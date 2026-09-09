@@ -19,43 +19,39 @@ import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.utils.Settings
 
-/**
- * Helper for querying the status and modifying various features and settings in the application.
- */
+/** Helper for querying the status and modifying various features and settings in the application. */
 class FeatureSettingsHelperDelegate : FeatureSettingsHelper {
     /**
-     * The current feature flags used inside the app before the tests start.
-     * These will be restored when the tests end.
+     * The current feature flags used inside the app before the tests start. These will be restored when the tests end.
      */
-    private val initialFeatureFlags = FeatureFlags(
-        isPocketEnabled = settings.showPocketRecommendationsFeature,
-        isRecentTabsFeatureEnabled = settings.showRecentTabsFeature,
-        isRecentlyVisitedFeatureEnabled = settings.historyMetadataUIFeature,
-        isWallpaperOnboardingEnabled = settings.showWallpaperOnboarding,
-        isDeleteSitePermissionsEnabled = settings.deleteSitePermissions,
-        isOpenInAppBannerEnabled = settings.shouldShowOpenInAppBanner,
-        etpPolicy = getETPPolicy(settings),
-        isLocationPermissionEnabled = getFeaturePermission(PhoneFeature.LOCATION, settings),
-        isMicrosurveyEnabled = settings.microsurveyFeatureEnabled,
-        shouldUseBottomToolbar = settings.shouldUseBottomToolbar,
-        onboardingFeatureEnabled = settings.onboardingFeatureEnabled,
-        isTabSwipeCFREnabled = settings.hasShownTabSwipeCFR,
-        isTermsOfServiceAccepted = settings.hasAcceptedTermsOfService,
-        openLinksInApp = getOpenLinksInApp(settings),
-        tabManagerOpeningAnimationEnabled = settings.tabManagerOpeningAnimationEnabled,
-        hasSeenShakeToSummarizeToolbarCfr = settings.shakeToSummarizeToolbarCfrShown,
-        shakeToSummarizeFeatureFlagEnabled = settings.shakeToSummarizeFeatureFlagEnabled,
-        isPrivateModeAndStoriesEntryPointEnabled = settings.privateModeAndStoriesEntryPointEnabled,
-        shouldUseExpandedToolbar = settings.shouldUseExpandedToolbar,
-        isTabStripEnabled = settings.isTabStripEnabled,
-        nativeShareSheetEnabled = settings.nativeShareSheetEnabled,
-        showVoiceSearchInDisplayToolbar = settings.showVoiceSearchInDisplayToolbar,
-        isHomepageTrendingRecentSearchEnabled = settings.enableHomepageTrendingRecentSearch,
-    )
+    private val initialFeatureFlags =
+        FeatureFlags(
+            isPocketEnabled = settings.showPocketRecommendationsFeature,
+            isRecentTabsFeatureEnabled = settings.showRecentTabsFeature,
+            isRecentlyVisitedFeatureEnabled = settings.historyMetadataUIFeature,
+            isWallpaperOnboardingEnabled = settings.showWallpaperOnboarding,
+            isDeleteSitePermissionsEnabled = settings.deleteSitePermissions,
+            isOpenInAppBannerEnabled = settings.shouldShowOpenInAppBanner,
+            etpPolicy = getETPPolicy(settings),
+            isLocationPermissionEnabled = getFeaturePermission(PhoneFeature.LOCATION, settings),
+            isMicrosurveyEnabled = settings.microsurveyFeatureEnabled,
+            shouldUseBottomToolbar = settings.shouldUseBottomToolbar,
+            onboardingFeatureEnabled = settings.onboardingFeatureEnabled,
+            isTabSwipeCFREnabled = settings.hasShownTabSwipeCFR,
+            isTermsOfServiceAccepted = settings.hasAcceptedTermsOfService,
+            openLinksInApp = getOpenLinksInApp(settings),
+            tabManagerOpeningAnimationEnabled = settings.tabManagerOpeningAnimationEnabled,
+            hasSeenShakeToSummarizeToolbarCfr = settings.shakeToSummarizeToolbarCfrShown,
+            shakeToSummarizeFeatureFlagEnabled = settings.shakeToSummarizeFeatureFlagEnabled,
+            isPrivateModeAndStoriesEntryPointEnabled = settings.privateModeAndStoriesEntryPointEnabled,
+            shouldUseExpandedToolbar = settings.shouldUseExpandedToolbar,
+            isTabStripEnabled = settings.isTabStripEnabled,
+            nativeShareSheetEnabled = settings.nativeShareSheetEnabled,
+            showVoiceSearchInDisplayToolbar = settings.showVoiceSearchInDisplayToolbar,
+            isHomepageTrendingRecentSearchEnabled = settings.enableHomepageTrendingRecentSearch,
+        )
 
-    /**
-     * The current feature flags updated in tests.
-     */
+    /** The current feature flags updated in tests. */
     private var updatedFeatureFlags = initialFeatureFlags.copy()
 
     override var isPocketEnabled: Boolean by updatedFeatureFlags::isPocketEnabled
@@ -64,7 +60,8 @@ class FeatureSettingsHelperDelegate : FeatureSettingsHelper {
     override var isRecentlyVisitedFeatureEnabled: Boolean by updatedFeatureFlags::isRecentlyVisitedFeatureEnabled
     override var isOpenInAppBannerEnabled: Boolean by updatedFeatureFlags::isOpenInAppBannerEnabled
     override var etpPolicy: ETPPolicy by updatedFeatureFlags::etpPolicy
-    override var isLocationPermissionEnabled: SitePermissionsRules.Action by updatedFeatureFlags::isLocationPermissionEnabled
+    override var isLocationPermissionEnabled: SitePermissionsRules.Action by
+        updatedFeatureFlags::isLocationPermissionEnabled
     override var isMicrosurveyEnabled: Boolean by updatedFeatureFlags::isMicrosurveyEnabled
     override var shouldUseBottomToolbar: Boolean by updatedFeatureFlags::shouldUseBottomToolbar
     override var onboardingFeatureEnabled: Boolean by updatedFeatureFlags::onboardingFeatureEnabled
@@ -74,12 +71,14 @@ class FeatureSettingsHelperDelegate : FeatureSettingsHelper {
     override var tabManagerOpeningAnimationEnabled: Boolean by updatedFeatureFlags::tabManagerOpeningAnimationEnabled
     override var hasSeenShakeToSummarizeToolbarCfr: Boolean by updatedFeatureFlags::hasSeenShakeToSummarizeToolbarCfr
     override var shakeToSummarizeFeatureFlagEnabled: Boolean by updatedFeatureFlags::shakeToSummarizeFeatureFlagEnabled
-    override var isPrivateModeAndStoriesEntryPointEnabled: Boolean by updatedFeatureFlags::isPrivateModeAndStoriesEntryPointEnabled
+    override var isPrivateModeAndStoriesEntryPointEnabled: Boolean by
+        updatedFeatureFlags::isPrivateModeAndStoriesEntryPointEnabled
     override var shouldUseExpandedToolbar: Boolean by updatedFeatureFlags::shouldUseExpandedToolbar
     override var isTabStripEnabled: Boolean by updatedFeatureFlags::isTabStripEnabled
     override var nativeShareSheetEnabled: Boolean by updatedFeatureFlags::nativeShareSheetEnabled
     override var showVoiceSearchInDisplayToolbar: Boolean by updatedFeatureFlags::showVoiceSearchInDisplayToolbar
-    override var isHomepageTrendingRecentSearchEnabled: Boolean by updatedFeatureFlags::isHomepageTrendingRecentSearchEnabled
+    override var isHomepageTrendingRecentSearchEnabled: Boolean by
+        updatedFeatureFlags::isHomepageTrendingRecentSearchEnabled
 
     override fun applyFlagUpdates() {
         Log.i(TAG, "applyFlagUpdates: Trying to apply the updated feature flags: $updatedFeatureFlags")
@@ -166,7 +165,8 @@ private fun setETPPolicy(policy: ETPPolicy) {
         // The following two cases update ETP in the same way "setStrictETP" does.
         STANDARD -> {
             Log.i(TAG, "setETPPolicy: Trying to set ETP policy to: \"Standard\"")
-            settings.preferences.edit()
+            settings.preferences
+                .edit()
                 .putBoolean(
                     appContext.getPreferenceKey(R.string.pref_key_tracking_protection_strict_default),
                     false,
@@ -184,7 +184,8 @@ private fun setETPPolicy(policy: ETPPolicy) {
         }
         CUSTOM -> {
             Log.i(TAG, "setETPPolicy: Trying to set ETP policy to: \"Custom\"")
-            settings.preferences.edit()
+            settings.preferences
+                .edit()
                 .putBoolean(
                     appContext.getPreferenceKey(R.string.pref_key_tracking_protection_strict_default),
                     false,
@@ -209,18 +210,22 @@ internal fun getOpenLinksInApp(settings: Settings): OpenLinksInApp {
         appContext.getString(R.string.pref_key_open_links_in_apps_ask) -> OpenLinksInApp.ASK
         appContext.getString(R.string.pref_key_open_links_in_apps_never) -> OpenLinksInApp.NEVER
         else -> {
-            Log.i(TAG, "getOpenLinksInApp: Unknown preference value found: \"${settings.openLinksInExternalApp}\", defaulting to \"Ask before opening\".")
+            Log.i(
+                TAG,
+                "getOpenLinksInApp: Unknown preference value found: \"${settings.openLinksInExternalApp}\", defaulting to \"Ask before opening\".",
+            )
             OpenLinksInApp.ASK
         }
     }
 }
 
 private fun setOpenLinksInApp(value: OpenLinksInApp) {
-    val prefValue = when (value) {
-        OpenLinksInApp.ALWAYS -> appContext.getString(R.string.pref_key_open_links_in_apps_always)
-        OpenLinksInApp.ASK -> appContext.getString(R.string.pref_key_open_links_in_apps_ask)
-        OpenLinksInApp.NEVER -> appContext.getString(R.string.pref_key_open_links_in_apps_never)
-    }
+    val prefValue =
+        when (value) {
+            OpenLinksInApp.ALWAYS -> appContext.getString(R.string.pref_key_open_links_in_apps_always)
+            OpenLinksInApp.ASK -> appContext.getString(R.string.pref_key_open_links_in_apps_ask)
+            OpenLinksInApp.NEVER -> appContext.getString(R.string.pref_key_open_links_in_apps_never)
+        }
     settings.openLinksInExternalApp = prefValue
     Log.i(TAG, "setOpenLinksInApp: Set the preference to \"$prefValue\".")
 }

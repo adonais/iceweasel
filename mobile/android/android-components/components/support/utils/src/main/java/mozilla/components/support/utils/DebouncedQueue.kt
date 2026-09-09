@@ -11,8 +11,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * A queue that manages function execution with a debounce mechanism. Only the most recent function
- * submitted within a set interval is executed, helping to prevent excessive or redundant operations.
+ * A queue that manages function execution with a debounce mechanism. Only the most recent function submitted within a
+ * set interval is executed, helping to prevent excessive or redundant operations.
  *
  * @param delayMillis The time delay in milliseconds before the last submitted function is executed.
  * @param scope The coroutine scope in which to launch the tasks.
@@ -24,8 +24,8 @@ class DebouncedQueue(
     private var debounceJob: Job? = null
 
     /**
-     * Enqueues a function to be executed. If another function is enqueued during the delay period,
-     * the previous function is cancelled and only the most recent one will be executed after the delay.
+     * Enqueues a function to be executed. If another function is enqueued during the delay period, the previous
+     * function is cancelled and only the most recent one will be executed after the delay.
      *
      * @param function The function to execute after the delay period if no other functions are submitted.
      */

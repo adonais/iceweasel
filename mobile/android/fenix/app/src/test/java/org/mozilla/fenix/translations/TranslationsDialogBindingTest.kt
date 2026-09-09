@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.TranslationsAction
 import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.createCustomTab
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.translate.DetectedLanguages
@@ -41,77 +42,135 @@ class TranslationsDialogBindingTest {
             val englishLanguage = Language("en", "English")
             val spanishLanguage = Language("es", "Spanish")
             translationsDialogStore = spyk(TranslationsDialogStore(TranslationsDialogState()))
-            browserStore = BrowserStore(
-                BrowserState(
-                    tabs = listOf(tab),
-                    selectedTabId = tabId,
-                ),
-            )
+            browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs = listOf(tab),
+                        selectedTabId = tabId,
+                    )
+                )
 
-            val binding = TranslationsDialogBinding(
-                browserStore = browserStore,
-                translationsDialogStore = translationsDialogStore,
-                getTranslatedPageTitle = titleProvider,
-                mainDispatcher = testDispatcher,
-            )
+            val binding =
+                TranslationsDialogBinding(
+                    browserStore = browserStore,
+                    translationsDialogStore = translationsDialogStore,
+                    getTranslatedPageTitle = titleProvider,
+                    mainDispatcher = testDispatcher,
+                )
             binding.start()
 
-            val detectedLanguages = DetectedLanguages(
-                documentLangTag = englishLanguage.code,
-                supportedDocumentLang = true,
-                userPreferredLangTag = spanishLanguage.code,
-            )
+            val detectedLanguages =
+                DetectedLanguages(
+                    documentLangTag = englishLanguage.code,
+                    supportedDocumentLang = true,
+                    userPreferredLangTag = spanishLanguage.code,
+                )
 
-            val translationEngineState = TranslationEngineState(
-                detectedLanguages = detectedLanguages,
-                error = null,
-                isEngineReady = true,
-                requestedTranslationPair = TranslationPair(
-                    fromLanguage = englishLanguage.code,
-                    toLanguage = spanishLanguage.code,
-                ),
-            )
+            val translationEngineState =
+                TranslationEngineState(
+                    detectedLanguages = detectedLanguages,
+                    error = null,
+                    isEngineReady = true,
+                    requestedTranslationPair =
+                        TranslationPair(
+                            fromLanguage = englishLanguage.code,
+                            toLanguage = spanishLanguage.code,
+                        ),
+                )
 
-            val supportLanguages = TranslationSupport(
-                fromLanguages = listOf(englishLanguage),
-                toLanguages = listOf(spanishLanguage),
-            )
+            val supportLanguages =
+                TranslationSupport(
+                    fromLanguages = listOf(englishLanguage),
+                    toLanguages = listOf(spanishLanguage),
+                )
 
-            browserStore.dispatch(
-                TranslationsAction.SetSupportedLanguagesAction(
-                    supportedLanguages = supportLanguages,
-                ),
-            )
+            browserStore.dispatch(TranslationsAction.SetSupportedLanguagesAction(supportedLanguages = supportLanguages))
             testDispatcher.scheduler.advanceUntilIdle()
 
             browserStore.dispatch(
                 TranslationsAction.TranslateStateChangeAction(
                     tabId = tabId,
                     translationEngineState = translationEngineState,
-                ),
+                )
             )
             testDispatcher.scheduler.advanceUntilIdle()
 
             verify {
-                translationsDialogStore.dispatch(
-                    TranslationsDialogAction.UpdateFromSelectedLanguage(
-                        englishLanguage,
-                    ),
-                )
+                translationsDialogStore.dispatch(TranslationsDialogAction.UpdateFromSelectedLanguage(englishLanguage))
             }
             verify {
-                translationsDialogStore.dispatch(
-                    TranslationsDialogAction.UpdateToSelectedLanguage(
-                        spanishLanguage,
-                    ),
-                )
+                translationsDialogStore.dispatch(TranslationsDialogAction.UpdateToSelectedLanguage(spanishLanguage))
             }
             verify {
                 translationsDialogStore.dispatch(
                     TranslationsDialogAction.UpdateTranslatedPageTitle(
-                        "Translated from ${englishLanguage.localizedDisplayName} to ${spanishLanguage.localizedDisplayName}",
-                    ),
+                        "Translated from ${englishLanguage.localizedDisplayName} to ${spanishLanguage.localizedDisplayName}"
+                    )
                 )
+            }
+        }
+
+    @Test
+    fun `GIVEN a custom tab WHEN supported translations languages change THEN update the dialog from the custom tab`() =
+        runTest(testDispatcher) {
+            val customTabId = "custom-tab"
+            val englishLanguage = Language("en", "English")
+            val spanishLanguage = Language("es", "Spanish")
+            translationsDialogStore = spyk(TranslationsDialogStore(TranslationsDialogState()))
+            browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs = listOf(tab),
+                        selectedTabId = tabId,
+                        customTabs = listOf(createCustomTab(url = customTabId, id = customTabId)),
+                    )
+                )
+            val binding =
+                TranslationsDialogBinding(
+                    browserStore = browserStore,
+                    translationsDialogStore = translationsDialogStore,
+                    getTranslatedPageTitle = titleProvider,
+                    sessionId = customTabId,
+                    mainDispatcher = testDispatcher,
+                )
+            binding.start()
+            browserStore.dispatch(
+                TranslationsAction.SetSupportedLanguagesAction(
+                    supportedLanguages =
+                        TranslationSupport(
+                            fromLanguages = listOf(englishLanguage),
+                            toLanguages = listOf(spanishLanguage),
+                        )
+                )
+            )
+            browserStore.dispatch(
+                TranslationsAction.TranslateStateChangeAction(
+                    tabId = customTabId,
+                    translationEngineState =
+                        TranslationEngineState(
+                            detectedLanguages =
+                                DetectedLanguages(
+                                    documentLangTag = englishLanguage.code,
+                                    supportedDocumentLang = true,
+                                    userPreferredLangTag = spanishLanguage.code,
+                                ),
+                            error = null,
+                            isEngineReady = true,
+                            requestedTranslationPair =
+                                TranslationPair(
+                                    fromLanguage = englishLanguage.code,
+                                    toLanguage = spanishLanguage.code,
+                                ),
+                        ),
+                )
+            )
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify {
+                translationsDialogStore.dispatch(TranslationsDialogAction.UpdateFromSelectedLanguage(englishLanguage))
+            }
+            verify {
+                translationsDialogStore.dispatch(TranslationsDialogAction.UpdateToSelectedLanguage(spanishLanguage))
             }
         }
 
@@ -121,19 +180,21 @@ class TranslationsDialogBindingTest {
             val englishLanguage = Language("en", "English")
             val spanishLanguage = Language("es", "Spanish")
             translationsDialogStore = spyk(TranslationsDialogStore(TranslationsDialogState()))
-            browserStore = BrowserStore(
-                BrowserState(
-                    tabs = listOf(tab),
-                    selectedTabId = tabId,
-                ),
-            )
+            browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs = listOf(tab),
+                        selectedTabId = tabId,
+                    )
+                )
 
-            val binding = TranslationsDialogBinding(
-                browserStore = browserStore,
-                translationsDialogStore = translationsDialogStore,
-                getTranslatedPageTitle = titleProvider,
-                mainDispatcher = testDispatcher,
-            )
+            val binding =
+                TranslationsDialogBinding(
+                    browserStore = browserStore,
+                    translationsDialogStore = translationsDialogStore,
+                    getTranslatedPageTitle = titleProvider,
+                    mainDispatcher = testDispatcher,
+                )
             binding.start()
 
             browserStore.dispatch(
@@ -142,22 +203,16 @@ class TranslationsDialogBindingTest {
                     fromLanguage = englishLanguage.code,
                     toLanguage = spanishLanguage.code,
                     null,
-                ),
+                )
             )
             testDispatcher.scheduler.advanceUntilIdle()
 
             verify {
-                translationsDialogStore.dispatch(
-                    TranslationsDialogAction.UpdateTranslationInProgress(
-                        true,
-                    ),
-                )
+                translationsDialogStore.dispatch(TranslationsDialogAction.UpdateTranslationInProgress(true))
             }
             verify {
                 translationsDialogStore.dispatch(
-                    TranslationsDialogAction.DismissDialog(
-                        dismissDialogState = DismissDialogState.WaitingToBeDismissed,
-                    ),
+                    TranslationsDialogAction.DismissDialog(dismissDialogState = DismissDialogState.WaitingToBeDismissed)
                 )
             }
         }
@@ -166,43 +221,39 @@ class TranslationsDialogBindingTest {
     fun `WHEN translate from languages list and translate to languages list are sent to the browserStore THEN update translation dialog store based on operation`() =
         runTest(testDispatcher) {
             translationsDialogStore = spyk(TranslationsDialogStore(TranslationsDialogState()))
-            browserStore = BrowserStore(
-                BrowserState(
-                    tabs = listOf(tab),
-                    selectedTabId = tabId,
-                ),
-            )
+            browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs = listOf(tab),
+                        selectedTabId = tabId,
+                    )
+                )
 
-            val binding = TranslationsDialogBinding(
-                browserStore = browserStore,
-                translationsDialogStore = translationsDialogStore,
-                getTranslatedPageTitle = titleProvider,
-                mainDispatcher = testDispatcher,
-            )
+            val binding =
+                TranslationsDialogBinding(
+                    browserStore = browserStore,
+                    translationsDialogStore = translationsDialogStore,
+                    getTranslatedPageTitle = titleProvider,
+                    mainDispatcher = testDispatcher,
+                )
             binding.start()
 
             val toLanguage = Language("de", "German")
             val fromLanguage = Language("es", "Spanish")
             val supportedLanguages = TranslationSupport(listOf(fromLanguage), listOf(toLanguage))
             browserStore.dispatch(
-                TranslationsAction.SetSupportedLanguagesAction(
-                    supportedLanguages = supportedLanguages,
-                ),
+                TranslationsAction.SetSupportedLanguagesAction(supportedLanguages = supportedLanguages)
             )
             testDispatcher.scheduler.advanceUntilIdle()
 
             verify {
                 translationsDialogStore.dispatch(
-                    TranslationsDialogAction.UpdateTranslateFromLanguages(
-                        listOf(fromLanguage),
-                    ),
+                    TranslationsDialogAction.UpdateTranslateFromLanguages(listOf(fromLanguage))
                 )
             }
             verify {
                 translationsDialogStore.dispatch(
-                    TranslationsDialogAction.UpdateTranslateToLanguages(
-                        listOf(toLanguage),
-                    ),
+                    TranslationsDialogAction.UpdateTranslateToLanguages(listOf(toLanguage))
                 )
             }
         }
@@ -211,75 +262,74 @@ class TranslationsDialogBindingTest {
     fun `WHEN translate action success is sent to the browserStore THEN update translation dialog store based on operation`() =
         runTest(testDispatcher) {
             translationsDialogStore =
-                spyk(TranslationsDialogStore(TranslationsDialogState(dismissDialogState = DismissDialogState.WaitingToBeDismissed)))
-            browserStore = BrowserStore(
-                BrowserState(
-                    tabs = listOf(tab),
-                    selectedTabId = tabId,
-                ),
-            )
+                spyk(
+                    TranslationsDialogStore(
+                        TranslationsDialogState(dismissDialogState = DismissDialogState.WaitingToBeDismissed)
+                    )
+                )
+            browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs = listOf(tab),
+                        selectedTabId = tabId,
+                    )
+                )
 
-            val binding = TranslationsDialogBinding(
-                browserStore = browserStore,
-                translationsDialogStore = translationsDialogStore,
-                getTranslatedPageTitle = titleProvider,
-                mainDispatcher = testDispatcher,
-            )
+            val binding =
+                TranslationsDialogBinding(
+                    browserStore = browserStore,
+                    translationsDialogStore = translationsDialogStore,
+                    getTranslatedPageTitle = titleProvider,
+                    mainDispatcher = testDispatcher,
+                )
             binding.start()
 
             browserStore.dispatch(
                 TranslationsAction.TranslateSuccessAction(
                     tabId = tab.id,
                     operation = TranslationOperation.TRANSLATE,
-                ),
+                )
             )
             testDispatcher.scheduler.advanceUntilIdle()
 
             // Simulate success response post-translate
-            val detectedLanguages = DetectedLanguages(
-                documentLangTag = "en",
-                supportedDocumentLang = true,
-                userPreferredLangTag = "es",
-            )
+            val detectedLanguages =
+                DetectedLanguages(
+                    documentLangTag = "en",
+                    supportedDocumentLang = true,
+                    userPreferredLangTag = "es",
+                )
 
-            val translationEngineState = TranslationEngineState(
-                detectedLanguages = detectedLanguages,
-                error = null,
-                isEngineReady = true,
-                hasVisibleChange = true,
-                requestedTranslationPair = TranslationPair(
-                    fromLanguage = "en",
-                    toLanguage = "es",
-                ),
-            )
+            val translationEngineState =
+                TranslationEngineState(
+                    detectedLanguages = detectedLanguages,
+                    error = null,
+                    isEngineReady = true,
+                    hasVisibleChange = true,
+                    requestedTranslationPair =
+                        TranslationPair(
+                            fromLanguage = "en",
+                            toLanguage = "es",
+                        ),
+                )
 
             browserStore.dispatch(
                 TranslationsAction.TranslateStateChangeAction(
                     tabId = tabId,
                     translationEngineState = translationEngineState,
-                ),
+                )
             )
             testDispatcher.scheduler.advanceUntilIdle()
 
             verify {
-                translationsDialogStore.dispatch(
-                    TranslationsDialogAction.UpdateTranslated(
-                        true,
-                    ),
-                )
+                translationsDialogStore.dispatch(TranslationsDialogAction.UpdateTranslated(true))
             }
             verify(exactly = 2) {
-                translationsDialogStore.dispatch(
-                    TranslationsDialogAction.UpdateTranslationInProgress(
-                        false,
-                    ),
-                )
+                translationsDialogStore.dispatch(TranslationsDialogAction.UpdateTranslationInProgress(false))
             }
             verify {
                 translationsDialogStore.dispatch(
-                    TranslationsDialogAction.DismissDialog(
-                        dismissDialogState = DismissDialogState.Dismiss,
-                    ),
+                    TranslationsDialogAction.DismissDialog(dismissDialogState = DismissDialogState.Dismiss)
                 )
             }
         }
@@ -287,21 +337,22 @@ class TranslationsDialogBindingTest {
     @Test
     fun `WHEN translate fetch error is sent to the browserStore THEN update translation dialog store based on operation`() =
         runTest(testDispatcher) {
-            translationsDialogStore =
-                spyk(TranslationsDialogStore(TranslationsDialogState()))
-            browserStore = BrowserStore(
-                BrowserState(
-                    tabs = listOf(tab),
-                    selectedTabId = tabId,
-                ),
-            )
+            translationsDialogStore = spyk(TranslationsDialogStore(TranslationsDialogState()))
+            browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs = listOf(tab),
+                        selectedTabId = tabId,
+                    )
+                )
 
-            val binding = TranslationsDialogBinding(
-                browserStore = browserStore,
-                translationsDialogStore = translationsDialogStore,
-                getTranslatedPageTitle = titleProvider,
-                mainDispatcher = testDispatcher,
-            )
+            val binding =
+                TranslationsDialogBinding(
+                    browserStore = browserStore,
+                    translationsDialogStore = translationsDialogStore,
+                    getTranslatedPageTitle = titleProvider,
+                    mainDispatcher = testDispatcher,
+                )
             binding.start()
 
             val fetchError = TranslationError.CouldNotLoadLanguagesError(null)
@@ -310,70 +361,64 @@ class TranslationsDialogBindingTest {
                     tabId = tab.id,
                     operation = TranslationOperation.FETCH_SUPPORTED_LANGUAGES,
                     translationError = fetchError,
-                ),
+                )
             )
             testDispatcher.scheduler.advanceUntilIdle()
 
             verify {
-                translationsDialogStore.dispatch(
-                    TranslationsDialogAction.UpdateTranslationError(fetchError),
-                )
+                translationsDialogStore.dispatch(TranslationsDialogAction.UpdateTranslationError(fetchError))
             }
         }
 
     @Test
     fun `WHEN a non-displayable error is sent to the browserStore THEN the translation dialog store is not updated`() =
         runTest(testDispatcher) {
-            translationsDialogStore =
-                spyk(TranslationsDialogStore(TranslationsDialogState()))
-            browserStore = BrowserStore(
-                BrowserState(
-                    tabs = listOf(tab),
-                    selectedTabId = tabId,
-                ),
-            )
+            translationsDialogStore = spyk(TranslationsDialogStore(TranslationsDialogState()))
+            browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs = listOf(tab),
+                        selectedTabId = tabId,
+                    )
+                )
 
-            val binding = TranslationsDialogBinding(
-                browserStore = browserStore,
-                translationsDialogStore = translationsDialogStore,
-                getTranslatedPageTitle = titleProvider,
-                mainDispatcher = testDispatcher,
-            )
+            val binding =
+                TranslationsDialogBinding(
+                    browserStore = browserStore,
+                    translationsDialogStore = translationsDialogStore,
+                    getTranslatedPageTitle = titleProvider,
+                    mainDispatcher = testDispatcher,
+                )
             binding.start()
 
             val fetchError = TranslationError.UnknownEngineSupportError(null)
-            browserStore.dispatch(
-                TranslationsAction.EngineExceptionAction(
-                    error = fetchError,
-                ),
-            )
+            browserStore.dispatch(TranslationsAction.EngineExceptionAction(error = fetchError))
             testDispatcher.scheduler.advanceUntilIdle()
 
             verify(exactly = 0) {
-                translationsDialogStore.dispatch(
-                    TranslationsDialogAction.UpdateTranslationError(fetchError),
-                )
+                translationsDialogStore.dispatch(TranslationsDialogAction.UpdateTranslationError(fetchError))
             }
         }
 
     @Test
     fun `WHEN a browser and session error is sent to the browserStore THEN the session error takes priority and the translation dialog store is updated`() =
         runTest(testDispatcher) {
-            translationsDialogStore =
-                spyk(TranslationsDialogStore(TranslationsDialogState()))
-            browserStore = BrowserStore(
-                BrowserState(
-                    tabs = listOf(tab),
-                    selectedTabId = tabId,
-                ),
-            )
+            translationsDialogStore = spyk(TranslationsDialogStore(TranslationsDialogState()))
+            browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs = listOf(tab),
+                        selectedTabId = tabId,
+                    )
+                )
 
-            val binding = TranslationsDialogBinding(
-                browserStore = browserStore,
-                translationsDialogStore = translationsDialogStore,
-                getTranslatedPageTitle = titleProvider,
-                mainDispatcher = testDispatcher,
-            )
+            val binding =
+                TranslationsDialogBinding(
+                    browserStore = browserStore,
+                    translationsDialogStore = translationsDialogStore,
+                    getTranslatedPageTitle = titleProvider,
+                    mainDispatcher = testDispatcher,
+                )
             binding.start()
 
             val sessionError = TranslationError.CouldNotLoadLanguagesError(null)
@@ -382,71 +427,63 @@ class TranslationsDialogBindingTest {
                     tabId = tab.id,
                     operation = TranslationOperation.FETCH_SUPPORTED_LANGUAGES,
                     translationError = sessionError,
-                ),
+                )
             )
             testDispatcher.scheduler.advanceUntilIdle()
 
             verify {
-                translationsDialogStore.dispatch(
-                    TranslationsDialogAction.UpdateTranslationError(sessionError),
-                )
+                translationsDialogStore.dispatch(TranslationsDialogAction.UpdateTranslationError(sessionError))
             }
 
             val engineError = TranslationError.UnknownError(IllegalStateException())
-            browserStore.dispatch(
-                TranslationsAction.EngineExceptionAction(
-                    error = engineError,
-                ),
-            )
+            browserStore.dispatch(TranslationsAction.EngineExceptionAction(error = engineError))
             testDispatcher.scheduler.advanceUntilIdle()
 
             verify(exactly = 0) {
-                translationsDialogStore.dispatch(
-                    TranslationsDialogAction.UpdateTranslationError(engineError),
-                )
+                translationsDialogStore.dispatch(TranslationsDialogAction.UpdateTranslationError(engineError))
             }
         }
 
     @Test
     fun `WHEN set translation download size action sent to the browserStore THEN update translation dialog store based on operation`() =
         runTest(testDispatcher) {
-            translationsDialogStore =
-                spyk(TranslationsDialogStore(TranslationsDialogState()))
-            browserStore = BrowserStore(
-                BrowserState(
-                    tabs = listOf(tab),
-                    selectedTabId = tabId,
-                ),
-            )
+            translationsDialogStore = spyk(TranslationsDialogStore(TranslationsDialogState()))
+            browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs = listOf(tab),
+                        selectedTabId = tabId,
+                    )
+                )
 
-            val binding = TranslationsDialogBinding(
-                browserStore = browserStore,
-                translationsDialogStore = translationsDialogStore,
-                getTranslatedPageTitle = titleProvider,
-                mainDispatcher = testDispatcher,
-            )
+            val binding =
+                TranslationsDialogBinding(
+                    browserStore = browserStore,
+                    translationsDialogStore = translationsDialogStore,
+                    getTranslatedPageTitle = titleProvider,
+                    mainDispatcher = testDispatcher,
+                )
             binding.start()
 
             val toLanguage = Language("de", "German")
             val fromLanguage = Language("es", "Spanish")
-            val translationDownloadSize = TranslationDownloadSize(
-                fromLanguage = fromLanguage,
-                toLanguage = toLanguage,
-                size = 1000L,
-            )
+            val translationDownloadSize =
+                TranslationDownloadSize(
+                    fromLanguage = fromLanguage,
+                    toLanguage = toLanguage,
+                    size = 1000L,
+                )
             browserStore.dispatch(
                 TranslationsAction.SetTranslationDownloadSizeAction(
                     tabId = tab.id,
                     translationSize = translationDownloadSize,
-                ),
+                )
             )
             testDispatcher.scheduler.advanceUntilIdle()
 
             verify {
                 translationsDialogStore.dispatch(
-                    TranslationsDialogAction.UpdateDownloadTranslationDownloadSize(
-                        translationDownloadSize,
-                    ),
+                    TranslationsDialogAction.UpdateDownloadTranslationDownloadSize(translationDownloadSize)
                 )
             }
         }

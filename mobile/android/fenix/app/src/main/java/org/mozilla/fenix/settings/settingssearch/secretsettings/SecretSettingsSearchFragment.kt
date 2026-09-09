@@ -19,32 +19,31 @@ import org.mozilla.fenix.settings.settingssearch.SettingsSearchState
 import org.mozilla.fenix.settings.settingssearch.SettingsSearchStore
 import org.mozilla.fenix.settings.settingssearch.secretRecentSearchesDataStore
 
-/**
- * Fragment for the secret settings search screen.
- */
+/** Fragment for the secret settings search screen. */
 class SecretSettingsSearchFragment : SettingsSearchFragment(), SystemInsetsPaddedFragment {
 
     override fun buildSettingsSearchStore(): SettingsSearchStore = storeProvider.get { restoredState ->
-        val secretPreferenceFileInformationList = listOf(
-            PreferenceFileInformation.SecretSettingsPreferences,
-        )
+        val secretPreferenceFileInformationList = listOf(PreferenceFileInformation.SecretSettingsPreferences)
 
         SettingsSearchStore(
             initialState = restoredState ?: SettingsSearchState.Default(emptyList()),
-            middleware = listOf(
-                SettingsSearchMiddleware(
-                    fenixSettingsIndexer = DefaultFenixSettingsIndexer(
-                        context = requireContext(),
-                        preferenceFileInformationList = secretPreferenceFileInformationList,
-                    ),
-                    navController = findNavController(),
-                    recentSettingsSearchesRepository = FenixRecentSettingsSearchesRepository(
-                        dataStore = requireContext().secretRecentSearchesDataStore,
-                        preferenceFileInformationList = secretPreferenceFileInformationList,
-                    ),
-                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+            middleware =
+                listOf(
+                    SettingsSearchMiddleware(
+                        fenixSettingsIndexer =
+                            DefaultFenixSettingsIndexer(
+                                context = requireContext(),
+                                preferenceFileInformationList = secretPreferenceFileInformationList,
+                            ),
+                        navController = findNavController(),
+                        recentSettingsSearchesRepository =
+                            FenixRecentSettingsSearchesRepository(
+                                dataStore = requireContext().secretRecentSearchesDataStore,
+                                preferenceFileInformationList = secretPreferenceFileInformationList,
+                            ),
+                        scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                    )
                 ),
-            ),
         )
     }
 

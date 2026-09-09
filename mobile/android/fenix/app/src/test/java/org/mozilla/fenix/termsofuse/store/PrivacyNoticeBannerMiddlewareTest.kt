@@ -15,10 +15,7 @@ class PrivacyNoticeBannerMiddlewareTest {
 
     private lateinit var repository: FakePrivacyNoticeBannerRepository
 
-    private val store =
-        mockk<Store<PrivacyNoticeBannerState, PrivacyNoticeBannerAction>>(
-            relaxed = true,
-        )
+    private val store = mockk<Store<PrivacyNoticeBannerState, PrivacyNoticeBannerAction>>(relaxed = true)
 
     private lateinit var middleware: PrivacyNoticeBannerMiddleware
 

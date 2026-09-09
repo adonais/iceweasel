@@ -20,10 +20,10 @@ skip-if = [
 
 ["test_TaskSchedulerWinImpl.js"]
 run-if = [
-  "os == 'win'", # Test of Windows backend
+  "os == 'win' && !msix", # Test of Windows backend
 ]
 
 ["test_WinTaskSchedulerService.js"]
 run-if = [
-  "os == 'win'", # Test of Windows only service
+  "os == 'win' && !msix", # Test of Windows (non-msix) service
 ]

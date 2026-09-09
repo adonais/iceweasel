@@ -17,14 +17,11 @@ import mozilla.components.lib.state.Store
 private const val PAGE_FULLY_LOADED_PROGRESS = 100
 
 /**
- * Middleware that checks if the current page is a PDF and dispatches [ContentAction.EnteredPdfViewer]
- * with the result.
+ * Middleware that checks if the current page is a PDF and dispatches [ContentAction.EnteredPdfViewer] with the result.
  *
  * @param scope [CoroutineScope] used for long running tasks.
  */
-internal class PdfStateMiddleware(
-    private val scope: CoroutineScope,
-) : Middleware<BrowserState, BrowserAction> {
+internal class PdfStateMiddleware(private val scope: CoroutineScope) : Middleware<BrowserState, BrowserAction> {
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,
@@ -48,12 +45,13 @@ internal class PdfStateMiddleware(
         sessionId: String,
         isPdf: Boolean,
         store: Store<BrowserState, BrowserAction>,
-    ) = store.dispatch(
-        when (isPdf) {
-            true -> ContentAction.EnteredPdfViewer(sessionId)
-            false -> ContentAction.ExitedPdfViewer(sessionId)
-        },
-    )
+    ) =
+        store.dispatch(
+            when (isPdf) {
+                true -> ContentAction.EnteredPdfViewer(sessionId)
+                false -> ContentAction.ExitedPdfViewer(sessionId)
+            }
+        )
 
     private fun previousPdfRenderingStatus(sessionId: String, state: BrowserState): Boolean {
         return state.findTabOrCustomTabOrSelectedTab(sessionId)?.content?.isPdf ?: false

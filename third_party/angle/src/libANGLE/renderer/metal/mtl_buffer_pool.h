@@ -54,14 +54,15 @@ class BufferPool
 
     // This call will allocate a new region at the end of the buffer. It internally may trigger
     // a new buffer to be created (which is returned in the optional parameter
-    // `newBufferAllocatedOut`).  The new region will be in the returned buffer at given offset. If
-    // a memory pointer is given, the buffer will be automatically map()ed.
-    angle::Result allocate(ContextMtl *contextMtl,
-                           size_t sizeInBytes,
-                           uint8_t **ptrOut            = nullptr,
-                           BufferRef *bufferOut        = nullptr,
-                           size_t *offsetOut           = nullptr,
-                           bool *newBufferAllocatedOut = nullptr);
+    // `newBufferAllocatedOut`).  The new region will be in the returned BufferSlice.
+
+    angle::Result allocate(ContextMtl *contextMtl, size_t sizeInBytes, BufferSlice *outBuffer);
+
+    // The buffer will be automatically mapped and the mapped region returned in outMappedData.
+    angle::Result allocateAndMap(ContextMtl *contextMtl,
+                                 size_t sizeInBytes,
+                                 angle::Span<uint8_t> *outMappedData,
+                                 BufferSlice *outBuffer);
 
     // After a sequence of CPU writes, call commit to ensure the data is visible to the GPU.
     // Note: the data will only be made visible to the GPU if the buffer's storage mode is not
@@ -90,20 +91,19 @@ class BufferPool
     MTLStorageMode storageMode(ContextMtl *contextMtl) const;
     void reset();
     angle::Result allocateNewBuffer(ContextMtl *contextMtl);
-    void destroyBufferList(ContextMtl *contextMtl, std::deque<BufferRef> *buffers);
+    void destroyBufferList(ContextMtl *contextMtl, std::deque<BufferRef> *buffers, bool isFreeList);
     angle::Result finalizePendingBuffer(ContextMtl *contextMtl);
-    size_t mInitialSize;
-    BufferRef mBuffer;
-    uint32_t mNextAllocationOffset;
-    uint32_t mLastFlushOffset;
-    size_t mSize;
-    size_t mAlignment;
 
+    BufferRef mBuffer;
     std::deque<BufferRef> mInFlightBuffers;
     std::deque<BufferRef> mBufferFreeList;
-
-    size_t mBuffersAllocated;
-    size_t mMaxBuffers;
+    size_t mInitialSize{0};
+    size_t mNextAllocationOffset{0};
+    size_t mLastFlushOffset{0};
+    size_t mSize{0};
+    size_t mAlignment{1};
+    size_t mBuffersAllocated{0};
+    size_t mMaxBuffers{0};
     bool mAlwaysAllocateNewBuffer;
 };
 

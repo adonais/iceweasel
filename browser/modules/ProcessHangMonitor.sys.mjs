@@ -357,6 +357,14 @@ export var ProcessHangMonitor = {
         uri_type = "extension";
       } else if (report.scriptFileName?.startsWith("debugger")) {
         uri_type = "devtools";
+      } else if (
+        report.scriptFileName?.startsWith(
+          "resource://pdf.js/build/pdf.scripting.mjs"
+        )
+      ) {
+        // PDF scripts are content, but their reported filename is the PDF.js
+        // scripting bundle.
+        uri_type = "content";
       } else {
         try {
           let url = new URL(report.scriptFileName);

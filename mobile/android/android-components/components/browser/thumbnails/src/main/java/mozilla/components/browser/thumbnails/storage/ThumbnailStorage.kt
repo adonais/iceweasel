@@ -7,6 +7,7 @@ package mozilla.components.browser.thumbnails.storage
 import android.content.Context
 import android.graphics.Bitmap
 import androidx.annotation.WorkerThread
+import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -23,7 +24,6 @@ import mozilla.components.support.base.utils.NamedThreadFactory
 import mozilla.components.support.images.DesiredSize
 import mozilla.components.support.images.decoder.AndroidImageDecoder
 import mozilla.components.support.ktx.android.content.pixelSizeFor
-import java.util.concurrent.Executors
 
 private const val MAXIMUM_SCALE_FACTOR = 2.0f
 
@@ -33,59 +33,49 @@ private const val THREADS = 3
 internal val sharedDiskCache = ThumbnailDiskCache()
 internal val privateDiskCache = ThumbnailDiskCache(isPrivate = true)
 
-/**
- * Thumbnail storage layer which handles saving and loading the thumbnail from the disk cache.
- */
+/** Thumbnail storage layer which handles saving and loading the thumbnail from the disk cache. */
 class ThumbnailStorage(
     private val context: Context,
-    jobDispatcher: CoroutineDispatcher = Executors.newFixedThreadPool(
-        THREADS,
-        NamedThreadFactory("ThumbnailStorage"),
-    ).asCoroutineDispatcher(),
+    jobDispatcher: CoroutineDispatcher =
+        Executors.newFixedThreadPool(
+                THREADS,
+                NamedThreadFactory("ThumbnailStorage"),
+            )
+            .asCoroutineDispatcher(),
 ) {
     private val decoders = AndroidImageDecoder()
     private val logger = Logger("ThumbnailStorage")
-    private val maximumSize =
-        context.pixelSizeFor(R.dimen.mozac_browser_thumbnails_maximum_size)
+    private val maximumSize = context.pixelSizeFor(R.dimen.mozac_browser_thumbnails_maximum_size)
     private val scope = CoroutineScope(jobDispatcher)
 
     init {
         privateDiskCache.clear(context)
     }
 
-    /**
-     * Clears all the stored thumbnails in the disk cache.
-     */
-    fun clearThumbnails(): Job =
-        scope.launch {
-            logger.debug("Cleared all thumbnails from disk")
-            sharedDiskCache.clear(context)
-            privateDiskCache.clear(context)
-        }
+    /** Clears all the stored thumbnails in the disk cache. */
+    fun clearThumbnails(): Job = scope.launch {
+        logger.debug("Cleared all thumbnails from disk")
+        sharedDiskCache.clear(context)
+        privateDiskCache.clear(context)
+    }
 
-    /**
-     * Deletes the given thumbnail [Bitmap] from the disk cache with the provided session ID or url
-     * as its key.
-     */
-    fun deleteThumbnail(sessionIdOrUrl: String, isPrivate: Boolean): Job =
-        scope.launch {
-            logger.debug("Removed thumbnail from disk (sessionIdOrUrl = $sessionIdOrUrl)")
-            if (isPrivate) {
-                privateDiskCache.removeThumbnailData(context, sessionIdOrUrl)
-            } else {
-                sharedDiskCache.removeThumbnailData(context, sessionIdOrUrl)
-            }
+    /** Deletes the given thumbnail [Bitmap] from the disk cache with the provided session ID or url as its key. */
+    fun deleteThumbnail(sessionIdOrUrl: String, isPrivate: Boolean): Job = scope.launch {
+        logger.debug("Removed thumbnail from disk (sessionIdOrUrl = $sessionIdOrUrl)")
+        if (isPrivate) {
+            privateDiskCache.removeThumbnailData(context, sessionIdOrUrl)
+        } else {
+            sharedDiskCache.removeThumbnailData(context, sessionIdOrUrl)
         }
+    }
 
-    /**
-     * Asynchronously loads a thumbnail [Bitmap] for the given [ImageLoadRequest].
-     */
+    /** Asynchronously loads a thumbnail [Bitmap] for the given [ImageLoadRequest]. */
     fun loadThumbnail(request: ImageLoadRequest): Deferred<Bitmap?> = scope.async {
         loadThumbnailInternal(request).also { loadedThumbnail ->
             if (loadedThumbnail != null) {
                 logger.debug(
                     "Loaded thumbnail from disk (id = ${request.id}, " +
-                        "generationId = ${loadedThumbnail.generationId})",
+                        "generationId = ${loadedThumbnail.generationId})"
                 )
             } else {
                 logger.debug("No thumbnail loaded (id = ${request.id})")
@@ -95,18 +85,20 @@ class ThumbnailStorage(
 
     @WorkerThread
     private fun loadThumbnailInternal(request: ImageLoadRequest): Bitmap? {
-        val desiredSize = DesiredSize(
-            targetSize = request.size,
-            minSize = request.size,
-            maxSize = maximumSize,
-            maxScaleFactor = MAXIMUM_SCALE_FACTOR,
-        )
+        val desiredSize =
+            DesiredSize(
+                targetSize = request.size,
+                minSize = request.size,
+                maxSize = maximumSize,
+                maxScaleFactor = MAXIMUM_SCALE_FACTOR,
+            )
 
-        val data = if (request.isPrivate) {
-            privateDiskCache.getThumbnailData(context, request)
-        } else {
-            sharedDiskCache.getThumbnailData(context, request)
-        }
+        val data =
+            if (request.isPrivate) {
+                privateDiskCache.getThumbnailData(context, request)
+            } else {
+                sharedDiskCache.getThumbnailData(context, request)
+            }
 
         if (data != null) {
             return decoders.decode(data, desiredSize)
@@ -115,20 +107,13 @@ class ThumbnailStorage(
         return null
     }
 
-    /**
-     * Stores the given thumbnail [Bitmap] into the disk cache with the provided [ImageLoadRequest]
-     * as its key.
-     */
-    fun saveThumbnail(request: ImageSaveRequest, bitmap: Bitmap): Job =
-        scope.launch {
-            logger.debug(
-                "Saved thumbnail to disk (id = $request, " +
-                    "generationId = ${bitmap.generationId})",
-            )
-            if (request.isPrivate) {
-                privateDiskCache.putThumbnailBitmap(context, request, bitmap)
-            } else {
-                sharedDiskCache.putThumbnailBitmap(context, request, bitmap)
-            }
+    /** Stores the given thumbnail [Bitmap] into the disk cache with the provided [ImageLoadRequest] as its key. */
+    fun saveThumbnail(request: ImageSaveRequest, bitmap: Bitmap): Job = scope.launch {
+        logger.debug("Saved thumbnail to disk (id = $request, " + "generationId = ${bitmap.generationId})")
+        if (request.isPrivate) {
+            privateDiskCache.putThumbnailBitmap(context, request, bitmap)
+        } else {
+            sharedDiskCache.putThumbnailBitmap(context, request, bitmap)
         }
+    }
 }

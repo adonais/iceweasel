@@ -20,15 +20,9 @@ class DownloadsUseCases(
     downloadFileUtils: DownloadFileUtils,
 ) {
 
-    /**
-     * Use case that cancels the download request from a tab.
-     */
-    class CancelDownloadRequestUseCase(
-        private val store: BrowserStore,
-    ) {
-        /**
-         * Cancels the download request the session with the given [tabId].
-         */
+    /** Use case that cancels the download request from a tab. */
+    class CancelDownloadRequestUseCase(private val store: BrowserStore) {
+        /** Cancels the download request the session with the given [tabId]. */
         operator fun invoke(tabId: String, downloadId: String) {
             store.dispatch(ContentAction.CancelDownloadAction(tabId, downloadId))
         }
@@ -44,8 +38,8 @@ class DownloadsUseCases(
         private val downloadFileUtils: DownloadFileUtils,
     ) {
         /**
-         * Opens the already downloaded file with the given [downloadId], and cancels the download
-         * request in the session with the given [tabId].
+         * Opens the already downloaded file with the given [downloadId], and cancels the download request in the
+         * session with the given [tabId].
          */
         operator fun invoke(tabId: String, download: DownloadState, filePath: String?) {
             store.dispatch(ContentAction.CancelDownloadAction(tabId, download.id))
@@ -58,57 +52,43 @@ class DownloadsUseCases(
         }
     }
 
-    class ConsumeDownloadUseCase(
-        private val store: BrowserStore,
-    ) {
-        /**
-         * Consumes the download with the given [downloadId] from the session with the given
-         * [tabId].
-         */
+    class ConsumeDownloadUseCase(private val store: BrowserStore) {
+        /** Consumes the download with the given [downloadId] from the session with the given [tabId]. */
         operator fun invoke(tabId: String, downloadId: String) {
             store.dispatch(
                 ContentAction.ConsumeDownloadAction(
                     tabId,
                     downloadId,
-                ),
+                )
             )
         }
     }
 
-    /**
-     * Use case that allows to restore downloads from the storage.
-     */
+    /** Use case that allows to restore downloads from the storage. */
     class RestoreDownloadsUseCase(private val store: BrowserStore) {
-        /**
-         * Restores downloads from the storage.
-         */
+        /** Restores downloads from the storage. */
         operator fun invoke() {
             store.dispatch(DownloadAction.RestoreDownloadsStateAction)
         }
     }
 
-    /**
-     * Use case that allows to remove a download.
-     */
+    /** Use case that allows to remove a download. */
     class RemoveDownloadUseCase(private val store: BrowserStore) {
         /**
          * Removes the download with the given [downloadId].
+         *
          * @param downloadId The ID of the download to remove.
-         * @param removeFromDisk If true, forcibly delete the file from storage. If false,
-         * remove the download from history. If null, fall back to the global user preference.
+         * @param removeFromDisk If true, forcibly delete the file from storage. If false, remove the download from
+         *   history. If null, fall back to the global user preference.
          */
         operator fun invoke(downloadId: String, removeFromDisk: Boolean? = null) {
             store.dispatch(DownloadAction.RemoveDownloadAction(downloadId, removeFromDisk))
         }
     }
 
-    /**
-     * Use case that allows to remove all downloads.
-     */
+    /** Use case that allows to remove all downloads. */
     class RemoveAllDownloadsUseCase(private val store: BrowserStore) {
-        /**
-         * Removes all downloads.
-         */
+        /** Removes all downloads. */
         operator fun invoke() {
             store.dispatch(DownloadAction.RemoveAllDownloadsAction)
         }

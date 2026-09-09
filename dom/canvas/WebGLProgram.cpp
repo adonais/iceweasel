@@ -609,6 +609,8 @@ const char* webgl::ToString(const webgl::UniformBaseType x) {
   MOZ_CRASH("pacify gcc6 warning");
 }
 
+static uint8_t NumUsedLocationsByElemType(GLenum elemType);
+
 const webgl::CachedDrawFetchLimits*
 webgl::LinkedProgramInfo::GetDrawFetchLimits() const {
   const auto& webgl = prog->mContext;
@@ -643,46 +645,50 @@ webgl::LinkedProgramInfo::GetDrawFetchLimits() const {
     if (loc == -1) continue;
     hasActiveAttrib |= true;
 
-    const auto& binding = vao->AttribBinding(loc);
-    const auto& buffer = binding.buffer;
-    const auto& layout = binding.layout;
-    hasActiveDivisor0 |= (layout.divisor == 0);
+    const auto numUsedLocs = NumUsedLocationsByElemType(progAttrib.elemType);
+    for (uint8_t locOffset = 0; locOffset < numUsedLocs; locOffset++) {
+      const auto usedLoc = static_cast<uint32_t>(loc) + locOffset;
 
-    webgl::AttribBaseType attribDataBaseType;
-    if (layout.isArray) {
-      MOZ_ASSERT(buffer);
-      fetchLimits.usedBuffers.push_back(
-          {buffer.get(), static_cast<uint32_t>(loc)});
+      const auto& binding = vao->AttribBinding(usedLoc);
+      const auto& buffer = binding.buffer;
+      const auto& layout = binding.layout;
+      hasActiveDivisor0 |= (layout.divisor == 0);
 
-      attribDataBaseType = layout.baseType;
+      webgl::AttribBaseType attribDataBaseType;
+      if (layout.isArray) {
+        MOZ_ASSERT(buffer);
+        fetchLimits.usedBuffers.push_back({buffer.get(), usedLoc});
 
-      const auto availBytes = buffer->ByteLength();
-      const auto availElems = AvailGroups(availBytes, layout.byteOffset,
-                                          layout.byteSize, layout.byteStride);
-      if (layout.divisor) {
-        const auto availInstances =
-            CheckedInt<uint64_t>(availElems) * layout.divisor;
-        if (availInstances.isValid()) {
-          fetchLimits.maxInstances =
-              std::min(fetchLimits.maxInstances, availInstances.value());
-        }  // If not valid, it overflowed too large, so we're super safe.
+        attribDataBaseType = layout.baseType;
+
+        const auto availBytes = buffer->ByteLength();
+        const auto availElems = AvailGroups(availBytes, layout.byteOffset,
+                                            layout.byteSize, layout.byteStride);
+        if (layout.divisor) {
+          const auto availInstances =
+              CheckedInt<uint64_t>(availElems) * layout.divisor;
+          if (availInstances.isValid()) {
+            fetchLimits.maxInstances =
+                std::min(fetchLimits.maxInstances, availInstances.value());
+          }  // If not valid, it overflowed too large, so we're super safe.
+        } else {
+          fetchLimits.maxVerts = std::min(fetchLimits.maxVerts, availElems);
+        }
       } else {
-        fetchLimits.maxVerts = std::min(fetchLimits.maxVerts, availElems);
+        attribDataBaseType = webgl->mGenericVertexAttribTypes[usedLoc];
       }
-    } else {
-      attribDataBaseType = webgl->mGenericVertexAttribTypes[loc];
-    }
 
-    const auto& progBaseType = progAttrib.baseType;
-    if ((attribDataBaseType != progBaseType) &&
-        (progBaseType != webgl::AttribBaseType::Boolean)) {
-      const auto& dataType = ToString(attribDataBaseType);
-      const auto& progType = ToString(progBaseType);
-      webgl->ErrorInvalidOperation(
-          "Vertex attrib %u requires data of type %s,"
-          " but is being supplied with type %s.",
-          loc, progType, dataType);
-      return nullptr;
+      const auto& progBaseType = progAttrib.baseType;
+      if ((attribDataBaseType != progBaseType) &&
+          (progBaseType != webgl::AttribBaseType::Boolean)) {
+        const auto& dataType = ToString(attribDataBaseType);
+        const auto& progType = ToString(progBaseType);
+        webgl->ErrorInvalidOperation(
+            "Vertex attrib %u requires data of type %s,"
+            " but is being supplied with type %s.",
+            usedLoc, progType, dataType);
+        return nullptr;
+      }
     }
   }
 

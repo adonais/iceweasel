@@ -17,15 +17,24 @@ the maintenance-cost curve through reuse, and make failures attributable so red 
 
 ## The layers (bottom to top)
 
-- **`core/`** — the element plumbing. The `resolve()` seam turns a `Selector` into an on-screen element.
-  It resolves tag/text/content-desc by trying **both** the merged and unmerged Compose trees and picking the
-  _displayed_ match (this is why Compose "merged-vs-unmerged" bugs don't recur), and it degrades to `false`
-  on absence instead of throwing (so presence checks can't crash a run). `UiElement` is the facade; `ScreenDump`
-  captures the on-screen hierarchy for debugging. **Everything funnels through `resolve()`** — which is powerful
-  (one fix helps all tests) and dangerous (one bad change breaks all tests); always full-suite a core change.
-- **`helpers/`** — `BaseTest` (test rule, retry policy, failure handling) and `BasePage`, the `moz*` verb
-  library (`mozClick`, `mozEnterText`, `mozVerifyElement`, `mozVerifyElementsByGroup`, …) plus
-  `navigateToPage`, which BFS-routes to a target page over the graph.
+- **`core/`** — everything a verb is made of, in ten small files.
+  - *Selector to element:* `Locator` describes what a `SelectorStrategy` asks for as data and
+    `STRATEGY_LOCATORS` maps every strategy to one; `Resolvers` interprets that, one resolver per
+    toolkit, plus `displayed()` which picks the _on-screen_ match by trying **both** Compose semantics
+    trees (this is why "merged-vs-unmerged" bugs don't recur). Absence is always `null`, never a throw,
+    so a presence check cannot crash a run. `UiElement` is the facade.
+  - *The verbs themselves:* `Verbs` holds the seven shapes every verb has — `require`, `requireAbsent`,
+    `requireAll`, `driveUntil`, `requireState`, `reportAround`, `groupPresent` — each owning the
+    reporting, the polling, the one overlay-dismiss retry, the failure dump and the message. `Wait`
+    declares patience (`Immediate` vs `Poll`, which backs off).
+  - *Per-backend behaviour, one copy each:* `UiActions` (click, long click, text, clear, IME action),
+    `Gestures` (swipes), `ElementState` (enabled/selected/checked/displayed), `Relations` (siblings).
+  - **A core change reaches every test** — powerful (one fix helps all) and dangerous (one bad change
+    breaks all); always full-suite it.
+- **`helpers/`** — `BaseTest` (test rule, failure handling) and `BasePage`, which is three things:
+  `navigateToPage` (BFS-routes to a target page over the graph), the handful of methods `core/` needs
+  from a page, and the 39 `moz*` verbs, each one expression over a `core/` primitive. `ScreenDump`
+  captures the on-screen hierarchy for debugging.
 - **`navigation/`** — the 4-file graph core: `NavigationEdge` / `NavigationRegistry` / `NavigationStep`
   (the model) and `PageCatalog` (discovers page objects by reflection). Page objects register edges into
   this graph; `navigateToPage` finds a path.

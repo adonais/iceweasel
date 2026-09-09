@@ -91,7 +91,7 @@ static void swap_header_copy(HASHHDR *, HASHHDR *);
 #endif
 
 /* Fast arithmetic, relying on powers of 2, */
-#define MOD(x, y) ((x) & ((y)-1))
+#define MOD(x, y) ((x) & ((y) - 1))
 
 #define RETURN_ERROR(ERR, LOC) \
     {                          \

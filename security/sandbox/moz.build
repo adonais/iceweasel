@@ -227,3 +227,6 @@ elif CONFIG["OS_ARCH"] == "WINNT":
         "-Wno-unneeded-internal-declaration"
     ]
     SOURCES["/third_party/abseil-cpp/absl/strings/numbers.cc"].flags += ["-Wno-comma"]
+    SOURCES[
+        "/third_party/abseil-cpp/absl/strings/internal/str_format/float_conversion.cc"
+    ].flags += ["-Wno-unused-template"]

@@ -11,12 +11,12 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
+import java.lang.ref.WeakReference
 import mozilla.components.browser.engine.gecko.fetch.GeckoViewFetchClient
 import mozilla.components.browser.icons.BrowserIcons
 import mozilla.components.browser.icons.IconRequest
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.lang.ref.WeakReference
 
 class BrowserIconsTest {
     @Test
@@ -30,9 +30,7 @@ class BrowserIconsTest {
         every { context.assets } returns mockk()
         every { context.resources.getDimensionPixelSize(any()) } returns 100
 
-        val icons = spyk(
-            BrowserIcons(context = context, httpClient = mockk<GeckoViewFetchClient>()),
-        )
+        val icons = spyk(BrowserIcons(context = context, httpClient = mockk<GeckoViewFetchClient>()))
 
         every { icons.loadIntoViewInternal(any(), any(), any(), any()) } returns mockk()
 

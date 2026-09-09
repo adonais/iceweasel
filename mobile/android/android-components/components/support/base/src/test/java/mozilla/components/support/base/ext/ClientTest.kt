@@ -4,6 +4,7 @@
 
 package mozilla.components.support.base.ext
 
+import java.io.IOException
 import mozilla.components.concept.fetch.Client
 import mozilla.components.concept.fetch.MutableHeaders
 import mozilla.components.concept.fetch.Request
@@ -18,7 +19,6 @@ import org.junit.Test
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
-import java.io.IOException
 
 private const val EXPECTED_DEFAULT_RESPONSE_BODY = "default response body"
 private const val TEST_URL = "https://mozilla.org"
@@ -38,9 +38,10 @@ class ClientTest {
         failureResponse = spy(Response(TEST_URL, 404, MutableHeaders(), failureResponseBody))
         testRequest = Request(TEST_URL, conservative = true)
 
-        client = mock<Client>().also {
-            whenever(it.fetch(any())).thenReturn(defaultResponse)
-        }
+        client =
+            mock<Client>().also {
+                whenever(it.fetch(any())).thenReturn(defaultResponse)
+            }
     }
 
     @Test

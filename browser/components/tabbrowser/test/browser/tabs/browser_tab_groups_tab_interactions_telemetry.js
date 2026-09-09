@@ -12,7 +12,7 @@ const {
 FirefoxViewTestUtilsInit(this);
 
 const { TabStateFlusher } = ChromeUtils.importESModule(
-  "resource:///modules/sessionstore/TabStateFlusher.sys.mjs"
+  "moz-src:///browser/components/sessionstore/TabStateFlusher.sys.mjs"
 );
 
 const { UrlbarTestUtils } = ChromeUtils.importESModule(
@@ -226,7 +226,7 @@ add_task(async function test_tabInteractionsClose() {
     let tabElement;
     await TestUtils.waitForCondition(() => {
       tabElement = Array.from(openTabsCard.tabList.rowEls).find(
-        t => t.__tabElement?.group
+        t => t.tabElement?.group
       );
       return !!tabElement;
     }, "Wait for grouped tab to appear in Firefox View open tabs");

@@ -7,9 +7,9 @@
 
 @layer tokens-foundation, tokens-browser-theme, tokens-foundation-brand, tokens-foundation-nova, tokens-browser-theme-nova, tokens-foundation-brand-nova, tokens-prefers-contrast, tokens-prefers-contrast-nova, tokens-forced-colors, tokens-forced-colors-nova;
 
-@layer tokens-foundation {
-  :root,
-  :host {
+:root,
+:host {
+  @layer tokens-foundation {
     --promo-background-color: color-mix(in lch, currentColor 8%, transparent);
     --promo-background-color-vibrant: light-dark(var(--color-violet-0), var(--color-violet-90));
     --promo-border: var(--promo-border-width) solid var(--promo-border-color);
@@ -25,37 +25,24 @@
     --promo-message-text-color-vibrant: light-dark(var(--color-violet-80), var(--color-violet-0));
     --promo-padding: var(--space-medium);
   }
-}
 
-/* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-@layer tokens-prefers-contrast {
-  @media (prefers-contrast) {
-    :root,
-    :host {
+  @layer tokens-prefers-contrast {
+    @media (prefers-contrast) {
       --promo-background-color: var(--background-color-canvas);
       --promo-border-color: var(--border-color);
     }
   }
-}
 
-@media -moz-pref("browser.nova.enabled") {
-  @layer tokens-foundation-nova {
-    :root,
-    :host {
+  @media -moz-pref("browser.nova.enabled") {
+    @layer tokens-foundation-nova {
       --promo-background-color: var(--background-color-box-info);
       --promo-background-color-vibrant: light-dark(var(--color-violet-desaturated-10), var(--color-violet-desaturated-70));
       --promo-border-color: light-dark(rgba(24, 14, 48, 0.12), rgba(242, 240, 248, 0.12));
       --promo-border-color-vibrant: var(--promo-border-color);
     }
-  }
 
-  /* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-  @layer tokens-forced-colors-nova {
-    @media (forced-colors) {
-      :root,
-      :host {
+    @layer tokens-forced-colors-nova {
+      @media (forced-colors) {
         --promo-background-color-vibrant: Canvas;
         --promo-border-color: CanvasText;
       }

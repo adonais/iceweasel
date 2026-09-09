@@ -12,9 +12,7 @@ import org.mozilla.fenix.termsofuse.experimentation.utils.FakeTermsOfUseDataProv
 import org.mozilla.fenix.termsofuse.experimentation.utils.supportedSponsoredShortcutsLocales
 import org.mozilla.fenix.termsofuse.experimentation.utils.supportedSponsoredStoriesLocales
 
-/**
- * Test for the [TermsOfUseAdvancedTargetingHelper.sponsoredContentPoints] function and dependencies.
- */
+/** Test for the [TermsOfUseAdvancedTargetingHelper.sponsoredContentPoints] function and dependencies. */
 class SponsoredContentPointsTest {
 
     private val shortcutsLocale = supportedSponsoredShortcutsLocales.first()
@@ -22,8 +20,7 @@ class SponsoredContentPointsTest {
 
     @Test
     fun `WHEN eligible user opted out of shortcuts THEN sponsoredContentPoints returns 1`() {
-        val helper =
-            TermsOfUseAdvancedTargetingHelper(FakeTermsOfUseDataProvider(), shortcutsLocale)
+        val helper = TermsOfUseAdvancedTargetingHelper(FakeTermsOfUseDataProvider(), shortcutsLocale)
 
         assertEquals(
             1,
@@ -36,8 +33,7 @@ class SponsoredContentPointsTest {
 
     @Test
     fun `WHEN eligible user opted out of stories THEN sponsoredContentPoints returns 1`() {
-        val helper =
-            TermsOfUseAdvancedTargetingHelper(FakeTermsOfUseDataProvider(), shortcutsLocale)
+        val helper = TermsOfUseAdvancedTargetingHelper(FakeTermsOfUseDataProvider(), shortcutsLocale)
 
         assertEquals(
             1,
@@ -50,8 +46,7 @@ class SponsoredContentPointsTest {
 
     @Test
     fun `WHEN eligible user opted out of shortcuts and stories THEN sponsoredContentPoints returns 1`() {
-        val helper =
-            TermsOfUseAdvancedTargetingHelper(FakeTermsOfUseDataProvider(), shortcutsLocale)
+        val helper = TermsOfUseAdvancedTargetingHelper(FakeTermsOfUseDataProvider(), shortcutsLocale)
 
         assertEquals(
             1,
@@ -64,8 +59,7 @@ class SponsoredContentPointsTest {
 
     @Test
     fun `WHEN eligible user has no opt outs THEN sponsoredContentPoints returns 0`() {
-        val helper =
-            TermsOfUseAdvancedTargetingHelper(FakeTermsOfUseDataProvider(), shortcutsLocale)
+        val helper = TermsOfUseAdvancedTargetingHelper(FakeTermsOfUseDataProvider(), shortcutsLocale)
 
         assertEquals(
             0,
@@ -79,8 +73,7 @@ class SponsoredContentPointsTest {
     @Test
     fun `WHEN region not supported THEN hasEligibleUserOptedOutOfSponsoredShortcuts returns false`() {
         val unsupportedRegion = "te-ST"
-        val helper =
-            TermsOfUseAdvancedTargetingHelper(FakeTermsOfUseDataProvider(), unsupportedRegion)
+        val helper = TermsOfUseAdvancedTargetingHelper(FakeTermsOfUseDataProvider(), unsupportedRegion)
 
         val result = helper.hasEligibleUserOptedOutOfSponsoredShortcuts()
 
@@ -90,8 +83,7 @@ class SponsoredContentPointsTest {
     @Test
     fun `GIVEN region supported WHEN show sponsored shortcuts opted out THEN hasEligibleUserOptedOutOfSponsoredShortcuts returns true`() {
         val dataProvider = FakeTermsOfUseDataProvider(showSponsoredShortcuts = false)
-        val helper =
-            TermsOfUseAdvancedTargetingHelper(dataProvider, shortcutsLocale)
+        val helper = TermsOfUseAdvancedTargetingHelper(dataProvider, shortcutsLocale)
 
         val result = helper.hasEligibleUserOptedOutOfSponsoredShortcuts()
 
@@ -101,8 +93,7 @@ class SponsoredContentPointsTest {
     @Test
     fun `GIVEN region supported WHEN shortcuts feature opted out THEN hasEligibleUserOptedOutOfSponsoredShortcuts returns true`() {
         val dataProvider = FakeTermsOfUseDataProvider(showShortcutsFeature = false)
-        val helper =
-            TermsOfUseAdvancedTargetingHelper(dataProvider, shortcutsLocale)
+        val helper = TermsOfUseAdvancedTargetingHelper(dataProvider, shortcutsLocale)
 
         val result = helper.hasEligibleUserOptedOutOfSponsoredShortcuts()
 
@@ -111,8 +102,7 @@ class SponsoredContentPointsTest {
 
     @Test
     fun `GIVEN region supported WHEN sponsored shortcuts and shortcuts feature opted out THEN hasEligibleUserOptedOutOfSponsoredShortcuts returns true`() {
-        val dataProvider =
-            FakeTermsOfUseDataProvider(showSponsoredShortcuts = false, showShortcutsFeature = false)
+        val dataProvider = FakeTermsOfUseDataProvider(showSponsoredShortcuts = false, showShortcutsFeature = false)
         val helper = TermsOfUseAdvancedTargetingHelper(dataProvider, shortcutsLocale)
 
         val result = helper.hasEligibleUserOptedOutOfSponsoredShortcuts()
@@ -133,8 +123,7 @@ class SponsoredContentPointsTest {
     @Test
     fun `WHEN region not supported THEN hasEligibleUserOptedOutOfSponsoredStories returns false`() {
         val unsupportedRegion = "te-ST"
-        val helper =
-            TermsOfUseAdvancedTargetingHelper(FakeTermsOfUseDataProvider(), unsupportedRegion)
+        val helper = TermsOfUseAdvancedTargetingHelper(FakeTermsOfUseDataProvider(), unsupportedRegion)
 
         val result = helper.hasEligibleUserOptedOutOfSponsoredStories()
 
@@ -144,8 +133,7 @@ class SponsoredContentPointsTest {
     @Test
     fun `GIVEN region supported WHEN show sponsored stories opted out THEN hasEligibleUserOptedOutOfSponsoredStories returns true`() {
         val dataProvider = FakeTermsOfUseDataProvider(showSponsoredStories = false)
-        val helper =
-            TermsOfUseAdvancedTargetingHelper(dataProvider, storiesLocale)
+        val helper = TermsOfUseAdvancedTargetingHelper(dataProvider, storiesLocale)
 
         val result = helper.hasEligibleUserOptedOutOfSponsoredStories()
 
@@ -155,8 +143,7 @@ class SponsoredContentPointsTest {
     @Test
     fun `GIVEN region supported WHEN stories feature opted out THEN hasEligibleUserOptedOutOfSponsoredStories returns true`() {
         val dataProvider = FakeTermsOfUseDataProvider(showStoriesFeature = false)
-        val helper =
-            TermsOfUseAdvancedTargetingHelper(dataProvider, storiesLocale)
+        val helper = TermsOfUseAdvancedTargetingHelper(dataProvider, storiesLocale)
 
         val result = helper.hasEligibleUserOptedOutOfSponsoredStories()
 
@@ -165,8 +152,7 @@ class SponsoredContentPointsTest {
 
     @Test
     fun `GIVEN region supported WHEN sponsored stories and stories feature opted out THEN hasEligibleUserOptedOutOfSponsoredStories returns true`() {
-        val dataProvider =
-            FakeTermsOfUseDataProvider(showSponsoredStories = false, showStoriesFeature = false)
+        val dataProvider = FakeTermsOfUseDataProvider(showSponsoredStories = false, showStoriesFeature = false)
         val helper = TermsOfUseAdvancedTargetingHelper(dataProvider, storiesLocale)
 
         val result = helper.hasEligibleUserOptedOutOfSponsoredStories()

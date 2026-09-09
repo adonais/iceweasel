@@ -43,8 +43,6 @@ async function handleCommandLine(args, state) {
 }
 
 function assertToHandleTelemetry(assertions) {
-  const scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
-
   const { invoked, launched, ...unknown } = assertions;
   if (Object.keys(unknown).length) {
     throw Error(
@@ -57,43 +55,48 @@ function assertToHandleTelemetry(assertions) {
     throw Error("No known keys given to assertToHandleTelemetry");
   }
 
-  for (let scalar of ["invoked", "launched"]) {
-    if (scalar in assertions) {
-      const { handled, not_handled } = assertions[scalar] || {};
+  for (let metric of ["invoked", "launched"]) {
+    if (metric in assertions) {
+      const counter =
+        metric == "invoked"
+          ? Glean.osEnvironment.invokedToHandle
+          : Glean.osEnvironment.launchedToHandle;
+      const { handled, not_handled } = assertions[metric] || {};
       if (handled) {
-        TelemetryTestUtils.assertKeyedScalar(
-          scalars,
-          `os.environment.${scalar}_to_handle`,
-          handled,
+        Assert.equal(
+          counter[handled].testGetValue(),
           1,
-          `${scalar} to handle '${handled}' 1 times`
+          `${metric} to handle '${handled}' 1 times`
         );
         // Intentionally nested.
         if (not_handled) {
           Assert.equal(
-            not_handled in scalars[`os.environment.${scalar}_to_handle`],
-            false,
-            `${scalar} to handle '${not_handled}' 0 times`
+            counter[not_handled].testGetValue(),
+            null,
+            `${metric} to handle '${not_handled}' 0 times`
           );
         }
       } else {
-        TelemetryTestUtils.assertScalarUnset(
-          scalars,
-          `os.environment.${scalar}_to_handle`
+        Assert.deepEqual(
+          counter.testGetValue() ?? {},
+          {},
+          `${metric} to handle nothing`
         );
 
         if (not_handled) {
           throw new Error(
-            `In ${scalar}, 'not_handled' is only valid with 'handled'`
+            `In ${metric}, 'not_handled' is only valid with 'handled'`
           );
         }
       }
     }
   }
+
+  Services.fog.testResetFOG();
 }
 
 add_setup(async function () {
-  await TelemetryTestUtils.getProcessScalars("parent", true, true);
+  Services.fog.testResetFOG();
 });
 
 add_task(async function test_invoked_to_handle_registered_file_type() {

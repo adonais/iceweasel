@@ -52,8 +52,8 @@ function waitForFinderResult(findbar) {
   });
 }
 
-function waitForPdfjsResult(findbar) {
-  // FIXME: This is a pretty sketchy way to intercept the results from pdfjs...
+function waitForPdfJSResult(findbar) {
+  // FIXME: This is a pretty sketchy way to intercept the results from PDF.js...
   return new Promise(resolve => {
     let oldUpdateControlState = findbar.updateControlState;
     function updateControlState(result, findPrevious) {
@@ -99,7 +99,7 @@ add_task(async function test_findbar_in_pdf() {
       await waitForPdfJS(browser, TEST_PDF_URL);
       const tab = gBrowser.getTabForBrowser(browser);
       let findbar = await gBrowser.getFindBar(tab);
-      let findResult = await doFind(findbar, "Mozilla", waitForPdfjsResult);
+      let findResult = await doFind(findbar, "Mozilla", waitForPdfJSResult);
       is(
         findResult.result,
         Ci.nsITypeAheadFind.FIND_FOUND,
@@ -130,7 +130,7 @@ add_task(async function test_findbar_in_pdf_with_notfound_sound() {
       for (let index = 0; index < steps.length; index++) {
         const [searchString, expectedPlayed] = steps[index];
         MockSound.reset();
-        findResult = await doFind(findbar, searchString, waitForPdfjsResult);
+        findResult = await doFind(findbar, searchString, waitForPdfJSResult);
         is(
           findResult.result,
           Ci.nsITypeAheadFind.FIND_NOTFOUND,
@@ -146,7 +146,7 @@ add_task(async function test_findbar_in_pdf_with_notfound_sound() {
       // Extra step for testing entireWord
       findbar.toggleEntireWord(true);
       MockSound.reset();
-      findResult = await doFind(findbar, "MozooOOX", waitForPdfjsResult);
+      findResult = await doFind(findbar, "MozooOOX", waitForPdfJSResult);
       is(
         findResult.result,
         Ci.nsITypeAheadFind.FIND_NOTFOUND,
@@ -180,10 +180,10 @@ add_task(async function test_findbar_in_pdf_with_wrapped_sound() {
       MockSound.reset();
 
       // Known: "B2G" appears in the doc 2 times
-      findResult = await doFind(findbar, "B2G", waitForPdfjsResult);
+      findResult = await doFind(findbar, "B2G", waitForPdfJSResult);
       is(findResult.result, Ci.nsITypeAheadFind.FIND_FOUND, 'Find 1st "B2G"');
 
-      findResult = await doFindNext(findbar, waitForPdfjsResult);
+      findResult = await doFindNext(findbar, waitForPdfJSResult);
       is(findResult.result, Ci.nsITypeAheadFind.FIND_FOUND, 'Find 2nd "B2G"');
       SimpleTest.isDeeply(
         MockSound.played,
@@ -191,7 +191,7 @@ add_task(async function test_findbar_in_pdf_with_wrapped_sound() {
         'No sound for first 2 "B2G" finding'
       );
 
-      findResult = await doFindNext(findbar, waitForPdfjsResult);
+      findResult = await doFindNext(findbar, waitForPdfJSResult);
       is(
         findResult.result,
         Ci.nsITypeAheadFind.FIND_WRAPPED,
@@ -220,7 +220,7 @@ add_task(async function test_findbar_in_pdf_after_adopt() {
       let newTab = newWindow.gBrowser.adoptTab(tab);
 
       let findbar = await newWindow.gBrowser.getFindBar(newTab);
-      let findResult = await doFind(findbar, "Mozilla", waitForPdfjsResult);
+      let findResult = await doFind(findbar, "Mozilla", waitForPdfJSResult);
       is(
         findResult.result,
         Ci.nsITypeAheadFind.FIND_FOUND,
@@ -233,7 +233,7 @@ add_task(async function test_findbar_in_pdf_after_adopt() {
 });
 
 // Make sure that performing a find in the browser continues to work after
-// navigating to another page (i.e. Pdfjs disables its pdfjs interception
+// navigating to another page (i.e. PDF.js disables its find interception
 // listeners).
 add_task(async function test_findbar_after_navigate() {
   await BrowserTestUtils.withNewTab(

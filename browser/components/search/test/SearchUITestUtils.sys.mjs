@@ -59,6 +59,8 @@ export const SearchUITestUtils = new (class {
    *   Pass false if the SAP telemetry is expected to be recorded only by Glean.
    * @param {keyof typeof lazy.BrowserSearchTelemetry.KNOWN_SEARCH_SOURCES} expected.source
    *   The source of the search (e.g. urlbar, contextmenu etc.).
+   * @param {string} expected.telemetrySuffix
+   *   The telemetry suffix for legacy telemetry counts.
    * @param {number} expected.count
    *   The expected count for the source.
    */
@@ -69,6 +71,7 @@ export const SearchUITestUtils = new (class {
     partnerCode = null,
     expectLegacyTelemetry = true,
     source,
+    telemetrySuffix = "",
     count,
   }) {
     await lazy.TestUtils.waitForCondition(() => {
@@ -103,7 +106,7 @@ export const SearchUITestUtils = new (class {
 
     let histogramKey = overriddenByThirdParty
       ? `${engineId}-addon.${legacySource}`
-      : `${engineId ? "" : "other-"}${engineName}.${legacySource}`;
+      : `${engineId ? "" : "other-"}${engineName + telemetrySuffix}.${legacySource}`;
 
     let expectedSum;
     let expectedSnapshotKeys = [];

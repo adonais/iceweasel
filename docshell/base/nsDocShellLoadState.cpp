@@ -30,6 +30,7 @@
 #include "mozilla/dom/NavigationUtils.h"
 #include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
+#include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/nsHTTPSOnlyUtils.h"
 #include "mozilla/net/DocumentLoadListener.h"
 #include "mozilla/StaticPrefs_browser.h"
@@ -192,14 +193,11 @@ nsDocShellLoadState::nsDocShellLoadState(
   // If we're in the parent process, potentially validate against a LoadState
   // which we sent to the source content process.
   if (XRE_IsParentProcess()) {
-    mozilla::ipc::IToplevelProtocol* top = aActor->ToplevelProtocol();
-    if (!top ||
-        top->GetProtocolId() != mozilla::ipc::ProtocolId::PContentMsgStart ||
-        top->GetSide() != mozilla::ipc::ParentSide) {
+    ContentParent* cp = ActorDynCast<ContentParent>(aActor->ToplevelProtocol());
+    if (!cp) {
       aActor->FatalError("nsDocShellLoadState must be received over PContent");
       return;
     }
-    ContentParent* cp = static_cast<ContentParent*>(top);
 
     // If this load was sent down to the content process as a navigation
     // request, ensure it still matches the one we sent down.
@@ -1487,6 +1485,16 @@ nsLoadFlags nsDocShellLoadState::CalculateChannelLoadFlags(
   // interception to occur. See step 12.1 of the SW HandleFetch algorithm.
   if (IsForceReloadType(loadType)) {
     loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
+  } else if (aBrowsingContext->IsTopContent()) {
+    // For the top-level site the uri to load determines whether service workers
+    // are blocked by policy.
+    if (dom::IsServiceWorkersDisabledByPolicy(mURI)) {
+      loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
+    }
+  } else if (aBrowsingContext->Top()->ServiceWorkersDisabledByPolicy()) {
+    // Otherwise use the state of the top-level site to determine whether
+    // service workers are blocked.
+    loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
   }
 
   return loadFlags;
@@ -1549,8 +1557,8 @@ const char* nsDocShellLoadState::ValidateWithOriginalState(
     return "HasSpeculativeListener";
   }
 
-  // FIXME: Consider calculating less information in the target process so that
-  // we can validate more properties more easily.
+  // FIXME: Consider calculating less information in the target process so
+  // that we can validate more properties more easily.
   // FIXME: Identify what other flags will not change when sent through a
   // content process.
 
@@ -1626,13 +1634,8 @@ DocShellLoadStateInit nsDocShellLoadState::Serialize(
   loadState.NavigationAPIState() = mNavigationAPIState;
 
   if (XRE_IsParentProcess()) {
-    mozilla::ipc::IToplevelProtocol* top = aActor->ToplevelProtocol();
-    MOZ_RELEASE_ASSERT(top &&
-                           top->GetProtocolId() ==
-                               mozilla::ipc::ProtocolId::PContentMsgStart &&
-                           top->GetSide() == mozilla::ipc::ParentSide,
-                       "nsDocShellLoadState must be sent over PContent");
-    ContentParent* cp = static_cast<ContentParent*>(top);
+    ContentParent* cp = ActorDynCast<ContentParent>(aActor->ToplevelProtocol());
+    MOZ_RELEASE_ASSERT(cp, "nsDocShellLoadState must be sent over PContent");
     cp->StorePendingLoadState(this);
   }
 

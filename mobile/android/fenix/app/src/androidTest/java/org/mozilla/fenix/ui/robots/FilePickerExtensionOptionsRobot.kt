@@ -13,8 +13,7 @@ import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.TestHelper.packageName
 
 /**
- * Robot for interacting with the file picker test extension's options page rendered in the
- * internal settings fragment.
+ * Robot for interacting with the file picker test extension's options page rendered in the internal settings fragment.
  */
 class FilePickerExtensionOptionsRobot(private val composeTestRule: ComposeTestRule) {
     fun verifyOptionsPageIsDisplayed() {
@@ -45,9 +44,7 @@ class FilePickerExtensionOptionsRobot(private val composeTestRule: ComposeTestRu
     }
 }
 
-/**
- * Enters the add-on options page robot scope for assertions and interactions.
- */
+/** Enters the add-on options page robot scope for assertions and interactions. */
 fun filePickerExtensionOptionsScreen(
     composeTestRule: ComposeTestRule,
     interact: FilePickerExtensionOptionsRobot.() -> Unit,

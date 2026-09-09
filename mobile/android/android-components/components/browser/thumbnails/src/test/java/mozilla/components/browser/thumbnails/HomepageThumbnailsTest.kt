@@ -39,19 +39,19 @@ class HomepageThumbnailsTest {
     fun setup() {
         captureActionsMiddleware = CaptureActionsMiddleware()
         middlewares = listOf(captureActionsMiddleware, ThumbnailsMiddleware(mock()))
-        store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab(homepageUrl, id = tabId),
+        store =
+            BrowserStore(
+                BrowserState(
+                    tabs = listOf(createTab(homepageUrl, id = tabId)),
+                    selectedTabId = tabId,
                 ),
-                selectedTabId = tabId,
-            ),
-            middlewares,
-        )
+                middlewares,
+            )
         bitmap = mock()
-        thumbnails = HomepageThumbnails(testContext, store, homepageUrl, mainDispatcher = testDispatcher) { callback ->
-            callback(bitmap)
-        }
+        thumbnails =
+            HomepageThumbnails(testContext, store, homepageUrl, mainDispatcher = testDispatcher) { callback ->
+                callback(bitmap)
+            }
     }
 
     @Test
@@ -69,9 +69,10 @@ class HomepageThumbnailsTest {
     @Test
     fun `do not capture thumbnail when feature is started but homepage is not opened`() {
         val store = BrowserStore(BrowserState(), middlewares)
-        val feature = HomepageThumbnails(testContext, store, homepageUrl) { callback ->
-            callback(bitmap)
-        }
+        val feature =
+            HomepageThumbnails(testContext, store, homepageUrl) { callback ->
+                callback(bitmap)
+            }
         feature.start()
 
         testDispatcher.scheduler.advanceUntilIdle()
@@ -83,24 +84,17 @@ class HomepageThumbnailsTest {
     fun `capture all thumbnails if multiple new tabs are opened`() {
         val store = BrowserStore(BrowserState(), middlewares)
         val bitmap: Bitmap = mock()
-        val feature = HomepageThumbnails(testContext, store, homepageUrl, mainDispatcher = testDispatcher) { callback ->
-            callback(bitmap)
-        }
+        val feature =
+            HomepageThumbnails(testContext, store, homepageUrl, mainDispatcher = testDispatcher) { callback ->
+                callback(bitmap)
+            }
         feature.start()
 
         testDispatcher.scheduler.advanceUntilIdle()
 
-        store.dispatch(
-            TabListAction.AddTabAction(
-                createTab(homepageUrl, id = "1"),
-            ),
-        )
+        store.dispatch(TabListAction.AddTabAction(createTab(homepageUrl, id = "1")))
 
-        store.dispatch(
-            TabListAction.SelectTabAction(
-                tabId = "1",
-            ),
-        )
+        store.dispatch(TabListAction.SelectTabAction(tabId = "1"))
 
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -108,17 +102,9 @@ class HomepageThumbnailsTest {
             assertEquals("1", it.sessionId)
         }
 
-        store.dispatch(
-            TabListAction.AddTabAction(
-                createTab(homepageUrl, id = "2"),
-            ),
-        )
+        store.dispatch(TabListAction.AddTabAction(createTab(homepageUrl, id = "2")))
 
-        store.dispatch(
-            TabListAction.SelectTabAction(
-                "2",
-            ),
-        )
+        store.dispatch(TabListAction.SelectTabAction("2"))
 
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -126,17 +112,9 @@ class HomepageThumbnailsTest {
             assertEquals("2", it.sessionId)
         }
 
-        store.dispatch(
-            TabListAction.AddTabAction(
-                createTab("www.google.com", id = "3"),
-            ),
-        )
+        store.dispatch(TabListAction.AddTabAction(createTab("www.google.com", id = "3")))
 
-        store.dispatch(
-            TabListAction.SelectTabAction(
-                tabId = "3",
-            ),
-        )
+        store.dispatch(TabListAction.SelectTabAction(tabId = "3"))
 
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -144,17 +122,9 @@ class HomepageThumbnailsTest {
             assertEquals("2", it.sessionId)
         }
 
-        store.dispatch(
-            TabListAction.AddTabAction(
-                createTab(homepageUrl, id = "4"),
-            ),
-        )
+        store.dispatch(TabListAction.AddTabAction(createTab(homepageUrl, id = "4")))
 
-        store.dispatch(
-            TabListAction.SelectTabAction(
-                tabId = "4",
-            ),
-        )
+        store.dispatch(TabListAction.SelectTabAction(tabId = "4"))
 
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -166,17 +136,14 @@ class HomepageThumbnailsTest {
     @Test
     fun `do not capture thumbnail when feature has stopped and homepage is opened`() {
         val store = BrowserStore(BrowserState(), middlewares)
-        val feature = HomepageThumbnails(testContext, store, homepageUrl) { callback ->
-            callback(bitmap)
-        }
+        val feature =
+            HomepageThumbnails(testContext, store, homepageUrl) { callback ->
+                callback(bitmap)
+            }
         feature.start()
         feature.stop()
 
-        store.dispatch(
-            TabListAction.AddTabAction(
-                createTab(homepageUrl, id = "1"),
-            ),
-        )
+        store.dispatch(TabListAction.AddTabAction(createTab(homepageUrl, id = "1")))
 
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -195,19 +162,17 @@ class HomepageThumbnailsTest {
 
     @Test
     fun `feature never captures thumbnail if there is no selected tab ID`() = runTest {
-        store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab(homepageUrl, id = tabId),
-                ),
-            ),
-            middlewares,
-        )
+        store =
+            BrowserStore(
+                BrowserState(tabs = listOf(createTab(homepageUrl, id = tabId))),
+                middlewares,
+            )
 
         val bitmap: Bitmap = mock()
-        val feature = HomepageThumbnails(testContext, store, homepageUrl, mainDispatcher = testDispatcher) { callback ->
-            callback(bitmap)
-        }
+        val feature =
+            HomepageThumbnails(testContext, store, homepageUrl, mainDispatcher = testDispatcher) { callback ->
+                callback(bitmap)
+            }
 
         feature.start()
 

@@ -22,6 +22,5 @@ class IPProtectionManager(
      *
      * @return `true` if the IP Protection bottom sheet should be shown; otherwise, `false`.
      */
-    fun shouldShowIPProtectionPrompt(): Boolean =
-        repository.canShowIPProtectionPrompt(currentTimeMillis())
+    fun shouldShowIPProtectionPrompt(): Boolean = repository.canShowIPProtectionPrompt(currentTimeMillis())
 }

@@ -10,12 +10,18 @@ namespace mozilla {
 
 std::unique_ptr<WebrtcVideoEncoder> GmpVideoCodec::CreateEncoder(
     const webrtc::SdpVideoFormat& aFormat, std::string aPCHandle) {
+  if (!HaveGMPFor("encode-video"_ns, {"h264"_ns})) {
+    return nullptr;
+  }
   return std::make_unique<WebrtcVideoEncoderProxy>(
       MakeRefPtr<WebrtcGmpVideoEncoder>(aFormat, std::move(aPCHandle)));
 }
 
 std::unique_ptr<WebrtcVideoDecoder> GmpVideoCodec::CreateDecoder(
     std::string aPCHandle, TrackingId aTrackingId) {
+  if (!HaveGMPFor("decode-video"_ns, {"h264"_ns})) {
+    return nullptr;
+  }
   return std::make_unique<WebrtcVideoDecoderProxy>(std::move(aPCHandle),
                                                    std::move(aTrackingId));
 }

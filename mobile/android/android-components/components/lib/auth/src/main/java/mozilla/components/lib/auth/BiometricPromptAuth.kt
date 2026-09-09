@@ -15,8 +15,8 @@ import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * A [LifecycleAwareFeature] for the Android Biometric API to prompt for user authentication.
- * The prompt also requests support for the device PIN as a fallback authentication mechanism.
+ * A [LifecycleAwareFeature] for the Android Biometric API to prompt for user authentication. The prompt also requests
+ * support for the device PIN as a fallback authentication mechanism.
  *
  * @param context Android context.
  * @param fragment The fragment on which this feature will live.
@@ -29,8 +29,7 @@ class BiometricPromptAuth(
 ) : LifecycleAwareFeature {
     private val logger = Logger(javaClass.simpleName)
 
-    @VisibleForTesting
-    internal var biometricPrompt: BiometricPrompt? = null
+    @VisibleForTesting internal var biometricPrompt: BiometricPrompt? = null
 
     override fun start() {
         val executor = ContextCompat.getMainExecutor(context)
@@ -51,11 +50,12 @@ class BiometricPromptAuth(
         title: String,
         subtitle: String = "",
     ) {
-        val promptInfo: BiometricPrompt.PromptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setAllowedAuthenticators(BIOMETRIC_WEAK or DEVICE_CREDENTIAL)
-            .setTitle(title)
-            .setSubtitle(subtitle)
-            .build()
+        val promptInfo: BiometricPrompt.PromptInfo =
+            BiometricPrompt.PromptInfo.Builder()
+                .setAllowedAuthenticators(BIOMETRIC_WEAK or DEVICE_CREDENTIAL)
+                .setTitle(title)
+                .setSubtitle(subtitle)
+                .build()
         biometricPrompt?.authenticate(promptInfo)
     }
 

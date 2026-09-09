@@ -21,29 +21,23 @@ class SettingsHTTPSOnlyModeTest : BaseTest() {
     @SmokeTest
     @Test
     fun httpsOnlyModeEnabledInNormalBrowsingTest() {
-        on.settingsHTTPSOnlyMode.navigateToPage()
-            .enableHttpsOnlyMode()
-            .verifyHttpsOnlyAllTabsSelected()
+        on.settingsHTTPSOnlyMode.navigateToPage().enableHttpsOnlyMode().verifyHttpsOnlyAllTabsSelected()
 
-        on.settings.navigateToPage()
-            .verifyHttpsOnlyModeOnAllTabs()
+        on.settings.navigateToPage().verifyHttpsOnlyModeOnAllTabs()
 
         on.home.navigateToPage()
 
-        on.browserPage.navigateToPage("http://permission.site/")
-            .verifyPageContent("permission.site")
+        on.browserPage.navigateToPage("http://permission.site/").verifyPageContent("permission.site")
 
-        on.searchBar.navigateToPage()
-            .verifyUrl("https://permission.site/")
+        on.searchBar.navigateToPage().verifyUrl("https://permission.site/")
 
-        on.browserPage.navigateToPage("http.badssl.com")
+        on.browserPage
+            .navigateToPage("http.badssl.com")
             .verifyHttpsOnlyErrorPage()
             .goBackFromHttpsError()
             .verifyPageContent("permission.site")
 
         on.searchBar.navigateToPage()
-        on.browserPage.navigateToPage("http.badssl.com")
-            .continueToHttpSite()
-            .verifyPageContent("http.badssl.com")
+        on.browserPage.navigateToPage("http.badssl.com").continueToHttpSite().verifyPageContent("http.badssl.com")
     }
 }

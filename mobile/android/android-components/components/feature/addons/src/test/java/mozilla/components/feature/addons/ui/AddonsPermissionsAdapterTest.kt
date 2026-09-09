@@ -8,16 +8,16 @@ import android.view.View
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import mozilla.components.feature.addons.R as addonsR
 import mozilla.components.feature.addons.ui.AddonPermissionsAdapter.PermissionViewHolder
 import mozilla.components.feature.addons.ui.AddonPermissionsAdapter.Style
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.whenever
+import mozilla.components.ui.colors.R as colorsR
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.verify
-import mozilla.components.feature.addons.R as addonsR
-import mozilla.components.ui.colors.R as colorsR
 
 @RunWith(AndroidJUnit4::class)
 class AddonsPermissionsAdapterTest {
@@ -37,12 +37,13 @@ class AddonsPermissionsAdapterTest {
         adapter.onBindViewHolder(viewHolder, 0)
 
         verify(textView).text = "permission"
-        verify(textView).contentDescription = testContext.getString(
-            addonsR.string.mozac_feature_addons_permissions_content_description_item,
-            "permission",
-            1,
-            1,
-        )
+        verify(textView).contentDescription =
+            testContext.getString(
+                addonsR.string.mozac_feature_addons_permissions_content_description_item,
+                "permission",
+                1,
+                1,
+            )
         verify(textView).setTextColor(ContextCompat.getColor(testContext, style.itemsTextColor!!))
     }
 }

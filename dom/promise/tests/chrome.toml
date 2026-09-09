@@ -1,7 +1,5 @@
 [DEFAULT]
 
-["test_on_new_promise.html"]
-
 ["test_promise_argument_xrays.html"]
 run-if = [
   "debug",
@@ -25,3 +23,5 @@ support-files = [
 
 ["test_promise_xrays.html"]
 support-files = ["file_promise_xrays.html"]
+
+["test_scheduling_state_incumbent_hop.html"]

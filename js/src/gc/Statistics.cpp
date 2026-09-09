@@ -5,6 +5,7 @@
 #include "gc/Statistics.h"
 
 #include "mozilla/DebugOnly.h"
+#include "mozilla/glue/Debug.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/TimeStamp.h"
 
@@ -1503,12 +1504,11 @@ void Statistics::recordPhaseEnd(Phase phase) {
       continue;
     }
     if (phaseEndTimes[kid] > now) {
-      fprintf(stderr,
-              "Parent %s ended at %.3fms, before child %s ended at %.3fms?\n",
-              phases[phase].name,
-              t(TimeBetween(TimeStamp::FirstTimeStamp(), now)),
-              phases[kid].name,
-              t(TimeBetween(TimeStamp::FirstTimeStamp(), phaseEndTimes[kid])));
+      printf_stderr(
+          "Parent %s ended at %.3fms, before child %s ended at %.3fms?\n",
+          phases[phase].name, t(TimeBetween(TimeStamp::FirstTimeStamp(), now)),
+          phases[kid].name,
+          t(TimeBetween(TimeStamp::FirstTimeStamp(), phaseEndTimes[kid])));
     }
     MOZ_ASSERT(phaseEndTimes[kid] <= now,
                "Inconsistent time data; see bug 1400153");

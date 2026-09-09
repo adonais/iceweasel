@@ -55,8 +55,10 @@ containers:
       Recorded when a container tab is opened.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1975403
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063946
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1975403
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063946
     notification_emails:
       - amarchesini@mozilla.com
     expires: never
@@ -65,6 +67,10 @@ containers:
     extra_keys:
       container_id:
         description: The ID of the container.
+        type: string
+      source:
+        description: |
+          The name of the UI entry point the tab was opened from, or "unknown".
         type: string
 
   container_tab_closed:
@@ -106,6 +112,25 @@ containers:
         description: The destination container id, or "0" if the tab wasn't in a container
         type: string
 
+  add_container_clicked:
+    type: event
+    description: >
+      Recorded when the user asks for a new container, before filling the form.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063946
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063946
+    notification_emails:
+      - amarchesini@mozilla.com
+    expires: never
+    data_sensitivity:
+      - interaction
+    extra_keys:
+      source:
+        description: |
+          The name of the UI entry point the request came from, or "unknown".
+        type: string
+
   container_created:
     type: event
     description: >
@@ -122,6 +147,26 @@ containers:
     extra_keys:
       container_id:
         description: The ID of the newly created container.
+        type: string
+
+  manage_containers_opened:
+    type: event
+    description: >
+      Recorded when the container management section of the Firefox settings
+      (about:preferences#containers) is shown.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063946
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063946
+    notification_emails:
+      - amarchesini@mozilla.com
+    expires: never
+    data_sensitivity:
+      - interaction
+    extra_keys:
+      source:
+        description: |
+          The name of the entry point used to reach the section, or "unknown".
         type: string
 
   container_modified:

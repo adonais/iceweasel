@@ -12,15 +12,21 @@ add_setup(async function () {
 });
 
 add_task(async function test_clearSearchHistoryAvailability() {
+  // The context menu is shared by both inputs, so the item is there either way
+  // and only shown for the searchbar.
   await UrlbarTestUtils.withContextMenu(window, popup => {
-    let mozInputBox = popup.parentNode;
-    let menuitem = mozInputBox.getMenuItem("clear-search-history");
-    Assert.ok(!menuitem, "Menuitem is not available in urlbar");
+    let menuitem = popup.querySelector('[anonid="clear-search-history"]');
+    Assert.ok(
+      !BrowserTestUtils.isVisible(menuitem),
+      "Menuitem is not shown for the urlbar"
+    );
   });
   await SearchbarTestUtils.withContextMenu(window, popup => {
-    let mozInputBox = popup.parentNode;
-    let menuitem = mozInputBox.getMenuItem("clear-search-history");
-    Assert.ok(menuitem, "Menuitem is available in searchbar");
+    let menuitem = popup.querySelector('[anonid="clear-search-history"]');
+    Assert.ok(
+      BrowserTestUtils.isVisible(menuitem),
+      "Menuitem is shown for the searchbar"
+    );
   });
 });
 
@@ -71,4 +77,24 @@ add_task(async function test_clearSearchHistory() {
   );
 
   await SearchbarTestUtils.formHistory.clear();
+});
+
+add_task(async function test_itemsGoWithTheSearchbar() {
+  let popup = window.EditContextMenu.popup;
+  let count = anonid => popup.querySelectorAll(`[anonid="${anonid}"]`).length;
+
+  Assert.equal(count("clear-search-history"), 1, "The searchbar has an item");
+  Assert.equal(count("paste-and-go"), 2, "Both inputs have an item");
+
+  await gCUITestUtils.removeSearchBar();
+  Assert.equal(
+    count("clear-search-history"),
+    0,
+    "The searchbar's item is gone"
+  );
+  Assert.equal(count("paste-and-go"), 1, "Only the urlbar's item is left");
+
+  await gCUITestUtils.addSearchBar();
+  Assert.equal(count("clear-search-history"), 1, "The item is back");
+  Assert.equal(count("paste-and-go"), 2, "The items aren't duplicated");
 });

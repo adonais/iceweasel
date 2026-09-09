@@ -389,6 +389,26 @@ class GapFillEncryptedRandomAccessStreamTest
 class WriteToEmptyStreamEncryptedRandomAccessStreamTest
     : public testing::TestWithParam<size_t> {};
 
+constexpr size_t kSetEOFOriginalSize = kMaxTextLength + kMaxTextLength / 2;
+
+struct SetEOFResizeCase {
+  size_t mStartSize;
+  size_t mTargetSize;
+  const char* mName;
+};
+
+class SetEOFResizeEncryptedRandomAccessStreamTest
+    : public testing::TestWithParam<SetEOFResizeCase> {};
+
+struct SetEOFBufferedExpandCase {
+  size_t mWriteLength;
+  size_t mTargetSize;
+  const char* mName;
+};
+
+class SetEOFBufferedExpandEncryptedRandomAccessStreamTest
+    : public testing::TestWithParam<SetEOFBufferedExpandCase> {};
+
 // -------------------------
 // Tests covering Create()
 // -------------------------
@@ -2090,6 +2110,596 @@ TEST(EncryptedRandomAccessStreamTest,
 }
 
 // -------------------------
+// Tests covering SetEOF()
+// -------------------------
+//
+// SetEOF() resizes the stream to the current cursor position. A resize is one
+// of three kinds: shrinking (truncation), leaving the size unchanged (a no-op),
+// or expanding (growing with a zero-filled region).
+//
+// The tests are organized in two layers:
+//
+//   1. A systematic resize matrix (one parameterized case per start/target
+//      geometry) that drives the plain "seek, SetEOF(), read back" path. It
+//      covers shrinking, no-op and expanding from empty, mid-block and
+//      block-aligned starts, and folds in the on-disk block count, the logical
+//      round-trip through a freshly reopened file, and the partial-final-block
+//      padding check.
+//   2. Cases the above matrix cannot reach because they involve writes,
+//      in-memory buffered blocks, reusing the same stream object after a
+//      resize, or a closed stream.
+
+// --- Systematic resize matrix (start geometry x target geometry) ---
+
+// Each case starts from a stream of |mStartSize| bytes, seeks to |mTargetSize|
+// and calls SetEOF(). It then verifies the new size on the working stream, the
+// on-disk block count, and -- after reopening the file from disk -- the new
+// size and content (original prefix preserved, grown region zero-filled). A
+// partial final block additionally has its on-disk padding checked: it must be
+// the cipher's (non-zero) padding rather than logical zeros.
+
+TEST_P(SetEOFResizeEncryptedRandomAccessStreamTest,
+       EncryptedRandomAccessStream_setEOFResizeMatrix) {
+  const size_t startSize = GetParam().mStartSize;
+  const size_t targetSize = GetParam().mTargetSize;
+
+  auto res = CreateEncryptedFileStream(startSize, kGapFillSentinelPadding);
+  ASSERT_TRUE(res.isOk());
+
+  auto fileStream = res.unwrap();
+  ASSERT_TRUE(fileStream.mStream);
+
+  const auto original = CreatePlaintext(startSize);
+  TestPlaintext expected(targetSize);
+  for (size_t i = 0; i < targetSize; ++i) {
+    expected[i] = i < startSize ? original[i] : 0;
+  }
+
+  {
+    auto stream = CreateEncryptedRandomAccessStream(fileStream.mStream);
+
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET,
+                           static_cast<int64_t>(targetSize)),
+              NS_OK);
+    ASSERT_EQ(stream->SetEOF(), NS_OK);
+
+    // The new logical size is observable from the start of the stream.
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET, 0), NS_OK);
+    uint64_t available = std::numeric_limits<uint64_t>::max();
+    ASSERT_EQ(stream->Available(&available), NS_OK);
+    EXPECT_EQ(available, static_cast<uint64_t>(targetSize));
+
+    ASSERT_EQ(stream->Flush(), NS_OK);
+  }
+
+  // The base file holds exactly the blocks needed to back |targetSize|.
+  const size_t blockCount = (targetSize + kMaxTextLength - 1) / kMaxTextLength;
+  ASSERT_EQ(fileStream.mStream->Seek(nsISeekableStream::NS_SEEK_END, 0), NS_OK);
+  int64_t physicalSize = -1;
+  ASSERT_EQ(fileStream.mStream->Tell(&physicalSize), NS_OK);
+  EXPECT_EQ(
+      physicalSize,
+      static_cast<int64_t>(blockCount * EncryptedRandomAccessBlock::BlockSize));
+
+  // Reopening the file from disk reports the new size and returns the expected
+  // content: the original prefix is preserved and any grown region is
+  // zero-filled (never the sentinel padding present on disk).
+  {
+    nsCOMPtr<nsIRandomAccessStream> base;
+    ASSERT_EQ(NS_NewLocalFileRandomAccessStream(getter_AddRefs(base),
+                                                fileStream.mFile),
+              NS_OK);
+    auto stream = CreateEncryptedRandomAccessStream(base);
+
+    uint64_t available = std::numeric_limits<uint64_t>::max();
+    ASSERT_EQ(stream->Available(&available), NS_OK);
+    EXPECT_EQ(available, static_cast<uint64_t>(targetSize));
+
+    std::vector<char> buf(targetSize);
+    uint32_t read = std::numeric_limits<uint32_t>::max();
+    ASSERT_EQ(stream->Read(buf.data(), buf.size(), &read), NS_OK);
+    ASSERT_EQ(read, static_cast<uint32_t>(targetSize));
+    for (size_t i = 0; i < targetSize; ++i) {
+      EXPECT_EQ(static_cast<uint8_t>(buf[i]), expected[i]) << "byte " << i;
+    }
+  }
+
+  // A partial final block must be padded on disk with the cipher's (non-zero)
+  // padding, not with logical zeros.
+  if (targetSize > 0 && targetSize % kMaxTextLength != 0) {
+    const size_t finalBlockIndex = (targetSize - 1) / kMaxTextLength;
+    const TestPlaintext finalBlockText(
+        expected.begin() + finalBlockIndex * kMaxTextLength, expected.end());
+    const auto block = ReadDecryptedBlock(fileStream.mFile, finalBlockIndex);
+    ExpectPaddedFinalBlock(block, finalBlockText);
+  }
+}
+
+// --- Truncation that discards a buffered dirty block above the new end ---
+
+TEST(EncryptedRandomAccessStreamTest,
+     EncryptedRandomAccessStream_setEOFTruncateDropsDirtyBlockAboveNewEnd)
+{
+  auto res =
+      CreateEncryptedFileStream(kSetEOFOriginalSize, kGapFillSentinelPadding);
+  ASSERT_TRUE(res.isOk());
+
+  auto fileStream = res.unwrap();
+  ASSERT_TRUE(fileStream.mStream);
+
+  const auto pattern = CreateOverwritePattern(kTextLength);
+
+  {
+    auto stream = CreateEncryptedRandomAccessStream(fileStream.mStream);
+
+    // Dirty the second block, then cut the stream back to the first block
+    // boundary so that dirty block is discarded.
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET,
+                           static_cast<int64_t>(kMaxTextLength + 10)),
+              NS_OK);
+    uint32_t written = 0;
+    ASSERT_EQ(stream->Write(reinterpret_cast<const char*>(pattern.data()),
+                            pattern.size(), &written),
+              NS_OK);
+    ASSERT_EQ(written, kTextLength);
+
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET,
+                           static_cast<int64_t>(kMaxTextLength)),
+              NS_OK);
+    ASSERT_EQ(stream->SetEOF(), NS_OK);
+
+    ASSERT_EQ(stream->Flush(), NS_OK);
+  }
+
+  // Exactly one block must remain on disk; the discarded dirty block must not
+  // have been written back.
+  ASSERT_EQ(fileStream.mStream->Seek(nsISeekableStream::NS_SEEK_END, 0), NS_OK);
+  int64_t physicalSize = -1;
+  ASSERT_EQ(fileStream.mStream->Tell(&physicalSize), NS_OK);
+  EXPECT_EQ(physicalSize,
+            static_cast<int64_t>(EncryptedRandomAccessBlock::BlockSize));
+
+  // The surviving block still holds the original first-block content.
+  const auto original = CreatePlaintext(kSetEOFOriginalSize);
+  const auto result = ReadDataFromStream(fileStream.mStream, kMaxTextLength);
+  for (size_t i = 0; i < kMaxTextLength; ++i) {
+    EXPECT_EQ(result[i], original[i]) << "byte " << i;
+  }
+}
+
+// --- Truncation that flushes a dirty block below the new end ---
+
+TEST(EncryptedRandomAccessStreamTest,
+     EncryptedRandomAccessStream_setEOFTruncateFlushesDirtyBlockBelowNewEnd)
+{
+  constexpr size_t truncatedSize = kMaxTextLength + kMaxTextLength / 4;
+
+  auto res =
+      CreateEncryptedFileStream(kSetEOFOriginalSize, kGapFillSentinelPadding);
+  ASSERT_TRUE(res.isOk());
+
+  auto fileStream = res.unwrap();
+  ASSERT_TRUE(fileStream.mStream);
+
+  const auto original = CreatePlaintext(kSetEOFOriginalSize);
+  const auto pattern = CreateOverwritePattern(kTextLength);
+
+  {
+    auto stream = CreateEncryptedRandomAccessStream(fileStream.mStream);
+
+    uint32_t written = 0;
+    ASSERT_EQ(stream->Write(reinterpret_cast<const char*>(pattern.data()),
+                            pattern.size(), &written),
+              NS_OK);
+    ASSERT_EQ(written, kTextLength);
+
+    // Truncate into the middle of block 1. SetEOF() must save the dirty block 0
+    // before loading block 1 for truncation, otherwise the overwrite is lost.
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET,
+                           static_cast<int64_t>(truncatedSize)),
+              NS_OK);
+    ASSERT_EQ(stream->SetEOF(), NS_OK);
+
+    ASSERT_EQ(stream->Flush(), NS_OK);
+  }
+
+  // Two blocks remain: block 0 and the truncated block 1.
+  ASSERT_EQ(fileStream.mStream->Seek(nsISeekableStream::NS_SEEK_END, 0), NS_OK);
+  int64_t physicalSize = -1;
+  ASSERT_EQ(fileStream.mStream->Tell(&physicalSize), NS_OK);
+  EXPECT_EQ(physicalSize,
+            static_cast<int64_t>(2 * EncryptedRandomAccessBlock::BlockSize));
+
+  // Block 0's overwrite survived, proving the dirty block was saved before
+  // block 1 was loaded for truncation. The rest is the original content up to
+  // the new end.
+  const auto result = ReadDataFromStream(fileStream.mStream, truncatedSize);
+  for (size_t i = 0; i < truncatedSize; ++i) {
+    const uint8_t expected = i < kTextLength ? pattern[i] : original[i];
+    EXPECT_EQ(result[i], expected) << "byte " << i;
+  }
+}
+
+// --- Expanding within a still-buffered (unflushed) block ---
+
+TEST_P(SetEOFBufferedExpandEncryptedRandomAccessStreamTest,
+       EncryptedRandomAccessStream_setEOFExpandWithinBufferedBlock) {
+  const size_t writeLength = GetParam().mWriteLength;
+  const size_t targetSize = GetParam().mTargetSize;
+
+  auto res = CreateEncryptedFileStream(0, kGapFillSentinelPadding);
+  ASSERT_TRUE(res.isOk());
+
+  auto fileStream = res.unwrap();
+  ASSERT_TRUE(fileStream.mStream);
+
+  const auto pattern = CreateOverwritePattern(writeLength);
+
+  {
+    auto stream = CreateEncryptedRandomAccessStream(fileStream.mStream);
+
+    // Write a partial block that is never flushed, so SetEOF() expands within a
+    // block still buffered in memory.
+    uint32_t written = 0;
+    ASSERT_EQ(stream->Write(reinterpret_cast<const char*>(pattern.data()),
+                            pattern.size(), &written),
+              NS_OK);
+    ASSERT_EQ(written, static_cast<uint32_t>(writeLength));
+
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET,
+                           static_cast<int64_t>(targetSize)),
+              NS_OK);
+    ASSERT_EQ(stream->SetEOF(), NS_OK);
+
+    ASSERT_EQ(stream->Flush(), NS_OK);
+  }
+
+  const auto result = ReadDataFromStream(fileStream.mStream, targetSize);
+  // The buffered write must survive and the grown region must be zero-filled.
+  for (size_t i = 0; i < writeLength; ++i) {
+    EXPECT_EQ(result[i], pattern[i]);
+  }
+  for (size_t i = writeLength; i < targetSize; ++i) {
+    EXPECT_EQ(result[i], 0) << "grown byte at " << i << " must be zero-filled";
+  }
+}
+
+// --- Truncating within a still-buffered (unflushed) new block ---
+
+TEST(EncryptedRandomAccessStreamTest,
+     EncryptedRandomAccessStream_setEOFTruncateWithinBufferedNewBlock)
+{
+  constexpr size_t originalSize = kMaxTextLength;
+  constexpr size_t writeLength = kTextLength;
+  constexpr size_t truncatedSize = originalSize + writeLength / 2;
+
+  auto res = CreateEncryptedFileStream(originalSize, kGapFillSentinelPadding);
+  ASSERT_TRUE(res.isOk());
+
+  auto fileStream = res.unwrap();
+  ASSERT_TRUE(fileStream.mStream);
+
+  const auto original = CreatePlaintext(originalSize);
+  const auto pattern = CreateOverwritePattern(writeLength);
+
+  {
+    auto stream = CreateEncryptedRandomAccessStream(fileStream.mStream);
+
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_END, 0), NS_OK);
+    uint32_t written = 0;
+    ASSERT_EQ(stream->Write(reinterpret_cast<const char*>(pattern.data()),
+                            pattern.size(), &written),
+              NS_OK);
+    ASSERT_EQ(written, writeLength);
+
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET,
+                           static_cast<int64_t>(truncatedSize)),
+              NS_OK);
+    ASSERT_EQ(stream->SetEOF(), NS_OK);
+
+    // The truncated size is observable on the same stream.
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET, 0), NS_OK);
+    uint64_t available = std::numeric_limits<uint64_t>::max();
+    ASSERT_EQ(stream->Available(&available), NS_OK);
+    EXPECT_EQ(available, static_cast<uint64_t>(truncatedSize));
+
+    ASSERT_EQ(stream->Flush(), NS_OK);
+  }
+
+  const auto result = ReadDataFromStream(fileStream.mStream, truncatedSize);
+  for (size_t i = 0; i < originalSize; ++i) {
+    EXPECT_EQ(result[i], original[i]);
+  }
+  for (size_t i = originalSize; i < truncatedSize; ++i) {
+    EXPECT_EQ(result[i], pattern[i - originalSize]);
+  }
+}
+
+// --- Continuing to use the same stream in various ways after SetEOF() ---
+
+TEST(EncryptedRandomAccessStreamTest,
+     EncryptedRandomAccessStream_setEOFTruncateThenAppendOnSameStream)
+{
+  constexpr size_t truncatedSize = kMaxTextLength / 2;
+  constexpr size_t writeLength = kMaxTextLength + kTextLength;
+  constexpr size_t finalSize = truncatedSize + writeLength;
+
+  auto res =
+      CreateEncryptedFileStream(kSetEOFOriginalSize, kGapFillSentinelPadding);
+  ASSERT_TRUE(res.isOk());
+
+  auto fileStream = res.unwrap();
+  ASSERT_TRUE(fileStream.mStream);
+
+  const auto pattern = CreateOverwritePattern(writeLength);
+
+  {
+    auto stream = CreateEncryptedRandomAccessStream(fileStream.mStream);
+
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET,
+                           static_cast<int64_t>(truncatedSize)),
+              NS_OK);
+    ASSERT_EQ(stream->SetEOF(), NS_OK);
+
+    // The truncated size is observable on the same stream.
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET, 0), NS_OK);
+    uint64_t available = std::numeric_limits<uint64_t>::max();
+    ASSERT_EQ(stream->Available(&available), NS_OK);
+    EXPECT_EQ(available, static_cast<uint64_t>(truncatedSize));
+
+    // Append from the new end on the same stream.
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_END, 0), NS_OK);
+    uint32_t written = 0;
+    ASSERT_EQ(stream->Write(reinterpret_cast<const char*>(pattern.data()),
+                            pattern.size(), &written),
+              NS_OK);
+    ASSERT_EQ(written, writeLength);
+
+    ASSERT_EQ(stream->Flush(), NS_OK);
+  }
+
+  const auto original = CreatePlaintext(kSetEOFOriginalSize);
+  const auto result = ReadDataFromStream(fileStream.mStream, finalSize);
+  for (size_t i = 0; i < truncatedSize; ++i) {
+    EXPECT_EQ(result[i], original[i]);
+  }
+  for (size_t i = truncatedSize; i < truncatedSize + writeLength; ++i) {
+    EXPECT_EQ(result[i], pattern[i - truncatedSize]);
+  }
+}
+
+TEST(EncryptedRandomAccessStreamTest,
+     EncryptedRandomAccessStream_setEOFTruncateThenExpandOnSameStream)
+{
+  constexpr size_t originalSize = 2 * kMaxTextLength + kMaxTextLength / 2;
+  constexpr size_t shrunkSize = kMaxTextLength / 2;
+  constexpr size_t expandedSize = kMaxTextLength + 4 * kMaxTextLength / 5;
+
+  auto res = CreateEncryptedFileStream(originalSize, kGapFillSentinelPadding);
+  ASSERT_TRUE(res.isOk());
+
+  auto fileStream = res.unwrap();
+  ASSERT_TRUE(fileStream.mStream);
+
+  {
+    auto stream = CreateEncryptedRandomAccessStream(fileStream.mStream);
+
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET,
+                           static_cast<int64_t>(shrunkSize)),
+              NS_OK);
+    ASSERT_EQ(stream->SetEOF(), NS_OK);
+
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET,
+                           static_cast<int64_t>(expandedSize)),
+              NS_OK);
+    ASSERT_EQ(stream->SetEOF(), NS_OK);
+
+    ASSERT_EQ(stream->Flush(), NS_OK);
+  }
+
+  const auto original = CreatePlaintext(originalSize);
+  const auto result = ReadDataFromStream(fileStream.mStream, expandedSize);
+  for (size_t i = 0; i < shrunkSize; ++i) {
+    EXPECT_EQ(result[i], original[i]);
+  }
+  for (size_t i = shrunkSize; i < expandedSize; ++i) {
+    EXPECT_EQ(result[i], 0)
+        << "re-grown byte at " << i << " must be zero-filled";
+  }
+}
+
+TEST(
+    EncryptedRandomAccessStreamTest,
+    EncryptedRandomAccessStream_setEOFTruncateThenAppendThenTruncateOnSameStream)
+{
+  constexpr size_t truncatedSize = kMaxTextLength / 2;
+  constexpr size_t writeLength = kMaxTextLength + kTextLength;
+  constexpr size_t retruncatedSize = kMaxTextLength + kTextLength / 2;
+
+  auto res =
+      CreateEncryptedFileStream(kSetEOFOriginalSize, kGapFillSentinelPadding);
+  ASSERT_TRUE(res.isOk());
+
+  auto fileStream = res.unwrap();
+  ASSERT_TRUE(fileStream.mStream);
+
+  const auto pattern = CreateOverwritePattern(writeLength);
+
+  {
+    auto stream = CreateEncryptedRandomAccessStream(fileStream.mStream);
+
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET,
+                           static_cast<int64_t>(truncatedSize)),
+              NS_OK);
+    ASSERT_EQ(stream->SetEOF(), NS_OK);
+
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_END, 0), NS_OK);
+    uint32_t written = 0;
+    ASSERT_EQ(stream->Write(reinterpret_cast<const char*>(pattern.data()),
+                            pattern.size(), &written),
+              NS_OK);
+    ASSERT_EQ(written, writeLength);
+
+    // Truncate again within that just-appended, still-buffered block.
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET,
+                           static_cast<int64_t>(retruncatedSize)),
+              NS_OK);
+    ASSERT_EQ(stream->SetEOF(), NS_OK);
+
+    ASSERT_EQ(stream->Flush(), NS_OK);
+  }
+
+  // Reopening from disk reports exactly the new length, so the truncated append
+  // tail did not persist beyond the new end.
+  {
+    auto stream = CreateEncryptedRandomAccessStream(fileStream.mStream);
+    uint64_t available = std::numeric_limits<uint64_t>::max();
+    ASSERT_EQ(stream->Available(&available), NS_OK);
+    EXPECT_EQ(available, static_cast<uint64_t>(retruncatedSize));
+  }
+
+  const auto original = CreatePlaintext(kSetEOFOriginalSize);
+  const auto result = ReadDataFromStream(fileStream.mStream, retruncatedSize);
+  for (size_t i = 0; i < truncatedSize; ++i) {
+    EXPECT_EQ(result[i], original[i]);
+  }
+  for (size_t i = truncatedSize; i < retruncatedSize; ++i) {
+    EXPECT_EQ(result[i], pattern[i - truncatedSize]);
+  }
+}
+
+TEST(EncryptedRandomAccessStreamTest,
+     EncryptedRandomAccessStream_setEOFExpandThenReadThenAppendOnSameStream)
+{
+  constexpr size_t originalSize = kMaxTextLength + kMaxTextLength / 2;
+  constexpr size_t expandedSize = 2 * kMaxTextLength + kMaxTextLength / 2;
+  constexpr uint32_t appendLength = 40;
+  const size_t finalSize = expandedSize + appendLength;
+
+  auto res = CreateEncryptedFileStream(originalSize, kGapFillSentinelPadding);
+  ASSERT_TRUE(res.isOk());
+
+  auto fileStream = res.unwrap();
+  ASSERT_TRUE(fileStream.mStream);
+
+  const auto original = CreatePlaintext(originalSize);
+  const auto pattern = CreateOverwritePattern(appendLength);
+
+  {
+    auto stream = CreateEncryptedRandomAccessStream(fileStream.mStream);
+
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET,
+                           static_cast<int64_t>(expandedSize)),
+              NS_OK);
+    ASSERT_EQ(stream->SetEOF(), NS_OK);
+
+    // Read back the whole stream on the same object: original then zeros.
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET, 0), NS_OK);
+    std::vector<char> buf(expandedSize);
+    uint32_t read = 0;
+    ASSERT_EQ(stream->Read(buf.data(), buf.size(), &read), NS_OK);
+    ASSERT_EQ(read, static_cast<uint32_t>(expandedSize));
+    for (size_t i = 0; i < originalSize; ++i) {
+      EXPECT_EQ(static_cast<uint8_t>(buf[i]), original[i]);
+    }
+    for (size_t i = originalSize; i < expandedSize; ++i) {
+      EXPECT_EQ(static_cast<uint8_t>(buf[i]), 0) << "gap byte " << i;
+    }
+
+    // Append from the new end on the same stream.
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_END, 0), NS_OK);
+    uint32_t written = 0;
+    ASSERT_EQ(stream->Write(reinterpret_cast<const char*>(pattern.data()),
+                            pattern.size(), &written),
+              NS_OK);
+    ASSERT_EQ(written, appendLength);
+
+    ASSERT_EQ(stream->Flush(), NS_OK);
+  }
+
+  const auto result = ReadDataFromStream(fileStream.mStream, finalSize);
+  for (size_t i = 0; i < originalSize; ++i) {
+    EXPECT_EQ(result[i], original[i]);
+  }
+  for (size_t i = originalSize; i < expandedSize; ++i) {
+    EXPECT_EQ(result[i], 0);
+  }
+  for (size_t i = expandedSize; i < expandedSize + appendLength; ++i) {
+    EXPECT_EQ(result[i], pattern[i - expandedSize]);
+  }
+}
+
+TEST(EncryptedRandomAccessStreamTest,
+     EncryptedRandomAccessStream_setEOFExpandThenWriteOnSameStream)
+{
+  constexpr size_t originalSize = kMaxTextLength + kMaxTextLength / 2;
+  constexpr size_t expandedSize = 2 * kMaxTextLength + kMaxTextLength / 2;
+  constexpr size_t writePos = 2 * kMaxTextLength;
+  constexpr uint32_t writeLength = 50;
+
+  auto res = CreateEncryptedFileStream(originalSize, kGapFillSentinelPadding);
+  ASSERT_TRUE(res.isOk());
+
+  auto fileStream = res.unwrap();
+  ASSERT_TRUE(fileStream.mStream);
+
+  const auto original = CreatePlaintext(originalSize);
+  const auto pattern = CreateOverwritePattern(writeLength);
+
+  {
+    auto stream = CreateEncryptedRandomAccessStream(fileStream.mStream);
+
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET,
+                           static_cast<int64_t>(expandedSize)),
+              NS_OK);
+    ASSERT_EQ(stream->SetEOF(), NS_OK);
+
+    ASSERT_EQ(stream->Seek(nsISeekableStream::NS_SEEK_SET,
+                           static_cast<int64_t>(writePos)),
+              NS_OK);
+    uint32_t written = 0;
+    ASSERT_EQ(stream->Write(reinterpret_cast<const char*>(pattern.data()),
+                            pattern.size(), &written),
+              NS_OK);
+    ASSERT_EQ(written, writeLength);
+
+    ASSERT_EQ(stream->Flush(), NS_OK);
+  }
+
+  const auto result = ReadDataFromStream(fileStream.mStream, expandedSize);
+  for (size_t i = 0; i < originalSize; ++i) {
+    EXPECT_EQ(result[i], original[i]);
+  }
+  for (size_t i = originalSize; i < writePos; ++i) {
+    EXPECT_EQ(result[i], 0) << "gap byte before write at " << i;
+  }
+  for (size_t i = writePos; i < writePos + writeLength; ++i) {
+    EXPECT_EQ(result[i], pattern[i - writePos]);
+  }
+  for (size_t i = writePos + writeLength; i < expandedSize; ++i) {
+    EXPECT_EQ(result[i], 0) << "gap byte after write at " << i;
+  }
+}
+
+// --- Calling SetEOF() on a closed stream ---
+
+TEST(EncryptedRandomAccessStreamTest,
+     EncryptedRandomAccessStream_setEOFOnClosedStreamReturnsClosed)
+{
+  auto res = CreateEncryptedFileStream(kSetEOFOriginalSize);
+  ASSERT_TRUE(res.isOk());
+
+  auto fileStream = res.unwrap();
+  ASSERT_TRUE(fileStream.mStream);
+
+  auto stream = CreateEncryptedRandomAccessStream(fileStream.mStream);
+
+  ASSERT_EQ(stream->Close(), NS_OK);
+
+  EXPECT_EQ(stream->SetEOF(), NS_BASE_STREAM_CLOSED);
+}
+
+// -------------------------
 // Tests covering Close()
 // -------------------------
 
@@ -2299,6 +2909,97 @@ INSTANTIATE_TEST_SUITE_P(
         return "SpanningMultipleBlocks";
       }
       MOZ_CRASH("Unexpected block geometry value.");
+    });
+
+INSTANTIATE_TEST_SUITE_P(
+    EncryptedRandomAccessStreamSetEOFResize,
+    SetEOFResizeEncryptedRandomAccessStreamTest,
+    testing::Values(
+        // Start: 0 blocks (empty)
+        SetEOFResizeCase{0, kMaxTextLength / 2, "EmptyExpandToHalfBlock"},
+        SetEOFResizeCase{0, kMaxTextLength, "EmptyExpandToOneFull"},
+        SetEOFResizeCase{0, kMaxTextLength + kMaxTextLength / 2,
+                         "EmptyExpandToOneAndHalf"},
+        SetEOFResizeCase{0, 2 * kMaxTextLength, "EmptyExpandToTwoFull"},
+        SetEOFResizeCase{0, 2 * kMaxTextLength + kMaxTextLength / 2,
+                         "EmptyExpandToTwoAndHalf"},
+
+        // Start: 2.0 blocks (boundary)
+        SetEOFResizeCase{2 * kMaxTextLength,
+                         2 * kMaxTextLength + kMaxTextLength / 2,
+                         "TwoFullExpandToNextBlockMid"},
+        SetEOFResizeCase{2 * kMaxTextLength, 3 * kMaxTextLength,
+                         "TwoFullExpandToNextBlockEnd"},
+        SetEOFResizeCase{2 * kMaxTextLength,
+                         3 * kMaxTextLength + kMaxTextLength / 2,
+                         "TwoFullExpandToSecondNextBlockMid"},
+        SetEOFResizeCase{2 * kMaxTextLength, 4 * kMaxTextLength,
+                         "TwoFullExpandToSecondNextBlockEnd"},
+        SetEOFResizeCase{2 * kMaxTextLength,
+                         kMaxTextLength + kMaxTextLength / 2,
+                         "TwoFullShrinkToCurrentBlockMid"},
+        SetEOFResizeCase{2 * kMaxTextLength, kMaxTextLength,
+                         "TwoFullShrinkToCurrentBlockStart"},
+        SetEOFResizeCase{2 * kMaxTextLength, kMaxTextLength / 2,
+                         "TwoFullShrinkToPrevBlockMid"},
+        SetEOFResizeCase{2 * kMaxTextLength, 0, "TwoFullShrinkToEmpty"},
+        SetEOFResizeCase{2 * kMaxTextLength, 2 * kMaxTextLength, "TwoFullNoOp"},
+
+        // Start: 3.5 blocks (middle in a block)
+        SetEOFResizeCase{3 * kMaxTextLength + kMaxTextLength / 2,
+                         3 * kMaxTextLength + 4 * kMaxTextLength / 5,
+                         "ThreeAndHalfExpandWithinCurrentBlock"},
+        SetEOFResizeCase{3 * kMaxTextLength + kMaxTextLength / 2,
+                         4 * kMaxTextLength,
+                         "ThreeAndHalfExpandToCurrentBlockEnd"},
+        SetEOFResizeCase{3 * kMaxTextLength + kMaxTextLength / 2,
+                         4 * kMaxTextLength + kMaxTextLength / 2,
+                         "ThreeAndHalfExpandToNextBlockMid"},
+        SetEOFResizeCase{3 * kMaxTextLength + kMaxTextLength / 2,
+                         5 * kMaxTextLength,
+                         "ThreeAndHalfExpandToNextBlockEnd"},
+        SetEOFResizeCase{3 * kMaxTextLength + kMaxTextLength / 2,
+                         5 * kMaxTextLength + kMaxTextLength / 2,
+                         "ThreeAndHalfExpandToSecondNextBlockMid"},
+        SetEOFResizeCase{3 * kMaxTextLength + kMaxTextLength / 2,
+                         6 * kMaxTextLength,
+                         "ThreeAndHalfExpandToSecondNextBlockEnd"},
+        SetEOFResizeCase{3 * kMaxTextLength + kMaxTextLength / 2,
+                         3 * kMaxTextLength + kMaxTextLength / 5,
+                         "ThreeAndHalfShrinkWithinCurrentBlock"},
+        SetEOFResizeCase{3 * kMaxTextLength + kMaxTextLength / 2,
+                         3 * kMaxTextLength,
+                         "ThreeAndHalfShrinkToCurrentBlockStart"},
+        SetEOFResizeCase{3 * kMaxTextLength + kMaxTextLength / 2,
+                         2 * kMaxTextLength + kMaxTextLength / 2,
+                         "ThreeAndHalfShrinkToPrevBlockMid"},
+        SetEOFResizeCase{3 * kMaxTextLength + kMaxTextLength / 2,
+                         2 * kMaxTextLength,
+                         "ThreeAndHalfShrinkToPrevBlockStart"},
+        SetEOFResizeCase{3 * kMaxTextLength + kMaxTextLength / 2,
+                         kMaxTextLength + kMaxTextLength / 2,
+                         "ThreeAndHalfShrinkToSecondPrevBlockMid"},
+        SetEOFResizeCase{3 * kMaxTextLength + kMaxTextLength / 2,
+                         kMaxTextLength,
+                         "ThreeAndHalfShrinkToSecondPrevBlockStart"},
+        SetEOFResizeCase{3 * kMaxTextLength + kMaxTextLength / 2,
+                         3 * kMaxTextLength + kMaxTextLength / 2,
+                         "ThreeAndHalfNoOp"}),
+    [](const testing::TestParamInfo<SetEOFResizeCase>& aInfo) {
+      return std::string(aInfo.param.mName);
+    });
+
+INSTANTIATE_TEST_SUITE_P(
+    EncryptedRandomAccessStreamSetEOFBufferedExpand,
+    SetEOFBufferedExpandEncryptedRandomAccessStreamTest,
+    testing::Values(SetEOFBufferedExpandCase{kTextLength, 2 * kTextLength,
+                                             "WithinFirstBlock"},
+                    SetEOFBufferedExpandCase{
+                        kMaxTextLength + kMaxTextLength / 5,
+                        kMaxTextLength + 4 * kMaxTextLength / 5,
+                        "WithinSecondBlock"}),
+    [](const testing::TestParamInfo<SetEOFBufferedExpandCase>& aInfo) {
+      return std::string(aInfo.param.mName);
     });
 
 }  // namespace mozilla::dom::quota::test

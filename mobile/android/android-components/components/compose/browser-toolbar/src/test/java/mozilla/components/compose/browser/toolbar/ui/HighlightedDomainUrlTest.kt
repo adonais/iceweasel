@@ -26,8 +26,8 @@ import org.mockito.Mockito.doReturn
  *
  * Assumptions:
  * - each character shown has 50px width.
- * - text box available width is 1000px - space to shown 20 characters.
- * If needing to show more than 20 characters they would be shown offscreen with the text being scrollable.
+ * - text box available width is 1000px - space to shown 20 characters. If needing to show more than 20 characters they
+ *   would be shown offscreen with the text being scrollable.
  */
 @RunWith(AndroidJUnit4::class)
 class HighlightedDomainUrlTest {
@@ -95,67 +95,75 @@ class HighlightedDomainUrlTest {
     fun `GIVEN the displayed URL does not overflow the available space WHEN creating the fading brush THEN set no fading`() {
         val expected = SolidColor(Color.Black)
 
-        val result = createUrlFadeBrush(
-            scrolledPixels = 0,
-            maxScrollPixels = 0,
-            viewportSize = viewPortWidth.toInt(),
-            fadeFraction = 0.5f,
-        )
+        val result =
+            createUrlFadeBrush(
+                scrolledPixels = 0,
+                maxScrollPixels = 0,
+                viewportSize = viewPortWidth.toInt(),
+                fadeFraction = 0.5f,
+            )
 
         assertEquals(expected, result)
     }
 
     @Test
     fun `GIVEN the displayed URL only overflows to the right WHEN creating the fading brush THEN fade the right edge`() {
-        val expected = Brush.horizontalGradient(
-            0.5f to Color.Black,
-            1f to Color.Transparent,
-        )
+        val expected =
+            Brush.horizontalGradient(
+                0.5f to Color.Black,
+                1f to Color.Transparent,
+            )
 
-        val result = createUrlFadeBrush(
-            scrolledPixels = 0,
-            maxScrollPixels = 600,
-            viewportSize = viewPortWidth.toInt(),
-            fadeFraction = 0.5f,
-        )
+        val result =
+            createUrlFadeBrush(
+                scrolledPixels = 0,
+                maxScrollPixels = 600,
+                viewportSize = viewPortWidth.toInt(),
+                fadeFraction = 0.5f,
+            )
 
         assertEquals(expected, result)
     }
 
     @Test
     fun `GIVEN the displayed URL only overflows to the left WHEN creating the fading brush THEN fade the left edge`() {
-        val expected = Brush.horizontalGradient(
-            0f to Color.Transparent,
-            0.5f to Color.Black,
-        )
+        val expected =
+            Brush.horizontalGradient(
+                0f to Color.Transparent,
+                0.5f to Color.Black,
+            )
 
-        val result = createUrlFadeBrush(
-            scrolledPixels = 600,
-            maxScrollPixels = 600,
-            viewportSize = viewPortWidth.toInt(),
-            fadeFraction = 0.5f,
-        )
+        val result =
+            createUrlFadeBrush(
+                scrolledPixels = 600,
+                maxScrollPixels = 600,
+                viewportSize = viewPortWidth.toInt(),
+                fadeFraction = 0.5f,
+            )
 
         assertEquals(expected, result)
     }
 
     @Test
     fun `GIVEN the displayed URL overflows on both sides WHEN creating the fading brush THEN fade both edges`() {
-        val expected = Brush.horizontalGradient(
-            colorStops = arrayOf(
-                0f to Color.Transparent,
-                0.5f to Color.Black,
-                0.5f to Color.Black,
-                1f to Color.Transparent,
-            ),
-        )
+        val expected =
+            Brush.horizontalGradient(
+                colorStops =
+                    arrayOf(
+                        0f to Color.Transparent,
+                        0.5f to Color.Black,
+                        0.5f to Color.Black,
+                        1f to Color.Transparent,
+                    )
+            )
 
-        val result = createUrlFadeBrush(
-            scrolledPixels = 100,
-            maxScrollPixels = 1200,
-            viewportSize = viewPortWidth.toInt(),
-            fadeFraction = 0.5f,
-        )
+        val result =
+            createUrlFadeBrush(
+                scrolledPixels = 100,
+                maxScrollPixels = 1200,
+                viewportSize = viewPortWidth.toInt(),
+                fadeFraction = 0.5f,
+            )
 
         assertEquals(expected, result)
     }
@@ -163,27 +171,26 @@ class HighlightedDomainUrlTest {
     private fun computeDomainEndScrollValue(text: String, highlightRange: Pair<Int, Int>?) =
         computeDomainEndScrollValue(text, highlightRange, scrollState, textLayoutResult)
 
-    /**
-     * Configure the visual bounds for a range of characters shown on the screen.
-     */
+    /** Configure the visual bounds for a range of characters shown on the screen. */
     private fun TextLayoutResult.stubBoundingBoxForText() {
         doAnswer { invocation ->
-            val start = invocation.getArgument<Int>(0)
-            val end = invocation.getArgument<Int>(1)
-            val leftCoord = start * charWidth
-            val rightCoord = end * charWidth
+                val start = invocation.getArgument<Int>(0)
+                val end = invocation.getArgument<Int>(1)
+                val leftCoord = start * charWidth
+                val rightCoord = end * charWidth
 
-            val textDrawingPath: Path = mock()
-            doReturn(Rect(left = leftCoord, top = 0f, right = rightCoord, bottom = 100f))
-                .`when`(textDrawingPath).getBounds()
+                val textDrawingPath: Path = mock()
+                doReturn(Rect(left = leftCoord, top = 0f, right = rightCoord, bottom = 100f))
+                    .`when`(textDrawingPath)
+                    .getBounds()
 
-            textDrawingPath
-        }.`when`(this).getPathForRange(anyInt(), anyInt())
+                textDrawingPath
+            }
+            .`when`(this)
+            .getPathForRange(anyInt(), anyInt())
     }
 
-    /**
-     * Automatically compute and configure how much we can scroll to show the indicated [text].
-     */
+    /** Automatically compute and configure how much we can scroll to show the indicated [text]. */
     private fun ScrollState.stubScrollInfo(text: String) {
         doReturn(viewPortWidth.toInt()).`when`(this).viewportSize
 
@@ -201,8 +208,7 @@ class HighlightedDomainUrlTest {
         return when (text.length == highlightRange.second) {
             true -> scrollState.maxValue
             else -> {
-                val lastVisibleCharIndex = (highlightRange.second.plus(END_SCROLL_OFFSET))
-                    .coerceAtMost(text.lastIndex)
+                val lastVisibleCharIndex = (highlightRange.second.plus(END_SCROLL_OFFSET)).coerceAtMost(text.lastIndex)
                 (lastVisibleCharIndex - maxVisibleCharCount).coerceAtLeast(0)
             }
         }

@@ -17,8 +17,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class PrivacyPreferencesMiddlewareTest {
 
-    @MockK
-    private lateinit var repository: PrivacyPreferencesRepository
+    @MockK private lateinit var repository: PrivacyPreferencesRepository
 
     private lateinit var middleware: PrivacyPreferencesMiddleware
 
@@ -32,18 +31,24 @@ class PrivacyPreferencesMiddlewareTest {
     @Test
     fun `WHEN data usage update action is invoked THEN new value is set in repository`() {
         var dataUsageEnabled = true
-        val middleware = PrivacyPreferencesMiddleware(
-            repository = object : PrivacyPreferencesRepository {
-                override fun getPreference(type: PreferenceType) = false
+        val middleware =
+            PrivacyPreferencesMiddleware(
+                repository =
+                    object : PrivacyPreferencesRepository {
+                        override fun getPreference(type: PreferenceType) = false
 
-                override fun setPreference(type: PreferenceType, enabled: Boolean) {
-                    dataUsageEnabled = enabled
-                }
-            },
-        )
+                        override fun setPreference(type: PreferenceType, enabled: Boolean) {
+                            dataUsageEnabled = enabled
+                        }
+                    }
+            )
 
         val updatedDataUsageEnabled = !dataUsageEnabled
-        middleware.invoke(store = mockk(), {}, PrivacyPreferencesAction.UsageDataPreferenceUpdatedTo(enabled = updatedDataUsageEnabled))
+        middleware.invoke(
+            store = mockk(),
+            {},
+            PrivacyPreferencesAction.UsageDataPreferenceUpdatedTo(enabled = updatedDataUsageEnabled),
+        )
 
         assertEquals(updatedDataUsageEnabled, dataUsageEnabled)
     }
@@ -51,18 +56,24 @@ class PrivacyPreferencesMiddlewareTest {
     @Test
     fun `WHEN crash reporting update action is invoked THEN new value is set in repository`() {
         var crashReportEnabled = true
-        val middleware = PrivacyPreferencesMiddleware(
-            repository = object : PrivacyPreferencesRepository {
-                override fun getPreference(type: PreferenceType) = false
+        val middleware =
+            PrivacyPreferencesMiddleware(
+                repository =
+                    object : PrivacyPreferencesRepository {
+                        override fun getPreference(type: PreferenceType) = false
 
-                override fun setPreference(type: PreferenceType, enabled: Boolean) {
-                    crashReportEnabled = enabled
-                }
-            },
-        )
+                        override fun setPreference(type: PreferenceType, enabled: Boolean) {
+                            crashReportEnabled = enabled
+                        }
+                    }
+            )
 
         val updatedCrashReportEnabled = !crashReportEnabled
-        middleware.invoke(store = mockk(), {}, PrivacyPreferencesAction.UsageDataPreferenceUpdatedTo(enabled = updatedCrashReportEnabled))
+        middleware.invoke(
+            store = mockk(),
+            {},
+            PrivacyPreferencesAction.UsageDataPreferenceUpdatedTo(enabled = updatedCrashReportEnabled),
+        )
 
         assertEquals(updatedCrashReportEnabled, crashReportEnabled)
     }

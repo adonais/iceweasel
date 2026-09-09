@@ -13,6 +13,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.app.ActivityOptionsCompat
 import androidx.test.filters.SdkSuppress
+import kotlin.test.assertNotNull
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+import mozilla.components.feature.ipprotection.store.IPProtectionAction
+import mozilla.components.feature.ipprotection.store.IPProtectionStore
+import mozilla.components.feature.ipprotection.store.state.AccountStatus
+import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.DateTimeProvider
 import mozilla.components.support.utils.FakeDateTimeProvider
@@ -28,6 +35,7 @@ import org.mozilla.fenix.GleanMetrics.Onboarding
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.FenixGleanTestRule
+import org.mozilla.fenix.ipprotection.FakeIPProtectionPromptRepository
 import org.mozilla.fenix.onboarding.OnboardingReason
 import org.mozilla.fenix.onboarding.OnboardingTelemetryRecorder
 import org.mozilla.fenix.onboarding.view.Action
@@ -36,41 +44,54 @@ import org.mozilla.fenix.onboarding.view.OnboardingPageUiData
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 private const val CONTINUOUS_ONBOARDING_DIALOG_TAG = "continuous_onboarding_dialog"
 
 @RunWith(RobolectricTestRunner::class)
 class ContinuousOnboardingFeatureTest {
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
+
+    private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var activity: Activity
     private lateinit var settings: Settings
     private lateinit var telemetryRecorder: OnboardingTelemetryRecorder
     private lateinit var stageProvider: ContinuousOnboardingStageProvider
     private lateinit var dateTimeProvider: DateTimeProvider
+    private lateinit var ipProtectionStore: IPProtectionStore
+    private lateinit var ipProtectionPromptRepository: FakeIPProtectionPromptRepository
     private lateinit var feature: ContinuousOnboardingFeature
 
     @Before
     fun setup() {
         activity = Robolectric.buildActivity(AppCompatActivity::class.java).create().get()
         settings = Settings(testContext)
-        telemetryRecorder = OnboardingTelemetryRecorder(
-            onboardingReason = OnboardingReason.NEW_USER,
-            installSource = "test",
-        )
+        telemetryRecorder =
+            OnboardingTelemetryRecorder(
+                onboardingReason = OnboardingReason.NEW_USER,
+                installSource = "test",
+            )
         dateTimeProvider = FakeDateTimeProvider()
         stageProvider = FakeContinuousOnboardingStageProvider()
-        feature = ContinuousOnboardingFeature(
-            activity = activity,
-            launcher = FakeActivityResultLauncher(),
-            settings = settings,
-            telemetryRecorder = telemetryRecorder,
-            stageProvider = stageProvider,
-            dateTimeProvider = dateTimeProvider,
-            navigateToSyncSignIn = {},
-        )
+        ipProtectionStore = IPProtectionStore()
+        ipProtectionPromptRepository = FakeIPProtectionPromptRepository()
+        feature =
+            ContinuousOnboardingFeature(
+                activity = activity,
+                launcher = FakeActivityResultLauncher(),
+                settings = settings,
+                telemetryRecorder = telemetryRecorder,
+                stageProvider = stageProvider,
+                dateTimeProvider = dateTimeProvider,
+                navigateToSyncSignIn = {},
+                ipProtectionOnboardingConfig =
+                    IPProtectionOnboardingConfig(
+                        store = ipProtectionStore,
+                        promptRepository = ipProtectionPromptRepository,
+                        navigateToIpProtection = {},
+                    ),
+                ipProtectionMainDispatcher = testDispatcher,
+            )
     }
 
     // shouldShowContinuousOnboarding
@@ -118,37 +139,41 @@ class ContinuousOnboardingFeatureTest {
 
     @Test
     fun `getSyncOnboardingPageState returns the expected state`() {
-        val expectedState = OnboardingPageState(
-            imageRes = R.drawable.nova_onboarding_sync,
-            title = "Instantly pick up where you left off",
-            description = "Grab bookmarks, passwords, and more on any device in a snap. Your personal data stays safe and secure with encryption.",
-            primaryButton = Action(
-                text = "Start syncing",
-                onClick = {
-                    telemetryRecorder.onSyncSignInClick(
+        val expectedState =
+            OnboardingPageState(
+                imageRes = R.drawable.nova_onboarding_sync,
+                title = "Instantly pick up where you left off",
+                description =
+                    "Grab bookmarks, passwords, and more on any device in a snap. Your personal data stays safe and secure with encryption.",
+                primaryButton =
+                    Action(
+                        text = "Start syncing",
+                        onClick = {
+                            telemetryRecorder.onSyncSignInClick(
+                                sequenceId = OnboardingPageUiData.Type.SYNC_SIGN_IN.telemetryId,
+                                sequencePosition = "0",
+                            )
+                        },
+                    ),
+                secondaryButton =
+                    Action(
+                        text = "Continue",
+                        onClick = {
+                            telemetryRecorder.onSkipSignInClick(
+                                sequenceId = OnboardingPageUiData.Type.SYNC_SIGN_IN.telemetryId,
+                                sequencePosition = "0",
+                            )
+                        },
+                    ),
+                onRecordImpressionEvent = {
+                    telemetryRecorder.onImpression(
                         sequenceId = OnboardingPageUiData.Type.SYNC_SIGN_IN.telemetryId,
+                        pageType = OnboardingPageUiData.Type.SYNC_SIGN_IN,
                         sequencePosition = "0",
                     )
                 },
-            ),
-            secondaryButton = Action(
-                text = "Continue",
-                onClick = {
-                    telemetryRecorder.onSkipSignInClick(
-                        sequenceId = OnboardingPageUiData.Type.SYNC_SIGN_IN.telemetryId,
-                        sequencePosition = "0",
-                    )
-                },
-            ),
-            onRecordImpressionEvent = {
-                telemetryRecorder.onImpression(
-                    sequenceId = OnboardingPageUiData.Type.SYNC_SIGN_IN.telemetryId,
-                    pageType = OnboardingPageUiData.Type.SYNC_SIGN_IN,
-                    sequencePosition = "0",
-                )
-            },
-        )
-        val actualState = feature.getSyncOnboardingPageState(ContinuousOnboardingStage.DAY_7)
+            )
+        val actualState = feature.getSyncOnboardingPageState(ContinuousOnboardingStage.DAY_5)
 
         assertEquals(expectedState.imageRes, actualState.imageRes)
         assertEquals(expectedState.title, actualState.title)
@@ -159,7 +184,7 @@ class ContinuousOnboardingFeatureTest {
 
     @Test
     fun `WHEN sync primary button is clicked THEN sign-in telemetry is recorded`() {
-        val pageState = feature.getSyncOnboardingPageState(ContinuousOnboardingStage.DAY_7)
+        val pageState = feature.getSyncOnboardingPageState(ContinuousOnboardingStage.DAY_5)
 
         pageState.primaryButton.onClick()
 
@@ -176,23 +201,31 @@ class ContinuousOnboardingFeatureTest {
         assertNotNull(Onboarding.dismissed.testGetValue())
         assertEquals("completed", Onboarding.dismissed.testGetValue()!!.single().extra!!["method"])
 
-        assertEquals(-1L, settings.seventhDayOnboardingCompletedTimestamp)
+        assertEquals(-1L, settings.fifthDayOnboardingCompletedTimestamp)
     }
 
     @Test
     fun `WHEN sync primary button is clicked THEN navigateToSyncSignIn is invoked`() {
         var navigateToSyncSignInInvoked = false
         val navigateToSyncSignIn = { navigateToSyncSignInInvoked = true }
-        val feature = ContinuousOnboardingFeature(
-            activity = activity,
-            launcher = FakeActivityResultLauncher(),
-            settings = settings,
-            telemetryRecorder = telemetryRecorder,
-            stageProvider = stageProvider,
-            dateTimeProvider = dateTimeProvider,
-            navigateToSyncSignIn = navigateToSyncSignIn,
-        )
-        val pageState = feature.getSyncOnboardingPageState(ContinuousOnboardingStage.DAY_7)
+        val feature =
+            ContinuousOnboardingFeature(
+                activity = activity,
+                launcher = FakeActivityResultLauncher(),
+                settings = settings,
+                telemetryRecorder = telemetryRecorder,
+                stageProvider = stageProvider,
+                dateTimeProvider = dateTimeProvider,
+                navigateToSyncSignIn = navigateToSyncSignIn,
+                ipProtectionOnboardingConfig =
+                    IPProtectionOnboardingConfig(
+                        store = ipProtectionStore,
+                        promptRepository = ipProtectionPromptRepository,
+                        navigateToIpProtection = {},
+                    ),
+                ipProtectionMainDispatcher = testDispatcher,
+            )
+        val pageState = feature.getSyncOnboardingPageState(ContinuousOnboardingStage.DAY_5)
 
         pageState.primaryButton.onClick()
 
@@ -201,7 +234,7 @@ class ContinuousOnboardingFeatureTest {
 
     @Test
     fun `WHEN sync secondary button is clicked THEN skip sign-in telemetry is recorded`() {
-        val pageState = feature.getSyncOnboardingPageState(ContinuousOnboardingStage.DAY_7)
+        val pageState = feature.getSyncOnboardingPageState(ContinuousOnboardingStage.DAY_5)
 
         pageState.secondaryButton!!.onClick()
 
@@ -218,12 +251,12 @@ class ContinuousOnboardingFeatureTest {
         assertNotNull(Onboarding.dismissed.testGetValue())
         assertEquals("skipped", Onboarding.dismissed.testGetValue()!!.single().extra!!["method"])
 
-        assertEquals(dateTimeProvider.currentTimeMillis(), settings.seventhDayOnboardingCompletedTimestamp)
+        assertEquals(dateTimeProvider.currentTimeMillis(), settings.fifthDayOnboardingCompletedTimestamp)
     }
 
     @Test
     fun `WHEN sync impression event fires THEN sign-in card telemetry is recorded`() {
-        val pageState = feature.getSyncOnboardingPageState(ContinuousOnboardingStage.DAY_7)
+        val pageState = feature.getSyncOnboardingPageState(ContinuousOnboardingStage.DAY_5)
 
         pageState.onRecordImpressionEvent()
 
@@ -235,7 +268,7 @@ class ContinuousOnboardingFeatureTest {
 
     @Test
     fun `WHEN no sync button is clicked THEN no sign-in telemetry is recorded`() {
-        feature.getSyncOnboardingPageState(ContinuousOnboardingStage.DAY_7)
+        feature.getSyncOnboardingPageState(ContinuousOnboardingStage.DAY_5)
 
         assertNull(Onboarding.signIn.testGetValue())
         assertNull(Onboarding.skipSignIn.testGetValue())
@@ -247,37 +280,41 @@ class ContinuousOnboardingFeatureTest {
     @SdkSuppress(minSdkVersion = 33)
     @Test
     fun `getNotificationOnboardingPageState returns the expected state`() {
-        val expectedState = OnboardingPageState(
-            imageRes = R.drawable.nova_onboarding_notifications,
-            title = "Notifications help you stay safer with Firefox",
-            description = "Discover the latest privacy features in Firefox so you’re always up to date on how to stay protected.",
-            primaryButton = Action(
-                text = "Turn on notifications",
-                onClick = {
-                    telemetryRecorder.onNotificationPermissionClick(
+        val expectedState =
+            OnboardingPageState(
+                imageRes = R.drawable.nova_onboarding_notifications,
+                title = "Notifications help you stay safer with Firefox",
+                description =
+                    "Discover the latest privacy features in Firefox so you’re always up to date on how to stay protected.",
+                primaryButton =
+                    Action(
+                        text = "Turn on notifications",
+                        onClick = {
+                            telemetryRecorder.onNotificationPermissionClick(
+                                sequenceId = OnboardingPageUiData.Type.NOTIFICATION_PERMISSION.telemetryId,
+                                sequencePosition = "0",
+                            )
+                            activity.components.notificationsDelegate.requestNotificationPermission()
+                        },
+                    ),
+                secondaryButton =
+                    Action(
+                        text = "Not now",
+                        onClick = {
+                            telemetryRecorder.onSkipTurnOnNotificationsClick(
+                                sequenceId = OnboardingPageUiData.Type.NOTIFICATION_PERMISSION.telemetryId,
+                                sequencePosition = "0",
+                            )
+                        },
+                    ),
+                onRecordImpressionEvent = {
+                    telemetryRecorder.onImpression(
                         sequenceId = OnboardingPageUiData.Type.NOTIFICATION_PERMISSION.telemetryId,
+                        pageType = OnboardingPageUiData.Type.NOTIFICATION_PERMISSION,
                         sequencePosition = "0",
                     )
-                    activity.components.notificationsDelegate.requestNotificationPermission()
                 },
-            ),
-            secondaryButton = Action(
-                text = "Not now",
-                onClick = {
-                    telemetryRecorder.onSkipTurnOnNotificationsClick(
-                        sequenceId = OnboardingPageUiData.Type.NOTIFICATION_PERMISSION.telemetryId,
-                        sequencePosition = "0",
-                    )
-                },
-            ),
-            onRecordImpressionEvent = {
-                telemetryRecorder.onImpression(
-                    sequenceId = OnboardingPageUiData.Type.NOTIFICATION_PERMISSION.telemetryId,
-                    pageType = OnboardingPageUiData.Type.NOTIFICATION_PERMISSION,
-                    sequencePosition = "0",
-                )
-            },
-        )
+            )
 
         val actualState = feature.getNotificationOnboardingPageState(ContinuousOnboardingStage.DAY_2)
 
@@ -341,6 +378,194 @@ class ContinuousOnboardingFeatureTest {
         assertNull(Onboarding.turnOnNotificationsCard.testGetValue())
     }
 
+    // IP Protection integration
+
+    @Test
+    fun `WHEN stage is DAY_7 AND eligibility and account become ready AND repository allows THEN navigateToIpProtection is invoked and seventh day timestamp is saved`() =
+        runTest(testDispatcher) {
+            settings.continuousOnboardingFeatureEnabled = true
+            var navigateToIpProtectionInvoked = false
+            val feature =
+                ContinuousOnboardingFeature(
+                    activity = activity,
+                    launcher = FakeActivityResultLauncher(),
+                    settings = settings,
+                    telemetryRecorder = telemetryRecorder,
+                    stageProvider = FakeContinuousOnboardingStageProvider(ContinuousOnboardingStage.DAY_7),
+                    dateTimeProvider = dateTimeProvider,
+                    navigateToSyncSignIn = {},
+                    ipProtectionOnboardingConfig =
+                        IPProtectionOnboardingConfig(
+                            store = ipProtectionStore,
+                            promptRepository = ipProtectionPromptRepository,
+                            navigateToIpProtection = { navigateToIpProtectionInvoked = true },
+                        ),
+                    ipProtectionMainDispatcher = testDispatcher,
+                )
+
+            feature.start()
+            ipProtectionStore.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
+            ipProtectionStore.dispatch(IPProtectionAction.AccountStateChanged(AccountStatus.NoAccount))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertTrue(navigateToIpProtectionInvoked)
+            assertEquals(dateTimeProvider.currentTimeMillis(), settings.seventhDayOnboardingCompletedTimestamp)
+        }
+
+    @Test
+    fun `WHEN stage is DAY_7 AND repository does not allow the prompt THEN navigateToIpProtection is not invoked`() =
+        runTest(testDispatcher) {
+            settings.continuousOnboardingFeatureEnabled = true
+            var navigateToIpProtectionInvoked = false
+            val feature =
+                ContinuousOnboardingFeature(
+                    activity = activity,
+                    launcher = FakeActivityResultLauncher(),
+                    settings = settings,
+                    telemetryRecorder = telemetryRecorder,
+                    stageProvider = FakeContinuousOnboardingStageProvider(ContinuousOnboardingStage.DAY_7),
+                    dateTimeProvider = dateTimeProvider,
+                    navigateToSyncSignIn = {},
+                    ipProtectionOnboardingConfig =
+                        IPProtectionOnboardingConfig(
+                            store = ipProtectionStore,
+                            promptRepository = FakeIPProtectionPromptRepository(canShowIPProtectionPrompt = false),
+                            navigateToIpProtection = { navigateToIpProtectionInvoked = true },
+                        ),
+                    ipProtectionMainDispatcher = testDispatcher,
+                )
+
+            feature.start()
+            ipProtectionStore.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
+            ipProtectionStore.dispatch(IPProtectionAction.AccountStateChanged(AccountStatus.NoAccount))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertFalse(navigateToIpProtectionInvoked)
+            assertEquals(-1L, settings.seventhDayOnboardingCompletedTimestamp)
+        }
+
+    @Test
+    fun `WHEN feature is stopped THEN the IP Protection binding stops observing eligibility`() =
+        runTest(testDispatcher) {
+            settings.continuousOnboardingFeatureEnabled = true
+            var navigateToIpProtectionInvoked = false
+            val feature =
+                ContinuousOnboardingFeature(
+                    activity = activity,
+                    launcher = FakeActivityResultLauncher(),
+                    settings = settings,
+                    telemetryRecorder = telemetryRecorder,
+                    stageProvider = FakeContinuousOnboardingStageProvider(ContinuousOnboardingStage.DAY_7),
+                    dateTimeProvider = dateTimeProvider,
+                    navigateToSyncSignIn = {},
+                    ipProtectionOnboardingConfig =
+                        IPProtectionOnboardingConfig(
+                            store = ipProtectionStore,
+                            promptRepository = ipProtectionPromptRepository,
+                            navigateToIpProtection = { navigateToIpProtectionInvoked = true },
+                        ),
+                    ipProtectionMainDispatcher = testDispatcher,
+                )
+
+            feature.start()
+            feature.stop()
+            ipProtectionStore.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
+            ipProtectionStore.dispatch(IPProtectionAction.AccountStateChanged(AccountStatus.NoAccount))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertFalse(navigateToIpProtectionInvoked)
+        }
+
+    @Test
+    fun `WHEN feature is stopped and started again THEN the IP Protection binding still observes eligibility`() =
+        runTest(testDispatcher) {
+            settings.continuousOnboardingFeatureEnabled = true
+            var navigateToIpProtectionInvoked = false
+            val feature =
+                ContinuousOnboardingFeature(
+                    activity = activity,
+                    launcher = FakeActivityResultLauncher(),
+                    settings = settings,
+                    telemetryRecorder = telemetryRecorder,
+                    stageProvider = FakeContinuousOnboardingStageProvider(ContinuousOnboardingStage.DAY_7),
+                    dateTimeProvider = dateTimeProvider,
+                    navigateToSyncSignIn = {},
+                    ipProtectionOnboardingConfig =
+                        IPProtectionOnboardingConfig(
+                            store = ipProtectionStore,
+                            promptRepository = ipProtectionPromptRepository,
+                            navigateToIpProtection = { navigateToIpProtectionInvoked = true },
+                        ),
+                    ipProtectionMainDispatcher = testDispatcher,
+                )
+
+            // Simulates the fragment view going through a stop/start cycle (e.g. backgrounding
+            // the app) before eligibility changes, reusing the same IP Protection binding.
+            feature.start()
+            feature.stop()
+            feature.start()
+            ipProtectionStore.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
+            ipProtectionStore.dispatch(IPProtectionAction.AccountStateChanged(AccountStatus.NoAccount))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertTrue(navigateToIpProtectionInvoked)
+            assertEquals(dateTimeProvider.currentTimeMillis(), settings.seventhDayOnboardingCompletedTimestamp)
+        }
+
+    @Test
+    fun `WHEN feature is stopped without ever starting THEN no exception is thrown`() {
+        val feature =
+            ContinuousOnboardingFeature(
+                activity = activity,
+                launcher = FakeActivityResultLauncher(),
+                settings = settings,
+                telemetryRecorder = telemetryRecorder,
+                stageProvider = stageProvider,
+                dateTimeProvider = dateTimeProvider,
+                navigateToSyncSignIn = {},
+                ipProtectionOnboardingConfig =
+                    IPProtectionOnboardingConfig(
+                        store = ipProtectionStore,
+                        promptRepository = ipProtectionPromptRepository,
+                        navigateToIpProtection = {},
+                    ),
+                ipProtectionMainDispatcher = testDispatcher,
+            )
+
+        feature.stop()
+    }
+
+    @Test
+    fun `WHEN stage is DAY_7 AND feature is disabled THEN navigateToIpProtection is not invoked`() =
+        runTest(testDispatcher) {
+            settings.continuousOnboardingFeatureEnabled = false
+            var navigateToIpProtectionInvoked = false
+            val feature =
+                ContinuousOnboardingFeature(
+                    activity = activity,
+                    launcher = FakeActivityResultLauncher(),
+                    settings = settings,
+                    telemetryRecorder = telemetryRecorder,
+                    stageProvider = FakeContinuousOnboardingStageProvider(ContinuousOnboardingStage.DAY_7),
+                    dateTimeProvider = dateTimeProvider,
+                    navigateToSyncSignIn = {},
+                    ipProtectionOnboardingConfig =
+                        IPProtectionOnboardingConfig(
+                            store = ipProtectionStore,
+                            promptRepository = ipProtectionPromptRepository,
+                            navigateToIpProtection = { navigateToIpProtectionInvoked = true },
+                        ),
+                    ipProtectionMainDispatcher = testDispatcher,
+                )
+
+            feature.start()
+            ipProtectionStore.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
+            ipProtectionStore.dispatch(IPProtectionAction.AccountStateChanged(AccountStatus.NoAccount))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertFalse(navigateToIpProtectionInvoked)
+        }
+
     // markStageCompleted
 
     @Test
@@ -349,6 +574,7 @@ class ContinuousOnboardingFeatureTest {
 
         assertEquals(dateTimeProvider.currentTimeMillis(), settings.secondDayOnboardingCompletedTimestamp)
         assertEquals(-1L, settings.thirdDayOnboardingCompletedTimestamp)
+        assertEquals(-1L, settings.fifthDayOnboardingCompletedTimestamp)
         assertEquals(-1L, settings.seventhDayOnboardingCompletedTimestamp)
     }
 
@@ -358,6 +584,17 @@ class ContinuousOnboardingFeatureTest {
 
         assertEquals(-1L, settings.secondDayOnboardingCompletedTimestamp)
         assertEquals(dateTimeProvider.currentTimeMillis(), settings.thirdDayOnboardingCompletedTimestamp)
+        assertEquals(-1L, settings.fifthDayOnboardingCompletedTimestamp)
+        assertEquals(-1L, settings.seventhDayOnboardingCompletedTimestamp)
+    }
+
+    @Test
+    fun `WHEN DAY_5 stage is completed THEN fifth day timestamp is saved`() {
+        feature.markStageCompleted(ContinuousOnboardingStage.DAY_5)
+
+        assertEquals(-1L, settings.secondDayOnboardingCompletedTimestamp)
+        assertEquals(-1L, settings.thirdDayOnboardingCompletedTimestamp)
+        assertEquals(dateTimeProvider.currentTimeMillis(), settings.fifthDayOnboardingCompletedTimestamp)
         assertEquals(-1L, settings.seventhDayOnboardingCompletedTimestamp)
     }
 
@@ -367,6 +604,7 @@ class ContinuousOnboardingFeatureTest {
 
         assertEquals(-1L, settings.secondDayOnboardingCompletedTimestamp)
         assertEquals(-1L, settings.thirdDayOnboardingCompletedTimestamp)
+        assertEquals(-1L, settings.fifthDayOnboardingCompletedTimestamp)
         assertEquals(dateTimeProvider.currentTimeMillis(), settings.seventhDayOnboardingCompletedTimestamp)
     }
 
@@ -376,6 +614,7 @@ class ContinuousOnboardingFeatureTest {
 
         assertEquals(-1L, settings.secondDayOnboardingCompletedTimestamp)
         assertEquals(-1L, settings.thirdDayOnboardingCompletedTimestamp)
+        assertEquals(-1L, settings.fifthDayOnboardingCompletedTimestamp)
         assertEquals(-1L, settings.seventhDayOnboardingCompletedTimestamp)
     }
 
@@ -422,15 +661,23 @@ class ContinuousOnboardingFeatureTest {
     fun `WHEN pendingStage is not none THEN start does not evaluate the stage`() {
         settings.continuousOnboardingFeatureEnabled = true
         val fakeStageProvider = FakeContinuousOnboardingStageProvider(ContinuousOnboardingStage.DAY_7)
-        val feature = ContinuousOnboardingFeature(
-            activity = activity,
-            launcher = FakeActivityResultLauncher(),
-            settings = settings,
-            telemetryRecorder = telemetryRecorder,
-            stageProvider = fakeStageProvider,
-            dateTimeProvider = dateTimeProvider,
-            navigateToSyncSignIn = {},
-        )
+        val feature =
+            ContinuousOnboardingFeature(
+                activity = activity,
+                launcher = FakeActivityResultLauncher(),
+                settings = settings,
+                telemetryRecorder = telemetryRecorder,
+                stageProvider = fakeStageProvider,
+                dateTimeProvider = dateTimeProvider,
+                navigateToSyncSignIn = {},
+                ipProtectionOnboardingConfig =
+                    IPProtectionOnboardingConfig(
+                        store = ipProtectionStore,
+                        promptRepository = ipProtectionPromptRepository,
+                        navigateToIpProtection = {},
+                    ),
+                ipProtectionMainDispatcher = testDispatcher,
+            )
         feature.pendingStage = ContinuousOnboardingStage.DAY_2
 
         feature.start()
@@ -442,20 +689,28 @@ class ContinuousOnboardingFeatureTest {
     fun `WHEN a continuous onboarding dialog is already showing THEN start does not evaluate the stage`() {
         settings.continuousOnboardingFeatureEnabled = true
         val fakeStageProvider = FakeContinuousOnboardingStageProvider(ContinuousOnboardingStage.DAY_7)
-        val feature = ContinuousOnboardingFeature(
-            activity = activity,
-            launcher = FakeActivityResultLauncher(),
-            settings = settings,
-            telemetryRecorder = telemetryRecorder,
-            stageProvider = fakeStageProvider,
-            dateTimeProvider = dateTimeProvider,
-            navigateToSyncSignIn = {},
-        )
+        val feature =
+            ContinuousOnboardingFeature(
+                activity = activity,
+                launcher = FakeActivityResultLauncher(),
+                settings = settings,
+                telemetryRecorder = telemetryRecorder,
+                stageProvider = fakeStageProvider,
+                dateTimeProvider = dateTimeProvider,
+                navigateToSyncSignIn = {},
+                ipProtectionOnboardingConfig =
+                    IPProtectionOnboardingConfig(
+                        store = ipProtectionStore,
+                        promptRepository = ipProtectionPromptRepository,
+                        navigateToIpProtection = {},
+                    ),
+                ipProtectionMainDispatcher = testDispatcher,
+            )
         val decorView = activity.window.decorView as ViewGroup
         decorView.addView(
             ComposeView(activity).apply {
                 tag = CONTINUOUS_ONBOARDING_DIALOG_TAG
-            },
+            }
         )
 
         feature.start()
@@ -465,13 +720,15 @@ class ContinuousOnboardingFeatureTest {
 
     class FakeActivityResultLauncher : ActivityResultLauncher<Intent>() {
         override fun launch(input: Intent, options: ActivityOptionsCompat?) = Unit
+
         override fun unregister() = Unit
+
         override val contract: ActivityResultContract<Intent, *>
             get() = throw UnsupportedOperationException("Not used in tests.")
     }
 
     class FakeContinuousOnboardingStageProvider(
-        private val stage: ContinuousOnboardingStage = ContinuousOnboardingStage.NONE,
+        private val stage: ContinuousOnboardingStage = ContinuousOnboardingStage.NONE
     ) : ContinuousOnboardingStageProvider {
         var callCount = 0
             private set

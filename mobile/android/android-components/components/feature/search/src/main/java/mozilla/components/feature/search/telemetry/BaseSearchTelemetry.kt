@@ -23,9 +23,7 @@ import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.filterChanged
 import org.json.JSONObject
 
-/**
- * Main configuration and functionality for tracking ads / web searches with specific providers.
- */
+/** Main configuration and functionality for tracking ads / web searches with specific providers. */
 abstract class BaseSearchTelemetry(private val mainDispatcher: CoroutineDispatcher) {
     var providerList: List<SearchProviderModel>? = emptyList()
 
@@ -35,16 +33,15 @@ abstract class BaseSearchTelemetry(private val mainDispatcher: CoroutineDispatch
     }
 
     /**
-     * Finds provider among list of providers that matches regex in url.
-     * This may additionally return null if the provider list is still being initialized.
+     * Finds provider among list of providers that matches regex in url. This may additionally return null if the
+     * provider list is still being initialized.
      */
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
-    internal fun getProviderForUrl(url: String): SearchProviderModel? =
-        providerList?.find { provider -> provider.searchPageRegexp.containsMatchIn(url) }
+    internal fun getProviderForUrl(url: String): SearchProviderModel? = providerList?.find { provider ->
+        provider.searchPageRegexp.containsMatchIn(url)
+    }
 
-    /**
-     * Install the web extensions that this functionality is based on and start listening for updates.
-     */
+    /** Install the web extensions that this functionality is based on and start listening for updates. */
     abstract suspend fun install(
         engine: Engine,
         store: BrowserStore,
@@ -77,12 +74,13 @@ abstract class BaseSearchTelemetry(private val mainDispatcher: CoroutineDispatch
         metadata: Map<String, Any>? = null,
     ) {
         Fact(
-            Component.FEATURE_SEARCH,
-            INTERACTION,
-            event,
-            value,
-            metadata,
-        ).collect()
+                Component.FEATURE_SEARCH,
+                INTERACTION,
+                event,
+                value,
+                metadata,
+            )
+            .collect()
     }
 
     protected sealed class Action
@@ -94,7 +92,8 @@ abstract class BaseSearchTelemetry(private val mainDispatcher: CoroutineDispatch
     ) {
         // Whenever we see a new EngineSession in the store then we register our content message
         // handler if it has not been added yet.
-        flow.map { it.tabs }
+        flow
+            .map { it.tabs }
             .filterChanged { it.engineState.engineSession }
             .collect { state ->
                 val engineSession = state.engineState.engineSession ?: return@collect
@@ -110,11 +109,8 @@ abstract class BaseSearchTelemetry(private val mainDispatcher: CoroutineDispatch
             }
     }
 
-    /**
-     * This method is used to process any valid json message coming from a web-extension.
-     */
-    @VisibleForTesting
-    internal abstract fun processMessage(message: JSONObject)
+    /** This method is used to process any valid json message coming from a web-extension. */
+    @VisibleForTesting internal abstract fun processMessage(message: JSONObject)
 
     @VisibleForTesting
     internal inner class SearchTelemetryMessageHandler : MessageHandler {

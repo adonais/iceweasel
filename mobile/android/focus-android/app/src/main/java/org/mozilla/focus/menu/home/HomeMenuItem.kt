@@ -4,17 +4,11 @@
 
 package org.mozilla.focus.menu.home
 
-/**
- * Represents the items in the home screen menu.
- */
+/** Represents the items in the home screen menu. */
 sealed class HomeMenuItem {
-    /**
-     * Menu item for the help screen.
-     */
+    /** Menu item for the help screen. */
     object Help : HomeMenuItem()
 
-    /**
-     * Menu item for the settings screen.
-     */
+    /** Menu item for the settings screen. */
     object Settings : HomeMenuItem()
 }

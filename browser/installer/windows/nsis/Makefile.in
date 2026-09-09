@@ -22,6 +22,7 @@ TEST_STUB_INSTALLER_DEPS := \
 	telemetry.nsh \
 	test_telemetry.nsh \
 	defines.nsi.in \
+	desktop_launcher_helpers.nsh \
 	$(NULL)
 
 test_stub_installer:

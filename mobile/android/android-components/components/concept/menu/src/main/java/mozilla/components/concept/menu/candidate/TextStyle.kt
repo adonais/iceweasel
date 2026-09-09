@@ -23,24 +23,20 @@ data class TextStyle(
     @param:TextAlignment val textAlignment: Int = View.TEXT_ALIGNMENT_INHERIT,
 )
 
-/**
- * Enum for [Typeface] values.
- */
-@IntDef(value = [Typeface.NORMAL, Typeface.BOLD, Typeface.ITALIC, Typeface.BOLD_ITALIC])
-annotation class TypefaceStyle
+/** Enum for [Typeface] values. */
+@IntDef(value = [Typeface.NORMAL, Typeface.BOLD, Typeface.ITALIC, Typeface.BOLD_ITALIC]) annotation class TypefaceStyle
 
-/**
- * Enum for text alignment values.
- */
+/** Enum for text alignment values. */
 @IntDef(
-    value = [
-        View.TEXT_ALIGNMENT_GRAVITY,
-        View.TEXT_ALIGNMENT_INHERIT,
-        View.TEXT_ALIGNMENT_CENTER,
-        View.TEXT_ALIGNMENT_TEXT_START,
-        View.TEXT_ALIGNMENT_TEXT_END,
-        View.TEXT_ALIGNMENT_VIEW_START,
-        View.TEXT_ALIGNMENT_VIEW_END,
-    ],
+    value =
+        [
+            View.TEXT_ALIGNMENT_GRAVITY,
+            View.TEXT_ALIGNMENT_INHERIT,
+            View.TEXT_ALIGNMENT_CENTER,
+            View.TEXT_ALIGNMENT_TEXT_START,
+            View.TEXT_ALIGNMENT_TEXT_END,
+            View.TEXT_ALIGNMENT_VIEW_START,
+            View.TEXT_ALIGNMENT_VIEW_END,
+        ]
 )
 annotation class TextAlignment

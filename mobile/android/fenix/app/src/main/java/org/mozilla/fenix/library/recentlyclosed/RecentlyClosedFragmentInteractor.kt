@@ -6,13 +6,9 @@ package org.mozilla.fenix.library.recentlyclosed
 
 import mozilla.components.browser.state.state.recover.TabState
 
-/**
- * Interactor for the recently closed screen
- * Provides implementations for the RecentlyClosedInteractor
- */
-class RecentlyClosedFragmentInteractor(
-    private val recentlyClosedController: RecentlyClosedController,
-) : RecentlyClosedInteractor {
+/** Interactor for the recently closed screen Provides implementations for the RecentlyClosedInteractor */
+class RecentlyClosedFragmentInteractor(private val recentlyClosedController: RecentlyClosedController) :
+    RecentlyClosedInteractor {
 
     override fun onDelete(tab: TabState) {
         recentlyClosedController.handleDelete(tab)

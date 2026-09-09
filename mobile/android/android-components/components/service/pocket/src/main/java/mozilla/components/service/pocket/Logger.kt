@@ -6,7 +6,5 @@ package mozilla.components.service.pocket
 
 import mozilla.components.support.base.log.logger.Logger
 
-/**
- * Internal logger for the ":components:service-pocket" module.
- */
+/** Internal logger for the ":components:service-pocket" module. */
 internal val logger = Logger("service-pocket")

@@ -6,11 +6,11 @@
 
 :::{note}
 
-- This page is part of the {ref}`mozilla_projects_nss_ssl_functions_old_ssl_reference` that
+- This page is part of the {ref}`mozilla-projects-nss-ssl-functions-old-ssl-reference` that
   we are migrating into the format described in the [MDN Style
   Guide](https://developer.mozilla.org/en-US/docs/Project:MDC_style_guide). If you are
   inclined to help with this migration, your help would be very much appreciated.
-- Upgraded documentation may be found in the {ref}`mozilla_projects_nss_reference`
+- Upgraded documentation may be found in the {ref}`mozilla-projects-nss-reference`
 :::
 
 ```{rubric} Overview of an SSL Application
@@ -92,7 +92,7 @@ following:
 
 (initializing-caches)=
 
-### [Initializing Caches](#initializing_caches)
+### Initializing Caches
 
 :::{container}
 SSL peers frequently reconnect after a relatively short time has passed. To avoid the overhead of
@@ -305,7 +305,7 @@ then call `SSL_ForceHandshake` to drive the handshake to completion.
 
 (functions-used-by-callbacks)=
 
-## [Functions Used by Callbacks](#functions_used_by_callbacks)
+## Functions Used by Callbacks
 
 :::{container}
 An SSL application typically provides one or more callback functions that are called by the SSL

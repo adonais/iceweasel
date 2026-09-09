@@ -344,7 +344,7 @@ class WaylandSurface final {
       const WaylandSurfaceLock& aProofOfLock,
       mozilla::gfx::YUVColorSpace aColorSpace,
       gfx::TransferFunction aTransferFunction,
-      const mozilla::gfx::HDRMetadata& aHDRMetadata);
+      const mozilla::gfx::HDRMetadata& aHDRMetadata, GdkWindow* aGdkWindow);
   void SetColorRepresentationLocked(const WaylandSurfaceLock& aProofOfLock,
                                     mozilla::gfx::YUVColorSpace aColorSpace,
                                     bool aFullRange,
@@ -558,6 +558,9 @@ class WaylandSurface final {
   WUniquePtr<wp_color_management_surface_v1> mColorSurface;
   WUniquePtr<wp_color_representation_surface_v1> mColorRepresentationSurface;
   WUniquePtr<wp_image_description_v1> mImageDescription;
+
+  static void SetLuminances(wp_image_description_creator_params_v1* aParams,
+                            float minLum, float maxLum, float refLum);
 
   static void SetContentLightLevel(
       wp_image_description_creator_params_v1* aParams,

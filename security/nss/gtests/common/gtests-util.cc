@@ -10,7 +10,7 @@
 #define GTEST_HAS_RTTI 0
 #include "gtest/gtest.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
   if (SECOID_Init() != SECSuccess) {

@@ -109,7 +109,6 @@
 - {ref}`Memory-Mapped_I.2FO_Functions`
 - {ref}`Anonymous_Pipe_Function`
 - {ref}`Polling_Functions`
-- {ref}`Pollable_Events`
 - {ref}`Manipulating_Layers`
 
 ## Network Addresses
@@ -246,11 +245,6 @@
 ## IPC Semaphores
 
 - {ref}`IPC_Semaphore_Functions`
-
-## Thread Pools
-
-- {ref}`Thread_Pool_Types`
-- {ref}`Thread_Pool_Functions`
 
 ## Random Number Generator
 

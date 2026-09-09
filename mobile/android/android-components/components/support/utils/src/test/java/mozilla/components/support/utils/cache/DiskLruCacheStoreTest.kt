@@ -9,6 +9,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jakewharton.disklrucache.DiskLruCache
 import com.jakewharton.disklrucache.DiskLruCache.Editor
 import com.jakewharton.disklrucache.DiskLruCache.Snapshot
+import java.io.File
+import java.io.IOException
+import java.io.InputStream
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
@@ -22,9 +25,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.`when`
-import java.io.File
-import java.io.IOException
-import java.io.InputStream
 
 @RunWith(AndroidJUnit4::class)
 class DiskLruCacheStoreTest {
@@ -53,7 +53,7 @@ class DiskLruCacheStoreTest {
         assertTrue(
             store.write(testContext, "key") { stream ->
                 stream.write("bytes".toByteArray())
-            },
+            }
         )
 
         assertEquals("bytes", String(store.readBytes(testContext, "key")!!))
@@ -123,9 +123,10 @@ class DiskLruCacheStoreTest {
 
     @Test
     fun `write returns false when cache cannot be opened`() {
-        val nonDirectoryFile = File(testContext.cacheDir, BLOCKING_FILE_NAME).apply {
-            writeText("not a directory")
-        }
+        val nonDirectoryFile =
+            File(testContext.cacheDir, BLOCKING_FILE_NAME).apply {
+                writeText("not a directory")
+            }
         val store = createStore {
             File(nonDirectoryFile, STORE_PARENT)
         }
@@ -183,20 +184,20 @@ class DiskLruCacheStoreTest {
         assertNull(store.cache)
     }
 
-    private fun createStore(
-        directoryProvider: (Context) -> File = { File(it.noBackupFilesDir, STORE_PARENT) },
-    ) = DiskLruCacheStore(
-        logger = Logger("DiskLruCacheStoreTest"),
-        version = 1,
-        maxSizeBytes = 1024L * 1024L,
-        directoryProvider = directoryProvider,
-    )
+    private fun createStore(directoryProvider: (Context) -> File = { File(it.noBackupFilesDir, STORE_PARENT) }) =
+        DiskLruCacheStore(
+            logger = Logger("DiskLruCacheStoreTest"),
+            version = 1,
+            maxSizeBytes = 1024L * 1024L,
+            directoryProvider = directoryProvider,
+        )
 
-    private fun throwingInputStream() = object : InputStream() {
-        override fun read(): Int {
-            throw IOException("test")
+    private fun throwingInputStream() =
+        object : InputStream() {
+            override fun read(): Int {
+                throw IOException("test")
+            }
         }
-    }
 
     companion object {
         private const val BLOCKING_FILE_NAME = "disk_lru_cache_file"

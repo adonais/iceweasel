@@ -21,7 +21,27 @@ DIRS += [
     "/third_party/angle/xxhash_gn"
 ]
 
-if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
+if CONFIG["OS_TARGET"] == "WINNT":
+
+    DIRS += [
+        "/third_party/angle/angle_d3d_format_tables_gn",
+        "/third_party/angle/angle_frame_capture_mock_gn",
+        "/third_party/angle/angle_gpu_info_util_gn",
+        "/third_party/angle/angle_image_util_gn",
+        "/third_party/angle/angle_image_util_headers_gn",
+        "/third_party/angle/libANGLE_gn",
+        "/third_party/angle/libANGLE_headers_gn",
+        "/third_party/angle/libANGLE_no_vulkan_gn",
+        "/third_party/angle/libEGL_egl_loader_gn",
+        "/third_party/angle/libEGL_gn",
+        "/third_party/angle/libGLESv2_gn",
+        "/third_party/angle/src/libANGLE/renderer/d3d/angle_d3d11_backend_gn",
+        "/third_party/angle/src/libANGLE/renderer/d3d/angle_d3d_shared_gn",
+        "/third_party/angle/third_party/zlib/google/compression_utils_portable_gn",
+        "/third_party/angle/third_party/zlib/zlib_gn"
+    ]
+
+if CONFIG["OS_TARGET"] == "Darwin" and CONFIG["TARGET_OS"] == "OSX":
 
     DIRS += [
         "/third_party/angle/angle_frame_capture_mock_gn",
@@ -39,34 +59,13 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
         "/third_party/angle/third_party/zlib/zlib_gn"
     ]
 
-if CONFIG["OS_TARGET"] == "WINNT":
-
-    DIRS += [
-        "/third_party/angle/angle_d3d_format_tables_gn",
-        "/third_party/angle/angle_frame_capture_mock_gn",
-        "/third_party/angle/angle_gpu_info_util_gn",
-        "/third_party/angle/angle_image_util_gn",
-        "/third_party/angle/angle_image_util_headers_gn",
-        "/third_party/angle/libANGLE_gn",
-        "/third_party/angle/libANGLE_headers_gn",
-        "/third_party/angle/libANGLE_no_vulkan_gn",
-        "/third_party/angle/libEGL_egl_loader_gn",
-        "/third_party/angle/libEGL_gn",
-        "/third_party/angle/libGLESv2_gn",
-        "/third_party/angle/src/libANGLE/renderer/d3d/angle_d3d11_backend_gn",
-        "/third_party/angle/src/libANGLE/renderer/d3d/angle_d3d9_backend_gn",
-        "/third_party/angle/src/libANGLE/renderer/d3d/angle_d3d_shared_gn",
-        "/third_party/angle/third_party/zlib/google/compression_utils_portable_gn",
-        "/third_party/angle/third_party/zlib/zlib_gn"
-    ]
-
-if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
+if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "WINNT":
 
     DIRS += [
         "/third_party/angle/angle_gl_enum_utils_gn"
     ]
 
-if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "WINNT":
+if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "Darwin" and CONFIG["TARGET_OS"] == "OSX":
 
     DIRS += [
         "/third_party/angle/angle_gl_enum_utils_gn"

@@ -49,8 +49,12 @@ class DrawableMenuIconViewHoldersTest {
         doReturn(testContext).`when`(parent).context
         doReturn(testContext.resources).`when`(parent).resources
         doReturn(imageView).`when`(layoutInflater).inflate(DrawableMenuIconViewHolder.layoutResource, parent, false)
-        doReturn(imageView).`when`(layoutInflater).inflate(AsyncDrawableMenuIconViewHolder.layoutResource, parent, false)
-        doReturn(imageButton).`when`(layoutInflater).inflate(DrawableButtonMenuIconViewHolder.layoutResource, parent, false)
+        doReturn(imageView)
+            .`when`(layoutInflater)
+            .inflate(AsyncDrawableMenuIconViewHolder.layoutResource, parent, false)
+        doReturn(imageButton)
+            .`when`(layoutInflater)
+            .inflate(DrawableButtonMenuIconViewHolder.layoutResource, parent, false)
         doReturn(imageView).`when`(imageView).findViewById<TextView>(R.id.icon)
         doReturn(imageButton).`when`(imageButton).findViewById<TextView>(R.id.icon)
     }
@@ -159,9 +163,10 @@ class DrawableMenuIconViewHoldersTest {
         var dismissed = false
         var clicked = false
 
-        val holder = DrawableButtonMenuIconViewHolder(parent, layoutInflater, Side.START) {
-            dismissed = true
-        }
+        val holder =
+            DrawableButtonMenuIconViewHolder(parent, layoutInflater, Side.START) {
+                dismissed = true
+            }
 
         holder.onClick(imageButton)
         assertTrue(dismissed)

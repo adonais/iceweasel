@@ -48,99 +48,71 @@ import mozilla.components.support.utils.Browsers
 import mozilla.components.support.utils.DownloadFileUtils
 import mozilla.components.support.utils.ext.packageManagerCompatHelper
 
-/**
- * The name of the file to be downloaded.
- */
-@JvmInline
-value class Filename(val value: String)
+/** The name of the file to be downloaded. */
+@JvmInline value class Filename(val value: String)
+
+/** Represents the current state of a download being processed. */
+@JvmInline value class CurrentDownloadState(val value: DownloadState)
 
 /**
- * Represents the current state of a download being processed.
+ * The name of a file that was already downloaded with the same ETag. The value will be `null` if no such file exists.
  */
-@JvmInline
-value class CurrentDownloadState(val value: DownloadState)
+@JvmInline value class FileNameOfDuplicateIfAlreadyDownloaded(val value: String?)
 
 /**
- * The name of a file that was already downloaded with the same ETag.
- * The value will be `null` if no such file exists.
+ * The size of the file to be downloaded expressed as the number of `bytes`. The value will be `0` if the size is
+ * unknown.
  */
-@JvmInline
-value class FileNameOfDuplicateIfAlreadyDownloaded(val value: String?)
+@JvmInline value class ContentSize(val value: Long)
+
+/** The list of all applications that can perform a download, including this application. */
+@JvmInline value class ThirdPartyDownloaderApps(val value: List<DownloaderApp>)
+
+/** Callback for when the user picked a certain application with which to download the current file. */
+@JvmInline value class ThirdPartyDownloaderAppChosenCallback(val value: (DownloaderApp) -> Unit)
+
+/** Callback for when the positive button of a download dialog was tapped. */
+@JvmInline value class PositiveActionCallback(val value: (DownloadState?) -> Unit)
+
+/** Callback for when the negative button of a download dialog was tapped. */
+@JvmInline value class NegativeActionCallback(val value: () -> Unit)
+
+/** Callback for when the open file button was tapped. */
+@JvmInline value class OpenFileCallback(val value: () -> Unit)
 
 /**
- * The size of the file to be downloaded expressed as the number of `bytes`.
- * The value will be `0` if the size is unknown.
- */
-@JvmInline
-value class ContentSize(val value: Long)
-
-/**
- * The list of all applications that can perform a download, including this application.
- */
-@JvmInline
-value class ThirdPartyDownloaderApps(val value: List<DownloaderApp>)
-
-/**
- * Callback for when the user picked a certain application with which to download the current file.
- */
-@JvmInline
-value class ThirdPartyDownloaderAppChosenCallback(val value: (DownloaderApp) -> Unit)
-
-/**
- * Callback for when the positive button of a download dialog was tapped.
- */
-@JvmInline
-value class PositiveActionCallback(val value: (DownloadState?) -> Unit)
-
-/**
- * Callback for when the negative button of a download dialog was tapped.
- */
-@JvmInline
-value class NegativeActionCallback(val value: () -> Unit)
-
-/**
- * Callback for when the open file button was tapped.
- */
-@JvmInline
-value class OpenFileCallback(val value: () -> Unit)
-
-/**
- * Feature implementation to provide download functionality for the selected
- * session. The feature will subscribe to the selected session and listen
- * for downloads.
+ * Feature implementation to provide download functionality for the selected session. The feature will subscribe to the
+ * selected session and listen for downloads.
  *
  * @property applicationContext a reference to the application context.
- * @property onNeedToRequestPermissions a callback invoked when permissions
- * need to be requested before a download can be performed. Once the request
- * is completed, [onPermissionsResult] needs to be invoked.
+ * @property onNeedToRequestPermissions a callback invoked when permissions need to be requested before a download can
+ *   be performed. Once the request is completed, [onPermissionsResult] needs to be invoked.
  * @property onDownloadStopped a callback invoked when a download is paused or completed.
- * @property downloadManager a reference to the [DownloadManager] which is
- * responsible for performing the downloads.
+ * @property downloadManager a reference to the [DownloadManager] which is responsible for performing the downloads.
  * @property store a reference to the application's [BrowserStore].
  * @property useCases [DownloadsUseCases] instance for consuming processed downloads.
  * @property fileSystemHelper A helper for file system operations.
- * @property fragmentManager a reference to a [FragmentManager]. If a fragment
- * manager is provided, a dialog will be shown before every download.
+ * @property fragmentManager a reference to a [FragmentManager]. If a fragment manager is provided, a dialog will be
+ *   shown before every download.
  * @property promptsStyling styling properties for the dialog.
  * @property onDownloadStartedListener a callback invoked when a download is started.
- * @property dismissCustomFirstPartyDownloadDialog A callback invoked when the custom first party
- * download dialog should be dismissed.
- * @property shouldForwardToThirdParties Indicates if downloads should be forward to third party apps,
- * if there are multiple apps a chooser dialog will shown.
- * @property customFirstPartyDownloadDialog An optional delegate for showing a dialog for a download
- * that will be processed by the current application.
- * @property customThirdPartyDownloadDialog An optional delegate for showing a dialog for a download
- * that can be processed by multiple installed applications including the current one.
+ * @property dismissCustomFirstPartyDownloadDialog A callback invoked when the custom first party download dialog should
+ *   be dismissed.
+ * @property shouldForwardToThirdParties Indicates if downloads should be forward to third party apps, if there are
+ *   multiple apps a chooser dialog will shown.
+ * @property customFirstPartyDownloadDialog An optional delegate for showing a dialog for a download that will be
+ *   processed by the current application.
+ * @property customThirdPartyDownloadDialog An optional delegate for showing a dialog for a download that can be
+ *   processed by multiple installed applications including the current one.
  * @property fileHasNotEnoughStorageDialog A callback invoked when there is not enough storage space.
  */
 @Suppress("LargeClass")
 class DownloadsFeature(
     private val applicationContext: Context,
     private val store: BrowserStore,
-    @get:VisibleForTesting(otherwise = PRIVATE)
-    internal val useCases: DownloadsUseCases,
+    @get:VisibleForTesting(otherwise = PRIVATE) internal val useCases: DownloadsUseCases,
     private val fileSystemHelper: FileSystemHelper = DefaultFileSystemHelper(),
-    override var onNeedToRequestPermissions: OnNeedToRequestPermissions = { },
+    override var onNeedToRequestPermissions: OnNeedToRequestPermissions = {},
     onDownloadStopped: onDownloadStopped = noop,
     private val downloadFileUtils: DownloadFileUtils,
     private val downloadManager: DownloadManager = AndroidDownloadManager(applicationContext, store, downloadFileUtils),
@@ -150,18 +122,18 @@ class DownloadsFeature(
     private val onDownloadStartedListener: ((String) -> Unit) = {},
     private val dismissCustomFirstPartyDownloadDialog: () -> Unit = {},
     private val shouldForwardToThirdParties: () -> Boolean = { false },
-    private val customFirstPartyDownloadDialog: (
-        (
-        CurrentDownloadState,
-        FileNameOfDuplicateIfAlreadyDownloaded,
-        PositiveActionCallback,
-        NegativeActionCallback,
-        OpenFileCallback,
-    ) -> Unit
-    )? = null,
-    private val customThirdPartyDownloadDialog: (
-        (ThirdPartyDownloaderApps, ThirdPartyDownloaderAppChosenCallback, NegativeActionCallback) -> Unit
-    )? = null,
+    private val customFirstPartyDownloadDialog:
+        ((
+            CurrentDownloadState,
+            FileNameOfDuplicateIfAlreadyDownloaded,
+            PositiveActionCallback,
+            NegativeActionCallback,
+            OpenFileCallback,
+        ) -> Unit)? =
+        null,
+    private val customThirdPartyDownloadDialog:
+        ((ThirdPartyDownloaderApps, ThirdPartyDownloaderAppChosenCallback, NegativeActionCallback) -> Unit)? =
+        null,
     private val fileHasNotEnoughStorageDialog: ((Filename) -> Unit) = {},
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : LifecycleAwareFeature, PermissionsFeature {
@@ -170,7 +142,9 @@ class DownloadsFeature(
 
     var onDownloadStopped: onDownloadStopped
         get() = downloadManager.onDownloadStopped
-        set(value) { downloadManager.onDownloadStopped = value }
+        set(value) {
+            downloadManager.onDownloadStopped = value
+        }
 
     init {
         this.onDownloadStopped = onDownloadStopped
@@ -178,76 +152,68 @@ class DownloadsFeature(
 
     private var scope: CoroutineScope? = null
 
-    @VisibleForTesting
-    internal var dismissPromptScope: CoroutineScope? = null
+    @VisibleForTesting internal var dismissPromptScope: CoroutineScope? = null
 
-    @VisibleForTesting
-    internal var previousTab: SessionState? = null
+    @VisibleForTesting internal var previousTab: SessionState? = null
 
-    /**
-     * Starts observing downloads on the selected session and sends them to the [DownloadManager]
-     * to be processed.
-     */
+    /** Starts observing downloads on the selected session and sends them to the [DownloadManager] to be processed. */
     override fun start() {
         downloadManager.registerListeners()
         // Dismiss the previous prompts when the user navigates to another site.
         // This prevents prompts from the previous page from covering content.
-        dismissPromptScope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.mapNotNull { state -> state.findTabOrCustomTabOrSelectedTab(tabId) }
-                .distinctUntilChangedBy { it.content.url }
-                .collect {
-                    val currentHost = previousTab?.content?.url
-                    val newHost = it.content.url
+        dismissPromptScope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .mapNotNull { state -> state.findTabOrCustomTabOrSelectedTab(tabId) }
+                    .distinctUntilChangedBy { it.content.url }
+                    .collect {
+                        val currentHost = previousTab?.content?.url
+                        val newHost = it.content.url
 
-                    // The user is navigating to another site
-                    if (currentHost?.isSameOriginAs(newHost) == false) {
-                        previousTab?.let { tab ->
-                            // We have an old download request.
-                            tab.content.download?.let { download ->
-                                useCases.cancelDownloadRequest.invoke(tab.id, download.id)
-                                dismissAllDownloadDialogs()
-                                previousTab = null
+                        // The user is navigating to another site
+                        if (currentHost?.isSameOriginAs(newHost) == false) {
+                            previousTab?.let { tab ->
+                                // We have an old download request.
+                                tab.content.download?.let { download ->
+                                    useCases.cancelDownloadRequest.invoke(tab.id, download.id)
+                                    dismissAllDownloadDialogs()
+                                    previousTab = null
+                                }
                             }
                         }
                     }
-                }
-        }
+            }
 
-        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.mapNotNull { state -> state.findTabOrCustomTabOrSelectedTab(tabId) }
-                .distinctUntilChangedBy { it.content.download }
-                .collect { state ->
-                    state.content.download?.let { downloadState ->
-                        previousTab = state
-                        val updatedDownloadState = downloadState.copy(
-                            directoryPath = downloadFileUtils.currentDownloadLocation,
-                        )
-                        processDownload(state, updatedDownloadState)
+        scope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .mapNotNull { state -> state.findTabOrCustomTabOrSelectedTab(tabId) }
+                    .distinctUntilChangedBy { it.content.download }
+                    .collect { state ->
+                        state.content.download?.let { downloadState ->
+                            previousTab = state
+                            val updatedDownloadState =
+                                downloadState.copy(directoryPath = downloadFileUtils.currentDownloadLocation)
+                            processDownload(state, updatedDownloadState)
+                        }
                     }
-                }
-        }
+            }
     }
 
-    /**
-     * Calls the tryAgain function of the corresponding [DownloadManager]
-     */
+    /** Calls the tryAgain function of the corresponding [DownloadManager] */
     @Suppress("Unused")
     fun tryAgain(id: String) {
         downloadManager.tryAgain(id)
     }
 
-    /**
-     * Stops observing downloads on the selected session.
-     */
+    /** Stops observing downloads on the selected session. */
     override fun stop() {
         scope?.cancel()
         dismissPromptScope?.cancel()
         downloadManager.unregisterListeners()
     }
 
-    /**
-     * Notifies the [DownloadManager] that a new download must be processed.
-     */
+    /** Notifies the [DownloadManager] that a new download must be processed. */
     @VisibleForTesting
     internal fun processDownload(tab: SessionState, download: DownloadState): Boolean {
         val apps = getDownloaderApps(applicationContext, download)
@@ -257,15 +223,16 @@ class DownloadsFeature(
         return if (shouldShowAppDownloaderDialog) {
             when (customThirdPartyDownloadDialog) {
                 null -> showAppDownloaderDialog(tab, download, apps)
-                else -> customThirdPartyDownloadDialog.invoke(
-                    ThirdPartyDownloaderApps(apps),
-                    ThirdPartyDownloaderAppChosenCallback {
-                        onDownloaderAppSelected(it, tab, download)
-                    },
-                    NegativeActionCallback {
-                        useCases.cancelDownloadRequest.invoke(tab.id, download.id)
-                    },
-                )
+                else ->
+                    customThirdPartyDownloadDialog.invoke(
+                        ThirdPartyDownloaderApps(apps),
+                        ThirdPartyDownloaderAppChosenCallback {
+                            onDownloaderAppSelected(it, tab, download)
+                        },
+                        NegativeActionCallback {
+                            useCases.cancelDownloadRequest.invoke(tab.id, download.id)
+                        },
+                    )
             }
 
             false
@@ -279,15 +246,15 @@ class DownloadsFeature(
                                 download.copy(
                                     fileName = download.getRealFilenameOrGuessed(downloadFileUtils),
                                     contentLength = download.contentLength ?: 0,
-                                ),
+                                )
                             ),
                             FileNameOfDuplicateIfAlreadyDownloaded(downloadWithSameEtag?.fileName),
                             PositiveActionCallback { downloadState ->
                                 downloadState?.let {
-                                startDownload(it)
-                                useCases.consumeDownload.invoke(tab.id, it.id)
-                            }
-                                                   },
+                                    startDownload(it)
+                                    useCases.consumeDownload.invoke(tab.id, it.id)
+                                }
+                            },
                             NegativeActionCallback {
                                 useCases.cancelDownloadRequest.invoke(tab.id, download.id)
                             },
@@ -324,9 +291,7 @@ class DownloadsFeature(
 
     @VisibleForTesting
     internal fun findDownloadWithSameEtag(download: DownloadState): DownloadState? =
-        store.state
-            .downloads
-            .values
+        store.state.downloads.values
             .filter {
                 it.url == download.url &&
                     it.status == DownloadState.Status.COMPLETED &&
@@ -343,9 +308,7 @@ class DownloadsFeature(
     internal fun startDownload(download: DownloadState): Boolean {
         fileSystemHelper.createDirectoryIfNotExists(download.directoryPath)
         if (isDownloadBiggerThanAvailableSpace(download)) {
-            fileHasNotEnoughStorageDialog.invoke(
-                Filename(download.getRealFilenameOrGuessed(downloadFileUtils)),
-            )
+            fileHasNotEnoughStorageDialog.invoke(Filename(download.getRealFilenameOrGuessed(downloadFileUtils)))
             download.sessionId?.let { useCases.cancelDownloadRequest.invoke(it, download.id) }
             return false
         }
@@ -361,8 +324,8 @@ class DownloadsFeature(
     }
 
     /**
-     * Notifies the feature that the permissions request was completed. It will then
-     * either trigger or clear the pending download.
+     * Notifies the feature that the permissions request was completed. It will then either trigger or clear the pending
+     * download.
      */
     override fun onPermissionsResult(permissions: Array<String>, grantResults: IntArray) {
         if (permissions.isEmpty()) {
@@ -378,9 +341,7 @@ class DownloadsFeature(
                     startDownload(download)
                     useCases.consumeDownload(tab.id, download.id)
                 } else {
-                    val updatedDownloadState = download.copy(
-                        directoryPath = downloadFileUtils.currentDownloadLocation,
-                    )
+                    val updatedDownloadState = download.copy(directoryPath = downloadFileUtils.currentDownloadLocation)
                     processDownload(tab, updatedDownloadState)
                 }
             } else {
@@ -393,13 +354,14 @@ class DownloadsFeature(
     @VisibleForTesting(otherwise = PRIVATE)
     internal fun showDownloadNotSupportedError() {
         Toast.makeText(
-            applicationContext,
-            applicationContext.getString(
-                R.string.mozac_feature_downloads_file_not_supported2,
-                applicationContext.appName,
-            ),
-            Toast.LENGTH_LONG,
-        ).show()
+                applicationContext,
+                applicationContext.getString(
+                    R.string.mozac_feature_downloads_file_not_supported2,
+                    applicationContext.appName,
+                ),
+                Toast.LENGTH_LONG,
+            )
+            .show()
     }
 
     internal fun showDownloadDialog(
@@ -428,9 +390,8 @@ class DownloadsFeature(
     }
 
     private fun getDownloadDialog(): DownloadDialogFragment {
-        return findPreviousDownloadDialogFragment() ?: SimpleDownloadDialogFragment.newInstance(
-            promptsStyling = promptsStyling,
-        )
+        return findPreviousDownloadDialogFragment()
+            ?: SimpleDownloadDialogFragment.newInstance(promptsStyling = promptsStyling)
     }
 
     @VisibleForTesting
@@ -483,21 +444,23 @@ class DownloadsFeature(
             try {
                 applicationContext.startActivity(app.toIntent())
             } catch (error: ActivityNotFoundException) {
-                val errorMessage = applicationContext.getString(
-                    R.string.mozac_feature_downloads_unable_to_open_third_party_app,
-                    app.name,
-                )
+                val errorMessage =
+                    applicationContext.getString(
+                        R.string.mozac_feature_downloads_unable_to_open_third_party_app,
+                        app.name,
+                    )
                 Toast.makeText(applicationContext, errorMessage, Toast.LENGTH_SHORT).show()
             }
             useCases.consumeDownload(tab.id, download.id)
         }
     }
 
-    private fun getAppDownloaderDialog() = findPreviousAppDownloaderDialogFragment()
-        ?: DownloadAppChooserDialog.newInstance(
-            promptsStyling?.gravity,
-            promptsStyling?.shouldWidthMatchParent,
-        )
+    private fun getAppDownloaderDialog() =
+        findPreviousAppDownloaderDialogFragment()
+            ?: DownloadAppChooserDialog.newInstance(
+                promptsStyling?.gravity,
+                promptsStyling?.shouldWidthMatchParent,
+            )
 
     @VisibleForTesting
     internal fun isAlreadyAppDownloaderDialog(): Boolean {
@@ -523,19 +486,20 @@ class DownloadsFeature(
         block(Pair(state, download))
     }
 
-    /**
-     * Find all apps that can perform a download, including this app.
-     */
+    /** Find all apps that can perform a download, including this app. */
     @VisibleForTesting
     internal fun getDownloaderApps(context: Context, download: DownloadState): List<DownloaderApp> {
         val packageManager = context.packageManagerCompatHelper
 
-        val browsers = Browsers.findResolvers(context, packageManager, includeThisApp = true)
-            .associateBy { it.activityInfo.identifier }
+        val browsers =
+            Browsers.findResolvers(context, packageManager, includeThisApp = true).associateBy {
+                it.activityInfo.identifier
+            }
 
-        val thisApp = browsers.values
-            .firstOrNull { it.activityInfo.packageName == context.packageName }
-            ?.toDownloaderApp(context, download)
+        val thisApp =
+            browsers.values
+                .firstOrNull { it.activityInfo.packageName == context.packageName }
+                ?.toDownloaderApp(context, download)
 
         // Check for data URL that can cause a TransactionTooLargeException when querying for apps
         // See https://github.com/mozilla-mobile/android-components/issues/9665
@@ -543,15 +507,17 @@ class DownloadsFeature(
             return listOfNotNull(thisApp)
         }
 
-        val apps = Browsers.findResolvers(
-            context,
-            packageManager,
-            includeThisApp = false,
-            url = download.url,
-            contentType = download.contentType,
-        )
+        val apps =
+            Browsers.findResolvers(
+                context,
+                packageManager,
+                includeThisApp = false,
+                url = download.url,
+                contentType = download.contentType,
+            )
         // Remove browsers and returns only the apps that can perform a download plus this app.
-        return apps.filter { !browsers.contains(it.activityInfo.identifier) }
+        return apps
+            .filter { !browsers.contains(it.activityInfo.identifier) }
             .map { it.toDownloaderApp(context, download) } + listOfNotNull(thisApp)
     }
 
@@ -562,7 +528,8 @@ class DownloadsFeature(
         dismissCustomFirstPartyDownloadDialog.invoke()
     }
 
-    private val ActivityInfo.identifier: String get() = packageName + name
+    private val ActivityInfo.identifier: String
+        get() = packageName + name
 
     @VisibleForTesting
     internal fun DownloaderApp.toIntent(): Intent {
@@ -574,9 +541,7 @@ class DownloadsFeature(
         }
     }
 
-    /**
-     * Styling for the download dialog prompt
-     */
+    /** Styling for the download dialog prompt */
     data class PromptsStyling(
         val gravity: Int,
         val shouldWidthMatchParent: Boolean = false,
@@ -589,9 +554,10 @@ class DownloadsFeature(
     @VisibleForTesting
     internal fun showPermissionDeniedDialog() {
         fragmentManager?.let {
-            val dialog = DeniedPermissionDialogFragment.newInstance(
-                R.string.mozac_feature_downloads_write_external_storage_permissions_needed_message,
-            )
+            val dialog =
+                DeniedPermissionDialogFragment.newInstance(
+                    R.string.mozac_feature_downloads_write_external_storage_permissions_needed_message
+                )
             dialog.showNow(fragmentManager, DeniedPermissionDialogFragment.FRAGMENT_TAG)
         }
     }

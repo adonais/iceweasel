@@ -48,11 +48,12 @@ class VideoCaptureTest {
     @Test
     fun constructWithBadEnumerator() {
         val ctr = VideoCaptureAndroid::class.java.getDeclaredConstructors()[0].apply { isAccessible = true }
-        val capture = ctr.newInstance(
-            InstrumentationRegistry.getInstrumentation().targetContext,
-            "my camera",
-            BadCameraEnumerator(),
-        ) as VideoCaptureAndroid
+        val capture =
+            ctr.newInstance(
+                InstrumentationRegistry.getInstrumentation().targetContext,
+                "my camera",
+                BadCameraEnumerator(),
+            ) as VideoCaptureAndroid
         assertEquals(false, capture.canCapture())
     }
 }

@@ -4,12 +4,12 @@
 
 package mozilla.components.lib.jexl.value
 
+import kotlin.reflect.KClass
 import mozilla.components.lib.jexl.Jexl
 import mozilla.components.lib.jexl.JexlException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.fail
 import org.junit.Test
-import kotlin.reflect.KClass
 
 class JexlValueTest {
     @Test

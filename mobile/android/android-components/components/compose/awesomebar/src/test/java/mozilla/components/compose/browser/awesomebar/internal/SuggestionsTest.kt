@@ -18,10 +18,11 @@ class SuggestionsTest {
     fun `GIVEN 1 suggestion in 1 group WHEN neither are visible THEN return an empty visibility state`() {
         val provider: SuggestionProvider = mock()
 
-        val visibleItems = VisibleItems(
-            suggestions = mapOf(SuggestionProviderGroup(listOf(provider)) to listOf(Suggestion(provider))),
-            visibleItemKeys = emptyList(),
-        )
+        val visibleItems =
+            VisibleItems(
+                suggestions = mapOf(SuggestionProviderGroup(listOf(provider)) to listOf(Suggestion(provider))),
+                visibleItemKeys = emptyList(),
+            )
 
         val visibilityState = visibleItems.toVisibilityState()
         assertTrue(visibilityState.visibleProviderGroups.isEmpty())
@@ -34,20 +35,20 @@ class SuggestionsTest {
         val providerGroup = SuggestionProviderGroup(listOf(provider))
         val providerGroupSuggestions = listOf(Suggestion(provider))
 
-        val visibleItems = VisibleItems(
-            suggestions = mapOf(providerGroup to providerGroupSuggestions),
-            visibleItemKeys = listOf(
-                ItemKey.SuggestionGroup(providerGroup.id),
-                ItemKey.Suggestion(providerGroup.id, provider.id, providerGroupSuggestions[0].id),
-            ),
-        )
+        val visibleItems =
+            VisibleItems(
+                suggestions = mapOf(providerGroup to providerGroupSuggestions),
+                visibleItemKeys =
+                    listOf(
+                        ItemKey.SuggestionGroup(providerGroup.id),
+                        ItemKey.Suggestion(providerGroup.id, provider.id, providerGroupSuggestions[0].id),
+                    ),
+            )
 
         val visibilityState = visibleItems.toVisibilityState()
         assertEquals(
             visibilityState.visibleProviderGroups,
-            mapOf(
-                providerGroup to providerGroupSuggestions,
-            ),
+            mapOf(providerGroup to providerGroupSuggestions),
         )
     }
 
@@ -58,19 +59,17 @@ class SuggestionsTest {
         val providerGroup = SuggestionProviderGroup(listOf(provider))
         val providerGroupSuggestions = listOf(Suggestion(provider))
 
-        val visibleItems = VisibleItems(
-            suggestions = mapOf(providerGroup to providerGroupSuggestions),
-            visibleItemKeys = listOf(
-                ItemKey.Suggestion(providerGroup.id, provider.id, providerGroupSuggestions[0].id),
-            ),
-        )
+        val visibleItems =
+            VisibleItems(
+                suggestions = mapOf(providerGroup to providerGroupSuggestions),
+                visibleItemKeys =
+                    listOf(ItemKey.Suggestion(providerGroup.id, provider.id, providerGroupSuggestions[0].id)),
+            )
 
         val visibilityState = visibleItems.toVisibilityState()
         assertEquals(
             visibilityState.visibleProviderGroups,
-            mapOf(
-                providerGroup to providerGroupSuggestions,
-            ),
+            mapOf(providerGroup to providerGroupSuggestions),
         )
     }
 
@@ -81,21 +80,21 @@ class SuggestionsTest {
         val providerGroup = SuggestionProviderGroup(listOf(provider))
         val providerGroupSuggestions = listOf(Suggestion(provider), Suggestion(provider))
 
-        val visibleItems = VisibleItems(
-            suggestions = mapOf(providerGroup to providerGroupSuggestions),
-            visibleItemKeys = listOf(
-                ItemKey.SuggestionGroup(providerGroup.id),
-                ItemKey.Suggestion(providerGroup.id, provider.id, providerGroupSuggestions[0].id),
-                ItemKey.Suggestion(providerGroup.id, provider.id, providerGroupSuggestions[1].id),
-            ),
-        )
+        val visibleItems =
+            VisibleItems(
+                suggestions = mapOf(providerGroup to providerGroupSuggestions),
+                visibleItemKeys =
+                    listOf(
+                        ItemKey.SuggestionGroup(providerGroup.id),
+                        ItemKey.Suggestion(providerGroup.id, provider.id, providerGroupSuggestions[0].id),
+                        ItemKey.Suggestion(providerGroup.id, provider.id, providerGroupSuggestions[1].id),
+                    ),
+            )
 
         val visibilityState = visibleItems.toVisibilityState()
         assertEquals(
             visibilityState.visibleProviderGroups,
-            mapOf(
-                providerGroup to providerGroupSuggestions,
-            ),
+            mapOf(providerGroup to providerGroupSuggestions),
         )
     }
 
@@ -112,23 +111,28 @@ class SuggestionsTest {
         val secondProviderGroup = SuggestionProviderGroup(listOf(secondProvider, thirdProvider))
         val secondProviderGroupSuggestions = listOf(Suggestion(secondProvider), Suggestion(thirdProvider))
 
-        val visibleItems = VisibleItems(
-            suggestions = mapOf(
-                firstProviderGroup to firstProviderGroupSuggestions,
-                secondProviderGroup to secondProviderGroupSuggestions,
-            ),
-            visibleItemKeys = listOf(
-                ItemKey.SuggestionGroup(firstProviderGroup.id),
-                ItemKey.Suggestion(firstProviderGroup.id, secondProvider.id, firstProviderGroupSuggestions[1].id),
-            ),
-        )
+        val visibleItems =
+            VisibleItems(
+                suggestions =
+                    mapOf(
+                        firstProviderGroup to firstProviderGroupSuggestions,
+                        secondProviderGroup to secondProviderGroupSuggestions,
+                    ),
+                visibleItemKeys =
+                    listOf(
+                        ItemKey.SuggestionGroup(firstProviderGroup.id),
+                        ItemKey.Suggestion(
+                            firstProviderGroup.id,
+                            secondProvider.id,
+                            firstProviderGroupSuggestions[1].id,
+                        ),
+                    ),
+            )
 
         val visibilityState = visibleItems.toVisibilityState()
         assertEquals(
             visibilityState.visibleProviderGroups,
-            mapOf(
-                firstProviderGroup to listOf(firstProviderGroupSuggestions[1]),
-            ),
+            mapOf(firstProviderGroup to listOf(firstProviderGroupSuggestions[1])),
         )
     }
 
@@ -149,18 +153,29 @@ class SuggestionsTest {
         val secondProviderGroup = SuggestionProviderGroup(listOf(secondProvider, thirdProvider))
         val secondProviderGroupSuggestions = listOf(Suggestion(secondProvider), Suggestion(thirdProvider))
 
-        val visibleItems = VisibleItems(
-            suggestions = mapOf(
-                firstProviderGroup to firstProviderGroupSuggestions,
-                secondProviderGroup to secondProviderGroupSuggestions,
-            ),
-            visibleItemKeys = listOf(
-                ItemKey.SuggestionGroup(firstProviderGroup.id),
-                ItemKey.Suggestion(firstProviderGroup.id, firstProvider.id, firstProviderGroupSuggestions[0].id),
-                ItemKey.SuggestionGroup(secondProviderGroup.id),
-                ItemKey.Suggestion(secondProviderGroup.id, thirdProvider.id, secondProviderGroupSuggestions[1].id),
-            ),
-        )
+        val visibleItems =
+            VisibleItems(
+                suggestions =
+                    mapOf(
+                        firstProviderGroup to firstProviderGroupSuggestions,
+                        secondProviderGroup to secondProviderGroupSuggestions,
+                    ),
+                visibleItemKeys =
+                    listOf(
+                        ItemKey.SuggestionGroup(firstProviderGroup.id),
+                        ItemKey.Suggestion(
+                            firstProviderGroup.id,
+                            firstProvider.id,
+                            firstProviderGroupSuggestions[0].id,
+                        ),
+                        ItemKey.SuggestionGroup(secondProviderGroup.id),
+                        ItemKey.Suggestion(
+                            secondProviderGroup.id,
+                            thirdProvider.id,
+                            secondProviderGroupSuggestions[1].id,
+                        ),
+                    ),
+            )
         val visibilityState = visibleItems.toVisibilityState()
         assertEquals(
             visibilityState.visibleProviderGroups,

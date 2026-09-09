@@ -32,14 +32,12 @@ class OnboardingPreferencesMiddleware(
         when (action) {
             is OnboardingAction.Init -> {
                 coroutineScope.launch {
-                    repository.onboardingPreferenceUpdates
-                        .collect { preferenceUpdate ->
-                            if (preferenceUpdate.value) {
-                                val updateAction =
-                                    mapOnboardingPreferenceUpdateToStoreAction(preferenceUpdate)
-                                store.dispatch(updateAction)
-                            }
+                    repository.onboardingPreferenceUpdates.collect { preferenceUpdate ->
+                        if (preferenceUpdate.value) {
+                            val updateAction = mapOnboardingPreferenceUpdateToStoreAction(preferenceUpdate)
+                            store.dispatch(updateAction)
                         }
+                    }
                 }
 
                 repository.init()
@@ -47,20 +45,20 @@ class OnboardingPreferencesMiddleware(
 
             is OnboardingAction.OnboardingToolbarAction.UpdateSelected -> {
                 repository.updateOnboardingPreference(
-                    OnboardingPreferencesRepository
-                        .OnboardingPreferenceUpdate(action.selected.toOnboardingPreference()),
+                    OnboardingPreferencesRepository.OnboardingPreferenceUpdate(action.selected.toOnboardingPreference())
                 )
             }
         }
     }
 
-    private fun ToolbarOptionType.toOnboardingPreference() = when (this) {
-        ToolbarOptionType.TOOLBAR_TOP -> OnboardingPreference.TopToolbar
-        ToolbarOptionType.TOOLBAR_BOTTOM -> OnboardingPreference.BottomToolbar
-    }
+    private fun ToolbarOptionType.toOnboardingPreference() =
+        when (this) {
+            ToolbarOptionType.TOOLBAR_TOP -> OnboardingPreference.TopToolbar
+            ToolbarOptionType.TOOLBAR_BOTTOM -> OnboardingPreference.BottomToolbar
+        }
 
     private fun mapOnboardingPreferenceUpdateToStoreAction(
-        preferenceUpdate: OnboardingPreferencesRepository.OnboardingPreferenceUpdate,
+        preferenceUpdate: OnboardingPreferencesRepository.OnboardingPreferenceUpdate
     ): OnboardingAction {
         return when (preferenceUpdate.preferenceType) {
             OnboardingPreference.TopToolbar ->

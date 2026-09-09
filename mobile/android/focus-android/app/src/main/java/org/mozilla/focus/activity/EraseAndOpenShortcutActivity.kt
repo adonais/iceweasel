@@ -11,9 +11,7 @@ import mozilla.components.browser.state.selector.privateTabs
 import org.mozilla.focus.GleanMetrics.AppShortcuts
 import org.mozilla.focus.ext.components
 
-/**
- * Shortcut activity that erases all data and opens the app.
- */
+/** Shortcut activity that erases all data and opens the app. */
 class EraseAndOpenShortcutActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {

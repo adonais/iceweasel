@@ -4,6 +4,7 @@
 
 package mozilla.components.concept.engine
 
+import java.lang.reflect.Modifier
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
 import mozilla.components.concept.engine.EngineSession.TrackingProtectionPolicy
 import mozilla.components.concept.engine.EngineSession.TrackingProtectionPolicy.CookiePolicy
@@ -27,7 +28,6 @@ import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.verifyNoMoreInteractions
-import java.lang.reflect.Modifier
 
 class EngineSessionTest {
     private val unknownHitResult = HitResult.UNKNOWN("file://foobar")
@@ -679,17 +679,18 @@ class EngineSessionTest {
             )
         }
 
-        verify(observer).onExternalResource(
-            url = "https://download.mozilla.org",
-            fileName = "firefox.apk",
-            contentLength = 1927392,
-            contentType = "application/vnd.android.package-archive",
-            cookie = "PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1;",
-            isPrivate = true,
-            skipConfirmation = false,
-            openInApp = false,
-            userAgent = "Components/1.0",
-        )
+        verify(observer)
+            .onExternalResource(
+                url = "https://download.mozilla.org",
+                fileName = "firefox.apk",
+                contentLength = 1927392,
+                contentType = "application/vnd.android.package-archive",
+                cookie = "PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1;",
+                isPrivate = true,
+                skipConfirmation = false,
+                openInApp = false,
+                userAgent = "Components/1.0",
+            )
     }
 
     @Test
@@ -706,12 +707,11 @@ class EngineSessionTest {
             )
         }
 
-        verify(observer).onHistoryStateChanged(
-            historyList = listOf(
-                HistoryItem("Firefox download", "https://download.mozilla.org"),
-            ),
-            currentIndex = 0,
-        )
+        verify(observer)
+            .onHistoryStateChanged(
+                historyList = listOf(HistoryItem("Firefox download", "https://download.mozilla.org")),
+                currentIndex = 0,
+            )
     }
 
     @Test
@@ -746,38 +746,39 @@ class EngineSessionTest {
         assertEquals(nonePolicy.cookiePolicy.id, CookiePolicy.ACCEPT_ALL.id)
         assertEquals(nonePolicy.cookiePolicyPrivateMode.id, CookiePolicy.ACCEPT_ALL.id)
 
-        val newPolicy = TrackingProtectionPolicy.select(
-            trackingCategories = arrayOf(
-                TrackingCategory.AD,
-                TrackingCategory.SOCIAL,
-                TrackingCategory.ANALYTICS,
-                TrackingCategory.CONTENT,
-                TrackingCategory.CRYPTOMINING,
-                TrackingCategory.FINGERPRINTING,
-                TrackingCategory.TEST,
-            ),
-        )
+        val newPolicy =
+            TrackingProtectionPolicy.select(
+                trackingCategories =
+                    arrayOf(
+                        TrackingCategory.AD,
+                        TrackingCategory.SOCIAL,
+                        TrackingCategory.ANALYTICS,
+                        TrackingCategory.CONTENT,
+                        TrackingCategory.CRYPTOMINING,
+                        TrackingCategory.FINGERPRINTING,
+                        TrackingCategory.TEST,
+                    )
+            )
 
         assertEquals(
             newPolicy.trackingCategories.sumOf { it.id },
             arrayOf(
-                TrackingCategory.AD,
-                TrackingCategory.SOCIAL,
-                TrackingCategory.ANALYTICS,
-                TrackingCategory.CONTENT,
-                TrackingCategory.CRYPTOMINING,
-                TrackingCategory.FINGERPRINTING,
-                TrackingCategory.TEST,
-            ).sumOf { it.id },
+                    TrackingCategory.AD,
+                    TrackingCategory.SOCIAL,
+                    TrackingCategory.ANALYTICS,
+                    TrackingCategory.CONTENT,
+                    TrackingCategory.CRYPTOMINING,
+                    TrackingCategory.FINGERPRINTING,
+                    TrackingCategory.TEST,
+                )
+                .sumOf { it.id },
         )
     }
 
     @Test
     fun `tracking protection policies can be specified for session type`() {
         val all = TrackingProtectionPolicy.strict()
-        val selected = TrackingProtectionPolicy.select(
-            trackingCategories = arrayOf(TrackingCategory.AD),
-        )
+        val selected = TrackingProtectionPolicy.select(trackingCategories = arrayOf(TrackingCategory.AD))
 
         // Tracking protection policies should be applied to all sessions by default
         assertTrue(all.useForPrivateSessions)
@@ -790,8 +791,7 @@ class EngineSessionTest {
         assertFalse(allForPrivate.useForRegularSessions)
 
         val selectedForRegular =
-            TrackingProtectionPolicy.select(trackingCategories = arrayOf(TrackingCategory.AD))
-                .forRegularSessionsOnly()
+            TrackingProtectionPolicy.select(trackingCategories = arrayOf(TrackingCategory.AD)).forRegularSessionsOnly()
 
         assertTrue(selectedForRegular.useForRegularSessions)
         assertFalse(selectedForRegular.useForPrivateSessions)
@@ -810,7 +810,9 @@ class EngineSessionTest {
         assertTrue(LoadUrlFlags.all().contains(LoadUrlFlags.select(LoadUrlFlags.BYPASS_CLASSIFIER).value))
         assertTrue(LoadUrlFlags.all().contains(LoadUrlFlags.select(LoadUrlFlags.LOAD_FLAGS_FORCE_ALLOW_DATA_URI).value))
         assertTrue(LoadUrlFlags.all().contains(LoadUrlFlags.select(LoadUrlFlags.LOAD_FLAGS_REPLACE_HISTORY).value))
-        assertTrue(LoadUrlFlags.all().contains(LoadUrlFlags.select(LoadUrlFlags.LOAD_FLAGS_BYPASS_LOAD_URI_DELEGATE).value))
+        assertTrue(
+            LoadUrlFlags.all().contains(LoadUrlFlags.select(LoadUrlFlags.LOAD_FLAGS_BYPASS_LOAD_URI_DELEGATE).value)
+        )
         assertTrue(LoadUrlFlags.all().contains(LoadUrlFlags.select(LoadUrlFlags.ALLOW_ADDITIONAL_HEADERS).value))
         assertTrue(LoadUrlFlags.all().contains(LoadUrlFlags.select(LoadUrlFlags.ALLOW_JAVASCRIPT_URL).value))
 
@@ -900,20 +902,24 @@ class EngineSessionTest {
     fun `TrackingSessionPolicies retain all expected fields during privacy transformations`() {
         val strict = TrackingProtectionPolicy.strict()
         val default = TrackingProtectionPolicy.recommended()
-        val customNormal = TrackingProtectionPolicy.select(
-            trackingCategories = emptyArray(),
-            cookiePolicy = CookiePolicy.ACCEPT_ONLY_FIRST_PARTY,
-            strictSocialTrackingProtection = true,
-        )
-        val customPrivate = TrackingProtectionPolicy.select(
-            trackingCategories = emptyArray(),
-            cookiePolicy = CookiePolicy.ACCEPT_ONLY_FIRST_PARTY,
-            strictSocialTrackingProtection = false,
-        )
+        val customNormal =
+            TrackingProtectionPolicy.select(
+                trackingCategories = emptyArray(),
+                cookiePolicy = CookiePolicy.ACCEPT_ONLY_FIRST_PARTY,
+                strictSocialTrackingProtection = true,
+            )
+        val customPrivate =
+            TrackingProtectionPolicy.select(
+                trackingCategories = emptyArray(),
+                cookiePolicy = CookiePolicy.ACCEPT_ONLY_FIRST_PARTY,
+                strictSocialTrackingProtection = false,
+            )
         val changedFields = listOf("useForPrivateSessions", "useForRegularSessions")
 
         fun checkSavedFields(expect: TrackingProtectionPolicy, actual: TrackingProtectionPolicy) {
-            TrackingProtectionPolicy::class.java.declaredMethods
+            TrackingProtectionPolicy::class
+                .java
+                .declaredMethods
                 .filter { method -> changedFields.all { !method.name.lowercase().contains(it.lowercase()) } }
                 .filter { it.parameterCount == 0 } // Only keep getters
                 .filter { it.modifiers and Modifier.PUBLIC != 0 }
@@ -924,19 +930,20 @@ class EngineSessionTest {
         }
 
         listOf(
-            strict,
-            default,
-            customNormal,
-        ).forEach {
-            checkSavedFields(it, it.forRegularSessionsOnly())
-        }
+                strict,
+                default,
+                customNormal,
+            )
+            .forEach {
+                checkSavedFields(it, it.forRegularSessionsOnly())
+            }
 
         checkSavedFields(customPrivate, customPrivate.forPrivateSessionsOnly())
     }
 
     @Test
     fun `engine session observer has default methods`() {
-        val observer = object : EngineSession.Observer { }
+        val observer = object : EngineSession.Observer {}
         val permissionRequest = mock(PermissionRequest::class.java)
         val windowRequest = mock(WindowRequest::class.java)
         val tracker: Tracker = mock()
@@ -973,7 +980,9 @@ open class DummyEngineSession : EngineSession() {
     override val settings: Settings
         get() = mock(Settings::class.java)
 
-    override fun restoreState(state: EngineSessionState): Boolean { return false }
+    override fun restoreState(state: EngineSessionState): Boolean {
+        return false
+    }
 
     override fun flushSessionState() {}
 
@@ -1072,7 +1081,5 @@ open class DummyEngineSession : EngineSession() {
         notifyObservers(block)
     }
 
-    override fun processBackPressed(
-        onResult: (Boolean) -> Unit,
-    ) {}
+    override fun processBackPressed(onResult: (Boolean) -> Unit) {}
 }

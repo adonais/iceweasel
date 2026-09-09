@@ -7,6 +7,11 @@ let mockCA = makeMockContentAnalysis();
 
 add_setup(async function test_setup() {
   mockCA = await mockContentAnalysisService(mockCA);
+  // This test isn't about the downloads panel, and starting downloads would
+  // otherwise leave it open.
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.download.alwaysOpenPanel", false]],
+  });
 });
 
 const DOWNLOAD_URL =

@@ -38,9 +38,7 @@ import org.mozilla.fenix.ui.robots.SettingsSubMenuAccessibilityRobot.Companion.D
 import org.mozilla.fenix.ui.robots.SettingsSubMenuAccessibilityRobot.Companion.MIN_VALUE
 import org.mozilla.fenix.ui.robots.SettingsSubMenuAccessibilityRobot.Companion.STEP_SIZE
 
-/**
- * Implementation of Robot Pattern for the settings Accessibility sub menu.
- */
+/** Implementation of Robot Pattern for the settings Accessibility sub menu. */
 class SettingsSubMenuAccessibilityRobot {
 
     companion object {
@@ -59,14 +57,22 @@ class SettingsSubMenuAccessibilityRobot {
     ) {
         // Automatic font sizing
         Log.i(TAG, "verifyFontSizingMenuItems: Trying to verify that the \"Automatic font sizing\" title is displayed")
-        onView(withText(getStringResource(R.string.preference_accessibility_auto_size_2))).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText(getStringResource(R.string.preference_accessibility_auto_size_2)))
+            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyFontSizingMenuItems: Verified that the \"Automatic font sizing\" title is displayed")
-        Log.i(TAG, "verifyFontSizingMenuItems: Trying to verify that the \"Automatic font sizing\" summary is displayed")
-        onView(withText(getStringResource(R.string.preference_accessibility_auto_size_summary))).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        Log.i(
+            TAG,
+            "verifyFontSizingMenuItems: Trying to verify that the \"Automatic font sizing\" summary is displayed",
+        )
+        onView(withText(getStringResource(R.string.preference_accessibility_auto_size_summary)))
+            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyFontSizingMenuItems: Verified that the \"Automatic font sizing\" summary is displayed")
 
         // Automatic font sizing toggle assertion
-        Log.i(TAG, "verifyEnabledMenuItems: Trying to verify that the \"Automatic font sizing\" toggle is enabled: $isTheAutomaticFontSizingToggleChecked")
+        Log.i(
+            TAG,
+            "verifyEnabledMenuItems: Trying to verify that the \"Automatic font sizing\" toggle is enabled: $isTheAutomaticFontSizingToggleChecked",
+        )
         onView(withText(R.string.preference_accessibility_auto_size_2))
             .check(
                 matches(
@@ -77,12 +83,15 @@ class SettingsSubMenuAccessibilityRobot {
                                 isChecked()
                             } else {
                                 isNotChecked()
-                                   },
-                            ),
-                        ),
-                    ),
+                            },
+                        )
+                    )
                 )
-        Log.i(TAG, "verifyEnabledMenuItems: Verified that the \"Automatic font sizing\" toggle is enabled: $isTheAutomaticFontSizingToggleChecked")
+            )
+        Log.i(
+            TAG,
+            "verifyEnabledMenuItems: Verified that the \"Automatic font sizing\" toggle is enabled: $isTheAutomaticFontSizingToggleChecked",
+        )
 
         // Font size
         Log.i(TAG, "verifyFontSizingMenuItems: Trying to verify that the \"Font Size\" title is displayed")
@@ -113,30 +122,38 @@ class SettingsSubMenuAccessibilityRobot {
 
         // Zoom on all websites
         Log.i(TAG, "verifyFontSizingMenuItems: Trying to verify that the \"Zoom on all websites\" title is displayed")
-        onView(withText(getStringResource(R.string.preference_accessibility_force_enable_zoom))).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText(getStringResource(R.string.preference_accessibility_force_enable_zoom)))
+            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyFontSizingMenuItems: Verified that the \"Zoom on all websites\" title is displayed")
         Log.i(TAG, "verifyFontSizingMenuItems: Trying to verify that the \"Zoom on all websites\" summary is displayed")
-        onView(withText(getStringResource(R.string.preference_accessibility_force_enable_zoom_summary))).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText(getStringResource(R.string.preference_accessibility_force_enable_zoom_summary)))
+            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyFontSizingMenuItems: Verified that the \"Zoom on all websites\" summary is displayed")
 
         // Zoom on all websites toggle assertion
-        Log.i(TAG, "verifyEnabledMenuItems: Trying to verify that the \"Zoom on all websites\" toggle is enabled: $isTheZoomOnAllWbsitesToggleChecked")
-            onView(withText(R.string.preference_accessibility_force_enable_zoom))
-                .check(
-                    matches(
-                        hasCousin(
-                            allOf(
-                                withClassName(endsWith("Switch")),
-                                if (isTheZoomOnAllWbsitesToggleChecked) {
-                                    isChecked()
-                                } else {
-                                    isNotChecked()
-                                },
-                            ),
-                        ),
-                    ),
+        Log.i(
+            TAG,
+            "verifyEnabledMenuItems: Trying to verify that the \"Zoom on all websites\" toggle is enabled: $isTheZoomOnAllWbsitesToggleChecked",
+        )
+        onView(withText(R.string.preference_accessibility_force_enable_zoom))
+            .check(
+                matches(
+                    hasCousin(
+                        allOf(
+                            withClassName(endsWith("Switch")),
+                            if (isTheZoomOnAllWbsitesToggleChecked) {
+                                isChecked()
+                            } else {
+                                isNotChecked()
+                            },
+                        )
+                    )
                 )
-        Log.i(TAG, "verifyEnabledMenuItems: Verified that the \"Zoom on all websites\" toggle is enabled: $isTheZoomOnAllWbsitesToggleChecked")
+            )
+        Log.i(
+            TAG,
+            "verifyEnabledMenuItems: Verified that the \"Zoom on all websites\" toggle is enabled: $isTheZoomOnAllWbsitesToggleChecked",
+        )
     }
 
     fun changeTextSizeSlider(seekBarPercentage: Int, composeTestRule: ComposeTestRule) =
@@ -144,8 +161,7 @@ class SettingsSubMenuAccessibilityRobot {
 
     fun verifyTextSizePercentage(textSize: Int, composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyTextSizePercentage: Trying to verify that the text size percentage is set to: $textSize")
-        composeTestRule.onNodeWithTag("fontSizeSliderValue")
-            .assertTextEquals("$textSize %")
+        composeTestRule.onNodeWithTag("fontSizeSliderValue").assertTextEquals("$textSize %")
         Log.i(TAG, "verifyTextSizePercentage: Verified that the text size percentage is set to: $textSize")
     }
 
@@ -175,13 +191,13 @@ private fun toggleFontSizingSwitch() {
 
 private fun adjustTextSizeSlider(seekBarPercentage: Int, composeTestRule: ComposeTestRule) {
     Log.i(TAG, "adjustTextSizeSlider: Trying to set the seek bar value to: $seekBarPercentage")
-    composeTestRule.onNodeWithTag("fontSizeSlider")
-        .performSemanticsAction(SemanticsActions.SetProgress) { it(seekBarPercentage.toFloat()) }
+    composeTestRule.onNodeWithTag("fontSizeSlider").performSemanticsAction(SemanticsActions.SetProgress) {
+        it(seekBarPercentage.toFloat())
+    }
     Log.i(TAG, "adjustTextSizeSlider: Seek bar value was set to: $seekBarPercentage")
 }
 
-private fun goBackButton() =
-    onView(allOf(withContentDescription("Navigate up")))
+private fun goBackButton() = onView(allOf(withContentDescription("Navigate up")))
 
 fun calculateStepSizeFromPercentage(textSizePercentage: Int): Int {
     return ((textSizePercentage - MIN_VALUE) / STEP_SIZE)
@@ -192,6 +208,9 @@ fun checkTextSizeOnWebsite(textSizePercentage: Int, components: Components) {
     // Checks the Gecko engine settings for the font size
     val textSize = calculateStepSizeFromPercentage(textSizePercentage)
     val newTextScale = ((textSize * STEP_SIZE) + MIN_VALUE).toFloat() / DECIMAL_CONVERSION
-    assertTrue("$TAG: text size on website was not set to: $textSizePercentage", components.core.engine.settings.fontSizeFactor == newTextScale)
+    assertTrue(
+        "$TAG: text size on website was not set to: $textSizePercentage",
+        components.core.engine.settings.fontSizeFactor == newTextScale,
+    )
     Log.i(TAG, "checkTextSizeOnWebsite: Verified that text size on website is: $textSizePercentage")
 }

@@ -12,8 +12,8 @@ import android.content.ContextWrapper
  * A [ContextWrapper] that holds the original [Activity] Context.
  *
  * @param baseContext see [ContextWrapper.getBaseContext].
- * @param originalContext the Context that the Activity was created with. This might be the same
- * as baseContext if a non-default value has not been set.
+ * @param originalContext the Context that the Activity was created with. This might be the same as baseContext if a
+ *   non-default value has not been set.
  */
 class ActivityContextWrapper(
     baseContext: Context,
@@ -21,13 +21,10 @@ class ActivityContextWrapper(
 ) : ContextWrapper(baseContext) {
     companion object {
         /**
-         * Recursively try to retrieve the [ActivityContextWrapper.originalContext] from a wrapped
-         * Activity Context.
+         * Recursively try to retrieve the [ActivityContextWrapper.originalContext] from a wrapped Activity Context.
          *
-         * @param outerContext the Activity Context that may be wrapped in
-         * an [ActivityContextWrapper].
-         * @return the [ActivityContextWrapper.originalContext] or otherwise null if one
-         * doesn't exist.
+         * @param outerContext the Activity Context that may be wrapped in an [ActivityContextWrapper].
+         * @return the [ActivityContextWrapper.originalContext] or otherwise null if one doesn't exist.
          */
         fun getOriginalContext(outerContext: Context): Context? {
             if (outerContext !is ContextWrapper) {

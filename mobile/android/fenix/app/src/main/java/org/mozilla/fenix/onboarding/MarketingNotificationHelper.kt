@@ -22,15 +22,15 @@ fun ensureMarketingChannelExists(context: Context): String {
     val notificationManager: NotificationManager =
         context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-    var channel =
-        notificationManager.getNotificationChannel(MARKETING_CHANNEL_ID)
+    var channel = notificationManager.getNotificationChannel(MARKETING_CHANNEL_ID)
 
     if (channel == null) {
-        channel = NotificationChannel(
-            MARKETING_CHANNEL_ID,
-            context.getString(R.string.notification_marketing_channel_name),
-            NotificationManager.IMPORTANCE_DEFAULT,
-        )
+        channel =
+            NotificationChannel(
+                MARKETING_CHANNEL_ID,
+                context.getString(R.string.notification_marketing_channel_name),
+                NotificationManager.IMPORTANCE_DEFAULT,
+            )
 
         notificationManager.createNotificationChannel(channel)
     }

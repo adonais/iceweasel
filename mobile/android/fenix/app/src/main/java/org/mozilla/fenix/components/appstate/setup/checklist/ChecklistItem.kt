@@ -6,19 +6,17 @@ package org.mozilla.fenix.components.appstate.setup.checklist
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.nimbus.SetupChecklistType
 import org.mozilla.fenix.utils.Settings
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A sealed class representing an item in the setup checklist.
  *
  * @property title the string resource for the checklist item title.
  */
-sealed class ChecklistItem(
-    @param:StringRes open val title: Int,
-) {
+sealed class ChecklistItem(@param:StringRes open val title: Int) {
     /**
      * A data class representing an individual task in the checklist.
      *
@@ -34,9 +32,7 @@ sealed class ChecklistItem(
         val isCompleted: Boolean = false,
     ) : ChecklistItem(title) {
 
-        /**
-         * A check list task type.
-         */
+        /** A check list task type. */
         enum class Type(val telemetryName: String) {
             SET_AS_DEFAULT("default-browser"),
             SIGN_IN("sign-in"),
@@ -73,15 +69,11 @@ data class Progress(
     val totalTasks: Int = 0,
     val completedTasks: Int = 0,
 ) {
-    /**
-     * Returns `true` if all tasks in the checklist are completed.
-     */
+    /** Returns `true` if all tasks in the checklist are completed. */
     fun allTasksCompleted() = totalTasks == completedTasks
 }
 
-/**
- * Calculates the completion progress of a set of [ChecklistItem].
- */
+/** Calculates the completion progress of a set of [ChecklistItem]. */
 fun List<ChecklistItem>.getTaskProgress(): Progress {
     val tasks = flatMap { item ->
         when (item) {
@@ -96,51 +88,52 @@ fun List<ChecklistItem>.getTaskProgress(): Progress {
     )
 }
 
-/**
- * Returns true if all checklist items are groups.
- */
+/** Returns true if all checklist items are groups. */
 fun List<ChecklistItem>.checklistItemsAreGroups() = all { it is ChecklistItem.Group }
 
-/**
- * Gets the checklist items for the given [SetupChecklistType].
- */
+/** Gets the checklist items for the given [SetupChecklistType]. */
 fun getSetupChecklistCollection(
     settings: Settings,
     collection: SetupChecklistType,
     tabStripEnabled: Boolean = false,
-) = when (collection) {
-    SetupChecklistType.COLLECTION_1 -> createTasksCollection(settings)
-    SetupChecklistType.COLLECTION_2 -> createGroupsCollection(settings, tabStripEnabled)
-}
+) =
+    when (collection) {
+        SetupChecklistType.COLLECTION_1 -> createTasksCollection(settings)
+        SetupChecklistType.COLLECTION_2 -> createGroupsCollection(settings, tabStripEnabled)
+    }
 
-private fun createTasksCollection(settings: Settings) = with(settings) {
-    listOf(
-        defaultBrowserTask(isDefaultBrowserBlocking()),
-        exploreExtensionTask(hasCompletedSetupStepExtensions),
-        signInTask(signedInFxaAccount),
+private fun createTasksCollection(settings: Settings) =
+    with(settings) {
+        listOf(
+            defaultBrowserTask(isDefaultBrowserBlocking()),
+            exploreExtensionTask(hasCompletedSetupStepExtensions),
+            signInTask(signedInFxaAccount),
+        )
+    }
+
+private fun defaultBrowserTask(isCompleted: Boolean) =
+    ChecklistItem.Task(
+        type = ChecklistItem.Task.Type.SET_AS_DEFAULT,
+        title = R.string.setup_checklist_task_default_browser,
+        icon = iconsR.drawable.mozac_ic_globe_24,
+        isCompleted = isCompleted,
     )
-}
 
-private fun defaultBrowserTask(isCompleted: Boolean) = ChecklistItem.Task(
-    type = ChecklistItem.Task.Type.SET_AS_DEFAULT,
-    title = R.string.setup_checklist_task_default_browser,
-    icon = iconsR.drawable.mozac_ic_globe_24,
-    isCompleted = isCompleted,
-)
+private fun exploreExtensionTask(isCompleted: Boolean) =
+    ChecklistItem.Task(
+        type = ChecklistItem.Task.Type.EXPLORE_EXTENSION,
+        title = R.string.setup_checklist_task_explore_extensions,
+        icon = iconsR.drawable.mozac_ic_extension_24,
+        isCompleted = isCompleted,
+    )
 
-private fun exploreExtensionTask(isCompleted: Boolean) = ChecklistItem.Task(
-    type = ChecklistItem.Task.Type.EXPLORE_EXTENSION,
-    title = R.string.setup_checklist_task_explore_extensions,
-    icon = iconsR.drawable.mozac_ic_extension_24,
-    isCompleted = isCompleted,
-)
-
-private fun signInTask(isCompleted: Boolean) = ChecklistItem.Task(
-    type = ChecklistItem.Task.Type.SIGN_IN,
-    title = R.string.setup_checklist_task_account_sync,
-    icon = R.drawable.ic_fx_accounts_avatar,
-    isCompleted = isCompleted,
-)
+private fun signInTask(isCompleted: Boolean) =
+    ChecklistItem.Task(
+        type = ChecklistItem.Task.Type.SIGN_IN,
+        title = R.string.setup_checklist_task_account_sync,
+        icon = R.drawable.ic_fx_accounts_avatar,
+        isCompleted = isCompleted,
+    )
 
 private fun createGroupsCollection(settings: Settings, tabStripEnabled: Boolean) =
     listOf(
@@ -149,26 +142,29 @@ private fun createGroupsCollection(settings: Settings, tabStripEnabled: Boolean)
         helpfulToolsGroup(settings),
     )
 
-private fun essentialsGroup(settings: Settings) = ChecklistItem.Group(
-    title = R.string.setup_checklist_group_essentials,
-    tasks = with(settings) {
-        listOf(
-            defaultBrowserTask(isDefaultBrowserBlocking()),
-            signInTask(signedInFxaAccount),
-        )
-    },
-)
+private fun essentialsGroup(settings: Settings) =
+    ChecklistItem.Group(
+        title = R.string.setup_checklist_group_essentials,
+        tasks =
+            with(settings) {
+                listOf(
+                    defaultBrowserTask(isDefaultBrowserBlocking()),
+                    signInTask(signedInFxaAccount),
+                )
+            },
+    )
 
 private fun customizeGroup(settings: Settings, tabStripEnabled: Boolean): ChecklistItem.Group =
     with(settings) {
-        val tasks = mutableListOf(
-            ChecklistItem.Task(
-                type = ChecklistItem.Task.Type.SELECT_THEME,
-                title = R.string.setup_checklist_task_theme_selection,
-                icon = iconsR.drawable.mozac_ic_themes_24,
-                isCompleted = hasCompletedSetupStepTheme,
-            ),
-        )
+        val tasks =
+            mutableListOf(
+                ChecklistItem.Task(
+                    type = ChecklistItem.Task.Type.SELECT_THEME,
+                    title = R.string.setup_checklist_task_theme_selection,
+                    icon = iconsR.drawable.mozac_ic_themes_24,
+                    isCompleted = hasCompletedSetupStepTheme,
+                )
+            )
 
         // Toolbar placement cannot be changed when the tab strip is enabled.
         if (!tabStripEnabled) {
@@ -178,7 +174,7 @@ private fun customizeGroup(settings: Settings, tabStripEnabled: Boolean): Checkl
                     title = R.string.setup_checklist_task_toolbar_selection,
                     icon = iconsR.drawable.mozac_ic_tool_24,
                     isCompleted = hasCompletedSetupStepToolbar,
-                ),
+                )
             )
         }
 
@@ -188,17 +184,19 @@ private fun customizeGroup(settings: Settings, tabStripEnabled: Boolean): Checkl
         )
     }
 
-private fun helpfulToolsGroup(settings: Settings) = ChecklistItem.Group(
-    title = R.string.setup_checklist_group_helpful_tools,
-    tasks = with(settings) {
-        listOf(
-            ChecklistItem.Task(
-                type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
-                title = R.string.setup_checklist_task_search_widget_2,
-                icon = iconsR.drawable.mozac_ic_search_24,
-                isCompleted = hasCompletedSetupStepInstallSearchWidget,
-            ),
-            exploreExtensionTask(hasCompletedSetupStepExtensions),
-        )
-    },
-)
+private fun helpfulToolsGroup(settings: Settings) =
+    ChecklistItem.Group(
+        title = R.string.setup_checklist_group_helpful_tools,
+        tasks =
+            with(settings) {
+                listOf(
+                    ChecklistItem.Task(
+                        type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
+                        title = R.string.setup_checklist_task_search_widget_2,
+                        icon = iconsR.drawable.mozac_ic_search_24,
+                        isCompleted = hasCompletedSetupStepInstallSearchWidget,
+                    ),
+                    exploreExtensionTask(hasCompletedSetupStepExtensions),
+                )
+            },
+    )

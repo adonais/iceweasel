@@ -9,13 +9,9 @@ import mozilla.components.support.base.facts.Action
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.collect
 
-/**
- * Facts emitted for telemetry related to [TopSitesFeature]
- */
+/** Facts emitted for telemetry related to [TopSitesFeature] */
 class TopSitesFacts {
-    /**
-     * Items that specify which portion of the [TopSitesFeature] was interacted with
-     */
+    /** Items that specify which portion of the [TopSitesFeature] was interacted with */
     object Items {
         const val COUNT = "count"
     }
@@ -23,9 +19,10 @@ class TopSitesFacts {
 
 internal fun emitTopSitesCountFact(count: Int) {
     Fact(
-        Component.FEATURE_TOP_SITES,
-        Action.INTERACTION,
-        TopSitesFacts.Items.COUNT,
-        count.toString(),
-    ).collect()
+            Component.FEATURE_TOP_SITES,
+            Action.INTERACTION,
+            TopSitesFacts.Items.COUNT,
+            count.toString(),
+        )
+        .collect()
 }

@@ -9,13 +9,11 @@ import org.mozilla.fenix.settings.biometric.ui.state.SecureScreenAction.Lifecycl
 import org.mozilla.fenix.settings.biometric.ui.state.SecureScreenAction.UnlockScreenAction
 
 /**
- * Reducer for the secure screen. This function takes the current [SecureScreenState] and a
- * [SecureScreenAction], and returns a new state. It delegates the handling of specific action
- * types to corresponding extension functions.
+ * Reducer for the secure screen. This function takes the current [SecureScreenState] and a [SecureScreenAction], and
+ * returns a new state. It delegates the handling of specific action types to corresponding extension functions.
  *
  * @param state The current state of the secure screen.
  * @param action The action to be processed.
- *
  * @return The new state after applying the action.
  */
 fun secureScreenReducer(
@@ -28,18 +26,14 @@ fun secureScreenReducer(
         is UnlockScreenAction -> state.handleUnlockScreenAction(action)
     }
 
-private fun SecureScreenState.handleUnlockScreenAction(
-    action: UnlockScreenAction,
-): SecureScreenState {
+private fun SecureScreenState.handleUnlockScreenAction(action: UnlockScreenAction): SecureScreenState {
     return when (action) {
         UnlockScreenAction.LeaveTapped -> copy(shouldExit = true)
         UnlockScreenAction.UnlockTapped -> copy(authenticationState = BiometricAuthenticationState.InProgress)
     }
 }
 
-private fun SecureScreenState.handleAuthenticationFlowAction(
-    action: AuthenticationFlowAction,
-): SecureScreenState {
+private fun SecureScreenState.handleAuthenticationFlowAction(action: AuthenticationFlowAction): SecureScreenState {
     return when (action) {
         AuthenticationFlowAction.Failed -> copy(authenticationState = BiometricAuthenticationState.Failed)
         AuthenticationFlowAction.Started -> copy(authenticationState = BiometricAuthenticationState.InProgress)
@@ -47,25 +41,27 @@ private fun SecureScreenState.handleAuthenticationFlowAction(
     }
 }
 
-private fun SecureScreenState.handleLifecycleAction(
-    action: LifecycleAction,
-): SecureScreenState {
+private fun SecureScreenState.handleLifecycleAction(action: LifecycleAction): SecureScreenState {
     return when (action) {
-        LifecycleAction.OnPause -> copy(
-            authenticationState = if (authenticationState.isAuthorized) {
-                BiometricAuthenticationState.ReadyToLock
-            } else {
-                authenticationState
-            },
-        )
+        LifecycleAction.OnPause ->
+            copy(
+                authenticationState =
+                    if (authenticationState.isAuthorized) {
+                        BiometricAuthenticationState.ReadyToLock
+                    } else {
+                        authenticationState
+                    }
+            )
 
         LifecycleAction.OnDispose -> this
-        LifecycleAction.OnResume -> copy(
-            authenticationState = if (authenticationState.isReadyToLock) {
-                BiometricAuthenticationState.InProgress
-            } else {
-                authenticationState
-            },
-        )
+        LifecycleAction.OnResume ->
+            copy(
+                authenticationState =
+                    if (authenticationState.isReadyToLock) {
+                        BiometricAuthenticationState.InProgress
+                    } else {
+                        authenticationState
+                    }
+            )
     }
 }

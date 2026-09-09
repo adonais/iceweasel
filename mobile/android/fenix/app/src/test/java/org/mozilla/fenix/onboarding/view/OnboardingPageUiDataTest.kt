@@ -51,35 +51,39 @@ class OnboardingPageUiDataTest {
     }
 }
 
-val defaultBrowserPageUiData = OnboardingPageUiData(
-    type = OnboardingPageUiData.Type.DEFAULT_BROWSER,
-    imageRes = R.drawable.ic_onboarding_welcome,
-    title = "default browser title",
-    description = "default browser body with link text",
-    primaryButtonLabel = "default browser primary button text",
-    secondaryButtonLabel = "default browser secondary button text",
-)
+val defaultBrowserPageUiData =
+    OnboardingPageUiData(
+        type = OnboardingPageUiData.Type.DEFAULT_BROWSER,
+        imageRes = R.drawable.ic_onboarding_welcome,
+        title = "default browser title",
+        description = "default browser body with link text",
+        primaryButtonLabel = "default browser primary button text",
+        secondaryButtonLabel = "default browser secondary button text",
+    )
 
-val syncPageUiData = OnboardingPageUiData(
-    type = OnboardingPageUiData.Type.SYNC_SIGN_IN,
-    imageRes = R.drawable.ic_onboarding_sync,
-    title = "sync title",
-    description = "sync body",
-    primaryButtonLabel = "sync primary button text",
-    secondaryButtonLabel = "sync secondary button text",
-)
+val syncPageUiData =
+    OnboardingPageUiData(
+        type = OnboardingPageUiData.Type.SYNC_SIGN_IN,
+        imageRes = R.drawable.ic_onboarding_sync,
+        title = "sync title",
+        description = "sync body",
+        primaryButtonLabel = "sync primary button text",
+        secondaryButtonLabel = "sync secondary button text",
+    )
 
-val notificationPageUiData = OnboardingPageUiData(
-    type = OnboardingPageUiData.Type.NOTIFICATION_PERMISSION,
-    imageRes = R.drawable.ic_notification_permission,
-    title = "notification title",
-    description = "notification body",
-    primaryButtonLabel = "notification primary button text",
-    secondaryButtonLabel = "notification secondary button text",
-)
+val notificationPageUiData =
+    OnboardingPageUiData(
+        type = OnboardingPageUiData.Type.NOTIFICATION_PERMISSION,
+        imageRes = R.drawable.ic_notification_permission,
+        title = "notification title",
+        description = "notification body",
+        primaryButtonLabel = "notification primary button text",
+        secondaryButtonLabel = "notification secondary button text",
+    )
 
-private val allKnownPages = listOf(
-    defaultBrowserPageUiData,
-    syncPageUiData,
-    notificationPageUiData,
-)
+private val allKnownPages =
+    listOf(
+        defaultBrowserPageUiData,
+        syncPageUiData,
+        notificationPageUiData,
+    )

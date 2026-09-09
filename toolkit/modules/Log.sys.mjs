@@ -48,6 +48,7 @@ export var Log = {
     },
   },
 
+  /** @returns {LoggerRepository} */
   get repository() {
     delete Log.repository;
     Log.repository = new LoggerRepository();
@@ -462,7 +463,7 @@ class LoggerRepository {
    * all callers. In other words, if two consumers call getLogger("foo"),
    * they will both have a reference to the same object.
    *
-   * @return Logger
+   * @returns {Logger}
    */
   getLogger(name) {
     if (name in this._loggers) {

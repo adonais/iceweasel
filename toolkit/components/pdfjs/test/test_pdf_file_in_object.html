@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8">
-  <title>PDFjs: Load a PDF in an object/embed.</title>
+  <title>pdf.js: Load a PDF in an object/embed.</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
   <script src="/tests/SimpleTest/EventUtils.js"></script>
   <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
@@ -25,7 +25,19 @@ async function check_viewer_container(frame) {
   );
 }
 
-async function test_object() {
+async function check_fallback_page(frame) {
+  const hasOpenButton = await SpecialPowers.spawn(
+    SpecialPowers.wrap(frame).browsingContext,
+    [],
+    () => !!this.content.document.getElementById("fallbackOpenButton")
+  );
+  ok(
+    hasOpenButton,
+    "The object element with a pdf must have a button to open the pdf"
+  );
+}
+
+async function test_object(check = check_viewer_container) {
   const object = document.createElement("object");
   const { promise: loaded, resolve } = Promise.withResolvers();
   object.onload = resolve;
@@ -35,10 +47,10 @@ async function test_object() {
   object.data = "file_pdfjs_test.pdf";
 
   await loaded;
-  await check_viewer_container(object);
+  await check(object);
 }
 
-async function test_embed() {
+async function test_embed(check = check_viewer_container) {
   const embed = document.createElement("embed");
   const { promise: loaded, resolve } = Promise.withResolvers();
   embed.onload = resolve;
@@ -48,7 +60,7 @@ async function test_embed() {
   embed.src = "file_pdfjs_test.pdf";
 
   await loaded;
-  await check_viewer_container(embed);
+  await check(embed);
 }
 
 add_setup(async function setup() {
@@ -112,6 +124,48 @@ add_task(async function test_not_default() {
   } finally {
     await changeMimeHandler(oldAction[0], oldAction[1]);
   }
+});
+
+add_task(async function test_disabled() {
+  if (SpecialPowers.Services.appinfo.OS === "Android") {
+    info("The embed fallback page is only available on desktop.");
+    return;
+  }
+
+  // With the built-in viewer disabled, object/embed elements cannot invoke the
+  // configured PDF handler directly, so a fallback page is displayed instead.
+  await SpecialPowers.pushPrefEnv({
+    "set": [["pdfjs.disabled", true]],
+  });
+  await test_object(check_fallback_page);
+  await test_embed(check_fallback_page);
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_disabled_without_fallback() {
+  await SpecialPowers.pushPrefEnv({
+    "set": [["pdfjs.disabled", true], ["pdfjs.embedFallback", false]],
+  });
+
+  const object = document.createElement("object");
+  const fallbackContent = document.createElement("span");
+  fallbackContent.textContent = "no pdf viewer";
+  object.append(fallbackContent);
+  document.body.append(object);
+  object.type = "application/pdf";
+  object.data = "file_pdfjs_test.pdf";
+
+  await SimpleTest.promiseWaitForCondition(
+    () => fallbackContent.getBoundingClientRect().width !== 0,
+    "The object element must display its own fallback content"
+  );
+  is(
+    SpecialPowers.wrap(object).browsingContext,
+    null,
+    "No document must be loaded in the object element"
+  );
+
+  await SpecialPowers.popPrefEnv();
 });
 </script>
 </pre>

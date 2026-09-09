@@ -61,6 +61,7 @@
         'tls_filter.cc',
         'tls_grease_unittest.cc',
         'tls_hkdf_unittest.cc',
+        'tls_mldsa_unittest.cc',
         'tls_mlkem_unittest.cc',
         'tls_protect.cc',
         'tls_psk_unittest.cc',

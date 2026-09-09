@@ -22,8 +22,8 @@ import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.wallpapers.WallpaperTheme
 
 /**
- * A wrapper over the [NavigationBar] composable that provides enhanced customization and
- * lifecycle-aware integration for use within the [FenixHomeToolbar] framework.
+ * A wrapper over the [NavigationBar] composable that provides enhanced customization and lifecycle-aware integration
+ * for use within the [FenixHomeToolbar] framework.
  *
  * @param toolbarStore [BrowserToolbarStore] containing the navigation bar state.
  * @param browsingModeManager [BrowsingModeManager] used to determine the current browsing mode.
@@ -40,18 +40,20 @@ class HomeNavigationBar(
     @Composable
     private fun DefaultNavigationBarContent() {
         val uiState by toolbarStore.stateFlow.collectAsState()
-        val toolbarGravity = remember(settings) {
-            when (settings.shouldUseBottomToolbar) {
-                true -> Bottom
-                false -> Top
+        val toolbarGravity =
+            remember(settings) {
+                when (settings.shouldUseBottomToolbar) {
+                    true -> Bottom
+                    false -> Top
+                }
             }
-        }
-        val isKeyboardVisible = if (hideWhenKeyboardShown) {
-            val keyboardState by keyboardAsState()
-            keyboardState == KeyboardState.Opened
-        } else {
-            false
-        }
+        val isKeyboardVisible =
+            if (hideWhenKeyboardShown) {
+                val keyboardState by keyboardAsState()
+                keyboardState == KeyboardState.Opened
+            } else {
+                false
+            }
 
         val isPrivateMode = browsingModeManager.mode.isPrivate
 
@@ -59,14 +61,15 @@ class HomeNavigationBar(
             FirefoxTheme {
                 val colors = MaterialTheme.colorScheme
                 MaterialTheme(
-                    colorScheme = if (settings.enableUniversalEdgeToEdgeWallpapers && !isPrivateMode) {
-                        colors.copy(
-                            surface = Color.Transparent,
-                            onSurface = WallpaperTheme.onWallpaper,
-                        )
-                    } else {
-                        colors
-                    },
+                    colorScheme =
+                        if (settings.enableUniversalEdgeToEdgeWallpapers && !isPrivateMode) {
+                            colors.copy(
+                                surface = Color.Transparent,
+                                onSurface = WallpaperTheme.onWallpaper,
+                            )
+                        } else {
+                            colors
+                        }
                 ) {
                     NavigationBar(
                         actions = uiState.displayState.navigationActions,

@@ -118,7 +118,7 @@ article > span:last-child {
 article {
   display: grid;
   grid-template-areas: "a b c" "a b c";
-  grid-template-columns: 1fr 1fr 6.5em;
+  grid-template-columns: 1fr 1fr auto;
   column-gap: 1em;
   padding-block: 0.4em;
 }
@@ -142,7 +142,7 @@ button {
 @media only screen and (max-width: 500px) {
   article {
     grid-template-areas: "d d" "a c" "b c";
-    grid-template-columns: 1fr 6.5em;
+    grid-template-columns: 1fr auto;
   }
 
   article > span {

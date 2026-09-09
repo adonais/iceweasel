@@ -122,7 +122,7 @@ BaselineInterpreterGenerator::BaselineInterpreterGenerator(JSContext* cx,
                       /* no handlerArgs */) {}
 
 bool BaselineCompilerHandler::init() {
-  if (!analysis_.init(alloc_)) {
+  if (!analysis_.init()) {
     return false;
   }
 
@@ -5860,7 +5860,7 @@ void BaselineCompilerCodeGen::emitTableSwitchJump(Register key,
                                                   Register scratch2) {
   // Jump to resumeEntries[firstResumeIndex + key].
 
-  // Note: BytecodeEmitter::allocateResumeIndex static_asserts
+  // Note: BytecodeEmitter::checkResumeIndexLimit static_asserts
   // |firstResumeIndex * sizeof(uintptr_t)| fits in int32_t.
   uint32_t firstResumeIndex =
       GET_RESUMEINDEX(handler.pc() + TableSwitchOpFirstResumeIndexOffset);
@@ -5994,11 +5994,6 @@ bool BaselineCodeGen<Handler>::emit_OptimizeGetIterator() {
 
   frame.push(R0);
   return true;
-}
-
-template <typename Handler>
-bool BaselineCodeGen<Handler>::emit_IsGenClosing() {
-  return emitIsMagicValue(JS_GENERATOR_CLOSING);
 }
 
 template <typename Handler>
@@ -6312,9 +6307,9 @@ bool BaselineCodeGen<Handler>::emitSuspend(JSOp op) {
     return false;
   }
 
-  // Three values are pushed onto the stack when resuming the generator,
+  // Two values are pushed onto the stack when resuming the generator,
   // replacing the one slot that holds the return value.
-  frame.incStackDepth(2);
+  frame.incStackDepth(1);
   return true;
 }
 
@@ -6515,25 +6510,37 @@ bool BaselineCodeGen<Handler>::emitGeneratorResumePrologueBody() {
         Imm32(0),
         Address(scratch2, ObjectElements::offsetOfInitializedLength()));
 
-    Label loop, loopDone;
+    // Whether the zone needs a marking barrier cannot change while this loop
+    // runs, so test it once rather than once per slot. The barrier is only
+    // armed during an incremental GC, so the common case is the loop that has
+    // no barrier code in it at all.
+    Label loop, barrierLoop, loopDone;
     masm.branchTest32(Assembler::Zero, initLength, initLength, &loopDone);
+    masm.branchTestNeedsMarkingBarrierAnyZone(Assembler::NonZero, &barrierLoop,
+                                              scratch1);
     masm.bind(&loop);
     {
       masm.pushValue(Address(scratch2, 0));
-      emitGuardedCallPreBarrierAnyZone(Address(scratch2, 0), MIRType::Value,
-                                       scratch1);
       masm.addPtr(Imm32(sizeof(Value)), scratch2);
       masm.branchSub32(Assembler::NonZero, Imm32(1), initLength, &loop);
+    }
+    masm.jump(&loopDone);
+
+    masm.bind(&barrierLoop);
+    {
+      masm.pushValue(Address(scratch2, 0));
+      masm.unguardedCallPreBarrier(Address(scratch2, 0), MIRType::Value);
+      masm.addPtr(Imm32(sizeof(Value)), scratch2);
+      masm.branchSub32(Assembler::NonZero, Imm32(1), initLength, &barrierLoop);
     }
     masm.bind(&loopDone);
     regs.add(initLength);
   }
   masm.bind(&noStackStorage);
 
-  // Push the resume operands (value, generator, resumeKind) on the operand
-  // stack, where JSOp::AfterYield and JSOp::CheckResumeKind expect them.
+  // Push the resume operands (value, resumeKind) on the operand stack, where
+  // JSOp::AfterYield expects them.
   masm.pushValue(argValue);
-  masm.pushValue(argGen);
   masm.pushValue(argResumeKind);
 
   // Jump to the resume point.
@@ -6664,11 +6671,18 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
   MOZ_ASSERT(masm.framePushed() == sizeof(uintptr_t));
   masm.setFramePushed(0);
 
-  // Load the code to call. We can't use jitCodeRaw unconditionally because it
-  // may point to Ion code and the Ion prologue doesn't support resuming a
-  // generator.
+  // Load the code to call. Throw currently always resumes in Baseline.
+  // See MaybeEnterJit.
   Register code = regs.takeAny();
+  Label baselineOnly, gotEntry;
+  masm.unboxInt32(resumeKindSlot, scratch1);
+  masm.branch32(Assembler::Equal, scratch1,
+                Imm32(int32_t(GeneratorResumeKind::Throw)), &baselineOnly);
+  masm.loadJitCodeRaw(callee, code);
+  masm.jump(&gotEntry);
+  masm.bind(&baselineOnly);
   masm.loadJitCodeRawNoIon(callee, code, scratch1);
+  masm.bind(&gotEntry);
   regs.add(callee);
 
   masm.switchToObjectRealm(genObj, scratch1);
@@ -6700,47 +6714,6 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
   restoreInterpreterPCReg();
   frame.popn(3);
   frame.push(R0);
-  return true;
-}
-
-template <typename Handler>
-bool BaselineCodeGen<Handler>::emit_CheckResumeKind() {
-  // Load resumeKind in R1, generator in R0.
-  frame.popRegsAndSync(2);
-
-#ifdef DEBUG
-  Label ok;
-  masm.branchTestInt32(Assembler::Equal, R1, &ok);
-  masm.assumeUnreachable("Expected int32 resumeKind");
-  masm.bind(&ok);
-#endif
-
-  // If resumeKind is 'next' we don't have to do anything.
-  Label done;
-  masm.unboxInt32(R1, R1.scratchReg());
-  masm.branch32(Assembler::Equal, R1.scratchReg(),
-                Imm32(int32_t(GeneratorResumeKind::Next)), &done);
-
-  prepareVMCall();
-
-  pushArg(R1.scratchReg());  // resumeKind
-
-  masm.loadValue(frame.addressOfStackValue(-1), R2);
-  pushArg(R2);  // arg
-
-  masm.unboxObject(R0, R0.scratchReg());
-  pushArg(R0.scratchReg());  // genObj
-
-  masm.loadBaselineFramePtr(FramePointer, R2.scratchReg());
-  pushArg(R2.scratchReg());  // frame
-
-  using Fn = bool (*)(JSContext*, BaselineFrame*,
-                      Handle<AbstractGeneratorObject*>, HandleValue, int32_t);
-  if (!callVM<Fn, jit::GeneratorThrowOrReturn>()) {
-    return false;
-  }
-
-  masm.bind(&done);
   return true;
 }
 
@@ -6993,6 +6966,10 @@ bool BaselineCodeGen<Handler>::emitPrologue() {
   emitProfilerEnterFrame();
 
   masm.subFromStackPtr(Imm32(BaselineFrame::Size()));
+
+  // A bailout of an Ion frame that's still mid-generator-resume re-enters here
+  // to redo the resume in Baseline.
+  masm.bind(&bailoutResumePrologue_);
 
   if (!emitGeneratorResumePrologue()) {
     return false;
@@ -7293,6 +7270,13 @@ bool BaselineInterpreterGenerator::emitInterpreterLoop() {
   restoreInterpreterPCReg();
   masm.jump(&bailoutPrologue_);
 
+  // External entry point for Ion resume prologue bailouts.
+  bailoutResumePrologueOffset_ = CodeOffset(masm.currentOffset());
+  restoreInterpreterPCReg();
+  masm.moveToStackPtr(FramePointer);
+  masm.subFromStackPtr(Imm32(BaselineFrame::Size()));
+  masm.jump(&bailoutResumePrologue_);
+
   // Emit debug trap handler code (target of patchable call instructions). This
   // is just a tail call to the debug trap handler trampoline code.
   {
@@ -7461,7 +7445,7 @@ bool BaselineInterpreterGenerator::generate(JSContext* cx,
 
     interpreter.init(
         code, interpretOpOffset_, interpretOpNoDebugTrapOffset_,
-        bailoutPrologueOffset_.offset(),
+        bailoutPrologueOffset_.offset(), bailoutResumePrologueOffset_.offset(),
         profilerEnterFrameToggleOffset_.offset(),
         profilerExitFrameToggleOffset_.offset(), debugTrapHandlerOffset_,
         std::move(handler.debugInstrumentationOffsets()),

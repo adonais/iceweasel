@@ -4,6 +4,7 @@
 
 package org.mozilla.focus.telemetry
 
+import kotlin.test.assertNotNull
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -13,7 +14,6 @@ import org.mozilla.focus.telemetry.fake.FakeGleanProfileIdStore
 import org.mozilla.focus.telemetry.fake.FakeGleanUsageReporting
 import org.mozilla.focus.telemetry.fake.FakeLifecycleEventObserver
 import org.mozilla.focus.telemetry.fake.FakeLifecycleOwner
-import kotlin.test.assertNotNull
 
 internal class GleanUsageReportingMetricsServiceTest {
 
@@ -85,11 +85,12 @@ internal class GleanUsageReportingMetricsServiceTest {
         assertTrue(fakeGleanUsageReporting.dataDeletionRequested!!)
     }
 
-    private fun createGleanUsageReportingMetricsService() = GleanUsageReportingMetricsService(
-        lifecycleOwner = fakeLifecycleOwner,
-        gleanUsageReportingLifecycleObserver = fakeLifecycleEventObserver,
-        gleanUsageReporting = fakeGleanUsageReporting,
-        gleanProfileId = FakeGleanProfileId(),
-        gleanProfileIdStore = FakeGleanProfileIdStore(),
-    )
+    private fun createGleanUsageReportingMetricsService() =
+        GleanUsageReportingMetricsService(
+            lifecycleOwner = fakeLifecycleOwner,
+            gleanUsageReportingLifecycleObserver = fakeLifecycleEventObserver,
+            gleanUsageReporting = fakeGleanUsageReporting,
+            gleanProfileId = FakeGleanProfileId(),
+            gleanProfileIdStore = FakeGleanProfileIdStore(),
+        )
 }

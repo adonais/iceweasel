@@ -1385,22 +1385,6 @@ function waitForCondition(condition, nextTest, errorMsg) {
   };
 }
 
-// Wait for and then acknowledge (by pressing the primary button) the
-// given notification.
-function promiseNotification(id = "addon-webext-permissions") {
-  return new Promise(resolve => {
-    function popupshown() {
-      let notification = PopupNotifications.getNotification(id);
-      if (notification) {
-        PopupNotifications.panel.removeEventListener("popupshown", popupshown);
-        PopupNotifications.panel.firstElementChild.button.click();
-        resolve();
-      }
-    }
-    PopupNotifications.panel.addEventListener("popupshown", popupshown);
-  });
-}
-
 /**
  * Wait for the given PopupNotification to display
  *
@@ -1415,6 +1399,14 @@ function promisePopupNotificationShown(name = "addon-webext-permissions") {
     function popupshown() {
       let notification = PopupNotifications.getNotification(name);
       if (!notification) {
+        return;
+      }
+      // Don't use PopupNotifications.isPanelOpen here: it also returns true
+      // while the panel is still in the "showing" state, in which case the
+      // popup frame isn't open yet and its contents aren't focusable.
+      let panelState = PopupNotifications.panel.state;
+      if (panelState != "open") {
+        info(`Ignoring popupshown for ${name}, panel state: ${panelState}`);
         return;
       }
 

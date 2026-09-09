@@ -1,0 +1,27 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Test for the countId attribute of nsIAlertNotification</title>
+  <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="chrome://mochikit/content/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<script class="testbody">
+function makeAlert() {
+  const alert = Cc["@mozilla.org/alert-notification;1"].createInstance(
+    Ci.nsIAlertNotification
+  );
+  alert.init("countIdTest", "", "title", "text");
+  return alert;
+}
+
+const first = makeAlert();
+const second = makeAlert();
+
+isnot(first.countId, 0, "countId is assigned");
+isnot(second.countId, 0, "countId is assigned for the second instance");
+isnot(first.countId, second.countId, "instances get distinct countIds");
+is(first.countId, first.countId, "countId is stable across reads");
+</script>
+</body>
+</html>

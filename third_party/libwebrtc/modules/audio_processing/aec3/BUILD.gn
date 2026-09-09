@@ -308,6 +308,7 @@ if (rtc_include_tests) {
       ":vector_math",
       "..:apm_logging",
       "..:audio_buffer",
+      "..:echo_canceller_test_tools",
       "..:high_pass_filter",
       "../../../api:field_trials",
       "../../../api/audio:aec3_config",
@@ -375,9 +376,6 @@ if (rtc_include_tests) {
         "suppression_gain_unittest.cc",
         "vector_math_unittest.cc",
       ]
-    }
-    if (!build_with_chromium) {
-      deps += [ "..:audio_processing_unittests" ]
     }
   }
 }

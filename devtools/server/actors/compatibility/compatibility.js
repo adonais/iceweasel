@@ -9,11 +9,10 @@ const {
   compatibilitySpec,
 } = require("resource://devtools/shared/specs/compatibility.js");
 
-loader.lazyGetter(this, "mdnCompatibility", () => {
-  const MDNCompatibility = require("resource://devtools/server/actors/compatibility/lib/MDNCompatibility.js");
-  const cssPropertiesCompatData = require("resource://devtools/shared/compatibility/dataset/css-properties.json");
-  return new MDNCompatibility(cssPropertiesCompatData);
-});
+const MDNCompatibility = require("resource://devtools/server/actors/compatibility/lib/MDNCompatibility.js");
+const {
+  getCSSPropertiesCompatData,
+} = require("resource://devtools/shared/compatibility/compatibility-dataset.js");
 
 class CompatibilityActor extends Actor {
   /**
@@ -35,11 +34,16 @@ class CompatibilityActor extends Actor {
   constructor(inspector) {
     super(inspector.conn, compatibilitySpec);
     this.inspector = inspector;
+    // Note: getCSSPropertiesCompatData() will either pick the real or mocked
+    // MDN dataset, so it should not be persisted beyond the lifetime of the
+    // actor.
+    this.mdnCompatibility = new MDNCompatibility(getCSSPropertiesCompatData());
   }
 
   destroy() {
     super.destroy();
     this.inspector = null;
+    this.mdnCompatibility = null;
   }
 
   form() {
@@ -84,7 +88,7 @@ class CompatibilityActor extends Actor {
    */
   getCSSDeclarationBlockIssues(domRulesDeclarations, targetBrowsers) {
     return domRulesDeclarations.map(declarationBlock =>
-      mdnCompatibility.getCSSDeclarationBlockIssues(
+      this.mdnCompatibility.getCSSDeclarationBlockIssues(
         declarationBlock,
         targetBrowsers
       )
@@ -146,7 +150,7 @@ class CompatibilityActor extends Actor {
       }
     }
 
-    return mdnCompatibility.getCSSDeclarationBlockIssues(
+    return this.mdnCompatibility.getCSSDeclarationBlockIssues(
       declarations,
       targetBrowsers
     );

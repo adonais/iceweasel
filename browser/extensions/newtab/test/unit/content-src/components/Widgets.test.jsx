@@ -220,8 +220,8 @@ describe("<Widgets>", () => {
 
       assert.equal(
         setPrefCalls.length,
-        8,
-        `should dispatch eight SetPref actions, got ${setPrefCalls.length}.`
+        9,
+        `should dispatch nine SetPref actions, got ${setPrefCalls.length}.`
       );
 
       const listsPrefCall = setPrefCalls.find(
@@ -322,8 +322,8 @@ describe("<Widgets>", () => {
 
       assert.equal(
         setPrefCalls.length,
-        8,
-        "should dispatch eight SetPref actions"
+        9,
+        "should dispatch nine SetPref actions"
       );
 
       const listsPrefCall = setPrefCalls.find(
@@ -424,8 +424,8 @@ describe("<Widgets>", () => {
 
       assert.equal(
         setPrefCalls.length,
-        8,
-        "should dispatch eight SetPref actions"
+        9,
+        "should dispatch nine SetPref actions"
       );
 
       const listsPrefCall = setPrefCalls.find(

@@ -56,94 +56,96 @@ class ShortcutsMiddlewareTest {
     }
 
     @Test
-    fun `WHEN InitAction action is dispatched THEN showAddShortcut, topSites and popularSites values are set with the correct values`() = runTest(testDispatcher) {
-        settings.enableAddShortcutsImprovement = true
+    fun `WHEN InitAction action is dispatched THEN showAddShortcut, topSites and popularSites values are set with the correct values`() =
+        runTest(testDispatcher) {
+            settings.enableAddShortcutsImprovement = true
 
-        val topSites = listOf(
-            TopSite.Pinned(id = 1L, title = "Mozilla", url = "https://mozilla.org", createdAt = 0),
-        )
-        val manifestEntries = listOf(
-            ManifestEntry(
-                rank = 1,
-                domain = "example",
-                categories = emptyList(),
-                serpCategories = emptyList(),
-                url = "https://example.com",
-                title = "example",
-                icon = "https://example.com",
-            ),
-        )
-        every { merinoManifestProvider.getTopDomains(any(), any()) } returns manifestEntries
+            val topSites =
+                listOf(TopSite.Pinned(id = 1L, title = "Mozilla", url = "https://mozilla.org", createdAt = 0))
+            val manifestEntries =
+                listOf(
+                    ManifestEntry(
+                        rank = 1,
+                        domain = "example",
+                        categories = emptyList(),
+                        serpCategories = emptyList(),
+                        url = "https://example.com",
+                        title = "example",
+                        icon = "https://example.com",
+                    )
+                )
+            every { merinoManifestProvider.getTopDomains(any(), any()) } returns manifestEntries
 
-        appStore = AppStore(initialState = AppState(topSites = topSites))
+            appStore = AppStore(initialState = AppState(topSites = topSites))
 
-        val store = createStore(scope = backgroundScope)
+            val store = createStore(scope = backgroundScope)
 
-        verify {
-            merinoManifestProvider.getTopDomains(
-                limit = POPULAR_SITES_LIMIT,
-                excludedDomains = setOf("mozilla.org"),
-            )
+            verify {
+                merinoManifestProvider.getTopDomains(
+                    limit = POPULAR_SITES_LIMIT,
+                    excludedDomains = setOf("mozilla.org"),
+                )
+            }
+
+            assertEquals(settings.enableAddShortcutsImprovement, store.state.showAddShortcut)
+            assertEquals(topSites, store.state.topSites)
+            assertEquals(manifestEntries.map { it.toPopularSite() }, store.state.popularSites)
         }
 
-        assertEquals(settings.enableAddShortcutsImprovement, store.state.showAddShortcut)
-        assertEquals(topSites, store.state.topSites)
-        assertEquals(manifestEntries.map { it.toPopularSite() }, store.state.popularSites)
-    }
-
     @Test
-    fun `WHEN appStore is updated with new top sites THEN UpdateTopSites action is dispatched`() = runTest(testDispatcher) {
-        val captureMiddleware = CaptureActionsMiddleware<ShortcutsState, ShortcutsAction>()
-        createStore(captureMiddleware = captureMiddleware, scope = backgroundScope)
+    fun `WHEN appStore is updated with new top sites THEN UpdateTopSites action is dispatched`() =
+        runTest(testDispatcher) {
+            val captureMiddleware = CaptureActionsMiddleware<ShortcutsState, ShortcutsAction>()
+            createStore(captureMiddleware = captureMiddleware, scope = backgroundScope)
 
-        val topSites = listOf(
-            TopSite.Default(id = 7L, title = "Wiki", url = "https://wikipedia.org", createdAt = 0),
-        )
-        appStore.dispatch(AppAction.TopSitesChange(topSites))
+            val topSites =
+                listOf(TopSite.Default(id = 7L, title = "Wiki", url = "https://wikipedia.org", createdAt = 0))
+            appStore.dispatch(AppAction.TopSitesChange(topSites))
 
-        captureMiddleware.assertLastAction(ShortcutsAction.UpdateTopSites::class) { action ->
-            assertEquals(topSites, action.topSites)
+            captureMiddleware.assertLastAction(ShortcutsAction.UpdateTopSites::class) { action ->
+                assertEquals(topSites, action.topSites)
+            }
         }
-    }
 
     @Test
-    fun `WHEN SaveShortcut action is dispatched THEN addPinnedSites use case is called and dialog is closed`() = runTest(testDispatcher) {
-        val shortcutsCaptureMiddleware = CaptureActionsMiddleware<ShortcutsState, ShortcutsAction>()
-        val store = createStore(captureMiddleware = shortcutsCaptureMiddleware, scope = backgroundScope)
+    fun `WHEN SaveShortcut action is dispatched THEN addPinnedSites use case is called and dialog is closed`() =
+        runTest(testDispatcher) {
+            val shortcutsCaptureMiddleware = CaptureActionsMiddleware<ShortcutsState, ShortcutsAction>()
+            val store = createStore(captureMiddleware = shortcutsCaptureMiddleware, scope = backgroundScope)
 
-        val title = "Firefox"
-        val url = "https://firefox.com"
-        store.dispatch(
-            ShortcutsAction.SaveShortcut(title = title, url = url, source = AddShortcutSource.POPULAR),
-        )
+            val title = "Firefox"
+            val url = "https://firefox.com"
+            store.dispatch(ShortcutsAction.SaveShortcut(title = title, url = url, source = AddShortcutSource.POPULAR))
 
-        coVerify { topSitesUseCases.addPinnedSites(title = title, url = url) }
-        captureMiddleware.assertLastAction(ShortcutAction.ShortcutAdded::class) { action ->
-            assertEquals(AddShortcutSource.POPULAR, action.source)
-            assertEquals(AddShortcutEntryPoint.SHORTCUTS_LIBRARY, action.entryPoint)
+            coVerify { topSitesUseCases.addPinnedSites(title = title, url = url) }
+            captureMiddleware.assertLastAction(ShortcutAction.ShortcutAdded::class) { action ->
+                assertEquals(AddShortcutSource.POPULAR, action.source)
+                assertEquals(AddShortcutEntryPoint.SHORTCUTS_LIBRARY, action.entryPoint)
+            }
+            shortcutsCaptureMiddleware.assertLastAction(ShortcutsAction.CloseDialog::class)
         }
-        shortcutsCaptureMiddleware.assertLastAction(ShortcutsAction.CloseDialog::class)
-    }
 
     @Test
-    fun `WHEN ShowAddShortcutBottomSheet action is dispatched THEN show add shortcut sheet shown action is dispatched`() = runTest(testDispatcher) {
-        val store = createStore(scope = backgroundScope)
+    fun `WHEN ShowAddShortcutBottomSheet action is dispatched THEN show add shortcut sheet shown action is dispatched`() =
+        runTest(testDispatcher) {
+            val store = createStore(scope = backgroundScope)
 
-        store.dispatch(ShortcutsAction.ShowAddShortcutBottomSheet)
+            store.dispatch(ShortcutsAction.ShowAddShortcutBottomSheet)
 
-        captureMiddleware.assertLastAction(ShortcutAction.AddShortcutSheetShown::class) { action ->
-            assertEquals(AddShortcutEntryPoint.SHORTCUTS_LIBRARY, action.entryPoint)
+            captureMiddleware.assertLastAction(ShortcutAction.AddShortcutSheetShown::class) { action ->
+                assertEquals(AddShortcutEntryPoint.SHORTCUTS_LIBRARY, action.entryPoint)
+            }
         }
-    }
 
     @Test
-    fun `WHEN ShowAddShortcutDialog action is dispatched THEN the add website dialog shown action is dispatched`() = runTest(testDispatcher) {
-        val store = createStore(scope = backgroundScope)
+    fun `WHEN ShowAddShortcutDialog action is dispatched THEN the add website dialog shown action is dispatched`() =
+        runTest(testDispatcher) {
+            val store = createStore(scope = backgroundScope)
 
-        store.dispatch(ShortcutsAction.ShowAddShortcutDialog)
+            store.dispatch(ShortcutsAction.ShowAddShortcutDialog)
 
-        captureMiddleware.assertLastAction(ShortcutAction.AddWebsiteDialogShown::class) { }
-    }
+            captureMiddleware.assertLastAction(ShortcutAction.AddWebsiteDialogShown::class) {}
+        }
 
     private fun createStore(
         initialState: ShortcutsState = ShortcutsState.INITIAL,
@@ -151,14 +153,15 @@ class ShortcutsMiddlewareTest {
         scope: CoroutineScope,
         ioDispatcher: CoroutineDispatcher = testDispatcher,
     ): ShortcutsStore {
-        val middleware = ShortcutsMiddleware(
-            appStore = appStore,
-            topSitesUseCases = topSitesUseCases,
-            merinoManifestProvider = merinoManifestProvider,
-            settings = settings,
-            scope = scope,
-            ioDispatcher = ioDispatcher,
-        )
+        val middleware =
+            ShortcutsMiddleware(
+                appStore = appStore,
+                topSitesUseCases = topSitesUseCases,
+                merinoManifestProvider = merinoManifestProvider,
+                settings = settings,
+                scope = scope,
+                ioDispatcher = ioDispatcher,
+            )
         return ShortcutsStore(
             initialState = initialState,
             middleware = listOf(captureMiddleware, middleware),

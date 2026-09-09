@@ -11,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.R as materialR
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -27,7 +28,6 @@ import mozilla.components.support.ktx.android.content.getColorFromAttr
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.FragmentTabHistoryDialogBinding
 import org.mozilla.fenix.ext.requireComponents
-import com.google.android.material.R as materialR
 
 class TabHistoryDialogFragment : BottomSheetDialogFragment() {
 
@@ -53,50 +53,51 @@ class TabHistoryDialogFragment : BottomSheetDialogFragment() {
 
         val binding = FragmentTabHistoryDialogBinding.bind(view)
 
-        view.background = MaterialShapeDrawable(
-            ShapeAppearanceModel.builder()
-                .setTopLeftCorner(
-                    CornerFamily.ROUNDED,
-                    resources.getDimension(R.dimen.bottom_sheet_corner_radius_28dp),
+        view.background =
+            MaterialShapeDrawable(
+                    ShapeAppearanceModel.builder()
+                        .setTopLeftCorner(
+                            CornerFamily.ROUNDED,
+                            resources.getDimension(R.dimen.bottom_sheet_corner_radius_28dp),
+                        )
+                        .setTopRightCorner(
+                            CornerFamily.ROUNDED,
+                            resources.getDimension(R.dimen.bottom_sheet_corner_radius_28dp),
+                        )
+                        .build()
                 )
-                .setTopRightCorner(
-                    CornerFamily.ROUNDED,
-                    resources.getDimension(R.dimen.bottom_sheet_corner_radius_28dp),
-                )
-                .build(),
-        ).apply {
-            fillColor = ColorStateList.valueOf(view.context.getColorFromAttr(materialR.attr.colorSurface))
-        }
+                .apply {
+                    fillColor = ColorStateList.valueOf(view.context.getColorFromAttr(materialR.attr.colorSurface))
+                }
 
         customTabSessionId = requireArguments().getString(EXTRA_SESSION_ID)
 
-        val controller = DefaultTabHistoryController(
-            navController = findNavController(),
-            goToHistoryIndexUseCase = requireComponents.useCases.sessionUseCases.goToHistoryIndex,
-            customTabId = customTabSessionId,
-        )
-        val tabHistoryView = TabHistoryView(
-            container = binding.tabHistoryLayout,
-            expandDialog = ::expand,
-            interactor = TabHistoryInteractor(controller),
-        )
+        val controller =
+            DefaultTabHistoryController(
+                navController = findNavController(),
+                goToHistoryIndexUseCase = requireComponents.useCases.sessionUseCases.goToHistoryIndex,
+                customTabId = customTabSessionId,
+            )
+        val tabHistoryView =
+            TabHistoryView(
+                container = binding.tabHistoryLayout,
+                expandDialog = ::expand,
+                interactor = TabHistoryInteractor(controller),
+            )
 
         // flush the session state for showing the most recent the engine session state of the selected tab.
         requireComponents.core.store.state.selectedTabId?.let {
-            requireComponents.core.store.dispatch(
-                EngineAction.FlushEngineSessionStateAction(it),
-            )
+            requireComponents.core.store.dispatch(EngineAction.FlushEngineSessionStateAction(it))
         }
 
         // flush the session state for showing the most recent the engine session state of the custom tab.
         customTabSessionId?.let {
-            requireComponents.core.store.dispatch(
-                EngineAction.FlushEngineSessionStateAction(it),
-            )
+            requireComponents.core.store.dispatch(EngineAction.FlushEngineSessionStateAction(it))
         }
 
         requireComponents.core.store.flowScoped(viewLifecycleOwner, Dispatchers.Main) { flow ->
-            flow.mapNotNull { state -> state.findCustomTabOrSelectedTab(customTabSessionId)?.content?.history }
+            flow
+                .mapNotNull { state -> state.findCustomTabOrSelectedTab(customTabSessionId)?.content?.history }
                 .distinctUntilChanged()
                 .collect { historyState ->
                     tabHistoryView.updateState(historyState)
@@ -110,7 +111,8 @@ class TabHistoryDialogFragment : BottomSheetDialogFragment() {
 
     companion object {
         const val EXTRA_SESSION_ID = "activeSessionId"
-        val NAME: String = TabHistoryDialogFragment::class.java.canonicalName?.substringAfterLast('.')
-            ?: TabHistoryDialogFragment::class.java.simpleName
+        val NAME: String =
+            TabHistoryDialogFragment::class.java.canonicalName?.substringAfterLast('.')
+                ?: TabHistoryDialogFragment::class.java.simpleName
     }
 }

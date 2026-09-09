@@ -388,13 +388,13 @@ BEGIN_TEST(testWasmRefType_GLB) {
       {a1.asNonNullable(), a1, a1.asNonNullable()},
       {a1.asNonNullable(), a1.asNonNullable(), a1.asNonNullable()},
 
-      // $a1, any -> $a1 or none
+      // $a1, any -> $a1
       {a1, RefType::any(), a1},
       {a1, RefType::any().asNonNullable(), a1.asNonNullable()},
       {a1.asNonNullable(), RefType::any(), a1.asNonNullable()},
       {a1.asNonNullable(), RefType::any().asNonNullable(), a1.asNonNullable()},
 
-      // $a1, eq -> eq or none
+      // $a1, eq -> $a1
       {a1, RefType::eq(), a1},
       {a1, RefType::eq().asNonNullable(), a1.asNonNullable()},
       {a1.asNonNullable(), RefType::eq(), a1.asNonNullable()},
@@ -414,7 +414,7 @@ BEGIN_TEST(testWasmRefType_GLB) {
       {a1.asNonNullable(), RefType::struct_().asNonNullable(),
        RefType::none().asNonNullable()},
 
-      // $a1, array -> $a1 or none
+      // $a1, array -> $a1
       {a1, RefType::array(), a1},
       {a1, RefType::array().asNonNullable(), a1.asNonNullable()},
       {a1.asNonNullable(), RefType::array(), a1.asNonNullable()},
@@ -432,7 +432,7 @@ BEGIN_TEST(testWasmRefType_GLB) {
       // concrete subtypes
       //
 
-      // $s1, $s2 -> $s2 or none
+      // $s1, $s2 -> $s2
       {s1, s2, s2},
       {s1, s2.asNonNullable(), s2.asNonNullable()},
       {s1.asNonNullable(), s2, s2.asNonNullable()},

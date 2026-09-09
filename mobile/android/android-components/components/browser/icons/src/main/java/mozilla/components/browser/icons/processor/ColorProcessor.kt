@@ -13,9 +13,7 @@ import mozilla.components.browser.icons.Icon
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.support.images.DesiredSize
 
-/**
- * [IconProcessor] implementation to extract the dominant color from the icon.
- */
+/** [IconProcessor] implementation to extract the dominant color from the icon. */
 class ColorProcessor : IconProcessor {
 
     override fun process(

@@ -21,6 +21,7 @@
 #include "mozilla/RefPtr.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
+#include "nsXULAppAPI.h"
 
 #include <utility>
 
@@ -529,6 +530,10 @@ void ProfileBufferGlobalController::HandleChunkManagerNonFinalUpdate(
 /* static */
 ProfilerParentTracker* ProfilerParentTracker::GetInstance() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  if (!XRE_IsParentProcess()) {
+    return nullptr;
+  }
 
   // The main instance pointer, it will be initialized at most once, before
   // XPCOMShutdownThreads.

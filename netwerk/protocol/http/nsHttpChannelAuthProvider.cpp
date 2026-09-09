@@ -879,6 +879,13 @@ nsresult nsHttpChannelAuthProvider::GetCredentialsForChallenge(
   // as restartable.
   mAuthChannel->ConnectionRestartable(!authAtProgress);
 
+  if (identFromURI &&
+      (authFlags & nsIHttpAuthenticator::IDENTITY_INCLUDES_DOMAIN)) {
+    LOG(("  ignoring URL identity for a domain-identity scheme\n"));
+    ident->Clear();
+    identFromURI = false;
+  }
+
   if (identityInvalid) {
     if (entry) {
       if (ident->Equals(entry->Identity())) {

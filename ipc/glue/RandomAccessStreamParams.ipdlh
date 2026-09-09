@@ -22,10 +22,17 @@ struct LimitingFileRandomAccessStreamParams
   IPCQuotaObject quotaObject;
 };
 
+struct NSSEncryptedRandomAccessStreamParams
+{
+  RandomAccessStreamParams baseStreamParams;
+  uint8_t[] masterKey;
+};
+
 union RandomAccessStreamParams
 {
   FileRandomAccessStreamParams;
   LimitingFileRandomAccessStreamParams;
+  NSSEncryptedRandomAccessStreamParams;
 };
 
 } // namespace ipc

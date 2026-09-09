@@ -22,9 +22,7 @@ import mozilla.components.lib.llm.mlpa.service.VerificationNetworkError
 import mozilla.components.lib.llm.mlpa.service.VerificationResponseParseError
 import mozilla.components.lib.llm.mlpa.service.VerificationServiceFailed
 
-/**
- * The result of looking up an error code for a throwable.
- */
+/** The result of looking up an error code for a throwable. */
 sealed class ErrorLookupResult {
     abstract val code: Int
 
@@ -39,43 +37,43 @@ sealed class ErrorLookupResult {
     }
 }
 
-/**
- * Static namespace for [lookup].
- */
+/** Static namespace for [lookup]. */
 object ErrorCodeLookup {
     /**
      * Maps a [Throwable] to a stable numeric code for UI display and telemetry.
      *
-     * Branching is tiered: concrete impl subtypes first (most specific), then the impl marker
-     * for unenumerated impl errors, then a global fallback. Code ranges are reserved per impl
-     * module so reports tell us which provider an error came from at a glance.
+     * Branching is tiered: concrete impl subtypes first (most specific), then the impl marker for unenumerated impl
+     * errors, then a global fallback. Code ranges are reserved per impl module so reports tell us which provider an
+     * error came from at a glance.
      *
      * Code ranges:
-     *  - 1000-1099: MLPA (lib/llm-mlpa)
-     *  - 9999:      global fallback for unrecognized errors
+     * - 1000-1099: MLPA (lib/llm-mlpa)
+     * - 9999: global fallback for unrecognized errors
      */
-    fun lookup(throwable: Throwable): ErrorLookupResult = when (throwable) {
-        is MlpaError -> throwable.lookupResult
-        is Llm.Exception -> ErrorLookupResult.Known(throwable, ErrorLookupResult.FALLBACK_CODE)
-        else -> ErrorLookupResult.Unknown(throwable)
-    }
+    fun lookup(throwable: Throwable): ErrorLookupResult =
+        when (throwable) {
+            is MlpaError -> throwable.lookupResult
+            is Llm.Exception -> ErrorLookupResult.Known(throwable, ErrorLookupResult.FALLBACK_CODE)
+            else -> ErrorLookupResult.Unknown(throwable)
+        }
 
     private val MlpaError.lookupResult: ErrorLookupResult
-        get() = when (this) {
-            is IntegrityHandshakeFailure -> ErrorLookupResult.Known(this, 1002)
-            is VerificationServiceFailed -> ErrorLookupResult.Known(this, 1003)
-            is InvalidToken -> ErrorLookupResult.Known(this, 1004)
-            is UserBlocked -> ErrorLookupResult.Known(this, 1005)
-            is RequestTooLarge -> ErrorLookupResult.Known(this, 1006)
-            is BudgetExceeded -> ErrorLookupResult.Known(this, 1007)
-            is RateLimited -> ErrorLookupResult.Known(this, 1008)
-            is UpstreamError -> ErrorLookupResult.Known(this, 1009)
-            is ServerError -> ErrorLookupResult.Known(this, 1010)
-            is ChatNetworkError -> ErrorLookupResult.Known(this, 1011)
-            is ResponseParseError -> ErrorLookupResult.Known(this, 1012)
-            is RateLimitResponseParseError -> ErrorLookupResult.Known(this, 1013)
-            is UpstreamResponseParseError -> ErrorLookupResult.Known(this, 1014)
-            is VerificationResponseParseError -> ErrorLookupResult.Known(this, 1017)
-            is VerificationNetworkError -> ErrorLookupResult.Known(this, 1018)
-        }
+        get() =
+            when (this) {
+                is IntegrityHandshakeFailure -> ErrorLookupResult.Known(this, 1002)
+                is VerificationServiceFailed -> ErrorLookupResult.Known(this, 1003)
+                is InvalidToken -> ErrorLookupResult.Known(this, 1004)
+                is UserBlocked -> ErrorLookupResult.Known(this, 1005)
+                is RequestTooLarge -> ErrorLookupResult.Known(this, 1006)
+                is BudgetExceeded -> ErrorLookupResult.Known(this, 1007)
+                is RateLimited -> ErrorLookupResult.Known(this, 1008)
+                is UpstreamError -> ErrorLookupResult.Known(this, 1009)
+                is ServerError -> ErrorLookupResult.Known(this, 1010)
+                is ChatNetworkError -> ErrorLookupResult.Known(this, 1011)
+                is ResponseParseError -> ErrorLookupResult.Known(this, 1012)
+                is RateLimitResponseParseError -> ErrorLookupResult.Known(this, 1013)
+                is UpstreamResponseParseError -> ErrorLookupResult.Known(this, 1014)
+                is VerificationResponseParseError -> ErrorLookupResult.Known(this, 1017)
+                is VerificationNetworkError -> ErrorLookupResult.Known(this, 1018)
+            }
 }

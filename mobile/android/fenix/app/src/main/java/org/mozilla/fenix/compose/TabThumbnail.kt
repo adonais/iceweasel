@@ -19,16 +19,15 @@ import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
- * Thumbnail belonging to a [tab]. If a thumbnail is not available, the favicon
- * will be displayed until the thumbnail is loaded.
+ * Thumbnail belonging to a [tab]. If a thumbnail is not available, the favicon will be displayed until the thumbnail is
+ * loaded.
  *
  * @param tabThumbnailImageData The tab information needed to render a thumbnail.
  * @param thumbnailSizePx Size of the thumbnail in pixels.
  * @param modifier [Modifier] used to draw the image content.
  * @param shape [Shape] to be applied to the thumbnail card.
  * @param border [BorderStroke] to be applied around the thumbnail card.
- * @param contentDescription Text used by accessibility services
- * to describe what this image represents.
+ * @param contentDescription Text used by accessibility services to describe what this image represents.
  * @param alignment [Alignment] used to draw the image content.
  */
 @Composable
@@ -62,12 +61,13 @@ fun TabThumbnail(
 private fun ThumbnailCardPreview() {
     FirefoxTheme {
         TabThumbnail(
-            tabThumbnailImageData = TabThumbnailImageData(
-                tabUrl = "www.mozilla.com",
-                tabId = "123",
-                tabIcon = null,
-                isPrivate = false,
-            ),
+            tabThumbnailImageData =
+                TabThumbnailImageData(
+                    tabUrl = "www.mozilla.com",
+                    tabId = "123",
+                    tabIcon = null,
+                    isPrivate = false,
+                ),
             thumbnailSizePx = 108,
             modifier = Modifier.size(108.dp, 80.dp),
         )

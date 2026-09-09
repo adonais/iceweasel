@@ -5,6 +5,7 @@
 package mozilla.components.feature.addons.update
 
 import androidx.room.InvalidationTracker
+import java.util.Date
 import mozilla.components.feature.addons.update.AddonUpdater.Status.SuccessfullyUpdated
 import mozilla.components.feature.addons.update.DefaultAddonUpdater.UpdateAttemptStorage
 import mozilla.components.feature.addons.update.db.UpdateAttemptDao
@@ -15,7 +16,6 @@ import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import java.util.Date
 
 class UpdateAttemptStorageTest {
 
@@ -25,11 +25,12 @@ class UpdateAttemptStorageTest {
     @Before
     fun setup() {
         mockDAO = mock()
-        storage = spy(
-            UpdateAttemptStorage(mock()).apply {
-                databaseInitializer = { mockDatabase(mockDAO) }
-            },
-        )
+        storage =
+            spy(
+                UpdateAttemptStorage(mock()).apply {
+                    databaseInitializer = { mockDatabase(mockDAO) }
+                }
+            )
     }
 
     @Test
@@ -61,9 +62,12 @@ class UpdateAttemptStorageTest {
         )
     }
 
-    private fun mockDatabase(dao: UpdateAttemptDao) = object : UpdateAttemptsDatabase() {
-        override fun updateAttemptDao() = dao
-        override fun createInvalidationTracker(): InvalidationTracker = mock()
-        override fun clearAllTables() = Unit
-    }
+    private fun mockDatabase(dao: UpdateAttemptDao) =
+        object : UpdateAttemptsDatabase() {
+            override fun updateAttemptDao() = dao
+
+            override fun createInvalidationTracker(): InvalidationTracker = mock()
+
+            override fun clearAllTables() = Unit
+        }
 }

@@ -10,9 +10,7 @@ import org.mozilla.focus.ext.components
 import org.mozilla.focus.settings.LearnMoreSwitchPreference
 import org.mozilla.focus.utils.SupportUtils
 
-/**
- * Switch preference for enabling/disabling telemetry
- */
+/** Switch preference for enabling/disabling telemetry */
 internal class DailyUsageReportingSwitchPreference(context: Context, attrs: AttributeSet?) :
     LearnMoreSwitchPreference(context, attrs) {
 

@@ -28,7 +28,8 @@ struct NetworkMarker {
       int64_t aRedirectChannelId, uint32_t aClassOfServiceFlags,
       bool aClassOfServiceIncremental, nsresult aRequestStatus,
       const mozilla::Maybe<mozilla::net::HttpVersion> aHttpVersion,
-      mozilla::Maybe<uint32_t> aResponseStatus) {
+      mozilla::Maybe<uint32_t> aResponseStatus,
+      const ProfilerString8View& aSecPurpose, bool aActivatedFromPrefetch) {
     // This payload still streams a startTime and endTime property because it
     // made the migration to MarkerTiming on the front-end easier.
     aWriter.TimeProperty("startTime", aStart);
@@ -102,6 +103,16 @@ struct NetworkMarker {
 
     if (aIsPrivateBrowsing) {
       aWriter.BoolProperty("isPrivateBrowsing", aIsPrivateBrowsing);
+    }
+
+    if (aSecPurpose.Length() != 0) {
+      aWriter.StringProperty("secPurpose", aSecPurpose);
+    }
+
+    if (aActivatedFromPrefetch) {
+      // Same vocabulary as PerformanceNavigationTiming's deliveryType.
+      aWriter.StringProperty("deliveryType",
+                             MakeStringSpan("navigational-prefetch"));
     }
 
     if (aType != NetworkLoadType::LOAD_START) {
@@ -402,6 +413,7 @@ void profiler_add_network_marker(
     nsICacheInfoChannel::CacheDisposition aCacheDisposition,
     uint64_t aInnerWindowID, bool aIsPrivateBrowsing,
     nsIClassOfService* aClassOfService, nsresult aRequestStatus,
+    const nsACString& aSecPurpose, bool aActivatedFromPrefetch,
     const mozilla::net::TimingStruct* aTimings,
     UniquePtr<ProfileChunkedBuffer> aSource,
     const Maybe<mozilla::net::HttpVersion> aHttpVersion,
@@ -448,6 +460,7 @@ void profiler_add_network_marker(
       redirect_spec,
       aContentType ? ProfilerString8View(*aContentType) : ProfilerString8View(),
       aRedirectFlags, aRedirectChannelId, classOfServiceFlags,
-      classOfServiceIncremental, aRequestStatus, aHttpVersion, aResponseStatus);
+      classOfServiceIncremental, aRequestStatus, aHttpVersion, aResponseStatus,
+      aSecPurpose, aActivatedFromPrefetch);
 }
 }  // namespace mozilla::net

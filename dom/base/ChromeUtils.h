@@ -34,8 +34,10 @@ struct IdleRequestOptions;
 struct MediaMetadataInit;
 class MozQueryInterface;
 class PrecompiledScript;
+class ProfilerCounter;
 class Promise;
 struct ProcessActorOptions;
+struct ProfilerCounterOptions;
 struct WindowActorOptions;
 class WindowProxyHolder;
 
@@ -99,6 +101,9 @@ class ChromeUtils {
   static void AddProfilerMarker(GlobalObject& aGlobal, const nsACString& aName,
                                 const ProfilerMarkerOptionsOrDouble& aOptions,
                                 const Optional<UTF8StringOrObject>& aData);
+
+  static already_AddRefed<ProfilerCounter> AddProfilerCounter(
+      GlobalObject& aGlobal, const ProfilerCounterOptions& aOptions);
 
   static void GetXPCOMErrorName(GlobalObject& aGlobal, uint32_t aErrorCode,
                                 nsACString& aRetval);

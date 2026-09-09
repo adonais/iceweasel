@@ -9,8 +9,8 @@ package org.mozilla.fenix.tabstray.data
  *
  * @property selectedTabId The ID of the selected tab. Null if there is no tab selected (when no tabs are open).
  * @property normalItems The list of normal [TabsTrayItem]s to display in the Tabs Tray.
- * @property normalTabCount The total number of open Normal tabs, including inactive tabs and
- * the tabs within tab groups.
+ * @property normalTabCount The total number of open Normal tabs, including inactive tabs and the tabs within tab
+ *   groups.
  * @property selectedNormalItemIndex The index of the selected item in the list of normal tab items.
  * @property inactiveTabs The list of inactive [TabsTrayItem.Tab]s to display in the Tabs Tray.
  * @property privateTabs The list of private [TabsTrayItem]s to display in the Tabs Tray.

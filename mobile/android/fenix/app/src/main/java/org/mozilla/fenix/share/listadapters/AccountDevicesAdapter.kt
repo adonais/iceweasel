@@ -13,16 +13,14 @@ import org.mozilla.fenix.share.ShareToAccountDevicesInteractor
 import org.mozilla.fenix.share.viewholders.AccountDeviceViewHolder
 
 /**
- * Adapter for a list of devices that can be shared to.
- * May also display buttons to reconnect, add a device, or send to all devices.
+ * Adapter for a list of devices that can be shared to. May also display buttons to reconnect, add a device, or send to
+ * all devices.
  */
-class AccountDevicesShareAdapter(
-    private val interactor: ShareToAccountDevicesInteractor,
-) : ListAdapter<SyncShareOption, AccountDeviceViewHolder>(DiffCallback) {
+class AccountDevicesShareAdapter(private val interactor: ShareToAccountDevicesInteractor) :
+    ListAdapter<SyncShareOption, AccountDeviceViewHolder>(DiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AccountDeviceViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(AccountDeviceViewHolder.LAYOUT_ID, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(AccountDeviceViewHolder.LAYOUT_ID, parent, false)
 
         return AccountDeviceViewHolder(view, interactor)
     }
@@ -41,19 +39,21 @@ class AccountDevicesShareAdapter(
             }
 
         @Suppress("DiffUtilEquals")
-        override fun areContentsTheSame(oldItem: SyncShareOption, newItem: SyncShareOption) =
-            oldItem == newItem
+        override fun areContentsTheSame(oldItem: SyncShareOption, newItem: SyncShareOption) = oldItem == newItem
     }
 }
 
-/**
- * Different options to be displayed by [AccountDevicesShareAdapter].
- */
+/** Different options to be displayed by [AccountDevicesShareAdapter]. */
 sealed class SyncShareOption {
     object Reconnect : SyncShareOption()
+
     object Offline : SyncShareOption()
+
     object SignIn : SyncShareOption()
+
     object AddNewDevice : SyncShareOption()
+
     data class SendAll(val devices: List<Device>) : SyncShareOption()
+
     data class SingleDevice(val device: Device) : SyncShareOption()
 }

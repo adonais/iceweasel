@@ -87,11 +87,11 @@ MaybeCloseWindowHelper::ChooseNewBrowsingContext(BrowsingContext* aBC) {
 }
 
 NS_IMETHODIMP
-MaybeCloseWindowHelper::Notify(nsITimer* timer) {
+MaybeCloseWindowHelper::Notify(nsITimer* timer) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   NS_ASSERTION(mBCToClose, "No window to close after timer fired");
 
-  mBCToClose->Close(CallerType::System, IgnoreErrors());
-  mBCToClose = nullptr;
+  const RefPtr<BrowsingContext> bc = std::move(mBCToClose);
+  bc->Close(CallerType::System, IgnoreErrors());
   mTimer = nullptr;
 
   return NS_OK;
@@ -120,11 +120,10 @@ NS_INTERFACE_MAP_BEGIN(nsDSURIContentListener)
 NS_INTERFACE_MAP_END
 
 NS_IMETHODIMP
-nsDSURIContentListener::DoContent(const nsACString& aContentType,
-                                  bool aIsContentPreferred,
-                                  nsIRequest* aRequest,
-                                  nsIStreamListener** aContentHandler,
-                                  bool* aAbortProcess) {
+nsDSURIContentListener::DoContent(
+    const nsACString& aContentType, bool aIsContentPreferred,
+    nsIRequest* aRequest, nsIStreamListener** aContentHandler,
+    bool* aAbortProcess) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   nsresult rv;
   NS_ENSURE_ARG_POINTER(aContentHandler);
   NS_ENSURE_TRUE(mDocShell, NS_ERROR_FAILURE);

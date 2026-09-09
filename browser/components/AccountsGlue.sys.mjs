@@ -24,6 +24,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "CLIENT_INFO_PING_ENABLED",
+  "identity.fxaccounts.telemetry.clientInfoPing.enabled",
+  false
+);
+
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "AlertsService",
@@ -65,6 +72,7 @@ export const AccountsGlue = {
       "fxaccounts:commands:open-uri",
       "fxaccounts:commands:close-uri",
       "sync-ui-state:update",
+      "idle-daily",
     ].forEach(topic => os.addObserver(this, topic, true));
   },
 
@@ -112,6 +120,14 @@ export const AccountsGlue = {
           Object.defineProperty(lazy, "AlertsService", {
             value: subject.wrappedJSObject,
           });
+        }
+        break;
+      case "idle-daily":
+        if (
+          lazy.CLIENT_INFO_PING_ENABLED &&
+          lazy.UIState.get().status == lazy.UIState.STATUS_SIGNED_IN
+        ) {
+          GleanPings.fxAccountsClientInfo.submit();
         }
         break;
     }

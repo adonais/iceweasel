@@ -24,15 +24,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.TextButton
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.SyncState
 import org.mozilla.fenix.tabstray.syncedtabs.OnSectionExpansionToggled
-import org.mozilla.fenix.tabstray.ui.syncedtabs.SyncedTabsList
-import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.tabstray.ui.syncedtabs.OnTabClick as OnSyncedTabClick
 import org.mozilla.fenix.tabstray.ui.syncedtabs.OnTabCloseClick as OnSyncedTabClose
+import org.mozilla.fenix.tabstray.ui.syncedtabs.SyncedTabsList
+import org.mozilla.fenix.theme.FirefoxTheme
 
 private val EmptyPageWidth = 200.dp
 
@@ -77,9 +77,7 @@ private fun UnauthenticatedSyncedTabsPage(
     modifier: Modifier = Modifier,
     onSignInClick: () -> Unit,
 ) {
-    EmptyTabPage(
-        modifier = modifier.testTag(TabsTrayTestTag.UNAUTHENTICATED_SYNCED_TABS_PAGE),
-    ) {
+    EmptyTabPage(modifier = modifier.testTag(TabsTrayTestTag.UNAUTHENTICATED_SYNCED_TABS_PAGE)) {
         Column(
             modifier = Modifier.width(EmptyPageWidth),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -108,9 +106,7 @@ private fun UnauthenticatedSyncedTabsPage(
             TextButton(
                 text = stringResource(id = R.string.tab_manager_empty_synced_tabs_page_sign_in_cta),
                 onClick = onSignInClick,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = LocalContentColor.current,
-                ),
+                colors = ButtonDefaults.textButtonColors(contentColor = LocalContentColor.current),
             )
         }
     }

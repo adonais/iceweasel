@@ -29,18 +29,15 @@
   display: block;
   position: absolute;
   font: menu;
-  background-color: var(--panel-list-background-color);
-  color: var(--panel-list-text-color);
-  border-radius: var(--panel-list-border-radius);
   padding-block: var(--panel-padding-block);
   margin-block-end: var(--space-large);
-  box-shadow: var(--panel-list-box-shadow);
   min-width: 12em;
   z-index: var(--z-index-popup, 10);
   white-space: nowrap;
   cursor: default;
   overflow-y: auto;
   box-sizing: border-box;
+  user-select: none;
 }
 
 :host([has-submenu]) {
@@ -61,8 +58,14 @@
   margin: 0;
 }
 
+/* In a XUL panel the panel paints the surface the list sits on along with its
+   text color, casts its shadow, and rounds and clips its corners. */
 :host(:not([inxulpanel])) {
+  background-color: var(--panel-list-background-color);
+  color: var(--panel-list-text-color);
   border: 1px solid var(--panel-list-border-color);
+  border-radius: var(--panel-list-border-radius);
+  box-shadow: var(--panel-list-box-shadow);
 }
 
 .list {

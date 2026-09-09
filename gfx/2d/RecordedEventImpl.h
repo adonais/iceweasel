@@ -2119,7 +2119,7 @@ void RecordedStrokeOptionsMixin::ReadStrokeOptions(
 }
 
 template <class S>
-static void ReadDrawOptions(S& aStream, DrawOptions& aDrawOptions) {
+void ReadDrawOptions(S& aStream, DrawOptions& aDrawOptions) {
   ReadElement(aStream, aDrawOptions);
   if (aDrawOptions.mAntialiasMode < AntialiasMode::NONE ||
       aDrawOptions.mAntialiasMode > AntialiasMode::DEFAULT) {
@@ -2134,8 +2134,8 @@ static void ReadDrawOptions(S& aStream, DrawOptions& aDrawOptions) {
 }
 
 template <class S>
-static void ReadDrawSurfaceOptions(S& aStream,
-                                   DrawSurfaceOptions& aDrawSurfaceOptions) {
+void ReadDrawSurfaceOptions(S& aStream,
+                            DrawSurfaceOptions& aDrawSurfaceOptions) {
   ReadElement(aStream, aDrawSurfaceOptions);
   if (aDrawSurfaceOptions.mSamplingFilter < SamplingFilter::GOOD ||
       aDrawSurfaceOptions.mSamplingFilter >= SamplingFilter::SENTINEL) {

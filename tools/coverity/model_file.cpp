@@ -276,6 +276,8 @@ void* moz_xmemalign(size_t boundary, size_t size) {
 /// Model the copy operations of the string classes as trivial so that
 /// COPY_INSTEAD_OF_MOVE stops reporting copies where std::move() brings no
 /// benefit (CID 1697195 and friends).
+/// The assignments across string classes (`nsCString = nsAutoCString`, as in
+/// CID 1700142) go through the substring overloads, so model those too.
 template <typename T>
 class nsTSubstring {
  public:
@@ -287,14 +289,18 @@ template <typename T>
 class nsTString : public nsTSubstring<T> {
  public:
   nsTString(const nsTString& aStr) {}
+  nsTString(const nsTSubstring<T>& aStr) {}
   nsTString& operator=(const nsTString& aStr) { return *this; }
+  nsTString& operator=(const nsTSubstring<T>& aStr) { return *this; }
 };
 
 template <typename T, size_t N>
 class nsTAutoStringN : public nsTString<T> {
  public:
   nsTAutoStringN(const nsTAutoStringN& aStr) {}
+  nsTAutoStringN(const nsTSubstring<T>& aStr) {}
   nsTAutoStringN& operator=(const nsTAutoStringN& aStr) { return *this; }
+  nsTAutoStringN& operator=(const nsTSubstring<T>& aStr) { return *this; }
 };
 
 /// usrsctp defines all its usrsctp_sysctl_set_* setters with this macro, whose

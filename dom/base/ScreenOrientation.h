@@ -36,9 +36,9 @@ class ScreenOrientation final : public DOMEventTargetHelper {
 
   // Called when we might need to dispatch orientation change events
   // in case of orientation override being set, updated or removed.
-  void MaybeDispatchEventsForOverride(BrowsingContext* aBrowsingContext,
-                                      bool aOldHasOrientationOverride,
-                                      bool aOverrideIsDifferentThanDevice);
+  MOZ_CAN_RUN_SCRIPT void MaybeDispatchEventsForOverride(
+      BrowsingContext* aBrowsingContext, bool aOldHasOrientationOverride,
+      bool aOverrideIsDifferentThanDevice);
 
  private:
   ScreenOrientation(nsPIDOMWindowInner* aWindow, nsScreen* aScreen);

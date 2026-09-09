@@ -67,6 +67,7 @@ import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.snackbar.Snackbar
 import mozilla.components.compose.base.snackbar.displaySnackbar
 import mozilla.components.compose.base.text.Text
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.ExpandableListHeader
 import org.mozilla.fenix.downloads.DownloadsScreenTestTag
@@ -85,7 +86,6 @@ import org.mozilla.fenix.downloads.listscreen.ui.ToolbarConfig
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.ThemedValue
 import org.mozilla.fenix.theme.ThemedValueProvider
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Downloads screen that displays the list of downloads.
@@ -216,9 +216,7 @@ fun DownloadsScreen(
                             toolbarConfig = toolbarConfig,
                             onItemDeleteClick = {
                                 downloadsStore.dispatch(
-                                    DownloadUIAction.RequestDeleteMultiple(
-                                        uiState.mode.selectedItems,
-                                    ),
+                                    DownloadUIAction.RequestDeleteMultiple(uiState.mode.selectedItems)
                                 )
                             },
                         )
@@ -263,14 +261,10 @@ fun DownloadsScreen(
                 }
             },
             onPauseClick = {
-                downloadsStore.dispatch(
-                    DownloadUIAction.PauseDownload(downloadId = it),
-                )
+                downloadsStore.dispatch(DownloadUIAction.PauseDownload(downloadId = it))
             },
             onResumeClick = {
-                downloadsStore.dispatch(
-                    DownloadUIAction.ResumeDownload(downloadId = it),
-                )
+                downloadsStore.dispatch(DownloadUIAction.ResumeDownload(downloadId = it))
             },
             onRetryClick = {
                 downloadsStore.dispatch(DownloadUIAction.RetryDownload(downloadId = it))
@@ -285,21 +279,17 @@ fun DownloadsScreen(
                         directoryPath = it.directoryPath,
                         fileName = it.fileName,
                         contentType = it.contentType,
-                    ),
+                    )
                 )
             },
             onRenameFileClick = { downloadsStore.dispatch(DownloadUIAction.RenameFileClicked(it)) },
             onRenameFileConfirmed = { item: FileItem, newName: String ->
-                downloadsStore.dispatch(
-                    DownloadUIAction.RenameFileConfirmed(item = item, newName = newName),
-                )
+                downloadsStore.dispatch(DownloadUIAction.RenameFileConfirmed(item = item, newName = newName))
             },
             onRenameFileDismissed = { downloadsStore.dispatch(DownloadUIAction.RenameFileDismissed) },
             onRenameFileFailureDismissed = { downloadsStore.dispatch(DownloadUIAction.RenameFileFailureDismissed) },
             onFileExtensionChangedByUser = { item: FileItem, newName: String ->
-                downloadsStore.dispatch(
-                    DownloadUIAction.FileExtensionChangedByUser(item = item, newName = newName),
-                )
+                downloadsStore.dispatch(DownloadUIAction.FileExtensionChangedByUser(item = item, newName = newName))
             },
             onCloseChangeFileExtensionDialog = {
                 downloadsStore.dispatch(DownloadUIAction.CloseChangeFileExtensionDialog)
@@ -320,9 +310,7 @@ private fun ToolbarEditActions(
 
         IconButton(
             onClick = { showMenu = true },
-            contentDescription = stringResource(
-                R.string.content_description_menu,
-            ),
+            contentDescription = stringResource(R.string.content_description_menu),
         ) {
             Icon(
                 painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
@@ -333,18 +321,19 @@ private fun ToolbarEditActions(
 
         DropdownMenu(
             expanded = showMenu,
-            menuItems = listOf(
-                MenuItem.TextItem(
-                    text = Text.Resource(R.string.download_select_all_items),
-                    level = MenuItem.FixedItem.Level.Default,
-                    onClick = { downloadsStore.dispatch(DownloadUIAction.AddAllItemsForRemoval) },
+            menuItems =
+                listOf(
+                    MenuItem.TextItem(
+                        text = Text.Resource(R.string.download_select_all_items),
+                        level = MenuItem.FixedItem.Level.Default,
+                        onClick = { downloadsStore.dispatch(DownloadUIAction.AddAllItemsForRemoval) },
+                    ),
+                    MenuItem.TextItem(
+                        text = Text.Resource(R.string.download_delete_item),
+                        level = MenuItem.FixedItem.Level.Critical,
+                        onClick = onItemDeleteClick,
+                    ),
                 ),
-                MenuItem.TextItem(
-                    text = Text.Resource(R.string.download_delete_item),
-                    level = MenuItem.FixedItem.Level.Critical,
-                    onClick = onItemDeleteClick,
-                ),
-            ),
             onDismissRequest = { showMenu = false },
         )
     }
@@ -352,6 +341,7 @@ private fun ToolbarEditActions(
 
 /**
  * Content of the screen below the toolbar.
+ *
  * @param uiState The UI state of the screen.
  * @param paddingValues The padding values of the screen.
  * @param listState The state controlling and observing the scroll position of the downloads list.
@@ -394,18 +384,16 @@ private fun DownloadsScreenContent(
     onCloseChangeFileExtensionDialog: () -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .padding(paddingValues)
-            .imePadding(),
+        modifier = Modifier.padding(paddingValues).imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (uiState.filtersToDisplay.isNotEmpty()) {
             Filters(
                 selectedContentTypeFilter = uiState.selectedContentTypeFilter,
                 contentTypeFilters = uiState.filtersToDisplay,
-                modifier = Modifier
-                    .width(FirefoxTheme.layout.size.containerMaxWidth)
-                    .padding(vertical = FirefoxTheme.layout.space.static200),
+                modifier =
+                    Modifier.width(FirefoxTheme.layout.size.containerMaxWidth)
+                        .padding(vertical = FirefoxTheme.layout.space.static200),
                 onContentTypeSelected = onContentTypeSelected,
             )
         }
@@ -423,25 +411,24 @@ private fun DownloadsScreenContent(
 
         when (uiState.itemsState) {
             is DownloadUIState.ItemsState.NoItems -> EmptyState(modifier = Modifier.fillMaxSize())
-            is DownloadUIState.ItemsState.NoSearchResults -> NoSearchResults(
-                modifier = Modifier.fillMaxSize(),
-            )
+            is DownloadUIState.ItemsState.NoSearchResults -> NoSearchResults(modifier = Modifier.fillMaxSize())
 
-            is DownloadUIState.ItemsState.Items -> DownloadsContent(
-                items = uiState.itemsState.items,
-                mode = uiState.mode,
-                listState = listState,
-                onClick = onItemClick,
-                onSelectionChange = onSelectionChange,
-                onPauseClick = onPauseClick,
-                onResumeClick = onResumeClick,
-                onRetryClick = onRetryClick,
-                onDeleteClick = onDeleteClick,
-                onShareUrlClick = onShareUrlClick,
-                onShareFileClick = onShareFileClick,
-                onRenameFileClick = onRenameFileClick,
-                modifier = Modifier.fillMaxSize(),
-            )
+            is DownloadUIState.ItemsState.Items ->
+                DownloadsContent(
+                    items = uiState.itemsState.items,
+                    mode = uiState.mode,
+                    listState = listState,
+                    onClick = onItemClick,
+                    onSelectionChange = onSelectionChange,
+                    onPauseClick = onPauseClick,
+                    onResumeClick = onResumeClick,
+                    onRetryClick = onRetryClick,
+                    onDeleteClick = onDeleteClick,
+                    onShareUrlClick = onShareUrlClick,
+                    onShareFileClick = onShareFileClick,
+                    onRenameFileClick = onRenameFileClick,
+                    modifier = Modifier.fillMaxSize(),
+                )
         }
     }
 }
@@ -484,9 +471,7 @@ private fun DownloadsContent(
                 is HeaderItem -> {
                     HeaderListItem(
                         headerItem = listItem,
-                        modifier = Modifier
-                            .animateItem()
-                            .width(FirefoxTheme.layout.size.containerMaxWidth),
+                        modifier = Modifier.animateItem().width(FirefoxTheme.layout.size.containerMaxWidth),
                     )
                 }
 
@@ -494,8 +479,8 @@ private fun DownloadsContent(
                     FileListItem(
                         fileItem = listItem,
                         isSelected = mode.selectedItems.contains(listItem),
-                        areAfterListItemIconsVisible = mode is Mode.Normal ||
-                            listItem.status !is FileItem.Status.Completed,
+                        areAfterListItemIconsVisible =
+                            mode is Mode.Normal || listItem.status !is FileItem.Status.Completed,
                         onPauseClick = onPauseClick,
                         onDeleteClick = onDeleteClick,
                         onResumeClick = onResumeClick,
@@ -503,31 +488,33 @@ private fun DownloadsContent(
                         onShareUrlClick = onShareUrlClick,
                         onShareFileClick = onShareFileClick,
                         onRenameFileClick = onRenameFileClick,
-                        modifier = Modifier
-                            .animateItem()
-                            .width(FirefoxTheme.layout.size.containerMaxWidth)
-                            .thenConditional(
-                                modifier = Modifier
-                                    .combinedClickable(
-                                        onClick = {
-                                            if (mode is Mode.Normal) {
-                                                onClick(listItem)
-                                            } else {
-                                                onSelectionChange(
-                                                    listItem,
-                                                    !mode.selectedItems.contains(listItem),
-                                                )
-                                            }
-                                        },
-                                        onLongClick = {
-                                            if (mode is Mode.Normal) {
-                                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                onSelectionChange(listItem, true)
-                                            }
-                                        },
-                                    ),
-                            ) { listItem.status is FileItem.Status.Completed }
-                            .testTag("${DownloadsListTestTag.DOWNLOADS_LIST_ITEM}.${listItem.fileName}"),
+                        modifier =
+                            Modifier.animateItem()
+                                .width(FirefoxTheme.layout.size.containerMaxWidth)
+                                .thenConditional(
+                                    modifier =
+                                        Modifier.combinedClickable(
+                                            onClick = {
+                                                if (mode is Mode.Normal) {
+                                                    onClick(listItem)
+                                                } else {
+                                                    onSelectionChange(
+                                                        listItem,
+                                                        !mode.selectedItems.contains(listItem),
+                                                    )
+                                                }
+                                            },
+                                            onLongClick = {
+                                                if (mode is Mode.Normal) {
+                                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                    onSelectionChange(listItem, true)
+                                                }
+                                            },
+                                        )
+                                ) {
+                                    listItem.status is FileItem.Status.Completed
+                                }
+                                .testTag("${DownloadsListTestTag.DOWNLOADS_LIST_ITEM}.${listItem.fileName}"),
                     )
 
                     if (index == items.lastIndex || items[index + 1] is HeaderItem) {
@@ -545,9 +532,7 @@ private fun HeaderListItem(
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier) {
-        ExpandableListHeader(
-            headerText = stringResource(id = headerItem.timeCategory.stringRes),
-        )
+        ExpandableListHeader(headerText = stringResource(id = headerItem.timeCategory.stringRes))
     }
 }
 
@@ -599,22 +584,25 @@ private fun EmptyState(modifier: Modifier = Modifier) {
 @ReadOnlyComposable
 private fun getToolbarConfig(mode: Mode): ToolbarConfig {
     return when (mode) {
-        is Mode.Editing -> ToolbarConfig(
-            title = stringResource(
-                R.string.download_multi_select_title,
-                mode.selectedItems.size,
-            ),
-            backgroundColor = MaterialTheme.colorScheme.primary,
-            textColor = MaterialTheme.colorScheme.onPrimary,
-            iconColor = MaterialTheme.colorScheme.onPrimary,
-        )
+        is Mode.Editing ->
+            ToolbarConfig(
+                title =
+                    stringResource(
+                        R.string.download_multi_select_title,
+                        mode.selectedItems.size,
+                    ),
+                backgroundColor = MaterialTheme.colorScheme.primary,
+                textColor = MaterialTheme.colorScheme.onPrimary,
+                iconColor = MaterialTheme.colorScheme.onPrimary,
+            )
 
-        is Mode.Normal -> ToolbarConfig(
-            title = stringResource(R.string.library_downloads),
-            backgroundColor = MaterialTheme.colorScheme.surface,
-            textColor = MaterialTheme.colorScheme.onSurface,
-            iconColor = MaterialTheme.colorScheme.onSurface,
-        )
+        is Mode.Normal ->
+            ToolbarConfig(
+                title = stringResource(R.string.library_downloads),
+                backgroundColor = MaterialTheme.colorScheme.surface,
+                textColor = MaterialTheme.colorScheme.onSurface,
+                iconColor = MaterialTheme.colorScheme.onSurface,
+            )
     }
 }
 
@@ -681,14 +669,14 @@ private fun DeleteOptionRow(
     title: String,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .selectable(
-                selected = selected,
-                onClick = onClick,
-                role = Role.RadioButton,
-            )
-            .padding(vertical = 12.dp),
+        modifier =
+            Modifier.fillMaxWidth()
+                .selectable(
+                    selected = selected,
+                    onClick = onClick,
+                    role = Role.RadioButton,
+                )
+                .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(
@@ -738,134 +726,136 @@ private class DownloadsScreenPreviewModelParameterProvider :
         sequenceOf(
             DownloadUIState.INITIAL,
             DownloadUIState(
-                items = listOf(
-                    FileItem(
-                        id = "1",
-                        fileName = "File 1",
-                        url = "https://example.com/file1",
-                        description = "1.2 MB • example.com",
-                        directoryPath = "/storage/emulated/0/Download",
-                        displayedShortUrl = "example.com",
-                        contentType = "application/pdf",
-                        status = FileItem.Status.Completed,
-                        filePath = "/path/to/file1",
-                        timeCategory = TimeCategory.TODAY,
+                items =
+                    listOf(
+                        FileItem(
+                            id = "1",
+                            fileName = "File 1",
+                            url = "https://example.com/file1",
+                            description = "1.2 MB • example.com",
+                            directoryPath = "/storage/emulated/0/Download",
+                            displayedShortUrl = "example.com",
+                            contentType = "application/pdf",
+                            status = FileItem.Status.Completed,
+                            filePath = "/path/to/file1",
+                            timeCategory = TimeCategory.TODAY,
+                        ),
+                        FileItem(
+                            id = "2",
+                            fileName = "File 2",
+                            url = "https://example.com/file2",
+                            description = "2.3 MB • example.com",
+                            directoryPath = "/storage/emulated/0/Download",
+                            displayedShortUrl = "example.com",
+                            contentType = "image/png",
+                            status = FileItem.Status.Completed,
+                            filePath = "/path/to/file2",
+                            timeCategory = TimeCategory.TODAY,
+                        ),
+                        FileItem(
+                            id = "3",
+                            fileName = "File 3",
+                            url = "https://example.com/file3",
+                            description = "3.4 MB • example.com",
+                            directoryPath = "/storage/emulated/0/Download",
+                            displayedShortUrl = "example.com",
+                            contentType = "application/zip",
+                            status = FileItem.Status.Completed,
+                            filePath = "/path/to/file3",
+                            timeCategory = TimeCategory.OLDER,
+                        ),
+                        FileItem(
+                            id = "4",
+                            fileName = "File 4",
+                            url = "https://example.com/file4",
+                            description = "5 MB / 10 MB • in 5s",
+                            directoryPath = "/storage/emulated/0/Download",
+                            displayedShortUrl = "example.com",
+                            contentType = "application/zip",
+                            status = FileItem.Status.Downloading(progress = 0.5f),
+                            filePath = "/path/to/file4",
+                            timeCategory = TimeCategory.IN_PROGRESS,
+                        ),
+                        FileItem(
+                            id = "5",
+                            fileName = "File 5",
+                            url = "https://example.com/file5",
+                            description = "5 MB / 10 MB • pending",
+                            directoryPath = "/storage/emulated/0/Download",
+                            displayedShortUrl = "example.com",
+                            contentType = "application/zip",
+                            status = FileItem.Status.Downloading(progress = 0.5f),
+                            filePath = "/path/to/file5",
+                            timeCategory = TimeCategory.IN_PROGRESS,
+                        ),
+                        FileItem(
+                            id = "6",
+                            fileName = "File 6",
+                            url = "https://example.com/file6",
+                            description = "5 MB / 10 MB • paused",
+                            directoryPath = "/storage/emulated/0/Download",
+                            displayedShortUrl = "example.com",
+                            contentType = "application/zip",
+                            status = FileItem.Status.Paused(progress = 0.5f),
+                            filePath = "/path/to/file6",
+                            timeCategory = TimeCategory.IN_PROGRESS,
+                        ),
+                        FileItem(
+                            id = "7",
+                            fileName = "File 7",
+                            url = "https://example.com/file7",
+                            description = "Preparing download…",
+                            directoryPath = "/storage/emulated/0/Download",
+                            displayedShortUrl = "example.com",
+                            contentType = "application/zip",
+                            status = FileItem.Status.Initiated,
+                            filePath = "/path/to/file7",
+                            timeCategory = TimeCategory.IN_PROGRESS,
+                        ),
+                        FileItem(
+                            id = "8",
+                            fileName = "File 8",
+                            url = "https://example.com/file8",
+                            description = "Download Failed",
+                            directoryPath = "/storage/emulated/0/Download",
+                            displayedShortUrl = "example.com",
+                            contentType = "application/zip",
+                            status = FileItem.Status.Failed,
+                            filePath = "/path/to/file8",
+                            timeCategory = TimeCategory.IN_PROGRESS,
+                        ),
                     ),
-                    FileItem(
-                        id = "2",
-                        fileName = "File 2",
-                        url = "https://example.com/file2",
-                        description = "2.3 MB • example.com",
-                        directoryPath = "/storage/emulated/0/Download",
-                        displayedShortUrl = "example.com",
-                        contentType = "image/png",
-                        status = FileItem.Status.Completed,
-                        filePath = "/path/to/file2",
-                        timeCategory = TimeCategory.TODAY,
-                    ),
-                    FileItem(
-                        id = "3",
-                        fileName = "File 3",
-                        url = "https://example.com/file3",
-                        description = "3.4 MB • example.com",
-                        directoryPath = "/storage/emulated/0/Download",
-                        displayedShortUrl = "example.com",
-                        contentType = "application/zip",
-                        status = FileItem.Status.Completed,
-                        filePath = "/path/to/file3",
-                        timeCategory = TimeCategory.OLDER,
-                    ),
-                    FileItem(
-                        id = "4",
-                        fileName = "File 4",
-                        url = "https://example.com/file4",
-                        description = "5 MB / 10 MB • in 5s",
-                        directoryPath = "/storage/emulated/0/Download",
-                        displayedShortUrl = "example.com",
-                        contentType = "application/zip",
-                        status = FileItem.Status.Downloading(progress = 0.5f),
-                        filePath = "/path/to/file4",
-                        timeCategory = TimeCategory.IN_PROGRESS,
-                    ),
-                    FileItem(
-                        id = "5",
-                        fileName = "File 5",
-                        url = "https://example.com/file5",
-                        description = "5 MB / 10 MB • pending",
-                        directoryPath = "/storage/emulated/0/Download",
-                        displayedShortUrl = "example.com",
-                        contentType = "application/zip",
-                        status = FileItem.Status.Downloading(progress = 0.5f),
-                        filePath = "/path/to/file5",
-                        timeCategory = TimeCategory.IN_PROGRESS,
-                    ),
-                    FileItem(
-                        id = "6",
-                        fileName = "File 6",
-                        url = "https://example.com/file6",
-                        description = "5 MB / 10 MB • paused",
-                        directoryPath = "/storage/emulated/0/Download",
-                        displayedShortUrl = "example.com",
-                        contentType = "application/zip",
-                        status = FileItem.Status.Paused(progress = 0.5f),
-                        filePath = "/path/to/file6",
-                        timeCategory = TimeCategory.IN_PROGRESS,
-                    ),
-                    FileItem(
-                        id = "7",
-                        fileName = "File 7",
-                        url = "https://example.com/file7",
-                        description = "Preparing download…",
-                        directoryPath = "/storage/emulated/0/Download",
-                        displayedShortUrl = "example.com",
-                        contentType = "application/zip",
-                        status = FileItem.Status.Initiated,
-                        filePath = "/path/to/file7",
-                        timeCategory = TimeCategory.IN_PROGRESS,
-                    ),
-                    FileItem(
-                        id = "8",
-                        fileName = "File 8",
-                        url = "https://example.com/file8",
-                        description = "Download Failed",
-                        directoryPath = "/storage/emulated/0/Download",
-                        displayedShortUrl = "example.com",
-                        contentType = "application/zip",
-                        status = FileItem.Status.Failed,
-                        filePath = "/path/to/file8",
-                        timeCategory = TimeCategory.IN_PROGRESS,
-                    ),
-                ),
                 mode = Mode.Normal,
                 pendingDeletionIds = emptySet(),
                 userSelectedContentTypeFilter = FileItem.ContentTypeFilter.All,
             ),
             DownloadUIState(
-                items = List(size = 20) { index ->
-                    FileItem(
-                        id = "$index",
-                        fileName = "File $index",
-                        url = "https://example.com/file$index",
-                        description = "1.2 MB • example.com",
-                        directoryPath = "/storage/emulated/0/Download",
-                        displayedShortUrl = "example.com",
-                        contentType = "application/zip",
-                        status = FileItem.Status.Completed,
-                        filePath = "/path/to/file1",
-                        timeCategory = TimeCategory.TODAY,
-                    )
-                },
+                items =
+                    List(size = 20) { index ->
+                        FileItem(
+                            id = "$index",
+                            fileName = "File $index",
+                            url = "https://example.com/file$index",
+                            description = "1.2 MB • example.com",
+                            directoryPath = "/storage/emulated/0/Download",
+                            displayedShortUrl = "example.com",
+                            contentType = "application/zip",
+                            status = FileItem.Status.Completed,
+                            filePath = "/path/to/file1",
+                            timeCategory = TimeCategory.TODAY,
+                        )
+                    },
                 mode = Mode.Normal,
                 pendingDeletionIds = emptySet(),
                 userSelectedContentTypeFilter = FileItem.ContentTypeFilter.All,
             ),
-        ),
+        )
     )
 
 @Composable
 @FlexibleWindowLightDarkPreview
 private fun DownloadsScreenPreviews(
-    @PreviewParameter(DownloadsScreenPreviewModelParameterProvider::class) state: ThemedValue<DownloadUIState>,
+    @PreviewParameter(DownloadsScreenPreviewModelParameterProvider::class) state: ThemedValue<DownloadUIState>
 ) {
     val downloadsStore = remember { DownloadUIStore(initialState = state.value) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -876,15 +866,11 @@ private fun DownloadsScreenPreviews(
                 downloadsStore = downloadsStore,
                 onItemClick = {
                     scope.launch {
-                        snackbarHostState.displaySnackbar(
-                            message = "Item ${it.fileName} clicked",
-                        )
+                        snackbarHostState.displaySnackbar(message = "Item ${it.fileName} clicked")
                     }
                 },
             )
-            SnackbarHost(
-                hostState = snackbarHostState,
-            ) {
+            SnackbarHost(hostState = snackbarHostState) {
                 Snackbar(snackbarData = it)
             }
         }

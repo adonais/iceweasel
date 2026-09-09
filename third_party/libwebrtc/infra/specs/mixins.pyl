@@ -25,13 +25,6 @@
       'chromium-tester@chops-service-accounts.iam.gserviceaccount.com'
     }
   },
-  'cores-12': {
-    'swarming': {
-      'dimensions': {
-        'cores': '12'
-      }
-    }
-  },
   'fuchsia-gtest-output': {
     'args': [
       '--test-launcher-summary-output=${ISOLATED_OUTDIR}/gtest_output.json',
@@ -89,14 +82,6 @@
       'dimensions': {
         'cpu': 'arm64',
         'os': 'Mac-12'
-      }
-    }
-  },
-  'mac_15_x64': {
-    'swarming': {
-      'dimensions': {
-        'cpu': 'x86-64',
-        'os': 'Mac-15'
       }
     }
   },

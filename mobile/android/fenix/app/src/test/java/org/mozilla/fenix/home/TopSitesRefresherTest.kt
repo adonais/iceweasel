@@ -23,9 +23,7 @@ import org.mozilla.fenix.helpers.lifecycle.TestLifecycleOwner
 import org.mozilla.fenix.perf.StartupPathProvider
 import org.mozilla.fenix.utils.Settings
 
-/**
- * Class to test the [TopSitesRefresher]
- */
+/** Class to test the [TopSitesRefresher] */
 class TopSitesRefresherTest {
 
     private val testDispatcher = StandardTestDispatcher()
@@ -37,23 +35,21 @@ class TopSitesRefresherTest {
     private val settings: Settings = mockk(relaxed = true)
 
     private val visualCompletenessQueue = RunWhenReadyQueue(testScope)
-    private val startupPathProvider =
-        FakeStartupPathProvider(expectedPath = StartupPathProvider.StartupPath.NOT_SET)
+    private val startupPathProvider = FakeStartupPathProvider(expectedPath = StartupPathProvider.StartupPath.NOT_SET)
     private lateinit var topSitesRefresher: TopSitesRefresher
 
     @Before
     fun setUp() {
-        topSitesRefresher = TopSitesRefresher(
-            settings = settings,
-            topSitesProvider = topSitesProvider,
-            visualCompletenessQueue = visualCompletenessQueue,
-            startupPathProvider = startupPathProvider,
-            dispatcher = testDispatcher,
-        )
+        topSitesRefresher =
+            TopSitesRefresher(
+                settings = settings,
+                topSitesProvider = topSitesProvider,
+                visualCompletenessQueue = visualCompletenessQueue,
+                startupPathProvider = startupPathProvider,
+                dispatcher = testDispatcher,
+            )
 
-        lifecycleOwner.registerObserver(
-            observer = topSitesRefresher,
-        )
+        lifecycleOwner.registerObserver(observer = topSitesRefresher)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
@@ -165,13 +161,12 @@ class TopSitesRefresherTest {
         }
     }
 
-    private class FakeStartupPathProvider(
-        var expectedPath: StartupPathProvider.StartupPath,
-    ) : StartupPathProvider {
+    private class FakeStartupPathProvider(var expectedPath: StartupPathProvider.StartupPath) : StartupPathProvider {
         override val startupPathForActivity: StartupPathProvider.StartupPath
             get() = expectedPath
 
         override fun attachOnActivityOnCreate(lifecycle: Lifecycle, intent: Intent?) = Unit
+
         override fun onIntentReceived(intent: Intent?) = Unit
     }
 }

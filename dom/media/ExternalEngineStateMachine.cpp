@@ -1575,6 +1575,7 @@ void ExternalEngineStateMachine::ReportTelemetry(const MediaResult& aError) {
   // process starts and are not modified afterwards. This runs on the state
   // machine task queue rather than the main thread, so copy the values out
   // instead of holding a reference into the gfxVars singleton.
+  // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
   const nsCString adapterVendorID = gfx::gfxVars::AdapterVendorID();
   if (!adapterVendorID.IsEmpty()) {
     extraData.adapterVendorId = Some(adapterVendorID);

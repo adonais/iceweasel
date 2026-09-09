@@ -69,9 +69,9 @@ import mozilla.components.compose.base.badge.BadgedIcon
 import mozilla.components.compose.base.button.RadioButton
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.theme.information
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.compose.Favicon
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 private val LIST_ITEM_HEIGHT = 56.dp
 private val ICON_SIZE = 24.dp
@@ -81,24 +81,23 @@ private const val TOAST_LENGTH = Toast.LENGTH_SHORT
 private val EmptyListItemSlot: @Composable RowScope.() -> Unit = {}
 
 /**
- * List item used to display a label with an optional description text and an optional
- * [IconButton] or [Icon] at the end.
+ * List item used to display a label with an optional description text and an optional [IconButton] or [Icon] at the
+ * end.
  *
  * @param label The label in the list item.
  * @param modifier [Modifier] to be applied to the layout.
  * @param maxLabelLines An optional maximum number of lines for the label text to span.
  * @param description An optional description text below the label.
  * @param maxDescriptionLines An optional maximum number of lines for the description text to span.
- * @param enabled Controls the enabled state of the list item. When `false`, the list item will not
- * be clickable.
+ * @param enabled Controls the enabled state of the list item. When `false`, the list item will not be clickable.
  * @param minHeight An optional minimum height for the list item.
  * @param onClick Called when the user clicks on the item.
  * @param onLongClick Called when the user long clicks on the item.
  * @param iconPainter [Painter] used to display an icon after the list item.
  * @param iconDescription Content description of the icon.
  * @param iconTint Tint applied to [iconPainter].
- * @param onIconClick Called when the user clicks on the icon. An [IconButton] will be
- * displayed if this is provided. Otherwise, an [Icon] will be displayed.
+ * @param onIconClick Called when the user clicks on the icon. An [IconButton] will be displayed if this is provided.
+ *   Otherwise, an [Icon] will be displayed.
  */
 @Composable
 fun TextListItem(
@@ -140,9 +139,7 @@ fun TextListItem(
         } else {
             IconButton(
                 onClick = onIconClick,
-                modifier = Modifier
-                    .size(ICON_SIZE)
-                    .clearAndSetSemantics {},
+                modifier = Modifier.size(ICON_SIZE).clearAndSetSemantics {},
             ) {
                 Icon(
                     painter = iconPainter,
@@ -155,8 +152,8 @@ fun TextListItem(
 }
 
 /**
- * List item used to display a label and a [Favicon] with an optional description text and
- * an optional [IconButton] at the end.
+ * List item used to display a label and a [Favicon] with an optional description text and an optional [IconButton] at
+ * the end.
  *
  * @param label The label in the list item.
  * @param url Website [url] for which the favicon will be shown.
@@ -168,8 +165,7 @@ fun TextListItem(
  * @param faviconPainter Optional painter to use when fetching a new favicon is unnecessary.
  * @param onClick Called when the user clicks on the item.
  * @param onLongClick Called when the user long clicks on the item.
- * @param showDivider Whether or not to display a vertical divider line before the [IconButton]
- * at the end.
+ * @param showDivider Whether or not to display a vertical divider line before the [IconButton] at the end.
  * @param iconPainter [Painter] used to display an [IconButton] after the list item.
  * @param iconButtonModifier [Modifier] to be applied to the icon button.
  * @param iconDescription Content description of the icon.
@@ -227,10 +223,7 @@ fun FaviconListItem(
 
             IconButton(
                 onClick = onIconClick,
-                modifier = iconButtonModifier.then(
-                    Modifier
-                        .size(ICON_SIZE),
-                ),
+                modifier = iconButtonModifier.then(Modifier.size(ICON_SIZE)),
             ) {
                 Icon(
                     painter = iconPainter,
@@ -242,8 +235,8 @@ fun FaviconListItem(
 }
 
 /**
- * List item used to display a label and an icon at the beginning with an optional description
- * text and an optional [IconButton], [Icon], or Composable at the end.
+ * List item used to display a label and an icon at the beginning with an optional description text and an optional
+ * [IconButton], [Icon], or Composable at the end.
  *
  * @param label The label in the list item.
  * @param modifier [Modifier] to be applied to the layout.
@@ -252,27 +245,25 @@ fun FaviconListItem(
  * @param maxLabelLines An optional maximum number of lines for the label text to span.
  * @param description An optional description text below the label.
  * @param maxDescriptionLines An optional maximum number of lines for the description text to span.
- * @param enabled Controls the enabled state of the list item. When `false`, the list item will not
- * be clickable.
+ * @param enabled Controls the enabled state of the list item. When `false`, the list item will not be clickable.
  * @param minHeight An optional minimum height for the list item.
  * @param onClick Called when the user clicks on the item.
  * @param onLongClick Called when the user long clicks on the item.
- * @param beforeIconTint [Color] used to tint the icon.  Note: Color.Unspecified is used when you
- * wish to preserve the original colors of the icon.  This color should NOT be combined with
- * ListItemColors because ListItemDefaults will not allow you to specify Color.Unspecified.
+ * @param beforeIconTint [Color] used to tint the icon. Note: Color.Unspecified is used when you wish to preserve the
+ *   original colors of the icon. This color should NOT be combined with ListItemColors because ListItemDefaults will
+ *   not allow you to specify Color.Unspecified.
  * @param beforeIconPainter [Painter] used to display an [Icon] before the list item.
  * @param beforeIconDescription Content description of the icon.
  * @param isBeforeIconHighlighted Whether or not the item should be highlighted with a notification icon.
- * @param showDivider Whether or not to display a vertical divider line before the [IconButton]
- * at the end.
- * @param afterIconTint [Color] used to tint the icon.  Note: Color.Unspecified is used when you
- * wish to preserve the original colors of the icon.  This color should NOT be combined with
- * ListItemColors because ListItemDefaults will not allow you to specify Color.Unspecified.
+ * @param showDivider Whether or not to display a vertical divider line before the [IconButton] at the end.
+ * @param afterIconTint [Color] used to tint the icon. Note: Color.Unspecified is used when you wish to preserve the
+ *   original colors of the icon. This color should NOT be combined with ListItemColors because ListItemDefaults will
+ *   not allow you to specify Color.Unspecified.
  * @param contentPaddingListItem The spacing values to be applied to the internal content of the list item.
  * @param afterIconPainter [Painter] used to display an icon after the list item.
  * @param afterIconDescription Content description of the icon.
- * @param onAfterIconClick Called when the user clicks on the icon. An [IconButton] will be
- * displayed if this is provided. Otherwise, an [Icon] will be displayed.
+ * @param onAfterIconClick Called when the user clicks on the icon. An [IconButton] will be displayed if this is
+ *   provided. Otherwise, an [Icon] will be displayed.
  * @param afterListAction Optional Composable for adding UI to the end of the list item.
  */
 @Composable
@@ -294,10 +285,11 @@ fun IconListItem(
     isBeforeIconHighlighted: Boolean = false,
     showDivider: Boolean = false,
     afterIconTint: Color = ListItemDefaults.colors().leadingIconColor,
-    contentPaddingListItem: PaddingValues = PaddingValues(
-        horizontal = FirefoxTheme.layout.space.dynamic200,
-        vertical = FirefoxTheme.layout.space.static150,
-    ),
+    contentPaddingListItem: PaddingValues =
+        PaddingValues(
+            horizontal = FirefoxTheme.layout.space.dynamic200,
+            vertical = FirefoxTheme.layout.space.static150,
+        ),
     afterIconPainter: Painter? = null,
     afterIconDescription: String? = null,
     onAfterIconClick: (() -> Unit)? = null,
@@ -388,9 +380,8 @@ private fun IconListItemAfterIcon(
     } else {
         IconButton(
             onClick = onClick,
-            modifier = Modifier
-                .size(ICON_SIZE)
-                .semantics {
+            modifier =
+                Modifier.size(ICON_SIZE).semantics {
                     this.role = Role.Button
                 },
             enabled = enabled,
@@ -405,8 +396,8 @@ private fun IconListItemAfterIcon(
 }
 
 /**
- * List item used to display a label with an optional description text and
- * a [RadioButton] at the beginning or at the end.
+ * List item used to display a label with an optional description text and a [RadioButton] at the beginning or at the
+ * end.
  *
  * @param label The label in the list item.
  * @param selected [Boolean] That indicates whether the [RadioButton] is currently selected.
@@ -414,8 +405,7 @@ private fun IconListItemAfterIcon(
  * @param maxLabelLines An optional maximum number of lines for the label text to span.
  * @param description An optional description text below the label.
  * @param maxDescriptionLines An optional maximum number of lines for the description text to span.
- * @param enabled Controls the enabled state of the list item. When `false`, the list item will not
- * be clickable.
+ * @param enabled Controls the enabled state of the list item. When `false`, the list item will not be clickable.
  * @param showButtonAfter [Boolean] That indicates whether the [RadioButton] is after the [ListItem].
  * @param onClick Called when the user clicks on the item.
  */
@@ -434,21 +424,21 @@ fun RadioButtonListItem(
     val radioButton: @Composable RowScope.() -> Unit = {
         RadioButton(
             selected = selected,
-            modifier = Modifier
-                .size(ICON_SIZE)
-                .semantics {
-                    testTag = "$label.radio.button"
-                    testTagsAsResourceId = true
-                }
-                .clearAndSetSemantics {},
+            modifier =
+                Modifier.size(ICON_SIZE)
+                    .semantics {
+                        testTag = "$label.radio.button"
+                        testTagsAsResourceId = true
+                    }
+                    .clearAndSetSemantics {},
             enabled = enabled,
             onClick = onClick,
         )
     }
     ListItem(
         label = label,
-        modifier = modifier
-            .semantics(mergeDescendants = true) {
+        modifier =
+            modifier.semantics(mergeDescendants = true) {
                 this.selected = selected
                 role = Role.RadioButton
             },
@@ -463,8 +453,7 @@ fun RadioButtonListItem(
 }
 
 /**
- * List item used to display a label with an optional description text and
- * a [Switch] at the beginning or at the end.
+ * List item used to display a label with an optional description text and a [Switch] at the beginning or at the end.
  *
  * @param label The label in the list item.
  * @param checked [Boolean] That indicates whether the [Switch] is currently checked.
@@ -472,8 +461,7 @@ fun RadioButtonListItem(
  * @param maxLabelLines An optional maximum number of lines for the label text to span.
  * @param description An optional description text below the label.
  * @param maxDescriptionLines An optional maximum number of lines for the description text to span.
- * @param enabled Controls the enabled state of the list item. When `false`, the list item will not
- * be clickable.
+ * @param enabled Controls the enabled state of the list item. When `false`, the list item will not be clickable.
  * @param showSwitchAfter [Boolean] That indicates whether the [Switch] is after the [ListItem].
  * @param belowListItemContent Optional composable rendered below the description text.
  * @param onClick Called when the user clicks the [Switch].
@@ -496,17 +484,17 @@ fun SwitchListItem(
             checked = checked,
             onCheckedChange = onClick,
             enabled = enabled,
-            modifier = Modifier
-                .clearAndSetSemantics {},
+            modifier = Modifier.clearAndSetSemantics {},
         )
     }
 
     ListItem(
         label = label,
-        modifier = modifier.semantics(mergeDescendants = true) {
-            this.selected = checked
-            role = Role.Switch
-        },
+        modifier =
+            modifier.semantics(mergeDescendants = true) {
+                this.selected = checked
+                role = Role.Switch
+            },
         maxLabelLines = maxLabelLines,
         description = description,
         maxDescriptionLines = maxDescriptionLines,
@@ -519,8 +507,8 @@ fun SwitchListItem(
 }
 
 /**
- * Selectable list item used to display a label and a [Favicon] with an optional description text
- * at either the beginning or the end and an optional [IconButton] at the end.
+ * Selectable list item used to display a label and a [Favicon] with an optional description text at either the
+ * beginning or the end and an optional [IconButton] at the end.
  *
  * @param label The label in the list item.
  * @param url Website [url] for which the favicon will be shown.
@@ -530,8 +518,7 @@ fun SwitchListItem(
  * @param faviconPainter Optional painter to use when fetching a new favicon is unnecessary.
  * @param onClick Called when the user clicks on the item.
  * @param onLongClick Called when the user long clicks on the item.
- * @param showDivider Whether or not to display a vertical divider line before the [IconButton]
- * at the end.
+ * @param showDivider Whether or not to display a vertical divider line before the [IconButton] at the end.
  * @param iconPainter [Painter] used to display an [IconButton] after the list item.
  * @param iconDescription Content description of the icon.
  * @param onIconClick Called when the user clicks on the icon.
@@ -604,8 +591,8 @@ fun SelectableFaviconListItem(
 }
 
 /**
- * List item used to display a label and an icon at the beginning with an optional description
- * text and an optional [IconButton] or [Icon] at the end.
+ * List item used to display a label and an icon at the beginning with an optional description text and an optional
+ * [IconButton] or [Icon] at the end.
  *
  * @param label The label in the list item.
  * @param isSelected The selected state of the item.
@@ -614,27 +601,24 @@ fun SelectableFaviconListItem(
  * @param colors [ListItemColors] to be applied to the list item.
  * @param maxLabelLines An optional maximum number of lines for the label text to span.
  * @param description An optional description text below the label.
- * @param enabled Controls the enabled state of the list item. When `false`, the list item will not
- * be clickable.
+ * @param enabled Controls the enabled state of the list item. When `false`, the list item will not be clickable.
  * @param minHeight An optional minimum height for the list item.
  * @param onClick Called when the user clicks on the item.
  * @param onLongClick Called when the user long clicks on the item.
- * @param beforeIconTint [Color] used to tint the icon.  Note: Color.Unspecified is used when you
- * wish to preserve the original colors of the icon.  This color should NOT be combined with
- * ListItemColors because ListItemDefaults will not allow you to specify Color.Unspecified.
+ * @param beforeIconTint [Color] used to tint the icon. Note: Color.Unspecified is used when you wish to preserve the
+ *   original colors of the icon. This color should NOT be combined with ListItemColors because ListItemDefaults will
+ *   not allow you to specify Color.Unspecified.
  * @param beforeIconPainter [Painter] used to display an [Icon] before the list item.
  * @param beforeIconDescription Content description of the icon.
- * @param showDivider Whether or not to display a vertical divider line before the [IconButton]
- * at the end.
- * @param afterIconTint [Color] used to tint the icon.  Note: Color.Unspecified is used when you
- * wish to preserve the original colors of the icon.  This color should NOT be combined with
- * ListItemColors because ListItemDefaults will not allow you to specify Color.Unspecified.
+ * @param showDivider Whether or not to display a vertical divider line before the [IconButton] at the end.
+ * @param afterIconTint [Color] used to tint the icon. Note: Color.Unspecified is used when you wish to preserve the
+ *   original colors of the icon. This color should NOT be combined with ListItemColors because ListItemDefaults will
+ *   not allow you to specify Color.Unspecified.
  * @param afterIconPainter [Painter] used to display an icon after the list item.
  * @param afterIconDescription Content description of the icon.
- * @param onAfterIconClick Called when the user clicks on the icon. An [IconButton] will be
- * displayed if this is provided. Otherwise, an [Icon] will be displayed.
- * @param iconSlot Optional Composable slot to be displayed after the list item if [afterIconPainter] is
- * not supplied.
+ * @param onAfterIconClick Called when the user clicks on the icon. An [IconButton] will be displayed if this is
+ *   provided. Otherwise, an [Icon] will be displayed.
+ * @param iconSlot Optional Composable slot to be displayed after the list item if [afterIconPainter] is not supplied.
  */
 @Composable
 @Suppress("CognitiveComplexMethod")
@@ -723,8 +707,7 @@ fun SelectableIconListItem(
 }
 
 /**
- * List item used to display a selectable item with an icon, label description and an action
- * composable at the end.
+ * List item used to display a selectable item with an icon, label description and an action composable at the end.
  *
  * @param label The label in the list item.
  * @param description The description text below the label.
@@ -808,8 +791,8 @@ private fun SelectableItemIcon(
 }
 
 /**
- * Base list item used to display a label with an optional description text and
- * the flexibility to add custom UI to either end of the item.
+ * Base list item used to display a label with an optional description text and the flexibility to add custom UI to
+ * either end of the item.
  *
  * @param label The label in the list item.
  * @param modifier [Modifier] to be applied to the layout.
@@ -819,8 +802,7 @@ private fun SelectableItemIcon(
  * @param maxLabelLines An optional maximum number of lines for the label text to span.
  * @param description An optional description text below the label.
  * @param maxDescriptionLines An optional maximum number of lines for the description text to span.
- * @param enabled Controls the enabled state of the list item. When `false`, the list item will not
- * be clickable.
+ * @param enabled Controls the enabled state of the list item. When `false`, the list item will not be clickable.
  * @param minHeight An optional minimum height for the list item.
  * @param onClick Called when the user clicks on the item.
  * @param onLongClick Called when the user long clicks on the item.
@@ -843,39 +825,43 @@ private fun ListItem(
     minHeight: Dp = LIST_ITEM_HEIGHT,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
-    contentPadding: PaddingValues = PaddingValues(
-        horizontal = FirefoxTheme.layout.space.dynamic200,
-        vertical = FirefoxTheme.layout.space.static150,
-    ),
+    contentPadding: PaddingValues =
+        PaddingValues(
+            horizontal = FirefoxTheme.layout.space.dynamic200,
+            vertical = FirefoxTheme.layout.space.static150,
+        ),
     belowListItemContent: @Composable ColumnScope.() -> Unit = {},
     beforeListItemAction: @Composable RowScope.() -> Unit = {},
     afterListItemAction: @Composable RowScope.() -> Unit = {},
 ) {
     val haptics = LocalHapticFeedback.current
-    val contentColor = if (enabled) {
-        ListItemDefaults.contentColor
-    } else {
-        ListItemDefaults.colors().disabledLeadingIconColor
-    }
+    val contentColor =
+        if (enabled) {
+            ListItemDefaults.contentColor
+        } else {
+            ListItemDefaults.colors().disabledLeadingIconColor
+        }
 
     CompositionLocalProvider(LocalContentColor provides contentColor) {
         Row(
-            modifier = modifier
-                .height(IntrinsicSize.Min)
-                .defaultMinSize(minHeight = minHeight)
-                .thenConditional(
-                    modifier = Modifier.combinedClickable(
-                        onClick = { onClick?.invoke() },
-                        onLongClick = {
-                            onLongClick?.let {
-                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                it.invoke()
-                            }
-                        },
-                    ),
-                    predicate = { (onClick != null || onLongClick != null) && enabled },
-                )
-                .padding(contentPadding),
+            modifier =
+                modifier
+                    .height(IntrinsicSize.Min)
+                    .defaultMinSize(minHeight = minHeight)
+                    .thenConditional(
+                        modifier =
+                            Modifier.combinedClickable(
+                                onClick = { onClick?.invoke() },
+                                onLongClick = {
+                                    onLongClick?.let {
+                                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        it.invoke()
+                                    }
+                                },
+                            ),
+                        predicate = { (onClick != null || onLongClick != null) && enabled },
+                    )
+                    .padding(contentPadding),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static200),
         ) {
@@ -912,9 +898,7 @@ private fun ListItemContent(
     enabled: Boolean = true,
     belowListItemContent: @Composable ColumnScope.() -> Unit = {},
 ) {
-    Column(
-        modifier = modifier,
-    ) {
+    Column(modifier = modifier) {
         Text(
             text = label,
             modifier = labelModifier,
@@ -1182,8 +1166,7 @@ private fun FaviconListItemPreview() {
 @Composable
 @PreviewLightDark
 private fun RadioButtonListItemPreview() {
-    val radioOptions =
-        listOf("Radio button first item", "Radio button second item", "Radio button third item")
+    val radioOptions = listOf("Radio button first item", "Radio button second item", "Radio button third item")
     val (selectedOption, onOptionSelected) = remember { mutableStateOf(radioOptions[1]) }
     FirefoxTheme {
         Column(Modifier.background(MaterialTheme.colorScheme.surface)) {
@@ -1218,7 +1201,7 @@ private fun SwitchListItemPreview() {
                 label = "Switch item",
                 description = "Switch item description",
                 checked = true,
-                onClick = { },
+                onClick = {},
             )
             SwitchListItem(
                 label = "Switch item",
@@ -1226,7 +1209,7 @@ private fun SwitchListItemPreview() {
                 checked = true,
                 enabled = false,
                 showSwitchAfter = true,
-                onClick = { },
+                onClick = {},
             )
         }
     }
@@ -1238,49 +1221,50 @@ private data class SelectableFaviconListItemPreviewState(
     val isSelected: Boolean = false,
     val description: String? = "Description text",
     val faviconRes: Int? = null,
-    val onClick: (() -> Unit)? = { },
-    val onLongClick: (() -> Unit)? = { },
+    val onClick: (() -> Unit)? = {},
+    val onLongClick: (() -> Unit)? = {},
     val showFaviconAfter: Boolean = false,
     val iconRes: Int? = null,
-    val onIconClick: (() -> Unit)? = { },
+    val onIconClick: (() -> Unit)? = {},
 )
 
 private class SelectableFaviconListItemParameterProvider :
     PreviewParameterProvider<SelectableFaviconListItemPreviewState> {
     override val values: Sequence<SelectableFaviconListItemPreviewState>
-        get() = sequenceOf(
-            SelectableFaviconListItemPreviewState(
-                label = "Favicon + right icon",
-                faviconRes = iconsR.drawable.mozac_ic_collection_24,
-                iconRes = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
-            ),
-            SelectableFaviconListItemPreviewState(
-                label = "Favicon + right icon + overline",
-                faviconRes = iconsR.drawable.mozac_ic_collection_24,
-                iconRes = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
-            ),
-            SelectableFaviconListItemPreviewState(
-                label = "Selected favicon + right icon",
-                isSelected = true,
-                faviconRes = iconsR.drawable.mozac_ic_collection_24,
-                iconRes = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
-            ),
-            SelectableFaviconListItemPreviewState(
-                label = "Favicon + painter",
-                faviconRes = iconsR.drawable.mozac_ic_collection_24,
-            ),
-            SelectableFaviconListItemPreviewState(
-                label = "Selected favicon + painter",
-                faviconRes = iconsR.drawable.mozac_ic_collection_24,
-                isSelected = true,
-            ),
-        )
+        get() =
+            sequenceOf(
+                SelectableFaviconListItemPreviewState(
+                    label = "Favicon + right icon",
+                    faviconRes = iconsR.drawable.mozac_ic_collection_24,
+                    iconRes = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
+                ),
+                SelectableFaviconListItemPreviewState(
+                    label = "Favicon + right icon + overline",
+                    faviconRes = iconsR.drawable.mozac_ic_collection_24,
+                    iconRes = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
+                ),
+                SelectableFaviconListItemPreviewState(
+                    label = "Selected favicon + right icon",
+                    isSelected = true,
+                    faviconRes = iconsR.drawable.mozac_ic_collection_24,
+                    iconRes = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
+                ),
+                SelectableFaviconListItemPreviewState(
+                    label = "Favicon + painter",
+                    faviconRes = iconsR.drawable.mozac_ic_collection_24,
+                ),
+                SelectableFaviconListItemPreviewState(
+                    label = "Selected favicon + painter",
+                    faviconRes = iconsR.drawable.mozac_ic_collection_24,
+                    isSelected = true,
+                ),
+            )
 }
 
 @Composable
 @PreviewLightDark
 private fun SelectableFaviconListItemPreview(
-    @PreviewParameter(SelectableFaviconListItemParameterProvider::class) state: SelectableFaviconListItemPreviewState,
+    @PreviewParameter(SelectableFaviconListItemParameterProvider::class) state: SelectableFaviconListItemPreviewState
 ) {
     val faviconPainter = state.faviconRes?.let { painterResource(it) }
     val iconPainter = state.iconRes?.let { painterResource(it) }

@@ -4,9 +4,7 @@
 
 package mozilla.components.concept.storage
 
-/**
- * Knows how to provide a [ManagedKey].
- */
+/** Knows how to provide a [ManagedKey]. */
 interface KeyProvider {
     /**
      * Fetches or generates a new encryption key.
@@ -17,42 +15,29 @@ interface KeyProvider {
 }
 
 /**
- * An encryption key, with an optional [wasGenerated] field used to indicate if it was freshly
- * generated. In that case, a [KeyGenerationReason] is supplied, allowing consumers to detect
- * potential key loss or corruption.
- * If [wasGenerated] is `null`, that means an existing key was successfully read from the key storage.
+ * An encryption key, with an optional [wasGenerated] field used to indicate if it was freshly generated. In that case,
+ * a [KeyGenerationReason] is supplied, allowing consumers to detect potential key loss or corruption. If [wasGenerated]
+ * is `null`, that means an existing key was successfully read from the key storage.
  */
 data class ManagedKey(
     val key: String,
     val wasGenerated: KeyGenerationReason? = null,
 )
 
-/**
- * Describes why a key was generated.
- */
+/** Describes why a key was generated. */
 sealed class KeyGenerationReason {
-    /**
-     * A new key, not previously present in the store.
-     */
+    /** A new key, not previously present in the store. */
     object New : KeyGenerationReason()
 
-    /**
-     * Something went wrong with the previously stored key.
-     */
+    /** Something went wrong with the previously stored key. */
     sealed class RecoveryNeeded : KeyGenerationReason() {
-        /**
-         * Previously stored key was lost, and a new key was generated as its replacement.
-         */
+        /** Previously stored key was lost, and a new key was generated as its replacement. */
         object Lost : RecoveryNeeded()
 
-        /**
-         * Previously stored key was corrupted, and a new key was generated as its replacement.
-         */
+        /** Previously stored key was corrupted, and a new key was generated as its replacement. */
         object Corrupt : RecoveryNeeded()
 
-        /**
-         * Storage layer encountered an abnormal state, which lead to key loss. A new key was generated.
-         */
+        /** Storage layer encountered an abnormal state, which lead to key loss. A new key was generated. */
         object AbnormalState : RecoveryNeeded()
     }
 }

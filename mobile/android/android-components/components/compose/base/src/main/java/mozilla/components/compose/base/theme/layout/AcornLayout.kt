@@ -23,9 +23,7 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.theme.AcornTheme
 
-/**
- * A palette of tokens defining the layout of visual elements styled by the Acorn Design System.
- */
+/** A palette of tokens defining the layout of visual elements styled by the Acorn Design System. */
 data class AcornLayout(
     val space: AcornSpace,
     val size: AcornSize,
@@ -34,28 +32,25 @@ data class AcornLayout(
     val border: AcornBorder = AcornBorder
     val elevation: AcornElevation = AcornElevation
 
-    /**
-     * A palette of tokens defining the borders of visual elements styled by the Acorn Design System.
-     */
+    /** A palette of tokens defining the borders of visual elements styled by the Acorn Design System. */
     object AcornBorder {
         val default: Dp = 1.dp
         val heavy: Dp = 2.dp
         val heaviest: Dp = 4.dp
     }
 
-    /**
-     * [AcornLayout] helper object
-     */
+    /** [AcornLayout] helper object */
     companion object {
         /**
          * Returns the palette of layout tokens corresponding to the [AcornWindowSize].
          *
          * @param windowSize The app window's current [AcornWindowSize].
          */
-        fun fromWindowSize(windowSize: AcornWindowSize) = AcornLayout(
-            space = AcornSpace.fromWindowSize(windowSize = windowSize),
-            size = AcornSize.fromWindowSize(windowSize = windowSize),
-        )
+        fun fromWindowSize(windowSize: AcornWindowSize) =
+            AcornLayout(
+                space = AcornSpace.fromWindowSize(windowSize = windowSize),
+                size = AcornSize.fromWindowSize(windowSize = windowSize),
+            )
     }
 }
 
@@ -67,35 +62,35 @@ private fun AcornLayoutPreview() {
     AcornTheme {
         Surface {
             FlowRow(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(AcornTheme.layout.space.dynamic400),
                 verticalArrangement = Arrangement.spacedBy(AcornTheme.layout.space.dynamic400),
             ) {
                 repeat(GRID_ITEMS) {
-                    val color = Color(
-                        red = it,
-                        green = 0,
-                        blue = it,
-                    )
+                    val color =
+                        Color(
+                            red = it,
+                            green = 0,
+                            blue = it,
+                        )
 
                     Box(
-                        modifier = Modifier
-                            .size(size = AcornTheme.layout.size.static800)
-                            .background(
-                                color = color,
-                                shape = MaterialTheme.shapes.small,
-                            )
-                            .border(
-                                width = AcornTheme.layout.border.heavy,
-                                color = Color(
-                                    red = color.red * 0.8f,
-                                    green = color.green * 0.8f,
-                                    blue = color.blue * 0.8f,
-                                ),
-                                shape = MaterialTheme.shapes.small,
-                            ),
+                        modifier =
+                            Modifier.size(size = AcornTheme.layout.size.static800)
+                                .background(
+                                    color = color,
+                                    shape = MaterialTheme.shapes.small,
+                                )
+                                .border(
+                                    width = AcornTheme.layout.border.heavy,
+                                    color =
+                                        Color(
+                                            red = color.red * 0.8f,
+                                            green = color.green * 0.8f,
+                                            blue = color.blue * 0.8f,
+                                        ),
+                                    shape = MaterialTheme.shapes.small,
+                                )
                     )
                 }
             }

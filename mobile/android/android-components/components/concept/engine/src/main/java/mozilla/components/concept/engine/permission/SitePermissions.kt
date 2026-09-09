@@ -9,9 +9,7 @@ import kotlinx.parcelize.Parcelize
 import mozilla.components.concept.engine.permission.SitePermissions.Status.NO_DECISION
 import mozilla.components.concept.engine.permission.SitePermissionsStorage.Permission
 
-/**
- * A site permissions and its state.
- */
+/** A site permissions and its state. */
 @Parcelize
 data class SitePermissions(
     val origin: String,
@@ -29,45 +27,41 @@ data class SitePermissions(
     val localNetworkAccess: Status = NO_DECISION,
     val savedAt: Long = System.currentTimeMillis(),
 ) : Parcelable {
-    enum class Status(
-        val id: Int,
-    ) {
-        BLOCKED(-1), NO_DECISION(0), ALLOWED(1);
+    enum class Status(val id: Int) {
+        BLOCKED(-1),
+        NO_DECISION(0),
+        ALLOWED(1);
 
         fun isAllowed() = this == ALLOWED
 
         fun doNotAskAgain() = this == ALLOWED || this == BLOCKED
 
-        fun toggle(): Status = when (this) {
-            BLOCKED, NO_DECISION -> ALLOWED
-            ALLOWED -> BLOCKED
-        }
+        fun toggle(): Status =
+            when (this) {
+                BLOCKED,
+                NO_DECISION -> ALLOWED
+                ALLOWED -> BLOCKED
+            }
 
-        /**
-         * Converts from [SitePermissions.Status] to [AutoplayStatus].
-         */
+        /** Converts from [SitePermissions.Status] to [AutoplayStatus]. */
         fun toAutoplayStatus(): AutoplayStatus {
             return when (this) {
-                NO_DECISION, BLOCKED -> AutoplayStatus.BLOCKED
+                NO_DECISION,
+                BLOCKED -> AutoplayStatus.BLOCKED
                 ALLOWED -> AutoplayStatus.ALLOWED
             }
         }
     }
 
-    /**
-     * An enum that represents the status that autoplay can have.
-     */
+    /** An enum that represents the status that autoplay can have. */
     enum class AutoplayStatus(val id: Int) {
-        BLOCKED(Status.BLOCKED.id), ALLOWED(Status.ALLOWED.id);
+        BLOCKED(Status.BLOCKED.id),
+        ALLOWED(Status.ALLOWED.id);
 
-        /**
-         * Indicates if the status is allowed.
-         */
+        /** Indicates if the status is allowed. */
         fun isAllowed() = this == ALLOWED
 
-        /**
-         * Convert from a AutoplayStatus to Status.
-         */
+        /** Convert from a AutoplayStatus to Status. */
         fun toStatus(): Status {
             return when (this) {
                 BLOCKED -> Status.BLOCKED
@@ -76,9 +70,7 @@ data class SitePermissions(
         }
     }
 
-    /**
-     * Gets the current status for a [Permission] type
-     */
+    /** Gets the current status for a [Permission] type */
     operator fun get(permissionType: Permission): Status {
         return when (permissionType) {
             Permission.MICROPHONE -> microphone

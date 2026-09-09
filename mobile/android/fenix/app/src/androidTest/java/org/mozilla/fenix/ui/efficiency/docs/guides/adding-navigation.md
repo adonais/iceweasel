@@ -37,7 +37,7 @@ gap — see `extending-basepage.md`.
   directly for launch-time surfaces.
 - **Launch-flag entries.** Some flows only exist under a launch configuration. Onboarding only shows
   when the app launches with it enabled, so `OnboardingPage` registers `AppEntry -> OnboardingPage`
-  with empty steps, and its tests declare `BaseTest(skipOnboarding = false)`. The nav edge and the
+  with empty steps, and its tests declare `BaseTest(LaunchConfig(skipOnboarding = false))`. The nav edge and the
   launch flag go together — document the required flag on the page object.
 - **Empty steps** mean "already here at entry" — only valid for `AppEntry -> X` launch surfaces.
 

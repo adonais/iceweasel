@@ -287,7 +287,7 @@ add_task(async function test_switchTab() {
     );
     Assert.equal(result.payload.url, url, "Check result URL");
     Assert.equal(
-      result.payload.userContextId,
+      result.payload.userContext.id,
       userContextId,
       "Check user context"
     );

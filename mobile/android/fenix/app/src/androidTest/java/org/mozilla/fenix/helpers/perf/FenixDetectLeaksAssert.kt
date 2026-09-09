@@ -8,6 +8,7 @@ import android.content.Context
 import android.os.Build
 import android.os.Environment
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.File
 import leakcanary.AndroidDetectLeaksAssert
 import leakcanary.DetectLeaksAssert
 import leakcanary.HeapAnalysisReporter
@@ -15,12 +16,10 @@ import leakcanary.LeakAssertions
 import leakcanary.NoLeakAssertionFailedError
 import shark.HeapAnalysis
 import shark.HeapAnalysisSuccess
-import java.io.File
 
 /**
- * Fenix implementation of [DetectLeaksAssert] that wraps around the default [AndroidDetectLeaksAssert]
- * implementation and provides a custom [HeapAnalysisReporter] that writes to an output file
- * specified by the params.
+ * Fenix implementation of [DetectLeaksAssert] that wraps around the default [AndroidDetectLeaksAssert] implementation
+ * and provides a custom [HeapAnalysisReporter] that writes to an output file specified by the params.
  *
  * @param filename Destination filename for the leak report if a leak occurs
  * @param directory Directory within the destination location to host the file if a leak occurs
@@ -30,12 +29,14 @@ class FenixDetectLeaksAssert(
     private val directory: String,
 ) : DetectLeaksAssert {
 
-    private val delegateAssert: DetectLeaksAssert = AndroidDetectLeaksAssert(
-        heapAnalysisReporter = MemoryLeaksFileOutputReporter(
-            filename = filename,
-            directory = directory,
-        ),
-    )
+    private val delegateAssert: DetectLeaksAssert =
+        AndroidDetectLeaksAssert(
+            heapAnalysisReporter =
+                MemoryLeaksFileOutputReporter(
+                    filename = filename,
+                    directory = directory,
+                )
+        )
 
     override fun assertNoLeaks(tag: String) {
         delegateAssert.assertNoLeaks(tag)
@@ -44,21 +45,22 @@ class FenixDetectLeaksAssert(
     companion object {
 
         /**
-         * Asserts that there are no leaks detected. If any leak is detected, then the test is
-         * failed and a leak trace is written to a file in a directory specified by the [directory] param within
-         * the `/sdcard/googletest/test_outputfiles/` location.
+         * Asserts that there are no leaks detected. If any leak is detected, then the test is failed and a leak trace
+         * is written to a file in a directory specified by the [directory] param within the
+         * `/sdcard/googletest/test_outputfiles/` location.
          *
          * This is built upon the [LeakAssertions.assertNoLeaks] function from the library.
          *
          * @param tag The tag used to identify the calling code
-         * @param filename The filename to be used for the memory leak trace in the event of
+         * @param filename The filename to be used for the memory leak trace in the event of a leak
+         * @param directory The directory the leak trace file is written to
          */
         fun assertNoLeaks(tag: String, filename: String, directory: String = "memory_leaks") {
             DetectLeaksAssert.update(
                 FenixDetectLeaksAssert(
                     filename = filename,
                     directory = directory,
-                ),
+                )
             )
 
             LeakAssertions.assertNoLeaks(tag)
@@ -67,11 +69,11 @@ class FenixDetectLeaksAssert(
 }
 
 /**
- * Custom [HeapAnalysisReporter] that writes the leak trace to a file output
- * specified by [filename], [directory] and then calls the default analysis reporter.
+ * Custom [HeapAnalysisReporter] that writes the leak trace to a file output specified by [filename], [directory] and
+ * then calls the default analysis reporter.
  *
- * The reports are written into a directory specified by [directory], within the location that is
- * specified by the `additionalTestOutputDir` argument of the test runner argument.
+ * The reports are written into a directory specified by [directory], within the location that is specified by the
+ * `additionalTestOutputDir` argument of the test runner argument.
  */
 private class MemoryLeaksFileOutputReporter(
     private val filename: String,
@@ -92,8 +94,7 @@ private fun HeapAnalysis.writeToFile(
         val context = InstrumentationRegistry.getInstrumentation().targetContext
 
         val outputDirectory =
-            InstrumentationRegistry.getArguments().getString("additionalTestOutputDir")
-                ?.let { File(it) }
+            InstrumentationRegistry.getArguments().getString("additionalTestOutputDir")?.let { File(it) }
                 ?: getFallbackUsableDirectory(context)
 
         // delete any existing files in the directory
@@ -112,12 +113,13 @@ private fun HeapAnalysis.writeToFile(
 }
 
 /**
- * Gets the fallback usable directory. In the event that the test runner does not provide an
- * `additionalTestOutputDir` argument, the fallback directory is used.
+ * Gets the fallback usable directory. In the event that the test runner does not provide an `additionalTestOutputDir`
+ * argument, the fallback directory is used.
  *
  * This is copied from how Android implements it in the macro benchmark library
  *
- * Source: [cs.android.com](https://cs.android.com/androidx/platform/frameworks/support/+/9bd4efdf8576ab9ce6654b0d115aadd6e1ea6ef5:benchmark/benchmark-common/src/main/java/androidx/benchmark/Outputs.kt;bpv=0)
+ * Source:
+ * [cs.android.com](https://cs.android.com/androidx/platform/frameworks/support/+/9bd4efdf8576ab9ce6654b0d115aadd6e1ea6ef5:benchmark/benchmark-common/src/main/java/androidx/benchmark/Outputs.kt;bpv=0)
  */
 private fun getFallbackUsableDirectory(context: Context): File {
     val dirUsableByAppAndShell =
@@ -143,7 +145,7 @@ private fun getFallbackUsableDirectory(context: Context): File {
         }
             ?: throw IllegalStateException(
                 "Unable to select a directory for writing files, " +
-                        "additionalTestOutputDir argument required to declare output dir.",
+                    "additionalTestOutputDir argument required to declare output dir."
             )
 
     if (Build.VERSION.SDK_INT in 21..22) {

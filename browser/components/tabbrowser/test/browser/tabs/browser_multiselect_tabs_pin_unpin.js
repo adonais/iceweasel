@@ -45,9 +45,9 @@ add_task(async function test() {
   ok(tab1.pinned, "Tab1 is pinned");
   ok(tab2.pinned, "Tab2 is pinned");
   ok(!tab3.pinned, "Tab3 is unpinned");
-  is(tab1._tPos, 0, "Tab1 should still be first after pinning");
-  is(tab2._tPos, 1, "Tab2 should still be second after pinning");
-  is(tab3._tPos, 2, "Tab3 should still be third after pinning");
+  is(tab1.index, 0, "Tab1 should still be first after pinning");
+  is(tab2.index, 1, "Tab2 should still be second after pinning");
+  is(tab3.index, 2, "Tab3 should still be third after pinning");
 
   // Check the context menu with a multiselected and pinned tab
   await openTabContextMenu(tab2);
@@ -66,10 +66,36 @@ add_task(async function test() {
   ok(!tab1.pinned, "Tab1 is unpinned");
   ok(!tab2.pinned, "Tab2 is unpinned");
   ok(!tab3.pinned, "Tab3 is unpinned");
-  is(tab1._tPos, 0, "Tab1 should still be first after unpinning");
-  is(tab2._tPos, 1, "Tab2 should still be second after unpinning");
-  is(tab3._tPos, 2, "Tab3 should still be third after unpinning");
+  is(tab1.index, 0, "Tab1 should still be first after unpinning");
+  is(tab2.index, 1, "Tab2 should still be second after unpinning");
+  is(tab3.index, 2, "Tab3 should still be third after unpinning");
 
   BrowserTestUtils.removeTab(tab2);
   BrowserTestUtils.removeTab(tab3);
+});
+
+add_task(async function test_pin_multiselected_tabs_records_source() {
+  Services.fog.testResetFOG();
+
+  let tab1 = gBrowser.selectedTab;
+  let tab2 = await addTab();
+  await triggerClickOn(tab2, { ctrlKey: true });
+
+  let tab1Pinned = BrowserTestUtils.waitForEvent(tab1, "TabPinned");
+  let tab2Pinned = BrowserTestUtils.waitForEvent(tab2, "TabPinned");
+  await openTabContextMenu(tab2);
+  await BrowserTestUtils.activateMenuItem(
+    document.getElementById("context_pinSelectedTabs")
+  );
+  await tab1Pinned;
+  await tab2Pinned;
+
+  Assert.deepEqual(
+    Glean.pinnedTabs.pin.testGetValue().map(event => event.extra.source),
+    ["tab_menu", "tab_menu"],
+    "Each pinned tab records the surface it was pinned from"
+  );
+
+  gBrowser.unpinTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
 });

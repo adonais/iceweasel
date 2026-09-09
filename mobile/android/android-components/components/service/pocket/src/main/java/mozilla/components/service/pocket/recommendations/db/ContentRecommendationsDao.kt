@@ -13,9 +13,7 @@ import androidx.room.Transaction
 import androidx.room.Update
 import mozilla.components.service.pocket.recommendations.db.ContentRecommendationsDatabase.Companion.CONTENT_RECOMMENDATIONS_TABLE
 
-/**
- * Internal DAO for accessing [ContentRecommendationEntity] instances.
- */
+/** Internal DAO for accessing [ContentRecommendationEntity] instances. */
 @Dao
 internal interface ContentRecommendationsDao {
     @Query("SELECT * FROM $CONTENT_RECOMMENDATIONS_TABLE")
@@ -24,20 +22,17 @@ internal interface ContentRecommendationsDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(recommendations: List<ContentRecommendationEntity>)
 
-    @Delete
-    suspend fun delete(recommendations: List<ContentRecommendationEntity>)
+    @Delete suspend fun delete(recommendations: List<ContentRecommendationEntity>)
 
-    @Update
-    suspend fun update(recommendations: List<ContentRecommendationEntity>)
+    @Update suspend fun update(recommendations: List<ContentRecommendationEntity>)
 
     @Update(entity = ContentRecommendationEntity::class)
     suspend fun updateRecommendationsImpressions(recommendations: List<ContentRecommendationImpression>)
 
     /**
-     * Replaces the existing content recommendations in the database with the provided
-     * [recommendations]. This will remove any existing recommendations that are no longer
-     * part of the provided [recommendations], updating the metadata in existing recommendations
-     * that are still relevant, and persisting any new recommendations in storage.
+     * Replaces the existing content recommendations in the database with the provided [recommendations]. This will
+     * remove any existing recommendations that are no longer part of the provided [recommendations], updating the
+     * metadata in existing recommendations that are still relevant, and persisting any new recommendations in storage.
      *
      * @param recommendations The new list of [ContentRecommendationEntity] to persist in storage.
      */
@@ -47,16 +42,15 @@ internal interface ContentRecommendationsDao {
         val oldCorpusItemIds = oldRecommendations.map { it.corpusItemId }
         val newCorpusItemIds = recommendations.map { it.corpusItemId }
 
-        val existingRecommendationsToDelete =
-            oldRecommendations.filterNot { newCorpusItemIds.contains(it.corpusItemId) }
+        val existingRecommendationsToDelete = oldRecommendations.filterNot {
+            newCorpusItemIds.contains(it.corpusItemId)
+        }
         delete(existingRecommendationsToDelete)
 
-        val existingRecommendationsToUpdate =
-            recommendations.filter { oldCorpusItemIds.contains(it.corpusItemId) }
+        val existingRecommendationsToUpdate = recommendations.filter { oldCorpusItemIds.contains(it.corpusItemId) }
         update(existingRecommendationsToUpdate)
 
-        val newRecommendationsToInsert =
-            recommendations.filterNot { oldCorpusItemIds.contains(it.corpusItemId) }
+        val newRecommendationsToInsert = recommendations.filterNot { oldCorpusItemIds.contains(it.corpusItemId) }
         insert(newRecommendationsToInsert)
     }
 }

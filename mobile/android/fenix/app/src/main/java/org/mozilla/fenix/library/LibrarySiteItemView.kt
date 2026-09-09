@@ -20,37 +20,40 @@ import org.mozilla.fenix.ext.loadIntoView
 import org.mozilla.fenix.selection.SelectionHolder
 import org.mozilla.fenix.selection.SelectionInteractor
 
-class LibrarySiteItemView @JvmOverloads constructor(
+class LibrarySiteItemView
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
     defStyleRes: Int = 0,
 ) : ConstraintLayout(context, attrs, defStyleAttr, defStyleRes) {
 
-    private val binding = LibrarySiteItemBinding.inflate(
-        LayoutInflater.from(context),
-        this,
-        true,
-    )
+    private val binding =
+        LibrarySiteItemBinding.inflate(
+            LayoutInflater.from(context),
+            this,
+            true,
+        )
 
-    val titleView: TextView get() = binding.title
+    val titleView: TextView
+        get() = binding.title
 
-    val urlView: TextView get() = binding.url
+    val urlView: TextView
+        get() = binding.url
 
-    val iconView: ImageView get() = binding.favicon
+    val iconView: ImageView
+        get() = binding.favicon
 
-    val overflowView: ImageButton get() = binding.overflowMenu
+    val overflowView: ImageButton
+        get() = binding.overflowMenu
 
-    /**
-     * Change visibility of parts of this view based on what type of item is being represented.
-     */
+    /** Change visibility of parts of this view based on what type of item is being represented. */
     fun displayAs(mode: ItemType) {
         urlView.isVisible = mode == ItemType.SITE
     }
 
-    /**
-     * Changes the icon to show a check mark if [isSelected]
-     */
+    /** Changes the icon to show a check mark if [isSelected] */
     fun changeSelected(isSelected: Boolean) {
         binding.icon.displayedChild = if (isSelected) 1 else 0
     }
@@ -97,6 +100,7 @@ class LibrarySiteItemView @JvmOverloads constructor(
     }
 
     enum class ItemType {
-        SITE, FOLDER
+        SITE,
+        FOLDER,
     }
 }

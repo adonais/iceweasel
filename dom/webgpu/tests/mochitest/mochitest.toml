@@ -1,18 +1,16 @@
+# WebGPU Mochitests
+#
+# These are regular WebGPU functional tests. We set `dom.webgpu.enabled=true`
+# and run these tests everywhere, regardless of whether WebGPU is enabled
+# by default.
+
 [DEFAULT]
 subsuite = "webgpu"
-
-# This file's tests should run when WebGPU is enabled by the default
-# value of `dom.webgpu.enabled` in `modules/libpref/init/StaticPrefList.yaml`.
-#
-# These conditions should be the same as the `skip-if` conditions in
-# `mochitest-no-pref.html`, except for `verify`.
-run-if = [
-  "early_beta_or_earlier",
-  "os == 'mac' && arch == 'aarch64'",
-  "os == 'win'",
+skip-if = [
+  "verify", # `test-verify` jobs don't guarantee a GPU, so skip them.
 ]
-
 prefs = [
+  "dom.webgpu.enabled=true",
   "dom.webgpu.service-workers.enabled=true",
   # Ignoring the blocklist is necessary to run tests in CI on old Mesa versions
   # (https://bugzilla.mozilla.org/show_bug.cgi?id=1985348).
@@ -28,8 +26,6 @@ support-files = [
 #
 # See spec WebIDL, like this: https://www.w3.org/TR/webgpu/#navigatorgpu
 scheme = "https"
-
-["test_adapter_enabled.html"]
 
 ["test_basic_canvas.worker.html"]
 
@@ -54,8 +50,6 @@ scheme = "https"
 ["test_device_lost.html"]
 
 ["test_double_encoder_finish.html"]
-
-["test_enabled.html"]
 
 ["test_encoder_cycle_collection.html"]
 

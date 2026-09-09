@@ -14,11 +14,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.fragment.app.FragmentActivity
 
 /**
- *  The UI host for displaying the Biometric Authentication dialog
+ * The UI host for displaying the Biometric Authentication dialog
  *
- *  @param title The title of the authentication prompt.
- *  @param onAuthSuccess Callback triggered when biometric authentication succeeds.
- *  @param onAuthFailure Callback triggered when biometric authentication fails.
+ * @param title The title of the authentication prompt.
+ * @param onAuthSuccess Callback triggered when biometric authentication succeeds.
+ * @param onAuthFailure Callback triggered when biometric authentication fails.
  */
 @Composable
 internal fun BiometricAuthenticationDialog(
@@ -74,9 +74,7 @@ private fun ShowPinVerificationDialog(
     onAuthFailure: () -> Unit,
 ) {
     val startForResult =
-        rememberLauncherForActivityResult(
-            ActivityResultContracts.StartActivityForResult(),
-        ) { result: ActivityResult ->
+        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
             if (result.resultCode == Activity.RESULT_OK) {
                 onAuthSuccess()
             } else {
@@ -86,9 +84,10 @@ private fun ShowPinVerificationDialog(
 
     SideEffect {
         DefaultBiometricUtils.getConfirmDeviceCredentialIntent(
-            title = title,
-            activity = activity,
-        )?.also { startForResult.launch(it) }
+                title = title,
+                activity = activity,
+            )
+            ?.also { startForResult.launch(it) }
     }
 }
 

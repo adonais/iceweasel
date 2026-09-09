@@ -11,8 +11,7 @@ import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.AppStoreReducer
 
 /**
- * A [Store] that holds the [AppState] for the app and reduces [AppAction]s
- * dispatched to the store.
+ * A [Store] that holds the [AppState] for the app and reduces [AppAction]s dispatched to the store.
  *
  * This store is not persisted to disk and is scoped to the life-cycle of the application.
  */

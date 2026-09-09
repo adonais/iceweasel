@@ -7,17 +7,7 @@ package org.mozilla.fenix.ui.efficiency.generation.behavior
 import android.util.Log
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 
-abstract class BaseBehaviorShardTest(
-    private val case: BehaviorCase,
-) : BaseTest(
-    skipOnboarding = case.context.toBaseTestConfig().skipOnboarding,
-    isPageLoadTranslationsPromptEnabled =
-        case.context.toBaseTestConfig().isPageLoadTranslationsPromptEnabled,
-    isPocketEnabled =
-        case.context.toBaseTestConfig().isPocketEnabled,
-    isRecentlyVisitedFeatureEnabled =
-        case.context.toBaseTestConfig().isRecentlyVisitedFeatureEnabled,
-) {
+abstract class BaseBehaviorShardTest(private val case: BehaviorCase) : BaseTest(case.context.toLaunchConfig()) {
 
     protected fun runBehaviorCase() {
         Log.i(
@@ -45,11 +35,12 @@ abstract class BaseBehaviorShardTest(
             "Behavior case is not runnable: ${case.missingRequirements}"
         }
 
-        val runtime = BehaviorRuntime(
-            on = on,
-            data = case.data,
-            context = case.context,
-        )
+        val runtime =
+            BehaviorRuntime(
+                on = on,
+                data = case.data,
+                context = case.context,
+            )
 
         BehaviorRuntimeStateSetup.apply(
             runtime = runtime,
@@ -61,10 +52,7 @@ abstract class BaseBehaviorShardTest(
             capability.perform(runtime)
         }
 
-        println(
-            "Verifying assertion: " +
-                "${case.assertion.kind} ${case.assertion.selectorTemplate.description}",
-        )
+        println("Verifying assertion: " + "${case.assertion.kind} ${case.assertion.selectorTemplate.description}")
 
         case.assertion.verify(runtime)
     }

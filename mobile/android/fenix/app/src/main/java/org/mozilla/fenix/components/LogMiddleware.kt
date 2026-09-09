@@ -11,12 +11,12 @@ import mozilla.components.lib.state.Store
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * A simple generic middleware that will log actions that pass through the Store it is attached to.
- * Default implementations will use [Logger], which should output through logcat in debug builds.
+ * A simple generic middleware that will log actions that pass through the Store it is attached to. Default
+ * implementations will use [Logger], which should output through logcat in debug builds.
  *
- * NOTE: when [shouldIncludeDetailedData] is true, potentially sensitive data will be recorded even
- * in release builds. It will not be sent to logcat by default, but it may still be extractable
- * by external tools. Use caution when enabling this.
+ * NOTE: when [shouldIncludeDetailedData] is true, potentially sensitive data will be recorded even in release builds.
+ * It will not be sent to logcat by default, but it may still be extractable by external tools. Use caution when
+ * enabling this.
  */
 class LogMiddleware<S : State, A : Action>(
     val tag: String = "Unspecified",

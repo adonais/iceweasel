@@ -38,13 +38,14 @@ fun ScrollIndicator(
 ) {
     if (enabled && scrollState.maxValue > 0) {
         BoxWithConstraints(
-            modifier = modifier
-                .fillMaxHeight()
-                .width(2.dp)
-                .background(
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = SCROLLBAR_ALPHA),
-                    CircleShape,
-                ),
+            modifier =
+                modifier
+                    .fillMaxHeight()
+                    .width(2.dp)
+                    .background(
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = SCROLLBAR_ALPHA),
+                        CircleShape,
+                    )
         ) {
             val trackHeight = maxHeight
             // Represents the scroll handle height (40% of the total track length).
@@ -52,17 +53,17 @@ fun ScrollIndicator(
             val scrollableArea = trackHeight - handleHeight
 
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(handleHeight)
-                    .graphicsLayer {
-                        val scrollPercentage = scrollState.value.toFloat() / scrollState.maxValue.toFloat()
-                        translationY = (scrollableArea * scrollPercentage).toPx()
-                    }
-                    .background(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = SCROLL_INDICATOR_ALPHA),
-                        shape = CircleShape,
-                    ),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .height(handleHeight)
+                        .graphicsLayer {
+                            val scrollPercentage = scrollState.value.toFloat() / scrollState.maxValue.toFloat()
+                            translationY = (scrollableArea * scrollPercentage).toPx()
+                        }
+                        .background(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = SCROLL_INDICATOR_ALPHA),
+                            shape = CircleShape,
+                        )
             )
         }
     }

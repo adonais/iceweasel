@@ -21,7 +21,7 @@ const spellColour = color => (color === "grey" ? "gray" : color);
 function validateTabIndexForMove(group, window, tabIndex) {
   if (group.documentGlobal === window) {
     let group_tabs = group.tabs;
-    if (tabIndex > group_tabs[0]._tPos) {
+    if (tabIndex > group_tabs[0].index) {
       // When group is moving to a higher index, we need to increase the
       // index to account for the fact that the act of moving tab groups
       // causes all following tabs to have a decreased index.

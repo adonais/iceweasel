@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.components.bookmarks
 
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import mozilla.appservices.places.BookmarkRoot
@@ -13,11 +14,8 @@ import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarksStorage
 import mozilla.components.concept.storage.HistoryStorage
 import org.mozilla.fenix.home.bookmarks.Bookmark
-import java.util.concurrent.TimeUnit
 
-/**
- * Use cases that allow for modifying and retrieving bookmarks.
- */
+/** Use cases that allow for modifying and retrieving bookmarks. */
 class BookmarksUseCase(
     bookmarksStorage: BookmarksStorage,
     historyStorage: HistoryStorage,
@@ -28,10 +26,11 @@ class BookmarksUseCase(
      * Use case for adding a new bookmark.
      *
      * @param storage [BookmarksStorage] used to add and retrieve bookmark data.
-     * @param lastSavedFolderCache Caches the folder the user last saved a bookmark in, used to
-     * pick the default parent folder when the caller does not specify one.
+     * @param lastSavedFolderCache Caches the folder the user last saved a bookmark in, used to pick the default parent
+     *   folder when the caller does not specify one.
      */
-    class AddBookmarksUseCase internal constructor(
+    class AddBookmarksUseCase
+    internal constructor(
         private val storage: BookmarksStorage,
         private val lastSavedFolderCache: LastSavedFolderCache,
     ) {
@@ -39,11 +38,10 @@ class BookmarksUseCase(
         /**
          * The outcome of an attempted add.
          *
-         * @property guidToEdit The guid of the newly added bookmark, or null when a bookmark with
-         * the same url already existed or the add otherwise failed.
-         * @property parentNode The resolved parent folder the bookmark was (or would have been)
-         * added under. Useful for snackbar/UX consumers that need the folder name. May be null
-         * if even the Mobile root could not be fetched.
+         * @property guidToEdit The guid of the newly added bookmark, or null when a bookmark with the same url already
+         *   existed or the add otherwise failed.
+         * @property parentNode The resolved parent folder the bookmark was (or would have been) added under. Useful for
+         *   snackbar/UX consumers that need the folder name. May be null if even the Mobile root could not be fetched.
          */
         data class Result(
             val guidToEdit: String?,
@@ -53,10 +51,9 @@ class BookmarksUseCase(
         /**
          * Adds a new bookmark with the provided [url] and [title].
          *
-         * When [parentGuid] is null, the parent folder is resolved from [LastSavedFolderCache]
-         * (falling back to [BookmarkRoot.Mobile] and clearing a stale cache entry if the cached
-         * folder no longer exists). An explicit [parentGuid] is honored as-is and does not
-         * interact with the cache.
+         * When [parentGuid] is null, the parent folder is resolved from [LastSavedFolderCache] (falling back to
+         * [BookmarkRoot.Mobile] and clearing a stale cache entry if the cached folder no longer exists). An explicit
+         * [parentGuid] is honored as-is and does not interact with the cache.
          */
         suspend operator fun invoke(
             url: String,
@@ -66,24 +63,24 @@ class BookmarksUseCase(
         ): Result {
             val (resolvedGuid, parentNode) = resolveParent(parentGuid)
 
-            val guidToEdit = try {
-                val alreadyExists = storage
-                    .getBookmarksWithUrl(url)
-                    .getOrDefault(listOf())
-                    .any { it.url == url }
-                if (alreadyExists) {
+            val guidToEdit =
+                try {
+                    val alreadyExists = storage.getBookmarksWithUrl(url).getOrDefault(listOf()).any { it.url == url }
+                    if (alreadyExists) {
+                        null
+                    } else {
+                        storage
+                            .addItem(
+                                parentGuid = resolvedGuid,
+                                url = url,
+                                title = title,
+                                position = position,
+                            )
+                            .getOrNull()
+                    }
+                } catch (e: PlacesApiException.UrlParseFailed) {
                     null
-                } else {
-                    storage.addItem(
-                        parentGuid = resolvedGuid,
-                        url = url,
-                        title = title,
-                        position = position,
-                    ).getOrNull()
                 }
-            } catch (e: PlacesApiException.UrlParseFailed) {
-                null
-            }
             return Result(guidToEdit, parentNode)
         }
 
@@ -92,8 +89,8 @@ class BookmarksUseCase(
                 return explicit to storage.getBookmark(explicit).getOrNull()
             }
             val cachedGuid = lastSavedFolderCache.getGuid() ?: BookmarkRoot.Mobile.id
-            val parentNode = storage.getBookmark(cachedGuid).getOrNull()
-                ?: storage.getBookmark(BookmarkRoot.Mobile.id).getOrNull()
+            val parentNode =
+                storage.getBookmark(cachedGuid).getOrNull() ?: storage.getBookmark(BookmarkRoot.Mobile.id).getOrNull()
             val finalGuid = parentNode?.guid ?: BookmarkRoot.Mobile.id
             if (cachedGuid != finalGuid) {
                 lastSavedFolderCache.setGuid(null)
@@ -106,47 +103,49 @@ class BookmarksUseCase(
      * Use case for editing an existing bookmark.
      *
      * @param storage [BookmarksStorage] used to persist the edit.
-     * @param lastSavedFolderCache Caches the folder the user last saved a bookmark in. Updated
-     * when an edit changes a real field on the bookmark, so subsequent adds default to the same
-     * folder.
+     * @param lastSavedFolderCache Caches the folder the user last saved a bookmark in. Updated when an edit changes a
+     *   real field on the bookmark, so subsequent adds default to the same folder.
      */
-    class EditBookmarkUseCase internal constructor(
+    class EditBookmarkUseCase
+    internal constructor(
         private val storage: BookmarksStorage,
         private val lastSavedFolderCache: LastSavedFolderCache,
     ) {
         /**
-         * Commits an edit to the bookmark identified by [guid]. The storage write and cache
-         * update are performed atomically with respect to caller cancellation: if the caller's
-         * scope is cancelled mid-call, both still complete.
+         * Commits an edit to the bookmark identified by [guid]. The storage write and cache update are performed
+         * atomically with respect to caller cancellation: if the caller's scope is cancelled mid-call, both still
+         * complete.
          *
          * @param guid The guid of the bookmark to update.
          * @param info The new fields to persist.
-         * @param edited Whether the edit changed any user-visible field. When true and the
-         * update succeeds, the parent folder is remembered for the next add.
+         * @param edited Whether the edit changed any user-visible field. When true and the update succeeds, the parent
+         *   folder is remembered for the next add.
          * @return true if storage reported a successful update, false otherwise.
          */
         suspend operator fun invoke(
             guid: String,
             info: BookmarkInfo,
             edited: Boolean,
-        ): Boolean = withContext(NonCancellable) {
-            val result = storage.updateNode(guid, info)
-            if (result.isSuccess && edited) {
-                lastSavedFolderCache.setGuid(info.parentGuid)
+        ): Boolean =
+            withContext(NonCancellable) {
+                val result = storage.updateNode(guid, info)
+                if (result.isSuccess && edited) {
+                    lastSavedFolderCache.setGuid(info.parentGuid)
+                }
+                result.isSuccess
             }
-            result.isSuccess
-        }
     }
 
     /**
      * Uses for retrieving recently added bookmarks.
      *
      * @param bookmarksStorage [BookmarksStorage] to retrieve the bookmark data.
-     * @param historyStorage Optional [HistoryStorage] to retrieve the preview image of a visited
-     * page associated with a bookmark.
+     * @param historyStorage Optional [HistoryStorage] to retrieve the preview image of a visited page associated with a
+     *   bookmark.
      * @param currentTimeMillis provider for the current time in milliseconds, injectable for testing.
      */
-    class RetrieveRecentBookmarksUseCase internal constructor(
+    class RetrieveRecentBookmarksUseCase
+    internal constructor(
         private val bookmarksStorage: BookmarksStorage,
         private val historyStorage: HistoryStorage? = null,
         private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
@@ -165,21 +164,19 @@ class BookmarksUseCase(
             val currentTime = currentTimeMillis()
 
             // Fetch visit information within the time range of now and the specified maximum age.
-            val history = historyStorage?.getDetailedVisits(
-                start = currentTime - previewImageMaxAgeMs,
-                end = currentTime,
-            )
+            val history =
+                historyStorage?.getDetailedVisits(
+                    start = currentTime - previewImageMaxAgeMs,
+                    end = currentTime,
+                )
 
-            return bookmarksStorage
-                .getRecentBookmarks(count)
-                .getOrDefault(listOf())
-                .map { bookmark ->
-                    Bookmark(
-                        title = bookmark.title,
-                        url = bookmark.url,
-                        previewImageUrl = history?.find { bookmark.url == it.url }?.previewImageUrl,
-                    )
-                }
+            return bookmarksStorage.getRecentBookmarks(count).getOrDefault(listOf()).map { bookmark ->
+                Bookmark(
+                    title = bookmark.title,
+                    url = bookmark.url,
+                    previewImageUrl = history?.find { bookmark.url == it.url }?.previewImageUrl,
+                )
+            }
         }
     }
 

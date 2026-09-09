@@ -30,42 +30,39 @@ sealed class AutomaticTranslationOptionPreference(
     open val summaryId: List<Int>,
 ) {
 
-    /**
-     * The app will offer to translate sites in the selected language.
-     */
+    /** The app will offer to translate sites in the selected language. */
     data class OfferToTranslate(
         override val titleId: Int = R.string.automatic_translation_option_offer_to_translate_title_preference,
-        override val summaryId: List<Int> = listOf(
-            R.string.automatic_translation_option_offer_to_translate_summary_preference,
-            R.string.firefox,
-        ),
+        override val summaryId: List<Int> =
+            listOf(
+                R.string.automatic_translation_option_offer_to_translate_summary_preference,
+                R.string.firefox,
+            ),
     ) : AutomaticTranslationOptionPreference(titleId = titleId, summaryId = summaryId)
 
-    /**
-     * The app will translate in the selected language automatically when the page loads.
-     */
+    /** The app will translate in the selected language automatically when the page loads. */
     data class AlwaysTranslate(
         override val titleId: Int = R.string.automatic_translation_option_always_translate_title_preference,
-        override val summaryId: List<Int> = listOf(
-            R.string.automatic_translation_option_always_translate_summary_preference,
-            R.string.firefox,
-        ),
+        override val summaryId: List<Int> =
+            listOf(
+                R.string.automatic_translation_option_always_translate_summary_preference,
+                R.string.firefox,
+            ),
     ) : AutomaticTranslationOptionPreference(titleId = titleId, summaryId = summaryId)
 
-    /**
-     * The app will never offer to translate sites in the selected language.
-     */
+    /** The app will never offer to translate sites in the selected language. */
     data class NeverTranslate(
         override val titleId: Int = R.string.automatic_translation_option_never_translate_title_preference,
-        override val summaryId: List<Int> = listOf(
-            R.string.automatic_translation_option_never_translate_summary_preference,
-            R.string.firefox,
-        ),
+        override val summaryId: List<Int> =
+            listOf(
+                R.string.automatic_translation_option_never_translate_summary_preference,
+                R.string.firefox,
+            ),
     ) : AutomaticTranslationOptionPreference(titleId = titleId, summaryId = summaryId)
 }
 
 internal fun getAutomaticTranslationOptionPreference(
-    languageSetting: LanguageSetting,
+    languageSetting: LanguageSetting
 ): AutomaticTranslationOptionPreference {
     return when (languageSetting) {
         LanguageSetting.ALWAYS -> AutomaticTranslationOptionPreference.AlwaysTranslate()
@@ -75,7 +72,7 @@ internal fun getAutomaticTranslationOptionPreference(
 }
 
 internal fun getLanguageSetting(
-    automaticTranslationItemPreference: AutomaticTranslationOptionPreference,
+    automaticTranslationItemPreference: AutomaticTranslationOptionPreference
 ): LanguageSetting {
     return when (automaticTranslationItemPreference) {
         is AutomaticTranslationOptionPreference.AlwaysTranslate -> LanguageSetting.ALWAYS

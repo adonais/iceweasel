@@ -66,6 +66,22 @@ enum class ComputeSizeFlag : uint8_t {
 using ComputeSizeFlags = mozilla::EnumSet<ComputeSizeFlag>;
 
 /**
+ * Flags to pass to nsIFrame::GetTransformMatrix(),
+ * nsLayoutUtils::GetTransformToAncestor(), etc.
+ */
+enum class TransformMatrixFlag : uint8_t {
+  // Return the matrix in CSS pixels rather than device pixels.
+  InCSSUnits,
+  // Stop the ancestor walk at a stacking context, or at a frame with a display
+  // port.
+  StopAtStackingContextAndDisplayPort,
+  // Accumulate the offsets between frames as if every scroll container on the
+  // way to the ancestor were scrolled to its origin.
+  IgnoreScrolling,
+};
+using TransformMatrixFlags = mozilla::EnumSet<TransformMatrixFlag>;
+
+/**
  * The fallback size of width is 300px and the aspect-ratio is 2:1, based on
  * CSS2 section 10.3.2 and CSS Sizing Level 3 section 5.1:
  * https://drafts.csswg.org/css2/visudet.html#inline-replaced-width

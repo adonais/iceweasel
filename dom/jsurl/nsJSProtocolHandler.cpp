@@ -1432,7 +1432,9 @@ bool nsJSURI::Deserialize(const mozilla::ipc::URIParams& aParams) {
   }
 
   const JSURIParams& jsParams = aParams.get_JSURIParams();
-  mozilla::net::nsSimpleURI::Deserialize(jsParams.simpleParams());
+  if (!mozilla::net::nsSimpleURI::Deserialize(jsParams.simpleParams())) {
+    return false;
+  }
 
   if (jsParams.baseURI().isSome()) {
     mBaseURI = DeserializeURI(jsParams.baseURI().ref());

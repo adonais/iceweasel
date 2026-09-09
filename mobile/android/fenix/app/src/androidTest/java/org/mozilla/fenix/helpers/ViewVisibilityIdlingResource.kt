@@ -17,7 +17,10 @@ class ViewVisibilityIdlingResource(
     private var isIdle: Boolean = false
 
     override fun getName(): String {
-        Log.i(TAG, "ViewVisibilityIdlingResource: Trying to return the the name of the resource: ${ViewVisibilityIdlingResource::class.java.name + ":" + view.id + ":" + expectedVisibility}")
+        Log.i(
+            TAG,
+            "ViewVisibilityIdlingResource: Trying to return the the name of the resource: ${ViewVisibilityIdlingResource::class.java.name + ":" + view.id + ":" + expectedVisibility}",
+        )
         return ViewVisibilityIdlingResource::class.java.name + ":" + view.id + ":" + expectedVisibility
     }
 
@@ -27,7 +30,10 @@ class ViewVisibilityIdlingResource(
         isIdle = view.visibility == expectedVisibility
 
         if (isIdle) {
-            Log.i(TAG, "ViewVisibilityIdlingResource: Trying to verify that the resource transitioned from busy to idle")
+            Log.i(
+                TAG,
+                "ViewVisibilityIdlingResource: Trying to verify that the resource transitioned from busy to idle",
+            )
             resourceCallback?.onTransitionToIdle()
             Log.i(TAG, "ViewVisibilityIdlingResource: The resource transitioned to idle")
         }
@@ -37,6 +43,9 @@ class ViewVisibilityIdlingResource(
 
     override fun registerIdleTransitionCallback(callback: IdlingResource.ResourceCallback?) {
         this.resourceCallback = callback
-        Log.i(TAG, "ViewVisibilityIdlingResource: Notified asynchronously that the resource is transitioning from busy to idle")
+        Log.i(
+            TAG,
+            "ViewVisibilityIdlingResource: Notified asynchronously that the resource is transitioning from busy to idle",
+        )
     }
 }

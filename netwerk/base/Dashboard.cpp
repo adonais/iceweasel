@@ -9,9 +9,14 @@
 #include "SSLTokensCache.h"
 #include "mozilla/Components.h"
 #include "mozilla/ErrorNames.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/Span.h"
 #include "mozilla/dom/NetDashboardBinding.h"
+#include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ToJSValue.h"
+#include "mozilla/dom/TypedArray.h"
 #include "mozilla/net/HTTPSSVC.h"
 #include "mozilla/net/HttpInfo.h"
 #include "mozilla/net/SocketProcessParent.h"
@@ -1381,11 +1386,53 @@ Dashboard::RequestSSLTokensCache(nsINetDashboardCallback* aCallback) {
   return GetSSLTokensCache(data);
 }
 
+static nsresult CreateUint8Array(JSContext* aCx, Span<const uint8_t> aData,
+                                 JS::MutableHandle<JSObject*> aOut) {
+  ErrorResult error;
+  aOut.set(dom::Uint8Array::Create(aCx, aData, error));
+  RETURN_NSRESULT_ON_FAILURE(error);
+  return NS_OK;
+}
+
+static nsresult InitCertDER(JSContext* aCx, Span<const uint8_t> aDER,
+                            dom::Uint8Array& aOut) {
+  JS::Rooted<JSObject*> obj(aCx);
+  nsresult rv = CreateUint8Array(aCx, aDER, &obj);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return aOut.Init(obj) ? NS_OK : NS_ERROR_FAILURE;
+}
+
+static nsresult SetCertDERChain(
+    JSContext* aCx, const Maybe<nsTArray<nsTArray<uint8_t>>>& aChainBytes,
+    dom::Optional<Sequence<dom::Uint8Array>>& aOut) {
+  Sequence<dom::Uint8Array>& chain = aOut.Construct();
+  if (!aChainBytes) {
+    return NS_OK;
+  }
+  if (!chain.SetCapacity(aChainBytes->Length(), fallible)) {
+    JS_ReportOutOfMemory(aCx);
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  for (const auto& der : *aChainBytes) {
+    dom::Uint8Array* elem = chain.AppendElement(fallible);
+    if (!elem) {
+      JS_ReportOutOfMemory(aCx);
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
+    nsresult rv = InitCertDER(aCx, der, *elem);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+  return NS_OK;
+}
+
 nsresult Dashboard::GetSSLTokensCache(SSLTokensCacheData* aData) {
   RefPtr<SSLTokensCacheData> data = aData;
   AutoSafeJSContext cx;
 
-  mozilla::dom::SSLTokensCacheDict dict;
+  using mozilla::dom::RootedDictionary;
+  RootedDictionary<mozilla::dom::SSLTokensCacheDict> dict(cx);
   dict.mEntries.Construct();
   Sequence<mozilla::dom::SSLTokensCacheElement>& entries =
       dict.mEntries.Value();
@@ -1426,40 +1473,17 @@ nsresult Dashboard::GetSSLTokensCache(SSLTokensCacheData* aData) {
         info.mIsBuiltCertChainRootBuiltInRoot.isNothing()
             ? -1
             : (*info.mIsBuiltCertChainRootBuiltInRoot ? 1 : 0);
-    entry->mServerCertDER.Construct();
-    if (!entry->mServerCertDER.Value().AppendElements(
-            info.mServerCertBytes.Elements(), info.mServerCertBytes.Length(),
-            fallible)) {
-      JS_ReportOutOfMemory(cx);
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
+    nsresult rv = InitCertDER(cx, info.mServerCertBytes,
+                              entry->mServerCertDER.Construct());
+    NS_ENSURE_SUCCESS(rv, rv);
 
-    entry->mSucceededCertChainDER.Construct();
-    if (info.mSucceededCertChainBytes) {
-      Sequence<Sequence<uint8_t>>& chain =
-          entry->mSucceededCertChainDER.Value();
-      for (const auto& der : *info.mSucceededCertChainBytes) {
-        Sequence<uint8_t>* certDER = chain.AppendElement(fallible);
-        if (!certDER ||
-            !certDER->AppendElements(der.Elements(), der.Length(), fallible)) {
-          JS_ReportOutOfMemory(cx);
-          return NS_ERROR_OUT_OF_MEMORY;
-        }
-      }
-    }
+    rv = SetCertDERChain(cx, info.mSucceededCertChainBytes,
+                         entry->mSucceededCertChainDER);
+    NS_ENSURE_SUCCESS(rv, rv);
 
-    entry->mHandshakeCertDER.Construct();
-    if (info.mHandshakeCertificatesBytes) {
-      Sequence<Sequence<uint8_t>>& chain = entry->mHandshakeCertDER.Value();
-      for (const auto& der : *info.mHandshakeCertificatesBytes) {
-        Sequence<uint8_t>* certDER = chain.AppendElement(fallible);
-        if (!certDER ||
-            !certDER->AppendElements(der.Elements(), der.Length(), fallible)) {
-          JS_ReportOutOfMemory(cx);
-          return NS_ERROR_OUT_OF_MEMORY;
-        }
-      }
-    }
+    rv = SetCertDERChain(cx, info.mHandshakeCertificatesBytes,
+                         entry->mHandshakeCertDER);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   JS::Rooted<JS::Value> val(cx);

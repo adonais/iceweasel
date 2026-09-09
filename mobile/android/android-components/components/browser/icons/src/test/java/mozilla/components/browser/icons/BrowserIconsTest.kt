@@ -9,6 +9,9 @@ import android.graphics.drawable.Drawable
 import android.os.Looper.getMainLooper
 import android.widget.ImageView
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.OutputStream
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
@@ -40,9 +43,6 @@ import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.robolectric.Shadows.shadowOf
-import java.io.OutputStream
-import kotlin.coroutines.ContinuationInterceptor
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class BrowserIconsTest {
@@ -68,14 +68,15 @@ class BrowserIconsTest {
         `when`(generator.generate(any(), any())).thenReturn(mockedIcon)
 
         val request = IconRequest(url = "https://www.mozilla_test.org")
-        val icon = BrowserIcons(
-            context = testContext,
-            httpClient = mock(),
-            generator = generator,
-            memoryInfoProvider = FakeMemoryInfoProvider(defaultAvailMem),
-            mainDispatcher = testDispatcher,
-        )
-            .loadIcon(request)
+        val icon =
+            BrowserIcons(
+                    context = testContext,
+                    httpClient = mock(),
+                    generator = generator,
+                    memoryInfoProvider = FakeMemoryInfoProvider(defaultAvailMem),
+                    mainDispatcher = testDispatcher,
+                )
+                .loadIcon(request)
 
         assertEquals(mockedIcon, icon.await())
 
@@ -87,41 +88,48 @@ class BrowserIconsTest {
         val server = MockWebServer()
 
         server.enqueue(
-            MockResponse.Builder().body(javaClass.getResourceAsStream("/png/mozac.png")!!.source().buffer().buffer).build(),
+            MockResponse.Builder()
+                .body(javaClass.getResourceAsStream("/png/mozac.png")!!.source().buffer().buffer)
+                .build()
         )
 
         server.start()
 
         try {
-            val request = IconRequest(
-                url = server.url("/").toString(),
-                size = IconRequest.Size.DEFAULT,
-                resources = listOf(
-                    IconRequest.Resource(
-                        url = server.url("icon64.png").toString(),
-                        sizes = listOf(Size(64, 64)),
-                        mimeType = "image/png",
-                        type = IconRequest.Resource.Type.FAVICON,
-                    ),
-                    IconRequest.Resource(
-                        url = server.url("icon128.png").toString(),
-                        sizes = listOf(Size(128, 128)),
-                        mimeType = "image/png",
-                        type = IconRequest.Resource.Type.FAVICON,
-                    ),
-                    IconRequest.Resource(
-                        url = server.url("icon128.png").toString(),
-                        sizes = listOf(Size(180, 180)),
-                        type = IconRequest.Resource.Type.APPLE_TOUCH_ICON,
-                    ),
-                ),
-            )
+            val request =
+                IconRequest(
+                    url = server.url("/").toString(),
+                    size = IconRequest.Size.DEFAULT,
+                    resources =
+                        listOf(
+                            IconRequest.Resource(
+                                url = server.url("icon64.png").toString(),
+                                sizes = listOf(Size(64, 64)),
+                                mimeType = "image/png",
+                                type = IconRequest.Resource.Type.FAVICON,
+                            ),
+                            IconRequest.Resource(
+                                url = server.url("icon128.png").toString(),
+                                sizes = listOf(Size(128, 128)),
+                                mimeType = "image/png",
+                                type = IconRequest.Resource.Type.FAVICON,
+                            ),
+                            IconRequest.Resource(
+                                url = server.url("icon128.png").toString(),
+                                sizes = listOf(Size(180, 180)),
+                                type = IconRequest.Resource.Type.APPLE_TOUCH_ICON,
+                            ),
+                        ),
+                )
 
-            val icon = BrowserIcons(
-                testContext,
-                httpClient = HttpURLConnectionClient(),
-                memoryInfoProvider = FakeMemoryInfoProvider(defaultAvailMem),
-            ).loadIcon(request).await()
+            val icon =
+                BrowserIcons(
+                        testContext,
+                        httpClient = HttpURLConnectionClient(),
+                        memoryInfoProvider = FakeMemoryInfoProvider(defaultAvailMem),
+                    )
+                    .loadIcon(request)
+                    .await()
 
             assertNotNull(icon)
             assertNotNull(icon.bitmap)
@@ -138,28 +146,33 @@ class BrowserIconsTest {
         val server = MockWebServer()
 
         server.enqueue(
-            MockResponse.Builder().body(javaClass.getResourceAsStream("/png/mozac.png")!!.source().buffer().buffer).build(),
+            MockResponse.Builder()
+                .body(javaClass.getResourceAsStream("/png/mozac.png")!!.source().buffer().buffer)
+                .build()
         )
 
         server.start()
 
         try {
-            val icons = BrowserIcons(
-                context = testContext,
-                httpClient = HttpURLConnectionClient(),
-                memoryInfoProvider = FakeMemoryInfoProvider(defaultAvailMem),
-                mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-            )
+            val icons =
+                BrowserIcons(
+                    context = testContext,
+                    httpClient = HttpURLConnectionClient(),
+                    memoryInfoProvider = FakeMemoryInfoProvider(defaultAvailMem),
+                    mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+                )
 
-            val request = IconRequest(
-                url = "https://www.mozilla.org",
-                resources = listOf(
-                    IconRequest.Resource(
-                        url = server.url("icon64.png").toString(),
-                        type = IconRequest.Resource.Type.FAVICON,
-                    ),
-                ),
-            )
+            val request =
+                IconRequest(
+                    url = "https://www.mozilla.org",
+                    resources =
+                        listOf(
+                            IconRequest.Resource(
+                                url = server.url("icon64.png").toString(),
+                                type = IconRequest.Resource.Type.FAVICON,
+                            )
+                        ),
+                )
 
             val icon = icons.loadIcon(request).await()
             testScheduler.advanceUntilIdle()
@@ -167,9 +180,12 @@ class BrowserIconsTest {
             assertEquals(Icon.Source.DOWNLOAD, icon.source)
             assertNotNull(icon.bitmap)
 
-            val secondIcon = icons.loadIcon(
-                IconRequest("https://www.mozilla.org"), // Without resources!
-            ).await()
+            val secondIcon =
+                icons
+                    .loadIcon(
+                        IconRequest("https://www.mozilla.org") // Without resources!
+                    )
+                    .await()
             testScheduler.advanceUntilIdle()
 
             assertEquals(Icon.Source.MEMORY, secondIcon.source)
@@ -186,28 +202,33 @@ class BrowserIconsTest {
         val server = MockWebServer()
 
         server.enqueue(
-            MockResponse.Builder().body(javaClass.getResourceAsStream("/png/mozac.png")!!.source().buffer().buffer).build(),
+            MockResponse.Builder()
+                .body(javaClass.getResourceAsStream("/png/mozac.png")!!.source().buffer().buffer)
+                .build()
         )
 
         server.start()
 
         try {
-            val icons = BrowserIcons(
-                context = testContext,
-                httpClient = HttpURLConnectionClient(),
-                memoryInfoProvider = FakeMemoryInfoProvider(defaultAvailMem),
-                mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-            )
+            val icons =
+                BrowserIcons(
+                    context = testContext,
+                    httpClient = HttpURLConnectionClient(),
+                    memoryInfoProvider = FakeMemoryInfoProvider(defaultAvailMem),
+                    mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+                )
 
-            val request = IconRequest(
-                url = "https://www.mozilla.org",
-                resources = listOf(
-                    IconRequest.Resource(
-                        url = server.url("icon64.png").toString(),
-                        type = IconRequest.Resource.Type.FAVICON,
-                    ),
-                ),
-            )
+            val request =
+                IconRequest(
+                    url = "https://www.mozilla.org",
+                    resources =
+                        listOf(
+                            IconRequest.Resource(
+                                url = server.url("icon64.png").toString(),
+                                type = IconRequest.Resource.Type.FAVICON,
+                            )
+                        ),
+                )
 
             val icon = icons.loadIcon(request).await()
             testScheduler.advanceUntilIdle()
@@ -217,9 +238,12 @@ class BrowserIconsTest {
 
             sharedMemoryCache.clear()
 
-            val secondIcon = icons.loadIcon(
-                IconRequest("https://www.mozilla.org"), // Without resources!
-            ).await()
+            val secondIcon =
+                icons
+                    .loadIcon(
+                        IconRequest("https://www.mozilla.org") // Without resources!
+                    )
+                    .await()
             testScheduler.advanceUntilIdle()
 
             assertEquals(Icon.Source.DISK, secondIcon.source)
@@ -306,12 +330,13 @@ class BrowserIconsTest {
     fun `clear should delete all disk and memory data`() {
         // Test the effect of clear by first adding some icons data
         val icons = BrowserIcons(testContext, httpClient = HttpURLConnectionClient())
-        val resource = IconRequest.Resource(
-            url = "https://www.mozilla.org/icon64.png",
-            sizes = listOf(Size(64, 64)),
-            mimeType = "image/png",
-            type = IconRequest.Resource.Type.FAVICON,
-        )
+        val resource =
+            IconRequest.Resource(
+                url = "https://www.mozilla.org/icon64.png",
+                sizes = listOf(Size(64, 64)),
+                mimeType = "image/png",
+                type = IconRequest.Resource.Type.FAVICON,
+            )
         val request = IconRequest(url = "https://www.mozilla.org", resources = listOf(resource))
         sharedDiskCache.putResources(testContext, request)
         val bitmap: Bitmap = mock()

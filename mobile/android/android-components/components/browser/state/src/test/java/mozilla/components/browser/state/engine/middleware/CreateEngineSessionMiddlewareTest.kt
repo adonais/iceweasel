@@ -40,10 +40,11 @@ class CreateEngineSessionMiddlewareTest {
 
         val middleware = CreateEngineSessionMiddleware(engine, this)
         val tab = createTab("https://www.mozilla.org", id = "1")
-        val store = BrowserStore(
-            initialState = BrowserState(tabs = listOf(tab)),
-            middleware = listOf(middleware),
-        )
+        val store =
+            BrowserStore(
+                initialState = BrowserState(tabs = listOf(tab)),
+                middleware = listOf(middleware),
+            )
         assertNull(store.state.findTab(tab.id)?.engineState?.engineSession)
 
         store.dispatch(EngineAction.CreateEngineSessionAction(tab.id))
@@ -66,10 +67,11 @@ class CreateEngineSessionMiddlewareTest {
 
         val middleware = CreateEngineSessionMiddleware(engine, this)
         val tab = createTab("https://www.mozilla.org", id = "1")
-        val store = BrowserStore(
-            initialState = BrowserState(tabs = listOf(tab)),
-            middleware = listOf(middleware),
-        )
+        val store =
+            BrowserStore(
+                initialState = BrowserState(tabs = listOf(tab)),
+                middleware = listOf(middleware),
+            )
         assertNull(store.state.findTab(tab.id)?.engineState?.engineSession)
 
         store.dispatch(EngineAction.UpdateEngineSessionStateAction(tab.id, engineSessionState))
@@ -85,10 +87,11 @@ class CreateEngineSessionMiddlewareTest {
         `when`(engine.createSession(anyBoolean(), anyString())).thenReturn(mock())
 
         val middleware = CreateEngineSessionMiddleware(engine, this)
-        val store = BrowserStore(
-            initialState = BrowserState(tabs = listOf()),
-            middleware = listOf(middleware),
-        )
+        val store =
+            BrowserStore(
+                initialState = BrowserState(tabs = listOf()),
+                middleware = listOf(middleware),
+            )
 
         store.dispatch(EngineAction.CreateEngineSessionAction("invalid"))
         testScheduler.advanceUntilIdle()
@@ -104,14 +107,13 @@ class CreateEngineSessionMiddlewareTest {
         val middleware = CreateEngineSessionMiddleware(engine, this)
         val tab = createTab("https://www.mozilla.org", id = "1")
 
-        val store = BrowserStore(
-            initialState = BrowserState(tabs = listOf(tab)),
-            middleware = listOf(middleware),
-        )
+        val store =
+            BrowserStore(
+                initialState = BrowserState(tabs = listOf(tab)),
+                middleware = listOf(middleware),
+            )
 
-        store.dispatch(
-            EngineAction.CreateEngineSessionAction("non-existent"),
-        )
+        store.dispatch(EngineAction.CreateEngineSessionAction("non-existent"))
 
         testScheduler.advanceUntilIdle()
 
@@ -126,10 +128,11 @@ class CreateEngineSessionMiddlewareTest {
 
         val middleware = CreateEngineSessionMiddleware(engine, this)
         val tab = createTab("https://www.mozilla.org", id = "1")
-        val store = BrowserStore(
-            initialState = BrowserState(tabs = listOf(tab)),
-            middleware = listOf(middleware),
-        )
+        val store =
+            BrowserStore(
+                initialState = BrowserState(tabs = listOf(tab)),
+                middleware = listOf(middleware),
+            )
         assertNull(store.state.findTab(tab.id)?.engineState?.engineSession)
 
         val followupAction = ContentAction.UpdateTitleAction(tab.id, "test")
@@ -150,10 +153,11 @@ class CreateEngineSessionMiddlewareTest {
 
         val middleware = CreateEngineSessionMiddleware(engine, this)
         val tab = createTab("https://www.mozilla.org", id = "1")
-        val store = BrowserStore(
-            initialState = BrowserState(tabs = listOf(tab)),
-            middleware = listOf(middleware),
-        )
+        val store =
+            BrowserStore(
+                initialState = BrowserState(tabs = listOf(tab)),
+                middleware = listOf(middleware),
+            )
         assertNull(store.state.findTab(tab.id)?.engineState?.engineSession)
 
         val followupAction = ContentAction.UpdateTitleAction(tab.id, "test")
@@ -177,10 +181,11 @@ class CreateEngineSessionMiddlewareTest {
 
         val middleware = CreateEngineSessionMiddleware(engine, this)
         val customTab = createCustomTab("https://www.mozilla.org", id = "1")
-        val store = BrowserStore(
-            initialState = BrowserState(customTabs = listOf(customTab)),
-            middleware = listOf(middleware),
-        )
+        val store =
+            BrowserStore(
+                initialState = BrowserState(customTabs = listOf(customTab)),
+                middleware = listOf(middleware),
+            )
         assertNull(store.state.findCustomTab(customTab.id)?.engineState?.engineSession)
 
         val followupAction = ContentAction.UpdateTitleAction(customTab.id, "test")
@@ -201,10 +206,11 @@ class CreateEngineSessionMiddlewareTest {
 
         val middleware = CreateEngineSessionMiddleware(engine, this)
         val customTab = createCustomTab("https://www.mozilla.org", id = "1", desktopMode = true)
-        val store = BrowserStore(
-            initialState = BrowserState(customTabs = listOf(customTab)),
-            middleware = listOf(middleware),
-        )
+        val store =
+            BrowserStore(
+                initialState = BrowserState(customTabs = listOf(customTab)),
+                middleware = listOf(middleware),
+            )
         assertNull(store.state.findCustomTab(customTab.id)?.engineState?.engineSession)
 
         val followupAction = ContentAction.UpdateTitleAction(customTab.id, "test")
@@ -225,14 +231,16 @@ class CreateEngineSessionMiddlewareTest {
         whenever(engine.createSession(anyBoolean(), any())).thenReturn(engineSession)
 
         val middleware = CreateEngineSessionMiddleware(engine, this)
-        val tabs = listOf(
-            createTab("https://www.mozilla.org", id = "1", desktopMode = true),
-            createTab("https://www.mozilla.com", id = "2", desktopMode = false),
-        )
-        val store = BrowserStore(
-            initialState = BrowserState(tabs = tabs),
-            middleware = listOf(middleware),
-        )
+        val tabs =
+            listOf(
+                createTab("https://www.mozilla.org", id = "1", desktopMode = true),
+                createTab("https://www.mozilla.com", id = "2", desktopMode = false),
+            )
+        val store =
+            BrowserStore(
+                initialState = BrowserState(tabs = tabs),
+                middleware = listOf(middleware),
+            )
         assertNull(store.state.findTab(tabs[0].id)?.engineState?.engineSession)
 
         store.dispatch(EngineAction.CreateEngineSessionAction(tabs[0].id))
@@ -247,14 +255,16 @@ class CreateEngineSessionMiddlewareTest {
         whenever(engine.createSession(anyBoolean(), any())).thenReturn(engineSession)
 
         val middleware = CreateEngineSessionMiddleware(engine, this)
-        val tabs = listOf(
-            createTab("https://www.mozilla.org", id = "1", desktopMode = true),
-            createTab("https://www.mozilla.com", id = "2", desktopMode = false),
-        )
-        val store = BrowserStore(
-            initialState = BrowserState(tabs = tabs),
-            middleware = listOf(middleware),
-        )
+        val tabs =
+            listOf(
+                createTab("https://www.mozilla.org", id = "1", desktopMode = true),
+                createTab("https://www.mozilla.com", id = "2", desktopMode = false),
+            )
+        val store =
+            BrowserStore(
+                initialState = BrowserState(tabs = tabs),
+                middleware = listOf(middleware),
+            )
         assertNull(store.state.findTab(tabs[0].id)?.engineState?.engineSession)
 
         store.dispatch(EngineAction.CreateEngineSessionAction(tabs[1].id))

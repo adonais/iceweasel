@@ -115,7 +115,7 @@ describe("private messages", () => {
           `Unknown property ‘such-unknown-property’.  Declaration dropped.`
         ),
         stubPackets.get(
-          `Error in parsing value for ‘padding-top’.  Declaration dropped.`
+          `Error in parsing value for ‘padding-top: invalid value;’.  Declaration dropped.`
         ),
       ])
     );

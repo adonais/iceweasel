@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.ui.efficiency.generation.reachability
 
 import android.util.Log
@@ -5,12 +9,8 @@ import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.navigation.LaunchConfig
 
-/**
- * Shared logic for all generated/manual navigation shard entrypoint classes.
- */
-abstract class BaseReachabilityShardTest(
-    private val case: ReachabilityCase,
-) : BaseTest() {
+/** Shared logic for all generated/manual navigation shard entrypoint classes. */
+abstract class BaseReachabilityShardTest(private val case: ReachabilityCase) : BaseTest() {
 
     override fun launchConfig(): LaunchConfig = case.launch
 

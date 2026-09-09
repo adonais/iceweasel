@@ -3,6 +3,10 @@ import {
   LLM_TELEMETRY_TABLE,
   TOOL_RESULT_TABLE,
   TOOL_RESULT_HISTORY_URL_INDEX,
+  MESSAGE_ROLE_CREATED_DATE_INDEX,
+  MESSAGE_PARENT_ID_INDEX,
+  MESSAGE_REVISION_ROOT_INDEX,
+  MESSAGE_ORDINAL_INDEX_DROP,
 } from "./ChatSql.sys.mjs";
 
 /*
@@ -213,6 +217,20 @@ async function applyV11(conn, version) {
   `);
 }
 
+// Index the two self-referencing message foreign keys, which cascade on delete,
+// and (role, created_date) for MESSAGES_BY_DATE_AND_ROLE. Drop the unused
+// standalone ordinal index.
+async function applyV12(conn, version) {
+  if (version >= 12) {
+    return;
+  }
+
+  await conn.execute(MESSAGE_PARENT_ID_INDEX);
+  await conn.execute(MESSAGE_REVISION_ROOT_INDEX);
+  await conn.execute(MESSAGE_ROLE_CREATED_DATE_INDEX);
+  await conn.execute(MESSAGE_ORDINAL_INDEX_DROP);
+}
+
 /**
  * Array of migration functions to run in the order they should be run in.
  *
@@ -229,4 +247,5 @@ export const migrations = [
   applyV9,
   applyV10,
   applyV11,
+  applyV12,
 ];

@@ -22,27 +22,26 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.XmlContext
 import org.w3c.dom.Element
 
-/**
- * A custom lint check that prohibits not using the app:srcCompat for ImageViews
- */
+/** A custom lint check that prohibits not using the app:srcCompat for ImageViews */
 class TextViewAndroidSrcXmlDetector : ResourceXmlDetector() {
     companion object {
         const val SCHEMA = "http://schemas.android.com/apk/res/android"
 
-        const val ERROR_MESSAGE =
-            "Using android:drawableX to define resource instead of app:drawableXCompat"
+        const val ERROR_MESSAGE = "Using android:drawableX to define resource instead of app:drawableXCompat"
 
-        val ISSUE_XML_SRC_USAGE = Issue.create(
-            id = "TextViewAndroidSrcXmlDetector",
-            briefDescription = "Prohibits using android namespace to define drawables in TextViews",
-            explanation = "TextView drawables should be declared using app:drawableXCompat",
-            category = Category.CORRECTNESS,
-            severity = Severity.ERROR,
-            implementation = Implementation(
-                TextViewAndroidSrcXmlDetector::class.java,
-                Scope.RESOURCE_FILE_SCOPE,
-            ),
-        )
+        val ISSUE_XML_SRC_USAGE =
+            Issue.create(
+                id = "TextViewAndroidSrcXmlDetector",
+                briefDescription = "Prohibits using android namespace to define drawables in TextViews",
+                explanation = "TextView drawables should be declared using app:drawableXCompat",
+                category = Category.CORRECTNESS,
+                severity = Severity.ERROR,
+                implementation =
+                    Implementation(
+                        TextViewAndroidSrcXmlDetector::class.java,
+                        Scope.RESOURCE_FILE_SCOPE,
+                    ),
+            )
     }
 
     override fun appliesTo(folderType: ResourceFolderType): Boolean {
@@ -59,33 +58,38 @@ class TextViewAndroidSrcXmlDetector : ResourceXmlDetector() {
     }
 
     override fun visitElement(context: XmlContext, element: Element) {
-        val node = when {
-            element.hasAttributeNS(SCHEMA, ATTR_DRAWABLE_BOTTOM) -> element.getAttributeNodeNS(
-                SCHEMA,
-                ATTR_DRAWABLE_BOTTOM,
-            )
-            element.hasAttributeNS(SCHEMA, ATTR_DRAWABLE_END) -> element.getAttributeNodeNS(
-                SCHEMA,
-                ATTR_DRAWABLE_END,
-            )
-            element.hasAttributeNS(SCHEMA, ATTR_DRAWABLE_LEFT) -> element.getAttributeNodeNS(
-                SCHEMA,
-                ATTR_DRAWABLE_LEFT,
-            )
-            element.hasAttributeNS(
-                SCHEMA,
-                ATTR_DRAWABLE_RIGHT,
-            ) -> element.getAttributeNodeNS(SCHEMA, ATTR_DRAWABLE_RIGHT)
-            element.hasAttributeNS(
-                SCHEMA,
-                ATTR_DRAWABLE_START,
-            ) -> element.getAttributeNodeNS(SCHEMA, ATTR_DRAWABLE_START)
-            element.hasAttributeNS(SCHEMA, ATTR_DRAWABLE_TOP) -> element.getAttributeNodeNS(
-                SCHEMA,
-                ATTR_DRAWABLE_TOP,
-            )
-            else -> null
-        } ?: return
+        val node =
+            when {
+                element.hasAttributeNS(SCHEMA, ATTR_DRAWABLE_BOTTOM) ->
+                    element.getAttributeNodeNS(
+                        SCHEMA,
+                        ATTR_DRAWABLE_BOTTOM,
+                    )
+                element.hasAttributeNS(SCHEMA, ATTR_DRAWABLE_END) ->
+                    element.getAttributeNodeNS(
+                        SCHEMA,
+                        ATTR_DRAWABLE_END,
+                    )
+                element.hasAttributeNS(SCHEMA, ATTR_DRAWABLE_LEFT) ->
+                    element.getAttributeNodeNS(
+                        SCHEMA,
+                        ATTR_DRAWABLE_LEFT,
+                    )
+                element.hasAttributeNS(
+                    SCHEMA,
+                    ATTR_DRAWABLE_RIGHT,
+                ) -> element.getAttributeNodeNS(SCHEMA, ATTR_DRAWABLE_RIGHT)
+                element.hasAttributeNS(
+                    SCHEMA,
+                    ATTR_DRAWABLE_START,
+                ) -> element.getAttributeNodeNS(SCHEMA, ATTR_DRAWABLE_START)
+                element.hasAttributeNS(SCHEMA, ATTR_DRAWABLE_TOP) ->
+                    element.getAttributeNodeNS(
+                        SCHEMA,
+                        ATTR_DRAWABLE_TOP,
+                    )
+                else -> null
+            } ?: return
 
         context.report(
             issue = ISSUE_XML_SRC_USAGE,

@@ -11,9 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mozilla.components.support.base.log.logger.Logger
 
-/**
- * An implementation of [CoroutineWorker] to perform MAC top site updates.
- */
+/** An implementation of [CoroutineWorker] to perform MAC top site updates. */
 internal class MacTopSitesUpdaterWorker(
     context: Context,
     params: WorkerParameters,
@@ -22,13 +20,14 @@ internal class MacTopSitesUpdaterWorker(
     private val logger = Logger("MacTopSitesUpdaterWorker")
 
     @Suppress("TooGenericExceptionCaught")
-    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        try {
-            MacTopSitesUseCases().refreshMacTopSites.invoke()
-            Result.success()
-        } catch (e: Exception) {
-            logger.error("Failed to refresh MAC top sites", e)
-            Result.failure()
+    override suspend fun doWork(): Result =
+        withContext(Dispatchers.IO) {
+            try {
+                MacTopSitesUseCases().refreshMacTopSites.invoke()
+                Result.success()
+            } catch (e: Exception) {
+                logger.error("Failed to refresh MAC top sites", e)
+                Result.failure()
+            }
         }
-    }
 }

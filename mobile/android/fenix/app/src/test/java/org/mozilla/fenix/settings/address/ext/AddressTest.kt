@@ -16,42 +16,46 @@ class AddressTest {
 
         val description = addr.getAddressLabel()
 
-        val expected = "${addr.streetAddress}, ${addr.addressLevel3}, ${addr.addressLevel2}, " +
-            "${addr.organization}, ${addr.addressLevel1}, ${addr.country}, " +
-            "${addr.postalCode}, ${addr.tel}, ${addr.email}"
+        val expected =
+            "${addr.streetAddress}, ${addr.addressLevel3}, ${addr.addressLevel2}, " +
+                "${addr.organization}, ${addr.addressLevel1}, ${addr.country}, " +
+                "${addr.postalCode}, ${addr.tel}, ${addr.email}"
 
         assertEquals(expected, description)
     }
 
     @Test
     fun `WHEN any properties are missing THEN description includes only present`() {
-        val addr = generateAddress(
-            addressLevel3 = "",
-            organization = "",
-            email = "",
-        )
+        val addr =
+            generateAddress(
+                addressLevel3 = "",
+                organization = "",
+                email = "",
+            )
 
         val description = addr.getAddressLabel()
 
-        val expected = "${addr.streetAddress}, ${addr.addressLevel2}, ${addr.addressLevel1}, " +
-            "${addr.country}, ${addr.postalCode}, ${addr.tel}"
+        val expected =
+            "${addr.streetAddress}, ${addr.addressLevel2}, ${addr.addressLevel1}, " +
+                "${addr.country}, ${addr.postalCode}, ${addr.tel}"
         assertEquals(expected, description)
     }
 
     @Test
     fun `WHEN everything is missing THEN description is empty`() {
-        val addr = generateAddress(
-            name = "",
-            organization = "",
-            streetAddress = "",
-            addressLevel3 = "",
-            addressLevel2 = "",
-            addressLevel1 = "",
-            postalCode = "",
-            country = "",
-            tel = "",
-            email = "",
-        )
+        val addr =
+            generateAddress(
+                name = "",
+                organization = "",
+                streetAddress = "",
+                addressLevel3 = "",
+                addressLevel2 = "",
+                addressLevel1 = "",
+                postalCode = "",
+                country = "",
+                tel = "",
+                email = "",
+            )
 
         val description = addr.getAddressLabel()
 
@@ -60,11 +64,13 @@ class AddressTest {
 
     @Test
     fun `GIVEN multiline street address THEN joined as single line`() {
-        val streetAddress = """
+        val streetAddress =
+            """
             line1
             line2
             line3
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val result = streetAddress.toOneLineAddress()
 

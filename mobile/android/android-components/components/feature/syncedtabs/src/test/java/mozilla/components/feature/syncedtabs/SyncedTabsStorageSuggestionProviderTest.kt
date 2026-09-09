@@ -5,6 +5,7 @@
 package mozilla.components.feature.syncedtabs
 
 import android.graphics.drawable.Drawable
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion.Flag
 import mozilla.components.feature.syncedtabs.helper.getDevice1Tabs
@@ -16,7 +17,6 @@ import mozilla.components.support.test.whenever
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertNotNull
 
 class SyncedTabsStorageSuggestionProviderTest {
     private lateinit var syncedTabs: SyncedTabsStorage
@@ -61,28 +61,30 @@ class SyncedTabsStorageSuggestionProviderTest {
     }
 
     @Test
-    fun `GIVEN an external filter WHEN querying tabs THEN return only the results that pass through the filter`() = runTest {
-        val deviceTabs1 = getDevice1Tabs()
-        val deviceTabs2 = getDevice2Tabs()
-        whenever(syncedTabs.getSyncedDeviceTabs()).thenReturn(listOf(deviceTabs1, deviceTabs2))
-        whenever(indicatorIcon.desktop).thenReturn(indicatorIconDesktop)
-        whenever(indicatorIcon.mobile).thenReturn(indicatorIconMobile)
+    fun `GIVEN an external filter WHEN querying tabs THEN return only the results that pass through the filter`() =
+        runTest {
+            val deviceTabs1 = getDevice1Tabs()
+            val deviceTabs2 = getDevice2Tabs()
+            whenever(syncedTabs.getSyncedDeviceTabs()).thenReturn(listOf(deviceTabs1, deviceTabs2))
+            whenever(indicatorIcon.desktop).thenReturn(indicatorIconDesktop)
+            whenever(indicatorIcon.mobile).thenReturn(indicatorIconMobile)
 
-        val provider = SyncedTabsStorageSuggestionProvider(
-            syncedTabs = syncedTabs,
-            loadUrlUseCase = mock(),
-            icons = mock(),
-            deviceIndicators = indicatorIcon,
-            resultsUrlFilter = {
-                it.tryGetHostFromUrl() == "https://foo.bar".tryGetHostFromUrl()
-            },
-        )
+            val provider =
+                SyncedTabsStorageSuggestionProvider(
+                    syncedTabs = syncedTabs,
+                    loadUrlUseCase = mock(),
+                    icons = mock(),
+                    deviceIndicators = indicatorIcon,
+                    resultsUrlFilter = {
+                        it.tryGetHostFromUrl() == "https://foo.bar".tryGetHostFromUrl()
+                    },
+                )
 
-        val suggestions = provider.onInputChanged("foo")
+            val suggestions = provider.onInputChanged("foo")
 
-        assertEquals(2, suggestions.size)
-        // The url is behind the "onSuggestionClicked" lambda.
-        // Check the descriptions of the only two tabs that have the "foo.bar" host.
-        assertEquals(2, suggestions.map { it.description }.filter { it == "Foo Client" }.size)
-    }
+            assertEquals(2, suggestions.size)
+            // The url is behind the "onSuggestionClicked" lambda.
+            // Check the descriptions of the only two tabs that have the "foo.bar" host.
+            assertEquals(2, suggestions.map { it.description }.filter { it == "Foo Client" }.size)
+        }
 }

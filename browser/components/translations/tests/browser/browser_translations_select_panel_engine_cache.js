@@ -4,10 +4,8 @@
 "use strict";
 
 /**
- * This test case tests that the SelectTranslationsPanel successfully
- * caches the engine within the Translator for the given language pair,
- * and if that engine is destroyed, the Translator will correctly reinitialize
- * the engine, even for the same language pair.
+ * This test case verifies that short-lived Select Translations clients reuse a
+ * cached engine and can create a replacement after that engine is destroyed.
  */
 add_task(
   async function test_select_translations_panel_translate_sentence_on_open() {
@@ -26,6 +24,7 @@ add_task(
       downloadHandler: resolveDownloads,
       onOpenPanel: SelectTranslationsTestUtils.assertPanelViewTranslated,
     });
+    await SelectTranslationsTestUtils.waitForPortToClose();
 
     await SelectTranslationsTestUtils.clickDoneButton();
 
@@ -37,6 +36,7 @@ add_task(
       // No downloads because the engine is cached for this language pair.
       onOpenPanel: SelectTranslationsTestUtils.assertPanelViewTranslated,
     });
+    await SelectTranslationsTestUtils.waitForPortToClose();
 
     await SelectTranslationsTestUtils.clickDoneButton();
 
@@ -51,9 +51,30 @@ add_task(
       downloadHandler: resolveDownloads,
       onOpenPanel: SelectTranslationsTestUtils.assertPanelViewTranslated,
     });
+    await SelectTranslationsTestUtils.waitForPortToClose();
 
     await SelectTranslationsTestUtils.clickDoneButton();
 
     await cleanup();
   }
 );
+
+/**
+ * This test case covers recreating both the inference process and translations
+ * engine after an idle timeout.
+ */
+add_task(async function test_select_translations_panel_process_idle_timeout() {
+  await SelectTranslationsTestUtils.assertTranslationAfterEngineIdleTimeout({
+    keepProcessAlive: false,
+  });
+});
+
+/**
+ * This test case covers recreating a translations engine inside an inference
+ * process kept alive by another engine actor.
+ */
+add_task(async function test_select_translations_panel_engine_idle_timeout() {
+  await SelectTranslationsTestUtils.assertTranslationAfterEngineIdleTimeout({
+    keepProcessAlive: true,
+  });
+});

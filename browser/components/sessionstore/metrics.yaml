@@ -170,9 +170,6 @@ session_restore:
     description: >
       Session restore: Duration of session history collection in the parent
       process (ms).
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram FX_SESSION_RESTORE_COLLECT_SESSION_HISTORY_MS.
     time_unit: millisecond
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1810704
@@ -182,7 +179,6 @@ session_restore:
       - session-restore-telemetry-alerts@mozilla.com
       - farre@mozilla.com
     expires: never
-    telemetry_mirror: FX_SESSION_RESTORE_COLLECT_SESSION_HISTORY_MS
 
   read_file:
     type: timing_distribution

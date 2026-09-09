@@ -19,19 +19,20 @@ class AppSearchWidgetProviderTest {
 
     @Test
     fun testGetLayoutSize() {
-        val sizes = mapOf(
-            0 to SearchWidgetProviderSize.EXTRA_SMALL_V1,
-            10 to SearchWidgetProviderSize.EXTRA_SMALL_V1,
-            63 to SearchWidgetProviderSize.EXTRA_SMALL_V1,
-            64 to SearchWidgetProviderSize.EXTRA_SMALL_V2,
-            99 to SearchWidgetProviderSize.EXTRA_SMALL_V2,
-            100 to SearchWidgetProviderSize.SMALL,
-            191 to SearchWidgetProviderSize.SMALL,
-            192 to SearchWidgetProviderSize.MEDIUM,
-            255 to SearchWidgetProviderSize.MEDIUM,
-            256 to SearchWidgetProviderSize.LARGE,
-            1000 to SearchWidgetProviderSize.LARGE,
-        )
+        val sizes =
+            mapOf(
+                0 to SearchWidgetProviderSize.EXTRA_SMALL_V1,
+                10 to SearchWidgetProviderSize.EXTRA_SMALL_V1,
+                63 to SearchWidgetProviderSize.EXTRA_SMALL_V1,
+                64 to SearchWidgetProviderSize.EXTRA_SMALL_V2,
+                99 to SearchWidgetProviderSize.EXTRA_SMALL_V2,
+                100 to SearchWidgetProviderSize.SMALL,
+                191 to SearchWidgetProviderSize.SMALL,
+                192 to SearchWidgetProviderSize.MEDIUM,
+                255 to SearchWidgetProviderSize.MEDIUM,
+                256 to SearchWidgetProviderSize.LARGE,
+                1000 to SearchWidgetProviderSize.LARGE,
+            )
 
         for ((dp, layoutSize) in sizes) {
             assertEquals(layoutSize, AppSearchWidgetProvider.getLayoutSize(dp))
@@ -130,26 +131,25 @@ class AppSearchWidgetProviderTest {
             AppSearchWidgetProvider.getText(
                 SearchWidgetProviderSize.SMALL,
                 testContext,
-            ),
+            )
         )
         assertNull(
             AppSearchWidgetProvider.getText(
                 SearchWidgetProviderSize.EXTRA_SMALL_V1,
                 testContext,
-            ),
+            )
         )
         assertNull(
             AppSearchWidgetProvider.getText(
                 SearchWidgetProviderSize.EXTRA_SMALL_V2,
                 testContext,
-            ),
+            )
         )
     }
 
     @Test
     fun `GIVEN voice search is disabled WHEN createVoiceSearchIntent is called THEN it returns null`() {
-        val appSearchWidgetProvider: AppSearchWidgetProvider =
-            mock()
+        val appSearchWidgetProvider: AppSearchWidgetProvider = mock()
         doReturn(false).`when`(appSearchWidgetProvider).shouldShowVoiceSearch(testContext)
 
         val result = appSearchWidgetProvider.createVoiceSearchIntent(testContext)

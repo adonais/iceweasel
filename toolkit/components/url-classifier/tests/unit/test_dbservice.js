@@ -242,8 +242,13 @@ function checkState() {
   }
 }
 
-function testSubSuccess(result) {
-  Assert.equal(result, "1000");
+function testSubSuccess(tables, waitSeconds) {
+  // V2 carries a single response-level timeout, reported for every requested
+  // table.
+  Assert.deepEqual(
+    waitSeconds,
+    tables.map(() => 1000)
+  );
   checkState();
 }
 
@@ -262,8 +267,11 @@ function do_subs() {
   doSimpleUpdate(data, testSubSuccess, testFailure);
 }
 
-function testAddSuccess(arg) {
-  Assert.equal(arg, "1000");
+function testAddSuccess(tables, waitSeconds) {
+  Assert.deepEqual(
+    waitSeconds,
+    tables.map(() => 1000)
+  );
 
   do_subs();
 }

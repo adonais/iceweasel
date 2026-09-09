@@ -965,7 +965,7 @@ inline void DequantizeMonotonic(const Span<float> vals) {
   // => f(x) = f(x0) + (x-x0) * (f(x1) - f(x0)) / (x1-x0)
   // => f(x) = f(x0) + (x-x0) * dfdx
 
-  const auto head_end = *body_first;
+  const auto& head_end = *body_first;
   const auto head = vals.subspan(0, head_end - vals.begin());
   const auto tail_begin = *body_last + 1;
   const auto tail = vals.subspan(tail_begin - vals.begin());
@@ -1039,7 +1039,7 @@ inline void DequantizeMonotonic(const Span<float> vals) {
 }
 
 template <class In, class Out>
-static void InvertLut(const In& lut, Out* const out_invertedLut) {
+void InvertLut(const In& lut, Out* const out_invertedLut) {
   MOZ_ASSERT(IsMonotonic(lut));
   auto plut = &lut;
   auto vec = std::vector<float>{};

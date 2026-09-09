@@ -15,17 +15,16 @@ import mozilla.components.support.base.facts.collect
 /**
  * This class exists so that we can measure how reliable our usage of AndroidKeyStore is.
  *
- * All of the actions here are executed against SecureAbove22Preferences, which encrypts/decrypts prefs
- * using a key managed by AndroidKeyStore.
- * If device is running on API<23, encryption/decryption won't be used.
+ * All of the actions here are executed against SecureAbove22Preferences, which encrypts/decrypts prefs using a key
+ * managed by AndroidKeyStore. If device is running on API<23, encryption/decryption won't be used.
  *
  * Experiment actions are:
  * - on every invocation, read a persisted value and verify it's correct; if it's missing write it.
- * - if an error is encountered (e.g. corrupt/missing value), experiment state is reset and the
- * experiment starts from scratch.
+ * - if an error is encountered (e.g. corrupt/missing value), experiment state is reset and the experiment starts from
+ *   scratch.
  *
- * For each step (get, write, reset), a Fact is emitted describing what happened (success, type of failure).
- * A special "experiment" Fact will be emitted in case of an unexpected failure.
+ * For each step (get, write, reset), a Fact is emitted describing what happened (success, type of failure). A special
+ * "experiment" Fact will be emitted in case of an unexpected failure.
  *
  * Consumers of this experiment are expected to inspect emitted Facts (e.g. record them into telemetry).
  */
@@ -62,45 +61,45 @@ class SecurePrefsReliabilityExperiment(private val context: Context) {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
-    /**
-     * Runs an experiment. This will emit one or more [Fact]s describing results.
-     */
+    /** Runs an experiment. This will emit one or more [Fact]s describing results. */
     @Suppress("TooGenericExceptionCaught")
     operator fun invoke() {
         try {
-            val storedVal = try {
-                securePrefs.getString(PREF_KEY)
-            } catch (e: Exception) {
-                emitFact(Actions.GET, Values.FAIL, mapOf("javaClass" to e.nameForTelemetry()))
+            val storedVal =
+                try {
+                    securePrefs.getString(PREF_KEY)
+                } catch (e: Exception) {
+                    emitFact(Actions.GET, Values.FAIL, mapOf("javaClass" to e.nameForTelemetry()))
 
-                // should this return? or proceed to the write part..?
-                return
-            }
+                    // should this return? or proceed to the write part..?
+                    return
+                }
 
             val valueAlreadyPersisted = prefs().getBoolean(PREF_DID_STORE_VALUE, false)
 
-            val getResult = when {
-                // we didn't store the value yet, and didn't get anything back either
-                (!valueAlreadyPersisted && storedVal == null) -> {
-                    Values.SUCCESS_MISSING
+            val getResult =
+                when {
+                    // we didn't store the value yet, and didn't get anything back either
+                    (!valueAlreadyPersisted && storedVal == null) -> {
+                        Values.SUCCESS_MISSING
+                    }
+                    // we got back the value we stored
+                    (valueAlreadyPersisted && storedVal == PREF_VALUE) -> {
+                        Values.SUCCESS_PRESENT
+                    }
+                    // value was lost
+                    (valueAlreadyPersisted && storedVal == null) -> {
+                        Values.LOST
+                    }
+                    // we got some value back, but not what we stored
+                    (valueAlreadyPersisted && storedVal != PREF_VALUE) -> {
+                        Values.CORRUPTED
+                    }
+                    // we didn't store the value yet, but got something back either way
+                    else -> {
+                        Values.PRESENT_UNEXPECTED
+                    }
                 }
-                // we got back the value we stored
-                (valueAlreadyPersisted && storedVal == PREF_VALUE) -> {
-                    Values.SUCCESS_PRESENT
-                }
-                // value was lost
-                (valueAlreadyPersisted && storedVal == null) -> {
-                    Values.LOST
-                }
-                // we got some value back, but not what we stored
-                (valueAlreadyPersisted && storedVal != PREF_VALUE) -> {
-                    Values.CORRUPTED
-                }
-                // we didn't store the value yet, but got something back either way
-                else -> {
-                    Values.PRESENT_UNEXPECTED
-                }
-            }
 
             emitFact(Actions.GET, getResult)
 
@@ -117,7 +116,9 @@ class SecurePrefsReliabilityExperiment(private val context: Context) {
                 }
 
                 // reset our experiment in case of detected failures. this lets us measure the failure rate
-                Values.LOST, Values.CORRUPTED, Values.PRESENT_UNEXPECTED -> {
+                Values.LOST,
+                Values.CORRUPTED,
+                Values.PRESENT_UNEXPECTED -> {
                     securePrefs.clear()
                     prefs().edit { clear() }
                     emitFact(Actions.RESET, Values.SUCCESS_RESET)
@@ -138,12 +139,13 @@ private fun emitFact(
     metadata: Map<String, Any>? = null,
 ) {
     Fact(
-        Component.LIB_DATAPROTECT,
-        Action.IMPLEMENTATION_DETAIL,
-        item,
-        "${value.v}",
-        metadata,
-    ).collect()
+            Component.LIB_DATAPROTECT,
+            Action.IMPLEMENTATION_DETAIL,
+            item,
+            "${value.v}",
+            metadata,
+        )
+        .collect()
 }
 
 private fun Exception.nameForTelemetry(): String {

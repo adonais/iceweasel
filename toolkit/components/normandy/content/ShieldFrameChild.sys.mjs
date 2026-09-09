@@ -48,22 +48,6 @@ export class ShieldFrameChild extends JSWindowActorChild {
     }
     switch (event.detail.action) {
       // Actions that require the parent process
-      case "GetRemoteValue:AddonStudyList": {
-        let addonStudies = await this.sendQuery("Shield:GetAddonStudyList");
-        this.triggerPageCallback(
-          "ReceiveRemoteValue:AddonStudyList",
-          addonStudies
-        );
-        break;
-      }
-      case "GetRemoteValue:PreferenceStudyList": {
-        let prefStudies = await this.sendQuery("Shield:GetPreferenceStudyList");
-        this.triggerPageCallback(
-          "ReceiveRemoteValue:PreferenceStudyList",
-          prefStudies
-        );
-        break;
-      }
       case "GetRemoteValue:MessagingSystemList": {
         let experiments = await this.sendQuery("Shield:GetMessagingSystemList");
         this.triggerPageCallback(
@@ -72,15 +56,6 @@ export class ShieldFrameChild extends JSWindowActorChild {
         );
         break;
       }
-      case "RemoveAddonStudy":
-        this.sendAsyncMessage("Shield:RemoveAddonStudy", event.detail.data);
-        break;
-      case "RemovePreferenceStudy":
-        this.sendAsyncMessage(
-          "Shield:RemovePreferenceStudy",
-          event.detail.data
-        );
-        break;
       case "RemoveMessagingSystemExperiment":
         this.sendAsyncMessage(
           "Shield:RemoveMessagingSystemExperiment",
@@ -135,15 +110,6 @@ export class ShieldFrameChild extends JSWindowActorChild {
 
   receiveMessage(msg) {
     switch (msg.name) {
-      case "Shield:UpdateAddonStudyList":
-        this.triggerPageCallback("ReceiveRemoteValue:AddonStudyList", msg.data);
-        break;
-      case "Shield:UpdatePreferenceStudyList":
-        this.triggerPageCallback(
-          "ReceiveRemoteValue:PreferenceStudyList",
-          msg.data
-        );
-        break;
       case "Shield:UpdateMessagingSystemExperimentList":
         this.triggerPageCallback(
           "ReceiveRemoteValue:MessagingSystemList",

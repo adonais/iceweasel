@@ -6,6 +6,12 @@
 const { FormHistory } = ChromeUtils.importESModule(
   "resource://gre/modules/FormHistory.sys.mjs"
 );
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
+const { SmartFormFillAutocomplete } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillAutocomplete.sys.mjs"
+);
 
 function padLeft(number, length) {
   let str = number + "";
@@ -401,4 +407,84 @@ add_task(async function test_can_search_escape_marker() {
       Assert.equal(browser.autoCompletePopup.matchCount, 1);
     }
   );
+});
+
+add_task(async function test_smart_form_fill_with_form_history_results() {
+  const source = {
+    label: "Source tab",
+    favicon: "page-icon:https://example.com/",
+  };
+  const item = {
+    style: "smartFormFill",
+    value: "",
+    image: "chrome://browser/content/aiwindow/assets/sff-autofill-icon.svg",
+    label: "Smart Form Fill",
+    comment: JSON.stringify({
+      type: "smartFormFill",
+      sources: [source],
+      sourcesLabel: "Sources:",
+      ariaLabel: "Smart Form Fill",
+      loading: false,
+      loadingLabel: "Loading...",
+      emptySourcesLabel: null,
+      fillMessageName: "SmartFormFill:Start",
+      fillMessageData: {},
+      secondaryAction: {
+        type: "edit",
+        fillMessageName: "FormAutofill:EditSmartFormFillSources",
+        fillMessageData: {},
+      },
+    }),
+  };
+  const autocompleteStub = sinon
+    .stub(SmartFormFillAutocomplete, "autocompleteItemsAsync")
+    .resolves([item]);
+
+  try {
+    const url = `data:text/html,<input type="text" name="field1">`;
+    await BrowserTestUtils.withNewTab(
+      { gBrowser, url },
+      async function (browser) {
+        try {
+          await focusAndWaitForPopupOpen(browser);
+
+          const { autoCompletePopup: popup } = browser;
+          const styles = Array.from({ length: popup.matchCount }, (_, index) =>
+            popup.view.getStyleAt(index)
+          );
+
+          Assert.ok(
+            styles.includes("fromhistory"),
+            "Form History rows remain in the result"
+          );
+
+          const smartFormFillIndex = styles.indexOf("smartFormFill");
+          Assert.notEqual(
+            smartFormFillIndex,
+            -1,
+            "The Smart Form Fill result is present"
+          );
+          Assert.equal(
+            popup.view.getLabelAt(smartFormFillIndex),
+            item.label,
+            "The specialized label is preserved"
+          );
+          Assert.equal(
+            popup.view.getImageAt(smartFormFillIndex),
+            item.image,
+            "The specialized image is preserved"
+          );
+          Assert.deepEqual(
+            JSON.parse(popup.view.getCommentAt(smartFormFillIndex)),
+            JSON.parse(item.comment),
+            "The specialized metadata is preserved"
+          );
+        } finally {
+          await unfocusAndWaitForPopupClose(browser);
+        }
+      }
+    );
+  } finally {
+    autocompleteStub.restore();
+  }
 });

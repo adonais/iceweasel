@@ -145,6 +145,82 @@ add_task(async function test_timezone_exempt() {
   await SpecialPowers.popPrefEnv();
 });
 
+// Verify that an exempted domain is still exempt when the first-party domain
+// and partition key are serialized in site format, i.e. "(https,example.net)".
+add_task(async function test_timezone_exempt_site_keyed_partition() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["privacy.resistFingerprinting.exemptedDomains", "example.net"],
+      ["privacy.resistFingerprinting", true],
+      ["privacy.firstparty.isolate", true],
+      ["privacy.firstparty.isolate.use_site", true],
+      ["privacy.dynamic_firstparty.use_site", true],
+    ],
+  });
+
+  let tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: TEST_PATH + "file_dummy.html",
+    forceNewProcess: true,
+  });
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    SpecialPowers.Cu.getJSTestingFunctions().setTimeZone("PST8PDT");
+
+    function test() {
+      is(
+        Intl.DateTimeFormat("en-US").resolvedOptions().timeZone,
+        "America/Los_Angeles",
+        "Content should use default time zone"
+      );
+    }
+
+    // Run test in the context of the page.
+    Cu.exportFunction(is, content, { defineAs: "is" });
+    content.eval(`(${test})()`);
+  });
+
+  BrowserTestUtils.removeTab(tab);
+
+  await SpecialPowers.popPrefEnv();
+});
+
+// Verify that `exemptedDomains` matching is case-insensitive.
+add_task(async function test_timezone_exempt_mixed_case() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["privacy.resistFingerprinting.exemptedDomains", "Example.NET"],
+      ["privacy.resistFingerprinting", true],
+    ],
+  });
+
+  let tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: TEST_PATH + "file_dummy.html",
+    forceNewProcess: true,
+  });
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    SpecialPowers.Cu.getJSTestingFunctions().setTimeZone("PST8PDT");
+
+    function test() {
+      is(
+        Intl.DateTimeFormat("en-US").resolvedOptions().timeZone,
+        "America/Los_Angeles",
+        "Content should use default time zone"
+      );
+    }
+
+    // Run test in the context of the page.
+    Cu.exportFunction(is, content, { defineAs: "is" });
+    content.eval(`(${test})()`);
+  });
+
+  BrowserTestUtils.removeTab(tab);
+
+  await SpecialPowers.popPrefEnv();
+});
+
 // Verify that we are still spoofing for domains not `exemptedDomains` list.
 add_task(async function test_timezone_exempt_wrong_domain() {
   await SpecialPowers.pushPrefEnv({

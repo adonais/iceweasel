@@ -32,13 +32,14 @@ object DeleteFilesHelper {
     private fun getUriFromDisplayName(context: Context, displayName: String): Uri? {
         val projection = arrayOf(MediaStore.Files.FileColumns._ID)
         val extUri: Uri = MediaStore.Files.getContentUri("external")
-        val cursor: Cursor = context.contentResolver.query(
-            extUri,
-            projection,
-            MediaStore.Files.FileColumns.DISPLAY_NAME + " LIKE ?",
-            arrayOf(displayName),
-            null,
-        )!!
+        val cursor: Cursor =
+            context.contentResolver.query(
+                extUri,
+                projection,
+                MediaStore.Files.FileColumns.DISPLAY_NAME + " LIKE ?",
+                arrayOf(displayName),
+                null,
+            )!!
         cursor.moveToFirst()
         return if (cursor.count > 0) {
             val columnIndex: Int = cursor.getColumnIndex(projection[0])

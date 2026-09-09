@@ -33,7 +33,7 @@ add_task(async function () {
 
   // Wait for the CSS warning to be displayed so we don't have a pending promise.
   await waitFor(() =>
-    findWarningMessage(hud, "Expected color but found ‘blouge’")
+    findWarningMessage(hud, "Error in parsing value for ‘color: blouge;’")
   );
 
   info("Close and re-open the console");
@@ -48,7 +48,7 @@ add_task(async function () {
 
   // Wait for the CSS warning to be displayed so we don't have a pending promise.
   await waitFor(() =>
-    findWarningMessage(hud, "Expected color but found ‘blouge’")
+    findWarningMessage(hud, "Error in parsing value for ‘color: blouge;’")
   );
 
   // Check that the ui settings were persisted.

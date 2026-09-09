@@ -4,9 +4,7 @@
 
 package mozilla.components.service.pocket.stories.api
 
-/**
- * A response from the Pocket API: the subclasses determine the type of the result and contain usable data.
- */
+/** A response from the Pocket API: the subclasses determine the type of the result and contain usable data. */
 internal sealed class PocketResponse<T> {
 
     /**
@@ -18,9 +16,7 @@ internal sealed class PocketResponse<T> {
     // Opt into behavior which will become the default in Kotlin 2.1+
     data class Success<T> internal constructor(val data: T) : PocketResponse<T>()
 
-    /**
-     * A failure response from the Pocket API.
-     */
+    /** A failure response from the Pocket API. */
     class Failure<T> internal constructor() : PocketResponse<T>()
 
     companion object {
@@ -33,12 +29,13 @@ internal sealed class PocketResponse<T> {
          * - a Boolean and false, then Failure
          * - otherwise, Success
          */
-        internal fun <T : Any> wrap(target: T?): PocketResponse<T> = when (target) {
-            null -> Failure()
-            is Collection<*> -> if (target.isEmpty()) Failure() else Success(target)
-            is String -> if (target.isBlank()) Failure() else Success(target)
-            is Boolean -> if (target == false) Failure() else Success(target)
-            else -> Success(target)
-        }
+        internal fun <T : Any> wrap(target: T?): PocketResponse<T> =
+            when (target) {
+                null -> Failure()
+                is Collection<*> -> if (target.isEmpty()) Failure() else Success(target)
+                is String -> if (target.isBlank()) Failure() else Success(target)
+                is Boolean -> if (target == false) Failure() else Success(target)
+                else -> Success(target)
+            }
     }
 }

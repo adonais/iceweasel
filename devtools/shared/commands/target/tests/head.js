@@ -10,23 +10,3 @@ Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/shared/test/shared-head.js",
   this
 );
-
-const {
-  DevToolsClient,
-} = require("resource://devtools/client/devtools-client.js");
-const {
-  DevToolsServer,
-} = require("resource://devtools/server/devtools-server.js");
-
-async function createLocalClient() {
-  // Instantiate a minimal server
-  DevToolsServer.init();
-  DevToolsServer.allowChromeProcess = true;
-  if (!DevToolsServer.createRootActor) {
-    DevToolsServer.registerAllActors();
-  }
-  const transport = DevToolsServer.connectPipe();
-  const client = new DevToolsClient(transport);
-  await client.connect();
-  return client;
-}

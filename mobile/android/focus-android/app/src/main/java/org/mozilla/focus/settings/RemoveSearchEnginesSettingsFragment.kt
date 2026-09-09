@@ -17,9 +17,7 @@ import org.mozilla.focus.search.MultiselectSearchEngineListPreference
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.utils.ViewUtils
 
-/**
- * Settings fragment for removing search engines.
- */
+/** Settings fragment for removing search engines. */
 class RemoveSearchEnginesSettingsFragment : BaseSettingsFragment() {
     override fun onCreatePreferences(p0: Bundle?, p1: String?) {
         addPreferencesFromResource(R.xml.remove_search_engines)
@@ -39,9 +37,9 @@ class RemoveSearchEnginesSettingsFragment : BaseSettingsFragment() {
     override fun onPrepareMenu(menu: Menu) {
         super.onPrepareMenu(menu)
         view?.post {
-            val pref = preferenceScreen
-                .findPreference(resources.getString(R.string.pref_key_multiselect_search_engine_list))
-                as? MultiselectSearchEngineListPreference
+            val pref =
+                preferenceScreen.findPreference(resources.getString(R.string.pref_key_multiselect_search_engine_list))
+                    as? MultiselectSearchEngineListPreference
 
             menu.findItem(R.id.menu_delete_items)?.let {
                 ViewUtils.setMenuItemEnabled(it, pref!!.atLeastOneEngineChecked())
@@ -52,22 +50,24 @@ class RemoveSearchEnginesSettingsFragment : BaseSettingsFragment() {
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
         return when (menuItem.itemId) {
             R.id.menu_delete_items -> {
-                val pref: MultiselectSearchEngineListPreference? = preferenceScreen
-                    .findPreference(resources.getString(R.string.pref_key_multiselect_search_engine_list))
+                val pref: MultiselectSearchEngineListPreference? =
+                    preferenceScreen.findPreference(
+                        resources.getString(R.string.pref_key_multiselect_search_engine_list)
+                    )
 
                 val enginesToRemove = pref!!.checkedEngineIds
 
-                requireComponents.store.state.search.searchEngines.filter { searchEngine ->
-                    searchEngine.id in enginesToRemove
-                }.forEach { searchEngine ->
-                    requireComponents.searchUseCases.removeSearchEngine(searchEngine)
-                }
+                requireComponents.store.state.search.searchEngines
+                    .filter { searchEngine ->
+                        searchEngine.id in enginesToRemove
+                    }
+                    .forEach { searchEngine ->
+                        requireComponents.searchUseCases.removeSearchEngine(searchEngine)
+                    }
 
                 SearchEngines.removeEngines.record(SearchEngines.RemoveEnginesExtra(enginesToRemove.size))
 
-                requireComponents.appStore.dispatch(
-                    AppAction.NavigateUp(requireComponents.store.state.selectedTabId),
-                )
+                requireComponents.appStore.dispatch(AppAction.NavigateUp(requireComponents.store.state.selectedTabId))
                 true
             }
             else -> false

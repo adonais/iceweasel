@@ -6,6 +6,7 @@ package org.mozilla.fenix.home.intent
 
 import android.app.Activity
 import android.content.Intent
+import android.provider.Settings as AndroidSettings
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import io.mockk.Called
@@ -18,29 +19,34 @@ import io.mockk.verify
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.prompt.ShareData
+import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.BuildConfig.DEEP_LINK_SCHEME
+import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.ShareUseCases
+import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.onboarding.MARKETING_CHANNEL_ID
-import org.mozilla.fenix.trackingprotection.ProtectionsDashboardFragment
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
-import android.provider.Settings as AndroidSettings
 
 @RunWith(RobolectricTestRunner::class)
 class HomeDeepLinkIntentProcessorTest {
+
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
+
     private lateinit var activity: HomeActivity
     private lateinit var navController: NavController
     private lateinit var out: Intent
@@ -53,11 +59,12 @@ class HomeDeepLinkIntentProcessorTest {
         activity = mockk(relaxed = true)
         navController = mockk(relaxed = true)
         out = mockk()
-        processorHome = HomeDeepLinkIntentProcessor(
-            activity = activity,
-            showAddSearchWidgetPrompt = ::showAddSearchWidgetPrompt,
-            shareUseCases = shareUseCases,
-        )
+        processorHome =
+            HomeDeepLinkIntentProcessor(
+                activity = activity,
+                showAddSearchWidgetPrompt = ::showAddSearchWidgetPrompt,
+                shareUseCases = shareUseCases,
+            )
     }
 
     @Test
@@ -135,11 +142,7 @@ class HomeDeepLinkIntentProcessorTest {
 
         verify { activity wasNot Called }
         verify {
-            navController.navigate(
-                NavGraphDirections.actionGlobalTurnOnSync(
-                    entrypoint = FenixFxAEntryPoint.DeepLink,
-                ),
-            )
+            navController.navigate(NavGraphDirections.actionGlobalTurnOnSync(entrypoint = FenixFxAEntryPoint.DeepLink))
         }
         verify { out wasNot Called }
     }
@@ -226,7 +229,9 @@ class HomeDeepLinkIntentProcessorTest {
         verify { navController wasNot Called }
         verify { out wasNot Called }
 
-        assertTrue(processorHome.process(testIntent("open?url=https%3A%2F%2Fwww.example.org%2F"), navController, out, settings))
+        assertTrue(
+            processorHome.process(testIntent("open?url=https%3A%2F%2Fwww.example.org%2F"), navController, out, settings)
+        )
 
         verify {
             @Suppress("DEPRECATION")
@@ -268,7 +273,16 @@ class HomeDeepLinkIntentProcessorTest {
             )
         } just Runs
 
-        assertTrue(processorHome.process(testIntent("share_sheet?url=https%3A%2F%2Fexample.com&title=TestTitle&text=TestText&subject=TestSubject"), navController, out, settings))
+        assertTrue(
+            processorHome.process(
+                testIntent(
+                    "share_sheet?url=https%3A%2F%2Fexample.com&title=TestTitle&text=TestText&subject=TestSubject"
+                ),
+                navController,
+                out,
+                settings,
+            )
+        )
 
         verify {
             shareUseCases.shareUrl(
@@ -287,14 +301,16 @@ class HomeDeepLinkIntentProcessorTest {
 
         verify {
             navController.navigate(
-                directions = match {
-                    with(it.arguments) {
-                        getBoolean("showPage") == false &&
-                            getParcelableArray("data", ShareData::class.java)?.get(0)?.url == "https://example.com" &&
-                            getString("sessionId") == null &&
-                            getString("shareSubject") == "TestSubject"
+                directions =
+                    match {
+                        with(it.arguments) {
+                            getBoolean("showPage") == false &&
+                                getParcelableArray("data", ShareData::class.java)?.get(0)?.url ==
+                                    "https://example.com" &&
+                                getString("sessionId") == null &&
+                                getString("shareSubject") == "TestSubject"
+                        }
                     }
-                },
             )
         }
         verify { out wasNot Called }
@@ -310,7 +326,14 @@ class HomeDeepLinkIntentProcessorTest {
         verify { navController wasNot Called }
         verify { out wasNot Called }
 
-        assertTrue(invalidProcessor.process(testIntent("open?url=open?url=https%3A%2F%2Fwww.example.org%2F"), navController, out, settings))
+        assertTrue(
+            invalidProcessor.process(
+                testIntent("open?url=open?url=https%3A%2F%2Fwww.example.org%2F"),
+                navController,
+                out,
+                settings,
+            )
+        )
 
         verify { activity wasNot Called }
         verify { navController wasNot Called }
@@ -391,14 +414,13 @@ class HomeDeepLinkIntentProcessorTest {
 
         verify { activity wasNot Called }
         verify {
-            navController.navigate(
-                NavGraphDirections.actionGlobalProtectionsDashboard(
-                    customTabSessionId = null,
-                    source = ProtectionsDashboardFragment.SOURCE_DEEPLINK,
-                ),
-            )
+            navController.navigate(NavGraphDirections.actionGlobalProtectionsDashboard(null))
         }
         verify { out wasNot Called }
+        assertEquals(
+            HOME_DEEPLINK_TELEMETRY_SOURCE,
+            TrackingProtection.privacyReportTapped.testGetValue()?.last()?.extra?.get("source"),
+        )
     }
 
     @Test
@@ -411,10 +433,25 @@ class HomeDeepLinkIntentProcessorTest {
                 NavGraphDirections.actionGlobalIpProtectionFragment(
                     entrypoint = FenixFxAEntryPoint.DeepLink,
                     startAuthFlow = false,
-                ),
+                )
             )
         }
         verify { out wasNot Called }
+    }
+
+    @Test
+    fun `process privacy_report deep link`() {
+        assertTrue(processorHome.process(testIntent("privacy_report"), navController, out, settings))
+
+        verify { activity wasNot Called }
+        verify {
+            navController.navigate(NavGraphDirections.actionGlobalProtectionsDashboard(null))
+        }
+        verify { out wasNot Called }
+        assertEquals(
+            PRIVACY_REPORT_NOTIFICATION_TELEMETRY_SOURCE,
+            TrackingProtection.privacyReportTapped.testGetValue()?.last()?.extra?.get("source"),
+        )
     }
 
     private fun testIntent(uri: String) = Intent("", "$DEEP_LINK_SCHEME://$uri".toUri())

@@ -7,26 +7,25 @@ package org.mozilla.fenix.search.awesomebar
 import org.mozilla.fenix.search.SearchFragmentState
 import org.mozilla.fenix.search.awesomebar.SearchSuggestionsProvidersBuilder.SearchProviderState
 
-/**
- * Map [SearchFragmentState] to [SearchProviderState] as a subset of properties only specific to search.
- */
-fun SearchFragmentState.toSearchProviderState() = SearchProviderState(
-    showSearchTermHistory = showSearchTermHistory,
-    showHistorySuggestionsForCurrentEngine = showHistorySuggestionsForCurrentEngine,
-    showAllHistorySuggestions = showAllHistorySuggestions,
-    showBookmarksSuggestionsForCurrentEngine = showBookmarksSuggestionsForCurrentEngine,
-    showAllBookmarkSuggestions = showAllBookmarkSuggestions,
-    showSearchSuggestions = showSearchSuggestionsFromCurrentEngine,
-    showSyncedTabsSuggestionsForCurrentEngine = showSyncedTabsSuggestionsForCurrentEngine,
-    showAllSyncedTabsSuggestions = showAllSyncedTabsSuggestions,
-    showSessionSuggestionsForCurrentEngine = showSessionSuggestionsForCurrentEngine,
-    showAllSessionSuggestions = showAllSessionSuggestions,
-    showSponsoredSuggestions = showSponsoredSuggestions,
-    showNonSponsoredSuggestions = showNonSponsoredSuggestions,
-    showStocksSuggestions = showStocksSuggestions,
-    showSportsSuggestions = showSportsSuggestions,
-    showFlightsSuggestions = showFlightsSuggestions,
-    showTrendingSearches = showTrendingSearches,
-    showRecentSearches = showRecentSearches,
-    searchEngineSource = searchEngineSource,
-)
+/** Map [SearchFragmentState] to [SearchProviderState] as a subset of properties only specific to search. */
+fun SearchFragmentState.toSearchProviderState() =
+    SearchProviderState(
+        showSearchTermHistory = showSearchTermHistory,
+        showHistorySuggestionsForCurrentEngine = showHistorySuggestionsForCurrentEngine,
+        showAllHistorySuggestions = showAllHistorySuggestions,
+        showBookmarksSuggestionsForCurrentEngine = showBookmarksSuggestionsForCurrentEngine,
+        showAllBookmarkSuggestions = showAllBookmarkSuggestions,
+        showSearchSuggestions = showSearchSuggestionsFromCurrentEngine,
+        showSyncedTabsSuggestionsForCurrentEngine = showSyncedTabsSuggestionsForCurrentEngine,
+        showAllSyncedTabsSuggestions = showAllSyncedTabsSuggestions,
+        showSessionSuggestionsForCurrentEngine = showSessionSuggestionsForCurrentEngine,
+        showAllSessionSuggestions = showAllSessionSuggestions,
+        showSponsoredSuggestions = showSponsoredSuggestions,
+        showNonSponsoredSuggestions = showNonSponsoredSuggestions,
+        showStocksSuggestions = showStocksSuggestions,
+        showSportsSuggestions = showSportsSuggestions,
+        showFlightsSuggestions = showFlightsSuggestions,
+        showTrendingSearches = showTrendingSearches,
+        showRecentSearches = showRecentSearches,
+        searchEngineSource = searchEngineSource,
+    )

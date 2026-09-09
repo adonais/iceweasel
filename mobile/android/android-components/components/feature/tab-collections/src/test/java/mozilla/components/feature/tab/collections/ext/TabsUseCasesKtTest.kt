@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.tab.collections.ext
 
+import java.io.File
 import mozilla.components.browser.state.engine.EngineMiddleware
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.state.BrowserState
@@ -23,7 +24,6 @@ import org.junit.Before
 import org.junit.Test
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyBoolean
-import java.io.File
 
 class TabsUseCasesKtTest {
 
@@ -44,35 +44,40 @@ class TabsUseCasesKtTest {
         whenever(filesDir.path).thenReturn("/test")
 
         whenever(engine.createSession(anyBoolean(), any())).thenReturn(engineSession)
-        store = BrowserStore(
-            initialState = BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "mozilla"),
-                    createTab("https://www.example.org", id = "example"),
-                ),
-                selectedTabId = "mozilla",
-            ),
-            middleware = EngineMiddleware.create(
-                engine = engine,
-            ),
-        )
+        store =
+            BrowserStore(
+                initialState =
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab("https://www.mozilla.org", id = "mozilla"),
+                                createTab("https://www.example.org", id = "example"),
+                            ),
+                        selectedTabId = "mozilla",
+                    ),
+                middleware = EngineMiddleware.create(engine = engine),
+            )
         tabsUseCases = TabsUseCases(store)
 
-        val recoveredTab = createTab(
-            id = "123",
-            url = "https://mozilla.org",
-            lastAccess = 3735928559L,
-        ).toRecoverableTab()
+        val recoveredTab =
+            createTab(
+                    id = "123",
+                    url = "https://mozilla.org",
+                    lastAccess = 3735928559L,
+                )
+                .toRecoverableTab()
 
-        tab = mock<Tab>().apply {
-            whenever(id).thenReturn(123)
-            whenever(title).thenReturn("Firefox")
-            whenever(url).thenReturn("https://firefox.com")
-            whenever(restore(filesDir, engine, false)).thenReturn(recoveredTab)
-        }
-        collection = mock<TabCollection>().apply {
-            whenever(tabs).thenReturn(listOf(tab))
-        }
+        tab =
+            mock<Tab>().apply {
+                whenever(id).thenReturn(123)
+                whenever(title).thenReturn("Firefox")
+                whenever(url).thenReturn("https://firefox.com")
+                whenever(restore(filesDir, engine, false)).thenReturn(recoveredTab)
+            }
+        collection =
+            mock<TabCollection>().apply {
+                whenever(tabs).thenReturn(listOf(tab))
+            }
     }
 
     @Test
@@ -106,12 +111,14 @@ class TabsUseCasesKtTest {
     @Test
     fun `GIVEN source and target keys are not the same WHEN MoveTabs is invoked THEN order is updated`() {
         val initialState = store.state.copy()
-        val expectedState = store.state.copy(
-            tabs = listOf(
-                initialState.tabs[1],
-                initialState.tabs[0],
-            ),
-        )
+        val expectedState =
+            store.state.copy(
+                tabs =
+                    listOf(
+                        initialState.tabs[1],
+                        initialState.tabs[0],
+                    )
+            )
         tabsUseCases.moveTabs.invoke("mozilla", "example", true)
         assertEquals(expectedState, store.state)
     }

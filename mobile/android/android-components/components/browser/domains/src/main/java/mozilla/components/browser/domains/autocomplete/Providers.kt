@@ -5,6 +5,7 @@
 package mozilla.components.browser.domains.autocomplete
 
 import android.content.Context
+import java.util.Locale
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,28 +18,24 @@ import mozilla.components.browser.domains.Domains
 import mozilla.components.browser.domains.into
 import mozilla.components.concept.toolbar.AutocompleteProvider
 import mozilla.components.concept.toolbar.AutocompleteResult
-import java.util.Locale
 
 enum class DomainList(val listName: String) {
     DEFAULT("default"),
     CUSTOM("custom"),
 }
 
-/**
- * Provides autocomplete functionality for domains based on provided list of assets (see [Domains]).
- */
+/** Provides autocomplete functionality for domains based on provided list of assets (see [Domains]). */
 class ShippedDomainsProvider(override val autocompletePriority: Int = 0) :
     BaseDomainAutocompleteProvider(DomainList.DEFAULT, Domains.asLoader())
 
-/**
- * Provides autocomplete functionality for domains based on a list managed by [CustomDomains].
- */
+/** Provides autocomplete functionality for domains based on a list managed by [CustomDomains]. */
 class CustomDomainsProvider(override val autocompletePriority: Int = 0) :
     BaseDomainAutocompleteProvider(DomainList.CUSTOM, CustomDomains.asLoader())
 
 typealias DomainsLoader = (Context) -> List<Domain>
 
 private fun Domains.asLoader(): DomainsLoader = { context: Context -> load(context).into() }
+
 private fun CustomDomains.asLoader(): DomainsLoader = { context: Context -> load(context).into() }
 
 /**
@@ -56,8 +53,7 @@ open class BaseDomainAutocompleteProvider(
     private val scope = CoroutineScope(ioDispatcher + SupervisorJob())
 
     // We compute 'domains' on the worker thread; make sure it's immediately visible on the UI thread.
-    @Volatile
-    var domains: List<Domain> = emptyList()
+    @Volatile var domains: List<Domain> = emptyList()
 
     fun initialize(context: Context) {
         scope.launch {
@@ -66,8 +62,7 @@ open class BaseDomainAutocompleteProvider(
     }
 
     /**
-     * Computes an autocomplete suggestion for the given text, and invokes the
-     * provided callback, passing the result.
+     * Computes an autocomplete suggestion for the given text, and invokes the provided callback, passing the result.
      *
      * @param query text to be auto completed
      * @return the result of auto-completion, or null if no match is found.
@@ -103,11 +98,10 @@ open class BaseDomainAutocompleteProvider(
     }
 
     /**
-     * Our autocomplete list is all lower case, however the search text might
-     * be mixed case. Our autocomplete EditText code does more string comparison,
-     * which fails if the suggestion doesn't exactly match searchText (ie.
-     * if casing differs). It's simplest to just build a suggestion
-     * that exactly matches the search text - which is what this method is for:
+     * Our autocomplete list is all lower case, however the search text might be mixed case. Our autocomplete EditText
+     * code does more string comparison, which fails if the suggestion doesn't exactly match searchText (ie. if casing
+     * differs). It's simplest to just build a suggestion that exactly matches the search text - which is what this
+     * method is for:
      */
     private fun getResultText(rawSearchText: String, autocomplete: String) =
         rawSearchText + autocomplete.substring(rawSearchText.length)

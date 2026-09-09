@@ -170,6 +170,13 @@ bool jit::ReorderInstructions(MIRGenerator* mir, MIRGraph& graph) {
         if (prev->isSetInitializedLength()) {
           break;
         }
+        if (prev->isClearResumingGeneratorFlag()) {
+          // Everything above this is a generator/async resume still in
+          // progress. Don't move a bailing instruction between the
+          // MSetInitializedLength and MClearResumingGeneratorFlag, because the
+          // stack storage array is needed in Baseline when we bail out.
+          break;
+        }
 
         // The instruction can't be moved before any of its uses.
         bool isUse = false;

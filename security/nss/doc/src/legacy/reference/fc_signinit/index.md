@@ -2,13 +2,13 @@
 
 # FC_SignInit
 
-## [Name](#name)
+## Name
 
 :::{container}
 FC_SignInit - initialize a signing operation.
 :::
 
-## [Syntax](#syntax)
+## Syntax
 
 :::{container}
 
@@ -22,7 +22,7 @@ CK_RV FC_SignInit(
 
 :::
 
-## [Parameters](#parameters)
+## Parameters
 
 :::{container}
 `hSession`
@@ -38,7 +38,7 @@ CK_RV FC_SignInit(
 : [in] handle of the key to be used .
 :::
 
-## [Description](#description)
+## Description
 
 :::{container}
 `FC_SignInit` initializes a signature operation.
@@ -46,15 +46,15 @@ CK_RV FC_SignInit(
 A user must log into the token (to assume the NSS User role) before calling `FC_SignInit`.
 :::
 
-## [Return value](#return_value)
+## Return value
 
-## [Examples](#examples)
+## Examples
 
-## [See also](#see_also)
+## See also
 
 :::{container}
 
-- [NSC_SignInit](/en-US/NSC_SignInit) {ref}`mozilla_projects_nss_reference_fc_sign`
-  {ref}`mozilla_projects_nss_reference_fc_signupdate`
-  {ref}`mozilla_projects_nss_reference_fc_signfinal`
+- [NSC_SignInit](/en-US/NSC_SignInit) {ref}`mozilla-projects-nss-reference-fc-sign`
+  {ref}`mozilla-projects-nss-reference-fc-signupdate`
+  {ref}`mozilla-projects-nss-reference-fc-signfinal`
 :::

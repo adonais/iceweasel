@@ -11,23 +11,21 @@ import mozilla.components.support.utils.creditCardIIN
 private const val LAST_VISIBLE_DIGITS_COUNT = 4
 
 /**
- * Strips characters other than digits from a string.
- * Used to strip a credit card number user input of spaces and separators.
+ * Strips characters other than digits from a string. Used to strip a credit card number user input of spaces and
+ * separators.
  */
 fun String.toCreditCardNumber(): String {
     return this.filter { it.isDigit() }
 }
 
-/**
- * Returns the last 4 digits from a formatted credit card number string.
- */
+/** Returns the last 4 digits from a formatted credit card number string. */
 fun String.last4Digits(): String {
     return this.takeLast(LAST_VISIBLE_DIGITS_COUNT)
 }
 
 /**
- * Returns true if the provided string is a valid credit card by checking if it has a matching
- * credit card issuer network passes the Luhn Algorithm, and false otherwise.
+ * Returns true if the provided string is a valid credit card by checking if it has a matching credit card issuer
+ * network passes the Luhn Algorithm, and false otherwise.
  */
 fun String.validateCreditCardNumber(): Boolean {
     val creditCardNumber = this.toCreditCardNumber()
@@ -39,9 +37,7 @@ fun String.validateCreditCardNumber(): Boolean {
     return luhnAlgorithmValidation(creditCardNumber)
 }
 
-/**
- * Implementation of Luhn Algorithm validation (https://en.wikipedia.org/wiki/Luhn_algorithm)
- */
+/** Implementation of Luhn Algorithm validation (https://en.wikipedia.org/wiki/Luhn_algorithm) */
 @Suppress("MagicNumber")
 @VisibleForTesting
 internal fun luhnAlgorithmValidation(creditCardNumber: String): Boolean {

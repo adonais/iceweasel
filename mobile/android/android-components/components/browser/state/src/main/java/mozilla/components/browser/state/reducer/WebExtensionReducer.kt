@@ -12,8 +12,8 @@ import mozilla.components.browser.state.state.WebExtensionState
 
 internal object WebExtensionReducer {
     /**
-     * [WebExtensionAction] Reducer function for modifying a specific [WebExtensionState] in
-     *  both [SessionState.extensionState] or [BrowserState.extensions].
+     * [WebExtensionAction] Reducer function for modifying a specific [WebExtensionState] in both
+     * [SessionState.extensionState] or [BrowserState.extensions].
      */
     @Suppress("LongMethod")
     fun reduce(state: BrowserState, action: WebExtensionAction): BrowserState {
@@ -21,9 +21,7 @@ internal object WebExtensionReducer {
             is WebExtensionAction.InstallWebExtensionAction -> {
                 val existingExtension = state.extensions[action.extension.id]
                 if (existingExtension == null) {
-                    state.copy(
-                        extensions = state.extensions + (action.extension.id to action.extension),
-                    )
+                    state.copy(extensions = state.extensions + (action.extension.id to action.extension))
                 } else {
                     state.updateWebExtensionState(action.extension.id) {
                         // Keep existing browser and page actions in case we received them before the install action
@@ -74,20 +72,19 @@ internal object WebExtensionReducer {
                 } else {
                     state.updateWebExtensionState(action.extensionId) {
                         it.copy(
-                            activeOptionsPage = ActiveOptionsPage(
-                                instanceId = action.optionsPageInstanceId,
-                                url = action.optionsPageUrl,
-                                name = action.extensionTranslatedName,
-                            ),
+                            activeOptionsPage =
+                                ActiveOptionsPage(
+                                    instanceId = action.optionsPageInstanceId,
+                                    url = action.optionsPageUrl,
+                                    name = action.extensionTranslatedName,
+                                )
                         )
                     }
                 }
             }
             is WebExtensionAction.ClearOptionsPageSession -> {
                 state.updateWebExtensionState(action.extensionId) {
-                    it.copy(
-                        activeOptionsPage = null,
-                    )
+                    it.copy(activeOptionsPage = null)
                 }
             }
             is WebExtensionAction.UpdateTabBrowserAction -> {
@@ -121,11 +118,12 @@ internal object WebExtensionReducer {
         update: (WebExtensionState) -> WebExtensionState,
     ): BrowserState {
         return copy(
-            tabs = tabs.updateTabs(tabId) { current ->
-                val existingExtension = current.extensionState[extensionId]
-                val newExtension = extensionId to update(existingExtension ?: WebExtensionState(extensionId))
-                current.copy(extensionState = current.extensionState + newExtension)
-            } ?: tabs,
+            tabs =
+                tabs.updateTabs(tabId) { current ->
+                    val existingExtension = current.extensionState[extensionId]
+                    val newExtension = extensionId to update(existingExtension ?: WebExtensionState(extensionId))
+                    current.copy(extensionState = current.extensionState + newExtension)
+                } ?: tabs
         )
     }
 

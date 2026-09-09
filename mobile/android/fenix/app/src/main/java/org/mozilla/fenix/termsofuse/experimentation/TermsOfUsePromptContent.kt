@@ -39,12 +39,11 @@ data class TermsOfUsePromptContent(
 
 @VisibleForTesting
 internal fun String.toTermsOfUsePromptContentOption(): TermsOfUsePromptContentOption =
-    TermsOfUsePromptContentOption.entries.firstOrNull { it.name == this }
-        ?: TermsOfUsePromptContentOption.VALUE_0
+    TermsOfUsePromptContentOption.entries.firstOrNull { it.name == this } ?: TermsOfUsePromptContentOption.VALUE_0
 
 /**
- * Gets the [TermsOfUsePromptContent] for the given [id], and calls [onLearnMoreClicked] when the
- * "Learn more" link is clicked.
+ * Gets the [TermsOfUsePromptContent] for the given [id], and calls [onLearnMoreClicked] when the "Learn more" link is
+ * clicked.
  *
  * @param context The [Context] used to get the string resources.
  * @param id The persisted ID of the [TermsOfUsePromptContent].
@@ -54,11 +53,12 @@ internal fun getTermsOfUsePromptContent(
     context: Context,
     id: String,
     onLearnMoreClicked: () -> Unit,
-): TermsOfUsePromptContent = when (id.toTermsOfUsePromptContentOption()) {
-    TermsOfUsePromptContentOption.VALUE_0 -> getTreatmentC(context, onLearnMoreClicked)
-    TermsOfUsePromptContentOption.VALUE_1 -> getTreatmentA(context, onLearnMoreClicked)
-    TermsOfUsePromptContentOption.VALUE_2 -> getTreatmentB(context, onLearnMoreClicked)
-}
+): TermsOfUsePromptContent =
+    when (id.toTermsOfUsePromptContentOption()) {
+        TermsOfUsePromptContentOption.VALUE_0 -> getTreatmentC(context, onLearnMoreClicked)
+        TermsOfUsePromptContentOption.VALUE_1 -> getTreatmentA(context, onLearnMoreClicked)
+        TermsOfUsePromptContentOption.VALUE_2 -> getTreatmentB(context, onLearnMoreClicked)
+    }
 
 /**
  * Experimental configuration.
@@ -84,10 +84,11 @@ internal fun getTreatmentB(
     onLearnMoreClicked: () -> Unit,
 ): TermsOfUsePromptContent =
     TermsOfUsePromptContent(
-        title = context.getString(
-            R.string.terms_of_use_prompt_title_option_b,
-            context.getString(R.string.firefox),
-        ),
+        title =
+            context.getString(
+                R.string.terms_of_use_prompt_title_option_b,
+                context.getString(R.string.firefox),
+            ),
         learnMoreContent = { LearnMoreContentAlternative(onLearnMoreClicked) },
     )
 
@@ -103,8 +104,8 @@ private fun LearnMoreContentAlternative(onLearnMoreClicked: () -> Unit) {
 /**
  * Default configuration.
  *
- * Show the ToU prompt with the current defaults, "We’ve got an update" title and
- * "Please take a moment to review and accept. Learn more." learn more text.
+ * Show the ToU prompt with the current defaults, "We’ve got an update" title and "Please take a moment to review and
+ * accept. Learn more." learn more text.
  */
 internal fun getTreatmentC(
     context: Context,
@@ -129,18 +130,17 @@ private fun LearnMoreContent(
 ) {
     val linkText = stringResource(linkTextRes)
 
-    val learnMoreLinkState = LinkTextState(
-        text = linkText,
-        url = "", // URL is unused; navigation is handled via onLearnMoreClicked.
-        onClick = { onLearnMoreClicked() },
-    )
+    val learnMoreLinkState =
+        LinkTextState(
+            text = linkText,
+            url = "", // URL is unused; navigation is handled via onLearnMoreClicked.
+            onClick = { onLearnMoreClicked() },
+        )
 
     LinkText(
         text = stringResource(copyTextRes, linkText),
         linkTextStates = listOf(learnMoreLinkState),
-        style = FirefoxTheme.typography.body2.copy(
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
+        style = FirefoxTheme.typography.body2.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
         linkTextDecoration = TextDecoration.Underline,
     )
 }

@@ -13,25 +13,23 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.google.android.material.R as materialR
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import java.text.NumberFormat
+import java.util.Locale
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.support.ktx.android.view.putCompoundDrawablesRelativeWithIntrinsicBounds
 import mozilla.components.support.ktx.kotlin.tryGetHostFromUrl
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.focus.R
 import org.mozilla.focus.databinding.DialogTrackingProtectionSheetBinding
 import org.mozilla.focus.engine.EngineSharedPreferencesListener.TrackerChanged
 import org.mozilla.focus.ext.components
 import org.mozilla.focus.ext.installedDate
 import org.mozilla.focus.ext.settings
-import java.text.NumberFormat
-import java.util.Locale
-import com.google.android.material.R as materialR
-import mozilla.components.ui.icons.R as iconsR
 
-/**
- * Site state passed to [TrackingProtectionPanel].
- * */
+/** Site state passed to [TrackingProtectionPanel]. */
 data class SiteSecurityInfo(
     val tabUrl: String,
     val blockedTrackersCount: Int,
@@ -39,9 +37,7 @@ data class SiteSecurityInfo(
     val isConnectionSecure: Boolean,
 )
 
-/**
- * Callbacks invoked by [TrackingProtectionPanel].
- */
+/** Callbacks invoked by [TrackingProtectionPanel]. */
 interface TrackingProtectionPanelInteractor {
     /**
      * Called when the user toggles tracking protection for the current site.
@@ -62,9 +58,7 @@ interface TrackingProtectionPanelInteractor {
     fun showConnectionInfo()
 }
 
-/**
- * A bottom sheet panel that displays tracking protection details and settings for the current site.
- */
+/** A bottom sheet panel that displays tracking protection details and settings for the current site. */
 class TrackingProtectionPanel(
     context: Context,
     private val lifecycleOwner: LifecycleOwner,
@@ -89,9 +83,7 @@ class TrackingProtectionPanel(
     private fun initWindow() {
         this.window?.decorView?.let {
             it.setViewTreeLifecycleOwner(lifecycleOwner)
-            it.setViewTreeSavedStateRegistryOwner(
-                lifecycleOwner as SavedStateRegistryOwner,
-            )
+            it.setViewTreeSavedStateRegistryOwner(lifecycleOwner as SavedStateRegistryOwner)
         }
     }
 
@@ -109,18 +101,20 @@ class TrackingProtectionPanel(
     }
 
     private fun updateConnectionState() {
-        binding.securityInfo.text = context.getString(
-            if (siteInfo.isConnectionSecure) R.string.secure_connection else R.string.insecure_connection,
-        )
+        binding.securityInfo.text =
+            context.getString(
+                if (siteInfo.isConnectionSecure) R.string.secure_connection else R.string.insecure_connection
+            )
         binding.securityInfo.putCompoundDrawablesRelativeWithIntrinsicBounds(
-            start = AppCompatResources.getDrawable(
-                context,
-                if (siteInfo.isConnectionSecure) {
-                    iconsR.drawable.mozac_ic_lock_24
-                } else {
-                    iconsR.drawable.mozac_ic_warning_fill_24
-                },
-            ),
+            start =
+                AppCompatResources.getDrawable(
+                    context,
+                    if (siteInfo.isConnectionSecure) {
+                        iconsR.drawable.mozac_ic_lock_24
+                    } else {
+                        iconsR.drawable.mozac_ic_warning_fill_24
+                    },
+                ),
             end = AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_chevron_right_24),
             top = null,
             bottom = null,
@@ -135,15 +129,16 @@ class TrackingProtectionPanel(
                         R.string.enhanced_tracking_protection_state_on
                     } else {
                         R.string.enhanced_tracking_protection_state_off
-                    },
-                ),
+                    }
+                )
             )
             updateIcon(
-                icon = if (siteInfo.isTrackingProtectionOn) {
-                    iconsR.drawable.mozac_ic_shield_24
-                } else {
-                    iconsR.drawable.mozac_ic_shield_slash_24
-                },
+                icon =
+                    if (siteInfo.isTrackingProtectionOn) {
+                        iconsR.drawable.mozac_ic_shield_24
+                    } else {
+                        iconsR.drawable.mozac_ic_shield_slash_24
+                    },
                 iconContentDescription = context.getString(R.string.enhanced_tracking_protection),
             )
             binding.switchWidget.isChecked = siteInfo.isTrackingProtectionOn

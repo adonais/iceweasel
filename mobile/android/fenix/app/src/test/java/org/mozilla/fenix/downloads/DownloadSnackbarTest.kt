@@ -26,71 +26,76 @@ class DownloadSnackbarTest {
     private val testDispatcher = StandardTestDispatcher()
 
     @Test
-    fun `GIVEN previous snackbar was DownloadInProgress WHEN download is cancelled THEN snackbar is dismissed`() = runTest(testDispatcher) {
-        val appStore = spyk(
-            AppStore(
-                AppState(
-                    snackbarState = SnackbarState.None(previous = SnackbarState.DownloadInProgress("downloadId")),
-                ),
-            ),
-        )
-        val download = DownloadState(
-            url = "https://www.mozilla.org",
-            sessionId = "test-tab",
-            id = "downloadId",
-            status = DownloadState.Status.CANCELLED,
-        )
+    fun `GIVEN previous snackbar was DownloadInProgress WHEN download is cancelled THEN snackbar is dismissed`() =
+        runTest(testDispatcher) {
+            val appStore =
+                spyk(
+                    AppStore(
+                        AppState(
+                            snackbarState =
+                                SnackbarState.None(previous = SnackbarState.DownloadInProgress("downloadId"))
+                        )
+                    )
+                )
+            val download =
+                DownloadState(
+                    url = "https://www.mozilla.org",
+                    sessionId = "test-tab",
+                    id = "downloadId",
+                    status = DownloadState.Status.CANCELLED,
+                )
 
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(createTab("https://www.mozilla.org", id = "test-tab")),
-                selectedTabId = "test-tab",
-                downloads = mapOf("downloadId" to download),
-            ),
-        )
+            val store =
+                BrowserStore(
+                    BrowserState(
+                        tabs = listOf(createTab("https://www.mozilla.org", id = "test-tab")),
+                        selectedTabId = "test-tab",
+                        downloads = mapOf("downloadId" to download),
+                    )
+                )
 
-        val downloadSnackbar = DownloadSnackbar(store, appStore, testDispatcher)
+            val downloadSnackbar = DownloadSnackbar(store, appStore, testDispatcher)
 
-        downloadSnackbar.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+            downloadSnackbar.start()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify { appStore.dispatch(AppAction.SnackbarAction.SnackbarDismissed) }
-    }
+            verify { appStore.dispatch(AppAction.SnackbarAction.SnackbarDismissed) }
+        }
 
     @Test
-    fun `GIVEN previous snackbar is download completed WHEN download is completed THEN snackbar is not dismissed`() = runTest(testDispatcher) {
-        val download = DownloadState(
-            url = "https://www.mozilla.org",
-            sessionId = "test-tab",
-            id = "downloadId",
-            status = DownloadState.Status.COMPLETED,
-        )
+    fun `GIVEN previous snackbar is download completed WHEN download is completed THEN snackbar is not dismissed`() =
+        runTest(testDispatcher) {
+            val download =
+                DownloadState(
+                    url = "https://www.mozilla.org",
+                    sessionId = "test-tab",
+                    id = "downloadId",
+                    status = DownloadState.Status.COMPLETED,
+                )
 
-        val appStore = spyk(
-            AppStore(
-                AppState(
-                    snackbarState = SnackbarState.None(
-                        previous = SnackbarState.DownloadCompleted(
-                            download,
-                        ),
-                    ),
-                ),
-            ),
-        )
+            val appStore =
+                spyk(
+                    AppStore(
+                        AppState(
+                            snackbarState = SnackbarState.None(previous = SnackbarState.DownloadCompleted(download))
+                        )
+                    )
+                )
 
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(createTab("https://www.mozilla.org", id = "test-tab")),
-                selectedTabId = "test-tab",
-                downloads = mapOf("downloadId" to download),
-            ),
-        )
+            val store =
+                BrowserStore(
+                    BrowserState(
+                        tabs = listOf(createTab("https://www.mozilla.org", id = "test-tab")),
+                        selectedTabId = "test-tab",
+                        downloads = mapOf("downloadId" to download),
+                    )
+                )
 
-        val downloadSnackbar = DownloadSnackbar(store, appStore)
+            val downloadSnackbar = DownloadSnackbar(store, appStore)
 
-        downloadSnackbar.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+            downloadSnackbar.start()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(exactly = 0) { appStore.dispatch(AppAction.SnackbarAction.SnackbarDismissed) }
-    }
+            verify(exactly = 0) { appStore.dispatch(AppAction.SnackbarAction.SnackbarDismissed) }
+        }
 }

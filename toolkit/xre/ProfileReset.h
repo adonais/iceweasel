@@ -14,8 +14,8 @@ static bool gProfileResetCleanupCompleted = false;
 static const char kResetProgressURL[] =
     "chrome://global/content/resetProfileProgress.xhtml";
 
-nsresult ProfileResetCleanup(nsToolkitProfileService* aService,
-                             nsIToolkitProfile* aOldProfile);
+MOZ_CAN_RUN_SCRIPT nsresult ProfileResetCleanup(
+    nsToolkitProfileService* aService, nsIToolkitProfile* aOldProfile);
 
 class ProfileResetCleanupResultTask : public mozilla::Runnable {
  public:

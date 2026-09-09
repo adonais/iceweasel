@@ -23,16 +23,13 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine
 import mozilla.components.lib.state.Middleware
 
-/**
- * Helper for creating a list of [Middleware] instances for supporting all [EngineAction]s.
- */
+/** Helper for creating a list of [Middleware] instances for supporting all [EngineAction]s. */
 object EngineMiddleware {
     /**
-     * Creates a list of [Middleware] to be installed on a [BrowserStore] in order to support all
-     * [EngineAction]s.
+     * Creates a list of [Middleware] to be installed on a [BrowserStore] in order to support all [EngineAction]s.
      *
-     * @param trimMemoryAutomatically Whether a middleware should listen to LowMemoryAction and
-     * automatically trim memory by suspending tabs.
+     * @param trimMemoryAutomatically Whether a middleware should listen to LowMemoryAction and automatically trim
+     *   memory by suspending tabs.
      */
     fun create(
         engine: Engine,
@@ -52,10 +49,11 @@ object EngineMiddleware {
             CrashMiddleware(),
             ExtensionsProcessMiddleware(engine),
             PdfStateMiddleware(scope),
-        ) + if (trimMemoryAutomatically) {
-            listOf(TrimMemoryMiddleware())
-        } else {
-            emptyList()
-        }
+        ) +
+            if (trimMemoryAutomatically) {
+                listOf(TrimMemoryMiddleware())
+            } else {
+                emptyList()
+            }
     }
 }

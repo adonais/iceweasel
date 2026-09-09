@@ -299,3 +299,29 @@ function assertContextRemoved(manager, contextId, internalId) {
     `Internal id ${internalId} is not found in ContextualIdentityService`
   );
 }
+
+add_task(async function test_external_deletion_emits_event() {
+  const manager = new UserContextManagerClass();
+  const userContextId = manager.createContext("test");
+  const internalId = manager.getInternalIdById(userContextId);
+
+  const deletedPromise = new Promise(resolve => {
+    manager.on("user-context-deleted", function onDeleted(eventName, data) {
+      manager.off("user-context-deleted", onDeleted);
+      resolve(data);
+    });
+  });
+
+  info("Remove the user context externally via ContextualIdentityService");
+  ContextualIdentityService.remove(internalId);
+
+  const data = await deletedPromise;
+  is(
+    data.userContextId,
+    userContextId,
+    "Event payload contains correct userContextId"
+  );
+  is(data.internalId, internalId, "Event payload contains correct internalId");
+
+  manager.destroy();
+});

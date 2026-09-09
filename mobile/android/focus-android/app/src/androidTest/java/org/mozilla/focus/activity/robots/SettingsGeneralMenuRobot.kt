@@ -41,9 +41,7 @@ class SettingsGeneralMenuRobot {
     }
 
     fun clickSetDefaultBrowser() {
-        defaultBrowserSwitch()
-            .check(matches(isDisplayed()))
-            .perform(click())
+        defaultBrowserSwitch().check(matches(isDisplayed())).perform(click())
     }
 
     fun verifyAndroidDefaultAppsMenuAppears() {
@@ -51,11 +49,11 @@ class SettingsGeneralMenuRobot {
         when (Build.VERSION.SDK_INT) {
             in Build.VERSION_CODES.N..Build.VERSION_CODES.P ->
                 assertTrue(
-                    mDevice.findObject(UiSelector().resourceId("com.android.settings:id/list"))
-                        .waitForExists(waitingTime),
+                    mDevice
+                        .findObject(UiSelector().resourceId("com.android.settings:id/list"))
+                        .waitForExists(waitingTime)
                 )
-            in Build.VERSION_CODES.Q..Build.VERSION_CODES.R ->
-                intended(IntentMatchers.hasAction(ACTION_REQUEST_ROLE))
+            in Build.VERSION_CODES.Q..Build.VERSION_CODES.R -> intended(IntentMatchers.hasAction(ACTION_REQUEST_ROLE))
         }
     }
 
@@ -66,15 +64,16 @@ class SettingsGeneralMenuRobot {
     }
 
     fun verifySwitchIsToggled(checked: Boolean) {
-        onView(withId(R.id.switch_widget)).check(
-            matches(
-                if (checked) {
-                    isChecked()
-                } else {
-                    isNotChecked()
-                },
-            ),
-        )
+        onView(withId(R.id.switch_widget))
+            .check(
+                matches(
+                    if (checked) {
+                        isChecked()
+                    } else {
+                        isNotChecked()
+                    }
+                )
+            )
     }
 
     fun openLanguageSelectionMenu(localizedText: String = "Language"): ViewInteraction =
@@ -82,22 +81,17 @@ class SettingsGeneralMenuRobot {
 
     fun verifySystemLocaleSelected(localizedText: String = "System default") {
         assertTrue(
-            languageMenu.getChild(
-                UiSelector()
-                    .text(localizedText)
-                    .index(1),
-            ).getFromParent(
-                UiSelector().index(0),
-            ).isChecked,
+            languageMenu
+                .getChild(UiSelector().text(localizedText).index(1))
+                .getFromParent(UiSelector().index(0))
+                .isChecked
         )
     }
 
     fun selectLanguage(language: String) {
         // Due to scrolling issues on Compose LazyList, avoid setting a language that is under the fold.
         // see https://github.com/mozilla-mobile/focus-android/issues/7282
-        languageMenu
-            .getChildByText(UiSelector().text(language), language, true)
-            .click()
+        languageMenu.getChildByText(UiSelector().text(language), language, true).click()
     }
 
     fun selectSystemDefault() {
@@ -108,9 +102,7 @@ class SettingsGeneralMenuRobot {
     fun verifyThemesList() {
         darkThemeToggle.check(matches(isDisplayed()))
         lightThemeToggle.check(matches(isDisplayed()))
-        deviceThemeToggle
-            .check(matches(isDisplayed()))
-            .check(matches(isChecked()))
+        deviceThemeToggle.check(matches(isDisplayed())).check(matches(isChecked()))
     }
 
     fun verifyThemeApplied(isDarkTheme: Boolean = false, isLightTheme: Boolean = false, getThemeState: Boolean) {
@@ -144,9 +136,9 @@ private fun assertDefaultBrowserSwitchState(enabled: Boolean) {
                         allOf(
                             withId(R.id.switch_widget),
                             isChecked(),
-                        ),
-                    ),
-                ),
+                        )
+                    )
+                )
             )
     } else {
         defaultBrowserSwitch()
@@ -156,22 +148,12 @@ private fun assertDefaultBrowserSwitchState(enabled: Boolean) {
                         allOf(
                             withId(R.id.switch_widget),
                             isNotChecked(),
-                        ),
-                    ),
-                ),
+                        )
+                    )
+                )
             )
     }
 }
-
-private val openWithDialogTitle = mDevice.findObject(
-    UiSelector()
-        .text("Open with"),
-)
-
-private val openWithList = mDevice.findObject(
-    UiSelector()
-        .resourceId("android:id/resolver_list"),
-)
 
 private fun languageMenuButton(localizedText: String = "Language") = onView(withText(localizedText))
 
@@ -182,7 +164,7 @@ private val darkThemeToggle =
         allOf(
             withId(R.id.radio_button),
             hasSibling(withText("Dark")),
-        ),
+        )
     )
 
 private val lightThemeToggle =
@@ -190,7 +172,7 @@ private val lightThemeToggle =
         allOf(
             withId(R.id.radio_button),
             hasSibling(withText("Light")),
-        ),
+        )
     )
 
 private val deviceThemeToggle =
@@ -198,5 +180,5 @@ private val deviceThemeToggle =
         allOf(
             withId(R.id.radio_button),
             hasSibling(withText("Follow device theme")),
-        ),
+        )
     )

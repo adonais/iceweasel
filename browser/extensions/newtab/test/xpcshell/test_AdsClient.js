@@ -66,6 +66,16 @@ add_task(function test_getClient_singleton() {
   );
 });
 
+add_task(async function test_getClient_opensCacheDatabase() {
+  const adsClient = new lazy._AdsClient();
+  Assert.ok(adsClient.getClient(), "getClient built a MozAdsClient");
+
+  Assert.ok(
+    await IOUtils.exists(adsClient.cacheConfig.dbPath),
+    "Building the client opened the SQLite HTTP cache in the profile"
+  );
+});
+
 add_task(function test_buildTelemetry_recordsToGlean() {
   Services.fog.testResetFOG();
 

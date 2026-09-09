@@ -336,3 +336,54 @@ add_task(async function test_view_all_tabs_opens_firefox_view() {
 
   openTabStub.restore();
 });
+
+// Tests that hidden tabs in the all tabs view can be muted and unmuted
+// (bug2058137)
+add_task(async function test_mute_hidden_audio_tab_from_all_tabs_view() {
+  function rowForTab(containerNode, tab) {
+    return [...containerNode.querySelectorAll(":scope > .all-tabs-item")].find(
+      row => row._tab == tab
+    );
+  }
+
+  async function clickMuteButton(row, tab, expectMuted) {
+    EventUtils.synthesizeMouseAtCenter(
+      row.querySelector(".all-tabs-mute-button"),
+      {},
+      window
+    );
+    await BrowserTestUtils.waitForMutationCondition(
+      tab,
+      { attributes: true, attributeFilter: ["muted"] },
+      () => muted(tab) == expectMuted,
+      `tab is ${expectMuted ? "muted" : "unmuted"} after clicking the mute button`
+    );
+  }
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["media.block-autoplay-until-in-foreground", false]],
+  });
+  const tab = await addMediaTab();
+  await play(tab);
+  const tabHidden = BrowserTestUtils.waitForEvent(tab, "TabHide");
+  gBrowser.hideTab(tab);
+  await tabHidden;
+
+  window.gTabsPanel.init();
+  await openAllTabsMenu();
+
+  const hiddenAudioTabs = document.getElementById(
+    "allTabsMenu-allTabsView-hiddenAudio-tabs"
+  );
+  const row = rowForTab(hiddenAudioTabs, tab);
+  ok(row, "Hidden tab playing audio has a row in the hidden audio list");
+  ok(!muted(tab), "Tab starts unmuted");
+
+  await clickMuteButton(row, tab, true);
+  await clickMuteButton(rowForTab(hiddenAudioTabs, tab), tab, false);
+
+  await closeAllTabsMenu();
+  gBrowser.showTab(tab);
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});

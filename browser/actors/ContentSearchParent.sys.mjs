@@ -143,7 +143,7 @@ export let ContentSearch = {
 
   destroy() {
     if (!this.initialized) {
-      return new Promise();
+      return Promise.resolve();
     }
 
     if (this._destroyedPromise) {

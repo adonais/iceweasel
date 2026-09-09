@@ -17,11 +17,11 @@ import mozilla.components.lib.state.Store
 import mozilla.components.support.ktx.android.view.toScope
 
 /**
- * Helper extension method for consuming [State] from a [Store] sequentially in order scoped to the
- * lifetime of the [View]. The [block] function will get invoked for every [State] update.
+ * Helper extension method for consuming [State] from a [Store] sequentially in order scoped to the lifetime of the
+ * [View]. The [block] function will get invoked for every [State] update.
  *
- * This helper will automatically stop observing the [Store] once the [View] gets detached. The
- * provided [LifecycleOwner] is used to determine when observing should be stopped or resumed.
+ * This helper will automatically stop observing the [Store] once the [View] gets detached. The provided
+ * [LifecycleOwner] is used to determine when observing should be stopped or resumed.
  *
  * Inside a [Fragment] prefer to use [Fragment.consumeFrom].
  */

@@ -16,12 +16,13 @@ class FenixSuggestStrongPasswordPromptTest {
     @Test
     fun `GIVEN FenixSuggestStrongPasswordPrompt when showPrompt is called THEN display the prompt`() {
         val view: SuggestStrongPasswordBar = mockk(relaxed = true)
-        val prompt = FenixSuggestStrongPasswordPrompt(
-            viewProvider = { view },
-            toolbarPositionProvider = { ToolbarPosition.BOTTOM },
-            onShow = {},
-            onHide = {},
-        )
+        val prompt =
+            FenixSuggestStrongPasswordPrompt(
+                viewProvider = { view },
+                toolbarPositionProvider = { ToolbarPosition.BOTTOM },
+                onShow = {},
+                onHide = {},
+            )
 
         prompt.showPrompt()
 
@@ -31,12 +32,13 @@ class FenixSuggestStrongPasswordPromptTest {
     @Test
     fun `GIVEN FenixSuggestStrongPasswordPrompt when hidePrompt is called THEN the prompt is not displayed`() {
         val view: SuggestStrongPasswordBar = mockk(relaxed = true)
-        val prompt = FenixSuggestStrongPasswordPrompt(
-            viewProvider = { view },
-            toolbarPositionProvider = { ToolbarPosition.BOTTOM },
-            onShow = {},
-            onHide = {},
-        )
+        val prompt =
+            FenixSuggestStrongPasswordPrompt(
+                viewProvider = { view },
+                toolbarPositionProvider = { ToolbarPosition.BOTTOM },
+                onShow = {},
+                onHide = {},
+            )
         prompt.showPrompt()
 
         prompt.hidePrompt()
@@ -48,12 +50,13 @@ class FenixSuggestStrongPasswordPromptTest {
     fun `GIVEN FenixSuggestStrongPasswordPrompt when showPrompt is called THEN the onShow callback is invoked`() {
         var onShowCalled = false
         val view: SuggestStrongPasswordBar = mockk(relaxed = true)
-        val prompt = FenixSuggestStrongPasswordPrompt(
-            viewProvider = { view },
-            toolbarPositionProvider = { ToolbarPosition.BOTTOM },
-            onShow = { onShowCalled = true },
-            onHide = {},
-        )
+        val prompt =
+            FenixSuggestStrongPasswordPrompt(
+                viewProvider = { view },
+                toolbarPositionProvider = { ToolbarPosition.BOTTOM },
+                onShow = { onShowCalled = true },
+                onHide = {},
+            )
         prompt.showPrompt()
 
         assertTrue(onShowCalled)
@@ -63,12 +66,13 @@ class FenixSuggestStrongPasswordPromptTest {
     fun `GIVEN FenixSuggestStrongPasswordPrompt when hidePrompt is called THEN the onHide callback is invoked`() {
         var onHideCalled = false
         val view: SuggestStrongPasswordBar = mockk(relaxed = true)
-        val prompt = FenixSuggestStrongPasswordPrompt(
-            viewProvider = { view },
-            toolbarPositionProvider = { ToolbarPosition.BOTTOM },
-            onShow = {},
-            onHide = { onHideCalled = true },
-        )
+        val prompt =
+            FenixSuggestStrongPasswordPrompt(
+                viewProvider = { view },
+                toolbarPositionProvider = { ToolbarPosition.BOTTOM },
+                onShow = {},
+                onHide = { onHideCalled = true },
+            )
         prompt.hidePrompt()
 
         assertTrue(onHideCalled)

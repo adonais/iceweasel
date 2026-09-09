@@ -42,9 +42,7 @@ class SyncedTabsIntegration(
     commands: SyncedTabsCommands,
     accountManager: FxaAccountManager,
     lifecycleOwner: LifecycleOwner,
-) : LifecycleAwareFeature,
-    SyncedTabsView,
-    Observable<SyncedTabsView.Listener> by ObserverRegistry() {
+) : LifecycleAwareFeature, SyncedTabsView, Observable<SyncedTabsView.Listener> by ObserverRegistry() {
 
     private val syncedTabsFeature by lazy {
         SyncedTabsFeature(
@@ -102,9 +100,9 @@ class SyncedTabsIntegration(
                         if (context.components.settings.enableCloseSyncedTabs) {
                             add(SyncedTabsListSupportedFeature.CLOSE_TABS)
                         }
-                    },
-                ),
-            ),
+                    }
+                )
+            )
         )
     }
 }

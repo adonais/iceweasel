@@ -21,9 +21,7 @@ import org.mozilla.samples.browser.R
 import org.mozilla.samples.browser.databinding.FragmentAddOnSettingsBinding
 import org.mozilla.samples.browser.ext.components
 
-/**
- * An activity to show the pop up action of a web extension.
- */
+/** An activity to show the pop up action of a web extension. */
 class WebExtensionActionPopupActivity : AppCompatActivity() {
     private lateinit var webExtensionId: String
 
@@ -48,9 +46,7 @@ class WebExtensionActionPopupActivity : AppCompatActivity() {
             else -> super.onCreateView(parent, name, context, attrs)
         }
 
-    /**
-     * A fragment to show the web extension action popup with [EngineView].
-     */
+    /** A fragment to show the web extension action popup with [EngineView]. */
     class WebExtensionActionPopupFragment : Fragment(), EngineSession.Observer {
         private var engineSession: EngineSession? = null
         private lateinit var webExtensionId: String
@@ -94,21 +90,20 @@ class WebExtensionActionPopupActivity : AppCompatActivity() {
                 engineSession?.loadUrl(windowRequest.url)
             }
         }
+
         private fun consumePopupSession() {
-            components.store.dispatch(
-                WebExtensionAction.UpdatePopupSessionAction(webExtensionId, popupSession = null),
-            )
+            components.store.dispatch(WebExtensionAction.UpdatePopupSessionAction(webExtensionId, popupSession = null))
         }
 
         companion object {
-            /**
-             * Create an [WebExtensionActionPopupFragment] with webExtensionId as a required parameter.
-             */
-            fun create(webExtensionId: String) = WebExtensionActionPopupFragment().apply {
-                arguments = Bundle().apply {
-                    putString("web_extension_id", webExtensionId)
+            /** Create an [WebExtensionActionPopupFragment] with webExtensionId as a required parameter. */
+            fun create(webExtensionId: String) =
+                WebExtensionActionPopupFragment().apply {
+                    arguments =
+                        Bundle().apply {
+                            putString("web_extension_id", webExtensionId)
+                        }
                 }
-            }
         }
     }
 }

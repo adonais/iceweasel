@@ -127,32 +127,42 @@ pub struct DBusMessageIter {
     pub pad3: *mut c_void,
 }
 
-pub type DBusHandleMessageFunction = Option<extern fn(conn: *mut DBusConnection, msg: *mut DBusMessage, user_data: *mut c_void) -> DBusHandlerResult>;
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct DBusSignatureIter {
+    pub dummy1: *mut c_void,
+    pub dummy2: *mut c_void,
+    pub dummy8: u32,
+    pub dummy12: c_int,
+    pub dummy17: c_int,
+}
 
-pub type DBusAddWatchFunction = Option<extern fn(watch: *mut DBusWatch, user_data: *mut c_void) -> u32>;
-pub type DBusRemoveWatchFunction = Option<extern fn(watch: *mut DBusWatch, user_data: *mut c_void)>;
-pub type DBusWatchToggledFunction = Option<extern fn(watch: *mut DBusWatch, user_data: *mut c_void)>;
+pub type DBusHandleMessageFunction = Option<extern "C" fn(conn: *mut DBusConnection, msg: *mut DBusMessage, user_data: *mut c_void) -> DBusHandlerResult>;
 
-pub type DBusAddTimeoutFunction = Option<extern fn(timeout: *mut DBusTimeout, user_data: *mut c_void) -> u32>;
-pub type DBusTimeoutToggledFunction = Option<extern fn(timeout: *mut DBusTimeout, user_data: *mut c_void)>;
-pub type DBusRemoveTimeoutFunction = Option<extern fn(timeout: *mut DBusTimeout, user_data: *mut c_void)>;
+pub type DBusAddWatchFunction = Option<extern "C" fn(watch: *mut DBusWatch, user_data: *mut c_void) -> u32>;
+pub type DBusRemoveWatchFunction = Option<extern "C" fn(watch: *mut DBusWatch, user_data: *mut c_void)>;
+pub type DBusWatchToggledFunction = Option<extern "C" fn(watch: *mut DBusWatch, user_data: *mut c_void)>;
 
-pub type DBusDispatchStatusFunction = Option<extern fn(conn: *mut DBusConnection, new_status: DBusDispatchStatus, user_data: *mut c_void)>;
+pub type DBusAddTimeoutFunction = Option<extern "C" fn(timeout: *mut DBusTimeout, user_data: *mut c_void) -> u32>;
+pub type DBusTimeoutToggledFunction = Option<extern "C" fn(timeout: *mut DBusTimeout, user_data: *mut c_void)>;
+pub type DBusRemoveTimeoutFunction = Option<extern "C" fn(timeout: *mut DBusTimeout, user_data: *mut c_void)>;
 
-pub type DBusWakeupMainFunction = Option<extern fn(conn: *mut DBusConnection, user_data: *mut c_void)>;
+pub type DBusDispatchStatusFunction = Option<extern "C" fn(conn: *mut DBusConnection, new_status: DBusDispatchStatus, user_data: *mut c_void)>;
 
-pub type DBusPendingCallNotifyFunction = Option<extern fn(pending: *mut DBusPendingCall, user_data: *mut c_void)>;
+pub type DBusWakeupMainFunction = Option<extern "C" fn(conn: *mut DBusConnection, user_data: *mut c_void)>;
 
-pub type DBusFreeFunction = Option<extern fn(memory: *mut c_void)>;
+pub type DBusPendingCallNotifyFunction = Option<extern "C" fn(pending: *mut DBusPendingCall, user_data: *mut c_void)>;
+
+pub type DBusFreeFunction = Option<extern "C" fn(memory: *mut c_void)>;
 
 #[repr(C)]
 pub struct DBusObjectPathVTable {
-    pub unregister_function: Option<extern fn(conn: *mut DBusConnection, user_data: *mut c_void)>,
+    pub unregister_function: Option<extern "C" fn(conn: *mut DBusConnection, user_data: *mut c_void)>,
     pub message_function: DBusHandleMessageFunction,
-    pub dbus_internal_pad1: Option<extern fn()>,
-    pub dbus_internal_pad2: Option<extern fn()>,
-    pub dbus_internal_pad3: Option<extern fn()>,
-    pub dbus_internal_pad4: Option<extern fn()>,
+    pub dbus_internal_pad1: Option<extern "C" fn()>,
+    pub dbus_internal_pad2: Option<extern "C" fn()>,
+    pub dbus_internal_pad3: Option<extern "C" fn()>,
+    pub dbus_internal_pad4: Option<extern "C" fn()>,
 }
 
 extern "C" {
@@ -228,11 +238,13 @@ extern "C" {
     pub fn dbus_message_get_reply_serial(message: *mut DBusMessage) -> u32;
     pub fn dbus_message_get_serial(message: *mut DBusMessage) -> u32;
     pub fn dbus_message_get_path(message: *mut DBusMessage) -> *const c_char;
+    pub fn dbus_message_set_path(message: *mut DBusMessage, path: *const c_char) -> bool;
     pub fn dbus_message_get_interface(message: *mut DBusMessage) -> *const c_char;
     pub fn dbus_message_get_destination(message: *mut DBusMessage) -> *const c_char;
     pub fn dbus_message_get_member(message: *mut DBusMessage) -> *const c_char;
     pub fn dbus_message_get_sender(message: *mut DBusMessage) -> *const c_char;
     pub fn dbus_message_set_serial(message: *mut DBusMessage, serial: u32);
+    pub fn dbus_message_set_sender(message: *mut DBusMessage, sender: *const c_char) -> u32;
     pub fn dbus_message_set_destination(message: *mut DBusMessage, destination: *const c_char) -> u32;
     pub fn dbus_message_get_no_reply(message: *mut DBusMessage) -> u32;
     pub fn dbus_message_set_no_reply(message: *mut DBusMessage, no_reply: u32);
@@ -256,6 +268,13 @@ extern "C" {
     pub fn dbus_message_iter_open_container(iter: *mut DBusMessageIter, _type: c_int,
         contained_signature: *const c_char, sub: *mut DBusMessageIter) -> u32;
     pub fn dbus_message_iter_close_container(iter: *mut DBusMessageIter, sub: *mut DBusMessageIter) -> u32;
+
+    pub fn dbus_signature_iter_init(iter: *mut DBusSignatureIter, signature: *const c_char);
+    pub fn dbus_signature_iter_get_current_type(iter: *const DBusSignatureIter) -> c_int;
+    pub fn dbus_signature_iter_get_signature(iter: *const DBusSignatureIter) -> *mut c_char;
+    pub fn dbus_signature_iter_get_element_type(iter: *const DBusSignatureIter) -> c_int;
+    pub fn dbus_signature_iter_next(iter: *mut DBusSignatureIter) -> bool;
+    pub fn dbus_signature_iter_recurse(iter: *const DBusSignatureIter, subiter: *mut DBusSignatureIter);
 
     pub fn dbus_free(memory: *mut c_void);
     pub fn dbus_free_string_array(str_array: *mut *mut c_char) -> c_void;

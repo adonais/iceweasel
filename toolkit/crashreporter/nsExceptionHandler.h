@@ -142,6 +142,9 @@ nsresult UnrecordAnnotation(Annotation aKey);
 
 nsresult AppendAppNotesToCrashReport(const nsACString& data);
 
+nsresult RecordPlatformAnnotations();
+nsresult RecordXPCOMPlatformAnnotations();
+
 // RAII class for setting a crash annotation during a limited scope of time.
 // Will reset the named annotation to its previous value when destroyed.
 //

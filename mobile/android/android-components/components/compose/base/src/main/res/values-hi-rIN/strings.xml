@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources>
+  <!--
+    TextField Design System Component
+
+    The default content description (not visible, for screen readers etc.): Eye trailing icon button in TextField used to show hidden password text.
+  -->
+  <string name="text_field_eye_trailing_icon_default_content_description">छिपा हुआ टेक्स्ट दिखाएं</string>
+  <!-- The default content description (not visible, for screen readers etc.): Cross trailing icon button in TextField used to clear input. -->
+  <string name="text_field_cross_trailing_icon_default_content_description">टेक्स्ट हटाएं</string>
+  <!-- Announcement made by the screen reader when the progress bar is shown and a page is loading -->
+  <string name="mozac_compose_base_progress_loading">लोड किया जा रहा है</string>
+  <!-- Content description for the dismiss icon of a Snackbar -->
+  <string name="mozac_compose_base_snackbar_dismiss_content_description">मैसेज ख़ारिज करें</string>
+  <!-- Content description for the close icon of a Banner -->
+  <string name="mozac_compose_base_close_button_content_description">बंद करें</string>
+  <!-- Title shown in the dialog that lists every clickable link inside a LinkText composable when the text contains more than one link. -->
+  <string name="mozac_compose_base_link_text_links_title">लिंक</string>
+  <!-- Announcement appended to the LinkText content description so screen readers know that interactive links are present in the text. -->
+  <string name="mozac_compose_base_link_text_links_available">लिंक उपलब्ध हैं</string>
+  <!-- Label for the button that dismisses the LinkText links dialog without selecting a link. -->
+  <string name="mozac_compose_base_link_text_dismiss">ख़ारिज करें</string>
+</resources>

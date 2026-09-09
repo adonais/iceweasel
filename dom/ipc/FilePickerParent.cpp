@@ -280,6 +280,10 @@ mozilla::ipc::IPCResult FilePickerParent::RecvOpen(
     return IPC_OK();
   }
 
+  if (aFilters.Length() != aFilterNames.Length()) {
+    return IPC_FAIL(this, "PFilePicker::Open filter arrays lengths mismatch");
+  }
+
   mFilePicker->SetAddToRecentDocs(aAddToRecentDocs);
 
   for (uint32_t i = 0; i < aFilters.Length(); ++i) {
@@ -307,9 +311,12 @@ mozilla::ipc::IPCResult FilePickerParent::RecvOpen(
   }
 
   MOZ_ASSERT(!mCallback);
-  mCallback = new FilePickerShownCallback(this);
+  const RefPtr<FilePickerShownCallback> callback =
+      MakeRefPtr<FilePickerShownCallback>(this);
+  mCallback = callback;
 
-  mFilePicker->Open(mCallback);
+  const nsCOMPtr<nsIFilePicker> filePicker = mFilePicker;
+  filePicker->Open(callback);
   return IPC_OK();
 }
 

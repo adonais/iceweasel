@@ -12,15 +12,18 @@ import java.util.concurrent.TimeUnit
 
 // This file is a modified port from Focus Android
 
-/**
- * Interface to abstract where the cached version and session counter is stored
- */
+/** Interface to abstract where the cached version and session counter is stored */
 interface WhatsNewStorage {
     fun getVersion(): WhatsNewVersion?
+
     fun setVersion(version: WhatsNewVersion)
+
     fun getWhatsNewHasBeenCleared(): Boolean
+
     fun setWhatsNewHasBeenCleared(cleared: Boolean)
+
     fun getDaysSinceUpdate(): Long
+
     fun setDateOfUpdate(day: Long)
 
     companion object {

@@ -10,6 +10,7 @@ import android.app.Service.STOP_FOREGROUND_REMOVE
 
 /**
  * Remove this service from foreground state.
+ *
  * @param removeNotification whether the notification is to be removed or not.
  */
 fun Service.stopForegroundCompat(removeNotification: Boolean) {

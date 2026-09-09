@@ -19,42 +19,28 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.settings.registerOnSharedPreferenceChangeListener
 
-/**
- * Cache for accessing any settings related to onboarding preferences.
- */
+/** Cache for accessing any settings related to onboarding preferences. */
 interface OnboardingPreferencesRepository {
 
-    /**
-     * Enum for the onboarding preference keys.
-     */
-    enum class OnboardingPreference(
-        @param:StringRes val preferenceKey: Int,
-    ) {
+    /** Enum for the onboarding preference keys. */
+    enum class OnboardingPreference(@param:StringRes val preferenceKey: Int) {
         TopToolbar(preferenceKey = R.string.pref_key_toolbar_top),
         BottomToolbar(preferenceKey = R.string.pref_key_toolbar_bottom),
     }
 
-    /**
-     * An update to a [OnboardingPreference].
-     */
+    /** An update to a [OnboardingPreference]. */
     data class OnboardingPreferenceUpdate(
         val preferenceType: OnboardingPreference,
         val value: Boolean = true,
     )
 
-    /**
-     * A [Flow] of [OnboardingPreferenceUpdate]s.
-     */
+    /** A [Flow] of [OnboardingPreferenceUpdate]s. */
     val onboardingPreferenceUpdates: Flow<OnboardingPreferenceUpdate>
 
-    /**
-     * Initializes the repository and starts the [SharedPreferences] listener.
-     */
+    /** Initializes the repository and starts the [SharedPreferences] listener. */
     fun init()
 
-    /**
-     * Update [OnboardingPreferenceUpdate.preferenceType] with [OnboardingPreferenceUpdate.value].
-     */
+    /** Update [OnboardingPreferenceUpdate.preferenceType] with [OnboardingPreferenceUpdate.value]. */
     fun updateOnboardingPreference(preferenceUpdate: OnboardingPreferenceUpdate)
 }
 
@@ -75,7 +61,7 @@ class DefaultOnboardingPreferencesRepository(
         MutableSharedFlow<OnboardingPreferencesRepository.OnboardingPreferenceUpdate>()
 
     private fun emitPreferenceUpdate(
-        onboardingPreferenceUpdate: OnboardingPreferencesRepository.OnboardingPreferenceUpdate,
+        onboardingPreferenceUpdate: OnboardingPreferencesRepository.OnboardingPreferenceUpdate
     ) = coroutineScope.launch { _onboardingPreferenceUpdates.emit(onboardingPreferenceUpdate) }
 
     override val onboardingPreferenceUpdates: Flow<OnboardingPreferencesRepository.OnboardingPreferenceUpdate>
@@ -83,19 +69,19 @@ class DefaultOnboardingPreferencesRepository(
 
     override fun init() {
         OnboardingPreferencesRepository.OnboardingPreference.entries.forEach { preference ->
-            val initialPreferences = when (preference) {
-                OnboardingPreferencesRepository.OnboardingPreference.TopToolbar ->
-                    !settings.shouldUseBottomToolbar
+            val initialPreferences =
+                when (preference) {
+                    OnboardingPreferencesRepository.OnboardingPreference.TopToolbar -> !settings.shouldUseBottomToolbar
 
-                OnboardingPreferencesRepository.OnboardingPreference.BottomToolbar ->
-                    settings.shouldUseBottomToolbar
-            }
+                    OnboardingPreferencesRepository.OnboardingPreference.BottomToolbar ->
+                        settings.shouldUseBottomToolbar
+                }
 
             emitPreferenceUpdate(
                 OnboardingPreferencesRepository.OnboardingPreferenceUpdate(
                     preferenceType = preference,
                     value = initialPreferences,
-                ),
+                )
             )
         }
 
@@ -105,10 +91,10 @@ class DefaultOnboardingPreferencesRepository(
     }
 
     private fun startListener() {
-        settings.preferences
-            .registerOnSharedPreferenceChangeListener(owner = lifecycleOwner) { sharedPreferences, key ->
-                onPreferenceChange(sharedPreferences = sharedPreferences, key = key)
-            }
+        settings.preferences.registerOnSharedPreferenceChangeListener(owner = lifecycleOwner) { sharedPreferences, key
+            ->
+            onPreferenceChange(sharedPreferences = sharedPreferences, key = key)
+        }
     }
 
     @VisibleForTesting
@@ -116,9 +102,10 @@ class DefaultOnboardingPreferencesRepository(
         sharedPreferences: SharedPreferences,
         key: String?,
     ) {
-        val preferenceType = OnboardingPreferencesRepository.OnboardingPreference.entries.find {
-            context.getString(it.preferenceKey) == key
-        } ?: return
+        val preferenceType =
+            OnboardingPreferencesRepository.OnboardingPreference.entries.find {
+                context.getString(it.preferenceKey) == key
+            } ?: return
 
         val onboardingPreference = sharedPreferences.getBoolean(key, false)
 
@@ -126,19 +113,20 @@ class DefaultOnboardingPreferencesRepository(
             OnboardingPreferencesRepository.OnboardingPreferenceUpdate(
                 preferenceType = preferenceType,
                 value = onboardingPreference,
-            ),
+            )
         )
     }
 
     override fun updateOnboardingPreference(
-        preferenceUpdate: OnboardingPreferencesRepository.OnboardingPreferenceUpdate,
-    ) = with(preferenceUpdate) {
-        when (preferenceType) {
-            OnboardingPreferencesRepository.OnboardingPreference.TopToolbar ->
-                settings.shouldUseBottomToolbar = false
+        preferenceUpdate: OnboardingPreferencesRepository.OnboardingPreferenceUpdate
+    ) =
+        with(preferenceUpdate) {
+            when (preferenceType) {
+                OnboardingPreferencesRepository.OnboardingPreference.TopToolbar ->
+                    settings.shouldUseBottomToolbar = false
 
-            OnboardingPreferencesRepository.OnboardingPreference.BottomToolbar ->
-                settings.shouldUseBottomToolbar = true
+                OnboardingPreferencesRepository.OnboardingPreference.BottomToolbar ->
+                    settings.shouldUseBottomToolbar = true
+            }
         }
-    }
 }

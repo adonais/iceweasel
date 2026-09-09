@@ -267,7 +267,22 @@ impl TextRunTemplate {
         //           will implicitly be part of the device pixel ratio for
         //           the (cached) local space surface, and so this code
         //           will no longer be required.
-        let raster_scale_input = raster_space.local_scale().unwrap_or(1.0).max(0.001);
+        // A bitmap-strike run rasterizes with an identity glyph shape (see below),
+        // so the only way the transform's scale can reach the rasterizer is through
+        // the raster scale. Without it the glyph is rendered at its untransformed
+        // size and the shader scales that, which on the backends that resample at
+        // rasterization time (Core Text, DirectWrite) is visibly soft when scaling
+        // up (bug 2064316). Only screen raster space needs this: a requested - or
+        // zoom/animation derived - local raster space carries its own scale, which
+        // is deliberately decoupled from the current transform.
+        let raster_scale_input = if has_bitmap_strikes && raster_space == RasterSpace::Screen {
+            transform
+                .coplanar_scale_factors()
+                .map_or(1.0, |(sx, sy)| sx.max(sy))
+        } else {
+            raster_space.local_scale().unwrap_or(1.0)
+        }
+        .max(0.001);
 
         let dps = surface.device_pixel_scale.0;
         let font_size = specified_font.size.to_f32_px();
@@ -503,10 +518,15 @@ impl TextRunTemplate {
         let local_raster = raster_space != RasterSpace::Screen
             || used_font.flags.contains(FontInstanceFlags::TEXTURE_PADDING);
 
+        // Only the local-raster branch below snaps on the CPU; device mode hands
+        // the exact pen to the shader, which applies the matching bias itself.
+        // `Mixed` never reaches local-raster mode (that path rasterizes with an
+        // identity `FontTransform`, so its subpx dir is always `Horizontal`).
         let snap_bias = match subpx_dir {
             SubpixelDirection::None => DeviceVector2D::new(0.5, 0.5),
             SubpixelDirection::Horizontal => DeviceVector2D::new(0.125, 0.5),
             SubpixelDirection::Vertical => DeviceVector2D::new(0.5, 0.125),
+            SubpixelDirection::Mixed => DeviceVector2D::new(0.125, 0.125),
         };
 
         // World-space run anchor (device mode only).

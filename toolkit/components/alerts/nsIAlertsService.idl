@@ -107,6 +107,14 @@ interface nsIAlertNotification : nsISupports
   readonly attribute AString name;
 
   /**
+   * An identifier unique across notification instances within the process,
+   * regardless of the name. Backends can use it to track individual show
+   * requests, e.g. to route asynchronous events correctly after a same-name
+   * notification has been replaced.
+   */
+  readonly attribute unsigned long long countId;
+
+  /**
    * A URL identifying the image to put in the alert. The OS X backend limits
    * the amount of time it will wait for the image to load to six seconds. After
    * that time, the alert will show without an image.

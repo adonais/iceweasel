@@ -16,9 +16,7 @@ import org.json.JSONObject
  *
  * @param jsonString A string that is converted into a JSONObject and used when getting WebCompat info.
  */
-internal class FakeEngineSession(
-    private val jsonString: String,
-) : EngineSession() {
+internal class FakeEngineSession(private val jsonString: String) : EngineSession() {
 
     override val settings: Settings
         get() = DefaultSettings()
@@ -40,7 +38,7 @@ internal class FakeEngineSession(
         onResult: () -> Unit,
         onException: (Throwable) -> Unit,
     ) {
-         onResult()
+        onResult()
     }
 
     override fun getWebCompatInfo(
@@ -83,7 +81,9 @@ internal class FakeEngineSession(
 
     override fun goToHistoryIndex(index: Int) {}
 
-    override fun restoreState(state: EngineSessionState): Boolean { return false }
+    override fun restoreState(state: EngineSessionState): Boolean {
+        return false
+    }
 
     override fun flushSessionState() {}
 

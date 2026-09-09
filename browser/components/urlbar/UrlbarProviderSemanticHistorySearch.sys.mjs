@@ -209,7 +209,7 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
           url: res.url,
           title: res.title,
           icon: lazy.UrlbarShared.getIconForUrl(res.url),
-          userContextId: tabUserContextId,
+          userContext: UrlbarUtils.getUserContextData(tabUserContextId),
           tabGroup: tabGroupId,
           lastVisit: res.lastVisit,
           action: lazy.UrlbarPrefs.get("secondaryActions.switchToTab")

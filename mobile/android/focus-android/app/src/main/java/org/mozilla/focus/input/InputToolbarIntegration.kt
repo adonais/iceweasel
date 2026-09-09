@@ -6,6 +6,7 @@ package org.mozilla.focus.input
 
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.widget.AppCompatEditText
+import androidx.cardview.R as cardViewR
 import androidx.compose.material3.Text
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
@@ -22,6 +23,7 @@ import kotlinx.coroutines.launch
 import mozilla.components.browser.domains.autocomplete.CustomDomainsProvider
 import mozilla.components.browser.domains.autocomplete.ShippedDomainsProvider
 import mozilla.components.browser.toolbar.BrowserToolbar
+import mozilla.components.browser.toolbar.R as toolbarR
 import mozilla.components.browser.toolbar.display.DisplayToolbar.DisplayMargins
 import mozilla.components.compose.cfr.CFRPopup
 import mozilla.components.compose.cfr.CFRPopupBackground
@@ -37,12 +39,8 @@ import org.mozilla.focus.ext.settings
 import org.mozilla.focus.fragment.UrlInputFragment
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.ui.theme.focusTypography
-import androidx.cardview.R as cardViewR
-import mozilla.components.browser.toolbar.R as toolbarR
 
-/**
- * Integration for the URL input toolbar, managing editing and autocomplete.
- */
+/** Integration for the URL input toolbar, managing editing and autocomplete. */
 class InputToolbarIntegration(
     private val toolbar: BrowserToolbar,
     private val fragment: UrlInputFragment,
@@ -55,26 +53,27 @@ class InputToolbarIntegration(
     private var useShippedDomainProvider: Boolean = false
     private var useCustomDomainProvider: Boolean = false
 
-    @VisibleForTesting
-    internal var startBrowsingCfrScope: CoroutineScope? = null
+    @VisibleForTesting internal var startBrowsingCfrScope: CoroutineScope? = null
 
     init {
         with(toolbar.display) {
             indicators = emptyList()
             hint = fragment.resources.getString(R.string.urlbar_hint)
-            colors = toolbar.display.colors.copy(
-                hint = ContextCompat.getColor(toolbar.context, R.color.urlBarHintText),
-                text = ContextCompat.getColor(toolbar.context, R.color.primaryText),
-            )
+            colors =
+                toolbar.display.colors.copy(
+                    hint = ContextCompat.getColor(toolbar.context, R.color.urlBarHintText),
+                    text = ContextCompat.getColor(toolbar.context, R.color.primaryText),
+                )
         }
         toolbar.edit.hint = fragment.resources.getString(R.string.urlbar_hint)
         toolbar.private = true
-        toolbar.edit.colors = toolbar.edit.colors.copy(
-            hint = ContextCompat.getColor(toolbar.context, R.color.urlBarHintText),
-            text = ContextCompat.getColor(toolbar.context, R.color.primaryText),
-            clear = ContextCompat.getColor(toolbar.context, R.color.primaryText),
-            suggestionBackground = ContextCompat.getColor(toolbar.context, R.color.autocompleteBackgroundColor),
-        )
+        toolbar.edit.colors =
+            toolbar.edit.colors.copy(
+                hint = ContextCompat.getColor(toolbar.context, R.color.urlBarHintText),
+                text = ContextCompat.getColor(toolbar.context, R.color.primaryText),
+                clear = ContextCompat.getColor(toolbar.context, R.color.primaryText),
+                suggestionBackground = ContextCompat.getColor(toolbar.context, R.color.autocompleteBackgroundColor),
+            )
 
         toolbar.setOnEditListener(
             object : Toolbar.OnEditListener {
@@ -93,7 +92,7 @@ class InputToolbarIntegration(
                         fragment.onTextChange(text)
                     }
                 }
-            },
+            }
         )
 
         toolbar.setOnUrlCommitListener { url ->
@@ -119,7 +118,7 @@ class InputToolbarIntegration(
                         result.url,
                         result.source,
                         result.totalItems,
-                    ),
+                    )
                 )
             } else {
                 delegate.noAutocompleteResult(text)
@@ -127,16 +126,15 @@ class InputToolbarIntegration(
         }
 
         // Use the same background for display/edit modes.
-        val urlBackground = ResourcesCompat.getDrawable(
-            fragment.resources,
-            R.drawable.toolbar_url_background,
-            fragment.context?.theme,
-        )
+        val urlBackground =
+            ResourcesCompat.getDrawable(
+                fragment.resources,
+                R.drawable.toolbar_url_background,
+                fragment.context?.theme,
+            )
 
         toolbar.display.setUrlBackground(urlBackground)
-        toolbar.display.setUrlBackgroundMargins(
-            DisplayMargins(8.dpToPx(toolbar.resources.displayMetrics), 0),
-        )
+        toolbar.display.setUrlBackgroundMargins(DisplayMargins(8.dpToPx(toolbar.resources.displayMetrics), 0))
 
         toolbar.edit.setUrlBackground(urlBackground)
     }
@@ -151,52 +149,59 @@ class InputToolbarIntegration(
 
     @VisibleForTesting
     internal fun observeStartBrowserCfrVisibility() {
-        startBrowsingCfrScope = fragment.components?.appStore?.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.mapNotNull { state -> state.showStartBrowsingTabsCfr }
-                .distinctUntilChanged()
-                .collect { showStartBrowsingCfr ->
-                    if (showStartBrowsingCfr) {
-                        CFRPopup(
-                            anchor = toolbar.findViewById<AppCompatEditText>(
-                                toolbarR.id.mozac_browser_toolbar_background,
-                            ),
-                            properties = CFRPopupProperties(
-                                popupWidth = 256.dp,
-                                popupAlignment = CFRPopup.PopupAlignment.BODY_TO_ANCHOR_START,
-                                popupBodyColors = CFRPopupBackground.Colors(
-                                    listOf(
-                                        ContextCompat.getColor(
-                                            fragment.requireContext(),
-                                            R.color.cfr_pop_up_shape_end_color,
+        startBrowsingCfrScope =
+            fragment.components?.appStore?.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .mapNotNull { state -> state.showStartBrowsingTabsCfr }
+                    .distinctUntilChanged()
+                    .collect { showStartBrowsingCfr ->
+                        if (showStartBrowsingCfr) {
+                            CFRPopup(
+                                    anchor =
+                                        toolbar.findViewById<AppCompatEditText>(
+                                            toolbarR.id.mozac_browser_toolbar_background
                                         ),
-                                        ContextCompat.getColor(
-                                            fragment.requireContext(),
-                                            R.color.cfr_pop_up_shape_start_color,
+                                    properties =
+                                        CFRPopupProperties(
+                                            popupWidth = 256.dp,
+                                            popupAlignment = CFRPopup.PopupAlignment.BODY_TO_ANCHOR_START,
+                                            popupBodyColors =
+                                                CFRPopupBackground.Colors(
+                                                    listOf(
+                                                        ContextCompat.getColor(
+                                                            fragment.requireContext(),
+                                                            R.color.cfr_pop_up_shape_end_color,
+                                                        ),
+                                                        ContextCompat.getColor(
+                                                            fragment.requireContext(),
+                                                            R.color.cfr_pop_up_shape_start_color,
+                                                        ),
+                                                    )
+                                                ),
+                                            dismissButtonColor =
+                                                ContextCompat.getColor(
+                                                    fragment.requireContext(),
+                                                    cardViewR.color.cardview_light_background,
+                                                ),
+                                            popupVerticalOffset = 0.dp,
                                         ),
-                                    ),
-                                ),
-                                dismissButtonColor = ContextCompat.getColor(
-                                    fragment.requireContext(),
-                                    cardViewR.color.cardview_light_background,
-                                ),
-                                popupVerticalOffset = 0.dp,
-                            ),
-                            onDismiss = {
-                                onDismissStartBrowsingCfr()
-                            },
-                            text = {
-                                Text(
-                                    style = focusTypography.cfrTextStyle,
-                                    text = fragment.resources.getString(R.string.cfr_for_start_browsing),
-                                    color = colorResource(R.color.cfr_text_color),
+                                    onDismiss = {
+                                        onDismissStartBrowsingCfr()
+                                    },
+                                    text = {
+                                        Text(
+                                            style = focusTypography.cfrTextStyle,
+                                            text = fragment.resources.getString(R.string.cfr_for_start_browsing),
+                                            color = colorResource(R.color.cfr_text_color),
+                                        )
+                                    },
                                 )
-                            },
-                        ).apply {
-                            show()
+                                .apply {
+                                    show()
+                                }
                         }
                     }
-                }
-        }
+            }
     }
 
     private fun onDismissStartBrowsingCfr() {

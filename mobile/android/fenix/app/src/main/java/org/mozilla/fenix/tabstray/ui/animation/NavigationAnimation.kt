@@ -16,14 +16,10 @@ import androidx.navigation3.scene.Scene
 import androidx.navigationevent.NavigationEvent
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 
-/**
- * Value representing the animation curve's spring stiffness.
- */
+/** Value representing the animation curve's spring stiffness. */
 private const val ANIMATION_STIFFNESS = 150f
 
-/**
- * An animation spec with spring animation curve.
- */
+/** An animation spec with spring animation curve. */
 private val SpringAnimationSpec: FiniteAnimationSpec<IntOffset> = spring(stiffness = ANIMATION_STIFFNESS)
 
 private val EnteringTransitionDirection = AnimatedContentTransitionScope.SlideDirection.Start
@@ -33,8 +29,7 @@ private val LeavingTransitionDirection = AnimatedContentTransitionScope.SlideDir
 private typealias TabManagerScene = Scene<TabManagerNavDestination>
 
 /**
- * Animation spec for transitioning from the Tab Manager's root screen to other tab screens,
- * such as Tab Search.
+ * Animation spec for transitioning from the Tab Manager's root screen to other tab screens, such as Tab Search.
  *
  * This performs a right-to-left transition when navigating to a new screen.
  */
@@ -42,15 +37,16 @@ internal fun defaultTransitionSpec(): AnimatedContentTransitionScope<TabManagerS
     slideIntoContainer(
         towards = EnteringTransitionDirection,
         animationSpec = SpringAnimationSpec,
-    ) togetherWith slideOutOfContainer(
-        towards = EnteringTransitionDirection,
-        animationSpec = SpringAnimationSpec,
-    )
+    ) togetherWith
+        slideOutOfContainer(
+            towards = EnteringTransitionDirection,
+            animationSpec = SpringAnimationSpec,
+        )
 }
 
 /**
- * Animation spec for transitioning from a screen, such as Tab Search, back to the Tab Manager's
- * root screen via the back button.
+ * Animation spec for transitioning from a screen, such as Tab Search, back to the Tab Manager's root screen via the
+ * back button.
  *
  * This performs a left-to-right transition when leaving a screen.
  */
@@ -58,21 +54,21 @@ internal fun popTransitionSpec(): AnimatedContentTransitionScope<TabManagerScene
     slideIntoContainer(
         towards = LeavingTransitionDirection,
         animationSpec = SpringAnimationSpec,
-    ) togetherWith slideOutOfContainer(
-        towards = LeavingTransitionDirection,
-        animationSpec = SpringAnimationSpec,
-    )
+    ) togetherWith
+        slideOutOfContainer(
+            towards = LeavingTransitionDirection,
+            animationSpec = SpringAnimationSpec,
+        )
 }
 
 /**
- * Animation spec for transitioning from a screen, such as Tab Search, back to the Tab Manager's
- * root screen via the navigate back gesture.
+ * Animation spec for transitioning from a screen, such as Tab Search, back to the Tab Manager's root screen via the
+ * navigate back gesture.
  *
- * This scales out  the current screen, so the previous screen becomes visible as the user
- * performs the navigation gesture.
+ * This scales out the current screen, so the previous screen becomes visible as the user performs the navigation
+ * gesture.
  */
-internal fun defaultPredictivePopTransitionSpec(): AnimatedContentTransitionScope<TabManagerScene>.(
-    @NavigationEvent.SwipeEdge Int,
-) -> ContentTransform = {
+internal fun defaultPredictivePopTransitionSpec():
+    AnimatedContentTransitionScope<TabManagerScene>.(@NavigationEvent.SwipeEdge Int) -> ContentTransform = {
     fadeIn(initialAlpha = 1f) togetherWith scaleOut(targetScale = 0.7f)
 }

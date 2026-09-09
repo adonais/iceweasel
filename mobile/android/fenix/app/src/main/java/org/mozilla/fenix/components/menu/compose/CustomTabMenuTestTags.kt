@@ -4,18 +4,12 @@
 
 package org.mozilla.fenix.components.menu.compose
 
-/**
- * Test tags for the custom tab menu composables.
- */
+/** Test tags for the custom tab menu composables. */
 object CustomTabMenuTestTags {
 
-    /**
-     * Test tag for the bookmark page menu item.
-     */
+    /** Test tag for the bookmark page menu item. */
     const val BOOKMARK_PAGE_ITEM = "browser.customtab.menu.bookmark_page"
 
-    /**
-     * Test tag for the edit bookmark menu item.
-     */
+    /** Test tag for the edit bookmark menu item. */
     const val EDIT_BOOKMARK_PAGE_ITEM = "browser.customtab.menu.edit_bookmark"
 }

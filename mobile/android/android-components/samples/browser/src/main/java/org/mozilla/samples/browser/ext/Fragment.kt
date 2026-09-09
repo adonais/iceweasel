@@ -7,8 +7,6 @@ package org.mozilla.samples.browser.ext
 import androidx.fragment.app.Fragment
 import org.mozilla.samples.browser.Components
 
-/**
- * Get the components of this application.
- */
+/** Get the components of this application. */
 val Fragment.components: Components
     get() = context!!.components

@@ -36,14 +36,13 @@ class SecureWindowFeatureTest {
 
     @Test
     fun `add flags to private session`() = runTest {
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = tabId, private = true),
-                ),
-                selectedTabId = tabId,
-            ),
-        )
+        val store =
+            BrowserStore(
+                BrowserState(
+                    tabs = listOf(createTab("https://www.mozilla.org", id = tabId, private = true)),
+                    selectedTabId = tabId,
+                )
+            )
         val feature = SecureWindowFeature(window, store, mainDispatcher = testDispatcher)
 
         feature.start()
@@ -54,14 +53,13 @@ class SecureWindowFeatureTest {
 
     @Test
     fun `remove flags from normal session`() = runTest {
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = tabId, private = false),
-                ),
-                selectedTabId = tabId,
-            ),
-        )
+        val store =
+            BrowserStore(
+                BrowserState(
+                    tabs = listOf(createTab("https://www.mozilla.org", id = tabId, private = false)),
+                    selectedTabId = tabId,
+                )
+            )
         val feature = SecureWindowFeature(window, store, mainDispatcher = testDispatcher)
 
         feature.start()

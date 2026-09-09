@@ -16,9 +16,8 @@ import org.mozilla.fenix.settings.settingssearch.PreferenceFileInformation
  *
  * @param navController [NavController] used to execute any navigation actions on the UI.
  */
-class DownloadNavigationMiddleware(
-    private val navController: NavController,
-) : Middleware<DownloadUIState, DownloadUIAction> {
+class DownloadNavigationMiddleware(private val navController: NavController) :
+    Middleware<DownloadUIState, DownloadUIAction> {
 
     override fun invoke(
         store: Store<DownloadUIState, DownloadUIAction>,
@@ -35,9 +34,7 @@ class DownloadNavigationMiddleware(
                 }
             }
             is DownloadUIAction.SettingsIconClicked -> {
-                navController.navigate(
-                    resId = PreferenceFileInformation.DownloadsSettingsPreferences.fragmentId,
-                )
+                navController.navigate(resId = PreferenceFileInformation.DownloadsSettingsPreferences.fragmentId)
             }
             else -> {} // no-op
         }

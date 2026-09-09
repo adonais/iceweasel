@@ -21,11 +21,13 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
+import com.google.android.material.R as materialR
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import kotlin.reflect.KProperty
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -45,8 +47,6 @@ import mozilla.components.support.ktx.android.content.res.resolveAttribute
 import mozilla.components.support.ktx.android.view.hideKeyboard
 import mozilla.components.support.ktx.android.view.toScope
 import mozilla.components.support.utils.ext.getParcelableCompat
-import kotlin.reflect.KProperty
-import com.google.android.material.R as materialR
 
 private const val KEY_LOGIN_HINT = "KEY_LOGIN_HINT"
 private const val KEY_LOGIN_USERNAME = "KEY_LOGIN_USERNAME"
@@ -58,8 +58,8 @@ private const val KEY_LOGIN_HTTP_REALM = "KEY_LOGIN_HTTP_REALM"
 @VisibleForTesting internal const val KEY_LOGIN_ICON = "KEY_LOGIN_ICON"
 
 /**
- * [android.support.v4.app.DialogFragment] implementation to display a
- * dialog that allows users to save/update usernames and passwords for a given domain.
+ * [android.support.v4.app.DialogFragment] implementation to display a dialog that allows users to save/update usernames
+ * and passwords for a given domain.
  */
 @Suppress("LargeClass")
 internal class SaveLoginDialogFragment : PromptDialogFragment() {
@@ -80,14 +80,11 @@ internal class SaveLoginDialogFragment : PromptDialogFragment() {
     @VisibleForTesting
     internal val icon by lazy { safeArguments.getParcelableCompat(KEY_LOGIN_ICON, Bitmap::class.java) }
 
-    @VisibleForTesting
-    internal var username by SafeArgString(KEY_LOGIN_USERNAME)
+    @VisibleForTesting internal var username by SafeArgString(KEY_LOGIN_USERNAME)
 
-    @VisibleForTesting
-    internal var password by SafeArgString(KEY_LOGIN_PASSWORD)
+    @VisibleForTesting internal var password by SafeArgString(KEY_LOGIN_PASSWORD)
 
-    @Volatile
-    private var loginValid = false
+    @Volatile private var loginValid = false
     private var validateStateUpdate: Job? = null
 
     private var isUpdate = false
@@ -97,12 +94,12 @@ internal class SaveLoginDialogFragment : PromptDialogFragment() {
             setCancelable(true)
             setOnShowListener {
                 /*
-                 Note: we must include a short delay before expanding the bottom sheet.
-                 This is because the keyboard is still in the process of hiding when `onShowListener` is triggered.
-                 Because of this, we'll only be given a small portion of the screen to draw on which will set the bottom
-                 anchor of this view incorrectly to somewhere in the center of the view. If we delay a small amount we
-                 are given the correct amount of space and are properly anchored.
-                 */
+                Note: we must include a short delay before expanding the bottom sheet.
+                This is because the keyboard is still in the process of hiding when `onShowListener` is triggered.
+                Because of this, we'll only be given a small portion of the screen to draw on which will set the bottom
+                anchor of this view incorrectly to somewhere in the center of the view. If we delay a small amount we
+                are given the correct amount of space and are properly anchored.
+                */
                 CoroutineScope(IO).launch {
                     delay(KEYBOARD_HIDING_DELAY)
                     launch(Main) {
@@ -195,11 +192,12 @@ internal class SaveLoginDialogFragment : PromptDialogFragment() {
 
     @VisibleForTesting
     internal fun inflateRootView(container: ViewGroup? = null): View {
-        return LayoutInflater.from(requireContext()).inflate(
-            R.layout.mozac_feature_prompt_save_login_prompt,
-            container,
-            false,
-        )
+        return LayoutInflater.from(requireContext())
+            .inflate(
+                R.layout.mozac_feature_prompt_save_login_prompt,
+                container,
+                false,
+            )
     }
 
     private fun bindUsername(view: View) {
@@ -221,9 +219,8 @@ internal class SaveLoginDialogFragment : PromptDialogFragment() {
                     after: Int,
                 ) = Unit
 
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) =
-                    Unit
-            },
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+            }
         )
 
         with(usernameEditText) {
@@ -246,7 +243,7 @@ internal class SaveLoginDialogFragment : PromptDialogFragment() {
                         setViewState(
                             loginValid = false,
                             passwordErrorText =
-                            context?.getString(R.string.mozac_feature_prompt_error_empty_password_2),
+                                context?.getString(R.string.mozac_feature_prompt_error_empty_password_2),
                         )
                     } else {
                         setViewState(
@@ -256,11 +253,10 @@ internal class SaveLoginDialogFragment : PromptDialogFragment() {
                     }
                 }
 
-                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) =
-                    Unit
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
 
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
-            },
+            }
         )
         passwordEditText.setText(password)
 
@@ -283,77 +279,75 @@ internal class SaveLoginDialogFragment : PromptDialogFragment() {
 
     @VisibleForTesting
     internal fun setImageViewTint(imageView: ImageView) {
-        val tintColor = ContextCompat.getColor(
-            requireContext(),
-            requireContext().theme.resolveAttribute(android.R.attr.textColorPrimary),
-        )
+        val tintColor =
+            ContextCompat.getColor(
+                requireContext(),
+                requireContext().theme.resolveAttribute(android.R.attr.textColorPrimary),
+            )
         ImageViewCompat.setImageTintList(imageView, ColorStateList.valueOf(tintColor))
     }
 
-    /**
-     * Check current state then update view state to match.
-     */
+    /** Check current state then update view state to match. */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     @Suppress("CognitiveComplexMethod")
-    fun update() = view?.toScope()?.launch(IO) {
-        val entry = LoginEntry(
-            origin = origin,
-            formActionOrigin = formActionOrigin,
-            httpRealm = httpRealm,
-            username = username,
-            password = password,
-        )
+    fun update() =
+        view?.toScope()?.launch(IO) {
+            val entry =
+                LoginEntry(
+                    origin = origin,
+                    formActionOrigin = formActionOrigin,
+                    httpRealm = httpRealm,
+                    username = username,
+                    password = password,
+                )
 
-        try {
-            validateStateUpdate?.cancelAndJoin()
-        } catch (cancellationException: CancellationException) {
-            Logger.error("Failed to cancel job", cancellationException)
-        }
-
-        var validateDeferred: Deferred<Result>?
-        validateStateUpdate = launch validate@{
-            if (!loginValid) {
-                // Don't run the validation logic if we know the login is invalid
-                return@validate
+            try {
+                validateStateUpdate?.cancelAndJoin()
+            } catch (cancellationException: CancellationException) {
+                Logger.error("Failed to cancel job", cancellationException)
             }
-            val validationDelegate =
-                feature?.loginValidationDelegate ?: return@validate
-            validateDeferred = validationDelegate.shouldUpdateOrCreateAsync(entry)
-            val result = validateDeferred.await()
-            withContext(Main) {
-                when (result) {
-                    Result.CanBeCreated -> {
-                        isUpdate = false
-                        setViewState(
-                            headline = context?.getString(R.string.mozac_feature_prompt_login_save_headline_2),
-                            negativeText = context?.getString(R.string.mozac_feature_prompt_never_save),
-                            confirmText = context?.getString(R.string.mozac_feature_prompt_save_confirmation),
-                        )
+
+            var validateDeferred: Deferred<Result>?
+            validateStateUpdate = launch validate@{
+                if (!loginValid) {
+                    // Don't run the validation logic if we know the login is invalid
+                    return@validate
+                }
+                val validationDelegate = feature?.loginValidationDelegate ?: return@validate
+                validateDeferred = validationDelegate.shouldUpdateOrCreateAsync(entry)
+                val result = validateDeferred.await()
+                withContext(Main) {
+                    when (result) {
+                        Result.CanBeCreated -> {
+                            isUpdate = false
+                            setViewState(
+                                headline = context?.getString(R.string.mozac_feature_prompt_login_save_headline_2),
+                                negativeText = context?.getString(R.string.mozac_feature_prompt_never_save),
+                                confirmText = context?.getString(R.string.mozac_feature_prompt_save_confirmation),
+                            )
+                        }
+                        is Result.CanBeUpdated -> {
+                            isUpdate = true
+                            setViewState(
+                                headline =
+                                    if (result.foundLogin.username.isEmpty()) {
+                                        context?.getString(R.string.mozac_feature_prompt_login_add_username_headline_2)
+                                    } else {
+                                        context?.getString(R.string.mozac_feature_prompt_login_update_headline_2)
+                                    },
+                                negativeText = context?.getString(R.string.mozac_feature_prompt_dont_update_2),
+                                confirmText = context?.getString(R.string.mozac_feature_prompt_update_confirmation),
+                            )
+                        }
                     }
-                    is Result.CanBeUpdated -> {
-                        isUpdate = true
-                        setViewState(
-                            headline = if (result.foundLogin.username.isEmpty()) {
-                                context?.getString(
-                                    R.string.mozac_feature_prompt_login_add_username_headline_2,
-                                )
-                            } else {
-                                context?.getString(R.string.mozac_feature_prompt_login_update_headline_2)
-                            },
-                            negativeText = context?.getString(R.string.mozac_feature_prompt_dont_update_2),
-                            confirmText =
-                            context?.getString(R.string.mozac_feature_prompt_update_confirmation),
-                        )
+                }
+                validateStateUpdate?.invokeOnCompletion {
+                    if (it is CancellationException) {
+                        validateDeferred.cancel()
                     }
                 }
             }
-            validateStateUpdate?.invokeOnCompletion {
-                if (it is CancellationException) {
-                    validateDeferred.cancel()
-                }
-            }
         }
-    }
 
     private fun setViewState(
         headline: String? = null,
@@ -381,8 +375,7 @@ internal class SaveLoginDialogFragment : PromptDialogFragment() {
         }
 
         if (passwordErrorText != null) {
-            view?.findViewById<TextInputLayout>(R.id.password_text_input_layout)?.error =
-                passwordErrorText
+            view?.findViewById<TextInputLayout>(R.id.password_text_input_layout)?.error = passwordErrorText
         }
     }
 
@@ -391,14 +384,15 @@ internal class SaveLoginDialogFragment : PromptDialogFragment() {
 
         /**
          * A builder method for creating a [SaveLoginDialogFragment]
+         *
          * @param sessionId the id of the session for which this dialog will be created.
          * @param promptRequestUID identifier of the [PromptRequest] for which this dialog is shown.
-         * @param shouldDismissOnLoad whether or not the dialog should automatically be dismissed
-         * when a new page is loaded.
+         * @param shouldDismissOnLoad whether or not the dialog should automatically be dismissed when a new page is
+         *   loaded.
          * @param hint a value that helps to determine the appropriate prompting behavior.
          * @param entry represents login information on a given domain.
          * @param icon represents the icon to be displayed on the dialog.
-         * */
+         */
         fun newInstance(
             sessionId: String,
             promptRequestUID: String,

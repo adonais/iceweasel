@@ -6,9 +6,7 @@ package mozilla.components.support.base.log.sink
 
 import mozilla.components.support.base.log.Log
 
-/**
- * [LogSink] implementation that prints to console.
- */
+/** [LogSink] implementation that prints to console. */
 internal class TestModeLogSink : LogSink {
 
     override fun log(priority: Log.Priority, tag: String?, throwable: Throwable?, message: String) {

@@ -211,3 +211,130 @@ TEST(VideoData, StrideOrSizeMismatch)
     EXPECT_EQ(v.get(), nullptr);
   }
 }
+
+// For a 16-bit buffer (e.g. P010/P016) the luma stride in bytes is twice the
+// width in samples. A picture region whose width is greater than the frame
+// width must be rejected, since the picture region and the frame width are both
+// measured in samples.
+TEST(VideoData, PictureRegionExceedingFrameWidth)
+{
+  constexpr int width = 560;
+  constexpr int height = 16;
+  // 16-bit samples: luma stride in bytes is twice the width in samples.
+  constexpr int yStride = width * 2;
+  constexpr int uvWidth = (width + 1) / 2;
+  constexpr int uvHeight = (height + 1) / 2;
+  constexpr int uvStride = uvWidth * 2;
+
+  // A picture width greater than the frame width.
+  constexpr int picWidth = yStride - 8;
+
+  VideoInfo info(width, height);
+
+  // Size the backing storage for the full picture extent.
+  nsTArray<uint8_t> yStorage;
+  yStorage.SetLength(static_cast<size_t>(yStride) * height);
+  memset(yStorage.Elements(), 0x10, yStorage.Length());
+
+  nsTArray<uint8_t> cbStorage;
+  nsTArray<uint8_t> crStorage;
+  cbStorage.SetLength(static_cast<size_t>(uvStride) * uvHeight);
+  crStorage.SetLength(static_cast<size_t>(uvStride) * uvHeight);
+  memset(cbStorage.Elements(), 0x80, cbStorage.Length());
+  memset(crStorage.Elements(), 0x80, crStorage.Length());
+
+  VideoData::YCbCrBuffer b;
+  b.mColorDepth = gfx::ColorDepth::COLOR_16;
+  b.mChromaSubsampling = gfx::ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
+  b.mYUVColorSpace = gfx::YUVColorSpace::BT601;
+  b.mColorRange = gfx::ColorRange::FULL;
+
+  b.mPlanes[0] = {yStorage.Elements(), width, height, yStride, 0};
+  b.mPlanes[1] = {cbStorage.Elements(), uvWidth, uvHeight, uvStride, 0};
+  b.mPlanes[2] = {crStorage.Elements(), uvWidth, uvHeight, uvStride, 0};
+
+  RefPtr imageContainer = new ImageContainer(
+      ImageUsageType::VideoFrameContainer, ImageContainer::ASYNCHRONOUS);
+  RefPtr widget = nsIWidget::CreateHeadlessWidget();
+  widget->CreateCompositor();
+
+  // A picture region contained in the frame is accepted, confirming the buffer
+  // setup is otherwise valid.
+  IntRect validPicture(0, 0, width, height);
+  RefPtr valid = VideoData::CreateAndCopyData(
+                     info, imageContainer, /*aOffset*/ 0, TimeUnit::Zero(),
+                     TimeUnit::FromSeconds(1), b, /*aKeyFrame*/ true,
+                     TimeUnit::Zero(), validPicture, /*aAllocator*/ nullptr)
+                     .unwrapOr(nullptr);
+  EXPECT_NE(valid.get(), nullptr);
+
+  // A picture region wider than the frame is rejected with NS_ERROR_INVALID_ARG
+  // during validation.
+  IntRect picture(0, 0, picWidth, height);
+  Result res = VideoData::CreateAndCopyData(
+      info, imageContainer, /*aOffset*/ 0, TimeUnit::Zero(),
+      TimeUnit::FromSeconds(1), b, /*aKeyFrame*/ true, TimeUnit::Zero(),
+      picture,
+      /*aAllocator*/ nullptr);
+  ASSERT_TRUE(res.isErr());
+  EXPECT_EQ(res.inspectErr().Code(), NS_ERROR_INVALID_ARG);
+}
+
+namespace {
+// Records whether the pixel copy runs; the copy itself is a no-op so the test
+// exercises SetVideoDataToImage's picture-rect handling without touching
+// pixels.
+class NoCopyPlanarYCbCrImage final : public PlanarYCbCrImage {
+ public:
+  NoCopyPlanarYCbCrImage() { mSize = IntSize(0, 0); }
+  nsresult CopyData(const Data&) override {
+    mCopyDataCalled = true;
+    return NS_OK;
+  }
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf) const { return 0; }
+  bool mCopyDataCalled = false;
+};
+}  // namespace
+
+TEST(VideoData, SetVideoDataToImagePictureRect)
+{
+  const uint32_t w = 320, h = 240;
+  nsTArray<uint8_t> storage;
+  VideoData::YCbCrBuffer buf{};
+  BuildI420Buffer(w, h, storage, buf);
+
+  VideoInfo info(w, h);
+
+  // A picture rect that fits the buffer is accepted and the copy runs.
+  RefPtr<NoCopyPlanarYCbCrImage> fitImage = new NoCopyPlanarYCbCrImage();
+  MediaResult fit = VideoData::SetVideoDataToImage(fitImage, info, buf,
+                                                   IntRect(0, 0, w, h), true);
+  EXPECT_TRUE(NS_SUCCEEDED(fit));
+  EXPECT_TRUE(fitImage->mCopyDataCalled);
+
+  // A picture rect larger than the buffer is not accepted.
+  RefPtr<NoCopyPlanarYCbCrImage> oversizedImage = new NoCopyPlanarYCbCrImage();
+  MediaResult oversized = VideoData::SetVideoDataToImage(
+      oversizedImage, info, buf, IntRect(0, 0, w, h * 4), true);
+  EXPECT_TRUE(NS_FAILED(oversized));
+  EXPECT_FALSE(oversizedImage->mCopyDataCalled);
+}
+
+TEST(VideoInfo, AdoptImageSize)
+{
+  // An unchanged image size keeps an existing sub-crop.
+  {
+    VideoInfo info(320, 240);
+    info.SetImageRect(IntRect(10, 10, 300, 220));
+    info.AdoptImageSize(IntSize(320, 240));
+    EXPECT_EQ(info.ImageRect(), IntRect(10, 10, 300, 220));
+  }
+
+  // A changed image size discards the previous picture rectangle.
+  {
+    VideoInfo info(320, 4096);
+    info.SetImageRect(IntRect(0, 0, 320, 4096));
+    info.AdoptImageSize(IntSize(320, 240));
+    EXPECT_EQ(info.ImageRect(), IntRect(0, 0, 320, 240));
+  }
+}

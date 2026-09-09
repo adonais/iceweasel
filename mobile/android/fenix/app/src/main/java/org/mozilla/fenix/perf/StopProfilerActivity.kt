@@ -12,12 +12,12 @@ import androidx.appcompat.app.AppCompatActivity
 private const val DIALOG_TAG = "StopProfilerDialogTag"
 
 /**
- * An activity that displays a dialog([ProfilerStopDialogFragment]) for stopping the profiler.
- *This activity is launched the profiling notification displayed by [ProfilerService] is tapped.
+ * An activity that displays a dialog([ProfilerStopDialogFragment]) for stopping the profiler. This activity is launched
+ * the profiling notification displayed by [ProfilerService] is tapped.
  *
  * ## Usage:
- * This activity is typically launched via a [PendingIntent] from the profiling
- * notification and should not be started directly by application code.
+ * This activity is typically launched via a [PendingIntent] from the profiling notification and should not be started
+ * directly by application code.
  */
 class StopProfilerActivity : AppCompatActivity() {
 

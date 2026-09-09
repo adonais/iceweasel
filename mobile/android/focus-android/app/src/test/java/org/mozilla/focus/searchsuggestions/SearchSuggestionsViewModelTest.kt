@@ -23,11 +23,9 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class SearchSuggestionsViewModelTest {
-    @get:Rule
-    var rule: TestRule = InstantTaskExecutorRule()
+    @get:Rule var rule: TestRule = InstantTaskExecutorRule()
 
-    @Mock
-    private lateinit var observer: Observer<String?>
+    @Mock private lateinit var observer: Observer<String?>
 
     private lateinit var lifecycle: LifecycleRegistry
     private lateinit var viewModel: SearchSuggestionsViewModel

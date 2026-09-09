@@ -5,17 +5,13 @@
 package org.mozilla.fenix.exceptions
 
 /**
- * Interface for exceptions view interactors. This interface is implemented by objects that want
- * to respond to user interaction on the [ExceptionsView].
+ * Interface for exceptions view interactors. This interface is implemented by objects that want to respond to user
+ * interaction on the [ExceptionsView].
  */
 interface ExceptionsInteractor<T> {
-    /**
-     * Called whenever all exception items are deleted
-     */
+    /** Called whenever all exception items are deleted */
     fun onDeleteAll()
 
-    /**
-     * Called whenever one exception item is deleted
-     */
+    /** Called whenever one exception item is deleted */
     fun onDeleteOne(item: T)
 }

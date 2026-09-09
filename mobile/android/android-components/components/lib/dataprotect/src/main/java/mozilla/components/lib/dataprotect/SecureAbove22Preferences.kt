@@ -9,10 +9,10 @@ import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
 import android.util.Base64
 import androidx.core.content.edit
-import mozilla.components.concept.base.crash.CrashReporting
-import mozilla.components.support.base.log.logger.Logger
 import java.nio.charset.StandardCharsets
 import java.security.GeneralSecurityException
+import mozilla.components.concept.base.crash.CrashReporting
+import mozilla.components.support.base.log.logger.Logger
 
 private interface KeyValuePreferences {
     /**
@@ -38,28 +38,24 @@ private interface KeyValuePreferences {
      */
     fun putString(key: String, value: String)
 
-    /**
-     * Removes key/value pair from storage for the provided [key].
-     */
+    /** Removes key/value pair from storage for the provided [key]. */
     fun remove(key: String)
 
-    /**
-     * Clears all key/value pairs from the storage.
-     */
+    /** Clears all key/value pairs from the storage. */
     fun clear()
 }
 
 /**
- * A wrapper around [SharedPreferences] which encrypts contents on supported API versions (23+).
- * Otherwise, this simply delegates to [SharedPreferences].
+ * A wrapper around [SharedPreferences] which encrypts contents on supported API versions (23+). Otherwise, this simply
+ * delegates to [SharedPreferences].
  *
- * In rare circumstances (such as APK signing key rotation) a master key which protects this storage may be lost,
- * in which case previously stored values will be lost as well. Applications are encouraged to instrument such events.
+ * In rare circumstances (such as APK signing key rotation) a master key which protects this storage may be lost, in
+ * which case previously stored values will be lost as well. Applications are encouraged to instrument such events.
  *
  * @param context A [Context], used for accessing [SharedPreferences].
  * @param name A name for this storage, used for isolating different instances of [SecureAbove22Preferences].
  * @param forceInsecure A flag indicating whether to force plaintext storage. If set to `true`,
- * [InsecurePreferencesImpl21] will be used as a storage layer
+ *   [InsecurePreferencesImpl21] will be used as a storage layer
  */
 class SecureAbove22Preferences(
     context: Context,
@@ -67,11 +63,12 @@ class SecureAbove22Preferences(
     forceInsecure: Boolean = false,
     crashReporting: CrashReporting? = null,
 ) : KeyValuePreferences {
-    private val impl = if (!forceInsecure) {
-        SecurePreferencesImpl23(context, name, crashReporting = crashReporting)
-    } else {
-        InsecurePreferencesImpl21(context, name)
-    }
+    private val impl =
+        if (!forceInsecure) {
+            SecurePreferencesImpl23(context, name, crashReporting = crashReporting)
+        } else {
+            InsecurePreferencesImpl21(context, name)
+        }
 
     override fun all(): Map<String, String> = impl.all()
 
@@ -123,13 +120,15 @@ private class InsecurePreferencesImpl21(
     }
 
     override fun all(): Map<String, String> {
-        return prefs.all.mapNotNull {
-            if (it.value is String) {
-                it.key to it.value as String
-            } else {
-                null
+        return prefs.all
+            .mapNotNull {
+                if (it.value is String) {
+                    it.key to it.value as String
+                } else {
+                    null
+                }
             }
-        }.toMap()
+            .toMap()
     }
 
     override fun getString(key: String) = prefs.getString(key, null)
@@ -147,9 +146,7 @@ private class InsecurePreferencesImpl21(
     }
 }
 
-/**
- * A [KeyValuePreferences] which is backed by [SharedPreferences] and performs encryption/decryption of values.
- */
+/** A [KeyValuePreferences] which is backed by [SharedPreferences] and performs encryption/decryption of values. */
 private class SecurePreferencesImpl23(
     context: Context,
     name: String,
@@ -181,11 +178,13 @@ private class SecurePreferencesImpl23(
     }
 
     override fun all(): Map<String, String> {
-        return prefs.all.keys.mapNotNull { key ->
-            getString(key)?.let { value ->
-                key to value
+        return prefs.all.keys
+            .mapNotNull { key ->
+                getString(key)?.let { value ->
+                    key to value
+                }
             }
-        }.toMap()
+            .toMap()
     }
 
     override fun getString(key: String): String? {

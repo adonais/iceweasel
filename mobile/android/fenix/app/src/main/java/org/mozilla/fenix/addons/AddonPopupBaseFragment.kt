@@ -31,6 +31,7 @@ import mozilla.components.feature.downloads.CurrentDownloadState
 import mozilla.components.feature.downloads.DownloadsFeature
 import mozilla.components.feature.downloads.NegativeActionCallback
 import mozilla.components.feature.downloads.PositiveActionCallback
+import mozilla.components.feature.downloads.R as downloadsR
 import mozilla.components.feature.downloads.manager.FetchDownloadManager
 import mozilla.components.feature.prompts.PromptFeature
 import mozilla.components.feature.prompts.file.AndroidPhotoPicker
@@ -51,17 +52,10 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.downloads.DownloadLocationManager
 import org.mozilla.fenix.theme.ThemeManager
-import mozilla.components.feature.downloads.R as downloadsR
 
-/**
- * Provides shared functionality to our fragments for add-on settings and
- * browser/page action popups.
- */
+/** Provides shared functionality to our fragments for add-on settings and browser/page action popups. */
 abstract class AddonPopupBaseFragment :
-    Fragment(),
-    EngineSession.Observer,
-    UserInteractionHandler,
-    ActivityResultHandler {
+    Fragment(), EngineSession.Observer, UserInteractionHandler, ActivityResultHandler {
     private val promptsFeature = ViewBoundFeatureWrapper<PromptFeature>()
     private val downloadsFeature = ViewBoundFeatureWrapper<DownloadsFeature>()
 
@@ -89,126 +83,137 @@ abstract class AddonPopupBaseFragment :
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         session?.let {
             promptsFeature.set(
-                feature = PromptFeature(
-                    activity = requireActivity(),
-                    store = requireComponents.core.store,
-                    customTabId = it.id,
-                    fragmentManager = parentFragmentManager,
-                    fileUploadsDirCleaner = requireComponents.core.fileUploadsDirCleaner,
-                    onNeedToRequestPermissions = { permissions ->
-                        requestPermissions(permissions, REQUEST_CODE_PROMPT_PERMISSIONS)
-                    },
-                    isEmailMaskFeatureEnabled = { requireComponents.settings.isEmailMaskFeatureEnabled },
-                    isSuggestEmailMaskEnabled = { requireComponents.settings.isEmailMaskSuggestionEnabled },
-                    tabsUseCases = requireComponents.useCases.tabsUseCases,
-                    androidPhotoPicker = AndroidPhotoPicker(
-                        requireContext(),
-                        singleMediaPicker,
-                        multipleMediaPicker,
+                feature =
+                    PromptFeature(
+                        activity = requireActivity(),
+                        store = requireComponents.core.store,
+                        customTabId = it.id,
+                        fragmentManager = parentFragmentManager,
+                        fileUploadsDirCleaner = requireComponents.core.fileUploadsDirCleaner,
+                        onNeedToRequestPermissions = { permissions ->
+                            requestPermissions(permissions, REQUEST_CODE_PROMPT_PERMISSIONS)
+                        },
+                        isEmailMaskFeatureEnabled = { requireComponents.settings.isEmailMaskFeatureEnabled },
+                        isSuggestEmailMaskEnabled = { requireComponents.settings.isEmailMaskSuggestionEnabled },
+                        tabsUseCases = requireComponents.useCases.tabsUseCases,
+                        androidPhotoPicker =
+                            AndroidPhotoPicker(
+                                requireContext(),
+                                singleMediaPicker,
+                                multipleMediaPicker,
+                            ),
                     ),
-                ),
                 owner = this,
                 view = view,
             )
-            val downloadFileUtils: DownloadFileUtils = DefaultDownloadFileUtils(
-                context = requireContext(),
-                downloadLocation = {
-                    DownloadLocationManager(
-                        requireComponents.settings,
-                        requireContext().contentResolver,
-                    ).defaultLocation
-                },
-            )
-            val downloadFeature = DownloadsFeature(
-                requireContext().applicationContext,
-                store = provideBrowserStore(),
-                useCases = requireContext().components.useCases.downloadUseCases,
-                downloadFileUtils = downloadFileUtils,
-                fragmentManager = childFragmentManager,
-                tabId = it.id,
-                downloadManager = FetchDownloadManager(
+            val downloadFileUtils: DownloadFileUtils =
+                DefaultDownloadFileUtils(
+                    context = requireContext(),
+                    downloadLocation = {
+                        DownloadLocationManager(
+                                requireComponents.settings,
+                                requireContext().contentResolver,
+                            )
+                            .defaultLocation
+                    },
+                )
+            val downloadFeature =
+                DownloadsFeature(
                     requireContext().applicationContext,
-                    provideBrowserStore(),
-                    DownloadService::class,
-                    notificationsDelegate = requireContext().components.notificationsDelegate,
-                ),
-                shouldForwardToThirdParties = {
-                    PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(
-                        requireContext().getPreferenceKey(R.string.pref_key_external_download_manager),
-                        false,
-                    )
-                },
-                promptsStyling = DownloadsFeature.PromptsStyling(
-                    gravity = Gravity.BOTTOM,
-                    shouldWidthMatchParent = true,
-                    positiveButtonBackgroundColor = ThemeManager.resolveAttribute(
-                        R.attr.accent,
-                        requireContext(),
-                    ),
-                    positiveButtonTextColor = ThemeManager.resolveAttribute(
-                        R.attr.textOnColorPrimary,
-                        requireContext(),
-                    ),
-                    positiveButtonRadius = pixelSizeFor(R.dimen.tab_corner_radius).toFloat(),
-                ),
-                onDownloadStartedListener = { downloadId ->
-                    requireComponents.appStore.dispatch(
-                        AppAction.DownloadAction.DownloadInProgress(
-                             downloadId,
+                    store = provideBrowserStore(),
+                    useCases = requireContext().components.useCases.downloadUseCases,
+                    downloadFileUtils = downloadFileUtils,
+                    fragmentManager = childFragmentManager,
+                    tabId = it.id,
+                    downloadManager =
+                        FetchDownloadManager(
+                            requireContext().applicationContext,
+                            provideBrowserStore(),
+                            DownloadService::class,
+                            notificationsDelegate = requireContext().components.notificationsDelegate,
                         ),
-                    )
-                },
-                onNeedToRequestPermissions = { permissions ->
-                    requestPermissions(permissions, REQUEST_CODE_DOWNLOAD_PERMISSIONS)
-                },
-                dismissCustomFirstPartyDownloadDialog = {
-                    dismissRenameDialog()
-                    downloadDialog?.dismiss()
-                },
-                customFirstPartyDownloadDialog = { currentDownloadState, _, positiveAction, negativeAction, _ ->
-                    run {
-                        if (canShowDownloadDialog()) {
-                            if (!FxNimbus.features.downloadsCustomLocation.value().enabled) {
-                                showFirstPartyDownloadDialog(
-                                    currentDownloadState = currentDownloadState,
-                                    positiveAction = positiveAction,
-                                    negativeAction = negativeAction,
-                                )
-                            } else {
-                                currentDownloadState.value.fileName?.let { fileName ->
-                                    showRenameDownloadDialog(
-                                        fileName = fileName,
+                    shouldForwardToThirdParties = {
+                        PreferenceManager.getDefaultSharedPreferences(requireContext())
+                            .getBoolean(
+                                requireContext().getPreferenceKey(R.string.pref_key_external_download_manager),
+                                false,
+                            )
+                    },
+                    promptsStyling =
+                        DownloadsFeature.PromptsStyling(
+                            gravity = Gravity.BOTTOM,
+                            shouldWidthMatchParent = true,
+                            positiveButtonBackgroundColor =
+                                ThemeManager.resolveAttribute(
+                                    R.attr.accent,
+                                    requireContext(),
+                                ),
+                            positiveButtonTextColor =
+                                ThemeManager.resolveAttribute(
+                                    R.attr.textOnColorPrimary,
+                                    requireContext(),
+                                ),
+                            positiveButtonRadius = pixelSizeFor(R.dimen.tab_corner_radius).toFloat(),
+                        ),
+                    onDownloadStartedListener = { downloadId ->
+                        requireComponents.appStore.dispatch(AppAction.DownloadAction.DownloadInProgress(downloadId))
+                    },
+                    onNeedToRequestPermissions = { permissions ->
+                        requestPermissions(permissions, REQUEST_CODE_DOWNLOAD_PERMISSIONS)
+                    },
+                    dismissCustomFirstPartyDownloadDialog = {
+                        dismissRenameDialog()
+                        downloadDialog?.dismiss()
+                    },
+                    customFirstPartyDownloadDialog = { currentDownloadState, _, positiveAction, negativeAction, _ ->
+                        run {
+                            if (canShowDownloadDialog()) {
+                                if (!FxNimbus.features.downloadsCustomLocation.value().enabled) {
+                                    showFirstPartyDownloadDialog(
                                         currentDownloadState = currentDownloadState,
                                         positiveAction = positiveAction,
                                         negativeAction = negativeAction,
                                     )
+                                } else {
+                                    currentDownloadState.value.fileName?.let { fileName ->
+                                        showRenameDownloadDialog(
+                                            fileName = fileName,
+                                            currentDownloadState = currentDownloadState,
+                                            positiveAction = positiveAction,
+                                            negativeAction = negativeAction,
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
-                },
-                customThirdPartyDownloadDialog = { downloaderApps, onAppSelected, negativeActionCallback ->
-                    run {
-                        if (canShowDownloadDialog()) {
-                            requireContext().components.analytics.crashReporter.recordCrashBreadcrumb(
-                                Breadcrumb("DownloaderAppDialog created"),
-                            )
-                            downloadDialog = createDownloadAppDialog(
-                                context = requireContext(),
-                                downloaderApps = downloaderApps.value,
-                                onAppSelected = onAppSelected.value,
-                                onDismiss = {
-                                    downloadDialog = null
-                                    requireContext().components.analytics.crashReporter.recordCrashBreadcrumb(
-                                        Breadcrumb("DownloaderAppDialog onDismiss"),
+                    },
+                    customThirdPartyDownloadDialog = { downloaderApps, onAppSelected, negativeActionCallback ->
+                        run {
+                            if (canShowDownloadDialog()) {
+                                requireContext()
+                                    .components
+                                    .analytics
+                                    .crashReporter
+                                    .recordCrashBreadcrumb(Breadcrumb("DownloaderAppDialog created"))
+                                downloadDialog =
+                                    createDownloadAppDialog(
+                                        context = requireContext(),
+                                        downloaderApps = downloaderApps.value,
+                                        onAppSelected = onAppSelected.value,
+                                        onDismiss = {
+                                            downloadDialog = null
+                                            requireContext()
+                                                .components
+                                                .analytics
+                                                .crashReporter
+                                                .recordCrashBreadcrumb(Breadcrumb("DownloaderAppDialog onDismiss"))
+                                        },
                                     )
-                                },
-                            )
-                            downloadDialog?.show()
+                                downloadDialog?.show()
+                            }
                         }
-                    }
-                },
-            )
+                    },
+                )
             downloadsFeature.set(
                 downloadFeature,
                 owner = this,
@@ -234,30 +239,34 @@ abstract class AddonPopupBaseFragment :
     ) {
         session?.let { session ->
             val fileSize = if (contentLength != null && contentLength < 0) null else contentLength
-            val download = DownloadState(
-                url,
-                fileName,
-                contentType,
-                fileSize,
-                0,
-                Status.INITIATED,
-                userAgent,
-                directoryPath = DownloadLocationManager(
-                    requireComponents.settings,
-                    requireContext().contentResolver,
-                ).defaultLocation,
-                private = isPrivate,
-                skipConfirmation = skipConfirmation,
-                openInApp = openInApp,
-                response = response,
-            )
+            val download =
+                DownloadState(
+                    url,
+                    fileName,
+                    contentType,
+                    fileSize,
+                    0,
+                    Status.INITIATED,
+                    userAgent,
+                    directoryPath =
+                        DownloadLocationManager(
+                                requireComponents.settings,
+                                requireContext().contentResolver,
+                            )
+                            .defaultLocation,
+                    private = isPrivate,
+                    skipConfirmation = skipConfirmation,
+                    openInApp = openInApp,
+                    response = response,
+                )
 
-            provideBrowserStore().dispatch(
-                ContentAction.UpdateDownloadAction(
-                    session.id,
-                    download,
-                ),
-            )
+            provideBrowserStore()
+                .dispatch(
+                    ContentAction.UpdateDownloadAction(
+                        session.id,
+                        download,
+                    )
+                )
         }
     }
 
@@ -295,7 +304,7 @@ abstract class AddonPopupBaseFragment :
                 ContentAction.UpdatePromptRequestAction(
                     session.id,
                     promptRequest,
-                ),
+                )
             )
         }
     }
@@ -323,10 +332,12 @@ abstract class AddonPopupBaseFragment :
 
     protected fun initializeSession(fromEngineSession: EngineSession? = null) {
         engineSession = fromEngineSession ?: requireComponents.core.engine.createSession()
-        session = createCustomTab(
-            url = "",
-            source = SessionState.Source.Internal.CustomTab,
-        ).copy(engineState = EngineState(engineSession))
+        session =
+            createCustomTab(
+                    url = "",
+                    source = SessionState.Source.Internal.CustomTab,
+                )
+                .copy(engineState = EngineState(engineSession))
         requireComponents.core.store.dispatch(CustomTabListAction.AddCustomTabAction(session as CustomTabSessionState))
     }
 
@@ -360,58 +371,47 @@ abstract class AddonPopupBaseFragment :
         // If the download is just paused, don't show any in-app notification
         if (shouldShowCompletedDownloadDialog(downloadState, downloadJobStatus)) {
             if (downloadState.openInApp && downloadJobStatus == Status.COMPLETED) {
-                val fileWasOpened = downloadFileUtils.openFile(
-                    fileName = downloadState.fileName,
-                    directoryPath = downloadState.directoryPath,
-                    contentType = downloadState.contentType,
-                )
+                val fileWasOpened =
+                    downloadFileUtils.openFile(
+                        fileName = downloadState.fileName,
+                        directoryPath = downloadState.directoryPath,
+                        contentType = downloadState.contentType,
+                    )
                 if (!fileWasOpened) {
                     requireComponents.appStore.dispatch(
-                        AppAction.DownloadAction.CannotOpenFile(
-                            downloadState = downloadState,
-                        ),
+                        AppAction.DownloadAction.CannotOpenFile(downloadState = downloadState)
                     )
                 }
             } else {
                 if (downloadJobStatus == Status.FAILED) {
-                    requireComponents.appStore.dispatch(
-                        AppAction.DownloadAction.DownloadFailed(
-                            downloadState.fileName,
-                        ),
-                    )
+                    requireComponents.appStore.dispatch(AppAction.DownloadAction.DownloadFailed(downloadState.fileName))
                 } else {
-                    requireComponents.appStore.dispatch(
-                        AppAction.DownloadAction.DownloadCompleted(
-                            downloadState,
-                        ),
-                    )
+                    requireComponents.appStore.dispatch(AppAction.DownloadAction.DownloadCompleted(downloadState))
                 }
             }
         }
     }
 
     private fun canShowDownloadDialog(): Boolean {
-        val isRenameFragmentShowing = childFragmentManager.findFragmentByTag(
-            RenameAndChangeLocationDialogFragment.RENAME_AND_CHANGE_LOCATION_DIALOG_TAG,
-        ) != null
+        val isRenameFragmentShowing =
+            childFragmentManager.findFragmentByTag(
+                RenameAndChangeLocationDialogFragment.RENAME_AND_CHANGE_LOCATION_DIALOG_TAG
+            ) != null
 
         return downloadDialog == null && !isRenameFragmentShowing
     }
 
     private fun dismissRenameDialog() {
-        val renameDialog = childFragmentManager.findFragmentByTag(
-            RenameAndChangeLocationDialogFragment.RENAME_AND_CHANGE_LOCATION_DIALOG_TAG,
-        ) as? RenameAndChangeLocationDialogFragment
+        val renameDialog =
+            childFragmentManager.findFragmentByTag(
+                RenameAndChangeLocationDialogFragment.RENAME_AND_CHANGE_LOCATION_DIALOG_TAG
+            ) as? RenameAndChangeLocationDialogFragment
         renameDialog?.dismissAllowingStateLoss()
     }
 
-    /**
-     * Forwards activity results to the [ActivityResultHandler] features.
-     */
+    /** Forwards activity results to the [ActivityResultHandler] features. */
     override fun onActivityResult(requestCode: Int, data: Intent?, resultCode: Int): Boolean {
-        return listOf(
-            promptsFeature,
-        ).any { it.onActivityResult(requestCode, data, resultCode) }
+        return listOf(promptsFeature).any { it.onActivityResult(requestCode, data, resultCode) }
     }
 
     private fun showFirstPartyDownloadDialog(
@@ -420,40 +420,38 @@ abstract class AddonPopupBaseFragment :
         negativeAction: NegativeActionCallback,
     ) {
         val contentSize = currentDownloadState.value.contentLength ?: 0
-        val title = if (contentSize > 0L) {
-            val contentSizeInBytes = requireComponents.core.fileSizeFormatter.formatSizeInBytes(
-                contentSize,
-            )
-            getString(
-                downloadsR.string.mozac_feature_downloads_dialog_title_3,
-                contentSizeInBytes,
-            )
-        } else {
-            getString(
-                downloadsR.string.mozac_feature_downloads_dialog_title_with_unknown_size,
-            )
-        }
-
-        downloadDialog = MaterialAlertDialogBuilder(requireContext())
-            .setTitle(title)
-            .setMessage(currentDownloadState.value.fileName)
-            .setPositiveButton(
-                downloadsR.string.mozac_feature_downloads_dialog_download,
-            ) { dialog, _ ->
-                positiveAction.value.invoke(currentDownloadState.value)
-                dialog.dismiss()
-            }
-            .setNegativeButton(
-                downloadsR.string.mozac_feature_downloads_dialog_cancel,
-            ) { dialog, _ ->
-                negativeAction.value.invoke()
-                dialog.dismiss()
-            }.setOnDismissListener {
-                downloadDialog = null
-                requireContext().components.analytics.crashReporter.recordCrashBreadcrumb(
-                    Breadcrumb("FirstPartyDownloadDialog onDismiss"),
+        val title =
+            if (contentSize > 0L) {
+                val contentSizeInBytes = requireComponents.core.fileSizeFormatter.formatSizeInBytes(contentSize)
+                getString(
+                    downloadsR.string.mozac_feature_downloads_dialog_title_3,
+                    contentSizeInBytes,
                 )
-            }.show()
+            } else {
+                getString(downloadsR.string.mozac_feature_downloads_dialog_title_with_unknown_size)
+            }
+
+        downloadDialog =
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(title)
+                .setMessage(currentDownloadState.value.fileName)
+                .setPositiveButton(downloadsR.string.mozac_feature_downloads_dialog_download) { dialog, _ ->
+                    positiveAction.value.invoke(currentDownloadState.value)
+                    dialog.dismiss()
+                }
+                .setNegativeButton(downloadsR.string.mozac_feature_downloads_dialog_cancel) { dialog, _ ->
+                    negativeAction.value.invoke()
+                    dialog.dismiss()
+                }
+                .setOnDismissListener {
+                    downloadDialog = null
+                    requireContext()
+                        .components
+                        .analytics
+                        .crashReporter
+                        .recordCrashBreadcrumb(Breadcrumb("FirstPartyDownloadDialog onDismiss"))
+                }
+                .show()
     }
 
     private fun showRenameDownloadDialog(
@@ -462,21 +460,24 @@ abstract class AddonPopupBaseFragment :
         positiveAction: PositiveActionCallback,
         negativeAction: NegativeActionCallback,
     ) {
-        val existingFragment = childFragmentManager.findFragmentByTag(
-            RenameAndChangeLocationDialogFragment.RENAME_AND_CHANGE_LOCATION_DIALOG_TAG,
-        )
+        val existingFragment =
+            childFragmentManager.findFragmentByTag(
+                RenameAndChangeLocationDialogFragment.RENAME_AND_CHANGE_LOCATION_DIALOG_TAG
+            )
 
         if (existingFragment == null && isAdded && !childFragmentManager.isStateSaved) {
-            val renameDialog = RenameAndChangeLocationDialogFragment.newInstance(
-                fileName = fileName,
-                directoryPath = currentDownloadState.value.directoryPath,
-                contentSize = currentDownloadState.value.contentLength ?: 0,
-            )
-            renameDialog.onConfirmSave = { newFileName: String, directoryPath: String ->
-                val downloadState = currentDownloadState.value.copy(
-                    fileName = newFileName,
-                    directoryPath = directoryPath,
+            val renameDialog =
+                RenameAndChangeLocationDialogFragment.newInstance(
+                    fileName = fileName,
+                    directoryPath = currentDownloadState.value.directoryPath,
+                    contentSize = currentDownloadState.value.contentLength ?: 0,
                 )
+            renameDialog.onConfirmSave = { newFileName: String, directoryPath: String ->
+                val downloadState =
+                    currentDownloadState.value.copy(
+                        fileName = newFileName,
+                        directoryPath = directoryPath,
+                    )
                 positiveAction.value.invoke(downloadState)
             }
             renameDialog.onCancel = {

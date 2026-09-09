@@ -412,7 +412,7 @@ mpl_get_bits(const mp_int *a, mp_size lsbNum, mp_size numBits)
         x = d >> (i);                              \
         mask = (0 - x);                            \
         mask = (0 - (mask >> (MP_DIGIT_BIT - 1))); \
-        bits += (i)&mask;                          \
+        bits += (i) & mask;                        \
         d ^= (x ^ d) & mask;                       \
     } while (0)
 

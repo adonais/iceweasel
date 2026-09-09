@@ -41,20 +41,21 @@ class LoginFragment : Fragment() {
         webView.settings.javaScriptEnabled = true
         CookieManager.getInstance().setAcceptCookie(true)
 
-        webView.webViewClient = object : WebViewClient() {
-            override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                if (url != null && url.startsWith(redirectUrl)) {
-                    val uri = url.toUri()
-                    val code = uri.getQueryParameter("code")
-                    val state = uri.getQueryParameter("state")
-                    if (code != null && state != null) {
-                        listener?.onLoginComplete(code, state, this@LoginFragment)
+        webView.webViewClient =
+            object : WebViewClient() {
+                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                    if (url != null && url.startsWith(redirectUrl)) {
+                        val uri = url.toUri()
+                        val code = uri.getQueryParameter("code")
+                        val state = uri.getQueryParameter("state")
+                        if (code != null && state != null) {
+                            listener?.onLoginComplete(code, state, this@LoginFragment)
+                        }
                     }
-                }
 
-                super.onPageStarted(view, url, favicon)
+                    super.onPageStarted(view, url, favicon)
+                }
             }
-        }
         webView.loadUrl(authUrl)
 
         mWebView?.destroy()
@@ -98,10 +99,11 @@ class LoginFragment : Fragment() {
 
         fun create(authUrl: String, redirectUrl: String): LoginFragment =
             LoginFragment().apply {
-                arguments = Bundle().apply {
-                    putString(AUTH_URL, authUrl)
-                    putString(REDIRECT_URL, redirectUrl)
-                }
+                arguments =
+                    Bundle().apply {
+                        putString(AUTH_URL, authUrl)
+                        putString(REDIRECT_URL, redirectUrl)
+                    }
             }
     }
 }

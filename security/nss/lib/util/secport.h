@@ -128,9 +128,9 @@ SEC_END_PROTOS
 
 /* macros to handle endian based byte conversion */
 #define PORT_GET_BYTE_BE(value, offset, len) \
-    ((unsigned char)(((len) - (offset)-1) >= sizeof(value) ? 0 : (((value) >> (((len) - (offset)-1) * PR_BITS_PER_BYTE)) & 0xff)))
+    ((unsigned char)(((len) - (offset) - 1) >= sizeof(value) ? 0 : (((value) >> (((len) - (offset) - 1) * PR_BITS_PER_BYTE)) & 0xff)))
 #define PORT_GET_BYTE_LE(value, offset, len) \
-    ((unsigned char)((offset) > sizeof(value) ? 0 : (((value) >> ((offset)*PR_BITS_PER_BYTE)) & 0xff)))
+    ((unsigned char)((offset) > sizeof(value) ? 0 : (((value) >> ((offset) * PR_BITS_PER_BYTE)) & 0xff)))
 
 /* This runs a function that should return SECSuccess.
  * Intended for NSS internal use only.

@@ -17,17 +17,18 @@ class DownloadEntityTest {
 
     @Test
     fun `convert a DownloadEntity to a DownloadState`() {
-        val downloadEntity = DownloadEntity(
-            id = "1",
-            url = "url",
-            fileName = "fileName",
-            contentType = "application/zip",
-            contentLength = 5242880,
-            status = DownloadState.Status.DOWNLOADING,
-            directoryPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path,
-            createdAt = 33,
-            etag = "etag",
-        )
+        val downloadEntity =
+            DownloadEntity(
+                id = "1",
+                url = "url",
+                fileName = "fileName",
+                contentType = "application/zip",
+                contentLength = 5242880,
+                status = DownloadState.Status.DOWNLOADING,
+                directoryPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path,
+                createdAt = 33,
+                etag = "etag",
+            )
 
         val downloadState = downloadEntity.toDownloadState()
 
@@ -44,18 +45,19 @@ class DownloadEntityTest {
 
     @Test
     fun `convert a DownloadState to DownloadEntity`() {
-        val downloadState = DownloadState(
-            id = "1",
-            url = "url",
-            fileName = "fileName",
-            contentType = "application/zip",
-            contentLength = 5242880,
-            status = DownloadState.Status.DOWNLOADING,
-            directoryPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path,
-            private = true,
-            createdTime = 33,
-            etag = "etag",
-        )
+        val downloadState =
+            DownloadState(
+                id = "1",
+                url = "url",
+                fileName = "fileName",
+                contentType = "application/zip",
+                contentLength = 5242880,
+                status = DownloadState.Status.DOWNLOADING,
+                directoryPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path,
+                private = true,
+                createdTime = 33,
+                etag = "etag",
+            )
 
         val downloadEntity = downloadState.toDownloadEntity()
 
@@ -72,10 +74,11 @@ class DownloadEntityTest {
 
     @Test
     fun `GIVEN a download with data URL WHEN converting a DownloadState to DownloadEntity THEN data url is removed`() {
-        val downloadState = DownloadState(
-            id = "1",
-            url = "data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==",
-        )
+        val downloadState =
+            DownloadState(
+                id = "1",
+                url = "data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==",
+            )
 
         val downloadEntity = downloadState.toDownloadEntity()
 
@@ -85,10 +88,11 @@ class DownloadEntityTest {
 
     @Test
     fun `GIVEN a download with no data URL WHEN converting a DownloadState to DownloadEntity THEN data url is not removed`() {
-        val downloadState = DownloadState(
-            id = "1",
-            url = "url",
-        )
+        val downloadState =
+            DownloadState(
+                id = "1",
+                url = "url",
+            )
 
         val downloadEntity = downloadState.toDownloadEntity()
 

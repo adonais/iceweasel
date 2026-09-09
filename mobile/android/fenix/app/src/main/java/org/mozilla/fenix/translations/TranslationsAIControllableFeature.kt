@@ -11,21 +11,20 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.ai.controls.AIControllableFeature
 import mozilla.components.concept.ai.controls.AIFeatureMetadata
 import mozilla.components.concept.ai.controls.AIFeatureState
-import org.mozilla.fenix.R
 import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.fenix.R
 
-/**
- * The definition of the translation feature for use in AI Controls.
- */
+/** The definition of the translation feature for use in AI Controls. */
 class TranslationsAIControllableFeature(
     private val settings: TranslationsEnabledSettings,
     private val browserStore: BrowserStore,
 ) : AIControllableFeature, AIFeatureMetadata by Companion {
 
     override val featureState: Flow<AIFeatureState>
-        get() = settings.isEnabled.map { enabled ->
-            if (enabled) AIFeatureState.Enabled else AIFeatureState.Disabled
-        }
+        get() =
+            settings.isEnabled.map { enabled ->
+                if (enabled) AIFeatureState.Enabled else AIFeatureState.Disabled
+            }
 
     override suspend fun set(enabled: Boolean) {
         settings.setEnabled(enabled)
@@ -34,10 +33,11 @@ class TranslationsAIControllableFeature(
 
     companion object : AIFeatureMetadata {
         override val id: AIFeatureMetadata.FeatureId = AIFeatureMetadata.FeatureId("translations")
-        override val description = AIFeatureMetadata.Description(
-            titleRes = R.string.ai_controls_translations_title,
-            descriptionRes = R.string.ai_controls_translations_description,
-            iconRes = iconsR.drawable.mozac_ic_translate_24,
-        )
+        override val description =
+            AIFeatureMetadata.Description(
+                titleRes = R.string.ai_controls_translations_title,
+                descriptionRes = R.string.ai_controls_translations_description,
+                iconRes = iconsR.drawable.mozac_ic_translate_24,
+            )
     }
 }

@@ -35,9 +35,10 @@ class BitmapKtTest {
         val fillColor = Color.RED
         val config = Bitmap.Config.ARGB_8888
 
-        val bitmap = createBitmap(dimen, dimen, config).apply {
-            eraseColor(fillColor)
-        }
+        val bitmap =
+            createBitmap(dimen, dimen, config).apply {
+                eraseColor(fillColor)
+            }
         val roundedBitmap = bitmap.withRoundedCorners(40f, config)
 
         fun assertCornersAreTransparent() {

@@ -4,36 +4,18 @@
 
 package mozilla.components.concept.bookmarks.file
 
-/**
- * Types of errors that could happen during bookmarks file import.
- */
-sealed class BookmarksImporterError(
-    override val cause: Throwable?,
-) : RuntimeException() {
+/** Types of errors that could happen during bookmarks file import. */
+sealed class BookmarksImporterError(override val cause: Throwable?) : RuntimeException() {
 
-    /**
-     * An error occurred while reading the file.
-     */
+    /** An error occurred while reading the file. */
     class FileReadError(override val cause: Throwable?) : BookmarksImporterError(cause = cause)
 
-    /**
-     * An error occurred while parsing the bookmarks file.
-     */
-    class FileParseError(
-        override val cause: Throwable?,
-    ) : BookmarksImporterError(cause)
+    /** An error occurred while parsing the bookmarks file. */
+    class FileParseError(override val cause: Throwable?) : BookmarksImporterError(cause)
 
-    /**
-     * An error occurred while saving the imported bookmarks.
-     */
-    class BookmarksSaveError(
-        override val cause: Throwable?,
-    ) : BookmarksImporterError(cause)
+    /** An error occurred while saving the imported bookmarks. */
+    class BookmarksSaveError(override val cause: Throwable?) : BookmarksImporterError(cause)
 
-    /**
-     * An unknown error happened while importing the bookmarks
-     */
-    class UnknownImporterError(
-        override val cause: Throwable?,
-    ) : BookmarksImporterError(cause)
+    /** An unknown error happened while importing the bookmarks */
+    class UnknownImporterError(override val cause: Throwable?) : BookmarksImporterError(cause)
 }

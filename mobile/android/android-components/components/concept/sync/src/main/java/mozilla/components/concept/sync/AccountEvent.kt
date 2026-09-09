@@ -4,9 +4,7 @@
 
 package mozilla.components.concept.sync
 
-/**
- * Allows monitoring events targeted at the current account/device.
- */
+/** Allows monitoring events targeted at the current account/device. */
 interface AccountEventsObserver {
     /** The callback called when an account event is received */
     fun onEvents(events: List<AccountEvent>)
@@ -14,9 +12,7 @@ interface AccountEventsObserver {
 
 typealias OuterDeviceCommandIncoming = DeviceCommandIncoming
 
-/**
- * Privacy mode for tabs.
- */
+/** Privacy mode for tabs. */
 enum class TabPrivacy {
     /** A private browsing tab */
     Private,
@@ -25,9 +21,7 @@ enum class TabPrivacy {
     Normal,
 }
 
-/**
- * Incoming account events.
- */
+/** Incoming account events. */
 sealed class AccountEvent {
     /** An incoming command from another device */
     data class DeviceCommandIncoming(val command: OuterDeviceCommandIncoming) : AccountEvent()
@@ -51,9 +45,7 @@ sealed class AccountEvent {
     object Unknown : AccountEvent()
 }
 
-/**
- * Incoming device commands (ie, targeted at the current device.)
- */
+/** Incoming device commands (ie, targeted at the current device.) */
 sealed class DeviceCommandIncoming {
     /** A command to open a list of tabs on the current device */
     class TabReceived(val from: Device?, val entries: List<TabData>) : DeviceCommandIncoming()
@@ -62,9 +54,7 @@ sealed class DeviceCommandIncoming {
     class TabsClosed(val from: Device?, val urls: List<String>) : DeviceCommandIncoming()
 }
 
-/**
- * Outgoing device commands (ie, targeted at other devices.)
- */
+/** Outgoing device commands (ie, targeted at other devices.) */
 sealed class DeviceCommandOutgoing {
     /** A command to open a tab on another device */
     class SendTab(val title: String, val url: String, val privacy: TabPrivacy) : DeviceCommandOutgoing()
@@ -73,9 +63,7 @@ sealed class DeviceCommandOutgoing {
     class CloseTab(val urls: List<String>) : DeviceCommandOutgoing(), DeviceCommandQueue.Type.RemoteTabs
 }
 
-/**
- * Information about a tab sent with tab related commands.
- */
+/** Information about a tab sent with tab related commands. */
 data class TabData(
     val title: String,
     val url: String,

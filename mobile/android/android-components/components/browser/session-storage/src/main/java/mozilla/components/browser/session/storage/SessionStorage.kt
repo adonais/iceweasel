@@ -11,6 +11,9 @@ import androidx.annotation.CheckResult
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
 import androidx.core.net.toUri
+import java.io.File
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 import mozilla.components.browser.session.storage.serialize.BrowserStateReader
 import mozilla.components.browser.session.storage.serialize.BrowserStateWriter
 import mozilla.components.browser.state.selector.normalTabs
@@ -23,17 +26,12 @@ import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.concept.engine.Engine
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.net.isReadable
-import java.io.File
-import java.util.Locale
-import java.util.concurrent.TimeUnit
 
 private const val STORE_FILE_NAME_FORMAT = "mozilla_components_session_storage_%s.json"
 
 private val sessionFileLock = Any()
 
-/**
- * Session storage for (partially) persisting the state of [BrowserStore] to disk.
- */
+/** Session storage for (partially) persisting the state of [BrowserStore] to disk. */
 class SessionStorage(
     private val context: Context,
     private val engine: Engine,
@@ -62,20 +60,15 @@ class SessionStorage(
         }
     }
 
-    @VisibleForTesting
-    internal fun isUriReadable(uri: Uri): Boolean = uri.isReadable(context.contentResolver)
+    @VisibleForTesting internal fun isUriReadable(uri: Uri): Boolean = uri.isReadable(context.contentResolver)
 
-    /**
-     * Clears the state saved on disk.
-     */
+    /** Clears the state saved on disk. */
     @WorkerThread
     fun clear() {
         removeSnapshotFromDisk(context, engine)
     }
 
-    /**
-     * Saves the given state to disk.
-     */
+    /** Saves the given state to disk. */
     @WorkerThread
     override fun save(state: BrowserState): Boolean {
         if (state.normalTabs.isEmpty()) {
@@ -88,14 +81,15 @@ class SessionStorage(
         val updatedTabList = state.tabs.filterNot { it.content.url == "about:crashparent" }
         val updatedState = state.copy(tabs = updatedTabList)
 
-        val stateToPersist = if (updatedState.selectedTabId != null && updatedState.selectedTab == null) {
-            // Needs investigation to figure out and prevent cause:
-            // https://github.com/mozilla-mobile/android-components/issues/8417
-            logger.error("Selected tab ID set, but tab with matching ID not found. Clearing selection.")
-            updatedState.copy(selectedTabId = null)
-        } else {
-            updatedState
-        }
+        val stateToPersist =
+            if (updatedState.selectedTabId != null && updatedState.selectedTab == null) {
+                // Needs investigation to figure out and prevent cause:
+                // https://github.com/mozilla-mobile/android-components/issues/8417
+                logger.error("Selected tab ID set, but tab with matching ID not found. Clearing selection.")
+                updatedState.copy(selectedTabId = null)
+            } else {
+                updatedState
+            }
 
         return synchronized(sessionFileLock) {
             try {
@@ -109,9 +103,7 @@ class SessionStorage(
         }
     }
 
-    /**
-     * Starts configuring automatic saving of the state.
-     */
+    /** Starts configuring automatic saving of the state. */
     @CheckResult
     fun autoSave(
         store: BrowserStore,
@@ -124,8 +116,7 @@ class SessionStorage(
 
 private fun removeSnapshotFromDisk(context: Context, engine: Engine) {
     synchronized(sessionFileLock) {
-        getFileForEngine(context, engine)
-            .delete()
+        getFileForEngine(context, engine).delete()
     }
 }
 
@@ -134,8 +125,7 @@ internal fun getFileForEngine(context: Context, engine: Engine): AtomicFile {
     return AtomicFile(
         File(
             context.filesDir,
-            String.format(STORE_FILE_NAME_FORMAT, engine.name())
-                .lowercase(Locale.ROOT),
-        ),
+            String.format(STORE_FILE_NAME_FORMAT, engine.name()).lowercase(Locale.ROOT),
+        )
     )
 }

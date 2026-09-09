@@ -6,6 +6,7 @@ package org.mozilla.focus.locale.screen
 
 import android.app.Activity
 import androidx.annotation.VisibleForTesting
+import java.util.Locale
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import mozilla.components.support.locale.LocaleManager
@@ -13,16 +14,15 @@ import mozilla.components.support.locale.LocaleUseCases
 import org.mozilla.focus.locale.Locales
 import org.mozilla.focus.settings.InstalledSearchEnginesSettingsFragment
 import org.mozilla.gecko.util.ThreadUtils.runOnUiThread
-import java.util.Locale
 
 /**
- * [Middleware] responsible for handling actions related to language selection and updates in the
- * language settings screen. It interacts with [LanguageStorage] to persist the selected language and
- * [LocaleUseCases] to apply the selected language to the system.
+ * [Middleware] responsible for handling actions related to language selection and updates in the language settings
+ * screen. It interacts with [LanguageStorage] to persist the selected language and [LocaleUseCases] to apply the
+ * selected language to the system.
  *
- * This middleware intercepts [LanguageScreenAction]s, updates the stored language preference, and triggers
- * a locale change that affects the application's displayed language. It also handles the initial population
- * of available languages when the language screen is first displayed.
+ * This middleware intercepts [LanguageScreenAction]s, updates the stored language preference, and triggers a locale
+ * change that affects the application's displayed language. It also handles the initial population of available
+ * languages when the language screen is first displayed.
  *
  * @param activity The current activity. Used for accessing resources and triggering activity recreation.
  * @param localeUseCase Use cases for interacting with locales, provided by [LocaleUseCases].
@@ -53,7 +53,7 @@ class LanguageMiddleware(
                     LanguageScreenAction.UpdateLanguages(
                         storage.languages,
                         storage.selectedLanguage,
-                    ),
+                    )
                 )
             }
             else -> {
@@ -63,8 +63,8 @@ class LanguageMiddleware(
     }
 
     /**
-     * It changes the system defined locale to the indicated Language .
-     * It recreates the current activity for changes to take effect.
+     * It changes the system defined locale to the indicated Language . It recreates the current activity for changes to
+     * take effect.
      *
      * @param languageTag selected Language Tag that comes from Language object
      */
@@ -83,17 +83,15 @@ class LanguageMiddleware(
         activity.applicationContext.resources.apply {
             configuration.setLocale(locale)
             configuration.setLayoutDirection(locale)
-            @Suppress("DEPRECATION")
-            updateConfiguration(configuration, displayMetrics)
+            @Suppress("DEPRECATION") updateConfiguration(configuration, displayMetrics)
         }
 
         recreateActivity()
     }
 
     /**
-     * Recreates the current activity to apply language changes.
-     * This is necessary for the new locale to take effect throughout the application.
-     * The recreation is performed on the UI thread.
+     * Recreates the current activity to apply language changes. This is necessary for the new locale to take effect
+     * throughout the application. The recreation is performed on the UI thread.
      */
     @VisibleForTesting
     internal fun recreateActivity() {

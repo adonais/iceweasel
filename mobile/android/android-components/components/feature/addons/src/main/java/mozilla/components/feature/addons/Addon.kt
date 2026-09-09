@@ -11,22 +11,21 @@ import android.os.Build
 import android.os.Parcelable
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
-import kotlinx.parcelize.Parcelize
-import mozilla.components.concept.engine.webextension.Incognito
-import mozilla.components.concept.engine.webextension.WebExtension
-import mozilla.components.support.base.log.logger.Logger
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
+import kotlinx.parcelize.Parcelize
+import mozilla.components.concept.engine.webextension.Incognito
+import mozilla.components.concept.engine.webextension.WebExtension
+import mozilla.components.support.base.log.logger.Logger
 
 typealias GeckoIncognito = Incognito
 
 val logger = Logger("Addon")
 
 /**
- * Represents an add-on based on the AMO store:
- * https://addons.mozilla.org/en-US/firefox/
+ * Represents an add-on based on the AMO store: https://addons.mozilla.org/en-US/firefox/
  *
  * @property id The unique ID of this add-on.
  * @property author Information about the add-on author.
@@ -35,20 +34,20 @@ val logger = Logger("Addon")
  * @property permissions A single list with all the API and origin permissions for this add-on.
  * @property optionalPermissions Optional permissions requested or granted to this add-on.
  * @property optionalOrigins Optional origin permissions requested or granted to this add-on.
- * @property translatableName A map containing the different translations for the add-on name,
- * where the key is the language and the value is the actual translated text.
- * @property translatableDescription A map containing the different translations for the add-on description,
- * where the key is the language and the value is the actual translated text.
- * @property translatableSummary A map containing the different translations for the add-on name,
- * where the key is the language and the value is the actual translated text.
+ * @property translatableName A map containing the different translations for the add-on name, where the key is the
+ *   language and the value is the actual translated text.
+ * @property translatableDescription A map containing the different translations for the add-on description, where the
+ *   key is the language and the value is the actual translated text.
+ * @property translatableSummary A map containing the different translations for the add-on name, where the key is the
+ *   language and the value is the actual translated text.
  * @property iconUrl The URL to icon for the add-on.
  * @property homepageUrl The add-on homepage.
  * @property rating The rating information of this add-on.
  * @property createdAt The date the add-on was created.
  * @property updatedAt The date of the last time the add-on was updated by its developer(s).
  * @property icon the icon of the this [Addon], available when the icon is loaded.
- * @property installedState Holds the state of the installed web extension for this add-on. Null, if
- * the [Addon] is not installed.
+ * @property installedState Holds the state of the installed web extension for this add-on. Null, if the [Addon] is not
+ *   installed.
  * @property defaultLocale Indicates which locale will be always available to display translatable fields.
  * @property ratingUrl The link to the ratings page (user reviews) for this [Addon].
  * @property detailUrl The link to the detail page for this [Addon].
@@ -81,9 +80,7 @@ data class Addon(
     val incognito: Incognito = Incognito.SPANNING,
 ) : Parcelable {
 
-    /**
-     * Returns an icon for this [Addon], either from the [Addon] or [installedState].
-     */
+    /** Returns an icon for this [Addon], either from the [Addon] or [installedState]. */
     fun provideIcon(): Bitmap? {
         return icon ?: installedState?.icon
     }
@@ -137,20 +134,18 @@ data class Addon(
     ) : Parcelable
 
     /**
-     * Returns a list of id resources per each item on the [Addon.permissions] list.
-     * Holds the state of the installed web extension of this add-on.
+     * Returns a list of id resources per each item on the [Addon.permissions] list. Holds the state of the installed
+     * web extension of this add-on.
      *
      * @property id The ID of the installed web extension.
      * @property version The installed version.
-     * @property enabled Indicates if this [Addon] is enabled to interact with web content or not,
-     * defaults to false.
-     * @property supported Indicates if this [Addon] is supported by the browser or not, defaults
-     * to true.
+     * @property enabled Indicates if this [Addon] is enabled to interact with web content or not, defaults to false.
+     * @property supported Indicates if this [Addon] is supported by the browser or not, defaults to true.
      * @property disabledReason Indicates why the [Addon] was disabled.
-     * @property optionsPageUrl the URL of the page displaying the
-     * options page (options_ui in the extension's manifest).
-     * @property allowedInPrivateBrowsing true if this addon should be allowed to run in private
-     * browsing pages, false otherwise.
+     * @property optionsPageUrl the URL of the page displaying the options page (options_ui in the extension's
+     *   manifest).
+     * @property allowedInPrivateBrowsing true if this addon should be allowed to run in private browsing pages, false
+     *   otherwise.
      * @property icon the icon of the installed extension.
      */
     @Parcelize
@@ -166,64 +161,43 @@ data class Addon(
         val icon: Bitmap? = null,
     ) : Parcelable
 
-    /**
-     * Enum containing all reasons why an [Addon] was disabled.
-     */
+    /** Enum containing all reasons why an [Addon] was disabled. */
     enum class DisabledReason {
 
-        /**
-         * The [Addon] was disabled because it is unsupported.
-         */
+        /** The [Addon] was disabled because it is unsupported. */
         UNSUPPORTED,
 
-        /**
-         * The [Addon] was disabled because is it is blocklisted.
-         */
+        /** The [Addon] was disabled because is it is blocklisted. */
         BLOCKLISTED,
 
-        /**
-         * The [Addon] was disabled by the user.
-         */
+        /** The [Addon] was disabled by the user. */
         USER_REQUESTED,
 
-        /**
-         * The [Addon] was disabled because it isn't correctly signed.
-         */
+        /** The [Addon] was disabled because it isn't correctly signed. */
         NOT_CORRECTLY_SIGNED,
 
-        /**
-         * The [Addon] was disabled because it isn't compatible with the application version.
-         */
+        /** The [Addon] was disabled because it isn't compatible with the application version. */
         INCOMPATIBLE,
 
-        /**
-         * The [Addon] was disabled because it is soft-blocked.
-         */
+        /** The [Addon] was disabled because it is soft-blocked. */
         SOFT_BLOCKED,
     }
 
-    /**
-     * Incognito values that control how an [Addon] works with private browsing windows.
-     */
+    /** Incognito values that control how an [Addon] works with private browsing windows. */
     enum class Incognito {
-        /**
-         * The [Addon] will see events from private and non-private windows and tabs.
-         */
+        /** The [Addon] will see events from private and non-private windows and tabs. */
         SPANNING,
 
-        /**
-         * The [Addon] will be split between private and non-private windows.
-         */
+        /** The [Addon] will be split between private and non-private windows. */
         SPLIT,
 
-        /**
-         * Private tabs and windows are invisible to the [Addon].
-         */
+        /** Private tabs and windows are invisible to the [Addon]. */
         NOT_ALLOWED,
     }
 
     /**
      * Returns a list of localized Strings per each item on the [permissions] list.
+     *
      * @param context A context reference.
      */
     fun translatePermissions(context: Context): List<String> {
@@ -232,6 +206,7 @@ data class Addon(
 
     /**
      * Returns a [LocalizedPermission] list of the optional permissions.
+     *
      * @param context Context for resource lookup
      */
     fun translateOptionalPermissions(context: Context): List<LocalizedPermission> {
@@ -240,6 +215,7 @@ data class Addon(
 
     /**
      * Returns a list of localized Strings for each of the required data collection permissions.
+     *
      * @param context Context for resource lookup
      */
     fun translateRequiredDataCollectionPermissions(context: Context): List<String> {
@@ -248,68 +224,53 @@ data class Addon(
 
     /**
      * Returns a list of [LocalizedPermission] for each of the optional data collection permissions.
+     *
      * @param context Context for resource lookup
      */
     fun translateOptionalDataCollectionPermissions(context: Context): List<LocalizedPermission> {
         return localizeOptionalDataCollectionPermissions(optionalDataCollectionPermissions, context)
     }
 
-    /**
-     * Returns whether or not this [Addon] is currently installed.
-     */
+    /** Returns whether or not this [Addon] is currently installed. */
     fun isInstalled() = installedState != null
 
-    /**
-     * Returns whether or not this [Addon] is currently enabled.
-     */
+    /** Returns whether or not this [Addon] is currently enabled. */
     fun isEnabled() = installedState?.enabled == true
 
-    /**
-     * Returns whether or not this [Addon] is currently supported by the browser.
-     */
+    /** Returns whether or not this [Addon] is currently supported by the browser. */
     fun isSupported() = installedState?.supported == true
 
     /**
-     * Returns whether or not this [Addon] is currently disabled because it is not
-     * supported. This is based on the installed extension state in the engine. An
-     * addon can be disabled as unsupported and later become supported, so
+     * Returns whether or not this [Addon] is currently disabled because it is not supported. This is based on the
+     * installed extension state in the engine. An addon can be disabled as unsupported and later become supported, so
      * both [isSupported] and [isDisabledAsUnsupported] can be true.
      */
     fun isDisabledAsUnsupported() = installedState?.disabledReason == DisabledReason.UNSUPPORTED
 
     /**
-     * Returns whether or not this [Addon] is currently disabled because it is part of
-     * the blocklist. This is based on the installed extension state in the engine.
+     * Returns whether or not this [Addon] is currently disabled because it is part of the blocklist. This is based on
+     * the installed extension state in the engine.
      */
     fun isDisabledAsBlocklisted() = installedState?.disabledReason == DisabledReason.BLOCKLISTED
 
     /**
-     * Returns whether this [Addon] is currently soft-blocked. While we're cheking the
-     * disabled reason, the user still has the opportunity to re-enable the [Addon].
+     * Returns whether this [Addon] is currently soft-blocked. While we're cheking the disabled reason, the user still
+     * has the opportunity to re-enable the [Addon].
      */
     fun isSoftBlocked() = installedState?.disabledReason == DisabledReason.SOFT_BLOCKED
 
-    /**
-     * Returns whether this [Addon] is currently disabled because it isn't correctly signed.
-     */
-    fun isDisabledAsNotCorrectlySigned() =
-        installedState?.disabledReason == DisabledReason.NOT_CORRECTLY_SIGNED
+    /** Returns whether this [Addon] is currently disabled because it isn't correctly signed. */
+    fun isDisabledAsNotCorrectlySigned() = installedState?.disabledReason == DisabledReason.NOT_CORRECTLY_SIGNED
 
-    /**
-     * Returns whether this [Addon] is currently disabled because it isn't compatible
-     * with the application version.
-     */
+    /** Returns whether this [Addon] is currently disabled because it isn't compatible with the application version. */
     fun isDisabledAsIncompatible() = installedState?.disabledReason == DisabledReason.INCOMPATIBLE
 
-    /**
-     * Returns whether or not this [Addon] is allowed in private browsing mode.
-     */
+    /** Returns whether or not this [Addon] is allowed in private browsing mode. */
     fun isAllowedInPrivateBrowsing() = installedState?.allowedInPrivateBrowsing == true
 
     /**
-     * Returns a copy of this [Addon] containing only translations (description,
-     * name, summary) of the provided locales. All other translations
-     * except the [defaultLocale] will be removed.
+     * Returns a copy of this [Addon] containing only translations (description, name, summary) of the provided locales.
+     * All other translations except the [defaultLocale] will be removed.
      *
      * @param locales list of locales to keep.
      * @return copy of the addon with all other translations removed.
@@ -327,133 +288,169 @@ data class Addon(
     }
 
     companion object {
-        /**
-         * A map of permissions to translation string ids.
-         */
+        /** A map of permissions to translation string ids. */
         @Suppress("MaxLineLength")
-        val permissionToTranslation = mapOf(
-            "<all_urls>" to R.string.mozac_feature_addons_permissions_all_urls_description,
-            "bookmarks" to R.string.mozac_feature_addons_permissions_bookmarks_description,
-            "browserSettings" to R.string.mozac_feature_addons_permissions_browser_setting_description,
-            "browsingData" to R.string.mozac_feature_addons_permissions_browser_data_description,
-            "clipboardRead" to R.string.mozac_feature_addons_permissions_clipboard_read_description,
-            "clipboardWrite" to R.string.mozac_feature_addons_permissions_clipboard_write_description,
-            "declarativeNetRequest" to R.string.mozac_feature_addons_permissions_declarative_net_request_description,
-            "declarativeNetRequestFeedback" to R.string.mozac_feature_addons_permissions_declarative_net_request_feedback_description,
-            "devtools" to R.string.mozac_feature_addons_permissions_devtools_description,
-            "downloads" to R.string.mozac_feature_addons_permissions_downloads_description,
-            "downloads.open" to R.string.mozac_feature_addons_permissions_downloads_open_description,
-            "find" to R.string.mozac_feature_addons_permissions_find_description,
-            "geolocation" to R.string.mozac_feature_addons_permissions_geolocation_description,
-            "history" to R.string.mozac_feature_addons_permissions_history_description,
-            "management" to R.string.mozac_feature_addons_permissions_management_description,
-            "nativeMessaging" to R.string.mozac_feature_addons_permissions_native_messaging_description,
-            "notifications" to R.string.mozac_feature_addons_permissions_notifications_description,
-            "pkcs11" to R.string.mozac_feature_addons_permissions_pkcs11_description,
-            "privacy" to R.string.mozac_feature_addons_permissions_privacy_description,
-            "proxy" to R.string.mozac_feature_addons_permissions_proxy_description,
-            "sessions" to R.string.mozac_feature_addons_permissions_sessions_description,
-            "tabHide" to R.string.mozac_feature_addons_permissions_tab_hide_description,
-            "tabs" to R.string.mozac_feature_addons_permissions_tabs_description,
-            "topSites" to R.string.mozac_feature_addons_permissions_top_sites_description,
-            "trialML" to R.string.mozac_feature_addons_permissions_trial_ml_description,
-            "userScripts" to R.string.mozac_feature_addons_permissions_user_scripts_description,
-            "webNavigation" to R.string.mozac_feature_addons_permissions_web_navigation_description,
-        )
+        val permissionToTranslation =
+            mapOf(
+                "<all_urls>" to R.string.mozac_feature_addons_permissions_all_urls_description,
+                "bookmarks" to R.string.mozac_feature_addons_permissions_bookmarks_description,
+                "browserSettings" to R.string.mozac_feature_addons_permissions_browser_setting_description,
+                "browsingData" to R.string.mozac_feature_addons_permissions_browser_data_description,
+                "clipboardRead" to R.string.mozac_feature_addons_permissions_clipboard_read_description,
+                "clipboardWrite" to R.string.mozac_feature_addons_permissions_clipboard_write_description,
+                "declarativeNetRequest" to
+                    R.string.mozac_feature_addons_permissions_declarative_net_request_description,
+                "declarativeNetRequestFeedback" to
+                    R.string.mozac_feature_addons_permissions_declarative_net_request_feedback_description,
+                "devtools" to R.string.mozac_feature_addons_permissions_devtools_description,
+                "downloads" to R.string.mozac_feature_addons_permissions_downloads_description,
+                "downloads.open" to R.string.mozac_feature_addons_permissions_downloads_open_description,
+                "find" to R.string.mozac_feature_addons_permissions_find_description,
+                "geolocation" to R.string.mozac_feature_addons_permissions_geolocation_description,
+                "history" to R.string.mozac_feature_addons_permissions_history_description,
+                "management" to R.string.mozac_feature_addons_permissions_management_description,
+                "nativeMessaging" to R.string.mozac_feature_addons_permissions_native_messaging_description,
+                "notifications" to R.string.mozac_feature_addons_permissions_notifications_description,
+                "pkcs11" to R.string.mozac_feature_addons_permissions_pkcs11_description,
+                "privacy" to R.string.mozac_feature_addons_permissions_privacy_description,
+                "proxy" to R.string.mozac_feature_addons_permissions_proxy_description,
+                "sessions" to R.string.mozac_feature_addons_permissions_sessions_description,
+                "tabHide" to R.string.mozac_feature_addons_permissions_tab_hide_description,
+                "tabs" to R.string.mozac_feature_addons_permissions_tabs_description,
+                "topSites" to R.string.mozac_feature_addons_permissions_top_sites_description,
+                "trialML" to R.string.mozac_feature_addons_permissions_trial_ml_description,
+                "userScripts" to R.string.mozac_feature_addons_permissions_user_scripts_description,
+                "webNavigation" to R.string.mozac_feature_addons_permissions_web_navigation_description,
+            )
+
+        /** A map of permissions to translation string ids used in the system notification (for updates). */
+        @Suppress("MaxLineLength")
+        val permissionToTranslationForUpdate =
+            mapOf(
+                "<all_urls>" to R.string.mozac_feature_addons_permissions_all_urls_description_for_update,
+                "bookmarks" to R.string.mozac_feature_addons_permissions_bookmarks_description_for_update,
+                "browserSettings" to R.string.mozac_feature_addons_permissions_browser_settings_description_for_update,
+                "browsingData" to R.string.mozac_feature_addons_permissions_browsing_data_description_for_update,
+                "clipboardRead" to R.string.mozac_feature_addons_permissions_clipboard_read_description_for_update,
+                "clipboardWrite" to R.string.mozac_feature_addons_permissions_clipboard_write_description_for_update,
+                "declarativeNetRequest" to
+                    R.string.mozac_feature_addons_permissions_declarative_net_request_description_for_update,
+                "declarativeNetRequestFeedback" to
+                    R.string.mozac_feature_addons_permissions_declarative_net_request_feedback_description_for_update,
+                "devtools" to R.string.mozac_feature_addons_permissions_devtools_description_for_update,
+                "downloads" to R.string.mozac_feature_addons_permissions_downloads_description_for_update,
+                "downloads.open" to R.string.mozac_feature_addons_permissions_downloads_open_description_for_update,
+                "find" to R.string.mozac_feature_addons_permissions_find_description_for_update,
+                "geolocation" to R.string.mozac_feature_addons_permissions_geolocation_description_for_update,
+                "history" to R.string.mozac_feature_addons_permissions_history_description_for_update,
+                "management" to R.string.mozac_feature_addons_permissions_management_description_for_update,
+                "nativeMessaging" to R.string.mozac_feature_addons_permissions_native_messaging_description_for_update,
+                "notifications" to R.string.mozac_feature_addons_permissions_notifications_description_for_update,
+                "pkcs11" to R.string.mozac_feature_addons_permissions_pkcs11_description_for_update,
+                "privacy" to R.string.mozac_feature_addons_permissions_privacy_description_for_update,
+                "proxy" to R.string.mozac_feature_addons_permissions_proxy_description_for_update,
+                "sessions" to R.string.mozac_feature_addons_permissions_sessions_description_for_update,
+                "tabHide" to R.string.mozac_feature_addons_permissions_tab_hide_description_for_update,
+                "tabs" to R.string.mozac_feature_addons_permissions_tabs_description_for_update,
+                "topSites" to R.string.mozac_feature_addons_permissions_top_sites_description_for_update,
+                "trialML" to R.string.mozac_feature_addons_permissions_trial_ml_description_for_update,
+                "userScripts" to R.string.mozac_feature_addons_permissions_user_scripts_description_for_update,
+                "webNavigation" to R.string.mozac_feature_addons_permissions_web_navigation_description_for_update,
+            )
 
         /**
-         * A map of permissions to translation string ids used in the system notification (for updates).
+         * A map of data collection permissions to short translation string ids. This should be kept in sync with
+         * `DATA_COLLECTION_PERMISSIONS` in `ExtensionPermissionMessages.sys.mjs`.
          */
         @Suppress("MaxLineLength")
-        val permissionToTranslationForUpdate = mapOf(
-            "<all_urls>" to R.string.mozac_feature_addons_permissions_all_urls_description_for_update,
-            "bookmarks" to R.string.mozac_feature_addons_permissions_bookmarks_description_for_update,
-            "browserSettings" to R.string.mozac_feature_addons_permissions_browser_settings_description_for_update,
-            "browsingData" to R.string.mozac_feature_addons_permissions_browsing_data_description_for_update,
-            "clipboardRead" to R.string.mozac_feature_addons_permissions_clipboard_read_description_for_update,
-            "clipboardWrite" to R.string.mozac_feature_addons_permissions_clipboard_write_description_for_update,
-            "declarativeNetRequest" to R.string.mozac_feature_addons_permissions_declarative_net_request_description_for_update,
-            "declarativeNetRequestFeedback" to R.string.mozac_feature_addons_permissions_declarative_net_request_feedback_description_for_update,
-            "devtools" to R.string.mozac_feature_addons_permissions_devtools_description_for_update,
-            "downloads" to R.string.mozac_feature_addons_permissions_downloads_description_for_update,
-            "downloads.open" to R.string.mozac_feature_addons_permissions_downloads_open_description_for_update,
-            "find" to R.string.mozac_feature_addons_permissions_find_description_for_update,
-            "geolocation" to R.string.mozac_feature_addons_permissions_geolocation_description_for_update,
-            "history" to R.string.mozac_feature_addons_permissions_history_description_for_update,
-            "management" to R.string.mozac_feature_addons_permissions_management_description_for_update,
-            "nativeMessaging" to R.string.mozac_feature_addons_permissions_native_messaging_description_for_update,
-            "notifications" to R.string.mozac_feature_addons_permissions_notifications_description_for_update,
-            "pkcs11" to R.string.mozac_feature_addons_permissions_pkcs11_description_for_update,
-            "privacy" to R.string.mozac_feature_addons_permissions_privacy_description_for_update,
-            "proxy" to R.string.mozac_feature_addons_permissions_proxy_description_for_update,
-            "sessions" to R.string.mozac_feature_addons_permissions_sessions_description_for_update,
-            "tabHide" to R.string.mozac_feature_addons_permissions_tab_hide_description_for_update,
-            "tabs" to R.string.mozac_feature_addons_permissions_tabs_description_for_update,
-            "topSites" to R.string.mozac_feature_addons_permissions_top_sites_description_for_update,
-            "trialML" to R.string.mozac_feature_addons_permissions_trial_ml_description_for_update,
-            "userScripts" to R.string.mozac_feature_addons_permissions_user_scripts_description_for_update,
-            "webNavigation" to R.string.mozac_feature_addons_permissions_web_navigation_description_for_update,
-        )
+        private val dataCollectionPermissionToShortTranslation =
+            mapOf(
+                "authenticationInfo" to
+                    R.string.mozac_feature_addons_permissions_data_collection_authenticationInfo_short_description,
+                "bookmarksInfo" to
+                    R.string.mozac_feature_addons_permissions_data_collection_bookmarksInfo_short_description,
+                "browsingActivity" to
+                    R.string.mozac_feature_addons_permissions_data_collection_browsingActivity_short_description,
+                "financialAndPaymentInfo" to
+                    R.string.mozac_feature_addons_permissions_data_collection_financialAndPaymentInfo_short_description,
+                "healthInfo" to R.string.mozac_feature_addons_permissions_data_collection_healthInfo_short_description,
+                "locationInfo" to
+                    R.string.mozac_feature_addons_permissions_data_collection_locationInfo_short_description,
+                "personalCommunications" to
+                    R.string.mozac_feature_addons_permissions_data_collection_personalCommunications_short_description,
+                "personallyIdentifyingInfo" to
+                    R.string
+                        .mozac_feature_addons_permissions_data_collection_personallyIdentifyingInfo_short_description,
+                "searchTerms" to
+                    R.string.mozac_feature_addons_permissions_data_collection_searchTerms_short_description,
+                "technicalAndInteraction" to
+                    R.string.mozac_feature_addons_permissions_data_collection_technicalAndInteraction_short_description,
+                "websiteActivity" to
+                    R.string.mozac_feature_addons_permissions_data_collection_websiteActivity_short_description,
+                "websiteContent" to
+                    R.string.mozac_feature_addons_permissions_data_collection_websiteContent_short_description,
+            )
 
         /**
-         * A map of data collection permissions to short translation string ids. This should be
-         * kept in sync with `DATA_COLLECTION_PERMISSIONS` in `ExtensionPermissionMessages.sys.mjs`.
+         * A map of data collection permissions to long translation string ids. This should be kept in sync with
+         * `DATA_COLLECTION_PERMISSIONS` in `ExtensionPermissionMessages.sys.mjs`.
          */
         @Suppress("MaxLineLength")
-        private val dataCollectionPermissionToShortTranslation = mapOf(
-            "authenticationInfo" to R.string.mozac_feature_addons_permissions_data_collection_authenticationInfo_short_description,
-            "bookmarksInfo" to R.string.mozac_feature_addons_permissions_data_collection_bookmarksInfo_short_description,
-            "browsingActivity" to R.string.mozac_feature_addons_permissions_data_collection_browsingActivity_short_description,
-            "financialAndPaymentInfo" to R.string.mozac_feature_addons_permissions_data_collection_financialAndPaymentInfo_short_description,
-            "healthInfo" to R.string.mozac_feature_addons_permissions_data_collection_healthInfo_short_description,
-            "locationInfo" to R.string.mozac_feature_addons_permissions_data_collection_locationInfo_short_description,
-            "personalCommunications" to R.string.mozac_feature_addons_permissions_data_collection_personalCommunications_short_description,
-            "personallyIdentifyingInfo" to R.string.mozac_feature_addons_permissions_data_collection_personallyIdentifyingInfo_short_description,
-            "searchTerms" to R.string.mozac_feature_addons_permissions_data_collection_searchTerms_short_description,
-            "technicalAndInteraction" to R.string.mozac_feature_addons_permissions_data_collection_technicalAndInteraction_short_description,
-            "websiteActivity" to R.string.mozac_feature_addons_permissions_data_collection_websiteActivity_short_description,
-            "websiteContent" to R.string.mozac_feature_addons_permissions_data_collection_websiteContent_short_description,
-        )
-
-        /**
-         * A map of data collection permissions to long translation string ids. This should be
-         * kept in sync with `DATA_COLLECTION_PERMISSIONS` in `ExtensionPermissionMessages.sys.mjs`.
-         */
-        @Suppress("MaxLineLength")
-        private val dataCollectionPermissionToLongTranslation = mapOf(
-            "authenticationInfo" to R.string.mozac_feature_addons_permissions_data_collection_authenticationInfo_long_description,
-            "bookmarksInfo" to R.string.mozac_feature_addons_permissions_data_collection_bookmarksInfo_long_description,
-            "browsingActivity" to R.string.mozac_feature_addons_permissions_data_collection_browsingActivity_long_description,
-            "financialAndPaymentInfo" to R.string.mozac_feature_addons_permissions_data_collection_financialAndPaymentInfo_long_description,
-            "healthInfo" to R.string.mozac_feature_addons_permissions_data_collection_healthInfo_long_description,
-            "locationInfo" to R.string.mozac_feature_addons_permissions_data_collection_locationInfo_long_description,
-            "personalCommunications" to R.string.mozac_feature_addons_permissions_data_collection_personalCommunications_long_description,
-            "personallyIdentifyingInfo" to R.string.mozac_feature_addons_permissions_data_collection_personallyIdentifyingInfo_long_description,
-            "searchTerms" to R.string.mozac_feature_addons_permissions_data_collection_searchTerms_long_description,
-            "technicalAndInteraction" to R.string.mozac_feature_addons_permissions_data_collection_technicalAndInteraction_long_description,
-            "websiteActivity" to R.string.mozac_feature_addons_permissions_data_collection_websiteActivity_long_description,
-            "websiteContent" to R.string.mozac_feature_addons_permissions_data_collection_websiteContent_long_description,
-        )
+        private val dataCollectionPermissionToLongTranslation =
+            mapOf(
+                "authenticationInfo" to
+                    R.string.mozac_feature_addons_permissions_data_collection_authenticationInfo_long_description,
+                "bookmarksInfo" to
+                    R.string.mozac_feature_addons_permissions_data_collection_bookmarksInfo_long_description,
+                "browsingActivity" to
+                    R.string.mozac_feature_addons_permissions_data_collection_browsingActivity_long_description,
+                "financialAndPaymentInfo" to
+                    R.string.mozac_feature_addons_permissions_data_collection_financialAndPaymentInfo_long_description,
+                "healthInfo" to R.string.mozac_feature_addons_permissions_data_collection_healthInfo_long_description,
+                "locationInfo" to
+                    R.string.mozac_feature_addons_permissions_data_collection_locationInfo_long_description,
+                "personalCommunications" to
+                    R.string.mozac_feature_addons_permissions_data_collection_personalCommunications_long_description,
+                "personallyIdentifyingInfo" to
+                    R.string
+                        .mozac_feature_addons_permissions_data_collection_personallyIdentifyingInfo_long_description,
+                "searchTerms" to R.string.mozac_feature_addons_permissions_data_collection_searchTerms_long_description,
+                "technicalAndInteraction" to
+                    R.string.mozac_feature_addons_permissions_data_collection_technicalAndInteraction_long_description,
+                "websiteActivity" to
+                    R.string.mozac_feature_addons_permissions_data_collection_websiteActivity_long_description,
+                "websiteContent" to
+                    R.string.mozac_feature_addons_permissions_data_collection_websiteContent_long_description,
+            )
 
         /**
          * Takes a list of [permissions] and returns a list of id resources per each item.
+         *
          * @param permissions The list of permissions to be localized. Valid permissions can be found in
-         * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/permissions#API_permissions
+         *   https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/permissions#API_permissions
          * @param context The application context used to access the string resources.
          * @param forUpdate Optional - When set to `true`, this method will return localized permissions for the update
-         * flow.
+         *   flow.
          */
         fun localizePermissions(permissions: List<String>, context: Context, forUpdate: Boolean = false): List<String> {
             var localizedUrlAccessPermissions = emptyList<String>()
             val requireAllUrlsAccess = permissions.contains("<all_urls>")
             val notFoundPermissions = mutableListOf<String>()
 
-            val translationMap = if (forUpdate) { permissionToTranslationForUpdate } else { permissionToTranslation }
-            val localizedNormalPermissions = permissions.mapNotNull {
-                val id = translationMap[it]
-                if (id == null) notFoundPermissions.add(it)
-                id
-            }.map { context.getString(it) }
+            val translationMap =
+                if (forUpdate) {
+                    permissionToTranslationForUpdate
+                } else {
+                    permissionToTranslation
+                }
+            val localizedNormalPermissions =
+                permissions
+                    .mapNotNull {
+                        val id = translationMap[it]
+                        if (id == null) notFoundPermissions.add(it)
+                        id
+                    }
+                    .map { context.getString(it) }
 
             if (!requireAllUrlsAccess && notFoundPermissions.isNotEmpty()) {
                 localizedUrlAccessPermissions = localizeURLAccessPermissions(context, notFoundPermissions, forUpdate)
@@ -464,16 +461,20 @@ data class Addon(
 
         /**
          * Takes a list of data collection [permissions] and returns a list of localized strings.
+         *
          * @param permissions The list of data collection permissions to be localized.
          */
         fun localizeDataCollectionPermissions(permissions: List<String>, context: Context): List<String> {
-            return permissions.mapNotNull {
-                dataCollectionPermissionToShortTranslation[it]
-            }.map { context.getString(it) }
+            return permissions
+                .mapNotNull {
+                    dataCollectionPermissionToShortTranslation[it]
+                }
+                .map { context.getString(it) }
         }
 
         /**
          * Takes a list of optional data collection [permissions] and returns a list of [LocalizedPermission].
+         *
          * @param permissions The list of optional data collection permissions to be localized.
          * @param context The context for resource lookup.
          */
@@ -494,34 +495,38 @@ data class Addon(
         /**
          * Takes a list of localized permission [String] values and formats it to return a single string.
          *
-         * We want to render the list of data collection permissions as a sentence in the UI. The localized
-         * string expects a unique string parameter that is a formatted list of permission names. For example:
-         *
+         * We want to render the list of data collection permissions as a sentence in the UI. The localized string
+         * expects a unique string parameter that is a formatted list of permission names. For example:
          * ```
          * The developer says this extension collects: x, y, z
          * ```
          *
          * We have to account for a fairly limited API prior to API level 33. That essentially means:
          *
-         * - For API level 33 and above (TIRAMISU), we will return `x, y, z` because we use the "AND" type and
-         *   the "NARROW" width.
+         * - For API level 33 and above (TIRAMISU), we will return `x, y, z` because we use the "AND" type and the
+         *   "NARROW" width.
          *
-         * - For API level below 33, we will use the list formatter that is configured with the
-         *   "AND" type (good) and the "WIDE" width (not ideal). We will therefore return `x, y and z` for the
-         *   same list of permissions. It's still better to use a list formatter for localization.
+         * - For API level below 33, we will use the list formatter that is configured with the "AND" type (good) and
+         *   the "WIDE" width (not ideal). We will therefore return `x, y and z` for the same list of permissions. It's
+         *   still better to use a list formatter for localization.
          *
          * @param localizedPermissions The list of localized permission [String]
          */
         fun formatLocalizedDataCollectionPermissions(localizedPermissions: List<String>): String {
-            val formattedList = when {
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
-                    ListFormatter.getInstance(Locale.getDefault(), ListFormatter.Type.AND, ListFormatter.Width.NARROW)
-                        .format(localizedPermissions)
+            val formattedList =
+                when {
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
+                        ListFormatter.getInstance(
+                                Locale.getDefault(),
+                                ListFormatter.Type.AND,
+                                ListFormatter.Width.NARROW,
+                            )
+                            .format(localizedPermissions)
+                    }
+                    else -> {
+                        ListFormatter.getInstance(Locale.getDefault()).format(localizedPermissions)
+                    }
                 }
-                else -> {
-                    ListFormatter.getInstance(Locale.getDefault()).format(localizedPermissions)
-                }
-            }
             return formattedList
         }
 
@@ -539,17 +544,16 @@ data class Addon(
             val notFoundPermissions = mutableListOf<Permission>()
             val localizedURLAccessPermissions = mutableListOf<LocalizedPermission>()
 
-            val localizedOptionalPermissions: List<LocalizedPermission> =
-                optionalPermissions.mapNotNull {
-                    val resourceId = permissionToTranslation[it.name]
-                    if (resourceId != null) {
-                        if (resourceId.isAllURLsPermission()) allUrlAccessPermissionFound = true
-                        LocalizedPermission(context.getString(resourceId), it)
-                    } else {
-                        notFoundPermissions.add(it)
-                        null
-                    }
+            val localizedOptionalPermissions: List<LocalizedPermission> = optionalPermissions.mapNotNull {
+                val resourceId = permissionToTranslation[it.name]
+                if (resourceId != null) {
+                    if (resourceId.isAllURLsPermission()) allUrlAccessPermissionFound = true
+                    LocalizedPermission(context.getString(resourceId), it)
+                } else {
+                    notFoundPermissions.add(it)
+                    null
                 }
+            }
 
             if (!allUrlAccessPermissionFound && notFoundPermissions.isNotEmpty()) {
                 notFoundPermissions.mapNotNullTo(localizedURLAccessPermissions) { permission ->
@@ -584,32 +588,34 @@ data class Addon(
             val metadata = extension.getMetadata()
             val name = metadata?.name ?: extension.id
             val description = metadata?.description ?: extension.id
-            val permissions =
-                metadata?.requiredPermissions.orEmpty() + metadata?.requiredOrigins.orEmpty()
+            val permissions = metadata?.requiredPermissions.orEmpty() + metadata?.requiredOrigins.orEmpty()
             val averageRating = metadata?.averageRating ?: 0f
             val reviewCount = metadata?.reviewCount ?: 0
             val homepageUrl = metadata?.homepageUrl.orEmpty()
             val ratingUrl = metadata?.reviewUrl.orEmpty()
             val developerName = metadata?.developerName.orEmpty()
-            val author = if (developerName.isNotBlank()) {
-                Author(name = developerName, url = metadata?.developerUrl.orEmpty())
-            } else {
-                null
-            }
+            val author =
+                if (developerName.isNotBlank()) {
+                    Author(name = developerName, url = metadata?.developerUrl.orEmpty())
+                } else {
+                    null
+                }
             val detailUrl = metadata?.detailUrl.orEmpty()
-            val incognito = when (metadata?.incognito) {
-                GeckoIncognito.NOT_ALLOWED -> Incognito.NOT_ALLOWED
-                GeckoIncognito.SPLIT -> Incognito.SPLIT
-                else -> Incognito.SPANNING
-            }
+            val incognito =
+                when (metadata?.incognito) {
+                    GeckoIncognito.NOT_ALLOWED -> Incognito.NOT_ALLOWED
+                    GeckoIncognito.SPLIT -> Incognito.SPLIT
+                    else -> Incognito.SPANNING
+                }
 
             val grantedOptionalPermissions = metadata?.grantedOptionalPermissions ?: emptyList()
-            val optionalPermissions = metadata?.optionalPermissions?.map { permission ->
-                Permission(
-                    name = permission,
-                    granted = grantedOptionalPermissions.contains(permission),
-                )
-            } ?: emptyList()
+            val optionalPermissions =
+                metadata?.optionalPermissions?.map { permission ->
+                    Permission(
+                        name = permission,
+                        granted = grantedOptionalPermissions.contains(permission),
+                    )
+                } ?: emptyList()
 
             val allOrigins = metadata?.optionalOrigins?.toMutableSet() ?: mutableSetOf()
             val grantedOptionalOrigins = metadata?.grantedOptionalOrigins ?: emptyList()
@@ -624,12 +630,13 @@ data class Addon(
             val requiredDataCollectionPermissions = metadata?.requiredDataCollectionPermissions ?: emptyList()
             val grantedOptionalDataCollectionPermissions =
                 metadata?.grantedOptionalDataCollectionPermissions ?: emptyList()
-            val optionalDataCollectionPermissions = metadata?.optionalDataCollectionPermissions?.map { permission ->
-                Permission(
-                    name = permission,
-                    granted = grantedOptionalDataCollectionPermissions.contains(permission),
-                )
-            } ?: emptyList()
+            val optionalDataCollectionPermissions =
+                metadata?.optionalDataCollectionPermissions?.map { permission ->
+                    Permission(
+                        name = permission,
+                        granted = grantedOptionalDataCollectionPermissions.contains(permission),
+                    )
+                } ?: emptyList()
 
             return Addon(
                 id = extension.id,
@@ -657,34 +664,36 @@ data class Addon(
         }
 
         /**
-         * Returns a new [String] formatted in "yyyy-MM-dd'T'HH:mm:ss'Z'".
-         * [Metadata] uses "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" which is in simplified 8601 format
-         * while [Addon] uses "yyyy-MM-dd'T'HH:mm:ss'Z'"
+         * Returns a new [String] formatted in "yyyy-MM-dd'T'HH:mm:ss'Z'". [Metadata] uses
+         * "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" which is in simplified 8601 format while [Addon] uses
+         * "yyyy-MM-dd'T'HH:mm:ss'Z'"
          *
          * @param inputDate The string data to be formatted.
          */
         @VisibleForTesting
         internal fun fromMetadataToAddonDate(inputDate: String): String {
-            val updatedAt: String = try {
-                val zone = TimeZone.getTimeZone("GMT")
-                val metadataFormat =
-                    SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ROOT).apply {
-                        timeZone = zone
-                    }
-                val addonFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT).apply {
-                    timeZone = zone
-                }
-                val formattedDate = metadataFormat.parse(inputDate)
+            val updatedAt: String =
+                try {
+                    val zone = TimeZone.getTimeZone("GMT")
+                    val metadataFormat =
+                        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ROOT).apply {
+                            timeZone = zone
+                        }
+                    val addonFormat =
+                        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT).apply {
+                            timeZone = zone
+                        }
+                    val formattedDate = metadataFormat.parse(inputDate)
 
-                if (formattedDate !== null) {
-                    addonFormat.format(formattedDate)
-                } else {
+                    if (formattedDate !== null) {
+                        addonFormat.format(formattedDate)
+                    } else {
+                        ""
+                    }
+                } catch (e: ParseException) {
+                    logger.error("Unable to format $inputDate", e)
                     ""
                 }
-            } catch (e: ParseException) {
-                logger.error("Unable to format $inputDate", e)
-                ""
-            }
             return updatedAt
         }
 
@@ -704,11 +713,12 @@ data class Addon(
             }
 
             if (permissionsToTranslations.values.any { it.isAllURLsPermission() }) {
-                val stringId = if (forUpdate) {
-                    R.string.mozac_feature_addons_permissions_all_urls_description_for_update
-                } else {
-                    R.string.mozac_feature_addons_permissions_all_urls_description
-                }
+                val stringId =
+                    if (forUpdate) {
+                        R.string.mozac_feature_addons_permissions_all_urls_description_for_update
+                    } else {
+                        R.string.mozac_feature_addons_permissions_all_urls_description
+                    }
                 localizedSiteAccessPermissions.add(context.getString(stringId))
             } else {
                 formatURLAccessPermission(permissionsToTranslations, localizedSiteAccessPermissions, context, forUpdate)
@@ -724,7 +734,12 @@ data class Addon(
             context: Context,
             forUpdate: Boolean = false,
         ) {
-            val maxShownPermissionsEntries = if (forUpdate) { 2 } else { 4 }
+            val maxShownPermissionsEntries =
+                if (forUpdate) {
+                    2
+                } else {
+                    4
+                }
             fun addExtraEntriesIfNeeded(collapsedPermissions: Int, oneExtraPermission: Int, multiplePermissions: Int) {
                 if (collapsedPermissions == 1) {
                     localizedSiteAccessPermissions.add(context.getString(oneExtraPermission))
@@ -757,57 +772,62 @@ data class Addon(
             // If we have [maxPermissionsEntries] or fewer permissions, display them all, otherwise we
             // display the first [maxPermissionsEntries] followed by an item that says "...plus N others"
             if (domainCount > maxShownPermissionsEntries) {
-                val onePermission = if (forUpdate) {
-                    R.string.mozac_feature_addons_permissions_one_extra_domain_description_for_update
-                } else {
-                    R.string.mozac_feature_addons_permissions_one_extra_domain_description_2
-                }
-                val multiplePermissions = if (forUpdate) {
-                    R.string.mozac_feature_addons_permissions_extra_domains_description_plural_for_update
-                } else {
-                    R.string.mozac_feature_addons_permissions_extra_domains_description_plural_2
-                }
+                val onePermission =
+                    if (forUpdate) {
+                        R.string.mozac_feature_addons_permissions_one_extra_domain_description_for_update
+                    } else {
+                        R.string.mozac_feature_addons_permissions_one_extra_domain_description_2
+                    }
+                val multiplePermissions =
+                    if (forUpdate) {
+                        R.string.mozac_feature_addons_permissions_extra_domains_description_plural_for_update
+                    } else {
+                        R.string.mozac_feature_addons_permissions_extra_domains_description_plural_2
+                    }
                 addExtraEntriesIfNeeded(domainCount - maxShownPermissionsEntries, onePermission, multiplePermissions)
             }
             if (siteCount > maxShownPermissionsEntries) {
-                val onePermission = if (forUpdate) {
-                    R.string.mozac_feature_addons_permissions_one_extra_site_description_for_update
-                } else {
-                    R.string.mozac_feature_addons_permissions_one_extra_site_description_2
-                }
-                val multiplePermissions = if (forUpdate) {
-                    R.string.mozac_feature_addons_permissions_extra_sites_description_for_update
-                } else {
-                    R.string.mozac_feature_addons_permissions_extra_sites_description_2
-                }
+                val onePermission =
+                    if (forUpdate) {
+                        R.string.mozac_feature_addons_permissions_one_extra_site_description_for_update
+                    } else {
+                        R.string.mozac_feature_addons_permissions_one_extra_site_description_2
+                    }
+                val multiplePermissions =
+                    if (forUpdate) {
+                        R.string.mozac_feature_addons_permissions_extra_sites_description_for_update
+                    } else {
+                        R.string.mozac_feature_addons_permissions_extra_sites_description_2
+                    }
                 addExtraEntriesIfNeeded(siteCount - maxShownPermissionsEntries, onePermission, multiplePermissions)
             }
         }
 
         private fun Int.isSiteAccessPermission(): Boolean {
             return listOf(
-                R.string.mozac_feature_addons_permissions_one_site_description,
-                R.string.mozac_feature_addons_permissions_one_site_description_for_update,
-            ).contains(this)
+                    R.string.mozac_feature_addons_permissions_one_site_description,
+                    R.string.mozac_feature_addons_permissions_one_site_description_for_update,
+                )
+                .contains(this)
         }
 
         private fun Int.isDomainAccessPermission(): Boolean {
             return listOf(
-                R.string.mozac_feature_addons_permissions_sites_in_domain_description,
-                R.string.mozac_feature_addons_permissions_sites_in_domain_description_for_update,
-            ).contains(this)
+                    R.string.mozac_feature_addons_permissions_sites_in_domain_description,
+                    R.string.mozac_feature_addons_permissions_sites_in_domain_description_for_update,
+                )
+                .contains(this)
         }
 
         private fun Int.isAllURLsPermission(): Boolean {
             return listOf(
-                R.string.mozac_feature_addons_permissions_all_urls_description,
-                R.string.mozac_feature_addons_permissions_all_urls_description_for_update,
-            ).contains(this)
+                    R.string.mozac_feature_addons_permissions_all_urls_description,
+                    R.string.mozac_feature_addons_permissions_all_urls_description_for_update,
+                )
+                .contains(this)
         }
 
-        /**
-         * Check if a permission is considered [Int.isAllURLsPermission] based on the name
-         */
+        /** Check if a permission is considered [Int.isAllURLsPermission] based on the name */
         fun Permission.isAllURLsPermission(): Boolean {
             return permissionToTranslation[name]?.isAllURLsPermission() == true ||
                 permissionToTranslationForUpdate[name]?.isAllURLsPermission() == true ||
@@ -819,10 +839,9 @@ data class Addon(
          *
          * @param permissions the list of permissions to check
          */
-        fun permissionsListContainsAllUrls(permissions: List<String>): Boolean =
-            permissions.any {
-                getStringIdForHostPermission(it)?.isAllURLsPermission() == true
-            }
+        fun permissionsListContainsAllUrls(permissions: List<String>): Boolean = permissions.any {
+            getStringIdForHostPermission(it)?.isAllURLsPermission() == true
+        }
 
         /**
          * Data class representing host permissions.
@@ -838,13 +857,11 @@ data class Addon(
         )
 
         /**
-         * Classify host permissions.
-         * This is a direct conversion of the desktop function found at:
+         * Classify host permissions. This is a direct conversion of the desktop function found at:
          * https://searchfox.org/mozilla-central/rev/b765e2890b0eb85b24f54bc7ff04491fd0704e30/toolkit/components/extensions/Extension.sys.mjs#2367
          *
          * @param origins List of permission origins.
          * @param ignoreNonWebSchemes Whether to return only schemes like *, http, https, ws, wss.
-         *
          * @return [HostPermissions] containing categorized permissions.
          */
         fun classifyOriginPermissions(
@@ -863,12 +880,11 @@ data class Addon(
                     continue
                 }
 
-                val match = Regex("^([a-z*]+)://([^/]*)/|^about:").find(permission)
-                    ?: return Result.failure(
-                        IllegalArgumentException(
-                            "Illegal origin permission pattern found: $permission",
-                        ),
-                    )
+                val match =
+                    Regex("^([a-z*]+)://([^/]*)/|^about:").find(permission)
+                        ?: return Result.failure(
+                            IllegalArgumentException("Illegal origin permission pattern found: $permission")
+                        )
 
                 val scheme = match.groups[1]?.value
                 val host = match.groups[2]?.value
@@ -920,9 +936,7 @@ data class Addon(
             }
         }
 
-        /**
-         * The default fallback locale in case the [Addon] does not have its own [Addon.defaultLocale].
-         */
+        /** The default fallback locale in case the [Addon] does not have its own [Addon.defaultLocale]. */
         const val DEFAULT_LOCALE = "en-us"
     }
 }

@@ -557,12 +557,15 @@ class nsBlockFrame : public nsContainerFrame {
 
   /** Returns the effective align-content of this frame */
   mozilla::StyleAlignFlags EffectiveAlignContent() const {
-    if (IsButtonLike()) {
-      return mozilla::StyleAlignFlags::CENTER;
-    }
-    if (IsSingleLineTextInput()) {
-      return mozilla::StyleAlignFlags::CENTER |
-             mozilla::StyleAlignFlags::UNSAFE;
+    if (!mozilla::StaticPrefs::
+            layout_forms_button_input_align_content_block_enabled()) {
+      if (IsButtonLike()) {
+        return mozilla::StyleAlignFlags::CENTER;
+      }
+      if (IsSingleLineTextInput()) {
+        return mozilla::StyleAlignFlags::CENTER |
+               mozilla::StyleAlignFlags::UNSAFE;
+      }
     }
     return StylePosition()->mAlignContent.primary;
   }

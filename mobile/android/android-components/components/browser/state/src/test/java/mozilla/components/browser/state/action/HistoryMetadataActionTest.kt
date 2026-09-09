@@ -21,12 +21,17 @@ class HistoryMetadataActionTest {
         var state = BrowserState(tabs = listOf(tab))
         assertNull(state.findTab(tab.id)?.historyMetadata)
 
-        val historyMetadata = HistoryMetadataKey(
-            url = tab.content.url,
-            referrerUrl = "https://firefox.com",
-        )
+        val historyMetadata =
+            HistoryMetadataKey(
+                url = tab.content.url,
+                referrerUrl = "https://firefox.com",
+            )
 
-        state = BrowserStateReducer.reduce(state, HistoryMetadataAction.SetHistoryMetadataKeyAction(tab.id, historyMetadata))
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                HistoryMetadataAction.SetHistoryMetadataKeyAction(tab.id, historyMetadata),
+            )
         assertEquals(historyMetadata, state.findTab(tab.id)?.historyMetadata)
     }
 
@@ -35,15 +40,17 @@ class HistoryMetadataActionTest {
         val tab1 = createTab("https://www.mozilla.org")
         val tab2 = createTab("https://www.mozilla.org/downloads")
         var state = BrowserState(tabs = listOf(tab1, tab2))
-        val historyMetadata1 = HistoryMetadataKey(
-            url = tab1.content.url,
-            referrerUrl = "https://firefox.com",
-        )
-        val historyMetadata2 = HistoryMetadataKey(
-            url = tab2.content.url,
-            searchTerm = "download Firefox",
-            referrerUrl = "https://google.com/?q=download+firefox",
-        )
+        val historyMetadata1 =
+            HistoryMetadataKey(
+                url = tab1.content.url,
+                referrerUrl = "https://firefox.com",
+            )
+        val historyMetadata2 =
+            HistoryMetadataKey(
+                url = tab2.content.url,
+                searchTerm = "download Firefox",
+                referrerUrl = "https://google.com/?q=download+firefox",
+            )
 
         // Okay to do this without any metadata associated with tabs.
         state = BrowserStateReducer.reduce(state, HistoryMetadataAction.DisbandSearchGroupAction("Download firefox"))
@@ -51,8 +58,16 @@ class HistoryMetadataActionTest {
         // Okay to do this with an empty search term string.
         state = BrowserStateReducer.reduce(state, HistoryMetadataAction.DisbandSearchGroupAction(""))
 
-        state = BrowserStateReducer.reduce(state, HistoryMetadataAction.SetHistoryMetadataKeyAction(tab1.id, historyMetadata1))
-        state = BrowserStateReducer.reduce(state, HistoryMetadataAction.SetHistoryMetadataKeyAction(tab2.id, historyMetadata2))
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                HistoryMetadataAction.SetHistoryMetadataKeyAction(tab1.id, historyMetadata1),
+            )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                HistoryMetadataAction.SetHistoryMetadataKeyAction(tab2.id, historyMetadata2),
+            )
 
         // Search term matching is case-insensitive.
         state = BrowserStateReducer.reduce(state, HistoryMetadataAction.DisbandSearchGroupAction("Download firefox"))

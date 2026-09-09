@@ -6,15 +6,12 @@ package org.mozilla.samples.compose.browser.browser
 
 import mozilla.components.lib.state.Store
 
-/**
- * [Store] for maintaining the state of the browser screen.
- */
-class BrowserScreenStore(
-    initialState: BrowserScreenState = BrowserScreenState(),
-) : Store<BrowserScreenState, BrowserScreenAction>(
-    initialState = initialState,
-    reducer = ::reduce,
-)
+/** [Store] for maintaining the state of the browser screen. */
+class BrowserScreenStore(initialState: BrowserScreenState = BrowserScreenState()) :
+    Store<BrowserScreenState, BrowserScreenAction>(
+        initialState = initialState,
+        reducer = ::reduce,
+    )
 
 private fun reduce(state: BrowserScreenState, action: BrowserScreenAction): BrowserScreenState {
     return when (action) {

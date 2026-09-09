@@ -16,14 +16,12 @@ import mozilla.components.feature.prompts.facts.emitAddressAutofillShownFact
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * Interactor that implements [SelectablePromptView.Listener] and notifies the feature about actions
- * the user performed in the address picker.
+ * Interactor that implements [SelectablePromptView.Listener] and notifies the feature about actions the user performed
+ * in the address picker.
  *
  * @property store The [BrowserStore] this feature should subscribe to.
- * @property addressSelectBar The [AutocompletePrompt] view into which the select address
- * prompt will be inflated.
- * @property onManageAddresses Callback invoked when user clicks on "Manage adresses" button from
- * select address prompt.
+ * @property addressSelectBar The [AutocompletePrompt] view into which the select address prompt will be inflated.
+ * @property onManageAddresses Callback invoked when user clicks on "Manage adresses" button from select address prompt.
  * @property sessionId The session ID which requested the prompt.
  */
 class AddressPicker(
@@ -51,8 +49,7 @@ class AddressPicker(
     /**
      * Dismisses the active [PromptRequest.SelectAddress] request.
      *
-     * @param promptRequest The current active [PromptRequest.SelectAddress] or null
-     * otherwise.
+     * @param promptRequest The current active [PromptRequest.SelectAddress] or null otherwise.
      */
     @Suppress("TooGenericExceptionCaught")
     fun dismissSelectAddressRequest(promptRequest: PromptRequest.SelectAddress? = null) {

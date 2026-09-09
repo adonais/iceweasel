@@ -6,9 +6,7 @@ package org.mozilla.samples.fxa
 
 import mozilla.components.concept.sync.FxAEntryPoint
 
-/**
- * An implementation of [FxAEntryPoint] for the sample application.
- */
+/** An implementation of [FxAEntryPoint] for the sample application. */
 enum class SampleFxAEntryPoint(override val entryName: String) : FxAEntryPoint {
-    HomeMenu("home-menu"),
+    HomeMenu("home-menu")
 }

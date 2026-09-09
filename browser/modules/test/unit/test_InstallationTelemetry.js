@@ -9,14 +9,18 @@ const { AppConstants } = ChromeUtils.importESModule(
 const { BrowserUsageTelemetry } = ChromeUtils.importESModule(
   "resource:///modules/BrowserUsageTelemetry.sys.mjs"
 );
-const { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
 ChromeUtils.defineESModuleGetters(this, {
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
 });
 
 const TIMESTAMP_PREF = "app.installation.timestamp";
+
+// The first_seen event recorded for each installation type.
+const FIRST_SEEN_EVENTS = {
+  full: () => Glean.installation.firstSeenFull,
+  stub: () => Glean.installation.firstSeenStub,
+  msix: () => Glean.installation.firstSeenMsix,
+};
 
 function encodeUtf16(str) {
   const buf = new ArrayBuffer(str.length * 2);
@@ -47,7 +51,7 @@ async function runReport(
   }
 
   // Init events
-  Services.telemetry.clearEvents();
+  Services.fog.testResetFOG();
 
   // Exercise reportInstallationTelemetry
   if (typeof assertRejects != "undefined") {
@@ -65,18 +69,35 @@ async function runReport(
   }
 
   // Check events
-  TelemetryTestUtils.assertEvents(
-    expectExtra
-      ? [{ object: installType, value: null, extra: expectExtra }]
-      : [],
-    { category: "installation", method: "first_seen" }
+  const recorded = Object.entries(FIRST_SEEN_EVENTS).map(([type, event]) => [
+    type,
+    event().testGetValue() ?? [],
+  ]);
+  Assert.equal(
+    recorded.reduce((total, [, events]) => total + events.length, 0),
+    expectExtra ? 1 : 0,
+    "Expected number of first_seen events"
   );
+  if (expectExtra) {
+    const events = FIRST_SEEN_EVENTS[installType]().testGetValue() ?? [];
+    Assert.equal(events.length, 1, `first_seen recorded for ${installType}`);
+    if (events.length) {
+      for (const [key, value] of Object.entries(expectExtra)) {
+        Assert.equal(events[0].extra[key], value, `extra[${key}] must match`);
+      }
+    }
+  }
 
   // Check timestamp
   if (typeof expectTS == "string") {
     Assert.equal(expectTS, Services.prefs.getStringPref(TIMESTAMP_PREF));
   }
 }
+
+add_setup(function () {
+  do_get_profile();
+  Services.fog.initializeFOG();
+});
 
 let condition = {
   skip_if: () =>
@@ -90,7 +111,7 @@ add_task(condition, async function testInstallationTelemetryMSIX() {
   // nothing we can do here.
   let msixExtra = {
     version: AppConstants.MOZ_APP_VERSION,
-    build_id: AppConstants.MOZ_BULIDID,
+    build_id: AppConstants.MOZ_BUILDID,
     admin_user: "false",
     from_msi: "false",
     silent: "false",

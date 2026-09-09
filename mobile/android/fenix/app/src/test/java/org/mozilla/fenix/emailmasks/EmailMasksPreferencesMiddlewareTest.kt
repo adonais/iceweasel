@@ -19,10 +19,11 @@ class EmailMasksPreferencesMiddlewareTest {
 
     private lateinit var repository: FakeEmailMasksRepository
     private lateinit var middleware: EmailMasksPreferencesMiddleware
-    private val store = Store<EmailMasksState, EmailMasksAction>(
-        initialState = EmailMasksState(),
-        reducer = { state, _ -> state },
-    )
+    private val store =
+        Store<EmailMasksState, EmailMasksAction>(
+            initialState = EmailMasksState(),
+            reducer = { state, _ -> state },
+        )
 
     @Before
     fun setup() {

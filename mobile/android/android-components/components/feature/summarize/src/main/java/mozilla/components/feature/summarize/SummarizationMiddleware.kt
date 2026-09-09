@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.summarize
 
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -23,15 +24,14 @@ import mozilla.components.feature.summarize.ext.prompt
 import mozilla.components.feature.summarize.settings.SummarizationSettings
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
-import kotlin.time.Duration.Companion.seconds
 
 const val TAG = "SummarizationMiddleware"
 
 /**
  * The initial middleware for the summarization feature.
  *
- * @property llmProvider The cloud provider used to source a summarization [Llm]. A token is renewed
- * by preparing the provider when it does not already hold a usable one.
+ * @property llmProvider The cloud provider used to source a summarization [Llm]. A token is renewed by preparing the
+ *   provider when it does not already hold a usable one.
  */
 class SummarizationMiddleware(
     private val isPageLoadingFlow: Flow<Boolean>,
@@ -49,39 +49,45 @@ class SummarizationMiddleware(
         action: SummarizationAction,
     ) {
         when (action) {
-            is ViewAppeared -> scope.launch {
-                if (needsShakeConsent(store.state)) {
-                    store.dispatch(ShakeConsentRequested)
-                } else if (isPageLoadingFlow.first()) {
-                    store.dispatch(PageLoadStarted)
-                    try {
-                        withTimeout(PAGE_LOADING_TIMEOUT) {
-                            isPageLoadingFlow.first { !it }
-                            store.dispatch(PageLoadCompleted)
+            is ViewAppeared ->
+                scope.launch {
+                    if (needsShakeConsent(store.state)) {
+                        store.dispatch(ShakeConsentRequested)
+                    } else if (isPageLoadingFlow.first()) {
+                        store.dispatch(PageLoadStarted)
+                        try {
+                            withTimeout(PAGE_LOADING_TIMEOUT) {
+                                isPageLoadingFlow.first { !it }
+                                store.dispatch(PageLoadCompleted)
+                            }
+                        } catch (e: TimeoutCancellationException) {
+                            store.dispatch(SummarizationFailed(e))
                         }
-                    } catch (e: TimeoutCancellationException) {
-                        store.dispatch(SummarizationFailed(e))
+                    } else {
+                        observeCloudLlmProvider(store)
                     }
-                } else {
+                }
+            OffDeviceSummarizationShakeConsentAction.CancelClicked ->
+                scope.launch {
+                    settings.incrementShakeConsentRejectedCount()
+                }
+            OffDeviceSummarizationShakeConsentAction.AllowClicked ->
+                scope.launch {
+                    settings.setHasConsentedToShake(true)
                     observeCloudLlmProvider(store)
                 }
-            }
-            OffDeviceSummarizationShakeConsentAction.CancelClicked -> scope.launch {
-                settings.incrementShakeConsentRejectedCount()
-            }
-            OffDeviceSummarizationShakeConsentAction.AllowClicked -> scope.launch {
-                settings.setHasConsentedToShake(true)
-                observeCloudLlmProvider(store)
-            }
-            is LlmProviderAction.ProviderInitialized -> scope.launch {
-                observePrompt(store, action.llm)
-            }
-            is SummarizationFailed -> scope.launch {
-                errorReporter.report(TAG, action.exception)
-            }
-            is PageLoadCompleted -> scope.launch {
-                observeCloudLlmProvider(store)
-            }
+            is LlmProviderAction.ProviderInitialized ->
+                scope.launch {
+                    observePrompt(store, action.llm)
+                }
+            is SummarizationFailed ->
+                scope.launch {
+                    errorReporter.report(TAG, action.exception)
+                }
+            is PageLoadCompleted ->
+                scope.launch {
+                    observeCloudLlmProvider(store)
+                }
 
             is ContentExtracted,
             DownloadConsentAction.AllowClicked,
@@ -102,14 +108,16 @@ class SummarizationMiddleware(
             is ReceivedParsedDocument,
             SettingsBackClicked,
             SettingsClicked,
+            is SettingsLoaded,
             ShakeConsentRequested,
             SignInSummarizationContentAction.DismissClicked,
             SignInSummarizationContentAction.LearnMoreClicked,
             SignInSummarizationContentAction.SignInClicked,
             SummarizationCompleted,
             is SummarizationRequested,
-            is ViewDismissed,
-            -> Unit
+            is SummarizeSettingsActionWrapper,
+            is SummaryFeedbackProvided,
+            is ViewDismissed -> Unit
         }
 
         next(action)
@@ -148,9 +156,7 @@ class SummarizationMiddleware(
     }
 
     private suspend fun needsShakeConsent(state: SummarizationState): Boolean =
-        state is SummarizationState.Inert &&
-            state.initializedWithShake &&
-            !settings.getHasConsentedToShake().first()
+        state is SummarizationState.Inert && state.initializedWithShake && !settings.getHasConsentedToShake().first()
 
     private companion object {
         val SUMMARIZE_TIMEOUT = 60.seconds

@@ -38,16 +38,18 @@ fun StoriesCategories(
     onCategoryClick: (PocketRecommendedStoriesCategory) -> Unit,
 ) {
     Box(
-        modifier = modifier.semantics {
-            testTagsAsResourceId = true
-            testTag = "pocket.categories"
-        },
+        modifier =
+            modifier.semantics {
+                testTagsAsResourceId = true
+                testTag = "pocket.categories"
+            }
     ) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            categories.filter { it.name != POCKET_STORIES_DEFAULT_CATEGORY_NAME }
+            categories
+                .filter { it.name != POCKET_STORIES_DEFAULT_CATEGORY_NAME }
                 .forEach { category ->
                     SelectableChip(
                         text = category.name,

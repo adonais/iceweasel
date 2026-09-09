@@ -5,11 +5,11 @@
 package org.mozilla.fenix.settings.pagesummaries
 
 import android.content.Context
+import mozilla.components.feature.summarize.R as summariesR
 import org.mozilla.fenix.settings.settingssearch.PreferenceFileInformation
 import org.mozilla.fenix.settings.settingssearch.SettingsSearchItem
 import org.mozilla.fenix.settings.settingssearch.SettingsSearchProvider
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
-import mozilla.components.feature.summarize.R as summariesR
 
 /**
  * [SettingsSearchProvider] for making "Page summaries" discoverable in settings search
@@ -17,7 +17,7 @@ import mozilla.components.feature.summarize.R as summariesR
  * Returns an empty list when the feature is not available, so the feature is not indexed.
  */
 class PageSummariesSettingsSearchProvider(
-    val summarizationFeatureConfiguration: SummarizationFeatureDiscoveryConfiguration,
+    val summarizationFeatureConfiguration: SummarizationFeatureDiscoveryConfiguration
 ) : SettingsSearchProvider {
 
     private val preferenceFileInformation = PreferenceFileInformation.PageSummariesPreferences
@@ -33,39 +33,32 @@ class PageSummariesSettingsSearchProvider(
                     preferenceKey = Section.Feature.key,
                     categoryHeader = context.getString(preferenceFileInformation.categoryHeaderResourceId),
                     preferenceFileInformation = preferenceFileInformation,
-                ),
+                )
             )
             add(
                 SettingsSearchItem(
                     title = context.getString(summariesR.string.mozac_summarize_settings_shake_to_summarize),
-                    summary = context.getString(
-                        summariesR.string.mozac_summarize_settings_shake_to_summarize_description,
-                    ),
+                    summary =
+                        context.getString(summariesR.string.mozac_summarize_settings_shake_to_summarize_description),
                     preferenceKey = Section.Gestures.key,
                     categoryHeader = context.getString(preferenceFileInformation.categoryHeaderResourceId),
                     preferenceFileInformation = preferenceFileInformation,
-                ),
+                )
             )
         }
     }
 
-    /**
-     * Preference sections for the "Page summaries" settings
-     */
+    /** Preference sections for the "Page summaries" settings */
     private sealed interface Section {
         val key: String
 
-        /**
-         * The page summaries feature section
-         */
+        /** The page summaries feature section */
         data object Feature : Section {
             override val key: String
                 get() = "PAGE_SUMMARIES_FEATURE"
         }
 
-        /**
-         * The page summaries gestures section
-         */
+        /** The page summaries gestures section */
         data object Gestures : Section {
             override val key: String
                 get() = "PAGE_SUMMARIES_GESTURES"

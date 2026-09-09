@@ -19,18 +19,17 @@ import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 
-/**
- * Internal database for storing collections and their tabs.
- */
+/** Internal database for storing collections and their tabs. */
 @Database(
     entities = [CrashEntity::class, ReportEntity::class],
     version = 5,
-    autoMigrations = [
-        AutoMigration(from = 1, to = 2),
-        AutoMigration(from = 2, to = 3),
-        AutoMigration(from = 3, to = 4, spec = CrashDatabase.DropCrashEntityMinidumpSuccess::class),
-        AutoMigration(from = 4, to = 5, spec = CrashDatabase.RenameCrashEntityProcessType::class),
-    ],
+    autoMigrations =
+        [
+            AutoMigration(from = 1, to = 2),
+            AutoMigration(from = 2, to = 3),
+            AutoMigration(from = 3, to = 4, spec = CrashDatabase.DropCrashEntityMinidumpSuccess::class),
+            AutoMigration(from = 4, to = 5, spec = CrashDatabase.RenameCrashEntityProcessType::class),
+        ],
 )
 @TypeConverters(Converter::class)
 internal abstract class CrashDatabase : RoomDatabase() {
@@ -41,13 +40,15 @@ internal abstract class CrashDatabase : RoomDatabase() {
 
         @Synchronized
         fun get(context: Context): CrashDatabase {
-            instance?.let { return it }
+            instance?.let {
+                return it
+            }
 
             return Room.databaseBuilder(
-                context.applicationContext,
-                CrashDatabase::class.java,
-                "crashes",
-            )
+                    context.applicationContext,
+                    CrashDatabase::class.java,
+                    "crashes",
+                )
                 // We are allowing main thread queries here since we need to write to disk blocking
                 // in a crash event before the process gets shutdown. At this point the app already
                 // crashed and temporarily blocking the UI thread is not that problematic anymore.
@@ -71,8 +72,7 @@ internal class Converter {
     private val listSerializer = ListSerializer(String.serializer())
 
     @TypeConverter
-    fun mapToString(map: Map<String, String>): String =
-        Json.encodeToString(serializer = mapSerializer, value = map)
+    fun mapToString(map: Map<String, String>): String = Json.encodeToString(serializer = mapSerializer, value = map)
 
     @TypeConverter
     fun stringToMap(string: String): Map<String, String> =

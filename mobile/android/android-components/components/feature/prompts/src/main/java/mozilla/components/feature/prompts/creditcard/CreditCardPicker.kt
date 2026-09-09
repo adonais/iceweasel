@@ -17,16 +17,16 @@ import mozilla.components.feature.prompts.facts.emitCreditCardAutofillShownFact
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * Interactor that implements [SelectablePromptView.Listener] and notifies the feature about actions
- * the user performed in the credit card picker.
+ * Interactor that implements [SelectablePromptView.Listener] and notifies the feature about actions the user performed
+ * in the credit card picker.
  *
  * @property store The [BrowserStore] this feature should subscribe to.
- * @property creditCardSelectBar The [AutocompletePrompt] view into which the select credit card
- * prompt will be inflated.
- * @property manageCreditCardsCallback A callback invoked when a user selects "Manage credit cards"
- * from the select credit card prompt.
- * @property selectCreditCardCallback A callback invoked when a user selects a credit card option
- * from the select credit card prompt
+ * @property creditCardSelectBar The [AutocompletePrompt] view into which the select credit card prompt will be
+ *   inflated.
+ * @property manageCreditCardsCallback A callback invoked when a user selects "Manage credit cards" from the select
+ *   credit card prompt.
+ * @property selectCreditCardCallback A callback invoked when a user selects a credit card option from the select credit
+ *   card prompt
  * @property sessionId The session ID which requested the prompt.
  */
 class CreditCardPicker(
@@ -42,8 +42,7 @@ class CreditCardPicker(
     }
 
     // The selected credit card option to confirm.
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal var selectedCreditCard: CreditCardEntry? = null
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal var selectedCreditCard: CreditCardEntry? = null
 
     override fun onManageOptions() {
         manageCreditCardsCallback.invoke()
@@ -56,9 +55,7 @@ class CreditCardPicker(
         selectCreditCardCallback.invoke()
     }
 
-    /**
-     * Called on a successful authentication to confirm the selected credit card option.
-     */
+    /** Called on a successful authentication to confirm the selected credit card option. */
     fun onAuthSuccess() {
         store.consumePromptFrom<PromptRequest.SelectCreditCard>(sessionId) {
             selectedCreditCard?.let { creditCard ->
@@ -69,9 +66,7 @@ class CreditCardPicker(
         }
     }
 
-    /**
-     * Called on a failed authentication to dismiss the current select credit card prompt request.
-     */
+    /** Called on a failed authentication to dismiss the current select credit card prompt request. */
     fun onAuthFailure() {
         selectedCreditCard = null
 
@@ -83,8 +78,7 @@ class CreditCardPicker(
     /**
      * Dismisses the active select credit card request.
      *
-     * @param promptRequest The current active [PromptRequest.SelectCreditCard] or null
-     * otherwise.
+     * @param promptRequest The current active [PromptRequest.SelectCreditCard] or null otherwise.
      */
     @Suppress("TooGenericExceptionCaught")
     fun dismissSelectCreditCardRequest(promptRequest: PromptRequest.SelectCreditCard? = null) {

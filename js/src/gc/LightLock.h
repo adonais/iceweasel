@@ -7,7 +7,6 @@
 #define gc_LightLock_h
 
 #include "mozilla/Atomics.h"
-#include "mozilla/ThreadLocal.h"
 
 #include "js/TypeDecls.h"
 #include "threading/ConditionVariable.h"
@@ -21,17 +20,12 @@ extern void TSANMemoryAcquireFence(JSRuntime* runtime);
 extern void TSANMemoryReleaseFence(JSRuntime* runtime);
 #endif
 
-#ifdef DEBUG
-extern MOZ_THREAD_LOCAL(bool) TlsLightLockHeld;
-#endif
-
 // A lightweight lock modelled after rust's parking lot mutex.
 //
 // WARNING: This is not a general purpose mutex! There are the following
 // restrictions on use:
 //
 //  - only two threads are supported
-//  - a thread may hold at most one lock at a time
 //
 // This is intended for use in concurrent marking which only requires the
 // current feature set. This greatly simplifies the implementation.
@@ -42,7 +36,7 @@ extern MOZ_THREAD_LOCAL(bool) TlsLightLockHeld;
 //
 // The rust implementation can be found here:
 // https://docs.rs/parking_lot/latest/src/parking_lot/raw_mutex.rs.html
-class LightLock {
+class LightLock : public MutexBase {
   enum StateBits : uint32_t {
     // Whether the mutex is locked. Set and cleared by the locking thread.
     IsLocked = Bit(0),
@@ -61,39 +55,24 @@ class LightLock {
   // It's unlikely to be a big deal but this could be improved in the future.
   mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> state;
 
-#ifdef DEBUG
-  ThreadId holdingThread_;
-#endif
-
  public:
+  explicit LightLock(const MutexId& id) : MutexBase(id) {}
+
   void lock(JSRuntime* runtime) {
-    MOZ_ASSERT(!TlsLightLockHeld.get());
-    MOZ_ASSERT(holdingThread_ != ThreadId::ThisThreadId());
+    preLockChecks();
     if (MOZ_UNLIKELY(!state.compareExchange(UnlockedState, LockedState))) {
       lockSlow(runtime);
     }
-#ifdef DEBUG
     MOZ_ASSERT(isLocked());
-    MOZ_ASSERT(holdingThread_ == ThreadId());
-    holdingThread_ = ThreadId::ThisThreadId();
-    TlsLightLockHeld.set(true);
-#endif
+    postLockChecks();
   }
   void lockSlow(JSRuntime* runtime);
 
   void unlock(JSRuntime* runtime) {
-#ifdef DEBUG
-    MOZ_ASSERT(isLocked());
-    MOZ_ASSERT(TlsLightLockHeld.get());
-    MOZ_ASSERT(holdingThread_ == ThreadId::ThisThreadId());
-    holdingThread_ = ThreadId();
-#endif
+    preUnlockChecks();
     if (MOZ_UNLIKELY(!state.compareExchange(LockedState, UnlockedState))) {
       unlockSlow(runtime);
     }
-#ifdef DEBUG
-    TlsLightLockHeld.set(false);
-#endif
   }
   void unlockSlow(JSRuntime* runtime);
 

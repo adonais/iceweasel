@@ -42,7 +42,7 @@
           data-l10n-id="add-engine-name"
         />
         <html:input id="engineName" type="text" required="required" />
-        <html:div class="error-label">valid</html:div>
+        <html:div id="engineName-error" class="error-label" role="alert" />
       </html:div>
 
       <html:div class="dialogRow" id="engineUrlRow">
@@ -52,7 +52,7 @@
           data-l10n-id="add-engine-url2"
         />
         <html:input id="engineUrl" type="url" required="required" />
-        <html:div class="error-label">valid</html:div>
+        <html:div id="engineUrl-error" class="error-label" role="alert" />
       </html:div>
 
       <html:div class="dialogRow">
@@ -62,7 +62,7 @@
           data-l10n-id="add-engine-keyword2"
         />
         <html:input id="engineAlias" type="text" />
-        <html:div class="error-label">valid</html:div>
+        <html:div id="engineAlias-error" class="error-label" role="alert" />
       </html:div>
 
       <html:div id="advanced-section" hidden="hidden">
@@ -73,7 +73,11 @@
             data-l10n-id="add-engine-post-data"
           />
           <html:input id="enginePostData" type="text" />
-          <html:div class="error-label">valid</html:div>
+          <html:div
+            id="enginePostData-error"
+            class="error-label"
+            role="alert"
+          />
         </html:div>
 
         <html:div class="dialogRow" id="suggestUrlRow">
@@ -83,7 +87,7 @@
             data-l10n-id="add-engine-suggest-url"
           />
           <html:input id="suggestUrl" type="url" />
-          <html:div class="error-label">valid</html:div>
+          <html:div id="suggestUrl-error" class="error-label" role="alert" />
         </html:div>
       </html:div>
     </html:form>

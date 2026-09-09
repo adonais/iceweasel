@@ -16,7 +16,8 @@ class ProxyConfigLookupParent final : public PProxyConfigLookupParent {
  public:
   NS_INLINE_DECL_REFCOUNTING(ProxyConfigLookupParent, override)
 
-  explicit ProxyConfigLookupParent(nsIURI* aURI, uint32_t aProxyResolveFlags);
+  ProxyConfigLookupParent(nsIURI* aURI, uint32_t aProxyResolveFlags,
+                          bool aIsTRRServiceChannel);
 
   void DoProxyLookup();
 
@@ -25,6 +26,7 @@ class ProxyConfigLookupParent final : public PProxyConfigLookupParent {
 
   nsCOMPtr<nsIURI> mURI;
   uint32_t mProxyResolveFlags;
+  bool mIsTRRServiceChannel;
 };
 
 }  // namespace net

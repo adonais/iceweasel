@@ -19,13 +19,14 @@ template <typename T, typename U>
 void AssertNoUnderflow(T aDest, U aArg,
                        const nsACString& context = EmptyCString());
 
-// Implementation detail of AssertNoUnderflow, not meant to be called
-// directly. Throttles how often a given context is reported (to the browser
-// console/telemetry) using exponential backoff, to avoid flooding.
-// aContext is used to have different counters.
-// Thread-safe on its own (guarded by a dedicated mutex), since
-// AssertNoUnderflow is called from several unrelated thread-affinity domains.
-bool ShouldReportUnderflow(const nsACString& aContext);
+// Implementation detail of AssertNoUnderflow and ReportUsageDriftIfAny, not
+// meant to be called directly. Throttles how often a given context is
+// reported (to the browser console/telemetry) using exponential backoff, to
+// avoid flooding. aContext is used to have different counters, so callers
+// with distinct contexts can't suppress each other's reports.
+// Thread-safe on its own (guarded by a dedicated mutex), since it's called
+// from several unrelated thread-affinity domains.
+bool ShouldReportDiagnostic(const nsACString& aContext);
 
 bool IsOnIOThread();
 

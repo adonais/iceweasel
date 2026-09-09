@@ -6,6 +6,11 @@ package mozilla.components.feature.importer
 
 import android.net.Uri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestScope
@@ -15,11 +20,6 @@ import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.bookmarks.file.BookmarksFileImporter
 import mozilla.components.concept.bookmarks.file.BookmarksImporterError
 import org.junit.runner.RunWith
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
-import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class) // advanceTimeBy
 @RunWith(AndroidJUnit4::class)
@@ -35,14 +35,13 @@ class ImporterMiddlewareTest {
     }
 
     @Test
-    fun `when ImportStarted is received, the state is transitioned to Loading`() =
-        runTest {
-            val store = middleware.makeStore()
+    fun `when ImportStarted is received, the state is transitioned to Loading`() = runTest {
+        val store = middleware.makeStore()
 
-            store.dispatch(ImporterAction.ImportStarted)
+        store.dispatch(ImporterAction.ImportStarted)
 
-            assertEquals(ImporterState.Loading, store.state)
-        }
+        assertEquals(ImporterState.Loading, store.state)
+    }
 
     @Test
     fun `when ImportCancelled action is received while import is in progress, the state is transitioned to Cancelled`() =
@@ -96,9 +95,7 @@ class ImporterMiddlewareTest {
             val store = middleware.makeStore()
 
             // And that a file has been selected and the import succeeded
-            importer.expectedImportResult = Result.success(
-                BookmarksFileImporter.ImportResult(guid = "123", count = 5),
-            )
+            importer.expectedImportResult = Result.success(BookmarksFileImporter.ImportResult(guid = "123", count = 5))
             store.dispatch(ImporterAction.FileSelected(uri = Uri.EMPTY))
 
             // And that the import has finished
@@ -155,9 +152,7 @@ class ImporterMiddlewareTest {
         assertEquals(cause, error.cause)
     }
 
-    private fun ImporterMiddleware.makeStore(
-        initialState: ImporterState = ImporterState.Inert,
-    ): ImporterStore {
+    private fun ImporterMiddleware.makeStore(initialState: ImporterState = ImporterState.Inert): ImporterStore {
         return ImporterStore(
             initialState = initialState,
             middleware = listOf(this),

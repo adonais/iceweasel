@@ -48,7 +48,8 @@ class StoreProviderTest {
 
         var result1 = lifecycleOwner.storeProvider.get<TestStore>()
         var result2: TestStore2? = lifecycleOwner.storeProvider.get()
-        var result3: TestStore3 = lifecycleOwner.storeProvider.get<TestState, TestStore3> { TestStore3(TestState(9999)) }
+        var result3: TestStore3 =
+            lifecycleOwner.storeProvider.get<TestState, TestStore3> { TestStore3(TestState(9999)) }
         assertEquals(store, result1)
         assertEquals(store2, result2)
         assertEquals(store3, result3)
@@ -57,9 +58,10 @@ class StoreProviderTest {
 
         result1 = lifecycleOwner.storeProvider.get<TestStore>()
         result2 = lifecycleOwner.storeProvider.get()
-        result3 = lifecycleOwner.storeProvider.get<TestState, TestStore3> { restoredState ->
-            TestStore3(restoredState ?: TestState(9999))
-        }
+        result3 =
+            lifecycleOwner.storeProvider.get<TestState, TestStore3> { restoredState ->
+                TestStore3(restoredState ?: TestState(9999))
+            }
         assertNull(result1)
         assertNull(result2)
         assertEquals(store3.state, result3.state)
@@ -82,35 +84,33 @@ class StoreProviderTest {
 }
 
 private class MockedLifecycleOwner(initialState: Lifecycle.State) : LifecycleOwner, ViewModelStoreOwner {
-    val lifecycleRegistry = LifecycleRegistry(this).apply {
-        currentState = initialState
-    }
+    val lifecycleRegistry =
+        LifecycleRegistry(this).apply {
+            currentState = initialState
+        }
 
     override val lifecycle: Lifecycle = lifecycleRegistry
 
     override val viewModelStore: ViewModelStore = ViewModelStore()
 }
 
-private class TestStore(
-    initialState: TestState = TestState(1),
-) : Store<TestState, TestAction>(
-    initialState = initialState,
-    reducer = ::reducer,
-    middleware = emptyList(),
-)
+private class TestStore(initialState: TestState = TestState(1)) :
+    Store<TestState, TestAction>(
+        initialState = initialState,
+        reducer = ::reducer,
+        middleware = emptyList(),
+    )
 
-private class TestStore2(
-    initialState: TestState = TestState(2),
-) : Store<TestState, TestAction>(
-    initialState = initialState,
-    reducer = ::reducer,
-    middleware = emptyList(),
-)
+private class TestStore2(initialState: TestState = TestState(2)) :
+    Store<TestState, TestAction>(
+        initialState = initialState,
+        reducer = ::reducer,
+        middleware = emptyList(),
+    )
 
-private class TestStore3(
-    initialState: TestState = TestState(3),
-) : Store<TestState, TestAction>(
-    initialState = initialState,
-    reducer = ::reducer,
-    middleware = emptyList(),
-)
+private class TestStore3(initialState: TestState = TestState(3)) :
+    Store<TestState, TestAction>(
+        initialState = initialState,
+        reducer = ::reducer,
+        middleware = emptyList(),
+    )

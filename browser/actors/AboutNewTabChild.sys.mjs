@@ -5,7 +5,7 @@
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { PrivateBrowsingUtils } from "resource://gre/modules/PrivateBrowsingUtils.sys.mjs";
-import { RemotePageChild } from "resource://gre/actors/RemotePageChild.sys.mjs";
+import { RemotePageChild } from "moz-src:///toolkit/actors/RemotePageChild.sys.mjs";
 
 const lazy = {};
 

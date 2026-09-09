@@ -20,14 +20,13 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class MediaSessionStateKtTest {
 
-    private val baseActions = PlaybackStateCompat.ACTION_PLAY_PAUSE or
-        PlaybackStateCompat.ACTION_PLAY or
-        PlaybackStateCompat.ACTION_PAUSE
+    private val baseActions =
+        PlaybackStateCompat.ACTION_PLAY_PAUSE or PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PAUSE
 
     @Before
     fun setUp() {
         MediaNimbus.features.mediaNotificationImprovements.withCachedValue(
-            MediaNotificationImprovements(enabled = true),
+            MediaNotificationImprovements(enabled = true)
         )
     }
 
@@ -38,21 +37,23 @@ class MediaSessionStateKtTest {
 
     @Test
     fun `WHEN no track features are set THEN toPlaybackState advertises only base actions`() {
-        val state = MediaSessionState(
-            controller = mock(),
-            playbackState = MediaSession.PlaybackState.PLAYING,
-        )
+        val state =
+            MediaSessionState(
+                controller = mock(),
+                playbackState = MediaSession.PlaybackState.PLAYING,
+            )
 
         assertEquals(baseActions, state.toPlaybackState().actions)
     }
 
     @Test
     fun `WHEN the NEXT_TRACK feature is set THEN toPlaybackState advertises SKIP_TO_NEXT`() {
-        val state = MediaSessionState(
-            controller = mock(),
-            playbackState = MediaSession.PlaybackState.PLAYING,
-            features = MediaSession.Feature(MediaSession.Feature.NEXT_TRACK),
-        )
+        val state =
+            MediaSessionState(
+                controller = mock(),
+                playbackState = MediaSession.PlaybackState.PLAYING,
+                features = MediaSession.Feature(MediaSession.Feature.NEXT_TRACK),
+            )
 
         assertEquals(
             baseActions or PlaybackStateCompat.ACTION_SKIP_TO_NEXT,
@@ -62,11 +63,12 @@ class MediaSessionStateKtTest {
 
     @Test
     fun `WHEN the PREVIOUS_TRACK feature is set THEN toPlaybackState advertises SKIP_TO_PREVIOUS`() {
-        val state = MediaSessionState(
-            controller = mock(),
-            playbackState = MediaSession.PlaybackState.PLAYING,
-            features = MediaSession.Feature(MediaSession.Feature.PREVIOUS_TRACK),
-        )
+        val state =
+            MediaSessionState(
+                controller = mock(),
+                playbackState = MediaSession.PlaybackState.PLAYING,
+                features = MediaSession.Feature(MediaSession.Feature.PREVIOUS_TRACK),
+            )
 
         assertEquals(
             baseActions or PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS,
@@ -77,13 +79,14 @@ class MediaSessionStateKtTest {
     @Test
     fun `WHEN the improvements flag is disabled THEN toPlaybackState omits the timeline actions and reports an unknown position`() {
         MediaNimbus.features.mediaNotificationImprovements.withCachedValue(
-            MediaNotificationImprovements(enabled = false),
+            MediaNotificationImprovements(enabled = false)
         )
-        val state = MediaSessionState(
-            controller = mock(),
-            playbackState = MediaSession.PlaybackState.PLAYING,
-            positionState = MediaSession.PositionState(duration = 100.0, position = 30.0),
-        )
+        val state =
+            MediaSessionState(
+                controller = mock(),
+                playbackState = MediaSession.PlaybackState.PLAYING,
+                positionState = MediaSession.PositionState(duration = 100.0, position = 30.0),
+            )
 
         val playbackState = state.toPlaybackState()
 
@@ -93,11 +96,12 @@ class MediaSessionStateKtTest {
 
     @Test
     fun `WHEN positionState has a duration THEN toPlaybackState advertises ACTION_SEEK_TO`() {
-        val state = MediaSessionState(
-            controller = mock(),
-            playbackState = MediaSession.PlaybackState.PLAYING,
-            positionState = MediaSession.PositionState(duration = 100.0),
-        )
+        val state =
+            MediaSessionState(
+                controller = mock(),
+                playbackState = MediaSession.PlaybackState.PLAYING,
+                positionState = MediaSession.PositionState(duration = 100.0),
+            )
 
         assertEquals(
             baseActions or PlaybackStateCompat.ACTION_SEEK_TO,
@@ -107,11 +111,12 @@ class MediaSessionStateKtTest {
 
     @Test
     fun `WHEN the SEEK_TO feature is set THEN toPlaybackState advertises ACTION_SEEK_TO`() {
-        val state = MediaSessionState(
-            controller = mock(),
-            playbackState = MediaSession.PlaybackState.PLAYING,
-            features = MediaSession.Feature(MediaSession.Feature.SEEK_TO),
-        )
+        val state =
+            MediaSessionState(
+                controller = mock(),
+                playbackState = MediaSession.PlaybackState.PLAYING,
+                features = MediaSession.Feature(MediaSession.Feature.SEEK_TO),
+            )
 
         assertEquals(
             baseActions or PlaybackStateCompat.ACTION_SEEK_TO,
@@ -121,54 +126,59 @@ class MediaSessionStateKtTest {
 
     @Test
     fun `WHEN there is no duration and no SEEK_TO feature THEN toPlaybackState does not advertise ACTION_SEEK_TO`() {
-        val state = MediaSessionState(
-            controller = mock(),
-            playbackState = MediaSession.PlaybackState.PLAYING,
-        )
+        val state =
+            MediaSessionState(
+                controller = mock(),
+                playbackState = MediaSession.PlaybackState.PLAYING,
+            )
 
         assertEquals(0L, state.toPlaybackState().actions and PlaybackStateCompat.ACTION_SEEK_TO)
     }
 
     @Test
     fun `WHEN a position is set THEN toPlaybackState reports it in milliseconds`() {
-        val state = MediaSessionState(
-            controller = mock(),
-            playbackState = MediaSession.PlaybackState.PLAYING,
-            positionState = MediaSession.PositionState(duration = 100.0, position = 42.0),
-        )
+        val state =
+            MediaSessionState(
+                controller = mock(),
+                playbackState = MediaSession.PlaybackState.PLAYING,
+                positionState = MediaSession.PositionState(duration = 100.0, position = 42.0),
+            )
 
         assertEquals(42000L, state.toPlaybackState().position)
     }
 
     @Test
     fun `WHEN resetPosition is true THEN toPlaybackState reports 0 instead of positionState`() {
-        val state = MediaSessionState(
-            controller = mock(),
-            playbackState = MediaSession.PlaybackState.PLAYING,
-            positionState = MediaSession.PositionState(duration = 100.0, position = 42.0),
-        )
+        val state =
+            MediaSessionState(
+                controller = mock(),
+                playbackState = MediaSession.PlaybackState.PLAYING,
+                positionState = MediaSession.PositionState(duration = 100.0, position = 42.0),
+            )
 
         assertEquals(0L, state.toPlaybackState(resetPosition = true).position)
     }
 
     @Test
     fun `WHEN playing THEN toPlaybackState reports the playbackRate as the speed`() {
-        val state = MediaSessionState(
-            controller = mock(),
-            playbackState = MediaSession.PlaybackState.PLAYING,
-            positionState = MediaSession.PositionState(playbackRate = 1.5),
-        )
+        val state =
+            MediaSessionState(
+                controller = mock(),
+                playbackState = MediaSession.PlaybackState.PLAYING,
+                positionState = MediaSession.PositionState(playbackRate = 1.5),
+            )
 
         assertEquals(1.5f, state.toPlaybackState().playbackSpeed, 0.0f)
     }
 
     @Test
     fun `WHEN paused with a non-zero playbackRate THEN toPlaybackState reports a speed of 0`() {
-        val state = MediaSessionState(
-            controller = mock(),
-            playbackState = MediaSession.PlaybackState.PAUSED,
-            positionState = MediaSession.PositionState(playbackRate = 1.0),
-        )
+        val state =
+            MediaSessionState(
+                controller = mock(),
+                playbackState = MediaSession.PlaybackState.PAUSED,
+                positionState = MediaSession.PositionState(playbackRate = 1.0),
+            )
 
         assertEquals(0.0f, state.toPlaybackState().playbackSpeed, 0.0f)
     }

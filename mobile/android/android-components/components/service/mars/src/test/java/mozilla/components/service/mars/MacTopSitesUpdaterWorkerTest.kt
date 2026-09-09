@@ -8,6 +8,7 @@ import androidx.concurrent.futures.await
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.ListenableWorker
 import androidx.work.testing.TestListenableWorkerBuilder
+import java.io.IOException
 import kotlinx.coroutines.test.runTest
 import mozilla.components.feature.top.sites.TopSitesProvider
 import mozilla.components.support.test.mock
@@ -19,7 +20,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.anyBoolean
 import org.mockito.Mockito.spy
-import java.io.IOException
 
 @RunWith(AndroidJUnit4::class)
 class MacTopSitesUpdaterWorkerTest {
@@ -32,10 +32,7 @@ class MacTopSitesUpdaterWorkerTest {
     @Test
     fun `WHEN worker does successful work THEN return a success result`() = runTest {
         val provider: TopSitesProvider = mock()
-        val worker = spy(
-            TestListenableWorkerBuilder<MacTopSitesUpdaterWorker>(testContext)
-                .build(),
-        )
+        val worker = spy(TestListenableWorkerBuilder<MacTopSitesUpdaterWorker>(testContext).build())
 
         MacTopSitesUseCases.initialize(provider)
 
@@ -49,10 +46,7 @@ class MacTopSitesUpdaterWorkerTest {
     @Test
     fun `WHEN worker does unsuccessful work THEN return a failure result`() = runTest {
         val provider: TopSitesProvider = mock()
-        val worker = spy(
-            TestListenableWorkerBuilder<MacTopSitesUpdaterWorker>(testContext)
-                .build(),
-        )
+        val worker = spy(TestListenableWorkerBuilder<MacTopSitesUpdaterWorker>(testContext).build())
         val throwable = IOException("test")
 
         MacTopSitesUseCases.initialize(provider)

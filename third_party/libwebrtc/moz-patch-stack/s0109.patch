@@ -11,7 +11,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/19164e58323d59c1f
  2 files changed, 8 insertions(+), 2 deletions(-)
 
 diff --git a/call/call.h b/call/call.h
-index c7a25fe78b..3cfdc40f05 100644
+index 31768f9782..84aaa82cd2 100644
 --- a/call/call.h
 +++ b/call/call.h
 @@ -27,6 +27,7 @@
@@ -35,10 +35,10 @@ index c7a25fe78b..3cfdc40f05 100644
  
    static std::unique_ptr<Call> Create(CallConfig config);
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index 9d34ca4777..c80af9f8b5 100644
+index b38a144fc2..9708a47cbc 100644
 --- a/modules/desktop_capture/BUILD.gn
 +++ b/modules/desktop_capture/BUILD.gn
-@@ -690,6 +690,11 @@ rtc_library("desktop_capture") {
+@@ -709,6 +709,11 @@ rtc_library("desktop_capture") {
      ]
      if (build_with_mozilla) {
        libs -= [ "Xtst" ]

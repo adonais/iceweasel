@@ -112,6 +112,7 @@ const Template = ({
   description,
   supportPage,
   accessKey,
+  title,
   hasSlottedDescription,
   useOtherOptions,
   options = useOtherOptions ? OTHER_OPTIONS : DEFAULT_OPTIONS,
@@ -136,6 +137,7 @@ const Template = ({
     data-l10n-id=${l10nId}
     support-page=${ifDefined(supportPage || null)}
     accesskey=${ifDefined(accessKey || null)}
+    title=${ifDefined(title || null)}
     inputlayout=${ifDefined(inputLayout)}
     class=${classMap({ "text-truncated-ellipsis": ellipsized })}
   >
@@ -170,6 +172,7 @@ Default.args = {
   description: "",
   supportPage: "",
   accessKey: "",
+  title: "",
   hasSlottedDescription: false,
   useOtherOptions: false,
   hasSlottedSupportLink: false,

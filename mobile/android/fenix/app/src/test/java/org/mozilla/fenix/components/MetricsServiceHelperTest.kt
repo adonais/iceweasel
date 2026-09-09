@@ -20,11 +20,9 @@ import org.mozilla.fenix.components.metrics.MetricServiceType
 
 class MetricsServiceHelperTest {
 
-    @RelaxedMockK
-    private lateinit var mockLogger: Logger
+    @RelaxedMockK private lateinit var mockLogger: Logger
 
-    @MockK
-    private lateinit var mockAnalytics: Analytics
+    @MockK private lateinit var mockAnalytics: Analytics
 
     private val fakeMetricController = FakeMetricController()
 

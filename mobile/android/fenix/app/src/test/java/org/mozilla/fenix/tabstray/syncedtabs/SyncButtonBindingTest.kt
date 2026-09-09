@@ -16,34 +16,36 @@ class SyncButtonBindingTest {
     private val testDispatcher = StandardTestDispatcher()
 
     @Test
-    fun `WHEN syncing state is true THEN invoke callback`() = runTest(testDispatcher) {
-        var invoked = false
-        val store = TabsTrayStore()
-        val binding = SyncButtonBinding(store, testDispatcher) { invoked = true }
+    fun `WHEN syncing state is true THEN invoke callback`() =
+        runTest(testDispatcher) {
+            var invoked = false
+            val store = TabsTrayStore()
+            val binding = SyncButtonBinding(store, testDispatcher) { invoked = true }
 
-        binding.start()
+            binding.start()
 
-        store.dispatch(TabsTrayAction.SyncNow)
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(TabsTrayAction.SyncNow)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertTrue(invoked)
-    }
+            assertTrue(invoked)
+        }
 
     @Test
-    fun `WHEN syncing state is false THEN nothing is invoked`() = runTest(testDispatcher) {
-        var invoked = false
-        val store = TabsTrayStore()
-        val binding = SyncButtonBinding(store, testDispatcher) { invoked = true }
+    fun `WHEN syncing state is false THEN nothing is invoked`() =
+        runTest(testDispatcher) {
+            var invoked = false
+            val store = TabsTrayStore()
+            val binding = SyncButtonBinding(store, testDispatcher) { invoked = true }
 
-        binding.start()
+            binding.start()
 
-        testDispatcher.scheduler.advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertFalse(invoked)
+            assertFalse(invoked)
 
-        store.dispatch(TabsTrayAction.SyncCompleted)
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(TabsTrayAction.SyncCompleted)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertFalse(invoked)
-    }
+            assertFalse(invoked)
+        }
 }

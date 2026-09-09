@@ -19,6 +19,7 @@ filters:
   - target_tasks_method
 head_git_repository: https://github.com/mozilla-firefox/firefox
 head_git_rev: f18a08cd59a4c299c1f9bd6ed0d735647ca58d5b
+head_git_ref: refs/heads/autoland
 head_ref: 0b47413c2e637febe76470f5b511bad40ba71593
 head_repository: https://hg.mozilla.org/integration/autoland
 head_rev: 0b47413c2e637febe76470f5b511bad40ba71593

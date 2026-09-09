@@ -16,8 +16,8 @@ import org.mozilla.geckoview.GeckoResult
  *
  * This interface provides methods for getting and setting Gecko preferences of various types.
  *
- * It is important to note that all methods in this interface can potentially block the calling thread,
- * so they should not be called on the main thread.
+ * It is important to note that all methods in this interface can potentially block the calling thread, so they should
+ * not be called on the main thread.
  *
  * All methods return a [GeckoResult] object, which can be used to check if the operation was successful.
  */
@@ -25,8 +25,8 @@ interface GeckoPreferenceAccessor {
 
     /**
      * Registers a Gecko preference for observation on the
-     * [org.mozilla.geckoview.GeckoPreferenceController.Observer.Delegate].
-     * Preferences registered here will be reported when they change value.
+     * [org.mozilla.geckoview.GeckoPreferenceController.Observer.Delegate]. Preferences registered here will be reported
+     * when they change value.
      *
      * @param pref The name of the preference to register for events.
      * @return A [GeckoResult] object indicating whether the operation was successful.
@@ -35,8 +35,8 @@ interface GeckoPreferenceAccessor {
 
     /**
      * Registers a list of Gecko preferences for observation on the
-     * [org.mozilla.geckoview.GeckoPreferenceController.Observer.Delegate].
-     * Preferences registered here will be reported when they change value.
+     * [org.mozilla.geckoview.GeckoPreferenceController.Observer.Delegate]. Preferences registered here will be reported
+     * when they change value.
      *
      * @param prefs A list of preference names to register for events.
      * @return A [GeckoResult] object indicating whether the operation was successful.
@@ -67,8 +67,7 @@ interface GeckoPreferenceAccessor {
      * @param pref The name of the preference to get.
      * @return A [GeckoResult] object containing the value of the preference, or null if the preference does not exist.
      */
-    @OptIn(ExperimentalGeckoViewApi::class)
-    fun getGeckoPref(pref: String): GeckoResult<GeckoPreference<*>?>
+    @OptIn(ExperimentalGeckoViewApi::class) fun getGeckoPref(pref: String): GeckoResult<GeckoPreference<*>?>
 
     /**
      * Gets the values of a list of Gecko preferences.
@@ -131,8 +130,8 @@ internal class DefaultGeckoPreferenceAccessor : GeckoPreferenceAccessor {
 
     /**
      * Registers a Gecko preference for observation on the
-     * [org.mozilla.geckoview.GeckoPreferenceController.Observer.Delegate].
-     * Preferences registered here will be reported when they change value.
+     * [org.mozilla.geckoview.GeckoPreferenceController.Observer.Delegate]. Preferences registered here will be reported
+     * when they change value.
      *
      * @param pref The name of the preference to register for events.
      * @return A [GeckoResult] object indicating whether the operation was successful.
@@ -144,8 +143,8 @@ internal class DefaultGeckoPreferenceAccessor : GeckoPreferenceAccessor {
 
     /**
      * Registers a list of Gecko preferences for observation on the
-     * [org.mozilla.geckoview.GeckoPreferenceController.Observer.Delegate].
-     * Preferences registered here will be reported when they change value.
+     * [org.mozilla.geckoview.GeckoPreferenceController.Observer.Delegate]. Preferences registered here will be reported
+     * when they change value.
      *
      * @param prefs A list of preference names to register for events.
      * @return A [GeckoResult] object indicating whether the operation was successful.
@@ -183,8 +182,8 @@ internal class DefaultGeckoPreferenceAccessor : GeckoPreferenceAccessor {
      * Gets the value of the Gecko preference with the given name.
      *
      * @param pref The name of the preference to get.
-     * @return A [GeckoResult] containing the [GeckoPreference] for the given preference, or null if the
-     * preference does not exist. The [GeckoResult] will contain an error if the operation fails.
+     * @return A [GeckoResult] containing the [GeckoPreference] for the given preference, or null if the preference does
+     *   not exist. The [GeckoResult] will contain an error if the operation fails.
      */
     @OptIn(ExperimentalGeckoViewApi::class)
     override fun getGeckoPref(pref: String): GeckoResult<GeckoPreference<*>?> {

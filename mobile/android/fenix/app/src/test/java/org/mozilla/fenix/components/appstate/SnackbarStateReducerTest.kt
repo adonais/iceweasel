@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.components.appstate
 
+import kotlin.test.assertIs
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.components.appstate.AppAction.SnackbarAction
@@ -11,12 +12,9 @@ import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.DeletingBrow
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.Dismiss
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.None
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.ShowSnackbar
-import kotlin.test.assertIs
 
 class SnackbarStateReducerTest {
-    private val initialState = AppState(
-        snackbarState = DeletingBrowserDataInProgress,
-    )
+    private val initialState = AppState(snackbarState = DeletingBrowserDataInProgress)
 
     @Test
     fun `WHEN snackbar dismissed action is dispatched THEN state is updated`() {

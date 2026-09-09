@@ -18,40 +18,37 @@ import org.junit.Test
 class CombinedOnlineSuggestionDataSourceTest {
 
     @Test
-    fun `fetchStocks returns empty list without a network call when query is too short`() =
-        runTest {
-            val client = FakeMerinoClient(STOCKS_RESPONSE)
-            val dataSource = CombinedOnlineSuggestionDataSource(backgroundScope, client, debounceMs = 0)
+    fun `fetchStocks returns empty list without a network call when query is too short`() = runTest {
+        val client = FakeMerinoClient(STOCKS_RESPONSE)
+        val dataSource = CombinedOnlineSuggestionDataSource(backgroundScope, client, debounceMs = 0)
 
-            val result = dataSource.fetchStocks("AP")
+        val result = dataSource.fetchStocks("AP")
 
-            assertTrue(result.isEmpty())
-            assertTrue(client.queries.isEmpty())
-        }
-
-    @Test
-    fun `fetchSports returns empty list without a network call when query is too short`() =
-        runTest {
-            val client = FakeMerinoClient(SPORTS_RESPONSE)
-            val dataSource = CombinedOnlineSuggestionDataSource(backgroundScope, client, debounceMs = 0)
-
-            val result = dataSource.fetchSports("AP")
-
-            assertTrue(result.isEmpty())
-            assertTrue(client.queries.isEmpty())
-        }
+        assertTrue(result.isEmpty())
+        assertTrue(client.queries.isEmpty())
+    }
 
     @Test
-    fun `fetchFlights returns empty list without a network call when query is too short`() =
-        runTest {
-            val client = FakeMerinoClient(FLIGHTS_RESPONSE)
-            val dataSource = CombinedOnlineSuggestionDataSource(backgroundScope, client, debounceMs = 0)
+    fun `fetchSports returns empty list without a network call when query is too short`() = runTest {
+        val client = FakeMerinoClient(SPORTS_RESPONSE)
+        val dataSource = CombinedOnlineSuggestionDataSource(backgroundScope, client, debounceMs = 0)
 
-            val result = dataSource.fetchFlights("UA")
+        val result = dataSource.fetchSports("AP")
 
-            assertTrue(result.isEmpty())
-            assertTrue(client.queries.isEmpty())
-        }
+        assertTrue(result.isEmpty())
+        assertTrue(client.queries.isEmpty())
+    }
+
+    @Test
+    fun `fetchFlights returns empty list without a network call when query is too short`() = runTest {
+        val client = FakeMerinoClient(FLIGHTS_RESPONSE)
+        val dataSource = CombinedOnlineSuggestionDataSource(backgroundScope, client, debounceMs = 0)
+
+        val result = dataSource.fetchFlights("UA")
+
+        assertTrue(result.isEmpty())
+        assertTrue(client.queries.isEmpty())
+    }
 
     @Test
     fun `fetchStocks returns stock items when only a stock response is returned`() = runTest {
@@ -299,7 +296,8 @@ private class FakeMerinoClient(private val response: String?) : MerinoClient {
     }
 }
 
-private val STOCKS_RESPONSE = """
+private val STOCKS_RESPONSE =
+    """
     {
       "suggestions": [{
         "provider": "polygon",
@@ -319,9 +317,11 @@ private val STOCKS_RESPONSE = """
         }
       }]
     }
-""".trimIndent()
+    """
+        .trimIndent()
 
-private val SPORTS_RESPONSE = """
+private val SPORTS_RESPONSE =
+    """
     {
       "suggestions": [{
         "provider": "sports",
@@ -343,9 +343,11 @@ private val SPORTS_RESPONSE = """
         }
       }]
     }
-""".trimIndent()
+    """
+        .trimIndent()
 
-private val FLIGHTS_RESPONSE = """
+private val FLIGHTS_RESPONSE =
+    """
     {
       "suggestions": [{
         "provider": "flightaware",
@@ -369,9 +371,11 @@ private val FLIGHTS_RESPONSE = """
         }
       }]
     }
-""".trimIndent()
+    """
+        .trimIndent()
 
-private val SPORTS_BEATS_STOCKS_RESPONSE = """
+private val SPORTS_BEATS_STOCKS_RESPONSE =
+    """
     {
       "suggestions": [
         {
@@ -411,9 +415,11 @@ private val SPORTS_BEATS_STOCKS_RESPONSE = """
         }
       ]
     }
-""".trimIndent()
+    """
+        .trimIndent()
 
-private val UNKNOWN_PROVIDER_RESPONSE = """
+private val UNKNOWN_PROVIDER_RESPONSE =
+    """
     {
       "suggestions": [{
         "provider": "unknown_provider",
@@ -421,4 +427,5 @@ private val UNKNOWN_PROVIDER_RESPONSE = """
         "custom_details": {}
       }]
     }
-""".trimIndent()
+    """
+        .trimIndent()

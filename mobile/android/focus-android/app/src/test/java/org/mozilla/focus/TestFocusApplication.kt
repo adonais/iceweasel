@@ -24,8 +24,8 @@ import mozilla.components.concept.fetch.Response
 import org.json.JSONObject
 
 /**
- * [FocusApplication] override for unit tests. This allows us to override some parameters and inputs
- * since an application object gets created without much control otherwise.
+ * [FocusApplication] override for unit tests. This allows us to override some parameters and inputs since an
+ * application object gets created without much control otherwise.
  */
 class TestFocusApplication : FocusApplication() {
     override val components: Components by lazy {
@@ -33,15 +33,15 @@ class TestFocusApplication : FocusApplication() {
     }
 
     override fun initializeNimbus() = Unit
+
     override fun initializeTelemetry() = Unit
+
     override fun finishSetupMegazord(dispatcher: CoroutineDispatcher) = Unit
 
     override fun initializeWebExtensionSupport() = Unit
 }
 
-/**
- * Empty [FocusApplication] override for unit tests.
- */
+/** Empty [FocusApplication] override for unit tests. */
 class EmptyFocusApplication : FocusApplication() {
     override fun onCreate() {
         //
@@ -62,8 +62,7 @@ class FakeEngine : Engine {
         // do nothing
     }
 
-    override fun createView(context: Context, attrs: AttributeSet?): EngineView =
-        throw UnsupportedOperationException()
+    override fun createView(context: Context, attrs: AttributeSet?): EngineView = throw UnsupportedOperationException()
 
     override fun createSession(private: Boolean, contextId: String?): EngineSession =
         throw UnsupportedOperationException()
@@ -76,11 +75,9 @@ class FakeEngine : Engine {
         return FakeEngineSessionState()
     }
 
-    override fun name(): String =
-        throw UnsupportedOperationException()
+    override fun name(): String = throw UnsupportedOperationException()
 
-    override fun speculativeConnect(url: String) =
-        throw UnsupportedOperationException()
+    override fun speculativeConnect(url: String) = throw UnsupportedOperationException()
 
     override val profiler: Profiler
         get() = throw NotImplementedError("Not needed for test")

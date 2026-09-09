@@ -493,7 +493,7 @@ export class NimbusEnrollments {
             unenrollReason = excluded.unenrollReason,
             lastSeen = excluded.lastSeen,
             setPrefs = excluded.setPrefs,
-            prefFlips = excluded.setPrefs,
+            prefFlips = excluded.prefFlips,
             source = excluded.source;
         `,
         {

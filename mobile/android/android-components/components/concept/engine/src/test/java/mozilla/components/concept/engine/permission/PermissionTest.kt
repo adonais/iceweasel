@@ -4,11 +4,11 @@
 
 package mozilla.components.concept.engine.permission
 
+import kotlin.reflect.full.createInstance
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import kotlin.reflect.full.createInstance
 
 @RunWith(Parameterized::class)
 class PermissionTest<out T : Permission>(private val permission: T) {
@@ -25,8 +25,9 @@ class PermissionTest<out T : Permission>(private val permission: T) {
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun permissions() = Permission::class.sealedSubclasses.map {
-            it.createInstance()
-        }
+        fun permissions() =
+            Permission::class.sealedSubclasses.map {
+                it.createInstance()
+            }
     }
 }

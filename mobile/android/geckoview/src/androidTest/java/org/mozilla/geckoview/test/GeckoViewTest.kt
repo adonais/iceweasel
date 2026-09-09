@@ -1,10 +1,7 @@
-@file:Suppress("ktlint:standard:no-wildcard-imports")
-
 package org.mozilla.geckoview.test
 
 import android.content.Context
 import android.graphics.Matrix
-import android.os.Build
 import android.os.Bundle
 import android.os.LocaleList
 import android.os.ParcelFileDescriptor
@@ -36,8 +33,7 @@ class GeckoViewTest : BaseSessionTest() {
     val activityRule = ActivityScenarioRule(GeckoViewTestActivity::class.java)
     private val uiAutomation = InstrumentationRegistry.getInstrumentation().uiAutomation
 
-    @get:Rule
-    override val rules = RuleChain.outerRule(activityRule).around(sessionRule)
+    @get:Rule override val rules = RuleChain.outerRule(activityRule).around(sessionRule)
 
     @Before
     fun setup() {
@@ -110,21 +106,24 @@ class GeckoViewTest : BaseSessionTest() {
         highPids: Collection<Int>,
         lowPids: Collection<Int>,
     ) {
-        UiThreadUtils.waitForCondition({
-            val shouldBeHighPri = getContentProcessesOomScoreAdj(highPids)
-            val shouldBeLowPri = getContentProcessesOomScoreAdj(lowPids)
+        UiThreadUtils.waitForCondition(
+            {
+                val shouldBeHighPri = getContentProcessesOomScoreAdj(highPids)
+                val shouldBeLowPri = getContentProcessesOomScoreAdj(lowPids)
 
-            // Smaller oom_score_adj indicates higher priority, with 0 indicating foreground visibility.
-            // Larger oom_score_adj indicates lower priority, with 900 indicating background visibility
-            // and the process may be killed.
-            shouldBeHighPri.count { it == 0 } == shouldBeHighPri.size &&
-                shouldBeLowPri.count { it >= 900 } == shouldBeLowPri.size
-        }, env.defaultTimeoutMillis)
+                // Smaller oom_score_adj indicates higher priority, with 0 indicating foreground visibility.
+                // Larger oom_score_adj indicates lower priority, with 900 indicating background visibility
+                // and the process may be killed.
+                shouldBeHighPri.count { it == 0 } == shouldBeHighPri.size &&
+                    shouldBeLowPri.count { it >= 900 } == shouldBeLowPri.size
+            },
+            env.defaultTimeoutMillis,
+        )
     }
 
     /**
-     * Helper function reads oom_score_adj. oom_score_adj is set by Android based on some criteria
-     * to manage process priority.
+     * Helper function reads oom_score_adj. oom_score_adj is set by Android based on some criteria to manage process
+     * priority.
      *
      * Background on oom_score_adj:
      * https://cs.android.com/android/platform/superproject/+/android-latest-release:frameworks/base/services/core/java/com/android/server/am/OomAdjuster.md
@@ -132,17 +131,12 @@ class GeckoViewTest : BaseSessionTest() {
      * oom_score_adj constants:
      * https://cs.android.com/android/platform/superproject/+/android-latest-release:frameworks/base/services/core/java/com/android/server/am/ProcessList.java
      */
-    fun getContentProcessesOomScoreAdj(pids: Collection<Int>): List<Int> =
-        pids.map { pid ->
-            val shellCommand = uiAutomation.executeShellCommand("cat /proc/$pid/oom_score_adj")
-            ParcelFileDescriptor.AutoCloseInputStream(shellCommand).use { inputStream ->
-                inputStream
-                    .bufferedReader(Charsets.UTF_8)
-                    .readText()
-                    .trim()
-                    .toInt()
-            }
+    fun getContentProcessesOomScoreAdj(pids: Collection<Int>): List<Int> = pids.map { pid ->
+        val shellCommand = uiAutomation.executeShellCommand("cat /proc/$pid/oom_score_adj")
+        ParcelFileDescriptor.AutoCloseInputStream(shellCommand).use { inputStream ->
+            inputStream.bufferedReader(Charsets.UTF_8).readText().trim().toInt()
         }
+    }
 
     fun setupPriorityTest(): GeckoSession {
         // This makes the test a little bit faster
@@ -150,7 +144,7 @@ class GeckoViewTest : BaseSessionTest() {
             mapOf(
                 "dom.ipc.processPriorityManager.backgroundGracePeriodMS" to 0,
                 "dom.ipc.processPriorityManager.backgroundPerceivableGracePeriodMS" to 0,
-            ),
+            )
         )
 
         val otherSession = sessionRule.createOpenSession()
@@ -271,7 +265,7 @@ class GeckoViewTest : BaseSessionTest() {
                 "dom.ipc.processPriorityManager.backgroundGracePeriodMS" to 0,
                 "dom.ipc.processPriorityManager.backgroundPerceivableGracePeriodMS" to 0,
                 "fission.webContentIsolationStrategy" to 1,
-            ),
+            )
         )
 
         // Can't use getSessionPid until the session is loaded,
@@ -300,16 +294,25 @@ class GeckoViewTest : BaseSessionTest() {
                 "The initial oom score adj has more priority than the loaded oom score because it was backgrounded.",
                 loadedOomScoreAdj > initialOomScoreAdj,
             )
-            assertTrue("The initial oom score adj indicates higher priority because it started in the foreground.", initialOomScoreAdj == 0)
-            assertTrue("The loaded oom score adj indicates lower priority because it is backgrounded.", loadedOomScoreAdj == 900)
+            assertTrue(
+                "The initial oom score adj indicates higher priority because it started in the foreground.",
+                initialOomScoreAdj == 0,
+            )
+            assertTrue(
+                "The loaded oom score adj indicates lower priority because it is backgrounded.",
+                loadedOomScoreAdj == 900,
+            )
         } else {
             assertTrue("A process switch did not occur.", initialPid == loadedPid)
 
             // setActive(false) occurred on this PID, give time for it to settle.
             // When it reaches 900, this indicates the pid is backgrounded.
-            UiThreadUtils.waitForCondition({
-                getContentProcessesOomScoreAdj(listOf(loadedPid)).first() == 900
-            }, env.defaultTimeoutMillis)
+            UiThreadUtils.waitForCondition(
+                {
+                    getContentProcessesOomScoreAdj(listOf(loadedPid)).first() == 900
+                },
+                env.defaultTimeoutMillis,
+            )
             assertTrue("The loaded oom score indicates low priority.", true)
         }
     }
@@ -342,15 +345,14 @@ class GeckoViewTest : BaseSessionTest() {
             )
 
         // Set up promises to monitor the values changing.
-        val promises =
-            autofills.map { entry ->
-                // Repeat each test with both the top document and the iframe document.
-                mainSession.evaluatePromiseJS(
-                    """
+        val promises = autofills.map { entry ->
+            // Repeat each test with both the top document and the iframe document.
+            mainSession.evaluatePromiseJS(
+                """
                 window.getDataForAllFrames('${entry.key}', '${entry.value}')
-                """,
-                )
-            }
+                """
+            )
+        }
 
         activityRule.scenario.onActivity {
             val root = MockViewStructure(View.NO_ID)
@@ -561,8 +563,7 @@ class GeckoViewTest : BaseSessionTest() {
 
         override fun newHtmlInfoBuilder(p0: String): HtmlInfo.Builder = MockHtmlInfoBuilder()
 
-        override fun setHtmlInfo(p0: HtmlInfo) {
-        }
+        override fun setHtmlInfo(p0: HtmlInfo) {}
     }
 
     class MockHtmlInfoBuilder : ViewStructure.HtmlInfo.Builder() {

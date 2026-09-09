@@ -10,6 +10,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 
+  AnimationFramePromise: "chrome://remote/content/shared/Sync.sys.mjs",
   AppInfo: "chrome://remote/content/shared/AppInfo.sys.mjs",
   assert: "chrome://remote/content/shared/webdriver/Assert.sys.mjs",
   AsyncQueue: "chrome://remote/content/shared/AsyncQueue.sys.mjs",
@@ -41,6 +42,9 @@ export const actions = {};
 
 // Max interval between two clicks that should result in a dblclick or a tripleclick (in ms)
 export const CLICK_INTERVAL = 640;
+
+// Interval between transitions in ms, matching a common 60Hz vsync
+const FP60_INTERVAL = 1000 / 60;
 
 /** Map from normalized key value to UI Events modifier key name */
 const MODIFIER_NAME_LOOKUP = {
@@ -1664,6 +1668,7 @@ class PointerMoveAction extends PointerAction {
       [[inputSource.x, inputSource.y]],
       [moveCoordinates],
       this.duration ?? tickDuration,
+      context,
       async _target =>
         await this.performPointerMoveStep(state, inputSource, _target, options)
     );
@@ -1934,8 +1939,9 @@ class WheelScrollAction extends WheelAction {
       [[startX, startY]],
       [[this.deltaX, this.deltaY]],
       this.duration ?? tickDuration,
+      context,
       async deltaTarget =>
-        await this.performOneWheelScroll(
+        await this.performWheelScrollStep(
           state,
           scrollCoordinates,
           deltaPosition,
@@ -1961,7 +1967,7 @@ class WheelScrollAction extends WheelAction {
    *
    * @returns {Promise}
    */
-  async performOneWheelScroll(
+  async performWheelScrollStep(
     state,
     scrollCoordinates,
     deltaPosition,
@@ -1988,7 +1994,7 @@ class WheelScrollAction extends WheelAction {
     eventData.update(state);
 
     lazy.logger.trace(
-      `WheelScrollAction.performOneWheelScrollStep [${deltaX},${deltaY}]`
+      `WheelScrollAction.performWheelScrollStep [${deltaX},${deltaY}]`
     );
 
     await dispatchEvent("synthesizeWheelAtPoint", context, {
@@ -2214,6 +2220,8 @@ class PointerMoveTouchActionGroup extends TouchActionGroup {
    *     Promise that is resolved once the action is complete.
    */
   async dispatch(state, inputSource, tickDuration, options) {
+    const { context } = options;
+
     if (inputSource !== null) {
       throw new Error(
         "Expected null inputSource for PointerMoveTouchActionGroup.dispatch"
@@ -2264,6 +2272,7 @@ class PointerMoveTouchActionGroup extends TouchActionGroup {
       startCoords,
       targetCoords,
       this.duration ?? tickDuration,
+      context,
       async currentTargetCoords =>
         await this.performPointerMoveStep(
           state,
@@ -2313,6 +2322,12 @@ class PointerMoveTouchActionGroup extends TouchActionGroup {
     if (reachedTarget) {
       return;
     }
+
+    lazy.logger.trace(
+      `PointerMoveTouchActionGroup.performPointerMoveStep ${targetCoords.map(
+        ([x, y]) => `[${x},${y}]`
+      )}`
+    );
 
     const eventData = new TouchEventData("touchmove");
     for (const [inputSource, action, target] of perPointerData) {
@@ -2412,16 +2427,21 @@ for (const cls of [
  *     in the move.
  * @param {number} duration
  *     Time in ms the move will take.
+ * @param {BrowsingContext} context
+ *     The browsing context the move is dispatched to. Used to retrieve the
+ *     window that drives the incremental transitions via animation frames.
  * @param {Function} callback
  *     Function that actually performs the move. This takes a single parameter
  *     which is an array of [x, y] coordinates corresponding to the move
  *     targets.
  */
-async function moveOverTime(startCoords, targetCoords, duration, callback) {
-  lazy.logger.trace(
-    `moveOverTime start: ${startCoords} target: ${targetCoords} duration: ${duration}`
-  );
-
+async function moveOverTime(
+  startCoords,
+  targetCoords,
+  duration,
+  context,
+  callback
+) {
   if (startCoords.length !== targetCoords.length) {
     throw new Error(
       "Expected equal number of start coordinates and target coordinates"
@@ -2437,56 +2457,60 @@ async function moveOverTime(startCoords, targetCoords, duration, callback) {
     );
   }
 
+  lazy.logger.trace(
+    `moveOverTime start: ${startCoords} target: ${targetCoords} duration: ${duration}`
+  );
+
   if (duration === 0) {
     // transition to destination in one step
     await callback(targetCoords);
     return;
   }
 
-  const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-  // interval between transitions in ms, based on common vsync
-  const fps60 = 17;
-
   const distances = targetCoords.map((targetCoord, i) => {
     const startCoord = startCoords[i];
     return [targetCoord[0] - startCoord[0], targetCoord[1] - startCoord[1]];
   });
-  const ONE_SHOT = Ci.nsITimer.TYPE_ONE_SHOT;
+
+  // Use the chrome window because its animation frames should be scheduled
+  // reliably, unlike content windows where the renderer could be blocked.
+  const win = context.topChromeWindow;
+
+  // Split the transition into 60 Hz steps. Animation frames only schedule
+  // dispatching, keeping event timing consistent while honoring |duration|.
+  const steps = Math.max(1, Math.round(duration / FP60_INTERVAL));
+
   const startTime = Date.now();
-  const transitions = (async () => {
-    // wait |fps60| ms before performing first incremental transition
-    await new Promise(resolveTimer =>
-      timer.initWithCallback(resolveTimer, fps60, ONE_SHOT)
-    );
+  let dispatched = 0;
 
-    let durationRatio = Math.floor(Date.now() - startTime) / duration;
-    const epsilon = fps60 / duration / 10;
-    while (1 - durationRatio > epsilon) {
-      const intermediateTargets = startCoords.map((startCoord, i) => {
-        let distance = distances[i];
-        return [
-          Math.floor(durationRatio * distance[0] + startCoord[0]),
-          Math.floor(durationRatio * distance[1] + startCoord[1]),
-        ];
-      });
+  while (true) {
+    // wait for the next animation frame before performing the transition
+    await lazy.AnimationFramePromise(win);
 
-      await Promise.all([
-        callback(intermediateTargets),
-
-        // wait |fps60| ms before performing next transition
-        new Promise(resolveTimer =>
-          timer.initWithCallback(resolveTimer, fps60, ONE_SHOT)
-        ),
-      ]);
-
-      durationRatio = Math.floor(Date.now() - startTime) / duration;
+    const ratio = Math.min(1, (Date.now() - startTime) / duration);
+    if (ratio === 1) {
+      break;
     }
-  })();
 
-  await transitions;
+    // Round to the nearest step, capping at |steps - 1|.
+    // The final step is dispatched outside the loop.
+    const due = Math.min(steps - 1, Math.round(ratio * steps));
+    if (due <= dispatched) {
+      continue;
+    }
+    dispatched = due;
 
-  // perform last transition after all incremental moves are resolved and
-  // durationRatio is close enough to 1
+    const intermediateTargets = startCoords.map((startCoord, i) => {
+      const distance = distances[i];
+      return [
+        Math.floor((dispatched / steps) * distance[0] + startCoord[0]),
+        Math.floor((dispatched / steps) * distance[1] + startCoord[1]),
+      ];
+    });
+    await callback(intermediateTargets);
+  }
+
+  // perform the last transition once the full duration has elapsed
   await callback(targetCoords);
 }
 

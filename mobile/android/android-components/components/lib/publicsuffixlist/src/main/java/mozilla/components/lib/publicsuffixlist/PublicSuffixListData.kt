@@ -4,12 +4,10 @@
 
 package mozilla.components.lib.publicsuffixlist
 
-import mozilla.components.lib.publicsuffixlist.ext.binarySearch
 import java.net.IDN
+import mozilla.components.lib.publicsuffixlist.ext.binarySearch
 
-/**
- * Class wrapping the public suffix list data and offering methods for accessing rules in it.
- */
+/** Class wrapping the public suffix list data and offering methods for accessing rules in it. */
 internal class PublicSuffixListData(
     private val rules: ByteArray,
     private val exceptions: ByteArray,
@@ -86,9 +84,7 @@ internal class PublicSuffixListData(
         }
     }
 
-    /**
-     * Returns an exact match or null.
-     */
+    /** Returns an exact match or null. */
     private fun findExactMatch(labels: List<ByteArray>): String? {
         // Start by looking for exact matches. We start at the leftmost label. For example, foo.bar.com
         // will look like: [foo, bar, com], [bar, com], [com]. The longest matching rule wins.
@@ -104,9 +100,7 @@ internal class PublicSuffixListData(
         return null
     }
 
-    /**
-     * Returns a wildcard match or null.
-     */
+    /** Returns a wildcard match or null. */
     private fun findWildcardMatch(labels: List<ByteArray>): String? {
         // In theory, wildcard rules are not restricted to having the wildcard in the leftmost position.
         // In practice, wildcards are always in the leftmost position. For now, this implementation
@@ -153,6 +147,8 @@ internal class PublicSuffixListData(
 
 internal sealed class PublicSuffixOffset {
     data class Offset(val value: Int) : PublicSuffixOffset()
+
     object PublicSuffix : PublicSuffixOffset()
+
     object PrevailingRule : PublicSuffixOffset()
 }

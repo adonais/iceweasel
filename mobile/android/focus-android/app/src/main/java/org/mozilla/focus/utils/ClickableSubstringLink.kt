@@ -86,11 +86,9 @@ fun ClickableSubstringLink(
         text = annotatedText,
         style = style,
         onClick = {
-            annotatedText
-                .getStringAnnotations("link", it, it)
-                .firstOrNull()?.let {
-                    onClick()
-                }
+            annotatedText.getStringAnnotations("link", it, it).firstOrNull()?.let {
+                onClick()
+            }
         },
     )
 }
@@ -107,7 +105,7 @@ private fun ClickableSubstringTextPreview() {
                 linkTextDecoration = TextDecoration.Underline,
                 clickableStartIndex = text.indexOf("link"),
                 clickableEndIndex = text.length,
-            ) { }
+            ) {}
         }
     }
 }

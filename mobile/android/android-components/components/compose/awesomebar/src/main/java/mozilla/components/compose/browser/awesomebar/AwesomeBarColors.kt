@@ -6,9 +6,7 @@ package mozilla.components.compose.browser.awesomebar
 
 import androidx.compose.ui.graphics.Color
 
-/**
- * Represents the colors used by the AwesomeBar.
- */
+/** Represents the colors used by the AwesomeBar. */
 data class AwesomeBarColors(
     val background: Color,
     val title: Color,

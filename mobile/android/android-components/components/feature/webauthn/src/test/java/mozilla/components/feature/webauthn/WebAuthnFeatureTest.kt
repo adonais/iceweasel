@@ -53,7 +53,7 @@ class WebAuthnFeatureTest {
     @Test
     fun `activity delegate starts intent sender`() {
         val feature = webAuthnFeature()
-        val callback: ((Intent?) -> Unit) = { }
+        val callback: ((Intent?) -> Unit) = {}
         val intentSender: IntentSender = mock()
 
         feature.startIntentSenderForResult(intentSender, callback)
@@ -90,7 +90,7 @@ class WebAuthnFeatureTest {
     @Test
     fun `when feature called by activity, then exit fullscreen if required`() {
         val feature = webAuthnFeature()
-        val callback: ((Intent?) -> Unit) = { }
+        val callback: ((Intent?) -> Unit) = {}
         val intentSender: IntentSender = mock()
 
         assertFalse(exitFullScreenUseCaseCalled)

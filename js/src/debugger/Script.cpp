@@ -1695,10 +1695,8 @@ static bool BytecodeIsEffectful(JSScript* script, size_t offset) {
     case JSOp::GetBoundName:
     case JSOp::Exception:
     case JSOp::ExceptionAndStack:
-    case JSOp::IsGenClosing:
     case JSOp::FinalYieldRval:
     case JSOp::Resume:
-    case JSOp::CheckResumeKind:
     case JSOp::AfterYield:
     case JSOp::MaybeExtractAwaitValue:
     case JSOp::Generator:

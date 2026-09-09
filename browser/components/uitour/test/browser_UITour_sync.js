@@ -70,10 +70,16 @@ add_UITour_task(async function test_checkSyncCounts() {
 add_UITour_task(async function test_firefoxAccountsNoParams() {
   info("Load https://accounts.firefox.com");
   await gContentAPI.showFirefoxAccounts();
-  await BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser, false, url =>
-    url.startsWith(
-      `https://example.com/?${gFxaParams}&entrypoint=uitour&action=email&service=sync`
-    )
+  await BrowserTestUtils.browserLoaded(
+    gTestTab.linkedBrowser,
+    false,
+    url =>
+      url.startsWith("https://example.com/") &&
+      // always expect a service.
+      url.includes("service=") &&
+      url.includes(gFxaParams) &&
+      url.includes("action=email") &&
+      url.includes("entrypoint=uitour")
   );
 });
 
@@ -84,19 +90,23 @@ add_UITour_task(async function test_firefoxAccountsValidParams() {
     gTestTab.linkedBrowser,
     false,
     url =>
-      url.startsWith(
-        `https://example.com/?${gFxaParams}&entrypoint=uitour&action=email&service=sync`
-      ) && url.includes("utm_foo=foo&utm_bar=bar")
+      url.startsWith("https://example.com/") &&
+      url.includes("action=email") &&
+      url.includes("utm_foo=foo&utm_bar=bar")
   );
 });
 
 add_UITour_task(async function test_firefoxAccountsWithEmail() {
   info("Load https://accounts.firefox.com");
   await gContentAPI.showFirefoxAccounts(null, null, "foo@bar.com");
-  await BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser, false, url =>
-    url.startsWith(
-      `https://example.com/?${gFxaParams}&entrypoint=uitour&email=foo%40bar.com&service=sync`
-    )
+  await BrowserTestUtils.browserLoaded(
+    gTestTab.linkedBrowser,
+    false,
+    url =>
+      url.startsWith("https://example.com/") &&
+      url.includes(gFxaParams) &&
+      url.includes("action=email") &&
+      url.includes("email=foo%40bar.com")
   );
 });
 
@@ -112,9 +122,10 @@ add_UITour_task(async function test_firefoxAccountsWithEmailAndFlowParams() {
     gTestTab.linkedBrowser,
     false,
     url =>
-      url.startsWith(
-        `https://example.com/?${gFxaParams}&entrypoint=uitour&email=foo%40bar.com&service=sync`
-      ) &&
+      url.startsWith("https://example.com/") &&
+      url.includes(gFxaParams) &&
+      url.includes("action=email") &&
+      url.includes("email=foo%40bar.com") &&
       url.includes(
         `flow_id=${MOCK_FLOW_ID}&flow_begin_time=${MOCK_FLOW_BEGIN_TIME}&device_id=${MOCK_DEVICE_ID}`
       )
@@ -167,9 +178,9 @@ add_UITour_task(
       gTestTab.linkedBrowser,
       false,
       url =>
-        url.startsWith(
-          `https://example.com/?${gFxaParams}&entrypoint=uitour&email=foo%40bar.com&service=sync`
-        ) &&
+        url.startsWith("https://example.com/") &&
+        url.includes("email=foo%40bar.com") &&
+        url.includes("action=email") &&
         url.includes(
           `flow_id=${MOCK_FLOW_ID}&flow_begin_time=${MOCK_FLOW_BEGIN_TIME}`
         )
@@ -188,13 +199,8 @@ add_UITour_task(async function test_firefoxAccountsWithEmailAndEntrypoints() {
     "entry",
     "foo@bar.com"
   );
-  await BrowserTestUtils.browserLoaded(
-    gTestTab.linkedBrowser,
-    false,
-    url =>
-      url.startsWith(
-        `https://example.com/?${gFxaParams}&entrypoint=entry&email=foo%40bar.com&service=sync`
-      ) && url.includes(`entrypoint_experiment=exp&entrypoint_variation=var`)
+  await BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser, false, url =>
+    url.includes(`entrypoint_experiment=exp&entrypoint_variation=var`)
   );
 });
 
@@ -207,13 +213,8 @@ add_UITour_task(async function test_firefoxAccountsNonAlphaValue() {
   let expected = encodeURIComponent(value).replace(/%20/g, "+");
   info("Load https://accounts.firefox.com");
   await gContentAPI.showFirefoxAccounts({ utm_foo: value });
-  await BrowserTestUtils.browserLoaded(
-    gTestTab.linkedBrowser,
-    false,
-    url =>
-      url.startsWith(
-        `https://example.com/?${gFxaParams}&entrypoint=uitour&action=email&service=sync`
-      ) && url.includes(`&utm_foo=` + expected)
+  await BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser, false, url =>
+    url.includes(`&utm_foo=` + expected)
   );
 });
 

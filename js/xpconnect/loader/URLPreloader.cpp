@@ -5,6 +5,7 @@
 #include "mozilla/URLPreloader.h"
 
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Components.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/FileUtils.h"
 #include "mozilla/IOBuffers.h"
@@ -12,7 +13,6 @@
 #include "mozilla/Logging.h"
 #include "mozilla/scache/StartupCache.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/Services.h"
 #include "mozilla/Try.h"
 #include "mozilla/Vector.h"
 
@@ -132,7 +132,7 @@ Result<Ok, nsresult> URLPreloader::InitInternal() {
   mResProto = do_QueryInterface(ph, &rv);
   MOZ_TRY(rv);
 
-  mChromeReg = services::GetChromeRegistry();
+  mChromeReg = components::ChromeRegistry::Service();
   if (!mChromeReg) {
     return Err(NS_ERROR_UNEXPECTED);
   }

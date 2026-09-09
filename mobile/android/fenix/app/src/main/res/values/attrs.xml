@@ -33,11 +33,15 @@
     <attr name="colorOnInformationContainer" format="reference" />
     <attr name="colorSuccess" format="reference" />
     <attr name="colorOnSuccess" format="reference" />
+    <attr name="colorSuccessContainer" format="reference" />
+    <attr name="colorOnSuccessContainer" format="reference" />
     <attr name="colorWarning" format="reference" />
     <attr name="colorOnWarning" format="reference" />
     <attr name="colorWarningContainer" format="reference" />
     <attr name="colorOnWarningContainer" format="reference" />
     <attr name="colorSurfaceDimVariant" format="reference" />
+    <attr name="colorSurfaceContainerSelected" format="reference" />
+    <attr name="colorSheetOutline" format="reference" />
     <attr name="colorAutofillText" format="reference" />
     <attr name="colorSelectedText" format="reference" />
     <attr name="colorIconPrivate" format="reference" />

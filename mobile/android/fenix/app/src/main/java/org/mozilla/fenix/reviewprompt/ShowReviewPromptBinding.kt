@@ -6,6 +6,7 @@ package org.mozilla.fenix.reviewprompt
 
 import android.app.Activity
 import androidx.navigation.NavDirections
+import java.lang.ref.WeakReference
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,12 +21,8 @@ import org.mozilla.fenix.components.PlayStoreReviewPromptController
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.reviewprompt.ReviewPromptState.Eligible.Type
-import java.lang.ref.WeakReference
 
-/**
- * A feature that shows either the Google Play Review Prompt or the built-in review prompt based
- * on the eligibility.
- */
+/** A feature that shows either the Google Play Review Prompt or the built-in review prompt based on the eligibility. */
 class ShowReviewPromptBinding(
     private val appStore: AppStore,
     private val promptController: PlayStoreReviewPromptController,
@@ -36,11 +33,13 @@ class ShowReviewPromptBinding(
 ) : AbstractBinding<AppState>(appStore, mainDispatcher) {
 
     override suspend fun onState(flow: Flow<AppState>) {
-        flow.map { it.reviewPrompt }
+        flow
+            .map { it.reviewPrompt }
             .distinctUntilChanged()
             .collect {
                 when (it) {
-                    ReviewPromptState.Unknown, ReviewPromptState.NotEligible -> {}
+                    ReviewPromptState.Unknown,
+                    ReviewPromptState.NotEligible -> {}
 
                     is ReviewPromptState.Eligible -> {
                         when (it.type) {

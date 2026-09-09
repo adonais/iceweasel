@@ -18,11 +18,12 @@ class LogFactProcessorTest {
         val logger: Logger = mock()
         val processor = LogFactProcessor(logger)
 
-        val fact = Fact(
-            Component.SUPPORT_TEST,
-            Action.CLICK,
-            "test",
-        )
+        val fact =
+            Fact(
+                Component.SUPPORT_TEST,
+                Action.CLICK,
+                "test",
+            )
 
         processor.process(fact)
 

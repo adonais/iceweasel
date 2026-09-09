@@ -10,11 +10,8 @@
 #ifndef LIBANGLE_FRAME_CAPTURE_H_
 #define LIBANGLE_FRAME_CAPTURE_H_
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include <fstream>
+#include "common/unsafe_buffers.h"
 #include "sys/stat.h"
 
 #include "common/PackedEnums.h"
@@ -327,6 +324,13 @@ class ResourceTracker final : angle::NonCopyable
 
     std::map<GLuint, egl::ImageID> &getTextureIDToImageTable() { return mMatchTextureIDToImage; }
 
+    std::map<egl::ImageID, std::vector<uint8_t>> &getImageDataMap() { return mImageDataMap; }
+
+    std::map<gl::ContextID, std::set<GLuint>> &getExternalImageBindingsToRestore()
+    {
+        return mExternalImageBindingsToRestore;
+    }
+
     void setShaderProgramType(gl::ShaderProgramID id, angle::ShaderProgramType type)
     {
         mShaderProgramType[id] = type;
@@ -367,6 +371,8 @@ class ResourceTracker final : angle::NonCopyable
         mDefaultUniformsToReset.clear();
         mDefaultUniformResetCalls.clear();
         mDefaultUniformBaseLocations.clear();
+        mImageDataMap.clear();
+        mExternalImageBindingsToRestore.clear();
     }
 
   private:
@@ -406,6 +412,8 @@ class ResourceTracker final : angle::NonCopyable
     std::map<gl::ContextID, TrackedResourceArray> mTrackedResourcesPerContext;
     std::map<EGLImage, egl::AttributeMap> mMatchImageToAttribs;
     std::map<GLuint, egl::ImageID> mMatchTextureIDToImage;
+    std::map<egl::ImageID, std::vector<uint8_t>> mImageDataMap;
+    std::map<gl::ContextID, std::set<GLuint>> mExternalImageBindingsToRestore;
     std::map<gl::ShaderProgramID, ShaderProgramType> mShaderProgramType;
 };
 
@@ -813,7 +821,7 @@ class FrameCaptureShared final : angle::NonCopyable
         for (size_t i = 0; i < numObjs; ++i)
         {
             mResourceTrackerCL.mCLParamIDToIndexVector[paramCaptureKey->uniqueID].push_back(
-                (this->*getCLObjIndexFunc)(&objs[i]));
+                (this->*getCLObjIndexFunc)(&ANGLE_UNSAFE_TODO(objs[i])));
         }
     }
 
@@ -849,6 +857,7 @@ class FrameCaptureShared final : angle::NonCopyable
                             bool persistent);
 
     void trackTextureUpdate(const gl::Context *context, const CallCapture &call);
+    void trackFramebufferAttachmentUpdate(const gl::Context *context, const CallCapture &call);
     void trackImageUpdate(const gl::Context *context, const CallCapture &call);
     void trackDefaultUniformUpdate(const gl::Context *context, const CallCapture &call);
     void trackVertexArrayUpdate(const gl::Context *context, const CallCapture &call);
@@ -963,6 +972,17 @@ class FrameCaptureShared final : angle::NonCopyable
 
     angle::SimpleMutex &getFrameCaptureMutex() { return mFrameCaptureMutex; }
 
+    void markGLSyncEmitted(gl::SyncID syncID) { mEmittedGLSyncIDs.insert(syncID.value); }
+    void markEGLSyncEmitted(egl::SyncID syncID) { mEmittedEGLSyncIDs.insert(syncID.value); }
+    bool isGLSyncEmitted(gl::SyncID syncID) const
+    {
+        return mEmittedGLSyncIDs.find(syncID.value) != mEmittedGLSyncIDs.end();
+    }
+    bool isEGLSyncEmitted(egl::SyncID syncID) const
+    {
+        return mEmittedEGLSyncIDs.find(syncID.value) != mEmittedEGLSyncIDs.end();
+    }
+
     void setDeferredLinkProgram(gl::ShaderProgramID programID)
     {
         mDeferredLinkPrograms.emplace(programID);
@@ -1044,6 +1064,8 @@ class FrameCaptureShared final : angle::NonCopyable
     void scanSetupCalls(std::vector<CallCapture> &setupCalls);
 
     std::vector<CallCapture> mFrameCalls;
+    std::vector<size_t> mClientVertexArrayCallIndices;
+    gl::AttributesMask mClientVertexArrayDirtyAttribMask;
 
     // We save one large buffer of binary data for the whole CPP replay.
     // This simplifies a lot of file management.
@@ -1078,6 +1100,11 @@ class FrameCaptureShared final : angle::NonCopyable
     angle::SimpleMutex mFrameCaptureMutex;
     bool mCallCaptured           = false;
     bool mStartFrameCallCaptured = false;
+
+    // Track Sync IDs emitted in the trace to allow skipping of external sync objects
+    // to prevent corrupttion of Sync state tracking
+    std::unordered_set<GLuint> mEmittedGLSyncIDs;
+    std::unordered_set<GLuint> mEmittedEGLSyncIDs;
 
     // When true, it removes unnecessary calls going into
     // replay files that occur before mCaptureStartFrame

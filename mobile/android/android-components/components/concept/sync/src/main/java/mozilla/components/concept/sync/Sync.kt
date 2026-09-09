@@ -4,27 +4,17 @@
 
 package mozilla.components.concept.sync
 
-/**
- * Results of running a sync via [SyncableStore.sync].
- */
+/** Results of running a sync via [SyncableStore.sync]. */
 sealed class SyncStatus {
-    /**
-     * Sync succeeded successfully.
-     */
+    /** Sync succeeded successfully. */
     object Ok : SyncStatus()
 
-    /**
-     * Sync completed with an error.
-     */
+    /** Sync completed with an error. */
     data class Error(val exception: Exception) : SyncStatus()
 }
 
-/**
- * Describes a "sync" entry point for a storage layer.
- */
+/** Describes a "sync" entry point for a storage layer. */
 interface SyncableStore {
-    /**
-     * Registers this storage with a sync manager.
-     */
+    /** Registers this storage with a sync manager. */
     fun registerWithSyncManager()
 }

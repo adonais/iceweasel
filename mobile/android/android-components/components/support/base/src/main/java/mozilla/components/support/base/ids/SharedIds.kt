@@ -26,9 +26,7 @@ internal class SharedIds(
     private val offset: Int = 0,
     now: () -> Long = { System.currentTimeMillis() },
 ) {
-    /**
-     * Get a unique ID for the provided unique tag.
-     */
+    /** Get a unique ID for the provided unique tag. */
     @Synchronized
     fun getIdForTag(context: Context, tag: String): Int {
         val preferences = preferences(context)
@@ -56,9 +54,7 @@ internal class SharedIds(
         return nextId
     }
 
-    /**
-     * Get the next available unique ID for the provided unique tag.
-     */
+    /** Get the next available unique ID for the provided unique tag. */
     @Synchronized
     fun getNextIdForTag(context: Context, tag: String): Int {
         val preferences = preferences(context)
@@ -96,12 +92,13 @@ internal class SharedIds(
      * @param preferences The [SharedPreferences] instance.
      */
     private fun removeExpiredIds(preferences: SharedPreferences) {
-        val expiredEntries = preferences.all.entries
-            .filter { it.key.startsWith(KEY_LAST_USED_PREFIX) }
-            .filter {
-                val lastUsed = it.value as? Long
-                lastUsed != null && lastUsed < (now() - idLifeTime)
-            }
+        val expiredEntries =
+            preferences.all.entries
+                .filter { it.key.startsWith(KEY_LAST_USED_PREFIX) }
+                .filter {
+                    val lastUsed = it.value as? Long
+                    lastUsed != null && lastUsed < (now() - idLifeTime)
+                }
 
         if (expiredEntries.isNotEmpty()) {
             preferences.edit {
@@ -115,7 +112,9 @@ internal class SharedIds(
         }
     }
 
-    fun clear(context: Context) { preferences(context).edit { clear() } }
+    fun clear(context: Context) {
+        preferences(context).edit { clear() }
+    }
 
     internal var now: () -> Long = now
 }

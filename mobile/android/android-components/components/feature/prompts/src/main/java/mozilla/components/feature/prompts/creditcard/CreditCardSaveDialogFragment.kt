@@ -17,6 +17,7 @@ import android.widget.TextView
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.view.isVisible
+import com.google.android.material.R as materialR
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.Dispatchers.IO
@@ -36,13 +37,12 @@ import mozilla.components.support.ktx.android.content.appName
 import mozilla.components.support.ktx.android.view.toScope
 import mozilla.components.support.utils.creditCardIssuerNetwork
 import mozilla.components.support.utils.ext.getParcelableCompat
-import com.google.android.material.R as materialR
 
 private const val KEY_CREDIT_CARD = "KEY_CREDIT_CARD"
 
 /**
- * [android.support.v4.app.DialogFragment] implementation to display a dialog that allows
- * user to save a new credit card or update an existing credit card.
+ * [android.support.v4.app.DialogFragment] implementation to display a dialog that allows user to save a new credit card
+ * or update an existing credit card.
  */
 internal class CreditCardSaveDialogFragment : PromptDialogFragment() {
 
@@ -51,8 +51,7 @@ internal class CreditCardSaveDialogFragment : PromptDialogFragment() {
         safeArguments.getParcelableCompat(KEY_CREDIT_CARD, CreditCardEntry::class.java)!!
     }
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal var confirmResult: Result = Result.CanBeCreated
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal var confirmResult: Result = Result.CanBeCreated
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return BottomSheetDialog(requireContext(), R.style.MozDialogStyle).apply {
@@ -70,17 +69,19 @@ internal class CreditCardSaveDialogFragment : PromptDialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        return LayoutInflater.from(requireContext()).inflate(
-            R.layout.mozac_feature_prompt_save_credit_card_prompt,
-            container,
-            false,
-        )
+        return LayoutInflater.from(requireContext())
+            .inflate(
+                R.layout.mozac_feature_prompt_save_credit_card_prompt,
+                container,
+                false,
+            )
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        view.findViewById<ImageView>(R.id.credit_card_logo)
+        view
+            .findViewById<ImageView>(R.id.credit_card_logo)
             .setImageResource(creditCard.cardType.creditCardIssuerNetwork().icon)
 
         view.findViewById<TextView>(R.id.save_credit_card_message).text =
@@ -113,9 +114,7 @@ internal class CreditCardSaveDialogFragment : PromptDialogFragment() {
         updateUI(view)
     }
 
-    /**
-     * Emit the save or update fact based on the confirm action for the credit card.
-     */
+    /** Emit the save or update fact based on the confirm action for the credit card. */
     @VisibleForTesting
     internal fun emitSaveUpdateFact() {
         when (confirmResult) {
@@ -136,31 +135,38 @@ internal class CreditCardSaveDialogFragment : PromptDialogFragment() {
         )
     }
 
-    /**
-     * Updates the dialog based on whether a save or update credit card state should be displayed.
-     */
-    private fun updateUI(view: View) = view.toScope().launch(IO) {
-        val validationDelegate = feature?.creditCardValidationDelegate ?: return@launch
-        confirmResult = validationDelegate.shouldCreateOrUpdate(creditCard)
+    /** Updates the dialog based on whether a save or update credit card state should be displayed. */
+    private fun updateUI(view: View) =
+        view.toScope().launch(IO) {
+            val validationDelegate = feature?.creditCardValidationDelegate ?: return@launch
+            confirmResult = validationDelegate.shouldCreateOrUpdate(creditCard)
 
-        withContext(Main) {
-            when (confirmResult) {
-                is Result.CanBeCreated -> setViewText(
-                    view = view,
-                    header = requireContext().getString(R.string.mozac_feature_prompts_save_credit_card_prompt_title),
-                    cancelButtonText = requireContext().getString(R.string.mozac_feature_prompt_not_now),
-                    confirmButtonText = requireContext().getString(R.string.mozac_feature_prompt_save_confirmation),
-                )
-                is Result.CanBeUpdated -> setViewText(
-                    view = view,
-                    header = requireContext().getString(R.string.mozac_feature_prompts_update_credit_card_prompt_title),
-                    cancelButtonText = requireContext().getString(R.string.mozac_feature_prompts_cancel),
-                    confirmButtonText = requireContext().getString(R.string.mozac_feature_prompt_update_confirmation),
-                    showMessageBody = false,
-                )
+            withContext(Main) {
+                when (confirmResult) {
+                    is Result.CanBeCreated ->
+                        setViewText(
+                            view = view,
+                            header =
+                                requireContext()
+                                    .getString(R.string.mozac_feature_prompts_save_credit_card_prompt_title),
+                            cancelButtonText = requireContext().getString(R.string.mozac_feature_prompt_not_now),
+                            confirmButtonText =
+                                requireContext().getString(R.string.mozac_feature_prompt_save_confirmation),
+                        )
+                    is Result.CanBeUpdated ->
+                        setViewText(
+                            view = view,
+                            header =
+                                requireContext()
+                                    .getString(R.string.mozac_feature_prompts_update_credit_card_prompt_title),
+                            cancelButtonText = requireContext().getString(R.string.mozac_feature_prompts_cancel),
+                            confirmButtonText =
+                                requireContext().getString(R.string.mozac_feature_prompt_update_confirmation),
+                            showMessageBody = false,
+                        )
+                }
             }
         }
-    }
 
     /**
      * Updates the header and button text in the dialog.
@@ -179,8 +185,7 @@ internal class CreditCardSaveDialogFragment : PromptDialogFragment() {
         confirmButtonText: String,
         showMessageBody: Boolean = true,
     ) {
-        view.findViewById<AppCompatTextView>(R.id.save_credit_card_message).isVisible =
-            showMessageBody
+        view.findViewById<AppCompatTextView>(R.id.save_credit_card_message).isVisible = showMessageBody
         view.findViewById<AppCompatTextView>(R.id.save_credit_card_header).text = header
         view.findViewById<Button>(R.id.save_cancel).text = cancelButtonText
         view.findViewById<Button>(R.id.save_confirm).text = confirmButtonText

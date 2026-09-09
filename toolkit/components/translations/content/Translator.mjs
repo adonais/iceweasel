@@ -54,13 +54,6 @@ export class Translator {
   #portAcquisition = null;
 
   /**
-   * Whether the current port has carried a translation request.
-   *
-   * @type {boolean}
-   */
-  #hasUsedPort = false;
-
-  /**
    * The language pair consisting of the source language and target language.
    *
    * @type {LanguagePair}
@@ -224,11 +217,6 @@ export class Translator {
    *  Rejects if an error has occurred during translation.
    */
   async translate(sourceText, isHTML = false) {
-    if (this.#hasUsedPort && this.#translationRequests.size === 0) {
-      this.#port?.close();
-      this.#port = null;
-    }
-
     await this.#createNewPortIfClosed();
     await this.#ready;
 
@@ -245,7 +233,6 @@ export class Translator {
       reject,
     });
 
-    this.#hasUsedPort = true;
     this.#port?.postMessage({
       type: "TranslationsPort:TranslationRequest",
       translationId,
@@ -262,12 +249,16 @@ export class Translator {
    * @returns {void}
    */
   destroy() {
+    const port = this.#port;
+    this.#port = null;
+
     try {
-      this.#port?.close();
+      port?.postMessage({ type: "TranslationsPort:Close" });
     } catch {
       // We're destroying anyway, nothing to do.
+    } finally {
+      port?.close();
     }
-    this.#port = null;
 
     for (const request of this.#translationRequests.values()) {
       request.resolve(null);
@@ -309,7 +300,6 @@ export class Translator {
    */
   async #acquirePort() {
     this.#port = await this.#requestTranslationsPort(this.#languagePair);
-    this.#hasUsedPort = false;
 
     const { promise, resolve, reject } = Promise.withResolvers();
 

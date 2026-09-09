@@ -18,16 +18,15 @@ data class LabsState(
     val dialogState: DialogState,
 ) : State {
     companion object {
-        val INITIAL = LabsState(
-            labsItems = emptyList(),
-            dialogState = DialogState.Closed,
-        )
+        val INITIAL =
+            LabsState(
+                labsItems = emptyList(),
+                dialogState = DialogState.Closed,
+            )
     }
 }
 
-/**
- * Represents the dialog state of the Firefox Labs screen.
- */
+/** Represents the dialog state of the Firefox Labs screen. */
 sealed interface DialogState {
     /**
      * The confirmation dialog for toggling a [LabsItem] on or off when it requires a restart.
@@ -36,13 +35,9 @@ sealed interface DialogState {
      */
     data class ToggleLabsItem(val item: LabsItem) : DialogState
 
-    /**
-     * The dialog for restoring all [LabsItem]s to their default disabled state.
-     */
+    /** The dialog for restoring all [LabsItem]s to their default disabled state. */
     object RestoreDefaults : DialogState
 
-    /**
-     * No dialog is being shown.
-     */
+    /** No dialog is being shown. */
     object Closed : DialogState
 }

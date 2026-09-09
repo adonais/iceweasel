@@ -23,7 +23,7 @@
 
 static PRLibrary *blLib;
 
-#define LSB(x) ((x)&0xff)
+#define LSB(x) ((x) & 0xff)
 #define MSB(x) ((x) >> 8)
 
 static const NSSLOWVector *vector;

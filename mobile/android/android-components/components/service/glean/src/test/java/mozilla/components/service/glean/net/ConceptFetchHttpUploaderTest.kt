@@ -4,6 +4,12 @@
 
 package mozilla.components.service.glean.net
 
+import java.io.IOException
+import java.net.CookieHandler
+import java.net.CookieManager
+import java.net.HttpCookie
+import java.net.URI
+import java.util.concurrent.TimeUnit
 import mockwebserver3.Dispatcher
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -29,12 +35,6 @@ import org.junit.Test
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import java.io.IOException
-import java.net.CookieHandler
-import java.net.CookieManager
-import java.net.HttpCookie
-import java.net.URI
-import java.util.concurrent.TimeUnit
 
 class ConceptFetchHttpUploaderTest {
     private val testPath: String = "/some/random/path/not/important"
@@ -43,6 +43,7 @@ class ConceptFetchHttpUploaderTest {
 
     /**
      * Create a mock webserver that accepts all requests.
+     *
      * @return a [MockWebServer] instance
      */
     private fun getMockWebServer(): MockWebServer {
@@ -59,8 +60,7 @@ class ConceptFetchHttpUploaderTest {
 
     @Test
     fun `connection timeouts must be properly set`() {
-        val uploader =
-            spy<ConceptFetchHttpUploader>(ConceptFetchHttpUploader(lazy { HttpURLConnectionClient() }))
+        val uploader = spy<ConceptFetchHttpUploader>(ConceptFetchHttpUploader(lazy { HttpURLConnectionClient() }))
 
         val uploadRequest = PingUploadRequest(url = testPath, data = testPing.toByteArray(), emptyMap(), emptyList())
         val request = uploader.buildRequest(uploadRequest)
@@ -78,18 +78,20 @@ class ConceptFetchHttpUploaderTest {
     @Test
     fun `Glean headers are correctly dispatched`() {
         val mockClient: Client = mock()
-        `when`(mockClient.fetch(any())).thenReturn(
-            Response("URL", 200, mock(), mock()),
-        )
+        `when`(mockClient.fetch(any())).thenReturn(Response("URL", 200, mock(), mock()))
 
-        val expectedHeaders = mapOf(
-            "Content-Type" to "application/json; charset=utf-8",
-            "Test-header" to "SomeValue",
-            "OtherHeader" to "Glean/Test 25.0.2",
-        )
+        val expectedHeaders =
+            mapOf(
+                "Content-Type" to "application/json; charset=utf-8",
+                "Test-header" to "SomeValue",
+                "OtherHeader" to "Glean/Test 25.0.2",
+            )
 
         val uploader = ConceptFetchHttpUploader(lazy { mockClient })
-        val uploadRequest = CapablePingUploadRequest(PingUploadRequest(url = testPath, data = testPing.toByteArray(), expectedHeaders, emptyList()))
+        val uploadRequest =
+            CapablePingUploadRequest(
+                PingUploadRequest(url = testPath, data = testPing.toByteArray(), expectedHeaders, emptyList())
+            )
         uploader.upload(uploadRequest)
         val requestCaptor = argumentCaptor<Request>()
         verify(mockClient).fetch(requestCaptor.capture())
@@ -104,8 +106,7 @@ class ConceptFetchHttpUploaderTest {
 
     @Test
     fun `Cookie policy must be properly set`() {
-        val uploader =
-            spy<ConceptFetchHttpUploader>(ConceptFetchHttpUploader(lazy { HttpURLConnectionClient() }))
+        val uploader = spy<ConceptFetchHttpUploader>(ConceptFetchHttpUploader(lazy { HttpURLConnectionClient() }))
 
         val uploadRequest = PingUploadRequest(url = testPath, data = testPing.toByteArray(), emptyMap(), emptyList())
         val request = uploader.buildRequest(uploadRequest)
@@ -116,18 +117,22 @@ class ConceptFetchHttpUploaderTest {
     @Test
     fun `upload() returns true for successful submissions (200)`() {
         val mockClient: Client = mock()
-        `when`(mockClient.fetch(any())).thenReturn(
-            Response(
-                "URL",
-                200,
-                mock(),
-                mock(),
-            ),
-        )
+        `when`(mockClient.fetch(any()))
+            .thenReturn(
+                Response(
+                    "URL",
+                    200,
+                    mock(),
+                    mock(),
+                )
+            )
 
         val uploader = spy<ConceptFetchHttpUploader>(ConceptFetchHttpUploader(lazy { mockClient }))
 
-        val uploadRequest = CapablePingUploadRequest(PingUploadRequest(url = testPath, data = testPing.toByteArray(), emptyMap(), emptyList()))
+        val uploadRequest =
+            CapablePingUploadRequest(
+                PingUploadRequest(url = testPath, data = testPing.toByteArray(), emptyMap(), emptyList())
+            )
         assertEquals(HttpStatus(200), uploader.upload(uploadRequest))
     }
 
@@ -135,18 +140,22 @@ class ConceptFetchHttpUploaderTest {
     fun `upload() returns false for server errors (5xx)`() {
         for (responseCode in 500..527) {
             val mockClient: Client = mock()
-            `when`(mockClient.fetch(any())).thenReturn(
-                Response(
-                    "URL",
-                    responseCode,
-                    mock(),
-                    mock(),
-                ),
-            )
+            `when`(mockClient.fetch(any()))
+                .thenReturn(
+                    Response(
+                        "URL",
+                        responseCode,
+                        mock(),
+                        mock(),
+                    )
+                )
 
             val uploader = spy<ConceptFetchHttpUploader>(ConceptFetchHttpUploader(lazy { mockClient }))
 
-            val uploadRequest = CapablePingUploadRequest(PingUploadRequest(url = testPath, data = testPing.toByteArray(), emptyMap(), emptyList()))
+            val uploadRequest =
+                CapablePingUploadRequest(
+                    PingUploadRequest(url = testPath, data = testPing.toByteArray(), emptyMap(), emptyList())
+                )
             assertEquals(HttpStatus(responseCode), uploader.upload(uploadRequest))
         }
     }
@@ -155,18 +164,22 @@ class ConceptFetchHttpUploaderTest {
     fun `upload() returns true for successful submissions (2xx)`() {
         for (responseCode in 200..226) {
             val mockClient: Client = mock()
-            `when`(mockClient.fetch(any())).thenReturn(
-                Response(
-                    "URL",
-                    responseCode,
-                    mock(),
-                    mock(),
-                ),
-            )
+            `when`(mockClient.fetch(any()))
+                .thenReturn(
+                    Response(
+                        "URL",
+                        responseCode,
+                        mock(),
+                        mock(),
+                    )
+                )
 
             val uploader = spy<ConceptFetchHttpUploader>(ConceptFetchHttpUploader(lazy { mockClient }))
 
-            val uploadRequest = CapablePingUploadRequest(PingUploadRequest(url = testPath, data = testPing.toByteArray(), emptyMap(), emptyList()))
+            val uploadRequest =
+                CapablePingUploadRequest(
+                    PingUploadRequest(url = testPath, data = testPing.toByteArray(), emptyMap(), emptyList())
+                )
             assertEquals(HttpStatus(responseCode), uploader.upload(uploadRequest))
         }
     }
@@ -175,18 +188,22 @@ class ConceptFetchHttpUploaderTest {
     fun `upload() returns true for failing submissions with broken requests (4xx)`() {
         for (responseCode in 400..451) {
             val mockClient: Client = mock()
-            `when`(mockClient.fetch(any())).thenReturn(
-                Response(
-                    "URL",
-                    responseCode,
-                    mock(),
-                    mock(),
-                ),
-            )
+            `when`(mockClient.fetch(any()))
+                .thenReturn(
+                    Response(
+                        "URL",
+                        responseCode,
+                        mock(),
+                        mock(),
+                    )
+                )
 
             val uploader = spy<ConceptFetchHttpUploader>(ConceptFetchHttpUploader(lazy { mockClient }))
 
-            val uploadRequest = CapablePingUploadRequest(PingUploadRequest(url = testPath, data = testPing.toByteArray(), emptyMap(), emptyList()))
+            val uploadRequest =
+                CapablePingUploadRequest(
+                    PingUploadRequest(url = testPath, data = testPing.toByteArray(), emptyMap(), emptyList())
+                )
             assertEquals(HttpStatus(responseCode), uploader.upload(uploadRequest))
         }
     }
@@ -198,7 +215,15 @@ class ConceptFetchHttpUploaderTest {
         val client = ConceptFetchHttpUploader(lazy { HttpURLConnectionClient() })
 
         val submissionUrl = "http://" + server.hostName + ":" + server.port + testPath
-        val uploadRequest = CapablePingUploadRequest(PingUploadRequest(url = submissionUrl, data = testPing.toByteArray(), mapOf("test" to "header"), emptyList()))
+        val uploadRequest =
+            CapablePingUploadRequest(
+                PingUploadRequest(
+                    url = submissionUrl,
+                    data = testPing.toByteArray(),
+                    mapOf("test" to "header"),
+                    emptyList(),
+                )
+            )
         assertEquals(HttpStatus(200), client.upload(uploadRequest))
 
         val request = server.takeRequest()
@@ -217,7 +242,15 @@ class ConceptFetchHttpUploaderTest {
         val client = ConceptFetchHttpUploader(lazy { HttpURLConnectionClient() })
 
         val submissionUrl = "http://" + server.hostName + ":" + server.port + testPath
-        val uploadRequest = CapablePingUploadRequest(PingUploadRequest(url = submissionUrl, data = testPing.toByteArray(), mapOf("test" to "header"), emptyList()))
+        val uploadRequest =
+            CapablePingUploadRequest(
+                PingUploadRequest(
+                    url = submissionUrl,
+                    data = testPing.toByteArray(),
+                    mapOf("test" to "header"),
+                    emptyList(),
+                )
+            )
         assertEquals(HttpStatus(200), client.upload(uploadRequest))
 
         val request = server.takeRequest()
@@ -237,7 +270,15 @@ class ConceptFetchHttpUploaderTest {
         val client = ConceptFetchHttpUploader(lazy { OkHttpClient() })
 
         val submissionUrl = "http://" + server.hostName + ":" + server.port + testPath
-        val uploadRequest = CapablePingUploadRequest(PingUploadRequest(url = submissionUrl, data = testPing.toByteArray(), mapOf("test" to "header"), emptyList()))
+        val uploadRequest =
+            CapablePingUploadRequest(
+                PingUploadRequest(
+                    url = submissionUrl,
+                    data = testPing.toByteArray(),
+                    mapOf("test" to "header"),
+                    emptyList(),
+                )
+            )
         assertEquals(HttpStatus(200), client.upload(uploadRequest))
 
         val request = server.takeRequest()
@@ -254,9 +295,7 @@ class ConceptFetchHttpUploaderTest {
     fun `upload() must not transmit any cookie`() {
         val server = getMockWebServer()
 
-        val testConfig = testDefaultConfig.copy(
-            serverEndpoint = "http://localhost:" + server.port,
-        )
+        val testConfig = testDefaultConfig.copy(serverEndpoint = "http://localhost:" + server.port)
 
         // Set the default cookie manager/handler to be used for the http upload.
         val cookieManager = CookieManager()
@@ -287,7 +326,10 @@ class ConceptFetchHttpUploaderTest {
         // Trigger the connection.
         val client = ConceptFetchHttpUploader(lazy { HttpURLConnectionClient() })
         val submissionUrl = testConfig.serverEndpoint + testPath
-        val uploadRequest = CapablePingUploadRequest(PingUploadRequest(url = submissionUrl, data = testPing.toByteArray(), emptyMap(), emptyList()))
+        val uploadRequest =
+            CapablePingUploadRequest(
+                PingUploadRequest(url = submissionUrl, data = testPing.toByteArray(), emptyMap(), emptyList())
+            )
         assertEquals(HttpStatus(200), client.upload(uploadRequest))
 
         val request = server.takeRequest()
@@ -312,21 +354,25 @@ class ConceptFetchHttpUploaderTest {
 
         // And IOException during upload is a failed upload that we should retry. The client should
         // return false in this case.
-        val uploadRequest = CapablePingUploadRequest(PingUploadRequest(url = "path", data = "ping".toByteArray(), emptyMap(), emptyList()))
+        val uploadRequest =
+            CapablePingUploadRequest(
+                PingUploadRequest(url = "path", data = "ping".toByteArray(), emptyMap(), emptyList())
+            )
         assertEquals(RecoverableFailure(0), uploader.upload(uploadRequest))
     }
 
     @Test
     fun `the lazy client should only be instantiated after the first upload`() {
         val mockClient: Client = mock()
-        `when`(mockClient.fetch(any())).thenReturn(
-            Response("URL", 200, mock(), mock()),
-        )
+        `when`(mockClient.fetch(any())).thenReturn(Response("URL", 200, mock(), mock()))
         val uploader = spy<ConceptFetchHttpUploader>(ConceptFetchHttpUploader(lazy { mockClient }))
         assertFalse(uploader.client.isInitialized())
 
         // After calling upload, the client must get instantiated.
-        val uploadRequest = CapablePingUploadRequest(PingUploadRequest(url = "path", data = "ping".toByteArray(), emptyMap(), emptyList()))
+        val uploadRequest =
+            CapablePingUploadRequest(
+                PingUploadRequest(url = "path", data = "ping".toByteArray(), emptyMap(), emptyList())
+            )
         uploader.upload(uploadRequest)
         assertTrue(uploader.client.isInitialized())
     }
@@ -334,18 +380,20 @@ class ConceptFetchHttpUploaderTest {
     @Test
     fun `usePrivateRequest sends all requests with private flag`() {
         val mockClient: Client = mock()
-        `when`(mockClient.fetch(any())).thenReturn(
-            Response("URL", 200, mock(), mock()),
-        )
+        `when`(mockClient.fetch(any())).thenReturn(Response("URL", 200, mock(), mock()))
 
-        val expectedHeaders = mapOf(
-            "Content-Type" to "application/json; charset=utf-8",
-            "Test-header" to "SomeValue",
-            "OtherHeader" to "Glean/Test 25.0.2",
-        )
+        val expectedHeaders =
+            mapOf(
+                "Content-Type" to "application/json; charset=utf-8",
+                "Test-header" to "SomeValue",
+                "OtherHeader" to "Glean/Test 25.0.2",
+            )
 
         val uploader = ConceptFetchHttpUploader(lazy { mockClient }, true)
-        val uploadRequest = CapablePingUploadRequest(PingUploadRequest(url = "path", data = "ping".toByteArray(), expectedHeaders, emptyList()))
+        val uploadRequest =
+            CapablePingUploadRequest(
+                PingUploadRequest(url = "path", data = "ping".toByteArray(), expectedHeaders, emptyList())
+            )
         uploader.upload(uploadRequest)
 
         val captor = argumentCaptor<Request>()
@@ -358,38 +406,62 @@ class ConceptFetchHttpUploaderTest {
     @Test
     fun `upload() respects the uploader capabilities`() {
         val mockClient: Client = mock()
-        `when`(mockClient.fetch(any())).thenReturn(
-            Response(
-                "URL",
-                200,
-                mock(),
-                mock(),
-            ),
-        )
+        `when`(mockClient.fetch(any()))
+            .thenReturn(
+                Response(
+                    "URL",
+                    200,
+                    mock(),
+                    mock(),
+                )
+            )
 
         // Ensure that an empty capabilities list succeed
         val incapableUploader = spy<ConceptFetchHttpUploader>(ConceptFetchHttpUploader(lazy { mockClient }))
 
-        val plainPing = CapablePingUploadRequest(PingUploadRequest(url = testPath, data = testPing.toByteArray(), emptyMap(), emptyList()))
+        val plainPing =
+            CapablePingUploadRequest(
+                PingUploadRequest(url = testPath, data = testPing.toByteArray(), emptyMap(), emptyList())
+            )
         assertEquals(HttpStatus(200), incapableUploader.upload(plainPing))
 
         // Ensure that we get Incapable when we have unsupported capabilities
-        val pingWUnsupportedCapability = CapablePingUploadRequest(PingUploadRequest(url = testPath, data = testPing.toByteArray(), emptyMap(), listOf("some-unsupported-capability")))
+        val pingWUnsupportedCapability =
+            CapablePingUploadRequest(
+                PingUploadRequest(
+                    url = testPath,
+                    data = testPing.toByteArray(),
+                    emptyMap(),
+                    listOf("some-unsupported-capability"),
+                )
+            )
         assertEquals(Incapable(0), incapableUploader.upload(pingWUnsupportedCapability))
 
         // Ensure that we don't submit OHTTP pings when supportsOhttp is false
-        val pingWOhttpCapability = CapablePingUploadRequest(PingUploadRequest(url = testPath, data = testPing.toByteArray(), emptyMap(), listOf("ohttp")))
+        val pingWOhttpCapability =
+            CapablePingUploadRequest(
+                PingUploadRequest(url = testPath, data = testPing.toByteArray(), emptyMap(), listOf("ohttp"))
+            )
         assertEquals(Incapable(0), incapableUploader.upload(pingWOhttpCapability))
 
         // Ensure that when supportsOhttp is true, we are able to submit ohttp pings
-        val ohttpCapableUploader = spy<ConceptFetchHttpUploader>(ConceptFetchHttpUploader(lazy { mockClient }, supportsOhttp = true))
+        val ohttpCapableUploader =
+            spy<ConceptFetchHttpUploader>(ConceptFetchHttpUploader(lazy { mockClient }, supportsOhttp = true))
         assertEquals(HttpStatus(200), ohttpCapableUploader.upload(pingWOhttpCapability))
 
         // Ensure that OHTTP capable uploader doesn't accept all capabilities
         assertEquals(Incapable(0), ohttpCapableUploader.upload(pingWUnsupportedCapability))
 
         // Ensure that OHTTP capable uploader doesn't accept all capabilities when there's ohttp in the list
-        val pingWOhttpAndUnsupportedCapability = CapablePingUploadRequest(PingUploadRequest(url = testPath, data = testPing.toByteArray(), emptyMap(), listOf("ohttp", "some-unsupported-capability")))
+        val pingWOhttpAndUnsupportedCapability =
+            CapablePingUploadRequest(
+                PingUploadRequest(
+                    url = testPath,
+                    data = testPing.toByteArray(),
+                    emptyMap(),
+                    listOf("ohttp", "some-unsupported-capability"),
+                )
+            )
         assertEquals(Incapable(0), ohttpCapableUploader.upload(pingWOhttpAndUnsupportedCapability))
     }
 }

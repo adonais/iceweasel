@@ -13,9 +13,7 @@ import mozilla.components.feature.search.ext.waitForSelectedOrDefaultSearchEngin
 import mozilla.components.support.utils.SafeIntent
 import org.mozilla.focus.ext.components
 
-/**
- * Activity for receiving and processing an ACTION_PROCESS_TEXT intent.
- */
+/** Activity for receiving and processing an ACTION_PROCESS_TEXT intent. */
 class TextActionActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

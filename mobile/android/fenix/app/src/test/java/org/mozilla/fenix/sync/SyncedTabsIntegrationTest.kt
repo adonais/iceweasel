@@ -33,11 +33,13 @@ class SyncedTabsIntegrationTest {
         MockKAnnotations.init(this)
         every { syncedTabsStorage.stop() } just Runs
         every { accountManager.register(any(), owner = any(), autoPause = false) } just Runs
-        every { context.applicationContext } returns mockk<FenixApplication> {
-            every { components } returns mockk {
-                every { backgroundServices.syncedTabsStorage } returns syncedTabsStorage
+        every { context.applicationContext } returns
+            mockk<FenixApplication> {
+                every { components } returns
+                    mockk {
+                        every { backgroundServices.syncedTabsStorage } returns syncedTabsStorage
+                    }
             }
-        }
     }
 
     @Test

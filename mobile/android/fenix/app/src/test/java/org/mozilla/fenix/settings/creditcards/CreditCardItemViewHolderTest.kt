@@ -28,19 +28,20 @@ class CreditCardItemViewHolderTest {
     private lateinit var interactor: CreditCardsManagementInteractor
     private lateinit var binding: CreditCardListItemBinding
 
-    private val creditCard = CreditCard(
-        guid = "id",
-        billingName = "Banana Apple",
-        encryptedCardNumber = CreditCardNumber.Encrypted("4111111111111110"),
-        cardNumberLast4 = "1110",
-        expiryMonth = 1,
-        expiryYear = 2030,
-        cardType = CreditCardNetworkType.AMEX.cardName,
-        timeCreated = 1L,
-        timeLastUsed = 1L,
-        timeLastModified = 1L,
-        timesUsed = 1L,
-    )
+    private val creditCard =
+        CreditCard(
+            guid = "id",
+            billingName = "Banana Apple",
+            encryptedCardNumber = CreditCardNumber.Encrypted("4111111111111110"),
+            cardNumberLast4 = "1110",
+            expiryMonth = 1,
+            expiryYear = 2030,
+            cardType = CreditCardNetworkType.AMEX.cardName,
+            timeCreated = 1L,
+            timeLastUsed = 1L,
+            timeLastModified = 1L,
+            timesUsed = 1L,
+        )
 
     @Before
     fun setup() {

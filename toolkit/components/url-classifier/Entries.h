@@ -311,6 +311,13 @@ struct CachedFullHashResponse {
 typedef nsClassHashtable<nsUint32HashKey, CachedFullHashResponse>
     FullHashResponseMap;
 
+// The minimum time a client should wait before requesting a given table
+// again.
+struct TableWaitDuration {
+  nsCString mTable;
+  uint32_t mWaitSec;
+};
+
 template <class T>
 void CopyClassHashTable(const T& aSource, T& aDestination) {
   for (const auto& entry : aSource) {

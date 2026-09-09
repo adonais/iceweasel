@@ -9,9 +9,7 @@ import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
 import org.mozilla.experiments.nimbus.Branch
 
-/**
- * The [Store] for holding the [NimbusBranchesState] and applying [NimbusBranchesAction]s.
- */
+/** The [Store] for holding the [NimbusBranchesState] and applying [NimbusBranchesAction]s. */
 class NimbusBranchesStore(initialState: NimbusBranchesState) :
     Store<NimbusBranchesState, NimbusBranchesAction>(
         initialState,
@@ -32,8 +30,8 @@ data class NimbusBranchesState(
 ) : State
 
 /**
- * Actions to dispatch through the [NimbusBranchesStore] to modify the [NimbusBranchesState]
- * through the [nimbusBranchesFragmentStateReducer].
+ * Actions to dispatch through the [NimbusBranchesStore] to modify the [NimbusBranchesState] through the
+ * [nimbusBranchesFragmentStateReducer].
  */
 sealed class NimbusBranchesAction : Action {
     /**
@@ -42,8 +40,7 @@ sealed class NimbusBranchesAction : Action {
      * @property branches The list of [Branch]s to display in the branches list.
      * @property selectedBranch The selected [Branch] slug for a Nimbus experiment.
      */
-    data class UpdateBranches(val branches: List<Branch>, val selectedBranch: String) :
-        NimbusBranchesAction()
+    data class UpdateBranches(val branches: List<Branch>, val selectedBranch: String) : NimbusBranchesAction()
 
     /**
      * Updates the selected branch.
@@ -52,15 +49,12 @@ sealed class NimbusBranchesAction : Action {
      */
     data class UpdateSelectedBranch(val selectedBranch: String) : NimbusBranchesAction()
 
-    /**
-     * Opts out of the branches.
-     */
+    /** Opts out of the branches. */
     object UpdateUnselectBranch : NimbusBranchesAction()
 }
 
 /**
- * Reduces the Nimbus branches state from the current state with the provided [action] to
- * be performed.
+ * Reduces the Nimbus branches state from the current state with the provided [action] to be performed.
  *
  * @param state The current Nimbus branches state.
  * @param action The action to be performed on the state.

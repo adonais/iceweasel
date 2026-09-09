@@ -12,20 +12,17 @@ import androidx.appcompat.app.AppCompatActivity
 
 /**
  * Sets the icon for the back (up) navigation button.
+ *
  * @param icon The resource id of the icon.
  */
-fun Activity.setNavigationIcon(
-    @DrawableRes icon: Int,
-) {
+fun Activity.setNavigationIcon(@DrawableRes icon: Int) {
     (this as? AppCompatActivity)?.supportActionBar?.let {
         it.setDisplayHomeAsUpEnabled(true)
         it.setHomeAsUpIndicator(icon)
     }
 }
 
-/**
- * Sets or clears the secure flags for the activity's window.
- */
+/** Sets or clears the secure flags for the activity's window. */
 fun Activity.updateSecureWindowFlags() {
     if (this.settings.shouldUseSecureMode()) {
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)

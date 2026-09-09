@@ -26,13 +26,15 @@ class AdaptiveIconProcessorTest {
     fun `process adds padding to legacy icons`() {
         val bitmap = spy(createBitmap(128, 128))
 
-        val icon = AdaptiveIconProcessor().process(
-            mock(),
-            mock(),
-            IconRequest.Resource("", MANIFEST_ICON, maskable = false),
-            Icon(bitmap, source = Icon.Source.DISK),
-            mock(),
-        )
+        val icon =
+            AdaptiveIconProcessor()
+                .process(
+                    mock(),
+                    mock(),
+                    IconRequest.Resource("", MANIFEST_ICON, maskable = false),
+                    Icon(bitmap, source = Icon.Source.DISK),
+                    mock(),
+                )
 
         assertEquals(228, icon.bitmap.width)
         assertEquals(228, icon.bitmap.height)
@@ -46,13 +48,15 @@ class AdaptiveIconProcessorTest {
     fun `process adjusts the size of maskable icons`() {
         val bitmap = createBitmap(256, 256)
 
-        val icon = AdaptiveIconProcessor().process(
-            mock(),
-            mock(),
-            IconRequest.Resource("", MANIFEST_ICON, maskable = true),
-            Icon(bitmap, source = Icon.Source.INLINE),
-            mock(),
-        )
+        val icon =
+            AdaptiveIconProcessor()
+                .process(
+                    mock(),
+                    mock(),
+                    IconRequest.Resource("", MANIFEST_ICON, maskable = true),
+                    Icon(bitmap, source = Icon.Source.INLINE),
+                    mock(),
+                )
 
         assertEquals(334, icon.bitmap.width)
         assertEquals(334, icon.bitmap.height)
@@ -66,13 +70,15 @@ class AdaptiveIconProcessorTest {
         val bitmap = createBitmap(128, 128).apply { recycle() }
         val icon = Icon(bitmap, source = Icon.Source.INLINE)
 
-        val processed = AdaptiveIconProcessor().process(
-            mock(),
-            mock(),
-            IconRequest.Resource("", MANIFEST_ICON, maskable = true),
-            icon,
-            mock(),
-        )
+        val processed =
+            AdaptiveIconProcessor()
+                .process(
+                    mock(),
+                    mock(),
+                    IconRequest.Resource("", MANIFEST_ICON, maskable = true),
+                    icon,
+                    mock(),
+                )
 
         assertEquals(icon, processed)
     }

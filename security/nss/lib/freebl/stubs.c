@@ -144,6 +144,7 @@ STUB_DECLARE(void, PORT_Free_Util, (void *ptr));
 STUB_DECLARE(void, PORT_FreeArena_Util, (PLArenaPool * arena, PRBool zero));
 STUB_DECLARE(int, PORT_GetError_Util, (void));
 STUB_DECLARE(PLArenaPool *, PORT_NewArena_Util, (unsigned long chunksize));
+STUB_DECLARE(void *, PORT_Realloc_Util, (void *ptr, size_t len));
 STUB_DECLARE(void, PORT_SafeZero, (void *p, size_t n));
 STUB_DECLARE(void, PORT_SetError_Util, (int value));
 STUB_DECLARE(void *, PORT_ZAlloc_Util, (size_t len));
@@ -208,6 +209,13 @@ PORT_Alloc_stub(size_t len)
 {
     STUB_SAFE_CALL1(PORT_Alloc_Util, len);
     return malloc(len);
+}
+
+extern void *
+PORT_Realloc_stub(void *ptr, size_t len)
+{
+    STUB_SAFE_CALL2(PORT_Realloc_Util, ptr, len);
+    return realloc(ptr, len);
 }
 
 extern void
@@ -841,7 +849,8 @@ freebl_InitNSSUtil(void *lib)
 static void *FREEBLnsprGlobalLib = NULL;
 static void *FREEBLnssutilGlobalLib = NULL;
 
-void __attribute((destructor)) FREEBL_unload()
+void __attribute((destructor))
+FREEBL_unload()
 {
     freebl_releaseLibrary(FREEBLnsprGlobalLib);
     freebl_releaseLibrary(FREEBLnssutilGlobalLib);

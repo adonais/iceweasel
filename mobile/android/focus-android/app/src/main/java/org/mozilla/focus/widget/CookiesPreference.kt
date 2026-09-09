@@ -13,9 +13,7 @@ import androidx.preference.PreferenceViewHolder
 import org.mozilla.focus.R
 import org.mozilla.focus.ext.settings
 
-/**
- * Autocomplete preference that will show a sub screen to configure the autocomplete behavior.
- */
+/** Autocomplete preference that will show a sub screen to configure the autocomplete behavior. */
 class CookiesPreference(context: Context, attrs: AttributeSet?) : ListPreference(context, attrs) {
 
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
@@ -29,17 +27,16 @@ class CookiesPreference(context: Context, attrs: AttributeSet?) : ListPreference
         updateSummary()
     }
 
-    /**
-     * Updates the summary text of the preference based on the current cookie settings.
-     */
+    /** Updates the summary text of the preference based on the current cookie settings. */
     fun updateSummary() {
         val settings = context.settings
 
         val cookieOptionIndex =
-            context.resources.getStringArray(R.array.cookies_options_entry_values)
-                .asList().indexOf(settings.shouldBlockCookiesValue)
-        this.summary =
-            context.resources.getStringArray(R.array.cookies_options_entries)[cookieOptionIndex]
+            context.resources
+                .getStringArray(R.array.cookies_options_entry_values)
+                .asList()
+                .indexOf(settings.shouldBlockCookiesValue)
+        this.summary = context.resources.getStringArray(R.array.cookies_options_entries)[cookieOptionIndex]
     }
 
     private fun showIcon(holder: PreferenceViewHolder?) {

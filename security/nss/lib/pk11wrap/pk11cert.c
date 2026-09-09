@@ -1241,17 +1241,23 @@ PK11_ImportCert(PK11SlotInfo *slot, CERTCertificate *cert,
         goto loser;
     }
 
-    if (c->object.cryptoContext) {
-        /* Delete the temp instance */
-        NSSCryptoContext *cc = c->object.cryptoContext;
+    nssPKIObject_Lock(&c->object);
+    NSSCryptoContext *cc = c->object.cryptoContext;
+    nssPKIObject_Unlock(&c->object);
+    if (cc) {
         nssCertificateStore_Lock(cc->certStore, &lockTrace);
-        nssCertificateStore_RemoveCertLOCKED(cc->certStore, c);
+        nssPKIObject_Lock(&c->object);
+        if (c->object.cryptoContext == cc) {
+            /* Delete the temp instance */
+            nssCertificateStore_RemoveCertLOCKED(cc->certStore, c);
+            c->object.cryptoContext = NULL;
+            CERT_LockCertTempPerm(cert);
+            cert->istemp = PR_FALSE;
+            cert->isperm = PR_TRUE;
+            CERT_UnlockCertTempPerm(cert);
+        }
+        nssPKIObject_Unlock(&c->object);
         nssCertificateStore_Unlock(cc->certStore, &lockTrace, &unlockTrace);
-        c->object.cryptoContext = NULL;
-        CERT_LockCertTempPerm(cert);
-        cert->istemp = PR_FALSE;
-        cert->isperm = PR_TRUE;
-        CERT_UnlockCertTempPerm(cert);
     }
 
     /* add the new instance to the cert, force an update of the
@@ -2456,13 +2462,11 @@ PK11_FindCertFromDERCertItem(PK11SlotInfo *slot, const SECItem *inDerCert,
     NSSITEM_FROM_SECITEM(&derCert, inDerCert);
     rv = pk11_AuthenticateUnfriendly(slot, PR_TRUE, wincx);
     if (rv != SECSuccess) {
-        PK11_FreeSlot(slot);
         return NULL;
     }
 
     tok = PK11Slot_GetNSSToken(slot);
     if (!tok) {
-        PK11_FreeSlot(slot);
         return NULL;
     }
     co = nssToken_FindCertificateByEncodedCertificate(tok, NULL, &derCert,
@@ -2596,9 +2600,8 @@ PK11_FortezzaHasKEA(CERTCertificate *cert)
 /*
  * Find a kea cert on this slot that matches the domain of it's peer
  */
-static CERTCertificate
-    *
-    pk11_GetKEAMate(PK11SlotInfo *slot, CERTCertificate *peer)
+static CERTCertificate *
+pk11_GetKEAMate(PK11SlotInfo *slot, CERTCertificate *peer)
 {
     int i;
     CERTCertificate *returnedCert = NULL;

@@ -99,6 +99,18 @@ reset these impressions.
    "Save" button to save your changes.
  - If needed, you can click the "Reset" button to restore the original screen impressions data.
 
+4. Profile Impressions
+
+  - Profile impressions are the message impressions shared across all profiles in
+    a profile group. They are recorded for messages that have a `profileScope`
+    set, and are stored in an object where each key is a message ID and each value
+    is an array of timestamps.
+  - You can edit the JSON for profile impressions in the text area. Click the
+    "Save" button to persist your changes to the shared datastore.
+  - To clear all profile impressions, click the "Reset" button. Because profile
+    impressions live in the shared datastore, this clears them across the whole
+    profile group, not just the current profile.
+
 ## Errors
 
 This section can be accessed by visiting `about:asrouter#devtools-errors` or

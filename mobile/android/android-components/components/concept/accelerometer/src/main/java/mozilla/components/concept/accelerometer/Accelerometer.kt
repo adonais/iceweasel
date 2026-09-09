@@ -6,18 +6,12 @@ package mozilla.components.concept.accelerometer
 
 import kotlinx.coroutines.flow.Flow
 
-/**
- * An accelerometer for measuring changes to a devices motion.
- */
+/** An accelerometer for measuring changes to a devices motion. */
 interface Accelerometer {
-    /**
-     * The flow of data.
-     */
+    /** The flow of data. */
     fun samples(): Flow<Sample>
 
-    /**
-     * A simple type containing acceleration data at a specific time.
-     */
+    /** A simple type containing acceleration data at a specific time. */
     interface Sample {
         val xAccel: Float
         val yAccel: Float

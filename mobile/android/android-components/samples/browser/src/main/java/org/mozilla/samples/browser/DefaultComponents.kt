@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import mozilla.components.browser.domains.autocomplete.ShippedDomainsProvider
@@ -89,6 +90,8 @@ import mozilla.components.support.base.worker.Frequency
 import mozilla.components.support.utils.DateTimeProvider
 import mozilla.components.support.utils.DefaultDateTimeProvider
 import mozilla.components.support.utils.DefaultDownloadFileUtils
+import mozilla.components.ui.colors.R as colorsR
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.samples.browser.addons.AddonsActivity
 import org.mozilla.samples.browser.autofill.AutofillConfirmActivity
 import org.mozilla.samples.browser.autofill.AutofillSearchActivity
@@ -98,9 +101,6 @@ import org.mozilla.samples.browser.ext.components
 import org.mozilla.samples.browser.integration.FindInPageIntegration
 import org.mozilla.samples.browser.media.MediaSessionService
 import org.mozilla.samples.browser.request.SampleUrlEncodedRequestInterceptor
-import java.util.concurrent.TimeUnit
-import mozilla.components.ui.colors.R as colorsR
-import mozilla.components.ui.icons.R as iconsR
 
 private const val DAY_IN_MINUTES = 24 * 60L
 
@@ -140,10 +140,11 @@ open class DefaultComponents(private val applicationContext: Context) {
             supportMultipleWindows = true
             preferredColorScheme = PreferredColorScheme.Dark
             httpsOnlyMode = Engine.HttpsOnlyMode.ENABLED
-            globalPrivacyControlEnabled = applicationContext.components.preferences.getBoolean(
-                PREF_GLOBAL_PRIVACY_CONTROL,
-                false,
-            )
+            globalPrivacyControlEnabled =
+                applicationContext.components.preferences.getBoolean(
+                    PREF_GLOBAL_PRIVACY_CONTROL,
+                    false,
+                )
         }
     }
 
@@ -172,41 +173,41 @@ open class DefaultComponents(private val applicationContext: Context) {
 
     val store by lazy {
         BrowserStore(
-            middleware = listOf(
-                DownloadMiddleware(
-                    applicationContext = applicationContext,
-                    downloadServiceClass = DownloadService::class.java,
-                    deleteFileFromStorage = { false },
-                    downloadFileUtils = DefaultDownloadFileUtils(
-                        context = applicationContext,
-                    ),
-                ),
-                ReaderViewMiddleware(),
-                ThumbnailsMiddleware(thumbnailStorage),
-                UndoMiddleware(),
-                RegionMiddleware(
-                    applicationContext,
-                    LocationService.default(),
-                ),
-                SearchMiddleware(applicationContext),
-                RecordingDevicesMiddleware(applicationContext, notificationsDelegate),
-                LastAccessMiddleware(),
-                PromptMiddleware(),
-                SessionPrioritizationMiddleware(),
-            ) + EngineMiddleware.create(engine),
-        ).apply {
-            WebNotificationFeature(
-                applicationContext,
-                engine,
-                icons,
-                R.mipmap.ic_launcher_foreground,
-                permissionStorage,
-                IntentReceiverActivity::class.java,
-                notificationsDelegate = notificationsDelegate,
+                middleware =
+                    listOf(
+                        DownloadMiddleware(
+                            applicationContext = applicationContext,
+                            downloadServiceClass = DownloadService::class.java,
+                            deleteFileFromStorage = { false },
+                            downloadFileUtils = DefaultDownloadFileUtils(context = applicationContext),
+                        ),
+                        ReaderViewMiddleware(),
+                        ThumbnailsMiddleware(thumbnailStorage),
+                        UndoMiddleware(),
+                        RegionMiddleware(
+                            applicationContext,
+                            LocationService.default(),
+                        ),
+                        SearchMiddleware(applicationContext),
+                        RecordingDevicesMiddleware(applicationContext, notificationsDelegate),
+                        LastAccessMiddleware(),
+                        PromptMiddleware(),
+                        SessionPrioritizationMiddleware(),
+                    ) + EngineMiddleware.create(engine)
             )
+            .apply {
+                WebNotificationFeature(
+                    applicationContext,
+                    engine,
+                    icons,
+                    R.mipmap.ic_launcher_foreground,
+                    permissionStorage,
+                    IntentReceiverActivity::class.java,
+                    notificationsDelegate = notificationsDelegate,
+                )
 
-            MediaSessionFeature(applicationContext, MediaSessionService::class.java, this).start()
-        }
+                MediaSessionFeature(applicationContext, MediaSessionService::class.java, this).start()
+            }
     }
 
     val customTabsStore by lazy { CustomTabsServiceStore() }
@@ -291,9 +292,7 @@ open class DefaultComponents(private val applicationContext: Context) {
         WebExtensionBrowserMenuBuilder(
             menuItems,
             store = store,
-            style = WebExtensionBrowserMenuBuilder.Style(
-                webExtIconTintColorResource = colorsR.color.photonGrey90,
-            ),
+            style = WebExtensionBrowserMenuBuilder.Style(webExtIconTintColorResource = colorsR.color.photonGrey90),
             onAddonsManagerTapped = {
                 val intent = Intent(applicationContext, AddonsActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
@@ -303,96 +302,106 @@ open class DefaultComponents(private val applicationContext: Context) {
     }
 
     private val menuItems by lazy {
-        val items = mutableListOf(
-            menuToolbar,
-            BrowserMenuHighlightableItem(
-                "No Highlight",
-                iconsR.drawable.mozac_ic_share_android_24,
-                android.R.color.black,
-                highlight = BrowserMenuHighlight.LowPriority(
-                    notificationTint = ContextCompat.getColor(applicationContext, android.R.color.holo_green_dark),
-                    label = "Highlight",
-                ),
-            ) {
-                Toast.makeText(applicationContext, "Highlight", Toast.LENGTH_SHORT).show()
-            },
-            BrowserMenuImageText("Share", iconsR.drawable.mozac_ic_share_android_24, android.R.color.black) {
-                Toast.makeText(applicationContext, "Share", Toast.LENGTH_SHORT).show()
-            },
-            SimpleBrowserMenuItem("Settings") {
-                Toast.makeText(applicationContext, "Settings", Toast.LENGTH_SHORT).show()
-            },
-            SimpleBrowserMenuItem("Find In Page") {
-                FindInPageIntegration.launch?.invoke()
-            },
-            SimpleBrowserMenuItem("Save to PDF") {
-                sessionUseCases.saveToPdf.invoke()
-            },
-            SimpleBrowserMenuItem("Translate (auto)") {
-                var detectedFrom =
-                    store.state.selectedTab?.translationsState?.translationEngineState
-                        ?.detectedLanguages?.documentLangTag
-                        ?: "en"
-                var detectedTo =
-                    store.state.selectedTab?.translationsState?.translationEngineState
-                        ?.detectedLanguages?.userPreferredLangTag
-                        ?: "en"
-                sessionUseCases.translate.invoke(
-                    fromLanguage = detectedFrom,
-                    toLanguage = detectedTo,
-                    options = null,
-                )
-            },
-            SimpleBrowserMenuItem("Print") {
-                sessionUseCases.printContent.invoke()
-            },
-            SimpleBrowserMenuItem("Restore after Translate") {
-                sessionUseCases.translateRestore.invoke()
-            },
-            SimpleBrowserMenuItem("Restore after crash") {
-                sessionUseCases.crashRecovery.invoke()
-            },
-            BrowserMenuDivider(),
-        )
+        val items =
+            mutableListOf(
+                menuToolbar,
+                BrowserMenuHighlightableItem(
+                    "No Highlight",
+                    iconsR.drawable.mozac_ic_share_android_24,
+                    android.R.color.black,
+                    highlight =
+                        BrowserMenuHighlight.LowPriority(
+                            notificationTint =
+                                ContextCompat.getColor(applicationContext, android.R.color.holo_green_dark),
+                            label = "Highlight",
+                        ),
+                ) {
+                    Toast.makeText(applicationContext, "Highlight", Toast.LENGTH_SHORT).show()
+                },
+                BrowserMenuImageText("Share", iconsR.drawable.mozac_ic_share_android_24, android.R.color.black) {
+                    Toast.makeText(applicationContext, "Share", Toast.LENGTH_SHORT).show()
+                },
+                SimpleBrowserMenuItem("Settings") {
+                    Toast.makeText(applicationContext, "Settings", Toast.LENGTH_SHORT).show()
+                },
+                SimpleBrowserMenuItem("Find In Page") {
+                    FindInPageIntegration.launch?.invoke()
+                },
+                SimpleBrowserMenuItem("Save to PDF") {
+                    sessionUseCases.saveToPdf.invoke()
+                },
+                SimpleBrowserMenuItem("Translate (auto)") {
+                    var detectedFrom =
+                        store.state.selectedTab
+                            ?.translationsState
+                            ?.translationEngineState
+                            ?.detectedLanguages
+                            ?.documentLangTag ?: "en"
+                    var detectedTo =
+                        store.state.selectedTab
+                            ?.translationsState
+                            ?.translationEngineState
+                            ?.detectedLanguages
+                            ?.userPreferredLangTag ?: "en"
+                    sessionUseCases.translate.invoke(
+                        fromLanguage = detectedFrom,
+                        toLanguage = detectedTo,
+                        options = null,
+                    )
+                },
+                SimpleBrowserMenuItem("Print") {
+                    sessionUseCases.printContent.invoke()
+                },
+                SimpleBrowserMenuItem("Restore after Translate") {
+                    sessionUseCases.translateRestore.invoke()
+                },
+                SimpleBrowserMenuItem("Restore after crash") {
+                    sessionUseCases.crashRecovery.invoke()
+                },
+                BrowserMenuDivider(),
+            )
 
         items.add(
             SimpleBrowserMenuItem("Add to homescreen") {
-                MainScope().launch {
-                    webAppUseCases.addToHomescreen()
+                    MainScope().launch {
+                        webAppUseCases.addToHomescreen()
+                    }
                 }
-            }.apply {
-                visible = { webAppUseCases.isPinningSupported() && store.state.selectedTabId != null }
-            },
+                .apply {
+                    visible = { webAppUseCases.isPinningSupported() && store.state.selectedTabId != null }
+                }
         )
 
         items.add(
             SimpleBrowserMenuItem("Open in App") {
-                val getRedirect = appLinksUseCases.appLinkRedirect
-                store.state.selectedTab?.let {
-                    val redirect = getRedirect.invoke(it.content.url)
-                    redirect.appIntent?.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    appLinksUseCases.openAppLink.invoke(redirect.appIntent)
-                }
-            }.apply {
-                visible = {
+                    val getRedirect = appLinksUseCases.appLinkRedirect
                     store.state.selectedTab?.let {
-                        appLinksUseCases.appLinkRedirect(it.content.url).hasExternalApp()
-                    } ?: false
+                        val redirect = getRedirect.invoke(it.content.url)
+                        redirect.appIntent?.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        appLinksUseCases.openAppLink.invoke(redirect.appIntent)
+                    }
                 }
-            },
+                .apply {
+                    visible = {
+                        store.state.selectedTab?.let {
+                            appLinksUseCases.appLinkRedirect(it.content.url).hasExternalApp()
+                        } ?: false
+                    }
+                }
         )
 
         items.add(
             BrowserMenuCheckbox(
-                "Request desktop site",
-                {
-                    store.state.selectedTab?.content?.desktopMode == true
-                },
-            ) { checked ->
-                sessionUseCases.requestDesktopSite(checked)
-            }.apply {
-                visible = { store.state.selectedTab != null }
-            },
+                    "Request desktop site",
+                    {
+                        store.state.selectedTab?.content?.desktopMode == true
+                    },
+                ) { checked ->
+                    sessionUseCases.requestDesktopSite(checked)
+                }
+                .apply {
+                    visible = { store.state.selectedTab != null }
+                }
         )
         items.add(
             BrowserMenuCheckbox(
@@ -402,7 +411,7 @@ open class DefaultComponents(private val applicationContext: Context) {
                 },
             ) { checked ->
                 preferences.edit { putBoolean(PREF_LAUNCH_EXTERNAL_APP, checked) }
-            },
+            }
         )
 
         items.add(
@@ -415,7 +424,7 @@ open class DefaultComponents(private val applicationContext: Context) {
                 preferences.edit { putBoolean(PREF_GLOBAL_PRIVACY_CONTROL, checked) }
                 engine.settings.globalPrivacyControlEnabled = checked
                 sessionUseCases.reload()
-            },
+            }
         )
 
         items.add(
@@ -423,63 +432,67 @@ open class DefaultComponents(private val applicationContext: Context) {
                 "Toggle Relay",
                 { engine.settings.firefoxRelay != null },
             ) { checked ->
-                val mode = if (checked) {
-                    Engine.FirefoxRelayMode.ENABLED
-                } else {
-                    Engine.FirefoxRelayMode.DISABLED
-                }
+                val mode =
+                    if (checked) {
+                        Engine.FirefoxRelayMode.ENABLED
+                    } else {
+                        Engine.FirefoxRelayMode.DISABLED
+                    }
                 engine.settings.firefoxRelay = mode
-            },
+            }
         )
 
         items
     }
 
     private val menuToolbar by lazy {
-        val back = BrowserMenuItemToolbar.TwoStateButton(
-            primaryImageResource = iconsR.drawable.mozac_ic_back_24,
-            primaryImageTintResource = colorsR.color.photonBlue90,
-            primaryContentDescription = "Back",
-            isInPrimaryState = {
-                store.state.selectedTab?.content?.canGoBack ?: true
-            },
-            disableInSecondaryState = true,
-            secondaryImageTintResource = colorsR.color.photonGrey40,
-        ) {
-            sessionUseCases.goBack()
-        }
-
-        val forward = BrowserMenuItemToolbar.TwoStateButton(
-            primaryImageResource = iconsR.drawable.mozac_ic_forward_24,
-            primaryContentDescription = "Forward",
-            primaryImageTintResource = colorsR.color.photonBlue90,
-            isInPrimaryState = {
-                store.state.selectedTab?.content?.canGoForward ?: true
-            },
-            disableInSecondaryState = true,
-            secondaryImageTintResource = colorsR.color.photonGrey40,
-        ) {
-            sessionUseCases.goForward()
-        }
-
-        val refresh = BrowserMenuItemToolbar.TwoStateButton(
-            primaryImageResource = iconsR.drawable.mozac_ic_arrow_clockwise_24,
-            primaryContentDescription = "Refresh",
-            primaryImageTintResource = colorsR.color.photonBlue90,
-            isInPrimaryState = {
-                store.state.selectedTab?.content?.loading == false
-            },
-            secondaryImageResource = iconsR.drawable.mozac_ic_cross_24,
-            secondaryContentDescription = "Stop",
-            secondaryImageTintResource = colorsR.color.photonBlue90,
-            disableInSecondaryState = false,
-        ) {
-            if (store.state.selectedTab?.content?.loading == true) {
-                sessionUseCases.stopLoading()
-            } else {
-                sessionUseCases.reload()
+        val back =
+            BrowserMenuItemToolbar.TwoStateButton(
+                primaryImageResource = iconsR.drawable.mozac_ic_back_24,
+                primaryImageTintResource = colorsR.color.photonBlue90,
+                primaryContentDescription = "Back",
+                isInPrimaryState = {
+                    store.state.selectedTab?.content?.canGoBack ?: true
+                },
+                disableInSecondaryState = true,
+                secondaryImageTintResource = colorsR.color.photonGrey40,
+            ) {
+                sessionUseCases.goBack()
             }
-        }
+
+        val forward =
+            BrowserMenuItemToolbar.TwoStateButton(
+                primaryImageResource = iconsR.drawable.mozac_ic_forward_24,
+                primaryContentDescription = "Forward",
+                primaryImageTintResource = colorsR.color.photonBlue90,
+                isInPrimaryState = {
+                    store.state.selectedTab?.content?.canGoForward ?: true
+                },
+                disableInSecondaryState = true,
+                secondaryImageTintResource = colorsR.color.photonGrey40,
+            ) {
+                sessionUseCases.goForward()
+            }
+
+        val refresh =
+            BrowserMenuItemToolbar.TwoStateButton(
+                primaryImageResource = iconsR.drawable.mozac_ic_arrow_clockwise_24,
+                primaryContentDescription = "Refresh",
+                primaryImageTintResource = colorsR.color.photonBlue90,
+                isInPrimaryState = {
+                    store.state.selectedTab?.content?.loading == false
+                },
+                secondaryImageResource = iconsR.drawable.mozac_ic_cross_24,
+                secondaryContentDescription = "Stop",
+                secondaryImageTintResource = colorsR.color.photonBlue90,
+                disableInSecondaryState = false,
+            ) {
+                if (store.state.selectedTab?.content?.loading == true) {
+                    sessionUseCases.stopLoading()
+                } else {
+                    sessionUseCases.reload()
+                }
+            }
 
         BrowserMenuItemToolbar(listOf(back, forward, refresh))
     }
@@ -494,56 +507,54 @@ open class DefaultComponents(private val applicationContext: Context) {
     val downloadsUseCases: DownloadsUseCases by lazy {
         DownloadsUseCases(
             store = store,
-            downloadFileUtils = DefaultDownloadFileUtils(
-                context = applicationContext,
-            ),
+            downloadFileUtils = DefaultDownloadFileUtils(context = applicationContext),
         )
     }
     val contextMenuUseCases: ContextMenuUseCases by lazy { ContextMenuUseCases(store) }
 
     val crashReporter: CrashReporter by lazy {
         CrashReporter(
-            applicationContext,
-            services = listOf(
-                object : CrashReporterService {
-                    override val id: String
-                        get() = "xxx"
-                    override val name: String
-                        get() = "Test"
+                applicationContext,
+                services =
+                    listOf(
+                        object : CrashReporterService {
+                            override val id: String
+                                get() = "xxx"
 
-                    override fun createCrashReportUrl(identifier: String): String? {
-                        return null
-                    }
+                            override val name: String
+                                get() = "Test"
 
-                    override fun report(crash: Crash.UncaughtExceptionCrash): String? {
-                        return null
-                    }
+                            override fun createCrashReportUrl(identifier: String): String? {
+                                return null
+                            }
 
-                    override fun report(crash: Crash.NativeCodeCrash): String? {
-                        return null
-                    }
+                            override fun report(crash: Crash.UncaughtExceptionCrash): String? {
+                                return null
+                            }
 
-                    override fun report(
-                        throwable: Throwable,
-                        breadcrumbs: ArrayList<Breadcrumb>,
-                    ): String? {
-                        return null
-                    }
-                },
-            ),
-        ).install(applicationContext)
+                            override fun report(crash: Crash.NativeCodeCrash): String? {
+                                return null
+                            }
+
+                            override fun report(
+                                throwable: Throwable,
+                                breadcrumbs: ArrayList<Breadcrumb>,
+                            ): String? {
+                                return null
+                            }
+                        }
+                    ),
+            )
+            .install(applicationContext)
     }
 
     private val notificationManagerCompat = NotificationManagerCompat.from(applicationContext)
 
     val notificationsDelegate: NotificationsDelegate by lazy {
-        NotificationsDelegate(
-            notificationManagerCompat,
-        )
+        NotificationsDelegate(notificationManagerCompat)
     }
 
-    val addonUpdater =
-        DefaultAddonUpdater(applicationContext, Frequency(1, TimeUnit.DAYS), notificationsDelegate)
+    val addonUpdater = DefaultAddonUpdater(applicationContext, Frequency(1, TimeUnit.DAYS), notificationsDelegate)
 
     val fileSizeFormatter: FileSizeFormatter by lazy { DefaultFileSizeFormatter(applicationContext) }
 

@@ -14,6 +14,12 @@
 #undef CONFIG_AV1_VAAPI_HWACCEL
 #endif
 
+#ifdef CONFIG_VULKAN
+#undef CONFIG_VULKAN
+#undef CONFIG_VP9_VULKAN_HWACCEL
+#undef CONFIG_AV1_VULKAN_HWACCEL
+#endif
+
 #if defined(MOZ_FFVPX_AUDIOONLY)
 #    include "config_components_audio_only.h"
 #else

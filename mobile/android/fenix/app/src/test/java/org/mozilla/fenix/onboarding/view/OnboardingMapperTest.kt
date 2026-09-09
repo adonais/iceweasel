@@ -13,234 +13,254 @@ class OnboardingMapperTest {
 
     @Test
     fun `GIVEN a default browser page WHEN mapToOnboardingPageState is called THEN creates the expected OnboardingPageState`() {
-        val expected = OnboardingPageState(
-            imageRes = R.drawable.ic_onboarding_welcome,
-            title = "default browser title",
-            description = "default browser body with link text",
-            primaryButton = Action("default browser primary button text", unitLambda),
-            secondaryButton = Action("default browser secondary button text", unitLambda),
-        )
+        val expected =
+            OnboardingPageState(
+                imageRes = R.drawable.ic_onboarding_welcome,
+                title = "default browser title",
+                description = "default browser body with link text",
+                primaryButton = Action("default browser primary button text", unitLambda),
+                secondaryButton = Action("default browser secondary button text", unitLambda),
+            )
 
-        val onboardingPageUiData = OnboardingPageUiData(
-            type = OnboardingPageUiData.Type.DEFAULT_BROWSER,
-            imageRes = R.drawable.ic_onboarding_welcome,
-            title = "default browser title",
-            description = "default browser body with link text",
-            primaryButtonLabel = "default browser primary button text",
-            secondaryButtonLabel = "default browser secondary button text",
-        )
-        val actual = mapToOnboardingPageState(
-            onboardingPageUiData = onboardingPageUiData,
-            onMakeFirefoxDefaultClick = unitLambda,
-            onMakeFirefoxDefaultSkipClick = unitLambda,
-            onSignInButtonClick = {},
-            onSignInSkipClick = {},
-            onNotificationPermissionButtonClick = {},
-            onNotificationPermissionSkipClick = {},
-            onAddFirefoxWidgetClick = {},
-            onAddFirefoxWidgetSkipClick = {},
-            onCustomizeToolbarButtonClick = {},
-            onTermsOfServiceButtonClick = {},
-        )
+        val onboardingPageUiData =
+            OnboardingPageUiData(
+                type = OnboardingPageUiData.Type.DEFAULT_BROWSER,
+                imageRes = R.drawable.ic_onboarding_welcome,
+                title = "default browser title",
+                description = "default browser body with link text",
+                primaryButtonLabel = "default browser primary button text",
+                secondaryButtonLabel = "default browser secondary button text",
+            )
+        val actual =
+            mapToOnboardingPageState(
+                onboardingPageUiData = onboardingPageUiData,
+                onMakeFirefoxDefaultClick = unitLambda,
+                onMakeFirefoxDefaultSkipClick = unitLambda,
+                onSignInButtonClick = {},
+                onSignInSkipClick = {},
+                onNotificationPermissionButtonClick = {},
+                onNotificationPermissionSkipClick = {},
+                onAddFirefoxWidgetClick = {},
+                onAddFirefoxWidgetSkipClick = {},
+                onCustomizeToolbarButtonClick = {},
+                onTermsOfServiceButtonClick = {},
+            )
 
         assertEquals(expected, actual)
     }
 
     @Test
     fun `GIVEN a sync page WHEN mapToOnboardingPageState is called THEN creates the expected OnboardingPageState`() {
-        val expected = OnboardingPageState(
-            imageRes = R.drawable.ic_onboarding_sync,
-            title = "sync title",
-            description = "sync body",
-            primaryButton = Action("sync primary button text", unitLambda),
-            secondaryButton = Action("sync secondary button text", unitLambda),
-        )
+        val expected =
+            OnboardingPageState(
+                imageRes = R.drawable.ic_onboarding_sync,
+                title = "sync title",
+                description = "sync body",
+                primaryButton = Action("sync primary button text", unitLambda),
+                secondaryButton = Action("sync secondary button text", unitLambda),
+            )
 
-        val onboardingPageUiData = OnboardingPageUiData(
-            type = OnboardingPageUiData.Type.SYNC_SIGN_IN,
-            imageRes = R.drawable.ic_onboarding_sync,
-            title = "sync title",
-            description = "sync body",
-            primaryButtonLabel = "sync primary button text",
-            secondaryButtonLabel = "sync secondary button text",
-        )
-        val actual = mapToOnboardingPageState(
-            onboardingPageUiData = onboardingPageUiData,
-            onMakeFirefoxDefaultClick = {},
-            onMakeFirefoxDefaultSkipClick = {},
-            onSignInButtonClick = unitLambda,
-            onSignInSkipClick = unitLambda,
-            onNotificationPermissionButtonClick = {},
-            onNotificationPermissionSkipClick = {},
-            onAddFirefoxWidgetClick = {},
-            onAddFirefoxWidgetSkipClick = {},
-            onCustomizeToolbarButtonClick = {},
-            onTermsOfServiceButtonClick = {},
-        )
+        val onboardingPageUiData =
+            OnboardingPageUiData(
+                type = OnboardingPageUiData.Type.SYNC_SIGN_IN,
+                imageRes = R.drawable.ic_onboarding_sync,
+                title = "sync title",
+                description = "sync body",
+                primaryButtonLabel = "sync primary button text",
+                secondaryButtonLabel = "sync secondary button text",
+            )
+        val actual =
+            mapToOnboardingPageState(
+                onboardingPageUiData = onboardingPageUiData,
+                onMakeFirefoxDefaultClick = {},
+                onMakeFirefoxDefaultSkipClick = {},
+                onSignInButtonClick = unitLambda,
+                onSignInSkipClick = unitLambda,
+                onNotificationPermissionButtonClick = {},
+                onNotificationPermissionSkipClick = {},
+                onAddFirefoxWidgetClick = {},
+                onAddFirefoxWidgetSkipClick = {},
+                onCustomizeToolbarButtonClick = {},
+                onTermsOfServiceButtonClick = {},
+            )
 
         assertEquals(expected, actual)
     }
 
     @Test
     fun `GIVEN a notification page WHEN mapToOnboardingPageState is called THEN creates the expected OnboardingPageState`() {
-        val expected = OnboardingPageState(
-            imageRes = R.drawable.ic_notification_permission,
-            title = "notification title",
-            description = "notification body",
-            primaryButton = Action("notification primary button text", unitLambda),
-            secondaryButton = Action("notification secondary button text", unitLambda),
-        )
+        val expected =
+            OnboardingPageState(
+                imageRes = R.drawable.ic_notification_permission,
+                title = "notification title",
+                description = "notification body",
+                primaryButton = Action("notification primary button text", unitLambda),
+                secondaryButton = Action("notification secondary button text", unitLambda),
+            )
 
-        val onboardingPageUiData = OnboardingPageUiData(
-            type = OnboardingPageUiData.Type.NOTIFICATION_PERMISSION,
-            imageRes = R.drawable.ic_notification_permission,
-            title = "notification title",
-            description = "notification body",
-            primaryButtonLabel = "notification primary button text",
-            secondaryButtonLabel = "notification secondary button text",
-        )
-        val actual = mapToOnboardingPageState(
-            onboardingPageUiData = onboardingPageUiData,
-            onMakeFirefoxDefaultClick = {},
-            onMakeFirefoxDefaultSkipClick = {},
-            onSignInButtonClick = {},
-            onSignInSkipClick = {},
-            onNotificationPermissionButtonClick = unitLambda,
-            onNotificationPermissionSkipClick = unitLambda,
-            onAddFirefoxWidgetClick = {},
-            onAddFirefoxWidgetSkipClick = {},
-            onCustomizeToolbarButtonClick = {},
-            onTermsOfServiceButtonClick = {},
-        )
+        val onboardingPageUiData =
+            OnboardingPageUiData(
+                type = OnboardingPageUiData.Type.NOTIFICATION_PERMISSION,
+                imageRes = R.drawable.ic_notification_permission,
+                title = "notification title",
+                description = "notification body",
+                primaryButtonLabel = "notification primary button text",
+                secondaryButtonLabel = "notification secondary button text",
+            )
+        val actual =
+            mapToOnboardingPageState(
+                onboardingPageUiData = onboardingPageUiData,
+                onMakeFirefoxDefaultClick = {},
+                onMakeFirefoxDefaultSkipClick = {},
+                onSignInButtonClick = {},
+                onSignInSkipClick = {},
+                onNotificationPermissionButtonClick = unitLambda,
+                onNotificationPermissionSkipClick = unitLambda,
+                onAddFirefoxWidgetClick = {},
+                onAddFirefoxWidgetSkipClick = {},
+                onCustomizeToolbarButtonClick = {},
+                onTermsOfServiceButtonClick = {},
+            )
 
         assertEquals(expected, actual)
     }
 
     @Test
     fun `GIVEN an add search widget page WHEN mapToOnboardingPageState is called THEN creates the expected OnboardingPageState`() {
-        val expected = OnboardingPageState(
-            imageRes = R.drawable.ic_onboarding_search_widget,
-            title = "add search widget title",
-            description = "add search widget body with link text",
-            primaryButton = Action("add search widget primary button text", unitLambda),
-            secondaryButton = Action("add search widget secondary button text", unitLambda),
-        )
+        val expected =
+            OnboardingPageState(
+                imageRes = R.drawable.ic_onboarding_search_widget,
+                title = "add search widget title",
+                description = "add search widget body with link text",
+                primaryButton = Action("add search widget primary button text", unitLambda),
+                secondaryButton = Action("add search widget secondary button text", unitLambda),
+            )
 
-        val onboardingPageUiData = OnboardingPageUiData(
-            type = OnboardingPageUiData.Type.ADD_SEARCH_WIDGET,
-            imageRes = R.drawable.ic_onboarding_search_widget,
-            title = "add search widget title",
-            description = "add search widget body with link text",
-            primaryButtonLabel = "add search widget primary button text",
-            secondaryButtonLabel = "add search widget secondary button text",
-        )
-        val actual = mapToOnboardingPageState(
-            onboardingPageUiData = onboardingPageUiData,
-            onMakeFirefoxDefaultClick = {},
-            onMakeFirefoxDefaultSkipClick = {},
-            onSignInButtonClick = {},
-            onSignInSkipClick = {},
-            onNotificationPermissionButtonClick = {},
-            onNotificationPermissionSkipClick = {},
-            onAddFirefoxWidgetClick = unitLambda,
-            onAddFirefoxWidgetSkipClick = unitLambda,
-            onCustomizeToolbarButtonClick = {},
-            onTermsOfServiceButtonClick = {},
-        )
+        val onboardingPageUiData =
+            OnboardingPageUiData(
+                type = OnboardingPageUiData.Type.ADD_SEARCH_WIDGET,
+                imageRes = R.drawable.ic_onboarding_search_widget,
+                title = "add search widget title",
+                description = "add search widget body with link text",
+                primaryButtonLabel = "add search widget primary button text",
+                secondaryButtonLabel = "add search widget secondary button text",
+            )
+        val actual =
+            mapToOnboardingPageState(
+                onboardingPageUiData = onboardingPageUiData,
+                onMakeFirefoxDefaultClick = {},
+                onMakeFirefoxDefaultSkipClick = {},
+                onSignInButtonClick = {},
+                onSignInSkipClick = {},
+                onNotificationPermissionButtonClick = {},
+                onNotificationPermissionSkipClick = {},
+                onAddFirefoxWidgetClick = unitLambda,
+                onAddFirefoxWidgetSkipClick = unitLambda,
+                onCustomizeToolbarButtonClick = {},
+                onTermsOfServiceButtonClick = {},
+            )
 
         assertEquals(expected, actual)
     }
 
     @Test
     fun `GIVEN a toolbar placement page WHEN mapToOnboardingPageState is called THEN creates the expected OnboardingPageState`() {
-        val toolbarOptions = listOf(
-            ToolbarOption(
-                toolbarType = ToolbarOptionType.TOOLBAR_TOP,
-                imageRes = R.drawable.ic_onboarding_top_toolbar,
-                label = "Top",
-            ),
-            ToolbarOption(
-                toolbarType = ToolbarOptionType.TOOLBAR_BOTTOM,
-                imageRes = R.drawable.ic_onboarding_bottom_toolbar,
-                label = "Bottom",
-            ),
-        )
+        val toolbarOptions =
+            listOf(
+                ToolbarOption(
+                    toolbarType = ToolbarOptionType.TOOLBAR_TOP,
+                    imageRes = R.drawable.ic_onboarding_top_toolbar,
+                    label = "Top",
+                ),
+                ToolbarOption(
+                    toolbarType = ToolbarOptionType.TOOLBAR_BOTTOM,
+                    imageRes = R.drawable.ic_onboarding_bottom_toolbar,
+                    label = "Bottom",
+                ),
+            )
 
-        val expected = OnboardingPageState(
-            imageRes = R.drawable.ic_onboarding_customize_toolbar,
-            title = "Pick a toolbar placement",
-            description = "Keep searches within reach",
-            primaryButton = Action("Save and continue", unitLambda),
-            toolbarOptions = toolbarOptions,
-        )
+        val expected =
+            OnboardingPageState(
+                imageRes = R.drawable.ic_onboarding_customize_toolbar,
+                title = "Pick a toolbar placement",
+                description = "Keep searches within reach",
+                primaryButton = Action("Save and continue", unitLambda),
+                toolbarOptions = toolbarOptions,
+            )
 
-        val onboardingPageUiData = OnboardingPageUiData(
-            type = OnboardingPageUiData.Type.TOOLBAR_PLACEMENT,
-            imageRes = R.drawable.ic_onboarding_customize_toolbar,
-            title = "Pick a toolbar placement",
-            description = "Keep searches within reach",
-            primaryButtonLabel = "Save and continue",
-            toolbarOptions = toolbarOptions,
-        )
+        val onboardingPageUiData =
+            OnboardingPageUiData(
+                type = OnboardingPageUiData.Type.TOOLBAR_PLACEMENT,
+                imageRes = R.drawable.ic_onboarding_customize_toolbar,
+                title = "Pick a toolbar placement",
+                description = "Keep searches within reach",
+                primaryButtonLabel = "Save and continue",
+                toolbarOptions = toolbarOptions,
+            )
 
-        val actual = mapToOnboardingPageState(
-            onboardingPageUiData = onboardingPageUiData,
-            onMakeFirefoxDefaultClick = {},
-            onMakeFirefoxDefaultSkipClick = {},
-            onSignInButtonClick = {},
-            onSignInSkipClick = {},
-            onNotificationPermissionButtonClick = {},
-            onNotificationPermissionSkipClick = {},
-            onAddFirefoxWidgetClick = {},
-            onAddFirefoxWidgetSkipClick = {},
-            onCustomizeToolbarButtonClick = unitLambda,
-            onTermsOfServiceButtonClick = {},
-            onMarketingDataContinueClick = {},
-        )
+        val actual =
+            mapToOnboardingPageState(
+                onboardingPageUiData = onboardingPageUiData,
+                onMakeFirefoxDefaultClick = {},
+                onMakeFirefoxDefaultSkipClick = {},
+                onSignInButtonClick = {},
+                onSignInSkipClick = {},
+                onNotificationPermissionButtonClick = {},
+                onNotificationPermissionSkipClick = {},
+                onAddFirefoxWidgetClick = {},
+                onAddFirefoxWidgetSkipClick = {},
+                onCustomizeToolbarButtonClick = unitLambda,
+                onTermsOfServiceButtonClick = {},
+                onMarketingDataContinueClick = {},
+            )
 
         assertEquals(expected, actual)
     }
 
     @Test
     fun `GIVEN a marketing data collection opt out page WHEN mapToOnboardingPageState is called THEN creates the expected OnboardingPageState`() {
-        val marketingData = OnboardingMarketingData(
-            marketingCardVariant = MarketingCardVariant.DEFAULT,
-            bodyOneText = "marketing data body one",
-            bodyOneLinkText = "marketing data body one link",
-            bodyTwoText = "marketing data body two",
-        )
+        val marketingData =
+            OnboardingMarketingData(
+                marketingCardVariant = MarketingCardVariant.DEFAULT,
+                bodyOneText = "marketing data body one",
+                bodyOneLinkText = "marketing data body one link",
+                bodyTwoText = "marketing data body two",
+            )
 
-        val expected = OnboardingPageState(
-            imageRes = R.drawable.ic_high_five,
-            title = "marketing data title",
-            description = "marketing data body",
-            primaryButton = Action("marketing data button text", unitLambda),
-            marketingData = marketingData,
-        )
+        val expected =
+            OnboardingPageState(
+                imageRes = R.drawable.ic_high_five,
+                title = "marketing data title",
+                description = "marketing data body",
+                primaryButton = Action("marketing data button text", unitLambda),
+                marketingData = marketingData,
+            )
 
-        val onboardingPageUiData = OnboardingPageUiData(
-            type = OnboardingPageUiData.Type.MARKETING_DATA,
-            imageRes = R.drawable.ic_high_five,
-            title = "marketing data title",
-            description = "marketing data body",
-            primaryButtonLabel = "marketing data button text",
-            marketingData = marketingData,
-        )
+        val onboardingPageUiData =
+            OnboardingPageUiData(
+                type = OnboardingPageUiData.Type.MARKETING_DATA,
+                imageRes = R.drawable.ic_high_five,
+                title = "marketing data title",
+                description = "marketing data body",
+                primaryButtonLabel = "marketing data button text",
+                marketingData = marketingData,
+            )
 
-        val actual = mapToOnboardingPageState(
-            onboardingPageUiData = onboardingPageUiData,
-            onMakeFirefoxDefaultClick = {},
-            onMakeFirefoxDefaultSkipClick = {},
-            onSignInButtonClick = {},
-            onSignInSkipClick = {},
-            onNotificationPermissionButtonClick = {},
-            onNotificationPermissionSkipClick = {},
-            onAddFirefoxWidgetClick = {},
-            onAddFirefoxWidgetSkipClick = {},
-            onCustomizeToolbarButtonClick = {},
-            onTermsOfServiceButtonClick = {},
-            onMarketingDataContinueClick = unitLambda,
-        )
+        val actual =
+            mapToOnboardingPageState(
+                onboardingPageUiData = onboardingPageUiData,
+                onMakeFirefoxDefaultClick = {},
+                onMakeFirefoxDefaultSkipClick = {},
+                onSignInButtonClick = {},
+                onSignInSkipClick = {},
+                onNotificationPermissionButtonClick = {},
+                onNotificationPermissionSkipClick = {},
+                onAddFirefoxWidgetClick = {},
+                onAddFirefoxWidgetSkipClick = {},
+                onCustomizeToolbarButtonClick = {},
+                onTermsOfServiceButtonClick = {},
+                onMarketingDataContinueClick = unitLambda,
+            )
 
         assertEquals(expected, actual)
     }

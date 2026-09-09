@@ -7,16 +7,13 @@ package org.mozilla.fenix.settings.doh
 import java.net.URI
 import java.net.URISyntaxException
 
-/**
- * An object for DoH custom provider and exception urls.
- */
+/** An object for DoH custom provider and exception urls. */
 object DohUrlValidator {
     /**
      * Validates that the provided [url] is a valid absolute https url.
      *
      * @param url The URL to be validated.
      * @return The normalized url as a string.
-     *
      * @throws UrlValidationException.NonHttpsUrlException If the url scheme is not "https".
      * @throws UrlValidationException.InvalidUrlException If the url is invalid or does not have a valid host.
      */
@@ -46,9 +43,9 @@ object DohUrlValidator {
      *
      * For instance:
      * - "http://example.com" -> "c.com"
-     * - "https://foo"    -> "foo"
-     * - "ftp://foo/bar"  -> "foo/bar"
-     * - "example.com"    -> "example.com"
+     * - "https://foo" -> "foo"
+     * - "ftp://foo/bar" -> "foo/bar"
+     * - "example.com" -> "example.com"
      *
      * @param url The original URL string.
      * @return The [url] without its leading scheme and "://", if present.
@@ -71,17 +68,11 @@ object DohUrlValidator {
     }
 }
 
-/**
- * Represents the possible exceptions thrown during DoH url validation.
- */
+/** Represents the possible exceptions thrown during DoH url validation. */
 sealed class UrlValidationException : RuntimeException() {
-    /**
-     * Indicates that the provided url does not use https as its scheme.
-     */
+    /** Indicates that the provided url does not use https as its scheme. */
     data object NonHttpsUrlException : UrlValidationException()
 
-    /**
-     * Indicates that the provided url is invalid (e.g. malformed, missing host).
-     */
+    /** Indicates that the provided url is invalid (e.g. malformed, missing host). */
     data object InvalidUrlException : UrlValidationException()
 }

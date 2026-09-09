@@ -36,22 +36,22 @@ internal fun TranslationDialogBottomSheet(
     content: @Composable () -> Unit,
 ) {
     Surface(
-        shape = MaterialTheme.shapes.extraLarge.copy(
-            bottomStart = CornerSize(0.dp),
-            bottomEnd = CornerSize(0.dp),
-        ),
-        modifier = Modifier.nestedScroll(rememberNestedScrollInteropConnection())
-            .verticalScroll(rememberScrollState()),
+        shape =
+            MaterialTheme.shapes.extraLarge.copy(
+                bottomStart = CornerSize(0.dp),
+                bottomEnd = CornerSize(0.dp),
+            ),
+        modifier = Modifier.nestedScroll(rememberNestedScrollInteropConnection()).verticalScroll(rememberScrollState()),
     ) {
         Column {
             BottomSheetHandle(
                 onRequestDismiss = onRequestDismiss,
                 contentDescription = stringResource(R.string.translation_option_bottom_sheet_close_content_description),
-                modifier = Modifier
-                    .padding(top = 16.dp)
-                    .fillMaxWidth(BOTTOM_SHEET_HANDLE_WIDTH_PERCENT)
-                    .align(Alignment.CenterHorizontally)
-                    .semantics { traversalIndex = -1f },
+                modifier =
+                    Modifier.padding(top = 16.dp)
+                        .fillMaxWidth(BOTTOM_SHEET_HANDLE_WIDTH_PERCENT)
+                        .align(Alignment.CenterHorizontally)
+                        .semantics { traversalIndex = -1f },
             )
 
             content()
@@ -102,13 +102,14 @@ internal fun TranslationsOptionsDialog(
 ) {
     TranslationOptionsDialog(
         showGlobalSettings = showGlobalSettings,
-        translationOptionsList = getTranslationSwitchItemList(
-            translationPageSettings = translationPageSettings,
-            offerTranslation = offerTranslation,
-            initialFrom = initialFrom,
-            context = context,
-            onStateChange = onStateChange,
-        ),
+        translationOptionsList =
+            getTranslationSwitchItemList(
+                translationPageSettings = translationPageSettings,
+                offerTranslation = offerTranslation,
+                initialFrom = initialFrom,
+                context = context,
+                onStateChange = onStateChange,
+            ),
         pageSettingsError = translationPageSettingsError,
         onBackClicked = onBackClicked,
         onTranslationSettingsClicked = onTranslationSettingsClicked,
@@ -136,13 +137,10 @@ private fun getTranslationSwitchItemList(
                 type = TranslationPageSettingsOption.AlwaysOfferPopup(),
                 textLabel = context.getString(R.string.translation_option_bottom_sheet_always_translate),
                 isChecked = it,
-                isEnabled = !(
-                    alwaysTranslateLanguage == true ||
-                        neverTranslateLanguage == true ||
-                        neverTranslateSite == true
-                    ),
+                isEnabled =
+                    !(alwaysTranslateLanguage == true || neverTranslateLanguage == true || neverTranslateSite == true),
                 onStateChange = onStateChange,
-            ),
+            )
         )
     }
 
@@ -152,14 +150,15 @@ private fun getTranslationSwitchItemList(
                 translationSwitchItemList.add(
                     TranslationSwitchItem(
                         type = TranslationPageSettingsOption.AlwaysTranslateLanguage(),
-                        textLabel = context.getString(
-                            R.string.translation_option_bottom_sheet_always_translate_in_language,
-                            initialFrom.localizedDisplayName,
-                        ),
+                        textLabel =
+                            context.getString(
+                                R.string.translation_option_bottom_sheet_always_translate_in_language,
+                                initialFrom.localizedDisplayName,
+                            ),
                         isChecked = it,
                         isEnabled = neverTranslateSite != true,
                         onStateChange = onStateChange,
-                    ),
+                    )
                 )
             }
 
@@ -167,14 +166,15 @@ private fun getTranslationSwitchItemList(
                 translationSwitchItemList.add(
                     TranslationSwitchItem(
                         type = TranslationPageSettingsOption.NeverTranslateLanguage(),
-                        textLabel = context.getString(
-                            R.string.translation_option_bottom_sheet_never_translate_in_language,
-                            initialFrom.localizedDisplayName,
-                        ),
+                        textLabel =
+                            context.getString(
+                                R.string.translation_option_bottom_sheet_never_translate_in_language,
+                                initialFrom.localizedDisplayName,
+                            ),
                         isChecked = it,
                         isEnabled = neverTranslateSite != true,
                         onStateChange = onStateChange,
-                    ),
+                    )
                 )
             }
         }
@@ -187,7 +187,7 @@ private fun getTranslationSwitchItemList(
                     isChecked = it,
                     isEnabled = true,
                     onStateChange = onStateChange,
-                ),
+                )
             )
         }
     }

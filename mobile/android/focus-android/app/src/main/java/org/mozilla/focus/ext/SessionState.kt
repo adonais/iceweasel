@@ -7,9 +7,7 @@ package org.mozilla.focus.ext
 import mozilla.components.browser.state.state.CustomTabSessionState
 import mozilla.components.browser.state.state.SessionState
 
-/**
- * Returns this [SessionState] cast to [CustomTabSessionState] if possible. Otherwise returns `null`.
- */
+/** Returns this [SessionState] cast to [CustomTabSessionState] if possible. Otherwise returns `null`. */
 fun SessionState.ifCustomTab(): CustomTabSessionState? {
     if (this is CustomTabSessionState) {
         return this
@@ -17,9 +15,7 @@ fun SessionState.ifCustomTab(): CustomTabSessionState? {
     return null
 }
 
-/**
- * Returns `true` if this [SessionState] is a custom tab (an instance of [CustomTabSessionState]).
- */
+/** Returns `true` if this [SessionState] is a custom tab (an instance of [CustomTabSessionState]). */
 fun SessionState.isCustomTab(): Boolean {
     return this is CustomTabSessionState
 }

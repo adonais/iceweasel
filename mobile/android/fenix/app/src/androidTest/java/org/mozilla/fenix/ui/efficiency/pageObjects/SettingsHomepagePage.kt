@@ -26,10 +26,11 @@ class SettingsHomepagePage(composeRule: AndroidComposeTestRule<HomeActivityInten
         NavigationRegistry.register(
             from = pageName,
             to = "HomePage",
-            steps = listOf(
-                NavigationStep.Click(SettingsSelectors.GO_BACK_BUTTON),
-                NavigationStep.Click(SettingsSelectors.GO_BACK_BUTTON),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.Click(SettingsSelectors.GO_BACK_BUTTON),
+                    NavigationStep.Click(SettingsSelectors.GO_BACK_BUTTON),
+                ),
         )
     }
 

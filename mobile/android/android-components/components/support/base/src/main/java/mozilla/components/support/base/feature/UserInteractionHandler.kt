@@ -7,8 +7,8 @@ package mozilla.components.support.base.feature
 import android.app.Activity
 
 /**
- * Generic interface for fragments, features and other components that want to handle user
- * interactions such as 'back' or 'home' button presses.
+ * Generic interface for fragments, features and other components that want to handle user interactions such as 'back'
+ * or 'home' button presses.
  */
 interface UserInteractionHandler {
     /**
@@ -26,8 +26,8 @@ interface UserInteractionHandler {
     fun onForwardPressed(): Boolean = false
 
     /**
-     * In most cases, when the home button is pressed, we invoke this callback to inform the app that the user
-     * is going to leave the app.
+     * In most cases, when the home button is pressed, we invoke this callback to inform the app that the user is going
+     * to leave the app.
      *
      * See also [Activity.onUserLeaveHint] for more details.
      */

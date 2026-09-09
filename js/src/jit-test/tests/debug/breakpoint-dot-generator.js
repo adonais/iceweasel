@@ -12,7 +12,7 @@ const script = dg.makeDebuggeeValue(g.func).script;
 //
 // 00000:  Generator                       # GENERATOR
 // 00001:  SetAliasedVar ".generator"      # GENERATOR
-// 00007:  InitialYield 0                  # RVAL GENERATOR RESUMEKIND
+// 00007:  InitialYield 0                  # RVAL RESUMEKIND
 
 // Setting a breakpoint at `SetAliasedVar ".generator"` should be disallow.
 let caught = false;

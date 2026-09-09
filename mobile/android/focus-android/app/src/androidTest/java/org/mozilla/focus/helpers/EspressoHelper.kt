@@ -19,18 +19,10 @@ import org.hamcrest.Matchers
 import org.hamcrest.TypeSafeMatcher
 import org.mozilla.focus.R
 
-/**
- * Some convenient methods for testing Focus with espresso.
- */
+/** Some convenient methods for testing Focus with espresso. */
 object EspressoHelper {
     fun hasCousin(matcher: Matcher<View>): Matcher<View> {
-        return withParent(
-            hasSibling(
-                withChild(
-                    matcher,
-                ),
-            ),
-        )
+        return withParent(hasSibling(withChild(matcher)))
     }
 
     @JvmStatic
@@ -50,15 +42,13 @@ object EspressoHelper {
     }
 
     @JvmStatic
-    fun assertToolbarMatchesText(
-        @StringRes titleResource: Int,
-    ) {
+    fun assertToolbarMatchesText(@StringRes titleResource: Int) {
         Espresso.onView(
-            Matchers.allOf(
-                ViewMatchers.withClassName(Matchers.endsWith("TextView")),
-                ViewMatchers.withParent(ViewMatchers.withId(R.id.toolbar)),
-            ),
-        )
+                Matchers.allOf(
+                    ViewMatchers.withClassName(Matchers.endsWith("TextView")),
+                    ViewMatchers.withParent(ViewMatchers.withId(R.id.toolbar)),
+                )
+            )
             .check(ViewAssertions.matches(ViewMatchers.isDisplayed()))
             .check(ViewAssertions.matches(ViewMatchers.withText(titleResource)))
     }
@@ -76,10 +66,7 @@ object EspressoHelper {
 
             public override fun matchesSafely(view: View): Boolean {
                 val parent = view.parent
-                return (
-                    parent is ViewGroup && parentMatcher.matches(parent) &&
-                        view == parent.getChildAt(position)
-                    )
+                return (parent is ViewGroup && parentMatcher.matches(parent) && view == parent.getChildAt(position))
             }
         }
     }

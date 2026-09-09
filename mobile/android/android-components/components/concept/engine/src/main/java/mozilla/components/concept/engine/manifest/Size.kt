@@ -8,8 +8,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * Represents dimensions for an image.
- * Corresponds to values of the "sizes" HTML attribute.
+ * Represents dimensions for an image. Corresponds to values of the "sizes" HTML attribute.
  *
  * @property width Width of the image.
  * @property height Height of the image.
@@ -19,28 +18,21 @@ data class Size(
     val height: Int,
 ) {
 
-    /**
-     * Gets the longest length between width and height.
-     */
-    val maxLength get() = max(width, height)
+    /** Gets the longest length between width and height. */
+    val maxLength
+        get() = max(width, height)
 
-    /**
-     * Gets the shortest length between width and height.
-     */
-    val minLength get() = min(width, height)
+    /** Gets the shortest length between width and height. */
+    val minLength
+        get() = min(width, height)
 
     override fun toString() = if (this == ANY) "any" else "${width}x$height"
 
     companion object {
-        /**
-         * Represents the "any" size.
-         */
+        /** Represents the "any" size. */
         val ANY = Size(Int.MAX_VALUE, Int.MAX_VALUE)
 
-        /**
-         * Parses a value from an HTML sizes attribute (512x512, 16x16, etc).
-         * Returns null if the value was invalid.
-         */
+        /** Parses a value from an HTML sizes attribute (512x512, 16x16, etc). Returns null if the value was invalid. */
         fun parse(raw: String): Size? {
             if (raw == "any") return ANY
 

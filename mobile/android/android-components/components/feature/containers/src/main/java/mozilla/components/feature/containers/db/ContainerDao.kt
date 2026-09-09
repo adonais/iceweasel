@@ -12,25 +12,16 @@ import androidx.room.Query
 import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 
-/**
- * Internal DAO for accessing [ContainerEntity] instances.
- */
+/** Internal DAO for accessing [ContainerEntity] instances. */
 @Dao
 internal interface ContainerDao {
-    @Insert
-    suspend fun insertContainer(container: ContainerEntity): Long
+    @Insert suspend fun insertContainer(container: ContainerEntity): Long
 
-    @Delete
-    suspend fun deleteContainer(identity: ContainerEntity)
+    @Delete suspend fun deleteContainer(identity: ContainerEntity)
 
-    @Transaction
-    @Query("SELECT * FROM containers")
-    fun getContainers(): Flow<List<ContainerEntity>>
+    @Transaction @Query("SELECT * FROM containers") fun getContainers(): Flow<List<ContainerEntity>>
 
-    @Query("SELECT * FROM containers")
-    suspend fun getContainersList(): List<ContainerEntity>
+    @Query("SELECT * FROM containers") suspend fun getContainersList(): List<ContainerEntity>
 
-    @Transaction
-    @Query("SELECT * FROM containers")
-    fun getContainersPaged(): DataSource.Factory<Int, ContainerEntity>
+    @Transaction @Query("SELECT * FROM containers") fun getContainersPaged(): DataSource.Factory<Int, ContainerEntity>
 }

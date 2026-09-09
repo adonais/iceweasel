@@ -13,15 +13,15 @@ add_task(async function () {
   const hud = await openNewTabAndConsole(TEST_URI);
   const toolbox = gDevTools.getToolboxForTab(gBrowser.selectedTab);
 
-  await testViewSource(hud, toolbox, "\u2018font-weight\u2019");
+  await testViewSource(hud, toolbox, "\u2018font-weight");
 
   info("Selecting the console again");
   await toolbox.selectTool("webconsole");
-  await testViewSource(hud, toolbox, "\u2018color\u2019");
+  await testViewSource(hud, toolbox, "\u2018color");
 
   info("Selecting the console again");
   await toolbox.selectTool("webconsole");
-  await testViewSource(hud, toolbox, "\u2018display\u2019");
+  await testViewSource(hud, toolbox, "\u2018display");
 });
 
 async function testViewSource(hud, toolbox, text) {

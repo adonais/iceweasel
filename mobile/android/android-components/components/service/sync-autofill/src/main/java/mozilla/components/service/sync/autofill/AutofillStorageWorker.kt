@@ -12,8 +12,8 @@ import mozilla.components.support.base.log.logger.Logger
 /**
  * A WorkManager Worker that executes [AutofillCreditCardsAddressesStorage.runMaintenance].
  *
- * If there is a failure or the worker constraints are no longer met during execution,
- * active write operations on [AutofillCreditCardsAddressesStorage] are cancelled.
+ * If there is a failure or the worker constraints are no longer met during execution, active write operations on
+ * [AutofillCreditCardsAddressesStorage] are cancelled.
  *
  * See also [mozilla.components.concept.storage.StorageMaintenanceWorker].
  */
@@ -23,8 +23,7 @@ internal class AutofillStorageWorker(context: Context, params: WorkerParameters)
     val logger = Logger(AUTOFILL_STORAGE_WORKER_TAG)
 
     override suspend fun operate() {
-        GlobalAutofillDependencyProvider.requireAutofillStorage()
-            .runMaintenance(DB_SIZE_LIMIT_IN_BYTES.toUInt())
+        GlobalAutofillDependencyProvider.requireAutofillStorage().runMaintenance(DB_SIZE_LIMIT_IN_BYTES.toUInt())
     }
 
     override fun onError(exception: Exception) {

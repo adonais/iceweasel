@@ -14,6 +14,12 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlin.test.assertNotNull
+import mozilla.components.browser.state.search.RegionState
+import mozilla.components.browser.state.search.SearchEngine
+import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.SearchState
+import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -33,24 +39,24 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class SearchWidgetProviderTest {
-    @get:Rule
-    val gleanRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanRule = FenixGleanTestRule(testContext)
 
     @Test
     fun testGetLayoutSize() {
-        val sizes = mapOf(
-            0 to SearchWidgetProviderSize.EXTRA_SMALL_V1,
-            10 to SearchWidgetProviderSize.EXTRA_SMALL_V1,
-            63 to SearchWidgetProviderSize.EXTRA_SMALL_V1,
-            64 to SearchWidgetProviderSize.EXTRA_SMALL_V2,
-            99 to SearchWidgetProviderSize.EXTRA_SMALL_V2,
-            100 to SearchWidgetProviderSize.SMALL,
-            191 to SearchWidgetProviderSize.SMALL,
-            192 to SearchWidgetProviderSize.MEDIUM,
-            255 to SearchWidgetProviderSize.MEDIUM,
-            256 to SearchWidgetProviderSize.LARGE,
-            1000 to SearchWidgetProviderSize.LARGE,
-        )
+        val sizes =
+            mapOf(
+                0 to SearchWidgetProviderSize.EXTRA_SMALL_V1,
+                10 to SearchWidgetProviderSize.EXTRA_SMALL_V1,
+                63 to SearchWidgetProviderSize.EXTRA_SMALL_V1,
+                64 to SearchWidgetProviderSize.EXTRA_SMALL_V2,
+                99 to SearchWidgetProviderSize.EXTRA_SMALL_V2,
+                100 to SearchWidgetProviderSize.SMALL,
+                191 to SearchWidgetProviderSize.SMALL,
+                192 to SearchWidgetProviderSize.MEDIUM,
+                255 to SearchWidgetProviderSize.MEDIUM,
+                256 to SearchWidgetProviderSize.LARGE,
+                1000 to SearchWidgetProviderSize.LARGE,
+            )
 
         for ((dp, layoutSize) in sizes) {
             assertEquals(layoutSize, SearchWidgetProvider.getLayoutSize(dp))
@@ -149,6 +155,58 @@ class SearchWidgetProviderTest {
     }
 
     @Test
+    fun `GIVEN lens integration disabled WHEN createLensSearchIntent is called THEN it returns null`() {
+        val widgetProvider = SearchWidgetProvider()
+        val context: Context = mockk {
+            every { components.settings.googleLensIntegrationEnabled } returns false
+        }
+
+        assertNull(widgetProvider.createLensSearchIntent(context))
+    }
+
+    @Test
+    fun `GIVEN lens user pref disabled WHEN createLensSearchIntent is called THEN it returns null`() {
+        val widgetProvider = SearchWidgetProvider()
+        val context: Context = mockk {
+            every { components.settings.googleLensIntegrationEnabled } returns true
+            every { components.settings.googleLensIntegrationUserEnabled } returns false
+        }
+
+        assertNull(widgetProvider.createLensSearchIntent(context))
+    }
+
+    @Test
+    fun `GIVEN a non-Google default engine WHEN createLensSearchIntent is called THEN it returns null`() {
+        val widgetProvider = SearchWidgetProvider()
+        val context = contextWithDefaultEngine("bing")
+
+        assertNull(widgetProvider.createLensSearchIntent(context))
+    }
+
+    @Test
+    fun `GIVEN lens enabled and Google is the default engine WHEN createLensSearchIntent is called THEN it returns an intent`() {
+        val widgetProvider = SearchWidgetProvider()
+        val context = contextWithDefaultEngine("google-b-1-m")
+
+        assertNotNull(widgetProvider.createLensSearchIntent(context))
+    }
+
+    private fun contextWithDefaultEngine(engineId: String): Context {
+        val searchState =
+            SearchState(
+                region = RegionState("US", "US"),
+                regionSearchEngines =
+                    listOf(SearchEngine(engineId, "Engine", mockk(), type = SearchEngine.Type.BUNDLED)),
+                regionDefaultSearchEngineId = engineId,
+            )
+        val store = BrowserStore(BrowserState(search = searchState))
+        every { testContext.components.settings.googleLensIntegrationEnabled } returns true
+        every { testContext.components.settings.googleLensIntegrationUserEnabled } returns true
+        every { testContext.components.core.store } returns store
+        return testContext
+    }
+
+    @Test
     fun `GIVEN widgets set on screen shown WHEN updateAllWidgets is called THEN it sends a broadcast to update all widgets`() {
         val widgetManager: AppWidgetManager = mockk()
         val componentNameCaptor = slot<ComponentName>()
@@ -219,6 +277,7 @@ class SearchWidgetProviderTest {
     fun `GIVEN not knowing search widget is installed WHEN a widget is updated THEN record telemetry and persist that the widget is installed`() {
         val settings = Settings(testContext)
         every { testContext.components.settings } returns settings
+        every { testContext.components.core.store } returns BrowserStore(BrowserState())
         val widgetProvider = SearchWidgetProvider()
         assertFalse(settings.searchWidgetInstalled)
 

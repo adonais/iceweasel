@@ -15,17 +15,16 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.R
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_LOGO
-import kotlin.test.assertEquals
 
 @RunWith(AndroidJUnit4::class)
 class WordmarkTest {
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun `When the normal theme is rendered, then the fenix wordmark is found and displayed`() {
@@ -54,9 +53,9 @@ class WordmarkTest {
     }
 
     /**
-     * [androidx.appcompat.view.ContextThemeWrapper] layers a theme resource on top of a base context.
-     * For this case, we want to test if a resource is missing from the base theme, so we need to create a
-     * theme from scratch with the appropriate style resource.
+     * [androidx.appcompat.view.ContextThemeWrapper] layers a theme resource on top of a base context. For this case, we
+     * want to test if a resource is missing from the base theme, so we need to create a theme from scratch with the
+     * appropriate style resource.
      */
     private fun Context.withIsolatedTheme(themeId: Int): Context =
         object : ContextWrapper(this) {

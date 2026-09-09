@@ -396,6 +396,20 @@ void EncoderAgent::Dry(MediaDataEncoder::EncodedData&& aPendingOutputs) {
       ->Track(mDrainRequest);
 }
 
+RefPtr<EncoderAgent::DebugInfoPromise> EncoderAgent::RequestDebugInfo() {
+  MOZ_ASSERT(mOwnerThread->IsOnCurrentThread());
+  if (!mEncoder || mState == State::Unconfigured ||
+      mState == State::Configuring || mState == State::Error ||
+      mState == State::ShuttingDown) {
+    return DebugInfoPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                                             __func__);
+  }
+
+  dom::EncoderDebugInfo info;
+  info.mEncoderName = NS_ConvertUTF8toUTF16(mEncoder->GetDescriptionName());
+  return DebugInfoPromise::CreateAndResolve(std::move(info), __func__);
+}
+
 void EncoderAgent::SetState(State aState) {
   MOZ_ASSERT(mOwnerThread->IsOnCurrentThread());
 

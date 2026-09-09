@@ -40,7 +40,7 @@ class SyncableLoginsStorageTest {
             assertTrue(
                 testContext
                     .getSharedPreferences("sync.logins.prefs", Context.MODE_PRIVATE)
-                    .getInt(UNDECRYPTABLE_LOGINS_CLEANED_KEY, 0) == 0,
+                    .getInt(UNDECRYPTABLE_LOGINS_CLEANED_KEY, 0) == 0
             )
 
             // Register with the sync manager to "pretend" we're about to sync
@@ -50,7 +50,7 @@ class SyncableLoginsStorageTest {
             assertTrue(
                 testContext
                     .getSharedPreferences("sync.logins.prefs", Context.MODE_PRIVATE)
-                    .getInt(UNDECRYPTABLE_LOGINS_CLEANED_KEY, 0) == 1,
+                    .getInt(UNDECRYPTABLE_LOGINS_CLEANED_KEY, 0) == 1
             )
 
             storage.registerWithSyncManager()
@@ -60,57 +60,59 @@ class SyncableLoginsStorageTest {
             assertTrue(
                 testContext
                     .getSharedPreferences("sync.logins.prefs", Context.MODE_PRIVATE)
-                    .getInt(UNDECRYPTABLE_LOGINS_CLEANED_KEY, 0) == 1,
+                    .getInt(UNDECRYPTABLE_LOGINS_CLEANED_KEY, 0) == 1
             )
 
             storage.close()
         }
 
     @Test
-    fun `test that we can add many logins`() = runTest(testDispatcher) {
-        RustComponentsInitializer.init()
+    fun `test that we can add many logins`() =
+        runTest(testDispatcher) {
+            RustComponentsInitializer.init()
 
-        securePrefs = SecureAbove22Preferences(testContext, "logins", forceInsecure = true)
-        storage = SyncableLoginsStorage(testContext, lazy { securePrefs }, testDispatcher)
+            securePrefs = SecureAbove22Preferences(testContext, "logins", forceInsecure = true)
+            storage = SyncableLoginsStorage(testContext, lazy { securePrefs }, testDispatcher)
 
-        storage.warmUp()
+            storage.warmUp()
 
-        assertTrue(storage.list().isEmpty())
+            assertTrue(storage.list().isEmpty())
 
-        val loginsToAdd = listOf(
-            LoginEntry(
-                origin = "https://www.example.org",
-                httpRealm = "",
-                formActionOrigin = "https://www.example.org/login",
-                usernameField = "users_name",
-                passwordField = "users_password",
-                password = "MyVeryCoolPassword",
-                username = "Foobar2001",
-            ),
-            LoginEntry(
-                origin = "https://www.example.org",
-                httpRealm = "",
-                formActionOrigin = "https://www.example.org/login",
-                usernameField = "users_name",
-                passwordField = "users_password",
-                password = "MyVeryCoolPassword",
-                username = "Foobar2002",
-            ),
-            LoginEntry(
-                origin = "https://www.example.org",
-                httpRealm = "",
-                formActionOrigin = "https://www.example.org/login",
-                usernameField = "users_name",
-                passwordField = "users_password",
-                password = "MyVeryCoolPassword",
-                username = "Foobar2003",
-            ),
-        )
+            val loginsToAdd =
+                listOf(
+                    LoginEntry(
+                        origin = "https://www.example.org",
+                        httpRealm = "",
+                        formActionOrigin = "https://www.example.org/login",
+                        usernameField = "users_name",
+                        passwordField = "users_password",
+                        password = "MyVeryCoolPassword",
+                        username = "Foobar2001",
+                    ),
+                    LoginEntry(
+                        origin = "https://www.example.org",
+                        httpRealm = "",
+                        formActionOrigin = "https://www.example.org/login",
+                        usernameField = "users_name",
+                        passwordField = "users_password",
+                        password = "MyVeryCoolPassword",
+                        username = "Foobar2002",
+                    ),
+                    LoginEntry(
+                        origin = "https://www.example.org",
+                        httpRealm = "",
+                        formActionOrigin = "https://www.example.org/login",
+                        usernameField = "users_name",
+                        passwordField = "users_password",
+                        password = "MyVeryCoolPassword",
+                        username = "Foobar2003",
+                    ),
+                )
 
-        storage.addMany(loginsToAdd)
+            storage.addMany(loginsToAdd)
 
-        assertEquals(loginsToAdd.size, storage.list().size)
+            assertEquals(loginsToAdd.size, storage.list().size)
 
-        storage.close()
-    }
+            storage.close()
+        }
 }

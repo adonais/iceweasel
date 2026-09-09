@@ -21,7 +21,7 @@ class SettingsTest {
 
     @Test
     fun settingsThrowByDefault() {
-        val settings = object : Settings() { }
+        val settings = object : Settings() {}
 
         expectUnsupportedSettingException(
             { settings.javascriptEnabled },
@@ -138,44 +138,45 @@ class SettingsTest {
         val interceptor: RequestInterceptor = mock()
         val historyTrackingDelegate: HistoryTrackingDelegate = mock()
 
-        val defaultSettings = DefaultSettings(
-            javascriptEnabled = false,
-            domStorageEnabled = false,
-            webFontsEnabled = false,
-            automaticFontSizeAdjustment = false,
-            automaticLanguageAdjustment = false,
-            trackingProtectionPolicy = TrackingProtectionPolicy.strict(),
-            historyTrackingDelegate = historyTrackingDelegate,
-            requestInterceptor = interceptor,
-            userAgentString = "userAgent",
-            mediaPlaybackRequiresUserGesture = false,
-            javaScriptCanOpenWindowsAutomatically = true,
-            displayZoomControls = false,
-            loadWithOverviewMode = true,
-            useWideViewPort = true,
-            allowContentAccess = false,
-            allowFileAccess = false,
-            allowFileAccessFromFileURLs = true,
-            allowUniversalAccessFromFileURLs = true,
-            verticalScrollBarEnabled = false,
-            horizontalScrollBarEnabled = false,
-            remoteDebuggingEnabled = true,
-            supportMultipleWindows = true,
-            preferredColorScheme = PreferredColorScheme.Dark,
-            testingModeEnabled = true,
-            suspendMediaWhenInactive = true,
-            fontInflationEnabled = false,
-            fontSizeFactor = 2.0F,
-            forceUserScalableContent = true,
-            loginAutofillEnabled = true,
-            clearColor = Color.BLUE,
-            enterpriseRootsEnabled = true,
-            queryParameterStripping = true,
-            queryParameterStrippingPrivateBrowsing = true,
-            queryParameterStrippingAllowList = "AllowList",
-            queryParameterStrippingStripList = "StripList",
-            emailTrackerBlockingPrivateBrowsing = true,
-        )
+        val defaultSettings =
+            DefaultSettings(
+                javascriptEnabled = false,
+                domStorageEnabled = false,
+                webFontsEnabled = false,
+                automaticFontSizeAdjustment = false,
+                automaticLanguageAdjustment = false,
+                trackingProtectionPolicy = TrackingProtectionPolicy.strict(),
+                historyTrackingDelegate = historyTrackingDelegate,
+                requestInterceptor = interceptor,
+                userAgentString = "userAgent",
+                mediaPlaybackRequiresUserGesture = false,
+                javaScriptCanOpenWindowsAutomatically = true,
+                displayZoomControls = false,
+                loadWithOverviewMode = true,
+                useWideViewPort = true,
+                allowContentAccess = false,
+                allowFileAccess = false,
+                allowFileAccessFromFileURLs = true,
+                allowUniversalAccessFromFileURLs = true,
+                verticalScrollBarEnabled = false,
+                horizontalScrollBarEnabled = false,
+                remoteDebuggingEnabled = true,
+                supportMultipleWindows = true,
+                preferredColorScheme = PreferredColorScheme.Dark,
+                testingModeEnabled = true,
+                suspendMediaWhenInactive = true,
+                fontInflationEnabled = false,
+                fontSizeFactor = 2.0F,
+                forceUserScalableContent = true,
+                loginAutofillEnabled = true,
+                clearColor = Color.BLUE,
+                enterpriseRootsEnabled = true,
+                queryParameterStripping = true,
+                queryParameterStrippingPrivateBrowsing = true,
+                queryParameterStrippingAllowList = "AllowList",
+                queryParameterStrippingStripList = "StripList",
+                emailTrackerBlockingPrivateBrowsing = true,
+            )
 
         assertFalse(defaultSettings.domStorageEnabled)
         assertFalse(defaultSettings.javascriptEnabled)

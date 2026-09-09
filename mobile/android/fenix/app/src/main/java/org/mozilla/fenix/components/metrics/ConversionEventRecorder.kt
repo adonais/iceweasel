@@ -10,28 +10,22 @@ import org.mozilla.fenix.GleanMetrics.AdjustAttribution.ConversionEventExtra
 /**
  * Records Adjust conversion events to Glean and submits the adjust-attribution ping.
  *
- * Recording and ping submission are separate operations so callers can record an event
- * and submit the ping independently.
+ * Recording and ping submission are separate operations so callers can record an event and submit the ping
+ * independently.
  */
 interface ConversionEventRecorder {
 
-    /**
-     * Records conversion event.
-     */
+    /** Records conversion event. */
     fun recordConversionEvent(eventNumber: Int)
 }
 
 /**
- * [ConversionEventRecorder] implementation that delegates to Glean-generated metrics
- * and submits the adjust-attribution ping.
+ * [ConversionEventRecorder] implementation that delegates to Glean-generated metrics and submits the adjust-attribution
+ * ping.
  */
 class GleanConversionEventRecorder : ConversionEventRecorder {
 
     override fun recordConversionEvent(eventNumber: Int) {
-        AdjustAttribution.conversionEvent.record(
-            extra = ConversionEventExtra(
-                eventNumber = eventNumber,
-            ),
-        )
+        AdjustAttribution.conversionEvent.record(extra = ConversionEventExtra(eventNumber = eventNumber))
     }
 }

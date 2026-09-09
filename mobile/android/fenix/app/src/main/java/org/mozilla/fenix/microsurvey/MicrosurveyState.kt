@@ -11,6 +11,4 @@ import org.mozilla.fenix.microsurvey.ui.ext.MicrosurveyUIData
  *
  * @property current The microsurvey to display, or null if none is eligible.
  */
-data class MicrosurveyState(
-    val current: MicrosurveyUIData? = null,
-)
+data class MicrosurveyState(val current: MicrosurveyUIData? = null)

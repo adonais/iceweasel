@@ -17,9 +17,7 @@ import java.io.File
  *
  * @param context The application context, used for checking URI permissions.
  */
-class DefaultAndroidFileUtils(
-    private val context: Context,
-) : AndroidFileUtils {
+class DefaultAndroidFileUtils(private val context: Context) : AndroidFileUtils {
     override val externalStorageDirectory: File
         get() = Environment.getExternalStorageDirectory()
 

@@ -13,14 +13,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.core.view.isVisible
 import mozilla.components.compose.base.theme.AcornTheme
+import mozilla.components.feature.prompts.R as promptsR
 import mozilla.components.feature.prompts.concept.EmailMaskPromptView
 import mozilla.components.feature.prompts.concept.ToggleablePrompt
-import mozilla.components.feature.prompts.R as promptsR
 
-/**
- * The top-level view holder for the Email Mask Prompt Bar.
- */
-class EmailMaskPromptBarView @JvmOverloads constructor(
+/** The top-level view holder for the Email Mask Prompt Bar. */
+class EmailMaskPromptBarView
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
@@ -49,10 +49,11 @@ class EmailMaskPromptBarView @JvmOverloads constructor(
         AcornTheme {
             EmailMaskPromptBar(
                 shouldShowCfr = shouldShowCfrState,
-                cfrText = context.getString(
-                    promptsR.string.mozac_feature_relay_email_masks_cfr,
-                    context.getString(promptsR.string.firefox_relay),
-                ),
+                cfrText =
+                    context.getString(
+                        promptsR.string.mozac_feature_relay_email_masks_cfr,
+                        context.getString(promptsR.string.firefox_relay),
+                    ),
                 onCfrDismiss = {
                     emailMaskPromptListener?.onEmailMaskCfrDismissed()
                 },

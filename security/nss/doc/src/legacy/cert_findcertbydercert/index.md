@@ -6,7 +6,7 @@
 Find a certificate in the database that matches a DER-encoded certificate.
 :::
 
-## [Syntax](#syntax)
+## Syntax
 
 :::{container}
 
@@ -20,23 +20,23 @@ CERTCertificate *CERT_FindCertByDERCert(
 
 :::
 
-## [Parameters](#parameters)
+## Parameters
 
 :::{container}
 
 ```{eval-rst}
-+-------------+-----------------------------------------------------------------------------------+
-| ``handle``  | *in* pointer to a `CERTCertDBHandle </en-US/NSS/CERTCertDBHandle>`__ representing |
-|             | the certificate database to look in                                               |
-+-------------+-----------------------------------------------------------------------------------+
-| ``derCert`` | *in* pointer to an `SECItem </en-US/NSS/SECItem>`__ whose ``type`` must be        |
-|             | ``siDERCertBuffer`` and whose ``data`` contains a DER-encoded certificate         |
-+-------------+-----------------------------------------------------------------------------------+
++-------------+------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``handle``  | *in* pointer to a `CERTCertDBHandle </en-US/NSS/CERTCertDBHandle>`__ representing the certificate database to look in                                |
+|             |                                                                                                                                                      |
++-------------+------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``derCert`` | *in* pointer to an `SECItem </en-US/NSS/SECItem>`__ whose ``type`` must be ``siDERCertBuffer`` and whose ``data`` contains a DER-encoded certificate |
+|             |                                                                                                                                                      |
++-------------+------------------------------------------------------------------------------------------------------------------------------------------------------+
 ```
 
 :::
 
-## [Description](#description)
+## Description
 
 :::{container}
 This function looks in the ?NSSCryptoContext? and the ?NSSTrustDomain? to find the certificate
@@ -44,7 +44,7 @@ that matches the DER-encoded certificate. A match is found when the issuer and s
 the DER-encoded certificate are found on a certificate in the certificate database.
 :::
 
-## [Returns](#returns)
+## Returns
 
 :::{container}
 A pointer to a [CERTCertificate](/en-US/NSS/CERTCertificate) representing the certificate in
@@ -53,7 +53,7 @@ shallow copy, use [CERT_DestroyCertificate](/en-US/NSS/CERT_DestroyCertificate) 
 the reference count on the certificate instance.
 :::
 
-## [See Also](#see_also)
+## See Also
 
 :::{container}
 Occurrences of

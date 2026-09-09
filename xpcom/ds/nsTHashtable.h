@@ -187,8 +187,8 @@ struct CheckAllowMemmove<EntryType, false> : std::false_type {};
 // We define this outside of nsTHashtable so only one copy exists for every N,
 // rather than separate copies for every EntryType used with nsTHashtable.
 template <size_t N>
-static void FixedSizeEntryMover(PLDHashTable*, const PLDHashEntryHdr* aFrom,
-                                PLDHashEntryHdr* aTo) {
+void FixedSizeEntryMover(PLDHashTable*, const PLDHashEntryHdr* aFrom,
+                         PLDHashEntryHdr* aTo) {
   memcpy(aTo, aFrom, N);
 }
 

@@ -35,9 +35,8 @@ enum class ToolbarConfiguration(val label: String) {
     COMPOSE_CUSTOMTAB("Compose Custom Tab"),
 }
 
-class ConfigurationAdapter(
-    private val configuration: ToolbarConfiguration,
-) : RecyclerView.Adapter<ConfigurationViewHolder>() {
+class ConfigurationAdapter(private val configuration: ToolbarConfiguration) :
+    RecyclerView.Adapter<ConfigurationViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ConfigurationViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_toolbar_configuration, parent, false)
         return ConfigurationViewHolder(view as TextView)
@@ -81,12 +80,8 @@ object Extra {
     internal const val TOOLBAR_LABEL = "toolbar_label"
 }
 
-/**
- * A custom view to be drawn behind the URL and page actions. Acts as a custom progress view.
- */
-class UrlBoxProgressView(
-    context: Context,
-) : View(context) {
+/** A custom view to be drawn behind the URL and page actions. Acts as a custom progress view. */
+class UrlBoxProgressView(context: Context) : View(context) {
     var progress: Int = 0
         set(value) {
             // We clip the background and progress drawable based on the new progress:
@@ -115,21 +110,25 @@ class UrlBoxProgressView(
             }
         }
 
-    private var backgroundDrawable = ClipDrawable(
-        ResourcesCompat.getDrawable(resources, R.drawable.sample_url_background, context.theme),
-        Gravity.END,
-        ClipDrawable.HORIZONTAL,
-    ).apply {
-        level = MAX_LEVEL
-    }
+    private var backgroundDrawable =
+        ClipDrawable(
+                ResourcesCompat.getDrawable(resources, R.drawable.sample_url_background, context.theme),
+                Gravity.END,
+                ClipDrawable.HORIZONTAL,
+            )
+            .apply {
+                level = MAX_LEVEL
+            }
 
-    private var progressDrawable = ClipDrawable(
-        ResourcesCompat.getDrawable(resources, R.drawable.sample_url_progress, context.theme),
-        Gravity.START,
-        ClipDrawable.HORIZONTAL,
-    ).apply {
-        level = 0
-    }
+    private var progressDrawable =
+        ClipDrawable(
+                ResourcesCompat.getDrawable(resources, R.drawable.sample_url_progress, context.theme),
+                Gravity.START,
+                ClipDrawable.HORIZONTAL,
+            )
+            .apply {
+                level = 0
+            }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         backgroundDrawable.setBounds(0, 0, w, h)

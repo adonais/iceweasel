@@ -63,6 +63,8 @@ run-if = [
 
 ["test_basics.js"]
 
+["test_cacheSchemaMismatch.js"]
+
 ["test_clearStoragesForClient.js"]
 
 ["test_clearStoragesForOriginAttributesPattern.js"]
@@ -226,6 +228,20 @@ run-if = [
 ["test_temporaryStorageRFP.js"]
 
 ["test_unaccessedOrigins.js"]
+
+["test_underflowedCacheRescan.js"]
+# The rescan logic is gated on NIGHTLY_BUILD || DEBUG in C++.
+run-if = [
+  "nightly_build",
+  "debug",
+]
+# dom.storage.testing is needed for LocalStorageUtils.createStorage() to work
+# from an xpcshell (non-content) context, and dom.storage.client_validation
+# needs to be disabled since it can't be satisfied from such a context either.
+prefs = [
+  "dom.storage.testing=true",
+  "dom.storage.client_validation=false",
+]
 
 ["test_unknownFiles.js"]
 prefs = ["security.storage.encryption.sqlite.enabled=false"]

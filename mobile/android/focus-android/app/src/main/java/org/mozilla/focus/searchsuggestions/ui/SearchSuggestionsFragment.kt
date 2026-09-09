@@ -25,13 +25,12 @@ import org.mozilla.focus.searchsuggestions.SearchSuggestionsViewModel
 import org.mozilla.focus.searchsuggestions.State
 import org.mozilla.focus.ui.theme.FocusTheme
 
-/**
- * Fragment responsible for displaying search suggestions and related UI states.
- */
+/** Fragment responsible for displaying search suggestions and related UI states. */
 class SearchSuggestionsFragment : Fragment() {
 
     private var _binding: FragmentSearchSuggestionsBinding? = null
-    private val binding get() = _binding!!
+    private val binding
+        get() = _binding!!
 
     private val defaultSearchEngineName: String
         get() = requireComponents.store.defaultSearchEngineName()
@@ -60,19 +59,15 @@ class SearchSuggestionsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        searchSuggestionsViewModel.state.observe(
-            viewLifecycleOwner,
-        ) { state ->
+        searchSuggestionsViewModel.state.observe(viewLifecycleOwner) { state ->
             binding.enableSearchSuggestionsContainer.isVisible = false
             binding.noSuggestionsContainer.isVisible = false
 
             when (state) {
                 is State.ReadyForSuggestions -> { // Handled by Jetpack Compose implementation
                 }
-                is State.NoSuggestionsAPI ->
-                    binding.noSuggestionsContainer.isVisible = state.givePrompt
-                is State.Disabled ->
-                    binding.enableSearchSuggestionsContainer.isVisible = state.givePrompt
+                is State.NoSuggestionsAPI -> binding.noSuggestionsContainer.isVisible = state.givePrompt
+                is State.Disabled -> binding.enableSearchSuggestionsContainer.isVisible = state.givePrompt
             }
         }
 
@@ -104,16 +99,16 @@ class SearchSuggestionsFragment : Fragment() {
                     SearchOverlay(
                         searchSuggestionsViewModel,
                         defaultSearchEngineName,
-                    ) { view.hideKeyboard() }
+                    ) {
+                        view.hideKeyboard()
+                    }
                 }
             }
         }
     }
 
     companion object {
-        /**
-         * Creates a new instance of [SearchSuggestionsFragment].
-         */
+        /** Creates a new instance of [SearchSuggestionsFragment]. */
         fun create() = SearchSuggestionsFragment()
     }
 }

@@ -199,6 +199,7 @@ class nsWaylandDisplay {
 
   bool IsTFSupported(int aTF);
   bool IsSetMDCVSupported();
+  bool IsSetLuminancesSupported();
 
   ~nsWaylandDisplay();
 

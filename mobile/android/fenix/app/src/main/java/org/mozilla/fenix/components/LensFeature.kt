@@ -15,6 +15,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import java.io.IOException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +33,6 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.AppAction.LensAction
 import org.mozilla.fenix.components.lens.LensCameraActivity
 import org.mozilla.fenix.ext.components
-import java.io.IOException
 
 /**
  * Handles Google Lens image search requests and results.
@@ -66,21 +66,23 @@ class LensFeature(
     }
 
     private fun observeLensRequests() {
-        scope = appStore.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.map { state -> state.lensState }
-                .distinctUntilChangedBy { it.isRequesting }
-                .collect { lensState ->
-                    if (lensState.isRequesting) {
-                        val pendingImageUrl = lensState.pendingImageUrl
-                        appStore.dispatch(LensAction.LensRequestConsumed)
-                        if (pendingImageUrl != null) {
-                            uploadFromImageUrl(pendingImageUrl)
-                        } else {
-                            launchCamera()
+        scope =
+            appStore.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .map { state -> state.lensState }
+                    .distinctUntilChangedBy { it.isRequesting }
+                    .collect { lensState ->
+                        if (lensState.isRequesting) {
+                            val pendingImageUrl = lensState.pendingImageUrl
+                            appStore.dispatch(LensAction.LensRequestConsumed)
+                            if (pendingImageUrl != null) {
+                                uploadFromImageUrl(pendingImageUrl)
+                            } else {
+                                launchCamera()
+                            }
                         }
                     }
-                }
-        }
+            }
     }
 
     private fun launchCamera() {
@@ -88,9 +90,7 @@ class LensFeature(
             // The opt-out bottom sheet has to be seen before any permission prompt;
             // LensCameraActivity requests the permission itself once the user accepts.
             launchCameraActivity()
-        } else if (permissionChecker(context, Manifest.permission.CAMERA)
-            == PackageManager.PERMISSION_GRANTED
-        ) {
+        } else if (permissionChecker(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             launchCameraActivity()
         } else {
             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
@@ -106,9 +106,7 @@ class LensFeature(
         }
     }
 
-    /**
-     * Handles the result of the camera permission request initiated by [launchCamera].
-     */
+    /** Handles the result of the camera permission request initiated by [launchCamera]. */
     fun onCameraPermissionResult(isGranted: Boolean) {
         if (isGranted) {
             launchCameraActivity()
@@ -134,12 +132,13 @@ class LensFeature(
                 // User-Agent and cookies, which succeeds for hosts that block Lens's server-side
                 // fetcher. In private mode the upload runs in the private cookie context so the
                 // Lens session it establishes matches the private tab the result is opened in.
-                val uploadResult = try {
-                    uploader.uploadFromUrl(imageUrl, isPrivate)
-                } catch (e: IOException) {
-                    logger.debug("Lens image upload failed for $imageUrl", e)
-                    null
-                }
+                val uploadResult =
+                    try {
+                        uploader.uploadFromUrl(imageUrl, isPrivate)
+                    } catch (e: IOException) {
+                        logger.debug("Lens image upload failed for $imageUrl", e)
+                        null
+                    }
 
                 val resultUrl = uploadResult?.resultUrl
                 recordSearchCompleted(
@@ -163,10 +162,9 @@ class LensFeature(
     }
 
     /**
-     * Routes the result of the Lens camera activity. If the result intent carries a QR scan
-     * payload (from the in-camera QR mode), dismisses the Lens flow and forwards the result to
-     * [qrScanFeature]; otherwise treats it as an image capture and delegates to
-     * [handleImageResult].
+     * Routes the result of the Lens camera activity. If the result intent carries a QR scan payload (from the in-camera
+     * QR mode), dismisses the Lens flow and forwards the result to [qrScanFeature]; otherwise treats it as an image
+     * capture and delegates to [handleImageResult].
      */
     fun handleCameraActivityResult(
         resultCode: Int,
@@ -181,9 +179,7 @@ class LensFeature(
         }
     }
 
-    /**
-     * Handles the result of the Lens camera activity.
-     */
+    /** Handles the result of the Lens camera activity. */
     fun handleImageResult(resultCode: Int, data: Intent?) {
         if (resultCode != Activity.RESULT_OK) {
             appStore.dispatch(LensAction.LensDismissed)
@@ -231,7 +227,7 @@ class LensFeature(
                 succeeded = succeeded,
                 httpStatusCode = httpStatusCode,
                 source = source,
-            ),
+            )
         )
     }
 
@@ -240,10 +236,7 @@ class LensFeature(
 
         @VisibleForTesting internal const val SOURCE_UNKNOWN = "unknown"
 
-        /**
-         * Registers [LensFeature] with a [Fragment].
-         * Returns null if the Google Lens integration is disabled.
-         */
+        /** Registers [LensFeature] with a [Fragment]. Returns null if the Google Lens integration is disabled. */
         fun register(
             fragment: Fragment,
             activityResultLauncher: ActivityResultLauncher<Intent>,
@@ -257,17 +250,20 @@ class LensFeature(
             val lensBinding = ViewBoundFeatureWrapper<LensFeature>()
 
             lensBinding.set(
-                feature = LensFeature(
-                    context = fragment.requireContext(),
-                    appStore = fragment.requireContext().components.appStore,
-                    lensLauncher = activityResultLauncher,
-                    cameraPermissionLauncher = cameraPermissionLauncher,
-                    uploader = LensImageUploader(
+                feature =
+                    LensFeature(
                         context = fragment.requireContext(),
-                        client = fragment.requireContext().components.core.client,
-                        userAgent = fragment.requireContext().components.core.engine.settings.userAgentString ?: "",
+                        appStore = fragment.requireContext().components.appStore,
+                        lensLauncher = activityResultLauncher,
+                        cameraPermissionLauncher = cameraPermissionLauncher,
+                        uploader =
+                            LensImageUploader(
+                                context = fragment.requireContext(),
+                                client = fragment.requireContext().components.core.client,
+                                userAgent =
+                                    fragment.requireContext().components.core.engine.settings.userAgentString ?: "",
+                            ),
                     ),
-                ),
                 owner = fragment.viewLifecycleOwner,
                 view = fragment.requireView(),
             )

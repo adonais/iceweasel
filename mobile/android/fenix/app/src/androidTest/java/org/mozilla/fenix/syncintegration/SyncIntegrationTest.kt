@@ -6,6 +6,7 @@ package org.mozilla.fenix.syncintegration
 
 import android.os.SystemClock.sleep
 import android.widget.EditText
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.matcher.ViewMatchers.withId
@@ -26,16 +27,13 @@ import org.mozilla.fenix.helpers.ext.waitNotNull
 import org.mozilla.fenix.ui.robots.accountSettings
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.settingsSubMenuLoginsAndPassword
-import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
 class SyncIntegrationTest {
 
-    @get:Rule(order = 0)
-    val fenixTestRule: FenixTestRule = FenixTestRule()
+    @get:Rule(order = 0) val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    @get:Rule
-    val composeTestRule = AndroidComposeTestRuleV2(HomeActivityIntentTestRule()) { it.activity }
+    @get:Rule val composeTestRule = AndroidComposeTestRuleV2(HomeActivityIntentTestRule()) { it.activity }
 
     // TestRail link: https://testrail.stage.mozaws.net/index.php?/cases/view/352905
     // History item Desktop -> Fenix
@@ -46,10 +44,7 @@ class SyncIntegrationTest {
         // Let's wait until homescreen is shown to go to three dot menu
         TestAssetHelper.waitingTime
         TestHelper.mDevice.waitNotNull(Until.findObjects(By.res("org.mozilla.fenix.debug:id/counter_root")))
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickHistoryButton {
-        }
+        homeScreen(composeTestRule) {}.openThreeDotMenu {}.clickHistoryButton {}
         historyAfterSyncIsShown()
     }
 
@@ -59,9 +54,7 @@ class SyncIntegrationTest {
     fun syncBookmarksTest() {
         signInFxSync()
         tapReturnToPreviousApp()
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickBookmarksButton {}
+        homeScreen(composeTestRule) {}.openThreeDotMenu {}.clickBookmarksButton {}
         bookmarkAfterSyncIsShown()
     }
 
@@ -83,52 +76,51 @@ class SyncIntegrationTest {
             verifyHistoryCheckbox()
             verifySignOutButton()
             verifyDeviceName()
-        }.disconnectAccount {
-            TestHelper.mDevice.waitNotNull(Until.findObjects(By.text("Settings")), TestAssetHelper.waitingTime)
-            verifySettingsView()
         }
+            .disconnectAccount {
+                TestHelper.mDevice.waitNotNull(Until.findObjects(By.text("Settings")), TestAssetHelper.waitingTime)
+                verifySettingsView()
+            }
     }
 
     // TestRail link: https://testrail.stage.mozaws.net/index.php?/cases/view/466387
     // Login item Desktop -> Fenix
     @Test
     fun synLoginsTest() {
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openLoginsAndPasswordSubMenu {
-        }.openSyncLogins(composeTestRule) {
-            // Tap to sign in from Logins menu
-            tapOnUseEmailToSignIn()
-            typeEmail()
-            tapOnContinueButton()
-            typePassword()
-            tapOnSignIn()
-        }
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openLoginsAndPasswordSubMenu {}
+            .openSyncLogins(composeTestRule) {
+                // Tap to sign in from Logins menu
+                tapOnUseEmailToSignIn()
+                typeEmail()
+                tapOnContinueButton()
+                typePassword()
+                tapOnSignIn()
+            }
         // Automatically goes back to Logins and passwords view
         settingsSubMenuLoginsAndPassword {
-            verifyDefaultView()
-            // Sync logings option is set to Off, no synced logins yet
-            verifyDefaultViewBeforeSyncComplete()
-        }.openSavedLogins(composeTestRule) {
-            // Discard the secure your device message
-            tapSetupLater()
-            // Check the logins synced
-            verifySavedLoginsAfterSync()
-        }.goBack {
-            // After checking the synced logins
-            // on Logins and Passwords menu the Sync passwords option is set to On
-            verifyDefaultViewAfterSync()
-        }
+                verifyDefaultView()
+                // Sync logings option is set to Off, no synced logins yet
+                verifyDefaultViewBeforeSyncComplete()
+            }
+            .openSavedLogins(composeTestRule) {
+                // Discard the secure your device message
+                tapSetupLater()
+                // Check the logins synced
+                verifySavedLoginsAfterSync()
+            }
+            .goBack {
+                // After checking the synced logins
+                // on Logins and Passwords menu the Sync passwords option is set to On
+                verifyDefaultViewAfterSync()
+            }
     }
 
     // Useful functions for the tests
     fun typeEmail() {
-        val emailInput = TestHelper.mDevice.findObject(
-            UiSelector()
-                .instance(0)
-                .className(EditText::class.java),
-        )
+        val emailInput = TestHelper.mDevice.findObject(UiSelector().instance(0).className(EditText::class.java))
         emailInput.waitForExists(TestAssetHelper.waitingTime)
 
         val emailAddress = javaClass.classLoader!!.getResource("email.txt").readText()
@@ -141,11 +133,7 @@ class SyncIntegrationTest {
     }
 
     fun typePassword() {
-        val passwordInput = TestHelper.mDevice.findObject(
-            UiSelector()
-                .instance(0)
-                .className(EditText::class.java),
-        )
+        val passwordInput = TestHelper.mDevice.findObject(UiSelector().instance(0).className(EditText::class.java))
 
         val passwordValue = javaClass.classLoader!!.getResource("password.txt").readText()
         passwordInput.setText(passwordValue)
@@ -159,7 +147,10 @@ class SyncIntegrationTest {
     }
 
     fun historyAfterSyncIsShown() {
-        TestHelper.mDevice.waitNotNull(Until.findObjects(By.text("http://www.example.com/")), TestAssetHelper.waitingTime)
+        TestHelper.mDevice.waitNotNull(
+            Until.findObjects(By.text("http://www.example.com/")),
+            TestAssetHelper.waitingTime,
+        )
     }
 
     fun bookmarkAfterSyncIsShown() {
@@ -173,17 +164,21 @@ class SyncIntegrationTest {
 
         // Wait until the Settings shows the account synced
         TestHelper.mDevice.waitNotNull(Until.findObjects(By.text("Account")), TestAssetHelper.waitingTime)
-        TestHelper.mDevice.waitNotNull(Until.findObjects(By.res("org.mozilla.fenix.debug:id/email")), TestAssetHelper.waitingTime)
+        TestHelper.mDevice.waitNotNull(
+            Until.findObjects(By.res("org.mozilla.fenix.debug:id/email")),
+            TestAssetHelper.waitingTime,
+        )
         TestAssetHelper.waitingTime
         // Go to Homescreen
         TestHelper.mDevice.pressBack()
     }
 
     fun signInFxSync() {
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-            verifySettingsButton()
-        }.clickSettingsButton {}
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {
+                verifySettingsButton()
+            }
+            .clickSettingsButton {}
         settingsAccount()
         useEmailInsteadButton()
 
@@ -201,5 +196,7 @@ class SyncIntegrationTest {
 }
 
 fun settingsAccount() = onView(allOf(withText("Turn on Sync"))).perform(click())
+
 fun useEmailInsteadButton() = onView(withId(R.id.signInEmailButton)).perform(click())
+
 fun enterAccountSettings() = onView(withId(R.id.email)).perform(click())

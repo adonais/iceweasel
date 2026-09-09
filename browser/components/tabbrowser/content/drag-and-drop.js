@@ -6,6 +6,13 @@
 
 // Wrap in a block to prevent leaking to window scope.
 {
+  const lazy = {};
+
+  ChromeUtils.defineESModuleGetters(lazy, {
+    OpenInTabsUtils:
+      "moz-src:///browser/components/tabbrowser/OpenInTabsUtils.sys.mjs",
+  });
+
   const isTab = element => gBrowser.isTab(element);
   const isTabGroupLabel = element => gBrowser.isTabGroupLabel(element);
   const isSplitViewWrapper = element => gBrowser.isSplitViewWrapper(element);
@@ -26,7 +33,7 @@
    * - <tab-split-view-wrapper>
    *
    * When working with tab strip items, if you need logical information, you
-   * can get it directly, e.g. `element.elementIndex` or `element._tPos`. If
+   * can get it directly, e.g. `element.elementIndex` or `element.index`. If
    * you need spatial information like position or dimensions, then you should
    * call this function. For example, `elementToMove(element).getBoundingClientRect()`
    * or `elementToMove(element).style.top`.
@@ -89,6 +96,11 @@
         tab = tab.splitview;
       }
 
+      // Don't start a drag on a split view whose tabs are hidden.
+      if (isSplitViewWrapper(tab) && !tab.visible) {
+        return;
+      }
+
       this._tabbrowserTabs.previewPanel?.deactivate(null, { force: true });
       this.startTabDrag(event, tab);
     }
@@ -147,6 +159,7 @@
           draggedTab._dragData.expandGroupOnDrop &&
           !draggedTab.group.collapsed
         ) {
+          draggedTab.group.collapsedByDrag = true;
           draggedTab.group.collapsed = true;
         }
 
@@ -459,11 +472,6 @@
               metricsContext: dropMetricsContext,
             });
           }
-
-          if (isTabGroupLabel(draggedTab)) {
-            this._setIsDraggingTabGroup(draggedTab.group, false);
-            this._expandGroupOnDrop(draggedTab);
-          }
         };
 
         if (shouldPin || shouldUnpin) {
@@ -550,6 +558,13 @@
             moveTabs();
             this._tabbrowserTabs._notifyBackgroundTab(movingTabs.at(-1));
           }
+        }
+
+        // Every branch above has to end the tab group drag, including the ones
+        // that don't move anything.
+        if (isTabGroupLabel(draggedTab)) {
+          this._setIsDraggingTabGroup(draggedTab.group, false);
+          this._expandGroupOnDrop(draggedTab);
         }
       } else if (isTabGroupLabel(draggedTab)) {
         const dropIndex = this._getDropIndex(event);
@@ -680,11 +695,10 @@
             Services.prefs.getIntPref("browser.tabs.maxOpenBeforeWarn")
           ) {
             // Sync dialog cannot be used inside drop event handler.
-            let answer =
-              await gBrowser.OpenInTabsUtils.promiseConfirmOpenInTabs(
-                urls.length,
-                window
-              );
+            let answer = await lazy.OpenInTabsUtils.promiseConfirmOpenInTabs(
+              urls.length,
+              window
+            );
             if (!answer) {
               return;
             }
@@ -1156,31 +1170,35 @@
       this._tabbrowserTabs._invalidateCachedVisibleTabs();
     }
 
+    /**
+     * Undoes the collapse a drag applied to a tab group. Safe to call from
+     * every way out of a drag: it does nothing for a group the user collapsed
+     * themselves, and nothing once the group is already on its way back.
+     *
+     * @param {MozTabbrowserTab|typeof MozTabbrowserTabGroup.labelElement} [draggedTab]
+     */
     _expandGroupOnDrop(draggedTab) {
-      if (
-        !isTabGroupLabel(draggedTab) ||
-        !draggedTab._dragData?.expandGroupOnDrop
-      ) {
+      if (!isTabGroupLabel(draggedTab)) {
         return;
       }
       let group = draggedTab.group;
+      if (!group.collapsedByDrag || !group.collapsed) {
+        return;
+      }
       let periphery = draggedTab.ownerDocument.getElementById(
         "tabbrowser-arrowscrollbox-periphery"
       );
-      let releaseReservedSpace = () =>
-        this.#releaseSpaceInScrolledContent(periphery);
-      if (group.collapsed) {
-        // The group's tabs animate back to their full size, so hold on to the
-        // space reserved for them until they get there.
-        group.addEventListener(
-          "TabGroupAnimationComplete",
-          releaseReservedSpace,
-          { once: true }
-        );
-        group.collapsed = false;
-      } else {
-        releaseReservedSpace();
-      }
+      // The group's tabs animate back to their full size, so hold on to the
+      // space reserved for them until they get there.
+      group.addEventListener(
+        "TabGroupAnimationComplete",
+        () => {
+          group.collapsedByDrag = false;
+          this.#releaseSpaceInScrolledContent(periphery);
+        },
+        { once: true }
+      );
+      group.collapsed = false;
     }
 
     /**
@@ -2496,7 +2514,7 @@
           dropElementSize
         );
 
-        moveOverThreshold = gBrowser._tabGroupsEnabled
+        moveOverThreshold = gBrowser.tabGroupsEnabled
           ? Services.prefs.getIntPref(
               "browser.tabs.dragDrop.moveOverThresholdPercent"
             ) / 100
@@ -2569,7 +2587,7 @@
       }
 
       if (
-        gBrowser._tabGroupsEnabled &&
+        gBrowser.tabGroupsEnabled &&
         (isTab(draggedTab) || isSplitViewWrapper(draggedTab)) &&
         !isPinned &&
         (!numPinned || newDropElementIndex >= numPinned)
@@ -2839,7 +2857,7 @@
       periphery.style.top = "";
       // Space reserved for the tabs of a collapsed tab group is released by
       // _expandGroupOnDrop once they are back to their full size.
-      if (!draggedTab?._dragData?.expandGroupOnDrop) {
+      if (!isTabGroupLabel(draggedTab) || !draggedTab.group.collapsedByDrag) {
         this.#releaseSpaceInScrolledContent(periphery);
       }
       let pinnedTabsContainer = draggedTabDocument.getElementById(

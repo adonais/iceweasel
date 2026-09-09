@@ -11,17 +11,12 @@ import android.util.JsonWriter
 import mozilla.components.concept.engine.EngineSessionState
 import org.json.JSONObject
 
-class SystemEngineSessionState(
-    internal val bundle: Bundle?,
-) : EngineSessionState {
+class SystemEngineSessionState(internal val bundle: Bundle?) : EngineSessionState {
     override fun writeTo(writer: JsonWriter) {
         writer.beginObject()
 
         bundle?.keySet()?.forEach { key ->
-            when (
-                @Suppress("DEPRECATION")
-                val value = bundle[key]
-            ) {
+            when (@Suppress("DEPRECATION") val value = bundle[key]) {
                 is Number -> writer.name(key).value(value)
                 is String -> writer.name(key).value(value)
                 is Boolean -> writer.name(key).value(value)
@@ -37,9 +32,7 @@ class SystemEngineSessionState(
             return SystemEngineSessionState(json.toBundle())
         }
 
-        /**
-         * Creates a [SystemEngineSessionState] from the given [JsonReader].
-         */
+        /** Creates a [SystemEngineSessionState] from the given [JsonReader]. */
         fun from(reader: JsonReader): SystemEngineSessionState {
             return SystemEngineSessionState(reader.toBundle())
         }

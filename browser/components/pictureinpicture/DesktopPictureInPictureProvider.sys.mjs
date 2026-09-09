@@ -4,7 +4,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { getActorFor } from "resource://gre/actors/PictureInPictureChild.sys.mjs";
+import { getActorFor } from "moz-src:///toolkit/actors/PictureInPictureChild.sys.mjs";
 
 /**
  * Desktop's implementation of the PIP Chrome JS interface declared in

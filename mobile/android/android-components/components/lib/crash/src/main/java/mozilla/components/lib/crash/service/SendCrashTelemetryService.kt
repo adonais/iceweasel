@@ -24,16 +24,15 @@ class SendCrashTelemetryService : Service() {
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         val channel = CrashNotification.ensureChannelExists(this)
-        val notification = NotificationCompat.Builder(this, channel)
-            .setContentTitle(
-                getString(R.string.mozac_lib_gathering_crash_telemetry_in_progress),
-            )
-            .setSmallIcon(R.drawable.mozac_lib_crash_notification)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setCategory(NotificationCompat.CATEGORY_ERROR)
-            .setAutoCancel(true)
-            .setProgress(0, 0, true)
-            .build()
+        val notification =
+            NotificationCompat.Builder(this, channel)
+                .setContentTitle(getString(R.string.mozac_lib_gathering_crash_telemetry_in_progress))
+                .setSmallIcon(R.drawable.mozac_lib_crash_notification)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setCategory(NotificationCompat.CATEGORY_ERROR)
+                .setAutoCancel(true)
+                .setProgress(0, 0, true)
+                .build()
 
         val notificationId = SharedIdsHelper.getIdForTag(this, NOTIFICATION_TAG)
         startForeground(notificationId, notification)

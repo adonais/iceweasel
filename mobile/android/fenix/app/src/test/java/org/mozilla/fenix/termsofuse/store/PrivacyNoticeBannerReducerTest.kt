@@ -13,12 +13,11 @@ class PrivacyNoticeBannerReducerTest {
 
     @Test
     fun `WHEN the OnCloseClicked action is received THEN the visibility of the banner is set to false`() {
-        store = PrivacyNoticeBannerStore(
-            initialState = PrivacyNoticeBannerState(
-                visible = true,
-            ),
-            middleware = emptyList(),
-        )
+        store =
+            PrivacyNoticeBannerStore(
+                initialState = PrivacyNoticeBannerState(visible = true),
+                middleware = emptyList(),
+            )
 
         store.dispatch(PrivacyNoticeBannerAction.OnCloseClicked)
 
@@ -27,12 +26,11 @@ class PrivacyNoticeBannerReducerTest {
 
     @Test
     fun `WHEN the OnNavigatedAwayFromHome action is received THEN the visibility of the banner is set to false`() {
-        store = PrivacyNoticeBannerStore(
-            initialState = PrivacyNoticeBannerState(
-                visible = true,
-            ),
-            middleware = emptyList(),
-        )
+        store =
+            PrivacyNoticeBannerStore(
+                initialState = PrivacyNoticeBannerState(visible = true),
+                middleware = emptyList(),
+            )
 
         store.dispatch(PrivacyNoticeBannerAction.OnNavigatedAwayFromHome)
 
@@ -41,12 +39,11 @@ class PrivacyNoticeBannerReducerTest {
 
     @Test
     fun `WHEN a no-op action is received THEN the visibility of the banner does not change`() {
-        store = PrivacyNoticeBannerStore(
-            initialState = PrivacyNoticeBannerState(
-                visible = true,
-            ),
-            middleware = emptyList(),
-        )
+        store =
+            PrivacyNoticeBannerStore(
+                initialState = PrivacyNoticeBannerState(visible = true),
+                middleware = emptyList(),
+            )
 
         store.dispatch(PrivacyNoticeBannerAction.OnLearnMoreClicked)
         assertTrue(store.state.visible)

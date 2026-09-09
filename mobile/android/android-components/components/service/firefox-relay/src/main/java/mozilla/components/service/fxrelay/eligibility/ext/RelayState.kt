@@ -17,8 +17,8 @@ private val logger = Logger("RelayState")
  *
  * @param timeout Time-to-live for entitlement checks in milliseconds.
  * @param now The current time in milliseconds.
- * @return True if the user is logged in and the TTL has expired, or if there hasn't been any
- * entitlement checks yet, false otherwise.
+ * @return True if the user is logged in and the TTL has expired, or if there hasn't been any entitlement checks yet,
+ *   false otherwise.
  */
 internal fun RelayState.shouldCheckStatus(
     timeout: Long = FETCH_TIMEOUT_MS,

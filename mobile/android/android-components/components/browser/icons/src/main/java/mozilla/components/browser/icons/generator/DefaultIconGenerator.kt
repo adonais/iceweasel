@@ -17,12 +17,12 @@ import androidx.annotation.ColorRes
 import androidx.annotation.DimenRes
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
+import kotlin.math.abs
 import mozilla.components.browser.icons.Icon
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.browser.icons.R
 import mozilla.components.support.ktx.kotlin.getRepresentativeCharacter
 import mozilla.components.support.ktx.kotlin.getRepresentativeSnippet
-import kotlin.math.abs
 
 /**
  * [IconGenerator] implementation that will generate an icon with a background color, rounded corners and a letter
@@ -54,11 +54,12 @@ class DefaultIconGenerator(
 
         // The text size is calculated dynamically based on the target icon size (1/5th). For an icon
         // size of 100dp we'd use a text size of 20dp (100 / 5).
-        val textSize = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP,
-            size * TARGET_ICON_RATIO,
-            context.resources.displayMetrics,
-        )
+        val textSize =
+            TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                size * TARGET_ICON_RATIO,
+                context.resources.displayMetrics,
+            )
 
         paint.color = ContextCompat.getColor(context, textColorRes)
         paint.textAlign = Paint.Align.CENTER
@@ -81,20 +82,21 @@ class DefaultIconGenerator(
     }
 
     /**
-     * Return a color for this [url]. Colors will be based on the host. URLs with the same host will
-     * return the same color.
+     * Return a color for this [url]. Colors will be based on the host. URLs with the same host will return the same
+     * color.
      */
     @ColorInt
     internal fun pickColor(resources: Resources, url: String): Int {
         val backgroundColors = resources.obtainTypedArray(backgroundColorsRes)
-        val color = if (url.isEmpty()) {
-            backgroundColors.getColor(0, 0)
-        } else {
-            val snippet = url.getRepresentativeSnippet()
-            val index = abs(snippet.hashCode() % backgroundColors.length())
+        val color =
+            if (url.isEmpty()) {
+                backgroundColors.getColor(0, 0)
+            } else {
+                val snippet = url.getRepresentativeSnippet()
+                val index = abs(snippet.hashCode() % backgroundColors.length())
 
-            backgroundColors.getColor(index, 0)
-        }
+                backgroundColors.getColor(index, 0)
+            }
 
         backgroundColors.recycle()
         return color

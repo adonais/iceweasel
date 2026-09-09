@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
-import { html } from "chrome://global/content/vendor/lit.all.mjs";
+import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/applied-memories-button.mjs";
 
@@ -29,6 +29,10 @@ import "chrome://browser/content/aiwindow/components/applied-memories-button.mjs
  *   List of applied memories for the message. Passed through to the
  *   <applied-memories-button> child.
  *
+ * @property {boolean} hideRetry
+ *   Hides the retry button, e.g. for a resume-activity response, where
+ *   retrying would lose its bespoke context.
+ *
  * Events dispatched:
  *   - "copy-message"
  *       detail: { messageId }
@@ -44,6 +48,7 @@ export class AssistantMessageFooter extends MozLitElement {
     messageId: { type: String, attribute: "message-id" },
     appliedMemories: { attribute: false },
     showCallout: { type: Boolean },
+    hideRetry: { type: Boolean, attribute: "hide-retry" },
   };
 
   constructor() {
@@ -51,6 +56,7 @@ export class AssistantMessageFooter extends MozLitElement {
     this.messageId = null;
     this.appliedMemories = [];
     this.showCallout = false;
+    this.hideRetry = false;
   }
 
   static eventBehaviors = {
@@ -137,18 +143,22 @@ export class AssistantMessageFooter extends MozLitElement {
           }}
         >
         </moz-button>
-        <moz-button
-          data-l10n-id="aiwindow-retry"
-          data-l10n-attrs="tooltiptext,aria-label"
-          type="ghost"
-          size="small"
-          iconsrc="chrome://global/skin/icons/reload.svg"
-          class="footer-icon-button retry-button"
-          @click=${() => {
-            this.#emitRetry();
-          }}
-        >
-        </moz-button>
+        ${this.hideRetry
+          ? nothing
+          : html`
+              <moz-button
+                data-l10n-id="aiwindow-retry"
+                data-l10n-attrs="tooltiptext,aria-label"
+                type="ghost"
+                size="small"
+                iconsrc="chrome://global/skin/icons/reload.svg"
+                class="footer-icon-button retry-button"
+                @click=${() => {
+                  this.#emitRetry();
+                }}
+              >
+              </moz-button>
+            `}
         <applied-memories-button
           .messageId=${this.messageId}
           .appliedMemories=${this.appliedMemories ?? []}

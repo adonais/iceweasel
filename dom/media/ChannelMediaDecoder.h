@@ -69,8 +69,6 @@ class ChannelMediaDecoder
 
   explicit ChannelMediaDecoder(MediaDecoderInit& aInit);
 
-  void GetDebugInfo(dom::MediaDecoderDebugInfo& aInfo);
-
  public:
   // Create a decoder for the given aType. Returns null if we were unable
   // to create the decoder, for example because the requested MIME type in

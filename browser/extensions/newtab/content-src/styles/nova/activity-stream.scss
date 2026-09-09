@@ -187,6 +187,7 @@ input {
 
 // Discovery Stream Components
 @import '../../components/DiscoveryStreamComponents/CardGrid/CardGrid';
+@import '../../components/DiscoveryStreamComponents/CardCarousel/CardCarousel';
 @import '../../components/DiscoveryStreamComponents/CardSections/CardSections';
 @import '../../components/DiscoveryStreamComponents/Highlights/Highlights';
 @import '../../components/DiscoveryStreamComponents/HorizontalRule/HorizontalRule';
@@ -212,7 +213,6 @@ input {
 @import '../../components/DiscoveryStreamComponents/AdBanner/AdBanner';
 @import '../../components/DiscoveryStreamComponents/AdBannerContextMenu/AdBannerContextMenu';
 @import '../../components/DiscoveryStreamComponents/PromoCard/PromoCard';
-@import '../../components/DiscoveryStreamComponents/BriefingCard/BriefingCard';
 @import '../../components/DiscoveryStreamComponents/SectionContextMenu/SectionContextMenu';
 @import '../../components/DiscoveryStreamComponents/InterestPicker/InterestPicker';
 @import '../../components/DiscoveryStreamComponents/ReportContent/ReportContent';

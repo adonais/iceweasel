@@ -26,8 +26,8 @@ private const val KEY_CHOICES = "KEY_CHOICES"
 private const val KEY_DIALOG_TYPE = "KEY_DIALOG_TYPE"
 
 /**
- * [android.support.v4.app.DialogFragment] implementation to display choice(options,optgroup and menu)
- * web content in native dialogs.
+ * [android.support.v4.app.DialogFragment] implementation to display choice(options,optgroup and menu) web content in
+ * native dialogs.
  */
 internal class ChoiceDialogFragment : PromptDialogFragment() {
 
@@ -35,12 +35,13 @@ internal class ChoiceDialogFragment : PromptDialogFragment() {
         safeArguments.getParcelableArrayCompat(KEY_CHOICES, Choice::class.java) ?: emptyArray()
     }
 
-    @VisibleForTesting
-    internal val dialogType: Int by lazy { safeArguments.getInt(KEY_DIALOG_TYPE) }
+    @VisibleForTesting internal val dialogType: Int by lazy { safeArguments.getInt(KEY_DIALOG_TYPE) }
 
-    internal val isSingleChoice get() = dialogType == SINGLE_CHOICE_DIALOG_TYPE
+    internal val isSingleChoice
+        get() = dialogType == SINGLE_CHOICE_DIALOG_TYPE
 
-    internal val isMenuChoice get() = dialogType == MENU_CHOICE_DIALOG_TYPE
+    internal val isMenuChoice
+        get() = dialogType == MENU_CHOICE_DIALOG_TYPE
 
     internal val mapSelectChoice by lazy { HashMap<Choice, Choice>() }
 
@@ -87,9 +88,10 @@ internal class ChoiceDialogFragment : PromptDialogFragment() {
         val index = choices.indexOfFirst { it.selected }
         val view = inflater.inflate(R.layout.mozac_feature_choice_dialogs, null)
         view.findViewById<RecyclerView>(R.id.recyclerView).apply {
-            layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false).also {
-                it.scrollToPosition(index)
-            }
+            layoutManager =
+                LinearLayoutManager(context, RecyclerView.VERTICAL, false).also {
+                    it.scrollToPosition(index)
+                }
             adapter = ChoiceAdapter(this@ChoiceDialogFragment, inflater)
         }
         return view
@@ -110,10 +112,12 @@ internal class ChoiceDialogFragment : PromptDialogFragment() {
         val inflater = LayoutInflater.from(requireContext())
         val view = createDialogContentView(inflater)
 
-        return builder.setView(view)
+        return builder
+            .setView(view)
             .setOnDismissListener {
                 feature?.onCancel(sessionId, promptRequestUID)
-            }.create()
+            }
+            .create()
     }
 
     private fun createMultipleChoiceDialog(): AlertDialog {
@@ -121,15 +125,19 @@ internal class ChoiceDialogFragment : PromptDialogFragment() {
         val inflater = LayoutInflater.from(requireContext())
         val view = createDialogContentView(inflater)
 
-        return builder.setView(view)
+        return builder
+            .setView(view)
             .setNegativeButton(R.string.mozac_feature_prompts_cancel) { _, _ ->
                 feature?.onCancel(sessionId, promptRequestUID)
             }
             .setPositiveButton(R.string.mozac_feature_prompts_ok) { _, _ ->
                 feature?.onConfirm(sessionId, promptRequestUID, mapSelectChoice.keys.toTypedArray())
-            }.setOnDismissListener {
+            }
+            .setOnDismissListener {
                 feature?.onCancel(sessionId, promptRequestUID)
-            }.create().withCenterAlignedButtons()
+            }
+            .create()
+            .withCenterAlignedButtons()
     }
 }
 

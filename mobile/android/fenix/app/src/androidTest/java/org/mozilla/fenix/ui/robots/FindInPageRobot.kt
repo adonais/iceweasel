@@ -16,7 +16,7 @@ import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
-import org.mozilla.fenix.R
+import mozilla.components.feature.findinpage.R as findinpageR
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
@@ -24,35 +24,33 @@ import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.click
 import org.mozilla.fenix.helpers.ext.waitNotNull
-import mozilla.components.feature.findinpage.R as findinpageR
 
-/**
- * Implementation of Robot Pattern for the find in page UI.
- */
+/** Implementation of Robot Pattern for the find in page UI. */
 class FindInPageRobot {
     fun verifyFindInPageNextButton() {
         Log.i(TAG, "verifyFindInPageNextButton: Trying to verify find in page next result button is visible")
-        findInPageNextButton()
-            .check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+        findInPageNextButton().check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
         Log.i(TAG, "verifyFindInPageNextButton: Verified find in page next result button is visible")
     }
+
     fun verifyFindInPagePrevButton() {
         Log.i(TAG, "verifyFindInPagePrevButton: Trying to verify find in page previous result button is visible")
-        findInPagePrevButton()
-            .check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+        findInPagePrevButton().check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
         Log.i(TAG, "verifyFindInPagePrevButton: Verified find in page previous result button is visible")
     }
+
     fun verifyFindInPageCloseButton() {
         Log.i(TAG, "verifyFindInPageCloseButton: Trying to verify find in page close button is visible")
-        findInPageCloseButton()
-            .check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+        findInPageCloseButton().check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
         Log.i(TAG, "verifyFindInPageCloseButton: Verified find in page close button is visible")
     }
+
     fun clickFindInPageNextButton() {
         Log.i(TAG, "clickFindInPageNextButton: Trying to click next result button")
         findInPageNextButton().click()
         Log.i(TAG, "clickFindInPageNextButton: Clicked next result button")
     }
+
     fun clickFindInPagePrevButton() {
         Log.i(TAG, "clickFindInPagePrevButton: Trying to click previous result button")
         findInPagePrevButton().click()
@@ -68,13 +66,19 @@ class FindInPageRobot {
         Log.i(TAG, "enterFindInPageQuery: Trying to type $expectedText in find in page bar")
         findInPageQuery().perform(typeText(expectedText))
         Log.i(TAG, "enterFindInPageQuery: Typed $expectedText in find page bar")
-        mDevice.waitNotNull(Until.findObject(By.res("org.mozilla.fenix.debug:id/find_in_page_result_text")), waitingTime)
+        mDevice.waitNotNull(
+            Until.findObject(By.res("org.mozilla.fenix.debug:id/find_in_page_result_text")),
+            waitingTime,
+        )
     }
 
     fun verifyFindInPageResult(ratioCounter: String) = assertUIObjectExists(itemContainingText(ratioCounter))
 
     class Transition {
-        fun closeFindInPageWithCloseButton(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+        fun closeFindInPageWithCloseButton(
+            composeTestRule: ComposeTestRule,
+            interact: BrowserRobot.() -> Unit,
+        ): BrowserRobot.Transition {
             Log.i(TAG, "closeFindInPageWithCloseButton: Waiting for device to be idle")
             mDevice.waitForIdle()
             Log.i(TAG, "closeFindInPageWithCloseButton: Device was idle")
@@ -85,7 +89,10 @@ class FindInPageRobot {
             return BrowserRobot.Transition(composeTestRule)
         }
 
-        fun closeFindInPageWithBackButton(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+        fun closeFindInPageWithBackButton(
+            composeTestRule: ComposeTestRule,
+            interact: BrowserRobot.() -> Unit,
+        ): BrowserRobot.Transition {
             Log.i(TAG, "closeFindInPageWithBackButton: Waiting for device to be idle")
             mDevice.waitForIdle()
             Log.i(TAG, "closeFindInPageWithBackButton: Device was idle")
@@ -105,7 +112,9 @@ class FindInPageRobot {
 }
 
 private fun findInPageQuery() = onView(withId(findinpageR.id.find_in_page_query_text))
-private fun findInPageResult() = onView(withId(findinpageR.id.find_in_page_result_text))
+
 private fun findInPageNextButton() = onView(withId(findinpageR.id.find_in_page_next_btn))
+
 private fun findInPagePrevButton() = onView(withId(findinpageR.id.find_in_page_prev_btn))
+
 private fun findInPageCloseButton() = onView(withId(findinpageR.id.find_in_page_close_btn))

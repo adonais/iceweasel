@@ -93,9 +93,9 @@ struct PEHeaderStr {
 #define GetInt2(c) ((c[0] << 8) | c[1])
 #define GetInt4(c) (((unsigned long)c[0] << 24) | ((unsigned long)c[1] << 16) | \
                     ((unsigned long)c[2] << 8) | ((unsigned long)c[3]))
-#define PutInt2(c, i) ((c[1] = (i)&0xff), (c[0] = ((i) >> 8) & 0xff))
+#define PutInt2(c, i) ((c[1] = (i) & 0xff), (c[0] = ((i) >> 8) & 0xff))
 #define PutInt4(c, i) ((c[0] = ((i) >> 24) & 0xff), (c[1] = ((i) >> 16) & 0xff), \
-                       (c[2] = ((i) >> 8) & 0xff), (c[3] = (i)&0xff))
+                       (c[2] = ((i) >> 8) & 0xff), (c[3] = (i) & 0xff))
 
 #define PRE_MAGIC 0xc0de
 #define PRE_VERSION 0x1010

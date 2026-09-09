@@ -8,45 +8,34 @@ import androidx.compose.foundation.lazy.grid.LazyGridItemInfo
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.ui.geometry.Offset
 
-/**
- * Defines the state for an interactable grid or list item.
- */
+/** Defines the state for an interactable grid or list item. */
 sealed interface InteractionState {
-    /**
-     * The item's index in the list of interactable items.
-     */
+    /** The item's index in the list of interactable items. */
     val index: Int?
 
-    /**
-     * The item's unique key, typically a String.
-     */
+    /** The item's unique key, typically a String. */
     val key: String?
 
-    /**
-     * Fetches the [LazyGridItemInfo] for the interacted item, based on its key.
-     */
+    /** Fetches the [LazyGridItemInfo] for the interacted item, based on its key. */
     fun getLazyGridItemInfo(gridState: LazyGridState): LazyGridItemInfo?
 
-    /**
-     * Grid interface to handle the InteractionState for a 2 dimensional coordinate system.
-     */
+    /** Grid interface to handle the InteractionState for a 2 dimensional coordinate system. */
     sealed interface Grid : InteractionState {
         val initialOffset: Offset
         val cumulatedOffset: Offset
 
         /**
-         * Increments the cumulated offset of the dragged item by the latest offset being passed in,
-         * typically from a drag event update.
+         * Increments the cumulated offset of the dragged item by the latest offset being passed in, typically from a
+         * drag event update.
          */
         fun incrementCumulatedOffset(offset: Offset): Grid
 
-        /**
-         * Return a copy of the item with an updated index.
-         */
+        /** Return a copy of the item with an updated index. */
         fun copyWithNewIndex(newIndex: Int): Grid
 
         /**
          * Data object to represent no active interaction.
+         *
          * @property index of the item, always null
          * @property key of the item, always null
          * @property initialOffset initial offset of the item, always Offset.Zero
@@ -57,6 +46,7 @@ sealed interface InteractionState {
             override val key = null
             override val initialOffset: Offset = Offset.Zero
             override val cumulatedOffset: Offset = Offset.Zero
+
             override fun getLazyGridItemInfo(gridState: LazyGridState): LazyGridItemInfo? {
                 return null
             }
@@ -72,6 +62,7 @@ sealed interface InteractionState {
 
         /**
          * Data object to represent an active interaction.
+         *
          * @property index of the item, as an Int
          * @property key of the item, as a String
          * @property initialOffset initial offset of the item,
@@ -88,22 +79,16 @@ sealed interface InteractionState {
             }
 
             override fun incrementCumulatedOffset(offset: Offset): Grid {
-                return this.copy(
-                    cumulatedOffset = cumulatedOffset + offset,
-                )
+                return this.copy(cumulatedOffset = cumulatedOffset + offset)
             }
 
             override fun copyWithNewIndex(newIndex: Int): Grid {
-                return this.copy(
-                    index = newIndex,
-                )
+                return this.copy(index = newIndex)
             }
         }
     }
 
-    /**
-     * List interface to handle the InteractionState for a 1 dimensional coordinate system.
-     */
+    /** List interface to handle the InteractionState for a 1 dimensional coordinate system. */
     sealed interface List : InteractionState {
         val initialOffset: Float
         val cumulatedOffset: Float
@@ -111,23 +96,20 @@ sealed interface InteractionState {
         val moved: Boolean
 
         /**
-         * Increments the cumulated offset of the dragged item by the latest offset being passed in,
-         * typically from a drag event update.
+         * Increments the cumulated offset of the dragged item by the latest offset being passed in, typically from a
+         * drag event update.
          */
         fun incrementCumulatedOffset(offset: Float): List
 
-        /**
-         * Mark that the dragged item has been moved.
-         */
+        /** Mark that the dragged item has been moved. */
         fun markAsMoved(): List
 
-        /**
-         * Return a copy of the item with an updated index.
-         */
+        /** Return a copy of the item with an updated index. */
         fun copyWithNewIndex(newIndex: Int): List
 
         /**
          * Data object to represent no active interaction.
+         *
          * @property index of the item, always null
          * @property key of the item, always null
          * @property initialOffset initial offset of the item, always Offset.Zero
@@ -140,6 +122,7 @@ sealed interface InteractionState {
             override val moved = false
             override val initialOffset: Float = 0f
             override val cumulatedOffset: Float = 0f
+
             override fun getLazyGridItemInfo(gridState: LazyGridState): LazyGridItemInfo? {
                 return null
             }
@@ -159,6 +142,7 @@ sealed interface InteractionState {
 
         /**
          * Data object to represent an active interaction.
+         *
          * @property index of the item, as an Int
          * @property key of the item, as a String
          * @property initialOffset initial offset of the item,
@@ -177,15 +161,11 @@ sealed interface InteractionState {
             }
 
             override fun incrementCumulatedOffset(offset: Float): List {
-                return this.copy(
-                    cumulatedOffset = cumulatedOffset + offset,
-                )
+                return this.copy(cumulatedOffset = cumulatedOffset + offset)
             }
 
             override fun markAsMoved(): List {
-                return this.copy(
-                    moved = true,
-                )
+                return this.copy(moved = true)
             }
 
             override fun copyWithNewIndex(newIndex: Int): List {

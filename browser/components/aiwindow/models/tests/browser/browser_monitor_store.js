@@ -77,6 +77,7 @@ function makeMonitor(options = {}) {
     lastRunTime: options.lastRunTime ?? "2026-06-23T12:00:00.000Z",
     nextRunTime: options.nextRunTime ?? "2026-06-23T18:00:00.000Z",
     history: options.history ?? [],
+    initialSnapshot: options.initialSnapshot ?? null,
   };
 }
 
@@ -118,6 +119,67 @@ add_task(async function test_saveMonitor_persists_monitor_and_history() {
     await MonitorStore.listMonitors(),
     [monitor],
     "The monitor and run history persist through a real IndexedDB reopen."
+  );
+});
+
+add_task(async function test_saveMonitor_persists_initial_snapshot() {
+  await resetMonitorStore();
+
+  const monitor = makeMonitor({
+    id: "monitor-with-snapshot",
+    initialSnapshot: {
+      capturedAt: "2026-06-23T12:00:00.000Z",
+      pageContent: "Product Page\nThe price is $999",
+    },
+  });
+  await MonitorStore.saveMonitor(monitor);
+  await MonitorStore.close();
+
+  Assert.deepEqual(
+    await MonitorStore.listMonitors(),
+    [monitor],
+    "The initial snapshot persists through a real IndexedDB reopen."
+  );
+});
+
+add_task(async function test_initial_snapshot_validation() {
+  await resetMonitorStore();
+
+  await Assert.rejects(
+    MonitorStore.saveMonitor(
+      makeMonitor({
+        id: "invalid-snapshot-content",
+        initialSnapshot: {
+          capturedAt: "2026-06-23T12:00:00.000Z",
+          pageContent: 42,
+        },
+      })
+    ),
+    /Monitor initial snapshot is invalid/,
+    "Snapshots with non-string page content are rejected on save."
+  );
+  await Assert.rejects(
+    MonitorStore.saveMonitor(
+      makeMonitor({
+        id: "invalid-snapshot-timestamp",
+        initialSnapshot: { capturedAt: "not-a-date", pageContent: "text" },
+      })
+    ),
+    /Monitor initial snapshot timestamp is invalid/,
+    "Snapshots with invalid timestamps are rejected on save."
+  );
+
+  // A corrupt stored snapshot is dropped on load instead of losing the monitor.
+  const corruptSnapshot = makeMonitor({
+    id: "corrupt-stored-snapshot",
+    initialSnapshot: { capturedAt: "not-a-date", pageContent: "text" },
+  });
+  await writeRawMonitorRecords([corruptSnapshot]);
+
+  Assert.deepEqual(
+    await MonitorStore.listMonitors(),
+    [{ ...corruptSnapshot, initialSnapshot: null }],
+    "A monitor with a corrupt stored snapshot loads with the snapshot dropped."
   );
 });
 

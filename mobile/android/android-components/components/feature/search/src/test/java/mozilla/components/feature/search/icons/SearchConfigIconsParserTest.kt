@@ -1,5 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package mozilla.components.feature.search.icons
 
+import kotlin.test.assertNotNull
 import mozilla.appservices.remotesettings.Attachment
 import mozilla.appservices.remotesettings.RemoteSettingsRecord
 import org.json.JSONArray
@@ -10,7 +15,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class SearchConfigIconsParserTest {
@@ -24,27 +28,30 @@ class SearchConfigIconsParserTest {
 
     @Test
     fun `Given record with all fields and attachment When parseRecord is called Then valid model is returned`() {
-        val fields = JSONObject()
-            .put("schema", 1L)
-            .put("imageSize", 64)
-            .put("engineIdentifiers", JSONArray().put("google").put("bing"))
-            .put("filter_expression", "test-filter")
+        val fields =
+            JSONObject()
+                .put("schema", 1L)
+                .put("imageSize", 64)
+                .put("engineIdentifiers", JSONArray().put("google").put("bing"))
+                .put("filter_expression", "test-filter")
 
-        val attachment = Attachment(
-            filename = "icon.png",
-            mimetype = "image/png",
-            location = "location/path",
-            hash = "abc123hash",
-            size = 1024u,
-        )
+        val attachment =
+            Attachment(
+                filename = "icon.png",
+                mimetype = "image/png",
+                location = "location/path",
+                hash = "abc123hash",
+                size = 1024u,
+            )
 
-        val record = RemoteSettingsRecord(
-            id = "test-id",
-            lastModified = 123u,
-            deleted = false,
-            attachment = attachment,
-            fields = fields,
-        )
+        val record =
+            RemoteSettingsRecord(
+                id = "test-id",
+                lastModified = 123u,
+                deleted = false,
+                attachment = attachment,
+                fields = fields,
+            )
 
         val result = parser.parseRecord(record)
 
@@ -64,19 +71,21 @@ class SearchConfigIconsParserTest {
 
     @Test
     fun `Given record with missing optional fields When parseRecord is called Then valid model with null attachment is returned`() {
-        val fields = JSONObject()
-            .put("schema", 2L)
-            .put("imageSize", 32)
-            .put("engineIdentifiers", JSONArray().put("duckduckgo"))
-            .put("filter_expression", "")
+        val fields =
+            JSONObject()
+                .put("schema", 2L)
+                .put("imageSize", 32)
+                .put("engineIdentifiers", JSONArray().put("duckduckgo"))
+                .put("filter_expression", "")
 
-        val record = RemoteSettingsRecord(
-            id = "test-id",
-            lastModified = 123u,
-            deleted = false,
-            attachment = null,
-            fields = fields,
-        )
+        val record =
+            RemoteSettingsRecord(
+                id = "test-id",
+                lastModified = 123u,
+                deleted = false,
+                attachment = null,
+                fields = fields,
+            )
 
         val result = parser.parseRecord(record)
 
@@ -90,17 +99,16 @@ class SearchConfigIconsParserTest {
 
     @Test
     fun `Given record that causes JSONException during field parsing When parseRecord is called Then null is returned`() {
-        val fields = JSONObject()
-            .put("schema", "NOT_AN_INTEGER")
-            .put("imageSize", "NOT_AN_INTEGER")
+        val fields = JSONObject().put("schema", "NOT_AN_INTEGER").put("imageSize", "NOT_AN_INTEGER")
 
-        val record = RemoteSettingsRecord(
-            id = "test-id",
-            lastModified = 123u,
-            deleted = false,
-            attachment = null,
-            fields = fields,
-        )
+        val record =
+            RemoteSettingsRecord(
+                id = "test-id",
+                lastModified = 123u,
+                deleted = false,
+                attachment = null,
+                fields = fields,
+            )
 
         val result = parser.parseRecord(record)
 

@@ -8,8 +8,8 @@ import android.os.SystemClock
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * Executes the given [block] and logs the elapsed time in milliseconds.
- * Uses [System.nanoTime] for measurements, since it isn't tied to a wall-clock.
+ * Executes the given [block] and logs the elapsed time in milliseconds. Uses [System.nanoTime] for measurements, since
+ * it isn't tied to a wall-clock.
  *
  * @param logger [Logger] to use for logging.
  * @param op Name of the operation [block] performs.

@@ -16,7 +16,7 @@
 #include "blapii.h"
 #include "nss.h"
 
-int main(int argc, char const *argv[]) {
+int main(int argc, char const* argv[]) {
   BL_Init();
   printf("\n\n ========== NSS Hardware Report ==========\n");
 #if defined(NSS_X86_OR_X64)

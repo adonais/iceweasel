@@ -11,9 +11,8 @@ object InteractionCaseGenerator {
     private const val TAG = "InteractionGenerator"
 
     /**
-     * Builds the interaction boilerplate report without emitting it anywhere, so a future
-     * consumer (a debug UI, an export, etc.) can reuse the same computation
-     * [logInteractionCaseBoilerplate] uses.
+     * Builds the interaction boilerplate report without emitting it anywhere, so a future consumer (a debug UI, an
+     * export, etc.) can reuse the same computation [logInteractionCaseBoilerplate] uses.
      */
     fun buildInteractionCaseBoilerplateReport(): DevToolReport {
         val cases = InteractionTestPlanner.buildInteractionCases()
@@ -39,7 +38,8 @@ object InteractionCaseGenerator {
                 ),
                 state = runState.ifBlank { "Interaction Factory" },
             ),
-            """.trimIndent()
+            """
+                .trimIndent()
         }
     }
 

@@ -217,6 +217,7 @@ def filter_gn_config(path, gn_result, sandbox_vars, input_vars, gn_target):
         "android": "Android",
         "linux": "Linux",
         "mac": "Darwin",
+        "ios": "Darwin",
         "openbsd": "OpenBSD",
         "win": "WINNT",
     }
@@ -228,6 +229,10 @@ def filter_gn_config(path, gn_result, sandbox_vars, input_vars, gn_target):
     }
     if "ozone_platform_x11" in input_vars:
         mozbuild_args["MOZ_X11"] = "1" if input_vars["ozone_platform_x11"] else None
+    if input_vars["target_os"] == "mac":
+        mozbuild_args["TARGET_OS"] = "OSX"
+    if input_vars["target_os"] == "ios":
+        mozbuild_args["TARGET_OS"] = "iOS"
 
     gn_out["mozbuild_args"] = mozbuild_args
     all_deps = find_deps(gn_result["targets"], gn_target)
@@ -822,6 +827,7 @@ def write_mozbuild(topsrcdir, write_mozbuild_variables, relsrcdir, configs):
             (),
             ("MOZ_DEBUG",),
             ("OS_TARGET",),
+            ("OS_TARGET", "TARGET_OS"),
             ("TARGET_CPU",),
             ("MOZ_DEBUG", "OS_TARGET"),
             ("OS_TARGET", "MOZ_X11"),
@@ -910,7 +916,9 @@ def write_mozbuild_files(
         for attrs in (
             (),
             ("OS_TARGET",),
+            ("OS_TARGET", "TARGET_OS"),
             ("OS_TARGET", "MOZ_DEBUG"),
+            ("OS_TARGET", "TARGET_OS", "MOZ_DEBUG"),
             ("OS_TARGET", "TARGET_CPU"),
             ("OS_TARGET", "TARGET_CPU", "MOZ_X11"),
         ):
@@ -977,26 +985,32 @@ def generate_gn_config(
     srcdir = build_root_dir / target_dir
     gn_target = select_gn_target(gn_target_config, input_variables["target_os"])
 
-    input_variables = input_variables.copy()
-    input_variables.update({
+    gn_input_variables = input_variables.copy()
+    gn_input_variables.update({
         f"{moz_build_flag}": True,
         "concurrent_links": 1,
         "action_pool_depth": 1,
     })
 
     if input_variables["target_os"] == "win":
-        input_variables.update({
+        gn_input_variables.update({
             "visual_studio_path": "/",
             "visual_studio_version": 2015,
             "wdk_path": "/",
             "windows_sdk_version": "n/a",
         })
-    if input_variables["target_os"] == "mac":
-        input_variables.update({
+    if input_variables["target_os"] in ("ios", "mac"):
+        gn_input_variables.update({
             "mac_sdk_path": "/",
         })
 
-    gn_args = f"--args={' '.join([f'{k}={str_for_arg(v)}' for k, v in input_variables.items()])}"
+    # Running `gn gen` for an ios target doesn't succeed, so we use a mac target
+    # instead and hope the result is similar enough that iOS can still build
+    # successfully.
+    if input_variables["target_os"] == "ios":
+        gn_input_variables["target_os"] = "mac"
+
+    gn_args = f"--args={' '.join([f'{k}={str_for_arg(v)}' for k, v in gn_input_variables.items()])}"
     with tempfile.TemporaryDirectory() as tempdir:
         # On Mac, `tempdir` starts with /var which is a symlink to /private/var.
         # We resolve the symlinks in `tempdir` here so later usage with
@@ -1049,9 +1063,9 @@ def generate_gn_configs(topsrcdir, config):
 
     vars_set = []
     for is_debug in (True, False):
-        for target_os in ("android", "linux", "mac", "openbsd", "win"):
+        for target_os in ("android", "ios", "linux", "mac", "openbsd", "win"):
             target_cpus = ["x64"]
-            if target_os in ("android", "linux", "mac", "win", "openbsd"):
+            if target_os in ("android", "ios", "linux", "mac", "win", "openbsd"):
                 target_cpus.append("arm64")
             if target_os in ("android", "linux"):
                 target_cpus.append("arm")

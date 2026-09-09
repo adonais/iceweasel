@@ -38,18 +38,16 @@ import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.whatsnew.WhatsNew
 import org.mozilla.geckoview.BuildConfig as GeckoViewBuildConfig
 
-/**
- * Displays the logo and information about the app, including library versions.
- */
-class AboutFragment(
-    private val toastHandler: ToastHandler = DefaultToastHandler(),
-) : Fragment(), AboutPageListener, SystemInsetsPaddedFragment {
+/** Displays the logo and information about the app, including library versions. */
+class AboutFragment(private val toastHandler: ToastHandler = DefaultToastHandler()) :
+    Fragment(), AboutPageListener, SystemInsetsPaddedFragment {
 
     private lateinit var appName: String
     private var aboutPageAdapter: AboutPageAdapter? = null
     private var _binding: FragmentAboutBinding? = null
 
-    private val binding get() = _binding!!
+    private val binding
+        get() = _binding!!
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -73,7 +71,7 @@ class AboutFragment(
                 DividerItemDecoration(
                     context,
                     DividerItemDecoration.VERTICAL,
-                ),
+                )
             )
         }
 
@@ -98,28 +96,27 @@ class AboutFragment(
     /**
      * Sets up the secret debug menu trigger.
      *
-     * This function configures a secret debug menu that can be activated by multiple clicks on the view.
-     * It uses a [SecretDebugMenuTrigger] to handle the click detection and menu activation.
+     * This function configures a secret debug menu that can be activated by multiple clicks on the view. It uses a
+     * [SecretDebugMenuTrigger] to handle the click detection and menu activation.
      *
      * The [SecretDebugMenuTrigger] also observes the provided [Lifecycle] to properly handle lifecycle events.
      *
      * @param view The [View] that will trigger the debug menu when clicked.
      * @param settings The [Settings] object used to determine if the secret debug menu should be enabled this session.
-     *                 If `showSecretDebugMenuThisSession` is true, the debug menu trigger will be disabled.
-     * @param lifecycle The [Lifecycle] of the component to which this debug menu is attached.
-     *                  This is used to add the [SecretDebugMenuTrigger] as an observer,
-     *                  allowing it to react to lifecycle events.
-     *
+     *   If `showSecretDebugMenuThisSession` is true, the debug menu trigger will be disabled.
+     * @param lifecycle The [Lifecycle] of the component to which this debug menu is attached. This is used to add the
+     *   [SecretDebugMenuTrigger] as an observer, allowing it to react to lifecycle events.
      * @see SecretDebugMenuTrigger
      * @see Settings
      * @see Lifecycle
      */
     @VisibleForTesting
     internal fun setupDebugMenu(view: View, settings: Settings, lifecycle: Lifecycle) {
-        val secretDebugMenuTrigger = SecretDebugMenuTrigger(
-            onLogoClicked = { clicksLeft -> onLogoClicked(view.context, clicksLeft) },
-            onDebugMenuActivated = { onDebugMenuActivated(view.context, settings) },
-        )
+        val secretDebugMenuTrigger =
+            SecretDebugMenuTrigger(
+                onLogoClicked = { clicksLeft -> onLogoClicked(view.context, clicksLeft) },
+                onDebugMenuActivated = { onDebugMenuActivated(view.context, settings) },
+            )
 
         if (!settings.showSecretDebugMenuThisSession) {
             view.setOnClickListener {
@@ -130,9 +127,7 @@ class AboutFragment(
         lifecycle.addObserver(secretDebugMenuTrigger)
     }
 
-    /**
-     * Handles a click on the application logo, which is used as part of the debug menu activation process.
-     */
+    /** Handles a click on the application logo, which is used as part of the debug menu activation process. */
     @VisibleForTesting
     internal fun onLogoClicked(context: Context, clicksLeft: Int) {
         toastHandler.showToast(
@@ -142,9 +137,7 @@ class AboutFragment(
         )
     }
 
-    /**
-     * Handles the activation of the debug menu.
-     */
+    /** Handles the activation of the debug menu. */
     @VisibleForTesting
     internal fun onDebugMenuActivated(context: Context, settings: Settings) {
         settings.showSecretDebugMenuThisSession = true
@@ -156,36 +149,39 @@ class AboutFragment(
     }
 
     private fun populateAboutHeader() {
-        val aboutText = try {
-            val packageInfo = requireContext().packageManagerCompatHelper.getPackageInfoCompat(
-                requireContext().packageName,
-                0,
-            )
-            val versionCode = PackageInfoCompat.getLongVersionCode(packageInfo).toString()
-            val maybeFenixVcsHash = if (BuildConfig.VCS_HASH.isNotBlank()) ", ${BuildConfig.VCS_HASH}" else ""
-            val maybeGecko = getString(R.string.gecko_view_abbreviation)
-            val geckoVersion =
-                GeckoViewBuildConfig.MOZ_APP_VERSION + "-" + GeckoViewBuildConfig.MOZ_APP_BUILDID
-            val appServicesAbbreviation = getString(R.string.app_services_abbreviation)
-            val appServicesVersion = mozilla.components.Build.APPLICATION_SERVICES_VERSION
-            val operatingSystemAbbrevation = "OS"
-            val operatingSystemVersion = "Android ${Build.VERSION.RELEASE}"
+        val aboutText =
+            try {
+                val packageInfo =
+                    requireContext()
+                        .packageManagerCompatHelper
+                        .getPackageInfoCompat(
+                            requireContext().packageName,
+                            0,
+                        )
+                val versionCode = PackageInfoCompat.getLongVersionCode(packageInfo).toString()
+                val maybeFenixVcsHash = if (BuildConfig.VCS_HASH.isNotBlank()) ", ${BuildConfig.VCS_HASH}" else ""
+                val maybeGecko = getString(R.string.gecko_view_abbreviation)
+                val geckoVersion = GeckoViewBuildConfig.MOZ_APP_VERSION + "-" + GeckoViewBuildConfig.MOZ_APP_BUILDID
+                val appServicesAbbreviation = getString(R.string.app_services_abbreviation)
+                val appServicesVersion = mozilla.components.Build.APPLICATION_SERVICES_VERSION
+                val operatingSystemAbbrevation = "OS"
+                val operatingSystemVersion = "Android ${Build.VERSION.RELEASE}"
 
-            String.format(
-                "%s (Build #%s)%s\n%s: %s\n%s: %s\n%s: %s",
-                packageInfo.versionName,
-                versionCode,
-                maybeFenixVcsHash,
-                maybeGecko,
-                geckoVersion,
-                appServicesAbbreviation,
-                appServicesVersion,
-                operatingSystemAbbrevation,
-                operatingSystemVersion,
-            )
-        } catch (e: PackageManager.NameNotFoundException) {
-            ""
-        }
+                String.format(
+                    "%s (Build #%s)%s\n%s: %s\n%s: %s\n%s: %s",
+                    packageInfo.versionName,
+                    versionCode,
+                    maybeFenixVcsHash,
+                    maybeGecko,
+                    geckoVersion,
+                    appServicesAbbreviation,
+                    appServicesVersion,
+                    operatingSystemAbbrevation,
+                    operatingSystemVersion,
+                )
+            } catch (e: PackageManager.NameNotFoundException) {
+                ""
+            }
 
         val content = getString(R.string.about_content, appName)
         val buildDate = BuildConfig.BUILD_DATE
@@ -264,7 +260,10 @@ class AboutFragment(
                         WhatsNew.userViewedWhatsNew(requireContext())
                         Events.whatsNewTapped.record(Events.WhatsNewTappedExtra(source = "ABOUT"))
                     }
-                    SUPPORT, PRIVACY_NOTICE, LICENSING_INFO, RIGHTS -> {} // no telemetry needed
+                    SUPPORT,
+                    PRIVACY_NOTICE,
+                    LICENSING_INFO,
+                    RIGHTS -> {} // no telemetry needed
                 }
 
                 openLinkInNormalTab(item.url)
@@ -283,9 +282,7 @@ class AboutFragment(
         private const val ABOUT_LICENSE_URL = "about:license"
     }
 
-    /**
-     * Helper functions for handling Toast messages.
-     */
+    /** Helper functions for handling Toast messages. */
     interface ToastHandler {
         /**
          * Displays a Toast message to the user.
@@ -293,15 +290,12 @@ class AboutFragment(
          * @param context The application context.
          * @param message The message to be displayed in the Toast.
          * @param duration The duration of the Toast. Can be either [Toast.LENGTH_SHORT] or [Toast.LENGTH_LONG].
-         *
          * @see Toast
          */
         fun showToast(context: Context, message: String, duration: Int)
     }
 
-    /**
-     * Default implementation of the [ToastHandler] interface.
-     */
+    /** Default implementation of the [ToastHandler] interface. */
     class DefaultToastHandler : ToastHandler {
         private var currentToast: Toast? = null
 
@@ -321,9 +315,7 @@ class AboutFragment(
             toast.show()
         }
 
-        /**
-         * Cancels the currently shown Toast, if any.
-         */
+        /** Cancels the currently shown Toast, if any. */
         fun cancelCurrentToast() {
             currentToast?.cancel()
             currentToast = null

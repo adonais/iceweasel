@@ -96,6 +96,7 @@ class ProfileChunkedBuffer;
 class ScopedNameRef;
 class ScrollContainerFrame;
 class StyleSheet;
+struct StyleAtom;
 
 struct AutoConnectedAncestorTracker;
 struct PointerInfo;
@@ -816,8 +817,8 @@ class PresShell final : public nsStubDocumentObserver,
                                const nsIFrame* aPositionedFrame) const;
   void CollectAnchorNames(const nsIFrame* aPositionedFrame,
                           nsTArray<nsString>& aResult);
-  void AddAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
-  void RemoveAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
+  void AddAnchorPosAnchor(Span<const StyleAtom> aNames, nsIFrame* aFrame);
+  void RemoveAnchorPosAnchor(Span<const StyleAtom> aNames, nsIFrame* aFrame);
   enum class AnchorPosUpdateResult {
     NotApplicable,
     Flushed,
@@ -1531,10 +1532,15 @@ class PresShell final : public nsStubDocumentObserver,
    *   >= FlushType::Style.  This also returns true if a throttled
    *   animation flush is required.
    */
-  bool NeedFlush(FlushType aType) const {
+  bool NeedFlush(FlushType aType, bool aFlushAnimations) const {
     MOZ_ASSERT(aType >= FlushType::Style);
-    return mNeedStyleFlush || mNeedThrottledAnimationFlush ||
+    return mNeedStyleFlush ||
+           (mNeedThrottledAnimationFlush && aFlushAnimations) ||
            (mNeedLayoutFlush && aType >= FlushType::InterruptibleLayout);
+  }
+
+  bool NeedFlush(const ChangesToFlush& aFlush) const {
+    return NeedFlush(aFlush.mFlushType, aFlush.mFlushAnimations);
   }
 
   /**
@@ -1563,7 +1569,7 @@ class PresShell final : public nsStubDocumentObserver,
    */
   MOZ_CAN_RUN_SCRIPT
   void FlushPendingNotifications(FlushType aType) {
-    if (!NeedFlush(aType)) {
+    if (!NeedFlush(aType, /* aFlushAnimations = */ true)) {
       return;
     }
 
@@ -1572,7 +1578,7 @@ class PresShell final : public nsStubDocumentObserver,
 
   MOZ_CAN_RUN_SCRIPT
   void FlushPendingNotifications(ChangesToFlush aType) {
-    if (!NeedFlush(aType.mFlushType)) {
+    if (!NeedFlush(aType)) {
       return;
     }
 
@@ -2133,6 +2139,7 @@ class PresShell final : public nsStubDocumentObserver,
     RenderingState mOldState;
   };
   void SetRenderingState(const RenderingState& aState);
+  void RemoveAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
 
   friend class ::nsPresShellEventCB;
 

@@ -39,12 +39,12 @@ private val ButtonSpacing = 8.dp
 private val ButtonsTopPadding = 12.dp
 
 /**
- * First-run bottom sheet explaining Google Lens, shown before the camera is started so the user
- * can leave without any camera or permission activity taking place.
+ * First-run bottom sheet explaining Google Lens, shown before the camera is started so the user can leave without any
+ * camera or permission activity taking place.
  *
- * Meant to be hosted directly in a `BottomSheetDialogFragment`, which supplies the slide-in
- * animation and drag-to-dismiss behaviour; the colors come from the surrounding [FirefoxTheme] so
- * the sheet follows the same light/dark/private theming as the rest of the browser.
+ * Meant to be hosted directly in a `BottomSheetDialogFragment`, which supplies the slide-in animation and
+ * drag-to-dismiss behaviour; the colors come from the surrounding [FirefoxTheme] so the sheet follows the same
+ * light/dark/private theming as the rest of the browser.
  *
  * @param onRequestDismiss Invoked when accessibility services request dismissal via the handle.
  * @param onTryItNowClick Invoked when the user accepts and wants to continue to the camera.
@@ -59,31 +59,31 @@ fun GoogleLensOptOutBottomSheet(
     onSettingsClick: () -> Unit,
 ) {
     val scrollState = rememberScrollState()
-    val cornerShape = MaterialTheme.shapes.large.copy(
-        bottomStart = CornerSize(0.dp),
-        bottomEnd = CornerSize(0.dp),
-    )
+    val cornerShape =
+        MaterialTheme.shapes.large.copy(
+            bottomStart = CornerSize(0.dp),
+            bottomEnd = CornerSize(0.dp),
+        )
 
     Column(
-        modifier = Modifier
-            .background(color = MaterialTheme.colorScheme.surface, shape = cornerShape)
-            .navigationBarsPadding()
-            .verticalScroll(scrollState),
+        modifier =
+            Modifier.background(color = MaterialTheme.colorScheme.surface, shape = cornerShape)
+                .navigationBarsPadding()
+                .verticalScroll(scrollState)
     ) {
         BottomSheetHandle(
             onRequestDismiss = onRequestDismiss,
             contentDescription = stringResource(R.string.a11y_action_label_collapse),
-            modifier = Modifier
-                .padding(vertical = HandleVerticalPadding)
-                .align(Alignment.CenterHorizontally),
+            modifier = Modifier.padding(vertical = HandleVerticalPadding).align(Alignment.CenterHorizontally),
         )
 
         Column(
-            modifier = Modifier.padding(
-                start = HorizontalPadding,
-                end = HorizontalPadding,
-                bottom = BottomPadding,
-            ),
+            modifier =
+                Modifier.padding(
+                    start = HorizontalPadding,
+                    end = HorizontalPadding,
+                    bottom = BottomPadding,
+                ),
             verticalArrangement = Arrangement.spacedBy(ContentSpacing),
         ) {
             Text(
@@ -105,19 +105,21 @@ fun GoogleLensOptOutBottomSheet(
             val settingsLinkText = stringResource(R.string.lens_opt_out_settings_link)
             LinkText(
                 text = settingsLinkText,
-                linkTextStates = listOf(
-                    LinkTextState(
-                        text = settingsLinkText,
-                        // In-app navigation rather than a URL, so the click is handled entirely by
-                        // onClick and the url is left empty.
-                        url = "",
-                        onClick = { onSettingsClick() },
+                linkTextStates =
+                    listOf(
+                        LinkTextState(
+                            text = settingsLinkText,
+                            // In-app navigation rather than a URL, so the click is handled entirely by
+                            // onClick and the url is left empty.
+                            url = "",
+                            onClick = { onSettingsClick() },
+                        )
                     ),
-                ),
-                style = FirefoxTheme.typography.body2.copy(
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                ),
+                style =
+                    FirefoxTheme.typography.body2.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    ),
                 linkTextDecoration = TextDecoration.Underline,
                 shouldApplyAccessibleSize = true,
                 modifier = Modifier.align(Alignment.CenterHorizontally),

@@ -13,11 +13,12 @@ class RelayApiExceptionTest {
 
     @Test
     fun `GIVEN Api exception with free_tier_limit code WHEN freeLimitReached is called THEN returns true`() {
-        val exception = RelayApiException.Api(
-            status = 403u,
-            code = API_CODE_FREE_TIER_LIMIT,
-            detail = "Free tier limit reached",
-        )
+        val exception =
+            RelayApiException.Api(
+                status = 403u,
+                code = API_CODE_FREE_TIER_LIMIT,
+                detail = "Free tier limit reached",
+            )
 
         val result = exception.freeLimitReached()
 
@@ -26,11 +27,12 @@ class RelayApiExceptionTest {
 
     @Test
     fun `GIVEN Api exception with different code WHEN freeLimitReached is called THEN returns false`() {
-        val exception = RelayApiException.Api(
-            status = 403u,
-            code = "account_is_inactive",
-            detail = "Account is inactive",
-        )
+        val exception =
+            RelayApiException.Api(
+                status = 403u,
+                code = "account_is_inactive",
+                detail = "Account is inactive",
+            )
 
         val result = exception.freeLimitReached()
 

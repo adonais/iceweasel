@@ -11,28 +11,21 @@ import org.mozilla.fenix.settings.creditcards.CreditCardsManagementFragmentDirec
 import org.mozilla.fenix.settings.creditcards.interactor.CreditCardsManagementInteractor
 
 /**
- * [CreditCardsManagementFragment] controller. An interface that handles the view manipulation of
- * the credit cards manager triggered by the Interactor.
+ * [CreditCardsManagementFragment] controller. An interface that handles the view manipulation of the credit cards
+ * manager triggered by the Interactor.
  */
 interface CreditCardsManagementController {
 
-    /**
-     * @see [CreditCardsManagementInteractor.onSelectCreditCard]
-     */
+    /** @see [CreditCardsManagementInteractor.onSelectCreditCard] */
     fun handleCreditCardClicked(creditCard: CreditCard)
 
-    /**
-     * @see [CreditCardsManagementInteractor.onAddCreditCardClick]
-     */
+    /** @see [CreditCardsManagementInteractor.onAddCreditCardClick] */
     fun handleAddCreditCardClicked()
 }
 
-/**
- * The default implementation of [CreditCardsManagementController].
- */
-class DefaultCreditCardsManagementController(
-    private val navController: NavController,
-) : CreditCardsManagementController {
+/** The default implementation of [CreditCardsManagementController]. */
+class DefaultCreditCardsManagementController(private val navController: NavController) :
+    CreditCardsManagementController {
 
     override fun handleCreditCardClicked(creditCard: CreditCard) {
         navigateToCreditCardEditor(creditCard)
@@ -44,10 +37,9 @@ class DefaultCreditCardsManagementController(
 
     private fun navigateToCreditCardEditor(creditCard: CreditCard? = null) {
         navController.navigate(
-            CreditCardsManagementFragmentDirections
-                .actionCreditCardsManagementFragmentToCreditCardEditorFragment(
-                    creditCard = creditCard,
-                ),
+            CreditCardsManagementFragmentDirections.actionCreditCardsManagementFragmentToCreditCardEditorFragment(
+                creditCard = creditCard
+            )
         )
     }
 }

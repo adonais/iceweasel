@@ -8,6 +8,7 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
+import java.util.UUID
 import mozilla.components.browser.icons.BrowserIcons
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.concept.awesomebar.AwesomeBar
@@ -17,32 +18,21 @@ import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarksStorage
 import mozilla.components.feature.awesomebar.facts.emitBookmarkSuggestionClickedFact
 import mozilla.components.feature.session.SessionUseCases
-import java.util.UUID
+
+/** Return up to 20 bookmarks suggestions by default. */
+@VisibleForTesting internal const val BOOKMARKS_SUGGESTION_LIMIT = 20
+
+/** Default suggestions limit multiplier when needing to filter results by an external url filter. */
+@VisibleForTesting internal const val BOOKMARKS_RESULTS_TO_FILTER_SCALE_FACTOR = 10
 
 /**
- * Return up to 20 bookmarks suggestions by default.
- */
-@VisibleForTesting
-internal const val BOOKMARKS_SUGGESTION_LIMIT = 20
-
-/**
- * Default suggestions limit multiplier when needing to filter results by an external url filter.
- */
-@VisibleForTesting
-internal const val BOOKMARKS_RESULTS_TO_FILTER_SCALE_FACTOR = 10
-
-/**
- * A [AwesomeBar.SuggestionProvider] implementation that provides suggestions based on the bookmarks
- * stored in the [BookmarksStorage].
+ * A [AwesomeBar.SuggestionProvider] implementation that provides suggestions based on the bookmarks stored in the
+ * [BookmarksStorage].
  *
- * @property bookmarksStorage and instance of the [BookmarksStorage] used
- * to query matching bookmarks.
- * @property loadUrlUseCase the use case invoked to load the url when the
- * user clicks on the suggestion.
- * @property icons optional instance of [BrowserIcons] to load fav icons
- * for bookmarked URLs.
- * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the
- * highest scored suggestion URL.
+ * @property bookmarksStorage and instance of the [BookmarksStorage] used to query matching bookmarks.
+ * @property loadUrlUseCase the use case invoked to load the url when the user clicks on the suggestion.
+ * @property icons optional instance of [BrowserIcons] to load fav icons for bookmarked URLs.
+ * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the highest scored suggestion URL.
  * @param showEditSuggestion optional parameter to specify if the suggestion should show the edit button
  * @param suggestionsHeader optional parameter to specify if the suggestion should have a header
  * @param resultsUriFilter Optional predicate to filter matching suggestions by URL.
@@ -69,10 +59,11 @@ class BookmarksStorageSuggestionProvider(
         }
 
         bookmarksStorage.cancelReads(text)
-        val suggestions = when (resultsUriFilter) {
-            null -> getBookmarksSuggestions(text)
-            else -> getFilteredBookmarksSuggestions(text, resultsUriFilter)
-        }
+        val suggestions =
+            when (resultsUriFilter) {
+                null -> getBookmarksSuggestions(text)
+                else -> getFilteredBookmarksSuggestions(text, resultsUriFilter)
+            }
 
         suggestions.firstOrNull()?.url?.let { url -> engine?.speculativeConnect(url) }
 
@@ -84,12 +75,13 @@ class BookmarksStorageSuggestionProvider(
      *
      * @param query String to filter bookmarks' title or URL by.
      */
-    private suspend fun getBookmarksSuggestions(query: String) = bookmarksStorage
-        .searchBookmarks(query, BOOKMARKS_SUGGESTION_LIMIT)
-        .getOrDefault(listOf())
-        .filter { it.url != null }
-        .distinctBy { it.url }
-        .sortedBy { it.guid }
+    private suspend fun getBookmarksSuggestions(query: String) =
+        bookmarksStorage
+            .searchBookmarks(query, BOOKMARKS_SUGGESTION_LIMIT)
+            .getOrDefault(listOf())
+            .filter { it.url != null }
+            .distinctBy { it.url }
+            .sortedBy { it.guid }
 
     /**
      * Get up to [BOOKMARKS_SUGGESTION_LIMIT] bookmarks matching [query] and [filter].
@@ -108,9 +100,7 @@ class BookmarksStorageSuggestionProvider(
             .sortedBy { it.guid }
             .take(BOOKMARKS_SUGGESTION_LIMIT)
 
-    /**
-     * Expects list of BookmarkNode to be specifically of bookmarks (e.g. nodes with a url).
-     */
+    /** Expects list of BookmarkNode to be specifically of bookmarks (e.g. nodes with a url). */
     private suspend fun List<BookmarkNode>.into(): List<AwesomeBar.Suggestion> {
         val iconRequests = this.map { icons?.loadIcon(IconRequest(url = it.url!!, waitOnNetworkLoad = false)) }
 

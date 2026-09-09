@@ -50,17 +50,16 @@ class BrowserScreenStoreKtTest {
     @Test
     fun `WHEN the page translations status of the current page changes THEN remember the new details in state`() {
         val store = buildStore()
-        val expectedNewStatus = PageTranslationStatus(
-            isTranslationPossible = true,
-            isTranslated = false,
-            isTranslateProcessing = true,
-            fromSelectedLanguage = Language("fr"),
-            toSelectedLanguage = Language("ro"),
-        )
+        val expectedNewStatus =
+            PageTranslationStatus(
+                isTranslationPossible = true,
+                isTranslated = false,
+                isTranslateProcessing = true,
+                fromSelectedLanguage = Language("fr"),
+                toSelectedLanguage = Language("ro"),
+            )
 
-        store.dispatch(
-            PageTranslationStatusUpdated(expectedNewStatus),
-        )
+        store.dispatch(PageTranslationStatusUpdated(expectedNewStatus))
 
         assertEquals(expectedNewStatus, store.state.pageTranslationStatus)
     }
@@ -68,8 +67,9 @@ class BrowserScreenStoreKtTest {
     private fun buildStore(
         initialState: BrowserScreenState = BrowserScreenState(),
         middlewares: List<Middleware<BrowserScreenState, BrowserScreenAction>> = emptyList(),
-    ) = BrowserScreenStore(
-        initialState = initialState,
-        middleware = middlewares,
-    )
+    ) =
+        BrowserScreenStore(
+            initialState = initialState,
+            middleware = middlewares,
+        )
 }

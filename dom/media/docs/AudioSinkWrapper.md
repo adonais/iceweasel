@@ -158,6 +158,26 @@ resume, avoiding a fresh cubeb stream initialisation; when disabled, the stream
 is torn down and a new one is created. Both paths reach the same seek-resume
 clock behaviour and differ only in whether a stream is created.
 
+### Silence while the sink is stopped for the seek
+
+A reused stream is never stopped, so its callback keeps running while the sink is
+stopped for the seek. The audio still queued at that point belongs to the
+position being left behind, so it is dropped as the seek begins and the stream
+outputs silence until the resume.
+
+Three things follow from emptying the buffer on purpose, and all three are load
+bearing:
+
+- The reported position holds at the seek target rather than advancing, because
+  the missing frames are accounted as underrun and the position is clamped to the
+  frames actually serviced. Handing back a full buffer of explicit silence
+  instead would count as played audio and put the clock ahead of what is heard.
+- The stream is held out of its ended state for that window, so a seek issued
+  once the audio queue has already finished does not drain it and cost the reuse.
+- The shortfall is not reported as a glitch. It is deliberate, and a run of
+  underrun markers across an ordinary seek would mislead anyone reading a profile
+  for a real one.
+
 ## Verifying the behaviour
 
 `dom/media/gtest/TestAudioSinkWrapper.cpp` exercises these situations and is the

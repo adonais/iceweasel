@@ -15,6 +15,7 @@
 #include "gfxPlatform.h"
 #include "imgFrame.h"
 #include "jerror.h"
+#include "mozilla/StaticPrefs_image.h"
 #include "mozilla/gfx/Types.h"
 #include "nsCRT.h"
 #include "nspr.h"
@@ -353,15 +354,43 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
         }
       }
 
-      // We don't want to use the pipe buffers directly because we don't want
-      // any reads on non-BGRA or non-CMYK formatted data.
-      if (mInfo.out_color_space == JCS_GRAYSCALE) {
-        mCMSLine = new (std::nothrow) uint32_t[mInfo.image_width];
-        if (!mCMSLine) {
-          mState = JPEG_ERROR;
-          MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
-                  ("} (could allocate buffer for color conversion)"));
-          return Transition::TerminateFailure();
+      // Use libjpeg-turbo DCT scaling to produce a reduced-size intermediate
+      // image when we're downscaling significantly. This avoids decoding at
+      // full resolution only to discard most of the data in the
+      // DownscalingFilter. We restrict to SIMD-accelerated factors (1/2, 1/4,
+      // 1/8) for performance.
+      //
+      // Skip IDCT scaling when the image has a non-whole number of MCUs in
+      // either dimension: the encoder may have filled the trailing MCU
+      // row/column with padding data that is harmless at full-size decode
+      // (it's cropped) but can smear into visible pixels when downscaled.
+      // See https://crbug.com/890745 and
+      // https://github.com/libjpeg-turbo/libjpeg-turbo/issues/297.
+      JDIMENSION mcuWidth = mInfo.max_h_samp_factor * DCTSIZE;
+      JDIMENSION mcuHeight = mInfo.max_v_samp_factor * DCTSIZE;
+      bool mcuAligned = mcuWidth != 0 && mcuHeight != 0 &&
+                        mInfo.image_width % mcuWidth == 0 &&
+                        mInfo.image_height % mcuHeight == 0;
+      if (ExplicitOutputSize() && mcuAligned &&
+          StaticPrefs::image_jpeg_dct_scaling_enabled()) {
+        UnorientedIntSize targetSize =
+            GetOrientation().ToUnoriented(OutputSize());
+        float widthRatio = float(mInfo.image_width) / float(targetSize.width);
+        float heightRatio =
+            float(mInfo.image_height) / float(targetSize.height);
+        float minRatio = std::min(widthRatio, heightRatio);
+        float minFactor =
+            std::max(1.0f, StaticPrefs::image_jpeg_dct_scaling_min_factor());
+
+        if (minRatio >= 8.0f * minFactor) {
+          mInfo.scale_num = 1;
+          mInfo.scale_denom = 8;
+        } else if (minRatio >= 4.0f * minFactor) {
+          mInfo.scale_num = 1;
+          mInfo.scale_denom = 4;
+        } else if (minRatio >= 2.0f * minFactor) {
+          mInfo.scale_num = 1;
+          mInfo.scale_denom = 2;
         }
       }
 
@@ -372,6 +401,18 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
 
       /* Used to set up image size so arrays can be allocated */
       jpeg_calc_output_dimensions(&mInfo);
+
+      // We don't want to use the pipe buffers directly because we don't want
+      // any reads on non-BGRA or non-CMYK formatted data.
+      if (mInfo.out_color_space == JCS_GRAYSCALE) {
+        mCMSLine = new (std::nothrow) uint32_t[mInfo.output_width];
+        if (!mCMSLine) {
+          mState = JPEG_ERROR;
+          MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
+                  ("} (could allocate buffer for color conversion)"));
+          return Transition::TerminateFailure();
+        }
+      }
 
       // We handle the transform outside the pipeline if we are outputting in
       // grayscale, because the pipeline wants BGRA pixels, particularly the
@@ -386,8 +427,10 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
         inFormat = mIsPDF ? SurfaceFormat::CMYK : SurfaceFormat::InvertedCMYK;
       }
 
+      OrientedIntSize pipeInputSize = GetOrientation().ToOriented(
+          UnorientedIntSize(mInfo.output_width, mInfo.output_height));
       Maybe<SurfacePipe> pipe = SurfacePipeFactory::CreateReorientSurfacePipe(
-          this, Size(), OutputSize(), inFormat, SurfaceFormat::OS_RGBX,
+          this, pipeInputSize, OutputSize(), inFormat, SurfaceFormat::OS_RGBX,
           pipeTransform, GetOrientation(), SurfacePipeFlags());
       if (!pipe) {
         mState = JPEG_ERROR;
@@ -468,13 +511,17 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
       if (mState == JPEG_DECOMPRESS_PROGRESSIVE) {
         LOG_SCOPE((mozilla::LogModule*)sJPEGLog,
                   "nsJPEGDecoder::Write -- JPEG_DECOMPRESS_PROGRESSIVE case");
-        auto AllComponentsSeen = [](jpeg_decompress_struct& info) {
+        auto AllComponentsSeen = [](jpeg_decompress_struct& info) -> bool {
+          // Without coefficient state (lossless, non-interleaved sequential)
+          // we can't prove per-component completion, so require the whole
+          // input before displaying.
+          if (!info.coef_bits) {
+            return jpeg_input_complete(&info);
+          }
           bool all_components_seen = true;
-          if (info.coef_bits) {
-            for (int c = 0; c < info.num_components; ++c) {
-              bool current_component_seen = info.coef_bits[c][0] != -1;
-              all_components_seen &= current_component_seen;
-            }
+          for (int c = 0; c < info.num_components; ++c) {
+            bool current_component_seen = info.coef_bits[c][0] != -1;
+            all_components_seen &= current_component_seen;
           }
           return all_components_seen;
         };

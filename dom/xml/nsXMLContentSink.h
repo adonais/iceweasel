@@ -58,7 +58,8 @@ class nsXMLContentSink : public nsContentSink,
   // nsIContentSink
   NS_IMETHOD WillParse(void) override;
   NS_IMETHOD WillBuildModel() override;
-  NS_IMETHOD DidBuildModel(bool aTerminated) override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD
+  DidBuildModel(bool aTerminated) override;
   NS_IMETHOD WillInterrupt(void) override;
   void WillResume() override;
   NS_IMETHOD SetParser(nsParserBase* aParser) override;
@@ -77,11 +78,12 @@ class nsXMLContentSink : public nsContentSink,
   }
 
   // nsITransformObserver
-  nsresult OnDocumentCreated(mozilla::dom::Document* aSourceDocument,
-                             mozilla::dom::Document* aResultDocument) override;
-  nsresult OnTransformDone(mozilla::dom::Document* aSourceDocument,
-                           nsresult aResult,
-                           mozilla::dom::Document* aResultDocument) override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+  OnDocumentCreated(mozilla::dom::Document* aSourceDocument,
+                    mozilla::dom::Document* aResultDocument) override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+  OnTransformDone(mozilla::dom::Document* aSourceDocument, nsresult aResult,
+                  mozilla::dom::Document* aResultDocument) override;
 
   // nsICSSLoaderObserver
   NS_IMETHOD StyleSheetLoaded(mozilla::StyleSheet* aSheet, bool aWasDeferred,
@@ -124,7 +126,8 @@ class nsXMLContentSink : public nsContentSink,
 
   // aParent is allowed to be null here if this is the root content
   // being closed
-  virtual nsresult CloseElement(nsIContent* aContent);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual nsresult CloseElement(
+      nsIContent* aContent);
 
   virtual nsresult FlushText(bool aReleaseTextNode = true);
 
@@ -147,7 +150,7 @@ class nsXMLContentSink : public nsContentSink,
   }
 
   // nsContentSink override
-  virtual nsresult ProcessStyleLinkFromHeader(
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual nsresult ProcessStyleLinkFromHeader(
       const nsAString& aHref, bool aAlternate, const nsAString& aTitle,
       const nsAString& aIntegrity, const nsAString& aType,
       const nsAString& aMedia, const nsAString& aReferrerPolicy,

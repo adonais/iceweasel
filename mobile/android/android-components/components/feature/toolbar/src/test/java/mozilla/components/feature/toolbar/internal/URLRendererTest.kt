@@ -10,6 +10,7 @@ import android.text.SpannableStringBuilder
 import android.text.style.ForegroundColorSpan
 import android.util.Patterns
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -27,7 +28,6 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 @Config(shadows = [ShadowInetAddresses::class])
@@ -93,10 +93,11 @@ class URLRendererTest {
     @Test
     fun `GIVEN a simple domain WHEN getting registrable domain span in host THEN span is returned`() {
         runTest(testDispatcher) {
-            val domainSpan = getRegistrableDomainSpanInHost(
-                host = "www.mozilla.org",
-                publicSuffixList = PublicSuffixList(testContext, scope = testScope),
-            )
+            val domainSpan =
+                getRegistrableDomainSpanInHost(
+                    host = "www.mozilla.org",
+                    publicSuffixList = PublicSuffixList(testContext, scope = testScope),
+                )
 
             assertEquals(4 to 15, domainSpan)
         }
@@ -105,10 +106,11 @@ class URLRendererTest {
     @Test
     fun `GIVEN a host with a trailing period in the domain WHEN getting registrable domain span in host THEN span is returned`() {
         runTest(testDispatcher) {
-            val domainSpan = getRegistrableDomainSpanInHost(
-                host = "www.mozilla.org.",
-                publicSuffixList = PublicSuffixList(testContext, scope = testScope),
-            )
+            val domainSpan =
+                getRegistrableDomainSpanInHost(
+                    host = "www.mozilla.org.",
+                    publicSuffixList = PublicSuffixList(testContext, scope = testScope),
+                )
 
             assertEquals(4 to 15, domainSpan)
         }
@@ -117,10 +119,11 @@ class URLRendererTest {
     @Test
     fun `GIVEN a host with a repeated domain WHEN getting registrable domain span in host THEN the span of the last occurrence of domain is returned`() {
         runTest(testDispatcher) {
-            val domainSpan = getRegistrableDomainSpanInHost(
-                host = "mozilla.org.mozilla.org",
-                publicSuffixList = PublicSuffixList(testContext, scope = testScope),
-            )
+            val domainSpan =
+                getRegistrableDomainSpanInHost(
+                    host = "mozilla.org.mozilla.org",
+                    publicSuffixList = PublicSuffixList(testContext, scope = testScope),
+                )
 
             assertEquals(12 to 23, domainSpan)
         }
@@ -129,10 +132,11 @@ class URLRendererTest {
     @Test
     fun `GIVEN an IPv4 address as host WHEN getting registrable domain span in host THEN null is returned`() {
         runTest(testDispatcher) {
-            val domainSpan = getRegistrableDomainSpanInHost(
-                host = "127.0.0.1",
-                publicSuffixList = PublicSuffixList(testContext, scope = testScope),
-            )
+            val domainSpan =
+                getRegistrableDomainSpanInHost(
+                    host = "127.0.0.1",
+                    publicSuffixList = PublicSuffixList(testContext, scope = testScope),
+                )
 
             assertNull(domainSpan)
         }
@@ -141,10 +145,11 @@ class URLRendererTest {
     @Test
     fun `GIVEN an IPv6 address as host WHEN getting registrable domain span in host THEN null is returned`() {
         runTest(testDispatcher) {
-            val domainSpan = getRegistrableDomainSpanInHost(
-                host = "[::1]",
-                publicSuffixList = PublicSuffixList(testContext, scope = testScope),
-            )
+            val domainSpan =
+                getRegistrableDomainSpanInHost(
+                    host = "[::1]",
+                    publicSuffixList = PublicSuffixList(testContext, scope = testScope),
+                )
 
             assertNull(domainSpan)
         }
@@ -153,10 +158,11 @@ class URLRendererTest {
     @Test
     fun `GIVEN a non PSL domain as host WHEN getting registrable domain span in host THEN null is returned`() {
         runTest(testDispatcher) {
-            val domainSpan = getRegistrableDomainSpanInHost(
-                host = "localhost",
-                publicSuffixList = PublicSuffixList(testContext, scope = testScope),
-            )
+            val domainSpan =
+                getRegistrableDomainSpanInHost(
+                    host = "localhost",
+                    publicSuffixList = PublicSuffixList(testContext, scope = testScope),
+                )
 
             assertNull(domainSpan)
         }
@@ -165,10 +171,11 @@ class URLRendererTest {
     @Test
     fun `GIVEN a simple URL WHEN getting registrable domain or host span THEN span is returned`() {
         runTest(testDispatcher) {
-            val span = getRegistrableDomainOrHostSpan(
-                url = "https://www.mozilla.org/",
-                publicSuffixList = PublicSuffixList(testContext, scope = testScope),
-            )
+            val span =
+                getRegistrableDomainOrHostSpan(
+                    url = "https://www.mozilla.org/",
+                    publicSuffixList = PublicSuffixList(testContext, scope = testScope),
+                )
 
             assertEquals(12 to 23, span)
         }
@@ -177,10 +184,11 @@ class URLRendererTest {
     @Test
     fun `GIVEN a URL with a trailing period in the domain WHEN getting registrable domain or host span THEN span is returned`() {
         runTest(testDispatcher) {
-            val span = getRegistrableDomainOrHostSpan(
-                url = "https://www.mozilla.org./",
-                publicSuffixList = PublicSuffixList(testContext, scope = testScope),
-            )
+            val span =
+                getRegistrableDomainOrHostSpan(
+                    url = "https://www.mozilla.org./",
+                    publicSuffixList = PublicSuffixList(testContext, scope = testScope),
+                )
 
             assertEquals(12 to 23, span)
         }
@@ -189,10 +197,11 @@ class URLRendererTest {
     @Test
     fun `GIVEN a URL with a repeated domain WHEN getting registrable domain or host span THEN the span of the last occurrence of domain is returned`() {
         runTest(testDispatcher) {
-            val span = getRegistrableDomainOrHostSpan(
-                url = "https://mozilla.org.mozilla.org/",
-                publicSuffixList = PublicSuffixList(testContext, scope = testScope),
-            )
+            val span =
+                getRegistrableDomainOrHostSpan(
+                    url = "https://mozilla.org.mozilla.org/",
+                    publicSuffixList = PublicSuffixList(testContext, scope = testScope),
+                )
 
             assertEquals(20 to 31, span)
         }
@@ -201,10 +210,11 @@ class URLRendererTest {
     @Test
     fun `GIVEN a URL with an IPv4 address WHEN getting registrable domain or host span THEN the span of the IP part is returned`() {
         runTest(testDispatcher) {
-            val span = getRegistrableDomainOrHostSpan(
-                url = "http://127.0.0.1/",
-                publicSuffixList = PublicSuffixList(testContext, scope = testScope),
-            )
+            val span =
+                getRegistrableDomainOrHostSpan(
+                    url = "http://127.0.0.1/",
+                    publicSuffixList = PublicSuffixList(testContext, scope = testScope),
+                )
 
             assertEquals(7 to 16, span)
         }
@@ -213,10 +223,11 @@ class URLRendererTest {
     @Test
     fun `GIVEN a URL with an IPv6 address WHEN getting registrable domain or host span THEN the span of the IP part is returned`() {
         runTest(testDispatcher) {
-            val span = getRegistrableDomainOrHostSpan(
-                url = "http://[::1]/",
-                publicSuffixList = PublicSuffixList(testContext, scope = testScope),
-            )
+            val span =
+                getRegistrableDomainOrHostSpan(
+                    url = "http://[::1]/",
+                    publicSuffixList = PublicSuffixList(testContext, scope = testScope),
+                )
 
             assertEquals(7 to 12, span)
         }
@@ -225,10 +236,11 @@ class URLRendererTest {
     @Test
     fun `GIVEN a URL with a non PSL domain WHEN getting registrable domain or host span THEN the span of the host part is returned`() {
         runTest(testDispatcher) {
-            val span = getRegistrableDomainOrHostSpan(
-                url = "http://localhost/",
-                publicSuffixList = PublicSuffixList(testContext, scope = testScope),
-            )
+            val span =
+                getRegistrableDomainOrHostSpan(
+                    url = "http://localhost/",
+                    publicSuffixList = PublicSuffixList(testContext, scope = testScope),
+                )
 
             assertEquals(7 to 16, span)
         }
@@ -237,10 +249,11 @@ class URLRendererTest {
     @Test
     fun `GIVEN an internal page name WHEN getting registrable domain or host span THEN null is returned`() {
         runTest(testDispatcher) {
-            val span = getRegistrableDomainOrHostSpan(
-                url = "about:mozilla",
-                publicSuffixList = PublicSuffixList(testContext, scope = testScope),
-            )
+            val span =
+                getRegistrableDomainOrHostSpan(
+                    url = "about:mozilla",
+                    publicSuffixList = PublicSuffixList(testContext, scope = testScope),
+                )
 
             assertNull(span)
         }
@@ -249,10 +262,11 @@ class URLRendererTest {
     @Test
     fun `GIVEN a content URI WHEN getting registrable domain or host span THEN null is returned`() {
         runTest(testDispatcher) {
-            val span = getRegistrableDomainOrHostSpan(
-                url = "content://media/external/file/1000000000",
-                publicSuffixList = PublicSuffixList(testContext, scope = testScope),
-            )
+            val span =
+                getRegistrableDomainOrHostSpan(
+                    url = "content://media/external/file/1000000000",
+                    publicSuffixList = PublicSuffixList(testContext, scope = testScope),
+                )
 
             assertNull(span)
         }
@@ -261,10 +275,11 @@ class URLRendererTest {
     @Test
     fun `GIVEN a blob URI WHEN getting registrable domain or host span THEN domain span is returned`() {
         runTest(testDispatcher) {
-            val span = getRegistrableDomainOrHostSpan(
-                url = "blob:https://www.mozilla.org/69a29afb-938c-4b9e-9fca-b2f79755047a",
-                publicSuffixList = PublicSuffixList(testContext, scope = testScope),
-            )
+            val span =
+                getRegistrableDomainOrHostSpan(
+                    url = "blob:https://www.mozilla.org/69a29afb-938c-4b9e-9fca-b2f79755047a",
+                    publicSuffixList = PublicSuffixList(testContext, scope = testScope),
+                )
 
             assertEquals(17 to 28, span)
         }
@@ -273,10 +288,11 @@ class URLRendererTest {
     @Test
     fun `GIVEN a blob URI with duplicated blob prefix WHEN getting registrable domain or host span THEN null is returned`() {
         runTest(testDispatcher) {
-            val span = getRegistrableDomainOrHostSpan(
-                url = "blob:blob:https://www.mozilla.org/69a29afb-938c-4b9e-9fca-b2f79755047a",
-                publicSuffixList = PublicSuffixList(testContext, scope = testScope),
-            )
+            val span =
+                getRegistrableDomainOrHostSpan(
+                    url = "blob:blob:https://www.mozilla.org/69a29afb-938c-4b9e-9fca-b2f79755047a",
+                    publicSuffixList = PublicSuffixList(testContext, scope = testScope),
+                )
 
             assertNull(span)
         }
@@ -548,14 +564,13 @@ class URLRendererTest {
         return requireNotNull(toolbar.url as? SpannableStringBuilder) { "Toolbar URL should not be null" }
     }
 
-    private fun getConfiguration(
-        renderStyle: ToolbarFeature.RenderStyle = ToolbarFeature.RenderStyle.ColoredUrl,
-    ) = ToolbarFeature.UrlRenderConfiguration(
-        publicSuffixList = PublicSuffixList(testContext, scope = testScope),
-        registrableDomainColor = Color.RED,
-        urlColor = Color.GREEN,
-        renderStyle = renderStyle,
-    )
+    private fun getConfiguration(renderStyle: ToolbarFeature.RenderStyle = ToolbarFeature.RenderStyle.ColoredUrl) =
+        ToolbarFeature.UrlRenderConfiguration(
+            publicSuffixList = PublicSuffixList(testContext, scope = testScope),
+            registrableDomainColor = Color.RED,
+            urlColor = Color.GREEN,
+            renderStyle = renderStyle,
+        )
 
     private fun assertUrlColorSpans(
         url: SpannableStringBuilder,
@@ -599,10 +614,11 @@ class URLRendererTest {
     ) {
         val toolbar: Toolbar = FakeToolbar(url = testUrl)
 
-        val renderer = URLRenderer(
-            toolbar,
-            getConfiguration(renderStyle = ToolbarFeature.RenderStyle.RegistrableDomain),
-        )
+        val renderer =
+            URLRenderer(
+                toolbar,
+                getConfiguration(renderStyle = ToolbarFeature.RenderStyle.RegistrableDomain),
+            )
 
         renderer.updateUrl(testUrl)
         assertEquals(expectedUrl, toolbar.url)
@@ -627,10 +643,12 @@ class URLRendererTest {
 }
 
 /**
- * Robolectric default implementation of [InetAddresses] returns false for any address.
- * This shadow is used to override that behavior and return true for any IP address.
+ * Robolectric default implementation of [InetAddresses] returns false for any address. This shadow is used to override
+ * that behavior and return true for any IP address.
  */
 @Implements(InetAddresses::class)
+// Robolectric instantiates shadows, so this has to stay a class.
+@Suppress("UtilityClassWithPublicConstructor")
 class ShadowInetAddresses {
     companion object {
         @Implementation

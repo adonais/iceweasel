@@ -214,6 +214,7 @@ BROWSER_CHROME_MANIFESTS += ["tests/browser/browser.toml"]
 TESTING_JS_MODULES += ["tests/ProfilerTestUtils.sys.mjs"]
 
 UNIFIED_SOURCES += [
+    "core/ChromeProfilerCounter.cpp",
     "core/MicroGeckoProfiler.cpp",
     "core/ProfileAdditionalInformation.cpp",
     "core/ProfilerBindings.cpp",
@@ -246,6 +247,7 @@ EXPORTS += [
 ]
 
 EXPORTS.mozilla += [
+    "public/ChromeProfilerCounter.h",
     "public/FlowMarkers.h",
     "public/ProfileBufferEntrySerializationGeckoExtensions.h",
     "public/ProfileJSONWriter.h",

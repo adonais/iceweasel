@@ -14,16 +14,12 @@ import org.mozilla.fenix.components.Components
  */
 object LeakCanarySetup : LeakCanarySetupInterface {
 
-    /**
-     * LeakCanary is disabled by default in beta.
-     */
+    /** LeakCanary is disabled by default in beta. */
     override fun setup(application: Application, components: Components) {
         // no-op
     }
 
-    /**
-     * LeakCanary is disabled by default in beta.
-     */
+    /** LeakCanary is disabled by default in beta. */
     override fun updateState(isEnabled: Boolean, components: Components) {
         // no-op.
     }

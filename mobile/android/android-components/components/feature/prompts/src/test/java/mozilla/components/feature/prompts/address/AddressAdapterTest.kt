@@ -19,46 +19,37 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AddressAdapterTest {
 
-    private val address = Address(
-        guid = "1",
-        name = "Jane Marie Doe",
-        organization = "Mozilla",
-        streetAddress = "1230 Main st",
-        addressLevel3 = "Location3",
-        addressLevel2 = "Location2",
-        addressLevel1 = "Location1",
-        postalCode = "90237",
-        country = "USA",
-        tel = "00",
-        email = "email",
-    )
+    private val address =
+        Address(
+            guid = "1",
+            name = "Jane Marie Doe",
+            organization = "Mozilla",
+            streetAddress = "1230 Main st",
+            addressLevel3 = "Location3",
+            addressLevel2 = "Location2",
+            addressLevel1 = "Location1",
+            postalCode = "90237",
+            country = "USA",
+            tel = "00",
+            email = "email",
+        )
 
     @Test
     fun testAddressDiffCallback() {
         val address2 = address.copy()
 
-        assertTrue(
-            AddressDiffCallback.areItemsTheSame(address, address2),
-        )
-        assertTrue(
-            AddressDiffCallback.areContentsTheSame(address, address2),
-        )
+        assertTrue(AddressDiffCallback.areItemsTheSame(address, address2))
+        assertTrue(AddressDiffCallback.areContentsTheSame(address, address2))
 
         val address3 = address.copy(guid = "2")
 
-        assertFalse(
-            AddressDiffCallback.areItemsTheSame(address, address3),
-        )
-        assertFalse(
-            AddressDiffCallback.areItemsTheSame(address, address3),
-        )
+        assertFalse(AddressDiffCallback.areItemsTheSame(address, address3))
+        assertFalse(AddressDiffCallback.areItemsTheSame(address, address3))
     }
 
     @Test
     fun `WHEN an address is bound to the adapter THEN set the address display name`() {
-        val view =
-            LayoutInflater.from(testContext)
-                .inflate(R.layout.mozac_feature_prompts_address_list_item, null)
+        val view = LayoutInflater.from(testContext).inflate(R.layout.mozac_feature_prompts_address_list_item, null)
         val addressName: TextView = view.findViewById(R.id.address_name)
 
         AddressViewHolder(view, onAddressSelected = {}).bind(address)
@@ -69,9 +60,7 @@ class AddressAdapterTest {
     @Test
     fun `WHEN an address item is clicked THEN call the onAddressSelected callback`() {
         var addressSelected = false
-        val view =
-            LayoutInflater.from(testContext)
-                .inflate(R.layout.mozac_feature_prompts_address_list_item, null)
+        val view = LayoutInflater.from(testContext).inflate(R.layout.mozac_feature_prompts_address_list_item, null)
         val onAddressSelect: (Address) -> Unit = { addressSelected = true }
 
         AddressViewHolder(view, onAddressSelect).bind(address)

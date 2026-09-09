@@ -10,8 +10,8 @@ import org.mozilla.fenix.utils.Stories.isUrlOfInternallyOpenedStory
 import org.mozilla.fenix.utils.Stories.syncInternallyOpenedStoryMarker
 
 /**
- * [RequestInterceptor] that will synchronize the application specific story UTM parameters
- * between previous and new loaded URL in case of redirect requests.
+ * [RequestInterceptor] that will synchronize the application specific story UTM parameters between previous and new
+ * loaded URL in case of redirect requests.
  */
 class PersistStoryUTMRequestInterceptor : RequestInterceptor {
     override fun onLoadRequest(

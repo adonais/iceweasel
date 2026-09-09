@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <bit>
+#include <limits>
 
 #include "GLContext.h"
 #include "WebGLBuffer.h"
@@ -145,6 +146,11 @@ CheckVertexAttribPointer(const bool isWebgl2,
   if (desc.channels < 1 || desc.channels > 4) {
     return Err(webgl::ErrorInfo{LOCAL_GL_INVALID_VALUE,
                                 "Channel count `size` must be within [1,4]."});
+  }
+
+  if (desc.byteOffset > std::numeric_limits<int64_t>::max()) {
+    return Err(webgl::ErrorInfo{LOCAL_GL_INVALID_VALUE,
+                                "`byteOffset` must be non-negative."});
   }
 
   ////

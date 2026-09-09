@@ -20,12 +20,11 @@ import mozilla.components.concept.menu.candidate.HighPriorityHighlightEffect
 import mozilla.components.concept.menu.candidate.LowPriorityHighlightEffect
 import mozilla.components.concept.menu.candidate.TextMenuCandidate
 
-@Suppress("Deprecation")
-private val defaultHighlight = BrowserMenuHighlightableItem.Highlight(0, 0, 0, 0)
+@Suppress("Deprecation") private val defaultHighlight = BrowserMenuHighlightableItem.Highlight(0, 0, 0, 0)
 
 /**
- * A menu item for displaying text with an image icon and a highlight state which sets the
- * background of the menu item and a second image icon to the right of the text.
+ * A menu item for displaying text with an image icon and a highlight state which sets the background of the menu item
+ * and a second image icon to the right of the text.
  *
  * @param label The default visible label of this menu item.
  * @param startImageResource ID of a drawable resource to be shown as a leftmost icon.
@@ -33,8 +32,8 @@ private val defaultHighlight = BrowserMenuHighlightableItem.Highlight(0, 0, 0, 0
  * @param textColorResource Optional ID of color resource to tint the text.
  * @param enabled Sets the enabled status for the view. By default, it is true.
  * @param isCollapsingMenuLimit Whether this menu item can serve as the limit of a collapsing menu.
- * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards
- * depending on the menu position).
+ * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards depending on the menu
+ *   position).
  * @param highlight Highlight object representing how the menu item will be displayed when highlighted.
  * @param isHighlighted Whether or not to display the highlight
  * @param listener Callback to be invoked when this menu item is clicked.
@@ -50,28 +49,26 @@ class BrowserMenuHighlightableItem(
     override val highlight: BrowserMenuHighlight,
     override val isHighlighted: () -> Boolean = { true },
     private val listener: () -> Unit = {},
-) : BrowserMenuImageText(
-    label,
-    startImageResource,
-    iconTintColorResource,
-    textColorResource,
-    enabled,
-    isCollapsingMenuLimit,
-    isSticky,
-    listener,
-),
+) :
+    BrowserMenuImageText(
+        label,
+        startImageResource,
+        iconTintColorResource,
+        textColorResource,
+        enabled,
+        isCollapsingMenuLimit,
+        isSticky,
+        listener,
+    ),
     HighlightableMenuItem {
 
     @Deprecated("Use the new constructor")
     @Suppress("Deprecation") // Constructor uses old highlight type
     constructor(
         label: String,
-        @DrawableRes
-        imageResource: Int,
-        @ColorRes
-        iconTintColorResource: Int = NO_ID,
-        @ColorRes
-        textColorResource: Int = NO_ID,
+        @DrawableRes imageResource: Int,
+        @ColorRes iconTintColorResource: Int = NO_ID,
+        @ColorRes textColorResource: Int = NO_ID,
         enabled: Boolean = true,
         isCollapsingMenuLimit: Boolean = false,
         isSticky: Boolean = false,
@@ -168,33 +165,35 @@ class BrowserMenuHighlightableItem(
 
         @Suppress("Deprecation")
         return when (highlight) {
-            is BrowserMenuHighlight.HighPriority -> base.copy(
-                text = highlight.label ?: label,
-                end = if (highlight.endImageResource == NO_ID) {
-                    null
-                } else {
-                    DrawableMenuIcon(
-                        context,
-                        highlight.endImageResource,
-                    )
-                },
-                effect = HighPriorityHighlightEffect(
-                    backgroundTint = highlight.backgroundTint,
-                ),
-            )
-            is BrowserMenuHighlight.LowPriority -> base.copy(
-                text = highlight.label ?: label,
-                start = (base.start as? DrawableMenuIcon)?.copy(
-                    effect = LowPriorityHighlightEffect(notificationTint = highlight.notificationTint),
-                ),
-            )
+            is BrowserMenuHighlight.HighPriority ->
+                base.copy(
+                    text = highlight.label ?: label,
+                    end =
+                        if (highlight.endImageResource == NO_ID) {
+                            null
+                        } else {
+                            DrawableMenuIcon(
+                                context,
+                                highlight.endImageResource,
+                            )
+                        },
+                    effect = HighPriorityHighlightEffect(backgroundTint = highlight.backgroundTint),
+                )
+            is BrowserMenuHighlight.LowPriority ->
+                base.copy(
+                    text = highlight.label ?: label,
+                    start =
+                        (base.start as? DrawableMenuIcon)?.copy(
+                            effect = LowPriorityHighlightEffect(notificationTint = highlight.notificationTint)
+                        ),
+                )
             is BrowserMenuHighlight.ClassicHighlight -> base
         }
     }
 
     /**
-     * Described how to display a [BrowserMenuHighlightableItem] when it is highlighted.
-     * Replaced by [BrowserMenuHighlight] which lets a priority be specified.
+     * Described how to display a [BrowserMenuHighlightableItem] when it is highlighted. Replaced by
+     * [BrowserMenuHighlight] which lets a priority be specified.
      */
     @Deprecated("Replace with BrowserMenuHighlight.LowPriority or BrowserMenuHighlight.HighPriority")
     @Suppress("Deprecation")
@@ -203,10 +202,11 @@ class BrowserMenuHighlightableItem(
         @DrawableRes endImageResource: Int = NO_ID,
         @DrawableRes backgroundResource: Int,
         @ColorRes colorResource: Int,
-    ) : BrowserMenuHighlight.ClassicHighlight(
-        startImageResource,
-        endImageResource,
-        backgroundResource,
-        colorResource,
-    )
+    ) :
+        BrowserMenuHighlight.ClassicHighlight(
+            startImageResource,
+            endImageResource,
+            backgroundResource,
+            colorResource,
+        )
 }

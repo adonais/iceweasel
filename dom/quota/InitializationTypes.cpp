@@ -28,6 +28,8 @@ nsLiteralCString StringGenerator::GetString(
       return "UpgradeStorageFrom2_1To2_2"_ns;
     case Initialization::UpgradeStorageFrom2_2To2_3:
       return "UpgradeStorageFrom2_2To2_3"_ns;
+    case Initialization::UpgradeStorageFrom2_3To2_4:
+      return "UpgradeStorageFrom2_3To2_4"_ns;
     case Initialization::UpgradeFromIndexedDBDirectory:
       return "UpgradeFromIndexedDBDirectory"_ns;
     case Initialization::UpgradeFromPersistentStorageDirectory:

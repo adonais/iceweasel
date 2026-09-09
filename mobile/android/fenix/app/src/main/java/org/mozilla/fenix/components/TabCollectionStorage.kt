@@ -31,23 +31,15 @@ class TabCollectionStorage(
     private val delegate: Observable<Observer> = ObserverRegistry(),
 ) : Observable<org.mozilla.fenix.components.TabCollectionStorage.Observer> by delegate {
 
-    /**
-     * Interface to be implemented by classes that want to observe the storage
-     */
+    /** Interface to be implemented by classes that want to observe the storage */
     interface Observer {
-        /**
-         * A collection has been created
-         */
+        /** A collection has been created */
         fun onCollectionCreated(title: String, sessions: List<TabSessionState>, id: Long?) = Unit
 
-        /**
-         *  Tab(s) have been added to collection
-         */
+        /** Tab(s) have been added to collection */
         fun onTabsAdded(tabCollection: TabCollection, sessions: List<TabSessionState>) = Unit
 
-        /**
-         *  Collection has been renamed
-         */
+        /** Collection has been renamed */
         fun onCollectionRenamed(tabCollection: TabCollection, title: String) = Unit
     }
 
@@ -89,18 +81,31 @@ class TabCollectionStorage(
         return collectionStorage.getCollections().asLiveData()
     }
 
-    suspend fun removeCollection(tabCollection: TabCollection) = ioScope.launch {
-        collectionStorage.removeCollection(tabCollection)
-    }.join()
+    /** Returns the list of stored [TabCollection]s. */
+    suspend fun getCollectionsList(): List<TabCollection> =
+        withContext(ioScope.coroutineContext) { collectionStorage.getCollectionsList() }
 
-    suspend fun removeTabFromCollection(tabCollection: TabCollection, tab: Tab) = ioScope.launch {
-        collectionStorage.removeTabFromCollection(tabCollection, tab)
-    }.join()
+    suspend fun removeCollection(tabCollection: TabCollection) =
+        ioScope
+            .launch {
+                collectionStorage.removeCollection(tabCollection)
+            }
+            .join()
 
-    suspend fun renameCollection(tabCollection: TabCollection, title: String) = ioScope.launch {
-        collectionStorage.renameCollection(tabCollection, title)
-        notifyObservers { onCollectionRenamed(tabCollection, title) }
-    }.join()
+    suspend fun removeTabFromCollection(tabCollection: TabCollection, tab: Tab) =
+        ioScope
+            .launch {
+                collectionStorage.removeTabFromCollection(tabCollection, tab)
+            }
+            .join()
+
+    suspend fun renameCollection(tabCollection: TabCollection, title: String) =
+        ioScope
+            .launch {
+                collectionStorage.renameCollection(tabCollection, title)
+                notifyObservers { onCollectionRenamed(tabCollection, title) }
+            }
+            .join()
 }
 
 fun TabCollection.description(context: Context): String {

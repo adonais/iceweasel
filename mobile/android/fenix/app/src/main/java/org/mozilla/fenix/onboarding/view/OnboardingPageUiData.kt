@@ -7,9 +7,7 @@ package org.mozilla.fenix.onboarding.view
 import androidx.annotation.DrawableRes
 import org.mozilla.fenix.nimbus.OnboardingCardData
 
-/**
- * Model containing the required data from a raw [OnboardingCardData] object in a UI state.
- */
+/** Model containing the required data from a raw [OnboardingCardData] object in a UI state. */
 data class OnboardingPageUiData(
     val type: Type,
     @param:DrawableRes val imageRes: Int,
@@ -26,43 +24,26 @@ data class OnboardingPageUiData(
      *
      * @property telemetryId Identifier for the page, used in telemetry.
      */
-    enum class Type(
-        val telemetryId: String,
-    ) {
-        DEFAULT_BROWSER(
-            telemetryId = "default",
-        ),
-        SYNC_SIGN_IN(
-            telemetryId = "sync",
-        ),
-        ADD_SEARCH_WIDGET(
-            telemetryId = "search_widget",
-        ),
-        NOTIFICATION_PERMISSION(
-            telemetryId = "notification",
-        ),
-        TOOLBAR_PLACEMENT(
-            telemetryId = "toolbar_placement",
-        ),
-        TERMS_OF_SERVICE(
-            telemetryId = "terms_of_service",
-        ),
-        MARKETING_DATA(
-            telemetryId = "marketing_data",
-        ),
+    enum class Type(val telemetryId: String) {
+        DEFAULT_BROWSER(telemetryId = "default"),
+        SYNC_SIGN_IN(telemetryId = "sync"),
+        ADD_SEARCH_WIDGET(telemetryId = "search_widget"),
+        NOTIFICATION_PERMISSION(telemetryId = "notification"),
+        TOOLBAR_PLACEMENT(telemetryId = "toolbar_placement"),
+        TERMS_OF_SERVICE(telemetryId = "terms_of_service"),
+        MARKETING_DATA(telemetryId = "marketing_data"),
     }
 }
 
-/**
- * Returns the sequence position for the given [OnboardingPageUiData.Type].
- */
-fun List<OnboardingPageUiData>.sequencePosition(type: OnboardingPageUiData.Type): String =
-    indexOfFirst { it.type == type }.inc().toString()
+/** Returns the sequence position for the given [OnboardingPageUiData.Type]. */
+fun List<OnboardingPageUiData>.sequencePosition(type: OnboardingPageUiData.Type): String = indexOfFirst {
+    it.type == type
+}
+    .inc()
+    .toString()
 
 /**
- * Helper function for telemetry that maps List<OnboardingPageUiData> to a string of page names
- * separated by an underscore.
- * e.g. [DEFAULT_BROWSER, SYNC_SIGN_IN] will be mapped to "default_sync".
+ * Helper function for telemetry that maps List<OnboardingPageUiData> to a string of page names separated by an
+ * underscore. e.g. [DEFAULT_BROWSER, SYNC_SIGN_IN] will be mapped to "default_sync".
  */
-fun List<OnboardingPageUiData>.telemetrySequenceId(): String =
-    joinToString(separator = "_") { it.type.telemetryId }
+fun List<OnboardingPageUiData>.telemetrySequenceId(): String = joinToString(separator = "_") { it.type.telemetryId }

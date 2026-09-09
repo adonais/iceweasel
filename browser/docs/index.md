@@ -42,7 +42,6 @@ components/backup/docs/index
 components/sidebar/docs/index
 components/mozcachedohttp/docs/index
 desktop-launcher/index
-tabunloader/index
 app/pbproxy/private-browsing-proxy/index
 /installation_dir_layout/index
 ```

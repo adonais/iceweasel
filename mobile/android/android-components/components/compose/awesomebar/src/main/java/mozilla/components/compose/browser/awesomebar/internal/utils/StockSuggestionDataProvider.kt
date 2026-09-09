@@ -9,32 +9,33 @@ import mozilla.components.feature.awesomebar.optimizedsuggestions.ChangePercent
 
 internal class StockSuggestionDataProvider : PreviewParameterProvider<StockSuggestionPreviewModel> {
 
-    override val values = sequenceOf(
-        StockSuggestionPreviewModel(
-            ticker = "AAPL",
-            name = "Apple Inc.",
-            index = "NASDAQ",
-            lastPrice = "USD 150.04",
-            changePercent = ChangePercent.Negative("-1.23"),
-            onClick = {},
-        ),
-        StockSuggestionPreviewModel(
-            ticker = "AAPL",
-            name = "Apple Inc.",
-            index = "NASDAQ",
-            lastPrice = "USD 248.03",
-            changePercent = ChangePercent.Positive("+1.23"),
-            onClick = {},
-        ),
-        StockSuggestionPreviewModel(
-            ticker = "AAPL",
-            name = "Apple Inc.",
-            index = "NASDAQ",
-            lastPrice = "USD 12.34",
-            changePercent = ChangePercent.Neutral,
-            onClick = {},
-        ),
-    )
+    override val values =
+        sequenceOf(
+            StockSuggestionPreviewModel(
+                ticker = "AAPL",
+                name = "Apple Inc.",
+                index = "NASDAQ",
+                lastPrice = "USD 150.04",
+                changePercent = ChangePercent.Negative("-1.23"),
+                onClick = {},
+            ),
+            StockSuggestionPreviewModel(
+                ticker = "AAPL",
+                name = "Apple Inc.",
+                index = "NASDAQ",
+                lastPrice = "USD 248.03",
+                changePercent = ChangePercent.Positive("+1.23"),
+                onClick = {},
+            ),
+            StockSuggestionPreviewModel(
+                ticker = "AAPL",
+                name = "Apple Inc.",
+                index = "NASDAQ",
+                lastPrice = "USD 12.34",
+                changePercent = ChangePercent.Neutral,
+                onClick = {},
+            ),
+        )
 }
 
 internal data class StockSuggestionPreviewModel(

@@ -34,116 +34,118 @@ class GeckoWebNotificationDelegateTest {
     }
 
     @Test
-    fun `onShowNotification is forwarded to delegate`() = runTest(testDispatcher) {
-        val geckoViewWebNotification: GeckoViewWebNotification = mockWebNotification(
-            title = "title",
-            tag = "tag",
-            text = "text",
-            imageUrl = "imageUrl",
-            textDirection = "textDirection",
-            lang = "lang",
-            requireInteraction = true,
-            source = "source",
-            privateBrowsing = true,
-            actions = arrayOf(GeckoViewWebNotificationAction("foo", "bar")),
-        )
-        val geckoWebNotificationDelegate = GeckoWebNotificationDelegate(webNotificationDelegate, testDispatcher)
+    fun `onShowNotification is forwarded to delegate`() =
+        runTest(testDispatcher) {
+            val geckoViewWebNotification: GeckoViewWebNotification =
+                mockWebNotification(
+                    title = "title",
+                    tag = "tag",
+                    text = "text",
+                    imageUrl = "imageUrl",
+                    textDirection = "textDirection",
+                    lang = "lang",
+                    requireInteraction = true,
+                    source = "source",
+                    privateBrowsing = true,
+                    actions = arrayOf(GeckoViewWebNotificationAction("foo", "bar")),
+                )
+            val geckoWebNotificationDelegate = GeckoWebNotificationDelegate(webNotificationDelegate, testDispatcher)
 
-        val notificationCaptor = argumentCaptor<WebNotification>()
-        geckoWebNotificationDelegate.onShowNotification(geckoViewWebNotification)
+            val notificationCaptor = argumentCaptor<WebNotification>()
+            geckoWebNotificationDelegate.onShowNotification(geckoViewWebNotification)
 
-        // (verify will only return null even though the return type is Deferred)
-        @Suppress("UNUSED_VARIABLE")
-        val result = verify(webNotificationDelegate).onShowNotification(
-            notificationCaptor.capture(),
-        )
+            // (verify will only return null even though the return type is Deferred)
+            @Suppress("UNUSED_VARIABLE")
+            val result = verify(webNotificationDelegate).onShowNotification(notificationCaptor.capture())
 
-        val notification = notificationCaptor.value
-        assertEquals(notification.title, geckoViewWebNotification.title)
-        assertEquals(notification.tag, geckoViewWebNotification.tag)
-        assertEquals(notification.body, geckoViewWebNotification.text)
-        assertEquals(notification.sourceUrl, geckoViewWebNotification.source)
-        assertEquals(notification.iconUrl, geckoViewWebNotification.imageUrl)
-        assertEquals(notification.direction, geckoViewWebNotification.textDirection)
-        assertEquals(notification.lang, geckoViewWebNotification.lang)
-        assertEquals(notification.requireInteraction, geckoViewWebNotification.requireInteraction)
-        assertFalse(notification.triggeredByWebExtension)
-        assertTrue(notification.privateBrowsing)
-        assertEquals(notification.actions[0].name, geckoViewWebNotification.actions[0].name)
-        assertEquals(notification.actions[0].title, geckoViewWebNotification.actions[0].title)
-    }
-
-    @Test
-    fun `onCloseNotification is forwarded to delegate`() = runTest(testDispatcher) {
-        val geckoViewWebNotification: GeckoViewWebNotification = mockWebNotification(
-            title = "title",
-            tag = "tag",
-            text = "text",
-            imageUrl = "imageUrl",
-            textDirection = "textDirection",
-            lang = "lang",
-            requireInteraction = true,
-            source = "source",
-            privateBrowsing = false,
-            actions = arrayOf(GeckoViewWebNotificationAction("foo", "bar")),
-        )
-        val geckoWebNotificationDelegate = GeckoWebNotificationDelegate(webNotificationDelegate, testDispatcher)
-
-        val notificationCaptor = argumentCaptor<WebNotification>()
-        geckoWebNotificationDelegate.onCloseNotification(geckoViewWebNotification)
-        verify(webNotificationDelegate).onCloseNotification(notificationCaptor.capture())
-
-        val notification = notificationCaptor.value
-        assertEquals(notification.title, geckoViewWebNotification.title)
-        assertEquals(notification.tag, geckoViewWebNotification.tag)
-        assertEquals(notification.body, geckoViewWebNotification.text)
-        assertEquals(notification.sourceUrl, geckoViewWebNotification.source)
-        assertEquals(notification.iconUrl, geckoViewWebNotification.imageUrl)
-        assertEquals(notification.direction, geckoViewWebNotification.textDirection)
-        assertEquals(notification.lang, geckoViewWebNotification.lang)
-        assertEquals(notification.requireInteraction, geckoViewWebNotification.requireInteraction)
-        assertEquals(notification.privateBrowsing, geckoViewWebNotification.privateBrowsing)
-        assertEquals(notification.actions[0].name, geckoViewWebNotification.actions[0].name)
-        assertEquals(notification.actions[0].title, geckoViewWebNotification.actions[0].title)
-    }
+            val notification = notificationCaptor.value
+            assertEquals(notification.title, geckoViewWebNotification.title)
+            assertEquals(notification.tag, geckoViewWebNotification.tag)
+            assertEquals(notification.body, geckoViewWebNotification.text)
+            assertEquals(notification.sourceUrl, geckoViewWebNotification.source)
+            assertEquals(notification.iconUrl, geckoViewWebNotification.imageUrl)
+            assertEquals(notification.direction, geckoViewWebNotification.textDirection)
+            assertEquals(notification.lang, geckoViewWebNotification.lang)
+            assertEquals(notification.requireInteraction, geckoViewWebNotification.requireInteraction)
+            assertFalse(notification.triggeredByWebExtension)
+            assertTrue(notification.privateBrowsing)
+            assertEquals(notification.actions[0].name, geckoViewWebNotification.actions[0].name)
+            assertEquals(notification.actions[0].title, geckoViewWebNotification.actions[0].title)
+        }
 
     @Test
-    fun `notification without a source are from web extensions`() = runTest(testDispatcher) {
-        val geckoViewWebNotification: GeckoViewWebNotification = mockWebNotification(
-            title = "title",
-            tag = "tag",
-            text = "text",
-            imageUrl = "imageUrl",
-            textDirection = "textDirection",
-            lang = "lang",
-            requireInteraction = true,
-            source = null,
-            privateBrowsing = true,
-            actions = arrayOf(GeckoViewWebNotificationAction("foo", "bar")),
-        )
-        val geckoWebNotificationDelegate = GeckoWebNotificationDelegate(webNotificationDelegate, testDispatcher)
+    fun `onCloseNotification is forwarded to delegate`() =
+        runTest(testDispatcher) {
+            val geckoViewWebNotification: GeckoViewWebNotification =
+                mockWebNotification(
+                    title = "title",
+                    tag = "tag",
+                    text = "text",
+                    imageUrl = "imageUrl",
+                    textDirection = "textDirection",
+                    lang = "lang",
+                    requireInteraction = true,
+                    source = "source",
+                    privateBrowsing = false,
+                    actions = arrayOf(GeckoViewWebNotificationAction("foo", "bar")),
+                )
+            val geckoWebNotificationDelegate = GeckoWebNotificationDelegate(webNotificationDelegate, testDispatcher)
 
-        val notificationCaptor = argumentCaptor<WebNotification>()
-        geckoWebNotificationDelegate.onShowNotification(geckoViewWebNotification)
+            val notificationCaptor = argumentCaptor<WebNotification>()
+            geckoWebNotificationDelegate.onCloseNotification(geckoViewWebNotification)
+            verify(webNotificationDelegate).onCloseNotification(notificationCaptor.capture())
 
-        // (verify will only return null even though the return type is Deferred)
-        @Suppress("UNUSED_VARIABLE")
-        val result = verify(webNotificationDelegate).onShowNotification(
-            notificationCaptor.capture(),
-        )
+            val notification = notificationCaptor.value
+            assertEquals(notification.title, geckoViewWebNotification.title)
+            assertEquals(notification.tag, geckoViewWebNotification.tag)
+            assertEquals(notification.body, geckoViewWebNotification.text)
+            assertEquals(notification.sourceUrl, geckoViewWebNotification.source)
+            assertEquals(notification.iconUrl, geckoViewWebNotification.imageUrl)
+            assertEquals(notification.direction, geckoViewWebNotification.textDirection)
+            assertEquals(notification.lang, geckoViewWebNotification.lang)
+            assertEquals(notification.requireInteraction, geckoViewWebNotification.requireInteraction)
+            assertEquals(notification.privateBrowsing, geckoViewWebNotification.privateBrowsing)
+            assertEquals(notification.actions[0].name, geckoViewWebNotification.actions[0].name)
+            assertEquals(notification.actions[0].title, geckoViewWebNotification.actions[0].title)
+        }
 
-        val notification = notificationCaptor.value
-        assertEquals(notification.title, geckoViewWebNotification.title)
-        assertEquals(notification.tag, geckoViewWebNotification.tag)
-        assertEquals(notification.body, geckoViewWebNotification.text)
-        assertEquals(notification.sourceUrl, geckoViewWebNotification.source)
-        assertEquals(notification.iconUrl, geckoViewWebNotification.imageUrl)
-        assertEquals(notification.direction, geckoViewWebNotification.textDirection)
-        assertEquals(notification.lang, geckoViewWebNotification.lang)
-        assertEquals(notification.requireInteraction, geckoViewWebNotification.requireInteraction)
-        assertTrue(notification.triggeredByWebExtension)
-        assertTrue(notification.privateBrowsing)
-        assertEquals(notification.actions[0].name, geckoViewWebNotification.actions[0].name)
-        assertEquals(notification.actions[0].title, geckoViewWebNotification.actions[0].title)
-    }
+    @Test
+    fun `notification without a source are from web extensions`() =
+        runTest(testDispatcher) {
+            val geckoViewWebNotification: GeckoViewWebNotification =
+                mockWebNotification(
+                    title = "title",
+                    tag = "tag",
+                    text = "text",
+                    imageUrl = "imageUrl",
+                    textDirection = "textDirection",
+                    lang = "lang",
+                    requireInteraction = true,
+                    source = null,
+                    privateBrowsing = true,
+                    actions = arrayOf(GeckoViewWebNotificationAction("foo", "bar")),
+                )
+            val geckoWebNotificationDelegate = GeckoWebNotificationDelegate(webNotificationDelegate, testDispatcher)
+
+            val notificationCaptor = argumentCaptor<WebNotification>()
+            geckoWebNotificationDelegate.onShowNotification(geckoViewWebNotification)
+
+            // (verify will only return null even though the return type is Deferred)
+            @Suppress("UNUSED_VARIABLE")
+            val result = verify(webNotificationDelegate).onShowNotification(notificationCaptor.capture())
+
+            val notification = notificationCaptor.value
+            assertEquals(notification.title, geckoViewWebNotification.title)
+            assertEquals(notification.tag, geckoViewWebNotification.tag)
+            assertEquals(notification.body, geckoViewWebNotification.text)
+            assertEquals(notification.sourceUrl, geckoViewWebNotification.source)
+            assertEquals(notification.iconUrl, geckoViewWebNotification.imageUrl)
+            assertEquals(notification.direction, geckoViewWebNotification.textDirection)
+            assertEquals(notification.lang, geckoViewWebNotification.lang)
+            assertEquals(notification.requireInteraction, geckoViewWebNotification.requireInteraction)
+            assertTrue(notification.triggeredByWebExtension)
+            assertTrue(notification.privateBrowsing)
+            assertEquals(notification.actions[0].name, geckoViewWebNotification.actions[0].name)
+            assertEquals(notification.actions[0].title, geckoViewWebNotification.actions[0].title)
+        }
 }

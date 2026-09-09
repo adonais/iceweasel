@@ -21,9 +21,7 @@ import mozilla.components.support.base.log.logger.Logger
 private const val RELAY_SCOPE_URL = "https://identity.mozilla.com/apps/relay"
 private const val RELAY_BASE_URL = "https://relay.firefox.com"
 
-/**
- * Public API for Firefox Relay.
- */
+/** Public API for Firefox Relay. */
 interface FxRelay {
     /**
      * Fetches a list of email masks.
@@ -44,7 +42,6 @@ interface FxRelay {
      *
      * @param generatedForHostUrl The host URL of the website for which the address is generated.
      * @param descriptionHostUrl Optional host URL used as the description of the email address.
-     *
      * @return the newly created email mask or `null` if the operation fails.
      */
     suspend fun createEmailMask(
@@ -68,15 +65,13 @@ internal class FxRelayImpl(
     private val logger = Logger("FxRelay")
 
     /**
-     * Cache for RelayClient so we don't recreate the Rust client on every call.
-     * We tie it to the access token it was built with.
+     * Cache for RelayClient so we don't recreate the Rust client on every call. We tie it to the access token it was
+     * built with.
      */
     private var cachedClient: RelayClientInterface? = null
     private var cachedToken: String? = null
 
-    /**
-     * Defines supported Relay operations for logging and error handling.
-     */
+    /** Defines supported Relay operations for logging and error handling. */
     enum class RelayOperation {
         FETCH_ADDRESSES,
         FETCH_PROFILE,
@@ -86,19 +81,21 @@ internal class FxRelayImpl(
     /**
      * Build or reuse a [RelayClient] with a fresh token.
      *
-     * @return a [RelayClientInterface], or `null` if no FxA access token is available or the
-     * account is not authorized for the Relay scope.
+     * @return a [RelayClientInterface], or `null` if no FxA access token is available or the account is not authorized
+     *   for the Relay scope.
      */
     private suspend fun getOrCreateClient(): RelayClientInterface? {
-        val token = try {
-            account.getAccessToken(RELAY_SCOPE_URL)?.token
-        } catch (e: FxaException.Forbidden) {
-            logger.error("Account is not authorized for the Relay scope", e)
-            return null
-        } ?: run {
-            logger.error("No FxA access token available for Relay")
-            return null
-        }
+        val token =
+            try {
+                account.getAccessToken(RELAY_SCOPE_URL)?.token
+            } catch (e: FxaException.Forbidden) {
+                logger.error("Account is not authorized for the Relay scope", e)
+                return null
+            }
+                ?: run {
+                    logger.error("No FxA access token available for Relay")
+                    return null
+                }
 
         return cachedClient.takeIf { cachedToken == token }
             ?: relayClientProvider(token).also {
@@ -111,11 +108,10 @@ internal class FxRelayImpl(
      * Runs a provided [block], handling known [RelayApiException] variants gracefully.
      *
      * @param operation The [RelayOperation] being performed, included in log output.
-     * @param fallback A lambda to execute if [block] fails with a [RelayApiException].
-     *                 Typically returns a safe fallback value so callers don't crash.
+     * @param fallback A lambda to execute if [block] fails with a [RelayApiException]. Typically returns a safe
+     *   fallback value so callers don't crash.
      * @param block A suspendable lambda to execute which may fail with a [RelayApiException].
      * @return The result of [block] if successful, or the result of [fallback] if a [RelayApiException] occurs.
-     *
      * @throws Exception if any unexpected exception (not a [RelayApiException]) is thrown by [block].
      */
     private suspend fun <T> handleRelayExceptions(
@@ -146,66 +142,70 @@ internal class FxRelayImpl(
         }
     }
 
-    override suspend fun fetchEmailMasks(): List<EmailMask>? = withContext(Dispatchers.IO) {
-        handleRelayExceptions(
-            RelayOperation.FETCH_ADDRESSES,
-            { null },
-        ) {
-            getOrCreateClient()?.fetchAddresses()?.map { it.asEmailMask() }
+    override suspend fun fetchEmailMasks(): List<EmailMask>? =
+        withContext(Dispatchers.IO) {
+            handleRelayExceptions(
+                RelayOperation.FETCH_ADDRESSES,
+                { null },
+            ) {
+                getOrCreateClient()?.fetchAddresses()?.map { it.asEmailMask() }
+            }
         }
-    }
 
     override suspend fun createEmailMask(
         generatedForHostUrl: String,
         descriptionHostUrl: String,
-    ): EmailMask? = withContext(Dispatchers.IO) {
-        handleRelayExceptions(
-            RelayOperation.CREATE_ADDRESS,
-            { null },
-        ) {
-            try {
-                val client = getOrCreateClient() ?: return@handleRelayExceptions null
-                val address = client.createAddress(
-                    description = descriptionHostUrl,
-                    generatedFor = generatedForHostUrl,
-                    usedOn = "", // always empty string for now until we can surface this property correctly.
-                )
+    ): EmailMask? =
+        withContext(Dispatchers.IO) {
+            handleRelayExceptions(
+                RelayOperation.CREATE_ADDRESS,
+                { null },
+            ) {
+                try {
+                    val client = getOrCreateClient() ?: return@handleRelayExceptions null
+                    val address =
+                        client.createAddress(
+                            description = descriptionHostUrl,
+                            generatedFor = generatedForHostUrl,
+                            usedOn = "", // always empty string for now until we can surface this property correctly.
+                        )
 
-                address.asEmailMask(MaskSource.GENERATED)
-            } catch (e: RelayApiException) {
-                if (e.freeLimitReached()) {
-                    val randomMask = fetchEmailMasks()
-                        ?.randomOrNull()
-                        ?.copy(source = MaskSource.FREE_TIER_LIMIT)
-                    return@handleRelayExceptions randomMask
-                } else {
-                    // re-throw for handling all other exceptions.
-                    throw e
+                    address.asEmailMask(MaskSource.GENERATED)
+                } catch (e: RelayApiException) {
+                    if (e.freeLimitReached()) {
+                        val randomMask = fetchEmailMasks()?.randomOrNull()?.copy(source = MaskSource.FREE_TIER_LIMIT)
+                        return@handleRelayExceptions randomMask
+                    } else {
+                        // re-throw for handling all other exceptions.
+                        throw e
+                    }
                 }
             }
         }
-    }
 
-    override suspend fun fetchAccountDetails(): RelayAccountDetails? = withContext(Dispatchers.IO) {
-        val profile = fetchProfile() ?: return@withContext null
-        mapProfileToDetails(profile)
-    }
-
-    private suspend fun fetchProfile(): RelayProfile? = withContext(Dispatchers.IO) {
-        handleRelayExceptions(
-            RelayOperation.FETCH_PROFILE,
-            { null },
-        ) {
-            val client = getOrCreateClient() ?: return@handleRelayExceptions null
-            client.fetchProfile()
+    override suspend fun fetchAccountDetails(): RelayAccountDetails? =
+        withContext(Dispatchers.IO) {
+            val profile = fetchProfile() ?: return@withContext null
+            mapProfileToDetails(profile)
         }
-    }
+
+    private suspend fun fetchProfile(): RelayProfile? =
+        withContext(Dispatchers.IO) {
+            handleRelayExceptions(
+                RelayOperation.FETCH_PROFILE,
+                { null },
+            ) {
+                val client = getOrCreateClient() ?: return@handleRelayExceptions null
+                client.fetchProfile()
+            }
+        }
 
     private fun mapProfileToDetails(profile: RelayProfile): RelayAccountDetails {
-        val relayPlanTier = when {
-            profile.hasPremium || profile.hasMegabundle -> RelayPlanTier.PREMIUM
-            else -> RelayPlanTier.FREE
-        }
+        val relayPlanTier =
+            when {
+                profile.hasPremium || profile.hasMegabundle -> RelayPlanTier.PREMIUM
+                else -> RelayPlanTier.FREE
+            }
 
         return RelayAccountDetails(
             relayPlanTier = relayPlanTier,
@@ -225,25 +225,17 @@ data class RelayAccountDetails(
     val totalMasksUsed: Int?,
 )
 
-/**
- * A reduced [RelayAddress] intended for client use.
- */
+/** A reduced [RelayAddress] intended for client use. */
 data class EmailMask(
     val fullAddress: String,
     val source: MaskSource?,
 )
 
-/**
- * Indicates the source of the email mask.
- */
+/** Indicates the source of the email mask. */
 enum class MaskSource {
-    /**
-     * The mask was newly generated.
-     */
+    /** The mask was newly generated. */
     GENERATED,
 
-    /**
-     * The mask was reused because the free tier limit was reached.
-     */
+    /** The mask was reused because the free tier limit was reached. */
     FREE_TIER_LIMIT,
 }

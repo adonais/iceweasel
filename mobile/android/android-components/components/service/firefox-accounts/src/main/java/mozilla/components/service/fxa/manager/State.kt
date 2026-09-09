@@ -52,19 +52,12 @@ import mozilla.components.service.fxa.FxaAuthData
  * State transitions are described by a transition matrix, which is described in [State.next].
  */
 
-/**
- * Represents a [State.Idle] in the accounts state machine detailing the state of the account
- * lifecycle.
- */
+/** Represents a [State.Idle] in the accounts state machine detailing the state of the account lifecycle. */
 sealed class AccountState {
-    /**
-     * The account manager has not initialized, so we have not determined an auth state yet.
-     */
+    /** The account manager has not initialized, so we have not determined an auth state yet. */
     object Unknown : AccountState()
 
-    /**
-     * Account is logged in and authenticated.
-     */
+    /** Account is logged in and authenticated. */
     object Authenticated : AccountState()
 
     /**
@@ -74,14 +67,10 @@ sealed class AccountState {
      */
     data class Authenticating(val oAuthUrl: String) : AccountState()
 
-    /**
-     * Account needs to be re-authenticated (e.g. due to a password change).
-     */
+    /** Account needs to be re-authenticated (e.g. due to a password change). */
     object AuthenticationProblem : AccountState()
 
-    /**
-     * No authenticated account is available (e.g. account is logged out).
-     */
+    /** No authenticated account is available (e.g. account is logged out). */
     object NotAuthenticated : AccountState()
 }
 
@@ -96,22 +85,26 @@ internal enum class ProgressState {
 internal sealed class Event {
     internal sealed class Account : Event() {
         internal object Start : Account()
+
         data class BeginEmailFlow(
             val service: String,
             val entrypoint: FxAEntryPoint,
             val scopes: Set<String>,
         ) : Account()
+
         data class BeginPairingFlow(
             val pairingUrl: String?,
             val service: String,
             val entrypoint: FxAEntryPoint,
             val scopes: Set<String>,
         ) : Account()
+
         data class AuthenticationError(val operation: String, val errorCountWithinTheTimeWindow: Int = 1) : Account() {
             override fun toString(): String {
                 return "${this.javaClass.simpleName} - $operation"
             }
         }
+
         object AccessTokenKeyError : Account()
 
         object Logout : Account()
@@ -121,139 +114,162 @@ internal sealed class Event {
 
     internal sealed class Progress : Event() {
         object AccountNotFound : Progress()
+
         object AccountRestored : Progress()
 
         data class AuthData(val authData: FxaAuthData) : Progress()
 
         object FailedToBeginAuth : Progress()
+
         object FailedToCompleteAuthRestore : Progress()
+
         object FailedToCompleteAuth : Progress()
 
         object CancelAuth : Progress()
 
         object FailedToRecoverFromAuthenticationProblem : Progress()
+
         object RecoveredFromAuthenticationProblem : Progress()
 
         object LoggedOut : Progress()
 
         data class StartedOAuthFlow(val oAuthUrl: String) : Progress()
+
         data class CompletedAuthentication(val authType: AuthType) : Progress()
     }
 
     /**
      * Get a string to display in the breadcrumbs
      *
-     * The main point of this function is to avoid using the string "auth", which gets filtered by
-     * Sentry.  Use "ath" as a hacky replacement.
+     * The main point of this function is to avoid using the string "auth", which gets filtered by Sentry. Use "ath" as
+     * a hacky replacement.
      */
-    fun breadcrumbDisplay(): String = when (this) {
-        is Account.Start -> "Account.Start"
-        is Account.BeginEmailFlow -> "Account.BeginEmailFlow"
-        is Account.BeginPairingFlow -> "Account.BeginPairingFlow"
-        is Account.AuthenticationError -> "Account.AthenticationError($operation)"
-        is Account.AccessTokenKeyError -> "Account.AccessTknKeyError"
-        is Account.Logout -> "Account.Logout"
-        is Account.WebChannelPasswordChange -> "Account.WebChannelPwdChange"
-        is Progress.AccountNotFound -> "Progress.AccountNotFound"
-        is Progress.AccountRestored -> "Progress.AccountRestored"
-        is Progress.AuthData -> "Progress.LoggedOut"
-        is Progress.FailedToBeginAuth -> "Progress.FailedToBeginAth"
-        is Progress.FailedToCompleteAuthRestore -> "Progress.FailedToCompleteAthRestore"
-        is Progress.FailedToCompleteAuth -> "Progress.FailedToCompleteAth"
-        is Progress.CancelAuth -> "Progress.CancelAth"
-        is Progress.FailedToRecoverFromAuthenticationProblem -> "Progress.FailedToRecoverFromAthenticationProblem"
-        is Progress.RecoveredFromAuthenticationProblem -> "Progress.RecoveredFromAthenticationProblem"
-        is Progress.LoggedOut -> "Progress.LoggedOut"
-        is Progress.StartedOAuthFlow -> "Progress.StartedOAthFlow"
-        is Progress.CompletedAuthentication -> "Progress.CompletedAthentication"
-    }
+    fun breadcrumbDisplay(): String =
+        when (this) {
+            is Account.Start -> "Account.Start"
+            is Account.BeginEmailFlow -> "Account.BeginEmailFlow"
+            is Account.BeginPairingFlow -> "Account.BeginPairingFlow"
+            is Account.AuthenticationError -> "Account.AthenticationError($operation)"
+            is Account.AccessTokenKeyError -> "Account.AccessTknKeyError"
+            is Account.Logout -> "Account.Logout"
+            is Account.WebChannelPasswordChange -> "Account.WebChannelPwdChange"
+            is Progress.AccountNotFound -> "Progress.AccountNotFound"
+            is Progress.AccountRestored -> "Progress.AccountRestored"
+            is Progress.AuthData -> "Progress.LoggedOut"
+            is Progress.FailedToBeginAuth -> "Progress.FailedToBeginAth"
+            is Progress.FailedToCompleteAuthRestore -> "Progress.FailedToCompleteAthRestore"
+            is Progress.FailedToCompleteAuth -> "Progress.FailedToCompleteAth"
+            is Progress.CancelAuth -> "Progress.CancelAth"
+            is Progress.FailedToRecoverFromAuthenticationProblem -> "Progress.FailedToRecoverFromAthenticationProblem"
+            is Progress.RecoveredFromAuthenticationProblem -> "Progress.RecoveredFromAthenticationProblem"
+            is Progress.LoggedOut -> "Progress.LoggedOut"
+            is Progress.StartedOAuthFlow -> "Progress.StartedOAthFlow"
+            is Progress.CompletedAuthentication -> "Progress.CompletedAthentication"
+        }
 }
 
 internal sealed class State {
     data class Idle(val accountState: AccountState) : State()
+
     data class Active(val progressState: ProgressState) : State()
 
     /**
      * Get a string to display in the breadcrumbs
      *
-     * The main point of this function is to avoid using the string "auth", which gets filtered by
-     * Sentry.  Use "ath" as a hacky replacement.
+     * The main point of this function is to avoid using the string "auth", which gets filtered by Sentry. Use "ath" as
+     * a hacky replacement.
      */
-    fun breadcrumbDisplay(): String = when (this) {
-        is Idle -> when (accountState) {
-            is AccountState.Authenticated -> "AccountState.Athenticated"
-            is AccountState.Authenticating -> "AccountState.Athenticating"
-            is AccountState.AuthenticationProblem -> "AccountState.AthenticationProblem"
-            is AccountState.NotAuthenticated -> "AccountState.NotAthenticated"
-            AccountState.Unknown -> "AccountState.Unknown"
+    fun breadcrumbDisplay(): String =
+        when (this) {
+            is Idle ->
+                when (accountState) {
+                    is AccountState.Authenticated -> "AccountState.Athenticated"
+                    is AccountState.Authenticating -> "AccountState.Athenticating"
+                    is AccountState.AuthenticationProblem -> "AccountState.AthenticationProblem"
+                    is AccountState.NotAuthenticated -> "AccountState.NotAthenticated"
+                    AccountState.Unknown -> "AccountState.Unknown"
+                }
+            is Active ->
+                when (progressState) {
+                    ProgressState.Initializing -> "ProgressState.Initializing"
+                    ProgressState.BeginningAuthentication -> "ProgressState.BeginningAthentication"
+                    ProgressState.CompletingAuthentication -> "ProgressState.CompletingAthentication"
+                    ProgressState.RecoveringFromAuthProblem -> "ProgressState.RecoveringFromAthProblem"
+                    ProgressState.LoggingOut -> "ProgressState.LoggingOut"
+                }
         }
-        is Active -> when (progressState) {
-            ProgressState.Initializing -> "ProgressState.Initializing"
-            ProgressState.BeginningAuthentication -> "ProgressState.BeginningAthentication"
-            ProgressState.CompletingAuthentication -> "ProgressState.CompletingAthentication"
-            ProgressState.RecoveringFromAuthProblem -> "ProgressState.RecoveringFromAthProblem"
-            ProgressState.LoggingOut -> "ProgressState.LoggingOut"
-        }
-    }
 }
 
 @Suppress("CognitiveComplexMethod")
-internal fun State.next(event: Event): State? = when (this) {
-    // Reacting to external events.
-    is State.Idle -> when (this.accountState) {
-        AccountState.NotAuthenticated -> when (event) {
-            Event.Account.Start -> State.Active(ProgressState.Initializing)
-            is Event.Account.BeginEmailFlow -> State.Active(ProgressState.BeginningAuthentication)
-            is Event.Account.BeginPairingFlow -> State.Active(ProgressState.BeginningAuthentication)
-            else -> null
-        }
-        is AccountState.Authenticating -> when (event) {
-            is Event.Progress.AuthData -> State.Active(ProgressState.CompletingAuthentication)
-            Event.Progress.CancelAuth -> State.Idle(AccountState.NotAuthenticated)
-            else -> null
-        }
-        AccountState.Authenticated -> when (event) {
-            is Event.Account.AuthenticationError -> State.Active(ProgressState.RecoveringFromAuthProblem)
-            is Event.Account.AccessTokenKeyError -> State.Idle(AccountState.AuthenticationProblem)
-            is Event.Account.Logout -> State.Active(ProgressState.LoggingOut)
-            else -> null
-        }
-        AccountState.AuthenticationProblem -> when (event) {
-            is Event.Account.Logout -> State.Active(ProgressState.LoggingOut)
-            is Event.Account.BeginEmailFlow -> State.Active(ProgressState.BeginningAuthentication)
-            else -> null
-        }
-        // This is the old state machine that is no longer used so we don't need to implement
-        // new features into it. See Bug 2041509.
-        AccountState.Unknown -> null
+internal fun State.next(event: Event): State? =
+    when (this) {
+        // Reacting to external events.
+        is State.Idle ->
+            when (this.accountState) {
+                AccountState.NotAuthenticated ->
+                    when (event) {
+                        Event.Account.Start -> State.Active(ProgressState.Initializing)
+                        is Event.Account.BeginEmailFlow -> State.Active(ProgressState.BeginningAuthentication)
+                        is Event.Account.BeginPairingFlow -> State.Active(ProgressState.BeginningAuthentication)
+                        else -> null
+                    }
+                is AccountState.Authenticating ->
+                    when (event) {
+                        is Event.Progress.AuthData -> State.Active(ProgressState.CompletingAuthentication)
+                        Event.Progress.CancelAuth -> State.Idle(AccountState.NotAuthenticated)
+                        else -> null
+                    }
+                AccountState.Authenticated ->
+                    when (event) {
+                        is Event.Account.AuthenticationError -> State.Active(ProgressState.RecoveringFromAuthProblem)
+                        is Event.Account.AccessTokenKeyError -> State.Idle(AccountState.AuthenticationProblem)
+                        is Event.Account.Logout -> State.Active(ProgressState.LoggingOut)
+                        else -> null
+                    }
+                AccountState.AuthenticationProblem ->
+                    when (event) {
+                        is Event.Account.Logout -> State.Active(ProgressState.LoggingOut)
+                        is Event.Account.BeginEmailFlow -> State.Active(ProgressState.BeginningAuthentication)
+                        else -> null
+                    }
+                // This is the old state machine that is no longer used so we don't need to implement
+                // new features into it. See Bug 2041509.
+                AccountState.Unknown -> null
+            }
+        // Reacting to internal events.
+        is State.Active ->
+            when (this.progressState) {
+                ProgressState.Initializing ->
+                    when (event) {
+                        Event.Progress.AccountNotFound -> State.Idle(AccountState.NotAuthenticated)
+                        Event.Progress.AccountRestored -> State.Active(ProgressState.CompletingAuthentication)
+                        else -> null
+                    }
+                ProgressState.BeginningAuthentication ->
+                    when (event) {
+                        Event.Progress.FailedToBeginAuth -> State.Idle(AccountState.NotAuthenticated)
+                        is Event.Progress.StartedOAuthFlow -> State.Idle(AccountState.Authenticating(event.oAuthUrl))
+                        else -> null
+                    }
+                ProgressState.CompletingAuthentication ->
+                    when (event) {
+                        is Event.Progress.CompletedAuthentication -> State.Idle(AccountState.Authenticated)
+                        is Event.Account.AuthenticationError -> State.Active(ProgressState.RecoveringFromAuthProblem)
+                        Event.Progress.FailedToCompleteAuthRestore -> State.Idle(AccountState.NotAuthenticated)
+                        Event.Progress.FailedToCompleteAuth -> State.Idle(AccountState.NotAuthenticated)
+                        else -> null
+                    }
+                ProgressState.RecoveringFromAuthProblem ->
+                    when (event) {
+                        Event.Progress.RecoveredFromAuthenticationProblem -> State.Idle(AccountState.Authenticated)
+                        Event.Progress.FailedToRecoverFromAuthenticationProblem ->
+                            State.Idle(AccountState.AuthenticationProblem)
+                        else -> null
+                    }
+                ProgressState.LoggingOut ->
+                    when (event) {
+                        Event.Progress.LoggedOut -> State.Idle(AccountState.NotAuthenticated)
+                        else -> null
+                    }
+            }
     }
-    // Reacting to internal events.
-    is State.Active -> when (this.progressState) {
-        ProgressState.Initializing -> when (event) {
-            Event.Progress.AccountNotFound -> State.Idle(AccountState.NotAuthenticated)
-            Event.Progress.AccountRestored -> State.Active(ProgressState.CompletingAuthentication)
-            else -> null
-        }
-        ProgressState.BeginningAuthentication -> when (event) {
-            Event.Progress.FailedToBeginAuth -> State.Idle(AccountState.NotAuthenticated)
-            is Event.Progress.StartedOAuthFlow -> State.Idle(AccountState.Authenticating(event.oAuthUrl))
-            else -> null
-        }
-        ProgressState.CompletingAuthentication -> when (event) {
-            is Event.Progress.CompletedAuthentication -> State.Idle(AccountState.Authenticated)
-            is Event.Account.AuthenticationError -> State.Active(ProgressState.RecoveringFromAuthProblem)
-            Event.Progress.FailedToCompleteAuthRestore -> State.Idle(AccountState.NotAuthenticated)
-            Event.Progress.FailedToCompleteAuth -> State.Idle(AccountState.NotAuthenticated)
-            else -> null
-        }
-        ProgressState.RecoveringFromAuthProblem -> when (event) {
-            Event.Progress.RecoveredFromAuthenticationProblem -> State.Idle(AccountState.Authenticated)
-            Event.Progress.FailedToRecoverFromAuthenticationProblem -> State.Idle(AccountState.AuthenticationProblem)
-            else -> null
-        }
-        ProgressState.LoggingOut -> when (event) {
-            Event.Progress.LoggedOut -> State.Idle(AccountState.NotAuthenticated)
-            else -> null
-        }
-    }
-}

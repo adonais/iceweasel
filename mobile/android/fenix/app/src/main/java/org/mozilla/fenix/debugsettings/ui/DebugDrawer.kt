@@ -29,19 +29,19 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import mozilla.components.compose.base.button.IconButton
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.debugsettings.navigation.DebugDrawerDestination
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * The debug drawer UI.
  *
  * @param navController [NavHostController] used to perform navigation actions on the [NavHost].
- * @param destinations The list of [DebugDrawerDestination]s (excluding home) used to populate
- * the [NavHost] with screens.
+ * @param destinations The list of [DebugDrawerDestination]s (excluding home) used to populate the [NavHost] with
+ *   screens.
  * @param onBackButtonClick Invoked when the user taps on the back button in the app bar.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,9 +69,8 @@ fun DebugDrawer(
                     if (backButtonVisible) {
                         IconButton(
                             onClick = onBackButtonClick,
-                            contentDescription = stringResource(
-                                id = R.string.debug_drawer_back_button_content_description,
-                            ),
+                            contentDescription =
+                                stringResource(id = R.string.debug_drawer_back_button_content_description),
                         ) {
                             Icon(
                                 painter = painterResource(iconsR.drawable.mozac_ic_back_24),
@@ -80,19 +79,18 @@ fun DebugDrawer(
                         }
                     }
                 },
-                windowInsets = WindowInsets(
-                    top = 0.dp,
-                    bottom = 0.dp,
-                ),
+                windowInsets =
+                    WindowInsets(
+                        top = 0.dp,
+                        bottom = 0.dp,
+                    ),
             )
         },
     ) { paddingValues ->
         NavHost(
             navController = navController,
             startDestination = DEBUG_DRAWER_HOME_ROUTE,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
         ) {
             composable(route = DEBUG_DRAWER_HOME_ROUTE) {
                 toolbarTitle = stringResource(id = R.string.debug_drawer_title)
@@ -114,9 +112,7 @@ fun DebugDrawer(
 
 @Preview
 @Composable
-private fun DebugDrawerPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun DebugDrawerPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     val navController = rememberNavController()
     val destinations = remember {
         List(size = 15) { index ->

@@ -7,12 +7,12 @@ package org.mozilla.fenix.iconpicker
 import android.content.ComponentName
 import android.content.pm.PackageManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class DefaultAppIconRepositoryTest {
@@ -66,7 +66,8 @@ class DefaultAppIconRepositoryTest {
     fun `GIVEN the active alias is broken WHEN getCurrentLauncherAliasSuffix is called THEN the default app icon suffix is returned`() {
         val defaultIcon = AppIcon.AppDefault
         val packageName = "why.is.it.even.here"
-        val packageManagerWrapper = TestPackageManagerWrapper(fenixLauncherName = packageName.plus("3cb7bc27e968627800f338fe1221a8764974b2f1"))
+        val packageManagerWrapper =
+            TestPackageManagerWrapper(fenixLauncherName = packageName.plus("3cb7bc27e968627800f338fe1221a8764974b2f1"))
         val repository = DefaultAppIconRepository(packageManagerWrapper, packageName)
 
         assertEquals(defaultIcon, repository.selectedAppIcon)
@@ -142,9 +143,7 @@ class DefaultAppIconRepositoryTest {
         assertEquals(AppIcon.AppDefault.aliasSuffix, result)
     }
 
-    class TestPackageManagerWrapper(
-        val fenixLauncherName: String?,
-    ) : PackageManagerWrapper {
+    class TestPackageManagerWrapper(val fenixLauncherName: String?) : PackageManagerWrapper {
         override fun getFenixLauncherName(packageName: String): String? {
             return fenixLauncherName
         }

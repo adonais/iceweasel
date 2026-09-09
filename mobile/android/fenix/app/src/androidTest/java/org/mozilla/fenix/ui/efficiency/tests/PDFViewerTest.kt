@@ -15,7 +15,8 @@ import org.mozilla.fenix.ui.efficiency.selectors.ToolbarSelectors
 
 class PDFViewerTest : BaseTest() {
 
-    private val mockWebServer get() = fenixTestRule.mockWebServer
+    private val mockWebServer
+        get() = fenixTestRule.mockWebServer
 
     // Converted from legacy PDFViewerTest.verifyPDFFileIsOpenedInTheSameTabTest
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2048140

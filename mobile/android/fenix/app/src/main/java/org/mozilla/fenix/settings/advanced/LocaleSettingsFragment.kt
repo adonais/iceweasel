@@ -26,9 +26,7 @@ import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.showToolbar
 
-/**
- * Settings screen allowing users to change the locale used inside the application.
- */
+/** Settings screen allowing users to change the locale used inside the application. */
 class LocaleSettingsFragment : Fragment(), MenuProvider, SystemInsetsPaddedFragment {
 
     private lateinit var localeSettingsStore: LocaleSettingsStore
@@ -36,7 +34,8 @@ class LocaleSettingsFragment : Fragment(), MenuProvider, SystemInsetsPaddedFragm
     private lateinit var localeView: LocaleSettingsView
 
     private var _binding: FragmentLocaleSettingsBinding? = null
-    private val binding get() = _binding!!
+    private val binding
+        get() = _binding!!
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,14 +55,16 @@ class LocaleSettingsFragment : Fragment(), MenuProvider, SystemInsetsPaddedFragm
         localeSettingsStore = storeProvider.get { restoredState ->
             LocaleSettingsStore(restoredState ?: createInitialLocaleSettingsState(requireContext()))
         }
-        interactor = LocaleSettingsInteractor(
-            controller = DefaultLocaleSettingsController(
-                activity = requireActivity(),
-                localeSettingsStore = localeSettingsStore,
-                browserStore = browserStore,
-                localeUseCase = localeUseCase,
-            ),
-        )
+        interactor =
+            LocaleSettingsInteractor(
+                controller =
+                    DefaultLocaleSettingsController(
+                        activity = requireActivity(),
+                        localeSettingsStore = localeSettingsStore,
+                        browserStore = browserStore,
+                        localeUseCase = localeUseCase,
+                    )
+            )
         localeView = LocaleSettingsView(binding.root, interactor)
         return view
     }
@@ -86,7 +87,7 @@ class LocaleSettingsFragment : Fragment(), MenuProvider, SystemInsetsPaddedFragm
                     interactor.onSearchQueryTyped(newText)
                     return false
                 }
-            },
+            }
         )
     }
 

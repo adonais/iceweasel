@@ -14,13 +14,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * [FlingBehavior] for a [LazyRow] that will automatically scroll the list in the fling direction
- * to fully show the next item.
+ * [FlingBehavior] for a [LazyRow] that will automatically scroll the list in the fling direction to fully show the next
+ * item.
  */
 @Composable
-fun eagerFlingBehavior(
-    lazyRowState: LazyListState,
-): FlingBehavior {
+fun eagerFlingBehavior(lazyRowState: LazyListState): FlingBehavior {
     val scope = rememberCoroutineScope()
 
     return LazyListEagerFlingBehavior(lazyRowState, scope)
@@ -34,10 +32,11 @@ private class LazyListEagerFlingBehavior(
         if (lazyRowState.canScrollForward) {
             val firstItemIndex = lazyRowState.firstVisibleItemIndex
 
-            val itemIndexToScrollTo = when (initialVelocity <= 0) {
-                true -> firstItemIndex
-                false -> firstItemIndex + 1
-            }
+            val itemIndexToScrollTo =
+                when (initialVelocity <= 0) {
+                    true -> firstItemIndex
+                    false -> firstItemIndex + 1
+                }
 
             scope.launch {
                 lazyRowState.animateScrollToItem(itemIndexToScrollTo)

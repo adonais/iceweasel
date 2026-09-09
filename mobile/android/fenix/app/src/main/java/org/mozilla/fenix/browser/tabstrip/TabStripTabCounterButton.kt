@@ -35,8 +35,8 @@ import mozilla.components.ui.tabcounter.TabCounter
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
- * A button showing number of tabs in the tab strip, encapsulating [TabCounter] and [DropdownMenu].
- * When long pressed, the [DropdownMenu] will appear.
+ * A button showing number of tabs in the tab strip, encapsulating [TabCounter] and [DropdownMenu]. When long pressed,
+ * the [DropdownMenu] will appear.
  *
  * @param tabCount The number of tabs to display in the counter.
  * @param size The size of the button.
@@ -57,16 +57,17 @@ fun TabStripTabCounterButton(
     var menuExpanded by remember { mutableStateOf(false) }
 
     Box(
-        modifier = modifier
-            .size(size)
-            .clip(CircleShape)
-            .combinedClickable(
-                onClick = onClick,
-                role = Role.Button,
-                onLongClick = {
-                    menuExpanded = true
-                },
-            ),
+        modifier =
+            modifier
+                .size(size)
+                .clip(CircleShape)
+                .combinedClickable(
+                    onClick = onClick,
+                    role = Role.Button,
+                    onLongClick = {
+                        menuExpanded = true
+                    },
+                ),
         contentAlignment = Alignment.Center,
     ) {
         TabCounter(
@@ -77,10 +78,11 @@ fun TabStripTabCounterButton(
         DropdownMenu(
             menuItems = menuItems,
             expanded = menuExpanded,
-            offset = DpOffset(
-                x = 0.dp,
-                y = -size,
-            ),
+            offset =
+                DpOffset(
+                    x = 0.dp,
+                    y = -size,
+                ),
             onDismissRequest = { menuExpanded = false },
         )
     }
@@ -102,9 +104,11 @@ private fun TabStripTabCounterButtonPreview() {
                 )
 
                 Text(
-                    text = """
-                    Clicking the button will increment the tab count. Long press the button to open the dropdown menu.
-                    """.trimIndent(),
+                    text =
+                        """
+                        Clicking the button will increment the tab count. Long press the button to open the dropdown menu.
+                        """
+                            .trimIndent(),
                     style = FirefoxTheme.typography.caption,
                 )
 
@@ -113,12 +117,14 @@ private fun TabStripTabCounterButtonPreview() {
                 TabStripTabCounterButton(
                     tabCount = tabCount,
                     size = 56.dp,
-                    menuItems = listOf(
-                        TabCounterMenuItem.IconItem.NewTab { },
-                        TabCounterMenuItem.IconItem.NewPrivateTab { },
-                        TabCounterMenuItem.Divider,
-                        TabCounterMenuItem.IconItem.CloseTab { },
-                    ).map { it.toMenuItem() },
+                    menuItems =
+                        listOf(
+                                TabCounterMenuItem.IconItem.NewTab {},
+                                TabCounterMenuItem.IconItem.NewPrivateTab {},
+                                TabCounterMenuItem.Divider,
+                                TabCounterMenuItem.IconItem.CloseTab {},
+                            )
+                            .map { it.toMenuItem() },
                     onClick = { tabCount++ },
                     privacyBadgeVisible = privacyBadgeVisible,
                 )

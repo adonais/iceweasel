@@ -6,7 +6,7 @@
 One-line description of what the function does (more than just what it returns).
 :::
 
-## [Syntax](#syntax)
+## Syntax
 
 :::{container}
 
@@ -20,23 +20,23 @@ ReturnType Function_Name(
 
 :::
 
-## [Parameters](#parameters)
+## Parameters
 
 :::{container}
 
 ```{eval-rst}
-+---------------+---------------------------------------------------------------------------------+
-| ``ParamName`` | Sample: *in* pointer to a `CERTCertDBHandle </en-US/NSS/CERTCertDBHandle>`__    |
-|               | representing the certificate database to look in                                |
-+---------------+---------------------------------------------------------------------------------+
-| ``ParamName`` | Sample: *in* pointer to an `SECItem </en-US/NSS/SECItem>`__ whose ``type`` must |
-|               | be ``siDERCertBuffer`` and whose ``data`` contains a DER-encoded certificate    |
-+---------------+---------------------------------------------------------------------------------+
++---------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``ParamName`` | Sample: *in* pointer to a `CERTCertDBHandle </en-US/NSS/CERTCertDBHandle>`__ representing the certificate database to look in                                |
+|               |                                                                                                                                                              |
++---------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``ParamName`` | Sample: *in* pointer to an `SECItem </en-US/NSS/SECItem>`__ whose ``type`` must be ``siDERCertBuffer`` and whose ``data`` contains a DER-encoded certificate |
+|               |                                                                                                                                                              |
++---------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------+
 ```
 
 :::
 
-## [Description](#description)
+## Description
 
 :::{container}
 Long description of this function, what it does, and why you would use it. Describe all
@@ -48,7 +48,7 @@ matches the DER-encoded certificate. A match is found when the issuer and serial
 DER-encoded certificate are found on a certificate in the certificate database.
 :::
 
-## [Returns](#returns)
+## Returns
 
 :::{container}
 Full description of the return value, for example:
@@ -59,7 +59,7 @@ shallow copy, use [CERT_DestroyCertificate](/en-US/NSS/CERT_DestroyCertificate) 
 the reference count on the certificate instance.
 :::
 
-## [See Also](#see_also)
+## See Also
 
 :::{container}
 Copy of the MXR link, with the following text

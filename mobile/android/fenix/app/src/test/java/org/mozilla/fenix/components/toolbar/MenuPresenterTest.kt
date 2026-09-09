@@ -31,10 +31,11 @@ class MenuPresenterTest {
         testTab = createTab(url = "https://mozilla.org")
         store = BrowserStore(initialState = BrowserState(tabs = listOf(testTab), selectedTabId = testTab.id))
         menuToolbar = mockk(relaxed = true)
-        menuPresenter = MenuPresenter(menuToolbar, store, mainDispatcher = testDispatcher).also {
-            it.start()
-            testDispatcher.scheduler.advanceUntilIdle()
-        }
+        menuPresenter =
+            MenuPresenter(menuToolbar, store, mainDispatcher = testDispatcher).also {
+                it.start()
+                testDispatcher.scheduler.advanceUntilIdle()
+            }
         clearMocks(menuToolbar)
     }
 

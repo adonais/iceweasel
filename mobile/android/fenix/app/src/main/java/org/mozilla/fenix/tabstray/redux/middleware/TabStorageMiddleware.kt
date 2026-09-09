@@ -42,15 +42,12 @@ import org.mozilla.fenix.tabstray.redux.state.TabGroupFormState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 
 private typealias TabItemId = String
+
 private typealias TabGroupMap = HashMap<TabItemId, MutableTabGroup>
 
-/**
- * Value class representing the combined data model of all data inputs before being transformed.
- */
+/** Value class representing the combined data model of all data inputs before being transformed. */
 @JvmInline
-private value class CombinedTabData(
-    private val combinedData: Pair<TabData, TabGroupData>,
-) {
+private value class CombinedTabData(private val combinedData: Pair<TabData, TabGroupData>) {
     val tabs: List<TabSessionState>
         get() = combinedData.first.tabs
 
@@ -64,9 +61,7 @@ private value class CombinedTabData(
         get() = combinedData.second.tabGroupAssignments
 }
 
-/**
- * Value class representing a tab group while the final data model is being constructed.
- */
+/** Value class representing a tab group while the final data model is being constructed. */
 @VisibleForTesting
 internal data class MutableTabGroup(
     val metaData: TabGroup,
@@ -111,11 +106,12 @@ class TabStorageMiddleware(
     private val combinedDataFlow: StateFlow<CombinedTabData?> =
         if (tabGroupsEnabled) {
             combine(
-                flow = tabDataFlow.distinctUntilChanged(),
-                flow2 = tabGroupRepository.tabGroupDataFlow.distinctUntilChanged(),
-            ) { tabData, tabGroupData ->
-                CombinedTabData(combinedData = Pair(tabData, tabGroupData))
-            }.toCombinedDataStateFlow()
+                    flow = tabDataFlow.distinctUntilChanged(),
+                    flow2 = tabGroupRepository.tabGroupDataFlow.distinctUntilChanged(),
+                ) { tabData, tabGroupData ->
+                    CombinedTabData(combinedData = Pair(tabData, tabGroupData))
+                }
+                .toCombinedDataStateFlow()
         } else {
             tabDataFlow
                 .map { CombinedTabData(combinedData = Pair(it, TabGroupData())) }
@@ -131,10 +127,11 @@ class TabStorageMiddleware(
         action: TabsTrayAction,
     ) {
         when (action) {
-            is TabsStorageAction -> processAction(
-                action = action,
-                store = store,
-            )
+            is TabsStorageAction ->
+                processAction(
+                    action = action,
+                    store = store,
+                )
 
             else -> {}
         }
@@ -150,21 +147,20 @@ class TabStorageMiddleware(
             InitAction -> {
                 // Set up the tab data observer and set the Flow collection to the lifetime of main scope
                 mainScope.launch {
-                    combinedDataFlow
-                        .filterNotNull()
-                        .collect { data ->
-                            scope.launch {
-                                val transformedTabData = transformTabData(
+                    combinedDataFlow.filterNotNull().collect { data ->
+                        scope.launch {
+                            val transformedTabData =
+                                transformTabData(
                                     tabs = data.tabs,
                                     selectedTabId = data.selectedTabId,
                                     tabGroups = data.tabGroups,
                                     tabGroupAssignments = data.tabGroupAssignments,
                                 )
 
-                                mainScope.launch {
-                                    store.dispatch(TabDataUpdateReceived(tabStorageUpdate = transformedTabData))
-                                }
+                            mainScope.launch {
+                                store.dispatch(TabDataUpdateReceived(tabStorageUpdate = transformedTabData))
                             }
+                        }
                     }
                 }
             }
@@ -236,16 +232,13 @@ class TabStorageMiddleware(
     }
 
     /**
-     * This method returns the appropriate target tab id for a group destination.
-     * When a [TabsTrayItem.TabGroup] is the destination of a reorder, the object being placed will either be placed
-     * (1) before the first tab in the group
-     * OR
+     * This method returns the appropriate target tab id for a group destination. When a [TabsTrayItem.TabGroup] is the
+     * destination of a reorder, the object being placed will either be placed (1) before the first tab in the group OR
      * (2) after the last tab in the group
      *
      * @param groupId The group's id
      * @param placeAfter Whether the reordered item should be placed before or after the target
      * @param store The store holding [TabsTrayState] and the relevant Action
-     *
      */
     private fun targetTabIdForDestinationGroup(
         groupId: String,
@@ -262,10 +255,9 @@ class TabStorageMiddleware(
     /**
      * Handles reordering tabs tray items triggered by a gesture.
      *
-     * If the source is a tab group, the set of tab ids is invoked to the [MoveTabsUseCase].
-     * If the destination is a tab group, the correct destination id is derived from place after and the first or last
-     * tab id in a group.
-     * If both source and destination are tabs, the [MoveTabsUseCase] is invoked directly.
+     * If the source is a tab group, the set of tab ids is invoked to the [MoveTabsUseCase]. If the destination is a tab
+     * group, the correct destination id is derived from place after and the first or last tab id in a group. If both
+     * source and destination are tabs, the [MoveTabsUseCase] is invoked directly.
      *
      * @param action The reorder action containing source, destination, and placement info.
      * @param store The store holding [TabsTrayState].
@@ -281,11 +273,12 @@ class TabStorageMiddleware(
         when {
             reorderItems.source is TabsTrayItem.TabGroup && reorderItems.target is TabsTrayItem.TabGroup -> {
                 // Find the appropriate anchor tab for a group destination, or return if the group is empty
-                val targetTabId = targetTabIdForDestinationGroup(
-                    groupId = action.destinationId,
-                    placeAfter = action.placeAfter,
-                    store = store,
-                )
+                val targetTabId =
+                    targetTabIdForDestinationGroup(
+                        groupId = action.destinationId,
+                        placeAfter = action.placeAfter,
+                        store = store,
+                    )
                 if (targetTabId != null) {
                     moveTabsUseCase.invoke(
                         tabIds = store.state.tabIdsForGroup(action.sourceId),
@@ -293,9 +286,7 @@ class TabStorageMiddleware(
                         placeAfter = action.placeAfter,
                     )
                 } else {
-                    logger.warn(
-                        "ReorderTabTrayItem:  Empty target group.  No action taken.",
-                    )
+                    logger.warn("ReorderTabTrayItem:  Empty target group.  No action taken.")
                 }
             }
 
@@ -309,11 +300,12 @@ class TabStorageMiddleware(
 
             reorderItems.source is TabsTrayItem.Tab && reorderItems.target is TabsTrayItem.TabGroup -> {
                 // Find the appropriate anchor tab for a group destination, or return if the group is empty
-                val targetTabId = targetTabIdForDestinationGroup(
-                    groupId = action.destinationId,
-                    placeAfter = action.placeAfter,
-                    store = store,
-                )
+                val targetTabId =
+                    targetTabIdForDestinationGroup(
+                        groupId = action.destinationId,
+                        placeAfter = action.placeAfter,
+                        store = store,
+                    )
                 if (targetTabId != null) {
                     moveTabsUseCase.invoke(
                         targetTabId = targetTabId,
@@ -321,9 +313,7 @@ class TabStorageMiddleware(
                         placeAfter = action.placeAfter,
                     )
                 } else {
-                    logger.warn(
-                        "ReorderTabTrayItem:  Empty target group.  No action taken.",
-                    )
+                    logger.warn("ReorderTabTrayItem:  Empty target group.  No action taken.")
                 }
             }
 
@@ -345,6 +335,7 @@ class TabStorageMiddleware(
 
     /**
      * Handles the drag and drop action based on the source and target types.
+     *
      * @param action: The DragAndDropInitiated action
      * @param store: The TabsTraySTore
      */
@@ -355,8 +346,8 @@ class TabStorageMiddleware(
         scope.launch {
             val dragAndDropItems =
                 lookupGestureItems(sourceId = action.sourceId, destinationId = action.destinationId, store = store)
-            val areSourceAndTargetTabs = dragAndDropItems.source is TabsTrayItem.Tab &&
-                dragAndDropItems.target is TabsTrayItem.Tab
+            val areSourceAndTargetTabs =
+                dragAndDropItems.source is TabsTrayItem.Tab && dragAndDropItems.target is TabsTrayItem.Tab
             try {
                 when {
                     // Source and target are tabs
@@ -366,7 +357,7 @@ class TabStorageMiddleware(
                                 TabGroupAction.DragAndDropTwoTabs(
                                     sourceTabId = action.sourceId,
                                     destinationTabId = action.destinationId,
-                                ),
+                                )
                             )
                         }
                     }
@@ -390,16 +381,14 @@ class TabStorageMiddleware(
 
                     else -> {
                         logger.warn(
-                            "DragAndDropInitiated:  Source or target not found or unsupported.  No action taken.",
+                            "DragAndDropInitiated:  Source or target not found or unsupported.  No action taken."
                         )
                     }
                 }
             } catch (e: CancellationException) {
                 // Don't swallow cancellation exceptions
                 throw e
-            } catch (
-                @Suppress("TooGenericExceptionCaught") e: Exception,
-            ) {
+            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
                 // There are a broad variety of exceptions that Room could throw here
                 logger.error(message = "DragAndDropInitiated:  Storage layer failure.", throwable = e)
             } finally {
@@ -407,9 +396,7 @@ class TabStorageMiddleware(
                 // The drag should be released even if the storage layer encounters an exception
                 if (!areSourceAndTargetTabs) {
                     mainScope.launch {
-                        store.dispatch(
-                            TabGroupAction.DragAndDropProcessed,
-                        )
+                        store.dispatch(TabGroupAction.DragAndDropProcessed)
                     }
                 }
             }
@@ -418,19 +405,16 @@ class TabStorageMiddleware(
 
     @JvmInline
     private value class TabsTrayGestureItems(private val items: Pair<TabsTrayItem?, TabsTrayItem?>) {
-        constructor(source: TabsTrayItem?, target: TabsTrayItem?) : this(
-            source to target,
-        )
+        constructor(source: TabsTrayItem?, target: TabsTrayItem?) : this(source to target)
 
         val source: TabsTrayItem?
             get() = this.items.first
+
         val target: TabsTrayItem?
             get() = this.items.second
     }
 
-    /**
-     * Performs the lookup from id -> TabsTrayItem for source and target in a single linear scan
-     */
+    /** Performs the lookup from id -> TabsTrayItem for source and target in a single linear scan */
     private fun lookupGestureItems(
         sourceId: String,
         destinationId: String,
@@ -454,8 +438,7 @@ class TabStorageMiddleware(
         targetGroupId: String,
         store: Store<TabsTrayState, TabsTrayAction>,
     ) {
-        val groupedTabs =
-            store.state.tabIdsForGroup(groupId = sourceGroupId)
+        val groupedTabs = store.state.tabIdsForGroup(groupId = sourceGroupId)
         if (groupedTabs.isNotEmpty()) {
             addTabItemsToTabGroup(
                 groupId = targetGroupId,
@@ -489,7 +472,7 @@ class TabStorageMiddleware(
     private suspend fun handleGroupAddedToTab(
         groupId: String,
         tabId: String,
-                                              store: Store<TabsTrayState, TabsTrayAction>,
+        store: Store<TabsTrayState, TabsTrayAction>,
     ) {
         val groupedTabs = store.state.tabIdsForGroup(groupId)
         // Sequence the group's tabs in front of the target tab.
@@ -510,7 +493,7 @@ class TabStorageMiddleware(
     private suspend fun handleTabAddedToGroup(
         groupId: String,
         tabId: String,
-                                              store: Store<TabsTrayState, TabsTrayAction>,
+        store: Store<TabsTrayState, TabsTrayAction>,
     ) {
         val lastTabInGroupId = store.state.lastTabInGroupId(groupId = groupId)
 
@@ -544,10 +527,11 @@ class TabStorageMiddleware(
         var selectedPrivateTabIndex = 0
 
         tabs.forEach { tab ->
-            val displayTab = TabsTrayItem.Tab(
-                tab = tab,
-                isFocused = tab.id == selectedTabId,
-            )
+            val displayTab =
+                TabsTrayItem.Tab(
+                    tab = tab,
+                    isFocused = tab.id == selectedTabId,
+                )
             val assignedGroupId = tabGroupAssignments[displayTab.id]
             val assignedGroup = transformedTabGroups[assignedGroupId]
 
@@ -565,11 +549,12 @@ class TabStorageMiddleware(
                     )
                 }
 
-                displayTab.private -> addToPrivateTabs(
-                    tab = displayTab,
-                    privateTabs = privateTabs,
-                    updateSelectedTabIndex = { selectedPrivateTabIndex = it },
-                )
+                displayTab.private ->
+                    addToPrivateTabs(
+                        tab = displayTab,
+                        privateTabs = privateTabs,
+                        updateSelectedTabIndex = { selectedPrivateTabIndex = it },
+                    )
 
                 inactiveTabsEnabled && displayTab.inactive -> {
                     inactiveTabs.add(displayTab)
@@ -585,10 +570,11 @@ class TabStorageMiddleware(
             }
         }
 
-        val (displayTabGroups, displayNormalItems) = generateUiFriendlyModels(
-            normalItems = normalItems,
-            tabGroupMap = transformedTabGroups,
-        )
+        val (displayTabGroups, displayNormalItems) =
+            generateUiFriendlyModels(
+                normalItems = normalItems,
+                tabGroupMap = transformedTabGroups,
+            )
 
         return TabStorageUpdate(
             selectedTabId = selectedTabId,
@@ -667,18 +653,17 @@ class TabStorageMiddleware(
         }
     }
 
-    private fun constructTabGroupMaps(
-        tabGroups: List<TabGroup>,
-    ): TabGroupMap {
+    private fun constructTabGroupMaps(tabGroups: List<TabGroup>): TabGroupMap {
         val transformedTabGroups: TabGroupMap = hashMapOf()
 
         tabGroups.forEach { tabGroup ->
             val safeTheme = tabGroup.theme.toTabGroupTheme()
 
-            transformedTabGroups[tabGroup.id] = MutableTabGroup(
-                metaData = tabGroup,
-                theme = safeTheme,
-            )
+            transformedTabGroups[tabGroup.id] =
+                MutableTabGroup(
+                    metaData = tabGroup,
+                    theme = safeTheme,
+                )
         }
 
         return transformedTabGroups
@@ -689,16 +674,18 @@ class TabStorageMiddleware(
         theme: TabGroupTheme,
         store: Store<TabsTrayState, TabsTrayAction>,
     ) = scope.launch {
-        val newTabId = fenixBrowserUseCases.addNewHomepageTab(
-            private = false,
-            startLoading = false,
-            selectTab = false,
-        )
-        val tabGroup = TabGroup(
-            title = name,
-            theme = theme.toStorageValue(),
-            lastModified = dateTimeProvider.currentTimeMillis(),
-        )
+        val newTabId =
+            fenixBrowserUseCases.addNewHomepageTab(
+                private = false,
+                startLoading = false,
+                selectTab = false,
+            )
+        val tabGroup =
+            TabGroup(
+                title = name,
+                theme = theme.toStorageValue(),
+                lastModified = dateTimeProvider.currentTimeMillis(),
+            )
         tabGroupRepository.createTabGroupWithTabs(
             tabGroup = tabGroup,
             tabIds = listOf(newTabId),
@@ -706,20 +693,19 @@ class TabStorageMiddleware(
         mainScope.launch {
             store.dispatch(
                 TabGroupAction.OpenCreatedTabGroup(
-                    group = TabsTrayItem.TabGroup(
-                        id = tabGroup.id,
-                        title = name,
-                        theme = theme,
-                        tabs = emptyList(),
-                    ),
-                ),
+                    group =
+                        TabsTrayItem.TabGroup(
+                            id = tabGroup.id,
+                            title = name,
+                            theme = theme,
+                            tabs = emptyList(),
+                        )
+                )
             )
         }
     }
 
-    private fun handleSaveClicked(
-        store: Store<TabsTrayState, TabsTrayAction>,
-    ) {
+    private fun handleSaveClicked(store: Store<TabsTrayState, TabsTrayAction>) {
         val formState = store.state.tabGroupState.formState ?: return
         val mode = store.state.mode
 
@@ -731,18 +717,20 @@ class TabStorageMiddleware(
         // Capture the selection synchronously to prevent selection loss by the Reducer
         val selectedTabIds = mode.selectedTabs.map { it.id }
         scope.launch {
-            val newGroupId = when (mode) {
-                is TabsTrayState.Mode.DragAndDrop -> {
-                    handleSaveFromDragAndDrop(formState = formState, mode = mode)
-                }
+            val newGroupId =
+                when (mode) {
+                    is TabsTrayState.Mode.DragAndDrop -> {
+                        handleSaveFromDragAndDrop(formState = formState, mode = mode)
+                    }
 
-                is TabsTrayState.Mode.Normal, is TabsTrayState.Mode.Select -> {
-                    handleSaveFromMultiSelection(
-                        formState = formState,
-                        selectedTabIds = selectedTabIds,
-                    )
+                    is TabsTrayState.Mode.Normal,
+                    is TabsTrayState.Mode.Select -> {
+                        handleSaveFromMultiSelection(
+                            formState = formState,
+                            selectedTabIds = selectedTabIds,
+                        )
+                    }
                 }
-            }
             if (newGroupId != null) {
                 mainScope.launch {
                     store.dispatch(TabGroupAction.NewGroupCreated(newGroupId))
@@ -762,11 +750,12 @@ class TabStorageMiddleware(
             tabIds = listOf(sourceId),
             targetTabId = destinationId,
         )
-        val tabGroup = TabGroup(
-            title = formState.name,
-            theme = formState.theme.toStorageValue(),
-            lastModified = dateTimeProvider.currentTimeMillis(),
-        )
+        val tabGroup =
+            TabGroup(
+                title = formState.name,
+                theme = formState.theme.toStorageValue(),
+                lastModified = dateTimeProvider.currentTimeMillis(),
+            )
         tabGroupRepository.createTabGroupWithTabs(
             tabGroup = tabGroup,
             tabIds = listOf(sourceId, destinationId),
@@ -779,21 +768,20 @@ class TabStorageMiddleware(
         selectedTabIds: List<String>,
     ): String? {
         if (formState.tabGroupId == null) {
-            val newTabGroup = TabGroup(
-                title = formState.name,
-                theme = formState.theme.toStorageValue(),
-                lastModified = dateTimeProvider.currentTimeMillis(),
-            )
+            val newTabGroup =
+                TabGroup(
+                    title = formState.name,
+                    theme = formState.theme.toStorageValue(),
+                    lastModified = dateTimeProvider.currentTimeMillis(),
+                )
             if (selectedTabIds.isNotEmpty()) {
                 // Obtain the ID of the selected tab that appears sequentially first in the tab data to sequence
                 // the rest of the selected tabs against it.
                 // If the data is in a weird state, fallback to the first selected tab ID.
                 // This is necessary until we can guarantee we always have tab data after the tab data refactor
                 // to hoist tab data more globally.
-                val sequentiallyFirstTabId = combinedDataFlow
-                    .value
-                    ?.tabs
-                    ?.first { it.id in selectedTabIds }?.id ?: selectedTabIds.first()
+                val sequentiallyFirstTabId =
+                    combinedDataFlow.value?.tabs?.first { it.id in selectedTabIds }?.id ?: selectedTabIds.first()
 
                 sequenceGroupedTabsTogether(
                     tabIds = selectedTabIds - sequentiallyFirstTabId,
@@ -810,12 +798,13 @@ class TabStorageMiddleware(
             return newTabGroup.id
         } else {
             tabGroupRepository.updateTabGroup(
-                tabGroup = TabGroup(
-                    id = formState.tabGroupId,
-                    title = formState.name,
-                    theme = formState.theme.toStorageValue(),
-                    lastModified = dateTimeProvider.currentTimeMillis(),
-                ),
+                tabGroup =
+                    TabGroup(
+                        id = formState.tabGroupId,
+                        title = formState.name,
+                        theme = formState.theme.toStorageValue(),
+                        lastModified = dateTimeProvider.currentTimeMillis(),
+                    )
             )
         }
         return null
@@ -826,11 +815,12 @@ class TabStorageMiddleware(
         store: Store<TabsTrayState, TabsTrayAction>,
     ) {
         scope.launch {
-            val inactiveTabIds = if (inactiveTabsEnabled) {
-                store.state.inactiveTabs.tabs.map { it.id }.toSet()
-            } else {
-                emptySet()
-            }
+            val inactiveTabIds =
+                if (inactiveTabsEnabled) {
+                    store.state.inactiveTabs.tabs.map { it.id }.toSet()
+                } else {
+                    emptySet()
+                }
 
             removeTabsUseCase.invoke(
                 ids = group.tabs.map { it.id },
@@ -843,12 +833,13 @@ class TabStorageMiddleware(
 
     internal fun TabGroupTheme.toStorageValue(): String = name
 
-    internal fun String.toTabGroupTheme() = try {
-        TabGroupTheme.valueOf(this)
-    } catch (_: IllegalArgumentException) {
-        logger.info(message = "Failed to parse TabGroupTheme: $this")
-        TabGroupTheme.default
-    }
+    internal fun String.toTabGroupTheme() =
+        try {
+            TabGroupTheme.valueOf(this)
+        } catch (_: IllegalArgumentException) {
+            logger.info(message = "Failed to parse TabGroupTheme: $this")
+            TabGroupTheme.default
+        }
 
     // Because the sort order is defined by the underlying JSON file, we need to arrange all the group's tabs
     // next to each other in BrowserState so they are correctly sorted/grouped together. This is
@@ -865,39 +856,22 @@ class TabStorageMiddleware(
         )
     }
 
-    private fun Flow<CombinedTabData>.toCombinedDataStateFlow(): StateFlow<CombinedTabData?> = stateIn(
-        scope = mainScope,
-        started = Eagerly,
-        initialValue = null,
-    )
+    private fun Flow<CombinedTabData>.toCombinedDataStateFlow(): StateFlow<CombinedTabData?> =
+        stateIn(
+            scope = mainScope,
+            started = Eagerly,
+            initialValue = null,
+        )
 }
 
-/**
- * Fetches a list of tab IDs in the group with [groupId].
- * Returns an empty list if the group is empty or not found.
- */
+/** Fetches a list of tab IDs in the group with [groupId]. Returns an empty list if the group is empty or not found. */
 private fun TabsTrayState.tabIdsForGroup(groupId: String): List<String> =
-    tabGroupState.groups
-        .find { it.id == groupId }
-        ?.tabs
-        ?.map { it.id } ?: emptyList()
+    tabGroupState.groups.find { it.id == groupId }?.tabs?.map { it.id } ?: emptyList()
 
-/**
- * Fetches the ID of the last tab in the group with [groupId], or null if the group is empty.
- */
+/** Fetches the ID of the last tab in the group with [groupId], or null if the group is empty. */
 private fun TabsTrayState.lastTabInGroupId(groupId: String): String? =
-    tabGroupState.groups
-        .find { it.id == groupId }
-        ?.tabs
-        ?.lastOrNull()
-        ?.id
+    tabGroupState.groups.find { it.id == groupId }?.tabs?.lastOrNull()?.id
 
-/**
- * Fetches the ID of the first tab in the group with [groupId], or null if the group is empty.
- */
+/** Fetches the ID of the first tab in the group with [groupId], or null if the group is empty. */
 private fun TabsTrayState.firstTabInGroupId(groupId: String): String? =
-    tabGroupState.groups
-        .find { it.id == groupId }
-        ?.tabs
-        ?.firstOrNull()
-        ?.id
+    tabGroupState.groups.find { it.id == groupId }?.tabs?.firstOrNull()?.id

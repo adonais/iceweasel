@@ -17,6 +17,11 @@
 #include "nsTArray.h"
 #include "nsUnicharUtils.h"
 
+#ifdef MOZ_FONTATIONS
+#  include "mozilla/MemoryMappedFile.h"
+#  include "mozilla/gfx/fontations_glue_generated.h"
+#endif
+
 // Abstract base class for Core Text/Core Graphics-based platform font list,
 // which is subclassed to create specific macOS and iOS variants.
 
@@ -37,6 +42,10 @@ class CTFontEntry final : public gfxFontEntry {
 
   gfxFontEntry* Clone() const override;
 
+#if MOZ_FONTATIONS
+  void InitSkrifaFontFace() override;
+#endif
+
   // Return a non-owning reference to our CGFont; caller must not release it.
   // This will cause the fontEntry to create & retain a CGFont for the life
   // of the entry.
@@ -53,7 +62,7 @@ class CTFontEntry final : public gfxFontEntry {
 
   // override gfxFontEntry table access function to bypass table cache,
   // use CGFontRef API to get direct access to system font data
-  hb_blob_t* GetFontTable(uint32_t aTag) override;
+  hb_blob_t* GetFontTableInternal(uint32_t aTag) override;
 
   void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                               FontListSizes* aSizes) const override;
@@ -61,12 +70,6 @@ class CTFontEntry final : public gfxFontEntry {
   nsresult ReadCMAP(FontInfoData* aFontInfoData = nullptr) override;
 
   bool RequiresAATLayout() const { return mRequiresAAT; }
-
-  bool HasVariations() override;
-  void GetVariationAxes(
-      nsTArray<gfxFontVariationAxis>& aVariationAxes) override;
-  void GetVariationInstances(
-      nsTArray<gfxFontVariationInstance>& aInstances) override;
 
   bool IsCFF();
 
@@ -78,7 +81,13 @@ class CTFontEntry final : public gfxFontEntry {
 
   gfxFont* CreateFontInstance(const gfxFontStyle* aFontStyle) override;
 
-  bool HasFontTable(uint32_t aTableTag) override;
+  bool HasVariationsInternal() override;
+  void GetVariationAxesInternal(
+      nsTArray<gfxFontVariationAxis>& aVariationAxes) override;
+  void GetVariationInstancesInternal(
+      nsTArray<gfxFontVariationInstance>& aInstances) override;
+
+  bool HasFontTableInternal(uint32_t aTableTag) override;
 
   static void DestroyBlobFunc(void* aUserData);
 

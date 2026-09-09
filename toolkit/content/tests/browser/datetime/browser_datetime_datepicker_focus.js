@@ -115,9 +115,11 @@ add_task(async function test_focus_after_selection() {
     () => {
       return monthYearEl.textContent == DATE_FORMAT(new Date(inputValue));
     },
-    `Should change to December 2022, instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to December 2022, instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
   Assert.equal(
     focusedDay,
@@ -151,9 +153,11 @@ add_task(async function test_focus_after_selection() {
     () => {
       return monthYearEl.textContent == DATE_FORMAT(new Date(nextYear));
     },
-    `Should change to November 2023, instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to November 2023, instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
 
   // Make a selection, close the month picker

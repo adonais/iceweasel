@@ -24,13 +24,12 @@ import org.mozilla.focus.settings.BaseSettingsLikeFragment
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.utils.ViewUtils
 
-/**
- * Fragment showing settings UI to add custom autocomplete domains.
- */
+/** Fragment showing settings UI to add custom autocomplete domains. */
 class AutocompleteAddFragment : BaseSettingsLikeFragment() {
 
     private var _binding: FragmentAutocompleteAddDomainBinding? = null
-    private val binding get() = _binding!!
+    private val binding
+        get() = _binding!!
 
     override fun onResume() {
         super.onResume()
@@ -65,28 +64,30 @@ class AutocompleteAddFragment : BaseSettingsLikeFragment() {
         menuInflater.inflate(R.menu.menu_autocomplete_add, menu)
     }
 
-    override fun onMenuItemSelected(menuItem: MenuItem): Boolean = when (menuItem.itemId) {
-        R.id.save -> {
-            val domain = binding.domainView.text.toString().trim()
+    override fun onMenuItemSelected(menuItem: MenuItem): Boolean =
+        when (menuItem.itemId) {
+            R.id.save -> {
+                val domain = binding.domainView.text.toString().trim()
 
                 val domains = CustomDomains.load(requireActivity())
 
-                val error = when {
-                    domain.isEmpty() -> getString(R.string.preference_autocomplete_add_error)
-                    domains.contains(domain) -> getString(R.string.preference_autocomplete_duplicate_url_error)
-                    else -> null
-                }
+                val error =
+                    when {
+                        domain.isEmpty() -> getString(R.string.preference_autocomplete_add_error)
+                        domains.contains(domain) -> getString(R.string.preference_autocomplete_duplicate_url_error)
+                        else -> null
+                    }
 
                 if (error != null) {
                     binding.domainView.error = error
                 } else {
                     saveDomainAndClose(requireActivity().applicationContext, domain)
                 }
-            true
+                true
+            }
+            // other options are not handled by this menu provider
+            else -> false
         }
-        // other options are not handled by this menu provider
-        else -> false
-    }
 
     private fun saveDomainAndClose(context: Context, domain: String) {
         CustomDomains.add(context, domain)
@@ -94,10 +95,6 @@ class AutocompleteAddFragment : BaseSettingsLikeFragment() {
 
         ViewUtils.showBrandedSnackbar(view, R.string.preference_autocomplete_add_confirmation, 0)
 
-        requireComponents.appStore.dispatch(
-            AppAction.NavigateUp(
-                requireComponents.store.state.selectedTabId,
-            ),
-        )
+        requireComponents.appStore.dispatch(AppAction.NavigateUp(requireComponents.store.state.selectedTabId))
     }
 }

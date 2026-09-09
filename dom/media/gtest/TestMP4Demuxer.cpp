@@ -806,6 +806,82 @@ static Mp4parseTrackVideoInfo MakeVideoInfo(
   return video;
 }
 
+TEST(MP4Demuxer, VideoInfoDisplaySizeBound)
+{
+  Mp4parseTrackVideoSampleInfo si{};
+  si.codec_type = MP4PARSE_CODEC_VP9;
+  si.image_width = 1920;
+  si.image_height = 1080;
+
+  Mp4parseTrackInfo track = MakeTrackInfo();
+
+  // A display size with both dimensions within the maximum image dimension and
+  // a total area at the maximum video area is accepted (16384 * 2304 ==
+  // MAX_VIDEO_WIDTH * MAX_VIDEO_HEIGHT).
+  {
+    Mp4parseTrackVideoInfo video = MakeVideoInfo(&si);
+    video.display_width = 16384;
+    video.display_height = 2304;
+    MP4VideoInfo info;
+    EXPECT_TRUE(NS_SUCCEEDED(info.Update(&track, &video).Code()));
+  }
+
+  // A display area one past the maximum video area is rejected by the area
+  // bound alone: both dimensions stay within the maximum image dimension, so
+  // only the width * height limit can reject it, unlike the per-axis cases
+  // below.
+  {
+    Mp4parseTrackVideoInfo video = MakeVideoInfo(&si);
+    video.display_width = 16384;
+    video.display_height = 2305;
+    MP4VideoInfo info;
+    EXPECT_EQ(NS_ERROR_DOM_MEDIA_METADATA_ERR,
+              info.Update(&track, &video).Code());
+  }
+
+  // A width one past the maximum image dimension is rejected on its own, even
+  // when the total area is within bounds.
+  {
+    Mp4parseTrackVideoInfo video = MakeVideoInfo(&si);
+    video.display_width = 16385;
+    video.display_height = 1;
+    MP4VideoInfo info;
+    EXPECT_EQ(NS_ERROR_DOM_MEDIA_METADATA_ERR,
+              info.Update(&track, &video).Code());
+  }
+
+  // A height one past the maximum image dimension is rejected on its own, even
+  // when the total area is within bounds.
+  {
+    Mp4parseTrackVideoInfo video = MakeVideoInfo(&si);
+    video.display_width = 1;
+    video.display_height = 16385;
+    MP4VideoInfo info;
+    EXPECT_EQ(NS_ERROR_DOM_MEDIA_METADATA_ERR,
+              info.Update(&track, &video).Code());
+  }
+
+  // A zero display dimension is rejected.
+  {
+    Mp4parseTrackVideoInfo video = MakeVideoInfo(&si);
+    video.display_width = 0;
+    video.display_height = 1080;
+    MP4VideoInfo info;
+    EXPECT_EQ(NS_ERROR_DOM_MEDIA_METADATA_ERR,
+              info.Update(&track, &video).Code());
+  }
+
+  // A display size far beyond the maximum image dimension is rejected.
+  {
+    Mp4parseTrackVideoInfo video = MakeVideoInfo(&si);
+    video.display_width = 65535;
+    video.display_height = 65535;
+    MP4VideoInfo info;
+    EXPECT_EQ(NS_ERROR_DOM_MEDIA_METADATA_ERR,
+              info.Update(&track, &video).Code());
+  }
+}
+
 TEST(MP4Demuxer, VideoInfoMdcvClli)
 {
   Mp4parseTrackVideoSampleInfo si{};

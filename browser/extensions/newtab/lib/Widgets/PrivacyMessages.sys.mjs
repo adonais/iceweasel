@@ -16,6 +16,7 @@
  *
  * ZERO STATE
  *   No trackers blocked today → the empty state (shield icon, no count, no tip).
+ *   A zero *site* count is not a zero state; the component drops that line instead.
  *
  * MESSAGE FAMILIES (the `category` field)
  *   info          Education about tracking / Firefox protections. shield/planet/
@@ -128,8 +129,15 @@ const CTA_PROTECTIONS = ctaAboutPage("protections");
 const CTA_LOGINS = ctaAboutPage("logins");
 const CTA_USER_PRIVACY = ctaUrl("https://www.firefox.com/en-US/user-privacy/");
 const CTA_MISSION = ctaUrl("https://www.mozilla.org/en-US/mission/");
-const CTA_MONITOR = ctaUrl("https://monitor.mozilla.org");
-const CTA_RELAY = ctaUrl("https://relay.firefox.com");
+// Monitor/Relay are external properties: tag the referral so they can attribute
+// signups to this widget (Bug 2061524). utm_content identifies the message.
+// `base` must end in "/" since the query string is appended directly to it.
+const ctaAttributedUrl = (base, utmContent) =>
+  ctaUrl(
+    `${base}?utm_medium=referral&utm_source=firefox-desktop&utm_campaign=widget&utm_content=${utmContent}`
+  );
+const MONITOR = "https://monitor.mozilla.org/";
+const RELAY = "https://relay.firefox.com/";
 const CTA_SET_DEFAULT = { type: "SET_DEFAULT_BROWSER" };
 const CTA_SIGNIN = {
   type: "FXA_SIGNIN_FLOW",
@@ -319,7 +327,7 @@ export const PRIVACY_MESSAGES = [
     icon: "star",
     countSource: "none",
     feature: "monitor",
-    cta: CTA_MONITOR,
+    cta: ctaAttributedUrl(MONITOR, "get-breach-alerts-global"),
   },
   {
     // Monitor: free data breach monitoring, up to 20 emails
@@ -328,7 +336,7 @@ export const PRIVACY_MESSAGES = [
     icon: "star",
     countSource: "none",
     feature: "monitor",
-    cta: CTA_MONITOR,
+    cta: ctaAttributedUrl(MONITOR, "protect-your-info-global"),
   },
   {
     // sign in: encrypt bookmarks/passwords/tabs across devices
@@ -382,7 +390,7 @@ export const PRIVACY_MESSAGES = [
     icon: "star",
     countSource: "none",
     feature: "relay",
-    cta: CTA_RELAY,
+    cta: ctaAttributedUrl(RELAY, "use-email-mask-global"),
   },
   {
     // Relay: protect real address from spam
@@ -391,7 +399,7 @@ export const PRIVACY_MESSAGES = [
     icon: "star",
     countSource: "none",
     feature: "relay",
-    cta: CTA_RELAY,
+    cta: ctaAttributedUrl(RELAY, "protect-your-inbox-global"),
   },
   {
     // Relay: 50 free email masks
@@ -400,7 +408,7 @@ export const PRIVACY_MESSAGES = [
     icon: "star",
     countSource: "none",
     feature: "relay",
-    cta: CTA_RELAY,
+    cta: ctaAttributedUrl(RELAY, "50-free-email-mask-global"),
   },
 ];
 

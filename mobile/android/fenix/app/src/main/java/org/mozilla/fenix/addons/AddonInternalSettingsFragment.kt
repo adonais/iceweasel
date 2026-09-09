@@ -29,14 +29,14 @@ import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
 import org.mozilla.fenix.snackbar.SnackbarBinding
 
-/**
- * A fragment to show the internal settings of an add-on.
- */
+/** A fragment to show the internal settings of an add-on. */
 class AddonInternalSettingsFragment : AddonPopupBaseFragment(), SystemInsetsPaddedFragment {
 
     private val args by navArgs<AddonInternalSettingsFragmentArgs>()
     private var _binding: FragmentAddOnInternalSettingsBinding? = null
-    internal val binding get() = _binding!!
+    internal val binding
+        get() = _binding!!
+
     private val snackbarBinding = ViewBoundFeatureWrapper<SnackbarBinding>()
     private var navigateToDetailsJob: Job? = null
 
@@ -60,16 +60,17 @@ class AddonInternalSettingsFragment : AddonPopupBaseFragment(), SystemInsetsPadd
         } ?: findNavController().navigateUp()
 
         snackbarBinding.set(
-            feature = SnackbarBinding(
-                context = requireContext(),
-                browserStore = requireComponents.core.store,
-                appStore = requireComponents.appStore,
-                snackbarDelegate = FenixSnackbarDelegate(provideDynamicSnackbarContainer()),
-                navController = findNavController(),
-                tabsUseCases = requireComponents.useCases.tabsUseCases,
-                sendTabUseCases = SendTabUseCases(requireComponents.backgroundServices.accountManager),
-                customTabSessionId = session?.id,
-            ),
+            feature =
+                SnackbarBinding(
+                    context = requireContext(),
+                    browserStore = requireComponents.core.store,
+                    appStore = requireComponents.appStore,
+                    snackbarDelegate = FenixSnackbarDelegate(provideDynamicSnackbarContainer()),
+                    navController = findNavController(),
+                    tabsUseCases = requireComponents.useCases.tabsUseCases,
+                    sendTabUseCases = SendTabUseCases(requireComponents.backgroundServices.accountManager),
+                    customTabSessionId = session?.id,
+                ),
             owner = this,
             view = view,
         )
@@ -110,9 +111,10 @@ class AddonInternalSettingsFragment : AddonPopupBaseFragment(), SystemInsetsPadd
             return true
         }
         val webExtensionId = args.webExtensionId
-        navigateToDetailsJob = viewLifecycleOwner.lifecycleScope.launch {
-            navigateToInstalledAddonDetailsFor(webExtensionId)
-        }
+        navigateToDetailsJob =
+            viewLifecycleOwner.lifecycleScope.launch {
+                navigateToInstalledAddonDetailsFor(webExtensionId)
+            }
         return true
     }
 
@@ -120,30 +122,25 @@ class AddonInternalSettingsFragment : AddonPopupBaseFragment(), SystemInsetsPadd
     internal suspend fun navigateToInstalledAddonDetailsFor(webExtensionId: String) {
         val addon = provideAddonManager().getAddonByID(webExtensionId)
         if (addon != null) {
-            provideNavController().navigate(
-                NavGraphDirections.actionGlobalToInstalledAddonDetailsFragment(addon),
-                NavOptions.Builder()
-                    .setPopUpTo(R.id.addonInternalSettingsFragment, true)
-                    .build(),
-            )
+            provideNavController()
+                .navigate(
+                    NavGraphDirections.actionGlobalToInstalledAddonDetailsFragment(addon),
+                    NavOptions.Builder().setPopUpTo(R.id.addonInternalSettingsFragment, true).build(),
+                )
         } else {
             provideNavController().navigateUp()
         }
     }
 
-    @VisibleForTesting
-    internal fun provideNavController() = findNavController()
+    @VisibleForTesting internal fun provideNavController() = findNavController()
 
-    @VisibleForTesting
-    internal fun provideAddonManager() = requireContext().components.addonManager
+    @VisibleForTesting internal fun provideAddonManager() = requireContext().components.addonManager
 
     override fun onDestroy() {
         super.onDestroy()
 
         if (isRemoving) {
-            requireComponents.core.store.dispatch(
-                WebExtensionAction.ClearOptionsPageSession(args.webExtensionId),
-            )
+            requireComponents.core.store.dispatch(WebExtensionAction.ClearOptionsPageSession(args.webExtensionId))
         }
     }
 

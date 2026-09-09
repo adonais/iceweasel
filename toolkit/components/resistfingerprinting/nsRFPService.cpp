@@ -3182,6 +3182,8 @@ void nsRFPService::GetExemptedDomainsLowercase(nsCString& aExemptedDomains) {
 #define EXEMPTED_DOMAINS_PREF_NAME \
   "privacy.resistFingerprinting.exemptedDomains"
 
+  // Callers compare this against a lower-cased host, and
+  // nsContentUtils::IsURIInList() asserts that the list is lower-case.
   static bool sInited = false;
   if (!sInited) {
     sInited = true;
@@ -3189,10 +3191,12 @@ void nsRFPService::GetExemptedDomainsLowercase(nsCString& aExemptedDomains) {
     ClearOnShutdown(sExemptedDomainsLowercase);
     Preferences::GetCString(EXEMPTED_DOMAINS_PREF_NAME,
                             *sExemptedDomainsLowercase);
+    ToLowerCase(*sExemptedDomainsLowercase);
     Preferences::RegisterCallback(
         [](const char* aPref, void* aData) {
           Preferences::GetCString(EXEMPTED_DOMAINS_PREF_NAME,
                                   *sExemptedDomainsLowercase);
+          ToLowerCase(*sExemptedDomainsLowercase);
         },
         EXEMPTED_DOMAINS_PREF_NAME);
   }
@@ -3387,9 +3391,11 @@ void nsRFPService::CalculateFontLocaleAllowlist() {
 #elif defined(XP_MACOSX)
 #  include "../../gfx/thebes/StandardFonts-macos.inc"
 #elif defined(XP_LINUX)
-#  include "../../gfx/thebes/StandardFonts-linux.inc"
-#elif defined(XP_ANDROID)
-#  include "../../gfx/thebes/StandardFonts-android.inc"
+#  if defined(ANDROID)
+#    include "../../gfx/thebes/StandardFonts-android.inc"
+#  else
+#    include "../../gfx/thebes/StandardFonts-linux.inc"
+#  endif
 #endif
 
 #undef FontInclusionByLocaleRules

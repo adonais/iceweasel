@@ -14,6 +14,9 @@ files_changed:
   - gfx/thebes/gfxUserFontSet.cpp
 filters:
   - target_tasks_method
+head_git_repository: https://github.com/mozilla-firefox/firefox
+head_git_rev: f594acb4e221939ee193159d529203b889830861
+head_git_ref: refs/heads/main
 head_ref: 7bc9f9c659dd5c04c341cef4f898cb08574d9cdd
 head_repository: https://hg.mozilla.org/mozilla-central
 head_rev: 7bc9f9c659dd5c04c341cef4f898cb08574d9cdd

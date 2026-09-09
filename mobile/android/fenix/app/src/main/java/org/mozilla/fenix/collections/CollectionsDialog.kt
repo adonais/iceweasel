@@ -27,14 +27,12 @@ import org.mozilla.fenix.ext.increaseTapArea
 /**
  * A lambda that is invoked when a confirmation button in a [CollectionsDialog] is clicked.
  *
- * The [TabCollection] ID of the selected collection is passed to the delegate when confirmed.
- * If the selected collection was newly created then [Boolean] is set to true.
+ * The [TabCollection] ID of the selected collection is passed to the delegate when confirmed. If the selected
+ * collection was newly created then [Boolean] is set to true.
  */
 typealias OnPositiveButtonClick = (id: Long?, isNewCollection: Boolean) -> Unit
 
-/**
- * A lambda that is invoked when a cancel button in a [CollectionsDialog] is clicked.
- */
+/** A lambda that is invoked when a cancel button in a [CollectionsDialog] is clicked. */
 typealias OnNegativeButtonClick = () -> Unit
 
 /**
@@ -52,12 +50,8 @@ data class CollectionsDialog(
     val onNegativeButtonClick: OnNegativeButtonClick,
 )
 
-/**
- * Create and display a [CollectionsDialog] using [AlertDialog].
- */
-fun CollectionsDialog.show(
-    context: Context,
-) {
+/** Create and display a [CollectionsDialog] using [AlertDialog]. */
+fun CollectionsDialog.show(context: Context) {
     if (storage.cachedTabCollections.isEmpty()) {
         showAddNewDialog(context, storage)
         return
@@ -67,32 +61,34 @@ fun CollectionsDialog.show(
     val layout = LayoutInflater.from(context).inflate(R.layout.add_new_collection_dialog, null)
     val list = layout.findViewById<RecyclerView>(R.id.recycler_view)
 
-    val builder = MaterialAlertDialogBuilder(context).setTitle(R.string.tab_tray_select_collection)
-        .setView(layout)
-        .setPositiveButton(R.string.create_collection_positive) { dialog, _ ->
-            val selectedCollection =
-                (list.adapter as CollectionsListAdapter).getSelectedCollection()
-            val collection = storage.cachedTabCollections[selectedCollection]
+    val builder =
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.tab_tray_select_collection)
+            .setView(layout)
+            .setPositiveButton(R.string.create_collection_positive) { dialog, _ ->
+                val selectedCollection = (list.adapter as CollectionsListAdapter).getSelectedCollection()
+                val collection = storage.cachedTabCollections[selectedCollection]
 
-            MainScope().launch {
-                val id = storage.addTabsToCollection(collection, sessionList)
-                onPositiveButtonClick.invoke(id, false)
+                MainScope().launch {
+                    val id = storage.addTabsToCollection(collection, sessionList)
+                    onPositiveButtonClick.invoke(id, false)
+                }
+
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.create_collection_negative) { dialog, _ ->
+                onNegativeButtonClick.invoke()
+
+                dialog.cancel()
             }
 
-            dialog.dismiss()
-        }.setNegativeButton(R.string.create_collection_negative) { dialog, _ ->
-            onNegativeButtonClick.invoke()
-
-            dialog.cancel()
-        }
-
     val dialog = builder.create().withCenterAlignedButtons()
-    val collectionNames =
-        arrayOf(context.getString(R.string.tab_tray_add_new_collection)) + collections
-    val collectionsListAdapter = CollectionsListAdapter(collectionNames) {
-        dialog.dismiss()
-        showAddNewDialog(context, storage)
-    }
+    val collectionNames = arrayOf(context.getString(R.string.tab_tray_add_new_collection)) + collections
+    val collectionsListAdapter =
+        CollectionsListAdapter(collectionNames) {
+            dialog.dismiss()
+            showAddNewDialog(context, storage)
+        }
 
     list.apply {
         layoutManager = LinearLayoutManager(context)
@@ -112,29 +108,32 @@ internal fun CollectionsDialog.showAddNewDialog(
         context.getString(
             R.string.create_collection_default_name,
             collectionsStorage.cachedTabCollections.getDefaultCollectionNumber(),
-        ),
+        )
     )
     collectionNameEditText.increaseTapArea(context.resources.getDimension(R.dimen.tap_increase_2).toInt())
 
-    val dialog = MaterialAlertDialogBuilder(context)
-        .setTitle(R.string.tab_tray_add_new_collection)
-        .setView(layout).setPositiveButton(R.string.create_collection_positive) { dialog, _ ->
+    val dialog =
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.tab_tray_add_new_collection)
+            .setView(layout)
+            .setPositiveButton(R.string.create_collection_positive) { dialog, _ ->
+                MainScope().launch {
+                    val id =
+                        storage.createCollection(
+                            collectionNameEditText.text.toString().trim(),
+                            sessionList,
+                        )
+                    onPositiveButtonClick.invoke(id, true)
+                }
 
-            MainScope().launch {
-                val id = storage.createCollection(
-                    collectionNameEditText.text.toString().trim(),
-                    sessionList,
-                )
-                onPositiveButtonClick.invoke(id, true)
+                dialog.dismiss()
             }
-
-            dialog.dismiss()
-        }
-        .setNegativeButton(R.string.create_collection_negative) { dialog, _ ->
-            onNegativeButtonClick.invoke()
-            dialog.cancel()
-        }
-        .create().withCenterAlignedButtons()
+            .setNegativeButton(R.string.create_collection_negative) { dialog, _ ->
+                onNegativeButtonClick.invoke()
+                dialog.cancel()
+            }
+            .create()
+            .withCenterAlignedButtons()
 
     collectionNameEditText.doOnTextChanged { text, _, _, _ ->
         dialog.getButton(DialogInterface.BUTTON_POSITIVE).isClickable = text.toString().isNotBlank()

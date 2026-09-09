@@ -26,9 +26,7 @@ import org.mozilla.fenix.settings.labs.store.LabsStore
 import org.mozilla.fenix.settings.labs.ui.FirefoxLabsScreen
 import org.mozilla.fenix.theme.FirefoxTheme
 
-/**
- * Fragment for displaying the Firefox Labs screen.
- */
+/** Fragment for displaying the Firefox Labs screen. */
 class FirefoxLabsFragment : Fragment(), SystemInsetsPaddedFragment {
 
     override fun onResume() {
@@ -36,24 +34,24 @@ class FirefoxLabsFragment : Fragment(), SystemInsetsPaddedFragment {
         hideToolbar()
     }
 
-    private val labsStore by fragmentStore(
-        initialState = LabsState.INITIAL,
-    ) {
-        LabsStore(
-            initialState = it,
-            middleware = listOf(
-                LabsMiddleware(
-                    context = requireContext().applicationContext,
-                    settings = requireComponents.settings,
-                    nimbusSdk = requireComponents.nimbus.sdk,
-                    onRestart = ::restartFenix,
-                    onOpenFeedback = ::openFeedbackLink,
-                    crashReporter = requireComponents.analytics.crashReporter,
-                ),
-                LabsTelemetryMiddleware(),
-            ),
-        )
-    }
+    private val labsStore by
+        fragmentStore(initialState = LabsState.INITIAL) {
+            LabsStore(
+                initialState = it,
+                middleware =
+                    listOf(
+                        LabsMiddleware(
+                            context = requireContext().applicationContext,
+                            settings = requireComponents.settings,
+                            nimbusSdk = requireComponents.nimbus.sdk,
+                            onRestart = ::restartFenix,
+                            onOpenFeedback = ::openFeedbackLink,
+                            crashReporter = requireComponents.analytics.crashReporter,
+                        ),
+                        LabsTelemetryMiddleware(),
+                    ),
+            )
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -81,7 +79,7 @@ class FirefoxLabsFragment : Fragment(), SystemInsetsPaddedFragment {
             LabsRefreshFeature(
                 store = labsStore,
                 nimbusApi = requireComponents.nimbus.sdk,
-            ),
+            )
         )
     }
 
@@ -96,8 +94,8 @@ class FirefoxLabsFragment : Fragment(), SystemInsetsPaddedFragment {
         val context = activity?.applicationContext
         context?.startActivity(
             Intent.makeRestartActivityTask(
-                context.packageManager.getLaunchIntentForPackage(context.packageName)?.component,
-            ),
+                context.packageManager.getLaunchIntentForPackage(context.packageName)?.component
+            )
         )
         // Kill the existing process to ensure we get a clean start of the application
         Process.killProcess(Process.myPid())

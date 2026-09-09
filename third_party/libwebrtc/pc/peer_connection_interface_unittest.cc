@@ -2845,9 +2845,14 @@ RTC_ALLOW_PLAN_B_DEPRECATION_END()
 // This tests that remote tracks are ended if a local session description is set
 // that rejects the media content type.
 TEST_P(PeerConnectionInterfaceTest, RejectMediaContent) {
-  // Munging allowed: kUnknownModification (section rejection)
+  // Munging allowed: kRejected (section rejection)
+  // TODO: bugs.webrtc.org/41480906 - This test rejects m= sections by
+  // munging content->rejected because it also runs under Plan B, where the
+  // transceiver API is unavailable. Once Plan B is removed, reject sections via
+  // transceiver->StopStandard() instead of munging and drop the
+  // WebRTC-NoSdpMangleAllowForTesting exception below.
   RTCConfiguration config;
-  CreatePeerConnection(config, "WebRTC-NoSdpMangleAllowForTesting/Enabled,1/");
+  CreatePeerConnection(config, "WebRTC-NoSdpMangleAllowForTesting/Enabled,39/");
   // First create and set a remote offer, then reject its video content in our
   // answer.
   CreateAndSetRemoteOffer(kSdpStringWithStream1PlanB);

@@ -9,9 +9,7 @@ import androidx.annotation.FloatRange
 import androidx.annotation.StringRes
 import org.mozilla.fenix.R
 
-/**
- * Sealed interface representing a download list item
- */
+/** Sealed interface representing a download list item */
 sealed interface DownloadListItem
 
 /**
@@ -41,22 +39,14 @@ data class FileItem(
     val description: String,
 ) : DownloadListItem {
 
-    /**
-     * The icon resource ID associated with this [FileItem].
-     */
-    @DrawableRes
-    val icon: Int = getIcon()
+    /** The icon resource ID associated with this [FileItem]. */
+    @DrawableRes val icon: Int = getIcon()
 
-    /**
-     * The content type filter based on the [contentType] of the [FileItem]
-     */
+    /** The content type filter based on the [contentType] of the [FileItem] */
     val matchingContentTypeFilter: ContentTypeFilter
-        get() = (ContentTypeFilter.interestingContentTypes)
-            .first { type -> type.predicate(contentType) }
+        get() = (ContentTypeFilter.interestingContentTypes).first { type -> type.predicate(contentType) }
 
-    /**
-     * Text against which the search query is matched.
-     */
+    /** Text against which the search query is matched. */
     val stringToMatchForSearchQuery: String
         get() = "$fileName $displayedShortUrl"
 
@@ -88,79 +78,62 @@ data class FileItem(
                 // We extract MIME types corresponding to documents from the list of the most common
                 // MIME types from MDN.
                 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types/Common_types
-                it?.startsWith("text/") == true || it in listOf(
-                    "application/vnd.ms-excel",
-                    "application/msword",
-                    "application/vnd.ms-powerpoint",
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                    "application/vnd.oasis.opendocument.text",
-                    "application/vnd.oasis.opendocument.spreadsheet",
-                    "application/vnd.oasis.opendocument.presentation",
-                    "application/pdf",
-                    "application/rtf",
-                    "application/epub+zip",
-                    "application/vnd.amazon.ebook",
-                    "application/xml",
-                    "application/json",
-                    "application/vnd.apple.keynote",
-                    "application/x-abiword",
-                )
+                it?.startsWith("text/") == true ||
+                    it in
+                        listOf(
+                            "application/vnd.ms-excel",
+                            "application/msword",
+                            "application/vnd.ms-powerpoint",
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                            "application/vnd.oasis.opendocument.text",
+                            "application/vnd.oasis.opendocument.spreadsheet",
+                            "application/vnd.oasis.opendocument.presentation",
+                            "application/pdf",
+                            "application/rtf",
+                            "application/epub+zip",
+                            "application/vnd.amazon.ebook",
+                            "application/xml",
+                            "application/json",
+                            "application/vnd.apple.keynote",
+                            "application/x-abiword",
+                        )
             },
         ),
         Other(
             stringRes = R.string.download_content_type_filter_other_1,
             predicate = { !Image.predicate(it) && !Video.predicate(it) && !Document.predicate(it) },
-        ),
-        ;
+        );
 
-        /**
-         * @see [ContentTypeFilter].
-         */
+        /** @see [ContentTypeFilter]. */
         companion object {
             val interestingContentTypes = entries - All
         }
     }
 
-    /**
-     * The download status of the item.
-     */
+    /** The download status of the item. */
     sealed interface Status {
 
-        /**
-         * Indicates that the download is in the first state after creation but not yet [Downloading].
-         */
+        /** Indicates that the download is in the first state after creation but not yet [Downloading]. */
         data object Initiated : Status
 
-        /**
-         * Indicates that an [Initiated] download is now actively being downloaded.
-         */
-        data class Downloading(
-            @param:FloatRange(from = 0.0, to = 1.0) val progress: Float?,
-        ) : Status
+        /** Indicates that an [Initiated] download is now actively being downloaded. */
+        data class Downloading(@param:FloatRange(from = 0.0, to = 1.0) val progress: Float?) : Status
 
-        /**
-         * Indicates that the download that has been [Downloading] has been paused.
-         */
-        data class Paused(
-            @param:FloatRange(from = 0.0, to = 1.0) val progress: Float?,
-        ) : Status
+        /** Indicates that the download that has been [Downloading] has been paused. */
+        data class Paused(@param:FloatRange(from = 0.0, to = 1.0) val progress: Float?) : Status
 
-        /**
-         * Indicates that the download that has been [Downloading] has been cancelled.
-         */
+        /** Indicates that the download that has been [Downloading] has been cancelled. */
         data object Cancelled : Status
 
         /**
-         * Indicates that the download that has been [Downloading] has moved to failed because
-         * something unexpected has happened.
+         * Indicates that the download that has been [Downloading] has moved to failed because something unexpected has
+         * happened.
          */
         data object Failed : Status
 
-        /**
-         * Indicates that the [Downloading] download has been completed.
-         */
+        /** Indicates that the [Downloading] download has been completed. */
         data object Completed : Status
     }
 }
@@ -170,43 +143,25 @@ data class FileItem(
  *
  * @property timeCategory The time period the header represents
  */
-data class HeaderItem(
-    val timeCategory: TimeCategory,
-) : DownloadListItem
+data class HeaderItem(val timeCategory: TimeCategory) : DownloadListItem
 
-/**
- * Enum class representing the time period used to group download items
- */
-enum class TimeCategory(
-    @param:StringRes val stringRes: Int,
-) {
-    /**
-     * Represents a download that is in progress
-     */
+/** Enum class representing the time period used to group download items */
+enum class TimeCategory(@param:StringRes val stringRes: Int) {
+    /** Represents a download that is in progress */
     IN_PROGRESS(R.string.download_header_in_progress),
 
-    /**
-     * Represents the current day
-     */
+    /** Represents the current day */
     TODAY(R.string.download_time_period_today),
 
-    /**
-     * Represents the day before the current day
-     */
+    /** Represents the day before the current day */
     YESTERDAY(R.string.download_time_period_yesterday),
 
-    /**
-     * Represents the last 7 days
-     */
+    /** Represents the last 7 days */
     LAST_7_DAYS(R.string.download_time_period_last_7_days),
 
-    /**
-     * Represents the last 30 days
-     */
+    /** Represents the last 30 days */
     LAST_30_DAYS(R.string.download_time_period_last_30_days),
 
-    /**
-     * Represents a time period older than 30 days
-     */
+    /** Represents a time period older than 30 days */
     OLDER(R.string.download_time_period_older),
 }

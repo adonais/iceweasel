@@ -37,7 +37,6 @@ use style::counter_style::{self, DescriptorId as CounterStyleDescriptorId};
 use style::data::{self, ElementStyles};
 use style::dom::ElementContext;
 use style::dom::{AttributeTracker, ShowSubtreeData, TDocument, TElement, TNode, TShadowRoot};
-use style::driver;
 use style::error_reporting::{ParseErrorReporter, SelectorWarningKind};
 use style::font_face::{
     self, DescriptorId as FontFaceDescriptorId, FontFaceSourceFormat, FontFaceSourceListComponent,
@@ -94,7 +93,8 @@ use style::properties::{
     parse_one_declaration_into, parse_style_attribute, CSSWideKeyword, ComputedValues,
     CountedUnknownProperty, Importance, LonghandId, NonCustomPropertyId,
     OwnedPropertyDeclarationId, PropertyDeclarationBlock, PropertyDeclarationId,
-    PropertyDeclarationIdSet, PropertyId, ShorthandId, SourcePropertyDeclaration, StyleBuilder,
+    PropertyDeclarationIdSet, PropertyFlags, PropertyId, ShorthandId, SourcePropertyDeclaration,
+    StyleBuilder,
 };
 use style::properties_and_values::registry::PropertyRegistration;
 use style::rule_cache::RuleCacheConditions;
@@ -163,6 +163,7 @@ use style::values::specified::source_size_list::SourceSizeList;
 use style::values::specified::svg_path::PathCommand;
 use style::values::specified::{LengthUnit, NoCalcLength, NoCalcNumber};
 use style::values::{specified, AtomIdent, CustomIdent, KeyframesName};
+use style::{custom_properties, driver};
 use style_traits::{CssWriter, ParseError, ParsingMode, SpecifiedValueInfo, ToCss};
 use thin_vec::ThinVec as nsTArray;
 use to_shmem::SharedMemoryBuilder;
@@ -5417,7 +5418,9 @@ pub extern "C" fn Servo_ParsePseudoElement(
         return false;
     }
     let data = unsafe { UrlExtraData::from_ptr_ref(&url_data) };
-    if !ignore_enabled_state && !pseudo.enabled_in_content(data) {
+    if !ignore_enabled_state
+        && !pseudo.enabled_in_content(data, /* for_supports_rule = */ false)
+    {
         return false;
     }
     let (pseudo_type, name) = pseudo.pseudo_type_and_argument();
@@ -7527,7 +7530,7 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
         &mut tree_counting_caches,
     );
 
-    let restriction = pseudo.and_then(|p| p.property_restriction());
+    let restriction = pseudo.map_or(PropertyFlags::empty(), |p| p.property_restriction());
 
     let global_style_data = &*GLOBAL_STYLE_DATA;
     let guard = global_style_data.shared_lock.read();
@@ -7590,7 +7593,7 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
                     }
 
                     // Skip restricted properties
-                    if restriction.map_or(false, |r| !property.flags().contains(r)) {
+                    if !restriction.is_empty() && !property.flags().contains(restriction) {
                         return;
                     }
 
@@ -8200,7 +8203,7 @@ pub extern "C" fn Servo_StyleSet_MightHaveAttributeDependency(
     element: &RawGeckoElement,
     local_name: *mut nsAtom,
 ) -> bool {
-    let data = raw_data.borrow();
+    let data = unsafe { borrow_assert_main_thread(raw_data) };
     let element = GeckoElement(element);
 
     unsafe {
@@ -8218,7 +8221,7 @@ pub extern "C" fn Servo_StyleSet_MightHaveAttributeDependencyInContainer(
     element: &RawGeckoElement,
     local_name: *mut nsAtom,
 ) -> ContainerAttributeDependencyKind {
-    let data = raw_data.borrow();
+    let data = unsafe { borrow_assert_main_thread(raw_data) };
     let element = GeckoElement(element);
     unsafe {
         AtomIdent::with(local_name, |local_name| {
@@ -9528,7 +9531,11 @@ unsafe fn compute_color(
     value: &nsACString,
     loader: *mut Loader,
 ) -> Result<ComputeColorResult, ()> {
-    let mut input = ParserInput::new(value.as_str_unchecked());
+    use style::error_reporting::ContextualParseError;
+    use style_traits::StyleParseErrorKind;
+
+    let value = value.as_str_unchecked();
+    let mut input = ParserInput::new(value);
     let mut input = Parser::new(&mut input);
     let reporter = loader.as_mut().and_then(|loader| {
         // Make an ErrorReporter that will report errors as being "from DOM".
@@ -9556,7 +9563,17 @@ unsafe fn compute_color(
         None => None,
     };
 
-    let computed = specified::Color::parse_and_compute(&context, &mut input, device)?;
+    let computed = specified::Color::parse_and_compute(&context, &mut input, device);
+
+    if computed.is_err() && context.error_reporting_enabled() {
+        // TODO(emilio): Revise whether we want to keep this at all, we use this only for canvas,
+        // these warnings are disabled by default and not available on OffscreenCanvas anyways...
+        let e = ParseError::custom(StyleParseErrorKind::OtherInvalidValue);
+        let error = ContextualParseError::UnsupportedValue(value, e);
+        context.log_css_error(SourceLocation::default(), error);
+    }
+
+    let computed = computed?;
 
     let result_color = computed.resolve_to_absolute(current_color);
     let was_current_color = computed.is_currentcolor();
@@ -10479,7 +10496,7 @@ pub extern "C" fn Servo_EasingFunctionAt(
 
 fn parse_no_context<'i, F, R>(string: &'i str, parse: F) -> Result<R, ()>
 where
-    F: FnOnce(&ParserContext, &mut Parser<'i, '_>) -> Result<R, ParseError<'i>>,
+    F: FnOnce(&ParserContext, &mut Parser<'i, '_>) -> Result<R, ParseError>,
 {
     let context = ParserContext::new(
         Origin::Author,
@@ -10812,8 +10829,7 @@ pub extern "C" fn Servo_GetRuleBodyText(initial_text: &nsACString, ret_val: &mut
 
     let token_start = input.position();
     // Parse the nested block to move the parser to the end of the block
-    let _ =
-        input.parse_nested_block(|_i| -> Result<(), CssParseError<'_, BasicParseError>> { Ok(()) });
+    let _ = input.parse_nested_block(|_i| -> Result<(), CssParseError<BasicParseError>> { Ok(()) });
 
     // We're not guaranteed to have a closing bracket, but when we do, we need to move
     // the end offset before it.
@@ -10863,8 +10879,7 @@ pub extern "C" fn Servo_ReplaceBlockRuleBodyTextInStylesheetText(
     let token_start = input.position();
     let rule_body_start = rule_start_index + token_start.byte_index();
     // Parse the nested block to move the parser to the end of the block
-    let _ =
-        input.parse_nested_block(|_i| -> Result<(), CssParseError<'_, BasicParseError>> { Ok(()) });
+    let _ = input.parse_nested_block(|_i| -> Result<(), CssParseError<BasicParseError>> { Ok(()) });
     let mut rule_body_end = rule_start_index + input.position().byte_index();
 
     // We're not guaranteed to have a closing bracket, but when we do, we need to move
@@ -11108,7 +11123,7 @@ pub unsafe extern "C" fn Servo_CSSParser_NextToken(
     css_token.column = location_start.column;
 
     if need_to_parse_nested_block {
-        let _ = input.parse_nested_block(|i| -> Result<(), CssParseError<'_, BasicParseError>> {
+        let _ = input.parse_nested_block(|i| -> Result<(), CssParseError<BasicParseError>> {
             *state = i.state();
             Ok(())
         });
@@ -11497,11 +11512,12 @@ pub extern "C" fn Servo_GetShadowRootForScoped(
 pub unsafe extern "C" fn Servo_GetComputationStepsSupportedCSSFunctions(
     out: &mut nsTArray<nsCString>,
 ) {
+    use style::properties::ARBITRARY_SUBSTITUTION_FUNCTIONS;
     use style::values::specified::calc::MathFunction;
 
-    out.push(nsCString::from("var"));
-    out.push(nsCString::from("attr"));
-    out.push(nsCString::from("env"));
+    for func in ARBITRARY_SUBSTITUTION_FUNCTIONS {
+        out.push(nsCString::from(*func));
+    }
     for func in MathFunction::variants() {
         out.push(nsCString::from(func.as_ref()));
     }
@@ -11516,6 +11532,8 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
     raw_data: &PerDocumentStyleData,
     out: &mut nsTArray<nsString>,
 ) {
+    use style::custom_properties::VariableValue;
+    use style::properties::ARBITRARY_SUBSTITUTION_FUNCTIONS;
     use style::values::generics::calc::SimplificationResult;
     use style::values::specified::calc::{CalcNode, CalcParseFlags, Leaf};
 
@@ -11532,55 +11550,9 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
     );
 
     let string = str.to_string();
+    let mut substituted = None;
     let mut input = ParserInput::new(&string);
     let mut parser = Parser::new(&mut input);
-
-    // At the moment, we're only supporting top-level Math function
-    // TODO: we should handle others like env()/var()/attr() (See Bug 2041622)
-    let math_func = match parser.next() {
-        Ok(Token::Function(ref name)) => {
-            match CalcNode::math_function(
-                &parser_context,
-                name,
-                // we don't need to have a valid location here, it's only used to report errors
-                SourceLocation { line: 0, column: 0 },
-            ) {
-                Ok(f) => f,
-                Err(_) => {
-                    return;
-                },
-            }
-        },
-        _ => {
-            return;
-        },
-    };
-
-    let flags = CalcParseFlags {
-        percentage_context: PercentageContext::allowed(),
-        in_place_operations: CalcNodeParseInPlaceOperations::No,
-        ..Default::default()
-    };
-    // Initial parsing
-    let mut node = match CalcNode::parse(&parser_context, &mut parser, math_func, flags) {
-        Ok(n) => n,
-        Err(_) => {
-            return;
-        },
-    };
-
-    let mut value = match node.as_leaf() {
-        Some(l) => l.to_css_string(),
-        None => node.to_css_string(),
-    };
-    // `value` is the serialized version of `string`, which can be different from the
-    // authored expression (for example `round(Infinity) will serialize as `round(infinity, 1)`).
-    // We only want to put `string` in the array if it's significantly different (as in, it
-    // should have more differences than juste whitespace/casing).
-    if value.replace(" ", "").to_lowercase() != string.replace(" ", "").to_lowercase() {
-        out.push(nsString::from(&string));
-    }
-    out.push(nsString::from(&value));
 
     let data = raw_data.borrow();
     let element = GeckoElement(element);
@@ -11609,6 +11581,114 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
         &element,
         &mut tree_counting_caches,
     );
+
+    // Let's check if we have substitution functions (`var()`, `attr()`, `env()`) to handle.
+    parser.look_for_arbitrary_substitution_functions(ARBITRARY_SUBSTITUTION_FUNCTIONS);
+    let Ok(variable_value) = VariableValue::parse(
+        &mut parser,
+        Some(&parser_context.namespaces.prefixes),
+        &parser_context.url_data,
+    ) else {
+        return;
+    };
+
+    if parser.seen_arbitrary_substitution_functions() {
+        // Build the attributes Map that ComputedSubstitutionFunctions needs
+        let stylist = &data.stylist;
+        let mut attribute_tracker = AttributeTracker::new(&element);
+        let attributes: style::custom_properties_map::OwnMap = variable_value
+            .references
+            .refs
+            .iter()
+            .filter_map(|reference| {
+                if !reference.is_attr_with_type() {
+                    return None;
+                }
+
+                let value = custom_properties::get_attr_value_for_cycle_resolution(
+                    &reference.name,
+                    &reference.attribute_data,
+                    &variable_value.url_data,
+                    &mut attribute_tracker,
+                )
+                .ok()?;
+
+                Some((reference.name.clone(), Some(value)))
+            })
+            .collect();
+        let substitution_functions = custom_properties::ComputedSubstitutionFunctions::new(
+            Some(style.custom_properties().clone()),
+            Some(attributes),
+        );
+
+        let Ok(result) = custom_properties::substitute(
+            &variable_value,
+            &substitution_functions,
+            stylist,
+            &context,
+            &mut attribute_tracker,
+        ) else {
+            return;
+        };
+
+        // We successfully substituted, let's add the initial string to the result array
+        out.push(nsString::from(&string));
+        let result_string = result.css.to_string();
+        // …as well as the substituted string.
+        out.push(nsString::from(&result_string));
+        substituted = Some(result_string.clone());
+    }
+
+    let substituted_str = substituted.as_deref().unwrap_or(&string);
+    // Create a new Parser with the substituted string (even if no substitution occured)
+    // so we have a clean state and can get the computation steps now.
+    input = ParserInput::new(substituted_str);
+    parser = Parser::new(&mut input);
+
+    // At the moment, we're only supporting top-level Math function
+    // TODO: we should handle simple values too.
+    let math_func = match parser.next() {
+        Ok(Token::Function(ref name)) => match CalcNode::math_function(&parser_context, name) {
+            Ok(f) => f,
+            Err(_) => {
+                return;
+            },
+        },
+        _ => {
+            return;
+        },
+    };
+
+    let flags = CalcParseFlags {
+        percentage_context: PercentageContext::allowed(),
+        in_place_operations: CalcNodeParseInPlaceOperations::No,
+        ..Default::default()
+    };
+    // Initial parsing
+    let mut node = match CalcNode::parse(&parser_context, &mut parser, math_func, flags) {
+        Ok(n) => n,
+        Err(_) => {
+            return;
+        },
+    };
+
+    let mut value = match node.as_leaf() {
+        Some(l) => l.to_css_string(),
+        None => node.to_css_string(),
+    };
+
+    // If we didn't perform a substitution, we need to add the original string to the
+    // output (if we did a substitution, the original string was already added to `out`)
+    if substituted.is_none() {
+        // `value` is the serialized version of `string`, which can be different from the
+        // authored expression (for example `round(Infinity) will serialize as `round(infinity, 1)`).
+        // We only want to put `string` in the array if it's significantly different (as in, it
+        // should have more differences than juste whitespace/casing).
+        if value.replace(" ", "").to_lowercase() != string.replace(" ", "").to_lowercase() {
+            out.push(nsString::from(&string));
+        }
+        out.push(nsString::from(&value));
+    }
 
     // Go through the leaves so we have consistent units to run the computation
     node = node.map_leaves(|leaf| match *leaf {

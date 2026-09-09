@@ -19,33 +19,33 @@ import org.junit.Test
 
 class MlpaTokenProviderTest {
     @Test
-    fun `GIVEN a static provider WHEN I fetch the token THEN return the provided token`() =
-        runTest {
-            val expected = AuthorizationToken.Integrity("my-test-token")
-            val provider = MlpaTokenProvider.static(expected)
-            val result = provider.fetchToken()
+    fun `GIVEN a static provider WHEN I fetch the token THEN return the provided token`() = runTest {
+        val expected = AuthorizationToken.Integrity("my-test-token")
+        val provider = MlpaTokenProvider.static(expected)
+        val result = provider.fetchToken()
 
-            assertTrue(result.isSuccess)
+        assertTrue(result.isSuccess)
 
-            result.onSuccess {
-                assertEquals(expected, it)
-            }
+        result.onSuccess {
+            assertEquals(expected, it)
         }
+    }
 
     @Test
     fun `GIVEN the happy path WHEN I fetch the token THEN return the provided token`() = runTest {
         var actualUserId: UserId? = null
 
-        val provider = MlpaTokenProvider.mlpaIntegrityHandshake(
-            integrityClient = successIntegrityClient,
-            authenticationService = { request ->
-                actualUserId = request.userId
-                successAuthenticationService.verify(request)
-            },
-            userIdProvider = userIdProvider,
-            storage = MlpaTokenStorage.static(),
-            packageName = PackageName("my.package.name"),
-        )
+        val provider =
+            MlpaTokenProvider.mlpaIntegrityHandshake(
+                integrityClient = successIntegrityClient,
+                authenticationService = { request ->
+                    actualUserId = request.userId
+                    successAuthenticationService.verify(request)
+                },
+                userIdProvider = userIdProvider,
+                storage = MlpaTokenStorage.static(),
+                packageName = PackageName("my.package.name"),
+            )
 
         val actual = provider.fetchToken()
 
@@ -54,9 +54,9 @@ class MlpaTokenProviderTest {
     }
 
     @Test
-    fun `GIVEN a failed integrity token WHEN I fetch the token THEN propagate the failure`() =
-        runTest {
-            val provider = MlpaTokenProvider.mlpaIntegrityHandshake(
+    fun `GIVEN a failed integrity token WHEN I fetch the token THEN propagate the failure`() = runTest {
+        val provider =
+            MlpaTokenProvider.mlpaIntegrityHandshake(
                 integrityClient = failureIntegrityClient,
                 authenticationService = successAuthenticationService,
                 userIdProvider = userIdProvider,
@@ -64,19 +64,19 @@ class MlpaTokenProviderTest {
                 packageName = PackageName("my.package.name"),
             )
 
-            val actual = provider.fetchToken()
+        val actual = provider.fetchToken()
 
-            assertTrue(actual.isFailure)
+        assertTrue(actual.isFailure)
 
-            actual.onFailure {
-                assertEquals("Missing Token!", it.message)
-            }
+        actual.onFailure {
+            assertEquals("Missing Token!", it.message)
         }
+    }
 
     @Test
-    fun `GIVEN a failed mlpa response WHEN I fetch the token THEN propagate the failure`() =
-        runTest {
-            val provider = MlpaTokenProvider.mlpaIntegrityHandshake(
+    fun `GIVEN a failed mlpa response WHEN I fetch the token THEN propagate the failure`() = runTest {
+        val provider =
+            MlpaTokenProvider.mlpaIntegrityHandshake(
                 integrityClient = successIntegrityClient,
                 authenticationService = failureAuthenticationService,
                 userIdProvider = userIdProvider,
@@ -84,12 +84,12 @@ class MlpaTokenProviderTest {
                 packageName = PackageName("my.package.name"),
             )
 
-            val actual = provider.fetchToken()
+        val actual = provider.fetchToken()
 
-            assertTrue(actual.isFailure)
+        assertTrue(actual.isFailure)
 
-            actual.onFailure {
-                assertEquals("Bad MLPA Response", it.message)
-            }
+        actual.onFailure {
+            assertEquals("Bad MLPA Response", it.message)
         }
+    }
 }

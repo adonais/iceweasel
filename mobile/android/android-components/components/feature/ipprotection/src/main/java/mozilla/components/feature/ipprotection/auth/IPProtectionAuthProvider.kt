@@ -14,8 +14,7 @@ import mozilla.components.feature.ipprotection.IPProtectionFeature
 /**
  * Configures optional providers for initialization.
  *
- * This keeps [IPProtectionFeature] agnostic of optional handler
- * capabilities (such as Google Play Integrity).
+ * This keeps [IPProtectionFeature] agnostic of optional handler capabilities (such as Google Play Integrity).
  *
  * N.B: Implementations are invoked once, after the handler is registered and its auth provider is set, and before
  * [IPProtectionHandler.init].

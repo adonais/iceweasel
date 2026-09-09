@@ -41,15 +41,17 @@ NS_InitXPCOM
                                     __psynch_mutexwait   <-- blocked here
 ```
 
-`nsLookAndFeel::EnsureInit()` creates a hidden AppKit window to probe the system theme. AppKit immediately tries to resolve the system font to render the window's title bar, which goes through CoreText into `libFontRegistry.dylib`. The `TLocalFontRegistry` mutex is held by one of the font threads, so the main thread stalls.
+`nsLookAndFeel::EnsureInit()` creates a hidden AppKit window to probe the system theme. AppKit immediately tries to resolve the system font to render the window's title bar, which goes through CoreText into `libFontRegistry.dylib`, where it blocks trying to acquire the `TLocalFontRegistry` mutex.
+
+I could not determine from the profile which thread was holding that mutex. A sampled stack records the thread that is waiting, not the thread that owns the lock, so the holder is never directly visible. What the profile does show is that the main thread is blocked in the `TLocalFontRegistry` constructor and that the only other threads touching that registry during this window are the two font threads below.
 
 ## What the font threads are doing
 
-On the `RegisterFonts` thread, `gfxPlatformMac::FontRegistrationCallback` is scanning font directories and registering them with the OS. It calls `CoreTextFontList::ActivateFontsFromDir`, which goes through `CTFontManagerRegisterActionFontURLs` and into `libFontRegistry.dylib`'s registration path. The registration path holds the `TLocalFontRegistry` mutex while adding fonts to the index.
+On the `RegisterFonts` thread, `gfxPlatformMac::FontRegistrationCallback` is scanning font directories and registering them with the OS. It calls `CoreTextFontList::ActivateFontsFromDir`, which goes through `CTFontManagerRegisterActionFontURLs` and into `libFontRegistry.dylib`'s registration path. Adding fonts to the index almost certainly requires the `TLocalFontRegistry` mutex, which would make this thread a holder for part of the window, but that is a mechanism inference from the call stack rather than something the samples show.
 
-The `RegisterFonts` thread is also contending: 20.9% of its samples are in `__psynch_mutexwait` via `TLocalFontRegistry::TLocalFontRegistry()`. It is both the cause of the main thread's blocking and a victim of contention itself (the two font threads compete with each other and with the main thread over the same lock).
+What the samples do show is that `RegisterFonts` is itself contending: 20.9% of its samples are in `__psynch_mutexwait` via `TLocalFontRegistry::TLocalFontRegistry()`, the same frame the main thread blocks in. So it cannot be the holder throughout: for a fifth of its samples it is a waiter too. Most of the remaining time is real registration work, mostly filesystem calls (`stat` 9.2%, `__getattrlist` 6.1%) plus string and URL construction, with a further 3.7% waiting on synchronous XPC to the font daemon.
 
-On `InitFontList`, `gfxPlatformFontList::InitFontList()` calls `CTFontDescriptorCreateMatchingFontDescriptorsWithOptions` to enumerate the system font families. This also needs the font registry, and 10.3% of the thread's time is spent in synchronous XPC replies waiting for the font daemon to respond.
+On `InitFontList`, `gfxPlatformFontList::InitFontList()` calls `CTFontDescriptorCreateMatchingFontDescriptorsWithOptions` to enumerate the system font families. This also needs the font registry, and about 16% of the thread's samples (17 of 107) are spent in synchronous XPC replies waiting for the font daemon to respond. That figure has to come from a search across the whole thread: in the top-down tree the XPC wait frame is split across two branches, at 10.3% and 4.7%, so reading either branch alone understates it.
 
 ## The picture
 
@@ -57,4 +59,6 @@ All three threads need the `TLocalFontRegistry` mutex at overlapping times. The 
 
 The lock contention is concentrated in the first 400ms because that is when both the XPCOM initialization path and the font registration threads are active simultaneously. After the font threads finish, the contention disappears and the main thread continues normally.
 
-The "low-CPU gaps" visible in the profiler timeline on the main thread during startup are these 112 samples blocked in the kernel waiting for the font registry mutex. The main thread is not genuinely idle: it is ready to work but held up by a lock the font threads hold.
+The "low-CPU gaps" visible in the profiler timeline on the main thread during startup are these 112 samples blocked in the kernel waiting for the font registry mutex. The main thread is not genuinely idle: it is ready to work but stalled on a lock.
+
+Worth separating what this profile establishes from what it does not, because the distinction matters when filing this in a bug. Established: all three threads block in `TLocalFontRegistry::TLocalFontRegistry()`, the main thread loses 112 of the window's 394 samples to it, and the contention is confined to the first 400ms. Not established: which thread owns the mutex at any given moment. Pinning that down needs lock-contention instrumentation or a `dtrace`/`lldb` session, not a sampled profile.

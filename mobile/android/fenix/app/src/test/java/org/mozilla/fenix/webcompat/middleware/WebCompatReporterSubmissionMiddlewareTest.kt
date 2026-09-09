@@ -28,7 +28,7 @@ import org.mozilla.fenix.webcompat.store.WebCompatReporterStore
 import org.mozilla.fenix.webcompat.testdata.WebCompatTestData
 import org.robolectric.RobolectricTestRunner
 
-class TestGleanBrokenSiteReportSender() : GleanBrokenSiteReportSender {
+class TestGleanBrokenSiteReportSender : GleanBrokenSiteReportSender {
     internal var lastSentDetails: JSONObject? = null
     internal var lastSentDescription: String? = null
     internal var lastSentReason: WebCompatReporterState.BrokenSiteReason? = null
@@ -60,43 +60,50 @@ class WebCompatReporterSubmissionMiddlewareTest {
     private val gleanBrokenSiteReportSender: TestGleanBrokenSiteReportSender = TestGleanBrokenSiteReportSender()
 
     @Test
-    fun `GIVEN the URL is not changed WHEN WebCompatInfo is retrieved successfully THEN all report broken site pings are submitted`() = runTest {
-        val nimbusExperimentsProvider: NimbusExperimentsProvider = FakeNimbusExperimentsProvider(
-            activeExperiments = listOf(
-                EnrolledExperiment(
-                    featureIds = listOf(),
-                    slug = "slug1",
-                    userFacingName = "",
-                    userFacingDescription = "",
-                    branchSlug = "",
-                    isRollout = false,
-                ),
-                EnrolledExperiment(
-                    featureIds = listOf(),
-                    slug = "slug2",
-                    userFacingName = "",
-                    userFacingDescription = "",
-                    branchSlug = "",
-                    isRollout = false,
-                ),
-            ),
-            experimentBranchLambda = { it },
-        )
+    fun `GIVEN the URL is not changed WHEN WebCompatInfo is retrieved successfully THEN all report broken site pings are submitted`() =
+        runTest {
+            val nimbusExperimentsProvider: NimbusExperimentsProvider =
+                FakeNimbusExperimentsProvider(
+                    activeExperiments =
+                        listOf(
+                            EnrolledExperiment(
+                                featureIds = listOf(),
+                                slug = "slug1",
+                                userFacingName = "",
+                                userFacingDescription = "",
+                                branchSlug = "",
+                                isRollout = false,
+                            ),
+                            EnrolledExperiment(
+                                featureIds = listOf(),
+                                slug = "slug2",
+                                userFacingName = "",
+                                userFacingDescription = "",
+                                branchSlug = "",
+                                isRollout = false,
+                            ),
+                        ),
+                    experimentBranchLambda = { it },
+                )
 
-        val store = createStore(
-            enteredUrl = "https://www.mozilla.org",
-            nimbusExperimentsProvider = nimbusExperimentsProvider,
-            scope = this,
-        )
+            val store =
+                createStore(
+                    enteredUrl = "https://www.mozilla.org",
+                    nimbusExperimentsProvider = nimbusExperimentsProvider,
+                    scope = this,
+                )
 
-        store.dispatch(WebCompatReporterAction.SendReportClicked)
-        testScheduler.advanceUntilIdle()
+            store.dispatch(WebCompatReporterAction.SendReportClicked)
+            testScheduler.advanceUntilIdle()
 
-        assertLastSentBasicInfoMatchesExpectations()
+            assertLastSentBasicInfoMatchesExpectations()
 
-        val expected = FakeWebCompatReporterRetrievalService().retrieveInfo()?.addActiveExperimentsToWebCompatInfo(nimbusExperimentsProvider)
-        assertEquals(expected.toString(), gleanBrokenSiteReportSender.lastSentDetails.toString())
-    }
+            val expected =
+                FakeWebCompatReporterRetrievalService()
+                    .retrieveInfo()
+                    ?.addActiveExperimentsToWebCompatInfo(nimbusExperimentsProvider)
+            assertEquals(expected.toString(), gleanBrokenSiteReportSender.lastSentDetails.toString())
+        }
 
     @Test
     fun `WHEN the report is sent successfully THEN appState is updated`() = runTest {
@@ -109,190 +116,218 @@ class WebCompatReporterSubmissionMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN the URL is changed WHEN WebCompatInfo is retrieved successfully THEN only non tab related report broken site pings are submitted`() = runTest {
-        val nimbusExperimentsProvider: NimbusExperimentsProvider = FakeNimbusExperimentsProvider(
-            activeExperiments = listOf(
-                EnrolledExperiment(
-                    featureIds = listOf(),
-                    slug = "slug1",
-                    userFacingName = "",
-                    userFacingDescription = "",
-                    branchSlug = "",
-                    isRollout = false,
-                ),
-                EnrolledExperiment(
-                    featureIds = listOf(),
-                    slug = "slug2",
-                    userFacingName = "",
-                    userFacingDescription = "",
-                    branchSlug = "",
-                    isRollout = false,
-                ),
-            ),
-            experimentBranchLambda = { it },
-        )
+    fun `GIVEN the URL is changed WHEN WebCompatInfo is retrieved successfully THEN only non tab related report broken site pings are submitted`() =
+        runTest {
+            val nimbusExperimentsProvider: NimbusExperimentsProvider =
+                FakeNimbusExperimentsProvider(
+                    activeExperiments =
+                        listOf(
+                            EnrolledExperiment(
+                                featureIds = listOf(),
+                                slug = "slug1",
+                                userFacingName = "",
+                                userFacingDescription = "",
+                                branchSlug = "",
+                                isRollout = false,
+                            ),
+                            EnrolledExperiment(
+                                featureIds = listOf(),
+                                slug = "slug2",
+                                userFacingName = "",
+                                userFacingDescription = "",
+                                branchSlug = "",
+                                isRollout = false,
+                            ),
+                        ),
+                    experimentBranchLambda = { it },
+                )
 
-        val store = createStore(
-            enteredUrl = "https://example.com",
-            scope = this,
-            nimbusExperimentsProvider = nimbusExperimentsProvider,
-        )
+            val store =
+                createStore(
+                    enteredUrl = "https://example.com",
+                    scope = this,
+                    nimbusExperimentsProvider = nimbusExperimentsProvider,
+                )
 
-        store.dispatch(WebCompatReporterAction.SendReportClicked)
-        testScheduler.advanceUntilIdle()
+            store.dispatch(WebCompatReporterAction.SendReportClicked)
+            testScheduler.advanceUntilIdle()
 
-        assertLastSentBasicInfoMatchesExpectations(sentUrl = store.state.enteredUrl, shouldSendTabSpecificInfo = false)
+            assertLastSentBasicInfoMatchesExpectations(
+                sentUrl = store.state.enteredUrl,
+                shouldSendTabSpecificInfo = false,
+            )
 
-        val expected = FakeWebCompatReporterRetrievalService().retrieveInfo()?.addActiveExperimentsToWebCompatInfo(nimbusExperimentsProvider)
-        assertEquals(expected.toString(), gleanBrokenSiteReportSender.lastSentDetails.toString())
-    }
-
-    @Test
-    fun `GIVEN WebCompatInfo is not retrieved successfully THEN only the form fields and active experiments are submitted`() = runTest {
-        val webCompatReporterRetrievalService = object : WebCompatReporterRetrievalService {
-            override suspend fun retrieveInfo(): JSONObject? = null
+            val expected =
+                FakeWebCompatReporterRetrievalService()
+                    .retrieveInfo()
+                    ?.addActiveExperimentsToWebCompatInfo(nimbusExperimentsProvider)
+            assertEquals(expected.toString(), gleanBrokenSiteReportSender.lastSentDetails.toString())
         }
 
-        val nimbusExperimentsProvider: NimbusExperimentsProvider = FakeNimbusExperimentsProvider(
-            activeExperiments = listOf(
-                EnrolledExperiment(
-                    featureIds = listOf(),
-                    slug = "slug1",
-                    userFacingName = "",
-                    userFacingDescription = "",
-                    branchSlug = "",
-                    isRollout = false,
-                ),
-            ),
-            experimentBranchLambda = { it },
-        )
-
-        val store = createStore(
-            service = webCompatReporterRetrievalService,
-            scope = this,
-            nimbusExperimentsProvider = nimbusExperimentsProvider,
-        )
-
-        store.dispatch(WebCompatReporterAction.SendReportClicked)
-        testScheduler.advanceUntilIdle()
-
-        assertLastSentBasicInfoMatchesExpectations(shouldSendTabSpecificInfo = false)
-        assertEquals(null, gleanBrokenSiteReportSender.lastSentDetails)
-    }
-
     @Test
-    fun `GIVEN Nimbus has no active experiments WHEN submitting a report THEN the experiments metric is empty`() = runTest {
-        val nimbusExperimentsProvider: NimbusExperimentsProvider = FakeNimbusExperimentsProvider(activeExperiments = emptyList())
+    fun `GIVEN WebCompatInfo is not retrieved successfully THEN only the form fields and active experiments are submitted`() =
+        runTest {
+            val webCompatReporterRetrievalService =
+                object : WebCompatReporterRetrievalService {
+                    override suspend fun retrieveInfo(): JSONObject? = null
+                }
 
-        val store = createStore(
-            service = FakeWebCompatReporterRetrievalService(),
-            scope = this,
-            nimbusExperimentsProvider = nimbusExperimentsProvider,
-        )
+            val nimbusExperimentsProvider: NimbusExperimentsProvider =
+                FakeNimbusExperimentsProvider(
+                    activeExperiments =
+                        listOf(
+                            EnrolledExperiment(
+                                featureIds = listOf(),
+                                slug = "slug1",
+                                userFacingName = "",
+                                userFacingDescription = "",
+                                branchSlug = "",
+                                isRollout = false,
+                            )
+                        ),
+                    experimentBranchLambda = { it },
+                )
 
-        store.dispatch(WebCompatReporterAction.SendReportClicked)
-        testScheduler.advanceUntilIdle()
+            val store =
+                createStore(
+                    service = webCompatReporterRetrievalService,
+                    scope = this,
+                    nimbusExperimentsProvider = nimbusExperimentsProvider,
+                )
 
-        assertLastSentBasicInfoMatchesExpectations()
+            store.dispatch(WebCompatReporterAction.SendReportClicked)
+            testScheduler.advanceUntilIdle()
 
-        val sentDetails = gleanBrokenSiteReportSender.lastSentDetails
-        val sentExperiments = sentDetails?.optJSONObject("browserInfo")?.optJSONObject("experiments")?.optJSONArray("value")
-        assertEquals("[]", sentExperiments.toString())
-    }
-
-    @Test
-    fun `WHEN open preview is clicked AND enteredUrl matches tab url THEN preview contains full raw JSON plus form fields`() = runTest {
-        val capture = CaptureActionsMiddleware<WebCompatReporterState, WebCompatReporterAction>()
-
-        val webCompatReporterSubmissionMiddleware = createMiddleware(
-            scope = this,
-            gleanBrokenSiteReportSender = gleanBrokenSiteReportSender,
-            service = FakeWebCompatReporterRetrievalService(),
-        )
-
-        val store = WebCompatReporterStore(
-            initialState = WebCompatReporterState(
-                tabUrl = "https://www.mozilla.org",
-                enteredUrl = "https://www.mozilla.org",
-                reason = WebCompatReporterState.BrokenSiteReason.Slow,
-                problemDescription = "",
-                includeEtpBlockedUrls = true,
-            ),
-            middleware = listOf(
-                capture,
-                webCompatReporterSubmissionMiddleware,
-            ),
-        )
-
-        store.dispatch(WebCompatReporterAction.OpenPreviewClicked)
-        testScheduler.advanceUntilIdle()
-
-        val actual = store.state.previewReporterItems
-        val webCompatInfo = FakeWebCompatReporterRetrievalService().retrieveInfo()
-        val expectedJson = buildJsonObject {
-            put(
-                "basic",
-                buildJsonObject {
-                    put("description", "")
-                    put("reason", WebCompatReporterState.BrokenSiteReason.Slow.name)
-                    put("url", "https://www.mozilla.org")
-                },
-            )
-        }.addWebCompatInfo(webCompatInfo)
-
-        val expected = webCompatReporterSubmissionMiddleware.parseWebCompatPreviewJson(expectedJson)
-
-        assertEquals(expected, actual)
-    }
-
-    @Test
-    fun `GIVEN a complex JsonObject WHEN parseWebCompatPreviewJson is called THEN it returns a list of PreviewReporterItem`() = runTest {
-        val json = buildJsonObject {
-            put(
-                "group1",
-                buildJsonObject {
-                    put("key1", "value1")
-                    put("key2", 2)
-                    put("key3", true)
-                },
-            )
-            put(
-                "group2",
-                buildJsonObject {
-                    put("key4", "value4")
-                },
-            )
-            put("invalid", "not an object")
+            assertLastSentBasicInfoMatchesExpectations(shouldSendTabSpecificInfo = false)
+            assertEquals(null, gleanBrokenSiteReportSender.lastSentDetails)
         }
 
-        val middleware = createMiddleware(
-            scope = this,
-            gleanBrokenSiteReportSender = gleanBrokenSiteReportSender,
-            service = FakeWebCompatReporterRetrievalService(),
-        )
-        val result = middleware.parseWebCompatPreviewJson(json)
+    @Test
+    fun `GIVEN Nimbus has no active experiments WHEN submitting a report THEN the experiments metric is empty`() =
+        runTest {
+            val nimbusExperimentsProvider: NimbusExperimentsProvider =
+                FakeNimbusExperimentsProvider(activeExperiments = emptyList())
 
-        assertEquals(2, result.size)
+            val store =
+                createStore(
+                    service = FakeWebCompatReporterRetrievalService(),
+                    scope = this,
+                    nimbusExperimentsProvider = nimbusExperimentsProvider,
+                )
 
-        assertEquals("group1", result[0].title)
-        assertEquals(3, result[0].data.size)
-        assertEquals("value1", result[0].data["key1"])
-        assertEquals("2", result[0].data["key2"])
-        assertEquals("true", result[0].data["key3"])
+            store.dispatch(WebCompatReporterAction.SendReportClicked)
+            testScheduler.advanceUntilIdle()
 
-        assertEquals("group2", result[1].title)
-        assertEquals(1, result[1].data.size)
-        assertEquals("value4", result[1].data["key4"])
-    }
+            assertLastSentBasicInfoMatchesExpectations()
+
+            val sentDetails = gleanBrokenSiteReportSender.lastSentDetails
+            val sentExperiments =
+                sentDetails?.optJSONObject("browserInfo")?.optJSONObject("experiments")?.optJSONArray("value")
+            assertEquals("[]", sentExperiments.toString())
+        }
+
+    @Test
+    fun `WHEN open preview is clicked AND enteredUrl matches tab url THEN preview contains full raw JSON plus form fields`() =
+        runTest {
+            val capture = CaptureActionsMiddleware<WebCompatReporterState, WebCompatReporterAction>()
+
+            val webCompatReporterSubmissionMiddleware =
+                createMiddleware(
+                    scope = this,
+                    gleanBrokenSiteReportSender = gleanBrokenSiteReportSender,
+                    service = FakeWebCompatReporterRetrievalService(),
+                )
+
+            val store =
+                WebCompatReporterStore(
+                    initialState =
+                        WebCompatReporterState(
+                            tabUrl = "https://www.mozilla.org",
+                            enteredUrl = "https://www.mozilla.org",
+                            reason = WebCompatReporterState.BrokenSiteReason.Slow,
+                            problemDescription = "",
+                            includeEtpBlockedUrls = true,
+                        ),
+                    middleware =
+                        listOf(
+                            capture,
+                            webCompatReporterSubmissionMiddleware,
+                        ),
+                )
+
+            store.dispatch(WebCompatReporterAction.OpenPreviewClicked)
+            testScheduler.advanceUntilIdle()
+
+            val actual = store.state.previewReporterItems
+            val webCompatInfo = FakeWebCompatReporterRetrievalService().retrieveInfo()
+            val expectedJson = buildJsonObject {
+                put(
+                    "basic",
+                    buildJsonObject {
+                        put("description", "")
+                        put("reason", WebCompatReporterState.BrokenSiteReason.Slow.name)
+                        put("url", "https://www.mozilla.org")
+                    },
+                )
+            }
+                .addWebCompatInfo(webCompatInfo)
+
+            val expected = webCompatReporterSubmissionMiddleware.parseWebCompatPreviewJson(expectedJson)
+
+            assertEquals(expected, actual)
+        }
+
+    @Test
+    fun `GIVEN a complex JsonObject WHEN parseWebCompatPreviewJson is called THEN it returns a list of PreviewReporterItem`() =
+        runTest {
+            val json = buildJsonObject {
+                put(
+                    "group1",
+                    buildJsonObject {
+                        put("key1", "value1")
+                        put("key2", 2)
+                        put("key3", true)
+                    },
+                )
+                put(
+                    "group2",
+                    buildJsonObject {
+                        put("key4", "value4")
+                    },
+                )
+                put("invalid", "not an object")
+            }
+
+            val middleware =
+                createMiddleware(
+                    scope = this,
+                    gleanBrokenSiteReportSender = gleanBrokenSiteReportSender,
+                    service = FakeWebCompatReporterRetrievalService(),
+                )
+            val result = middleware.parseWebCompatPreviewJson(json)
+
+            assertEquals(2, result.size)
+
+            assertEquals("group1", result[0].title)
+            assertEquals(3, result[0].data.size)
+            assertEquals("value1", result[0].data["key1"])
+            assertEquals("2", result[0].data["key2"])
+            assertEquals("true", result[0].data["key3"])
+
+            assertEquals("group2", result[1].title)
+            assertEquals(1, result[1].data.size)
+            assertEquals("value4", result[1].data["key4"])
+        }
 
     @Test
     fun `GIVEN an empty JsonObject WHEN parseWebCompatPreviewJson is called THEN it returns an empty list`() = runTest {
-        val json = buildJsonObject { }
-        val middleware = createMiddleware(
-            scope = this,
-            gleanBrokenSiteReportSender = gleanBrokenSiteReportSender,
-            service = FakeWebCompatReporterRetrievalService(),
-        )
+        val json = buildJsonObject {}
+        val middleware =
+            createMiddleware(
+                scope = this,
+                gleanBrokenSiteReportSender = gleanBrokenSiteReportSender,
+                service = FakeWebCompatReporterRetrievalService(),
+            )
 
         val result = middleware.parseWebCompatPreviewJson(json)
 
@@ -300,9 +335,9 @@ class WebCompatReporterSubmissionMiddlewareTest {
     }
 
     private fun assertLastSentBasicInfoMatchesExpectations(
-      sentUrl: String = "https://www.mozilla.org",
-      shouldSendTabSpecificInfo: Boolean = true,
-      shouldSendBlockedURLs: Boolean = false,
+        sentUrl: String = "https://www.mozilla.org",
+        shouldSendTabSpecificInfo: Boolean = true,
+        shouldSendBlockedURLs: Boolean = false,
     ) {
         assertEquals(gleanBrokenSiteReportSender.lastSentDescription, "")
         assertEquals(gleanBrokenSiteReportSender.lastSentReason, WebCompatReporterState.BrokenSiteReason.Slow)
@@ -318,80 +353,84 @@ class WebCompatReporterSubmissionMiddlewareTest {
         scope: CoroutineScope,
     ): WebCompatReporterStore {
         return WebCompatReporterStore(
-            initialState = WebCompatReporterState(
-                tabUrl = "",
-                enteredUrl = enteredUrl,
-                reason = WebCompatReporterState.BrokenSiteReason.Slow,
-                problemDescription = "",
-            ),
-            middleware = listOf(
-                createMiddleware(
-                    service = service,
-                    gleanBrokenSiteReportSender = gleanBrokenSiteReportSender,
-                    nimbusExperimentsProvider = nimbusExperimentsProvider,
-                    scope = scope,
+            initialState =
+                WebCompatReporterState(
+                    tabUrl = "",
+                    enteredUrl = enteredUrl,
+                    reason = WebCompatReporterState.BrokenSiteReason.Slow,
+                    problemDescription = "",
                 ),
-            ),
+            middleware =
+                listOf(
+                    createMiddleware(
+                        service = service,
+                        gleanBrokenSiteReportSender = gleanBrokenSiteReportSender,
+                        nimbusExperimentsProvider = nimbusExperimentsProvider,
+                        scope = scope,
+                    )
+                ),
         )
     }
 
     @Test
-    fun `GIVEN a JSONObject with not-to-be-previewed items, WHEN addWebCompatInfo is called THEN it ignores those items`() = runTest {
-        val toAdd = buildJsonObject {
-            put(
-                "category",
-                buildJsonObject {
-                    put(
-                        "included_item1",
-                        buildJsonObject {
-                            put("value", "included1")
-                        },
-                    )
-                    put(
-                        "included_item2",
-                        buildJsonObject {
-                            put("doNotPreview", false)
-                            put("value", "included2")
-                        },
-                    )
-                    put(
-                        "ignored_item",
-                        buildJsonObject {
-                            put("doNotPreview", true)
-                            put("value", "included")
-                        },
-                    )
-                },
-            )
+    fun `GIVEN a JSONObject with not-to-be-previewed items, WHEN addWebCompatInfo is called THEN it ignores those items`() =
+        runTest {
+            val toAdd = buildJsonObject {
+                put(
+                    "category",
+                    buildJsonObject {
+                        put(
+                            "included_item1",
+                            buildJsonObject {
+                                put("value", "included1")
+                            },
+                        )
+                        put(
+                            "included_item2",
+                            buildJsonObject {
+                                put("doNotPreview", false)
+                                put("value", "included2")
+                            },
+                        )
+                        put(
+                            "ignored_item",
+                            buildJsonObject {
+                                put("doNotPreview", true)
+                                put("value", "included")
+                            },
+                        )
+                    },
+                )
+            }
+
+            val result = buildJsonObject {}.addWebCompatInfo(JSONObject(toAdd.toString()))
+
+            val expected = buildJsonObject {
+                put(
+                    "category",
+                    buildJsonObject {
+                        put("included_item1", "included1")
+                        put("included_item2", "included2")
+                    },
+                )
+            }
+
+            assertEquals(expected, result)
         }
-
-        val result = buildJsonObject { }.addWebCompatInfo(JSONObject(toAdd.toString()))
-
-        val expected = buildJsonObject {
-            put(
-                "category",
-                buildJsonObject {
-                    put("included_item1", "included1")
-                    put("included_item2", "included2")
-                },
-            )
-        }
-
-        assertEquals(expected, result)
-    }
 
     private fun createMiddleware(
         service: WebCompatReporterRetrievalService,
         gleanBrokenSiteReportSender: GleanBrokenSiteReportSender,
         scope: CoroutineScope,
         nimbusExperimentsProvider: NimbusExperimentsProvider = FakeNimbusExperimentsProvider(),
-    ) = WebCompatReporterSubmissionMiddleware(
-        appStore = appStore,
-        webCompatReporterRetrievalService = service,
-        gleanBrokenSiteReportSender = gleanBrokenSiteReportSender,
-        scope = scope,
-        nimbusExperimentsProvider = nimbusExperimentsProvider,
-    )
+    ) =
+        WebCompatReporterSubmissionMiddleware(
+            appStore = appStore,
+            webCompatReporterRetrievalService = service,
+            gleanBrokenSiteReportSender = gleanBrokenSiteReportSender,
+            scope = scope,
+            nimbusExperimentsProvider = nimbusExperimentsProvider,
+        )
 
     private class FakeWebCompatReporterRetrievalService : WebCompatReporterRetrievalService {
 

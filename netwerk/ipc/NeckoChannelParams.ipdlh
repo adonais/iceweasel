@@ -216,6 +216,7 @@ struct LoadInfoArgs
   IPAddressSpace              ipAddressSpace;
   RFPTargetSet?               overriddenFingerprintingSettings;
   bool                        isMetaRefresh;
+  bool                        activatedFromNavigationalPrefetch;
   CrossOriginEmbedderPolicy   loadingEmbedderPolicy;
   bool                        originTrialCoepCredentiallessEnabledForTopLevel;
   nullable nsIURI             unstrippedURI;

@@ -10,8 +10,9 @@
  * This suite verifies the middleware's structural safety and inter-turn
  * deduplication logic. Coverage includes:
  *
- * - test_no_tool_calls_bypass: Verifies arrays without tool calls are safely deep-cloned and passed through unmodified.
+ * - test_no_tool_calls_bypass: Verifies arrays without tool calls are passed through unmodified.
  * - test_basic_deduplication: Verifies older page reads are replaced with placeholders when the exact same URL is read in a later turn.
+ * - test_nested_aliases_not_mutated: Verifies nested payloads that alias live conversation state are never mutated in place.
  * - test_multi_url_partial_deduplication: Verifies precise index-matching when only a subset of URLs overlap across multi-URL requests.
  * - test_global_failsafe_non_array: Verifies invalid non-array inputs are safely bypassed without throwing errors.
  * - test_granular_failsafe_bad_json: Verifies malformed JSON arguments/contents are skipped gracefully without crashing the pipeline.
@@ -33,13 +34,12 @@ add_task(async function test_no_tool_calls_bypass() {
 
   Assert.deepEqual(
     optimized,
-    originalMessages,
+    [
+      { role: "system", content: "You are a helpful assistant." },
+      { role: "user", content: "Hello!" },
+      { role: "assistant", content: "Hi there!" },
+    ],
     "Array without tool calls should remain completely unchanged."
-  );
-  Assert.notEqual(
-    optimized,
-    originalMessages,
-    "The returned array must be a deep clone, not the same reference."
   );
 });
 
@@ -103,6 +103,61 @@ add_task(async function test_basic_deduplication() {
     newToolResponse[0],
     "[Heavy DOM Content - Newer]",
     "The newest payload must remain fully intact."
+  );
+});
+
+// test: Nested payloads alias live UI state, so stages must replace them rather
+// than mutate them. Compaction rewrites top-level fields on the caller-owned
+// message objects, but must leave everything reachable through those fields
+// byte-identical.
+add_task(async function test_nested_aliases_not_mutated() {
+  const url = "https://example.com/article";
+  const toolCalls = [
+    {
+      id: "call_older",
+      type: "function",
+      function: {
+        name: "get_page_content",
+        arguments: JSON.stringify({ url_list: [url] }),
+      },
+    },
+  ];
+  const pristineToolCalls = structuredClone(toolCalls);
+
+  compactMessages([
+    { role: "assistant", content: "", tool_calls: toolCalls },
+    {
+      role: "tool",
+      name: "get_page_content",
+      tool_call_id: "call_older",
+      content: JSON.stringify(["[Heavy DOM Content - Older]"]),
+    },
+    {
+      role: "assistant",
+      content: "",
+      tool_calls: [
+        {
+          id: "call_newer",
+          type: "function",
+          function: {
+            name: "get_page_content",
+            arguments: JSON.stringify({ url_list: [url] }),
+          },
+        },
+      ],
+    },
+    {
+      role: "tool",
+      name: "get_page_content",
+      tool_call_id: "call_newer",
+      content: JSON.stringify(["[Heavy DOM Content - Newer]"]),
+    },
+  ]);
+
+  Assert.deepEqual(
+    toolCalls,
+    pristineToolCalls,
+    "Compaction must not mutate tool_calls, which alias the live conversation."
   );
 });
 

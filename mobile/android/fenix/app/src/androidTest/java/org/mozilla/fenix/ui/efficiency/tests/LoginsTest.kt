@@ -13,7 +13,8 @@ import org.mozilla.fenix.ui.efficiency.selectors.SettingsSavedPasswordsSelectors
 
 class LoginsTest : BaseTest() {
 
-    private val mockWebServer get() = fenixTestRule.mockWebServer
+    private val mockWebServer
+        get() = fenixTestRule.mockWebServer
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1508171
     @SmokeTest

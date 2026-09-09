@@ -53,7 +53,10 @@ class LIRGenerator final : public LIRGeneratorSpecific {
     return useBoxFixed(mir, reg1, reg2, /* useAtStart = */ true);
   }
 
+  using LIRGeneratorSpecific::useBoxFixed;
+  LBoxAllocation useBoxFixed(MDefinition* mir, ValueOperand op);
   LBoxAllocation useBoxFixedAtStart(MDefinition* mir, ValueOperand op);
+
   LBoxAllocation useBoxAtStart(MDefinition* mir,
                                LUse::Policy policy = LUse::REGISTER);
 
@@ -66,8 +69,6 @@ class LIRGenerator final : public LIRGeneratorSpecific {
 
   friend class LIRGeneratorShared;
   void visitInstructionDispatch(MInstruction* ins);
-
-  void visitReturnImpl(MDefinition* def, bool isGenerator = false);
 
   [[nodiscard]] bool visitInstruction(MInstruction* ins);
   [[nodiscard]] bool visitBlock(MBasicBlock* block);

@@ -739,15 +739,6 @@ LUse LIRGeneratorShared::usePayloadAtStart(MDefinition* mir,
 LUse LIRGeneratorShared::usePayloadInRegisterAtStart(MDefinition* mir) {
   return usePayloadAtStart(mir, LUse::REGISTER);
 }
-
-void LIRGeneratorShared::fillBoxUses(LInstruction* lir, size_t n,
-                                     MDefinition* mir) {
-  ensureDefined(mir);
-  lir->getOperand(n)->toUse()->setVirtualRegister(mir->virtualRegister() +
-                                                  VREG_TYPE_OFFSET);
-  lir->getOperand(n + 1)->toUse()->setVirtualRegister(
-      VirtualRegisterOfPayload(mir));
-}
 #endif
 
 LUse LIRGeneratorShared::useRegisterForTypedLoad(MDefinition* mir,

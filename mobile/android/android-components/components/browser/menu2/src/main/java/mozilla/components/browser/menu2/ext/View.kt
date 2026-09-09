@@ -20,9 +20,7 @@ import mozilla.components.concept.menu.candidate.MenuIconWithDrawable
 import mozilla.components.concept.menu.candidate.TextStyle
 import mozilla.components.support.ktx.android.content.res.resolveAttribute
 
-/**
- * Apply container styles if different from the previous styling.
- */
+/** Apply container styles if different from the previous styling. */
 internal fun View.applyStyle(newStyle: ContainerStyle, oldStyle: ContainerStyle?) {
     if (newStyle != oldStyle) {
         isVisible = newStyle.isVisible
@@ -30,9 +28,7 @@ internal fun View.applyStyle(newStyle: ContainerStyle, oldStyle: ContainerStyle?
     }
 }
 
-/**
- * Apply text styles if different from the previous styling.
- */
+/** Apply text styles if different from the previous styling. */
 internal fun TextView.applyStyle(newStyle: TextStyle, oldStyle: TextStyle?) {
     if (newStyle != oldStyle) {
         newStyle.size?.let { textSize = it }
@@ -42,9 +38,7 @@ internal fun TextView.applyStyle(newStyle: TextStyle, oldStyle: TextStyle?) {
     }
 }
 
-/**
- * Set the image to display based on the [MenuIconWithDrawable].
- */
+/** Set the image to display based on the [MenuIconWithDrawable]. */
 internal fun ImageView.applyIcon(newIcon: MenuIconWithDrawable, oldIcon: MenuIconWithDrawable?) {
     if (newIcon != oldIcon) {
         setImageDrawable(newIcon.drawable)
@@ -62,9 +56,7 @@ internal fun ImageView.applyNotificationEffect(
     }
 }
 
-/**
- * Build a drawable to be used for the background of a menu option.
- */
+/** Build a drawable to be used for the background of a menu option. */
 @SuppressLint("UnsafeCompatGetDrawable")
 internal fun View.applyBackgroundEffect(
     newEffect: MenuCandidateEffect?,
@@ -73,14 +65,14 @@ internal fun View.applyBackgroundEffect(
     if (newEffect == oldEffect) return
 
     val highlight = newEffect as? HighPriorityHighlightEffect
-    val selectableBackgroundRes = context.theme
-        .resolveAttribute(android.R.attr.selectableItemBackground)
+    val selectableBackgroundRes = context.theme.resolveAttribute(android.R.attr.selectableItemBackground)
 
     if (highlight != null) {
-        val selectableBackground = ContextCompat.getDrawable(
-            context,
-            selectableBackgroundRes,
-        )
+        val selectableBackground =
+            ContextCompat.getDrawable(
+                context,
+                selectableBackgroundRes,
+            )
 
         setBackgroundColor(highlight.backgroundTint)
         foreground = selectableBackground

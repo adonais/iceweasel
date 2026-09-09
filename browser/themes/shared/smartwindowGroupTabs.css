@@ -42,11 +42,18 @@
   border: none;
 }
 
+/* The same treatment .subview-subheader gives every other panel subheading, so
+ * "Suggested groups" reads as a heading rather than another menu item. */
 .swgt-section {
   box-sizing: border-box;
   margin: var(--panel-menuitem-margin);
+  margin-block: var(--space-xsmall);
   padding: var(--panel-menuitem-padding);
   padding-block: var(--space-xsmall);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens --
+     matching panelUI-shared.css's .subview-subheader; chrome has no font-size
+     token, --font-size-small is unset outside the brand token set. */
+  font-size: 0.9em;
   font-weight: inherit;
   color: var(--text-color-deemphasized);
 }
@@ -141,14 +148,23 @@
   }
 }
 
-.swgt-swatch {
-  width: var(--size-item-small);
-  height: var(--size-item-small);
-  border-radius: var(--border-radius-xsmall);
+/* Same chicklet the tab strip and the tab groups list use, so it picks up the
+ * Nova shape on its own. The --tab-group-* colors are set inline per group by
+ * the card. */
+.swgt-group-icon {
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
   flex: none;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens --
-     set inline per group by the card, from the tab strip's --tab-group-* palette. */
-  background-color: var(--swgt-swatch-color);
+  -moz-context-properties: fill, stroke;
+  /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+  fill: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
+  stroke: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
+
+  @media -moz-pref("browser.nova.enabled") {
+    fill: var(--tab-group-background-color);
+    stroke: var(--tab-group-background-color);
+  }
+  /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
 }
 
 .swgt-message {
@@ -270,10 +286,19 @@
   }
 }
 
+.swgt-create-all-icon,
 .swgt-ungroup-icon {
   width: var(--icon-size);
   height: var(--icon-size);
   flex: none;
   background-color: currentColor;
-  mask: url("chrome://global/skin/icons/undo.svg") no-repeat center / var(--icon-size) var(--icon-size);
+  mask: no-repeat center / var(--icon-size) var(--icon-size);
+}
+
+.swgt-create-all-icon {
+  mask-image: url("chrome://global/skin/icons/edit-copy.svg");
+}
+
+.swgt-ungroup-icon {
+  mask-image: url("chrome://global/skin/icons/undo.svg");
 }

@@ -8,25 +8,23 @@ import mozilla.components.concept.storage.CreditCardEntry
 import mozilla.components.support.utils.creditCardIIN
 import org.mozilla.geckoview.Autocomplete
 
-/**
- * Converts a GeckoView [Autocomplete.CreditCard] to an Android Components [CreditCardEntry].
- */
-fun Autocomplete.CreditCard.toCreditCardEntry() = CreditCardEntry(
-    guid = guid,
-    name = name,
-    number = number,
-    expiryMonth = expirationMonth,
-    expiryYear = expirationYear,
-    cardType = number.creditCardIIN()?.creditCardIssuerNetwork?.name ?: "",
-)
+/** Converts a GeckoView [Autocomplete.CreditCard] to an Android Components [CreditCardEntry]. */
+fun Autocomplete.CreditCard.toCreditCardEntry() =
+    CreditCardEntry(
+        guid = guid,
+        name = name,
+        number = number,
+        expiryMonth = expirationMonth,
+        expiryYear = expirationYear,
+        cardType = number.creditCardIIN()?.creditCardIssuerNetwork?.name ?: "",
+    )
 
-/**
- * Converts an Android Components [CreditCardEntry] to a GeckoView [Autocomplete.CreditCard].
- */
-fun CreditCardEntry.toAutocompleteCreditCard() = Autocomplete.CreditCard.Builder()
-    .guid(guid)
-    .name(name)
-    .number(number)
-    .expirationMonth(expiryMonth)
-    .expirationYear(expiryYear)
-    .build()
+/** Converts an Android Components [CreditCardEntry] to a GeckoView [Autocomplete.CreditCard]. */
+fun CreditCardEntry.toAutocompleteCreditCard() =
+    Autocomplete.CreditCard.Builder()
+        .guid(guid)
+        .name(name)
+        .number(number)
+        .expirationMonth(expiryMonth)
+        .expirationYear(expiryYear)
+        .build()

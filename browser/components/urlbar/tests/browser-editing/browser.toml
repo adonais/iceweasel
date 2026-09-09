@@ -70,6 +70,8 @@ https_first_disabled = true
 
 ["browser_typed_value.js"]
 
+["browser_undo_history.js"]
+
 ["browser_urlbar_contextmenu.js"]
 
 ["browser_urlbar_selection.js"]

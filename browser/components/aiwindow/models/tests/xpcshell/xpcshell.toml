@@ -65,13 +65,15 @@ firefox-appdir = "browser"
 
 ["test_Tools_SearchBrowsingHistory.js"]
 
-["test_Tools_WorldCup.js"]
-
 ["test_Utils.js"]
 
 ["test_Utils_RemoteSettings.js"]
 
 ["test_Utils_RemoteSettings_ChatModelChoice.js"]
+
+["test_aitab_parse.js"]
+
+["test_aitab_viewer.js"]
 
 ["test_engine_build_object_form.js"]
 

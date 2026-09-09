@@ -2,13 +2,13 @@
 
 # FC_GetSessionInfo
 
-## [Name](#name)
+## Name
 
 :::{container}
 FC_GetSessionInfo - obtain information about a session.
 :::
 
-## [Syntax](#syntax)
+## Syntax
 
 :::{container}
 
@@ -21,7 +21,7 @@ CK_RV FC_GetSessionInfo(
 
 :::
 
-## [Parameters](#parameters)
+## Parameters
 
 :::{container}
 `hSession`
@@ -33,7 +33,7 @@ CK_RV FC_GetSessionInfo(
 : [out] pointer to the [CK_SESSION_INFO](/en-US/CK_SESSION_INFO) structure to be returned.
 :::
 
-## [Description](#description)
+## Description
 
 :::{container}
 `FC_GetSessionInfo` obtains information about a session. A user may call `FC_GetSessionInfo`
@@ -54,14 +54,14 @@ information:
     is always set to true.
 :::
 
-## [Return value](#return_value)
+## Return value
 
-## [Examples](#examples)
+## Examples
 
-## [See also](#see_also)
+## See also
 
 :::{container}
 
-- {ref}`mozilla_projects_nss_reference_fc_closesession`,
+- {ref}`mozilla-projects-nss-reference-fc-closesession`,
   [NSC_OpenSession](/en-US/NSC_OpenSession)
 :::

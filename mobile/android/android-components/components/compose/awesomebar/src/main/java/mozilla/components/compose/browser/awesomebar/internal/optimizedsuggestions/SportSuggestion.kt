@@ -64,21 +64,20 @@ internal fun SportSuggestion(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shouldDisplayScore by remember(state.homeTeam, state.awayTeam) {
-        derivedStateOf {
-            state.homeTeam.score != null && state.awayTeam.score != null
+    val shouldDisplayScore by
+        remember(state.homeTeam, state.awayTeam) {
+            derivedStateOf {
+                state.homeTeam.score != null && state.awayTeam.score != null
+            }
         }
-    }
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(color = MaterialTheme.colorScheme.surface)
-            .clickable(enabled = true, onClick = onClick),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .background(color = MaterialTheme.colorScheme.surface)
+                .clickable(enabled = true, onClick = onClick)
     ) {
-        Column(
-            modifier = Modifier
-                .padding(AcornTheme.layout.space.static200),
-        ) {
+        Column(modifier = Modifier.padding(AcornTheme.layout.space.static200)) {
             SuggestionHeader(
                 sport = state.sport,
                 sportCategory = state.sportCategory,
@@ -128,12 +127,13 @@ private fun SuggestionHeader(
         Spacer(modifier = Modifier.weight(1f))
 
         Text(
-            text = buildString {
-                status.stringResId?.let {
-                    append("${stringResource(it)} · ")
-                }
-                append(getSportsDate(date))
-            },
+            text =
+                buildString {
+                    status.stringResId?.let {
+                        append("${stringResource(it)} · ")
+                    }
+                    append(getSportsDate(date))
+                },
             overflow = TextOverflow.Ellipsis,
             maxLines = 1,
             style = AcornTheme.typography.body2,
@@ -156,20 +156,20 @@ private fun SuggestionTeams(
 ) {
     val teamContentDescription = getTeamContentDescription(shouldDisplayScore, awayTeam, homeTeam)
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-                shape = MaterialTheme.shapes.small,
-            )
-            .padding(
-                vertical = AcornTheme.layout.space.static150,
-                horizontal = AcornTheme.layout.space.static100,
-            )
-            .clearAndSetSemantics {
-                this.contentDescription = teamContentDescription
-            },
+        modifier =
+            Modifier.fillMaxWidth()
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    shape = MaterialTheme.shapes.small,
+                )
+                .padding(
+                    vertical = AcornTheme.layout.space.static150,
+                    horizontal = AcornTheme.layout.space.static100,
+                )
+                .clearAndSetSemantics {
+                    this.contentDescription = teamContentDescription
+                },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Team(
@@ -211,10 +211,11 @@ private fun getSportsDate(sportSuggestionDate: SportSuggestionDate): String =
     when (sportSuggestionDate) {
         is SportSuggestionDate.General -> sportSuggestionDate.date
         is SportSuggestionDate.Today -> stringResource(R.string.mozac_browser_awesomebar_sport_suggestion_date_today)
-        is SportSuggestionDate.Tomorrow -> stringResource(
-            R.string.mozac_browser_awesomebar_sport_suggestion_date_tomorrow,
-            sportSuggestionDate.time,
-        )
+        is SportSuggestionDate.Tomorrow ->
+            stringResource(
+                R.string.mozac_browser_awesomebar_sport_suggestion_date_tomorrow,
+                sportSuggestionDate.time,
+            )
     }
 
 @Composable
@@ -222,26 +223,28 @@ private fun getTeamContentDescription(
     shouldDisplayScore: Boolean,
     awayTeam: SportSuggestionTeam,
     homeTeam: SportSuggestionTeam,
-) = if (shouldDisplayScore) {
-    "${awayTeam.name}. ${awayTeam.score}. ${homeTeam.name}. ${homeTeam.score}"
-} else {
-    stringResource(
-        R.string.mozac_browser_awesomebar_sport_suggestion_talkback_team_description_no_score,
-        awayTeam.name,
-        homeTeam.name,
-    )
-}
+) =
+    if (shouldDisplayScore) {
+        "${awayTeam.name}. ${awayTeam.score}. ${homeTeam.name}. ${homeTeam.score}"
+    } else {
+        stringResource(
+            R.string.mozac_browser_awesomebar_sport_suggestion_talkback_team_description_no_score,
+            awayTeam.name,
+            homeTeam.name,
+        )
+    }
 
 @Composable
 private fun LiveStatus(modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier
-            .background(
-                color = MaterialTheme.colorScheme.success,
-                shape = MaterialTheme.shapes.small,
-            )
-            .clip(MaterialTheme.shapes.small)
-            .padding(horizontal = 8.dp),
+        modifier =
+            modifier
+                .background(
+                    color = MaterialTheme.colorScheme.success,
+                    shape = MaterialTheme.shapes.small,
+                )
+                .clip(MaterialTheme.shapes.small)
+                .padding(horizontal = 8.dp)
     ) {
         Text(
             text = stringResource(R.string.mozac_browser_awesomebar_sport_suggestion_live),
@@ -314,7 +317,7 @@ private fun ScoreText(text: String, modifier: Modifier = Modifier) {
 @PreviewLightDark
 @Composable
 private fun SportSuggestionPreview(
-    @PreviewParameter(SportSuggestionDataProvider::class) config: SportSuggestionPreviewModel,
+    @PreviewParameter(SportSuggestionDataProvider::class) config: SportSuggestionPreviewModel
 ) {
     AcornTheme {
         Surface {
@@ -329,7 +332,7 @@ private fun SportSuggestionPreview(
 @Preview
 @Composable
 private fun SportSuggestionPreviewPrivate(
-    @PreviewParameter(SportSuggestionDataProvider::class) config: SportSuggestionPreviewModel,
+    @PreviewParameter(SportSuggestionDataProvider::class) config: SportSuggestionPreviewModel
 ) {
     AcornTheme(
         colors = privateColorPalette,

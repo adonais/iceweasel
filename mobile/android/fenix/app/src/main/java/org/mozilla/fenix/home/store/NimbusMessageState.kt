@@ -19,17 +19,15 @@ import org.mozilla.fenix.termsofuse.store.PrivacyNoticeBannerState
  */
 data class NimbusMessageState(val cardState: MessageCardState, val message: Message) {
 
-    /**
-     * Companion object for building [NimbusMessageState].
-     */
+    /** Companion object for building [NimbusMessageState]. */
     companion object {
 
         /**
          * Builds a new [NimbusMessageState] from the current [AppState].
          *
          * @param appState State to build the [NimbusMessageState] from.
-         * @param privacyNoticeBannerState State of the privacy notice banner.  If the privacy
-         * notice banner is visible, we should not show the nimbus message banner.
+         * @param privacyNoticeBannerState State of the privacy notice banner. If the privacy notice banner is visible,
+         *   we should not show the nimbus message banner.
          */
         @Composable
         internal fun build(
@@ -41,10 +39,11 @@ data class NimbusMessageState(val cardState: MessageCardState, val message: Mess
             }
             return appState.messaging.messageToShow[FenixMessageSurfaceId.HOMESCREEN]?.let {
                 NimbusMessageState(
-                    cardState = MessageCardState.build(
-                        message = it,
-                        wallpaperState = appState.wallpaperState,
-                    ),
+                    cardState =
+                        MessageCardState.build(
+                            message = it,
+                            wallpaperState = appState.wallpaperState,
+                        ),
                     message = it,
                 )
             }

@@ -9,7 +9,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::convert::TryInto;
 use std::marker::PhantomData;
 
-use crate::cryptoki::CryptokiCert;
+use crate::cryptoki::{CryptokiCert, CryptokiTrust};
 
 pub trait CryptokiObject {
     fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool;
@@ -33,7 +33,9 @@ pub trait ClientCertsBackend {
     type Key: CryptokiObject + Sign;
 
     #[allow(clippy::type_complexity)]
-    fn find_objects(&mut self) -> Result<(Vec<CryptokiCert>, Vec<Self::Key>), Error>;
+    fn find_objects(
+        &mut self,
+    ) -> Result<(Vec<CryptokiCert>, Vec<Self::Key>, Vec<CryptokiTrust>), Error>;
     fn get_slot_info(&self) -> CK_SLOT_INFO;
     fn get_token_info(&self) -> CK_TOKEN_INFO;
     fn get_mechanism_list(&self) -> Vec<CK_MECHANISM_TYPE>;
@@ -55,22 +57,29 @@ pub trait IsSearchingForClientCerts {
 
 const SUPPORTED_ATTRIBUTES: &[CK_ATTRIBUTE_TYPE] = &[
     CKA_CLASS,
-    CKA_TOKEN,
-    CKA_LABEL,
+    CKA_EC_PARAMS,
     CKA_ID,
-    CKA_VALUE,
     CKA_ISSUER,
+    CKA_KEY_TYPE,
+    CKA_HASH_OF_CERTIFICATE,
+    CKA_NAME_HASH_ALGORITHM,
+    CKA_LABEL,
+    CKA_MODULUS,
+    CKA_PRIVATE,
     CKA_SERIAL_NUMBER,
     CKA_SUBJECT,
-    CKA_PRIVATE,
-    CKA_KEY_TYPE,
-    CKA_MODULUS,
-    CKA_EC_PARAMS,
+    CKA_TOKEN,
+    CKA_VALUE,
+    nss::CKA_PKCS_TRUST_CLIENT_AUTH,
+    nss::CKA_PKCS_TRUST_CODE_SIGNING,
+    nss::CKA_PKCS_TRUST_EMAIL_PROTECTION,
+    nss::CKA_PKCS_TRUST_SERVER_AUTH,
 ];
 
 enum Object<B: ClientCertsBackend> {
     Cert(CryptokiCert),
     Key(B::Key),
+    Trust(CryptokiTrust),
 }
 
 impl<B: ClientCertsBackend> Object<B> {
@@ -78,6 +87,7 @@ impl<B: ClientCertsBackend> Object<B> {
         match self {
             Object::Cert(cert) => cert.matches(attrs),
             Object::Key(key) => key.matches(attrs),
+            Object::Trust(key) => key.matches(attrs),
         }
     }
 
@@ -85,11 +95,16 @@ impl<B: ClientCertsBackend> Object<B> {
         match self {
             Object::Cert(cert) => cert.get_attribute(attribute),
             Object::Key(key) => key.get_attribute(attribute),
+            Object::Trust(trust) => trust.get_attribute(attribute),
         }
     }
 
     fn id(&self) -> Result<&[u8], Error> {
-        self.get_attribute(CKA_ID)
+        let attribute = match self {
+            Object::Cert(_) | Object::Key(_) => CKA_ID,
+            Object::Trust(_) => CKA_HASH_OF_CERTIFICATE,
+        };
+        self.get_attribute(attribute)
             .ok_or_else(|| error_here!(ErrorType::LibraryFailure))
     }
 
@@ -101,6 +116,7 @@ impl<B: ClientCertsBackend> Object<B> {
         match self {
             Object::Cert(_) => Err(error_here!(ErrorType::InvalidArgument)),
             Object::Key(key) => key.get_signature_length(&data, params),
+            Object::Trust(_) => Err(error_here!(ErrorType::InvalidArgument)),
         }
     }
 
@@ -112,6 +128,7 @@ impl<B: ClientCertsBackend> Object<B> {
         match self {
             Object::Cert(_) => Err(error_here!(ErrorType::InvalidArgument)),
             Object::Key(key) => key.sign(&data, params),
+            Object::Trust(_) => Err(error_here!(ErrorType::InvalidArgument)),
         }
     }
 }
@@ -125,6 +142,9 @@ struct Slot<B: ClientCertsBackend> {
     /// A set of key identifiers (not the same as handles). For each id in this set, there should be
     /// a corresponding identical id in the `cert_ids` set.
     key_ids: BTreeSet<Vec<u8>>,
+    /// A set of trust identifiers (not the same as handles). For each id in this set, there should
+    /// be a corresponding identical id in the `cert_ids` set.
+    trust_ids: BTreeSet<Vec<u8>>,
     /// The next object handle to hand out.
     next_handle: CK_OBJECT_HANDLE,
     /// The backend that provides objects, signing, etc.
@@ -137,6 +157,7 @@ impl<B: ClientCertsBackend> Slot<B> {
             objects: BTreeMap::new(),
             cert_ids: BTreeSet::new(),
             key_ids: BTreeSet::new(),
+            trust_ids: BTreeSet::new(),
             next_handle: 1,
             backend,
         }
@@ -151,7 +172,7 @@ impl<B: ClientCertsBackend> Slot<B> {
     /// When a new search session is opened, this searches for certificates and keys to expose. We
     /// de-duplicate previously-found certificates and keys by keeping track of their IDs.
     fn maybe_find_new_objects(&mut self) -> Result<(), Error> {
-        let (certs, keys) = self.backend.find_objects()?;
+        let (certs, keys, trusts) = self.backend.find_objects()?;
         for cert in certs {
             let object = Object::Cert(cert);
             if self.cert_ids.contains(object.id()?) {
@@ -167,6 +188,15 @@ impl<B: ClientCertsBackend> Slot<B> {
                 continue;
             }
             self.key_ids.insert(object.id()?.to_vec());
+            let handle = self.get_next_handle();
+            self.objects.insert(handle, object);
+        }
+        for trust in trusts {
+            let object = Object::Trust(trust);
+            if self.trust_ids.contains(object.id()?) {
+                continue;
+            }
+            self.trust_ids.insert(object.id()?.to_vec());
             let handle = self.get_next_handle();
             self.objects.insert(handle, object);
         }

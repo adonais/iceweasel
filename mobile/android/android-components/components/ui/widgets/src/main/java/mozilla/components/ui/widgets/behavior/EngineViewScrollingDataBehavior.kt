@@ -15,8 +15,8 @@ import mozilla.components.concept.engine.EngineView
 import mozilla.components.support.ktx.android.view.toScope
 
 /**
- * A [CoordinatorLayout.Behavior] implementation to be used for moving [dependency] up/down
- * depending on scroll data exposed by [engineView].
+ * A [CoordinatorLayout.Behavior] implementation to be used for moving [dependency] up/down depending on scroll data
+ * exposed by [engineView].
  *
  * This is safe to use even if [dependency] has it's visibility modified.
  *
@@ -39,19 +39,22 @@ class EngineViewScrollingDataBehavior(
         target: View,
         axes: Int,
         type: Int,
-    ): Boolean = when (dependency.isVisible && isScrollEnabled) {
-        true -> {
-            yTranslator.cancelInProgressTranslation()
+    ): Boolean =
+        when (dependency.isVisible && isScrollEnabled) {
+            true -> {
+                yTranslator.cancelInProgressTranslation()
 
-            scrollUpdatesJob = scrollListenerScope.launch {
-                engineView.verticalScrollDelta.collect {
-                    if (isActive) { yTranslator.translate(dependency, it) }
+                scrollUpdatesJob = scrollListenerScope.launch {
+                    engineView.verticalScrollDelta.collect {
+                        if (isActive) {
+                            yTranslator.translate(dependency, it)
+                        }
+                    }
                 }
+                true
             }
-            true
+            false -> false // not interested in subsequent scroll events
         }
-        false -> false // not interested in subsequent scroll events
-    }
 
     override fun onStopNestedScroll(
         coordinatorLayout: CoordinatorLayout,

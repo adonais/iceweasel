@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.action.SearchAction
 import mozilla.components.support.AppServicesInitializer
+import mozilla.components.support.AppServicesInitializer.Config as AppServiceConfig
 import mozilla.components.support.base.facts.register
 import mozilla.components.support.base.log.Log
 import mozilla.components.support.base.log.sink.AndroidLogSink
@@ -42,11 +43,8 @@ import org.mozilla.focus.session.VisibilityLifeCycleCallback
 import org.mozilla.focus.telemetry.FactsProcessor
 import org.mozilla.focus.telemetry.ProfilerMarkerFactProcessor
 import org.mozilla.focus.utils.AppConstants
-import mozilla.components.support.AppServicesInitializer.Config as AppServiceConfig
 
-/**
- * Focus application class.
- */
+/** Focus application class. */
 open class FocusApplication : Application(), Provider {
 
     protected val applicationScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -164,12 +162,11 @@ open class FocusApplication : Application(), Provider {
     /**
      * Initializes EmojiCompat manually on a background thread.
      *
-     * By initializing manually, we avoid the startup penalty associated with the default
-     * EmojiCompat initializer's ContentProvider. [DefaultEmojiCompatConfig] is used to
-     * automatically find a compatible font provider (such as Google Play Services).
+     * By initializing manually, we avoid the startup penalty associated with the default EmojiCompat initializer's
+     * ContentProvider. [DefaultEmojiCompatConfig] is used to automatically find a compatible font provider (such as
+     * Google Play Services).
      *
-     * @param dispatcher The [CoroutineDispatcher] on which the initialization will occur.
-     * Defaults to [ioDispatcher].
+     * @param dispatcher The [CoroutineDispatcher] on which the initialization will occur. Defaults to [ioDispatcher].
      */
     private suspend fun initializeEmojiCompat(dispatcher: CoroutineDispatcher = ioDispatcher) {
         withContext(dispatcher) {
@@ -194,7 +191,7 @@ open class FocusApplication : Application(), Provider {
                             message = "EmojiCompat initialization failed",
                         )
                     }
-                },
+                }
             )
 
             EmojiCompat.init(config)
@@ -212,32 +209,26 @@ open class FocusApplication : Application(), Provider {
     /**
      * Initiate Megazord sequence! Megazord Battle Mode!
      *
-     * The application-services combined libraries are known as the "megazord". We use the default `full`
-     * megazord - it contains everything that fenix needs, and (currently) nothing more.
+     * The application-services combined libraries are known as the "megazord". We use the default `full` megazord - it
+     * contains everything that fenix needs, and (currently) nothing more.
      *
      * Documentation on what megazords are, and why they're needed:
      * - https://github.com/mozilla/application-services/blob/master/docs/design/megazords.md
      * - https://mozilla.github.io/application-services/docs/applications/consuming-megazord-libraries.html
      *
-     * This is the initialization of the megazord without setting up networking, i.e. needing the
-     * engine for networking. This should do the minimum work necessary as it is done on the main
-     * thread, early in the app startup sequence.
+     * This is the initialization of the megazord without setting up networking, i.e. needing the engine for networking.
+     * This should do the minimum work necessary as it is done on the main thread, early in the app startup sequence.
      */
     private fun beginSetupMegazord() {
-        AppServicesInitializer.init(
-            AppServiceConfig(components.crashReporter),
-        )
+        AppServicesInitializer.init(AppServiceConfig(components.crashReporter))
     }
 
-    /**
-     * Finish Megazord setup sequence.
-     */
+    /** Finish Megazord setup sequence. */
     @OpenForTesting
     open fun finishSetupMegazord(dispatcher: CoroutineDispatcher = ioDispatcher) {
         // We need to use an unwrapped client because native components do not support private
         // requests.
-        @Suppress("Deprecation")
-        RustHttpConfig.setClient(lazy { components.client.unwrap() })
+        @Suppress("Deprecation") RustHttpConfig.setClient(lazy { components.client.unwrap() })
 
         applicationScope.launch(dispatcher) {
             // Now viaduct (the RustHttp client) is initialized we can ask Nimbus to fetch
@@ -255,15 +246,11 @@ open class FocusApplication : Application(), Provider {
         val settings = context.settings
         when {
             settings.lightThemeSelected -> {
-                AppCompatDelegate.setDefaultNightMode(
-                    AppCompatDelegate.MODE_NIGHT_NO,
-                )
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
             }
 
             settings.darkThemeSelected -> {
-                AppCompatDelegate.setDefaultNightMode(
-                    AppCompatDelegate.MODE_NIGHT_YES,
-                )
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
             }
 
             settings.useDefaultThemeSelected -> {
@@ -280,13 +267,9 @@ open class FocusApplication : Application(), Provider {
 
     private fun setDefaultTheme() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            AppCompatDelegate.setDefaultNightMode(
-                AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM,
-            )
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
         } else {
-            AppCompatDelegate.setDefaultNightMode(
-                AppCompatDelegate.MODE_NIGHT_AUTO_BATTERY,
-            )
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_AUTO_BATTERY)
         }
     }
 
@@ -294,12 +277,13 @@ open class FocusApplication : Application(), Provider {
         // Only enable StrictMode in debug builds
         if (AppConstants.isDevBuild) {
             val threadPolicyBuilder = StrictMode.ThreadPolicy.Builder().detectAll()
-            val vmPolicyBuilder = StrictMode.VmPolicy.Builder()
-                .detectActivityLeaks()
-                .detectFileUriExposure()
-                .detectLeakedClosableObjects()
-                .detectLeakedRegistrationObjects()
-                .detectLeakedSqlLiteObjects()
+            val vmPolicyBuilder =
+                StrictMode.VmPolicy.Builder()
+                    .detectActivityLeaks()
+                    .detectFileUriExposure()
+                    .detectLeakedClosableObjects()
+                    .detectLeakedRegistrationObjects()
+                    .detectLeakedSqlLiteObjects()
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 vmPolicyBuilder.detectNonSdkApiUsage()

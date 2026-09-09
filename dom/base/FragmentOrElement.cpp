@@ -1425,6 +1425,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FragmentOrElement)
   } */
 
   if (ShadowRoot* shadowRoot = tmp->GetShadowRoot()) {
+    nsAutoScriptBlocker scriptBlocker;
     shadowRoot->Unbind();
     tmp->ExtendedDOMSlots()->mShadowRoot = nullptr;
   }
@@ -2092,7 +2093,7 @@ void FragmentOrElement::SetInnerHTMLInternal(const nsAString& aInnerHTML,
   // Step 6: Let registry be the result of looking up a custom element registry
   // given intendedParent.
   Maybe<RefPtr<CustomElementRegistry>> customElementRegistry =
-      nsContentUtils::GetCustomElementRegistry(this);
+      nsContentUtils::GetCustomElementRegistry(target);
 
   if (doc->IsHTMLDocument()) {
     doc->SuspendDOMNotifications();

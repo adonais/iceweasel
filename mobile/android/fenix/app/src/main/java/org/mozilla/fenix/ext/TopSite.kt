@@ -7,14 +7,12 @@ package org.mozilla.fenix.ext
 import mozilla.components.feature.top.sites.TopSite
 import org.mozilla.fenix.settings.SupportUtils
 
-/**
- * Returns a sorted list of [TopSite] with the default Google top site always appearing
- * as the first item.
- */
+/** Returns a sorted list of [TopSite] with the default Google top site always appearing as the first item. */
 fun List<TopSite>.sort(): List<TopSite> {
-    val defaultGoogleTopSiteIndex = this.indexOfFirst {
-        it is TopSite.Default && it.url == SupportUtils.GOOGLE_URL
-    }
+    val defaultGoogleTopSiteIndex =
+        this.indexOfFirst {
+            it is TopSite.Default && it.url == SupportUtils.GOOGLE_URL
+        }
 
     return if (defaultGoogleTopSiteIndex == -1) {
         this

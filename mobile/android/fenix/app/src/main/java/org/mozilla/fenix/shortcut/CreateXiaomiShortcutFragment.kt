@@ -21,18 +21,16 @@ import org.mozilla.fenix.ext.requireComponents
 /**
  * A [DialogFragment] for creating a Xiaomi-specific shortcut on the home screen.
  *
- * This fragment allows users to create a shortcut for the current tab on Xiaomi devices,
- * with an option to customize the shortcut name. The fragment handles the layout and interaction
- * for inputting the shortcut name, validating input, and invoking the necessary use case to
- * add the shortcut to the home screen.
+ * This fragment allows users to create a shortcut for the current tab on Xiaomi devices, with an option to customize
+ * the shortcut name. The fragment handles the layout and interaction for inputting the shortcut name, validating input,
+ * and invoking the necessary use case to add the shortcut to the home screen.
  */
 class CreateXiaomiShortcutFragment : DialogFragment() {
     private var _binding: FragmentCreateXiaomiShortcutBinding? = null
-    private val binding get() = _binding!!
+    private val binding
+        get() = _binding!!
 
-    /**
-     * Sets the dialog style for the shortcut creation screen.
-     */
+    /** Sets the dialog style for the shortcut creation screen. */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setStyle(STYLE_NO_TITLE, R.style.CreateShortcutDialogStyle)
@@ -89,17 +87,13 @@ class CreateXiaomiShortcutFragment : DialogFragment() {
         }
     }
 
-    /**
-     * Cleans up the view binding when the fragment's view is destroyed.
-     */
+    /** Cleans up the view binding when the fragment's view is destroyed. */
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
 
-    /**
-     * Updates the state of the "Add" button based on the shortcut text.
-     */
+    /** Updates the state of the "Add" button based on the shortcut text. */
     private fun updateAddButtonEnabledState() {
         val text = binding.shortcutText.text
         binding.addButton.isEnabled = text.isNotBlank()

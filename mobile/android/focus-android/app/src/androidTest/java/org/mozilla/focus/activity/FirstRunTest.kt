@@ -21,11 +21,9 @@ import org.mozilla.focus.testAnnotations.SmokeTest
 class FirstRunTest {
     private val featureSettingsHelper = FeatureSettingsHelper()
 
-    @get:Rule(order = 0)
-    val focusTestRule: FocusTestRule = FocusTestRule()
+    @get:Rule(order = 0) val focusTestRule: FocusTestRule = FocusTestRule()
 
-    @get:Rule
-    val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = true)
+    @get:Rule val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = true)
 
     @Before
     fun setUp() {

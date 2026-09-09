@@ -19,14 +19,12 @@ import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
 import mozilla.components.support.utils.ColorUtils
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.focus.R
 import org.mozilla.focus.ext.ifCustomTab
 import org.mozilla.focus.theme.resolveAttribute
-import mozilla.components.ui.icons.R as iconsR
 
-/**
- * Integration for browser navigation buttons (back, forward, reload/stop).
- */
+/** Integration for browser navigation buttons (back, forward, reload/stop). */
 class NavigationButtonsIntegration(
     val context: Context,
     val store: BrowserStore,
@@ -50,75 +48,79 @@ class NavigationButtonsIntegration(
             }
         }
 
-        val backButton = BrowserToolbar.TwoStateButton(
-            primaryImage = AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_back_24)!!,
-            primaryContentDescription = context.getString(R.string.content_description_back),
-            primaryImageTintResource = enabledColorRes,
-            isInPrimaryState = {
-                store.state.findCustomTabOrSelectedTab(customTabId)?.content?.canGoBack == true
-            },
-            secondaryImageTintResource = disabledColorRes,
-            disableInSecondaryState = true,
-            longClickListener = null,
-            listener = {
-                sessionUseCases.goBack(store.state.findCustomTabOrSelectedTab(customTabId)?.id)
-            },
-        )
+        val backButton =
+            BrowserToolbar.TwoStateButton(
+                primaryImage = AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_back_24)!!,
+                primaryContentDescription = context.getString(R.string.content_description_back),
+                primaryImageTintResource = enabledColorRes,
+                isInPrimaryState = {
+                    store.state.findCustomTabOrSelectedTab(customTabId)?.content?.canGoBack == true
+                },
+                secondaryImageTintResource = disabledColorRes,
+                disableInSecondaryState = true,
+                longClickListener = null,
+                listener = {
+                    sessionUseCases.goBack(store.state.findCustomTabOrSelectedTab(customTabId)?.id)
+                },
+            )
         toolbar.addNavigationAction(backButton)
 
-        val forwardButton = BrowserToolbar.TwoStateButton(
-            primaryImage = AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_forward_24)!!,
-            primaryContentDescription = context.getString(R.string.content_description_forward),
-            primaryImageTintResource = enabledColorRes,
-            isInPrimaryState = {
-                store.state.findCustomTabOrSelectedTab(customTabId)?.content?.canGoForward == true
-            },
-            secondaryImageTintResource = disabledColorRes,
-            disableInSecondaryState = true,
-            longClickListener = null,
-            listener = {
-                sessionUseCases.goForward(store.state.findCustomTabOrSelectedTab(customTabId)?.id)
-            },
-        )
+        val forwardButton =
+            BrowserToolbar.TwoStateButton(
+                primaryImage = AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_forward_24)!!,
+                primaryContentDescription = context.getString(R.string.content_description_forward),
+                primaryImageTintResource = enabledColorRes,
+                isInPrimaryState = {
+                    store.state.findCustomTabOrSelectedTab(customTabId)?.content?.canGoForward == true
+                },
+                secondaryImageTintResource = disabledColorRes,
+                disableInSecondaryState = true,
+                longClickListener = null,
+                listener = {
+                    sessionUseCases.goForward(store.state.findCustomTabOrSelectedTab(customTabId)?.id)
+                },
+            )
         toolbar.addNavigationAction(forwardButton)
 
-        val reloadOrStopButton = BrowserToolbar.TwoStateButton(
-            primaryImage = AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_cross_24)!!,
-            secondaryImage = AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_arrow_clockwise_24)!!,
-            primaryContentDescription = context.getString(R.string.content_description_stop),
-            secondaryContentDescription = context.getString(R.string.content_description_reload),
-            primaryImageTintResource = enabledColorRes,
-            isInPrimaryState = {
-                store.state.findCustomTabOrSelectedTab(customTabId)?.content?.loading == true
-            },
-            secondaryImageTintResource = enabledColorRes,
-            disableInSecondaryState = false,
-            longClickListener = null,
-            listener = {
-                val tab = store.state.findCustomTabOrSelectedTab(customTabId)
-                    ?: return@TwoStateButton
-                if (tab.content.loading) {
-                    sessionUseCases.stopLoading(tab.id)
-                } else {
-                    sessionUseCases.reload(tab.id)
-                }
-            },
-        )
+        val reloadOrStopButton =
+            BrowserToolbar.TwoStateButton(
+                primaryImage = AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_cross_24)!!,
+                secondaryImage = AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_arrow_clockwise_24)!!,
+                primaryContentDescription = context.getString(R.string.content_description_stop),
+                secondaryContentDescription = context.getString(R.string.content_description_reload),
+                primaryImageTintResource = enabledColorRes,
+                isInPrimaryState = {
+                    store.state.findCustomTabOrSelectedTab(customTabId)?.content?.loading == true
+                },
+                secondaryImageTintResource = enabledColorRes,
+                disableInSecondaryState = false,
+                longClickListener = null,
+                listener = {
+                    val tab = store.state.findCustomTabOrSelectedTab(customTabId) ?: return@TwoStateButton
+                    if (tab.content.loading) {
+                        sessionUseCases.stopLoading(tab.id)
+                    } else {
+                        sessionUseCases.reload(tab.id)
+                    }
+                },
+            )
         toolbar.addNavigationAction(reloadOrStopButton)
     }
 
     override fun start() {
-        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.map { state -> state.findCustomTabOrSelectedTab(customTabId) }
-                .ifAnyChanged { tab ->
-                    arrayOf(
-                        tab?.content?.canGoBack,
-                        tab?.content?.canGoForward,
-                        tab?.content?.loading,
-                    )
-                }
-                .collect { toolbar.invalidateActions() }
-        }
+        scope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .map { state -> state.findCustomTabOrSelectedTab(customTabId) }
+                    .ifAnyChanged { tab ->
+                        arrayOf(
+                            tab?.content?.canGoBack,
+                            tab?.content?.canGoForward,
+                            tab?.content?.loading,
+                        )
+                    }
+                    .collect { toolbar.invalidateActions() }
+            }
     }
 
     override fun stop() {

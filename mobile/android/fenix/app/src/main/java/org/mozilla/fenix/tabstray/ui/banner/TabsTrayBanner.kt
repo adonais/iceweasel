@@ -44,11 +44,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlin.math.max
 import mozilla.components.compose.base.badge.BadgedIcon
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
+import mozilla.components.ui.icons.R as iconsR
 import mozilla.components.ui.tabcounter.TabCounter
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.Banner
@@ -66,8 +68,6 @@ import org.mozilla.fenix.tabstray.ui.tabstray.TabsTray
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.ThemedValue
 import org.mozilla.fenix.theme.ThemedValueProvider
-import kotlin.math.max
-import mozilla.components.ui.icons.R as iconsR
 
 private const val TAB_COUNT_SHOW_CFR = 6
 private val RowHeight = 48.dp
@@ -85,8 +85,8 @@ private val RowHeight = 48.dp
  * @param onForceSelectedTabsAsInactiveClick Invoked when the user clicks the "Mark Tabs as Inactive" menu item.
  * @param onTabAutoCloseBannerViewOptionsClick Invoked when the user clicks to view auto-close settings from the banner.
  * @param onTabsTrayPbmLockedClick Invoked when the user interacts with the lock private browsing mode banner.
- * @param onTabsTrayPbmLockedDismiss Invoked when the user clicks on either button in the
- * lock private browsing mode banner.
+ * @param onTabsTrayPbmLockedDismiss Invoked when the user clicks on either button in the lock private browsing mode
+ *   banner.
  * @param onTabAutoCloseBannerDismiss Invoked when the user dismisses the auto-close banner.
  * @param onTabAutoCloseBannerShown Invoked when the auto-close banner is shown to the user.
  */
@@ -107,35 +107,38 @@ fun TabsTrayBanner(
     onTabAutoCloseBannerDismiss: () -> Unit,
     onTabAutoCloseBannerShown: () -> Unit,
 ) {
-    val isInMultiSelectMode by remember(state.mode) {
-        derivedStateOf {
-            state.mode is Mode.Select
+    val isInMultiSelectMode by
+        remember(state.mode) {
+            derivedStateOf {
+                state.mode is Mode.Select
+            }
         }
-    }
-    val showTabAutoCloseBanner by remember(
-        state.config.showTabAutoCloseBanner,
-        state.normalTabsState.tabCount,
-        state.privateBrowsing.tabs.size,
-    ) {
-        derivedStateOf {
-            state.config.showTabAutoCloseBanner && max(
-                state.normalTabsState.tabCount,
-                state.privateBrowsing.tabs.size,
-            ) >= TAB_COUNT_SHOW_CFR
+    val showTabAutoCloseBanner by
+        remember(
+            state.config.showTabAutoCloseBanner,
+            state.normalTabsState.tabCount,
+            state.privateBrowsing.tabs.size,
+        ) {
+            derivedStateOf {
+                state.config.showTabAutoCloseBanner &&
+                    max(
+                        state.normalTabsState.tabCount,
+                        state.privateBrowsing.tabs.size,
+                    ) >= TAB_COUNT_SHOW_CFR
+            }
         }
-    }
-    val syncedTabCount = remember(state.sync.syncedTabs) {
-        state.sync.syncedTabs
-            .filterIsInstance<SyncedTabsListItem.DeviceSection>()
-            .sumOf { deviceSection: SyncedTabsListItem.DeviceSection -> deviceSection.tabs.size }
-    }
+    val syncedTabCount =
+        remember(state.sync.syncedTabs) {
+            state.sync.syncedTabs.filterIsInstance<SyncedTabsListItem.DeviceSection>().sumOf {
+                deviceSection: SyncedTabsListItem.DeviceSection ->
+                deviceSection.tabs.size
+            }
+        }
 
     var hasAcknowledgedAutoCloseBanner by remember { mutableStateOf(false) }
     var hasAcknowledgedPbmLockBanner by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier.testTag(tag = TabsTrayTestTag.BANNER_ROOT),
-    ) {
+    Column(modifier = Modifier.testTag(tag = TabsTrayTestTag.BANNER_ROOT)) {
         if (isInMultiSelectMode) {
             MultiSelectBanner(
                 selectedTabCount = state.mode.selectedTabs.size,
@@ -218,8 +221,8 @@ fun TabsTrayBanner(
  * @param shouldShowTabGroupBadge Whether to show the new-content badge on the tab groups page button.
  * @param syncedTabCount The amount of synced tabs.
  * @param hasTabDataLoaded Whether the tab data has loaded.
- * @param onTabPageIndicatorClicked Invoked when the user clicks on a tab page button. Passes along the
- * [Page] that was clicked.
+ * @param onTabPageIndicatorClicked Invoked when the user clicks on a tab page button. Passes along the [Page] that was
+ *   clicked.
  */
 @Suppress("LongParameterList")
 @Composable
@@ -234,30 +237,31 @@ private fun TabPageBanner(
     hasTabDataLoaded: Boolean,
     onTabPageIndicatorClicked: (Page) -> Unit,
 ) {
-    val selectedTabIndex = Page.pageToPosition(
-        page = selectedPage,
-        shouldShowTabGroupsPage = shouldShowTabGroupsPage,
-    )
+    val selectedTabIndex =
+        Page.pageToPosition(
+            page = selectedPage,
+            shouldShowTabGroupsPage = shouldShowTabGroupsPage,
+        )
 
     Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh) {
         PrimaryTabRow(
             selectedTabIndex = selectedTabIndex,
-            modifier = Modifier
-                .fillMaxWidth()
-                .windowInsetsPadding(insets = TopAppBarDefaults.windowInsets),
+            modifier = Modifier.fillMaxWidth().windowInsetsPadding(insets = TopAppBarDefaults.windowInsets),
             contentColor = MaterialTheme.colorScheme.primary,
             containerColor = Color.Transparent,
             indicator = {
                 TabRowDefaults.PrimaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(
-                        selectedTabIndex = selectedTabIndex,
-                        matchContentSize = true,
-                    ),
+                    modifier =
+                        Modifier.tabIndicatorOffset(
+                            selectedTabIndex = selectedTabIndex,
+                            matchContentSize = true,
+                        ),
                     width = Dp.Unspecified,
-                    shape = RoundedCornerShape(
-                        topStartPercent = 50,
-                        topEndPercent = 50,
-                    ),
+                    shape =
+                        RoundedCornerShape(
+                            topStartPercent = 50,
+                            topEndPercent = 50,
+                        ),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
             },
@@ -291,23 +295,27 @@ private fun TabPageBannerTabs(
     hasTabDataLoaded: Boolean,
     onTabPageIndicatorClicked: (Page) -> Unit,
 ) {
-    val privateTabDescription = stringResource(
-        id = R.string.tabs_header_private_tabs_counter_title,
-        privateTabCount.toString(),
-    )
-    val normalTabDescription = stringResource(
-        id = R.string.tabs_header_normal_tabs_counter_title,
-        normalTabCount.toString(),
-    )
-    val tabGroupsDescription = pluralStringResource(
-        id = R.plurals.tabs_header_tab_group_counter_title,
-        count = tabGroupCount,
-        tabGroupCount,
-    )
-    val syncedTabDescription = stringResource(
-        id = R.string.tabs_header_synced_tabs_counter_title,
-        syncedTabCount.toString(),
-    )
+    val privateTabDescription =
+        stringResource(
+            id = R.string.tabs_header_private_tabs_counter_title,
+            privateTabCount.toString(),
+        )
+    val normalTabDescription =
+        stringResource(
+            id = R.string.tabs_header_normal_tabs_counter_title,
+            normalTabCount.toString(),
+        )
+    val tabGroupsDescription =
+        pluralStringResource(
+            id = R.plurals.tabs_header_tab_group_counter_title,
+            count = tabGroupCount,
+            tabGroupCount,
+        )
+    val syncedTabDescription =
+        stringResource(
+            id = R.string.tabs_header_synced_tabs_counter_title,
+            syncedTabCount.toString(),
+        )
 
     BannerTab(
         selected = selectedPage == Page.PrivateTabs,
@@ -366,10 +374,8 @@ private fun BannerTab(
     Tab(
         selected = selected,
         onClick = onClick,
-        modifier = Modifier
-            .testTag(testTag)
-            .semantics { this.contentDescription = contentDescription }
-            .height(RowHeight),
+        modifier =
+            Modifier.testTag(testTag).semantics { this.contentDescription = contentDescription }.height(RowHeight),
         selectedContentColor = MaterialTheme.colorScheme.onSurface,
         unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
     ) {
@@ -389,8 +395,7 @@ private fun BannerTab(
  * @param onShareSelectedTabs Invoked when the user clicks on the share tabs button.
  * @param onBookmarkSelectedTabsClick Invoked when the user clicks the menu item to bookmark the selected tabs.
  * @param onCloseSelectedTabsClick Invoked when the user clicks the menu item to close the selected tabs.
- * @param onMakeSelectedTabsInactive Invoked when the user clicks the menu item to set the
- * selected tabs as inactive.
+ * @param onMakeSelectedTabsInactive Invoked when the user clicks the menu item to set the selected tabs as inactive.
  * @param onAddToTabGroup Invoked when the user adds to a tab group.
  */
 @Suppress("LongMethod", "LongParameterList")
@@ -408,35 +413,39 @@ private fun MultiSelectBanner(
     onMakeSelectedTabsInactive: () -> Unit,
     onAddToTabGroup: () -> Unit,
 ) {
-    val buttonsEnabled by remember(selectedTabCount) {
-        derivedStateOf {
-            selectedTabCount > 0
+    val buttonsEnabled by
+        remember(selectedTabCount) {
+            derivedStateOf {
+                selectedTabCount > 0
+            }
         }
-    }
-    val buttonTint = if (buttonsEnabled) {
-        MaterialTheme.colorScheme.onSurface
-    } else {
-        MaterialTheme.colorScheme.secondary
-    }
+    val buttonTint =
+        if (buttonsEnabled) {
+            MaterialTheme.colorScheme.onSurface
+        } else {
+            MaterialTheme.colorScheme.secondary
+        }
     var showMenu by remember { mutableStateOf(false) }
-    val menuItems = generateMultiSelectBannerMenuItems(
-        shouldShowInactiveButton = shouldShowInactiveButton,
-        shouldShowAddToTabGroupButton = shouldShowAddToTabGroupButton,
-        shouldShowSaveToCollectionButton = shouldShowSaveToCollectionButton,
-        onShareSelectedTabs = onShareSelectedTabs,
-        onSaveToCollectionsClick = onSaveToCollectionsClick,
-        onMakeSelectedTabsInactive = onMakeSelectedTabsInactive,
-        onAddToTabGroup = onAddToTabGroup,
-    )
+    val menuItems =
+        generateMultiSelectBannerMenuItems(
+            shouldShowInactiveButton = shouldShowInactiveButton,
+            shouldShowAddToTabGroupButton = shouldShowAddToTabGroupButton,
+            shouldShowSaveToCollectionButton = shouldShowSaveToCollectionButton,
+            onShareSelectedTabs = onShareSelectedTabs,
+            onSaveToCollectionsClick = onSaveToCollectionsClick,
+            onMakeSelectedTabsInactive = onMakeSelectedTabsInactive,
+            onAddToTabGroup = onAddToTabGroup,
+        )
 
     TopAppBar(
         title = {
             Text(
-                text = if (selectedTabCount == 0) {
-                    stringResource(R.string.tab_tray_multi_select_title_empty)
-                } else {
-                    stringResource(R.string.tab_tray_multi_select_title, selectedTabCount)
-                },
+                text =
+                    if (selectedTabCount == 0) {
+                        stringResource(R.string.tab_tray_multi_select_title_empty)
+                    } else {
+                        stringResource(R.string.tab_tray_multi_select_title, selectedTabCount)
+                    },
                 modifier = Modifier.testTag(TabsTrayTestTag.SELECTION_COUNTER),
                 style = FirefoxTheme.typography.headline6,
             )
@@ -455,9 +464,8 @@ private fun MultiSelectBanner(
         actions = {
             IconButton(
                 onClick = onBookmarkSelectedTabsClick,
-                contentDescription = stringResource(
-                    id = R.string.tab_manager_multiselect_menu_item_bookmark_content_description,
-                ),
+                contentDescription =
+                    stringResource(id = R.string.tab_manager_multiselect_menu_item_bookmark_content_description),
                 enabled = buttonsEnabled,
             ) {
                 Icon(
@@ -468,9 +476,8 @@ private fun MultiSelectBanner(
 
             IconButton(
                 onClick = onCloseSelectedTabsClick,
-                contentDescription = stringResource(
-                    id = R.string.tab_manager_multiselect_menu_item_close_content_description,
-                ),
+                contentDescription =
+                    stringResource(id = R.string.tab_manager_multiselect_menu_item_close_content_description),
                 enabled = buttonsEnabled,
             ) {
                 Icon(
@@ -498,10 +505,11 @@ private fun MultiSelectBanner(
             }
         },
         expandedHeight = RowHeight,
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            actionIconContentColor = buttonTint,
-        ),
+        colors =
+            TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                actionIconContentColor = buttonTint,
+            ),
     )
 }
 
@@ -514,14 +522,15 @@ private fun generateMultiSelectBannerMenuItems(
     onMakeSelectedTabsInactive: () -> Unit,
     onAddToTabGroup: () -> Unit,
 ): List<MenuItem> {
-    val menuItems = mutableListOf(
-        MenuItem.IconItem(
-            text = Text.Resource(R.string.tab_manager_multiselect_menu_item_share),
-            drawableRes = iconsR.drawable.mozac_ic_share_android_24,
-            testTag = TabsTrayTestTag.SHARE_BUTTON,
-            onClick = onShareSelectedTabs,
-        ),
-    )
+    val menuItems =
+        mutableListOf(
+            MenuItem.IconItem(
+                text = Text.Resource(R.string.tab_manager_multiselect_menu_item_share),
+                drawableRes = iconsR.drawable.mozac_ic_share_android_24,
+                testTag = TabsTrayTestTag.SHARE_BUTTON,
+                onClick = onShareSelectedTabs,
+            )
+        )
     if (shouldShowSaveToCollectionButton) {
         menuItems.add(
             MenuItem.IconItem(
@@ -529,7 +538,7 @@ private fun generateMultiSelectBannerMenuItems(
                 drawableRes = iconsR.drawable.mozac_ic_collection_24,
                 testTag = TabsTrayTestTag.COLLECTIONS_BUTTON,
                 onClick = onSaveToCollectionsClick,
-            ),
+            )
         )
     }
     if (shouldShowInactiveButton) {
@@ -538,7 +547,7 @@ private fun generateMultiSelectBannerMenuItems(
                 text = Text.Resource(R.string.inactive_tabs_menu_item_2),
                 drawableRes = iconsR.drawable.mozac_ic_cross_circle_24,
                 onClick = onMakeSelectedTabsInactive,
-            ),
+            )
         )
     }
     if (shouldShowAddToTabGroupButton) {
@@ -547,92 +556,91 @@ private fun generateMultiSelectBannerMenuItems(
                 text = Text.Resource(R.string.tab_manager_multiselect_menu_item_add_to_tab_group),
                 drawableRes = iconsR.drawable.mozac_ic_tab_group_24,
                 onClick = onAddToTabGroup,
-            ),
+            )
         )
     }
     return menuItems
 }
 
-private val previewData = listOf(
-    Pair(
-        "Private page selected",
-        TabsTrayState(
-            selectedPage = Page.PrivateTabs,
+private val previewData =
+    listOf(
+        Pair(
+            "Private page selected",
+            TabsTrayState(selectedPage = Page.PrivateTabs),
         ),
-    ),
-    Pair(
-        "Normal page selected - 0 tabs",
-        TabsTrayState(
-            selectedPage = Page.NormalTabs,
-            normalTabsState = TabsTrayState.NormalTabsState(tabCount = 0),
-        ),
-    ),
-    Pair(
-        "Normal page selected - infinity tabs",
-        TabsTrayState(
-            selectedPage = Page.NormalTabs,
-            normalTabsState = TabsTrayState.NormalTabsState(tabCount = 100),
-        ),
-    ),
-    Pair(
-        "Tab groups page selected",
-        TabsTrayState(
-            selectedPage = Page.TabGroups,
-            config = TabsTrayState.TabsTrayConfig(tabGroupsEnabled = true),
-        ),
-    ),
-    Pair(
-        "Synced page selected",
-        TabsTrayState(
-            selectedPage = Page.SyncedTabs,
-        ),
-    ),
-    Pair(
-        "Normal tab page selected with badge on tab group page",
-        TabsTrayState(
-            selectedPage = Page.NormalTabs,
-            tabGroupState = TabsTrayState.TabGroupState(
-                groups = listOf(createTabGroup()),
-                hasViewedTabGroupsPage = false,
-            ),
-            config = TabsTrayState.TabsTrayConfig(tabGroupsEnabled = true),
-        ),
-    ),
-    Pair(
-        "Auto close banner is displayed",
-        TabsTrayState(
-            normalTabsState = TabsTrayState.NormalTabsState(tabCount = 10),
-            config = TabsTrayState.TabsTrayConfig(showTabAutoCloseBanner = true),
-        ),
-    ),
-    Pair(
-        "Multiselection mode with 2 tabs selected",
-        TabsTrayState(
-            mode = Mode.Select(
-                selectedTabs = setOf(
-                    createTab("www.mozilla.com"),
-                    createTab("www.mozilla.com"),
-                ),
+        Pair(
+            "Normal page selected - 0 tabs",
+            TabsTrayState(
+                selectedPage = Page.NormalTabs,
+                normalTabsState = TabsTrayState.NormalTabsState(tabCount = 0),
             ),
         ),
-    ),
-    Pair(
-        "Multiselection mode with 0 tabs selected",
-        TabsTrayState(
-            mode = Mode.Select(),
+        Pair(
+            "Normal page selected - infinity tabs",
+            TabsTrayState(
+                selectedPage = Page.NormalTabs,
+                normalTabsState = TabsTrayState.NormalTabsState(tabCount = 100),
+            ),
         ),
-    ),
-)
+        Pair(
+            "Tab groups page selected",
+            TabsTrayState(
+                selectedPage = Page.TabGroups,
+                config = TabsTrayState.TabsTrayConfig(tabGroupsEnabled = true),
+            ),
+        ),
+        Pair(
+            "Synced page selected",
+            TabsTrayState(selectedPage = Page.SyncedTabs),
+        ),
+        Pair(
+            "Normal tab page selected with badge on tab group page",
+            TabsTrayState(
+                selectedPage = Page.NormalTabs,
+                tabGroupState =
+                    TabsTrayState.TabGroupState(
+                        groups = listOf(createTabGroup()),
+                        hasViewedTabGroupsPage = false,
+                    ),
+                config = TabsTrayState.TabsTrayConfig(tabGroupsEnabled = true),
+            ),
+        ),
+        Pair(
+            "Auto close banner is displayed",
+            TabsTrayState(
+                normalTabsState = TabsTrayState.NormalTabsState(tabCount = 10),
+                config = TabsTrayState.TabsTrayConfig(showTabAutoCloseBanner = true),
+            ),
+        ),
+        Pair(
+            "Multiselection mode with 2 tabs selected",
+            TabsTrayState(
+                mode =
+                    Mode.Select(
+                        selectedTabs =
+                            setOf(
+                                createTab("www.mozilla.com"),
+                                createTab("www.mozilla.com"),
+                            )
+                    )
+            ),
+        ),
+        Pair(
+            "Multiselection mode with 0 tabs selected",
+            TabsTrayState(mode = Mode.Select()),
+        ),
+    )
 
-private class TabsTrayBannerParameterProvider : ThemedValueProvider<TabsTrayState>(
-    baseValues = previewData.map { it.second }.asSequence(),
-    getDisplayName = { index, _ -> previewData[index].first },
-)
+private class TabsTrayBannerParameterProvider :
+    ThemedValueProvider<TabsTrayState>(
+        baseValues = previewData.map { it.second }.asSequence(),
+        getDisplayName = { index, _ -> previewData[index].first },
+    )
 
 @Preview
 @Composable
 private fun TabsTrayBannerPreview(
-    @PreviewParameter(TabsTrayBannerParameterProvider::class) previewState: ThemedValue<TabsTrayState>,
+    @PreviewParameter(TabsTrayBannerParameterProvider::class) previewState: ThemedValue<TabsTrayState>
 ) {
     val tabsTrayStore = remember { TabsTrayStore(initialState = previewState.value) }
     val state by tabsTrayStore.stateFlow.collectAsState()

@@ -9,10 +9,11 @@ const BinaryInputStream = CC(
   "nsIBinaryInputStream",
   "setInputStream"
 );
-const ProtocolProxyService = CC(
-  "@mozilla.org/network/protocol-proxy-service;1",
-  "nsIProtocolProxyService"
+
+var pps = Cc["@mozilla.org/network/protocol-proxy-service;1"].getService(
+  Ci.nsIProtocolProxyService
 );
+
 var sts = Cc["@mozilla.org/network/socket-transport-service;1"].getService(
   Ci.nsISocketTransportService
 );
@@ -41,7 +42,6 @@ async function launchConnection(
     pi_flags = Ci.nsIProxyInfo.TRANSPARENT_PROXY_RESOLVES_HOST;
   }
 
-  let pps = new ProtocolProxyService();
   let pi = pps.newProxyInfo(
     socks_vers,
     "localhost",

@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Dragging image whose `src` is a data URL</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<script src="/tests/SimpleTest/EventUtils.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css">
+<script>
+"use strict";
+
+SimpleTest.waitForExplicitFinish();
+SimpleTest.waitForFocus(async () => {
+  const editingHost = document.querySelector("div[contenteditable]");
+  const destP = document.getElementById("first");
+  const srcP = document.getElementById("second");
+  editingHost.focus();
+  const img = srcP.firstChild;
+  const imgSrc = img.getAttribute("src");
+  await synthesizePlainDragAndDrop({
+    srcElement: img,
+    destElement: destP,
+  });
+  is(
+    destP.innerHTML,
+    `<img src="${imgSrc}">`,
+    "The drop target paragraph should have the <img>"
+  );
+  is(
+    srcP.innerHTML,
+    `<br>`,
+    "The source paragraph should have not content"
+  );
+
+  SimpleTest.finish();
+});
+</script>
+<style>
+p {
+  min-height: 1em;
+}
+img {
+  width: 64px;
+  height: 64px;
+}
+</style>
+</head>
+<body>
+<div contenteditable>
+<p id="first"></p>
+<p id="second"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAYAAAAGCAIAAABvrngfAAAAFklEQVQImWMwjWhCQwxECoW3oCHihAB0LyYv5/oAHwAAAABJRU5ErkJggg=="></p>
+</div>
+</body>
+</html>

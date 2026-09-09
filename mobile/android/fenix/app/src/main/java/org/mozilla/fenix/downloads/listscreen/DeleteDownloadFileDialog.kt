@@ -17,12 +17,12 @@ import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 
 /**
-* This dialog is used to prompt the user to confirm if they want to delete
-* selected downloads. It provides options to confirm or cancel the deletion.
-*
-* @param onConfirmDelete Callback invoked when the user confirms the deletion.
-* @param onCancel Callback invoked when the user cancels the deletion.
-*/
+ * This dialog is used to prompt the user to confirm if they want to delete selected downloads. It provides options to
+ * confirm or cancel the deletion.
+ *
+ * @param onConfirmDelete Callback invoked when the user confirms the deletion.
+ * @param onCancel Callback invoked when the user cancels the deletion.
+ */
 @Composable
 fun DeleteDownloadFileDialog(
     onConfirmDelete: () -> Unit,
@@ -32,9 +32,7 @@ fun DeleteDownloadFileDialog(
         onDismissRequest = {},
         text = {
             Text(
-                text = stringResource(
-                    R.string.download_delete_multi_select_dialog_confirmation,
-                ),
+                text = stringResource(R.string.download_delete_multi_select_dialog_confirmation),
                 style = FirefoxTheme.typography.body2,
             )
         },
@@ -55,9 +53,7 @@ fun DeleteDownloadFileDialog(
 
 @FlexibleWindowPreview
 @Composable
-private fun DeleteDownloadFileDialogPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun DeleteDownloadFileDialogPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         DeleteDownloadFileDialog(
             onConfirmDelete = {},

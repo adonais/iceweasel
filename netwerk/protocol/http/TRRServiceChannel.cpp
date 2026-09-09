@@ -25,6 +25,7 @@
 #include "nsIOService.h"
 #include "nsIProtocolProxyService2.h"
 #include "nsISeekableStream.h"
+#include "nsSocketTransportService2.h"
 #include "nsThreadUtils.h"
 #include "nsURLHelper.h"
 
@@ -278,7 +279,8 @@ nsresult TRRServiceChannel::ResolveProxy() {
       [self](nsIProxyInfo* aProxyInfo, nsresult aStatus) {
         self->OnProxyAvailable(nullptr, nullptr, aProxyInfo, aStatus);
       },
-      mURI, mProxyResolveFlags, getter_AddRefs(proxyRequest));
+      mURI, mProxyResolveFlags, LoadIsTRRServiceChannel(),
+      getter_AddRefs(proxyRequest));
 
   if (NS_FAILED(rv)) {
     if (!mCurrentEventTarget->IsOnCurrentThread()) {

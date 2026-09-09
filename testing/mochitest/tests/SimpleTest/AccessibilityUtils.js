@@ -4,6 +4,9 @@
 
 "use strict";
 
+// Loaded into this scope by browser-test.js before this file.
+const ClickChecks = this.ClickChecks;
+
 /**
  * Accessible states used to check node's state from the accessiblity API
  * perspective.
@@ -816,6 +819,28 @@ this.AccessibilityUtils = (function () {
   }
 
   /**
+   * Find the closest popup ancestor of an accessible, if the accessible is
+   * invisible because that popup is not open.
+   *
+   * A popup that is still opening keeps its accessibles: the accessibility
+   * service only skips the subtree once it is closed or hiding. They are
+   * invisible and not focusable, which is why this is reached from the
+   * focusable check and not from the "not accessible" one.
+   *
+   * @param {nsIAccessible} accessible
+   * @returns {?Element} the popup, or null if there is none, it is open, or the
+   *   accessible is visible.
+   */
+  function notOpenPopupAncestor(accessible) {
+    if (!matchState(accessible, STATE_INVISIBLE)) {
+      return null;
+    }
+
+    const popup = ClickChecks.popupAncestor(accessible.DOMNode);
+    return popup && popup.state != "open" ? popup : null;
+  }
+
+  /**
    * Log a todo statement with a given message because of an issue with a given
    * accessible object. This is used for cases where accessibility best
    * practices are not followed or for something that is not as severe to be
@@ -861,7 +886,14 @@ this.AccessibilityUtils = (function () {
       const ariaRoles = getAriaRoles(accessible);
       // Do not force ARIA combobox or listbox to be focusable.
       if (!ariaRoles.includes("combobox") && !ariaRoles.includes("listbox")) {
-        a11yFail("Node is not focusable via the accessibility API", accessible);
+        const notOpenPopup = notOpenPopupAncestor(accessible);
+        a11yFail(
+          notOpenPopup
+            ? `Node is inside ${ClickChecks.describePopup(notOpenPopup)}, ` +
+                `so it is not focusable`
+            : "Node is not focusable via the accessibility API",
+          accessible
+        );
       }
 
       return;

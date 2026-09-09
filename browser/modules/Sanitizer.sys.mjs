@@ -627,8 +627,7 @@ export var Sanitizer = {
                 tabBrowser.getCachedFindBar(tab).clear();
               }
             }
-            // Clear any saved find value
-            tabBrowser._lastFindValue = "";
+            tabBrowser.clearLastFindValue();
           }
         } catch (ex) {
           seenException = ex;

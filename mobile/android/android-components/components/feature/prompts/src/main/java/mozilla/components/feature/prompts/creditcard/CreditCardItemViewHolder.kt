@@ -29,14 +29,13 @@ class CreditCardItemViewHolder(
      * @param creditCard The [CreditCardEntry] to display.
      */
     fun bind(creditCard: CreditCardEntry) {
-        itemView.findViewById<ImageView>(R.id.credit_card_logo)
+        itemView
+            .findViewById<ImageView>(R.id.credit_card_logo)
             .setImageResource(creditCard.cardType.creditCardIssuerNetwork().icon)
 
-        itemView.findViewById<TextView>(R.id.credit_card_number).text =
-            creditCard.obfuscatedCardNumber
+        itemView.findViewById<TextView>(R.id.credit_card_number).text = creditCard.obfuscatedCardNumber
 
-        itemView.findViewById<TextView>(R.id.credit_card_expiration_date).text =
-            creditCard.expiryDate
+        itemView.findViewById<TextView>(R.id.credit_card_expiration_date).text = creditCard.expiryDate
 
         itemView.setOnClickListener {
             onCreditCardSelected(creditCard)
@@ -44,7 +43,6 @@ class CreditCardItemViewHolder(
     }
 
     companion object {
-        @LayoutRes
-        val LAYOUT_ID = R.layout.mozac_feature_prompts_credit_card_list_item
+        @LayoutRes val LAYOUT_ID = R.layout.mozac_feature_prompts_credit_card_list_item
     }
 }

@@ -1389,9 +1389,9 @@ bool GPUProcessManager::CreateContentBridges(
   const uint32_t compositorBridgeNamespace = AllocateNamespace();
   const uint32_t imageBridgeNamespace = AllocateNamespace();
   const uint32_t vrManagerNamespace = AllocateNamespace();
-  if (!CreateContentCompositorManager(aOtherProcess, aChildId,
-                                      compositorManagerNamespace,
-                                      aOutCompositor) ||
+  if (!CreateContentCompositorManager(
+          aOtherProcess, aChildId, compositorManagerNamespace,
+          compositorBridgeNamespace, aOutCompositor) ||
       !CreateContentImageBridge(aOtherProcess, aChildId, imageBridgeNamespace,
                                 aOutImageBridge) ||
       !CreateContentVRManager(aOtherProcess, aChildId, vrManagerNamespace,
@@ -1413,7 +1413,8 @@ bool GPUProcessManager::CreateContentBridges(
 
 bool GPUProcessManager::CreateContentCompositorManager(
     ipc::EndpointProcInfo aOtherProcess, dom::ContentParentId aChildId,
-    uint32_t aNamespace, ipc::Endpoint<PCompositorManagerChild>* aOutEndpoint) {
+    uint32_t aNamespace, uint32_t aContentBridgeNamespace,
+    ipc::Endpoint<PCompositorManagerChild>* aOutEndpoint) {
   MOZ_DIAGNOSTIC_ASSERT(IsGPUReady());
 
   ipc::Endpoint<PCompositorManagerParent> parentPipe;
@@ -1432,10 +1433,11 @@ bool GPUProcessManager::CreateContentCompositorManager(
   }
 
   if (mGPUChild) {
-    mGPUChild->SendNewContentCompositorManager(std::move(parentPipe), aChildId,
-                                               aNamespace);
+    mGPUChild->SendNewContentCompositorManager(
+        std::move(parentPipe), aChildId, aNamespace, aContentBridgeNamespace);
   } else if (!CompositorManagerParent::Create(std::move(parentPipe), aChildId,
                                               aNamespace,
+                                              aContentBridgeNamespace,
                                               /* aIsRoot */ false)) {
     return false;
   }

@@ -97,25 +97,27 @@ class MenuButtonTest {
     fun `invalidateMenu should automatically upgrade menu items if both builder and controller are present`() {
         val onClick = {}
         `when`(menuButtonInternal.menuController).thenReturn(menuController)
-        `when`(menuButtonInternal.menuBuilder).thenReturn(
-            BrowserMenuBuilder(
-                listOf(
-                    SimpleBrowserMenuItem("Item 1", listener = onClick),
-                    SimpleBrowserMenuItem("Item 2"),
-                ),
-            ),
-        )
+        `when`(menuButtonInternal.menuBuilder)
+            .thenReturn(
+                BrowserMenuBuilder(
+                    listOf(
+                        SimpleBrowserMenuItem("Item 1", listener = onClick),
+                        SimpleBrowserMenuItem("Item 2"),
+                    )
+                )
+            )
         verify(menuButtonInternal, never()).invalidateBrowserMenu()
 
         menuButton.invalidateMenu()
 
         verify(menuButtonInternal, never()).invalidateBrowserMenu()
-        verify(menuController).submitList(
-            listOf(
-                TextMenuCandidate("Item 1", onClick = onClick),
-                DecorativeTextMenuCandidate("Item 2"),
-            ),
-        )
+        verify(menuController)
+            .submitList(
+                listOf(
+                    TextMenuCandidate("Item 1", onClick = onClick),
+                    DecorativeTextMenuCandidate("Item 2"),
+                )
+            )
     }
 
     @Test
@@ -132,18 +134,19 @@ class MenuButtonTest {
     @Test
     fun `setHighlightStatus is called on the impl MenuButton when invalidateMenu() is called`() {
         val highlight = BrowserMenuHighlight.LowPriority(Color.YELLOW)
-        val highlightMenuBuilder = spy(
-            BrowserMenuBuilder(
-                listOf(
-                    BrowserMenuHighlightableItem(
-                        label = "Test",
-                        startImageResource = 0,
-                        highlight = highlight,
-                        isHighlighted = { false },
-                    ),
-                ),
-            ),
-        )
+        val highlightMenuBuilder =
+            spy(
+                BrowserMenuBuilder(
+                    listOf(
+                        BrowserMenuHighlightableItem(
+                            label = "Test",
+                            startImageResource = 0,
+                            highlight = highlight,
+                            isHighlighted = { false },
+                        )
+                    )
+                )
+            )
         doReturn(menu).`when`(highlightMenuBuilder).build(testContext)
 
         menuButtonInternal.menuBuilder = highlightMenuBuilder

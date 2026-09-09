@@ -15,21 +15,15 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.experiments.view.ResearchSurfaceSurvey
 import org.mozilla.fenix.theme.FirefoxTheme
 
-/**
- * Dialog displaying the fullscreen research surface message.
- */
+/** Dialog displaying the fullscreen research surface message. */
 class ResearchSurfaceDialogFragment : DialogFragment() {
     private val args by navArgs<ResearchSurfaceDialogFragmentArgs>()
     private lateinit var bundleArgs: Bundle
 
-    /**
-     * A callback to trigger the 'Take Survey' button of the dialog.
-     */
+    /** A callback to trigger the 'Take Survey' button of the dialog. */
     var onAccept: () -> Unit = {}
 
-    /**
-     * A callback to trigger the 'No Thanks' button of the dialog.
-     */
+    /** A callback to trigger the 'No Thanks' button of the dialog. */
     var onDismiss: () -> Unit = {}
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,12 +43,11 @@ class ResearchSurfaceDialogFragment : DialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ) = content {
-        val messageText = bundleArgs.getString(KEY_MESSAGE_TEXT)
-            ?: getString(R.string.nimbus_survey_message_text)
-        val acceptButtonText = bundleArgs.getString(KEY_ACCEPT_BUTTON_TEXT)
-            ?: getString(R.string.preferences_take_survey)
-        val dismissButtonText = bundleArgs.getString(KEY_DISMISS_BUTTON_TEXT)
-            ?: getString(R.string.preferences_not_take_survey)
+        val messageText = bundleArgs.getString(KEY_MESSAGE_TEXT) ?: getString(R.string.nimbus_survey_message_text)
+        val acceptButtonText =
+            bundleArgs.getString(KEY_ACCEPT_BUTTON_TEXT) ?: getString(R.string.preferences_take_survey)
+        val dismissButtonText =
+            bundleArgs.getString(KEY_DISMISS_BUTTON_TEXT) ?: getString(R.string.preferences_not_take_survey)
 
         FirefoxTheme {
             ResearchSurfaceSurvey(
@@ -74,9 +67,7 @@ class ResearchSurfaceDialogFragment : DialogFragment() {
     }
 
     companion object {
-        /**
-         * A builder method for creating a [ResearchSurfaceDialogFragment]
-         */
+        /** A builder method for creating a [ResearchSurfaceDialogFragment] */
         fun newInstance(
             keyMessageText: String?,
             keyAcceptButtonText: String?,

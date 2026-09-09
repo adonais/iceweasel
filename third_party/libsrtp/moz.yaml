@@ -43,3 +43,10 @@ vendoring:
     - LICENSE
     - CHANGES
     - README.md
+
+  update-actions:
+    # Upstream generates config.h at build time so it isn't in the sources we fetch, but
+    # moz.build defines HAVE_CONFIG_H, so put our placeholder back after unpacking.
+    - action: copy-file
+      from: '{yaml_dir}/config.h'
+      to: '{yaml_dir}/src/include/config.h'

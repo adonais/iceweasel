@@ -16,7 +16,6 @@ import {
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
@@ -80,7 +79,7 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
         let str = queryContext.searchString;
         if (!URL.canParse(str)) {
           if (
-            lazy.UrlbarPrefs.get("keyword.enabled") &&
+            queryContext.keywordEnabled &&
             (lazy.UrlUtils.looksLikeOrigin(str, {
               noIp: true,
               noPort: true,
@@ -108,8 +107,7 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
     }
 
     if (
-      queryContext.sapName == "searchbar" ||
-      lazy.UrlbarPrefs.get("keyword.enabled") ||
+      queryContext.keywordEnabled ||
       queryContext.restrictSource == lazy.UrlbarShared.RESULT_SOURCE.SEARCH ||
       queryContext.searchMode
     ) {
@@ -156,7 +154,7 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
     if (queryContext.fixupError) {
       if (
         queryContext.fixupError == Cr.NS_ERROR_MALFORMED_URI &&
-        !lazy.UrlbarPrefs.get("keyword.enabled")
+        !queryContext.keywordEnabled
       ) {
         return new lazy.UrlbarResult({
           type: lazy.UrlbarShared.RESULT_TYPE.URL,

@@ -28,7 +28,14 @@ class ProvidersTest {
         assertCompletion(provider, "MOZ", DomainList.DEFAULT, size, "MOZilla.org", "http://mozilla.org")
         assertCompletion(provider, "www.GOO", DomainList.DEFAULT, size, "www.GOOgle.com", "http://google.com")
         assertCompletion(provider, "WWW.GOOGLE.", DomainList.DEFAULT, size, "WWW.GOOGLE.com", "http://google.com")
-        assertCompletion(provider, "www.facebook.com", DomainList.DEFAULT, size, "www.facebook.com", "http://facebook.com")
+        assertCompletion(
+            provider,
+            "www.facebook.com",
+            DomainList.DEFAULT,
+            size,
+            "www.facebook.com",
+            "http://facebook.com",
+        )
         assertCompletion(provider, "facebook.com", DomainList.DEFAULT, size, "facebook.com", "http://facebook.com")
 
         assertNoCompletion(provider, "wwww")
@@ -42,8 +49,22 @@ class ProvidersTest {
         val provider = CustomDomainsProvider()
         provider.domains = customDomains.into()
 
-        assertCompletion(provider, "f", DomainList.CUSTOM, customDomains.size, "fanfiction.com", "http://www.fanfiction.com")
-        assertCompletion(provider, "fa", DomainList.CUSTOM, customDomains.size, "fanfiction.com", "http://www.fanfiction.com")
+        assertCompletion(
+            provider,
+            "f",
+            DomainList.CUSTOM,
+            customDomains.size,
+            "fanfiction.com",
+            "http://www.fanfiction.com",
+        )
+        assertCompletion(
+            provider,
+            "fa",
+            DomainList.CUSTOM,
+            customDomains.size,
+            "fanfiction.com",
+            "http://www.fanfiction.com",
+        )
 
         assertCompletion(provider, "g", DomainList.CUSTOM, customDomains.size, "gap.com", "http://gap.com")
         assertCompletion(provider, "ga", DomainList.CUSTOM, customDomains.size, "gap.com", "http://gap.com")

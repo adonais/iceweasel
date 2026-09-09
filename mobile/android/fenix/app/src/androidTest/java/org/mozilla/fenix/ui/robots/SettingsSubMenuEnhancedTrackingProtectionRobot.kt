@@ -38,9 +38,7 @@ import org.mozilla.fenix.helpers.isEnabled
 
 const val GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT = "Tell websites not to share & sell data"
 
-/**
- * Implementation of Robot Pattern for the settings Enhanced Tracking Protection sub menu.
- */
+/** Implementation of Robot Pattern for the settings Enhanced Tracking Protection sub menu. */
 class SettingsSubMenuEnhancedTrackingProtectionRobot {
 
     fun verifyEnhancedTrackingProtectionSummary() {
@@ -57,154 +55,239 @@ class SettingsSubMenuEnhancedTrackingProtectionRobot {
     }
 
     fun verifyEnhancedTrackingProtectionTextWithSwitchWidget() {
-        Log.i(TAG, "verifyEnhancedTrackingProtectionTextWithSwitchWidget: Trying to verify that the ETP toggle is visible")
-        onView(
-            allOf(
-                withParentIndex(1),
-                withChild(withText("Enhanced Tracking Protection")),
-            ),
+        Log.i(
+            TAG,
+            "verifyEnhancedTrackingProtectionTextWithSwitchWidget: Trying to verify that the ETP toggle is visible",
         )
+        onView(
+                allOf(
+                    withParentIndex(1),
+                    withChild(withText("Enhanced Tracking Protection")),
+                )
+            )
             .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyEnhancedTrackingProtectionTextWithSwitchWidget: Verified that the ETP toggle is visible")
     }
 
     fun verifyEnhancedTrackingProtectionOptionsEnabled(enabled: Boolean = true) {
-        Log.i(TAG, "verifyEnhancedTrackingProtectionOptionsEnabled: Trying to verify that the \"Standard\" ETP option is enabled $enabled")
-        onView(withText("Standard (default)"))
-            .check(matches(isEnabled(enabled)))
-        Log.i(TAG, "verifyEnhancedTrackingProtectionOptionsEnabled: Verified that the \"Standard\" ETP option is enabled $enabled")
-        Log.i(TAG, "verifyEnhancedTrackingProtectionOptionsEnabled: Trying to verify that the \"Strict\" ETP option is enabled $enabled")
-        onView(withText("Strict"))
-            .check(matches(isEnabled(enabled)))
-        Log.i(TAG, "verifyEnhancedTrackingProtectionOptionsEnabled: Verified that the \"Strict\" ETP option is enabled $enabled")
-        Log.i(TAG, "verifyEnhancedTrackingProtectionOptionsEnabled: Trying to verify that the \"Custom\" ETP option is enabled $enabled")
-        onView(withText("Custom"))
-            .check(matches(isEnabled(enabled)))
-        Log.i(TAG, "verifyEnhancedTrackingProtectionOptionsEnabled: Verified that the \"Custom\" ETP option is enabled $enabled")
+        Log.i(
+            TAG,
+            "verifyEnhancedTrackingProtectionOptionsEnabled: Trying to verify that the \"Standard\" ETP option is enabled $enabled",
+        )
+        onView(withText("Standard (default)")).check(matches(isEnabled(enabled)))
+        Log.i(
+            TAG,
+            "verifyEnhancedTrackingProtectionOptionsEnabled: Verified that the \"Standard\" ETP option is enabled $enabled",
+        )
+        Log.i(
+            TAG,
+            "verifyEnhancedTrackingProtectionOptionsEnabled: Trying to verify that the \"Strict\" ETP option is enabled $enabled",
+        )
+        onView(withText("Strict")).check(matches(isEnabled(enabled)))
+        Log.i(
+            TAG,
+            "verifyEnhancedTrackingProtectionOptionsEnabled: Verified that the \"Strict\" ETP option is enabled $enabled",
+        )
+        Log.i(
+            TAG,
+            "verifyEnhancedTrackingProtectionOptionsEnabled: Trying to verify that the \"Custom\" ETP option is enabled $enabled",
+        )
+        onView(withText("Custom")).check(matches(isEnabled(enabled)))
+        Log.i(
+            TAG,
+            "verifyEnhancedTrackingProtectionOptionsEnabled: Verified that the \"Custom\" ETP option is enabled $enabled",
+        )
     }
 
     fun verifyTrackingProtectionSwitchEnabled() {
         Log.i(TAG, "verifyTrackingProtectionSwitchEnabled: Trying to verify that the ETP toggle is checked")
-        onView(withResourceName("checkbox")).check(
-            matches(
-                isChecked(
-                    true,
-                ),
-            ),
-        )
+        onView(withResourceName("checkbox")).check(matches(isChecked(true)))
         Log.i(TAG, "verifyTrackingProtectionSwitchEnabled: Verified that the ETP toggle is checked")
     }
 
     fun switchEnhancedTrackingProtectionToggle() {
         Log.i(TAG, "switchEnhancedTrackingProtectionToggle: Trying to click the ETP toggle")
         onView(
-            allOf(
-                withText("Enhanced Tracking Protection"),
-                hasSibling(withResourceName("checkbox")),
-            ),
-        ).click()
+                allOf(
+                    withText("Enhanced Tracking Protection"),
+                    hasSibling(withResourceName("checkbox")),
+                )
+            )
+            .click()
         Log.i(TAG, "switchEnhancedTrackingProtectionToggle: Clicked the ETP toggle")
     }
 
     fun scrollToGCPSettings() {
         Log.i(TAG, "scrollToGCPSettings: Trying to perform scroll to the $GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT option")
-        onView(withId(R.id.recycler_view)).perform(
-            RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
-                hasDescendant(withText(GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT)),
-            ),
-        )
+        onView(withId(R.id.recycler_view))
+            .perform(
+                RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
+                    hasDescendant(withText(GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT))
+                )
+            )
         Log.i(TAG, "scrollToGCPSettings: Performed scroll to the $GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT option")
     }
+
     fun verifyGPCTextWithSwitchWidget() {
-        Log.i(TAG, "verifyGPCTextWithSwitchWidget: Trying to verify that the $GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT option is visible")
-        onView(
-            allOf(
-                withChild(withText(GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT)),
-            ),
-        ).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
-        Log.i(TAG, "verifyGPCTextWithSwitchWidget: Verified that the $GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT option is visible")
+        Log.i(
+            TAG,
+            "verifyGPCTextWithSwitchWidget: Trying to verify that the $GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT option is visible",
+        )
+        onView(allOf(withChild(withText(GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT))))
+            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        Log.i(
+            TAG,
+            "verifyGPCTextWithSwitchWidget: Verified that the $GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT option is visible",
+        )
     }
 
     fun verifyGPCSwitchEnabled(enabled: Boolean) {
-        Log.i(TAG, "verifyGPCSwitchEnabled: Trying to verify that the $GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT option is checked: $enabled")
-        onView(
-            allOf(
-                withChild(withText(GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT)),
-            ),
-        ).check(matches(isChecked(enabled)))
-        Log.i(TAG, "verifyGPCSwitchEnabled: Verified that the $GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT option is checked: $enabled")
+        Log.i(
+            TAG,
+            "verifyGPCSwitchEnabled: Trying to verify that the $GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT option is checked: $enabled",
+        )
+        onView(allOf(withChild(withText(GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT)))).check(matches(isChecked(enabled)))
+        Log.i(
+            TAG,
+            "verifyGPCSwitchEnabled: Verified that the $GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT option is checked: $enabled",
+        )
     }
 
     fun switchGPCToggle() {
         Log.i(TAG, "switchGPCToggle: Trying to click the $GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT option toggle")
-        onView(
-            allOf(
-                withChild(withText(GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT)),
-            ),
-        ).click()
+        onView(allOf(withChild(withText(GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT)))).click()
         Log.i(TAG, "switchGPCToggle: Clicked the $GLOBAL_PRIVACY_CONTROL_SWITCH_TEXT option toggle")
     }
 
     fun verifyStandardOptionDescription() {
-        Log.i(TAG, "verifyStandardOptionDescription: Trying to verify that the \"Standard\" ETP option summary is displayed")
+        Log.i(
+            TAG,
+            "verifyStandardOptionDescription: Trying to verify that the \"Standard\" ETP option summary is displayed",
+        )
         onView(withText(R.string.preference_enhanced_tracking_protection_standard_description_5))
             .check(matches(isDisplayed()))
         Log.i(TAG, "verifyStandardOptionDescription: Verified that the \"Standard\" ETP option summary is displayed")
-        Log.i(TAG, "verifyStandardOptionDescription: Trying to verify that the \"Standard\" ETP option info button is displayed")
+        Log.i(
+            TAG,
+            "verifyStandardOptionDescription: Trying to verify that the \"Standard\" ETP option info button is displayed",
+        )
         onView(withContentDescription(R.string.preference_enhanced_tracking_protection_standard_info_button))
             .check(matches(isDisplayed()))
         Log.i(TAG, "verifyStandardOptionDescription: Verify that the \"Standard\" ETP option info button is displayed")
     }
 
     fun verifyStrictOptionDescription() {
-        Log.i(TAG, "verifyStrictOptionDescription: Trying to verify that the \"Strict\" ETP option summary is displayed")
+        Log.i(
+            TAG,
+            "verifyStrictOptionDescription: Trying to verify that the \"Strict\" ETP option summary is displayed",
+        )
         onView(withText(R.string.preference_enhanced_tracking_protection_strict_description_4))
             .check(matches(isDisplayed()))
         Log.i(TAG, "verifyStrictOptionDescription: Verified that the \"Strict\" ETP option summary is displayed")
-        Log.i(TAG, "verifyStrictOptionDescription: Trying to verify that the \"Strict\" ETP option info button is displayed")
+        Log.i(
+            TAG,
+            "verifyStrictOptionDescription: Trying to verify that the \"Strict\" ETP option info button is displayed",
+        )
         onView(withContentDescription(R.string.preference_enhanced_tracking_protection_strict_info_button))
             .check(matches(isDisplayed()))
         Log.i(TAG, "verifyStrictOptionDescription: Verified that the \"Strict\" ETP option info button is displayed")
     }
 
     fun verifyCustomTrackingProtectionSettings() {
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Custom\" ETP option summary is displayed")
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Custom\" ETP option summary is displayed",
+        )
         onView(withText(R.string.preference_enhanced_tracking_protection_custom_description_2))
             .check(matches(isDisplayed()))
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Verified that the \"Custom\" ETP option summary is displayed")
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Custom\" ETP option info button is displayed")
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Verified that the \"Custom\" ETP option summary is displayed",
+        )
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Custom\" ETP option info button is displayed",
+        )
         onView(withContentDescription(R.string.preference_enhanced_tracking_protection_custom_info_button))
             .check(matches(isDisplayed()))
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Verified that the \"Custom\" ETP option info button is displayed")
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Verified that the \"Custom\" ETP option info button is displayed",
+        )
         scrollToElementByText("Redirect Trackers")
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Cookies\" check box is displayed")
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Cookies\" check box is displayed",
+        )
         cookiesCheckbox().check(matches(isDisplayed()))
         Log.i(TAG, "verifyCustomTrackingProtectionSettings: Verified that the \"Cookies\" check box is displayed")
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Cookies\" drop down is displayed")
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Cookies\" drop down is displayed",
+        )
         cookiesDropDownMenuDefault().check(matches(isDisplayed()))
         Log.i(TAG, "verifyCustomTrackingProtectionSettings: Verified that the \"Cookies\" drop down is displayed")
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Tracking content\" check box is displayed")
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Tracking content\" check box is displayed",
+        )
         trackingContentCheckbox().check(matches(isDisplayed()))
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Verified that the \"Tracking content\" check box is displayed")
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Tracking content\" drop down is displayed")
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Verified that the \"Tracking content\" check box is displayed",
+        )
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Tracking content\" drop down is displayed",
+        )
         trackingcontentDropDownDefault().check(matches(isDisplayed()))
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Verified that the \"Tracking content\" drop down is displayed")
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Verified that the \"Tracking content\" drop down is displayed",
+        )
         scrollToElementByText(getStringResource(R.string.preferences_tracking_protection_exceptions))
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Cryptominers\" check box is displayed")
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Cryptominers\" check box is displayed",
+        )
         cryptominersCheckbox().check(matches(isDisplayed()))
         Log.i(TAG, "verifyCustomTrackingProtectionSettings: Verified that the \"Cryptominers\" check box is displayed")
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Known Fingerprinters\" check box is displayed")
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Known Fingerprinters\" check box is displayed",
+        )
         knownFingerprintersCheckbox().check(matches(isDisplayed()))
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Verified that the \"Known Fingerprinters\" check box is displayed")
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Suspected Fingerprinters\" check box is displayed")
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Verified that the \"Known Fingerprinters\" check box is displayed",
+        )
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Suspected Fingerprinters\" check box is displayed",
+        )
         suspectedFingerprintersCheckbox().check(matches(isDisplayed()))
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Verified that the \"Suspected Fingerprinters\" check box is displayed")
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Suspected Fingerprinters\" drop down is displayed")
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Verified that the \"Suspected Fingerprinters\" check box is displayed",
+        )
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Suspected Fingerprinters\" drop down is displayed",
+        )
         suspectedFingerprintersDropDownDefault().check(matches(isDisplayed()))
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Verified that the \"Suspected Fingerprinters\" drop down is displayed")
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Redirect trackers\" check box is displayed")
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Verified that the \"Suspected Fingerprinters\" drop down is displayed",
+        )
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Trying to verify that the \"Redirect trackers\" check box is displayed",
+        )
         redirectTrackersCheckbox().check(matches(isDisplayed()))
-        Log.i(TAG, "verifyCustomTrackingProtectionSettings: Verified that the \"Redirect trackers\" check box is displayed")
+        Log.i(
+            TAG,
+            "verifyCustomTrackingProtectionSettings: Verified that the \"Redirect trackers\" check box is displayed",
+        )
     }
 
     fun verifyWhatsBlockedByStandardETPInfo() {
@@ -220,11 +303,22 @@ class SettingsSubMenuEnhancedTrackingProtectionRobot {
         Log.i(TAG, "verifyWhatsBlockedByStrictETPInfo: Clicked the \"Strict\" ETP option info button")
         // Repeating the info as in the standard option, with one extra point.
         blockedByStandardETPInfo()
-        Log.i(TAG, "verifyWhatsBlockedByStrictETPInfo: Trying to verify that the \"Tracking Content\" title is displayed")
+        Log.i(
+            TAG,
+            "verifyWhatsBlockedByStrictETPInfo: Trying to verify that the \"Tracking Content\" title is displayed",
+        )
         onView(withText("Tracking Content")).check(matches(isDisplayed()))
         Log.i(TAG, "verifyWhatsBlockedByStrictETPInfo: Verified that the \"Tracking Content\" title is displayed")
-        Log.i(TAG, "verifyWhatsBlockedByStrictETPInfo: Trying to verify that the \"Tracking Content\" summary is displayed")
-        onView(withText("Stops outside ads, videos, and other content from loading that contains tracking code. May affect some website functionality.")).check(matches(isDisplayed()))
+        Log.i(
+            TAG,
+            "verifyWhatsBlockedByStrictETPInfo: Trying to verify that the \"Tracking Content\" summary is displayed",
+        )
+        onView(
+                withText(
+                    "Stops outside ads, videos, and other content from loading that contains tracking code. May affect some website functionality."
+                )
+            )
+            .check(matches(isDisplayed()))
         Log.i(TAG, "verifyWhatsBlockedByStrictETPInfo: Verified that the \"Tracking Content\" summary is displayed")
     }
 
@@ -234,11 +328,22 @@ class SettingsSubMenuEnhancedTrackingProtectionRobot {
         Log.i(TAG, "verifyWhatsBlockedByCustomETPInfo: Clicked the \"Custom\" ETP option info button")
         // Repeating the info as in the standard option, with one extra point.
         blockedByStandardETPInfo()
-        Log.i(TAG, "verifyWhatsBlockedByCustomETPInfo: Trying to verify that the \"Tracking Content\" title is displayed")
+        Log.i(
+            TAG,
+            "verifyWhatsBlockedByCustomETPInfo: Trying to verify that the \"Tracking Content\" title is displayed",
+        )
         onView(withText("Tracking Content")).check(matches(isDisplayed()))
         Log.i(TAG, "verifyWhatsBlockedByCustomETPInfo: Verified that the \"Tracking Content\" title is displayed")
-        Log.i(TAG, "verifyWhatsBlockedByCustomETPInfo: Trying to verify that the \"Tracking Content\" summary is displayed")
-        onView(withText("Stops outside ads, videos, and other content from loading that contains tracking code. May affect some website functionality.")).check(matches(isDisplayed()))
+        Log.i(
+            TAG,
+            "verifyWhatsBlockedByCustomETPInfo: Trying to verify that the \"Tracking Content\" summary is displayed",
+        )
+        onView(
+                withText(
+                    "Stops outside ads, videos, and other content from loading that contains tracking code. May affect some website functionality."
+                )
+            )
+            .check(matches(isDisplayed()))
         Log.i(TAG, "verifyWhatsBlockedByCustomETPInfo: Verified that the \"Tracking Content\" summary is displayed")
     }
 
@@ -249,13 +354,22 @@ class SettingsSubMenuEnhancedTrackingProtectionRobot {
     }
 
     fun verifyEnhancedTrackingProtectionLevelSelected(option: String, checked: Boolean) {
-        Log.i(TAG, "verifyEnhancedTrackingProtectionLevelSelected: Waiting for $waitingTime ms until finding the \"Enhanced Tracking Protection\" toolbar")
+        Log.i(
+            TAG,
+            "verifyEnhancedTrackingProtectionLevelSelected: Waiting for $waitingTime ms until finding the \"Enhanced Tracking Protection\" toolbar",
+        )
         mDevice.wait(
             Until.findObject(By.text("Enhanced Tracking Protection")),
             waitingTime,
         )
-        Log.i(TAG, "verifyEnhancedTrackingProtectionLevelSelected: Waited for $waitingTime ms until the \"Enhanced Tracking Protection\" toolbar was found")
-        Log.i(TAG, "verifyEnhancedTrackingProtectionLevelSelected: Trying to verify that the $option ETP option is checked: $checked")
+        Log.i(
+            TAG,
+            "verifyEnhancedTrackingProtectionLevelSelected: Waited for $waitingTime ms until the \"Enhanced Tracking Protection\" toolbar was found",
+        )
+        Log.i(
+            TAG,
+            "verifyEnhancedTrackingProtectionLevelSelected: Trying to verify that the $option ETP option is checked: $checked",
+        )
         onView(withText(option))
             .check(
                 matches(
@@ -263,15 +377,21 @@ class SettingsSubMenuEnhancedTrackingProtectionRobot {
                         allOf(
                             withId(R.id.radio_button),
                             isChecked(checked),
-                        ),
-                    ),
-                ),
+                        )
+                    )
+                )
             )
-        Log.i(TAG, "verifyEnhancedTrackingProtectionLevelSelected: Verified that the $option ETP option is checked: $checked")
+        Log.i(
+            TAG,
+            "verifyEnhancedTrackingProtectionLevelSelected: Verified that the $option ETP option is checked: $checked",
+        )
     }
 
     class Transition {
-        fun goBackToHomeScreen(composeTestRule: ComposeTestRule, interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
+        fun goBackToHomeScreen(
+            composeTestRule: ComposeTestRule,
+            interact: HomeScreenRobot.() -> Unit,
+        ): HomeScreenRobot.Transition {
             // To settings
             Log.i(TAG, "goBackToHomeScreen: Trying to click the navigate up toolbar button")
             goBackButton().click()
@@ -295,14 +415,11 @@ class SettingsSubMenuEnhancedTrackingProtectionRobot {
         }
 
         fun openExceptions(
-            interact: SettingsSubMenuEnhancedTrackingProtectionExceptionsRobot.() -> Unit,
+            interact: SettingsSubMenuEnhancedTrackingProtectionExceptionsRobot.() -> Unit
         ): SettingsSubMenuEnhancedTrackingProtectionExceptionsRobot.Transition {
             Log.i(TAG, "openExceptions: Trying to perform scroll to the \"Exceptions\" option")
-            onView(withId(R.id.recycler_view)).perform(
-                RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
-                    hasDescendant(withText("Exceptions")),
-                ),
-            )
+            onView(withId(R.id.recycler_view))
+                .perform(RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(hasDescendant(withText("Exceptions"))))
             Log.i(TAG, "openExceptions: Performed scroll to the \"Exceptions\" option")
             Log.i(TAG, "openExceptions: Trying to click the \"Exceptions\" option")
             openExceptions().click()
@@ -314,24 +431,27 @@ class SettingsSubMenuEnhancedTrackingProtectionRobot {
     }
 }
 
-fun settingsSubMenuEnhancedTrackingProtection(interact: SettingsSubMenuEnhancedTrackingProtectionRobot.() -> Unit): SettingsSubMenuEnhancedTrackingProtectionRobot.Transition {
+fun settingsSubMenuEnhancedTrackingProtection(
+    interact: SettingsSubMenuEnhancedTrackingProtectionRobot.() -> Unit
+): SettingsSubMenuEnhancedTrackingProtectionRobot.Transition {
     SettingsSubMenuEnhancedTrackingProtectionRobot().interact()
     return SettingsSubMenuEnhancedTrackingProtectionRobot.Transition()
 }
 
-private fun goBackButton() =
-    onView(allOf(withContentDescription("Navigate up")))
+private fun goBackButton() = onView(allOf(withContentDescription("Navigate up")))
 
-private fun openExceptions() =
-    onView(allOf(withText("Exceptions")))
+private fun openExceptions() = onView(allOf(withText("Exceptions")))
 
 private fun cookiesCheckbox() = onView(withText("Cookies"))
 
-private fun cookiesDropDownMenuDefault() = onView(withText(R.string.preference_enhanced_tracking_protection_custom_cookies_5))
+private fun cookiesDropDownMenuDefault() =
+    onView(withText(R.string.preference_enhanced_tracking_protection_custom_cookies_5))
 
-private fun trackingContentCheckbox() = onView(withText(R.string.preference_enhanced_tracking_protection_custom_tracking_content))
+private fun trackingContentCheckbox() =
+    onView(withText(R.string.preference_enhanced_tracking_protection_custom_tracking_content))
 
-private fun trackingcontentDropDownDefault() = onView(withText(R.string.preference_enhanced_tracking_protection_custom_tracking_content_1))
+private fun trackingcontentDropDownDefault() =
+    onView(withText(R.string.preference_enhanced_tracking_protection_custom_tracking_content_1))
 
 private fun cryptominersCheckbox() = onView(withText(R.string.etp_cryptominers_title))
 
@@ -339,7 +459,8 @@ private fun knownFingerprintersCheckbox() = onView(withText(R.string.etp_known_f
 
 private fun suspectedFingerprintersCheckbox() = onView(withText(R.string.etp_suspected_fingerprinters_title))
 
-private fun suspectedFingerprintersDropDownDefault() = onView(withText(R.string.preference_enhanced_tracking_protection_custom_tracking_content_2))
+private fun suspectedFingerprintersDropDownDefault() =
+    onView(withText(R.string.preference_enhanced_tracking_protection_custom_tracking_content_2))
 
 private fun redirectTrackersCheckbox() = onView(withText(R.string.etp_redirect_trackers_title))
 
@@ -348,25 +469,37 @@ private fun blockedByStandardETPInfo() {
     onView(withText("Social Media Trackers")).check(matches(isDisplayed()))
     Log.i(TAG, "blockedByStandardETPInfo: Verified that the \"Social Media Trackers\" title is displayed")
     Log.i(TAG, "blockedByStandardETPInfo: Trying to verify that the \"Social Media Trackers\" summary is displayed")
-    onView(withText("Limits the ability of social networks to track your browsing activity around the web.")).check(matches(isDisplayed()))
+    onView(withText("Limits the ability of social networks to track your browsing activity around the web."))
+        .check(matches(isDisplayed()))
     Log.i(TAG, "blockedByStandardETPInfo: Verified that the \"Social Media Trackers\" summary is displayed")
     Log.i(TAG, "blockedByStandardETPInfo: Trying to verify that the \"Cross-Site Cookies\" title is displayed")
     onView(withText("Cross-Site Cookies")).check(matches(isDisplayed()))
     Log.i(TAG, "blockedByStandardETPInfo: Verified that the \"Cross-Site Cookies\" title is displayed")
     Log.i(TAG, "blockedByStandardETPInfo: Trying to verify that the \"Cross-Site Cookies\" summary is displayed")
-    onView(withText("Total Cookie Protection isolates cookies to the site you’re on so trackers like ad networks can’t use them to follow you across sites.")).check(matches(isDisplayed()))
+    onView(
+            withText(
+                "Total Cookie Protection isolates cookies to the site you’re on so trackers like ad networks can’t use them to follow you across sites."
+            )
+        )
+        .check(matches(isDisplayed()))
     Log.i(TAG, "blockedByStandardETPInfo: Verified that the \"Cross-Site Cookies\" summary is displayed")
     Log.i(TAG, "blockedByStandardETPInfo: Trying to verify that the \"Cryptominers\" title is displayed")
     onView(withText("Cryptominers")).check(matches(isDisplayed()))
     Log.i(TAG, "blockedByStandardETPInfo: Verified that the \"Cryptominers\" title is displayed")
     Log.i(TAG, "blockedByStandardETPInfo: Trying to verify that the \"Cryptominers\" summary is displayed")
-    onView(withText("Prevents malicious scripts gaining access to your device to mine digital currency.")).check(matches(isDisplayed()))
+    onView(withText("Prevents malicious scripts gaining access to your device to mine digital currency."))
+        .check(matches(isDisplayed()))
     Log.i(TAG, "blockedByStandardETPInfo: Verified that the \"Cryptominers\" summary is displayed")
     Log.i(TAG, "blockedByStandardETPInfo: Trying to verify that the \"Known Fingerprinters\" title is displayed")
     onView(withText("Known Fingerprinters")).check(matches(isDisplayed()))
     Log.i(TAG, "blockedByStandardETPInfo: Verified that the \"Known Fingerprinters\" title is displayed")
     Log.i(TAG, "blockedByStandardETPInfo: Trying to verify that the \"Fingerprinters\" summary is displayed")
-    onView(withText("Stops uniquely identifiable data from being collected about your device that can be used for tracking purposes.")).check(matches(isDisplayed()))
+    onView(
+            withText(
+                "Stops uniquely identifiable data from being collected about your device that can be used for tracking purposes."
+            )
+        )
+        .check(matches(isDisplayed()))
     Log.i(TAG, "blockedByStandardETPInfo: Verified that the \"Fingerprinters\" summary is displayed")
     Log.i(TAG, "blockedByStandardETPInfo: Trying to verify that the \"Redirect Trackers\" title is displayed")
     onView(withText("Redirect Trackers")).check(matches(isDisplayed()))

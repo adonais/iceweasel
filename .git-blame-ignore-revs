@@ -2648,3 +2648,11 @@ b5f588f848de17b9d4787c18d3d621d621827eb6 # Bug 1994397 - Remove obsolete Unused.
 9e6366be325625a58f8839779978b8310f991757 # Revert - Bug 1994397 - Remove obsolete Unused.h header
 9084cc9d3ed0308af1e30e391daf509995dc0598 # Revert - Bug 1994397 - Remove obsolete Unused.h header
 82d01f49ea3166afa2daeb31f79b9e446894ed06 # Revert - Bug 1994397 - Remove obsolete Unused.h header
+fafdd808a2f3749449893bd57f4bc0a7d7a455bd # Bug 2050591 - Replace ktlint with ktfmt for android linting and autoformat mobile/android/** files
+d0469c5e7f19f6f28c2f03ff715aaa944b2e6d68 # Bug 2050591 - Replace ktlint with ktfmt for android linting and autoformat mobile/android/** files
+d48158104cb4d50d2696a92c94975e0b755ed137 # Bug 2050591 - Replace ktlint with ktfmt for android linting and autoformat mobile/android/** files
+8e38afc767763a66ecc87a2289e6ff342f099be6 # Bug 2050591 - Replace ktlint with ktfmt for android linting and autoformat mobile/android/** files
+747bf11e140d30e4134ce4c2ed50683bc84ce383 # Bug 2050591 - Replace ktlint with ktfmt for android linting and autoformat mobile/android/** files
+1967f78d98efce2eab72c0cfc79e9319360d7b1e # Bug 2050591 - Replace ktlint with ktfmt for android linting and autoformat mobile/android/** files
+b4f712874bb3721456c5573673ab78f33f121b42 # Bug 2050591 - Replace ktlint with ktfmt for android linting and autoformat mobile/android/** files
+560af3c0b95a11167742f616efb7e12c8850f08a # Bug 2064159 - Drop the indentation-preserving block from Tabbrowser.sys.mjs

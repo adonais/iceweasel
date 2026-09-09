@@ -4,15 +4,13 @@
 
 package mozilla.components.support.test.middleware
 
+import kotlin.reflect.KClass
 import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
-import kotlin.reflect.KClass
 
-/**
- * A [Middleware] implementation for unit tests that want to inspect actions dispatched on a `Store`
- */
+/** A [Middleware] implementation for unit tests that want to inspect actions dispatched on a `Store` */
 class CaptureActionsMiddleware<S : State, A : Action> : Middleware<S, A> {
     private val capturedActions = mutableListOf<A>()
 
@@ -23,8 +21,8 @@ class CaptureActionsMiddleware<S : State, A : Action> : Middleware<S, A> {
     }
 
     /**
-     * Returns the first action of type [clazz] that was dispatched on the store. Throws
-     * [AssertionError] if no such action was dispatched.
+     * Returns the first action of type [clazz] that was dispatched on the store. Throws [AssertionError] if no such
+     * action was dispatched.
      */
     @Synchronized
     @Suppress("UNCHECKED_CAST")
@@ -34,8 +32,8 @@ class CaptureActionsMiddleware<S : State, A : Action> : Middleware<S, A> {
     }
 
     /**
-     * Returns the last action of type [clazz] that was dispatched on the store. Throws
-     * [AssertionError] if no such action was dispatched.
+     * Returns the last action of type [clazz] that was dispatched on the store. Throws [AssertionError] if no such
+     * action was dispatched.
      */
     @Synchronized
     @Suppress("UNCHECKED_CAST")
@@ -45,9 +43,9 @@ class CaptureActionsMiddleware<S : State, A : Action> : Middleware<S, A> {
     }
 
     /**
-     * Asserts that an action of type [clazz] was dispatched and optionally executes a given [block]
-     * with the first action of type [clazz] that was dispatched on the store. Throws [AssertionError]
-     * if no such action was dispatched.
+     * Asserts that an action of type [clazz] was dispatched and optionally executes a given [block] with the first
+     * action of type [clazz] that was dispatched on the store. Throws [AssertionError] if no such action was
+     * dispatched.
      */
     @Synchronized
     fun <X : A> assertFirstAction(clazz: KClass<X>, block: (X) -> Unit = {}) {
@@ -56,8 +54,8 @@ class CaptureActionsMiddleware<S : State, A : Action> : Middleware<S, A> {
     }
 
     /**
-     * Executes the given [block] with the last action of type [clazz] that was dispatched on the
-     * store. Throws [AssertionError] if no such action was dispatched.
+     * Executes the given [block] with the last action of type [clazz] that was dispatched on the store. Throws
+     * [AssertionError] if no such action was dispatched.
      */
     @Synchronized
     fun <X : A> assertLastAction(clazz: KClass<X>, block: (X) -> Unit = {}) {
@@ -66,8 +64,7 @@ class CaptureActionsMiddleware<S : State, A : Action> : Middleware<S, A> {
     }
 
     /**
-     * Asserts that no action of type [clazz] was dispatched. Throws [AssertionError] if a matching
-     * action was found.
+     * Asserts that no action of type [clazz] was dispatched. Throws [AssertionError] if a matching action was found.
      */
     @Synchronized
     fun <X : A> assertNotDispatched(clazz: KClass<X>) {
@@ -76,10 +73,7 @@ class CaptureActionsMiddleware<S : State, A : Action> : Middleware<S, A> {
         }
     }
 
-    /**
-     * Asserts that no actions were dispatched on the store.
-     * Throws [AssertionError] if any action was found.
-     */
+    /** Asserts that no actions were dispatched on the store. Throws [AssertionError] if any action was found. */
     @Synchronized
     fun assertNoActionDispatched() {
         if (capturedActions.isNotEmpty()) {

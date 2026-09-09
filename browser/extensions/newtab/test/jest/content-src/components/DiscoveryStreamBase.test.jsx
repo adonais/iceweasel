@@ -480,4 +480,46 @@ describe("<DiscoveryStreamBase> ASRouterNewTabMessage positions", () => {
       container.querySelectorAll("[data-testid='asrouter-message']")
     ).toHaveLength(0);
   });
+
+  // Bug 2061741: the side-by-side layouts need one element to place beside the
+  // widgets and to paint a panel behind.
+  describe("layout-content-column", () => {
+    it("wraps the content feed but not the widgets", () => {
+      const { container } = mountForPositionTest(null);
+      const column = container.querySelector(".layout-content-column");
+
+      expect(column).not.toBeNull();
+      expect(
+        column.querySelector("[data-testid='content-feed']")
+      ).not.toBeNull();
+      expect(column.querySelector(".ds-layout-widgets")).toBeNull();
+      expect(container.querySelector(".ds-layout-widgets")).not.toBeNull();
+    });
+
+    // Base.jsx hands this in as a prop, so the slot sits inside the column.
+    it("contains the aboveContentFeed slot", () => {
+      const { container } = render(
+        <DiscoveryStreamBase
+          locale="en-US"
+          DiscoveryStream={{
+            layout: POSITION_TEST_LAYOUT,
+            feeds: { loaded: true },
+            spocs: { loaded: true, data: { spocs: null } },
+          }}
+          Messages={null}
+          Prefs={{ values: { ...BASE_PREFS, "nova.enabled": true } }}
+          App={{ locale: "en-US" }}
+          document={{ documentElement: { lang: "en-US" } }}
+          Sections={[{ id: "topstories", learnMore: { link: {} }, pref: {} }]}
+          dispatch={jest.fn()}
+          aboveContentFeed={<div data-testid="above-content-feed" />}
+        />
+      );
+      const column = container.querySelector(".layout-content-column");
+
+      expect(
+        column.querySelector("[data-testid='above-content-feed']")
+      ).not.toBeNull();
+    });
+  });
 });

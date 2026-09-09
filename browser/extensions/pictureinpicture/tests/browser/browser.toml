@@ -6,6 +6,7 @@ support-files = [
   "../../../../../toolkit/components/pictureinpicture/tests/click-event-helper.js",
   "../../../../../toolkit/components/pictureinpicture/tests/head.js",
   "../../../../../toolkit/components/pictureinpicture/tests/test-video.mp4",
+  "../../../../../toolkit/components/pictureinpicture/tests/test-webvtt-1.vtt",
 ]
 
 prefs = [

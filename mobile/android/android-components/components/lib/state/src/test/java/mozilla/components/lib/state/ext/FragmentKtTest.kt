@@ -10,6 +10,9 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.lib.state.Store
@@ -30,9 +33,6 @@ import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class FragmentKtTest {
@@ -215,7 +215,7 @@ class FragmentKtTest {
         doReturn(view).`when`(fragment).view
 
         fragment.consumeFlow(store) { flow ->
-            flow.collect { }
+            flow.collect {}
         }
 
         verify(fragmentLifecycle, atLeastOnce()).addObserver(any())
@@ -275,10 +275,11 @@ class FragmentKtTest {
         // Start lifecycle in a state where collection can begin once STARTED
         val viewLifecycleOwner = MockedLifecycleOwner(Lifecycle.State.CREATED)
 
-        val store = Store(
-            TestState(counter = 10), // Initial state
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 10), // Initial state
+                ::reducer,
+            )
 
         var collectedValue: Int? = null
         val collectedItems = mutableListOf<Int>()
@@ -287,11 +288,9 @@ class FragmentKtTest {
         // This latch should NOT be hit for the third item
         val thirdItemLatch = CountDownLatch(1)
 
-        val attachStateChangeListenerCaptor =
-            ArgumentCaptor.forClass(View.OnAttachStateChangeListener::class.java)
+        val attachStateChangeListenerCaptor = ArgumentCaptor.forClass(View.OnAttachStateChangeListener::class.java)
 
-        doNothing().`when`(viewMock)
-            .addOnAttachStateChangeListener(attachStateChangeListenerCaptor.capture())
+        doNothing().`when`(viewMock).addOnAttachStateChangeListener(attachStateChangeListenerCaptor.capture())
         `when`(viewMock.isAttachedToWindow).thenReturn(true) // View is initially attached
 
         `when`(fragment.activity).thenReturn(mozilla.components.support.test.mock<FragmentActivity>())

@@ -58,12 +58,6 @@ New code, represented by the {doc}`Debugger.Script <../debugger.script/index>` i
 
 This method’s return value is ignored.
 
-`onNewPromise(promise)`
-
-A new Promise object, referenced by the {doc}`Debugger.Object <../debugger.object/index>` instance *promise*, has been allocated in the scope of the debuggees. The Promise’s allocation stack can be obtained using the *promiseAllocationStack* accessor property of the {doc}`Debugger.Object <../debugger.object/index>` instance *promise*.
-
-This handler method should return a resumption value specifying how the debuggee’s execution should proceed. However, note that a `{ return: value }` resumption value is treated like `undefined` (“continue normally”); *value* is ignored.
-
 `onPromiseSettled(promise)`
 
 A Promise object, referenced by the {doc}`Debugger.Object <../debugger.object/index>` instance *promise* that was allocated within a debuggee scope, has settled (either fulfilled or rejected). The Promise’s state, fulfillment or rejection value, and the allocation and resolution stacks can be obtained using the Promise-related accessor properties of the {doc}`Debugger.Object <../debugger.object/index>` instance *promise*.

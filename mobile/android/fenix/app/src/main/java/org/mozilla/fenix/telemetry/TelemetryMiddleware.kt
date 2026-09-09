@@ -32,6 +32,7 @@ import mozilla.components.support.base.log.logger.Logger
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.GleanMetrics.Addons
+import org.mozilla.fenix.GleanMetrics.EngineTab as EngineMetrics
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.GleanMetrics.Translations
@@ -40,7 +41,6 @@ import org.mozilla.fenix.components.metrics.Event
 import org.mozilla.fenix.components.metrics.MetricController
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.utils.Settings
-import org.mozilla.fenix.GleanMetrics.EngineTab as EngineMetrics
 
 /**
  * [Middleware] to record telemetry in response to [BrowserAction]s.
@@ -75,7 +75,13 @@ class TelemetryMiddleware(
         AppSessionRestore("app_session_restore"),
     }
 
-    @Suppress("TooGenericExceptionCaught", "CognitiveComplexMethod", "NestedBlockDepth", "LongMethod", "CyclomaticComplexMethod")
+    @Suppress(
+        "TooGenericExceptionCaught",
+        "CognitiveComplexMethod",
+        "NestedBlockDepth",
+        "LongMethod",
+        "CyclomaticComplexMethod",
+    )
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,
@@ -99,7 +105,9 @@ class TelemetryMiddleware(
                     }
                 }
             }
-            is DownloadAction.AddDownloadAction -> { /* NOOP */ }
+            is DownloadAction.AddDownloadAction -> {
+                /* NOOP */
+            }
             is EngineAction.KillEngineSessionAction -> {
                 val tab = store.state.findTabOrCustomTab(action.tabId)
                 onEngineSessionKilled(store.state, tab)
@@ -132,8 +140,7 @@ class TelemetryMiddleware(
             is TabListAction.RemoveTabAction,
             is TabListAction.RemoveAllNormalTabsAction,
             is TabListAction.RemoveAllTabsAction,
-            is TabListAction.RestoreAction,
-            -> {
+            is TabListAction.RestoreAction -> {
                 // Update/Persist tabs count whenever it changes
                 settings.openTabsCount = store.state.normalTabs.count()
                 settings.openPrivateTabsCount = store.state.privateTabs.count()
@@ -161,7 +168,7 @@ class TelemetryMiddleware(
                     Translations.TranslateRequestedExtra(
                         fromLanguage = action.fromLanguage,
                         toLanguage = action.toLanguage,
-                    ),
+                    )
                 )
             }
             is TranslationsAction.TranslateSuccessAction -> {
@@ -172,7 +179,7 @@ class TelemetryMiddleware(
             is TranslationsAction.TranslateExceptionAction -> {
                 if (action.operation == TranslationOperation.TRANSLATE) {
                     Translations.translateFailed.record(
-                        Translations.TranslateFailedExtra(action.translationError.errorName),
+                        Translations.TranslateFailedExtra(action.translationError.errorName)
                     )
                 }
             }
@@ -207,7 +214,7 @@ class TelemetryMiddleware(
                 foregroundTab = isSelected,
                 appForeground = context.components.appStore.state.isForeground,
                 hadFormData = tab.content.hasFormData,
-            ),
+            )
         )
     }
 
@@ -233,9 +240,7 @@ class TelemetryMiddleware(
         return (elapsed / 1000L).coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
     }
 
-    /**
-     * Collecting some engine-specific (GeckoView) telemetry.
-     */
+    /** Collecting some engine-specific (GeckoView) telemetry. */
     private fun onEngineSessionCreated(state: BrowserState, tab: SessionState?) {
         if (!androidVersionSupportsEngineTabTelemetry) return
 
@@ -247,18 +252,19 @@ class TelemetryMiddleware(
         val isFromSessionRestore = sessionRestoredTabIds.remove(tab.id)
         val isFromProcessKill = state.recentlyKilledTabs.contains(tab.id)
 
-        val reason = when {
-            isFromProcessKill -> ReloadReason.ContentProcessKill
-            isFromSessionRestore -> ReloadReason.AppSessionRestore
-            else -> null
-        }
+        val reason =
+            when {
+                isFromProcessKill -> ReloadReason.ContentProcessKill
+                isFromSessionRestore -> ReloadReason.AppSessionRestore
+                else -> null
+            }
 
         if (reason != null) {
             EngineMetrics.reloaded.record(
                 EngineMetrics.ReloadedExtra(
                     durationSinceLastVisibleSeconds = computeDurationSinceLastVisible(tab),
                     reason = reason.value,
-                ),
+                )
             )
         }
     }

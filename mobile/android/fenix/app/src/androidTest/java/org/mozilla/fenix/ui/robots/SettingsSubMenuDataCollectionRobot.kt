@@ -16,23 +16,19 @@ import androidx.test.espresso.matcher.RootMatchers
 import androidx.test.espresso.matcher.ViewMatchers.isChecked
 import androidx.test.espresso.matcher.ViewMatchers.isNotChecked
 import androidx.test.espresso.matcher.ViewMatchers.withId
+import mozilla.components.lib.crash.R as crashR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.MatcherHelper.assertItemIsChecked
-import org.mozilla.fenix.helpers.MatcherHelper.assertItemTextEquals
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithDescription
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.TestHelper.packageName
-import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.click
-import mozilla.components.lib.crash.R as crashR
 
-/**
- * Implementation of Robot Pattern for the settings Data Collection sub menu.
- */
+/** Implementation of Robot Pattern for the settings Data Collection sub menu. */
 class SettingsSubMenuDataCollectionRobot {
 
     fun verifyDataCollectionView(
@@ -85,28 +81,50 @@ class SettingsSubMenuDataCollectionRobot {
     }
 
     fun verifyUsageAndTechnicalDataToggle(composeTestRule: ComposeTestRule, isChecked: Boolean) {
-        Log.i(TAG, "verifyUsageAndTechnicalDataToggle: Trying to verify that the \"Technical and interaction data\" toggle is checked: $isChecked")
+        Log.i(
+            TAG,
+            "verifyUsageAndTechnicalDataToggle: Trying to verify that the \"Technical and interaction data\" toggle is checked: $isChecked",
+        )
         if (isChecked) {
-            composeTestRule.onNodeWithTag("data.collection.Send technical and interaction data.toggle", useUnmergedTree = true)
+            composeTestRule
+                .onNodeWithTag("data.collection.Send technical and interaction data.toggle", useUnmergedTree = true)
                 .assertIsSelected()
-            Log.i(TAG, "verifyUsageAndTechnicalDataToggle: Verified that the \"Usage and technical data\" toggle is checked: $isChecked")
+            Log.i(
+                TAG,
+                "verifyUsageAndTechnicalDataToggle: Verified that the \"Usage and technical data\" toggle is checked: $isChecked",
+            )
         } else {
-            composeTestRule.onNodeWithTag("data.collection.Send technical and interaction data.toggle", useUnmergedTree = true)
+            composeTestRule
+                .onNodeWithTag("data.collection.Send technical and interaction data.toggle", useUnmergedTree = true)
                 .assertIsNotSelected()
-            Log.i(TAG, "verifyUsageAndTechnicalDataToggle: Verified that the \"Usage and technical data\" toggle is checked: $isChecked")
+            Log.i(
+                TAG,
+                "verifyUsageAndTechnicalDataToggle: Verified that the \"Usage and technical data\" toggle is checked: $isChecked",
+            )
         }
     }
 
     fun verifyDailyUsagePingToggle(composeTestRule: ComposeTestRule, isChecked: Boolean) {
-        Log.i(TAG, "verifyDailyUsagePingToggle: Trying to verify that the \"Daily usage ping\" toggle is checked: $isChecked")
+        Log.i(
+            TAG,
+            "verifyDailyUsagePingToggle: Trying to verify that the \"Daily usage ping\" toggle is checked: $isChecked",
+        )
         if (isChecked) {
-            composeTestRule.onNodeWithTag("data.collection.Daily usage ping.toggle", useUnmergedTree = true)
+            composeTestRule
+                .onNodeWithTag("data.collection.Daily usage ping.toggle", useUnmergedTree = true)
                 .assertIsSelected()
-            Log.i(TAG, "verifyDailyUsagePingToggle: Verified that the \"Daily usage ping\" toggle is checked: $isChecked")
+            Log.i(
+                TAG,
+                "verifyDailyUsagePingToggle: Verified that the \"Daily usage ping\" toggle is checked: $isChecked",
+            )
         } else {
-            composeTestRule.onNodeWithTag("data.collection.Daily usage ping.toggle", useUnmergedTree = true)
+            composeTestRule
+                .onNodeWithTag("data.collection.Daily usage ping.toggle", useUnmergedTree = true)
                 .assertIsNotSelected()
-            Log.i(TAG, "verifyDailyUsagePingToggle: Verified that the \"Daily usage ping\" toggle is checked: $isChecked")
+            Log.i(
+                TAG,
+                "verifyDailyUsagePingToggle: Verified that the \"Daily usage ping\" toggle is checked: $isChecked",
+            )
         }
     }
 
@@ -119,15 +137,17 @@ class SettingsSubMenuDataCollectionRobot {
                         isChecked()
                     } else {
                         isNotChecked()
-                    },
-                ),
+                    }
+                )
             )
         Log.i(TAG, "verifyStudiesToggle: Verified that the \"Studies\" toggle is checked: $enabled")
     }
 
     fun clickUsageAndTechnicalDataToggle(composeTestRule: ComposeTestRule) {
         Log.i(TAG, "clickUsageAndTechnicalDataToggle: Trying to click the \"Technical and interaction data\" toggle")
-        composeTestRule.onNodeWithTag("data.collection.Send technical and interaction data.toggle", useUnmergedTree = true).performClick()
+        composeTestRule
+            .onNodeWithTag("data.collection.Send technical and interaction data.toggle", useUnmergedTree = true)
+            .performClick()
         Log.i(TAG, "clickUsageAndTechnicalDataToggle: Clicked the \"Technical and interaction data\" toggle")
     }
 
@@ -162,10 +182,10 @@ class SettingsSubMenuDataCollectionRobot {
 
         assertUIObjectExists(
             itemContainingText(getStringResource(R.string.crash_reports_data_category)),
-        itemContainingText(getStringResource(R.string.crash_reporting_description)),
-        itemContainingText(getStringResource(crashR.string.crash_reporting_ask)),
-        itemContainingText(getStringResource(crashR.string.crash_reporting_auto)),
-        itemContainingText(getStringResource(crashR.string.crash_reporting_never)),
+            itemContainingText(getStringResource(R.string.crash_reporting_description)),
+            itemContainingText(getStringResource(crashR.string.crash_reporting_ask)),
+            itemContainingText(getStringResource(crashR.string.crash_reporting_auto)),
+            itemContainingText(getStringResource(crashR.string.crash_reporting_never)),
         )
     }
 
@@ -180,17 +200,26 @@ class SettingsSubMenuDataCollectionRobot {
         Log.i(TAG, "verifyTheCrashReportOptionStates: Waited for compose test rule to be idle")
 
         // Crash reports item state
-        assertItemIsChecked(itemWithResId("data.collection.Ask.option"), isChecked = isAskBeforeSendingCrashReportsEnabled)
-        assertItemIsChecked(itemWithResId("data.collection.Auto.option"), isChecked = isAutomaticallySendCrashReportsEnabled)
+        assertItemIsChecked(
+            itemWithResId("data.collection.Ask.option"),
+            isChecked = isAskBeforeSendingCrashReportsEnabled,
+        )
+        assertItemIsChecked(
+            itemWithResId("data.collection.Auto.option"),
+            isChecked = isAutomaticallySendCrashReportsEnabled,
+        )
         assertItemIsChecked(itemWithResId("data.collection.Never.option"), isChecked = isNeverSendCrashReportsEnabled)
     }
 
     fun clickTheCrashReportsRadioButton(composeTestRule: ComposeTestRule, crashReportsRadioButton: String) {
         Log.i(TAG, "clickTheCrashReportsRadioButton: Trying to click the $crashReportsRadioButton radio button")
         when (crashReportsRadioButton) {
-            "Ask before sending" -> composeTestRule.onNodeWithTag("Ask before sending.radio.button", useUnmergedTree = true).performClick()
-            "Send automatically" -> composeTestRule.onNodeWithTag("Send automatically.radio.button", useUnmergedTree = true).performClick()
-            "Never send" -> composeTestRule.onNodeWithTag("Never send.radio.button", useUnmergedTree = true).performClick()
+            "Ask before sending" ->
+                composeTestRule.onNodeWithTag("Ask before sending.radio.button", useUnmergedTree = true).performClick()
+            "Send automatically" ->
+                composeTestRule.onNodeWithTag("Send automatically.radio.button", useUnmergedTree = true).performClick()
+            "Never send" ->
+                composeTestRule.onNodeWithTag("Never send.radio.button", useUnmergedTree = true).performClick()
         }
         Log.i(TAG, "clickTheCrashReportsRadioButton: Clicked the $crashReportsRadioButton radio button")
     }
@@ -208,5 +237,5 @@ class SettingsSubMenuDataCollectionRobot {
 }
 
 private fun goBackButton() = itemWithDescription("Navigate up")
+
 private fun studiesDialogOkButton() = onView(withId(android.R.id.button1)).inRoot(RootMatchers.isDialog())
-private fun studiesDialogCancelButton() = onView(withId(android.R.id.button2)).inRoot(RootMatchers.isDialog())

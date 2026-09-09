@@ -23,13 +23,13 @@ import mozilla.components.compose.browser.toolbar.store.EditState
 import mozilla.components.compose.browser.toolbar.store.Mode
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.samples.compose.browser.BrowserComposeActivity.Companion.ROUTE_SETTINGS
 import org.mozilla.samples.compose.browser.R
 import org.mozilla.samples.compose.browser.browser.DisplayBrowserActionsInteractions.TabCounterClicked
 import org.mozilla.samples.compose.browser.browser.DisplayPageActionsEndInteractions.RefreshClicked
 import org.mozilla.samples.compose.browser.browser.DisplayPageOriginInteractions.PageOriginClicked
 import org.mozilla.samples.compose.browser.browser.EditActionsInteractions.ClearClicked
-import mozilla.components.ui.icons.R as iconsR
 
 private sealed class DisplayPageOriginInteractions : BrowserToolbarEvent {
     data object PageOriginClicked : DisplayPageOriginInteractions()
@@ -51,9 +51,8 @@ private sealed class EditActionsInteractions : BrowserToolbarEvent {
     data object ClearClicked : EditActionsInteractions()
 }
 
-internal class BrowserToolbarMiddleware(
-    initialDependencies: Dependencies,
-) : Middleware<BrowserToolbarState, BrowserToolbarAction> {
+internal class BrowserToolbarMiddleware(initialDependencies: Dependencies) :
+    Middleware<BrowserToolbarState, BrowserToolbarAction> {
     var dependencies = initialDependencies
 
     override fun invoke(
@@ -84,63 +83,69 @@ internal class BrowserToolbarMiddleware(
         }
     }
 
-    private fun buildInitialState() = BrowserToolbarAction.Init(
-        mode = Mode.DISPLAY,
-        displayState = DisplayState(
-            pageOrigin = PageOrigin(
-                hint = R.string.toolbar_search_hint,
-                title = null,
-                url = null,
-                onClick = PageOriginClicked,
-            ),
-            pageActionsEnd = buildDisplayPageActions(),
-            browserActionsEnd = buildDisplayBrowserActions(),
-        ),
-        editState = EditState(
-            editActionsEnd = buildEditPageActionsEnd(),
-        ),
-    )
-
-    private fun buildDisplayPageActions() = listOf(
-        ActionButtonRes(
-            drawableResId = iconsR.drawable.mozac_ic_arrow_clockwise_24,
-            contentDescription = R.string.page_action_refresh_description,
-            onClick = RefreshClicked,
-        ),
-    )
-
-    private fun buildDisplayBrowserActions() = listOf(
-        TabCounterAction(
-            count = 1,
-            contentDescription = "Tabs open: 1",
-            showPrivacyMask = false,
-            onClick = TabCounterClicked,
-        ),
-        ActionButtonRes(
-            drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
-            contentDescription = R.string.menu_button_description,
-            onClick = BrowserToolbarMenu {
-                listOf(
-                    BrowserToolbarMenuButton(
-                        icon = Icon.DrawableResIcon(iconsR.drawable.mozac_ic_settings_24),
-                        text = Text.StringResText(R.string.menu_item_settings),
-                        contentDescription = ContentDescription.StringResContentDescription(
-                            R.string.menu_item_settings_description,
+    private fun buildInitialState() =
+        BrowserToolbarAction.Init(
+            mode = Mode.DISPLAY,
+            displayState =
+                DisplayState(
+                    pageOrigin =
+                        PageOrigin(
+                            hint = R.string.toolbar_search_hint,
+                            title = null,
+                            url = null,
+                            onClick = PageOriginClicked,
                         ),
-                        onClick = MenuInteractions.SettingsClicked,
-                    ),
-                )
-            },
-        ),
-    )
+                    pageActionsEnd = buildDisplayPageActions(),
+                    browserActionsEnd = buildDisplayBrowserActions(),
+                ),
+            editState = EditState(editActionsEnd = buildEditPageActionsEnd()),
+        )
 
-    private fun buildEditPageActionsEnd() = listOf(
-        ActionButtonRes(
-            drawableResId = iconsR.drawable.mozac_ic_cross_24,
-            contentDescription = R.string.clear_input_description,
-            onClick = ClearClicked,
-        ),
-    )
+    private fun buildDisplayPageActions() =
+        listOf(
+            ActionButtonRes(
+                drawableResId = iconsR.drawable.mozac_ic_arrow_clockwise_24,
+                contentDescription = R.string.page_action_refresh_description,
+                onClick = RefreshClicked,
+            )
+        )
+
+    private fun buildDisplayBrowserActions() =
+        listOf(
+            TabCounterAction(
+                count = 1,
+                contentDescription = "Tabs open: 1",
+                showPrivacyMask = false,
+                onClick = TabCounterClicked,
+            ),
+            ActionButtonRes(
+                drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
+                contentDescription = R.string.menu_button_description,
+                onClick =
+                    BrowserToolbarMenu {
+                        listOf(
+                            BrowserToolbarMenuButton(
+                                icon = Icon.DrawableResIcon(iconsR.drawable.mozac_ic_settings_24),
+                                text = Text.StringResText(R.string.menu_item_settings),
+                                contentDescription =
+                                    ContentDescription.StringResContentDescription(
+                                        R.string.menu_item_settings_description
+                                    ),
+                                onClick = MenuInteractions.SettingsClicked,
+                            )
+                        )
+                    },
+            ),
+        )
+
+    private fun buildEditPageActionsEnd() =
+        listOf(
+            ActionButtonRes(
+                drawableResId = iconsR.drawable.mozac_ic_cross_24,
+                contentDescription = R.string.clear_input_description,
+                onClick = ClearClicked,
+            )
+        )
 
     companion object {
         data class Dependencies(

@@ -20,7 +20,6 @@ linux64-cbindgen:
     worker:
         max-run-time: 1800
     run:
-        clone-with: hg
         arguments: ['x86_64-unknown-linux-gnu']
     fetches:
         toolchain:
@@ -38,7 +37,6 @@ linux64-cbindgen-base:
     worker:
         max-run-time: 1800
     run:
-        clone-with: hg
         arguments: ['x86_64-unknown-linux-gnu']
     fetches:
         toolchain:
@@ -54,7 +52,6 @@ linux64-aarch64-cbindgen:
     treeherder:
         symbol: TLA64(cbindgen)
     run:
-        clone-with: hg
         arguments: ['aarch64-unknown-linux-gnu']
     fetches:
         toolchain:
@@ -68,7 +65,6 @@ macosx64-cbindgen:
     treeherder:
         symbol: TM(cbindgen)
     run:
-        clone-with: hg
         arguments: ['x86_64-apple-darwin']
     fetches:
         toolchain:
@@ -82,7 +78,6 @@ macosx64-aarch64-cbindgen:
     treeherder:
         symbol: TMA64(cbindgen)
     run:
-        clone-with: hg
         arguments: ['aarch64-apple-darwin']
     fetches:
         toolchain:
@@ -96,7 +91,6 @@ win64-cbindgen:
     treeherder:
         symbol: TW64(cbindgen)
     run:
-        clone-with: hg
         arguments: ['x86_64-pc-windows-msvc']
     fetches:
         toolchain:
@@ -110,7 +104,6 @@ win64-aarch64-cbindgen:
     treeherder:
         symbol: TWA64(cbindgen)
     run:
-        clone-with: hg
         arguments: ['aarch64-pc-windows-msvc']
     fetches:
         toolchain:

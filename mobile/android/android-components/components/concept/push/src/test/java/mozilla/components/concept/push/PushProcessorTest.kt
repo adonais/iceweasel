@@ -4,10 +4,10 @@
 
 package mozilla.components.concept.push
 
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.mock
 import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertNotNull
 
 class PushProcessorTest {
 

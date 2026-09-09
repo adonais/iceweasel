@@ -7,10 +7,11 @@ package mozilla.components.feature.downloads
 import mozilla.components.concept.fetch.Headers
 import mozilla.components.concept.fetch.Headers.Names.CONTENT_RANGE
 
-internal val CONTENT_RANGE_PATTERN = Regex(
-    "^bytes\\s+(\\d+)-\\d+/(\\d+|\\*)$",
-    RegexOption.IGNORE_CASE,
-)
+internal val CONTENT_RANGE_PATTERN =
+    Regex(
+        "^bytes\\s+(\\d+)-\\d+/(\\d+|\\*)$",
+        RegexOption.IGNORE_CASE,
+    )
 
 internal data class ParsedContentRange(
     val start: Long,

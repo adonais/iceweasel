@@ -22,38 +22,41 @@ internal class CrashViewHolder(
 ) : RecyclerView.ViewHolder(view) {
     private val titleView = view.findViewById<TextView>(R.id.mozac_lib_crash_title)
     private val idView = view.findViewById<TextView>(R.id.mozac_lib_crash_id)
-    private val footerView = view.findViewById<TextView>(R.id.mozac_lib_crash_footer).apply {
-        movementMethod = LinkMovementMethod.getInstance()
-    }
+    private val footerView =
+        view.findViewById<TextView>(R.id.mozac_lib_crash_footer).apply {
+            movementMethod = LinkMovementMethod.getInstance()
+        }
 
     fun bind(crash: DisplayableCrash) {
         idView.text = crash.uuid
         titleView.text = crash.stacktrace.lines().first()
 
-        val time = DateUtils.getRelativeDateTimeString(
-            footerView.context,
-            crash.createdAt,
-            DateUtils.MINUTE_IN_MILLIS,
-            DateUtils.WEEK_IN_MILLIS,
-            0,
-        )
+        val time =
+            DateUtils.getRelativeDateTimeString(
+                footerView.context,
+                crash.createdAt,
+                DateUtils.MINUTE_IN_MILLIS,
+                DateUtils.WEEK_IN_MILLIS,
+                0,
+            )
 
-        footerView.text = SpannableStringBuilder(time).apply {
-            append(" - ")
-            append(itemView.context.getString(R.string.mozac_lib_crash_share)) {
-                onShareCrashClicked(crash)
-            }
-            if (crash.reports.isNotEmpty()) {
+        footerView.text =
+            SpannableStringBuilder(time).apply {
                 append(" - ")
-                crash.reports.forEachIndexed { index, report ->
-                    append(report.serviceName) { onCrashServiceSelected(report) }
+                append(itemView.context.getString(R.string.mozac_lib_crash_share)) {
+                    onShareCrashClicked(crash)
+                }
+                if (crash.reports.isNotEmpty()) {
+                    append(" - ")
+                    crash.reports.forEachIndexed { index, report ->
+                        append(report.serviceName) { onCrashServiceSelected(report) }
 
-                    if (index < crash.reports.lastIndex) {
-                        append(" ")
+                        if (index < crash.reports.lastIndex) {
+                            append(" ")
+                        }
                     }
                 }
             }
-        }
         ViewCompat.enableAccessibleClickableSpanSupport(footerView)
     }
 

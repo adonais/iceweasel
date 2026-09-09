@@ -8,12 +8,9 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import mozilla.components.support.test.mock
 
-/**
- * A default implementation of [StickyItemsAdapter] to be used in tests.
- */
+/** A default implementation of [StickyItemsAdapter] to be used in tests. */
 class FakeStickyItemsAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>(), StickyItemsAdapter {
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
-        mock()
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder = mock()
 
     override fun getItemCount(): Int = 42
 

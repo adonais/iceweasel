@@ -1,6 +1,5 @@
 // Opening a second listening socket on the same address as an extant
-// socket should elicit NS_ERROR_SOCKET_ADDRESS_IN_USE on non-Windows
-// machines.
+// socket should elicit NS_ERROR_SOCKET_ADDRESS_IN_USE.
 
 "use strict";
 
@@ -13,12 +12,6 @@ const ServerSocket = CC(
 );
 
 function testAddrInUse() {
-  // Windows lets us have as many sockets listening on the same address as
-  // we like, evidently.
-  if (mozinfo.os == "win") {
-    return;
-  }
-
   // Create listening socket:
   // any port (-1), loopback only (true), default backlog (-1)
   let listener = ServerSocket(-1, true, -1);

@@ -24,8 +24,7 @@ import org.mozilla.fenix.theme.Theme
 
 @RunWith(AndroidJUnit4::class)
 class TrackersBlockedCardTest {
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun `when the longfox animation is not shown, the fox is not displayed`() {

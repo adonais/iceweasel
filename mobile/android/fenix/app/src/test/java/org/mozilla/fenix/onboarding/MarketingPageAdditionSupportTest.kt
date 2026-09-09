@@ -37,26 +37,28 @@ class MarketingPageAdditionSupportTest {
 
     @Before
     fun setup() {
-        marketingPage = OnboardingPageUiData(
-            type = OnboardingPageUiData.Type.MARKETING_DATA,
-            imageRes = 0,
-            title = "marketing title",
-            description = "notification body",
-            primaryButtonLabel = "notification primary button text",
-            secondaryButtonLabel = "notification secondary button text",
-        )
-        pages = mutableListOf<OnboardingPageUiData>().apply {
-            add(
-                OnboardingPageUiData(
-                    type = OnboardingPageUiData.Type.SYNC_SIGN_IN,
-                    imageRes = 0,
-                    title = "sync title",
-                    description = "sync body",
-                    primaryButtonLabel = "sync primary button text",
-                    secondaryButtonLabel = "sync secondary button text",
-                ),
+        marketingPage =
+            OnboardingPageUiData(
+                type = OnboardingPageUiData.Type.MARKETING_DATA,
+                imageRes = 0,
+                title = "marketing title",
+                description = "notification body",
+                primaryButtonLabel = "notification primary button text",
+                secondaryButtonLabel = "notification secondary button text",
             )
-        }
+        pages =
+            mutableListOf<OnboardingPageUiData>().apply {
+                add(
+                    OnboardingPageUiData(
+                        type = OnboardingPageUiData.Type.SYNC_SIGN_IN,
+                        imageRes = 0,
+                        title = "sync title",
+                        description = "sync body",
+                        primaryButtonLabel = "sync primary button text",
+                        secondaryButtonLabel = "sync secondary button text",
+                    )
+                )
+            }
         settings = Settings(testContext)
         mockedLifecycleOwner = TestLifecycleOwner(Lifecycle.State.CREATED)
         prefKey = testContext.getString(R.string.pref_key_should_show_marketing_onboarding)
@@ -64,15 +66,16 @@ class MarketingPageAdditionSupportTest {
 
     @Test
     fun `we should show marketing`() = runTest {
-        val addPage = MarketingPageAdditionSupport(
-            prefKey = prefKey,
-            pagesToDisplay = pages,
-            marketingPage = marketingPage,
-            settings = settings,
-            mainContext = testScheduler,
-            ioContext = testScheduler,
-            lifecycleOwner = mockedLifecycleOwner,
-        )
+        val addPage =
+            MarketingPageAdditionSupport(
+                prefKey = prefKey,
+                pagesToDisplay = pages,
+                marketingPage = marketingPage,
+                settings = settings,
+                mainContext = testScheduler,
+                ioContext = testScheduler,
+                lifecycleOwner = mockedLifecycleOwner,
+            )
         settings.shouldShowMarketingOnboarding = true
 
         addPage.start()
@@ -84,15 +87,16 @@ class MarketingPageAdditionSupportTest {
 
     @Test
     fun `we should not show marketing`() = runTest {
-        val addPage = MarketingPageAdditionSupport(
-            prefKey = prefKey,
-            pagesToDisplay = pages,
-            marketingPage = marketingPage,
-            settings = settings,
-            mainContext = testScheduler,
-            ioContext = testScheduler,
-            lifecycleOwner = mockedLifecycleOwner,
-        )
+        val addPage =
+            MarketingPageAdditionSupport(
+                prefKey = prefKey,
+                pagesToDisplay = pages,
+                marketingPage = marketingPage,
+                settings = settings,
+                mainContext = testScheduler,
+                ioContext = testScheduler,
+                lifecycleOwner = mockedLifecycleOwner,
+            )
         settings.shouldShowMarketingOnboarding = false
 
         addPage.start()
@@ -126,8 +130,7 @@ class MarketingPageAdditionSupportTest {
 
         val results = mutableListOf<Boolean>()
         backgroundScope.launch {
-            prefs.flowScopedBooleanPreference(lifecycleOwner, testScheduler, "my_key", false)
-                .toList(results)
+            prefs.flowScopedBooleanPreference(lifecycleOwner, testScheduler, "my_key", false).toList(results)
         }
 
         lifecycleOwner.onResume()
@@ -148,8 +151,7 @@ class MarketingPageAdditionSupportTest {
 
         val results = mutableListOf<Boolean>()
         backgroundScope.launch {
-            prefs.flowScopedBooleanPreference(lifecycleOwner, testScheduler, "my_key", false)
-                .toList(results)
+            prefs.flowScopedBooleanPreference(lifecycleOwner, testScheduler, "my_key", false).toList(results)
         }
 
         lifecycleOwner.onResume()

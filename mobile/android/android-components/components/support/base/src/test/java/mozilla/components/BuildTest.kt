@@ -4,9 +4,9 @@
 
 package mozilla.components
 
+import kotlin.test.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlin.test.assertNotNull
 
 class BuildTest {
     @Test

@@ -19,9 +19,10 @@ class SystemPermissionRequest(private val nativeRequest: android.webkit.Permissi
     override val uri: String = nativeRequest.origin.toString()
     override val id: String = java.util.UUID.randomUUID().toString()
 
-    override val permissions = nativeRequest.resources.map { resource ->
-        permissionsMap.getOrElse(resource) { Permission.Generic(resource) }
-    }
+    override val permissions =
+        nativeRequest.resources.map { resource ->
+            permissionsMap.getOrElse(resource) { Permission.Generic(resource) }
+        }
 
     override fun grant(permissions: List<Permission>) {
         nativeRequest.grant(permissions.map { it.id }.toTypedArray())
@@ -34,10 +35,11 @@ class SystemPermissionRequest(private val nativeRequest: android.webkit.Permissi
     override fun merge(permissionRequest: PermissionRequest) = Unit
 
     companion object {
-        val permissionsMap = mapOf(
-            RESOURCE_AUDIO_CAPTURE to Permission.ContentAudioCapture(RESOURCE_AUDIO_CAPTURE),
-            RESOURCE_VIDEO_CAPTURE to Permission.ContentVideoCapture(RESOURCE_VIDEO_CAPTURE),
-            RESOURCE_PROTECTED_MEDIA_ID to Permission.ContentProtectedMediaId(RESOURCE_PROTECTED_MEDIA_ID),
-        )
+        val permissionsMap =
+            mapOf(
+                RESOURCE_AUDIO_CAPTURE to Permission.ContentAudioCapture(RESOURCE_AUDIO_CAPTURE),
+                RESOURCE_VIDEO_CAPTURE to Permission.ContentVideoCapture(RESOURCE_VIDEO_CAPTURE),
+                RESOURCE_PROTECTED_MEDIA_ID to Permission.ContentProtectedMediaId(RESOURCE_PROTECTED_MEDIA_ID),
+            )
     }
 }

@@ -51,6 +51,7 @@
 #include "mozilla/dom/quota/UniversalDirectoryLock.h"
 #include "mozilla/dom/quota/UsageInfo.h"
 #include "mozilla/fallible.h"
+#include "mozilla/glean/DomQuotaMetrics.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "nsCOMPtr.h"
@@ -70,6 +71,16 @@
 #include "prtime.h"
 
 namespace mozilla::dom::quota {
+
+namespace {
+void RecordCorruptionUnrecovered(const nsresult aRv,
+                                 const nsLiteralCString& aContext) {
+  if (IsDatabaseCorruptionError(aRv)) {
+    glean::quotamanager::storage_sqlite_corruption_unrecovered.Get(aContext)
+        .Add();
+  }
+}
+}  // namespace
 
 using namespace mozilla::ipc;
 
@@ -2123,7 +2134,10 @@ nsresult InitOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
 
   AUTO_PROFILER_LABEL("InitOp::DoDirectoryWork", OTHER);
 
-  QM_TRY(MOZ_TO_RESULT(aQuotaManager.EnsureStorageIsInitializedInternal()));
+  QM_TRY(MOZ_TO_RESULT(aQuotaManager.EnsureStorageIsInitializedInternal()),
+         QM_PROPAGATE,
+         std::bind(RecordCorruptionUnrecovered, std::placeholders::_1,
+                   "storage"_ns));
 
   return NS_OK;
 }
@@ -2162,7 +2176,10 @@ nsresult InitializePersistentStorageOp::DoDirectoryWork(
          NS_ERROR_NOT_INITIALIZED);
 
   QM_TRY(MOZ_TO_RESULT(
-      aQuotaManager.EnsurePersistentStorageIsInitializedInternal()));
+             aQuotaManager.EnsurePersistentStorageIsInitializedInternal()),
+         QM_PROPAGATE,
+         std::bind(RecordCorruptionUnrecovered, std::placeholders::_1,
+                   "persistent_storage"_ns));
 
   return NS_OK;
 }
@@ -2208,7 +2225,10 @@ nsresult InitTemporaryStorageOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
 
   if (!wasInitialized) {
     QM_TRY(MOZ_TO_RESULT(
-        aQuotaManager.EnsureTemporaryStorageIsInitializedInternal()));
+               aQuotaManager.EnsureTemporaryStorageIsInitializedInternal()),
+           QM_PROPAGATE,
+           std::bind(RecordCorruptionUnrecovered, std::placeholders::_1,
+                     "temporary_storage"_ns));
 
     mAllTemporaryGroups = Some(aQuotaManager.GetAllTemporaryGroups());
   }

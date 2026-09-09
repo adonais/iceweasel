@@ -30,7 +30,7 @@
 
   --AT-square-button-large: calc(var(--size-item-large) + var(--space-small));
   --AT-square-button-small: var(--size-item-large);
-  --AT-source-textarea-button-inline-padding: calc(var(--AT-square-button-small) + var(--space-small));
+  --AT-source-textarea-button-inline-padding: calc(var(--AT-square-button-small) + var(--space-small) + var(--space-xsmall));
   --AT-target-textarea-button-block-padding: calc(var(--AT-square-button-large) + var(--space-small));
 }
 
@@ -227,8 +227,8 @@ body {
   position: absolute;
   z-index: 1;
   position-anchor: --AT-source-textarea-anchor;
-  inset-block-start: calc(anchor(top) + var(--space-xsmall));
-  inset-inline-end: calc(anchor(end) + var(--space-xsmall));
+  inset-block-start: calc(anchor(top) + var(--space-small));
+  inset-inline-end: calc(anchor(end) + var(--space-small));
 
   &:focus-visible {
     outline: none;

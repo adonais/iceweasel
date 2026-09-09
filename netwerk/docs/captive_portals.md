@@ -49,7 +49,7 @@ Also, we don't currently allow any redirects to take place, even if the redirect
 ## Preferences
 ```js
 
-pref("network.captive-portal-service.enabled", false); // controls if the checking is performed
+pref("network.captive-portal-service.enabled", true); // controls if the checking is performed
 pref("network.captive-portal-service.minInterval", 60000); // 60 seconds
 pref("network.captive-portal-service.maxInterval", 1500000); // 25 minutes
 // Every 10 checks, the delay is increased by a factor of 5
@@ -57,12 +57,13 @@ pref("network.captive-portal-service.backoffFactor", "5.0");
 
 // The URL used to perform the captive portal checks.
 // It answers with an empty 204 when there is no captive portal.
-pref("captivedetect.canonicalURL", "http://detectportal.firefox.com/generate_204");
-// The response we expect to receive back when the canonical URL answers with a
-// non-empty body, which is the case for the older /canonical.html endpoint this
-// pref may still be pointed at. It contains valid HTML that when loaded in a
-// browser redirects the user to a support page explaining captive portals.
-pref("captivedetect.canonicalContent", "<meta http-equiv=\"refresh\" content=\"0;url=https://support.mozilla.org/kb/captive-portal\"/>");
+pref("captivedetect.canonicalURL", "http://firefox-portal-detection.com/generate_204");
+// The response we expect to receive back when fetching the canonical URL.
+// The older /canonical.html endpoint which older Firefox might still be using
+// returned "<meta http-equiv=\"refresh\" content=\"0;url=https://support.mozilla.org/kb/captive-portal\"/>"
+// that when loaded in a browser redirected the user to a support page explaining captive portals.
+// The /generate_204 endpoint is expected to return an empty response.
+pref("captivedetect.canonicalContent", "");
 
 // The timeout for each request.
 pref("captivedetect.maxWaitingTime", 5000);

@@ -38,7 +38,6 @@ macosx64-plain/opt:
         env:
             PERFHERDER_EXTRA_OPTIONS: plain
     run:
-        clone-with: hg
         actions: [build]
         config:
             - builds/releng_base_firefox.py
@@ -74,7 +73,6 @@ macosx64-plain/debug:
         env:
             PERFHERDER_EXTRA_OPTIONS: plain
     run:
-        clone-with: hg
         actions: [build]
         config:
             - builds/releng_base_firefox.py
@@ -110,7 +108,6 @@ macosx64-rusttests/opt:
         env:
             PERFHERDER_EXTRA_OPTIONS: rusttests
     run:
-        clone-with: hg
         actions: [build]
         config:
             - builds/releng_base_firefox.py
@@ -143,7 +140,6 @@ macosx64-rusttests/debug:
         env:
             PERFHERDER_EXTRA_OPTIONS: rusttests
     run:
-        clone-with: hg
         actions: [build]
         config:
             - builds/releng_base_firefox.py

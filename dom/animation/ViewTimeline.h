@@ -7,6 +7,8 @@
 
 #include "mozilla/dom/ScrollTimeline.h"
 
+class nsIFrame;
+
 namespace mozilla {
 class ScrollContainerFrame;
 }  // namespace mozilla
@@ -93,9 +95,92 @@ class ViewTimeline final : public ScrollTimeline {
 
   Maybe<ComputedTimelineData> ComputeTimelineData() const override;
 
+  // The displacement that sticky positioning applies to the subject along this
+  // timeline's axis, as a function of the scroll offset s:
+  //
+  //   d(s) = clamp(s - mStartSideStuckAt, 0, mStartSideMax) +
+  //          clamp(s - mEndSideUnstuckAt, -mEndSideMax, 0)
+  //
+  // A zero max means the subject never sticks that way, so a
+  // default-constructed StickyDisplacement is the non-sticky case.
+  struct StickyDisplacement {
+    // The scroll offset at which start-side sticking begins. Over the range
+    // [mStartSideStuckAt, mStartSideStuckAt + mStartSideMax], the displacement
+    // increases from 0 to |mStartSideMax|.
+    nscoord mStartSideStuckAt = 0;
+    // The maximum positive displacement caused by start-side sticking. Never
+    // negative; 0 means there is no start-side sticking.
+    nscoord mStartSideMax = 0;
+    // The scroll offset at which end-side sticking ends. Over the range
+    // [mEndSideUnstuckAt - mEndSideMax, mEndSideUnstuckAt], the displacement
+    // increases from -mEndSideMax to 0.
+    nscoord mEndSideUnstuckAt = 0;
+    // The maximum magnitude of the negative displacement caused by end-side
+    // sticking. Never negative; 0 means there is no end-side sticking.
+    nscoord mEndSideMax = 0;
+
+    // While stuck, the subject moves with the scrollport, so the alignment
+    // that would occur at a single scroll offset if the subject never stuck
+    // can instead persist over a range of actual scroll offsets. These
+    // functions do not compute d(s) itself; they invert the mapping from an
+    // actual scroll offset |s| to its corresponding offset without sticky
+    // positioning:
+    //
+    //   aOffsetIgnoringSticky = s - d(s)
+    //
+    // returning the smallest (Earliest) resp. largest (Latest) solution for
+    // |s|, which lets timeline range calculations pick out the endpoints of
+    // the interval over which the alignment is maintained.
+    //
+    // |aOffsetIgnoringSticky| is the scroll offset at which the subject would
+    // reach the alignment defining a timeline range boundary if sticky
+    // positioning were not applied.
+    nscoord Earliest(nscoord aOffsetIgnoringSticky) const;
+    nscoord Latest(nscoord aOffsetIgnoringSticky) const;
+
+    // The same displacement model expressed for negated scroll offsets, as
+    // used for RTL / bottom-to-top axes where GetScrollPosition() is zero or
+    // negative. The roles of the two sides swap.
+    StickyDisplacement Reversed() const {
+      return {-mEndSideUnstuckAt, mEndSideMax, -mStartSideStuckAt,
+              mStartSideMax};
+    }
+
+    bool operator==(const StickyDisplacement&) const = default;
+  };
+
+  // The scroll offsets at which the subject's edges would coincide with the
+  // edges of its view progress visibility range if the subject never stuck.
+  struct AlignmentOffsetsIgnoringSticky {
+    // The scroll offset at which the start border edge of the subject would
+    // align with the end edge of the view progress visibility range.
+    nscoord mSubjectStartAtViewEnd = 0;
+    // The scroll offset at which the end border edge of the subject would
+    // align with the start edge of the view progress visibility range.
+    nscoord mSubjectEndAtViewStart = 0;
+    // The scroll offset at which the start border edge of the subject would
+    // align with the start edge of the view progress visibility range.
+    nscoord mSubjectStartAtViewStart = 0;
+    // The scroll offset at which the end border edge of the subject would
+    // align with the end edge of the view progress visibility range.
+    nscoord mSubjectEndAtViewEnd = 0;
+  };
+  AlignmentOffsetsIgnoringSticky ComputeAlignmentOffsetsIgnoringSticky() const;
+
+  // Returns the sticky displacement currently baked into |aSubject|'s offset
+  // to the scrolled frame, along with the model of how it varies with the
+  // scroll offset. Nothing() if we can't model the subject's stickiness (e.g.
+  // more than one sticky ancestor contributes to its offset), in which case
+  // the caller should not remove the baked-in displacement from the subject's
+  // position: treating the current displacement as permanent is our best
+  // approximation.
+  static Maybe<std::pair<nscoord, StickyDisplacement>>
+  ComputeStickyDisplacement(const nsIFrame* aSubject,
+                            const ScrollContainerFrame* aScrollContainerFrame,
+                            layers::ScrollDirection aAxis);
+
   std::pair<nscoord, nscoord> IntervalForTimelineRangeName(
-      const StyleTimelineRangeName aName,
-      const ScrollTimeline::ComputedTimelineData& aData) const;
+      const StyleTimelineRangeName aName) const;
 
   template <typename F>
   double ComputeOffsetToTimelineRange(
@@ -131,7 +216,11 @@ class ViewTimeline final : public ScrollTimeline {
     // The used view-timeline-inset.
     nscoord mInsetStart = 0;
     nscoord mInsetEnd = 0;
-    // TODO: Bug 2018678. We may have to add more for sticky positioned element.
+    // How sticky positioning displaces the subject. |mSubjectPosition| has this
+    // displacement removed, so both are scroll-invariant - except when we
+    // can't model the stickiness (see ComputeStickyDisplacement()), where the
+    // current displacement is treated as permanent.
+    StickyDisplacement mSticky;
 
     // Returns true if any of the metrics are changed, except for |mPosition|.
     bool IsChanged(const CurrentTimeData& aOther) const {
@@ -140,7 +229,8 @@ class ViewTimeline final : public ScrollTimeline {
              mScrollPortSize != aOther.mScrollPortSize ||
              mSubjectPosition != aOther.mSubjectPosition ||
              mSubjectSize != aOther.mSubjectSize ||
-             mInsetStart != aOther.mInsetStart || mInsetEnd != aOther.mInsetEnd;
+             mInsetStart != aOther.mInsetStart ||
+             mInsetEnd != aOther.mInsetEnd || mSticky != aOther.mSticky;
     }
     bool operator==(const CurrentTimeData& aOther) const {
       return mScrollData.mPosition == aOther.mScrollData.mPosition &&

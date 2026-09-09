@@ -41,7 +41,7 @@ void GL_APIENTRY GL_BlendBarrier()
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateBlendBarrier(context, angle::EntryPoint::GLBlendBarrier);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -384,8 +384,7 @@ void GL_APIENTRY GL_DebugMessageCallback(GLDEBUGPROC callback, const void *userP
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateDebugMessageCallback(
-                    context, angle::EntryPoint::GLDebugMessageCallback, callback, userParam);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -911,8 +910,7 @@ GLenum GL_APIENTRY GL_GetGraphicsResetStatus()
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateGetGraphicsResetStatus(
-                    context, angle::EntryPoint::GLGetGraphicsResetStatus);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -1093,7 +1091,7 @@ void GL_APIENTRY GL_GetSamplerParameterIiv(GLuint sampler, GLenum pname, GLint *
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        SamplerID samplerPacked = PackParam<SamplerID>(sampler);
+        SamplerID samplerPacked      = PackParam<SamplerID>(sampler);
         SamplerParameter pnamePacked = PackParam<SamplerParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -1141,7 +1139,7 @@ void GL_APIENTRY GL_GetSamplerParameterIuiv(GLuint sampler, GLenum pname, GLuint
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        SamplerID samplerPacked = PackParam<SamplerID>(sampler);
+        SamplerID samplerPacked      = PackParam<SamplerID>(sampler);
         SamplerParameter pnamePacked = PackParam<SamplerParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -1481,9 +1479,7 @@ void GL_APIENTRY GL_MinSampleShading(GLfloat value)
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateMinSampleShading(
-                    context->getPrivateState(), context->getMutableErrorSetForValidation(),
-                    angle::EntryPoint::GLMinSampleShading, value);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(isCallValid || context->getPushedErrorCount() != errorCount);
 #endif
@@ -1706,10 +1702,7 @@ void GL_APIENTRY GL_PrimitiveBoundingBox(GLfloat minX,
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidatePrimitiveBoundingBox(
-                    context->getPrivateState(), context->getMutableErrorSetForValidation(),
-                    angle::EntryPoint::GLPrimitiveBoundingBox, minX, minY, minZ, minW, maxX, maxY,
-                    maxZ, maxW);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(isCallValid || context->getPushedErrorCount() != errorCount);
 #endif
@@ -1849,7 +1842,7 @@ void GL_APIENTRY GL_SamplerParameterIiv(GLuint sampler, GLenum pname, const GLin
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        SamplerID samplerPacked = PackParam<SamplerID>(sampler);
+        SamplerID samplerPacked      = PackParam<SamplerID>(sampler);
         SamplerParameter pnamePacked = PackParam<SamplerParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -1897,7 +1890,7 @@ void GL_APIENTRY GL_SamplerParameterIuiv(GLuint sampler, GLenum pname, const GLu
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        SamplerID samplerPacked = PackParam<SamplerID>(sampler);
+        SamplerID samplerPacked      = PackParam<SamplerID>(sampler);
         SamplerParameter pnamePacked = PackParam<SamplerParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();

@@ -14,17 +14,13 @@ data class RecordingDevice(
     val type: Type,
     val status: Status,
 ) {
-    /**
-     * Types of recording devices.
-     */
+    /** Types of recording devices. */
     enum class Type {
         CAMERA,
         MICROPHONE,
     }
 
-    /**
-     * States a recording device can be in.
-     */
+    /** States a recording device can be in. */
     enum class Status {
         INACTIVE,
         RECORDING,

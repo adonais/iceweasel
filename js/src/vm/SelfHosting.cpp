@@ -233,29 +233,6 @@ static bool intrinsic_GuardToBuiltin(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 template <typename T>
-static bool intrinsic_IsWrappedInstanceOfBuiltin(JSContext* cx, unsigned argc,
-                                                 Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  MOZ_ASSERT(args.length() == 1);
-  MOZ_ASSERT(args[0].isObject());
-
-  JSObject* obj = &args[0].toObject();
-  if (!obj->is<WrapperObject>()) {
-    args.rval().setBoolean(false);
-    return true;
-  }
-
-  JSObject* unwrapped = CheckedUnwrapDynamic(obj, cx);
-  if (!unwrapped) {
-    ReportAccessDenied(cx);
-    return false;
-  }
-
-  args.rval().setBoolean(unwrapped->is<T>());
-  return true;
-}
-
-template <typename T>
 static bool intrinsic_IsPossiblyWrappedInstanceOfBuiltin(JSContext* cx,
                                                          unsigned argc,
                                                          Value* vp) {

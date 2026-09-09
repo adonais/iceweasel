@@ -7,9 +7,7 @@ package mozilla.components.support.android.test
 import org.hamcrest.CoreMatchers.not
 import org.hamcrest.Matcher
 
-/**
- * A collection of non-domain specific [Matcher]s.
- */
+/** A collection of non-domain specific [Matcher]s. */
 object Matchers {
 
     /**
@@ -19,8 +17,9 @@ object Matchers {
      * This allows developers to write code more generically by using a boolean argument: e.g. assertIsShown(Boolean)
      * rather than two methods, assertIsShown() and assertIsNotShown().
      */
-    fun <T> maybeInvertMatcher(matcher: Matcher<T>, useUnmodifiedMatcher: Boolean): Matcher<T> = when {
-        useUnmodifiedMatcher -> matcher
-        else -> not(matcher)
-    }
+    fun <T> maybeInvertMatcher(matcher: Matcher<T>, useUnmodifiedMatcher: Boolean): Matcher<T> =
+        when {
+            useUnmodifiedMatcher -> matcher
+            else -> not(matcher)
+        }
 }

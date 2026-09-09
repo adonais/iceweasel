@@ -164,7 +164,7 @@ bool SVGTests::PassesRequiredExtensionsTests() const {
 
 bool SVGTests::PassesConditionalProcessingTests() const {
   if (mPassesConditionalProcessingTests) {
-    return mPassesConditionalProcessingTests.value();
+    return *mPassesConditionalProcessingTests;
   }
   if (!PassesRequiredExtensionsTests()) {
     return false;
@@ -189,7 +189,7 @@ bool SVGTests::PassesConditionalProcessingTests() const {
 
     mPassesConditionalProcessingTests =
         Some(FindBestLanguage(availLocales, AsSVGElement()->OwnerDoc()) >= 0);
-    return mPassesConditionalProcessingTests.value();
+    return *mPassesConditionalProcessingTests;
   }
 
   mPassesConditionalProcessingTests = Some(true);

@@ -7,13 +7,13 @@ package org.mozilla.fenix.settings.doh
 internal fun dohSettingsReducer(state: DohSettingsState, action: DohSettingsAction) =
     when (action) {
         is DohSettingsRootAction.DohOptionSelected -> {
-            val selectedProvider = when (action.protectionLevel) {
-                is ProtectionLevel.Increased,
-                is ProtectionLevel.Max,
-                -> action.provider ?: state.providers.first()
+            val selectedProvider =
+                when (action.protectionLevel) {
+                    is ProtectionLevel.Increased,
+                    is ProtectionLevel.Max -> action.provider ?: state.providers.first()
 
-                else -> null
-            }
+                    else -> null
+                }
             state.copy(
                 selectedProtectionLevel = action.protectionLevel,
                 selectedProvider = selectedProvider,
@@ -31,9 +31,7 @@ internal fun dohSettingsReducer(state: DohSettingsState, action: DohSettingsActi
         }
 
         is DohSettingsRootAction.CustomClicked -> {
-            state.copy(
-                isCustomProviderDialogOn = true,
-            )
+            state.copy(isCustomProviderDialogOn = true)
         }
 
         is DohSettingsRootAction.DohCustomProviderDialogAction.NonHttpsUrlDetected -> {
@@ -54,9 +52,7 @@ internal fun dohSettingsReducer(state: DohSettingsState, action: DohSettingsActi
             state.copy(
                 isCustomProviderDialogOn = false,
                 customProviderErrorState = CustomProviderErrorState.Valid,
-                selectedProvider = action.customProvider.copy(
-                    url = action.url,
-                ),
+                selectedProvider = action.customProvider.copy(url = action.url),
             )
         }
 

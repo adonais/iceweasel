@@ -10,14 +10,10 @@ import mozilla.telemetry.glean.debug.GleanDebugActivity
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.utils.Settings
 
-/**
- * A storage used to access the Glean APIs.
- */
+/** A storage used to access the Glean APIs. */
 interface GleanDebugToolsStorage {
 
-    /**
-     * Toggle whether to log pings to console.
-     */
+    /** Toggle whether to log pings to console. */
     fun setLogPings(enabled: Boolean)
 
     /**
@@ -28,9 +24,7 @@ interface GleanDebugToolsStorage {
      */
     fun sendPing(pingType: String, debugViewTag: String)
 
-    /**
-     * Clear any debug view tag persisted across app restarts.
-     */
+    /** Clear any debug view tag persisted across app restarts. */
     fun clearPersistedDebugViewTag()
 }
 
@@ -39,9 +33,7 @@ interface GleanDebugToolsStorage {
  *
  * @param settings Where the debug view tag is persisted.
  */
-class DefaultGleanDebugToolsStorage(
-    private val settings: Settings,
-) : GleanDebugToolsStorage {
+class DefaultGleanDebugToolsStorage(private val settings: Settings) : GleanDebugToolsStorage {
     override fun setLogPings(enabled: Boolean) {
         Glean.setLogPings(enabled)
     }
@@ -57,28 +49,22 @@ class DefaultGleanDebugToolsStorage(
         }
     }
 
-    /**
-     * @see [DefaultGleanDebugToolsStorage].
-     */
+    /** @see [DefaultGleanDebugToolsStorage]. */
     companion object {
-        /**
-         * Intent extra for opting in to keep the debug view tag across app restarts.
-         */
+        /** Intent extra for opting in to keep the debug view tag across app restarts. */
         const val PERSIST_DEBUG_VIEW_TAG_EXTRA = "persistDebugViewTag"
 
-        /**
-         * Get all the types of pings that can be submitted.
-         */
+        /** Get all the types of pings that can be submitted. */
         fun getPingTypes(): Set<String> {
             return Glean.getRegisteredPingNames()
         }
 
         /**
-         * Persist the debug view tag from a Glean debug [intent] so it survives a restart, but only
-         * when the caller opts in with [PERSIST_DEBUG_VIEW_TAG_EXTRA].
+         * Persist the debug view tag from a Glean debug [intent] so it survives a restart, but only when the caller
+         * opts in with [PERSIST_DEBUG_VIEW_TAG_EXTRA].
          * - A debug tag set without the flag clears the persisted tag.
-         * - A launch with no debug tag (a normal restart, or the persist flag without a tag)
-         * leaves any persisted tag as-is.
+         * - A launch with no debug tag (a normal restart, or the persist flag without a tag) leaves any persisted tag
+         *   as-is.
          *
          * Only runs on Nightly or Debug builds.
          *
@@ -99,8 +85,8 @@ class DefaultGleanDebugToolsStorage(
         }
 
         /**
-         * Re-apply the persisted debug view tag at startup so it survives a restart, since Glean
-         * only keeps its debug view tag in memory.
+         * Re-apply the persisted debug view tag at startup so it survives a restart, since Glean only keeps its debug
+         * view tag in memory.
          *
          * Only runs on Nightly or Debug builds.
          *
@@ -110,9 +96,7 @@ class DefaultGleanDebugToolsStorage(
             if (!Config.channel.isNightlyOrDebug) {
                 return
             }
-            settings.gleanDebugViewTag
-                .takeIf { it.isNotEmpty() }
-                ?.let { Glean.setDebugViewTag(it) }
+            settings.gleanDebugViewTag.takeIf { it.isNotEmpty() }?.let { Glean.setDebugViewTag(it) }
         }
     }
 }

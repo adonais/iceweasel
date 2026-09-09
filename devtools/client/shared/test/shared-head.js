@@ -202,6 +202,7 @@ const {
 } = require("resource://devtools/client/framework/devtools.js");
 const {
   CommandsFactory,
+  createLocalClientForTests,
 } = require("resource://devtools/shared/commands/commands-factory.js");
 const DevToolsUtils = require("resource://devtools/shared/DevToolsUtils.js");
 
@@ -2367,31 +2368,11 @@ function simulateLinkClick(element) {
 }
 
 /**
- * Since the MDN data is updated frequently, it might happen that the properties used in
- * this test are not in the dataset anymore/now have URLs.
- * This function will return properties in the dataset that don't have MDN url so you
- * can easily find a replacement.
+ * Use mocked MDN compat data. Should be called before the toolbox starts.
+ * See devtools/shared/compatibility/dataset/mock-css-properties.json.
  */
-function logCssCompatDataPropertiesWithoutMDNUrl() {
-  const cssPropertiesCompatData = require("resource://devtools/shared/compatibility/dataset/css-properties.json");
-
-  function walk(node) {
-    for (const propertyName in node) {
-      const property = node[propertyName];
-      if (property.__compat) {
-        if (!property.__compat.mdn_url) {
-          dump(
-            `"${propertyName}" - MDN URL: ${
-              property.__compat.mdn_url || "❌"
-            } - Spec URL: ${property.__compat.spec_url || "❌"}\n`
-          );
-        }
-      } else if (typeof property == "object") {
-        walk(property);
-      }
-    }
-  }
-  walk(cssPropertiesCompatData);
+async function setMockCompatibilityDataset() {
+  await pushPref("devtools.compatibility.use-mock-dataset", true);
 }
 
 /**

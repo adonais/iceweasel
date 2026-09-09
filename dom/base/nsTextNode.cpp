@@ -22,7 +22,13 @@ using namespace mozilla;
 using namespace mozilla::dom;
 
 /**
- * class used to implement attr() generated content
+ * Legacy class used to implement attr() generated content. However now
+ * only used for the internal `-moz-alt-content` and `-moz-label-content`
+ * keywords, which always reference a no-namespace attribute and fallbacks
+ * to the empty string.
+ *
+ * TODO(bug 2060746): Remove nsAttributeTextNode completely by decoupling it
+ * from `-moz-alt-content` and `-moz-label-content`.
  */
 class nsAttributeTextNode final : public nsTextNode,
                                   public nsStubMutationObserver {
@@ -30,13 +36,8 @@ class nsAttributeTextNode final : public nsTextNode,
   NS_DECL_ISUPPORTS_INHERITED
 
   nsAttributeTextNode(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
-                      int32_t aNameSpaceID, nsAtom* aAttrName,
-                      nsAtom* aFallback)
-      : nsTextNode(std::move(aNodeInfo)),
-        mNameSpaceID(aNameSpaceID),
-        mAttrName(aAttrName),
-        mFallback(aFallback) {
-    NS_ASSERTION(mNameSpaceID != kNameSpaceID_Unknown, "Must know namespace");
+                      nsAtom* aAttrName)
+      : nsTextNode(std::move(aNodeInfo)), mAttrName(aAttrName) {
     NS_ASSERTION(mAttrName, "Must have attr name");
   }
 
@@ -48,9 +49,8 @@ class nsAttributeTextNode final : public nsTextNode,
 
   already_AddRefed<CharacterData> CloneDataNode(
       mozilla::dom::NodeInfo* aNodeInfo, bool aCloneText) const override {
-    RefPtr<nsAttributeTextNode> it =
-        new (aNodeInfo->NodeInfoManager()) nsAttributeTextNode(
-            do_AddRef(aNodeInfo), mNameSpaceID, mAttrName, mFallback);
+    RefPtr<nsAttributeTextNode> it = new (aNodeInfo->NodeInfoManager())
+        nsAttributeTextNode(do_AddRef(aNodeInfo), mAttrName);
     if (aCloneText) {
       it->mBuffer = mBuffer;
     }
@@ -74,10 +74,8 @@ class nsAttributeTextNode final : public nsTextNode,
   // so the ancestor must be bound to the document tree the whole time
   // and can't be deleted.
   Element* mOriginatingElement = nullptr;
-  // What attribute we're showing
-  int32_t mNameSpaceID;
+  // What attribute we're showing (always in the null namespace).
   RefPtr<nsAtom> mAttrName;
-  RefPtr<nsAtom> mFallback;
 };
 
 nsTextNode::~nsTextNode() = default;
@@ -151,18 +149,16 @@ void nsTextNode::DumpContent(FILE* out, int32_t aIndent, bool aDumpAll) const {
 #endif
 
 nsresult NS_NewAttributeContent(nsNodeInfoManager* aNodeInfoManager,
-                                int32_t aNameSpaceID, nsAtom* aAttrName,
-                                nsAtom* aFallback, nsIContent** aResult) {
+                                nsAtom* aAttrName, nsIContent** aResult) {
   MOZ_ASSERT(aNodeInfoManager, "Missing nodeInfoManager");
   MOZ_ASSERT(aAttrName, "Must have an attr name");
-  MOZ_ASSERT(aNameSpaceID != kNameSpaceID_Unknown, "Must know namespace");
 
   *aResult = nullptr;
 
   RefPtr<mozilla::dom::NodeInfo> ni = aNodeInfoManager->GetTextNodeInfo();
 
-  RefPtr<nsAttributeTextNode> textNode = new (aNodeInfoManager)
-      nsAttributeTextNode(ni.forget(), aNameSpaceID, aAttrName, aFallback);
+  RefPtr<nsAttributeTextNode> textNode =
+      new (aNodeInfoManager) nsAttributeTextNode(ni.forget(), aAttrName);
   textNode.forget(aResult);
 
   return NS_OK;
@@ -215,7 +211,7 @@ void nsAttributeTextNode::AttributeChanged(Element* aElement,
                                            int32_t aNameSpaceID,
                                            nsAtom* aAttribute, AttrModType,
                                            const nsAttrValue* aOldValue) {
-  if (aNameSpaceID == mNameSpaceID && aAttribute == mAttrName &&
+  if (aNameSpaceID == kNameSpaceID_None && aAttribute == mAttrName &&
       aElement == mOriginatingElement) {
     // Since UpdateText notifies, do it when it's safe to run script.  Note
     // that if we get unbound while the event is up that's ok -- we'll just
@@ -234,13 +230,10 @@ void nsAttributeTextNode::NodeWillBeDestroyed(nsINode* aNode) {
 
 void nsAttributeTextNode::UpdateText(bool aNotify) {
   if (mOriginatingElement) {
+    // If the attribute doesn't exist, GetAttr leaves attrValue empty,
+    // which is the fallback we want.
     nsAutoString attrValue;
-
-    if (!mOriginatingElement->GetAttr(mNameSpaceID, mAttrName, attrValue)) {
-      // Attr value does not exist, use fallback instead
-      mFallback->ToString(attrValue);
-    }
-
+    mOriginatingElement->GetAttr(mAttrName, attrValue);
     SetText(attrValue, aNotify);
   }
 }

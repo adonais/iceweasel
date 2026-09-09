@@ -18,9 +18,7 @@ data class ContainerState(
     val color: Color,
     val icon: Icon,
 ) {
-    /**
-     * Enum of container color.
-     */
+    /** Enum of container color. */
     enum class Color(val color: String) {
         BLUE("blue"),
         TURQUOISE("turquoise"),
@@ -33,9 +31,7 @@ data class ContainerState(
         TOOLBAR("toolbar"),
     }
 
-    /**
-     * Enum of container icon.
-     */
+    /** Enum of container icon. */
     enum class Icon(val icon: String) {
         FINGERPRINT("fingerprint"),
         BRIEFCASE("briefcase"),

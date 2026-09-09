@@ -7,12 +7,8 @@ package mozilla.components.feature.customtabs.feature
 import mozilla.components.browser.state.state.CustomTabSessionState
 import mozilla.components.concept.toolbar.Toolbar
 
-/**
- * Sets the title of the custom tab toolbar based on the session title and URL.
- */
-class CustomTabSessionTitleObserver(
-    private val toolbar: Toolbar,
-) {
+/** Sets the title of the custom tab toolbar based on the session title and URL. */
+class CustomTabSessionTitleObserver(private val toolbar: Toolbar) {
     private var url: String? = null
     private var title: String? = null
     private var showedTitle = false

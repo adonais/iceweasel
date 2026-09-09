@@ -14,9 +14,9 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import kotlin.math.roundToInt
 
 class CustomPopupPlacementPositionProviderTest {
 
@@ -50,10 +50,11 @@ class CustomPopupPlacementPositionProviderTest {
 
     @Test
     fun `GIVEN center alignment of a popup that fits in anchor WHEN placing the popup THEN show it inside the anchor`() {
-        val provider = createProvider(
-            verticalAlignment = CenterVertically,
-            horizontalAlignment = CenterHorizontally,
-        )
+        val provider =
+            createProvider(
+                verticalAlignment = CenterVertically,
+                horizontalAlignment = CenterHorizontally,
+            )
         val expectedX = topAnchorBounds.left + (topAnchorBounds.width - popupSize.width) / 2
         val expectedY = topAnchorBounds.top + (topAnchorBounds.height - popupSize.height) / 2
         val expectedOffset = IntOffset(expectedX, expectedY)
@@ -67,10 +68,11 @@ class CustomPopupPlacementPositionProviderTest {
 
     @Test
     fun `GIVEN TopStart alignment WHEN placing the popup THEN show it at the top-start of the anchor plus offset`() {
-        val provider = createProvider(
-            verticalAlignment = Alignment.Top,
-            horizontalAlignment = Alignment.Start,
-        )
+        val provider =
+            createProvider(
+                verticalAlignment = Alignment.Top,
+                horizontalAlignment = Alignment.Start,
+            )
         val expectedX = topAnchorBounds.left + offset.x.value.roundToInt()
         val expectedY = topAnchorBounds.top - popupSize.height + offset.y.value.roundToInt()
         val expectedOffset = IntOffset(expectedX, expectedY)
@@ -84,10 +86,11 @@ class CustomPopupPlacementPositionProviderTest {
 
     @Test
     fun `GIVEN TopEnd alignment WHEN placing the popup THEN show it at the top-end of the anchor plus offset`() {
-        val provider = createProvider(
-            verticalAlignment = Alignment.Top,
-            horizontalAlignment = Alignment.End,
-        )
+        val provider =
+            createProvider(
+                verticalAlignment = Alignment.Top,
+                horizontalAlignment = Alignment.End,
+            )
         val expectedX = topAnchorBounds.right + this.offset.x.value.roundToInt()
         val expectedY = topAnchorBounds.top - popupSize.height + offset.y.value.roundToInt()
         val expectedOffset = IntOffset(expectedX, expectedY)
@@ -101,10 +104,11 @@ class CustomPopupPlacementPositionProviderTest {
 
     @Test
     fun `GIVEN BottomStart alignment WHEN placing the popup THEN position it at anchor's bottom-right plus offset`() {
-        val provider = createProvider(
-            verticalAlignment = Alignment.Bottom,
-            horizontalAlignment = Alignment.Start,
-        )
+        val provider =
+            createProvider(
+                verticalAlignment = Alignment.Bottom,
+                horizontalAlignment = Alignment.Start,
+            )
         val expectedX = topAnchorBounds.left + offset.x.value.roundToInt()
         val expectedY = topAnchorBounds.bottom + this.offset.y.value.roundToInt()
         val expectedOffset = IntOffset(expectedX, expectedY)
@@ -118,10 +122,11 @@ class CustomPopupPlacementPositionProviderTest {
 
     @Test
     fun `GIVEN BottomEnd alignment WHEN placing the popup THEN position it at anchor's bottom-right plus offset`() {
-        val provider = createProvider(
-            verticalAlignment = Alignment.Bottom,
-            horizontalAlignment = Alignment.End,
-        )
+        val provider =
+            createProvider(
+                verticalAlignment = Alignment.Bottom,
+                horizontalAlignment = Alignment.End,
+            )
         val expectedX = topAnchorBounds.right + this.offset.x.value.roundToInt()
         val expectedY = topAnchorBounds.bottom + this.offset.y.value.roundToInt()
         val expectedOffset = IntOffset(expectedX, expectedY)
@@ -135,10 +140,11 @@ class CustomPopupPlacementPositionProviderTest {
 
     @Test
     fun `GIVEN center alignment of a popup that does not fit in anchor WHEN placing the popup THEN align it to anchor's top-start`() {
-        val provider = createProvider(
-            verticalAlignment = CenterVertically,
-            horizontalAlignment = CenterHorizontally,
-        )
+        val provider =
+            createProvider(
+                verticalAlignment = CenterVertically,
+                horizontalAlignment = CenterHorizontally,
+            )
         val expectedX = topAnchorBounds.left
         val expectedY = topAnchorBounds.top
         val expectedOffset = IntOffset(expectedX, expectedY)
@@ -152,10 +158,11 @@ class CustomPopupPlacementPositionProviderTest {
 
     @Test
     fun `GIVEN TopEnd alignment of a popup that does not fit the screen WHEN placing the popup THEN align it to the start of the screen and anchor bottom`() {
-        val provider = createProvider(
-            verticalAlignment = Alignment.Top,
-            horizontalAlignment = Alignment.End,
-        )
+        val provider =
+            createProvider(
+                verticalAlignment = Alignment.Top,
+                horizontalAlignment = Alignment.End,
+            )
         val expectedX = 0
         val expectedY = topAnchorBounds.bottom + offset.y.value.roundToInt()
         val expectedOffset = IntOffset(expectedX, expectedY)
@@ -169,10 +176,11 @@ class CustomPopupPlacementPositionProviderTest {
 
     @Test
     fun `GIVEN BottomStart alignment of a popup that does not fit the screen WHEN placing the popup THEN align the right and bottom to anchor top`() {
-        val provider = createProvider(
-            verticalAlignment = Alignment.Bottom,
-            horizontalAlignment = Alignment.Start,
-        )
+        val provider =
+            createProvider(
+                verticalAlignment = Alignment.Bottom,
+                horizontalAlignment = Alignment.Start,
+            )
         val expectedX = bottomAnchorBounds.right - largePopupSize.width + offset.x.value.roundToInt()
         val expectedY = bottomAnchorBounds.top - largePopupSize.height + offset.y.value.roundToInt()
         val expectedOffset = IntOffset(expectedX, expectedY)

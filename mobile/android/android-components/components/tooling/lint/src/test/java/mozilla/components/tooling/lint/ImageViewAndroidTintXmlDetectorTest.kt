@@ -11,14 +11,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-/**
- * Tests for the [ImageViewAndroidTintXmlDetector] custom lint check.
- */
+/** Tests for the [ImageViewAndroidTintXmlDetector] custom lint check. */
 @RunWith(JUnit4::class)
 class ImageViewAndroidTintXmlDetectorTest : LintDetectorTest() {
 
-    override fun getIssues(): MutableList<Issue> =
-        mutableListOf(ImageViewAndroidTintXmlDetector.ISSUE_XML_SRC_USAGE)
+    override fun getIssues(): MutableList<Issue> = mutableListOf(ImageViewAndroidTintXmlDetector.ISSUE_XML_SRC_USAGE)
 
     override fun getDetector(): Detector = ImageViewAndroidTintXmlDetector()
 
@@ -34,8 +31,9 @@ class ImageViewAndroidTintXmlDetectorTest : LintDetectorTest() {
     android:layout_height="wrap_content"
     />
 """,
-                ),
-            ).allowMissingSdk(true)
+                )
+            )
+            .allowMissingSdk(true)
             .run()
             .expectClean()
     }
@@ -54,8 +52,9 @@ class ImageViewAndroidTintXmlDetectorTest : LintDetectorTest() {
     android:tint="@color/photonBlue90"
     />
 """,
-                ),
-            ).allowMissingSdk(true)
+                )
+            )
+            .allowMissingSdk(true)
             .run()
             .expect(
                 """
@@ -63,7 +62,7 @@ res/layout/layout.xml:6: Error: Using android:tint to tint ImageView instead of 
     android:tint="@color/photonBlue90"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 1 errors, 0 warnings
-            """,
+            """
             )
     }
 }

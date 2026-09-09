@@ -6,9 +6,7 @@ package mozilla.components.concept.bookmarks.file
 
 import android.net.Uri
 
-/**
- * An interface for importing bookmarks from a file.
- */
+/** An interface for importing bookmarks from a file. */
 fun interface BookmarksFileImporter {
     /**
      * The result of a bookmarks file import.
@@ -32,17 +30,19 @@ fun interface BookmarksFileImporter {
          *
          * @param result The [ImportResult] to return on every import.
          */
-        fun alwaysSuccess(
-            result: ImportResult = ImportResult(guid = "", count = 0),
-        ): BookmarksFileImporter = BookmarksFileImporter { Result.success(result) }
+        fun alwaysSuccess(result: ImportResult = ImportResult(guid = "", count = 0)): BookmarksFileImporter =
+            BookmarksFileImporter {
+                Result.success(result)
+            }
 
         /**
          * Creates a [BookmarksFileImporter] that always returns a failed [Result].
          *
          * @param exception The [Exception] to return on every import.
          */
-        fun alwaysFailure(
-            exception: Exception = IllegalStateException("Import failed"),
-        ): BookmarksFileImporter = BookmarksFileImporter { Result.failure(exception) }
+        fun alwaysFailure(exception: Exception = IllegalStateException("Import failed")): BookmarksFileImporter =
+            BookmarksFileImporter {
+                Result.failure(exception)
+            }
     }
 }

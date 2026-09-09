@@ -34,6 +34,7 @@
 #include "prenv.h"
 #include "prsystem.h"
 #include "nsPrintfCString.h"
+#include "mozilla/Components.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozIStorageService.h"
@@ -431,7 +432,7 @@ Database::Database()
 already_AddRefed<nsIAsyncShutdownClient>
 Database::GetProfileChangeTeardownPhase() {
   nsCOMPtr<nsIAsyncShutdownService> asyncShutdownSvc =
-      services::GetAsyncShutdownService();
+      components::AsyncShutdown::Service();
   MOZ_ASSERT(asyncShutdownSvc);
   if (NS_WARN_IF(!asyncShutdownSvc)) {
     return nullptr;
@@ -448,7 +449,7 @@ Database::GetProfileChangeTeardownPhase() {
 already_AddRefed<nsIAsyncShutdownClient>
 Database::GetProfileBeforeChangePhase() {
   nsCOMPtr<nsIAsyncShutdownService> asyncShutdownSvc =
-      services::GetAsyncShutdownService();
+      components::AsyncShutdown::Service();
   MOZ_ASSERT(asyncShutdownSvc);
   if (NS_WARN_IF(!asyncShutdownSvc)) {
     return nullptr;

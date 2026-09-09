@@ -9,6 +9,8 @@ prefs = [
   "browser.ipProtection.cacheDisabled=true",
 ]
 
+["test_IPPL10nHelper.js"]
+
 ["test_IPPOnboardingMessageHelper.js"]
 
 ["test_IPProtectionPanel.js"]

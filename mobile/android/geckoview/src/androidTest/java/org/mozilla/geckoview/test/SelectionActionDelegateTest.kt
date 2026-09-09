@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -62,43 +62,38 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
 class SelectionActionDelegateTest : BaseSessionTest() {
     val activityRule = ActivityScenarioRule(GeckoViewTestActivity::class.java)
 
-    @get:Rule
-    override val rules: RuleChain = RuleChain.outerRule(activityRule).around(sessionRule)
+    @get:Rule override val rules: RuleChain = RuleChain.outerRule(activityRule).around(sessionRule)
 
     enum class ContentType {
-        DIV, EDITABLE_ELEMENT, IFRAME, IFRAME_XORIGIN
+        DIV,
+        EDITABLE_ELEMENT,
+        IFRAME,
+        IFRAME_XORIGIN,
     }
 
     companion object {
         @get:Parameters(name = "{0}")
         @JvmStatic
-        val parameters: List<Array<Any>> = listOf(
-            arrayOf("#text", ContentType.DIV, "lorem", false),
-            arrayOf("#input", ContentType.EDITABLE_ELEMENT, "ipsum", true),
-            arrayOf("#textarea", ContentType.EDITABLE_ELEMENT, "dolor", true),
-            arrayOf("#contenteditable", ContentType.DIV, "sit", true),
-            arrayOf("#iframe", ContentType.IFRAME, "amet", false),
-            arrayOf("#designmode", ContentType.IFRAME, "consectetur", true),
-            arrayOf("#iframe-xorigin", ContentType.IFRAME_XORIGIN, "elit", false),
-            arrayOf("#x-input", ContentType.EDITABLE_ELEMENT, "adipisci", true),
-        )
+        val parameters: List<Array<Any>> =
+            listOf(
+                arrayOf("#text", ContentType.DIV, "lorem", false),
+                arrayOf("#input", ContentType.EDITABLE_ELEMENT, "ipsum", true),
+                arrayOf("#textarea", ContentType.EDITABLE_ELEMENT, "dolor", true),
+                arrayOf("#contenteditable", ContentType.DIV, "sit", true),
+                arrayOf("#iframe", ContentType.IFRAME, "amet", false),
+                arrayOf("#designmode", ContentType.IFRAME, "consectetur", true),
+                arrayOf("#iframe-xorigin", ContentType.IFRAME_XORIGIN, "elit", false),
+                arrayOf("#x-input", ContentType.EDITABLE_ELEMENT, "adipisci", true),
+            )
     }
 
-    @field:Parameter(0)
-    @JvmField
-    var id: String = ""
+    @field:Parameter(0) @JvmField var id: String = ""
 
-    @field:Parameter(1)
-    @JvmField
-    var type: ContentType = ContentType.DIV
+    @field:Parameter(1) @JvmField var type: ContentType = ContentType.DIV
 
-    @field:Parameter(2)
-    @JvmField
-    var initialContent: String = ""
+    @field:Parameter(2) @JvmField var initialContent: String = ""
 
-    @field:Parameter(3)
-    @JvmField
-    var editable: Boolean = false
+    @field:Parameter(3) @JvmField var editable: Boolean = false
 
     private val selectedContent by lazy {
         when (type) {
@@ -129,8 +124,8 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     }
 
     /** Generic tests for each content type. */
-
-    @Test fun request() {
+    @Test
+    fun request() {
         if (editable) {
             withClipboard("text") {
                 testThat(
@@ -225,58 +220,73 @@ class SelectionActionDelegateTest : BaseSessionTest() {
         }
     }
 
-    @Test fun request_collapsed() = assumingEditable(true) {
-        withClipboard("text") {
-            testThat(
-                collapsedContent,
-                {},
-                hasShowActionRequest(
-                    FLAG_IS_EDITABLE or FLAG_IS_COLLAPSED,
-                    arrayOf(ACTION_HIDE, ACTION_PASTE, ACTION_SELECT_ALL),
-                ),
-            )
+    @Test
+    fun request_collapsed() =
+        assumingEditable(true) {
+            withClipboard("text") {
+                testThat(
+                    collapsedContent,
+                    {},
+                    hasShowActionRequest(
+                        FLAG_IS_EDITABLE or FLAG_IS_COLLAPSED,
+                        arrayOf(ACTION_HIDE, ACTION_PASTE, ACTION_SELECT_ALL),
+                    ),
+                )
+            }
         }
-    }
 
-    @Test fun request_noClipboard() = assumingEditable(true) {
-        withClipboard("") {
-            testThat(
-                collapsedContent,
-                {},
-                hasShowActionRequest(
-                    FLAG_IS_EDITABLE or FLAG_IS_COLLAPSED,
-                    arrayOf(ACTION_HIDE, ACTION_SELECT_ALL),
-                ),
-            )
+    @Test
+    fun request_noClipboard() =
+        assumingEditable(true) {
+            withClipboard("") {
+                testThat(
+                    collapsedContent,
+                    {},
+                    hasShowActionRequest(
+                        FLAG_IS_EDITABLE or FLAG_IS_COLLAPSED,
+                        arrayOf(ACTION_HIDE, ACTION_SELECT_ALL),
+                    ),
+                )
+            }
         }
-    }
 
     @Test fun hide() = testThat(selectedContent, withResponse(ACTION_HIDE), clearsSelection())
 
-    @Test fun cut() = assumingEditable(true) {
-        withClipboard("") {
-            testThat(selectedContent, withResponse(ACTION_CUT), copiesText(), deletesContent())
+    @Test
+    fun cut() =
+        assumingEditable(true) {
+            withClipboard("") {
+                testThat(selectedContent, withResponse(ACTION_CUT), copiesText(), deletesContent())
+            }
         }
-    }
-
-    @Test fun copy() = withClipboard("") {
-        testThat(selectedContent, withResponse(ACTION_COPY), copiesText())
-    }
-
-    @Test fun paste() = assumingEditable(true) {
-        withClipboard("pasted") {
-            testThat(selectedContent, withResponse(ACTION_PASTE), changesContentTo("pasted"))
-        }
-    }
 
     @Test
-    fun pasteAsPlainText() = assumingEditable(true) {
-        assumeThat("Paste as plain text works on content editable", type, not(equalTo(ContentType.EDITABLE_ELEMENT)))
-
-        withHtmlClipboard("pasted", "<bold>pasted</bold>") {
-            testThat(selectedContent, withResponse(ACTION_PASTE_AS_PLAIN_TEXT), changesContentTo("pasted"))
+    fun copy() =
+        withClipboard("") {
+            testThat(selectedContent, withResponse(ACTION_COPY), copiesText())
         }
-    }
+
+    @Test
+    fun paste() =
+        assumingEditable(true) {
+            withClipboard("pasted") {
+                testThat(selectedContent, withResponse(ACTION_PASTE), changesContentTo("pasted"))
+            }
+        }
+
+    @Test
+    fun pasteAsPlainText() =
+        assumingEditable(true) {
+            assumeThat(
+                "Paste as plain text works on content editable",
+                type,
+                not(equalTo(ContentType.EDITABLE_ELEMENT)),
+            )
+
+            withHtmlClipboard("pasted", "<bold>pasted</bold>") {
+                testThat(selectedContent, withResponse(ACTION_PASTE_AS_PLAIN_TEXT), changesContentTo("pasted"))
+            }
+        }
 
     @Test
     fun pasteImage() {
@@ -291,11 +301,14 @@ class SelectionActionDelegateTest : BaseSessionTest() {
         }
     }
 
-    @Test fun delete() = assumingEditable(true) {
-        testThat(selectedContent, withResponse(ACTION_DELETE), deletesContent())
-    }
+    @Test
+    fun delete() =
+        assumingEditable(true) {
+            testThat(selectedContent, withResponse(ACTION_DELETE), deletesContent())
+        }
 
-    @Test fun selectAll() {
+    @Test
+    fun selectAll() {
         if (type == ContentType.DIV && !editable) {
             // "Select all" for non-editable div means selecting the whole document.
             testThat(
@@ -303,7 +316,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
                 withResponse(ACTION_SELECT_ALL),
                 changesSelectionTo(
                     both(containsString(selectedContent.initialContent))
-                        .and(not(equalTo(selectedContent.initialContent))),
+                        .and(not(equalTo(selectedContent.initialContent)))
                 ),
             )
         } else {
@@ -315,40 +328,50 @@ class SelectionActionDelegateTest : BaseSessionTest() {
         }
     }
 
-    @Test fun unselect() = assumingEditable(false) {
-        testThat(selectedContent, withResponse(ACTION_UNSELECT), clearsSelection())
-    }
+    @Test
+    fun unselect() =
+        assumingEditable(false) {
+            testThat(selectedContent, withResponse(ACTION_UNSELECT), clearsSelection())
+        }
 
     @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
-    @Test fun multipleActions() = assumingEditable(false) {
-        withClipboard("") {
+    @Test
+    fun multipleActions() =
+        assumingEditable(false) {
+            withClipboard("") {
+                testThat(
+                    selectedContent,
+                    withResponse(ACTION_COPY, ACTION_UNSELECT),
+                    copiesText(),
+                    clearsSelection(),
+                )
+            }
+        }
+
+    @Test
+    fun collapseToStart() =
+        assumingEditable(true) {
+            testThat(selectedContent, withResponse(ACTION_COLLAPSE_TO_START), hasSelectionAt(0))
+        }
+
+    @Test
+    fun collapseToEnd() =
+        assumingEditable(true) {
             testThat(
                 selectedContent,
-                withResponse(ACTION_COPY, ACTION_UNSELECT),
-                copiesText(),
-                clearsSelection(),
+                withResponse(ACTION_COLLAPSE_TO_END),
+                hasSelectionAt(selectedContent.initialContent.length),
             )
         }
-    }
 
-    @Test fun collapseToStart() = assumingEditable(true) {
-        testThat(selectedContent, withResponse(ACTION_COLLAPSE_TO_START), hasSelectionAt(0))
-    }
-
-    @Test fun collapseToEnd() = assumingEditable(true) {
-        testThat(
-            selectedContent,
-            withResponse(ACTION_COLLAPSE_TO_END),
-            hasSelectionAt(selectedContent.initialContent.length),
-        )
-    }
-
-    @Test fun pagehide() {
+    @Test
+    fun pagehide() {
         // Navigating to another page should hide selection action.
         testThat(selectedContent, { mainSession.loadTestPath(HELLO_HTML_PATH) }, clearsSelection())
     }
 
-    @Test fun deactivate() {
+    @Test
+    fun deactivate() {
         // Blurring the window should hide selection action.
         testThat(selectedContent, { mainSession.setFocused(false) }, clearsSelection())
         mainSession.setFocused(true)
@@ -358,11 +381,12 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     @Test
     fun clearDelegate() {
         var counter = 0
-        mainSession.selectionActionDelegate = object : SelectionActionDelegate {
-            override fun onHideAction(session: GeckoSession, reason: Int) {
-                counter++
+        mainSession.selectionActionDelegate =
+            object : SelectionActionDelegate {
+                override fun onHideAction(session: GeckoSession, reason: Int) {
+                    counter++
+                }
             }
-        }
 
         mainSession.selectionActionDelegate = null
         assertThat(
@@ -374,13 +398,15 @@ class SelectionActionDelegateTest : BaseSessionTest() {
 
     @Test
     fun compareClientRect() {
-        val jsCssReset = """(function() {
+        val jsCssReset =
+            """(function() {
             document.querySelector('$id').style.display = "block";
             document.querySelector('$id').style.border = "0";
             document.querySelector('$id').style.padding = "0";
             document.querySelector('$id').offsetHeight; // flush layout
         })()"""
-        val jsBorder10pxPadding10px = """(function() {
+        val jsBorder10pxPadding10px =
+            """(function() {
             document.querySelector('$id').style.display = "block";
             document.querySelector('$id').style.border = "10px solid";
             document.querySelector('$id').style.padding = "10px";
@@ -403,31 +429,33 @@ class SelectionActionDelegateTest : BaseSessionTest() {
 
         // Select allow
         val result = GeckoResult<Void>()
-        mainSession.delegateDuringNextWait(object : SelectionActionDelegate, PromptDelegate {
-            @AssertCalled(count = 1)
-            override fun onShowClipboardPermissionRequest(
-                session: GeckoSession,
-                perm: ClipboardPermission,
-            ): GeckoResult<AllowOrDeny> {
-                assertThat(
-                    "Type should match",
-                    perm.type,
-                    equalTo(SelectionActionDelegate.PERMISSION_CLIPBOARD_READ),
-                )
-                assertThat("screenPoint should match", perm.screenPoint, equalTo(Point(50, 50)))
-                return GeckoResult.allow()
-            }
+        mainSession.delegateDuringNextWait(
+            object : SelectionActionDelegate, PromptDelegate {
+                @AssertCalled(count = 1)
+                override fun onShowClipboardPermissionRequest(
+                    session: GeckoSession,
+                    perm: ClipboardPermission,
+                ): GeckoResult<AllowOrDeny> {
+                    assertThat(
+                        "Type should match",
+                        perm.type,
+                        equalTo(SelectionActionDelegate.PERMISSION_CLIPBOARD_READ),
+                    )
+                    assertThat("screenPoint should match", perm.screenPoint, equalTo(Point(50, 50)))
+                    return GeckoResult.allow()
+                }
 
-            @AssertCalled(count = 1, order = [2])
-            override fun onAlertPrompt(
-                session: GeckoSession,
-                prompt: PromptDelegate.AlertPrompt,
-            ): GeckoResult<PromptDelegate.PromptResponse> {
-                assertThat("Message should match", "allow", equalTo(prompt.message))
-                result.complete(null)
-                return GeckoResult.fromValue(prompt.dismiss())
+                @AssertCalled(count = 1, order = [2])
+                override fun onAlertPrompt(
+                    session: GeckoSession,
+                    prompt: PromptDelegate.AlertPrompt,
+                ): GeckoResult<PromptDelegate.PromptResponse> {
+                    assertThat("Message should match", "allow", equalTo(prompt.message))
+                    result.complete(null)
+                    return GeckoResult.fromValue(prompt.dismiss())
+                }
             }
-        })
+        )
 
         mainSession.synthesizeTap(50, 50) // Provides user activation.
         sessionRule.waitForResult(result)
@@ -446,30 +474,32 @@ class SelectionActionDelegateTest : BaseSessionTest() {
 
         // Select deny
         val result = GeckoResult<Void>()
-        mainSession.delegateDuringNextWait(object : SelectionActionDelegate, PromptDelegate {
-            @AssertCalled(count = 1, order = [1])
-            override fun onShowClipboardPermissionRequest(
-                session: GeckoSession,
-                perm: ClipboardPermission,
-            ): GeckoResult<AllowOrDeny>? {
-                assertThat(
-                    "Type should match",
-                    perm.type,
-                    equalTo(SelectionActionDelegate.PERMISSION_CLIPBOARD_READ),
-                )
-                return GeckoResult.deny()
-            }
+        mainSession.delegateDuringNextWait(
+            object : SelectionActionDelegate, PromptDelegate {
+                @AssertCalled(count = 1, order = [1])
+                override fun onShowClipboardPermissionRequest(
+                    session: GeckoSession,
+                    perm: ClipboardPermission,
+                ): GeckoResult<AllowOrDeny>? {
+                    assertThat(
+                        "Type should match",
+                        perm.type,
+                        equalTo(SelectionActionDelegate.PERMISSION_CLIPBOARD_READ),
+                    )
+                    return GeckoResult.deny()
+                }
 
-            @AssertCalled(count = 1, order = [2])
-            override fun onAlertPrompt(
-                session: GeckoSession,
-                prompt: PromptDelegate.AlertPrompt,
-            ): GeckoResult<PromptDelegate.PromptResponse> {
-                assertThat("Message should match", "deny", equalTo(prompt.message))
-                result.complete(null)
-                return GeckoResult.fromValue(prompt.dismiss())
+                @AssertCalled(count = 1, order = [2])
+                override fun onAlertPrompt(
+                    session: GeckoSession,
+                    prompt: PromptDelegate.AlertPrompt,
+                ): GeckoResult<PromptDelegate.PromptResponse> {
+                    assertThat("Message should match", "deny", equalTo(prompt.message))
+                    result.complete(null)
+                    return GeckoResult.fromValue(prompt.dismiss())
+                }
             }
-        })
+        )
 
         mainSession.synthesizeTap(50, 50) // Provides user activation.
         sessionRule.waitForResult(result)
@@ -488,31 +518,35 @@ class SelectionActionDelegateTest : BaseSessionTest() {
 
         val result = GeckoResult<Void>()
         val permissionResult = GeckoResult<AllowOrDeny>()
-        mainSession.delegateDuringNextWait(object : SelectionActionDelegate {
-            @AssertCalled(count = 1)
-            override fun onShowClipboardPermissionRequest(
-                session: GeckoSession,
-                perm: ClipboardPermission,
-            ): GeckoResult<AllowOrDeny>? {
-                assertThat(
-                    "Type should match",
-                    perm.type,
-                    equalTo(SelectionActionDelegate.PERMISSION_CLIPBOARD_READ),
-                )
-                result.complete(null)
-                return permissionResult
+        mainSession.delegateDuringNextWait(
+            object : SelectionActionDelegate {
+                @AssertCalled(count = 1)
+                override fun onShowClipboardPermissionRequest(
+                    session: GeckoSession,
+                    perm: ClipboardPermission,
+                ): GeckoResult<AllowOrDeny>? {
+                    assertThat(
+                        "Type should match",
+                        perm.type,
+                        equalTo(SelectionActionDelegate.PERMISSION_CLIPBOARD_READ),
+                    )
+                    result.complete(null)
+                    return permissionResult
+                }
             }
-        })
+        )
 
         mainSession.synthesizeTap(50, 50) // Provides user activation.
         sessionRule.waitForResult(result)
 
-        mainSession.delegateDuringNextWait(object : SelectionActionDelegate {
-            @AssertCalled
-            override fun onDismissClipboardPermissionRequest(session: GeckoSession) {
-                permissionResult.complete(AllowOrDeny.DENY)
+        mainSession.delegateDuringNextWait(
+            object : SelectionActionDelegate {
+                @AssertCalled
+                override fun onDismissClipboardPermissionRequest(session: GeckoSession) {
+                    permissionResult.complete(AllowOrDeny.DENY)
+                }
             }
-        })
+        )
 
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForResult(permissionResult)
@@ -532,31 +566,35 @@ class SelectionActionDelegateTest : BaseSessionTest() {
 
         val result = GeckoResult<Void>()
         val permissionResult = GeckoResult<AllowOrDeny>()
-        mainSession.delegateDuringNextWait(object : SelectionActionDelegate {
-            @AssertCalled(count = 1)
-            override fun onShowClipboardPermissionRequest(
-                session: GeckoSession,
-                perm: ClipboardPermission,
-            ): GeckoResult<AllowOrDeny>? {
-                assertThat(
-                    "Type should match",
-                    perm.type,
-                    equalTo(SelectionActionDelegate.PERMISSION_CLIPBOARD_READ),
-                )
-                result.complete(null)
-                return permissionResult
+        mainSession.delegateDuringNextWait(
+            object : SelectionActionDelegate {
+                @AssertCalled(count = 1)
+                override fun onShowClipboardPermissionRequest(
+                    session: GeckoSession,
+                    perm: ClipboardPermission,
+                ): GeckoResult<AllowOrDeny>? {
+                    assertThat(
+                        "Type should match",
+                        perm.type,
+                        equalTo(SelectionActionDelegate.PERMISSION_CLIPBOARD_READ),
+                    )
+                    result.complete(null)
+                    return permissionResult
+                }
             }
-        })
+        )
 
         mainSession.synthesizeTap(50, 50) // Provides user activation.
         sessionRule.waitForResult(result)
 
-        mainSession.delegateDuringNextWait(object : SelectionActionDelegate {
-            @AssertCalled
-            override fun onDismissClipboardPermissionRequest(session: GeckoSession) {
-                permissionResult.complete(AllowOrDeny.DENY)
+        mainSession.delegateDuringNextWait(
+            object : SelectionActionDelegate {
+                @AssertCalled
+                override fun onDismissClipboardPermissionRequest(session: GeckoSession) {
+                    permissionResult.complete(AllowOrDeny.DENY)
+                }
             }
-        })
+        )
 
         mainSession.synthesizeTap(10, 10) // click to dismiss.
         sessionRule.waitForResult(permissionResult)
@@ -565,7 +603,9 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     /** Interface that defines behavior for a particular type of content */
     private interface SelectedContent {
         fun focus() {}
+
         fun select() {}
+
         val initialContent: String
         val content: String
         val htmlContent: String
@@ -590,26 +630,33 @@ class SelectionActionDelegateTest : BaseSessionTest() {
             mapOf(
                 "geckoview.selection_action.show_on_focus" to true,
                 "layout.accessiblecaret.script_change_update_mode" to 2,
-            ),
+            )
         )
 
-        mainSession.delegateDuringNextWait(object : SelectionActionDelegate {
-            override fun onShowActionRequest(session: GeckoSession, selection: GeckoSession.SelectionActionDelegate.Selection) {
-                respondingWith(selection)
+        mainSession.delegateDuringNextWait(
+            object : SelectionActionDelegate {
+                override fun onShowActionRequest(
+                    session: GeckoSession,
+                    selection: GeckoSession.SelectionActionDelegate.Selection,
+                ) {
+                    respondingWith(selection)
+                }
             }
-        })
+        )
 
         content.select()
-        mainSession.waitUntilCalled(object : SelectionActionDelegate {
-            @AssertCalled(count = 1)
-            override fun onShowActionRequest(session: GeckoSession, selection: Selection) {
-                assertThat(
-                    "Initial content should match",
-                    selection.text,
-                    equalTo(content.initialContent),
-                )
+        mainSession.waitUntilCalled(
+            object : SelectionActionDelegate {
+                @AssertCalled(count = 1)
+                override fun onShowActionRequest(session: GeckoSession, selection: Selection) {
+                    assertThat(
+                        "Initial content should match",
+                        selection.text,
+                        equalTo(content.initialContent),
+                    )
+                }
             }
-        })
+        )
 
         result(content)
         sideEffects.forEach { it(content) }
@@ -627,7 +674,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
             mapOf(
                 "geckoview.selection_action.show_on_focus" to true,
                 "layout.accessiblecaret.script_change_update_mode" to 2,
-            ),
+            )
         )
 
         mainSession.loadTestPath(INPUTS_PATH)
@@ -644,12 +691,14 @@ class SelectionActionDelegateTest : BaseSessionTest() {
 
             var screenRect = RectF()
             content.select()
-            mainSession.waitUntilCalled(object : SelectionActionDelegate {
-                @AssertCalled(count = 1)
-                override fun onShowActionRequest(session: GeckoSession, selection: Selection) {
-                    screenRect = selection.screenRect!!
+            mainSession.waitUntilCalled(
+                object : SelectionActionDelegate {
+                    @AssertCalled(count = 1)
+                    override fun onShowActionRequest(session: GeckoSession, selection: Selection) {
+                        screenRect = selection.screenRect!!
+                    }
                 }
-            })
+            )
 
             screenRect
         }
@@ -658,10 +707,11 @@ class SelectionActionDelegateTest : BaseSessionTest() {
         val screenRectB = requestClientRect(initialJsB)
 
         val fuzzyEqual = { a: Float, b: Float, e: Float -> Math.abs(a + e - b) <= 1 }
-        val result = fuzzyEqual(screenRectA.top, screenRectB.top, expectedDiff.top) &&
-            fuzzyEqual(screenRectA.left, screenRectB.left, expectedDiff.left) &&
-            fuzzyEqual(screenRectA.width(), screenRectB.width(), expectedDiff.width()) &&
-            fuzzyEqual(screenRectA.height(), screenRectB.height(), expectedDiff.height())
+        val result =
+            fuzzyEqual(screenRectA.top, screenRectB.top, expectedDiff.top) &&
+                fuzzyEqual(screenRectA.left, screenRectB.left, expectedDiff.left) &&
+                fuzzyEqual(screenRectA.width(), screenRectB.width(), expectedDiff.width()) &&
+                fuzzyEqual(screenRectA.height(), screenRectB.height(), expectedDiff.height())
 
         assertThat(
             "Selection rect is not at expected location. a$screenRectA b$screenRectB expectedDiff$expectedDiff",
@@ -671,7 +721,6 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     }
 
     /** Helpers. */
-
     private val clipboard by lazy {
         InstrumentationRegistry.getInstrumentation().targetContext.getSystemService(Context.CLIPBOARD_SERVICE)
             as ClipboardManager
@@ -719,7 +768,12 @@ class SelectionActionDelegateTest : BaseSessionTest() {
         val oldClip = clipboard.primaryClip
         try {
             TestContentProvider.setTestData(this.getTestBytes(contentPath), mime)
-            val clipData = ClipData("image", arrayOf(mime), ClipData.Item("content://org.mozilla.geckoview.test.provider/gif".toUri()))
+            val clipData =
+                ClipData(
+                    "image",
+                    arrayOf(mime),
+                    ClipData.Item("content://org.mozilla.geckoview.test.provider/gif".toUri()),
+                )
             clipboard.setPrimaryClip(clipData)
 
             sessionRule.addExternalDelegateUntilTestEnd(
@@ -744,7 +798,6 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     }
 
     /** Behavior objects for different content types */
-
     open inner class SelectedDiv(
         val id: String,
         override val initialContent: String,
@@ -753,36 +806,41 @@ class SelectionActionDelegateTest : BaseSessionTest() {
             mainSession.evaluateJS(
                 """document.getSelection().setBaseAndExtent(
                 document.querySelector('$id').firstChild, 0,
-                document.querySelector('$id').firstChild, $to)""",
+                document.querySelector('$id').firstChild, $to)"""
             )
         }
 
         override fun select() = selectTo(initialContent.length)
 
-        override val content: String get() {
-            return mainSession.evaluateJS("document.querySelector('$id').textContent") as String
-        }
-
-        override val htmlContent: String get() {
-            return mainSession.evaluateJS("document.querySelector('$id').innerHTML") as String
-        }
-
-        override val selectionOffsets: Pair<Int, Int> get() {
-            if (mainSession.evaluateJS(
-                    """
-                document.getSelection().anchorNode !== document.querySelector('$id').firstChild ||
-                document.getSelection().focusNode !== document.querySelector('$id').firstChild""",
-                ) as Boolean
-            ) {
-                return Pair(-1, -1)
+        override val content: String
+            get() {
+                return mainSession.evaluateJS("document.querySelector('$id').textContent") as String
             }
-            val offsets = mainSession.evaluateJS(
-                """[
+
+        override val htmlContent: String
+            get() {
+                return mainSession.evaluateJS("document.querySelector('$id').innerHTML") as String
+            }
+
+        override val selectionOffsets: Pair<Int, Int>
+            get() {
+                if (
+                    mainSession.evaluateJS(
+                        """
+                document.getSelection().anchorNode !== document.querySelector('$id').firstChild ||
+                document.getSelection().focusNode !== document.querySelector('$id').firstChild"""
+                    ) as Boolean
+                ) {
+                    return Pair(-1, -1)
+                }
+                val offsets =
+                    mainSession.evaluateJS(
+                        """[
                 document.getSelection().anchorOffset,
-                document.getSelection().focusOffset]""",
-            ) as JSONArray
-            return Pair(offsets[0] as Int, offsets[1] as Int)
-        }
+                document.getSelection().focusOffset]"""
+                    ) as JSONArray
+                return Pair(offsets[0] as Int, offsets[1] as Int)
+            }
     }
 
     inner class CollapsedDiv(id: String) : SelectedDiv(id, "") {
@@ -801,22 +859,27 @@ class SelectionActionDelegateTest : BaseSessionTest() {
             mainSession.evaluateJS("document.querySelector('$id').select()")
         }
 
-        override val content: String get() {
-            return mainSession.evaluateJS("document.querySelector('$id').value") as String
-        }
+        override val content: String
+            get() {
+                return mainSession.evaluateJS("document.querySelector('$id').value") as String
+            }
 
-        override val htmlContent: String get() {
-            return content
-        }
+        override val htmlContent: String
+            get() {
+                return content
+            }
 
-        override val selectionOffsets: Pair<Int, Int> get() {
-            val offsets = mainSession.evaluateJS(
-                """[ document.querySelector('$id').selectionStart,
+        override val selectionOffsets: Pair<Int, Int>
+            get() {
+                val offsets =
+                    mainSession.evaluateJS(
+                        """[ document.querySelector('$id').selectionStart,
                         |document.querySelector('$id').selectionEnd ]
-                """.trimMargin(),
-            ) as JSONArray
-            return Pair(offsets[0] as Int, offsets[1] as Int)
-        }
+                """
+                            .trimMargin()
+                    ) as JSONArray
+                return Pair(offsets[0] as Int, offsets[1] as Int)
+            }
     }
 
     inner class CollapsedEditableElement(id: String) : SelectedEditableElement(id, "") {
@@ -839,33 +902,38 @@ class SelectionActionDelegateTest : BaseSessionTest() {
                     var doc = document.querySelector('$id').contentDocument;
                     var text = doc.body.firstChild;
                     doc.getSelection().setBaseAndExtent(text, 0, text, $to);
-                })()""",
+                })()"""
             )
         }
 
         override fun select() = selectTo(initialContent.length)
 
-        override val content: String get() {
-            return mainSession.evaluateJS("document.querySelector('$id').contentDocument.body.textContent") as String
-        }
+        override val content: String
+            get() {
+                return mainSession.evaluateJS("document.querySelector('$id').contentDocument.body.textContent")
+                    as String
+            }
 
-        override val htmlContent: String get() {
-            return content
-        }
+        override val htmlContent: String
+            get() {
+                return content
+            }
 
-        override val selectionOffsets: Pair<Int, Int> get() {
-            val offsets = mainSession.evaluateJS(
-                """(function() {
+        override val selectionOffsets: Pair<Int, Int>
+            get() {
+                val offsets =
+                    mainSession.evaluateJS(
+                        """(function() {
                     var sel = document.querySelector('$id').contentDocument.getSelection();
                     var text = document.querySelector('$id').contentDocument.body.firstChild;
                     if (sel.anchorNode !== text || sel.focusNode !== text) {
                         return [-1, -1];
                     }
                     return [sel.anchorOffset, sel.focusOffset];
-                })()""",
-            ) as JSONArray
-            return Pair(offsets[0] as Int, offsets[1] as Int)
-        }
+                })()"""
+                    ) as JSONArray
+                return Pair(offsets[0] as Int, offsets[1] as Int)
+            }
     }
 
     inner class CollapsedFrame(id: String) : SelectedFrame(id, "") {
@@ -881,43 +949,50 @@ class SelectionActionDelegateTest : BaseSessionTest() {
         }
 
         protected fun selectTo(to: Int) {
-            mainSession.evaluateJS("document.querySelector('$id').contentWindow.postMessage({ type: 'select', length: $to }, '*')")
+            mainSession.evaluateJS(
+                "document.querySelector('$id').contentWindow.postMessage({ type: 'select', length: $to }, '*')"
+            )
         }
 
         override fun select() = selectTo(initialContent.length)
 
-        override val content: String get() {
-            val promise = mainSession.evaluatePromiseJS(
-                """
+        override val content: String
+            get() {
+                val promise =
+                    mainSession.evaluatePromiseJS(
+                        """
               new Promise(resolve => {
                   window.addEventListener('message', e => {
                       resolve(e.data);
                   }, { once: true });
                   document.querySelector('$id').contentDocument.postMessage({ type: 'content' }, '*');
               });
-            """,
-            )
-            return promise.value as String
-        }
+            """
+                    )
+                return promise.value as String
+            }
 
-        override val htmlContent: String get() {
-            return content
-        }
+        override val htmlContent: String
+            get() {
+                return content
+            }
 
-        override val selectionOffsets: Pair<Int, Int> get() {
-            val promise = mainSession.evaluatePromiseJS(
-                """
+        override val selectionOffsets: Pair<Int, Int>
+            get() {
+                val promise =
+                    mainSession.evaluatePromiseJS(
+                        """
               new Promise(resolve => {
                   window.addEventListener('message', e => {
                       resolve(e.data);
                   }, { once: true });
                   document.querySelector('$id').contentDocument.postMessage({ type: 'selectedOffset' }, '*');
               });
-            """,
-            )
-            val offsets = promise.value as JSONArray
-            return Pair(offsets[0] as Int, offsets[1] as Int)
-        }
+            """
+                    )
+                val offsets = promise.value as JSONArray
+                return Pair(offsets[0] as Int, offsets[1] as Int)
+            }
     }
 
     inner class CollapsedFrameXOrigin(id: String) : SelectedFrameXOrigin(id, "") {
@@ -925,7 +1000,6 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     }
 
     /** Lambda for responding with certain actions. */
-
     private fun withResponse(vararg actions: String): (Selection) -> Unit {
         var responded = false
         return { response ->
@@ -937,36 +1011,40 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     }
 
     /** Lambdas for asserting the results of actions. */
-
     private fun hasShowActionRequest(
         expectedFlags: Int,
         expectedActions: Array<out String>,
     ) = { it: SelectedContent ->
-        mainSession.forCallbacksDuringWait(object : SelectionActionDelegate {
-            @AssertCalled(count = 1)
-            override fun onShowActionRequest(session: GeckoSession, selection: GeckoSession.SelectionActionDelegate.Selection) {
-                assertThat(
-                    "Selection text should be valid",
-                    selection.text,
-                    equalTo(it.initialContent),
-                )
-                assertThat(
-                    "Selection flags should be valid",
-                    selection.flags,
-                    equalTo(expectedFlags),
-                )
-                assertThat(
-                    "Selection rect should be valid",
-                    selection.screenRect!!.isEmpty,
-                    equalTo(false),
-                )
-                assertThat(
-                    "Actions must be valid",
-                    selection.availableActions.toTypedArray(),
-                    arrayContainingInAnyOrder(*expectedActions),
-                )
+        mainSession.forCallbacksDuringWait(
+            object : SelectionActionDelegate {
+                @AssertCalled(count = 1)
+                override fun onShowActionRequest(
+                    session: GeckoSession,
+                    selection: GeckoSession.SelectionActionDelegate.Selection,
+                ) {
+                    assertThat(
+                        "Selection text should be valid",
+                        selection.text,
+                        equalTo(it.initialContent),
+                    )
+                    assertThat(
+                        "Selection flags should be valid",
+                        selection.flags,
+                        equalTo(expectedFlags),
+                    )
+                    assertThat(
+                        "Selection rect should be valid",
+                        selection.screenRect!!.isEmpty,
+                        equalTo(false),
+                    )
+                    assertThat(
+                        "Actions must be valid",
+                        selection.availableActions.toTypedArray(),
+                        arrayContainingInAnyOrder(*expectedActions),
+                    )
+                }
             }
-        })
+        )
     }
 
     private fun copiesText() = { it: SelectedContent ->
@@ -977,32 +1055,36 @@ class SelectionActionDelegateTest : BaseSessionTest() {
                     clipboard.primaryClip?.getItemAt(0)?.text,
                     hasToString(it.initialContent),
                 )
-            },
+            }
         )
     }
 
     private fun changesSelectionTo(text: String) = changesSelectionTo(equalTo(text))
 
     private fun changesSelectionTo(matcher: Matcher<String>) = { _: SelectedContent ->
-        sessionRule.waitUntilCalled(object : SelectionActionDelegate {
-            @AssertCalled(count = 1)
-            override fun onShowActionRequest(session: GeckoSession, selection: Selection) {
-                assertThat("New selection text should match", selection.text, matcher)
+        sessionRule.waitUntilCalled(
+            object : SelectionActionDelegate {
+                @AssertCalled(count = 1)
+                override fun onShowActionRequest(session: GeckoSession, selection: Selection) {
+                    assertThat("New selection text should match", selection.text, matcher)
+                }
             }
-        })
+        )
     }
 
     private fun clearsSelection() = { _: SelectedContent ->
-        sessionRule.waitUntilCalled(object : SelectionActionDelegate {
-            @AssertCalled(count = 1)
-            override fun onHideAction(session: GeckoSession, reason: Int) {
-                assertThat(
-                    "Hide reason should be correct",
-                    reason,
-                    equalTo(HIDE_REASON_NO_SELECTION),
-                )
+        sessionRule.waitUntilCalled(
+            object : SelectionActionDelegate {
+                @AssertCalled(count = 1)
+                override fun onHideAction(session: GeckoSession, reason: Int) {
+                    assertThat(
+                        "Hide reason should be correct",
+                        reason,
+                        equalTo(HIDE_REASON_NO_SELECTION),
+                    )
+                }
             }
-        })
+        )
     }
 
     private fun hasSelectionAt(offset: Int) = hasSelectionAt(offset, offset)

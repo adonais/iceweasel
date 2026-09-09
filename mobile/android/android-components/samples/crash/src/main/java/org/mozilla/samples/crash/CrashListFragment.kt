@@ -8,9 +8,7 @@ import android.widget.Toast
 import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.lib.crash.ui.AbstractCrashListFragment
 
-/**
- * Activity showing list of past crashes.
- */
+/** Activity showing list of past crashes. */
 class CrashListFragment : AbstractCrashListFragment() {
     override val reporter: CrashReporter
         get() = (requireActivity().application as CrashApplication).crashReporter

@@ -56,7 +56,8 @@ class BrowserToolbarToFenixSearchMapperMiddleware(
 
     private fun syncSearchStatus(store: Store<SearchFragmentState, SearchFragmentAction>) {
         syncSearchStartedJob = scope.launch {
-            toolbarStore.flow()
+            toolbarStore
+                .flow()
                 .distinctUntilChangedBy { it.mode }
                 .collect {
                     if (it.mode == Mode.EDIT) {
@@ -66,9 +67,10 @@ class BrowserToolbarToFenixSearchMapperMiddleware(
                                 selectedSearchEngine = null,
                                 isUserSelected = true,
                                 inPrivateMode = browsingModeManager.mode.isPrivate,
-                                searchStartedForCurrentUrl = editState.isQueryPrefilled &&
-                                    browserStore?.state?.selectedTab?.content?.url == editState.query.current,
-                            ),
+                                searchStartedForCurrentUrl =
+                                    editState.isQueryPrefilled &&
+                                        browserStore?.state?.selectedTab?.content?.url == editState.query.current,
+                            )
                         )
 
                         syncUserQuery(store)
@@ -82,7 +84,8 @@ class BrowserToolbarToFenixSearchMapperMiddleware(
     private fun syncUserQuery(store: Store<SearchFragmentState, SearchFragmentAction>) {
         syncSearchQueryJob?.cancel()
         syncSearchQueryJob = scope.launch {
-            toolbarStore.flow()
+            toolbarStore
+                .flow()
                 .map { it.editState.query }
                 .distinctUntilChanged()
                 .collect { query ->
@@ -93,8 +96,8 @@ class BrowserToolbarToFenixSearchMapperMiddleware(
                             when (isSearchStartedForCurrentUrl && isQueryPrefilled) {
                                 true -> "" // consider a prefilled query for the current URL as not entered by user
                                 false -> query.current
-                            },
-                        ),
+                            }
+                        )
                     )
                 }
         }

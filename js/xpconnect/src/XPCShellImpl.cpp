@@ -62,7 +62,6 @@
 #  include "mozilla/mscom/ProcessRuntime.h"
 #  include "mozilla/ScopeExit.h"
 #  include "mozilla/WinDllServices.h"
-#  include "mozilla/WindowsBCryptInitialization.h"
 
 #  include <windows.h>
 #  if defined(MOZ_SANDBOX)
@@ -1307,10 +1306,6 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
     }
 #  endif  // defined(MOZ_SANDBOX)
 
-    {
-      DebugOnly<bool> result = WindowsBCryptInitialization();
-      MOZ_ASSERT(result);
-    }
 #endif  // defined(XP_WIN)
 
 #ifdef MOZ_CODE_COVERAGE

@@ -154,7 +154,6 @@ class nsWindow final : public nsIWidget {
                                 const InitData&) override;
   void Destroy() override;
   void DidClearParent(nsIWidget*) override;
-  float GetDPI() override;
   double GetDefaultScaleInternal() override;
   void Show(bool aState) override;
   bool IsVisible() const override;

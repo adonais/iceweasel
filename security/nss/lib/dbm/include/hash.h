@@ -64,7 +64,7 @@ struct _bufhead {
 #define BUF_PIN 0x0008
 };
 
-#define IS_BUCKET(X) ((X)&BUF_BUCKET)
+#define IS_BUCKET(X) ((X) & BUF_BUCKET)
 
 typedef BUFHEAD **SEGMENT;
 
@@ -186,7 +186,7 @@ typedef struct htab { /* Memory resident data structure */
 #define SPLITSHIFT 11
 #define SPLITMASK 0x7FF
 #define SPLITNUM(N) (((uint32)(N)) >> SPLITSHIFT)
-#define OPAGENUM(N) ((N)&SPLITMASK)
+#define OPAGENUM(N) ((N) & SPLITMASK)
 #define OADDR_OF(S, O) ((uint32)((uint32)(S) << SPLITSHIFT) + (O))
 
 #define BUCKET_TO_PAGE(B) \

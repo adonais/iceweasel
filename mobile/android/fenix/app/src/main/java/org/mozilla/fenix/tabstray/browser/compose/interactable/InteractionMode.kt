@@ -7,14 +7,12 @@ package org.mozilla.fenix.tabstray.browser.compose.interactable
 import androidx.compose.ui.geometry.Rect
 
 /**
- * Defines the mode that an interactable grid or list is in, and holds source and target items.
- * The user may be reordering, dragging and dropping items, and so on.
+ * Defines the mode that an interactable grid or list is in, and holds source and target items. The user may be
+ * reordering, dragging and dropping items, and so on.
  */
 sealed interface InteractionMode {
 
-    /**
-     * Defines the interaction modes for a Grid that uses Offsets to handle a 2 dimensional coordinate system.
-     */
+    /** Defines the interaction modes for a Grid that uses Offsets to handle a 2 dimensional coordinate system. */
     sealed interface Grid {
 
         // The source [InteractionState] for the mode
@@ -25,6 +23,7 @@ sealed interface InteractionMode {
 
         /**
          * Represents no interaction mode is currently happening
+         *
          * @property source [InteractionState], which is always [InteractionState.None]
          * @property target [InteractionState], which is always [InteractionState.None]
          */
@@ -35,6 +34,7 @@ sealed interface InteractionMode {
 
         /**
          * Represents a source item placed next to a target item, either before or after.
+         *
          * @property source [InteractionState], which is always [InteractionState.Active]
          * @property target [InteractionState], which is always [InteractionState.Active]
          * @property placeAfter: Boolean representing whether to place the source item before or after the target
@@ -49,6 +49,7 @@ sealed interface InteractionMode {
 
         /**
          * Represents a source item dragged and dropped onto a target item.
+         *
          * @property source [InteractionState], which is always [InteractionState.Active]
          * @property target [InteractionState], which is always [InteractionState.Active]
          */
@@ -59,6 +60,7 @@ sealed interface InteractionMode {
 
         /**
          * Represents a user attempting to scroll up or down the list or grid.
+         *
          * @property scroll: [Float] representing the scroll amount, which may be negative.
          * @property source [InteractionState], which is always [InteractionState.None]
          * @property target [InteractionState], which is always [InteractionState.None]
@@ -70,9 +72,7 @@ sealed interface InteractionMode {
         ) : Grid
     }
 
-    /**
-     * Defines the interaction modes for a List that uses Floats to handle a 1 dimensional coordinate system.
-     */
+    /** Defines the interaction modes for a List that uses Floats to handle a 1 dimensional coordinate system. */
     sealed interface List {
 
         // The source [InteractionState] for the mode
@@ -83,6 +83,7 @@ sealed interface InteractionMode {
 
         /**
          * Represents no interaction mode is currently happening
+         *
          * @property source [InteractionState], which is always [InteractionState.None]
          * @property target [InteractionState], which is always [InteractionState.None]
          */
@@ -93,6 +94,7 @@ sealed interface InteractionMode {
 
         /**
          * Represents a source item placed next to a target item, either before or after.
+         *
          * @property source [InteractionState], which is always [InteractionState.Active]
          * @property target [InteractionState], which is always [InteractionState.Active]
          * @property placeAfter: Boolean representing whether to place the source item before or after the target
@@ -107,6 +109,7 @@ sealed interface InteractionMode {
 
         /**
          * Represents a source item dragged and dropped onto a target item.
+         *
          * @property source [InteractionState], which is always [InteractionState.Active]
          * @property target [InteractionState], which is always [InteractionState.Active]
          */
@@ -117,6 +120,7 @@ sealed interface InteractionMode {
 
         /**
          * Represents a user attempting to scroll up or down the list or grid.
+         *
          * @property scroll: [Float] representing the scroll amount, which may be negative.
          * @property source [InteractionState], which is always [InteractionState.None]
          * @property target [InteractionState], which is always [InteractionState.None]

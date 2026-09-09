@@ -663,7 +663,11 @@ export class _Weather extends React.PureComponent {
           data-l10n-id="newtab-menu-section-tooltip"
           className="weatherButtonContextMenu"
         />
-        <panel-list id="weather-context-menu" ref={this.setPanelRef}>
+        <panel-list
+          className="panel-list-no-icons"
+          id="weather-context-menu"
+          ref={this.setPanelRef}
+        >
           {isLocationSearchEnabled && (
             <panel-item
               id="weather-menu-change-location"

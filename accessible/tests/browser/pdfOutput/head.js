@@ -40,36 +40,57 @@ delete window.gDisableAccServiceInit;
  * match up the ids and separately test the struct tree and content items, this
  * function finds marked content items and inserts their strings directly into a
  * .content array on the struct tree node.
+ *
+ * Structure ids are generated from a counter covering every Accessible in the
+ * document, so they depend on things the tests don't describe; e.g. they differ
+ * between the topLevel and iframe variants of the same test. They are therefore
+ * renumbered in tree order. A cell can reference a header which comes later in
+ * the tree, so the headers references are remapped after the walk, once all ids
+ * are known.
  */
-function simplifyStructTreeNode(node, contentItems) {
-  if (node.type == "content") {
-    // Find the associated content items and append their strings to
-    // node.content.
-    node.content = [];
-    let inMarked = false;
-    for (const item of contentItems) {
-      if (item.type == "beginMarkedContentProps" && item.id == node.id) {
-        inMarked = true;
-        continue;
+function simplifyStructTree(root, contentItems) {
+  const structIds = new Map();
+  const nodesWithHeaders = [];
+  const walk = node => {
+    if (node.type == "content") {
+      // Find the associated content items and append their strings to
+      // node.content.
+      node.content = [];
+      let inMarked = false;
+      for (const item of contentItems) {
+        if (item.type == "beginMarkedContentProps" && item.id == node.id) {
+          inMarked = true;
+          continue;
+        }
+        if (!inMarked) {
+          continue;
+        }
+        if (item.str) {
+          node.content.push(item.str);
+          continue;
+        }
+        if (item.type == "endMarkedContent") {
+          break;
+        }
       }
-      if (!inMarked) {
-        continue;
-      }
-      if (item.str) {
-        node.content.push(item.str);
-        continue;
-      }
-      if (item.type == "endMarkedContent") {
-        break;
-      }
+      delete node.type;
+      delete node.id;
     }
-    delete node.type;
-    delete node.id;
-  }
-  if (node.children) {
-    for (const child of node.children) {
-      simplifyStructTreeNode(child, contentItems);
+    if (node.structId) {
+      const newId = `id${structIds.size + 1}`;
+      structIds.set(node.structId, newId);
+      node.structId = newId;
     }
+    if (node.headers) {
+      nodesWithHeaders.push(node);
+    }
+    for (const child of node.children || []) {
+      walk(child);
+    }
+  };
+  walk(root);
+  for (const node of nodesWithHeaders) {
+    node.headers = node.headers.map(id => structIds.get(id) || id);
   }
 }
 
@@ -231,7 +252,7 @@ async function assertPdfStructTree(pdf, pageTrees) {
     const contentItems = (
       await page.getTextContent({ includeMarkedContent: true })
     ).items;
-    simplifyStructTreeNode(actualTree, contentItems);
+    simplifyStructTree(actualTree, contentItems);
     SimpleTest.isDeeply(
       actualTree,
       pageTrees[p],

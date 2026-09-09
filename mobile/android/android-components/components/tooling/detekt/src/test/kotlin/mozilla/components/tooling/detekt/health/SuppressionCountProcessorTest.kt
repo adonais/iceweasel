@@ -12,7 +12,8 @@ import org.junit.Test
 class SuppressionCountProcessorTest {
     @Test
     fun `single @SuppressWarnings in a function is processed`() {
-        val code = """
+        val code =
+            """
             class Test {
                 @SuppressWarnings("VariableNaming")
                 fun suppressedFunction() = Unit
@@ -20,22 +21,22 @@ class SuppressionCountProcessorTest {
         """
 
         val ktFile = compileContentForTest(code)
-        SuppressionCountProcessor().onProcess(
-            file = ktFile,
-            bindingContext = BindingContext.EMPTY,
-        )
+        SuppressionCountProcessor()
+            .onProcess(
+                file = ktFile,
+                bindingContext = BindingContext.EMPTY,
+            )
 
         assertEquals(
-            mapOf(
-                "VariableNaming" to 1,
-            ),
+            mapOf("VariableNaming" to 1),
             ktFile.getUserData(SuppressionCountProcessor.Companion.suppressionKey),
         )
     }
 
     @Test
     fun `single suppression in a function is processed`() {
-        val code = """
+        val code =
+            """
             class Test {
                 @Suppress("unused")
                 fun suppressedFunction() = Unit
@@ -43,22 +44,22 @@ class SuppressionCountProcessorTest {
         """
 
         val ktFile = compileContentForTest(code)
-        SuppressionCountProcessor().onProcess(
-            file = ktFile,
-            bindingContext = BindingContext.EMPTY,
-        )
+        SuppressionCountProcessor()
+            .onProcess(
+                file = ktFile,
+                bindingContext = BindingContext.EMPTY,
+            )
 
         assertEquals(
-            mapOf(
-                "unused" to 1,
-            ),
+            mapOf("unused" to 1),
             ktFile.getUserData(SuppressionCountProcessor.Companion.suppressionKey),
         )
     }
 
     @Test
     fun `multiple suppressions on a function in the same function annotation are correct`() {
-        val code = """
+        val code =
+            """
             class Test {
                 @Suppress("unused, TooManyFunctions")
                 fun suppressedFunction() = Unit
@@ -66,10 +67,11 @@ class SuppressionCountProcessorTest {
         """
 
         val ktFile = compileContentForTest(code)
-        SuppressionCountProcessor().onProcess(
-            file = ktFile,
-            bindingContext = BindingContext.EMPTY,
-        )
+        SuppressionCountProcessor()
+            .onProcess(
+                file = ktFile,
+                bindingContext = BindingContext.EMPTY,
+            )
 
         assertEquals(
             mapOf(
@@ -82,7 +84,8 @@ class SuppressionCountProcessorTest {
 
     @Test
     fun `multiple suppressions on a function with argument name specified is correct`() {
-        val code = """
+        val code =
+            """
             class Test {
                 @Suppress(names = ["unused, TooManyFunctions"])
                 fun suppressedFunction() = Unit
@@ -90,10 +93,11 @@ class SuppressionCountProcessorTest {
         """
 
         val ktFile = compileContentForTest(code)
-        SuppressionCountProcessor().onProcess(
-            file = ktFile,
-            bindingContext = BindingContext.EMPTY,
-        )
+        SuppressionCountProcessor()
+            .onProcess(
+                file = ktFile,
+                bindingContext = BindingContext.EMPTY,
+            )
 
         assertEquals(
             mapOf(
@@ -106,7 +110,8 @@ class SuppressionCountProcessorTest {
 
     @Test
     fun `single function suppression with argument name specified is correct`() {
-        val code = """
+        val code =
+            """
             class Test {
                 @Suppress(names = ["ComplexMethod"])
                 fun suppressedFunction() = Unit
@@ -114,22 +119,22 @@ class SuppressionCountProcessorTest {
         """
 
         val ktFile = compileContentForTest(code)
-        SuppressionCountProcessor().onProcess(
-            file = ktFile,
-            bindingContext = BindingContext.EMPTY,
-        )
+        SuppressionCountProcessor()
+            .onProcess(
+                file = ktFile,
+                bindingContext = BindingContext.EMPTY,
+            )
 
         assertEquals(
-            mapOf(
-                "ComplexMethod" to 1,
-            ),
+            mapOf("ComplexMethod" to 1),
             ktFile.getUserData(SuppressionCountProcessor.Companion.suppressionKey),
         )
     }
 
     @Test
     fun `single function suppression with argument name and arrayOf is correct`() {
-        val code = """
+        val code =
+            """
             class Test {
                 @Suppress(names = arrayOf("ComplexMethod"))
                 fun suppressedFunction() = Unit
@@ -137,35 +142,37 @@ class SuppressionCountProcessorTest {
         """
 
         val ktFile = compileContentForTest(code)
-        SuppressionCountProcessor().onProcess(
-            file = ktFile,
-            bindingContext = BindingContext.EMPTY,
-        )
+        SuppressionCountProcessor()
+            .onProcess(
+                file = ktFile,
+                bindingContext = BindingContext.EMPTY,
+            )
 
         assertEquals(
-            mapOf(
-                "ComplexMethod" to 1,
-            ),
+            mapOf("ComplexMethod" to 1),
             ktFile.getUserData(SuppressionCountProcessor.Companion.suppressionKey),
         )
     }
 
     @Test
     fun `multiple annotations on various functions are processed correctly`() {
-        val code = """
+        val code =
+            """
             class Test {
                 @Suppress(names = ["ComplexMethod"])
                 fun suppressedFunction1() = Unit
                 @Suppress("ComplexMethod, unused")
                 fun suppressedFunction2() = Unit
             }
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val ktFile = compileContentForTest(code)
-        SuppressionCountProcessor().onProcess(
-            file = ktFile,
-            bindingContext = BindingContext.EMPTY,
-        )
+        SuppressionCountProcessor()
+            .onProcess(
+                file = ktFile,
+                bindingContext = BindingContext.EMPTY,
+            )
 
         assertEquals(
             mapOf(

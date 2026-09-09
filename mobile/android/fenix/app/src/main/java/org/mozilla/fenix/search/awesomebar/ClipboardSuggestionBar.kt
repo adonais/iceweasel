@@ -26,15 +26,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
- * A suggestion bar that appears when a link is copied to the clipboard.
- * It allows the user to fill the link into the current input field.
+ * A suggestion bar that appears when a link is copied to the clipboard. It allows the user to fill the link into the
+ * current input field.
  *
  * @param shouldUseBottomToolbar Indicates whether the toolbar is at the bottom of the screen.
  * @param backgroundColor Background color for the suggestion bar.
@@ -52,10 +52,7 @@ fun ClipboardSuggestionBar(
     ) {
         Box {
             Row(
-                modifier = Modifier
-                    .clickable(onClick = onClick)
-                    .padding(8.dp)
-                    .height(32.dp),
+                modifier = Modifier.clickable(onClick = onClick).padding(8.dp).height(32.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
@@ -74,10 +71,11 @@ fun ClipboardSuggestionBar(
             }
 
             HorizontalDivider(
-                modifier = when (shouldUseBottomToolbar) {
-                    true -> Modifier.align(Alignment.TopCenter)
-                    false -> Modifier.align(Alignment.BottomCenter)
-                },
+                modifier =
+                    when (shouldUseBottomToolbar) {
+                        true -> Modifier.align(Alignment.TopCenter)
+                        false -> Modifier.align(Alignment.BottomCenter)
+                    }
             )
         }
     }
@@ -85,9 +83,7 @@ fun ClipboardSuggestionBar(
 
 @Preview
 @Composable
-private fun ClipboardBarPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun ClipboardBarPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         ClipboardSuggestionBar(
             shouldUseBottomToolbar = false,

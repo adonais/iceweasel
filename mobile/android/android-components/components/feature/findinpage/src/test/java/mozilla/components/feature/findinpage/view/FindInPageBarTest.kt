@@ -32,8 +32,7 @@ class FindInPageBarTest {
         val view = FindInPageBar(testContext)
         view.listener = listener
 
-        view.findViewById<AppCompatImageButton>(R.id.find_in_page_close_btn)
-            .performClick()
+        view.findViewById<AppCompatImageButton>(R.id.find_in_page_close_btn).performClick()
 
         verify(listener).onClose()
     }
@@ -46,8 +45,7 @@ class FindInPageBarTest {
         view.listener = listener
 
         view.findViewById<EditText>(R.id.find_in_page_query_text).setText("Non empty query")
-        view.findViewById<AppCompatImageButton>(R.id.find_in_page_next_btn)
-            .performClick()
+        view.findViewById<AppCompatImageButton>(R.id.find_in_page_next_btn).performClick()
 
         verify(listener).onNextResult()
     }
@@ -60,8 +58,7 @@ class FindInPageBarTest {
         view.listener = listener
 
         view.findViewById<EditText>(R.id.find_in_page_query_text).setText("Non empty query")
-        view.findViewById<AppCompatImageButton>(R.id.find_in_page_prev_btn)
-            .performClick()
+        view.findViewById<AppCompatImageButton>(R.id.find_in_page_prev_btn).performClick()
 
         verify(listener).onPreviousResult()
     }
@@ -73,8 +70,7 @@ class FindInPageBarTest {
         val view = FindInPageBar(testContext)
         view.listener = listener
 
-        view.findViewById<EditText>(R.id.find_in_page_query_text)
-            .setText("Hello World")
+        view.findViewById<EditText>(R.id.find_in_page_query_text).setText("Hello World")
 
         verify(listener).onFindAll("Hello World")
     }
@@ -86,8 +82,7 @@ class FindInPageBarTest {
         val view = FindInPageBar(testContext)
         view.listener = listener
 
-        view.findViewById<EditText>(R.id.find_in_page_query_text)
-            .setText("")
+        view.findViewById<EditText>(R.id.find_in_page_query_text).setText("")
 
         verify(listener).onClearMatches()
     }
@@ -128,8 +123,7 @@ class FindInPageBarTest {
         // By default "private mode" is off.
         assertEquals(
             0,
-            edit.imeOptions and
-                EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING,
+            edit.imeOptions and EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING,
         )
         assertEquals(false, findInPageBar.private)
 
@@ -137,8 +131,7 @@ class FindInPageBarTest {
         findInPageBar.private = true
         assertNotEquals(
             0,
-            edit.imeOptions and
-                EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING,
+            edit.imeOptions and EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING,
         )
         assertTrue(findInPageBar.private)
 
@@ -146,8 +139,7 @@ class FindInPageBarTest {
         findInPageBar.private = false
         assertEquals(
             0,
-            edit.imeOptions and
-                EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING,
+            edit.imeOptions and EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING,
         )
         assertEquals(false, findInPageBar.private)
     }

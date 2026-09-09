@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package mozilla.components.browser.engine.gecko.autofill
 
+import kotlin.test.assertIs
 import mozilla.components.concept.engine.autofill.AddressStructure
 import mozilla.components.concept.engine.autofill.UnexpectedNullError
 import org.junit.Assert.assertEquals
@@ -12,7 +13,6 @@ import org.mozilla.geckoview.Autocomplete
 import org.mozilla.geckoview.GeckoResult
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.shadows.ShadowLooper
-import kotlin.test.assertIs
 
 @RunWith(RobolectricTestRunner::class)
 class RuntimeAddressStructureAccessorTest {
@@ -37,7 +37,7 @@ class RuntimeAddressStructureAccessorTest {
                         "key-1",
                         listOf(Autocomplete.AddressStructure.Field.SelectField.Option("key-1", "value-1")),
                     ),
-                ),
+                )
             )
         }
 
@@ -48,26 +48,57 @@ class RuntimeAddressStructureAccessorTest {
             { throwable -> },
         )
 
-        val expectedStructure = AddressStructure(
-            listOf(
-                AddressStructure.Field.TextField(AddressStructure.Field.ID.Name, AddressStructure.Field.LocalizationKey.Name),
-                AddressStructure.Field.TextField(AddressStructure.Field.ID.Organization, AddressStructure.Field.LocalizationKey.Organization),
-                AddressStructure.Field.TextField(AddressStructure.Field.ID.StreetAddress, AddressStructure.Field.LocalizationKey.StreetAddress),
-                AddressStructure.Field.TextField(AddressStructure.Field.ID.AddressLevel1, AddressStructure.Field.LocalizationKey.State),
-                AddressStructure.Field.TextField(AddressStructure.Field.ID.AddressLevel2, AddressStructure.Field.LocalizationKey.City),
-                AddressStructure.Field.TextField(AddressStructure.Field.ID.AddressLevel3, AddressStructure.Field.LocalizationKey.Prefecture),
-                AddressStructure.Field.TextField(AddressStructure.Field.ID.PostalCode, AddressStructure.Field.LocalizationKey.PostalCode),
-                AddressStructure.Field.TextField(AddressStructure.Field.ID.Tel, AddressStructure.Field.LocalizationKey.Tel),
-                AddressStructure.Field.TextField(AddressStructure.Field.ID.Email, AddressStructure.Field.LocalizationKey.Email),
-                AddressStructure.Field.TextField(AddressStructure.Field.ID.Unknown("unknown"), AddressStructure.Field.LocalizationKey.Unknown("unknown-localization")),
-                AddressStructure.Field.SelectField(
-                    AddressStructure.Field.ID.Country,
-                    AddressStructure.Field.LocalizationKey.Country,
-                    "key-1",
-                    listOf(AddressStructure.Field.SelectField.Option("key-1", "value-1")),
-                ),
-            ),
-        )
+        val expectedStructure =
+            AddressStructure(
+                listOf(
+                    AddressStructure.Field.TextField(
+                        AddressStructure.Field.ID.Name,
+                        AddressStructure.Field.LocalizationKey.Name,
+                    ),
+                    AddressStructure.Field.TextField(
+                        AddressStructure.Field.ID.Organization,
+                        AddressStructure.Field.LocalizationKey.Organization,
+                    ),
+                    AddressStructure.Field.TextField(
+                        AddressStructure.Field.ID.StreetAddress,
+                        AddressStructure.Field.LocalizationKey.StreetAddress,
+                    ),
+                    AddressStructure.Field.TextField(
+                        AddressStructure.Field.ID.AddressLevel1,
+                        AddressStructure.Field.LocalizationKey.State,
+                    ),
+                    AddressStructure.Field.TextField(
+                        AddressStructure.Field.ID.AddressLevel2,
+                        AddressStructure.Field.LocalizationKey.City,
+                    ),
+                    AddressStructure.Field.TextField(
+                        AddressStructure.Field.ID.AddressLevel3,
+                        AddressStructure.Field.LocalizationKey.Prefecture,
+                    ),
+                    AddressStructure.Field.TextField(
+                        AddressStructure.Field.ID.PostalCode,
+                        AddressStructure.Field.LocalizationKey.PostalCode,
+                    ),
+                    AddressStructure.Field.TextField(
+                        AddressStructure.Field.ID.Tel,
+                        AddressStructure.Field.LocalizationKey.Tel,
+                    ),
+                    AddressStructure.Field.TextField(
+                        AddressStructure.Field.ID.Email,
+                        AddressStructure.Field.LocalizationKey.Email,
+                    ),
+                    AddressStructure.Field.TextField(
+                        AddressStructure.Field.ID.Unknown("unknown"),
+                        AddressStructure.Field.LocalizationKey.Unknown("unknown-localization"),
+                    ),
+                    AddressStructure.Field.SelectField(
+                        AddressStructure.Field.ID.Country,
+                        AddressStructure.Field.LocalizationKey.Country,
+                        "key-1",
+                        listOf(AddressStructure.Field.SelectField.Option("key-1", "value-1")),
+                    ),
+                )
+            )
 
         ShadowLooper.idleMainLooper()
         assertEquals(expectedStructure, structure)

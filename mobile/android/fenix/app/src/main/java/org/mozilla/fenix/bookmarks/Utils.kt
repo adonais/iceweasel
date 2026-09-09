@@ -5,46 +5,48 @@
 package org.mozilla.fenix.bookmarks
 
 import android.content.Context
+import kotlin.collections.get
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarkNodeType
 import org.mozilla.fenix.R
-import kotlin.collections.get
 
-fun rootTitles(context: Context, withMobileRoot: Boolean): Map<String, String> = if (withMobileRoot) {
-    mapOf(
-        "root" to context.getString(R.string.library_bookmarks),
-        "mobile" to context.getString(R.string.library_bookmarks),
-        "menu" to context.getString(R.string.library_desktop_bookmarks_menu),
-        "toolbar" to context.getString(R.string.library_desktop_bookmarks_toolbar),
-        "unfiled" to context.getString(R.string.library_desktop_bookmarks_unfiled),
-    )
-} else {
-    mapOf(
-        "root" to context.getString(R.string.library_desktop_bookmarks_root),
-        "menu" to context.getString(R.string.library_desktop_bookmarks_menu),
-        "toolbar" to context.getString(R.string.library_desktop_bookmarks_toolbar),
-        "unfiled" to context.getString(R.string.library_desktop_bookmarks_unfiled),
-    )
-}
+fun rootTitles(context: Context, withMobileRoot: Boolean): Map<String, String> =
+    if (withMobileRoot) {
+        mapOf(
+            "root" to context.getString(R.string.library_bookmarks),
+            "mobile" to context.getString(R.string.library_bookmarks),
+            "menu" to context.getString(R.string.library_desktop_bookmarks_menu),
+            "toolbar" to context.getString(R.string.library_desktop_bookmarks_toolbar),
+            "unfiled" to context.getString(R.string.library_desktop_bookmarks_unfiled),
+        )
+    } else {
+        mapOf(
+            "root" to context.getString(R.string.library_desktop_bookmarks_root),
+            "menu" to context.getString(R.string.library_desktop_bookmarks_menu),
+            "toolbar" to context.getString(R.string.library_desktop_bookmarks_toolbar),
+            "unfiled" to context.getString(R.string.library_desktop_bookmarks_unfiled),
+        )
+    }
 
 /**
  * Provides a lookup table for providing names for root bookmark nodes
  *
  * @param context The [Context] used in resolving strings.
  */
-fun composeRootTitles(context: Context) = mapOf(
-    "root" to context.getString(R.string.library_desktop_bookmarks_root),
-    "mobile" to context.getString(R.string.library_bookmarks),
-    "menu" to context.getString(R.string.library_desktop_bookmarks_menu),
-    "toolbar" to context.getString(R.string.library_desktop_bookmarks_toolbar),
-    "unfiled" to context.getString(R.string.library_desktop_bookmarks_unfiled),
-)
+fun composeRootTitles(context: Context) =
+    mapOf(
+        "root" to context.getString(R.string.library_desktop_bookmarks_root),
+        "mobile" to context.getString(R.string.library_bookmarks),
+        "menu" to context.getString(R.string.library_desktop_bookmarks_menu),
+        "toolbar" to context.getString(R.string.library_desktop_bookmarks_toolbar),
+        "unfiled" to context.getString(R.string.library_desktop_bookmarks_unfiled),
+    )
 
 /**
- * Checks to see if a [BookmarkNode] is a [BookmarkRoot] and if so, returns the user-friendly
- * translated version of its title.
+ * Checks to see if a [BookmarkNode] is a [BookmarkRoot] and if so, returns the user-friendly translated version of its
+ * title.
  *
  * @param context The [Context] used in resolving strings.
  * @param node The [BookmarkNode] to resolve a title for.
@@ -56,11 +58,12 @@ fun friendlyRootTitle(
     node: BookmarkNode,
     withMobileRoot: Boolean = true,
     rootTitles: Map<String, String> = rootTitles(context, withMobileRoot),
-) = when {
-    !node.inRoots() -> node.title
-    rootTitles.containsKey(node.title) -> rootTitles[node.title]
-    else -> node.title
-}
+) =
+    when {
+        !node.inRoots() -> node.title
+        rootTitles.containsKey(node.title) -> rootTitles[node.title]
+        else -> node.title
+    }
 
 data class BookmarkNodeWithDepth(val depth: Int, val node: BookmarkNode, val parent: String?)
 
@@ -69,22 +72,17 @@ fun BookmarkNode.flatNodeList(excludeSubtreeRoot: String?, depth: Int = 0): List
         return emptyList()
     }
     val newList = listOf(BookmarkNodeWithDepth(depth, this, this.parentGuid))
-    return newList + children
-        ?.filter { it.type == BookmarkNodeType.FOLDER }
-        ?.flatMap { it.flatNodeList(excludeSubtreeRoot = excludeSubtreeRoot, depth = depth + 1) }
-        .orEmpty()
+    return newList +
+        children
+            ?.filter { it.type == BookmarkNodeType.FOLDER }
+            ?.flatMap { it.flatNodeList(excludeSubtreeRoot = excludeSubtreeRoot, depth = depth + 1) }
+            .orEmpty()
 }
 
-/**
- * Whether the [BookmarkNode] is any of the [BookmarkRoot]s.
- */
+/** Whether the [BookmarkNode] is any of the [BookmarkRoot]s. */
 fun BookmarkNode.inRoots() = enumValues<BookmarkRoot>().any { it.id == guid }
 
-/**
- * Converts a List of [BookmarkItem.Bookmark]s to an Array of [ShareData]. Used for sharing one or
- * more bookmarks
- */
-internal fun List<BookmarkItem.Bookmark>.asShareDataArray(): Array<ShareData> {
-    return map { ShareData(title = it.title, url = it.url) }
-        .toTypedArray()
+/** Converts a List of [BookmarkItem.Bookmark]s to an Array of [ShareData]. Used for sharing one or more bookmarks */
+internal fun List<BookmarkItem.Bookmark>.asShareDataArray(private: Boolean): Array<ShareData> {
+    return map { ShareData(title = it.title, url = it.url, private = private) }.toTypedArray()
 }

@@ -1,0 +1,43 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Test main-thread keyboard scrolling when the focused content is fixed to the viewport</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<!-- The mochitest test frame itself is scrolling="no", so the scrollable root
+     scroll container under test has to live in a nested frame. -->
+<iframe id="subframe" srcdoc="
+  <div id='fixed' tabindex='0' style='position:fixed; top:0; left:0'>focus</div>
+  <div style='height:3000px'></div>
+"></iframe>
+<pre id="test">
+<script>
+add_task(async function keyboard_scroll_from_fixed_pos() {
+  await SpecialPowers.pushPrefEnv({set: [["general.smoothScroll", false]]});
+
+  const subWindow = document.getElementById("subframe").contentWindow;
+  const subDocument = subWindow.document;
+  const fixed = subDocument.getElementById("fixed");
+
+  ok(subDocument.scrollingElement.scrollHeight >
+     subDocument.scrollingElement.clientHeight,
+     "the nested root scroll container has vertical scroll range");
+
+  fixed.focus();
+  is(subDocument.activeElement, fixed, "the fixed element is focused");
+
+  is(subWindow.scrollY, 0, "the nested frame has not scrolled yet");
+  const scrollEndPromise = new Promise(resolve =>
+    subWindow.addEventListener("scrollend", resolve, { once: true }));
+  SpecialPowers.doCommand(subWindow, "cmd_scrollLineDown");
+  await scrollEndPromise;
+  ok(subWindow.scrollY > 0,
+     "the root scroll container scrolled down with the fixed element focused");
+});
+</script>
+</pre>
+</body>
+</html>

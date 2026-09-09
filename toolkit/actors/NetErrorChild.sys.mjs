@@ -9,7 +9,29 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
 });
 
-import { RemotePageChild } from "resource://gre/actors/RemotePageChild.sys.mjs";
+import { RemotePageChild } from "moz-src:///toolkit/actors/RemotePageChild.sys.mjs";
+
+/**
+ * Record a click on the injected "did you mean" alternate-host suggestion
+ * (bug 2058380), matching the extras the other security.ui.neterror click
+ * events carry. Content-free: the suggested host is never recorded.
+ *
+ * @param {Document} doc The error page document holding the suggestion.
+ */
+function recordDnsSuggestionClick(doc) {
+  let errorCode = "";
+  try {
+    // Truncated to stay inside the telemetry string limit, as the other click
+    // events do. DNS failures carry an empty code.
+    errorCode = doc.getNetErrorInfo().errorCodeString.substring(0, 40);
+  } catch (e) {
+    // No net error info on this document.
+  }
+  Glean.securityUiNeterror.clickDnsSuggestionLink.record({
+    value: errorCode,
+    is_frame: doc.defaultView.parent != doc.defaultView,
+  });
+}
 
 export class NetErrorChild extends RemotePageChild {
   actorCreated() {
@@ -141,6 +163,13 @@ export class NetErrorChild extends RemotePageChild {
         let span = doc.createElement("span");
         span.id = "dns-suggestion";
         span.appendChild(link);
+        // The suggestion is injected after page setup, so neither renderer has
+        // a delegated click recorder to pick up a data-telemetry-id, and it
+        // needs its own listener (bug 2058380). It goes on the span, not the
+        // link: L10nOverlays replaces a data-l10n-name child with a shallow
+        // clone when the translation applies, which keeps the attributes but
+        // drops any listener. The span is the overlay root and survives.
+        span.addEventListener("click", () => recordDnsSuggestionClick(doc));
         doc.l10n.setAttributes(span, "neterror-dns-not-found-with-suggestion", {
           hostAndPath: displayHost + pathQueryRef,
         });
@@ -152,10 +181,13 @@ export class NetErrorChild extends RemotePageChild {
         } else {
           const intro =
             doc.querySelector("net-error-card")?.wrappedJSObject?.errorIntro;
-          if (intro) {
-            intro.after(span);
+          if (!intro) {
+            return;
           }
+          intro.after(span);
         }
+
+        Glean.securityUiNeterror.alternateHostSuggested.add(1);
       },
     };
 

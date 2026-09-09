@@ -16,7 +16,7 @@ async def setup_moz_bidi(bidi_session):
 
 
 @pytest_asyncio.fixture
-async def assert_pause_and_resume(bidi_session, wait_for_event):
+async def assert_pause_and_resume(bidi_session, wait_for_event, wait_for_future_safe):
     async def _assert_pause_and_resume(context, expression, line):
         on_paused = wait_for_event(PAUSED_EVENT)
 
@@ -28,14 +28,14 @@ async def assert_pause_and_resume(bidi_session, wait_for_event):
             )
         )
 
-        paused_event = await on_paused
+        paused_event = await wait_for_future_safe(on_paused)
         assert paused_event["context"] == context["context"]
         assert paused_event["line"] == line
 
         on_resumed = wait_for_event(RESUMED_EVENT)
         await bidi_session.moz.debugging.resume(context=context["context"])
 
-        resumed_event = await on_resumed
+        resumed_event = await wait_for_future_safe(on_resumed)
         assert resumed_event["context"] == context["context"]
 
         result = await eval_task

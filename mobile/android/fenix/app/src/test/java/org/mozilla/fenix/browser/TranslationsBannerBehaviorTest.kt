@@ -37,12 +37,13 @@ class TranslationsBannerBehaviorTest {
     @Before
     fun setup() {
         every { banner.layoutParams } returns layoutParams
-        every { banner.post(any()) } answers {
-            // Immediately run the given Runnable argument
-            val action: Runnable = firstArg()
-            action.run()
-            true
-        }
+        every { banner.post(any()) } answers
+            {
+                // Immediately run the given Runnable argument
+                val action: Runnable = firstArg()
+                action.run()
+                true
+            }
         parent.addView(dependency)
     }
 
@@ -54,14 +55,15 @@ class TranslationsBannerBehaviorTest {
         val animator: ValueAnimator = mockk(relaxed = true)
         behavior.snapAnimator = animator
 
-        val acceptsNestedScroll = behavior.onStartNestedScroll(
-            coordinatorLayout = mockk(),
-            child = mockk(),
-            directTargetChild = mockk(),
-            target = mockk(),
-            axes = ViewCompat.SCROLL_AXIS_VERTICAL,
-            type = ViewCompat.TYPE_TOUCH,
-        )
+        val acceptsNestedScroll =
+            behavior.onStartNestedScroll(
+                coordinatorLayout = mockk(),
+                child = mockk(),
+                directTargetChild = mockk(),
+                target = mockk(),
+                axes = ViewCompat.SCROLL_AXIS_VERTICAL,
+                type = ViewCompat.TYPE_TOUCH,
+            )
 
         assertTrue(acceptsNestedScroll)
 
@@ -72,14 +74,15 @@ class TranslationsBannerBehaviorTest {
     fun `WHEN the webpage is scrolled horizontally THEN don't react to scroll events`() {
         val behavior = TranslationsBannerBehavior<View>(testContext, false, false)
 
-        val acceptsNestedScroll = behavior.onStartNestedScroll(
-            coordinatorLayout = mockk(),
-            child = mockk(),
-            directTargetChild = mockk(),
-            target = mockk(),
-            axes = ViewCompat.SCROLL_AXIS_HORIZONTAL,
-            type = ViewCompat.TYPE_TOUCH,
-        )
+        val acceptsNestedScroll =
+            behavior.onStartNestedScroll(
+                coordinatorLayout = mockk(),
+                child = mockk(),
+                directTargetChild = mockk(),
+                target = mockk(),
+                axes = ViewCompat.SCROLL_AXIS_HORIZONTAL,
+                type = ViewCompat.TYPE_TOUCH,
+            )
 
         assertFalse(acceptsNestedScroll)
     }
@@ -94,10 +97,11 @@ class TranslationsBannerBehaviorTest {
 
         behavior.expanded = false
 
-        val child = mockk<View> {
-            every { height } returns 100
-            every { translationY } returns 59f
-        }
+        val child =
+            mockk<View> {
+                every { height } returns 100
+                every { translationY } returns 59f
+            }
 
         behavior.onStartNestedScroll(
             coordinatorLayout = mockk(),
@@ -134,10 +138,11 @@ class TranslationsBannerBehaviorTest {
 
         behavior.expanded = true
 
-        val child = mockk<View> {
-            every { height } returns 100
-            every { translationY } returns 5f
-        }
+        val child =
+            mockk<View> {
+                every { height } returns 100
+                every { translationY } returns 5f
+            }
 
         behavior.onStartNestedScroll(
             coordinatorLayout = mockk(),
@@ -169,11 +174,12 @@ class TranslationsBannerBehaviorTest {
         val behavior = spyk(TranslationsBannerBehavior<View>(testContext, false, false))
         every { behavior.shouldScroll } returns true
 
-        val child = mockk<View> {
-            every { height } returns 100
-            every { translationY } returns 0f
-            every { translationY = any() } just Runs
-        }
+        val child =
+            mockk<View> {
+                every { height } returns 100
+                every { translationY } returns 0f
+                every { translationY = any() } just Runs
+            }
 
         behavior.onNestedPreScroll(
             coordinatorLayout = mockk(),
@@ -251,14 +257,15 @@ class TranslationsBannerBehaviorTest {
         every { inputResultDetail.isTouchUnhandled() } returns true
 
         val childView: View = mockk()
-        val acceptsNestedScroll = behavior.onStartNestedScroll(
-            coordinatorLayout = mockk(),
-            child = childView,
-            directTargetChild = mockk(),
-            target = mockk(),
-            axes = ViewCompat.SCROLL_AXIS_VERTICAL,
-            type = ViewCompat.TYPE_TOUCH,
-        )
+        val acceptsNestedScroll =
+            behavior.onStartNestedScroll(
+                coordinatorLayout = mockk(),
+                child = childView,
+                directTargetChild = mockk(),
+                target = mockk(),
+                axes = ViewCompat.SCROLL_AXIS_VERTICAL,
+                type = ViewCompat.TYPE_TOUCH,
+            )
 
         verify { behavior.forceExpand(childView) }
         verify { animator.cancel() }
@@ -337,12 +344,8 @@ class TranslationsBannerBehaviorTest {
 
     @Test
     fun `GIVEN the banner is anchored to the logins bar and a top toolbar is shown WHEN the logins bar is not shown anymore THEN place the banner to the bottom`() {
-        val loginsBar = View(testContext)
-            .apply { id = R.id.loginSelectBar }
-            .also { parent.addView(it) }
-        View(testContext)
-            .apply { id = R.id.toolbar }
-            .also { parent.addView(it) }
+        val loginsBar = View(testContext).apply { id = R.id.loginSelectBar }.also { parent.addView(it) }
+        View(testContext).apply { id = R.id.toolbar }.also { parent.addView(it) }
         val behavior = TranslationsBannerBehavior<View>(testContext, false, false)
 
         behavior.layoutDependsOn(parent, banner, dependency)
@@ -355,12 +358,8 @@ class TranslationsBannerBehaviorTest {
 
     @Test
     fun `GIVEN the banner is anchored to the logins bar and a bottom toolbar is shown WHEN the logins bar is not shown anymore THEN place the banner on top of the toolbar`() {
-        val loginsBar = View(testContext)
-            .apply { id = R.id.loginSelectBar }
-            .also { parent.addView(it) }
-        val bottomToolbar = View(testContext)
-            .apply { id = R.id.toolbar }
-            .also { parent.addView(it) }
+        val loginsBar = View(testContext).apply { id = R.id.loginSelectBar }.also { parent.addView(it) }
+        val bottomToolbar = View(testContext).apply { id = R.id.toolbar }.also { parent.addView(it) }
         val behavior = TranslationsBannerBehavior<View>(testContext, true, false)
 
         behavior.layoutDependsOn(parent, banner, dependency)
@@ -373,12 +372,8 @@ class TranslationsBannerBehaviorTest {
 
     @Test
     fun `GIVEN the banner is anchored to the logins bar and navigation bar is shown WHEN the logins bar is not shown anymore THEN place the banner to the navigation bar`() {
-        val loginsBar = View(testContext)
-            .apply { id = R.id.loginSelectBar }
-            .also { parent.addView(it) }
-        val toolbar = View(testContext)
-            .apply { id = R.id.toolbar }
-            .also { parent.addView(it) }
+        val loginsBar = View(testContext).apply { id = R.id.loginSelectBar }.also { parent.addView(it) }
+        val toolbar = View(testContext).apply { id = R.id.toolbar }.also { parent.addView(it) }
         val behavior = TranslationsBannerBehavior<View>(testContext, true, true)
 
         behavior.layoutDependsOn(parent, banner, dependency)
@@ -391,12 +386,8 @@ class TranslationsBannerBehaviorTest {
 
     @Test
     fun `GIVEN the banner is anchored to the password bar and a top toolbar is shown WHEN the password bar is not shown anymore THEN place the banner to the bottom`() {
-        val passwordBar = View(testContext)
-            .apply { id = R.id.suggestStrongPasswordBar }
-            .also { parent.addView(it) }
-        View(testContext)
-            .apply { id = R.id.toolbar }
-            .also { parent.addView(it) }
+        val passwordBar = View(testContext).apply { id = R.id.suggestStrongPasswordBar }.also { parent.addView(it) }
+        View(testContext).apply { id = R.id.toolbar }.also { parent.addView(it) }
         val behavior = TranslationsBannerBehavior<View>(testContext, false, false)
 
         behavior.layoutDependsOn(parent, banner, dependency)
@@ -409,12 +400,8 @@ class TranslationsBannerBehaviorTest {
 
     @Test
     fun `GIVEN the banner is anchored to the password bar and a bottom toolbar is shown WHEN the password bar is not shown anymore THEN place the banner on top of the toolbar`() {
-        val loginsBar = View(testContext)
-            .apply { id = R.id.suggestStrongPasswordBar }
-            .also { parent.addView(it) }
-        val bottomToolbar = View(testContext)
-            .apply { id = R.id.toolbar }
-            .also { parent.addView(it) }
+        val loginsBar = View(testContext).apply { id = R.id.suggestStrongPasswordBar }.also { parent.addView(it) }
+        val bottomToolbar = View(testContext).apply { id = R.id.toolbar }.also { parent.addView(it) }
         val behavior = TranslationsBannerBehavior<View>(testContext, true, false)
 
         behavior.layoutDependsOn(parent, banner, dependency)
@@ -427,12 +414,8 @@ class TranslationsBannerBehaviorTest {
 
     @Test
     fun `GIVEN the banner is anchored to the password bar and navigation bar is shown WHEN the password bar is not shown anymore THEN place the banner to the navigation bar`() {
-        val passwordBar = View(testContext)
-            .apply { id = R.id.suggestStrongPasswordBar }
-            .also { parent.addView(it) }
-        val toolbar = View(testContext)
-            .apply { id = R.id.toolbar }
-            .also { parent.addView(it) }
+        val passwordBar = View(testContext).apply { id = R.id.suggestStrongPasswordBar }.also { parent.addView(it) }
+        val toolbar = View(testContext).apply { id = R.id.toolbar }.also { parent.addView(it) }
         val behavior = TranslationsBannerBehavior<View>(testContext, true, true)
 
         behavior.layoutDependsOn(parent, banner, dependency)

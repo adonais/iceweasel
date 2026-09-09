@@ -158,6 +158,10 @@ typedef enum {
     ssl_sig_dsa_sha512 = 0x0602,
     ssl_sig_ecdsa_sha1 = 0x0203,
 
+    ssl_sig_mldsa44 = 0x0904,
+    ssl_sig_mldsa65 = 0x0905,
+    ssl_sig_mldsa87 = 0x0906,
+
     /* The following value (which can't be used in the protocol), represents
      * the RSA signature using SHA-1 and MD5 that is used in TLS 1.0 and 1.1.
      * This is reported as a signature scheme when TLS 1.0 or 1.1 is used.
@@ -187,6 +191,9 @@ typedef enum {
     ssl_auth_rsa_pss = 8,    /* RSA signing with a PSS key. */
     ssl_auth_psk = 9,
     ssl_auth_tls13_any = 10,
+    ssl_auth_mldsa44 = 11, /* use separate auth for each paramset */
+    ssl_auth_mldsa65 = 12, /* so we can properly identify the certs */
+    ssl_auth_mldsa87 = 13,
     ssl_auth_size /* number of authentication types */
 } SSLAuthType;
 

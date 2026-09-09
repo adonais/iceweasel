@@ -14,9 +14,7 @@ import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.ext.components
 
-/**
- * Processes incoming intents and sends them to the corresponding activity.
- */
+/** Processes incoming intents and sends them to the corresponding activity. */
 class AuthIntentReceiverActivity : Activity() {
 
     @VisibleForTesting

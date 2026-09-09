@@ -7,9 +7,7 @@ package org.mozilla.fenix.ui.efficiency.generation.behavior
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.selectors.BookmarksSelectors
 
-/**
- * Dynamic selector factory used when behavior assertions depend on runtime data.
- */
+/** Dynamic selector factory used when behavior assertions depend on runtime data. */
 data class SelectorTemplate(
     val id: String,
     val feature: String,
@@ -22,18 +20,19 @@ data class SelectorTemplate(
 )
 
 object SelectorTemplateCatalog {
-    val all: List<SelectorTemplate> = listOf(
-        SelectorTemplate(
-            id = "bookmarks.folder.item",
-            feature = "bookmarks",
-            entity = "folder",
-            target = AssertionTarget.CREATED_ENTITY,
-            pagePropertyName = "bookmarks",
-            requiredDataKeys = setOf("folderName"),
-            description = "Bookmark folder row matching the generated folder name",
-            build = { data -> BookmarksSelectors.BOOKMARK_ITEM(data.require("folderName")) },
-        ),
-    )
+    val all: List<SelectorTemplate> =
+        listOf(
+            SelectorTemplate(
+                id = "bookmarks.folder.item",
+                feature = "bookmarks",
+                entity = "folder",
+                target = AssertionTarget.CREATED_ENTITY,
+                pagePropertyName = "bookmarks",
+                requiredDataKeys = setOf("folderName"),
+                description = "Bookmark folder row matching the generated folder name",
+                build = { data -> BookmarksSelectors.BOOKMARK_ITEM(data.require("folderName")) },
+            )
+        )
 
     fun find(
         feature: String,

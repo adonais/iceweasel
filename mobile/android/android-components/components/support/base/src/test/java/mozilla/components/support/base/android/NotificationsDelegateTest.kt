@@ -24,6 +24,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.doNothing
+import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.eq
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
@@ -46,9 +47,7 @@ class NotificationsDelegateTest {
     fun setUp() {
         notificationManagerCompat = mock()
         crashReporter = mock()
-        notificationsDelegate = spy(
-            NotificationsDelegate(notificationManagerCompat),
-        )
+        notificationsDelegate = spy(NotificationsDelegate(notificationManagerCompat))
         activity = mock()
         lifecycle = mock()
 
@@ -62,35 +61,48 @@ class NotificationsDelegateTest {
 
     @Test
     fun `hasPostNotificationsPermission returns true when notifications are enabled`() {
-        `when`(notificationManagerCompat.areNotificationsEnabled()).thenReturn(
-            true,
-        )
+        `when`(notificationManagerCompat.areNotificationsEnabled()).thenReturn(true)
         assertTrue(notificationsDelegate.hasPostNotificationsPermission())
     }
 
     @Test
     fun `hasPostNotificationsPermission returns false when notifications are disabled`() {
-        `when`(notificationManagerCompat.areNotificationsEnabled()).thenReturn(
-            false,
-        )
+        `when`(notificationManagerCompat.areNotificationsEnabled()).thenReturn(false)
         assertFalse(notificationsDelegate.hasPostNotificationsPermission())
+    }
+
+    @Test
+    fun `notify swallows a SecurityException and still reports the permission as granted`() {
+        `when`(notificationManagerCompat.areNotificationsEnabled()).thenReturn(true)
+        doThrow(SecurityException("Unknown package")).`when`(notificationManagerCompat).notify(null, 1, notification)
+
+        var permissionGranted = false
+        notificationsDelegate.notify(
+            notificationId = 1,
+            notification = notification,
+            onPermissionGranted = { permissionGranted = true },
+        )
+
+        assertTrue(permissionGranted)
     }
 
     @Test
     fun `bindToActivity adds activity and result launcher to notificationPermissionHandler`() {
         `when`(
-            activity.registerForActivityResult(
-                any<ActivityResultContracts.RequestPermission>(),
-                any<ActivityResultCallback<Boolean>>(),
-            ),
-        ).thenReturn(activityResultLauncher)
+                activity.registerForActivityResult(
+                    any<ActivityResultContracts.RequestPermission>(),
+                    any<ActivityResultCallback<Boolean>>(),
+                )
+            )
+            .thenReturn(activityResultLauncher)
 
         notificationsDelegate.bindToActivity(activity)
 
-        verify(activity).registerForActivityResult(
-            any<ActivityResultContracts.RequestPermission>(),
-            any<ActivityResultCallback<Boolean>>(),
-        )
+        verify(activity)
+            .registerForActivityResult(
+                any<ActivityResultContracts.RequestPermission>(),
+                any<ActivityResultCallback<Boolean>>(),
+            )
 
         assertEquals(1, notificationsDelegate.notificationPermissionHandler.size)
         assertEquals(activity, notificationsDelegate.notificationPermissionHandler.entries.first().key)
@@ -104,11 +116,12 @@ class NotificationsDelegateTest {
     @Test
     fun `unBindActivity removes activity from notificationPermissionHandler`() {
         `when`(
-            activity.registerForActivityResult(
-                any<ActivityResultContracts.RequestPermission>(),
-                any<ActivityResultCallback<Boolean>>(),
-            ),
-        ).thenReturn(activityResultLauncher)
+                activity.registerForActivityResult(
+                    any<ActivityResultContracts.RequestPermission>(),
+                    any<ActivityResultCallback<Boolean>>(),
+                )
+            )
+            .thenReturn(activityResultLauncher)
 
         notificationsDelegate.bindToActivity(activity)
         assertEquals(1, notificationsDelegate.notificationPermissionHandler.size)
@@ -120,11 +133,12 @@ class NotificationsDelegateTest {
     @Test
     fun `requestNotificationPermission with bound activity does not throw exception and calls launch`() {
         `when`(
-            activity.registerForActivityResult(
-                any<ActivityResultContracts.RequestPermission>(),
-                any<ActivityResultCallback<Boolean>>(),
-            ),
-        ).thenReturn(activityResultLauncher)
+                activity.registerForActivityResult(
+                    any<ActivityResultContracts.RequestPermission>(),
+                    any<ActivityResultCallback<Boolean>>(),
+                )
+            )
+            .thenReturn(activityResultLauncher)
 
         notificationsDelegate.bindToActivity(activity)
 
@@ -136,11 +150,12 @@ class NotificationsDelegateTest {
     @Test
     fun `requestNotificationPermission without bound activity does not throw exception and does not call launch`() {
         `when`(
-            activity.registerForActivityResult(
-                any<ActivityResultContracts.RequestPermission>(),
-                any<ActivityResultCallback<Boolean>>(),
-            ),
-        ).thenReturn(activityResultLauncher)
+                activity.registerForActivityResult(
+                    any<ActivityResultContracts.RequestPermission>(),
+                    any<ActivityResultCallback<Boolean>>(),
+                )
+            )
+            .thenReturn(activityResultLauncher)
 
         notificationsDelegate.bindToActivity(activity)
         notificationsDelegate.unBindActivity(activity)
@@ -152,9 +167,7 @@ class NotificationsDelegateTest {
 
     @Test
     fun `notify posts notification when permission is granted`() {
-        `when`(notificationManagerCompat.areNotificationsEnabled()).thenReturn(
-            true,
-        )
+        `when`(notificationManagerCompat.areNotificationsEnabled()).thenReturn(true)
 
         notificationsDelegate.notify(
             "testTag",
@@ -167,14 +180,14 @@ class NotificationsDelegateTest {
 
     @Test
     fun `notify requests permission when permission is not granted`() {
-        `when`(notificationManagerCompat.areNotificationsEnabled()).thenReturn(
-            false,
-        )
-        doNothing().`when`(notificationsDelegate).requestNotificationPermission(
-            any(),
-            any(),
-            eq(false),
-        )
+        `when`(notificationManagerCompat.areNotificationsEnabled()).thenReturn(false)
+        doNothing()
+            .`when`(notificationsDelegate)
+            .requestNotificationPermission(
+                any(),
+                any(),
+                eq(false),
+            )
 
         notificationsDelegate.bindToActivity(activity)
         notificationsDelegate.notify(
@@ -182,25 +195,25 @@ class NotificationsDelegateTest {
             notification = notification,
         )
 
-        verify(notificationsDelegate).requestNotificationPermission(
-            any<OnPermissionGranted>(),
-            any<OnPermissionRejected>(),
-            eq(false),
-        )
+        verify(notificationsDelegate)
+            .requestNotificationPermission(
+                any<OnPermissionGranted>(),
+                any<OnPermissionRejected>(),
+                eq(false),
+            )
     }
 
     @Test
     fun `requestNotificationPermission requests notification permission when permission is not previously granted`() {
-        `when`(notificationManagerCompat.areNotificationsEnabled()).thenReturn(
-            false,
-        )
+        `when`(notificationManagerCompat.areNotificationsEnabled()).thenReturn(false)
 
         `when`(
-            activity.registerForActivityResult(
-                any<ActivityResultContracts.RequestPermission>(),
-                any<ActivityResultCallback<Boolean>>(),
-            ),
-        ).thenReturn(activityResultLauncher)
+                activity.registerForActivityResult(
+                    any<ActivityResultContracts.RequestPermission>(),
+                    any<ActivityResultCallback<Boolean>>(),
+                )
+            )
+            .thenReturn(activityResultLauncher)
 
         notificationsDelegate.bindToActivity(activity)
 
@@ -218,11 +231,12 @@ class NotificationsDelegateTest {
     fun `requestNotificationPermission calls onPermissionGranted when permission request is granted`() {
         `when`(notificationManagerCompat.areNotificationsEnabled()).thenReturn(false)
         `when`(
-            activity.registerForActivityResult(
-                any<ActivityResultContracts.RequestPermission>(),
-                any<ActivityResultCallback<Boolean>>(),
-            ),
-        ).thenReturn(activityResultLauncher)
+                activity.registerForActivityResult(
+                    any<ActivityResultContracts.RequestPermission>(),
+                    any<ActivityResultCallback<Boolean>>(),
+                )
+            )
+            .thenReturn(activityResultLauncher)
 
         notificationsDelegate.bindToActivity(activity)
 
@@ -235,10 +249,11 @@ class NotificationsDelegateTest {
         )
 
         val callbackCaptor = argumentCaptor<ActivityResultCallback<Boolean>>()
-        verify(activity).registerForActivityResult(
-            any<ActivityResultContracts.RequestPermission>(),
-            callbackCaptor.capture(),
-        )
+        verify(activity)
+            .registerForActivityResult(
+                any<ActivityResultContracts.RequestPermission>(),
+                callbackCaptor.capture(),
+            )
 
         // Simulate permission granted
         callbackCaptor.value.onActivityResult(true)
@@ -251,11 +266,12 @@ class NotificationsDelegateTest {
     fun `requestNotificationPermission calls onPermissionRejected when permission request is not granted`() {
         `when`(notificationManagerCompat.areNotificationsEnabled()).thenReturn(false)
         `when`(
-            activity.registerForActivityResult(
-                any<ActivityResultContracts.RequestPermission>(),
-                any<ActivityResultCallback<Boolean>>(),
-            ),
-        ).thenReturn(activityResultLauncher)
+                activity.registerForActivityResult(
+                    any<ActivityResultContracts.RequestPermission>(),
+                    any<ActivityResultCallback<Boolean>>(),
+                )
+            )
+            .thenReturn(activityResultLauncher)
 
         notificationsDelegate.bindToActivity(activity)
 
@@ -268,10 +284,11 @@ class NotificationsDelegateTest {
         )
 
         val callbackCaptor = argumentCaptor<ActivityResultCallback<Boolean>>()
-        verify(activity).registerForActivityResult(
-            any<ActivityResultContracts.RequestPermission>(),
-            callbackCaptor.capture(),
-        )
+        verify(activity)
+            .registerForActivityResult(
+                any<ActivityResultContracts.RequestPermission>(),
+                callbackCaptor.capture(),
+            )
 
         // Simulate permission rejected
         callbackCaptor.value.onActivityResult(false)

@@ -23,8 +23,8 @@ import mozilla.components.support.ktx.android.view.clearPersistentInsets
 import mozilla.components.support.ktx.android.view.setupPersistentInsets
 
 /**
- * [FragmentLifecycleCallbacks] delegate for configuring the container activity
- * as edge-to-edge or not to match how the new fragment navigated to is wants to be displayed.
+ * [FragmentLifecycleCallbacks] delegate for configuring the container activity as edge-to-edge or not to match how the
+ * new fragment navigated to is wants to be displayed.
  */
 class EdgeToEdgeFragmentLifecycleCallbacks : FragmentLifecycleCallbacks() {
 
@@ -66,18 +66,18 @@ class EdgeToEdgeFragmentLifecycleCallbacks : FragmentLifecycleCallbacks() {
 
     companion object {
         /**
-         * Register this functionality to observe all fragment navigations in [supportFragmentManager]
-         * and configure the parent activity with a new edge-to-edge behavior depending on the current fragment.
-         * This only works on if API33+.
+         * Register this functionality to observe all fragment navigations in [supportFragmentManager] and configure the
+         * parent activity with a new edge-to-edge behavior depending on the current fragment. This only works on if
+         * API33+.
          *
-         * Must be called before [android.app.Activity.setContentView] so the callbacks are registered
-         * before the content view and its fragments are created. This ensures the edge-to-edge strategy
-         * is applied to every fragment through [onFragmentViewCreated].
+         * Must be called before [android.app.Activity.setContentView] so the callbacks are registered before the
+         * content view and its fragments are created. This ensures the edge-to-edge strategy is applied to every
+         * fragment through [onFragmentViewCreated].
          *
-         * @param supportFragmentManager [FragmentManager] hosting all screens for which to set
-         * a different edge-to-edge behavior.
-         * @param window [Window] which will be shown as edge-to-edge or not depending on
-         * the current fragment being shown.
+         * @param supportFragmentManager [FragmentManager] hosting all screens for which to set a different edge-to-edge
+         *   behavior.
+         * @param window [Window] which will be shown as edge-to-edge or not depending on the current fragment being
+         *   shown.
          */
         fun register(supportFragmentManager: FragmentManager, window: Window) {
             // Matching the same API guard used for the methods controlling the edge-to-edge insets.

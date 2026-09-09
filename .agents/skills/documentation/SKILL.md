@@ -159,6 +159,12 @@ The path is rooted at the documentation tree (leading `/`), and the extension
 must match the actual source file (`.md` or `.rst`). To link to a section, append
 the anchor: `/mots/index.md#desktop-theme`.
 
+An API reference generated from source comments renders their descriptions as
+reStructuredText, where the `[text](/path/index.md)` form above comes out
+literally, with only the bare URL autolinked. Write the link as a role instead:
+
+    :doc:`Places </browser/places/index>`
+
 ## Best Practices
 
 -   Always build documentation locally before pushing.

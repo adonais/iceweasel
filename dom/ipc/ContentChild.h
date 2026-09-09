@@ -680,7 +680,7 @@ class ContentChild final : public PContentChild,
   mozilla::ipc::IPCResult RecvSetUseOriginAgentCluster(
       uint64_t aGroupId, nsIPrincipal* aPrincipal, bool aUseOriginAgentCluster);
 
-  mozilla::ipc::IPCResult RecvWindowClose(
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult RecvWindowClose(
       const MaybeDiscarded<BrowsingContext>& aContext, bool aTrustedCaller);
   mozilla::ipc::IPCResult RecvWindowFocus(
       const MaybeDiscarded<BrowsingContext>& aContext, CallerType aCallerType,

@@ -19,11 +19,29 @@ HEADER_LINE = (
 FEATURE_SCHEMA = Path("schemas", "ExperimentFeature.schema.json")
 
 NIMBUS_FALLBACK_PREFS = (
-    "constexpr std::pair<nsLiteralCString, nsLiteralCString>"
-    "NIMBUS_FALLBACK_PREFS[]{{{}}};"
+    "constinit std::array NIMBUS_FALLBACK_PREFS = "
+    "std::to_array<std::pair<nsLiteralCString, nsLiteralCString>>({{\n"
+    "{entries}\n"
+    "}});"
+)
+
+NIMBUS_PLATFORM_FEATURES = (
+    "#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED\n"
+    "constinit static std::array NIMBUS_PLATFORM_FEATURES = "
+    "std::to_array<std::tuple<nsLiteralCString, bool>>({{\n"
+    "{entries}\n"
+    "}});\n"
+    "#endif  // MOZ_DIAGNOSTIC_ASSERT_ENABLED\n"
 )
 
 # Do not add new feature IDs to this list! isEarlyStartup is being deprecated.
+#
+# In most cases new features should use setPref to read feature values from
+# platform code.
+#
+# However, if the platform feature API is required, then the feature can be
+# added to this list.
+#
 # See https://bugzilla.mozilla.org/show_bug.cgi?id=1875331 for details.
 ALLOWED_ISEARLYSTARTUP_FEATURE_IDS = {
     "aboutwelcome",
@@ -32,7 +50,8 @@ ALLOWED_ISEARLYSTARTUP_FEATURE_IDS = {
     "opaqueResponseBlocking",  # Requires C++ API for exposure events
     "pocketNewtab",
     "preonboarding",
-    "testFeature",
+    "testFeature",  # Test-only feature
+    "testPlatformExposureFeature",  # Test-only feature
     "upgradeDialog",
 }
 
@@ -64,10 +83,6 @@ DISALLOWED_PREFS = {
 }
 
 
-def write_fm_headers(fd):
-    fd.write(HEADER_LINE)
-
-
 def validate_feature_manifest(schema_path, manifest_path, manifest):
     TOPSRCDIR = Path(__file__).parent.parent.parent.parent.parent
 
@@ -87,7 +102,11 @@ def validate_feature_manifest(schema_path, manifest_path, manifest):
                 if is_early_startup:
                     print(f"Feature {feature_id} is marked isEarlyStartup: true")
                     print(
-                        "isEarlyStartup is deprecated and no new isEarlyStartup features can be added"
+                        "isEarlyStartup is deprecated and new isEarlyStartup features should not be added"
+                    )
+                    print(
+                        "Either remove isEarlyStartup: true or add to the override list in "
+                        "generate_feature_manifest.py"
                     )
                     print(
                         "See https://bugzilla.mozilla.org/show_bug.cgi?id=1875331 for details"
@@ -191,60 +210,90 @@ def validate_feature_manifest(schema_path, manifest_path, manifest):
 
 
 def generate_feature_manifest(fd, input_file):
-    write_fm_headers(fd)
-
     try:
         with open(input_file, encoding="utf-8") as f:
             manifest = yaml.safe_load(f)
+    except OSError as e:
+        print(f"{input_file}: error:\n  {e}\n")
+        sys.exit(1)
 
-        validate_feature_manifest(
-            Path(input_file).parent / FEATURE_SCHEMA, input_file, manifest
-        )
+    validate_feature_manifest(
+        Path(input_file).parent / FEATURE_SCHEMA, input_file, manifest
+    )
 
-        fd.write(f"export const FeatureManifest = {json.dumps(manifest)};")
+    contents = (
+        f"{HEADER_LINE}\n"
+        f"export const FeatureManifest = {json.dumps(manifest, indent=2)}"
+    )
+
+    try:
+        fd.write(contents)
     except OSError as e:
         print(f"{input_file}: error:\n  {e}\n")
         sys.exit(1)
 
 
-def platform_feature_manifest_array(features):
-    entries = []
-    for feature, featureData in features.items():
-        # Features have to be tagged isEarlyStartup to be accessible
-        # to Nimbus platform API
-        if not featureData.get("isEarlyStartup", False):
-            continue
-        entries.extend(
-            '{{ "{}_{}"_ns, "{}"_ns }}'.format(
-                feature, variable, variableData["fallbackPref"]
-            )
-            for (variable, variableData) in featureData.get("variables", {}).items()
-            if variableData.get("fallbackPref", False)
-        )
-    return NIMBUS_FALLBACK_PREFS.format(", ".join(entries))
+def generate_platform_feature_array(features):
+    def render_bool(b):
+        if b:
+            return "true"
+        return "false"
+
+    # Features have to be tagged isEarlyStartup to be accessible
+    # to Nimbus platform API
+
+    entries = [
+        f'  std::make_tuple("{feature_id}"_ns, {render_bool(feature_data["hasExposure"])})'
+        for (feature_id, feature_data) in features.items()
+        if feature_data.get("isEarlyStartup", False)
+    ]
+
+    return NIMBUS_PLATFORM_FEATURES.format(entries=",\n".join(entries))
+
+
+def generate_platform_fallback_pref_array(features):
+    entries = [
+        f'  {{ "{feature_id}_{variable}"_ns, "{variable_data["fallbackPref"]}"_ns }}'
+        for (feature_id, feature_data) in features.items()
+        if feature_data.get("isEarlyStartup", False)
+        for (variable, variable_data) in feature_data.get("variables", {}).items()
+        if variable_data.get("fallbackPref", False)
+    ]
+    return NIMBUS_FALLBACK_PREFS.format(entries=",\n".join(entries))
 
 
 def generate_platform_feature_manifest(fd, input_file):
-    write_fm_headers(fd)
-
-    def file_structure(data):
-        return "\n".join([
-            "#ifndef mozilla_NimbusFeaturesManifest_h",
-            "#define mozilla_NimbusFeaturesManifest_h",
-            "#include <utility>",
-            '#include "mozilla/Maybe.h"',
-            '#include "nsStringFwd.h"',
-            "namespace mozilla {",
-            platform_feature_manifest_array(data),
-            '#include "./lib/NimbusFeatureManifest.inc.h"',
-            "}  // namespace mozilla",
-            "#endif  // mozilla_NimbusFeaturesManifest_h",
-        ])
-
     try:
         with open(input_file, encoding="utf-8") as yaml_input:
             data = yaml.safe_load(yaml_input)
-            fd.write(file_structure(data))
+    except OSError as e:
+        print(f"{input_file}: error:\n  {e}\n")
+        sys.exit(1)
+
+    contents = "\n".join([
+        HEADER_LINE,
+        "#ifndef mozilla_NimbusFeatureManifest_h",
+        "#define mozilla_NimbusFeatureManifest_h",
+        "",
+        "#include <array>",
+        "#include <utility>",
+        "",
+        '#include "mozilla/Maybe.h"',
+        '#include "nsStringFwd.h"',
+        "",
+        "namespace mozilla::nimbus {",
+        "",
+        f"{generate_platform_feature_array(data)}",
+        "",
+        f"{generate_platform_fallback_pref_array(data)}",
+        "",
+        "}  // namespace mozilla::nimbus",
+        "",
+        "#endif  // mozilla_NimbusFeatureManifest_h\n",
+    ])
+
+    try:
+        fd.write(contents)
     except OSError as e:
         print(f"{input_file}: error:\n  {e}\n")
         sys.exit(1)

@@ -560,7 +560,19 @@ SkScalerContext_CairoFT::SkScalerContext_CairoFT(
     }
 
     if ((fRec.fFlags & SkScalerContext::kEmbeddedBitmapText_Flag) == 0) {
-        loadFlags |= FT_LOAD_NO_BITMAP;
+        // Freetype versions older than 2.14 fail to load a bitmap-only font w/
+        // FT_LOAD_NO_BITMAP, see bug 2058486 / freetype commit 4ef8eed11 [1].
+        // Newer freetype ignores this flag for those, so just avoid setting it.
+        //
+        // Note that usually we wouldn't even get here for a bitmap-only font
+        // (unless there's a fontconfig misconfiguration or so), but some SkPDF
+        // callers (like SkPDFStrike::Make) override it.
+        //
+        // [1]: https://gitlab.freedesktop.org/freetype/freetype/-/commit/4ef8eed11
+        const bool isBitmapOnly = fFTFace && !FT_IS_SCALABLE(fFTFace);
+        if (!isBitmapOnly) {
+            loadFlags |= FT_LOAD_NO_BITMAP;
+        }
     }
 
     // Always using FT_LOAD_IGNORE_GLOBAL_ADVANCE_WIDTH to get correct

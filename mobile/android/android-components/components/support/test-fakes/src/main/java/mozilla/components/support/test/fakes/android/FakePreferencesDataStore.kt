@@ -16,8 +16,10 @@ class FakePreferencesDataStore(initialPreferences: Preferences = mutablePreferen
     override val data = preferences
 
     override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences): Preferences {
-        return preferences.update {
-            transform(preferences.value).toMutablePreferences()
-        }.let { data.value }
+        return preferences
+            .update {
+                transform(preferences.value).toMutablePreferences()
+            }
+            .let { data.value }
     }
 }

@@ -7,9 +7,7 @@ package mozilla.components.feature.syncedtabs
 import mozilla.components.browser.storage.sync.TabEntry
 import mozilla.components.concept.sync.DeviceType
 
-/**
- * Mapping of a device and the active [TabEntry] for each synced tab.
- */
+/** Mapping of a device and the active [TabEntry] for each synced tab. */
 internal data class ClientTabPair(
     val clientName: String,
     val tab: TabEntry,

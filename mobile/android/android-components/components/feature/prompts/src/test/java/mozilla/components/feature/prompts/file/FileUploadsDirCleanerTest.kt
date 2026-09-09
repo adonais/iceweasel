@@ -5,6 +5,7 @@
 package mozilla.components.feature.prompts.file
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -16,7 +17,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class FileUploadsDirCleanerTest {
@@ -25,12 +25,13 @@ class FileUploadsDirCleanerTest {
 
     @Before
     fun setup() {
-        fileCleaner = FileUploadsDirCleaner(
-            scope = CoroutineScope(testDispatcher),
-            ioDispatcher = testDispatcher,
-        ) {
-            testContext.cacheDir
-        }
+        fileCleaner =
+            FileUploadsDirCleaner(
+                scope = CoroutineScope(testDispatcher),
+                ioDispatcher = testDispatcher,
+            ) {
+                testContext.cacheDir
+            }
         fileCleaner.fileNamesToBeDeleted = emptyList()
     }
 

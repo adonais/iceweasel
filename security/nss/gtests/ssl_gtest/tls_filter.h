@@ -491,7 +491,7 @@ class TlsExtensionFilter : public TlsHandshakeFilter {
 class TlsExtensionOrderCapture : public TlsExtensionFilter {
  public:
   TlsExtensionOrderCapture(const std::shared_ptr<TlsAgent>& a, uint8_t message)
-      : TlsExtensionFilter(a, {message}){};
+      : TlsExtensionFilter(a, {message}) {};
 
   std::vector<uint16_t> order;
 

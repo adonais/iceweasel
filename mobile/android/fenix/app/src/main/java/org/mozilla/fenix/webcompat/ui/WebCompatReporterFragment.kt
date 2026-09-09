@@ -30,9 +30,7 @@ import org.mozilla.fenix.webcompat.store.WebCompatReporterAction
 import org.mozilla.fenix.webcompat.store.WebCompatReporterState
 import org.mozilla.fenix.webcompat.store.WebCompatReporterStore
 
-/**
- * [Fragment] for displaying the WebCompat Reporter.
- */
+/** [Fragment] for displaying the WebCompat Reporter. */
 class WebCompatReporterFragment : Fragment(), SystemInsetsPaddedFragment {
 
     private val args by navArgs<WebCompatReporterFragmentArgs>()
@@ -46,24 +44,25 @@ class WebCompatReporterFragment : Fragment(), SystemInsetsPaddedFragment {
     ): View {
         webCompatReporterStore = storeProvider.get { restoredState ->
             WebCompatReporterStore(
-                initialState = restoredState ?: WebCompatReporterState(
-                    tabUrl = args.tabUrl,
-                    enteredUrl = args.tabUrl,
-                ),
-                middleware = WebCompatReporterMiddlewareProvider.provideMiddleware(
-                    browserStore = requireComponents.core.store,
-                    appStore = requireComponents.appStore,
-                    scope = storeProvider.viewModelScope,
-                    nimbusApi = requireComponents.nimbus.sdk,
-                ),
+                initialState =
+                    restoredState
+                        ?: WebCompatReporterState(
+                            tabUrl = args.tabUrl,
+                            enteredUrl = args.tabUrl,
+                        ),
+                middleware =
+                    WebCompatReporterMiddlewareProvider.provideMiddleware(
+                        browserStore = requireComponents.core.store,
+                        appStore = requireComponents.appStore,
+                        scope = storeProvider.viewModelScope,
+                        nimbusApi = requireComponents.nimbus.sdk,
+                    ),
             )
         }
 
         return content {
             FirefoxTheme {
-                WebCompatReporter(
-                    store = webCompatReporterStore,
-                )
+                WebCompatReporter(store = webCompatReporterStore)
             }
         }
     }

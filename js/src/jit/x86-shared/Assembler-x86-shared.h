@@ -4459,15 +4459,15 @@ class AssemblerX86Shared : public AssemblerShared {
     }
     MOZ_CRASH("unexpected mode");
   }
-  void vroundsd(X86Encoding::RoundingMode mode, FloatRegister src,
-                FloatRegister dest) {
+  void vroundsd(X86Encoding::RoundingMode mode, FloatRegister src1,
+                FloatRegister src0, FloatRegister dest) {
     MOZ_ASSERT(HasSSE41());
-    masm.vroundsd_irr(mode, src.encoding(), dest.encoding());
+    masm.vroundsd_irr(mode, src1.encoding(), src0.encoding(), dest.encoding());
   }
-  void vroundss(X86Encoding::RoundingMode mode, FloatRegister src,
-                FloatRegister dest) {
+  void vroundss(X86Encoding::RoundingMode mode, FloatRegister src1,
+                FloatRegister src0, FloatRegister dest) {
     MOZ_ASSERT(HasSSE41());
-    masm.vroundss_irr(mode, src.encoding(), dest.encoding());
+    masm.vroundss_irr(mode, src1.encoding(), src0.encoding(), dest.encoding());
   }
 
   unsigned vinsertpsMask(unsigned sourceLane, unsigned destLane,

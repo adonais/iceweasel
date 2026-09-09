@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -51,11 +51,12 @@ class RuntimeSettingsTest : BaseSessionTest() {
 
         settings.automaticFontSizeAdjustment = true
         val contentResolver = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver
-        val expectedFontSizeFactor = Settings.System.getFloat(
-            contentResolver,
-            Settings.System.FONT_SCALE,
-            1.0f,
-        )
+        val expectedFontSizeFactor =
+            Settings.System.getFloat(
+                contentResolver,
+                Settings.System.FONT_SCALE,
+                1.0f,
+            )
         assertThat(
             "Gecko font scale should match system font scale",
             settings.fontSizeFactor.toDouble(),
@@ -156,7 +157,8 @@ class RuntimeSettingsTest : BaseSessionTest() {
         )
     }
 
-    @Test fun fontInflation() {
+    @Test
+    fun fontInflation() {
         val baseFontInflationMinTwips = 120
         val settings = sessionRule.runtime.settings
 
@@ -237,8 +239,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
         )
 
         // Check isolation strategy with Gecko
-        val geckoPreference =
-            (sessionRule.getPrefs("fission.webContentIsolationStrategy").get(0)) as Int
+        val geckoPreference = (sessionRule.getPrefs("fission.webContentIsolationStrategy").get(0)) as Int
 
         assertThat(
             "WebContentIsolationStrategy pref value should be isolate nothing.",
@@ -259,8 +260,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(GeckoRuntimeSettings.FIREFOX_RELAY_ENABLED),
         )
 
-        val geckoPreference =
-            (sessionRule.getPrefs("signon.firefoxRelay.feature").get(0)) as String
+        val geckoPreference = (sessionRule.getPrefs("signon.firefoxRelay.feature").get(0)) as String
 
         assertThat(
             "Firefox Relay pref value should be enabled.",
@@ -324,22 +324,30 @@ class RuntimeSettingsTest : BaseSessionTest() {
         )
 
         mainSession.loadUri("about:config")
-        mainSession.waitUntilCalled(object : NavigationDelegate {
-            @AssertCalled
-            override fun onLoadError(session: GeckoSession, uri: String?, error: WebRequestError): GeckoResult<String>? {
-                assertThat("about:config should not load.", uri, equalTo("about:config"))
-                return null
+        mainSession.waitUntilCalled(
+            object : NavigationDelegate {
+                @AssertCalled
+                override fun onLoadError(
+                    session: GeckoSession,
+                    uri: String?,
+                    error: WebRequestError,
+                ): GeckoResult<String>? {
+                    assertThat("about:config should not load.", uri, equalTo("about:config"))
+                    return null
+                }
             }
-        })
+        )
 
         settings.aboutConfigEnabled = true
 
-        mainSession.delegateDuringNextWait(object : ProgressDelegate {
-            @AssertCalled
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                assertThat("about:config load should succeed", success, equalTo(true))
+        mainSession.delegateDuringNextWait(
+            object : ProgressDelegate {
+                @AssertCalled
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    assertThat("about:config load should succeed", success, equalTo(true))
+                }
             }
-        })
+        )
 
         mainSession.loadUri("about:config")
         mainSession.waitForPageStop()
@@ -354,9 +362,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
 
         geckoRuntimeSettings.setGlobalPrivacyControl(true)
 
-        val gpcValue = mainSession.evaluateJS(
-            "window.navigator.globalPrivacyControl",
-        )
+        val gpcValue = mainSession.evaluateJS("window.navigator.globalPrivacyControl")
 
         assertThat(
             "Global Privacy Control should now be enabled",
@@ -376,13 +382,11 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(true),
         )
 
-        val globalPrivacyControl =
-            (sessionRule.getPrefs("privacy.globalprivacycontrol.enabled").get(0)) as Boolean
+        val globalPrivacyControl = (sessionRule.getPrefs("privacy.globalprivacycontrol.enabled").get(0)) as Boolean
         val globalPrivacyControlPrivateMode =
             (sessionRule.getPrefs("privacy.globalprivacycontrol.pbmode.enabled").get(0)) as Boolean
-        val globalPrivacyControlFunctionality = (
-            sessionRule.getPrefs("privacy.globalprivacycontrol.functionality.enabled").get(0)
-            ) as Boolean
+        val globalPrivacyControlFunctionality =
+            (sessionRule.getPrefs("privacy.globalprivacycontrol.functionality.enabled").get(0)) as Boolean
 
         assertThat(
             "Global Privacy Control should be enabled in normal tabs",
@@ -412,9 +416,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
 
         geckoRuntimeSettings.setGlobalPrivacyControl(false)
 
-        val gpcValue = mainSession.evaluateJS(
-            "window.navigator.globalPrivacyControl",
-        )
+        val gpcValue = mainSession.evaluateJS("window.navigator.globalPrivacyControl")
 
         assertThat(
             "Global Privacy Control should now be disabled in normal mode",
@@ -434,13 +436,11 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(true),
         )
 
-        val globalPrivacyControl =
-            (sessionRule.getPrefs("privacy.globalprivacycontrol.enabled").get(0)) as Boolean
+        val globalPrivacyControl = (sessionRule.getPrefs("privacy.globalprivacycontrol.enabled").get(0)) as Boolean
         val globalPrivacyControlPrivateMode =
             (sessionRule.getPrefs("privacy.globalprivacycontrol.pbmode.enabled").get(0)) as Boolean
-        val globalPrivacyControlFunctionality = (
-            sessionRule.getPrefs("privacy.globalprivacycontrol.functionality.enabled").get(0)
-            ) as Boolean
+        val globalPrivacyControlFunctionality =
+            (sessionRule.getPrefs("privacy.globalprivacycontrol.functionality.enabled").get(0)) as Boolean
 
         assertThat(
             "Global Privacy Control should be enabled in normal tabs",
@@ -480,8 +480,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(true),
         )
 
-        val fingerprintingProtection =
-            (sessionRule.getPrefs("privacy.fingerprintingProtection").get(0)) as Boolean
+        val fingerprintingProtection = (sessionRule.getPrefs("privacy.fingerprintingProtection").get(0)) as Boolean
         val fingerprintingProtectionPrivateBrowsing =
             (sessionRule.getPrefs("privacy.fingerprintingProtection.pbmode").get(0)) as Boolean
 
@@ -517,8 +516,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(false),
         )
 
-        val fingerprintingProtection =
-            (sessionRule.getPrefs("privacy.fingerprintingProtection").get(0)) as Boolean
+        val fingerprintingProtection = (sessionRule.getPrefs("privacy.fingerprintingProtection").get(0)) as Boolean
         val fingerprintingProtectionPrivateBrowsing =
             (sessionRule.getPrefs("privacy.fingerprintingProtection.pbmode").get(0)) as Boolean
 
@@ -539,9 +537,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
     fun fingerprintingProtectionOverrides() {
         val geckoRuntimeSettings = sessionRule.runtime.settings
 
-        geckoRuntimeSettings.setFingerprintingProtectionOverrides(
-            "+NavigatorHWConcurrency,+CanvasRandomization",
-        )
+        geckoRuntimeSettings.setFingerprintingProtectionOverrides("+NavigatorHWConcurrency,+CanvasRandomization")
 
         assertThat(
             "Fingerprint Protection overrides settings should be set to the expected value",
@@ -549,8 +545,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo("+NavigatorHWConcurrency,+CanvasRandomization"),
         )
 
-        val overrides =
-            (sessionRule.getPrefs("privacy.fingerprintingProtection.overrides").get(0)) as String
+        val overrides = (sessionRule.getPrefs("privacy.fingerprintingProtection.overrides").get(0)) as String
 
         assertThat(
             "Fingerprint Protection overrides pref should be set to the expected value",
@@ -571,8 +566,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(true),
         )
 
-        val enabled =
-            (sessionRule.getPrefs("javascript.options.use_fdlibm_for_sin_cos_tan").get(0)) as Boolean
+        val enabled = (sessionRule.getPrefs("javascript.options.use_fdlibm_for_sin_cos_tan").get(0)) as Boolean
 
         assertThat(
             "Fdlibm math pref should be set to the expected value",
@@ -593,8 +587,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(false),
         )
 
-        val enabled =
-            (sessionRule.getPrefs("javascript.options.use_fdlibm_for_sin_cos_tan").get(0)) as Boolean
+        val enabled = (sessionRule.getPrefs("javascript.options.use_fdlibm_for_sin_cos_tan").get(0)) as Boolean
 
         assertThat(
             "Fdlibm math pref should be set to the expected value",
@@ -615,8 +608,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(false),
         )
 
-        val enabledFalse =
-            (sessionRule.getPrefs("privacy.baselineFingerprintingProtection").get(0)) as Boolean
+        val enabledFalse = (sessionRule.getPrefs("privacy.baselineFingerprintingProtection").get(0)) as Boolean
 
         assertThat(
             "baselineFpp pref should be set to the expected value",
@@ -632,8 +624,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(true),
         )
 
-        val enabledTrue =
-            (sessionRule.getPrefs("privacy.baselineFingerprintingProtection").get(0)) as Boolean
+        val enabledTrue = (sessionRule.getPrefs("privacy.baselineFingerprintingProtection").get(0)) as Boolean
 
         assertThat(
             "baselineFpp pref should be set to the expected value",
@@ -647,7 +638,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
         val geckoRuntimeSettings = sessionRule.runtime.settings
 
         geckoRuntimeSettings.setBaselineFingerprintingProtectionOverrides(
-            "+NavigatorHWConcurrency,+CanvasRandomization",
+            "+NavigatorHWConcurrency,+CanvasRandomization"
         )
 
         assertThat(
@@ -656,8 +647,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo("+NavigatorHWConcurrency,+CanvasRandomization"),
         )
 
-        val overrides =
-            (sessionRule.getPrefs("privacy.baselineFingerprintingProtection.overrides").get(0)) as String
+        val overrides = (sessionRule.getPrefs("privacy.baselineFingerprintingProtection.overrides").get(0)) as String
 
         assertThat(
             "baselineFppOverrides pref should be set to the expected value",
@@ -700,8 +690,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(true),
         )
 
-        val enabled =
-            (sessionRule.getPrefs("network.fetchpriority.enabled").get(0)) as Boolean
+        val enabled = (sessionRule.getPrefs("network.fetchpriority.enabled").get(0)) as Boolean
 
         assertThat(
             "Fetch Priority pref should be set to the expected value",
@@ -722,8 +711,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(false),
         )
 
-        val enabled =
-            (sessionRule.getPrefs("network.fetchpriority.enabled").get(0)) as Boolean
+        val enabled = (sessionRule.getPrefs("network.fetchpriority.enabled").get(0)) as Boolean
 
         assertThat(
             "Fetch Priority pref should be set to the expected value",
@@ -750,8 +738,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(0),
         )
 
-        val preference =
-            (sessionRule.getPrefs("security.pki.certificate_transparency.mode").get(0)) as Int
+        val preference = (sessionRule.getPrefs("security.pki.certificate_transparency.mode").get(0)) as Int
 
         assertThat(
             "Certificate Transparency mode pref should be set to 0",
@@ -784,8 +771,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(true),
         )
 
-        val enabled =
-            (sessionRule.getPrefs("javascript.options.mem.gc_parallel_marking").get(0)) as Boolean
+        val enabled = (sessionRule.getPrefs("javascript.options.mem.gc_parallel_marking").get(0)) as Boolean
 
         assertThat(
             "Parallel Marking pref should be set to the expected value",
@@ -812,8 +798,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(false),
         )
 
-        val enabled =
-            (sessionRule.getPrefs("javascript.options.mem.gc_parallel_marking").get(0)) as Boolean
+        val enabled = (sessionRule.getPrefs("javascript.options.mem.gc_parallel_marking").get(0)) as Boolean
 
         assertThat(
             "Parallel Marking pref should be set to the expected value",
@@ -877,16 +862,14 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(true),
         )
 
-        val tlsPreference =
-            (sessionRule.getPrefs("security.tls.enable_kyber").get(0)) as Boolean
+        val tlsPreference = (sessionRule.getPrefs("security.tls.enable_kyber").get(0)) as Boolean
         assertThat(
             "The security.tls.enable_kyber preference should be set to true",
             tlsPreference,
             equalTo(true),
         )
 
-        val http3Preference =
-            (sessionRule.getPrefs("network.http.http3.enable_kyber").get(0)) as Boolean
+        val http3Preference = (sessionRule.getPrefs("network.http.http3.enable_kyber").get(0)) as Boolean
         assertThat(
             "The network.http.http3.enable_kyber preference should be set to true",
             http3Preference,
@@ -923,8 +906,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(true),
         )
 
-        enabled =
-            (sessionRule.getPrefs("docshell.shistory.sameDocumentNavigationOverridesLoadType").get(0)) as Boolean
+        enabled = (sessionRule.getPrefs("docshell.shistory.sameDocumentNavigationOverridesLoadType").get(0)) as Boolean
 
         assertThat(
             "sameDocumentNavigationOverridesLoadType pref should be set to the expected value",
@@ -946,7 +928,8 @@ class RuntimeSettingsTest : BaseSessionTest() {
         )
 
         var sameDocumentNavigationOverridesLoadTypeForceDisable =
-            (sessionRule.getPrefs("docshell.shistory.sameDocumentNavigationOverridesLoadType.forceDisable").get(0)) as String
+            (sessionRule.getPrefs("docshell.shistory.sameDocumentNavigationOverridesLoadType.forceDisable").get(0))
+                as String
 
         assertThat(
             "sameDocumentNavigationOverridesLoadTypeForceDisable pref should be set to the expected value",
@@ -963,7 +946,8 @@ class RuntimeSettingsTest : BaseSessionTest() {
         )
 
         sameDocumentNavigationOverridesLoadTypeForceDisable =
-            (sessionRule.getPrefs("docshell.shistory.sameDocumentNavigationOverridesLoadType.forceDisable").get(0)) as String
+            (sessionRule.getPrefs("docshell.shistory.sameDocumentNavigationOverridesLoadType.forceDisable").get(0))
+                as String
 
         assertThat(
             "sameDocumentNavigationOverridesLoadTypeForceDisable pref should be set to the expected value",
@@ -990,8 +974,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(true),
         )
 
-        val prefEnabled =
-            (sessionRule.getPrefs("network.android_doh.autoselect_enabled").get(0)) as Boolean
+        val prefEnabled = (sessionRule.getPrefs("network.android_doh.autoselect_enabled").get(0)) as Boolean
         assertThat(
             "The network.android_doh.autoselect_enabled preference should be set to true",
             prefEnabled,
@@ -1017,8 +1000,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo("12345,23456"),
         )
 
-        val ports =
-            (sessionRule.getPrefs("network.security.ports.banned").get(0)) as String
+        val ports = (sessionRule.getPrefs("network.security.ports.banned").get(0)) as String
 
         assertThat(
             "Pref value should match setting",
@@ -1046,8 +1028,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(crliteChannel),
         )
 
-        val crlitePreference =
-            (sessionRule.getPrefs("security.pki.crlite_channel").get(0)) as String
+        val crlitePreference = (sessionRule.getPrefs("security.pki.crlite_channel").get(0)) as String
         assertThat(
             "The security.pki.crlite_channel preference should be set to the correct string",
             crlitePreference,
@@ -1060,8 +1041,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
         val geckoRuntimeSettings = sessionRule.runtime.settings
 
         // Read the default pref value.
-        var defaultPrefValue =
-            (sessionRule.getPrefs("browser.safebrowsing.provider.google5.enabled").get(0)) as Boolean
+        var defaultPrefValue = (sessionRule.getPrefs("browser.safebrowsing.provider.google5.enabled").get(0)) as Boolean
 
         // Verify the Safe Browsing V5 enabled setting matches the default
         // pref value.
@@ -1082,8 +1062,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
         )
 
         // Verify the Safe Browsing V5 enabled pref does change.
-        var enabled =
-            (sessionRule.getPrefs("browser.safebrowsing.provider.google5.enabled").get(0)) as Boolean
+        var enabled = (sessionRule.getPrefs("browser.safebrowsing.provider.google5.enabled").get(0)) as Boolean
 
         assertThat(
             "Safe Browsing V5 enabled pref should match setting",
@@ -1096,8 +1075,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
     fun safeBrowsingGlobalCacheEnabled() {
         val geckoRuntimeSettings = sessionRule.runtime.settings
 
-        var defaultPrefValue =
-            (sessionRule.getPrefs("browser.safebrowsing.globalCache.enabled").get(0)) as Boolean
+        var defaultPrefValue = (sessionRule.getPrefs("browser.safebrowsing.globalCache.enabled").get(0)) as Boolean
 
         assertThat(
             "Global cache enabled pref should match setting",
@@ -1113,8 +1091,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(!defaultPrefValue),
         )
 
-        var prefValue =
-            (sessionRule.getPrefs("browser.safebrowsing.globalCache.enabled").get(0)) as Boolean
+        var prefValue = (sessionRule.getPrefs("browser.safebrowsing.globalCache.enabled").get(0)) as Boolean
 
         assertThat(
             "Global cache enabled pref should match after change",
@@ -1127,8 +1104,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
     fun safeBrowsingRealTimeEnabled() {
         val geckoRuntimeSettings = sessionRule.runtime.settings
 
-        var defaultPrefValue =
-            (sessionRule.getPrefs("browser.safebrowsing.realTime.enabled").get(0)) as Boolean
+        var defaultPrefValue = (sessionRule.getPrefs("browser.safebrowsing.realTime.enabled").get(0)) as Boolean
 
         assertThat(
             "Real-time enabled pref should match setting",
@@ -1144,8 +1120,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(!defaultPrefValue),
         )
 
-        var prefValue =
-            (sessionRule.getPrefs("browser.safebrowsing.realTime.enabled").get(0)) as Boolean
+        var prefValue = (sessionRule.getPrefs("browser.safebrowsing.realTime.enabled").get(0)) as Boolean
 
         assertThat(
             "Real-time enabled pref should match after change",
@@ -1175,8 +1150,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(!defaultPrefValue),
         )
 
-        var prefValue =
-            (sessionRule.getPrefs("browser.safebrowsing.realTime.simulation.enabled").get(0)) as Boolean
+        var prefValue = (sessionRule.getPrefs("browser.safebrowsing.realTime.simulation.enabled").get(0)) as Boolean
 
         assertThat(
             "Real-time simulation enabled pref should match after change",
@@ -1207,8 +1181,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(newValue),
         )
 
-        var prefValue =
-            (sessionRule.getPrefs("browser.safebrowsing.realTime.simulation.hitProbability").get(0)) as Int
+        var prefValue = (sessionRule.getPrefs("browser.safebrowsing.realTime.simulation.hitProbability").get(0)) as Int
 
         assertThat(
             "Hit probability pref should match after change",
@@ -1239,8 +1212,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
             equalTo(newValue),
         )
 
-        var prefValue =
-            (sessionRule.getPrefs("browser.safebrowsing.realTime.simulation.cacheTTLSec").get(0)) as Int
+        var prefValue = (sessionRule.getPrefs("browser.safebrowsing.realTime.simulation.cacheTTLSec").get(0)) as Int
 
         assertThat(
             "Cache TTL pref should match after change",

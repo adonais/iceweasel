@@ -17,11 +17,9 @@ import android.widget.TextView
 import androidx.core.widget.PopupWindowCompat
 import mozilla.components.browser.menu.R
 
-/**
- * A tooltip shown on long click on an anchor view.
- * There can be only one tooltip shown at a given moment.
- */
-internal class CustomTooltip private constructor(
+/** A tooltip shown on long click on an anchor view. There can be only one tooltip shown at a given moment. */
+internal class CustomTooltip
+private constructor(
     private val anchor: View,
     private val tooltipText: CharSequence,
 ) : OnLongClickListener, View.OnAttachStateChangeListener {
@@ -74,16 +72,16 @@ internal class CustomTooltip private constructor(
         activeTooltip?.hide()
         activeTooltip = this
 
-        val layout = LayoutInflater.from(anchor.context)
-            .inflate(R.layout.mozac_browser_tooltip_layout, null)
+        val layout = LayoutInflater.from(anchor.context).inflate(R.layout.mozac_browser_tooltip_layout, null)
 
         layout.findViewById<TextView>(R.id.mozac_browser_tooltip_text).text = tooltipText
-        popupWindow = PopupWindow(
-            layout,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            false,
-        )
+        popupWindow =
+            PopupWindow(
+                layout,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                false,
+            )
 
         val offsets = computeOffsets()
 
@@ -122,11 +120,11 @@ internal class CustomTooltip private constructor(
         private const val TOOLTIP_EXTRA_VERTICAL_OFFSET_DP = 8
 
         // The tooltip currently being shown properly disposed in hide() / onViewDetachedFromWindow()
-        @SuppressLint("StaticFieldLeak")
-        private var activeTooltip: CustomTooltip? = null
+        @SuppressLint("StaticFieldLeak") private var activeTooltip: CustomTooltip? = null
 
         /**
          * Set the tooltip text for the view.
+         *
          * @param view view to set the tooltip for
          * @param tooltipText the tooltip text
          */
@@ -146,8 +144,6 @@ internal class CustomTooltip private constructor(
         }
     }
 
-    /**
-     * A data class for storing x and y offsets
-     */
+    /** A data class for storing x and y offsets */
     data class Offset(val x: Int, val y: Int)
 }

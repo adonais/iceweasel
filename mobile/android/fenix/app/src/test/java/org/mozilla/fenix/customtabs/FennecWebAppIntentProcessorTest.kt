@@ -5,6 +5,7 @@
 package org.mozilla.fenix.customtabs
 
 import io.mockk.mockk
+import java.io.File
 import mozilla.components.feature.pwa.ManifestStorage
 import mozilla.components.feature.tabs.CustomTabsUseCases
 import mozilla.components.support.test.robolectric.testContext
@@ -13,7 +14,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 class FennecWebAppIntentProcessorTest {
@@ -29,7 +29,11 @@ class FennecWebAppIntentProcessorTest {
     fun `fennec manifest path - correct path`() {
         val processor = createFennecWebAppIntentProcessor()
 
-        val file = File(testContext.filesDir.absolutePath + "/mozilla/rkgl5eyc.default/manifests/c311ad28-f331-482f-ba8f-a0fbf2c56a0d.json")
+        val file =
+            File(
+                testContext.filesDir.absolutePath +
+                    "/mozilla/rkgl5eyc.default/manifests/c311ad28-f331-482f-ba8f-a0fbf2c56a0d.json"
+            )
         assertTrue(processor.isUnderFennecManifestDirectory(file))
     }
 
@@ -37,7 +41,10 @@ class FennecWebAppIntentProcessorTest {
     fun `fennec manifest path - correct path, but other app`() {
         val processor = createFennecWebAppIntentProcessor()
 
-        val file = File("/data/data/org.other.app/files/mozilla/rkgl5eyc.default/manifests/c311ad28-f331-482f-ba8f-a0fbf2c56a0d.json")
+        val file =
+            File(
+                "/data/data/org.other.app/files/mozilla/rkgl5eyc.default/manifests/c311ad28-f331-482f-ba8f-a0fbf2c56a0d.json"
+            )
         assertFalse(processor.isUnderFennecManifestDirectory(file))
     }
 
@@ -53,7 +60,8 @@ class FennecWebAppIntentProcessorTest {
     fun `fennec manifest path - tmp path rebuild`() {
         val processor = createFennecWebAppIntentProcessor()
 
-        val file = File("/data/local/tmp/files/mozilla/rkgl5eyc.default/manifests/c311ad28-f331-482f-ba8f-a0fbf2c56a0d.json")
+        val file =
+            File("/data/local/tmp/files/mozilla/rkgl5eyc.default/manifests/c311ad28-f331-482f-ba8f-a0fbf2c56a0d.json")
         assertFalse(processor.isUnderFennecManifestDirectory(file))
     }
 }

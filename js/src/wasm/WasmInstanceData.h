@@ -68,9 +68,9 @@ struct TypeDefInstanceData {
   GCPtr<Shape*> shape;
   const JSClass* clasp;
 
-  // This union is only meaningful for structs and arrays, and should otherwise
-  // be zeroed out.  It exists so that allocators of structs and arrays don't
-  // need to chase through `typeDef` to find this info.
+  // This union is only meaningful for structs, arrays and continuations,
+  // and should otherwise be zeroed out. It exists so that allocators for
+  // these types don't need to chase through `typeDef` to find this info.
   union {
     struct {
       // When `typeDef` refers to a struct type, these are copied unchanged
@@ -88,6 +88,11 @@ struct TypeDefInstanceData {
       // `typeDef->arrayType().fieldType_.size()` (a size in bytes).
       uint32_t elemSize;
     } array;
+    struct {
+      // When `typeDef` refers to a cont type, the address of the type-specific
+      // base frame stub, or null if stack switching is disabled.
+      void* baseFrameStub;
+    } cont;
   } cached;
 
   static constexpr size_t offsetOfShape() {
@@ -98,6 +103,9 @@ struct TypeDefInstanceData {
   }
   static constexpr size_t offsetOfArrayElemSize() {
     return offsetof(TypeDefInstanceData, cached.array.elemSize);
+  }
+  static constexpr size_t offsetOfContBaseFrameStub() {
+    return offsetof(TypeDefInstanceData, cached.cont.baseFrameStub);
   }
 };
 

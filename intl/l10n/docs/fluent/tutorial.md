@@ -10,63 +10,27 @@
 
 # Fluent for Firefox Developers
 
-This tutorial is intended for Firefox engineers already familiar with the previous
-localization systems offered by Gecko - DTD and StringBundle - and assumes
-prior experience with those systems.
+[Fluent] is a modern localization system introduced into
+the Gecko platform with a focus on quality, performance, maintenance and completeness.
 
+This document covers using Fluent for Firefox localization.
 For a more hands-on tutorial of understanding Fluent from the ground up, try
 following the [Fluent DOMLocalization Tutorial](https://projectfluent.org/dom-l10n-documentation/), which provides some background on
 how Fluent works and walks you through creating a basic web project from scratch that
 uses Fluent for localization.
 
-## Using Fluent in Gecko
+## Getting Started
 
-[Fluent] is a modern localization system introduced into
-the Gecko platform with a focus on quality, performance, maintenance and completeness.
-
-The legacy DTD system is deprecated, and Fluent should be used where possible.
-
-### Getting a Review
+- [Guidelines for Working with Fluent Files](./review.md)
+- [ProjectFluent Good Practices for Developers]
+- [Mozilla Localization Best Practices For Developers]
 
 If you work on any patch that touches FTL files, you'll need to get a review
 from [fluent-reviewers](https://phabricator.services.mozilla.com/tag/fluent-reviewers/). There's a Herald hook that automatically sets
 that group as a blocking reviewer.
 
-Guidelines for the review process are available [here](./review.md).
-
-To lighten the burden on reviewers, please take a moment to review some
-best practices before submitting your patch for review.
-
-- [ProjectFluent Good Practices for Developers]
-- [Mozilla Localization Best Practices For Developers]
-
-## Major Benefits
-
-Fluent [ties tightly](https://github.com/projectfluent/fluent/wiki/Fluent-and-Standards) into the domain of internationalization
-through [Unicode], [CLDR] and [ICU].
-
-More specifically, the most observable benefits for each group of consumers are
-
-### Developers
-
-- Support for XUL, XHTML, HTML, Web Components, React, JS, Python and Rust
-- Strings are available in a single, unified localization context available for both DOM and runtime code
-- Full internationalization (i18n) support: date and time formatting, number formatting, plurals, genders etc.
-- Strong focus on [declarative API via DOM attributes](https://github.com/projectfluent/fluent/wiki/Get-Started)
-- Extensible with custom formatters, Mozilla-specific APIs etc.
-- [Separation of concerns](https://github.com/projectfluent/fluent/wiki/Design-Principles): localization details, and the added complexity of some languages, don't leak onto the source code and are no concern for developers
-- Compound messages link a single translation unit to a single UI element
-- [DOM Overlays](https://github.com/projectfluent/fluent.js/wiki/DOM-Overlays) allow for localization of DOM fragments
-- Simplified build system model
-- No need for pre-processing instructions
-- Support for pseudolocalization
-
-### Product Quality
-
-- A robust, multilevel, [error fallback system](https://github.com/projectfluent/fluent/wiki/Error-Handling) prevents XML errors and runtime errors
-- Simplified l10n API reduces the amount of l10n specific code and resulting bugs
-- Runtime localization allows for dynamic language changes and updates over-the-air
-- DOM Overlays increase localization security
+To minimize back-and-forth during the review, please take a moment to review some of the
+best practices above before submitting your patch for review.
 
 ## Fluent Translation List - FTL
 
@@ -653,6 +617,34 @@ mozregression --app firefox-l10n --lang nl --good 2024-01-01
 ```
 
 and that should run localized nightlies.
+
+## Why use Fluent?
+
+Fluent [ties tightly](https://github.com/projectfluent/fluent/wiki/Fluent-and-Standards) into the domain of internationalization
+through [Unicode], [CLDR] and [ICU].
+
+More specifically, the most observable benefits for each group of consumers are
+
+### Developers
+
+- Support for XUL, XHTML, HTML, Web Components, React, JS, Python and Rust
+- Strings are available in a single, unified localization context available for both DOM and runtime code
+- Full internationalization (i18n) support: date and time formatting, number formatting, plurals, genders etc.
+- Strong focus on [declarative API via DOM attributes](https://github.com/projectfluent/fluent/wiki/Get-Started)
+- Extensible with custom formatters, Mozilla-specific APIs etc.
+- [Separation of concerns](https://github.com/projectfluent/fluent/wiki/Design-Principles): localization details, and the added complexity of some languages, don't leak onto the source code and are no concern for developers
+- Compound messages link a single translation unit to a single UI element
+- [DOM Overlays](https://github.com/projectfluent/fluent.js/wiki/DOM-Overlays) allow for localization of DOM fragments
+- Simplified build system model
+- No need for pre-processing instructions
+- Support for pseudolocalization
+
+### Product Quality
+
+- A robust, multilevel, [error fallback system](https://github.com/projectfluent/fluent/wiki/Error-Handling) prevents XML errors and runtime errors
+- Simplified l10n API reduces the amount of l10n specific code and resulting bugs
+- Runtime localization allows for dynamic language changes and updates over-the-air
+- DOM Overlays increase localization security
 
 ## Inner Structure of Fluent
 

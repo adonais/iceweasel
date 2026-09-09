@@ -12,20 +12,20 @@ typealias ConsumableListener = () -> Unit
  * @param value The value to be wrapped.
  * @param onConsume A callback that gets invoked if the wrapped value gets consumed.
  */
-class Consumable<T> private constructor(
+class Consumable<T>
+private constructor(
     internal var value: T?,
     onConsume: ConsumableListener? = null,
 ) {
 
-    private val listeners = mutableSetOf<ConsumableListener>().also { listeners ->
-        if (onConsume != null) {
-            listeners.add(onConsume)
+    private val listeners =
+        mutableSetOf<ConsumableListener>().also { listeners ->
+            if (onConsume != null) {
+                listeners.add(onConsume)
+            }
         }
-    }
 
-    /**
-     * Invokes the given lambda and marks the value as consumed if the lambda returns true.
-     */
+    /** Invokes the given lambda and marks the value as consumed if the lambda returns true. */
     @Synchronized
     fun consume(consumer: (value: T) -> Boolean): Boolean {
         return if (value?.let(consumer) == true) {
@@ -37,10 +37,7 @@ class Consumable<T> private constructor(
         }
     }
 
-    /**
-     * Invokes the given list of lambdas and marks the value as consumed if at least one lambda
-     * returns true.
-     */
+    /** Invokes the given list of lambdas and marks the value as consumed if at least one lambda returns true. */
     @Synchronized
     fun consumeBy(consumers: List<(T) -> Boolean>): Boolean {
         val value = value ?: return false
@@ -55,17 +52,11 @@ class Consumable<T> private constructor(
         }
     }
 
-    /**
-     * Returns whether the value was consumed.
-     */
-    @Synchronized
-    fun isConsumed() = value == null
+    /** Returns whether the value was consumed. */
+    @Synchronized fun isConsumed() = value == null
 
-    /**
-     * Returns the value of this [Consumable] without consuming it.
-     */
-    @Synchronized
-    fun peek(): T? = value
+    /** Returns the value of this [Consumable] without consuming it. */
+    @Synchronized fun peek(): T? = value
 
     /**
      * Adds a listener to be invoked when this [Consumable] is consumed.
@@ -78,34 +69,23 @@ class Consumable<T> private constructor(
     }
 
     companion object {
-        /**
-         * Creates a new Consumable wrapping the given value.
-         */
+        /** Creates a new Consumable wrapping the given value. */
         fun <T> from(value: T, onConsume: (() -> Unit)? = null): Consumable<T> = Consumable(value, onConsume)
 
-        /**
-         * Creates a new Consumable stream for the provided values.
-         */
-        fun <T> stream(vararg values: T): ConsumableStream<T> = ConsumableStream(
-            values.map { Consumable(it) },
-        )
+        /** Creates a new Consumable stream for the provided values. */
+        fun <T> stream(vararg values: T): ConsumableStream<T> = ConsumableStream(values.map { Consumable(it) })
 
-        /**
-         * Returns an empty Consumable with not value as if it was consumed already.
-         */
+        /** Returns an empty Consumable with not value as if it was consumed already. */
         fun <T> empty(): Consumable<T> = Consumable(null)
     }
 }
 
-/**
- * A generic wrapper for a stream of values that can be consumed. Values will
- * be consumed first in, first out.
- */
+/** A generic wrapper for a stream of values that can be consumed. Values will be consumed first in, first out. */
 class ConsumableStream<T> internal constructor(private val consumables: List<Consumable<T>>) {
 
     /**
-     * Invokes the given lambda with the next consumable value and marks the value
-     * as consumed if the lambda returns true.
+     * Invokes the given lambda with the next consumable value and marks the value as consumed if the lambda returns
+     * true.
      *
      * @param consumer a lambda accepting a consumable value.
      * @return true if the consumable was consumed, otherwise false.
@@ -117,8 +97,7 @@ class ConsumableStream<T> internal constructor(private val consumables: List<Con
     }
 
     /**
-     * Invokes the given lambda for each consumable value and marks the values
-     * as consumed if the lambda returns true.
+     * Invokes the given lambda for each consumable value and marks the values as consumed if the lambda returns true.
      *
      * @param consumer a lambda accepting a consumable value.
      * @return true if all consumables were consumed, otherwise false.
@@ -130,8 +109,8 @@ class ConsumableStream<T> internal constructor(private val consumables: List<Con
     }
 
     /**
-     * Invokes the given list of lambdas with the next consumable value and marks the
-     * value as consumed if at least one lambda returns true.
+     * Invokes the given list of lambdas with the next consumable value and marks the value as consumed if at least one
+     * lambda returns true.
      *
      * @param consumers the lambdas accepting the next consumable value.
      * @return true if the consumable was consumed, otherwise false.
@@ -143,8 +122,8 @@ class ConsumableStream<T> internal constructor(private val consumables: List<Con
     }
 
     /**
-     * Invokes the given list of lambdas for each consumable value and marks the
-     * values as consumed if at least one lambda returns true.
+     * Invokes the given list of lambdas for each consumable value and marks the values as consumed if at least one
+     * lambda returns true.
      *
      * @param consumers the lambdas accepting a consumable value.
      * @return true if all consumables were consumed, otherwise false.
@@ -172,8 +151,7 @@ class ConsumableStream<T> internal constructor(private val consumables: List<Con
      * @return a new consumable stream with the matching values removed.
      */
     @Synchronized
-    fun remove(value: T): ConsumableStream<T> =
-        ConsumableStream(consumables.filterNot { it.value == value })
+    fun remove(value: T): ConsumableStream<T> = ConsumableStream(consumables.filterNot { it.value == value })
 
     /**
      * Copies the stream but removes all consumed values.
@@ -181,18 +159,11 @@ class ConsumableStream<T> internal constructor(private val consumables: List<Con
      * @return a new consumable stream with the consumed values removed.
      */
     @Synchronized
-    fun removeConsumed(): ConsumableStream<T> =
-        ConsumableStream(consumables.filterNot { it.isConsumed() })
+    fun removeConsumed(): ConsumableStream<T> = ConsumableStream(consumables.filterNot { it.isConsumed() })
 
-    /**
-     * Returns true if all values in this stream were consumed, otherwise false.
-     */
-    @Synchronized
-    fun isConsumed() = consumables.filterNot { it.isConsumed() }.isEmpty()
+    /** Returns true if all values in this stream were consumed, otherwise false. */
+    @Synchronized fun isConsumed() = consumables.filterNot { it.isConsumed() }.isEmpty()
 
-    /**
-     * Returns true if the stream is empty, otherwise false.
-     */
-    @Synchronized
-    fun isEmpty() = consumables.isEmpty()
+    /** Returns true if the stream is empty, otherwise false. */
+    @Synchronized fun isEmpty() = consumables.isEmpty()
 }

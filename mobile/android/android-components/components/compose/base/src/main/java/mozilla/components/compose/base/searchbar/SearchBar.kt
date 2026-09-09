@@ -18,11 +18,13 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SearchBar as M3SearchBar
 import androidx.compose.material3.SearchBarColors
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SearchBarScrollBehavior
 import androidx.compose.material3.SearchBarState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopSearchBar as M3TopSearchBar
 import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -44,14 +46,12 @@ import mozilla.components.compose.base.R
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.theme.AcornTheme
-import androidx.compose.material3.SearchBar as M3SearchBar
-import androidx.compose.material3.TopSearchBar as M3TopSearchBar
 import mozilla.components.ui.icons.R as iconsR
 
 /**
- * A wrapper around the Material3 [SearchBar] that exposes a query-based API and uses
- * [SearchBarInputField] to handle input behavior. This version adds support for dynamic
- * trailing-icon behavior, allowing icons to update based on the current query state.
+ * A wrapper around the Material3 [SearchBar] that exposes a query-based API and uses [SearchBarInputField] to handle
+ * input behavior. This version adds support for dynamic trailing-icon behavior, allowing icons to update based on the
+ * current query state.
  *
  * @param query the current text entered in the search field.
  * @param onQueryChange called when the query text is changed by the user.
@@ -62,21 +62,21 @@ import mozilla.components.ui.icons.R as iconsR
  * @param enabled whether the search bar is enabled.
  * @param placeholder optional placeholder composable displayed in the input field when [query] is empty.
  * @param leadingIcon optional leading icon displayed at the start of the input field.
- * @param trailingIcon trailing icon displayed at the end of the input field when there is
- * no text or when a clear icon is not being shown.
- * @param shape the shape of this search bar when it is not expanded. When expanded, the shape will
- * always be [SearchBarDefaults.fullScreenShape].
- * @param colors [SearchBarColors] used to resolve the colors for this search bar in different
- * states. See [SearchBarDefaults.colors].
- * @param tonalElevation when [SearchBarColors.containerColor] is surface, a translucent
- * primary color overlay is applied on top of the container. A higher tonal elevation
- * value will result in a darker color in light theme and a lighter color in dark theme.
+ * @param trailingIcon trailing icon displayed at the end of the input field when there is no text or when a clear icon
+ *   is not being shown.
+ * @param shape the shape of this search bar when it is not expanded. When expanded, the shape will always be
+ *   [SearchBarDefaults.fullScreenShape].
+ * @param colors [SearchBarColors] used to resolve the colors for this search bar in different states. See
+ *   [SearchBarDefaults.colors].
+ * @param tonalElevation when [SearchBarColors.containerColor] is surface, a translucent primary color overlay is
+ *   applied on top of the container. A higher tonal elevation value will result in a darker color in light theme and a
+ *   lighter color in dark theme.
  * @param shadowElevation the elevation for the shadow below this search bar.
  * @param windowInsets the window insets that this search bar will respect.
- * @param interactionSource the [MutableInteractionSource] representing the stream of interactions
- * for this search bar. You can use this to observe focus, press, and other interactions.
- * @param content the content of this search bar to display search results below the input field
- * when [expanded] is true.
+ * @param interactionSource the [MutableInteractionSource] representing the stream of interactions for this search bar.
+ *   You can use this to observe focus, press, and other interactions.
+ * @param content the content of this search bar to display search results below the input field when [expanded] is
+ *   true.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -128,9 +128,9 @@ fun SearchBar(
 }
 
 /**
- * A Material3 [SearchBar] that places the search bar at the top of the layout and uses
- * [SearchBarInputField] to handle input behavior. This adds support for dynamic
- * trailing-icon behavior and automatically updates icons based on the current query state.
+ * A Material3 [SearchBar] that places the search bar at the top of the layout and uses [SearchBarInputField] to handle
+ * input behavior. This adds support for dynamic trailing-icon behavior and automatically updates icons based on the
+ * current query state.
  *
  * @param state the state of the search bar.
  * @param modifier optional [Modifier] for customizing the layout or behavior of the search bar.
@@ -142,18 +142,18 @@ fun SearchBar(
  * @param enabled whether the search bar is interactive.
  * @param placeholder optional placeholder composable shown when the query is empty.
  * @param leadingIcon optional composable displayed at the start of the input field.
- * @param trailingIcon trailing icon displayed when the bar is not expanded, or when
- * the implementation determines no dynamic icon should replace it.
+ * @param trailingIcon trailing icon displayed when the bar is not expanded, or when the implementation determines no
+ *   dynamic icon should replace it.
  * @param shape the shape of the search bar when collapsed; expanded shape is always
- * [SearchBarDefaults.fullScreenShape].
+ *   [SearchBarDefaults.fullScreenShape].
  * @param colors the [SearchBarColors] used to resolve container, content, and indicator colors.
  * @param tonalElevation the tonal elevation applied to the container surface.
  * @param shadowElevation the elevation of the search bar's shadow.
  * @param windowInsets the window insets that this search bar should respect.
- * @param interactionSource an optional [MutableInteractionSource] for observing focus and
- * press interactions within the input field.
- * @param scrollBehavior optional [SearchBarScrollBehavior] controlling how the search bar
- * responds to scroll events (pinned, enter-always, etc.).
+ * @param interactionSource an optional [MutableInteractionSource] for observing focus and press interactions within the
+ *   input field.
+ * @param scrollBehavior optional [SearchBarScrollBehavior] controlling how the search bar responds to scroll events
+ *   (pinned, enter-always, etc.).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -220,9 +220,7 @@ private fun SearchBarInputField(
     colors: SearchBarColors,
     interactionSource: MutableInteractionSource?,
 ) {
-    CompositionLocalProvider(
-        LocalTextStyle provides AcornTheme.typography.body1,
-    ) {
+    CompositionLocalProvider(LocalTextStyle provides AcornTheme.typography.body1) {
         SearchBarDefaults.InputField(
             modifier = Modifier.fillMaxWidth(),
             query = query,
@@ -234,9 +232,7 @@ private fun SearchBarInputField(
             placeholder = placeholder,
             leadingIcon = leadingIcon,
             trailingIcon = {
-                CompositionLocalProvider(
-                    LocalContentColor provides MaterialTheme.colorScheme.onSurface,
-                ) {
+                CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         when {
                             !expanded -> trailingIcon?.invoke()
@@ -244,9 +240,10 @@ private fun SearchBarInputField(
                             expanded && query.isNotEmpty() -> {
                                 IconButton(
                                     onClick = { onQueryChange("") },
-                                    contentDescription = stringResource(
-                                        R.string.text_field_cross_trailing_icon_default_content_description,
-                                    ),
+                                    contentDescription =
+                                        stringResource(
+                                            R.string.text_field_cross_trailing_icon_default_content_description
+                                        ),
                                 ) {
                                     Icon(
                                         painterResource(iconsR.drawable.mozac_ic_cross_circle_fill_24),
@@ -276,28 +273,27 @@ private data class SearchBarPreviewState(
 )
 
 /**
- * Provides a sequence of [SearchBarPreviewState] configurations for Compose previews to render
- * the SearchBar in multiple visual states without duplicating preview functions.
+ * Provides a sequence of [SearchBarPreviewState] configurations for Compose previews to render the SearchBar in
+ * multiple visual states without duplicating preview functions.
  */
-private class SearchBarIconsPreviewProvider :
-    PreviewParameterProvider<SearchBarPreviewState> {
-    override val values = sequenceOf(
-        SearchBarPreviewState(),
-        SearchBarPreviewState(
-            showTrailing = true,
-        ),
-        SearchBarPreviewState(
-            showTrailing = true,
-            showSecondaryTrailing = true,
-        ),
-    )
+private class SearchBarIconsPreviewProvider : PreviewParameterProvider<SearchBarPreviewState> {
+    override val values =
+        sequenceOf(
+            SearchBarPreviewState(),
+            SearchBarPreviewState(showTrailing = true),
+            SearchBarPreviewState(
+                showTrailing = true,
+                showSecondaryTrailing = true,
+            ),
+        )
 }
 
-private val PreviewSearchItems = listOf(
-    "Mozilla",
-    "Google",
-    "Google Maps",
-)
+private val PreviewSearchItems =
+    listOf(
+        "Mozilla",
+        "Google",
+        "Google Maps",
+    )
 
 @Composable
 private fun rememberFilteredItems(
@@ -318,8 +314,7 @@ private fun rememberFilteredItems(
 @PreviewLightDark
 @Composable
 private fun SearchBarPreview(
-    @PreviewParameter(SearchBarIconsPreviewProvider::class)
-    previewState: SearchBarPreviewState,
+    @PreviewParameter(SearchBarIconsPreviewProvider::class) previewState: SearchBarPreviewState
 ) {
     var query by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
@@ -371,9 +366,7 @@ private fun SearchBarPreview(
                     null
                 },
         ) {
-            CompositionLocalProvider(
-                LocalContentColor provides MaterialTheme.colorScheme.onSurface,
-            ) {
+            CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
                 filteredItems.forEach { item ->
                     Text(
                         text = item,
@@ -440,12 +433,9 @@ private fun TopSearchBarPreview() {
                         }
                     },
                 )
-            },
+            }
         ) { innerPadding ->
-            LazyColumn(
-                modifier = Modifier
-                    .padding(innerPadding),
-            ) {
+            LazyColumn(modifier = Modifier.padding(innerPadding)) {
                 items(filteredItems) { item ->
                     Text(
                         text = item,

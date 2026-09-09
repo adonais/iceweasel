@@ -22,7 +22,9 @@ import org.mockito.Mockito.mock
 @RunWith(AndroidJUnit4::class)
 class TwoStateBrowserMenuImageTextTest {
 
-    private val context: Context get() = ApplicationProvider.getApplicationContext()
+    private val context: Context
+        get() = ApplicationProvider.getApplicationContext()
+
     private lateinit var menuItemPrimary: TwoStateBrowserMenuImageText
     private lateinit var menuItemSecondary: TwoStateBrowserMenuImageText
 
@@ -34,24 +36,26 @@ class TwoStateBrowserMenuImageTextTest {
 
     @Before
     fun setup() {
-        menuItemPrimary = TwoStateBrowserMenuImageText(
-            primaryLabel = primaryLabel,
-            secondaryLabel = secondaryLabel,
-            primaryStateIconResource = android.R.drawable.ic_delete,
-            secondaryStateIconResource = android.R.drawable.ic_input_add,
-            isInPrimaryState = { true },
-            primaryStateAction = { primaryPressed = true },
-        )
+        menuItemPrimary =
+            TwoStateBrowserMenuImageText(
+                primaryLabel = primaryLabel,
+                secondaryLabel = secondaryLabel,
+                primaryStateIconResource = android.R.drawable.ic_delete,
+                secondaryStateIconResource = android.R.drawable.ic_input_add,
+                isInPrimaryState = { true },
+                primaryStateAction = { primaryPressed = true },
+            )
 
-        menuItemSecondary = TwoStateBrowserMenuImageText(
-            primaryLabel = primaryLabel,
-            secondaryLabel = secondaryLabel,
-            primaryStateIconResource = android.R.drawable.ic_delete,
-            secondaryStateIconResource = android.R.drawable.ic_input_add,
-            isInPrimaryState = { false },
-            isInSecondaryState = { true },
-            secondaryStateAction = { secondaryPressed = true },
-        )
+        menuItemSecondary =
+            TwoStateBrowserMenuImageText(
+                primaryLabel = primaryLabel,
+                secondaryLabel = secondaryLabel,
+                primaryStateIconResource = android.R.drawable.ic_delete,
+                secondaryStateIconResource = android.R.drawable.ic_input_add,
+                isInPrimaryState = { false },
+                isInSecondaryState = { true },
+                secondaryStateAction = { secondaryPressed = true },
+            )
     }
 
     @Test

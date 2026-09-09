@@ -29,97 +29,82 @@ import org.robolectric.RobolectricTestRunner
 class BrowserStoreToFenixSearchMapperMiddlewareTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `WHEN the browser search state changes THEN update the application search state`() = runTest(UnconfinedTestDispatcher()) {
-        val defaultSearchEngine: SearchEngine = mockk()
-        val newSearchEngines: List<SearchEngine> = listOf(defaultSearchEngine, mockk())
-        val browserStore = BrowserStore(
-            BrowserState(
-                search = SearchState(
-                    applicationSearchEngines = newSearchEngines,
-                ),
-            ),
-        )
-        val middleware = BrowserStoreToFenixSearchMapperMiddleware(browserStore, backgroundScope)
-        val searchStore = buildStore(middleware)
+    fun `WHEN the browser search state changes THEN update the application search state`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val defaultSearchEngine: SearchEngine = mockk()
+            val newSearchEngines: List<SearchEngine> = listOf(defaultSearchEngine, mockk())
+            val browserStore =
+                BrowserStore(BrowserState(search = SearchState(applicationSearchEngines = newSearchEngines)))
+            val middleware = BrowserStoreToFenixSearchMapperMiddleware(browserStore, backgroundScope)
+            val searchStore = buildStore(middleware)
 
-        browserStore.dispatch(ApplicationSearchEnginesLoaded(newSearchEngines))
+            browserStore.dispatch(ApplicationSearchEnginesLoaded(newSearchEngines))
 
-        assertEquals(defaultSearchEngine, searchStore.state.defaultEngine)
-    }
+            assertEquals(defaultSearchEngine, searchStore.state.defaultEngine)
+        }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `GIVEN no appStore WHEN the browser search state changes THEN isPrivate defaults to false`() = runTest(UnconfinedTestDispatcher()) {
-        val newSearchEngines: List<SearchEngine> = listOf(mockk(), mockk())
-        val browserStore = BrowserStore(
-            BrowserState(
-                search = SearchState(
-                    applicationSearchEngines = newSearchEngines,
-                ),
-            ),
-        )
-        val actionsCaptor = CaptureActionsMiddleware<SearchFragmentState, SearchFragmentAction>()
-        val middleware = BrowserStoreToFenixSearchMapperMiddleware(browserStore, backgroundScope)
-        buildStore(middleware, actionsCaptor)
+    fun `GIVEN no appStore WHEN the browser search state changes THEN isPrivate defaults to false`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val newSearchEngines: List<SearchEngine> = listOf(mockk(), mockk())
+            val browserStore =
+                BrowserStore(BrowserState(search = SearchState(applicationSearchEngines = newSearchEngines)))
+            val actionsCaptor = CaptureActionsMiddleware<SearchFragmentState, SearchFragmentAction>()
+            val middleware = BrowserStoreToFenixSearchMapperMiddleware(browserStore, backgroundScope)
+            buildStore(middleware, actionsCaptor)
 
-        browserStore.dispatch(ApplicationSearchEnginesLoaded(newSearchEngines))
+            browserStore.dispatch(ApplicationSearchEnginesLoaded(newSearchEngines))
 
-        actionsCaptor.assertLastAction(SearchFragmentAction.UpdateSearchState::class) {
-            assertFalse(it.isPrivate)
+            actionsCaptor.assertLastAction(SearchFragmentAction.UpdateSearchState::class) {
+                assertFalse(it.isPrivate)
+            }
         }
-    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `GIVEN appStore in private mode WHEN the browser search state changes THEN isPrivate is true`() = runTest(UnconfinedTestDispatcher()) {
-        val newSearchEngines: List<SearchEngine> = listOf(mockk(), mockk())
-        val browserStore = BrowserStore(
-            BrowserState(
-                search = SearchState(
-                    applicationSearchEngines = newSearchEngines,
-                ),
-            ),
-        )
-        val appStore = AppStore(AppState(mode = BrowsingMode.Private))
-        val actionsCaptor = CaptureActionsMiddleware<SearchFragmentState, SearchFragmentAction>()
-        val middleware = BrowserStoreToFenixSearchMapperMiddleware(browserStore, backgroundScope, appStore)
-        buildStore(middleware, actionsCaptor)
+    fun `GIVEN appStore in private mode WHEN the browser search state changes THEN isPrivate is true`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val newSearchEngines: List<SearchEngine> = listOf(mockk(), mockk())
+            val browserStore =
+                BrowserStore(BrowserState(search = SearchState(applicationSearchEngines = newSearchEngines)))
+            val appStore = AppStore(AppState(mode = BrowsingMode.Private))
+            val actionsCaptor = CaptureActionsMiddleware<SearchFragmentState, SearchFragmentAction>()
+            val middleware = BrowserStoreToFenixSearchMapperMiddleware(browserStore, backgroundScope, appStore)
+            buildStore(middleware, actionsCaptor)
 
-        browserStore.dispatch(ApplicationSearchEnginesLoaded(newSearchEngines))
+            browserStore.dispatch(ApplicationSearchEnginesLoaded(newSearchEngines))
 
-        actionsCaptor.assertLastAction(SearchFragmentAction.UpdateSearchState::class) {
-            assertTrue(it.isPrivate)
+            actionsCaptor.assertLastAction(SearchFragmentAction.UpdateSearchState::class) {
+                assertTrue(it.isPrivate)
+            }
         }
-    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `GIVEN appStore in normal mode WHEN the browser search state changes THEN isPrivate is false`() = runTest(UnconfinedTestDispatcher()) {
-        val newSearchEngines: List<SearchEngine> = listOf(mockk(), mockk())
-        val browserStore = BrowserStore(
-            BrowserState(
-                search = SearchState(
-                    applicationSearchEngines = newSearchEngines,
-                ),
-            ),
-        )
-        val appStore = AppStore(AppState(mode = BrowsingMode.Normal))
-        val actionsCaptor = CaptureActionsMiddleware<SearchFragmentState, SearchFragmentAction>()
-        val middleware = BrowserStoreToFenixSearchMapperMiddleware(browserStore, backgroundScope, appStore)
-        buildStore(middleware, actionsCaptor)
+    fun `GIVEN appStore in normal mode WHEN the browser search state changes THEN isPrivate is false`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val newSearchEngines: List<SearchEngine> = listOf(mockk(), mockk())
+            val browserStore =
+                BrowserStore(BrowserState(search = SearchState(applicationSearchEngines = newSearchEngines)))
+            val appStore = AppStore(AppState(mode = BrowsingMode.Normal))
+            val actionsCaptor = CaptureActionsMiddleware<SearchFragmentState, SearchFragmentAction>()
+            val middleware = BrowserStoreToFenixSearchMapperMiddleware(browserStore, backgroundScope, appStore)
+            buildStore(middleware, actionsCaptor)
 
-        browserStore.dispatch(ApplicationSearchEnginesLoaded(newSearchEngines))
+            browserStore.dispatch(ApplicationSearchEnginesLoaded(newSearchEngines))
 
-        actionsCaptor.assertLastAction(SearchFragmentAction.UpdateSearchState::class) {
-            assertFalse(it.isPrivate)
+            actionsCaptor.assertLastAction(SearchFragmentAction.UpdateSearchState::class) {
+                assertFalse(it.isPrivate)
+            }
         }
-    }
 
     private fun buildStore(
         middleware: BrowserStoreToFenixSearchMapperMiddleware,
         vararg additional: CaptureActionsMiddleware<SearchFragmentState, SearchFragmentAction>,
-    ) = SearchFragmentStore(
-        initialState = EMPTY_SEARCH_FRAGMENT_STATE,
-        middleware = listOf(middleware) + additional.toList(),
-    )
+    ) =
+        SearchFragmentStore(
+            initialState = EMPTY_SEARCH_FRAGMENT_STATE,
+            middleware = listOf(middleware) + additional.toList(),
+        )
 }

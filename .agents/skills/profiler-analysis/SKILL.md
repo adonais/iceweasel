@@ -18,17 +18,21 @@ You are helping a Mozilla Firefox engineer analyze a Firefox performance profile
 Before doing anything else, verify `profiler-cli` is installed by running `profiler-cli --version`. If the command is not found, STOP immediately: tell the user to install it (`npm install -g @firefox-devtools/profiler-cli@latest`) and restart the agent, then end your turn. Do NOT attempt any workaround. In particular, do not download profiles from Taskcluster or artifact URLs, do not fetch them with WebFetch, and do not parse profile JSON by hand. `profiler-cli` is the only supported way to load and analyze a profile, and there is no acceptable fallback.
 
 When invoked:
-1. Run `profiler-cli guide` first and read the **entire** output. It is approximately 400 lines. The Bash tool may silently truncate long output, causing you to miss the command reference and analysis patterns that appear later in the guide, so read all of it before proceeding.
-2. If `$ARGUMENTS` contains a profile path or URL, load it with `profiler-cli load`.
+
+1. Run `profiler-cli guide` first and read all of it, unpiped: no `head`, `tail`, or `grep`. It is the command reference, and the analysis patterns come late in the output.
+2. Load the profile into a named session and pass `--session <id>` to every later command, so you never touch a session the user started.
+   Never `stop --all`, and never stop a session you did not start. The profile comes from `$ARGUMENTS`, or from the conversation when a link or path was pasted there.
 3. Walk through the analysis interactively. Run commands and interpret the output.
 4. Suggest next steps based on what the output reveals.
 5. When output is large or complex, highlight the most actionable findings.
+
+The case studies below are snapshots of past investigations, not a command reference: they predate some commands the guide documents, so treat a walkthrough's commands as one route rather than the full set, and use the guide output for the full list of commands.
 
 If the URL is a `profiler.firefox.com/from-file/...` or `profiler.firefox.com/from-browser/...` link, stop and tell the user it cannot be loaded. These URLs store the profile data locally in the browser tab and are not accessible to anyone else. Ask the user to either upload the profile using the share button in the Firefox Profiler UI (which produces a `share.firefox.dev` or `profiler.firefox.com/public/...` link), or pass a local file path to the profile JSON directly.
 
 Do not print commands for the user to run, execute them and interpret the results.
 
-Once there is no more useful information left in the profile to look at, run `profiler-cli stop` to shut down the background daemon process (it persists beyond individual commands and must be explicitly stopped to free the port and memory), then present the findings.
+Once there is no more useful information left in the profile to look at, run `profiler-cli stop --session <id>` to shut down the background daemon process (it persists beyond individual commands and must be explicitly stopped to free the port and memory), then present the findings.
 
 # Accuracy: Never Present Guesses as Facts
 
@@ -43,7 +47,7 @@ Profiles invite plausible-sounding causal stories the data does not support. Eng
 
 The `references/` directory in this skill contains real profiling investigations. Each scenario has two files:
 
-- **Narrative file** (e.g. `macos-extensions-hang-infinite-recursion.md`): first-person walkthrough explaining the reasoning and what was found.
+- **Narrative file** (e.g. `macos-extensions-hang-infinite-recursion.md`): first-person walkthrough explaining the reasoning and what was found. Read it when you need the reasoning rather than the commands, for example when writing findings up for a bug.
 - **profiler-cli companion file** (e.g. `macos-extensions-hang-infinite-recursion-cli.md`): step-by-step `profiler-cli` commands with real output and annotations. These are the most useful for calibrating your approach.
 
 Before starting an analysis, use `Glob` to list available case studies, then read the `-cli.md` file that most closely matches the current scenario:
@@ -54,11 +58,11 @@ Before starting an analysis, use `Glob` to list available case studies, then rea
 - **Hang or jank getting worse over time, IPC I/O thread blocked, long IPCIn marker durations**: `macos-ipc-blob-url-accumulation-cli.md`
 - **Android startup performance**: `simpleperf-non-rooted-firefox-startup-cli.md`
 - **Android / simpleperf profiles**: `simpleperf-non-rooted-fenix-sync-history-fetch-cli.md`
-- **Resource usage (CPU/memory over time)**: `resource-usage-linux-fat-aar-build-cli.md`
+- **Resource usage (CPU/memory over time), marker-only profiles with no samples**: `resource-usage-linux-fat-aar-build-cli.md`
 - **Network or I/O issues**: `macos-network-pr-bad-descriptor-error-cli.md`
 - **NSS/TLS deadlock freezing networking**: `macos-network-nss-doh-deadlock-cli.md`
 - **Broken stack walking**: `windows-broken-stackwalk-jpeg-avx2-cli.md`
 
 If the scenario is unclear, read `firefox-macos-startup-font-initialization-cli.md` as a general-purpose baseline.
 
-The list above is for calibration only. The actual problem may be novel or not covered by any case study. Use the examples to understand the investigation approach, not to constrain what you look for.
+The list above is for calibration only. The actual problem may be novel or not covered by any case study. Use the examples to understand the investigation approach, not to constrain what you look for or which commands you use.

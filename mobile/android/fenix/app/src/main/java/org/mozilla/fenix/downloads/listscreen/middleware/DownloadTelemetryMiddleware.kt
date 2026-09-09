@@ -11,10 +11,7 @@ import org.mozilla.fenix.GleanMetrics.Downloads
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIAction
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIState
 
-/**
- * A [Middleware] for recording telemetry based on [DownloadUIState]s that are dispatch to the
- * [DownloadUIStore].
- */
+/** A [Middleware] for recording telemetry based on [DownloadUIState]s that are dispatch to the [DownloadUIStore]. */
 class DownloadTelemetryMiddleware : Middleware<DownloadUIState, DownloadUIAction> {
 
     override fun invoke(
@@ -53,7 +50,7 @@ class DownloadTelemetryMiddleware : Middleware<DownloadUIState, DownloadUIAction
             }
 
             is DownloadUIAction.ResumeDownload -> {
-               Downloads.resumeDownload.record(NoExtras())
+                Downloads.resumeDownload.record(NoExtras())
             }
 
             is DownloadUIAction.CancelDownload -> {

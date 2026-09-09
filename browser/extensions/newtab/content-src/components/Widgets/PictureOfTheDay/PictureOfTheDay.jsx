@@ -376,7 +376,10 @@ const PictureOfTheDay = ({
             menuId="picture-of-the-day-context-menu"
             type="ghost"
           />
-          <panel-list id="picture-of-the-day-context-menu">
+          <panel-list
+            className="panel-list-no-icons"
+            id="picture-of-the-day-context-menu"
+          >
             <panel-item
               data-l10n-id="newtab-picture-menu-manage-wallpaper"
               onClick={handleManageWallpaper}

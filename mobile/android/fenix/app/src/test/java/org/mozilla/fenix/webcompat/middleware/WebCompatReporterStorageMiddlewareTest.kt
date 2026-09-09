@@ -8,7 +8,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.components.AppStore
@@ -24,22 +23,23 @@ class WebCompatReporterStorageMiddlewareTest {
     @Test
     fun `GIVEN a previous session with the same URL WHEN the store is initialized THEN the previous state is restored`() {
         val matchingURL = "www.mozilla.org"
-        val expected = WebCompatState(
-            tabUrl = matchingURL,
-            enteredUrl = matchingURL,
-            reason = WebCompatReporterState.BrokenSiteReason.Media.name,
-            problemDescription = "A user provided problem description.",
-        )
-        val initialState = WebCompatReporterState(
-            tabUrl = matchingURL,
-            enteredUrl = matchingURL,
-        )
-        val store = createWebCompatReporterStore(
-            initialState = initialState,
-            appStore = createAppStore(
-                webCompatState = expected,
-            ),
-        )
+        val expected =
+            WebCompatState(
+                tabUrl = matchingURL,
+                enteredUrl = matchingURL,
+                reason = WebCompatReporterState.BrokenSiteReason.Media.name,
+                problemDescription = "A user provided problem description.",
+            )
+        val initialState =
+            WebCompatReporterState(
+                tabUrl = matchingURL,
+                enteredUrl = matchingURL,
+            )
+        val store =
+            createWebCompatReporterStore(
+                initialState = initialState,
+                appStore = createAppStore(webCompatState = expected),
+            )
 
         assertEquals(expected.toReporterState(), store.state)
         assertNotEquals(initialState, store.state)
@@ -47,22 +47,23 @@ class WebCompatReporterStorageMiddlewareTest {
 
     @Test
     fun `GIVEN a previous session with a different URL WHEN the store is initialized THEN the previous state is not restored`() {
-        val previousState = WebCompatState(
-            tabUrl = "www.mozilla.org",
-            enteredUrl = "www.mozilla.org",
-            reason = WebCompatReporterState.BrokenSiteReason.Media.name,
-            problemDescription = "A user provided problem description.",
-        )
-        val expected = WebCompatReporterState(
-            tabUrl = "www.example.com",
-            enteredUrl = "www.example.com",
-        )
-        val store = createWebCompatReporterStore(
-            initialState = expected,
-            appStore = createAppStore(
-                webCompatState = previousState,
-            ),
-        )
+        val previousState =
+            WebCompatState(
+                tabUrl = "www.mozilla.org",
+                enteredUrl = "www.mozilla.org",
+                reason = WebCompatReporterState.BrokenSiteReason.Media.name,
+                problemDescription = "A user provided problem description.",
+            )
+        val expected =
+            WebCompatReporterState(
+                tabUrl = "www.example.com",
+                enteredUrl = "www.example.com",
+            )
+        val store =
+            createWebCompatReporterStore(
+                initialState = expected,
+                appStore = createAppStore(webCompatState = previousState),
+            )
 
         assertNotEquals(previousState.toReporterState(), store.state)
         assertEquals(expected, store.state)
@@ -70,16 +71,18 @@ class WebCompatReporterStorageMiddlewareTest {
 
     @Test
     fun `WHEN the learn more button is pressed THEN the state is saved`() {
-        val savedState = WebCompatReporterState(
-            enteredUrl = "www.mozilla.org",
-            reason = null,
-            problemDescription = "problem description",
-        )
+        val savedState =
+            WebCompatReporterState(
+                enteredUrl = "www.mozilla.org",
+                reason = null,
+                problemDescription = "problem description",
+            )
         val appStore = AppStore()
-        val webCompatReporterStore = createWebCompatReporterStore(
-            initialState = savedState,
-            appStore = appStore,
-        )
+        val webCompatReporterStore =
+            createWebCompatReporterStore(
+                initialState = savedState,
+                appStore = appStore,
+            )
 
         webCompatReporterStore.dispatch(WebCompatReporterAction.LearnMoreClicked)
 
@@ -88,16 +91,16 @@ class WebCompatReporterStorageMiddlewareTest {
 
     @Test
     fun `WHEN the cancel button is pressed THEN the state is cleared`() {
-        val appStore = createAppStore(
-            webCompatState = WebCompatState(
-                tabUrl = "www.mozilla.org",
-                reason = null,
-                problemDescription = "problem description",
-            ),
-        )
-        val webCompatReporterStore = createWebCompatReporterStore(
-            appStore = appStore,
-        )
+        val appStore =
+            createAppStore(
+                webCompatState =
+                    WebCompatState(
+                        tabUrl = "www.mozilla.org",
+                        reason = null,
+                        problemDescription = "problem description",
+                    )
+            )
+        val webCompatReporterStore = createWebCompatReporterStore(appStore = appStore)
 
         webCompatReporterStore.dispatch(WebCompatReporterAction.CancelClicked)
 
@@ -107,20 +110,12 @@ class WebCompatReporterStorageMiddlewareTest {
     private fun createWebCompatReporterStore(
         initialState: WebCompatReporterState = WebCompatReporterState(),
         appStore: AppStore = createAppStore(),
-    ) = WebCompatReporterStore(
-        initialState = initialState,
-        middleware = listOf(
-            WebCompatReporterStorageMiddleware(
-                appStore = appStore,
-            ),
-        ),
-    )
+    ) =
+        WebCompatReporterStore(
+            initialState = initialState,
+            middleware = listOf(WebCompatReporterStorageMiddleware(appStore = appStore)),
+        )
 
-    private fun createAppStore(
-        webCompatState: WebCompatState? = null,
-    ) = AppStore(
-        initialState = AppState(
-            webCompatState = webCompatState,
-        ),
-    )
+    private fun createAppStore(webCompatState: WebCompatState? = null) =
+        AppStore(initialState = AppState(webCompatState = webCompatState))
 }

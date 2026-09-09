@@ -8,45 +8,38 @@ import android.content.Context
 import mozilla.components.support.locale.LocaleManager
 import mozilla.components.support.locale.LocaleManager.getSystemDefault
 
-/**
- * Utility singleton for providing helper functions related to content recommendations feature
- * flags.
- */
+/** Utility singleton for providing helper functions related to content recommendations feature flags. */
 object ContentRecommendationsFeatureHelper {
-    /**
-     * List of supported content recommendations locales.
-     */
-    val CONTENT_RECOMMENDATIONS_SUPPORTED_LOCALE = listOf(
-        "fr",
-        "fr-FR",
-        "es",
-        "es-ES",
-        "it",
-        "it-IT",
-        "en",
-        "en-CA",
-        "en-GB",
-        "en-US",
-        "de",
-        "de-DE",
-        "de-AT",
-        "de-CH",
-    )
+    /** List of supported content recommendations locales. */
+    val CONTENT_RECOMMENDATIONS_SUPPORTED_LOCALE =
+        listOf(
+            "fr",
+            "fr-FR",
+            "es",
+            "es-ES",
+            "it",
+            "it-IT",
+            "en",
+            "en-CA",
+            "en-GB",
+            "en-US",
+            "de",
+            "de-DE",
+            "de-AT",
+            "de-CH",
+        )
 
-    /**
-     * Show Pocket sponsored stories in between Pocket recommended stories on home.
-     */
+    /** Show Pocket sponsored stories in between Pocket recommended stories on home. */
     fun isPocketSponsoredStoriesFeatureEnabled(context: Context): Boolean {
         return isContentRecommendationsFeatureEnabled(context)
     }
 
     /**
-     * Returns true if the current locale is part of the supported locales for content
-     * recommendations, and false otherwise.
+     * Returns true if the current locale is part of the supported locales for content recommendations, and false
+     * otherwise.
      */
     fun isContentRecommendationsFeatureEnabled(context: Context): Boolean {
-        val langTag = LocaleManager.getCurrentLocale(context)
-            ?.toLanguageTag() ?: getSystemDefault().toLanguageTag()
+        val langTag = LocaleManager.getCurrentLocale(context)?.toLanguageTag() ?: getSystemDefault().toLanguageTag()
         return CONTENT_RECOMMENDATIONS_SUPPORTED_LOCALE.contains(langTag)
     }
 }

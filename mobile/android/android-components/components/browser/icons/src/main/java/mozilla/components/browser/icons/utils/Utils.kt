@@ -13,11 +13,13 @@ internal fun List<Pair<Int, Int>>.findBestSize(targetSize: Int, maxSize: Int, ma
     // First look for a pair that is close to (but not smaller than) our target size.
     val ideal = filter { (x, y) ->
         x >= targetSize && y >= targetSize && x <= maxSize && y <= maxSize
-    }.filter { (x, y) ->
-        x == y
-    }.minByOrNull { (x, _) ->
-        x
     }
+        .filter { (x, y) ->
+            x == y
+        }
+        .minByOrNull { (x, _) ->
+            x
+        }
 
     if (ideal != null) {
         // We found an icon that is exactly in the range we want, yay!
@@ -29,13 +31,11 @@ internal fun List<Pair<Int, Int>>.findBestSize(targetSize: Int, maxSize: Int, ma
         val downScaledX = (x.toFloat() * (1.0f / maxScaleFactor)).toInt()
         val downScaledY = (y.toFloat() * (1.0f / maxScaleFactor)).toInt()
 
-        downScaledX >= targetSize &&
-            downScaledY >= targetSize &&
-            downScaledX <= maxSize &&
-            downScaledY <= maxSize
-    }.minByOrNull { (x, _) ->
-        x
+        downScaledX >= targetSize && downScaledY >= targetSize && downScaledX <= maxSize && downScaledY <= maxSize
     }
+        .minByOrNull { (x, _) ->
+            x
+        }
 
     if (downscalable != null) {
         // We found an icon we can downscale to our desired size.
@@ -47,13 +47,11 @@ internal fun List<Pair<Int, Int>>.findBestSize(targetSize: Int, maxSize: Int, ma
         val upscaledX = x * maxScaleFactor
         val upscaledY = y * maxScaleFactor
 
-        upscaledX >= targetSize &&
-            upscaledY >= targetSize &&
-            upscaledX <= maxSize &&
-            upscaledY <= maxSize
-    }.maxByOrNull { (x, _) ->
-        x
+        upscaledX >= targetSize && upscaledY >= targetSize && upscaledX <= maxSize && upscaledY <= maxSize
     }
+        .maxByOrNull { (x, _) ->
+            x
+        }
 
     if (upscalable != null) {
         // We found an icon we can upscale to our desired size.

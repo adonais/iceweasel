@@ -71,8 +71,7 @@ internal class Parser(
             throw ParserException("Token after parsing completed")
         }
 
-        val stateMap = stateMachine[state]
-            ?: throw ParserException("Can't continue from state: $state")
+        val stateMap = stateMachine[state] ?: throw ParserException("Can't continue from state: $state")
 
         if (stateMap.subHandler != null) {
             // Use a sub handler for this state
@@ -183,66 +182,68 @@ internal class NextState(
     val handler: ((Parser, Token) -> Unit)? = null,
 )
 
-internal val handlers: Map<Token.Type, (Parser, Token) -> Unit> = mapOf(
-    Token.Type.LITERAL to { parser, token ->
-        parser.placeAtCursor(
-            Literal(token.value),
-        )
-    },
-    Token.Type.BINARY_OP to { parser, token ->
-        val precedence = parser.grammar.elements[token.value]?.precedence ?: 0
-        var parent = parser.cursor!!.parent
+internal val handlers: Map<Token.Type, (Parser, Token) -> Unit> =
+    mapOf(
+        Token.Type.LITERAL to
+            { parser, token ->
+                parser.placeAtCursor(Literal(token.value))
+            },
+        Token.Type.BINARY_OP to
+            { parser, token ->
+                val precedence = parser.grammar.elements[token.value]?.precedence ?: 0
+                var parent = parser.cursor!!.parent
 
-        var operator = (parent as? OperatorNode)?.operator
+                var operator = (parent as? OperatorNode)?.operator
 
-        while (operator != null &&
-            parser.grammar.elements[operator]!!.precedence > precedence
-        ) {
-            parser.cursor = parent
-            parent = parent?.parent
-            operator = (parent as? OperatorNode)?.operator
-        }
+                while (operator != null && parser.grammar.elements[operator]!!.precedence > precedence) {
+                    parser.cursor = parent
+                    parent = parent?.parent
+                    operator = (parent as? OperatorNode)?.operator
+                }
 
-        val node = BinaryExpression(
-            left = parser.cursor,
-            operator = token.value.toString(),
-        )
+                val node =
+                    BinaryExpression(
+                        left = parser.cursor,
+                        operator = token.value.toString(),
+                    )
 
-        parser.cursor!!.parent = node
-        parser.cursor = parent
-        parser.placeAtCursor(node)
-    },
-    Token.Type.IDENTIFIER to { parser, token ->
-        val node = Identifier(token.value)
+                parser.cursor!!.parent = node
+                parser.cursor = parent
+                parser.placeAtCursor(node)
+            },
+        Token.Type.IDENTIFIER to
+            { parser, token ->
+                val node = Identifier(token.value)
 
-        if (parser.nextIdentEncapsulate) {
-            node.from = parser.cursor
-            parser.placeBeforeCursor(node)
-            parser.nextIdentEncapsulate = false
-        } else {
-            if (parser.nextIdentRelative) {
-                node.relative = true
-            }
-            parser.placeAtCursor(node)
-        }
-    },
-    Token.Type.UNARY_OP to { parser, token ->
-        val node = UnaryExpression(
-            operator = token.value.toString(),
-        )
-        parser.placeAtCursor(node)
-    },
-    Token.Type.DOT to { parser, _ ->
-        val cursor = parser.cursor
+                if (parser.nextIdentEncapsulate) {
+                    node.from = parser.cursor
+                    parser.placeBeforeCursor(node)
+                    parser.nextIdentEncapsulate = false
+                } else {
+                    if (parser.nextIdentRelative) {
+                        node.relative = true
+                    }
+                    parser.placeAtCursor(node)
+                }
+            },
+        Token.Type.UNARY_OP to
+            { parser, token ->
+                val node = UnaryExpression(operator = token.value.toString())
+                parser.placeAtCursor(node)
+            },
+        Token.Type.DOT to
+            { parser, _ ->
+                val cursor = parser.cursor
 
-        parser.nextIdentEncapsulate = cursor != null &&
-            (cursor !is BinaryExpression || cursor.right != null) &&
-            cursor !is UnaryExpression
+                parser.nextIdentEncapsulate =
+                    cursor != null &&
+                        (cursor !is BinaryExpression || cursor.right != null) &&
+                        cursor !is UnaryExpression
 
-        parser.nextIdentRelative = cursor == null || !parser.nextIdentEncapsulate
+                parser.nextIdentRelative = cursor == null || !parser.nextIdentEncapsulate
 
-        if (parser.nextIdentRelative) {
-            parser.relative = true
-        }
-    },
-)
+                if (parser.nextIdentRelative) {
+                    parser.relative = true
+                }
+            },
+    )

@@ -12,13 +12,9 @@ import org.mozilla.fenix.utils.Settings
  *
  * @param repositories The list of [DebugInfoRepository]s that provides
  */
-class DebugInfoProvider(
-    private val repositories: List<DebugInfoRepository>,
-) {
+class DebugInfoProvider(private val repositories: List<DebugInfoRepository>) {
 
-    /**
-     * Returns a list of [DebugInfoSection]s to display.
-     */
+    /** Returns a list of [DebugInfoSection]s to display. */
     suspend fun getDebugInfo(): List<DebugInfoSection> = repositories.map { it.getSection() }
 
     companion object {
@@ -38,19 +34,21 @@ class DebugInfoProvider(
             versionName: String,
             deviceLocale: String,
             secretSettingsKeys: List<String>,
-        ): DebugInfoProvider = DebugInfoProvider(
-            repositories = listOf(
-                BuildDebugInfoRepository(versionName),
-                DeviceDebugInfoRepository(localeTag = deviceLocale),
-                ConfigurationDebugInfoRepository(),
-                NimbusExperimentsDebugInfoRepository(nimbusApi),
-                HomepageDebugInfoRepository(settings),
-                ToolbarDebugInfoRepository(settings),
-                SecretSettingsDebugInfoRepository(
-                    preferenceKeys = secretSettingsKeys,
-                    settings = settings,
-                ),
-            ),
-        )
+        ): DebugInfoProvider =
+            DebugInfoProvider(
+                repositories =
+                    listOf(
+                        BuildDebugInfoRepository(versionName),
+                        DeviceDebugInfoRepository(localeTag = deviceLocale),
+                        ConfigurationDebugInfoRepository(),
+                        NimbusExperimentsDebugInfoRepository(nimbusApi),
+                        HomepageDebugInfoRepository(settings),
+                        ToolbarDebugInfoRepository(settings),
+                        SecretSettingsDebugInfoRepository(
+                            preferenceKeys = secretSettingsKeys,
+                            settings = settings,
+                        ),
+                    )
+            )
     }
 }

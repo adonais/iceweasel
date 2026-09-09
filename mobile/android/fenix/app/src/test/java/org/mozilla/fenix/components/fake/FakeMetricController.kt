@@ -8,9 +8,7 @@ import org.mozilla.fenix.components.metrics.Event
 import org.mozilla.fenix.components.metrics.MetricController
 import org.mozilla.fenix.components.metrics.MetricServiceType
 
-/**
- * A class to facilitate inspection of MetricController interactions for unit tests.
- */
+/** A class to facilitate inspection of MetricController interactions for unit tests. */
 class FakeMetricController : MetricController {
     val startedServiceTypes: MutableList<MetricServiceType> = emptyList<MetricServiceType>().toMutableList()
 

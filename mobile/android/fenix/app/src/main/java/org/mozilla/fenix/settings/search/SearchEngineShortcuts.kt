@@ -49,12 +49,12 @@ import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.menu.MenuItem.FixedItem.Level
 import mozilla.components.compose.base.text.Text
 import mozilla.components.lib.state.ext.observeAsComposableState
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.settings.SettingsSectionHeader
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Top-level UI for search shortcuts settings.
@@ -77,16 +77,16 @@ fun SearchEngineShortcuts(
 ) {
     val searchState = store.observeAsComposableState { it.search }.value
     val defaultSearchEngineId = DefaultSearchEngineProvider(store).getDefaultSearchEngine()?.id
-    val searchEngines = with(searchState) {
-        (regionSearchEngines + additionalSearchEngines + availableSearchEngines + customSearchEngines)
-            .filter { it.id != defaultSearchEngineId }
-    }
+    val searchEngines =
+        with(searchState) {
+            (regionSearchEngines + additionalSearchEngines + availableSearchEngines + customSearchEngines).filter {
+                it.id != defaultSearchEngineId
+            }
+        }
     val disabledShortcutsIds = searchState.disabledSearchEngineIds
 
     Surface {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-        ) {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -136,11 +136,7 @@ private fun SearchItem(
 ) {
     val isMenuExpanded: MutableState<Boolean> = remember { mutableStateOf(false) }
 
-    Row(
-        modifier = Modifier
-            .defaultMinSize(minHeight = 56.dp)
-            .padding(start = 4.dp),
-    ) {
+    Row(modifier = Modifier.defaultMinSize(minHeight = 56.dp).padding(start = 4.dp)) {
         Checkbox(
             modifier = Modifier.align(Alignment.CenterVertically),
             checked = isEnabled,
@@ -150,32 +146,25 @@ private fun SearchItem(
         Spacer(modifier = Modifier.width(20.dp))
 
         Image(
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .size(24.dp),
+            modifier = Modifier.align(Alignment.CenterVertically).size(24.dp),
             bitmap = engine.icon.asImageBitmap(),
-            contentDescription = stringResource(
-                id = R.string.search_engine_icon_content_description_1,
-                engine.name,
-            ),
+            contentDescription =
+                stringResource(
+                    id = R.string.search_engine_icon_content_description_1,
+                    engine.name,
+                ),
         )
 
         Spacer(modifier = Modifier.width(16.dp))
 
         Text(
             text = name,
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .padding(vertical = 8.dp)
-                .weight(1f),
+            modifier = Modifier.align(Alignment.CenterVertically).padding(vertical = 8.dp).weight(1f),
             style = FirefoxTheme.typography.body1,
         )
 
         if (engine.type == SearchEngine.Type.CUSTOM) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterVertically),
-            ) {
+            Box(modifier = Modifier.align(Alignment.CenterVertically)) {
                 IconButton(
                     onClick = {
                         isMenuExpanded.value = true
@@ -188,18 +177,19 @@ private fun SearchItem(
                     )
 
                     DropdownMenu(
-                        menuItems = listOf(
-                            MenuItem.TextItem(
-                                text = Text.Resource(R.string.search_engine_edit),
-                                level = Level.Critical,
-                                onClick = { onEditEngineClicked(engine) },
+                        menuItems =
+                            listOf(
+                                MenuItem.TextItem(
+                                    text = Text.Resource(R.string.search_engine_edit),
+                                    level = Level.Critical,
+                                    onClick = { onEditEngineClicked(engine) },
+                                ),
+                                MenuItem.TextItem(
+                                    text = Text.Resource(R.string.search_engine_delete),
+                                    level = Level.Critical,
+                                    onClick = { onDeleteEngineClicked(engine) },
+                                ),
                             ),
-                            MenuItem.TextItem(
-                                text = Text.Resource(R.string.search_engine_delete),
-                                level = Level.Critical,
-                                onClick = { onDeleteEngineClicked(engine) },
-                            ),
-                        ),
                         expanded = isMenuExpanded.value,
                         modifier = Modifier,
                         offset = DpOffset(x = 0.dp, y = (-24).dp),
@@ -214,34 +204,23 @@ private fun SearchItem(
 }
 
 @Composable
-private fun AddEngineButton(
-    onAddEngineClicked: () -> Unit,
-) {
+private fun AddEngineButton(onAddEngineClicked: () -> Unit) {
     Row(
-        modifier = Modifier
-            .defaultMinSize(minHeight = 56.dp)
-            .padding(start = 4.dp)
-            .clickable { onAddEngineClicked() },
+        modifier = Modifier.defaultMinSize(minHeight = 56.dp).padding(start = 4.dp).clickable { onAddEngineClicked() }
     ) {
         Spacer(modifier = Modifier.width(68.dp))
 
         Icon(
-            modifier = Modifier
-                .size(24.dp)
-                .align(Alignment.CenterVertically),
+            modifier = Modifier.size(24.dp).align(Alignment.CenterVertically),
             painter = painterResource(id = iconsR.drawable.mozac_ic_plus_24),
-            contentDescription = stringResource(
-                id = R.string.search_engine_add_custom_search_engine_button_content_description,
-            ),
+            contentDescription =
+                stringResource(id = R.string.search_engine_add_custom_search_engine_button_content_description),
         )
 
         Spacer(modifier = Modifier.width(16.dp))
 
         Text(
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .padding(vertical = 8.dp)
-                .weight(1f),
+            modifier = Modifier.align(Alignment.CenterVertically).padding(vertical = 8.dp).weight(1f),
             text = stringResource(id = R.string.search_engine_add_custom_search_engine_title),
             style = FirefoxTheme.typography.body1,
         )
@@ -272,9 +251,10 @@ private fun generateFakeEngines(
     return SearchEngine(
         id = id,
         name = name,
-        icon = createBitmap(1, 1, Bitmap.Config.ARGB_8888).apply {
-            eraseColor(Color.BLUE)
-        },
+        icon =
+            createBitmap(1, 1, Bitmap.Config.ARGB_8888).apply {
+                eraseColor(Color.BLUE)
+            },
         type = type,
         isGeneral = true,
     )
@@ -282,21 +262,22 @@ private fun generateFakeEngines(
 
 @FlexibleWindowPreview
 @Composable
-private fun SearchEngineShortcutsPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun SearchEngineShortcutsPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         SearchEngineShortcuts(
             categoryTitle = stringResource(id = R.string.preferences_category_engines_in_search_menu),
-            store = BrowserStore(
-                initialState = BrowserState(
-                    search = SearchState(
-                        regionSearchEngines = generateFakeEnginesList(),
-                        disabledSearchEngineIds = listOf("7", "8"),
-                        regionDefaultSearchEngineId = "1",
-                    ),
+            store =
+                BrowserStore(
+                    initialState =
+                        BrowserState(
+                            search =
+                                SearchState(
+                                    regionSearchEngines = generateFakeEnginesList(),
+                                    disabledSearchEngineIds = listOf("7", "8"),
+                                    regionDefaultSearchEngineId = "1",
+                                )
+                        )
                 ),
-            ),
             onCheckboxClicked = { _, _ -> },
             onEditEngineClicked = {},
             onDeleteEngineClicked = {},

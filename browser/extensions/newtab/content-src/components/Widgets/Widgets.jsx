@@ -26,6 +26,12 @@ import {
   resolveWidgetHasSidebar,
   getHideAllTargets,
 } from "common/WidgetsRegistry.mjs";
+import {
+  isSideBySideActive,
+  isSpaceOverridden,
+  isSpacesActive,
+  SPACE_IDS,
+} from "common/PageLayoutVariants.mjs";
 import { WIDGET_ROW_COMPONENTS } from "./WidgetsComponentRegistry.jsx";
 import { WidgetWrapper } from "./WidgetWrapper";
 import { ErrorBoundary } from "content-src/components/ErrorBoundary/ErrorBoundary";
@@ -39,7 +45,6 @@ const CONTAINER_ACTION_TYPES = {
   FEEDBACK: "feedback",
 };
 
-const PREF_WIDGETS_ENABLED = "widgets.enabled";
 const PREF_NOVA_ENABLED = "nova.enabled";
 const PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED =
   "widgets.system.weatherForecast.enabled";
@@ -131,7 +136,10 @@ function Widgets() {
 
   const novaEnabled = prefs[PREF_NOVA_ENABLED];
   const isMaximized = prefs[PREF_WIDGETS_MAXIMIZED];
-  const rowExpanded = !!prefs[PREF_WIDGETS_ROW_EXPANDED];
+  const spacesActive = isSpacesActive(prefs);
+  // A space is a full page of its own, so there is nothing to be conservative
+  // about: widgets always show expanded and the row toggle is hidden.
+  const rowExpanded = spacesActive || !!prefs[PREF_WIDGETS_ROW_EXPANDED];
   const nimbusMaximizedTrainhopEnabled =
     prefs.trainhopConfig?.widgets?.maximized;
   const feedbackEnabled =
@@ -142,11 +150,21 @@ function Widgets() {
     prefs[PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED];
   const feedbackUrl =
     prefs.trainhopConfig?.widgets?.feedbackUrl ?? WIDGETS_FEEDBACK_URL;
-  const showWidgetsSizeToggle =
+  const sideBySideActive = isSideBySideActive(prefs);
+  // Side-by-side and spaces both put an add button in the section header where
+  // the row size toggle would otherwise sit.
+  const addButtonInHeader = sideBySideActive || spacesActive;
+  const widgetsMayBeMaximized =
     nimbusMaximizedTrainhopEnabled || prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED];
-  const widgetsMayBeMaximized = showWidgetsSizeToggle;
+  // The row toggle resizes every widget at once, which a one-card-wide column has
+  // no room for; that slot gets an add button instead. Per-widget "Change size"
+  // still applies -- size is a row span, so medium and large are both one card wide.
+  const showWidgetsSizeToggle = !addButtonInHeader && widgetsMayBeMaximized;
 
-  const widgetsEnabled = prefs[PREF_WIDGETS_ENABLED];
+  // The experiment can show the Widgets space to someone who had the master
+  // toggle off, and the panel must not then be empty.
+  const widgetsEnabled =
+    prefs["widgets.enabled"] || isSpaceOverridden(SPACE_IDS.WIDGETS, prefs);
 
   // Bug 2034542: these per-widget lookups and all the derived consts below
   // (listsEnabled, timerEnabled, weatherBase, weatherEnabled, weatherSize,
@@ -229,6 +247,11 @@ function Widgets() {
     ),
     pictureOfTheDay: isWidgetEnabled(
       WIDGET_REGISTRY.find(w => w.id === "pictureOfTheDay"),
+      prefs,
+      widgetsEnabled
+    ),
+    recentSearches: isWidgetEnabled(
+      WIDGET_REGISTRY.find(w => w.id === "recentSearches"),
       prefs,
       widgetsEnabled
     ),
@@ -566,6 +589,15 @@ function Widgets() {
             onKeyDown={handleToggleMaximizeKeyDown}
           />
         ) : null}
+        {addButtonInHeader ? (
+          <moz-button
+            id="add-widgets-button"
+            size="small"
+            data-l10n-id="newtab-widget-add-widgets-button"
+            iconsrc="chrome://global/skin/icons/plus.svg"
+            onClick={handleManageWidgetsClick}
+          />
+        ) : null}
       </div>
     );
   }
@@ -582,7 +614,10 @@ function Widgets() {
             type="ghost"
             size="default"
           />
-          <panel-list id="widgets-header-context-panel">
+          <panel-list
+            className="panel-list-no-icons"
+            id="widgets-header-context-panel"
+          >
             <panel-item
               data-l10n-id="newtab-widget-section-menu-hide-all"
               onClick={handleHideAllWidgetsClick}
@@ -637,7 +672,7 @@ function Widgets() {
   // CSS container queries on the widgets section decide whether the toggle
   // button is shown — see _Widgets.scss. The collapsed row holds one widget
   // per card-column slot regardless of size, so for each card-column count
-  // (1–4) anything past the first N positions overflows. This keeps mediums
+  // (1–5) anything past the first N positions overflows. This keeps mediums
   // to a single (shorter) row rather than stacking them two-deep to fill a
   // large-height band. The matching `data-overflow-N` attribute is read by
   // the @container rules in CSS.
@@ -667,12 +702,14 @@ function Widgets() {
     2: hiddenIndicesAt(2),
     3: hiddenIndicesAt(3),
     4: hiddenIndicesAt(4),
+    5: hiddenIndicesAt(5),
   };
   const overflowAttrs = {
     "data-overflow-1": overflowsAt(1) ? "" : undefined,
     "data-overflow-2": overflowsAt(2) ? "" : undefined,
     "data-overflow-3": overflowsAt(3) ? "" : undefined,
     "data-overflow-4": overflowsAt(4) ? "" : undefined,
+    "data-overflow-5": overflowsAt(5) ? "" : undefined,
   };
   const isCollapsed = novaEnabled && !rowExpanded;
 
@@ -728,6 +765,9 @@ function Widgets() {
                   ? ""
                   : undefined,
                 "data-hidden-4": hiddenAtCols[4].has(renderIdx)
+                  ? ""
+                  : undefined,
+                "data-hidden-5": hiddenAtCols[5].has(renderIdx)
                   ? ""
                   : undefined,
               };
@@ -811,7 +851,10 @@ function Widgets() {
               </React.Fragment>
             );
           })}
-          {novaEnabled && !allWidgetsAdded && (
+          {/* Side-by-side has its own add button in the section header, and
+              this tile's at-content-cols() reveal rules resolve against the
+              band rather than the one-card-wide widgets column. */}
+          {novaEnabled && !sideBySideActive && !allWidgetsAdded && (
             <button
               type="button"
               className={`widgets-add-button col-4 ${addButtonSize}-widget`}
@@ -824,7 +867,7 @@ function Widgets() {
             </button>
           )}
         </div>
-        {novaEnabled && (
+        {novaEnabled && !spacesActive && (
           <moz-button
             className="widgets-row-toggle"
             type="muted"

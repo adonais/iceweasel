@@ -11,7 +11,9 @@ import androidx.preference.DropDownPreference
 import androidx.preference.ListPreference
 import org.mozilla.fenix.R
 
-open class DropDownListPreference @JvmOverloads constructor(
+open class DropDownListPreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : DropDownPreference(context, attrs) {
@@ -28,11 +30,9 @@ open class DropDownListPreference @JvmOverloads constructor(
 /**
  * Return the (human-readable) entry that is matched to the (backing key) entryValue.
  *
- * E.g.
- *   entryValues == listOf("private", "normal")
- *   entries == listOf("Use private mode", "Use normal mode")
+ * E.g. entryValues == listOf("private", "normal") entries == listOf("Use private mode", "Use normal mode")
  *
- *   findEntry("private) == "Use Private Mode"
+ * findEntry("private) == "Use Private Mode"
  */
 fun ListPreference.findEntry(key: Any?): CharSequence? {
     if (key !is String) return null

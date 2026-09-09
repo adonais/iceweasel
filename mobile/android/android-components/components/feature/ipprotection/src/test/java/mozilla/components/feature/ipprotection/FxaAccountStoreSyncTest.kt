@@ -55,16 +55,22 @@ class FxaAccountStoreSyncTest {
     @Test
     fun `WHEN the account state changes THEN the mapped status is forwarded`() = runTest {
         // All these cases are the same mappings - and we do not want them to change.
-        val cases = listOf(
-            AccountState.AuthenticationProblem to AccountStatus.NeedsAuthentication,
-            AccountState.NotAuthenticated to AccountStatus.NoAccount,
-        )
+        val cases =
+            listOf(
+                AccountState.AuthenticationProblem to AccountStatus.NeedsAuthentication,
+                AccountState.NotAuthenticated to AccountStatus.NoAccount,
+            )
 
         cases.forEach { (accountState, expectedStatus) ->
             val (ipProtectionStore, captureMiddleware) = buildStore()
             val syncStore = SyncStore()
 
-            FxaAccountStoreSync(syncStore, ipProtectionStore, lazyOf(accountManager), StandardTestDispatcher(testScheduler))
+            FxaAccountStoreSync(
+                    syncStore,
+                    ipProtectionStore,
+                    lazyOf(accountManager),
+                    StandardTestDispatcher(testScheduler),
+                )
                 .initialize()
 
             syncStore.dispatch(SyncAction.UpdateAccountState(accountState))
@@ -103,23 +109,29 @@ class FxaAccountStoreSyncTest {
     }
 
     @Test
-    fun `WHEN authenticated AND the IP protection scope is not granted THEN NeedsAuthorization is forwarded`() = runTest {
-        val (ipProtectionStore, captureMiddleware) = buildStore()
+    fun `WHEN authenticated AND the IP protection scope is not granted THEN NeedsAuthorization is forwarded`() =
+        runTest {
+            val (ipProtectionStore, captureMiddleware) = buildStore()
 
-        whenever(accountManager.containsScope(SCOPE_IPPROTECTION)).thenReturn(false)
+            whenever(accountManager.containsScope(SCOPE_IPPROTECTION)).thenReturn(false)
 
-        FxaAccountStoreSync(syncStore, ipProtectionStore, lazyOf(accountManager), StandardTestDispatcher(testScheduler))
-            .initialize()
+            FxaAccountStoreSync(
+                    syncStore,
+                    ipProtectionStore,
+                    lazyOf(accountManager),
+                    StandardTestDispatcher(testScheduler),
+                )
+                .initialize()
 
-        syncStore.dispatch(SyncAction.UpdateAccountState(AccountState.Authenticated))
+            syncStore.dispatch(SyncAction.UpdateAccountState(AccountState.Authenticated))
 
-        testScheduler.advanceUntilIdle()
+            testScheduler.advanceUntilIdle()
 
-        captureMiddleware.assertLastAction(InternalAction.AccountManagerStateChanged::class) {
-            assertEquals(AccountStatus.NeedsAuthorization, it.status)
+            captureMiddleware.assertLastAction(InternalAction.AccountManagerStateChanged::class) {
+                assertEquals(AccountStatus.NeedsAuthorization, it.status)
+            }
+            assertEquals(AccountStatus.NeedsAuthorization, ipProtectionStore.state.accountState.status)
         }
-        assertEquals(AccountStatus.NeedsAuthorization, ipProtectionStore.state.accountState.status)
-    }
 
     @Test
     fun `WHEN the account state is unchanged THEN nothing new is forwarded`() = runTest {

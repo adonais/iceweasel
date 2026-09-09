@@ -14,9 +14,9 @@ import org.mozilla.experiments.nimbus.internal.FirefoxLabsUnenrollStatus
 import org.mozilla.fenix.nimbus.TestNimbusApi
 
 /**
- * A fake [mozilla.components.service.nimbus.NimbusApi] for exercising the Firefox Labs enroll and
- * unenroll flows in tests. It records the slugs it was asked to enroll/unenroll, the observers it
- * was asked to register/unregister, and returns the statuses supplied by the providers.
+ * A fake [mozilla.components.service.nimbus.NimbusApi] for exercising the Firefox Labs enroll and unenroll flows in
+ * tests. It records the slugs it was asked to enroll/unenroll, the observers it was asked to register/unregister, and
+ * returns the statuses supplied by the providers.
  */
 internal class FakeNimbusApi(
     context: Context,
@@ -39,8 +39,7 @@ internal class FakeNimbusApi(
         unregisteredObservers.add(observer)
     }
 
-    override fun getAvailableFirefoxLabs(): Deferred<List<FirefoxLabsMetadata>> =
-        CompletableDeferred(labsProvider())
+    override fun getAvailableFirefoxLabs(): Deferred<List<FirefoxLabsMetadata>> = CompletableDeferred(labsProvider())
 
     override fun enrollInFirefoxLab(slug: String): Deferred<FirefoxLabsEnrollStatus> {
         enrolledSlugs.add(slug)

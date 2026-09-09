@@ -14,7 +14,6 @@
     <link rel="localization" href="toolkit/printing/printUI.ftl" />
 
     <link rel="stylesheet" href="chrome://global/skin/in-content/common.css" />
-    <link rel="stylesheet" href="chrome://global/content/toggle-group.css" />
     <link rel="stylesheet" href="chrome://global/content/print.css" />
     <script defer src="chrome://global/content/print.js"></script>
     <script
@@ -77,31 +76,25 @@
     </template>
 
     <template id="orientation-template">
-      <input
-        type="radio"
-        name="orientation"
-        id="portrait"
-        value="0"
-        checked
-        class="toggle-group-input"
-      />
-      <label
-        for="portrait"
-        data-l10n-id="printui-portrait"
-        class="toggle-group-label toggle-group-label-iconic"
-      ></label>
-      <input
-        type="radio"
-        name="orientation"
-        id="landscape"
-        value="1"
-        class="toggle-group-input"
-      />
-      <label
-        for="landscape"
-        data-l10n-id="printui-landscape"
-        class="toggle-group-label toggle-group-label-iconic"
-      ></label>
+      <moz-segmented-control
+        id="orientation-control"
+        data-l10n-id="printui-orientation-control"
+      >
+        <moz-segmented-control-item
+          id="portrait"
+          value="0"
+          size="small"
+          iconsrc="chrome://global/skin/icons/page-portrait.svg"
+          data-l10n-id="printui-portrait-2"
+        ></moz-segmented-control-item>
+        <moz-segmented-control-item
+          id="landscape"
+          value="1"
+          size="small"
+          iconsrc="chrome://global/skin/icons/page-landscape.svg"
+          data-l10n-id="printui-landscape-2"
+        ></moz-segmented-control-item>
+      </moz-segmented-control>
     </template>
 
     <template id="twisty-summary-template">
@@ -343,12 +336,7 @@
               class="block-label"
               data-l10n-id="printui-orientation"
             ></label>
-            <div
-              is="orientation-input"
-              class="toggle-group"
-              role="radiogroup"
-              aria-labelledby="orientation-label"
-            ></div>
+            <div is="orientation-input"></div>
           </section>
 
           <section id="pages" class="section-block">

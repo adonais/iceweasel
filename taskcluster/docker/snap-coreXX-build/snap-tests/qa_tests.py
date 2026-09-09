@@ -884,12 +884,23 @@ class QATests(SnapTestsBase):
         download_name = self.accept_download()
         self.wait_for_download()
 
-        self.open_tab("about:preferences")
+        # The download folder control is only in the document once the
+        # Downloads settings page is selected, and the hash selects it.
+        #
+        # Firefox versions that have no Downloads page treat the hash as an
+        # unknown category and open their default page, which is where their
+        # own control is, so the same URL serves the older snaps we test.
+        self.open_tab("about:preferences#downloads")
+
         download_folder = self._wait.until(
             EC.presence_of_element_located((By.ID, "chooseFolder"))
         )
-        if not download_folder.get_property("value"):
-            # Fallback to "downloadFoler" for older Firefox versions
+        try:
+            # The path comes from an asynchronous lookup of the download
+            # directory, so an empty value only means "not filled in yet".
+            self._wait.until(lambda d: download_folder.get_property("value"))
+        except TimeoutException:
+            # Fallback to "downloadFolder" for older Firefox versions
             download_folder = self._wait.until(
                 EC.presence_of_element_located((By.ID, "downloadFolder"))
             )

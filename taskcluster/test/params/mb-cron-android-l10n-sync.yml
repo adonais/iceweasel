@@ -29,7 +29,9 @@ files_changed:
   - taskcluster/gecko_taskgraph/util/backstop.py
 filters:
   - target_tasks_method
+head_git_repository: https://github.com/mozilla-firefox/firefox
 head_git_rev: c034b1c857d52dac5ca28b11e94c996d1c8d5e59
+head_git_ref: refs/heads/beta
 head_ref: eab1c14b7eb1edad6b10f299cccef8def55a4a0f
 head_repository: https://hg.mozilla.org/releases/mozilla-beta
 head_rev: eab1c14b7eb1edad6b10f299cccef8def55a4a0f

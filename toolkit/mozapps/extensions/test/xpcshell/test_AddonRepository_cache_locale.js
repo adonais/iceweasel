@@ -4,8 +4,6 @@ const PREF_GETADDONS_CACHE_ENABLED = "extensions.getAddons.cache.enabled";
 const PREF_METADATA_LASTUPDATE = "extensions.getAddons.cache.lastUpdate";
 Services.prefs.setBoolPref(PREF_GETADDONS_CACHE_ENABLED, true);
 
-AddonTestUtils.init(this);
-AddonTestUtils.overrideCertDB();
 AddonTestUtils.createAppInfo(
   "xpcshell@tests.mozilla.org",
   "XPCShell",

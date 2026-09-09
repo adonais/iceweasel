@@ -9,19 +9,13 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
 
-/**
- * [State] for the IP Protection prompt.
- */
+/** [State] for the IP Protection prompt. */
 data object IPProtectionPromptState : State
 
-/**
- * [Action] related to [IPProtectionPromptStore].
- */
+/** [Action] related to [IPProtectionPromptStore]. */
 sealed interface IPProtectionPromptAction : Action {
 
-    /**
-     * Triggered when the prompt is created.
-     */
+    /** Triggered when the prompt is created. */
     data object OnPromptCreated : IPProtectionPromptAction
 
     /**
@@ -53,27 +47,23 @@ sealed interface IPProtectionPromptAction : Action {
     data class OnBrowseWithExtraProtectionClicked(val surface: Surface) : IPProtectionPromptAction
 
     /**
-     * Triggered when the user closes the prompt by swiping, hitting back, or tapping the
-     * background scrim.
+     * Triggered when the user closes the prompt by swiping, hitting back, or tapping the background scrim.
      *
      * @property surface The [Surface] that the prompt was displayed on.
      */
     data class OnPromptManuallyDismissed(val surface: Surface) : IPProtectionPromptAction
 
-    /**
-     * Triggered when the prompt is dismissed for any reason.
-     */
+    /** Triggered when the prompt is dismissed for any reason. */
     data object OnPromptDismissed : IPProtectionPromptAction
 }
 
-/**
- * A [Store] that holds the [IPProtectionPromptState].
- */
+/** A [Store] that holds the [IPProtectionPromptState]. */
 class IPProtectionPromptStore(
     initialState: IPProtectionPromptState = IPProtectionPromptState,
     middleware: List<Middleware<IPProtectionPromptState, IPProtectionPromptAction>>,
-) : Store<IPProtectionPromptState, IPProtectionPromptAction>(
-    initialState = initialState,
-    reducer = { _, _ -> IPProtectionPromptState },
-    middleware = middleware,
-)
+) :
+    Store<IPProtectionPromptState, IPProtectionPromptAction>(
+        initialState = initialState,
+        reducer = { _, _ -> IPProtectionPromptState },
+        middleware = middleware,
+    )

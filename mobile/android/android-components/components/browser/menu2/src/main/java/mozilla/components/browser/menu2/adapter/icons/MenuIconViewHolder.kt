@@ -16,9 +16,7 @@ import androidx.constraintlayout.widget.ConstraintSet.START
 import mozilla.components.browser.menu2.R
 import mozilla.components.concept.menu.candidate.MenuIcon
 
-/**
- * View holder with a [bind] method that passes the previously bound value.
- */
+/** View holder with a [bind] method that passes the previously bound value. */
 internal abstract class MenuIconViewHolder<T : MenuIcon>(
     protected val parent: ConstraintLayout,
     protected val inflater: LayoutInflater,
@@ -37,20 +35,14 @@ internal abstract class MenuIconViewHolder<T : MenuIcon>(
      */
     protected abstract fun bind(newIcon: T, oldIcon: T?)
 
-    /**
-     * Inflates the layout resource and adds it to the parent layout.
-     */
-    protected fun inflate(
-        @LayoutRes layoutResource: Int,
-    ): View {
+    /** Inflates the layout resource and adds it to the parent layout. */
+    protected fun inflate(@LayoutRes layoutResource: Int): View {
         val view = inflater.inflate(layoutResource, parent, false)
         parent.addView(view)
         return view
     }
 
-    /**
-     * Changes the constraints applied to [parent].
-     */
+    /** Changes the constraints applied to [parent]. */
     protected inline fun updateConstraints(update: ConstraintSet.() -> Unit) {
         ConstraintSet().apply {
             clone(parent)
@@ -59,10 +51,7 @@ internal abstract class MenuIconViewHolder<T : MenuIcon>(
         }
     }
 
-    /**
-     * Resets the layout and removes any child views.
-     * Called when the view holder is removed.
-     */
+    /** Resets the layout and removes any child views. Called when the view holder is removed. */
     @CallSuper
     open fun disconnect() {
         updateConstraints {

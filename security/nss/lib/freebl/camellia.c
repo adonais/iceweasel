@@ -63,8 +63,8 @@
 
 #endif
 
-#define CamelliaSubkeyL(INDEX) (subkey[(INDEX)*2])
-#define CamelliaSubkeyR(INDEX) (subkey[(INDEX)*2 + 1])
+#define CamelliaSubkeyL(INDEX) (subkey[(INDEX) * 2])
+#define CamelliaSubkeyR(INDEX) (subkey[(INDEX) * 2 + 1])
 
 /* rotation right shift 1byte */
 #define CAMELLIA_RR8(x) (((x) >> 8) + ((x) << 24))

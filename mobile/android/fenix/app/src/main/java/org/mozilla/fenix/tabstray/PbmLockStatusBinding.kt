@@ -15,9 +15,7 @@ import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 
-/**
- * Binding to update the [TabsTrayStore] when the Private Browsing Mode lock status changes in [AppStore].
- */
+/** Binding to update the [TabsTrayStore] when the Private Browsing Mode lock status changes in [AppStore]. */
 class PbmLockStatusBinding(
     appStore: AppStore,
     private val tabsTrayStore: TabsTrayStore,
@@ -25,11 +23,10 @@ class PbmLockStatusBinding(
 ) : AbstractBinding<AppState>(appStore, mainDispatcher) {
 
     override suspend fun onState(flow: Flow<AppState>) {
-        flow.distinctUntilChangedBy { it.isPrivateScreenLocked }
+        flow
+            .distinctUntilChangedBy { it.isPrivateScreenLocked }
             .collectLatest { state ->
-                tabsTrayStore.dispatch(
-                    TabsTrayAction.UpdatePbmLockStatus(isLocked = state.isPrivateScreenLocked),
-                )
+                tabsTrayStore.dispatch(TabsTrayAction.UpdatePbmLockStatus(isLocked = state.isPrivateScreenLocked))
             }
     }
 }

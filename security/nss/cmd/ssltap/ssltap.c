@@ -1813,7 +1813,7 @@ print_ssl3_handshake(unsigned char *recordBuf,
             }
         } /* end of switch sslh.type */
         offset += sslh.length + 4;
-    }                         /* while */
+    } /* while */
     if (offset < recordLen) { /* stuff left over */
         unsigned int newMsgLen = recordLen - offset;
         if (!s->msgBuf) {

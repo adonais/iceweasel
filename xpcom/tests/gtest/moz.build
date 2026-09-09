@@ -21,7 +21,6 @@ UNIFIED_SOURCES += [
     "TestEscape.cpp",
     "TestEventPriorities.cpp",
     "TestEventTargetQI.cpp",
-    "TestFile.cpp",
     "TestGCPostBarriers.cpp",
     "TestHex.cpp",
     "TestID.cpp",
@@ -164,6 +163,9 @@ SOURCES += [
     "TestAsyncPlatformPipes.cpp",
     "TestCOMArray.cpp",
     "TestCOMPtr.cpp",  # Redefines IFoo and IBar
+    # nsILocalFileMac.h pulls in Carbon.h, whose global TextRange clashes with
+    # mozilla::TextRange when unified with files that "using namespace mozilla".
+    "TestFile.cpp",
     "TestHashtables.cpp",  # Redefines IFoo
     "TestNsRefPtr.cpp",  # Redefines Foo
 ]

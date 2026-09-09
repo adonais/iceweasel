@@ -38,7 +38,6 @@ clippy:
         - netwerk/base/idna_glue/
         - netwerk/base/mozurl/
         - netwerk/base/rust-helper/
-        - netwerk/base/ssl_tokens_cache/
         - netwerk/base/urlpattern_glue/
         - netwerk/base/uritemplate_glue/
         - netwerk/protocol/http/happy_eyeballs_glue/

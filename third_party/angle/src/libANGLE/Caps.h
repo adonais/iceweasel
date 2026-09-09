@@ -108,15 +108,6 @@ struct Limitations
 
     Limitations &operator=(const Limitations &other);
 
-    // Renderer doesn't support gl_FrontFacing in fragment shaders
-    bool noFrontFacingSupport = false;
-
-    // Renderer doesn't support GL_SAMPLE_ALPHA_TO_COVERAGE
-    bool noSampleAlphaToCoverageSupport = false;
-
-    // In glVertexAttribDivisorANGLE, attribute zero must have a zero divisor
-    bool attributeZeroRequiresZeroDivisorInEXT = false;
-
     // Unable to support different values for front and back faces for stencil refs and masks
     bool noSeparateStencilRefsAndMasks = false;
 
@@ -126,9 +117,6 @@ struct Limitations
 
     // Renderer always clamps constant blend color.
     bool noUnclampedBlendColor = false;
-
-    // D3D9 does not support flexible varying register packing.
-    bool noFlexibleVaryingPacking = false;
 
     // D3D does not support having multiple transform feedback outputs go to the same buffer.
     bool noDoubleBoundTransformFeedbackBuffers = false;
@@ -144,9 +132,6 @@ struct Limitations
     // pass doesn't have a color attachment on slot 0.
     // http://anglebug.com/42266263
     bool noRasterOrderGroupWithoutAttachmentZero = false;
-
-    // PVRTC1 textures must be squares.
-    bool squarePvrtc1 = false;
 
     // ETC1 texture support is emulated.
     bool emulatedEtc1 = false;
@@ -170,7 +155,12 @@ struct Limitations
 
     // Size limit for buffers. GL_INVALID_OPERATION should be generated if trying to allocate a
     // buffer larger than this limit.
-    GLsizeiptr bufferSizeLimit = std::numeric_limits<GLsizeiptr>::max();
+    size_t maxBufferBytes = std::numeric_limits<GLsizeiptr>::max();
+
+    // Maximum texture allocation size. Calculated by multiplying texture dimensions by
+    // bytes-per-pixel. 1.25Gb is chosen as a conservative limit to allow for backends to expand
+    // textures formats up to 3x and still stay within 32-bit sizes.
+    size_t maxTextureBytes = 1280 * 1024 * 1024;
 };
 
 struct TypePrecision
@@ -747,9 +737,6 @@ struct DeviceExtensions
     // EGL_ANGLE_device_d3d
     bool deviceD3D = false;
 
-    // EGL_ANGLE_device_d3d9
-    bool deviceD3D9 = false;
-
     // EGL_ANGLE_device_d3d11
     bool deviceD3D11 = false;
 
@@ -833,6 +820,9 @@ struct ClientExtensions
 
     // EGL_ANGLE_platform_angle_device_id
     bool platformANGLEDeviceId = false;
+
+    // EGL_ANGLE_platform_angle_display_key
+    bool platformANGLEDisplayKey = false;
 
     // EGL_ANGLE_device_creation
     bool deviceCreation = false;

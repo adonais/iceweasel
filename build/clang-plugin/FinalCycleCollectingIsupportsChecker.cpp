@@ -14,7 +14,7 @@ void FinalCycleCollectingIsupportsChecker::registerMatchers(
   // uses `override`; NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL uses `final`.
   AstMatcher->addMatcher(
       cxxRecordDecl(
-          isFinal(), isInPath("dom/html"),
+          isFinal(), isInPath("/dom/"),
           has(cxxMethodDecl(hasName("AddRef"), isOverride(), unless(isFinal()),
                             isExpandedFromMacro(
                                 "NS_DECL_CYCLE_COLLECTING_ISUPPORTS_META"))

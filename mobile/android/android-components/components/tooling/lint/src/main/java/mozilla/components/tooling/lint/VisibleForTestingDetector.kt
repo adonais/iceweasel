@@ -18,25 +18,23 @@ import org.jetbrains.uast.UImportStatement
 const val VISIBLE_FOR_TESTING_ANNOTATION = "VisibleForTesting"
 const val ANDROIDX_VISIBLE_FOR_TESTING_PACKAGE = "androidx.annotation"
 
-/**
- * Custom lint check that ensures only `androidx.annotation.VisibleForTesting` is used.
- */
+/** Custom lint check that ensures only `androidx.annotation.VisibleForTesting` is used. */
 class VisibleForTestingDetector : Detector(), Detector.UastScanner {
 
     override fun getApplicableUastTypes() = listOf(UImportStatement::class.java)
+
     override fun createUastHandler(context: JavaContext) = InvalidImportHandler(context)
 
     /**
-     * [InvalidImportHandler] is a UAST (Unified Abstract Syntax Tree) element handler that checks for
-     * invalid import statements related to the `@VisibleForTesting` annotation.
+     * [InvalidImportHandler] is a UAST (Unified Abstract Syntax Tree) element handler that checks for invalid import
+     * statements related to the `@VisibleForTesting` annotation.
      *
-     * It specifically looks for imports of `@VisibleForTesting` that are *not* from the
-     * `androidx.annotation` package (`androidx.annotation.VisibleForTesting`).
-     * If it finds such an import, it reports a lint issue, suggesting the use of the
-     * `androidx` version.
+     * It specifically looks for imports of `@VisibleForTesting` that are *not* from the `androidx.annotation` package
+     * (`androidx.annotation.VisibleForTesting`). If it finds such an import, it reports a lint issue, suggesting the
+     * use of the `androidx` version.
      *
-     * This class extends [UElementHandler] to hook into the UAST visitor framework and process
-     * `UImportStatement` nodes.
+     * This class extends [UElementHandler] to hook into the UAST visitor framework and process `UImportStatement`
+     * nodes.
      *
      * @property context The [JavaContext] used to report lint issues.
      */
@@ -45,8 +43,9 @@ class VisibleForTestingDetector : Detector(), Detector.UastScanner {
             node.importReference?.let { importReference ->
                 val importFqName = importReference.asSourceString()
 
-                if (importFqName.contains(VISIBLE_FOR_TESTING_ANNOTATION) &&
-                    !importFqName.startsWith(ANDROIDX_VISIBLE_FOR_TESTING_PACKAGE)
+                if (
+                    importFqName.contains(VISIBLE_FOR_TESTING_ANNOTATION) &&
+                        !importFqName.startsWith(ANDROIDX_VISIBLE_FOR_TESTING_PACKAGE)
                 ) {
                     reportUsage(context, node, importFqName)
                 }
@@ -64,25 +63,26 @@ class VisibleForTestingDetector : Detector(), Detector.UastScanner {
         }
     }
 
-    /**
-     * Define the scope and detector class for the issue.
-     */
+    /** Define the scope and detector class for the issue. */
     companion object {
-        private val IMPLEMENTATION = Implementation(
-            VisibleForTestingDetector::class.java,
-            Scope.JAVA_FILE_SCOPE,
-        )
+        private val IMPLEMENTATION =
+            Implementation(
+                VisibleForTestingDetector::class.java,
+                Scope.JAVA_FILE_SCOPE,
+            )
 
-        val ISSUE_VISIBLE_FOR_TESTING_ANNOTATION: Issue = Issue.create(
-            id = "VisibleForTestingAnnotation",
-            briefDescription = "Invalid @VisibleForTesting Annotation Usage",
-            explanation = "The @VisibleForTesting annotation must be imported from androidx.annotation." +
-                "Other packages such as org.jetbrains.annotations or com.google.common.annotations are not allowed." +
-                "Please replace the import with androidx.annotation.VisibleForTesting.".trimIndent(),
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            implementation = IMPLEMENTATION,
-        )
+        val ISSUE_VISIBLE_FOR_TESTING_ANNOTATION: Issue =
+            Issue.create(
+                id = "VisibleForTestingAnnotation",
+                briefDescription = "Invalid @VisibleForTesting Annotation Usage",
+                explanation =
+                    "The @VisibleForTesting annotation must be imported from androidx.annotation." +
+                        "Other packages such as org.jetbrains.annotations or com.google.common.annotations are not allowed." +
+                        "Please replace the import with androidx.annotation.VisibleForTesting.".trimIndent(),
+                category = Category.CORRECTNESS,
+                priority = 6,
+                severity = Severity.ERROR,
+                implementation = IMPLEMENTATION,
+            )
     }
 }

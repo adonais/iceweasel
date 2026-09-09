@@ -26,10 +26,10 @@ class RemoteSettingsSyncWorker(
     @SuppressWarnings("TooGenericExceptionCaught")
     override suspend fun doWork(): Result {
         try {
-            val remoteSettingsService = GlobalRemoteSettingsDependencyProvider
-                .requireRemoteSettingsService().remoteSettingsService
-            val onRemoteCollectionsUpdated = GlobalRemoteSettingsDependencyProvider
-                .requireRemoteCollectionsUpdatedCallback()
+            val remoteSettingsService =
+                GlobalRemoteSettingsDependencyProvider.requireRemoteSettingsService().remoteSettingsService
+            val onRemoteCollectionsUpdated =
+                GlobalRemoteSettingsDependencyProvider.requireRemoteCollectionsUpdatedCallback()
 
             onRemoteCollectionsUpdated(remoteSettingsService.sync())
 
@@ -39,21 +39,14 @@ class RemoteSettingsSyncWorker(
         }
     }
 
-    /**
-     * Companion object for holding important const strings.
-     */
+    /** Companion object for holding important const strings. */
     companion object {
         private const val IDENTIFIER_PREFIX = "mozilla.components.support.remotesettings"
 
-        /**
-         * Identifies all the workers that periodically sync with Remote Settings.
-         */
+        /** Identifies all the workers that periodically sync with Remote Settings. */
         internal const val UNIQUE_NAME = "$IDENTIFIER_PREFIX.RemoteSettingsSyncWorker"
 
-        /**
-         * Testing tag for worker.
-         */
-        @VisibleForTesting
-        internal const val REMOTE_SETTINGS_SYNC_WORKER_TAG = UNIQUE_NAME
+        /** Testing tag for worker. */
+        @VisibleForTesting internal const val REMOTE_SETTINGS_SYNC_WORKER_TAG = UNIQUE_NAME
     }
 }

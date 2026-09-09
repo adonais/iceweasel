@@ -14,14 +14,11 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.utils.Settings
 
 /**
- * When the media notification is clicked we need to switch to the tab where the audio/video is
- * playing. This intent has the following informations:
- * action - [AbstractMediaSessionService.Companion.ACTION_SWITCH_TAB]
- * extra string for the tab id - [AbstractMediaSessionService.Companion.EXTRA_TAB_ID]
+ * When the media notification is clicked we need to switch to the tab where the audio/video is playing. This intent has
+ * the following informations: action - [AbstractMediaSessionService.Companion.ACTION_SWITCH_TAB] extra string for the
+ * tab id - [AbstractMediaSessionService.Companion.EXTRA_TAB_ID]
  */
-class OpenSpecificTabIntentProcessor(
-    private val activity: HomeActivity,
-) : HomeIntentProcessor {
+class OpenSpecificTabIntentProcessor(private val activity: HomeActivity) : HomeIntentProcessor {
 
     override fun process(intent: Intent, navController: NavController, out: Intent, settings: Settings): Boolean {
         if (intent.action == getAction()) {

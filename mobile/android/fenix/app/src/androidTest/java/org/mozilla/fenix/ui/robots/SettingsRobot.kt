@@ -62,17 +62,14 @@ import org.mozilla.fenix.helpers.click
 import org.mozilla.fenix.helpers.ext.waitNotNull
 import org.mozilla.fenix.settings.SupportUtils
 
-/**
- * Implementation of Robot Pattern for the settings menu.
- */
+/** Implementation of Robot Pattern for the settings menu. */
 class SettingsRobot {
 
     // BASICS SECTION
     fun verifyGeneralHeading() {
         scrollToElementByText("General")
         Log.i(TAG, "verifyGeneralHeading: Trying to verify that the \"General\" heading is visible")
-        onView(withText("General"))
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText("General")).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyGeneralHeading: Verified that the \"General\" heading is visible")
     }
 
@@ -81,51 +78,59 @@ class SettingsRobot {
         mDevice.wait(Until.findObject(By.text("Search")), waitingTime)
         Log.i(TAG, "verifySearchButton: Waited for $waitingTime ms until the \"Search\" button was found")
         Log.i(TAG, "verifySearchButton: Trying to verify that the \"Search\" button is visible")
-        onView(withText(R.string.preferences_search))
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText(R.string.preferences_search)).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifySearchButton: Verified that the \"Search\" button is visible")
     }
+
     fun verifyCustomizeButton() {
         Log.i(TAG, "verifyCustomizeButton: Trying to verify that the \"Customize\" button is visible")
-        onView(withText("Customize"))
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText("Customize")).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyCustomizeButton: Verified that the \"Customize\" button is visible")
     }
 
     fun verifyAccessibilityButton() {
         Log.i(TAG, "verifyAccessibilityButton: Trying to verify that the \"Accessibility\" button is visible")
-        onView(withText("Accessibility"))
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText("Accessibility")).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyAccessibilityButton: Verified that the \"Accessibility\" button is visible")
     }
+
     fun verifySetAsDefaultBrowserButton() {
         scrollToElementByText("Set as default browser")
-        Log.i(TAG, "verifySetAsDefaultBrowserButton: Trying to verify that the \"Set as default browser\" button is visible")
-        onView(withText("Set as default browser"))
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        Log.i(
+            TAG,
+            "verifySetAsDefaultBrowserButton: Trying to verify that the \"Set as default browser\" button is visible",
+        )
+        onView(withText("Set as default browser")).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifySetAsDefaultBrowserButton: Verified that the \"Set as default browser\" button is visible")
     }
-    fun verifyTabsButton() =
-        assertUIObjectExists(itemContainingText(getStringResource(R.string.preferences_tabs)))
+
+    fun verifyTabsButton() = assertUIObjectExists(itemContainingText(getStringResource(R.string.preferences_tabs)))
+
     fun verifyHomepageButton() {
         Log.i(TAG, "verifyHomepageButton: Trying to verify that the \"Homepage\" button is visible")
         onView(withText(R.string.preferences_home_2)).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyHomepageButton: Verified that the \"Homepage\" button is visible")
     }
+
     fun verifyAutofillButton() {
         Log.i(TAG, "verifyAutofillButton: Trying to verify that the \"Autofill\" button is visible")
         onView(withText(R.string.preferences_autofill)).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyAutofillButton: Verified that the \"Autofill\" button is visible")
     }
+
     fun verifyLanguageButton(localizedText: String = getStringResource(R.string.preferences_language)) {
         scrollToElementByText(localizedText)
         Log.i(TAG, "verifyLanguageButton: Trying to verify that the \"Language\" button is visible")
         onView(withText(localizedText)).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyLanguageButton: Verified that the \"Language\" button is visible")
     }
+
     fun verifyDefaultBrowserToggle(isEnabled: Boolean) {
         scrollToElementByText(getStringResource(R.string.preferences_set_as_default_browser))
-        Log.i(TAG, "verifyDefaultBrowserToggle: Trying to verify that the \"Set as default browser\" toggle is enabled: $isEnabled")
+        Log.i(
+            TAG,
+            "verifyDefaultBrowserToggle: Trying to verify that the \"Set as default browser\" toggle is enabled: $isEnabled",
+        )
         onView(withText(R.string.preferences_set_as_default_browser))
             .check(
                 matches(
@@ -137,14 +142,18 @@ class SettingsRobot {
                             } else {
                                 isNotChecked()
                             },
-                        ),
-                    ),
-                ),
+                        )
+                    )
+                )
             )
-        Log.i(TAG, "verifyDefaultBrowserToggle: Verified that the \"Set as default browser\" toggle is enabled: $isEnabled")
+        Log.i(
+            TAG,
+            "verifyDefaultBrowserToggle: Verified that the \"Set as default browser\" toggle is enabled: $isEnabled",
+        )
     }
 
     fun clickDefaultBrowserSwitch() = toggleDefaultBrowserSwitch()
+
     fun verifyAndroidDefaultAppsMenuAppears() {
         Log.i(TAG, "verifyAndroidDefaultAppsMenuAppears: Trying to verify that default browser apps dialog appears")
         intended(hasAction(DEFAULT_APPS_SETTINGS_ACTION))
@@ -155,145 +164,182 @@ class SettingsRobot {
     fun verifyPrivacyHeading() {
         scrollToElementByText("Privacy and security")
         Log.i(TAG, "verifyPrivacyHeading: Trying to verify that the \"Privacy and security\" heading is visible")
-        onView(withText("Privacy and security"))
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText("Privacy and security")).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyPrivacyHeading: Verified that the \"Privacy and security\" heading is visible")
     }
+
     fun verifyHTTPSOnlyModeButton() {
         scrollToElementByText(getStringResource(R.string.preferences_https_only_title))
         Log.i(TAG, "verifyHTTPSOnlyModeButton: Trying to verify that the \"HTTPS-Only Mode\" button is visible")
-        onView(
-            withText(R.string.preferences_https_only_title),
-        ).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText(R.string.preferences_https_only_title))
+            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyHTTPSOnlyModeButton: Verified that the \"HTTPS-Only Mode\" button is visible")
     }
 
     fun verifyEnhancedTrackingProtectionButton() {
-        Log.i(TAG, "verifyEnhancedTrackingProtectionButton: Waiting for $waitingTime ms until finding the \"Privacy and Security\" heading")
+        Log.i(
+            TAG,
+            "verifyEnhancedTrackingProtectionButton: Waiting for $waitingTime ms until finding the \"Privacy and Security\" heading",
+        )
         mDevice.wait(Until.findObject(By.text("Privacy and Security")), waitingTime)
-        Log.i(TAG, "verifyEnhancedTrackingProtectionButton: Waited for $waitingTime ms until the \"Privacy and Security\" heading was found")
-        Log.i(TAG, "verifyEnhancedTrackingProtectionButton: Trying to verify that the \"Enhanced Tracking Protection\" button is visible")
-        onView(withId(R.id.recycler_view)).perform(
-            RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
-                hasDescendant(withText("Enhanced Tracking Protection")),
-            ),
-        ).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
-        Log.i(TAG, "verifyEnhancedTrackingProtectionButton: Verified that the \"Enhanced Tracking Protection\" button is visible")
+        Log.i(
+            TAG,
+            "verifyEnhancedTrackingProtectionButton: Waited for $waitingTime ms until the \"Privacy and Security\" heading was found",
+        )
+        Log.i(
+            TAG,
+            "verifyEnhancedTrackingProtectionButton: Trying to verify that the \"Enhanced Tracking Protection\" button is visible",
+        )
+        onView(withId(R.id.recycler_view))
+            .perform(
+                RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
+                    hasDescendant(withText("Enhanced Tracking Protection"))
+                )
+            )
+            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        Log.i(
+            TAG,
+            "verifyEnhancedTrackingProtectionButton: Verified that the \"Enhanced Tracking Protection\" button is visible",
+        )
     }
+
     fun verifyLoginsAndPasswordsButton() {
         scrollToElementByText("Passwords")
-        Log.i(TAG, "verifyLoginsAndPasswordsButton: Trying to verify that the \"Logins and passwords\" button is visible")
+        Log.i(
+            TAG,
+            "verifyLoginsAndPasswordsButton: Trying to verify that the \"Logins and passwords\" button is visible",
+        )
         onView(withText(R.string.preferences_passwords_logins_and_passwords_2))
             .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyLoginsAndPasswordsButton: Verified that the \"Logins and passwords\" button is visible")
     }
+
     fun verifyPrivateBrowsingButton() {
         scrollToElementByText("Private browsing")
-        Log.i(TAG, "verifyPrivateBrowsingButton: Waiting for $waitingTime ms until finding the \"Private browsing\" button")
+        Log.i(
+            TAG,
+            "verifyPrivateBrowsingButton: Waiting for $waitingTime ms until finding the \"Private browsing\" button",
+        )
         mDevice.wait(Until.findObject(By.text("Private browsing")), waitingTime)
-        Log.i(TAG, "verifyPrivateBrowsingButton: Waited for $waitingTime ms until the \"Private browsing\" button was found")
+        Log.i(
+            TAG,
+            "verifyPrivateBrowsingButton: Waited for $waitingTime ms until the \"Private browsing\" button was found",
+        )
         Log.i(TAG, "verifyPrivateBrowsingButton: Trying to verify that the \"Private browsing\" button is visible")
-        onView(withText("Private browsing"))
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText("Private browsing")).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyPrivateBrowsingButton: Verified that the \"Private browsing\" button is visible")
     }
+
     fun verifySiteSettingsButton() {
         scrollToElementByText("Site settings")
         Log.i(TAG, "verifySiteSettingsButton: Trying to verify that the \"Site permissions\" button is visible")
-        onView(withText("Site settings"))
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText("Site settings")).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifySiteSettingsButton: Verified that the \"Site permissions\" button is visible")
     }
+
     fun verifyDeleteBrowsingDataButton() {
         scrollToElementByText("Delete browsing data")
-        Log.i(TAG, "verifyDeleteBrowsingDataButton: Trying to verify that the \"Delete browsing data\" button is visible")
-        onView(withText("Delete browsing data"))
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        Log.i(
+            TAG,
+            "verifyDeleteBrowsingDataButton: Trying to verify that the \"Delete browsing data\" button is visible",
+        )
+        onView(withText("Delete browsing data")).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyDeleteBrowsingDataButton: Verified that the \"Delete browsing data\" button is visible")
     }
+
     fun verifyDeleteBrowsingDataOnQuitButton() {
         scrollToElementByText("Delete browsing data on quit")
-        Log.i(TAG, "verifyDeleteBrowsingDataOnQuitButton: Trying to verify that the \"Delete browsing data on quit\" button is visible")
-        onView(withText("Delete browsing data on quit"))
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
-        Log.i(TAG, "verifyDeleteBrowsingDataOnQuitButton: Verified that the \"Delete browsing data on quit\" button is visible")
+        Log.i(
+            TAG,
+            "verifyDeleteBrowsingDataOnQuitButton: Trying to verify that the \"Delete browsing data on quit\" button is visible",
+        )
+        onView(withText("Delete browsing data on quit")).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        Log.i(
+            TAG,
+            "verifyDeleteBrowsingDataOnQuitButton: Verified that the \"Delete browsing data on quit\" button is visible",
+        )
     }
+
     fun verifyNotificationsButton() {
         scrollToElementByText("Notifications")
         Log.i(TAG, "verifyNotificationsButton: Trying to verify that the \"Notifications\" button is visible")
-        onView(withText("Notifications"))
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText("Notifications")).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyNotificationsButton: Verified that the \"Notifications\" button is visible")
     }
+
     fun verifyDataCollectionButton() {
         scrollToElementByText("Data collection")
         Log.i(TAG, "verifyDataCollectionButton: Trying to verify that the \"Data collection\" button is visible")
-        onView(withText("Data collection"))
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText("Data collection")).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyDataCollectionButton: Verified that the \"Data collection\" button is visible")
     }
+
     fun verifyOpenLinksInAppsButton() {
         Log.i(TAG, "verifyOpenLinksInAppsButton: Trying to perform scroll to the \"Open links in apps\" button")
-        onView(withId(R.id.recycler_view)).perform(
-            RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
-                hasDescendant(withText(R.string.preferences_open_links_in_apps)),
-            ),
-        )
+        onView(withId(R.id.recycler_view))
+            .perform(
+                RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
+                    hasDescendant(withText(R.string.preferences_open_links_in_apps))
+                )
+            )
         Log.i(TAG, "verifyOpenLinksInAppsButton: Performed scroll to the \"Open links in apps\" button")
         Log.i(TAG, "verifyOpenLinksInAppsButton: Trying to verify that the \"Open links in apps\" button is visible")
-        openLinksInAppsButton()
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        openLinksInAppsButton().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyOpenLinksInAppsButton: Verified that the \"Open links in apps\" button is visible")
     }
+
     fun verifySettingsView() {
         scrollToElementByText("General")
         Log.i(TAG, "verifySettingsView: Trying to verify that the \"General\" heading is visible")
-        onView(withText("General"))
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText("General")).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifySettingsView: Verified that the \"General\" heading is visible")
         scrollToElementByText("Privacy and security")
         Log.i(TAG, "verifySettingsView: Trying to verify that the \"Privacy and security\" heading is visible")
-        onView(withText("Privacy and security"))
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText("Privacy and security")).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifySettingsView: Verified that the \"Privacy and security\" heading is visible")
 
         val extensions = getStringResource(R.string.preferences_extensions)
         Log.i(TAG, "verifySettingsView: Trying to perform scroll to the \"$extensions\" button")
-        onView(withId(R.id.recycler_view)).perform(
-            RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
-                hasDescendant(withText(R.string.preferences_extensions)),
-            ),
-        )
+        onView(withId(R.id.recycler_view))
+            .perform(
+                RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
+                    hasDescendant(withText(R.string.preferences_extensions))
+                )
+            )
         Log.i(TAG, "verifySettingsView: Performed scroll to the \"$extensions\" button")
         Log.i(TAG, "verifySettingsView: Trying to verify that the \"$extensions\" button is completely displayed")
-        onView(withText(R.string.preferences_extensions))
-            .check(matches(isCompletelyDisplayed()))
+        onView(withText(R.string.preferences_extensions)).check(matches(isCompletelyDisplayed()))
         Log.i(TAG, "verifySettingsView: Verified that the \"$extensions\" button is completely displayed")
 
-        Log.i(TAG, "verifySettingsView: Trying to perform ${LISTS_MAXSWIPES}x a scroll action to the end of the settings list")
+        Log.i(
+            TAG,
+            "verifySettingsView: Trying to perform ${LISTS_MAXSWIPES}x a scroll action to the end of the settings list",
+        )
         settingsList().scrollToEnd(LISTS_MAXSWIPES)
         Log.i(TAG, "verifySettingsView: Performed ${LISTS_MAXSWIPES}x a scroll action to the end of the settings list")
         Log.i(TAG, "verifySettingsView: Trying to verify that the \"About\" heading is visible")
-        onView(withText("About"))
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText("About")).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifySettingsView: Verified that the \"About\" heading is visible")
     }
+
     fun verifySettingsToolbar() {
         Log.i(TAG, "verifySettingsToolbar: Trying to verify that the navigate up button is visible")
         onView(
-            allOf(
-                withId(R.id.navigationToolbar),
-                hasDescendant(withContentDescription(R.string.action_bar_up_description)),
-            ),
-        ).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+                allOf(
+                    withId(R.id.navigationToolbar),
+                    hasDescendant(withContentDescription(R.string.action_bar_up_description)),
+                )
+            )
+            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifySettingsToolbar: Verified that the navigate up button is visible")
         Log.i(TAG, "verifySettingsToolbar: Trying to verify that the \"Settings\" toolbar title is visible")
         onView(
-            allOf(
-                withId(R.id.navigationToolbar),
-                hasDescendant(withText(R.string.settings)),
-            ),
-        ).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+                allOf(
+                    withId(R.id.navigationToolbar),
+                    hasDescendant(withText(R.string.settings)),
+                )
+            )
+            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifySettingsToolbar: Verified that the \"Settings\" toolbar title is visible")
     }
 
@@ -301,29 +347,30 @@ class SettingsRobot {
     fun verifyAdvancedHeading() {
         val extensions = getStringResource(R.string.preferences_extensions)
         Log.i(TAG, "verifyAdvancedHeading: Trying to perform scroll to the \"$extensions\" button")
-        onView(withId(R.id.recycler_view)).perform(
-            RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
-                hasDescendant(withText(R.string.preferences_extensions)),
-            ),
-        )
+        onView(withId(R.id.recycler_view))
+            .perform(
+                RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
+                    hasDescendant(withText(R.string.preferences_extensions))
+                )
+            )
         Log.i(TAG, "verifyAdvancedHeading: Performed scroll to the \"$extensions\" button")
         Log.i(TAG, "verifyAdvancedHeading: Trying to verify that the \"$extensions\" button is completely displayed")
-        onView(withText(R.string.preferences_extensions))
-            .check(matches(isCompletelyDisplayed()))
+        onView(withText(R.string.preferences_extensions)).check(matches(isCompletelyDisplayed()))
         Log.i(TAG, "verifyAdvancedHeading: Verified that the \"$extensions\" button is completely displayed")
     }
+
     fun verifyAddons() {
         val extensions = getStringResource(R.string.preferences_extensions)
         Log.i(TAG, "verifyAddons: Trying to perform scroll to the \"$extensions\" button")
-        onView(withId(R.id.recycler_view)).perform(
-            RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
-                hasDescendant(withText(R.string.preferences_extensions)),
-            ),
-        )
+        onView(withId(R.id.recycler_view))
+            .perform(
+                RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
+                    hasDescendant(withText(R.string.preferences_extensions))
+                )
+            )
         Log.i(TAG, "verifyAddons: Performed scroll to the \"$extensions\" button")
         Log.i(TAG, "verifyAddons: Trying to verify that the \"$extensions\" button is completely displayed")
-        addonsManagerButton()
-            .check(matches(isCompletelyDisplayed()))
+        addonsManagerButton().check(matches(isCompletelyDisplayed()))
         Log.i(TAG, "verifyAddons: Verified that the \"$extensions\" button is completely displayed")
     }
 
@@ -336,11 +383,12 @@ class SettingsRobot {
     }
 
     fun verifyLeakCanaryToggle(enabled: Boolean) {
-        onView(withId(R.id.recycler_view)).perform(
-            RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
-                hasDescendant(withText(R.string.preference_leakcanary)),
-            ),
-        )
+        onView(withId(R.id.recycler_view))
+            .perform(
+                RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
+                    hasDescendant(withText(R.string.preference_leakcanary))
+                )
+            )
         Log.i(TAG, "verifyLeakCanaryToggle: Trying to verify that the \"LeakCanary\" toggle is enabled: $enabled")
         onView(withText(R.string.preference_leakcanary))
             .check(
@@ -353,20 +401,24 @@ class SettingsRobot {
                             } else {
                                 isNotChecked()
                             },
-                        ),
-                    ),
-                ),
+                        )
+                    )
+                )
             )
         Log.i(TAG, "verifyLeakCanaryToggle: Verified that the \"LeakCanary\" toggle is enabled: $enabled")
     }
 
     fun verifyRemoteDebuggingToggle(enabled: Boolean) {
-        onView(withId(R.id.recycler_view)).perform(
-            RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
-                hasDescendant(withText(R.string.preferences_remote_debugging)),
-            ),
+        onView(withId(R.id.recycler_view))
+            .perform(
+                RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
+                    hasDescendant(withText(R.string.preferences_remote_debugging))
+                )
+            )
+        Log.i(
+            TAG,
+            "verifyRemoteDebuggingToggle: Trying to verify that the \"Remote debugging via USB\" toggle is enabled: $enabled",
         )
-        Log.i(TAG, "verifyRemoteDebuggingToggle: Trying to verify that the \"Remote debugging via USB\" toggle is enabled: $enabled")
         onView(withText(R.string.preferences_remote_debugging))
             .check(
                 matches(
@@ -378,37 +430,44 @@ class SettingsRobot {
                             } else {
                                 isNotChecked()
                             },
-                        ),
-                    ),
-                ),
+                        )
+                    )
+                )
             )
-        Log.i(TAG, "verifyRemoteDebuggingToggle: Verified that the \"Remote debugging via USB\" toggle is enabled: $enabled")
+        Log.i(
+            TAG,
+            "verifyRemoteDebuggingToggle: Verified that the \"Remote debugging via USB\" toggle is enabled: $enabled",
+        )
     }
 
     // DEVELOPER TOOLS SECTION
     fun verifyRemoteDebuggingButton() {
         scrollToElementByText("Remote debugging via USB")
-        Log.i(TAG, "verifyRemoteDebuggingButton: Trying to verify that the \"Remote debugging via USB\" button is visible")
-        onView(withText("Remote debugging via USB"))
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        Log.i(
+            TAG,
+            "verifyRemoteDebuggingButton: Trying to verify that the \"Remote debugging via USB\" button is visible",
+        )
+        onView(withText("Remote debugging via USB")).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyRemoteDebuggingButton: Verified that the \"Remote debugging via USB\" button is visible")
     }
+
     fun verifyLeakCanaryButton() {
         scrollToElementByText("LeakCanary")
         Log.i(TAG, "verifyLeakCanaryButton: Trying to verify that the \"LeakCanary\" button is visible")
-        onView(withText("LeakCanary"))
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText("LeakCanary")).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyLeakCanaryButton: Verified that the \"LeakCanary\" button is visible")
     }
 
     // ABOUT SECTION
     fun verifyAboutHeading() {
-        Log.i(TAG, "verifyAboutHeading: Trying to perform ${LISTS_MAXSWIPES}x a scroll action to the end of the settings list")
+        Log.i(
+            TAG,
+            "verifyAboutHeading: Trying to perform ${LISTS_MAXSWIPES}x a scroll action to the end of the settings list",
+        )
         settingsList().scrollToEnd(LISTS_MAXSWIPES)
         Log.i(TAG, "verifyAboutHeading: Performed ${LISTS_MAXSWIPES}x a scroll action to the end of the settings list")
         Log.i(TAG, "verifyAboutHeading: Trying to verify that the \"About\" heading is visible")
-        onView(withText("About"))
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText("About")).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyAboutHeading: Verified that the \"About\" heading is visible")
     }
 
@@ -431,7 +490,7 @@ class SettingsRobot {
                     allOf(
                         hasAction(Intent.ACTION_VIEW),
                         hasData(SupportUtils.RATE_APP_URL.toUri()),
-                    ),
+                    )
                 )
                 Log.i(TAG, "verifyGooglePlayRedirect: Verified intent to: $GOOGLE_PLAY_SERVICES")
             } catch (e: AssertionFailedError) {
@@ -447,13 +506,17 @@ class SettingsRobot {
 
     fun verifySettingsOptionSummary(setting: String, summary: String) {
         scrollToElementByText(setting)
-        Log.i(TAG, "verifySettingsOptionSummary: Trying to verify that setting: $setting with summary:$summary is visible")
+        Log.i(
+            TAG,
+            "verifySettingsOptionSummary: Trying to verify that setting: $setting with summary:$summary is visible",
+        )
         onView(
-            allOf(
-                withText(setting),
-                hasSibling(withText(summary)),
-            ),
-        ).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+                allOf(
+                    withText(setting),
+                    hasSibling(withText(summary)),
+                )
+            )
+            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifySettingsOptionSummary: Verified that setting: $setting with summary:$summary is visible")
     }
 
@@ -477,7 +540,10 @@ class SettingsRobot {
             return HomeScreenRobot.Transition(composeTestRule)
         }
 
-        fun goBackToOnboardingScreen(composeTestRule: ComposeTestRule, interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
+        fun goBackToOnboardingScreen(
+            composeTestRule: ComposeTestRule,
+            interact: HomeScreenRobot.() -> Unit,
+        ): HomeScreenRobot.Transition {
             Log.i(TAG, "goBackToOnboardingScreen: Trying to click device back button")
             mDevice.pressBack()
             Log.i(TAG, "goBackToOnboardingScreen: Clicked device back button")
@@ -489,7 +555,10 @@ class SettingsRobot {
             return HomeScreenRobot.Transition(composeTestRule)
         }
 
-        fun goBackToBrowser(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+        fun goBackToBrowser(
+            composeTestRule: ComposeTestRule,
+            interact: BrowserRobot.() -> Unit,
+        ): BrowserRobot.Transition {
             Log.i(TAG, "goBackToBrowser: Trying to click the navigate up button")
             goBackButton().click()
             Log.i(TAG, "goBackToBrowser: Clicked the navigate up button")
@@ -498,7 +567,9 @@ class SettingsRobot {
             return BrowserRobot.Transition(composeTestRule)
         }
 
-        fun openAboutFirefoxPreview(interact: SettingsSubMenuAboutRobot.() -> Unit): SettingsSubMenuAboutRobot.Transition {
+        fun openAboutFirefoxPreview(
+            interact: SettingsSubMenuAboutRobot.() -> Unit
+        ): SettingsSubMenuAboutRobot.Transition {
             Log.i(TAG, "openAboutFirefoxPreview: Trying to click the \"About Firefox\" button")
             aboutFirefoxHeading().click()
             Log.i(TAG, "openAboutFirefoxPreview: Clicked the \"About Firefox\" button")
@@ -507,21 +578,22 @@ class SettingsRobot {
         }
 
         fun openSearchSubMenu(interact: SettingsSubMenuSearchRobot.() -> Unit): SettingsSubMenuSearchRobot.Transition {
-            itemWithText(getStringResource(R.string.preferences_search))
-                .also {
-                    Log.i(TAG, "openSearchSubMenu: Waiting for $waitingTimeShort ms for the \"Search\" button to exist")
-                    it.waitForExists(waitingTimeShort)
-                    Log.i(TAG, "openSearchSubMenu: Waited for $waitingTimeShort ms for the \"Search\" button to exist")
-                    Log.i(TAG, "openSearchSubMenu: Trying to click the \"Search\" button")
-                    it.click()
-                    Log.i(TAG, "openSearchSubMenu: Clicked the \"Search\" button")
-                }
+            itemWithText(getStringResource(R.string.preferences_search)).also {
+                Log.i(TAG, "openSearchSubMenu: Waiting for $waitingTimeShort ms for the \"Search\" button to exist")
+                it.waitForExists(waitingTimeShort)
+                Log.i(TAG, "openSearchSubMenu: Waited for $waitingTimeShort ms for the \"Search\" button to exist")
+                Log.i(TAG, "openSearchSubMenu: Trying to click the \"Search\" button")
+                it.click()
+                Log.i(TAG, "openSearchSubMenu: Clicked the \"Search\" button")
+            }
 
             SettingsSubMenuSearchRobot().interact()
             return SettingsSubMenuSearchRobot.Transition()
         }
 
-        fun openCustomizeSubMenu(interact: SettingsSubMenuCustomizeRobot.() -> Unit): SettingsSubMenuCustomizeRobot.Transition {
+        fun openCustomizeSubMenu(
+            interact: SettingsSubMenuCustomizeRobot.() -> Unit
+        ): SettingsSubMenuCustomizeRobot.Transition {
             assertUIObjectExists(itemContainingText(getStringResource(R.string.preferences_customize)))
             Log.i(TAG, "openCustomizeSubMenu: Trying to click the \"Customize\" button")
             itemContainingText(getStringResource(R.string.preferences_customize)).click()
@@ -533,19 +605,28 @@ class SettingsRobot {
 
         fun openTabsSubMenu(interact: SettingsSubMenuTabsRobot.() -> Unit): SettingsSubMenuTabsRobot.Transition {
             Log.i(TAG, "openTabsSubMenu: Waiting for $waitingTime ms for the \"Tabs\" button to exist")
-            val tabsButton = mDevice.wait(
-                Until.findObject(By.text(getStringResource(R.string.preferences_tabs))),
-                waitingTime,
-            ) ?: throw AssertionError("Tabs settings button not found after $waitingTime ms")
-            Log.i(TAG, "openTabsSubMenu: Trying to click the \"Tabs\" button and wait for $waitingTimeShort ms for a new window")
+            val tabsButton =
+                mDevice.wait(
+                    Until.findObject(By.text(getStringResource(R.string.preferences_tabs))),
+                    waitingTime,
+                ) ?: throw AssertionError("Tabs settings button not found after $waitingTime ms")
+            Log.i(
+                TAG,
+                "openTabsSubMenu: Trying to click the \"Tabs\" button and wait for $waitingTimeShort ms for a new window",
+            )
             tabsButton.clickAndWait(Until.newWindow(), waitingTimeShort)
-            Log.i(TAG, "openTabsSubMenu: Clicked the \"Tabs\" button and waited for $waitingTimeShort ms for a new window")
+            Log.i(
+                TAG,
+                "openTabsSubMenu: Clicked the \"Tabs\" button and waited for $waitingTimeShort ms for a new window",
+            )
 
             SettingsSubMenuTabsRobot().interact()
             return SettingsSubMenuTabsRobot.Transition()
         }
 
-        fun openHomepageSubMenu(interact: SettingsSubMenuHomepageRobot.() -> Unit): SettingsSubMenuHomepageRobot.Transition {
+        fun openHomepageSubMenu(
+            interact: SettingsSubMenuHomepageRobot.() -> Unit
+        ): SettingsSubMenuHomepageRobot.Transition {
             Log.i(TAG, "openHomepageSubMenu: Waiting for $waitingTime ms for the \"Homepage\" button to exist")
             mDevice.findObject(UiSelector().textContains("Homepage")).waitForExists(waitingTime)
             Log.i(TAG, "openHomepageSubMenu: Waited for $waitingTime ms for the \"Homepage\" button to exist")
@@ -557,12 +638,16 @@ class SettingsRobot {
             return SettingsSubMenuHomepageRobot.Transition()
         }
 
-        fun openAutofillSubMenu(composeTestRule: ComposeTestRule, interact: SettingsSubMenuAutofillRobot.() -> Unit): SettingsSubMenuAutofillRobot.Transition {
+        fun openAutofillSubMenu(
+            composeTestRule: ComposeTestRule,
+            interact: SettingsSubMenuAutofillRobot.() -> Unit,
+        ): SettingsSubMenuAutofillRobot.Transition {
             Log.i(TAG, "openAutofillSubMenu: Waiting for $waitingTime ms for the \"Autofill\" button to exist")
-            val autofillButton = mDevice.wait(
-                Until.findObject(By.textContains(getStringResource(R.string.preferences_autofill))),
-                waitingTime,
-            ) ?: throw AssertionError("Autofill settings button not found after $waitingTime ms")
+            val autofillButton =
+                mDevice.wait(
+                    Until.findObject(By.textContains(getStringResource(R.string.preferences_autofill))),
+                    waitingTime,
+                ) ?: throw AssertionError("Autofill settings button not found after $waitingTime ms")
             Log.i(TAG, "openAutofillSubMenu: Trying to click the \"Autofill\" button")
             autofillButton.click()
             Log.i(TAG, "openAutofillSubMenu: Clicked the \"Autofill\" button")
@@ -571,7 +656,9 @@ class SettingsRobot {
             return SettingsSubMenuAutofillRobot.Transition(composeTestRule)
         }
 
-        fun openAccessibilitySubMenu(interact: SettingsSubMenuAccessibilityRobot.() -> Unit): SettingsSubMenuAccessibilityRobot.Transition {
+        fun openAccessibilitySubMenu(
+            interact: SettingsSubMenuAccessibilityRobot.() -> Unit
+        ): SettingsSubMenuAccessibilityRobot.Transition {
             scrollToElementByText("Accessibility")
             Log.i(TAG, "openAccessibilitySubMenu: Trying to verify that the \"Accessibility\" button is displayed")
             onView(withText("Accessibility")).check(matches(isDisplayed()))
@@ -593,11 +680,9 @@ class SettingsRobot {
             onView(withId(R.id.recycler_view))
                 .perform(
                     RecyclerViewActions.actionOnItem<RecyclerView.ViewHolder>(
-                        hasDescendant(
-                            withText(localizedText),
-                        ),
+                        hasDescendant(withText(localizedText)),
                         ViewActions.click(),
-                    ),
+                    )
                 )
             Log.i(TAG, "openLanguageSubMenu: Clicked the $localizedText button")
 
@@ -605,7 +690,9 @@ class SettingsRobot {
             return SettingsSubMenuLanguageRobot.Transition()
         }
 
-        fun openSetDefaultBrowserSubMenu(interact: SettingsSubMenuSetDefaultBrowserRobot.() -> Unit): SettingsSubMenuSetDefaultBrowserRobot.Transition {
+        fun openSetDefaultBrowserSubMenu(
+            interact: SettingsSubMenuSetDefaultBrowserRobot.() -> Unit
+        ): SettingsSubMenuSetDefaultBrowserRobot.Transition {
             scrollToElementByText("Set as default browser")
             Log.i(TAG, "openSetDefaultBrowserSubMenu: Trying to click the \"Set as default browser\" button")
             onView(withText("Set as default browser")).click()
@@ -615,9 +702,14 @@ class SettingsRobot {
             return SettingsSubMenuSetDefaultBrowserRobot.Transition()
         }
 
-        fun openEnhancedTrackingProtectionSubMenu(interact: SettingsSubMenuEnhancedTrackingProtectionRobot.() -> Unit): SettingsSubMenuEnhancedTrackingProtectionRobot.Transition {
+        fun openEnhancedTrackingProtectionSubMenu(
+            interact: SettingsSubMenuEnhancedTrackingProtectionRobot.() -> Unit
+        ): SettingsSubMenuEnhancedTrackingProtectionRobot.Transition {
             scrollToElementByText("Enhanced Tracking Protection")
-            Log.i(TAG, "openEnhancedTrackingProtectionSubMenu: Trying to click the \"Enhanced Tracking Protection\" button")
+            Log.i(
+                TAG,
+                "openEnhancedTrackingProtectionSubMenu: Trying to click the \"Enhanced Tracking Protection\" button",
+            )
             onView(withText("Enhanced Tracking Protection")).click()
             Log.i(TAG, "openEnhancedTrackingProtectionSubMenu: Clicked the \"Enhanced Tracking Protection\" button")
 
@@ -625,7 +717,9 @@ class SettingsRobot {
             return SettingsSubMenuEnhancedTrackingProtectionRobot.Transition()
         }
 
-        fun openLoginsAndPasswordSubMenu(interact: SettingsSubMenuLoginsAndPasswordRobot.() -> Unit): SettingsSubMenuLoginsAndPasswordRobot.Transition {
+        fun openLoginsAndPasswordSubMenu(
+            interact: SettingsSubMenuLoginsAndPasswordRobot.() -> Unit
+        ): SettingsSubMenuLoginsAndPasswordRobot.Transition {
             scrollToElementByText("Passwords")
             Log.i(TAG, "openLoginsAndPasswordSubMenu: Trying to click the \"Logins and passwords\" button")
             onView(withText("Passwords")).click()
@@ -635,7 +729,10 @@ class SettingsRobot {
             return SettingsSubMenuLoginsAndPasswordRobot.Transition()
         }
 
-        fun openTurnOnSyncMenu(composeTestRule: ComposeTestRule, interact: SettingsSignInToSyncRobot.() -> Unit): SettingsSignInToSyncRobot.Transition {
+        fun openTurnOnSyncMenu(
+            composeTestRule: ComposeTestRule,
+            interact: SettingsSignInToSyncRobot.() -> Unit,
+        ): SettingsSignInToSyncRobot.Transition {
             Log.i(TAG, "openTurnOnSyncMenu: Trying to click the \"Sync and save your data\" button")
             onView(withText("Sign in")).click()
             Log.i(TAG, "openTurnOnSyncMenu: Clicked the \"Sync and save your data\" button")
@@ -644,7 +741,9 @@ class SettingsRobot {
             return SettingsSignInToSyncRobot.Transition(composeTestRule)
         }
 
-        fun openPrivateBrowsingSubMenu(interact: SettingsSubMenuPrivateBrowsingRobot.() -> Unit): SettingsSubMenuPrivateBrowsingRobot.Transition {
+        fun openPrivateBrowsingSubMenu(
+            interact: SettingsSubMenuPrivateBrowsingRobot.() -> Unit
+        ): SettingsSubMenuPrivateBrowsingRobot.Transition {
             scrollToElementByText("Private browsing")
             Log.i(TAG, "openPrivateBrowsingSubMenu: Trying to click the \"Private browsing\" button")
             mDevice.findObject(textContains("Private browsing")).click()
@@ -654,7 +753,9 @@ class SettingsRobot {
             return SettingsSubMenuPrivateBrowsingRobot.Transition()
         }
 
-        fun openSettingsSubMenuSiteSettings(interact: SettingsSubMenuSitePermissionsRobot.() -> Unit): SettingsSubMenuSitePermissionsRobot.Transition {
+        fun openSettingsSubMenuSiteSettings(
+            interact: SettingsSubMenuSitePermissionsRobot.() -> Unit
+        ): SettingsSubMenuSitePermissionsRobot.Transition {
             scrollToElementByText("Site settings")
             Log.i(TAG, "openSettingsSubMenuSiteSettings: Trying to click the \"Site settings\" button")
             mDevice.findObject(textContains("Site settings")).click()
@@ -664,7 +765,9 @@ class SettingsRobot {
             return SettingsSubMenuSitePermissionsRobot.Transition()
         }
 
-        fun openSettingsSubMenuDeleteBrowsingData(interact: SettingsSubMenuDeleteBrowsingDataRobot.() -> Unit): SettingsSubMenuDeleteBrowsingDataRobot.Transition {
+        fun openSettingsSubMenuDeleteBrowsingData(
+            interact: SettingsSubMenuDeleteBrowsingDataRobot.() -> Unit
+        ): SettingsSubMenuDeleteBrowsingDataRobot.Transition {
             scrollToElementByText("Delete browsing data")
             Log.i(TAG, "openSettingsSubMenuDeleteBrowsingData: Trying to click the \"Delete browsing data\" button")
             mDevice.findObject(textContains("Delete browsing data")).click()
@@ -674,11 +777,19 @@ class SettingsRobot {
             return SettingsSubMenuDeleteBrowsingDataRobot.Transition()
         }
 
-        fun openSettingsSubMenuDeleteBrowsingDataOnQuit(interact: SettingsSubMenuDeleteBrowsingDataOnQuitRobot.() -> Unit): SettingsSubMenuDeleteBrowsingDataOnQuitRobot.Transition {
+        fun openSettingsSubMenuDeleteBrowsingDataOnQuit(
+            interact: SettingsSubMenuDeleteBrowsingDataOnQuitRobot.() -> Unit
+        ): SettingsSubMenuDeleteBrowsingDataOnQuitRobot.Transition {
             scrollToElementByText("Delete browsing data on quit")
-            Log.i(TAG, "openSettingsSubMenuDeleteBrowsingDataOnQuit: Trying to click the \"Delete browsing data on quit\" button")
+            Log.i(
+                TAG,
+                "openSettingsSubMenuDeleteBrowsingDataOnQuit: Trying to click the \"Delete browsing data on quit\" button",
+            )
             mDevice.findObject(textContains("Delete browsing data on quit")).click()
-            Log.i(TAG, "openSettingsSubMenuDeleteBrowsingDataOnQuit: Clicked the \"Delete browsing data on quit\" button")
+            Log.i(
+                TAG,
+                "openSettingsSubMenuDeleteBrowsingDataOnQuit: Clicked the \"Delete browsing data on quit\" button",
+            )
 
             SettingsSubMenuDeleteBrowsingDataOnQuitRobot().interact()
             return SettingsSubMenuDeleteBrowsingDataOnQuitRobot.Transition()
@@ -694,7 +805,9 @@ class SettingsRobot {
             return SystemSettingsRobot.Transition()
         }
 
-        fun openSettingsSubMenuDataCollection(interact: SettingsSubMenuDataCollectionRobot.() -> Unit): SettingsSubMenuDataCollectionRobot.Transition {
+        fun openSettingsSubMenuDataCollection(
+            interact: SettingsSubMenuDataCollectionRobot.() -> Unit
+        ): SettingsSubMenuDataCollectionRobot.Transition {
             scrollToElementByText("Data collection")
             Log.i(TAG, "openSettingsSubMenuDataCollection: Trying to click the \"Data collection\" button")
             mDevice.findObject(textContains("Data collection")).click()
@@ -704,7 +817,10 @@ class SettingsRobot {
             return SettingsSubMenuDataCollectionRobot.Transition()
         }
 
-        fun openAddonsManagerMenu(composeTestRule: ComposeTestRule, interact: SettingsSubMenuAddonsManagerRobot.() -> Unit): SettingsSubMenuAddonsManagerRobot.Transition {
+        fun openAddonsManagerMenu(
+            composeTestRule: ComposeTestRule,
+            interact: SettingsSubMenuAddonsManagerRobot.() -> Unit,
+        ): SettingsSubMenuAddonsManagerRobot.Transition {
             Log.i(TAG, "openAddonsManagerMenu: Trying to click the \"Add-ons\" button")
             addonsManagerButton().click()
             Log.i(TAG, "openAddonsManagerMenu: Clicked the \"Add-ons\" button")
@@ -713,7 +829,9 @@ class SettingsRobot {
             return SettingsSubMenuAddonsManagerRobot.Transition(composeTestRule)
         }
 
-        fun openOpenLinksInAppsMenu(interact: SettingsSubMenuOpenLinksInAppsRobot.() -> Unit): SettingsSubMenuOpenLinksInAppsRobot.Transition {
+        fun openOpenLinksInAppsMenu(
+            interact: SettingsSubMenuOpenLinksInAppsRobot.() -> Unit
+        ): SettingsSubMenuOpenLinksInAppsRobot.Transition {
             Log.i(TAG, "openOpenLinksInAppsMenu: Trying to click the \"Open links in apps\" button")
             openLinksInAppsButton().click()
             Log.i(TAG, "openOpenLinksInAppsMenu: Clicked the \"Open links in apps\" button")
@@ -722,7 +840,9 @@ class SettingsRobot {
             return SettingsSubMenuOpenLinksInAppsRobot.Transition()
         }
 
-        fun openHttpsOnlyModeMenu(interact: SettingsSubMenuHttpsOnlyModeRobot.() -> Unit): SettingsSubMenuHttpsOnlyModeRobot.Transition {
+        fun openHttpsOnlyModeMenu(
+            interact: SettingsSubMenuHttpsOnlyModeRobot.() -> Unit
+        ): SettingsSubMenuHttpsOnlyModeRobot.Transition {
             scrollToElementByText("HTTPS-Only Mode")
             Log.i(TAG, "openHttpsOnlyModeMenu: Trying to click the \"HTTPS-Only Mode\" button")
             onView(withText(getStringResource(R.string.preferences_https_only_title))).click()
@@ -736,7 +856,9 @@ class SettingsRobot {
             return SettingsSubMenuHttpsOnlyModeRobot.Transition()
         }
 
-        fun openExperimentsMenu(interact: SettingsSubMenuExperimentsRobot.() -> Unit): SettingsSubMenuExperimentsRobot.Transition {
+        fun openExperimentsMenu(
+            interact: SettingsSubMenuExperimentsRobot.() -> Unit
+        ): SettingsSubMenuExperimentsRobot.Transition {
             scrollToElementByText("Nimbus Experiments")
             onView(withText(getStringResource(R.string.preferences_nimbus_experiments))).click()
 
@@ -744,7 +866,10 @@ class SettingsRobot {
             return SettingsSubMenuExperimentsRobot.Transition()
         }
 
-        fun openPageSummariesSubMenu(composeTestRule: ComposeTestRule, interact: SettingsSubMenuPageSummariesRobot.() -> Unit): SettingsSubMenuPageSummariesRobot.Transition {
+        fun openPageSummariesSubMenu(
+            composeTestRule: ComposeTestRule,
+            interact: SettingsSubMenuPageSummariesRobot.() -> Unit,
+        ): SettingsSubMenuPageSummariesRobot.Transition {
             assertUIObjectExists(itemContainingText(getStringResource(R.string.preferences_page_summaries)))
             Log.i(TAG, "openPageSummariesSubMenu: Trying to click the \"Page summaries\" button")
             itemContainingText(getStringResource(R.string.preferences_page_summaries)).click()
@@ -806,8 +931,6 @@ fun clickRateButtonGooglePlay() {
 
 private fun addonsManagerButton() = onView(withText(R.string.preferences_extensions))
 
-private fun goBackButton() =
-    onView(CoreMatchers.allOf(withContentDescription("Navigate up")))
+private fun goBackButton() = onView(CoreMatchers.allOf(withContentDescription("Navigate up")))
 
-private fun settingsList() =
-    UiScrollable(UiSelector().resourceId("$packageName:id/recycler_view"))
+private fun settingsList() = UiScrollable(UiSelector().resourceId("$packageName:id/recycler_view"))

@@ -408,6 +408,75 @@ add_task(async function test_scroll_preserved_on_pointer_leave() {
   );
 });
 
+add_task(async function test_pointer_selection_cleared_over_gap() {
+  const url = `data:text/html,<input type="text" name="field1">`;
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url },
+    async function (browser) {
+      const {
+        autoCompletePopup,
+        autoCompletePopup: { richlistbox: itemsBox },
+      } = browser;
+      const mockHistory = [
+        { op: "add", fieldname: "field1", value: "value1" },
+        { op: "add", fieldname: "field1", value: "value2" },
+        { op: "add", fieldname: "field1", value: "value3" },
+        { op: "add", fieldname: "field1", value: "value4" },
+      ];
+
+      await FormHistory.update([{ op: "remove" }, ...mockHistory]);
+      await SpecialPowers.spawn(browser, [], async function () {
+        const input = content.document.querySelector("input");
+
+        input.focus();
+      });
+
+      // show popup
+      await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
+      await TestUtils.waitForCondition(() => {
+        return autoCompletePopup.popupOpen;
+      });
+
+      const listItemElems = itemsBox.querySelectorAll(".autocomplete-row-item");
+
+      // hover a row to select it with the pointer
+      EventUtils.synthesizeMouseAtCenter(listItemElems[1], {
+        type: "mousemove",
+      });
+      await TestUtils.waitForCondition(() => {
+        return itemsBox.hasAttribute("pointerselected");
+      });
+
+      // a mousemove landing between rows (over the richlistbox, not a row)
+      // clears the pointer selection so nothing stays invisibly selected
+      autoCompletePopup.mLastMoveTime = 0;
+      itemsBox.dispatchEvent(new MouseEvent("mousemove", { bubbles: true }));
+
+      Assert.equal(
+        autoCompletePopup.selectedIndex,
+        -1,
+        "pointer selection should be cleared when the pointer is between rows"
+      );
+      Assert.ok(
+        !itemsBox.hasAttribute("pointerselected"),
+        "pointerselected should be removed when the pointer is between rows"
+      );
+      Assert.equal(
+        autoCompletePopup.mousedOverIndex,
+        -1,
+        "mousedOverIndex should be reset when the pointer is between rows"
+      );
+
+      // close popup
+      await SpecialPowers.spawn(browser, [], async function () {
+        const input = content.document.querySelector("input");
+
+        input.blur();
+      });
+    }
+  );
+});
+
 add_task(async function test_scroll_reset_on_fresh_search() {
   const url = `data:text/html,<input type="text" name="field1">`;
   await BrowserTestUtils.withNewTab(

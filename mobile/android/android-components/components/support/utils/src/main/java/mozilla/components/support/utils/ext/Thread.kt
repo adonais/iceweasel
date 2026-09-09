@@ -15,6 +15,5 @@ fun Thread.threadIdCompat() =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
         threadId()
     } else {
-        @Suppress("DEPRECATION")
-        id
+        @Suppress("DEPRECATION") id
     }

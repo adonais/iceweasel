@@ -6,31 +6,21 @@ package mozilla.components.support.base.android
 
 import android.os.SystemClock
 import androidx.annotation.VisibleForTesting
-import mozilla.components.support.base.log.logger.Logger
 import java.lang.RuntimeException
+import mozilla.components.support.base.log.logger.Logger
 
 private val logger = Logger("Clock")
 
-/**
- * A wrapper around [SystemClock] and other time-related APIs. Allows mocking the underlying
- * behavior in tests.
- */
+/** A wrapper around [SystemClock] and other time-related APIs. Allows mocking the underlying behavior in tests. */
 object Clock {
-    @VisibleForTesting
-    var delegate: Delegate = createDefaultDelegate()
+    @VisibleForTesting var delegate: Delegate = createDefaultDelegate()
 
-    /**
-     * Returns milliseconds since boot, including time spent in sleep.
-     */
+    /** Returns milliseconds since boot, including time spent in sleep. */
     fun elapsedRealtime(): Long = delegate.elapsedRealtime()
 
-    /**
-     * Interface for actual clock implementations that [Clock] will delegate to.
-     */
+    /** Interface for actual clock implementations that [Clock] will delegate to. */
     interface Delegate {
-        /**
-         * Returns milliseconds since boot, including time spent in sleep.
-         */
+        /** Returns milliseconds since boot, including time spent in sleep. */
         fun elapsedRealtime(): Long
     }
 

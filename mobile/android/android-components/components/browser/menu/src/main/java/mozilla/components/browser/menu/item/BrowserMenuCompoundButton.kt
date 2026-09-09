@@ -14,13 +14,13 @@ import mozilla.components.concept.menu.candidate.CompoundMenuCandidate
 import mozilla.components.concept.menu.candidate.ContainerStyle
 
 /**
- * A browser menu compound button. A basic sub-class would only have to provide a layout resource to
- * satisfy [BrowserMenuItem.getLayoutResource] which contains a [View] that inherits from [CompoundButton].
+ * A browser menu compound button. A basic sub-class would only have to provide a layout resource to satisfy
+ * [BrowserMenuItem.getLayoutResource] which contains a [View] that inherits from [CompoundButton].
  *
  * @param label The visible label of this menu item.
  * @param isCollapsingMenuLimit Whether this menu item can serve as the limit of a collapsing menu.
- * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards
- * depending on the menu position).
+ * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards depending on the menu
+ *   position).
  * @param initialState The initial value the checkbox should have.
  * @param listener Callback to be invoked when this menu item is checked.
  */
@@ -48,7 +48,7 @@ abstract class BrowserMenuCompoundButton(
                         view.layoutDirection = View.LAYOUT_DIRECTION_INHERIT
                         return true
                     }
-                },
+                }
             )
         }
 
@@ -62,11 +62,12 @@ abstract class BrowserMenuCompoundButton(
         }
     }
 
-    override fun asCandidate(context: Context) = CompoundMenuCandidate(
-        label,
-        isChecked = initialState(),
-        end = CompoundMenuCandidate.ButtonType.CHECKBOX,
-        containerStyle = ContainerStyle(isVisible = visible()),
-        onCheckedChange = listener,
-    )
+    override fun asCandidate(context: Context) =
+        CompoundMenuCandidate(
+            label,
+            isChecked = initialState(),
+            end = CompoundMenuCandidate.ButtonType.CHECKBOX,
+            containerStyle = ContainerStyle(isVisible = visible()),
+            onCheckedChange = listener,
+        )
 }

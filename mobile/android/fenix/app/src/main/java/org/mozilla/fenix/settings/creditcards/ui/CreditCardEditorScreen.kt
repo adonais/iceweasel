@@ -54,22 +54,18 @@ import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.textfield.TextField
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.creditcards.ui.CreditCardEditorAction.DeleteDialogAction
 import org.mozilla.fenix.settings.creditcards.ui.CreditCardEditorAction.FieldChanged
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.ThemedValue
 import org.mozilla.fenix.theme.ThemedValueProvider
-import mozilla.components.ui.icons.R as iconsR
 
-/**
- * Weight for the expiration month dropdown.
- */
+/** Weight for the expiration month dropdown. */
 private const val EXPIRATION_MONTH_WEIGHT = 5f
 
-/**
- * Weight for the expiration year dropdown.
- */
+/** Weight for the expiration year dropdown. */
 private const val EXPIRATION_YEAR_WEIGHT = 4f
 
 /**
@@ -82,9 +78,10 @@ fun CreditCardEditorScreen(store: CreditCardEditorStore) {
     val state by store.stateFlow.collectAsState()
 
     Scaffold(
-        modifier = Modifier.semantics {
-            testTagsAsResourceId = true
-        },
+        modifier =
+            Modifier.semantics {
+                testTagsAsResourceId = true
+            },
         topBar = {
             EditorTopBar(
                 inEditMode = state.inEditMode,
@@ -112,9 +109,7 @@ fun CreditCardEditorScreen(store: CreditCardEditorStore) {
         }
 
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(it),
+            modifier = Modifier.fillMaxWidth().padding(it),
             contentAlignment = Alignment.TopCenter,
         ) {
             EditorContent(
@@ -158,11 +153,12 @@ private fun EditorTopBar(
         modifier = modifier,
         title = {
             Text(
-                text = if (inEditMode) {
-                    stringResource(R.string.credit_cards_edit_card)
-                } else {
-                    stringResource(R.string.credit_cards_add_card)
-                },
+                text =
+                    if (inEditMode) {
+                        stringResource(R.string.credit_cards_edit_card)
+                    } else {
+                        stringResource(R.string.credit_cards_add_card)
+                    },
                 style = FirefoxTheme.typography.headline5,
             )
         },
@@ -202,10 +198,11 @@ private fun EditorTopBar(
                 )
             }
         },
-        windowInsets = WindowInsets(
-            top = 0.dp,
-            bottom = 0.dp,
-        ),
+        windowInsets =
+            WindowInsets(
+                top = 0.dp,
+                bottom = 0.dp,
+            ),
     )
 }
 
@@ -221,11 +218,11 @@ private fun EditorContent(
     onSaveClicked: () -> Unit = {},
 ) {
     Column(
-        modifier = Modifier
-            .widthIn(max = FirefoxTheme.layout.size.containerMaxWidth)
-            .verticalScroll(rememberScrollState())
-            .padding(FirefoxTheme.layout.space.static200)
-            .imePadding(),
+        modifier =
+            Modifier.widthIn(max = FirefoxTheme.layout.size.containerMaxWidth)
+                .verticalScroll(rememberScrollState())
+                .padding(FirefoxTheme.layout.space.static200)
+                .imePadding(),
         verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static200),
     ) {
         val focusRequester = remember { FocusRequester() }
@@ -235,27 +232,28 @@ private fun EditorContent(
         }
 
         TextInput(
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag(CreditCardEditorTestTags.CARD_NUMBER_FIELD)
-                .semantics { contentDataType = ContentDataType.None }
-                .focusRequester(focusRequester),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .testTag(CreditCardEditorTestTags.CARD_NUMBER_FIELD)
+                    .semantics { contentDataType = ContentDataType.None }
+                    .focusRequester(focusRequester),
             errorText = stringResource(R.string.credit_cards_number_validation_error_message_2),
             label = stringResource(R.string.credit_cards_card_number),
             isError = state.showCardNumberError,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Next,
-            ),
+            keyboardOptions =
+                KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Next,
+                ),
             value = state.cardNumber,
             onValueChange = onCardNumberChanged,
         )
 
         TextInput(
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag(CreditCardEditorTestTags.NAME_ON_CARD_FIELD)
-                .semantics { contentDataType = ContentDataType.None },
+            modifier =
+                Modifier.fillMaxWidth().testTag(CreditCardEditorTestTags.NAME_ON_CARD_FIELD).semantics {
+                    contentDataType = ContentDataType.None
+                },
             errorText = stringResource(R.string.credit_cards_name_on_card_validation_error_message_2),
             label = stringResource(R.string.credit_cards_name_on_card),
             isError = state.showNameOnCardError,
@@ -295,10 +293,10 @@ private fun ExpirationDateRow(
         horizontalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static200),
     ) {
         ExpirationDateDropdown(
-            modifier = Modifier
-                .weight(EXPIRATION_MONTH_WEIGHT)
-                .testTag(CreditCardEditorTestTags.EXPIRATION_MONTH_FIELD)
-                .semantics { contentType = ContentType.CreditCardExpirationMonth },
+            modifier =
+                Modifier.weight(EXPIRATION_MONTH_WEIGHT)
+                    .testTag(CreditCardEditorTestTags.EXPIRATION_MONTH_FIELD)
+                    .semantics { contentType = ContentType.CreditCardExpirationMonth },
             label = stringResource(R.string.credit_cards_expiration_date_month),
             items = months,
             selectedIndex = selectedMonthIndex,
@@ -306,10 +304,10 @@ private fun ExpirationDateRow(
         )
 
         ExpirationDateDropdown(
-            modifier = Modifier
-                .weight(EXPIRATION_YEAR_WEIGHT)
-                .testTag(CreditCardEditorTestTags.EXPIRATION_YEAR_FIELD)
-                .semantics { contentType = ContentType.CreditCardExpirationYear },
+            modifier =
+                Modifier.weight(EXPIRATION_YEAR_WEIGHT)
+                    .testTag(CreditCardEditorTestTags.EXPIRATION_YEAR_FIELD)
+                    .semantics { contentType = ContentType.CreditCardExpirationYear },
             label = stringResource(R.string.credit_cards_expiration_date_year),
             items = years,
             selectedIndex = selectedYearIndex,
@@ -363,15 +361,16 @@ private fun ExpirationDateDropdown(
     Dropdown(
         modifier = modifier,
         label = label,
-        dropdownItems = items.mapIndexed { index, itemLabel ->
-            MenuItem.CheckableItem(
-                text = Text.String(value = itemLabel),
-                isChecked = index == selectedIndex,
-                onClick = {
-                    onItemSelected(index)
-                },
-            )
-        },
+        dropdownItems =
+            items.mapIndexed { index, itemLabel ->
+                MenuItem.CheckableItem(
+                    text = Text.String(value = itemLabel),
+                    isChecked = index == selectedIndex,
+                    onClick = {
+                        onItemSelected(index)
+                    },
+                )
+            },
         placeholder = "",
     )
 }
@@ -410,33 +409,33 @@ private data class CreditCardEditorPreviewState(
     val showDeleteDialog: Boolean = false,
 )
 
-private class CreditCardEditorPreviewProvider : ThemedValueProvider<CreditCardEditorPreviewState>(
-    sequenceOf(
-        CreditCardEditorPreviewState(),
-        CreditCardEditorPreviewState(inEditMode = true),
-        CreditCardEditorPreviewState(inEditMode = true, showDeleteDialog = true),
-    ),
-)
+private class CreditCardEditorPreviewProvider :
+    ThemedValueProvider<CreditCardEditorPreviewState>(
+        sequenceOf(
+            CreditCardEditorPreviewState(),
+            CreditCardEditorPreviewState(inEditMode = true),
+            CreditCardEditorPreviewState(inEditMode = true, showDeleteDialog = true),
+        )
+    )
 
 @FlexibleWindowLightDarkPreview
 @Composable
 private fun CreditCardEditorScreenPreview(
-    @PreviewParameter(CreditCardEditorPreviewProvider::class) state: ThemedValue<CreditCardEditorPreviewState>,
+    @PreviewParameter(CreditCardEditorPreviewProvider::class) state: ThemedValue<CreditCardEditorPreviewState>
 ) {
-    val uiState = CreditCardEditorState(
-        guid = state.value.guid,
-        cardNumber = state.value.cardNumber,
-        nameOnCard = state.value.nameOnCard,
-        expiryMonths = state.value.expiryMonths,
-        selectedExpiryMonthIndex = state.value.selectedExpiryMonthIndex,
-        expiryYears = state.value.expiryYears,
-        selectedExpiryYearIndex = state.value.selectedExpiryYearIndex,
-        inEditMode = state.value.inEditMode,
-        showDeleteDialog = state.value.showDeleteDialog,
-    )
-    FirefoxTheme(state.theme) {
-        CreditCardEditorScreen(
-            store = CreditCardEditorStore(initialState = uiState),
+    val uiState =
+        CreditCardEditorState(
+            guid = state.value.guid,
+            cardNumber = state.value.cardNumber,
+            nameOnCard = state.value.nameOnCard,
+            expiryMonths = state.value.expiryMonths,
+            selectedExpiryMonthIndex = state.value.selectedExpiryMonthIndex,
+            expiryYears = state.value.expiryYears,
+            selectedExpiryYearIndex = state.value.selectedExpiryYearIndex,
+            inEditMode = state.value.inEditMode,
+            showDeleteDialog = state.value.showDeleteDialog,
         )
+    FirefoxTheme(state.theme) {
+        CreditCardEditorScreen(store = CreditCardEditorStore(initialState = uiState))
     }
 }

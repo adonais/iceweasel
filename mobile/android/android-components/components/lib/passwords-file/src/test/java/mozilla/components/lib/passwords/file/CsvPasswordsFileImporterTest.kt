@@ -5,6 +5,9 @@
 package mozilla.components.lib.passwords.file
 
 import android.net.Uri
+import java.io.ByteArrayInputStream
+import java.io.IOException
+import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.password.parser.PasswordsFileParser
 import mozilla.components.concept.storage.Login
@@ -18,9 +21,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import java.io.ByteArrayInputStream
-import java.io.IOException
-import kotlin.test.assertIs
 
 @RunWith(RobolectricTestRunner::class)
 class CsvPasswordsFileImporterTest {
@@ -33,10 +33,11 @@ class CsvPasswordsFileImporterTest {
         whenever(storage.addMany(any())).thenAnswer { invocation ->
             invocation.getArgument<List<LoginEntry>>(0).map { Result.success(stubLogin(it)) }
         }
-        val importer = createImporter(
-            parser = PasswordsFileParser.fakeSuccess(entries),
-            loginsStorage = storage,
-        )
+        val importer =
+            createImporter(
+                parser = PasswordsFileParser.fakeSuccess(entries),
+                loginsStorage = storage,
+            )
 
         val result = importer.importPasswordsFromUri(testUri).getOrThrow()
 
@@ -45,9 +46,7 @@ class CsvPasswordsFileImporterTest {
 
     @Test
     fun `importPasswordsFromUri returns failure when uri cannot be opened`() = runTest {
-        val importer = createImporter(
-            uriOpener = { Result.failure(IOException("cannot open")) },
-        )
+        val importer = createImporter(uriOpener = { Result.failure(IOException("cannot open")) })
 
         val result = importer.importPasswordsFromUri(testUri)
 
@@ -68,43 +67,48 @@ class CsvPasswordsFileImporterTest {
     fun `importPasswordsFromUri counts only successful storage writes`() = runTest {
         val entries = threeLogins()
         val storage: LoginsStorage = mock()
-        whenever(storage.addMany(entries)).thenReturn(
-            listOf(
-                Result.success(stubLogin(entries[0])),
-                Result.failure(RuntimeException("duplicate")),
-                Result.success(stubLogin(entries[2])),
-            ),
-        )
-        val importer = createImporter(
-            parser = PasswordsFileParser.fakeSuccess(entries),
-            loginsStorage = storage,
-        )
+        whenever(storage.addMany(entries))
+            .thenReturn(
+                listOf(
+                    Result.success(stubLogin(entries[0])),
+                    Result.failure(RuntimeException("duplicate")),
+                    Result.success(stubLogin(entries[2])),
+                )
+            )
+        val importer =
+            createImporter(
+                parser = PasswordsFileParser.fakeSuccess(entries),
+                loginsStorage = storage,
+            )
 
         val result = importer.importPasswordsFromUri(testUri).getOrThrow()
 
         assertEquals(2, result.count)
     }
 
-    private fun threeLogins() = listOf(
-        LoginEntry(origin = "https://a.example", username = "a", password = "p1"),
-        LoginEntry(origin = "https://b.example", username = "b", password = "p2"),
-        LoginEntry(origin = "https://c.example", username = "c", password = "p3"),
-    )
+    private fun threeLogins() =
+        listOf(
+            LoginEntry(origin = "https://a.example", username = "a", password = "p1"),
+            LoginEntry(origin = "https://b.example", username = "b", password = "p2"),
+            LoginEntry(origin = "https://c.example", username = "c", password = "p3"),
+        )
 
-    private fun stubLogin(entry: LoginEntry) = Login(
-        guid = entry.origin,
-        username = entry.username,
-        password = entry.password,
-        origin = entry.origin,
-    )
+    private fun stubLogin(entry: LoginEntry) =
+        Login(
+            guid = entry.origin,
+            username = entry.username,
+            password = entry.password,
+            origin = entry.origin,
+        )
 
     private fun createImporter(
         uriOpener: UriOpener = UriOpener { Result.success(ByteArrayInputStream(ByteArray(0))) },
         parser: PasswordsFileParser = PasswordsFileParser.fakeSuccess(),
         loginsStorage: LoginsStorage = mock(),
-    ) = CsvPasswordsFileImporter(
-        uriOpener = uriOpener,
-        parser = parser,
-        loginsStorage = loginsStorage,
-    )
+    ) =
+        CsvPasswordsFileImporter(
+            uriOpener = uriOpener,
+            parser = parser,
+            loginsStorage = loginsStorage,
+        )
 }

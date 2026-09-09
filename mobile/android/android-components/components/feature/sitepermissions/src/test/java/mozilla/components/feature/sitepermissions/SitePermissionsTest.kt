@@ -38,15 +38,16 @@ class SitePermissionsTest {
         assertEquals(BLOCKED, sitePermissions[AUTOPLAY_AUDIBLE])
         assertEquals(ALLOWED, sitePermissions[AUTOPLAY_INAUDIBLE])
 
-        sitePermissions = sitePermissions.copy(
-            location = ALLOWED,
-            notification = BLOCKED,
-            microphone = NO_DECISION,
-            autoplayAudible = AutoplayStatus.ALLOWED,
-            autoplayInaudible = AutoplayStatus.BLOCKED,
-            localDeviceAccess = ALLOWED,
-            localNetworkAccess = ALLOWED,
-        )
+        sitePermissions =
+            sitePermissions.copy(
+                location = ALLOWED,
+                notification = BLOCKED,
+                microphone = NO_DECISION,
+                autoplayAudible = AutoplayStatus.ALLOWED,
+                autoplayInaudible = AutoplayStatus.BLOCKED,
+                localDeviceAccess = ALLOWED,
+                localNetworkAccess = ALLOWED,
+            )
 
         assertEquals(BLOCKED, sitePermissions[NOTIFICATION])
         assertEquals(ALLOWED, sitePermissions[LOCATION])
@@ -62,20 +63,22 @@ class SitePermissionsTest {
 
     @Test
     fun `AutoplayStatus - toStatus`() {
-        var sitePermissions = SitePermissions(
-            origin = "mozilla.dev",
-            autoplayInaudible = AutoplayStatus.BLOCKED,
-            autoplayAudible = AutoplayStatus.BLOCKED,
-            savedAt = 0,
-        )
+        var sitePermissions =
+            SitePermissions(
+                origin = "mozilla.dev",
+                autoplayInaudible = AutoplayStatus.BLOCKED,
+                autoplayAudible = AutoplayStatus.BLOCKED,
+                savedAt = 0,
+            )
 
         assertEquals(BLOCKED, sitePermissions.autoplayAudible.toStatus())
         assertEquals(BLOCKED, sitePermissions.autoplayInaudible.toStatus())
 
-        sitePermissions = sitePermissions.copy(
-            autoplayAudible = AutoplayStatus.ALLOWED,
-            autoplayInaudible = AutoplayStatus.ALLOWED,
-        )
+        sitePermissions =
+            sitePermissions.copy(
+                autoplayAudible = AutoplayStatus.ALLOWED,
+                autoplayInaudible = AutoplayStatus.ALLOWED,
+            )
 
         assertEquals(ALLOWED, sitePermissions.autoplayAudible.toStatus())
         assertEquals(ALLOWED, sitePermissions.autoplayInaudible.toStatus())

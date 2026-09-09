@@ -20,6 +20,8 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
+import java.io.File
+import java.io.FileNotFoundException
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.DownloadUtils.changeExtension
 import mozilla.components.support.utils.DownloadUtils.createExtension
@@ -28,8 +30,6 @@ import mozilla.components.support.utils.DownloadUtils.findFileInMediaStore
 import mozilla.components.support.utils.DownloadUtils.isDefaultDownloadDirectory
 import mozilla.components.support.utils.DownloadUtils.sanitizeMimeType
 import mozilla.components.support.utils.DownloadUtils.truncateFileName
-import java.io.File
-import java.io.FileNotFoundException
 
 /**
  * The default implementation of [DownloadFileUtils].
@@ -40,9 +40,7 @@ import java.io.FileNotFoundException
 class DefaultDownloadFileUtils(
     private val context: Context,
     private val downloadLocation: () -> String = {
-        Environment.getExternalStoragePublicDirectory(
-            Environment.DIRECTORY_DOWNLOADS,
-        ).path
+        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
     },
 ) : DownloadFileUtils {
     private val logger = Logger("DefaultDownloadFileUtils")
@@ -51,17 +49,19 @@ class DefaultDownloadFileUtils(
      * Keep aligned with desktop generic content types:
      * https://searchfox.org/firefox-main/source/browser/components/downloads/DownloadsCommon.jsm#208
      */
-    private val genericContentTypes = arrayOf(
-        "application/octet-stream",
-        "binary/octet-stream",
-        "application/unknown",
-    )
+    private val genericContentTypes =
+        arrayOf(
+            "application/octet-stream",
+            "binary/octet-stream",
+            "application/unknown",
+        )
 
     companion object {
         private const val SCHEME_CONTENT = "content://"
         private const val SCHEME_FILE = "file"
         private const val FILE_PROVIDER_EXTENSION = ".feature.downloads.fileprovider"
     }
+
     override val currentDownloadLocation: String
         get() = downloadLocation()
 
@@ -75,15 +75,16 @@ class DefaultDownloadFileUtils(
         val extractedFileName = extractFileNameFromUrl(contentDisposition, url)
         val sanitizedMimeType = sanitizeMimeType(mimeType)
 
-        val fileName = if (extractedFileName.contains('.')) {
-            if (genericContentTypes.contains(sanitizedMimeType)) {
-                extractedFileName
+        val fileName =
+            if (extractedFileName.contains('.')) {
+                if (genericContentTypes.contains(sanitizedMimeType)) {
+                    extractedFileName
+                } else {
+                    changeExtension(extractedFileName, sanitizedMimeType)
+                }
             } else {
-                changeExtension(extractedFileName, sanitizedMimeType)
+                extractedFileName + createExtension(sanitizedMimeType)
             }
-        } else {
-            extractedFileName + createExtension(sanitizedMimeType)
-        }
         return uniqueFileName(
             directoryPath = downloadLocation(),
             fileName = fileName,
@@ -95,11 +96,12 @@ class DefaultDownloadFileUtils(
         directoryPath: String,
         contentType: String?,
     ): Boolean {
-        val newIntent = createOpenFileIntent(
-            fileName = fileName,
-            directoryPath = directoryPath,
-            downloadContentType = contentType,
-        )
+        val newIntent =
+            createOpenFileIntent(
+                fileName = fileName,
+                directoryPath = directoryPath,
+                downloadContentType = contentType,
+            )
 
         return try {
             context.startActivity(newIntent)
@@ -154,10 +156,11 @@ class DefaultDownloadFileUtils(
     }
 
     override fun findShareableDownloadFileUri(fileName: String?, directoryPath: String): Uri? {
-        val initialUri = findDownloadFileUri(
-            fileName = fileName,
-            directoryPath = directoryPath,
-        ) ?: return null
+        val initialUri =
+            findDownloadFileUri(
+                fileName = fileName,
+                directoryPath = directoryPath,
+            ) ?: return null
 
         return if (initialUri.scheme == SCHEME_FILE) {
             getFilePathUri(initialUri.path ?: "")
@@ -202,11 +205,12 @@ class DefaultDownloadFileUtils(
         fileName: String,
     ): String {
         val file = File(fileName)
-        val (baseFileName, fileExtension) = truncateFileName(
-            baseFileName = file.nameWithoutExtension,
-            fileExtension = file.extension,
-            path = directoryPath,
-        )
+        val (baseFileName, fileExtension) =
+            truncateFileName(
+                baseFileName = file.nameWithoutExtension,
+                fileExtension = file.extension,
+                path = directoryPath,
+            )
 
         var currentFileName = createFileName(baseFileName, fileExtension)
         var copyVersionNumber = 1
@@ -375,10 +379,11 @@ class DefaultDownloadFileUtils(
 
     @VisibleForTesting
     internal fun findInDefaultDownloadDirectory(fileName: String, directoryPath: String): Uri? {
-        val mediaStoreUri = context.contentResolver.findFileInMediaStore(
-            collection = downloadsCollectionUri,
-            fileName = fileName,
-        )
+        val mediaStoreUri =
+            context.contentResolver.findFileInMediaStore(
+                collection = downloadsCollectionUri,
+                fileName = fileName,
+            )
 
         if (mediaStoreUri == null) {
             val file = File(directoryPath, fileName)
@@ -390,21 +395,20 @@ class DefaultDownloadFileUtils(
         return mediaStoreUri
     }
 
-    /**
-     * The appropriate content URI for the downloads collection, based on the Android SDK version.
-     */
+    /** The appropriate content URI for the downloads collection, based on the Android SDK version. */
     private val downloadsCollectionUri: Uri
-        get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-        } else {
-            MediaStore.Files.getContentUri("external")
-        }
+        get() =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            } else {
+                MediaStore.Files.getContentUri("external")
+            }
 
     /**
      * Converts a "tree" URI into a standard, shareable document URI if possible.
      *
-     * An ACTION_VIEW Intent cannot directly open a tree URI. This function finds the specific
-     * file within the tree and returns its direct document URI.
+     * An ACTION_VIEW Intent cannot directly open a tree URI. This function finds the specific file within the tree and
+     * returns its direct document URI.
      *
      * @param treeUri The URI that might be a tree URI.
      * @param fileName The name of the file to find within the tree.

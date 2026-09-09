@@ -323,7 +323,7 @@ add_task(async function testF7SpamDoesNotOpenDialogs() {
 
   let openedPromise = promiseDialogOrTimeout();
 
-  // Hit F7 two more times: once to test that _awaitingToggleCaretBrowsingPrompt
+  // Hit F7 two more times: once to test that #awaitingToggleCaretBrowsingPrompt
   // is applied, and again to test that its value isn't somehow reset by
   // pressing F7 while the dialog is open.
   for (let i = 0; i < 2; i++) {

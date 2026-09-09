@@ -11,22 +11,19 @@ package mozilla.components.concept.engine.translate
  */
 enum class LanguageSetting(private val languageSetting: String) {
     /**
-     * The translations engine should always expect a given language to be translated and
-     * automatically translate on page load.
+     * The translations engine should always expect a given language to be translated and automatically translate on
+     * page load.
      */
     ALWAYS("always"),
 
     /**
-     * The translations engine should offer a given language to be translated. This is the default
-     * setting. Note, this means the language will parallel the global offer setting
+     * The translations engine should offer a given language to be translated. This is the default setting. Note, this
+     * means the language will parallel the global offer setting
      */
     OFFER("offer"),
 
-    /**
-     * The translations engine should never offer to translate a given language.
-     */
-    NEVER("never"),
-    ;
+    /** The translations engine should never offer to translate a given language. */
+    NEVER("never");
 
     companion object {
         /**
@@ -34,28 +31,24 @@ enum class LanguageSetting(private val languageSetting: String) {
          *
          * @param languageSetting The specified language setting.
          */
-        fun fromValue(languageSetting: String): LanguageSetting = when (languageSetting.lowercase()) {
-            "always" -> ALWAYS
-            "offer" -> OFFER
-            "never" -> NEVER
-            else ->
-                throw IllegalArgumentException("The language setting $languageSetting is not mapped.")
-        }
+        fun fromValue(languageSetting: String): LanguageSetting =
+            when (languageSetting.lowercase()) {
+                "always" -> ALWAYS
+                "offer" -> OFFER
+                "never" -> NEVER
+                else -> throw IllegalArgumentException("The language setting $languageSetting is not mapped.")
+            }
     }
 
     /**
      * Helper function to transform a given [LanguageSetting] setting into its boolean counterpart.
      *
-     * @param categoryToSetFor The [LanguageSetting] type that we would like to determine the
-     * boolean value for. For example, if trying to calculate a boolean 'isAlways',
-     * [categoryToSetFor] would be [LanguageSetting.ALWAYS].
-     *
-     * @return A boolean that corresponds to the language setting. Will return null if not enough
-     * information is present to make a determination.
+     * @param categoryToSetFor The [LanguageSetting] type that we would like to determine the boolean value for. For
+     *   example, if trying to calculate a boolean 'isAlways', [categoryToSetFor] would be [LanguageSetting.ALWAYS].
+     * @return A boolean that corresponds to the language setting. Will return null if not enough information is present
+     *   to make a determination.
      */
-    fun toBoolean(
-        categoryToSetFor: LanguageSetting,
-    ): Boolean? {
+    fun toBoolean(categoryToSetFor: LanguageSetting): Boolean? {
         when (this) {
             ALWAYS -> {
                 return when (categoryToSetFor) {
@@ -93,11 +86,9 @@ enum class LanguageSetting(private val languageSetting: String) {
      *
      * @param value The given [Boolean] to convert to a [LanguageSetting].
      * @return A language setting that corresponds to the boolean. Will return null if not enough information is present
-     * to make a determination.
+     *   to make a determination.
      */
-    fun toLanguageSetting(
-        value: Boolean,
-    ): LanguageSetting? {
+    fun toLanguageSetting(value: Boolean): LanguageSetting? {
         when (this) {
             ALWAYS -> {
                 return when (value) {

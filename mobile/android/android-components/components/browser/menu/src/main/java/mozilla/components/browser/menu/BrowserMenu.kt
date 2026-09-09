@@ -30,21 +30,16 @@ import mozilla.components.concept.menu.MenuStyle
 import mozilla.components.support.ktx.android.view.isRTL
 import mozilla.components.support.ktx.android.view.pixelSizeFor
 
-/**
- * A popup menu composed of BrowserMenuItem objects.
- */
-open class BrowserMenu internal constructor(
-    internal val adapter: BrowserMenuAdapter,
-) : View.OnAttachStateChangeListener {
+/** A popup menu composed of BrowserMenuItem objects. */
+open class BrowserMenu internal constructor(internal val adapter: BrowserMenuAdapter) :
+    View.OnAttachStateChangeListener {
     protected var currentPopup: PopupWindow? = null
 
-    @VisibleForTesting
-    internal var menuList: RecyclerView? = null
+    @VisibleForTesting internal var menuList: RecyclerView? = null
     internal var currAnchor: View? = null
     internal var isShown = false
 
-    @VisibleForTesting
-    internal lateinit var menuPositioningData: MenuPositioningData
+    @VisibleForTesting internal lateinit var menuPositioningData: MenuPositioningData
     internal var backgroundColor: Int = Color.RED
 
     /**
@@ -52,7 +47,7 @@ open class BrowserMenu internal constructor(
      * @param orientation the preferred orientation to show the popup window.
      * @param style Custom styling for this menu.
      * @param endOfMenuAlwaysVisible when is set to true makes sure the bottom of the menu is always visible otherwise,
-     *  the top of the menu is always visible.
+     *   the top of the menu is always visible.
      */
     @Suppress("InflateParams")
     open fun show(
@@ -66,73 +61,79 @@ open class BrowserMenu internal constructor(
 
         adapter.menu = this
 
-        menuList = view.findViewById<DynamicWidthRecyclerView>(R.id.mozac_browser_menu_recyclerView).apply {
-            layoutManager = StickyItemsLinearLayoutManager.get<BrowserMenuAdapter>(
-                anchor.context,
-                StickyItemPlacement.BOTTOM,
-                false,
-            )
+        menuList =
+            view.findViewById<DynamicWidthRecyclerView>(R.id.mozac_browser_menu_recyclerView).apply {
+                layoutManager =
+                    StickyItemsLinearLayoutManager.get<BrowserMenuAdapter>(
+                        anchor.context,
+                        StickyItemPlacement.BOTTOM,
+                        false,
+                    )
 
-            adapter = this@BrowserMenu.adapter
-            minWidth = style?.minWidth ?: pixelSizeFor(R.dimen.mozac_browser_menu_width_min)
-            maxWidth = style?.maxWidth ?: pixelSizeFor(R.dimen.mozac_browser_menu_width_max)
-        }
+                adapter = this@BrowserMenu.adapter
+                minWidth = style?.minWidth ?: pixelSizeFor(R.dimen.mozac_browser_menu_width_min)
+                maxWidth = style?.maxWidth ?: pixelSizeFor(R.dimen.mozac_browser_menu_width_max)
+            }
 
         setColors(view, style)
 
-        menuList?.accessibilityDelegate = object : View.AccessibilityDelegate() {
-            override fun onInitializeAccessibilityNodeInfo(
-                host: View,
-                info: AccessibilityNodeInfo,
-            ) {
-                super.onInitializeAccessibilityNodeInfo(host, info)
-                info.collectionInfo =
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        AccessibilityNodeInfo.CollectionInfo(
-                            adapter.interactiveCount,
-                            0,
-                            false,
-                        )
-                    } else {
-                        @Suppress("DEPRECATION")
-                        AccessibilityNodeInfo.CollectionInfo.obtain(
-                            adapter.interactiveCount,
-                            0,
-                            false,
-                        )
-                    }
+        menuList?.accessibilityDelegate =
+            object : View.AccessibilityDelegate() {
+                override fun onInitializeAccessibilityNodeInfo(
+                    host: View,
+                    info: AccessibilityNodeInfo,
+                ) {
+                    super.onInitializeAccessibilityNodeInfo(host, info)
+                    info.collectionInfo =
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            AccessibilityNodeInfo.CollectionInfo(
+                                adapter.interactiveCount,
+                                0,
+                                false,
+                            )
+                        } else {
+                            @Suppress("DEPRECATION")
+                            AccessibilityNodeInfo.CollectionInfo.obtain(
+                                adapter.interactiveCount,
+                                0,
+                                false,
+                            )
+                        }
+                }
             }
-        }
 
         // Data needed to infer whether to show a collapsed menu
         // And then to properly place it.
-        menuPositioningData = inferMenuPositioningData(
-            view as ViewGroup,
-            anchor,
-            MenuPositioningData(askedOrientation = orientation),
-        )
+        menuPositioningData =
+            inferMenuPositioningData(
+                view as ViewGroup,
+                anchor,
+                MenuPositioningData(askedOrientation = orientation),
+            )
 
         view = configureExpandableMenu(view, endOfMenuAlwaysVisible)
-        return getNewPopupWindow(view).apply {
-            setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
-            isFocusable = true
-            elevation = view.resources.getDimension(R.dimen.mozac_browser_menu_elevation)
+        return getNewPopupWindow(view)
+            .apply {
+                setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+                isFocusable = true
+                elevation = view.resources.getDimension(R.dimen.mozac_browser_menu_elevation)
 
-            setOnDismissListener {
-                adapter.menu = null
-                currentPopup = null
-                isShown = false
-                onDismiss()
-            }
+                setOnDismissListener {
+                    adapter.menu = null
+                    currentPopup = null
+                    isShown = false
+                    onDismiss()
+                }
 
-            displayPopup(menuPositioningData).also {
-                anchor.addOnAttachStateChangeListener(this@BrowserMenu)
-                currAnchor = anchor
+                displayPopup(menuPositioningData).also {
+                    anchor.addOnAttachStateChangeListener(this@BrowserMenu)
+                    currAnchor = anchor
+                }
             }
-        }.also {
-            currentPopup = it
-            isShown = true
-        }
+            .also {
+                currentPopup = it
+                isShown = true
+            }
     }
 
     @VisibleForTesting
@@ -141,8 +142,9 @@ open class BrowserMenu internal constructor(
         endOfMenuAlwaysVisible: Boolean,
     ): ViewGroup {
         // If the menu is placed at the bottom it should start as collapsed.
-        if (menuPositioningData.inferredMenuPlacement is BrowserMenuPlacement.AnchoredToBottom.Dropdown ||
-            menuPositioningData.inferredMenuPlacement is BrowserMenuPlacement.AnchoredToBottom.ManualAnchoring
+        if (
+            menuPositioningData.inferredMenuPlacement is BrowserMenuPlacement.AnchoredToBottom.Dropdown ||
+                menuPositioningData.inferredMenuPlacement is BrowserMenuPlacement.AnchoredToBottom.ManualAnchoring
         ) {
             val collapsingMenuIndexLimit = adapter.visibleItems.indexOfFirst { it.isCollapsingMenuLimit }
             val stickyFooterPosition = adapter.visibleItems.indexOfLast { it.isSticky }
@@ -151,14 +153,17 @@ open class BrowserMenu internal constructor(
                     view,
                     collapsingMenuIndexLimit,
                     stickyFooterPosition,
-                ) { dismiss() }
+                ) {
+                    dismiss()
+                }
             }
         } else {
             // The menu is by default set as a bottom one. Reconfigure it as a top one.
-            menuList?.layoutManager = StickyItemsLinearLayoutManager.get<BrowserMenuAdapter>(
-                view.context,
-                StickyItemPlacement.TOP,
-            )
+            menuList?.layoutManager =
+                StickyItemsLinearLayoutManager.get<BrowserMenuAdapter>(
+                    view.context,
+                    StickyItemPlacement.TOP,
+                )
 
             // By default the menu is laid out from and scrolled to top - showing the top most items.
             // For the top menu it may be desired to initially show the bottom most items.
@@ -178,13 +183,14 @@ open class BrowserMenu internal constructor(
         // If the menu is expandable we need to give it all the possible space to expand.
         // Also, by setting MATCH_PARENT, expanding the menu will not expand the Window
         // of the PopupWindow which for a bottom anchored menu means glitchy animations.
-        val popupHeight = if (view is ExpandableLayout) {
-            WindowManager.LayoutParams.MATCH_PARENT
-        } else {
-            // Otherwise wrap the menu. Allowing it to be as big as the parent would result in
-            // layout issues if the menu is smaller than the available screen estate.
-            WindowManager.LayoutParams.WRAP_CONTENT
-        }
+        val popupHeight =
+            if (view is ExpandableLayout) {
+                WindowManager.LayoutParams.MATCH_PARENT
+            } else {
+                // Otherwise wrap the menu. Allowing it to be as big as the parent would result in
+                // layout issues if the menu is smaller than the available screen estate.
+                WindowManager.LayoutParams.WRAP_CONTENT
+            }
 
         return PopupWindow(
             view,
@@ -211,16 +217,15 @@ open class BrowserMenu internal constructor(
     @VisibleForTesting
     internal fun setColors(menuLayout: View, colorState: MenuStyle?) {
         val listParent: CardView = menuLayout.findViewById(R.id.mozac_browser_menu_menuView)
-        backgroundColor = colorState?.backgroundColor?.let {
-            listParent.setCardBackgroundColor(it)
-            it.defaultColor
-        } ?: listParent.cardBackgroundColor.defaultColor
+        backgroundColor =
+            colorState?.backgroundColor?.let {
+                listParent.setCardBackgroundColor(it)
+                it.defaultColor
+            } ?: listParent.cardBackgroundColor.defaultColor
     }
 
     companion object {
-        /**
-         * Determines the orientation to be used for a menu based on the positioning of the [parent] in the layout.
-         */
+        /** Determines the orientation to be used for a menu based on the positioning of the [parent] in the layout. */
         fun determineMenuOrientation(parent: View?): Orientation {
             if (parent == null) {
                 return DOWN
@@ -262,8 +267,7 @@ internal fun PopupWindow.displayPopup(currentData: MenuPositioningData) {
         is BrowserMenuPlacement.AnchoredToBottom.Dropdown -> showPopupWithUpOrientation(currentData)
 
         is BrowserMenuPlacement.AnchoredToTop.ManualAnchoring,
-        is BrowserMenuPlacement.AnchoredToBottom.ManualAnchoring,
-        -> showAtAnchorLocation(currentData)
+        is BrowserMenuPlacement.AnchoredToBottom.ManualAnchoring -> showAtAnchorLocation(currentData)
         else -> {
             // no-op
         }
@@ -277,12 +281,13 @@ internal fun PopupWindow.showPopupWithUpOrientation(menuPositioningData: MenuPos
     animationStyle = menuPositioningData.inferredMenuPlacement.animation
 
     // Positioning the menu above and overlapping the anchor.
-    val yOffset = if (menuPositioningData.availableHeightToBottom < 0) {
-        // The anchor is partially below of the bottom of the screen, let's make the menu completely visible.
-        menuPositioningData.availableHeightToBottom - menuPositioningData.containerViewHeight
-    } else {
-        -menuPositioningData.containerViewHeight
-    }
+    val yOffset =
+        if (menuPositioningData.availableHeightToBottom < 0) {
+            // The anchor is partially below of the bottom of the screen, let's make the menu completely visible.
+            menuPositioningData.availableHeightToBottom - menuPositioningData.containerViewHeight
+        } else {
+            -menuPositioningData.containerViewHeight
+        }
     showAsDropDown(anchor, xOffset, yOffset)
 }
 

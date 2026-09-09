@@ -18,17 +18,15 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.browser.icons.IconRequest
+import mozilla.components.ui.icons.R as iconsR
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.focus.GleanMetrics.AddToHomeScreen
 import org.mozilla.focus.R
 import org.mozilla.focus.ext.components
 import org.mozilla.focus.shortcut.HomeScreen
 import org.mozilla.focus.shortcut.IconGenerator
-import mozilla.components.ui.icons.R as iconsR
 
-/**
- * Fragment displaying a dialog where a user can change the title for a homescreen shortcut
- */
+/** Fragment displaying a dialog where a user can change the title for a homescreen shortcut */
 class AddToHomescreenDialogFragment : DialogFragment() {
 
     override fun onCreateDialog(bundle: Bundle?): AlertDialog {
@@ -45,22 +43,26 @@ class AddToHomescreenDialogFragment : DialogFragment() {
         builder.setView(dialogView)
 
         val iconView = dialogView.findViewById<ImageView>(R.id.homescreen_icon)
-        requireContext().components.icons.loadIntoView(
-            iconView,
-            IconRequest(url, isPrivate = true),
-        )
+        requireContext()
+            .components
+            .icons
+            .loadIntoView(
+                iconView,
+                IconRequest(url, isPrivate = true),
+            )
 
         val blockIcon = dialogView.findViewById<ImageView>(R.id.homescreen_dialog_block_icon)
         blockIcon.setImageResource(iconsR.drawable.mozac_ic_shield_slash_24)
-        val warning =
-            dialogView.findViewById<ConstraintLayout>(R.id.homescreen_dialog_warning_layout)
+        val warning = dialogView.findViewById<ConstraintLayout>(R.id.homescreen_dialog_warning_layout)
         warning.isVisible = !blockingEnabled
 
         val editableTitle = dialogView.findViewById<EditText>(R.id.edit_title)
 
-        title?.takeIf { it.isNotEmpty() }?.let {
-            editableTitle.setText(it)
-        }
+        title
+            ?.takeIf { it.isNotEmpty() }
+            ?.let {
+                editableTitle.setText(it)
+            }
 
         setButtons(dialogView, editableTitle, url, blockingEnabled, requestDesktop, title)
 
@@ -75,10 +77,8 @@ class AddToHomescreenDialogFragment : DialogFragment() {
         requestDesktop: Boolean,
         initialTitle: String?,
     ) {
-        val addToHomescreenDialogCancelButton =
-            parentView.findViewById<Button>(R.id.addtohomescreen_dialog_cancel)
-        val addToHomescreenDialogConfirmButton =
-            parentView.findViewById<Button>(R.id.addtohomescreen_dialog_add)
+        val addToHomescreenDialogCancelButton = parentView.findViewById<Button>(R.id.addtohomescreen_dialog_cancel)
+        val addToHomescreenDialogConfirmButton = parentView.findViewById<Button>(R.id.addtohomescreen_dialog_add)
 
         addToHomescreenDialogCancelButton.setOnClickListener {
             AddToHomeScreen.cancelButtonTapped.record(NoExtras())
@@ -98,9 +98,7 @@ class AddToHomescreenDialogFragment : DialogFragment() {
 
             val hasEditedTitle = initialTitle != editableTitle.text.toString().trim()
             AddToHomeScreen.addButtonTapped.record(
-                AddToHomeScreen.AddButtonTappedExtra(
-                    hasEditedTitle = hasEditedTitle,
-                ),
+                AddToHomeScreen.AddButtonTappedExtra(hasEditedTitle = hasEditedTitle)
             )
 
             dismiss()

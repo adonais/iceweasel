@@ -32,11 +32,6 @@ function testDebuggerHooksNX(dbg, g, testHook) {
   testDebuggerHook("onNewGlobalObject",
                    () => { newGlobal(); });
 
-  if ('Promise' in g) {
-      testDebuggerHook("onNewPromise",
-                       () => { new g.Promise(()=>{}); });
-  }
-
   // Hooks on frames.
   var onStepHit = false;
   var onPopHit = false;

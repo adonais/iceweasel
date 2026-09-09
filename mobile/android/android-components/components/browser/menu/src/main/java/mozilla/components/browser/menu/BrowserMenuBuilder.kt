@@ -11,17 +11,15 @@ import android.content.Context
  *
  * @param items List of BrowserMenuItem objects to compose the menu from.
  * @param extras Map of extra values that are added to emitted facts
- * @param endOfMenuAlwaysVisible when is set to true makes sure the bottom of the menu is always visible otherwise,
- *  the top of the menu is always visible.
+ * @param endOfMenuAlwaysVisible when is set to true makes sure the bottom of the menu is always visible otherwise, the
+ *   top of the menu is always visible.
  */
 open class BrowserMenuBuilder(
     val items: List<BrowserMenuItem>,
     val extras: Map<String, Any> = emptyMap(),
     val endOfMenuAlwaysVisible: Boolean = false,
 ) {
-    /**
-     * Builds and returns a browser menu with [items]
-     */
+    /** Builds and returns a browser menu with [items] */
     open fun build(context: Context): BrowserMenu {
         val adapter = BrowserMenuAdapter(context, items)
         return BrowserMenu(adapter)

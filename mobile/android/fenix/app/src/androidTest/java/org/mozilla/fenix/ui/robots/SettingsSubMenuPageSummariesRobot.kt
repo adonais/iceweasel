@@ -15,16 +15,14 @@ import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
+import mozilla.components.feature.summarize.R as summarizeR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
-import mozilla.components.feature.summarize.R as summarizeR
 
-/**
- * Implementation of Robot Pattern for the settings Page summaries sub menu.
- */
+/** Implementation of Robot Pattern for the settings Page summaries sub menu. */
 class SettingsSubMenuPageSummariesRobot(private val composeTestRule: ComposeTestRule) {
 
     fun verifyPageSummariesView() {
@@ -65,36 +63,47 @@ class SettingsSubMenuPageSummariesRobot(private val composeTestRule: ComposeTest
 
     fun verifyTheSummarizedBottomSheet(isSuccessful: Boolean = false) {
         if (isSuccessful) {
-            Log.i(TAG, "verifyTheSummarizedBottomSheet: Trying to verify that the \"Summary by Firefox\" bottom sheet is displayed.")
+            Log.i(
+                TAG,
+                "verifyTheSummarizedBottomSheet: Trying to verify that the \"Summary by Firefox\" bottom sheet is displayed.",
+            )
             composeTestRule.summarizedBottomSheet().assertIsDisplayed()
-            Log.i(TAG, "verifyTheSummarizedBottomSheet: Verified that the \"Summary by Firefox\" bottom sheet is displayed.")
+            Log.i(
+                TAG,
+                "verifyTheSummarizedBottomSheet: Verified that the \"Summary by Firefox\" bottom sheet is displayed.",
+            )
         } else {
-            Log.i(TAG, "verifyTheSummarizedBottomSheet: Trying to verify that the \"Can't summarize right now\" error message is displayed.")
+            Log.i(
+                TAG,
+                "verifyTheSummarizedBottomSheet: Trying to verify that the \"Can't summarize right now\" error message is displayed.",
+            )
             composeTestRule.summarizeErrorMessage().assertIsDisplayed()
-            Log.i(TAG, "verifyTheSummarizedBottomSheet: Verified that the \"Can't summarize right now\" error message is displayed.")
+            Log.i(
+                TAG,
+                "verifyTheSummarizedBottomSheet: Verified that the \"Can't summarize right now\" error message is displayed.",
+            )
         }
     }
 
     class Transition(private val composeTestRule: ComposeTestRule)
 }
 
-    private fun pageSummariesToolbarTitle() =
-        itemContainingText(getStringResource(R.string.preferences_page_summaries))
+private fun pageSummariesToolbarTitle() = itemContainingText(getStringResource(R.string.preferences_page_summaries))
 
-    private fun goBackButton() = onView(withContentDescription("Navigate up"))
+private fun goBackButton() = onView(withContentDescription("Navigate up"))
 
-    private fun ComposeTestRule.summarizePagesOption() =
-        onNodeWithText(getStringResource(summarizeR.string.mozac_summarize_settings_summarize_pages))
+private fun ComposeTestRule.summarizePagesOption() =
+    onNodeWithText(getStringResource(summarizeR.string.mozac_summarize_settings_summarize_pages))
 
-    private fun ComposeTestRule.learnMoreLink() =
-        onNodeWithText(getStringResource(summarizeR.string.mozac_summarize_settings_learn_more))
+private fun ComposeTestRule.learnMoreLink() =
+    onNodeWithText(getStringResource(summarizeR.string.mozac_summarize_settings_learn_more))
 
-    private fun ComposeTestRule.gesturesSubHeader() =
-        onNodeWithText(getStringResource(summarizeR.string.mozac_summarize_settings_gestures))
+private fun ComposeTestRule.gesturesSubHeader() =
+    onNodeWithText(getStringResource(summarizeR.string.mozac_summarize_settings_gestures))
 
-    private fun ComposeTestRule.shakeToSummarizeOption() =
-        onNodeWithText(getStringResource(summarizeR.string.mozac_summarize_settings_shake_to_summarize))
+private fun ComposeTestRule.shakeToSummarizeOption() =
+    onNodeWithText(getStringResource(summarizeR.string.mozac_summarize_settings_shake_to_summarize))
 
-    private fun ComposeTestRule.summarizedBottomSheet() = onNodeWithText("Summary by Firefox")
+private fun ComposeTestRule.summarizedBottomSheet() = onNodeWithText("Summary by Firefox")
 
-    private fun ComposeTestRule.summarizeErrorMessage() = onNodeWithText("Try again later.")
+private fun ComposeTestRule.summarizeErrorMessage() = onNodeWithText("Try again later.")

@@ -9,14 +9,12 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 
 /**
- * A [SplashScreenOperation] that runs multiple child operations concurrently and completes
- * when all of them have finished.
+ * A [SplashScreenOperation] that runs multiple child operations concurrently and completes when all of them have
+ * finished.
  *
  * @param operations The list of operations to run in parallel.
  */
-class CompositeSplashScreenOperation(
-    private val operations: List<SplashScreenOperation>,
-) : SplashScreenOperation {
+class CompositeSplashScreenOperation(private val operations: List<SplashScreenOperation>) : SplashScreenOperation {
 
     override val type: String
         get() = operations.joinToString("+") { it.type }

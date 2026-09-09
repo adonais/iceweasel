@@ -33,9 +33,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.lib.state.ext.observeAsComposableState
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Composable for the settings search bar.
@@ -56,8 +56,7 @@ fun SettingsSearchBar(
     val focusRequester = remember { FocusRequester() }
 
     TopAppBar(
-        modifier = Modifier
-            .wrapContentHeight(),
+        modifier = Modifier.wrapContentHeight(),
         title = {
             SettingsSearchField(
                 store = store,
@@ -67,10 +66,11 @@ fun SettingsSearchBar(
             )
         },
         navigationIcon = { BackButton(onClick = onBackClick) },
-        windowInsets = WindowInsets(
-            top = 0.dp,
-            bottom = 0.dp,
-        ),
+        windowInsets =
+            WindowInsets(
+                top = 0.dp,
+                bottom = 0.dp,
+            ),
     )
 }
 
@@ -89,7 +89,7 @@ private fun SettingsSearchField(
             TextFieldValue(
                 text = state.searchQuery,
                 selection = TextRange(state.searchQuery.length),
-            ),
+            )
         )
     }
 
@@ -100,43 +100,43 @@ private fun SettingsSearchField(
             store.dispatch(SettingsSearchAction.SearchQueryUpdated(value.text))
         },
         textStyle = FirefoxTheme.typography.body1,
-        modifier = Modifier
-            .fillMaxWidth()
-            .focusRequester(focusRequester)
-            .onFocusChanged { focusState ->
+        modifier =
+            Modifier.fillMaxWidth().focusRequester(focusRequester).onFocusChanged { focusState ->
                 if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
                     onSearchFocusChange(focusState.isFocused)
                 }
             },
-        placeholder = @Composable {
-            Text(
-                text = stringResource(R.string.settings_search_title),
-                style = FirefoxTheme.typography.body1,
-            )
-        },
+        placeholder =
+            @Composable {
+                Text(
+                    text = stringResource(R.string.settings_search_title),
+                    style = FirefoxTheme.typography.body1,
+                )
+            },
         singleLine = true,
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = Color.Transparent,
-            unfocusedContainerColor = Color.Transparent,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            errorIndicatorColor = Color.Transparent,
-        ),
-        trailingIcon = @Composable {
-            when (state) {
-                is SettingsSearchState.SearchInProgress,
-                is SettingsSearchState.NoSearchResults,
-                    -> {
-                    ClearTextButton(
-                        onClick = {
-                            searchQuery = TextFieldValue("")
-                            store.dispatch(SettingsSearchAction.SearchQueryUpdated(""))
-                        },
-                    )
+        colors =
+            TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                errorIndicatorColor = Color.Transparent,
+            ),
+        trailingIcon =
+            @Composable {
+                when (state) {
+                    is SettingsSearchState.SearchInProgress,
+                    is SettingsSearchState.NoSearchResults -> {
+                        ClearTextButton(
+                            onClick = {
+                                searchQuery = TextFieldValue("")
+                                store.dispatch(SettingsSearchAction.SearchQueryUpdated(""))
+                            }
+                        )
+                    }
+                    else -> Unit
                 }
-                else -> Unit
-            }
-        },
+            },
     )
 
     LaunchedEffect(Unit) {
@@ -147,34 +147,23 @@ private fun SettingsSearchField(
 }
 
 @Composable
-private fun BackButton(
-    onClick: () -> Unit,
-) {
+private fun BackButton(onClick: () -> Unit) {
     IconButton(
         onClick = onClick,
-        contentDescription =
-            stringResource(
-                R.string.content_description_settings_search_navigate_back,
-            ),
+        contentDescription = stringResource(R.string.content_description_settings_search_navigate_back),
     ) {
         Icon(
-            painter = painterResource(
-                iconsR.drawable.mozac_ic_back_24,
-            ),
+            painter = painterResource(iconsR.drawable.mozac_ic_back_24),
             contentDescription = null,
         )
     }
 }
 
 @Composable
-private fun ClearTextButton(
-    onClick: () -> Unit,
-) {
+private fun ClearTextButton(onClick: () -> Unit) {
     IconButton(
         onClick = onClick,
-        contentDescription = stringResource(
-            R.string.content_description_settings_search_clear_search,
-        ),
+        contentDescription = stringResource(R.string.content_description_settings_search_clear_search),
     ) {
         Icon(
             painter = painterResource(iconsR.drawable.mozac_ic_cross_circle_fill_24),

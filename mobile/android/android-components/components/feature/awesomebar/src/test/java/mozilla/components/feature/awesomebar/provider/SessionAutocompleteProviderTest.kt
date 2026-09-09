@@ -5,6 +5,7 @@
 package mozilla.components.feature.awesomebar.provider
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createTab
@@ -13,7 +14,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class SessionAutocompleteProviderTest {
@@ -22,11 +22,7 @@ class SessionAutocompleteProviderTest {
         val tab1 = createTab("https://allizom.org")
         val tab2 = createTab("https://getpocket.com")
         val tab3 = createTab("https://www.firefox.com")
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(tab1, tab2, tab3),
-            ),
-        )
+        val store = BrowserStore(BrowserState(tabs = listOf(tab1, tab2, tab3)))
         val provider = SessionAutocompleteProvider(store)
 
         var suggestion = provider.getAutocompleteSuggestion("mozilla")
@@ -50,26 +46,23 @@ class SessionAutocompleteProviderTest {
     }
 
     @Test
-    fun `GIVEN open tabs exist WHEN asked for autocomplete suggestions and only private tabs match THEN return null`() = runTest {
-        val tab1 = createTab(url = "https://allizom.org", private = true)
-        val tab2 = createTab(url = "https://getpocket.com")
-        val tab3 = createTab(url = "https://www.firefox.com", private = true)
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(tab1, tab2, tab3),
-            ),
-        )
-        val provider = SessionAutocompleteProvider(store)
+    fun `GIVEN open tabs exist WHEN asked for autocomplete suggestions and only private tabs match THEN return null`() =
+        runTest {
+            val tab1 = createTab(url = "https://allizom.org", private = true)
+            val tab2 = createTab(url = "https://getpocket.com")
+            val tab3 = createTab(url = "https://www.firefox.com", private = true)
+            val store = BrowserStore(BrowserState(tabs = listOf(tab1, tab2, tab3)))
+            val provider = SessionAutocompleteProvider(store)
 
-        var suggestion = provider.getAutocompleteSuggestion("mozilla")
-        assertNull(suggestion)
+            var suggestion = provider.getAutocompleteSuggestion("mozilla")
+            assertNull(suggestion)
 
-        suggestion = provider.getAutocompleteSuggestion("all")
-        assertNull(suggestion)
+            suggestion = provider.getAutocompleteSuggestion("all")
+            assertNull(suggestion)
 
-        suggestion = provider.getAutocompleteSuggestion("www")
-        assertNull(suggestion)
-    }
+            suggestion = provider.getAutocompleteSuggestion("www")
+            assertNull(suggestion)
+        }
 
     @Test
     fun `GIVEN no open tabs exist WHEN asked for autocomplete suggestions THEN return null`() = runTest {

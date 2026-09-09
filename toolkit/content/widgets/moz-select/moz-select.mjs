@@ -8,6 +8,7 @@ import {
   ref,
   classMap,
   ifDefined,
+  styleMap,
 } from "../vendor/lit.all.mjs";
 import { MozBaseInputElement, MozLitElement } from "../lit-utils.mjs";
 
@@ -37,6 +38,7 @@ import { MozBaseInputElement, MozLitElement } from "../lit-utils.mjs";
  * @property {string} supportPage - Name of the SUMO support page to link to.
  * @property {string} ariaLabel - The aria-label text when there is no visible label.
  * @property {string} ariaDescription - The aria-description text when there is no visible description.
+ * @property {string} title - The title attribute, mapped onto the inner control.
  * @property {SelectOption[]} options - The array of options, populated by <moz-option> children in the
  *     default slot. Do not set directly, these will be overridden by <moz-option> children.
  * @property {SelectOption} selectedOption - The currently selected option object.
@@ -328,6 +330,7 @@ export default class MozSelect extends MozBaseInputElement {
       name=${this.name}
       .value=${this.value}
       accesskey=${this.accessKey}
+      title=${ifDefined(this.title)}
       @input=${this.handleStateChange}
       @change=${this.redispatchEvent}
       ?disabled=${this.disabled || this.parentDisabled}
@@ -377,6 +380,7 @@ export default class MozSelect extends MozBaseInputElement {
       aria-haspopup="menu"
       aria-expanded=${this.panelList?.open ? "true" : "false"}
       accesskey=${ifDefined(this.accessKey)}
+      title=${ifDefined(this.title)}
       @mousedown=${this.handlePanelMousedown}
       @click=${this.handlePanelClick}
       @keydown=${this.handlePanelKeydown}
@@ -396,6 +400,7 @@ export default class MozSelect extends MozBaseInputElement {
     return html`<panel-list
       .value=${this.value}
       min-width-from-anchor
+      click-on-mouseup
       @click=${this.handlePanelChange}
       @hidden=${this.handlePanelHidden}
     >
@@ -408,9 +413,11 @@ export default class MozSelect extends MozBaseInputElement {
               ?disabled=${option.disabled}
               ?hidden=${option.hidden}
               icon=${ifDefined(option.iconSrc)}
-              style=${option.iconSrc
-                ? `--select-item-icon-url: url(${option.iconSrc})`
-                : ""}
+              style=${styleMap(
+                option.iconSrc
+                  ? { "--select-item-icon-url": `url(${option.iconSrc})` }
+                  : {}
+              )}
             >
               ${option.label}
             </panel-item>`

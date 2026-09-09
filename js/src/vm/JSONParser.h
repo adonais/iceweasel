@@ -354,8 +354,7 @@ class MOZ_STACK_CLASS JSONReviveHandler : public JSONFullParseHandler<CharT> {
 
   template <JSONStringType ST>
   inline bool setStringValue(CharPtr start, size_t length, SourceT&& source) {
-    if (!Base::template setStringValue<ST>(start, length,
-                                           std::forward<SourceT&&>(source))) {
+    if (!Base::template setStringValue<ST>(start, length, std::move(source))) {
       return false;
     }
     // Property names don't need parse records.
@@ -367,8 +366,7 @@ class MOZ_STACK_CLASS JSONReviveHandler : public JSONFullParseHandler<CharT> {
 
   template <JSONStringType ST>
   inline bool setStringValue(JSONStringBuilder& builder, SourceT&& source) {
-    if (!Base::template setStringValue<ST>(builder,
-                                           std::forward<SourceT&&>(source))) {
+    if (!Base::template setStringValue<ST>(builder, std::move(source))) {
       return false;
     }
     // Property names don't need parse records.
@@ -379,7 +377,7 @@ class MOZ_STACK_CLASS JSONReviveHandler : public JSONFullParseHandler<CharT> {
   }
 
   inline bool setNumberValue(double d, SourceT&& source) {
-    if (!Base::setNumberValue(d, std::forward<SourceT&&>(source))) {
+    if (!Base::setNumberValue(d, std::move(source))) {
       return false;
     }
     return finishPrimitiveParseRecord(this->v, source);

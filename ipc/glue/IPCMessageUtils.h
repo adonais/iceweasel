@@ -119,12 +119,12 @@ struct BitfieldHelper {
 // ReadParams(aMsg, aIter, aParam.foo, aParam.bar, aParam.baz)
 
 template <typename... Ts>
-static void WriteParams(MessageWriter* aWriter, const Ts&... aArgs) {
+void WriteParams(MessageWriter* aWriter, const Ts&... aArgs) {
   (WriteParam(aWriter, aArgs), ...);
 }
 
 template <typename... Ts>
-static bool ReadParams(MessageReader* aReader, Ts&... aArgs) {
+bool ReadParams(MessageReader* aReader, Ts&... aArgs) {
   return (ReadParam(aReader, &aArgs) && ...);
 }
 

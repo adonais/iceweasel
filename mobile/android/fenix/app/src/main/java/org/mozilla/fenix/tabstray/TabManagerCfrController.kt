@@ -5,42 +5,34 @@
 package org.mozilla.fenix.tabstray
 
 import androidx.annotation.VisibleForTesting
+import kotlin.math.abs
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.TabsTray
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.tabstray.ui.TabManagementFragment
 import org.mozilla.fenix.utils.Settings
-import kotlin.math.abs
 
-/**
- * Controller for handling CFR logic in [TabManagementFragment]
- */
+/** Controller for handling CFR logic in [TabManagementFragment] */
 class TabManagerCfrController(
     private val settings: Settings,
     private val tabsTrayStore: TabsTrayStore,
     private val currentTimeProvider: () -> Long = { System.currentTimeMillis() },
 ) {
-    /**
-     * Suppresses future shows of the banner and records the time of the last CFR.
-     */
+    /** Suppresses future shows of the banner and records the time of the last CFR. */
     fun onTabAutoCloseBannerDismiss() {
         settings.shouldShowAutoCloseTabsBanner = false
         settings.lastCfrShownTimeInMillis = currentTimeProvider()
     }
 
-    /**
-     * Marks the CFR as shown and records telemetry.
-     */
+    /** Marks the CFR as shown and records telemetry. */
     fun onInactiveTabsCfrClick() {
         settings.shouldShowInactiveTabsOnboardingPopup = false
         settings.lastCfrShownTimeInMillis = currentTimeProvider()
         TabsTray.inactiveTabsCfrSettings.record(NoExtras())
     }
 
-    /**
-     * Marks the CFR as shown and records telemetry.
-     */
+    /** Marks the CFR as shown and records telemetry. */
     fun onInactiveTabsCfrDismiss() {
         settings.shouldShowInactiveTabsOnboardingPopup = false
         settings.lastCfrShownTimeInMillis = currentTimeProvider()

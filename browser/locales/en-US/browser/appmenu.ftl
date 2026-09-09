@@ -147,6 +147,7 @@ fxa-menu-sync-off-data-description = Your data isn’t syncing
 # turned off. Turns syncing on by opening sync preferences.
 fxa-menu-sync-status-turn-on-button =
     .label = Turn on
+fxa-menu-sync-status-turn-on-button-aria-label = Turn on
 
 # Shown as a secondary label under "Sync is Off" when the user needs to sign in
 # (again) for sync to work.
@@ -372,8 +373,8 @@ appmenu-about =
     .accesskey = A
 # This menu item opens the referral page, where the user can invite others to
 # use the browser. "Share" here means recommending or referring the browser
-appmenu-referrals =
-    .label = Share { -brand-shorter-name }
+appmenu-referrals2 =
+    .label = Share { -brand-product-name }
     .accesskey = r
 appmenu-get-help =
     .label = Get help
@@ -498,5 +499,5 @@ fxa-menu-create-profile-learn-more =
     .label = What Are Profiles?
 
 # Button in the account menu that links to the Referrals page
-appmenuitem-share-firefox-title = Share { -brand-short-name }
+appmenuitem-share-firefox-title2 = Share { -brand-product-name }
 appmenuitem-share-firefox-description = Invite someone to choose the browser that puts privacy first

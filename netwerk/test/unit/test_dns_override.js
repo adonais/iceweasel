@@ -1292,3 +1292,35 @@ add_task(
     equal(answer[0].name, "c1-end.com", "record carries the final target name");
   }
 );
+
+// A plain CNAME chain is not an HTTPS AliasMode chain: when the CNAME target
+// has no HTTPS record, resolution must fail instead of synthesizing an
+// AliasMode record (bug 2066852).
+add_task(
+  {
+    skip_if: () =>
+      mozinfo.os == "win" ||
+      mozinfo.os == "android" ||
+      mozinfo.socketprocess_networking,
+  },
+  async function test_https_record_plain_cname_chain_no_record() {
+    let listener = await resolveHTTPSChain(
+      [
+        {
+          name: "p1-origin.com",
+          answers: cnameAnswer("p1-origin.com", "p1-end.com"),
+        },
+        // p1-end.com resolves but has no HTTPS record (NODATA).
+        { name: "p1-end.com", answers: [] },
+      ],
+      "p1-origin.com"
+    );
+
+    let [, , inStatus] = await listener;
+    equal(
+      inStatus,
+      Cr.NS_ERROR_UNKNOWN_HOST,
+      "cname->no-record must not synthesize an AliasMode record"
+    );
+  }
+);

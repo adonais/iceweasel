@@ -4,25 +4,23 @@
 
 package mozilla.components.lib.auth
 
-/**
- * Callbacks for BiometricPrompt Authentication
- */
+/** Callbacks for BiometricPrompt Authentication */
 interface AuthenticationDelegate {
 
     /**
-     * Called when a biometric (e.g. fingerprint, face, etc.)
-     * is presented but not recognized as belonging to the user.
+     * Called when a biometric (e.g. fingerprint, face, etc.) is presented but not recognized as belonging to the user.
      */
     fun onAuthFailure()
 
     /**
-     * Called when a biometric (e.g. fingerprint, face, etc.) is recognized,
-     * indicating that the user has successfully authenticated.
+     * Called when a biometric (e.g. fingerprint, face, etc.) is recognized, indicating that the user has successfully
+     * authenticated.
      */
     fun onAuthSuccess()
 
     /**
      * Called when an unrecoverable error has been encountered and authentication has stopped.
+     *
      * @param errorText A human-readable error string that can be shown on an UI
      */
     fun onAuthError(errorText: String)

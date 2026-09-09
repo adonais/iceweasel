@@ -135,29 +135,16 @@ export var ReaderMode = {
       return null;
     }
 
-    let outerHash = "";
-    try {
-      let uriObj = Services.io.newURI(url);
-      url = uriObj.specIgnoringRef;
-      outerHash = uriObj.ref;
-    } catch (ex) {
-      /* ignore, use the raw string */
-    }
-
-    let searchParams = new URLSearchParams(
-      url.substring("about:reader?".length)
-    );
-    if (!searchParams.has("url")) {
+    let urlObj = URL.parse(url);
+    let originalUrl = urlObj?.searchParams.get("url");
+    if (!originalUrl) {
       return null;
     }
-    let originalUrl = searchParams.get("url");
-    if (outerHash) {
-      try {
-        let uriObj = Services.io.newURI(originalUrl);
-        uriObj = Services.io.newURI("#" + outerHash, null, uriObj);
-        originalUrl = uriObj.spec;
-      } catch (ex) {}
+    let hash = urlObj.hash;
+    if (hash) {
+      originalUrl = URL.parse(hash, originalUrl)?.href || null;
     }
+
     return originalUrl;
   },
 

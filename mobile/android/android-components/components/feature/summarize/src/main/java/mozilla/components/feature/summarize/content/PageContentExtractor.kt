@@ -4,17 +4,11 @@
 
 package mozilla.components.feature.summarize.content
 
-/**
- * An interface to conform to do deliver page content for summarization.
- */
+/** An interface to conform to do deliver page content for summarization. */
 fun interface PageContentExtractor {
-    /**
-     * Retrieve the page content.
-     */
+    /** Retrieve the page content. */
     suspend fun getPageContent(options: Options): Result<String>
 
-    /**
-     * Options defining how the content should be extracted.
-     */
+    /** Options defining how the content should be extracted. */
     data class Options(val shouldUseReaderModeContent: Boolean)
 }

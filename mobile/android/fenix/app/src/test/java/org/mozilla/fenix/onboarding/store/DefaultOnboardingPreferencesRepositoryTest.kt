@@ -42,59 +42,59 @@ class DefaultOnboardingPreferencesRepositoryTest {
     }
 
     @Test
-    fun `WHEN the repository is initialized THEN the initial state of the preferences should be emitted`() =
-        runTest {
-            val repository = DefaultOnboardingPreferencesRepository(
+    fun `WHEN the repository is initialized THEN the initial state of the preferences should be emitted`() = runTest {
+        val repository =
+            DefaultOnboardingPreferencesRepository(
                 context = testContext,
                 lifecycleOwner = mockk(relaxed = true),
                 coroutineScope = this,
             )
 
-            settings.preferences.edit {
-                preferenceKeys.forEach {
-                    putBoolean(testContext.getString(it.preferenceKey), false)
-                }
+        settings.preferences.edit {
+            preferenceKeys.forEach {
+                putBoolean(testContext.getString(it.preferenceKey), false)
             }
-
-            repository.init()
-
-            val actual =
-                repository.onboardingPreferenceUpdates.take(preferenceKeys.size).toList()
-
-            assertTrue(actual.isNotEmpty())
-            assertFalse(actual.all { it.value })
         }
+
+        repository.init()
+
+        val actual = repository.onboardingPreferenceUpdates.take(preferenceKeys.size).toList()
+
+        assertTrue(actual.isNotEmpty())
+        assertFalse(actual.all { it.value })
+    }
 
     @Test
-    fun `WHEN a change is made to the preference values THEN the repository emits the change`() =
-        runTest {
-            val repository = DefaultOnboardingPreferencesRepository(
+    fun `WHEN a change is made to the preference values THEN the repository emits the change`() = runTest {
+        val repository =
+            DefaultOnboardingPreferencesRepository(
                 context = testContext,
                 lifecycleOwner = mockk(relaxed = true),
                 coroutineScope = this,
             )
 
-            OnboardingPreferencesRepository.OnboardingPreference.entries.forEach {
-                val preferenceKey = testContext.getString(it.preferenceKey)
+        OnboardingPreferencesRepository.OnboardingPreference.entries.forEach {
+            val preferenceKey = testContext.getString(it.preferenceKey)
 
-                settings.preferences.edit { putBoolean(preferenceKey, false) }
-                repository.onPreferenceChange(
-                    sharedPreferences = settings.preferences,
-                    key = preferenceKey,
-                )
+            settings.preferences.edit { putBoolean(preferenceKey, false) }
+            repository.onPreferenceChange(
+                sharedPreferences = settings.preferences,
+                key = preferenceKey,
+            )
 
-                assertFalse(repository.onboardingPreferenceUpdates.first().value)
-            }
+            assertFalse(repository.onboardingPreferenceUpdates.first().value)
         }
+    }
 
     @Test
     fun `GIVEN top toolbar preference update WHEN updateOnboardingPreference is called THEN the real preference is updated`() =
         runTest {
-            val repository = DefaultOnboardingPreferencesRepository(
-                context = testContext,
-                lifecycleOwner = mockk(relaxed = true),
-                coroutineScope = this,
-            )
+            val repository =
+                DefaultOnboardingPreferencesRepository(
+                    context = testContext,
+                    lifecycleOwner = mockk(relaxed = true),
+                    coroutineScope = this,
+                )
 
             settings.preferences.edit {
                 preferenceKeys.forEach {
@@ -106,8 +106,8 @@ class DefaultOnboardingPreferencesRepositoryTest {
 
             repository.updateOnboardingPreference(
                 OnboardingPreferencesRepository.OnboardingPreferenceUpdate(
-                    OnboardingPreferencesRepository.OnboardingPreference.TopToolbar,
-                ),
+                    OnboardingPreferencesRepository.OnboardingPreference.TopToolbar
+                )
             )
 
             assertFalse(settings.shouldUseBottomToolbar)
@@ -116,11 +116,12 @@ class DefaultOnboardingPreferencesRepositoryTest {
     @Test
     fun `GIVEN bottom toolbar preference update WHEN updateOnboardingPreference is called THEN the real preference is updated`() =
         runTest {
-            val repository = DefaultOnboardingPreferencesRepository(
-                context = testContext,
-                lifecycleOwner = mockk(relaxed = true),
-                coroutineScope = this,
-            )
+            val repository =
+                DefaultOnboardingPreferencesRepository(
+                    context = testContext,
+                    lifecycleOwner = mockk(relaxed = true),
+                    coroutineScope = this,
+                )
 
             settings.preferences.edit {
                 preferenceKeys.forEach {
@@ -132,8 +133,8 @@ class DefaultOnboardingPreferencesRepositoryTest {
 
             repository.updateOnboardingPreference(
                 OnboardingPreferencesRepository.OnboardingPreferenceUpdate(
-                    OnboardingPreferencesRepository.OnboardingPreference.BottomToolbar,
-                ),
+                    OnboardingPreferencesRepository.OnboardingPreference.BottomToolbar
+                )
             )
 
             assertTrue(settings.shouldUseBottomToolbar)

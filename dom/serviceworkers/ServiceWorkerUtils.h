@@ -59,6 +59,8 @@ bool ServiceWorkerRegistrationDataIsValid(
 void ServiceWorkerScopeIsValid(nsIPrincipal* aPrincipal, nsIURI* aScopeURI,
                                ErrorResult& aRv);
 
+bool IsServiceWorkersDisabledByPolicy(nsIURI* aURI);
+
 // Performs key spec validation steps of
 // https://w3c.github.io/ServiceWorker/#start-register-algorithm and
 // https://w3c.github.io/ServiceWorker/#register-algorithm as well as CSP

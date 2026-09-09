@@ -446,6 +446,60 @@ add_task(async function test_openai_tool_call_drain_is_bounded() {
   }
 });
 
+add_task(async function test_openai_abandoned_generator_rejection_is_handled() {
+  const records = [
+    { ...BASE_ENGINE_OPTIONS, id: "d4f8c1a9-2e7b-4c60-9a3d-8b1e5f0c2d47" },
+  ];
+  const { cleanup } = await setup({ records });
+  const {
+    server: mockServer,
+    port,
+    releaseHeldStreams,
+  } = startMockOpenAI({ holdStreamOpenAfterFinish: true });
+
+  const engineInstance = await createEngine({
+    ...BASE_ENGINE_OPTIONS,
+    apiKey: "ollama",
+    baseURL: `http://localhost:${port}/v1`,
+    backend: "openai",
+  });
+
+  try {
+    const generator = engineInstance.runWithGenerator({
+      args: [
+        { role: "system", content: "You are a helpful assistant." },
+        { role: "user", content: "Find my open news tabs." },
+      ],
+      tools: SHARED_TOOLS,
+      streamOptions: { enabled: true },
+    });
+
+    // Read one chunk, then abandon the generator by returning it early. This
+    // unwinds it past `await completionPromise`, like a consumer walking away
+    // mid-run (a `for await` that breaks does the same thing under the hood).
+    await generator.next();
+    await generator.return();
+
+    // The run is still pending (the mock holds the stream open). Tearing the
+    // engine down rejects it. With the completionPromise handler that rejection
+    // is swallowed; without it, it's an uncaught rejection the harness fails on.
+    await EngineProcess.destroyMLEngine();
+
+    // Let the rejection settle and be observed before the test ends.
+    await new Promise(executeSoon);
+    await new Promise(executeSoon);
+
+    Assert.ok(
+      true,
+      "Abandoning runWithGenerator and destroying the engine raises no uncaught rejection"
+    );
+  } finally {
+    releaseHeldStreams();
+    await cleanup();
+    await stopMockOpenAI(mockServer);
+  }
+});
+
 /**
  * Test that fxAccountToken is properly passed to the OpenAI client
  */

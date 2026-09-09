@@ -11,8 +11,11 @@ namespace mozilla {
 namespace net {
 
 ProxyConfigLookupParent::ProxyConfigLookupParent(nsIURI* aURI,
-                                                 uint32_t aProxyResolveFlags)
-    : mURI(aURI), mProxyResolveFlags(aProxyResolveFlags) {}
+                                                 uint32_t aProxyResolveFlags,
+                                                 bool aIsTRRServiceChannel)
+    : mURI(aURI),
+      mProxyResolveFlags(aProxyResolveFlags),
+      mIsTRRServiceChannel(aIsTRRServiceChannel) {}
 
 ProxyConfigLookupParent::~ProxyConfigLookupParent() = default;
 
@@ -29,7 +32,7 @@ void ProxyConfigLookupParent::DoProxyLookup() {
           (void)Send__delete__(self, proxyInfoArray, aStatus);
         }
       },
-      mURI, mProxyResolveFlags);
+      mURI, mProxyResolveFlags, mIsTRRServiceChannel);
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
     nsTArray<ProxyInfoCloneArgs> emptyArray;

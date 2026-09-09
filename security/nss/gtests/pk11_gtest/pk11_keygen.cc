@@ -166,18 +166,18 @@ std::unique_ptr<ParamHolder> Pkcs11KeyPairGenerator::MakeParams() const {
       return std::unique_ptr<ParamHolder>(new EcParamHolder(curve_));
 
     case CKM_NSS_KYBER_KEY_PAIR_GEN:
-      std::cerr << "Generate Kyber768 pair" << std::endl;
-      return std::unique_ptr<ParamHolder>(
-          new KyberParamHolder(CKP_NSS_KYBER_768_ROUND3));
-
     case CKM_NSS_ML_KEM_KEY_PAIR_GEN:
-      std::cerr << "Generate ML-KEM768 pair" << std::endl;
-      return std::unique_ptr<ParamHolder>(new KyberParamHolder(CKP_ML_KEM_768));
-
-    case CKM_ML_KEM_KEY_PAIR_GEN:
-      std::cerr << "Generate ML-KEM1024 pair" << std::endl;
-      return std::unique_ptr<ParamHolder>(
-          new KyberParamHolder(CKP_ML_KEM_1024));
+    case CKM_ML_KEM_KEY_PAIR_GEN: {
+      // A single mechanism covers more than one parameter set, so inferring
+      // one from the mechanism would silently generate the wrong key.
+      if (kem_params_ == CKP_INVALID_ID) {
+        ADD_FAILURE() << "KEM key generation needs an explicit parameter set";
+        return nullptr;
+      }
+      std::cerr << "Generate KEM pair, parameter set " << kem_params_
+                << std::endl;
+      return std::unique_ptr<ParamHolder>(new KyberParamHolder(kem_params_));
+    }
 
     default:
       ADD_FAILURE() << "unknown OID " << mech_;

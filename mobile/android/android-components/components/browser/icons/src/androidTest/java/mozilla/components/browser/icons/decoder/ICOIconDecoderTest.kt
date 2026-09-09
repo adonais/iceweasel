@@ -2,12 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import kotlin.test.assertNotNull
 import mozilla.components.browser.icons.decoder.ICOIconDecoder
 import mozilla.components.browser.icons.decoder.ico.decodeDirectoryEntries
 import mozilla.components.support.images.DesiredSize
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import kotlin.test.assertNotNull
 
 class ICOIconDecoderTest {
     @Test
@@ -17,9 +17,7 @@ class ICOIconDecoderTest {
 
         assertEquals(6, entries.size)
 
-        val bitmaps = entries
-            .mapNotNull { entry -> entry.toBitmap(icon) }
-            .sortedBy { bitmap -> bitmap.width }
+        val bitmaps = entries.mapNotNull { entry -> entry.toBitmap(icon) }.sortedBy { bitmap -> bitmap.width }
 
         assertEquals(6, bitmaps.size)
 
@@ -76,9 +74,7 @@ class ICOIconDecoderTest {
 
         assertEquals(5, entries.size)
 
-        val bitmaps = entries
-            .mapNotNull { entry -> entry.toBitmap(icon) }
-            .sortedBy { bitmap -> bitmap.width }
+        val bitmaps = entries.mapNotNull { entry -> entry.toBitmap(icon) }.sortedBy { bitmap -> bitmap.width }
 
         assertEquals(5, bitmaps.size)
 
@@ -106,9 +102,7 @@ class ICOIconDecoderTest {
 
         assertEquals(3, entries.size)
 
-        val bitmaps = entries
-            .mapNotNull { entry -> entry.toBitmap(icon) }
-            .sortedBy { bitmap -> bitmap.width }
+        val bitmaps = entries.mapNotNull { entry -> entry.toBitmap(icon) }.sortedBy { bitmap -> bitmap.width }
 
         assertEquals(3, bitmaps.size)
 
@@ -123,7 +117,5 @@ class ICOIconDecoderTest {
     }
 
     private fun loadIcon(fileName: String): ByteArray =
-        javaClass.getResourceAsStream("/ico/$fileName")!!
-            .buffered()
-            .readBytes()
+        javaClass.getResourceAsStream("/ico/$fileName")!!.buffered().readBytes()
 }

@@ -38,6 +38,7 @@
   _(StubFolding, "CacheIR stub folding")                                     \
   _(StubFoldingDetails, "Spewing of stub content during folding")            \
   _(CanonicalizeNaN, "NaN canonicalization")                                 \
+  _(GeneratorResume, "Generator and async function resume analysis")         \
                                                                              \
   /* BASELINE COMPILER SPEW */                                               \
   _(BaselineAbort, "Baseline compiler abort messages")                       \
@@ -97,6 +98,7 @@
   _("loadkeys", MarkLoadsUsedAsPropertyKeys)  \
   _("stubfolding", StubFolding)               \
   _("canonicalize-nan", CanonicalizeNaN)      \
+  _("gen-resume", GeneratorResume)            \
   _("profiling", Profiling)                   \
   _("dump-mir-expr", MIRExpressions)          \
   _("unroll", Unroll)                         \

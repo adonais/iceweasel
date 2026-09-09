@@ -49,10 +49,11 @@ internal abstract class CompoundMenuCandidateViewHolder(
 
     companion object {
         @LayoutRes
-        fun getLayoutResource(candidate: CompoundMenuCandidate) = when (candidate.end) {
-            ButtonType.CHECKBOX -> CompoundCheckboxMenuCandidateViewHolder.layoutResource
-            ButtonType.SWITCH -> CompoundSwitchMenuCandidateViewHolder.layoutResource
-        }
+        fun getLayoutResource(candidate: CompoundMenuCandidate) =
+            when (candidate.end) {
+                ButtonType.CHECKBOX -> CompoundCheckboxMenuCandidateViewHolder.layoutResource
+                ButtonType.SWITCH -> CompoundSwitchMenuCandidateViewHolder.layoutResource
+            }
     }
 }
 
@@ -63,8 +64,7 @@ internal class CompoundCheckboxMenuCandidateViewHolder(
 ) : CompoundMenuCandidateViewHolder(itemView, inflater, dismiss) {
 
     companion object {
-        @LayoutRes
-        val layoutResource = R.layout.mozac_browser_menu2_candidate_compound_checkbox
+        @LayoutRes val layoutResource = R.layout.mozac_browser_menu2_candidate_compound_checkbox
     }
 }
 
@@ -75,7 +75,6 @@ internal class CompoundSwitchMenuCandidateViewHolder(
 ) : CompoundMenuCandidateViewHolder(itemView, inflater, dismiss) {
 
     companion object {
-        @LayoutRes
-        val layoutResource = R.layout.mozac_browser_menu2_candidate_compound_switch
+        @LayoutRes val layoutResource = R.layout.mozac_browser_menu2_candidate_compound_switch
     }
 }

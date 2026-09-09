@@ -30,7 +30,7 @@ add_task(async function test_pinned_and_hidden_tabs() {
 
   Assert.ok(pinnedTab.pinned, "Tab should have been created as a pinned tab");
   Assert.equal(
-    pinnedTab._tPos,
+    pinnedTab.index,
     0,
     "Pinned tabs should come before all unpinned tabs"
   );

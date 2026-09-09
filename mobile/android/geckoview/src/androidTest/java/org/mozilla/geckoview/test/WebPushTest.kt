@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -7,6 +7,11 @@ import android.os.Parcel
 import android.util.Base64
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import java.security.KeyPair
+import java.security.KeyPairGenerator
+import java.security.SecureRandom
+import java.security.interfaces.ECPublicKey
+import java.security.spec.ECGenParameterSpec
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.endsWith
 import org.hamcrest.Matchers.equalTo
@@ -26,11 +31,6 @@ import org.mozilla.geckoview.WebPushDelegate
 import org.mozilla.geckoview.WebPushSubscription
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.RejectedPromiseException
-import java.security.KeyPair
-import java.security.KeyPairGenerator
-import java.security.SecureRandom
-import java.security.interfaces.ECPublicKey
-import java.security.spec.ECGenParameterSpec
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
@@ -66,12 +66,21 @@ class WebPushTest : BaseSessionTest() {
     fun setup() {
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.webnotifications.requireuserinteraction" to false))
         // Grant "desktop notification" permission
-        mainSession.delegateUntilTestEnd(object : PermissionDelegate {
-            override fun onContentPermissionRequest(session: GeckoSession, perm: GeckoSession.PermissionDelegate.ContentPermission): GeckoResult<Int>? {
-                assertThat("Should grant DESKTOP_NOTIFICATIONS permission", perm.permission, equalTo(GeckoSession.PermissionDelegate.PERMISSION_DESKTOP_NOTIFICATION))
-                return GeckoResult.fromValue(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
+        mainSession.delegateUntilTestEnd(
+            object : PermissionDelegate {
+                override fun onContentPermissionRequest(
+                    session: GeckoSession,
+                    perm: GeckoSession.PermissionDelegate.ContentPermission,
+                ): GeckoResult<Int>? {
+                    assertThat(
+                        "Should grant DESKTOP_NOTIFICATIONS permission",
+                        perm.permission,
+                        equalTo(GeckoSession.PermissionDelegate.PERMISSION_DESKTOP_NOTIFICATION),
+                    )
+                    return GeckoResult.fromValue(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
+                }
             }
-        })
+        )
 
         delegate = TestPushDelegate()
 
@@ -102,7 +111,8 @@ class WebPushTest : BaseSessionTest() {
     fun subscribe() {
         // PushManager.subscribe()
         val appServerKey = WebPushUtils.keyToString(APP_SERVER_KEY_PAIR.public as ECPublicKey)
-        var pushSubscription = mainSession.evaluatePromiseJS("window.doSubscribe(\"$appServerKey\")").value as JSONObject
+        var pushSubscription =
+            mainSession.evaluatePromiseJS("window.doSubscribe(\"$appServerKey\")").value as JSONObject
         assertThat("Should have a stored subscription", delegate!!.storedSubscription, notNullValue())
         verifySubscription(pushSubscription)
 
@@ -152,7 +162,10 @@ class WebPushTest : BaseSessionTest() {
         val p = mainSession.evaluatePromiseJS("window.doWaitForPushEvent()")
 
         val testPayload = "The Payload"
-        sessionRule.runtime.webPushController.onPushEvent(delegate!!.storedSubscription!!.scope, testPayload.toByteArray(Charsets.UTF_8))
+        sessionRule.runtime.webPushController.onPushEvent(
+            delegate!!.storedSubscription!!.scope,
+            testPayload.toByteArray(Charsets.UTF_8),
+        )
 
         assertThat("Push data should match", p.value as String, equalTo(testPayload))
     }
@@ -173,22 +186,27 @@ class WebPushTest : BaseSessionTest() {
         val expectedTitle = "The title"
         val expectedBody = "The body"
 
-        sessionRule.delegateDuringNextWait(object : WebNotificationDelegate {
-            @GeckoSessionTestRule.AssertCalled
-            override fun onShowNotification(notification: WebNotification) {
-                assertThat("Title should match", notification.title, equalTo(expectedTitle))
-                assertThat("Body should match", notification.text, equalTo(expectedBody))
-                assertThat("Source should match", notification.source, endsWith("sw.js"))
-                notification.show()
-                notificationResult.complete(null)
+        sessionRule.delegateDuringNextWait(
+            object : WebNotificationDelegate {
+                @GeckoSessionTestRule.AssertCalled
+                override fun onShowNotification(notification: WebNotification) {
+                    assertThat("Title should match", notification.title, equalTo(expectedTitle))
+                    assertThat("Body should match", notification.text, equalTo(expectedBody))
+                    assertThat("Source should match", notification.source, endsWith("sw.js"))
+                    notification.show()
+                    notificationResult.complete(null)
+                }
             }
-        })
+        )
 
         val testPayload = JSONObject()
         testPayload.put("title", expectedTitle)
         testPayload.put("body", expectedBody)
 
-        sessionRule.runtime.webPushController.onPushEvent(delegate!!.storedSubscription!!.scope, testPayload.toString().toByteArray(Charsets.UTF_8))
+        sessionRule.runtime.webPushController.onPushEvent(
+            delegate!!.storedSubscription!!.scope,
+            testPayload.toString().toByteArray(Charsets.UTF_8),
+        )
         sessionRule.waitForResult(notificationResult)
     }
 
@@ -223,13 +241,14 @@ class WebPushTest : BaseSessionTest() {
     @Test
     fun parceling() {
         val testScope = "https://test.scope"
-        val sub = WebPushSubscription(
-            testScope,
-            PUSH_ENDPOINT,
-            WebPushUtils.keyToBytes(APP_SERVER_KEY_PAIR.public as ECPublicKey),
-            WebPushUtils.keyToBytes(BROWSER_KEY_PAIR.public as ECPublicKey)!!,
-            AUTH_SECRET,
-        )
+        val sub =
+            WebPushSubscription(
+                testScope,
+                PUSH_ENDPOINT,
+                WebPushUtils.keyToBytes(APP_SERVER_KEY_PAIR.public as ECPublicKey),
+                WebPushUtils.keyToBytes(BROWSER_KEY_PAIR.public as ECPublicKey)!!,
+                AUTH_SECRET,
+            )
 
         val parcel = Parcel.obtain()
         sub.writeToParcel(parcel, 0)
@@ -256,8 +275,21 @@ class WebPushTest : BaseSessionTest() {
         }
 
         override fun onSubscribe(scope: String, appServerKey: ByteArray?): GeckoResult<WebPushSubscription>? {
-            appServerKey?.let { assertThat("Application server key should match", it, equalTo(WebPushUtils.keyToBytes(APP_SERVER_KEY_PAIR.public as ECPublicKey))) }
-            storedSubscription = WebPushSubscription(scope, PUSH_ENDPOINT, appServerKey, WebPushUtils.keyToBytes(BROWSER_KEY_PAIR.public as ECPublicKey)!!, AUTH_SECRET)
+            appServerKey?.let {
+                assertThat(
+                    "Application server key should match",
+                    it,
+                    equalTo(WebPushUtils.keyToBytes(APP_SERVER_KEY_PAIR.public as ECPublicKey)),
+                )
+            }
+            storedSubscription =
+                WebPushSubscription(
+                    scope,
+                    PUSH_ENDPOINT,
+                    appServerKey,
+                    WebPushUtils.keyToBytes(BROWSER_KEY_PAIR.public as ECPublicKey)!!,
+                    AUTH_SECRET,
+                )
             return GeckoResult.fromValue(storedSubscription)
         }
     }

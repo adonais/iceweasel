@@ -7,9 +7,7 @@ package mozilla.components.support.base.android
 import androidx.annotation.CallSuper
 import androidx.appcompat.app.AppCompatDialogFragment
 
-/**
- * [AppCompatDialogFragment] that responds to touches only if not obscured.
- */
+/** [AppCompatDialogFragment] that responds to touches only if not obscured. */
 open class NoObscuredTouchesDialogFragment : AppCompatDialogFragment() {
     @CallSuper
     override fun onStart() {

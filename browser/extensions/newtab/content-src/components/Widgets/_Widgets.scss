@@ -113,7 +113,8 @@
 
   // @nova-cleanup(remove-conditional): Make default, remove .nova-enabled selector
   #hide-all-widgets-button,
-  #toggle-widgets-size-button {
+  #toggle-widgets-size-button,
+  #add-widgets-button {
     .nova-enabled & {
       color: var(--newtab-contextual-text-primary-color);
 
@@ -287,8 +288,9 @@
 //     that viewport — combined with `data-row-collapsed`, drives
 //     `display: none` so the container shrinks naturally (no clip
 //     needed) and the widget tabs out of focus / a11y order.
-// One IAB card spans 4 grid columns, so the ranges below mirror 1-, 2-,
-// 3-, and 4-card viewports.
+// One IAB card spans 4 grid columns, so the ranges below mirror 1- through
+// 5-card viewports. The 5-card range is only reachable when the content band is
+// widened for a 5-column story grid; see .sections-5-col in _Grid.scss.
 .nova-enabled {
   @include at-content-cols-range(0, 8) {
     .widgets-section-container[data-overflow-1] .widgets-row-toggle {
@@ -320,12 +322,22 @@
     }
   }
 
-  @include at-content-cols(16) {
+  @include at-content-cols-range(16, 20) {
     .widgets-section-container[data-overflow-4] .widgets-row-toggle {
       display: block;
     }
 
     .widgets-container[data-row-collapsed] .widget-wrapper[data-hidden-4] {
+      display: none;
+    }
+  }
+
+  @include at-content-cols(20) {
+    .widgets-section-container[data-overflow-5] .widgets-row-toggle {
+      display: block;
+    }
+
+    .widgets-container[data-row-collapsed] .widget-wrapper[data-hidden-5] {
       display: none;
     }
   }
@@ -354,6 +366,12 @@
 
     @include at-content-cols(16) {
       &:has(> :nth-child(4)):not(:has(> :nth-child(5))) > .widgets-add-button {
+        display: flex;
+      }
+    }
+
+    @include at-content-cols(20) {
+      &:has(> :nth-child(5)):not(:has(> :nth-child(6))) > .widgets-add-button {
         display: flex;
       }
     }

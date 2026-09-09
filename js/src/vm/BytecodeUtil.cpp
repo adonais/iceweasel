@@ -686,12 +686,6 @@ uint32_t BytecodeParser::simulateOp(JSOp op, uint32_t offset,
       MOZ_ASSERT(ndefs == 1);
       break;
 
-    case JSOp::CheckResumeKind:
-      // Pop the top two values, keep the other value.
-      MOZ_ASSERT(nuses == 3);
-      MOZ_ASSERT(ndefs == 1);
-      break;
-
     case JSOp::SetGName:
     case JSOp::SetName:
     case JSOp::SetProp:
@@ -720,7 +714,6 @@ uint32_t BytecodeParser::simulateOp(JSOp op, uint32_t offset,
       offsetStack[stackDepth] = offsetStack[stackDepth + 3];
       break;
 
-    case JSOp::IsGenClosing:
     case JSOp::IsNoIter:
     case JSOp::IsNullOrUndefined:
     case JSOp::MoreIter:
@@ -2044,11 +2037,6 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
       case JSOp::Hole:
         return write("HOLE");
 
-      case JSOp::IsGenClosing:
-        // For stack dump, defIndex == 0 is not used.
-        MOZ_ASSERT(defIndex == 1);
-        return write("ISGENCLOSING");
-
       case JSOp::IsNoIter:
         // For stack dump, defIndex == 0 is not used.
         MOZ_ASSERT(defIndex == 1);
@@ -2111,10 +2099,7 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
         if (defIndex == 0) {
           return write("RVAL");
         }
-        if (defIndex == 1) {
-          return write("GENERATOR");
-        }
-        MOZ_ASSERT(defIndex == 2);
+        MOZ_ASSERT(defIndex == 1);
         return write("RESUMEKIND");
 
       case JSOp::ResumeKind:

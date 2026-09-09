@@ -30,16 +30,14 @@ class SafeIntentTest {
 
     @Test
     fun `getStringArrayListExtra returns null if intent throws OutOfMemoryError`() {
-        doThrow(OutOfMemoryError::class.java)
-            .`when`(intent).getStringArrayListExtra(anyString())
+        doThrow(OutOfMemoryError::class.java).`when`(intent).getStringArrayListExtra(anyString())
 
         assertNull(SafeIntent(intent).getStringArrayListExtra("mozilla"))
     }
 
     @Test
     fun `getExtras returns null if intent throws OutOfMemoryError`() {
-        doThrow(OutOfMemoryError::class.java)
-            .`when`(intent).extras
+        doThrow(OutOfMemoryError::class.java).`when`(intent).extras
 
         assertNull(SafeIntent(intent).extras)
     }
@@ -48,8 +46,7 @@ class SafeIntentTest {
     fun `getAction return original action`() {
         val expected = Intent.ACTION_MAIN
 
-        doReturn(expected)
-            .`when`(intent).action
+        doReturn(expected).`when`(intent).action
 
         assertEquals(expected, SafeIntent(intent).action)
     }
@@ -58,8 +55,7 @@ class SafeIntentTest {
     fun `getFlags returns original flags`() {
         val expected = Intent.FLAG_ACTIVITY_NEW_TASK
 
-        doReturn(expected)
-            .`when`(intent).flags
+        doReturn(expected).`when`(intent).flags
 
         assertEquals(expected, SafeIntent(intent).flags)
     }
@@ -67,8 +63,7 @@ class SafeIntentTest {
     @Test
     fun `isLauncherIntent returns false if intent is not Launcher Intent`() {
         // category is null
-        doReturn(null)
-            .`when`(intent).categories
+        doReturn(null).`when`(intent).categories
 
         assertFalse(SafeIntent(intent).isLauncherIntent)
 
@@ -77,11 +72,9 @@ class SafeIntentTest {
 
         category.add("NOT" + Intent.CATEGORY_LAUNCHER)
 
-        doReturn(category)
-            .`when`(intent).categories
+        doReturn(category).`when`(intent).categories
 
-        doReturn("NOT" + Intent.ACTION_MAIN)
-            .`when`(intent).action
+        doReturn("NOT" + Intent.ACTION_MAIN).`when`(intent).action
 
         assertFalse(SafeIntent(intent).isLauncherIntent)
 
@@ -90,11 +83,9 @@ class SafeIntentTest {
 
         category.add(Intent.CATEGORY_LAUNCHER)
 
-        doReturn(category)
-            .`when`(intent).categories
+        doReturn(category).`when`(intent).categories
 
-        doReturn("NOT" + Intent.ACTION_MAIN)
-            .`when`(intent).action
+        doReturn("NOT" + Intent.ACTION_MAIN).`when`(intent).action
 
         assertFalse(SafeIntent(intent).isLauncherIntent)
 
@@ -103,11 +94,9 @@ class SafeIntentTest {
 
         category.add("NOT" + Intent.CATEGORY_LAUNCHER)
 
-        doReturn(category)
-            .`when`(intent).categories
+        doReturn(category).`when`(intent).categories
 
-        doReturn(Intent.ACTION_MAIN)
-            .`when`(intent).action
+        doReturn(Intent.ACTION_MAIN).`when`(intent).action
 
         assertFalse(SafeIntent(intent).isLauncherIntent)
 
@@ -116,11 +105,9 @@ class SafeIntentTest {
 
         category.add(Intent.CATEGORY_LAUNCHER)
 
-        doReturn(category)
-            .`when`(intent).categories
+        doReturn(category).`when`(intent).categories
 
-        doReturn(Intent.ACTION_MAIN)
-            .`when`(intent).action
+        doReturn(Intent.ACTION_MAIN).`when`(intent).action
 
         assertTrue(SafeIntent(intent).isLauncherIntent)
     }
@@ -131,59 +118,51 @@ class SafeIntentTest {
         val category = HashSet<String>()
         category.add(Intent.CATEGORY_LAUNCHER)
 
-        doReturn(category)
-            .`when`(intent).categories
+        doReturn(category).`when`(intent).categories
 
-        doReturn(Intent.ACTION_MAIN)
-            .`when`(intent).action
+        doReturn(Intent.ACTION_MAIN).`when`(intent).action
 
         assertTrue(SafeIntent(intent).isLauncherIntent)
     }
 
     @Test
     fun `getDataString returns null if intent throws OutOfMemoryError`() {
-        doThrow(OutOfMemoryError::class.java)
-            .`when`(intent).dataString
+        doThrow(OutOfMemoryError::class.java).`when`(intent).dataString
 
         assertNull(SafeIntent(intent).dataString)
     }
 
     @Test
     fun `getData returns null if intent throws OutOfMemoryError`() {
-        doThrow(OutOfMemoryError::class.java)
-            .`when`(intent).data
+        doThrow(OutOfMemoryError::class.java).`when`(intent).data
 
         assertNull(SafeIntent(intent).data)
     }
 
     @Test
     fun `getCategories returns null if intent throws OutOfMemoryError`() {
-        doThrow(OutOfMemoryError::class.java)
-            .`when`(intent).categories
+        doThrow(OutOfMemoryError::class.java).`when`(intent).categories
 
         assertNull(SafeIntent(intent).categories)
     }
 
     @Test
     fun `hasExtra returns false if intent throws OutOfMemoryError`() {
-        doThrow(OutOfMemoryError::class.java)
-            .`when`(intent).hasExtra(anyString())
+        doThrow(OutOfMemoryError::class.java).`when`(intent).hasExtra(anyString())
 
         assertFalse(SafeIntent(intent).hasExtra(""))
     }
 
     @Test
     fun `getBooleanExtra returns false if intent throws OutOfMemoryError`() {
-        doThrow(OutOfMemoryError::class.java)
-            .`when`(intent).getBooleanExtra(anyString(), anyBoolean())
+        doThrow(OutOfMemoryError::class.java).`when`(intent).getBooleanExtra(anyString(), anyBoolean())
 
         assertFalse(SafeIntent(intent).getBooleanExtra("", false))
     }
 
     @Test
     fun `getIntExtra returns default value if intent throws OutOfMemoryError`() {
-        doThrow(OutOfMemoryError::class.java)
-            .`when`(intent).getIntExtra(anyString(), anyInt())
+        doThrow(OutOfMemoryError::class.java).`when`(intent).getIntExtra(anyString(), anyInt())
 
         val expected = 1
         assertEquals(expected, SafeIntent(intent).getIntExtra("", expected))
@@ -191,24 +170,21 @@ class SafeIntentTest {
 
     @Test
     fun `getStringExtra returns null if intent throws OutOfMemoryError`() {
-        doThrow(OutOfMemoryError::class.java)
-            .`when`(intent).getStringExtra(anyString())
+        doThrow(OutOfMemoryError::class.java).`when`(intent).getStringExtra(anyString())
 
         assertNull(SafeIntent(intent).getStringExtra(""))
     }
 
     @Test
     fun `getBundleExtra returns null if intent throws OutOfMemoryError`() {
-        doThrow(OutOfMemoryError::class.java)
-            .`when`(intent).getBundleExtra(anyString())
+        doThrow(OutOfMemoryError::class.java).`when`(intent).getBundleExtra(anyString())
 
         assertNull(SafeIntent(intent).getBundleExtra(""))
     }
 
     @Test
     fun `getCharSequenceExtra returns null if intent throws OutOfMemoryError`() {
-        doThrow(OutOfMemoryError::class.java)
-            .`when`(intent).getCharSequenceExtra(anyString())
+        doThrow(OutOfMemoryError::class.java).`when`(intent).getCharSequenceExtra(anyString())
 
         assertNull(SafeIntent(intent).getCharSequenceExtra(""))
     }
@@ -216,8 +192,7 @@ class SafeIntentTest {
     @Test
     fun `getParcelableExtra returns null if intent throws OutOfMemoryError`() {
         @Suppress("DEPRECATION")
-        doThrow(OutOfMemoryError::class.java)
-            .`when`(intent).getParcelableExtra<Parcelable>(anyString())
+        doThrow(OutOfMemoryError::class.java).`when`(intent).getParcelableExtra<Parcelable>(anyString())
 
         assertNull(SafeIntent(intent).getParcelableExtra("", Parcelable::class.java))
     }
@@ -225,8 +200,7 @@ class SafeIntentTest {
     @Test
     fun `getParcelableArrayListExtra returns null if intent throws OutOfMemoryError`() {
         @Suppress("DEPRECATION")
-        doThrow(OutOfMemoryError::class.java)
-            .`when`(intent).getParcelableArrayListExtra<Parcelable>(anyString())
+        doThrow(OutOfMemoryError::class.java).`when`(intent).getParcelableArrayListExtra<Parcelable>(anyString())
 
         assertNull(SafeIntent(intent).getParcelableArrayListExtra("", Parcelable::class.java))
     }
@@ -234,9 +208,7 @@ class SafeIntentTest {
     @Test
     fun `getParcelableArrayListExtra returns ArrayList if intent is safe`() {
         val expected = ArrayList<Any>()
-        @Suppress("DEPRECATION")
-        doReturn(expected)
-            .`when`(intent).getParcelableArrayListExtra<Parcelable>(anyString())
+        @Suppress("DEPRECATION") doReturn(expected).`when`(intent).getParcelableArrayListExtra<Parcelable>(anyString())
 
         assertEquals(expected, SafeIntent(intent).getParcelableArrayListExtra("", Parcelable::class.java))
     }

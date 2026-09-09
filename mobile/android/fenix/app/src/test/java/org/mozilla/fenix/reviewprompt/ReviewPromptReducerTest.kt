@@ -24,10 +24,11 @@ class ReviewPromptReducerTest {
 
     @Test
     fun `WHEN show Play Store prompt THEN sets eligible for Play Store prompt`() {
-        val updatedState = ReviewPromptReducer.reduce(
-            initialState,
-            ReviewPromptAction.ShowPlayStorePrompt,
-        )
+        val updatedState =
+            ReviewPromptReducer.reduce(
+                initialState,
+                ReviewPromptAction.ShowPlayStorePrompt,
+            )
 
         assertEquals(
             AppState(reviewPrompt = ReviewPromptState.Eligible(Type.PlayStore)),
@@ -37,10 +38,11 @@ class ReviewPromptReducerTest {
 
     @Test
     fun `WHEN show custom prompt THEN sets eligible for custom prompt`() {
-        val updatedState = ReviewPromptReducer.reduce(
-            initialState,
-            ReviewPromptAction.ShowCustomReviewPrompt,
-        )
+        val updatedState =
+            ReviewPromptReducer.reduce(
+                initialState,
+                ReviewPromptAction.ShowCustomReviewPrompt,
+            )
 
         assertEquals(
             AppState(reviewPrompt = ReviewPromptState.Eligible(Type.Custom)),
@@ -50,10 +52,11 @@ class ReviewPromptReducerTest {
 
     @Test
     fun `WHEN don't show prompt THEN sets not eligible`() {
-        val updatedState = ReviewPromptReducer.reduce(
-            initialState,
-            ReviewPromptAction.DoNotShowReviewPrompt,
-        )
+        val updatedState =
+            ReviewPromptReducer.reduce(
+                initialState,
+                ReviewPromptAction.DoNotShowReviewPrompt,
+            )
 
         assertEquals(
             AppState(reviewPrompt = ReviewPromptState.NotEligible),
@@ -63,10 +66,11 @@ class ReviewPromptReducerTest {
 
     @Test
     fun `WHEN prompt has been shown THEN sets not eligible`() {
-        val updatedState = ReviewPromptReducer.reduce(
-            initialState,
-            ReviewPromptAction.ReviewPromptShown,
-        )
+        val updatedState =
+            ReviewPromptReducer.reduce(
+                initialState,
+                ReviewPromptAction.ReviewPromptShown,
+            )
 
         assertEquals(
             AppState(reviewPrompt = ReviewPromptState.NotEligible),

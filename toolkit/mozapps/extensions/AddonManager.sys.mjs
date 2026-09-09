@@ -31,8 +31,6 @@ const PREF_EM_CHECK_UPDATE_SECURITY = "extensions.checkUpdateSecurity";
 const PREF_SYS_ADDON_UPDATE_ENABLED = "extensions.systemAddon.update.enabled";
 const PREF_REMOTESETTINGS_DISABLED = "extensions.remoteSettings.disabled";
 const PREF_USE_REMOTE = "extensions.webextensions.remote";
-const PREF_AMTELEMETRY_ADDONS_BUILDER =
-  "extensions.telemetry.EnvironmentAddonBuilder";
 const PREF_GLEAN_PING_ADDONS_UPDATED_DELAY_MS =
   "extensions.gleanPingAddons.updated.delay";
 const PREF_GLEAN_PING_ADDONS_UPDATED_IDLE_TIMEOUT_MS =
@@ -105,13 +103,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "WEBEXT_POSTDOWNLOAD_THIRD_PARTY",
   PREF_EM_POSTDOWNLOAD_THIRD_PARTY,
-  false
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "AMTELEMETRY_ADDONS_BUILDER_ENABLED",
-  PREF_AMTELEMETRY_ADDONS_BUILDER,
   false
 );
 
@@ -193,6 +184,12 @@ const GMP_PROVIDER_REGISTERED_TOPIC = "gmp-provider-registered";
 // The maximum length of strings collected in the Glean addons.activeAddons/activeTheme/activeGMPlugins
 // metrics properties (e.g. description).
 const MAX_ADDON_STRING_LENGTH = 100;
+
+// Notification to inform TelemetryEnvironment of changes to the set of active
+// add-ons, so it can trigger an environment change (with the same frequency as
+// the old environment.addons).
+export const TELEMETRY_ENVIRONMENT_ADDONS_CHANGED_TOPIC =
+  "telemetry-environment-addons-changed";
 
 const UNNAMED_PROVIDER = "<unnamed-provider>";
 function providerName(aProvider) {
@@ -4823,19 +4820,12 @@ AMRemoteSettings = {
 /**
  * Encapsulates the Glean addons.activeAddons/activeTheme/activeGMPlugins data collection.
  *
- * In Firefox Desktop build the EnvironmentAddonBuilder is managed from the TelemetryEnvironment,
- * whereas on Firefox for Android / GeckoView builds it is managed from the AMTelemetry singleton
- * defined in this same ES module.
+ * Managed from the AMTelemetry singleton defined in this same ES module.
  */
 export class EnvironmentAddonBuilder {
-  // Used by TelemetryEnvironment to determine if it is still
-  // responsible for creating and managing the EnvironmentAddonBuilder
-  // instance as part of the legacy TelemetryEnvironment.
-  static isTelemetryEnvironmentEnabled = () =>
-    !lazy.AMTELEMETRY_ADDONS_BUILDER_ENABLED;
-
-  constructor(environment) {
-    this._environment = environment;
+  constructor() {
+    // Populated by _updateAddons.
+    this.addons = {};
 
     // The pending task blocks addon manager shutdown. It can either be the initial load
     // or a change load.
@@ -4868,8 +4858,6 @@ export class EnvironmentAddonBuilder {
         ? "Debug"
         : "Warn",
     });
-
-    this._currentData = {};
   }
 
   /**
@@ -4931,6 +4919,9 @@ export class EnvironmentAddonBuilder {
         }
       } catch (err) {
         this._log.error("init - Exception in _updateAddons", err);
+        // Replay the uncaught reject (e.g. so that a rejection coming
+        // from databaseReady would not be detected as caught and handled).
+        Promise.reject(err);
       } finally {
         this._pendingTask = null;
         this._shutdownState = "_pendingTask init complete. No longer blocking.";
@@ -5001,46 +4992,12 @@ export class EnvironmentAddonBuilder {
     if (aTopic == GMP_PROVIDER_REGISTERED_TOPIC) {
       Services.obs.removeObserver(this, GMP_PROVIDER_REGISTERED_TOPIC);
       this._gmpProviderObserverAdded = false;
-      let gmpPluginsPromise = this._getActiveGMPlugins();
-      gmpPluginsPromise.then(
-        gmpPlugins => {
-          let { addons } = this._currentEnvironment;
-          addons.activeGMPlugins = gmpPlugins;
-        },
-        err => {
-          this._log.error("blocklist observe: Error collecting plugins", err);
-        }
-      );
+      this._checkForChanges("gmp-provider-registered");
     }
   }
 
   // Internal helper methods and getters.
-  get _currentEnvironment() {
-    return this._environment?._currentEnvironment ?? this._currentData;
-  }
-
-  _onEnvironmentChange(changeReason, oldEnvironment) {
-    this._environment?._onEnvironmentChange(changeReason, oldEnvironment);
-  }
-
   _onAddonChange(addon) {
-    // On builds where this metric is also reported in the legacy telemetry main ping
-    // as part of the TelemetryEnvironment, return earlier if the add-on is a non-system builtin
-    // to keep the old behavior unchanged (to reduce the change of changing the frequency of the
-    // legacy telemetry main ping as an unexpected side-effect).
-    //
-    // NOTE: on android builds this check is expected to never be true, and the non-system builtin
-    // add-ons like webcompat to be part of the activeAddons Glean metric. This early return
-    // can be dropped completely (along with the similar logic from the _getActiveAddons method)
-    // once we have migrated the Desktop builds away from the legacy TelemetryEnvironment.
-    if (
-      !lazy.AMTELEMETRY_ADDONS_BUILDER_ENABLED &&
-      addon &&
-      addon.isBuiltin &&
-      !addon.isSystem
-    ) {
-      return;
-    }
     this._log.trace(`_onAddonChange ${addon?.id ? addon.id : ""}`);
     this._checkForChanges("addons-changed");
   }
@@ -5060,7 +5017,10 @@ export class EnvironmentAddonBuilder {
         this._pendingTask = null;
         this._shutdownState = "No longer blocking, _updateAddons resolved";
         if (result.changed) {
-          this._onEnvironmentChange(changeReason, result.oldEnvironment);
+          Services.obs.notifyObservers(
+            null,
+            TELEMETRY_ENVIRONMENT_ADDONS_CHANGED_TOPIC
+          );
           this._scheduleGleanPingAddonsUpdated();
         }
       },
@@ -5140,7 +5100,6 @@ export class EnvironmentAddonBuilder {
    *
    * @returns Promise<Object> This returns a Promise resolved with a status object with the following members:
    *   changed - Whether the environment changed.
-   *   oldEnvironment - Only set if a change occured, contains the environment data before the change.
    */
   async _updateAddons() {
     this._log.trace("_updateAddons");
@@ -5154,19 +5113,16 @@ export class EnvironmentAddonBuilder {
     };
 
     let result = {
-      changed:
-        !this._currentEnvironment.addons ||
-        !lazy.ObjectUtils.deepEqual(
-          addons.activeAddons,
-          this._currentEnvironment.addons.activeAddons
-        ),
+      changed: !lazy.ObjectUtils.deepEqual(
+        addons.activeAddons,
+        this.addons.activeAddons
+      ),
     };
 
     if (result.changed) {
       this._log.trace("_updateAddons: addons differ");
-      result.oldEnvironment = Cu.cloneInto(this._currentEnvironment, {});
     }
-    this._currentEnvironment.addons = addons;
+    this.addons = addons;
 
     // Convert into the appropriate schema and record the addon environment
     // data in Glean
@@ -5208,17 +5164,6 @@ export class EnvironmentAddonBuilder {
     this._addonsAreFull = fullData;
     let activeAddons = {};
     for (let addon of allAddons) {
-      // NOTE: This if block should be dropped completely (along with the similar one
-      // on the _onAddonChange side) once we have migrated the Desktop builds away from
-      // the legacy TelemetryEnvironment
-      if (
-        !lazy.AMTELEMETRY_ADDONS_BUILDER_ENABLED &&
-        addon.isBuiltin &&
-        !addon.isSystem
-      ) {
-        continue;
-      }
-
       // Weird addon data in the wild can lead to exceptions while collecting
       // the data.
       try {
@@ -5394,7 +5339,7 @@ export class EnvironmentAddonBuilder {
  */
 AMTelemetry = {
   telemetrySetupDone: false,
-  telemetryAddonBuilder: null,
+  addonsBuilder: null,
 
   // This method is called by the AddonManager, once it has been started, so that we can
   // init the telemetry event category and start listening for the events related to the
@@ -5413,12 +5358,10 @@ AMTelemetry = {
     AddonManager.addInstallListener(this);
     AddonManager.addAddonListener(this);
 
-    if (lazy.AMTELEMETRY_ADDONS_BUILDER_ENABLED) {
-      this.telemetryAddonBuilder = new EnvironmentAddonBuilder();
-      this.telemetryAddonBuilder.init().finally(() => {
-        this.telemetryAddonBuilder.watchForChanges();
-      });
-    }
+    this.addonsBuilder = new EnvironmentAddonBuilder();
+    this.addonsBuilder.init().finally(() => {
+      this.addonsBuilder.watchForChanges();
+    });
   },
 
   // NOTE: used by AddonTestUtils.promiseShutdownManager to ensure
@@ -5436,8 +5379,8 @@ AMTelemetry = {
     AddonManager.removeInstallListener(this);
     AddonManager.removeAddonListener(this);
 
-    await this.telemetryAddonBuilder?.uninit();
-    this.telemetryAddonBuilder = null;
+    await this.addonsBuilder?.uninit();
+    this.addonsBuilder = null;
 
     this.telemetrySetupDone = false;
   },

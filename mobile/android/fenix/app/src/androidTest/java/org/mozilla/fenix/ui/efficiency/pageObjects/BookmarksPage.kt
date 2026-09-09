@@ -22,30 +22,30 @@ class BookmarksPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
         NavigationRegistry.register(
             from = "HomePage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
-                NavigationStep.Click(MainMenuSelectors.BOOKMARKS_BUTTON),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
+                    NavigationStep.Click(MainMenuSelectors.BOOKMARKS_BUTTON),
+                ),
         )
 
         NavigationRegistry.register(
             from = "MainMenuPage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(MainMenuSelectors.BOOKMARKS_BUTTON),
-            ),
+            steps = listOf(NavigationStep.Click(MainMenuSelectors.BOOKMARKS_BUTTON)),
         )
 
         NavigationRegistry.register(
             from = pageName,
             to = "BookmarkSearchPage",
-            steps = listOf(
-                /* TODO: the search button only renders when at least one bookmark exists, so we add
-                one here as a navigation precondition. This adds a hidden "Mozilla" bookmark in any
-                test navigating through this path — safe as long as no test searches for "moz", "org", etc. */
-                NavigationStep.Action { createBookmarkItem("https://www.mozilla.org", "Mozilla", null) },
-                NavigationStep.Click(BookmarksSelectors.SEARCH_BUTTON),
-            ),
+            steps =
+                listOf(
+                    /* The search button only renders when at least one bookmark exists, so we add
+                    one here as a navigation precondition. This adds a hidden "Mozilla" bookmark in any
+                    test navigating through this path — safe as long as no test searches for "moz", "org", etc. */
+                    NavigationStep.Action { createBookmarkItem("https://www.mozilla.org", "Mozilla", null) },
+                    NavigationStep.Click(BookmarksSelectors.SEARCH_BUTTON),
+                ),
         )
     }
 
@@ -67,6 +67,12 @@ class BookmarksPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
 
     fun openItemMenu(title: String): BookmarksPage {
         mozClick(BookmarksSelectors.ITEM_MENU(title))
+        return this
+    }
+
+    fun importBookmarksFromFile(): BookmarksPage {
+        mozClick(BookmarksSelectors.IMPORT_BOOKMARKS_BUTTON)
+        mozClick(BookmarksSelectors.IMPORT_MENU_BUTTON)
         return this
     }
 

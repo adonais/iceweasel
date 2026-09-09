@@ -301,10 +301,7 @@ add_task(async function testFxViewNotMultiselect() {
 
     info("We multi-select a visible tab with ctrl key down");
     await triggerClickOn(tab2, { ctrlKey: true });
-    Assert.ok(
-      tab2.multiselected && gBrowser._multiSelectedTabsSet.has(tab2),
-      "Second visible tab is (multi) selected"
-    );
+    Assert.ok(tab2.multiselected, "Second visible tab is (multi) selected");
     Assert.equal(gBrowser.multiSelectedTabsCount, 1, "One tab is selected.");
     Assert.notEqual(
       fxViewBtn,
@@ -317,10 +314,7 @@ add_task(async function testFxViewNotMultiselect() {
 
     info("We multi-select visible tabs with shift key down");
     await triggerClickOn(tab2, { shiftKey: true });
-    Assert.ok(
-      tab2.multiselected && gBrowser._multiSelectedTabsSet.has(tab2),
-      "Second visible tab is (multi) selected"
-    );
+    Assert.ok(tab2.multiselected, "Second visible tab is (multi) selected");
     Assert.equal(gBrowser.multiSelectedTabsCount, 2, "Two tabs are selected.");
     Assert.notEqual(
       fxViewBtn,

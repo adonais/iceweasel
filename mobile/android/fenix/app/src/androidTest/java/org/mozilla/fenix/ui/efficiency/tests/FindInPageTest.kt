@@ -12,7 +12,8 @@ import org.mozilla.fenix.ui.efficiency.selectors.FindInPageSelectors
 
 class FindInPageTest : BaseTest() {
 
-    private val mockWebServer get() = fenixTestRule.mockWebServer
+    private val mockWebServer
+        get() = fenixTestRule.mockWebServer
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080130
     @SmokeTest
@@ -20,13 +21,9 @@ class FindInPageTest : BaseTest() {
     fun verifyTheFindInPageMenuItemTest() {
         val testPage = mockWebServer.getGenericAsset(3)
 
-        on.findInPage.navigateToPage(testPage.url.toString())
-            .verifyFindInPageElement("a", 3)
-        on.browserPage.navigateToPage()
-            .mozVerifyElementAbsent(FindInPageSelectors.FIND_IN_PAGE_CLOSE_BUTTON)
-        on.findInPage.navigateToPage()
-            .verifyFindInPageElement("3", 1)
-        on.browserPage.navigateToPage()
-            .mozVerifyElementAbsent(FindInPageSelectors.FIND_IN_PAGE_CLOSE_BUTTON)
+        on.findInPage.navigateToPage(testPage.url.toString()).verifyFindInPageElement("a", 3)
+        on.browserPage.navigateToPage().mozVerifyElementAbsent(FindInPageSelectors.FIND_IN_PAGE_CLOSE_BUTTON)
+        on.findInPage.navigateToPage().verifyFindInPageElement("3", 1)
+        on.browserPage.navigateToPage().mozVerifyElementAbsent(FindInPageSelectors.FIND_IN_PAGE_CLOSE_BUTTON)
     }
 }

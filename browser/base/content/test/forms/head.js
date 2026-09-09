@@ -33,7 +33,7 @@ function hideSelectPopup(mode = "enter", win = window) {
   let browser = win.gBrowser.selectedBrowser;
   let selectClosedPromise = SpecialPowers.spawn(browser, [], async function () {
     let { SelectContentHelper } = ChromeUtils.importESModule(
-      "resource://gre/actors/SelectChild.sys.mjs"
+      "moz-src:///toolkit/actors/SelectChild.sys.mjs"
     );
     return ContentTaskUtils.waitForCondition(() => !SelectContentHelper.open);
   });

@@ -481,6 +481,19 @@ void MacroAssembler::lshift64(Imm32 imm, Register64 dest) {
   xorl(dest.low, dest.low);
 }
 
+void MacroAssembler::lshift64(Imm32 imm, Register64 src, Register64 dest) {
+  MOZ_ASSERT(0 <= imm.value && imm.value < 64);
+  MOZ_ASSERT(dest.low != src.high);
+  if (src.low != dest.low) {
+    movl(src.low, dest.low);
+  }
+  if (src.high != dest.high) {
+    movl(src.high, dest.high);
+  }
+
+  lshift64(imm, dest);
+}
+
 void MacroAssembler::lshift64(Register shift, Register64 srcDest) {
   MOZ_ASSERT(shift == ecx);
   MOZ_ASSERT(srcDest.low != ecx && srcDest.high != ecx);
@@ -527,6 +540,19 @@ void MacroAssembler::rshift64(Imm32 imm, Register64 dest) {
   movl(dest.high, dest.low);
   shrl(Imm32(imm.value & 0x1f), dest.low);
   xorl(dest.high, dest.high);
+}
+
+void MacroAssembler::rshift64(Imm32 imm, Register64 src, Register64 dest) {
+  MOZ_ASSERT(0 <= imm.value && imm.value < 64);
+  MOZ_ASSERT(dest.low != src.high);
+  if (src.low != dest.low) {
+    movl(src.low, dest.low);
+  }
+  if (src.high != dest.high) {
+    movl(src.high, dest.high);
+  }
+
+  rshift64(imm, dest);
 }
 
 void MacroAssembler::rshift64(Register shift, Register64 srcDest) {
@@ -577,6 +603,20 @@ void MacroAssembler::rshift64Arithmetic(Imm32 imm, Register64 dest) {
   movl(dest.high, dest.low);
   sarl(Imm32(imm.value & 0x1f), dest.low);
   sarl(Imm32(0x1f), dest.high);
+}
+
+void MacroAssembler::rshift64Arithmetic(Imm32 imm, Register64 src,
+                                        Register64 dest) {
+  MOZ_ASSERT(0 <= imm.value && imm.value < 64);
+  MOZ_ASSERT(dest.low != src.high);
+  if (src.low != dest.low) {
+    movl(src.low, dest.low);
+  }
+  if (src.high != dest.high) {
+    movl(src.high, dest.high);
+  }
+
+  rshift64Arithmetic(imm, dest);
 }
 
 void MacroAssembler::rshift64Arithmetic(Register shift, Register64 srcDest) {

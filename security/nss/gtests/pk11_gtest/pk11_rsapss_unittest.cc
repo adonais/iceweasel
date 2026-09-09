@@ -279,11 +279,9 @@ TEST_P(Pkcs11RsaPssVectorTest, Verify) {
 
 TEST_P(Pkcs11RsaPssVectorTest, SignAndVerify) { SignAndVerify(GetParam()); }
 
-#define VECTOR(pkcs8, spki, data, sig)                                \
-  {                                                                   \
-    DataBuffer(pkcs8, sizeof(pkcs8)), DataBuffer(spki, sizeof(spki)), \
-        DataBuffer(data, sizeof(data)), DataBuffer(sig, sizeof(sig))  \
-  }
+#define VECTOR(pkcs8, spki, data, sig)                               \
+  {DataBuffer(pkcs8, sizeof(pkcs8)), DataBuffer(spki, sizeof(spki)), \
+   DataBuffer(data, sizeof(data)), DataBuffer(sig, sizeof(sig))}
 #define VECTOR_N(n)                                                         \
   VECTOR(kTestVector##n##Pkcs8, kTestVector##n##Spki, kTestVector##n##Data, \
          kTestVector##n##Sig)

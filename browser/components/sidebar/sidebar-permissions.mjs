@@ -351,7 +351,11 @@ export class SidebarPermissions {
       iconBox,
       {
         getVisibleAnchorElement(anchorElement) {
-          if (anchorElement?.checkVisibility()) {
+          if (
+            anchorElement?.checkVisibility(
+              lazy.PopupNotifications.CHECK_VISIBILITY_OPTIONS
+            )
+          ) {
             return anchorElement;
           }
 
@@ -360,7 +364,11 @@ export class SidebarPermissions {
           const micAnchor = sidebarDocument?.getElementById(
             "sidebar-webrtc-microphone-notification-icon"
           );
-          if (micAnchor?.checkVisibility()) {
+          if (
+            micAnchor?.checkVisibility(
+              lazy.PopupNotifications.CHECK_VISIBILITY_OPTIONS
+            )
+          ) {
             return micAnchor;
           }
 

@@ -16,47 +16,40 @@ import mozilla.components.support.base.ext.fetchBodyOrNull
 import org.json.JSONObject
 
 @VisibleForTesting
-internal const val ENDPOINT_URL =
-    "https://merino.services.mozilla.com/api/v1/curated-recommendations"
+internal const val ENDPOINT_URL = "https://merino.services.mozilla.com/api/v1/curated-recommendations"
 
-@VisibleForTesting
-internal const val REQUEST_BODY_LOCALE_KEY = "locale"
+@VisibleForTesting internal const val REQUEST_BODY_LOCALE_KEY = "locale"
 
-@VisibleForTesting
-internal const val REQUEST_BODY_REGION_KEY = "region"
+@VisibleForTesting internal const val REQUEST_BODY_REGION_KEY = "region"
 
-@VisibleForTesting
-internal const val REQUEST_BODY_COUNT_KEY = "count"
+@VisibleForTesting internal const val REQUEST_BODY_COUNT_KEY = "count"
 
-@VisibleForTesting
-internal const val REQUEST_BODY_TOPICS_KEY = "topics"
+@VisibleForTesting internal const val REQUEST_BODY_TOPICS_KEY = "topics"
 
 /**
- * Performs requests to retrieve the content recommendations from the [endpointURL] server
- * with the provided [config].
+ * Performs requests to retrieve the content recommendations from the [endpointURL] server with the provided [config].
  *
- * See https://merino.services.mozilla.com/docs#/default/curated_content_api_v1_curated_recommendations_post
- * for documentation of the API endpoint.
- *
- * @see [newInstance] to retrieve an instance.
+ * See https://merino.services.mozilla.com/docs#/default/curated_content_api_v1_curated_recommendations_post for
+ * documentation of the API endpoint.
  *
  * @property client The [Client] used for interacting with the content recommendations HTTP API.
  * @property config Configuration for content recommendations request.
  * @property endpointURL The url of the endpoint to fetch from. Defaults to [ENDPOINT_URL].
+ * @see [newInstance] to retrieve an instance.
  */
-internal class ContentRecommendationEndpointRaw internal constructor(
+internal class ContentRecommendationEndpointRaw
+internal constructor(
     @get:VisibleForTesting internal val client: Client,
     @get:VisibleForTesting internal val config: ContentRecommendationsRequestConfig,
     private val endpointURL: String = ENDPOINT_URL,
 ) {
     /**
-     * Fetches from the content recommendation [endpointURL] and returns the content
-     * recommendations as a JSON string or null.
+     * Fetches from the content recommendation [endpointURL] and returns the content recommendations as a JSON string or
+     * null.
      *
      * @return The content recommendations as a raw JSON string or null on error.
      */
-    @WorkerThread
-    fun getContentRecommendations(): String? = makeRequest()
+    @WorkerThread fun getContentRecommendations(): String? = makeRequest()
 
     /**
      * Retrieves the content recommendations from the endpoint server.
@@ -65,25 +58,25 @@ internal class ContentRecommendationEndpointRaw internal constructor(
      */
     @WorkerThread // synchronous request.
     private fun makeRequest(): String? {
-        val request = Request(
-            url = endpointURL,
-            method = Method.POST,
-            headers = MutableHeaders(
-                "Content-Type" to "application/json; charset=UTF-8",
-            ),
-            body = getRequestBody(),
-            conservative = true,
-        )
+        val request =
+            Request(
+                url = endpointURL,
+                method = Method.POST,
+                headers = MutableHeaders("Content-Type" to "application/json; charset=UTF-8"),
+                body = getRequestBody(),
+                conservative = true,
+            )
         return client.fetchBodyOrNull(request)
     }
 
     private fun getRequestBody(): Body {
-        val params = mapOf(
-            REQUEST_BODY_LOCALE_KEY to config.locale,
-            REQUEST_BODY_REGION_KEY to config.region,
-            REQUEST_BODY_COUNT_KEY to config.count,
-            REQUEST_BODY_TOPICS_KEY to config.topics,
-        )
+        val params =
+            mapOf(
+                REQUEST_BODY_LOCALE_KEY to config.locale,
+                REQUEST_BODY_REGION_KEY to config.region,
+                REQUEST_BODY_COUNT_KEY to config.count,
+                REQUEST_BODY_TOPICS_KEY to config.topics,
+            )
 
         return Body(JSONObject(params).toString().byteInputStream())
     }

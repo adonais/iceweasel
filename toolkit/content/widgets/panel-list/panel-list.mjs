@@ -85,6 +85,21 @@ export class PanelList extends HTMLElement {
     this.toggleAttribute("stay-open", val);
   }
 
+  /**
+   * Whether an item is activated by a mouse release over it even when the press
+   * happened elsewhere, so that the panel can be opened and an item chosen with
+   * a single click. Suitable for panels that open on mousedown.
+   *
+   * @type {boolean}
+   */
+  get clickOnMouseup() {
+    return this.hasAttribute("click-on-mouseup");
+  }
+
+  set clickOnMouseup(val) {
+    this.toggleAttribute("click-on-mouseup", val);
+  }
+
   getTargetForEvent(event) {
     if (!event) {
       return null;
@@ -100,6 +115,12 @@ export class PanelList extends HTMLElement {
   }
 
   show(triggeringEvent, target) {
+    // Re-arming the triggeringEvent guard in handleEvent() on an open list
+    // would make it ignore the event currently being dispatched.
+    if (this.open) {
+      return;
+    }
+
     this.triggeringEvent = triggeringEvent;
     this.lastAnchorNode =
       target || this.getTargetForEvent(this.triggeringEvent);
@@ -114,7 +135,13 @@ export class PanelList extends HTMLElement {
       const autohideDisabled = this.hasServices()
         ? Services.prefs.getBoolPref("ui.popup.disable_autohide", false)
         : false;
-      this.setAttribute("popover", autohideDisabled ? "manual" : "auto");
+      // A contextmenu event is dispatched during the button press on most
+      // platforms, so the release that follows would light-dismiss an auto
+      // popover. Manual popovers are exempt from light dismiss; the listeners
+      // from addHideListeners() dismiss them.
+      const lightDismissable =
+        !autohideDisabled && triggeringEvent?.type != "contextmenu";
+      this.setAttribute("popover", lightDismissable ? "auto" : "manual");
     }
 
     // Bug 2010864 - We need to set `open` to true before calling this.onShow()
@@ -222,8 +249,14 @@ export class PanelList extends HTMLElement {
     // Set the showing attribute to hide the panel until its alignment is set.
     this.setAttribute("showing", "true");
     // Tell the host element to hide any overflow in case the panel extends off
-    // the page before the alignment is set.
-    hostElement.style.overflow = "hidden";
+    // the page before the alignment is set. A popover skips it: mutating the
+    // host's overflow reconstructs its frame, which makes every scrollable
+    // descendant dispatch a `scroll` event it never scrolled for (bug 2066409),
+    // and `addHideListeners()` reads that as the anchor moving away.
+    const hideHostOverflow = !this.supportsPopover();
+    if (hideHostOverflow) {
+      hostElement.style.overflow = "hidden";
+    }
 
     // Wait for a layout flush, then find the bounds.
     let {
@@ -344,7 +377,9 @@ export class PanelList extends HTMLElement {
       // Set the alignments and show the panel.
       this.setAttribute("align", align);
       this.setAttribute("valign", valign);
-      hostElement.style.overflow = "";
+      if (hideHostOverflow) {
+        hostElement.style.overflow = "";
+      }
       // Decide positioning based on where this panel will be rendered
       const offsetParentIsBody =
         this.supportsPopover() ||
@@ -990,7 +1025,7 @@ export class PanelItem extends HTMLElement {
         if (
           // preventClickEvent is undefined outside of chrome contexts.
           !event.preventClickEvent ||
-          this.panel?.lastAnchorNode?.role != "combobox" ||
+          !this.panel?.clickOnMouseup ||
           e.button != 0
         ) {
           break;

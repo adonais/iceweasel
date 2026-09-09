@@ -16,10 +16,7 @@ import mozilla.components.lib.state.Store
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 
-/**
- * Helper class for creating small binding classes that are responsible for reacting to state
- * changes.
- */
+/** Helper class for creating small binding classes that are responsible for reacting to state changes. */
 abstract class AbstractBinding<in S : State>(
     private val store: Store<S, out Action>,
     protected val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
@@ -28,9 +25,10 @@ abstract class AbstractBinding<in S : State>(
 
     @CallSuper
     override fun start() {
-        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            onState(flow)
-        }
+        scope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                onState(flow)
+            }
     }
 
     @CallSuper
@@ -38,8 +36,6 @@ abstract class AbstractBinding<in S : State>(
         scope?.cancel()
     }
 
-    /**
-     * A callback that is invoked when a [Flow] on the [store] is available to use.
-     */
+    /** A callback that is invoked when a [Flow] on the [store] is available to use. */
     abstract suspend fun onState(flow: Flow<S>)
 }

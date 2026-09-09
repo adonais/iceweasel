@@ -6,7 +6,7 @@ extends `BaseTest`, which owns the compose rule, retries, cleanup, and the mock 
 ## Structure
 
 ```kotlin
-class OnboardingTest : BaseTest(skipOnboarding = false) {
+class OnboardingTest : BaseTest(LaunchConfig(skipOnboarding = false)) {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3349493
     @SmokeTest
@@ -18,9 +18,10 @@ class OnboardingTest : BaseTest(skipOnboarding = false) {
 }
 ```
 
-- **`BaseTest(...)` options** configure the launch: `skipOnboarding` (default true),
-  `isPocketEnabled`, `isRecentlyVisitedFeatureEnabled`, `isPageLoadTranslationsPromptEnabled`. Set
-  the ones the scenario needs.
+- **`BaseTest(LaunchConfig(...))`** configures the launch. Every flag and its default lives in
+  `navigation/LaunchConfig.kt` --- set only the ones the scenario needs, and read that file rather
+  than a list here, which is the sort of thing that goes stale. Override `launchConfig()` instead
+  when the launch varies per case.
 - **`on`** is the `PageContext` — `on.<page>` gives the typed page object.
 - **`navigateToPage()`** routes + confirms arrival; `navigateToPage(url)` on `browserPage` loads a
   page. Chain `moz*` verbs off it.

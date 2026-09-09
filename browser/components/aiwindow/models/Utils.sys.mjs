@@ -25,6 +25,9 @@ const lazy = XPCOMUtils.declareLazy({
 
 let _remoteClient = null;
 
+/** @type {Promise<object[]>|null} */
+let _recordsPromise = null;
+
 /**
  * Gets the Remote Settings client for AI window configurations. Subscribes
  * the model-data cache to RS sync events on first use and caches the client
@@ -40,6 +43,8 @@ export function getRemoteClient() {
     bucketName: "main",
   });
   client.on("sync", async () => {
+    // Dropped before the models refresh below, which reads records back.
+    _recordsPromise = null;
     try {
       await refreshModelsDataCache();
     } catch (e) {
@@ -51,6 +56,34 @@ export function getRemoteClient() {
 }
 
 /**
+ * Every record in the AI window collection, memoized for the session and
+ * dropped on sync. `client.get()` is not a cheap repeat read: each call lists
+ * the whole collection out of IndexedDB and re-runs the JEXL filter over every
+ * record, and a single chat submit resolves records three to five times
+ * (model config, system prompt assembly, per-turn browser context).
+ *
+ * @returns {Promise<object[]>}
+ */
+export function getRemoteRecords() {
+  if (_recordsPromise) {
+    return _recordsPromise;
+  }
+  const promise = getRemoteClient()
+    .get()
+    .catch(error => {
+      // Never leave a failed read cached, or one transient error would be
+      // served for the rest of the session. Guarded so a sync that landed
+      // while this read was in flight keeps its fresher entry.
+      if (_recordsPromise === promise) {
+        _recordsPromise = null;
+      }
+      throw error;
+    });
+  _recordsPromise = promise;
+  return promise;
+}
+
+/**
  * Test-only seam: install a fake client. Subsequent `getRemoteClient()` calls
  * return it until cleared.
  *
@@ -58,6 +91,7 @@ export function getRemoteClient() {
  */
 export function _setRemoteClientForTesting(client) {
   _remoteClient = client;
+  _recordsPromise = null;
 }
 
 /**
@@ -65,6 +99,15 @@ export function _setRemoteClientForTesting(client) {
  */
 export function _clearRemoteClientForTesting() {
   _remoteClient = null;
+  _recordsPromise = null;
+}
+
+/**
+ * Test-only seam: drops memoized records without replacing the client, for
+ * tests that mutate a fake client's data between reads.
+ */
+export function _clearRecordsCacheForTesting() {
+  _recordsPromise = null;
 }
 
 const modelPrefObserver = {
@@ -74,6 +117,7 @@ const modelPrefObserver = {
         "Model preference changed, invalidating Remote Settings cache"
       );
       _remoteClient = null;
+      _recordsPromise = null;
     }
   },
 };
@@ -119,11 +163,13 @@ export const MODEL_FEATURES = Object.freeze({
   REAL_TIME_CONTEXT_DATE: "real-time-context-date",
   REAL_TIME_CONTEXT_TAB: "real-time-context-tab",
   REAL_TIME_CONTEXT_MENTIONS: "real-time-context-mentions",
-  MEMORIES_RELEVANT_CONTEXT: "memories-relevant-context",
+  MEMORIES_CONTEXT: "memories-context",
   // agents
   AGENT_MONITOR: "agent-monitor",
   // search agent
   SEARCH_ANSWER_GENERATION: "search-answer-generation",
+  // aitab structured-page generation
+  AITAB: "aitab",
 });
 
 /** @typedef {(typeof MODEL_FEATURES)[keyof typeof MODEL_FEATURES]} ModelFeature */
@@ -149,6 +195,8 @@ export const PURPOSES = Object.freeze({
   MEMORY_GENERATION: "memory-generation",
   // agents
   MONITOR: "monitor",
+  // aitab structured-page generation
+  AITAB: "aitab",
 });
 
 /**
@@ -184,15 +232,17 @@ export const FEATURE_MAJOR_VERSIONS = Object.freeze({
   // memories usage feature versions
   [MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM]: 1,
   [MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_USER]: 1,
-  [MODEL_FEATURES.MEMORIES_RELEVANT_CONTEXT]: 2,
+  [MODEL_FEATURES.MEMORIES_CONTEXT]: 1,
   // real-time-context fragments
   [MODEL_FEATURES.REAL_TIME_CONTEXT_DATE]: 1,
   [MODEL_FEATURES.REAL_TIME_CONTEXT_TAB]: 1,
   [MODEL_FEATURES.REAL_TIME_CONTEXT_MENTIONS]: 1,
   // agents
-  [MODEL_FEATURES.AGENT_MONITOR]: 1,
+  [MODEL_FEATURES.AGENT_MONITOR]: 2,
   // search agent
   [MODEL_FEATURES.SEARCH_ANSWER_GENERATION]: 1,
+  // aitab structured-page generation
+  [MODEL_FEATURES.AITAB]: 1,
 });
 
 /**
@@ -316,6 +366,16 @@ export const FALLBACK_MODELS_V2 = {
 };
 
 /**
+ * Checks if the modelChoiceId points at a custom model selection.
+ *
+ * @param {string} modelChoiceId
+ * @returns {boolean}
+ */
+function isCustomModelChoice(modelChoiceId) {
+  return modelChoiceId === "0" || modelChoiceId === "";
+}
+
+/**
  * Selects the main configuration for a feature based on version and model preferences.
  *
  * Remote Settings maintains only the latest minor version for each (feature, model, major_version) combination.
@@ -347,11 +407,12 @@ export function selectMainConfig(
     return null;
   }
 
-  // We only allow customization of main assistant model ("chat" feature)
+  // Only the main assistant model ("chat" feature) is selectable per model
+  // choice; other features always use their default config.
   // We figure out which model the user wants and load prompts for that model
   // If we can't find a config for the user selection, we load the generic one
   if (feature === MODEL_FEATURES.CHAT) {
-    if (modelChoiceId !== "0" && modelChoiceId !== "") {
+    if (!isCustomModelChoice(modelChoiceId)) {
       // First check the choice ID. If it's not 0, use the model associated with that ID
 
       // Look for config based on model choice ID
@@ -397,10 +458,13 @@ export function selectMainConfig(
   }
 
   // **For all features other than "chat"**
-  // If no user model pref OR user's model not found: use default
+  // If no user model pref OR user's model not found: use default, swapping in
+  // the userModel if needed
   const defaultConfig = sameMajor.find(config => config.is_default === true);
   if (defaultConfig) {
-    return defaultConfig;
+    return userModel && isCustomModelChoice(modelChoiceId)
+      ? { ...defaultConfig, model: userModel }
+      : defaultConfig;
   }
 
   // No default found - this shouldn't happen with proper Remote Settings data
@@ -460,8 +524,7 @@ export async function resolveChatModelChoice(
   }
 
   try {
-    const client = getRemoteClient();
-    const allRecords = await client.get();
+    const allRecords = await getRemoteRecords();
 
     const record = selectMainConfig(
       // CHAT model+params live in v2 kind:"params" records.

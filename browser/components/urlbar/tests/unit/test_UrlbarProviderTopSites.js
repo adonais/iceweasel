@@ -464,7 +464,7 @@ add_task(async function unvisitedBookmark() {
         tags: null,
         sendAttributionRequest: false,
         providerName: UrlbarProviderTopSites.name,
-        source: UrlbarShared.RESULT_SOURCE.BOOKMARK,
+        source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       }),
   });
 

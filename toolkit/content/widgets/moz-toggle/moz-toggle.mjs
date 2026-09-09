@@ -17,6 +17,7 @@ import "chrome://global/content/elements/moz-label.mjs";
  * @property {string} description - The description text.
  * @property {string} ariaLabel - The aria-label text when there is no visible label.
  * @property {string} ariaDescription - The aria-description text when there is no visible description.
+ * @property {string} title - The title attribute, mapped onto the inner button.
  * @slot support-link - Used to append a moz-support-link to the description.
  * @fires toggle
  *  Custom event indicating that the toggle's pressed state has changed.
@@ -64,6 +65,7 @@ export default class MozToggle extends MozBaseInputElement {
         this.hasDescription ? undefined : this.ariaDescription
       )}
       accesskey=${ifDefined(this.accessKey)}
+      title=${ifDefined(this.title)}
       @click=${handleClick}
     ></button>`;
   }

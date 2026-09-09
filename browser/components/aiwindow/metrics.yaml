@@ -846,16 +846,17 @@ smart_window:
         type: string
     expires: never
 
-  open_window:
+  launch_command_invoked:
     type: event
     description: |
-      Recorded when a Smart Window is opened
+      Recorded when a Smart Window launch is requested by a user with Smart
+      Window not blocked by AI controls, before any Firefox Accounts sign-in
+      flow runs. Captures the intent to use Smart Window, so it can be compared
+      against open_window, which is only recorded once the window opens.
     bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2009610
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037980
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2065555
     data_reviews:
-      - https://phabricator.services.mozilla.com/D285902
-      - https://phabricator.services.mozilla.com/D299196
+      - https://phabricator.services.mozilla.com/D321341
     data_sensitivity:
       - interaction
     notification_emails: *emails
@@ -863,7 +864,42 @@ smart_window:
       trigger:
         type: string
         description: >
-          The reason the Smart Window was opened. One of: switch, menu, new_window, open_browser, undo_close, or keyboard_shortcut
+          The entry point that requested the launch. One of: switch, menu,
+          keyboard_shortcut, startup, settings, bedrock, asrouter, or other.
+          Messaging surfaces may supply their own value instead of asrouter
+      fxa:
+        type: boolean
+        description: >
+          Whether the user is signed in to their Firefox Account when the launch
+          is requested. False means the launch sends the user through the
+          sign-in flow first
+      new_window:
+        type: boolean
+        description: >
+          Whether the launch opens a new window instead of switching the current
+          window to Smart Window
+    expires: never
+
+  open_window:
+    type: event
+    description: |
+      Recorded when a Smart Window is opened
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2009610
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037980
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2065555
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D285902
+      - https://phabricator.services.mozilla.com/D299196
+      - https://phabricator.services.mozilla.com/D321341
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    extra_keys:
+      trigger:
+        type: string
+        description: >
+          The reason the Smart Window was opened. One of: switch, menu, new_window, open_browser, undo_close, keyboard_shortcut, settings, bedrock, asrouter, or other. Messaging surfaces may supply their own value instead of asrouter
       fxa:
         type: boolean
         description: >
@@ -1547,8 +1583,9 @@ smart_window:
     type: boolean
     description: >
       Whether the single-row Top Sites are shown below the Smartbar in Smart
-      Window fullpage mode. Corresponds to the inverse of the
-      `browser.smartwindow.hideTopSites` pref (true when Top Sites are shown).
+      Window fullpage mode. True when the `browser.smartwindow.hideTopSites`
+      pref is false and the
+      `browser.newtabpage.activity-stream.feeds.topsites` pref is true.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2048338
     data_reviews:
@@ -2114,3 +2151,338 @@ smart_window:
           Number of duplicate tabs that were closed.
       success: *atg_success
       error_type: *atg_error_type
+
+  form_fill_classify_request:
+    type: event
+    description: |
+      Sent when the context free classification request is dispatched; also the
+      invocation record.
+    bugs: &smart_form_fill_bugs
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055066
+    data_reviews: &smart_form_fill_data_reviews
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055066
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      flow_id: &smart_form_fill_flow_id
+        type: string
+        description: >
+          Unique id for this fill invocation; correlates all of its events.
+      trigger:
+        type: string
+        description: >
+          How the fill was invoked. Currently only: autofill_menu.
+      fields_total:
+        type: quantity
+        unit: fields
+        description: >
+          Number of fillable fields detected in the form.
+      model:
+        type: string
+        description: >
+          Model used for the classification request.
+      prompt_version:
+        type: string
+        description: >
+          Version of the classification prompt config.
+
+  form_fill_classify_response:
+    type: event
+    description: |
+      The classification request completes.
+    bugs: *smart_form_fill_bugs
+    data_reviews: *smart_form_fill_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      flow_id: *smart_form_fill_flow_id
+      page_type:
+        type: string
+        description: >
+          Form type the model classified from the page title and url. One of: travel, registration,
+          product_search, or other. Absent when the request failed, and while the
+          model does not classify the page yet.
+      latency_ms:
+        type: quantity
+        unit: ms
+        description: >
+          Time in ms from request to response.
+      error:
+        type: boolean
+        description: >
+          True if an error happened.
+      error_message:
+        type: string
+        description: >
+          What the failure is attributed to, from a closed set of reasons shared
+          with the chat: connectionFailure, fxaTokenUnavailable,
+          modelConfigUnavailable, offline, promptLoadFailure or
+          remoteSettingsUnavailable. Anything else, including a bug of our own,
+          is genericError. Never a free form message, and absent on success.
+
+  form_fill_generate_request:
+    type: event
+    description: |
+      Sent when value generation for a form, which includes browsing context, is dispatched.
+      Fields are sent in batches of at most 20, so one event can cover more than one
+      model request.
+    bugs: *smart_form_fill_bugs
+    data_reviews: *smart_form_fill_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      flow_id: *smart_form_fill_flow_id
+      tokens_available:
+        type: quantity
+        unit: tokens
+        description: >
+          Number of fields for which the client offered a typed value token.
+      tabs:
+        type: quantity
+        unit: tabs
+        description: >
+          Number of open tabs included as context.
+      memories:
+        type: quantity
+        unit: memories
+        description: >
+          Number of memories included as context.
+      model:
+        type: string
+        description: >
+          Model used for the generation request.
+      prompt_version:
+        type: string
+        description: >
+          Version of the generation prompt config.
+      threshold:
+        type: string
+        description: >
+          Minimum model confidence a value must clear to be filled.
+          A string. One of: low, medium or high.
+
+  form_fill_generate_response:
+    type: event
+    description: |
+      The generation request completes.
+    bugs: *smart_form_fill_bugs
+    data_reviews: *smart_form_fill_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      flow_id: *smart_form_fill_flow_id
+      fields_filled:
+        type: quantity
+        unit: fields
+        description: >
+          Number of fields ultimately filled.
+      memories_used:
+        type: quantity
+        unit: memories
+        description: >
+          Number of memories the model reports having used. Absent when the
+          generation failed, since no answer came back to report it.
+      tabs_used:
+        type: quantity
+        unit: tabs
+        description: >
+          Number of the context tabs the model reports having used, out of the
+          tabs counted by the request's tabs. Absent when the generation failed,
+          since no answer came back to report it.
+      batches_total:
+        type: quantity
+        unit: requests
+        description: >
+          Number of model requests the fields were split across. Absent when the
+          whole generation failed, since the count does not survive the error.
+      batches_failed:
+        type: quantity
+        unit: requests
+        description: >
+          Number of those requests that failed. A value above 0 with no error
+          means the form was only partly filled. Absent when the whole
+          generation failed, since the count does not survive the error.
+      latency_ms:
+        type: quantity
+        unit: ms
+        description: >
+          Time in ms from request to response.
+      error:
+        type: boolean
+        description: >
+          True if an error happened.
+      error_message:
+        type: string
+        description: >
+          What the failure is attributed to, from a closed set of reasons shared
+          with the chat: connectionFailure, fxaTokenUnavailable,
+          modelConfigUnavailable, offline, promptLoadFailure or
+          remoteSettingsUnavailable. Anything else, including a bug of our own,
+          is genericError. Never a free form message, and absent on success..
+
+  form_fill_field:
+    type: event
+    description: |
+      Recorded once per field with the model's decision for it.
+    bugs: *smart_form_fill_bugs
+    data_reviews: *smart_form_fill_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      flow_id: *smart_form_fill_flow_id
+      field_seq:
+        type: quantity
+        unit: count
+        description: >
+          Index of the field within the form, to join with its outcome event
+          (not a name or content).
+      input_type:
+        type: string
+        description: >
+          The field's input type, e.g. text, search, email, tel, or textarea.
+      field_kind:
+        type: string
+        description: >
+          Model's inferred field classification from the classification request,
+          from a closed enum defined with the models team. Absent when the field
+          was not classified.
+      token_available:
+        type: boolean
+        description: >
+          Boolean, whether the client offered a typed value token for this field.
+      token_kind:
+        type: string
+        description: >
+          Type of the offered token, a type and never a value. Absent when no
+          token was offered for the field, which token_available also reports.
+      source:
+        type: string
+        description: >
+          The model's decision from the generation request. One of: token, generated, or none.
+      confidence:
+        type: string
+        description: >
+          Model confidence for this field. A string. One of: low, medium or high.
+          Absent when the model returned no decision for the field.
+      filled:
+        type: boolean
+        description: >
+          Boolean, whether the field was filled
+
+  form_fill_field_outcome:
+    type: event
+    description: |
+      Recorded once per filled field when the fill is torn down (blur, submit, or navigation),
+      capturing whether the user kept the value.
+    bugs: *smart_form_fill_bugs
+    data_reviews: *smart_form_fill_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      flow_id: *smart_form_fill_flow_id
+      field_seq:
+        type: quantity
+        unit: count
+        description: >
+          Index of the field, to join with its decision event.
+      field_kind:
+        type: string
+        description: >
+          Model's inferred field classification, same enum as form_fill_field.
+          Absent when the field was not classified.
+      source:
+        type: string
+        description: >
+          What filled the field. One of: token or generated.
+      confidence:
+        type: string
+        description: >
+          Model confidence for this field. A string. One of: low, medium or high.
+          Absent when the model returned no decision for the field.
+      outcome:
+        type: string
+        description: >
+          Whether the user kept the value. One of: kept, edited, or cleared.
+
+  form_relevant_tabs_request:
+    type: event
+    description: |
+      Recorded when a request to find relevant tabs for generation is dispatched.
+      The request is sent on initialization or when the form is updated.
+    bugs: *smart_form_fill_bugs
+    data_reviews: *smart_form_fill_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      flow_id: *smart_form_fill_flow_id
+      model:
+        type: string
+        description: >
+          Model used for the relevant tabs request.
+      prompt_version:
+        type: string
+        description: >
+          Version of the relevant tabs prompt config.
+      tabs_sent:
+        type: quantity
+        unit: tabs
+        description: >
+          How many tabs were sent in the request.
+
+  form_relevant_tabs_response:
+    type: event
+    description: |
+      Recorded when the relevant tabs request is completed.
+    bugs: *smart_form_fill_bugs
+    data_reviews: *smart_form_fill_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      flow_id: *smart_form_fill_flow_id
+      latency_ms:
+        type: quantity
+        unit: ms
+        description: >
+          Time in ms from request to response.
+      error:
+        type: boolean
+        description: >
+          True if an error happened.
+      error_message:
+        type: string
+        description: >
+          What the failure is attributed to, from a closed set of reasons shared
+          with the chat: connectionFailure, fxaTokenUnavailable,
+          modelConfigUnavailable, offline, promptLoadFailure or
+          remoteSettingsUnavailable. Anything else, including a bug of our own,
+          is genericError. Never a free form message, and absent on success.
+      tabs_selected:
+        type: quantity
+        unit: tabs
+        description: >
+          Number of tabs the model returned. Absent when the request failed, or
+          when the answer carried no tab list at all.
+      tabs_used:
+        type: quantity
+        unit: tabs
+        description: >
+          Number of those tabs that were actually included as context.
+          Lower than tabs_selected when the model repeated a tab, named
+          one that was never offered, or picked more than the client accepts.
+          Absent when the request failed.

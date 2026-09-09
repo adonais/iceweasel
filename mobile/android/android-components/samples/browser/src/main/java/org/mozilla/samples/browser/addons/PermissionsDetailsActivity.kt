@@ -17,12 +17,9 @@ import mozilla.components.feature.addons.ui.translateName
 import mozilla.components.support.utils.ext.getParcelableExtraCompat
 import org.mozilla.samples.browser.R
 
-private const val LEARN_MORE_URL =
-    "https://support.mozilla.org/kb/permission-request-messages-firefox-extensions"
+private const val LEARN_MORE_URL = "https://support.mozilla.org/kb/permission-request-messages-firefox-extensions"
 
-/**
- * An activity to show the permissions of an add-on.
- */
+/** An activity to show the permissions of an add-on. */
 class PermissionsDetailsActivity : AppCompatActivity(), View.OnClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,8 +44,7 @@ class PermissionsDetailsActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     override fun onClick(v: View?) {
-        val intent =
-            Intent(Intent.ACTION_VIEW).setData(LEARN_MORE_URL.toUri())
+        val intent = Intent(Intent.ACTION_VIEW).setData(LEARN_MORE_URL.toUri())
         startActivity(intent)
     }
 }

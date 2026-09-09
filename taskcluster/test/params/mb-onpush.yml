@@ -16,7 +16,9 @@ files_changed:
   - mobile/locales/l10n-changesets.json
 filters:
   - target_tasks_method
+head_git_repository: https://github.com/mozilla-firefox/firefox
 head_git_rev: d0946d7b67ad6a52d9cc9faf1aadcb7d6f678bd0
+head_git_ref: refs/heads/beta
 head_ref: 510e56232e8a126f822c61d157502dc4ff99ebac
 head_repository: https://hg.mozilla.org/releases/mozilla-beta
 head_rev: 510e56232e8a126f822c61d157502dc4ff99ebac

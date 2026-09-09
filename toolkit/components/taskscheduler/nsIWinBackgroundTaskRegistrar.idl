@@ -1,0 +1,57 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+#include "nsISupports.idl"
+
+/**
+ * Registers Windows MSIX background tasks that fire on a recurring timer.
+ *
+ * This is the MSIX-packaged counterpart to nsIWinTaskSchedulerService: instead
+ * of the classic Task Scheduler 2.0 (taskschd), it uses the WinRT
+ * Windows.ApplicationModel.Background APIs. A registered task activates a COM server
+ * (identified by a CLSID entry point) on a TimeTrigger.
+ *
+ * These methods only work when Firefox is running with package identity (i.e.
+ * from an MSIX install) on Windows 10 version 2004 (build 19041) or later. In
+ * any other configuration they throw.
+ */
+[scriptable, main_process_scriptable_only, uuid(67402829-1451-4c52-a9be-65781cc64f14)]
+interface nsIWinBackgroundTaskRegistrar : nsISupports
+{
+  /**
+   * Register a recurring TimeTrigger that activates the package's background
+   * task class. Replaces any existing task with the same name.
+   *
+   * @param aId               Name to register the task under.
+   * @param aIntervalMinutes  Recurrence interval in minutes. The Windows
+   *                          minimum is 15; smaller values throw.
+   *
+   * @throws NS_ERROR_FAILURE if registration fails (including when not running
+   *         with package identity, or on a Windows version older than build
+   *         19041).
+   */
+  void registerTask(in AString aId, in unsigned long aIntervalMinutes);
+
+  /**
+   * Unregister the task previously registered under aId.
+   *
+   * @throws NS_ERROR_FILE_NOT_FOUND if no task with that name exists.
+   * @throws NS_ERROR_FAILURE if enumeration or unregistration fails.
+   */
+  void deleteTask(in AString aId);
+
+  /**
+   * Unregister every background task registered by this package.
+   *
+   * @throws NS_ERROR_FAILURE if enumeration or unregistration fails.
+   */
+  void deleteAllTasks();
+
+  /**
+   * @return true if a task with the name aId is registered, otherwise false.
+   *
+   * @throws NS_ERROR_FAILURE if enumeration fails.
+   */
+  boolean taskExists(in AString aId);
+};

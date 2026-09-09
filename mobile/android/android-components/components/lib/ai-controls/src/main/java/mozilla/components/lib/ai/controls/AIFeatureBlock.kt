@@ -8,16 +8,17 @@ import mozilla.components.concept.ai.controls.AIFeatureBlock
 import mozilla.components.concept.ai.controls.AIFeatureRegistry
 
 /**
- * Creates the default implementation of [AIFeatureBlock], coordinating [registry] and [storage]
- * to block or unblock all registered features.
+ * Creates the default implementation of [AIFeatureBlock], coordinating [registry] and [storage] to block or unblock all
+ * registered features.
  */
 fun AIFeatureBlock.Companion.default(
     storage: AIFeatureBlockStorage,
     registry: AIFeatureRegistry,
-): AIFeatureBlock = DefaultAIFeatureBlock(
-    storage = storage,
-    registry = registry,
-)
+): AIFeatureBlock =
+    DefaultAIFeatureBlock(
+        storage = storage,
+        registry = registry,
+    )
 
 internal class DefaultAIFeatureBlock(
     private val registry: AIFeatureRegistry,

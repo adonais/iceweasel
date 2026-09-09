@@ -5,6 +5,8 @@
 package org.mozilla.fenix.components.toolbar
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent.Source
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.support.test.robolectric.testContext
@@ -40,13 +42,10 @@ import org.mozilla.fenix.telemetry.ACTION_SHORTCUT_LONG_CLICKED
 import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
 import org.mozilla.fenix.telemetry.SOURCE_NAVIGATION_BAR
 import org.mozilla.fenix.telemetry.SURFACE_BROWSER
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 
 @RunWith(AndroidJUnit4::class)
 class BrowserToolbarTelemetryMiddlewareTest {
-    @get:Rule
-    val gleanRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanRule = FenixGleanTestRule(testContext)
 
     @Test
     fun `WHEN menu button is clicked THEN record telemetry based on browser end or navbar source`() {
@@ -108,7 +107,10 @@ class BrowserToolbarTelemetryMiddlewareTest {
     @Test
     fun `WHEN navigating back is long clicked THEN record telemetry based on browser start, end or navbar source`() {
         buildStore.dispatch(NavigateBackLongClicked(Source.AddressBar.BrowserStart))
-        assertTelemetryRecorded(Source.AddressBar.BrowserStart, item = ToolbarActionRecord.NavigateBackLongClicked.action)
+        assertTelemetryRecorded(
+            Source.AddressBar.BrowserStart,
+            item = ToolbarActionRecord.NavigateBackLongClicked.action,
+        )
 
         buildStore.dispatch(NavigateBackLongClicked(Source.AddressBar.BrowserEnd))
         assertTelemetryRecorded(Source.AddressBar.BrowserEnd, item = ToolbarActionRecord.NavigateBackLongClicked.action)
@@ -120,13 +122,19 @@ class BrowserToolbarTelemetryMiddlewareTest {
     @Test
     fun `WHEN navigating forward THEN record browser start telemetry`() {
         buildStore.dispatch(NavigateForwardClicked)
-        assertTelemetryRecorded(Source.AddressBar.BrowserStart, item = ToolbarActionRecord.NavigateForwardClicked.action)
+        assertTelemetryRecorded(
+            Source.AddressBar.BrowserStart,
+            item = ToolbarActionRecord.NavigateForwardClicked.action,
+        )
     }
 
     @Test
     fun `WHEN navigating forward is long clicked THEN record browser start telemetry`() {
         buildStore.dispatch(NavigateForwardLongClicked)
-        assertTelemetryRecorded(Source.AddressBar.BrowserStart, item = ToolbarActionRecord.NavigateForwardLongClicked.action)
+        assertTelemetryRecorded(
+            Source.AddressBar.BrowserStart,
+            item = ToolbarActionRecord.NavigateForwardLongClicked.action,
+        )
     }
 
     @Test
@@ -242,10 +250,12 @@ class BrowserToolbarTelemetryMiddlewareTest {
         assertNotNull(Toolbar.buttonTapped.testGetValue())
         val snapshot = Toolbar.buttonTapped.testGetValue()!!
         val last = snapshot.last()
-        val expectedSource = when (source) {
-            is Source.AddressBar, Source.Unknown -> SOURCE_ADDRESS_BAR
-            Source.NavigationBar -> SOURCE_NAVIGATION_BAR
-        }
+        val expectedSource =
+            when (source) {
+                is Source.AddressBar,
+                Source.Unknown -> SOURCE_ADDRESS_BAR
+                Source.NavigationBar -> SOURCE_NAVIGATION_BAR
+            }
         assertEquals(item, last.extra?.getValue("item"))
         assertEquals(expectedSource, last.extra?.getValue("source"))
         assertEquals(SURFACE_BROWSER, last.extra?.getValue("surface"))
@@ -256,7 +266,5 @@ class BrowserToolbarTelemetryMiddlewareTest {
         }
     }
 
-    private val buildStore = BrowserToolbarStore(
-        middleware = listOf(BrowserToolbarTelemetryMiddleware()),
-    )
+    private val buildStore = BrowserToolbarStore(middleware = listOf(BrowserToolbarTelemetryMiddleware()))
 }

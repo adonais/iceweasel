@@ -52,12 +52,13 @@ class RecentAppStorageTest {
         val thirdActivityName = "third"
         val fourthActivityName = "fourth"
         val currentApps = listOf(firstActivityName, secondActivityName, thirdActivityName, fourthActivityName)
-        val appsInDatabase = listOf(
-            RecentAppEntity(firstActivityName),
-            RecentAppEntity(secondActivityName),
-            RecentAppEntity(thirdActivityName),
-            RecentAppEntity(fourthActivityName),
-        )
+        val appsInDatabase =
+            listOf(
+                RecentAppEntity(firstActivityName),
+                RecentAppEntity(secondActivityName),
+                RecentAppEntity(thirdActivityName),
+                RecentAppEntity(fourthActivityName),
+            )
 
         recentAppsStorage.updateDatabaseWithNewApps(currentApps)
 

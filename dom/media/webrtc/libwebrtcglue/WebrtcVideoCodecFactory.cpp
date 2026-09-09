@@ -29,6 +29,7 @@ namespace mozilla {
 enum EncoderCreationStrategy {
   PreferWebRTCEncoder = 0,
   PreferPlatformEncoder = 1,
+  PreferHwPlatformEncoder = 2,
 };
 
 /* static */
@@ -87,6 +88,14 @@ media::EncodeSupportSet WebrtcVideoEncoderFactory::SupportsCodec(
     case EncoderCreationStrategy::PreferPlatformEncoder: {
       return MediaDataCodec::SupportsEncoderCodec(aConfig) + libwebrtcSupport;
     }
+    case EncoderCreationStrategy::PreferHwPlatformEncoder: {
+      if (libwebrtcSupport.isEmpty()) {
+        return MediaDataCodec::SupportsEncoderCodec(aConfig);
+      }
+      return (MediaDataCodec::SupportsEncoderCodec(aConfig) -
+              media::EncodeSupport::SoftwareEncode) +
+             libwebrtcSupport;
+    }
   }
   return {};
 }
@@ -106,7 +115,7 @@ std::unique_ptr<webrtc::VideoDecoder> WebrtcVideoDecoderFactory::Create(
     case webrtc::VideoCodecType::kVideoCodecH264: {
       // Get an external decoder
       auto gmpDecoder = GmpVideoCodec::CreateDecoder(mPCHandle, mTrackingId);
-      {
+      if (gmpDecoder) {
         MutexAutoLock lock(mGmpPluginMutex);
         mCreatedGmpPluginEvent.Forward(*gmpDecoder->InitPluginEvent());
         mReleasedGmpPluginEvent.Forward(*gmpDecoder->ReleasePluginEvent());
@@ -189,8 +198,9 @@ WebrtcVideoEncoderFactory::InternalFactory::Create(
 
   std::unique_ptr<webrtc::VideoEncoder> platformEncoder;
 
-  auto createPlatformEncoder = [&]() -> std::unique_ptr<webrtc::VideoEncoder> {
-    return MediaDataCodec::CreateEncoder(aFormat);
+  auto createPlatformEncoder = [&](HardwarePreference aHardwarePref)
+      -> std::unique_ptr<webrtc::VideoEncoder> {
+    return MediaDataCodec::CreateEncoder(aFormat, aHardwarePref);
   };
 
   auto createWebRTCEncoder =
@@ -200,7 +210,7 @@ WebrtcVideoEncoderFactory::InternalFactory::Create(
       case webrtc::VideoCodecType::kVideoCodecH264: {
         // get an external encoder
         auto gmpEncoder = GmpVideoCodec::CreateEncoder(aFormat, mPCHandle);
-        {
+        if (gmpEncoder) {
           MutexAutoLock lock(mGmpPluginMutex);
           mCreatedGmpPluginEvent.Forward(*gmpEncoder->InitPluginEvent());
           mReleasedGmpPluginEvent.Forward(*gmpEncoder->ReleasePluginEvent());
@@ -238,13 +248,18 @@ WebrtcVideoEncoderFactory::InternalFactory::Create(
         NS_WARNING(
             "Failed creating libwebrtc video encoder, falling back on platform "
             "encoder");
-        return createPlatformEncoder();
+        return createPlatformEncoder(HardwarePreference::None);
       }
       return encoder;
     }
     case EncoderCreationStrategy::PreferPlatformEncoder:
-      platformEncoder = createPlatformEncoder();
+    case EncoderCreationStrategy::PreferHwPlatformEncoder:
       encoder = createWebRTCEncoder();
+      platformEncoder = createPlatformEncoder(
+          encoder &&
+                  strategy == EncoderCreationStrategy::PreferHwPlatformEncoder
+              ? HardwarePreference::RequireHardware
+              : HardwarePreference::None);
       if (encoder && platformEncoder) {
         return webrtc::CreateVideoEncoderSoftwareFallbackWrapper(
             aEnv, std::move(encoder), std::move(platformEncoder), false);

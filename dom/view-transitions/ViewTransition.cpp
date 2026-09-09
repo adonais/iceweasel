@@ -72,7 +72,7 @@ static CSSToCSSMatrix4x4Flagged EffectiveTransform(nsIFrame* aFrame) {
       nsLayoutUtils::GetTransformToAncestor(
           RelativeTo{aFrame},
           RelativeTo{nsLayoutUtils::GetContainingBlockForClientRect(aFrame)},
-          nsIFrame::IN_CSS_UNITS, nullptr));
+          TransformMatrixFlag::InCSSUnits, nullptr));
 
   // Compensate for the default transform-origin of 50% 50% using border box
   // dimensions.

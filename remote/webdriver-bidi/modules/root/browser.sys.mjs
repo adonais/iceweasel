@@ -137,9 +137,19 @@ class BrowserModule extends RootBiDiModule {
     // A set of internal user context ids to keep track of user contexts
     // which had insecure certificates overrides set for them.
     this.#userContextsWithInsecureCertificatesOverrides = new Set();
+
+    lazy.UserContextManager.on(
+      "user-context-deleted",
+      this.#onUserContextDeleted
+    );
   }
 
   destroy() {
+    lazy.UserContextManager.off(
+      "user-context-deleted",
+      this.#onUserContextDeleted
+    );
+
     this.#downloadBehaviorManager.destroy();
     this.#downloadBehaviorManager = null;
 
@@ -434,12 +444,7 @@ class BrowserModule extends RootBiDiModule {
     });
 
     // Reset the state to clean up the platform state.
-    lazy.Certificates.resetSecurityChecksForUserContext(internalId);
-    this.#userContextsWithInsecureCertificatesOverrides.delete(internalId);
-
-    this.#proxyManager.deleteConfiguration(internalId);
-
-    this.#downloadBehaviorManager.setUserContextBehavior(internalId, null);
+    this.#cleanupUserContextState(internalId);
   }
 
   /**
@@ -537,6 +542,13 @@ class BrowserModule extends RootBiDiModule {
     return this.#getClientWindowInfo(window);
   }
 
+  #cleanupUserContextState(internalId) {
+    lazy.Certificates.resetSecurityChecksForUserContext(internalId);
+    this.#userContextsWithInsecureCertificatesOverrides.delete(internalId);
+    this.#proxyManager.deleteConfiguration(internalId);
+    this.#downloadBehaviorManager.setUserContextBehavior(internalId, null);
+  }
+
   #getClientWindowInfo(window) {
     const { height, width, x, y } = lazy.windowManager.getWindowRect(window);
 
@@ -550,6 +562,13 @@ class BrowserModule extends RootBiDiModule {
       y,
     };
   }
+
+  #onUserContextDeleted = (eventName, data = {}) => {
+    const { internalId } = data;
+    if (internalId !== undefined) {
+      this.#cleanupUserContextState(internalId);
+    }
+  };
 
   async #setClientWindowState(window, state) {
     const currentState = lazy.WindowState.from(window.windowState);

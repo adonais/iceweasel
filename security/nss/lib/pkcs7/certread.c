@@ -380,7 +380,7 @@ CERT_DecodeCertPackage(char *certbuf,
     }
 
 /* now look for a netscape base64 ascii encoded cert */
-notder : {
+notder: {
     unsigned char *certbegin = NULL;
     unsigned char *certend = NULL;
     char *pc;

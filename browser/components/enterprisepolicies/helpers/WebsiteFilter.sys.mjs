@@ -30,6 +30,10 @@ const PREF_LOGLEVEL = "browser.policies.loglevel";
 
 const lazy = {};
 
+ChromeUtils.defineESModuleGetters(lazy, {
+  ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
+});
+
 ChromeUtils.defineLazyGetter(lazy, "log", () => {
   let { ConsoleAPI } = ChromeUtils.importESModule(
     "resource://gre/modules/Console.sys.mjs"
@@ -116,14 +120,14 @@ export let WebsiteFilter = {
     let url = contentLocation.spec.toLowerCase();
     if (contentLocation.scheme == "view-source") {
       url = contentLocation.pathQueryRef;
-    } else if (url.startsWith("about:reader?url=")) {
-      url = decodeURIComponent(url.substr(17));
+    } else if (url.startsWith("about:reader?")) {
+      url = lazy.ReaderMode.getOriginalUrl(url);
     }
     if (
       contentType == Ci.nsIContentPolicy.TYPE_DOCUMENT ||
       contentType == Ci.nsIContentPolicy.TYPE_SUBDOCUMENT
     ) {
-      if (!this.isAllowed(url)) {
+      if (!url || !this.isAllowed(url)) {
         return Ci.nsIContentPolicy.REJECT_POLICY;
       }
     }

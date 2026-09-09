@@ -134,7 +134,7 @@ aboutaddons-themes-mode {
   addon-page-header[current-view="list"][type="theme"] & {
     display: block;
     margin-inline-start: var(--main-margin-start);
-    width: calc(var(--page-main-content-width) - var(--space-medium));
+    width: var(--page-main-content-width);
 
     @media not -moz-pref("browser.nova.enabled") {
       display: none;

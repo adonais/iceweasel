@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.components.metrics
 
+import kotlin.test.assertNotNull
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -13,7 +14,6 @@ import org.mozilla.fenix.components.metrics.fake.FakeGleanProfileIdStore
 import org.mozilla.fenix.components.metrics.fake.FakeGleanUsageReporting
 import org.mozilla.fenix.components.metrics.fake.FakeLifecycleEventObserver
 import org.mozilla.fenix.components.metrics.fake.FakeLifecycleOwner
-import kotlin.test.assertNotNull
 
 internal class GleanUsageReportingMetricsServiceTest {
 
@@ -85,11 +85,12 @@ internal class GleanUsageReportingMetricsServiceTest {
         assertTrue(fakeGleanUsageReporting.dataDeletionRequested!!)
     }
 
-    private fun createGleanUsageReportingMetricsService() = GleanUsageReportingMetricsService(
-        lifecycleOwner = fakeLifecycleOwner,
-        gleanUsageReportingLifecycleObserver = fakeLifecycleEventObserver,
-        gleanUsageReporting = fakeGleanUsageReporting,
-        gleanProfileId = FakeGleanProfileId(),
-        gleanProfileIdStore = FakeGleanProfileIdStore(),
-    )
+    private fun createGleanUsageReportingMetricsService() =
+        GleanUsageReportingMetricsService(
+            lifecycleOwner = fakeLifecycleOwner,
+            gleanUsageReportingLifecycleObserver = fakeLifecycleEventObserver,
+            gleanUsageReporting = fakeGleanUsageReporting,
+            gleanProfileId = FakeGleanProfileId(),
+            gleanProfileIdStore = FakeGleanProfileIdStore(),
+        )
 }

@@ -6,10 +6,7 @@
 
 // validationES31.cpp: Validation functions for OpenGL ES 3.1 entry point parameters
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
+#include "common/unsafe_buffers.h"
 #include "libANGLE/validationES31_autogen.h"
 
 #include "libANGLE/Context.h"
@@ -1083,19 +1080,19 @@ bool ValidateGetMultisamplefvRobustANGLE(const Context *context,
 bool ValidateFramebufferParameteri(const Context *context,
                                    angle::EntryPoint entryPoint,
                                    GLenum target,
-                                   GLenum pname,
+                                   FramebufferParameter pnamePacked,
                                    GLint param)
 {
-    return ValidateFramebufferParameteriBase(context, entryPoint, target, pname, param);
+    return ValidateFramebufferParameteriBase(context, entryPoint, target, pnamePacked, param);
 }
 
 bool ValidateGetFramebufferParameteriv(const Context *context,
                                        angle::EntryPoint entryPoint,
                                        GLenum target,
-                                       GLenum pname,
+                                       FramebufferParameter pnamePacked,
                                        const GLint *params)
 {
-    return ValidateGetFramebufferParameterivBase(context, entryPoint, target, pname, params);
+    return ValidateGetFramebufferParameterivBase(context, entryPoint, target, pnamePacked, params);
 }
 
 bool ValidateGetProgramResourceIndex(const Context *context,
@@ -1436,7 +1433,8 @@ bool ValidateBindImageTexture(const Context *context,
             return false;
         }
 
-        if (!tex->getImmutableFormat() && tex->getType() != gl::TextureType::Buffer)
+        if (tex->getType() != gl::TextureType::External &&
+            tex->getType() != gl::TextureType::Buffer && !tex->getImmutableFormat())
         {
             ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION,
                                    kTextureIsNeitherImmutableNorTextureBuffer);
@@ -1525,12 +1523,13 @@ bool ValidateGetProgramResourceiv(const Context *context,
     }
     for (GLsizei i = 0; i < propCount; i++)
     {
-        if (!ValidateProgramResourceProperty(context, entryPoint, props[i]))
+        if (!ValidateProgramResourceProperty(context, entryPoint, ANGLE_UNSAFE_TODO(props[i])))
         {
             ANGLE_VALIDATION_ERROR(GL_INVALID_ENUM, kInvalidProgramResourceProperty);
             return false;
         }
-        if (!ValidateProgramResourcePropertyByInterface(props[i], programInterface))
+        if (!ValidateProgramResourcePropertyByInterface(ANGLE_UNSAFE_TODO(props[i]),
+                                                        programInterface))
         {
             ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kInvalidPropertyForProgramInterface);
             return false;
@@ -1623,13 +1622,6 @@ bool ValidateBindProgramPipelineBase(const Context *context,
         return false;
     }
 
-    return true;
-}
-
-bool ValidateIsProgramPipelineBase(const Context *context,
-                                   angle::EntryPoint entryPoint,
-                                   ProgramPipelineID pipeline)
-{
     return true;
 }
 
@@ -1939,13 +1931,6 @@ bool ValidateGetProgramPipelineiv(const Context *context,
                                   const GLint *params)
 {
     return ValidateGetProgramPipelineivBase(context, entryPoint, pipelinePacked, pname, params);
-}
-
-bool ValidateIsProgramPipeline(const Context *context,
-                               angle::EntryPoint entryPoint,
-                               ProgramPipelineID pipelinePacked)
-{
-    return ValidateIsProgramPipelineBase(context, entryPoint, pipelinePacked);
 }
 
 bool ValidateProgramUniform1f(const Context *context,
@@ -2398,14 +2383,6 @@ bool ValidateSampleMaski(const PrivateState &state,
     return ValidateSampleMaskiBase(state, errors, entryPoint, maskNumber, mask);
 }
 
-bool ValidateMinSampleShadingOES(const PrivateState &state,
-                                 ErrorSet *errors,
-                                 angle::EntryPoint entryPoint,
-                                 GLfloat value)
-{
-    return true;
-}
-
 bool ValidateFramebufferTextureCommon(const Context *context,
                                       angle::EntryPoint entryPoint,
                                       GLenum target,
@@ -2437,6 +2414,21 @@ bool ValidateFramebufferTextureCommon(const Context *context,
         {
             ANGLE_VALIDATION_ERROR(GL_INVALID_VALUE, kInvalidMipLevel);
             return false;
+        }
+
+        if (tex->getType() == TextureType::External)
+        {
+            if (!context->getExtensions().YUVTargetEXT)
+            {
+                ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kYUVTargetExtensionRequired);
+                return false;
+            }
+
+            if (attachment != GL_COLOR_ATTACHMENT0)
+            {
+                ANGLE_VALIDATION_ERROR(GL_INVALID_OPERATION, kInvalidAttachment);
+                return false;
+            }
         }
 
         // GLES spec 3.2, Section 9.2.8 "Attaching Texture Images to a Framebuffer"
@@ -2686,27 +2678,15 @@ bool ValidatePatchParameteriBase(const PrivateState &state,
                                  GLenum pname,
                                  GLint value)
 {
-    if (state.getClientVersion() < ES_3_1)
-    {
-        errors->validationError(entryPoint, GL_INVALID_OPERATION, kES31Required);
-        return false;
-    }
-
-    if (pname != GL_PATCH_VERTICES)
+    if (ANGLE_UNLIKELY(pname != GL_PATCH_VERTICES))
     {
         errors->validationError(entryPoint, GL_INVALID_ENUM, kInvalidPname);
         return false;
     }
 
-    if (value <= 0)
+    if (ANGLE_UNLIKELY(value <= 0 || value > state.getCaps().maxPatchVertices))
     {
-        errors->validationError(entryPoint, GL_INVALID_VALUE, kInvalidValueNonPositive);
-        return false;
-    }
-
-    if (value > state.getCaps().maxPatchVertices)
-    {
-        errors->validationError(entryPoint, GL_INVALID_VALUE, kInvalidValueExceedsMaxPatchSize);
+        errors->validationError(entryPoint, GL_INVALID_VALUE, kInvalidPatchVerticesValue);
         return false;
     }
 

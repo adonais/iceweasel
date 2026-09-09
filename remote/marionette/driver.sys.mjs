@@ -12,6 +12,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   assert: "chrome://remote/content/shared/webdriver/Assert.sys.mjs",
   browser: "chrome://remote/content/marionette/browser.sys.mjs",
   capture: "chrome://remote/content/shared/Capture.sys.mjs",
+  ConnectionPrompt:
+    "chrome://remote/content/shared/webdriver/ConnectionPrompt.sys.mjs",
+  ConnectionPromptResult:
+    "chrome://remote/content/shared/webdriver/ConnectionPrompt.sys.mjs",
   Context: "chrome://remote/content/marionette/browser.sys.mjs",
   cookie: "chrome://remote/content/marionette/cookie.sys.mjs",
   disableEventsActor:
@@ -331,6 +335,7 @@ export class GeckoDriver {
   #reftest;
   #server;
   #sessionConfigFlags;
+  #sessionCreationPending;
 
   constructor(server) {
     this.#server = server;
@@ -386,6 +391,10 @@ export class GeckoDriver {
     this.#sessionConfigFlags = new Set([
       lazy.WebDriverSession.SESSION_FLAG_HTTP,
     ]);
+
+    // Set when creating sessions for dynamic non-automation servers, while we
+    // wait for the user to accept or deny the connection.
+    this.#sessionCreationPending = false;
   }
 
   /**
@@ -1649,7 +1658,7 @@ export class GeckoDriver {
    *     Reference ID to the element that will be inspected.
    *
    * @returns {string}
-   *     Local tag name of element.
+   *     Qualified name of the element.
    *
    * @throws {InvalidArgumentError}
    *     If <var>id</var> is not a string.
@@ -2462,6 +2471,12 @@ export class GeckoDriver {
       );
     }
 
+    if (this.#sessionCreationPending) {
+      throw new lazy.error.SessionNotCreatedError(
+        "Maximum number of active sessions (session creation in progress)"
+      );
+    }
+
     const { parameters: capabilities } = cmd;
 
     try {
@@ -2475,6 +2490,25 @@ export class GeckoDriver {
       } else {
         // If it's not the case then Marionette itself needs to handle it, and
         // has to nullify the "webSocketUrl" capability.
+
+        // Sessions unrelated to browser automation need an explicit user
+        // confirmation. When WebDriverBiDi is enabled this is handled by
+        // WebDriverBiDi.createSession, which checks the Remote Agent flag:
+        // both servers are always started with the same isBrowserAutomation.
+        if (!lazy.Marionette.isBrowserAutomationRunning) {
+          this.#sessionCreationPending = true;
+          try {
+            const promptResult = await lazy.ConnectionPrompt.show();
+            if (promptResult === lazy.ConnectionPromptResult.DENY) {
+              throw new lazy.error.SessionNotCreatedError(
+                "The connection was denied by the user"
+              );
+            }
+          } finally {
+            this.#sessionCreationPending = false;
+          }
+        }
+
         this.#currentSession = new lazy.WebDriverSession(
           capabilities,
           this.#sessionConfigFlags

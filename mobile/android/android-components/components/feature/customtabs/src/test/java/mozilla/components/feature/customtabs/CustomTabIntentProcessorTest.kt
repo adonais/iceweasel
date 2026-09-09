@@ -9,6 +9,8 @@ import android.os.Bundle
 import android.provider.Browser
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.CustomTabListAction
 import mozilla.components.browser.state.action.EngineAction
@@ -34,24 +36,17 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito.verify
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class CustomTabIntentProcessorTest {
     @Test
     fun processCustomTabIntentWithDefaultHandlers() {
         val middleware = CaptureActionsMiddleware<BrowserState, BrowserAction>()
-        val store = BrowserStore(
-            middleware = listOf(middleware) + EngineMiddleware.create(
-                engine = mock(),
-            ),
-        )
+        val store = BrowserStore(middleware = listOf(middleware) + EngineMiddleware.create(engine = mock()))
         val useCases = SessionUseCases(store)
         val customTabsUseCases = CustomTabsUseCases(store, useCases.loadUrl)
 
-        val handler =
-            CustomTabIntentProcessor(customTabsUseCases.add, testContext.resources)
+        val handler = CustomTabIntentProcessor(customTabsUseCases.add, testContext.resources)
 
         val intent = mock<Intent>()
         whenever(intent.action).thenReturn(Intent.ACTION_VIEW)
@@ -86,16 +81,11 @@ class CustomTabIntentProcessorTest {
     @Test
     fun processCustomTabIntentWithAdditionalHeaders() {
         val middleware = CaptureActionsMiddleware<BrowserState, BrowserAction>()
-        val store = BrowserStore(
-            middleware = listOf(middleware) + EngineMiddleware.create(
-                engine = mock(),
-            ),
-        )
+        val store = BrowserStore(middleware = listOf(middleware) + EngineMiddleware.create(engine = mock()))
         val useCases = SessionUseCases(store)
         val customTabsUseCases = CustomTabsUseCases(store, useCases.loadUrl)
 
-        val handler =
-            CustomTabIntentProcessor(customTabsUseCases.add, testContext.resources)
+        val handler = CustomTabIntentProcessor(customTabsUseCases.add, testContext.resources)
 
         val intent = mock<Intent>()
         whenever(intent.action).thenReturn(Intent.ACTION_VIEW)
@@ -103,9 +93,10 @@ class CustomTabIntentProcessorTest {
         whenever(intent.dataString).thenReturn("http://mozilla.org")
         whenever(intent.putExtra(any<String>(), any<String>())).thenReturn(intent)
 
-        val headersBundle = Bundle().apply {
-            putString("X-Extra-Header", "true")
-        }
+        val headersBundle =
+            Bundle().apply {
+                putString("X-Extra-Header", "true")
+            }
         whenever(intent.getBundleExtra(Browser.EXTRA_HEADERS)).thenReturn(headersBundle)
         val headers = handler.getAdditionalHeaders(intent.toSafeIntent())
 
@@ -137,16 +128,11 @@ class CustomTabIntentProcessorTest {
     @Test
     fun processPrivateCustomTabIntentWithDefaultHandlers() {
         val middleware = CaptureActionsMiddleware<BrowserState, BrowserAction>()
-        val store = BrowserStore(
-            middleware = listOf(middleware) + EngineMiddleware.create(
-                engine = mock(),
-            ),
-        )
+        val store = BrowserStore(middleware = listOf(middleware) + EngineMiddleware.create(engine = mock()))
         val useCases = SessionUseCases(store)
         val customTabsUseCases = CustomTabsUseCases(store, useCases.loadUrl)
 
-        val handler =
-            CustomTabIntentProcessor(customTabsUseCases.add, testContext.resources, true)
+        val handler = CustomTabIntentProcessor(customTabsUseCases.add, testContext.resources, true)
 
         val intent = mock<Intent>()
         whenever(intent.action).thenReturn(Intent.ACTION_VIEW)

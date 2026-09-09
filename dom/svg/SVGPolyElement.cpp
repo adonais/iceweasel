@@ -86,42 +86,41 @@ void SVGPolyElement::GetMarkPoints(nsTArray<SVGMark>* aMarks) {
   aMarks->LastElement().type = SVGMark::Type::End;
 }
 
-bool SVGPolyElement::GetGeometryBounds(Rect* aBounds,
-                                       const StrokeOptions& aStrokeOptions,
-                                       const Matrix& aToBoundsSpace,
-                                       const Matrix* aToNonScalingStrokeSpace) {
+Maybe<Rect> SVGPolyElement::GetGeometryBounds(
+    const StrokeOptions& aStrokeOptions, const Matrix& aToBoundsSpace,
+    const Matrix* aToNonScalingStrokeSpace) {
   const SVGPointList& points = mPoints.GetAnimValue();
 
   if (points.IsEmpty()) {
     // Rendering of the element is disabled
-    aBounds->SetEmpty();
-    return true;
+    return Some(Rect());
   }
 
   if (aStrokeOptions.mLineWidth > 0 || aToNonScalingStrokeSpace) {
     // We don't handle non-scaling-stroke or stroke-miterlimit etc. yet
-    return false;
+    return Nothing();
   }
 
   float zoom = UserSpaceMetrics::GetZoom(this);
 
+  Rect bounds;
   if (aToBoundsSpace.IsRectilinear()) {
     // We can avoid transforming each point and just transform the result.
     // Important for large point lists.
 
-    Rect bounds(Point(points[0]) * zoom, Size());
+    bounds = Rect(Point(points[0]) * zoom, Size());
     for (uint32_t i = 1; i < points.Length(); ++i) {
       bounds.ExpandToEnclose(Point(points[i]) * zoom);
     }
-    *aBounds = aToBoundsSpace.TransformBounds(bounds);
+    bounds = aToBoundsSpace.TransformBounds(bounds);
   } else {
-    *aBounds =
+    bounds =
         Rect(aToBoundsSpace.TransformPoint(Point(points[0]) * zoom), Size());
     for (uint32_t i = 1; i < points.Length(); ++i) {
-      aBounds->ExpandToEnclose(
+      bounds.ExpandToEnclose(
           aToBoundsSpace.TransformPoint(Point(points[i]) * zoom));
     }
   }
-  return aBounds->IsFinite();
+  return bounds.IsFinite() ? Some(bounds) : Nothing();
 }
 }  // namespace mozilla::dom

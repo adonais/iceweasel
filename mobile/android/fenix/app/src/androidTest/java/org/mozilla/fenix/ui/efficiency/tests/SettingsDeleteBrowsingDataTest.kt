@@ -15,9 +15,12 @@ import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
 
 class SettingsDeleteBrowsingDataTest : BaseTest() {
 
-    private val mockWebServer get() = fenixTestRule.mockWebServer
+    private val mockWebServer
+        get() = fenixTestRule.mockWebServer
 
-    @Ignore("Covered by verifyNavigationReachability[1: SettingsDeleteBrowsingDataPage (TBD) — Navigation Reachability]")
+    @Ignore(
+        "Covered by verifyNavigationReachability[1: SettingsDeleteBrowsingDataPage (TBD) — Navigation Reachability]"
+    )
     @Test
     fun verifyTheDeleteBrowsingDataSectionTest() {
         on.settingsDeleteBrowsingData.navigateToPage()
@@ -31,7 +34,8 @@ class SettingsDeleteBrowsingDataTest : BaseTest() {
 
         on.browserPage.navigateToPage(defaultWebPage.url.toString())
 
-        on.settingsDeleteBrowsingData.navigateToPage()
+        on.settingsDeleteBrowsingData
+            .navigateToPage()
             .verifyAllCheckBoxesAreChecked()
             .selectOnlyOpenTabsCheckBox()
             .clickDeleteBrowsingDataButton()
@@ -43,8 +47,7 @@ class SettingsDeleteBrowsingDataTest : BaseTest() {
             .confirmDeletionAndAssertSnackbar()
             .verifyOpenTabsDetails("0")
 
-        on.tabDrawer.navigateToPage()
-            .verifyNoOpenTabsInNormalBrowsing()
+        on.tabDrawer.navigateToPage().verifyNoOpenTabsInNormalBrowsing()
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/378864
@@ -55,7 +58,8 @@ class SettingsDeleteBrowsingDataTest : BaseTest() {
 
         on.browserPage.navigateToPage(genericPage.url.toString())
 
-        on.settingsDeleteBrowsingData.navigateToPage()
+        on.settingsDeleteBrowsingData
+            .navigateToPage()
             .verifyBrowsingHistoryDetails("1")
             .selectOnlyBrowsingHistoryCheckBox()
             .clickDeleteBrowsingDataButton()
@@ -67,8 +71,7 @@ class SettingsDeleteBrowsingDataTest : BaseTest() {
             .confirmDeletionAndAssertSnackbar()
             .verifyBrowsingHistoryDetails("0")
 
-        on.history.navigateToPage()
-            .mozVerifyElementsByGroup("emptyHistoryMenuView")
+        on.history.navigateToPage().mozVerifyElementsByGroup("emptyHistoryMenuView")
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/416041
@@ -82,7 +85,8 @@ class SettingsDeleteBrowsingDataTest : BaseTest() {
         // Browse a generic page first so GeckoView is loaded on a fresh run.
         on.browserPage.navigateToPage(genericPage.url.toString())
 
-        on.browserPage.navigateToPage(storageWritePage, forceNavigation = true)
+        on.browserPage
+            .navigateToPage(storageWritePage, forceNavigation = true)
             .verifyPageContent("No cookies set")
             .clickPageObjectUntilContent(
                 BrowserPageSelectors.SET_COOKIES_WEB_BUTTON,
@@ -90,11 +94,13 @@ class SettingsDeleteBrowsingDataTest : BaseTest() {
                 "user=android",
             )
 
-        on.browserPage.navigateToPage(storageCheckPage, forceNavigation = true)
+        on.browserPage
+            .navigateToPage(storageCheckPage, forceNavigation = true)
             .verifyPageContent("Session storage has value")
             .verifyPageContent("Local storage has value")
 
-        on.settingsDeleteBrowsingData.navigateToPage()
+        on.settingsDeleteBrowsingData
+            .navigateToPage()
             .selectOnlyCookiesCheckBox()
             .clickDeleteBrowsingDataButton()
             .verifyDeleteBrowsingDataDialog()
@@ -104,11 +110,11 @@ class SettingsDeleteBrowsingDataTest : BaseTest() {
             .verifyDeleteBrowsingDataDialog()
             .confirmDeletionAndAssertSnackbar()
 
-        on.browserPage.navigateToPage(storageCheckPage, forceNavigation = true)
+        on.browserPage
+            .navigateToPage(storageCheckPage, forceNavigation = true)
             .verifyPageContent("Session storage empty")
             .verifyPageContent("Local storage empty")
 
-        on.browserPage.navigateToPage(storageWritePage, forceNavigation = true)
-            .verifyPageContent("No cookies set")
+        on.browserPage.navigateToPage(storageWritePage, forceNavigation = true).verifyPageContent("No cookies set")
     }
 }

@@ -21,9 +21,7 @@ import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.tabs.CustomTabsUseCases
 import mozilla.components.support.utils.toSafeIntent
 
-/**
- * Processor for intents which trigger actions related to web apps.
- */
+/** Processor for intents which trigger actions related to web apps. */
 class WebAppIntentProcessor(
     private val store: BrowserStore,
     private val addTabUseCase: CustomTabsUseCases.AddWebAppTabUseCase,
@@ -31,17 +29,14 @@ class WebAppIntentProcessor(
     private val storage: ManifestStorage,
 ) : IntentProcessor {
 
-    /**
-     * Returns true if this intent should launch a progressive web app.
-     */
-    private fun matches(intent: Intent) =
-        intent.toSafeIntent().action == ACTION_VIEW_PWA
+    /** Returns true if this intent should launch a progressive web app. */
+    private fun matches(intent: Intent) = intent.toSafeIntent().action == ACTION_VIEW_PWA
 
     /**
      * Processes the given [Intent] by creating a [Session] with a corresponding web app manifest.
      *
-     * A custom tab config is also set so a custom tab toolbar can be shown when the user leaves
-     * the scope defined in the manifest.
+     * A custom tab config is also set so a custom tab toolbar can be shown when the user leaves the scope defined in
+     * the manifest.
      */
     override fun process(intent: Intent): Boolean {
         val url = intent.toSafeIntent().dataString
@@ -67,19 +62,17 @@ class WebAppIntentProcessor(
         }
     }
 
-    /**
-     * Returns an existing web app session that matches the manifest.
-     */
+    /** Returns an existing web app session that matches the manifest. */
     private fun findExistingSession(webAppManifest: WebAppManifest): String? {
-        return store.state.customTabs.find { tab ->
-            tab.config.externalAppType == ExternalAppType.PROGRESSIVE_WEB_APP &&
-                tab.content.webAppManifest?.startUrl == webAppManifest.startUrl
-        }?.id
+        return store.state.customTabs
+            .find { tab ->
+                tab.config.externalAppType == ExternalAppType.PROGRESSIVE_WEB_APP &&
+                    tab.content.webAppManifest?.startUrl == webAppManifest.startUrl
+            }
+            ?.id
     }
 
-    /**
-     * Returns a new web app session.
-     */
+    /** Returns a new web app session. */
     private fun createSession(webAppManifest: WebAppManifest, url: String): String {
         return addTabUseCase.invoke(
             url = url,

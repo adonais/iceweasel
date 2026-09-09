@@ -41,10 +41,8 @@ struct NumberPart {
   NumberPartSource source;
   size_t endIndex;
 
-  bool operator==(const NumberPart& rhs) const {
-    return type == rhs.type && source == rhs.source && endIndex == rhs.endIndex;
-  }
-  bool operator!=(const NumberPart& rhs) const { return !(*this == rhs); }
+  bool operator==(const NumberPart& rhs) const = default;
+  bool operator!=(const NumberPart& rhs) const = default;
 };
 
 using NumberPartVector = mozilla::Vector<NumberPart, 8>;

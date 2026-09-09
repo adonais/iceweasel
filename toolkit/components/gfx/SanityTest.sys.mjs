@@ -391,7 +391,7 @@ SanityTest.prototype = {
         PAGE_WIDTH +
         ",height=" +
         PAGE_HEIGHT +
-        ",chrome,titlebar=0,scrollbars=0,dialog=1",
+        ",chrome,titlebar=0,dialog=1",
       null
     );
 

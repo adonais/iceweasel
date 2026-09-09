@@ -12,6 +12,7 @@
 #include "mozilla/dom/CSSNumericValueBinding.h"
 #include "mozilla/dom/CSSScaleBinding.h"
 #include "mozilla/dom/CSSUnitValue.h"
+#include "mozilla/dom/DOMMatrix.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
 
@@ -60,21 +61,36 @@ already_AddRefed<CSSScale> CSSScale::Constructor(
     const Optional<CSSNumberish>& aZ, ErrorResult& aRv) {
   nsCOMPtr<nsISupports> global = aGlobal.GetAsSupports();
 
+  // Step 1.
+  RefPtr<CSSNumericValue> x = CSSNumericValue::Create(global, aX);
+  RefPtr<CSSNumericValue> y = CSSNumericValue::Create(global, aY);
+  RefPtr<CSSNumericValue> z =
+      aZ.WasPassed() ? CSSNumericValue::Create(global, aZ.Value()) : nullptr;
+
+  // Step 2.
+  if (!x->GetNumericType().MatchesNumber()) {
+    aRv.ThrowTypeError("X must match <number>");
+    return nullptr;
+  }
+  if (!y->GetNumericType().MatchesNumber()) {
+    aRv.ThrowTypeError("Y must match <number>");
+    return nullptr;
+  }
+  if (z && !z->GetNumericType().MatchesNumber()) {
+    aRv.ThrowTypeError("Z must match <number>");
+    return nullptr;
+  }
+
   // TODO: The spec step ordering could be adjusted to better match typical
   // implementations, which usually initialize all slots at once.
 
-  // Step 1-6.
-  RefPtr<CSSNumericValue> x = CSSNumericValue::Create(global, aX);
-  RefPtr<CSSNumericValue> y = CSSNumericValue::Create(global, aY);
-
-  if (aZ.WasPassed()) {
-    RefPtr<CSSNumericValue> z = CSSNumericValue::Create(global, aZ.Value());
-
+  // Step 3-6.
+  if (z) {
     return MakeAndAddRef<CSSScale>(std::move(global), /* aIs2D */ false,
                                    std::move(x), std::move(y), std::move(z));
   }
 
-  RefPtr<CSSUnitValue> z = CSSUnitValue::Create(global, 1.0);
+  z = CSSUnitValue::Create(global, 1.0);
 
   return MakeAndAddRef<CSSScale>(std::move(global), /* aIs2D */ true,
                                  std::move(x), std::move(y), std::move(z));
@@ -85,7 +101,15 @@ void CSSScale::GetX(OwningCSSNumberish& aRetVal) const {
 }
 
 void CSSScale::SetX(const CSSNumberish& aArg, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssscale-x
+  RefPtr<CSSNumericValue> x = CSSNumericValue::Create(mParent, aArg);
+
+  if (!x->GetNumericType().MatchesNumber()) {
+    aRv.ThrowTypeError("X must match <number>");
+    return;
+  }
+
+  mX = std::move(x);
 }
 
 void CSSScale::GetY(OwningCSSNumberish& aRetVal) const {
@@ -93,7 +117,15 @@ void CSSScale::GetY(OwningCSSNumberish& aRetVal) const {
 }
 
 void CSSScale::SetY(const CSSNumberish& aArg, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssscale-y
+  RefPtr<CSSNumericValue> y = CSSNumericValue::Create(mParent, aArg);
+
+  if (!y->GetNumericType().MatchesNumber()) {
+    aRv.ThrowTypeError("Y must match <number>");
+    return;
+  }
+
+  mY = std::move(y);
 }
 
 void CSSScale::GetZ(OwningCSSNumberish& aRetVal) const {
@@ -101,10 +133,45 @@ void CSSScale::GetZ(OwningCSSNumberish& aRetVal) const {
 }
 
 void CSSScale::SetZ(const CSSNumberish& aArg, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssscale-z
+  RefPtr<CSSNumericValue> z = CSSNumericValue::Create(mParent, aArg);
+
+  if (!z->GetNumericType().MatchesNumber()) {
+    aRv.ThrowTypeError("Z must match <number>");
+    return;
+  }
+
+  mZ = std::move(z);
 }
 
 // end of CSSScale Web IDL implementation
+
+already_AddRefed<DOMMatrix> CSSScale::ToMatrix(ErrorResult& aRv) {
+  auto matrix = MakeRefPtr<DOMMatrix>(mParent);
+
+  auto x = mX->ToStyleUnitValue("number"_ns, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  auto y = mY->ToStyleUnitValue("number"_ns, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  if (Is2D()) {
+    matrix->ScaleSelf(x->value, Optional<double>(y->value), 1, 0, 0, 0);
+  } else {
+    auto z = mZ->ToStyleUnitValue("number"_ns, aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+
+    matrix->ScaleSelf(x->value, Optional<double>(y->value), z->value, 0, 0, 0);
+  }
+
+  return matrix.forget();
+}
 
 void CSSScale::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                      nsACString& aDest) const {

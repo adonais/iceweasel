@@ -15,6 +15,7 @@
 #include "frontend/BytecodeOffset.h"  // BytecodeOffset
 #include "frontend/JumpList.h"        // JumpList, JumpTarget
 #include "frontend/ParserAtom.h"      // TaggedParserAtomIndex
+#include "frontend/SelfHostedIter.h"  // SelfHostedIter
 #include "frontend/SharedContext.h"  // StatementKind, StatementKindIsLoop, StatementKindIsUnlabeledBreakTarget
 #include "frontend/TDZCheckCache.h"  // TDZCheckCache
 #include "vm/StencilEnums.h"         // TryNoteKind
@@ -34,6 +35,21 @@ class NestableControl : public Nestable<NestableControl> {
   // The innermost scope when this was pushed.
   EmitterScope* emitterScope_;
 
+  // The expression-stack depth of this statement's body, for statements that
+  // require non-local-exit handling such as closing an iterator or executing a
+  // finally-block for a `return` or `break`. This is Nothing if no such
+  // handling is needed.
+  //
+  // emitNonLocalJump uses this to pop extra stack values before emitting exit
+  // handling. In most cases the depth already matches and this is a no-op,
+  // except for a forced return from a `yield` expression or an exit from a
+  // `finally` subroutine.
+  //
+  // This is set once, after all values that remain live throughout the body are
+  // pushed and before the body is emitted. It remains valid until the control
+  // is fully emitted and is never overwritten.
+  mozilla::Maybe<int32_t> nonLocalExitStackDepth_;
+
  protected:
   NestableControl(BytecodeEmitter* bce, StatementKind kind);
 
@@ -44,6 +60,14 @@ class NestableControl : public Nestable<NestableControl> {
   StatementKind kind() const { return kind_; }
 
   EmitterScope* emitterScope() const { return emitterScope_; }
+
+  mozilla::Maybe<int32_t> nonLocalExitStackDepth() const {
+    return nonLocalExitStackDepth_;
+  }
+  void setNonLocalExitStackDepth(int32_t stackDepth) {
+    MOZ_ASSERT(nonLocalExitStackDepth_.isNothing());
+    nonLocalExitStackDepth_ = mozilla::Some(stackDepth);
+  }
 
   template <typename T>
   bool is() const;
@@ -111,9 +135,6 @@ class LoopControl : public BreakableControl {
   // The bytecode offset of JSOp::LoopHead.
   JumpTarget head_;
 
-  // Stack depth when this loop was pushed on the control stack.
-  int32_t stackDepth_;
-
   // The loop nesting depth. Used as a hint to Ion.
   uint32_t loopDepth_;
 
@@ -139,6 +160,23 @@ class LoopControl : public BreakableControl {
 template <>
 inline bool NestableControl::is<LoopControl>() const {
   return StatementKindIsLoop(kind_);
+}
+
+class MOZ_STACK_CLASS DestructuringControl : public NestableControl {
+  SelfHostedIter selfHostedIter_;
+
+  // IteratorClose is emitted after the enclosing destructuring try-note.
+  JumpList returnJumps_;
+
+ public:
+  DestructuringControl(BytecodeEmitter* bce, SelfHostedIter selfHostedIter);
+
+  [[nodiscard]] bool emitJumpToIteratorClose(BytecodeEmitter* bce);
+  [[nodiscard]] bool emitEnd(BytecodeEmitter* bce);
+};
+template <>
+inline bool NestableControl::is<DestructuringControl>() const {
+  return kind_ == StatementKind::Destructuring;
 }
 
 enum class NonLocalExitKind { Continue, Break, Return };
@@ -201,7 +239,8 @@ class NonLocalExitControl {
 
   [[nodiscard]] bool emitNonLocalJump(NestableControl* target,
                                       NestableControl* startingAfter = nullptr);
-  [[nodiscard]] bool emitReturn(BytecodeOffset setRvalOffset);
+  [[nodiscard]] bool emitReturn(
+      BytecodeOffset setRvalOffset = BytecodeOffset::invalidOffset());
 };
 
 } /* namespace frontend */

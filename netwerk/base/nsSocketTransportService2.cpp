@@ -71,6 +71,22 @@ PRCallOnceType nsSocketTransportService::gMaxCountInitOnce;
 // Utility functions
 bool OnSocketThread() { return PR_GetCurrentThread() == gSocketThread; }
 
+nsresult DispatchToCurrent(already_AddRefed<nsIRunnable> aEvent) {
+  nsCOMPtr<nsIRunnable> event(aEvent);
+  nsISerialEventTarget* thread = GetCurrentSerialEventTarget();
+  if (!thread) {
+    // If there's no serial event target, fallback to current thread.
+    thread = NS_GetCurrentThread();
+  }
+  if (!thread) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  return thread->Dispatch(event.forget(), NS_DISPATCH_FALLIBLE);
+}
+nsresult DispatchToCurrent(nsIRunnable* aEvent) {
+  return DispatchToCurrent(do_AddRef(aEvent));
+}
+
 //-----------------------------------------------------------------------------
 
 bool nsSocketTransportService::SocketContext::IsTimedOut(

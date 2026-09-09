@@ -3,7 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 XPCSHELL_TESTS_MANIFESTS += ["tests/unit/xpcshell.toml"]
-BROWSER_CHROME_MANIFESTS += ["tests/browser/browser.toml"]
+BROWSER_CHROME_MANIFESTS += [
+    "tests/browser/browser-legacy.toml",
+    "tests/browser/browser.toml",
+]
 
 JAR_MANIFESTS += ["jar.mn"]
 

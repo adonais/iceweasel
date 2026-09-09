@@ -5,6 +5,10 @@
 package mozilla.components.lib.fetch.okhttp
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import mockwebserver3.MockResponse
@@ -16,10 +20,6 @@ import mozilla.components.tooling.fetch.tests.FetchTestCases
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertFailsWith
-import kotlin.test.assertNotNull
-import kotlin.test.assertSame
-import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class OkHttpFetchTestCases : FetchTestCases() {

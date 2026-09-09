@@ -70,6 +70,8 @@ prefs = ["security.storage.encryption.sqlite.enabled=false"]
 
 ["test_database_onclose.js"]
 
+["test_external_file_corruption.js"]
+
 ["test_fileListUpgrade.js"]
 # Bug 1996558: migrates a plaintext profile fixture that obfsvfs cannot read; runs with SQLite encryption off.
 prefs = ["security.storage.encryption.sqlite.enabled=false"]

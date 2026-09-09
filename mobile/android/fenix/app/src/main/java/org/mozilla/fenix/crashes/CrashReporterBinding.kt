@@ -18,8 +18,8 @@ import org.mozilla.fenix.components.appstate.AppState
  *
  * @param store The [AppStore] used to observe the [CrashState].
  * @param onReporting a callback that is called when [CrashState] is [CrashState.Reporting].
- * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur.
- *                       Defaults to [Dispatchers.Main].
+ * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur. Defaults to
+ *   [Dispatchers.Main].
  */
 class CrashReporterBinding(
     store: AppStore,
@@ -27,7 +27,8 @@ class CrashReporterBinding(
     mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : AbstractBinding<AppState>(store, mainDispatcher) {
     override suspend fun onState(flow: Flow<AppState>) {
-        flow.distinctUntilChangedBy { state -> state.crashState }
+        flow
+            .distinctUntilChangedBy { state -> state.crashState }
             .collect { state ->
                 if (state.crashState is CrashState.Reporting) {
                     onReporting(state.crashState.crashIDs)

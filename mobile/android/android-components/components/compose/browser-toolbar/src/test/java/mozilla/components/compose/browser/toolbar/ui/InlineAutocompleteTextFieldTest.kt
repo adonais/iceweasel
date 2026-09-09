@@ -65,8 +65,7 @@ import org.robolectric.annotation.Implements
 @RunWith(RobolectricTestRunner::class)
 class InlineAutocompleteTextFieldTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun `WHEN the query is updated THEN inform callbacks`() {
@@ -92,13 +91,14 @@ class InlineAutocompleteTextFieldTest {
 
     @Test
     fun `GIVEN a query WHEN an autocomplete suggestion is available THEN display the autocompleted query`() {
-        val suggestion = AutocompleteResult(
-            input = "moz",
-            text = "mozilla.org",
-            url = "https://mozilla.org",
-            source = "test",
-            totalItems = 1,
-        )
+        val suggestion =
+            AutocompleteResult(
+                input = "moz",
+                text = "mozilla.org",
+                url = "https://mozilla.org",
+                source = "test",
+                totalItems = 1,
+            )
 
         composeTestRule.setContent {
             InlineAutocompleteTextField(
@@ -116,13 +116,14 @@ class InlineAutocompleteTextFieldTest {
     @Test
     fun `GIVEN an autocomplete suggestion is shown WHEN the query is tapped, THEN don't do anything`() {
         val onUrlEdit: (BrowserToolbarQuery) -> Unit = mock()
-        val suggestion = AutocompleteResult(
-            input = "w",
-            text = "wikipedia.org",
-            url = "https://wikipedia.org",
-            source = "test",
-            totalItems = 1,
-        )
+        val suggestion =
+            AutocompleteResult(
+                input = "w",
+                text = "wikipedia.org",
+                url = "https://wikipedia.org",
+                source = "test",
+                totalItems = 1,
+            )
 
         composeTestRule.setContent {
             InlineAutocompleteTextField(
@@ -144,13 +145,14 @@ class InlineAutocompleteTextFieldTest {
     @Test
     fun `GIVEN an autocomplete suggestion is shown WHEN tapping outside the query, THEN commit the autocomplete suggestion`() {
         val onUrlEdit: (BrowserToolbarQuery) -> Unit = mock()
-        val suggestion = AutocompleteResult(
-            input = "w",
-            text = "wikipedia.org",
-            url = "https://wikipedia.org",
-            source = "test",
-            totalItems = 1,
-        )
+        val suggestion =
+            AutocompleteResult(
+                input = "w",
+                text = "wikipedia.org",
+                url = "https://wikipedia.org",
+                source = "test",
+                totalItems = 1,
+            )
 
         composeTestRule.setContent {
             InlineAutocompleteTextField(
@@ -172,13 +174,14 @@ class InlineAutocompleteTextFieldTest {
     @Test
     fun `GIVEN a query and suggestion are shown WHEN backspace is first pressed THEN only clear the suggestion`() {
         val onUrlEdit: (BrowserToolbarQuery) -> Unit = mock()
-        val suggestion = AutocompleteResult(
-            input = "moz",
-            text = "mozilla.org",
-            url = "https://mozilla.org",
-            source = "test",
-            totalItems = 1,
-        )
+        val suggestion =
+            AutocompleteResult(
+                input = "moz",
+                text = "mozilla.org",
+                url = "https://mozilla.org",
+                source = "test",
+                totalItems = 1,
+            )
 
         composeTestRule.setContent {
             InlineAutocompleteTextField(
@@ -233,13 +236,14 @@ class InlineAutocompleteTextFieldTest {
     @Test
     @Config(shadows = [ShadowMagnifier::class])
     fun `GIVEN an autocomplete suggestion is shown WHEN a selection is started THEN the typed query and the suggestion are selected`() {
-        val suggestion = AutocompleteResult(
-            input = "wiki",
-            text = "wikipedia.org",
-            url = "https://wikipedia.org",
-            source = "test",
-            totalItems = 1,
-        )
+        val suggestion =
+            AutocompleteResult(
+                input = "wiki",
+                text = "wikipedia.org",
+                url = "https://wikipedia.org",
+                source = "test",
+                totalItems = 1,
+            )
 
         composeTestRule.setContent {
             InlineAutocompleteTextField(
@@ -262,13 +266,14 @@ class InlineAutocompleteTextFieldTest {
     @Test
     fun `GIVEN an autocomplete suggestion is shown WHEN the text is selected and deleted via the IME THEN delete the typed text without committing the suggestion`() {
         val onUrlEdit: (BrowserToolbarQuery) -> Unit = mock()
-        val suggestion = AutocompleteResult(
-            input = "wiki",
-            text = "wikipedia.org",
-            url = "https://wikipedia.org",
-            source = "test",
-            totalItems = 1,
-        )
+        val suggestion =
+            AutocompleteResult(
+                input = "wiki",
+                text = "wikipedia.org",
+                url = "https://wikipedia.org",
+                source = "test",
+                totalItems = 1,
+            )
 
         composeTestRule.setContent {
             InlineAutocompleteTextField(
@@ -281,8 +286,7 @@ class InlineAutocompleteTextFieldTest {
             )
         }
 
-        composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX)
-            .performTextInputSelection(TextRange(0, "wiki".length))
+        composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performTextInputSelection(TextRange(0, "wiki".length))
         composeTestRule.waitForIdle()
         verify(onUrlEdit, never()).invoke(any())
 
@@ -300,7 +304,7 @@ class InlineAutocompleteTextFieldTest {
                 suggestion = null,
                 showQueryAsPreselected = false,
                 usePrivateModeQueries = false,
-                onUrlEdit = { },
+                onUrlEdit = {},
             )
         }
 
@@ -316,7 +320,7 @@ class InlineAutocompleteTextFieldTest {
                 suggestion = null,
                 showQueryAsPreselected = false,
                 usePrivateModeQueries = false,
-                onUrlEdit = { },
+                onUrlEdit = {},
             )
         }
 
@@ -340,10 +344,11 @@ class InlineAutocompleteTextFieldTest {
         val extractedText = ExtractedText()
         doReturn(extractedText).`when`(target).getExtractedText(any(), anyInt())
 
-        val result = connection.getExtractedText(
-            ExtractedTextRequest().apply { token = 7 },
-            InputConnection.GET_EXTRACTED_TEXT_MONITOR,
-        )
+        val result =
+            connection.getExtractedText(
+                ExtractedTextRequest().apply { token = 7 },
+                InputConnection.GET_EXTRACTED_TEXT_MONITOR,
+            )
 
         assertEquals(extractedText, result)
         assertEquals(connection, activeConnection.connection)
@@ -383,7 +388,8 @@ class InlineAutocompleteTextFieldTest {
     @Test
     fun `GIVEN the IME is not monitoring the extracted text WHEN an update is pushed THEN do nothing`() {
         val inputMethodManager: InputMethodManager = mock()
-        val connection = ExtractedTextInputConnection(mock(), mock(), inputMethodManager, ExtractedTextConnectionHolder())
+        val connection =
+            ExtractedTextInputConnection(mock(), mock(), inputMethodManager, ExtractedTextConnectionHolder())
 
         connection.pushExtractedTextUpdate("mozilla", TextRange(0))
 
@@ -442,13 +448,14 @@ class InlineAutocompleteTextFieldTest {
     @Test
     fun `GIVEN a query and suggestion WHEN the IME action button is tapped THEN hide the IME and inform callbacks of the suggestion accepted`() {
         val userQuery = "wiki"
-        val suggestion = AutocompleteResult(
-            input = "wiki",
-            text = "wikipedia.org",
-            url = "https://wikipedia.org",
-            source = "test",
-            totalItems = 1,
-        )
+        val suggestion =
+            AutocompleteResult(
+                input = "wiki",
+                text = "wikipedia.org",
+                url = "https://wikipedia.org",
+                source = "test",
+                totalItems = 1,
+            )
         val keyboardController: SoftwareKeyboardController = mock()
         val urlCommitedCallback: (String) -> Unit = mock()
         composeTestRule.setContent {
@@ -505,140 +512,150 @@ class InlineAutocompleteTextFieldTest {
 
     @Test
     fun `GIVEN cursor was inside the real text WHEN setSelection moves it to the end of real text THEN should accept`() {
-        val result = shouldAcceptSuggestionOnSelectionUpdate(
-            currentTextLength = 4,
-            oldSelection = TextRange(2),
-            requestedSelectionStart = 4,
-            requestedSelectionEnd = 4,
-            suggestionLength = 13,
-            hasTextChangedSinceLastSelection = false,
-        )
+        val result =
+            shouldAcceptSuggestionOnSelectionUpdate(
+                currentTextLength = 4,
+                oldSelection = TextRange(2),
+                requestedSelectionStart = 4,
+                requestedSelectionEnd = 4,
+                suggestionLength = 13,
+                hasTextChangedSinceLastSelection = false,
+            )
 
         assertTrue(result)
     }
 
     @Test
     fun `GIVEN cursor was already at the end WHEN setSelection redundantly requests cursor at end THEN should accept`() {
-        val result = shouldAcceptSuggestionOnSelectionUpdate(
-            currentTextLength = 4,
-            oldSelection = TextRange(4),
-            requestedSelectionStart = 4,
-            requestedSelectionEnd = 4,
-            suggestionLength = 13,
-            hasTextChangedSinceLastSelection = false,
-        )
+        val result =
+            shouldAcceptSuggestionOnSelectionUpdate(
+                currentTextLength = 4,
+                oldSelection = TextRange(4),
+                requestedSelectionStart = 4,
+                requestedSelectionEnd = 4,
+                suggestionLength = 13,
+                hasTextChangedSinceLastSelection = false,
+            )
 
         assertTrue(result)
     }
 
     @Test
     fun `GIVEN cursor was at the end WHEN setSelection moves cursor into the visible suggestion suffix THEN should accept`() {
-        val result = shouldAcceptSuggestionOnSelectionUpdate(
-            currentTextLength = 4,
-            oldSelection = TextRange(4),
-            requestedSelectionStart = 8,
-            requestedSelectionEnd = 8,
-            suggestionLength = 13,
-            hasTextChangedSinceLastSelection = false,
-        )
+        val result =
+            shouldAcceptSuggestionOnSelectionUpdate(
+                currentTextLength = 4,
+                oldSelection = TextRange(4),
+                requestedSelectionStart = 8,
+                requestedSelectionEnd = 8,
+                suggestionLength = 13,
+                hasTextChangedSinceLastSelection = false,
+            )
 
         assertTrue(result)
     }
 
     @Test
     fun `GIVEN cursor was at the end WHEN setSelection moves cursor to the very end of the visible suggestion THEN should accept`() {
-        val result = shouldAcceptSuggestionOnSelectionUpdate(
-            currentTextLength = 4,
-            oldSelection = TextRange(4),
-            requestedSelectionStart = 13,
-            requestedSelectionEnd = 13,
-            suggestionLength = 13,
-            hasTextChangedSinceLastSelection = false,
-        )
+        val result =
+            shouldAcceptSuggestionOnSelectionUpdate(
+                currentTextLength = 4,
+                oldSelection = TextRange(4),
+                requestedSelectionStart = 13,
+                requestedSelectionEnd = 13,
+                suggestionLength = 13,
+                hasTextChangedSinceLastSelection = false,
+            )
 
         assertTrue(result)
     }
 
     @Test
     fun `GIVEN text changed since last selection WHEN setSelection requests cursor at end THEN should not accept`() {
-        val result = shouldAcceptSuggestionOnSelectionUpdate(
-            currentTextLength = 4,
-            oldSelection = TextRange(4),
-            requestedSelectionStart = 4,
-            requestedSelectionEnd = 4,
-            suggestionLength = 13,
-            hasTextChangedSinceLastSelection = true,
-        )
+        val result =
+            shouldAcceptSuggestionOnSelectionUpdate(
+                currentTextLength = 4,
+                oldSelection = TextRange(4),
+                requestedSelectionStart = 4,
+                requestedSelectionEnd = 4,
+                suggestionLength = 13,
+                hasTextChangedSinceLastSelection = true,
+            )
 
         assertFalse(result)
     }
 
     @Test
     fun `GIVEN setSelection requests a selection range instead of a collapsed cursor THEN should not accept`() {
-        val result = shouldAcceptSuggestionOnSelectionUpdate(
-            currentTextLength = 4,
-            oldSelection = TextRange(2),
-            requestedSelectionStart = 4,
-            requestedSelectionEnd = 5,
-            suggestionLength = 13,
-            hasTextChangedSinceLastSelection = false,
-        )
+        val result =
+            shouldAcceptSuggestionOnSelectionUpdate(
+                currentTextLength = 4,
+                oldSelection = TextRange(2),
+                requestedSelectionStart = 4,
+                requestedSelectionEnd = 5,
+                suggestionLength = 13,
+                hasTextChangedSinceLastSelection = false,
+            )
 
         assertFalse(result)
     }
 
     @Test
     fun `GIVEN setSelection requests a position past the suggestion end THEN should not accept`() {
-        val result = shouldAcceptSuggestionOnSelectionUpdate(
-            currentTextLength = 4,
-            oldSelection = TextRange(4),
-            requestedSelectionStart = 14,
-            requestedSelectionEnd = 14,
-            suggestionLength = 13,
-            hasTextChangedSinceLastSelection = false,
-        )
+        val result =
+            shouldAcceptSuggestionOnSelectionUpdate(
+                currentTextLength = 4,
+                oldSelection = TextRange(4),
+                requestedSelectionStart = 14,
+                requestedSelectionEnd = 14,
+                suggestionLength = 13,
+                hasTextChangedSinceLastSelection = false,
+            )
 
         assertFalse(result)
     }
 
     @Test
     fun `GIVEN no active suggestion WHEN setSelection requests a position past real text end THEN should not accept`() {
-        val result = shouldAcceptSuggestionOnSelectionUpdate(
-            currentTextLength = 4,
-            oldSelection = TextRange(4),
-            requestedSelectionStart = 8,
-            requestedSelectionEnd = 8,
-            suggestionLength = null,
-            hasTextChangedSinceLastSelection = false,
-        )
+        val result =
+            shouldAcceptSuggestionOnSelectionUpdate(
+                currentTextLength = 4,
+                oldSelection = TextRange(4),
+                requestedSelectionStart = 8,
+                requestedSelectionEnd = 8,
+                suggestionLength = null,
+                hasTextChangedSinceLastSelection = false,
+            )
 
         assertFalse(result)
     }
 
     @Test
     fun `GIVEN setSelection moves cursor within real text but not to its end THEN should not accept`() {
-        val result = shouldAcceptSuggestionOnSelectionUpdate(
-            currentTextLength = 4,
-            oldSelection = TextRange(4),
-            requestedSelectionStart = 2,
-            requestedSelectionEnd = 2,
-            suggestionLength = 13,
-            hasTextChangedSinceLastSelection = false,
-        )
+        val result =
+            shouldAcceptSuggestionOnSelectionUpdate(
+                currentTextLength = 4,
+                oldSelection = TextRange(4),
+                requestedSelectionStart = 2,
+                requestedSelectionEnd = 2,
+                suggestionLength = 13,
+                hasTextChangedSinceLastSelection = false,
+            )
 
         assertFalse(result)
     }
 
     @Test
     fun `GIVEN oldSelection was a range WHEN setSelection collapses cursor to end of real text THEN should not accept`() {
-        val result = shouldAcceptSuggestionOnSelectionUpdate(
-            currentTextLength = 4,
-            oldSelection = TextRange(2, 3),
-            requestedSelectionStart = 4,
-            requestedSelectionEnd = 4,
-            suggestionLength = 13,
-            hasTextChangedSinceLastSelection = false,
-        )
+        val result =
+            shouldAcceptSuggestionOnSelectionUpdate(
+                currentTextLength = 4,
+                oldSelection = TextRange(2, 3),
+                requestedSelectionStart = 4,
+                requestedSelectionEnd = 4,
+                suggestionLength = 13,
+                hasTextChangedSinceLastSelection = false,
+            )
 
         assertFalse(result)
     }
@@ -681,13 +698,14 @@ class InlineAutocompleteTextFieldTest {
         val selectAllAction = {}
         val autofillAction = {}
 
-        val toolbar = PasteSanitizerTextToolbar(
-            context = testContext,
-            delegate = delegate,
-            clipboard = mock(),
-            scope = mock(),
-            handlePaste = {},
-        )
+        val toolbar =
+            PasteSanitizerTextToolbar(
+                context = testContext,
+                delegate = delegate,
+                clipboard = mock(),
+                scope = mock(),
+                handlePaste = {},
+            )
 
         toolbar.showMenu(
             rect = Rect.Zero,
@@ -698,26 +716,28 @@ class InlineAutocompleteTextFieldTest {
             onAutofillRequested = autofillAction,
         )
 
-        verify(delegate).showMenu(
-            rect = eq(Rect.Zero),
-            onCopyRequested = eq(copyAction),
-            onPasteRequested = any(),
-            onCutRequested = eq(cutAction),
-            onSelectAllRequested = eq(selectAllAction),
-            onAutofillRequested = eq(autofillAction),
-        )
+        verify(delegate)
+            .showMenu(
+                rect = eq(Rect.Zero),
+                onCopyRequested = eq(copyAction),
+                onPasteRequested = any(),
+                onCutRequested = eq(cutAction),
+                onSelectAllRequested = eq(selectAllAction),
+                onAutofillRequested = eq(autofillAction),
+            )
     }
 
     @Test
     fun `GIVEN no action is possible WHEN showing the contextual menu THEN the no actions are shown`() {
         val delegate: TextToolbar = mock()
-        val toolbar = PasteSanitizerTextToolbar(
-            context = testContext,
-            delegate = delegate,
-            clipboard = mock(),
-            scope = mock(),
-            handlePaste = {},
-        )
+        val toolbar =
+            PasteSanitizerTextToolbar(
+                context = testContext,
+                delegate = delegate,
+                clipboard = mock(),
+                scope = mock(),
+                handlePaste = {},
+            )
 
         toolbar.showMenu(
             rect = Rect.Zero,
@@ -728,14 +748,15 @@ class InlineAutocompleteTextFieldTest {
             onAutofillRequested = null,
         )
 
-        verify(delegate).showMenu(
-            rect = Rect.Zero,
-            onCopyRequested = null,
-            onPasteRequested = null,
-            onCutRequested = null,
-            onSelectAllRequested = null,
-            onAutofillRequested = null,
-        )
+        verify(delegate)
+            .showMenu(
+                rect = Rect.Zero,
+                onCopyRequested = null,
+                onPasteRequested = null,
+                onCutRequested = null,
+                onSelectAllRequested = null,
+                onAutofillRequested = null,
+            )
     }
 }
 
@@ -745,11 +766,9 @@ internal class ShadowMagnifier {
     fun show(
         @Suppress("UNUSED_PARAMETER") sourceCenterX: Float,
         @Suppress("UNUSED_PARAMETER") sourceCenterY: Float,
-    ) { }
+    ) {}
 
-    @Implementation
-    fun dismiss() { }
+    @Implementation fun dismiss() {}
 
-    @Implementation
-    fun update() { }
+    @Implementation fun update() {}
 }

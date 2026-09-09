@@ -11,8 +11,8 @@ import mozilla.components.support.ktx.android.org.json.toList
 import org.json.JSONException
 
 /**
- * Parser for search engine icons configuration from Remote Settings records.
- * Converts raw records into structured model objects.
+ * Parser for search engine icons configuration from Remote Settings records. Converts raw records into structured model
+ * objects.
  */
 class SearchConfigIconsParser {
     private val logger = Logger("SearchConfigIconsParser")

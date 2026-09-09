@@ -18,10 +18,11 @@ class SearchProviderModelTest {
             queryParamNames = listOf("q"),
             searchPageRegexp = "^https://www\\.ecosia\\.org/",
             expectedOrganicCodes = listOf(),
-            extraAdServersRegexps = listOf(
-                "^https:\\/\\/www\\.bing\\.com\\/acli?c?k",
-                "^https:\\/\\/www\\.bing\\.com\\/fd\\/ls\\/GLinkPingPost\\.aspx.*acli?c?k",
-            ),
+            extraAdServersRegexps =
+                listOf(
+                    "^https:\\/\\/www\\.bing\\.com\\/acli?c?k",
+                    "^https:\\/\\/www\\.bing\\.com\\/fd\\/ls\\/GLinkPingPost\\.aspx.*acli?c?k",
+                ),
         )
 
     @Test

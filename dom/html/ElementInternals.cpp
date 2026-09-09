@@ -284,7 +284,8 @@ bool ElementInternals::CheckValidity(ErrorResult& aRv) {
         "Target element is not a form-associated custom element");
     return false;
   }
-  return nsIConstraintValidation::CheckValidity(*mTarget);
+  const OwningNonNull<HTMLElement> target = *mTarget;
+  return nsIConstraintValidation::CheckValidity(target);
 }
 
 // https://html.spec.whatwg.org/#dom-elementinternals-reportvalidity
@@ -298,7 +299,8 @@ bool ElementInternals::ReportValidity(ErrorResult& aRv) {
   }
 
   bool defaultAction = true;
-  if (nsIConstraintValidation::CheckValidity(*mTarget, &defaultAction)) {
+  const OwningNonNull<HTMLElement> target = *mTarget;
+  if (nsIConstraintValidation::CheckValidity(target, &defaultAction)) {
     return true;
   }
 
@@ -307,10 +309,10 @@ bool ElementInternals::ReportValidity(ErrorResult& aRv) {
   }
 
   AutoTArray<RefPtr<Element>, 1> invalidElements;
-  invalidElements.AppendElement(mTarget);
+  invalidElements.AppendElement(target);
 
   AutoJSAPI jsapi;
-  if (!jsapi.Init(mTarget->GetRelevantGlobal())) {
+  if (!jsapi.Init(target->GetRelevantGlobal())) {
     return false;
   }
   JS::Rooted<JS::Value> detail(jsapi.cx());
@@ -319,13 +321,13 @@ bool ElementInternals::ReportValidity(ErrorResult& aRv) {
   }
 
   RefPtr<CustomEvent> event =
-      NS_NewDOMCustomEvent(mTarget->OwnerDoc(), nullptr, nullptr);
+      NS_NewDOMCustomEvent(target->OwnerDoc(), nullptr, nullptr);
   event->InitCustomEvent(jsapi.cx(), u"MozInvalidForm"_ns,
                          /* CanBubble */ true,
                          /* Cancelable */ true, detail);
   event->SetTrusted(true);
   event->WidgetEventPtr()->mFlags.mOnlyChromeDispatch = true;
-  mTarget->DispatchEvent(*event);
+  target->DispatchEvent(*event);
 
   return false;
 }

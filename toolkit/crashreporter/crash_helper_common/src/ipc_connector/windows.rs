@@ -47,27 +47,11 @@ const INVALID_ANCILLARY_DATA: usize = 0;
 const HANDLE_SIZE: usize = size_of::<usize>();
 const MAX_HANDLES_PER_MESSAGE: usize = 2;
 
-// We encode handles at the beginning of every transmitted message. This
-// function extracts the handle (if present) and returns it together with
-// the rest of the buffer.
-fn extract_buffer_and_handle(buffer: Vec<u8>) -> Result<(Vec<u8>, Vec<OwnedHandle>), IPCError> {
-    let mut handles = Vec::<OwnedHandle>::new();
-    for i in 0..MAX_HANDLES_PER_MESSAGE {
-        let offset = i * HANDLE_SIZE;
-        let handle_bytes = &buffer[offset..offset + HANDLE_SIZE];
-        let handle_bytes: Result<[u8; HANDLE_SIZE], _> = handle_bytes.try_into();
-        let Ok(handle_bytes) = handle_bytes else {
-            return Err(IPCError::InvalidAncillary);
-        };
-        match usize::from_ne_bytes(handle_bytes) {
-            INVALID_ANCILLARY_DATA => {}
-            handle => handles.push(unsafe { OwnedHandle::from_raw_handle(handle as RawHandle) }),
-        };
-    }
+fn is_pseudo_handle(handle: HANDLE) -> bool {
+    let signed_handle = handle as isize;
 
-    let data = &buffer[MAX_HANDLES_PER_MESSAGE * HANDLE_SIZE..];
-
-    Ok((data.to_vec(), handles))
+    // Pseudo-handles fall between -1 (current process) and -12 (undocumented).
+    (-12..=-1).contains(&signed_handle)
 }
 
 pub type IPCConnectorKey = usize;
@@ -289,7 +273,8 @@ impl IPCConnector {
             BytesMut::with_capacity((MAX_HANDLES_PER_MESSAGE * HANDLE_SIZE) + payload.len());
 
         for handle in ancillary_data.into_iter() {
-            let handle = self.clone_handle(handle)?;
+            // Leak the handles, they'll be closed by the receiving process
+            let handle = handle.into_raw_handle();
             buffer.put_slice(&(handle as usize).to_ne_bytes());
         }
         for _i in handles_len..MAX_HANDLES_PER_MESSAGE {
@@ -330,27 +315,64 @@ impl IPCConnector {
         let buffer = self
             .recv_buffer((MAX_HANDLES_PER_MESSAGE * HANDLE_SIZE) + expected_size)
             .map_err(IPCError::ReceptionFailure)?;
-        extract_buffer_and_handle(buffer)
+        self.extract_buffer_and_handle(buffer)
     }
 
     fn recv_buffer(&self, expected_size: usize) -> Result<Vec<u8>, PlatformError> {
         OverlappedOperation::recv(&self.handle, self.event.as_handle(), expected_size)
     }
 
-    /// Clone a handle in the destination process, this is required to
-    /// transfer handles over this connector. Note that this consumes the
-    /// incoming handle because we want it to be closed after it's been cloned
-    /// over to the other process.
-    fn clone_handle(&self, handle: OwnedHandle) -> Result<HANDLE, PlatformError> {
-        let Some(dst_process) = self.process.as_ref() else {
+    // We encode handles at the beginning of every transmitted message. This
+    // function extracts the handles (if present) and returns them together
+    // with the rest of the buffer.
+    fn extract_buffer_and_handle(
+        &self,
+        buffer: Vec<u8>,
+    ) -> Result<(Vec<u8>, Vec<OwnedHandle>), IPCError> {
+        let mut handles = Vec::<OwnedHandle>::new();
+        for i in 0..MAX_HANDLES_PER_MESSAGE {
+            let offset = i * HANDLE_SIZE;
+            let handle_bytes = &buffer[offset..offset + HANDLE_SIZE];
+            let handle_bytes: Result<[u8; HANDLE_SIZE], _> = handle_bytes.try_into();
+            let Ok(handle_bytes) = handle_bytes else {
+                return Err(IPCError::InvalidAncillary);
+            };
+            match usize::from_ne_bytes(handle_bytes) {
+                INVALID_ANCILLARY_DATA => {}
+                handle => handles.push(
+                    self.clone_handle(handle as HANDLE)
+                        .map_err(IPCError::ReceptionFailure)?,
+                ),
+            };
+        }
+
+        let data = &buffer[MAX_HANDLES_PER_MESSAGE * HANDLE_SIZE..];
+
+        Ok((data.to_vec(), handles))
+    }
+
+    /// Clone a remote handle into the current process, this is required to
+    /// transfer handles over this connector. Note that the incoming handle
+    /// is closed in the source process after it's been cloned in the current
+    /// one.
+    fn clone_handle(&self, handle: HANDLE) -> Result<OwnedHandle, PlatformError> {
+        let Some(src_process) = self.process.as_ref() else {
             return Err(PlatformError::MissingProcessHandle);
         };
+
+        if is_pseudo_handle(handle) {
+            return Err(PlatformError::DuplicatePseudoHandle);
+        }
+
         let mut dst_handle: HANDLE = null_mut();
+
+        // SAFETY: Calling `DuplicateHandle()` is always safe once we've
+        // verified that the source handle is not a pseudo-handle.
         let res = unsafe {
             DuplicateHandle(
+                src_process.as_raw_handle(),
+                handle,
                 GetCurrentProcess(),
-                handle.into_raw_handle() as HANDLE,
-                dst_process.as_raw_handle() as HANDLE,
                 &mut dst_handle,
                 /* dwDesiredAccess */ 0,
                 /* bInheritHandle */ FALSE,
@@ -362,7 +384,8 @@ impl IPCConnector {
             return Err(PlatformError::DuplicateHandleFailed(get_last_error()));
         }
 
-        Ok(dst_handle)
+        // SAFETY: We just checked the `dst_handle` is a valid handle.
+        Ok(unsafe { OwnedHandle::from_raw_handle(dst_handle) })
     }
 }
 

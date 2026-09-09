@@ -3125,61 +3125,6 @@ bool Debugger::appendAllocationSite(JSContext* cx, HandleObject obj,
   return true;
 }
 
-bool Debugger::firePromiseHook(JSContext* cx, Hook hook, HandleObject promise) {
-  MOZ_ASSERT(hook == OnNewPromise);
-
-  RootedObject hookObj(cx, getHook(hook));
-  MOZ_ASSERT(hookObj);
-  MOZ_ASSERT(hookObj->isCallable());
-
-  RootedValue dbgObj(cx, ObjectValue(*promise));
-  if (!wrapDebuggeeValue(cx, &dbgObj)) {
-    return false;
-  }
-
-  // Like onNewGlobalObject, the Promise hooks are infallible and the comments
-  // in |Debugger::fireNewGlobalObject| apply here as well.
-  RootedValue fval(cx, ObjectValue(*hookObj));
-  RootedValue rv(cx);
-  bool ok = js::Call(cx, fval, object, dbgObj, &rv);
-  if (ok && !rv.isUndefined()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_DEBUG_RESUMPTION_VALUE_DISALLOWED);
-    ok = false;
-  }
-
-  return ok || handleUncaughtException(cx);
-}
-
-/* static */
-void Debugger::slowPathPromiseHook(JSContext* cx, Hook hook,
-                                   Handle<PromiseObject*> promise) {
-  MOZ_ASSERT(hook == OnNewPromise);
-
-  AutoRealm ar(cx, promise);
-
-  Debugger::dispatchQuietHook(
-      cx, [hook](Debugger* dbg) -> bool { return dbg->getHook(hook); },
-      [&](Debugger* dbg) -> bool {
-        return dbg->firePromiseHook(cx, hook, promise);
-      });
-}
-
-/* static */
-bool DebugAPI::slowPathOnNewPromise(JSContext* cx,
-                                    Handle<PromiseObject*> promise) {
-  auto prevState = promise->state();
-
-  Debugger::slowPathPromiseHook(cx, Debugger::OnNewPromise, promise);
-
-  if (promise->state() != prevState) {
-    JS_ReportErrorASCII(cx, "Debugger hook violates the promise invariant");
-    return false;
-  }
-
-  return true;
-}
-
 /*** Debugger code invalidation for observing execution *********************/
 
 class MOZ_RAII ExecutionObservableRealms
@@ -4386,8 +4331,6 @@ struct MOZ_STACK_CLASS Debugger::CallData {
   bool setShouldAvoidSideEffects();
   bool getOnNewGlobalObject();
   bool setOnNewGlobalObject();
-  bool getOnNewPromise();
-  bool setOnNewPromise();
   bool getUncaughtExceptionHook();
   bool setUncaughtExceptionHook();
   bool getAllowUnobservedWasm();
@@ -4551,14 +4494,6 @@ bool Debugger::CallData::getOnNewScript() {
 
 bool Debugger::CallData::setOnNewScript() {
   return setHookImpl(cx, args, *dbg, OnNewScript);
-}
-
-bool Debugger::CallData::getOnNewPromise() {
-  return getHookImpl(cx, args, *dbg, OnNewPromise);
-}
-
-bool Debugger::CallData::setOnNewPromise() {
-  return setHookImpl(cx, args, *dbg, OnNewPromise);
 }
 
 bool Debugger::CallData::getOnEnterFrame() {
@@ -6997,7 +6932,6 @@ const JSPropertySpec Debugger::properties[] = {
     JS_DEBUG_PSGS("onExceptionUnwind", getOnExceptionUnwind,
                   setOnExceptionUnwind),
     JS_DEBUG_PSGS("onNewScript", getOnNewScript, setOnNewScript),
-    JS_DEBUG_PSGS("onNewPromise", getOnNewPromise, setOnNewPromise),
     JS_DEBUG_PSGS("onEnterFrame", getOnEnterFrame, setOnEnterFrame),
     JS_DEBUG_PSGS("onNativeCall", getOnNativeCall, setOnNativeCall),
     JS_DEBUG_PSGS("shouldAvoidSideEffects", getShouldAvoidSideEffects,

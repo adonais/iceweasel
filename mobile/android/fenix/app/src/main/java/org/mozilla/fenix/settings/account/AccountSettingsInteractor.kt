@@ -10,9 +10,7 @@ import org.mozilla.fenix.ext.nav
 
 interface AccountSettingsUserActions {
 
-    /**
-     * Called whenever the "Sync now" button is tapped.
-     */
+    /** Called whenever the "Sync now" button is tapped. */
     fun onSyncNow()
 
     /**
@@ -24,9 +22,7 @@ interface AccountSettingsUserActions {
      */
     fun onChangeDeviceName(newDeviceName: String, invalidNameResponse: () -> Unit): Boolean
 
-    /**
-     * Called whenever the "Sign out" button is tapped.
-     */
+    /** Called whenever the "Sign out" button is tapped. */
     fun onSignOut()
 }
 

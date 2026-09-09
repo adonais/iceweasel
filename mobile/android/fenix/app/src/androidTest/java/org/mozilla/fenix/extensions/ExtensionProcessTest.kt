@@ -13,9 +13,7 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.gecko.GeckoProvider
 import org.mozilla.fenix.helpers.TestHelper
 
-/**
- * Instrumentation test for verifying that the extensions process is enabled unconditionally.
- */
+/** Instrumentation test for verifying that the extensions process is enabled unconditionally. */
 class ExtensionProcessTest {
     private lateinit var context: Context
     private lateinit var policy: EngineSession.TrackingProtectionPolicy

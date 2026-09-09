@@ -100,6 +100,12 @@ async function doHandoffTest({
   private: isPrivate,
   input = "x",
 }) {
+  // This SAP is the handoff search bar, which the newtab <moz-urlbar>
+  // supersedes when its feature gate is on.
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.newtab.featureGate", false]],
+  });
+
   await doSapTest(
     async function (win) {
       const browser = win.gBrowser.selectedBrowser;
@@ -132,6 +138,8 @@ async function doHandoffTest({
     },
     { private: isPrivate }
   );
+
+  await SpecialPowers.popPrefEnv();
 }
 
 async function doUrlbarAddonpageTest({

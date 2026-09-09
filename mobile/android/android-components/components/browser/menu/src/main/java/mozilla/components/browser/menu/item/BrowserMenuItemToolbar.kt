@@ -29,8 +29,8 @@ import mozilla.components.support.ktx.android.content.res.resolveAttribute
  *
  * @param items buttons that will be shown in a horizontal layout
  * @param isCollapsingMenuLimit Whether this menu item can serve as the limit of a collapsing menu.
- * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards
- * depending on the menu position).
+ * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards depending on the menu
+ *   position).
  */
 class BrowserMenuItemToolbar(
     private val items: List<Button>,
@@ -78,10 +78,11 @@ class BrowserMenuItemToolbar(
         }
     }
 
-    override fun asCandidate(context: Context) = RowMenuCandidate(
-        items = items.map { it.asCandidate(context) },
-        containerStyle = ContainerStyle(isVisible = visible()),
-    )
+    override fun asCandidate(context: Context) =
+        RowMenuCandidate(
+            items = items.map { it.asCandidate(context) },
+            containerStyle = ContainerStyle(isVisible = visible()),
+        )
 
     /**
      * A button to be shown in a toolbar inside the browser menu.
@@ -114,16 +115,18 @@ class BrowserMenuItemToolbar(
             view.isEnabled = isEnabled()
         }
 
-        internal open fun asCandidate(context: Context) = SmallMenuCandidate(
-            contentDescription,
-            icon = DrawableMenuIcon(
-                context,
-                resource = imageResource,
-                tint = if (iconTintColorResource == NO_ID) null else getColor(context, iconTintColorResource),
-            ),
-            containerStyle = ContainerStyle(isEnabled = isEnabled()),
-            onClick = listener,
-        )
+        internal open fun asCandidate(context: Context) =
+            SmallMenuCandidate(
+                contentDescription,
+                icon =
+                    DrawableMenuIcon(
+                        context,
+                        resource = imageResource,
+                        tint = if (iconTintColorResource == NO_ID) null else getColor(context, iconTintColorResource),
+                    ),
+                containerStyle = ContainerStyle(isEnabled = isEnabled()),
+                onClick = listener,
+            )
 
         internal fun setTooltipTextCompatible(view: ImageView, contentDescription: String) {
             if (Build.VERSION.SDK_INT == Build.VERSION_CODES.O) {
@@ -160,14 +163,15 @@ class BrowserMenuItemToolbar(
         val disableInSecondaryState: Boolean = false,
         longClickListener: (() -> Unit)? = null,
         listener: () -> Unit,
-    ) : Button(
-        primaryImageResource,
-        primaryContentDescription,
-        primaryImageTintResource,
-        isInPrimaryState,
-        longClickListener = longClickListener,
-        listener = listener,
-    ) {
+    ) :
+        Button(
+            primaryImageResource,
+            primaryContentDescription,
+            primaryImageTintResource,
+            isInPrimaryState,
+            longClickListener = longClickListener,
+            listener = listener,
+        ) {
 
         private var wasInPrimaryState = false
 
@@ -190,23 +194,26 @@ class BrowserMenuItemToolbar(
             }
         }
 
-        override fun asCandidate(context: Context): SmallMenuCandidate = if (isInPrimaryState()) {
-            super.asCandidate(context)
-        } else {
-            SmallMenuCandidate(
-                secondaryContentDescription,
-                icon = DrawableMenuIcon(
-                    context,
-                    resource = secondaryImageResource,
-                    tint = if (secondaryImageTintResource == NO_ID) {
-                        null
-                    } else {
-                        getColor(context, secondaryImageTintResource)
-                    },
-                ),
-                containerStyle = ContainerStyle(isEnabled = !disableInSecondaryState),
-                onClick = listener,
-            )
-        }
+        override fun asCandidate(context: Context): SmallMenuCandidate =
+            if (isInPrimaryState()) {
+                super.asCandidate(context)
+            } else {
+                SmallMenuCandidate(
+                    secondaryContentDescription,
+                    icon =
+                        DrawableMenuIcon(
+                            context,
+                            resource = secondaryImageResource,
+                            tint =
+                                if (secondaryImageTintResource == NO_ID) {
+                                    null
+                                } else {
+                                    getColor(context, secondaryImageTintResource)
+                                },
+                        ),
+                    containerStyle = ContainerStyle(isEnabled = !disableInSecondaryState),
+                    onClick = listener,
+                )
+            }
     }
 }

@@ -504,6 +504,29 @@ export var UpdateUtils = {
     const policyValue = pref.policyFn();
     return policyValue !== null;
   },
+
+  summarizeLatestUpdate(history) {
+    let is_patch = null;
+    let target_version = null;
+    let previous_version = null;
+    let total_retries = 0;
+    if (history && history.length) {
+      is_patch = history[0]?.isCompleteUpdate != "true";
+      // In updates.xml, 'appVersion' is the version we are updating to.
+      target_version = history[0]?.appVersion;
+      previous_version = history[0]?.previousAppVersion;
+      if (history[0]?.childNodes && history[0]?.childNodes.length) {
+        total_retries = history[0].childNodes.reduce(
+          (accum, item) =>
+            item?.numTotalInstallAttempts
+              ? accum + item.numTotalInstallAttempts
+              : accum,
+          0
+        );
+      }
+    }
+    return { is_patch, target_version, previous_version, total_retries };
+  },
 };
 
 const PER_INSTALLATION_DEFAULTS_BRANCH = "__DEFAULTS__";
@@ -848,8 +871,8 @@ async function readUpdateConfig() {
           await writeUpdateConfig(migrationConfig);
           onMigrationSuccessful();
           return migrationConfig;
-        } catch (e) {
-          console.error("readUpdateConfig: Migration failed: ", e);
+        } catch (e2) {
+          console.error("readUpdateConfig: Migration failed: ", e2);
         }
       }
     } else {

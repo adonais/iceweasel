@@ -291,8 +291,9 @@ void HTMLElement::AfterClearForm(bool aUnbindOrDelete) {
 
 void HTMLElement::UpdateFormOwner() {
   MOZ_ASSERT(IsFormAssociatedElement());
-  DebugOnly<CustomElementData*> data = GetCustomElementData();
-  MOZ_ASSERT(data && data->mState == CustomElementData::State::eCustom);
+  MOZ_ASSERT(GetCustomElementData());
+  MOZ_ASSERT(GetCustomElementData()->mState ==
+             CustomElementData::State::eCustom);
 
   // If @form is set, the element *has* to be in a composed document,
   // otherwise it wouldn't be possible to find an element with the
@@ -413,8 +414,7 @@ void HTMLElement::UpdateFormOwner(bool aBindToTree, Element* aFormIdElement) {
 }
 
 bool HTMLElement::IsFormAssociatedElement() const {
-  CustomElementData* data = GetCustomElementData();
-  return data && data->IsFormAssociated();
+  return IsFormAssociatedCustomElement();
 }
 
 void HTMLElement::FieldSetDisabledChanged(bool aNotify) {

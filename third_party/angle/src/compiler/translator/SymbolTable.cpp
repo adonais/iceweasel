@@ -7,15 +7,12 @@
 // the header file.
 //
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #if defined(_MSC_VER)
 #    pragma warning(disable : 4718)
 #endif
 
 #include "compiler/translator/SymbolTable.h"
+#include "common/unsafe_buffers.h"
 
 #include "angle_gl.h"
 #include "compiler/translator/ImmutableString.h"
@@ -58,7 +55,7 @@ bool CheckShaderType(Shader expected, GLenum actual)
 bool CheckExtension(uint32_t extensionIndex, const ShBuiltInResources &resources)
 {
     const int *resourcePtr = reinterpret_cast<const int *>(&resources);
-    return resourcePtr[extensionIndex] > 0;
+    return ANGLE_UNSAFE_TODO(resourcePtr[extensionIndex]) > 0;
 }
 }  // namespace
 
@@ -245,6 +242,12 @@ const TVariable *TSymbolTable::gl_FragData() const
 const TVariable *TSymbolTable::gl_SecondaryFragDataEXT() const
 {
     return static_cast<const TVariable *>(m_gl_SecondaryFragDataEXT);
+}
+
+bool TSymbolTable::isSecondaryFragDataUsed() const
+{
+    // Extension variables may not always be initialized (saves some time at symbol table init).
+    return gl_SecondaryFragDataEXT() != nullptr && isStaticallyUsed(*gl_SecondaryFragDataEXT());
 }
 
 TSymbolTable::VariableMetadata *TSymbolTable::getOrCreateVariableMetadata(const TVariable &variable)
@@ -523,7 +526,8 @@ const TSymbol *FindMangledBuiltIn(ShShaderSpec shaderSpec,
     for (uint32_t ruleIndex = startIndex; ruleIndex < endIndex; ++ruleIndex)
     {
         const TSymbol *symbol =
-            rules[ruleIndex].get(shaderSpec, shaderVersion, shaderType, resources, symbolTable);
+            ANGLE_UNSAFE_TODO(rules[ruleIndex])
+                .get(shaderSpec, shaderVersion, shaderType, resources, symbolTable);
         if (symbol)
         {
             return symbol;

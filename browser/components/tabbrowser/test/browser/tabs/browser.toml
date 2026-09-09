@@ -131,8 +131,6 @@ tags = "vertical-tabs"
 ["browser_lastSeenActive.js"]
 tags = "vertical-tabs"
 skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && debug && vertical_tab && nova", # Bug 2057865
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && opt && vertical_tab && nova", # Bug 2057865
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1889774
 ]
 
@@ -495,6 +493,8 @@ tags = "vertical-tabs"
 # Unclear why this fails with vertical tabs
 # tags = "vertical-tabs"
 
+["browser_swapBrowsers.js"]
+
 ["browser_switch_by_scrolling.js"]
 tags = "vertical-tabs"
 
@@ -653,6 +653,9 @@ tags = "vertical-tabs"
 
 ["browser_tab_preview.js"]
 tags = "vertical-tabs"
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 2010318
+]
 
 ["browser_tab_splitview.js"]
 
@@ -670,6 +673,8 @@ skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1994508
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2023967
 ]
+
+["browser_tab_splitview_findbar.js"]
 
 ["browser_tab_splitview_footer.js"]
 support-files = ["file_withicon.html"]

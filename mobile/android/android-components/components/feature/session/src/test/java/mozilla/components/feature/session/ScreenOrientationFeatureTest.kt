@@ -10,7 +10,6 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import android.os.Build
 import mozilla.components.concept.engine.Engine
-import mozilla.components.concept.engine.activity.OrientationDelegate
 import mozilla.components.concept.engine.activity.OrientationDelegate.LockResult
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.whenever
@@ -61,18 +60,20 @@ class ScreenOrientationFeatureTest {
     fun `WHEN asked to set a screen orientation on large screen Android 16+ THEN return NOT_SUPPORTED`() {
         val activity = mock<Activity>()
         val resources = mock<Resources>()
-        val configuration = Configuration().apply {
-            smallestScreenWidthDp = 700
-        }
+        val configuration =
+            Configuration().apply {
+                smallestScreenWidthDp = 700
+            }
 
         whenever(activity.resources).thenReturn(resources)
         whenever(resources.configuration).thenReturn(configuration)
 
-        val feature = ScreenOrientationFeature(
-            engine = mock(),
-            activity = activity,
-            buildVersionProvider = { Build.VERSION_CODES.BAKLAVA },
-        )
+        val feature =
+            ScreenOrientationFeature(
+                engine = mock(),
+                activity = activity,
+                buildVersionProvider = { Build.VERSION_CODES.BAKLAVA },
+            )
 
         val result = feature.onOrientationLock(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
 

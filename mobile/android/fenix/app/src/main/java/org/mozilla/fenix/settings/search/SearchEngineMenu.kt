@@ -5,11 +5,11 @@
 package org.mozilla.fenix.settings.search
 
 import android.content.Context
+import androidx.appcompat.R as appcompatR
 import mozilla.components.browser.menu.BrowserMenuBuilder
 import mozilla.components.browser.menu.item.SimpleBrowserMenuItem
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.ThemeManager
-import androidx.appcompat.R as appcompatR
 
 class SearchEngineMenu(
     private val context: Context,
@@ -19,6 +19,7 @@ class SearchEngineMenu(
 ) {
     sealed class Item {
         object Delete : Item()
+
         object Edit : Item()
     }
 
@@ -29,11 +30,9 @@ class SearchEngineMenu(
 
         if (isCustomSearchEngine) {
             items.add(
-                SimpleBrowserMenuItem(
-                    label = context.getString(R.string.search_engine_edit),
-                ) {
+                SimpleBrowserMenuItem(label = context.getString(R.string.search_engine_edit)) {
                     onItemTapped.invoke(Item.Edit)
-                },
+                }
             )
         }
 
@@ -44,7 +43,7 @@ class SearchEngineMenu(
                     textColorResource = ThemeManager.resolveAttribute(appcompatR.attr.colorError, context),
                 ) {
                     onItemTapped.invoke(Item.Delete)
-                },
+                }
             )
         }
 

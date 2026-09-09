@@ -5,6 +5,14 @@
 @namespace html url("http://www.w3.org/1999/xhtml");
 
 /* General popup rules */
+
+/* popup.css sets a platform menu corner radius on every non-arrow panel, and
+   that element-level declaration outranks the --panel-border-radius token, so
+   this popup has to opt back into the design system value. */
+#PopupAutoComplete {
+  --panel-border-radius: var(--popup-border-radius);
+}
+
 #PopupAutoComplete:is(
     [resultstyles~="autofill"],
     [resultstyles~="loginsFooter"],
@@ -16,9 +24,9 @@
 }
 
 #PopupAutoComplete > richlistbox {
-  padding: var(--space-medium);
+  padding-block: var(--space-medium);
+  padding-inline: var(--space-small);
   scrollbar-gutter: stable;
-  scrollbar-width: thin;
 
   &:not([pointerselected]) > richlistitem.autocomplete-row-item[selected] > autocomplete-row-item:not([subfocused]) {
     border-color: var(--focus-outline-color);

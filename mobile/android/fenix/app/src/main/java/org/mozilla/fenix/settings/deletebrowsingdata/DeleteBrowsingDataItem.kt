@@ -14,7 +14,9 @@ import androidx.core.content.withStyledAttributes
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.DeleteBrowsingDataItemBinding
 
-class DeleteBrowsingDataItem @JvmOverloads constructor(
+class DeleteBrowsingDataItem
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
@@ -42,8 +44,7 @@ class DeleteBrowsingDataItem @JvmOverloads constructor(
     var onCheckListener: ((Boolean) -> Unit)? = null
 
     init {
-        val view =
-            LayoutInflater.from(context).inflate(R.layout.delete_browsing_data_item, this, true)
+        val view = LayoutInflater.from(context).inflate(R.layout.delete_browsing_data_item, this, true)
 
         binding = DeleteBrowsingDataItemBinding.bind(view)
 
@@ -56,14 +57,16 @@ class DeleteBrowsingDataItem @JvmOverloads constructor(
         }
 
         context.withStyledAttributes(attrs, R.styleable.DeleteBrowsingDataItem, defStyleAttr, 0) {
-            val titleId = getResourceId(
-                R.styleable.DeleteBrowsingDataItem_deleteBrowsingDataItemTitle,
-                R.string.browser_menu_library,
-            )
-            val subtitleId = getResourceId(
-                R.styleable.DeleteBrowsingDataItem_deleteBrowsingDataItemSubtitle,
-                R.string.empty_string,
-            )
+            val titleId =
+                getResourceId(
+                    R.styleable.DeleteBrowsingDataItem_deleteBrowsingDataItemTitle,
+                    R.string.browser_menu_library,
+                )
+            val subtitleId =
+                getResourceId(
+                    R.styleable.DeleteBrowsingDataItem_deleteBrowsingDataItemSubtitle,
+                    R.string.empty_string,
+                )
 
             binding.title.text = resources.getString(titleId)
             val subtitleText = resources.getString(subtitleId)

@@ -58,7 +58,6 @@ if (!build_with_chromium && !build_with_mozilla) {
         ":rtc_unittests",
         ":test_suites",
         ":voip_unittests",
-        ":webrtc_nonparallel_tests",
         ":webrtc_perf_tests",
         "common_audio:common_audio_unittests",
         "common_video:common_video_unittests",
@@ -74,7 +73,6 @@ if (!build_with_chromium && !build_with_mozilla) {
         "modules/video_coding:video_codec_perf_tests",
         "net/dcsctp:dcsctp_unittests",
         "p2p:dtls_ice_integration_bench",
-        "pc:peerconnection_unittests",
         "pc:rtc_pc_unittests",
         "pc:slow_peer_connection_unittests",
         "pc:svc_tests",
@@ -149,7 +147,17 @@ if (rtc_include_tests) {
       "//video/adaptation:video_adaptation_tests",
     ]
     if (rtc_desktop_capture_supported) {
-      deps += [ "//modules/desktop_capture:xvfb_capture_tests" ]
+      deps += [
+        "//modules/desktop_capture:desktop_capture_modules_tests",
+        "//modules/desktop_capture:desktop_capture_unittests",
+        "//modules/desktop_capture:xvfb_capture_tests",
+      ]
+      if (is_mac) {
+        deps += [ "//modules/desktop_capture:desktop_capture_mac_unittests" ]
+      }
+      if (is_win) {
+        deps += [ "//modules/desktop_capture:desktop_capture_win_unittests" ]
+      }
     }
   }
 }
@@ -582,7 +590,6 @@ if (!build_with_chromium) {
       "pc:peer_connection_factory",
       "pc:rtc_pc",
       "pc:webrtc_sdp",
-      "stats",
       "video",
     ]
     if (build_with_mozilla) {
@@ -610,7 +617,6 @@ if (!build_with_chromium) {
         "pc:peer_connection_factory",
         "pc:rtc_pc",
         "pc:webrtc_sdp",
-        "stats",
       ]
     }
 
@@ -625,6 +631,7 @@ if (!build_with_chromium) {
       deps += [
         "api:frame_transformer_factory",
         "api/audio:builtin_audio_processing_builder",
+        "api/video:adapted_video_track_source",
         "api/video:builtin_video_bitrate_allocator_factory",
         "api/environment:environment_factory",
         "api/video:video_frame",

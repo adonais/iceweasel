@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package mozilla.components.browser.engine.gecko.translate
+
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import junit.framework.TestCase.assertTrue
 import mozilla.components.browser.engine.gecko.GeckoEngineSession
@@ -37,7 +38,7 @@ class GeckoTranslateSessionDelegateTest {
                 override fun onTranslateExpected() {
                     onTranslateExpectedWasCalled = true
                 }
-            },
+            }
         )
 
         gecko.onExpectedTranslate(mock())
@@ -55,7 +56,7 @@ class GeckoTranslateSessionDelegateTest {
                 override fun onTranslateOffer() {
                     onTranslateOfferWasCalled = true
                 }
-            },
+            }
         )
 
         gecko.onOfferTranslate(mock())
@@ -91,13 +92,21 @@ class GeckoTranslateSessionDelegateTest {
                     assertTrue(state.isEngineReady == isEngineReady)
                     assertTrue(state.hasVisibleChange == hasVisibleChange)
                 }
-            },
+            }
         )
 
         // Mock states
-        val mockDetectedLanguages = TranslationsController.SessionTranslation.DetectedLanguages(userLangTag, isDocLangTagSupported, docLangTag)
+        val mockDetectedLanguages =
+            TranslationsController.SessionTranslation.DetectedLanguages(userLangTag, isDocLangTagSupported, docLangTag)
         val mockTranslationsPair = TranslationsController.SessionTranslation.TranslationPair(fromLanguage, toLanguage)
-        val mockGeckoState = TranslationsController.SessionTranslation.TranslationState(mockTranslationsPair, error, mockDetectedLanguages, isEngineReady, hasVisibleChange)
+        val mockGeckoState =
+            TranslationsController.SessionTranslation.TranslationState(
+                mockTranslationsPair,
+                error,
+                mockDetectedLanguages,
+                isEngineReady,
+                hasVisibleChange,
+            )
         gecko.onTranslationStateChange(mock(), mockGeckoState)
 
         assertTrue(onTranslateStateChangeWasCalled)

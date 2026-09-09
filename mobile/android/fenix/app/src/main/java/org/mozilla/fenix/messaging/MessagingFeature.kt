@@ -10,9 +10,7 @@ import mozilla.components.support.base.feature.LifecycleAwareFeature
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.MessagingAction
 
-/**
- * A [LifecycleAwareFeature] which tries to evaluate if message is available for the provided [surface].
- */
+/** A [LifecycleAwareFeature] which tries to evaluate if message is available for the provided [surface]. */
 class MessagingFeature(
     val appStore: AppStore,
     val surface: MessageSurfaceId,

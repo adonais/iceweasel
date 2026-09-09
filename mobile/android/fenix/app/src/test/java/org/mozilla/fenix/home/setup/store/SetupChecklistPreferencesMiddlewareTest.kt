@@ -47,12 +47,10 @@ class SetupChecklistPreferencesMiddlewareTest {
                 ChecklistItem.Task.Type.SELECT_THEME,
                 ChecklistItem.Task.Type.CHANGE_TOOLBAR_PLACEMENT,
                 ChecklistItem.Task.Type.EXPLORE_EXTENSION,
-                ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
-                -> assertTrue(repository.setPreferenceInvoked)
+                ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET -> assertTrue(repository.setPreferenceInvoked)
 
                 ChecklistItem.Task.Type.SET_AS_DEFAULT,
-                ChecklistItem.Task.Type.SIGN_IN,
-                -> assertFalse(repository.setPreferenceInvoked)
+                ChecklistItem.Task.Type.SIGN_IN -> assertFalse(repository.setPreferenceInvoked)
             }
         }
     }
@@ -71,10 +69,11 @@ class SetupChecklistPreferencesMiddlewareTest {
 
     @Test
     fun `GIVEN SetToDefault preference WHEN mapping to store action THEN returns SET_AS_DEFAULT task type`() {
-        val preferenceUpdate = SetupChecklistRepository.SetupChecklistPreferenceUpdate(
-            preference = SetupChecklistPreference.SetToDefault,
-            value = true,
-        )
+        val preferenceUpdate =
+            SetupChecklistRepository.SetupChecklistPreferenceUpdate(
+                preference = SetupChecklistPreference.SetToDefault,
+                value = true,
+            )
         val result = mapRepoUpdateToStoreAction(preferenceUpdate)
 
         assertEquals(
@@ -89,10 +88,11 @@ class SetupChecklistPreferencesMiddlewareTest {
     // tests for mapRepoUpdateToStoreAction
     @Test
     fun `GIVEN SignIn preference WHEN mapping to store action THEN returns SIGN_IN task type`() {
-        val preferenceUpdate = SetupChecklistRepository.SetupChecklistPreferenceUpdate(
-            SetupChecklistPreference.SignIn,
-            true,
-        )
+        val preferenceUpdate =
+            SetupChecklistRepository.SetupChecklistPreferenceUpdate(
+                SetupChecklistPreference.SignIn,
+                true,
+            )
         val result = mapRepoUpdateToStoreAction(preferenceUpdate)
 
         assertEquals(
@@ -106,10 +106,11 @@ class SetupChecklistPreferencesMiddlewareTest {
 
     @Test
     fun `GIVEN ThemeComplete preference WHEN mapping to store action THEN returns SELECT_THEME task type`() {
-        val preferenceUpdate = SetupChecklistRepository.SetupChecklistPreferenceUpdate(
-            SetupChecklistPreference.ThemeComplete,
-            true,
-        )
+        val preferenceUpdate =
+            SetupChecklistRepository.SetupChecklistPreferenceUpdate(
+                SetupChecklistPreference.ThemeComplete,
+                true,
+            )
         val result = mapRepoUpdateToStoreAction(preferenceUpdate)
 
         assertEquals(
@@ -123,10 +124,11 @@ class SetupChecklistPreferencesMiddlewareTest {
 
     @Test
     fun `GIVEN ToolbarComplete preference WHEN mapping to store action THEN returns CHANGE_TOOLBAR_PLACEMENT task type`() {
-        val preferenceUpdate = SetupChecklistRepository.SetupChecklistPreferenceUpdate(
-            SetupChecklistPreference.ToolbarComplete,
-            true,
-        )
+        val preferenceUpdate =
+            SetupChecklistRepository.SetupChecklistPreferenceUpdate(
+                SetupChecklistPreference.ToolbarComplete,
+                true,
+            )
         val result = mapRepoUpdateToStoreAction(preferenceUpdate)
 
         assertEquals(
@@ -140,10 +142,11 @@ class SetupChecklistPreferencesMiddlewareTest {
 
     @Test
     fun `GIVEN ExtensionsComplete preference WHEN mapping to store action THEN returns EXPLORE_EXTENSION task type`() {
-        val preferenceUpdate = SetupChecklistRepository.SetupChecklistPreferenceUpdate(
-            SetupChecklistPreference.ExtensionsComplete,
-            true,
-        )
+        val preferenceUpdate =
+            SetupChecklistRepository.SetupChecklistPreferenceUpdate(
+                SetupChecklistPreference.ExtensionsComplete,
+                true,
+            )
         val result = mapRepoUpdateToStoreAction(preferenceUpdate)
 
         assertEquals(
@@ -157,10 +160,11 @@ class SetupChecklistPreferencesMiddlewareTest {
 
     @Test
     fun `GIVEN InstallSearchWidget preference WHEN mapping to store action THEN returns INSTALL_SEARCH_WIDGET task type`() {
-        val preferenceUpdate = SetupChecklistRepository.SetupChecklistPreferenceUpdate(
-            SetupChecklistPreference.InstallSearchWidget,
-            true,
-        )
+        val preferenceUpdate =
+            SetupChecklistRepository.SetupChecklistPreferenceUpdate(
+                SetupChecklistPreference.InstallSearchWidget,
+                true,
+            )
         val result = mapRepoUpdateToStoreAction(preferenceUpdate)
 
         assertEquals(
@@ -174,10 +178,11 @@ class SetupChecklistPreferencesMiddlewareTest {
 
     @Test
     fun `GIVEN ShowSetupChecklist preference WHEN mapping to store action THEN returns the close action`() {
-        val preferenceUpdate = SetupChecklistRepository.SetupChecklistPreferenceUpdate(
-            SetupChecklistPreference.ShowSetupChecklist,
-            true,
-        )
+        val preferenceUpdate =
+            SetupChecklistRepository.SetupChecklistPreferenceUpdate(
+                SetupChecklistPreference.ShowSetupChecklist,
+                true,
+            )
         val result = mapRepoUpdateToStoreAction(preferenceUpdate)
 
         assertEquals(
@@ -186,18 +191,20 @@ class SetupChecklistPreferencesMiddlewareTest {
         )
     }
 
-    private fun buildGroup() = ChecklistItem.Group(
-        title = 0,
-        tasks = emptyList(),
-        isExpanded = false,
-    )
+    private fun buildGroup() =
+        ChecklistItem.Group(
+            title = 0,
+            tasks = emptyList(),
+            isExpanded = false,
+        )
 
-    private fun buildTask(type: ChecklistItem.Task.Type) = ChecklistItem.Task(
-        type = type,
-        title = 0,
-        icon = 0,
-        isCompleted = false,
-    )
+    private fun buildTask(type: ChecklistItem.Task.Type) =
+        ChecklistItem.Task(
+            type = type,
+            title = 0,
+            icon = 0,
+            isCompleted = false,
+        )
 }
 
 private class FakeRepository : SetupChecklistRepository {
@@ -219,13 +226,14 @@ private class FakeRepository : SetupChecklistRepository {
         get() = preferenceUpdates
 }
 
-private val preferenceUpdates = flowOf(
-    SetupChecklistRepository.SetupChecklistPreferenceUpdate(
-        SetupChecklistPreference.SetToDefault,
-        true,
-    ),
-    SetupChecklistRepository.SetupChecklistPreferenceUpdate(
-        SetupChecklistPreference.ThemeComplete,
-        false,
-    ),
-)
+private val preferenceUpdates =
+    flowOf(
+        SetupChecklistRepository.SetupChecklistPreferenceUpdate(
+            SetupChecklistPreference.SetToDefault,
+            true,
+        ),
+        SetupChecklistRepository.SetupChecklistPreferenceUpdate(
+            SetupChecklistPreference.ThemeComplete,
+            false,
+        ),
+    )

@@ -12,10 +12,7 @@ import androidx.compose.ui.graphics.Color as ComposeColor
  *
  * @property position The color stop position as a fraction of the gradient's length.
  */
-@JvmInline
-value class Position(
-    @param:FloatRange(from = 0.0, to = 1.0) val position: Float,
-)
+@JvmInline value class Position(@param:FloatRange(from = 0.0, to = 1.0) val position: Float)
 
 /**
  * A color stop in a gradient.

@@ -12,8 +12,8 @@ import kotlinx.coroutines.withContext
 import mozilla.components.service.pocket.GlobalDependencyProvider
 
 /**
- * An implementation of [CoroutineWorker] to perform periodic updates of the sponsored contents
- * by fetching and persisting in storage.
+ * An implementation of [CoroutineWorker] to perform periodic updates of the sponsored contents by fetching and
+ * persisting in storage.
  */
 internal class SponsoredContentsRefreshWorker(
     context: Context,
@@ -33,7 +33,6 @@ internal class SponsoredContentsRefreshWorker(
     }
 
     internal companion object {
-        const val REFRESH_WORK_TAG =
-            "mozilla.components.service.pocket.sponsored.content.refresh.work.tag"
+        const val REFRESH_WORK_TAG = "mozilla.components.service.pocket.sponsored.content.refresh.work.tag"
     }
 }

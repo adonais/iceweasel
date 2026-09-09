@@ -5,12 +5,13 @@
 package org.mozilla.fenix.settings.doh
 
 internal class FakeDohSettingsProvider(
-    private var expectedProtectionLevels: List<ProtectionLevel> = listOf(
-        ProtectionLevel.Default,
-        ProtectionLevel.Increased,
-        ProtectionLevel.Max,
-        ProtectionLevel.Off,
-    ),
+    private var expectedProtectionLevels: List<ProtectionLevel> =
+        listOf(
+            ProtectionLevel.Default,
+            ProtectionLevel.Increased,
+            ProtectionLevel.Max,
+            ProtectionLevel.Off,
+        ),
     private var selectedProtectionLevel: ProtectionLevel = ProtectionLevel.Default,
     private var exceptionsList: List<String> = emptyList(),
     private var selectedProvider: Provider? = null,
@@ -20,6 +21,7 @@ internal class FakeDohSettingsProvider(
     override fun getDefaultProviders(): List<Provider> = defaultProviders
 
     fun getBuiltInProvider(): Provider.BuiltIn = builtIn
+
     fun getCustomProvider(): Provider.Custom = custom
 
     override fun getSelectedProtectionLevel(): ProtectionLevel = selectedProtectionLevel
@@ -29,14 +31,17 @@ internal class FakeDohSettingsProvider(
     override fun getExceptions(): List<String> = exceptionsList
 
     override fun setProtectionLevel(protectionLevel: ProtectionLevel, provider: Provider?) {
-        selectedProtectionLevel = when (protectionLevel) {
-            is ProtectionLevel.Off, ProtectionLevel.Default -> protectionLevel
-            is ProtectionLevel.Increased, ProtectionLevel.Max -> {
-                require(provider != null) { "Provider must not be null for Increased/Max protection level" }
-                selectedProvider = provider
-                protectionLevel
+        selectedProtectionLevel =
+            when (protectionLevel) {
+                is ProtectionLevel.Off,
+                ProtectionLevel.Default -> protectionLevel
+                is ProtectionLevel.Increased,
+                ProtectionLevel.Max -> {
+                    require(provider != null) { "Provider must not be null for Increased/Max protection level" }
+                    selectedProvider = provider
+                    protectionLevel
+                }
             }
-        }
     }
 
     override fun setCustomProvider(url: String) {
@@ -48,14 +53,13 @@ internal class FakeDohSettingsProvider(
     }
 
     companion object {
-        private val builtIn = Provider.BuiltIn(
-            url = "built.in.provider",
-            name = "BuiltIn",
-            default = true,
-        )
-        private var custom = Provider.Custom(
-            url = "",
-        )
+        private val builtIn =
+            Provider.BuiltIn(
+                url = "built.in.provider",
+                name = "BuiltIn",
+                default = true,
+            )
+        private var custom = Provider.Custom(url = "")
         private val defaultProviders = listOf(builtIn, custom)
     }
 }

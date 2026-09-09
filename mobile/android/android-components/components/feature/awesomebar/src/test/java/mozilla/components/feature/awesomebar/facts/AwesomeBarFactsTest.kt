@@ -15,7 +15,6 @@ class AwesomeBarFactsTest {
     @Test
     fun `Emits facts for current state`() {
         CollectionProcessor.withFactCollection { facts ->
-
             emitBookmarkSuggestionClickedFact()
 
             assertEquals(1, facts.size)

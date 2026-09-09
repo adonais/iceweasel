@@ -53,25 +53,25 @@ fun HorizontalFadingEdgeBox(
         Box(modifier) {
             content()
             Spacer(
-                Modifier
-                    .width(fadeWidth)
+                Modifier.width(fadeWidth)
                     .fillMaxHeight()
                     .align(
                         if (isContentRtl) {
                             Alignment.CenterStart
                         } else {
                             Alignment.CenterEnd
-                        },
+                        }
                     )
                     .background(
                         Brush.horizontalGradient(
-                            colors = if (isContentRtl) {
-                                colorList.reversed()
-                            } else {
-                                colorList
-                            },
-                        ),
-                    ),
+                            colors =
+                                if (isContentRtl) {
+                                    colorList.reversed()
+                                } else {
+                                    colorList
+                                }
+                        )
+                    )
             )
         }
     }
@@ -83,16 +83,12 @@ private fun FadingRightTextPreview() {
     FirefoxTheme {
         Surface {
             HorizontalFadingEdgeBox(
-                modifier = Modifier
-                    .width(250.dp)
-                    .height(20.dp)
-                    .clipToBounds(),
+                modifier = Modifier.width(250.dp).height(20.dp).clipToBounds(),
                 backgroundColor = MaterialTheme.colorScheme.surface,
             ) {
                 Text(
                     "Example text set to fade on the right",
-                    modifier = Modifier
-                        .fillMaxSize(),
+                    modifier = Modifier.fillMaxSize(),
                     softWrap = false,
                 )
             }
@@ -106,18 +102,14 @@ private fun FadingLeftTextPreview() {
     FirefoxTheme {
         Surface {
             HorizontalFadingEdgeBox(
-                modifier = Modifier
-                    .width(250.dp)
-                    .height(20.dp)
-                    .clipToBounds(),
+                modifier = Modifier.width(250.dp).height(20.dp).clipToBounds(),
                 isContentRtl = true,
                 fadeWidth = 50.dp,
                 backgroundColor = MaterialTheme.colorScheme.surface,
             ) {
                 Text(
                     "Example text set to fade on the left",
-                    modifier = Modifier
-                        .fillMaxSize(),
+                    modifier = Modifier.fillMaxSize(),
                     softWrap = false,
                 )
             }

@@ -40,22 +40,28 @@ class BreadcrumbRecorderTest {
 
     @Test
     fun `ensure crash reporter recordCrashBreadcrumb is called`() {
-        val service = object : CrashReporterService {
-            override val id: String = "test"
-            override val name: String = "Test"
-            override fun createCrashReportUrl(identifier: String): String? = null
-            override fun report(throwable: Throwable, breadcrumbs: ArrayList<Breadcrumb>): String? = ""
-            override fun report(crash: Crash.NativeCodeCrash): String? = ""
-            override fun report(crash: Crash.UncaughtExceptionCrash): String? = ""
-        }
+        val service =
+            object : CrashReporterService {
+                override val id: String = "test"
+                override val name: String = "Test"
 
-        val reporter = spyk(
-            CrashReporter(
-                context = mockk(),
-                services = listOf(service),
-                shouldPrompt = CrashReporter.Prompt.NEVER,
-            ),
-        )
+                override fun createCrashReportUrl(identifier: String): String? = null
+
+                override fun report(throwable: Throwable, breadcrumbs: ArrayList<Breadcrumb>): String? = ""
+
+                override fun report(crash: Crash.NativeCodeCrash): String? = ""
+
+                override fun report(crash: Crash.UncaughtExceptionCrash): String? = ""
+            }
+
+        val reporter =
+            spyk(
+                CrashReporter(
+                    context = mockk(),
+                    services = listOf(service),
+                    shouldPrompt = CrashReporter.Prompt.NEVER,
+                )
+            )
 
         val navController: NavController = mockk()
         val navDestination: NavDestination = mockk()
@@ -69,7 +75,7 @@ class BreadcrumbRecorderTest {
                     assertEquals("test", it.message)
                     assertEquals("DestinationChanged", it.category)
                     assertEquals(Breadcrumb.Level.INFO, it.level)
-                },
+                }
             )
         }
     }

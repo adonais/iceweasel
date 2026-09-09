@@ -6,6 +6,7 @@ package org.mozilla.fenix.settings.account
 
 import android.content.Context
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.graphics.drawable.RoundedBitmapDrawable
 import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
@@ -17,10 +18,11 @@ import kotlinx.coroutines.launch
 import mozilla.components.concept.fetch.Client
 import mozilla.components.concept.sync.Profile
 import mozilla.components.service.fxa.manager.FxaAccountManager
+import mozilla.components.support.ktx.android.content.pixelSizeFor
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.bitmapForUrl
 import org.mozilla.fenix.settings.requirePreference
-import mozilla.components.ui.icons.R as iconsR
 
 class AccountUiView(
     fragment: PreferenceFragmentCompat,
@@ -29,10 +31,8 @@ class AccountUiView(
     private val httpClient: Client,
 ) {
 
-    private val preferenceSignIn =
-        fragment.requirePreference<Preference>(R.string.pref_key_sign_in)
-    private val preferenceFirefoxAccount =
-        fragment.requirePreference<AccountPreference>(R.string.pref_key_account)
+    private val preferenceSignIn = fragment.requirePreference<Preference>(R.string.pref_key_sign_in)
+    private val preferenceFirefoxAccount = fragment.requirePreference<AccountPreference>(R.string.pref_key_account)
     private val preferenceFirefoxAccountAuthError =
         fragment.requirePreference<AccountAuthErrorPreference>(R.string.pref_key_account_auth_error)
     private val accountPreferenceCategory =
@@ -41,8 +41,8 @@ class AccountUiView(
     private var avatarJob: Job? = null
 
     /**
-     * Updates the UI to reflect current account state.
-     * Possible conditions are logged-in without problems, logged-out, and logged-in but needs to re-authenticate.
+     * Updates the UI to reflect current account state. Possible conditions are logged-in without problems, logged-out,
+     * and logged-in but needs to re-authenticate.
      */
     fun updateAccountUIState(context: Context, profile: Profile?) {
         val account = accountManager.authenticatedAccount()
@@ -91,29 +91,26 @@ class AccountUiView(
         }
     }
 
-    /**
-     * Cancel any running coroutine jobs for loading account images.
-     */
+    /** Cancel any running coroutine jobs for loading account images. */
     fun cancel() {
         scope.cancel()
     }
 
-    /**
-     * Returns generic avatar for accounts.
-     */
+    /** Returns generic avatar for accounts. */
     private fun genericAvatar(context: Context) =
         AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_avatar_circle_24)
 
-    /**
-     * Gets a rounded drawable from a URL if possible, else null.
-     */
+    /** Gets a rounded drawable from a URL if possible, else null. */
     private suspend fun toRoundedDrawable(
         url: String,
         context: Context,
-    ) = httpClient.bitmapForUrl(url)?.let { bitmap ->
-        RoundedBitmapDrawableFactory.create(context.resources, bitmap).apply {
-            isCircular = true
-            setAntiAlias(true)
+    ): RoundedBitmapDrawable? {
+        val size = context.pixelSizeFor(R.dimen.preference_icon_drawable_size)
+        return httpClient.bitmapForUrl(url, targetWidth = size, targetHeight = size)?.let { bitmap ->
+            RoundedBitmapDrawableFactory.create(context.resources, bitmap).apply {
+                isCircular = true
+                setAntiAlias(true)
+            }
         }
     }
 }

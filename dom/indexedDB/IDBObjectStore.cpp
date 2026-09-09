@@ -386,13 +386,6 @@ nsresult GetAddInfoCallback(JSContext* aCx, void* aClosure) {
 
 using indexedDB::WrapAsJSObject;
 
-template <typename T>
-JSObject* WrapAsJSObject(JSContext* const aCx, T& aBaseObject) {
-  JS::Rooted<JSObject*> result(aCx);
-  const bool res = WrapAsJSObject(aCx, aBaseObject, &result);
-  return res ? static_cast<JSObject*>(result) : nullptr;
-}
-
 JSObject* CopyingStructuredCloneReadCallback(
     JSContext* aCx, JSStructuredCloneReader* aReader,
     const JS::CloneDataPolicy& aCloneDataPolicy, uint32_t aTag, uint32_t aData,

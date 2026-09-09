@@ -386,10 +386,25 @@ already_AddRefed<Promise> Serial::RequestPort(
     }
   }
 
+  nsTArray<nsString> ipcAllowedBluetoothServiceClassIds;
+  if (aOptions.mAllowedBluetoothServiceClassIds.WasPassed()) {
+    for (const auto& uuid : aOptions.mAllowedBluetoothServiceClassIds.Value()) {
+      nsAutoString resolved;
+      if (!ResolveBluetoothServiceUUID(uuid, resolved)) {
+        promise->MaybeRejectWithTypeError(
+            "Invalid UUID in allowedBluetoothServiceClassIds");
+        return promise.forget();
+      }
+      ipcAllowedBluetoothServiceClassIds.AppendElement(resolved);
+    }
+  }
+
   bool autoselect =
       StaticPrefs::dom_webserial_testing_enabled() && mAutoselectPorts;
 
-  child->SendRequestPort(ipcFilters, autoselect)
+  child
+      ->SendRequestPort(ipcFilters, ipcAllowedBluetoothServiceClassIds,
+                        autoselect)
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
           [promise, self = RefPtr{this}](
@@ -779,13 +794,17 @@ void Serial::ForgetPort(const nsAString& aPortId) {
 
 already_AddRefed<Promise> Serial::SimulateDeviceConnection(
     const nsAString& aDeviceId, const nsAString& aDevicePath,
-    uint16_t aVendorId, uint16_t aProductId, ErrorResult& aRv) {
+    uint16_t aVendorId, uint16_t aProductId,
+    const nsAString& aBluetoothServiceClassId, ErrorResult& aRv) {
   return RunTestingIpc(
       this, aRv, nsLiteralCString("SimulateDeviceConnection IPC error"),
       [deviceId = nsString(aDeviceId), devicePath = nsString(aDevicePath),
-       aVendorId, aProductId](SerialManagerChild* aChild) {
+       aVendorId, aProductId,
+       bluetoothServiceClassId =
+           nsString(aBluetoothServiceClassId)](SerialManagerChild* aChild) {
         return aChild->SendSimulateDeviceConnection(deviceId, devicePath,
-                                                    aVendorId, aProductId);
+                                                    aVendorId, aProductId,
+                                                    bluetoothServiceClassId);
       });
 }
 

@@ -7,13 +7,8 @@ package mozilla.components.feature.fxsuggest.dto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/**
- * Top-level response payload from the Polygon stocks API.
- */
-@Serializable
-data class PolygonPayloadDto(
-    val values: List<StockTickerDto> = emptyList(),
-)
+/** Top-level response payload from the Polygon stocks API. */
+@Serializable data class PolygonPayloadDto(val values: List<StockTickerDto> = emptyList())
 
 /**
  * A single stock ticker entry returned by the Polygon API.

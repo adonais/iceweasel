@@ -115,7 +115,7 @@
   <!-- Text for the banner message to tell users about our auto close feature. -->
   <string name="tab_tray_close_tabs_banner_message">Setel tab yang terbuka untuk menutup secara otomatis yang belum pernah dilihat pada beberapa hari, minggu, atau bulan terakhir.</string>
   <!-- Text for the positive action button to go to Settings for auto close tabs. -->
-  <string name="tab_tray_close_tabs_banner_positive_button_text">Lihat pengaturan</string>
+  <string name="tab_tray_close_tabs_banner_positive_button_text">Lihat pilihan</string>
   <!-- Text for the negative action button to dismiss the Close Tabs Banner. -->
   <string name="tab_tray_close_tabs_banner_negative_button_text">Tutup</string>
   <!-- Text for the banner message to tell users about our inactive tabs feature. -->
@@ -220,7 +220,7 @@
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Info akun</string>
   <!-- Browser menu button that opens the settings menu -->
-  <string name="browser_menu_settings">Setelan</string>
+  <string name="browser_menu_settings">Pengaturan</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">Pustaka</string>
   <!-- Browser menu toggle that requests a desktop site -->
@@ -1615,7 +1615,7 @@
   -->
   <string name="create_tab_group_form_default_name">Grup %d</string>
   <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
-  <string name="create_tab_group_name_label">Nama grup tab</string>
+  <string name="create_tab_group_name_label">Nama</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Tambahkan ke</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->

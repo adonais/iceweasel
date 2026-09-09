@@ -1831,7 +1831,7 @@ void MacroAssembler::floorFloat32ToInt32(FloatRegister src, Register dest,
     // Round toward -Infinity.
     {
       ScratchFloat32Scope scratch(*this);
-      vroundss(X86Encoding::RoundDown, src, scratch);
+      roundFloat32WithMode(X86Encoding::RoundDown, src, scratch);
       truncateFloat32ToInt32(scratch, dest, fail);
     }
   } else {
@@ -1890,7 +1890,7 @@ void MacroAssembler::floorDoubleToInt32(FloatRegister src, Register dest,
     // Round toward -Infinity.
     {
       ScratchDoubleScope scratch(*this);
-      vroundsd(X86Encoding::RoundDown, src, scratch);
+      roundDoubleWithMode(X86Encoding::RoundDown, src, scratch);
       truncateDoubleToInt32(scratch, dest, fail);
     }
   } else {
@@ -1958,7 +1958,7 @@ void MacroAssembler::ceilFloat32ToInt32(FloatRegister src, Register dest,
     // x <= -1 or x > -0
     bind(&lessThanOrEqualMinusOne);
     // Round toward +Infinity.
-    vroundss(X86Encoding::RoundUp, src, scratch);
+    roundFloat32WithMode(X86Encoding::RoundUp, src, scratch);
     truncateFloat32ToInt32(scratch, dest, fail);
     return;
   }
@@ -2003,7 +2003,7 @@ void MacroAssembler::ceilDoubleToInt32(FloatRegister src, Register dest,
     // x <= -1 or x > -0
     bind(&lessThanOrEqualMinusOne);
     // Round toward +Infinity.
-    vroundsd(X86Encoding::RoundUp, src, scratch);
+    roundDoubleWithMode(X86Encoding::RoundUp, src, scratch);
     truncateDoubleToInt32(scratch, dest, fail);
     return;
   }
@@ -2122,7 +2122,7 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
 
     if (HasSSE41()) {
       // Round toward -Infinity.
-      vroundss(X86Encoding::RoundDown, temp, scratch);
+      roundFloat32WithMode(X86Encoding::RoundDown, temp, scratch);
 
       // Truncate.
       truncateFloat32ToInt32(scratch, dest, fail);
@@ -2201,7 +2201,7 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
 
     if (HasSSE41()) {
       // Round toward -Infinity.
-      vroundsd(X86Encoding::RoundDown, temp, scratch);
+      roundDoubleWithMode(X86Encoding::RoundDown, temp, scratch);
 
       // Truncate.
       truncateDoubleToInt32(scratch, dest, fail);
@@ -2233,13 +2233,13 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
 void MacroAssembler::nearbyIntDouble(RoundingMode mode, FloatRegister src,
                                      FloatRegister dest) {
   MOZ_ASSERT(HasRoundInstruction(mode));
-  vroundsd(Assembler::ToX86RoundingMode(mode), src, dest);
+  roundDoubleWithMode(Assembler::ToX86RoundingMode(mode), src, dest);
 }
 
 void MacroAssembler::nearbyIntFloat32(RoundingMode mode, FloatRegister src,
                                       FloatRegister dest) {
   MOZ_ASSERT(HasRoundInstruction(mode));
-  vroundss(Assembler::ToX86RoundingMode(mode), src, dest);
+  roundFloat32WithMode(Assembler::ToX86RoundingMode(mode), src, dest);
 }
 
 void MacroAssembler::copySignDouble(FloatRegister lhs, FloatRegister rhs,

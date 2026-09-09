@@ -10,10 +10,8 @@ import mozilla.components.feature.downloads.INTENT_EXTRA_DOWNLOAD_ID
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * Defines a contract for sending broadcast messages.
- * This interface abstracts the underlying broadcast mechanism,
- * allowing for different implementations
- * and facilitating testing by enabling mock implementations.
+ * Defines a contract for sending broadcast messages. This interface abstracts the underlying broadcast mechanism,
+ * allowing for different implementations and facilitating testing by enabling mock implementations.
  */
 interface BroadcastSender {
     /**
@@ -26,22 +24,21 @@ interface BroadcastSender {
 }
 
 /**
- * A default implementation of [BroadcastSender] that uses the Android system's
- * standard broadcast mechanism ([Context.sendBroadcast]).
+ * A default implementation of [BroadcastSender] that uses the Android system's standard broadcast mechanism
+ * ([Context.sendBroadcast]).
  *
- * @param context The Android [Context] used to send the broadcast and access
- *                application-specific information like the package name.
+ * @param context The Android [Context] used to send the broadcast and access application-specific information like the
+ *   package name.
  */
-class DefaultBroadcastSender(
-    private val context: Context,
-) : BroadcastSender {
+class DefaultBroadcastSender(private val context: Context) : BroadcastSender {
     private val logger = Logger("DefaultBroadcastSender")
 
     override fun sendBroadcast(downloadId: String, action: String) {
-        val intent = Intent(action).apply {
-            setPackage(context.applicationContext.packageName)
-            putExtra(INTENT_EXTRA_DOWNLOAD_ID, downloadId)
-        }
+        val intent =
+            Intent(action).apply {
+                setPackage(context.applicationContext.packageName)
+                putExtra(INTENT_EXTRA_DOWNLOAD_ID, downloadId)
+            }
         context.sendBroadcast(intent)
         logger.debug("Sent broadcast: ACTION=$action for Download ID=$downloadId")
     }

@@ -1,16 +1,16 @@
 package org.mozilla.geckoview.test
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.BufferedReader
+import java.io.ByteArrayInputStream
+import java.io.InputStreamReader
+import java.util.zip.GZIPInputStream
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.greaterThan
 import org.json.JSONObject
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.geckoview.ProfilerController
-import java.io.BufferedReader
-import java.io.ByteArrayInputStream
-import java.io.InputStreamReader
-import java.util.zip.GZIPInputStream
 
 @RunWith(AndroidJUnit4::class)
 class ProfilerControllerTest : BaseSessionTest() {

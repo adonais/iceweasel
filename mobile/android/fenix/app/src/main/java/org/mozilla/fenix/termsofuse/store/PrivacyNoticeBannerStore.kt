@@ -9,54 +9,37 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
 
-/**
- * [State] of the Privacy Notice banner.
- */
-data class PrivacyNoticeBannerState(
-    val visible: Boolean,
-) : State
+/** [State] of the Privacy Notice banner. */
+data class PrivacyNoticeBannerState(val visible: Boolean) : State
 
-/**
- * [Action]s related to the [PrivacyNoticeBannerStore]
- */
+/** [Action]s related to the [PrivacyNoticeBannerStore] */
 sealed interface PrivacyNoticeBannerAction : Action {
-    /**
-     * Triggered when the user clicks the close button on the banner.
-     */
+    /** Triggered when the user clicks the close button on the banner. */
     data object OnCloseClicked : PrivacyNoticeBannerAction
 
-    /**
-     * Triggered when the user clicks the Privacy Notice link on the banner.
-     */
+    /** Triggered when the user clicks the Privacy Notice link on the banner. */
     data object OnPrivacyNoticeClicked : PrivacyNoticeBannerAction
 
-    /**
-     * Triggered when the user clicks the Learn More link on the banner.
-     */
+    /** Triggered when the user clicks the Learn More link on the banner. */
     data object OnLearnMoreClicked : PrivacyNoticeBannerAction
 
-    /**
-     * Triggered when navigating away from the home fragment.
-     */
+    /** Triggered when navigating away from the home fragment. */
     data object OnNavigatedAwayFromHome : PrivacyNoticeBannerAction
 
-    /**
-     * Triggered when the banner is displayed.
-     */
+    /** Triggered when the banner is displayed. */
     data object OnBannerDisplayed : PrivacyNoticeBannerAction
 }
 
-/**
- * A [Store] that holds the [PrivacyNoticeBannerState]
- */
+/** A [Store] that holds the [PrivacyNoticeBannerState] */
 class PrivacyNoticeBannerStore(
     initialState: PrivacyNoticeBannerState,
     middleware: List<Middleware<PrivacyNoticeBannerState, PrivacyNoticeBannerAction>>,
-) : Store<PrivacyNoticeBannerState, PrivacyNoticeBannerAction>(
-    initialState = initialState,
-    reducer = ::reduce,
-    middleware = middleware,
-)
+) :
+    Store<PrivacyNoticeBannerState, PrivacyNoticeBannerAction>(
+        initialState = initialState,
+        reducer = ::reduce,
+        middleware = middleware,
+    )
 
 private fun reduce(
     state: PrivacyNoticeBannerState,
@@ -64,12 +47,10 @@ private fun reduce(
 ): PrivacyNoticeBannerState {
     return when (action) {
         is PrivacyNoticeBannerAction.OnCloseClicked,
-        is PrivacyNoticeBannerAction.OnNavigatedAwayFromHome,
-            -> state.copy(visible = false)
+        is PrivacyNoticeBannerAction.OnNavigatedAwayFromHome -> state.copy(visible = false)
 
         is PrivacyNoticeBannerAction.OnLearnMoreClicked,
         is PrivacyNoticeBannerAction.OnBannerDisplayed,
-        is PrivacyNoticeBannerAction.OnPrivacyNoticeClicked,
-            -> state
+        is PrivacyNoticeBannerAction.OnPrivacyNoticeClicked -> state
     }
 }

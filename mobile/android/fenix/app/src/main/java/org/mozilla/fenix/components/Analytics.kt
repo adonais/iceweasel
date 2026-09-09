@@ -49,9 +49,7 @@ import org.mozilla.geckoview.BuildConfig.MOZ_APP_VENDOR
 import org.mozilla.geckoview.BuildConfig.MOZ_APP_VERSION
 import org.mozilla.geckoview.BuildConfig.MOZ_UPDATE_CHANNEL
 
-/**
- * Component group for all functionality related to analytics e.g. crash reporting and telemetry.
- */
+/** Component group for all functionality related to analytics e.g. crash reporting and telemetry. */
 class Analytics(
     private val context: Context,
     private val settings: Settings,
@@ -66,23 +64,26 @@ class Analytics(
             // We treat caught exceptions similar to debug logging.
             // On the release channel volume of these is too high for our Sentry instances, and
             // we get most value out of nightly/beta logging anyway.
-            val shouldSendCaughtExceptions = when (Config.channel) {
-                ReleaseChannel.Release -> false
-                else -> true
-            }
-            val sentryService = SentryService(
-                context,
-                BuildConfig.SENTRY_TOKEN,
-                tags = mapOf(
-                    "geckoview" to "$MOZ_APP_VERSION-$MOZ_APP_BUILDID",
-                    "fenix.git" to BuildConfig.VCS_HASH,
-                ),
-                environment = BuildConfig.BUILD_TYPE,
-                sendEventForNativeCrashes = false, // Do not send native crashes to Sentry
-                sendCaughtExceptions = shouldSendCaughtExceptions,
-                sentryProjectUrl = getSentryProjectUrl(),
-                crashMetadataEventProcessor = CrashMetadataEventProcessor(),
-            )
+            val shouldSendCaughtExceptions =
+                when (Config.channel) {
+                    ReleaseChannel.Release -> false
+                    else -> true
+                }
+            val sentryService =
+                SentryService(
+                    context,
+                    BuildConfig.SENTRY_TOKEN,
+                    tags =
+                        mapOf(
+                            "geckoview" to "$MOZ_APP_VERSION-$MOZ_APP_BUILDID",
+                            "fenix.git" to BuildConfig.VCS_HASH,
+                        ),
+                    environment = BuildConfig.BUILD_TYPE,
+                    sendEventForNativeCrashes = false, // Do not send native crashes to Sentry
+                    sendCaughtExceptions = shouldSendCaughtExceptions,
+                    sentryProjectUrl = getSentryProjectUrl(),
+                    crashMetadataEventProcessor = CrashMetadataEventProcessor(),
+                )
 
             // We only want to initialize Sentry on startup on the main process.
             if (context.isMainProcess()) {
@@ -96,60 +97,65 @@ class Analytics(
 
         // The name "Fenix" here matches the product name on Socorro and is unrelated to the actual app name:
         // https://bugzilla.mozilla.org/show_bug.cgi?id=1523284
-        val socorroService = MozillaSocorroService(
-            context,
-            appName = "Fenix",
-            vendor = MOZ_APP_VENDOR,
-            releaseChannel = MOZ_UPDATE_CHANNEL,
-            distributionId = distributionId,
-        )
+        val socorroService =
+            MozillaSocorroService(
+                context,
+                appName = "Fenix",
+                vendor = MOZ_APP_VENDOR,
+                releaseChannel = MOZ_UPDATE_CHANNEL,
+                distributionId = distributionId,
+            )
         services.add(socorroService)
 
-        val intent = Intent(context, HomeActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        val crashReportingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            PendingIntent.FLAG_MUTABLE
-        } else {
-            0 // No flags. Default behavior.
-        }
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            0,
-            intent,
-            crashReportingIntentFlags,
-        )
+        val intent =
+            Intent(context, HomeActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+        val crashReportingIntentFlags =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                PendingIntent.FLAG_MUTABLE
+            } else {
+                0 // No flags. Default behavior.
+            }
+        val pendingIntent =
+            PendingIntent.getActivity(
+                context,
+                0,
+                intent,
+                crashReportingIntentFlags,
+            )
 
         CrashReporter(
             context = context,
             services = services,
-            telemetryServices = listOf(
-                GleanCrashReporterService(
-                    context,
-                    appChannel = MOZ_UPDATE_CHANNEL,
-                    appVersion = MOZ_APP_VERSION,
-                    appBuildId = MOZ_APP_BUILDID,
-                    isUploadEnabled = settings.isTelemetryEnabled,
+            telemetryServices =
+                listOf(
+                    GleanCrashReporterService(
+                        context,
+                        appChannel = MOZ_UPDATE_CHANNEL,
+                        appVersion = MOZ_APP_VERSION,
+                        appBuildId = MOZ_APP_BUILDID,
+                        isUploadEnabled = settings.isTelemetryEnabled,
+                    )
                 ),
-            ),
             shouldPrompt = CrashReporter.Prompt.ALWAYS,
-            promptConfiguration = CrashReporter.PromptConfiguration(
-                appName = context.getString(R.string.app_name),
-                organizationName = "Mozilla",
-            ),
+            promptConfiguration =
+                CrashReporter.PromptConfiguration(
+                    appName = context.getString(R.string.app_name),
+                    organizationName = "Mozilla",
+                ),
             enabled = true,
             nonFatalCrashIntent = pendingIntent,
             useLegacyReporting = settings.crashReportOption() != CrashReportOption.Auto,
-            runtimeTagProviders = listOf(
-                ReleaseRuntimeTagProvider(),
-                BuildRuntimeTagProvider(context.versionInfoProvider),
-                EnvironmentRuntimeProvider(),
-                ExperimentDataRuntimeTagProvider(
-                    NimbusExperimentDataProvider(
-                        nimbusApi = lazyMonitored { nimbusComponents.sdk },
+            runtimeTagProviders =
+                listOf(
+                    ReleaseRuntimeTagProvider(),
+                    BuildRuntimeTagProvider(context.versionInfoProvider),
+                    EnvironmentRuntimeProvider(),
+                    ExperimentDataRuntimeTagProvider(
+                        NimbusExperimentDataProvider(nimbusApi = lazyMonitored { nimbusComponents.sdk })
                     ),
                 ),
-            ),
         )
     }
 
@@ -202,9 +208,10 @@ private fun getSentryProjectUrl(): String? {
 
 private val Context.versionInfoProvider: VersionInfoProvider
     get() {
-        val packageInfo = applicationContext.packageManagerCompatHelper.getPackageInfoCompat(
-            applicationContext.packageName,
-            0,
-        )
+        val packageInfo =
+            applicationContext.packageManagerCompatHelper.getPackageInfoCompat(
+                applicationContext.packageName,
+                0,
+            )
         return VersionInfoProvider.fromPackageInfo(packageInfo)
     }

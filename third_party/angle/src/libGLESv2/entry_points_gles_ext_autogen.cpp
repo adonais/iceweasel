@@ -613,8 +613,8 @@ void GL_APIENTRY GL_DrawArraysInstancedBaseInstanceANGLE(GLenum mode,
         }
         if (ANGLE_LIKELY(isCallValid))
         {
-            context->drawArraysInstancedBaseInstanceANGLE(modePacked, first, count, instanceCount,
-                                                          baseInstance);
+            context->drawArraysInstancedBaseInstance(modePacked, first, count, instanceCount,
+                                                     baseInstance);
         }
         ANGLE_CAPTURE_GL(DrawArraysInstancedBaseInstanceANGLE, isCallValid, context, modePacked,
                          first, count, instanceCount, baseInstance);
@@ -674,7 +674,7 @@ void GL_APIENTRY GL_DrawElementsInstancedBaseVertexBaseInstanceANGLE(GLenum mode
         }
         if (ANGLE_LIKELY(isCallValid))
         {
-            context->drawElementsInstancedBaseVertexBaseInstanceANGLE(
+            context->drawElementsInstancedBaseVertexBaseInstance(
                 modePacked, count, typePacked, indices, instanceCount, baseVertex, baseInstance);
         }
         ANGLE_CAPTURE_GL(DrawElementsInstancedBaseVertexBaseInstanceANGLE, isCallValid, context,
@@ -1339,7 +1339,7 @@ void GL_APIENTRY GL_GetTexLevelParameterivANGLE(GLenum target,
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        TextureTarget targetPacked = PackParam<TextureTarget>(target);
+        TextureTarget targetPacked        = PackParam<TextureTarget>(target);
         TextureImageParameter pnamePacked = PackParam<TextureImageParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -1392,7 +1392,7 @@ void GL_APIENTRY GL_GetTexLevelParameterfvANGLE(GLenum target,
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        TextureTarget targetPacked = PackParam<TextureTarget>(target);
+        TextureTarget targetPacked        = PackParam<TextureTarget>(target);
         TextureImageParameter pnamePacked = PackParam<TextureImageParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -1627,8 +1627,6 @@ void GL_APIENTRY GL_LogicOpANGLE(GLenum opcode)
     }
     ASSERT(!egl::Display::GetCurrentThreadUnlockedTailCall()->any());
 }
-
-// GL_ANGLE_lossy_etc_decode
 
 // GL_ANGLE_memory_object_flags
 void GL_APIENTRY GL_TexStorageMemFlags2DANGLE(GLenum target,
@@ -2336,7 +2334,6 @@ void GL_APIENTRY GL_RequestExtensionANGLE(const GLchar *name)
     }
     ASSERT(!egl::Display::GetCurrentThreadUnlockedTailCall()->any());
 }
-
 
 // GL_ANGLE_rgbx_internal_format
 
@@ -3599,7 +3596,7 @@ void GL_APIENTRY GL_GetQueryivRobustANGLE(GLenum target,
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        QueryType targetPacked = PackParam<QueryType>(target);
+        QueryType targetPacked     = PackParam<QueryType>(target);
         QueryParameter pnamePacked = PackParam<QueryParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -3663,7 +3660,7 @@ void GL_APIENTRY GL_GetQueryObjectuivRobustANGLE(GLuint id,
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        QueryID idPacked = PackParam<QueryID>(id);
+        QueryID idPacked                 = PackParam<QueryID>(id);
         QueryObjectParameter pnamePacked = PackParam<QueryObjectParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -4356,7 +4353,7 @@ void GL_APIENTRY GL_SamplerParameterivRobustANGLE(GLuint sampler,
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        SamplerID samplerPacked = PackParam<SamplerID>(sampler);
+        SamplerID samplerPacked      = PackParam<SamplerID>(sampler);
         SamplerParameter pnamePacked = PackParam<SamplerParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -4418,7 +4415,7 @@ void GL_APIENTRY GL_SamplerParameterfvRobustANGLE(GLuint sampler,
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        SamplerID samplerPacked = PackParam<SamplerID>(sampler);
+        SamplerID samplerPacked      = PackParam<SamplerID>(sampler);
         SamplerParameter pnamePacked = PackParam<SamplerParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -4482,7 +4479,7 @@ void GL_APIENTRY GL_GetSamplerParameterivRobustANGLE(GLuint sampler,
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        SamplerID samplerPacked = PackParam<SamplerID>(sampler);
+        SamplerID samplerPacked      = PackParam<SamplerID>(sampler);
         SamplerParameter pnamePacked = PackParam<SamplerParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -4547,7 +4544,7 @@ void GL_APIENTRY GL_GetSamplerParameterfvRobustANGLE(GLuint sampler,
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        SamplerID samplerPacked = PackParam<SamplerID>(sampler);
+        SamplerID samplerPacked      = PackParam<SamplerID>(sampler);
         SamplerParameter pnamePacked = PackParam<SamplerParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -4675,7 +4672,7 @@ void GL_APIENTRY GL_GetTexLevelParameterivRobustANGLE(GLenum target,
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        TextureTarget targetPacked = PackParam<TextureTarget>(target);
+        TextureTarget targetPacked        = PackParam<TextureTarget>(target);
         TextureImageParameter pnamePacked = PackParam<TextureImageParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -4742,7 +4739,7 @@ void GL_APIENTRY GL_GetTexLevelParameterfvRobustANGLE(GLenum target,
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        TextureTarget targetPacked = PackParam<TextureTarget>(target);
+        TextureTarget targetPacked        = PackParam<TextureTarget>(target);
         TextureImageParameter pnamePacked = PackParam<TextureImageParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -4808,7 +4805,7 @@ void GL_APIENTRY GL_GetQueryObjectivRobustANGLE(GLuint id,
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        QueryID idPacked = PackParam<QueryID>(id);
+        QueryID idPacked                 = PackParam<QueryID>(id);
         QueryObjectParameter pnamePacked = PackParam<QueryObjectParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -4869,7 +4866,7 @@ void GL_APIENTRY GL_GetQueryObjecti64vRobustANGLE(GLuint id,
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        QueryID idPacked = PackParam<QueryID>(id);
+        QueryID idPacked                 = PackParam<QueryID>(id);
         QueryObjectParameter pnamePacked = PackParam<QueryObjectParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -4931,7 +4928,7 @@ void GL_APIENTRY GL_GetQueryObjectui64vRobustANGLE(GLuint id,
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        QueryID idPacked = PackParam<QueryID>(id);
+        QueryID idPacked                 = PackParam<QueryID>(id);
         QueryObjectParameter pnamePacked = PackParam<QueryObjectParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -5597,8 +5594,7 @@ void GL_APIENTRY GL_EndPixelLocalStorageImplicitANGLE()
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateEndPixelLocalStorageImplicitANGLE(
-                    context, angle::EntryPoint::GLEndPixelLocalStorageImplicitANGLE);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -5914,109 +5910,6 @@ void GL_APIENTRY GL_GetFramebufferPixelLocalStorageParameteruivANGLE(GLint plane
 
 // GL_ANGLE_texture_compression_dxt5
 
-// GL_ANGLE_texture_external_update
-void GL_APIENTRY GL_TexImage2DExternalANGLE(GLenum target,
-                                            GLint level,
-                                            GLint internalformat,
-                                            GLsizei width,
-                                            GLsizei height,
-                                            GLint border,
-                                            GLenum format,
-                                            GLenum type)
-{
-    ASSERT(!egl::Display::GetCurrentThreadUnlockedTailCall()->any());
-    Context *context = GetValidGlobalContext();
-    ANGLE_UNSAFE_TODO(EVENT(context, GLTexImage2DExternalANGLE,
-                            "context = %d, target = %s, level = %d, internalformat = %d, width = "
-                            "%d, height = %d, border = %d, format = %s, type = %s",
-                            CID(context), GLenumToString(GLESEnum::TextureTarget, target), level,
-                            internalformat, width, height, border,
-                            GLenumToString(GLESEnum::PixelFormat, format),
-                            GLenumToString(GLESEnum::PixelType, type)));
-
-    if (ANGLE_LIKELY(context != nullptr))
-    {
-        TextureTarget targetPacked = PackParam<TextureTarget>(target);
-        SCOPED_SHARE_CONTEXT_LOCK(context);
-        bool isCallValid = context->skipValidation();
-        if (!isCallValid)
-        {
-            if (ANGLE_LIKELY(context->getExtensions().textureExternalUpdateANGLE))
-            {
-#if defined(ANGLE_ENABLE_ASSERTS)
-                const uint32_t errorCount = context->getPushedErrorCount();
-#endif
-                isCallValid = ValidateTexImage2DExternalANGLE(
-                    context, angle::EntryPoint::GLTexImage2DExternalANGLE, targetPacked, level,
-                    internalformat, width, height, border, format, type);
-#if defined(ANGLE_ENABLE_ASSERTS)
-                ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
-#endif
-            }
-            else
-            {
-                RecordVersionErrorESEXT(context, angle::EntryPoint::GLTexImage2DExternalANGLE);
-            }
-        }
-        if (ANGLE_LIKELY(isCallValid))
-        {
-            context->texImage2DExternal(targetPacked, level, internalformat, width, height, border,
-                                        format, type);
-        }
-        ANGLE_CAPTURE_GL(TexImage2DExternalANGLE, isCallValid, context, targetPacked, level,
-                         internalformat, width, height, border, format, type);
-    }
-    else
-    {
-        GenerateContextLostErrorOnCurrentGlobalContext(
-            angle::EntryPoint::GLTexImage2DExternalANGLE);
-    }
-    egl::Display::GetCurrentThreadUnlockedTailCall()->run(nullptr);
-}
-
-void GL_APIENTRY GL_InvalidateTextureANGLE(GLenum target)
-{
-    ASSERT(!egl::Display::GetCurrentThreadUnlockedTailCall()->any());
-    Context *context = GetValidGlobalContext();
-    ANGLE_UNSAFE_TODO(EVENT(context, GLInvalidateTextureANGLE, "context = %d, target = %s",
-                            CID(context), GLenumToString(GLESEnum::TextureTarget, target)));
-
-    if (ANGLE_LIKELY(context != nullptr))
-    {
-        TextureType targetPacked = PackParam<TextureType>(target);
-        SCOPED_SHARE_CONTEXT_LOCK(context);
-        bool isCallValid = context->skipValidation();
-        if (!isCallValid)
-        {
-            if (ANGLE_LIKELY(context->getExtensions().textureExternalUpdateANGLE))
-            {
-#if defined(ANGLE_ENABLE_ASSERTS)
-                const uint32_t errorCount = context->getPushedErrorCount();
-#endif
-                isCallValid = ValidateInvalidateTextureANGLE(
-                    context, angle::EntryPoint::GLInvalidateTextureANGLE, targetPacked);
-#if defined(ANGLE_ENABLE_ASSERTS)
-                ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
-#endif
-            }
-            else
-            {
-                RecordVersionErrorESEXT(context, angle::EntryPoint::GLInvalidateTextureANGLE);
-            }
-        }
-        if (ANGLE_LIKELY(isCallValid))
-        {
-            context->invalidateTexture(targetPacked);
-        }
-        ANGLE_CAPTURE_GL(InvalidateTextureANGLE, isCallValid, context, targetPacked);
-    }
-    else
-    {
-        GenerateContextLostErrorOnCurrentGlobalContext(angle::EntryPoint::GLInvalidateTextureANGLE);
-    }
-    ASSERT(!egl::Display::GetCurrentThreadUnlockedTailCall()->any());
-}
-
 // GL_ANGLE_texture_multisample
 void GL_APIENTRY GL_TexStorage2DMultisampleANGLE(GLenum target,
                                                  GLsizei samples,
@@ -6161,7 +6054,6 @@ void GL_APIENTRY GL_SampleMaskiANGLE(GLuint maskNumber, GLbitfield mask)
     }
     ASSERT(!egl::Display::GetCurrentThreadUnlockedTailCall()->any());
 }
-
 
 // GL_ANGLE_texture_usage
 
@@ -6711,7 +6603,6 @@ void GL_APIENTRY GL_EGLImageTargetTexStorageEXT(GLenum target,
     }
     ASSERT(!egl::Display::GetCurrentThreadUnlockedTailCall()->any());
 }
-
 
 // GL_EXT_EGL_image_storage_compression
 
@@ -7513,8 +7404,7 @@ void GL_APIENTRY GL_InsertEventMarkerEXT(GLsizei length, const GLchar *marker)
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateInsertEventMarkerEXT(
-                    context, angle::EntryPoint::GLInsertEventMarkerEXT, length, marker);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -7556,8 +7446,7 @@ void GL_APIENTRY GL_PopGroupMarkerEXT()
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid =
-                    ValidatePopGroupMarkerEXT(context, angle::EntryPoint::GLPopGroupMarkerEXT);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -7914,7 +7803,7 @@ void GL_APIENTRY GL_GetQueryObjecti64vEXT(GLuint id, GLenum pname, GLint64 *para
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        QueryID idPacked = PackParam<QueryID>(id);
+        QueryID idPacked                 = PackParam<QueryID>(id);
         QueryObjectParameter pnamePacked = PackParam<QueryObjectParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -7961,7 +7850,7 @@ void GL_APIENTRY GL_GetQueryObjectivEXT(GLuint id, GLenum pname, GLint *params)
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        QueryID idPacked = PackParam<QueryID>(id);
+        QueryID idPacked                 = PackParam<QueryID>(id);
         QueryObjectParameter pnamePacked = PackParam<QueryObjectParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -8007,7 +7896,7 @@ void GL_APIENTRY GL_GetQueryObjectui64vEXT(GLuint id, GLenum pname, GLuint64 *pa
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        QueryID idPacked = PackParam<QueryID>(id);
+        QueryID idPacked                 = PackParam<QueryID>(id);
         QueryObjectParameter pnamePacked = PackParam<QueryObjectParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -8054,7 +7943,7 @@ void GL_APIENTRY GL_GetQueryObjectuivEXT(GLuint id, GLenum pname, GLuint *params
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        QueryID idPacked = PackParam<QueryID>(id);
+        QueryID idPacked                 = PackParam<QueryID>(id);
         QueryObjectParameter pnamePacked = PackParam<QueryObjectParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -8102,7 +7991,7 @@ void GL_APIENTRY GL_GetQueryivEXT(GLenum target, GLenum pname, GLint *params)
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        QueryType targetPacked = PackParam<QueryType>(target);
+        QueryType targetPacked     = PackParam<QueryType>(target);
         QueryParameter pnamePacked = PackParam<QueryParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -8158,8 +8047,7 @@ GLboolean GL_APIENTRY GL_IsQueryEXT(GLuint id)
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid =
-                    ValidateIsQueryEXT(context, angle::EntryPoint::GLIsQueryEXT, idPacked);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -9165,7 +9053,7 @@ void GL_APIENTRY GL_ShadingRateEXT(GLenum rate)
     if (ANGLE_LIKELY(context != nullptr))
     {
         ShadingRate ratePacked = PackParam<ShadingRate>(rate);
-        bool isCallValid = context->skipValidation();
+        bool isCallValid       = context->skipValidation();
         if (!isCallValid)
         {
             if (ANGLE_LIKELY(context->getExtensions().fragmentShadingRateEXT))
@@ -9212,7 +9100,7 @@ void GL_APIENTRY GL_ShadingRateCombinerOpsEXT(GLenum combinerOp0, GLenum combine
     {
         CombinerOp combinerOp0Packed = PackParam<CombinerOp>(combinerOp0);
         CombinerOp combinerOp1Packed = PackParam<CombinerOp>(combinerOp1);
-        bool isCallValid = context->skipValidation();
+        bool isCallValid             = context->skipValidation();
         if (!isCallValid)
         {
             if (ANGLE_LIKELY(context->getExtensions().fragmentShadingRateEXT))
@@ -9779,8 +9667,7 @@ GLboolean GL_APIENTRY GL_IsMemoryObjectEXT(GLuint memoryObject)
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateIsMemoryObjectEXT(
-                    context, angle::EntryPoint::GLIsMemoryObjectEXT, memoryObjectPacked);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -10520,9 +10407,7 @@ void GL_APIENTRY GL_PolygonOffsetClampEXT(GLfloat factor, GLfloat units, GLfloat
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidatePolygonOffsetClampEXT(
-                    context->getPrivateState(), context->getMutableErrorSetForValidation(),
-                    angle::EntryPoint::GLPolygonOffsetClampEXT, factor, units, clamp);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(isCallValid || context->getPushedErrorCount() != errorCount);
 #endif
@@ -10574,10 +10459,7 @@ void GL_APIENTRY GL_PrimitiveBoundingBoxEXT(GLfloat minX,
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidatePrimitiveBoundingBoxEXT(
-                    context->getPrivateState(), context->getMutableErrorSetForValidation(),
-                    angle::EntryPoint::GLPrimitiveBoundingBoxEXT, minX, minY, minZ, minW, maxX,
-                    maxY, maxZ, maxW);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(isCallValid || context->getPushedErrorCount() != errorCount);
 #endif
@@ -10631,8 +10513,7 @@ GLenum GL_APIENTRY GL_GetGraphicsResetStatusEXT()
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateGetGraphicsResetStatusEXT(
-                    context, angle::EntryPoint::GLGetGraphicsResetStatusEXT);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -10983,8 +10864,7 @@ GLboolean GL_APIENTRY GL_IsSemaphoreEXT(GLuint semaphore)
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateIsSemaphoreEXT(context, angle::EntryPoint::GLIsSemaphoreEXT,
-                                                     semaphorePacked);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -11592,8 +11472,7 @@ GLboolean GL_APIENTRY GL_IsProgramPipelineEXT(GLuint pipeline)
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateIsProgramPipelineEXT(
-                    context, angle::EntryPoint::GLIsProgramPipelineEXT, pipelinePacked);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -13464,8 +13343,7 @@ void GL_APIENTRY GL_FramebufferFetchBarrierEXT()
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateFramebufferFetchBarrierEXT(
-                    context, angle::EntryPoint::GLFramebufferFetchBarrierEXT);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -13556,7 +13434,7 @@ void GL_APIENTRY GL_GetSamplerParameterIivEXT(GLuint sampler, GLenum pname, GLin
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        SamplerID samplerPacked = PackParam<SamplerID>(sampler);
+        SamplerID samplerPacked      = PackParam<SamplerID>(sampler);
         SamplerParameter pnamePacked = PackParam<SamplerParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -13605,7 +13483,7 @@ void GL_APIENTRY GL_GetSamplerParameterIuivEXT(GLuint sampler, GLenum pname, GLu
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        SamplerID samplerPacked = PackParam<SamplerID>(sampler);
+        SamplerID samplerPacked      = PackParam<SamplerID>(sampler);
         SamplerParameter pnamePacked = PackParam<SamplerParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -13748,7 +13626,7 @@ void GL_APIENTRY GL_SamplerParameterIivEXT(GLuint sampler, GLenum pname, const G
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        SamplerID samplerPacked = PackParam<SamplerID>(sampler);
+        SamplerID samplerPacked      = PackParam<SamplerID>(sampler);
         SamplerParameter pnamePacked = PackParam<SamplerParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -13796,7 +13674,7 @@ void GL_APIENTRY GL_SamplerParameterIuivEXT(GLuint sampler, GLenum pname, const 
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        SamplerID samplerPacked = PackParam<SamplerID>(sampler);
+        SamplerID samplerPacked      = PackParam<SamplerID>(sampler);
         SamplerParameter pnamePacked = PackParam<SamplerParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -14050,6 +13928,8 @@ void GL_APIENTRY GL_TexBufferRangeEXT(GLenum target,
 
 // GL_EXT_texture_format_sRGB_override
 
+// GL_EXT_texture_lod_bias
+
 // GL_EXT_texture_mirror_clamp_to_edge
 
 // GL_EXT_texture_norm16
@@ -14192,6 +14072,7 @@ void GL_APIENTRY GL_TexStorageAttribs2DEXT(GLenum target,
 
     if (ANGLE_LIKELY(context != nullptr))
     {
+        TextureType targetPacked = PackParam<TextureType>(target);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
         if (!isCallValid)
@@ -14202,7 +14083,7 @@ void GL_APIENTRY GL_TexStorageAttribs2DEXT(GLenum target,
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
                 isCallValid = ValidateTexStorageAttribs2DEXT(
-                    context, angle::EntryPoint::GLTexStorageAttribs2DEXT, target, levels,
+                    context, angle::EntryPoint::GLTexStorageAttribs2DEXT, targetPacked, levels,
                     internalformat, width, height, attrib_list);
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
@@ -14215,10 +14096,10 @@ void GL_APIENTRY GL_TexStorageAttribs2DEXT(GLenum target,
         }
         if (ANGLE_LIKELY(isCallValid))
         {
-            context->texStorageAttribs2D(target, levels, internalformat, width, height,
+            context->texStorageAttribs2D(targetPacked, levels, internalformat, width, height,
                                          attrib_list);
         }
-        ANGLE_CAPTURE_GL(TexStorageAttribs2DEXT, isCallValid, context, target, levels,
+        ANGLE_CAPTURE_GL(TexStorageAttribs2DEXT, isCallValid, context, targetPacked, levels,
                          internalformat, width, height, attrib_list);
     }
     else
@@ -14247,6 +14128,7 @@ void GL_APIENTRY GL_TexStorageAttribs3DEXT(GLenum target,
 
     if (ANGLE_LIKELY(context != nullptr))
     {
+        TextureType targetPacked = PackParam<TextureType>(target);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
         if (!isCallValid)
@@ -14257,7 +14139,7 @@ void GL_APIENTRY GL_TexStorageAttribs3DEXT(GLenum target,
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
                 isCallValid = ValidateTexStorageAttribs3DEXT(
-                    context, angle::EntryPoint::GLTexStorageAttribs3DEXT, target, levels,
+                    context, angle::EntryPoint::GLTexStorageAttribs3DEXT, targetPacked, levels,
                     internalformat, width, height, depth, attrib_list);
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
@@ -14270,10 +14152,10 @@ void GL_APIENTRY GL_TexStorageAttribs3DEXT(GLenum target,
         }
         if (ANGLE_LIKELY(isCallValid))
         {
-            context->texStorageAttribs3D(target, levels, internalformat, width, height, depth,
+            context->texStorageAttribs3D(targetPacked, levels, internalformat, width, height, depth,
                                          attrib_list);
         }
-        ANGLE_CAPTURE_GL(TexStorageAttribs3DEXT, isCallValid, context, target, levels,
+        ANGLE_CAPTURE_GL(TexStorageAttribs3DEXT, isCallValid, context, targetPacked, levels,
                          internalformat, width, height, depth, attrib_list);
     }
     else
@@ -14309,8 +14191,7 @@ void GL_APIENTRY GL_BlendBarrierKHR()
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid =
-                    ValidateBlendBarrierKHR(context, angle::EntryPoint::GLBlendBarrierKHR);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -14356,8 +14237,7 @@ void GL_APIENTRY GL_DebugMessageCallbackKHR(GLDEBUGPROCKHR callback, const void 
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateDebugMessageCallbackKHR(
-                    context, angle::EntryPoint::GLDebugMessageCallbackKHR, callback, userParam);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -14901,8 +14781,7 @@ void GL_APIENTRY GL_MaxShaderCompilerThreadsKHR(GLuint count)
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateMaxShaderCompilerThreadsKHR(
-                    context, angle::EntryPoint::GLMaxShaderCompilerThreadsKHR, count);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -14947,8 +14826,7 @@ GLenum GL_APIENTRY GL_GetGraphicsResetStatusKHR()
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateGetGraphicsResetStatusKHR(
-                    context, angle::EntryPoint::GLGetGraphicsResetStatusKHR);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -15206,6 +15084,7 @@ void GL_APIENTRY GL_FramebufferParameteriMESA(GLenum target, GLenum pname, GLint
 
     if (ANGLE_LIKELY(context != nullptr))
     {
+        FramebufferParameter pnamePacked = PackParam<FramebufferParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         if (context->getState().getPixelLocalStorageActivePlanes() != 0)
         {
@@ -15220,7 +15099,8 @@ void GL_APIENTRY GL_FramebufferParameteriMESA(GLenum target, GLenum pname, GLint
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
                 isCallValid = ValidateFramebufferParameteriMESA(
-                    context, angle::EntryPoint::GLFramebufferParameteriMESA, target, pname, param);
+                    context, angle::EntryPoint::GLFramebufferParameteriMESA, target, pnamePacked,
+                    param);
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -15232,9 +15112,10 @@ void GL_APIENTRY GL_FramebufferParameteriMESA(GLenum target, GLenum pname, GLint
         }
         if (ANGLE_LIKELY(isCallValid))
         {
-            context->framebufferParameteriMESA(target, pname, param);
+            context->framebufferParameteri(target, pnamePacked, param);
         }
-        ANGLE_CAPTURE_GL(FramebufferParameteriMESA, isCallValid, context, target, pname, param);
+        ANGLE_CAPTURE_GL(FramebufferParameteriMESA, isCallValid, context, target, pnamePacked,
+                         param);
     }
     else
     {
@@ -15256,6 +15137,7 @@ void GL_APIENTRY GL_GetFramebufferParameterivMESA(GLenum target, GLenum pname, G
 
     if (ANGLE_LIKELY(context != nullptr))
     {
+        FramebufferParameter pnamePacked = PackParam<FramebufferParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
         if (!isCallValid)
@@ -15266,8 +15148,8 @@ void GL_APIENTRY GL_GetFramebufferParameterivMESA(GLenum target, GLenum pname, G
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
                 isCallValid = ValidateGetFramebufferParameterivMESA(
-                    context, angle::EntryPoint::GLGetFramebufferParameterivMESA, target, pname,
-                    params);
+                    context, angle::EntryPoint::GLGetFramebufferParameterivMESA, target,
+                    pnamePacked, params);
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -15280,9 +15162,9 @@ void GL_APIENTRY GL_GetFramebufferParameterivMESA(GLenum target, GLenum pname, G
         }
         if (ANGLE_LIKELY(isCallValid))
         {
-            context->getFramebufferParameterivMESA(target, pname, params);
+            context->getFramebufferParameteriv(target, pnamePacked, params);
         }
-        ANGLE_CAPTURE_GL(GetFramebufferParameterivMESA, isCallValid, context, target, pname,
+        ANGLE_CAPTURE_GL(GetFramebufferParameterivMESA, isCallValid, context, target, pnamePacked,
                          params);
     }
     else
@@ -15488,8 +15370,7 @@ GLboolean GL_APIENTRY GL_IsFenceNV(GLuint fence)
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid =
-                    ValidateIsFenceNV(context, angle::EntryPoint::GLIsFenceNV, fencePacked);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -15657,8 +15538,8 @@ void GL_APIENTRY GL_BlitFramebufferNV(GLint srcX0,
         }
         if (ANGLE_LIKELY(isCallValid))
         {
-            context->blitFramebufferNV(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask,
-                                       filter);
+            context->blitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask,
+                                     filter);
         }
         ANGLE_CAPTURE_GL(BlitFramebufferNV, isCallValid, context, srcX0, srcY0, srcX1, srcY1, dstX0,
                          dstY0, dstX1, dstY1, mask, filter);
@@ -15708,8 +15589,8 @@ void GL_APIENTRY GL_PolygonModeNV(GLenum face, GLenum mode)
         }
         if (ANGLE_LIKELY(isCallValid))
         {
-            ContextPrivatePolygonModeNV(context->getMutablePrivateState(),
-                                        context->getMutablePrivateStateCache(), face, modePacked);
+            ContextPrivatePolygonMode(context->getMutablePrivateState(),
+                                      context->getMutablePrivateStateCache(), face, modePacked);
         }
         ANGLE_CAPTURE_GL(PolygonModeNV, isCallValid, context, face, modePacked);
     }
@@ -17446,8 +17327,7 @@ GLboolean GL_APIENTRY GL_IsFramebufferOES(GLuint framebuffer)
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateIsFramebufferOES(
-                    context, angle::EntryPoint::GLIsFramebufferOES, framebufferPacked);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -17496,8 +17376,7 @@ GLboolean GL_APIENTRY GL_IsRenderbufferOES(GLuint renderbuffer)
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateIsRenderbufferOES(
-                    context, angle::EntryPoint::GLIsRenderbufferOES, renderbufferPacked);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -17950,8 +17829,7 @@ void GL_APIENTRY GL_LoadPaletteFromModelViewMatrixOES()
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateLoadPaletteFromModelViewMatrixOES(
-                    context, angle::EntryPoint::GLLoadPaletteFromModelViewMatrixOES);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -18145,10 +18023,7 @@ void GL_APIENTRY GL_PrimitiveBoundingBoxOES(GLfloat minX,
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidatePrimitiveBoundingBoxOES(
-                    context->getPrivateState(), context->getMutableErrorSetForValidation(),
-                    angle::EntryPoint::GLPrimitiveBoundingBoxOES, minX, minY, minZ, minW, maxX,
-                    maxY, maxZ, maxW);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(isCallValid || context->getPushedErrorCount() != errorCount);
 #endif
@@ -18197,8 +18072,7 @@ GLbitfield GL_APIENTRY GL_QueryMatrixxOES(GLfixed *mantissa, GLint *exponent)
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateQueryMatrixxOES(context, angle::EntryPoint::GLQueryMatrixxOES,
-                                                      mantissa, exponent);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(context->getPushedErrorCount() - errorCount == (isCallValid ? 0 : 1));
 #endif
@@ -18249,9 +18123,7 @@ void GL_APIENTRY GL_MinSampleShadingOES(GLfloat value)
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateMinSampleShadingOES(
-                    context->getPrivateState(), context->getMutableErrorSetForValidation(),
-                    angle::EntryPoint::GLMinSampleShadingOES, value);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(isCallValid || context->getPushedErrorCount() != errorCount);
 #endif
@@ -18712,7 +18584,7 @@ void GL_APIENTRY GL_GetSamplerParameterIivOES(GLuint sampler, GLenum pname, GLin
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        SamplerID samplerPacked = PackParam<SamplerID>(sampler);
+        SamplerID samplerPacked      = PackParam<SamplerID>(sampler);
         SamplerParameter pnamePacked = PackParam<SamplerParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -18761,7 +18633,7 @@ void GL_APIENTRY GL_GetSamplerParameterIuivOES(GLuint sampler, GLenum pname, GLu
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        SamplerID samplerPacked = PackParam<SamplerID>(sampler);
+        SamplerID samplerPacked      = PackParam<SamplerID>(sampler);
         SamplerParameter pnamePacked = PackParam<SamplerParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -18904,7 +18776,7 @@ void GL_APIENTRY GL_SamplerParameterIivOES(GLuint sampler, GLenum pname, const G
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        SamplerID samplerPacked = PackParam<SamplerID>(sampler);
+        SamplerID samplerPacked      = PackParam<SamplerID>(sampler);
         SamplerParameter pnamePacked = PackParam<SamplerParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -18952,7 +18824,7 @@ void GL_APIENTRY GL_SamplerParameterIuivOES(GLuint sampler, GLenum pname, const 
 
     if (ANGLE_LIKELY(context != nullptr))
     {
-        SamplerID samplerPacked = PackParam<SamplerID>(sampler);
+        SamplerID samplerPacked      = PackParam<SamplerID>(sampler);
         SamplerParameter pnamePacked = PackParam<SamplerParameter>(pname);
         SCOPED_SHARE_CONTEXT_LOCK(context);
         bool isCallValid = context->skipValidation();
@@ -19803,7 +19675,7 @@ GLboolean GL_APIENTRY GL_IsVertexArrayOES(GLuint array)
     if (ANGLE_LIKELY(context != nullptr))
     {
         VertexArrayID arrayPacked = PackParam<VertexArrayID>(array);
-        bool isCallValid = context->skipValidation();
+        bool isCallValid          = context->skipValidation();
         if (!isCallValid)
         {
             if (ANGLE_LIKELY(context->getExtensions().vertexArrayObjectOES))
@@ -19811,9 +19683,7 @@ GLboolean GL_APIENTRY GL_IsVertexArrayOES(GLuint array)
 #if defined(ANGLE_ENABLE_ASSERTS)
                 const uint32_t errorCount = context->getPushedErrorCount();
 #endif
-                isCallValid = ValidateIsVertexArrayOES(
-                    context->getPrivateState(), context->getMutableErrorSetForValidation(),
-                    angle::EntryPoint::GLIsVertexArrayOES, arrayPacked);
+                isCallValid = true;
 #if defined(ANGLE_ENABLE_ASSERTS)
                 ASSERT(isCallValid || context->getPushedErrorCount() != errorCount);
 #endif
@@ -20103,7 +19973,7 @@ void GL_APIENTRY GL_ShadingRateQCOM(GLenum rate)
     if (ANGLE_LIKELY(context != nullptr))
     {
         ShadingRate ratePacked = PackParam<ShadingRate>(rate);
-        bool isCallValid = context->skipValidation();
+        bool isCallValid       = context->skipValidation();
         if (!isCallValid)
         {
             if (ANGLE_LIKELY(context->getExtensions().shadingRateQCOM))
@@ -20195,6 +20065,8 @@ void GL_APIENTRY GL_TextureFoveationParametersQCOM(GLuint texture,
     }
     ASSERT(!egl::Display::GetCurrentThreadUnlockedTailCall()->any());
 }
+
+// GL_QCOM_texture_lod_bias
 
 // GL_QCOM_tiled_rendering
 void GL_APIENTRY GL_EndTilingQCOM(GLbitfield preserveMask)

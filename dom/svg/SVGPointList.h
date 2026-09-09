@@ -37,6 +37,7 @@ class SVGPointList {
   friend class SVGAnimatedPointList;
   friend class dom::DOMSVGPointList;
   friend class dom::DOMSVGPoint;
+  using const_iterator = FallibleTArray<Point>::const_iterator;
 
  public:
   SVGPointList() = default;
@@ -63,12 +64,8 @@ class SVGPointList {
 
   const Point& operator[](uint32_t aIndex) const { return mItems[aIndex]; }
 
-  [[nodiscard]] FallibleTArray<Point>::const_iterator begin() const {
-    return mItems.begin();
-  }
-  [[nodiscard]] FallibleTArray<Point>::const_iterator end() const {
-    return mItems.end();
-  }
+  [[nodiscard]] const_iterator begin() const { return mItems.begin(); }
+  [[nodiscard]] const_iterator end() const { return mItems.end(); }
 
   bool operator==(const SVGPointList& rhs) const {
     // memcmp can be faster than |mItems == rhs.mItems|

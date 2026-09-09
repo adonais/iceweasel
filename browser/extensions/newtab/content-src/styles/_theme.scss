@@ -76,6 +76,9 @@ $shadow-image-inset: inset 0 0 0 0.5px $black-15;
   --newtab-inner-box-shadow-color: #{$black-10};
   --newtab-section-card-box-shadow-color: rgba(58, 57, 68, 20%);
   --newtab-overlay-color: color-mix(in srgb, var(--newtab-background-color) 85%, transparent);
+  // Fill behind a side-by-side layout section, over a wallpaper. The opacity
+  // token becomes 1 under forced-colors, so the panel turns opaque there.
+  --newtab-layout-panel-background: color-mix(in srgb, var(--newtab-background-color) calc(var(--opacity-deemphasized-strong) * 100%), transparent);
 
   // Custom border radius
   --border-radius-large: 16px;

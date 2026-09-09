@@ -10,10 +10,7 @@ import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.utils.Settings
 
-/**
- * Opens the "recently closed tabs" fragment when the user taps on a
- * "synced tabs closed" notification.
- */
+/** Opens the "recently closed tabs" fragment when the user taps on a "synced tabs closed" notification. */
 class OpenRecentlyClosedIntentProcessor : HomeIntentProcessor {
     override fun process(intent: Intent, navController: NavController, out: Intent, settings: Settings): Boolean {
         return if (intent.action == ACTION_OPEN_RECENTLY_CLOSED) {

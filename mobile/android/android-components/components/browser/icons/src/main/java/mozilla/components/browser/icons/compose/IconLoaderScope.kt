@@ -9,20 +9,14 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import mozilla.components.browser.icons.BrowserIcons
 
-/**
- * The scope of a [BrowserIcons.Loader] block.
- */
+/** The scope of a [BrowserIcons.Loader] block. */
 interface IconLoaderScope {
     val state: MutableState<IconLoaderState>
 }
 
-/**
- * Renders the inner [content] block once an icon was loaded.
- */
+/** Renders the inner [content] block once an icon was loaded. */
 @Composable
-fun IconLoaderScope.WithIcon(
-    content: @Composable (icon: IconLoaderState.Icon) -> Unit,
-) {
+fun IconLoaderScope.WithIcon(content: @Composable (icon: IconLoaderState.Icon) -> Unit) {
     WithInternalState {
         val state = state.value
         if (state is IconLoaderState.Icon) {
@@ -31,13 +25,9 @@ fun IconLoaderScope.WithIcon(
     }
 }
 
-/**
- * Renders the inner [content] block until an icon was loaded.
- */
+/** Renders the inner [content] block until an icon was loaded. */
 @Composable
-fun IconLoaderScope.Placeholder(
-    content: @Composable () -> Unit,
-) {
+fun IconLoaderScope.Placeholder(content: @Composable () -> Unit) {
     WithInternalState {
         val state = state.value
         if (state is IconLoaderState.Loading) {
@@ -47,13 +37,11 @@ fun IconLoaderScope.Placeholder(
 }
 
 @Composable
-private fun IconLoaderScope.WithInternalState(
-    content: @Composable InternalIconLoaderScope.() -> Unit,
-) {
+private fun IconLoaderScope.WithInternalState(content: @Composable InternalIconLoaderScope.() -> Unit) {
     val internalScope = this as InternalIconLoaderScope
     internalScope.content()
 }
 
 internal class InternalIconLoaderScope(
-    override val state: MutableState<IconLoaderState> = mutableStateOf(IconLoaderState.Loading),
+    override val state: MutableState<IconLoaderState> = mutableStateOf(IconLoaderState.Loading)
 ) : IconLoaderScope

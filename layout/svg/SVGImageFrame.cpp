@@ -19,6 +19,7 @@
 #include "mozilla/SVGUtils.h"
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/dom/LargestContentfulPaint.h"
+#include "mozilla/dom/PerformanceContainerTiming.h"
 #include "mozilla/dom/SVGImageElement.h"
 #include "mozilla/image/WebRenderImageProvider.h"
 #include "mozilla/layers/RenderRootStateManager.h"
@@ -372,7 +373,7 @@ void SVGImageFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
       // of the SVG image's internal document that is visible, in combination
       // with preserveAspectRatio and viewBox.
       const SVGImageContext context(
-          Some(CSSIntSize::Ceil(width, height)),
+          Some(CSSSize(width, height)),
           Some(imgElem->mPreserveAspectRatio.GetAnimValue()));
 
       // For the actual draw operation to draw crisply (and at the right size),
@@ -382,9 +383,13 @@ void SVGImageFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
                                      devPxSize, appUnitsPerDevPx));
       nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest();
       if (currentRequest) {
+        Element* element = GetContent()->AsElement();
+
+        ContainerTimingHelpers::MaybeProcessPaintForContainer(element, this,
+                                                              destRect);
         LCPHelpers::FinalizeLCPEntryForImage(
-            GetContent()->AsElement(),
-            static_cast<imgRequestProxy*>(currentRequest.get()), destRect);
+            element, static_cast<imgRequestProxy*>(currentRequest.get()),
+            destRect);
       }
 
       // Note: Can't use DrawSingleUnscaledImage for the TYPE_VECTOR case.
@@ -612,7 +617,7 @@ bool SVGImageFrame::CreateWebRenderCommands(
       flags |= imgIContainer::FLAG_RECORD_BLOB;
     }
     // Forward preserveAspectRatio to inner SVGs
-    svgContext.SetViewportSize(Some(CSSIntSize::Ceil(width, height)));
+    svgContext.SetViewportSize(Some(CSSSize(width, height)));
     svgContext.SetPreserveAspectRatio(
         Some(imgElem->mPreserveAspectRatio.GetAnimValue()));
   }
@@ -623,11 +628,17 @@ bool SVGImageFrame::CreateWebRenderCommands(
       region);
 
   if (nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest()) {
-    LCPHelpers::FinalizeLCPEntryForImage(
-        GetContent()->AsElement(),
-        static_cast<imgRequestProxy*>(currentRequest.get()),
+    Element* element = GetContent()->AsElement();
+    nsRect rectRelativeToSelf =
         LayoutDeviceRect::ToAppUnits(destRect, appUnitsPerDevPx) -
-            toReferenceFrame);
+        toReferenceFrame;
+
+    ContainerTimingHelpers::MaybeProcessPaintForContainer(element, this,
+                                                          rectRelativeToSelf);
+
+    LCPHelpers::FinalizeLCPEntryForImage(
+        element, static_cast<imgRequestProxy*>(currentRequest.get()),
+        rectRelativeToSelf);
   }
 
   RefPtr<image::WebRenderImageProvider> provider;

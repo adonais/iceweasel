@@ -14,33 +14,21 @@ import androidx.room.RewriteQueriesToDropUnusedColumns
 import androidx.room.Transaction
 import java.lang.Exception
 
-/**
- * Dao for saving and accessing crash related information.
- */
+/** Dao for saving and accessing crash related information. */
 @Dao
 internal interface CrashDao {
-    /**
-     * Inserts a crash into the database.
-     */
-    @Insert
-    fun insertCrash(crash: CrashEntity): Long
+    /** Inserts a crash into the database. */
+    @Insert fun insertCrash(crash: CrashEntity): Long
 
-    /**
-     * Inserts a report to the database.
-     */
-    @Insert
-    fun insertReport(report: ReportEntity): Long
+    /** Inserts a report to the database. */
+    @Insert fun insertReport(report: ReportEntity): Long
 
-    /**
-     * Returns saved crashes with their reports.
-     */
+    /** Returns saved crashes with their reports. */
     @Transaction
     @Query("SELECT * FROM crashes ORDER BY created_at DESC")
     fun getCrashesWithReports(): LiveData<List<CrashWithReports>>
 
-    /**
-     * Returns saved crashes that haven't been reported.
-     */
+    /** Returns saved crashes that haven't been reported. */
     @RewriteQueriesToDropUnusedColumns
     @Transaction
     @Query(
@@ -48,13 +36,11 @@ internal interface CrashDao {
         SELECT * FROM crashes
         LEFT JOIN reports ON crashes.uuid = reports.crash_uuid
         WHERE reports.crash_uuid IS NULL AND crashes.created_at > :timestampMillis
-        """,
+        """
     )
     suspend fun getCrashesWithoutReportsSince(timestampMillis: Long): List<CrashEntity>
 
-    /**
-     * Returns saved crashes that are part of a specific list of IDs.
-     */
+    /** Returns saved crashes that are part of a specific list of IDs. */
     @RewriteQueriesToDropUnusedColumns
     @Transaction
     @Query(
@@ -62,36 +48,30 @@ internal interface CrashDao {
         SELECT * FROM crashes
         LEFT JOIN reports ON crashes.uuid = reports.crash_uuid
         WHERE crashes.minidumpPath IN (:crashIDs)
-        """,
+        """
     )
     suspend fun getCrashesFromID(crashIDs: Array<String>): List<CrashEntity>
 
-    /**
-     * Returns saved crashes that haven't been reported.
-     */
+    /** Returns saved crashes that haven't been reported. */
     @Transaction
     @Query(
         """
         SELECT COUNT(*) FROM crashes
         LEFT JOIN reports ON crashes.uuid = reports.crash_uuid
         WHERE reports.crash_uuid IS NULL AND crashes.created_at > :timestampMillis
-        """,
+        """
     )
     suspend fun numberOfUnsentCrashesSince(timestampMillis: Long): Int
 
-    /**
-     * Delete table.
-     */
-    @Transaction
-    @Query("DELETE FROM crashes")
-    fun deleteAll()
+    /** Delete table. */
+    @Transaction @Query("DELETE FROM crashes") fun deleteAll()
 }
 
 /**
  * Insert crash into database safely, ignoring any exceptions.
  *
- * When handling a crash we want to avoid causing another crash when writing to the database. In the
- * case of an error we will just ignore it and continue without saving to the database.
+ * When handling a crash we want to avoid causing another crash when writing to the database. In the case of an error we
+ * will just ignore it and continue without saving to the database.
  */
 @SuppressLint("LogUsage") // We do not want to use our custom logger while handling the crash
 @Suppress("TooGenericExceptionCaught")
@@ -106,8 +86,8 @@ internal fun CrashDao.insertCrashSafely(entity: CrashEntity) {
 /**
  * Insert report into database safely, ignoring any exceptions.
  *
- * When handling a crash we want to avoid causing another crash when writing to the database. In the
- * case of an error we will just ignore it and continue without saving to the database.
+ * When handling a crash we want to avoid causing another crash when writing to the database. In the case of an error we
+ * will just ignore it and continue without saving to the database.
  */
 @SuppressLint("LogUsage") // We do not want to use our custom logger while handling the crash
 @Suppress("TooGenericExceptionCaught")

@@ -2,10 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import kotlin.test.assertNotNull
 import mozilla.components.support.utils.ext.toNullablePair
 import org.junit.Assert.assertNull
 import org.junit.Test
-import kotlin.test.assertNotNull
 
 class PairKtTest {
 
@@ -21,10 +21,10 @@ class PairKtTest {
     @Test
     fun `a pair with any null values should become null`() {
         listOf(
-            null to "nonNull",
-            null to null,
-            "nonNull" to null,
-        )
+                null to "nonNull",
+                null to null,
+                "nonNull" to null,
+            )
             .map { it.toNullablePair() }
             .forEach { assertNull(it) }
     }

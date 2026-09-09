@@ -12,9 +12,6 @@
 #include <winternl.h>
 #include <processthreadsapi.h>
 
-#include <bcrypt.h>
-#pragma comment(lib, "bcrypt.lib")
-
 #include <oleauto.h>
 #pragma comment(lib, "oleaut32.lib")
 
@@ -1559,8 +1556,6 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
 #if !defined(_M_ARM64)
       TEST_HOOK("user32.dll", SetCursorPos, NotEquals, FALSE) &&
 #endif
-      TEST_HOOK("bcrypt.dll", BCryptGenRandom, Equals,
-                static_cast<NTSTATUS>(STATUS_INVALID_HANDLE)) &&
       TEST_HOOK("advapi32.dll", RtlGenRandom, Equals, TRUE) &&
       TEST_HOOK_PARAMS("oleaut32.dll", VariantClear, Equals, S_OK, &var) &&
 #if !defined(_M_ARM64)

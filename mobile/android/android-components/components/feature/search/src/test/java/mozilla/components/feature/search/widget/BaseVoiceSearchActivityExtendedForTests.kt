@@ -13,12 +13,9 @@ class BaseVoiceSearchActivityExtendedForTests : BaseVoiceSearchActivity() {
         return Locale.getDefault()
     }
 
-    override fun onSpeechRecognitionStarted() {
-    }
+    override fun onSpeechRecognitionStarted() {}
 
-    override fun onSpeechRecognitionEnded(spokenText: String) {
-    }
+    override fun onSpeechRecognitionEnded(spokenText: String) {}
 
-    override fun addMenuProvider(provider: MenuProvider) {
-    }
+    override fun addMenuProvider(provider: MenuProvider) {}
 }

@@ -16,8 +16,8 @@ import mozilla.components.lib.state.Store
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * [Middleware] implementation responsible for calling [EngineSession.markActiveForWebExtensions] on
- * [EngineSession] instances.
+ * [Middleware] implementation responsible for calling [EngineSession.markActiveForWebExtensions] on [EngineSession]
+ * instances.
  */
 internal class WebExtensionMiddleware : Middleware<BrowserState, BrowserAction> {
     private val logger = Logger("WebExtensionsMiddleware")
@@ -43,8 +43,7 @@ internal class WebExtensionMiddleware : Middleware<BrowserState, BrowserAction> 
 
         when (action) {
             is TabListAction,
-            is EngineAction.LinkEngineSessionAction,
-            -> {
+            is EngineAction.LinkEngineSessionAction -> {
                 switchActiveStateIfNeeded(store)
             }
             else -> {

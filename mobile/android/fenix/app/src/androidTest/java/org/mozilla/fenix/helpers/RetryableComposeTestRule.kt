@@ -18,23 +18,19 @@ import org.mozilla.fenix.helpers.Constants.TAG
 /**
  * A [TestRule] wrapper for [AndroidComposeTestRule] that supports test retries.
  *
- * Traditional Compose rules cannot be reused across multiple [Statement.evaluate] calls
- * because their internal [TestScope] and [IdlingResource] transitions to a terminal
- * state upon completion or failure.
+ * Traditional Compose rules cannot be reused across multiple [Statement.evaluate] calls because their internal
+ * [TestScope] and [IdlingResource] transitions to a terminal state upon completion or failure.
  *
- * This rule acts as a factory, using the provided [composeRuleFactory] to instantiate
- * a fresh [AndroidComposeTestRule] and a new [Activity] for every retry attempt
- * triggered by an outer [RetryTestRule].
+ * This rule acts as a factory, using the provided [composeRuleFactory] to instantiate a fresh [AndroidComposeTestRule]
+ * and a new [Activity] for every retry attempt triggered by an outer [RetryTestRule].
  *
- * The type parameters are inferred from the factory's return type at the call site, so
- * callers typically write `RetryableComposeTestRule { AndroidComposeTestRuleV2(...) { ... } }`
- * without spelling them out.
+ * The type parameters are inferred from the factory's return type at the call site, so callers typically write
+ * `RetryableComposeTestRule { AndroidComposeTestRuleV2(...) { ... } }` without spelling them out.
  *
- * Pair this rule with a [RetryTestRule] declared at a *lower* [order][org.junit.Rule.order]
- * value so the retry rule wraps this one and re-invokes our [evaluate] on each attempt
- * (lower [order][org.junit.Rule.order] = outermost in JUnit). Without that ordering, retries
- * re-run only the test method inside a single [evaluate], reusing the same inner rule:
- *
+ * Pair this rule with a [RetryTestRule] declared at a *lower* [order][org.junit.Rule.order] value so the retry rule
+ * wraps this one and re-invokes our [evaluate] on each attempt (lower [order][org.junit.Rule.order] = outermost in
+ * JUnit). Without that ordering, retries re-run only the test method inside a single [evaluate], reusing the same inner
+ * rule:
  * ```
  * @get:Rule(order = 1)
  * val retryTestRule = RetryTestRule(3)
@@ -48,23 +44,26 @@ import org.mozilla.fenix.helpers.Constants.TAG
  * @param composeRuleFactory A lambda that constructs the specific Compose rule configuration.
  */
 class RetryableComposeTestRule<R : TestRule, T : ComponentActivity>(
-    private val composeRuleFactory: () -> AndroidComposeTestRule<R, T>,
+    private val composeRuleFactory: () -> AndroidComposeTestRule<R, T>
 ) : TestRule {
 
     private var _innerRule: AndroidComposeTestRule<R, T>? = null
 
     /**
-     * Provides access to the current instance of the compose rule.
-     * Use this inside your test methods: composeTestRule.onNodeWithText(...)
+     * Provides access to the current instance of the compose rule. Use this inside your test methods:
+     * composeTestRule.onNodeWithText(...)
      */
     val current: AndroidComposeTestRule<R, T>
-        get() = _innerRule
-            ?: error("RetryableComposeTestRule.current accessed before apply() initialized the inner rule")
+        get() =
+            _innerRule ?: error("RetryableComposeTestRule.current accessed before apply() initialized the inner rule")
 
     override fun apply(base: Statement, description: Description): Statement {
         return object : Statement() {
             override fun evaluate() {
-                Log.i(TAG, "RetryableComposeTestRule: Creating new compose rule for ${description.className}.${description.methodName}")
+                Log.i(
+                    TAG,
+                    "RetryableComposeTestRule: Creating new compose rule for ${description.className}.${description.methodName}",
+                )
                 val rule = composeRuleFactory()
                 _innerRule = rule
                 Log.i(TAG, "RetryableComposeTestRule: Applying inner compose rule.")

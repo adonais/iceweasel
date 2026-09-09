@@ -16,59 +16,54 @@ class CreditCardsAdapterTest {
 
     @Test
     fun testDiffCallback() {
-        val creditCard1 = CreditCard(
-            guid = "id",
-            billingName = "Banana Apple",
-            encryptedCardNumber = CreditCardNumber.Encrypted("4111111111111110"),
-            cardNumberLast4 = "1110",
-            expiryMonth = 1,
-            expiryYear = 2030,
-            cardType = CreditCardNetworkType.AMEX.cardName,
-            timeCreated = 1L,
-            timeLastUsed = 1L,
-            timeLastModified = 1L,
-            timesUsed = 1L,
-        )
-        val creditCard2 = CreditCard(
-            guid = "id",
-            billingName = "Banana Apple",
-            encryptedCardNumber = CreditCardNumber.Encrypted("4111111111111110"),
-            cardNumberLast4 = "1110",
-            expiryMonth = 1,
-            expiryYear = 2030,
-            cardType = CreditCardNetworkType.AMEX.cardName,
-            timeCreated = 1L,
-            timeLastUsed = 1L,
-            timeLastModified = 1L,
-            timesUsed = 1L,
-        )
+        val creditCard1 =
+            CreditCard(
+                guid = "id",
+                billingName = "Banana Apple",
+                encryptedCardNumber = CreditCardNumber.Encrypted("4111111111111110"),
+                cardNumberLast4 = "1110",
+                expiryMonth = 1,
+                expiryYear = 2030,
+                cardType = CreditCardNetworkType.AMEX.cardName,
+                timeCreated = 1L,
+                timeLastUsed = 1L,
+                timeLastModified = 1L,
+                timesUsed = 1L,
+            )
+        val creditCard2 =
+            CreditCard(
+                guid = "id",
+                billingName = "Banana Apple",
+                encryptedCardNumber = CreditCardNumber.Encrypted("4111111111111110"),
+                cardNumberLast4 = "1110",
+                expiryMonth = 1,
+                expiryYear = 2030,
+                cardType = CreditCardNetworkType.AMEX.cardName,
+                timeCreated = 1L,
+                timeLastUsed = 1L,
+                timeLastModified = 1L,
+                timesUsed = 1L,
+            )
 
-        assertTrue(
-            CreditCardsAdapter.DiffCallback.areItemsTheSame(creditCard1, creditCard2),
-        )
-        assertTrue(
-            CreditCardsAdapter.DiffCallback.areContentsTheSame(creditCard1, creditCard2),
-        )
+        assertTrue(CreditCardsAdapter.DiffCallback.areItemsTheSame(creditCard1, creditCard2))
+        assertTrue(CreditCardsAdapter.DiffCallback.areContentsTheSame(creditCard1, creditCard2))
 
-        val creditCard3 = CreditCard(
-            guid = "id3",
-            billingName = "Banana Apple",
-            encryptedCardNumber = CreditCardNumber.Encrypted("4111111111111110"),
-            cardNumberLast4 = "1110",
-            expiryMonth = 1,
-            expiryYear = 2030,
-            cardType = CreditCardNetworkType.AMEX.cardName,
-            timeCreated = 1L,
-            timeLastUsed = 1L,
-            timeLastModified = 1L,
-            timesUsed = 1L,
-        )
+        val creditCard3 =
+            CreditCard(
+                guid = "id3",
+                billingName = "Banana Apple",
+                encryptedCardNumber = CreditCardNumber.Encrypted("4111111111111110"),
+                cardNumberLast4 = "1110",
+                expiryMonth = 1,
+                expiryYear = 2030,
+                cardType = CreditCardNetworkType.AMEX.cardName,
+                timeCreated = 1L,
+                timeLastUsed = 1L,
+                timeLastModified = 1L,
+                timesUsed = 1L,
+            )
 
-        assertFalse(
-            CreditCardsAdapter.DiffCallback.areItemsTheSame(creditCard1, creditCard3),
-        )
-        assertFalse(
-            CreditCardsAdapter.DiffCallback.areContentsTheSame(creditCard1, creditCard3),
-        )
+        assertFalse(CreditCardsAdapter.DiffCallback.areItemsTheSame(creditCard1, creditCard3))
+        assertFalse(CreditCardsAdapter.DiffCallback.areContentsTheSame(creditCard1, creditCard3))
     }
 }

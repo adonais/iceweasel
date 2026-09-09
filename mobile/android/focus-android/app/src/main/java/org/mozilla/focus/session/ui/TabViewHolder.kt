@@ -8,22 +8,20 @@ import androidx.annotation.DrawableRes
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
+import java.lang.ref.WeakReference
 import mozilla.components.browser.state.state.TabSessionState
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.focus.R
 import org.mozilla.focus.databinding.ItemSessionBinding
 import org.mozilla.focus.ext.beautifyUrl
-import java.lang.ref.WeakReference
-import mozilla.components.ui.icons.R as iconsR
 
 /**
- * [RecyclerView.ViewHolder] implementation for displaying a tab session or action items
- * (like "Add New Tab" or "Close All Tabs") in the tabs tray.
+ * [RecyclerView.ViewHolder] implementation for displaying a tab session or action items (like "Add New Tab" or "Close
+ * All Tabs") in the tabs tray.
  *
  * @param binding The [ItemSessionBinding] for the layout of this view holder.
  */
-class TabViewHolder(
-    private val binding: ItemSessionBinding,
-) : RecyclerView.ViewHolder(binding.root) {
+class TabViewHolder(private val binding: ItemSessionBinding) : RecyclerView.ViewHolder(binding.root) {
 
     private var tabReference: WeakReference<TabSessionState> = WeakReference<TabSessionState>(null)
 
@@ -39,7 +37,6 @@ class TabViewHolder(
      * @param isCloseAllItem Indicates if this item should represent the "Close All Tabs" action.
      * @param isAddNewTabItem Indicates if this item should represent the "Add New Tab" action.
      */
-
     fun bind(
         tab: TabSessionState?,
         isCurrentSession: Boolean,
@@ -50,11 +47,12 @@ class TabViewHolder(
         isCloseAllItem: Boolean,
         isAddNewTabItem: Boolean,
     ) {
-        val drawable = if (isCurrentSession) {
-            R.drawable.background_list_item_current_session
-        } else {
-            R.drawable.background_list_item_session
-        }
+        val drawable =
+            if (isCurrentSession) {
+                R.drawable.background_list_item_current_session
+            } else {
+                R.drawable.background_list_item_session
+            }
 
         when {
             tab != null -> {

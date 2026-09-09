@@ -10,8 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 /**
- * Creates a [PasswordGeneratorDialogColors] that represents the default colors used in an
- * Password Generator bottom sheet dialog.
+ * Creates a [PasswordGeneratorDialogColors] that represents the default colors used in an Password Generator bottom
+ * sheet dialog.
  *
  * @param title The text color for the title of the dialog.
  * @param description The text color for the description.
@@ -33,9 +33,7 @@ data class PasswordGeneratorDialogColors(
 
     companion object {
 
-        /**
-         * @see [PasswordGeneratorDialogColors]
-         */
+        /** @see [PasswordGeneratorDialogColors] */
         @Composable
         fun default(
             title: Color = MaterialTheme.colorScheme.onSurface,
@@ -45,31 +43,25 @@ data class PasswordGeneratorDialogColors(
             confirmButton: Color = ButtonDefaults.buttonColors().containerColor,
             passwordBox: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
             boxBorder: Color = MaterialTheme.colorScheme.outline,
-        ) = PasswordGeneratorDialogColors(
-            title = title,
-            description = description,
-            background = background,
-            cancelText = cancelText,
-            confirmButton = confirmButton,
-            passwordBox = passwordBox,
-            boxBorder = boxBorder,
-        )
+        ) =
+            PasswordGeneratorDialogColors(
+                title = title,
+                description = description,
+                background = background,
+                cancelText = cancelText,
+                confirmButton = confirmButton,
+                passwordBox = passwordBox,
+                boxBorder = boxBorder,
+            )
 
-        /**
-         * Creates a provider that provides the default [PasswordGeneratorDialogColors]
-         */
+        /** Creates a provider that provides the default [PasswordGeneratorDialogColors] */
         fun defaultProvider() = PasswordGeneratorDialogColorsProvider { default() }
     }
 }
 
-/**
- * An [PasswordGeneratorDialogColorsProvider] implementation can provide an [PasswordGeneratorDialogColors]
- */
+/** An [PasswordGeneratorDialogColorsProvider] implementation can provide an [PasswordGeneratorDialogColors] */
 fun interface PasswordGeneratorDialogColorsProvider {
 
-    /**
-     * Provides [PasswordGeneratorDialogColors]
-     */
-    @Composable
-    fun provideColors(): PasswordGeneratorDialogColors
+    /** Provides [PasswordGeneratorDialogColors] */
+    @Composable fun provideColors(): PasswordGeneratorDialogColors
 }

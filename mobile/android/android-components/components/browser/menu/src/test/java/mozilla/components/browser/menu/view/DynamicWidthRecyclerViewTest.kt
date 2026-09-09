@@ -116,7 +116,8 @@ class DynamicWidthRecyclerViewTest {
     @Test
     fun `setReconciledDimensions() must set material minimum width even if childs are smaller`() {
         val childrenWidth = 20
-        val materialMinWidth = testContext.resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_material_min_item_width)
+        val materialMinWidth =
+            testContext.resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_material_min_item_width)
         // Layout width is *2 to allow bigger sizes. minWidth is /2 to verify the material min width is used.
         val dynamicRecyclerView = buildRecyclerView()
         dynamicRecyclerView.minWidth = materialMinWidth / 2
@@ -131,7 +132,8 @@ class DynamicWidthRecyclerViewTest {
     fun `setReconciledDimensions() must set minWidth even if children width is smaller`() {
         val childrenWidth = 20
         // minWidth set in xml. Ensure it is bigger than the default.
-        val minWidth = testContext.resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_material_min_item_width) + 10
+        val minWidth =
+            testContext.resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_material_min_item_width) + 10
         val dynamicRecyclerView = buildRecyclerView()
         dynamicRecyclerView.minWidth = minWidth
         dynamicRecyclerView.maxWidth = 500
@@ -143,7 +145,8 @@ class DynamicWidthRecyclerViewTest {
 
     @Test
     fun `setReconciledDimensions() will set children width if it is bigger than minWidth and smaller than maxWidth`() {
-        val materialMinWidth = testContext.resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_material_min_item_width)
+        val materialMinWidth =
+            testContext.resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_material_min_item_width)
         val childrenWidth = materialMinWidth + 10
         // Layout width is *2 to allow bigger sizes. minWidth is /2 to verify the material min width is used.
         val dynamicRecyclerView = buildRecyclerView()
@@ -159,7 +162,8 @@ class DynamicWidthRecyclerViewTest {
     @Config(qualifiers = "w500dp")
     @Suppress("UnnecessaryVariable")
     fun `setReconciledDimensions() must set maxWidth when children width is bigger`() {
-        val materialMaxWidth = 500 - testContext.resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_material_min_tap_area)
+        val materialMaxWidth =
+            500 - testContext.resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_material_min_tap_area)
         val childrenWidth = materialMaxWidth
         val maxWidth = materialMaxWidth - 10
         val dynamicRecyclerView = buildRecyclerView()
@@ -174,7 +178,8 @@ class DynamicWidthRecyclerViewTest {
     @Test
     @Config(qualifiers = "w500dp")
     fun `setReconciledDimensions must set material maximum width when children width is bigger`() {
-        val materialMaxWidth = 500 - testContext.resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_material_min_tap_area)
+        val materialMaxWidth =
+            500 - testContext.resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_material_min_tap_area)
         val maxWidth = 500
         val childrenWidth = maxWidth + 10
         val dynamicRecyclerView = buildRecyclerView()

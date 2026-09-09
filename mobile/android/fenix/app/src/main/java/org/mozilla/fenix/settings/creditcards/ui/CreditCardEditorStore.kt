@@ -8,15 +8,14 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Reducer
 import mozilla.components.lib.state.Store
 
-/**
- * A Store for handling [CreditCardEditorState] and dispatching [CreditCardEditorAction].
- */
+/** A Store for handling [CreditCardEditorState] and dispatching [CreditCardEditorAction]. */
 class CreditCardEditorStore(
     initialState: CreditCardEditorState,
     reducer: Reducer<CreditCardEditorState, CreditCardEditorAction> = ::creditCardEditorReducer,
     middleware: List<Middleware<CreditCardEditorState, CreditCardEditorAction>> = listOf(),
-) : Store<CreditCardEditorState, CreditCardEditorAction>(
-    initialState = initialState,
-    reducer = reducer,
-    middleware = middleware,
-)
+) :
+    Store<CreditCardEditorState, CreditCardEditorAction>(
+        initialState = initialState,
+        reducer = reducer,
+        middleware = middleware,
+    )

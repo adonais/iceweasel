@@ -37,15 +37,25 @@ input[type="url"]:not(:placeholder-shown) {
 .error-label {
   display: flex;
   font-size: var(--font-size-small);
+  /* Reserve space for a line of text even while empty, so that the layout
+   * doesn't shift once an error message is added. */
+  min-block-size: var(--icon-size-small);
   margin-top: var(--space-xxsmall);
   margin-bottom: var(--space-medium);
   align-items: center;
   gap: var(--space-xsmall);
   color: var(--text-color-error);
 
-  visibility: hidden;
-  input:user-invalid + & {
-    visibility: visible;
+  /* Use opacity rather than visibility to hide this: visibility:hidden
+   * elements get no accessible object at all, so revealing one is a fresh
+   * insertion into the a11y tree rather than a text change on an existing
+   * live region, and isn't reliably announced. Opacity keeps the
+   * role="alert" node (and its accessible) around the whole time. */
+  opacity: 0;
+  pointer-events: none;
+  input[aria-invalid="true"] + & {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   &::before {

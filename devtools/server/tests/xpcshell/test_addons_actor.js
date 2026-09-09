@@ -4,11 +4,7 @@
 "use strict";
 
 async function connect() {
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
-
-  const client = new DevToolsClient(DevToolsServer.connectPipe());
-  await client.connect();
+  const client = await CommandsFactory.spawnClientToDebugSystemPrincipal();
 
   const addons = await client.mainRoot.getFront("addons");
   return [client, addons];

@@ -7,9 +7,8 @@ package org.mozilla.fenix.ui.efficiency.logging
 /**
  * Outcome of executing a single [TestStep].
  *
- * Factories treat any [Fail] as **fail fast** at the current tier, after logging
- * and (usually) capturing a screenshot. [Ok] indicates the step completed
- * successfully and the flow may continue.
+ * Factories treat any [Fail] as **fail fast** at the current tier, after logging and (usually) capturing a screenshot.
+ * [Ok] indicates the step completed successfully and the flow may continue.
  */
 sealed class StepResult {
 
@@ -19,8 +18,8 @@ sealed class StepResult {
     /**
      * Step failed with a human-readable [reason] and optional [cause].
      *
-     * The [reason] should be end-user friendly (appears in summary logs). The
-     * [cause], when present, is captured into the JSON details for triage.
+     * The [reason] should be end-user friendly (appears in summary logs). The [cause], when present, is captured into
+     * the JSON details for triage.
      */
     data class Fail(val reason: String, val cause: Throwable? = null) : StepResult()
 }

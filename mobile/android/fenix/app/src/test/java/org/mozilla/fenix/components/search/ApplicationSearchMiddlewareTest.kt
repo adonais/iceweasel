@@ -21,23 +21,25 @@ import org.junit.Test
 class ApplicationSearchMiddlewareTest {
     @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
-    fun `GIVEN ApplicationSearchLoaderMiddleware WHEN InitAction is received THEN dispatch ApplicationSearchEnginesLoaded`() = runTest {
-        val middleware = ApplicationSearchMiddleware(
-            mockk(),
-            { _ -> "mockk()" },
-            { _ -> mockk() },
-            this,
-        )
-        val store: Store<BrowserState, BrowserAction> = mockk(relaxed = true)
+    fun `GIVEN ApplicationSearchLoaderMiddleware WHEN InitAction is received THEN dispatch ApplicationSearchEnginesLoaded`() =
+        runTest {
+            val middleware =
+                ApplicationSearchMiddleware(
+                    mockk(),
+                    { _ -> "mockk()" },
+                    { _ -> mockk() },
+                    this,
+                )
+            val store: Store<BrowserState, BrowserAction> = mockk(relaxed = true)
 
-        middleware.invoke(store, { _ -> }, InitAction)
-        this.advanceUntilIdle()
+            middleware.invoke(store, { _ -> }, InitAction)
+            this.advanceUntilIdle()
 
-        val slot = slot<SearchAction.ApplicationSearchEnginesLoaded>()
-        verify { store.dispatch(capture(slot)) }
-        slot.captured.applicationSearchEngines.also {
-            assertEquals(3, it.size)
-            assertEquals("bookmarks_search_engine_id", it.first().id)
+            val slot = slot<SearchAction.ApplicationSearchEnginesLoaded>()
+            verify { store.dispatch(capture(slot)) }
+            slot.captured.applicationSearchEngines.also {
+                assertEquals(3, it.size)
+                assertEquals("bookmarks_search_engine_id", it.first().id)
+            }
         }
-    }
 }

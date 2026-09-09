@@ -19,8 +19,7 @@ import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.home.topsites.AddShortcutSource
 
 /**
- * A [Middleware] for recording homepage related telemetry based on [AppAction]s that are
- * dispatch to the [AppStore].
+ * A [Middleware] for recording homepage related telemetry based on [AppAction]s that are dispatch to the [AppStore].
  */
 class HomeTelemetryMiddleware : Middleware<AppState, AppAction> {
     override fun invoke(
@@ -35,17 +34,18 @@ class HomeTelemetryMiddleware : Middleware<AppState, AppAction> {
                 val recommendation = action.recommendation
 
                 HomeContentArticle.click.record(
-                    extra = HomeContentArticle.ClickExtra(
-                        corpusItemId = recommendation.corpusItemId,
-                        isSponsored = false,
-                        position = action.position,
-                        receivedRank = recommendation.receivedRank,
-                        recommendedAt = recommendation.recommendedAt.toInt(),
-                        scheduledCorpusItemId = recommendation.scheduledCorpusItemId,
-                        tileId = recommendation.tileId.toInt(),
-                        topic = recommendation.topic,
-                        source = action.source.sourceName,
-                    ),
+                    extra =
+                        HomeContentArticle.ClickExtra(
+                            corpusItemId = recommendation.corpusItemId,
+                            isSponsored = false,
+                            position = action.position,
+                            receivedRank = recommendation.receivedRank,
+                            recommendedAt = recommendation.recommendedAt.toInt(),
+                            scheduledCorpusItemId = recommendation.scheduledCorpusItemId,
+                            tileId = recommendation.tileId.toInt(),
+                            topic = recommendation.topic,
+                            source = action.source.sourceName,
+                        )
                 )
 
                 Pings.home.submit()
@@ -56,17 +56,18 @@ class HomeTelemetryMiddleware : Middleware<AppState, AppAction> {
                     when (story) {
                         is ContentRecommendation -> {
                             HomeContentArticle.impression.record(
-                                extra = HomeContentArticle.ImpressionExtra(
-                                    corpusItemId = story.corpusItemId,
-                                    isSponsored = false,
-                                    position = position,
-                                    receivedRank = story.receivedRank,
-                                    recommendedAt = story.recommendedAt.toInt(),
-                                    scheduledCorpusItemId = story.scheduledCorpusItemId,
-                                    tileId = story.tileId.toInt(),
-                                    topic = story.topic,
-                                    source = action.source.sourceName,
-                                ),
+                                extra =
+                                    HomeContentArticle.ImpressionExtra(
+                                        corpusItemId = story.corpusItemId,
+                                        isSponsored = false,
+                                        position = position,
+                                        receivedRank = story.receivedRank,
+                                        recommendedAt = story.recommendedAt.toInt(),
+                                        scheduledCorpusItemId = story.scheduledCorpusItemId,
+                                        tileId = story.tileId.toInt(),
+                                        topic = story.topic,
+                                        source = action.source.sourceName,
+                                    )
                             )
                         }
                         else -> {
@@ -83,14 +84,12 @@ class HomeTelemetryMiddleware : Middleware<AppState, AppAction> {
                     TopSites.AddExtra(
                         source = action.source.value,
                         entryPoint = action.entryPoint.value,
-                    ),
+                    )
                 )
             }
 
             is ShortcutAction.AddShortcutSheetShown -> {
-                TopSites.addSheetShown.record(
-                    TopSites.AddSheetShownExtra(entryPoint = action.entryPoint.value),
-                )
+                TopSites.addSheetShown.record(TopSites.AddSheetShownExtra(entryPoint = action.entryPoint.value))
             }
 
             is ShortcutAction.AddWebsiteDialogShown -> {
@@ -98,9 +97,7 @@ class HomeTelemetryMiddleware : Middleware<AppState, AppAction> {
             }
 
             is ShortcutAction.FrecencyTopSitePromoted -> {
-                TopSites.add.record(
-                    TopSites.AddExtra(source = AddShortcutSource.FRECENCY_PROMOTE.value),
-                )
+                TopSites.add.record(TopSites.AddExtra(source = AddShortcutSource.FRECENCY_PROMOTE.value))
             }
 
             else -> {

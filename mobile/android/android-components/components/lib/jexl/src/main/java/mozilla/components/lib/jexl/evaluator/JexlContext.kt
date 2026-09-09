@@ -9,35 +9,16 @@ import mozilla.components.lib.jexl.value.JexlValue
 /**
  * Variables defined in the [JexlContext] are available to expressions.
  *
- * Example context:
- * <code>
- *  val context = JexlContext(
- *      "employees" to JexlArray(
- *          JexlObject(
- *              "first" to "Sterling".toJexl(),
- *              "last" to "Archer".toJexl(),
- *              "age" to 36.toJexl()),
- *          JexlObject(
- *              "first" to "Malory".toJexl(),
- *              "last" to "Archer".toJexl(),
- *              "age" to 75.toJexl()),
- *          JexlObject(
- *              "first" to "Malory".toJexl(),
- *              "last" to "Archer".toJexl(),
- *              "age" to 33.toJexl())
- *      )
- *  )
- * </code>
+ * Example context: <code> val context = JexlContext( "employees" to JexlArray( JexlObject( "first" to
+ * "Sterling".toJexl(), "last" to "Archer".toJexl(), "age" to 36.toJexl()), JexlObject( "first" to "Malory".toJexl(),
+ * "last" to "Archer".toJexl(), "age" to 75.toJexl()), JexlObject( "first" to "Malory".toJexl(), "last" to
+ * "Archer".toJexl(), "age" to 33.toJexl()) ) ) </code>
  *
  * This context can be accessed in an JEXL expression like this:
  *
- * <code>
- *     employees[.age >= 30 && .age < 90][.age < 35]
- * </code>
+ * <code> employees[.age >= 30 && .age < 90][.age < 35] </code>
  */
-class JexlContext(
-    vararg pairs: Pair<String, JexlValue>,
-) {
+class JexlContext(vararg pairs: Pair<String, JexlValue>) {
     private val properties: MutableMap<String, JexlValue> = pairs.toMap().toMutableMap()
 
     fun set(key: String, value: JexlValue) {
@@ -45,7 +26,6 @@ class JexlContext(
     }
 
     fun get(key: String): JexlValue {
-        return properties[key]
-            ?: throw EvaluatorException("$key is undefined")
+        return properties[key] ?: throw EvaluatorException("$key is undefined")
     }
 }

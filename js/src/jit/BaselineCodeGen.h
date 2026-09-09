@@ -53,12 +53,20 @@ class BaselineCodeGen {
   // Prologue code where we resume for Ion prologue bailouts.
   NonAssertingLabel bailoutPrologue_;
 
+  // Prologue code where we resume for a bailout of a frame that is still
+  // mid-generator-resume.
+  NonAssertingLabel bailoutResumePrologue_;
+
   CodeOffset profilerEnterFrameToggleOffset_;
   CodeOffset profilerExitFrameToggleOffset_;
 
   // Early Ion bailouts will enter at this address. This is after frame
   // construction and before environment chain is initialized.
   CodeOffset bailoutPrologueOffset_;
+
+  // Bailouts of a frame that is still mid-generator-resume enter at this
+  // address.
+  CodeOffset bailoutResumePrologueOffset_;
 
   // Baseline Interpreter can enter Baseline Compiler code at this address. This
   // is right after the warm-up counter check in the prologue.

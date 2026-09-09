@@ -42,26 +42,28 @@ class EngineViewScrollingGesturesBehaviorTest {
         doReturn(true).`when`(behavior).shouldScroll
 
         doReturn(View.GONE).`when`(browserToolbar).isVisible
-        var acceptsNestedScroll = behavior.onStartNestedScroll(
-            coordinatorLayout = mock(),
-            child = mock(),
-            directTargetChild = mock(),
-            target = mock(),
-            axes = ViewCompat.SCROLL_AXIS_VERTICAL,
-            type = ViewCompat.TYPE_TOUCH,
-        )
+        var acceptsNestedScroll =
+            behavior.onStartNestedScroll(
+                coordinatorLayout = mock(),
+                child = mock(),
+                directTargetChild = mock(),
+                target = mock(),
+                axes = ViewCompat.SCROLL_AXIS_VERTICAL,
+                type = ViewCompat.TYPE_TOUCH,
+            )
         assertFalse(acceptsNestedScroll)
         verify(behavior, never()).startNestedScroll(anyInt(), anyInt())
 
         doReturn(View.VISIBLE).`when`(browserToolbar).isVisible
-        acceptsNestedScroll = behavior.onStartNestedScroll(
-            coordinatorLayout = mock(),
-            child = mock(),
-            directTargetChild = mock(),
-            target = mock(),
-            axes = ViewCompat.SCROLL_AXIS_VERTICAL,
-            type = ViewCompat.TYPE_TOUCH,
-        )
+        acceptsNestedScroll =
+            behavior.onStartNestedScroll(
+                coordinatorLayout = mock(),
+                child = mock(),
+                directTargetChild = mock(),
+                target = mock(),
+                axes = ViewCompat.SCROLL_AXIS_VERTICAL,
+                type = ViewCompat.TYPE_TOUCH,
+            )
         assertTrue(acceptsNestedScroll)
         verify(behavior).startNestedScroll(anyInt(), anyInt())
     }
@@ -73,10 +75,11 @@ class EngineViewScrollingGesturesBehaviorTest {
         behavior.yTranslator = yTranslator
         doReturn(true).`when`(behavior).shouldScroll
 
-        val acceptsNestedScroll = behavior.startNestedScroll(
-            axes = ViewCompat.SCROLL_AXIS_VERTICAL,
-            type = ViewCompat.TYPE_TOUCH,
-        )
+        val acceptsNestedScroll =
+            behavior.startNestedScroll(
+                axes = ViewCompat.SCROLL_AXIS_VERTICAL,
+                type = ViewCompat.TYPE_TOUCH,
+            )
 
         assertTrue(acceptsNestedScroll)
         verify(yTranslator).cancelInProgressTranslation()
@@ -87,16 +90,18 @@ class EngineViewScrollingGesturesBehaviorTest {
         val behavior = spy(EngineViewScrollingGesturesBehavior(createDummyEngineView(), mock(), Bottom))
         doReturn(true).`when`(behavior).shouldScroll
 
-        var acceptsNestedScroll = behavior.startNestedScroll(
-            axes = ViewCompat.SCROLL_AXIS_VERTICAL,
-            type = ViewCompat.TYPE_TOUCH,
-        )
+        var acceptsNestedScroll =
+            behavior.startNestedScroll(
+                axes = ViewCompat.SCROLL_AXIS_VERTICAL,
+                type = ViewCompat.TYPE_TOUCH,
+            )
         assertTrue(acceptsNestedScroll)
 
-        acceptsNestedScroll = behavior.startNestedScroll(
-            axes = ViewCompat.SCROLL_AXIS_HORIZONTAL,
-            type = ViewCompat.TYPE_TOUCH,
-        )
+        acceptsNestedScroll =
+            behavior.startNestedScroll(
+                axes = ViewCompat.SCROLL_AXIS_HORIZONTAL,
+                type = ViewCompat.TYPE_TOUCH,
+            )
         assertFalse(acceptsNestedScroll)
     }
 
@@ -111,10 +116,11 @@ class EngineViewScrollingGesturesBehaviorTest {
         doReturn(true).`when`(inputResultDetail).isTouchUnhandled()
         doReturn(inputResultDetail).`when`(engineView).getInputResultDetail()
 
-        val acceptsNestedScroll = behavior.startNestedScroll(
-            axes = ViewCompat.SCROLL_AXIS_VERTICAL,
-            type = ViewCompat.TYPE_TOUCH,
-        )
+        val acceptsNestedScroll =
+            behavior.startNestedScroll(
+                axes = ViewCompat.SCROLL_AXIS_VERTICAL,
+                type = ViewCompat.TYPE_TOUCH,
+            )
 
         assertFalse(acceptsNestedScroll)
     }
@@ -124,24 +130,26 @@ class EngineViewScrollingGesturesBehaviorTest {
         val behavior = spy(EngineViewScrollingGesturesBehavior(createDummyEngineView(), mock(), Bottom))
         doReturn(true).`when`(behavior).shouldScroll
 
-        var acceptsNestedScroll = behavior.onStartNestedScroll(
-            coordinatorLayout = mock(),
-            child = mock(),
-            directTargetChild = mock(),
-            target = mock(),
-            axes = ViewCompat.SCROLL_AXIS_VERTICAL,
-            type = ViewCompat.TYPE_TOUCH,
-        )
+        var acceptsNestedScroll =
+            behavior.onStartNestedScroll(
+                coordinatorLayout = mock(),
+                child = mock(),
+                directTargetChild = mock(),
+                target = mock(),
+                axes = ViewCompat.SCROLL_AXIS_VERTICAL,
+                type = ViewCompat.TYPE_TOUCH,
+            )
         assertTrue(acceptsNestedScroll)
 
-        acceptsNestedScroll = behavior.onStartNestedScroll(
-            coordinatorLayout = mock(),
-            child = mock(),
-            directTargetChild = mock(),
-            target = mock(),
-            axes = ViewCompat.SCROLL_AXIS_HORIZONTAL,
-            type = ViewCompat.TYPE_TOUCH,
-        )
+        acceptsNestedScroll =
+            behavior.onStartNestedScroll(
+                coordinatorLayout = mock(),
+                child = mock(),
+                directTargetChild = mock(),
+                target = mock(),
+                axes = ViewCompat.SCROLL_AXIS_HORIZONTAL,
+                type = ViewCompat.TYPE_TOUCH,
+            )
         assertFalse(acceptsNestedScroll)
     }
 
@@ -507,18 +515,28 @@ class EngineViewScrollingGesturesBehaviorTest {
     open class DummyEngineView(context: Context) : FrameLayout(context), EngineView {
         override val verticalScrollPosition = flowOf(0f)
         override val verticalScrollDelta = flowOf(0f)
+
         override fun setVerticalClipping(clippingHeight: Int) {}
+
         override fun setDynamicToolbarMaxHeight(height: Int) {}
+
         override fun setActivityContext(context: Context?) {}
+
         override fun captureThumbnail(onFinish: (Bitmap?) -> Unit) = Unit
+
         override fun render(session: EngineSession) {}
+
         override fun release() {}
+
         override var selectionActionDelegate: SelectionActionDelegate? = null
+
         override fun addWindowInsetsListener(
             key: String,
             listener: androidx.core.view.OnApplyWindowInsetsListener?,
         ) {}
+
         override fun removeWindowInsetsListener(key: String) {}
+
         override fun asView() = View(context)
     }
 }

@@ -6,6 +6,9 @@
 
 const UPGRADE_NOT_AVAILABLE_PREF = "browser.ipProtection.upgradeNotAvailable";
 
+// The recommended option, which the list always renders first.
+const RECOMMENDED_CODE = "REC";
+
 const MOCK_LOCATIONS_LIST = [
   { code: "US", available: true },
   { code: "CA", available: true },
@@ -202,7 +205,7 @@ add_task(async function test_locations_tab_exits_list_from_any_item() {
 
   let locationsList = locationsView.querySelector("locations-list");
   let listItems = Array.from(
-    locationsList.querySelectorAll(".location-item:not([disabled])")
+    locationsList.querySelectorAll(".location-item:not([aria-disabled])")
   );
 
   Assert.greater(listItems.length, 1, "should have more than one enabled item");
@@ -215,6 +218,51 @@ add_task(async function test_locations_tab_exits_list_from_any_item() {
   let backButton = locationsView.querySelector(".subviewbutton-back");
   listItems[1].focus();
   await expectFocusAfterKey("Shift+Tab", backButton);
+
+  await closePanel();
+  cleanupService();
+});
+
+/**
+ * Tests that the list keeps a single tab stop that follows the focused item
+ * while the subview stays open, so tabbing out of and back into the list
+ * returns focus to that item rather than the selected option it started on.
+ */
+add_task(async function test_locations_tab_stop_follows_focused_item() {
+  let { backButton, locationsView, promoButton } = await openLocationsSubview({
+    hasUpgraded: false,
+  });
+
+  Assert.ok(promoButton, "promo button should be present");
+
+  let locationsList = locationsView.querySelector("locations-list");
+  let listItems = Array.from(
+    locationsList.querySelectorAll(".location-item:not([aria-disabled])")
+  );
+
+  Assert.greater(listItems.length, 1, "should have more than one enabled item");
+
+  // Move focus onto a non-default list item; the roving tabindex should follow.
+  let targetItem = listItems[1];
+  targetItem.focus();
+  await locationsList.updateComplete;
+
+  Assert.equal(
+    targetItem.getAttribute("tabindex"),
+    "0",
+    "the focused item should become the single tab stop"
+  );
+  Assert.equal(
+    listItems.filter(item => item.getAttribute("tabindex") === "0").length,
+    1,
+    "only one list item should be in the tab order"
+  );
+
+  // Tab out of the list and cycle back in; focus should return to the last
+  // focused item, not the recommended item.
+  await expectFocusAfterKey("Tab", promoButton);
+  await expectFocusAfterKey("Tab", backButton);
+  await expectFocusAfterKey("Tab", targetItem);
 
   await closePanel();
   cleanupService();
@@ -372,22 +420,54 @@ add_task(async function test_locations_arrow_right_closes_subview_in_rtl() {
 });
 
 /**
- * Tests that opening the subview via keyboard focuses the first list item,
- * and that closing via keyboard returns focus to the location button.
+ * Tests that opening the subview via keyboard focuses the list's tab stop, which
+ * starts on the selected location rather than the first list item, and that
+ * closing via keyboard returns focus to the location button.
+ *
+ * Reopening the subview should move the tab stop back to the selected location:
+ * PanelMultiView reuses the same list element when moving the subview between
+ * its view stacks, so the roving tabindex has to be reset when the list is
+ * reconnected.
+ *
  * Opening via mouse should not affect focus in either direction.
  */
-add_task(async function test_locations_keyboard_open_focuses_header_button() {
+add_task(async function test_locations_keyboard_open_focuses_selected_item() {
   let { firstListItem, locationsView, locationButton } =
-    await openLocationsSubview({}, true);
+    await openLocationsSubview({ location: "CA" }, true);
 
   Assert.ok(locationButton, "location button should be present");
 
+  let itemFor = code => locationsView.querySelector(`#location-option-${code}`);
+  let locationsList = locationsView.querySelector("locations-list");
+
+  Assert.ok(itemFor("CA"), "the selected location item should be present");
+  Assert.notEqual(
+    itemFor("CA"),
+    firstListItem,
+    "the selected location should not be the first list item"
+  );
   Assert.equal(
     document.activeElement,
-    firstListItem,
-    "keyboard-activated open should focus the first list item"
+    itemFor("CA"),
+    "keyboard-activated open should focus the selected location"
   );
 
+  // Move the tab stop off the selected location.
+  firstListItem.focus();
+  await locationsList.updateComplete;
+
+  Assert.equal(
+    firstListItem.getAttribute("tabindex"),
+    "0",
+    "the newly focused item should become the tab stop"
+  );
+  Assert.equal(
+    itemFor("CA").getAttribute("tabindex"),
+    "-1",
+    "the selected location should no longer be the tab stop"
+  );
+
+  // Close the subview with the back button.
   let backButton = locationsView.querySelector(".subviewbutton-back");
   backButton.focus();
 
@@ -403,15 +483,44 @@ add_task(async function test_locations_keyboard_open_focuses_header_button() {
     "focus should return to the location button after pressing the back button via keyboard"
   );
 
+  // Reopen the subview; the tab stop should be back on the selected location.
+  let panel = IPProtection.getPanel(window);
+  let viewShownPromise = BrowserTestUtils.waitForEvent(
+    locationsView,
+    "ViewShown"
+  );
+  panel.showLocationSelector(true, locationButton);
+  await viewShownPromise;
+  await locationsList.updateComplete;
+
+  Assert.equal(
+    itemFor("CA").getAttribute("tabindex"),
+    "0",
+    "reopening the subview should restore the tab stop to the selected location"
+  );
+  Assert.equal(
+    itemFor(RECOMMENDED_CODE).getAttribute("tabindex"),
+    "-1",
+    "the previously focused item should no longer be the tab stop"
+  );
+  Assert.equal(
+    document.activeElement,
+    itemFor("CA"),
+    "reopening via keyboard should focus the selected location again"
+  );
+
   await closePanel();
   cleanupService();
 
-  let { firstListItem: firstListItem2 } = await openLocationsSubview({}, false);
+  let { locationsView: mouseLocationsView } = await openLocationsSubview(
+    { location: "CA" },
+    false
+  );
 
   Assert.notEqual(
     document.activeElement,
-    firstListItem2,
-    "mouse-activated open should not focus the first list item"
+    mouseLocationsView.querySelector("#location-option-CA"),
+    "mouse-activated open should not focus the selected location"
   );
 
   await closePanel();

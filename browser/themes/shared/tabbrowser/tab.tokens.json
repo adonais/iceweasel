@@ -450,32 +450,32 @@
       "@base": {
         "value": {
           "light": "{color.gray.55}",
-          "dark": "{color.gray.0}"
+          "dark": "{color.gray.40}"
         }
       },
       "text": {
         "@base": {
           "value": {
             "light": "{color.white.@base}",
-            "dark": "{color.gray.65}"
+            "dark": "{color.gray.90}"
           }
         },
         "invert": {
           "value": {
             "dark": "{color.white.@base}",
-            "light": "{color.gray.65}"
+            "light": "{color.gray.90}"
           }
         }
       },
       "hover": {
         "value": {
           "light": "{color.gray.65}",
-          "dark": "{color.gray.10}"
+          "dark": "{color.gray.50}"
         }
       },
       "invert": {
         "value": {
-          "light": "{color.gray.0}",
+          "light": "{color.gray.40}",
           "dark": "{color.gray.55}"
         }
       }

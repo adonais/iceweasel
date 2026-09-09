@@ -356,6 +356,12 @@ class nsSocketTransportService final : public nsPISocketTransportService,
 extern nsSocketTransportService* gSocketTransportService;
 bool OnSocketThread();
 
+// Unlike NS_DispatchToCurrentThread, this function tries to dispatch
+// to the currentSerialEventTarget, so the prioritization logic in
+// nsSocketTransportService::Dispatch gets to run.
+nsresult DispatchToCurrent(already_AddRefed<nsIRunnable> aEvent);
+nsresult DispatchToCurrent(nsIRunnable* aEvent);
+
 }  // namespace net
 }  // namespace mozilla
 

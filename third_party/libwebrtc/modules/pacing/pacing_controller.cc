@@ -68,9 +68,6 @@ PacingController::PacingController(Clock* clock,
           field_trials.IsEnabled("WebRTC-Pacer-IgnoreTransportOverhead")),
       fast_retransmissions_(
           field_trials.IsEnabled("WebRTC-Pacer-FastRetransmissions")),
-      keyframe_flushing_(
-          configuration.keyframe_flushing ||
-          field_trials.IsEnabled("WebRTC-Pacer-KeyframeFlushing")),
       transport_overhead_per_packet_(DataSize::Zero()),
       send_burst_interval_(configuration.initial_pacer_config
                                ? configuration.initial_pacer_config->time_window
@@ -202,8 +199,7 @@ void PacingController::EnqueuePacket(std::unique_ptr<RtpPacketToSend> packet) {
       << "SetPacingRate must be called before InsertPacket.";
   RTC_CHECK(packet->packet_type());
 
-  if (keyframe_flushing_ &&
-      packet->packet_type() == RtpPacketMediaType::kVideo &&
+  if (packet->packet_type() == RtpPacketMediaType::kVideo &&
       packet->is_key_frame() && packet->is_first_packet_of_frame() &&
       !packet_queue_.HasKeyframePackets(packet->Ssrc())) {
     // First packet of a keyframe (and no keyframe packets currently in the

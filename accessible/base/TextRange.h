@@ -34,9 +34,7 @@ struct TextPoint final {
   Accessible* mContainer;
   int32_t mOffset;
 
-  bool operator==(const TextPoint& aPoint) const {
-    return mContainer == aPoint.mContainer && mOffset == aPoint.mOffset;
-  }
+  bool operator==(const TextPoint& aPoint) const = default;
   bool operator<(const TextPoint& aPoint) const;
 
   /**

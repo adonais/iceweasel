@@ -12,22 +12,16 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequest
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.worker.Frequency
-import java.util.concurrent.TimeUnit
 
-/**
- * Defines behavior for scheduling periodic sync for Remote Settings.
- */
+/** Defines behavior for scheduling periodic sync for Remote Settings. */
 interface RemoteSettingsSyncScheduler {
-    /**
-     * Registers for periodic sync for new Remote Settings.
-     */
+    /** Registers for periodic sync for new Remote Settings. */
     fun registerForSync()
 
-    /**
-     * Unregisters for periodic sync for new Remote Settings.
-     */
+    /** Unregisters for periodic sync for new Remote Settings. */
     fun unregisterForSync()
 }
 
@@ -45,36 +39,39 @@ class DefaultRemoteSettingsSyncScheduler(
     private val logger = Logger("DefaultRemoteSettingsChecker")
 
     override fun registerForSync() {
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            RemoteSettingsSyncWorker.UNIQUE_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
-            createPeriodicWorkerRequest(),
-        )
+        WorkManager.getInstance(context)
+            .enqueueUniquePeriodicWork(
+                RemoteSettingsSyncWorker.UNIQUE_NAME,
+                ExistingPeriodicWorkPolicy.KEEP,
+                createPeriodicWorkerRequest(),
+            )
         logger.info("Register sync work for Remote Settings")
     }
 
     override fun unregisterForSync() {
-        WorkManager.getInstance(context)
-            .cancelUniqueWork(RemoteSettingsSyncWorker.UNIQUE_NAME)
+        WorkManager.getInstance(context).cancelUniqueWork(RemoteSettingsSyncWorker.UNIQUE_NAME)
         logger.info("Unregister sync work for Remote Settings")
     }
 
-    /**
-     * Creates the [PeriodicWorkRequest] for the DefaultRemoteSettingsChecker.
-     */
+    /** Creates the [PeriodicWorkRequest] for the DefaultRemoteSettingsChecker. */
     @VisibleForTesting
     fun createPeriodicWorkerRequest(): PeriodicWorkRequest {
         return PeriodicWorkRequestBuilder<RemoteSettingsSyncWorker>(
-            frequency.repeatInterval,
-            frequency.repeatIntervalTimeUnit,
-        ).apply {
-            setConstraints(getWorkerConstraints())
-        }.build()
+                frequency.repeatInterval,
+                frequency.repeatIntervalTimeUnit,
+            )
+            .apply {
+                setConstraints(getWorkerConstraints())
+            }
+            .build()
     }
 
-    private fun getWorkerConstraints() = Constraints.Builder().apply {
-        setRequiresDeviceIdle(true)
-    }.setRequiresBatteryNotLow(true)
-        .setRequiredNetworkType(NetworkType.CONNECTED)
-        .build()
+    private fun getWorkerConstraints() =
+        Constraints.Builder()
+            .apply {
+                setRequiresDeviceIdle(true)
+            }
+            .setRequiresBatteryNotLow(true)
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
 }

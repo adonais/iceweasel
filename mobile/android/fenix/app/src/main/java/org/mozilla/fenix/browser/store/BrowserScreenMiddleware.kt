@@ -57,17 +57,13 @@ class BrowserScreenMiddleware(
         downloadCount: Int,
         tabId: String?,
     ) {
-        crashReporter.recordCrashBreadcrumb(
-            Breadcrumb("DownloadCancelDialogFragment shown in browser screen"),
-        )
+        crashReporter.recordCrashBreadcrumb(Breadcrumb("DownloadCancelDialogFragment shown in browser screen"))
         val dialog = createDownloadCancelDialog(uiContext, store, downloadCount, tabId)
 
         dialog.show(fragmentManager, CANCEL_PRIVATE_DOWNLOADS_DIALOG_FRAGMENT_TAG)
     }
 
-    /**
-     * Creates and configures a new instance of [DownloadCancelDialogFragment].
-     */
+    /** Creates and configures a new instance of [DownloadCancelDialogFragment]. */
     @VisibleForTesting
     internal fun createDownloadCancelDialog(
         context: Context,
@@ -86,30 +82,26 @@ class BrowserScreenMiddleware(
         )
     }
 
-    /**
-     * Creates the specific styling configuration for the download cancellation prompt.
-     */
+    /** Creates the specific styling configuration for the download cancellation prompt. */
     fun createDialogPromptStyling(context: Context): DownloadCancelDialogFragment.PromptStyling {
         return DownloadCancelDialogFragment.PromptStyling(
             gravity = Gravity.BOTTOM,
             shouldWidthMatchParent = true,
-            positiveButtonBackgroundColor = ThemeManager.resolveAttribute(
-                R.attr.accent,
-                context,
-            ),
-            positiveButtonTextColor = ThemeManager.resolveAttribute(
-                R.attr.textOnColorPrimary,
-                context,
-            ),
-            positiveButtonRadius = context.pixelSizeFor(
-                R.dimen.tab_corner_radius,
-            ).toFloat(),
+            positiveButtonBackgroundColor =
+                ThemeManager.resolveAttribute(
+                    R.attr.accent,
+                    context,
+                ),
+            positiveButtonTextColor =
+                ThemeManager.resolveAttribute(
+                    R.attr.textOnColorPrimary,
+                    context,
+                ),
+            positiveButtonRadius = context.pixelSizeFor(R.dimen.tab_corner_radius).toFloat(),
         )
     }
 
-    /**
-     * Static functionalities of the [BrowserScreenMiddleware].
-     */
+    /** Static functionalities of the [BrowserScreenMiddleware]. */
     companion object {
         @VisibleForTesting
         internal const val CANCEL_PRIVATE_DOWNLOADS_DIALOG_FRAGMENT_TAG = "CANCEL_PRIVATE_DOWNLOADS_DIALOG_FRAGMENT_TAG"

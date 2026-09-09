@@ -36,7 +36,6 @@ class AppViewHolder(
     }
 
     companion object {
-        @LayoutRes
-        val LAYOUT_ID = R.layout.app_share_list_item
+        @LayoutRes val LAYOUT_ID = R.layout.app_share_list_item
     }
 }

@@ -423,8 +423,10 @@ export class Conversation {
    */
   runWithGenerator(opts = {}) {
     return this.engine.runWithGenerator({
-      args: this.getMessagesInChatCompletionsFormat(),
       ...opts,
+      // Lazy so the projection is skipped when the caller supplies its own
+      // snapshot, as fetchWithHistory does with the compacted history.
+      args: opts.args ?? this.getMessagesInChatCompletionsFormat(),
       inferenceParams: { ...this.parameters, ...opts.inferenceParams },
     });
   }

@@ -14,11 +14,12 @@ class TruncateUrlAroundDomainTest {
         val testUrl = "www.example.com/test"
         val registrableDomainRange = 4 to 15 // example.com
 
-        val (truncatedUrl, adjustedDomainIndexRange) = truncateUrlAroundDomain(
-            url = testUrl,
-            registrableDomainIndexRange = registrableDomainRange,
-            maxCharCountAroundDomain = 1,
-        )
+        val (truncatedUrl, adjustedDomainIndexRange) =
+            truncateUrlAroundDomain(
+                url = testUrl,
+                registrableDomainIndexRange = registrableDomainRange,
+                maxCharCountAroundDomain = 1,
+            )
 
         assertEquals(".example.com/", truncatedUrl)
         assertEquals(1 to 12, adjustedDomainIndexRange)
@@ -28,11 +29,12 @@ class TruncateUrlAroundDomainTest {
     fun `GIVEN an URL with unknown domain indexes WHEN truncating it THEN keep double of the characters requested`() {
         val testUrl = "www.example.com/test"
 
-        val (truncatedUrl, adjustedDomainIndexRange) = truncateUrlAroundDomain(
-            url = testUrl,
-            registrableDomainIndexRange = null,
-            maxCharCountAroundDomain = 6,
-        )
+        val (truncatedUrl, adjustedDomainIndexRange) =
+            truncateUrlAroundDomain(
+                url = testUrl,
+                registrableDomainIndexRange = null,
+                maxCharCountAroundDomain = 6,
+            )
 
         assertEquals("www.example.", truncatedUrl)
         assertNull(adjustedDomainIndexRange)
@@ -43,11 +45,12 @@ class TruncateUrlAroundDomainTest {
         val testUrl = "example.com/test"
         val registrableDomainRange = 0 to 11 // example.com
 
-        val (truncatedUrl, adjustedDomainIndexRange) = truncateUrlAroundDomain(
-            url = testUrl,
-            registrableDomainIndexRange = registrableDomainRange,
-            maxCharCountAroundDomain = 3,
-        )
+        val (truncatedUrl, adjustedDomainIndexRange) =
+            truncateUrlAroundDomain(
+                url = testUrl,
+                registrableDomainIndexRange = registrableDomainRange,
+                maxCharCountAroundDomain = 3,
+            )
 
         assertEquals("example.com/te", truncatedUrl)
         assertEquals(0 to 11, adjustedDomainIndexRange)
@@ -58,11 +61,12 @@ class TruncateUrlAroundDomainTest {
         val testUrl = "www.example.com"
         val registrableDomainRange = 4 to 15 // example.com
 
-        val (truncatedUrl, adjustedDomainIndexRange) = truncateUrlAroundDomain(
-            url = testUrl,
-            registrableDomainIndexRange = registrableDomainRange,
-            maxCharCountAroundDomain = 2,
-        )
+        val (truncatedUrl, adjustedDomainIndexRange) =
+            truncateUrlAroundDomain(
+                url = testUrl,
+                registrableDomainIndexRange = registrableDomainRange,
+                maxCharCountAroundDomain = 2,
+            )
 
         assertEquals("w.example.com", truncatedUrl)
         assertEquals(2 to 13, adjustedDomainIndexRange)
@@ -73,11 +77,12 @@ class TruncateUrlAroundDomainTest {
         val testUrl = "www.example.com/test"
         val registrableDomainRange = 4 to 15 // example.com
 
-        val (truncatedUrl, adjustedDomainIndexRange) = truncateUrlAroundDomain(
-            url = testUrl,
-            registrableDomainIndexRange = registrableDomainRange,
-            maxCharCountAroundDomain = 10,
-        )
+        val (truncatedUrl, adjustedDomainIndexRange) =
+            truncateUrlAroundDomain(
+                url = testUrl,
+                registrableDomainIndexRange = registrableDomainRange,
+                maxCharCountAroundDomain = 10,
+            )
 
         assertEquals("www.example.com/test", truncatedUrl)
         assertEquals(4 to 15, adjustedDomainIndexRange)

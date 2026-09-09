@@ -11,9 +11,7 @@ import mozilla.components.concept.storage.Login
 import mozilla.components.feature.autofill.R
 import mozilla.components.feature.autofill.response.dataset.usernamePresentationOrFallback
 
-/**
- * ViewHolder for a login item in the autofill search view.
- */
+/** ViewHolder for a login item in the autofill search view. */
 internal class LoginViewHolder(
     itemView: View,
     private val onLoginSelected: (Login) -> Unit,

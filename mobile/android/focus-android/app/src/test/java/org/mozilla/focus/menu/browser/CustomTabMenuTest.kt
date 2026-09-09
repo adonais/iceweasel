@@ -7,6 +7,7 @@ package org.mozilla.focus.menu.browser
 import android.content.Context
 import android.content.res.Resources
 import android.util.TypedValue
+import kotlin.test.assertIs
 import mozilla.components.browser.menu.item.BrowserMenuCategory
 import mozilla.components.browser.menu.item.BrowserMenuDivider
 import mozilla.components.browser.menu.item.BrowserMenuImageSwitch
@@ -24,7 +25,6 @@ import org.mockito.Mockito.anyInt
 import org.mockito.Mockito.eq
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
-import kotlin.test.assertIs
 
 class CustomTabMenuTest {
 
@@ -41,22 +41,22 @@ class CustomTabMenuTest {
 
         `when`(context.theme).thenReturn(mockTheme)
 
-        `when`(mockTheme.resolveAttribute(anyInt(), any(), eq(true)))
-            .thenAnswer { invocation ->
-                val typedValueArg = invocation.arguments[1] as TypedValue
-                typedValueArg.resourceId = 1
-                true
-            }
+        `when`(mockTheme.resolveAttribute(anyInt(), any(), eq(true))).thenAnswer { invocation ->
+            val typedValueArg = invocation.arguments[1] as TypedValue
+            typedValueArg.resourceId = 1
+            true
+        }
     }
 
     @Test
     fun `WHEN is onboarding tab is false THEN menu items contains all menu items`() {
-        val customTabMenu = CustomTabMenu(
-            context = context,
-            store = BrowserStore(),
-            currentTabId = "",
-            isOnboardingTab = false,
-        ) {}
+        val customTabMenu =
+            CustomTabMenu(
+                context = context,
+                store = BrowserStore(),
+                currentTabId = "",
+                isOnboardingTab = false,
+            ) {}
 
         val expectedSize = 10
         val menuItems = customTabMenu.menuBuilder.items
@@ -86,12 +86,13 @@ class CustomTabMenuTest {
 
     @Test
     fun `WHEN is onboarding tab is true THEN menu items contains only sandboxed menu items`() {
-        val customTabMenu = CustomTabMenu(
-            context = context,
-            store = BrowserStore(),
-            currentTabId = "",
-            isOnboardingTab = true,
-        ) {}
+        val customTabMenu =
+            CustomTabMenu(
+                context = context,
+                store = BrowserStore(),
+                currentTabId = "",
+                isOnboardingTab = true,
+            ) {}
 
         val expectedSize = 8
         val menuItems = customTabMenu.menuBuilder.items

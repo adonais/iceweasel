@@ -175,11 +175,6 @@ clipboardTypes.forEach(function (clipboardType) {
     });
 
     add_task(function test_web_custom_format() {
-      // Web custom format clipboard support is not yet implemented on Android.
-      if (navigator.userAgent.includes("Android")) {
-        info("Skipping: Android does not yet support web custom formats");
-        return;
-      }
       let inputFormats = [
         "text/plain",
         "web text/plain",
@@ -347,11 +342,6 @@ add_task(async function test_read_custom_formats_from_clipboard_pref() {
     info("Skipping: HeadlessClipboard does not support web custom formats");
     return;
   }
-  // Web custom format clipboard support is not yet implemented on Android.
-  if (navigator.userAgent.includes("Android")) {
-    info("Skipping: Android does not yet support web custom formats");
-    return;
-  }
 
   await SpecialPowers.pushPrefEnv({
     set: [["widget.clipboard.use-cached-data.enabled", false]],
@@ -391,11 +381,6 @@ add_task(async function test_web_custom_format_empty_payload() {
     info("Skipping: HeadlessClipboard does not support web custom formats");
     return;
   }
-  // Web custom format clipboard support is not yet implemented on Android.
-  if (navigator.userAgent.includes("Android")) {
-    info("Skipping: Android does not yet support web custom formats");
-    return;
-  }
 
   await SpecialPowers.pushPrefEnv({
     set: [["widget.clipboard.use-cached-data.enabled", false]],
@@ -418,7 +403,12 @@ add_task(async function test_web_custom_format_empty_payload() {
   clipboard.setData(trans, null, clipboard.kGlobalClipboard);
 
   // XXX gtk doesn't preserve empty data through the clipboard, bug 1852983.
-  if (navigator.platform.includes("Linux")) {
+  // Android's navigator.platform also matches "Linux"; exclude it explicitly
+  // since Android's URI-backed ClipData preserves zero-length payloads.
+  if (
+    navigator.platform.includes("Linux") &&
+    !navigator.userAgent.includes("Android")
+  ) {
     todo_is(
       getClipboardData(flavor, clipboard.kGlobalClipboard),
       "",

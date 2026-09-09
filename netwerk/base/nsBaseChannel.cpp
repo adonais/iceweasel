@@ -155,9 +155,24 @@ nsresult nsBaseChannel::ContinueRedirect() {
 
   mRedirectChannel = nullptr;
 
-  // close down this channel
+  // Close down this channel.  We must do these cleanups manually rather than
+  // relying on OnStopRequest because external callers may invoke Redirect()
+  // while a cancelable is already running (e.g. from a BeginAsyncRead
+  // callback).  In that case OnStopRequest may fire after we return, so we
+  // clear the load group and listener now to prevent double-removal and
+  // spurious OnStopRequest calls to the listener.  Note: this does not protect
+  // against OnStopRequest racing before ContinueRedirect when a pump is
+  // involved.
   Cancel(NS_BINDING_REDIRECTED);
   ChannelDone();
+  mCancelableAsyncRequest = nullptr;
+  mPumpingData = false;
+  if (mLoadGroup) {
+    mLoadGroup->RemoveRequest(this, nullptr, mStatus);
+    mLoadGroup = nullptr;
+  }
+  mCallbacks = nullptr;
+  CallbacksChanged();
 
   return NS_OK;
 }

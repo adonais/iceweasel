@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set +vex
+set -e +vx
 
 if [ $# -lt 1 ]; then
   echo update.sh "<revision to update to>"
@@ -25,7 +25,8 @@ fi
 
 pushd "$ROOT" || exit
 git fetch origin
-git checkout "$1"
+git checkout -f "$1"
+git clean -fd
 
 npm install --legacy-peer-deps --ignore-scripts
 

@@ -122,7 +122,8 @@ int NS_main(int argc, NS_tchar** argv) {
   if (argc >= 2) {
     if (!NS_tstrcmp(argv[1], NS_T("post-update-async")) ||
         !NS_tstrcmp(argv[1], NS_T("post-update-sync")) ||
-        !NS_tstrcmp(argv[1], NS_T("post-update-environment"))) {
+        !NS_tstrcmp(argv[1], NS_T("post-update-environment")) ||
+        !NS_tstrcmp(argv[1], NS_T("post-update-args"))) {
       NS_tchar exePath[MAXPATHLEN];
 #ifdef XP_WIN
       if (!::GetModuleFileNameW(0, exePath, MAXPATHLEN)) {
@@ -170,8 +171,6 @@ int NS_main(int argc, NS_tchar** argv) {
         return 1;
       }
 
-      WriteMsg(logFilePath, "post-update");
-
       if (!NS_tstrcmp(argv[1], NS_T("post-update-environment"))) {
         // Right now only one argument is supported for post update invocations,
         // so we hardcode the environment variable under test rather than
@@ -192,6 +191,21 @@ int NS_main(int argc, NS_tchar** argv) {
         WriteMsg(logFilePath,
                  "post-update-environment not supported on this platform");
 #endif  // defined(XP_WIN) || defined(XP_MACOSX)
+      } else if (!NS_tstrcmp(argv[1], NS_T("post-update-args"))) {
+#if defined(XP_WIN) || defined(XP_MACOSX)
+        // In this case, we want to specifically append to the log file so the
+        // arguments aren't erased by the second post-update invocation.
+        FILE* dest = NS_tfopen(logFilePath, NS_T("ab"));
+        for (int i = 2; i < argc; ++i) {
+          fprintf(dest, "%d: " LOG_S "\n", i, argv[i]);
+        }
+        fclose(dest);
+#else
+        WriteMsg(logFilePath,
+                 "post-update-args not supported on this platform");
+#endif
+      } else {
+        WriteMsg(logFilePath, "post-update");
       }
 
       return 0;
@@ -214,6 +228,7 @@ int NS_main(int argc, NS_tchar** argv) {
         "   or: post-update-sync\n"
         "   or: post-update-async\n"
         "   or: post-update-environment\n"
+        "   or: post-update-args\n"
         "   or: create-update-dir\n"
         "   or: wait-for-pid-exit pid timeout\n"
         "\n"

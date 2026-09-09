@@ -21,12 +21,10 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 
 /**
- * [Middleware] responsible for delegating calls to the appropriate [EngineSession] instance for
- * actions like [EngineAction.LoadUrlAction].
+ * [Middleware] responsible for delegating calls to the appropriate [EngineSession] instance for actions like
+ * [EngineAction.LoadUrlAction].
  */
-internal class EngineDelegateMiddleware(
-    private val scope: CoroutineScope,
-) : Middleware<BrowserState, BrowserAction> {
+internal class EngineDelegateMiddleware(private val scope: CoroutineScope) : Middleware<BrowserState, BrowserAction> {
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,
@@ -74,91 +72,84 @@ internal class EngineDelegateMiddleware(
             return@launch
         }
 
-        val parentEngineSession = if (action.includeParent && tab is TabSessionState) {
-            tab.parentId?.let { store.state.findTabOrCustomTab(it)?.engineState?.engineSession }
-        } else {
-            null
-        }
+        val parentEngineSession =
+            if (action.includeParent && tab is TabSessionState) {
+                tab.parentId?.let { store.state.findTabOrCustomTab(it)?.engineState?.engineSession }
+            } else {
+                null
+            }
 
-        getEngineSessionOrDispatch(store, action)?.loadUrl(
-            url = action.url,
-            parent = parentEngineSession,
-            flags = action.flags,
-            additionalHeaders = action.additionalHeaders,
-            textDirectiveUserActivation = action.textDirectiveUserActivation,
-        )
+        getEngineSessionOrDispatch(store, action)
+            ?.loadUrl(
+                url = action.url,
+                parent = parentEngineSession,
+                flags = action.flags,
+                additionalHeaders = action.additionalHeaders,
+                textDirectiveUserActivation = action.textDirectiveUserActivation,
+            )
     }
 
     private fun loadData(
         store: Store<BrowserState, BrowserAction>,
         action: EngineAction.LoadDataAction,
     ) = scope.launch {
-        getEngineSessionOrDispatch(store, action)
-            ?.loadData(action.data, action.mimeType, action.encoding)
+        getEngineSessionOrDispatch(store, action)?.loadData(action.data, action.mimeType, action.encoding)
     }
 
     private fun reload(
         store: Store<BrowserState, BrowserAction>,
         action: EngineAction.ReloadAction,
     ) = scope.launch {
-        getEngineSessionOrDispatch(store, action)
-            ?.reload(action.flags)
+        getEngineSessionOrDispatch(store, action)?.reload(action.flags)
     }
 
     private fun goBack(
         store: Store<BrowserState, BrowserAction>,
         action: EngineAction.GoBackAction,
     ) = scope.launch {
-        getEngineSessionOrDispatch(store, action)
-            ?.goBack(action.userInteraction)
+        getEngineSessionOrDispatch(store, action)?.goBack(action.userInteraction)
     }
 
     private fun goForward(
         store: Store<BrowserState, BrowserAction>,
         action: EngineAction.GoForwardAction,
     ) = scope.launch {
-        getEngineSessionOrDispatch(store, action)
-            ?.goForward(action.userInteraction)
+        getEngineSessionOrDispatch(store, action)?.goForward(action.userInteraction)
     }
 
     private fun goToHistoryIndex(
         store: Store<BrowserState, BrowserAction>,
         action: EngineAction.GoToHistoryIndexAction,
     ) = scope.launch {
-        getEngineSessionOrDispatch(store, action)
-            ?.goToHistoryIndex(action.index)
+        getEngineSessionOrDispatch(store, action)?.goToHistoryIndex(action.index)
     }
 
     private fun toggleDesktopMode(
         store: Store<BrowserState, BrowserAction>,
         action: EngineAction.ToggleDesktopModeAction,
     ) = scope.launch {
-        getEngineSessionOrDispatch(store, action)
-            ?.toggleDesktopMode(action.enable, reload = true)
+        getEngineSessionOrDispatch(store, action)?.toggleDesktopMode(action.enable, reload = true)
     }
 
     private fun exitFullScreen(
         store: Store<BrowserState, BrowserAction>,
         action: EngineAction.ExitFullScreenModeAction,
     ) = scope.launch {
-        getEngineSessionOrDispatch(store, action)
-            ?.exitFullScreenMode()
+        getEngineSessionOrDispatch(store, action)?.exitFullScreenMode()
     }
 
     private fun saveToPdf(
         store: Store<BrowserState, BrowserAction>,
         action: EngineAction.SaveToPdfAction,
     ) = scope.launch {
-        getEngineSessionOrDispatch(store, action)
-            ?.requestPdfToDownload()
+        getEngineSessionOrDispatch(store, action)?.requestPdfToDownload()
     }
 
     private fun printContent(
         store: Store<BrowserState, BrowserAction>,
         action: EngineAction.PrintContentAction,
     ) = scope.launch {
-        getEngineSessionOrDispatch(store, action)
-            ?.requestPrintContent()
+        getEngineSessionOrDispatch(store, action)?.requestPrintContent()
     }
 
     private fun translate(
@@ -173,21 +164,17 @@ internal class EngineDelegateMiddleware(
         store: Store<BrowserState, BrowserAction>,
         action: TranslationsAction.TranslateRestoreAction,
     ) = scope.launch {
-        getEngineSessionOrDispatch(store, action)
-            ?.requestTranslationRestore()
+        getEngineSessionOrDispatch(store, action)?.requestTranslationRestore()
     }
 
     private fun clearData(
         store: Store<BrowserState, BrowserAction>,
         action: EngineAction.ClearDataAction,
     ) = scope.launch {
-        getEngineSessionOrDispatch(store, action)
-            ?.clearData(action.data)
+        getEngineSessionOrDispatch(store, action)?.clearData(action.data)
     }
 
-    private fun purgeHistory(
-        state: BrowserState,
-    ) = scope.launch {
+    private fun purgeHistory(state: BrowserState) = scope.launch {
         state.allTabs
             .mapNotNull { tab -> tab.engineState.engineSession }
             .forEach { engineSession -> engineSession.purgeHistory() }
@@ -197,16 +184,14 @@ internal class EngineDelegateMiddleware(
         store: Store<BrowserState, BrowserAction>,
         action: EngineAction.FlushEngineSessionStateAction,
     ) = scope.launch {
-        getEngineSessionOrDispatch(store, action)
-            ?.flushSessionState()
+        getEngineSessionOrDispatch(store, action)?.flushSessionState()
     }
 }
 
 /**
- * Returns the [EngineSession] of the tab targeted by the provided action. If the tab
- * does not have an engine session yet a new one will be created by dispatching a
- * [EngineAction.CreateEngineSessionAction]. The provided [action] will be dispatched
- * as a follow up once the [EngineSession] has been created and initialized.
+ * Returns the [EngineSession] of the tab targeted by the provided action. If the tab does not have an engine session
+ * yet a new one will be created by dispatching a [EngineAction.CreateEngineSessionAction]. The provided [action] will
+ * be dispatched as a follow up once the [EngineSession] has been created and initialized.
  *
  * @param store a reference to the browser store.
  * @param action the action to dispatch in case the engine session still has to be created.
@@ -224,7 +209,7 @@ private fun getEngineSessionOrDispatch(
             EngineAction.CreateEngineSessionAction(
                 action.tabId,
                 followupAction = action.toBrowserAction(),
-            ),
+            )
         )
         null
     } else {

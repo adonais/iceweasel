@@ -14,6 +14,10 @@ import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
@@ -34,10 +38,6 @@ import org.mockito.Mockito.`when`
 import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowLooper
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class ViewTest {
@@ -74,11 +74,13 @@ class ViewTest {
     fun `getRectWithViewLocation should transform getLocationInWindow method values`() {
         val view = spy(View(testContext))
         doAnswer { invocation ->
-            val locationInWindow = (invocation.getArgument(0) as IntArray)
-            locationInWindow[0] = 100
-            locationInWindow[1] = 200
-            locationInWindow
-        }.`when`(view).getLocationInWindow(any())
+                val locationInWindow = (invocation.getArgument(0) as IntArray)
+                locationInWindow[0] = 100
+                locationInWindow[1] = 200
+                locationInWindow
+            }
+            .`when`(view)
+            .getLocationInWindow(any())
 
         `when`(view.width).thenReturn(150)
         `when`(view.height).thenReturn(250)

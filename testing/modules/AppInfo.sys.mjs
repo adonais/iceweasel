@@ -93,6 +93,7 @@ export var newAppInfo = function (options = {}) {
 };
 
 var currentAppInfo = newAppInfo();
+var registered = false;
 
 /**
  * Obtain a reference to the current object used to define XULAppInfo.
@@ -106,32 +107,24 @@ export var getAppInfo = function () {
  *
  * See newAppInfo for options.
  *
- * To change the current XULAppInfo, simply call this function. If there was
- * a previously registered app info object, it will be unloaded and replaced.
+ * To change the current XULAppInfo, simply call this function. This assumes
+ * that nobody else has dynamically registered an app info factory.
  */
 export var updateAppInfo = function (options) {
   currentAppInfo = newAppInfo(options);
-
-  let id = Components.ID("{fbfae60b-64a4-44ef-a911-08ceb70b9f31}");
-  let contractid = "@mozilla.org/xre/app-info;1";
-  let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
-
-  // Unregister an existing factory if one exists.
-  try {
-    let existing = Components.manager.getClassObjectByContractID(
-      contractid,
-      Ci.nsIFactory
-    );
-    registrar.unregisterFactory(id, existing);
-  } catch (ex) {}
-
-  let factory = {
-    createInstance(iid) {
-      return currentAppInfo.QueryInterface(iid);
-    },
-  };
-
   Services.appinfo = currentAppInfo;
 
-  registrar.registerFactory(id, "XULAppInfo", contractid, factory);
+  if (!registered) {
+    registered = true;
+
+    let factory = {
+      createInstance(iid) {
+        return currentAppInfo.QueryInterface(iid);
+      },
+    };
+    let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
+    let cid = Components.ID("{fbfae60b-64a4-44ef-a911-08ceb70b9f31}");
+    let contractID = "@mozilla.org/xre/app-info;1";
+    registrar.registerFactory(cid, "XULAppInfo", contractID, factory);
+  }
 };

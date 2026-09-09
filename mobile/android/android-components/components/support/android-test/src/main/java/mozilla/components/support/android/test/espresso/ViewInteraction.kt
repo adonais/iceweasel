@@ -13,42 +13,30 @@ import mozilla.components.support.android.test.espresso.matcher.isDisplayed as i
 import mozilla.components.support.android.test.espresso.matcher.isEnabled as isEnabledFun
 import mozilla.components.support.android.test.espresso.matcher.isSelected as isSelectedFun
 
-/**
- * Shorthand to [ViewActions.click] the View.
- */
+/** Shorthand to [ViewActions.click] the View. */
 fun ViewInteraction.click(): ViewInteraction = this.perform(ViewActions.click())!!
 
-/**
- * Asserts the View has focus or does not have focus based on the Boolean argument.
- */
+/** Asserts the View has focus or does not have focus based on the Boolean argument. */
 fun ViewInteraction.assertHasFocus(hasFocus: Boolean): ViewInteraction {
     return this.check(ViewAssertions.matches(hasFocusFun(hasFocus)))
 }
 
-/**
- * Asserts the View is checked or is not checked based on the Boolean argument.
- */
+/** Asserts the View is checked or is not checked based on the Boolean argument. */
 fun ViewInteraction.assertIsChecked(isChecked: Boolean): ViewInteraction {
     return this.check(ViewAssertions.matches(isCheckedFun(isChecked)))!!
 }
 
-/**
- * Asserts the View is displayed or is not displayed based on the Boolean argument.
- */
+/** Asserts the View is displayed or is not displayed based on the Boolean argument. */
 fun ViewInteraction.assertIsDisplayed(isDisplayed: Boolean): ViewInteraction {
     return this.check(ViewAssertions.matches(isDisplayedFun(isDisplayed)))!!
 }
 
-/**
- * Asserts the View is enabled or is not enabled based on the Boolean argument.
- */
+/** Asserts the View is enabled or is not enabled based on the Boolean argument. */
 fun ViewInteraction.assertIsEnabled(isEnabled: Boolean): ViewInteraction {
     return this.check(ViewAssertions.matches(isEnabledFun(isEnabled)))!!
 }
 
-/**
- * Asserts the View is selected or is not selected based on the Boolean argument.
- */
+/** Asserts the View is selected or is not selected based on the Boolean argument. */
 fun ViewInteraction.assertIsSelected(isSelected: Boolean): ViewInteraction {
     return this.check(ViewAssertions.matches(isSelectedFun(isSelected)))!!
 }

@@ -122,6 +122,9 @@ class SandboxPrivate final : public nsIGlobalObject,
 
   bool IsXPCSandbox() override { return true; }
 
+  void SetAssociatedWindow(nsPIDOMWindowInner* aWindow);
+  already_AddRefed<nsPIDOMWindowInner> GetAssociatedWindow();
+
  private:
   explicit SandboxPrivate(nsIPrincipal* principal);
 
@@ -132,6 +135,9 @@ class SandboxPrivate final : public nsIGlobalObject,
   nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
 
   RefPtr<JS::loader::ModuleLoaderBase> mModuleLoader;
+
+  // Weak to avoid keeping the associated window alive.
+  nsWeakPtr mAssociatedWindow;
 };
 
 #endif  // SANDBOXPRIVATE_H_

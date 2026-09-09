@@ -6,10 +6,10 @@ package mozilla.components.support.test.robolectric
 
 import androidx.fragment.app.Fragment
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class FragmentsTest {

@@ -7,9 +7,6 @@
 const {
   createCommandsDictionary,
 } = require("resource://devtools/shared/commands/index.js");
-const { DevToolsLoader } = ChromeUtils.importESModule(
-  "resource://devtools/shared/loader/Loader.sys.mjs"
-);
 loader.lazyRequireGetter(
   this,
   "DevToolsServer",
@@ -174,14 +171,19 @@ exports.CommandsFactory = {
    * the one shared with the rest of Firefox frontend codebase.
    */
   async spawnClientToDebugSystemPrincipal() {
-    // The Browser console ends up using the debugger in autocomplete.
-    // Because the debugger can't be running in the same compartment than its debuggee,
-    // we have to load the server in a dedicated Loader, flagged with
-    // `freshCompartment`, which will force it to be loaded in another compartment.
-    const customLoader = new DevToolsLoader({
-      freshCompartment: true,
-    });
-    const { DevToolsServer: customDevToolsServer } = customLoader.require(
+    // The DevToolsServer has to be loaded in a special compartment/loader
+    // to be able to debug chrome JS running in the shared system principal compartment.
+    const {
+      useDistinctSystemPrincipalLoader,
+      releaseDistinctSystemPrincipalLoader,
+    } = ChromeUtils.importESModule(
+      "resource://devtools/shared/loader/DistinctSystemPrincipalLoader.sys.mjs",
+      { global: "shared" }
+    );
+    const requester = {};
+    const loader = useDistinctSystemPrincipalLoader(requester);
+
+    const { DevToolsServer: customDevToolsServer } = loader.require(
       "resource://devtools/server/devtools-server.js"
     );
 
@@ -197,6 +199,10 @@ exports.CommandsFactory = {
 
     const client = new DevToolsClient(customDevToolsServer.connectPipe());
     await client.connect();
+
+    client.once("closed", () => {
+      releaseDistinctSystemPrincipalLoader(requester);
+    });
 
     return client;
   },

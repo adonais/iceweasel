@@ -169,6 +169,13 @@ support-files = [
   "shared-worker.js",
 ]
 
+["browser_policy_sitepolicies_serviceworkers.js"]
+support-files = [
+  "sitepolicies_sw_fetch.html",
+  "sitepolicies_sw_framed.html",
+  "sw_fetch_intercept.js",
+]
+
 ["browser_policy_support_menu.js"]
 
 ["browser_policy_translateenabled.js"]

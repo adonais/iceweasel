@@ -11,7 +11,9 @@ import android.widget.ImageView
 import androidx.preference.PreferenceViewHolder
 import org.mozilla.fenix.R
 
-class RadioButtonInfoPreference @JvmOverloads constructor(
+class RadioButtonInfoPreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : RadioButtonPreference(context, attrs) {

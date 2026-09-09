@@ -14,7 +14,7 @@
 # Descriptions for each gradle task below can be found in the
 # output of `./gradlew tasks`.
 ./gradlew -q \
-        ktlint \
+        ktfmtCheck \
         detekt \
         assembleFocusDebugAndroidTest \
         testFocusDebugUnitTest

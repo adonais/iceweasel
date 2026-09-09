@@ -121,13 +121,9 @@ class BaseProfilerProcessId {
   }
 
   [[nodiscard]] constexpr bool operator==(
-      const BaseProfilerProcessId& aOther) const {
-    return mProcessId == aOther.mProcessId;
-  }
+      const BaseProfilerProcessId& aOther) const = default;
   [[nodiscard]] constexpr bool operator!=(
-      const BaseProfilerProcessId& aOther) const {
-    return mProcessId != aOther.mProcessId;
-  }
+      const BaseProfilerProcessId& aOther) const = default;
 
  private:
   static constexpr NumberType scUnspecified = 0;
@@ -180,13 +176,9 @@ class BaseProfilerThreadId {
   }
 
   [[nodiscard]] constexpr bool operator==(
-      const BaseProfilerThreadId& aOther) const {
-    return mThreadId == aOther.mThreadId;
-  }
+      const BaseProfilerThreadId& aOther) const = default;
   [[nodiscard]] constexpr bool operator!=(
-      const BaseProfilerThreadId& aOther) const {
-    return mThreadId != aOther.mThreadId;
-  }
+      const BaseProfilerThreadId& aOther) const = default;
 
  private:
   static constexpr NumberType scUnspecified = 0;

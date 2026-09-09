@@ -24,16 +24,17 @@ class PersistStoryUTMRequestInterceptorTest {
         val interceptor = PersistStoryUTMRequestInterceptor()
         val lastUri = "https://story.test".markAsOpenedFromHomeScreen()
 
-        val result = interceptor.onLoadRequest(
-            engineSession = engineSession,
-            uri = "https://redirect.com",
-            lastUri = lastUri,
-            hasUserGesture = false,
-            isSameDomain = false,
-            isRedirect = true,
-            isDirectNavigation = false,
-            isSubframeRequest = false,
-        )
+        val result =
+            interceptor.onLoadRequest(
+                engineSession = engineSession,
+                uri = "https://redirect.com",
+                lastUri = lastUri,
+                hasUserGesture = false,
+                isSameDomain = false,
+                isRedirect = true,
+                isDirectNavigation = false,
+                isSubframeRequest = false,
+            )
 
         assertEquals(
             RequestInterceptor.InterceptionResponse.Url("https://redirect.com".markAsOpenedFromHomeScreen()),
@@ -45,16 +46,17 @@ class PersistStoryUTMRequestInterceptorTest {
     fun `WHEN redirecting not from an internally opened story THEN return a null interception response`() {
         val interceptor = PersistStoryUTMRequestInterceptor()
 
-        val result = interceptor.onLoadRequest(
-            engineSession = engineSession,
-            uri = "https://redirect.com",
-            lastUri = "https://regular.com",
-            hasUserGesture = false,
-            isSameDomain = false,
-            isRedirect = true,
-            isDirectNavigation = false,
-            isSubframeRequest = false,
-        )
+        val result =
+            interceptor.onLoadRequest(
+                engineSession = engineSession,
+                uri = "https://redirect.com",
+                lastUri = "https://regular.com",
+                hasUserGesture = false,
+                isSameDomain = false,
+                isRedirect = true,
+                isDirectNavigation = false,
+                isSubframeRequest = false,
+            )
 
         assertNull(result)
     }
@@ -64,16 +66,17 @@ class PersistStoryUTMRequestInterceptorTest {
         val interceptor = PersistStoryUTMRequestInterceptor()
         val lastUri = "https://story.test".markAsOpenedFromHomeScreen()
 
-        val result = interceptor.onLoadRequest(
-            engineSession = engineSession,
-            uri = "https://newpage.com",
-            lastUri = lastUri,
-            hasUserGesture = false,
-            isSameDomain = false,
-            isRedirect = false,
-            isDirectNavigation = false,
-            isSubframeRequest = false,
-        )
+        val result =
+            interceptor.onLoadRequest(
+                engineSession = engineSession,
+                uri = "https://newpage.com",
+                lastUri = lastUri,
+                hasUserGesture = false,
+                isSameDomain = false,
+                isRedirect = false,
+                isDirectNavigation = false,
+                isSubframeRequest = false,
+            )
 
         assertNull(result)
     }
@@ -83,16 +86,17 @@ class PersistStoryUTMRequestInterceptorTest {
         val interceptor = PersistStoryUTMRequestInterceptor()
         val lastUri = "https://story.test".markAsOpenedFromHomeScreen()
 
-        val result = interceptor.onLoadRequest(
-            engineSession = engineSession,
-            uri = "https://redirect.com",
-            lastUri = lastUri,
-            hasUserGesture = false,
-            isSameDomain = false,
-            isRedirect = true,
-            isDirectNavigation = false,
-            isSubframeRequest = true,
-        )
+        val result =
+            interceptor.onLoadRequest(
+                engineSession = engineSession,
+                uri = "https://redirect.com",
+                lastUri = lastUri,
+                hasUserGesture = false,
+                isSameDomain = false,
+                isRedirect = true,
+                isDirectNavigation = false,
+                isSubframeRequest = true,
+            )
 
         assertNull(result)
     }
@@ -101,16 +105,17 @@ class PersistStoryUTMRequestInterceptorTest {
     fun `GIVEN an unknown previous URI WHEN redirecting to a new URL THEN return a null interception response`() {
         val interceptor = PersistStoryUTMRequestInterceptor()
 
-        val result = interceptor.onLoadRequest(
-            engineSession = engineSession,
-            uri = "https://redirect.com",
-            lastUri = null,
-            hasUserGesture = false,
-            isSameDomain = false,
-            isRedirect = true,
-            isDirectNavigation = false,
-            isSubframeRequest = false,
-        )
+        val result =
+            interceptor.onLoadRequest(
+                engineSession = engineSession,
+                uri = "https://redirect.com",
+                lastUri = null,
+                hasUserGesture = false,
+                isSameDomain = false,
+                isRedirect = true,
+                isDirectNavigation = false,
+                isSubframeRequest = false,
+            )
 
         assertNull(result)
     }

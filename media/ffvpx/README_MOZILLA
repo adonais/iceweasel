@@ -154,3 +154,9 @@ Finally, apply the patches:
 - vp9-get-format-rollback.patch to fix a VP9 decoder error handling issue.
 - flac-alloc-failure.patch fix leak in flac decoder in case of alloc failure
 - cbs_decoder_sync.patch to keep CBS and the decoder in sync
+- libvorbisdec-channel-order.patch to reorder libvorbis' output from the
+  Vorbis spec channel order to ffmpeg's, and to declare the resulting layout.
+  libavcodec's libvorbis wrapper, unlike its native vorbis decoder, does
+  neither, so multichannel Vorbis plays with its channels permuted
+  (bug 1991957). Drop this patch if it is ever fixed upstream.
+- av1_tilesize.patch to clean up av1 tile handling

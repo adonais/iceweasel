@@ -2,11 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
-  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
-});
+import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 
 /**
  * @typedef L10nCachedMessage
@@ -91,11 +87,6 @@ export class L10nCache {
    */
   constructor(l10n) {
     this.l10n = l10n ?? document.l10n;
-    this.QueryInterface = ChromeUtils.generateQI([
-      "nsIObserver",
-      "nsISupportsWeakReference",
-    ]);
-    Services.obs.addObserver(this, "intl:app-locales-changed", true);
   }
 
   /**
@@ -305,7 +296,7 @@ export class L10nCache {
 
       let span = element.ownerDocument.createElement("span");
       for (let key in argsHighlights) {
-        lazy.UrlbarShared.addTextContentWithHighlights(
+        UrlbarShared.addTextContentWithHighlights(
           span,
           args[key],
           argsHighlights[key]
@@ -357,23 +348,6 @@ export class L10nCache {
     }
     element.removeAttribute("data-l10n-id");
     element.removeAttribute("data-l10n-args");
-  }
-
-  /**
-   * Observer method from Services.obs.addObserver.
-   *
-   * @param {nsISupports} subject
-   *   The subject of the notification.
-   * @param {string} topic
-   *   The topic of the notification.
-   */
-  async observe(subject, topic) {
-    switch (topic) {
-      case "intl:app-locales-changed": {
-        this.clear();
-        break;
-      }
-    }
   }
 
   /**

@@ -98,6 +98,12 @@ class CacheStorage : public nsICacheStorage {
  protected:
   virtual ~CacheStorage() = default;
 
+  // Shared by asyncOpenURI and asyncOpenURIString once the latter has parsed
+  // its spec. aURI must already have had its ref stripped.
+  nsresult AsyncOpenInternal(nsIURI* aURI, const nsACString& aIdExtension,
+                             uint32_t aFlags,
+                             nsICacheEntryOpenCallback* aCallback);
+
   RefPtr<LoadContextInfo> mLoadContextInfo;
   bool mWriteToDisk : 1;
   bool mSkipSizeCheck : 1;

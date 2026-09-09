@@ -233,11 +233,6 @@ add_task(async function test_web_custom_format_data() {
     info("Skipping: HeadlessClipboard does not support web custom formats");
     return;
   }
-  // Web custom format clipboard support is not yet implemented on Android.
-  if (navigator.userAgent.includes("Android")) {
-    info("Skipping: Android does not yet support web custom formats");
-    return;
-  }
 
   let inputFormats = ["web text/plain", "web text/plain;foo=1"];
   let expectedData = writeMultipleDataToClipboard(

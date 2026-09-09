@@ -8,7 +8,7 @@
  */
 
 /**
- * @import {URIFixupPrimitives} from "chrome://browser/content/urlbar/UrlbarShared.mjs"
+ * @import {UrlbarLoadRequest, URIFixupPrimitives} from "chrome://browser/content/urlbar/UrlbarShared.mjs"
  * @import {Query} from "./UrlbarProvidersManager.sys.mjs"
  * @import {SearchEngine} from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
  * @import {SmartbarInput} from "chrome://browser/content/urlbar/SmartbarInput.mjs"
@@ -184,105 +184,19 @@ export var UrlbarUtils = {
   },
 
   /**
-   * Returns the group for a result.
+   * Converts nsIInputStream to string. Throws unless the stream is a MIME
+   * stream wrapping a string stream, as built by `getPostDataStream` and by
+   * search engine submissions.
    *
-   * @param {UrlbarResult} result
-   *   The result.
-   * @returns {Values<typeof UrlbarShared.RESULT_GROUP>}
-   *   The result's group.
+   * @param {nsIInputStream} postData
+   *   The stream to unwrap.
+   * @returns {string}
+   *  The wrapped post data.
    */
-  getResultGroup(result) {
-    // Used for test_suggestedIndexRelativeToGroup.js to make it simpler
-    if (result.group) {
-      return result.group;
-    }
-
-    if (result.hasSuggestedIndex && !result.isSuggestedIndexRelativeToGroup) {
-      return UrlbarShared.RESULT_GROUP.SUGGESTED_INDEX;
-    }
-    if (result.heuristic) {
-      switch (result.providerName) {
-        case "UrlbarProviderAiChat":
-          return UrlbarShared.RESULT_GROUP.HEURISTIC_AI_CHAT;
-        case "UrlbarProviderAliasEngines":
-          return UrlbarShared.RESULT_GROUP.HEURISTIC_ENGINE_ALIAS;
-        case "UrlbarProviderAutofill":
-          return UrlbarShared.RESULT_GROUP.HEURISTIC_AUTOFILL;
-        case "UrlbarProviderBookmarkKeywords":
-          return UrlbarShared.RESULT_GROUP.HEURISTIC_BOOKMARK_KEYWORD;
-        case "UrlbarProviderHeuristicFallback":
-          return UrlbarShared.RESULT_GROUP.HEURISTIC_FALLBACK;
-        case "UrlbarProviderHistoryUrlHeuristic":
-          return UrlbarShared.RESULT_GROUP.HEURISTIC_HISTORY_URL;
-        case "UrlbarProviderOmnibox":
-          return UrlbarShared.RESULT_GROUP.HEURISTIC_OMNIBOX;
-        case "UrlbarProviderRestrictKeywordsAutofill":
-          return UrlbarShared.RESULT_GROUP.HEURISTIC_RESTRICT_KEYWORD_AUTOFILL;
-        case "UrlbarProviderTokenAliasEngines":
-          return UrlbarShared.RESULT_GROUP.HEURISTIC_TOKEN_ALIAS_ENGINE;
-        case "UrlbarProviderSearchTips":
-          return UrlbarShared.RESULT_GROUP.HEURISTIC_SEARCH_TIP;
-        default:
-          if (result.providerName.startsWith("TestProvider")) {
-            return UrlbarShared.RESULT_GROUP.HEURISTIC_TEST;
-          }
-          break;
-      }
-      if (result.providerType == UrlbarShared.PROVIDER_TYPE.EXTENSION) {
-        return UrlbarShared.RESULT_GROUP.HEURISTIC_EXTENSION;
-      }
-      console.error(
-        "Returning HEURISTIC_FALLBACK for unrecognized heuristic result: ",
-        result
-      );
-      return UrlbarShared.RESULT_GROUP.HEURISTIC_FALLBACK;
-    }
-
-    switch (result.providerName) {
-      case "UrlbarProviderAboutPages":
-        return UrlbarShared.RESULT_GROUP.ABOUT_PAGES;
-      case "UrlbarProviderInputHistory":
-        return UrlbarShared.RESULT_GROUP.INPUT_HISTORY;
-      case "UrlbarProviderQuickSuggest":
-        return UrlbarShared.RESULT_GROUP.GENERAL_PARENT;
-      default:
-        break;
-    }
-
-    switch (result.type) {
-      case UrlbarShared.RESULT_TYPE.SEARCH:
-        if (result.source == UrlbarShared.RESULT_SOURCE.HISTORY) {
-          return result.providerName == "UrlbarProviderRecentSearches"
-            ? UrlbarShared.RESULT_GROUP.RECENT_SEARCH
-            : UrlbarShared.RESULT_GROUP.FORM_HISTORY;
-        }
-        if (result.payload.tail && !result.isRichSuggestion) {
-          return UrlbarShared.RESULT_GROUP.TAIL_SUGGESTION;
-        }
-        if (result.payload.suggestion) {
-          return UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION;
-        }
-        break;
-      case UrlbarShared.RESULT_TYPE.OMNIBOX:
-        return UrlbarShared.RESULT_GROUP.OMNIBOX;
-      case UrlbarShared.RESULT_TYPE.REMOTE_TAB:
-        return UrlbarShared.RESULT_GROUP.REMOTE_TAB;
-      case UrlbarShared.RESULT_TYPE.RESTRICT:
-        return UrlbarShared.RESULT_GROUP.RESTRICT_SEARCH_KEYWORD;
-      case UrlbarShared.RESULT_TYPE.AI_CHAT:
-        return UrlbarShared.RESULT_GROUP.AI;
-    }
-    // When enabled, semantic history results (both history URLs and
-    // switch-to-tab results) get their own group so they fill only the space
-    // left after, and never evict, the plain (non-semantic) results that would
-    // otherwise share the general group.
-    if (
-      result.providerName == "UrlbarProviderSemanticHistorySearch" &&
-      lazy.UrlbarPrefs.get("suggest.semanticHistory.separateGroup")
-    ) {
-      return UrlbarShared.RESULT_GROUP.SEMANTIC_HISTORY;
-    }
-    return UrlbarShared.RESULT_GROUP.GENERAL;
+  getPostDataString(postData) {
+    return postData
+      .QueryInterface(Ci.nsIMIMEInputStream)
+      .data.QueryInterface(Ci.nsISupportsCString).data;
   },
 
   /**
@@ -296,34 +210,44 @@ export var UrlbarUtils = {
    *   The element associated with the result that was selected or picked, if
    *   available. For results that have multiple selectable children, the URL
    *   may be taken from a child element rather than the result.
-   * @returns {object}
-   *   An object: `{ url, postData }`
+   * @returns {{url: ?string, postData: ?nsIInputStream}}
    *   `url` will be null if the result doesn't have a URL. `postData` will be
    *   null if the result doesn't have post data.
    */
   getUrlFromResult(result, { element = null } = {}) {
-    if (
-      result.payload.engine &&
-      (result.type == UrlbarShared.RESULT_TYPE.SEARCH ||
-        result.type == UrlbarShared.RESULT_TYPE.DYNAMIC)
-    ) {
-      let query =
-        element?.dataset.query ||
-        result.payload.suggestion ||
-        result.payload.query;
-      if (query) {
-        const engine = lazy.SearchService.getEngineByName(
-          result.payload.engine
-        );
-        let [url, postData] = this.getSearchQueryUrl(engine, query);
-        return { url, postData };
+    let loadRequest = UrlbarShared.getLoadRequestFromResult(result, {
+      element,
+    });
+    if (!loadRequest) {
+      return { url: null, postData: null };
+    }
+
+    return this.loadRequestToUrl(loadRequest);
+  },
+
+  /**
+   * Resolves a load request to the url and post data to load.
+   *
+   * @param {UrlbarLoadRequest} loadRequest
+   *   What to load.
+   * @returns {{url: ?string, postData: ?nsIInputStream}}
+   *   `url` will be null when the search engine wasn't found.
+   */
+  loadRequestToUrl(loadRequest) {
+    if (loadRequest.engineSearch) {
+      let { engineName, query } = loadRequest.engineSearch;
+      let engine = lazy.SearchService.getEngineByName(engineName);
+      if (!engine) {
+        return { url: null, postData: null };
       }
+      let [url, postData] = this.getSearchQueryUrl(engine, query);
+      return { url, postData };
     }
 
     return {
-      url: result.payload.url ?? null,
-      postData: result.payload.postData
-        ? this.getPostDataStream(result.payload.postData)
+      url: loadRequest.urlLoad.url,
+      postData: loadRequest.urlLoad.postData
+        ? this.getPostDataStream(loadRequest.urlLoad.postData)
         : null,
     };
   },
@@ -360,19 +284,27 @@ export var UrlbarUtils = {
 
   /**
    * Converts a given icon URL to a remote icon URL if it's not a trusted
-   * protocol.
+   * protocol, which keeps the decode out of the parent process (bug 2012436).
    *
    * @param {string} iconUrl The URL of the icon.
    * @param {number} size The desired size of the icon (currently ignored).
-   * @param {Window} win The window context.
+   * @param {UrlbarParentController} [controller]
+   *   The controller the query runs on. It supplies the window the icon renders
+   *   in, and whether that window is in a content process, which decodes what
+   *   it displays itself and can't load the wrapper's scheme. Omitted in unit
+   *   tests.
    * @returns {string|null} The URL of the remote icon or null if not available.
    */
-  getRemoteIconUrl(iconUrl, size, win) {
+  getRemoteIconUrl(iconUrl, size, controller) {
     let url = URL.parse(iconUrl);
     if (!url) {
       return null;
     }
-    if (!lazy.FaviconUtils.TRUSTED_FAVICON_SCHEMES.includes(url.protocol)) {
+    let scheme = url.protocol.slice(0, -1);
+    if (
+      !controller?.rendersInContentProcess &&
+      !lazy.FaviconUtils.TRUSTED_FAVICON_SCHEMES.includes(scheme)
+    ) {
       if (Services.env.exists("XPCSHELL_TEST_PROFILE_DIR")) {
         // XPCShell tests don't have a real window, just use fallback values.
         return lazy.FaviconUtils.getMozRemoteImageURL(iconUrl, {
@@ -384,8 +316,10 @@ export var UrlbarUtils = {
         // TODO Bug 2035971: Restore the size property once `FaviconUtils` and
         // `moz-remote-image` handle the image aspect ratio correctly.
         //
-        // size: Math.floor(size * win.devicePixelRatio),
-        colorScheme: win.matchMedia("(prefers-color-scheme: dark)").matches
+        // size: Math.floor(size * controller.browserWindow.devicePixelRatio),
+        colorScheme: controller.browserWindow.matchMedia(
+          "(prefers-color-scheme: dark)"
+        ).matches
           ? "dark"
           : "light",
       });
@@ -1175,88 +1109,6 @@ export var UrlbarUtils = {
   },
 
   /**
-   * Extracts a group for search engagement telemetry from a result.
-   *
-   * @param {UrlbarResult} result The result to analyze.
-   * @returns {string} Group name as string.
-   */
-  searchEngagementTelemetryGroup(result) {
-    if (!result) {
-      return "unknown";
-    }
-    if (result.isBestMatch) {
-      return "top_pick";
-    }
-    if (result.providerName === "UrlbarProviderTopSites") {
-      return "top_site";
-    }
-
-    switch (this.getResultGroup(result)) {
-      case UrlbarShared.RESULT_GROUP.INPUT_HISTORY: {
-        return "adaptive_history";
-      }
-      case UrlbarShared.RESULT_GROUP.RECENT_SEARCH: {
-        return "recent_search";
-      }
-      case UrlbarShared.RESULT_GROUP.FORM_HISTORY: {
-        return "search_history";
-      }
-      case UrlbarShared.RESULT_GROUP.TAIL_SUGGESTION:
-      case UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION: {
-        let group = result.payload.trending
-          ? "trending_search"
-          : "search_suggest";
-        if (result.isRichSuggestion) {
-          group += "_rich";
-        }
-        return group;
-      }
-      case UrlbarShared.RESULT_GROUP.REMOTE_TAB: {
-        return "remote_tab";
-      }
-      case UrlbarShared.RESULT_GROUP.HEURISTIC_EXTENSION:
-      case UrlbarShared.RESULT_GROUP.HEURISTIC_OMNIBOX:
-      case UrlbarShared.RESULT_GROUP.OMNIBOX: {
-        return "addon";
-      }
-      // Semantic history results have their own group for sorting purposes but
-      // are reported as "general" results, as they were before the group split.
-      case UrlbarShared.RESULT_GROUP.GENERAL:
-      case UrlbarShared.RESULT_GROUP.SEMANTIC_HISTORY: {
-        return "general";
-      }
-      // Group of UrlbarProviderQuickSuggest is GENERAL_PARENT.
-      case UrlbarShared.RESULT_GROUP.GENERAL_PARENT: {
-        return "suggest";
-      }
-      case UrlbarShared.RESULT_GROUP.ABOUT_PAGES: {
-        return "about_page";
-      }
-      case UrlbarShared.RESULT_GROUP.SUGGESTED_INDEX: {
-        return "suggested_index";
-      }
-      case UrlbarShared.RESULT_GROUP.RESTRICT_SEARCH_KEYWORD: {
-        return "restrict_keyword";
-      }
-      case UrlbarShared.RESULT_GROUP.AI: {
-        return "ai";
-      }
-    }
-
-    return result.heuristic ? "heuristic" : "unknown";
-  },
-
-  searchEngagementTelemetryAction(result, pickedActionKey = null) {
-    if (result.providerName != "UrlbarProviderGlobalActions") {
-      return result.payload.action?.key ?? "none";
-    }
-    if (pickedActionKey) {
-      return pickedActionKey;
-    }
-    return result.payload.actionsResults.map(({ key }) => key).join(",");
-  },
-
-  /**
    * For use when we want to hash a pair of items in a dictionary
    *
    * @param {string[]} tokens
@@ -1337,6 +1189,37 @@ export var UrlbarUtils = {
     }
 
     return action;
+  },
+
+  /**
+   * Builds the `userContext` payload of a tab-switch result: the container id
+   * the tab lives in, plus the container's display data, resolved here because
+   * the view can't reach ContextualIdentityService.
+   *
+   * @param {number} userContextId
+   *   The container id for the tab.
+   * @returns {{id: number, label?: string, color?: string, iconUrl?: string}}
+   *   The display data is absent when the id has no public identity. The label
+   *   is trimmed.
+   */
+  getUserContextData(userContextId) {
+    let identity =
+      lazy.ContextualIdentityService.getPublicIdentityFromId(userContextId);
+    if (!identity) {
+      return { id: userContextId };
+    }
+
+    return {
+      id: userContextId,
+      label:
+        lazy.ContextualIdentityService.getUserContextLabel(
+          userContextId
+        ).trim(),
+      color: identity.color,
+      iconUrl: lazy.ContextualIdentityService.getContainerIconURL(
+        identity.icon
+      ),
+    };
   },
 
   /**
@@ -1498,8 +1381,23 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       url: {
         type: "string",
       },
-      userContextId: {
-        type: "number",
+      userContext: {
+        type: "object",
+        required: ["id"],
+        properties: {
+          color: {
+            type: "string",
+          },
+          iconUrl: {
+            type: "string",
+          },
+          id: {
+            type: "number",
+          },
+          label: {
+            type: "string",
+          },
+        },
       },
     },
   },
@@ -1873,6 +1771,14 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       dynamicType: {
         type: "string",
       },
+      // Set by UrlbarProvidersManager when the result is finalized,
+      // so they're not present initially.
+      viewTemplate: {
+        type: "object",
+      },
+      viewUpdate: {
+        type: "object",
+      },
     },
   },
   [UrlbarShared.RESULT_TYPE.RESTRICT]: {
@@ -2184,9 +2090,10 @@ export class UrlbarProvider {
    * for details on what that means.
    *
    * @param {UrlbarResult} _result
-   *   The result that was selected.
-   * @param {Element} _element
-   *   The element in the result's view that was selected.
+   *   The result being selected.
+   * @param {Element} [_element]
+   *   The selected element. Undefined in the message path.
+   *   New providers should not use this parameter!
    * @abstract
    */
   onBeforeSelection(_result, _element) {}
@@ -2200,11 +2107,9 @@ export class UrlbarProvider {
    *
    * @param {UrlbarResult} _result
    *   The result that was selected.
-   * @param {Element} _element
-   *   The element in the result's view that was selected.
    * @abstract
    */
-  onSelection(_result, _element) {}
+  onSelection(_result) {}
 
   /**
    * @typedef {object} ViewTemplate
@@ -2254,8 +2159,7 @@ export class UrlbarProvider {
    *   An optional mapping from attribute names to values.  For each
    *   name-value pair, an attribute is added to the element created for the
    *   object. The `id` attribute is reserved and cannot be set by the
-   *   provider. Element IDs are passed back to the provider in getViewUpdate
-   *   if they are needed.
+   *   provider.
    *
    * @property {ViewTemplateElement[]} [children]
    *   An optional list of children.  Each item in the array must be an object
@@ -2272,8 +2176,7 @@ export class UrlbarProvider {
    */
 
   /**
-   * This is called only for dynamic result types, when the urlbar view creates
-   * the view of one of the results of the provider.
+   * This is called only for dynamic result types.
    *
    * @param {UrlbarResult} _result
    *   The result whose view will be created.
@@ -2286,9 +2189,8 @@ export class UrlbarProvider {
   }
 
   /**
-   * This is called only for dynamic result types, when the urlbar view updates
-   * the view of one of the results of the provider.  It should return an object
-   * describing the view update that looks like this:
+   * This is called only for dynamic result types by the providers manager. It
+   * should return an object describing the view update that looks like this:
    *
    *   {
    *     nodeNameFoo: {
@@ -2325,12 +2227,6 @@ export class UrlbarProvider {
    *
    * @param {UrlbarResult} _result
    *   The result whose view will be updated.
-   * @param {Map} _idsByName
-   *   A Map from an element's name, as defined by the provider; to its ID in
-   *   the DOM, as defined by the browser. The browser manages element IDs for
-   *   dynamic results to prevent collisions. However, a provider may need to
-   *   access the IDs of the elements created for its results. For example, to
-   *   set various `aria` attributes.
    * @returns {object}
    *   A view update object as described above.  The names of properties are the
    *   the names of elements declared in the view template.  The values of
@@ -2359,7 +2255,7 @@ export class UrlbarProvider {
    *   {string} [textContent]
    *     A string that will be set as `element.textContent`.
    */
-  getViewUpdate(_result, _idsByName) {
+  getViewUpdate(_result) {
     return null;
   }
 

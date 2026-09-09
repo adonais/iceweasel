@@ -53,12 +53,12 @@ class BrotliDecompressionStreamAlgorithms
                                            DecompressionStreamAlgorithms)
 
   static Result<already_AddRefed<BrotliDecompressionStreamAlgorithms>, nsresult>
-  Create();
+  Create(bool aEnableLargeWindow);
 
  private:
   BrotliDecompressionStreamAlgorithms() = default;
 
-  [[nodiscard]] nsresult Init();
+  [[nodiscard]] nsresult Init(bool aEnableLargeWindow);
 
   // Shared by:
   // https://wicg.github.io/compression/#decompress-and-enqueue-a-chunk

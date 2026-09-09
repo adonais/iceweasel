@@ -5,6 +5,7 @@
 package org.mozilla.fenix.ipprotection.store
 
 import io.mockk.mockk
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -14,13 +15,11 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.Vpn
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class IPProtectionPromptTelemetryMiddlewareTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     @Test
     fun `WHEN the OnImpression action THEN the expected telemetry is recorded`() {

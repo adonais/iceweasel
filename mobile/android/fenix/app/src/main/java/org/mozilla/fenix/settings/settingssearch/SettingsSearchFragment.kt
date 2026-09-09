@@ -24,9 +24,7 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.settings.settingssearch.DefaultFenixSettingsIndexer.Companion.defaultPreferenceFileInformationList
 import org.mozilla.fenix.theme.FirefoxTheme
 
-/**
- * Fragment for the settings search screen.
- */
+/** Fragment for the settings search screen. */
 open class SettingsSearchFragment : Fragment(), SystemInsetsPaddedFragment {
 
     protected lateinit var settingsSearchStore: SettingsSearchStore
@@ -61,22 +59,24 @@ open class SettingsSearchFragment : Fragment(), SystemInsetsPaddedFragment {
     }
 
     protected open fun buildSettingsSearchStore(): SettingsSearchStore {
-        val recentSettingsSearchesRepository = FenixRecentSettingsSearchesRepository(
-            dataStore = requireContext().recentSearchesDataStore,
-            preferenceFileInformationList = defaultPreferenceFileInformationList,
-        )
+        val recentSettingsSearchesRepository =
+            FenixRecentSettingsSearchesRepository(
+                dataStore = requireContext().recentSearchesDataStore,
+                preferenceFileInformationList = defaultPreferenceFileInformationList,
+            )
 
         return storeProvider.get { restoredState ->
             SettingsSearchStore(
                 initialState = restoredState ?: SettingsSearchState.Default(emptyList()),
-                middleware = listOf(
-                    SettingsSearchMiddleware(
-                        fenixSettingsIndexer = requireContext().components.settingsIndexer,
-                        navController = findNavController(),
-                        recentSettingsSearchesRepository = recentSettingsSearchesRepository,
-                        scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                middleware =
+                    listOf(
+                        SettingsSearchMiddleware(
+                            fenixSettingsIndexer = requireContext().components.settingsIndexer,
+                            navController = findNavController(),
+                            recentSettingsSearchesRepository = recentSettingsSearchesRepository,
+                            scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                        )
                     ),
-                ),
             )
         }
     }
@@ -89,7 +89,7 @@ open class SettingsSearchFragment : Fragment(), SystemInsetsPaddedFragment {
             SettingsSearch.SearchResultClickedExtra(
                 itemPreferenceKey = item.preferenceKey,
                 isRecentSearch = isRecentSearch,
-            ),
+            )
         )
         settingsSearchStore.dispatch(SettingsSearchAction.ResultItemClicked(item))
     }

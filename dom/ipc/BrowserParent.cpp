@@ -411,7 +411,7 @@ TabId BrowserParent::GetTabIdFrom(nsIDocShell* docShell) {
 }
 
 ContentParent* BrowserParent::Manager() const {
-  return static_cast<ContentParent*>(PBrowserParent::Manager());
+  return mozilla::ipc::ActorCast<ContentParent>(PBrowserParent::Manager());
 }
 
 void BrowserParent::AddBrowserParentToTable(layers::LayersId aLayersId,
@@ -542,19 +542,15 @@ uint32_t BrowserParent::GetMaxTouchPoints(Element* aElement) {
 
 a11y::DocAccessibleParent* BrowserParent::GetTopLevelDocAccessible() const {
 #ifdef ACCESSIBILITY
-  // XXX Consider managing non top level PDocAccessibles with their parent
-  // document accessible.
-  const ManagedContainer<PDocAccessibleParent>& docs =
-      ManagedPDocAccessibleParent();
-  for (auto* key : docs) {
-    auto* doc = static_cast<a11y::DocAccessibleParent*>(key);
-    // We want the document for this BrowserParent even if it's for an
-    // embedded out-of-process iframe. Therefore, we use
-    // IsTopLevelInContentProcess. In contrast, using IsToplevel would only
-    // include documents that aren't embedded; e.g. tab documents.
-    if (doc->IsTopLevelInContentProcess() && !doc->IsShutdown()) {
-      return doc;
-    }
+  WindowGlobalParent* wgp = mBrowsingContext->GetCurrentWindowGlobal();
+  if (wgp && wgp->Manager() != this) {
+    // The BrowsingContext has navigated such that its current document is no
+    // longer within this PBrowser.
+    return nullptr;
+  }
+  if (auto* doc = a11y::DocAccessibleParent::GetFrom(wgp)) {
+    MOZ_ASSERT(doc->IsTopLevelInContentProcess());
+    return doc;
   }
 #endif
   return nullptr;
@@ -738,15 +734,6 @@ void BrowserParent::Destroy() {
   Deactivated();
 
   RemoveWindowListeners();
-
-#ifdef ACCESSIBILITY
-  if (a11y::DocAccessibleParent* tabDoc = GetTopLevelDocAccessible()) {
-#  if defined(ANDROID)
-    MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
-#  endif
-    tabDoc->Destroy();
-  }
-#endif
 
   // If this fails, it's most likely due to a content-process crash, and
   // auto-cleanup will kick in.  Otherwise, the child side will destroy itself
@@ -1073,6 +1060,20 @@ mozilla::ipc::IPCResult BrowserParent::RecvSetDimensions(
   nsCOMPtr<nsIBaseWindow> treeOwnerAsWin = do_QueryInterface(treeOwner);
   NS_ENSURE_TRUE(treeOwnerAsWin, IPC_OK());
 
+  if (nsCOMPtr<nsIDragService> dragService =
+          do_GetService("@mozilla.org/widget/dragservice;1")) {
+    RefPtr<nsIWidget> widget = GetTopLevelWidget();
+    if (RefPtr<nsIDragSession> session =
+            dragService->GetCurrentSession(widget)) {
+      session->EndDragSession(false, 0);
+    }
+  }
+
+  if (nsPresContext* presContext =
+          mFrameElement->OwnerDoc()->GetPresContext()) {
+    presContext->EventStateManager()->StopTrackingDragGesture(true);
+  }
+
   // `BrowserChild` only sends the values to actually be changed, see more
   // details in `BrowserChild::SetDimensions()`.
   // Note that `BrowserChild::SetDimensions()` may be called before receiving
@@ -1214,6 +1215,7 @@ void BrowserParent::HandleAccessKey(const WidgetKeyboardEvent& aEvent,
     // Note that we don't need to mark aEvent is posted to a remote process
     // because the event may be dispatched to it as normal keyboard event.
     // Therefore, we should use local copy to send it.
+    // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
     WidgetKeyboardEvent localEvent(aEvent);
     RequestingAccessKeyEventData::Set(localEvent);
     (void)SendHandleAccessKey(localEvent, aCharCodes);
@@ -1237,138 +1239,6 @@ void BrowserParent::Deactivate(bool aWindowLowering, uint64_t aActionId) {
     (void)SendDeactivate(aActionId);
   }
 }
-
-#ifdef ACCESSIBILITY
-a11y::PDocAccessibleParent* BrowserParent::AllocPDocAccessibleParent(
-    PDocAccessibleParent* aParent, const uint64_t&,
-    const MaybeDiscardedBrowsingContext&, const bool&) {
-  // Reference freed in DeallocPDocAccessibleParent.
-  return a11y::DocAccessibleParent::New().take();
-}
-
-bool BrowserParent::DeallocPDocAccessibleParent(PDocAccessibleParent* aParent) {
-  // Free reference from AllocPDocAccessibleParent.
-  static_cast<a11y::DocAccessibleParent*>(aParent)->Release();
-  return true;
-}
-
-mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
-    PDocAccessibleParent* aDoc, PDocAccessibleParent* aParentDoc,
-    const uint64_t& aParentID,
-    const MaybeDiscardedBrowsingContext& aBrowsingContext,
-    const bool& aIsPrintDoc) {
-#  if defined(ANDROID)
-  MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
-#  endif
-  auto doc = static_cast<a11y::DocAccessibleParent*>(aDoc);
-  doc->SetIsPrintDoc(aIsPrintDoc);
-  auto allow = doc->ShouldAllowConstruction();
-  if (allow == a11y::DocAccessibleParent::AllowConstruction::Disallow) {
-    return IPC_FAIL(
-        this,
-        "Attempt to construct PDocAccessible when accessibility not in use");
-  } else if (allow ==
-             a11y::DocAccessibleParent::AllowConstruction::AllowButIgnore) {
-    doc->MarkAsShutdown();
-    return IPC_OK();
-  }
-
-  // If this tab is already shutting down just mark the new actor as shutdown
-  // and ignore it.  When the tab actor is destroyed it will be too.
-  if (mIsDestroyed) {
-    doc->MarkAsShutdown();
-    return IPC_OK();
-  }
-
-  if (aParentDoc) {
-    // Iframe document rendered in the same process as its embedder.
-    // A document should never directly be the parent of another document.
-    // There should always be an outer doc accessible child of the outer
-    // document containing the child.
-    MOZ_ASSERT(aParentID);
-    if (!aParentID) {
-      return IPC_FAIL_NO_REASON(this);
-    }
-
-    auto parentDoc = static_cast<a11y::DocAccessibleParent*>(aParentDoc);
-    if (parentDoc->IsShutdown()) {
-      // This can happen if parentDoc is an OOP iframe, but its embedder has
-      // been destroyed. (DocAccessibleParent::Destroy destroys any child
-      // documents.) The OOP iframe (and anything it embeds) will die soon
-      // anyway, so mark this document as shutdown and ignore it.
-      doc->MarkAsShutdown();
-      return IPC_OK();
-    }
-
-    if (aBrowsingContext) {
-      doc->SetBrowsingContext(aBrowsingContext.get_canonical());
-    }
-
-    mozilla::ipc::IPCResult added = parentDoc->AddChildDoc(doc, aParentID);
-    if (!added) {
-      return added;
-    }
-
-#  ifdef XP_WIN
-    if (a11y::nsWinUtils::IsWindowEmulationStarted()) {
-      doc->SetEmulatedWindowHandle(parentDoc->GetEmulatedWindowHandle());
-    }
-#  endif
-
-    return IPC_OK();
-  }
-
-  if (auto* prevTopLevel = GetTopLevelDocAccessible()) {
-    // Sometimes, we can get a new top level DocAccessibleParent before the
-    // old one gets destroyed. The old one will die pretty shortly anyway,
-    // so just destroy it now. If we don't do this, GetTopLevelDocAccessible()
-    // might return the wrong document for a short while.
-    prevTopLevel->Destroy();
-  }
-
-  if (aBrowsingContext) {
-    doc->SetBrowsingContext(aBrowsingContext.get_canonical());
-  }
-
-  if (auto* bridge = GetBrowserBridgeParent()) {
-    // Iframe document rendered in a different process to its embedder.
-    // In this case, we don't get aParentDoc and aParentID.
-    MOZ_ASSERT(!aParentDoc && !aParentID);
-    doc->SetTopLevelInContentProcess();
-    if (!doc->IsPrintDoc()) {
-      a11y::ProxyCreated(doc);
-    }
-    // It's possible the embedder accessible hasn't been set yet; e.g.
-    // a hidden iframe. In that case, embedderDoc will be null and this will
-    // be handled when the embedder is set.
-    if (a11y::DocAccessibleParent* embedderDoc =
-            bridge->GetEmbedderAccessibleDoc()) {
-      mozilla::ipc::IPCResult added = embedderDoc->AddChildDoc(bridge);
-      if (!added) {
-        return added;
-      }
-    }
-    return IPC_OK();
-  } else {
-    // null aParentDoc means this document is at the top level in the child
-    // process.  That means it makes no sense to get an id for an accessible
-    // that is its parent.
-    MOZ_ASSERT(!aParentID);
-    if (aParentID) {
-      return IPC_FAIL_NO_REASON(this);
-    }
-
-    doc->SetTopLevel();
-    a11y::DocManager::RemoteDocAdded(doc);
-#  ifdef XP_WIN
-    if (!aIsPrintDoc) {
-      doc->MaybeInitWindowEmulation();
-    }
-#  endif
-  }
-  return IPC_OK();
-}
-#endif
 
 already_AddRefed<PFilePickerParent> BrowserParent::AllocPFilePickerParent(
     const nsString& aTitle, const nsIFilePicker::Mode& aMode,
@@ -4027,8 +3897,29 @@ mozilla::ipc::IPCResult BrowserParent::RecvInvokeDragSession(
     const CookieJarSettingsArgs& aCookieJarSettingsArgs,
     const MaybeDiscarded<WindowContext>& aSourceWindowContext,
     const MaybeDiscarded<WindowContext>& aSourceTopWindowContext) {
-  PresShell* presShell = mFrameElement->OwnerDoc()->GetPresShell();
-  if (!presShell) {
+  nsCOMPtr<nsIDragService> dragService =
+      do_GetService("@mozilla.org/widget/dragservice;1");
+  nsPresContext* presContext = mFrameElement->OwnerDoc()->GetPresContext();
+  const bool isValidRemoteDrag = [&]() {
+    if (!dragService || !presContext) {
+      return false;
+    }
+
+    if (dragService->GetIsSuppressed()) {
+      return false;
+    }
+
+    BrowserParent* dragTopLevelRemoteTarget =
+        presContext->EventStateManager()
+            ->GetTrackingDragGestureTopLevelRemoteTarget();
+    if (NS_WARN_IF(dragTopLevelRemoteTarget != TopLevelBrowserParent())) {
+      return false;
+    }
+
+    return true;
+  }();
+
+  if (!isValidRemoteDrag) {
     (void)SendEndDragSession(true, true, LayoutDeviceIntPoint(), 0,
                              nsIDragService::DRAGDROP_ACTION_NONE);
     // Continue sending input events with input priority when stopping the dnd
@@ -4066,15 +3957,10 @@ mozilla::ipc::IPCResult BrowserParent::RecvInvokeDragSession(
     }
   }
 
-  nsCOMPtr<nsIDragService> dragService =
-      do_GetService("@mozilla.org/widget/dragservice;1");
-  if (dragService) {
-    dragService->MaybeAddBrowser(this);
-  }
+  dragService->MaybeAddBrowser(this);
 
-  presShell->GetPresContext()
-      ->EventStateManager()
-      ->BeginTrackingRemoteDragGesture(mFrameElement, dragStartData);
+  presContext->EventStateManager()->BeginTrackingRemoteDragGesture(
+      mFrameElement, dragStartData);
 
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   os->NotifyObservers(nullptr, "content-invoked-drag", nullptr);

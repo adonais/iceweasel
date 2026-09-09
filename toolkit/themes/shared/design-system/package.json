@@ -3,7 +3,7 @@
   "license": "MPL-2.0",
   "scripts": {
     "build": "style-dictionary build --config ./config/tokens-config.js && prettier ./dist/ ../../../content/widgets/**/*.css ../../../../browser/themes/shared/**/*.css --write",
-    "fetch-figma-nova": "node src/fetch-figma-variables.mjs",
+    "import-figma-nova": "node src/import-figma-variables.mjs",
     "build-figma-nova": "node src/figma-import.mjs",
     "test": "node tests/try-runner.js"
   },

@@ -285,7 +285,7 @@ class WorkerFetchResolver final : public FetchDriverObserver {
     return mFetchObserver;
   }
 
-  void OnResponseAvailableInternal(
+  MOZ_CAN_RUN_SCRIPT void OnResponseAvailableInternal(
       SafeRefPtr<InternalResponse> aResponse) override;
 
   void OnResponseEnd(FetchDriverObserver::EndReason aReason,
@@ -360,7 +360,7 @@ class MainThreadFetchResolver final : public FetchDriverObserver {
         mSignalImpl(aSignalImpl),
         mMozErrors(aMozErrors) {}
 
-  void OnResponseAvailableInternal(
+  MOZ_CAN_RUN_SCRIPT void OnResponseAvailableInternal(
       SafeRefPtr<InternalResponse> aResponse) override;
 
   void SetLoadGroup(nsILoadGroup* aLoadGroup) { mLoadGroup = aLoadGroup; }
@@ -874,7 +874,7 @@ void MainThreadFetchResolver::OnResponseAvailableInternal(
     // used by the password manager as a hint to observe DOM mutations.
     // Call this prior to setting state to Complete so we can set up the
     // observer before mutations occurs.
-    Document* doc = inner ? inner->GetExtantDoc() : nullptr;
+    const RefPtr<Document> doc = inner ? inner->GetExtantDoc() : nullptr;
     if (doc) {
       doc->NotifyFetchOrXHRSuccess();
     }

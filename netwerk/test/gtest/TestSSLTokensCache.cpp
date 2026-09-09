@@ -6,7 +6,6 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/gtest/MozAssertions.h"
-#include "mozilla/net/ssl_tokens_cache.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsIFile.h"
 #include "nsITransportSecurityInfo.h"
@@ -229,6 +228,7 @@ static nsCString GetTempCachePath(const char* aName) {
   nsCOMPtr<nsIFile> tmpDir;
   NS_GetSpecialDirectory("TmpD", getter_AddRefs(tmpDir));
   tmpDir->AppendNative(nsDependentCString(aName));
+  (void)tmpDir->Remove(false);
   nsAutoString widePath;
   tmpDir->GetPath(widePath);
   return NS_ConvertUTF16toUTF8(widePath);
@@ -341,7 +341,7 @@ TEST(TestTokensCache, PersistenceRoundTrip)
 {
   ClearAll();
   mozilla::Preferences::SetInt("network.ssl_tokens_cache_records_per_entry", 3);
-  nsCString path = GetTempCachePath("test_tls_tc_rt.bin");
+  nsCString path = GetTempCachePath("test_tls_tc_rt.sqlite");
 
   putToken("anon:a.example.com:443"_ns, 100);
   putToken("anon:a.example.com:443"_ns, 200);
@@ -360,7 +360,7 @@ TEST(TestTokensCache, PersistenceRoundTrip)
 TEST(TestTokensCache, PersistenceExpiryFiltering)
 {
   ClearAll();
-  nsCString path = GetTempCachePath("test_tls_tc_expiry.bin");
+  nsCString path = GetTempCachePath("test_tls_tc_expiry.sqlite");
 
   PRTime now = PR_Now();
   RefPtr<CommonSocketControl> sc = createDummySocketControl();
@@ -391,14 +391,17 @@ TEST(TestTokensCache, PersistenceExpiryFiltering)
             NS_ERROR_NOT_AVAILABLE);
 }
 
+// A corrupt header makes OpenUnsharedDatabase fail with
+// NS_ERROR_FILE_CORRUPTED, which must be handled gracefully.
 TEST(TestTokensCache, PersistenceCorruption)
 {
   ClearAll();
-  nsCString path = GetTempCachePath("test_tls_tc_corrupt.bin");
+  nsCString path = GetTempCachePath("test_tls_tc_corrupt.sqlite");
 
   putToken("anon:example.com:443"_ns, 100);
   mozilla::net::SSLTokensCache::TriggerWriteForTest(path);
-  CorruptFileAt(path, 20, 0xFF);
+  // SQLite validates this magic on open, so clobbering it is reliable.
+  CorruptFileAt(path, 0, 'X');
 
   ClearAll();
   mozilla::net::SSLTokensCache::LoadForTest(path);  // must not crash
@@ -410,38 +413,18 @@ TEST(TestTokensCache, PersistenceCorruption)
             NS_ERROR_NOT_AVAILABLE);
 }
 
-TEST(TestTokensCache, PersistenceBadMagic)
-{
-  ClearAll();
-  nsCString path = GetTempCachePath("test_tls_tc_magic.bin");
-
-  putToken("anon:example.com:443"_ns, 100);
-  mozilla::net::SSLTokensCache::TriggerWriteForTest(path);
-  CorruptFileAt(path, 0, 'X');
-
-  ClearAll();
-  mozilla::net::SSLTokensCache::LoadForTest(path);
-
-  nsTArray<uint8_t> result;
-  mozilla::net::SessionCacheInfo unused;
-  ASSERT_EQ(mozilla::net::SSLTokensCache::Get("anon:example.com:443"_ns, result,
-                                              unused),
-            NS_ERROR_NOT_AVAILABLE);
-}
-
+// A too-small-to-be-a-database file is a distinct failure mode.
 TEST(TestTokensCache, PersistenceTruncated)
 {
   ClearAll();
-  nsCString path = GetTempCachePath("test_tls_tc_trunc.bin");
+  nsCString path = GetTempCachePath("test_tls_tc_trunc.sqlite");
 
   putToken("anon:example.com:443"_ns, 100);
   mozilla::net::SSLTokensCache::TriggerWriteForTest(path);
 
-  // Overwrite with correct magic+version but no body, so decompression
-  // fails with a Truncated error (not BadVersion).
   FILE* f = fopen(path.get(), "wb");
   if (f) {
-    fwrite("STCF\x03", 1, 5, f);
+    fwrite("SQLite", 1, 6, f);
     fclose(f);
   }
 
@@ -455,10 +438,44 @@ TEST(TestTokensCache, PersistenceTruncated)
             NS_ERROR_NOT_AVAILABLE);
 }
 
+// Corruption found while reading rows, rather than at open time:
+// LoadValidRecordsFrom must not report a partial load as success. Which
+// failure mode a deep byte-flip triggers varies, so accept either.
+TEST(TestTokensCache, PersistenceMidReadCorruption)
+{
+  ClearAll();
+  nsCString path = GetTempCachePath("test_tls_tc_midcorrupt.sqlite");
+
+  putToken("anon:example.com:443"_ns, 500);
+  mozilla::net::SSLTokensCache::TriggerWriteForTest(path);
+
+  nsCOMPtr<nsIFile> file;
+  ASSERT_NS_SUCCEEDED(NS_NewNativeLocalFile(path, getter_AddRefs(file)));
+  int64_t fileSize = 0;
+  ASSERT_NS_SUCCEEDED(file->GetFileSize(&fileSize));
+  ASSERT_GT(fileSize, (int64_t)200)
+      << "test fixture too small to have data past the header";
+  CorruptFileAt(path, static_cast<size_t>(fileSize) - 20, 0xFF);
+
+  ClearAll();
+  mozilla::net::SSLTokensCache::LoadForTest(path);  // must not crash
+
+  nsTArray<uint8_t> result;
+  mozilla::net::SessionCacheInfo unused;
+  nsresult rv = mozilla::net::SSLTokensCache::Get("anon:example.com:443"_ns,
+                                                  result, unused);
+  if (rv == NS_OK) {
+    ASSERT_EQ(result.Length(), (size_t)500);
+  } else {
+    ASSERT_TRUE(rv == NS_ERROR_NOT_AVAILABLE || rv == NS_ERROR_FAILURE)
+    << "unexpected error code: " << static_cast<uint32_t>(rv);
+  }
+}
+
 TEST(TestTokensCache, PersistenceEmpty)
 {
   ClearAll();
-  nsCString path = GetTempCachePath("test_tls_tc_empty.bin");
+  nsCString path = GetTempCachePath("test_tls_tc_empty.sqlite");
 
   mozilla::net::SSLTokensCache::TriggerWriteForTest(path);
   mozilla::net::SSLTokensCache::LoadForTest(path);
@@ -474,7 +491,7 @@ TEST(TestTokensCache, PersistenceConsumedRecordsAbsent)
 {
   ClearAll();
   mozilla::Preferences::SetInt("network.ssl_tokens_cache_records_per_entry", 3);
-  nsCString path = GetTempCachePath("test_tls_tc_consumed.bin");
+  nsCString path = GetTempCachePath("test_tls_tc_consumed.sqlite");
 
   putToken("anon:example.com:443"_ns, 100);
   putToken("anon:example.com:443"_ns, 200);
@@ -504,7 +521,7 @@ TEST(TestTokensCache, PersistenceConsumedRecordsAbsent)
 TEST(TestTokensCache, PersistenceClear)
 {
   ClearAll();
-  nsCString path = GetTempCachePath("test_tls_tc_clear.bin");
+  nsCString path = GetTempCachePath("test_tls_tc_clear.sqlite");
 
   putToken("anon:example.com:443"_ns, 100);
   mozilla::net::SSLTokensCache::TriggerWriteForTest(path);
@@ -515,7 +532,7 @@ TEST(TestTokensCache, PersistenceClear)
   file->Exists(&exists);
   ASSERT_TRUE(exists);
 
-  // Clear Rust state and C++ cache, then reload from file
+  // Clear the in-memory cache, then reload from the DB file.
   ClearAll();
   mozilla::net::SSLTokensCache::LoadForTest(path);
 
@@ -534,7 +551,7 @@ TEST(TestTokensCache, PersistenceServerCertRoundTrip)
   // connections — which receive no Certificate message — can reconstruct
   // full security info via RebuildCertificateInfoFromSSLTokenCache().
   ClearAll();
-  nsCString path = GetTempCachePath("test_tls_tc_cert.bin");
+  nsCString path = GetTempCachePath("test_tls_tc_cert.sqlite");
 
   putToken("anon:example.com:443"_ns, 100);
   mozilla::net::SSLTokensCache::TriggerWriteForTest(path);
@@ -581,7 +598,7 @@ TEST(TestTokensCache, ResumedConnectionHasValidCertAfterReload)
   // the server), RebuildCertificateInfoFromSSLTokenCache() must produce a
   // server cert with valid DER bytes on the socket.
   ClearAll();
-  nsCString path = GetTempCachePath("test_tls_tc_resumed_cert.bin");
+  nsCString path = GetTempCachePath("test_tls_tc_resumed_cert.sqlite");
   putToken("anon:example.com:443"_ns, 100);
   mozilla::net::SSLTokensCache::TriggerWriteForTest(path);
   ClearAll();
@@ -610,7 +627,7 @@ TEST(TestTokensCache, ResumedConnectionEnablesCoalescing)
   // resumption using a token loaded from disk. IsAcceptableForHost() returns
   // false when mSucceededCertChain is empty.
   ClearAll();
-  nsCString path = GetTempCachePath("test_tls_tc_coalesce.bin");
+  nsCString path = GetTempCachePath("test_tls_tc_coalesce.sqlite");
   putToken("anon:example.com:443"_ns, 100);
   mozilla::net::SSLTokensCache::TriggerWriteForTest(path);
   ClearAll();
@@ -633,10 +650,10 @@ TEST(TestTokensCache, ResumedConnectionEnablesCoalescing)
 TEST(TestTokensCache, PersistenceWriteAfterLoad)
 {
   // Verify that tokens loaded from disk survive a subsequent flush —
-  // i.e. their IDs are correctly re-registered in the Rust shadow when loaded.
+  // i.e. loaded records are re-registered, so a later write includes both.
   ClearAll();
   mozilla::Preferences::SetInt("network.ssl_tokens_cache_records_per_entry", 3);
-  nsCString path = GetTempCachePath("test_tls_tc_wal.bin");
+  nsCString path = GetTempCachePath("test_tls_tc_wal.sqlite");
 
   putToken("anon:a.example.com:443"_ns, 100);
   putToken("anon:b.example.com:443"_ns, 200);

@@ -8,8 +8,8 @@ import android.content.Intent
 import android.net.Uri
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
-import mozilla.components.service.nimbus.GleanMetrics.Microsurvey
 import mozilla.components.service.nimbus.GleanMetrics.Messaging as GleanMessaging
+import mozilla.components.service.nimbus.GleanMetrics.Microsurvey
 
 /**
  * Bookkeeping for message actions in terms of Glean messages and the messaging store.
@@ -55,8 +55,8 @@ open class NimbusMessagingController(
     /**
      * Called once the user has clicked on a message.
      *
-     * This records that the message has been clicked on, but does not record a
-     * glean event. That should be done via [processMessageActionToUri].
+     * This records that the message has been clicked on, but does not record a glean event. That should be done via
+     * [processMessageActionToUri].
      */
     override suspend fun onMessageClicked(message: Message) {
         val messageMetadata = message.metadata
@@ -79,21 +79,22 @@ open class NimbusMessagingController(
         sendClickedMessageTelemetry(id, null)
     }
 
-    override fun getIntentForMessage(message: Message) = Intent(
-        Intent.ACTION_VIEW,
-        processMessageActionToUri(message),
-    )
+    override fun getIntentForMessage(message: Message) =
+        Intent(
+            Intent.ACTION_VIEW,
+            processMessageActionToUri(message),
+        )
 
     override suspend fun getMessage(id: String): Message? {
         return messagingStorage.getMessage(id)
     }
 
     /**
-     * The [message] action needs to be examined for string substitutions
-     * and any `uuid` needs to be recorded in the Glean event.
+     * The [message] action needs to be examined for string substitutions and any `uuid` needs to be recorded in the
+     * Glean event.
      *
-     * We call this `process` as it has a side effect of logging a Glean event while it
-     * creates a URI string for the message action.
+     * We call this `process` as it has a side effect of logging a Glean event while it creates a URI string for the
+     * message action.
      */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     fun processMessageActionToUri(message: Message): Uri {
@@ -117,7 +118,7 @@ open class NimbusMessagingController(
 
     private fun sendClickedMessageTelemetry(messageId: String, uuid: String?) {
         GleanMessaging.messageClicked.record(
-            GleanMessaging.MessageClickedExtra(messageKey = messageId, actionUuid = uuid),
+            GleanMessaging.MessageClickedExtra(messageKey = messageId, actionUuid = uuid)
         )
     }
 
@@ -126,7 +127,7 @@ open class NimbusMessagingController(
             Microsurvey.SubmitButtonTappedExtra(
                 surveyId = messageId,
                 userSelection = answer,
-            ),
+            )
         )
     }
 
@@ -137,11 +138,9 @@ open class NimbusMessagingController(
             action.toUri()
         }
 
-    override suspend fun getMessages(): List<Message> =
-        messagingStorage.getMessages()
+    override suspend fun getMessages(): List<Message> = messagingStorage.getMessages()
 
-    override suspend fun getNextMessage(surfaceId: MessageSurfaceId) =
-        getNextMessage(surfaceId, getMessages())
+    override suspend fun getNextMessage(surfaceId: MessageSurfaceId) = getNextMessage(surfaceId, getMessages())
 
     override fun getNextMessage(surfaceId: MessageSurfaceId, messages: List<Message>) =
         messagingStorage.getNextMessage(surfaceId, messages)

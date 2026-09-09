@@ -72,8 +72,6 @@ run-if = [
 
 ["browser_thumbnails_fullViewport.js"]
 
-["browser_thumbnails_preserveAspectRatio.js"]
-
 ["browser_thumbnails_privacy.js"]
 
 ["browser_thumbnails_redirect.js"]

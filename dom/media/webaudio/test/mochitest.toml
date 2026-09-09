@@ -83,6 +83,7 @@ support-files = [
   "sixteen-frames.mp3", # only 16 frames of valid audio
   "8ch-f32le.wav",
   "8ch-s16.wav",
+  "vorbis-6ch-channel-order.webm",
   "../../webrtc/tests/mochitests/mediaStreamPlayback.js",
   "../../webrtc/tests/mochitests/head.js",
   "tiny.flac"
@@ -166,6 +167,11 @@ skip-if = [
 ["test_decodeAudioError.html"]
 
 ["test_decodeMultichannel.html"]
+skip-if = [
+  "isolated_process", # Bug 1709948
+]
+
+["test_decodeMultichannelOrder.html"]
 skip-if = [
   "isolated_process", # Bug 1709948
 ]

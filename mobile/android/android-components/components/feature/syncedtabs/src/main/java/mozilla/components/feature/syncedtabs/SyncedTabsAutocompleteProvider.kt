@@ -12,17 +12,16 @@ import mozilla.components.feature.syncedtabs.storage.SyncedTabsStorage
 import mozilla.components.support.utils.doesUrlStartsWithText
 import mozilla.components.support.utils.segmentAwareDomainMatch
 
-@VisibleForTesting
-internal const val SYNCED_TABS_AUTOCOMPLETE_SOURCE_NAME = "syncedTabs"
+@VisibleForTesting internal const val SYNCED_TABS_AUTOCOMPLETE_SOURCE_NAME = "syncedTabs"
 
 /**
  * Provide autocomplete suggestions from synced tabs.
  *
  * @param syncedTabs [SyncedTabsStorage] containing the information about the available synced tabs.
- * @param autocompletePriority Order in which this provider will be queried for autocomplete suggestions
- * in relation ot others.
- *  - a lower priority means that this provider must be called before others with a higher priority.
- *  - an equal priority offers no ordering guarantees.
+ * @param autocompletePriority Order in which this provider will be queried for autocomplete suggestions in relation ot
+ *   others.
+ *     - a lower priority means that this provider must be called before others with a higher priority.
+ *     - an equal priority offers no ordering guarantees.
  *
  * Defaults to `0`.
  */
@@ -31,11 +30,9 @@ class SyncedTabsAutocompleteProvider(
     override val autocompletePriority: Int = 0,
 ) : AutocompleteProvider {
     override suspend fun getAutocompleteSuggestion(query: String): AutocompleteResult? {
-        val tabUrl = syncedTabs
-            .getActiveDeviceTabs { doesUrlStartsWithText(it.url, query) }
-            .firstOrNull()
-            ?.tab?.url
-            ?: return null
+        val tabUrl =
+            syncedTabs.getActiveDeviceTabs { doesUrlStartsWithText(it.url, query) }.firstOrNull()?.tab?.url
+                ?: return null
 
         val resultText = segmentAwareDomainMatch(query, arrayListOf(tabUrl))
         return resultText?.let {

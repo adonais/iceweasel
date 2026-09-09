@@ -7,12 +7,26 @@ prefs = [
 ]
 support-files = [
   "bug1921817.jpg",
+  "encoding_process.js",
   "green.png",
   "multiple.ico"
 ]
 
 ["test_bug1921817.html"]
 scheme = "https"
+
+["test_encoding_process.html"]
+scheme = "https"
+run-if = [
+  "os != 'android' && !mda_gpu",
+]
+
+["test_encoding_process_gpu.html"]
+scheme = "https"
+tags = "webcodecs media-gpu os_integration"
+run-if = [
+  "os != 'android' && mda_gpu",
+]
 
 ["test_imageDecoder_desiredSize.html"]
 scheme = "https"

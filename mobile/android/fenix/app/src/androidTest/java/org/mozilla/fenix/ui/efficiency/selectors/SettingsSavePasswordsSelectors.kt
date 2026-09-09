@@ -9,22 +9,25 @@ import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
 object SettingsSavePasswordsSelectors {
 
-    val ASK_TO_SAVE_OPTION = Selector(
-        strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
-        value = "Ask to save",
-        description = "Ask to save option",
-        groups = listOf("requiredForPage"),
-    )
+    val ASK_TO_SAVE_OPTION =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = "Ask to save",
+            description = "Ask to save option",
+            groups = listOf("requiredForPage"),
+        )
 
-    val NEVER_SAVE_OPTION = Selector(
-        strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
-        value = "Never save",
-        description = "Never save option",
-        groups = listOf(),
-    )
+    val NEVER_SAVE_OPTION =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = "Never save",
+            description = "Never save option",
+            groups = listOf(),
+        )
 
-    val all = listOf(
-        ASK_TO_SAVE_OPTION,
-        NEVER_SAVE_OPTION,
-    )
+    val all =
+        listOf(
+            ASK_TO_SAVE_OPTION,
+            NEVER_SAVE_OPTION,
+        )
 }

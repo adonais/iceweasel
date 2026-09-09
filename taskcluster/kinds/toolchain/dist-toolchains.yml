@@ -18,7 +18,6 @@ clang-dist-toolchain:
     worker:
         max-run-time: 1800
     run:
-        clone-with: hg
         arguments: ['clang']
         toolchain-artifact: public/build/clang-dist-toolchain.tar.xz
         toolchain-extract: false
@@ -34,7 +33,6 @@ rustc-dist-toolchain:
     worker:
         max-run-time: 1800
     run:
-        clone-with: hg
         arguments: ['rustc']
         toolchain-artifact: public/build/rustc-dist-toolchain.tar.xz
         toolchain-extract: false

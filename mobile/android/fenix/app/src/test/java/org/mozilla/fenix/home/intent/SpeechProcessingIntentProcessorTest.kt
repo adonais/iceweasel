@@ -35,11 +35,12 @@ class SpeechProcessingIntentProcessorTest {
     private val out: Intent = mockk(relaxed = true)
     private val settings: Settings = mockk()
 
-    private val searchEngine = createSearchEngine(
-        name = "Test",
-        url = "https://www.example.org/?q={searchTerms}",
-        icon = mockk(),
-    )
+    private val searchEngine =
+        createSearchEngine(
+            name = "Test",
+            url = "https://www.example.org/?q={searchTerms}",
+            icon = mockk(),
+        )
 
     private lateinit var store: BrowserStore
 
@@ -47,15 +48,17 @@ class SpeechProcessingIntentProcessorTest {
     fun setup() {
         val searchEngine = searchEngine
 
-        store = BrowserStore(
-            BrowserState(
-                search = SearchState(
-                    customSearchEngines = listOf(searchEngine),
-                    userSelectedSearchEngineId = searchEngine.id,
-                    complete = true,
-                ),
-            ),
-        )
+        store =
+            BrowserStore(
+                BrowserState(
+                    search =
+                        SearchState(
+                            customSearchEngines = listOf(searchEngine),
+                            userSelectedSearchEngineId = searchEngine.id,
+                            complete = true,
+                        )
+                )
+            )
 
         every { activity.applicationContext } returns ApplicationProvider.getApplicationContext()
     }
@@ -72,9 +75,10 @@ class SpeechProcessingIntentProcessorTest {
 
     @Test
     fun `do not process when open extra is false`() {
-        val intent = Intent().apply {
-            putExtra(HomeActivity.OPEN_TO_BROWSER_AND_LOAD, false)
-        }
+        val intent =
+            Intent().apply {
+                putExtra(HomeActivity.OPEN_TO_BROWSER_AND_LOAD, false)
+            }
         val processor = SpeechProcessingIntentProcessor(activity, store)
         processor.process(intent, navController, out, settings)
 
@@ -88,10 +92,11 @@ class SpeechProcessingIntentProcessorTest {
         every { testContext.components.strictMode } returns TestStrictModeManager()
         every { testContext.components.nimbus.events } returns mockk(relaxed = true)
 
-        val intent = Intent().apply {
-            putExtra(HomeActivity.OPEN_TO_BROWSER_AND_LOAD, true)
-            putExtra(SPEECH_PROCESSING, "hello world")
-        }
+        val intent =
+            Intent().apply {
+                putExtra(HomeActivity.OPEN_TO_BROWSER_AND_LOAD, true)
+                putExtra(SPEECH_PROCESSING, "hello world")
+            }
 
         val processor = SpeechProcessingIntentProcessor(activity, store)
         processor.process(intent, mockk(), mockk(relaxed = true), settings)

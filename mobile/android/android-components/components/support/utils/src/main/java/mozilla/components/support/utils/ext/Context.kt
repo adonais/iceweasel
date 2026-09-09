@@ -37,27 +37,25 @@ val Context.packageManagerWrapper: PackageManagerWrapper
  * @returns a [DefaultPackageManagerCompatHelper] created with the context's [PackageManager].
  */
 val Context.packageManagerCompatHelper: PackageManagerCompatHelper
-    get() = DefaultPackageManagerCompatHelper(
-        DefaultPackageManagerWrapper(packageManager),
-    )
+    get() = DefaultPackageManagerCompatHelper(DefaultPackageManagerWrapper(packageManager))
 
-/**
- * Open OS settings for default browser.
- */
+/** Open OS settings for default browser. */
 fun Context.navigateToDefaultBrowserAppsSettings(buildManufacturerChecker: BuildManufacturerChecker) {
-    val intent = when {
-        buildManufacturerChecker.isHuawei() -> Intent(ACTION_MANAGE_DEFAULT_APPS_SETTINGS_HUAWEI)
-        else -> Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS).apply {
-            putExtra(
-                SETTINGS_SELECT_OPTION_KEY,
-                DEFAULT_BROWSER_APP_OPTION,
-            )
-            putExtra(
-                SETTINGS_SHOW_FRAGMENT_ARGS,
-                Bundle().apply { putString(SETTINGS_SELECT_OPTION_KEY, DEFAULT_BROWSER_APP_OPTION) },
-            )
+    val intent =
+        when {
+            buildManufacturerChecker.isHuawei() -> Intent(ACTION_MANAGE_DEFAULT_APPS_SETTINGS_HUAWEI)
+            else ->
+                Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS).apply {
+                    putExtra(
+                        SETTINGS_SELECT_OPTION_KEY,
+                        DEFAULT_BROWSER_APP_OPTION,
+                    )
+                    putExtra(
+                        SETTINGS_SHOW_FRAGMENT_ARGS,
+                        Bundle().apply { putString(SETTINGS_SELECT_OPTION_KEY, DEFAULT_BROWSER_APP_OPTION) },
+                    )
+                }
         }
-    }
 
     try {
         startActivity(intent)
@@ -67,16 +65,14 @@ fun Context.navigateToDefaultBrowserAppsSettings(buildManufacturerChecker: Build
 }
 
 /**
- * Context  Context to retrieve service from.
- * @param broadcastReceiver The BroadcastReceiver to handle the broadcast.
- * @param filter   Selects the Intent broadcasts to be received.
- * @param exportedFlag [ContextCompat.RECEIVER_EXPORTED], if the receiver
- * should be able to receiver broadcasts from other applications, or
- * [ContextCompat.RECEIVER_NOT_EXPORTED] if the receiver should be able
- * to receive broadcasts only from the system or from within the app.
+ * Context Context to retrieve service from.
  *
- * @return The first sticky intent found that matches [filter],
- * or null if there are none.
+ * @param broadcastReceiver The BroadcastReceiver to handle the broadcast.
+ * @param filter Selects the Intent broadcasts to be received.
+ * @param exportedFlag [ContextCompat.RECEIVER_EXPORTED], if the receiver should be able to receiver broadcasts from
+ *   other applications, or [ContextCompat.RECEIVER_NOT_EXPORTED] if the receiver should be able to receive broadcasts
+ *   only from the system or from within the app.
+ * @return The first sticky intent found that matches [filter], or null if there are none.
  */
 @SuppressLint("UnspecifiedRegisterReceiverFlag")
 fun Context.registerReceiverCompat(
@@ -96,9 +92,7 @@ fun Context.registerReceiverCompat(
     }
 }
 
-/**
- * @return True if the orientation is landscape,or false if it's not.
- */
+/** @return True if the orientation is landscape,or false if it's not. */
 fun Context.isLandscape(): Boolean {
     return resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 }

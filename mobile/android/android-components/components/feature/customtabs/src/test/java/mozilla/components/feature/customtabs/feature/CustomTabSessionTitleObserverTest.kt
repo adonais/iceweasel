@@ -62,10 +62,6 @@ class CustomTabSessionTitleObserverTest {
     }
 }
 
-private fun CustomTabSessionState.withTitle(title: String) = copy(
-    content = content.copy(title = title),
-)
+private fun CustomTabSessionState.withTitle(title: String) = copy(content = content.copy(title = title))
 
-private fun CustomTabSessionState.withUrl(url: String) = copy(
-    content = content.copy(url = url),
-)
+private fun CustomTabSessionState.withUrl(url: String) = copy(content = content.copy(url = url))

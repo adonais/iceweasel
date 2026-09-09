@@ -13,7 +13,8 @@ import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsCustomizeSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
 
-class SettingsCustomizePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
+class SettingsCustomizePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) :
+    BasePage(composeRule) {
     override val pageName = "SettingsCustomizePage"
 
     init {
@@ -21,6 +22,16 @@ class SettingsCustomizePage(composeRule: AndroidComposeTestRule<HomeActivityInte
             from = pageName,
             to = "SettingsPage",
             steps = listOf(NavigationStep.Click(SettingsSelectors.GO_BACK_BUTTON)),
+        )
+
+        NavigationRegistry.register(
+            from = pageName,
+            to = "BrowserPage",
+            steps =
+                listOf(
+                    NavigationStep.Click(SettingsCustomizeSelectors.NAVIGATE_BACK_TOOLBAR_BUTTON),
+                    NavigationStep.Click(SettingsSelectors.GO_BACK_BUTTON),
+                ),
         )
     }
 

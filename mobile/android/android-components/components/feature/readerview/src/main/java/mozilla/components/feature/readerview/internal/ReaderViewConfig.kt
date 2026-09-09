@@ -21,12 +21,11 @@ import mozilla.components.feature.readerview.ReaderViewFeature.Companion.SHARED_
 import org.json.JSONObject
 
 /**
- * Stores the user configuration for reader view in shared prefs.
- * All values are initialized lazily and cached.
+ * Stores the user configuration for reader view in shared prefs. All values are initialized lazily and cached.
+ *
  * @param context Used to lazily obtain shared preferences and to check dark mode status.
- * @param sendConfigMessage If the config changes, this method will be invoked
- * with a JSON object which should be sent to the content script so the new
- * config can be applied.
+ * @param sendConfigMessage If the config changes, this method will be invoked with a JSON object which should be sent
+ *   to the content script so the new config can be applied.
  */
 internal class ReaderViewConfig(
     context: Context,
@@ -43,11 +42,12 @@ internal class ReaderViewConfig(
         get() {
             if (colorSchemeCache == null) {
                 // Default to a dark theme if either the system or local dark theme is active
-                val defaultColor = if (isNightMode()) {
-                    ReaderViewFeature.ColorScheme.DARK
-                } else {
-                    ReaderViewFeature.ColorScheme.LIGHT
-                }
+                val defaultColor =
+                    if (isNightMode()) {
+                        ReaderViewFeature.ColorScheme.DARK
+                    } else {
+                        ReaderViewFeature.ColorScheme.LIGHT
+                    }
                 colorSchemeCache = getEnumFromPrefs(COLOR_SCHEME_KEY, defaultColor)
             }
             return colorSchemeCache!!

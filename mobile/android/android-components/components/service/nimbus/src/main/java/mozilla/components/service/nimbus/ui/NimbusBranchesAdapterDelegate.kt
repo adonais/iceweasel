@@ -6,9 +6,7 @@ package mozilla.components.service.nimbus.ui
 
 import org.mozilla.experiments.nimbus.Branch
 
-/**
- * Provides method for handling the branch items in the Nimbus branches view.
- */
+/** Provides method for handling the branch items in the Nimbus branches view. */
 interface NimbusBranchesAdapterDelegate {
     /**
      * Handler for when a branch item is clicked.

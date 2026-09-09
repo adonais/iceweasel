@@ -40,8 +40,7 @@ const val IMAGE_SIZE = 66
  * Shared default configuration of a ListItemTabLarge Composable.
  *
  * @param imageUrl URL from where the to download a header image of the tab this composable renders.
- * @param imageContentScale Optional scale parameter used to determine the aspect ratio scaling to
- * be used on the image.
+ * @param imageContentScale Optional scale parameter used to determine the aspect ratio scaling to be used on the image.
  * @param backgroundColor Background [Color] of the item.
  * @param contentPadding Padding used for the image and details of the item.
  * @param onClick Optional callback to be invoked when this composable is clicked.
@@ -56,46 +55,36 @@ fun ListItemTabSurface(
     onClick: (() -> Unit)? = null,
     tabDetails: @Composable ColumnScope.() -> Unit,
 ) {
-    val modifier = Modifier
-        .width(ITEM_WIDTH.dp)
-        .fillMaxHeight()
-        .thenConditional(
-            modifier = Modifier.clickable { onClick!!() },
-            predicate = { onClick != null },
-        )
+    val modifier =
+        Modifier.width(ITEM_WIDTH.dp)
+            .fillMaxHeight()
+            .thenConditional(
+                modifier = Modifier.clickable { onClick!!() },
+                predicate = { onClick != null },
+            )
 
     HomepageCard(
         modifier = modifier,
         backgroundColor = backgroundColor,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxHeight()
-                .padding(contentPadding),
+            modifier = Modifier.fillMaxHeight().padding(contentPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Image(
                 url = imageUrl,
-                modifier = Modifier.size(IMAGE_SIZE.dp)
-                    .clip(homepageCardImageShape),
+                modifier = Modifier.size(IMAGE_SIZE.dp).clip(homepageCardImageShape),
                 private = false,
                 targetSize = IMAGE_SIZE.dp,
                 contentScale = imageContentScale,
                 placeholder = {
-                    Box(
-                        modifier = Modifier
-                            .size(IMAGE_SIZE.dp)
-                            .clip(homepageCardImageShape)
-                            .skeletonLoader(),
-                    )
+                    Box(modifier = Modifier.size(IMAGE_SIZE.dp).clip(homepageCardImageShape).skeletonLoader())
                 },
             )
 
             Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
 
-            Column(
-                verticalArrangement = Arrangement.SpaceBetween,
-            ) {
+            Column(verticalArrangement = Arrangement.SpaceBetween) {
                 tabDetails()
             }
         }
@@ -106,9 +95,7 @@ fun ListItemTabSurface(
 @PreviewLightDark
 private fun ListItemTabSurfacePreview() {
     FirefoxTheme {
-        ListItemTabSurface(
-            imageUrl = "",
-        ) {
+        ListItemTabSurface(imageUrl = "") {
             Text(
                 text = "This can be anything",
                 fontSize = 22.sp,

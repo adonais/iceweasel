@@ -16,7 +16,9 @@ import org.mozilla.fenix.R
  * **Note:** The [SwitchPreferenceCompat] layout internal id "switch_widget" has a min API of 24, so we use
  * [CheckBoxPreference] instead and use the layout internal id "checkbox".
  */
-class FenixSwitchPreference @JvmOverloads constructor(
+class FenixSwitchPreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : CheckBoxPreference(context, attrs) {

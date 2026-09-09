@@ -18,7 +18,7 @@ namespace mozilla {
 
 // static
 void GeckoProcessManager::GetEditableParent(jni::Object::Param aEditableChild,
-                                            int64_t aContentId,
+                                            int32_t aContentId,
                                             int64_t aTabId) {
   nsCOMPtr<nsIWidget> widget = GetWidget(aContentId, aTabId);
   if (RefPtr<nsWindow> window = nsWindow::From(widget)) {

@@ -6,25 +6,17 @@ package mozilla.components.feature.prompts.emailmask
 
 import mozilla.components.feature.prompts.concept.EmailMaskPromptView
 
-/**
- * Delegate to display the email mask prompt.
- */
+/** Delegate to display the email mask prompt. */
 interface EmailMaskDelegate {
 
-    /**
-     * The [EmailMaskPromptView] used for [EmailMaskPromptViewListener] to display a simple prompt.
-     */
+    /** The [EmailMaskPromptView] used for [EmailMaskPromptViewListener] to display a simple prompt. */
     val emailMaskPromptViewListenerView: EmailMaskPromptView?
         get() = null
 
-    /**
-     * Whether to show the email mask CFR.
-     */
+    /** Whether to show the email mask CFR. */
     fun shouldShowEmailMaskCfr(): Boolean
 
-    /**
-     * Called when the email mask CFR is dismissed.
-     */
+    /** Called when the email mask CFR is dismissed. */
     fun onEmailMaskCfrDismissed()
 
     /**

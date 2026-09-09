@@ -15,7 +15,7 @@
 namespace nss_test {
 
 // Return the path to user's NSS database.
-extern "C" char *getUserDB(void);
+extern "C" char* getUserDB(void);
 
 class Sysinit : public ::testing::Test {
  protected:
@@ -93,8 +93,8 @@ class Sysinit : public ::testing::Test {
     return temp;
   }
 
-  char *home_var_;
-  char *xdg_data_home_var_;
+  char* home_var_;
+  char* xdg_data_home_var_;
   std::string old_home_dir_;
   std::string old_xdg_data_home_;
   std::string nssdir_;
@@ -126,7 +126,7 @@ class SysinitSetTrashXdgUserDataHome : public Sysinit {
 // Check if $HOME/.pki/nssdb is used if it exists
 TEST_F(Sysinit, LegacyPath) {
   nssdir_ = CreateEmptyDirsFromStart(tmp_home_, "/.pki/nssdb", 0760);
-  char *nssdb = getUserDB();
+  char* nssdb = getUserDB();
   ASSERT_EQ(nssdir_, nssdb);
   PORT_Free(nssdb);
 }
@@ -137,7 +137,7 @@ TEST_F(Sysinit, LegacyPath) {
 TEST_F(Sysinit, XdgDefaultPath) {
   nssdir_ = CreateEmptyDirsFromStart(tmp_home_, "/.local/share", 0755);
   nssdir_ = CreateEmptyDirsFromStart(nssdir_, "/pki/nssdb", 0760);
-  char *nssdb = getUserDB();
+  char* nssdb = getUserDB();
   ASSERT_EQ(nssdir_, nssdb);
   PORT_Free(nssdb);
 }
@@ -148,7 +148,7 @@ TEST_F(Sysinit, XdgDefaultPath) {
 TEST_F(SysinitSetXdgUserDataHome, XdgSetPath) {
   // XDG_DATA_HOME is set to HOME
   nssdir_ = CreateEmptyDirsFromStart(tmp_home_, "/pki/nssdb", 0760);
-  char *nssdb = getUserDB();
+  char* nssdb = getUserDB();
   ASSERT_EQ(nssdir_, nssdb);
   PORT_Free(nssdb);
 }
@@ -157,7 +157,7 @@ TEST_F(SysinitSetXdgUserDataHome, XdgSetPath) {
 // - XDG_DATA_HOME is set to a path that does not exist;
 // - $HOME/.pki/nssdb also does not exist. */
 TEST_F(SysinitSetTrashXdgUserDataHome, XdgSetToTrashPath) {
-  char *nssdb = getUserDB();
+  char* nssdb = getUserDB();
   ASSERT_EQ(nullptr, nssdb);
 }
 

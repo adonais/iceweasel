@@ -10,14 +10,13 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.Components
 
 /**
- * An override of our application for use in Robolectric-based unit tests. This bypasses standard
- * process initialization of native code (Glean, Nimbus, Gecko, etc) as well mocking `components`
- * which is the primary service repository for our Kotlin code used by Fenix. Unit tests should
- * avoid relying global subsystems being available to them.
+ * An override of our application for use in Robolectric-based unit tests. This bypasses standard process initialization
+ * of native code (Glean, Nimbus, Gecko, etc) as well mocking `components` which is the primary service repository for
+ * our Kotlin code used by Fenix. Unit tests should avoid relying global subsystems being available to them.
  *
- * Note: Robolectric runs on a host machine JVM, so if you want native code your packages must
- *       include binaries for host platform. For example the [glean-native-forUnitTests] package
- *       is used for some unit tests, but we don't provide this in the default Application.
+ * Note: Robolectric runs on a host machine JVM, so if you want native code your packages must include binaries for host
+ * platform. For example the [glean-native-forUnitTests] package is used for some unit tests, but we don't provide this
+ * in the default Application.
  */
 class FenixRobolectricTestApplication : FenixApplication() {
 
@@ -27,6 +26,7 @@ class FenixRobolectricTestApplication : FenixApplication() {
     }
 
     override val components = mockk<Components>(relaxed = true)
+
     override fun initializeFenixProcess() = Unit
 
     private fun setApplicationTheme() {

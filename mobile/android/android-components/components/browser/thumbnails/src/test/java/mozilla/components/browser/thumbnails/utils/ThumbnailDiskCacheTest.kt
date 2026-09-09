@@ -6,6 +6,9 @@ package mozilla.components.browser.thumbnails.utils
 
 import android.graphics.Bitmap
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.File
+import java.io.OutputStream
+import kotlin.test.assertNotNull
 import mozilla.components.concept.base.images.ImageLoadRequest
 import mozilla.components.concept.base.images.ImageSaveRequest
 import mozilla.components.support.test.any
@@ -23,9 +26,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.`when`
-import java.io.File
-import java.io.OutputStream
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class ThumbnailDiskCacheTest {

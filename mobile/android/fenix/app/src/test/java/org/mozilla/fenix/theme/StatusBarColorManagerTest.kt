@@ -30,9 +30,10 @@ import org.mozilla.fenix.wallpapers.WallpaperState
 class StatusBarColorManagerTest {
 
     private val testDispatcher = StandardTestDispatcher()
-    private val themeManager: ThemeManager = mockk(relaxed = true) {
-        every { currentTheme } returns BrowsingMode.Normal
-    }
+    private val themeManager: ThemeManager =
+        mockk(relaxed = true) {
+            every { currentTheme } returns BrowsingMode.Normal
+        }
     private val activity: Activity = mockk(relaxed = true)
     private val settings: Settings = mockk(relaxed = true)
     private val tabStripStatusBarView: TabStripStatusBarView = mockk(relaxed = true)
@@ -40,149 +41,168 @@ class StatusBarColorManagerTest {
     private val homeFragment: HomeFragment = mockk(relaxed = true)
 
     @Test
-    fun `GIVEN tab strip is enabled WHEN the home fragment resumes THEN the gradient is shown`() = runTest(testDispatcher) {
-        val manager = buildStatusBarColorManager(isTabStripEnabled = true)
-        manager.onFragmentResumed(fragmentManager, homeFragment)
-        testScheduler.advanceUntilIdle()
+    fun `GIVEN tab strip is enabled WHEN the home fragment resumes THEN the gradient is shown`() =
+        runTest(testDispatcher) {
+            val manager = buildStatusBarColorManager(isTabStripEnabled = true)
+            manager.onFragmentResumed(fragmentManager, homeFragment)
+            testScheduler.advanceUntilIdle()
 
-        verify {
-            themeManager.applyStatusBarTheme(activity)
-            tabStripStatusBarView.show()
+            verify {
+                themeManager.applyStatusBarTheme(activity)
+                tabStripStatusBarView.show()
+            }
         }
-    }
 
     @Test
-    fun `GIVEN tab strip is enabled WHEN the browser fragment resumes THEN the gradient is shown`() = runTest(testDispatcher) {
-        val manager = buildStatusBarColorManager(isTabStripEnabled = true)
-        manager.onFragmentResumed(fragmentManager, mockk<BrowserFragment>())
+    fun `GIVEN tab strip is enabled WHEN the browser fragment resumes THEN the gradient is shown`() =
+        runTest(testDispatcher) {
+            val manager = buildStatusBarColorManager(isTabStripEnabled = true)
+            manager.onFragmentResumed(fragmentManager, mockk<BrowserFragment>())
 
-        verify { tabStripStatusBarView.show() }
-    }
+            verify { tabStripStatusBarView.show() }
+        }
 
     @Test
-    fun `GIVEN tab strip is enabled and edge-to-edge wallpaper WHEN the home fragment resumes THEN the gradient is hidden`() = runTest(testDispatcher) {
-        val manager = buildStatusBarColorManager(
-            isTabStripEnabled = true,
-            appStore = buildAppStore(Wallpaper.EdgeToEdge),
+    fun `GIVEN tab strip is enabled and edge-to-edge wallpaper WHEN the home fragment resumes THEN the gradient is hidden`() =
+        runTest(testDispatcher) {
+            val manager =
+                buildStatusBarColorManager(
+                    isTabStripEnabled = true,
+                    appStore = buildAppStore(Wallpaper.EdgeToEdge),
+                )
+            manager.onFragmentResumed(fragmentManager, homeFragment)
+            testScheduler.advanceUntilIdle()
+
+            verify { tabStripStatusBarView.hide() }
+        }
+
+    @Test
+    fun `GIVEN tab strip is enabled and edge-to-edge wallpaper WHEN the browser fragment resumes THEN the gradient is still shown`() =
+        runTest(testDispatcher) {
+            val manager =
+                buildStatusBarColorManager(
+                    isTabStripEnabled = true,
+                    appStore = buildAppStore(Wallpaper.EdgeToEdge),
+                )
+            manager.onFragmentResumed(fragmentManager, mockk<BrowserFragment>())
+
+            verify { tabStripStatusBarView.show() }
+        }
+
+    @Test
+    fun `GIVEN the home fragment is showing the gradient WHEN the wallpaper changes to edge-to-edge THEN the gradient is hidden`() =
+        runTest(testDispatcher) {
+            val appStore = AppStore()
+            val manager = buildStatusBarColorManager(isTabStripEnabled = true, appStore = appStore)
+            manager.onFragmentResumed(fragmentManager, homeFragment)
+            testScheduler.advanceUntilIdle()
+
+            verify(exactly = 1) { tabStripStatusBarView.show() }
+
+            appStore.dispatch(AppAction.WallpaperAction.UpdateCurrentWallpaper(Wallpaper.EdgeToEdge))
+            testScheduler.advanceUntilIdle()
+
+            verify(exactly = 1) { tabStripStatusBarView.hide() }
+        }
+
+    @Test
+    fun `GIVEN the edge-to-edge wallpaper and an active search WHEN the home fragment resumes THEN the gradient is shown`() =
+        runTest(testDispatcher) {
+            val manager =
+                buildStatusBarColorManager(
+                    isTabStripEnabled = true,
+                    appStore = buildAppStore(Wallpaper.EdgeToEdge, isSearchActive = true),
+                )
+            manager.onFragmentResumed(fragmentManager, homeFragment)
+            testScheduler.advanceUntilIdle()
+
+            verify { tabStripStatusBarView.show() }
+        }
+
+    @Test
+    fun `GIVEN the edge-to-edge wallpaper and no active search WHEN the home fragment resumes THEN the gradient is hidden`() =
+        runTest(testDispatcher) {
+            val manager =
+                buildStatusBarColorManager(
+                    isTabStripEnabled = true,
+                    appStore = buildAppStore(Wallpaper.EdgeToEdge, isSearchActive = false),
+                )
+            manager.onFragmentResumed(fragmentManager, homeFragment)
+            testScheduler.advanceUntilIdle()
+
+            verify { tabStripStatusBarView.hide() }
+        }
+
+    @Test
+    fun `GIVEN tab strip is enabled WHEN a fragment without a tab strip resumes THEN the gradient is hidden`() =
+        runTest(testDispatcher) {
+            val manager = buildStatusBarColorManager(isTabStripEnabled = true)
+            manager.onFragmentResumed(fragmentManager, mockk<Fragment>())
+
+            verify {
+                themeManager.applyStatusBarTheme(activity)
+                tabStripStatusBarView.hide()
+            }
+        }
+
+    @Test
+    fun `GIVEN private browsing mode is enabled WHEN a tab strip fragment resumes THEN the gradient is hidden`() =
+        runTest(testDispatcher) {
+            every { themeManager.currentTheme } returns BrowsingMode.Private
+
+            val manager = buildStatusBarColorManager(isTabStripEnabled = true)
+            manager.onFragmentResumed(fragmentManager, homeFragment)
+
+            verify {
+                themeManager.applyStatusBarTheme(activity)
+                tabStripStatusBarView.hide()
+            }
+        }
+
+    @Test
+    fun `GIVEN tab strip is disabled WHEN a tab strip fragment resumes THEN the gradient is hidden`() =
+        runTest(testDispatcher) {
+            val manager = buildStatusBarColorManager(isTabStripEnabled = false)
+            manager.onFragmentResumed(fragmentManager, homeFragment)
+
+            verify {
+                themeManager.applyStatusBarTheme(activity)
+                tabStripStatusBarView.hide()
+            }
+        }
+
+    @Test
+    fun `GIVEN NavHostFragment, DialogFragment and ExternalAppBrowserFragment as ignored fragments WHEN an ignored fragment resumes THEN do nothing`() =
+        runTest(testDispatcher) {
+            val manager = buildStatusBarColorManager(isTabStripEnabled = true)
+
+            manager.onFragmentResumed(fragmentManager, mockk<NavHostFragment>())
+            manager.onFragmentResumed(fragmentManager, mockk<DialogFragment>())
+            manager.onFragmentResumed(fragmentManager, mockk<ExternalAppBrowserFragment>())
+
+            verify(exactly = 0) {
+                themeManager.applyStatusBarTheme(any())
+                tabStripStatusBarView.show()
+                tabStripStatusBarView.hide()
+            }
+        }
+
+    private fun buildAppStore(currentWallpaper: Wallpaper, isSearchActive: Boolean = false) =
+        AppStore(
+            initialState =
+                AppState(
+                    wallpaperState =
+                        WallpaperState(
+                            currentWallpaper = currentWallpaper,
+                            availableWallpapers = emptyList(),
+                        ),
+                    searchState =
+                        SearchState.EMPTY.copy(
+                            isSearchActive = isSearchActive,
+                            sourceTabId = if (isSearchActive) "source-tab-id" else null,
+                        ),
+                )
         )
-        manager.onFragmentResumed(fragmentManager, homeFragment)
-        testScheduler.advanceUntilIdle()
-
-        verify { tabStripStatusBarView.hide() }
-    }
-
-    @Test
-    fun `GIVEN tab strip is enabled and edge-to-edge wallpaper WHEN the browser fragment resumes THEN the gradient is still shown`() = runTest(testDispatcher) {
-        val manager = buildStatusBarColorManager(
-            isTabStripEnabled = true,
-            appStore = buildAppStore(Wallpaper.EdgeToEdge),
-        )
-        manager.onFragmentResumed(fragmentManager, mockk<BrowserFragment>())
-
-        verify { tabStripStatusBarView.show() }
-    }
-
-    @Test
-    fun `GIVEN the home fragment is showing the gradient WHEN the wallpaper changes to edge-to-edge THEN the gradient is hidden`() = runTest(testDispatcher) {
-        val appStore = AppStore()
-        val manager = buildStatusBarColorManager(isTabStripEnabled = true, appStore = appStore)
-        manager.onFragmentResumed(fragmentManager, homeFragment)
-        testScheduler.advanceUntilIdle()
-
-        verify(exactly = 1) { tabStripStatusBarView.show() }
-
-        appStore.dispatch(AppAction.WallpaperAction.UpdateCurrentWallpaper(Wallpaper.EdgeToEdge))
-        testScheduler.advanceUntilIdle()
-
-        verify(exactly = 1) { tabStripStatusBarView.hide() }
-    }
-
-    @Test
-    fun `GIVEN the edge-to-edge wallpaper and an active search WHEN the home fragment resumes THEN the gradient is shown`() = runTest(testDispatcher) {
-        val manager = buildStatusBarColorManager(
-            isTabStripEnabled = true,
-            appStore = buildAppStore(Wallpaper.EdgeToEdge, isSearchActive = true),
-        )
-        manager.onFragmentResumed(fragmentManager, homeFragment)
-        testScheduler.advanceUntilIdle()
-
-        verify { tabStripStatusBarView.show() }
-    }
-
-    @Test
-    fun `GIVEN the edge-to-edge wallpaper and no active search WHEN the home fragment resumes THEN the gradient is hidden`() = runTest(testDispatcher) {
-        val manager = buildStatusBarColorManager(
-            isTabStripEnabled = true,
-            appStore = buildAppStore(Wallpaper.EdgeToEdge, isSearchActive = false),
-        )
-        manager.onFragmentResumed(fragmentManager, homeFragment)
-        testScheduler.advanceUntilIdle()
-
-        verify { tabStripStatusBarView.hide() }
-    }
-
-    @Test
-    fun `GIVEN tab strip is enabled WHEN a fragment without a tab strip resumes THEN the gradient is hidden`() = runTest(testDispatcher) {
-        val manager = buildStatusBarColorManager(isTabStripEnabled = true)
-        manager.onFragmentResumed(fragmentManager, mockk<Fragment>())
-
-        verify {
-            themeManager.applyStatusBarTheme(activity)
-            tabStripStatusBarView.hide()
-        }
-    }
-
-    @Test
-    fun `GIVEN private browsing mode is enabled WHEN a tab strip fragment resumes THEN the gradient is hidden`() = runTest(testDispatcher) {
-        every { themeManager.currentTheme } returns BrowsingMode.Private
-
-        val manager = buildStatusBarColorManager(isTabStripEnabled = true)
-        manager.onFragmentResumed(fragmentManager, homeFragment)
-
-        verify {
-            themeManager.applyStatusBarTheme(activity)
-            tabStripStatusBarView.hide()
-        }
-    }
-
-    @Test
-    fun `GIVEN tab strip is disabled WHEN a tab strip fragment resumes THEN the gradient is hidden`() = runTest(testDispatcher) {
-        val manager = buildStatusBarColorManager(isTabStripEnabled = false)
-        manager.onFragmentResumed(fragmentManager, homeFragment)
-
-        verify {
-            themeManager.applyStatusBarTheme(activity)
-            tabStripStatusBarView.hide()
-        }
-    }
-
-    @Test
-    fun `GIVEN NavHostFragment, DialogFragment and ExternalAppBrowserFragment as ignored fragments WHEN an ignored fragment resumes THEN do nothing`() = runTest(testDispatcher) {
-        val manager = buildStatusBarColorManager(isTabStripEnabled = true)
-
-        manager.onFragmentResumed(fragmentManager, mockk<NavHostFragment>())
-        manager.onFragmentResumed(fragmentManager, mockk<DialogFragment>())
-        manager.onFragmentResumed(fragmentManager, mockk<ExternalAppBrowserFragment>())
-
-        verify(exactly = 0) {
-            themeManager.applyStatusBarTheme(any())
-            tabStripStatusBarView.show()
-            tabStripStatusBarView.hide()
-        }
-    }
-
-    private fun buildAppStore(currentWallpaper: Wallpaper, isSearchActive: Boolean = false) = AppStore(
-        initialState = AppState(
-            wallpaperState = WallpaperState(
-                currentWallpaper = currentWallpaper,
-                availableWallpapers = emptyList(),
-            ),
-            searchState = SearchState.EMPTY.copy(
-                isSearchActive = isSearchActive,
-                sourceTabId = if (isSearchActive) "source-tab-id" else null,
-            ),
-        ),
-    )
 
     private fun buildStatusBarColorManager(
         isTabStripEnabled: Boolean,

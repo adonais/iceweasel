@@ -4,11 +4,8 @@
 // found in the LICENSE file.
 //
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "compiler/translator/glsl/OutputGLSLBase.h"
+#include "common/unsafe_buffers.h"
 
 #include "angle_gl.h"
 #include "common/debug.h"
@@ -88,13 +85,15 @@ Stream &operator<<(Stream &out, CommaSeparatedListItemPrefixGenerator &gen)
 
 TOutputGLSLBase::TOutputGLSLBase(TCompiler *compiler,
                                  TInfoSinkBase &objSink,
-                                 const ShCompileOptions &compileOptions)
+                                 const ShCompileOptions &compileOptions,
+                                 bool removeInvariant)
     : TIntermTraverser(true, true, true, &compiler->getSymbolTable()),
       mObjSink(objSink),
       mDeclaringVariable(false),
       mSkippedDeclaringAnonymousStruct(false),
       mHashFunction(compiler->getHashFunction()),
       mUserVariablePrefix(compiler->getUserVariableNamePrefix()),
+      mUserBlockPrefix(compiler->getUserBlockNamePrefix()),
       mNameMap(compiler->getNameMap()),
       mShaderType(compiler->getShaderType()),
       mShaderVersion(compiler->getShaderVersion()),
@@ -106,12 +105,13 @@ TOutputGLSLBase::TOutputGLSLBase(TCompiler *compiler,
           compileOptions.explicitFragmentLocations ||
           (compiler->hasPixelLocalStorageUniforms() &&
            compileOptions.pls.type == ShPixelLocalStorageType::FramebufferFetch)),
+      mRemoveInvariant(removeInvariant),
       mCompileOptions(compileOptions)
 {}
 
 void TOutputGLSLBase::writeInvariantQualifier(const TType &type)
 {
-    if (!sh::RemoveInvariant(mShaderType, mShaderVersion, mOutput, mCompileOptions))
+    if (!mRemoveInvariant)
     {
         TInfoSinkBase &out = objSink();
         out << "invariant ";
@@ -438,7 +438,7 @@ const char *TOutputGLSLBase::getIndentPrefix(int extraIndentation)
 {
     int indentDepth = std::min(kMaxIndentLevel, getCurrentBlockDepth() + extraIndentation);
     ASSERT(indentDepth >= 0);
-    return kIndent + (kMaxIndentLevel - indentDepth) * kIndentWidth;
+    return ANGLE_UNSAFE_TODO(kIndent + (kMaxIndentLevel - indentDepth) * kIndentWidth);
 }
 
 void TOutputGLSLBase::writeVariableType(const TType &type,
@@ -559,7 +559,7 @@ const TConstantUnion *TOutputGLSLBase::writeConstantUnion(const TType &type,
         bool writeType = size > 1;
         if (writeType)
             out << getTypeName(type) << "(";
-        for (size_t i = 0; i < size; ++i, ++pConstUnion)
+        for (size_t i = 0; i < size; ++i, ANGLE_UNSAFE_TODO(++pConstUnion))
         {
             switch (pConstUnion->getType())
             {
@@ -1185,19 +1185,17 @@ void TOutputGLSLBase::visitPreprocessorDirective(TIntermPreprocessorDirective *n
 
 ImmutableString TOutputGLSLBase::getTypeName(const TType &type)
 {
-    if (type.getBasicType() == EbtSamplerVideoWEBGL)
-    {
-        // TODO(http://anglebug.com/42262534): translate SamplerVideoWEBGL into different token
-        // when necessary (e.g. on Android devices)
-        return ImmutableString("sampler2D");
-    }
-
     return GetTypeName(type, mUserVariablePrefix, mHashFunction, &mNameMap);
 }
 
 ImmutableString TOutputGLSLBase::hashName(const TSymbol *symbol)
 {
     return HashName(symbol, mUserVariablePrefix, mHashFunction, &mNameMap);
+}
+
+ImmutableString TOutputGLSLBase::hashBlockName(const TSymbol *symbol)
+{
+    return HashName(symbol, mUserBlockPrefix, mHashFunction, &mNameMap);
 }
 
 ImmutableString TOutputGLSLBase::hashFieldName(const TField *field)
@@ -1352,7 +1350,7 @@ void TOutputGLSLBase::declareInterfaceBlock(const TType &type)
     const TInterfaceBlock *interfaceBlock = type.getInterfaceBlock();
     TInfoSinkBase &out                    = objSink();
 
-    out << hashName(interfaceBlock) << "{\n";
+    out << hashBlockName(interfaceBlock) << "{\n";
     const TFieldList &fields = interfaceBlock->fields();
     for (const TField *field : fields)
     {

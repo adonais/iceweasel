@@ -1,0 +1,431 @@
+{
+  "background-color": {
+    "__compat": {
+      "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/background-color",
+      "spec_url": "https://drafts.csswg.org/css-backgrounds/#background-color",
+      "status": {
+        "deprecated": false,
+        "experimental": false,
+        "standard_track": true
+      },
+      "support": {
+        "chrome": [{ "added": 1 }],
+        "chrome_android": [{ "added": 18 }],
+        "edge": [{ "added": 12 }],
+        "firefox": [{ "added": 1 }],
+        "firefox_android": [{ "added": 4 }],
+        "ie": [{ "added": 4 }],
+        "safari": [{ "added": 1 }],
+        "safari_ios": [{ "added": 1 }]
+      },
+      "tags": ["web-features:background-color"]
+    }
+  },
+  "color": {
+    "__compat": {
+      "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/color",
+      "spec_url": [
+        "https://drafts.csswg.org/css-color/#the-color-property",
+        "https://w3c.github.io/svgwg/svg2-draft/painting.html#ColorProperty"
+      ],
+      "status": {
+        "deprecated": false,
+        "experimental": false,
+        "standard_track": true
+      },
+      "support": {
+        "chrome": [{ "added": 1 }],
+        "chrome_android": [{ "added": 18 }],
+        "edge": [{ "added": 12 }],
+        "firefox": [{ "added": 1 }],
+        "firefox_android": [{ "added": 4 }],
+        "ie": [{ "added": 3 }],
+        "safari": [{ "added": 1 }],
+        "safari_ios": [{ "added": 1 }]
+      },
+      "tags": ["web-features:color"]
+    }
+  },
+  "border-block-color": {
+    "__compat": {
+      "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/border-block-color",
+      "spec_url": "https://drafts.csswg.org/css-logical/#propdef-border-block-color",
+      "status": {
+        "deprecated": false,
+        "experimental": false,
+        "standard_track": true
+      },
+      "support": {
+        "chrome": [{ "added": 87 }],
+        "chrome_android": [{ "added": 87 }],
+        "edge": [{ "added": 87 }],
+        "firefox": [{ "added": 66 }],
+        "firefox_android": [{ "added": 66 }],
+        "ie": [{ "added": false }],
+        "safari": [{ "added": 14.1 }],
+        "safari_ios": [{ "added": 14.5 }]
+      },
+      "tags": ["web-features:logical-properties"]
+    }
+  },
+  "grid-column": {
+    "__compat": {
+      "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/grid-column",
+      "spec_url": "https://drafts.csswg.org/css-grid/#placement-shorthands",
+      "status": {
+        "deprecated": false,
+        "experimental": false,
+        "standard_track": true
+      },
+      "support": {
+        "chrome": [{ "added": 57 }],
+        "chrome_android": [{ "added": 57 }],
+        "edge": [{ "added": 16 }],
+        "firefox": [{ "added": 52 }],
+        "firefox_android": [{ "added": 52 }],
+        "ie": [{ "added": false }],
+        "safari": [{ "added": 10.1 }],
+        "safari_ios": [{ "added": 10.3 }]
+      },
+      "tags": ["web-features:grid"]
+    }
+  },
+  "ruby-align": {
+    "__compat": {
+      "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/ruby-align",
+      "spec_url": "https://drafts.csswg.org/css-ruby/#ruby-align-property",
+      "status": {
+        "deprecated": false,
+        "experimental": false,
+        "standard_track": true
+      },
+      "support": {
+        "chrome": [{ "added": 128 }],
+        "chrome_android": [{ "added": 128 }],
+        "edge": [{ "added": 128 }],
+        "firefox": [{ "added": 38 }],
+        "firefox_android": [{ "added": 38 }],
+        "ie": [{ "added": false }],
+        "safari": [{ "added": 18.2 }],
+        "safari_ios": [{ "added": 18.2 }]
+      },
+      "tags": ["web-features:ruby-align"]
+    }
+  },
+  "clip": {
+    "__compat": {
+      "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/clip",
+      "spec_url": "https://drafts.csswg.org/css-masking/#propdef-clip",
+      "status": {
+        "deprecated": true,
+        "experimental": false,
+        "standard_track": true
+      },
+      "support": {
+        "chrome": [{ "added": 1 }],
+        "chrome_android": [{ "added": 18 }],
+        "edge": [{ "added": 12 }],
+        "firefox": [{ "added": 1 }],
+        "firefox_android": [{ "added": 4 }],
+        "ie": [{ "added": 4 }],
+        "safari": [{ "added": 1 }],
+        "safari_ios": [{ "added": 1 }]
+      },
+      "tags": ["web-features:clip"]
+    }
+  },
+  "-moz-float-edge": {
+    "__compat": {
+      "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/-moz-float-edge",
+      "status": {
+        "deprecated": true,
+        "experimental": false,
+        "standard_track": false
+      },
+      "support": {
+        "chrome": [{ "added": false }],
+        "chrome_android": [{ "added": false }],
+        "edge": [{ "added": false }],
+        "firefox": [{ "added": 1 }],
+        "firefox_android": [{ "added": 4 }],
+        "ie": [{ "added": false }],
+        "safari": [{ "added": false }],
+        "safari_ios": [{ "added": false }]
+      }
+    }
+  },
+  "-moz-user-focus": {
+    "__compat": {
+      "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/-moz-user-focus",
+      "status": {
+        "deprecated": true,
+        "experimental": false,
+        "standard_track": false
+      },
+      "support": {
+        "chrome": [{ "added": false }],
+        "chrome_android": [{ "added": false }],
+        "edge": [{ "added": false }],
+        "firefox": [{ "version_last": "121", "added": 1, "removed": 122 }],
+        "firefox_android": [
+          { "version_last": "121", "added": 4, "removed": 122 }
+        ],
+        "ie": [{ "added": false }],
+        "safari": [{ "added": false }],
+        "safari_ios": [{ "added": false }]
+      }
+    }
+  },
+  "animation-timeline": {
+    "__compat": {
+      "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/animation-timeline",
+      "spec_url": "https://drafts.csswg.org/css-animations-2/#animation-timeline",
+      "status": {
+        "deprecated": false,
+        "experimental": false,
+        "standard_track": true
+      },
+      "support": {
+        "chrome": [{ "added": 115 }],
+        "chrome_android": [{ "added": 115 }],
+        "edge": [{ "added": 115 }],
+        "firefox": [{ "added": null }],
+        "firefox_android": [{ "added": false }],
+        "ie": [{ "added": false }],
+        "safari": [{ "added": 26 }],
+        "safari_ios": [{ "added": 26 }]
+      },
+      "tags": ["web-features:scroll-driven-animations"]
+    }
+  },
+  "overflow-anchor": {
+    "__compat": {
+      "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/overflow-anchor",
+      "spec_url": "https://drafts.csswg.org/css-scroll-anchoring/#exclusion-api",
+      "status": {
+        "deprecated": false,
+        "experimental": false,
+        "standard_track": true
+      },
+      "support": {
+        "chrome": [{ "added": 56 }],
+        "chrome_android": [{ "added": 56 }],
+        "edge": [{ "added": 79 }],
+        "firefox": [{ "added": 66 }],
+        "firefox_android": [{ "added": 66 }],
+        "ie": [{ "added": false }],
+        "safari": [{ "added": false }],
+        "safari_ios": [{ "added": false }]
+      },
+      "tags": ["web-features:overflow-anchor"]
+    }
+  },
+  "font-variant-alternates": {
+    "__compat": {
+      "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/font-variant-alternates",
+      "spec_url": "https://drafts.csswg.org/css-fonts/#font-variant-alternates-prop",
+      "status": {
+        "deprecated": false,
+        "experimental": false,
+        "standard_track": true
+      },
+      "support": {
+        "chrome": [{ "added": 111 }],
+        "chrome_android": [{ "added": 111 }],
+        "edge": [{ "added": 111 }],
+        "firefox": [{ "added": 34 }],
+        "firefox_android": [{ "added": 34 }],
+        "ie": [{ "added": false }],
+        "safari": [{ "added": 9.1 }],
+        "safari_ios": [{ "added": 9.3 }]
+      },
+      "tags": ["web-features:font-variant-alternates"]
+    }
+  },
+  "text-box-edge": {
+    "__compat": {
+      "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/text-box-edge",
+      "spec_url": "https://drafts.csswg.org/css-inline-3/#text-box-edge",
+      "status": {
+        "deprecated": false,
+        "experimental": false,
+        "standard_track": true
+      },
+      "support": {
+        "chrome": [{ "added": 133 }],
+        "chrome_android": [{ "added": 133 }],
+        "edge": [{ "added": 133 }],
+        "firefox": [{ "added": false }],
+        "firefox_android": [{ "added": false }],
+        "ie": [{ "added": false }],
+        "safari": [{ "added": 18.2 }],
+        "safari_ios": [{ "added": 18.2 }]
+      },
+      "tags": ["web-features:text-box"]
+    }
+  },
+  "stroke-color": {
+    "__compat": {
+      "spec_url": "https://drafts.csswg.org/fill-stroke-3/#stroke-color",
+      "status": {
+        "deprecated": false,
+        "experimental": true,
+        "standard_track": true
+      },
+      "support": {
+        "chrome": [{ "added": false }],
+        "chrome_android": [{ "added": false }],
+        "edge": [{ "added": false }],
+        "firefox": [{ "added": false }],
+        "firefox_android": [{ "added": false }],
+        "ie": [{ "added": false }],
+        "safari": [{ "added": 11.1 }],
+        "safari_ios": [{ "added": 11.3 }]
+      },
+      "tags": ["web-features:svg"]
+    }
+  },
+  "-moz-orient": {
+    "__compat": {
+      "status": {
+        "deprecated": false,
+        "experimental": false,
+        "standard_track": false
+      },
+      "support": {
+        "chrome": [{ "added": false }],
+        "chrome_android": [{ "added": false }],
+        "edge": [{ "added": false }],
+        "firefox": [{ "added": 6 }],
+        "firefox_android": [{ "added": 6 }],
+        "ie": [{ "added": false }],
+        "safari": [{ "added": false }],
+        "safari_ios": [{ "added": false }]
+      }
+    }
+  },
+  "user-select": {
+    "__compat": {
+      "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/user-select",
+      "spec_url": "https://drafts.csswg.org/css-ui/#content-selection",
+      "status": {
+        "deprecated": false,
+        "experimental": false,
+        "standard_track": true
+      },
+      "support": {
+        "chrome": [{ "added": 54 }, { "prefix": "-webkit-", "added": 1 }],
+        "chrome_android": [
+          { "added": 54 },
+          { "prefix": "-webkit-", "added": 18 }
+        ],
+        "edge": [
+          { "added": 79 },
+          { "prefix": "-webkit-", "added": 12 },
+          { "prefix": "-ms-", "version_last": "18", "added": 12, "removed": 79 }
+        ],
+        "firefox": [
+          { "added": 69 },
+          { "prefix": "-webkit-", "added": 49 },
+          { "prefix": "-moz-", "added": 1 }
+        ],
+        "firefox_android": [
+          { "added": 79 },
+          { "prefix": "-webkit-", "added": 49 },
+          { "prefix": "-moz-", "added": 4 }
+        ],
+        "ie": [{ "prefix": "-ms-", "added": 10 }],
+        "safari": [
+          { "prefix": "-webkit-", "added": 3 },
+          { "prefix": "-khtml-", "version_last": "2", "added": 2, "removed": 3 }
+        ],
+        "safari_ios": [{ "prefix": "-webkit-", "added": 3 }]
+      },
+      "tags": ["web-features:user-select"]
+    },
+    "_aliasOf": "user-select"
+  },
+  "user-modify": {
+    "__compat": {
+      "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/user-modify",
+      "status": {
+        "deprecated": true,
+        "experimental": false,
+        "standard_track": false
+      },
+      "support": {
+        "chrome": [{ "prefix": "-webkit-", "added": 1 }],
+        "chrome_android": [{ "prefix": "-webkit-", "added": 18 }],
+        "edge": [{ "prefix": "-webkit-", "added": 12 }],
+        "firefox": [
+          {
+            "partial_implementation": true,
+            "prefix": "-moz-",
+            "version_last": "131",
+            "added": 1,
+            "removed": 132
+          }
+        ],
+        "firefox_android": [
+          {
+            "partial_implementation": true,
+            "prefix": "-moz-",
+            "version_last": "131",
+            "added": 4,
+            "removed": 132
+          }
+        ],
+        "ie": [{ "added": false }],
+        "safari": [
+          { "prefix": "-webkit-", "added": 3 },
+          { "prefix": "-khtml-", "version_last": "2", "added": 2, "removed": 3 }
+        ],
+        "safari_ios": [{ "prefix": "-webkit-", "added": 5 }]
+      }
+    },
+    "_aliasOf": "user-modify"
+  },
+  "text-size-adjust": {
+    "__compat": {
+      "mdn_url": "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/text-size-adjust",
+      "spec_url": "https://drafts.csswg.org/css-size-adjust/#adjustment-control",
+      "status": {
+        "deprecated": false,
+        "experimental": true,
+        "standard_track": true
+      },
+      "support": {
+        "chrome": [{ "added": 54 }],
+        "chrome_android": [{ "added": 54 }],
+        "edge": [
+          { "added": 79 },
+          {
+            "prefix": "-webkit-",
+            "version_last": "18",
+            "added": 12,
+            "removed": 79
+          }
+        ],
+        "firefox": [{ "added": false }],
+        "firefox_android": [
+          { "prefix": "-webkit-", "added": 49 },
+          { "prefix": "-moz-", "added": 14 }
+        ],
+        "ie": [{ "added": false }],
+        "safari": [{ "added": false }],
+        "safari_ios": [{ "prefix": "-webkit-", "added": 1 }]
+      },
+      "tags": ["web-features:text-size-adjust"]
+    },
+    "_aliasOf": "text-size-adjust"
+  },
+  "-webkit-text-size-adjust": { "_aliasOf": "text-size-adjust" },
+  "-moz-text-size-adjust": { "_aliasOf": "text-size-adjust" },
+  "-webkit-user-modify": { "_aliasOf": "user-modify" },
+  "-moz-user-modify": { "_aliasOf": "user-modify" },
+  "-khtml-user-modify": { "_aliasOf": "user-modify" },
+  "-webkit-user-select": { "_aliasOf": "user-select" },
+  "-ms-user-select": { "_aliasOf": "user-select" },
+  "-moz-user-select": { "_aliasOf": "user-select" },
+  "-khtml-user-select": { "_aliasOf": "user-select" }
+}

@@ -2240,9 +2240,12 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     // containing-block, see:
     // https://drafts.csswg.org/css-anchor-position-1/#fallback-apply
     const auto fits = aStatus.IsComplete() && FitsInContainingBlock();
+    // If the position-try-order is normal and the base style fits, we
+    // can skip the comparison of other styles. However, if position-try-order
+    // is anything other than normal, we have to check all the styles in that
+    // order including the base style.
     if (fallbacks.IsEmpty() || finalizing ||
-        (fits && (tryOrder == StylePositionTryOrder::Normal ||
-                  currentFallbackIndex == firstTryIndex))) {
+        (fits && tryOrder == StylePositionTryOrder::Normal)) {
       // We completed the reflow - Either we had a fallback that fit, or we
       // didn't have any to try in the first place.
       isOverflowingCB = !fits;

@@ -8,7 +8,7 @@ from textwrap import dedent
 
 import mozunit
 import pytest
-from tryselect.task_config import Pernosco, all_task_configs
+from tryselect.task_config import Pernosco, PushDate, all_task_configs
 
 TC_URL = "https://taskcluster.example.com"
 TH_URL = "https://treeherder.mozilla.org"
@@ -107,6 +107,18 @@ TASK_CONFIG_TESTS = {
     ],
     "pernosco": [
         ([], None),
+    ],
+    "pushdate": [
+        ([], None),
+        (
+            ["--pushdate", "20260424043035"],
+            {
+                "build_date": 1777005035,
+                "moz_build_date": "20260424043035",
+                "pushdate": 1777005035,
+            },
+        ),
+        (["--pushdate", "notadate"], SystemExit),
     ],
     "rebuild": [
         ([], None),
@@ -227,6 +239,20 @@ def test_pernosco(patch_ssh_user):
     args = parser.parse_args(["--pernosco"])
     params = cfg.get_parameters(**vars(args))
     assert params == {"try_task_config": {"env": {"PERNOSCO": "1"}, "pernosco": True}}
+
+
+def test_pushdate():
+    parser = ArgumentParser()
+
+    cfg = PushDate()
+    cfg.add_arguments(parser)
+    args = parser.parse_args(["--pushdate", "20260424043035"])
+    params = cfg.get_parameters(**vars(args))
+    assert params == {
+        "build_date": 1777005035,
+        "moz_build_date": "20260424043035",
+        "pushdate": 1777005035,
+    }
 
 
 def test_extensions(mocker):

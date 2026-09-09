@@ -1124,6 +1124,16 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
     return [super performKeyEquivalent:aEvent];
   }
 
+  // Handle only shortcuts that include Command here, whichever window has
+  // focus, and leave plain keys to that window. Native text fields read such
+  // keys as plain editing or navigation keys, and a Gecko window that does not
+  // handle one hands it back to the menu bar afterwards through
+  // nsCocoaWindow::PostHandleKeyEvent, so matching plain keys here buys
+  // nothing and can cost a menu flash on every keystroke.
+  if (!(aEvent.modifierFlags & NSEventModifierFlagCommand)) {
+    return NO;
+  }
+
   NSResponder* firstResponder = keyWindow.firstResponder;
 
   if ([keyWindow isKindOfClass:[BaseWindow class]]) {

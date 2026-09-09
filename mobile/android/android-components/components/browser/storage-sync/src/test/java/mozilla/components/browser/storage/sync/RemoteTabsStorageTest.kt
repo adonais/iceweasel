@@ -8,6 +8,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.remotetabs.ClientRemoteTabs
 import mozilla.appservices.remotetabs.RemoteTab
+import mozilla.appservices.remotetabs.TabsApiException as RemoteTabProviderException
+import mozilla.appservices.remotetabs.TabsStore as RemoteTabsProvider
 import mozilla.appservices.sync15.DeviceType
 import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.support.test.any
@@ -23,8 +25,6 @@ import org.mockito.Mockito.spy
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import mozilla.appservices.remotetabs.TabsApiException as RemoteTabProviderException
-import mozilla.appservices.remotetabs.TabsStore as RemoteTabsProvider
 
 @RunWith(AndroidJUnit4::class)
 class RemoteTabsStorageTest {
@@ -50,9 +50,7 @@ class RemoteTabsStorageTest {
         remoteTabs.store(
             listOf(
                 Tab(
-                    listOf(
-                        TabEntry("Bar", "https://bar", null),
-                    ),
+                    listOf(TabEntry("Bar", "https://bar", null)),
                     0,
                     1574458165555,
                     false,
@@ -77,80 +75,90 @@ class RemoteTabsStorageTest {
                     1574457405635,
                     false,
                 ),
-            ),
+            )
         )
 
-        verify(apiMock).setLocalTabs(
-            listOf(
-                RemoteTab("Bar", listOf("https://bar"), null, 1574458165555),
-                RemoteTab("Foo bar 2", listOf("https://foo.bar/2", "https://foo.bar/1", "https://foo.bar"), null, 0),
-                RemoteTab("Foo 2", listOf("https://foo/1", "https://foo"), "https://foo/icon2", 1574457405635),
-            ),
-        )
+        verify(apiMock)
+            .setLocalTabs(
+                listOf(
+                    RemoteTab("Bar", listOf("https://bar"), null, 1574458165555),
+                    RemoteTab(
+                        "Foo bar 2",
+                        listOf("https://foo.bar/2", "https://foo.bar/1", "https://foo.bar"),
+                        null,
+                        0,
+                    ),
+                    RemoteTab("Foo 2", listOf("https://foo/1", "https://foo"), "https://foo/icon2", 1574457405635),
+                )
+            )
     }
 
     @Test
     fun `getAll() translates tabs to our format`() = runTest {
-        `when`(apiMock.getAll()).thenReturn(
-            listOf(
-                ClientRemoteTabs(
-                    "client1",
-                    "",
-                    DeviceType.MOBILE,
-                    0, // any value for the timestamp is OK for these tests.
-                    listOf(
-                        RemoteTab("Foo", listOf("https://foo/1/1", "https://foo/1", "https://foo"), "https://foo/icon", 1574457405635),
+        `when`(apiMock.getAll())
+            .thenReturn(
+                listOf(
+                    ClientRemoteTabs(
+                        "client1",
+                        "",
+                        DeviceType.MOBILE,
+                        0, // any value for the timestamp is OK for these tests.
+                        listOf(
+                            RemoteTab(
+                                "Foo",
+                                listOf("https://foo/1/1", "https://foo/1", "https://foo"),
+                                "https://foo/icon",
+                                1574457405635,
+                            )
+                        ),
+                        emptyMap(), // tabGroups
+                        emptyMap(), // windows
                     ),
-                    emptyMap(), // tabGroups
-                    emptyMap(), // windows
-                ),
-                ClientRemoteTabs(
-                    "client2",
-                    "",
-                    DeviceType.MOBILE,
-                    0, // any value for the timestamp is OK for these tests.
-                    listOf(
-                        RemoteTab("Bar", listOf("https://bar"), null, 1574458165555),
-                        RemoteTab("Foo Bar", listOf("https://foo.bar"), "https://foo.bar/icon", 0),
+                    ClientRemoteTabs(
+                        "client2",
+                        "",
+                        DeviceType.MOBILE,
+                        0, // any value for the timestamp is OK for these tests.
+                        listOf(
+                            RemoteTab("Bar", listOf("https://bar"), null, 1574458165555),
+                            RemoteTab("Foo Bar", listOf("https://foo.bar"), "https://foo.bar/icon", 0),
+                        ),
+                        emptyMap(), // tabGroups
+                        emptyMap(), // windows
                     ),
-                    emptyMap(), // tabGroups
-                    emptyMap(), // windows
-                ),
-            ),
-        )
+                )
+            )
 
         assertEquals(
             mapOf(
-                SyncClient("client1") to listOf(
-                    Tab(
-                        listOf(
-                            TabEntry("Foo", "https://foo", "https://foo/icon"),
-                            TabEntry("Foo", "https://foo/1", "https://foo/icon"),
-                            TabEntry("Foo", "https://foo/1/1", "https://foo/icon"),
-                        ),
-                        2,
-                        1574457405635,
-                        false,
+                SyncClient("client1") to
+                    listOf(
+                        Tab(
+                            listOf(
+                                TabEntry("Foo", "https://foo", "https://foo/icon"),
+                                TabEntry("Foo", "https://foo/1", "https://foo/icon"),
+                                TabEntry("Foo", "https://foo/1/1", "https://foo/icon"),
+                            ),
+                            2,
+                            1574457405635,
+                            false,
+                        )
                     ),
-                ),
-                SyncClient("client2") to listOf(
-                    Tab(
-                        listOf(
-                            TabEntry("Bar", "https://bar", null),
+                SyncClient("client2") to
+                    listOf(
+                        Tab(
+                            listOf(TabEntry("Bar", "https://bar", null)),
+                            0,
+                            1574458165555,
+                            false,
                         ),
-                        0,
-                        1574458165555,
-                        false,
-                    ),
-                    Tab(
-                        listOf(
-                            TabEntry("Foo Bar", "https://foo.bar", "https://foo.bar/icon"),
+                        Tab(
+                            listOf(TabEntry("Foo Bar", "https://foo.bar", "https://foo.bar/icon")),
+                            0,
+                            0,
+                            false,
                         ),
-                        0,
-                        0,
-                        false,
                     ),
-                ),
             ),
             remoteTabs.getAll(),
         )

@@ -40,9 +40,7 @@ class NotificationRobot {
     fun verifySystemNotificationExists(notificationMessage: String) {
         val notification = mDevice.findObject(UiSelector().text(notificationMessage))
         while (!notification.waitForExists(waitingTime)) {
-            UiScrollable(
-                UiSelector().resourceId(systemNotificationPanelId),
-            ).flingToEnd(1)
+            UiScrollable(UiSelector().resourceId(systemNotificationPanelId)).flingToEnd(1)
         }
 
         assertTrue(notification.exists())
@@ -50,14 +48,11 @@ class NotificationRobot {
 
     fun verifyMediaNotificationExists(notificationMessage: String) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val notificationInTray = mDevice.wait(
-                Until.hasObject(
-                    By.res(quickSettingsPanelId).hasDescendant(
-                        By.text(notificationMessage),
-                    ),
-                ),
-                waitingTime,
-            )
+            val notificationInTray =
+                mDevice.wait(
+                    Until.hasObject(By.res(quickSettingsPanelId).hasDescendant(By.text(notificationMessage))),
+                    waitingTime,
+                )
 
             assertTrue(notificationInTray)
         } else {
@@ -66,10 +61,7 @@ class NotificationRobot {
     }
 
     fun verifyNotificationGone(notificationMessage: String) {
-        assertTrue(
-            mDevice.findObject(UiSelector().text(notificationMessage))
-                .waitUntilGone(waitingTime),
-        )
+        assertTrue(mDevice.findObject(UiSelector().text(notificationMessage)).waitUntilGone(waitingTime))
     }
 
     fun clickMediaNotificationControlButton(action: String) {
@@ -127,29 +119,21 @@ fun notificationTray(interact: NotificationRobot.() -> Unit): NotificationRobot.
 }
 
 private val eraseBrowsingNotification =
-    mDevice.findObject(
-        UiSelector().text(getStringResource(R.string.notification_erase_title_android_14)),
-    )
+    mDevice.findObject(UiSelector().text(getStringResource(R.string.notification_erase_title_android_14)))
 
 private val notificationEraseAndOpenButton =
-    mDevice.findObject(
-        UiSelector().description(getStringResource(R.string.notification_action_erase_and_open)),
-    )
+    mDevice.findObject(UiSelector().description(getStringResource(R.string.notification_action_erase_and_open)))
 
-private val notificationOpenButton = mDevice.findObject(
-    UiSelector().description(getStringResource(R.string.notification_action_open)),
-)
+private val notificationOpenButton =
+    mDevice.findObject(UiSelector().description(getStringResource(R.string.notification_action_open)))
 
-private fun notificationTray() = UiScrollable(
-    UiSelector().resourceId("com.android.systemui:id/notification_stack_scroller"),
-).setAsVerticalList()
+private fun notificationTray() =
+    UiScrollable(UiSelector().resourceId("com.android.systemui:id/notification_stack_scroller")).setAsVerticalList()
 
-private fun clearButton() =
-    mDevice.findObject(UiSelector().resourceId("com.android.systemui:id/dismiss_text"))
+private fun clearButton() = mDevice.findObject(UiSelector().resourceId("com.android.systemui:id/dismiss_text"))
 
 private fun scrollToEnd() {
     notificationTray().scrollToEnd(1)
 }
 
-private fun mediaNotificationControlButton(action: String) =
-    mDevice.findObject(UiSelector().description(action))
+private fun mediaNotificationControlButton(action: String) = mDevice.findObject(UiSelector().description(action))

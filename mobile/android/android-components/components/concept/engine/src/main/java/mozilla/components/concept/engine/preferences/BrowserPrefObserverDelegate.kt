@@ -4,8 +4,8 @@
 package mozilla.components.concept.engine.preferences
 
 /**
- * Interface for implementing a browser preference observer delegate.
- * This delegate reports events related to browser preferences changes.
+ * Interface for implementing a browser preference observer delegate. This delegate reports events related to browser
+ * preferences changes.
  */
 interface BrowserPrefObserverDelegate {
 

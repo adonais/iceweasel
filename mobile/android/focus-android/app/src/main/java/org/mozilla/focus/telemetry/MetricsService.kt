@@ -6,13 +6,9 @@ package org.mozilla.focus.telemetry
 
 import android.content.Context
 
-/**
- * A service for tracking telemetry events in various parts of the app.
- */
+/** A service for tracking telemetry events in various parts of the app. */
 interface MetricsService {
 
-    /**
-     * Perform any initialization that the service may require.
-     */
+    /** Perform any initialization that the service may require. */
     fun initialize(context: Context)
 }

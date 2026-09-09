@@ -4,6 +4,7 @@
 
 package mozilla.components.support.locale
 
+import java.util.Locale
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.LocaleAction
 import mozilla.components.browser.state.action.LocaleAction.UpdateLocaleAction
@@ -12,7 +13,6 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import org.junit.Before
 import org.junit.Test
-import java.util.Locale
 
 class LocaleUseCasesTest {
 
@@ -23,10 +23,11 @@ class LocaleUseCasesTest {
     fun setup() {
         browserStore = BrowserStore()
 
-        browserStore = BrowserStore(
-            initialState = BrowserState(),
-            middleware = listOf(captureActionsMiddleware),
-        )
+        browserStore =
+            BrowserStore(
+                initialState = BrowserState(),
+                middleware = listOf(captureActionsMiddleware),
+            )
     }
 
     @Test

@@ -27,6 +27,7 @@
 #include "mozilla/StaticPrefs_bidi.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/TextControlElement.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "nsBidiPresUtils.h"
@@ -477,6 +478,16 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsFrameSelection)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLimiters.mIndependentSelectionRootElement)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLimiters.mAncestorLimiter)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
+
+nsISelectionController* nsFrameSelection::GetSelectionController() const {
+  if (IsIndependentSelection()) {
+    auto* const textControlElement = TextControlElement::FromNodeOrNull(
+        GetIndependentSelectionRootParentElement());
+    return textControlElement ? textControlElement->GetSelectionController()
+                              : nullptr;
+  }
+  return mPresShell;
+}
 
 // static
 void nsFrameSelection::WillFocusDocument(PresShell& aPresShell,

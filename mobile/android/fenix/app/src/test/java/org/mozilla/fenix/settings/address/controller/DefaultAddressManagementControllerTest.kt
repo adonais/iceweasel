@@ -21,11 +21,7 @@ class DefaultAddressManagementControllerTest {
 
     @Before
     fun setup() {
-        controller = spyk(
-            DefaultAddressManagementController(
-                navController = navController,
-            ),
-        )
+        controller = spyk(DefaultAddressManagementController(navController = navController))
     }
 
     @Test
@@ -36,10 +32,9 @@ class DefaultAddressManagementControllerTest {
 
         verify {
             navController.navigate(
-                AddressManagementFragmentDirections
-                    .actionAddressManagementFragmentToAddressEditorFragment(
-                        address = address,
-                    ),
+                AddressManagementFragmentDirections.actionAddressManagementFragmentToAddressEditorFragment(
+                    address = address
+                )
             )
         }
     }
@@ -50,8 +45,7 @@ class DefaultAddressManagementControllerTest {
 
         verify {
             navController.navigate(
-                AddressManagementFragmentDirections
-                    .actionAddressManagementFragmentToAddressEditorFragment(),
+                AddressManagementFragmentDirections.actionAddressManagementFragmentToAddressEditorFragment()
             )
         }
     }

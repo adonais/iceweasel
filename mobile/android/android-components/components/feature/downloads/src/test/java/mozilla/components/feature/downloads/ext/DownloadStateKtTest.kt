@@ -20,15 +20,17 @@ import org.junit.runner.RunWith
 class DownloadStateKtTest {
     @Test
     fun `GIVEN a download filename is unkwnown WHEN requested with a guessing fallback THEN return a guessed canonical filename`() {
-        val download = DownloadState(
-            url = "url",
-            fileName = null,
-        )
+        val download =
+            DownloadState(
+                url = "url",
+                fileName = null,
+            )
         val fakeUtils = FakeDownloadFileUtils()
 
-        val expectedName = with(download) {
-            fakeUtils.guessFileName(null, "downloads", url)
-        }
+        val expectedName =
+            with(download) {
+                fakeUtils.guessFileName(null, "downloads", url)
+            }
 
         val result = download.getRealFilenameOrGuessed(fakeUtils)
 
@@ -37,17 +39,20 @@ class DownloadStateKtTest {
 
     @Test
     fun `GIVEN a download filename is available WHEN requested with a guessing fallback THEN return the available filename`() {
-        val download = DownloadState(
-            url = "http://example.com/file.jpg",
-            fileName = "test",
-            contentType = "image/jpeg",
-        )
-        val guessedName = with(download) {
-            DefaultDownloadFileUtils(
-                testContext,
-                downloadLocation = { "downloads" },
-            ).guessFileName(null, url, contentType)
-        }
+        val download =
+            DownloadState(
+                url = "http://example.com/file.jpg",
+                fileName = "test",
+                contentType = "image/jpeg",
+            )
+        val guessedName =
+            with(download) {
+                DefaultDownloadFileUtils(
+                        testContext,
+                        downloadLocation = { "downloads" },
+                    )
+                    .guessFileName(null, url, contentType)
+            }
 
         val result = download.fileName
 
@@ -57,44 +62,48 @@ class DownloadStateKtTest {
 
     @Test
     fun `WHEN the content type is pdf THEN the isPdf property returns true`() {
-        val download = DownloadState(
-            url = "http://example.com/file.pdf",
-            fileName = null,
-            contentType = "application/pdf",
-        )
+        val download =
+            DownloadState(
+                url = "http://example.com/file.pdf",
+                fileName = null,
+                contentType = "application/pdf",
+            )
 
         assertTrue(download.isPdf)
     }
 
     @Test
     fun `WHEN the content type is null and the fileName extension is pdf THEN the isPdf property returns true`() {
-        val download = DownloadState(
-            url = "http://example.com/file.pdf",
-            fileName = "file.pdf",
-            contentType = null,
-        )
+        val download =
+            DownloadState(
+                url = "http://example.com/file.pdf",
+                fileName = "file.pdf",
+                contentType = null,
+            )
 
         assertTrue(download.isPdf)
     }
 
     @Test
     fun `WHEN the content type is not pdf THEN the isPdf property returns false`() {
-        val download = DownloadState(
-            url = "http://example.com/file.jpg",
-            fileName = null,
-            contentType = "image/jpeg",
-        )
+        val download =
+            DownloadState(
+                url = "http://example.com/file.jpg",
+                fileName = null,
+                contentType = "image/jpeg",
+            )
 
         assertFalse(download.isPdf)
     }
 
     @Test
     fun `WHEN the content type is null and the fileName extension is not pdf THEN the isPdf property returns false`() {
-        val download = DownloadState(
-            url = "http://example.com/file.jpg",
-            fileName = "file.jpg",
-            contentType = null,
-        )
+        val download =
+            DownloadState(
+                url = "http://example.com/file.jpg",
+                fileName = "file.jpg",
+                contentType = null,
+            )
 
         assertFalse(download.isPdf)
     }

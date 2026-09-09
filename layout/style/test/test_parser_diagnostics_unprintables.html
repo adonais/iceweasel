@@ -23,157 +23,72 @@ SpecialPowers.wrap(window).docShell.cssErrorReportingEnabled = true;
 // There is one "pattern" for each code path through the error reporter
 // that might need to escape some kind of user-supplied text.
 // Each "pattern" is tested once with each of the "substitution"s below:
-// <t>, <i>, and <s> are replaced by the t:, i:, and s: fields of
-// each substitution object in turn.
+// <t> is replaced by the t: field of each substitution object in turn,
+// <e> by its e: field, and <E> by its E: field (which is e: for input whose
+// trailing whitespace the reporter trims away).
+//
+// Diagnostics quote the source text of the offending rule or declaration,
+// so what comes back is the input with the unprintables escaped, and with
+// trailing whitespace and any opening brace trimmed off the end.
 let patterns = [
-  // REPORT_UNEXPECTED_P (only ever used in contexts where identifier-like
-  // escaping is appropriate)
-  { i: "<t>|x{}",                 o: "prefix \u2018<i>\u2019" },
+  // REPORT_UNEXPECTED_P
+  { i: "<t>|x{}",                 o: "prefix \u2018<e>|x\u2019" },
   // REPORT_UNEXPECTED_TOKEN with:
   // _Ident
-  { i: "@namespace fnord <t>;",    o: "within @namespace: \u2018<i>\u2019" },
+  { i: "@namespace fnord <t>;",    o: "@namespace: \u2018@namespace fnord <E>\u2019" },
   // _Ref
-  { i: "@namespace fnord #<t>;",   o: "within @namespace: \u2018#<i>\u2019" },
+  { i: "@namespace fnord #<t>;",   o: "@namespace: \u2018@namespace fnord #<E>\u2019" },
   // _Function
-  { i: "@namespace fnord <t>();",  o: "within @namespace: \u2018<i>(\u2019" },
+  { i: "@namespace fnord <t>();",  o: "@namespace: \u2018@namespace fnord <e>()\u2019" },
   // _Dimension
-  { i: "@namespace fnord 14<t>;",  o: "within @namespace: \u201814<i>\u2019" },
+  { i: "@namespace fnord 14<t>;",  o: "@namespace: \u2018@namespace fnord 14<E>\u2019" },
   // _AtKeyword
-  { i: "x{@<t>: }",                o: "declaration but found \u2018@<i>\u2019." },
+  { i: "x{@<t>: }",                o: "declaration but found \u2018@<e>:\u2019." },
   // _String
-  { i: "x{ color: '<t>'}" ,        o: 'color but found \u2018"<s>"\u2019.' },
+  { i: "x{ color: '<t>'}" ,        o: "parsing value for \u2018color: '<e>'\u2019." },
   // _Bad_String
-  { i: "x{ color: '<t>\n}",        o: 'color but found \u2018"<s>\u2019.' },
+  { i: "x{ color: '<t>\n}",        o: "parsing value for \u2018color: '<E>\u2019." },
 ];
 
-// Blocks of characters to test, and how they should be escaped when
-// they appear in identifiers and string constants.
+// Blocks of characters to test, and how they come back out once the
+// unprintables among them have been escaped. Everything else is passed
+// through verbatim, so there's no point enumerating it here.
 const substitutions = [
-  // ASCII printables that _can_ normally appear in identifiers,
-  // so should of course _not_ be escaped.
-  { t: "-_0123456789",               i: "-_0123456789",
-                                     s: "-_0123456789" },
-  { t: "abcdefghijklmnopqrstuvwxyz", i: "abcdefghijklmnopqrstuvwxyz",
-                                     s: "abcdefghijklmnopqrstuvwxyz" },
-  { t: "ABCDEFGHIJKLMNOPQRSTUVWXYZ", i: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-                                     s: "ABCDEFGHIJKLMNOPQRSTUVWXYZ" },
-
-  // ASCII printables that are not normally valid as the first character
-  // of an identifier, or the character immediately after a leading dash,
-  // but can be forced into that position with escapes.
-  { t: "\\-",    i: "\\-",    s: "-"  },
-  { t: "\\30 ",  i: "\\30 ",  s: "0"  },
-  { t: "\\31 ",  i: "\\31 ",  s: "1"  },
-  { t: "\\32 ",  i: "\\32 ",  s: "2"  },
-  { t: "\\33 ",  i: "\\33 ",  s: "3"  },
-  { t: "\\34 ",  i: "\\34 ",  s: "4"  },
-  { t: "\\35 ",  i: "\\35 ",  s: "5"  },
-  { t: "\\36 ",  i: "\\36 ",  s: "6"  },
-  { t: "\\37 ",  i: "\\37 ",  s: "7"  },
-  { t: "\\38 ",  i: "\\38 ",  s: "8"  },
-  { t: "\\39 ",  i: "\\39 ",  s: "9"  },
-  { t: "-\\-",   i: "--",     s: "--" },
-  { t: "-\\30 ", i: "-\\30 ", s: "-0" },
-  { t: "-\\31 ", i: "-\\31 ", s: "-1" },
-  { t: "-\\32 ", i: "-\\32 ", s: "-2" },
-  { t: "-\\33 ", i: "-\\33 ", s: "-3" },
-  { t: "-\\34 ", i: "-\\34 ", s: "-4" },
-  { t: "-\\35 ", i: "-\\35 ", s: "-5" },
-  { t: "-\\36 ", i: "-\\36 ", s: "-6" },
-  { t: "-\\37 ", i: "-\\37 ", s: "-7" },
-  { t: "-\\38 ", i: "-\\38 ", s: "-8" },
-  { t: "-\\39 ", i: "-\\39 ", s: "-9" },
-
-  // ASCII printables that must be escaped in identifiers.
-  // Most of these should not be escaped in strings.
-  { t: "\\!\\\"\\#\\$",   i: "\\!\\\"\\#\\$",   s: "!\\\"#$" },
-  { t: "\\%\\&\\'\\(",    i: "\\%\\&\\'\\(",    s: "%&'(" },
-  { t: "\\)\\*\\+\\,",    i: "\\)\\*\\+\\,",    s: ")*+," },
-  { t: "\\.\\/\\:\\;",    i: "\\.\\/\\:\\;",    s: "./:;" },
-  { t: "\\<\\=\\>\\?",    i: "\\<\\=\\>\\?",    s: "<=>?", },
-  { t: "\\@\\[\\\\\\]",   i: "\\@\\[\\\\\\]",   s: "@[\\\\]" },
-  { t: "\\^\\`\\{\\}\\~", i: "\\^\\`\\{\\}\\~", s: "^`{}~" },
-
-  // U+0000 - U+0020 (C0 controls, space)
-  // U+000A LINE FEED, U+000C FORM FEED, and U+000D CARRIAGE RETURN
-  // cannot be put into a CSS token as escaped literal characters, so
-  // we do them with hex escapes instead.
-  // The parser replaces U+0000 with U+FFFD.
-  { t: "\\\x00\\\x01\\\x02\\\x03",       i: "�\\1 \\2 \\3 ",
-                                         s: "�\\1 \\2 \\3 " },
-  { t: "\\\x04\\\x05\\\x06\\\x07",       i: "\\4 \\5 \\6 \\7 ",
-                                         s: "\\4 \\5 \\6 \\7 " },
-  { t: "\\\x08\\\x09\\000A\\\x0B",       i: "\\8 \\9 \\a \\b ",
-                                         s: "\\8 \\9 \\a \\b " },
-  { t: "\\000C\\000D\\\x0E\\\x0F",       i: "\\c \\d \\e \\f ",
-                                         s: "\\c \\d \\e \\f " },
-  { t: "\\\x10\\\x11\\\x12\\\x13",       i: "\\10 \\11 \\12 \\13 ",
-                                         s: "\\10 \\11 \\12 \\13 " },
-  { t: "\\\x14\\\x15\\\x16\\\x17",       i: "\\14 \\15 \\16 \\17 ",
-                                         s: "\\14 \\15 \\16 \\17 " },
-  { t: "\\\x18\\\x19\\\x1A\\\x1B",       i: "\\18 \\19 \\1a \\1b ",
-                                         s: "\\18 \\19 \\1a \\1b " },
-  { t: "\\\x1C\\\x1D\\\x1E\\\x1F\\ ",    i: "\\1c \\1d \\1e \\1f \\ ",
-                                         s: "\\1c \\1d \\1e \\1f  " },
-
-  // U+007F (DELETE) and U+0080 - U+009F (C1 controls)
-  { t: "\\\x7f\\\x80\\\x81\\\x82",       i: "\\7f \x80\x81\x82",
-                                         s: "\\7f \x80\x81\x82" },
-  { t: "\\\x83\\\x84\\\x85\\\x86",       i: "\x83\x84\x85\x86",
-                                         s: "\x83\x84\x85\x86" },
-  { t: "\\\x87\\\x88\\\x89\\\x8A",       i: "\x87\x88\x89\x8A",
-                                         s: "\x87\x88\x89\x8A" },
-  { t: "\\\x8B\\\x8C\\\x8D\\\x8E",       i: "\x8B\x8C\x8D\x8E",
-                                         s: "\x8B\x8C\x8D\x8E" },
-  { t: "\\\x8F\\\x90\\\x91\\\x92",       i: "\x8F\x90\x91\x92",
-                                         s: "\x8F\x90\x91\x92" },
-  { t: "\\\x93\\\x94\\\x95\\\x96",       i: "\x93\x94\x95\x96",
-                                         s: "\x93\x94\x95\x96" },
-  { t: "\\\x97\\\x98\\\x99\\\x9A",       i: "\x97\x98\x99\x9A",
-                                         s: "\x97\x98\x99\x9A" },
-  { t: "\\\x9B\\\x9C\\\x9D\\\x9E\\\x9F", i: "\x9B\x9C\x9D\x9E\x9F",
-                                         s: "\x9B\x9C\x9D\x9E\x9F" },
-
-  // CSS doesn't bother with the full Unicode rules for identifiers,
-  // instead declaring that any code point greater than or equal to
-  // U+0080 is a valid identifier character.  Test a small handful
-  // of both basic and astral plane characters.
-
-  // Arabic (caution to editors: there is a possibly-invisible U+200E
-  // LEFT-TO-RIGHT MARK in each string, just before the close quote)
+  // U+0000 truncates the message if it isn't escaped; the rest of the C0
+  // controls are just unprintable.
+  { t: "\\\x00\\\x01\\\x02\\\x03",
+    e: "\\\\0 \\\\1 \\\\2 \\\\3 ",
+    E: "\\\\0 \\\\1 \\\\2 \\\\3 " },
+  // U+000A LINE FEED, U+000C FORM FEED and U+000D CARRIAGE RETURN cannot be
+  // put into a CSS token as escaped literal characters, so the input uses hex
+  // escapes for those, which pass through as-is. Note that the trailing
+  // U+000B is whitespace, so it gets trimmed rather than escaped.
+  { t: "\\\x08\\\x09\\000A\\\x0B",
+    e: "\\\\8 \\\\9 \\000A\\\\b ",
+    E: "\\\\8 \\\\9 \\000A\\" },
+  // A trailing escaped space is trimmed off the end, like any other trailing
+  // whitespace.
+  { t: "\\\x1C\\\x1D\\\x1E\\\x1F\\ ",
+    e: "\\\\1c \\\\1d \\\\1e \\\\1f \\ ",
+    E: "\\\\1c \\\\1d \\\\1e \\\\1f \\" },
+  // U+007F is escaped, but the C1 controls right above it are not, since
+  // they're not ASCII.
+  { t: "\\\x7F\\\x80\\\x81\\\x82",
+    e: "\\\\7f \\\x80\\\x81\\\x82",
+    E: "\\\\7f \\\x80\\\x81\\\x82" },
+  // Escaped ASCII punctuation, including a backslash, passes through
+  // untouched.
+  { t: "\\@\\[\\\\\\]",
+    e: "\\@\\[\\\\\\]",
+    E: "\\@\\[\\\\\\]" },
+  // So does non-ASCII text, including astral plane characters and the
+  // otherwise invisible U+200E LEFT-TO-RIGHT MARK at the end of this one.
   { t: "أبجدهوزحطيكلمنسعفصقرشتثخذضظغ‎",
-    i: "أبجدهوزحطيكلمنسعفصقرشتثخذضظغ‎",
-    s: "أبجدهوزحطيكلمنسعفصقرشتثخذضظغ‎" },
-
-  // Box drawing
-  { t: "─│┌┐└┘├┤┬┴┼╭╮╯╰╴╵╶╷",
-    i: "─│┌┐└┘├┤┬┴┼╭╮╯╰╴╵╶╷",
-    s: "─│┌┐└┘├┤┬┴┼╭╮╯╰╴╵╶╷" },
-
-  // CJK Unified Ideographs
-  { t: "一丁丂七丄丅丆万丈三上下丌不与丏",
-    i: "一丁丂七丄丅丆万丈三上下丌不与丏",
-    s: "一丁丂七丄丅丆万丈三上下丌不与丏" },
-
-  // CJK Unified Ideographs Extension B (astral)
-  { t: "𠀀𠀁𠀂𠀃𠀄𠀅𠀆𠀇𠀈𠀉𠀊𠀋𠀌𠀍𠀎𠀏",
-    i: "𠀀𠀁𠀂𠀃𠀄𠀅𠀆𠀇𠀈𠀉𠀊𠀋𠀌𠀍𠀎𠀏",
-    s: "𠀀𠀁𠀂𠀃𠀄𠀅𠀆𠀇𠀈𠀉𠀊𠀋𠀌𠀍𠀎𠀏" },
-
-  // Devanagari
-  { t: "कखगघङचछजझञटठडढणतथदधनपफबभमयरलळवशषसह",
-    i: "कखगघङचछजझञटठडढणतथदधनपफबभमयरलळवशषसह",
-    s: "कखगघङचछजझञटठडढणतथदधनपफबभमयरलळवशषसह" },
-
-  // Emoticons (astral)
+    e: "أبجدهوزحطيكلمنسعفصقرشتثخذضظغ‎",
+    E: "أبجدهوزحطيكلمنسعفصقرشتثخذضظغ‎" },
   { t: "😁😂😃😄😅😆😇😈😉😊😋😌😍😎😏😐",
-    i: "😁😂😃😄😅😆😇😈😉😊😋😌😍😎😏😐",
-    s: "😁😂😃😄😅😆😇😈😉😊😋😌😍😎😏😐" },
-
-  // Greek
-  { t: "αβγδεζηθικλμνξοπρςστυφχψω",
-    i: "αβγδεζηθικλμνξοπρςστυφχψω",
-    s: "αβγδεζηθικλμνξοπρςστυφχψω" }
+    e: "😁😂😃😄😅😆😇😈😉😊😋😌😍😎😏😐",
+    E: "😁😂😃😄😅😆😇😈😉😊😋😌😍😎😏😐" },
 ];
 
 const npatterns = patterns.length;
@@ -184,8 +99,8 @@ function quotemeta(str) {
 }
 function subst(str, sub) {
   return str.replace("<t>", sub.t)
-    .replace("<i>", sub.i)
-    .replace("<s>", sub.s);
+    .replace("<e>", sub.e)
+    .replace("<E>", sub.E);
 }
 
 var curpat = 0;

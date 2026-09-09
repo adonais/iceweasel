@@ -4,17 +4,11 @@
 
 package mozilla.components.support.base.facts
 
-/**
- * A [FactProcessor] receives [Fact] instances to process them further.
- */
+/** A [FactProcessor] receives [Fact] instances to process them further. */
 interface FactProcessor {
-    /**
-     * Passes the given [Fact] to the [FactProcessor] for processing.
-     */
+    /** Passes the given [Fact] to the [FactProcessor] for processing. */
     fun process(fact: Fact)
 }
 
-/**
- * Registers this [FactProcessor] to collect [Fact] instances from the [Facts] singleton.
- */
+/** Registers this [FactProcessor] to collect [Fact] instances from the [Facts] singleton. */
 fun FactProcessor.register() = Facts.registerProcessor(this)

@@ -15,9 +15,7 @@ import mozilla.components.feature.autofill.R
 import mozilla.components.feature.autofill.handler.MAX_LOGINS
 import mozilla.components.feature.autofill.structure.ParsedStructure
 
-internal data class SearchDatasetBuilder(
-    val parsedStructure: ParsedStructure,
-) : DatasetBuilder {
+internal data class SearchDatasetBuilder(val parsedStructure: ParsedStructure) : DatasetBuilder {
     override fun build(
         context: Context,
         configuration: AutofillConfiguration,
@@ -26,18 +24,20 @@ internal data class SearchDatasetBuilder(
         val dataset = Dataset.Builder()
 
         val searchIntent = Intent(context, configuration.searchActivity)
-        val searchPendingIntent = PendingIntent.getActivity(
-            context,
-            configuration.activityRequestCode + MAX_LOGINS,
-            searchIntent,
-            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_CANCEL_CURRENT,
-        )
+        val searchPendingIntent =
+            PendingIntent.getActivity(
+                context,
+                configuration.activityRequestCode + MAX_LOGINS,
+                searchIntent,
+                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_CANCEL_CURRENT,
+            )
         val intentSender: IntentSender = searchPendingIntent.intentSender
 
-        val title = context.getString(
-            R.string.mozac_feature_autofill_search_suggestions,
-            configuration.applicationName,
-        )
+        val title =
+            context.getString(
+                R.string.mozac_feature_autofill_search_suggestions,
+                configuration.applicationName,
+            )
 
         val usernamePresentation = createViewPresentation(context, title)
         val passwordPresentation = createViewPresentation(context, title)

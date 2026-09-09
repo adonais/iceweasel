@@ -201,26 +201,25 @@ results in the following CSS:
 ```css
 /* tokens-shared.css */
 
-@layer tokens-prefers-contrast {
-  @media (prefers-contrast) {
-    :root,
-    :host(.anonymous-content-host) {
+:root,
+:host(.anonymous-content-host) {
+  @layer tokens-prefers-contrast {
+    @media (prefers-contrast) {
       /** Border **/
       --border-color-interactive: var(--text-color);
     }
   }
-}
 
-@layer tokens-forced-colors {
-  @media (forced-colors) {
-    :root,
-    :host(.anonymous-content-host) {
+  @layer tokens-forced-colors {
+    @media (forced-colors) {
       /** Border **/
       --border-color-interactive: ButtonText;
     }
   }
 }
 ```
+
+The layers and media queries are nested inside a single `:root, :host(.anonymous-content-host)` selector, as recommended by the [HCM media query guidelines](https://firefox-source-docs.mozilla.org/accessible/HCMMediaQueries.html#writing-maintainable-frontend-code).
 
 ### Theming
 
@@ -290,9 +289,9 @@ communicates that `--text-color` should have the value `currentColor` in `tokens
 
 ```css
 /* tokens-platform.css */
-@layer tokens-foundation {
-  :root,
-  :host(.anonymous-content-host) {
+:root,
+:host(.anonymous-content-host) {
+  @layer tokens-foundation {
     /** Text **/
     --text-color: currentColor;
   }
@@ -301,9 +300,9 @@ communicates that `--text-color` should have the value `currentColor` in `tokens
 
 ```css
 /* tokens-brand.css */
-@layer tokens-foundation {
-  :root,
-  :host(.anonymous-content-host) {
+:root,
+:host(.anonymous-content-host) {
+  @layer tokens-foundation {
     /** Text **/
     --text-color: light-dark(var(--color-gray-100), var(--color-gray-0));
   }
@@ -330,6 +329,21 @@ This means there are several options of what the value of a design token will be
 ```
 
 This snippet will use the light/dark value in-content but it will also use it in the chrome when using the `Light` or `Dark` theme, and conditionally when using the `System theme — auto` (based on the native-theme pref). Otherwise it will use `AccentColor` (or `ButtonText` in HCM).
+
+The "browser theme" values end up in the `tokens-browser-theme` layer, which needs a narrower selector than the other layers and so gets its own top-level rule:
+
+```css
+/* tokens-platform.css */
+:root:is([theme-in-app], :not([lwtheme])),
+:host(.anonymous-content-host) {
+  @layer tokens-browser-theme {
+    @media not ((forced-colors) or (-moz-native-theme)) {
+      /** Color **/
+      --color-accent-primary: light-dark(var(--color-blue-60), var(--color-cyan-30));
+    }
+  }
+}
+```
 
 ### Adding new tokens
 
@@ -361,7 +375,12 @@ Then you can create new JSON files in `src/tokens` that end with a suffix using 
 When you run `./mach buildtokens`, the CSS output will include the new tokens under a media query using the `pref` that you defined. For example:
 
 ```css
-@media -moz-pref("browser.nova.enabled") {
-  /* Your token overrides */
+:root,
+:host(.anonymous-content-host) {
+  @media -moz-pref("browser.nova.enabled") {
+    @layer tokens-foundation-nova {
+      /* Your token overrides */
+    }
+  }
 }
 ```

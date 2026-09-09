@@ -48,48 +48,52 @@ class LabsRefreshFeatureTest {
     }
 
     @Test
-    fun `WHEN Nimbus applies updates THEN labs are refreshed AND a dropped lab is deactivated`() = runTest(UnconfinedTestDispatcher()) {
-        var labs: List<FirefoxLabsMetadata> = listOf(
-            FirefoxLabsMetadata(
-                slug = "lab-1",
-                titleStringId = "firefox_labs_test_lab_title",
-                descriptionStringId = "firefox_labs_test_lab_description",
-                feedbackUrl = null,
-                enrolled = true,
-                requiresRestart = false,
-            ),
-        )
-        val nimbusApi = FakeNimbusApi(testContext, labsProvider = { labs })
-        val captureMiddleware = CaptureActionsMiddleware<LabsState, LabsAction>()
-        val store = LabsStore(
-            initialState = LabsState.INITIAL,
-            middleware = listOf(
-                captureMiddleware,
-                LabsMiddleware(
-                    context = testContext,
-                    settings = Settings(testContext),
-                    nimbusSdk = nimbusApi,
-                    onRestart = {},
-                    onOpenFeedback = {},
-                    scope = backgroundScope,
-                ),
-            ),
-        )
-        val feature = LabsRefreshFeature(store = store, nimbusApi = nimbusApi)
+    fun `WHEN Nimbus applies updates THEN labs are refreshed AND a dropped lab is deactivated`() =
+        runTest(UnconfinedTestDispatcher()) {
+            var labs: List<FirefoxLabsMetadata> =
+                listOf(
+                    FirefoxLabsMetadata(
+                        slug = "lab-1",
+                        titleStringId = "firefox_labs_test_lab_title",
+                        descriptionStringId = "firefox_labs_test_lab_description",
+                        feedbackUrl = null,
+                        enrolled = true,
+                        requiresRestart = false,
+                    )
+                )
+            val nimbusApi = FakeNimbusApi(testContext, labsProvider = { labs })
+            val captureMiddleware = CaptureActionsMiddleware<LabsState, LabsAction>()
+            val store =
+                LabsStore(
+                    initialState = LabsState.INITIAL,
+                    middleware =
+                        listOf(
+                            captureMiddleware,
+                            LabsMiddleware(
+                                context = testContext,
+                                settings = Settings(testContext),
+                                nimbusSdk = nimbusApi,
+                                onRestart = {},
+                                onOpenFeedback = {},
+                                scope = backgroundScope,
+                            ),
+                        ),
+                )
+            val feature = LabsRefreshFeature(store = store, nimbusApi = nimbusApi)
 
-        labs = emptyList()
-        captureMiddleware.reset()
+            labs = emptyList()
+            captureMiddleware.reset()
 
-        // Simulate Nimbus forcing an unenroll mid-session, then deliver the observation event.
-        feature.onUpdatesApplied(emptyList())
+            // Simulate Nimbus forcing an unenroll mid-session, then deliver the observation event.
+            feature.onUpdatesApplied(emptyList())
 
-        captureMiddleware.assertFirstAction(LabsAction.RefreshLabs::class)
-        captureMiddleware.assertLastAction(LabsAction.UpdateLabsItems::class) { action ->
-            assertEquals(1, action.items.size)
-            val item = action.items.first()
-            assertEquals("lab-1", item.slug)
-            assertFalse(item.enrolled)
-            assertFalse(item.available)
+            captureMiddleware.assertFirstAction(LabsAction.RefreshLabs::class)
+            captureMiddleware.assertLastAction(LabsAction.UpdateLabsItems::class) { action ->
+                assertEquals(1, action.items.size)
+                val item = action.items.first()
+                assertEquals("lab-1", item.slug)
+                assertFalse(item.enrolled)
+                assertFalse(item.available)
+            }
         }
-    }
 }

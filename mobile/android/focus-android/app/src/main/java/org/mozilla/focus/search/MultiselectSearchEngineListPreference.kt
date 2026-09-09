@@ -11,9 +11,7 @@ import androidx.preference.PreferenceViewHolder
 import org.mozilla.focus.R
 import org.mozilla.focus.ext.tryAsActivity
 
-/**
- * A search engine list preference that allows multiple items to be selected.
- */
+/** A search engine list preference that allows multiple items to be selected. */
 class MultiselectSearchEngineListPreference(context: Context, attrs: AttributeSet) :
     SearchEngineListPreference(context, attrs) {
 
@@ -57,9 +55,7 @@ class MultiselectSearchEngineListPreference(context: Context, attrs: AttributeSe
         }
     }
 
-    /**
-     * Returns true if at least one search engine is checked.
-     */
+    /** Returns true if at least one search engine is checked. */
     fun atLeastOneEngineChecked(): Boolean {
         for (i in 0 until searchEngineGroup!!.childCount) {
             val engineButton = searchEngineGroup!!.getChildAt(i) as CompoundButton

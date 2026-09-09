@@ -14,9 +14,8 @@ import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
 
 /**
- * A generic middleware that can be attached to a Store to log every action that is processed by that
- * store. The standard message format will use [markerName] as a qualifier and the action name as a
- * detail message.
+ * A generic middleware that can be attached to a Store to log every action that is processed by that store. The
+ * standard message format will use [markerName] as a qualifier and the action name as a detail message.
  */
 class ProfileMarkerMiddleware<S : State, A : Action>(
     val markerName: String = "Unspecified",

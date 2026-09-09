@@ -398,9 +398,11 @@ add_task(async function test_datepicker_reopened_prev_next_month_btn() {
     () => {
       return monthYearEl.textContent == DATE_FORMAT(new Date(prevMonth));
     },
-    `Should change to the previous month (April 2023), instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to the previous month (April 2023), instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
   Assert.ok(
     true,
@@ -452,9 +454,11 @@ add_task(async function test_datepicker_reopened_prev_next_month_btn() {
     () => {
       return monthYearEl.textContent == DATE_FORMAT(new Date(inputValueDT));
     },
-    `Should change to May 2023, instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to May 2023, instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
   Assert.ok(
     true,
@@ -498,9 +502,11 @@ add_task(async function test_datepicker_reopened_prev_next_month_btn() {
     () => {
       return monthYearEl.textContent == DATE_FORMAT(new Date(prevMonth));
     },
-    `Should change to the previous month, instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to the previous month, instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
   Assert.ok(
     true,
@@ -520,9 +526,11 @@ add_task(async function test_datepicker_reopened_prev_next_month_btn() {
     () => {
       return monthYearEl.textContent == DATE_FORMAT(new Date(inputValueDT));
     },
-    `Should change to the previous month, instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to the previous month, instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
   Assert.ok(
     true,

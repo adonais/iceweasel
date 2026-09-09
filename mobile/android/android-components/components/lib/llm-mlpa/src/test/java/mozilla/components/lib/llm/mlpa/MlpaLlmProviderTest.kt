@@ -4,6 +4,7 @@
 
 package mozilla.components.lib.llm.mlpa
 
+import kotlin.test.assertIs
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.llm.CloudLlmProvider
@@ -16,17 +17,17 @@ import mozilla.components.lib.llm.mlpa.fakes.invalidTokenService
 import mozilla.components.lib.llm.mlpa.fakes.successTokenProvider
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlin.test.assertIs
 
 class MlpaLlmProviderTest {
     @Test
     fun `GIVEN a token provider that returns a token WHEN I prepare THEN the provider transitions to the ready state`() =
         runTest {
-            val provider = MlpaLlmProvider(
-                tokenProvider = successTokenProvider,
-                storage = MlpaTokenStorage.static(),
-                mlpaService = FakeMlpaService(),
-            )
+            val provider =
+                MlpaLlmProvider(
+                    tokenProvider = successTokenProvider,
+                    storage = MlpaTokenStorage.static(),
+                    mlpaService = FakeMlpaService(),
+                )
 
             assertIs<CloudLlmProvider.State.Available>(provider.state.value)
 
@@ -38,11 +39,12 @@ class MlpaLlmProviderTest {
     @Test
     fun `GIVEN a token provider that returns a failure WHEN I prepare THEN the provider transitions to the unavailable state`() =
         runTest {
-            val provider = MlpaLlmProvider(
-                tokenProvider = failureTokenProvider,
-                storage = MlpaTokenStorage.static(),
-                mlpaService = FakeMlpaService(),
-            )
+            val provider =
+                MlpaLlmProvider(
+                    tokenProvider = failureTokenProvider,
+                    storage = MlpaTokenStorage.static(),
+                    mlpaService = FakeMlpaService(),
+                )
 
             assertIs<CloudLlmProvider.State.Available>(provider.state.value)
 
@@ -54,21 +56,22 @@ class MlpaLlmProviderTest {
     @Test
     fun `GIVEN a valid LLM WHEN I prompt getting an invalid token error THEN the provider transitions back to the available state`() =
         runTest {
-            val service = FakeMlpaService(
-                chatService = invalidTokenService,
-            )
+            val service = FakeMlpaService(chatService = invalidTokenService)
 
-            val provider = MlpaLlmProvider(
-                tokenProvider = successTokenProvider,
-                storage = MlpaTokenStorage.static(),
-                mlpaService = service,
-            )
+            val provider =
+                MlpaLlmProvider(
+                    tokenProvider = successTokenProvider,
+                    storage = MlpaTokenStorage.static(),
+                    mlpaService = service,
+                )
 
             assertIs<CloudLlmProvider.State.Available>(provider.state.value)
 
             provider.prepare()
 
-            (provider.state.value as? CloudLlmProvider.State.Ready)?.llm?.prompt(Prompt("This is a test prompt"))
+            (provider.state.value as? CloudLlmProvider.State.Ready)
+                ?.llm
+                ?.prompt(Prompt("This is a test prompt"))
                 ?.catch {}
                 ?.collect {}
 
@@ -78,21 +81,22 @@ class MlpaLlmProviderTest {
     @Test
     fun `GIVEN a valid LLM WHEN I prompt getting an error that is not retryable THEN then provider remains in ready state`() =
         runTest {
-            val service = FakeMlpaService(
-                chatService = failureChatService,
-            )
+            val service = FakeMlpaService(chatService = failureChatService)
 
-            val provider = MlpaLlmProvider(
-                tokenProvider = successTokenProvider,
-                storage = MlpaTokenStorage.static(),
-                mlpaService = service,
-            )
+            val provider =
+                MlpaLlmProvider(
+                    tokenProvider = successTokenProvider,
+                    storage = MlpaTokenStorage.static(),
+                    mlpaService = service,
+                )
 
             assertIs<CloudLlmProvider.State.Available>(provider.state.value)
 
             provider.prepare()
 
-            (provider.state.value as? CloudLlmProvider.State.Ready)?.llm?.prompt(Prompt("This is a test prompt"))
+            (provider.state.value as? CloudLlmProvider.State.Ready)
+                ?.llm
+                ?.prompt(Prompt("This is a test prompt"))
                 ?.catch {}
                 ?.collect {}
 
@@ -102,20 +106,21 @@ class MlpaLlmProviderTest {
     @Test
     fun `GIVEN a chat service that throws a non-Llm exception WHEN I prompt THEN the rethrown exception is an Llm Exception wrapping the original cause`() =
         runTest {
-            val service = FakeMlpaService(
-                chatService = failureChatService,
-            )
+            val service = FakeMlpaService(chatService = failureChatService)
 
-            val provider = MlpaLlmProvider(
-                tokenProvider = successTokenProvider,
-                storage = MlpaTokenStorage.static(),
-                mlpaService = service,
-            )
+            val provider =
+                MlpaLlmProvider(
+                    tokenProvider = successTokenProvider,
+                    storage = MlpaTokenStorage.static(),
+                    mlpaService = service,
+                )
 
             provider.prepare()
 
             var caughtError: Throwable? = null
-            (provider.state.value as? CloudLlmProvider.State.Ready)?.llm?.prompt(Prompt("This is a test prompt"))
+            (provider.state.value as? CloudLlmProvider.State.Ready)
+                ?.llm
+                ?.prompt(Prompt("This is a test prompt"))
                 ?.catch { caughtError = it }
                 ?.collect {}
 

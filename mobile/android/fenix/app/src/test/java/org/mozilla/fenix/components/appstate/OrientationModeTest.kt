@@ -4,10 +4,10 @@
 package org.mozilla.fenix.components.appstate
 
 import android.content.res.Configuration
+import java.security.InvalidParameterException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
-import java.security.InvalidParameterException
 
 class OrientationModeTest {
     @Test

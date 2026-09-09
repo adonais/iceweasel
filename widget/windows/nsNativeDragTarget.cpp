@@ -283,13 +283,13 @@ nsNativeDragTarget::DragEnter(LPDATAOBJECT pIDataSource, DWORD grfKeyState,
   nsresult loadResult = nsClipboard::GetNativeDataOffClipboard(
       pIDataSource, 0, ::RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT),
       nullptr, &tempOutData, &tempDataLen);
-  if (NS_SUCCEEDED(loadResult) && tempOutData) {
+  if (NS_SUCCEEDED(loadResult) && tempOutData && tempDataLen >= sizeof(DWORD)) {
     mEffectsPreferred = *((DWORD*)tempOutData);
-    free(tempOutData);
   } else {
     // We have no preference if we can't obtain it
     mEffectsPreferred = DROPEFFECT_NONE;
   }
+  free(tempOutData);
   LOGD(
       "[%p] %s | grfKeyState: %lu | ptl: (%ld, %ld) | mEffectsAllowed: %lu"
       " | mEffectsPreferred: %lu",

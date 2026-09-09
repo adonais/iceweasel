@@ -4,7 +4,5 @@
 
 package mozilla.components.feature.downloads
 
-/**
- * Key for the Intent extra that holds the unique ID of a download.
- */
+/** Key for the Intent extra that holds the unique ID of a download. */
 const val INTENT_EXTRA_DOWNLOAD_ID = "downloadId"

@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.startupCrashStore
 
 import org.junit.Assert.assertEquals
@@ -12,9 +16,7 @@ import org.mozilla.fenix.startupCrash.startupCrashReducer
 
 class StartupCrashReducerTest {
 
-    private val defaultState = StartupCrashState(
-        uiState = UiState.Idle,
-    )
+    private val defaultState = StartupCrashState(uiState = UiState.Idle)
 
     @Test
     fun `when No is tapped then uiState is set to Loading`() {

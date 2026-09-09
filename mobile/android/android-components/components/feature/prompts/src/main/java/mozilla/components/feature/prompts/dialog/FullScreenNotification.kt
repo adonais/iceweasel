@@ -7,18 +7,15 @@ package mozilla.components.feature.prompts.dialog
 import android.app.Activity
 import android.widget.Toast
 
-/**
- * UI to show a 'full screen mode' notification.
- */
+/** UI to show a 'full screen mode' notification. */
 interface FullScreenNotification {
-    /**
-     * Show the notification.
-     */
+    /** Show the notification. */
     fun show()
 }
 
 /**
  * A [Toast] to show a full screen notification message
+ *
  * @property activity The activity to show the toast on.
  * @property gestureNavString The string to show when in gesture navigation mode.
  * @property backButtonString The string to show when in 3-button navigation mode.

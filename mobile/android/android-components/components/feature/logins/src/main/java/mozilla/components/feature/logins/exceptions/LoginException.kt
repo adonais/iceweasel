@@ -4,17 +4,11 @@
 
 package mozilla.components.feature.logins.exceptions
 
-/**
- * A login exception.
- */
+/** A login exception. */
 interface LoginException {
-    /**
-     * Unique ID of this login exception.
-     */
+    /** Unique ID of this login exception. */
     val id: Long
 
-    /**
-     * The origin of the login exception site.
-     */
+    /** The origin of the login exception site. */
     val origin: String
 }

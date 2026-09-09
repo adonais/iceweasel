@@ -7,109 +7,67 @@ package org.mozilla.fenix.settings.address.store
 import mozilla.components.concept.engine.autofill.AddressStructure
 import mozilla.components.lib.state.Action
 
-/**
- * Actions used within a [AddressStore].
- */
+/** Actions used within a [AddressStore]. */
 sealed interface AddressAction : Action
 
-/**
- * Actions dispatched when updating the form.
- */
+/** Actions dispatched when updating the form. */
 sealed class FormChange : AddressAction {
-    /**
-     * Name field has been changed.
-     */
+    /** Name field has been changed. */
     data class Name(val updatedText: String) : FormChange()
 
-    /**
-     * Organization field has been changed.
-     */
+    /** Organization field has been changed. */
     data class Organization(val updatedText: String) : FormChange()
 
-    /**
-     * Street Address field has changed.
-     */
+    /** Street Address field has changed. */
     data class StreetAddress(val updatedText: String) : FormChange()
 
-    /**
-     * Sub region (i.e. state or province) field has changed.
-     */
+    /** Sub region (i.e. state or province) field has changed. */
     data class AddressLevel1(val updatedText: String) : FormChange()
 
-    /**
-     * City field has changed.
-     */
+    /** City field has changed. */
     data class AddressLevel2(val updatedText: String) : FormChange()
 
-    /**
-     * Address Level3 field has changed, used to narrow down an address in some countries.
-     */
+    /** Address Level3 field has changed, used to narrow down an address in some countries. */
     data class AddressLevel3(val updatedText: String) : FormChange()
 
-    /**
-     * Postal code field has changed.
-     */
+    /** Postal code field has changed. */
     data class PostalCode(val updatedText: String) : FormChange()
 
-    /**
-     * Country field has changed.
-     */
+    /** Country field has changed. */
     data class Country(val countryCode: String) : FormChange()
 
-    /**
-     * Telephone field has changed.
-     */
+    /** Telephone field has changed. */
     data class Tel(val updatedText: String) : FormChange()
 
-    /**
-     * Email field has changed.
-     */
+    /** Email field has changed. */
     data class Email(val updatedText: String) : FormChange()
 }
 
-/**
- * Actions dispatched when interacting with the deletion dialog.
- */
+/** Actions dispatched when interacting with the deletion dialog. */
 sealed class DeleteDialogAction : AddressAction {
-    /**
-     * Delete button was tapped.
-     */
+    /** Delete button was tapped. */
     data object DeleteTapped : DeleteDialogAction()
 
-    /**
-     * Cancel button was tapped.
-     */
+    /** Cancel button was tapped. */
     data object CancelTapped : DeleteDialogAction()
 }
 
-/**
- * The Address View appeared.
- */
+/** The Address View appeared. */
 data object ViewAppeared : AddressAction
 
-/**
- * Back button was tapped.
- */
+/** Back button was tapped. */
 data object BackTapped : AddressAction
 
-/**
- * Cancel button was tapped.
- */
+/** Cancel button was tapped. */
 data object CancelTapped : AddressAction
 
-/**
- * Save button was tapped.
- */
+/** Save button was tapped. */
 data object SaveTapped : AddressAction
 
-/**
- * Delete button was tapped.
- */
+/** Delete button was tapped. */
 data object DeleteTapped : AddressAction
 
-/**
- * The Address Structure was loaded.
- */
+/** The Address Structure was loaded. */
 data class AddressStructureLoaded(
     val structure: AddressStructure,
     val initialLoad: Boolean,

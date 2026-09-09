@@ -1481,30 +1481,6 @@ void nsCSSFrameConstructor::CreateGeneratedContent(
       return;
     }
 
-    case Type::Attr: {
-      const auto& attr = aItem.AsAttr();
-      RefPtr<nsAtom> attrName = attr.attribute.AsAtom();
-      int32_t attrNameSpace = kNameSpaceID_None;
-      RefPtr<nsAtom> ns = attr.namespace_url.AsAtom();
-      if (!ns->IsEmpty()) {
-        nsresult rv = nsNameSpaceManager::GetInstance()->RegisterNameSpace(
-            ns.forget(), attrNameSpace);
-        NS_ENSURE_SUCCESS_VOID(rv);
-      }
-
-      if (mDocument->IsHTMLDocument() && aOriginatingElement.IsHTMLElement()) {
-        ToLowerCaseASCII(attrName);
-      }
-
-      RefPtr<nsAtom> fallback = attr.fallback.AsAtom();
-
-      nsCOMPtr<nsIContent> content;
-      NS_NewAttributeContent(mDocument->NodeInfoManager(), attrNameSpace,
-                             attrName, fallback, getter_AddRefs(content));
-      aAddChild(content);
-      return;
-    }
-
     case Type::Counter:
     case Type::Counters: {
       RefPtr<nsAtom> name;
@@ -1553,8 +1529,7 @@ void nsCSSFrameConstructor::CreateGeneratedContent(
           accesskey.IsEmpty() || !LookAndFeel::GetMenuAccessKey()) {
         // Easy path: just return a regular value attribute content.
         nsCOMPtr<nsIContent> content;
-        NS_NewAttributeContent(mDocument->NodeInfoManager(), kNameSpaceID_None,
-                               nsGkAtoms::value, nsGkAtoms::_empty,
+        NS_NewAttributeContent(mDocument->NodeInfoManager(), nsGkAtoms::value,
                                getter_AddRefs(content));
         aAddChild(content);
         return;
@@ -1643,8 +1618,7 @@ void nsCSSFrameConstructor::CreateGeneratedContent(
       // detect that and do the right thing here?
       if (aOriginatingElement.HasAttr(nsGkAtoms::alt)) {
         nsCOMPtr<nsIContent> content;
-        NS_NewAttributeContent(mDocument->NodeInfoManager(), kNameSpaceID_None,
-                               nsGkAtoms::alt, nsGkAtoms::_empty,
+        NS_NewAttributeContent(mDocument->NodeInfoManager(), nsGkAtoms::alt,
                                getter_AddRefs(content));
         aAddChild(content);
         return;
@@ -1653,9 +1627,8 @@ void nsCSSFrameConstructor::CreateGeneratedContent(
       if (aOriginatingElement.IsHTMLElement(nsGkAtoms::input)) {
         if (aOriginatingElement.HasAttr(nsGkAtoms::value)) {
           nsCOMPtr<nsIContent> content;
-          NS_NewAttributeContent(mDocument->NodeInfoManager(),
-                                 kNameSpaceID_None, nsGkAtoms::value,
-                                 nsGkAtoms::_empty, getter_AddRefs(content));
+          NS_NewAttributeContent(mDocument->NodeInfoManager(), nsGkAtoms::value,
+                                 getter_AddRefs(content));
           aAddChild(content);
           return;
         }
@@ -5144,7 +5117,7 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
   // Create our shadow tree lazily if needed.
   // NOTE(emilio): This is rather hacky, we should ideally remove this and make
   // shadow tree creation faster, see bug 2017005.
-  if (auto* input = HTMLInputElement::FromNode(aContent)) {
+  if (const RefPtr input = HTMLInputElement::FromNode(aContent)) {
     if (auto* sr = input->CreateShadowTreeFromLayoutIfNeeded()) {
       StyleNewChildRange(sr->GetFirstChild(), nullptr);
     }

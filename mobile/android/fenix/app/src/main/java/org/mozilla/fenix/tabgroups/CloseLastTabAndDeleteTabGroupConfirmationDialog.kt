@@ -18,15 +18,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.TextButton
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
- * This dialog is used to prompt the user to confirm if they want to close the current tab
- * and delete the associated tab group.
+ * This dialog is used to prompt the user to confirm if they want to close the current tab and delete the associated tab
+ * group.
  *
  * @param onConfirmDelete Callback invoked when the user confirms closing the tab and deleting the group.
  * @param onCancel Callback invoked when the user cancels the action.
@@ -78,7 +78,7 @@ fun CloseLastTabAndDeleteTabGroupConfirmationDialog(
 @FlexibleWindowPreview
 @Composable
 private fun CloseTabAndDeleteGroupConfirmationDialogPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme
 ) {
     FirefoxTheme(theme) {
         Surface {

@@ -46,6 +46,7 @@ const Template = ({
   l10nId,
   description,
   supportPage,
+  title,
   hasSlottedDescription,
   hasSlottedSupportLink,
   ellipsized,
@@ -59,6 +60,7 @@ const Template = ({
       ?disabled=${disabled}
       data-l10n-id=${l10nId}
       support-page=${ifDefined(supportPage || null)}
+      title=${ifDefined(title || null)}
       @click=${{
         handleEvent: e => {
           if (e.composedPath().some(el => el.id == "choose-folder-button")) {
@@ -95,6 +97,7 @@ Default.args = {
   disabled: false,
   l10nId: "moz-input-folder-label",
   supportPage: "",
+  title: "",
   hasSlottedDescription: false,
   hasSlottedSupportLink: false,
 };

@@ -20,15 +20,14 @@ import androidx.room.PrimaryKey
  * @property isTimeSensitive Whether or not the recommendation is time sensitive.
  * @property imageUrl The image URL of the recommendation.
  * @property tileId The tile ID of the recommendation.
- * @property receivedRank The original position/sort order of this item. This is provided to
- * include in telemetry payloads.
+ * @property receivedRank The original position/sort order of this item. This is provided to include in telemetry
+ *   payloads.
  * @property recommendedAt A timestamp indicating when the content recommendation was recommended.
  * @property impressions The number of impressions (times shown) of the recommendation.
  */
 @Entity(tableName = ContentRecommendationsDatabase.CONTENT_RECOMMENDATIONS_TABLE)
 internal data class ContentRecommendationEntity(
-    @PrimaryKey
-    val corpusItemId: String,
+    @PrimaryKey val corpusItemId: String,
     val scheduledCorpusItemId: String,
     val url: String,
     val title: String,
@@ -44,8 +43,7 @@ internal data class ContentRecommendationEntity(
 )
 
 /**
- * A [ContentRecommendationEntity] containing only the [impressions] metadata for allowing quick
- * updates.
+ * A [ContentRecommendationEntity] containing only the [impressions] metadata for allowing quick updates.
  *
  * @property corpusItemId A content identifier that corresponds uniquely to the URL.
  * @property impressions The number of impressions (times shown) of the recommendation.

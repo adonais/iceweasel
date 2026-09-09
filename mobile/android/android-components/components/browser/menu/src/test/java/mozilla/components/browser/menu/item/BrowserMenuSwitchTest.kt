@@ -30,9 +30,10 @@ class BrowserMenuSwitchTest {
                 onCheckedChange = listener,
             ),
             BrowserMenuSwitch(
-                "Hello",
-                listener = listener,
-            ).asCandidate(mock()),
+                    "Hello",
+                    listener = listener,
+                )
+                .asCandidate(mock()),
         )
     }
 }

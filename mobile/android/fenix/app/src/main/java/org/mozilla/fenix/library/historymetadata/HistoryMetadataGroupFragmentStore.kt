@@ -13,8 +13,7 @@ import org.mozilla.fenix.library.history.PendingDeletionHistory
 import org.mozilla.fenix.library.historymetadata.view.HistoryMetadataGroupView
 
 /**
- * The [Store] for holding the [HistoryMetadataGroupFragmentState] and applying
- * [HistoryMetadataGroupFragmentAction]s.
+ * The [Store] for holding the [HistoryMetadataGroupFragmentState] and applying [HistoryMetadataGroupFragmentAction]s.
  */
 class HistoryMetadataGroupFragmentStore(initialState: HistoryMetadataGroupFragmentState) :
     Store<HistoryMetadataGroupFragmentState, HistoryMetadataGroupFragmentAction>(
@@ -23,28 +22,30 @@ class HistoryMetadataGroupFragmentStore(initialState: HistoryMetadataGroupFragme
     )
 
 /**
- * Actions to dispatch through the [HistoryMetadataGroupFragmentStore] to modify the
- * [HistoryMetadataGroupFragmentState] through the [historyStateReducer].
+ * Actions to dispatch through the [HistoryMetadataGroupFragmentStore] to modify the [HistoryMetadataGroupFragmentState]
+ * through the [historyStateReducer].
  */
 sealed class HistoryMetadataGroupFragmentAction : Action {
-    data class UpdateHistoryItems(val items: List<History.Metadata>) :
-        HistoryMetadataGroupFragmentAction()
+    data class UpdateHistoryItems(val items: List<History.Metadata>) : HistoryMetadataGroupFragmentAction()
+
     data class Select(val item: History.Metadata) : HistoryMetadataGroupFragmentAction()
+
     data class Deselect(val item: History.Metadata) : HistoryMetadataGroupFragmentAction()
 
     /**
-     * Updates the set of items marked for removal from the [AppStore]
-     * to the [HistoryMetadataGroupFragmentStore], to be hidden from the UI.
+     * Updates the set of items marked for removal from the [AppStore] to the [HistoryMetadataGroupFragmentStore], to be
+     * hidden from the UI.
      */
     data class UpdatePendingDeletionItems(val pendingDeletionItems: Set<PendingDeletionHistory>) :
         HistoryMetadataGroupFragmentAction()
+
     object DeselectAll : HistoryMetadataGroupFragmentAction()
+
     data class Delete(val item: History.Metadata) : HistoryMetadataGroupFragmentAction()
+
     object DeleteAll : HistoryMetadataGroupFragmentAction()
 
-    /**
-     * Updates the empty state of [HistoryMetadataGroupView].
-     */
+    /** Updates the empty state of [HistoryMetadataGroupView]. */
     data class ChangeEmptyState(val isEmpty: Boolean) : HistoryMetadataGroupFragmentAction()
 }
 
@@ -62,8 +63,7 @@ data class HistoryMetadataGroupFragmentState(
 ) : State
 
 /**
- * Reduces the history metadata state from the current state with the provided [action] to be
- * performed.
+ * Reduces the history metadata state from the current state with the provided [action] to be performed.
  *
  * @param state The current history metadata state.
  * @param action The action to be performed on the state.
@@ -74,46 +74,39 @@ private fun historyStateReducer(
     action: HistoryMetadataGroupFragmentAction,
 ): HistoryMetadataGroupFragmentState {
     return when (action) {
-        is HistoryMetadataGroupFragmentAction.UpdateHistoryItems ->
-            state.copy(items = action.items)
+        is HistoryMetadataGroupFragmentAction.UpdateHistoryItems -> state.copy(items = action.items)
         is HistoryMetadataGroupFragmentAction.Select ->
             state.copy(
-                items = state.items.toMutableList()
-                    .map {
+                items =
+                    state.items.toMutableList().map {
                         if (it == action.item) {
                             it.copy(selected = true)
                         } else {
                             it
                         }
-                    },
+                    }
             )
         is HistoryMetadataGroupFragmentAction.Deselect ->
             state.copy(
-                items = state.items.toMutableList()
-                    .map {
+                items =
+                    state.items.toMutableList().map {
                         if (it == action.item) {
                             it.copy(selected = false)
                         } else {
                             it
                         }
-                    },
+                    }
             )
         is HistoryMetadataGroupFragmentAction.DeselectAll ->
-            state.copy(
-                items = state.items.toMutableList()
-                    .map { it.copy(selected = false) },
-            )
+            state.copy(items = state.items.toMutableList().map { it.copy(selected = false) })
         is HistoryMetadataGroupFragmentAction.Delete -> {
             val items = state.items.toMutableList()
             items.remove(action.item)
             state.copy(items = items)
         }
-        is HistoryMetadataGroupFragmentAction.DeleteAll ->
-            state.copy(items = emptyList())
+        is HistoryMetadataGroupFragmentAction.DeleteAll -> state.copy(items = emptyList())
         is HistoryMetadataGroupFragmentAction.UpdatePendingDeletionItems ->
             state.copy(pendingDeletionItems = action.pendingDeletionItems)
-        is HistoryMetadataGroupFragmentAction.ChangeEmptyState -> state.copy(
-            isEmpty = action.isEmpty,
-        )
+        is HistoryMetadataGroupFragmentAction.ChangeEmptyState -> state.copy(isEmpty = action.isEmpty)
     }
 }

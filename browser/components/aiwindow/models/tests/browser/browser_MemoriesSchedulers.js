@@ -748,6 +748,50 @@ add_task(async function test_generation_resumes_when_persisted_clock_elapses() {
 });
 
 /**
+ * A tick that finds no evidence stamps the cooldown clock, so the scheduler
+ * waits out a full cooldown before looking again instead of re-checking every
+ * two minutes. Accumulated browsing evidence survives that wait.
+ */
+add_task(async function test_no_trigger_stamps_the_cooldown_clock() {
+  await withScheduler(
+    { watermarkMs: Date.now() - COOLDOWN_MS - HOUR_MS },
+    async ({ scheduler, generate }) => {
+      const beforeTickMs = Date.now();
+
+      // Cooldown elapsed, but nothing visited and the chat source is off.
+      await scheduler.runNowForTesting();
+
+      Assert.ok(generate.notCalled, "Generation needs a trigger.");
+      Assert.greaterOrEqual(
+        await MemoriesManager.getLastGenerationRunTimestamp(),
+        beforeTickMs,
+        "A tick with no trigger met should stamp the persisted cooldown clock, so the wait survives a restart."
+      );
+
+      // Add a visit to check the cooldown clock is respected
+      await visitPage("https://example.com/no-trigger-then-visit");
+      await scheduler.runNowForTesting();
+
+      Assert.ok(
+        generate.notCalled,
+        "Evidence arriving right after a no-trigger tick should be held by the freshly stamped cooldown. Generation should not trigger."
+      );
+
+      // Age the clock out the way four hours of ticks would.
+      scheduler.setLastGenerationMsForTesting(
+        Date.now() - COOLDOWN_MS - HOUR_MS
+      );
+      await scheduler.runNowForTesting();
+
+      Assert.ok(
+        generate.calledOnce,
+        "The page visited during the wait should still be pending, and generation should run once the cooldown clears."
+      );
+    }
+  );
+});
+
+/**
  * A retryable generation failure leaves the clock unstamped, so the run stays
  * governed by the short transient backoff instead of the four-hour cooldown.
  */

@@ -9,6 +9,12 @@ let searchbar;
 let widgetAfterSearchbar;
 
 add_setup(async function () {
+  // The tab order asserted below is otherwise channel-dependent. The skipping
+  // variant is covered by test_tabOrder_skipTabStop.
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.searchModeSwitcher.skipTabStop", false]],
+  });
+
   searchbar = document.getElementById("searchbar-new");
   await SearchTestUtils.updateRemoteSettingsConfig([
     { identifier: "engine1" },
@@ -61,6 +67,36 @@ add_task(async function test_tabOrder() {
     "Skips revert button and go button"
   );
   searchbar.handleRevert();
+});
+
+add_task(async function test_tabOrder_skipTabStop() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.searchModeSwitcher.skipTabStop", true]],
+  });
+  let searchModeSwitcher = searchbar.querySelector(".searchmode-switcher");
+
+  searchbar.focus();
+  Assert.ok(searchbar.focused);
+
+  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
+  Assert.equal(
+    document.activeElement,
+    searchModeSwitcher,
+    "Shift+Tab reaches the search button"
+  );
+  EventUtils.synthesizeKey("KEY_Tab");
+  Assert.ok(
+    searchbar.focused,
+    "Tab from the search button returns to the input"
+  );
+
+  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
+  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
+  Assert.ok(gURLBar.focused);
+  EventUtils.synthesizeKey("KEY_Tab");
+  Assert.ok(searchbar.focused, "Tab skips the search button");
+
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_openCloseResultsPanel() {

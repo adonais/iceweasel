@@ -25,12 +25,13 @@ import org.mockito.Mockito.verify
 class ContainerToolbarActionTest {
 
     // Test container
-    private val container = ContainerState(
-        contextId = "contextId",
-        name = "Personal",
-        color = ContainerState.Color.GREEN,
-        icon = ContainerState.Icon.CART,
-    )
+    private val container =
+        ContainerState(
+            contextId = "contextId",
+            name = "Personal",
+            color = ContainerState.Color.GREEN,
+            icon = ContainerState.Icon.CART,
+        )
 
     @Test
     fun bind() {
@@ -51,9 +52,10 @@ class ContainerToolbarActionTest {
     fun createView() {
         var listenerWasClicked = false
 
-        val action = ContainerToolbarAction(container, padding = Padding(1, 2, 3, 4)) {
-            listenerWasClicked = true
-        }
+        val action =
+            ContainerToolbarAction(container, padding = Padding(1, 2, 3, 4)) {
+                listenerWasClicked = true
+            }
 
         val rootView = action.createView(LinearLayout(testContext))
         rootView.performClick()

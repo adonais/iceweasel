@@ -7,42 +7,32 @@ package mozilla.components.concept.awesomebar
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.view.View
-import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion.Flag
 import java.util.UUID
+import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion.Flag
 
 /**
  * Interface to be implemented by awesome bar implementations.
  *
  * An awesome bar has multiple duties:
- *  - Display [Suggestion] instances and invoking its callbacks once selected
- *  - React to outside events: [onInputStarted], [onInputChanged], [onInputCancelled].
- *  - Query [SuggestionProvider] instances for new suggestions when the text changes.
+ * - Display [Suggestion] instances and invoking its callbacks once selected
+ * - React to outside events: [onInputStarted], [onInputChanged], [onInputCancelled].
+ * - Query [SuggestionProvider] instances for new suggestions when the text changes.
  */
 interface AwesomeBar {
 
-    /**
-     * Adds the following [SuggestionProvider] instances to be queried for [Suggestion]s whenever the text changes.
-     */
+    /** Adds the following [SuggestionProvider] instances to be queried for [Suggestion]s whenever the text changes. */
     fun addProviders(vararg providers: SuggestionProvider)
 
-    /**
-     * Removes the following [SuggestionProvider]
-     */
+    /** Removes the following [SuggestionProvider] */
     fun removeProviders(vararg providers: SuggestionProvider)
 
-    /**
-     * Removes all [SuggestionProvider]s
-     */
+    /** Removes all [SuggestionProvider]s */
     fun removeAllProviders()
 
-    /**
-     * Returns whether or not this awesome bar contains the following [SuggestionProvider]
-     */
+    /** Returns whether or not this awesome bar contains the following [SuggestionProvider] */
     fun containsProvider(provider: SuggestionProvider): Boolean
 
-    /**
-     * Fired when the user starts interacting with the awesome bar by entering text in the toolbar.
-     */
+    /** Fired when the user starts interacting with the awesome bar by entering text in the toolbar. */
     fun onInputStarted() = Unit
 
     /**
@@ -52,14 +42,10 @@ interface AwesomeBar {
      */
     fun onInputChanged(text: String)
 
-    /**
-     * Fired when the user has cancelled their interaction with the awesome bar.
-     */
+    /** Fired when the user has cancelled their interaction with the awesome bar. */
     fun onInputCancelled() = Unit
 
-    /**
-     * Casts this awesome bar to an Android View object.
-     */
+    /** Casts this awesome bar to an Android View object. */
     fun asView(): View = this as View
 
     /**
@@ -68,68 +54,48 @@ interface AwesomeBar {
      */
     fun setOnStopListener(listener: () -> Unit)
 
-    /**
-     * Adds a lambda to be invoked when the user selected a suggestion to be edited further.
-     */
+    /** Adds a lambda to be invoked when the user selected a suggestion to be edited further. */
     fun setOnEditSuggestionListener(listener: (String) -> Unit)
 
-    /**
-     * Update what search suggestions should be hidden.
-     */
+    /** Update what search suggestions should be hidden. */
     fun updateHiddenSuggestions(hiddenSuggestions: Set<GroupedSuggestion>)
 
-    /**
-     * Add a callback for when the user clicked on the remove button for a history suggestion.
-     */
+    /** Add a callback for when the user clicked on the remove button for a history suggestion. */
     fun setOnRemoveSuggestionButtonClicked(listener: (GroupedSuggestion) -> Unit)
 
-    /**
-     * Information about the [Suggestion]s that are currently displayed by the [AwesomeBar].
-     */
+    /** Information about the [Suggestion]s that are currently displayed by the [AwesomeBar]. */
     data class VisibilityState(
         /**
          * An ordered map of the currently visible [SuggestionProviderGroup]s, and the visible [Suggestion]s in each
          * group. The groups and their suggestions are ordered top to bottom.
          */
-        val visibleProviderGroups: Map<SuggestionProviderGroup, List<SuggestionItem>> = emptyMap(),
+        val visibleProviderGroups: Map<SuggestionProviderGroup, List<SuggestionItem>> = emptyMap()
     )
 
     /**
-     * Pair of a [Suggestion] and the [SuggestionProviderGroup] identified by its id in which the
-     * [Suggestion] should be shown.
+     * Pair of a [Suggestion] and the [SuggestionProviderGroup] identified by its id in which the [Suggestion] should be
+     * shown.
      */
     data class GroupedSuggestion(
         val suggestion: SuggestionItem,
         val groupId: String,
     )
 
-    /**
-     * Interface to be implemented by suggestion implementations.
-     */
+    /** Interface to be implemented by suggestion implementations. */
     interface SuggestionItem {
-        /**
-         * The provider this suggestion came from.
-         */
+        /** The provider this suggestion came from. */
         val provider: SuggestionProvider
 
-        /**
-         * A unique ID identifying this suggestion.
-         */
+        /** A unique ID identifying this suggestion. */
         val id: String
 
-        /**
-         * A score used to rank suggestions of this provider against each other.
-         */
+        /** A score used to rank suggestions of this provider against each other. */
         val score: Int
 
-        /**
-         * A callback to be executed when the suggestion was clicked by the user.
-         */
+        /** A callback to be executed when the suggestion was clicked by the user. */
         val onSuggestionClicked: (() -> Unit)?
 
-        /**
-         * A set of [Flag] values for this [Suggestion].
-         */
+        /** A set of [Flag] values for this [Suggestion]. */
         val flags: Set<Flag>
     }
 
@@ -138,24 +104,24 @@ interface AwesomeBar {
      *
      * @property provider The provider this suggestion came from.
      * @property id A unique ID (provider scope) identifying this [Suggestion]. A stable ID but different data indicates
-     * to the [AwesomeBar] that this is the same [Suggestion] with new data. This will affect how the [AwesomeBar]
-     * animates showing the new suggestion.
+     *   to the [AwesomeBar] that this is the same [Suggestion] with new data. This will affect how the [AwesomeBar]
+     *   animates showing the new suggestion.
      * @property title A user-readable title for the [Suggestion].
      * @property description A user-readable description for the [Suggestion].
      * @property editSuggestion The string that will be set to the url bar when using the edit suggestion arrow.
-     * @property isRemovalAllowed Whether this suggestion can be removed by the user.
-     * If so an appropriate icon will be shown to the end of the row.
+     * @property isRemovalAllowed Whether this suggestion can be removed by the user. If so an appropriate icon will be
+     *   shown to the end of the row.
      * @property icon A lambda that can be invoked by the [AwesomeBar] implementation to receive an icon [Bitmap] for
-     * this [Suggestion]. The [AwesomeBar] will pass in its desired width and height for the Bitmap.
+     *   this [Suggestion]. The [AwesomeBar] will pass in its desired width and height for the Bitmap.
      * @property indicatorIcon A drawable for indicating different types of [Suggestion].
      * @property chips A list of [Chip] instances to be displayed.
      * @property flags A set of [Flag] values for this [Suggestion].
      * @property onSuggestionClicked A callback to be executed when the [Suggestion] was clicked by the user.
      * @property onChipClicked A callback to be executed when a [Chip] was clicked by the user.
      * @property score A score used to rank suggestions of this provider against each other. A suggestion with a higher
-     * score will be shown on top of suggestions with a lower score.
+     *   score will be shown on top of suggestions with a lower score.
      * @property metadata Opaque metadata associated with this [Suggestion]. A [SuggestionProvider] can use this field
-     * to pass additional information about this suggestion.
+     *   to pass additional information about this suggestion.
      */
     data class Suggestion(
         override val provider: SuggestionProvider,
@@ -178,13 +144,11 @@ interface AwesomeBar {
          * Chips are compact actions that are shown as part of a suggestion. For example a [Suggestion] from a search
          * engine may offer multiple search suggestion chips for different search terms.
          */
-        data class Chip(
-            val title: String,
-        )
+        data class Chip(val title: String)
 
         /**
-         * Flags can be added by a [SuggestionProvider] to help the [AwesomeBar] implementation decide how to display
-         * a specific [Suggestion]. For example an [AwesomeBar] could display a bookmark star icon next to [Suggestion]s
+         * Flags can be added by a [SuggestionProvider] to help the [AwesomeBar] implementation decide how to display a
+         * specific [Suggestion]. For example an [AwesomeBar] could display a bookmark star icon next to [Suggestion]s
          * that contain the [BOOKMARK] flag.
          */
         enum class Flag {
@@ -198,8 +162,8 @@ interface AwesomeBar {
         /**
          * Returns true if the content of the two suggestions is the same.
          *
-         * This is used by [AwesomeBar] implementations to decide whether an updated suggestion (same id) needs its
-         * view to be updated in order to display new data.
+         * This is used by [AwesomeBar] implementations to decide whether an updated suggestion (same id) needs its view
+         * to be updated in order to display new data.
          */
         fun areContentsTheSame(other: Suggestion): Boolean {
             return title == other.title &&
@@ -221,21 +185,17 @@ interface AwesomeBar {
          */
         val id: String
 
-        /**
-         * A header title for grouping the suggestions.
-         **/
+        /** A header title for grouping the suggestions. */
         fun groupTitle(): String? = null
 
-        /**
-         * Display the header title for grouping the suggestions.
-         **/
+        /** Display the header title for grouping the suggestions. */
         fun displayGroupTitle(): Boolean = true
 
         /**
          * Fired when the user starts interacting with the awesome bar by entering text in the toolbar.
          *
-         * The provider has the option to return an initial list of suggestions that will be displayed before the
-         * user has entered/modified any of the text.
+         * The provider has the option to return an initial list of suggestions that will be displayed before the user
+         * has entered/modified any of the text.
          */
         fun onInputStarted(): List<Suggestion> = emptyList()
 
@@ -254,9 +214,7 @@ interface AwesomeBar {
          */
         suspend fun onInputChanged(text: String): List<SuggestionItem>
 
-        /**
-         * Fired when the user has cancelled their interaction with the awesome bar.
-         */
+        /** Fired when the user has cancelled their interaction with the awesome bar. */
         fun onInputCancelled() = Unit
 
         /**
@@ -285,10 +243,9 @@ interface AwesomeBar {
      * A group of [SuggestionProvider]s.
      *
      * @property providers The list of [SuggestionProvider]s in this group.
-     * @property priority An optional priority for this group. Decides the order of this group
-     * in the AwesomeBar suggestions. Group having the highest integer value will have the highest priority.
-     * @property title An optional title for this group. The title may be rendered by an AwesomeBar
-     * implementation.
+     * @property priority An optional priority for this group. Decides the order of this group in the AwesomeBar
+     *   suggestions. Group having the highest integer value will have the highest priority.
+     * @property title An optional title for this group. The title may be rendered by an AwesomeBar implementation.
      * @property displayTitle display the above title.
      * @property limit The maximum number of suggestions that will be shown in this group.
      * @property id A unique ID for this group (uses a generated UUID by default)

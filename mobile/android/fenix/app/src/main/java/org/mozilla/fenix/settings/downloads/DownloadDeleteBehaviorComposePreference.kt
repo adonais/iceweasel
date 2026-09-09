@@ -36,14 +36,16 @@ import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.utils.Settings.DeleteDownloadBehavior
 
 /**
- * A custom [ComposePreference] that displays a radio group for selecting the user's
- * preferred download deletion behavior.
+ * A custom [ComposePreference] that displays a radio group for selecting the user's preferred download deletion
+ * behavior.
  *
  * @param context The context in which this preference is operating.
  * @param attrs The attribute set provided by the XML layout.
  * @param defStyleAttr An attribute in the current theme that contains a reference to a style resource.
  */
-class DownloadDeleteBehaviorComposePreference @JvmOverloads constructor(
+class DownloadDeleteBehaviorComposePreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
@@ -105,13 +107,13 @@ private fun DeleteBehaviorRow(
     onClick: () -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
-            .padding(
-                horizontal = FirefoxTheme.layout.space.dynamic200,
-                vertical = FirefoxTheme.layout.space.static150,
-            ),
+        modifier =
+            Modifier.fillMaxWidth()
+                .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
+                .padding(
+                    horizontal = FirefoxTheme.layout.space.dynamic200,
+                    vertical = FirefoxTheme.layout.space.static150,
+                ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static200, Alignment.Start),
     ) {
@@ -137,9 +139,7 @@ private fun DeleteBehaviorRow(
 
 @Preview
 @Composable
-private fun DeleteBehaviorRadioGroupPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun DeleteBehaviorRadioGroupPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         Box(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
             var selectedBehavior by remember {

@@ -26,8 +26,7 @@ class StartupActivityLogTest {
     private lateinit var appObserver: StartupActivityLog.StartupLogAppLifecycleObserver
     private lateinit var activityCallbacks: StartupActivityLog.StartupLogActivityLifecycleCallbacks
 
-    @RelaxedMockK
-    private lateinit var logger: Logger
+    @RelaxedMockK private lateinit var logger: Logger
 
     @Before
     fun setUp() {

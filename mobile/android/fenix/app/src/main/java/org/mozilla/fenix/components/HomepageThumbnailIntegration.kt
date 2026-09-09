@@ -31,9 +31,9 @@ import org.mozilla.fenix.theme.Theme
  * @param view The [View] to take screenshot of.
  * @param store The [BrowserStore] used to look up the current selected tab.
  * @param appStore The [AppStore] used to look up the current browsing mode.
- * @param homepageContentBounds Lamba that provides the bounds of the homepage content (excluding the toolbar and
- * system bar padding) within [view], used to crop the screenshot to the content only. Returns
- * null when the bounds are unknown, in which case the full [view] is captured.
+ * @param homepageContentBounds Lamba that provides the bounds of the homepage content (excluding the toolbar and system
+ *   bar padding) within [view], used to crop the screenshot to the content only. Returns null when the bounds are
+ *   unknown, in which case the full [view] is captured.
  */
 class HomepageThumbnailIntegration(
     private val context: Context,
@@ -72,8 +72,8 @@ class HomepageThumbnailIntegration(
     }
 
     /**
-     * Crops [this] bitmap to [bounds] so the thumbnail will only include the homepage content.
-     * Returns the original bitmap when [bounds] is null or does not describe a valid region within the bitmap.
+     * Crops [this] bitmap to [bounds] so the thumbnail will only include the homepage content. Returns the original
+     * bitmap when [bounds] is null or does not describe a valid region within the bitmap.
      */
     private fun Bitmap.cropToBounds(bounds: Rect?): Bitmap {
         if (bounds == null) {
@@ -98,9 +98,8 @@ class HomepageThumbnailIntegration(
     /**
      * Get the color palette based on the current browsing mode.
      *
-     * N.B: This logic was taken from [Theme.getTheme] in FirefoxTheme, however we cannot use it
-     * directly because those functions are annotated to be Composable and refactoring that can be
-     * done in a follow-up when needed.
+     * N.B: This logic was taken from [Theme.getTheme] in FirefoxTheme, however we cannot use it directly because those
+     * functions are annotated to be Composable and refactoring that can be done in a follow-up when needed.
      */
     private fun getColor(context: Context, mode: BrowsingMode): ColorScheme {
         val isDarkMode = context.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)

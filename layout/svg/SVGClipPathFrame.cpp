@@ -113,8 +113,7 @@ void SVGClipPathFrame::PaintChildren(gfxContext& aMaskContext,
         aMaskContext, aClippedFrame, aMatrix);
     // We want the mask to be untransformed so use the inverse of the current
     // transform as the maskTransform to compensate.
-    Matrix maskTransform = aMaskContext.CurrentMatrix();
-    maskTransform.Invert();
+    Matrix maskTransform = aMaskContext.CurrentMatrix().Inverse();
     autoGroupForBlend.PushGroupForBlendBack(gfxContentType::ALPHA, 1.0f,
                                             maskSurface, maskTransform);
   }
@@ -196,8 +195,7 @@ void SVGClipPathFrame::PaintFrameIntoMask(nsIFrame* aFrame,
 
     // We want the mask to be untransformed so use the inverse of the current
     // transform as the maskTransform to compensate.
-    Matrix maskTransform = aTarget.CurrentMatrix();
-    maskTransform.Invert();
+    Matrix maskTransform = aTarget.CurrentMatrix().Inverse();
     autoGroupForBlend.PushGroupForBlendBack(gfxContentType::ALPHA, 1.0f,
                                             maskSurface, maskTransform);
   }

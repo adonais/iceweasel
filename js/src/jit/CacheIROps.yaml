@@ -2157,11 +2157,26 @@
   shared: false
   transpile: true
   cost_estimate: 3
+  inlining_candidate: true
   args:
     callee: ObjId
     target: ObjId
     argc: Int32Id
     flags: CallFlagsImm
+    numBoundArgs: UInt32Imm
+
+# Like CallBoundScriptedFunction, but the target is trial-inlined so we have to
+# push the inlined ICScript and use the non-Ion jit entry.
+- name: CallInlinedBoundFunction
+  shared: false
+  transpile: true
+  cost_estimate: 3
+  args:
+    callee: ObjId
+    target: ObjId
+    argc: Int32Id
+    flags: CallFlagsImm
+    icScript: ICScriptField
     numBoundArgs: UInt32Imm
 
 - name: CallWasmFunction

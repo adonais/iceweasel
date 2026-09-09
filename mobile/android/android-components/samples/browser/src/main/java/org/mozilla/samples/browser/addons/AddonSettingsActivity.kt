@@ -23,9 +23,7 @@ import org.mozilla.samples.browser.databinding.ActivityAddOnSettingsBinding
 import org.mozilla.samples.browser.databinding.FragmentAddOnSettingsBinding
 import org.mozilla.samples.browser.ext.components
 
-/**
- * An activity to show the settings of an add-on.
- */
+/** An activity to show the settings of an add-on. */
 class AddonSettingsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAddOnSettingsBinding
@@ -51,9 +49,7 @@ class AddonSettingsActivity : AppCompatActivity() {
             else -> super.onCreateView(parent, name, context, attrs)
         }
 
-    /**
-     * A fragment to show the settings of an add-on with [EngineView].
-     */
+    /** A fragment to show the settings of an add-on with [EngineView]. */
     class AddonSettingsFragment : Fragment() {
         private lateinit var addon: Addon
         private lateinit var engineSession: EngineSession
@@ -81,14 +77,14 @@ class AddonSettingsActivity : AppCompatActivity() {
         }
 
         companion object {
-            /**
-             * Create an [AddonSettingsFragment] with add_on as a required parameter.
-             */
-            fun create(addon: Addon) = AddonSettingsFragment().apply {
-                arguments = Bundle().apply {
-                    putParcelable("add_on", addon)
+            /** Create an [AddonSettingsFragment] with add_on as a required parameter. */
+            fun create(addon: Addon) =
+                AddonSettingsFragment().apply {
+                    arguments =
+                        Bundle().apply {
+                            putParcelable("add_on", addon)
+                        }
                 }
-            }
         }
     }
 }

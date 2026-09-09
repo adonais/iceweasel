@@ -674,9 +674,6 @@ skip script test262/language/statements/with/set-mutable-binding-idref-with-prox
 skip script test262/language/statements/with/get-binding-value-idref-with-proxy-env.js
 skip script test262/language/statements/with/set-mutable-binding-idref-compound-assign-with-proxy-env.js
 
-# See https://bugzilla.mozilla.org/show_bug.cgi?id=1983837
-skip script test262/staging/top-level-await/tla-hang-entry.js
-
 # Before Hijri era not implemented in ICU: <https://unicode-org.atlassian.net/browse/ICU-23327>
 # Missing localizations for Before Hijri era: <https://unicode-org.atlassian.net/browse/CLDR-19320>
 skip script test262/intl402/DateTimeFormat/prototype/formatToParts/era.js
@@ -685,6 +682,9 @@ skip script test262/intl402/DateTimeFormat/prototype/formatToParts/era.js
 skip script test262/language/module-code/ambiguous-export-bindings/namespace-unambiguous-if-import-source-and-export.js
 skip script test262/language/module-code/source-phase-import/reexport-source-binding-namespace-get.js
 skip script test262/language/module-code/source-phase-import/reexport-source-binding-named-import.js
+
+# Bug 2062664 (Source phase imports prototype chain)
+skip script test262/staging/source-phase-imports/module-source-prototype-chain.js
 
 # Bug 2057270 (asyncDispose regression)
 skip script test262/built-ins/AsyncIteratorPrototype/Symbol.asyncDispose/invokes-return.js
@@ -710,6 +710,14 @@ skip script test262/built-ins/Error/prototype/stack/setter-receiver-is-proxy.js
 skip script test262/built-ins/Error/prototype/stack/getter-receiver-is-proxy.js
 skip script test262/built-ins/Error/prototype/stack/getter-error-prototype.js
 skip script test262/built-ins/Error/prototype/stack/getter-cross-realm.js
+
+# Bug 2062666 (Iterator take/drop RangeError failures)
+skip script test262/built-ins/Iterator/prototype/take/limit-rangeerror.js
+skip script test262/built-ins/Iterator/prototype/take/argument-effect-order.js
+skip script test262/built-ins/Iterator/prototype/take/argument-validation-failure-closes-underlying.js
+skip script test262/built-ins/Iterator/prototype/drop/limit-rangeerror.js
+skip script test262/built-ins/Iterator/prototype/drop/argument-effect-order.js
+skip script test262/built-ins/Iterator/prototype/drop/argument-validation-failure-closes-underlying.js
 
 ###########################################################
 # Tests disabled due to issues in test262 importer script #

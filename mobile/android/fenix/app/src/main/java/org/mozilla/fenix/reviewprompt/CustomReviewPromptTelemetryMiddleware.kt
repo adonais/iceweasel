@@ -9,8 +9,7 @@ import mozilla.components.lib.state.Store
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.CustomReviewPrompt
 
-internal class CustomReviewPromptTelemetryMiddleware :
-    Middleware<CustomReviewPromptState, CustomReviewPromptAction> {
+internal class CustomReviewPromptTelemetryMiddleware : Middleware<CustomReviewPromptState, CustomReviewPromptAction> {
 
     override fun invoke(
         store: Store<CustomReviewPromptState, CustomReviewPromptAction>,

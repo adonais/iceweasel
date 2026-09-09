@@ -433,14 +433,13 @@ void MediaStreamTrack::PrincipalChanged() {
 
 void MediaStreamTrack::NotifyPrincipalHandleChanged(
     const PrincipalHandle& aNewPrincipalHandle) {
-  PrincipalHandle handle(aNewPrincipalHandle);
   LOG(LogLevel::Info,
       ("MediaStreamTrack {} principalHandle changed on "
        "MediaTrackGraph thread to {}. Current principal: {}, "
        "pending: {}",
-       fmt::ptr(this), fmt::ptr(GetPrincipalFromHandle(handle)),
+       fmt::ptr(this), fmt::ptr(GetPrincipalFromHandle(aNewPrincipalHandle)),
        fmt::ptr(mPrincipal.get()), fmt::ptr(mPendingPrincipal.get())));
-  if (PrincipalHandleMatches(handle, mPendingPrincipal)) {
+  if (PrincipalHandleMatches(aNewPrincipalHandle, mPendingPrincipal)) {
     SetPrincipal(mPendingPrincipal);
     mPendingPrincipal = nullptr;
   }

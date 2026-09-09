@@ -27,16 +27,12 @@ abstract class EngineViewScrollingBehavior(
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
     internal var yTranslator = ViewYTranslator(dependencyGravity)
 
-    /**
-     * Used to expand the dependent View.
-     */
+    /** Used to expand the dependent View. */
     fun forceExpand() {
         yTranslator.expandWithAnimation(dependency)
     }
 
-    /**
-     * Used to collapse the dependent View.
-     */
+    /** Used to collapse the dependent View. */
     fun forceCollapse() {
         yTranslator.collapseWithAnimation(dependency)
     }

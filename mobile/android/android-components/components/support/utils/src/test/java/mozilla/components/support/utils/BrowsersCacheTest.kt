@@ -10,13 +10,13 @@ import android.content.pm.ActivityInfo
 import android.content.pm.PackageInfo
 import android.content.pm.ResolveInfo
 import androidx.core.net.toUri
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Ignore
 import org.junit.Test
 import org.robolectric.Shadows.shadowOf
-import kotlin.test.assertNotNull
 
 @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1794926")
 class BrowsersCacheTest {
@@ -28,24 +28,26 @@ class BrowsersCacheTest {
     fun `cached list of browsers match before-after installation when cache is not invalidated`() {
         BrowsersCache.resetAll()
         pretendBrowsersAreInstalled(
-            browsers = listOf(
-                Browsers.KnownBrowser.FIREFOX_NIGHTLY.packageName,
-                Browsers.KnownBrowser.REFERENCE_BROWSER.packageName,
-            ),
+            browsers =
+                listOf(
+                    Browsers.KnownBrowser.FIREFOX_NIGHTLY.packageName,
+                    Browsers.KnownBrowser.REFERENCE_BROWSER.packageName,
+                )
         )
 
         val initialBrowserList = BrowsersCache.all(testContext)
         assertEquals(3, initialBrowserList.installedBrowsers.size)
 
         pretendBrowsersAreInstalled(
-            browsers = listOf(
-                Browsers.KnownBrowser.FIREFOX_NIGHTLY.packageName,
-                Browsers.KnownBrowser.FIREFOX.packageName,
-                Browsers.KnownBrowser.CHROME.packageName,
-                Browsers.KnownBrowser.SAMSUNG_INTERNET.packageName,
-                Browsers.KnownBrowser.DUCKDUCKGO.packageName,
-                Browsers.KnownBrowser.REFERENCE_BROWSER.packageName,
-            ),
+            browsers =
+                listOf(
+                    Browsers.KnownBrowser.FIREFOX_NIGHTLY.packageName,
+                    Browsers.KnownBrowser.FIREFOX.packageName,
+                    Browsers.KnownBrowser.CHROME.packageName,
+                    Browsers.KnownBrowser.SAMSUNG_INTERNET.packageName,
+                    Browsers.KnownBrowser.DUCKDUCKGO.packageName,
+                    Browsers.KnownBrowser.REFERENCE_BROWSER.packageName,
+                )
         )
         val updatedBrowserList = BrowsersCache.all(testContext)
         assertEquals(3, updatedBrowserList.installedBrowsers.size)
@@ -55,24 +57,26 @@ class BrowsersCacheTest {
     fun `cached list of browsers change before-after installation when cache is invalidated`() {
         BrowsersCache.resetAll()
         pretendBrowsersAreInstalled(
-            browsers = listOf(
-                Browsers.KnownBrowser.FIREFOX_NIGHTLY.packageName,
-                Browsers.KnownBrowser.REFERENCE_BROWSER.packageName,
-            ),
+            browsers =
+                listOf(
+                    Browsers.KnownBrowser.FIREFOX_NIGHTLY.packageName,
+                    Browsers.KnownBrowser.REFERENCE_BROWSER.packageName,
+                )
         )
 
         val initialBrowserList = BrowsersCache.all(testContext)
         assertEquals(3, initialBrowserList.installedBrowsers.size)
 
         pretendBrowsersAreInstalled(
-            browsers = listOf(
-                Browsers.KnownBrowser.FIREFOX_NIGHTLY.packageName,
-                Browsers.KnownBrowser.FIREFOX.packageName,
-                Browsers.KnownBrowser.CHROME.packageName,
-                Browsers.KnownBrowser.SAMSUNG_INTERNET.packageName,
-                Browsers.KnownBrowser.DUCKDUCKGO.packageName,
-                Browsers.KnownBrowser.REFERENCE_BROWSER.packageName,
-            ),
+            browsers =
+                listOf(
+                    Browsers.KnownBrowser.FIREFOX_NIGHTLY.packageName,
+                    Browsers.KnownBrowser.FIREFOX.packageName,
+                    Browsers.KnownBrowser.CHROME.packageName,
+                    Browsers.KnownBrowser.SAMSUNG_INTERNET.packageName,
+                    Browsers.KnownBrowser.DUCKDUCKGO.packageName,
+                    Browsers.KnownBrowser.REFERENCE_BROWSER.packageName,
+                )
         )
 
         BrowsersCache.resetAll()
@@ -112,21 +116,24 @@ class BrowsersCacheTest {
             intent.data = url.toUri()
             intent.addCategory(Intent.CATEGORY_BROWSABLE)
 
-            val packageInfo = PackageInfo().apply {
-                this.packageName = packageName
-            }
+            val packageInfo =
+                PackageInfo().apply {
+                    this.packageName = packageName
+                }
 
             shadow.installPackage(packageInfo)
 
-            val activityInfo = ActivityInfo().apply {
-                exported = browsersExported
-                this.packageName = packageName
-            }
+            val activityInfo =
+                ActivityInfo().apply {
+                    exported = browsersExported
+                    this.packageName = packageName
+                }
 
-            val resolveInfo = ResolveInfo().apply {
-                resolvePackageName = packageName
-                this.activityInfo = activityInfo
-            }
+            val resolveInfo =
+                ResolveInfo().apply {
+                    resolvePackageName = packageName
+                    this.activityInfo = activityInfo
+                }
 
             shadow.addResolveInfoForIntent(intent, resolveInfo)
         }
@@ -136,15 +143,17 @@ class BrowsersCacheTest {
             intent.data = url.toUri()
             intent.addCategory(Intent.CATEGORY_BROWSABLE)
 
-            val activityInfo = ActivityInfo().apply {
-                exported = defaultBrowserExported
-                packageName = defaultBrowser
-            }
+            val activityInfo =
+                ActivityInfo().apply {
+                    exported = defaultBrowserExported
+                    packageName = defaultBrowser
+                }
 
-            val resolveInfo = ResolveInfo().apply {
-                resolvePackageName = defaultBrowser
-                this.activityInfo = activityInfo
-            }
+            val resolveInfo =
+                ResolveInfo().apply {
+                    resolvePackageName = defaultBrowser
+                    this.activityInfo = activityInfo
+                }
 
             shadow.addResolveInfoForIntent(intent, resolveInfo)
         }

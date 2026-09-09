@@ -407,6 +407,24 @@ add_task(async function () {
     ],
   });
 
+  // The address bar gets no result at all for this; a search bar searches it.
+  info("Invalid URL through the newtab search bar, keyword.enabled = false");
+  query = "bacon *";
+  context = createContext(query, {
+    isPrivate: false,
+    sapName: "newtab_searchbar",
+  });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        heuristic: true,
+        query,
+      }),
+    ],
+  });
+
   info("Non-search restriction token and invalid URL, keyword.enabled = false");
   query = "bacon *";
   context = createContext(query, { isPrivate: false });

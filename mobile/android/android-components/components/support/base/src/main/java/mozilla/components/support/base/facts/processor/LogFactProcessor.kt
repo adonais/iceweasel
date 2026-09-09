@@ -8,12 +8,8 @@ import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.FactProcessor
 import mozilla.components.support.base.log.logger.Logger
 
-/**
- * A [FactProcessor] implementation that prints collected [Fact] instances to the log.
- */
-class LogFactProcessor(
-    private val logger: Logger = Logger("Facts"),
-) : FactProcessor {
+/** A [FactProcessor] implementation that prints collected [Fact] instances to the log. */
+class LogFactProcessor(private val logger: Logger = Logger("Facts")) : FactProcessor {
 
     override fun process(fact: Fact) {
         logger.debug(fact.toString())

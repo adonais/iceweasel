@@ -7,8 +7,8 @@ package mozilla.components.feature.prompts.address.ext
 import mozilla.components.concept.storage.Address
 
 /**
- * Builds a human-readable, multi-line representation of an [Address] suitable for displaying in
- * a save-confirmation prompt. Empty fields are skipped so the rendered block stays compact.
+ * Builds a human-readable, multi-line representation of an [Address] suitable for displaying in a save-confirmation
+ * prompt. Empty fields are skipped so the rendered block stays compact.
  */
 internal fun Address.toDisplayLines(): List<String> {
     val lines = mutableListOf<String>()
@@ -17,11 +17,13 @@ internal fun Address.toDisplayLines(): List<String> {
     organization.takeIfNotBlank()?.let { lines.add(it) }
     streetAddress.takeIfNotBlank()?.let { lines.add(it) }
 
-    val cityRegionPostal = listOfNotNull(
-        addressLevel2.takeIfNotBlank(),
-        addressLevel1.takeIfNotBlank(),
-        postalCode.takeIfNotBlank(),
-    ).joinToString(separator = " ")
+    val cityRegionPostal =
+        listOfNotNull(
+                addressLevel2.takeIfNotBlank(),
+                addressLevel1.takeIfNotBlank(),
+                postalCode.takeIfNotBlank(),
+            )
+            .joinToString(separator = " ")
     if (cityRegionPostal.isNotEmpty()) lines.add(cityRegionPostal)
 
     country.takeIfNotBlank()?.let { lines.add(it) }

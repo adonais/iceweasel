@@ -110,6 +110,7 @@ class FuzzyParser(BaseTryParser):
         "target-tasks-method",
         "test-tag",
         "pernosco",
+        "pushdate",
         "rebuild",
         "routes",
         "worker-overrides",

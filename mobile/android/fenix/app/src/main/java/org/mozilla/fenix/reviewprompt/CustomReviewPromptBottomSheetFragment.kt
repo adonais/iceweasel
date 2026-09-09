@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.fragment.compose.content
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
+import com.google.android.material.R as materialR
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.launch
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
@@ -30,21 +31,20 @@ import org.mozilla.fenix.reviewprompt.CustomReviewPromptAction.PositivePrePrompt
 import org.mozilla.fenix.reviewprompt.CustomReviewPromptAction.RateButtonClicked
 import org.mozilla.fenix.reviewprompt.ui.CustomReviewPrompt
 import org.mozilla.fenix.theme.FirefoxTheme
-import com.google.android.material.R as materialR
 
-/**
- * A bottom sheet fragment for displaying [CustomReviewPrompt].
- */
+/** A bottom sheet fragment for displaying [CustomReviewPrompt]. */
 class CustomReviewPromptBottomSheetFragment : BottomSheetDialogFragment() {
-    private val store by fragmentStore(CustomReviewPromptState.PrePrompt) {
-        CustomReviewPromptStore(
-            initialState = it,
-            middleware = listOf(
-                CustomReviewPromptNavigationMiddleware(storeProvider.viewModelScope),
-                CustomReviewPromptTelemetryMiddleware(),
-            ),
-        )
-    }
+    private val store by
+        fragmentStore(CustomReviewPromptState.PrePrompt) {
+            CustomReviewPromptStore(
+                initialState = it,
+                middleware =
+                    listOf(
+                        CustomReviewPromptNavigationMiddleware(storeProvider.viewModelScope),
+                        CustomReviewPromptTelemetryMiddleware(),
+                    ),
+            )
+        }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return super.onCreateDialog(savedInstanceState).apply {
@@ -60,8 +60,7 @@ class CustomReviewPromptBottomSheetFragment : BottomSheetDialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ) = content {
-        val state by store.stateFlow
-            .collectAsState(initial = CustomReviewPromptState.PrePrompt)
+        val state by store.stateFlow.collectAsState(initial = CustomReviewPromptState.PrePrompt)
 
         LaunchedEffect(Unit) {
             store.dispatch(CustomReviewPromptAction.Displayed)
@@ -91,7 +90,8 @@ class CustomReviewPromptBottomSheetFragment : BottomSheetDialogFragment() {
                         with(requireComponents.playStoreReviewPromptController) {
                             val result = tryPromptReview(activity)
                             when (result) {
-                                NotDisplayed, is Error -> tryLaunchPlayStoreReview(activity, ::openInNewTab)
+                                NotDisplayed,
+                                is Error -> tryLaunchPlayStoreReview(activity, ::openInNewTab)
                                 else -> {}
                             }
                         }

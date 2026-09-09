@@ -9,6 +9,8 @@ import android.content.SharedPreferences
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.VisibleForTesting.Companion.NONE
 import androidx.core.content.edit
+import java.io.IOException
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -24,8 +26,6 @@ import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlin.sanitizeURL
 import org.json.JSONException
 import org.json.JSONObject
-import java.io.IOException
-import java.util.concurrent.TimeUnit
 
 private const val GEOIP_SERVICE_URL = "https://location.services.mozilla.com/v1/"
 private const val CONNECT_TIMEOUT_SECONDS = 10L
@@ -41,14 +41,13 @@ private const val KEY_CACHED_AT = "cached_at"
 private const val CACHE_LIFETIME_IN_MS = 24 * 60 * 60 * 1000
 
 /**
- * The Mozilla Location Service (MLS) is an open service which lets devices determine their location
- * based on network infrastructure like Bluetooth beacons, cell towers and WiFi access points.
+ * The Mozilla Location Service (MLS) is an open service which lets devices determine their location based on network
+ * infrastructure like Bluetooth beacons, cell towers and WiFi access points.
  *
  * - https://location.services.mozilla.com/
  * - https://mozilla.github.io/ichnaea/api/index.html
  *
- * Note: Accessing the Mozilla Location Service requires an API token:
- * https://location.services.mozilla.com/contact
+ * Note: Accessing the Mozilla Location Service requires an API token: https://location.services.mozilla.com/contact
  *
  * @param client The HTTP client that this [MozillaLocationService] should use for requests.
  * @param apiKey The API key that is used to access the Mozilla location service.
@@ -69,22 +68,25 @@ class MozillaLocationService(
      *
      * https://mozilla.github.io/ichnaea/api/region.html
      *
-     * @param readFromCache Whether a previously returned region (from the cache) can be returned
-     * (default) or whether a request to the service should always be made.
+     * @param readFromCache Whether a previously returned region (from the cache) can be returned (default) or whether a
+     *   request to the service should always be made.
      */
-    override suspend fun fetchRegion(
-        readFromCache: Boolean,
-    ): LocationService.Region? = withContext(Dispatchers.IO) {
-        cachedRegionIfValid(readFromCache)?.let { return@withContext it }
+    override suspend fun fetchRegion(readFromCache: Boolean): LocationService.Region? =
+        withContext(Dispatchers.IO) {
+            cachedRegionIfValid(readFromCache)?.let {
+                return@withContext it
+            }
 
-        fetchMutex.withLock {
-            cachedRegionIfValid(readFromCache)?.let { return@withLock it }
+            fetchMutex.withLock {
+                cachedRegionIfValid(readFromCache)?.let {
+                    return@withLock it
+                }
 
-            client.fetchRegion(regionServiceUrl)?.also {
-                context.cacheRegion(it)
+                client.fetchRegion(regionServiceUrl)?.also {
+                    context.cacheRegion(it)
+                }
             }
         }
-    }
 
     @VisibleForTesting
     internal fun cachedRegionIfValid(readFromCache: Boolean): LocationService.Region? {
@@ -96,17 +98,14 @@ class MozillaLocationService(
     }
 
     /**
-     * Get if there is already a cached region.
-     * This does not guarantee we have the current actual region but only the last value
-     * which may be obsolete at this time.
+     * Get if there is already a cached region. This does not guarantee we have the current actual region but only the
+     * last value which may be obsolete at this time.
      */
     override fun hasRegionCached(): Boolean {
         return context.hasCachedRegion()
     }
 
-    /**
-     * Check to see if the cache is still valid.
-     */
+    /** Check to see if the cache is still valid. */
     private fun isCacheValid(): Boolean {
         return currentTime() < context.cachedAt() + CACHE_LIFETIME_IN_MS
     }
@@ -153,21 +152,23 @@ private fun Context.regionCache(): SharedPreferences {
 }
 
 private fun Client.fetchRegion(regionServiceUrl: String): LocationService.Region? {
-    val request = Request(
-        url = regionServiceUrl.sanitizeURL(),
-        method = Request.Method.POST,
-        headers = MutableHeaders(
-            Headers.Names.CONTENT_TYPE to Headers.Values.CONTENT_TYPE_APPLICATION_JSON,
-            Headers.Names.USER_AGENT to USER_AGENT,
-        ),
-        // We are posting an empty request body here. This means the service will only use the IP
-        // address to provide a region response. Technically it's possible to also provide data
-        // about nearby Bluetooth, cell or WiFi networks.
-        body = Request.Body.fromString(EMPTY_REQUEST_BODY),
-        connectTimeout = Pair(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS),
-        readTimeout = Pair(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS),
-        conservative = true,
-    )
+    val request =
+        Request(
+            url = regionServiceUrl.sanitizeURL(),
+            method = Request.Method.POST,
+            headers =
+                MutableHeaders(
+                    Headers.Names.CONTENT_TYPE to Headers.Values.CONTENT_TYPE_APPLICATION_JSON,
+                    Headers.Names.USER_AGENT to USER_AGENT,
+                ),
+            // We are posting an empty request body here. This means the service will only use the IP
+            // address to provide a region response. Technically it's possible to also provide data
+            // about nearby Bluetooth, cell or WiFi networks.
+            body = Request.Body.fromString(EMPTY_REQUEST_BODY),
+            connectTimeout = Pair(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS),
+            readTimeout = Pair(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS),
+            conservative = true,
+        )
 
     return try {
         fetch(request).toRegion()

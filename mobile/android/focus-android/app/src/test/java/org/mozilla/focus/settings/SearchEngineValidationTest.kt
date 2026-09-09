@@ -68,9 +68,7 @@ class SearchEngineValidationTest {
     }
 }
 
-/**
- * Helper for creating a test that uses a mock webserver instance.
- */
+/** Helper for creating a test that uses a mock webserver instance. */
 private suspend fun withMockWebServer(
     vararg responses: MockResponse,
     block: suspend (MockWebServer) -> Unit,
@@ -90,8 +88,7 @@ private suspend fun withMockWebServer(
 
 private fun MockWebServer.rootUrl(): String = url("/").toString()
 
-private fun responseWithStatus(status: Int) =
-    MockResponse.Builder().code(status).body("").build()
+private fun responseWithStatus(status: Int) = MockResponse.Builder().code(status).body("").build()
 
 private class OkHttpWrapper : Client() {
     private val actual = OkHttpClient()

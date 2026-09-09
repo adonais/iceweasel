@@ -17,9 +17,8 @@ import mozilla.components.support.base.observer.ObserverRegistry
  *
  * @param pinnedSitesStorage An instance of [PinnedSiteStorage], used for storing pinned sites.
  */
-class DefaultTopSitesStorage(
-    private val pinnedSitesStorage: PinnedSiteStorage,
-) : TopSitesStorage, Observable<TopSitesStorage.Observer> by ObserverRegistry() {
+class DefaultTopSitesStorage(private val pinnedSitesStorage: PinnedSiteStorage) :
+    TopSitesStorage, Observable<TopSitesStorage.Observer> by ObserverRegistry() {
 
     override suspend fun addTopSite(title: String, url: String, isDefault: Boolean) {
         pinnedSitesStorage.addPinnedSite(title, url, isDefault)

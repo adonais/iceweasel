@@ -134,6 +134,15 @@ if not CONFIG['MOZ_FFVPX_AUDIOONLY']:
             'media_libdav1d_asm',
         ]
 
+    if CONFIG['MOZ_ENABLE_VULKAN_VIDEO']:
+        LOCAL_INCLUDES += ['/third_party/khronos/vulkan-headers/include']
+        SOURCES += [
+            'vulkan_av1.c',
+            'vulkan_decode.c',
+            'vulkan_video.c',
+            'vulkan_vp9.c',
+        ]
+
     if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
         LOCAL_INCLUDES += ['/media/mozva']
         SOURCES += [

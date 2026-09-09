@@ -177,21 +177,6 @@ static bool IsIdentity(const T* lanes) {
   return ScanIncreasingMasked(lanes, 0) == int(16 / sizeof(T));
 }
 
-// Recognize part of an identity permutation starting at start, with
-// the first value of the permutation expected to be bias.
-template <typename T>
-static bool IsIdentity(const T* lanes, int start, int len, int bias) {
-  if (lanes[start] != bias) {
-    return false;
-  }
-  for (int i = start + 1; i < start + len; i++) {
-    if (lanes[i] != lanes[i - 1] + 1) {
-      return false;
-    }
-  }
-  return true;
-}
-
 // We can permute by dwords if the mask is reducible to a dword mask, and in
 // this case a single PSHUFD is enough.
 static bool TryPermute32x4(SimdConstant* control) {

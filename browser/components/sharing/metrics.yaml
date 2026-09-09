@@ -79,3 +79,30 @@ collection_share:
       - nbarrett@mozilla.com
       - fterdal@mozilla.com
     expires: never
+
+share_button:
+  impression:
+    type: event
+    description: Recorded when the share panel closes after a user interacts with the share button and panel
+    extra_keys:
+      is_shareable:
+        type: boolean
+        description: Boolean indicating if the page was a shareable page or not
+      action:
+        type: string
+        description: >
+          A string space separated list indicating what buttons were clicked in the panel during the use of
+          the share button. The action will be one of the following: "", "copy-link", "os-share", "mail",
+          "screenshot", "qr-code", "send-to-device", "conntect-or-sign-in", "connect-device", "device-help".
+          An empty string means that the panel was closed with no action taken. "connect-or-sign-in" means
+          the send to mobile button was clicked while signed out or signed in with no devices connected.
+
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2052270
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2052270
+    notification_emails:
+      - nbaumgardner@mozilla.com
+      - nbarrett@mozilla.com
+      - jprickett@mozilla.com
+    expires: never

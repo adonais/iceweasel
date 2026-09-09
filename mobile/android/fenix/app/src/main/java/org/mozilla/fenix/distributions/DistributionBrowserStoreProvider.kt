@@ -10,13 +10,10 @@ import mozilla.components.browser.state.store.BrowserStore
 /**
  * A tool for getting and updating distribution Ids from the browser store.
  *
- * The distribution Id is the Id used to tell which distribution deal the app install was involved
- * with.
+ * The distribution Id is the Id used to tell which distribution deal the app install was involved with.
  */
 interface DistributionBrowserStoreProvider {
-    /**
-     * @return stored distribution Id
-     */
+    /** @return stored distribution Id */
     fun getDistributionId(): String?
 
     /**
@@ -27,12 +24,9 @@ interface DistributionBrowserStoreProvider {
     fun updateDistributionId(id: String)
 }
 
-/**
- * Default implementation for [DistributionBrowserStoreProvider]
- */
-class DefaultDistributionBrowserStoreProvider(
-    private val browserStore: BrowserStore,
-) : DistributionBrowserStoreProvider {
+/** Default implementation for [DistributionBrowserStoreProvider] */
+class DefaultDistributionBrowserStoreProvider(private val browserStore: BrowserStore) :
+    DistributionBrowserStoreProvider {
     override fun getDistributionId(): String? = browserStore.state.distributionId
 
     override fun updateDistributionId(id: String) {

@@ -14,6 +14,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   capture: "chrome://remote/content/shared/Capture.sys.mjs",
   ContextDescriptorType:
     "chrome://remote/content/shared/messagehandler/MessageHandler.sys.mjs",
+  Downloads: "resource://gre/modules/Downloads.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   EventPromise: "chrome://remote/content/shared/Sync.sys.mjs",
   generateUUID: "chrome://remote/content/shared/UUID.sys.mjs",
@@ -2021,7 +2022,7 @@ class BrowsingContextModule extends RootBiDiModule {
       },
     });
 
-    const downloadsDir = Services.dirsvc.get("DfltDwnld", Ci.nsIFile).path;
+    const downloadsDir = await lazy.Downloads.getPreferredDownloadsDirectory();
     const screencast = lazy.generateUUID();
 
     // Extract video file extension from mimeType.

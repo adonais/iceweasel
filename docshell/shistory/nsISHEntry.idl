@@ -218,9 +218,9 @@ interface nsISHEntry : nsISupports
     attribute AString srcdocData;
 
     /**
-     * When isSrcdocEntry is true, this contains the baseURI of the srcdoc
-     * document for use in situations where it cannot otherwise be determined,
-     * for example with view-source.
+     * The baseURI for situations where it cannot otherwise be determined.
+     * This is needed for srcdoc or when privileged code sets it on
+     * LoadURIOptions, e.g. for view selection source.
      */
     [infallible] attribute nsIURI baseURI;
 

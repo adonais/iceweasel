@@ -6,6 +6,7 @@ package org.mozilla.focus.state
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
+import java.util.UUID
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.lib.state.State
 import org.mozilla.focus.autocomplete.AutocompleteAddFragment
@@ -30,20 +31,19 @@ import org.mozilla.focus.settings.advanced.SecretSettingsFragment
 import org.mozilla.focus.settings.permissions.SitePermissionsFragment
 import org.mozilla.focus.settings.permissions.permissionoptions.SitePermission
 import org.mozilla.focus.settings.privacy.PrivacySecuritySettingsFragment
-import java.util.UUID
 
 /**
  * Global state of the application.
  *
  * @property screen The currently displayed screen.
  * @property topSites The list of [TopSite] to display on the Home screen.
- * @property sitePermissionOptionChange A flag which reflects the state of site permission rules,
- * whether they have been updated or not
+ * @property sitePermissionOptionChange A flag which reflects the state of site permission rules, whether they have been
+ *   updated or not
  * @property secretSettingsEnabled A flag which reflects the state of debug secret settings
  * @property showEraseTabsCfr A flag which reflects the state erase tabs CFR
  * @property showSearchWidgetSnackbar A flag which reflects the state of search widget snackbar
- * @property showTrackingProtectionCfrForTab A map where keys are tab IDs and values indicate whether
- * to show the Tracking Protection CFR for that tab.
+ * @property showTrackingProtectionCfrForTab A map where keys are tab IDs and values indicate whether to show the
+ *   Tracking Protection CFR for that tab.
  * @property showStartBrowsingTabsCfr A flag which reflects the state of start browsing CFR
  * @property isPinningSupported A nullable flag indicating whether pinning shortcuts to the home screen is supported.
  */
@@ -67,24 +67,16 @@ data class AppState(
 sealed class Screen {
     open val id = UUID.randomUUID().toString()
 
-    /**
-     * First run onboarding.
-     */
+    /** First run onboarding. */
     object FirstRun : Screen()
 
-    /**
-     * Second screen from new onboarding flow.
-     */
+    /** Second screen from new onboarding flow. */
     object OnboardingSecondScreen : Screen()
 
-    /**
-     * Screen to show content on about:crashes
-     */
+    /** Screen to show content on about:crashes */
     object CrashListScreen : Screen()
 
-    /**
-     * The home screen.
-     */
+    /** The home screen. */
     object Home : Screen()
 
     /**
@@ -102,38 +94,25 @@ sealed class Screen {
         override val id: String = "${super.id}_$showTabs}"
     }
 
-    /**
-     * Editing the URL of a tab.
-     */
-    data class EditUrl(
-        val tabId: String,
-    ) : Screen()
+    /** Editing the URL of a tab. */
+    data class EditUrl(val tabId: String) : Screen()
 
     /**
      * The application is locked (and requires unlocking).
      *
-     * @property bundle it is used for app navigation. If the user can unlock with success he should
-     * be redirected to a certain screen.It comes from the external intent.
+     * @property bundle it is used for app navigation. If the user can unlock with success he should be redirected to a
+     *   certain screen.It comes from the external intent.
      */
     data class Locked(val bundle: Bundle? = null) : Screen()
 
-    /**
-     * Screen for site permission options.
-     */
+    /** Screen for site permission options. */
     data class SitePermissionOptionsScreen(val sitePermission: SitePermission) : Screen()
 
-    /**
-     * Settings screen.
-     */
-    data class Settings(
-        val page: Page = Page.Start,
-    ) : Screen() {
-        /**
-         * Pages within the settings screen.
-         */
+    /** Settings screen. */
+    data class Settings(val page: Page = Page.Start) : Screen() {
+        /** Pages within the settings screen. */
         enum class Page(val fragmentClass: Class<out Fragment>) {
             Start(SettingsFragment::class.java),
-
             General(GeneralSettingsFragment::class.java),
             Privacy(PrivacySecuritySettingsFragment::class.java),
             Search(SearchSettingsFragment::class.java),
@@ -142,12 +121,10 @@ sealed class Screen {
             About(AboutFragment::class.java),
             Licenses(AboutLibrariesFragment::class.java),
             Locale(LanguageFragment::class.java),
-
             PrivacyExceptions(ExceptionsListFragment::class.java),
             PrivacyExceptionsRemove(ExceptionsRemoveFragment::class.java),
             SitePermissions(SitePermissionsFragment::class.java),
             SecretSettings(SecretSettingsFragment::class.java),
-
             SearchList(InstalledSearchEnginesSettingsFragment::class.java),
             SearchRemove(RemoveSearchEnginesSettingsFragment::class.java),
             SearchAdd(ManualAddSearchEngineSettingsFragment::class.java),

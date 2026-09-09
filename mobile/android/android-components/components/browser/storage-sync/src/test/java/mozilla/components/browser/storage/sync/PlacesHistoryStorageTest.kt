@@ -10,6 +10,9 @@ import androidx.work.Configuration
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.testing.WorkManagerTestInitHelper
+import java.io.File
+import java.util.concurrent.TimeUnit
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.places.PlacesReaderConnection
 import mozilla.appservices.places.uniffi.PlacesApiException
@@ -44,9 +47,6 @@ import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.robolectric.annotation.Config
-import java.io.File
-import java.util.concurrent.TimeUnit
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class PlacesHistoryStorageTest {
@@ -131,7 +131,7 @@ class PlacesHistoryStorageTest {
                     "http://www.firefox.com/7",
                     "http://www.firefox.com/8",
                     "http://www.firefox.com/9",
-                ),
+                )
             ),
         )
 
@@ -143,7 +143,8 @@ class PlacesHistoryStorageTest {
         assertEquals("http://www.firefox.com/7", page1[2].url)
 
         // Can exclude visit types during pagination.
-        val page1Limited = history.getVisitsPaginated(0, 10, listOf(VisitType.REDIRECT_PERMANENT, VisitType.REDIRECT_TEMPORARY))
+        val page1Limited =
+            history.getVisitsPaginated(0, 10, listOf(VisitType.REDIRECT_PERMANENT, VisitType.REDIRECT_TEMPORARY))
         assertEquals(7, page1Limited.size)
         assertEquals("http://www.firefox.com/9", page1Limited[0].url)
         assertEquals("http://www.firefox.com/8", page1Limited[1].url)
@@ -176,7 +177,10 @@ class PlacesHistoryStorageTest {
         assertEquals("Mozilla", recordedVisits[0].title)
         assertNull(recordedVisits[0].previewImageUrl)
 
-        history.recordObservation("http://www.mozilla.org", PageObservation(previewImageUrl = "https://test.com/og-image-url"))
+        history.recordObservation(
+            "http://www.mozilla.org",
+            PageObservation(previewImageUrl = "https://test.com/og-image-url"),
+        )
 
         recordedVisits = history.getDetailedVisits(0)
         assertEquals(1, recordedVisits.size)
@@ -186,16 +190,17 @@ class PlacesHistoryStorageTest {
 
     @Test
     fun `store can be used to query top frecent site information`() = runTest {
-        val toAdd = listOf(
-            "https://www.example.com/123",
-            "https://www.example.com/123",
-            "https://www.example.com/12345",
-            "https://www.mozilla.com/foo/bar/baz",
-            "https://www.mozilla.com/foo/bar/baz",
-            "https://mozilla.com/a1/b2/c3",
-            "https://news.ycombinator.com/",
-            "https://www.mozilla.com/foo/bar/baz",
-        )
+        val toAdd =
+            listOf(
+                "https://www.example.com/123",
+                "https://www.example.com/123",
+                "https://www.example.com/12345",
+                "https://www.mozilla.com/foo/bar/baz",
+                "https://www.mozilla.com/foo/bar/baz",
+                "https://mozilla.com/a1/b2/c3",
+                "https://news.ycombinator.com/",
+                "https://www.mozilla.com/foo/bar/baz",
+            )
 
         for (url in toAdd) {
             history.recordVisit(url, PageVisit(VisitType.LINK))
@@ -315,18 +320,37 @@ class PlacesHistoryStorageTest {
         assertEquals(listOf(true), history.getVisited(listOf("https://www.mozilla.org")))
 
         // Duplicate requests are handled.
-        assertEquals(listOf(true, true), history.getVisited(listOf("https://www.mozilla.org", "https://www.mozilla.org")))
+        assertEquals(
+            listOf(true, true),
+            history.getVisited(listOf("https://www.mozilla.org", "https://www.mozilla.org")),
+        )
 
         // Visit map is returned in correct order.
-        assertEquals(listOf(true, false), history.getVisited(listOf("https://www.mozilla.org", "https://www.unknown.com")))
+        assertEquals(
+            listOf(true, false),
+            history.getVisited(listOf("https://www.mozilla.org", "https://www.unknown.com")),
+        )
 
-        assertEquals(listOf(false, true), history.getVisited(listOf("https://www.unknown.com", "https://www.mozilla.org")))
+        assertEquals(
+            listOf(false, true),
+            history.getVisited(listOf("https://www.unknown.com", "https://www.mozilla.org")),
+        )
 
         // Multiple visits can be tracked. Reloads can be tracked.
         history.recordVisit("https://www.firefox.com", PageVisit(VisitType.LINK))
         history.recordVisit("https://www.mozilla.org", PageVisit(VisitType.RELOAD))
         history.recordVisit("https://www.wikipedia.org", PageVisit(VisitType.LINK))
-        assertEquals(listOf(true, true, false, true), history.getVisited(listOf("https://www.firefox.com", "https://www.wikipedia.org", "https://www.unknown.com", "https://www.mozilla.org")))
+        assertEquals(
+            listOf(true, true, false, true),
+            history.getVisited(
+                listOf(
+                    "https://www.firefox.com",
+                    "https://www.wikipedia.org",
+                    "https://www.unknown.com",
+                    "https://www.mozilla.org",
+                )
+            ),
+        )
     }
 
     @Test
@@ -445,7 +469,10 @@ class PlacesHistoryStorageTest {
         assertEquals(1, res.totalItems)
 
         // Path segment matching along a long path
-        history.recordVisit("https://www.reddit.com/r/vancouver/comments/quu9lt/hwy_1_just_north_of_lytton_is_gone", PageVisit(VisitType.LINK))
+        history.recordVisit(
+            "https://www.reddit.com/r/vancouver/comments/quu9lt/hwy_1_just_north_of_lytton_is_gone",
+            PageVisit(VisitType.LINK),
+        )
         res = history.getAutocompleteSuggestion("reddit.com/r")!!
         assertEquals("reddit.com/r/", res.text)
         assertEquals("https://www.reddit.com/r/", res.url)
@@ -607,14 +634,15 @@ class PlacesHistoryStorageTest {
     @Test
     @Config(sdk = [Build.VERSION_CODES.O])
     fun `When periodicStorageWorkRequest is called, worker with input specs is created`() {
-        val request = history.periodicStorageWorkRequest<PlacesHistoryStorageWorker>(
-            tag = PlacesHistoryStorageWorker.UNIQUE_NAME,
-        ) {
-            constraints {
-                setRequiresBatteryNotLow(true)
-                setRequiresDeviceIdle(true)
+        val request =
+            history.periodicStorageWorkRequest<PlacesHistoryStorageWorker>(
+                tag = PlacesHistoryStorageWorker.UNIQUE_NAME
+            ) {
+                constraints {
+                    setRequiresBatteryNotLow(true)
+                    setRequiresDeviceIdle(true)
+                }
             }
-        }
 
         assertEquals(request.workSpec.isPeriodic, true)
         assertEquals(
@@ -631,14 +659,15 @@ class PlacesHistoryStorageTest {
         val config = Configuration.Builder().build()
         WorkManagerTestInitHelper.initializeTestWorkManager(testContext, config)
 
-        val request = history.periodicStorageWorkRequest<PlacesHistoryStorageWorker>(
-            tag = PlacesHistoryStorageWorker.UNIQUE_NAME,
-        ) {
-            constraints {
-                setRequiresBatteryNotLow(true)
-                setRequiresDeviceIdle(true)
+        val request =
+            history.periodicStorageWorkRequest<PlacesHistoryStorageWorker>(
+                tag = PlacesHistoryStorageWorker.UNIQUE_NAME
+            ) {
+                constraints {
+                    setRequiresBatteryNotLow(true)
+                    setRequiresDeviceIdle(true)
+                }
             }
-        }
 
         val workManager = WorkManager.getInstance(testContext)
         val testDriver = WorkManagerTestInitHelper.getTestDriver(testContext)
@@ -658,14 +687,18 @@ class PlacesHistoryStorageTest {
 
     @Test
     fun `record and get latest history metadata by url`() = runTest {
-        val metaKey = HistoryMetadataKey(
-            url = "https://doc.rust-lang.org/std/macro.assert_eq.html",
-            searchTerm = "rust assert_eq",
-            referrerUrl = "http://www.google.com/",
-        )
+        val metaKey =
+            HistoryMetadataKey(
+                url = "https://doc.rust-lang.org/std/macro.assert_eq.html",
+                searchTerm = "rust assert_eq",
+                referrerUrl = "http://www.google.com/",
+            )
 
         assertNull(history.getLatestHistoryMetadataForUrl(metaKey.url))
-        history.noteHistoryMetadataObservation(metaKey, HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Regular))
+        history.noteHistoryMetadataObservation(
+            metaKey,
+            HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Regular),
+        )
         history.noteHistoryMetadataObservation(metaKey, HistoryMetadataObservation.ViewTimeObservation(5000))
 
         val dbMeta = history.getLatestHistoryMetadataForUrl(metaKey.url)
@@ -677,20 +710,28 @@ class PlacesHistoryStorageTest {
     fun `get history query`() = runTest {
         assertEquals(0, history.queryHistoryMetadata("keystore", 1).size)
 
-        val metaKey1 = HistoryMetadataKey(
-            url = "https://sql.telemetry.mozilla.org/dashboard/android-keystore-reliability-experiment",
-            searchTerm = "keystore reliability",
-            referrerUrl = "http://self.mozilla.com/",
+        val metaKey1 =
+            HistoryMetadataKey(
+                url = "https://sql.telemetry.mozilla.org/dashboard/android-keystore-reliability-experiment",
+                searchTerm = "keystore reliability",
+                referrerUrl = "http://self.mozilla.com/",
+            )
+        history.noteHistoryMetadataObservation(
+            metaKey1,
+            HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Regular),
         )
-        history.noteHistoryMetadataObservation(metaKey1, HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Regular))
         history.noteHistoryMetadataObservation(metaKey1, HistoryMetadataObservation.ViewTimeObservation(20000))
 
-        val metaKey2 = HistoryMetadataKey(
-            url = "https://www.youtube.com/watch?v=F7PQdCDiE44",
-            searchTerm = "crisis",
-            referrerUrl = "https://www.google.com/search?client=firefox-b-d&q=dw+crisis",
+        val metaKey2 =
+            HistoryMetadataKey(
+                url = "https://www.youtube.com/watch?v=F7PQdCDiE44",
+                searchTerm = "crisis",
+                referrerUrl = "https://www.google.com/search?client=firefox-b-d&q=dw+crisis",
+            )
+        history.noteHistoryMetadataObservation(
+            metaKey2,
+            HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Media),
         )
-        history.noteHistoryMetadataObservation(metaKey2, HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Media))
         history.noteHistoryMetadataObservation(metaKey2, HistoryMetadataObservation.ViewTimeObservation(30000))
 
         history.writer.noteObservation(
@@ -698,23 +739,32 @@ class PlacesHistoryStorageTest {
                 url = "https://www.youtube.com/watch?v=F7PQdCDiE44",
                 title = "DW next crisis",
                 visitType = mozilla.appservices.places.uniffi.VisitType.LINK,
-            ),
+            )
         )
 
-        val metaKey3 = HistoryMetadataKey(
-            url = "https://www.cbc.ca/news/canada/toronto/covid-19-ontario-april-16-2021-new-restrictions-modelling-1.5990092",
-            searchTerm = "ford covid19",
-            referrerUrl = "https://duckduckgo.com/?q=ford+covid19&t=hc&va=u&ia=web",
+        val metaKey3 =
+            HistoryMetadataKey(
+                url =
+                    "https://www.cbc.ca/news/canada/toronto/covid-19-ontario-april-16-2021-new-restrictions-modelling-1.5990092",
+                searchTerm = "ford covid19",
+                referrerUrl = "https://duckduckgo.com/?q=ford+covid19&t=hc&va=u&ia=web",
+            )
+        history.noteHistoryMetadataObservation(
+            metaKey3,
+            HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Regular),
         )
-        history.noteHistoryMetadataObservation(metaKey3, HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Regular))
         history.noteHistoryMetadataObservation(metaKey3, HistoryMetadataObservation.ViewTimeObservation(20000))
 
-        val metaKey4 = HistoryMetadataKey(
-            url = "https://www.youtube.com/watch?v=TfXbzbJQHuw",
-            searchTerm = "dw nyc rich",
-            referrerUrl = "https://duckduckgo.com/?q=dw+nyc+rich&t=hc&va=u&ia=web",
+        val metaKey4 =
+            HistoryMetadataKey(
+                url = "https://www.youtube.com/watch?v=TfXbzbJQHuw",
+                searchTerm = "dw nyc rich",
+                referrerUrl = "https://duckduckgo.com/?q=dw+nyc+rich&t=hc&va=u&ia=web",
+            )
+        history.noteHistoryMetadataObservation(
+            metaKey4,
+            HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Media),
         )
-        history.noteHistoryMetadataObservation(metaKey4, HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Media))
         history.noteHistoryMetadataObservation(metaKey4, HistoryMetadataObservation.ViewTimeObservation(20000))
 
         assertEquals(0, history.queryHistoryMetadata("keystore", 0).size)
@@ -761,29 +811,41 @@ class PlacesHistoryStorageTest {
 
         val beginning = System.currentTimeMillis()
 
-        val metaKey1 = HistoryMetadataKey(
-            url = "https://www.youtube.com/watch?v=lNeRQuiKBd4",
-            referrerUrl = "http://www.twitter.com",
+        val metaKey1 =
+            HistoryMetadataKey(
+                url = "https://www.youtube.com/watch?v=lNeRQuiKBd4",
+                referrerUrl = "http://www.twitter.com",
+            )
+        history.noteHistoryMetadataObservation(
+            metaKey1,
+            HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Media),
         )
-        history.noteHistoryMetadataObservation(metaKey1, HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Media))
         history.noteHistoryMetadataObservation(metaKey1, HistoryMetadataObservation.ViewTimeObservation(20000))
         val afterMeta1 = System.currentTimeMillis()
 
-        val metaKey2 = HistoryMetadataKey(
-            url = "https://www.youtube.com/watch?v=Cs1b5qvCZ54",
-            searchTerm = "путин валдай",
-            referrerUrl = "http://www.yandex.ru",
+        val metaKey2 =
+            HistoryMetadataKey(
+                url = "https://www.youtube.com/watch?v=Cs1b5qvCZ54",
+                searchTerm = "путин валдай",
+                referrerUrl = "http://www.yandex.ru",
+            )
+        history.noteHistoryMetadataObservation(
+            metaKey2,
+            HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Media),
         )
-        history.noteHistoryMetadataObservation(metaKey2, HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Media))
         history.noteHistoryMetadataObservation(metaKey2, HistoryMetadataObservation.ViewTimeObservation(200))
         val afterMeta2 = System.currentTimeMillis()
 
-        val metaKey3 = HistoryMetadataKey(
-            url = "https://www.ifixit.com/News/35377/which-wireless-earbuds-are-the-least-evil",
-            searchTerm = "repairable wireless headset",
-            referrerUrl = "http://www.google.com",
+        val metaKey3 =
+            HistoryMetadataKey(
+                url = "https://www.ifixit.com/News/35377/which-wireless-earbuds-are-the-least-evil",
+                searchTerm = "repairable wireless headset",
+                referrerUrl = "http://www.google.com",
+            )
+        history.noteHistoryMetadataObservation(
+            metaKey3,
+            HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Regular),
         )
-        history.noteHistoryMetadataObservation(metaKey3, HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Regular))
         history.noteHistoryMetadataObservation(metaKey3, HistoryMetadataObservation.ViewTimeObservation(2000))
 
         assertEquals(3, history.getHistoryMetadataBetween(0, Long.MAX_VALUE).size)
@@ -815,32 +877,44 @@ class PlacesHistoryStorageTest {
         assertEquals(0, history.getHistoryMetadataSince(Long.MAX_VALUE).size)
         assertEquals(0, history.getHistoryMetadataSince(beginning).size)
 
-        val metaKey1 = HistoryMetadataKey(
-            url = "https://www.youtube.com/watch?v=lNeRQuiKBd4",
-            referrerUrl = "http://www.twitter.com/",
+        val metaKey1 =
+            HistoryMetadataKey(
+                url = "https://www.youtube.com/watch?v=lNeRQuiKBd4",
+                referrerUrl = "http://www.twitter.com/",
+            )
+        history.noteHistoryMetadataObservation(
+            metaKey1,
+            HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Media),
         )
-        history.noteHistoryMetadataObservation(metaKey1, HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Media))
         history.noteHistoryMetadataObservation(metaKey1, HistoryMetadataObservation.ViewTimeObservation(20000))
         Thread.sleep(10)
         val afterMeta1 = System.currentTimeMillis()
 
-        val metaKey2 = HistoryMetadataKey(
-            url = "https://www.ifixit.com/News/35377/which-wireless-earbuds-are-the-least-evil",
-            searchTerm = "repairable wireless headset",
-            referrerUrl = "http://www.google.com/",
+        val metaKey2 =
+            HistoryMetadataKey(
+                url = "https://www.ifixit.com/News/35377/which-wireless-earbuds-are-the-least-evil",
+                searchTerm = "repairable wireless headset",
+                referrerUrl = "http://www.google.com/",
+            )
+        history.noteHistoryMetadataObservation(
+            metaKey2,
+            HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Regular),
         )
-        history.noteHistoryMetadataObservation(metaKey2, HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Regular))
         history.noteHistoryMetadataObservation(metaKey2, HistoryMetadataObservation.ViewTimeObservation(2000))
 
         Thread.sleep(10)
         val afterMeta2 = System.currentTimeMillis()
 
-        val metaKey3 = HistoryMetadataKey(
-            url = "https://www.youtube.com/watch?v=Cs1b5qvCZ54",
-            searchTerm = "путин валдай",
-            referrerUrl = "http://www.yandex.ru/",
+        val metaKey3 =
+            HistoryMetadataKey(
+                url = "https://www.youtube.com/watch?v=Cs1b5qvCZ54",
+                searchTerm = "путин валдай",
+                referrerUrl = "http://www.yandex.ru/",
+            )
+        history.noteHistoryMetadataObservation(
+            metaKey3,
+            HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Media),
         )
-        history.noteHistoryMetadataObservation(metaKey3, HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Media))
         history.noteHistoryMetadataObservation(metaKey3, HistoryMetadataObservation.ViewTimeObservation(200))
 
         // order is by updatedAt
@@ -875,7 +949,7 @@ class PlacesHistoryStorageTest {
             HistoryMetadataKey(
                 url = "https://www.youtube.com/watch?v=lNeRQuiKBd4",
                 referrerUrl = "http://www.twitter.com/",
-            ),
+            )
         ) {
             history.noteHistoryMetadataObservation(
                 this,
@@ -896,7 +970,7 @@ class PlacesHistoryStorageTest {
                 url = "https://www.ifixit.com/News/35377/which-wireless-earbuds-are-the-least-evil",
                 searchTerm = "repairable wireless headset",
                 referrerUrl = "http://www.google.com/",
-            ),
+            )
         ) {
             history.noteHistoryMetadataObservation(
                 this,
@@ -913,7 +987,7 @@ class PlacesHistoryStorageTest {
                 url = "https://www.youtube.com/watch?v=rfdshufsSfsd",
                 searchTerm = "repairable wireless headset",
                 referrerUrl = null,
-            ),
+            )
         ) {
             history.noteHistoryMetadataObservation(
                 this,
@@ -930,7 +1004,7 @@ class PlacesHistoryStorageTest {
                 url = "https://www.ifixit.com/News/35377/which-wireless-earbuds-are-the-least-evil",
                 searchTerm = "repairable wireless headset",
                 referrerUrl = "http://www.yandex.ru/",
-            ),
+            )
         ) {
             history.noteHistoryMetadataObservation(
                 this,
@@ -947,7 +1021,7 @@ class PlacesHistoryStorageTest {
                 url = "https://www.ifixit.com/News/35377/which-wireless-earbuds-are-the-least-evil",
                 searchTerm = "repairable wireless headset",
                 referrerUrl = null,
-            ),
+            )
         ) {
             history.noteHistoryMetadataObservation(
                 this,
@@ -961,7 +1035,7 @@ class PlacesHistoryStorageTest {
                 url = "https://www.youtube.com/watch?v=Cs1b5qvCZ54",
                 searchTerm = "путин валдай",
                 referrerUrl = "http://www.yandex.ru/",
-            ),
+            )
         ) {
             history.noteHistoryMetadataObservation(
                 this,
@@ -980,18 +1054,20 @@ class PlacesHistoryStorageTest {
 
     @Test
     fun `safe read from places`() = runTest {
-        val result = history.handlePlacesExceptions("test", default = emptyList<HistoryMetadata>()) {
-            // Can be any PlacesException error
-            throw PlacesApiException.PlacesConnectionBusy("test")
-        }
+        val result =
+            history.handlePlacesExceptions("test", default = emptyList<HistoryMetadata>()) {
+                // Can be any PlacesException error
+                throw PlacesApiException.PlacesConnectionBusy("test")
+            }
         assertEquals(emptyList<HistoryMetadata>(), result)
     }
 
     @Test
     fun `interrupted read from places is not reported to crash services and returns the default`() = runTest {
-        val result = history.handlePlacesExceptions("test", default = emptyList<HistoryMetadata>()) {
-            throw PlacesApiException.OperationInterrupted("An interrupted in progress query will throw")
-        }
+        val result =
+            history.handlePlacesExceptions("test", default = emptyList<HistoryMetadata>()) {
+                throw PlacesApiException.OperationInterrupted("An interrupted in progress query will throw")
+            }
 
         verify(history.crashReporter!!, never()).submitCaughtException(any())
         assertEquals(emptyList<HistoryMetadata>(), result)
@@ -1004,7 +1080,9 @@ class PlacesHistoryStorageTest {
         assertTrue(history.canAddUri("https://www.mozilla.com"))
         assertTrue(history.canAddUri("ftp://files.mozilla.com/stuff/fenix.apk"))
         assertTrue(history.canAddUri("about:reader?url=http://www.mozilla.com/interesting-article.html"))
-        assertTrue(history.canAddUri("https://john.doe@www.example.com:123/forum/questions/?tag=networking&order=newest#top"))
+        assertTrue(
+            history.canAddUri("https://john.doe@www.example.com:123/forum/questions/?tag=networking&order=newest#top")
+        )
         assertTrue(history.canAddUri("ldap://2001:db8::7/c=GB?objectClass?one"))
         assertTrue(history.canAddUri("telnet://192.0.2.16:80/"))
 
@@ -1028,11 +1106,7 @@ class PlacesHistoryStorageTest {
         history.deleteHistoryMetadataForUrl("")
 
         // Observe some items.
-        with(
-            HistoryMetadataKey(
-                url = "https://firefox.com/",
-            ),
-        ) {
+        with(HistoryMetadataKey(url = "https://firefox.com/")) {
             history.noteHistoryMetadataObservation(
                 this,
                 HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Regular),
@@ -1048,7 +1122,7 @@ class PlacesHistoryStorageTest {
                 url = "https://mozilla.org/",
                 searchTerm = "firefox",
                 referrerUrl = "https://google.com/",
-            ),
+            )
         ) {
             history.noteHistoryMetadataObservation(
                 this,
@@ -1060,11 +1134,7 @@ class PlacesHistoryStorageTest {
             )
         }
 
-        with(
-            HistoryMetadataKey(
-                url = "https://getpocket.com/",
-            ),
-        ) {
+        with(HistoryMetadataKey(url = "https://getpocket.com/")) {
             history.noteHistoryMetadataObservation(
                 this,
                 HistoryMetadataObservation.DocumentTypeObservation(DocumentType.Regular),
@@ -1094,16 +1164,14 @@ class PlacesHistoryStorageTest {
         expectedKey: HistoryMetadataKey,
         expectedTotalViewTime: Int,
         expectedDocumentType: DocumentType,
-        db_meta: HistoryMetadata,
+        dbMeta: HistoryMetadata,
     ) {
-        assertEquals(expectedKey, db_meta.key)
-        assertEquals(expectedTotalViewTime, db_meta.totalViewTime)
-        assertEquals(expectedDocumentType, db_meta.documentType)
+        assertEquals(expectedKey, dbMeta.key)
+        assertEquals(expectedTotalViewTime, dbMeta.totalViewTime)
+        assertEquals(expectedDocumentType, dbMeta.documentType)
     }
 }
 
 fun getTestPath(path: String): File {
-    return PlacesHistoryStorage::class.java.classLoader!!
-        .getResource(path).file
-        .let { File(it) }
+    return PlacesHistoryStorage::class.java.classLoader!!.getResource(path).file.let { File(it) }
 }

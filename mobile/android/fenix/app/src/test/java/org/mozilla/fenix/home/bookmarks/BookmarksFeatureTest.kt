@@ -23,11 +23,12 @@ class BookmarksFeatureTest {
     private val middleware = CaptureActionsMiddleware<AppState, AppAction>()
     private val appStore = AppStore(middlewares = listOf(middleware))
     private val bookmarksUseCases: BookmarksUseCase = mockk(relaxed = true)
-    private val bookmark = Bookmark(
-        title = null,
-        url = "https://www.example.com",
-        previewImageUrl = null,
-    )
+    private val bookmark =
+        Bookmark(
+            title = null,
+            url = "https://www.example.com",
+            previewImageUrl = null,
+        )
 
     private val testDispatcher = StandardTestDispatcher()
 
@@ -39,12 +40,13 @@ class BookmarksFeatureTest {
     @Test
     fun `GIVEN no bookmarks WHEN feature starts THEN fetch bookmarks and notify store`() =
         runTest(testDispatcher) {
-            val feature = BookmarksFeature(
-                appStore,
-                bookmarksUseCases,
-                this,
-                testDispatcher,
-            )
+            val feature =
+                BookmarksFeature(
+                    appStore,
+                    bookmarksUseCases,
+                    this,
+                    testDispatcher,
+                )
 
             assertEquals(emptyList<Bookmark>(), appStore.state.bookmarks)
 

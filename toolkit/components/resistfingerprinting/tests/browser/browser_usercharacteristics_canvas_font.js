@@ -19,11 +19,12 @@ const ACTOR_NAME = "UserCharacteristicsCanvasRendering";
 function registerActor() {
   ChromeUtils.registerWindowActor(ACTOR_NAME, {
     parent: {
-      esModuleURI: "resource://gre/actors/UserCharacteristicsParent.sys.mjs",
+      esModuleURI:
+        "moz-src:///toolkit/actors/UserCharacteristicsParent.sys.mjs",
     },
     child: {
       esModuleURI:
-        "resource://gre/actors/UserCharacteristicsCanvasRenderingChild.sys.mjs",
+        "moz-src:///toolkit/actors/UserCharacteristicsCanvasRenderingChild.sys.mjs",
     },
     safeForUntrustedWebProcess: true,
   });

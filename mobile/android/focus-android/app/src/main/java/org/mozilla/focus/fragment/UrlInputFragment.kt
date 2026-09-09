@@ -55,20 +55,15 @@ import org.mozilla.focus.utils.SupportUtils
 import org.mozilla.focus.utils.ViewUtils
 
 /**
- * Custom exception used to trigger a crash in Focus.
- * This can be triggered by typing "focus:crash" into the URL bar.
+ * Custom exception used to trigger a crash in Focus. This can be triggered by typing "focus:crash" into the URL bar.
  */
 class FocusCrashException : Exception()
 
-/**
- * Fragment for displaying the URL input controls.
- */
+/** Fragment for displaying the URL input controls. */
 // Refactoring the size and function count of this fragment is non-trivial at this point.
 // Therefore we ignore those violations for now.
 @Suppress("LargeClass", "TooManyFunctions")
-class UrlInputFragment :
-    BaseFragment(),
-    View.OnClickListener {
+class UrlInputFragment : BaseFragment(), View.OnClickListener {
     companion object {
         const val FRAGMENT_TAG = "url_input"
 
@@ -80,15 +75,13 @@ class UrlInputFragment :
         private const val ANIMATION_DURATION = 200
 
         /**
-         * Creates a [Bundle] containing the provided [tabId].
-         * This is used to create a new [UrlInputFragment] for an existing tab session.
+         * Creates a [Bundle] containing the provided [tabId]. This is used to create a new [UrlInputFragment] for an
+         * existing tab session.
          *
          * @param tabId The unique identifier of the tab.
          * @return A [Bundle] with the tab ID and animation arguments.
          */
-        fun bundleForTab(
-            tabId: String,
-        ): Bundle {
+        fun bundleForTab(tabId: String): Bundle {
             return Bundle().apply {
                 putString(ARGUMENT_ANIMATION, ANIMATION_BROWSER_SCREEN)
                 putString(ARGUMENT_SESSION_UUID, tabId)
@@ -99,12 +92,12 @@ class UrlInputFragment :
     private val shippedDomainsProvider = ShippedDomainsProvider()
     private val customDomainsProvider = CustomDomainsProvider()
     private var _binding: FragmentUrlinputBinding? = null
-    private val binding get() = _binding!!
+    private val binding
+        get() = _binding!!
 
     private val searchSuggestionsViewModel: SearchSuggestionsViewModel by activityViewModels()
 
-    @Volatile
-    private var isAnimating: Boolean = false
+    @Volatile private var isAnimating: Boolean = false
 
     var tab: TabSessionState? = null
         private set
@@ -147,7 +140,7 @@ class UrlInputFragment :
 
         if (
             requireComponents.settings.searchWidgetInstalled &&
-            requireComponents.appStore.state.showSearchWidgetSnackbar
+                requireComponents.appStore.state.showSearchWidgetSnackbar
         ) {
             ViewUtils.showBrandedSnackbar(view, R.string.promote_search_widget_snackbar_message, 0)
             SearchWidget.widgetWasAdded.record(NoExtras())
@@ -173,8 +166,7 @@ class UrlInputFragment :
         val topMargin = (inputHeight + statusBarHeight).toInt()
 
         if (binding.searchViewContainer.layoutParams is ViewGroup.MarginLayoutParams) {
-            val marginParams =
-                binding.searchViewContainer.layoutParams as ViewGroup.MarginLayoutParams
+            val marginParams = binding.searchViewContainer.layoutParams as ViewGroup.MarginLayoutParams
             marginParams.topMargin = topMargin
         }
 
@@ -217,15 +209,14 @@ class UrlInputFragment :
     }
 
     private fun setupSearchSuggestionsFragment() {
-        childFragmentManager.beginTransaction()
+        childFragmentManager
+            .beginTransaction()
             .replace(binding.searchViewContainer.id, SearchSuggestionsFragment.create())
             .commit()
     }
 
     private fun observeSearchSuggestions() {
-        searchSuggestionsViewModel.selectedSearchSuggestion.observe(
-            viewLifecycleOwner,
-        ) { suggestion ->
+        searchSuggestionsViewModel.selectedSearchSuggestion.observe(viewLifecycleOwner) { suggestion ->
             suggestion?.let {
                 val isActualSuggestion = searchSuggestionsViewModel.searchQuery.value != it
                 val alwaysSearchEnabled = searchSuggestionsViewModel.alwaysSearch
@@ -260,17 +251,18 @@ class UrlInputFragment :
         )
 
         topSitesFeature.set(
-            feature = TopSitesFeature(
-                view = DefaultTopSitesView(requireComponents.appStore),
-                storage = requireComponents.topSitesStorage,
-                config = {
-                    TopSitesConfig(
-                        totalSites = TOP_SITES_MAX_LIMIT,
-                        frecencyConfig = null,
-                        providerConfig = null,
-                    )
-                },
-            ),
+            feature =
+                TopSitesFeature(
+                    view = DefaultTopSitesView(requireComponents.appStore),
+                    storage = requireComponents.topSitesStorage,
+                    config = {
+                        TopSitesConfig(
+                            totalSites = TOP_SITES_MAX_LIMIT,
+                            frecencyConfig = null,
+                            providerConfig = null,
+                        )
+                    },
+                ),
             owner = this,
             view = requireView(),
         )
@@ -288,20 +280,22 @@ class UrlInputFragment :
         if (isOverlay) {
             binding.landingLayout.isVisible = false
         } else {
-            binding.backgroundView.background = AppCompatResources.getDrawable(
-                requireContext(),
-                R.drawable.home_background,
-            )
+            binding.backgroundView.background =
+                AppCompatResources.getDrawable(
+                    requireContext(),
+                    R.drawable.home_background,
+                )
             binding.dismissView.isVisible = false
             binding.menuView.isVisible = true
         }
 
         tab?.let { currentTab ->
-            binding.browserToolbar.url = if (currentTab.content.hasSearchTerms) {
-                currentTab.content.searchTerms
-            } else {
-                currentTab.content.url
-            }
+            binding.browserToolbar.url =
+                if (currentTab.content.hasSearchTerms) {
+                    currentTab.content.searchTerms
+                } else {
+                    currentTab.content.url
+                }
             binding.searchViewContainer.isVisible = false
             binding.menuView.isVisible = false
         }
@@ -311,12 +305,14 @@ class UrlInputFragment :
     }
 
     private fun setHomeMenu() {
-        binding.menuView.menuBuilder = HomeMenu(requireContext()) { menuItem ->
-            when (menuItem) {
-                is HomeMenuItem.Help -> openHelpPage()
-                is HomeMenuItem.Settings -> openSettingsPage()
-            }
-        }.getMenuBuilder()
+        binding.menuView.menuBuilder =
+            HomeMenu(requireContext()) { menuItem ->
+                    when (menuItem) {
+                        is HomeMenuItem.Help -> openHelpPage()
+                        is HomeMenuItem.Settings -> openSettingsPage()
+                    }
+                }
+                .getMenuBuilder()
     }
 
     private fun openHelpPage() {
@@ -328,16 +324,14 @@ class UrlInputFragment :
     }
 
     private fun openSettingsPage() {
-        requireComponents.appStore.dispatch(
-            AppAction.OpenSettings(page = Screen.Settings.Page.Start),
-        )
+        requireComponents.appStore.dispatch(AppAction.OpenSettings(page = Screen.Settings.Page.Start))
     }
 
     /**
      * Handles the back button press.
      *
-     * If the fragment is an overlay, it will animate and dismiss the fragment.
-     * Otherwise, it will allow the default back button behavior.
+     * If the fragment is an overlay, it will animate and dismiss the fragment. Otherwise, it will allow the default
+     * back button behavior.
      *
      * @return True if the back button press was handled by this fragment, false otherwise.
      */
@@ -362,10 +356,11 @@ class UrlInputFragment :
         super.onConfigurationChanged(newConfig)
 
         if (newConfig.orientation != Configuration.ORIENTATION_UNDEFINED) {
-            binding.backgroundView.background = AppCompatResources.getDrawable(
-                requireContext(),
-                R.drawable.home_background,
-            )
+            binding.backgroundView.background =
+                AppCompatResources.getDrawable(
+                    requireContext(),
+                    R.drawable.home_background,
+                )
         }
     }
 
@@ -419,11 +414,12 @@ class UrlInputFragment :
     private data class AnimationParams(val xyOffset: Float, val widthScale: Float, val heightScale: Float)
 
     private fun resolveAnimationParams(): AnimationParams {
-        val xyOffset = if (isOverlay) {
-            (binding.urlInputContainerView.layoutParams as FrameLayout.LayoutParams).bottomMargin.toFloat()
-        } else {
-            0f
-        }
+        val xyOffset =
+            if (isOverlay) {
+                (binding.urlInputContainerView.layoutParams as FrameLayout.LayoutParams).bottomMargin.toFloat()
+            } else {
+                0f
+            }
         val width = binding.urlInputBackgroundView.width.toFloat()
         val height = binding.urlInputBackgroundView.height.toFloat()
         return AnimationParams(
@@ -441,28 +437,31 @@ class UrlInputFragment :
         translationY: Float,
         onEnd: (() -> Unit)? = null,
     ) {
-        binding.urlInputBackgroundView.animate()
+        binding.urlInputBackgroundView
+            .animate()
             .setDuration(ANIMATION_DURATION.toLong())
             .scaleX(scaleX)
             .scaleY(scaleY)
             .alpha(alpha)
             .translationX(translationX)
             .translationY(translationY)
-            .setListener(object : AnimatorListenerAdapter() {
-                // onAnimationEnd is called even after a cancel on ViewPropertyAnimator,
-                // so we track cancellation to avoid invoking onEnd in that case.
-                private var cancelled = false
+            .setListener(
+                object : AnimatorListenerAdapter() {
+                    // onAnimationEnd is called even after a cancel on ViewPropertyAnimator,
+                    // so we track cancellation to avoid invoking onEnd in that case.
+                    private var cancelled = false
 
-                override fun onAnimationCancel(animation: Animator) {
-                    cancelled = true
-                    isAnimating = false
-                }
+                    override fun onAnimationCancel(animation: Animator) {
+                        cancelled = true
+                        isAnimating = false
+                    }
 
-                override fun onAnimationEnd(animation: Animator) {
-                    isAnimating = false
-                    if (!cancelled) onEnd?.invoke()
+                    override fun onAnimationEnd(animation: Animator) {
+                        isAnimating = false
+                        if (!cancelled) onEnd?.invoke()
+                    }
                 }
-            })
+            )
     }
 
     private fun animateEnter() {
@@ -542,11 +541,8 @@ class UrlInputFragment :
             if (isUrl) {
                 SearchBar.enteredUrl.record(NoExtras())
             } else {
-                val defaultSearchEngineName =
-                    requireComponents.store.defaultSearchEngineName().lowercase()
-                SearchBar.performedSearch.record(
-                    SearchBar.PerformedSearchExtra(defaultSearchEngineName),
-                )
+                val defaultSearchEngineName = requireComponents.store.defaultSearchEngineName().lowercase()
+                SearchBar.performedSearch.record(SearchBar.PerformedSearchExtra(defaultSearchEngineName))
                 BrowserSearch.searchCount["$defaultSearchEngineName.action"].add()
             }
         }
@@ -596,9 +592,7 @@ class UrlInputFragment :
         val normalizedUrl = URLStringUtils.toNormalizedURL(url)
         when (normalizedUrl) {
             "focus:about" -> {
-                requireComponents.appStore.dispatch(
-                    AppAction.OpenSettings(Screen.Settings.Page.About),
-                )
+                requireComponents.appStore.dispatch(AppAction.OpenSettings(Screen.Settings.Page.About))
                 return
             }
         }

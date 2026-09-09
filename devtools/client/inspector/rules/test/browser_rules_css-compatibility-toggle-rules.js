@@ -118,6 +118,7 @@ const TEST_DATA_TOGGLE_INLINE = [
 ];
 
 add_task(async function () {
+  await setMockCompatibilityDataset();
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   const { inspector, view } = await openRuleView();
 

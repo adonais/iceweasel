@@ -1,0 +1,82 @@
+<!DOCTYPE HTML>
+<html>
+<meta charset=utf-8>
+<head>
+  <title>Test that multichannel audio decodes with its channels in the right order</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<pre id="test">
+<script class="testbody" type="text/javascript">
+// vorbis-6ch-channel-order.webm is 6 channels of 48kHz Vorbis split into six
+// equal segments. The channel that must decode to output slot i carries a
+// 60Hz tone only during segment i; every other channel is silent there. The
+// tone is low frequency because libvorbis lowpasses the LFE channel in its 5.1
+// mode, which would swallow the segment that has to prove the LFE slot.
+//
+// Vorbis stores channels in the order given by the Vorbis I spec section 4.3.9
+// (L, C, R, rear L, rear R, LFE for 5.1), which is not the order Gecko and the
+// platform expect (L, R, C, LFE, surround L, surround R). A decoder that fails
+// to remap them still reports six channels and still plays audio, so checking
+// numberOfChannels alone does not catch it -- the tone simply comes out of the
+// wrong speaker. See bug 1991957.
+const SEGMENTS = 6;
+
+// Non-active channels decode to silence, so a modest margin distinguishes the
+// intended channel without being sensitive to the encoder's exact output.
+const MIN_MARGIN = 8;
+
+function rms(samples, start, end) {
+  let acc = 0;
+  for (let i = start; i < end; i++) {
+    acc += samples[i] * samples[i];
+  }
+  return Math.sqrt(acc / (end - start));
+}
+
+function checkChannelOrder(buffer) {
+  is(buffer.numberOfChannels, SEGMENTS,
+     "Decoded buffer should have 6 channels");
+
+  for (let segment = 0; segment < SEGMENTS; segment++) {
+    // Measure the middle of each segment; lapped transforms bleed across the
+    // boundaries.
+    const segStart = Math.floor((buffer.length * segment) / SEGMENTS);
+    const segEnd = Math.floor((buffer.length * (segment + 1)) / SEGMENTS);
+    const margin = Math.floor((segEnd - segStart) / 5);
+    const start = segStart + margin;
+    const end = segEnd - margin;
+
+    const levels = [];
+    for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+      levels.push(rms(buffer.getChannelData(channel), start, end));
+    }
+
+    const sorted = [...levels].sort((a, b) => b - a);
+    const loudest = levels.indexOf(sorted[0]);
+    is(loudest, segment,
+       `Segment ${segment} should be loudest on channel ${segment}, ` +
+       `levels: ${levels.map(l => l.toFixed(4)).join(", ")}`);
+    ok(sorted[0] > sorted[1] * MIN_MARGIN,
+       `Segment ${segment} channel ${loudest} (${sorted[0].toFixed(4)}) should ` +
+       `stand well clear of the next loudest (${sorted[1].toFixed(4)})`);
+  }
+}
+
+SimpleTest.waitForExplicitFinish();
+
+fetch("vorbis-6ch-channel-order.webm")
+  .then(response => {
+    ok(response.ok, "Fetched the multichannel Vorbis file");
+    return response.arrayBuffer();
+  })
+  .then(data => new AudioContext().decodeAudioData(data))
+  .then(checkChannelOrder)
+  .catch(e => ok(false, `Unexpected failure: ${e}`))
+  .then(() => SimpleTest.finish());
+
+</script>
+</pre>
+</body>
+</html>

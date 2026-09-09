@@ -54,51 +54,55 @@ fun TabCounter(
 
     // Wrapping the TabCounterView in our button composables to ensure the proper ripple effect.
     when (shouldReactToLongClicks) {
-        true -> LongPressIconButton(
-            onClick = { onInteraction(onClick) },
-            onLongClick = {
-                when (onLongClick) {
-                    is BrowserToolbarEvent -> onInteraction(onLongClick)
-                    is BrowserToolbarMenu -> showMenu = true
-                    is CombinedEventAndMenu -> {
-                        onInteraction(onLongClick.event)
-                        showMenu = true
+        true ->
+            LongPressIconButton(
+                onClick = { onInteraction(onClick) },
+                onLongClick = {
+                    when (onLongClick) {
+                        is BrowserToolbarEvent -> onInteraction(onLongClick)
+                        is BrowserToolbarMenu -> showMenu = true
+                        is CombinedEventAndMenu -> {
+                            onInteraction(onLongClick.event)
+                            showMenu = true
+                        }
+                        null -> {
+                            // no-op. This case is not possible. Just making the compiler happy.
+                        }
                     }
-                    null -> {
-                        // no-op. This case is not possible. Just making the compiler happy.
-                    }
-                }
-            },
-            contentDescription = "", // Set internally by the TabCounter View for every count change.
-            modifier = Modifier.semantics(mergeDescendants = true) {
-                testTag = TABS_COUNTER
-            },
-        ) {
-            TabCounter(count, showPrivacyMask)
-
-            CustomPlacementPopup(
-                isVisible = showMenu,
-                onDismissRequest = { showMenu = false },
+                },
+                contentDescription = "", // Set internally by the TabCounter View for every count change.
+                modifier =
+                    Modifier.semantics(mergeDescendants = true) {
+                        testTag = TABS_COUNTER
+                    },
             ) {
-                onLongClick?.let {
-                    CustomPlacementPopupVerticalContent {
-                        it.toMenuItems().forEach { menuItem ->
-                            menuItemComposable(menuItem) { event ->
-                                showMenu = false
-                                onInteraction(event)
-                            }.invoke()
+                TabCounter(count, showPrivacyMask)
+
+                CustomPlacementPopup(
+                    isVisible = showMenu,
+                    onDismissRequest = { showMenu = false },
+                ) {
+                    onLongClick?.let {
+                        CustomPlacementPopupVerticalContent {
+                            it.toMenuItems().forEach { menuItem ->
+                                menuItemComposable(menuItem) { event ->
+                                        showMenu = false
+                                        onInteraction(event)
+                                    }
+                                    .invoke()
+                            }
                         }
                     }
                 }
             }
-        }
 
-        false -> IconButton(
-            onClick = { onInteraction(onClick) },
-            contentDescription = "", // Set internally by the TabCounter View for every count change.
-        ) {
-            TabCounter(count, showPrivacyMask)
-        }
+        false ->
+            IconButton(
+                onClick = { onInteraction(onClick) },
+                contentDescription = "", // Set internally by the TabCounter View for every count change.
+            ) {
+                TabCounter(count, showPrivacyMask)
+            }
     }
 }
 

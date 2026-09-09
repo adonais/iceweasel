@@ -435,18 +435,6 @@ class BrowserParent final : public PBrowserParent,
 
   mozilla::ipc::IPCResult RecvPVsyncConstructor(PVsyncParent* aActor) override;
 
-#ifdef ACCESSIBILITY
-  PDocAccessibleParent* AllocPDocAccessibleParent(
-      PDocAccessibleParent*, const uint64_t&,
-      const MaybeDiscardedBrowsingContext&, const bool&);
-  bool DeallocPDocAccessibleParent(PDocAccessibleParent*);
-  virtual mozilla::ipc::IPCResult RecvPDocAccessibleConstructor(
-      PDocAccessibleParent* aDoc, PDocAccessibleParent* aParentDoc,
-      const uint64_t& aParentID,
-      const MaybeDiscardedBrowsingContext& aBrowsingContext,
-      const bool& aIsPrintDoc) override;
-#endif
-
   already_AddRefed<PSessionStoreParent> AllocPSessionStoreParent();
 
   mozilla::ipc::IPCResult RecvNewWindowGlobal(
@@ -751,6 +739,7 @@ class BrowserParent final : public PBrowserParent,
 
   mozilla::ipc::IPCResult RecvRemoteIsReadyToHandleInputEvents();
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvSetDimensions(mozilla::DimensionRequest aRequest,
                                             const double& aScale);
 
@@ -770,6 +759,7 @@ class BrowserParent final : public PBrowserParent,
   mozilla::ipc::IPCResult RecvMaybeFireEmbedderLoadEvents(
       EmbedderElementEventType aFireEventAtEmbeddingElement);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvRequestPointerLock(
       const bool& aUnadjustedMovement, RequestPointerLockResolver&& aResolve);
   mozilla::ipc::IPCResult RecvReleasePointerLock();

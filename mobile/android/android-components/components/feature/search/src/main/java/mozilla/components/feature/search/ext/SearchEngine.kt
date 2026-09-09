@@ -9,6 +9,8 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
+import java.io.InputStream
+import java.util.UUID
 import mozilla.components.browser.state.search.OS_SEARCH_ENGINE_TERMS_PARAM
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.SearchState
@@ -16,12 +18,8 @@ import mozilla.components.browser.state.state.searchEngines
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.feature.search.internal.SearchUrlBuilder
 import mozilla.components.feature.search.storage.SearchEngineReader
-import java.io.InputStream
-import java.util.UUID
 
-/**
- * Creates a custom [SearchEngine].
- */
+/** Creates a custom [SearchEngine]. */
 fun createSearchEngine(
     name: String,
     url: String,
@@ -48,9 +46,7 @@ fun createSearchEngine(
     )
 }
 
-/**
- * Creates an application [SearchEngine].
- */
+/** Creates an application [SearchEngine]. */
 fun createApplicationSearchEngine(
     id: String? = null,
     name: String,
@@ -72,47 +68,33 @@ fun createApplicationSearchEngine(
     )
 }
 
-/**
- * Whether this [SearchEngine] has a [SearchEngine.suggestUrl] set and can provide search
- * suggestions.
- */
+/** Whether this [SearchEngine] has a [SearchEngine.suggestUrl] set and can provide search suggestions. */
 val SearchEngine.canProvideSearchSuggestions: Boolean
     get() = suggestUrl != null
 
-/**
- * Whether this [SearchEngine] has a [SearchEngine.trendingUrl] set and can provide trending
- * searches.
- */
+/** Whether this [SearchEngine] has a [SearchEngine.trendingUrl] set and can provide trending searches. */
 val SearchEngine.canProvideTrendingSearches: Boolean
     get() = trendingUrl != null
 
-/**
- * Creates an URL to retrieve search suggestions for the provided [query].
- */
+/** Creates an URL to retrieve search suggestions for the provided [query]. */
 fun SearchEngine.buildSuggestionsURL(query: String): String? {
     val builder = SearchUrlBuilder(this)
     return builder.buildSuggestionUrl(query)
 }
 
-/**
- * Creates an URL to retrieve trending searches with this search engine.
- */
+/** Creates an URL to retrieve trending searches with this search engine. */
 fun SearchEngine.buildTrendingURL(): String? {
     val builder = SearchUrlBuilder(this)
     return builder.buildTrendingUrl()
 }
 
-/**
- * Builds a URL to search for the given search terms with this search engine.
- */
+/** Builds a URL to search for the given search terms with this search engine. */
 fun SearchEngine.buildSearchUrl(searchTerm: String): String {
     val builder = SearchUrlBuilder(this)
     return builder.buildSearchUrl(searchTerm)
 }
 
-/**
- * Parses a [SearchEngine] from the given [stream].
- */
+/** Parses a [SearchEngine] from the given [stream]. */
 @Deprecated("Only for migrating legacy search engines. Will eventually be removed.")
 fun parseLegacySearchEngine(context: Context, id: String, stream: InputStream): SearchEngine {
     val reader = SearchEngineReader(context, SearchEngine.Type.CUSTOM)
@@ -120,8 +102,9 @@ fun parseLegacySearchEngine(context: Context, id: String, stream: InputStream): 
 }
 
 /**
- * Given a [SearchState], determine if the passed-in [url] is a known search results page url
- * and what are the associated search terms.
+ * Given a [SearchState], determine if the passed-in [url] is a known search results page url and what are the
+ * associated search terms.
+ *
  * @return Search terms if [url] is a known search results page, `null` otherwise.
  */
 fun SearchState.parseSearchTerms(url: String): String? {
@@ -131,7 +114,9 @@ fun SearchState.parseSearchTerms(url: String): String? {
     // Or go through the rest of known engines.
     val fallback: () -> String? = fallback@{
         this.searchEngines.forEach { searchEngine ->
-            searchEngine.parseSearchTerms(parsedUrl)?.let { return@fallback it }
+            searchEngine.parseSearchTerms(parsedUrl)?.let {
+                return@fallback it
+            }
         }
         return@fallback null
     }
@@ -139,8 +124,9 @@ fun SearchState.parseSearchTerms(url: String): String? {
 }
 
 /**
- * Given a [SearchEngine], determine if the passed-in [url] matches its results template,
- * and what are the associated search terms.
+ * Given a [SearchEngine], determine if the passed-in [url] matches its results template, and what are the associated
+ * search terms.
+ *
  * @return Search terms if [url] matches the results page template, `null` otherwise.
  */
 @VisibleForTesting
@@ -153,14 +139,15 @@ fun SearchEngine.parseSearchTerms(url: Uri): String? {
     val urlRoot = url.authority + url.path
 
     return if (searchResultsRoot == urlRoot) {
-        val searchTerms = try {
-            this.searchParameterName?.let {
-                url.getQueryParameter(it)
+        val searchTerms =
+            try {
+                this.searchParameterName?.let {
+                    url.getQueryParameter(it)
+                }
+            } catch (e: UnsupportedOperationException) {
+                // Non-hierarchical url.
+                null
             }
-        } catch (e: UnsupportedOperationException) {
-            // Non-hierarchical url.
-            null
-        }
         searchTerms.takeUnless { it.isNullOrEmpty() }
     } else {
         null

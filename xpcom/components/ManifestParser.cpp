@@ -27,7 +27,7 @@
 #  include "mozilla/BackgroundTasks.h"
 #endif
 
-#include "mozilla/Services.h"
+#include "mozilla/Components.h"
 #include "nsCRT.h"
 #include "nsConsoleMessage.h"
 #include "nsIConsoleService.h"
@@ -634,7 +634,8 @@ void ParseManifest(NSLocationType aType, FileLocation& aFile, char* aBuf,
       }
 
       if (!nsChromeRegistry::gChromeRegistry) {
-        nsCOMPtr<nsIChromeRegistry> cr = mozilla::services::GetChromeRegistry();
+        nsCOMPtr<nsIChromeRegistry> cr =
+            mozilla::components::ChromeRegistry::Service();
         if (!nsChromeRegistry::gChromeRegistry) {
           LogMessageWithContext(aFile, line,
                                 "Chrome registry isn't available yet.");

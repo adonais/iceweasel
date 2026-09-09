@@ -19,10 +19,9 @@ import com.google.android.material.snackbar.Snackbar
 import org.mozilla.focus.databinding.FocusSnackbarBinding
 import org.mozilla.focus.ext.isAccessibilityEnabled
 
-/**
- * A custom [Snackbar] implementation for Focus.
- */
-class FocusSnackbar private constructor(
+/** A custom [Snackbar] implementation for Focus. */
+class FocusSnackbar
+private constructor(
     parent: ViewGroup,
     private val binding: FocusSnackbarBinding,
     contentViewCallback: FocusSnackbarCallback,
@@ -33,16 +32,12 @@ class FocusSnackbar private constructor(
         view.setPadding(0, 0, 0, 0)
     }
 
-    /**
-     * Sets the text to be displayed in the snackbar.
-     */
+    /** Sets the text to be displayed in the snackbar. */
     fun setText(text: String) = apply {
         binding.snackbarText.text = text
     }
 
-    /**
-     * Sets an action to be performed on clicking [FocusSnackbar]'s action button.
-     */
+    /** Sets an action to be performed on clicking [FocusSnackbar]'s action button. */
     fun setAction(text: String, action: (Context) -> Unit) = apply {
         binding.snackbarAction.apply {
             setText(text)
@@ -59,18 +54,18 @@ class FocusSnackbar private constructor(
         const val LENGTH_SHORT = Snackbar.LENGTH_SHORT
         private const val LENGTH_ACCESSIBLE = 15000 // 15 seconds in ms
 
-        /**
-         * Display a custom Focus Snackbar in the given view with duration and proper styling.
-         */
+        /** Display a custom Focus Snackbar in the given view with duration and proper styling. */
         fun make(
             view: View,
             duration: Int = LENGTH_LONG,
         ): FocusSnackbar {
-            val parent = findSuitableParent(view) ?: run {
-                throw IllegalArgumentException(
-                    "No suitable parent found from the given view. Please provide a valid view.",
-                )
-            }
+            val parent =
+                findSuitableParent(view)
+                    ?: run {
+                        throw IllegalArgumentException(
+                            "No suitable parent found from the given view. Please provide a valid view."
+                        )
+                    }
 
             val inflater = LayoutInflater.from(parent.context)
             val binding = FocusSnackbarBinding.inflate(inflater, parent, false)
@@ -86,9 +81,7 @@ class FocusSnackbar private constructor(
 
             return FocusSnackbar(parent, binding, callback).also {
                 it.duration = durationOrAccessibleDuration
-                it.view.updatePadding(
-                    bottom = 0,
-                )
+                it.view.updatePadding(bottom = 0)
             }
         }
 
@@ -122,9 +115,7 @@ class FocusSnackbar private constructor(
     }
 }
 
-private class FocusSnackbarCallback(
-    private val content: View,
-) : ContentViewCallback {
+private class FocusSnackbarCallback(private val content: View) : ContentViewCallback {
 
     override fun animateContentIn(delay: Int, duration: Int) {
         content.translationY = (content.height).toFloat()

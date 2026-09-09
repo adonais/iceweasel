@@ -6,6 +6,12 @@ package mozilla.components.feature.awesomebar.provider
 
 import android.graphics.Bitmap
 import androidx.annotation.VisibleForTesting
+import java.time.DateTimeException
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import java.util.UUID
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.take
@@ -25,12 +31,6 @@ import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestio
 import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionStatusType
 import mozilla.components.feature.awesomebar.optimizedsuggestions.SportSuggestionTeam
 import mozilla.components.feature.search.SearchUseCases
-import java.time.DateTimeException
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
-import java.util.UUID
 
 internal const val DEFAULT_SPORT_SUGGESTION_LIMIT = 1
 
@@ -62,13 +62,14 @@ class SportsOnlineSuggestionProvider(
         if (text.isBlank()) return emptyList()
 
         val items = dataSource.fetchSports(text)
-        val suggestions = items
-            .asFlow()
-            .mapNotNull { item ->
-                item.toSuggestionOrNull()?.let { it to item.sportCategory }
-            }
-            .take(maxNumberOfSuggestions)
-            .toList()
+        val suggestions =
+            items
+                .asFlow()
+                .mapNotNull { item ->
+                    item.toSuggestionOrNull()?.let { it to item.sportCategory }
+                }
+                .take(maxNumberOfSuggestions)
+                .toList()
 
         suggestions.forEach {
             emitOptimizedSuggestionCardDisplayedFact(
@@ -81,8 +82,7 @@ class SportsOnlineSuggestionProvider(
     }
 
     private suspend fun SportItem.toSuggestionOrNull(): SportSuggestion? {
-        val hasRequiredFields =
-            query.isNotBlank() && sport.isNotBlank()
+        val hasRequiredFields = query.isNotBlank() && sport.isNotBlank()
         val sportCategory = parseSportCategory(sportCategory)
         val date = parseDate(date)
         val status = parseStatus(status)
@@ -136,11 +136,7 @@ class SportsOnlineSuggestionProvider(
                     SportSuggestionDate.Tomorrow(time)
                 }
                 else -> {
-                    val date = parsedDate.format(
-                        DateTimeFormatter
-                            .ofPattern("d MMM yyyy")
-                            .withLocale(locale),
-                    )
+                    val date = parsedDate.format(DateTimeFormatter.ofPattern("d MMM yyyy").withLocale(locale))
                     SportSuggestionDate.General(date)
                 }
             }
@@ -160,8 +156,7 @@ class SportsOnlineSuggestionProvider(
             "Canceled" -> SportSuggestionStatus.Canceled
             "Final",
             "Final - Over Time",
-            "Final - Shoot Out",
-            -> SportSuggestionStatus.Final
+            "Final - Shoot Out" -> SportSuggestionStatus.Final
             "Forfeit" -> SportSuggestionStatus.Forfeit
             "Not Necessary" -> SportSuggestionStatus.NotNecessary
             else -> SportSuggestionStatus.Unknown
@@ -181,9 +176,11 @@ class SportsOnlineSuggestionProvider(
     @VisibleForTesting
     internal suspend fun parseTeam(team: SportItem.Team): SportSuggestionTeam? {
         val icon = fetchTeamIcon(icons, team.icon)
-        return team.name.takeIf { it.isNotBlank() }?.let {
-            SportSuggestionTeam(it, team.score, icon)
-        }
+        return team.name
+            .takeIf { it.isNotBlank() }
+            ?.let {
+                SportSuggestionTeam(it, team.score, icon)
+            }
     }
 
     @VisibleForTesting
@@ -207,12 +204,13 @@ class SportsOnlineSuggestionProvider(
         if (url.isNullOrBlank()) return null
 
         val resources = listOf(IconRequest.Resource(url, IconRequest.Resource.Type.IMAGE_SRC))
-        val request = IconRequest(
-            url = url,
-            size = IconRequest.Size.LAUNCHER_ADAPTIVE,
-            resources = resources,
-            isPrivate = true,
-        )
+        val request =
+            IconRequest(
+                url = url,
+                size = IconRequest.Size.LAUNCHER_ADAPTIVE,
+                resources = resources,
+                isPrivate = true,
+            )
 
         val icon = icons.loadIcon(request).await()
         return icon.bitmap

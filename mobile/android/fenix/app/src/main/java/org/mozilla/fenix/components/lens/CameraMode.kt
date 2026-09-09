@@ -5,7 +5,10 @@
 package org.mozilla.fenix.components.lens
 
 /**
- * Capture mode for the Lens camera screen. Lens mode captures or picks an image
- * for upload to Google Lens; QR mode runs continuous QR detection on the preview.
+ * Capture mode for the Lens camera screen. Lens mode captures or picks an image for upload to Google Lens; QR mode runs
+ * continuous QR detection on the preview.
  */
-enum class CameraMode { LENS, QR }
+enum class CameraMode {
+    LENS,
+    QR,
+}

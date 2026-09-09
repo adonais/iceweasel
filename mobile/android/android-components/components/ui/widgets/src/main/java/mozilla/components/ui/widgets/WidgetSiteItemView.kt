@@ -20,10 +20,12 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
 
 /**
- * Shared UI widget for showing a website in a list of websites,
- * such as in bookmarks, history, site exceptions, or collections.
+ * Shared UI widget for showing a website in a list of websites, such as in bookmarks, history, site exceptions, or
+ * collections.
  */
-class WidgetSiteItemView @JvmOverloads constructor(
+class WidgetSiteItemView
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
@@ -34,9 +36,7 @@ class WidgetSiteItemView @JvmOverloads constructor(
     private val iconWrapper: FrameLayout by lazy { findViewById<FrameLayout>(R.id.favicon_wrapper) }
     private val secondaryButton: ImageButton by lazy { findViewById<ImageButton>(R.id.secondary_button) }
 
-    /**
-     * ImageView that should display favicons.
-     */
+    /** ImageView that should display favicons. */
     val iconView: ImageView by lazy { findViewById<ImageView>(R.id.favicon) }
 
     init {
@@ -55,9 +55,7 @@ class WidgetSiteItemView @JvmOverloads constructor(
         captionView.isVisible = caption != null
     }
 
-    /**
-     * Add a view that will overlay the favicon, such as a checkmark.
-     */
+    /** Add a view that will overlay the favicon, such as a checkmark. */
     fun addIconOverlay(overlay: View) {
         iconWrapper.addView(overlay)
     }
@@ -91,15 +89,14 @@ class WidgetSiteItemView @JvmOverloads constructor(
         @DrawableRes icon: Int,
         @StringRes contentDescription: Int,
         onClickListener: (View) -> Unit,
-    ) = setSecondaryButton(
-        icon = getDrawable(context, icon),
-        contentDescription = context.getString(contentDescription),
-        onClickListener = onClickListener,
-    )
+    ) =
+        setSecondaryButton(
+            icon = getDrawable(context, icon),
+            contentDescription = context.getString(contentDescription),
+            onClickListener = onClickListener,
+        )
 
-    /**
-     * Removes the secondary button if it was previously set in [setSecondaryButton].
-     */
+    /** Removes the secondary button if it was previously set in [setSecondaryButton]. */
     fun removeSecondaryButton() {
         secondaryButton.isVisible = false
     }

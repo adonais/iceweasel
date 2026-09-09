@@ -9,6 +9,10 @@ DIRS += [
     "webdriver-bidi",
 ]
 
+# Localized strings are only used by the connection prompt, which is desktop-only
+if CONFIG["MOZ_BUILD_APP"] == "browser":
+    DIRS += ["locales"]
+
 JAR_MANIFESTS += ["jar.mn"]
 
 with Files("**"):

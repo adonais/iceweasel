@@ -130,7 +130,7 @@ add_task(async function sidebar__install_closed() {
       SidebarController.sidebarMain,
       { attributes: true, attributeFilter: ["hidden"] },
       () => !SidebarController.sidebarMain.hidden,
-      `Sidebar launcher element should be un-hidden`
+      { msg: `Sidebar launcher element should be un-hidden` }
     );
   }
 

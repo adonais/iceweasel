@@ -8,16 +8,15 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.ResolveInfo
-import mozilla.components.support.utils.ext.PackageManagerCompatHelper
 import java.util.Collections.emptyList
+import mozilla.components.support.utils.ext.PackageManagerCompatHelper
 
 class FakePackageManagerCompatHelper(
     val packageInfo: PackageInfo = PackageInfo(),
     val getPackageInfoThrowable: Throwable? = null,
     val applicationInfo: ApplicationInfo = ApplicationInfo(),
 ) : PackageManagerCompatHelper {
-    override fun queryIntentActivitiesCompat(intent: Intent, flag: Int): MutableList<ResolveInfo> =
-        emptyList()
+    override fun queryIntentActivitiesCompat(intent: Intent, flag: Int): MutableList<ResolveInfo> = emptyList()
 
     override fun resolveActivityCompat(intent: Intent, flag: Int): ResolveInfo? = null
 

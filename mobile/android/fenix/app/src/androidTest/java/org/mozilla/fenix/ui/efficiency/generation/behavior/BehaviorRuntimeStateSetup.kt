@@ -16,6 +16,7 @@ package org.mozilla.fenix.ui.efficiency.generation.behavior
  */
 object BehaviorRuntimeStateSetup {
 
+    @Suppress("UnusedParameter")
     fun apply(
         runtime: BehaviorRuntime,
         context: BehaviorContextVariant,
@@ -30,7 +31,7 @@ object BehaviorRuntimeStateSetup {
             else -> {
                 throw AssertionError(
                     "Runtime setup for BrowserMode=$browserMode is not implemented. " +
-                        "This context should have been filtered by BehaviorContextSupportRegistry.",
+                        "This context should have been filtered by BehaviorContextSupportRegistry."
                 )
             }
         }

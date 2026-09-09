@@ -43,19 +43,14 @@ rtc_library("congestion_controller") {
 }
 
 if (rtc_include_tests) {
-  rtc_library("congestion_controller_unittests") {
+  rtc_library("receive_side_congestion_controller_unittest") {
     testonly = true
-
-    sources = [
-      "receive_side_congestion_controller_unittest.cc",
-      "remb_throttler_unittest.cc",
-    ]
+    sources = [ "receive_side_congestion_controller_unittest.cc" ]
     deps = [
       ":congestion_controller",
       "../../api:field_trials",
       "../../api:rtp_header_extension_id",
       "../../api:rtp_parameters",
-      "../../api/environment:environment_factory",
       "../../api/test/network_emulation",
       "../../api/test/network_emulation:create_cross_traffic",
       "../../api/units:data_rate",
@@ -69,12 +64,29 @@ if (rtc_include_tests) {
       "../../test:test_support",
       "../../test/scenario",
       "../rtp_rtcp:rtp_rtcp_format",
-      "goog_cc:goog_cc_unittests",
-      "goog_cc_scream_network_controller:goog_cc_scream_network_controller_unittests",
-      "pcc:pcc_unittests",
-      "rtp:congestion_controller_unittests",
-      "scream:scream_unittests",
-      "scream/test:cc_feedback_generator_unittests",
+    ]
+  }
+
+  rtc_library("remb_throttler_unittest") {
+    testonly = true
+    sources = [ "remb_throttler_unittest.cc" ]
+    deps = [
+      ":congestion_controller",
+      "../../api/units:data_rate",
+      "../../api/units:time_delta",
+      "../../api/units:timestamp",
+      "../../system_wrappers",
+      "../../test:test_support",
+    ]
+  }
+
+  rtc_library("congestion_controller_unittests") {
+    testonly = true
+
+    sources = []
+    deps = [
+      ":receive_side_congestion_controller_unittest",
+      ":remb_throttler_unittest",
     ]
   }
 }

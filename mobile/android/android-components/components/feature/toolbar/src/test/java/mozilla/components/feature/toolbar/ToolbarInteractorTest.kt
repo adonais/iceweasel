@@ -4,26 +4,27 @@
 
 package mozilla.components.feature.toolbar
 
+import kotlin.test.assertNotNull
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.toolbar.fake.FakeToolbar
 import mozilla.components.feature.session.SessionUseCases
 import org.junit.Test
-import kotlin.test.assertNotNull
 
 class ToolbarInteractorTest {
 
     @Test
     fun `provide custom use case for loading url`() {
-        val loadUrlUseCase = object : SessionUseCases.LoadUrlUseCase {
-            override operator fun invoke(
-                url: String,
-                flags: EngineSession.LoadUrlFlags,
-                additionalHeaders: Map<String, String>?,
-                originalInput: String?,
-            ) {
-                // do nothing
+        val loadUrlUseCase =
+            object : SessionUseCases.LoadUrlUseCase {
+                override operator fun invoke(
+                    url: String,
+                    flags: EngineSession.LoadUrlFlags,
+                    additionalHeaders: Map<String, String>?,
+                    originalInput: String?,
+                ) {
+                    // do nothing
+                }
             }
-        }
 
         val toolbar = FakeToolbar(url = "")
         val toolbarInteractor = ToolbarInteractor(toolbar, loadUrlUseCase)

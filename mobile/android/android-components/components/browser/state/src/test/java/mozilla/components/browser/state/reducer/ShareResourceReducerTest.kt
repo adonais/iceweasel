@@ -4,6 +4,7 @@
 
 package mozilla.components.browser.state.reducer
 
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.action.ShareResourceAction
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.ContentState
@@ -15,7 +16,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlin.test.assertNotNull
 
 class ShareResourceReducerTest {
 
@@ -24,10 +24,11 @@ class ShareResourceReducerTest {
         val reducer = ShareResourceStateReducer
         val state = BrowserState(tabs = listOf(TabSessionState("tabId", ContentState("contentStateUrl"))))
         val response: Response = mock()
-        val action = ShareResourceAction.AddShareAction(
-            "tabId",
-            ShareResourceState.InternetResource("internetResourceUrl", "type", true, response),
-        )
+        val action =
+            ShareResourceAction.AddShareAction(
+                "tabId",
+                ShareResourceState.InternetResource("internetResourceUrl", "type", true, response),
+            )
 
         assertNull(state.tabs[0].content.share)
 
@@ -44,10 +45,11 @@ class ShareResourceReducerTest {
     fun `reduce - AddShareAction should add the localResource in the ContentState`() {
         val reducer = ShareResourceStateReducer
         val state = BrowserState(tabs = listOf(TabSessionState("tabId", ContentState("contentStateUrl"))))
-        val action = ShareResourceAction.AddShareAction(
-            "tabId",
-            ShareResourceState.LocalResource("internetResourceUrl", "type"),
-        )
+        val action =
+            ShareResourceAction.AddShareAction(
+                "tabId",
+                ShareResourceState.LocalResource("internetResourceUrl", "type"),
+            )
 
         assertNull(state.tabs[0].content.share)
 
@@ -62,11 +64,8 @@ class ShareResourceReducerTest {
     fun `reduce - ConsumeShareAction should remove the ContentState's share resource`() {
         val reducer = ShareResourceStateReducer
         val shareState: ShareResourceState.InternetResource = mock()
-        val state = BrowserState(
-            tabs = listOf(
-                TabSessionState("tabId", ContentState("contentStateUrl", share = shareState)),
-            ),
-        )
+        val state =
+            BrowserState(tabs = listOf(TabSessionState("tabId", ContentState("contentStateUrl", share = shareState))))
         val action = ShareResourceAction.ConsumeShareAction("tabId")
 
         assertNotNull(state.tabs[0].content.share)

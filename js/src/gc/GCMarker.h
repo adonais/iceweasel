@@ -827,8 +827,7 @@ class MOZ_RAII AutoSetMarkColor {
   ~AutoSetMarkColor() { marker_.setMarkColor(initialColor_); }
 };
 
-inline AutoMarkingLock::AutoMarkingLock(JSTracer* trc,
-                                        MarkingLock& markingLock) {
+inline AutoMarkingLock::AutoMarkingLock(JSTracer* trc, LightLock& markingLock) {
 #ifdef JS_GC_CONCURRENT_MARKING
   if (IsConcurrentMarkingTracer(trc)) {
     lock = &markingLock;

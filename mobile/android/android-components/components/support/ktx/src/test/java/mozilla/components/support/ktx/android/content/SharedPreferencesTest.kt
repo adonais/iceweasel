@@ -217,13 +217,14 @@ class SharedPreferencesTest {
 
         class MockPreferencesHolder : PreferencesHolder {
             override val preferences = sharedPrefs
-            var int by intPreference(
-                "int",
-                default = {
-                    initialized = true
-                     0
-                },
-            )
+            var int by
+                intPreference(
+                    "int",
+                    default = {
+                        initialized = true
+                        0
+                    },
+                )
         }
 
         val holder = MockPreferencesHolder()
@@ -241,13 +242,14 @@ class SharedPreferencesTest {
 
         class MockPreferencesHolder : PreferencesHolder {
             override val preferences = sharedPrefs
-            var float by floatPreference(
-                "float",
-                default = {
-                    initialized = true
-                    0f
-                },
-            )
+            var float by
+                floatPreference(
+                    "float",
+                    default = {
+                        initialized = true
+                        0f
+                    },
+                )
         }
 
         val holder = MockPreferencesHolder()
@@ -265,13 +267,14 @@ class SharedPreferencesTest {
 
         class MockPreferencesHolder : PreferencesHolder {
             override val preferences = sharedPrefs
-            var long by longPreference(
-                "long",
-                default = {
-                    initialized = true
-                    0L
-                },
-            )
+            var long by
+                longPreference(
+                    "long",
+                    default = {
+                        initialized = true
+                        0L
+                    },
+                )
         }
 
         val holder = MockPreferencesHolder()
@@ -289,13 +292,14 @@ class SharedPreferencesTest {
 
         class MockPreferencesHolder : PreferencesHolder {
             override val preferences = sharedPrefs
-            var string by stringPreference(
-                "string",
-                default = {
-                    initialized = true
-                    ""
-                },
-            )
+            var string by
+                stringPreference(
+                    "string",
+                    default = {
+                        initialized = true
+                        ""
+                    },
+                )
         }
 
         val holder = MockPreferencesHolder()
@@ -314,13 +318,14 @@ class SharedPreferencesTest {
 
         class MockPreferencesHolder : PreferencesHolder {
             override val preferences = sharedPrefs
-            var stringSet by stringSetPreference(
-                "string_set",
-                default = {
-                    initialized = true
-                    emptySet()
-                },
-            )
+            var stringSet by
+                stringSetPreference(
+                    "string_set",
+                    default = {
+                        initialized = true
+                        emptySet()
+                    },
+                )
         }
 
         val holder = MockPreferencesHolder()
@@ -349,7 +354,8 @@ class SharedPreferencesTest {
 
         var string by stringPreference("string", default = defaultString)
 
-        var persistString by stringPreference("persist_string", default = defaultString, persistDefaultIfNotExists = true)
+        var persistString by
+            stringPreference("persist_string", default = defaultString, persistDefaultIfNotExists = true)
 
         var stringSet by stringSetPreference("string_set", default = defaultSet)
     }

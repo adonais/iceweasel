@@ -15,14 +15,14 @@ import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.lib.state.helpers.AbstractBinding
 
 /**
- * A binding for observing an IP Protection proxy "catastrophic" error: an error the service can not
- * recover from. The service blocks the traffic while not disabling the active proxy, so that the
- * user data is not leaked. When such error happens, we present the user with options to disable
- * the proxy and continue browsing or to close their tabs first, and then disabling the proxy.
+ * A binding for observing an IP Protection proxy "catastrophic" error: an error the service can not recover from. The
+ * service blocks the traffic while not disabling the active proxy, so that the user data is not leaked. When such error
+ * happens, we present the user with options to disable the proxy and continue browsing or to close their tabs first,
+ * and then disabling the proxy.
  *
  * @param store The IP protection store to observe for state changes.
- * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will
- * occur. Defaults to [Dispatchers.Main].
+ * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur. Defaults to
+ *   [Dispatchers.Main].
  * @param proxyUnavailable A callback for reporting that proxy has errored and should be disabled.
  */
 class IPProtectionWarningBinding(

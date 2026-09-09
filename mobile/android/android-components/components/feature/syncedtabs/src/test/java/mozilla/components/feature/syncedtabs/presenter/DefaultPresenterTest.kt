@@ -39,14 +39,15 @@ class DefaultPresenterTest {
 
     @Test
     fun `start returns when there is no profile`() = runTest {
-        val presenter = DefaultPresenter(
-            context,
-            controller,
-            commands,
-            accountManager,
-            view,
-            lifecycleOwner,
-        )
+        val presenter =
+            DefaultPresenter(
+                context,
+                controller,
+                commands,
+                accountManager,
+                view,
+                lifecycleOwner,
+            )
 
         presenter.start()
 
@@ -55,14 +56,15 @@ class DefaultPresenterTest {
 
     @Test
     fun `start returns if sync engine is not enabled`() = runTest {
-        val presenter = DefaultPresenter(
-            context,
-            controller,
-            commands,
-            accountManager,
-            view,
-            lifecycleOwner,
-        )
+        val presenter =
+            DefaultPresenter(
+                context,
+                controller,
+                commands,
+                accountManager,
+                view,
+                lifecycleOwner,
+            )
 
         // disable sync storage
         prefs.edit().putBoolean("tabs", false).apply()
@@ -75,14 +77,15 @@ class DefaultPresenterTest {
 
     @Test
     fun `start returns if sync needs reauthentication`() {
-        val presenter = DefaultPresenter(
-            context,
-            controller,
-            commands,
-            accountManager,
-            view,
-            lifecycleOwner,
-        )
+        val presenter =
+            DefaultPresenter(
+                context,
+                controller,
+                commands,
+                accountManager,
+                view,
+                lifecycleOwner,
+            )
 
         `when`(accountManager.authenticatedAccount()).thenReturn(mock())
         `when`(accountManager.accountNeedsReauth()).thenReturn(true)
@@ -94,14 +97,15 @@ class DefaultPresenterTest {
 
     @Test
     fun `start invokes syncTabs - account profile is absent`() = runTest {
-        val presenter = DefaultPresenter(
-            context,
-            controller,
-            commands,
-            accountManager,
-            view,
-            lifecycleOwner,
-        )
+        val presenter =
+            DefaultPresenter(
+                context,
+                controller,
+                commands,
+                accountManager,
+                view,
+                lifecycleOwner,
+            )
 
         prefs.edit().putBoolean("tabs", true).apply()
         `when`(accountManager.authenticatedAccount()).thenReturn(mock())
@@ -115,14 +119,15 @@ class DefaultPresenterTest {
 
     @Test
     fun `start invokes syncTabs - account profile is present`() = runTest {
-        val presenter = DefaultPresenter(
-            context,
-            controller,
-            commands,
-            accountManager,
-            view,
-            lifecycleOwner,
-        )
+        val presenter =
+            DefaultPresenter(
+                context,
+                controller,
+                commands,
+                accountManager,
+                view,
+                lifecycleOwner,
+            )
 
         prefs.edit().putBoolean("tabs", true).apply()
         `when`(accountManager.authenticatedAccount()).thenReturn(mock())
@@ -136,14 +141,15 @@ class DefaultPresenterTest {
 
     @Test
     fun `notify on logout`() = runTest {
-        val presenter = DefaultPresenter(
-            context,
-            controller,
-            commands,
-            accountManager,
-            view,
-            lifecycleOwner,
-        )
+        val presenter =
+            DefaultPresenter(
+                context,
+                controller,
+                commands,
+                accountManager,
+                view,
+                lifecycleOwner,
+            )
 
         presenter.accountObserver.onLoggedOut()
         shadowOf(getMainLooper()).idle()
@@ -153,14 +159,15 @@ class DefaultPresenterTest {
 
     @Test
     fun `notify on authenticated`() = runTest {
-        val presenter = DefaultPresenter(
-            context,
-            controller,
-            commands,
-            accountManager,
-            view,
-            lifecycleOwner,
-        )
+        val presenter =
+            DefaultPresenter(
+                context,
+                controller,
+                commands,
+                accountManager,
+                view,
+                lifecycleOwner,
+            )
 
         presenter.accountObserver.onAuthenticated(mock(), mock<AuthType.Existing>())
         shadowOf(getMainLooper()).idle()
@@ -170,14 +177,15 @@ class DefaultPresenterTest {
 
     @Test
     fun `notify on authentication problems`() = runTest {
-        val presenter = DefaultPresenter(
-            context,
-            controller,
-            commands,
-            accountManager,
-            view,
-            lifecycleOwner,
-        )
+        val presenter =
+            DefaultPresenter(
+                context,
+                controller,
+                commands,
+                accountManager,
+                view,
+                lifecycleOwner,
+            )
 
         presenter.accountObserver.onAuthenticationProblems()
         shadowOf(getMainLooper()).idle()
@@ -187,14 +195,15 @@ class DefaultPresenterTest {
 
     @Test
     fun `sync tabs on idle status - tabs sync enabled`() = runTest {
-        val presenter = DefaultPresenter(
-            context,
-            controller,
-            commands,
-            accountManager,
-            view,
-            lifecycleOwner,
-        )
+        val presenter =
+            DefaultPresenter(
+                context,
+                controller,
+                commands,
+                accountManager,
+                view,
+                lifecycleOwner,
+            )
 
         prefs.edit().putBoolean("tabs", true).apply()
         presenter.eventObserver.onIdle()
@@ -204,14 +213,15 @@ class DefaultPresenterTest {
 
     @Test
     fun `sync tabs on idle status - tabs sync disabled`() = runTest {
-        val presenter = DefaultPresenter(
-            context,
-            controller,
-            commands,
-            accountManager,
-            view,
-            lifecycleOwner,
-        )
+        val presenter =
+            DefaultPresenter(
+                context,
+                controller,
+                commands,
+                accountManager,
+                view,
+                lifecycleOwner,
+            )
 
         prefs.edit().putBoolean("tabs", false).apply()
         presenter.eventObserver.onIdle()
@@ -222,14 +232,15 @@ class DefaultPresenterTest {
 
     @Test
     fun `show loading state on started status`() = runTest {
-        val presenter = DefaultPresenter(
-            context,
-            controller,
-            commands,
-            accountManager,
-            view,
-            lifecycleOwner,
-        )
+        val presenter =
+            DefaultPresenter(
+                context,
+                controller,
+                commands,
+                accountManager,
+                view,
+                lifecycleOwner,
+            )
 
         presenter.eventObserver.onStarted()
 
@@ -238,14 +249,15 @@ class DefaultPresenterTest {
 
     @Test
     fun `notify on error`() = runTest {
-        val presenter = DefaultPresenter(
-            context,
-            controller,
-            commands,
-            accountManager,
-            view,
-            lifecycleOwner,
-        )
+        val presenter =
+            DefaultPresenter(
+                context,
+                controller,
+                commands,
+                accountManager,
+                view,
+                lifecycleOwner,
+            )
 
         presenter.eventObserver.onError(mock())
 
@@ -254,14 +266,15 @@ class DefaultPresenterTest {
 
     @Test
     fun `GIVEN the presenter is started WHEN it is stopped THEN all observers should be unregistered`() {
-        val presenter = DefaultPresenter(
-            context,
-            controller,
-            commands,
-            accountManager,
-            view,
-            lifecycleOwner,
-        )
+        val presenter =
+            DefaultPresenter(
+                context,
+                controller,
+                commands,
+                accountManager,
+                view,
+                lifecycleOwner,
+            )
 
         presenter.stop()
 
@@ -272,14 +285,15 @@ class DefaultPresenterTest {
 
     @Test
     fun `GIVEN a presenter AND tabs sync is enabled WHEN a command is added to the synced tabs command queue THEN the synced tabs list should be refreshed`() {
-        val presenter = DefaultPresenter(
-            context,
-            controller,
-            commands,
-            accountManager,
-            view,
-            lifecycleOwner,
-        )
+        val presenter =
+            DefaultPresenter(
+                context,
+                controller,
+                commands,
+                accountManager,
+                view,
+                lifecycleOwner,
+            )
 
         presenter.commandsObserver.onAdded()
         shadowOf(getMainLooper()).idle()
@@ -289,14 +303,15 @@ class DefaultPresenterTest {
 
     @Test
     fun `GIVEN a presenter AND tabs sync is enabled WHEN a command is removed from the synced tabs command queue THEN the synced tabs list should be refreshed`() {
-        val presenter = DefaultPresenter(
-            context,
-            controller,
-            commands,
-            accountManager,
-            view,
-            lifecycleOwner,
-        )
+        val presenter =
+            DefaultPresenter(
+                context,
+                controller,
+                commands,
+                accountManager,
+                view,
+                lifecycleOwner,
+            )
 
         presenter.commandsObserver.onRemoved()
         shadowOf(getMainLooper()).idle()
@@ -306,14 +321,15 @@ class DefaultPresenterTest {
 
     @Test
     fun `GIVEN a presenter AND tabs sync is disabled WHEN a command is added to the synced tabs command queue THEN an error should be shown`() {
-        val presenter = DefaultPresenter(
-            context,
-            controller,
-            commands,
-            accountManager,
-            view,
-            lifecycleOwner,
-        )
+        val presenter =
+            DefaultPresenter(
+                context,
+                controller,
+                commands,
+                accountManager,
+                view,
+                lifecycleOwner,
+            )
         prefs.edit().putBoolean("tabs", false).apply()
 
         presenter.commandsObserver.onAdded()
@@ -325,14 +341,15 @@ class DefaultPresenterTest {
 
     @Test
     fun `GIVEN a presenter AND tabs sync is disabled WHEN a command is removed from the synced tabs command queue THEN an error should be shown`() {
-        val presenter = DefaultPresenter(
-            context,
-            controller,
-            commands,
-            accountManager,
-            view,
-            lifecycleOwner,
-        )
+        val presenter =
+            DefaultPresenter(
+                context,
+                controller,
+                commands,
+                accountManager,
+                view,
+                lifecycleOwner,
+            )
         prefs.edit().putBoolean("tabs", false).apply()
 
         presenter.commandsObserver.onRemoved()

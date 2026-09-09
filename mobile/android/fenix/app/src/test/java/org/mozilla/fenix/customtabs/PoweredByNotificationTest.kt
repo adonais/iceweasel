@@ -21,13 +21,8 @@ class PoweredByNotificationTest {
     @Test
     fun `register receiver on resume`() {
         val config = CustomTabConfig(externalAppType = ExternalAppType.TRUSTED_WEB_ACTIVITY)
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(
-                    createCustomTab("https://mozilla.org", config = config),
-                ),
-            ),
-        )
+        val store =
+            BrowserStore(BrowserState(customTabs = listOf(createCustomTab("https://mozilla.org", config = config))))
 
         val feature = PoweredByNotification(testContext, store, "session-id", mockk())
         feature.onResume(mockk())
@@ -36,13 +31,8 @@ class PoweredByNotificationTest {
     @Test
     fun `don't register receiver if not in a TWA`() {
         val config = CustomTabConfig(externalAppType = ExternalAppType.PROGRESSIVE_WEB_APP)
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(
-                    createCustomTab("https://mozilla.org", config = config),
-                ),
-            ),
-        )
+        val store =
+            BrowserStore(BrowserState(customTabs = listOf(createCustomTab("https://mozilla.org", config = config))))
 
         val feature = PoweredByNotification(testContext, store, "session-id", mockk())
         feature.onResume(mockk())

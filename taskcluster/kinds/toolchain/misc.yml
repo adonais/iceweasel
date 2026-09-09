@@ -13,7 +13,6 @@ linux64-binutils-2.31.1:
     treeherder:
         symbol: TL(binutil2.31)
     run:
-        clone-with: hg
         script: build-binutils-linux.sh
         resources:
             - 'build/unix/build-binutils/build-binutils.sh'
@@ -31,7 +30,6 @@ linux64-binutils:
     treeherder:
         symbol: TL(binutil)
     run:
-        clone-with: hg
         script: build-binutils-linux.sh
         resources:
             - 'build/unix/build-binutils/build-binutils.sh'
@@ -47,7 +45,6 @@ linux64-cctools-port:
     treeherder:
         symbol: TL(cctools-clang)
     run:
-        clone-with: hg
         script: build-cctools-port.sh
         resources:
             - taskcluster/scripts/misc/cctools-ld64-dead-strip-compiler-builtins.patch
@@ -70,7 +67,6 @@ linux64-hfsplus:
     treeherder:
         symbol: TL(hfs+)
     run:
-        clone-with: hg
         script: build-hfsplus-linux.sh
         resources:
             - 'build/unix/build-hfsplus/build-hfsplus.sh'
@@ -88,7 +84,6 @@ linux64-libdmg:
     treeherder:
         symbol: TL(libdmg-hfs+)
     run:
-        clone-with: hg
         script: build-dmg-hfsplus.sh
         toolchain-artifact: public/build/dmg.tar.zst
         toolchain-alias: linux64-dmg
@@ -106,7 +101,6 @@ linux64-mkbom:
     treeherder:
         symbol: TL(mkbom)
     run:
-        clone-with: hg
         script: build-mkbom-linux.sh
         toolchain-artifact: public/build/mkbom.tar.zst
     fetches:
@@ -123,7 +117,6 @@ linux64-xar:
     treeherder:
         symbol: TL(xar)
     run:
-        clone-with: hg
         script: build-xar-linux.sh
         toolchain-artifact: public/build/xar.tar.zst
     fetches:
@@ -141,7 +134,6 @@ linux64-mar-tools:
         toolchain:
             - linux64-clang-toolchain
     run:
-        clone-with: hg
         script: build-mar-tools.sh
         sparse-profile: null
         toolchain-artifact: public/build/mar-tools.tar.zst
@@ -162,7 +154,6 @@ linux64-zucchini-bin:
         toolchain:
             - linux64-clang-toolchain
     run:
-        clone-with: hg
         script: build-zucchini.sh
         sparse-profile: null
         toolchain-artifact: public/build/zucchini.tar.xz
@@ -180,7 +171,6 @@ linux64-msix-packaging:
         symbol: TL(msix-packaging)
         tier: 1
     run:
-        clone-with: hg
         script: build-msix-packaging.sh
         toolchain-artifact: public/build/msix-packaging.tar.zst
     fetches:
@@ -198,7 +188,6 @@ linux64-custom-v8:
         docker-image: {in-tree: custom-v8}
         max-run-time: 3600
     run:
-        clone-with: hg
         script: build-custom-v8.sh
         arguments: [
             d8.tar.zst,
@@ -217,7 +206,6 @@ linux64-marannon:
             - linux64-rust
             - sysroot-x86_64-linux-gnu
     run:
-        clone-with: hg
         script: build-rust-based-toolchain.sh
         sparse-profile: null
         toolchain-artifact: public/build/marannon.tar.zst
@@ -238,7 +226,6 @@ macosx64-xz:
         max-run-time: 30000
     use-python: system  # dependency of taskcluster python
     run:
-        clone-with: hg
         script: build-xz.sh
         toolchain-artifact: public/build/xz.tar.zst
     fetches:
@@ -261,7 +248,6 @@ macosx-arm64-custom-car:
     use-python: "3.11"
     run-on-projects: []
     run:
-        clone-with: hg
         script: build-custom-car.sh
         arguments: [
             car_macosx_arm.tar.zst,
@@ -300,7 +286,6 @@ android-custom-car:
     use-python: "3.11"
     run-on-projects: []
     run:
-        clone-with: hg
         script: build-custom-car.sh
         arguments: [
             car_android.tar.zst,
@@ -334,7 +319,6 @@ linux64-custom-car:
     use-python: "3.11"
     run-on-projects: []
     run:
-        clone-with: hg
         script: build-custom-car.sh
         arguments: [
             car_linux.tar.zst,
@@ -369,7 +353,6 @@ win64-custom-car:
     use-python: "3.11"
     run-on-projects: []
     run:
-        clone-with: hg
         script: build-custom-car.sh
         arguments: [
             car_win64.tar.zst,
@@ -396,7 +379,6 @@ browsertime:
     treeherder:
         symbol: TL(browsertime)
     run:
-        clone-with: hg
         script: browsertime.sh
         sparse-profile: null
         resources:
@@ -413,7 +395,6 @@ puppeteer-build:
     treeherder:
         symbol: TL(puppeteer-build)
     run:
-        clone-with: hg
         script: puppeteer-build.sh
         sparse-profile: null
         resources:
@@ -428,7 +409,6 @@ aboutwelcome-node-modules:
     treeherder:
         symbol: TL(aboutwelcome-node)
     run:
-        clone-with: hg
         script: generic-node-modules.sh
         arguments: ['aboutwelcome', 'browser/components/aboutwelcome/']
         sparse-profile: null
@@ -445,7 +425,6 @@ asrouter-node-modules:
     treeherder:
         symbol: TL(asrouter-node)
     run:
-        clone-with: hg
         script: generic-node-modules.sh
         arguments: ['asrouter', 'browser/components/asrouter/']
         sparse-profile: null
@@ -462,7 +441,6 @@ eslint-plugin-mozilla:
     treeherder:
         symbol: TL(epm)
     run:
-        clone-with: hg
         script: eslint-plugin-mozilla.sh
         sparse-profile: null
         resources:
@@ -478,7 +456,6 @@ stylelint-plugin-mozilla:
     treeherder:
         symbol: TL(spm)
     run:
-        clone-with: hg
         script: stylelint-plugin-mozilla.sh
         sparse-profile: null
         resources:
@@ -494,7 +471,6 @@ terser:
     treeherder:
         symbol: TL(terser)
     run:
-        clone-with: hg
         script: terser.sh
         sparse-profile: null
         resources:
@@ -510,7 +486,6 @@ newtab-node-modules:
     treeherder:
         symbol: TL(newtab-node)
     run:
-        clone-with: hg
         script: generic-node-modules.sh
         arguments: ['newtab', 'browser/extensions/newtab/']
         sparse-profile: null
@@ -527,7 +502,6 @@ node-modules:
     treeherder:
         symbol: TL(node)
     run:
-        clone-with: hg
         script: node-modules.sh
         sparse-profile: null
         resources:
@@ -550,7 +524,6 @@ wrench-deps:
     worker:
         docker-image: {in-tree: webrender}
     run:
-        clone-with: hg
         script: wrench-deps-vendoring.sh
         sparse-profile: null
         resources:
@@ -572,7 +545,6 @@ linux64-wine:
     worker:
         max-run-time: 10800
     run:
-        clone-with: hg
         script: build-wine.sh
         toolchain-artifact: public/build/wine.tar.zst
     fetches:
@@ -586,7 +558,6 @@ linux64-winchecksec:
     treeherder:
         symbol: TL(winchecksec)
     run:
-        clone-with: hg
         script: build-winchecksec.sh
         arguments: ['x86_64-unknown-linux-gnu']
         toolchain-artifact: public/build/winchecksec.tar.zst
@@ -602,7 +573,6 @@ win64-winchecksec:
     treeherder:
         symbol: TW64(winchecksec)
     run:
-        clone-with: hg
         script: build-winchecksec.sh
         arguments: ['x86_64-pc-windows-msvc']
         toolchain-artifact: public/build/winchecksec.tar.zst
@@ -622,7 +592,6 @@ linux64-makecab:
         env:
             FETCH: rust-makecab
     run:
-        clone-with: hg
         script: build-rust-based-toolchain.sh
         arguments: ['x86_64-unknown-linux-gnu']
         toolchain-artifact: public/build/makecab.tar.zst
@@ -641,7 +610,6 @@ win64-mozmake:
     treeherder:
         symbol: TW64(mozmake)
     run:
-        clone-with: hg
         script: build-mozmake.sh
         arguments: ['x86_64-pc-windows-msvc']
         toolchain-artifact: public/build/mozmake.tar.zst
@@ -659,7 +627,6 @@ win64-aarch64-mozmake:
     treeherder:
         symbol: TWA64(mozmake)
     run:
-        clone-with: hg
         script: build-mozmake.sh
         arguments: ['aarch64-pc-windows-msvc']
         toolchain-artifact: public/build/mozmake.tar.zst
@@ -677,7 +644,6 @@ nsis:
     treeherder:
         symbol: TL(nsis)
     run:
-        clone-with: hg
         script: build-nsis.sh
         toolchain-artifact: public/build/nsis.tar.zst
     fetches:
@@ -698,7 +664,6 @@ win64-vs2026:
         env:
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
     run:
-        clone-with: hg
         script: get_vs.py
         arguments:
             - build/vs/vs2026.yaml
@@ -716,7 +681,6 @@ win64-WindowsAppSDK:
     treeherder:
         symbol: TW64(WindowsAppSDK)
     run:
-        clone-with: hg
         script: build-WindowsAppSDK.sh
         arguments: ['x64', '2']
         toolchain-artifact: public/build/winappsdk-x86_64-pc-windows-msvc.tar.zst
@@ -733,7 +697,6 @@ win32-WindowsAppSDK:
     treeherder:
         symbol: TW32(WindowsAppSDK)
     run:
-        clone-with: hg
         script: build-WindowsAppSDK.sh
         arguments: ['x86', '2']
         toolchain-artifact: public/build/winappsdk-x86-pc-windows-msvc.tar.zst
@@ -750,7 +713,6 @@ win64-aarch64-WindowsAppSDK:
     treeherder:
         symbol: TWA64(WindowsAppSDK)
     run:
-        clone-with: hg
         script: build-WindowsAppSDK.sh
         arguments: ['arm64', '2']
         toolchain-artifact: public/build/winappsdk-aarch64-pc-windows-msvc.tar.zst
@@ -769,7 +731,6 @@ win64-aarch64-vs2026:
         env:
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
     run:
-        clone-with: hg
         script: get_vs.py
         arguments:
             - build/vs/vs2026-aarch64.yaml
@@ -785,7 +746,6 @@ linux64-afl-instrumentation:
     worker:
         max-run-time: 3600
     run:
-        clone-with: hg
         script: build-afl.sh
         resources:
             - taskcluster/scripts/misc/afl-nyx.patch
@@ -805,7 +765,6 @@ linux64-cargo-apk:
         env:
             FETCH: android-ndk-rs/cargo-apk
     run:
-        clone-with: hg
         script: build-rust-based-toolchain.sh
         arguments: ['x86_64-unknown-linux-gnu']
         resources:
@@ -824,7 +783,6 @@ win64-cmake:
     treeherder:
         symbol: TW64(cmake)
     run:
-        clone-with: hg
         script: build-cmake.sh
         toolchain-artifact: public/build/cmake.tar.zst
     fetches:
@@ -843,7 +801,6 @@ talos-pdfs:
     worker:
         max-run-time: 3600
     run:
-        clone-with: hg
         script: run-fetch-talos-pdfs.sh
         sparse-profile: null
         resources:

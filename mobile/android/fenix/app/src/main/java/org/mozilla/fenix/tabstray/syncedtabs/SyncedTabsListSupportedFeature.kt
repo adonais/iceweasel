@@ -4,9 +4,7 @@
 
 package org.mozilla.fenix.tabstray.syncedtabs
 
-/**
- * Configurable or experimental features that a [SyncedTabsList] supports.
- */
+/** Configurable or experimental features that a [SyncedTabsList] supports. */
 enum class SyncedTabsListSupportedFeature {
-    CLOSE_TABS,
+    CLOSE_TABS
 }

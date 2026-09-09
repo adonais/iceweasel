@@ -1103,6 +1103,14 @@ ImageTestCase ExifResolutionTestCase() {
   return ImageTestCase("exif_resolution.jpg", "image/jpeg", IntSize(100, 50));
 }
 
+ImageTestCase ExifOrientationDownscaleJPGTestCase() {
+  // EXIF orientation 6 (rotate 90 CW): stored 48x160, oriented 160x48. The
+  // 8x32 output is a non-aspect-preserving downscale exercising libjpeg-turbo
+  // IDCT scale-factor selection across the orientation axis swap (bug 2033250).
+  return ImageTestCase("green-exif-orient6.jpg", "image/jpeg", IntSize(160, 48),
+                       IntSize(8, 32), TEST_CASE_IS_FUZZY);
+}
+
 RefPtr<Image> TestCaseToDecodedImage(const ImageTestCase& aTestCase) {
   RefPtr<Image> image = ImageFactory::CreateAnonymousImage(
       nsDependentCString(aTestCase.mMimeType));

@@ -291,6 +291,11 @@ export class BrowserToolboxLauncher extends EventEmitter {
     // so that you could use a build that works for the browser toolbox.
     const customBinaryPath = Services.env.get("MOZ_BROWSER_TOOLBOX_BINARY");
     if (customBinaryPath) {
+      if (AppConstants.MOZILLA_OFFICIAL) {
+        throw new Error(
+          "MOZ_BROWSER_TOOLBOX_BINARY only works for local build without MOZILLA_OFFICIAL build flag"
+        );
+      }
       command = customBinaryPath;
       profilePath = PathUtils.join(PathUtils.tempDir, "browserToolboxProfile");
     }

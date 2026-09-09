@@ -7,7 +7,6 @@ const { ExtensionTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/ExtensionXPCShellUtils.sys.mjs"
 );
 
-const DistinctDevToolsServer = getDistinctDevToolsServer();
 ExtensionTestUtils.init(this);
 
 add_setup(async () => {
@@ -20,9 +19,6 @@ add_setup(async () => {
     "extensions.webextensions.warnings-as-errors",
     false
   );
-
-  DistinctDevToolsServer.init();
-  DistinctDevToolsServer.registerAllActors();
 });
 
 // Verifies:
@@ -31,9 +27,7 @@ add_setup(async () => {
 // Also a regression test for bug 1837185, that AddonManager.sys.mjs and
 // ExtensionParent.sys.mjs are imported from the correct loader.
 add_task(async function test_listAddons_and_WebExtensionDescriptor() {
-  const transport = DistinctDevToolsServer.connectPipe();
-  const client = new DevToolsClient(transport);
-  await client.connect();
+  const client = await CommandsFactory.spawnClientToDebugSystemPrincipal();
 
   const getRootResponse = await client.mainRoot.getRoot();
 

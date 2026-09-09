@@ -11,14 +11,12 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.MessagingAction.MessageClicked
 import org.mozilla.fenix.components.appstate.AppAction.MessagingAction.MessageDismissed
 
-/**
- * Handles default interactions with the ui of Nimbus Messaging messages.
- */
+/** Handles default interactions with the ui of Nimbus Messaging messages. */
 class DefaultMessageController(
     private val appStore: AppStore,
     private val messagingController: NimbusMessagingControllerInterface,
     private val processIntent: (Intent?) -> Unit,
-    ) : MessageController {
+) : MessageController {
     override fun onMessagePressed(message: Message) {
         val intent = messagingController.getIntentForMessage(message)
         processIntent(intent)

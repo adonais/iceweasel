@@ -24,8 +24,9 @@ add_task(async function testHorizontalScrolling() {
   // Strengthen the test by ensuring we always use the same Firefox window size.
   // Note that the inner size is the important one as that's the final space available for DevTools.
   // The outer size will be different based on OS/Environment.
-  const expectedWidth =
-    1280 + (Services.prefs.getBoolPref("browser.nova.enabled") ? 14 : 0);
+  // Widen the window by the extra width given to each of the two side panels,
+  // so that the editor is left with the same space in both pref states.
+  const expectedWidth = 1280 + 2 * toolboxBorderWidth;
   const expectedHeight = 1040;
   if (
     window.innerWidth != expectedWidth ||

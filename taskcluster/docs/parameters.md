@@ -60,6 +60,10 @@ topic.
 : Optionally, the git commit corresponding to the head_rev when it's in a Mercurial
   repository.
 
+`head_git_ref`
+
+: Optionally, the git ref associated with `head_git_rev`.
+
 `base_ref`
 
 : Reference where `head_rev` got merged into. It is usually a branch or a tag.

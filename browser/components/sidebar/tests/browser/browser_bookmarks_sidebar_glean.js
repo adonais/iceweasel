@@ -365,6 +365,11 @@ add_task(async function test_container_tab() {
     containerPopup.activateItem(containerPopup.firstElementChild);
   });
   assertLabeledCounterValue("open_in_new_container_tab", 1);
+  Assert.equal(
+    Glean.containers.containerTabOpened.testGetValue().at(-1).extra.source,
+    "sidebar_bookmarks_context_menu",
+    "container_tab_opened reports the bookmarks sidebar source"
+  );
   BrowserTestUtils.removeTab(await promiseNewTab);
 });
 

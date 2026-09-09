@@ -23,7 +23,9 @@ internal class TextMenuCandidateViewHolder(
 ) : MenuCandidateViewHolder<TextMenuCandidate>(itemView, inflater), View.OnClickListener {
 
     private val layout = itemView as ConstraintLayout
-    private val textView: TextView get() = itemView.findViewById(R.id.label)
+    private val textView: TextView
+        get() = itemView.findViewById(R.id.label)
+
     private val startIcon = MenuIconAdapter(layout, inflater, Side.START, dismiss)
     private val endIcon = MenuIconAdapter(layout, inflater, Side.END, dismiss)
     private var onClickListener: (() -> Unit)? = null
@@ -49,7 +51,6 @@ internal class TextMenuCandidateViewHolder(
     }
 
     companion object {
-        @LayoutRes
-        val layoutResource = R.layout.mozac_browser_menu2_candidate_text
+        @LayoutRes val layoutResource = R.layout.mozac_browser_menu2_candidate_text
     }
 }

@@ -13,8 +13,8 @@ import org.mozilla.fenix.databinding.InfoBannerBinding
 import org.mozilla.fenix.utils.Settings
 
 /**
- * Displays an Info Banner in the specified container with a message and an optional action.
- * The container can be a placeholder layout inserted in the original screen, or an existing layout.
+ * Displays an Info Banner in the specified container with a message and an optional action. The container can be a
+ * placeholder layout inserted in the original screen, or an existing layout.
  *
  * @param context A [Context] for accessing system resources.
  * @param settings [Settings] used to update lastCfrShownTimeInMillis.
@@ -23,7 +23,7 @@ import org.mozilla.fenix.utils.Settings
  * @param dismissText The text on the dismiss button.
  * @param actionText The text on the action to perform button.
  * @param dismissByHiding Whether or not to hide the banner when dismissed.
- * @property dismissAction  Optional callback invoked when the user dismisses the banner.
+ * @property dismissAction Optional callback invoked when the user dismisses the banner.
  * @param actionToPerform The action to be performed on action button press.
  * @param currentTimeMillis provider for the current time in milliseconds, injectable for testing.
  */
@@ -56,7 +56,11 @@ open class InfoBanner(
 
         binding.dismiss.setOnClickListener {
             dismissAction?.invoke()
-            if (dismissByHiding) { binding.root.visibility = GONE } else { dismiss() }
+            if (dismissByHiding) {
+                binding.root.visibility = GONE
+            } else {
+                dismiss()
+            }
         }
 
         binding.action.setOnClickListener {

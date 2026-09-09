@@ -1113,6 +1113,10 @@ nsresult EditorEventListener::HandleChangeComposition(
 
 void EditorEventListener::HandleEndComposition(
     WidgetCompositionEvent* aCompositionEndEvent) {
+  // NOTE: It's possible for OnCompositionEnd to be called directly
+  // from TextComposition, e.g. in the case where the editor is
+  // removed during a composition. So this function is not called
+  // for those compositions.
   if (NS_WARN_IF(!aCompositionEndEvent) || DetachedFromEditor()) {
     return;
   }

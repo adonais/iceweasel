@@ -11,22 +11,21 @@ import mozilla.components.support.base.android.Clock
 private const val AUTOLOCK_TIME = 5 * 60 * 1000
 
 /**
- * Helper for keeping track of the lock/unlock state for autofill. The actual unlocking or
- * decrypting of the underlying storage is done by the [LoginsStorage] implementation.
+ * Helper for keeping track of the lock/unlock state for autofill. The actual unlocking or decrypting of the underlying
+ * storage is done by the [LoginsStorage] implementation.
  */
 class AutofillLock {
     private var lastUnlockTimestmap: Long = 0
 
     /**
-     * Checks whether the autofill lock is still unlocked and whether autofill options will be shown
-     * without authenticating again.
+     * Checks whether the autofill lock is still unlocked and whether autofill options will be shown without
+     * authenticating again.
      */
-    @Synchronized
-    fun isUnlocked() = lastUnlockTimestmap + AUTOLOCK_TIME >= Clock.elapsedRealtime()
+    @Synchronized fun isUnlocked() = lastUnlockTimestmap + AUTOLOCK_TIME >= Clock.elapsedRealtime()
 
     /**
-     * If the autofill lock is unlocked then this will keep it unlocked by extending the time until
-     * it will automatically get locked again.
+     * If the autofill lock is unlocked then this will keep it unlocked by extending the time until it will
+     * automatically get locked again.
      */
     @Synchronized
     fun keepUnlocked(): Boolean {
@@ -38,9 +37,7 @@ class AutofillLock {
         }
     }
 
-    /**
-     * Unlocks the autofill lock.
-     */
+    /** Unlocks the autofill lock. */
     @Synchronized
     fun unlock() {
         lastUnlockTimestmap = Clock.elapsedRealtime()

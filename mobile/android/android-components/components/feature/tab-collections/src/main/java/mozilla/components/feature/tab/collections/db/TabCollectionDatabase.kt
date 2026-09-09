@@ -9,12 +9,11 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-/**
- * Internal database for storing collections and their tabs.
- */
+/** Internal database for storing collections and their tabs. */
 @Database(entities = [TabCollectionEntity::class, TabEntity::class], version = 1)
 internal abstract class TabCollectionDatabase : RoomDatabase() {
     abstract fun tabCollectionDao(): TabCollectionDao
+
     abstract fun tabDao(): TabDao
 
     companion object {
@@ -22,15 +21,19 @@ internal abstract class TabCollectionDatabase : RoomDatabase() {
 
         @Synchronized
         fun get(context: Context): TabCollectionDatabase {
-            instance?.let { return it }
+            instance?.let {
+                return it
+            }
 
             return Room.databaseBuilder(
-                context,
-                TabCollectionDatabase::class.java,
-                "tab_collections",
-            ).build().also {
-                instance = it
-            }
+                    context,
+                    TabCollectionDatabase::class.java,
+                    "tab_collections",
+                )
+                .build()
+                .also {
+                    instance = it
+                }
         }
     }
 }

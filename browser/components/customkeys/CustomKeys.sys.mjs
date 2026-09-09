@@ -225,7 +225,9 @@ export const CustomKeys = {
   clearAll() {
     const ids = new Set();
     for (const window of windows.keys()) {
-      for (const keyEl of window.document.querySelectorAll("key[id]")) {
+      for (const keyEl of window.document.querySelectorAll(
+        "key[id]:not([internal=true])"
+      )) {
         // Skip keys that are already unassigned; clearing them would
         // incorrectly mark them as customized.
         if (

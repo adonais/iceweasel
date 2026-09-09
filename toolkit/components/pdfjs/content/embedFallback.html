@@ -1,0 +1,34 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'none'; worker-src 'none'; style-src resource://pdf.js/embedFallback.css chrome://global/skin/; base-uri 'none'; form-action 'none';"
+    />
+    <link rel="stylesheet" href="chrome://global/skin/in-content/common.css" />
+    <link rel="stylesheet" href="resource://pdf.js/embedFallback.css" />
+    <link rel="localization" href="toolkit/pdfviewer/embedFallback.ftl" />
+  </head>
+
+  <body>
+    <div id="fallbackContainer">
+      <p
+        id="fallbackMessage"
+        dir="auto"
+        data-l10n-id="pdfjs-embed-fallback-message"
+      ></p>
+      <button
+        id="fallbackOpenButton"
+        class="primary"
+        type="button"
+        dir="auto"
+        data-l10n-id="pdfjs-embed-fallback-open-button"
+      ></button>
+    </div>
+  </body>
+</html>

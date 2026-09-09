@@ -38,7 +38,7 @@ SSL_IMPORT const PRUint16 SSL_NumImplementedCiphers;
 SSL_IMPORT PRUint16 SSL_GetNumImplementedCiphers(void);
 
 /* Macro to tell which ciphers in table are SSL2 vs SSL3/TLS. */
-#define SSL_IS_SSL2_CIPHER(which) (((which)&0xfff0) == 0xff00)
+#define SSL_IS_SSL2_CIPHER(which) (((which) & 0xfff0) == 0xff00)
 
 /*
 ** Imports fd into SSL, returning a new socket.  Copies SSL configuration

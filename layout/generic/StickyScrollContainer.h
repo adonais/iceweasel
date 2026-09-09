@@ -11,12 +11,17 @@
 #define StickyScrollContainer_h
 
 #include "mozilla/DepthOrderedFrameList.h"
+#include "mozilla/Maybe.h"
 #include "nsPoint.h"
 #include "nsRectAbsolute.h"
 #include "nsTArray.h"
 
 struct nsRect;
 class nsIFrame;
+
+namespace mozilla::layers {
+enum class ScrollDirection : uint8_t;
+}  // namespace mozilla::layers
 
 namespace mozilla {
 
@@ -29,6 +34,15 @@ class StickyScrollContainer final {
    * the scroll container of the given frame, if a scroll container exists.
    */
   static StickyScrollContainer* GetOrCreateForFrame(nsIFrame*);
+
+  /**
+   * As GetOrCreateForFrame, but returning null if the scroll container lacks
+   * a StickyScrollContainer (instead of creating one). Use this flavor for
+   * read-only queries, such as from view timeline code: if no
+   * StickyScrollContainer exists there is no sticking to report, and creating
+   * one would needlessly mutate layout state.
+   */
+  static StickyScrollContainer* GetForFrame(const nsIFrame*);
 
   void AddFrame(nsIFrame* aFrame) { mFrames.Add(aFrame); }
   void RemoveFrame(nsIFrame* aFrame) { mFrames.Remove(aFrame); }
@@ -52,6 +66,45 @@ class StickyScrollContainer final {
    */
   void GetScrollRanges(nsIFrame* aFrame, nsRectAbsolute* aOuter,
                        nsRectAbsolute* aInner) const;
+
+  /**
+   * Describes how a frame sticks to one side of the scrollport along one axis.
+   * Sides here are physical: the start side is the frame's top or left edge
+   * and the end side its bottom or right edge, regardless of writing mode,
+   * direction or flex-direction.
+   */
+  struct StickyScrollRange {
+    // The scroll offset at which sticking to this side begins or ends, in the
+    // signed space of ScrollContainerFrame::GetScrollPosition().
+    nscoord mScrollPosition = 0;
+    // How far sticking to this side can displace the frame before the
+    // containing block stops it. Never negative.
+    nscoord mMaxOffset = 0;
+  };
+
+  /**
+   * The per-side sticky ranges for one axis. A side is Nothing() if the frame
+   * doesn't stick that way, or if the sticky offsets haven't been computed
+   * yet.
+   */
+  struct StickyScrollRanges {
+    Maybe<StickyScrollRange> mStartSide;
+    Maybe<StickyScrollRange> mEndSide;
+  };
+
+  /**
+   * Compute, for each side of the given axis, the range of scroll offsets
+   * over which sticking displaces aFrame, and by how much. This re-expresses
+   * the stick and containment rectangles of ComputeStickyLimits() (see its
+   * documentation) as scroll offset ranges for a single axis.
+   *
+   * Compare GetScrollRanges(), which describes the same sticking as the 2-D
+   * region of scroll positions over which aFrame does not move with the
+   * scrolled content, rather than as per-side scroll offset thresholds and
+   * displacement limits along one axis.
+   */
+  StickyScrollRanges GetStickyScrollRangesForAxis(
+      const nsIFrame* aFrame, layers::ScrollDirection aAxis) const;
 
   /**
    * Compute and set the position of a frame and its following continuations.
@@ -92,13 +145,25 @@ class StickyScrollContainer final {
 
  private:
   /**
+   * Whether ComputeStickyLimits() positions its aStick outparam (the
+   * sticky-limits rectangle) relative to the current scroll position, or as
+   * if the scroll position were zero (in which case the result is independent
+   * of the current scroll position).
+   */
+  enum class StickyLimitSpace : uint8_t {
+    RelativeToCurrentScroll,
+    IgnoreCurrentScroll,
+  };
+
+  /**
    * Compute two rectangles that determine sticky positioning: |aStick|, based
    * on the scroll container, and |aContain|, based on the containing block.
    * Sticky positioning keeps the frame position (its upper-left corner) always
    * within |aContain| and secondarily within |aStick|.
    */
-  void ComputeStickyLimits(nsIFrame* aFrame, nsRect* aStick,
-                           nsRect* aContain) const;
+  void ComputeStickyLimits(nsIFrame* aFrame, nsRect* aStick, nsRect* aContain,
+                           StickyLimitSpace aSpace =
+                               StickyLimitSpace::RelativeToCurrentScroll) const;
 
   ScrollContainerFrame* const mScrollContainerFrame;
   DepthOrderedFrameList mFrames;

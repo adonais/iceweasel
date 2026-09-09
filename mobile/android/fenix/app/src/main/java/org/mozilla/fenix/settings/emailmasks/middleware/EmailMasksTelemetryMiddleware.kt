@@ -13,8 +13,7 @@ import org.mozilla.fenix.settings.emailmasks.EmailMasksState
 import org.mozilla.fenix.settings.emailmasks.EmailMasksSystemAction
 import org.mozilla.fenix.settings.emailmasks.EmailMasksUserAction
 
-internal class EmailMasksTelemetryMiddleware :
-    Middleware<EmailMasksState, EmailMasksAction> {
+internal class EmailMasksTelemetryMiddleware : Middleware<EmailMasksState, EmailMasksAction> {
 
     override fun invoke(
         store: Store<EmailMasksState, EmailMasksAction>,
@@ -29,7 +28,7 @@ internal class EmailMasksTelemetryMiddleware :
                     EmailMask.SettingChangedExtra(
                         setting = "email_mask_suggestions",
                         enabled = true,
-                    ),
+                    )
                 )
             }
 
@@ -38,7 +37,7 @@ internal class EmailMasksTelemetryMiddleware :
                     EmailMask.SettingChangedExtra(
                         setting = "email_mask_suggestions",
                         enabled = false,
-                    ),
+                    )
                 )
             }
 
@@ -51,8 +50,7 @@ internal class EmailMasksTelemetryMiddleware :
             }
 
             is EmailMasksSystemAction.ManageTabOpened,
-            is EmailMasksSystemAction.LearnMoreTabOpened,
-                -> Unit
+            is EmailMasksSystemAction.LearnMoreTabOpened -> Unit
         }
     }
 }

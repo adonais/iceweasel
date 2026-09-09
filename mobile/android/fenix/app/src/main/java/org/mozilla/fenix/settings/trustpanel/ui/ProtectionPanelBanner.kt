@@ -43,9 +43,9 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.surfaceDimVariant
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 private val BANNER_IMAGE_SIZE = 80.dp
 private val GradientAISubtleStop2Light = Color(0xFFE9DAFB)
@@ -72,36 +72,41 @@ private fun protectionPanelBannerContent(
     val appName = stringResource(id = R.string.app_name_firefox)
     val protectedTitle = stringResource(id = R.string.protection_panel_banner_protected_title, appName)
     return when {
-        !isSecured -> ProtectionPanelBannerContent(
-            imageId = R.drawable.protection_panel_not_secure,
-            title = stringResource(id = R.string.protection_panel_banner_not_secure_title),
-            description = stringResource(id = R.string.protection_panel_banner_not_secure_description),
-            backgroundColor = defaultBackground,
-        )
-        !isTrackingProtectionEnabled -> ProtectionPanelBannerContent(
-            imageId = R.drawable.protection_panel_not_protected,
-            title = stringResource(id = R.string.protection_panel_banner_not_protected_title),
-            description = stringResource(
-                id = R.string.protection_panel_banner_not_protected_description,
-                appName,
-            ),
-            backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-        )
-        else -> ProtectionPanelBannerContent(
-            imageId = R.drawable.kit_head_protection_blocker_banner,
-            title = protectedTitle,
-            description = if (numberOfTrackersBlocked > 0) {
-                pluralStringResource(
-                    id = R.plurals.protection_panel_banner_protected_blocked_trackers_description,
-                    count = numberOfTrackersBlocked,
-                    numberOfTrackersBlocked,
-                )
-            } else {
-                stringResource(id = R.string.protection_panel_banner_protected_no_blocked_trackers_description)
-            },
-            backgroundColor = defaultBackground,
-            isGradient = true,
-        )
+        !isSecured ->
+            ProtectionPanelBannerContent(
+                imageId = R.drawable.protection_panel_not_secure,
+                title = stringResource(id = R.string.protection_panel_banner_not_secure_title),
+                description = stringResource(id = R.string.protection_panel_banner_not_secure_description),
+                backgroundColor = defaultBackground,
+            )
+        !isTrackingProtectionEnabled ->
+            ProtectionPanelBannerContent(
+                imageId = R.drawable.protection_panel_not_protected,
+                title = stringResource(id = R.string.protection_panel_banner_not_protected_title),
+                description =
+                    stringResource(
+                        id = R.string.protection_panel_banner_not_protected_description,
+                        appName,
+                    ),
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            )
+        else ->
+            ProtectionPanelBannerContent(
+                imageId = R.drawable.kit_head_protection_blocker_banner,
+                title = protectedTitle,
+                description =
+                    if (numberOfTrackersBlocked > 0) {
+                        pluralStringResource(
+                            id = R.plurals.protection_panel_banner_protected_blocked_trackers_description,
+                            count = numberOfTrackersBlocked,
+                            numberOfTrackersBlocked,
+                        )
+                    } else {
+                        stringResource(id = R.string.protection_panel_banner_protected_no_blocked_trackers_description)
+                    },
+                backgroundColor = defaultBackground,
+                isGradient = true,
+            )
     }
 }
 
@@ -112,26 +117,31 @@ internal fun ProtectionPanelBanner(
     numberOfTrackersBlocked: Int,
     onClick: (() -> Unit)? = null,
 ) {
-    val content = protectionPanelBannerContent(
-        isSecured = isSecured,
-        isTrackingProtectionEnabled = isTrackingProtectionEnabled,
-        numberOfTrackersBlocked = numberOfTrackersBlocked,
-    )
-    val mergedContentDescription = if (content.description == null) {
-        content.title
-    } else {
-        "${content.title}. ${content.description}"
-    }
-    val bannerModifier = Modifier
-        .fillMaxWidth()
-        .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-        .clearAndSetSemantics {
-            contentDescription = mergedContentDescription
-            if (onClick != null) {
-                role = Role.Button
-                onClick { onClick(); true }
-            }
+    val content =
+        protectionPanelBannerContent(
+            isSecured = isSecured,
+            isTrackingProtectionEnabled = isTrackingProtectionEnabled,
+            numberOfTrackersBlocked = numberOfTrackersBlocked,
+        )
+    val mergedContentDescription =
+        if (content.description == null) {
+            content.title
+        } else {
+            "${content.title}. ${content.description}"
         }
+    val bannerModifier =
+        Modifier.fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .clearAndSetSemantics {
+                contentDescription = mergedContentDescription
+                if (onClick != null) {
+                    role = Role.Button
+                    onClick {
+                        onClick()
+                        true
+                    }
+                }
+            }
 
     if (content.isGradient) {
         ProtectionPanelGradientBanner(
@@ -201,18 +211,17 @@ private fun ProtectionPanelGradientBanner(
     imageId: Int,
     modifier: Modifier = Modifier,
 ) {
-    val (stop2, stop3) = if (isSystemInDarkTheme()) {
-        GradientAISubtleStop2Dark to GradientAISubtleStop3Dark
-    } else {
-        GradientAISubtleStop2Light to GradientAISubtleStop3Light
-    }
+    val (stop2, stop3) =
+        if (isSystemInDarkTheme()) {
+            GradientAISubtleStop2Dark to GradientAISubtleStop3Dark
+        } else {
+            GradientAISubtleStop2Light to GradientAISubtleStop3Light
+        }
     Box(
-        modifier = Modifier
-            .clip(MaterialTheme.shapes.extraLarge)
-            .background(
-                brush = Brush.horizontalGradient(listOf(stop2, stop3)),
-            )
-            .then(modifier),
+        modifier =
+            Modifier.clip(MaterialTheme.shapes.extraLarge)
+                .background(brush = Brush.horizontalGradient(listOf(stop2, stop3)))
+                .then(modifier)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = FirefoxTheme.layout.space.static200),
@@ -220,9 +229,7 @@ private fun ProtectionPanelGradientBanner(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(
-                modifier = Modifier
-                    .padding(vertical = FirefoxTheme.layout.space.static150)
-                    .weight(1f),
+                modifier = Modifier.padding(vertical = FirefoxTheme.layout.space.static150).weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 BannerTexts(title = title, description = description)
@@ -243,20 +250,24 @@ internal data class ProtectionPanelBannerPreviewState(
 )
 
 internal class ProtectionPanelBannerPreviewProvider : PreviewParameterProvider<ProtectionPanelBannerPreviewState> {
-    private val data = listOf(
-        "Not secure" to ProtectionPanelBannerPreviewState(
-            isSecured = false,
-            isTrackingProtectionEnabled = true,
-        ),
-        "Not protected" to ProtectionPanelBannerPreviewState(
-            isSecured = true,
-            isTrackingProtectionEnabled = false,
-        ),
-        "Protected" to ProtectionPanelBannerPreviewState(
-            isSecured = true,
-            isTrackingProtectionEnabled = true,
-        ),
-    )
+    private val data =
+        listOf(
+            "Not secure" to
+                ProtectionPanelBannerPreviewState(
+                    isSecured = false,
+                    isTrackingProtectionEnabled = true,
+                ),
+            "Not protected" to
+                ProtectionPanelBannerPreviewState(
+                    isSecured = true,
+                    isTrackingProtectionEnabled = false,
+                ),
+            "Protected" to
+                ProtectionPanelBannerPreviewState(
+                    isSecured = true,
+                    isTrackingProtectionEnabled = true,
+                ),
+        )
 
     override val values: Sequence<ProtectionPanelBannerPreviewState>
         get() = data.map { it.second }.asSequence()
@@ -269,13 +280,11 @@ internal class ProtectionPanelBannerPreviewProvider : PreviewParameterProvider<P
 @PreviewLightDark
 @Composable
 private fun ProtectionPanelBannerPreview(
-    @PreviewParameter(ProtectionPanelBannerPreviewProvider::class) state: ProtectionPanelBannerPreviewState,
+    @PreviewParameter(ProtectionPanelBannerPreviewProvider::class) state: ProtectionPanelBannerPreviewState
 ) {
     FirefoxTheme {
         Surface {
-            Column(
-                modifier = Modifier.padding(all = FirefoxTheme.layout.space.static200),
-            ) {
+            Column(modifier = Modifier.padding(all = FirefoxTheme.layout.space.static200)) {
                 ProtectionPanelBanner(
                     isSecured = state.isSecured,
                     isTrackingProtectionEnabled = state.isTrackingProtectionEnabled,

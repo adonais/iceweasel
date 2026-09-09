@@ -12,20 +12,19 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import org.mozilla.fenix.databinding.ComponentExceptionsBinding
 
-/**
- * View that contains and configures the Exceptions List
- */
+/** View that contains and configures the Exceptions List */
 abstract class ExceptionsView<T : Any>(
     container: ViewGroup,
     protected val interactor: ExceptionsInteractor<T>,
 ) {
 
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
-    internal val binding = ComponentExceptionsBinding.inflate(
-        LayoutInflater.from(container.context),
-        container,
-        true,
-    )
+    internal val binding =
+        ComponentExceptionsBinding.inflate(
+            LayoutInflater.from(container.context),
+            container,
+            true,
+        )
 
     val containerView: FrameLayout = binding.exceptionsWrapper
 

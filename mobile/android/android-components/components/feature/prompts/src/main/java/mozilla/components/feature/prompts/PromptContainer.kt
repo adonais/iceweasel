@@ -9,51 +9,39 @@ import android.content.Intent
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
 
-/**
- * Wrapper to hold shared functionality between activities and fragments for [PromptFeature].
- */
+/** Wrapper to hold shared functionality between activities and fragments for [PromptFeature]. */
 internal sealed class PromptContainer {
 
-    /**
-     * Getter for [Context].
-     */
+    /** Getter for [Context]. */
     abstract val context: Context
 
-    /**
-     * Launches an activity for which you would like a result when it finished.
-     */
+    /** Launches an activity for which you would like a result when it finished. */
     abstract fun startActivityForResult(intent: Intent, code: Int)
 
-    /**
-     * Returns a localized string.
-     */
+    /** Returns a localized string. */
     abstract fun getString(
         @StringRes res: Int,
         vararg objects: Any,
     ): String
 
-    internal class Activity(
-        private val activity: android.app.Activity,
-    ) : PromptContainer() {
+    internal class Activity(private val activity: android.app.Activity) : PromptContainer() {
 
-        override val context get() = activity
+        override val context
+            get() = activity
 
-        override fun startActivityForResult(intent: Intent, code: Int) =
-            activity.startActivityForResult(intent, code)
+        override fun startActivityForResult(intent: Intent, code: Int) = activity.startActivityForResult(intent, code)
 
         override fun getString(res: Int, vararg objects: Any) = activity.getString(res, *objects)
     }
 
-    internal class Fragment(
-        private val fragment: androidx.fragment.app.Fragment,
-    ) : PromptContainer() {
+    internal class Fragment(private val fragment: androidx.fragment.app.Fragment) : PromptContainer() {
 
-        override val context get() = fragment.requireContext()
+        override val context
+            get() = fragment.requireContext()
 
         @Suppress("DEPRECATION")
         // https://github.com/mozilla-mobile/android-components/issues/10357
-        override fun startActivityForResult(intent: Intent, code: Int) =
-            fragment.startActivityForResult(intent, code)
+        override fun startActivityForResult(intent: Intent, code: Int) = fragment.startActivityForResult(intent, code)
 
         override fun getString(res: Int, vararg objects: Any) = fragment.getString(res, *objects)
     }
@@ -61,6 +49,7 @@ internal sealed class PromptContainer {
     @VisibleForTesting
     internal class TestPromptContainer(override val context: Context) : PromptContainer() {
         override fun startActivityForResult(intent: Intent, code: Int) = Unit
+
         override fun getString(res: Int, vararg objects: Any) = context.getString(res, *objects)
     }
 }

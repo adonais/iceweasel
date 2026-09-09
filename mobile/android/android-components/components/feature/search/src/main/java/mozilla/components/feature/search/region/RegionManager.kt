@@ -34,8 +34,7 @@ private const val PREFERENCE_KEY_CURRENT_REGION = "region.current"
 private const val PREFERENCE_KEY_REGION_FIRST_SEEN = "region.first_seen"
 
 /**
- * Internal RegionManager for keeping track of the "current" and "home" region of a user. Used by
- * [RegionMiddleware].
+ * Internal RegionManager for keeping track of the "current" and "home" region of a user. Used by [RegionMiddleware].
  */
 internal class RegionManager(
     context: Context,
@@ -59,11 +58,12 @@ internal class RegionManager(
 
     private var firstSeen: Long?
         get() = preferences.value.getLong(PREFERENCE_KEY_REGION_FIRST_SEEN, 0)
-        set(value) = if (value == null) {
-            preferences.value.edit { remove(PREFERENCE_KEY_REGION_FIRST_SEEN) }
-        } else {
-            preferences.value.edit { putLong(PREFERENCE_KEY_REGION_FIRST_SEEN, value) }
-        }
+        set(value) =
+            if (value == null) {
+                preferences.value.edit { remove(PREFERENCE_KEY_REGION_FIRST_SEEN) }
+            } else {
+                preferences.value.edit { putLong(PREFERENCE_KEY_REGION_FIRST_SEEN, value) }
+            }
 
     fun region(): RegionState? {
         return homeRegion?.let { region ->
@@ -114,14 +114,15 @@ internal class RegionManager(
         }
     }
 
-    private suspend fun fetchRegionWithRetry(): LocationService.Region? = withContext(dispatcher) {
-        repeat(MAX_RETRIES) {
-            val region = locationService.fetchRegion(readFromCache = true)
-            if (region != null) {
-                return@withContext region
+    private suspend fun fetchRegionWithRetry(): LocationService.Region? =
+        withContext(dispatcher) {
+            repeat(MAX_RETRIES) {
+                val region = locationService.fetchRegion(readFromCache = true)
+                if (region != null) {
+                    return@withContext region
+                }
+                delay(RETRY_TIMEOUT_MS)
             }
-            delay(RETRY_TIMEOUT_MS)
+            return@withContext null
         }
-        return@withContext null
-    }
 }

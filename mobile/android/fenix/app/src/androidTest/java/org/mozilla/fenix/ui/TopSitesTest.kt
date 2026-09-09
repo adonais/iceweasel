@@ -5,6 +5,7 @@
 package org.mozilla.fenix.ui
 
 import android.util.Log
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -28,7 +29,6 @@ import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
-import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 /**
  * Tests Top Sites functionality
@@ -38,20 +38,17 @@ import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidCompo
  * - Verifies 'Top Site' usage UI functionality
  * - Verifies existence of default top sites available on the home-screen
  */
-
 class TopSitesTest {
-    @get:Rule(order = 0)
-    val fenixTestRule: FenixTestRule = FenixTestRule()
+    @get:Rule(order = 0) val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    private val mockWebServer get() = fenixTestRule.mockWebServer
+    private val mockWebServer
+        get() = fenixTestRule.mockWebServer
 
     @get:Rule(order = 1)
-    val composeTestRule = AndroidComposeTestRuleV2(
-        HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
-    ) { it.activity }
+    val composeTestRule =
+        AndroidComposeTestRuleV2(HomeActivityIntentTestRule.withDefaultSettingsOverrides()) { it.activity }
 
-    @get:Rule(order = 2)
-    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
+    @get:Rule(order = 2) val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     @Before
     fun setUp() {
@@ -59,14 +56,14 @@ class TopSitesTest {
         for (i in 1..RETRY_COUNT) {
             Log.i(TAG, "setUp: Started try #$i")
             try {
-                homeScreen(composeTestRule) {
-                }.openThreeDotMenu {
-                }.clickSettingsButton {
-                }.goBack(composeTestRule) {
-                    defaultTopSitesList.values.forEach { value ->
-                        verifyExistingTopSitesTabs(value)
+                homeScreen(composeTestRule) {}
+                    .openThreeDotMenu {}
+                    .clickSettingsButton {}
+                    .goBack(composeTestRule) {
+                        defaultTopSitesList.values.forEach { value ->
+                            verifyExistingTopSitesTabs(value)
+                        }
                     }
-                }
 
                 break
             } catch (e: Throwable) {
@@ -93,18 +90,21 @@ class TopSitesTest {
         homeScreen(composeTestRule) {
             verifyExistingTopSitesList()
         }
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser(defaultWebPage.url) {
-            verifyPageContent(defaultWebPage.content)
-        }.openThreeDotMenu {
-            clickTheMoreButton()
-            verifyAddToShortcutsButton(isDisplayed = true)
-        }.clickAddToShortcutsButton {
-            verifySnackBarText(getStringResource(R.string.snackbar_added_to_shortcuts))
-        }.goToHomescreen {
-            verifyExistingTopSitesList()
-            verifyExistingTopSitesTabs(defaultWebPage.title)
-        }
+        navigationToolbar(composeTestRule) {}
+            .enterURLAndEnterToBrowser(defaultWebPage.url) {
+                verifyPageContent(defaultWebPage.content)
+            }
+            .openThreeDotMenu {
+                clickTheMoreButton()
+                verifyAddToShortcutsButton(isDisplayed = true)
+            }
+            .clickAddToShortcutsButton {
+                verifySnackBarText(getStringResource(R.string.snackbar_added_to_shortcuts))
+            }
+            .goToHomescreen {
+                verifyExistingTopSitesList()
+                verifyExistingTopSitesTabs(defaultWebPage.title)
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/532599
@@ -118,18 +118,21 @@ class TopSitesTest {
         )
 
         homeScreen(composeTestRule) {
-            verifyExistingTopSitesList()
-            verifyExistingTopSitesTabs(webPage.title)
-        }.openTopSiteTabWithTitle(title = webPage.title) {
-            verifyUrl(webPage.url.toString().replace("http://", ""))
-        }.goToHomescreen {
-            verifyExistingTopSitesList()
-            verifyExistingTopSitesTabs(webPage.title)
-        }.openContextMenuOnTopSitesWithTitle(webPage.title) {
-            verifyTopSiteContextMenuItems()
-            // Dismiss context menu popup
-            mDevice.pressBack()
-        }
+                verifyExistingTopSitesList()
+                verifyExistingTopSitesTabs(webPage.title)
+            }
+            .openTopSiteTabWithTitle(title = webPage.title) {
+                verifyUrl(webPage.url.toString().replace("http://", ""))
+            }
+            .goToHomescreen {
+                verifyExistingTopSitesList()
+                verifyExistingTopSitesTabs(webPage.title)
+            }
+            .openContextMenuOnTopSitesWithTitle(webPage.title) {
+                verifyTopSiteContextMenuItems()
+                // Dismiss context menu popup
+                mDevice.pressBack()
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/532600
@@ -143,13 +146,15 @@ class TopSitesTest {
         )
 
         homeScreen(composeTestRule) {
-            verifyExistingTopSitesList()
-            verifyExistingTopSitesTabs(webPage.title)
-        }.openContextMenuOnTopSitesWithTitle(webPage.title) {
-            verifyTopSiteContextMenuItems()
-        }.openTopSiteInPrivateTab {
-            verifyCurrentPrivateSession(composeTestRule.activity.applicationContext)
-        }
+                verifyExistingTopSitesList()
+                verifyExistingTopSitesTabs(webPage.title)
+            }
+            .openContextMenuOnTopSitesWithTitle(webPage.title) {
+                verifyTopSiteContextMenuItems()
+            }
+            .openTopSiteInPrivateTab {
+                verifyCurrentPrivateSession(composeTestRule.activity.applicationContext)
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1110321
@@ -165,16 +170,19 @@ class TopSitesTest {
         )
 
         homeScreen(composeTestRule) {
-            verifyExistingTopSitesList()
-            verifyExistingTopSitesTabs(webPage.title)
-        }.openContextMenuOnTopSitesWithTitle(webPage.title) {
-            verifyTopSiteContextMenuItems()
-        }.editTopSite(newPageTitle, newWebPageURL.url.toString()) {
-            verifyExistingTopSitesList()
-            verifyExistingTopSitesTabs(newPageTitle)
-        }.openTopSiteTabWithTitle(title = newPageTitle) {
-            verifyUrl(newWebPageURL.url.toString())
-        }
+                verifyExistingTopSitesList()
+                verifyExistingTopSitesTabs(webPage.title)
+            }
+            .openContextMenuOnTopSitesWithTitle(webPage.title) {
+                verifyTopSiteContextMenuItems()
+            }
+            .editTopSite(newPageTitle, newWebPageURL.url.toString()) {
+                verifyExistingTopSitesList()
+                verifyExistingTopSitesTabs(newPageTitle)
+            }
+            .openTopSiteTabWithTitle(title = newPageTitle) {
+                verifyUrl(newWebPageURL.url.toString())
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2673886
@@ -189,13 +197,15 @@ class TopSitesTest {
         )
 
         homeScreen(composeTestRule) {
-            verifyExistingTopSitesList()
-            verifyExistingTopSitesTabs(webPage.title)
-        }.openContextMenuOnTopSitesWithTitle(webPage.title) {
-            verifyTopSiteContextMenuItems()
-        }.editTopSite(newPageTitle, "gl") {
-            verifyTopSiteContextMenuUrlErrorMessage()
-        }
+                verifyExistingTopSitesList()
+                verifyExistingTopSitesTabs(webPage.title)
+            }
+            .openContextMenuOnTopSitesWithTitle(webPage.title) {
+                verifyTopSiteContextMenuItems()
+            }
+            .editTopSite(newPageTitle, "gl") {
+                verifyTopSiteContextMenuUrlErrorMessage()
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/532601
@@ -209,13 +219,15 @@ class TopSitesTest {
         )
 
         homeScreen(composeTestRule) {
-            verifyExistingTopSitesList()
-            verifyExistingTopSitesTabs(webPage.title)
-        }.openContextMenuOnTopSitesWithTitle(webPage.title) {
-            verifyTopSiteContextMenuItems()
-        }.removeTopSite {
-            verifyNotExistingTopSiteItem(webPage.title)
-        }
+                verifyExistingTopSitesList()
+                verifyExistingTopSitesTabs(webPage.title)
+            }
+            .openContextMenuOnTopSitesWithTitle(webPage.title) {
+                verifyTopSiteContextMenuItems()
+            }
+            .removeTopSite {
+                verifyNotExistingTopSiteItem(webPage.title)
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2323641
@@ -229,16 +241,18 @@ class TopSitesTest {
         )
 
         homeScreen(composeTestRule) {
-            verifyExistingTopSitesList()
-            verifyExistingTopSitesTabs(webPage.title)
-        }.openTopSiteTabWithTitle(webPage.title) {
-        }.openThreeDotMenu {
-            clickTheMoreButton()
-            verifyRemoveFromShortcutsButton()
-        }.clickRemoveFromShortcutsButton {
-        }.goToHomescreen {
-            verifyNotExistingTopSiteItem(webPage.title)
-        }
+                verifyExistingTopSitesList()
+                verifyExistingTopSitesTabs(webPage.title)
+            }
+            .openTopSiteTabWithTitle(webPage.title) {}
+            .openThreeDotMenu {
+                clickTheMoreButton()
+                verifyRemoveFromShortcutsButton()
+            }
+            .clickRemoveFromShortcutsButton {}
+            .goToHomescreen {
+                verifyNotExistingTopSiteItem(webPage.title)
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/561582
@@ -261,66 +275,68 @@ class TopSitesTest {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
 
         for (i in 0..1) {
-            navigationToolbar(composeTestRule) {
-            }.enterURLAndEnterToBrowser(defaultWebPage.url) {
-                waitForPageToLoad()
-            }
+            navigationToolbar(composeTestRule) {}
+                .enterURLAndEnterToBrowser(defaultWebPage.url) {
+                    waitForPageToLoad()
+                }
         }
 
-        browserScreen(composeTestRule) {
-        }.goToHomescreen {
-            verifyExistingTopSitesList()
-            verifyExistingTopSitesTabs(defaultWebPage.title)
-        }.openContextMenuOnTopSitesWithTitle(defaultWebPage.title) {
-        }.removeTopSite {
-        }.openThreeDotMenu {
-        }.clickHistoryButton {
-            verifyEmptyHistoryView()
-        }
+        browserScreen(composeTestRule) {}
+            .goToHomescreen {
+                verifyExistingTopSitesList()
+                verifyExistingTopSitesTabs(defaultWebPage.title)
+            }
+            .openContextMenuOnTopSitesWithTitle(defaultWebPage.title) {}
+            .removeTopSite {}
+            .openThreeDotMenu {}
+            .clickHistoryButton {
+                verifyEmptyHistoryView()
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4227423
     @Test
     fun addAShortcutFromHomepageTest() {
-        val websiteData = object {
-            val title = "Mozilla"
-            val goodUrl = "https://www.mozilla.org/en-US/"
-            val badUrl = "incorrectURL"
-            val popularSite = "Facebook"
-        }
+        val websiteData =
+            object {
+                val title = "Mozilla"
+                val goodUrl = "https://www.mozilla.org/en-US/"
+                val badUrl = "incorrectURL"
+                val popularSite = "Facebook"
+            }
 
-        homeScreen(composeTestRule) {
-        }.clickAddShortcutButton {
-            verifyAddToHomepageBottomSheet()
-            clickOnPopularWebsite(websiteData.popularSite)
-            verifySnackBarText(getStringResource(R.string.snackbar_added_to_shortcuts))
-            waitUntilSnackbarGone()
-            verifyExistingTopSitesList()
-            verifyExistingTopSitesTabs(websiteData.popularSite)
-        }
+        homeScreen(composeTestRule) {}
+            .clickAddShortcutButton {
+                verifyAddToHomepageBottomSheet()
+                clickOnPopularWebsite(websiteData.popularSite)
+                verifySnackBarText(getStringResource(R.string.snackbar_added_to_shortcuts))
+                waitUntilSnackbarGone()
+                verifyExistingTopSitesList()
+                verifyExistingTopSitesTabs(websiteData.popularSite)
+            }
 
-        homeScreen(composeTestRule) {
-        }.clickAddShortcutButton {
-        }.clickAddWebsiteButton {
-            verifyEnterAWebsiteUrlDialog()
-            enterWebsiteUrl(websiteData.goodUrl)
-            enterShortcutName(websiteData.title)
-            clickCancelInAddWebsiteDialog()
-        }
+        homeScreen(composeTestRule) {}
+            .clickAddShortcutButton {}
+            .clickAddWebsiteButton {
+                verifyEnterAWebsiteUrlDialog()
+                enterWebsiteUrl(websiteData.goodUrl)
+                enterShortcutName(websiteData.title)
+                clickCancelInAddWebsiteDialog()
+            }
 
-        homeScreen(composeTestRule) {
-        }.clickAddShortcutButton {
-        }.clickAddWebsiteButton {
-            verifyEnterAWebsiteUrlDialog()
-            enterWebsiteUrl(websiteData.badUrl)
-            enterShortcutName(websiteData.title)
-            clickSaveInAddWebsiteDialog()
-            verifyInvalidUrlError()
-            enterWebsiteUrl(websiteData.goodUrl)
-            enterShortcutName(websiteData.title)
-            clickSaveInAddWebsiteDialog()
-            verifyExistingTopSitesList()
-            verifyExistingTopSitesTabs(websiteData.title)
-        }
+        homeScreen(composeTestRule) {}
+            .clickAddShortcutButton {}
+            .clickAddWebsiteButton {
+                verifyEnterAWebsiteUrlDialog()
+                enterWebsiteUrl(websiteData.badUrl)
+                enterShortcutName(websiteData.title)
+                clickSaveInAddWebsiteDialog()
+                verifyInvalidUrlError()
+                enterWebsiteUrl(websiteData.goodUrl)
+                enterShortcutName(websiteData.title)
+                clickSaveInAddWebsiteDialog()
+                verifyExistingTopSitesList()
+                verifyExistingTopSitesTabs(websiteData.title)
+            }
     }
 }

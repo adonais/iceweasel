@@ -152,4 +152,20 @@
             android:textAlignment="center"
             android:contentDescription="@string/mozac_feature_readerview_light_color_scheme_desc" />
     </RadioGroup>
+
+  <androidx.appcompat.widget.AppCompatButton
+    android:id="@+id/mozac_feature_readerview_listen"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="12dp"
+    android:fontFamily="sans-serif"
+    android:gravity="center"
+    android:minHeight="48dp"
+    android:text="@string/mozac_feature_readerview_listen_to_page"
+    android:textAlignment="center"
+    android:visibility="gone"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/mozac_feature_readerview_color_scheme_group" />
 </merge>

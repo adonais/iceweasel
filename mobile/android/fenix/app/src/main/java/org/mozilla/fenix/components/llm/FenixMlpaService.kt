@@ -12,18 +12,18 @@ import mozilla.components.lib.llm.mlpa.service.FetchClientMlpaService
 import mozilla.components.lib.llm.mlpa.service.MlpaConfig
 import mozilla.components.lib.llm.mlpa.service.MlpaService
 
-/**
- * Temporary class for toggling between prod and nonprod MLPA environment
- */
+/** Temporary class for toggling between prod and nonprod MLPA environment */
 class FenixMlpaService(
     client: Client,
     var useProd: Boolean = true,
 ) : MlpaService {
     private val nonProd = FetchClientMlpaService(client, MlpaConfig.nonProd)
     private val prod = FetchClientMlpaService(client, MlpaConfig.prodProd)
-    private val service get() = if (useProd) prod else nonProd
+    private val service
+        get() = if (useProd) prod else nonProd
 
     override suspend fun verify(request: AuthenticationService.Request) = service.verify(request)
+
     override fun completion(
         authorizationToken: AuthorizationToken,
         request: ChatService.Request,

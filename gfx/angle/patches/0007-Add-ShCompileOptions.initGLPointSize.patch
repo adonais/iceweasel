@@ -1,4 +1,4 @@
-From e43d053219a0e60fb0744a2df3ecef41d244e385 Mon Sep 17 00:00:00 2001
+From 74dc5c8e9fd8a525772bb58762f78fcc7ca5674b Mon Sep 17 00:00:00 2001
 From: Kelsey Gilbert <kelsey.gilbert@mozilla.com>
 Date: Wed, 29 Mar 2023 16:13:39 -0700
 Subject: [PATCH] Add ShCompileOptions.initGLPointSize.
@@ -6,14 +6,14 @@ Subject: [PATCH] Add ShCompileOptions.initGLPointSize.
 Change-Id: I1d998867f3e829ed0dc8181fa76be5fe701dde70
 ---
  include/GLSLANG/ShaderLang.h         |  5 +++++
- src/compiler/translator/Compiler.cpp | 13 +++++++++++++
- 2 files changed, 18 insertions(+)
+ src/compiler/translator/Compiler.cpp | 12 ++++++++++++
+ 2 files changed, 17 insertions(+)
 
 diff --git a/include/GLSLANG/ShaderLang.h b/include/GLSLANG/ShaderLang.h
-index 65ad2076c5..200eaac2c5 100644
+index f663f88..701f409 100644
 --- a/include/GLSLANG/ShaderLang.h
 +++ b/include/GLSLANG/ShaderLang.h
-@@ -224,6 +224,11 @@ struct ShCompileOptions
+@@ -221,6 +221,11 @@ struct ShCompileOptions
      // which incorrectly fail to link programs if gl_Position is not written.
      uint64_t initGLPosition : 1;
  
@@ -26,29 +26,28 @@ index 65ad2076c5..200eaac2c5 100644
      //   "a && b" with "a ? b : false",
      //   "a || b" with "a ? true : b".
 diff --git a/src/compiler/translator/Compiler.cpp b/src/compiler/translator/Compiler.cpp
-index 96350cbe2e..9ba125a178 100644
+index 450d2a8..6d57bbc 100644
 --- a/src/compiler/translator/Compiler.cpp
 +++ b/src/compiler/translator/Compiler.cpp
-@@ -1195,6 +1195,19 @@ bool TCompiler::checkAndSimplifyAST(TIntermBlock *root,
-             mGLPositionInitialized = true;
-         }
+@@ -1089,6 +1089,18 @@ bool TCompiler::checkAndSimplifyAST(TIntermBlock *root,
+         mGLPositionInitialized = true;
+     }
  
-+        if (mShaderType == GL_VERTEX_SHADER && compileOptions.initGLPointSize)
++    if (mShaderType == GL_VERTEX_SHADER && compileOptions.initGLPointSize)
++    {
++        InitVariableList list;
++        AddBuiltInToInitList(&mSymbolTable, mShaderVersion, root, "gl_PointSize", &list);
++
++        if (!list.empty() && !InitializeVariables(this, root, list, &mSymbolTable, mShaderVersion,
++                                                 mExtensionBehavior, false))
 +        {
-+            InitVariableList list;
-+            AddBuiltInToInitList(&mSymbolTable, mShaderVersion, root, "gl_PointSize", &list);
-+
-+            if (!list.empty() &&
-+                !InitializeVariables(this, root, list, &mSymbolTable, mShaderVersion,
-+                                     mExtensionBehavior, false))
-+            {
-+                return false;
-+            }
++            return false;
 +        }
++    }
 +
-         // DeferGlobalInitializers needs to be run before other AST transformations that generate
-         // new statements from expressions. But it's fine to run DeferGlobalInitializers after the
-         // above SplitSequenceOperator and RemoveArrayLengthMethod since they only have an effect on
+     // DeferGlobalInitializers needs to be run before other AST transformations that generate
+     // new statements from expressions. But it's fine to run DeferGlobalInitializers after the
+     // above SplitSequenceOperator and RemoveArrayLengthMethod since they only have an effect on
 -- 
-2.54.0
+2.43.0
 

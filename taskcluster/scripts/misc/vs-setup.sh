@@ -14,6 +14,9 @@ fi
 if [ ! -d "${VSPATH}/${VCDIR}" ]; then
     VCDIR=VC/Tools/MSVC/14.50.35717
 fi
+if [ ! -d "${VSPATH}/${VCDIR}" ]; then
+    VCDIR=VC/Tools/MSVC/14.51.36231
+fi
 SDKDIR="Windows Kits/10"
 SDK_VERSION=10.0.17134.0
 if [ ! -d "${VSPATH}/${SDKDIR}/Lib/${SDK_VERSION}" ]; then
@@ -24,6 +27,9 @@ if [ ! -d "${VSPATH}/${SDKDIR}/Lib/${SDK_VERSION}" ]; then
 fi
 if [ ! -d "${VSPATH}/${SDKDIR}/Lib/${SDK_VERSION}" ]; then
     SDK_VERSION=10.0.26100.0
+fi
+if [ ! -d "${VSPATH}/${SDKDIR}/Lib/${SDK_VERSION}" ]; then
+    SDK_VERSION=10.0.28000.0
 fi
 
 case "$TARGET" in

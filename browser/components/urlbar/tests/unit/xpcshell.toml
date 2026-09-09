@@ -10,6 +10,8 @@ support-files = ["data/engine.xml"]
 
 ["test_UrlbarChildController_unit.js"]
 
+["test_UrlbarNewTabComponentRegistrant.js"]
+
 ["test_UrlbarParentController_integration.js"]
 
 ["test_UrlbarParentController_telemetry.js"]
@@ -63,6 +65,8 @@ support-files = ["data/engine.xml"]
 ["test_UrlbarUtils_dismissAutofill.js"]
 
 ["test_UrlbarUtils_getBackspaceBlock.js"]
+
+["test_UrlbarUtils_getRemoteIconUrl.js"]
 
 ["test_UrlbarUtils_getShortcutOrURIAndPostData.js"]
 

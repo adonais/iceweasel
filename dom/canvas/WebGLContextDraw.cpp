@@ -377,14 +377,6 @@ bool WebGLContext::ValidateBuffersForTf(
 
 ////////////////////////////////////////
 
-template <typename T>
-static bool DoSetsIntersect(const std::set<T>& a, const std::set<T>& b) {
-  std::vector<T> intersection;
-  std::set_intersection(a.begin(), a.end(), b.begin(), b.end(),
-                        std::back_inserter(intersection));
-  return !intersection.empty();
-}
-
 template <size_t N>
 static size_t FindFirstOne(const std::bitset<N>& bs) {
   MOZ_ASSERT(bs.any());

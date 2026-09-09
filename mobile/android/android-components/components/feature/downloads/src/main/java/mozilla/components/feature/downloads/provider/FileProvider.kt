@@ -6,12 +6,11 @@ package mozilla.components.feature.downloads.provider
 /**
  * A file provider to provide functionality for the feature downloads component.
  *
- * We need this class to create a fully qualified class name that doesn't clash with other
- * file providers in other components see https://stackoverflow.com/a/43444164/5533820.
+ * We need this class to create a fully qualified class name that doesn't clash with other file providers in other
+ * components see https://stackoverflow.com/a/43444164/5533820.
  *
- * Be aware, when creating new file resources avoid using common names like "@xml/file_paths",
- * as other file providers could be using the same names and this could case unexpected behaviors.
- * As a convention try to use unique names like using the name of the component as a prefix of the
- * name of the file, like component_xxx_file_paths.xml.
+ * Be aware, when creating new file resources avoid using common names like "@xml/file_paths", as other file providers
+ * could be using the same names and this could case unexpected behaviors. As a convention try to use unique names like
+ * using the name of the component as a prefix of the name of the file, like component_xxx_file_paths.xml.
  */
 class FileProvider : androidx.core.content.FileProvider()

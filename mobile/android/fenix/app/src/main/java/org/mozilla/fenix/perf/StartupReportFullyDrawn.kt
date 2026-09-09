@@ -14,25 +14,20 @@ import org.mozilla.fenix.perf.StartupTimelineStateMachine.StartupDestination.HOM
 import org.mozilla.fenix.perf.StartupTimelineStateMachine.StartupState
 
 /**
- * Instruments the Android framework method [Activity.reportFullyDrawn], which prints time to visual
- * completeness to logcat.
+ * Instruments the Android framework method [Activity.reportFullyDrawn], which prints time to visual completeness to
+ * logcat.
  *
- * At the time of writing (2020-02-26), this functionality is tightly coupled to FNPRMS, our internal
- * startup measurement system. However, these values may also appear in the Google Play Vitals
- * dashboards.
+ * At the time of writing (2020-02-26), this functionality is tightly coupled to FNPRMS, our internal startup
+ * measurement system. However, these values may also appear in the Google Play Vitals dashboards.
  */
 class StartupReportFullyDrawn {
 
     // Ideally we'd incorporate this state into the StartupState but we're short on implementation time.
     private var isInstrumented = false
 
-    /**
-     * Instruments "visually complete" cold startup time for app link for use with FNPRMS.
-     */
+    /** Instruments "visually complete" cold startup time for app link for use with FNPRMS. */
     fun onActivityCreateEndHome(state: StartupState, activity: Activity) {
-        if (!isInstrumented &&
-            state is StartupState.Cold && state.destination == APP_LINK
-        ) {
+        if (!isInstrumented && state is StartupState.Cold && state.destination == APP_LINK) {
             // Instrumenting the first frame drawn should be good enough for app link for now.
             isInstrumented = true
             attachReportFullyDrawn(activity, activity.findViewById(R.id.rootContainer))
@@ -42,15 +37,13 @@ class StartupReportFullyDrawn {
     /**
      * Instruments "visually complete" cold startup time to homescreen for use with FNPRMS.
      *
-     * For FNPRMS, we define "visually complete" to be when top sites is loaded with placeholders;
-     * the animation to display top sites will occur after this point, as will the asynchronous
-     * loading of the actual top sites icons. Our focus for visually complete is usability.
-     * There are no tabs available in our FNPRMS tests so they are ignored for this instrumentation.
+     * For FNPRMS, we define "visually complete" to be when top sites is loaded with placeholders; the animation to
+     * display top sites will occur after this point, as will the asynchronous loading of the actual top sites icons.
+     * Our focus for visually complete is usability. There are no tabs available in our FNPRMS tests so they are ignored
+     * for this instrumentation.
      */
     fun onTopSitesItemBound(state: StartupState, activity: Activity) {
-        if (!isInstrumented &&
-            state is StartupState.Cold && state.destination == HOMESCREEN
-        ) {
+        if (!isInstrumented && state is StartupState.Cold && state.destination == HOMESCREEN) {
             isInstrumented = true
 
             attachReportFullyDrawn(activity)

@@ -16,19 +16,19 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class LinkTextTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun `WHEN a link is not found in the full text THEN it renders without crashing`() {
         // Before the fix this added a LinkAnnotation with a negative start, which crashed later in
         // the text layout pass with "Start(-1) ... is out of range". See bug for details.
         val fullText = "This is the full displayed text"
-        val state = LinkTextState(
-            text = "this substring is not present",
-            url = "https://mozilla.org",
-            onClick = {},
-        )
+        val state =
+            LinkTextState(
+                text = "this substring is not present",
+                url = "https://mozilla.org",
+                onClick = {},
+            )
 
         setLinkContent(fullText, listOf(state))
 
@@ -38,11 +38,12 @@ class LinkTextTest {
     @Test
     fun `WHEN a link is blank THEN it renders without crashing`() {
         val fullText = "This is the full displayed text"
-        val state = LinkTextState(
-            text = "",
-            url = "https://mozilla.org",
-            onClick = {},
-        )
+        val state =
+            LinkTextState(
+                text = "",
+                url = "https://mozilla.org",
+                onClick = {},
+            )
 
         setLinkContent(fullText, listOf(state))
 
@@ -80,14 +81,11 @@ class LinkTextTest {
     }
 
     /**
-     * Fetching the node forces the measure/layout pass - the phase where the out of range link
-     * annotation used to crash - so a regression would surface here as an exception rather than a
-     * failed assertion.
+     * Fetching the node forces the measure/layout pass - the phase where the out of range link annotation used to
+     * crash - so a regression would surface here as an exception rather than a failed assertion.
      */
     private fun assertIsShown(fullText: String) {
-        val node = composeTestRule
-            .onNodeWithContentDescription(fullText, substring = true)
-            .fetchSemanticsNode()
+        val node = composeTestRule.onNodeWithContentDescription(fullText, substring = true).fetchSemanticsNode()
 
         assertTrue(node.layoutInfo.isPlaced)
     }

@@ -399,10 +399,10 @@ index 6ba3292fca..5d3a731864 100644
    RTPHeader();
    RTPHeader(const RTPHeader& other);
 diff --git a/api/rtp_parameters.cc b/api/rtp_parameters.cc
-index 8df7d67d83..a49b033e8d 100644
+index 772898168a..7c0a523e00 100644
 --- a/api/rtp_parameters.cc
 +++ b/api/rtp_parameters.cc
-@@ -250,7 +250,8 @@ bool RtpExtension::IsSupportedForAudio(absl::string_view uri) {
+@@ -254,7 +254,8 @@ bool RtpExtension::IsSupportedForAudio(absl::string_view uri) {
           uri == RtpExtension::kTransportSequenceNumberUri ||
           uri == RtpExtension::kTransportSequenceNumberV2Uri ||
           uri == RtpExtension::kMidUri || uri == RtpExtension::kRidUri ||
@@ -413,7 +413,7 @@ index 8df7d67d83..a49b033e8d 100644
  
  bool RtpExtension::IsSupportedForVideo(absl::string_view uri) {
 diff --git a/call/BUILD.gn b/call/BUILD.gn
-index 7c65219249..23e66960f4 100644
+index 618354702d..892e457911 100644
 --- a/call/BUILD.gn
 +++ b/call/BUILD.gn
 @@ -20,6 +20,7 @@ rtc_library("call_interfaces") {
@@ -435,10 +435,10 @@ index 7c65219249..23e66960f4 100644
    deps = [
      ":audio_sender_interface",
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index a2278918de..fdeb0904b7 100644
+index cb2879dd4b..ae877a0539 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
-@@ -237,6 +237,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
+@@ -242,6 +242,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
        // disabled.
        KeyFrameReqMethod keyframe_method = KeyFrameReqMethod::kPliRtcp;
  
@@ -1286,7 +1286,7 @@ index 3b0a981d98..80d961c84c 100644
  
    int64_t _lastProcessFrameTimeNanos RTC_GUARDED_BY(capture_checker_);
 diff --git a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
-index 4392c0f631..46878860e2 100644
+index 3b745a5ca1..1a3934c364 100644
 --- a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
 +++ b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
 @@ -286,6 +286,7 @@ LibvpxVp9Encoder::LibvpxVp9Encoder(const Environment& env,
@@ -1392,7 +1392,7 @@ index c3326509ce..293ccd7089 100644
    const bool enable_svc_for_simulcast_;
    std::optional<SimulcastToSvcConverter> simulcast_to_svc_converter_;
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index bd076c34f5..36b301f6eb 100644
+index 276a878ffc..391fec9870 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
 @@ -549,6 +549,12 @@ rtc_library("logging") {
@@ -1510,7 +1510,7 @@ index b7933130bd..428fc9615d 100644
    vcm_ = nullptr;
  }
 diff --git a/webrtc.gni b/webrtc.gni
-index 6c4b961be7..b827f10b6b 100644
+index 044438dada..71df7a7206 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -110,7 +110,7 @@ declare_args() {

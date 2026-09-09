@@ -8,35 +8,32 @@ import org.mozilla.fenix.components.appstate.AppAction.ShareAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState
 
-/**
- * [AppStore] reducer of [ShareAction]s.
- */
+/** [AppStore] reducer of [ShareAction]s. */
 internal object ShareActionReducer {
-    fun reduce(state: AppState, action: ShareAction): AppState = when (action) {
-        is ShareAction.ShareToAppFailed -> state.copy(
-            snackbarState = SnackbarState.ShareToAppFailed,
-        )
+    fun reduce(state: AppState, action: ShareAction): AppState =
+        when (action) {
+            is ShareAction.ShareToAppFailed -> state.copy(snackbarState = SnackbarState.ShareToAppFailed)
 
-        is ShareAction.ShareToWhatsApp -> state.copy(
-            snackbarState = SnackbarState.ShareToWhatsApp,
-        )
+            is ShareAction.ShareToWhatsApp -> state.copy(snackbarState = SnackbarState.ShareToWhatsApp)
 
-        is ShareAction.SharedTabsSuccessfully -> state.copy(
-            snackbarState = SnackbarState.SharedTabsSuccessfully(
-                destination = action.destination,
-                tabs = action.tabs,
-            ),
-        )
+            is ShareAction.SharedTabsSuccessfully ->
+                state.copy(
+                    snackbarState =
+                        SnackbarState.SharedTabsSuccessfully(
+                            destination = action.destination,
+                            tabs = action.tabs,
+                        )
+                )
 
-        is ShareAction.ShareTabsFailed -> state.copy(
-            snackbarState = SnackbarState.ShareTabsFailed(
-                destination = action.destination,
-                tabs = action.tabs,
-            ),
-        )
+            is ShareAction.ShareTabsFailed ->
+                state.copy(
+                    snackbarState =
+                        SnackbarState.ShareTabsFailed(
+                            destination = action.destination,
+                            tabs = action.tabs,
+                        )
+                )
 
-        is ShareAction.CopyLinkToClipboard -> state.copy(
-            snackbarState = SnackbarState.CopyLinkToClipboard,
-        )
-    }
+            is ShareAction.CopyLinkToClipboard -> state.copy(snackbarState = SnackbarState.CopyLinkToClipboard)
+        }
 }

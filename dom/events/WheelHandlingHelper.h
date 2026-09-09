@@ -169,8 +169,24 @@ class WheelTransaction {
   static void MayEndTransaction();
 
   static LayoutDeviceIntPoint GetScreenPoint(WidgetGUIEvent* aEvent);
-  static void OnFailToScrollTarget();
-  static void OnTimeout(nsITimer* aTimer, void* aClosure);
+  /**
+   * NOTE: This is marked as MOZ_CAN_RUN_SCRIPT_BOUNDARY because this may
+   * dispatch a chrome only event for some automated tests. However, it's
+   * enabled only with a pref and the content cannot listen to the event.
+   * Therefore, this may run script, but shouldn't cause any problems except
+   * when the specific tests do something tricky.
+   */
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void OnFailToScrollTarget();
+  /**
+   * NOTE: This is marked as MOZ_CAN_RUN_SCRIPT_BOUNDARY because this may
+   * dispatch a chrome only event for some automated tests. However, it's
+   * enabled only with a pref and the content cannot listen to the event.
+   * Therefore, this may run script, but shouldn't cause any problems except
+   * when the specific tests do something tricky.
+   */
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void OnTimeout(nsITimer* aTimer,
+                                                    void* aClosure);
+
   static void SetTimeout();
   static DeltaValues OverrideSystemScrollSpeed(WidgetWheelEvent* aEvent);
   static double ComputeAcceleratedWheelDelta(double aDelta, int32_t aFactor);

@@ -139,41 +139,61 @@ void BaseLocalIter::operator++(int) {
 //
 // Stack map methods.
 
-bool BaseCompiler::createStackMap(const char* who) {
+bool BaseCompiler::createStackMap(Maybe<Trap> reason) {
   const ExitStubMapVector noExtras;
   StackMap* stackMap;
-  return stackMapGenerator_.createStackMap(
-             who, noExtras, HasDebugFrameWithLiveRefs::No, stk_, &stackMap) &&
+  return stackMapGenerator_.createStackMap(reason, noExtras,
+                                           HasDebugFrameWithLiveRefs::No, stk_,
+                                           &stackMap) &&
          (!stackMap || stackMaps_->add(masm.currentOffset(), stackMap));
 }
 
-bool BaseCompiler::createStackMap(const char* who, CodeOffset assemblerOffset) {
+bool BaseCompiler::createStackMap(Maybe<Trap> reason,
+                                  CodeOffset assemblerOffset) {
   const ExitStubMapVector noExtras;
   StackMap* stackMap;
-  return stackMapGenerator_.createStackMap(
-             who, noExtras, HasDebugFrameWithLiveRefs::No, stk_, &stackMap) &&
+  return stackMapGenerator_.createStackMap(reason, noExtras,
+                                           HasDebugFrameWithLiveRefs::No, stk_,
+                                           &stackMap) &&
          (!stackMap || stackMaps_->add(assemblerOffset.offset(), stackMap));
 }
 
 bool BaseCompiler::createStackMap(
-    const char* who, HasDebugFrameWithLiveRefs debugFrameWithLiveRefs) {
+    Maybe<Trap> reason, HasDebugFrameWithLiveRefs debugFrameWithLiveRefs) {
   const ExitStubMapVector noExtras;
   StackMap* stackMap;
   return stackMapGenerator_.createStackMap(
-             who, noExtras, debugFrameWithLiveRefs, stk_, &stackMap) &&
+             reason, noExtras, debugFrameWithLiveRefs, stk_, &stackMap) &&
          (!stackMap || stackMaps_->add(masm.currentOffset(), stackMap));
 }
 
-[[nodiscard]] bool BaseCompiler::createAbortingOutOfLineTrapStackMap(
-    StackMap** result) {
+bool BaseCompiler::createStackMap(
+    Maybe<Trap> reason, FaultingCodeRange insnRange,
+    HasDebugFrameWithLiveRefs debugFrameWithLiveRefs) {
+  const ExitStubMapVector noExtras;
+  StackMap* stackMap;
+  return stackMapGenerator_.createStackMap(
+             reason, noExtras, debugFrameWithLiveRefs, stk_, &stackMap) &&
+         (!stackMap || stackMaps_->add(insnRange.resumeOffset(), stackMap));
+}
+
+bool BaseCompiler::createDebugOnlyStackMapForNonResumingTrap(StackMap** result,
+                                                             Trap t1, Trap t2) {
+  // `t1`, and, if specified `t2`, definitely won't resume.
+  MOZ_ASSERT(t1 != Trap::Limit);
+  MOZ_ASSERT(!TrapMightResume(t1));
+  MOZ_ASSERT_IF(t2 != Trap::Limit, !TrapMightResume(t2));
+
   if (MOZ_LIKELY(!compilerEnv_.debugEnabled())) {
     *result = nullptr;
     return true;
   }
 
+  // We can use either `t1` or `t2` (when valid) here, since ::createStackMap
+  // cares only about their resumability, and we established that above.
   ExitStubMapVector extras;
   return stackMapGenerator_.createStackMap(
-      "OutOfLineTrap", extras, HasDebugFrameWithLiveRefs::Maybe, stk_, result);
+      Some(t1), extras, HasDebugFrameWithLiveRefs::Maybe, stk_, result);
 }
 
 bool MachineStackTracker::cloneTo(MachineStackTracker* dst) {
@@ -192,7 +212,7 @@ bool StackMapGenerator::generateStackmapEntriesForTrapExit(
 }
 
 bool StackMapGenerator::createStackMap(
-    const char* who, const ExitStubMapVector& extras,
+    Maybe<Trap> reason, const ExitStubMapVector& extras,
     HasDebugFrameWithLiveRefs debugFrameWithLiveRefs, const StkVector& stk,
     wasm::StackMap** result) {
   // Always initialize the result value
@@ -289,18 +309,38 @@ bool StackMapGenerator::createStackMap(
   MOZ_ASSERT_IF(framePushedAtEntryToBody.isNothing(), stk.empty());
   MOZ_ASSERT_IF(framePushedExcludingArgs.isNothing(), stk.empty());
 
+  // In this loop, we tolerate roots in registers only in the case where we
+  // definitely won't resume execution after the instruction with which this
+  // stackmap is associated.  That means the stackmap can't be for a call; it
+  // must be for a definitely-non-resumable trap.
+  bool allowRefsInRegs =
+      // the stackmap isn't for a call
+      reason.isSome() &&
+      // (implied: the stackmap is for trap) which is not resumable
+      !TrapMightResume(reason.value());
+
   for (const Stk& v : stk) {
+    // If refs in regs aren't allowed, hard assert that we don't have them.
+    // Failure of this assertion is serious and should be investigated.
+    if (MOZ_LIKELY(!allowRefsInRegs)) {
+      MOZ_RELEASE_ASSERT(v.kind() != Stk::RegisterRef);
+    }
+
+    // Now filter out everything except refs in memory.  If refs in regs are
+    // allowable then we will ignore them; that's OK because we have established
+    // above that we won't be resuming after the associated trap is handled
+    // (refs in regs are never allowed for stackmaps associated with calls).
+
 #ifndef DEBUG
-    // We don't track roots in registers, per rationale below, so if this
-    // doesn't hold, something is seriously wrong, and we're likely to get a
-    // GC-related crash.
-    MOZ_RELEASE_ASSERT(v.kind() != Stk::RegisterRef);
+    // Ignore everything except refs in memory.
     if (v.kind() != Stk::MemRef) {
       continue;
     }
+
 #else
-    // Take the opportunity to check everything we reasonably can about
-    // operand stack elements.
+    // The same; ignore everything except refs in memory.  However, take the
+    // opportunity to check everything we reasonably can about operand stack
+    // elements.
     switch (v.kind()) {
       case Stk::MemI32:
       case Stk::MemI64:
@@ -355,15 +395,21 @@ bool StackMapGenerator::createStackMap(
         MOZ_ASSERT(v.refval() == 0);
         continue;
       case Stk::RegisterRef:
-        // This can't happen, per rationale above.
-        MOZ_CRASH("createStackMap: operand stack contains RegisterRef");
+        // This assertion holds because of the release-assertion at the top of
+        // the loop.
+        MOZ_RELEASE_ASSERT(allowRefsInRegs);
+        // The associated instruction isn't resumable, so we tolerate the
+        // register.
+        continue;
       default:
         MOZ_CRASH("createStackMap: unknown operand stack element");
     }
 #endif
+
     // v.offs() holds masm.framePushed() at the point immediately after it
     // was pushed on the stack.  Since it's still on the stack,
     // masm.framePushed() can't be less.
+    MOZ_ASSERT(v.kind() == Stk::MemRef);
     MOZ_ASSERT(v.offs() <= framePushedExcludingArgs.value());
     uint32_t offsFromMapLowest = framePushedExcludingArgs.value() - v.offs();
     MOZ_ASSERT(0 == offsFromMapLowest % sizeof(void*));

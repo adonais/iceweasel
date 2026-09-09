@@ -45,44 +45,67 @@ class LibrarySubMenusMultipleSelectionToolbarRobot {
     }
 
     fun verifyMultiSelectionCheckmark(url: Uri) {
-        Log.i(TAG, "verifyMultiSelectionCheckmark: Trying to verify that the multi-selection checkmark for item with url: $url is displayed")
+        Log.i(
+            TAG,
+            "verifyMultiSelectionCheckmark: Trying to verify that the multi-selection checkmark for item with url: $url is displayed",
+        )
         onView(
-            allOf(
-                withId(R.id.checkmark),
-                withParent(
+                allOf(
+                    withId(R.id.checkmark),
                     withParent(
-                        withChild(
-                            allOf(
-                                withId(R.id.url),
-                                withText(url.toString()),
-                            ),
-                        ),
+                        withParent(
+                            withChild(
+                                allOf(
+                                    withId(R.id.url),
+                                    withText(url.toString()),
+                                )
+                            )
+                        )
                     ),
-                ),
-                // This is used as part of the `multiSelectionToolbarItemsTest` test. Somehow, in the view hierarchy,
-                // the match above is finding two checkmark views - one visible, one hidden, which is throwing off
-                // the matcher. This 'isDisplayed' check is a hacky workaround for this, we're explicitly ignoring
-                // the hidden one. Why are there two to begin with, though?
-                isDisplayed(),
-            ),
-        ).check(matches(isDisplayed()))
-        Log.i(Constants.TAG, "verifyMultiSelectionCheckmark: Verified that the multi-selection checkmark for item with url: $url is displayed")
+                    // This is used as part of the `multiSelectionToolbarItemsTest` test. Somehow, in the view
+                    // hierarchy,
+                    // the match above is finding two checkmark views - one visible, one hidden, which is throwing off
+                    // the matcher. This 'isDisplayed' check is a hacky workaround for this, we're explicitly ignoring
+                    // the hidden one. Why are there two to begin with, though?
+                    isDisplayed(),
+                )
+            )
+            .check(matches(isDisplayed()))
+        Log.i(
+            Constants.TAG,
+            "verifyMultiSelectionCheckmark: Verified that the multi-selection checkmark for item with url: $url is displayed",
+        )
     }
 
     fun verifyMultiSelectionCounter(counterNumber: Int) {
-        Log.i(TAG, "verifyMultiSelectionCounter: Trying to verify that the multi-selection toolbar containing: \"$counterNumber selected\" is displayed")
+        Log.i(
+            TAG,
+            "verifyMultiSelectionCounter: Trying to verify that the multi-selection toolbar containing: \"$counterNumber selected\" is displayed",
+        )
         onView(withText("$counterNumber selected")).check(matches(isDisplayed()))
-        Log.i(TAG, "verifyMultiSelectionCounter: Verified that the multi-selection toolbar containing: \"$counterNumber selected\" is displayed")
+        Log.i(
+            TAG,
+            "verifyMultiSelectionCounter: Verified that the multi-selection toolbar containing: \"$counterNumber selected\" is displayed",
+        )
     }
 
     fun verifyMultiSelectionCounter(counterNumber: Int, composeTestRule: ComposeTestRule) {
-        Log.i(TAG, "verifyMultiSelectionCounter: Trying to verify that the multi-selection toolbar containing: \"$counterNumber selected\" is displayed")
+        Log.i(
+            TAG,
+            "verifyMultiSelectionCounter: Trying to verify that the multi-selection toolbar containing: \"$counterNumber selected\" is displayed",
+        )
         composeTestRule.onNodeWithText("$counterNumber selected").assertIsDisplayed()
-        Log.i(TAG, "verifyMultiSelectionCounter: Verified that the multi-selection toolbar containing: \"$counterNumber selected\" is displayed")
+        Log.i(
+            TAG,
+            "verifyMultiSelectionCounter: Verified that the multi-selection toolbar containing: \"$counterNumber selected\" is displayed",
+        )
     }
 
     fun verifyShareHistoryButton() {
-        Log.i(TAG, "verifyShareHistoryButton: Trying to verify that the multi-selection share history button is displayed")
+        Log.i(
+            TAG,
+            "verifyShareHistoryButton: Trying to verify that the multi-selection share history button is displayed",
+        )
         shareHistoryButton().check(matches(isDisplayed()))
         Log.i(TAG, "verifyShareHistoryButton: Verified that the multi-selection share history button is displayed")
     }
@@ -123,9 +146,7 @@ class LibrarySubMenusMultipleSelectionToolbarRobot {
         Log.i(TAG, "clickShareHistoryButton: Clicked the multi-selection share history button")
 
         mDevice.waitNotNull(
-            Until.findObject(
-                By.text("ALL ACTIONS"),
-            ),
+            Until.findObject(By.text("ALL ACTIONS")),
             waitingTime,
         )
     }
@@ -144,7 +165,9 @@ class LibrarySubMenusMultipleSelectionToolbarRobot {
 
     fun clickMultiSelectThreeDotButton(composeTestRule: ComposeTestRule) {
         Log.i(TAG, "clickMultiSelectThreeDotButton: Trying to click the multi-selection three dot button")
-        composeTestRule.onNodeWithContentDescription(getStringResource(R.string.content_description_menu)).performClick()
+        composeTestRule
+            .onNodeWithContentDescription(getStringResource(R.string.content_description_menu))
+            .performClick()
         Log.i(TAG, "clickMultiSelectThreeDotButton: Clicked the multi-selection three dot button")
     }
 
@@ -171,7 +194,10 @@ class LibrarySubMenusMultipleSelectionToolbarRobot {
         }
 
         fun clickOpenInNewTabButton(interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
-            Log.i(TAG, "clickOpenInNewTabButton: Trying to click the multi-select \"Open in a new tab\" context menu button")
+            Log.i(
+                TAG,
+                "clickOpenInNewTabButton: Trying to click the multi-select \"Open in a new tab\" context menu button",
+            )
             redesignedBookmarksOpenInNewTabButton(composeTestRule).performClick()
             Log.i(TAG, "clickOpenInNewTabButton: Clicked the multi-select \"Open in a new tab\" context menu button")
             Log.i(TAG, "clickOpenInNewTabButton: Trying to verify that the tabs tray exists")
@@ -183,7 +209,10 @@ class LibrarySubMenusMultipleSelectionToolbarRobot {
         }
 
         fun clickOpenPrivateTab(interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
-            Log.i(TAG, "clickOpenPrivateTab: Trying to click the multi-select \"Open in a private tab\" context menu button")
+            Log.i(
+                TAG,
+                "clickOpenPrivateTab: Trying to click the multi-select \"Open in a private tab\" context menu button",
+            )
             openInPrivateTabButton().click()
             Log.i(TAG, "clickOpenPrivateTab: Clicked the multi-select \"Open in a private tab\" context menu button")
 
@@ -193,7 +222,10 @@ class LibrarySubMenusMultipleSelectionToolbarRobot {
     }
 }
 
-fun multipleSelectionToolbar(composeTestRule: ComposeTestRule, interact: LibrarySubMenusMultipleSelectionToolbarRobot.() -> Unit): LibrarySubMenusMultipleSelectionToolbarRobot.Transition {
+fun multipleSelectionToolbar(
+    composeTestRule: ComposeTestRule,
+    interact: LibrarySubMenusMultipleSelectionToolbarRobot.() -> Unit,
+): LibrarySubMenusMultipleSelectionToolbarRobot.Transition {
     LibrarySubMenusMultipleSelectionToolbarRobot().interact()
     return LibrarySubMenusMultipleSelectionToolbarRobot.Transition(composeTestRule)
 }

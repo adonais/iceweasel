@@ -27,9 +27,7 @@ import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.click
 
-/**
- * Implementation of Robot Pattern for the settings turn on sync option.
- */
+/** Implementation of Robot Pattern for the settings turn on sync option. */
 class SettingsSignInToSyncRobot {
 
     fun verifyTurnOnSyncMenu() {
@@ -63,14 +61,21 @@ class SettingsSignInToSyncRobot {
     }
 
     fun verifyTurnOnSyncToolbarTitle() {
-        Log.i(TAG, "verifyTurnOnSyncToolbarTitle: Trying to verify that the \"Sync and save your data\" toolbar title is displayed")
+        Log.i(
+            TAG,
+            "verifyTurnOnSyncToolbarTitle: Trying to verify that the \"Sync and save your data\" toolbar title is displayed",
+        )
         onView(
-            allOf(
-                withParent(withId(R.id.navigationToolbar)),
-                withText(R.string.preferences_sign_in),
-            ),
-        ).check(matches(isDisplayed()))
-        Log.i(TAG, "verifyTurnOnSyncToolbarTitle: Verified that the \"Sync and save your data\" toolbar title is displayed")
+                allOf(
+                    withParent(withId(R.id.navigationToolbar)),
+                    withText(R.string.preferences_sign_in),
+                )
+            )
+            .check(matches(isDisplayed()))
+        Log.i(
+            TAG,
+            "verifyTurnOnSyncToolbarTitle: Verified that the \"Sync and save your data\" toolbar title is displayed",
+        )
     }
 
     fun clickReadyToScanButton() {
@@ -93,25 +98,35 @@ class SettingsSignInToSyncRobot {
     }
 
     fun clickDismissPermissionRequiredDialog() {
-        Log.i(TAG, "clickDismissPermissionRequiredDialog: Waiting for $waitingTime ms for the \"Dismiss\" permission button to exist")
+        Log.i(
+            TAG,
+            "clickDismissPermissionRequiredDialog: Waiting for $waitingTime ms for the \"Dismiss\" permission button to exist",
+        )
         dismissPermissionButton().waitForExists(waitingTime)
-        Log.i(TAG, "clickDismissPermissionRequiredDialog: Waited for $waitingTime ms for the \"Dismiss\" permission button to exist")
+        Log.i(
+            TAG,
+            "clickDismissPermissionRequiredDialog: Waited for $waitingTime ms for the \"Dismiss\" permission button to exist",
+        )
         Log.i(TAG, "clickDismissPermissionRequiredDialog: Trying to click the \"Dismiss\" permission button")
         dismissPermissionButton().click()
         Log.i(TAG, "clickDismissPermissionRequiredDialog: Clicked the \"Dismiss\" permission button")
     }
 
     fun verifyQRScannerIsOpen() {
-        Log.i(TAG, "verifyScannerOpen: Trying to verify that the device camera is opened or that the camera app error message exist")
+        Log.i(
+            TAG,
+            "verifyScannerOpen: Trying to verify that the device camera is opened or that the camera app error message exist",
+        )
         assertTrue(
             "$TAG: Neither the device camera was opened nor the camera app error message was displayed",
-            mDevice.findObject(UiSelector().resourceId("$packageName:id/view_finder"))
-                .waitForExists(waitingTime) ||
+            mDevice.findObject(UiSelector().resourceId("$packageName:id/view_finder")).waitForExists(waitingTime) ||
                 // In case there is no camera available, an error will be shown.
-                mDevice.findObject(UiSelector().resourceId("$packageName:id/camera_error"))
-                    .exists(),
+                mDevice.findObject(UiSelector().resourceId("$packageName:id/camera_error")).exists(),
         )
-        Log.i(TAG, "verifyScannerOpen: Verified that the device camera is opened or that the camera app error message exist")
+        Log.i(
+            TAG,
+            "verifyScannerOpen: Verified that the device camera is opened or that the camera app error message exist",
+        )
     }
 
     class Transition(private val composeTestRule: ComposeTestRule) {
@@ -133,10 +148,18 @@ class SettingsSignInToSyncRobot {
             return HomeScreenRobot.Transition(composeTestRule)
         }
 
-        fun clickGoToPermissionsSettings(interact: SettingsSubMenuSitePermissionsCommonRobot.() -> Unit): SettingsSubMenuSitePermissionsCommonRobot.Transition {
-            Log.i(TAG, "clickGoToPermissionsSettings: Waiting for $waitingTime ms for the Go To \"Settings\" permission button to exist")
+        fun clickGoToPermissionsSettings(
+            interact: SettingsSubMenuSitePermissionsCommonRobot.() -> Unit
+        ): SettingsSubMenuSitePermissionsCommonRobot.Transition {
+            Log.i(
+                TAG,
+                "clickGoToPermissionsSettings: Waiting for $waitingTime ms for the Go To \"Settings\" permission button to exist",
+            )
             goToPermissionsSettingsButton().waitForExists(waitingTime)
-            Log.i(TAG, "clickGoToPermissionsSettings: Waited for $waitingTime ms for the Go To \"Settings\" permission button to exist")
+            Log.i(
+                TAG,
+                "clickGoToPermissionsSettings: Waited for $waitingTime ms for the Go To \"Settings\" permission button to exist",
+            )
             Log.i(TAG, "clickGoToPermissionsSettings: Trying to click the \"Go To Settings\" permission button")
             goToPermissionsSettingsButton().click()
             Log.i(TAG, "clickGoToPermissionsSettings: Clicked the \"Go To Settings\" permission button")
@@ -147,18 +170,18 @@ class SettingsSignInToSyncRobot {
     }
 }
 
-private fun goBackButton() =
-    onView(CoreMatchers.allOf(ViewMatchers.withContentDescription("Navigate up")))
+private fun goBackButton() = onView(CoreMatchers.allOf(ViewMatchers.withContentDescription("Navigate up")))
 
 private fun useEmailButton() = onView(withText("Use email instead"))
 
-fun settingsTurnOnSyncScreen(composeTestRule: ComposeTestRule, interact: SettingsSignInToSyncRobot.() -> Unit): SettingsSignInToSyncRobot.Transition {
+fun settingsTurnOnSyncScreen(
+    composeTestRule: ComposeTestRule,
+    interact: SettingsSignInToSyncRobot.() -> Unit,
+): SettingsSignInToSyncRobot.Transition {
     SettingsSignInToSyncRobot().interact()
     return SettingsSignInToSyncRobot.Transition(composeTestRule)
 }
 
-private fun dismissPermissionButton() =
-    mDevice.findObject(UiSelector().text("Dismiss"))
+private fun dismissPermissionButton() = mDevice.findObject(UiSelector().text("Dismiss"))
 
-private fun goToPermissionsSettingsButton() =
-    mDevice.findObject(UiSelector().text("Go to settings"))
+private fun goToPermissionsSettingsButton() = mDevice.findObject(UiSelector().text("Go to settings"))

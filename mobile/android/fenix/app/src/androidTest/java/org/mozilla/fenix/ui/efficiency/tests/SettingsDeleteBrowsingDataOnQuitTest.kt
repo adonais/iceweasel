@@ -27,8 +27,7 @@ import org.mozilla.fenix.ui.efficiency.selectors.SettingsDeleteBrowsingDataOnQui
 import org.mozilla.fenix.ui.efficiency.selectors.SitePermissionsSelectors
 
 class SettingsDeleteBrowsingDataOnQuitTest : BaseTest() {
-    @get:Rule
-    val grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(Manifest.permission.RECORD_AUDIO)
+    @get:Rule val grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(Manifest.permission.RECORD_AUDIO)
 
     @Before
     fun disablePromptAbuserDetector() {
@@ -40,7 +39,9 @@ class SettingsDeleteBrowsingDataOnQuitTest : BaseTest() {
         PromptAbuserDetector.validationsEnabled = true
     }
 
-    @Ignore("Covered by verifyNavigationReachability[1: SettingsDeleteBrowsingDataOnQuitPage (TBD) — Navigation Reachability]")
+    @Ignore(
+        "Covered by verifyNavigationReachability[1: SettingsDeleteBrowsingDataOnQuitPage (TBD) — Navigation Reachability]"
+    )
     @Test
     fun verifyTheDeleteBrowsingDataOnQuitSectionTest() {
         on.settingsDeleteBrowsingDataOnQuit.navigateToPage()
@@ -52,21 +53,21 @@ class SettingsDeleteBrowsingDataOnQuitTest : BaseTest() {
     fun deleteDownloadsOnQuitTest() {
         val downloadTestPage = "https://storage.googleapis.com/mobile_test_assets/test_app/downloads.html"
 
-        on.settingsDeleteBrowsingDataOnQuit.navigateToPage()
+        on.settingsDeleteBrowsingDataOnQuit
+            .navigateToPage()
             .mozClick(SettingsDeleteBrowsingDataOnQuitSelectors.DELETE_BROWSING_DATA_ON_QUIT_TOGGLE)
         on.home.navigateToPage()
-        on.browserPage.navigateToPage(downloadTestPage)
+        on.browserPage
+            .navigateToPage(downloadTestPage)
             .clickPageContent("smallZip.zip")
             .mozClick(DownloadsSelectors.DOWNLOAD_DIALOG_CONFIRM_BUTTON)
             .mozVerify(DownloadsSelectors.DOWNLOAD_COMPLETE_SNACKBAR, timeout = 15_000)
         on.home.navigateToPage()
-        on.mainMenu.navigateToPage()
-            .mozClick(MainMenuSelectors.QUIT_FIREFOX_BUTTON)
+        on.mainMenu.navigateToPage().mozClick(MainMenuSelectors.QUIT_FIREFOX_BUTTON)
         mDevice.waitNotNull(Until.gone(By.pkg(packageName)), TestAssetHelper.waitingTime)
         restartApp(composeRule.activityRule)
         on.home.navigateToPage()
-        on.downloads.navigateToPage()
-            .mozVerifyElementsByGroup("emptyDownloads")
+        on.downloads.navigateToPage().mozVerifyElementsByGroup("emptyDownloads")
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/416053
@@ -75,27 +76,22 @@ class SettingsDeleteBrowsingDataOnQuitTest : BaseTest() {
     fun deleteSitePermissionsOnQuitTest() {
         val testPage = "https://mozilla-mobile.github.io/testapp/permissions"
 
-        on.settingsDeleteBrowsingDataOnQuit.navigateToPage()
+        on.settingsDeleteBrowsingDataOnQuit
+            .navigateToPage()
             .mozClick(SettingsDeleteBrowsingDataOnQuitSelectors.DELETE_BROWSING_DATA_ON_QUIT_TOGGLE)
         on.home.navigateToPage()
-        on.browserPage.navigateToPage(testPage)
-            .verifyPageContent("Open microphone")
-            .clickPageContent("Open microphone")
+        on.browserPage.navigateToPage(testPage).verifyPageContent("Open microphone").clickPageContent("Open microphone")
         on.browserPage
             .mozVerify(SitePermissionsSelectors.MICROPHONE_PERMISSION_PROMPT)
             .mozClickIfPresent(SitePermissionsSelectors.PAGE_PERMISSION_REMEMBER_DECISION_CHECKBOX)
             .mozClickIfPresent(SitePermissionsSelectors.PAGE_PERMISSION_DIALOG_DENY_BUTTON)
         on.browserPage.verifyPageContent("Microphone not allowed")
         on.home.navigateToPage()
-        on.mainMenu.navigateToPage()
-            .mozClick(MainMenuSelectors.QUIT_FIREFOX_BUTTON)
+        on.mainMenu.navigateToPage().mozClick(MainMenuSelectors.QUIT_FIREFOX_BUTTON)
         mDevice.waitNotNull(Until.gone(By.pkg(packageName)), TestAssetHelper.waitingTime)
         restartApp(composeRule.activityRule)
         on.home.navigateToPage()
-        on.browserPage.navigateToPage(testPage)
-            .verifyPageContent("Open microphone")
-            .clickPageContent("Open microphone")
-        on.browserPage
-            .mozVerify(SitePermissionsSelectors.MICROPHONE_PERMISSION_PROMPT)
+        on.browserPage.navigateToPage(testPage).verifyPageContent("Open microphone").clickPageContent("Open microphone")
+        on.browserPage.mozVerify(SitePermissionsSelectors.MICROPHONE_PERMISSION_PROMPT)
     }
 }

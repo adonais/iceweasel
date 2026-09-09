@@ -30,9 +30,22 @@ IPCResult ClientHandleOpParent::Init(ClientOpConstructorArgs&& aArgs) {
   RefPtr<ClientHandleParent> handle =
       static_cast<ClientHandleParent*>(Manager());
 
+  auto* backgroundActor = handle->Manager()->Manager();
+
+  // ClientControlledArgs and ClientEvictBFCacheArgs are only ever issued by the
+  // parent-process ServiceWorkerManager (via ClientHandle::Control and
+  // ClientHandle::EvictFromBFCache). A content process must never send them:
+  // forging a ClientControlledArgs installs attacker-chosen controller state on
+  // a client living in another process, which ClientManagerService::Navigate
+  // then trusts as its sole authorization.
+  if ((aArgs.type() == ClientOpConstructorArgs::TClientControlledArgs ||
+       aArgs.type() == ClientOpConstructorArgs::TClientEvictBFCacheArgs) &&
+      BackgroundParent::IsOtherProcessActor(backgroundActor)) {
+    return IPC_FAIL(this, "Parent-only ClientOp received from content!");
+  }
+
   if (!IsValidClientOpConstructorArgs(
-          aArgs,
-          BackgroundParent::GetLoadedOrigins(handle->Manager()->Manager()))) {
+          aArgs, BackgroundParent::GetLoadedOrigins(backgroundActor))) {
     return IPC_FAIL(this, "Invalid ClientOpConstructorArgs!");
   }
 

@@ -878,17 +878,17 @@ export class FeatureCallout {
         ? this.doc.querySelector(preTokenSelector.trim())
         : this.doc;
 
-      const match = [
+      const bookmarkItems = [
         ...rootScope.querySelectorAll("#PlacesToolbarItems .bookmark-item"),
-      ].find(el => {
-        const node = el._placesNode;
-        return (
-          node &&
-          (node.uri === url ||
-            [this.browser.contentTitle, url].includes(node.title) ||
-            el.getAttribute("label") === label)
+      ];
+      const match =
+        bookmarkItems.find(el => el._placesNode?.uri === url) ??
+        bookmarkItems.find(
+          el =>
+            el._placesNode &&
+            ([this.browser.contentTitle, url].includes(el._placesNode?.title) ||
+              el.getAttribute("label") === label)
         );
-      });
 
       if (!match) {
         lazy.log.debug(

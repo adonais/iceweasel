@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -21,21 +21,21 @@ class PrivateModeTest : BaseSessionTest() {
         mainSession.evaluateJS(
             """
             localStorage.setItem('ctx', 'regular');
-        """,
+        """
         )
 
-        val privateSession = sessionRule.createOpenSession(
-            GeckoSessionSettings.Builder(mainSession.settings)
-                .usePrivateMode(true)
-                .build(),
-        )
+        val privateSession =
+            sessionRule.createOpenSession(
+                GeckoSessionSettings.Builder(mainSession.settings).usePrivateMode(true).build()
+            )
         privateSession.loadUri("https://example.com")
         privateSession.waitForPageStop()
-        var localStorage = privateSession.evaluateJS(
-            """
+        var localStorage =
+            privateSession.evaluateJS(
+                """
             localStorage.getItem('ctx') || 'null'
-        """,
-        ) as String
+        """
+            ) as String
 
         // Ensure that the regular session's data hasn't leaked into the private session.
         assertThat(
@@ -47,14 +47,15 @@ class PrivateModeTest : BaseSessionTest() {
         privateSession.evaluateJS(
             """
             localStorage.setItem('ctx', 'private');
-        """,
+        """
         )
 
-        localStorage = mainSession.evaluateJS(
-            """
+        localStorage =
+            mainSession.evaluateJS(
+                """
             localStorage.getItem('ctx') || 'null'
-        """,
-        ) as String
+        """
+            ) as String
 
         // Conversely, ensure private data hasn't leaked into the regular session.
         assertThat(
@@ -67,33 +68,32 @@ class PrivateModeTest : BaseSessionTest() {
     @Test
     fun privateModeStorageShared() {
         // Two private mode sessions should share the same storage (bug 1533406).
-        val privateSession1 = sessionRule.createOpenSession(
-            GeckoSessionSettings.Builder(mainSession.settings)
-                .usePrivateMode(true)
-                .build(),
-        )
+        val privateSession1 =
+            sessionRule.createOpenSession(
+                GeckoSessionSettings.Builder(mainSession.settings).usePrivateMode(true).build()
+            )
         privateSession1.loadUri("https://example.com")
         privateSession1.waitForPageStop()
 
         privateSession1.evaluateJS(
             """
             localStorage.setItem('ctx', 'private');
-        """,
+        """
         )
 
-        val privateSession2 = sessionRule.createOpenSession(
-            GeckoSessionSettings.Builder(mainSession.settings)
-                .usePrivateMode(true)
-                .build(),
-        )
+        val privateSession2 =
+            sessionRule.createOpenSession(
+                GeckoSessionSettings.Builder(mainSession.settings).usePrivateMode(true).build()
+            )
         privateSession2.loadUri("https://example.com")
         privateSession2.waitForPageStop()
 
-        val localStorage = privateSession2.evaluateJS(
-            """
+        val localStorage =
+            privateSession2.evaluateJS(
+                """
             localStorage.getItem('ctx') || 'null'
-        """,
-        ) as String
+        """
+            ) as String
 
         assertThat(
             "Private mode storage value still set",

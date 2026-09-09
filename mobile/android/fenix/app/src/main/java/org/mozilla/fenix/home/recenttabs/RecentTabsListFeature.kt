@@ -17,10 +17,7 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.ext.asRecentTabs
 
-/**
- * View-bound feature that dispatches recent tab changes to the [AppStore] when the
- * [BrowserStore] is updated.
- */
+/** View-bound feature that dispatches recent tab changes to the [AppStore] when the [BrowserStore] is updated. */
 class RecentTabsListFeature(
     browserStore: BrowserStore,
     private val appStore: AppStore,

@@ -24,16 +24,13 @@ import mozilla.components.concept.llm.RequestTooLarge as ConceptRequestTooLarge
 import mozilla.components.concept.llm.ServerError as ConceptServerError
 
 /**
- * Marker interface for all MLPA-originated errors. Closed within this module so the
- * full set of MLPA failure modes is exhaustively known here, while remaining open to
- * categorisation against the concept-level [mozilla.components.concept.llm.CloudFailure]
- * categories.
+ * Marker interface for all MLPA-originated errors. Closed within this module so the full set of MLPA failure modes is
+ * exhaustively known here, while remaining open to categorisation against the concept-level
+ * [mozilla.components.concept.llm.CloudFailure] categories.
  */
 sealed interface MlpaError
 
-/**
- * Thrown when the Integrity client experiences a failure, propagating its error message.
- */
+/** Thrown when the Integrity client experiences a failure, propagating its error message. */
 class IntegrityHandshakeFailure(message: String) : Llm.Exception(message), MlpaError, AttestationFailure
 
 /**
@@ -41,8 +38,7 @@ class IntegrityHandshakeFailure(message: String) : Llm.Exception(message), MlpaE
  *
  * @param reason A human-readable explanation of the failure.
  */
-class VerificationServiceFailed(reason: String) :
-    Llm.Exception("Verification Service Failed: $reason"), MlpaError
+class VerificationServiceFailed(reason: String) : Llm.Exception("Verification Service Failed: $reason"), MlpaError
 
 /** Token expired or invalid. Re-authenticate via [AuthenticationService.verify]. */
 class InvalidToken : Llm.Exception("Invalid token"), MlpaError, AuthFailure
@@ -66,12 +62,10 @@ data class BudgetExceeded(override val retryAfter: Long?) :
  *
  * @property retryAfter Duration in seconds before the limit resets (typically 60s).
  */
-data class RateLimited(override val retryAfter: Long?) :
-    Llm.Exception("Rate limited"), MlpaError, ConceptRateLimited
+data class RateLimited(override val retryAfter: Long?) : Llm.Exception("Rate limited"), MlpaError, ConceptRateLimited
 
 /** The upstream LLM was unreachable or returned an error (502). */
-data class UpstreamError(val reason: String) :
-    Llm.Exception("Upstream error: $reason"), MlpaError, ConceptServerError {
+data class UpstreamError(val reason: String) : Llm.Exception("Upstream error: $reason"), MlpaError, ConceptServerError {
     override val statusCode: Int = 502
 }
 
@@ -96,8 +90,7 @@ class ChatNetworkError(cause: Throwable) :
  *
  * @param cause The underlying serialization exception.
  */
-class ResponseParseError(cause: Throwable) :
-    Llm.Exception("Response parse error: ${cause.message}", cause), MlpaError
+class ResponseParseError(cause: Throwable) : Llm.Exception("Response parse error: ${cause.message}", cause), MlpaError
 
 /**
  * The rate-limit error response body (HTTP 429) could not be parsed.
@@ -136,25 +129,15 @@ class VerificationNetworkError(cause: Throwable) :
  *
  * @property baseUrl The base URL used for all MLPA API calls.
  */
-data class MlpaConfig(
-    val baseUrl: String,
-) {
+data class MlpaConfig(val baseUrl: String) {
     companion object {
-        /**
-         * Preconfigured MLPA configuration targeting the live (non-prod stage) environment.
-         */
+        /** Preconfigured MLPA configuration targeting the live (non-prod stage) environment. */
         val nonProd
-            get() = MlpaConfig(
-                baseUrl = "https://mlpa-nonprod-dev-mozilla.freetls.fastly.net",
-            )
+            get() = MlpaConfig(baseUrl = "https://mlpa-nonprod-dev-mozilla.freetls.fastly.net")
 
-        /**
-         * Preconfigured MLPA configuration targeting the live (prod-prod) environment.
-         */
+        /** Preconfigured MLPA configuration targeting the live (prod-prod) environment. */
         val prodProd
-            get() = MlpaConfig(
-                baseUrl = "https://mlpa-prod-prod-mozilla.freetls.fastly.net",
-            )
+            get() = MlpaConfig(baseUrl = "https://mlpa-prod-prod-mozilla.freetls.fastly.net")
     }
 }
 
@@ -171,18 +154,14 @@ sealed interface AuthorizationToken {
      *
      * @property value The raw token string.
      */
-    @JvmInline
-    @Serializable
-    value class Integrity(override val value: String) : AuthorizationToken
+    @JvmInline @Serializable value class Integrity(override val value: String) : AuthorizationToken
 
     /**
      * A Firefox Accounts (FxA) authorization token.
      *
      * @property value The raw token string.
      */
-    @JvmInline
-    @Serializable
-    value class Fxa(override val value: String) : AuthorizationToken
+    @JvmInline @Serializable value class Fxa(override val value: String) : AuthorizationToken
 }
 
 /**
@@ -190,18 +169,14 @@ sealed interface AuthorizationToken {
  *
  * @property value The raw user identifier.
  */
-@JvmInline
-@Serializable
-value class UserId(val value: String)
+@JvmInline @Serializable value class UserId(val value: String)
 
 /**
  * Represents the name of a package in MLPA requests.
  *
  * @property value The raw package name.
  */
-@JvmInline
-@Serializable
-value class PackageName(val value: String)
+@JvmInline @Serializable value class PackageName(val value: String)
 
 /**
  * Aggregated MLPA service interface combining:
@@ -210,9 +185,7 @@ value class PackageName(val value: String)
  */
 interface MlpaService : AuthenticationService, ChatService
 
-/**
- * Service responsible for verifying integrity tokens and issuing access tokens.
- */
+/** Service responsible for verifying integrity tokens and issuing access tokens. */
 fun interface AuthenticationService {
     /**
      * Verifies an integrity token and exchanges it for an access token.
@@ -253,9 +226,7 @@ fun interface AuthenticationService {
     )
 }
 
-/**
- * Service responsible for requesting chat/completion responses from MLPA.
- */
+/** Service responsible for requesting chat/completion responses from MLPA. */
 fun interface ChatService {
     /**
      * Requests a model completion.
@@ -274,16 +245,14 @@ fun interface ChatService {
      *
      * @property error the error number the [ChatService] returned.
      */
-    @Serializable
-    data class ResponseErrorCode(val error: Int)
+    @Serializable data class ResponseErrorCode(val error: Int)
 
     /**
      * Body of an error response with a reason.
      *
      * @property error the error reason the [ChatService] returned.
      */
-    @Serializable
-    data class ResponseErrorReason(val error: String)
+    @Serializable data class ResponseErrorReason(val error: String)
 
     /**
      * Response returned from a completion request.
@@ -291,28 +260,20 @@ fun interface ChatService {
      * @property choices A list of model-generated choices.
      */
     @Serializable
-    data class Response(
-        val choices: List<Choice>,
-    ) {
+    data class Response(val choices: List<Choice>) {
         /**
          * A single completion choice returned by the model.
          *
          * @property message The generated message.
          */
-        @Serializable
-        data class Choice(
-            val message: Message,
-        )
+        @Serializable data class Choice(val message: Message)
 
         /**
          * A generated message from the model.
          *
          * @property content The textual content of the message.
          */
-        @Serializable
-        data class Message(
-            val content: String,
-        )
+        @Serializable data class Message(val content: String)
     }
 
     /**
@@ -337,22 +298,14 @@ fun interface ChatService {
          */
         @Serializable
         data class Message(val role: Role, val content: String) {
-            /**
-             * Supported message roles.
-             */
+            /** Supported message roles. */
             @Serializable
             enum class Role {
-                /**
-                 * A message originating from the end user.
-                 */
-                @SerialName("user")
-                User,
+                /** A message originating from the end user. */
+                @SerialName("user") User,
 
-                /**
-                 * A system-level instruction that shapes model behavior.
-                 */
-                @SerialName("system")
-                System,
+                /** A system-level instruction that shapes model behavior. */
+                @SerialName("system") System,
             }
 
             companion object {
@@ -375,20 +328,17 @@ fun interface ChatService {
 }
 
 private object ModelIDSerializer : KSerializer<LlmProvider.ModelID> {
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("model_id", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("model_id", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: LlmProvider.ModelID) {
         encoder.encodeString(value.value)
     }
 
-    override fun deserialize(decoder: Decoder): LlmProvider.ModelID =
-        LlmProvider.ModelID(decoder.decodeString())
+    override fun deserialize(decoder: Decoder): LlmProvider.ModelID = LlmProvider.ModelID(decoder.decodeString())
 }
 
 private object IntegrityTokenSerializer : KSerializer<IntegrityToken> {
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("integrity_token", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("integrity_token", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: IntegrityToken) {
         encoder.encodeString(value.value) // or however you access the string

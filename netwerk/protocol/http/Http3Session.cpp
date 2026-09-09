@@ -159,10 +159,7 @@ nsresult Http3Session::Init(const nsHttpConnectionInfo* aConnInfo,
   mUseNSPRForIO =
       StaticPrefs::network_http_http3_use_nspr_for_io() || aIsTunnel;
 
-  uint32_t idleTimeout =
-      mConnInfo->GetIsTrrServiceChannel()
-          ? StaticPrefs::network_trr_idle_timeout_for_http3_conn()
-          : StaticPrefs::network_http_http3_idle_timeout();
+  uint32_t idleTimeout = StaticPrefs::network_http_http3_idle_timeout();
 
   // 0 means "use neqo's spec-compliant default PTO scaling".
   uint32_t fastPto = mConnInfo->GetIsTrrServiceChannel()
@@ -277,9 +274,8 @@ nsresult Http3Session::Init(const nsHttpConnectionInfo* aConnInfo,
           event = new PrioritizableRunnable(
               event.forget(), nsIRunnablePriority::PRIORITY_MEDIUMHIGH);
         }
-        DebugOnly<nsresult> rv = NS_DispatchToCurrentThread(event);
-        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                             "NS_DispatchToCurrentThread failed");
+        DebugOnly<nsresult> rv = DispatchToCurrent(event.forget());
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Dispatch failed");
       }
       break;
     }
@@ -2778,7 +2774,7 @@ void Http3Session::Authenticated(int32_t aError,
       event = new PrioritizableRunnable(
           event.forget(), nsIRunnablePriority::PRIORITY_MEDIUMHIGH);
     }
-    NS_DispatchToCurrentThread(event);
+    DispatchToCurrent(event.forget());
     mUdpConn->ChangeConnectionState(ConnectionState::TRANSFERING);
   }
 }

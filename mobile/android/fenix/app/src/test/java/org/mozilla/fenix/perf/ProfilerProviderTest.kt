@@ -45,14 +45,11 @@ class ProfilerProviderTest {
     private lateinit var app: FenixRobolectricTestApplication
     private lateinit var provider: ProfilerProvider
 
-    @RelaxedMockK
-    lateinit var mockCore: Core
+    @RelaxedMockK lateinit var mockCore: Core
 
-    @RelaxedMockK
-    lateinit var mockEngine: Engine
+    @RelaxedMockK lateinit var mockEngine: Engine
 
-    @MockK
-    lateinit var mockProfiler: Profiler
+    @MockK lateinit var mockProfiler: Profiler
 
     @Before
     fun setup() {
@@ -69,9 +66,10 @@ class ProfilerProviderTest {
 
         provider = ProfilerProvider()
         provider.ioDispatcher = testDispatcher
-        val info = ProviderInfo().apply {
-            authority = app.packageName + ".profiler"
-        }
+        val info =
+            ProviderInfo().apply {
+                authority = app.packageName + ".profiler"
+            }
         provider.attachInfo(app, info)
     }
 
@@ -82,24 +80,26 @@ class ProfilerProviderTest {
     }
 
     @Test
-    fun `WHEN profiler active THEN provider invokes stopProfiler on main and returns a pipe`() = runTest(testDispatcher) {
-        every { mockProfiler.isProfilerActive() } returns true
-        every { mockProfiler.stopProfiler(any(), any()) } answers {
-            val onSuccess = firstArg<(ByteArray?) -> Unit>()
-            onSuccess("dummy".toByteArray())
+    fun `WHEN profiler active THEN provider invokes stopProfiler on main and returns a pipe`() =
+        runTest(testDispatcher) {
+            every { mockProfiler.isProfilerActive() } returns true
+            every { mockProfiler.stopProfiler(any(), any()) } answers
+                {
+                    val onSuccess = firstArg<(ByteArray?) -> Unit>()
+                    onSuccess("dummy".toByteArray())
+                }
+
+            provider.saveProfileUrl = { _, _ -> "https://profiler.firefox.com/test-token" }
+
+            val uri = Uri.parse("content://${app.packageName}.profiler/stop-and-upload")
+            val pfd: ParcelFileDescriptor? = provider.openFile(uri, "r")
+            assertTrue("Provider should return a pipe file descriptor", pfd != null)
+
+            advanceUntilIdle()
+            Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+            io.mockk.verify { mockProfiler.stopProfiler(any(), any()) }
         }
-
-        provider.saveProfileUrl = { _, _ -> "https://profiler.firefox.com/test-token" }
-
-        val uri = Uri.parse("content://${app.packageName}.profiler/stop-and-upload")
-        val pfd: ParcelFileDescriptor? = provider.openFile(uri, "r")
-        assertTrue("Provider should return a pipe file descriptor", pfd != null)
-
-        advanceUntilIdle()
-        Shadows.shadowOf(Looper.getMainLooper()).idle()
-
-        io.mockk.verify { mockProfiler.stopProfiler(any(), any()) }
-    }
 
     @Test
     fun `WHEN profiler not active THEN provider throws IllegalStateException`() {
@@ -109,11 +109,12 @@ class ProfilerProviderTest {
         val pfd: ParcelFileDescriptor? = provider.openFile(uri, "r")
         assertTrue("Provider should return a pipe file descriptor", pfd != null)
 
-        val exception = assertThrows(IllegalStateException::class.java) {
-            runTest(testDispatcher) {
-                advanceUntilIdle()
+        val exception =
+            assertThrows(IllegalStateException::class.java) {
+                runTest(testDispatcher) {
+                    advanceUntilIdle()
+                }
             }
-        }
         assertEquals("Profiler is not active", exception.message)
 
         io.mockk.verify(exactly = 0) { mockProfiler.stopProfiler(any(), any()) }

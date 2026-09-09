@@ -17,8 +17,7 @@ class DefaultTopSitesPresenterTest {
     private val view: TopSitesView = mock()
     private val storage: DefaultTopSitesStorage = mock()
     private val config: () -> TopSitesConfig = mock()
-    private val presenter: DefaultTopSitesPresenter =
-        spy(DefaultTopSitesPresenter(view, storage, config))
+    private val presenter: DefaultTopSitesPresenter = spy(DefaultTopSitesPresenter(view, storage, config))
 
     @Test
     fun start() {

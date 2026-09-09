@@ -105,10 +105,7 @@ struct Keyframe {
       return mRangeName != StyleTimelineRangeName::None;
     }
 
-    bool operator==(const OffsetType& aOther) const {
-      return mRangeName == aOther.mRangeName &&
-             mPercentage == aOther.mPercentage;
-    }
+    bool operator==(const OffsetType& aOther) const = default;
   };
   // |mOffset| could be a null, a percentage, or a |range name, percentage|
   // pair.

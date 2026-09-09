@@ -6,17 +6,28 @@ package mozilla.components.feature.readerview
 
 import android.content.Context
 import androidx.annotation.VisibleForTesting
+import java.lang.ref.WeakReference
+import java.net.URLEncoder
+import java.util.Locale
+import java.util.UUID
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.action.ReaderAction
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine
+import mozilla.components.concept.engine.EngineSession
+import mozilla.components.concept.engine.pageextraction.ContentParams
+import mozilla.components.concept.engine.pageextraction.PageMetadata
 import mozilla.components.concept.engine.webextension.MessageHandler
 import mozilla.components.concept.engine.webextension.Port
 import mozilla.components.feature.readerview.internal.ReaderViewConfig
@@ -30,28 +41,35 @@ import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.filterChanged
 import mozilla.components.support.webextensions.BuiltInWebExtensionController
 import org.json.JSONObject
-import java.lang.ref.WeakReference
-import java.net.URLEncoder
-import java.util.Locale
-import java.util.UUID
 
 typealias onReaderViewStatusChange = (available: Boolean, active: Boolean) -> Unit
+
 typealias UUIDCreator = () -> String
 
 /**
- * Feature implementation that provides a reader view for the selected
- * session, based on a web extension.
+ * Data class representing the result of a listen action.
+ *
+ * @property text The extracted text content of the article.
+ * @property language The language of the article.
+ */
+data class ListenResult(
+    val text: String,
+    val language: String,
+)
+
+/**
+ * Feature implementation that provides a reader view for the selected session, based on a web extension.
  *
  * @property context a reference to the context.
  * @property engine a reference to the application's browser engine.
  * @property store a reference to the application's [BrowserStore].
  * @param controlsView the view to use to display reader mode controls.
  * @param mainDispatcher [CoroutineDispatcher] to be used for observing the store.
- * @property onReaderViewStatusChange a callback invoked to indicate whether
- * or not reader view is available and active for the page loaded by the
- * currently selected session. The callback will be invoked when a page is
- * loaded or refreshed, on any navigation (back or forward), and when the
- * selected session changes.
+ * @property onReaderViewStatusChange a callback invoked to indicate whether or not reader view is available and active
+ *   for the page loaded by the currently selected session. The callback will be invoked when a page is loaded or
+ *   refreshed, on any navigation (back or forward), and when the selected session changes.
+ * @property onListenClicked a callback invoked when the user clicks the listen button. The callback will be invoked
+ *   with a [Result] containing the article's text and language if successful, or an error otherwise.
  */
 class ReaderViewFeature(
     private val context: Context,
@@ -61,6 +79,7 @@ class ReaderViewFeature(
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
     private val createUUID: UUIDCreator = { UUID.randomUUID().toString() },
     private val onReaderViewStatusChange: onReaderViewStatusChange = { _, _ -> },
+    private val onListenClicked: (Result<ListenResult>) -> Unit = {},
 ) : LifecycleAwareFeature, UserInteractionHandler {
 
     private var scope: CoroutineScope? = null
@@ -69,44 +88,59 @@ class ReaderViewFeature(
 
     @VisibleForTesting
     // This is an internal var to make it mutable for unit testing purposes only
-    internal var extensionController = BuiltInWebExtensionController(
-        READER_VIEW_EXTENSION_ID,
-        READER_VIEW_EXTENSION_URL,
-        READER_VIEW_CONTENT_PORT,
-    )
+    internal var extensionController =
+        BuiltInWebExtensionController(
+            READER_VIEW_EXTENSION_ID,
+            READER_VIEW_EXTENSION_URL,
+            READER_VIEW_CONTENT_PORT,
+        )
 
     @VisibleForTesting
-    internal val config = ReaderViewConfig(context) { message ->
-        val engineSession = store.state.selectedTab?.engineState?.engineSession
-        extensionController.sendContentMessage(message, engineSession, READER_VIEW_ACTIVE_CONTENT_PORT)
-    }
+    internal val config =
+        ReaderViewConfig(context) { message ->
+            val engineSession = store.state.selectedTab?.engineState?.engineSession
+            extensionController.sendContentMessage(message, engineSession, READER_VIEW_ACTIVE_CONTENT_PORT)
+        }
 
     private val controlsPresenter = ReaderViewControlsPresenter(controlsView, config)
-    private val controlsInteractor = ReaderViewControlsInteractor(controlsView, config)
+    private val controlsInteractor =
+        ReaderViewControlsInteractor(controlsView, config) {
+            handleListenClicked()
+        }
 
-    enum class FontType(val value: String) { SANSSERIF("sans-serif"), SERIF("serif") }
-    enum class ColorScheme { LIGHT, SEPIA, DARK }
+    enum class FontType(val value: String) {
+        SANSSERIF("sans-serif"),
+        SERIF("serif"),
+    }
+
+    enum class ColorScheme {
+        LIGHT,
+        SEPIA,
+        DARK,
+    }
 
     override fun start() {
         ensureExtensionInstalled()
 
-        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.mapNotNull { state -> state.tabs }
-                .filterChanged {
-                    it.readerState
-                }
-                .collect { tab ->
-                    if (tab.readerState.connectRequired) {
-                        connectReaderViewContentScript(tab)
+        scope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .mapNotNull { state -> state.tabs }
+                    .filterChanged {
+                        it.readerState
                     }
-                    if (tab.readerState.checkRequired) {
-                        checkReaderState(tab)
+                    .collect { tab ->
+                        if (tab.readerState.connectRequired) {
+                            connectReaderViewContentScript(tab)
+                        }
+                        if (tab.readerState.checkRequired) {
+                            checkReaderState(tab)
+                        }
+                        if (tab.id == store.state.selectedTabId) {
+                            maybeNotifyReaderStatusChange(tab.readerState.readerable, tab.readerState.active)
+                        }
                     }
-                    if (tab.id == store.state.selectedTabId) {
-                        maybeNotifyReaderStatusChange(tab.readerState.readerable, tab.readerState.active)
-                    }
-                }
-        }
+            }
 
         controlsInteractor.start()
     }
@@ -130,9 +164,7 @@ class ReaderViewFeature(
         return false
     }
 
-    /**
-     * Shows the reader view UI.
-     */
+    /** Shows the reader view UI. */
     fun showReaderView(session: TabSessionState? = store.state.selectedTab) {
         session?.let {
             if (!it.readerState.active) {
@@ -143,10 +175,12 @@ class ReaderViewFeature(
                     READER_VIEW_CONTENT_PORT,
                 )
 
-                val readerUrl = extensionController.createReaderUrl(it.content.url, id) ?: run {
-                    Logger.error("FeatureReaderView unable to create ReaderUrl.")
-                    return@let
-                }
+                val readerUrl =
+                    extensionController.createReaderUrl(it.content.url, id)
+                        ?: run {
+                            Logger.error("FeatureReaderView unable to create ReaderUrl.")
+                            return@let
+                        }
 
                 store.dispatch(EngineAction.LoadUrlAction(it.id, readerUrl))
                 store.dispatch(ReaderAction.UpdateReaderActiveAction(it.id, true))
@@ -154,9 +188,7 @@ class ReaderViewFeature(
         }
     }
 
-    /**
-     * Hides the reader view UI.
-     */
+    /** Hides the reader view UI. */
     fun hideReaderView(session: TabSessionState? = store.state.selectedTab) {
         session?.let { it ->
             if (it.readerState.active) {
@@ -176,18 +208,49 @@ class ReaderViewFeature(
         }
     }
 
-    /**
-     * Shows the reader view appearance controls.
-     */
-    fun showControls() {
-        controlsPresenter.show()
+    /** Shows the reader view appearance controls. */
+    fun showControls(isListenEnabled: Boolean) {
+        controlsPresenter.show(isListenEnabled)
     }
 
-    /**
-     * Hides the reader view appearance controls.
-     */
+    /** Hides the reader view appearance controls. */
     fun hideControls() {
         controlsPresenter.hide()
+    }
+
+    @VisibleForTesting
+    @Suppress("TooGenericExceptionCaught")
+    internal fun handleListenClicked() {
+        val tabId = store.state.selectedTabId ?: return
+        val engineSession = store.state.selectedTab?.engineState?.engineSession ?: return
+
+        scope?.launch(mainDispatcher) {
+            try {
+                val metadata = engineSession.awaitPageMetadata()
+
+                if (store.state.selectedTabId != tabId) {
+                    return@launch
+                }
+
+                val content =
+                    engineSession.awaitPageContent(
+                        ContentParams(
+                            removeBoilerplate = false,
+                            useSimpleText = true,
+                        )
+                    )
+
+                if (store.state.selectedTabId != tabId) {
+                    return@launch
+                }
+
+                onListenClicked(Result.success(ListenResult(content, metadata.language)))
+            } catch (e: Throwable) {
+                if (store.state.selectedTabId == tabId) {
+                    onListenClicked(Result.failure(e))
+                }
+            }
+        }
     }
 
     @VisibleForTesting
@@ -240,18 +303,17 @@ class ReaderViewFeature(
             onSuccess = {
                 it.getMetadata()?.run {
                     readerBaseUrl = baseUrl
-                } ?: run {
-                    Logger.error("ReaderView extension missing Metadata")
                 }
+                    ?: run {
+                        Logger.error("ReaderView extension missing Metadata")
+                    }
 
                 feature.get()?.connectReaderViewContentScript()
             },
         )
     }
 
-    /**
-     * Handles content messages from regular pages.
-     */
+    /** Handles content messages from regular pages. */
     private open class ReaderViewContentMessageHandler(
         protected val store: BrowserStore,
         protected val sessionId: String,
@@ -268,9 +330,7 @@ class ReaderViewFeature(
         }
     }
 
-    /**
-     * Handles content messages from active reader pages.
-     */
+    /** Handles content messages from active reader pages. */
     private class ActiveReaderViewContentMessageHandler(
         store: BrowserStore,
         sessionId: String,
@@ -353,9 +413,7 @@ class ReaderViewFeature(
         }
 
         internal fun createCachePageMessage(id: String): JSONObject {
-            return JSONObject()
-                .put(ACTION_MESSAGE_KEY, ACTION_CACHE_PAGE)
-                .put(ACTION_VALUE_ID, id)
+            return JSONObject().put(ACTION_MESSAGE_KEY, ACTION_CACHE_PAGE).put(ACTION_VALUE_ID, id)
         }
 
         internal fun createShowReaderMessage(config: ReaderViewConfig?, scrollY: Int? = null): JSONObject {
@@ -366,20 +424,35 @@ class ReaderViewFeature(
             val fontSize = config?.fontSize ?: FONT_SIZE_DEFAULT
             val fontType = config?.fontType ?: FontType.SERIF
             val colorScheme = config?.colorScheme ?: ColorScheme.LIGHT
-            val configJson = JSONObject()
-                .put(ACTION_VALUE_SHOW_FONT_SIZE, fontSize)
-                .put(ACTION_VALUE_SHOW_FONT_TYPE, fontType.value.lowercase(Locale.ROOT))
-                .put(ACTION_VALUE_SHOW_COLOR_SCHEME, colorScheme.name.lowercase(Locale.ROOT))
+            val configJson =
+                JSONObject()
+                    .put(ACTION_VALUE_SHOW_FONT_SIZE, fontSize)
+                    .put(ACTION_VALUE_SHOW_FONT_TYPE, fontType.value.lowercase(Locale.ROOT))
+                    .put(ACTION_VALUE_SHOW_COLOR_SCHEME, colorScheme.name.lowercase(Locale.ROOT))
             if (scrollY != null) {
                 configJson.put(ACTION_VALUE_SCROLLY, scrollY)
             }
-            return JSONObject()
-                .put(ACTION_MESSAGE_KEY, ACTION_SHOW)
-                .put(ACTION_VALUE, configJson)
+            return JSONObject().put(ACTION_MESSAGE_KEY, ACTION_SHOW).put(ACTION_VALUE, configJson)
         }
 
         internal fun createHideReaderMessage(): JSONObject {
             return JSONObject().put(ACTION_MESSAGE_KEY, ACTION_HIDE)
         }
     }
+}
+
+private suspend fun EngineSession.awaitPageContent(options: ContentParams): String =
+    suspendCancellableCoroutine { continuation ->
+        getPageContent(
+            options = options,
+            onResult = { content -> continuation.resume(content) },
+            onException = { error -> continuation.resumeWithException(error) },
+        )
+    }
+
+private suspend fun EngineSession.awaitPageMetadata(): PageMetadata = suspendCancellableCoroutine { continuation ->
+    getPageMetadata(
+        onResult = { metadata -> continuation.resume(metadata) },
+        onException = { error -> continuation.resumeWithException(error) },
+    )
 }

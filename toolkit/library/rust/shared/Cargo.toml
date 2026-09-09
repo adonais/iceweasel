@@ -12,22 +12,23 @@ moz_asserts = "0.1"
 mozglue-static = { path = "../../../../mozglue/static/rust" }
 geckoservo = { path = "../../../../servo/ports/geckolib" }
 kvstore = { path = "../../../components/kvstore" }
-mp4parse_capi = { git = "https://github.com/mozilla/mp4parse-rust", rev = "8a49a0769764152022bf14a8253bcde1971a75df", features = ["missing-pixi-permitted"] }
+mp4parse_capi = { git = "https://github.com/mozilla/mp4parse-rust", rev = "215e238e633fa0df42cc25bfcf43a0f902692691", features = ["missing-pixi-permitted"] }
 nserror = { path = "../../../../xpcom/rust/nserror" }
 nsstring = { path = "../../../../xpcom/rust/nsstring" }
 netwerk_helper = { path = "../../../../netwerk/base/rust-helper" }
 xpcom = { path = "../../../../xpcom/rust/xpcom" }
+xdg_alerts = { path = "../../../system/gnome/rust", optional = true }
 prefs_parser = { path = "../../../../modules/libpref/parser" }
 static_prefs = { path = "../../../../modules/libpref/init/static_prefs" }
 profiler_helper = { path = "../../../../tools/profiler/rust-helper" }
 mozurl = { path = "../../../../netwerk/base/mozurl" }
 harfbuzz_glue = { path = "../../../../gfx/harfbuzz_glue" }
 webrender_bindings = { path = "../../../../gfx/webrender_bindings" }
-cubeb-coreaudio = { git = "https://github.com/mozilla/cubeb-coreaudio-rs", rev = "840f69c1b3f95accd582555e10abcef8ee67514b", optional = true, features=["vpio-forcelist"] }
+cubeb-coreaudio = { git = "https://github.com/mozilla/cubeb-coreaudio-rs", rev = "840f69c1b3f95accd582555e10abcef8ee67514b", optional = true }
 cubeb-pulse = { git = "https://github.com/mozilla/cubeb-pulse-rs", rev="88194f91c8778fa608a19af7b91306094525595d", optional = true, features=["pulse-dlopen"] }
 cubeb-sys = { version = "0.34", optional = true, features=["gecko-in-tree"] }
-audioipc2-client = { git = "https://github.com/mozilla/audioipc", rev = "88fe860", optional = true }
-audioipc2-server = { git = "https://github.com/mozilla/audioipc", rev = "88fe860", optional = true }
+audioipc2-client = { git = "https://github.com/mozilla/audioipc", rev = "d3c9825", optional = true }
+audioipc2-server = { git = "https://github.com/mozilla/audioipc", rev = "d3c9825", optional = true }
 encoding_glue = { path = "../../../../intl/encoding_glue" }
 locale_service_glue = { path = "../../../../intl/locale/rust/locale_service_glue" }
 app_collator_glue = { path = "../../../../intl/app_collator_glue" }
@@ -47,7 +48,7 @@ storage = { path = "../../../../storage/rust" }
 bookmark_sync = { path = "../../../components/places/bookmark_sync", optional = true }
 buildid_reader_ffi = { path = "../../buildid_reader/ffi" }
 chardetng_c = "1.0.0"
-audio_thread_priority = { version = "0.35", default-features = false }
+audio_thread_priority = { version = "0.37", default-features = false }
 mdns_service = { path="../../../../dom/media/webrtc/transport/mdns_service", optional = true }
 neqo_glue = { path = "../../../../netwerk/socket/neqo_glue" }
 wgpu_bindings = { path = "../../../../gfx/wgpu_bindings" }
@@ -56,7 +57,6 @@ mapped_hyph = { git = "https://github.com/jfkthame/mapped_hyph.git", rev = "eff1
 fog_control = { path = "../../../components/glean" }
 http_sfv = { path = "../../../../netwerk/base/http-sfv" }
 idna_glue = { path = "../../../../netwerk/base/idna_glue" }
-ssl_tokens_cache = { path = "../../../../netwerk/base/ssl_tokens_cache" }
 ipdl_utils = { path = "../../../../ipc/rust/ipdl_utils" }
 unic-langid = { version = "0.9", features = ["likelysubtags"] }
 unic-langid-ffi = { path = "../../../../intl/locale/rust/unic-langid-ffi" }
@@ -144,6 +144,7 @@ viaduct-necko = { path = "../../../../services/application-services/components/v
 webext-storage = "0.1"
 
 [target.'cfg(target_os = "windows")'.dependencies]
+backgroundtaskregistrar = { path = "../../../../toolkit/components/taskscheduler/rust", optional = true }
 detect_win32k_conflicts = { path = "../../../xre/detect_win32k_conflicts" }
 widget_windows = { path = "../../../../widget/windows/rust" }
 shell_windows = { path = "../../../../browser/components/shell/rust/shell_windows", optional = true }
@@ -166,7 +167,7 @@ glean_disable_upload = ["fog_control/disable_upload"]
 glean_with_gecko = ["fog_control/with_gecko", "jog/with_gecko"]
 oxidized_breakpad = ["rust_minidump_writer_linux"]
 crashreporter = ["crash_helper_client", "mozannotation_client"]
-with_dbus = ["audio_thread_priority/with_dbus"]
+with_dbus = ["audio_thread_priority/with_dbus", "xdg_alerts"]
 thread_sanitizer = ["xpcom/thread_sanitizer"]
 uniffi_fixtures = ["uniffi-bindgen-gecko-js-test-fixtures"]
 webmidi_midir_impl = ["midir_impl"]
@@ -182,6 +183,7 @@ for_xul = [
 ]
 webrender_debugger = ["webrender_bindings/debugger"]
 shell_windows = ["dep:shell_windows"]
+backgroundtaskregistrar = ["dep:backgroundtaskregistrar"]
 enable_tests = ["shell_windows?/enable_tests"]
 
 [lib]

@@ -17,15 +17,15 @@ import androidx.compose.ui.platform.LocalView
 import mozilla.components.support.utils.ext.getActivityWindow
 
 /**
- * [BackHandler] version specifically handling back invoked callbacks on Android 33+
- * with the advantage of also catching the back press / gesture events that would close the keyboard.
+ * [BackHandler] version specifically handling back invoked callbacks on Android 33+ with the advantage of also catching
+ * the back press / gesture events that would close the keyboard.
  *
- * On lower Android versions this will default to the original [BackHandler] functionality
- * which will still catch back presses or gesture events but only when the keyboard is not open.
- * @see [BackHandler]
+ * On lower Android versions this will default to the original [BackHandler] functionality which will still catch back
+ * presses or gesture events but only when the keyboard is not open.
  *
  * @param enabled Whether this functionality should be active or not
  * @param onBack The action to invoke for back presses or back gestures.
+ * @see [BackHandler]
  */
 @Composable
 fun BackInvokedHandler(enabled: Boolean = true, onBack: () -> Unit) {
@@ -39,12 +39,14 @@ fun BackInvokedHandler(enabled: Boolean = true, onBack: () -> Unit) {
         val window = remember(localView) { localView.context.getActivityWindow() }
 
         DisposableEffect(window, currentEnabledState) {
-            val backCallback = when (currentEnabledState) {
-                true -> OnBackInvokedCallback {
-                    currentOnBack()
+            val backCallback =
+                when (currentEnabledState) {
+                    true ->
+                        OnBackInvokedCallback {
+                            currentOnBack()
+                        }
+                    else -> null
                 }
-                else -> null
-            }
 
             if (currentEnabledState && backCallback != null && window != null) {
                 window.onBackInvokedDispatcher.registerOnBackInvokedCallback(PRIORITY_OVERLAY, backCallback)

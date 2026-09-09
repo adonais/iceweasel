@@ -100,9 +100,13 @@ function initRow(aPartId) {
 
     setRadioState(aPartId, state);
 
-    checkbox.disabled = Services.prefs.prefIsLocked(
-      "network.cookie.cookieBehavior"
-    );
+    const locked =
+      Services.prefs.prefIsLocked("network.cookie.cookieBehavior") ||
+      scope == SitePermissions.SCOPE_POLICY;
+    checkbox.disabled = locked;
+    if (locked) {
+      command.setAttribute("disabled", "true");
+    }
 
     return;
   }

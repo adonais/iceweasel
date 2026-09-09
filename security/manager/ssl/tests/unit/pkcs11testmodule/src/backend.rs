@@ -37,11 +37,11 @@ pub struct Key {
 }
 
 impl Key {
-    fn new(private_key_info: Vec<u8>, cert: Vec<u8>) -> Result<Key, Error> {
+    fn new(private_key_info: Vec<u8>, cert: &[u8]) -> Result<Key, Error> {
         let private_key_info = read_private_key_info(&private_key_info).unwrap();
         let (cryptoki_key, private_key) = match private_key_info {
             PrivateKeyInfo::RSA(rsa_private_key) => (
-                CryptokiKey::new(Some(rsa_private_key.modulus.clone()), None, &cert).unwrap(),
+                CryptokiKey::new(Some(rsa_private_key.modulus.clone()), None, cert).unwrap(),
                 PrivateKey::RSA(RSAKey {
                     modulus: BigUint::from_bytes_be(rsa_private_key.modulus.as_ref()),
                     private_exponent: BigUint::from_bytes_be(
@@ -50,7 +50,7 @@ impl Key {
                 }),
             ),
             PrivateKeyInfo::EC(ec_private_key) => (
-                CryptokiKey::new(None, Some(ENCODED_OID_BYTES_SECP256R1.to_vec()), &cert).unwrap(),
+                CryptokiKey::new(None, Some(ENCODED_OID_BYTES_SECP256R1.to_vec()), cert).unwrap(),
                 PrivateKey::EC(ECKey {
                     private_key: ec_private_key.private_key,
                 }),
@@ -162,6 +162,7 @@ pub struct Backend {
     logged_in: bool,
     certs: Vec<CryptokiCert>,
     keys: Vec<Key>,
+    trusts: Vec<CryptokiTrust>,
 }
 
 const TOKEN_MODEL_BYTES: &[u8; 16] = b"Test Model      ";
@@ -173,24 +174,44 @@ impl Backend {
         token_label: &'static [u8; 32],
         slot_flags: CK_FLAGS,
         token_flags: CK_FLAGS,
+        certs_with_keys_pem: Vec<(&'static str, &'static str)>,
         certs_pem: Vec<&'static str>,
-        keys_pem: Vec<&'static str>,
+        trust_anchors_pem: Vec<&'static str>,
     ) -> Backend {
-        let certs_der = certs_pem
-            .into_iter()
-            .map(pem_to_base64)
-            .map(|base64| BASE64_STANDARD.decode(base64).unwrap());
-        let keys_der = keys_pem
-            .into_iter()
-            .map(pem_to_base64)
-            .map(|base64| BASE64_STANDARD.decode(base64).unwrap());
         let mut certs = Vec::new();
         let mut keys = Vec::new();
-        for (cert_der, key_der) in std::iter::zip(certs_der, keys_der) {
-            let cert = CryptokiCert::new(cert_der.to_vec(), b"test certificate".to_vec()).unwrap();
-            certs.push(cert);
-            let key = Key::new(key_der.to_vec(), cert_der.to_vec()).unwrap();
+        let mut trusts = Vec::new();
+        for (cert_pem, key_pem) in certs_with_keys_pem.into_iter() {
+            let cert_der = BASE64_STANDARD.decode(pem_to_base64(cert_pem)).unwrap();
+            let key_der = BASE64_STANDARD.decode(pem_to_base64(key_pem)).unwrap();
+            let key = Key::new(key_der.to_vec(), &cert_der).unwrap();
             keys.push(key);
+            let trust = CryptokiTrust::new(&cert_der, b"test certificate with key".to_vec(), false)
+                .unwrap();
+            trusts.push(trust);
+            let cert = CryptokiCert::new(cert_der, b"test certificate with key".to_vec()).unwrap();
+            certs.push(cert);
+        }
+        for cert_der in certs_pem
+            .into_iter()
+            .map(pem_to_base64)
+            .map(|base64| BASE64_STANDARD.decode(base64).unwrap())
+        {
+            let trust = CryptokiTrust::new(&cert_der, b"test certificate".to_vec(), false).unwrap();
+            trusts.push(trust);
+            let cert = CryptokiCert::new(cert_der, b"test certificate".to_vec()).unwrap();
+            certs.push(cert);
+        }
+        for trust_anchor_der in trust_anchors_pem
+            .into_iter()
+            .map(pem_to_base64)
+            .map(|base64| BASE64_STANDARD.decode(base64).unwrap())
+        {
+            let trust =
+                CryptokiTrust::new(&trust_anchor_der, b"test trust anchor".to_vec(), true).unwrap();
+            trusts.push(trust);
+            let cert = CryptokiCert::new(trust_anchor_der, b"test trust anchor".to_vec()).unwrap();
+            certs.push(cert);
         }
         Backend {
             slot_description,
@@ -201,6 +222,7 @@ impl Backend {
             logged_in: false,
             certs,
             keys,
+            trusts,
         }
     }
 }
@@ -219,8 +241,8 @@ fn pem_to_base64(pem: &str) -> String {
 impl ClientCertsBackend for Backend {
     type Key = Key;
 
-    fn find_objects(&mut self) -> Result<(Vec<CryptokiCert>, Vec<Key>), Error> {
-        Ok((self.certs.clone(), self.keys.clone()))
+    fn find_objects(&mut self) -> Result<(Vec<CryptokiCert>, Vec<Key>, Vec<CryptokiTrust>), Error> {
+        Ok((self.certs.clone(), self.keys.clone(), self.trusts.clone()))
     }
 
     fn get_slot_info(&self) -> CK_SLOT_INFO {

@@ -35,7 +35,10 @@ class JSONObjectTest {
                 put("second-key", "second")
             },
         )
-        assertEquals("""{"first-key":{"a-key":"a-value","one-key":"one-value","second-key":"second"},"second-key":"second-value","third-key":[1,2,3]}""", jsonObject.sortKeys().toString())
+        assertEquals(
+            """{"first-key":{"a-key":"a-value","one-key":"one-value","second-key":"second"},"second-key":"second-value","third-key":[1,2,3]}""",
+            jsonObject.sortKeys().toString(),
+        )
     }
 
     @Test
@@ -103,29 +106,31 @@ class JSONObjectTest {
 
     @Test
     fun mergeWith() {
-        val merged = JSONObject(
-            mapOf(
-                "toKeep" to 3,
-                "toOverride" to "OHNOZ",
-            ),
-        )
+        val merged =
+            JSONObject(
+                mapOf(
+                    "toKeep" to 3,
+                    "toOverride" to "OHNOZ",
+                )
+            )
 
         merged.mergeWith(
             JSONObject(
                 mapOf(
                     "newKey" to 5,
                     "toOverride" to "YAY",
-                ),
-            ),
+                )
+            )
         )
 
-        val expectedObject = JSONObject(
-            mapOf(
-                "toKeep" to 3,
-                "toOverride" to "YAY",
-                "newKey" to 5,
-            ),
-        )
+        val expectedObject =
+            JSONObject(
+                mapOf(
+                    "toKeep" to 3,
+                    "toOverride" to "YAY",
+                    "newKey" to 5,
+                )
+            )
         assertEquals(expectedObject.toString(), merged.toString())
     }
 }

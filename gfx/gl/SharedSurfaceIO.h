@@ -38,6 +38,9 @@ class SharedSurface_IOSurface final : public SharedSurface {
 
   virtual void ProducerAcquireImpl() override {}
   virtual void ProducerReleaseImpl() override;
+  // Empty override to avoid the default calling ProducerReleaseImpl() which
+  // creates a GPU Fence.
+  virtual void ProducerReadReleaseImpl() override {}
 
   virtual bool NeedsIndirectReads() const override { return true; }
 

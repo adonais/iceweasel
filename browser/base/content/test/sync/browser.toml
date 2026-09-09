@@ -18,6 +18,8 @@ skip-if = [
 
 ["browser_fxa_badge.js"]
 
+["browser_fxa_cta_links.js"]
+
 ["browser_fxa_web_channel.js"]
 https_first_disabled = true
 support-files = ["browser_fxa_web_channel.html"]

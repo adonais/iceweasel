@@ -6,12 +6,27 @@ COOKIES_CSS = "#onetrust-consent-sdk"
 EXPANDER_CSS = "button[aria-controls=toggle-notebooks-content]"
 CONTAINER_CSS = "#toggle-notebooks-content"
 TABLE_CSS = "#toggle-notebooks-content table"
+CAPTCHA_TEXT = "Performing security"
+INFINITE_CAPTCHA_MSG = (
+    "Seem to be stuck in an infinite Captcha; please test this page manually."
+)
 
 
 async def is_full_table_visible(client):
     await client.navigate(URL, wait="none")
     client.hide_elements(COOKIES_CSS)
-    expander = client.await_css(EXPANDER_CSS, is_displayed=True)
+    expander, captcha = client.await_first_element_of(
+        [
+            client.css(EXPANDER_CSS),
+            client.text(CAPTCHA_TEXT),
+        ],
+        is_displayed=True,
+    )
+    if captcha:
+        # Unfortunately, the site tends to show an infinitely-repeating non-interactive Cloudflare Captcha now.
+        client.await_text(CAPTCHA_TEXT, is_displayed=True, timeout=4)
+        pytest.skip(INFINITE_CAPTCHA_MSG)
+        return False
     if not client.execute_script("return arguments[0].ariaExpanded", expander):
         expander.click()
         await client.stall(0.5)

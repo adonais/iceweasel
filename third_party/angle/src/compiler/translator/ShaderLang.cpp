@@ -4,10 +4,6 @@
 // found in the LICENSE file.
 //
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_libc_calls
-#endif
-
 //
 // Implement the top-level of interface to the compiler,
 // as defined in ShaderLang.h
@@ -36,6 +32,8 @@ namespace sh
 
 namespace
 {
+const char kUserVariableNamePrefix = 'u';
+const char kUserBlockNamePrefix    = 'b';
 
 bool isInitialized = false;
 
@@ -183,7 +181,7 @@ bool Finalize()
 void InitBuiltInResources(ShBuiltInResources *resources)
 {
     // Make comparable.
-    memset(resources, 0, sizeof(*resources));
+    ANGLE_UNSAFE_TODO(memset(resources, 0, sizeof(*resources)));
 
     // Constants.
     resources->MaxVertexAttribs                    = 8;
@@ -232,7 +230,6 @@ void InitBuiltInResources(ShBuiltInResources *resources)
     resources->ANGLE_multi_draw                               = 0;
     resources->ANGLE_base_vertex_base_instance                = 0;
     resources->ANGLE_base_vertex_base_instance_shader_builtin = 0;
-    resources->WEBGL_video_texture                            = 0;
     resources->APPLE_clip_distance                            = 0;
     resources->OES_texture_cube_map_array                     = 0;
     resources->EXT_texture_cube_map_array                     = 0;
@@ -273,7 +270,8 @@ void InitBuiltInResources(ShBuiltInResources *resources)
     // Disable name hashing by default.
     resources->HashFunction = nullptr;
 
-    resources->UserVariableNamePrefix = kUserDefinedNamePrefix;
+    resources->UserVariableNamePrefix = kUserVariableNamePrefix;
+    resources->UserBlockNamePrefix    = kUserBlockNamePrefix;
 
     resources->MaxExpressionComplexity = 256;
     resources->MaxStatementDepth       = 256;
@@ -522,7 +520,7 @@ const std::map<std::string, std::string> *GetNameHashingMap(const ShHandle handl
 {
     TCompiler *compiler = GetCompilerFromHandle(handle);
     ASSERT(compiler);
-    return &(compiler->getNameMap());
+    return &(compiler->getNameMap().getInternalMap());
 }
 
 const std::vector<ShaderVariable> *GetUniforms(const ShHandle handle)
@@ -651,16 +649,6 @@ const std::vector<ShPixelLocalStorageLayout> *GetPixelLocalStorageLayouts(const 
     ASSERT(compiler);
 
     return &compiler->getPixelLocalStorageLayouts();
-}
-
-uint32_t GetShaderSpecConstUsageBits(const ShHandle handle)
-{
-    TCompiler *compiler = GetCompilerFromHandle(handle);
-    if (compiler == nullptr)
-    {
-        return 0;
-    }
-    return compiler->getSpecConstUsageBits().bits();
 }
 
 bool CheckVariablesWithinPackingLimits(int maxVectors, const std::vector<ShaderVariable> &variables)
@@ -916,11 +904,6 @@ uint32_t GetAdvancedBlendEquations(const ShHandle handle)
     return compiler->getAdvancedBlendEquations().bits();
 }
 
-// Can't prefix with just _ because then we might introduce a double underscore, which is not safe
-// in GLSL (ESSL 3.00.6 section 3.8: All identifiers containing a double underscore are reserved for
-// use by the underlying implementation). u is short for user-defined.
-const char kUserDefinedNamePrefix = 'u';
-
 const char *BlockLayoutTypeToString(BlockLayoutType type)
 {
     switch (type)
@@ -977,30 +960,30 @@ const char *InterpolationTypeToString(InterpolationType type)
 
 ShCompileOptions::ShCompileOptions()
 {
-    memset(this, 0, sizeof(*this));
+    ANGLE_UNSAFE_TODO(memset(this, 0, sizeof(*this)));
 }
 
 ShCompileOptions::ShCompileOptions(const ShCompileOptions &other)
 {
-    memcpy(this, &other, sizeof(*this));
+    ANGLE_UNSAFE_TODO(memcpy(this, &other, sizeof(*this)));
 }
 ShCompileOptions &ShCompileOptions::operator=(const ShCompileOptions &other)
 {
-    memcpy(this, &other, sizeof(*this));
+    ANGLE_UNSAFE_TODO(memcpy(this, &other, sizeof(*this)));
     return *this;
 }
 
 ShBuiltInResources::ShBuiltInResources()
 {
-    memset(this, 0, sizeof(*this));
+    ANGLE_UNSAFE_TODO(memset(this, 0, sizeof(*this)));
 }
 
 ShBuiltInResources::ShBuiltInResources(const ShBuiltInResources &other)
 {
-    memcpy(this, &other, sizeof(*this));
+    ANGLE_UNSAFE_TODO(memcpy(this, &other, sizeof(*this)));
 }
 ShBuiltInResources &ShBuiltInResources::operator=(const ShBuiltInResources &other)
 {
-    memcpy(this, &other, sizeof(*this));
+    ANGLE_UNSAFE_TODO(memcpy(this, &other, sizeof(*this)));
     return *this;
 }

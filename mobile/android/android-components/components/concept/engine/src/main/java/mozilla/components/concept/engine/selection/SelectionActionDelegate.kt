@@ -4,23 +4,21 @@
 
 package mozilla.components.concept.engine.selection
 
-/**
- * Generic delegate for handling the context menu that is shown when text is selected.
- */
+/** Generic delegate for handling the context menu that is shown when text is selected. */
 interface SelectionActionDelegate {
     /**
      * Gets Strings representing all possible selection actions.
      *
-     * @returns String IDs for each action that could possibly be shown in the context menu. This
-     * array must include all actions, available or not, and must not change over the class lifetime.
+     * @returns String IDs for each action that could possibly be shown in the context menu. This array must include all
+     *   actions, available or not, and must not change over the class lifetime.
      */
     fun getAllActions(): Array<String>
 
     /**
      * Checks if an action can be shown on a new selection context menu.
      *
-     * @returns whether or not the the custom action with the id of [id] is currently available
-     *  which may be informed by [selectedText].
+     * @returns whether or not the the custom action with the id of [id] is currently available which may be informed by
+     *   [selectedText].
      */
     fun isActionAvailable(id: String, selectedText: String): Boolean
 

@@ -65,6 +65,12 @@ interface AudioEncoder : EventTarget {
   static Promise<AudioEncoderSupport> isConfigSupported(AudioEncoderConfig config);
 };
 
+// Mozilla extensions.
+partial interface AudioEncoder {
+  [Func="MediaUtils::HasDebuggerOrTabsPrivilege", NewObject]
+  Promise<EncoderDebugInfo> mozRequestDebugInfo();
+};
+
 dictionary AudioEncoderInit {
   required EncodedAudioChunkOutputCallback output;
   required WebCodecsErrorCallback error;

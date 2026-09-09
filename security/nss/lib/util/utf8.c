@@ -61,7 +61,7 @@
 #define H_0 0
 #define H_1 1
 
-#define BAD_UTF8 ((PRUint32)-1)
+#define BAD_UTF8 ((PRUint32) - 1)
 
 /*
  * Parse a single UTF-8 character per the spec. in section 3.9 (D36)

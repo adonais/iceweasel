@@ -5,6 +5,7 @@
 task-defaults:
     max-run-time: 3600
     suite: talos
+    use-python: system
     virtualization: hardware
     mozharness:
         script: talos_script.py

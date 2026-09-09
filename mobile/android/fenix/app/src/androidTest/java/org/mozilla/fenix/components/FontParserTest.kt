@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.components
 
 import androidx.test.platform.app.InstrumentationRegistry
@@ -10,9 +14,9 @@ class FontParserTest {
     @Test
     fun testSanityAssertion() {
         /*
-         Changing the below constant causes _all_ Nightly users to send a (large) Telemetry event containing
-         their font information. Do not change this value unless you explicitly intend this.
-         */
+        Changing the below constant causes _all_ Nightly users to send a (large) Telemetry event containing
+        their font information. Do not change this value unless you explicitly intend this.
+        */
         assertEquals(4, FontEnumerationWorker.DESIRED_SUBMISSIONS_NUMBER)
     }
 
@@ -21,13 +25,11 @@ class FontParserTest {
         val assetManager = InstrumentationRegistry.getInstrumentation().context.assets
         val font1 = FontParser.parse("no-path", assetManager.open("resources/TestTTF.ttf"))
         assertEquals(
-            "\u0000T\u0000e\u0000s\u0000t\u0000 \u0000T" +
-                "\u0000T\u0000F",
+            "\u0000T\u0000e\u0000s\u0000t\u0000 \u0000T" + "\u0000T\u0000F",
             font1.family,
         )
         assertEquals(
-            "\u0000V\u0000e\u0000r\u0000s\u0000i\u0000o\u0000n\u0000 \u00001\u0000." +
-                "\u00000\u00000\u00000",
+            "\u0000V\u0000e\u0000r\u0000s\u0000i\u0000o\u0000n\u0000 \u00001\u0000." + "\u00000\u00000\u00000",
             font1.fontVersion,
         )
         assertEquals(
@@ -49,13 +51,11 @@ class FontParserTest {
         assertEquals(65536, font1.revision)
         val font2 = FontParser.parse("no-path", assetManager.open("resources/TestTTC.ttc"))
         assertEquals(
-            "\u0000T\u0000e\u0000s\u0000t\u0000 \u0000T" +
-                "\u0000T\u0000F",
+            "\u0000T\u0000e\u0000s\u0000t\u0000 \u0000T" + "\u0000T\u0000F",
             font2.family,
         )
         assertEquals(
-            "\u0000V\u0000e\u0000r\u0000s\u0000i\u0000o\u0000n\u0000 \u00001\u0000." +
-                "\u00000\u00000\u00000",
+            "\u0000V\u0000e\u0000r\u0000s\u0000i\u0000o\u0000n\u0000 \u00001\u0000." + "\u00000\u00000\u00000",
             font2.fontVersion,
         )
         assertEquals(

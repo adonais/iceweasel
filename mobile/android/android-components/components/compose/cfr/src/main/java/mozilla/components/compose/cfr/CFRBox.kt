@@ -96,8 +96,7 @@ fun rememberCFRPositionProvider(
     indicatorDirection: IndicatorDirection,
     spacingBetweenCfrAndAnchor: Dp = 4.dp,
 ): CFRPositionProvider {
-    val anchorSpacing =
-        with(LocalDensity.current) { spacingBetweenCfrAndAnchor.roundToPx() }
+    val anchorSpacing = with(LocalDensity.current) { spacingBetweenCfrAndAnchor.roundToPx() }
     return remember(anchorSpacing, indicatorDirection) {
         CFRPositionProviderImpl(
             indicatorDirection,
@@ -106,32 +105,28 @@ fun rememberCFRPositionProvider(
     }
 }
 
-/**
- * Create and remember [CFRState] for [CFRBox]
- */
+/** Create and remember [CFRState] for [CFRBox] */
 @Composable
 @ExperimentalMaterial3Api // rememberTooltipState
 fun rememberCFRState(
     initialIsVisible: Boolean = false,
     isPersistent: Boolean = true,
-): CFRState =
-    rememberTooltipState(initialIsVisible = initialIsVisible, isPersistent = isPersistent)
+): CFRState = rememberTooltipState(initialIsVisible = initialIsVisible, isPersistent = isPersistent)
 
 /**
  * A CFR (Contextual Feature Recommendation) container built on Material3's TooltipBox.
  *
- *  NOTE: This component is meant for use in 100% compose situations. If you need to do a compose-view
- *  interop, for example, if your anchor is a view, consider using [CFRPopupLayout].
+ * NOTE: This component is meant for use in 100% compose situations. If you need to do a compose-view interop, for
+ * example, if your anchor is a view, consider using [CFRPopupLayout].
  *
  * @param positionProvider Controls tooltip placement relative to [anchor].
  * @param cfr The CFR tooltip content, scoped to [CFRScope] so it can use [CFR].
  * @param state Visibility state of the CFR tooltip.
  * @param modifier Modifier for the component.
  * @param onDismissRequest Called when the user taps outside the CFR tooltip.
- * @param focusable Whether the CFR tooltip consumes touch events while shown. If this is set to true,
- * it allows the tooltip to handle events like back button presses, and it will get dismissed on
- * back-pressed. If you wish to handle back-press to dismiss the CFR on your own, then set [focusable]
- * to false.
+ * @param focusable Whether the CFR tooltip consumes touch events while shown. If this is set to true, it allows the
+ *   tooltip to handle events like back button presses, and it will get dismissed on back-pressed. If you wish to handle
+ *   back-press to dismiss the CFR on your own, then set [focusable] to false.
  * @param anchor The anchor composable the CFR tooltip is attached to.
  */
 @OptIn(ExperimentalMaterial3Api::class) // TooltipBox
@@ -161,8 +156,8 @@ fun CFRBox(
 /**
  * CFR container content with a gradient background, optional title, text, and dismiss button.
  *
- * NOTE: This component is meant for use in 100% compose situations. If you need to do a compose-view
- * interop, for example, if your anchor is a view, consider using [CFRPopupLayout].
+ * NOTE: This component is meant for use in 100% compose situations. If you need to do a compose-view interop, for
+ * example, if your anchor is a view, consider using [CFRPopupLayout].
  *
  * @param modifier Modifier for the tooltip root.
  * @param title Optional title composable shown above [text].
@@ -190,39 +185,42 @@ fun CFRScope.CFR(
     val density = LocalDensity.current
     val windowContainerSize = LocalWindowInfo.current.containerSize
 
-    val resolvedShape: Shape = remember(containerShape, indicatorShape) {
-        CFRShape(transformationMatrix, containerShape, indicatorShape)
-    }
+    val resolvedShape: Shape =
+        remember(containerShape, indicatorShape) {
+            CFRShape(transformationMatrix, containerShape, indicatorShape)
+        }
 
-    val backgroundBrush = when (val background = colors.background) {
-        is CFRBackground.Gradient -> background.brush
-        is CFRBackground.Colors -> Brush.linearGradient(
-            colors = background.colors,
-            start = Offset(Float.POSITIVE_INFINITY, 0f),
-            end = Offset(0f, Float.POSITIVE_INFINITY),
-        )
-    }
+    val backgroundBrush =
+        when (val background = colors.background) {
+            is CFRBackground.Gradient -> background.brush
+            is CFRBackground.Colors ->
+                Brush.linearGradient(
+                    colors = background.colors,
+                    start = Offset(Float.POSITIVE_INFINITY, 0f),
+                    end = Offset(0f, Float.POSITIVE_INFINITY),
+                )
+        }
 
     CFRContentLayout(
-        modifier = Modifier
-            .layoutIndicator(
-                transformationMatrix = transformationMatrix,
-                density = density,
-                windowContainerSize = windowContainerSize,
-                getAnchorLayoutCoordinates = { obtainAnchorBounds() },
-                positionProvider = obtainPositionProvider() as CFRPositionProvider,
-            )
-            .then(modifier)
-            .sizeIn(
-                minWidth = CFR_MIN_WIDTH,
-                maxWidth = CFR_MAX_WIDTH,
-                minHeight = CFR_MIN_HEIGHT,
-            )
-            .background(
-                brush = backgroundBrush,
-                shape = resolvedShape,
-            )
-            .clip(resolvedShape),
+        modifier =
+            Modifier.layoutIndicator(
+                    transformationMatrix = transformationMatrix,
+                    density = density,
+                    windowContainerSize = windowContainerSize,
+                    getAnchorLayoutCoordinates = { obtainAnchorBounds() },
+                    positionProvider = obtainPositionProvider() as CFRPositionProvider,
+                )
+                .then(modifier)
+                .sizeIn(
+                    minWidth = CFR_MIN_WIDTH,
+                    maxWidth = CFR_MAX_WIDTH,
+                    minHeight = CFR_MIN_HEIGHT,
+                )
+                .background(
+                    brush = backgroundBrush,
+                    shape = resolvedShape,
+                )
+                .clip(resolvedShape),
         title = title,
         showDismissButton = showDismissButton,
         onDismiss = onDismiss,
@@ -241,11 +239,7 @@ private fun CFRContentLayout(
     text: @Composable () -> Unit,
 ) {
     Row(modifier) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .weight(1f),
-        ) {
+        Column(modifier = Modifier.padding(16.dp).weight(1f)) {
             title?.let {
                 CompositionLocalProvider(
                     LocalContentColor provides colors.titleContentColor,
@@ -266,11 +260,9 @@ private fun CFRContentLayout(
             Box(contentAlignment = Alignment.TopEnd) {
                 IconButton(
                     onClick = { onDismiss() },
-                    contentDescription = stringResource(
-                        R.string.mozac_cfr_dismiss_button_content_description,
-                    ),
-                    modifier = Modifier
-                        .semantics {
+                    contentDescription = stringResource(R.string.mozac_cfr_dismiss_button_content_description),
+                    modifier =
+                        Modifier.semantics {
                             testTagsAsResourceId = true
                             testTag = "cfr.dismiss"
                         },
@@ -288,9 +280,7 @@ private fun CFRContentLayout(
 
 // region Caret
 
-/**
- * Modifier that computes the indicator transformation matrix based on anchor position.
- */
+/** Modifier that computes the indicator transformation matrix based on anchor position. */
 @OptIn(ExperimentalMaterial3Api::class)
 private fun Modifier.layoutIndicator(
     transformationMatrix: MutableState<Matrix>,
@@ -298,90 +288,94 @@ private fun Modifier.layoutIndicator(
     windowContainerSize: IntSize,
     getAnchorLayoutCoordinates: MeasureScope.() -> LayoutCoordinates?,
     positionProvider: CFRPositionProvider,
-): Modifier = this.layout { measurables, constraints ->
-    val placeable = measurables.measure(constraints)
-    val width = placeable.width
-    val height = placeable.height
-    val windowContainerWidthInPx = windowContainerSize.width
-    val windowContainerHeightInPx = windowContainerSize.height
-    val cfrWidth = width.toFloat()
-    val cfrHeight = height.toFloat()
-    val anchorLayoutCoordinates = getAnchorLayoutCoordinates()
+): Modifier =
+    this.layout { measurables, constraints ->
+        val placeable = measurables.measure(constraints)
+        val width = placeable.width
+        val height = placeable.height
+        val windowContainerWidthInPx = windowContainerSize.width
+        val windowContainerHeightInPx = windowContainerSize.height
+        val cfrWidth = width.toFloat()
+        val cfrHeight = height.toFloat()
+        val anchorLayoutCoordinates = getAnchorLayoutCoordinates()
 
-    if (anchorLayoutCoordinates != null) {
-        val screenWidthPx: Int
-        val tooltipAnchorSpacing: Int
-        with(density) {
-            screenWidthPx = windowContainerWidthInPx
-            tooltipAnchorSpacing = positionProvider.tooltipAnchorSpacing(density = this)
-        }
-        val anchorBounds = anchorLayoutCoordinates.boundsInWindow()
-        val anchorTop = anchorBounds.top
-        val anchorBottom = anchorBounds.bottom
-
-        val indicatorY = when (positionProvider.indicatorDirection) {
-            IndicatorDirection.UP -> {
-                calculateIndicatorYPositionForUpDirection(
-                    anchorBottom = anchorBottom,
-                    cfrHeight = cfrHeight,
-                    tooltipAnchorSpacing = tooltipAnchorSpacing,
-                    windowContainerHeightInPx = windowContainerHeightInPx,
-                )
+        if (anchorLayoutCoordinates != null) {
+            val screenWidthPx: Int
+            val tooltipAnchorSpacing: Int
+            with(density) {
+                screenWidthPx = windowContainerWidthInPx
+                tooltipAnchorSpacing = positionProvider.tooltipAnchorSpacing(density = this)
             }
+            val anchorBounds = anchorLayoutCoordinates.boundsInWindow()
+            val anchorTop = anchorBounds.top
+            val anchorBottom = anchorBounds.bottom
 
-            IndicatorDirection.DOWN -> {
-                calculateIndicatorYPositionForDownDirection(
-                    anchorTop = anchorTop,
-                    cfrHeight = cfrHeight,
-                    tooltipAnchorSpacing = tooltipAnchorSpacing,
+            val indicatorY =
+                when (positionProvider.indicatorDirection) {
+                    IndicatorDirection.UP -> {
+                        calculateIndicatorYPositionForUpDirection(
+                            anchorBottom = anchorBottom,
+                            cfrHeight = cfrHeight,
+                            tooltipAnchorSpacing = tooltipAnchorSpacing,
+                            windowContainerHeightInPx = windowContainerHeightInPx,
+                        )
+                    }
+
+                    IndicatorDirection.DOWN -> {
+                        calculateIndicatorYPositionForDownDirection(
+                            anchorTop = anchorTop,
+                            cfrHeight = cfrHeight,
+                            tooltipAnchorSpacing = tooltipAnchorSpacing,
+                        )
+                    }
+                }
+
+            val position =
+                Offset(
+                    x = indicatorX(cfrWidth, screenWidthPx, anchorBounds),
+                    y = indicatorY,
                 )
+
+            // Translate matrix to position
+            val matrix = Matrix()
+            matrix.translate(x = position.x, y = position.y)
+
+            // We rotate matrix depending on positioning of the tooltip
+            if (indicatorY == 0f) {
+                // caret needs to be placed above tooltip
+                // Need to rotate it about the x axis by 180 degrees
+                matrix.rotateX(CARET_FLIP_DEGREES)
             }
+            transformationMatrix.value = matrix
         }
-
-        val position = Offset(
-            x = indicatorX(cfrWidth, screenWidthPx, anchorBounds),
-            y = indicatorY,
-        )
-
-        // Translate matrix to position
-        val matrix = Matrix()
-        matrix.translate(x = position.x, y = position.y)
-
-        // We rotate matrix depending on positioning of the tooltip
-        if (indicatorY == 0f) {
-            // caret needs to be placed above tooltip
-            // Need to rotate it about the x axis by 180 degrees
-            matrix.rotateX(CARET_FLIP_DEGREES)
-        }
-        transformationMatrix.value = matrix
+        layout(width, height) { placeable.place(0, 0) }
     }
-    layout(width, height) { placeable.place(0, 0) }
-}
 
 private fun calculateIndicatorYPositionForDownDirection(
     anchorTop: Float,
     cfrHeight: Float,
     tooltipAnchorSpacing: Int,
-): Float = if (anchorTop - cfrHeight - tooltipAnchorSpacing < 0) {
-    0f
-} else {
-    cfrHeight
-}
+): Float =
+    if (anchorTop - cfrHeight - tooltipAnchorSpacing < 0) {
+        0f
+    } else {
+        cfrHeight
+    }
 
 private fun calculateIndicatorYPositionForUpDirection(
     anchorBottom: Float,
     cfrHeight: Float,
     tooltipAnchorSpacing: Int,
     windowContainerHeightInPx: Int,
-): Float = if (anchorBottom + cfrHeight + tooltipAnchorSpacing > windowContainerHeightInPx) {
-    cfrHeight
-} else {
-    0f
-}
+): Float =
+    if (anchorBottom + cfrHeight + tooltipAnchorSpacing > windowContainerHeightInPx) {
+        cfrHeight
+    } else {
+        0f
+    }
 
 private fun PopupPositionProvider.tooltipAnchorSpacing(density: Density): Int {
-    return (this as? CFRPositionProviderImpl)?.cfrAnchorSpacing
-        ?: with(density) { 4.dp.roundToPx() }
+    return (this as? CFRPositionProviderImpl)?.cfrAnchorSpacing ?: with(density) { 4.dp.roundToPx() }
 }
 
 internal fun indicatorX(tooltipWidth: Float, screenWidthPx: Int, anchorBounds: Rect): Float {
@@ -412,10 +406,7 @@ internal fun indicatorX(tooltipWidth: Float, screenWidthPx: Int, anchorBounds: R
     }
 }
 
-/**
- * Shape that combines the tooltip container shape with an indicator shape,
- * transformed by [transformationMatrix].
- */
+/** Shape that combines the tooltip container shape with an indicator shape, transformed by [transformationMatrix]. */
 private class CFRShape(
     private val transformationMatrix: MutableState<Matrix>,
     private val cfrContainerShape: Shape,
@@ -456,20 +447,13 @@ private class CFRShape(
     }
 }
 
-/**
- * The [PopupPositionProvider] for CFRs that helps us place it correctly for the anchor
- */
-
+/** The [PopupPositionProvider] for CFRs that helps us place it correctly for the anchor */
 sealed interface CFRPositionProvider : PopupPositionProvider {
 
-    /**
-     * The [IndicatorDirection] for the CFR
-     */
+    /** The [IndicatorDirection] for the CFR */
     val indicatorDirection: IndicatorDirection
 
-    /**
-     * The spacing between the indicator and the anchor
-     */
+    /** The spacing between the indicator and the anchor */
     val cfrAnchorSpacing: Int
 }
 
@@ -562,19 +546,13 @@ private val CFR_MIN_HEIGHT = 24.dp
 
 // endregion
 
-/**
- * The background painted in the [CFR].
- */
+/** The background painted in the [CFR]. */
 sealed interface CFRBackground {
 
-    /**
-     * One or more [colors] painted as a linear gradient. A single color renders as a solid fill.
-     */
+    /** One or more [colors] painted as a linear gradient. A single color renders as a solid fill. */
     data class Colors(val colors: List<Color>) : CFRBackground
 
-    /**
-     * A [brush] painted directly as the background.
-     */
+    /** A [brush] painted directly as the background. */
     data class Gradient(val brush: Brush) : CFRBackground
 }
 
@@ -594,43 +572,36 @@ data class CFRColors(
     val dismissButtonColor: Color,
 )
 
-/**
- * Default values for CFRs
- */
+/** Default values for CFRs */
 object CFRDefaults {
 
-    /**
-     * The indicator shape for the CFR. Defaults to a caret
-     */
+    /** The indicator shape for the CFR. Defaults to a caret */
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun cfrIndicatorShape(): Shape {
         return TooltipDefaults.caretShape()
     }
 
-    /**
-     * The shape of the CFR
-     */
+    /** The shape of the CFR */
     @Composable
     fun cfrShape(): Shape {
         return MaterialTheme.shapes.medium
     }
 
-    /**
-     * Default colors for the CFR
-     */
+    /** Default colors for the CFR */
     @Composable
     fun colors(
         background: CFRBackground = CFRBackground.Gradient(brush = AcornTheme.gradients.cfr.brush),
         contentColor: Color = Color.White,
         titleContentColor: Color = Color.White,
         dismissButtonColor: Color = Color.White,
-    ) = CFRColors(
-        background = background,
-        contentColor = contentColor,
-        titleContentColor = titleContentColor,
-        dismissButtonColor = dismissButtonColor,
-    )
+    ) =
+        CFRColors(
+            background = background,
+            contentColor = contentColor,
+            titleContentColor = titleContentColor,
+            dismissButtonColor = dismissButtonColor,
+        )
 }
 
 // region Previews
@@ -642,9 +613,7 @@ private fun CFRWithTitlePreview() {
     AcornTheme {
         Surface {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
+                modifier = Modifier.fillMaxSize().padding(16.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 FlowRow(

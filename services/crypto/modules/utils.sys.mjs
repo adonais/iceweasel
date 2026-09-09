@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { Observers } from "resource://services-common/observers.sys.mjs";
-
 import { CommonUtils } from "resource://services-common/utils.sys.mjs";
 
 const lazy = {};
@@ -527,13 +525,3 @@ export var CryptoUtils = {
     };
   },
 };
-
-var Svc = {};
-
-Observers.add("xpcom-shutdown", function unloadServices() {
-  Observers.remove("xpcom-shutdown", unloadServices);
-
-  for (let k in Svc) {
-    delete Svc[k];
-  }
-});

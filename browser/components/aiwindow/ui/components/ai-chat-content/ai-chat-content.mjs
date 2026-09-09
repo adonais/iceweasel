@@ -1670,11 +1670,14 @@ export class AIChatContent extends MozLitElement {
             ></chat-assistant-citations>`
           : nothing}
         ${msg.role === "assistant" && msg.isLastChunk
-          ? html`
+          ? // TODO(Bug 2066269): remove hideRetry once resume-activity has
+            // its own retry path.
+            html`
               <assistant-message-footer
                 .messageId=${msg.messageId}
                 .appliedMemories=${msg.appliedMemories}
                 .showCallout=${msg.showCallout}
+                .hideRetry=${!!msg.toolUIData?.isResumeActivity}
               ></assistant-message-footer>
             `
           : nothing}

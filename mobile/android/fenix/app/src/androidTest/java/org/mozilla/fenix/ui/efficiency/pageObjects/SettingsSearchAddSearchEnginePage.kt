@@ -5,7 +5,6 @@
 package org.mozilla.fenix.ui.efficiency.pageObjects
 
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.uiautomator.By
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestHelper.mDevice
@@ -18,7 +17,8 @@ import org.mozilla.fenix.ui.efficiency.selectors.SettingsSearchAddSearchEngineSe
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSearchDefaultSearchEngineSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
 
-class SettingsSearchAddSearchEnginePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
+class SettingsSearchAddSearchEnginePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) :
+    BasePage(composeRule) {
     override val pageName = "SettingsSearchAddSearchEnginePage"
 
     init {
@@ -46,9 +46,9 @@ class SettingsSearchAddSearchEnginePage(composeRule: AndroidComposeTestRule<Home
     }
 
     /**
-     * Fills the name and search-string fields. The fields are plain View EditTexts reached by res id;
-     * setting UiObject2.text directly mirrors the legacy SettingsSubMenuSearchRobot.typeCustomEngineDetails
-     * and fires the TextWatcher that enables the Save button.
+     * Fills the name and search-string fields. The fields are plain View EditTexts reached by res id; setting
+     * UiObject2.text directly mirrors the legacy SettingsSubMenuSearchRobot.typeCustomEngineDetails and fires the
+     * TextWatcher that enables the Save button.
      */
     fun typeCustomEngineDetails(engineName: String, engineUrl: String): SettingsSearchAddSearchEnginePage {
         mDevice.findObject(By.res("$packageName:id/edit_engine_name")).text = engineName
@@ -58,7 +58,7 @@ class SettingsSearchAddSearchEnginePage(composeRule: AndroidComposeTestRule<Home
 
     fun saveNewSearchEngine(): SettingsSearchAddSearchEnginePage {
         // The Save button sits below the fields in a ScrollView, so the keyboard can cover it.
-        closeSoftKeyboard()
+        dismissSoftKeyboard()
         mozClick(SettingsSearchAddSearchEngineSelectors.SAVE_BUTTON)
         return this
     }

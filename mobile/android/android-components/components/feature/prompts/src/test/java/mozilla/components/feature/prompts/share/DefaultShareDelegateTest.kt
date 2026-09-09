@@ -39,7 +39,7 @@ class DefaultShareDelegateTest {
 
         shareDelegate.showShareSheet(
             context,
-            ShareData(title = "Title", text = "Text", url = null),
+            ShareData(title = "Title", text = "Text", url = null, private = false),
             onDismiss = { dismissed = true },
             onSuccess = { succeeded = true },
         )
@@ -59,7 +59,7 @@ class DefaultShareDelegateTest {
 
         shareDelegate.showShareSheet(
             context,
-            ShareData(title = null, text = "Text", url = "https://example.com"),
+            ShareData(title = null, text = "Text", url = "https://example.com", private = false),
             onDismiss = { dismissed = true },
             onSuccess = { succeeded = true },
         )

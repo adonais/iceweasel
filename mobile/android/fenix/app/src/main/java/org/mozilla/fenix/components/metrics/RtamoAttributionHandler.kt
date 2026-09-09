@@ -45,8 +45,8 @@ class RtamoAttributionHandler(
     private val logger = Logger("RtamoAttributionHandler")
 
     /**
-     * Checks [installReferrerResponse] for an RTAMO attribution and, if found, fetches the
-     * corresponding addon download URL from AMO and stores it in [settings].
+     * Checks [installReferrerResponse] for an RTAMO attribution and, if found, fetches the corresponding addon download
+     * URL from AMO and stores it in [settings].
      */
     @Suppress("TooGenericExceptionCaught")
     fun handleReferrer(installReferrerResponse: String?) {

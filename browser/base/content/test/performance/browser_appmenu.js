@@ -30,7 +30,7 @@ add_task(async function () {
   await ensureSearchIconVisible();
 
   let textBoxRect = gURLBar
-    .querySelector("moz-input-box")
+    .querySelector(".urlbar-input-box")
     .getBoundingClientRect();
   let menuButtonRect = document
     .getElementById("PanelUI-menu-button")

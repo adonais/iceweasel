@@ -22,20 +22,22 @@ class NimbusExperimentDataProviderTest {
     @Test
     fun `GIVEN active experiments, then the experiments are converted to runtime tags map`() {
         // given the active experiments
-        fakeNimbusApi.givenActiveExperiments = listOf(
-            createActiveExperiment(slug = "experiment-01", branchSlug = "control"),
-            createActiveExperiment(slug = "experiment-02", branchSlug = "treatment"),
-            createActiveExperiment(slug = "experiment-03", branchSlug = "variant-1"),
-        )
+        fakeNimbusApi.givenActiveExperiments =
+            listOf(
+                createActiveExperiment(slug = "experiment-01", branchSlug = "control"),
+                createActiveExperiment(slug = "experiment-02", branchSlug = "treatment"),
+                createActiveExperiment(slug = "experiment-03", branchSlug = "variant-1"),
+            )
 
         val data = runtimeTagProvider.getExperimentData()
-        val expected = ExperimentData(
-            mapOf(
-                "experiment-01" to "control",
-                "experiment-02" to "treatment",
-                "experiment-03" to "variant-1",
-            ),
-        )
+        val expected =
+            ExperimentData(
+                mapOf(
+                    "experiment-01" to "control",
+                    "experiment-02" to "treatment",
+                    "experiment-03" to "variant-1",
+                )
+            )
 
         assertEquals(
             "Runtime tags should contain all active experiments",
@@ -58,9 +60,8 @@ class NimbusExperimentDataProviderTest {
         )
     }
 
-    private class FakeNimbusApi(
-        var givenActiveExperiments: List<EnrolledExperiment> = emptyList(),
-    ) : TestNimbusApi(testContext) {
+    private class FakeNimbusApi(var givenActiveExperiments: List<EnrolledExperiment> = emptyList()) :
+        TestNimbusApi(testContext) {
 
         override fun getActiveExperiments(): List<EnrolledExperiment> {
             return givenActiveExperiments

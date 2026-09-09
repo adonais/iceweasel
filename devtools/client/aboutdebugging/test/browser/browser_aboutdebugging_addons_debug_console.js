@@ -256,7 +256,7 @@ add_task(async function testWebExtensionsToolboxWebConsole() {
   is(
     findMessagesByType(
       hud,
-      "Expected color but found ‘error’.  Error in parsing value for ‘color’.  Declaration dropped.",
+      "Error in parsing value for ‘color: error;’.  Declaration dropped.",
       ".warn"
     ).length,
     1,
@@ -265,7 +265,7 @@ add_task(async function testWebExtensionsToolboxWebConsole() {
   is(
     findMessagesByType(
       hud,
-      "Expected color but found ‘popup-error’.  Error in parsing value for ‘color’.  Declaration dropped.",
+      "Error in parsing value for ‘color: popup-error;’.  Declaration dropped.",
       ".warn"
     ).length,
     1,
@@ -292,7 +292,7 @@ add_task(async function testWebExtensionsToolboxWebConsole() {
   ok(
     !findMessageByType(
       hud,
-      "Expected color but found ‘error’.  Error in parsing value for ‘background-color’.  Declaration dropped.",
+      "Error in parsing value for ‘background-color: error;’.  Declaration dropped.",
       ".warn"
     ),
     "We don't get the other addon's background page CSS error message"
@@ -300,7 +300,7 @@ add_task(async function testWebExtensionsToolboxWebConsole() {
   ok(
     !findMessageByType(
       hud,
-      "Expected color but found ‘popup-error’.  Error in parsing value for ‘background-color’.  Declaration dropped.",
+      "Error in parsing value for ‘background-color: popup-error;’.  Declaration dropped.",
       ".warn"
     ),
     "We don't get the other addon's popup CSS error message"
@@ -441,7 +441,7 @@ add_task(async function testWebExtensionNoBgScript() {
   is(
     findMessagesByType(
       hud,
-      "Expected color but found ‘popup-only-error’.  Error in parsing value for ‘color’.  Declaration dropped.",
+      "Error in parsing value for ‘color: popup-only-error;’.  Declaration dropped.",
       ".warn"
     ).length,
     1,

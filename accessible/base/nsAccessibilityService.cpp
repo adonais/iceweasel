@@ -1013,21 +1013,6 @@ void nsAccessibilityService::UpdateImageMap(nsImageFrame* aImageFrame) {
   }
 }
 
-void nsAccessibilityService::UpdateLabelValue(PresShell* aPresShell,
-                                              nsIContent* aLabelElm,
-                                              const nsString& aNewValue) {
-  DocAccessible* document = GetDocAccessible(aPresShell);
-  if (document) {
-    LocalAccessible* accessible = document->GetAccessible(aLabelElm);
-    if (accessible) {
-      XULLabelAccessible* xulLabel = accessible->AsXULLabel();
-      NS_ASSERTION(xulLabel,
-                   "UpdateLabelValue was called for wrong accessible!");
-      if (xulLabel) xulLabel->UpdateLabelValue(aNewValue);
-    }
-  }
-}
-
 void nsAccessibilityService::PresShellActivated(PresShell* aPresShell) {
   DocAccessible* document = aPresShell->GetDocAccessible();
   if (document) {
@@ -2261,6 +2246,39 @@ EPlatformDisabledState PlatformDisabledState() {
   return ReadPlatformDisabledState();
 }
 
+void MaybeStartForceEnabled(bool aAsync) {
+  if (!XRE_IsParentProcess()) {
+    // Accessibility in content processes is driven by the parent process.
+    return;
+  }
+  // This also ensures the pref is being watched, so a later change to force
+  // enabled starts the service even if it wasn't already force enabled here.
+  if (PlatformDisabledState() != ePlatformIsForceEnabled) {
+    return;
+  }
+  if (GetAccService()) {
+    return;
+  }
+  if (!aAsync) {
+    GetOrCreateAccService(nsAccessibilityService::ePlatformAPI);
+    return;
+  }
+  static bool sIsPending = false;
+  if (sIsPending) {
+    // An async start runnable is pending. Don't dispatch another.
+    return;
+  }
+  NS_DispatchToMainThread(
+      NS_NewRunnableFunction("a11y::MaybeStartForceEnabled", [] {
+        // It's possible (albeit unlikely) that the pref changed again since
+        // this runnable was dispatched, or that something else already
+        // started the service. Use MaybeStartForceEnabled to be safe.
+        MaybeStartForceEnabled(false);
+        sIsPending = false;
+      }));
+  sIsPending = true;
+}
+
 EPlatformDisabledState ReadPlatformDisabledState() {
   sPlatformDisabledState =
       Preferences::GetInt(PREF_ACCESSIBILITY_FORCE_DISABLED, 0);
@@ -2274,13 +2292,20 @@ EPlatformDisabledState ReadPlatformDisabledState() {
 }
 
 void PrefChanged(const char* aPref, void* aClosure) {
-  if (ReadPlatformDisabledState() == ePlatformIsDisabled) {
+  EPlatformDisabledState disabledState = ReadPlatformDisabledState();
+  if (disabledState == ePlatformIsDisabled) {
     // Force shut down accessibility.
     nsAccessibilityService* accService =
         nsAccessibilityService::gAccessibilityService;
     if (accService && !nsAccessibilityService::IsShutdown()) {
       accService->Shutdown();
     }
+  } else if (disabledState == ePlatformIsForceEnabled) {
+    // Start accessibility asynchronously; this callback runs synchronously
+    // wherever the pref was set (e.g. from about:config, a test harness or
+    // enterprise policy), and starting the service reentrantly from there
+    // would pull in a lot of other initialization mid-call.
+    MaybeStartForceEnabled(/* aAsync */ true);
   }
 }
 

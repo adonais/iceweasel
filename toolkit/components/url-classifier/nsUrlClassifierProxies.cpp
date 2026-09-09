@@ -300,14 +300,16 @@ UrlClassifierUpdateObserverProxy::UpdateErrorRunnable::Run() {
 }
 
 NS_IMETHODIMP
-UrlClassifierUpdateObserverProxy::UpdateSuccess(uint32_t aRequestedTimeout) {
+UrlClassifierUpdateObserverProxy::UpdateSuccess(
+    const nsTArray<nsCString>& aTables,
+    const nsTArray<uint32_t>& aWaitSeconds) {
   nsCOMPtr<nsIRunnable> r =
-      new UpdateSuccessRunnable(mTarget, aRequestedTimeout);
+      new UpdateSuccessRunnable(mTarget, aTables, aWaitSeconds);
   return NS_DispatchToMainThread(r);
 }
 
 NS_IMETHODIMP
 UrlClassifierUpdateObserverProxy::UpdateSuccessRunnable::Run() {
-  mTarget->UpdateSuccess(mRequestedTimeout);
+  mTarget->UpdateSuccess(mTables, mWaitSeconds);
   return NS_OK;
 }

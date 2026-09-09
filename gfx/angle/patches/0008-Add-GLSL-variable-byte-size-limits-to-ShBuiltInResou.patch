@@ -1,4 +1,4 @@
-From a5f0aab16397f6e46f4b5c50e35347ce678cfbb0 Mon Sep 17 00:00:00 2001
+From bd020ccb9cc6303811ca54e14b6e21066e336dae Mon Sep 17 00:00:00 2001
 From: Kelsey Gilbert <kelsey.gilbert@mozilla.com>
 Date: Tue, 4 Jun 2024 15:37:29 -0700
 Subject: [PATCH] Add GLSL variable byte size limits to ShBuiltInResources.
@@ -6,15 +6,15 @@ Subject: [PATCH] Add GLSL variable byte size limits to ShBuiltInResources.
 ---
  include/GLSLANG/ShaderLang.h             |  5 +++++
  src/compiler/translator/Compiler.cpp     |  3 +++
- src/compiler/translator/ParseContext.cpp | 20 +++++++-------------
+ src/compiler/translator/ParseContext.cpp | 19 ++++++-------------
  src/compiler/translator/ShaderLang.cpp   |  6 ++++++
- 4 files changed, 21 insertions(+), 13 deletions(-)
+ 4 files changed, 20 insertions(+), 13 deletions(-)
 
 diff --git a/include/GLSLANG/ShaderLang.h b/include/GLSLANG/ShaderLang.h
-index 200eaac2c5..135daac147 100644
+index 701f409..7fe8ea6 100644
 --- a/include/GLSLANG/ShaderLang.h
 +++ b/include/GLSLANG/ShaderLang.h
-@@ -764,6 +764,11 @@ struct ShBuiltInResources
+@@ -770,6 +770,11 @@ struct ShBuiltInResources
      // ANGLE_shader_pixel_local_storage.
      int MaxPixelLocalStoragePlanes;
      int MaxCombinedDrawBuffersAndPixelLocalStoragePlanes;
@@ -27,10 +27,10 @@ index 200eaac2c5..135daac147 100644
  
  //
 diff --git a/src/compiler/translator/Compiler.cpp b/src/compiler/translator/Compiler.cpp
-index 9ba125a178..ebf0bd49c6 100644
+index 6d57bbc..4c04069 100644
 --- a/src/compiler/translator/Compiler.cpp
 +++ b/src/compiler/translator/Compiler.cpp
-@@ -1511,6 +1511,9 @@ void TCompiler::setResourceString()
+@@ -1390,6 +1390,9 @@ void TCompiler::setResourceString()
          << ":MaxFragmentImageUniforms:" << mResources.MaxFragmentImageUniforms
          << ":MaxComputeImageUniforms:" << mResources.MaxComputeImageUniforms
          << ":MaxCombinedImageUniforms:" << mResources.MaxCombinedImageUniforms
@@ -41,10 +41,10 @@ index 9ba125a178..ebf0bd49c6 100644
          << ":MaxComputeWorkGroupCountX:" << mResources.MaxComputeWorkGroupCount[0]
          << ":MaxComputeWorkGroupCountY:" << mResources.MaxComputeWorkGroupCount[1]
 diff --git a/src/compiler/translator/ParseContext.cpp b/src/compiler/translator/ParseContext.cpp
-index 9852c0c9cd..efd6e436ac 100644
+index 8207d7a..ef2d352 100644
 --- a/src/compiler/translator/ParseContext.cpp
 +++ b/src/compiler/translator/ParseContext.cpp
-@@ -45,15 +45,6 @@ namespace
+@@ -44,15 +44,6 @@ namespace
  {
  const int kWebGLMaxStructNesting = 4;
  
@@ -60,17 +60,16 @@ index 9852c0c9cd..efd6e436ac 100644
  // The 1024 character identifier limit, `-2` for the `_u`
  constexpr size_t kMaxAvailableIdentifierLength = 1022;
  
-@@ -1755,7 +1746,8 @@ bool TParseContext::checkVariableSize(const TSourceLoc &line,
-     const size_t variableSize =
-         CalculateVariableSize(type, type->isInterfaceBlock() || type->getQualifier() == EvqUniform)
-             .ValueOrDefault(std::numeric_limits<size_t>::max());
+@@ -1988,7 +1979,7 @@ bool TParseContext::checkVariableSize(const TSourceLoc &line,
+         mValidatedVariableTypeSizes[*type] = variableSize;
+     }
+ 
 -    if (variableSize > kWebGLMaxVariableSizeInBytes)
-+    if (mResources.MaxVariableSizeInBytes &&
-+        variableSize > mResources.MaxVariableSizeInBytes)
++    if (mResources.MaxVariableSizeInBytes && variableSize > mResources.MaxVariableSizeInBytes)
      {
          error(line, "Size of declared variable exceeds implementation-defined limit", identifier);
          return false;
-@@ -1799,7 +1791,8 @@ bool TParseContext::checkVariableSize(const TSourceLoc &line,
+@@ -2032,7 +2023,8 @@ bool TParseContext::checkVariableSize(const TSourceLoc &line,
          case EvqPerVertexIn:
          case EvqPerVertexOut:
  
@@ -80,7 +79,7 @@ index 9852c0c9cd..efd6e436ac 100644
              {
                  error(line,
                        "Size of declared private variable exceeds implementation-defined limit",
-@@ -10401,8 +10394,9 @@ bool TParseContext::postParseChecks()
+@@ -10877,8 +10869,9 @@ bool TParseContext::postParseChecks()
  
      if (mCompileOptions.rejectWebglShadersWithLargeVariables)
      {
@@ -93,10 +92,10 @@ index 9852c0c9cd..efd6e436ac 100644
              error(TSourceLoc{},
                    "Total size of declared private variables exceeds implementation-defined limit",
 diff --git a/src/compiler/translator/ShaderLang.cpp b/src/compiler/translator/ShaderLang.cpp
-index 6477eef68e..ebcb1c050e 100644
+index 21c5d0c..5cb6304 100644
 --- a/src/compiler/translator/ShaderLang.cpp
 +++ b/src/compiler/translator/ShaderLang.cpp
-@@ -363,6 +363,12 @@ void InitBuiltInResources(ShBuiltInResources *resources)
+@@ -361,6 +361,12 @@ void InitBuiltInResources(ShBuiltInResources *resources)
      resources->MaxTessEvaluationUniformBlocks        = 12;
  
      resources->MaxSamples = 4;
@@ -110,5 +109,5 @@ index 6477eef68e..ebcb1c050e 100644
  
  //
 -- 
-2.54.0
+2.43.0
 

@@ -31,17 +31,13 @@ import org.robolectric.RobolectricTestRunner
 class HomeScreenTest {
     private lateinit var context: Context
 
-    @Mock
-    private lateinit var applicationContext: FocusApplication
+    @Mock private lateinit var applicationContext: FocusApplication
 
-    @Mock
-    private lateinit var components: Components
+    @Mock private lateinit var components: Components
 
-    @Mock
-    private lateinit var appStore: AppStore
+    @Mock private lateinit var appStore: AppStore
 
-    @Mock
-    private lateinit var shortcutManager: ShortcutManager
+    @Mock private lateinit var shortcutManager: ShortcutManager
 
     private val testDispatcher = StandardTestDispatcher()
 

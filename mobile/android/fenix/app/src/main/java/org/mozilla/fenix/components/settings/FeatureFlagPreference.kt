@@ -5,14 +5,15 @@
 package org.mozilla.fenix.components.settings
 
 import androidx.core.content.edit
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
 import mozilla.components.support.ktx.android.content.PreferencesHolder
 import mozilla.components.support.ktx.android.content.booleanPreference
 import org.mozilla.fenix.FeatureFlags
-import kotlin.properties.ReadWriteProperty
-import kotlin.reflect.KProperty
 
 private class DummyProperty : ReadWriteProperty<PreferencesHolder, Boolean> {
     override fun getValue(thisRef: PreferencesHolder, property: KProperty<*>) = false
+
     override fun setValue(thisRef: PreferencesHolder, property: KProperty<*>, value: Boolean) = Unit
 }
 
@@ -21,11 +22,11 @@ private class DummyProperty : ReadWriteProperty<PreferencesHolder, Boolean> {
  *
  * @param key The key for the shared preference.
  * @param defaultValue The default value to return when the preference is unset.
- * @param featureFlag If `true`, the shared preference value is returned; if `false`, this always
- * returns `false`, regardless of the stored value.
+ * @param featureFlag If `true`, the shared preference value is returned; if `false`, this always returns `false`,
+ *   regardless of the stored value.
  *
- * Note: If you intend to always pass `true` for [featureFlag], consider using [booleanPreference]
- * directly instead, as the feature flag provides no additional behavior in that case.
+ * Note: If you intend to always pass `true` for [featureFlag], consider using [booleanPreference] directly instead, as
+ * the feature flag provides no additional behavior in that case.
  *
  * For example, this is **not** recommended:
  * ```
@@ -36,8 +37,8 @@ private class DummyProperty : ReadWriteProperty<PreferencesHolder, Boolean> {
  * )
  * ```
  *
- * [featureFlag] may be controlled through various mechanisms - for example, via an
- * alternative feature-flag system like [FeatureFlags], or internal conditionals.
+ * [featureFlag] may be controlled through various mechanisms - for example, via an alternative feature-flag system like
+ * [FeatureFlags], or internal conditionals.
  *
  * For example, recommended use:
  * ```
@@ -76,11 +77,11 @@ private class LazyBooleanPreference(val key: String, val defaultValue: () -> Boo
  * Property delegate for lazily getting and setting a boolean shared preference gated by a feature flag.
  *
  * @param key The key for the shared preference.
- * @param featureFlag If `true`, the shared preference value is returned; if `false`, this always
- * returns `false`, regardless of the stored value.
+ * @param featureFlag If `true`, the shared preference value is returned; if `false`, this always returns `false`,
+ *   regardless of the stored value.
  *
- * Note: If you intend to always pass `true` for [featureFlag], consider using [booleanPreference]
- * directly instead, as the feature flag provides no additional behavior in that case.
+ * Note: If you intend to always pass `true` for [featureFlag], consider using [booleanPreference] directly instead, as
+ * the feature flag provides no additional behavior in that case.
  *
  * For example, this is **not** recommended:
  * ```
@@ -91,8 +92,8 @@ private class LazyBooleanPreference(val key: String, val defaultValue: () -> Boo
  * )
  * ```
  *
- * [featureFlag] may be controlled through various mechanisms - for example, via an
- * alternative feature-flag system like [FeatureFlags], or internal conditionals.
+ * [featureFlag] may be controlled through various mechanisms - for example, via an alternative feature-flag system like
+ * [FeatureFlags], or internal conditionals.
  *
  * For example, recommended use:
  * ```

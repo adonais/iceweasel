@@ -3,7 +3,9 @@ import pytest
 URL = "https://www.qq.com/"
 
 LOGIN_CSS = "#qqcom-login .login-button"
-CHECKBOX_CSS = "[dt-eid=em_login_wx] + div svg#defaultbutton"
+LINK_LEADING_TO_CHECKBOX_CSS = (
+    "[dt-eid=em_login_window] a[href*='rule.tencent.com/rule/202504020001']"
+)
 QQ_BUTTON_CSS = "#QQ-face"
 IFRAME_CSS = "iframe[src*=login_qq_news_web]"
 WAIT_LOG_MSG = "load event end at"
@@ -14,7 +16,12 @@ async def does_checkmark_appear(client):
     await client.navigate(URL, wait="none")
     client.hide_elements("#download-btn-wrapid")
     client.await_css(LOGIN_CSS, is_displayed=True).click()
-    client.await_css(CHECKBOX_CSS, is_displayed=True).click()
+    client.execute_script(
+        """
+      return arguments[0].parentElement.previousElementSibling.firstElementChild;
+      """,
+        client.await_css(LINK_LEADING_TO_CHECKBOX_CSS, is_displayed=True),
+    ).click()
     client.await_css(QQ_BUTTON_CSS, is_displayed=True).click()
     client.switch_to_frame(client.await_css(IFRAME_CSS))
     # by the time this console message is logged, the checkbox should be ready to check

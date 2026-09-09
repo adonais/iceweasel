@@ -396,13 +396,6 @@ class Animation : public DOMEventTargetHelper,
   }
 
   /**
-   * Returns true if this animation does not currently need to update
-   * style on the main thread (e.g. because it is empty, or is
-   * running on the compositor).
-   */
-  bool CanThrottle() const;
-
-  /**
    * Updates various bits of state that we need to update as the result of
    * running ComposeStyle().
    * See the comment of KeyframeEffect::WillComposeStyle for more detail.

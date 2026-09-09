@@ -197,6 +197,181 @@ add_task(async function test_text_tracks_existing_window_new_track() {
 });
 
 /**
+ * This test ensures that a text track appears when it is enabled after the
+ * Picture-in-Picture window opens with no active track.
+ */
+add_task(async function test_text_tracks_existing_window_track_enabled_late() {
+  info("Running test: existing window - track enabled late");
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "media.videocontrols.picture-in-picture.display-text-tracks.enabled",
+        true,
+      ],
+    ],
+  });
+  let videoID = "with-controls";
+
+  await BrowserTestUtils.withNewTab(
+    {
+      url: TEST_PAGE_WITH_WEBVTT,
+      gBrowser,
+    },
+    async browser => {
+      await prepareVideosAndWebVTTTracks(browser, videoID, -1);
+
+      let pipWin = await triggerPictureInPicture(browser, videoID);
+      ok(pipWin, "Got Picture-in-Picture window.");
+      let pipBrowser = pipWin.document.getElementById("browser");
+
+      await SpecialPowers.spawn(pipBrowser, [], async () => {
+        let textTracks = content.document.getElementById("texttracks");
+        ok(textTracks, "TextTracks container should exist in the pip window");
+        ok(
+          !textTracks.textContent,
+          "Text tracks should not be visible before one is enabled"
+        );
+      });
+
+      await SpecialPowers.spawn(browser, [videoID], async videoID => {
+        let track = content.document.getElementById(videoID).textTracks[0];
+        is(track.mode, "disabled", "Track 1 should initially be disabled");
+        track.mode = "showing";
+        await ContentTaskUtils.waitForCondition(
+          () => track.activeCues?.length,
+          "Waiting for an active cue on track 1"
+        );
+      });
+
+      await SpecialPowers.spawn(pipBrowser, [], async () => {
+        let textTracks = content.document.getElementById("texttracks");
+        await ContentTaskUtils.waitForCondition(
+          () => textTracks.textContent.includes("track 1"),
+          `Waiting for track 1 in the pip window. Got ${textTracks.textContent}`
+        );
+      });
+    }
+  );
+});
+
+/**
+ * This test ensures that a text track added after the Picture-in-Picture
+ * window opens is displayed and removed without another video lifecycle event.
+ */
+add_task(async function test_text_tracks_existing_window_track_added_late() {
+  info("Running test: existing window - track added late");
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "media.videocontrols.picture-in-picture.display-text-tracks.enabled",
+        true,
+      ],
+    ],
+  });
+  let videoID = "with-controls-no-tracks";
+
+  await BrowserTestUtils.withNewTab(
+    {
+      url: TEST_PAGE_WITH_WEBVTT,
+      gBrowser,
+    },
+    async browser => {
+      await ensureVideosReady(browser);
+      await SpecialPowers.spawn(browser, [videoID], async videoID => {
+        let video = content.document.getElementById(videoID);
+        let seeked = ContentTaskUtils.waitForEvent(video, "seeked");
+        video.currentTime = 2.5;
+        await seeked;
+      });
+
+      let pipWin = await triggerPictureInPicture(browser, videoID);
+      ok(pipWin, "Got Picture-in-Picture window.");
+      let pipBrowser = pipWin.document.getElementById("browser");
+
+      await SpecialPowers.spawn(pipBrowser, [], async () => {
+        let textTracks = content.document.getElementById("texttracks");
+        ok(textTracks, "TextTracks container should exist in the pip window");
+        ok(
+          !textTracks.textContent,
+          "Text tracks should not be visible before a track is added"
+        );
+      });
+
+      await SpecialPowers.spawn(browser, [videoID], async videoID => {
+        let video = content.document.getElementById(videoID);
+        let trackElement = content.document.createElement("track");
+        trackElement.id = "late-track";
+        trackElement.kind = "subtitles";
+        trackElement.label = "Late track";
+        trackElement.srclang = "en";
+        trackElement.src = "test-webvtt-1.vtt";
+        trackElement.track.mode = "showing";
+        let loaded = ContentTaskUtils.waitForEvent(trackElement, "load");
+        video.appendChild(trackElement);
+
+        await loaded;
+        await ContentTaskUtils.waitForCondition(
+          () => trackElement.track.activeCues?.length,
+          "Waiting for an active cue on the late track"
+        );
+      });
+
+      await SpecialPowers.spawn(pipBrowser, [], async () => {
+        let textTracks = content.document.getElementById("texttracks");
+        await ContentTaskUtils.waitForCondition(
+          () => textTracks.textContent.includes("track 1"),
+          `Waiting for the late track in the pip window. Got ${textTracks.textContent}`
+        );
+      });
+
+      await SpecialPowers.spawn(browser, [videoID], async videoID => {
+        let video = content.document.getElementById(videoID);
+        content.document.getElementById("late-track").remove();
+        await ContentTaskUtils.waitForCondition(
+          () => !video.textTracks.length,
+          "Waiting for the late track to be removed"
+        );
+      });
+
+      await SpecialPowers.spawn(pipBrowser, [], async () => {
+        let textTracks = content.document.getElementById("texttracks");
+        await ContentTaskUtils.waitForCondition(
+          () => !textTracks.textContent,
+          `Waiting for the removed track to disappear. Got ${textTracks.textContent}`
+        );
+      });
+
+      await SpecialPowers.spawn(browser, [videoID], async videoID => {
+        let video = content.document.getElementById(videoID);
+        let trackElement = content.document.createElement("track");
+        trackElement.id = "second-late-track";
+        trackElement.kind = "subtitles";
+        trackElement.label = "Second late track";
+        trackElement.srclang = "fr";
+        trackElement.src = "test-webvtt-2.vtt";
+        trackElement.track.mode = "showing";
+        let loaded = ContentTaskUtils.waitForEvent(trackElement, "load");
+        video.appendChild(trackElement);
+
+        await loaded;
+        await ContentTaskUtils.waitForCondition(
+          () => trackElement.track.activeCues?.length,
+          "Waiting for an active cue on the second late track"
+        );
+      });
+
+      await SpecialPowers.spawn(pipBrowser, [], async () => {
+        let textTracks = content.document.getElementById("texttracks");
+        await ContentTaskUtils.waitForCondition(
+          () => textTracks.textContent.includes("track 2"),
+          `Waiting for the second late track in the pip window. Got ${textTracks.textContent}`
+        );
+      });
+    }
+  );
+});
+
+/**
  * This test ensures that text tracks are correctly updated.
  */
 add_task(async function test_text_tracks_existing_window_cues() {

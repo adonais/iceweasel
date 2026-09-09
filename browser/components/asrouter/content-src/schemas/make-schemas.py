@@ -75,7 +75,7 @@ SCHEMAS = [
             "ExtensionDoorhanger": (
                 SCHEMA_DIR / "CFR" / "templates" / "ExtensionDoorhanger.schema.json"
             ),
-            "InfoBar": SCHEMA_DIR / "CFR" / "templates" / "InfoBar.schema.json",
+            "InfoBar": SCHEMA_DIR / "InfoBar" / "InfoBar.schema.json",
             "MenuMessage": (
                 SCHEMA_DIR / "OnboardingMessage" / "MenuMessage.schema.json"
             ),

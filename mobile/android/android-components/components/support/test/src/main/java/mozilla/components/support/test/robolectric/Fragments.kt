@@ -13,12 +13,13 @@ import org.robolectric.Robolectric
  *
  * @param fragmentTag the name that will be used to tag the fragment inside the [FragmentManager].
  * @param fragmentFactory a lambda function that returns a Fragment that will be added to the Activity.
- *
- * @return The same [Fragment] that was returned from [fragmentFactory] after it got added to the
- * Activity.
+ * @return The same [Fragment] that was returned from [fragmentFactory] after it got added to the Activity.
  */
 inline fun <T : Fragment> createAddedTestFragment(fragmentTag: String = "test", fragmentFactory: () -> T): T {
-    return createAddedTestFragmentWithActivity<T, FragmentActivity>(fragmentTag = fragmentTag, fragmentFactory = fragmentFactory)
+    return createAddedTestFragmentWithActivity<T, FragmentActivity>(
+        fragmentTag = fragmentTag,
+        fragmentFactory = fragmentFactory,
+    )
 }
 
 /**
@@ -26,23 +27,15 @@ inline fun <T : Fragment> createAddedTestFragment(fragmentTag: String = "test", 
  *
  * @param fragmentTag the name that will be used to tag the fragment inside the [FragmentManager].
  * @param fragmentFactory a lambda function that returns a Fragment that will be added to the Activity.
- *
- * @return The same [Fragment] that was returned from [fragmentFactory] after it got added to the
- * Activity.
+ * @return The same [Fragment] that was returned from [fragmentFactory] after it got added to the Activity.
  */
 inline fun <T : Fragment, reified A : FragmentActivity> createAddedTestFragmentWithActivity(
     fragmentTag: String = "test",
     fragmentFactory: () -> T,
 ): T {
-    val activity = Robolectric.buildActivity(A::class.java)
-        .create()
-        .start()
-        .resume()
-        .get()
+    val activity = Robolectric.buildActivity(A::class.java).create().start().resume().get()
 
     return fragmentFactory().also {
-        activity.supportFragmentManager.beginTransaction()
-            .add(it, fragmentTag)
-            .commitNow()
+        activity.supportFragmentManager.beginTransaction().add(it, fragmentTag).commitNow()
     }
 }

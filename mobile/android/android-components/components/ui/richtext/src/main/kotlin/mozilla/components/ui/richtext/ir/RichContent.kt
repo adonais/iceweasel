@@ -13,20 +13,22 @@ import androidx.compose.runtime.Stable
  *
  * This is meant to be an abstraction that is agnostic of the underlying parser or rich content format.
  */
-@Immutable
-data class RichDocument(val blocks: List<BlockContent>)
+@Immutable data class RichDocument(val blocks: List<BlockContent>)
 
-/**
- * Inline content.
- */
+/** Inline content. */
 @Stable
 sealed interface InlineContent {
 
     data object LineBreak : InlineContent
+
     data class Plain(val value: String) : InlineContent
+
     data class Strong(val children: List<InlineContent>) : InlineContent
+
     data class Emphasis(val children: List<InlineContent>) : InlineContent
+
     data class Code(val value: String) : InlineContent
+
     data class Link(val url: String, val children: List<InlineContent>) : InlineContent
 }
 
@@ -57,10 +59,7 @@ sealed interface BlockContent {
      *
      * @param content The inline contents of the paragraph.
      */
-    @Immutable
-    data class Paragraph(
-        val content: List<InlineContent>,
-    ) : BlockContent
+    @Immutable data class Paragraph(val content: List<InlineContent>) : BlockContent
 
     /**
      * A heading containing inline content.
@@ -99,8 +98,5 @@ sealed interface BlockContent {
      *
      * @param content The block contents of the quote.
      */
-    @Immutable
-    data class BlockQuote(
-        val content: List<BlockContent>,
-    ) : BlockContent
+    @Immutable data class BlockQuote(val content: List<BlockContent>) : BlockContent
 }

@@ -16,6 +16,7 @@ class FFmpegRuntimeLinker {
   static bool Init() MOZ_EXCLUDES(sMutex);
   static already_AddRefed<PlatformDecoderModule> CreateDecoder();
   static already_AddRefed<PlatformEncoderModule> CreateEncoder();
+  static bool PreferSystemFFmpegForVulkan();
   enum LinkStatus {
     LinkStatus_INIT = 0,   // Never been linked.
     LinkStatus_SUCCEEDED,  // Found a usable library.

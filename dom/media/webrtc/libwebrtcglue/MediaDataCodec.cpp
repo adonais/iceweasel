@@ -44,8 +44,15 @@ media::EncodeSupportSet MediaDataCodec::SupportsEncoderCodec(
 
 /* static */
 std::unique_ptr<WebrtcVideoEncoder> MediaDataCodec::CreateEncoder(
-    const webrtc::SdpVideoFormat& aFormat) {
-  if (SupportsEncoderCodec(aFormat).isEmpty()) {
+    const webrtc::SdpVideoFormat& aFormat, HardwarePreference aHardwarePref) {
+  auto support = SupportsEncoderCodec(aFormat);
+  if (aHardwarePref == HardwarePreference::RequireHardware) {
+    support -= media::EncodeSupport::SoftwareEncode;
+  }
+  if (aHardwarePref == HardwarePreference::RequireSoftware) {
+    support -= media::EncodeSupport::HardwareEncode;
+  }
+  if (support.isEmpty()) {
     return nullptr;
   }
   return std::make_unique<WebrtcVideoEncoderProxy>(

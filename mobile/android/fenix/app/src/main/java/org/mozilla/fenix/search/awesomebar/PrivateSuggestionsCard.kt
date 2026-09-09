@@ -27,21 +27,20 @@ import mozilla.components.compose.base.LinkText
 import mozilla.components.compose.base.LinkTextState
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.TextButton
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Card asking the user to allow search suggestions in private mode.
  *
- * @param onSearchSuggestionsInPrivateModeAllowed Callback to be invoked when the user allows
- * search suggestions in private mode.
- * @param onSearchSuggestionsInPrivateModeBlocked Callback to be invoked when the user blocks
- * search suggestions in private mode.
+ * @param onSearchSuggestionsInPrivateModeAllowed Callback to be invoked when the user allows search suggestions in
+ *   private mode.
+ * @param onSearchSuggestionsInPrivateModeBlocked Callback to be invoked when the user blocks search suggestions in
+ *   private mode.
  * @param onLearnMoreClick Callback to be invoked when the user clicks on the learn more link.
  */
-
 @Composable
 internal fun PrivateSuggestionsCard(
     onSearchSuggestionsInPrivateModeAllowed: () -> Unit = {},
@@ -51,12 +50,13 @@ internal fun PrivateSuggestionsCard(
     Surface {
         Column {
             Row(
-                modifier = Modifier.padding(
-                    top = 20.dp,
-                    start = 20.dp,
-                    end = 20.dp,
-                    bottom = 10.dp,
-                ),
+                modifier =
+                    Modifier.padding(
+                        top = 20.dp,
+                        start = 20.dp,
+                        end = 20.dp,
+                        bottom = 10.dp,
+                    )
             ) {
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_information_24),
@@ -75,10 +75,11 @@ internal fun PrivateSuggestionsCard(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
-                        text = stringResource(
-                            R.string.search_suggestions_onboarding_text,
-                            stringResource(R.string.app_name),
-                        ),
+                        text =
+                            stringResource(
+                                R.string.search_suggestions_onboarding_text,
+                                stringResource(R.string.app_name),
+                            ),
                         style = FirefoxTheme.typography.body2,
                         maxLines = 2,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -86,13 +87,14 @@ internal fun PrivateSuggestionsCard(
 
                     LinkText(
                         text = stringResource(id = R.string.exceptions_empty_message_learn_more_link),
-                        linkTextStates = listOf(
-                            LinkTextState(
-                                text = stringResource(id = R.string.exceptions_empty_message_learn_more_link),
-                                url = "",
-                                onClick = { onLearnMoreClick() },
+                        linkTextStates =
+                            listOf(
+                                LinkTextState(
+                                    text = stringResource(id = R.string.exceptions_empty_message_learn_more_link),
+                                    url = "",
+                                    onClick = { onLearnMoreClick() },
+                                )
                             ),
-                        ),
                         linkTextColor = MaterialTheme.colorScheme.tertiary,
                     )
 

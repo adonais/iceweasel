@@ -6,6 +6,7 @@ package org.mozilla.fenix.settings
 
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
+import android.Manifest.permission.CAMERA as CAMERA_PERMISSION
 import android.Manifest.permission.RECORD_AUDIO
 import android.content.Context
 import android.os.Parcelable
@@ -15,6 +16,7 @@ import kotlinx.parcelize.Parcelize
 import mozilla.components.concept.engine.permission.SitePermissions
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
 import mozilla.components.support.ktx.android.content.isPermissionGranted
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_ALLOW_ALL
@@ -22,8 +24,6 @@ import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_ALLOW_ON_WIFI
 import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_BLOCK_ALL
 import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_BLOCK_AUDIBLE
 import org.mozilla.fenix.utils.Settings
-import android.Manifest.permission.CAMERA as CAMERA_PERMISSION
-import mozilla.components.ui.icons.R as iconsR
 
 @Parcelize
 enum class PhoneFeature(val androidPermissionsList: Array<String>) : Parcelable {
@@ -38,8 +38,7 @@ enum class PhoneFeature(val androidPermissionsList: Array<String>) : Parcelable 
     MEDIA_KEY_SYSTEM_ACCESS(emptyArray()),
     CROSS_ORIGIN_STORAGE_ACCESS(emptyArray()),
     LOCAL_DEVICE_ACCESS(emptyArray()),
-    LOCAL_NETWORK_ACCESS(emptyArray()),
-    ;
+    LOCAL_NETWORK_ACCESS(emptyArray());
 
     fun isAndroidPermissionGranted(context: Context): Boolean {
         return context.isPermissionGranted(androidPermissionsList.asIterable())
@@ -50,25 +49,28 @@ enum class PhoneFeature(val androidPermissionsList: Array<String>) : Parcelable 
         sitePermissions: SitePermissions? = null,
         settings: Settings? = null,
     ): String {
-        @StringRes val stringRes = if (isAndroidPermissionGranted(context)) {
-            when (this) {
-                AUTOPLAY_AUDIBLE ->
-                    when (settings?.getAutoplayUserSetting() ?: AUTOPLAY_BLOCK_ALL) {
-                        AUTOPLAY_ALLOW_ALL -> R.string.preference_option_autoplay_allowed2
-                        AUTOPLAY_ALLOW_ON_WIFI -> R.string.preference_option_autoplay_allowed_wifi_only2
-                        AUTOPLAY_BLOCK_AUDIBLE -> R.string.preference_option_autoplay_block_audio2
-                        AUTOPLAY_BLOCK_ALL -> R.string.preference_option_autoplay_blocked3
-                        else -> R.string.preference_option_autoplay_blocked3
-                    }
-                else -> when (getStatus(sitePermissions, settings)) {
-                    SitePermissions.Status.BLOCKED -> R.string.preference_option_phone_feature_blocked
-                    SitePermissions.Status.NO_DECISION -> R.string.preference_option_phone_feature_ask_to_allow
-                    SitePermissions.Status.ALLOWED -> R.string.preference_option_phone_feature_allowed
+        @StringRes
+        val stringRes =
+            if (isAndroidPermissionGranted(context)) {
+                when (this) {
+                    AUTOPLAY_AUDIBLE ->
+                        when (settings?.getAutoplayUserSetting() ?: AUTOPLAY_BLOCK_ALL) {
+                            AUTOPLAY_ALLOW_ALL -> R.string.preference_option_autoplay_allowed2
+                            AUTOPLAY_ALLOW_ON_WIFI -> R.string.preference_option_autoplay_allowed_wifi_only2
+                            AUTOPLAY_BLOCK_AUDIBLE -> R.string.preference_option_autoplay_block_audio2
+                            AUTOPLAY_BLOCK_ALL -> R.string.preference_option_autoplay_blocked3
+                            else -> R.string.preference_option_autoplay_blocked3
+                        }
+                    else ->
+                        when (getStatus(sitePermissions, settings)) {
+                            SitePermissions.Status.BLOCKED -> R.string.preference_option_phone_feature_blocked
+                            SitePermissions.Status.NO_DECISION -> R.string.preference_option_phone_feature_ask_to_allow
+                            SitePermissions.Status.ALLOWED -> R.string.preference_option_phone_feature_allowed
+                        }
                 }
+            } else {
+                R.string.phone_feature_blocked_by_android
             }
-        } else {
-            R.string.phone_feature_blocked_by_android
-        }
         return context.getString(stringRes)
     }
 
@@ -90,16 +92,15 @@ enum class PhoneFeature(val androidPermissionsList: Array<String>) : Parcelable 
             CROSS_ORIGIN_STORAGE_ACCESS ->
                 context.getString(R.string.preference_phone_feature_cross_origin_storage_access)
             MEDIA_KEY_SYSTEM_ACCESS -> context.getString(R.string.preference_phone_feature_media_key_system_access)
-            AUTOPLAY, AUTOPLAY_AUDIBLE, AUTOPLAY_INAUDIBLE ->
-                context.getString(R.string.preference_browser_feature_autoplay)
+            AUTOPLAY,
+            AUTOPLAY_AUDIBLE,
+            AUTOPLAY_INAUDIBLE -> context.getString(R.string.preference_browser_feature_autoplay)
             LOCAL_DEVICE_ACCESS -> context.getString(R.string.preference_browser_feature_local_device_access)
             LOCAL_NETWORK_ACCESS -> context.getString(R.string.preference_browser_feature_local_network_access)
         }
     }
 
-    /**
-     * Returns the label ID representing the permission corresponding to this phone feature.
-     */
+    /** Returns the label ID representing the permission corresponding to this phone feature. */
     @StringRes
     fun getLabelId(): Int {
         return when (this) {
@@ -110,15 +111,15 @@ enum class PhoneFeature(val androidPermissionsList: Array<String>) : Parcelable 
             PERSISTENT_STORAGE -> R.string.preference_phone_feature_persistent_storage
             CROSS_ORIGIN_STORAGE_ACCESS -> R.string.preference_phone_feature_cross_origin_storage_access
             MEDIA_KEY_SYSTEM_ACCESS -> R.string.preference_phone_feature_media_key_system_access
-            AUTOPLAY, AUTOPLAY_AUDIBLE, AUTOPLAY_INAUDIBLE -> R.string.preference_browser_feature_autoplay
+            AUTOPLAY,
+            AUTOPLAY_AUDIBLE,
+            AUTOPLAY_INAUDIBLE -> R.string.preference_browser_feature_autoplay
             LOCAL_DEVICE_ACCESS -> R.string.preference_browser_feature_local_device_access
             LOCAL_NETWORK_ACCESS -> R.string.preference_browser_feature_local_network_access
         }
     }
 
-    /**
-     * Returns the icon ID representing the permission corresponding to this phone feature.
-     */
+    /** Returns the icon ID representing the permission corresponding to this phone feature. */
     @DrawableRes
     fun getIconId(): Int {
         return when (this) {
@@ -129,16 +130,15 @@ enum class PhoneFeature(val androidPermissionsList: Array<String>) : Parcelable 
             PERSISTENT_STORAGE -> iconsR.drawable.mozac_ic_storage_24
             CROSS_ORIGIN_STORAGE_ACCESS -> iconsR.drawable.mozac_ic_cookies_24
             MEDIA_KEY_SYSTEM_ACCESS -> iconsR.drawable.mozac_ic_link_24
-            AUTOPLAY, AUTOPLAY_AUDIBLE, AUTOPLAY_INAUDIBLE -> iconsR.drawable.mozac_ic_autoplay_24
+            AUTOPLAY,
+            AUTOPLAY_AUDIBLE,
+            AUTOPLAY_INAUDIBLE -> iconsR.drawable.mozac_ic_autoplay_24
             LOCAL_DEVICE_ACCESS -> iconsR.drawable.mozac_ic_device_desktop_24
             LOCAL_NETWORK_ACCESS -> iconsR.drawable.mozac_ic_local_network_24
         }
     }
 
-    /**
-     * Returns a resource ID from preference_keys representing the preference corresponding
-     * to this phone feature.
-     */
+    /** Returns a resource ID from preference_keys representing the preference corresponding to this phone feature. */
     @StringRes
     fun getPreferenceId(): Int {
         return when (this) {
@@ -157,9 +157,7 @@ enum class PhoneFeature(val androidPermissionsList: Array<String>) : Parcelable 
         }
     }
 
-    /**
-     * Returns the key representing the preference corresponding to this phone feature.
-     */
+    /** Returns the key representing the preference corresponding to this phone feature. */
     fun getPreferenceKey(context: Context): String = context.getPreferenceKey(getPreferenceId())
 
     fun getAction(settings: Settings): SitePermissionsRules.Action =

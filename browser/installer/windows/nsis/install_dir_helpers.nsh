@@ -59,4 +59,15 @@
 !macroend
 !define UseExistingInstallPathIfNoInstallDirArg "!insertmacro UseExistingInstallPathIfNoInstallDirArg"
 
+Function GetProfileDirExisted
+  Push $0
+  ${GetLocalAppDataFolder} $0
+  ${If} ${FileExists} "$0\Mozilla\Firefox"
+    StrCpy $0 "true"
+  ${Else}
+    StrCpy $0 "false"
+  ${EndIf}
+  Exch $0
+FunctionEnd
+
 !endif

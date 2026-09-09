@@ -16,9 +16,10 @@ class UtilsKtTest {
     fun throttle() = runTest {
         val skipTime = 300L
         var value = 0
-        val throttleBlock = throttleLatest<Int>(skipTime, coroutineScope = this) {
-            value = it
-        }
+        val throttleBlock =
+            throttleLatest<Int>(skipTime, coroutineScope = this) {
+                value = it
+            }
 
         for (n in 1..300) {
             throttleBlock(n)

@@ -17,6 +17,7 @@ import org.mozilla.fenix.ext.shouldShowRecentSyncedTabs
 import org.mozilla.fenix.ext.shouldShowRecentTabs
 import org.mozilla.fenix.home.bookmarks.Bookmark
 import org.mozilla.fenix.home.collections.CollectionsState
+import org.mozilla.fenix.home.collections.migration.CollectionsMigrationCardState
 import org.mozilla.fenix.home.pocket.PocketState
 import org.mozilla.fenix.home.recentsyncedtabs.RecentSyncedTab
 import org.mozilla.fenix.home.recentsyncedtabs.RecentSyncedTabState
@@ -26,24 +27,16 @@ import org.mozilla.fenix.home.topsites.TopSiteState
 import org.mozilla.fenix.termsofuse.store.PrivacyNoticeBannerState
 import org.mozilla.fenix.utils.Settings
 
-/**
- * State object that describes the homepage.
- */
+/** State object that describes the homepage. */
 internal sealed class HomepageState {
 
-    /**
-     * Data related to the header of the homepage.
-     */
+    /** Data related to the header of the homepage. */
     abstract val headerState: HeaderState
 
-    /**
-     * Flag indicating whether the first frame of the homescreen has been drawn.
-     */
+    /** Flag indicating whether the first frame of the homescreen has been drawn. */
     abstract val firstFrameDrawn: Boolean
 
-    /**
-     * Whether search is currently active on the homepage.
-     */
+    /** Whether search is currently active on the homepage. */
     abstract val isSearchInProgress: Boolean
 
     /**
@@ -68,8 +61,8 @@ internal sealed class HomepageState {
      * @property recentTabs List of [RecentTab] to display, or null when the recent tabs section is hidden.
      * @property recentSyncedTabSectionState State of the recent synced tab section to display.
      * @property bookmarks List of [Bookmark] to display, or null when the bookmarks section is hidden.
-     * @property recentlyVisited List of [RecentlyVisitedItem] to display, or null when the recent history
-     * section is hidden.
+     * @property recentlyVisited List of [RecentlyVisitedItem] to display, or null when the recent history section is
+     *   hidden.
      * @property collectionsState State of the collections section to display.
      * @property pocketState State of the pocket section to display, or null when the section is hidden.
      * @property showTopSitesHeader Whether to show the shortcuts section header and "show all" button.
@@ -108,15 +101,16 @@ internal sealed class HomepageState {
     ) : HomepageState()
 
     val browsingMode: BrowsingMode
-        get() = when (this) {
-            is Normal -> BrowsingMode.Normal
-            is Private -> BrowsingMode.Private
-        }
+        get() =
+            when (this) {
+                is Normal -> BrowsingMode.Normal
+                is Private -> BrowsingMode.Private
+            }
 
     /**
-     * Returns whether the homepage is in the "Minimal Layout" state, where only the shortcuts and
-     * stories are visible (but both or either can be hidden). This is for the purpose of adding a
-     * weighted spacer in between so the stories are anchored to the bottom.
+     * Returns whether the homepage is in the "Minimal Layout" state, where only the shortcuts and stories are visible
+     * (but both or either can be hidden). This is for the purpose of adding a weighted spacer in between so the stories
+     * are anchored to the bottom.
      */
     internal fun isMinimalLayout(): Boolean {
         return (this as? Normal)?.run {
@@ -136,6 +130,7 @@ internal sealed class HomepageState {
          *
          * @param appState State to build the [HomepageState] from.
          * @param privacyNoticeBannerState State of the privacy notice banner.
+         * @param collectionsMigrationCardState State of the collections migration card.
          * @param browsingModeManager Manager holding current state of whether the browser is in private mode or not.
          * @param settings [Settings] corresponding to how the homepage should be displayed.
          */
@@ -143,6 +138,7 @@ internal sealed class HomepageState {
         internal fun build(
             appState: AppState,
             privacyNoticeBannerState: PrivacyNoticeBannerState,
+            collectionsMigrationCardState: CollectionsMigrationCardState,
             browsingModeManager: BrowsingModeManager,
             settings: Settings,
         ): HomepageState {
@@ -155,6 +151,7 @@ internal sealed class HomepageState {
                 buildNormalState(
                     appState = appState,
                     privacyNoticeBannerState = privacyNoticeBannerState,
+                    collectionsMigrationCardState = collectionsMigrationCardState,
                     settings = settings,
                 )
             }
@@ -170,72 +167,80 @@ internal sealed class HomepageState {
         private fun buildPrivateState(
             appState: AppState,
             settings: Settings,
-        ) = with(appState) {
-            Private(
-                headerState = buildPrivateHeaderState(settings = settings),
-                firstFrameDrawn = firstFrameDrawn,
-                isSearchInProgress = searchState.isSearchActive,
-            )
-        }
+        ) =
+            with(appState) {
+                Private(
+                    headerState = buildPrivateHeaderState(settings = settings),
+                    firstFrameDrawn = firstFrameDrawn,
+                    isSearchInProgress = searchState.isSearchActive,
+                )
+            }
 
         /**
          * Builds a new [HomepageState.Normal] from the current [AppState] and [Settings].
          *
          * @param appState State to build the [HomepageState.Normal] from.
          * @param privacyNoticeBannerState State of the privacy notice banner.
+         * @param collectionsMigrationCardState State of the collections migration card.
          * @param settings [Settings] corresponding to how the homepage should be displayed.
          */
         @Composable
         private fun buildNormalState(
             appState: AppState,
             privacyNoticeBannerState: PrivacyNoticeBannerState,
+            collectionsMigrationCardState: CollectionsMigrationCardState,
             settings: Settings,
-        ) = with(appState) {
-            Normal(
-                shouldShowPrivacyNoticeBanner = privacyNoticeBannerState.visible,
-                nimbusMessage = NimbusMessageState.build(appState, privacyNoticeBannerState),
-                topSiteState = TopSiteState.build(appState = appState, settings = settings),
-                recentTabs = recentTabs.takeIf { shouldShowRecentTabs(settings) },
-                recentSyncedTabSectionState = buildRecentSyncedTabSectionState(settings),
-                bookmarks = bookmarks.takeIf { settings.showBookmarksHomeFeature && it.isNotEmpty() },
-                recentlyVisited = recentHistory.takeIf {
-                    settings.historyMetadataUIFeature && it.isNotEmpty()
-                },
-                collectionsState = if (settings.collections) {
-                    CollectionsState.build(
-                        appState = appState,
-                        browserState = components.core.store.state,
-                    )
-                } else {
-                    CollectionsState.Gone
-                },
-                pocketState = PocketState.build(appState = appState).takeIf {
-                    settings.showPocketRecommendationsFeature &&
-                        recommendationState.pocketStories.isNotEmpty() &&
-                        !settings.privateModeAndStoriesEntryPointEnabled
-                },
-                showTopSitesHeader = !(settings.privateModeAndStoriesEntryPointEnabled && topSites.size < 8),
-                showPrivacyReport = settings.showPrivacyReportFeature,
-                longfoxEnabled = settings.longfoxEnabled,
-                showLongfoxAnimation = settings.longfoxEnabled && longfoxEntryPointReady,
-                trackersBlockedCount = blockedTrackersState.trackersBlockedCount,
-                headerState = buildHeaderState(settings = settings),
-                middleSearchState = MiddleSearchState(
-                    searchBarVisible = shouldShowSearchBar(appState = appState),
-                    searchBarEnabled = settings.enableHomepageSearchBar &&
-                        settings.toolbarPosition == ToolbarPosition.TOP &&
-                        LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT,
-                ),
-                firstFrameDrawn = firstFrameDrawn,
-                setupChecklistState = setupChecklistState,
-                isSearchInProgress = searchState.isSearchActive,
-                bottomPadding = if (settings.toolbarPosition == ToolbarPosition.TOP) {
-                    BOTTOM_PADDING_TOP_TOOLBAR
-                } else {
-                    BOTTOM_PADDING_BOTTOM_TOOLBAR
-                },
-            )
-        }
+        ) =
+            with(appState) {
+                Normal(
+                    shouldShowPrivacyNoticeBanner = privacyNoticeBannerState.visible,
+                    nimbusMessage = NimbusMessageState.build(appState, privacyNoticeBannerState),
+                    topSiteState = TopSiteState.build(appState = appState, settings = settings),
+                    recentTabs = recentTabs.takeIf { shouldShowRecentTabs(settings) },
+                    recentSyncedTabSectionState = buildRecentSyncedTabSectionState(settings),
+                    bookmarks = bookmarks.takeIf { settings.showBookmarksHomeFeature && it.isNotEmpty() },
+                    recentlyVisited =
+                        recentHistory.takeIf {
+                            settings.historyMetadataUIFeature && it.isNotEmpty()
+                        },
+                    collectionsState =
+                        CollectionsState.build(
+                            appState = appState,
+                            browserState = components.core.store.state,
+                            showCollections = settings.collections,
+                            shouldShowCollectionsMigrationCard = collectionsMigrationCardState.visible,
+                        ),
+                    pocketState =
+                        PocketState.build(appState = appState).takeIf {
+                            settings.showPocketRecommendationsFeature &&
+                                recommendationState.pocketStories.isNotEmpty() &&
+                                !settings.privateModeAndStoriesEntryPointEnabled
+                        },
+                    showTopSitesHeader = !(settings.privateModeAndStoriesEntryPointEnabled && topSites.size < 8),
+                    showPrivacyReport = settings.showPrivacyReportFeature,
+                    longfoxEnabled = settings.longfoxEnabled,
+                    showLongfoxAnimation = settings.longfoxEnabled && longfoxEntryPointReady,
+                    trackersBlockedCount = blockedTrackersState.trackersBlockedCount,
+                    headerState = buildHeaderState(settings = settings),
+                    middleSearchState =
+                        MiddleSearchState(
+                            searchBarVisible = shouldShowSearchBar(appState = appState),
+                            searchBarEnabled =
+                                settings.enableHomepageSearchBar &&
+                                    settings.toolbarPosition == ToolbarPosition.TOP &&
+                                    LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT,
+                        ),
+                    firstFrameDrawn = firstFrameDrawn,
+                    setupChecklistState = setupChecklistState,
+                    isSearchInProgress = searchState.isSearchActive,
+                    bottomPadding =
+                        if (settings.toolbarPosition == ToolbarPosition.TOP) {
+                            BOTTOM_PADDING_TOP_TOOLBAR
+                        } else {
+                            BOTTOM_PADDING_BOTTOM_TOOLBAR
+                        },
+                )
+            }
     }
 }
 
@@ -258,21 +263,16 @@ private fun buildPrivateHeaderState(settings: Settings): HeaderState {
     }
 }
 
-/**
- * A simple wrapper around state required for the homepage header.
- */
+/** A simple wrapper around state required for the homepage header. */
 internal sealed class HeaderState {
 
     /**
-     * Represents the non-experimental header state for both normal and private mode. The header's
-     * colors are derived from the wallpaper at render time (see `HomepageHeader`), so no colors are
-     * held here.
+     * Represents the non-experimental header state for both normal and private mode. The header's colors are derived
+     * from the wallpaper at render time (see `HomepageHeader`), so no colors are held here.
      */
     data object Normal : HeaderState()
 
-    /**
-     * Represents the experimental states for the entry points experiment.
-     */
+    /** Represents the experimental states for the entry points experiment. */
     sealed class Experimental : HeaderState() {
 
         /**
@@ -286,9 +286,7 @@ internal sealed class HeaderState {
             val showButtonAnimation: Boolean,
         ) : Experimental()
 
-        /**
-         * Represents the header in private mode for the entry points experiment.
-         */
+        /** Represents the header in private mode for the entry points experiment. */
         data object Private : Experimental()
     }
 }
@@ -303,26 +301,18 @@ internal data class MiddleSearchState(
     val searchBarVisible: Boolean = false,
     val searchBarEnabled: Boolean = false,
 ) {
-    /**
-     * Whether the middle search bar should be shown, i.e. it is both enabled and visible.
-     */
+    /** Whether the middle search bar should be shown, i.e. it is both enabled and visible. */
     val isShown: Boolean
         get() = searchBarEnabled && searchBarVisible
 }
 
-/**
- * Represents the state of the recent synced tab section on the homepage.
- */
+/** Represents the state of the recent synced tab section on the homepage. */
 internal sealed class RecentSyncedTabSectionState {
 
-    /**
-     * The section is not shown.
-     */
+    /** The section is not shown. */
     data object Gone : RecentSyncedTabSectionState()
 
-    /**
-     * The section is shown while the synced tab is still being resolved and a placeholder is displayed.
-     */
+    /** The section is shown while the synced tab is still being resolved and a placeholder is displayed. */
     data object Loading : RecentSyncedTabSectionState()
 
     /**
@@ -333,9 +323,7 @@ internal sealed class RecentSyncedTabSectionState {
     data class Visible(val tab: RecentSyncedTab) : RecentSyncedTabSectionState()
 }
 
-/**
- * Builds the [RecentSyncedTabSectionState] for the homepage from the current [AppState] and [Settings].
- */
+/** Builds the [RecentSyncedTabSectionState] for the homepage from the current [AppState] and [Settings]. */
 private fun AppState.buildRecentSyncedTabSectionState(settings: Settings): RecentSyncedTabSectionState {
     if (!(shouldShowRecentSyncedTabs(settings))) {
         return RecentSyncedTabSectionState.Gone
@@ -346,11 +334,9 @@ private fun AppState.buildRecentSyncedTabSectionState(settings: Settings): Recen
 }
 
 /**
- * Returns whether the search bar should be shown. Only show if search is not active, and the user
- * does not have their toolbar set to be on the bottom, and the screen is not in landscape mode.
- * This is in addition to logic in the view layer which hides the middle search bar when the users
- * scrolls down. This is separate from the middle search bar being enabled in settings since the
- * toolbar address bar needs to react to the middle search bar's visibility.
+ * Returns whether the search bar should be shown. Only show if search is not active, and the user does not have their
+ * toolbar set to be on the bottom, and the screen is not in landscape mode. This is in addition to logic in the view
+ * layer which hides the middle search bar when the users scrolls down. This is separate from the middle search bar
+ * being enabled in settings since the toolbar address bar needs to react to the middle search bar's visibility.
  */
-private fun shouldShowSearchBar(appState: AppState) =
-    !appState.searchState.isSearchActive
+private fun shouldShowSearchBar(appState: AppState) = !appState.searchState.isSearchActive

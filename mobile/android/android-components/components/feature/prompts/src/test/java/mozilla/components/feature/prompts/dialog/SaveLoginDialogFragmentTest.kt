@@ -16,6 +16,7 @@ import mozilla.components.feature.prompts.R
 import mozilla.components.support.test.any
 import mozilla.components.support.test.ext.appCompatContext
 import mozilla.components.support.test.mock
+import mozilla.components.ui.icons.R as iconsR
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.doAnswer
@@ -25,7 +26,6 @@ import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.robolectric.Shadows
-import mozilla.components.ui.icons.R as iconsR
 
 @RunWith(AndroidJUnit4::class)
 class SaveLoginDialogFragmentTest : TestCase() {
@@ -41,24 +41,27 @@ class SaveLoginDialogFragmentTest : TestCase() {
         `when`(entry.username).thenReturn(loginUsername)
         `when`(entry.password).thenReturn(loginPassword)
         val icon: Bitmap = mock()
-        val fragment = spy(
-            SaveLoginDialogFragment.newInstance(
-                sessionId = sessionId,
-                promptRequestUID = requestUID,
-                shouldDismissOnLoad = shouldDismissOnLoad,
-                hint = hint,
-                entry = entry,
-                icon = icon,
-            ),
-        )
+        val fragment =
+            spy(
+                SaveLoginDialogFragment.newInstance(
+                    sessionId = sessionId,
+                    promptRequestUID = requestUID,
+                    shouldDismissOnLoad = shouldDismissOnLoad,
+                    hint = hint,
+                    entry = entry,
+                    icon = icon,
+                )
+            )
         doReturn(appCompatContext).`when`(fragment).requireContext()
         doAnswer {
-            FrameLayout(appCompatContext).apply {
-                addView(TextInputEditText(appCompatContext).apply { id = R.id.username_field })
-                addView(TextInputEditText(appCompatContext).apply { id = R.id.password_field })
-                addView(ImageView(appCompatContext).apply { id = R.id.host_icon })
+                FrameLayout(appCompatContext).apply {
+                    addView(TextInputEditText(appCompatContext).apply { id = R.id.username_field })
+                    addView(TextInputEditText(appCompatContext).apply { id = R.id.password_field })
+                    addView(ImageView(appCompatContext).apply { id = R.id.host_icon })
+                }
             }
-        }.`when`(fragment).inflateRootView(any())
+            .`when`(fragment)
+            .inflateRootView(any())
 
         val fragmentView = fragment.onCreateView(mock(), mock(), mock())
 
@@ -87,30 +90,33 @@ class SaveLoginDialogFragmentTest : TestCase() {
         `when`(entry.username).thenReturn(loginUsername)
         `when`(entry.password).thenReturn(loginPassword)
         val icon: Bitmap? = null // null favicon
-        val fragment = spy(
-            SaveLoginDialogFragment.newInstance(
-                sessionId = sessionId,
-                promptRequestUID = requestUID,
-                shouldDismissOnLoad = shouldDismissOnLoad,
-                hint = hint,
-                entry = entry,
-                icon = icon,
-            ),
-        )
+        val fragment =
+            spy(
+                SaveLoginDialogFragment.newInstance(
+                    sessionId = sessionId,
+                    promptRequestUID = requestUID,
+                    shouldDismissOnLoad = shouldDismissOnLoad,
+                    hint = hint,
+                    entry = entry,
+                    icon = icon,
+                )
+            )
         val defaultIconResource = iconsR.drawable.mozac_ic_globe_24
         doReturn(appCompatContext).`when`(fragment).requireContext()
         doAnswer {
-            FrameLayout(appCompatContext).apply {
-                addView(TextInputEditText(appCompatContext).apply { id = R.id.username_field })
-                addView(TextInputEditText(appCompatContext).apply { id = R.id.password_field })
-                addView(
-                    ImageView(appCompatContext).apply {
-                        id = R.id.host_icon
-                        setImageResource(defaultIconResource)
-                    },
-                )
+                FrameLayout(appCompatContext).apply {
+                    addView(TextInputEditText(appCompatContext).apply { id = R.id.username_field })
+                    addView(TextInputEditText(appCompatContext).apply { id = R.id.password_field })
+                    addView(
+                        ImageView(appCompatContext).apply {
+                            id = R.id.host_icon
+                            setImageResource(defaultIconResource)
+                        }
+                    )
+                }
             }
-        }.`when`(fragment).inflateRootView(any())
+            .`when`(fragment)
+            .inflateRootView(any())
 
         val fragmentView = fragment.onCreateView(mock(), mock(), mock())
 

@@ -116,6 +116,8 @@ export let RemotePageAccessManager = {
         "Browser:ResetEnterpriseRootsPref",
         "DisplayOfflineSupportPage",
         "OpenTRRPreferences",
+        "SearchCTA:Search",
+        "SearchCTA:SearchAborted",
       ],
       RPMCheckAlternateHostAvailable: ["*"],
       RPMRecordGleanEvent: [
@@ -152,7 +154,7 @@ export let RemotePageAccessManager = {
       RPMSetTRRDisabledLoadFlags: ["*"],
       RPMShowOSXLocalNetworkPermissionWarning: ["*"],
       RPMIsSSLKeyLoggingEnabled: ["*"],
-      RPMSendQuery: ["Browser:AddTRRExcludedDomain"],
+      RPMSendQuery: ["Browser:AddTRRExcludedDomain", "SearchCTA:GetInfo"],
       RPMGetIntPref: ["network.trr.mode", "security.dialog_enable_delay"],
     },
     "about:newtab": {
@@ -196,6 +198,7 @@ export let RemotePageAccessManager = {
         "Profiles:CloseProfileTab",
         "Profiles:MoreThemes",
         "Profiles:PageHide",
+        "Profiles:RecordThemeTelemetry",
       ],
     },
     "about:newprofile": {
@@ -203,6 +206,7 @@ export let RemotePageAccessManager = {
         "Profiles:GetNewProfileContent",
         "Profiles:UpdateProfileTheme",
         "Profiles:UpdateProfileAvatar",
+        "Profiles:GetEditProfileContent",
       ],
       RPMSendAsyncMessage: [
         "Profiles:UpdateProfileName",
@@ -210,6 +214,7 @@ export let RemotePageAccessManager = {
         "Profiles:CloseProfileTab",
         "Profiles:MoreThemes",
         "Profiles:PageHide",
+        "Profiles:RecordThemeTelemetry",
       ],
       RPMGetBoolPref: ["browser.profiles.profile-name.updated"],
       RPMGetFormatURLPref: ["app.support.baseURL"],

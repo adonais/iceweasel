@@ -16,40 +16,40 @@ object ErrorPages {
     private const val HTML_RESOURCE_FILE = "error_page_js.html"
 
     /**
-     * Wayback Machine: error types for which offering an archived copy of the page makes
-     * sense. These are failures where the live site is unreachable or missing but the user still
-     * has connectivity to reach an archive service. Security errors (bad certificate, SSL,
-     * HSTS, HTTPS-only, port blocked, safe browsing) and connectivity errors (offline, no
-     * internet) are intentionally excluded: the former should not be bypassed via an archive,
-     * and the latter mean the archive service is unreachable too.
+     * Wayback Machine: error types for which offering an archived copy of the page makes sense. These are failures
+     * where the live site is unreachable or missing but the user still has connectivity to reach an archive service.
+     * Security errors (bad certificate, SSL, HSTS, HTTPS-only, port blocked, safe browsing) and connectivity errors
+     * (offline, no internet) are intentionally excluded: the former should not be bypassed via an archive, and the
+     * latter mean the archive service is unreachable too.
      */
-    private val ARCHIVABLE_ERROR_TYPES = setOf(
-        ErrorType.ERROR_UNKNOWN_HOST,
-        ErrorType.ERROR_CONNECTION_REFUSED,
-        ErrorType.ERROR_NET_TIMEOUT,
-        ErrorType.ERROR_NET_RESET,
-        ErrorType.ERROR_NET_INTERRUPT,
-        ErrorType.ERROR_REDIRECT_LOOP,
-        ErrorType.ERROR_FILE_NOT_FOUND,
-        ErrorType.ERROR_PROXY_CONNECTION_REFUSED,
-        ErrorType.ERROR_UNKNOWN_PROXY_HOST,
-        ErrorType.ERROR_CORRUPTED_CONTENT,
-        ErrorType.ERROR_INVALID_CONTENT_ENCODING,
-        ErrorType.ERROR_UNSAFE_CONTENT_TYPE,
-    )
+    private val ARCHIVABLE_ERROR_TYPES =
+        setOf(
+            ErrorType.ERROR_UNKNOWN_HOST,
+            ErrorType.ERROR_CONNECTION_REFUSED,
+            ErrorType.ERROR_NET_TIMEOUT,
+            ErrorType.ERROR_NET_RESET,
+            ErrorType.ERROR_NET_INTERRUPT,
+            ErrorType.ERROR_REDIRECT_LOOP,
+            ErrorType.ERROR_FILE_NOT_FOUND,
+            ErrorType.ERROR_PROXY_CONNECTION_REFUSED,
+            ErrorType.ERROR_UNKNOWN_PROXY_HOST,
+            ErrorType.ERROR_CORRUPTED_CONTENT,
+            ErrorType.ERROR_INVALID_CONTENT_ENCODING,
+            ErrorType.ERROR_UNSAFE_CONTENT_TYPE,
+        )
 
     /**
      * Provides an encoded URL for an error page. Supports displaying images
      *
-     * @param titleOverride A function that can return an error page title for an error type. If not
-     * provided or if `null` is returned from the function then the default page title for this
-     * error type, provided by this component, will be used.
-     * @param descriptionOverride  A function that can return an error page description text for an
-     * error type. If not provided or if `null` is returned from the function then the default
-     * description text for this error type, provided by this component, will be used.
-     * @param archiveActionEnabled When `true`, and the error type and URL are eligible (see
-     * [archiveUrlFor]), the page is given the parameters needed to offer an archived copy of the
-     * failed page. Defaults to `false` so the action is opt-in per consumer.
+     * @param titleOverride A function that can return an error page title for an error type. If not provided or if
+     *   `null` is returned from the function then the default page title for this error type, provided by this
+     *   component, will be used.
+     * @param descriptionOverride A function that can return an error page description text for an error type. If not
+     *   provided or if `null` is returned from the function then the default description text for this error type,
+     *   provided by this component, will be used.
+     * @param archiveActionEnabled When `true`, and the error type and URL are eligible (see [archiveUrlFor]), the page
+     *   is given the parameters needed to offer an archived copy of the failed page. Defaults to `false` so the action
+     *   is opt-in per consumer.
      */
     fun createUrlEncodedErrorPage(
         context: Context,
@@ -68,69 +68,72 @@ object ErrorPages {
         val errorCode = if (errorType.errorCode != null) context.getString(errorType.errorCode) else ""
         val continueHttpButton = context.getString(R.string.mozac_browser_errorpages_httpsonly_button)
         val badCertAdvanced = context.getString(R.string.mozac_browser_errorpages_security_bad_cert_advanced)
-        val badCertTechInfo = when (errorType) {
-            ErrorType.ERROR_SECURITY_BAD_CERT ->
-                context.getString(
-                    R.string.mozac_browser_errorpages_security_bad_cert_techInfo,
-                    context.appName,
-                    uri.toString(),
-                )
-            ErrorType.ERROR_BAD_HSTS_CERT -> context.getString(
-                R.string.mozac_browser_errorpages_security_bad_hsts_cert_techInfo2,
-                uri.toString().trim('/'),
-                context.appName,
-            )
-            else -> ""
-        }
+        val badCertTechInfo =
+            when (errorType) {
+                ErrorType.ERROR_SECURITY_BAD_CERT ->
+                    context.getString(
+                        R.string.mozac_browser_errorpages_security_bad_cert_techInfo,
+                        context.appName,
+                        uri.toString(),
+                    )
+                ErrorType.ERROR_BAD_HSTS_CERT ->
+                    context.getString(
+                        R.string.mozac_browser_errorpages_security_bad_hsts_cert_techInfo2,
+                        uri.toString().trim('/'),
+                        context.appName,
+                    )
+                else -> ""
+            }
 
         val badCertGoBack = context.getString(R.string.mozac_browser_errorpages_security_bad_cert_back)
-        val badCertAcceptTemporary = context.getString(
-            R.string.mozac_browser_errorpages_security_bad_cert_accept_temporary,
-        )
+        val badCertAcceptTemporary =
+            context.getString(R.string.mozac_browser_errorpages_security_bad_cert_accept_temporary)
 
-        val showSSLAdvanced: String = when (errorType) {
-            ErrorType.ERROR_SECURITY_BAD_CERT -> true
-            else -> false
-        }.toString()
+        val showSSLAdvanced: String =
+            when (errorType) {
+                ErrorType.ERROR_SECURITY_BAD_CERT -> true
+                else -> false
+            }.toString()
 
-        val showHSTSAdvanced: String = when (errorType) {
-            ErrorType.ERROR_BAD_HSTS_CERT -> true
-            else -> false
-        }.toString()
+        val showHSTSAdvanced: String =
+            when (errorType) {
+                ErrorType.ERROR_BAD_HSTS_CERT -> true
+                else -> false
+            }.toString()
 
         val showContinueHttp: String = (errorType == ErrorType.ERROR_HTTPS_ONLY).toString()
 
         /**
-         * Warning: When updating these params you WILL cause breaking changes that are undetected
-         * by consumers. Update the README accordingly.
+         * Warning: When updating these params you WILL cause breaking changes that are undetected by consumers. Update
+         * the README accordingly.
          */
-        var urlEncodedErrorPage = "resource://android/assets/$htmlResource?" +
-            "&title=${title.urlEncode()}" +
-            "&button=${button.urlEncode()}" +
-            "&description=${description.urlEncode()}" +
-            "&image=${imageName.urlEncode()}" +
-            "&showSSL=${showSSLAdvanced.urlEncode()}" +
-            "&showHSTS=${showHSTSAdvanced.urlEncode()}" +
-            "&badCertAdvanced=${badCertAdvanced.urlEncode()}" +
-            "&badCertTechInfo=${badCertTechInfo.urlEncode()}" +
-            "&badCertGoBack=${badCertGoBack.urlEncode()}" +
-            "&badCertAcceptTemporary=${badCertAcceptTemporary.urlEncode()}" +
-            "&showContinueHttp=${showContinueHttp.urlEncode()}" +
-            "&continueHttpButton=${continueHttpButton.urlEncode()}" +
-            "&errorCode=${errorCode.urlEncode()}" +
-            "&isPrivate=$isPrivate" +
-            archiveParamsFor(context, errorType, uri, archiveActionEnabled)
+        var urlEncodedErrorPage =
+            "resource://android/assets/$htmlResource?" +
+                "&title=${title.urlEncode()}" +
+                "&button=${button.urlEncode()}" +
+                "&description=${description.urlEncode()}" +
+                "&image=${imageName.urlEncode()}" +
+                "&showSSL=${showSSLAdvanced.urlEncode()}" +
+                "&showHSTS=${showHSTSAdvanced.urlEncode()}" +
+                "&badCertAdvanced=${badCertAdvanced.urlEncode()}" +
+                "&badCertTechInfo=${badCertTechInfo.urlEncode()}" +
+                "&badCertGoBack=${badCertGoBack.urlEncode()}" +
+                "&badCertAcceptTemporary=${badCertAcceptTemporary.urlEncode()}" +
+                "&showContinueHttp=${showContinueHttp.urlEncode()}" +
+                "&continueHttpButton=${continueHttpButton.urlEncode()}" +
+                "&errorCode=${errorCode.urlEncode()}" +
+                "&isPrivate=$isPrivate" +
+                archiveParamsFor(context, errorType, uri, archiveActionEnabled)
 
-        urlEncodedErrorPage = urlEncodedErrorPage
-            .replace("<ul>".urlEncode(), "<ul role=\"presentation\">".urlEncode())
+        urlEncodedErrorPage = urlEncodedErrorPage.replace("<ul>".urlEncode(), "<ul role=\"presentation\">".urlEncode())
         return urlEncodedErrorPage
     }
 
     /**
-     * Builds the query-string fragment carrying the archived-copy action's privacy-cleaned URL and
-     * localized labels, so the error page can offer an archived copy when the live site is
-     * unreachable. Returns an empty string when the consumer disabled the action or when an
-     * archived version does not make sense for [errorType]/[uri] (see [archiveUrlFor]).
+     * Builds the query-string fragment carrying the archived-copy action's privacy-cleaned URL and localized labels, so
+     * the error page can offer an archived copy when the live site is unreachable. Returns an empty string when the
+     * consumer disabled the action or when an archived version does not make sense for [errorType]/[uri] (see
+     * [archiveUrlFor]).
      */
     private fun archiveParamsFor(
         context: Context,
@@ -167,10 +170,10 @@ object ErrorPages {
     }
 
     /**
-     * Returns a privacy-cleaned version of [uri] suitable for looking up an archived copy of the
-     * page, or an empty string when an archived version does not make sense. This is the case when
-     * [errorType] is not one of [ARCHIVABLE_ERROR_TYPES] (for example security or connectivity
-     * errors) or when [uri] is not an http(s) URL with a host.
+     * Returns a privacy-cleaned version of [uri] suitable for looking up an archived copy of the page, or an empty
+     * string when an archived version does not make sense. This is the case when [errorType] is not one of
+     * [ARCHIVABLE_ERROR_TYPES] (for example security or connectivity errors) or when [uri] is not an http(s) URL with a
+     * host.
      *
      * @param errorType The type of error encountered.
      * @param uri The URL that failed to load, if known.
@@ -183,14 +186,12 @@ object ErrorPages {
         }
 
     /**
-     * Reduces [uri] to just its scheme, host, port and path, dropping any user info, query
-     * parameters and fragment. This ensures no user-specific data (sessions, tracking params,
-     * credentials) is leaked when the URL is later handed to an external archive service.
-     * Returns an empty string for anything that is not an http(s) URL with a host, since those
-     * have no meaningful archived version. The port is preserved when present, since it
-     * identifies a distinct service and is part of the address the user was trying to reach. An
-     * empty path is normalized to "/", since the archive lookup service does not match a
-     * bare-host URL without a trailing slash.
+     * Reduces [uri] to just its scheme, host, port and path, dropping any user info, query parameters and fragment.
+     * This ensures no user-specific data (sessions, tracking params, credentials) is leaked when the URL is later
+     * handed to an external archive service. Returns an empty string for anything that is not an http(s) URL with a
+     * host, since those have no meaningful archived version. The port is preserved when present, since it identifies a
+     * distinct service and is part of the address the user was trying to reach. An empty path is normalized to "/",
+     * since the archive lookup service does not match a bare-host URL without a trailing slash.
      */
     private fun cleanSiteUrl(uri: String): String {
         val parsed = Uri.parse(uri)
@@ -205,9 +206,7 @@ object ErrorPages {
     }
 }
 
-/**
- * Enum containing all supported error types that we can display an error page for.
- */
+/** Enum containing all supported error types that we can display an error page for. */
 enum class ErrorType(
     @param:StringRes val titleRes: Int,
     @param:StringRes val messageRes: Int,

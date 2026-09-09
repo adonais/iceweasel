@@ -68,7 +68,7 @@ class GeckoProcessManager final
   static void Init();
 
   static void GetEditableParent(jni::Object::Param aEditableChild,
-                                int64_t aContentId, int64_t aTabId);
+                                int32_t aContentId, int64_t aTabId);
 };
 
 }  // namespace mozilla

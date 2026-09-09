@@ -11,9 +11,7 @@ import org.mozilla.fenix.databinding.ShareToAppsBinding
 import org.mozilla.fenix.share.listadapters.AppShareAdapter
 import org.mozilla.fenix.share.listadapters.AppShareOption
 
-/**
- * Callbacks for possible user interactions on the [ShareCloseView]
- */
+/** Callbacks for possible user interactions on the [ShareCloseView] */
 interface ShareToAppsInteractor {
     fun onShareToApp(appToShareTo: AppShareOption)
 }
@@ -25,11 +23,12 @@ class ShareToAppsView(
 
     private val adapter = AppShareAdapter(interactor)
     private val recentAdapter = AppShareAdapter(interactor)
-    private var binding: ShareToAppsBinding = ShareToAppsBinding.inflate(
-        LayoutInflater.from(containerView.context),
-        containerView,
-        true,
-    )
+    private var binding: ShareToAppsBinding =
+        ShareToAppsBinding.inflate(
+            LayoutInflater.from(containerView.context),
+            containerView,
+            true,
+        )
 
     init {
         binding.appsList.adapter = adapter

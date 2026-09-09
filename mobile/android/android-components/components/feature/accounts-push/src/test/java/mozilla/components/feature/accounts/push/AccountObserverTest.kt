@@ -52,15 +52,16 @@ class AccountObserverTest {
     fun `register device observer for existing accounts`() = runTest {
         val lifecycle: Lifecycle = mock()
         val lifecycleOwner: LifecycleOwner = mock()
-        val observer = AccountObserver(
-            testContext,
-            pushFeature,
-            pushScope,
-            crashReporter,
-            lifecycleOwner,
-            coroutineContext,
-            false,
-        )
+        val observer =
+            AccountObserver(
+                testContext,
+                pushFeature,
+                pushScope,
+                crashReporter,
+                lifecycleOwner,
+                coroutineContext,
+                false,
+            )
         `when`(lifecycle.currentState).thenReturn(Lifecycle.State.STARTED)
         `when`(lifecycleOwner.lifecycle).thenReturn(lifecycle)
 
@@ -79,17 +80,19 @@ class AccountObserverTest {
 
     @Test
     fun `onLoggedOut removes cache`() = runTest {
-        val observer = AccountObserver(
-            testContext,
-            pushFeature,
-            pushScope,
-            crashReporter,
-            mock(),
-            coroutineContext,
-            false,
-        )
+        val observer =
+            AccountObserver(
+                testContext,
+                pushFeature,
+                pushScope,
+                crashReporter,
+                mock(),
+                coroutineContext,
+                false,
+            )
 
-        preference(testContext).edit()
+        preference(testContext)
+            .edit()
             .putString(PREF_LAST_VERIFIED, "{\"timestamp\": 100, \"totalCount\": 0}")
             .putString(PREF_FXA_SCOPE, "12345")
             .apply()
@@ -104,15 +107,16 @@ class AccountObserverTest {
 
     @Test
     fun `feature does not subscribe when authenticating`() = runTest {
-        val observer = AccountObserver(
-            testContext,
-            pushFeature,
-            pushScope,
-            crashReporter,
-            mock(),
-            coroutineContext,
-            false,
-        )
+        val observer =
+            AccountObserver(
+                testContext,
+                pushFeature,
+                pushScope,
+                crashReporter,
+                mock(),
+                coroutineContext,
+                false,
+            )
 
         observer.onAuthenticated(account, AuthType.Existing)
 
@@ -135,15 +139,16 @@ class AccountObserverTest {
 
     @Test
     fun `feature and service invoked on logout`() = runTest {
-        val observer = AccountObserver(
-            testContext,
-            pushFeature,
-            pushScope,
-            crashReporter,
-            mock(),
-            coroutineContext,
-            false,
-        )
+        val observer =
+            AccountObserver(
+                testContext,
+                pushFeature,
+                pushScope,
+                crashReporter,
+                mock(),
+                coroutineContext,
+                false,
+            )
 
         observer.onLoggedOut()
 
@@ -152,15 +157,16 @@ class AccountObserverTest {
 
     @Test
     fun `feature and service not invoked for any other callback`() = runTest {
-        val observer = AccountObserver(
-            testContext,
-            pushFeature,
-            pushScope,
-            crashReporter,
-            mock(),
-            coroutineContext,
-            false,
-        )
+        val observer =
+            AccountObserver(
+                testContext,
+                pushFeature,
+                pushScope,
+                crashReporter,
+                mock(),
+                coroutineContext,
+                false,
+            )
 
         observer.onAuthenticationProblems()
         observer.onProfileUpdated(mock())

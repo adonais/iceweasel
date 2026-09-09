@@ -11,22 +11,20 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import androidx.annotation.VisibleForTesting
+import java.lang.ref.WeakReference
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.support.base.android.NotificationsDelegate
-import java.lang.ref.WeakReference
 
-/**
- * [Binder] offering access to this service and all operations it can perform.
- */
+/** [Binder] offering access to this service and all operations it can perform. */
 internal class MediaServiceBinder(delegate: MediaSessionDelegate) : Binder() {
     // Necessary to prevent the delegate leaking Context when the MediaService is destroyed.
     @get:VisibleForTesting internal val service = WeakReference(delegate)
 
     /**
-     * Get an instance of [MediaSessionDelegate] which supports showing/hiding and updating
-     * a media notification based on the passed in [SessionState].
+     * Get an instance of [MediaSessionDelegate] which supports showing/hiding and updating a media notification based
+     * on the passed in [SessionState].
      */
     fun getMediaService(): MediaSessionDelegate? = service.get()
 }
@@ -40,24 +38,24 @@ abstract class AbstractMediaSessionService : Service() {
     protected abstract val crashReporter: CrashReporting?
     protected abstract val notificationsDelegate: NotificationsDelegate
 
-    @VisibleForTesting
-    internal var binder: MediaServiceBinder? = null
+    @VisibleForTesting internal var binder: MediaServiceBinder? = null
 
-    @VisibleForTesting
-    internal var delegate: MediaSessionServiceDelegate? = null
+    @VisibleForTesting internal var delegate: MediaSessionServiceDelegate? = null
 
     override fun onCreate() {
         super.onCreate()
 
-        delegate = MediaSessionServiceDelegate(
-            context = this,
-            service = this,
-            store = store,
-            crashReporter = crashReporter,
-            notificationsDelegate = notificationsDelegate,
-        ).also {
-            binder = MediaServiceBinder(it)
-        }
+        delegate =
+            MediaSessionServiceDelegate(
+                    context = this,
+                    service = this,
+                    store = store,
+                    crashReporter = crashReporter,
+                    notificationsDelegate = notificationsDelegate,
+                )
+                .also {
+                    binder = MediaServiceBinder(it)
+                }
 
         delegate?.onCreate()
     }
@@ -94,20 +92,24 @@ abstract class AbstractMediaSessionService : Service() {
         const val ACTION_SWITCH_TAB = "mozac.feature.mediasession.SWITCH_TAB"
         const val EXTRA_TAB_ID = "mozac.feature.mediasession.TAB_ID"
 
-        internal fun playIntent(context: Context, cls: Class<*>): Intent = Intent(ACTION_PLAY).apply {
-            component = ComponentName(context, cls)
-        }
+        internal fun playIntent(context: Context, cls: Class<*>): Intent =
+            Intent(ACTION_PLAY).apply {
+                component = ComponentName(context, cls)
+            }
 
-        internal fun pauseIntent(context: Context, cls: Class<*>): Intent = Intent(ACTION_PAUSE).apply {
-            component = ComponentName(context, cls)
-        }
+        internal fun pauseIntent(context: Context, cls: Class<*>): Intent =
+            Intent(ACTION_PAUSE).apply {
+                component = ComponentName(context, cls)
+            }
 
-        internal fun nextTrackIntent(context: Context, cls: Class<*>): Intent = Intent(ACTION_NEXT_TRACK).apply {
-            component = ComponentName(context, cls)
-        }
+        internal fun nextTrackIntent(context: Context, cls: Class<*>): Intent =
+            Intent(ACTION_NEXT_TRACK).apply {
+                component = ComponentName(context, cls)
+            }
 
-        internal fun previousTrackIntent(context: Context, cls: Class<*>): Intent = Intent(ACTION_PREV_TRACK).apply {
-            component = ComponentName(context, cls)
-        }
+        internal fun previousTrackIntent(context: Context, cls: Class<*>): Intent =
+            Intent(ACTION_PREV_TRACK).apply {
+                component = ComponentName(context, cls)
+            }
     }
 }

@@ -8,7 +8,6 @@
 #include "GMPService.h"
 #include "GMPStorage.h"
 #include "mozIGeckoMediaPluginChromeService.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/gmp/PGMPParent.h"
@@ -199,10 +198,6 @@ class GeckoMediaPluginServiceParent final
 
   // Protected by mMutex from the base class.
   nsTArray<RefPtr<GMPParent>> mPlugins MOZ_GUARDED_BY(mMutex);
-
-  // True if we've inspected MOZ_GMP_PATH on the GMP thread and loaded any
-  // plugins found there into mPlugins.
-  Atomic<bool> mScannedPluginOnDisk;
 
   template <typename T>
   class MainThreadOnly {

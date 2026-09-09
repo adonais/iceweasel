@@ -6,15 +6,12 @@
 
 // DisplayMtl.mm: Metal implementation of DisplayImpl
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "libANGLE/renderer/metal/DisplayMtl.h"
 #include <sys/param.h>
 
 #include "common/apple_platform_utils.h"
 #include "common/system_utils.h"
+#include "common/unsafe_buffers.h"
 #include "gpu_info_util/SystemInfo.h"
 #include "libANGLE/Context.h"
 #include "libANGLE/Display.h"
@@ -468,6 +465,7 @@ egl::Error DisplayMtl::makeCurrent(egl::Display *display,
 
 void DisplayMtl::generateExtensions(egl::DisplayExtensions *outExtensions) const
 {
+    outExtensions->createContextRobustness    = true;
     outExtensions->iosurfaceClientBuffer      = true;
     outExtensions->surfacelessContext         = true;
     outExtensions->noConfigContext            = true;
@@ -512,6 +510,8 @@ void DisplayMtl::initializeFrontendFeatures(angle::FrontendFeatures *features) c
     // The Metal backend's handling of compile and link is thread-safe
     ANGLE_FEATURE_CONDITION(features, compileJobIsThreadSafe, true);
     ANGLE_FEATURE_CONDITION(features, linkJobIsThreadSafe, true);
+
+    ANGLE_FEATURE_CONDITION(features, setNeedInitOnInvalidation, true);
 }
 
 void DisplayMtl::populateFeatureList(angle::FeatureList *features)
@@ -906,9 +906,6 @@ void DisplayMtl::ensureCapsInitialized() const
     // Metal doesn't support GL_TEXTURE_COMPARE_MODE=GL_NONE for shadow samplers
     mNativeLimitations.noShadowSamplerCompareModeNone = true;
 
-    // Apple platforms require PVRTC1 textures to be squares.
-    mNativeLimitations.squarePvrtc1 = true;
-
     if (mFeatures.disableProgrammableBlending.enabled || !supportsAppleGPUFamily(1))
     {
         const MTLReadWriteTextureTier readWriteTextureTier = [mMetalDevice readWriteTextureSupport];
@@ -952,6 +949,7 @@ void DisplayMtl::initializeExtensions() const
     mNativeExtensions.copyCompressedTextureCHROMIUM = false;
     mNativeExtensions.textureMirrorClampToEdgeEXT   = true;
     mNativeExtensions.depthClampEXT                 = true;
+    mNativeExtensions.rgbxInternalFormatANGLE       = mFeatures.hasTextureSwizzle.enabled;
 
     // EXT_debug_marker is not implemented yet, but the entry points must be exposed for the
     // Metal backend to be used in Chrome (http://anglebug.com/42263519)
@@ -1054,6 +1052,8 @@ void DisplayMtl::initializeExtensions() const
     mNativeExtensions.pixelBufferObjectNV = true;
 
     mNativeExtensions.packReverseRowOrderANGLE = true;
+
+    mNativeExtensions.framebufferFlipYMESA = true;
 
     if (mFeatures.hasEvents.enabled)
     {
@@ -1188,7 +1188,6 @@ void DisplayMtl::initializeTextureCaps() const
     // Disable all depth buffer and stencil buffer readback extensions until we need them
     mNativeExtensions.readDepthNV         = false;
     mNativeExtensions.readStencilNV       = false;
-    mNativeExtensions.depthBufferFloat2NV = false;
 }
 
 void DisplayMtl::initializeFeatures()
@@ -1423,7 +1422,7 @@ bool DisplayMtl::isAMDBronzeDriver() const
 
     for (size_t i = 0; i < ArraySize(kMTLBronzeDeviceNames); ++i)
     {
-        if ([[mMetalDevice name] hasSuffix:kMTLBronzeDeviceNames[i]])
+        if (ANGLE_UNSAFE_TODO([[mMetalDevice name] hasSuffix:kMTLBronzeDeviceNames[i]]))
         {
             mIsAMDBronze = true;
             break;

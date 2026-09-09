@@ -49,10 +49,11 @@ import org.mozilla.fenix.theme.FirefoxTheme
 private val TOU_IMAGE_HEIGHT = 176.dp
 private val TOU_IMAGE_HEIGHT_SMALL_DEVICE = 130.dp
 
-private val kitImageResources = listOf(
-    R.drawable.nova_onboarding_tou,
-    R.drawable.nova_onboarding_tou_2,
-)
+private val kitImageResources =
+    listOf(
+        R.drawable.nova_onboarding_tou,
+        R.drawable.nova_onboarding_tou_2,
+    )
 
 /**
  * A Composable for displaying the terms of service onboarding page content.
@@ -71,10 +72,11 @@ fun TermsOfServiceOnboardingPage(
     ) {
         val verticalPadding = if (pageState.isSmallDevice) 0.dp else FirefoxTheme.layout.space.static300
         Column(
-            modifier = Modifier.padding(
-                horizontal = FirefoxTheme.layout.space.static200,
-                vertical = verticalPadding,
-            ),
+            modifier =
+                Modifier.padding(
+                    horizontal = FirefoxTheme.layout.space.static200,
+                    vertical = verticalPadding,
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             val scrollState = rememberScrollState()
@@ -86,20 +88,14 @@ fun TermsOfServiceOnboardingPage(
             }
 
             // Use a Box to overlay the scrollbar on top of the content column, aligned to the right.
-            Box(
-                modifier = Modifier
-                    .weight(CONTENT_WEIGHT)
-                    .fillMaxWidth(),
-            ) {
+            Box(modifier = Modifier.weight(CONTENT_WEIGHT).fillMaxWidth()) {
                 // Disable the overscroll glow/stretch effect to keep the onboarding UI clean.
-                CompositionLocalProvider(
-                    LocalOverscrollFactory provides null,
-                ) {
+                CompositionLocalProvider(LocalOverscrollFactory provides null) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(end = FirefoxTheme.layout.space.static150)
-                            .verticalScroll(scrollState),
+                        modifier =
+                            Modifier.fillMaxSize()
+                                .padding(end = FirefoxTheme.layout.space.static150)
+                                .verticalScroll(scrollState),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Header(pageState)
@@ -120,12 +116,12 @@ fun TermsOfServiceOnboardingPage(
             }
             FilledButton(
                 text = pageState.primaryButton.text,
-                modifier = Modifier
-                    .width(width = FirefoxTheme.layout.size.maxWidth.small)
-                    .defaultMinSize(minHeight = FirefoxTheme.layout.size.static600)
-                    .semantics {
-                        testTag = pageState.title + "onboarding_card.positive_button"
-                    },
+                modifier =
+                    Modifier.width(width = FirefoxTheme.layout.size.maxWidth.small)
+                        .defaultMinSize(minHeight = FirefoxTheme.layout.size.static600)
+                        .semantics {
+                            testTag = pageState.title + "onboarding_card.positive_button"
+                        },
                 onClick = pageState.primaryButton.onClick,
             )
         }
@@ -144,15 +140,13 @@ private fun Header(pageState: OnboardingPageState) {
     Image(
         painter = painterResource(id = currentImageRes),
         contentDescription = null, // Decorative image only.
-        modifier = Modifier
-            .height(pageState.imageHeight())
-            .clickable(
+        modifier =
+            Modifier.height(pageState.imageHeight()).clickable(
                 role = Role.Button,
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null, // Prevents onClick press/ripple animation
             ) {
-                currentImageIndex.intValue =
-                    nextCyclicImageIndex(currentImageIndex.intValue, kitImageResources.size)
+                currentImageIndex.intValue = nextCyclicImageIndex(currentImageIndex.intValue, kitImageResources.size)
             },
     )
 
@@ -169,15 +163,16 @@ private fun Header(pageState: OnboardingPageState) {
     pageState.termsOfService?.subheaderOneText?.let { SubHeader(it) }
 }
 
-private fun OnboardingPageState.imageHeight() = if (isSmallDevice) {
-    TOU_IMAGE_HEIGHT_SMALL_DEVICE
-} else {
-    TOU_IMAGE_HEIGHT
-}
+private fun OnboardingPageState.imageHeight() =
+    if (isSmallDevice) {
+        TOU_IMAGE_HEIGHT_SMALL_DEVICE
+    } else {
+        TOU_IMAGE_HEIGHT
+    }
 
 /**
- * Advances the image index to the next item, wrapping back to the start when the end of the list
- * is reached. This ensures the index always stays within valid bounds.
+ * Advances the image index to the next item, wrapping back to the start when the end of the list is reached. This
+ * ensures the index always stays within valid bounds.
  */
 private fun nextCyclicImageIndex(
     currentImageIndex: Int,
@@ -188,10 +183,11 @@ private fun nextCyclicImageIndex(
 private fun SubHeader(text: String) {
     Text(
         text = text,
-        style = FirefoxTheme.typography.body2.copy(
-            color = MaterialTheme.colorScheme.secondary,
-            textAlign = TextAlign.Center,
-        ),
+        style =
+            FirefoxTheme.typography.body2.copy(
+                color = MaterialTheme.colorScheme.secondary,
+                textAlign = TextAlign.Center,
+            ),
     )
 }
 
@@ -202,31 +198,34 @@ private fun BodyText(
 ) {
     with(termsOfService) {
         Column(modifier = Modifier.padding(horizontal = FirefoxTheme.layout.space.static100)) {
-            val bodyOneLinkState = LinkTextState(
-                text = lineOneLinkText,
-                url = lineOneLinkUrl,
-                onClick = eventHandler::onTermsOfServiceLinkClicked,
-            )
+            val bodyOneLinkState =
+                LinkTextState(
+                    text = lineOneLinkText,
+                    url = lineOneLinkUrl,
+                    onClick = eventHandler::onTermsOfServiceLinkClicked,
+                )
             BodyLinkText(
                 lineOneText.updateFirstPlaceholder(lineOneLinkText),
                 bodyOneLinkState,
             )
 
-            val bodyTwoLinkState = LinkTextState(
-                text = lineTwoLinkText,
-                url = lineTwoLinkUrl,
-                onClick = eventHandler::onPrivacyNoticeLinkClicked,
-            )
+            val bodyTwoLinkState =
+                LinkTextState(
+                    text = lineTwoLinkText,
+                    url = lineTwoLinkUrl,
+                    onClick = eventHandler::onPrivacyNoticeLinkClicked,
+                )
             BodyLinkText(
                 lineTwoText.updateFirstPlaceholder(lineTwoLinkText),
                 bodyTwoLinkState,
             )
 
-            val bodyThreeLinkState = LinkTextState(
-                text = lineThreeLinkText,
-                url = "", // No URL
-                onClick = { _ -> eventHandler.onManagePrivacyPreferencesLinkClicked() },
-            )
+            val bodyThreeLinkState =
+                LinkTextState(
+                    text = lineThreeLinkText,
+                    url = "", // No URL
+                    onClick = { _ -> eventHandler.onManagePrivacyPreferencesLinkClicked() },
+                )
             BodyLinkText(
                 lineThreeText.updateFirstPlaceholder(lineThreeLinkText),
                 bodyThreeLinkState,
@@ -240,10 +239,11 @@ private fun BodyLinkText(
     text: String,
     linkState: LinkTextState,
 ) {
-    val style = FirefoxTheme.typography.caption.copy(
-        textAlign = TextAlign.Start,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
+    val style =
+        FirefoxTheme.typography.caption.copy(
+            textAlign = TextAlign.Start,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
 
     LinkText(
         text = text,
@@ -261,28 +261,29 @@ private fun String.updateFirstPlaceholder(text: String) = replace($$"%1$s", text
 private fun OnboardingPagePreview() {
     FirefoxTheme {
         TermsOfServiceOnboardingPage(
-            pageState = OnboardingPageState(
-                title = stringResource(id = R.string.onboarding_welcome_to_firefox),
-                description = "",
-                termsOfService = OnboardingTermsOfService(
-                    subheaderOneText = stringResource(id = R.string.nova_onboarding_tou_subtitle),
-                    lineOneText = stringResource(id = R.string.nova_onboarding_tou_body_line_1),
-                    lineOneLinkText = stringResource(id = R.string.nova_onboarding_tou_body_line_1_link_text),
-                    lineOneLinkUrl = "URL",
-                    lineTwoText = stringResource(id = R.string.nova_onboarding_tou_body_line_2),
-                    lineTwoLinkText = stringResource(id = R.string.nova_onboarding_tou_body_line_2_link_text),
-                    lineTwoLinkUrl = "URL",
-                    lineThreeText = stringResource(id = R.string.nova_onboarding_tou_body_line_3),
-                    lineThreeLinkText = stringResource(id = R.string.nova_onboarding_tou_body_line_3_link_text),
+            pageState =
+                OnboardingPageState(
+                    title = stringResource(id = R.string.onboarding_welcome_to_firefox),
+                    description = "",
+                    termsOfService =
+                        OnboardingTermsOfService(
+                            subheaderOneText = stringResource(id = R.string.nova_onboarding_tou_subtitle),
+                            lineOneText = stringResource(id = R.string.nova_onboarding_tou_body_line_1),
+                            lineOneLinkText = stringResource(id = R.string.nova_onboarding_tou_body_line_1_link_text),
+                            lineOneLinkUrl = "URL",
+                            lineTwoText = stringResource(id = R.string.nova_onboarding_tou_body_line_2),
+                            lineTwoLinkText = stringResource(id = R.string.nova_onboarding_tou_body_line_2_link_text),
+                            lineTwoLinkUrl = "URL",
+                            lineThreeText = stringResource(id = R.string.nova_onboarding_tou_body_line_3),
+                            lineThreeLinkText = stringResource(id = R.string.nova_onboarding_tou_body_line_3_link_text),
+                        ),
+                    imageRes = R.drawable.nova_onboarding_tou,
+                    primaryButton =
+                        Action(
+                            text = stringResource(id = R.string.nova_onboarding_continue_button),
+                            onClick = {},
+                        ),
                 ),
-                imageRes = R.drawable.nova_onboarding_tou,
-                primaryButton = Action(
-                    text = stringResource(
-                        id = R.string.nova_onboarding_continue_button,
-                    ),
-                    onClick = {},
-                ),
-            ),
             eventHandler = object : OnboardingTermsOfServiceEventHandler {},
         )
     }

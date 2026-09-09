@@ -21,12 +21,9 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import mozilla.components.support.base.log.logger.Logger
 
-/**
- * This [Middleware] reacts to various browsing events and records history metadata as needed.
- */
-class HistoryMetadataMiddleware(
-    private val historyMetadataService: HistoryMetadataService,
-) : Middleware<BrowserState, BrowserAction> {
+/** This [Middleware] reacts to various browsing events and records history metadata as needed. */
+class HistoryMetadataMiddleware(private val historyMetadataService: HistoryMetadataService) :
+    Middleware<BrowserState, BrowserAction> {
 
     private val logger = Logger("HistoryMetadataMiddleware")
 
@@ -66,11 +63,13 @@ class HistoryMetadataMiddleware(
                 }
             }
             is TabListAction.RemoveTabsAction -> {
-                action.tabIds.find { it == store.state.selectedTabId }?.let {
-                    store.state.findNormalTab(it)?.let { tab ->
-                        updateHistoryMetadata(tab)
+                action.tabIds
+                    .find { it == store.state.selectedTabId }
+                    ?.let {
+                        store.state.findNormalTab(it)?.let { tab ->
+                            updateHistoryMetadata(tab)
+                        }
                     }
-                }
             }
             is ContentAction.UpdateUrlAction -> {
                 store.state.findNormalTab(action.sessionId)?.let { tab ->
@@ -140,8 +139,7 @@ class HistoryMetadataMiddleware(
     ) {
         // When history state is ready, we can record metadata for this page.
         val knownHistoryMetadata = tab.historyMetadata
-        val metadataPresentForUrl = knownHistoryMetadata != null &&
-            knownHistoryMetadata.url == tab.content.url
+        val metadataPresentForUrl = knownHistoryMetadata != null && knownHistoryMetadata.url == tab.content.url
         // Record metadata for tab if there is no metadata present, or if url of the
         // tab changes since we last recorded metadata.
         if (!metadataPresentForUrl) {
@@ -172,46 +170,50 @@ class HistoryMetadataMiddleware(
         // it won't leave this group unless a direct navigation event happens.
         //
         // 2) A page was opened in the same tab as the search results page (navigated to via content).
-        val (searchTerm, referrerUrl) = when {
-            // Page was opened in a new tab. Look for search terms in the parent tab.
-            tabParent != null && !tabMetadataHasSearchTerms -> {
-                val searchTerms = findSearchTerms(tabParent, store.state.search)
-                searchTerms to tabParent.content.url
-            }
-            // Page was navigated to via content i.e., the user followed a link. Look for search terms in tab history.
-            !directLoadTriggered && previousUrlIndex >= 0 -> {
-                // Once a tab is within the search group, only a direct load event (via the toolbar) can change that.
-                val previousUrl = tab.content.history.items[previousUrlIndex].uri
-                val (searchTerms, referrerUrl) = if (tabMetadataHasSearchTerms) {
-                    tab.historyMetadata?.searchTerm to previousUrl
-                } else {
-                    // Find search terms by checking if page is a SERP or a result opened from a SERP
-                    val searchTerms = findSearchTerms(tab, store.state.search)
+        val (searchTerm, referrerUrl) =
+            when {
+                // Page was opened in a new tab. Look for search terms in the parent tab.
+                tabParent != null && !tabMetadataHasSearchTerms -> {
+                    val searchTerms = findSearchTerms(tabParent, store.state.search)
+                    searchTerms to tabParent.content.url
+                }
+                // Page was navigated to via content i.e., the user followed a link. Look for search terms in tab
+                // history.
+                !directLoadTriggered && previousUrlIndex >= 0 -> {
+                    // Once a tab is within the search group, only a direct load event (via the toolbar) can change
+                    // that.
+                    val previousUrl = tab.content.history.items[previousUrlIndex].uri
+                    val (searchTerms, referrerUrl) =
+                        if (tabMetadataHasSearchTerms) {
+                            tab.historyMetadata?.searchTerm to previousUrl
+                        } else {
+                            // Find search terms by checking if page is a SERP or a result opened from a SERP
+                            val searchTerms = findSearchTerms(tab, store.state.search)
+                            if (searchTerms != null) {
+                                searchTerms to null
+                            } else {
+                                store.state.search.parseSearchTerms(previousUrl) to previousUrl
+                            }
+                        }
+
                     if (searchTerms != null) {
-                        searchTerms to null
+                        searchTerms to referrerUrl
                     } else {
-                        store.state.search.parseSearchTerms(previousUrl) to previousUrl
+                        null to null
                     }
                 }
-
-                if (searchTerms != null) {
-                    searchTerms to referrerUrl
-                } else {
-                    null to null
+                // In certain redirect cases, we won't have a previous url in the history stack of the tab,
+                // but will have the search terms already set on the tab from having gone through this logic
+                // for the redirecting url. So we leave this tab within the search group it's already in
+                // unless a new direct load (via the toolbar) was triggered.
+                tabMetadataHasSearchTerms && !(directLoadTriggered && previousUrlIndex >= 0) -> {
+                    tab.historyMetadata?.searchTerm to tab.historyMetadata?.referrerUrl
+                }
+                // In all other cases (e.g. direct load) find search terms by checking if page is a SERP
+                else -> {
+                    findSearchTerms(tab, store.state.search) to null
                 }
             }
-            // In certain redirect cases, we won't have a previous url in the history stack of the tab,
-            // but will have the search terms already set on the tab from having gone through this logic
-            // for the redirecting url. So we leave this tab within the search group it's already in
-            // unless a new direct load (via the toolbar) was triggered.
-            tabMetadataHasSearchTerms && !(directLoadTriggered && previousUrlIndex >= 0) -> {
-                tab.historyMetadata?.searchTerm to tab.historyMetadata?.referrerUrl
-            }
-            // In all other cases (e.g. direct load) find search terms by checking if page is a SERP
-            else -> {
-                findSearchTerms(tab, store.state.search) to null
-            }
-        }
 
         // Sanity check to make sure we don't record a metadata record referring to itself.
         if (tab.content.url == referrerUrl) {

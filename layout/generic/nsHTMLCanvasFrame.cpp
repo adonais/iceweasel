@@ -11,6 +11,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/ReflowInput.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
+#include "mozilla/dom/PerformanceContainerTiming.h"
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/RenderRootStateManager.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
@@ -161,6 +162,9 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
             OpUpdateAsyncImagePipeline(data->GetPipelineId().value(), scBounds,
                                        wr::WrRotation::Degree0, filter,
                                        mixBlendMode));
+
+        ContainerTimingHelpers::MaybeProcessPaintForContainer(
+            element, canvasFrame, dest - ToReferenceFrame());
         break;
       }
       case CanvasContextType::ImageBitmap: {
@@ -190,6 +194,9 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
         aManager->CommandBuilder().PushImage(
             this, canvasData->GetImageContainer(), aBuilder, aResources, aSc,
             bounds, bounds);
+
+        ContainerTimingHelpers::MaybeProcessPaintForContainer(
+            element, canvasFrame, dest - ToReferenceFrame());
         break;
       }
       case CanvasContextType::NoContext:
@@ -255,6 +262,9 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
           Rect(0, 0, canvasSizeInPx.width, canvasSizeInPx.height),
           SurfacePattern(surface, ExtendMode::CLAMP, Matrix(),
                          nsLayoutUtils::GetSamplingFilterForFrame(f)));
+
+      ContainerTimingHelpers::MaybeProcessPaintForContainer(
+          canvas, f, dest - ToReferenceFrame());
       return;
     }
 
@@ -295,6 +305,9 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
 
     renderer->FireDidTransactionCallback();
     renderer->ResetDirty();
+
+    ContainerTimingHelpers::MaybeProcessPaintForContainer(
+        canvas, f, dest - ToReferenceFrame());
   }
 };
 

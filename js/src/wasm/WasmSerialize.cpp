@@ -1391,7 +1391,11 @@ CoderResult CodeCodeBlock(Coder<mode>& coder,
 
 CoderResult CodeSharedCode(Coder<MODE_DECODE>& coder, wasm::SharedCode* item,
                            const wasm::ModuleMetadata& moduleMeta) {
+#ifdef ENABLE_WASM_JSPI
+  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::Code, 1008);
+#else
   WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::Code, 968);
+#endif
 
   FuncImportVector funcImports;
   MOZ_TRY(CodePodVector(coder, &funcImports));
@@ -1435,9 +1439,24 @@ CoderResult CodeSharedCode(Coder<MODE_DECODE>& coder, wasm::SharedCode* item,
   code->setUpdateCallRefMetricsStubOffset(offsetOfCallRefMetricsStub);
 
 #ifdef ENABLE_WASM_JSPI
-  uint32_t offsetOfContBaseFrame = 0;
-  MOZ_TRY(CodePod(coder, &offsetOfContBaseFrame));
-  code->setContBaseFrameOffset(offsetOfContBaseFrame);
+  {
+    uint32_t count = 0;
+    MOZ_TRY(CodePod(coder, &count));
+    MOZ_RELEASE_ASSERT(count <= MaxTypes);
+    ContBaseFrameOffsetMap contBaseFrameOffsets;
+    if (!contBaseFrameOffsets.reserve(count)) {
+      return Err(OutOfMemory());
+    }
+    for (uint32_t i = 0; i < count; i++) {
+      uint32_t typeIndex = 0;
+      uint32_t offset = 0;
+      MOZ_TRY(CodePod(coder, &typeIndex));
+      MOZ_TRY(CodePod(coder, &offset));
+      MOZ_RELEASE_ASSERT(typeIndex < MaxTypes);
+      contBaseFrameOffsets.putNewInfallible(typeIndex, offset);
+    }
+    code->setContBaseFrameOffsets(std::move(contBaseFrameOffsets));
+  }
 #endif
 
   *item = code;
@@ -1447,7 +1466,11 @@ CoderResult CodeSharedCode(Coder<MODE_DECODE>& coder, wasm::SharedCode* item,
 template <CoderMode mode>
 CoderResult CodeSharedCode(Coder<mode>& coder,
                            CoderArg<mode, wasm::SharedCode> item) {
+#ifdef ENABLE_WASM_JSPI
+  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::Code, 1008);
+#else
   WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::Code, 968);
+#endif
   STATIC_ASSERT_ENCODING_OR_SIZING;
   // Don't encode the CodeMetadata or CodeTailMetadata, that is handled by
   // wasm::ModuleMetadata.
@@ -1474,8 +1497,18 @@ CoderResult CodeSharedCode(Coder<mode>& coder,
   MOZ_TRY(CodePod(coder, &offsetOfCallRefMetricsStub));
 
 #ifdef ENABLE_WASM_JSPI
-  uint32_t offsetOfContBaseFrame = (*item)->contBaseFrameOffset();
-  MOZ_TRY(CodePod(coder, &offsetOfContBaseFrame));
+  {
+    const ContBaseFrameOffsetMap& contBaseFrameOffsets =
+        (*item)->contBaseFrameOffsets();
+    uint32_t count = contBaseFrameOffsets.count();
+    MOZ_TRY(CodePod(coder, &count));
+    for (auto iter = contBaseFrameOffsets.iter(); !iter.done(); iter.next()) {
+      uint32_t typeIndex = iter.get().key();
+      uint32_t offset = iter.get().value();
+      MOZ_TRY(CodePod(coder, &typeIndex));
+      MOZ_TRY(CodePod(coder, &offset));
+    }
+  }
 #endif
 
   return Ok();

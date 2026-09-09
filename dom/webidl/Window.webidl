@@ -312,8 +312,8 @@ partial interface Window {
   [Throws, ChromeOnly] undefined moveResize(long x, long y, long w, long h);
 
   // viewport
-  [Replaceable, Throws] readonly attribute double innerWidth;
-  [Replaceable, Throws] readonly attribute double innerHeight;
+  [Replaceable, Throws, NeedsCallerType] readonly attribute double innerWidth;
+  [Replaceable, Throws, NeedsCallerType] readonly attribute double innerHeight;
 
   // viewport scrolling
   undefined scroll(unrestricted double x, unrestricted double y);

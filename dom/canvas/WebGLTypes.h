@@ -439,8 +439,8 @@ struct avec2 {
   avec2() = default;
   avec2(const T _x, const T _y) : x(_x), y(_y) {}
 
-  bool operator==(const avec2& rhs) const { return x == rhs.x && y == rhs.y; }
-  bool operator!=(const avec2& rhs) const { return !(*this == rhs); }
+  bool operator==(const avec2& rhs) const = default;
+  bool operator!=(const avec2& rhs) const = default;
 
 #define _(OP)                                 \
   avec2 operator OP(const avec2& rhs) const { \
@@ -504,10 +504,8 @@ struct avec3 {
   avec3() = default;
   avec3(const T _x, const T _y, const T _z) : x(_x), y(_y), z(_z) {}
 
-  bool operator==(const avec3& rhs) const {
-    return x == rhs.x && y == rhs.y && z == rhs.z;
-  }
-  bool operator!=(const avec3& rhs) const { return !(*this == rhs); }
+  bool operator==(const avec3& rhs) const = default;
+  bool operator!=(const avec3& rhs) const = default;
 };
 
 using ivec2 = avec2<int32_t>;

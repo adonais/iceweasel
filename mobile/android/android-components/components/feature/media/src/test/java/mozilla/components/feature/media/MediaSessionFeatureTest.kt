@@ -8,6 +8,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.MediaSessionAction
@@ -34,8 +36,6 @@ import org.mockito.Mockito.anyInt
 import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.verify
-import kotlin.coroutines.ContinuationInterceptor
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class MediaSessionFeatureTest {
@@ -43,11 +43,12 @@ class MediaSessionFeatureTest {
     @Test
     fun `WHEN the feature starts THEN it starts observing the store`() = runTest {
         val store = BrowserStore()
-        val feature = MediaSessionFeature(
-            mock(),
-            MediaSessionServiceDelegate::class.java,
-            store,
-        )
+        val feature =
+            MediaSessionFeature(
+                mock(),
+                MediaSessionServiceDelegate::class.java,
+                store,
+            )
         assertNull(feature.scope)
 
         feature.start()
@@ -56,59 +57,59 @@ class MediaSessionFeatureTest {
     }
 
     @Test
-    fun `GIVEN a started feature WHEN it is stopped THEN the store is not observed for updates anymore`() =
-        runTest {
-            val feature = MediaSessionFeature(
+    fun `GIVEN a started feature WHEN it is stopped THEN the store is not observed for updates anymore`() = runTest {
+        val feature =
+            MediaSessionFeature(
                 mock(),
                 MediaSessionServiceDelegate::class.java,
                 BrowserStore(),
                 mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
             )
 
-            feature.stop()
+        feature.stop()
 
-            assertNull(feature.scope)
-        }
+        assertNull(feature.scope)
+    }
 
     @Test
-    fun `WHEN the media service is bound THEN store this and show the current media playing status`() =
-        runTest {
-            val mediaTab = getMediaTab(PlaybackState.PLAYING)
-            val initialState = BrowserState(tabs = listOf(mediaTab))
-            val store = BrowserStore(initialState)
-            val mediaServiceClass = MediaSessionServiceDelegate::class.java
-            val feature = MediaSessionFeature(
+    fun `WHEN the media service is bound THEN store this and show the current media playing status`() = runTest {
+        val mediaTab = getMediaTab(PlaybackState.PLAYING)
+        val initialState = BrowserState(tabs = listOf(mediaTab))
+        val store = BrowserStore(initialState)
+        val mediaServiceClass = MediaSessionServiceDelegate::class.java
+        val feature =
+            MediaSessionFeature(
                 mock(),
                 mediaServiceClass,
                 store,
                 mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
             )
 
-            val mediaService: MediaSessionServiceDelegate = mock()
-            val binder = MediaServiceBinder(mediaService)
+        val mediaService: MediaSessionServiceDelegate = mock()
+        val binder = MediaServiceBinder(mediaService)
 
-            feature.mediaServiceConnection.onServiceConnected(mock(), binder)
+        feature.mediaServiceConnection.onServiceConnected(mock(), binder)
 
-            assertEquals(mediaService, feature.mediaService)
-            verify(feature.mediaService)!!.handleMediaPlaying(mediaTab)
-        }
+        assertEquals(mediaService, feature.mediaService)
+        verify(feature.mediaService)!!.handleMediaPlaying(mediaTab)
+    }
 
     @Test
-    fun `GIVEN media service is bound WHEN the service is disconnected THEN cleanup local properties`() =
-        runTest {
-            val mediaService: ComponentName = mock()
-            val feature = MediaSessionFeature(
+    fun `GIVEN media service is bound WHEN the service is disconnected THEN cleanup local properties`() = runTest {
+        val mediaService: ComponentName = mock()
+        val feature =
+            MediaSessionFeature(
                 mock(),
                 mediaService.javaClass,
                 BrowserStore(),
                 mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
             )
-            feature.mediaService = mock()
+        feature.mediaService = mock()
 
-            feature.mediaServiceConnection.onServiceDisconnected(mediaService)
+        feature.mediaServiceConnection.onServiceDisconnected(mediaService)
 
-            assertNull(feature.mediaService)
-        }
+        assertNull(feature.mediaService)
+    }
 
     @Test
     fun `GIVEN feature is started but media service is not WHEN media starts playing THEN bind to the media service and show the playing status`() =
@@ -118,28 +119,32 @@ class MediaSessionFeatureTest {
             val initialState = BrowserState(tabs = listOf(mediaTab))
             val store = BrowserStore(initialState)
             val mediaServiceClass = MediaSessionServiceDelegate::class.java
-            val feature = MediaSessionFeature(
-                mockApplicationContext,
-                mediaServiceClass,
-                store,
-                mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-            )
+            val feature =
+                MediaSessionFeature(
+                    mockApplicationContext,
+                    mediaServiceClass,
+                    store,
+                    mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+                )
 
-            doReturn(true).`when`(mockApplicationContext).bindService(
-                any<Intent>(),
-                any(),
-                anyInt(),
-            )
+            doReturn(true)
+                .`when`(mockApplicationContext)
+                .bindService(
+                    any<Intent>(),
+                    any(),
+                    anyInt(),
+                )
             val mediaServiceIntentCaptor = argumentCaptor<Intent>()
 
             feature.start()
             testScheduler.advanceUntilIdle()
 
-            verify(mockApplicationContext).bindService(
-                mediaServiceIntentCaptor.capture(),
-                any(),
-                eq(Context.BIND_AUTO_CREATE),
-            )
+            verify(mockApplicationContext)
+                .bindService(
+                    mediaServiceIntentCaptor.capture(),
+                    any(),
+                    eq(Context.BIND_AUTO_CREATE),
+                )
             assertEquals(
                 mediaServiceClass.name,
                 mediaServiceIntentCaptor.value.component!!.className,
@@ -150,16 +155,15 @@ class MediaSessionFeatureTest {
     fun `GIVEN feature and media service are started WHEN media starts playing in a normal tab THEN handle showing the new playing status`() =
         runTest {
             val mediaTab = getMediaTab(PlaybackState.PLAYING)
-            val initialState = BrowserState(
-                tabs = listOf(mediaTab),
-            )
+            val initialState = BrowserState(tabs = listOf(mediaTab))
             val store = BrowserStore(initialState)
-            val feature = MediaSessionFeature(
-                mock(),
-                MediaSessionServiceDelegate::class.java,
-                store,
-                mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-            )
+            val feature =
+                MediaSessionFeature(
+                    mock(),
+                    MediaSessionServiceDelegate::class.java,
+                    store,
+                    mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+                )
 
             feature.mediaService = mock()
 
@@ -174,12 +178,13 @@ class MediaSessionFeatureTest {
         runTest {
             val mediaTab = getMediaTab(PlaybackState.PLAYING)
             val store = BrowserStore(BrowserState(tabs = listOf(mediaTab)))
-            val feature = MediaSessionFeature(
-                mock(),
-                MediaSessionServiceDelegate::class.java,
-                store,
-                mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-            )
+            val feature =
+                MediaSessionFeature(
+                    mock(),
+                    MediaSessionServiceDelegate::class.java,
+                    store,
+                    mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+                )
             feature.mediaService = mock()
             feature.start()
             testScheduler.advanceUntilIdle()
@@ -192,7 +197,7 @@ class MediaSessionFeatureTest {
                 MediaSessionAction.UpdateMediaAudioSessionTypeAction(
                     mediaTab.id,
                     MediaSession.AudioSessionType.TRANSIENT,
-                ),
+                )
             )
             testScheduler.advanceUntilIdle()
 
@@ -208,16 +213,15 @@ class MediaSessionFeatureTest {
     fun `GIVEN feature and media service are started WHEN media starts playing in a custom tab THEN handle showing the new playing status`() =
         runTest {
             val mediaTab = getCustomTabWithMedia(PlaybackState.PLAYING)
-            val initialState = BrowserState(
-                customTabs = listOf(mediaTab),
-            )
+            val initialState = BrowserState(customTabs = listOf(mediaTab))
             val store = BrowserStore(initialState)
-            val feature = MediaSessionFeature(
-                mock(),
-                MediaSessionServiceDelegate::class.java,
-                store,
-                mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-            )
+            val feature =
+                MediaSessionFeature(
+                    mock(),
+                    MediaSessionServiceDelegate::class.java,
+                    store,
+                    mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+                )
 
             feature.mediaService = mock()
 
@@ -231,16 +235,15 @@ class MediaSessionFeatureTest {
     fun `GIVEN feature and media service are started WHEN media is paused in a normal tab THEN handle showing the new playing status`() =
         runTest {
             val mediaTab = getMediaTab(PlaybackState.PAUSED)
-            val initialState = BrowserState(
-                tabs = listOf(mediaTab),
-            )
+            val initialState = BrowserState(tabs = listOf(mediaTab))
             val store = BrowserStore(initialState)
-            val feature = MediaSessionFeature(
-                mock(),
-                MediaSessionServiceDelegate::class.java,
-                store,
-                mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-            )
+            val feature =
+                MediaSessionFeature(
+                    mock(),
+                    MediaSessionServiceDelegate::class.java,
+                    store,
+                    mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+                )
 
             feature.mediaService = mock()
 
@@ -254,16 +257,15 @@ class MediaSessionFeatureTest {
     fun `GIVEN feature and media service are started WHEN media is paused in a custom tab THEN handle showing the new playing status`() =
         runTest {
             val mediaTab = getCustomTabWithMedia(PlaybackState.PAUSED)
-            val initialState = BrowserState(
-                customTabs = listOf(mediaTab),
-            )
+            val initialState = BrowserState(customTabs = listOf(mediaTab))
             val store = BrowserStore(initialState)
-            val feature = MediaSessionFeature(
-                mock(),
-                MediaSessionServiceDelegate::class.java,
-                store,
-                mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-            )
+            val feature =
+                MediaSessionFeature(
+                    mock(),
+                    MediaSessionServiceDelegate::class.java,
+                    store,
+                    mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+                )
 
             feature.mediaService = mock()
 
@@ -277,16 +279,15 @@ class MediaSessionFeatureTest {
     fun `GIVEN feature and media service are started WHEN media is stopped in a normal tab THEN handle showing the new playing status`() =
         runTest {
             val mediaTab = getMediaTab(PlaybackState.STOPPED)
-            val initialState = BrowserState(
-                tabs = listOf(mediaTab),
-            )
+            val initialState = BrowserState(tabs = listOf(mediaTab))
             val store = BrowserStore(initialState)
-            val feature = MediaSessionFeature(
-                mock(),
-                MediaSessionServiceDelegate::class.java,
-                store,
-                mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-            )
+            val feature =
+                MediaSessionFeature(
+                    mock(),
+                    MediaSessionServiceDelegate::class.java,
+                    store,
+                    mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+                )
 
             feature.mediaService = mock()
 
@@ -300,16 +301,15 @@ class MediaSessionFeatureTest {
     fun `GIVEN feature and media service are started WHEN media is stopped in a custom tab THEN handle showing the new playing status`() =
         runTest {
             val mediaTab = getCustomTabWithMedia(PlaybackState.STOPPED)
-            val initialState = BrowserState(
-                customTabs = listOf(mediaTab),
-            )
+            val initialState = BrowserState(customTabs = listOf(mediaTab))
             val store = BrowserStore(initialState)
-            val feature = MediaSessionFeature(
-                mock(),
-                MediaSessionServiceDelegate::class.java,
-                store,
-                mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-            )
+            val feature =
+                MediaSessionFeature(
+                    mock(),
+                    MediaSessionServiceDelegate::class.java,
+                    store,
+                    mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+                )
 
             feature.mediaService = mock()
 
@@ -324,16 +324,15 @@ class MediaSessionFeatureTest {
         runTest {
             val mockApplicationContext: Context = mock()
             val mediaTab = getMediaTab(PlaybackState.UNKNOWN)
-            val initialState = BrowserState(
-                tabs = listOf(mediaTab),
-            )
+            val initialState = BrowserState(tabs = listOf(mediaTab))
             val store = BrowserStore(initialState)
-            val feature = MediaSessionFeature(
-                mockApplicationContext,
-                MediaSessionServiceDelegate::class.java,
-                store,
-                mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-            )
+            val feature =
+                MediaSessionFeature(
+                    mockApplicationContext,
+                    MediaSessionServiceDelegate::class.java,
+                    store,
+                    mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+                )
 
             val mediaService: MediaSessionDelegate = mock()
             feature.mediaService = mediaService
@@ -352,12 +351,13 @@ class MediaSessionFeatureTest {
             val mockApplicationContext: Context = mock()
             val initialState = BrowserState()
             val store = BrowserStore(initialState)
-            val feature = MediaSessionFeature(
-                mockApplicationContext,
-                MediaSessionServiceDelegate::class.java,
-                store,
-                mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-            )
+            val feature =
+                MediaSessionFeature(
+                    mockApplicationContext,
+                    MediaSessionServiceDelegate::class.java,
+                    store,
+                    mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+                )
 
             val mediaService: MediaSessionDelegate = mock()
             feature.mediaService = mediaService
@@ -375,16 +375,15 @@ class MediaSessionFeatureTest {
         runTest {
             val mockApplicationContext: Context = mock()
             val mediaTab = getMediaTab(PlaybackState.PLAYING)
-            val initialState = BrowserState(
-                tabs = listOf(mediaTab),
-            )
+            val initialState = BrowserState(tabs = listOf(mediaTab))
             val store = BrowserStore(initialState)
-            val feature = MediaSessionFeature(
-                mockApplicationContext,
-                MediaSessionServiceDelegate::class.java,
-                store,
-                mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-            )
+            val feature =
+                MediaSessionFeature(
+                    mockApplicationContext,
+                    MediaSessionServiceDelegate::class.java,
+                    store,
+                    mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+                )
 
             val mediaService: MediaSessionDelegate = mock()
             feature.mediaService = mediaService
@@ -406,17 +405,19 @@ class MediaSessionFeatureTest {
             val mockApplicationContext: Context = mock()
             val mediaTab = getMediaTab(PlaybackState.UNKNOWN)
             val customTabWithMedia = getCustomTabWithMedia(PlaybackState.PLAYING)
-            val initialState = BrowserState(
-                tabs = listOf(mediaTab),
-                customTabs = listOf(customTabWithMedia),
-            )
+            val initialState =
+                BrowserState(
+                    tabs = listOf(mediaTab),
+                    customTabs = listOf(customTabWithMedia),
+                )
             val store = BrowserStore(initialState)
-            val feature = MediaSessionFeature(
-                mockApplicationContext,
-                MediaSessionServiceDelegate::class.java,
-                store,
-                mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-            )
+            val feature =
+                MediaSessionFeature(
+                    mockApplicationContext,
+                    MediaSessionServiceDelegate::class.java,
+                    store,
+                    mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+                )
 
             val mediaService: MediaSessionDelegate = mock()
             feature.mediaService = mediaService
@@ -432,20 +433,23 @@ class MediaSessionFeatureTest {
             assertNull(feature.mediaService)
         }
 
-    private fun getMediaTab(playbackState: PlaybackState = PlaybackState.PLAYING) = createTab(
-        "https://www.mozilla.org",
-        mediaSessionState = MediaSessionState(
-            mock(),
-            playbackState = playbackState,
-        ),
-    )
+    private fun getMediaTab(playbackState: PlaybackState = PlaybackState.PLAYING) =
+        createTab(
+            "https://www.mozilla.org",
+            mediaSessionState =
+                MediaSessionState(
+                    mock(),
+                    playbackState = playbackState,
+                ),
+        )
 
     private fun getCustomTabWithMedia(playbackState: PlaybackState = PlaybackState.PLAYING) =
         createCustomTab(
             "https://www.mozilla.org",
-            mediaSessionState = MediaSessionState(
-                mock(),
-                playbackState = playbackState,
-            ),
+            mediaSessionState =
+                MediaSessionState(
+                    mock(),
+                    playbackState = playbackState,
+                ),
         )
 }

@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.ui
 
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 import androidx.test.filters.SdkSuppress
 import org.junit.Ignore
 import org.junit.Rule
@@ -16,11 +17,9 @@ import org.mozilla.fenix.helpers.TestHelper.closeApp
 import org.mozilla.fenix.helpers.TestHelper.restartApp
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.homeScreen
-import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 class OnboardingTest {
-    @get:Rule(order = 0)
-    val fenixTestRule: FenixTestRule = FenixTestRule(grantNotifications = false)
+    @get:Rule(order = 0) val fenixTestRule: FenixTestRule = FenixTestRule(grantNotifications = false)
 
     @get:Rule(order = 1)
     val composeTestRule =
@@ -28,11 +27,12 @@ class OnboardingTest {
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(
                 launchActivity = false,
                 skipOnboarding = false,
-            ),
-        ) { it.activity }
+            )
+        ) {
+            it.activity
+        }
 
-    @get:Rule(order = 2)
-    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
+    @get:Rule(order = 2) val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3349493
     @SdkSuppress(minSdkVersion = 29)
@@ -50,7 +50,9 @@ class OnboardingTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3814795
-    @Ignore("Disabled temporarily,as the default prompt is being turned off for tests, for more info check: https://bugzilla.mozilla.org/show_bug.cgi?id=2051502")
+    @Ignore(
+        "Disabled temporarily,as the default prompt is being turned off for tests, for more info check: https://bugzilla.mozilla.org/show_bug.cgi?id=2051502"
+    )
     @SdkSuppress(minSdkVersion = 29)
     @SmokeTest
     @Test

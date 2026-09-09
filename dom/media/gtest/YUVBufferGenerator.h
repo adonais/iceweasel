@@ -13,7 +13,10 @@
 // A helper object to generate of different YUV planes.
 class YUVBufferGenerator {
  public:
-  void Init(const mozilla::gfx::IntSize& aSize);
+  // aLuma/aChroma set the fill values for the generated planes. The defaults
+  // produce a black frame (limited-range Y=0x10, Cb=Cr=0x80).
+  void Init(const mozilla::gfx::IntSize& aSize, uint8_t aLuma = 0x10,
+            uint8_t aChroma = 0x80);
   mozilla::gfx::IntSize GetSize() const;
   already_AddRefed<mozilla::layers::Image> GenerateI420Image();
   already_AddRefed<mozilla::layers::Image> GenerateNV12Image();

@@ -25,242 +25,248 @@ class BaseDomainAutocompleteProviderTest {
     private val testDispatcher = StandardTestDispatcher()
 
     @Test
-    fun `empty provider with DEFAULT list returns nothing`() = runTest(testDispatcher) {
-        val provider = createAndInitProvider(testContext, DomainList.DEFAULT) {
-            emptyList()
+    fun `empty provider with DEFAULT list returns nothing`() =
+        runTest(testDispatcher) {
+            val provider =
+                createAndInitProvider(testContext, DomainList.DEFAULT) {
+                    emptyList()
+                }
+
+            assertNoCompletion(provider, "m")
+            assertNoCompletion(provider, "mo")
+            assertNoCompletion(provider, "moz")
+            assertNoCompletion(provider, "g")
+            assertNoCompletion(provider, "go")
+            assertNoCompletion(provider, "goo")
+            assertNoCompletion(provider, "w")
+            assertNoCompletion(provider, "www")
         }
 
-        assertNoCompletion(provider, "m")
-        assertNoCompletion(provider, "mo")
-        assertNoCompletion(provider, "moz")
-        assertNoCompletion(provider, "g")
-        assertNoCompletion(provider, "go")
-        assertNoCompletion(provider, "goo")
-        assertNoCompletion(provider, "w")
-        assertNoCompletion(provider, "www")
-    }
-
     @Test
-    fun `empty provider with CUSTOM list returns nothing`() = runTest(testDispatcher) {
-        val provider = createAndInitProvider(testContext, DomainList.CUSTOM) {
-            emptyList()
+    fun `empty provider with CUSTOM list returns nothing`() =
+        runTest(testDispatcher) {
+            val provider =
+                createAndInitProvider(testContext, DomainList.CUSTOM) {
+                    emptyList()
+                }
+
+            assertNoCompletion(provider, "m")
+            assertNoCompletion(provider, "mo")
+            assertNoCompletion(provider, "moz")
+            assertNoCompletion(provider, "g")
+            assertNoCompletion(provider, "go")
+            assertNoCompletion(provider, "goo")
+            assertNoCompletion(provider, "w")
+            assertNoCompletion(provider, "www")
         }
 
-        assertNoCompletion(provider, "m")
-        assertNoCompletion(provider, "mo")
-        assertNoCompletion(provider, "moz")
-        assertNoCompletion(provider, "g")
-        assertNoCompletion(provider, "go")
-        assertNoCompletion(provider, "goo")
-        assertNoCompletion(provider, "w")
-        assertNoCompletion(provider, "www")
-    }
+    @Test
+    fun `non-empty provider with DEFAULT list returns completion`() =
+        runTest(testDispatcher) {
+            val domains = listOf("mozilla.org", "google.com", "facebook.com").into()
+            val list = DomainList.DEFAULT
+            val domainsCount = domains.size
+
+            val provider = createAndInitProvider(testContext, list) { domains }
+
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "m",
+                "m",
+                "mozilla.org",
+                "http://mozilla.org",
+            )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "moz",
+                "moz",
+                "mozilla.org",
+                "http://mozilla.org",
+            )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "www",
+                "www",
+                "www.mozilla.org",
+                "http://mozilla.org",
+            )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "www.face",
+                "www.face",
+                "www.facebook.com",
+                "http://facebook.com",
+            )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "M",
+                "m",
+                "Mozilla.org",
+                "http://mozilla.org",
+            )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "MOZ",
+                "moz",
+                "MOZilla.org",
+                "http://mozilla.org",
+            )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "www.GOO",
+                "www.goo",
+                "www.GOOgle.com",
+                "http://google.com",
+            )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "WWW.GOOGLE.",
+                "www.google.",
+                "WWW.GOOGLE.com",
+                "http://google.com",
+            )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "www.facebook.com",
+                "www.facebook.com",
+                "www.facebook.com",
+                "http://facebook.com",
+            )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "facebook.com",
+                "facebook.com",
+                "facebook.com",
+                "http://facebook.com",
+            )
+
+            assertNoCompletion(provider, "wwww")
+            assertNoCompletion(provider, "yahoo")
+        }
 
     @Test
-    fun `non-empty provider with DEFAULT list returns completion`() = runTest(testDispatcher) {
-        val domains = listOf("mozilla.org", "google.com", "facebook.com").into()
-        val list = DomainList.DEFAULT
-        val domainsCount = domains.size
+    fun `non-empty provider with CUSTOM list returns completion`() =
+        runTest(testDispatcher) {
+            val domains = listOf("mozilla.org", "google.com", "facebook.com").into()
+            val list = DomainList.CUSTOM
+            val domainsCount = domains.size
 
-        val provider = createAndInitProvider(testContext, list) { domains }
+            val provider = createAndInitProvider(testContext, list) { domains }
 
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "m",
-            "m",
-            "mozilla.org",
-            "http://mozilla.org",
-        )
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "moz",
-            "moz",
-            "mozilla.org",
-            "http://mozilla.org",
-        )
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "www",
-            "www",
-            "www.mozilla.org",
-            "http://mozilla.org",
-        )
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "www.face",
-            "www.face",
-            "www.facebook.com",
-            "http://facebook.com",
-        )
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "M",
-            "m",
-            "Mozilla.org",
-            "http://mozilla.org",
-        )
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "MOZ",
-            "moz",
-            "MOZilla.org",
-            "http://mozilla.org",
-        )
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "www.GOO",
-            "www.goo",
-            "www.GOOgle.com",
-            "http://google.com",
-        )
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "WWW.GOOGLE.",
-            "www.google.",
-            "WWW.GOOGLE.com",
-            "http://google.com",
-        )
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "www.facebook.com",
-            "www.facebook.com",
-            "www.facebook.com",
-            "http://facebook.com",
-        )
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "facebook.com",
-            "facebook.com",
-            "facebook.com",
-            "http://facebook.com",
-        )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "m",
+                "m",
+                "mozilla.org",
+                "http://mozilla.org",
+            )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "moz",
+                "moz",
+                "mozilla.org",
+                "http://mozilla.org",
+            )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "www",
+                "www",
+                "www.mozilla.org",
+                "http://mozilla.org",
+            )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "www.face",
+                "www.face",
+                "www.facebook.com",
+                "http://facebook.com",
+            )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "M",
+                "m",
+                "Mozilla.org",
+                "http://mozilla.org",
+            )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "MOZ",
+                "moz",
+                "MOZilla.org",
+                "http://mozilla.org",
+            )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "www.GOO",
+                "www.goo",
+                "www.GOOgle.com",
+                "http://google.com",
+            )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "WWW.GOOGLE.",
+                "www.google.",
+                "WWW.GOOGLE.com",
+                "http://google.com",
+            )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "www.facebook.com",
+                "www.facebook.com",
+                "www.facebook.com",
+                "http://facebook.com",
+            )
+            assertCompletion(
+                provider,
+                list,
+                domainsCount,
+                "facebook.com",
+                "facebook.com",
+                "facebook.com",
+                "http://facebook.com",
+            )
 
-        assertNoCompletion(provider, "wwww")
-        assertNoCompletion(provider, "yahoo")
-    }
-
-    @Test
-    fun `non-empty provider with CUSTOM list returns completion`() = runTest(testDispatcher) {
-        val domains = listOf("mozilla.org", "google.com", "facebook.com").into()
-        val list = DomainList.CUSTOM
-        val domainsCount = domains.size
-
-        val provider = createAndInitProvider(testContext, list) { domains }
-
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "m",
-            "m",
-            "mozilla.org",
-            "http://mozilla.org",
-        )
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "moz",
-            "moz",
-            "mozilla.org",
-            "http://mozilla.org",
-        )
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "www",
-            "www",
-            "www.mozilla.org",
-            "http://mozilla.org",
-        )
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "www.face",
-            "www.face",
-            "www.facebook.com",
-            "http://facebook.com",
-        )
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "M",
-            "m",
-            "Mozilla.org",
-            "http://mozilla.org",
-        )
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "MOZ",
-            "moz",
-            "MOZilla.org",
-            "http://mozilla.org",
-        )
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "www.GOO",
-            "www.goo",
-            "www.GOOgle.com",
-            "http://google.com",
-        )
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "WWW.GOOGLE.",
-            "www.google.",
-            "WWW.GOOGLE.com",
-            "http://google.com",
-        )
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "www.facebook.com",
-            "www.facebook.com",
-            "www.facebook.com",
-            "http://facebook.com",
-        )
-        assertCompletion(
-            provider,
-            list,
-            domainsCount,
-            "facebook.com",
-            "facebook.com",
-            "facebook.com",
-            "http://facebook.com",
-        )
-
-        assertNoCompletion(provider, "wwww")
-        assertNoCompletion(provider, "yahoo")
-    }
+            assertNoCompletion(provider, "wwww")
+            assertNoCompletion(provider, "yahoo")
+        }
 
     private fun assertCompletion(
         provider: AutocompleteProvider,
@@ -293,8 +299,7 @@ class BaseDomainAutocompleteProviderTest {
         list: DomainList,
         loader: DomainsLoader,
     ): AutocompleteProvider =
-        object : BaseDomainAutocompleteProvider(list, loader, ioDispatcher = testDispatcher) {
-        }.apply {
+        object : BaseDomainAutocompleteProvider(list, loader, ioDispatcher = testDispatcher) {}.apply {
             initialize(context)
             testDispatcher.scheduler.advanceUntilIdle()
         }

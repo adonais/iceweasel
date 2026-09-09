@@ -87,7 +87,7 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
   bool IsFocused() const;
 
   /**
-   * Function to paint the focus rect when our nsSelectsAreaFrame is painting.
+   * Function to paint the focus rect when our scrolled frame is painting.
    * @param aPt the offset of this frame, relative to the rendering reference
    * frame
    */

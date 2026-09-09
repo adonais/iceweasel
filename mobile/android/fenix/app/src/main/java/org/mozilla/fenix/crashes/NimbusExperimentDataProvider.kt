@@ -10,19 +10,17 @@ import mozilla.components.lib.crash.runtimetagproviders.ExperimentDataProvider
 import mozilla.components.service.nimbus.NimbusApi
 
 /**
- * [RuntimeTagProvider] that provides the active [NimbusApi] experiments
- * as runtime tags.
+ * [RuntimeTagProvider] that provides the active [NimbusApi] experiments as runtime tags.
  *
  * @param nimbusApi the [NimbusApi] to use to get the active experiments
  */
-class NimbusExperimentDataProvider(
-    private val nimbusApi: Lazy<NimbusApi>,
-) : ExperimentDataProvider {
+class NimbusExperimentDataProvider(private val nimbusApi: Lazy<NimbusApi>) : ExperimentDataProvider {
 
     override fun getExperimentData(): ExperimentData {
-        val data = nimbusApi.value.getActiveExperiments().associate {
-            it.slug to it.branchSlug
-        }
+        val data =
+            nimbusApi.value.getActiveExperiments().associate {
+                it.slug to it.branchSlug
+            }
 
         return ExperimentData(data)
     }

@@ -27,7 +27,7 @@ namespace nss_test {
 class Pkcs11HmacTest : public ::testing::TestWithParam<
                            std::tuple<HmacTestVector, CK_MECHANISM_TYPE>> {
  protected:
-  void RunTestVector(const HmacTestVector &vec, CK_MECHANISM_TYPE mech) {
+  void RunTestVector(const HmacTestVector& vec, CK_MECHANISM_TYPE mech) {
     std::string err = "Test #" + std::to_string(vec.id) + " failed";
     std::vector<uint8_t> vec_key = hex_string_to_bytes(vec.key);
     std::vector<uint8_t> vec_mac = hex_string_to_bytes(vec.tag);

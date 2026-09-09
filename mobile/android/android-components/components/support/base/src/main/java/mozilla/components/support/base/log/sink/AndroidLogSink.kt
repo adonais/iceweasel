@@ -12,20 +12,17 @@ import mozilla.components.support.base.log.Log
  *
  * @param defaultTag A default tag that should be used for all logging calls without tag.
  */
-class AndroidLogSink(
-    private val defaultTag: String = "App",
-) : LogSink {
-    /**
-     * Low-level logging call.
-     */
+class AndroidLogSink(private val defaultTag: String = "App") : LogSink {
+    /** Low-level logging call. */
     override fun log(priority: Log.Priority, tag: String?, throwable: Throwable?, message: String) {
         val logTag = tag(tag)
 
-        val logMessage: String = if (throwable != null) {
-            "$message\n${throwable.getStacktraceAsString()}"
-        } else {
-            message
-        }
+        val logMessage: String =
+            if (throwable != null) {
+                "$message\n${throwable.getStacktraceAsString()}"
+            } else {
+                message
+            }
 
         android.util.Log.println(priority.value, logTag, logMessage)
     }

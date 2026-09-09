@@ -39,7 +39,7 @@ class nsIDocumentViewerPrint : public nsISupports {
   virtual void IncrementDestroyBlockedCount() = 0;
   virtual void DecrementDestroyBlockedCount() = 0;
 
-  virtual void OnDonePrinting() = 0;
+  MOZ_CAN_RUN_SCRIPT virtual void OnDonePrinting() = 0;
 
   /**
    * Replaces the current presentation with print preview presentation.
@@ -55,7 +55,7 @@ class nsIDocumentViewerPrint : public nsISupports {
   bool GetIsPrintPreview() const override;                      \
   void IncrementDestroyBlockedCount() override;                 \
   void DecrementDestroyBlockedCount() override;                 \
-  void OnDonePrinting() override;                               \
+  MOZ_CAN_RUN_SCRIPT void OnDonePrinting() override;            \
   void SetPrintPreviewPresentation(nsPresContext* aPresContext, \
                                    mozilla::PresShell* aPresShell) override;
 

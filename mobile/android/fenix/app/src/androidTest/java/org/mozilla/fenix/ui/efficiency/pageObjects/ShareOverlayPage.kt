@@ -6,12 +6,19 @@ package org.mozilla.fenix.ui.efficiency.pageObjects
 
 import android.content.Intent
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
+import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.matcher.IntentMatchers
+import androidx.test.espresso.matcher.ViewMatchers.hasSibling
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.uiautomator.UiSelector
 import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.Matchers.allOf
 import org.junit.Assert.assertTrue
+import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.AppAndSystemHelper.forceCloseApp
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestHelper.mDevice
@@ -36,10 +43,11 @@ class ShareOverlayPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTes
         NavigationRegistry.register(
             from = "BrowserPage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(BrowserPageSelectors.MAIN_MENU_BUTTON),
-                NavigationStep.Click(MainMenuSelectors.SHARE_BUTTON),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.Click(BrowserPageSelectors.MAIN_MENU_BUTTON),
+                    NavigationStep.Click(MainMenuSelectors.SHARE_BUTTON),
+                ),
         )
     }
 
@@ -53,6 +61,25 @@ class ShareOverlayPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTes
         return ShareOverlaySelectors.all.filter { it.groups.contains(group) }
     }
 
+    // Espresso rather than a moz* verb: the share sheet is a plain View fragment (no GeckoView), and the
+    // per-row favicon/url sibling relationship cannot be expressed by a single Selector. Mirrors the
+    // legacy ShareOverlayRobot.verifyShareTabsOverlay.
+    fun verifyShareTabsOverlay(vararg tabTitles: String): ShareOverlayPage {
+        onView(withId(R.id.shared_site_list)).check(matches(isDisplayed()))
+        tabTitles.forEach { title ->
+            onView(withText(title))
+                .check(
+                    matches(
+                        allOf(
+                            hasSibling(withId(R.id.share_tab_favicon)),
+                            hasSibling(withId(R.id.share_tab_url)),
+                        )
+                    )
+                )
+        }
+        return this
+    }
+
     fun verifySharingWithSelectedApp(
         appName: String,
         appPackageName: String,
@@ -63,7 +90,8 @@ class ShareOverlayPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTes
         assertTrue("Sharing app '$appName' not found on device", sharingApp.exists())
         sharingApp.clickAndWaitForNewWindow()
         val urlMatchers = content.split("\n\n").map { IntentMatchers.hasExtra(Intent.EXTRA_TEXT, containsString(it)) }
-        val subjectMatchers = subject.split(", ").map { IntentMatchers.hasExtra(Intent.EXTRA_SUBJECT, containsString(it)) }
+        val subjectMatchers =
+            subject.split(", ").map { IntentMatchers.hasExtra(Intent.EXTRA_SUBJECT, containsString(it)) }
         Intents.intended(allOf(*(urlMatchers + subjectMatchers).toTypedArray()))
         forceCloseApp(appPackageName)
         return this

@@ -12,24 +12,22 @@ import org.mozilla.fenix.IntentReceiverActivity
 import org.mozilla.fenix.android.DefaultActivityLifecycleCallbacks
 
 /**
- * Adds a profiler marker for each activity lifecycle callbacks. The callbacks are called by the
- * super method (e.g. [Activity.onCreate] so the markers occur sometime during the execution of
- * our implementation (e.g. [org.mozilla.fenix.HomeActivity.onCreate]) rather than at the beginning
- * or end of that method.
+ * Adds a profiler marker for each activity lifecycle callbacks. The callbacks are called by the super method (e.g.
+ * [Activity.onCreate] so the markers occur sometime during the execution of our implementation (e.g.
+ * [org.mozilla.fenix.HomeActivity.onCreate]) rather than at the beginning or end of that method.
  */
-class MarkersActivityLifecycleCallbacks(
-    private val engine: Engine,
-) : DefaultActivityLifecycleCallbacks {
+class MarkersActivityLifecycleCallbacks(private val engine: Engine) : DefaultActivityLifecycleCallbacks {
 
     private fun shouldSkip(): Boolean {
         return engine.profiler?.isProfilerActive() != true
     }
 
     override fun onActivityCreated(activity: Activity, bundle: Bundle?) {
-        if (shouldSkip() ||
-            // These methods are manually instrumented with duration.
-            activity is HomeActivity ||
-            activity is IntentReceiverActivity
+        if (
+            shouldSkip() ||
+                // These methods are manually instrumented with duration.
+                activity is HomeActivity ||
+                activity is IntentReceiverActivity
         ) {
             return
         }
@@ -37,9 +35,10 @@ class MarkersActivityLifecycleCallbacks(
     }
 
     override fun onActivityStarted(activity: Activity) {
-        if (shouldSkip() ||
-            // These methods are manually instrumented with duration.
-            activity is HomeActivity
+        if (
+            shouldSkip() ||
+                // These methods are manually instrumented with duration.
+                activity is HomeActivity
         ) {
             return
         }
@@ -47,19 +46,24 @@ class MarkersActivityLifecycleCallbacks(
     }
 
     override fun onActivityResumed(activity: Activity) {
-        if (shouldSkip()) { return }
+        if (shouldSkip()) {
+            return
+        }
         engine.profiler?.addMarker(MARKER_NAME, "${activity::class.simpleName}.onResume (via callbacks)")
     }
 
     override fun onActivityPaused(activity: Activity) {
-        if (shouldSkip()) { return }
+        if (shouldSkip()) {
+            return
+        }
         engine.profiler?.addMarker(MARKER_NAME, "${activity::class.simpleName}.onPause (via callbacks)")
     }
 
     override fun onActivityStopped(activity: Activity) {
-        if (shouldSkip() ||
-            // These methods are manually instrumented with duration.
-            activity is HomeActivity
+        if (
+            shouldSkip() ||
+                // These methods are manually instrumented with duration.
+                activity is HomeActivity
         ) {
             return
         }
@@ -67,9 +71,10 @@ class MarkersActivityLifecycleCallbacks(
     }
 
     override fun onActivityDestroyed(activity: Activity) {
-        if (shouldSkip() ||
-            // These methods are manually instrumented with duration.
-            activity is HomeActivity
+        if (
+            shouldSkip() ||
+                // These methods are manually instrumented with duration.
+                activity is HomeActivity
         ) {
             return
         }

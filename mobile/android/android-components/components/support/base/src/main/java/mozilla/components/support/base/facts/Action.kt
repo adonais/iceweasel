@@ -4,13 +4,9 @@
 
 package mozilla.components.support.base.facts
 
-/**
- * A user or system action that causes [Fact] instances to be emitted.
- */
+/** A user or system action that causes [Fact] instances to be emitted. */
 enum class Action {
-    /**
-     * The user has clicked on something.
-     */
+    /** The user has clicked on something. */
     CLICK,
 
     /**
@@ -21,49 +17,31 @@ enum class Action {
      */
     TOGGLE,
 
-    /**
-     * The user has committed an input (e.g. entered text into an input field and then pressed enter).
-     */
+    /** The user has committed an input (e.g. entered text into an input field and then pressed enter). */
     COMMIT,
 
-    /**
-     * The user has started playing something.
-     */
+    /** The user has started playing something. */
     PLAY,
 
-    /**
-     * The user has paused something.
-     */
+    /** The user has paused something. */
     PAUSE,
 
-    /**
-     * The user has stopped something.
-     */
+    /** The user has stopped something. */
     STOP,
 
-    /**
-     * The user has resumed something.
-     */
+    /** The user has resumed something. */
     RESUME,
 
-    /**
-     * The user has confirmed something.
-     */
+    /** The user has confirmed something. */
     CONFIRM,
 
-    /**
-     * The user has cancelled something.
-     */
+    /** The user has cancelled something. */
     CANCEL,
 
-    /**
-     * The user has retried something.
-     */
+    /** The user has retried something. */
     TRY_AGAIN,
 
-    /**
-     * The user has opened something.
-     */
+    /** The user has opened something. */
     OPEN,
 
     /**
@@ -74,34 +52,23 @@ enum class Action {
     INTERACTION,
 
     /**
-     * An implementation detail event exposed to understand the system for diagnostic purposes.
-     * For example, for each action the app may add profiler markers to better understand
-     * the app visually inside profiles.
+     * An implementation detail event exposed to understand the system for diagnostic purposes. For example, for each
+     * action the app may add profiler markers to better understand the app visually inside profiles.
      */
     IMPLEMENTATION_DETAIL,
 
-    /**
-     * An action triggered by the Android system.
-     */
+    /** An action triggered by the Android system. */
     SYSTEM,
 
-    /**
-     * Something is getting displayed.
-     */
+    /** Something is getting displayed. */
     DISPLAY,
 
-    /**
-     * The user selected something from a list of options.
-     */
+    /** The user selected something from a list of options. */
     SELECT,
 
-    /**
-     * The user has skipped to the next item (e.g. the next media track).
-     */
+    /** The user has skipped to the next item (e.g. the next media track). */
     NEXT,
 
-    /**
-     * The user has skipped to the previous item (e.g. the previous media track).
-     */
+    /** The user has skipped to the previous item (e.g. the previous media track). */
     PREVIOUS,
 }

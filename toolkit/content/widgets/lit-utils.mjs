@@ -251,6 +251,7 @@ export class MozLitElement extends LitElement {
  *     element can be disabled.
  * @property {string} ariaLabel - The aria-label text when there is no visible label.
  * @property {string} ariaDescription - The aria-description text when there is no visible description.
+ * @property {string} title - The title attribute, mapped onto the inner focusable control.
  */
 export class MozBaseInputElement extends MozLitElement {
   static formAssociated = true;
@@ -269,6 +270,7 @@ export class MozBaseInputElement extends MozLitElement {
     parentDisabled: { type: Boolean, state: true },
     ariaLabel: { type: String, mapped: true },
     ariaDescription: { type: String, mapped: true },
+    title: { type: String, mapped: true },
     inputLayout: { type: String, reflect: true, attribute: "inputlayout" },
   };
   /** @type {"inline" | "block" | "inline-end"} */

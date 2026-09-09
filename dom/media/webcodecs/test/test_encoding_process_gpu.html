@@ -1,0 +1,18 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Test WebCodecs video hardware encoding with GPU</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+<script src="encoding_process.js"></script>
+<script type="application/javascript">
+
+add_task(async function () {
+  await testWebCodecsEncodingProcess(/* hasGpu */ true);
+});
+
+</script>
+</head>
+<body>
+</body>
+</html>

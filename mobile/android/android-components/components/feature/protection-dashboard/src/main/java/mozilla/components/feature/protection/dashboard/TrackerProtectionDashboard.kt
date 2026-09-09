@@ -60,12 +60,11 @@ import mozilla.components.feature.protection.dashboard.facts.emitTrackerCategory
  * @param sitesCount Number of sites the trackers were blocked on.
  * @param dataSavedMB Approximate data saved in megabytes, or null if not available.
  * @param trackersBlocked Breakdown of trackers blocked by their category.
- * @param totalTrackersBlockedAllTime Total number of trackers blocked since [trackingSinceDate].
- * The footer is hidden when this is 0 or [trackingSinceDate] is null.
+ * @param totalTrackersBlockedAllTime Total number of trackers blocked since [trackingSinceDate]. The footer is hidden
+ *   when this is 0 or [trackingSinceDate] is null.
  * @param trackingSinceDate Pre-formatted date from which the all-time blocking has been tracked.
- * @param contentPadding Inner padding for the weekly stats card content.
- * Allows pushing the content down while leaving room for an overlay
- * (e.g. a bottom sheet handle) above the title.
+ * @param contentPadding Inner padding for the weekly stats card content. Allows pushing the content down while leaving
+ *   room for an overlay (e.g. a bottom sheet handle) above the title.
  */
 @Composable
 fun TrackerProtectionDashboard(
@@ -115,25 +114,23 @@ private fun WeeklyStatsCard(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
 ) {
-    val gradientBrush = Brush.linearGradient(
-        colorStops = arrayOf(
-            0.4f to colors.gradientStart,
-            1.0f to colors.gradientEnd,
-        ),
-    )
+    val gradientBrush =
+        Brush.linearGradient(
+            colorStops =
+                arrayOf(
+                    0.4f to colors.gradientStart,
+                    1.0f to colors.gradientEnd,
+                )
+        )
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(gradientBrush),
-    ) {
+    Box(modifier = modifier.fillMaxWidth().background(gradientBrush)) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(contentPadding)
-                .padding(horizontal = AcornTheme.layout.space.dynamic200)
-                .padding(top = AcornTheme.layout.space.static150)
-                .padding(bottom = AcornTheme.layout.space.static100),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .padding(contentPadding)
+                    .padding(horizontal = AcornTheme.layout.space.dynamic200)
+                    .padding(top = AcornTheme.layout.space.static150)
+                    .padding(bottom = AcornTheme.layout.space.static100),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (totalTrackersBlocked == 0) {
@@ -151,9 +148,7 @@ private fun WeeklyStatsCard(
 }
 
 @Composable
-private fun WeeklyStatsEmptyContent(
-    appName: String,
-) {
+private fun WeeklyStatsEmptyContent(appName: String) {
     Image(
         painter = painterResource(R.drawable.firefox_pictorgram_shield_check_rgb_2),
         contentDescription = null,
@@ -214,12 +209,13 @@ private fun WeeklyStatsContent(
 
         if (sitesCount > 0) {
             Text(
-                text = pluralStringResource(
-                    // If we are to use these in the future, move out string from static_strings.xml
-                    R.plurals.mozac_protections_dashboard_across_sites,
-                    sitesCount,
-                    sitesCount,
-                ),
+                text =
+                    pluralStringResource(
+                        // If we are to use these in the future, move out string from static_strings.xml
+                        R.plurals.mozac_protections_dashboard_across_sites,
+                        sitesCount,
+                        sitesCount,
+                    ),
                 style = AcornTheme.typography.subtitle1,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -227,14 +223,16 @@ private fun WeeklyStatsContent(
         }
     }
 
-    dataSavedMB?.takeIf { it > 0 }?.let { dataSaved ->
-        Spacer(modifier = Modifier.height(AcornTheme.layout.space.dynamic100))
+    dataSavedMB
+        ?.takeIf { it > 0 }
+        ?.let { dataSaved ->
+            Spacer(modifier = Modifier.height(AcornTheme.layout.space.dynamic100))
 
-        DataSavedChip(
-            dataSavedMB = dataSaved,
-            colors = colors,
-        )
-    }
+            DataSavedChip(
+                dataSavedMB = dataSaved,
+                colors = colors,
+            )
+        }
 }
 
 @Composable
@@ -249,16 +247,18 @@ private fun DataSavedChip(
         color = colors.chipBackground,
     ) {
         Text(
-            text = pluralStringResource(
-                // If we are to use these in the future, move out string from static_strings.xml
-                R.plurals.mozac_protections_dashboard_data_saved,
-                dataSavedMB,
-                dataSavedMB,
-            ),
-            modifier = Modifier.padding(
-                horizontal = AcornTheme.layout.space.static100,
-                vertical = AcornTheme.layout.space.static25,
-            ),
+            text =
+                pluralStringResource(
+                    // If we are to use these in the future, move out string from static_strings.xml
+                    R.plurals.mozac_protections_dashboard_data_saved,
+                    dataSavedMB,
+                    dataSavedMB,
+                ),
+            modifier =
+                Modifier.padding(
+                    horizontal = AcornTheme.layout.space.static100,
+                    vertical = AcornTheme.layout.space.static25,
+                ),
             style = AcornTheme.typography.subtitle1,
             color = colors.chipText,
         )
@@ -273,10 +273,11 @@ private fun TrackerBreakdownSection(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .padding(top = AcornTheme.layout.space.static200)
-            .padding(horizontal = AcornTheme.layout.space.dynamic200)
-            .clip(MaterialTheme.shapes.extraLarge),
+        modifier =
+            modifier
+                .padding(top = AcornTheme.layout.space.static200)
+                .padding(horizontal = AcornTheme.layout.space.dynamic200)
+                .clip(MaterialTheme.shapes.extraLarge),
         verticalArrangement = Arrangement.spacedBy(AcornTheme.layout.space.static25),
     ) {
         trackersBlocked.forEach { category ->
@@ -296,16 +297,18 @@ private fun TotalTrackersFooter(
     modifier: Modifier = Modifier,
 ) {
     Text(
-        text = pluralStringResource(
-            R.plurals.mozac_protections_dashboard_total_blocked_since_2,
-            totalTrackersBlockedAllTime,
-            totalTrackersBlockedAllTime,
-            trackingSinceDate,
-        ),
-        modifier = modifier
-            .padding(top = AcornTheme.layout.space.static300)
-            .padding(bottom = AcornTheme.layout.space.static200)
-            .padding(horizontal = AcornTheme.layout.space.static400),
+        text =
+            pluralStringResource(
+                R.plurals.mozac_protections_dashboard_total_blocked_since_2,
+                totalTrackersBlockedAllTime,
+                totalTrackersBlockedAllTime,
+                trackingSinceDate,
+            ),
+        modifier =
+            modifier
+                .padding(top = AcornTheme.layout.space.static300)
+                .padding(bottom = AcornTheme.layout.space.static200)
+                .padding(horizontal = AcornTheme.layout.space.static400),
         style = AcornTheme.typography.body2,
         color = MaterialTheme.colorScheme.onSurface,
     )
@@ -319,23 +322,25 @@ private fun TrackerCategoryRow(
     modifier: Modifier = Modifier,
 ) {
     val isEmpty = trackersBlocked.count == 0
-    val contentColor = if (isEmpty) {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
+    val contentColor =
+        if (isEmpty) {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        }
 
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.extraSmall)
-            .pointerInput(trackersBlocked.category) {
-                detectTapGestures(onTap = { emitTrackerCategoryTappedFact(trackersBlocked.category) })
-            }
-            .background(MaterialTheme.colorScheme.surfaceBright)
-            .padding(vertical = AcornTheme.layout.space.static100)
-            .padding(horizontal = AcornTheme.layout.space.static200)
-            .semantics(mergeDescendants = true) {},
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.extraSmall)
+                .pointerInput(trackersBlocked.category) {
+                    detectTapGestures(onTap = { emitTrackerCategoryTappedFact(trackersBlocked.category) })
+                }
+                .background(MaterialTheme.colorScheme.surfaceBright)
+                .padding(vertical = AcornTheme.layout.space.static100)
+                .padding(horizontal = AcornTheme.layout.space.static200)
+                .semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -347,9 +352,7 @@ private fun TrackerCategoryRow(
 
         Spacer(modifier = Modifier.width(AcornTheme.layout.space.static200))
 
-        Column(
-            modifier = Modifier.weight(1f),
-        ) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = pluralStringResource(trackersBlocked.name, trackersBlocked.count, trackersBlocked.count),
                 style = AcornTheme.typography.body1,
@@ -364,11 +367,7 @@ private fun TrackerCategoryRow(
 
                 val fraction = if (maxCount > 0) trackersBlocked.count.toFloat() / maxCount else 0f
                 val trackHeight = AcornTheme.layout.space.static100
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(trackHeight),
-                ) {
+                Canvas(modifier = Modifier.fillMaxWidth().height(trackHeight)) {
                     val strokeWidth = trackHeight.toPx()
                     val y = size.height / 2
 
@@ -390,9 +389,7 @@ private fun TrackerCategoryRow(
 private fun EmptyTrackerProtectionDashboardPreview() {
     AcornTheme {
         Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(AcornTheme.layout.space.static200),
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(AcornTheme.layout.space.static200)
         ) {
             WeeklyStatsCard(
                 appName = "Firefox",
@@ -414,37 +411,36 @@ private fun EmptyTrackerProtectionDashboardPreview() {
 @Composable
 @Suppress("MagicNumber")
 private fun TrackerProtectionDashboardPreview() {
-    val trackersBlocked = listOf(
-        TrackersBlockedCategory(
-            icon = mozilla.components.ui.icons.R.drawable.mozac_ic_cookies_24,
-            name = R.plurals.protections_dashboard_category_cookies,
-            count = 302,
-            category = TrackerCategory.CROSS_SITE_COOKIES,
-        ),
-        TrackersBlockedCategory(
-            icon = mozilla.components.ui.icons.R.drawable.mozac_ic_thumbs_down_24,
-            name = R.plurals.protections_dashboard_category_social,
-            count = 241,
-            category = TrackerCategory.SOCIAL_MEDIA_TRACKERS,
-        ),
-        TrackersBlockedCategory(
-            icon = mozilla.components.ui.icons.R.drawable.mozac_ic_fingerprinter_24,
-            name = R.plurals.protections_dashboard_category_fingerprinters,
-            count = 1,
-            category = TrackerCategory.FINGERPRINTERS,
-        ),
-        TrackersBlockedCategory(
-            icon = mozilla.components.ui.icons.R.drawable.mozac_ic_image_24,
-            name = R.plurals.protections_dashboard_category_tracking_content,
-            count = 0,
-            category = TrackerCategory.TRACKING_CONTENT,
-        ),
-    )
+    val trackersBlocked =
+        listOf(
+            TrackersBlockedCategory(
+                icon = mozilla.components.ui.icons.R.drawable.mozac_ic_cookies_24,
+                name = R.plurals.protections_dashboard_category_cookies,
+                count = 302,
+                category = TrackerCategory.CROSS_SITE_COOKIES,
+            ),
+            TrackersBlockedCategory(
+                icon = mozilla.components.ui.icons.R.drawable.mozac_ic_thumbs_down_24,
+                name = R.plurals.protections_dashboard_category_social,
+                count = 241,
+                category = TrackerCategory.SOCIAL_MEDIA_TRACKERS,
+            ),
+            TrackersBlockedCategory(
+                icon = mozilla.components.ui.icons.R.drawable.mozac_ic_fingerprinter_24,
+                name = R.plurals.protections_dashboard_category_fingerprinters,
+                count = 1,
+                category = TrackerCategory.FINGERPRINTERS,
+            ),
+            TrackersBlockedCategory(
+                icon = mozilla.components.ui.icons.R.drawable.mozac_ic_image_24,
+                name = R.plurals.protections_dashboard_category_tracking_content,
+                count = 0,
+                category = TrackerCategory.TRACKING_CONTENT,
+            ),
+        )
     AcornTheme {
         Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(AcornTheme.layout.space.static200),
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(AcornTheme.layout.space.static200)
         ) {
             WeeklyStatsCard(
                 appName = "Firefox",
@@ -469,27 +465,28 @@ private fun TrackerProtectionDashboardPreview() {
 @Suppress("MagicNumber")
 @Composable
 @ReadOnlyComposable
-private fun previewDashboardColors() = when (isSystemInDarkTheme()) {
-    true -> ProtectionsDashboardColors(
-        chipBackground = Color(0xFF1C1B22).copy(alpha = 0.4f),
-        chipText = Color(0xFFD9BFFF),
-        progressBar = Color(0xFF764EDD),
-        gradientStart = Color(0xFF180E30).copy(alpha = 0.5f),
-        gradientEnd = Color(0xFF711D08).copy(alpha = 0.5f),
-    )
+private fun previewDashboardColors() =
+    when (isSystemInDarkTheme()) {
+        true ->
+            ProtectionsDashboardColors(
+                chipBackground = Color(0xFF1C1B22).copy(alpha = 0.4f),
+                chipText = Color(0xFFD9BFFF),
+                progressBar = Color(0xFF764EDD),
+                gradientStart = Color(0xFF180E30).copy(alpha = 0.5f),
+                gradientEnd = Color(0xFF711D08).copy(alpha = 0.5f),
+            )
 
-    else -> ProtectionsDashboardColors(
-        chipBackground = Color.White.copy(alpha = 0.4f),
-        chipText = Color(0xFF312A64),
-        progressBar = Color(0xFF764EDD),
-        gradientStart = Color(0xFFE5D6FF).copy(alpha = 0.5f),
-        gradientEnd = Color(0xFFFFD4B7).copy(alpha = 0.5f),
-    )
-}
+        else ->
+            ProtectionsDashboardColors(
+                chipBackground = Color.White.copy(alpha = 0.4f),
+                chipText = Color(0xFF312A64),
+                progressBar = Color(0xFF764EDD),
+                gradientStart = Color(0xFFE5D6FF).copy(alpha = 0.5f),
+                gradientEnd = Color(0xFFFFD4B7).copy(alpha = 0.5f),
+            )
+    }
 
-/**
- * The kinds of trackers the dashboard breaks down, used as a stable identity for telemetry.
- */
+/** The kinds of trackers the dashboard breaks down, used as a stable identity for telemetry. */
 enum class TrackerCategory {
     CROSS_SITE_COOKIES,
     SOCIAL_MEDIA_TRACKERS,

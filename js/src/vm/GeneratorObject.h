@@ -235,10 +235,6 @@ class GeneratorObject : public AbstractGeneratorObject {
   static GeneratorObject* create(JSContext* cx, HandleFunction fun);
 };
 
-bool GeneratorThrowOrReturn(JSContext* cx, AbstractFramePtr frame,
-                            Handle<AbstractGeneratorObject*> obj,
-                            HandleValue val, GeneratorResumeKind resumeKind);
-
 /**
  * Resume a suspended generator, async function, async generator, or async
  * module.

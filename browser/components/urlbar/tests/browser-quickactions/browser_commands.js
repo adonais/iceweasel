@@ -90,6 +90,16 @@ const LOAD_TYPE = {
   PRE_LOADED: 3,
 };
 
+async function loadInCurrentTab(uri) {
+  const onLoad = BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    false,
+    uri
+  );
+  BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, uri);
+  await onLoad;
+}
+
 let COMMANDS_TESTS = [
   {
     cmd: "open view",
@@ -156,18 +166,7 @@ let COMMANDS_TESTS = [
   },
   {
     cmd: "add-ons",
-    setup: async () => {
-      const onLoad = BrowserTestUtils.browserLoaded(
-        gBrowser.selectedBrowser,
-        false,
-        "https://example.com/"
-      );
-      BrowserTestUtils.startLoadingURIString(
-        gBrowser.selectedBrowser,
-        "https://example.com/"
-      );
-      await onLoad;
-    },
+    setup: () => loadInCurrentTab("https://example.com/"),
     uri: "about:addons",
     loadType: LOAD_TYPE.NEW_TAB,
     testFun: async () =>
@@ -178,18 +177,7 @@ let COMMANDS_TESTS = [
   },
   {
     cmd: "extensions",
-    setup: async () => {
-      const onLoad = BrowserTestUtils.browserLoaded(
-        gBrowser.selectedBrowser,
-        false,
-        "https://example.com/"
-      );
-      BrowserTestUtils.startLoadingURIString(
-        gBrowser.selectedBrowser,
-        "https://example.com/"
-      );
-      await onLoad;
-    },
+    setup: () => loadInCurrentTab("https://example.com/"),
     uri: "about:addons",
     loadType: LOAD_TYPE.NEW_TAB,
     testFun: async () =>
@@ -201,18 +189,7 @@ let COMMANDS_TESTS = [
   },
   {
     cmd: "themes",
-    setup: async () => {
-      const onLoad = BrowserTestUtils.browserLoaded(
-        gBrowser.selectedBrowser,
-        false,
-        "https://example.com/"
-      );
-      BrowserTestUtils.startLoadingURIString(
-        gBrowser.selectedBrowser,
-        "https://example.com/"
-      );
-      await onLoad;
-    },
+    setup: () => loadInCurrentTab("https://example.com/"),
     uri: "about:addons",
     loadType: LOAD_TYPE.NEW_TAB,
     testFun: async () =>
@@ -230,6 +207,22 @@ let COMMANDS_TESTS = [
       });
       const libraryWindow = Services.wm.getMostRecentWindow("Places:Organizer");
       libraryWindow?.close();
+      return true;
+    },
+  },
+  {
+    // An about:preferences tab that is already open has to be navigated to the
+    // pane the action asks for, rather than only focused.
+    cmd: "manage ai",
+    setup: () => loadInCurrentTab("about:preferences"),
+    uri: "about:preferences#ai",
+    loadType: LOAD_TYPE.PRE_LOADED,
+    testFun: async () => {
+      await TestUtils.waitForCondition(
+        () =>
+          gBrowser.selectedBrowser.currentURI.spec == "about:preferences#ai",
+        "waiting for the open preferences tab to switch pane"
+      );
       return true;
     },
   },

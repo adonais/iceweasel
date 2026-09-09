@@ -24,14 +24,15 @@ internal class MenuCandidateListAdapter(
 ) : ListAdapter<MenuCandidate, MenuCandidateViewHolder<out MenuCandidate>>(MenuCandidateDiffer) {
 
     @LayoutRes
-    override fun getItemViewType(position: Int) = when (val item = getItem(position)) {
-        is TextMenuCandidate -> TextMenuCandidateViewHolder.layoutResource
-        is DecorativeTextMenuCandidate -> DecorativeTextMenuCandidateViewHolder.layoutResource
-        is CompoundMenuCandidate -> CompoundMenuCandidateViewHolder.getLayoutResource(item)
-        is NestedMenuCandidate -> NestedMenuCandidateViewHolder.layoutResource
-        is RowMenuCandidate -> RowMenuCandidateViewHolder.layoutResource
-        is DividerMenuCandidate -> DividerMenuCandidateViewHolder.layoutResource
-    }
+    override fun getItemViewType(position: Int) =
+        when (val item = getItem(position)) {
+            is TextMenuCandidate -> TextMenuCandidateViewHolder.layoutResource
+            is DecorativeTextMenuCandidate -> DecorativeTextMenuCandidateViewHolder.layoutResource
+            is CompoundMenuCandidate -> CompoundMenuCandidateViewHolder.getLayoutResource(item)
+            is NestedMenuCandidate -> NestedMenuCandidateViewHolder.layoutResource
+            is RowMenuCandidate -> RowMenuCandidateViewHolder.layoutResource
+            is DividerMenuCandidate -> DividerMenuCandidateViewHolder.layoutResource
+        }
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -39,8 +40,7 @@ internal class MenuCandidateListAdapter(
     ): MenuCandidateViewHolder<out MenuCandidate> {
         val view = inflater.inflate(viewType, parent, false)
         return when (viewType) {
-            TextMenuCandidateViewHolder.layoutResource ->
-                TextMenuCandidateViewHolder(view, inflater, dismiss)
+            TextMenuCandidateViewHolder.layoutResource -> TextMenuCandidateViewHolder(view, inflater, dismiss)
             DecorativeTextMenuCandidateViewHolder.layoutResource ->
                 DecorativeTextMenuCandidateViewHolder(view, inflater)
             CompoundCheckboxMenuCandidateViewHolder.layoutResource ->
@@ -49,10 +49,8 @@ internal class MenuCandidateListAdapter(
                 CompoundSwitchMenuCandidateViewHolder(view, inflater, dismiss)
             NestedMenuCandidateViewHolder.layoutResource ->
                 NestedMenuCandidateViewHolder(view, inflater, dismiss, reopenMenu)
-            RowMenuCandidateViewHolder.layoutResource ->
-                RowMenuCandidateViewHolder(view, inflater, dismiss)
-            DividerMenuCandidateViewHolder.layoutResource ->
-                DividerMenuCandidateViewHolder(view, inflater)
+            RowMenuCandidateViewHolder.layoutResource -> RowMenuCandidateViewHolder(view, inflater, dismiss)
+            DividerMenuCandidateViewHolder.layoutResource -> DividerMenuCandidateViewHolder(view, inflater)
             else -> throw IllegalArgumentException("Invalid viewType $viewType")
         }
     }
@@ -71,10 +69,8 @@ internal class MenuCandidateListAdapter(
 }
 
 private object MenuCandidateDiffer : DiffUtil.ItemCallback<MenuCandidate>() {
-    override fun areItemsTheSame(oldItem: MenuCandidate, newItem: MenuCandidate) =
-        oldItem::class == newItem::class
+    override fun areItemsTheSame(oldItem: MenuCandidate, newItem: MenuCandidate) = oldItem::class == newItem::class
 
     @Suppress("DiffUtilEquals")
-    override fun areContentsTheSame(oldItem: MenuCandidate, newItem: MenuCandidate) =
-        oldItem == newItem
+    override fun areContentsTheSame(oldItem: MenuCandidate, newItem: MenuCandidate) = oldItem == newItem
 }

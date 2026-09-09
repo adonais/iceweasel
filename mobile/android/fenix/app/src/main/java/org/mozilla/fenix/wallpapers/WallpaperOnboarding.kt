@@ -5,6 +5,7 @@
 package org.mozilla.fenix.wallpapers
 
 import android.graphics.Bitmap
+import android.util.Size
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -26,10 +27,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.wallpaper.WallpaperThumbnails
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A view that shows content of a WallpaperOnboarding dialog.
@@ -45,16 +46,17 @@ import mozilla.components.ui.icons.R as iconsR
 fun WallpaperOnboarding(
     wallpapers: List<Wallpaper>,
     currentWallpaper: Wallpaper,
-    loadWallpaperResource: suspend (Wallpaper) -> Bitmap?,
+    loadWallpaperResource: suspend (Wallpaper, Size) -> Bitmap?,
     onCloseClicked: () -> Unit,
     onExploreMoreButtonClicked: () -> Unit,
     onSelectWallpaper: (Wallpaper) -> Unit,
 ) {
     Surface(
-        shape = MaterialTheme.shapes.large.copy(
-            bottomStart = CornerSize(0.dp),
-            bottomEnd = CornerSize(0.dp),
-        ),
+        shape =
+            MaterialTheme.shapes.large.copy(
+                bottomStart = CornerSize(0.dp),
+                bottomEnd = CornerSize(0.dp),
+            )
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp),
@@ -63,10 +65,7 @@ fun WallpaperOnboarding(
             Icon(
                 painter = painterResource(id = iconsR.drawable.mozac_ic_cross_24),
                 contentDescription = stringResource(id = R.string.close_tab),
-                modifier = Modifier
-                    .clickable { onCloseClicked() }
-                    .size(24.dp)
-                    .align(Alignment.End),
+                modifier = Modifier.clickable { onCloseClicked() }.size(24.dp).align(Alignment.End),
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -93,16 +92,14 @@ fun WallpaperOnboarding(
             WallpaperThumbnails(
                 wallpapers = wallpapers,
                 selectedWallpaper = currentWallpaper,
-                loadWallpaperResource = { loadWallpaperResource(it) },
+                loadWallpaperResource = { wallpaper, size -> loadWallpaperResource(wallpaper, size) },
                 onSelectWallpaper = { onSelectWallpaper(it) },
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             TextButton(
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .fillMaxWidth(),
+                modifier = Modifier.align(Alignment.CenterHorizontally).fillMaxWidth(),
                 onClick = { onExploreMoreButtonClicked() },
             ) {
                 Text(
@@ -126,7 +123,7 @@ private fun WallpaperSnackbarPreview() {
             currentWallpaper = Wallpaper.Default,
             onCloseClicked = {},
             onExploreMoreButtonClicked = {},
-            loadWallpaperResource = { null },
+            loadWallpaperResource = { _, _ -> null },
             onSelectWallpaper = {},
         )
     }

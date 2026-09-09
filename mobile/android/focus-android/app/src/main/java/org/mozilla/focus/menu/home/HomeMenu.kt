@@ -7,33 +7,31 @@ package org.mozilla.focus.menu.home
 import android.content.Context
 import mozilla.components.browser.menu.BrowserMenuBuilder
 import mozilla.components.browser.menu.item.BrowserMenuImageText
-import org.mozilla.focus.R
 import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.focus.R
 
-/**
- * The overflow menu shown on the start/home screen.
- */
+/** The overflow menu shown on the start/home screen. */
 class HomeMenu(
     private val context: Context,
     private val onItemTapped: ((HomeMenuItem) -> Unit),
 ) {
-    /**
-     * Returns a [BrowserMenuBuilder] for the home screen overflow menu.
-     */
+    /** Returns a [BrowserMenuBuilder] for the home screen overflow menu. */
     fun getMenuBuilder(): BrowserMenuBuilder {
-        val help = BrowserMenuImageText(
-            label = context.getString(R.string.menu_help),
-            imageResource = iconsR.drawable.mozac_ic_help_circle_24,
-        ) {
-            onItemTapped.invoke(HomeMenuItem.Help)
-        }
+        val help =
+            BrowserMenuImageText(
+                label = context.getString(R.string.menu_help),
+                imageResource = iconsR.drawable.mozac_ic_help_circle_24,
+            ) {
+                onItemTapped.invoke(HomeMenuItem.Help)
+            }
 
-        val settings = BrowserMenuImageText(
-            label = context.getString(R.string.menu_settings),
-            imageResource = iconsR.drawable.mozac_ic_settings_24,
-        ) {
-            onItemTapped.invoke(HomeMenuItem.Settings)
-        }
+        val settings =
+            BrowserMenuImageText(
+                label = context.getString(R.string.menu_settings),
+                imageResource = iconsR.drawable.mozac_ic_settings_24,
+            ) {
+                onItemTapped.invoke(HomeMenuItem.Settings)
+            }
         return BrowserMenuBuilder(items = listOf(help, settings))
     }
 }

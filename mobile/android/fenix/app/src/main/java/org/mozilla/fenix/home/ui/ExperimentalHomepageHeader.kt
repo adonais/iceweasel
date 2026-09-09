@@ -40,13 +40,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.home.ui.HomepageTestTag.PRIVATE_BROWSING_HOMEPAGE_BUTTON
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.wallpapers.WallpaperTheme
-import mozilla.components.ui.icons.R as iconsR
 
 private const val NEWS_BUTTON_ANIMATION_TRANSITION_DURATION = 600
 private const val NEWS_BUTTON_ANIMATION_DURATION = 2000L
@@ -70,17 +70,9 @@ fun ExperimentalHomepageHeader(
     onStoriesTapped: () -> Unit,
     onNewsAnimationShown: () -> Unit,
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .padding(bottom = 16.dp),
-    ) {
+    Box(modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(bottom = 16.dp)) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(all = 16.dp),
+            modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(all = 16.dp),
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -96,10 +88,7 @@ fun ExperimentalHomepageHeader(
         }
 
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(all = 16.dp),
+            modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(all = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(modifier = Modifier.height(28.dp))
@@ -117,10 +106,7 @@ fun ExperimentalHomepageHeader(
 @Composable
 fun ExperimentalPrivateHomepageHeader(onHomeTapped: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .padding(all = 16.dp),
+        modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(all = 16.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.End,
     ) {
@@ -146,10 +132,11 @@ private fun WordmarkAndLogo(
 private fun PrivateModeButton(onClick: () -> Unit) {
     LeftChevronPillButton(
         onClick = onClick,
-        modifier = Modifier.semantics {
-            testTagsAsResourceId = true
-            testTag = PRIVATE_BROWSING_HOMEPAGE_BUTTON
-        },
+        modifier =
+            Modifier.semantics {
+                testTagsAsResourceId = true
+                testTag = PRIVATE_BROWSING_HOMEPAGE_BUTTON
+            },
     ) {
         Icon(
             painter = painterResource(iconsR.drawable.mozac_ic_private_mode_24),
@@ -213,9 +200,7 @@ private fun HomeButton(onClick: () -> Unit) {
 
 @Preview
 @Composable
-private fun HomepageHeaderPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun HomepageHeaderPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         Surface {
             ExperimentalHomepageHeader(
@@ -231,9 +216,7 @@ private fun HomepageHeaderPreview(
 
 @Preview
 @Composable
-private fun PrivateHomepageHeaderPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun PrivateHomepageHeaderPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         Surface {
             ExperimentalPrivateHomepageHeader {}

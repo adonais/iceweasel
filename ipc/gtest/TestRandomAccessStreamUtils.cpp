@@ -7,6 +7,12 @@
 #include "mozilla/NotNull.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
+#include "mozilla/dom/quota/EncryptedRandomAccessBlockView.h"
+#include "mozilla/dom/quota/EncryptedRandomAccessStream.h"
+#include "mozilla/dom/quota/EncryptedRandomAccessStream_impl.h"
+#include "mozilla/dom/quota/NSSRandomAccessCipherStrategy.h"
+#include "mozilla/dom/quota/QuotaCommon.h"
+#include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/ipc/RandomAccessStreamParams.h"
 #include "mozilla/ipc/RandomAccessStreamUtils.h"
 #include "mozilla/gtest/MozAssertions.h"
@@ -54,6 +60,23 @@ Result<nsCOMPtr<nsIRandomAccessStream>, nsresult> CreateFileStream() {
   }
 
   return stream;
+}
+
+using EncryptedRandomAccessStream = dom::quota::EncryptedRandomAccessStream<
+    dom::quota::NSSRandomAccessCipherStrategy>;
+
+Result<RefPtr<EncryptedRandomAccessStream>, nsresult>
+CreateEncryptedRandomAccessStream() {
+  dom::quota::NSSRandomAccessCipherStrategy strategy;
+  QM_TRY(MOZ_TO_RESULT(strategy.Init()));
+
+  QM_TRY_UNWRAP(auto masterKey,
+                dom::quota::NSSRandomAccessCipherStrategy::GenerateKey());
+
+  QM_TRY_UNWRAP(auto baseStream, CreateFileStream());
+
+  return EncryptedRandomAccessStream::Create(
+      strategy, WrapMovingNotNull(baseStream), masterKey);
 }
 
 // Populate an array with the given number of bytes.  Data is lorem ipsum
@@ -209,6 +232,48 @@ TEST(RandomAccessStreamUtils, FileRandomAccessStream_MaybeSerialize)
   ASSERT_NS_SUCCEEDED(rv);
 
   ConsumeAndValidateStream(stream2->InputStream(), inputData);
+}
+
+TEST(RandomAccessStreamUtils, EncryptedRandomAccessStream_Serialize)
+{
+  auto res = CreateEncryptedRandomAccessStream();
+  ASSERT_TRUE(res.isOk());
+
+  auto stream = res.unwrap();
+
+  const uint32_t dataSize =
+      dom::quota::DecryptedRandomAccessBlockCipherPayloadView::MaxTextLength +
+      512;
+  nsCString inputData;
+  CreateData(dataSize, inputData);
+
+  uint32_t numWritten = 0;
+  auto rv = stream->OutputStream()->Write(inputData.BeginReading(),
+                                          inputData.Length(), &numWritten);
+  ASSERT_NS_SUCCEEDED(rv);
+  ASSERT_EQ(numWritten, dataSize);
+
+  Maybe<RandomAccessStreamParams> streamParams =
+      SerializeRandomAccessStream(stream.get(), nullptr);
+
+  ASSERT_EQ(stream->StreamStatus(), NS_BASE_STREAM_CLOSED);
+  ASSERT_TRUE(streamParams);
+  ASSERT_EQ(streamParams->type(),
+            RandomAccessStreamParams::TNSSEncryptedRandomAccessStreamParams);
+
+  auto res2 = DeserializeRandomAccessStream(streamParams);
+  ASSERT_TRUE(res2.isOk());
+
+  nsCOMPtr<nsIRandomAccessStream> deserializedStream = res2.unwrap();
+
+  // Unlike the plaintext streams above, the logical position is not serialized,
+  // so the deserialized stream starts at zero instead of at |dataSize|.
+  int64_t offset;
+  rv = deserializedStream->Tell(&offset);
+  ASSERT_NS_SUCCEEDED(rv);
+  ASSERT_EQ(offset, 0);
+
+  ConsumeAndValidateStream(deserializedStream->InputStream(), inputData);
 }
 
 }  // namespace mozilla::ipc

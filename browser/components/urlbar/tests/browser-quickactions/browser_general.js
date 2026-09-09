@@ -334,7 +334,7 @@ add_task(async function test_update_in_actions_mode() {
       )
     );
     Assert.ok(
-      updateButton.hasAttribute("disabled"),
+      updateButton.hasAttribute("aria-disabled"),
       "Update action is shown as disabled in actions mode when no update is pending"
     );
     await exitActionsMode();
@@ -351,7 +351,7 @@ add_task(async function test_update_in_actions_mode() {
       )
     );
     Assert.ok(
-      !updateButton.hasAttribute("disabled"),
+      !updateButton.hasAttribute("aria-disabled"),
       "Update action is shown as enabled in actions mode when update is pending"
     );
   } finally {
@@ -506,16 +506,107 @@ add_task(async function test_searchMode_inactive_action() {
   });
 
   await assertAction("inactivesearchaction");
+  let btn = window.document.querySelector(
+    `.urlbarView-action-btn[data-action=inactivesearchaction]`
+  );
   Assert.ok(
-    window.document
-      .querySelector(`.urlbarView-action-btn[data-action=inactivesearchaction]`)
-      .hasAttribute("disabled"),
+    btn.hasAttribute("aria-disabled"),
     "Inactive action is shown but disabled in the actions search mode list"
   );
 
   await exitActionsMode();
 
   ActionsProviderQuickActions.removeAction("inactivesearchaction");
+});
+
+add_task(async function test_disabled_actions() {
+  let picked = [];
+  let actions = [
+    ["action-one", false],
+    ["action-two", true],
+    ["action-three", false],
+    ["action-four", true],
+  ];
+  for (let [key, inactive] of actions) {
+    ActionsProviderQuickActions.addAction(key, {
+      commands: [key],
+      label: "quickactions-downloads2",
+      isInactive: () => inactive,
+      onPick: () => picked.push(key),
+    });
+  }
+
+  await enterActionsMode();
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "action-",
+  });
+
+  await assertAction("action-four");
+
+  Assert.deepEqual(
+    Array.from(
+      window.document.querySelectorAll(".urlbarView-action-btn"),
+      button => button.dataset.action
+    ),
+    actions.map(([key]) => key),
+    "Both the active and the inactive actions are shown"
+  );
+
+  let selectedAction = () =>
+    UrlbarTestUtils.getSelectedElement(window)?.dataset.action ?? null;
+
+  Assert.equal(selectedAction(), null, "Nothing is selected initially");
+
+  let steps = [
+    ["KEY_ArrowDown", "action-one", "Selected first action"],
+    ["KEY_ArrowDown", "action-three", "Skip disabled action"],
+    ["KEY_ArrowDown", null, "Cycle selection to urlbar"],
+    ["KEY_ArrowUp", "action-three", "Select last non disabled action"],
+    ["KEY_ArrowUp", "action-one", "Skip disabled action"],
+    ["KEY_ArrowUp", null, "Back to urlbar"],
+  ];
+  for (let [key, expected, message] of steps) {
+    EventUtils.synthesizeKey(key);
+    Assert.equal(selectedAction(), expected, message);
+  }
+
+  let inactiveButton = window.document.querySelector(
+    `.urlbarView-action-btn[data-action=action-two]`
+  );
+  // Deliberately testing clicking on disabled button.
+  AccessibilityUtils.setEnv({ mustBeEnabled: false });
+  EventUtils.synthesizeMouseAtCenter(inactiveButton, {}, window);
+  AccessibilityUtils.resetEnv();
+
+  Assert.ok(
+    UrlbarTestUtils.isPopupOpen(window),
+    "Clicking an inactive action leaves the view open"
+  );
+  Assert.equal(selectedAction(), null, "Inactive action was not selected");
+  Assert.deepEqual(picked, [], "No action was picked");
+
+  EventUtils.synthesizeKey("KEY_ArrowDown");
+  EventUtils.synthesizeKey("KEY_ArrowDown");
+  Assert.equal(
+    selectedAction(),
+    "action-three",
+    "The active action after the inactive one is still selectable"
+  );
+
+  let engagement = UrlbarTestUtils.promiseProviderEngagement(window);
+  await UrlbarTestUtils.promisePopupClose(window, () => {
+    EventUtils.synthesizeKey("KEY_Enter");
+  });
+  await engagement;
+  Assert.deepEqual(picked, ["action-three"], "The active action was picked");
+
+  await exitActionsMode();
+
+  for (let [key] of actions) {
+    ActionsProviderQuickActions.removeAction(key);
+  }
 });
 
 let showAction = async testFun => {

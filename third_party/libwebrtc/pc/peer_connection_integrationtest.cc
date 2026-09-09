@@ -931,8 +931,10 @@ TEST_P(PeerConnectionIntegrationTest, AnswererRejectsAudioAndVideoSections) {
 // rejected. Once the re-negotiation is done, the video flow should stop and
 // the audio flow should continue.
 TEST_P(PeerConnectionIntegrationTest, VideoRejectedInSubsequentOffer) {
-  // Munging allowed: kUnknownModification (section rejection)
-  SetFieldTrials("WebRTC-NoSdpMangleAllowForTesting/Enabled,1/");
+  if (sdp_semantics_ == SdpSemantics::kPlanB_DEPRECATED) {
+    // Munging allowed: kRejected (section rejection)
+    SetFieldTrials("WebRTC-NoSdpMangleAllowForTesting/Enabled,39/");
+  }
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   caller()->AddAudioVideoTracks();

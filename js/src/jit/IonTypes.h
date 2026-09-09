@@ -30,12 +30,8 @@ class IonCompilationId {
  public:
   explicit IonCompilationId(uint64_t id)
       : idLo_(id & UINT32_MAX), idHi_(id >> 32) {}
-  bool operator==(const IonCompilationId& other) const {
-    return idLo_ == other.idLo_ && idHi_ == other.idHi_;
-  }
-  bool operator!=(const IonCompilationId& other) const {
-    return !operator==(other);
-  }
+  bool operator==(const IonCompilationId& other) const = default;
+  bool operator!=(const IonCompilationId& other) const = default;
 };
 
 namespace jit {
@@ -154,6 +150,11 @@ enum class BailoutKind : uint8_t {
   // An inevitable bailout (MBail instruction or type barrier that always bails)
   Inevitable,
 
+  // A JSOp::AfterYield Warp did not build a resume path for, because its
+  // suspend was in (or only reachable from) a catch-block. We fall back to
+  // running the generator in Baseline if this happens frequently.
+  UncompiledGeneratorResume,
+
   // Bailing out during a VM call. Many possible causes that are hard
   // to distinguish statically at snapshot construction time.
   // We just lump them together.
@@ -222,6 +223,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "UnboxFolding";
     case BailoutKind::Inevitable:
       return "Inevitable";
+    case BailoutKind::UncompiledGeneratorResume:
+      return "UncompiledGeneratorResume";
     case BailoutKind::DuringVMCall:
       return "DuringVMCall";
     case BailoutKind::TooManyArguments:

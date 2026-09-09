@@ -97,9 +97,7 @@ function initDevToolsServer() {
 }
 
 async function initPerfFront() {
-  initDevToolsServer();
-  const client = new DevToolsClient(DevToolsServer.connectPipe());
-  await waitUntilClientConnected(client);
+  const client = await createLocalClientForTests();
   const front = await client.mainRoot.getFront("perf");
   return { front, client };
 }
@@ -110,16 +108,6 @@ async function initInspectorFront(url) {
   const walker = inspector.walker;
 
   return { inspector, walker, target };
-}
-
-/**
- * Wait until a DevToolsClient is connected.
- *
- * @param {DevToolsClient} client
- * @return {Promise} Resolves when connected.
- */
-function waitUntilClientConnected(client) {
-  return client.once("connected");
 }
 
 /**

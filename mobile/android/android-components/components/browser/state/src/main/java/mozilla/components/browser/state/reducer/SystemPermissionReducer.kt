@@ -8,9 +8,7 @@ import mozilla.components.browser.state.action.SystemPermissionRequestAction
 import mozilla.components.browser.state.state.BrowserState
 
 internal object SystemPermissionReducer {
-    /**
-     * [SystemPermissionRequestAction] Reducer function for modifying [BrowserState].
-     */
+    /** [SystemPermissionRequestAction] Reducer function for modifying [BrowserState]. */
     fun reduce(state: BrowserState, action: SystemPermissionRequestAction): BrowserState {
         return when (action) {
             SystemPermissionRequestAction.SystemPermissionStateRequestInProgress -> {

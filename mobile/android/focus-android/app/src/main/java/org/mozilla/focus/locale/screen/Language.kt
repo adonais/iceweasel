@@ -9,7 +9,6 @@ package org.mozilla.focus.locale.screen
  *
  * @property displayName of the Language the will be shown in the GUI
  * @property tag of the Language that will be saved in SharePref if the element is selected
- * @property index of the Language in the list .It is used for auto-scrolling to the current selected
- * Language
+ * @property index of the Language in the list .It is used for auto-scrolling to the current selected Language
  */
 data class Language(var displayName: String?, val tag: String, val index: Int)

@@ -319,10 +319,8 @@ Maybe<SurfaceDescriptor> Image::GetDescFromTexClient(
     return {};
   }
 
-  const auto& tcd = tc->GetInternalData();
-
   SurfaceDescriptor ret;
-  if (!tcd->Serialize(ret)) {
+  if (!tc->ToSurfaceDescriptor(ret)) {
     return {};
   }
   return Some(ret);

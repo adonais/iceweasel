@@ -5,18 +5,18 @@
 package mozilla.components.feature.autofill.test
 
 import android.view.autofill.AutofillId
+import java.io.File
+import java.util.WeakHashMap
+import javax.xml.parsers.DocumentBuilderFactory
 import mozilla.components.feature.autofill.structure.AutofillNodeNavigator
 import mozilla.components.feature.autofill.structure.ParsedStructure
 import mozilla.components.support.test.mock
 import org.w3c.dom.Document
 import org.w3c.dom.Element
-import java.io.File
-import java.util.WeakHashMap
-import javax.xml.parsers.DocumentBuilderFactory
 
 /**
- * Alternative [AutofillNodeNavigator] implementation for reading a captured view structure from an
- * XML file for testing purposes.
+ * Alternative [AutofillNodeNavigator] implementation for reading a captured view structure from an XML file for testing
+ * purposes.
  */
 internal class DOMNavigator(
     file: File,
@@ -41,10 +41,7 @@ internal class DOMNavigator(
 
     override fun childNodes(node: Element): List<Element> {
         val children = node.childNodes
-        return (0 until children.length)
-            .map { children.item(it) }
-            .filter { it is Element }
-            .map { it as Element }
+        return (0 until children.length).map { children.item(it) }.filter { it is Element }.map { it as Element }
     }
 
     override fun clues(node: Element): Iterable<CharSequence> {
@@ -55,11 +52,12 @@ internal class DOMNavigator(
     }
 
     override fun autofillId(node: Element): AutofillId? {
-        val rawId = if (isEditText(node) || isHtmlInputField(node)) {
-            attr(node, "autofillId") ?: clues(node).joinToString("|")
-        } else {
-            null
-        }
+        val rawId =
+            if (isEditText(node) || isHtmlInputField(node)) {
+                attr(node, "autofillId") ?: clues(node).joinToString("|")
+            } else {
+                null
+            }
 
         return rawId?.let { getOrCreateAutofillIdMock(it) }
     }

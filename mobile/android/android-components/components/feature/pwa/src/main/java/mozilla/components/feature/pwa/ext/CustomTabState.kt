@@ -9,9 +9,7 @@ import mozilla.components.feature.customtabs.store.CustomTabState
 import mozilla.components.feature.customtabs.store.VerificationStatus.PENDING
 import mozilla.components.feature.customtabs.store.VerificationStatus.SUCCESS
 
-/**
- * Returns a list of trusted (or pending) origins.
- */
+/** Returns a list of trusted (or pending) origins. */
 val CustomTabState.trustedOrigins
     get() = relationships.mapNotNull { (pair, status) ->
         if (pair.relation == RELATION_HANDLE_ALL_URLS && (status == PENDING || status == SUCCESS)) {

@@ -23,9 +23,7 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.messaging.CustomAttributeProvider
 import org.mozilla.fenix.perf.lazyMonitored
 
-/**
- * Component group for access to Nimbus and other Nimbus services.
- */
+/** Component group for access to Nimbus and other Nimbus services. */
 @OptIn(ExperimentalAndroidComponentsApi::class)
 class NimbusComponents(
     private val context: Context,
@@ -34,8 +32,8 @@ class NimbusComponents(
 ) {
 
     /**
-     * The main entry point for the Nimbus SDK. Note that almost all access to feature configuration
-     * should be mediated through a FML generated class, e.g. [FxNimbus].
+     * The main entry point for the Nimbus SDK. Note that almost all access to feature configuration should be mediated
+     * through a FML generated class, e.g. [FxNimbus].
      */
     val sdk: NimbusApi by lazyMonitored {
         createNimbus(
@@ -47,10 +45,7 @@ class NimbusComponents(
         )
     }
 
-    /**
-     * Bridge between Nimbus and Gecko to allow enrollment, unenrollment, and observation of
-     * Gecko pref experiments.
-     */
+    /** Bridge between Nimbus and Gecko to allow enrollment, unenrollment, and observation of Gecko pref experiments. */
     val geckoPrefHandler by lazyMonitored {
         NimbusGeckoPrefHandler(engine = engine, nimbusApi = lazy { sdk })
     }
@@ -58,14 +53,11 @@ class NimbusComponents(
     /**
      * Convenience method for getting the event store from the SDK.
      *
-     * Before EXP-4354, this is the main write API for recording events to drive
-     * messaging, experiments and onboarding.
+     * Before EXP-4354, this is the main write API for recording events to drive messaging, experiments and onboarding.
      *
-     * Following EXP-4354, clients will not need to write these events
-     * themselves.
+     * Following EXP-4354, clients will not need to write these events themselves.
      *
-     * Read access to the event store should be done through
-     * the JEXL helper available from [createJexlHelper].
+     * Read access to the event store should be done through the JEXL helper available from [createJexlHelper].
      */
     val events: NimbusEventStore by lazyMonitored {
         sdk.events
@@ -78,8 +70,8 @@ class NimbusComponents(
      *
      * For this reason, an evaluator should be not be stored or cached.
      *
-     * Since it has a native peer, to avoid leaking memory, the helper's [destroy] method
-     * should be called after finishing the set of evaluations.
+     * Since it has a native peer, to avoid leaking memory, the helper's [destroy] method should be called after
+     * finishing the set of evaluations.
      *
      * This can be done automatically using the interface's `use` method, e.g.
      *
@@ -89,17 +81,15 @@ class NimbusComponents(
      * }
      * ```
      *
-     * The helper has access to all context needed to drive decisions
-     * about messaging, onboarding and experimentation.
+     * The helper has access to all context needed to drive decisions about messaging, onboarding and experimentation.
      *
      * It also has a built-in cache.
      */
-    fun createJexlHelper(): NimbusMessagingHelperInterface =
-        messagingStorage.createMessagingHelper()
+    fun createJexlHelper(): NimbusMessagingHelperInterface = messagingStorage.createMessagingHelper()
 
     /**
-     * The main entry point for UI surfaces to interact with (get, click, dismiss) messages
-     * from the Nimbus Messaging component.
+     * The main entry point for UI surfaces to interact with (get, click, dismiss) messages from the Nimbus Messaging
+     * component.
      */
     val messaging: NimbusMessagingControllerInterface by lazyMonitored {
         NimbusMessagingController(

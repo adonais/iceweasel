@@ -10,6 +10,8 @@ import {
   writeFileSync,
 } from "fs";
 import { basename, join } from "path";
+import process from "node:process";
+import { fileURLToPath } from "node:url";
 
 // eslint-disable-next-line mozilla/reject-import-system-module-from-non-system
 import { ObjectUtils } from "../../../../modules/ObjectUtils.sys.mjs";
@@ -212,7 +214,11 @@ function transformValue(val, tokenNames, figmaName) {
   return varName;
 }
 
-function getTokenFiles(globalDirs) {
+// Collect the base `*.tokens.json` files keyed by their prop name. By default
+// stale generated `*.nova.tokens.json` files are removed so the build can
+// regenerate them; pass `{ prune: false }` for a read-only pass (used when
+// computing which tokens a Figma import would change).
+function getTokenFiles(globalDirs, { prune = true } = {}) {
   let files = {};
   for (const group of globalDirs) {
     const tokenFiles = readdirSync(group, { recursive: true }).filter(path =>
@@ -225,7 +231,9 @@ function getTokenFiles(globalDirs) {
         prop = prop.substring(4);
       }
       if (remainder.startsWith("nova")) {
-        unlinkSync(path);
+        if (prune) {
+          unlinkSync(path);
+        }
         continue;
       }
       files[prop] = path;
@@ -279,28 +287,36 @@ function normalizeTokens(tokens, path) {
   return tokenNames;
 }
 
-// Main
-const FIGMA_GROUPS = ["Surface", "Primitives", "Colors", "Theme", "Components"];
-const tokenFiles = getTokenFiles(TOKEN_DIRS);
-const exportData = JSON.parse(
-  readFileSync(joinRelativePath("nova-export-clean-variables.json"), "utf8")
-);
-let figmaVars = {};
-let localTokenNames = new Set();
+export const FIGMA_GROUPS = [
+  "Surface",
+  "Primitives",
+  "Colors",
+  "Theme",
+  "Components",
+];
 
-for (const group of FIGMA_GROUPS) {
-  for (const prop in exportData[group]) {
-    figmaVars = {
-      ...figmaVars,
-      ...normalizeFigma(exportData[group][prop], prop),
-    };
+function buildFigmaVars(exportData) {
+  let figmaVars = {};
+  for (const group of FIGMA_GROUPS) {
+    for (const prop in exportData[group]) {
+      figmaVars = {
+        ...figmaVars,
+        ...normalizeFigma(exportData[group][prop], prop),
+      };
+    }
   }
+  return figmaVars;
 }
-for (const prop in tokenFiles) {
-  localTokenNames = new Set([
-    ...localTokenNames,
-    ...normalizeTokens(JSON.parse(readFileSync(tokenFiles[prop])), prop),
-  ]);
+
+function buildTokenNames(tokenFiles) {
+  let localTokenNames = new Set();
+  for (const prop in tokenFiles) {
+    localTokenNames = new Set([
+      ...localTokenNames,
+      ...normalizeTokens(JSON.parse(readFileSync(tokenFiles[prop])), prop),
+    ]);
+  }
+  return localTokenNames;
 }
 
 function matchesFigmaVar(resolvedPath, figmaVar) {
@@ -472,10 +488,72 @@ function updateNovaTokens(filePath, prop, vars, tokenNames) {
   updateTokens(filePath, tokens);
 }
 
-for (const prop in tokenFiles) {
-  updateNovaTokens(tokenFiles[prop], prop, figmaVars, localTokenNames);
+function collectStrippedValues(node, path, out) {
+  if (!node || typeof node !== "object") {
+    return;
+  }
+  for (const key in node) {
+    if (key === "comment" || key === "override") {
+      continue;
+    }
+    if (key === "value") {
+      const resolvedPath = path.filter(p => p !== "@base").join("/");
+      out.set(resolvedPath, JSON.stringify(node.value));
+    } else {
+      collectStrippedValues(node[key], [...path, key], out);
+    }
+  }
 }
-writeTokens();
 
-// eslint-disable-next-line no-console
-console.log("Remaining Figma vars:", figmaVars);
+// Compute the Nova override value for every token, keyed by its resolved path
+// (e.g. `button/background/color/hover`), for a given figma-variables export
+// object. Only tokens that actually override their base value are included,
+// mirroring what the build writes to the `*.nova.tokens.json` files. The fetch
+// step uses this to show which tokens a Figma import would really change,
+// rather than diffing the raw export (which lists no-op changes too).
+export function computeNovaValues(exportData) {
+  const tokenFiles = getTokenFiles(TOKEN_DIRS, { prune: false });
+  const figmaVars = buildFigmaVars(exportData);
+  const tokenNames = buildTokenNames(tokenFiles);
+  const values = new Map();
+  for (const prop in tokenFiles) {
+    const original = JSON.parse(readFileSync(tokenFiles[prop]));
+    const updated = walkUpdateNovaTokens(
+      JSON.parse(JSON.stringify(original)),
+      figmaVars,
+      tokenNames,
+      [prop]
+    );
+    collectStrippedValues(
+      stripUnchangedTokens(updated, original),
+      [prop],
+      values
+    );
+  }
+  return values;
+}
+
+// The curated subset of the Figma export that the build actually imports (same
+// collection/mode shape as `figma-variables-all.json`, but only the chosen
+// tokens). The build reads this file rather than the full export, so unselected
+// token changes are never picked up. The fetch step maintains it;
+// `figma-variables-all.json` is only a full mirror it diffs against.
+export const IMPORTED_VARIABLES_FILENAME = "nova-export-clean-variables.json";
+
+const isMain = process.argv[1] === fileURLToPath(import.meta.url);
+if (isMain) {
+  const exportData = JSON.parse(
+    readFileSync(joinRelativePath(IMPORTED_VARIABLES_FILENAME), "utf8")
+  );
+  const tokenFiles = getTokenFiles(TOKEN_DIRS);
+  const figmaVars = buildFigmaVars(exportData);
+  const localTokenNames = buildTokenNames(tokenFiles);
+
+  for (const prop in tokenFiles) {
+    updateNovaTokens(tokenFiles[prop], prop, figmaVars, localTokenNames);
+  }
+  writeTokens();
+
+  // eslint-disable-next-line no-console
+  console.log("Remaining Figma vars:", figmaVars);
+}

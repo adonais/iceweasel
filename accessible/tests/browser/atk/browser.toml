@@ -18,6 +18,8 @@ prefs = [
 
 ["browser_atspi_interfaces.js"]
 
+["browser_forceEnabled.js"]
+
 ["browser_groupPosition.js"]
 
 ["browser_notification.js"]

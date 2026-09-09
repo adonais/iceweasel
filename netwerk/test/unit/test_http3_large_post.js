@@ -18,7 +18,9 @@ Http3Listener.prototype = {
   expectedStatus: Cr.NS_OK,
   amount: 0,
   onProgressMaxNotificationCount: 0,
-  onProgressNotificationCount: 0,
+  onPartialProgressNotificationCount: 0,
+  lastProgress: -1,
+  lastProgressMax: -1,
 
   QueryInterface: ChromeUtils.generateQI(["nsIProgressEventSink"]),
 
@@ -30,12 +32,20 @@ Http3Listener.prototype = {
   },
 
   onProgress(request, progress, progressMax) {
+    // Progress is reported separately for the request and the response, so
+    // only compare consecutive notifications belonging to the same phase.
+    if (progressMax === this.lastProgressMax) {
+      Assert.greater(progress, this.lastProgress);
+    }
+    this.lastProgress = progress;
+    this.lastProgressMax = progressMax;
+
     // we will get notifications for the request and the response.
     if (progress === progressMax) {
       this.onProgressMaxNotificationCount += 1;
+    } else {
+      this.onPartialProgressNotificationCount += 1;
     }
-    // For a large upload there should be a multiple notifications.
-    this.onProgressNotificationCount += 1;
   },
 
   onStatus() {},
@@ -64,9 +74,11 @@ Http3Listener.prototype = {
     // We should get 2 correctOnProgress, i.e. one for request and one for the response.
     Assert.equal(this.onProgressMaxNotificationCount, 2);
     if (this.amount > 500000) {
-      // 10 is an arbitrary number, but we cannot calculate exact number
-      // because it depends on timing.
-      Assert.greater(this.onProgressNotificationCount, 10);
+      // The body doesn't fit into the neqo stream buffer at once, so it has to
+      // be uploaded in several chunks. How many notifications that produces
+      // depends on timing, but at least one of them must report partial
+      // progress.
+      Assert.greater(this.onPartialProgressNotificationCount, 0);
     }
     this.finish();
   },

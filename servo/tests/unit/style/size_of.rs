@@ -25,27 +25,17 @@ size_of_test!(
 size_of_test!(
     test_size_of_selector_parse_error_kind,
     SelectorParseErrorKind,
-    40
+    1
 );
 size_of_test!(
     test_size_of_style_parse_error_kind,
     ::style_traits::StyleParseErrorKind,
-    56
-);
-size_of_test!(
-    test_size_of_value_parse_error_kind,
-    ::style_traits::ValueParseErrorKind,
-    40
+    2
 );
 
-size_of_test!(test_size_of_selector_parse_error, SelectorParseError, 56);
+size_of_test!(test_size_of_selector_parse_error, SelectorParseError, 2);
 size_of_test!(
     test_size_of_style_traits_parse_error,
     ::style_traits::ParseError,
-    72
-);
-size_of_test!(
-    test_size_of_value_parse_error,
-    ::style_traits::ValueParseError,
-    56
+    2
 );

@@ -14,8 +14,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
+#include <utility>
 
 #include "absl/algorithm/container.h"
 #include "absl/strings/string_view.h"
@@ -64,6 +66,15 @@ std::unique_ptr<SSLFingerprint> SSLFingerprint::CreateFromRfc4572(
 
   return std::make_unique<SSLFingerprint>(
       algorithm, AsUint8Span(std::span(value, value_len)));
+}
+
+std::optional<SSLFingerprint> SSLFingerprint::CreateOptionalFromRfc4572(
+    absl::string_view algorithm,
+    absl::string_view fingerprint) {
+  if (auto parsed = CreateFromRfc4572(algorithm, fingerprint)) {
+    return std::move(*parsed);
+  }
+  return std::nullopt;
 }
 
 std::unique_ptr<SSLFingerprint> SSLFingerprint::CreateFromCertificate(

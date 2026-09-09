@@ -5,11 +5,9 @@
 package mozilla.components.support.ktx.kotlin
 
 /**
- * Performs a cartesian product of all the elements in two collections and returns each pair to
- * the [block] function.
+ * Performs a cartesian product of all the elements in two collections and returns each pair to the [block] function.
  *
  * Example:
- *
  * ```kotlin
  * val numbers = listOf(1, 2, 3)
  * val letters = listOf('a', 'b', 'c')

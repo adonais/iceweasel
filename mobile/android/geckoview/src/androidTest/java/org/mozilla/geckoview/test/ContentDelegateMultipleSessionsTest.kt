@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -33,11 +33,11 @@ class ContentDelegateMultipleSessionsTest : BaseSessionTest() {
         killAllContentProcesses()
 
         if (isMainSessionAlreadyOpen) {
-            mainSession.waitUntilCalled(object : ContentDelegate {
-                @AssertCalled(count = 1)
-                override fun onKill(session: GeckoSession) {
+            mainSession.waitUntilCalled(
+                object : ContentDelegate {
+                    @AssertCalled(count = 1) override fun onKill(session: GeckoSession) {}
                 }
-            })
+            )
         }
 
         mainSession.open()
@@ -104,24 +104,27 @@ class ContentDelegateMultipleSessionsTest : BaseSessionTest() {
         // ...but we use GeckoResult.allOf for waiting on the aggregated results
         val allCrashesFound = GeckoResult.allOf(mainSessionCrash, newSessionCrash)
 
-        sessionRule.delegateUntilTestEnd(object : ContentDelegate {
-            fun reportCrash(session: GeckoSession) {
-                if (session == mainSession) {
-                    mainSessionCrash.complete(null)
-                } else if (session == newSession) {
-                    newSessionCrash.complete(null)
+        sessionRule.delegateUntilTestEnd(
+            object : ContentDelegate {
+                fun reportCrash(session: GeckoSession) {
+                    if (session == mainSession) {
+                        mainSessionCrash.complete(null)
+                    } else if (session == newSession) {
+                        newSessionCrash.complete(null)
+                    }
+                }
+
+                // Slower devices may not catch crashes in a timely manner, so we check to see
+                // if either `onKill` or `onCrash` is called
+                override fun onCrash(session: GeckoSession) {
+                    reportCrash(session)
+                }
+
+                override fun onKill(session: GeckoSession) {
+                    reportCrash(session)
                 }
             }
-
-            // Slower devices may not catch crashes in a timely manner, so we check to see
-            // if either `onKill` or `onCrash` is called
-            override fun onCrash(session: GeckoSession) {
-                reportCrash(session)
-            }
-            override fun onKill(session: GeckoSession) {
-                reportCrash(session)
-            }
-        })
+        )
 
         mainSession.loadUri(CONTENT_CRASH_URL)
 
@@ -138,15 +141,17 @@ class ContentDelegateMultipleSessionsTest : BaseSessionTest() {
 
         val allKillEventsReceived = GeckoResult.allOf(mainSessionKilled, newSessionKilled)
 
-        sessionRule.delegateUntilTestEnd(object : ContentDelegate {
-            override fun onKill(session: GeckoSession) {
-                if (session == mainSession) {
-                    mainSessionKilled.complete(null)
-                } else if (session == newSession) {
-                    newSessionKilled.complete(null)
+        sessionRule.delegateUntilTestEnd(
+            object : ContentDelegate {
+                override fun onKill(session: GeckoSession) {
+                    if (session == mainSession) {
+                        mainSessionKilled.complete(null)
+                    } else if (session == newSession) {
+                        newSessionKilled.complete(null)
+                    }
                 }
             }
-        })
+        )
 
         killAllContentProcesses()
 

@@ -19,6 +19,6 @@ class CachedEnabledFeature(
     feature: AIControllableFeature,
     scope: CoroutineScope,
 ) : AIControllableFeature by feature {
-    override val featureState: Flow<AIFeatureState> = feature.featureState
-        .stateIn(scope, SharingStarted.Eagerly, AIFeatureState.Unknown)
+    override val featureState: Flow<AIFeatureState> =
+        feature.featureState.stateIn(scope, SharingStarted.Eagerly, AIFeatureState.Unknown)
 }

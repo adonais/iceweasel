@@ -18,9 +18,7 @@ import mozilla.components.feature.pwa.ext.applyOrientation
 import mozilla.components.feature.pwa.ext.toTaskDescription
 import mozilla.components.support.ktx.android.view.enterImmersiveMode
 
-/**
- * Feature used to handle window effects for "standalone" and "fullscreen" web apps.
- */
+/** Feature used to handle window effects for "standalone" and "fullscreen" web apps. */
 class WebAppActivityFeature(
     private val activity: Activity,
     private val icons: BrowserIcons,

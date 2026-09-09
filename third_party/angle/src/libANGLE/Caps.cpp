@@ -4,11 +4,8 @@
 // found in the LICENSE file.
 //
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "libANGLE/Caps.h"
+#include "common/unsafe_buffers.h"
 
 #include "common/angleutils.h"
 #include "common/debug.h"
@@ -150,7 +147,7 @@ static bool GetFormatSupportBase(const TextureCapsMap &textureCaps,
 {
     for (size_t i = 0; i < requiredFormatsSize; i++)
     {
-        const TextureCaps &cap = textureCaps.get(requiredFormats[i]);
+        const TextureCaps &cap = textureCaps.get(ANGLE_UNSAFE_TODO(requiredFormats[i]));
         if (requiresTexturing && !cap.texturable)
         {
             return false;
@@ -222,17 +219,6 @@ static bool DetermineReadStencilSupport(const TextureCapsMap &textureCaps)
     };
 
     return GetFormatSupport(textureCaps, requiredFormats, false, false, true, false, false);
-}
-
-// Checks for GL_NV_depth_buffer_float2 support
-static bool DetermineDepthBufferFloat2Support(const TextureCapsMap &textureCaps)
-{
-    constexpr GLenum requiredFormats[] = {
-        GL_DEPTH_COMPONENT32F,
-        GL_DEPTH32F_STENCIL8,
-    };
-
-    return GetFormatSupport(textureCaps, requiredFormats, true, false, true, false, false);
 }
 
 // Checks for GL_ARM_rgba8 support
@@ -527,106 +513,6 @@ static bool DetermineETC1RGB8TextureSupport(const TextureCapsMap &textureCaps)
     return GetFormatSupport(textureCaps, requiredFormats, true, true, false, false, false);
 }
 
-// Check for OES_compressed_ETC2_RGB8_texture support
-static bool DetermineETC2RGB8TextureSupport(const TextureCapsMap &textureCaps)
-{
-    constexpr GLenum requiredFormats[] = {
-        GL_COMPRESSED_RGB8_ETC2,
-    };
-
-    return GetFormatSupport(textureCaps, requiredFormats, true, true, false, false, false);
-}
-
-// Check for OES_compressed_ETC2_sRGB8_texture support
-static bool DetermineETC2sRGB8TextureSupport(const TextureCapsMap &textureCaps)
-{
-    constexpr GLenum requiredFormats[] = {
-        GL_COMPRESSED_SRGB8_ETC2,
-    };
-
-    return GetFormatSupport(textureCaps, requiredFormats, true, true, false, false, false);
-}
-
-// Check for OES_compressed_ETC2_punchthroughA_RGBA8_texture support
-static bool DetermineETC2PunchthroughARGB8TextureSupport(const TextureCapsMap &textureCaps)
-{
-    constexpr GLenum requiredFormats[] = {
-        GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2,
-    };
-
-    return GetFormatSupport(textureCaps, requiredFormats, true, true, false, false, false);
-}
-
-// Check for OES_compressed_ETC2_punchthroughA_sRGB8_alpha_texture support
-static bool DetermineETC2PunchthroughAsRGB8AlphaTextureSupport(const TextureCapsMap &textureCaps)
-{
-    constexpr GLenum requiredFormats[] = {
-        GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2,
-    };
-
-    return GetFormatSupport(textureCaps, requiredFormats, true, true, false, false, false);
-}
-
-// Check for OES_compressed_ETC2_RGBA8_texture support
-static bool DetermineETC2RGBA8TextureSupport(const TextureCapsMap &textureCaps)
-{
-    constexpr GLenum requiredFormats[] = {
-        GL_COMPRESSED_RGBA8_ETC2_EAC,
-    };
-
-    return GetFormatSupport(textureCaps, requiredFormats, true, true, false, false, false);
-}
-
-// Check for OES_compressed_ETC2_sRGB8_alpha8_texture support
-static bool DetermineETC2sRGB8Alpha8TextureSupport(const TextureCapsMap &textureCaps)
-{
-    constexpr GLenum requiredFormats[] = {
-        GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC,
-    };
-
-    return GetFormatSupport(textureCaps, requiredFormats, true, true, false, false, false);
-}
-
-// Check for OES_compressed_EAC_R11_unsigned_texture support
-static bool DetermineEACR11UnsignedTextureSupport(const TextureCapsMap &textureCaps)
-{
-    constexpr GLenum requiredFormats[] = {
-        GL_COMPRESSED_R11_EAC,
-    };
-
-    return GetFormatSupport(textureCaps, requiredFormats, true, true, false, false, false);
-}
-
-// Check for OES_compressed_EAC_R11_signed_texture support
-static bool DetermineEACR11SignedTextureSupport(const TextureCapsMap &textureCaps)
-{
-    constexpr GLenum requiredFormats[] = {
-        GL_COMPRESSED_SIGNED_R11_EAC,
-    };
-
-    return GetFormatSupport(textureCaps, requiredFormats, true, true, false, false, false);
-}
-
-// Check for OES_compressed_EAC_RG11_unsigned_texture support
-static bool DetermineEACRG11UnsignedTextureSupport(const TextureCapsMap &textureCaps)
-{
-    constexpr GLenum requiredFormats[] = {
-        GL_COMPRESSED_RG11_EAC,
-    };
-
-    return GetFormatSupport(textureCaps, requiredFormats, true, true, false, false, false);
-}
-
-// Check for OES_compressed_EAC_RG11_signed_texture support
-static bool DetermineEACRG11SignedTextureSupport(const TextureCapsMap &textureCaps)
-{
-    constexpr GLenum requiredFormats[] = {
-        GL_COMPRESSED_SIGNED_RG11_EAC,
-    };
-
-    return GetFormatSupport(textureCaps, requiredFormats, true, true, false, false, false);
-}
-
 // Check for GL_EXT_sRGB support
 static bool DetermineSRGBTextureSupport(const TextureCapsMap &textureCaps)
 {
@@ -895,7 +781,6 @@ void Extensions::setTextureExtensionSupport(const TextureCapsMap &textureCaps)
     rgb8Rgba8OES             = rgba8ARM && DetermineRGB8TextureSupport(textureCaps);
     readDepthNV              = DetermineReadDepthSupport(textureCaps);
     readStencilNV            = DetermineReadStencilSupport(textureCaps);
-    depthBufferFloat2NV      = DetermineDepthBufferFloat2Support(textureCaps);
     requiredInternalformatOES = DetermineRequiredInternalFormatTextureSupport(textureCaps);
     textureFormatBGRA8888EXT = DetermineBGRA8TextureSupport(textureCaps);
     readFormatBgraEXT        = DetermineBGRAReadFormatSupport(textureCaps);
@@ -915,18 +800,6 @@ void Extensions::setTextureExtensionSupport(const TextureCapsMap &textureCaps)
     textureCompressionAstcLdrKHR  = DetermineASTCLDRTextureSupport(textureCaps);
     textureCompressionAstcOES     = DetermineASTCOESTExtureSupport(textureCaps);
     compressedETC1RGB8TextureOES  = DetermineETC1RGB8TextureSupport(textureCaps);
-    compressedETC2RGB8TextureOES  = DetermineETC2RGB8TextureSupport(textureCaps);
-    compressedETC2SRGB8TextureOES = DetermineETC2sRGB8TextureSupport(textureCaps);
-    compressedETC2PunchthroughARGBA8TextureOES =
-        DetermineETC2PunchthroughARGB8TextureSupport(textureCaps);
-    compressedETC2PunchthroughASRGB8AlphaTextureOES =
-        DetermineETC2PunchthroughAsRGB8AlphaTextureSupport(textureCaps);
-    compressedETC2RGBA8TextureOES       = DetermineETC2RGBA8TextureSupport(textureCaps);
-    compressedETC2SRGB8Alpha8TextureOES = DetermineETC2sRGB8Alpha8TextureSupport(textureCaps);
-    compressedEACR11UnsignedTextureOES  = DetermineEACR11UnsignedTextureSupport(textureCaps);
-    compressedEACR11SignedTextureOES    = DetermineEACR11SignedTextureSupport(textureCaps);
-    compressedEACRG11UnsignedTextureOES = DetermineEACRG11UnsignedTextureSupport(textureCaps);
-    compressedEACRG11SignedTextureOES   = DetermineEACRG11SignedTextureSupport(textureCaps);
     sRGBEXT                             = DetermineSRGBTextureSupport(textureCaps);
     textureSRGBR8EXT                    = DetermineSRGBR8TextureSupport(textureCaps);
     textureSRGBRG8EXT                   = DetermineSRGBRG8TextureSupport(textureCaps);
@@ -1398,7 +1271,6 @@ std::vector<std::string> DeviceExtensions::getStrings() const
     // clang-format off
     //                   | Extension name                                 | Supported flag                | Output vector   |
     InsertExtensionString("EGL_ANGLE_device_d3d",                          deviceD3D,                      &extensionStrings);
-    InsertExtensionString("EGL_ANGLE_device_d3d9",                         deviceD3D9,                     &extensionStrings);
     InsertExtensionString("EGL_ANGLE_device_d3d11",                        deviceD3D11,                    &extensionStrings);
     InsertExtensionString("EGL_ANGLE_device_cgl",                          deviceCGL,                      &extensionStrings);
     InsertExtensionString("EGL_ANGLE_device_metal",                        deviceMetal,                    &extensionStrings);
@@ -1442,6 +1314,7 @@ std::vector<std::string> ClientExtensions::getStrings() const
     InsertExtensionString("EGL_ANGLE_platform_angle_metal",                   platformANGLEMetal,                 &extensionStrings);
     InsertExtensionString("EGL_ANGLE_platform_device_context_volatile_cgl",   platformANGLEDeviceContextVolatileCgl, &extensionStrings);
     InsertExtensionString("EGL_ANGLE_platform_angle_device_id",               platformANGLEDeviceId,              &extensionStrings);
+    InsertExtensionString("EGL_ANGLE_platform_angle_display_key",             platformANGLEDisplayKey,            &extensionStrings);
     InsertExtensionString("EGL_ANGLE_device_creation",                        deviceCreation,                     &extensionStrings);
     InsertExtensionString("EGL_ANGLE_device_creation_d3d11",                  deviceCreationD3D11,                &extensionStrings);
     InsertExtensionString("EGL_ANGLE_x11_visual",                             x11Visual,                          &extensionStrings);

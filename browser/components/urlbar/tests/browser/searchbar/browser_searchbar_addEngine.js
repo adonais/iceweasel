@@ -49,7 +49,7 @@ add_task(async function test_usingContextMenu() {
   let enginePromise = SearchTestUtils.promiseEngine("Foo");
   await SearchbarTestUtils.withContextMenu(window, popup => {
     info("Installing via context menu.");
-    popup.activateItem(popup.parentNode.getMenuItem("add-engine-0"));
+    popup.activateItem(popup.querySelector('[anonid="add-engine-0"]'));
   });
   let engine = await enginePromise;
   Assert.ok(true, "The engine was installed.");

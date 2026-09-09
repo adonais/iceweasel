@@ -25,6 +25,7 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_clipboard.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/TextUtils.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/widget/WebCustomFormatUtils.h"
 #include "nsArrayUtils.h"
@@ -92,6 +93,35 @@ static inline nsresult CheckClipboardByteSize(HGLOBAL aHGlobal,
   }
 
   return NS_OK;
+}
+
+// Web-originated format names must be of the form "Web Custom Format",
+// followed by the item's index -- see the W3C clipboard-apis spec, Appendix A
+// (https://www.w3.org/TR/clipboard-apis/#to-write-web-custom-formats).  That
+// algorithm appends the index, increments it, and breaks once it exceeds 100.
+// (That was probably supposed to be 99 but...).
+// The spec does not say that clipboard reads need to validate these names but
+// external applications that want "Web Custom Format" interop should write
+// according to the web format spec, to avoid surprising behavior.
+static bool IsWebCustomFormatSlotName(const nsACString& aFormatName) {
+  constexpr auto kSlotPrefix = "Web Custom Format"_ns;
+  if (!StringBeginsWith(aFormatName, kSlotPrefix)) {
+    return false;
+  }
+  if (kSlotPrefix.Length() >= aFormatName.Length() ||
+      (aFormatName.Length() - kSlotPrefix.Length() > 3)) {
+    return false;
+  }
+
+  uint32_t index = 0;
+  for (uint32_t i = kSlotPrefix.Length(); i < aFormatName.Length(); ++i) {
+    if (!mozilla::IsAsciiDigit(aFormatName.CharAt(i))) {
+      return false;
+    }
+    index = index * 10;
+    index += static_cast<uint32_t>(aFormatName.CharAt(i) - '0');
+  }
+  return index <= 100;
 }
 
 // Reads the "Web Custom Format Map" clipboard format and decodes its JSON
@@ -216,6 +246,55 @@ template bool nsClipboard::FileGroupDescriptorHasItems<FILEGROUPDESCRIPTORW>(
     HGLOBAL, uint64_t);
 template bool nsClipboard::FileGroupDescriptorHasItems<FILEGROUPDESCRIPTORA>(
     HGLOBAL, uint64_t);
+
+template <typename CharT>
+static bool HasValidDropFilesList(DROPFILES* aDropFiles, size_t aBufferSize) {
+  // The file list offset has to be at least past the DROPFILES metadata and
+  // has to contain at least room for the double-NUL terminator.
+  if (aDropFiles->pFiles < sizeof(DROPFILES) ||
+      aDropFiles->pFiles > aBufferSize ||
+      aBufferSize - aDropFiles->pFiles < 2 * sizeof(CharT)) {
+    return false;
+  }
+
+  const BYTE* list =
+      reinterpret_cast<const BYTE*>(aDropFiles) + aDropFiles->pFiles;
+  const CharT* charList = reinterpret_cast<const CharT*>(list);
+  // Whether the size evenly divides by sizeof(CharT) is irrelevant.
+  const CharT* endCharList =
+      charList + ((aBufferSize - aDropFiles->pFiles) / sizeof(CharT));
+
+  while (charList <= endCharList - 2) {
+    if (charList[0] == CharT(0) && charList[1] == CharT(0)) {
+      return true;
+    }
+    ++charList;
+  }
+  return false;
+}
+
+/* static */
+bool nsClipboard::IsValidDropFilesData(HGLOBAL aHGlobal) {
+  if (!aHGlobal) {
+    return false;
+  }
+
+  size_t size = ::GlobalSize(aHGlobal);
+  if (size < sizeof(DROPFILES)) {
+    return false;
+  }
+
+  ScopedOLELock<DROPFILES*> dropFiles(aHGlobal);
+  if (!dropFiles) {
+    return false;
+  }
+
+  if (dropFiles->fWide) {
+    return HasValidDropFilesList<WCHAR>(dropFiles.get(), size);
+  }
+
+  return HasValidDropFilesList<CHAR>(dropFiles.get(), size);
+}
 
 //-------------------------------------------------------------------------
 // static
@@ -835,7 +914,7 @@ nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject* aDataObject,
   UINT const format = aFormat;
 
   FORMATETC fe;
-  STGMEDIUM stm;
+  STGMEDIUM stm{};
   HRESULT hres = FillSTGMedium(aDataObject, format, &fe, &stm, TYMED_HGLOBAL);
 
   // If the format is CF_HDROP and we haven't found any files we can try looking
@@ -958,6 +1037,10 @@ nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject* aDataObject,
       // single data object. In order to match mozilla's D&D apis, we
       // just pull out the file at the requested index, pretending as
       // if there really are multiple drag items.
+      if (!IsValidDropFilesData(stm.hGlobal)) {
+        return NS_ERROR_INVALID_ARG;
+      }
+
       ScopedOLELock<HDROP> dropFiles(stm.hGlobal);
 
       UINT numFiles = ::DragQueryFileW(dropFiles.get(), 0xFFFFFFFF, nullptr, 0);
@@ -1161,7 +1244,7 @@ nsClipboard::GetDataFromDataObject(IDataObject* aDataObject, UINT anIndex,
     nsDependentCSubstring essence(
         Substring(aFlavor, strlen(kWebCustomFormatPrefix)));
     auto entry = map.Lookup(essence);
-    if (!entry) {
+    if (!entry || !IsWebCustomFormatSlotName(entry.Data())) {
       return nsCOMPtr<nsISupports>{};
     }
     format = GetFormat(entry.Data().get());
@@ -1688,7 +1771,7 @@ nsClipboard::HasNativeClipboardDataMatchingFlavors(
       nsDependentCSubstring essence(
           Substring(flavor, strlen(kWebCustomFormatPrefix)));
       auto entry = webCustomFormatMap.Lookup(essence);
-      if (!entry) {
+      if (!entry || !IsWebCustomFormatSlotName(entry.Data())) {
         continue;
       }
       UINT cf = GetFormat(entry.Data().get());

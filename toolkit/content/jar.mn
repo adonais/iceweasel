@@ -24,6 +24,9 @@ toolkit.jar:
 #endif
    content/global/aboutServiceWorkers.js
    content/global/aboutServiceWorkers.xhtml
+   content/global/aboutSyncLog.css               (/services/sync/content/aboutSyncLog.css)
+   content/global/aboutSyncLog.html              (/services/sync/content/aboutSyncLog.html)
+   content/global/aboutSyncLog.mjs               (/services/sync/content/aboutSyncLog.mjs)
    content/global/aboutwebrtc/aboutWebrtc.css   (aboutwebrtc/aboutWebrtc.css)
    content/global/aboutwebrtc/aboutWebrtc.mjs    (aboutwebrtc/aboutWebrtc.mjs)
    content/global/aboutwebrtc/graph.mjs    (aboutwebrtc/graph.mjs)

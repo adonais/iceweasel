@@ -31,17 +31,13 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class StudiesViewTest {
 
-    @RelaxedMockK
-    private lateinit var experiments: NimbusApi
+    @RelaxedMockK private lateinit var experiments: NimbusApi
 
-    @RelaxedMockK
-    private lateinit var binding: SettingsStudiesBinding
+    @RelaxedMockK private lateinit var binding: SettingsStudiesBinding
 
-    @RelaxedMockK
-    private lateinit var interactor: StudiesInteractor
+    @RelaxedMockK private lateinit var interactor: StudiesInteractor
 
-    @RelaxedMockK
-    private lateinit var settings: Settings
+    @RelaxedMockK private lateinit var settings: Settings
 
     private lateinit var view: StudiesView
     private val testDispatcher = StandardTestDispatcher()
@@ -50,43 +46,45 @@ class StudiesViewTest {
     @Before
     fun setup() {
         MockKAnnotations.init(this)
-        view = spyk(
-            StudiesView(
-                testScope,
-                testContext,
-                binding,
-                interactor,
-                settings,
-                experiments,
-                testDispatcher,
-                isAttached = { true },
-            ),
-        )
+        view =
+            spyk(
+                StudiesView(
+                    testScope,
+                    testContext,
+                    binding,
+                    interactor,
+                    settings,
+                    experiments,
+                    testDispatcher,
+                    isAttached = { true },
+                )
+            )
     }
 
     @Test
-    fun `WHEN calling bind THEN bind all the related information`() = runTest(testDispatcher) {
-        val studiesTitle = mockk<TextView>(relaxed = true)
-        val studiesSwitch = mockk<MaterialSwitch>(relaxed = true)
-        val studiesList = mockk<RecyclerView>(relaxed = true)
+    fun `WHEN calling bind THEN bind all the related information`() =
+        runTest(testDispatcher) {
+            val studiesTitle = mockk<TextView>(relaxed = true)
+            val studiesSwitch = mockk<MaterialSwitch>(relaxed = true)
+            val studiesList = mockk<RecyclerView>(relaxed = true)
 
-        every { settings.isExperimentationEnabled } returns true
-        every { view.provideStudiesTitle() } returns studiesTitle
-        every { view.provideStudiesSwitch() } returns studiesSwitch
-        every { view.provideStudiesList() } returns studiesList
-        every { view.bindDescription() } just runs
-        every { view.getSwitchTitle() } returns "Title"
+            every { settings.isExperimentationEnabled } returns true
+            every { view.provideStudiesTitle() } returns studiesTitle
+            every { view.provideStudiesSwitch() } returns studiesSwitch
+            every { view.provideStudiesList() } returns studiesList
+            every { view.bindDescription() } just runs
+            every { view.getSwitchTitle() } returns "Title"
 
-        view.bind()
-        testDispatcher.scheduler.advanceUntilIdle()
+            view.bind()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify {
-            studiesTitle.text = "Title"
-            studiesSwitch.isChecked = true
-            view.bindDescription()
-            studiesList.adapter = any()
+            verify {
+                studiesTitle.text = "Title"
+                studiesSwitch.isChecked = true
+                view.bindDescription()
+                studiesList.adapter = any()
+            }
         }
-    }
 
     @Test
     fun `WHEN calling onRemoveButtonClicked THEN delegate to the interactor`() {

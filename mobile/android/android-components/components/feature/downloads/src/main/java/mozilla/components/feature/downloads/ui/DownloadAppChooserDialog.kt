@@ -16,28 +16,25 @@ import androidx.appcompat.app.AppCompatDialogFragment
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.core.graphics.drawable.toDrawable
 import androidx.recyclerview.widget.RecyclerView
+import java.util.ArrayList
 import mozilla.components.feature.downloads.R
 import mozilla.components.support.utils.ext.getParcelableArrayListCompat
-import java.util.ArrayList
 
-/**
- * A dialog where an user can select with which app a download must be performed.
- */
+/** A dialog where an user can select with which app a download must be performed. */
 internal class DownloadAppChooserDialog : AppCompatDialogFragment() {
-    private val safeArguments get() = requireNotNull(arguments)
+    private val safeArguments
+        get() = requireNotNull(arguments)
+
     internal val appsList: ArrayList<DownloaderApp>
-        get() =
-            safeArguments.getParcelableArrayListCompat(KEY_APP_LIST, DownloaderApp::class.java)
-                ?: arrayListOf()
+        get() = safeArguments.getParcelableArrayListCompat(KEY_APP_LIST, DownloaderApp::class.java) ?: arrayListOf()
 
-    internal val dialogGravity: Int get() =
-        safeArguments.getInt(KEY_DIALOG_GRAVITY, DEFAULT_VALUE)
-    internal val dialogShouldWidthMatchParent: Boolean get() =
-        safeArguments.getBoolean(KEY_DIALOG_WIDTH_MATCH_PARENT)
+    internal val dialogGravity: Int
+        get() = safeArguments.getInt(KEY_DIALOG_GRAVITY, DEFAULT_VALUE)
 
-    /**
-     * Indicates the user has selected an application to perform the download
-     */
+    internal val dialogShouldWidthMatchParent: Boolean
+        get() = safeArguments.getBoolean(KEY_DIALOG_WIDTH_MATCH_PARENT)
+
+    /** Indicates the user has selected an application to perform the download */
     internal var onAppSelected: ((DownloaderApp) -> Unit) = {}
 
     internal var onDismiss: () -> Unit = {}
@@ -65,17 +62,20 @@ internal class DownloadAppChooserDialog : AppCompatDialogFragment() {
 
     @SuppressLint("InflateParams")
     private fun createContainer(): View {
-        val rootView = LayoutInflater.from(requireContext()).inflate(
-            R.layout.mozac_downloader_chooser_prompt,
-            null,
-            false,
-        )
+        val rootView =
+            LayoutInflater.from(requireContext())
+                .inflate(
+                    R.layout.mozac_downloader_chooser_prompt,
+                    null,
+                    false,
+                )
 
         val recyclerView = rootView.findViewById<RecyclerView>(R.id.apps_list)
-        recyclerView.adapter = DownloaderAppAdapter(rootView.context, appsList) { app ->
-            onAppSelected(app)
-            dismiss()
-        }
+        recyclerView.adapter =
+            DownloaderAppAdapter(rootView.context, appsList) { app ->
+                onAppSelected(app)
+                dismiss()
+            }
 
         rootView.findViewById<AppCompatImageButton>(R.id.close_button).setOnClickListener {
             dismiss()
@@ -106,9 +106,7 @@ internal class DownloadAppChooserDialog : AppCompatDialogFragment() {
     }
 
     companion object {
-        /**
-         * A builder method for creating a [DownloadAppChooserDialog]
-         */
+        /** A builder method for creating a [DownloadAppChooserDialog] */
         fun newInstance(
             gravity: Int? = DEFAULT_VALUE,
             dialogShouldWidthMatchParent: Boolean? = false,

@@ -50,7 +50,7 @@ static inline bool IsSymbol(const JS::Value& value) { return value.isSymbol(); }
 // Return the effective cell color given the current marking state.
 // This must be kept in sync with ShouldMark in Marking.cpp.
 template <typename T>
-static CellColor GetEffectiveColor(GCMarker* marker, const T& item) {
+CellColor GetEffectiveColor(GCMarker* marker, const T& item) {
   static_assert(!IsBarriered<T>::value, "Don't pass wrapper types");
 
   Cell* cell = ToMarkable(item);

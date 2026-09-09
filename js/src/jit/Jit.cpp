@@ -222,10 +222,13 @@ EnterJitStatus js::jit::MaybeEnterJit(JSContext* cx, RunState& state) {
       return EnterJitStatus::NotEntered;
     }
 
-    // Resume must enter Baseline, never Ion (which has no resume support).
+    // A Next or Return resume enters the highest available tier via jitCodeRaw.
+    // Throw always resumes in Baseline because it enters the exception handler
+    // machinery and that would be slower for Ion frames.
     JitScript* jitScript = script->jitScript();
     uint8_t* code;
-    if (jitScript->hasIonScript()) {
+    if (state.asGeneratorResume()->resumeKind() == GeneratorResumeKind::Throw &&
+        jitScript->hasIonScript()) {
       code = jitScript->baselineScript()->method()->raw();
     } else {
       code = script->jitCodeRaw();

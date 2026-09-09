@@ -45,31 +45,33 @@ class SitePermissionsRulesTest {
         mockOnNeedToRequestPermissions = mock()
         mockStorage = mock()
 
-        rules = SitePermissionsFeature(
-            context = testContext,
-            onNeedToRequestPermissions = mockOnNeedToRequestPermissions,
-            storage = mockStorage,
-            fragmentManager = mock(),
-            onShouldShowRequestPermissionRationale = mock(),
-            store = BrowserStore(),
-        )
+        rules =
+            SitePermissionsFeature(
+                context = testContext,
+                onNeedToRequestPermissions = mockOnNeedToRequestPermissions,
+                storage = mockStorage,
+                fragmentManager = mock(),
+                onShouldShowRequestPermissionRationale = mock(),
+                store = BrowserStore(),
+            )
     }
 
     @Test
     fun `getActionFrom must return the right action per permission`() {
-        val rules = SitePermissionsRules(
-            camera = ASK_TO_ALLOW,
-            location = BLOCKED,
-            notification = ASK_TO_ALLOW,
-            microphone = BLOCKED,
-            autoplayAudible = AutoplayAction.BLOCKED,
-            autoplayInaudible = AutoplayAction.ALLOWED,
-            persistentStorage = BLOCKED,
-            crossOriginStorageAccess = ALLOWED,
-            mediaKeySystemAccess = ASK_TO_ALLOW,
-            localDeviceAccess = BLOCKED,
-            localNetworkAccess = BLOCKED,
-        )
+        val rules =
+            SitePermissionsRules(
+                camera = ASK_TO_ALLOW,
+                location = BLOCKED,
+                notification = ASK_TO_ALLOW,
+                microphone = BLOCKED,
+                autoplayAudible = AutoplayAction.BLOCKED,
+                autoplayInaudible = AutoplayAction.ALLOWED,
+                persistentStorage = BLOCKED,
+                crossOriginStorageAccess = ALLOWED,
+                mediaKeySystemAccess = ASK_TO_ALLOW,
+                localDeviceAccess = BLOCKED,
+                localNetworkAccess = BLOCKED,
+            )
 
         val mockRequest: PermissionRequest = mock()
 
@@ -124,19 +126,20 @@ class SitePermissionsRulesTest {
 
     @Test
     fun `getActionFrom must return the right action for a Camera + Microphone permission`() {
-        var rules = SitePermissionsRules(
-            camera = ASK_TO_ALLOW,
-            location = BLOCKED,
-            crossOriginStorageAccess = ALLOWED,
-            persistentStorage = BLOCKED,
-            notification = ASK_TO_ALLOW,
-            microphone = BLOCKED,
-            autoplayInaudible = AutoplayAction.ALLOWED,
-            autoplayAudible = AutoplayAction.BLOCKED,
-            mediaKeySystemAccess = ASK_TO_ALLOW,
-            localDeviceAccess = BLOCKED,
-            localNetworkAccess = BLOCKED,
-        )
+        var rules =
+            SitePermissionsRules(
+                camera = ASK_TO_ALLOW,
+                location = BLOCKED,
+                crossOriginStorageAccess = ALLOWED,
+                persistentStorage = BLOCKED,
+                notification = ASK_TO_ALLOW,
+                microphone = BLOCKED,
+                autoplayInaudible = AutoplayAction.ALLOWED,
+                autoplayAudible = AutoplayAction.BLOCKED,
+                mediaKeySystemAccess = ASK_TO_ALLOW,
+                localDeviceAccess = BLOCKED,
+                localNetworkAccess = BLOCKED,
+            )
 
         val mockRequest: PermissionRequest = mock()
         doReturn(true).`when`(mockRequest).containsVideoAndAudioSources()
@@ -144,19 +147,20 @@ class SitePermissionsRulesTest {
         var action = rules.getActionFrom(mockRequest)
         assertEquals(action, BLOCKED)
 
-        rules = SitePermissionsRules(
-            camera = ASK_TO_ALLOW,
-            location = BLOCKED,
-            crossOriginStorageAccess = ALLOWED,
-            notification = ASK_TO_ALLOW,
-            microphone = ASK_TO_ALLOW,
-            autoplayInaudible = AutoplayAction.ALLOWED,
-            autoplayAudible = AutoplayAction.BLOCKED,
-            persistentStorage = BLOCKED,
-            mediaKeySystemAccess = ASK_TO_ALLOW,
-            localDeviceAccess = BLOCKED,
-            localNetworkAccess = BLOCKED,
-        )
+        rules =
+            SitePermissionsRules(
+                camera = ASK_TO_ALLOW,
+                location = BLOCKED,
+                crossOriginStorageAccess = ALLOWED,
+                notification = ASK_TO_ALLOW,
+                microphone = ASK_TO_ALLOW,
+                autoplayInaudible = AutoplayAction.ALLOWED,
+                autoplayAudible = AutoplayAction.BLOCKED,
+                persistentStorage = BLOCKED,
+                mediaKeySystemAccess = ASK_TO_ALLOW,
+                localDeviceAccess = BLOCKED,
+                localNetworkAccess = BLOCKED,
+            )
 
         action = rules.getActionFrom(mockRequest)
         assertEquals(action, ASK_TO_ALLOW)
@@ -164,34 +168,36 @@ class SitePermissionsRulesTest {
 
     @Test
     fun `toSitePermissions - converts a SitePermissionsRules to SitePermissions`() {
-        val expectedSitePermission = SitePermissions(
-            origin = "origin",
-            camera = Status.NO_DECISION,
-            location = Status.BLOCKED,
-            localStorage = Status.BLOCKED,
-            crossOriginStorageAccess = Status.ALLOWED,
-            notification = Status.NO_DECISION,
-            microphone = Status.BLOCKED,
-            autoplayInaudible = AutoplayStatus.ALLOWED,
-            autoplayAudible = AutoplayStatus.BLOCKED,
-            mediaKeySystemAccess = Status.BLOCKED,
-            localDeviceAccess = Status.BLOCKED,
-            localNetworkAccess = Status.ALLOWED,
-        )
+        val expectedSitePermission =
+            SitePermissions(
+                origin = "origin",
+                camera = Status.NO_DECISION,
+                location = Status.BLOCKED,
+                localStorage = Status.BLOCKED,
+                crossOriginStorageAccess = Status.ALLOWED,
+                notification = Status.NO_DECISION,
+                microphone = Status.BLOCKED,
+                autoplayInaudible = AutoplayStatus.ALLOWED,
+                autoplayAudible = AutoplayStatus.BLOCKED,
+                mediaKeySystemAccess = Status.BLOCKED,
+                localDeviceAccess = Status.BLOCKED,
+                localNetworkAccess = Status.ALLOWED,
+            )
 
-        val rules = SitePermissionsRules(
-            camera = ASK_TO_ALLOW,
-            location = BLOCKED,
-            notification = ASK_TO_ALLOW,
-            microphone = BLOCKED,
-            autoplayInaudible = AutoplayAction.ALLOWED,
-            autoplayAudible = AutoplayAction.BLOCKED,
-            persistentStorage = BLOCKED,
-            crossOriginStorageAccess = ALLOWED,
-            mediaKeySystemAccess = BLOCKED,
-            localDeviceAccess = BLOCKED,
-            localNetworkAccess = ALLOWED,
-        )
+        val rules =
+            SitePermissionsRules(
+                camera = ASK_TO_ALLOW,
+                location = BLOCKED,
+                notification = ASK_TO_ALLOW,
+                microphone = BLOCKED,
+                autoplayInaudible = AutoplayAction.ALLOWED,
+                autoplayAudible = AutoplayAction.BLOCKED,
+                persistentStorage = BLOCKED,
+                crossOriginStorageAccess = ALLOWED,
+                mediaKeySystemAccess = BLOCKED,
+                localDeviceAccess = BLOCKED,
+                localNetworkAccess = ALLOWED,
+            )
 
         val convertedSitePermissions = rules.toSitePermissions(origin = "origin")
 

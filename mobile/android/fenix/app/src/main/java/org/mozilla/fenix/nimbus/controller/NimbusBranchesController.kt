@@ -20,8 +20,8 @@ import org.mozilla.fenix.nimbus.NimbusBranchesStore
  * @param nimbusBranchesStore The store for managing Nimbus branch state.
  * @param experiments The Nimbus API for interacting with experiments.
  * @param experimentId The ID of the experiment being managed.
- * @param notifyUserToEnableExperiments A callback function to notify the user to enable
- *                                      telemetry and experimentation if they are disabled.
+ * @param notifyUserToEnableExperiments A callback function to notify the user to enable telemetry and experimentation
+ *   if they are disabled.
  */
 class NimbusBranchesController(
     private val isTelemetryEnabled: () -> Boolean,
@@ -48,7 +48,7 @@ class NimbusBranchesController(
             } else {
                 experiments.optOut(experimentId)
                 NimbusBranchesAction.UpdateUnselectBranch
-            },
+            }
         )
     }
 }

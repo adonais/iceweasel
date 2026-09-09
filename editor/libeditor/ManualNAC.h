@@ -7,6 +7,7 @@
 
 #include "mozilla/dom/Element.h"
 #include "mozilla/RefPtr.h"
+#include "nsContentUtils.h"
 
 namespace mozilla {
 
@@ -46,21 +47,21 @@ class ManualNACPtr final {
   // We use move semantics, and delete the copy-constructor and operator=.
   ManualNACPtr(ManualNACPtr&& aOther) : mPtr(std::move(aOther.mPtr)) {}
   ManualNACPtr(ManualNACPtr& aOther) = delete;
-  ManualNACPtr& operator=(ManualNACPtr&& aOther) {
+  MOZ_CAN_RUN_SCRIPT ManualNACPtr& operator=(ManualNACPtr&& aOther) {
     Reset();
     mPtr = std::move(aOther.mPtr);
     return *this;
   }
   ManualNACPtr& operator=(ManualNACPtr& aOther) = delete;
 
-  ~ManualNACPtr() { Reset(); }
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY ~ManualNACPtr() { Reset(); }
 
-  void Reset() {
+  MOZ_CAN_RUN_SCRIPT void Reset() {
     if (!mPtr) {
       return;
     }
-    RemoveContentFromNACArray(mPtr);
-    mPtr = nullptr;
+    RefPtr ptr = std::move(mPtr);
+    RemoveContentFromNACArray(ptr);
   }
 
   static bool IsManualNAC(nsIContent* aAnonContent) {
@@ -73,7 +74,8 @@ class ManualNACPtr final {
   }
 
   template <typename StrongNodePtr>
-  static void RemoveContentFromNACArray(StrongNodePtr& aAnonymousContent) {
+  MOZ_CAN_RUN_SCRIPT static void RemoveContentFromNACArray(
+      StrongNodePtr& aAnonymousContent) {
     static_assert(std::is_same_v<StrongNodePtr, RefPtr<dom::Element>> ||
                   std::is_same_v<StrongNodePtr, nsCOMPtr<nsIContent>>);
     // aAnonymousContent may be a class member. Let's move the ownership to
@@ -99,6 +101,10 @@ class ManualNACPtr final {
       }
     }
 
+    // If anonymousContent had a UA shadow, the call of UnbindFromTree() may
+    // have dispatched a chrome event. So, be careful if you want to refer
+    // something after the script blocker is destroyed.
+    const nsAutoScriptBlocker scriptBlocker;
     anonymousContent->UnbindFromTree();
   }
 
@@ -112,7 +118,8 @@ class ManualNACPtr final {
 
 }  // namespace mozilla
 
-inline void ImplCycleCollectionUnlink(mozilla::ManualNACPtr& field) {
+inline void ImplCycleCollectionUnlink(mozilla::ManualNACPtr& field)
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   field.Reset();
 }
 

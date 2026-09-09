@@ -217,11 +217,13 @@ void BaseCompiler::trap(Trap t) {
   }
 
   masm.propagateOOM(
-      createStackMap("BaseCompiler::trap", HasDebugFrameWithLiveRefs::Maybe));
+      createStackMap(mozilla::Some(t), HasDebugFrameWithLiveRefs::Maybe));
 }
 
 void BaseCompiler::trap(Trap t, const TrapSiteDesc& trapSite,
                         StackMap* stackMap) {
+  // TODO: ideally we should check that the resumability of `t` was taken into
+  // account when constructing `stackMap`.
   masm.wasmTrap(t, trapSite);
 
   if (stackMap && !stackMaps_->add(masm.currentOffset(), stackMap)) {

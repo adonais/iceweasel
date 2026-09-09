@@ -4,7 +4,5 @@
 
 package mozilla.components.service.nimbus.messaging
 
-/**
- * The identity of a message surface
- */
+/** The identity of a message surface */
 typealias MessageSurfaceId = String

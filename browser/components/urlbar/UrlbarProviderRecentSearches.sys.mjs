@@ -44,9 +44,9 @@ export class UrlbarProviderRecentSearches extends UrlbarProvider {
   }
 
   async isActive(queryContext) {
-    if (queryContext.sapName == "searchbar") {
-      // On the searchbar, we show recent searches of all engines,
-      // regardless of searchmode or prefs.
+    if (queryContext.isSearchbarSAP) {
+      // In a search bar, we show recent searches of all engines, regardless of
+      // searchmode or prefs.
       return !queryContext.searchString;
     }
 
@@ -109,13 +109,13 @@ export class UrlbarProviderRecentSearches extends UrlbarProvider {
     let results = await lazy.FormHistory.search(["value", "lastUsed"], {
       fieldname: lazy.DEFAULT_FORM_HISTORY_PARAM,
       // Use undefined to show recent searches of all engines.
-      source: queryContext.sapName == "searchbar" ? undefined : engine.name,
+      source: queryContext.isSearchbarSAP ? undefined : engine.name,
     });
 
     let now = Date.now();
 
     let expiration;
-    if (queryContext.sapName != "searchbar") {
+    if (!queryContext.isSearchbarSAP) {
       expiration = parseInt(lazy.UrlbarPrefs.get(EXPIRATION_PREF), 10);
       let lastDefaultChanged = parseInt(
         lazy.UrlbarPrefs.get(LASTDEFAULTCHANGED_PREF),
@@ -137,7 +137,7 @@ export class UrlbarProviderRecentSearches extends UrlbarProvider {
     results.sort((a, b) => b.lastUsed - a.lastUsed);
 
     if (
-      queryContext.sapName != "searchbar" &&
+      !queryContext.isSearchbarSAP &&
       results.length > lazy.UrlbarPrefs.get("recentsearches.maxResults")
     ) {
       results.length = lazy.UrlbarPrefs.get("recentsearches.maxResults");

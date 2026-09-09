@@ -14,39 +14,40 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import java.io.File
+import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.ext.components
-import java.io.File
-import java.util.concurrent.TimeUnit
-import kotlin.time.Duration.Companion.hours
 
 /**
- * Parse all of the fonts on the user's phone, then put them into the
- * `font_list_json` Metric to be submitted via Telemetry later.
+ * Parse all of the fonts on the user's phone, then put them into the `font_list_json` Metric to be submitted via
+ * Telemetry later.
  */
 class FontEnumerationWorker(
     context: Context,
     workerParameters: WorkerParameters,
 ) : CoroutineWorker(context, workerParameters) {
     @Suppress("TooGenericExceptionCaught")
-    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        try {
-            readAllFonts()
-        } catch (e: Exception) {
-            return@withContext Result.retry()
+    override suspend fun doWork(): Result =
+        withContext(Dispatchers.IO) {
+            try {
+                readAllFonts()
+            } catch (e: Exception) {
+                return@withContext Result.retry()
+            }
+
+            Pings.fontList.submit()
+
+            // To avoid getting multiple submissions from new installs, set directly
+            // to the desired number of submissions
+            applicationContext.components.settings.numFontListSent = DESIRED_SUBMISSIONS_NUMBER
+
+            return@withContext Result.success()
         }
-
-        Pings.fontList.submit()
-
-        // To avoid getting multiple submissions from new installs, set directly
-        // to the desired number of submissions
-        applicationContext.components.settings.numFontListSent = DESIRED_SUBMISSIONS_NUMBER
-
-        return@withContext Result.success()
-    }
 
     private val brokenFonts: ArrayList<Pair<String, String>> = ArrayList()
     private val fonts: MutableSet<FontMetric> = HashSet()
@@ -74,9 +75,7 @@ class FontEnumerationWorker(
         private val HOUR_MILLIS: Long = 1.hours.inWholeMilliseconds
         private const val SIX: Long = 6
 
-        /**
-         * Schedules the Activated User event if needed.
-         */
+        /** Schedules the Activated User event if needed. */
         fun sendActivatedSignalIfNeeded(context: Context) {
             val instanceWorkManager = WorkManager.getInstance(context)
 
@@ -94,11 +93,13 @@ class FontEnumerationWorker(
                     .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, SIX, TimeUnit.HOURS)
                     .build()
 
-            instanceWorkManager.beginUniqueWork(
-                FONT_ENUMERATOR_WORK_NAME,
-                ExistingWorkPolicy.KEEP,
-                fontEnumeratorWork,
-            ).enqueue()
+            instanceWorkManager
+                .beginUniqueWork(
+                    FONT_ENUMERATOR_WORK_NAME,
+                    ExistingWorkPolicy.KEEP,
+                    fontEnumeratorWork,
+                )
+                .enqueue()
         }
 
         private fun getSystemFonts(): ArrayList<String> {
@@ -130,10 +131,8 @@ class FontEnumerationWorker(
         }
 
         /**
-         * The number of font submissions we would like from a user.
-         * We will increment this number by one (via a code patch) when
-         * we wish to perform another data collection effort on the Nightly
-         * population.
+         * The number of font submissions we would like from a user. We will increment this number by one (via a code
+         * patch) when we wish to perform another data collection effort on the Nightly population.
          */
         const val DESIRED_SUBMISSIONS_NUMBER: Int = 4
     }

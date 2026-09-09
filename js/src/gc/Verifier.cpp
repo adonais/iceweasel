@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/glue/Debug.h"
 #include "mozilla/Sprintf.h"
 
 #include <algorithm>
@@ -18,6 +19,7 @@
 #include "gc/Zone.h"
 #include "js/friend/DumpFunctions.h"  // js::DumpObject
 #include "js/HashTable.h"
+#include "threading/Thread.h"
 #include "vm/JSContext.h"
 
 #include "gc/ArenaList-inl.h"
@@ -415,6 +417,11 @@ void gc::GCRuntime::endVerifyPreBarriers() {
   resetDelayedMarking();
   resetDeferredWeakMaps();
 
+  // Barriers fired during verification also push things onto the mark stack
+  // which are never traced. This can leave things marked black without their
+  // children having been marked to match, so may leave black to gray edges.
+  setGrayBitsInvalid();
+
   for (AllZonesIter zone(this); !zone.done(); zone.next()) {
     zone->bufferAllocator.clearMarkStateAfterBarrierVerification();
   }
@@ -788,13 +795,13 @@ void js::gc::MarkingValidator::validate() {
         CellColor nonIncColor = TenuredCell::getColor(bitmap, cell);
         if (incColor < nonIncColor) {
           ok = false;
-          fprintf(stderr,
-                  "%p: cell was marked %s, but would be marked %s by "
-                  "non-incremental marking\n",
-                  cell, CellColorName(incColor), CellColorName(nonIncColor));
+          printf_stderr(
+              "%p: cell was marked %s, but would be marked %s by "
+              "non-incremental marking\n",
+              cell, CellColorName(incColor), CellColorName(nonIncColor));
 #  ifdef DEBUG
           cell->dump();
-          fprintf(stderr, "\n");
+          printf_stderr("\n");
 #  endif
         }
 
@@ -957,29 +964,28 @@ void HeapCheckTracerBase::dumpCellInfo(Cell* cell) {
   JSObject* obj =
       kind == JS::TraceKind::Object ? static_cast<JSObject*>(cell) : nullptr;
 
-  fprintf(stderr, "%s %s", CellColorName(cell->color()),
-          GCTraceKindToAscii(kind));
   if (obj) {
-    fprintf(stderr, " %s", obj->getClass()->name);
+    printf_stderr("%s %s %s %p in compartment %p in zone %p (state %s)",
+                  CellColorName(cell->color()), GCTraceKindToAscii(kind),
+                  obj->getClass()->name, cell, obj->compartment(), cell->zone(),
+                  StateName(cell->zone()->gcState()));
+  } else {
+    printf_stderr("%s %s %p in zone %p (state %s)",
+                  CellColorName(cell->color()), GCTraceKindToAscii(kind), cell,
+                  cell->zone(), StateName(cell->zone()->gcState()));
   }
-  fprintf(stderr, " %p", cell);
-  if (obj) {
-    fprintf(stderr, " in compartment %p", obj->compartment());
-  }
-  fprintf(stderr, " in zone %p (state %s)", cell->zone(),
-          StateName(cell->zone()->gcState()));
 }
 
 void HeapCheckTracerBase::dumpCellPath(const char* name) {
   for (int index = parentIndex; index != -1; index = stack[index].parentIndex) {
     const WorkItem& parent = stack[index];
     Cell* cell = parent.thing.asCell();
-    fprintf(stderr, "  from ");
+    printf_stderr("  from ");
     dumpCellInfo(cell);
-    fprintf(stderr, " %s edge\n", name);
+    printf_stderr(" %s edge\n", name);
     name = parent.name;
   }
-  fprintf(stderr, "  from root %s\n", name);
+  printf_stderr("  from root %s\n", name);
 }
 
 class CheckHeapTracer final : public HeapCheckTracerBase {
@@ -1009,7 +1015,7 @@ bool CheckHeapTracer::checkCell(Cell* cell, const char* name) {
   }
 
   failures++;
-  fprintf(stderr, "Bad pointer %p\n", cell);
+  printf_stderr("Bad pointer %p\n", cell);
   dumpCellPath(name);
   return false;
 }
@@ -1050,7 +1056,7 @@ void CheckHeapTracer::check(AutoHeapSession& session) {
   }
 
   if (failures) {
-    fprintf(stderr, "Heap check: %zu failure(s)\n", failures);
+    printf_stderr("Heap check: %zu failure(s)\n", failures);
   }
   MOZ_RELEASE_ASSERT(failures == 0);
 }
@@ -1099,18 +1105,18 @@ bool CheckGrayMarkingTracer::checkCell(Cell* cell, const char* name) {
 
   failures++;
 
-  fprintf(stderr, "Found black to gray edge to ");
+  printf_stderr("Found black to gray edge to ");
   dumpCellInfo(cell);
-  fprintf(stderr, "\n");
+  printf_stderr("\n");
   dumpCellPath(name);
 
 #  ifdef DEBUG
   if (parent->is<JSObject>()) {
-    fprintf(stderr, "\nSource: ");
+    printf_stderr("\nSource: ");
     DumpObject(parent->as<JSObject>(), stderr);
   }
   if (cell->is<JSObject>()) {
-    fprintf(stderr, "\nTarget: ");
+    printf_stderr("\nTarget: ");
     DumpObject(cell->as<JSObject>(), stderr);
   }
 #  endif
@@ -1171,10 +1177,10 @@ bool js::gc::CheckWeakMapMapMarking(const WeakMapBase* map) {
   }
 
   if (object && object->color() != map->mapColor()) {
-    fprintf(stderr, "WeakMap object is marked differently to the map\n");
-    fprintf(stderr, "(map %p is %s, object %p is %s)\n", map,
-            CellColorName(map->mapColor()), object,
-            CellColorName(object->color()));
+    printf_stderr("WeakMap object is marked differently to the map\n");
+    printf_stderr("(map %p is %s, object %p is %s)\n", map,
+                  CellColorName(map->mapColor()), object,
+                  CellColorName(object->color()));
     ok = false;
   }
 
@@ -1214,19 +1220,19 @@ bool js::gc::CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key,
   CellColor keyColor = effectiveColor(key);
 
   if (valueColor < std::min(map->mapColor(), keyColor)) {
-    fprintf(stderr, "WeakMap value is less marked than map and key\n");
-    fprintf(stderr, "(map %p is %s, key %p is %s, value %p is %s)\n", map,
-            CellColorName(map->mapColor()), key, CellColorName(keyColor),
-            maybeValue, CellColorName(valueColor));
+    printf_stderr("WeakMap value is less marked than map and key\n");
+    printf_stderr("(map %p is %s, key %p is %s, value %p is %s)\n", map,
+                  CellColorName(map->mapColor()), key, CellColorName(keyColor),
+                  maybeValue, CellColorName(valueColor));
 #  ifdef DEBUG
-    fprintf(stderr, "Key:\n");
+    printf_stderr("Key:\n");
     key->dump();
     if (auto* delegate = MaybeGetDelegate(key); delegate) {
-      fprintf(stderr, "Delegate:\n");
+      printf_stderr("Delegate:\n");
       delegate->dump();
     }
     if (maybeValue) {
-      fprintf(stderr, "Value:\n");
+      printf_stderr("Value:\n");
       maybeValue->dump();
     }
 #  endif
@@ -1238,10 +1244,10 @@ bool js::gc::CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key,
   if (delegate) {
     CellColor delegateColor = effectiveColor(delegate);
     if (keyColor < std::min(map->mapColor(), delegateColor)) {
-      fprintf(stderr, "WeakMap key is less marked than map or delegate\n");
-      fprintf(stderr, "(map %p is %s, delegate %p is %s, key %p is %s)\n", map,
-              CellColorName(map->mapColor()), delegate,
-              CellColorName(delegateColor), key, CellColorName(keyColor));
+      printf_stderr("WeakMap key is less marked than map or delegate\n");
+      printf_stderr("(map %p is %s, delegate %p is %s, key %p is %s)\n", map,
+                    CellColorName(map->mapColor()), delegate,
+                    CellColorName(delegateColor), key, CellColorName(keyColor));
       ok = false;
     }
   }
@@ -1263,10 +1269,10 @@ bool js::gc::CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key,
     auto* symbol = key->as<JS::Symbol>();
     CellColor keyRefColor = gc->atomReferences.getRefColor(mapZone, symbol);
     if (keyRefColor == CellColor::White) {
-      fprintf(stderr,
-              "Symbol key %p in map %p is not present in the atom reference "
-              "bitmap for zone %p\n",
-              key, map, mapZone);
+      printf_stderr(
+          "Symbol key %p in map %p is not present in the atom reference "
+          "bitmap for zone %p\n",
+          key, map, mapZone);
       ok = false;
     }
   }
@@ -1275,10 +1281,10 @@ bool js::gc::CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key,
     auto* symbol = maybeValue->as<JS::Symbol>();
     CellColor valueRefColor = gc->atomReferences.getRefColor(mapZone, symbol);
     if (valueRefColor == CellColor::White) {
-      fprintf(stderr,
-              "Symbol value %p in map %p is not present in the atom reference "
-              "bitmap for zone %p\n",
-              maybeValue, map, mapZone);
+      printf_stderr(
+          "Symbol value %p in map %p is not present in the atom reference "
+          "bitmap for zone %p\n",
+          maybeValue, map, mapZone);
       ok = false;
     }
   }
@@ -1289,6 +1295,7 @@ bool js::gc::CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key,
 #endif  // defined(JS_GC_ZEAL) || defined(DEBUG)
 
 #ifdef JS_GC_ZEAL
+
 void GCRuntime::verifyPostBarriers(AutoHeapSession& session) {
   // Walk the entire heap to check for pointers into the nursery that should
   // have been tracked by the store buffer.
@@ -1321,7 +1328,14 @@ void GCRuntime::checkHeapBeforeMinorGC(AutoHeapSession& session) {
     }
   }
 }
-#endif
+
+void js::gc::MaybeSleepForConcurrentMarkingDelays(JSContext* cx) {
+  if (cx->runtime()->hasZealMode(ZealMode::ConcurrentMarkingDelays)) {
+    ThisThread::SleepMilliseconds(1);
+  }
+}
+
+#endif  // JS_GC_ZEAL
 
 // Return whether an arbitrary pointer is within a cell with the given
 // traceKind. Only for assertions and js::debug::* APIs. Note that this works at

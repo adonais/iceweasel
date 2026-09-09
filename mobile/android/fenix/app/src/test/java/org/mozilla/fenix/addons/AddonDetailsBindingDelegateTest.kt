@@ -10,9 +10,12 @@ import android.view.View
 import android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
+import com.google.android.material.R as materialR
 import io.mockk.mockk
 import io.mockk.verify
+import kotlin.test.assertIs
 import mozilla.components.feature.addons.Addon
+import mozilla.components.feature.addons.R as addonsR
 import mozilla.components.support.ktx.android.content.getColorFromAttr
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
@@ -22,12 +25,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.FragmentAddOnDetailsBinding
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertIs
-import com.google.android.material.R as materialR
-import mozilla.components.feature.addons.R as addonsR
 
 @RunWith(RobolectricTestRunner::class)
 class AddonDetailsBindingDelegateTest {
@@ -36,13 +35,12 @@ class AddonDetailsBindingDelegateTest {
     private lateinit var binding: FragmentAddOnDetailsBinding
     private lateinit var interactor: AddonDetailsInteractor
     private lateinit var detailsBindingDelegate: AddonDetailsBindingDelegate
-    private val baseAddon = Addon(
-        id = "",
-        translatableDescription = mapOf(
-            Addon.DEFAULT_LOCALE to "Some blank addon\nwith a blank line",
-        ),
-        updatedAt = "2020-11-23T08:00:00Z",
-    )
+    private val baseAddon =
+        Addon(
+            id = "",
+            translatableDescription = mapOf(Addon.DEFAULT_LOCALE to "Some blank addon\nwith a blank line"),
+            updatedAt = "2020-11-23T08:00:00Z",
+        )
 
     @Before
     fun setup() {
@@ -55,25 +53,23 @@ class AddonDetailsBindingDelegateTest {
 
     @Test
     fun `bind addons rating`() {
-        detailsBindingDelegate.bind(
-            baseAddon.copy(
-                rating = null,
-            ),
-        )
+        detailsBindingDelegate.bind(baseAddon.copy(rating = null))
         assertEquals(0f, binding.ratingView.rating)
 
         detailsBindingDelegate.bind(
             baseAddon.copy(
-                rating = Addon.Rating(
-                    average = 4.3f,
-                    reviews = 100,
-                ),
-            ),
+                rating =
+                    Addon.Rating(
+                        average = 4.3f,
+                        reviews = 100,
+                    )
+            )
         )
         assertEquals(4.5f, binding.ratingView.rating)
         assertEquals("100", binding.reviewCount.text)
 
-        val ratingContentDescription = testContext.getString(addonsR.string.mozac_feature_addons_rating_content_description_2)
+        val ratingContentDescription =
+            testContext.getString(addonsR.string.mozac_feature_addons_rating_content_description_2)
         var formattedRatting = String.format(ratingContentDescription, 4.3f)
         assertEquals(formattedRatting, binding.ratingLabel.contentDescription)
         assertEquals(IMPORTANT_FOR_ACCESSIBILITY_NO, binding.ratingView.importantForAccessibility)
@@ -89,7 +85,7 @@ class AddonDetailsBindingDelegateTest {
             baseAddon.copy(
                 rating = Addon.Rating(average = 4.3f, reviews = 100),
                 ratingUrl = "https://example.org/",
-            ),
+            )
         )
         assertEquals("100", binding.reviewCount.text.toString())
 
@@ -100,11 +96,7 @@ class AddonDetailsBindingDelegateTest {
 
     @Test
     fun `bind addons homepage`() {
-        detailsBindingDelegate.bind(
-            baseAddon.copy(
-                homepageUrl = "https://mozilla.org",
-            ),
-        )
+        detailsBindingDelegate.bind(baseAddon.copy(homepageUrl = "https://mozilla.org"))
 
         binding.homePageLabel.performClick()
 
@@ -123,24 +115,27 @@ class AddonDetailsBindingDelegateTest {
 
     @Test
     fun `bind addons version`() {
-        val addon1 = baseAddon.copy(
-            version = "1.0.0",
-            installedState = null,
-        )
+        val addon1 =
+            baseAddon.copy(
+                version = "1.0.0",
+                installedState = null,
+            )
 
         detailsBindingDelegate.bind(addon1)
         assertEquals("1.0.0", binding.versionText.text)
         binding.versionText.performLongClick()
         verify(exactly = 0) { interactor.showUpdaterDialog(addon1) }
 
-        val addon2 = baseAddon.copy(
-            version = "1.0.0",
-            installedState = Addon.InstalledState(
-                id = "",
-                version = "2.0.0",
-                optionsPageUrl = null,
-            ),
-        )
+        val addon2 =
+            baseAddon.copy(
+                version = "1.0.0",
+                installedState =
+                    Addon.InstalledState(
+                        id = "",
+                        version = "2.0.0",
+                        optionsPageUrl = null,
+                    ),
+            )
         detailsBindingDelegate.bind(addon2)
         assertEquals("2.0.0", binding.versionText.text)
         binding.versionText.performLongClick()
@@ -152,9 +147,7 @@ class AddonDetailsBindingDelegateTest {
 
     @Test
     fun `bind addons author`() {
-        detailsBindingDelegate.bind(
-            baseAddon.copy(author = Addon.Author(name = "Sarah Jane", url = "")),
-        )
+        detailsBindingDelegate.bind(baseAddon.copy(author = Addon.Author(name = "Sarah Jane", url = "")))
 
         assertEquals("Sarah Jane", binding.authorText.text)
         assertNotEquals(testContext.getColorFromAttr(materialR.attr.colorTertiary), binding.authorText.currentTextColor)
@@ -166,7 +159,7 @@ class AddonDetailsBindingDelegateTest {
     @Test
     fun `bind addons author with url`() {
         detailsBindingDelegate.bind(
-            baseAddon.copy(author = Addon.Author(name = "Sarah Jane", url = "https://example.org/")),
+            baseAddon.copy(author = Addon.Author(name = "Sarah Jane", url = "https://example.org/"))
         )
 
         assertEquals("Sarah Jane", binding.authorText.text.toString())

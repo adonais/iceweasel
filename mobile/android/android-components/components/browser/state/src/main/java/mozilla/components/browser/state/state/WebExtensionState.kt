@@ -12,18 +12,17 @@ import mozilla.components.concept.engine.webextension.WebExtensionPageAction
  * Value type that represents the state of a web extension.
  *
  * @property id The unique identifier for this web extension.
- * @property url The url pointing to a resources path for locating the extension
- * within the APK file e.g. resource://android/assets/extensions/my_web_ext.
+ * @property url The url pointing to a resources path for locating the extension within the APK file e.g.
+ *   resource://android/assets/extensions/my_web_ext.
  * @property name The name of this web extension.
  * @property enabled Whether or not this web extension is enabled, defaults to true.
- * @property allowedInPrivateBrowsing Whether or not this web extension is allowed in private browsing
- * mode. Defaults to false.
- * @property isBuiltIn Whether or not this web extension is built-in (packaged with the
- * APK file) or coming from an external source.
+ * @property allowedInPrivateBrowsing Whether or not this web extension is allowed in private browsing mode. Defaults to
+ *   false.
+ * @property isBuiltIn Whether or not this web extension is built-in (packaged with the APK file) or coming from an
+ *   external source.
  * @property browserAction The browser action state of this extension.
  * @property pageAction The page action state of this extension.
- * @property popupSessionId The ID of the session displaying
- * the browser action popup.
+ * @property popupSessionId The ID of the session displaying the browser action popup.
  * @property popupSession The [EngineSession] displaying the browser or page action popup.
  * @property activeOptionsPage The state of an active options page.
  */
@@ -44,8 +43,8 @@ data class WebExtensionState(
 /**
  * The state for an active options page.
  *
- * @property instanceId The unique ID for this options page instance. This makes repeated requests
- * distinguishable when observers miss the cleared state.
+ * @property instanceId The unique ID for this options page instance. This makes repeated requests distinguishable when
+ *   observers miss the cleared state.
  * @property url The URL of the options page.
  * @property name The Name for the extension.
  */

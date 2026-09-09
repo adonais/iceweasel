@@ -12,9 +12,6 @@ import mozilla.components.feature.share.db.RecentAppsDatabase.Companion.RECENT_A
 
 @Entity(tableName = RECENT_APPS_TABLE)
 internal data class RecentAppEntity(
-    @PrimaryKey
-    @ColumnInfo(name = "activityName")
-    override var activityName: String,
-    @ColumnInfo(name = "score")
-    override var score: Double = 0.0,
+    @PrimaryKey @ColumnInfo(name = "activityName") override var activityName: String,
+    @ColumnInfo(name = "score") override var score: Double = 0.0,
 ) : RecentApp

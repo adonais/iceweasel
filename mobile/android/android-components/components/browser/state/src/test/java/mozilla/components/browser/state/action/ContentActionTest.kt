@@ -6,6 +6,7 @@ package mozilla.components.browser.state.action
 
 import android.graphics.Bitmap
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.AutoPlayAudibleBlockingAction
 import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.AutoPlayAudibleChangedAction
 import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.AutoPlayInAudibleBlockingAction
@@ -52,7 +53,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class ContentActionTest {
@@ -69,16 +69,18 @@ class ContentActionTest {
 
     @Before
     fun setUp() {
-        state = BrowserState(
-            tabs = listOf(
-                createTab(url = "https://www.mozilla.org").also {
-                    tabId = it.id
-                },
-                createTab(url = "https://www.firefox.com").also {
-                    otherTabId = it.id
-                },
-            ),
-        )
+        state =
+            BrowserState(
+                tabs =
+                    listOf(
+                        createTab(url = "https://www.mozilla.org").also {
+                            tabId = it.id
+                        },
+                        createTab(url = "https://www.firefox.com").also {
+                            otherTabId = it.id
+                        },
+                    )
+            )
     }
 
     @Test
@@ -101,17 +103,19 @@ class ContentActionTest {
         assertNotEquals(icon, tab.content.icon)
         assertNotEquals(icon, otherTab.content.icon)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateIconAction(tab.id, tab.content.url, icon),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateIconAction(tab.id, tab.content.url, icon),
+            )
 
         assertEquals(icon, tab.content.icon)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateUrlAction(tab.id, "https://www.example.org"),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateUrlAction(tab.id, "https://www.example.org"),
+            )
 
         assertNull(tab.content.icon)
     }
@@ -123,17 +127,19 @@ class ContentActionTest {
         assertNotEquals(icon, tab.content.icon)
         assertNotEquals(icon, otherTab.content.icon)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateIconAction(tab.id, tab.content.url, icon),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateIconAction(tab.id, tab.content.url, icon),
+            )
 
         assertEquals(icon, tab.content.icon)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateUrlAction(tab.id, "https://www.mozilla.org/firefox"),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateUrlAction(tab.id, "https://www.mozilla.org/firefox"),
+            )
 
         assertEquals(icon, tab.content.icon)
     }
@@ -141,24 +147,27 @@ class ContentActionTest {
     @Test
     fun `WHEN UpdateUrlAction is dispatched by user gesture THEN the search terms are cleared`() {
         val searchTerms = "Firefox"
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateSearchTermsAction(tab.id, searchTerms),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateSearchTermsAction(tab.id, searchTerms),
+            )
 
         assertEquals(searchTerms, tab.content.searchTerms)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateUrlAction(tab.id, "https://www.mozilla.org", false),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateUrlAction(tab.id, "https://www.mozilla.org", false),
+            )
 
         assertEquals(searchTerms, tab.content.searchTerms)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateUrlAction(tab.id, "https://www.mozilla.org/firefox", true),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateUrlAction(tab.id, "https://www.mozilla.org/firefox", true),
+            )
 
         assertEquals("", tab.content.searchTerms)
     }
@@ -168,31 +177,35 @@ class ContentActionTest {
         assertFalse(tab.content.loading)
         assertFalse(otherTab.content.loading)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateLoadingStateAction(tab.id, true),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateLoadingStateAction(tab.id, true),
+            )
 
         assertTrue(tab.content.loading)
         assertFalse(otherTab.content.loading)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateLoadingStateAction(tab.id, false),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateLoadingStateAction(tab.id, false),
+            )
 
         assertFalse(tab.content.loading)
         assertFalse(otherTab.content.loading)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateLoadingStateAction(tab.id, true),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateLoadingStateAction(tab.id, true),
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateLoadingStateAction(otherTab.id, true),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateLoadingStateAction(otherTab.id, true),
+            )
 
         assertTrue(tab.content.loading)
         assertTrue(otherTab.content.loading)
@@ -203,30 +216,34 @@ class ContentActionTest {
         assertFalse(tab.content.refreshCanceled)
         assertFalse(otherTab.content.refreshCanceled)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateRefreshCanceledStateAction(tab.id, true),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateRefreshCanceledStateAction(tab.id, true),
+            )
 
         assertTrue(tab.content.refreshCanceled)
         assertFalse(otherTab.content.refreshCanceled)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateRefreshCanceledStateAction(tab.id, false),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateRefreshCanceledStateAction(tab.id, false),
+            )
 
         assertFalse(tab.content.refreshCanceled)
         assertFalse(otherTab.content.refreshCanceled)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateRefreshCanceledStateAction(tab.id, true),
-        )
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateRefreshCanceledStateAction(otherTab.id, true),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateRefreshCanceledStateAction(tab.id, true),
+            )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateRefreshCanceledStateAction(otherTab.id, true),
+            )
 
         assertTrue(tab.content.refreshCanceled)
         assertTrue(otherTab.content.refreshCanceled)
@@ -239,10 +256,11 @@ class ContentActionTest {
         assertNotEquals(newTitle, tab.content.title)
         assertNotEquals(newTitle, otherTab.content.title)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateTitleAction(tab.id, newTitle),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateTitleAction(tab.id, newTitle),
+            )
 
         assertEquals(newTitle, tab.content.title)
         assertNotEquals(newTitle, otherTab.content.title)
@@ -255,10 +273,11 @@ class ContentActionTest {
         assertNotEquals(newPreviewImageUrl, tab.content.previewImageUrl)
         assertNotEquals(newPreviewImageUrl, otherTab.content.previewImageUrl)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdatePreviewImageAction(tab.id, newPreviewImageUrl),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdatePreviewImageAction(tab.id, newPreviewImageUrl),
+            )
 
         assertEquals(newPreviewImageUrl, tab.content.previewImageUrl)
         assertNotEquals(newPreviewImageUrl, otherTab.content.previewImageUrl)
@@ -274,8 +293,7 @@ class ContentActionTest {
         assertEquals(75, tab.content.progress)
         assertEquals(0, otherTab.content.progress)
 
-        state =
-            BrowserStateReducer.reduce(state, ContentAction.UpdateProgressAction(otherTab.id, 25))
+        state = BrowserStateReducer.reduce(state, ContentAction.UpdateProgressAction(otherTab.id, 25))
         state = BrowserStateReducer.reduce(state, ContentAction.UpdateProgressAction(tab.id, 85))
 
         assertEquals(85, tab.content.progress)
@@ -289,10 +307,11 @@ class ContentActionTest {
         assertNotEquals(searchTerms, tab.content.searchTerms)
         assertNotEquals(searchTerms, otherTab.content.searchTerms)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateSearchTermsAction(tab.id, searchTerms),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateSearchTermsAction(tab.id, searchTerms),
+            )
 
         assertEquals(searchTerms, tab.content.searchTerms)
         assertNotEquals(searchTerms, otherTab.content.searchTerms)
@@ -305,10 +324,11 @@ class ContentActionTest {
         assertNotEquals(newSecurityInfo, tab.content.securityInfo)
         assertNotEquals(newSecurityInfo, otherTab.content.securityInfo)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateSecurityInfoAction(tab.id, newSecurityInfo),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateSecurityInfoAction(tab.id, newSecurityInfo),
+            )
 
         assertEquals(newSecurityInfo, tab.content.securityInfo)
         assertNotEquals(newSecurityInfo, otherTab.content.securityInfo)
@@ -326,10 +346,11 @@ class ContentActionTest {
         assertNotEquals(icon, tab.content.icon)
         assertNotEquals(icon, otherTab.content.icon)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateIconAction(tab.id, tab.content.url, icon),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateIconAction(tab.id, tab.content.url, icon),
+            )
 
         assertEquals(icon, tab.content.icon)
         assertNotEquals(icon, otherTab.content.icon)
@@ -342,10 +363,11 @@ class ContentActionTest {
         assertNotEquals(icon, tab.content.icon)
         assertNotEquals(icon, otherTab.content.icon)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateIconAction(tab.id, "https://different.example.org", icon),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateIconAction(tab.id, "https://different.example.org", icon),
+            )
 
         assertNull(tab.content.icon)
     }
@@ -356,17 +378,19 @@ class ContentActionTest {
 
         assertNotEquals(icon, tab.content.icon)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateIconAction(tab.id, tab.content.url, icon),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateIconAction(tab.id, tab.content.url, icon),
+            )
 
         assertEquals(icon, tab.content.icon)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.RemoveIconAction(tab.id),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.RemoveIconAction(tab.id),
+            )
 
         assertNull(tab.content.icon)
     }
@@ -376,21 +400,23 @@ class ContentActionTest {
         val customTab = createCustomTab("https://getpocket.com")
         val otherCustomTab = createCustomTab("https://www.google.com")
 
+        state = BrowserStateReducer.reduce(state, CustomTabListAction.AddCustomTabAction(customTab))
         state =
-            BrowserStateReducer.reduce(state, CustomTabListAction.AddCustomTabAction(customTab))
-        state = BrowserStateReducer.reduce(
-            state,
-            CustomTabListAction.AddCustomTabAction(otherCustomTab),
-        )
+            BrowserStateReducer.reduce(
+                state,
+                CustomTabListAction.AddCustomTabAction(otherCustomTab),
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateUrlAction(customTab.id, "https://www.example.org"),
-        )
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateTitleAction(customTab.id, "I am a custom tab"),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateUrlAction(customTab.id, "https://www.example.org"),
+            )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateTitleAction(customTab.id, "I am a custom tab"),
+            )
 
         val updatedCustomTab = state.findCustomTab(customTab.id)!!
         val updatedOtherCustomTab = state.findCustomTab(otherCustomTab.id)!!
@@ -410,28 +436,32 @@ class ContentActionTest {
     fun `UpdateDownloadAction updates download`() {
         assertNull(tab.content.download)
 
-        val download1 = DownloadState(
-            url = "https://www.mozilla.org",
-            sessionId = tab.id,
-        )
+        val download1 =
+            DownloadState(
+                url = "https://www.mozilla.org",
+                sessionId = tab.id,
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateDownloadAction(tab.id, download1),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateDownloadAction(tab.id, download1),
+            )
 
         assertEquals(download1.url, tab.content.download?.url)
         assertEquals(download1.sessionId, tab.content.download?.sessionId)
 
-        val download2 = DownloadState(
-            url = "https://www.wikipedia.org",
-            sessionId = tab.id,
-        )
+        val download2 =
+            DownloadState(
+                url = "https://www.wikipedia.org",
+                sessionId = tab.id,
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateDownloadAction(tab.id, download2),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateDownloadAction(tab.id, download2),
+            )
 
         assertEquals(download2.url, tab.content.download?.url)
         assertEquals(download2.sessionId, tab.content.download?.sessionId)
@@ -439,69 +469,78 @@ class ContentActionTest {
 
     @Test
     fun `ConsumeDownloadAction removes download`() {
-        val download = DownloadState(
-            id = "1337",
-            url = "https://www.mozilla.org",
-            sessionId = tab.id,
-        )
+        val download =
+            DownloadState(
+                id = "1337",
+                url = "https://www.mozilla.org",
+                sessionId = tab.id,
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateDownloadAction(tab.id, download),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateDownloadAction(tab.id, download),
+            )
 
         assertEquals(download, tab.content.download)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.ConsumeDownloadAction(tab.id, downloadId = "1337"),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.ConsumeDownloadAction(tab.id, downloadId = "1337"),
+            )
 
         assertNull(tab.content.download)
     }
 
     @Test
     fun `CancelDownloadAction removes download`() {
-        val download = DownloadState(
-            id = "1337",
-            url = "https://www.mozilla.org",
-            sessionId = tab.id,
-        )
+        val download =
+            DownloadState(
+                id = "1337",
+                url = "https://www.mozilla.org",
+                sessionId = tab.id,
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateDownloadAction(tab.id, download),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateDownloadAction(tab.id, download),
+            )
 
         assertEquals(download, tab.content.download)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.CancelDownloadAction(tab.id, downloadId = "1337"),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.CancelDownloadAction(tab.id, downloadId = "1337"),
+            )
 
         assertNull(tab.content.download)
     }
 
     @Test
     fun `ConsumeDownloadAction does not remove download with different id`() {
-        val download = DownloadState(
-            id = "1337",
-            url = "https://www.mozilla.org",
-            sessionId = tab.id,
-        )
+        val download =
+            DownloadState(
+                id = "1337",
+                url = "https://www.mozilla.org",
+                sessionId = tab.id,
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateDownloadAction(tab.id, download),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateDownloadAction(tab.id, download),
+            )
 
         assertEquals(download, tab.content.download)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.ConsumeDownloadAction(tab.id, downloadId = "4223"),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.ConsumeDownloadAction(tab.id, downloadId = "4223"),
+            )
 
         assertNotNull(tab.content.download)
     }
@@ -512,19 +551,21 @@ class ContentActionTest {
 
         val hitResult1: HitResult = HitResult.UNKNOWN("file://foo")
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateHitResultAction(tab.id, hitResult1),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateHitResultAction(tab.id, hitResult1),
+            )
 
         assertEquals(hitResult1, tab.content.hitResult)
 
         val hitResult2: HitResult = HitResult.UNKNOWN("file://bar")
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateHitResultAction(tab.id, hitResult2),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateHitResultAction(tab.id, hitResult2),
+            )
 
         assertEquals(hitResult2, tab.content.hitResult)
     }
@@ -533,17 +574,19 @@ class ContentActionTest {
     fun `ConsumeHitResultAction removes hit result`() {
         val hitResult: HitResult = HitResult.UNKNOWN("file://foo")
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateHitResultAction(tab.id, hitResult),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateHitResultAction(tab.id, hitResult),
+            )
 
         assertEquals(hitResult, tab.content.hitResult)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.ConsumeHitResultAction(tab.id),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.ConsumeHitResultAction(tab.id),
+            )
 
         assertNull(tab.content.hitResult)
     }
@@ -554,20 +597,22 @@ class ContentActionTest {
 
         val promptRequest1: PromptRequest = mock<PromptRequest.SingleChoice>()
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdatePromptRequestAction(tab.id, promptRequest1),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdatePromptRequestAction(tab.id, promptRequest1),
+            )
 
         assertEquals(1, tab.content.promptRequests.size)
         assertEquals(promptRequest1, tab.content.promptRequests[0])
 
         val promptRequest2: PromptRequest = mock<PromptRequest.MultipleChoice>()
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdatePromptRequestAction(tab.id, promptRequest2),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdatePromptRequestAction(tab.id, promptRequest2),
+            )
 
         assertEquals(2, tab.content.promptRequests.size)
         assertEquals(promptRequest1, tab.content.promptRequests[0])
@@ -578,18 +623,20 @@ class ContentActionTest {
     fun `ConsumePromptRequestAction removes request`() {
         val promptRequest: PromptRequest = mock<PromptRequest.SingleChoice>()
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdatePromptRequestAction(tab.id, promptRequest),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdatePromptRequestAction(tab.id, promptRequest),
+            )
 
         assertEquals(1, tab.content.promptRequests.size)
         assertEquals(promptRequest, tab.content.promptRequests[0])
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.ConsumePromptRequestAction(tab.id, promptRequest),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.ConsumePromptRequestAction(tab.id, promptRequest),
+            )
 
         assertTrue(tab.content.promptRequests.isEmpty())
     }
@@ -599,19 +646,21 @@ class ContentActionTest {
         assertTrue(tab.content.findResults.isEmpty())
 
         val result: FindResultState = mock()
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.AddFindResultAction(tab.id, result),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.AddFindResultAction(tab.id, result),
+            )
 
         assertEquals(1, tab.content.findResults.size)
         assertEquals(result, tab.content.findResults.last())
 
         val result2: FindResultState = mock()
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.AddFindResultAction(tab.id, result2),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.AddFindResultAction(tab.id, result2),
+            )
 
         assertEquals(2, tab.content.findResults.size)
         assertEquals(result2, tab.content.findResults.last())
@@ -619,22 +668,25 @@ class ContentActionTest {
 
     @Test
     fun `ClearFindResultsAction removes all results`() {
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.AddFindResultAction(tab.id, mock()),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.AddFindResultAction(tab.id, mock()),
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.AddFindResultAction(tab.id, mock()),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.AddFindResultAction(tab.id, mock()),
+            )
 
         assertEquals(2, tab.content.findResults.size)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.ClearFindResultsAction(tab.id),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.ClearFindResultsAction(tab.id),
+            )
 
         assertTrue(tab.content.findResults.isEmpty())
     }
@@ -645,19 +697,21 @@ class ContentActionTest {
 
         val windowRequest1: WindowRequest = mock()
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateWindowRequestAction(tab.id, windowRequest1),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateWindowRequestAction(tab.id, windowRequest1),
+            )
 
         assertEquals(windowRequest1, tab.content.windowRequest)
 
         val windowRequest2: WindowRequest = mock()
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateWindowRequestAction(tab.id, windowRequest2),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateWindowRequestAction(tab.id, windowRequest2),
+            )
 
         assertEquals(windowRequest2, tab.content.windowRequest)
     }
@@ -666,17 +720,19 @@ class ContentActionTest {
     fun `ConsumeWindowRequestAction removes request`() {
         val windowRequest: WindowRequest = mock()
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateWindowRequestAction(tab.id, windowRequest),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateWindowRequestAction(tab.id, windowRequest),
+            )
 
         assertEquals(windowRequest, tab.content.windowRequest)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.ConsumeWindowRequestAction(tab.id),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.ConsumeWindowRequestAction(tab.id),
+            )
 
         assertNull(tab.content.windowRequest)
     }
@@ -686,18 +742,20 @@ class ContentActionTest {
         assertFalse(tab.content.canGoBack)
         assertFalse(otherTab.content.canGoBack)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateBackNavigationStateAction(tab.id, true),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateBackNavigationStateAction(tab.id, true),
+            )
 
         assertTrue(tab.content.canGoBack)
         assertFalse(otherTab.content.canGoBack)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateBackNavigationStateAction(tab.id, false),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateBackNavigationStateAction(tab.id, false),
+            )
 
         assertFalse(tab.content.canGoBack)
         assertFalse(otherTab.content.canGoBack)
@@ -708,18 +766,20 @@ class ContentActionTest {
         assertFalse(tab.content.canGoForward)
         assertFalse(otherTab.content.canGoForward)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateForwardNavigationStateAction(tab.id, true),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateForwardNavigationStateAction(tab.id, true),
+            )
 
         assertTrue(tab.content.canGoForward)
         assertFalse(otherTab.content.canGoForward)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateForwardNavigationStateAction(tab.id, false),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateForwardNavigationStateAction(tab.id, false),
+            )
 
         assertFalse(tab.content.canGoForward)
         assertFalse(otherTab.content.canGoForward)
@@ -727,18 +787,20 @@ class ContentActionTest {
 
     @Test
     fun `UpdateWebAppManifestAction updates web app manifest`() {
-        val manifest = WebAppManifest(
-            name = "Mozilla",
-            startUrl = "https://mozilla.org",
-        )
+        val manifest =
+            WebAppManifest(
+                name = "Mozilla",
+                startUrl = "https://mozilla.org",
+            )
 
         assertNotEquals(manifest, tab.content.webAppManifest)
         assertNotEquals(manifest, otherTab.content.webAppManifest)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateWebAppManifestAction(tab.id, manifest),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateWebAppManifestAction(tab.id, manifest),
+            )
 
         assertEquals(manifest, tab.content.webAppManifest)
         assertNotEquals(manifest, otherTab.content.webAppManifest)
@@ -746,49 +808,55 @@ class ContentActionTest {
 
     @Test
     fun `RemoveWebAppManifestAction removes web app manifest`() {
-        val manifest = WebAppManifest(
-            name = "Mozilla",
-            startUrl = "https://mozilla.org",
-        )
+        val manifest =
+            WebAppManifest(
+                name = "Mozilla",
+                startUrl = "https://mozilla.org",
+            )
 
         assertNotEquals(manifest, tab.content.webAppManifest)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateWebAppManifestAction(tab.id, manifest),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateWebAppManifestAction(tab.id, manifest),
+            )
 
         assertEquals(manifest, tab.content.webAppManifest)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.RemoveWebAppManifestAction(tab.id),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.RemoveWebAppManifestAction(tab.id),
+            )
 
         assertNull(tab.content.webAppManifest)
     }
 
     @Test
     fun `UpdateHistoryStateAction updates history state`() {
-        val historyState = HistoryState(
-            items = listOf(
-                HistoryItem("Mozilla", "https://mozilla.org"),
-                HistoryItem("Firefox", "https://firefox.com"),
-            ),
-            currentIndex = 1,
-        )
+        val historyState =
+            HistoryState(
+                items =
+                    listOf(
+                        HistoryItem("Mozilla", "https://mozilla.org"),
+                        HistoryItem("Firefox", "https://firefox.com"),
+                    ),
+                currentIndex = 1,
+            )
 
         assertNotEquals(historyState, tab.content.history)
         assertNotEquals(historyState, otherTab.content.history)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateHistoryStateAction(
-                tab.id,
-                historyState.items,
-                historyState.currentIndex,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateHistoryStateAction(
+                    tab.id,
+                    historyState.items,
+                    historyState.currentIndex,
+                ),
+            )
 
         assertEquals(historyState, tab.content.history)
         assertNotEquals(historyState, otherTab.content.history)
@@ -798,13 +866,14 @@ class ContentActionTest {
     fun `UpdateLoadRequestAction updates load request state`() {
         val loadRequestUrl = "https://mozilla.org"
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateLoadRequestAction(
-                tab.id,
-                LoadRequestState(loadRequestUrl, true, false),
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateLoadRequestAction(
+                    tab.id,
+                    LoadRequestState(loadRequestUrl, true, false),
+                ),
+            )
 
         assertNotNull(tab.content.loadRequest) {
             assertEquals(loadRequestUrl, it.url)
@@ -823,8 +892,7 @@ class ContentActionTest {
         assertTrue(tab.content.desktopMode)
         assertFalse(otherTab.content.desktopMode)
 
-        state =
-            BrowserStateReducer.reduce(state, ContentAction.UpdateTabDesktopMode(tab.id, false))
+        state = BrowserStateReducer.reduce(state, ContentAction.UpdateTabDesktopMode(tab.id, false))
 
         assertFalse(tab.content.desktopMode)
         assertFalse(otherTab.content.desktopMode)
@@ -958,19 +1026,21 @@ class ContentActionTest {
 
         val appIntent1: AppIntentState = mock()
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateAppIntentAction(tab.id, appIntent1),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateAppIntentAction(tab.id, appIntent1),
+            )
 
         assertEquals(appIntent1, tab.content.appIntent)
 
         val appIntent2: AppIntentState = mock()
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateAppIntentAction(tab.id, appIntent2),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateAppIntentAction(tab.id, appIntent2),
+            )
 
         assertEquals(appIntent2, tab.content.appIntent)
     }
@@ -979,17 +1049,19 @@ class ContentActionTest {
     fun `ConsumeAppIntentAction removes request`() {
         val appIntent: AppIntentState = mock()
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateAppIntentAction(tab.id, appIntent),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateAppIntentAction(tab.id, appIntent),
+            )
 
         assertEquals(appIntent, tab.content.appIntent)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.ConsumeAppIntentAction(tab.id),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.ConsumeAppIntentAction(tab.id),
+            )
 
         assertNull(tab.content.appIntent)
     }
@@ -998,17 +1070,19 @@ class ContentActionTest {
     fun `CheckForFormDataAction updates hasFormData`() {
         assertFalse(tab.content.hasFormData)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateHasFormDataAction(tab.id, true),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateHasFormDataAction(tab.id, true),
+            )
 
         assertTrue(tab.content.hasFormData)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateHasFormDataAction(tab.id, false),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateHasFormDataAction(tab.id, false),
+            )
 
         assertFalse(tab.content.hasFormData)
     }
@@ -1026,14 +1100,16 @@ class ContentActionTest {
             whenever(uri).thenReturn(url)
         }
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdatePermissionsRequest(tab.id, request1),
-        )
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdatePermissionsRequest(tab.id, request2),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdatePermissionsRequest(tab.id, request1),
+            )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdatePermissionsRequest(tab.id, request2),
+            )
 
         verify(request1).merge(request2)
     }
@@ -1047,14 +1123,16 @@ class ContentActionTest {
             whenever(permissions).thenReturn(listOf(AppLocationCoarse(id = "permission")))
         }
 
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateAppPermissionsRequest(tab.id, request1),
-        )
-        state = BrowserStateReducer.reduce(
-            state,
-            ContentAction.UpdateAppPermissionsRequest(tab.id, request2),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateAppPermissionsRequest(tab.id, request1),
+            )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ContentAction.UpdateAppPermissionsRequest(tab.id, request2),
+            )
 
         verify(request1).merge(request2)
     }

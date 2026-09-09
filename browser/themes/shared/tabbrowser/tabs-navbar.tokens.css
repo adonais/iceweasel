@@ -7,20 +7,18 @@
 
 @layer tokens-foundation, tokens-browser-theme, tokens-foundation-brand, tokens-foundation-nova, tokens-browser-theme-nova, tokens-foundation-brand-nova, tokens-prefers-contrast, tokens-prefers-contrast-nova, tokens-forced-colors, tokens-forced-colors-nova;
 
-@layer tokens-foundation {
-  :root,
-  :host {
+:root,
+:host {
+  @layer tokens-foundation {
     --tabs-navbar-separator-color: ThreeDShadow;
     --tabs-navbar-separator-style: solid;
   }
 }
 
-/* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-@layer tokens-browser-theme {
-  @media not ((forced-colors) or (-moz-native-theme)) {
-    :root:is([theme-in-app], :not([lwtheme])),
-    :host(.anonymous-content-host) {
+:root:is([theme-in-app], :not([lwtheme])),
+:host(.anonymous-content-host) {
+  @layer tokens-browser-theme {
+    @media not ((forced-colors) or (-moz-native-theme)) {
       --tabs-navbar-separator-style: none;
     }
   }

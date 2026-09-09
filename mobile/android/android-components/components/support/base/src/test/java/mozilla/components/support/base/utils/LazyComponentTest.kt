@@ -4,17 +4,18 @@
 
 package mozilla.components.support.base.utils
 
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 class LazyComponentTest {
 
-    private val initCount: Int get() = LazyComponent.initCount.get()
+    private val initCount: Int
+        get() = LazyComponent.initCount.get()
 
     @Before
     fun setUp() {
@@ -61,7 +62,7 @@ class LazyComponentTest {
         // coroutines add complex behavior - suspension, test APIs affecting true concurrency, etc. -
         // so we use traditional threads for a simpler implementation.
         val executorService = Executors.newFixedThreadPool(12)
-        for (i in 1..100) {
+        repeat(100) {
             executorService.submit { component.get() }
         }
         executorService.shutdown()

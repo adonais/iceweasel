@@ -15,12 +15,8 @@ import mozilla.components.concept.engine.prompt.PromptRequest
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 
-/**
- * [Middleware] implementation for managing [PromptRequest]s.
- */
-class PromptMiddleware(
-    private val scope: CoroutineScope = MainScope(),
-) : Middleware<BrowserState, BrowserAction> {
+/** [Middleware] implementation for managing [PromptRequest]s. */
+class PromptMiddleware(private val scope: CoroutineScope = MainScope()) : Middleware<BrowserState, BrowserAction> {
 
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,

@@ -870,11 +870,7 @@ var gPrivacyPane = {
       "browser.contentblocking.fingerprinting.preferences.ui.enabled"
     );
     let updateTrackingAndIsolateOption = () => {
-      trackingAndIsolateOption.hidden =
-        !Services.prefs.getBoolPref(
-          "browser.contentblocking.reject-and-isolate-cookies.preferences.ui.enabled",
-          false
-        ) || gIsFirstPartyIsolated;
+      trackingAndIsolateOption.hidden = gIsFirstPartyIsolated;
     };
     Preferences.get("privacy.firstparty.isolate").on(
       "change",

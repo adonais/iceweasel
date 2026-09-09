@@ -37,9 +37,6 @@ function run_test() {
     "test"
   );
 
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
-
   add_test(init);
   add_test(test_client_request_promise);
   add_test(test_client_request_promise_error);
@@ -49,15 +46,11 @@ function run_test() {
   run_next_test();
 }
 
-function init() {
-  gClient = new DevToolsClient(DevToolsServer.connectPipe());
-  gClient
-    .connect()
-    .then(() => gClient.mainRoot.rootForm)
-    .then(response => {
-      gActorId = response.test;
-      run_next_test();
-    });
+async function init() {
+  gClient = await createLocalClientForTests();
+  const response = await gClient.mainRoot.rootForm;
+  gActorId = response.test;
+  run_next_test();
 }
 
 function checkStack(expectedName) {

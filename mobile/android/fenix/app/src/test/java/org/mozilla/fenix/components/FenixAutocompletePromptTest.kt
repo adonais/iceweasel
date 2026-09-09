@@ -29,17 +29,20 @@ class FenixAutocompletePromptTest {
             viewProviderInvocationCount++
             error("viewProvider should not be invoked")
         }
-        val fenixPrompt = FenixAutocompletePrompt(
-            viewProvider = viewProvider,
-            toolbarPositionProvider = { ToolbarPosition.BOTTOM },
-            onShow = { },
-            onHide = { },
-        )
+        val fenixPrompt =
+            FenixAutocompletePrompt(
+                viewProvider = viewProvider,
+                toolbarPositionProvider = { ToolbarPosition.BOTTOM },
+                onShow = {},
+                onHide = {},
+            )
 
-        fenixPrompt.selectablePromptListener = object : SelectablePromptView.Listener<Login> {
-            override fun onOptionSelect(option: Login) {}
-            override fun onManageOptions() {}
-        }
+        fenixPrompt.selectablePromptListener =
+            object : SelectablePromptView.Listener<Login> {
+                override fun onOptionSelect(option: Login) {}
+
+                override fun onManageOptions() {}
+            }
 
         assertEquals(0, viewProviderInvocationCount)
     }
@@ -47,12 +50,13 @@ class FenixAutocompletePromptTest {
     @Test
     fun `GIVEN FenixAutocompletePrompt WHEN populate is called THEN call populate on the view`() {
         val view: LoginSelectBar = mockk(relaxed = true)
-        val fenixPrompt = FenixAutocompletePrompt(
-            viewProvider = { view },
-            toolbarPositionProvider = { ToolbarPosition.BOTTOM },
-            onShow = { },
-            onHide = { },
-        )
+        val fenixPrompt =
+            FenixAutocompletePrompt(
+                viewProvider = { view },
+                toolbarPositionProvider = { ToolbarPosition.BOTTOM },
+                onShow = {},
+                onHide = {},
+            )
 
         fenixPrompt.populate(listOf())
 
@@ -63,17 +67,20 @@ class FenixAutocompletePromptTest {
     fun `GIVEN FenixAutocompletePrompt WHEN showPrompt is called THEN call showPrompt on the view`() {
         var onShowCalled = false
         val view: LoginSelectBar = mockk(relaxed = true)
-        val fenixPrompt = FenixAutocompletePrompt(
-            viewProvider = { view },
-            toolbarPositionProvider = { ToolbarPosition.BOTTOM },
-            onShow = { onShowCalled = true },
-            onHide = { },
-        )
+        val fenixPrompt =
+            FenixAutocompletePrompt(
+                viewProvider = { view },
+                toolbarPositionProvider = { ToolbarPosition.BOTTOM },
+                onShow = { onShowCalled = true },
+                onHide = {},
+            )
 
-        val listener = object : SelectablePromptView.Listener<Login> {
-            override fun onOptionSelect(option: Login) {}
-            override fun onManageOptions() {}
-        }
+        val listener =
+            object : SelectablePromptView.Listener<Login> {
+                override fun onOptionSelect(option: Login) {}
+
+                override fun onManageOptions() {}
+            }
 
         fenixPrompt.selectablePromptListener = listener
         fenixPrompt.showPrompt()
@@ -87,12 +94,13 @@ class FenixAutocompletePromptTest {
     fun `GIVEN FenixAutocompletePrompt WHEN hidePrompt is called THEN call hidePrompt on the view`() {
         var onHideCalled = false
         val view: LoginSelectBar = mockk(relaxed = true)
-        val fenixPrompt = FenixAutocompletePrompt(
-            viewProvider = { view },
-            toolbarPositionProvider = { ToolbarPosition.BOTTOM },
-            onShow = { },
-            onHide = { onHideCalled = true },
-        )
+        val fenixPrompt =
+            FenixAutocompletePrompt(
+                viewProvider = { view },
+                toolbarPositionProvider = { ToolbarPosition.BOTTOM },
+                onShow = {},
+                onHide = { onHideCalled = true },
+            )
 
         fenixPrompt.hidePrompt()
 
@@ -102,16 +110,18 @@ class FenixAutocompletePromptTest {
 
     @Test
     fun `GIVEN the prompt is shown with toolbar at bottom WHEN view is expanded THEN the autocomplete bar is placed at the bottom`() {
-        val view = LoginSelectBar(testContext).apply {
-            layoutParams = CoordinatorLayout.LayoutParams(0, 0)
-        }
+        val view =
+            LoginSelectBar(testContext).apply {
+                layoutParams = CoordinatorLayout.LayoutParams(0, 0)
+            }
 
-        val fenixPrompt = FenixAutocompletePrompt(
-            viewProvider = { view },
-            toolbarPositionProvider = { ToolbarPosition.BOTTOM },
-            onShow = { },
-            onHide = { },
-        )
+        val fenixPrompt =
+            FenixAutocompletePrompt(
+                viewProvider = { view },
+                toolbarPositionProvider = { ToolbarPosition.BOTTOM },
+                onShow = {},
+                onHide = {},
+            )
 
         fenixPrompt.showPrompt()
         view.expand()

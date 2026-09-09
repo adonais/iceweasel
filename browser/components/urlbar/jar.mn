@@ -3,14 +3,16 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 browser.jar:
+        content/browser/urlbar/UrlbarInputBase.mjs         (content/UrlbarInputBase.mjs)
         content/browser/urlbar/L10nCache.mjs               (content/L10nCache.mjs)
+        content/browser/urlbar/SearchbarInput.mjs          (content/SearchbarInput.mjs)
         content/browser/urlbar/SmartbarInput.mjs           (content/SmartbarInput.mjs)
         content/browser/urlbar/SmartbarInputController.mjs (content/SmartbarInputController.mjs)
         content/browser/urlbar/SmartbarInputUtils.mjs      (content/SmartbarInputUtils.mjs)
         content/browser/urlbar/UrlbarChildController.mjs   (content/UrlbarChildController.mjs)
         content/browser/urlbar/UrlbarChildTelemetry.mjs    (content/UrlbarChildTelemetry.mjs)
+        content/browser/urlbar/UrlbarContentUtils.mjs      (content/UrlbarContentUtils.mjs)
         content/browser/urlbar/UrlbarContentPrefs.mjs      (content/UrlbarContentPrefs.mjs)
-        content/browser/urlbar/UrlbarContentURIUtils.mjs   (content/UrlbarContentURIUtils.mjs)
         content/browser/urlbar/UrlbarParentControllerProxy.mjs (content/UrlbarParentControllerProxy.mjs)
         content/browser/urlbar/UrlbarEventBufferer.mjs     (content/UrlbarEventBufferer.mjs)
         content/browser/urlbar/UrlbarInput.mjs             (content/UrlbarInput.mjs)

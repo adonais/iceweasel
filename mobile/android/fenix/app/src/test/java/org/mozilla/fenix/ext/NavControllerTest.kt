@@ -19,8 +19,7 @@ class NavControllerTest {
 
     private val currentDestId = 4
 
-    @MockK(relaxUnitFun = true)
-    private lateinit var navController: NavController
+    @MockK(relaxUnitFun = true) private lateinit var navController: NavController
 
     @MockK private lateinit var navDirections: NavDirections
 

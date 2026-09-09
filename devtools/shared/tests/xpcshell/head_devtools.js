@@ -9,6 +9,10 @@ const { require, DevToolsLoader } = ChromeUtils.importESModule(
   "resource://devtools/shared/loader/Loader.sys.mjs"
 );
 const DevToolsUtils = require("resource://devtools/shared/DevToolsUtils.js");
+const {
+  CommandsFactory,
+  createLocalClientForTests,
+} = require("resource://devtools/shared/commands/commands-factory.js");
 
 Services.prefs.setBoolPref("devtools.testing", true);
 registerCleanupFunction(() => {

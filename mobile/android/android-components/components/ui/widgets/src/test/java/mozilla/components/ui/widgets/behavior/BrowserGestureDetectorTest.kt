@@ -73,9 +73,8 @@ class BrowserGestureDetectorTest {
 
         // Neither the scale detector, nor the scroll detector should be interested
         // in a one of a time ACTION_CANCEL MotionEvent
-        val wasEventHandled = detector.handleTouchEvent(
-            TestUtils.getMotionEvent(ACTION_CANCEL, previousEvent = unhandledEvent),
-        )
+        val wasEventHandled =
+            detector.handleTouchEvent(TestUtils.getMotionEvent(ACTION_CANCEL, previousEvent = unhandledEvent))
 
         assertFalse(wasEventHandled)
     }
@@ -103,14 +102,15 @@ class BrowserGestureDetectorTest {
         var scaleInProgressCalled = false
         var scaleEndCalled = false
 
-        val gesturesListener = BrowserGestureDetector.GesturesListener(
-            onScroll = { x, y -> scrollValues = Pair(x, y) },
-            onVerticalScroll = { y -> verticalScroll = y },
-            onHorizontalScroll = { x -> horizontalScroll = x },
-            onScaleBegin = { scaleBeginCalled = true },
-            onScale = { scaleInProgressCalled = true },
-            onScaleEnd = { scaleEndCalled = true },
-        )
+        val gesturesListener =
+            BrowserGestureDetector.GesturesListener(
+                onScroll = { x, y -> scrollValues = Pair(x, y) },
+                onVerticalScroll = { y -> verticalScroll = y },
+                onHorizontalScroll = { x -> horizontalScroll = x },
+                onScaleBegin = { scaleBeginCalled = true },
+                onScale = { scaleInProgressCalled = true },
+                onScaleEnd = { scaleEndCalled = true },
+            )
 
         val detector = BrowserGestureDetector(testContext, gesturesListener)
         val downEvent = TestUtils.getMotionEvent(ACTION_DOWN)
@@ -141,29 +141,32 @@ class BrowserGestureDetectorTest {
         var scaleInProgressCalled = false
         var scaleEndCalled = false
 
-        val gesturesListener = BrowserGestureDetector.GesturesListener(
-            onScroll = { x, y -> scrollValues = Pair(x, y) },
-            onVerticalScroll = { y -> verticalScroll = y },
-            onHorizontalScroll = { x -> horizontalScroll = x },
-            onScaleBegin = { scaleBeginCalled = true },
-            onScale = { scaleInProgressCalled = true },
-            onScaleEnd = { scaleEndCalled = true },
-        )
+        val gesturesListener =
+            BrowserGestureDetector.GesturesListener(
+                onScroll = { x, y -> scrollValues = Pair(x, y) },
+                onVerticalScroll = { y -> verticalScroll = y },
+                onHorizontalScroll = { x -> horizontalScroll = x },
+                onScaleBegin = { scaleBeginCalled = true },
+                onScale = { scaleInProgressCalled = true },
+                onScaleEnd = { scaleEndCalled = true },
+            )
 
         val detector = BrowserGestureDetector(testContext, gesturesListener)
         val downEvent = TestUtils.getMotionEvent(ACTION_DOWN)
-        val moveEvent = TestUtils.getMotionEvent(
-            ACTION_MOVE,
-            0f,
-            0f,
-            previousEvent = downEvent,
-        )
-        val moveEvent2 = TestUtils.getMotionEvent(
-            ACTION_MOVE,
-            100f,
-            100f,
-            previousEvent = moveEvent,
-        )
+        val moveEvent =
+            TestUtils.getMotionEvent(
+                ACTION_MOVE,
+                0f,
+                0f,
+                previousEvent = downEvent,
+            )
+        val moveEvent2 =
+            TestUtils.getMotionEvent(
+                ACTION_MOVE,
+                100f,
+                100f,
+                previousEvent = moveEvent,
+            )
 
         detector.handleTouchEvent(downEvent)
         detector.handleTouchEvent(moveEvent)
@@ -189,14 +192,15 @@ class BrowserGestureDetectorTest {
         var scaleInProgressCalled = false
         var scaleEndCalled = false
 
-        val gesturesListener = BrowserGestureDetector.GesturesListener(
-            onScroll = { x, y -> scrollValues = Pair(x, y) },
-            onVerticalScroll = { y -> verticalScroll = y },
-            onHorizontalScroll = { x -> horizontalScroll = x },
-            onScaleBegin = { scaleBeginCalled = true },
-            onScale = { scaleInProgressCalled = true },
-            onScaleEnd = { scaleEndCalled = true },
-        )
+        val gesturesListener =
+            BrowserGestureDetector.GesturesListener(
+                onScroll = { x, y -> scrollValues = Pair(x, y) },
+                onVerticalScroll = { y -> verticalScroll = y },
+                onHorizontalScroll = { x -> horizontalScroll = x },
+                onScaleBegin = { scaleBeginCalled = true },
+                onScale = { scaleInProgressCalled = true },
+                onScaleEnd = { scaleEndCalled = true },
+            )
 
         val detector = BrowserGestureDetector(testContext, gesturesListener)
         val downEvent = TestUtils.getMotionEvent(ACTION_DOWN)
@@ -253,14 +257,15 @@ class BrowserGestureDetectorTest {
         var scaleInProgressCalled = false
         var scaleEndCalled = false
 
-        val gesturesListener = BrowserGestureDetector.GesturesListener(
-            onScroll = { x, y -> scrollValues = Pair(x, y) },
-            onVerticalScroll = { y -> verticalScroll = y },
-            onHorizontalScroll = { x -> horizontalScroll = x },
-            onScaleBegin = { scaleBeginCalled = true },
-            onScale = { scaleInProgressCalled = true },
-            onScaleEnd = { scaleEndCalled = true },
-        )
+        val gesturesListener =
+            BrowserGestureDetector.GesturesListener(
+                onScroll = { x, y -> scrollValues = Pair(x, y) },
+                onVerticalScroll = { y -> verticalScroll = y },
+                onHorizontalScroll = { x -> horizontalScroll = x },
+                onScaleBegin = { scaleBeginCalled = true },
+                onScale = { scaleInProgressCalled = true },
+                onScaleEnd = { scaleEndCalled = true },
+            )
 
         val crashReporting: CrashReporting = mock()
         val detector = BrowserGestureDetector(testContext, gesturesListener, crashReporting)

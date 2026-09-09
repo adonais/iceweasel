@@ -2,16 +2,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// We allow wildcard imports as a convenience for the many json extension
-// methods used.
-@file:Suppress("ktlint:standard:no-wildcard-imports")
-
 package mozilla.components.lib.crash.service
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.serialization.json.*
+import java.io.IOException
+import java.util.Date
+import kotlin.test.assertNotNull
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.lib.crash.BuildConfig
 import mozilla.components.lib.crash.Crash
@@ -27,17 +33,13 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
-import java.io.IOException
-import java.util.Date
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class GleanCrashReporterServiceTest {
     private val context: Context
         get() = ApplicationProvider.getApplicationContext()
 
-    @get:Rule
-    val tempFolder = TemporaryFolder()
+    @get:Rule val tempFolder = TemporaryFolder()
 
     private fun crashCountJson(key: String): String = """{"type":"count","label":"$key"}"""
 
@@ -54,9 +56,8 @@ class GleanCrashReporterServiceTest {
     }
 
     /**
-     * This tests that the JNI path works without e.g. crashing. There's no
-     * convenient way to test whether Glean sends the pings at this point (e.g.
-     * the `testMetricsValuesBeforeNextSend` callback is still called).
+     * This tests that the JNI path works without e.g. crashing. There's no convenient way to test whether Glean sends
+     * the pings at this point (e.g. the `testMetricsValuesBeforeNextSend` callback is still called).
      */
     @Test
     fun nativeCrashToolsCanDisableTelemetry() {
@@ -70,15 +71,16 @@ class GleanCrashReporterServiceTest {
     fun gleanCrashReporterServiceSendsCrashPings() {
         val service = GleanCrashReporterService(context)
 
-        val crash = Crash.NativeCodeCrash(
-            12340000,
-            null,
-            null,
-            Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
-            processType = "main",
-            breadcrumbs = arrayListOf(),
-            remoteType = null,
-        )
+        val crash =
+            Crash.NativeCodeCrash(
+                12340000,
+                null,
+                null,
+                Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
+                processType = "main",
+                breadcrumbs = arrayListOf(),
+                remoteType = null,
+            )
 
         var pingSent = false
         getNativeCrashTools()?.testMetricValuesBeforeNextSend {
@@ -108,24 +110,26 @@ class GleanCrashReporterServiceTest {
     fun gleanCrashReporterServiceSendsBreadcrumbs() {
         val service = GleanCrashReporterService(context)
 
-        val crash = Crash.NativeCodeCrash(
-            12340000,
-            null,
-            null,
-            Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
-            processType = "main",
-            breadcrumbs = arrayListOf(
-                Breadcrumb(
-                    message = "Breadcrumb-1",
-                    category = "bread",
-                    level = Breadcrumb.Level.WARNING,
-                    type = Breadcrumb.Type.USER,
-                    date = Date(12340000),
-                    data = mapOf("foo" to "bar"),
-                ),
-            ),
-            remoteType = null,
-        )
+        val crash =
+            Crash.NativeCodeCrash(
+                12340000,
+                null,
+                null,
+                Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
+                processType = "main",
+                breadcrumbs =
+                    arrayListOf(
+                        Breadcrumb(
+                            message = "Breadcrumb-1",
+                            category = "bread",
+                            level = Breadcrumb.Level.WARNING,
+                            type = Breadcrumb.Type.USER,
+                            date = Date(12340000),
+                            data = mapOf("foo" to "bar"),
+                        )
+                    ),
+                remoteType = null,
+            )
 
         service.record(crash)
 
@@ -147,28 +151,29 @@ class GleanCrashReporterServiceTest {
                 assertNull(get("crash.remote_type"))
                 assertEquals(
                     JsonArray(
-                    listOf(
-                        JsonObject(
-                            mapOf(
-                                "timestamp" to JsonPrimitive("1970-01-01T03:25:40"),
-                                "message" to JsonPrimitive("Breadcrumb-1"),
-                                "category" to JsonPrimitive("bread"),
-                                "level" to JsonPrimitive("Warning"),
-                                "type" to JsonPrimitive("User"),
-                                "data" to JsonArray(
-                                    listOf(
-                                        JsonObject(
-                                            mapOf(
-                                                "key" to JsonPrimitive("foo"),
-                                                "value" to JsonPrimitive("bar"),
-                                            ),
+                        listOf(
+                            JsonObject(
+                                mapOf(
+                                    "timestamp" to JsonPrimitive("1970-01-01T03:25:40"),
+                                    "message" to JsonPrimitive("Breadcrumb-1"),
+                                    "category" to JsonPrimitive("bread"),
+                                    "level" to JsonPrimitive("Warning"),
+                                    "type" to JsonPrimitive("User"),
+                                    "data" to
+                                        JsonArray(
+                                            listOf(
+                                                JsonObject(
+                                                    mapOf(
+                                                        "key" to JsonPrimitive("foo"),
+                                                        "value" to JsonPrimitive("bar"),
+                                                    )
+                                                )
+                                            )
                                         ),
-                                    ),
-                                ),
-                            ),
-                        ),
+                                )
+                            )
+                        )
                     ),
-                ),
                     get("crash.breadcrumbs"),
                 )
                 pingSent = true
@@ -183,7 +188,8 @@ class GleanCrashReporterServiceTest {
     @Test
     fun gleanCrashReporterServiceReadsExtras() {
         val service = GleanCrashReporterService(context)
-        val stackTracesAnnotation = """
+        val stackTracesAnnotation =
+            """
         {
             "crash_type": "main",
             "crash_address": "0xf001ba11",
@@ -227,7 +233,8 @@ class GleanCrashReporterServiceTest {
         }
         """
 
-        val stackTracesGlean = """
+        val stackTracesGlean =
+            """
         {
             "crash_type": "main",
             "crash_address": "0xf001ba11",
@@ -285,18 +292,20 @@ class GleanCrashReporterServiceTest {
                 "JSLargeAllocationFailure": "reporting",
                 "JSOutOfMemory": "recovered"
             }
-            """.trimIndent(),
+            """
+                .trimIndent()
         )
 
-        val crash = Crash.NativeCodeCrash(
-            12340000,
-            "",
-            extrasFile.path,
-            Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
-            processType = "main",
-            breadcrumbs = arrayListOf(),
-            remoteType = null,
-        )
+        val crash =
+            Crash.NativeCodeCrash(
+                12340000,
+                "",
+                extrasFile.path,
+                Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
+                processType = "main",
+                breadcrumbs = arrayListOf(),
+                remoteType = null,
+            )
 
         var pingSent = false
         getNativeCrashTools()?.testMetricValuesBeforeNextSend {
@@ -306,6 +315,9 @@ class GleanCrashReporterServiceTest {
             )
             assertEquals("main", get("crash.process_type")?.jsonPrimitive?.content)
             assertEquals("d462c4b4-a9f8-4244-b526-7435fcdc4403", get("crash.event_id")?.jsonPrimitive?.content)
+            assertEquals("Android", get("crash.os")?.jsonPrimitive?.content)
+            assertNotNull(get("crash.os_version"))
+            assertNotNull(get("crash.cpu_architecture"))
             assertEquals(
                 "fatal native crash",
                 get("crash.crash_type")?.jsonPrimitive?.content,
@@ -318,22 +330,23 @@ class GleanCrashReporterServiceTest {
             assertEquals("recovered", get("memory.js_out_of_memory")?.jsonPrimitive?.content)
             assertEquals(
                 JsonObject(
-                mapOf(
-                    "phase" to JsonPrimitive("abcd"),
-                    "conditions" to JsonPrimitive("[{\"foo\":\"bar\"}]"),
-                    "broken_add_blockers" to JsonArray(listOf(JsonPrimitive("foo"))),
+                    mapOf(
+                        "phase" to JsonPrimitive("abcd"),
+                        "conditions" to JsonPrimitive("[{\"foo\":\"bar\"}]"),
+                        "broken_add_blockers" to JsonArray(listOf(JsonPrimitive("foo"))),
+                    )
                 ),
-            ),
                 get("crash.async_shutdown_timeout"),
             )
             assertEquals(
                 JsonArray(
-                listOf(
-                    "line1",
-                    "line2",
-                    "line3",
-                ).map { e -> JsonPrimitive(e) },
-            ),
+                    listOf(
+                            "line1",
+                            "line2",
+                            "line3",
+                        )
+                        .map { e -> JsonPrimitive(e) }
+                ),
                 get("crash.quota_manager_shutdown_timeout"),
             )
             assertEquals(Json.decodeFromString<JsonObject>(stackTracesGlean), get("crash.stack_traces"))
@@ -350,16 +363,18 @@ class GleanCrashReporterServiceTest {
     fun gleanCrashReporterServiceSendsExceptionCrashPings() {
         val service = GleanCrashReporterService(context)
 
-        val crash = Crash.UncaughtExceptionCrash(
-            12340000,
-            RuntimeException("Test", IOException("IO")),
-            arrayListOf(),
-            runtimeTags = mapOf(
-                RuntimeTag.VERSION_NAME to "142.0.0",
-                RuntimeTag.BUILD_ID to "1337",
-            ),
-            uuid = "2b341259-e273-47a8-8a31-86c7ebe2e6f8",
-        )
+        val crash =
+            Crash.UncaughtExceptionCrash(
+                12340000,
+                RuntimeException("Test", IOException("IO")),
+                arrayListOf(),
+                runtimeTags =
+                    mapOf(
+                        RuntimeTag.VERSION_NAME to "142.0.0",
+                        RuntimeTag.BUILD_ID to "1337",
+                    ),
+                uuid = "2b341259-e273-47a8-8a31-86c7ebe2e6f8",
+            )
 
         var pingSent = false
         getNativeCrashTools()?.testMetricValuesBeforeNextSend {
@@ -369,6 +384,9 @@ class GleanCrashReporterServiceTest {
             )
             assertEquals("main", get("crash.process_type")?.jsonPrimitive?.content)
             assertEquals("2b341259-e273-47a8-8a31-86c7ebe2e6f8", get("crash.event_id")?.jsonPrimitive?.content)
+            assertEquals("Android", get("crash.os")?.jsonPrimitive?.content)
+            assertNotNull(get("crash.os_version"))
+            assertNotNull(get("crash.cpu_architecture"))
             assertEquals(
                 "uncaught exception",
                 get("crash.crash_type")?.jsonPrimitive?.content,
@@ -390,7 +408,7 @@ class GleanCrashReporterServiceTest {
                         mapOf(
                             "type_name" to JsonPrimitive("java.lang.RuntimeException"),
                             "message" to JsonPrimitive("Test"),
-                        ),
+                        )
                     ),
                     first,
                 )
@@ -400,9 +418,9 @@ class GleanCrashReporterServiceTest {
                         mapOf(
                             "type_name" to JsonPrimitive("java.io.IOException"),
                             "message" to JsonPrimitive("IO"),
-                        ),
+                        )
                     ),
-                        second,
+                    second,
                 )
             }
             pingSent = true
@@ -424,18 +442,20 @@ class GleanCrashReporterServiceTest {
 
     @Test
     fun gleanCrashReporterServiceExceptionCrashPingsHaveCrashTimeAppInformationMetrics() {
-        val service = GleanCrashReporterService(
-            context,
-            appChannel = "channel",
-            appVersion = "version",
-            appBuildId = "buildid",
-        )
+        val service =
+            GleanCrashReporterService(
+                context,
+                appChannel = "channel",
+                appVersion = "version",
+                appBuildId = "buildid",
+            )
 
-        val crash = Crash.UncaughtExceptionCrash(
-            12340000,
-            RuntimeException("Test", IOException("IO")),
-            arrayListOf(),
-        )
+        val crash =
+            Crash.UncaughtExceptionCrash(
+                12340000,
+                RuntimeException("Test", IOException("IO")),
+                arrayListOf(),
+            )
 
         var pingSent = false
         getNativeCrashTools()?.testMetricValuesBeforeNextSend {

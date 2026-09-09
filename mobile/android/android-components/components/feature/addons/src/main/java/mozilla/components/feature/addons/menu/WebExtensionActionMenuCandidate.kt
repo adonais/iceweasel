@@ -26,29 +26,30 @@ fun Action.createMenuCandidate(
 ): TextMenuCandidate {
     return TextMenuCandidate(
         title.orEmpty(),
-        start = loadIcon?.let { loadIcon ->
-            val defaultIcon = getDrawable(context, iconsR.drawable.mozac_ic_extension_fill_24)
-            AsyncDrawableMenuIcon(
-                loadDrawable = { _, height ->
-                    loadIcon(height)?.toDrawable(context.resources)
-                },
-                loadingDrawable = defaultIcon,
-                fallbackDrawable = defaultIcon,
-            )
-        },
-        end = badgeText?.let { badgeText ->
-            TextMenuIcon(
-                badgeText,
-                backgroundTint = badgeBackgroundColor,
-                textStyle = TextStyle(
-                    color = badgeTextColor,
-                ),
-            )
-        },
-        containerStyle = ContainerStyle(
-            isVisible = true,
-            isEnabled = enabled ?: false,
-        ),
+        start =
+            loadIcon?.let { loadIcon ->
+                val defaultIcon = getDrawable(context, iconsR.drawable.mozac_ic_extension_fill_24)
+                AsyncDrawableMenuIcon(
+                    loadDrawable = { _, height ->
+                        loadIcon(height)?.toDrawable(context.resources)
+                    },
+                    loadingDrawable = defaultIcon,
+                    fallbackDrawable = defaultIcon,
+                )
+            },
+        end =
+            badgeText?.let { badgeText ->
+                TextMenuIcon(
+                    badgeText,
+                    backgroundTint = badgeBackgroundColor,
+                    textStyle = TextStyle(color = badgeTextColor),
+                )
+            },
+        containerStyle =
+            ContainerStyle(
+                isVisible = true,
+                isEnabled = enabled ?: false,
+            ),
         onClick = onClick,
     )
 }

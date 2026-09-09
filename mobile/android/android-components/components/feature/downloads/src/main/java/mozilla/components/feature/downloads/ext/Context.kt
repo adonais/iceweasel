@@ -10,8 +10,7 @@ import android.net.Uri
 import androidx.core.content.getSystemService
 
 /**
- * Wraps around [DownloadManager.addCompletedDownload] and calls the correct
- * method depending on the SDK version.
+ * Wraps around [DownloadManager.addCompletedDownload] and calls the correct method depending on the SDK version.
  *
  * Deprecated in Android Q, use MediaStore on that version.
  */
@@ -26,7 +25,8 @@ internal fun Context.addCompletedDownload(
     showNotification: Boolean,
     uri: Uri?,
     referer: Uri?,
-) = getSystemService<DownloadManager>()!!.run {
+) =
+    getSystemService<DownloadManager>()!!.run {
         addCompletedDownload(
             title,
             description,
@@ -38,4 +38,4 @@ internal fun Context.addCompletedDownload(
             uri,
             referer,
         )
-}
+    }

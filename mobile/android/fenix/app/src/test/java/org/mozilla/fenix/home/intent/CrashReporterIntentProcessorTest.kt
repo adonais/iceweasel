@@ -7,7 +7,6 @@ package org.mozilla.fenix.home.intent
 import android.content.Intent
 import androidx.navigation.NavController
 import io.mockk.Called
-import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import mozilla.components.lib.crash.Crash.NativeCodeCrash
@@ -39,11 +38,12 @@ class CrashReporterIntentProcessorTest {
     @Test
     fun `GIVEN a crash Intent WHEN processing it THEN update crash details and return true`() {
         val crash = mockk<NativeCodeCrash>(relaxed = true)
-        val processor = CrashReporterIntentProcessor(
-            appStore,
-            isCrashIntent = { true },
-            getCrashFromIntent = { crash },
-        )
+        val processor =
+            CrashReporterIntentProcessor(
+                appStore,
+                isCrashIntent = { true },
+                getCrashFromIntent = { crash },
+            )
         val intent = Intent()
 
         val result = processor.process(intent, navController, out, settings)

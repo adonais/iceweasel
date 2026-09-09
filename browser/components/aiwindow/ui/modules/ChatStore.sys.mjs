@@ -6,6 +6,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
   Sqlite: "resource://gre/modules/Sqlite.sys.mjs",
   CONFIRMATION_UI_TYPES:
     "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
@@ -23,10 +24,12 @@ import {
   CONVERSATION_UPDATED_DATE_INDEX,
   CONVERSATION_INSERT,
   MESSAGE_TABLE,
-  MESSAGE_ORDINAL_INDEX,
   MESSAGE_URL_INDEX,
   MESSAGE_CREATED_DATE_INDEX,
   MESSAGE_CONV_ID_INDEX,
+  MESSAGE_ROLE_CREATED_DATE_INDEX,
+  MESSAGE_PARENT_ID_INDEX,
+  MESSAGE_REVISION_ROOT_INDEX,
   MESSAGE_INSERT,
   TOOL_RESULT_TABLE,
   TOOL_RESULT_HISTORY_URL_INDEX,
@@ -49,12 +52,12 @@ import {
   REMOVE_ALL_SITE_URLS_FROM_MESSAGES,
   REMOVE_SITE_URL_FROM_MESSAGES,
   getConversationMessagesSql,
+  getDeleteConversationsByIdsSql,
   getDeleteMessagesByIdsSql,
   getDeleteEmptyConversationsSql,
   getUniformSamplingByConvIdsSql,
   LLM_TELEMETRY_TABLE,
   GET_LLM_TELEMETRY_BY_CONV_ID,
-  GET_LLM_TELEMETRY_DATA_BY_CONV_ID,
   UPSERT_LLM_TELEMETRY,
   MARK_LLM_TELEMETRY_UNPROCESSED,
   MARK_LLM_TELEMETRY_PROCESSED,
@@ -97,6 +100,18 @@ import { migrations } from "./ChatMigrations.sys.mjs";
 
 const MAX_DB_SIZE_BYTES = 75 * 1024 * 1024;
 const SORTS = ["ASC", "DESC"];
+
+// time to wait/collect before running recordDatabaseSize
+//  prevents running this function after every chunk of the response
+const DB_SIZE_RECORD_DELAY_MS = 10_000;
+
+// number of rows to delete at once (max is 999)
+const DELETE_CHUNK_SIZE = 250;
+
+// How long coalesced writes for a streaming message are held before they are
+// written. Chunks arrive at roughly 70/s, so persisting each one rewrites the
+// whole conversation dozens of times a second; see persistStreamingMessage.
+const STREAM_PERSIST_INTERVAL_MS = 1000;
 
 /**
  * Simple interface to store and retrieve chat conversations and messages.
@@ -145,9 +160,25 @@ class ChatStore {
   #conn;
   #promiseConn;
   #lastRecordedSize;
+  #sizeRecordTask;
+
+  /**
+   * Coalesced streaming writes, keyed by conversation id. At most one message
+   * per conversation streams at a time, so each entry tracks that message, the
+   * initial full write every narrow write depends on, and the pending task.
+   *
+   * @type {Map<string, {message: ChatMessage, ready: Promise, task: DeferredTask}>}
+   */
+  #streamingWrites = new Map();
 
   constructor() {
     this.#asyncShutdownBlocker = async () => {
+      // Flush before closing: #recordDatabaseSize() would otherwise reopen the
+      // connection it is racing against. Drop the task afterwards so a write
+      // on a reopened connection builds a fresh one rather than arming a
+      // finalized task, which throws.
+      await this.#sizeRecordTask?.finalize();
+      this.#sizeRecordTask = null;
       await this.#closeConnection();
     };
     this.#lastRecordedSize = null;
@@ -205,26 +236,9 @@ class ChatStore {
           ),
         });
 
-        const messages = conversation.messages.map(m => ({
-          message_id: m.id,
-          conv_id: conversation.id,
-          created_date: m.createdDate,
-          parent_message_id: m.parentMessageId,
-          revision_root_message_id: m.revisionRootMessageId,
-          ordinal: m.ordinal,
-          is_active_branch: m.isActiveBranch ? 1 : 0,
-          role: m.role,
-          model_id: m.modelId,
-          params: toJSONOrNull(m.params),
-          content: toJSONOrNull(m.content),
-          usage: toJSONOrNull(m.usage),
-          page_url: m.pageUrl?.href || "",
-          turn_index: m.turnIndex,
-          memories_enabled: m.memoriesEnabled,
-          memories_flag_source: m.memoriesFlagSource,
-          memories_applied_jsonb: toJSONOrNull(m.memoriesApplied),
-          web_search_queries_jsonb: toJSONOrNull(m.webSearchQueries),
-        }));
+        const messages = conversation.messages.map(m =>
+          this.#toMessageRow(conversation.id, m)
+        );
         await this.#conn.executeCached(MESSAGE_INSERT, messages);
 
         await this.#applyToolResults(conversation);
@@ -234,7 +248,150 @@ class ChatStore {
         throw e;
       });
 
-    this.#recordDatabaseSize();
+    this.#queueDatabaseSizeRecord();
+  }
+
+  #toMessageRow(convId, m) {
+    return {
+      message_id: m.id,
+      conv_id: convId,
+      created_date: m.createdDate,
+      parent_message_id: m.parentMessageId,
+      revision_root_message_id: m.revisionRootMessageId,
+      ordinal: m.ordinal,
+      is_active_branch: m.isActiveBranch ? 1 : 0,
+      role: m.role,
+      model_id: m.modelId,
+      params: toJSONOrNull(m.params),
+      content: toJSONOrNull(m.content),
+      usage: toJSONOrNull(m.usage),
+      page_url: m.pageUrl?.href || "",
+      turn_index: m.turnIndex,
+      memories_enabled: m.memoriesEnabled,
+      memories_flag_source: m.memoriesFlagSource,
+      memories_applied_jsonb: toJSONOrNull(m.memoriesApplied),
+      web_search_queries_jsonb: toJSONOrNull(m.webSearchQueries),
+    };
+  }
+
+  /**
+   * Persists a message that is receiving streamed content. Never rejects.
+   *
+   * A reply streams at roughly seventy chunks a second, and each chunk only
+   * appends to one message's body, so calling updateConversation per chunk
+   * re-serializes and rewrites the entire conversation dozens of times a
+   * second. Instead the first chunk for a message writes the conversation in
+   * full, which creates the conversation row and the message's parents that
+   * the narrow write's foreign keys need, and later chunks coalesce onto
+   * STREAM_PERSIST_INTERVAL_MS and rewrite only that message's row.
+   *
+   * Callers must call endStreamingWrites when the stream finishes or fails, so
+   * the last chunks land and no write can arrive after the conversation is
+   * deleted.
+   *
+   * @param {ChatConversation} conversation
+   * @param {ChatMessage} message - The message receiving streamed content.
+   */
+  persistStreamingMessage(conversation, message) {
+    if (!message) {
+      return;
+    }
+
+    const previous = this.#streamingWrites.get(conversation.id);
+    if (previous?.message === message) {
+      previous.task.arm();
+      return;
+    }
+
+    // First chunk for this message. The entry is registered before awaiting
+    // anything so the chunks that arrive during the full write below coalesce
+    // against it rather than each starting a full write of their own.
+    const entry = { message, ready: null, task: null };
+    this.#streamingWrites.set(conversation.id, entry);
+
+    entry.ready = (async () => {
+      await this.#endStreamingEntry(previous);
+      await this.updateConversation(conversation);
+    })();
+    entry.ready.catch(e => {
+      lazy.log.error(
+        "Could not persist a streaming message",
+        e.message,
+        e.stack
+      );
+    });
+
+    entry.task = new lazy.DeferredTask(async () => {
+      await entry.ready;
+      await this.#writeStreamingMessage(conversation.id, message);
+    }, STREAM_PERSIST_INTERVAL_MS);
+  }
+
+  /**
+   * Stops coalescing streaming writes and waits for the outstanding ones.
+   * Never rejects.
+   *
+   * @param {?string} [convId=null] - Limit to one conversation, or all of them.
+   * @param {boolean} [flush=true] - Run a pending coalesced write before
+   *   stopping. Pass false when the caller follows up with updateConversation,
+   *   which writes a superset of the same state.
+   */
+  async endStreamingWrites(convId = null, flush = true) {
+    const entries =
+      convId === null
+        ? Array.from(this.#streamingWrites.values())
+        : [this.#streamingWrites.get(convId)];
+
+    if (convId === null) {
+      this.#streamingWrites.clear();
+    } else {
+      this.#streamingWrites.delete(convId);
+    }
+
+    await Promise.all(
+      entries.map(entry => this.#endStreamingEntry(entry, flush))
+    );
+  }
+
+  /**
+   * Winds down one streaming entry. The caller is responsible for removing it
+   * from #streamingWrites first: finalize() permanently blocks arm(), so an
+   * entry must never be reachable once it has been passed here.
+   *
+   * @param {?object} entry - A #streamingWrites value, or null for a no-op.
+   * @param {boolean} [flush=true] - See endStreamingWrites.
+   */
+  async #endStreamingEntry(entry, flush = true) {
+    if (!entry) {
+      return;
+    }
+    if (!flush) {
+      entry.task.disarm();
+    }
+    try {
+      await entry.task.finalize();
+      await entry.ready;
+    } catch (e) {
+      lazy.log.error("Could not end streaming writes", e.message, e.stack);
+    }
+  }
+
+  /**
+   * Rewrites the row of a message receiving streamed content, leaving the rest
+   * of the conversation alone. A chunk can only dirty the message's content,
+   * memoriesApplied and webSearchQueries, which is exactly what MESSAGE_INSERT
+   * updates on conflict. Nothing on the conversation row changes while chunks
+   * arrive, and the database file barely moves, so neither the conversation
+   * upsert nor the size telemetry belongs on this path.
+   *
+   * @param {string} convId
+   * @param {ChatMessage} message
+   */
+  async #writeStreamingMessage(convId, message) {
+    await this.#ensureDatabase();
+    await this.#conn.executeCached(MESSAGE_INSERT, [
+      this.#toMessageRow(convId, message),
+    ]);
   }
 
   async #applyToolResults(conversation) {
@@ -305,7 +462,7 @@ class ChatStore {
         throw e;
       });
 
-    this.#recordDatabaseSize();
+    this.#queueDatabaseSizeRecord();
   }
 
   /**
@@ -337,7 +494,7 @@ class ChatStore {
         throw e;
       });
 
-    this.#recordDatabaseSize();
+    this.#queueDatabaseSizeRecord();
   }
 
   /**
@@ -737,9 +894,9 @@ class ChatStore {
         break;
       }
 
-      for (const chat of oldestConversations) {
-        await this.deleteConversationById(chat.id);
-      }
+      await this.#deleteConversationsByIds(
+        oldestConversations.map(chat => chat.id)
+      );
 
       const newDbSize = await this.getDbBytesInUse();
       if (newDbSize >= dbSize) {
@@ -753,6 +910,27 @@ class ChatStore {
 
     // Actually reclaim disk space.
     await this.#conn.execute("PRAGMA incremental_vacuum;");
+
+    await this.recordDatabaseSizeNow();
+  }
+
+  /**
+   * Deletes conversations in bulk. Messages are cascade-deleted via foreign
+   * key constraints. Callers are responsible for recording the resulting
+   * database size.
+   *
+   * @param {Array<string>} ids - The conv_ids of the conversations to delete
+   */
+  async #deleteConversationsByIds(ids) {
+    for (let i = 0; i < ids.length; i += DELETE_CHUNK_SIZE) {
+      const chunk = ids.slice(i, i + DELETE_CHUNK_SIZE);
+      await this.#conn.executeTransaction(async () => {
+        await this.#conn.execute(
+          getDeleteConversationsByIdsSql(chunk.length),
+          chunk
+        );
+      });
+    }
   }
 
   /**
@@ -761,6 +939,15 @@ class ChatStore {
    * @param {Array<ChatMessage>} messages
    */
   async deleteMessages(messages) {
+    // Land any coalesced streaming write for the affected conversations first,
+    // so one cannot fire afterwards and resurrect a row removed here, or a
+    // conversation the empty-conversation sweep below drops.
+    await Promise.all(
+      Array.from(new Set(messages.map(m => m.convId)), convId =>
+        this.endStreamingWrites(convId)
+      )
+    );
+
     await this.#ensureDatabase().catch(e => {
       lazy.log.error(
         "Could not ensure a database connection.",
@@ -770,10 +957,9 @@ class ChatStore {
       throw e;
     });
 
-    const chunkSize = 250;
     const chunks = [];
-    for (let i = 0; i < messages.length; i += chunkSize) {
-      chunks.push(messages.slice(i, i + chunkSize));
+    for (let i = 0; i < messages.length; i += DELETE_CHUNK_SIZE) {
+      chunks.push(messages.slice(i, i + DELETE_CHUNK_SIZE));
     }
 
     for (const chunk of chunks) {
@@ -799,7 +985,7 @@ class ChatStore {
       });
     }
 
-    this.#recordDatabaseSize();
+    this.#queueDatabaseSizeRecord();
   }
 
   /**
@@ -829,6 +1015,8 @@ class ChatStore {
    * @param {string} id - The conv_id of a conversation row to delete
    */
   async deleteConversationById(id) {
+    await this.endStreamingWrites(id);
+
     await this.#ensureDatabase().catch(e => {
       lazy.log.error(
         "Could not ensure a database connection.",
@@ -842,7 +1030,7 @@ class ChatStore {
       conv_id: id,
     });
 
-    this.#recordDatabaseSize();
+    this.#queueDatabaseSizeRecord();
   }
 
   /**
@@ -853,6 +1041,8 @@ class ChatStore {
    * @param {Date} endDate - The end date, inclusive
    */
   async deleteConversationsByDateRange(startDate, endDate) {
+    await this.endStreamingWrites();
+
     await this.#ensureDatabase().catch(e => {
       lazy.log.error(
         "Could not ensure a database connection.",
@@ -872,6 +1062,8 @@ class ChatStore {
    * Deletes all conversations and their messages.
    */
   async deleteAllConversations() {
+    await this.endStreamingWrites();
+
     await this.#ensureDatabase().catch(e => {
       lazy.log.error(
         "Could not ensure a database connection.",
@@ -888,13 +1080,41 @@ class ChatStore {
    * This method is meant to only be used for testing cleanup
    */
   async destroyDatabase() {
+    this.#sizeRecordTask?.disarm();
+
+    // Disarm rather than flush: the database is going away, so a coalesced
+    // write has nowhere to land.
+    await this.endStreamingWrites(null, false);
     await this.#promiseConn?.catch(() => {});
     await this.#removeDatabaseFiles();
     this.#promiseConn = null;
     this.#recordDatabaseSizeValue(0);
   }
 
-  async #recordDatabaseSize() {
+  /**
+   * Measures and records the database size immediately, cancelling any
+   * measurement queued by #queueDatabaseSizeRecord(). Records even when the
+   * size is unchanged, so callers can rely on the metric having been set.
+   */
+  async recordDatabaseSizeNow() {
+    this.#sizeRecordTask?.disarm();
+    await this.#recordDatabaseSize(true);
+  }
+
+  /**
+   * Requests a database size measurement, coalescing requests that arrive
+   * within DB_SIZE_RECORD_DELAY_MS of each other. Callers on write paths
+   * should use this rather than measuring inline.
+   */
+  #queueDatabaseSizeRecord() {
+    this.#sizeRecordTask ??= new lazy.DeferredTask(
+      () => this.#recordDatabaseSize(),
+      DB_SIZE_RECORD_DELAY_MS
+    );
+    this.#sizeRecordTask.arm();
+  }
+
+  async #recordDatabaseSize(force = false) {
     let size = null;
     try {
       size = await this.getDatabaseSize();
@@ -903,11 +1123,11 @@ class ChatStore {
       return;
     }
 
-    this.#recordDatabaseSizeValue(size);
+    this.#recordDatabaseSizeValue(size, force);
   }
 
-  #recordDatabaseSizeValue(size) {
-    if (size === this.#lastRecordedSize) {
+  #recordDatabaseSizeValue(size, force = false) {
+    if (!force && size === this.#lastRecordedSize) {
       return;
     }
     this.#lastRecordedSize = size;
@@ -1028,6 +1248,10 @@ class ChatStore {
   }
 
   async #closeConnection() {
+    // Flush before the early return: an entry can still be pending when the
+    // connection was never opened or has already gone away.
+    await this.endStreamingWrites();
+
     if (!this.#conn) {
       return;
     }
@@ -1267,7 +1491,7 @@ class ChatStore {
         throw e;
       });
 
-    this.#recordDatabaseSize();
+    this.#queueDatabaseSizeRecord();
   }
 
   /**
@@ -1297,57 +1521,13 @@ class ChatStore {
     });
 
     await this.#conn
-      .executeTransaction(async () => {
-        const rows = await this.#conn.executeCached(
-          GET_LLM_TELEMETRY_DATA_BY_CONV_ID,
-          { conv_id: conversationId }
-        );
-
-        let existingPrompts = {};
-        let existingProbabilities = {};
-
-        if (rows.length) {
-          try {
-            existingPrompts = JSON.parse(
-              rows[0].getResultByName("telemetry_prompts") || "{}"
-            );
-          } catch (e) {
-            lazy.log.warn(
-              `Could not parse LLM telemetry prompts for ${conversationId}`,
-              e.message
-            );
-          }
-
-          try {
-            existingProbabilities = JSON.parse(
-              rows[0].getResultByName("telemetry_probabilities") || "{}"
-            );
-          } catch (e) {
-            lazy.log.warn(
-              `Could not parse LLM telemetry probabilities for ${conversationId}`,
-              e.message
-            );
-          }
-        }
-
-        const mergedPrompts = {
-          ...existingPrompts,
-          ...(prompts ?? {}),
-        };
-
-        const mergedProbabilities = {
-          ...(probabilities ?? {}),
-          ...existingProbabilities,
-        };
-
-        await this.#conn.executeCached(UPSERT_LLM_TELEMETRY, {
-          conv_id: conversationId,
-          telemetry_prompts: JSON.stringify(mergedPrompts),
-          telemetry_probabilities: JSON.stringify(mergedProbabilities),
-          uniform_sampling_probability,
-          processed_time: Date.now(),
-          processed,
-        });
+      .executeCached(UPSERT_LLM_TELEMETRY, {
+        conv_id: conversationId,
+        telemetry_prompts: JSON.stringify(prompts ?? {}),
+        telemetry_probabilities: JSON.stringify(probabilities ?? {}),
+        uniform_sampling_probability,
+        processed_time: Date.now(),
+        processed,
       })
       .catch(e => {
         lazy.log.error(
@@ -1358,7 +1538,7 @@ class ChatStore {
         throw e;
       });
 
-    this.#recordDatabaseSize();
+    this.#queueDatabaseSizeRecord();
   }
 
   /**
@@ -1428,31 +1608,15 @@ class ChatStore {
       throw e;
     });
 
+    const newPrompts = Object.fromEntries(
+      Object.keys(telemetryPrompts).map(name => [name, turnIndex])
+    );
+
     await this.#conn
-      .executeTransaction(async () => {
-        const existingRows = await this.#conn.executeCached(
-          GET_LLM_TELEMETRY_BY_CONV_ID,
-          { conv_id: convId }
-        );
-
-        const existingPrompts = existingRows.length
-          ? JSON.parse(
-              existingRows[0].getResultByName("telemetry_prompts") || "{}"
-            )
-          : {};
-
-        const newPrompts = Object.fromEntries(
-          Object.keys(telemetryPrompts).map(name => [name, turnIndex])
-        );
-
-        await this.#conn.executeCached(MARK_LLM_TELEMETRY_PROCESSED, {
-          conv_id: convId,
-          processed_time: Date.now(),
-          telemetry_prompts: JSON.stringify({
-            ...existingPrompts,
-            ...newPrompts,
-          }),
-        });
+      .executeCached(MARK_LLM_TELEMETRY_PROCESSED, {
+        conv_id: convId,
+        processed_time: Date.now(),
+        telemetry_prompts: JSON.stringify(newPrompts),
       })
       .catch(e => {
         lazy.log.error(
@@ -1493,10 +1657,12 @@ class ChatStore {
     await this.#conn.execute(CONVERSATION_TABLE);
     await this.#conn.execute(CONVERSATION_UPDATED_DATE_INDEX);
     await this.#conn.execute(MESSAGE_TABLE);
-    await this.#conn.execute(MESSAGE_ORDINAL_INDEX);
     await this.#conn.execute(MESSAGE_URL_INDEX);
     await this.#conn.execute(MESSAGE_CREATED_DATE_INDEX);
     await this.#conn.execute(MESSAGE_CONV_ID_INDEX);
+    await this.#conn.execute(MESSAGE_ROLE_CREATED_DATE_INDEX);
+    await this.#conn.execute(MESSAGE_PARENT_ID_INDEX);
+    await this.#conn.execute(MESSAGE_REVISION_ROOT_INDEX);
     await this.#conn.execute(TOOL_RESULT_TABLE);
     await this.#conn.execute(TOOL_RESULT_HISTORY_URL_INDEX);
     await this.#conn.execute(LLM_TELEMETRY_TABLE);

@@ -8,9 +8,8 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <cstring>
-#include <limits>
 
+#include "mozilla/EndianUtils.h"
 #include "mozilla/Span.h"
 #include "nsTArray.h"
 
@@ -81,13 +80,11 @@ class EncryptedRandomAccessBlock {
   }
 
   VersionType Version() const {
-    VersionType version = std::numeric_limits<VersionType>::max();
-    memcpy(&version, mData.Elements(), VersionSize);
-    return version;
+    return mozilla::LittleEndian::readUint16(mData.Elements());
   }
 
   void SetVersion(VersionType aVersion) {
-    memcpy(mData.Elements(), &aVersion, VersionSize);
+    mozilla::LittleEndian::writeUint16(mData.Elements(), aVersion);
   }
 
   ConstSpan<HeaderSize - VersionSize> ReservedBytes() const {
@@ -117,10 +114,6 @@ class EncryptedRandomAccessBlock {
   MutableSpan<CipherPayloadSize> MutableCipherPayload() {
     return MutableWholeBlock()
         .Subspan<HeaderSize + CipherMetadataSize, CipherPayloadSize>();
-  }
-
-  void AssignFromBytes(ConstSpan<BlockSize> aData) {
-    memcpy(mData.Elements(), aData.data(), BlockSize);
   }
 
   ConstSpan<BlockSize> WholeBlock() const { return mData; }

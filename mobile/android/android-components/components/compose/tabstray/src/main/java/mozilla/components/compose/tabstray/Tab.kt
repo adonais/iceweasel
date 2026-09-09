@@ -46,24 +46,19 @@ fun Tab(
     onClose: (String) -> Unit = {},
 ) {
     Box(
-        modifier = Modifier
-            .background(if (selected) Color(0xFFFF45A1FF.toInt()) else Color.Unspecified)
-            .size(width = Dp.Unspecified, height = 72.dp)
-            .fillMaxWidth()
-            .clickable { onClick.invoke(tab.id) }
-            .padding(8.dp),
+        modifier =
+            Modifier.background(if (selected) Color(0xFFFF45A1FF.toInt()) else Color.Unspecified)
+                .size(width = Dp.Unspecified, height = 72.dp)
+                .fillMaxWidth()
+                .clickable { onClick.invoke(tab.id) }
+                .padding(8.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceAround,
         ) {
             // BrowserThumbnail(tab)
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .align(Alignment.CenterVertically)
-                    .padding(8.dp),
-            ) {
+            Column(modifier = Modifier.weight(1f).align(Alignment.CenterVertically).padding(8.dp)) {
                 Text(
                     text = tab.content.title,
                     fontWeight = FontWeight.Bold,
@@ -83,9 +78,7 @@ fun Tab(
             IconButton(
                 onClick = { onClose.invoke(tab.id) },
                 contentDescription = "close",
-                modifier = Modifier
-                    .align(Alignment.CenterVertically)
-                    .requiredSize(24.dp),
+                modifier = Modifier.align(Alignment.CenterVertically).requiredSize(24.dp),
             ) {
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_cross_24),

@@ -1,10 +1,12 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
+import java.io.IOException
+import java.nio.ByteBuffer
 import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -13,8 +15,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.gecko.media.SampleBuffer
 import org.mozilla.gecko.mozglue.SharedMemory
-import java.io.IOException
-import java.nio.ByteBuffer
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
@@ -57,7 +57,9 @@ class SampleBufferTest {
         // With offset + size exceeds src capacity
         assertThrows(IOException::class.java) { buffer.readFromByteBuffer(src, 1, bufferSize) }
         // With size exceeds shared memory
-        assertThrows(IOException::class.java) { buffer.readFromByteBuffer(ByteBuffer.allocateDirect(bufferSize * 2), 0, bufferSize + 1) }
+        assertThrows(IOException::class.java) {
+            buffer.readFromByteBuffer(ByteBuffer.allocateDirect(bufferSize * 2), 0, bufferSize + 1)
+        }
         // With offset + size integer overflow
         assertThrows(IOException::class.java) { buffer.readFromByteBuffer(src, Int.MAX_VALUE, 1) }
         // After disposal
@@ -79,7 +81,9 @@ class SampleBufferTest {
         // With offset + size exceeds shared memory
         assertThrows(IOException::class.java) { buffer.writeToByteBuffer(dest, 1, bufferSize) }
         // With size exceeds dest capacity
-        assertThrows(IOException::class.java) { buffer.writeToByteBuffer(ByteBuffer.allocateDirect(bufferSize / 2), 0, bufferSize) }
+        assertThrows(IOException::class.java) {
+            buffer.writeToByteBuffer(ByteBuffer.allocateDirect(bufferSize / 2), 0, bufferSize)
+        }
         // With offset + size integer overflow
         assertThrows(IOException::class.java) { buffer.writeToByteBuffer(dest, Int.MAX_VALUE, 1) }
         // After disposal
@@ -95,7 +99,9 @@ class SampleBufferTest {
         // With null destination pointer
         assertThrows(IOException::class.java) { buffer.nativeCopy(0L, bufferSize, 0, bufferSize) }
         // From null shared memory
-        assertThrows(IOException::class.java) { SampleBuffer(null).nativeCopy(destMem.getPointer(), bufferSize, 0, bufferSize) }
+        assertThrows(IOException::class.java) {
+            SampleBuffer(null).nativeCopy(destMem.getPointer(), bufferSize, 0, bufferSize)
+        }
         // With negative offset
         assertThrows(IOException::class.java) { buffer.nativeCopy(destMem.getPointer(), bufferSize, -1, bufferSize) }
         // With negative size

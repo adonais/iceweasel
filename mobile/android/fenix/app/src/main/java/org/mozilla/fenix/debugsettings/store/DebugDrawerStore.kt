@@ -8,23 +8,24 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 
 /**
- * A [Store] that holds the [DebugDrawerState] for the Debug Drawer and reduces [DebugDrawerAction]s
- * dispatched to the store.
+ * A [Store] that holds the [DebugDrawerState] for the Debug Drawer and reduces [DebugDrawerAction]s dispatched to the
+ * store.
  */
 class DebugDrawerStore(
     initialState: DebugDrawerState = DebugDrawerState(),
     middlewares: List<Middleware<DebugDrawerState, DebugDrawerAction>> = emptyList(),
-) : Store<DebugDrawerState, DebugDrawerAction>(
-    initialState,
-    ::reduce,
-    middlewares,
-)
+) :
+    Store<DebugDrawerState, DebugDrawerAction>(
+        initialState,
+        ::reduce,
+        middlewares,
+    )
 
-private fun reduce(state: DebugDrawerState, action: DebugDrawerAction): DebugDrawerState = when (action) {
-    is DebugDrawerAction.DrawerOpened -> state.copy(drawerStatus = DrawerStatus.Open)
-    is DebugDrawerAction.DrawerClosed -> state.copy(drawerStatus = DrawerStatus.Closed)
-    DebugDrawerAction.ViewAppeared,
-    is DebugDrawerAction.NavigateTo,
-    DebugDrawerAction.OnBackPressed,
-    -> state // handled by [DebugDrawerNavigationMiddleware]
-}
+private fun reduce(state: DebugDrawerState, action: DebugDrawerAction): DebugDrawerState =
+    when (action) {
+        is DebugDrawerAction.DrawerOpened -> state.copy(drawerStatus = DrawerStatus.Open)
+        is DebugDrawerAction.DrawerClosed -> state.copy(drawerStatus = DrawerStatus.Closed)
+        DebugDrawerAction.ViewAppeared,
+        is DebugDrawerAction.NavigateTo,
+        DebugDrawerAction.OnBackPressed -> state // handled by [DebugDrawerNavigationMiddleware]
+    }

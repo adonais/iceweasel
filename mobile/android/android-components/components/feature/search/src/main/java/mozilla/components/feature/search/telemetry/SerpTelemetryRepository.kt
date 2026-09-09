@@ -13,9 +13,7 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 
-/**
- * Parse SERP Telemetry json from remote config.
- */
+/** Parse SERP Telemetry json from remote config. */
 class SerpTelemetryRepository(
     private val readJson: () -> JSONObject,
     collectionName: String,
@@ -25,18 +23,17 @@ class SerpTelemetryRepository(
     private var providerList: List<SearchProviderModel> = emptyList()
 
     @VisibleForTesting
-    internal var remoteSettingsClient =
-        remoteSettingsService.remoteSettingsService.makeClient(collectionName)
+    internal var remoteSettingsClient = remoteSettingsService.remoteSettingsService.makeClient(collectionName)
 
-    /**
-     * Provides list of search providers from remote server, cache or dump.
-     */
+    /** Provides list of search providers from remote server, cache or dump. */
     suspend fun updateProviderList(): List<SearchProviderModel> {
         val cacheLastModified = remoteSettingsClient.getLastModifiedTimestamp()
         val cachedRecords = remoteSettingsClient.getRecords()
         val localResponse = readJson()
-        if (cachedRecords.isNullOrEmpty() || cacheLastModified == null ||
-            cacheLastModified <= localResponse.getString("timestamp").toULong()
+        if (
+            cachedRecords.isNullOrEmpty() ||
+                cacheLastModified == null ||
+                cacheLastModified <= localResponse.getString("timestamp").toULong()
         ) {
             providerList = parseLocalPreinstalledData(localResponse)
         } else if (cacheLastModified > localResponse.getString("timestamp").toULong()) {
@@ -47,12 +44,11 @@ class SerpTelemetryRepository(
         return providerList
     }
 
-    /**
-     * Parses local json response.
-     */
+    /** Parses local json response. */
     @VisibleForTesting
     internal fun parseLocalPreinstalledData(jsonObject: JSONObject): List<SearchProviderModel> {
-        return jsonObject.getJSONArray("data")
+        return jsonObject
+            .getJSONArray("data")
             .asSequence()
             .mapNotNull {
                 (it as JSONObject).toSearchProviderModel()
@@ -79,10 +75,11 @@ internal fun JSONObject.toSearchProviderModel(): SearchProviderModel? =
             expectedOrganicCodes = optJSONArray("expectedOrganicCodes")?.toList(),
         )
     } catch (e: JSONException) {
-        Logger("SerpTelemetryRepository").error(
-            "JSONException while trying to parse remote config",
-            e,
-        )
+        Logger("SerpTelemetryRepository")
+            .error(
+                "JSONException while trying to parse remote config",
+                e,
+            )
         null
     }
 
@@ -99,9 +96,10 @@ private fun JSONObject.toSearchProviderCookie(): SearchProviderCookie? =
             codeParamName = optString("codeParamName"),
         )
     } catch (e: JSONException) {
-        Logger("SerpTelemetryRepository").error(
-            "JSONException while trying to parse remote config",
-            e,
-        )
+        Logger("SerpTelemetryRepository")
+            .error(
+                "JSONException while trying to parse remote config",
+                e,
+            )
         null
     }

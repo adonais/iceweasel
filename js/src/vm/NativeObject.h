@@ -592,12 +592,8 @@ class TaggedSlotOffset {
   uint32_t offset() const { return bits_ >> OffsetShift; }
   bool isFixedSlot() const { return bits_ & IsFixedSlotFlag; }
 
-  bool operator==(const TaggedSlotOffset& other) const {
-    return bits_ == other.bits_;
-  }
-  bool operator!=(const TaggedSlotOffset& other) const {
-    return !(*this == other);
-  }
+  bool operator==(const TaggedSlotOffset& other) const = default;
+  bool operator!=(const TaggedSlotOffset& other) const = default;
 };
 
 enum class CanReuseShape {
@@ -748,6 +744,11 @@ class TypedSlot {
 #define JS_DEFINE_TYPED_SLOT(index, slotName, ...)                       \
   static constexpr auto slotName = js::TypedSlot<MOZ_FOR_EACH_SEPARATED( \
       JS_DEFINE_TYPED_SLOT_TYPE_, (, ), (), (__VA_ARGS__))>(index)
+
+// Use alongside JS_DEFINE_TYPED_SLOT to name a slot that can hold a value of
+// any type, and so can't be declared as a TypedSlot.
+#define JS_DEFINE_UNTYPED_SLOT(index, slotName) \
+  static constexpr uint32_t slotName = (index)
 
 namespace detail {
 template <class C>
@@ -2185,6 +2186,8 @@ inline void TraceBufferSlot(JSTracer* trc, NativeObject* obj, uint32_t slot,
     obj->setSlot(slot, PrivateValue(buffer));
   }
 }
+
+bool PreserveAnyUnpreservedWrapper(JSContext* cx, Handle<NativeObject*> obj);
 
 }  // namespace js
 

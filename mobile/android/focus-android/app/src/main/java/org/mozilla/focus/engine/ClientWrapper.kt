@@ -8,12 +8,8 @@ import mozilla.components.concept.fetch.Client
 import mozilla.components.concept.fetch.Request
 import mozilla.components.concept.fetch.Response
 
-/**
- * A wrapper around [Client] preventing [Request]s without the private flag set.
- */
-class ClientWrapper(
-    private val actual: Client,
-) : Client() {
+/** A wrapper around [Client] preventing [Request]s without the private flag set. */
+class ClientWrapper(private val actual: Client) : Client() {
     override fun fetch(request: Request): Response {
         if (request.private) {
             return actual.fetch(request)
@@ -22,9 +18,7 @@ class ClientWrapper(
         }
     }
 
-    /**
-     * Unwraps the [Client] and returns the actual [Client] instance.
-     */
+    /** Unwraps the [Client] and returns the actual [Client] instance. */
     @Deprecated("Non-private Client usage should be prevented")
     fun unwrap(): Client {
         return actual

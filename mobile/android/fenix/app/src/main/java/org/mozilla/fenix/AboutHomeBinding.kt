@@ -19,8 +19,8 @@ import mozilla.components.lib.state.helpers.AbstractBinding
 import org.mozilla.fenix.home.HomeFragment
 
 /**
- * A binding for observing [ContentState.url] and navigating to the [HomeFragment] if
- * the current session's url is updated to [ABOUT_HOME_URL].
+ * A binding for observing [ContentState.url] and navigating to the [HomeFragment] if the current session's url is
+ * updated to [ABOUT_HOME_URL].
  */
 class AboutHomeBinding(
     browserStore: BrowserStore,
@@ -33,14 +33,17 @@ class AboutHomeBinding(
             .map { it.selectedTab?.content?.url }
             .distinctUntilChanged()
             .collect { url ->
-                if (url == ABOUT_HOME_URL &&
-                    !listOf(
-                        R.id.homeFragment,
-                        R.id.onboardingFragment,
-                        // Closing a tab in the tabs tray can select an [ABOUT_HOME_URL] tab. Do not
-                        // navigate to the homepage in that case since it would dismiss the tabs tray.
-                        R.id.tabManagementFragment,
-                    ).contains(navController.currentDestination?.id)
+                if (
+                    url == ABOUT_HOME_URL &&
+                        !listOf(
+                                R.id.homeFragment,
+                                R.id.onboardingFragment,
+                                R.id.unlockPrivateTabsFragment,
+                                // Closing a tab in the tabs tray can select an [ABOUT_HOME_URL] tab. Do not
+                                // navigate to the homepage in that case since it would dismiss the tabs tray.
+                                R.id.tabManagementFragment,
+                            )
+                            .contains(navController.currentDestination?.id)
                 ) {
                     navController.navigate(NavGraphDirections.actionGlobalHome())
                 }

@@ -14,7 +14,6 @@ linux64-mingw32-nsis:
     treeherder:
         symbol: TMW(mingw32-nsis)
     run:
-        clone-with: hg
         script: build-mingw32-nsis.sh
         toolchain-artifact: public/build/nsis.tar.zst
     fetches:
@@ -33,7 +32,6 @@ linux64-mingw-fxc2-x86:
     worker:
         max-run-time: 1800
     run:
-        clone-with: hg
         using: toolchain-script
         script: build-mingw-fxc2-x86.sh
         toolchain-artifact: public/build/fxc2.tar.zst

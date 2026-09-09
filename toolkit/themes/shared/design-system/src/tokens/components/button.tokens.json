@@ -1,36 +1,4 @@
 {
-  "nova": {
-    "background": {
-      "color": {
-        "selected": {
-          "value": {
-            "forcedColors": "SelectedItem"
-          }
-        }
-      }
-    },
-    "border": {
-      "width": {
-        "split": {
-          "value": "0"
-        }
-      }
-    },
-    "gap": {
-      "split": {
-        "value": "0"
-      }
-    },
-    "split": {
-      "separator": {
-        "background": {
-          "color": {
-            "value": "{button.border.color.@base}"
-          }
-        }
-      }
-    }
-  },
   "background": {
     "color": {
       "@base": {
@@ -81,13 +49,22 @@
       },
       "primary": {
         "@base": {
-          "value": "{color.accent.primary.@base}"
+          "value": {
+            "default": "{color.accent.primary.@base}",
+            "forcedColors": "ButtonText"
+          }
         },
         "hover": {
-          "value": "{color.accent.primary.hover}"
+          "value": {
+            "default": "{color.accent.primary.hover}",
+            "forcedColors": "SelectedItem"
+          }
         },
         "active": {
-          "value": "{color.accent.primary.active}"
+          "value": {
+            "default": "{color.accent.primary.active}",
+            "forcedColors": "{button.background.color.primary.hover}"
+          }
         },
         "disabled": {
           "value": {

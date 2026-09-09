@@ -6,6 +6,7 @@ package mozilla.components.feature.syncedtabs
 
 import android.content.Context
 import androidx.lifecycle.LifecycleOwner
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.Dispatchers
 import mozilla.components.browser.storage.sync.Tab
 import mozilla.components.feature.syncedtabs.commands.SyncedTabsCommands
@@ -19,11 +20,10 @@ import mozilla.components.feature.syncedtabs.storage.SyncedTabsStorage
 import mozilla.components.feature.syncedtabs.view.SyncedTabsView
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.support.base.feature.LifecycleAwareFeature
-import kotlin.coroutines.CoroutineContext
 
 /**
- * Feature implementation that will keep a [SyncedTabsView] notified with other synced device tabs for
- * the Firefox Sync account.
+ * Feature implementation that will keep a [SyncedTabsView] notified with other synced device tabs for the Firefox Sync
+ * account.
  *
  * @param storage The synced tabs storage that stores the current device's and remote device tabs.
  * @param commands The queue used to send synced tabs commands to other devices.
@@ -46,25 +46,28 @@ class SyncedTabsFeature(
     lifecycleOwner: LifecycleOwner,
     coroutineContext: CoroutineContext = Dispatchers.IO,
     onTabClicked: (Tab) -> Unit,
-    private val controller: SyncedTabsController = DefaultController(
-        storage,
-        accountManager,
-        view,
-        coroutineContext,
-    ),
-    private val presenter: SyncedTabsPresenter = DefaultPresenter(
-        context,
-        controller,
-        commands,
-        accountManager,
-        view,
-        lifecycleOwner,
-    ),
-    private val interactor: SyncedTabsInteractor = DefaultInteractor(
-        controller,
-        view,
-        onTabClicked,
-    ),
+    private val controller: SyncedTabsController =
+        DefaultController(
+            storage,
+            accountManager,
+            view,
+            coroutineContext,
+        ),
+    private val presenter: SyncedTabsPresenter =
+        DefaultPresenter(
+            context,
+            controller,
+            commands,
+            accountManager,
+            view,
+            lifecycleOwner,
+        ),
+    private val interactor: SyncedTabsInteractor =
+        DefaultInteractor(
+            controller,
+            view,
+            onTabClicked,
+        ),
 ) : LifecycleAwareFeature {
 
     override fun start() {

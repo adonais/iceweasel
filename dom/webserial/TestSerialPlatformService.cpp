@@ -31,6 +31,10 @@ void TestSerialPlatformService::AddDefaultMockPorts() {
   AddMockDevice(u"test-device-1"_ns, u"/dev/ttyUSB0"_ns, 0x2341, 0x0043);
   AddMockDevice(u"test-device-2"_ns, u"/dev/ttyUSB1"_ns, 0x0403, 0x6002);
   AddMockDevice(u"test-device-3"_ns, u"/dev/ttyACM0"_ns, 0x1a86, 0x7523);
+  // A default Bluetooth Serial Port Profile (SPP) device so that filter
+  // tests can exercise the bluetoothServiceClassId code path.
+  AddMockDevice(u"test-bt-spp"_ns, u"/dev/rfcomm0"_ns, 0, 0,
+                u"00001101-0000-1000-8000-00805f9b34fb"_ns);
 }
 
 nsresult TestSerialPlatformService::EnumeratePortsImpl(
@@ -198,24 +202,27 @@ nsresult TestSerialPlatformService::GetReadStreamImpl(
   return NS_OK;
 }
 
-MockSerialPort TestSerialPlatformService::CreateMockPort(const nsString& aId,
-                                                         const nsString& aPath,
-                                                         uint16_t aVendorId,
-                                                         uint16_t aProductId) {
+MockSerialPort TestSerialPlatformService::CreateMockPort(
+    const nsString& aId, const nsString& aPath, uint16_t aVendorId,
+    uint16_t aProductId, const nsString& aBluetoothServiceClassId) {
   MockSerialPort port;
   port.mInfo.id() = aId;
   port.mInfo.path() = aPath;
   port.mInfo.friendlyName() = aId;
-  port.mInfo.usbVendorId() = Some(aVendorId);
-  port.mInfo.usbProductId() = Some(aProductId);
+  if (aBluetoothServiceClassId.IsEmpty()) {
+    port.mInfo.usbVendorId() = Some(aVendorId);
+    port.mInfo.usbProductId() = Some(aProductId);
+  } else {
+    port.mInfo.bluetoothServiceClassId() = Some(aBluetoothServiceClassId);
+  }
   return port;
 }
 
-void TestSerialPlatformService::AddMockDevice(const nsString& aId,
-                                              const nsString& aPath,
-                                              uint16_t aVendorId,
-                                              uint16_t aProductId) {
-  mMockPorts.AppendElement(CreateMockPort(aId, aPath, aVendorId, aProductId));
+void TestSerialPlatformService::AddMockDevice(
+    const nsString& aId, const nsString& aPath, uint16_t aVendorId,
+    uint16_t aProductId, const nsString& aBluetoothServiceClassId) {
+  mMockPorts.AppendElement(CreateMockPort(aId, aPath, aVendorId, aProductId,
+                                          aBluetoothServiceClassId));
 }
 
 MockSerialPort* TestSerialPlatformService::FindPort(const nsString& aPortId) {
@@ -227,11 +234,11 @@ MockSerialPort* TestSerialPlatformService::FindPort(const nsString& aPortId) {
   return nullptr;
 }
 
-void TestSerialPlatformService::SimulateDeviceConnection(const nsString& aId,
-                                                         const nsString& aPath,
-                                                         uint16_t aVendorId,
-                                                         uint16_t aProductId) {
-  MockSerialPort port = CreateMockPort(aId, aPath, aVendorId, aProductId);
+void TestSerialPlatformService::SimulateDeviceConnection(
+    const nsString& aId, const nsString& aPath, uint16_t aVendorId,
+    uint16_t aProductId, const nsString& aBluetoothServiceClassId) {
+  MockSerialPort port = CreateMockPort(aId, aPath, aVendorId, aProductId,
+                                       aBluetoothServiceClassId);
   IPCSerialPortInfo info = port.mInfo;
   mMockPorts.AppendElement(std::move(port));
   NotifyPortConnected(info);

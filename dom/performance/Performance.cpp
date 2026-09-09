@@ -135,6 +135,14 @@ DOMHighResTimeStamp Performance::TimeStampToDOMHighResForRendering(
                                                          mRTPCallerType);
 }
 
+DOMHighResTimeStamp Performance::GetReducedTimePrecisionDOMHighRes(
+    const TimeStamp& aTimeStamp) {
+  DOMHighResTimeStamp rawValue =
+      GetDOMTiming()->TimeStampToDOMHighRes(aTimeStamp);
+  return nsRFPService::ReduceTimePrecisionAsMSecs(
+      rawValue, GetRandomTimelineSeed(), GetRTPCallerType());
+}
+
 DOMHighResTimeStamp Performance::Now() {
   DOMHighResTimeStamp rawTime = NowUnclamped();
 
@@ -632,7 +640,11 @@ Maybe<std::pair<TimeStamp, TimeStamp>> Performance::GetTimeStampsForMarker(
 // to the file handle.  Otherwise, return false and sMarkerFile
 // is NULL.
 static bool MaybeOpenMarkerFile() {
-  if (!getenv("MOZ_USE_PERFORMANCE_MARKER_FILE")) {
+  // Read the environment only once. This runs on every performance.measure()
+  // call, and getenv is slow on Windows.
+  static const bool sMarkerFileEnabled =
+      !!getenv("MOZ_USE_PERFORMANCE_MARKER_FILE");
+  if (!sMarkerFileEnabled) {
     return false;
   }
 

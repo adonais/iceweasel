@@ -61,7 +61,16 @@ padBlock(SECItem *data, int blockSize, SECItem *result)
      */
     padLength = blockSize - (data->len % blockSize);
     result->len = data->len + padLength;
+    if (result->len < data->len) {
+        result->len = 0;
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
     result->data = (unsigned char *)PORT_Alloc(result->len);
+    if (!result->data) {
+        result->len = 0;
+        return SECFailure;
+    }
 
     /* Copy the data */
     PORT_Memcpy(result->data, data->data, data->len);

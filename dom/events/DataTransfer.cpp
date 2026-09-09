@@ -950,16 +950,19 @@ nsresult DataTransfer::SetDataAtInternal(const nsAString& aFormat,
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
   }
 
+  nsAutoString format;
+  GetRealFormat(aFormat, format);
+
   // Don't allow the custom type to be assigned.
-  if (aFormat.EqualsLiteral(kCustomTypesMime)) {
+  if (format.EqualsLiteral(kCustomTypesMime)) {
     return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
   }
 
-  if (!PrincipalMaySetData(aFormat, aData, aSubjectPrincipal)) {
+  if (!PrincipalMaySetData(format, aData, aSubjectPrincipal)) {
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  return SetDataWithPrincipal(aFormat, aData, aIndex, aSubjectPrincipal);
+  return SetDataWithPrincipal(format, aData, aIndex, aSubjectPrincipal);
 }
 
 void DataTransfer::MozSetDataAt(JSContext* aCx, const nsAString& aFormat,

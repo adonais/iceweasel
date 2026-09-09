@@ -25,6 +25,7 @@ UNIFIED_SOURCES += [
     "TestSafebrowsingHash.cpp",
     "TestSafeBrowsingProtobuf.cpp",
     "TestTable.cpp",
+    "TestUrlClassifierPrefixSetReporter.cpp",
     "TestUrlClassifierTableUpdateV4.cpp",
     "TestUrlClassifierUtils.cpp",
     "TestURLsAndHashing.cpp",

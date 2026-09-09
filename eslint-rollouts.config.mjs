@@ -182,7 +182,7 @@ export default [
       "browser/components/migration/SafariProfileMigrator.sys.mjs",
       "browser/components/places/content/places-tree.js",
       "browser/components/places/content/treeView.js",
-      "browser/components/tabbrowser/content/tabbrowser.js",
+      "browser/components/tabbrowser/Tabbrowser.sys.mjs",
       "browser/extensions/webcompat/**",
       "browser/modules/BackgroundTask_*.sys.mjs",
       "browser/themes/BuiltInThemes.sys.mjs",
@@ -304,7 +304,12 @@ export default [
       "toolkit/mozapps/update/**",
       "uriloader/**",
     ],
-    ignores: ["devtools/shared/css/parsing-utils.js", "devtools/startup/**"],
+    ignores: [
+      "browser/components/tabbrowser/Tabbrowser.sys.mjs",
+      "browser/modules/URILoadingHelper.sys.mjs",
+      "devtools/shared/css/parsing-utils.js",
+      "devtools/startup/**",
+    ],
     rules: {
       "jsdoc/check-param-names": "off",
       "jsdoc/require-returns-type": "off",
@@ -471,7 +476,12 @@ export default [
       "widget/tests/file*.js",
       "widget/tests/window_composition_text_querycontent.xhtml",
     ],
-    ignores: ["devtools/shared/css/parsing-utils.js", "devtools/startup/**"],
+    ignores: [
+      "browser/components/tabbrowser/Tabbrowser.sys.mjs",
+      "browser/modules/URILoadingHelper.sys.mjs",
+      "devtools/shared/css/parsing-utils.js",
+      "devtools/startup/**",
+    ],
     rules: mozilla.turnOff(mozilla.configs["flat/require-jsdoc"].rules),
   },
   {

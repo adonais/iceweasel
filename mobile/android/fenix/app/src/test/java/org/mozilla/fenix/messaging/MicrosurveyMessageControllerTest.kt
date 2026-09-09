@@ -32,8 +32,7 @@ private val PRIVACY_POLICY_URL =
 @RunWith(RobolectricTestRunner::class)
 class MicrosurveyMessageControllerTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private val message: Message = mockk(relaxed = true)
     private lateinit var microsurveyMessageController: MicrosurveyMessageController
@@ -43,10 +42,11 @@ class MicrosurveyMessageControllerTest {
 
     @Before
     fun setup() {
-        microsurveyMessageController = MicrosurveyMessageController(
-            appStore = appStore,
-            openUrlInBrowser = openUrlInBrowser,
-        )
+        microsurveyMessageController =
+            MicrosurveyMessageController(
+                appStore = appStore,
+                openUrlInBrowser = openUrlInBrowser,
+            )
     }
 
     @Test

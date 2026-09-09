@@ -21,8 +21,7 @@ class APZCArePointerEventsConsumable : public APZCTreeManagerTester {
         LayerIntRect(0, 0, 100, 100),
     };
     CreateScrollData(treeShape, layerVisibleRect);
-    SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
-                              CSSRect(0, 0, 500, 500));
+    SetScrollableFrameMetrics(root, START_SCROLL_ID, CSSRect(0, 0, 500, 500));
 
     registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
 
@@ -36,10 +35,8 @@ class APZCArePointerEventsConsumable : public APZCTreeManagerTester {
     LayerIntRect layerVisibleRect[] = {LayerIntRect(0, 0, 200, 200),
                                        LayerIntRect(50, 50, 100, 100)};
     CreateScrollData(treeShape, layerVisibleRect);
-    SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
-                              CSSRect(0, 0, 300, 300));
-    SetScrollableFrameMetrics(layers[1],
-                              ScrollableLayerGuid::START_SCROLL_ID + 1,
+    SetScrollableFrameMetrics(root, START_SCROLL_ID, CSSRect(0, 0, 300, 300));
+    SetScrollableFrameMetrics(layers[1], START_SCROLL_ID + 1,
                               CSSRect(0, 0, 200, 200));
     SetScrollHandoff(layers[1], root);
     registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
@@ -56,9 +53,9 @@ class APZCArePointerEventsConsumable : public APZCTreeManagerTester {
     return new TouchBlockState(aApzc, flags, counter);
   }
 
-  void UpdateOverscrollBehavior(ScrollableLayerGuid::ViewID aScrollId,
-                                OverscrollBehavior aX, OverscrollBehavior aY) {
-    auto* layer = layers[aScrollId - ScrollableLayerGuid::START_SCROLL_ID];
+  void UpdateOverscrollBehavior(ViewID aScrollId, OverscrollBehavior aX,
+                                OverscrollBehavior aY) {
+    auto* layer = layers[aScrollId - START_SCROLL_ID];
     ModifyFrameMetrics(layer, [aX, aY](ScrollMetadata& sm, FrameMetrics& _) {
       OverscrollBehaviorInfo overscroll;
       overscroll.mBehaviorX = aX;
@@ -237,8 +234,8 @@ TEST_F(APZCArePointerEventsConsumable, NestedElementCannotScroll) {
   // Because no handoff will happen, we are not able to use the parent's
   // room to scroll.
   // Bug 1814886: Once fixed, change expected value to {false, true}.
-  UpdateOverscrollBehavior(ScrollableLayerGuid::START_SCROLL_ID + 1,
-                           OverscrollBehavior::None, OverscrollBehavior::None);
+  UpdateOverscrollBehavior(START_SCROLL_ID + 1, OverscrollBehavior::None,
+                           OverscrollBehavior::None);
   expected = {true, true};
   actual = apzc->ArePointerEventsConsumable(blockState, touchMove);
   EXPECT_EQ(expected, actual);

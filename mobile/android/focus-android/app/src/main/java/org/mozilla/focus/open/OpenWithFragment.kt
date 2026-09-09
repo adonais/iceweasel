@@ -32,9 +32,7 @@ import org.mozilla.focus.R
 import org.mozilla.focus.ext.isTablet
 import org.mozilla.focus.open.AppAdapter.OnAppSelectedListener
 
-/**
- * [AppCompatDialogFragment] used to display open in app options.
- */
+/** [AppCompatDialogFragment] used to display open in app options. */
 class OpenWithFragment : AppCompatDialogFragment(), OnAppSelectedListener {
     override fun onPause() {
         requireActivity().supportFragmentManager.commit(allowStateLoss = true) {
@@ -51,13 +49,14 @@ class OpenWithFragment : AppCompatDialogFragment(), OnAppSelectedListener {
         val dialog: Dialog = CustomWidthBottomSheetDialog(wrapper)
         dialog.setContentView(view)
         val appList = view.findViewById<RecyclerView>(R.id.apps)
-        appList.layoutManager = LinearLayoutManager(
-            wrapper,
-            RecyclerView.VERTICAL,
-            false,
-        )
-        val adapter = requireArguments().getParcelableArrayCompat(ARGUMENT_KEY_APPS, ActivityInfo::class.java)
-            ?.let { infoArray ->
+        appList.layoutManager =
+            LinearLayoutManager(
+                wrapper,
+                RecyclerView.VERTICAL,
+                false,
+            )
+        val adapter =
+            requireArguments().getParcelableArrayCompat(ARGUMENT_KEY_APPS, ActivityInfo::class.java)?.let { infoArray ->
                 AppAdapter(
                     wrapper,
                     infoArray,
@@ -72,14 +71,14 @@ class OpenWithFragment : AppCompatDialogFragment(), OnAppSelectedListener {
 
     internal class CustomWidthBottomSheetDialog(context: Context) : BottomSheetDialog(context) {
         private var contentView: View? = null
+
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
 
             // The support library makes the bottomsheet full width on all devices (and then uses a 16:9
             // keyline). On tablets, the system bottom sheets use a narrower width - lets do that too:
             if (context.isTablet()) {
-                val width =
-                    context.pixelSizeFor(R.dimen.tablet_bottom_sheet_width)
+                val width = context.pixelSizeFor(R.dimen.tablet_bottom_sheet_width)
                 val window = window
                 window?.setLayout(width, ViewGroup.LayoutParams.MATCH_PARENT)
             }
@@ -90,9 +89,7 @@ class OpenWithFragment : AppCompatDialogFragment(), OnAppSelectedListener {
             contentView = view
         }
 
-        override fun setContentView(
-            @LayoutRes layoutResID: Int,
-        ) {
+        override fun setContentView(@LayoutRes layoutResID: Int) {
             throw IllegalStateException("CustomWidthBottomSheetDialog only supports setContentView(View)")
         }
 
@@ -102,11 +99,8 @@ class OpenWithFragment : AppCompatDialogFragment(), OnAppSelectedListener {
 
         override fun show() {
             if (context.isTablet() && !context.doesDeviceHaveHinge()) {
-                val peekHeight =
-                    context.pixelSizeFor(R.dimen.tablet_bottom_sheet_peekheight)
-                val bsBehaviour = BottomSheetBehavior.from(
-                    contentView!!.parent as View,
-                )
+                val peekHeight = context.pixelSizeFor(R.dimen.tablet_bottom_sheet_peekheight)
+                val bsBehaviour = BottomSheetBehavior.from(contentView!!.parent as View)
                 bsBehaviour.peekHeight = peekHeight
             }
             super.show()
@@ -129,9 +123,7 @@ class OpenWithFragment : AppCompatDialogFragment(), OnAppSelectedListener {
         private const val ARGUMENT_URL = "url"
         private const val ARGUMENT_STORE = "store"
 
-        /**
-         * Creates a new instance of [AppCompatDialogFragment].
-         */
+        /** Creates a new instance of [AppCompatDialogFragment]. */
         fun newInstance(
             apps: Array<ActivityInfo?>?,
             url: String?,

@@ -890,15 +890,13 @@ class ResourceCommand {
       }
 
       if (nestedResourceUpdates) {
-        for (const { path, value } of nestedResourceUpdates) {
-          let target = existingResource;
-
-          for (let i = 0; i < path.length - 1; i++) {
-            target = target[path[i]];
-          }
-
-          target[path[path.length - 1]] = value;
+        const processor = NestedUpdateProcessors[resourceType];
+        if (!processor) {
+          throw new Error(
+            `Receiving 'nestedResourceUpdates' without any processor for this resource type '${resourceType}'`
+          );
         }
+        processor({ resource: existingResource, nestedResourceUpdates });
       }
       this._queueResourceEvent("updated", resourceType, [
         {
@@ -1478,4 +1476,14 @@ loader.lazyRequireGetter(
   ResourceTransformers,
   ResourceCommand.TYPES.THREAD_STATE,
   "resource://devtools/shared/commands/resource/transformers/thread-states.js"
+);
+
+// Mandatory modules for any ressource using "nestedResourceUpdates",
+// to validate and apply the update packet.
+const NestedUpdateProcessors = {};
+
+loader.lazyRequireGetter(
+  NestedUpdateProcessors,
+  ResourceCommand.TYPES.STYLESHEET,
+  "resource://devtools/shared/commands/resource/nested-update-processors/stylesheet.js"
 );

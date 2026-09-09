@@ -15,10 +15,9 @@ import org.json.JSONObject
  * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions
  *
  * @property id the unique ID of this extension.
- * @property url the url pointing to a resources path for locating the extension
- * within the APK file e.g. resource://android/assets/extensions/my_web_ext.
- * @property supportActions whether or not browser and page actions are handled when
- * received from the web extension
+ * @property url the url pointing to a resources path for locating the extension within the APK file e.g.
+ *   resource://android/assets/extensions/my_web_ext.
+ * @property supportActions whether or not browser and page actions are handled when received from the web extension
  */
 abstract class WebExtension(
     val id: String,
@@ -26,53 +25,42 @@ abstract class WebExtension(
     val supportActions: Boolean,
 ) {
     /**
-     * Registers a [MessageHandler] for message events from background scripts.
-     * Messages received before a listener is registered are queued and
-     * dispatched after the message handler is registered. An extension can
-     * only send messages if it has the "geckoViewAddons" permission (only
-     * available to built-in or privileged extensions).
+     * Registers a [MessageHandler] for message events from background scripts. Messages received before a listener is
+     * registered are queued and dispatched after the message handler is registered. An extension can only send messages
+     * if it has the "geckoViewAddons" permission (only available to built-in or privileged extensions).
      *
-     * @param name the name of the native "application". This can either be the
-     * name of an application, web extension or a specific feature in case
-     * the web extension opens multiple [Port]s. There can only be one handler
-     * with this name per extension and the same name has to be used in
-     * JavaScript when calling `browser.runtime.connectNative` or
-     * `browser.runtime.sendNativeMessage`. Note that name must match
-     * /^\w+(\.\w+)*$/).
-     * @param messageHandler the message handler to be notified of messaging
-     * events e.g. a port was connected or a message received.
+     * @param name the name of the native "application". This can either be the name of an application, web extension or
+     *   a specific feature in case the web extension opens multiple [Port]s. There can only be one handler with this
+     *   name per extension and the same name has to be used in JavaScript when calling `browser.runtime.connectNative`
+     *   or `browser.runtime.sendNativeMessage`. Note that name must match /^\w+(\.\w+)*$/).
+     * @param messageHandler the message handler to be notified of messaging events e.g. a port was connected or a
+     *   message received.
      */
     abstract fun registerBackgroundMessageHandler(name: String, messageHandler: MessageHandler)
 
     /**
-     * Registers a [MessageHandler] for message events from content scripts or
-     * extension pages. Messages received before a listener is registered are
-     * queued and dispatched after the message handler is registered. A content
-     * script can only send messages if it has the "geckoViewAddons" and
-     * "nativeMessagingFromContent" permissions (only available to built-in or
-     * privileged extensions). Messages can be sent from extension pages
-     * without the "nativeMessagingFromContent" permission.
+     * Registers a [MessageHandler] for message events from content scripts or extension pages. Messages received before
+     * a listener is registered are queued and dispatched after the message handler is registered. A content script can
+     * only send messages if it has the "geckoViewAddons" and "nativeMessagingFromContent" permissions (only available
+     * to built-in or privileged extensions). Messages can be sent from extension pages without the
+     * "nativeMessagingFromContent" permission.
      *
-     * Warning: content scripts are hosted in untrusted web content processes,
-     * extension pages in a more privileged extension process (the same as
-     * background scripts handled by registerBackgroundMessageHandler).
+     * Warning: content scripts are hosted in untrusted web content processes, extension pages in a more privileged
+     * extension process (the same as background scripts handled by registerBackgroundMessageHandler).
      *
      * @param session the session to be observed / attach the message handler to.
-     * @param name the name of the native "application". This can either be the
-     * name of an application, web extension or a specific feature in case
-     * the web extension opens multiple [Port]s. There can only be one handler
-     * with this name per extension and session, and the same name has to be
-     * used in JavaScript when calling `browser.runtime.connectNative` or
-     * `browser.runtime.sendNativeMessage`. Note that name must match
-     * /^\w+(\.\w+)*$/).
-     * @param messageHandler the message handler to be notified of messaging
-     * events e.g. a port was connected or a message received.
+     * @param name the name of the native "application". This can either be the name of an application, web extension or
+     *   a specific feature in case the web extension opens multiple [Port]s. There can only be one handler with this
+     *   name per extension and session, and the same name has to be used in JavaScript when calling
+     *   `browser.runtime.connectNative` or `browser.runtime.sendNativeMessage`. Note that name must match
+     *   /^\w+(\.\w+)*$/).
+     * @param messageHandler the message handler to be notified of messaging events e.g. a port was connected or a
+     *   message received.
      */
     abstract fun registerContentMessageHandler(session: EngineSession, name: String, messageHandler: MessageHandler)
 
     /**
-     * Checks whether there is an existing content message handler for the provided
-     * session and "application" name.
+     * Checks whether there is an existing content message handler for the provided session and "application" name.
      *
      * @param session the session the message handler was registered for.
      * @param name the "application" name the message handler was registered for.
@@ -81,52 +69,45 @@ abstract class WebExtension(
     abstract fun hasContentMessageHandler(session: EngineSession, name: String): Boolean
 
     /**
-     * Returns a connected port with the given name and for the provided
-     * [EngineSession], if one exists.
+     * Returns a connected port with the given name and for the provided [EngineSession], if one exists.
      *
      * @param name the name as provided to connectNative.
-     * @param session (optional) session to check for, null if port is from a
-     * background script.
+     * @param session (optional) session to check for, null if port is from a background script.
      * @return a matching port, or null if none is connected.
      */
     abstract fun getConnectedPort(name: String, session: EngineSession? = null): Port?
 
     /**
-     * Disconnect a [Port] of the provided [EngineSession]. This method has
-     * no effect if there's no connected port with the given name.
+     * Disconnect a [Port] of the provided [EngineSession]. This method has no effect if there's no connected port with
+     * the given name.
      *
-     * @param name the name as provided to connectNative, see
-     * [registerContentMessageHandler] and [registerBackgroundMessageHandler].
-     * @param session (options) session for which ports should disconnected,
-     * null if port is from a background script.
+     * @param name the name as provided to connectNative, see [registerContentMessageHandler] and
+     *   [registerBackgroundMessageHandler].
+     * @param session (options) session for which ports should disconnected, null if port is from a background script.
      */
     abstract fun disconnectPort(name: String, session: EngineSession? = null)
 
     /**
-     * Registers an [ActionHandler] for this web extension. The handler will
-     * be invoked whenever browser and page action defaults change. To listen
-     * for session-specific overrides see registerActionHandler(
-     * EngineSession, ActionHandler).
+     * Registers an [ActionHandler] for this web extension. The handler will be invoked whenever browser and page action
+     * defaults change. To listen for session-specific overrides see registerActionHandler( EngineSession,
+     * ActionHandler).
      *
-     * @param actionHandler the [ActionHandler] to be invoked when a browser or
-     * page action is received.
+     * @param actionHandler the [ActionHandler] to be invoked when a browser or page action is received.
      */
     abstract fun registerActionHandler(actionHandler: ActionHandler)
 
     /**
-     * Registers an [ActionHandler] for the provided [EngineSession]. The handler
-     * will be invoked whenever browser and page action overrides are received
-     * for the provided session.
+     * Registers an [ActionHandler] for the provided [EngineSession]. The handler will be invoked whenever browser and
+     * page action overrides are received for the provided session.
      *
      * @param session the [EngineSession] the handler should be registered for.
-     * @param actionHandler the [ActionHandler] to be invoked when a
-     * session-specific browser or page action is received.
+     * @param actionHandler the [ActionHandler] to be invoked when a session-specific browser or page action is
+     *   received.
      */
     abstract fun registerActionHandler(session: EngineSession, actionHandler: ActionHandler)
 
     /**
-     * Checks whether there is an existing action handler for the provided
-     * session.
+     * Checks whether there is an existing action handler for the provided session.
      *
      * @param session the session the action handler was registered for.
      * @return true if an action handler is registered, otherwise false.
@@ -134,30 +115,25 @@ abstract class WebExtension(
     abstract fun hasActionHandler(session: EngineSession): Boolean
 
     /**
-     * Registers a [TabHandler] for this web extension. This handler will
-     * be invoked whenever a web extension wants to open a new tab. To listen
-     * for session-specific events (such as [TabHandler.onCloseTab]) use
+     * Registers a [TabHandler] for this web extension. This handler will be invoked whenever a web extension wants to
+     * open a new tab. To listen for session-specific events (such as [TabHandler.onCloseTab]) use
      * registerTabHandler(EngineSession, TabHandler) instead.
      *
-     * @param tabHandler the [TabHandler] to be invoked when the web extension
-     * wants to open a new tab.
-     * @param defaultSettings used to pass default tab settings to any tabs opened by
-     * a web extension.
+     * @param tabHandler the [TabHandler] to be invoked when the web extension wants to open a new tab.
+     * @param defaultSettings used to pass default tab settings to any tabs opened by a web extension.
      */
     abstract fun registerTabHandler(tabHandler: TabHandler, defaultSettings: Settings?)
 
     /**
-     * Registers a [TabHandler] for the provided [EngineSession]. The handler
-     * will be invoked whenever an existing tab should be closed or updated.
+     * Registers a [TabHandler] for the provided [EngineSession]. The handler will be invoked whenever an existing tab
+     * should be closed or updated.
      *
-     * @param tabHandler the [TabHandler] to be invoked when the web extension
-     * wants to update or close an existing tab.
+     * @param tabHandler the [TabHandler] to be invoked when the web extension wants to update or close an existing tab.
      */
     abstract fun registerTabHandler(session: EngineSession, tabHandler: TabHandler)
 
     /**
-     * Checks whether there is an existing tab handler for the provided
-     * session.
+     * Checks whether there is an existing tab handler for the provided session.
      *
      * @param session the session the tab handler was registered for.
      * @return true if an tab handler is registered, otherwise false.
@@ -167,33 +143,27 @@ abstract class WebExtension(
     /**
      * Returns additional information about this extension.
      *
-     * @return extension [Metadata], or null if the extension isn't
-     * installed and there is no meta data available.
+     * @return extension [Metadata], or null if the extension isn't installed and there is no meta data available.
      */
     abstract fun getMetadata(): Metadata?
 
     /**
-     * Checks whether or not this extension is built-in (packaged with the
-     * APK file) or coming from an external source.
+     * Checks whether or not this extension is built-in (packaged with the APK file) or coming from an external source.
      */
     open fun isBuiltIn(): Boolean = url.toUri().scheme == "resource"
 
-    /**
-     * Checks whether or not this extension is enabled.
-     */
+    /** Checks whether or not this extension is enabled. */
     abstract fun isEnabled(): Boolean
 
-    /**
-     * Checks whether or not this extension is allowed in private browsing.
-     */
+    /** Checks whether or not this extension is allowed in private browsing. */
     abstract fun isAllowedInPrivateBrowsing(): Boolean
 
     /**
      * Returns the icon of this extension as specified in the extension's manifest:
      * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/icons
      *
-     * @param size the desired size of the icon. The returned icon will be the closest
-     * available icon to the provided size.
+     * @param size the desired size of the icon. The returned icon will be the closest available icon to the provided
+     *   size.
      */
     abstract suspend fun loadIcon(size: Int): Bitmap?
 }
@@ -201,8 +171,7 @@ abstract class WebExtension(
 /**
  * A handler for web extension (browser and page) actions.
  *
- * Page action support will be addressed in:
- * https://github.com/mozilla-mobile/android-components/issues/4470
+ * Page action support will be addressed in: https://github.com/mozilla-mobile/android-components/issues/4470
  */
 interface ActionHandler {
 
@@ -210,8 +179,8 @@ interface ActionHandler {
      * Invoked when a browser action is defined or updated.
      *
      * @param extension the extension that defined the browser action.
-     * @param session the [EngineSession] if this action is to be updated for a
-     * specific session, or null if this is to set a new default value.
+     * @param session the [EngineSession] if this action is to be updated for a specific session, or null if this is to
+     *   set a new default value.
      * @param action the browser action as [Action].
      */
     fun onBrowserAction(extension: WebExtension, session: EngineSession?, action: Action) = Unit
@@ -220,8 +189,8 @@ interface ActionHandler {
      * Invoked when a page action is defined or updated.
      *
      * @param extension the extension that defined the browser action.
-     * @param session the [EngineSession] if this action is to be updated for a
-     * specific session, or null if this is to set a new default value.
+     * @param session the [EngineSession] if this action is to be updated for a specific session, or null if this is to
+     *   set a new default value.
      * @param action the [Action]
      */
     fun onPageAction(extension: WebExtension, session: EngineSession?, action: Action) = Unit
@@ -231,45 +200,38 @@ interface ActionHandler {
      *
      * @param extension the extension that defined the browser or page action.
      * @param action the action as [Action].
-     * @return the [EngineSession] that was used for displaying the popup,
-     * or null if the popup was closed.
+     * @return the [EngineSession] that was used for displaying the popup, or null if the popup was closed.
      */
     fun onToggleActionPopup(extension: WebExtension, action: Action): EngineSession? = null
 }
 
 /**
- * A handler for all messaging related events, usable for content scripts (and
- * extension pages) and background scripts.
+ * A handler for all messaging related events, usable for content scripts (and extension pages) and background scripts.
  *
  * To register a handler, use WebExtension.registerBackgroundMessageHandler or
- * WebExtension.registerContentMessageHandler. The extension can only send
- * messages if their manifest.json contains the "geckoViewAddons" permission,
- * and in case of content scripts, the "nativeMessagingFromContent" permission.
- * These permissions are only available to built-in (or privileged) extensions.
+ * WebExtension.registerContentMessageHandler. The extension can only send messages if their manifest.json contains the
+ * "geckoViewAddons" permission, and in case of content scripts, the "nativeMessagingFromContent" permission. These
+ * permissions are only available to built-in (or privileged) extensions.
  *
- * See the documentation for the GeckoView API (that this API wraps) for more
- * information on usage of the extension API and its requirements, at
+ * See the documentation for the GeckoView API (that this API wraps) for more information on usage of the extension API
+ * and its requirements, at
  * https://firefox-source-docs.mozilla.org/mobile/android/geckoview/consumer/web-extensions.html
  *
- * [Port]s are exposed to consumers (higher level components) because
- * how ports are used, how many there are and how messages map to it
- * is feature-specific and depends on the design of the web extension.
- * Therefore it makes most sense to let the extensions (higher-level
- * features) deal with the management of ports.
+ * [Port]s are exposed to consumers (higher level components) because how ports are used, how many there are and how
+ * messages map to it is feature-specific and depends on the design of the web extension. Therefore it makes most sense
+ * to let the extensions (higher-level features) deal with the management of ports.
  */
 interface MessageHandler {
 
     /**
-     * Invoked when a [Port] was connected as a result of a
-     * `browser.runtime.connectNative` call in JavaScript.
+     * Invoked when a [Port] was connected as a result of a `browser.runtime.connectNative` call in JavaScript.
      *
      * @param port the connected port.
      */
     fun onPortConnected(port: Port) = Unit
 
     /**
-     * Invoked when a [Port] was disconnected or the corresponding session was
-     * destroyed.
+     * Invoked when a [Port] was disconnected or the corresponding session was destroyed.
      *
      * @param port the disconnected port.
      */
@@ -278,46 +240,40 @@ interface MessageHandler {
     /**
      * Invoked when a message was received on the provided port.
      *
-     * @param message the received message, either be a primitive type
-     * or a org.json.JSONObject.
+     * @param message the received message, either be a primitive type or a org.json.JSONObject.
      * @param port the port the message was received on.
      */
     fun onPortMessage(message: Any, port: Port) = Unit
 
     /**
-     * Invoked when a message was received as a result of a
-     * `browser.runtime.sendNativeMessage` call in JavaScript.
+     * Invoked when a message was received as a result of a `browser.runtime.sendNativeMessage` call in JavaScript.
      *
-     * @param message the received message, either be a primitive type
-     * or a org.json.JSONObject.
-     * @param source the session this message originated from if from a content
-     * script or extension page, otherwise null.
-     * @return the response to be sent for this message, either a primitive
-     * type or a org.json.JSONObject, null if no response should be sent.
+     * @param message the received message, either be a primitive type or a org.json.JSONObject.
+     * @param source the session this message originated from if from a content script or extension page, otherwise
+     *   null.
+     * @return the response to be sent for this message, either a primitive type or a org.json.JSONObject, null if no
+     *   response should be sent.
      */
     fun onMessage(message: Any, source: EngineSession?): Any? = Unit
 }
 
-/**
- * A handler for all tab related events (triggered by browser.tabs.* methods).
- */
+/** A handler for all tab related events (triggered by browser.tabs.* methods). */
 interface TabHandler {
     /**
-     * Invoked to determine the current private browsing mode. New tabs opened
-     * by extensions may use this state if not specified otherwise.
+     * Invoked to determine the current private browsing mode. New tabs opened by extensions may use this state if not
+     * specified otherwise.
      */
     fun isInPrivateBrowsing(): Boolean = false
 
     /**
-     * Invoked when a web extension attempts to open a new tab via
-     * browser.tabs.create.
+     * Invoked when a web extension attempts to open a new tab via browser.tabs.create.
      *
      * @param webExtension The [WebExtension] that wants to open the tab.
      * @param engineSession an instance of engine session to open a new tab with.
      * @param active whether or not the new tab should be active/selected.
      * @param url the target url to be loaded in a new tab.
-     * @param isPrivate whether private browsing mode is enabled for the new
-     * tab. Must match the engineSession.privateMode flag.
+     * @param isPrivate whether private browsing mode is enabled for the new tab. Must match the
+     *   engineSession.privateMode flag.
      */
     fun onNewTab(
         webExtension: WebExtension,
@@ -328,8 +284,7 @@ interface TabHandler {
     ) = Unit
 
     /**
-     * Invoked when a web extension attempts to update a tab via
-     * browser.tabs.update.
+     * Invoked when a web extension attempts to update a tab via browser.tabs.update.
      *
      * @param webExtension The [WebExtension] that wants to update the tab.
      * @param engineSession an instance of engine session to open a new tab with.
@@ -340,8 +295,7 @@ interface TabHandler {
     fun onUpdateTab(webExtension: WebExtension, engineSession: EngineSession, active: Boolean, url: String?) = false
 
     /**
-     * Invoked when a web extension attempts to close a tab via
-     * browser.tabs.remove.
+     * Invoked when a web extension attempts to close a tab via browser.tabs.remove.
      *
      * @param webExtension The [WebExtension] that wants to remove the tab.
      * @param engineSession then engine session of the tab to be closed.
@@ -370,30 +324,19 @@ abstract class Port(val engineSession: EngineSession? = null) {
      */
     abstract fun postMessage(message: JSONObject)
 
-    /**
-     * Returns the name of this port.
-     */
+    /** Returns the name of this port. */
     abstract fun name(): String
 
-    /**
-     * Returns the URL of the port sender.
-     */
+    /** Returns the URL of the port sender. */
     abstract fun senderUrl(): String
 
-    /**
-     * Disconnects this port.
-     */
+    /** Disconnects this port. */
     abstract fun disconnect()
 }
 
-/**
- * Provides information about a [WebExtension].
- */
+/** Provides information about a [WebExtension]. */
 data class Metadata(
-    /**
-     * Version string:
-     * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/version
-     */
+    /** Version string: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/version */
     val version: String,
     /**
      * Required API permissions:
@@ -405,9 +348,7 @@ data class Metadata(
      * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/permissions#Host_permissions
      */
     val requiredOrigins: List<String>,
-    /**
-     * Required data collection permissions.
-     */
+    /** Required data collection permissions. */
     val requiredDataCollectionPermissions: List<String>,
     /**
      * Optional API permissions for this extension:
@@ -429,17 +370,12 @@ data class Metadata(
      * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/optional_permissions
      */
     val grantedOptionalOrigins: List<String>,
-    /**
-     * Optional data collection permissions.
-     */
+    /** Optional data collection permissions. */
     val optionalDataCollectionPermissions: List<String>,
-    /**
-     * Optional data collection granted to this extension.
-     */
+    /** Optional data collection granted to this extension. */
     val grantedOptionalDataCollectionPermissions: List<String>,
     /**
-     * Name of the extension:
-     * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/name
+     * Name of the extension: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/name
      */
     val name: String?,
     /**
@@ -462,49 +398,30 @@ data class Metadata(
      * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/homepage_url
      */
     val homepageUrl: String?,
-    /**
-     * Options page:
-     * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/options_ui
-     */
+    /** Options page: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/options_ui */
     val optionsPageUrl: String?,
     /**
      * Whether or not the options page should be opened in a new tab:
      * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/options_ui#syntax
      */
     val openOptionsPageInTab: Boolean,
-    /**
-     * Describes the reason (or reasons) why an extension is disabled.
-     */
+    /** Describes the reason (or reasons) why an extension is disabled. */
     val disabledFlags: DisabledFlags,
-    /**
-     * Base URL for pages of this extension. Can be used to determine if a page
-     * is from / belongs to this extension.
-     */
+    /** Base URL for pages of this extension. Can be used to determine if a page is from / belongs to this extension. */
     val baseUrl: String,
-    /**
-     * The full description of this extension.
-     */
+    /** The full description of this extension. */
     val fullDescription: String?,
-    /**
-     * The URL used to install this extension.
-     */
+    /** The URL used to install this extension. */
     val downloadUrl: String?,
     /**
-     * The string representation of the date that this extension was most recently updated
-     * (simplified ISO 8601 format).
+     * The string representation of the date that this extension was most recently updated (simplified ISO 8601 format).
      */
     val updateDate: String?,
-    /**
-     * The average rating of this extension.
-     */
+    /** The average rating of this extension. */
     val averageRating: Float,
-    /**
-     * The link to the review page for this extension.
-     */
+    /** The link to the review page for this extension. */
     val reviewUrl: String?,
-    /**
-     * The average rating of this extension.
-     */
+    /** The average rating of this extension. */
     val reviewCount: Int,
     /**
      * The creator name of this extension.
@@ -517,13 +434,11 @@ data class Metadata(
      */
     val creatorUrl: String?,
     /**
-     * Whether or not this extension is temporary i.e. installed using a debug tool
-     * such as web-ext, and won't be retained when the application exits.
+     * Whether or not this extension is temporary i.e. installed using a debug tool such as web-ext, and won't be
+     * retained when the application exits.
      */
     val temporary: Boolean = false,
-    /**
-     * The URL to the detail page of this extension.
-     */
+    /** The URL to the detail page of this extension. */
     val detailUrl: String?,
     /**
      * Indicates how this extension works with private browsing windows.
@@ -532,35 +447,23 @@ data class Metadata(
     val incognito: Incognito,
 )
 
-/**
- * Provides additional information about why an extension is being enabled or disabled.
- */
+/** Provides additional information about why an extension is being enabled or disabled. */
 enum class EnableSource(val id: Int) {
-    /**
-     * The extension is enabled or disabled by the user.
-     */
+    /** The extension is enabled or disabled by the user. */
     USER(1),
 
-    /**
-     * The extension is enabled or disabled by the application based
-     * on available support.
-     */
+    /** The extension is enabled or disabled by the application based on available support. */
     APP_SUPPORT(1 shl 1),
 }
 
-/**
- * Holds all the information which the user has submitted
- * as part of a confirmation of a permissions prompt request.
- */
+/** Holds all the information which the user has submitted as part of a confirmation of a permissions prompt request. */
 data class PermissionPromptResponse(
     val isPermissionsGranted: Boolean,
     val isPrivateModeGranted: Boolean = false,
     val isTechnicalAndInteractionDataGranted: Boolean = false,
 )
 
-/**
- * Flags to check for different reasons why an extension is disabled.
- */
+/** Flags to check for different reasons why an extension is disabled. */
 class DisabledFlags internal constructor(val value: Int) {
     companion object {
         const val USER: Int = 1 shl 1
@@ -586,31 +489,19 @@ class DisabledFlags internal constructor(val value: Int) {
     fun contains(flag: Int) = (value and flag) != 0
 }
 
-/**
- * Incognito values that control how an extension works with private browsing windows.
- */
+/** Incognito values that control how an extension works with private browsing windows. */
 enum class Incognito {
-    /**
-     * The extension will see events from private and non-private windows and tabs.
-     */
+    /** The extension will see events from private and non-private windows and tabs. */
     SPANNING,
 
-    /**
-     * The extension will be split between private and non-private windows.
-     */
+    /** The extension will be split between private and non-private windows. */
     SPLIT,
 
-    /**
-     * Private tabs and windows are invisible to the extension.
-     */
-    NOT_ALLOWED,
-
-    ;
+    /** Private tabs and windows are invisible to the extension. */
+    NOT_ALLOWED;
 
     companion object {
-        /**
-         * Safely returns an Incognito value based on the input nullable string.
-         */
+        /** Safely returns an Incognito value based on the input nullable string. */
         fun fromString(value: String?): Incognito {
             return when (value) {
                 "split" -> SPLIT
@@ -621,129 +512,92 @@ enum class Incognito {
     }
 }
 
-/**
- * Returns whether or not the extension is disabled because it is unsupported.
- */
+/** Returns whether or not the extension is disabled because it is unsupported. */
 fun WebExtension.isUnsupported(): Boolean {
     val flags = getMetadata()?.disabledFlags
     return flags?.contains(DisabledFlags.APP_SUPPORT) == true
 }
 
-/**
- * Returns whether or not the extension is disabled because it has been blocklisted.
- */
+/** Returns whether or not the extension is disabled because it has been blocklisted. */
 fun WebExtension.isBlockListed(): Boolean {
     val flags = getMetadata()?.disabledFlags
     return flags?.contains(DisabledFlags.BLOCKLIST) == true
 }
 
-/**
- * Returns whether the extension is soft-blocked.
- */
+/** Returns whether the extension is soft-blocked. */
 fun WebExtension.isSoftBlocked(): Boolean {
     val flags = getMetadata()?.disabledFlags
     return flags?.contains(DisabledFlags.SOFT_BLOCKLIST) == true
 }
 
-/**
- * Returns whether the extension is disabled because it isn't correctly signed.
- */
+/** Returns whether the extension is disabled because it isn't correctly signed. */
 fun WebExtension.isDisabledUnsigned(): Boolean {
     val flags = getMetadata()?.disabledFlags
     return flags?.contains(DisabledFlags.SIGNATURE) == true
 }
 
-/**
- * Returns whether the extension is disabled because it isn't compatible with the application version.
- */
+/** Returns whether the extension is disabled because it isn't compatible with the application version. */
 fun WebExtension.isDisabledIncompatible(): Boolean {
     val flags = getMetadata()?.disabledFlags
     return flags?.contains(DisabledFlags.APP_VERSION) == true
 }
 
 /**
- * An unexpected event that occurs when trying to perform an action on the extension like
- * (but not exclusively) installing/uninstalling, removing or updating.
+ * An unexpected event that occurs when trying to perform an action on the extension like (but not exclusively)
+ * installing/uninstalling, removing or updating.
  */
 open class WebExtensionException(throwable: Throwable, open val isRecoverable: Boolean = true) : Exception(throwable)
 
-/**
- * An unexpected event that occurs when installing an extension.
- */
+/** An unexpected event that occurs when installing an extension. */
 sealed class WebExtensionInstallException(
     open val extensionId: String? = null,
     open val extensionName: String? = null,
     open val extensionVersion: String? = null,
     throwable: Throwable,
 ) : WebExtensionException(throwable) {
-    /**
-     * The extension install was canceled by the user.
-     */
+    /** The extension install was canceled by the user. */
     class UserCancelled(override val extensionName: String? = null, throwable: Throwable) :
         WebExtensionInstallException(throwable = throwable)
 
-    /**
-     * The extension install was cancelled because the extension is blocklisted.
-     */
+    /** The extension install was cancelled because the extension is blocklisted. */
     class Blocklisted(
         override val extensionId: String? = null,
         override val extensionName: String? = null,
         override val extensionVersion: String? = null,
         throwable: Throwable,
-    ) :
-        WebExtensionInstallException(throwable = throwable)
+    ) : WebExtensionInstallException(throwable = throwable)
 
-    /**
-     * The extension install was cancelled because the downloaded file
-     * seems to be corrupted in some way.
-     */
-    class CorruptFile(throwable: Throwable) :
-        WebExtensionInstallException(throwable = throwable, extensionName = null)
+    /** The extension install was cancelled because the downloaded file seems to be corrupted in some way. */
+    class CorruptFile(throwable: Throwable) : WebExtensionInstallException(throwable = throwable, extensionName = null)
 
-    /**
-     * The extension install was cancelled because the file must be signed and isn't.
-     */
-    class NotSigned(throwable: Throwable) :
-        WebExtensionInstallException(throwable = throwable, extensionName = null)
+    /** The extension install was cancelled because the file must be signed and isn't. */
+    class NotSigned(throwable: Throwable) : WebExtensionInstallException(throwable = throwable, extensionName = null)
 
-    /**
-     * The extension install was cancelled because it is incompatible.
-     */
+    /** The extension install was cancelled because it is incompatible. */
     class Incompatible(override val extensionName: String? = null, throwable: Throwable) :
         WebExtensionInstallException(throwable = throwable)
 
-    /**
-     *  The extension install failed because of a network error.
-     */
+    /** The extension install failed because of a network error. */
     class NetworkFailure(override val extensionName: String? = null, throwable: Throwable) :
         WebExtensionInstallException(throwable = throwable)
 
-    /**
-     * The extension install failed with an unknown error.
-     */
+    /** The extension install failed with an unknown error. */
     class Unknown(override val extensionName: String? = null, throwable: Throwable) :
         WebExtensionInstallException(throwable = throwable)
 
-    /**
-     * The extension install failed because the extension type is not supported.
-     */
+    /** The extension install failed because the extension type is not supported. */
     class UnsupportedAddonType(override val extensionName: String? = null, throwable: Throwable) :
         WebExtensionInstallException(throwable = throwable)
 
-    /**
-     * The extension can only be installed via Enterprise Policies.
-     */
+    /** The extension can only be installed via Enterprise Policies. */
     class AdminInstallOnly(override val extensionName: String? = null, throwable: Throwable) :
         WebExtensionInstallException(throwable = throwable)
 
-    /**
-     * The extension install was cancelled because the extension is soft-blocked.
-     */
+    /** The extension install was cancelled because the extension is soft-blocked. */
     class SoftBlocked(
         override val extensionId: String? = null,
         override val extensionName: String? = null,
         override val extensionVersion: String? = null,
         throwable: Throwable,
-    ) :
-        WebExtensionInstallException(throwable = throwable)
+    ) : WebExtensionInstallException(throwable = throwable)
 }

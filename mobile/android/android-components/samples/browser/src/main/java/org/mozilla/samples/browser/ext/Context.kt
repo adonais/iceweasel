@@ -8,14 +8,10 @@ import android.content.Context
 import org.mozilla.samples.browser.Components
 import org.mozilla.samples.browser.SampleApplication
 
-/**
- * Get the SampleApplication object from a context.
- */
+/** Get the SampleApplication object from a context. */
 val Context.application: SampleApplication
     get() = applicationContext as SampleApplication
 
-/**
- * Get the components of this application.
- */
+/** Get the components of this application. */
 val Context.components: Components
     get() = application.components

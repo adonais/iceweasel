@@ -10,35 +10,35 @@ import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEngine
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
 import org.mozilla.fenix.components.appstate.AppState
 
-/**
- * [AppState] reducer functionality specific for [SearchAction].
- */
+/** [AppState] reducer functionality specific for [SearchAction]. */
 object SearchStateReducer {
-    /**
-     * [AppState] reducer of [SearchAction].
-     */
-    fun reduce(state: AppState, action: SearchAction): AppState = when (action) {
-        is SearchStarted -> state.updateSearchState {
-            copy(
-                isSearchActive = true,
-                sourceTabId = action.tabId,
-                searchAccessPoint = action.source,
-            )
+    /** [AppState] reducer of [SearchAction]. */
+    fun reduce(state: AppState, action: SearchAction): AppState =
+        when (action) {
+            is SearchStarted ->
+                state.updateSearchState {
+                    copy(
+                        isSearchActive = true,
+                        sourceTabId = action.tabId,
+                        searchAccessPoint = action.source,
+                    )
+                }
+            is SearchEnded ->
+                state.updateSearchState {
+                    SearchState.EMPTY
+                }
+            is SearchEngineSelected ->
+                state.updateSearchState {
+                    copy(
+                        selectedSearchEngine =
+                            SelectedSearchEngine(
+                                searchEngine = action.searchEngine,
+                                isUserSelected = action.isUserSelected,
+                            )
+                    )
+                }
         }
-        is SearchEnded -> state.updateSearchState {
-            SearchState.EMPTY
-        }
-        is SearchEngineSelected -> state.updateSearchState {
-            copy(
-                selectedSearchEngine = SelectedSearchEngine(
-                    searchEngine = action.searchEngine,
-                    isUserSelected = action.isUserSelected,
-                ),
-            )
-        }
-    }
 
-    private fun AppState.updateSearchState(update: SearchState.() -> SearchState) = copy(
-        searchState = searchState.update(),
-    )
+    private fun AppState.updateSearchState(update: SearchState.() -> SearchState) =
+        copy(searchState = searchState.update())
 }

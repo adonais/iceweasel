@@ -202,7 +202,6 @@ tasks:
                 - artifact: target.noarch.apk
                   extract: false
         run:
-            clone-with: hg
             secrets:
                 - name: project/gecko/level-any/firefox-android/fenix/firebase
                   key: firebaseToken

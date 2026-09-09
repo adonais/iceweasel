@@ -34,17 +34,13 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class BackgroundServicesTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
-    @MockK
-    private lateinit var context: Context
+    @MockK private lateinit var context: Context
 
-    @MockK
-    private lateinit var settings: Settings
+    @MockK private lateinit var settings: Settings
 
-    @MockK
-    private lateinit var nimbus: NimbusApi
+    @MockK private lateinit var nimbus: NimbusApi
 
     private lateinit var observer: TelemetryAccountObserver
     private lateinit var registry: ObserverRegistry<AccountObserver>
@@ -56,10 +52,11 @@ class BackgroundServicesTest {
 
         val mockComponents: Components = mockk()
         every { mockComponents.settings } returns settings
-        every { mockComponents.nimbus } returns mockk {
-            every { sdk } returns nimbus
-            every { events } returns nimbus
-        }
+        every { mockComponents.nimbus } returns
+            mockk {
+                every { sdk } returns nimbus
+                every { events } returns nimbus
+            }
         every { context.components } returns mockComponents
         every { nimbus.recordEvent(any()) } just Runs
 

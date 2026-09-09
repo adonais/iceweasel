@@ -13,33 +13,27 @@ import org.mozilla.geckoview.AIFeaturesController.AIFeaturesException.ERROR_COUL
 import org.mozilla.geckoview.AIFeaturesController.AIFeaturesException.ERROR_UNKNOWN_FEATURE
 import org.mozilla.geckoview.ExperimentalGeckoViewApi
 
-/**
- * Utility object for AI features functions related to the Gecko implementation.
- */
+/** Utility object for AI features functions related to the Gecko implementation. */
 @OptIn(ExperimentalGeckoViewApi::class)
 object GeckoAIFeaturesUtils {
 
     /**
-     * Convenience method for mapping an [AIFeaturesController.AIFeaturesException] to the
-     * Android Components defined error type of [AIFeaturesError].
+     * Convenience method for mapping an [AIFeaturesController.AIFeaturesException] to the Android Components defined
+     * error type of [AIFeaturesError].
      *
-     * Throwable is the engine throwable that occurred. Ordinarily should be
-     * an [AIFeaturesController.AIFeaturesException].
+     * Throwable is the engine throwable that occurred. Ordinarily should be an
+     * [AIFeaturesController.AIFeaturesException].
      */
     fun Throwable.intoAIFeaturesError(): AIFeaturesError {
         return if (this is AIFeaturesController.AIFeaturesException) {
             when (code) {
-                ERROR_COULD_NOT_PARSE ->
-                    AIFeaturesError.CouldNotParseError(this)
+                ERROR_COULD_NOT_PARSE -> AIFeaturesError.CouldNotParseError(this)
 
-                ERROR_UNKNOWN_FEATURE ->
-                    AIFeaturesError.UnknownFeatureError(this)
+                ERROR_UNKNOWN_FEATURE -> AIFeaturesError.UnknownFeatureError(this)
 
-                ERROR_COULD_NOT_SET ->
-                    AIFeaturesError.CouldNotSetError(this)
+                ERROR_COULD_NOT_SET -> AIFeaturesError.CouldNotSetError(this)
 
-                ERROR_COULD_NOT_MAKE_AVAILABLE ->
-                    AIFeaturesError.CouldNotMakeAvailableError(this)
+                ERROR_COULD_NOT_MAKE_AVAILABLE -> AIFeaturesError.CouldNotMakeAvailableError(this)
 
                 else -> AIFeaturesError.UnknownError(this)
             }

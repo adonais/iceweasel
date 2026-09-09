@@ -19,13 +19,9 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class PrivacyNoticeBannerTelemetryMiddlewareTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
-    private val store =
-        mockk<Store<PrivacyNoticeBannerState, PrivacyNoticeBannerAction>>(
-            relaxed = true,
-        )
+    private val store = mockk<Store<PrivacyNoticeBannerState, PrivacyNoticeBannerAction>>(relaxed = true)
 
     @Test
     fun `WHEN the OnBannerDisplayed action is received THEN telemetry is recorded`() {

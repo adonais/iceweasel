@@ -28,59 +28,44 @@ import mozilla.components.support.utils.ext.packageManagerCompatHelper
  * val browsers = Browsers.forUrl(context, url)`
  * ```
  */
-class Browsers private constructor(
+class Browsers
+private constructor(
     context: Context,
     uri: Uri,
 ) {
-    /**
-     * Enum of known browsers and their package names.
-     */
-    enum class KnownBrowser constructor(
-        val packageName: String,
-    ) {
+    /** Enum of known browsers and their package names. */
+    enum class KnownBrowser constructor(val packageName: String) {
         FIREFOX("org.mozilla.firefox"),
-
         FIREFOX_BETA("org.mozilla.firefox_beta"),
         FIREFOX_AURORA("org.mozilla.fennec_aurora"),
         FIREFOX_FENNEC_NIGHTLY("org.mozilla.fennec"),
         FIREFOX_FDROID("org.mozilla.fennec_fdroid"),
-
         FIREFOX_LITE("org.mozilla.rocket"),
-
         FIREFOX_NIGHTLY("org.mozilla.fenix"),
         FENIX_DEBUG("org.mozilla.fenix.debug"),
-
         FIREFOX_FOCUS_DEBUG("org.mozilla.focus.debug"),
         FIREFOX_FOCUS_NIGHTLY("org.mozilla.focus.nightly"),
         FIREFOX_FOCUS_BETA("org.mozilla.focus.beta"),
         FIREFOX_FOCUS("org.mozilla.focus"),
-
         REFERENCE_BROWSER("org.mozilla.reference.browser"),
         REFERENCE_BROWSER_DEBUG("org.mozilla.reference.browser.debug"),
-
         CHROME("com.android.chrome"),
         CHROME_BETA("com.chrome.beta"),
         CHROME_DEV("com.chrome.dev"),
         CHROME_CANARY("com.chrome.canary"),
         CHROME_LOCAL_BUILD("com.google.android.apps.chrome"),
         CHROMIUM_LOCAL_BUILD("org.chromium.chrome"),
-
         OPERA("com.opera.browser"),
         OPERA_BETA("com.opera.browser.beta"),
         OPERA_MINI("com.opera.mini.native"),
         OPERA_MINI_BETA("com.opera.mini.native.beta"),
-
         UC_BROWSER("com.UCMobile.intl"),
         UC_BROWSER_MINI("com.uc.browser.en"),
-
         ANDROID_STOCK_BROWSER("com.android.browser"),
-
         SAMSUNG_INTERNET("com.sec.android.app.sbrowser"),
         SAMSUNG_INTERNET_BETA("com.sec.android.app.sbrowser.beta"),
-
         ORFOX("info.guardianproject.orfox"),
         TOR_BROWSER_ALPHA("org.torproject.torbrowser_alpha"),
-
         MICROSOFT_EDGE("com.microsoft.emmx"),
         DOLPHIN_BROWSER("mobi.mgeek.TunnyBrowser"),
         BRAVE_BROWSER("com.brave.browser"),
@@ -95,28 +80,25 @@ class Browsers private constructor(
 
     private val packageName = context.packageName
 
-    private val browsers: Map<String, ActivityInfo> = {
-        val packageManager = context.packageManagerCompatHelper
+    private val browsers: Map<String, ActivityInfo> =
+        {
+            val packageManager = context.packageManagerCompatHelper
 
-        val browsers = resolveBrowsers(context, packageManager, uri)
+            val browsers = resolveBrowsers(context, packageManager, uri)
 
-        // If there's a default browser set then modern Android systems won't return other browsers
-        // anymore when using queryIntentActivities(). That's annoying and our only option is
-        // to go through a list of known browsers and see if anyone of them is installed and
-        // wants to handle our URL.
-        findKnownBrowsers(packageManager, browsers, uri)
+            // If there's a default browser set then modern Android systems won't return other browsers
+            // anymore when using queryIntentActivities(). That's annoying and our only option is
+            // to go through a list of known browsers and see if anyone of them is installed and
+            // wants to handle our URL.
+            findKnownBrowsers(packageManager, browsers, uri)
 
-        browsers
-    }()
+            browsers
+        }()
 
-    /**
-     * The [ActivityInfo] of the default browser of the user (or null if none could be found).
-     */
+    /** The [ActivityInfo] of the default browser of the user (or null if none could be found). */
     val defaultBrowser: ActivityInfo? = findDefault(context, uri)
 
-    /**
-     * The [ActivityInfo] of the installed Firefox, including Focus, browser (or null if none could be found).
-     */
+    /** The [ActivityInfo] of the installed Firefox, including Focus, browser (or null if none could be found). */
     val mozillaBrandedBrowser: ActivityInfo? = findMozillaBrandedBrowser()
 
     /**
@@ -126,43 +108,31 @@ class Browsers private constructor(
      */
     val firefoxBrandedBrowser: ActivityInfo? = findFirefoxBrandedBrowser()
 
-    /**
-     * Is there a Firefox browser installed on this device?
-     */
+    /** Is there a Firefox browser installed on this device? */
     val hasFirefoxBrandedBrowserInstalled: Boolean = firefoxBrandedBrowser != null
 
-    /**
-     * Is Firefox (Release, Beta, Nightly) the default browser of the user?
-     */
+    /** Is Firefox (Release, Beta, Nightly) the default browser of the user? */
     val isFirefoxDefaultBrowser: Boolean
         get() =
-            defaultBrowser != null && (
-                defaultBrowser.packageName == KnownBrowser.FIREFOX.packageName ||
+            defaultBrowser != null &&
+                (defaultBrowser.packageName == KnownBrowser.FIREFOX.packageName ||
                     defaultBrowser.packageName == KnownBrowser.FIREFOX_BETA.packageName ||
                     defaultBrowser.packageName == KnownBrowser.FIREFOX_AURORA.packageName ||
                     defaultBrowser.packageName == KnownBrowser.FIREFOX_FENNEC_NIGHTLY.packageName ||
                     defaultBrowser.packageName == KnownBrowser.FIREFOX_NIGHTLY.packageName ||
-                    defaultBrowser.packageName == KnownBrowser.FIREFOX_FDROID.packageName
-                )
+                    defaultBrowser.packageName == KnownBrowser.FIREFOX_FDROID.packageName)
 
-    /**
-     * List of [ActivityInfo] of all known installed browsers.
-     */
+    /** List of [ActivityInfo] of all known installed browsers. */
     val installedBrowsers: List<ActivityInfo> = browsers.values.toList()
 
-    /**
-     * Does this device have a default browser that is not Firefox (release) or **this** app calling the method.
-     */
-    val hasThirdPartyDefaultBrowser: Boolean = (
-        defaultBrowser != null &&
+    /** Does this device have a default browser that is not Firefox (release) or **this** app calling the method. */
+    val hasThirdPartyDefaultBrowser: Boolean =
+        (defaultBrowser != null &&
             defaultBrowser.packageName != KnownBrowser.FIREFOX.packageName &&
             !(mozillaBrandedBrowser != null && defaultBrowser.packageName == mozillaBrandedBrowser.packageName) &&
-            defaultBrowser.packageName != packageName
-        )
+            defaultBrowser.packageName != packageName)
 
-    /**
-     * Does this device have multiple third-party browser installed?
-     */
+    /** Does this device have multiple third-party browser installed? */
     val hasMultipleThirdPartyBrowsers: Boolean
         get() {
             if (browsers.size > 1) {
@@ -171,9 +141,10 @@ class Browsers private constructor(
             }
 
             for (info in browsers.values) {
-                if (info !== defaultBrowser &&
-                    info.packageName != KnownBrowser.FIREFOX.packageName &&
-                    info.packageName != packageName
+                if (
+                    info !== defaultBrowser &&
+                        info.packageName != KnownBrowser.FIREFOX.packageName &&
+                        info.packageName != packageName
                 ) {
                     // There's at least one browser that is not *this app* or Firefox and also not the
                     // default browser.
@@ -184,24 +155,19 @@ class Browsers private constructor(
             return false
         }
 
-    /**
-     * Does this device have [browser] installed?
-     */
+    /** Does this device have [browser] installed? */
     fun isInstalled(browser: KnownBrowser): Boolean {
         return browsers.containsKey(browser.packageName)
     }
 
-    /**
-     * Does this device have browser with [packageName] installed?
-     */
+    /** Does this device have browser with [packageName] installed? */
     fun isInstalled(packageName: String): Boolean {
         return browsers.containsKey(packageName)
     }
 
     private fun findMozillaBrandedBrowser(): ActivityInfo? {
         return when {
-            browsers.containsKey(KnownBrowser.FIREFOX.packageName) ->
-                browsers[KnownBrowser.FIREFOX.packageName]
+            browsers.containsKey(KnownBrowser.FIREFOX.packageName) -> browsers[KnownBrowser.FIREFOX.packageName]
 
             browsers.containsKey(KnownBrowser.FIREFOX_BETA.packageName) ->
                 browsers[KnownBrowser.FIREFOX_BETA.packageName]
@@ -232,8 +198,7 @@ class Browsers private constructor(
 
     private fun findFirefoxBrandedBrowser(): ActivityInfo? {
         return when {
-            browsers.containsKey(KnownBrowser.FIREFOX.packageName) ->
-                browsers[KnownBrowser.FIREFOX.packageName]
+            browsers.containsKey(KnownBrowser.FIREFOX.packageName) -> browsers[KnownBrowser.FIREFOX.packageName]
 
             browsers.containsKey(KnownBrowser.FIREFOX_BETA.packageName) ->
                 browsers[KnownBrowser.FIREFOX_BETA.packageName]
@@ -291,8 +256,7 @@ class Browsers private constructor(
             intent.setPackage(browser.packageName)
             intent.addCategory(Intent.CATEGORY_BROWSABLE)
 
-            val info = packageManager.resolveActivityCompat(intent, PackageManager.MATCH_DEFAULT_ONLY)
-                ?: continue
+            val info = packageManager.resolveActivityCompat(intent, PackageManager.MATCH_DEFAULT_ONLY) ?: continue
 
             if (info.activityInfo == null || !info.activityInfo.exported) {
                 continue
@@ -307,24 +271,24 @@ class Browsers private constructor(
      *
      * This can return null if there are no browsers installed or if none is set as default.
      *
-     * @param context Android [Context] used for querying other installed browsers and checking if
-     * **this** is the default.
+     * @param context Android [Context] used for querying other installed browsers and checking if **this** is the
+     *   default.
      * @param uri [Uri] to use for checking whether installed browsers can open.
      */
     private fun findDefault(
         context: Context,
         uri: Uri,
     ): ActivityInfo? {
-        val resolveInfo = findDefaultBrowserInfo(context, uri)
-            ?: return null
+        val resolveInfo = findDefaultBrowserInfo(context, uri) ?: return null
 
         if (resolveInfo.activityInfo == null || !resolveInfo.activityInfo.exported) {
             // We are not allowed to launch this activity.
             return null
         }
 
-        return if (!browsers.containsKey(resolveInfo.activityInfo.packageName) &&
-            resolveInfo.activityInfo.packageName != context.packageName
+        return if (
+            !browsers.containsKey(resolveInfo.activityInfo.packageName) &&
+                resolveInfo.activityInfo.packageName != context.packageName
         ) {
             // This default browser wasn't returned when we asked for *all* browsers. It's likely
             // that this is actually the resolver activity (aka intent chooser). Let's ignore it.
@@ -335,16 +299,13 @@ class Browsers private constructor(
     }
 
     companion object {
-        @VisibleForTesting
-        internal const val SAMPLE_BROWSER_HTTP_URL = "http://www.mozilla.org/index.html"
+        @VisibleForTesting internal const val SAMPLE_BROWSER_HTTP_URL = "http://www.mozilla.org/index.html"
         private const val SAMPLE_BROWSER_HTTPS_URL = "https://www.mozilla.org/index.html"
 
         // Sample URL handled by traditional web browsers. Used to find installed (basic) web browsers.
         private val SAMPLE_BROWSER_URI = SAMPLE_BROWSER_HTTP_URL.toUri()
 
-        /**
-         * Returns `true` is the provided [packageName] matches a known browser.
-         */
+        /** Returns `true` is the provided [packageName] matches a known browser. */
         fun isBrowser(packageName: String): Boolean {
             return KnownBrowser.entries.firstOrNull { browser ->
                 browser.packageName == packageName
@@ -354,8 +315,8 @@ class Browsers private constructor(
         /**
          * Is **this** application the default browser?
          *
-         * @param context Android [Context] used for querying other installed browsers and checking if
-         * **this** is the default.
+         * @param context Android [Context] used for querying other installed browsers and checking if **this** is the
+         *   default.
          */
         fun isDefaultBrowser(context: Context): Boolean {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -369,9 +330,7 @@ class Browsers private constructor(
             return defaultBrowserInfo?.activityInfo?.packageName == context.packageName
         }
 
-        /**
-         * Collect information about all installed browsers and return a [Browsers] object containing that data.
-         */
+        /** Collect information about all installed browsers and return a [Browsers] object containing that data. */
         fun all(context: Context): Browsers = Browsers(context, SAMPLE_BROWSER_URI)
 
         /**
@@ -382,6 +341,7 @@ class Browsers private constructor(
 
         /**
          * Finds all the [ResolveInfo] for the installed browsers.
+         *
          * @return A list of all [ResolveInfo] for the installed browsers.
          */
         fun findResolvers(
@@ -394,16 +354,14 @@ class Browsers private constructor(
 
             val flag = PackageManager.MATCH_ALL
 
-            val httpResults = packageManager.queryIntentActivitiesCompat(httpIntent, flag)
-                .filter {
-                    it.activityInfo.exported &&
-                        (includeThisApp || it.activityInfo.packageName != context.packageName)
+            val httpResults =
+                packageManager.queryIntentActivitiesCompat(httpIntent, flag).filter {
+                    it.activityInfo.exported && (includeThisApp || it.activityInfo.packageName != context.packageName)
                 }
 
-            val httpsResults = packageManager.queryIntentActivitiesCompat(httpsIntent, flag)
-                .filter {
-                    it.activityInfo.exported &&
-                        (includeThisApp || it.activityInfo.packageName != context.packageName)
+            val httpsResults =
+                packageManager.queryIntentActivitiesCompat(httpsIntent, flag).filter {
+                    it.activityInfo.exported && (includeThisApp || it.activityInfo.packageName != context.packageName)
                 }
 
             // There apps that have the same activityInfo.name to make it unique we
@@ -413,6 +371,7 @@ class Browsers private constructor(
 
         /**
          * Finds all the [ResolveInfo] for the installed browsers that can handle the specified URL [url].
+         *
          * @return A list of all [ResolveInfo] that correspond to the given [url].
          */
         fun findResolvers(
@@ -423,20 +382,17 @@ class Browsers private constructor(
             contentType: String? = null,
         ): List<ResolveInfo> {
             val uri = url.toUri()
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                if (contentType != null) setDataAndTypeAndNormalize(uri, contentType) else data = uri
-                addCategory(Intent.CATEGORY_BROWSABLE)
-            }
+            val intent =
+                Intent(Intent.ACTION_VIEW).apply {
+                    if (contentType != null) setDataAndTypeAndNormalize(uri, contentType) else data = uri
+                    addCategory(Intent.CATEGORY_BROWSABLE)
+                }
 
             val flag = PackageManager.MATCH_ALL
 
-            return packageManager.queryIntentActivitiesCompat(intent, flag)
-                .filter {
-                    it.activityInfo.exported && (
-                        includeThisApp ||
-                            it.activityInfo.packageName != context.packageName
-                        )
-                }
+            return packageManager.queryIntentActivitiesCompat(intent, flag).filter {
+                it.activityInfo.exported && (includeThisApp || it.activityInfo.packageName != context.packageName)
+            }
         }
 
         private fun findDefaultBrowserInfo(context: Context, uri: Uri = SAMPLE_BROWSER_URI): ResolveInfo? {

@@ -8,6 +8,7 @@ import android.app.assist.AssistStructure
 import android.content.Context
 import android.service.autofill.FillRequest
 import android.service.autofill.FillResponse
+import kotlin.math.min
 import mozilla.components.feature.autofill.AutofillConfiguration
 import mozilla.components.feature.autofill.facts.emitAutofillRequestFact
 import mozilla.components.feature.autofill.response.dataset.DatasetBuilder
@@ -19,23 +20,20 @@ import mozilla.components.feature.autofill.structure.ParsedStructure
 import mozilla.components.feature.autofill.structure.RawStructure
 import mozilla.components.feature.autofill.structure.getLookupDomain
 import mozilla.components.feature.autofill.structure.parseStructure
-import kotlin.math.min
 
 internal const val EXTRA_LOGIN_ID = "loginId"
 
 // Maximum number of logins we are going to display in the autofill overlay.
 internal const val MAX_LOGINS = 10
 
-/**
- * Class responsible for handling [FillRequest]s and returning [FillResponse]s.
- */
+/** Class responsible for handling [FillRequest]s and returning [FillResponse]s. */
 internal class FillRequestHandler(
     private val context: Context,
     private val configuration: AutofillConfiguration,
 ) {
     /**
-     * Handles a fill request for the given [AssistStructure] and returns a matching [FillResponse]
-     * or `null` if the request could not be handled or the passed in [AssistStructure] is `null`.
+     * Handles a fill request for the given [AssistStructure] and returns a matching [FillResponse] or `null` if the
+     * request could not be handled or the passed in [AssistStructure] is `null`.
      */
     @Suppress("ReturnCount")
     suspend fun handle(
@@ -57,15 +55,14 @@ internal class FillRequestHandler(
         maxSuggestionCount: Int = MAX_LOGINS,
     ): FillResponseBuilder {
         val lookupDomain = parsedStructure.getLookupDomain(configuration.publicSuffixList)
-        val needsConfirmation = !configuration.verifier.hasCredentialRelationship(
-            context,
-            lookupDomain,
-            parsedStructure.packageName,
-        )
+        val needsConfirmation =
+            !configuration.verifier.hasCredentialRelationship(
+                context,
+                lookupDomain,
+                parsedStructure.packageName,
+            )
 
-        val logins = configuration.storage
-            .getByBaseDomain(lookupDomain)
-            .take(min(MAX_LOGINS, maxSuggestionCount))
+        val logins = configuration.storage.getByBaseDomain(lookupDomain).take(min(MAX_LOGINS, maxSuggestionCount))
 
         return if (!configuration.lock.keepUnlocked() && !forceUnlock) {
             AuthFillResponseBuilder(parsedStructure, maxSuggestionCount)
@@ -76,9 +73,8 @@ internal class FillRequestHandler(
     }
 
     /**
-     * Handles a fill request for the given [RawStructure] and returns only a [DatasetBuilder] for
-     * the given [loginId] -  or `null` if the request could not be handled or the passed in
-     * [RawStructure] is `null`
+     * Handles a fill request for the given [RawStructure] and returns only a [DatasetBuilder] for the given [loginId] -
+     * or `null` if the request could not be handled or the passed in [RawStructure] is `null`
      */
     @Suppress("ReturnCount")
     suspend fun handleConfirmation(structure: RawStructure?, loginId: String): DatasetBuilder? {

@@ -405,14 +405,18 @@ nsDragSession::GetNumDropItems(uint32_t* aNumItems) {
   FORMATETC fe2;
   SET_FORMATETC(fe2, CF_HDROP, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
   if (SUCCEEDED(mDataObject->QueryGetData(&fe2))) {
-    STGMEDIUM stm;
+    STGMEDIUM stm{};
     if (FAILED(mDataObject->GetData(&fe2, &stm))) {
       *aNumItems = 1;
       return NS_OK;
     }
     HDROP hdrop = static_cast<HDROP>(GlobalLock(stm.hGlobal));
     MOZ_ASSERT(hdrop != NULL);
-    *aNumItems = ::DragQueryFileW(hdrop, 0xFFFFFFFF, nullptr, 0);
+    // Let the per-item read fail in nsClipboard::GetNativeDataOffClipboard
+    // instead of returning an error and failing the drag session.
+    *aNumItems = nsClipboard::IsValidDropFilesData(stm.hGlobal)
+                     ? ::DragQueryFileW(hdrop, 0xFFFFFFFF, nullptr, 0)
+                     : 0;
     ::GlobalUnlock(stm.hGlobal);
     ::ReleaseStgMedium(&stm);
     // Data may be provided later, so assume we have 1 item
@@ -424,7 +428,7 @@ nsDragSession::GetNumDropItems(uint32_t* aNumItems) {
   // Next check if we have a virtual file drop.
   SET_FORMATETC(fe2, nsClipboard::GetClipboardFileDescriptorFormatW(), 0,
                 DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
-  STGMEDIUM stm;
+  STGMEDIUM stm{};
 
   if (SUCCEEDED(mDataObject->GetData(&fe2, &stm))) {
     *aNumItems = 0;

@@ -74,7 +74,7 @@ test_newtab({
       "'Dismiss' is the last item in the context menu list"
     );
 
-    contextMenuItems[5].querySelector("button").click();
+    contextMenuItems[5].click();
 
     // Wait for the topsite to be dismissed and the second one to replace it
     await ContentTaskUtils.waitForCondition(
@@ -112,7 +112,7 @@ test_newtab({
     );
 
     // Unpin
-    contextMenuItems[0].querySelector("button").click();
+    contextMenuItems[0].click();
 
     await ContentTaskUtils.waitForCondition(
       () => content.document.querySelectorAll(siteSelector).length === 1,

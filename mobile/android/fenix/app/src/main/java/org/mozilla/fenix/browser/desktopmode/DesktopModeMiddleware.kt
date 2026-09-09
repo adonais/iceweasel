@@ -20,8 +20,7 @@ import org.mozilla.fenix.GleanMetrics.DesktopMode
  * [Middleware] for handling side effects related to the Desktop Mode feature.
  *
  * @param scope [CoroutineScope] used for writing settings changes to disk.
- * @param repository [DesktopModeRepository] used to interact with the desktop mode preference.
- * feature is enabled.
+ * @param repository [DesktopModeRepository] used to interact with the desktop mode preference. feature is enabled.
  */
 class DesktopModeMiddleware(
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
@@ -39,9 +38,7 @@ class DesktopModeMiddleware(
             InitAction -> {
                 scope.launch {
                     store.dispatch(
-                        DefaultDesktopModeAction.DesktopModeUpdated(
-                            newValue = repository.getDesktopBrowsingEnabled(),
-                        ),
+                        DefaultDesktopModeAction.DesktopModeUpdated(newValue = repository.getDesktopBrowsingEnabled())
                     )
                 }
             }
@@ -53,15 +50,9 @@ class DesktopModeMiddleware(
 
                     if (!preferenceWriteSucceeded) {
                         // If the preference write fails, revert the state change.
-                        store.dispatch(
-                            DefaultDesktopModeAction.DesktopModeUpdated(
-                                newValue = !updatedDesktopMode,
-                            ),
-                        )
+                        store.dispatch(DefaultDesktopModeAction.DesktopModeUpdated(newValue = !updatedDesktopMode))
                     } else if (updatedDesktopMode) {
-                        DesktopMode.settingsAlwaysRequestDesktopSite.record(
-                            NoExtras(),
-                        )
+                        DesktopMode.settingsAlwaysRequestDesktopSite.record(NoExtras())
                     }
                 }
             }

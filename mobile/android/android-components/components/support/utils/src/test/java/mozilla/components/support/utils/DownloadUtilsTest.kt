@@ -24,8 +24,14 @@ class DownloadUtilsTest {
         assertEquals("attachment; filename=foo.pdf;", DownloadUtils.makePdfContentDisposition("foo"))
         assertEquals("attachment; filename=foo.html.pdf;", DownloadUtils.makePdfContentDisposition("foo.html"))
         assertEquals("attachment; filename=foo.pdf;", DownloadUtils.makePdfContentDisposition("foo.pdf"))
-        assertEquals("attachment; filename=${"a".repeat(251)}.pdf;", DownloadUtils.makePdfContentDisposition("a".repeat(260)))
-        assertEquals("attachment; filename=${"a".repeat(251)}.pdf;", DownloadUtils.makePdfContentDisposition("a".repeat(260) + ".pdf"))
+        assertEquals(
+            "attachment; filename=${"a".repeat(251)}.pdf;",
+            DownloadUtils.makePdfContentDisposition("a".repeat(260)),
+        )
+        assertEquals(
+            "attachment; filename=${"a".repeat(251)}.pdf;",
+            DownloadUtils.makePdfContentDisposition("a".repeat(260) + ".pdf"),
+        )
     }
 
     @Test
@@ -64,7 +70,8 @@ class DownloadUtilsTest {
             Pair("multi.dot.filename", "superlongextension"),
             DownloadUtils.truncateFileName("multi.dot.filename", "superlongextension", path),
         )
-        // When a full multi-dot file name length is too long and the extension is too long, only keep what is before the first dot
+        // When a full multi-dot file name length is too long and the extension is too long, only keep what is before
+        // the first dot
         assertEquals(
             Pair("a".repeat(100), ""),
             DownloadUtils.truncateFileName("${"a".repeat(100)}.${"b".repeat(100)}", "c".repeat(100), customPath),

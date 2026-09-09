@@ -31,10 +31,19 @@ class ActivityTest {
         val window = activity.window
 
         // Turn off Keep Screen on Flag if it is on
-        if (shadowOf(window).getFlag(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)) window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        if (shadowOf(window).getFlag(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)) {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
 
         // Make sure that System UI flags are not set before the test
-        val flags = arrayOf(View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION, View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN, View.SYSTEM_UI_FLAG_HIDE_NAVIGATION, View.SYSTEM_UI_FLAG_FULLSCREEN, View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
+        val flags =
+            arrayOf(
+                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION,
+                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN,
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION,
+                View.SYSTEM_UI_FLAG_FULLSCREEN,
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY,
+            )
         if (flags.any { f -> (window.decorView.systemUiVisibility and f) == f }) {
             window.decorView.systemUiVisibility = 0
         }
@@ -52,9 +61,7 @@ class ActivityTest {
         val activity = mockk<Activity>()
 
         assertThrows(IllegalArgumentException::class.java) {
-            activity.getNavDirections(
-                BrowserDirection.FromGlobal,
-            )
+            activity.getNavDirections(BrowserDirection.FromGlobal)
         }
     }
 
@@ -86,12 +93,11 @@ class ActivityTest {
         // We don't hardcode a packageName in here because the value changes based on the variant
         // that we run these from (e.g. debug, beta)
         val dummyActivity = Robolectric.buildActivity(Activity::class.java).create().get()
-        val intent = Intent().apply {
-            putExtra(EXTRA_ACTIVITY_REFERRER_PACKAGE, dummyActivity.packageName)
-        }
-        val activity = Robolectric.buildActivity(Activity::class.java, intent)
-            .create()
-            .get()
+        val intent =
+            Intent().apply {
+                putExtra(EXTRA_ACTIVITY_REFERRER_PACKAGE, dummyActivity.packageName)
+            }
+        val activity = Robolectric.buildActivity(Activity::class.java, intent).create().get()
 
         assertTrue(activity.isIntentInternal())
     }

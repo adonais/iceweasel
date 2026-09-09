@@ -15,36 +15,33 @@ import org.mozilla.fenix.ui.efficiency.helpers.PageContext
 /**
  * ElementLoadParameterizedTest
  *
- * - Each Case carries a label, a TestRail id, a page selector (PageContext.() -> BasePage),
- *   and an optional human-readable `state` string.
+ * - Each Case carries a label, a TestRail id, a page selector (PageContext.() -> BasePage), and an optional
+ *   human-readable `state` string.
  *
  * - The `data()` companion provides two ways to control the `state`:
- *   1) Hard-coded per-case `state` values for quick local clarity.
- *   2) A run-level stamp read from `-DtestRunState="..."` (System property) so CI/CLI
- *      can stamp an entire run without modifying source.
+ *     1) Hard-coded per-case `state` values for quick local clarity.
+ *     2) A run-level stamp read from `-DtestRunState="..."` (System property) so CI/CLI can stamp an entire run without
+ *        modifying source.
  *
  * Design notes (why this shape helps future automation):
- * - Keeping `page` as a lambda `(PageContext) -> BasePage` lets us avoid per-page
- *   boilerplate wrappers. We can later generate these lambdas automatically by
- *   reflecting over PageContext properties.
+ * - Keeping `page` as a lambda `(PageContext) -> BasePage` lets us avoid per-page boilerplate wrappers. We can later
+ *   generate these lambdas automatically by reflecting over PageContext properties.
  *
- * - The simple `state: String` is intentionally small and serializable to the test name
- *   so it appears directly in the JUnit XML. Later we can replace `state: String` with
- *   a richer object (flags/enum) and still keep the same instrumentation for reporting.
+ * - The simple `state: String` is intentionally small and serializable to the test name so it appears directly in the
+ *   JUnit XML. Later we can replace `state: String` with a richer object (flags/enum) and still keep the same
+ *   instrumentation for reporting.
  *
  * - For CI-driven permutations:
- *     * A helper can enumerate "pages" (via reflection on PageContext or scanning page classes)
- *     * Another helper can enumerate "states" (feature flags, browser modes, user types)
- *     * A permutation generator produces Cases = Cartesian(product(pages, states))
- *     * Add pruning rules to avoid impossible or low-value combos
+ *         * A helper can enumerate "pages" (via reflection on PageContext or scanning page classes)
+ *         * Another helper can enumerate "states" (feature flags, browser modes, user types)
+ *         * A permutation generator produces Cases = Cartesian(product(pages, states))
+ *         * Add pruning rules to avoid impossible or low-value combos
  *
- * - Because the test name includes the state, TestRail/reporting mapping is straightforward:
- *   each test case name will include the Testrail ID and the exact state string used.
+ * - Because the test name includes the state, TestRail/reporting mapping is straightforward: each test case name will
+ *   include the Testrail ID and the exact state string used.
  */
 @RunWith(Parameterized::class)
-class ElementLoadParameterizedTest(
-    private val case: Case,
-) : BaseTest() {
+class ElementLoadParameterizedTest(private val case: Case) : BaseTest() {
 
     data class Case(
         val label: String,
@@ -61,20 +58,19 @@ class ElementLoadParameterizedTest(
          * Parameter provider.
          *
          * Behavior:
-         *  - If a run-level system property `testRunState` is provided when running Gradle,
-         *    it will be used as the `state` for cases that do not specify an explicit state.
+         * - If a run-level system property `testRunState` is provided when running Gradle, it will be used as the
+         *   `state` for cases that do not specify an explicit state.
          *
-         * Usage:
-         *  ./gradlew connectedDebugAndroidTest \
-         *    -Pandroid.testInstrumentationRunnerArguments.class=org.mozilla.fenix.ui.efficiency.devtools.ElementLoadParameterizedTest \
-         *    -DtestRunState="Compose Redesign | Browser=Default"
+         * Usage: ./gradlew connectedDebugAndroidTest \
+         * -Pandroid.testInstrumentationRunnerArguments.class=org.mozilla.fenix.ui.efficiency.devtools.ElementLoadParameterizedTest
+         * \ -DtestRunState="Compose Redesign | Browser=Default"
          *
          * Notes for future dynamic generation:
-         *  - Replace the static `listOf(...)` below with a generator function that:
-         *      1) Reflects PageContext properties (e.g., PageContext::home, PageContext::bookmarks)
-         *      2) Reflects available states (list of feature flags / browser modes / user types)
-         *      3) Produces permutations and returns them as List<Case>
-         *  - Add a pruning function to drop low-value or impossible permutations.
+         * - Replace the static `listOf(...)` below with a generator function that:
+         *     1) Reflects PageContext properties (e.g., PageContext::home, PageContext::bookmarks)
+         *     2) Reflects available states (list of feature flags / browser modes / user types)
+         *     3) Produces permutations and returns them as List<Case>
+         * - Add a pruning function to drop low-value or impossible permutations.
          */
         @JvmStatic
         @Parameterized.Parameters(name = "{index}: {0}")
@@ -84,34 +80,35 @@ class ElementLoadParameterizedTest(
 
             // Hard-coded cases for now — simple and explicit
             // Note: page lambdas refer to PageContext properties and avoid wrappers.
-            val cases = listOf(
-                Case(
-                    label = "HomePage",
-                    testRailId = "T1234",
-                    page = { home },
-                    state = runState.ifBlank { "Compose Classic | Browser=Default" },
-                ),
-                Case(
-                    label = "BookmarksPage",
-                    testRailId = "T1235",
-                    page = { bookmarks },
-                    state = runState.ifBlank { "Compose Classic | Browser=Default" },
-                ),
-                Case(
-                    label = "HistoryPage",
-                    testRailId = "T1236",
-                    page = { history },
-                    state = runState.ifBlank { "Compose Classic | Browser=Default" },
-                ),
-                // Example: explicit hard-coded state for just this case (overrides runState)
-                Case(
-                    label = "SearchBarComponent",
-                    testRailId = "T12347",
-                    page = { searchBar },
-                    state = "Compose Redesign | Browser=Default", // explicit per-case state
-                ),
-                // FUTURE: swap the above static list with a generator that reflects PageContext
-            )
+            val cases =
+                listOf(
+                    Case(
+                        label = "HomePage",
+                        testRailId = "T1234",
+                        page = { home },
+                        state = runState.ifBlank { "Compose Classic | Browser=Default" },
+                    ),
+                    Case(
+                        label = "BookmarksPage",
+                        testRailId = "T1235",
+                        page = { bookmarks },
+                        state = runState.ifBlank { "Compose Classic | Browser=Default" },
+                    ),
+                    Case(
+                        label = "HistoryPage",
+                        testRailId = "T1236",
+                        page = { history },
+                        state = runState.ifBlank { "Compose Classic | Browser=Default" },
+                    ),
+                    // Example: explicit hard-coded state for just this case (overrides runState)
+                    Case(
+                        label = "SearchBarComponent",
+                        testRailId = "T12347",
+                        page = { searchBar },
+                        state = "Compose Redesign | Browser=Default", // explicit per-case state
+                    ),
+                    // FUTURE: swap the above static list with a generator that reflects PageContext
+                )
 
             // The Parameterized runner expects a raw List/Collection of Any (static method),
             // so we ensure the type matches by mapping to Any.

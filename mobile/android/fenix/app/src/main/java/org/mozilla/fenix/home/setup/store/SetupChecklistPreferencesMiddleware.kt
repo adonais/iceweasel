@@ -35,11 +35,10 @@ class SetupChecklistPreferencesMiddleware(
         when (action) {
             is AppAction.SetupChecklistAction.Init -> {
                 coroutineScope.launch {
-                    repository.setupChecklistPreferenceUpdates
-                        .collect { preferenceUpdate ->
-                            val updateAction = mapRepoUpdateToStoreAction(preferenceUpdate)
-                            store.dispatch(updateAction)
-                        }
+                    repository.setupChecklistPreferenceUpdates.collect { preferenceUpdate ->
+                        val updateAction = mapRepoUpdateToStoreAction(preferenceUpdate)
+                        store.dispatch(updateAction)
+                    }
                 }
                 repository.init()
             }
@@ -51,18 +50,19 @@ class SetupChecklistPreferencesMiddleware(
             is AppAction.SetupChecklistAction.ChecklistItemClicked -> {
                 val item = action.item
                 if (item is ChecklistItem.Task) {
-                    val preference = when (item.type) {
-                        ChecklistItem.Task.Type.SELECT_THEME -> SetupChecklistPreference.ThemeComplete
-                        ChecklistItem.Task.Type.CHANGE_TOOLBAR_PLACEMENT -> SetupChecklistPreference.ToolbarComplete
-                        ChecklistItem.Task.Type.EXPLORE_EXTENSION -> SetupChecklistPreference.ExtensionsComplete
-                        ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET -> SetupChecklistPreference.InstallSearchWidget
+                    val preference =
+                        when (item.type) {
+                            ChecklistItem.Task.Type.SELECT_THEME -> SetupChecklistPreference.ThemeComplete
+                            ChecklistItem.Task.Type.CHANGE_TOOLBAR_PLACEMENT -> SetupChecklistPreference.ToolbarComplete
+                            ChecklistItem.Task.Type.EXPLORE_EXTENSION -> SetupChecklistPreference.ExtensionsComplete
+                            ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET ->
+                                SetupChecklistPreference.InstallSearchWidget
 
-                        // no-ops
-                        // these preferences are handled elsewhere outside of the setup checklist feature.
-                        ChecklistItem.Task.Type.SET_AS_DEFAULT,
-                        ChecklistItem.Task.Type.SIGN_IN,
-                        -> null
-                    }
+                            // no-ops
+                            // these preferences are handled elsewhere outside of the setup checklist feature.
+                            ChecklistItem.Task.Type.SET_AS_DEFAULT,
+                            ChecklistItem.Task.Type.SIGN_IN -> null
+                        }
 
                     preference?.let { repository.setPreference(it, true) }
                 }
@@ -76,30 +76,26 @@ class SetupChecklistPreferencesMiddleware(
 }
 
 @VisibleForTesting
-internal fun mapRepoUpdateToStoreAction(
-    preferenceUpdate: SetupChecklistRepository.SetupChecklistPreferenceUpdate,
-) = when (preferenceUpdate.preference) {
-    SetupChecklistPreference.SetToDefault ->
-        ChecklistItem.Task.Type.SET_AS_DEFAULT.updatedTo(preferenceUpdate)
+internal fun mapRepoUpdateToStoreAction(preferenceUpdate: SetupChecklistRepository.SetupChecklistPreferenceUpdate) =
+    when (preferenceUpdate.preference) {
+        SetupChecklistPreference.SetToDefault -> ChecklistItem.Task.Type.SET_AS_DEFAULT.updatedTo(preferenceUpdate)
 
-    SetupChecklistPreference.SignIn ->
-        ChecklistItem.Task.Type.SIGN_IN.updatedTo(preferenceUpdate)
+        SetupChecklistPreference.SignIn -> ChecklistItem.Task.Type.SIGN_IN.updatedTo(preferenceUpdate)
 
-    SetupChecklistPreference.ThemeComplete ->
-        ChecklistItem.Task.Type.SELECT_THEME.updatedTo(preferenceUpdate)
+        SetupChecklistPreference.ThemeComplete -> ChecklistItem.Task.Type.SELECT_THEME.updatedTo(preferenceUpdate)
 
-    SetupChecklistPreference.ToolbarComplete ->
-        ChecklistItem.Task.Type.CHANGE_TOOLBAR_PLACEMENT.updatedTo(preferenceUpdate)
+        SetupChecklistPreference.ToolbarComplete ->
+            ChecklistItem.Task.Type.CHANGE_TOOLBAR_PLACEMENT.updatedTo(preferenceUpdate)
 
-    SetupChecklistPreference.ExtensionsComplete ->
-        ChecklistItem.Task.Type.EXPLORE_EXTENSION.updatedTo(preferenceUpdate)
+        SetupChecklistPreference.ExtensionsComplete ->
+            ChecklistItem.Task.Type.EXPLORE_EXTENSION.updatedTo(preferenceUpdate)
 
-    SetupChecklistPreference.InstallSearchWidget ->
-        ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET.updatedTo(preferenceUpdate)
+        SetupChecklistPreference.InstallSearchWidget ->
+            ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET.updatedTo(preferenceUpdate)
 
-    SetupChecklistPreference.ShowSetupChecklist -> AppAction.SetupChecklistAction.Closed
-}
+        SetupChecklistPreference.ShowSetupChecklist -> AppAction.SetupChecklistAction.Closed
+    }
 
 private fun ChecklistItem.Task.Type.updatedTo(
-    preferenceUpdate: SetupChecklistRepository.SetupChecklistPreferenceUpdate,
+    preferenceUpdate: SetupChecklistRepository.SetupChecklistPreferenceUpdate
 ) = AppAction.SetupChecklistAction.TaskPreferenceUpdated(this, preferenceUpdate.value)

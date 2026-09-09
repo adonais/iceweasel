@@ -18,33 +18,28 @@ import mozilla.components.support.utils.toSafeIntent
  * Legacy processor for pinned websites shortcuts created by Fennec.
  * https://developer.android.com/guide/topics/ui/shortcuts/creating-shortcuts#pinned
  */
-class FennecBookmarkShortcutsIntentProcessor(
-    private val addNewTabUseCase: TabsUseCases.AddNewTabUseCase,
-) : IntentProcessor {
+class FennecBookmarkShortcutsIntentProcessor(private val addNewTabUseCase: TabsUseCases.AddNewTabUseCase) :
+    IntentProcessor {
 
-    /**
-     * Returns true if this Intent is of a Fennec pinned shortcut.
-     */
+    /** Returns true if this Intent is of a Fennec pinned shortcut. */
     private fun matches(intent: Intent): Boolean {
         return intent.toSafeIntent().action == ACTION_FENNEC_HOMESCREEN_SHORTCUT
     }
 
-    /**
-     * If this is an Intent for a Fennec pinned website shortcut
-     * prepare it for opening website's URL in a new tab.
-     */
+    /** If this is an Intent for a Fennec pinned website shortcut prepare it for opening website's URL in a new tab. */
     override fun process(intent: Intent): Boolean {
         val safeIntent = intent.toSafeIntent()
         val url = safeIntent.dataString
 
         return if (!url.isNullOrEmpty() && matches(intent)) {
-            val sessionId = addNewTabUseCase(
-                url = url,
-                flags = EngineSession.LoadUrlFlags.external(),
-                source = SessionState.Source.Internal.HomeScreen,
-                selectTab = true,
-                startLoading = true,
-            )
+            val sessionId =
+                addNewTabUseCase(
+                    url = url,
+                    flags = EngineSession.LoadUrlFlags.external(),
+                    source = SessionState.Source.Internal.HomeScreen,
+                    selectTab = true,
+                    startLoading = true,
+                )
             intent.action = ACTION_VIEW
             intent.putSessionId(sessionId)
             true
@@ -55,9 +50,7 @@ class FennecBookmarkShortcutsIntentProcessor(
 
     @VisibleForTesting
     companion object {
-        /**
-         * Fennec set action for the pinned website shortcut Intent.
-         */
+        /** Fennec set action for the pinned website shortcut Intent. */
         const val ACTION_FENNEC_HOMESCREEN_SHORTCUT = "org.mozilla.gecko.BOOKMARK"
     }
 }

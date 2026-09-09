@@ -16,19 +16,21 @@ import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsDeleteBrowsingDataSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
 
-class SettingsDeleteBrowsingDataPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
+class SettingsDeleteBrowsingDataPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) :
+    BasePage(composeRule) {
     override val pageName = "SettingsDeleteBrowsingDataPage"
 
     init {
         NavigationRegistry.register(
             from = "HomePage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
-                NavigationStep.Click(MainMenuSelectors.SETTINGS_BUTTON),
-                NavigationStep.Swipe(SettingsSelectors.DELETE_BROWSING_DATA_BUTTON),
-                NavigationStep.Click(SettingsSelectors.DELETE_BROWSING_DATA_BUTTON),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
+                    NavigationStep.Click(MainMenuSelectors.SETTINGS_BUTTON),
+                    NavigationStep.Swipe(SettingsSelectors.DELETE_BROWSING_DATA_BUTTON),
+                    NavigationStep.Click(SettingsSelectors.DELETE_BROWSING_DATA_BUTTON),
+                ),
         )
 
         // Reachable from the Settings screen too, so the page can be opened after browsing (Browser ->
@@ -36,10 +38,11 @@ class SettingsDeleteBrowsingDataPage(composeRule: AndroidComposeTestRule<HomeAct
         NavigationRegistry.register(
             from = "SettingsPage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Swipe(SettingsSelectors.DELETE_BROWSING_DATA_BUTTON),
-                NavigationStep.Click(SettingsSelectors.DELETE_BROWSING_DATA_BUTTON),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.Swipe(SettingsSelectors.DELETE_BROWSING_DATA_BUTTON),
+                    NavigationStep.Click(SettingsSelectors.DELETE_BROWSING_DATA_BUTTON),
+                ),
         )
 
         // Back out to Settings so the graph can route onward (e.g. to Home, the tab drawer or History)
@@ -71,12 +74,11 @@ class SettingsDeleteBrowsingDataPage(composeRule: AndroidComposeTestRule<HomeAct
     }
 
     /**
-     * Assert a checkbox's state, polling to a deadline. These rows are native MaterialCheckBoxes that
-     * inflate unchecked and get their real state applied a beat later as the fragment binds; the bottom
-     * "Delete browsing data" arrival anchor can be present before that settles, so a single-shot read
-     * races the bind and flakes (~1/50 on Firebase). Retrying the (single-shot) BasePage assertion keeps
-     * the wait local to this screen instead of changing the shared verb. Returns as soon as the state
-     * matches; a genuinely wrong state still fails once the deadline passes.
+     * Assert a checkbox's state, polling to a deadline. These rows are native MaterialCheckBoxes that inflate unchecked
+     * and get their real state applied a beat later as the fragment binds; the bottom "Delete browsing data" arrival
+     * anchor can be present before that settles, so a single-shot read races the bind and flakes (~1/50 on Firebase).
+     * Retrying the (single-shot) BasePage assertion keeps the wait local to this screen instead of changing the shared
+     * verb. Returns as soon as the state matches; a genuinely wrong state still fails once the deadline passes.
      */
     private fun verifyCheckBox(selector: Selector, checked: Boolean): SettingsDeleteBrowsingDataPage {
         val deadline = SystemClock.uptimeMillis() + CHECKBOX_STATE_TIMEOUT_MS

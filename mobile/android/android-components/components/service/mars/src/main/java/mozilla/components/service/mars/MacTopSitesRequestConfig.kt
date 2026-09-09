@@ -12,6 +12,4 @@ const val NEW_TAB_TILE_2_PLACEMENT_KEY = "newtab_mobile_tile_2"
  *
  * @property placements List of Ad Placement Ids to request.
  */
-data class MacTopSitesRequestConfig(
-    val placements: List<String>,
-)
+data class MacTopSitesRequestConfig(val placements: List<String>)

@@ -17,6 +17,7 @@
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/LinkStyle.h"
 #include "mozilla/dom/ReportingUtils.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/glean/DomSecurityMetrics.h"
@@ -687,11 +688,18 @@ nsCSPContext::GetAllowsInline(CSPDirective aDirective, bool aHasUnsafeHash,
     // one policy, so this check may be unnecessary.
     if (content.IsEmpty()) {
       if (aSourceText.IsVoid()) {
-        // Lazily retrieve the text of inline script, see bug 1376651.
-        nsCOMPtr<nsIScriptElement> element =
-            do_QueryInterface(aTriggeringElement);
-        MOZ_ASSERT(element);
-        element->GetScriptText(content);
+        // Lazily retrieve inline script / stylesheets, see bug 1376651.
+        if (nsCOMPtr<nsIScriptElement> element =
+                do_QueryInterface(aTriggeringElement)) {
+          element->GetScriptText(content);
+        } else if (auto* style = LinkStyle::FromNode(*aTriggeringElement)) {
+          if (!style->GetInlineSheetText(content)) {
+            // TODO: Could fall back more reasonably perhaps.
+            MOZ_CRASH("OOM when getting sheet text for CSP reporting");
+          }
+        } else {
+          MOZ_ASSERT_UNREACHABLE("No way to get the actual source text?");
+        }
       } else {
         content = aSourceText;
       }

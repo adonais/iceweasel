@@ -13,24 +13,26 @@ import mozilla.components.support.base.observer.Observable
 import mozilla.components.support.base.observer.ObserverRegistry
 
 /**
- * Closes open tabs on this device that other devices in the
- * [DeviceConstellation] have requested to close.
+ * Closes open tabs on this device that other devices in the [DeviceConstellation] have requested to close.
  *
  * @param browserStore The [BrowserStore] that holds the currently open tabs.
  */
-class CloseTabsCommandReceiver(
-    private val browserStore: BrowserStore,
-) : Observable<CloseTabsCommandReceiver.Observer> by ObserverRegistry() {
+class CloseTabsCommandReceiver(private val browserStore: BrowserStore) :
+    Observable<CloseTabsCommandReceiver.Observer> by ObserverRegistry() {
     /**
-     * Processes a [DeviceCommandIncoming.TabsClosed] command
-     * received from another device in the [DeviceConstellation].
+     * Processes a [DeviceCommandIncoming.TabsClosed] command received from another device in the [DeviceConstellation].
      *
      * @param command The received command.
      */
     fun receive(command: DeviceCommandIncoming.TabsClosed) {
         val openTabs = browserStore.state.normalTabs
         val urlsToClose = command.urls.toSet()
-        val tabsToRemove = openTabs.filter { urlsToClose.contains(it.content.url) }.ifEmpty { return }
+        val tabsToRemove =
+            openTabs
+                .filter { urlsToClose.contains(it.content.url) }
+                .ifEmpty {
+                    return
+                }
         val remainingTabsCount = openTabs.size - tabsToRemove.size
         val willCloseLastTab = tabsToRemove.any { it.id == browserStore.state.selectedTabId } && remainingTabsCount <= 0
 

@@ -20,24 +20,25 @@ class StatementRelationCheckerTest {
     fun `checks list lazily`() {
         var numYields = 0
         val target = AssetDescriptor.Web("https://mozilla.org")
-        val listFetcher = object : StatementListFetcher {
-            override fun listStatements(source: AssetDescriptor.Web) = sequence {
-                numYields = 1
-                yield(
-                    Statement(
-                        relation = Relation.USE_AS_ORIGIN,
-                        target = target,
-                    ),
-                )
-                numYields = 2
-                yield(
-                    Statement(
-                        relation = Relation.USE_AS_ORIGIN,
-                        target = target,
-                    ),
-                )
+        val listFetcher =
+            object : StatementListFetcher {
+                override fun listStatements(source: AssetDescriptor.Web) = sequence {
+                    numYields = 1
+                    yield(
+                        Statement(
+                            relation = Relation.USE_AS_ORIGIN,
+                            target = target,
+                        )
+                    )
+                    numYields = 2
+                    yield(
+                        Statement(
+                            relation = Relation.USE_AS_ORIGIN,
+                            target = target,
+                        )
+                    )
+                }
             }
-        }
 
         val checker = StatementRelationChecker(listFetcher)
         assertEquals(0, numYields)
@@ -54,14 +55,16 @@ class StatementRelationCheckerTest {
     @Test
     fun `fails if relation does not match`() {
         val target = AssetDescriptor.Android("com.test", "AA:BB")
-        val listFetcher = object : StatementListFetcher {
-            override fun listStatements(source: AssetDescriptor.Web) = sequenceOf(
-                Statement(
-                    relation = Relation.USE_AS_ORIGIN,
-                    target = target,
-                ),
-            )
-        }
+        val listFetcher =
+            object : StatementListFetcher {
+                override fun listStatements(source: AssetDescriptor.Web) =
+                    sequenceOf(
+                        Statement(
+                            relation = Relation.USE_AS_ORIGIN,
+                            target = target,
+                        )
+                    )
+            }
 
         val checker = StatementRelationChecker(listFetcher)
         assertFalse(checker.checkRelationship(mock(), Relation.HANDLE_ALL_URLS, target))
@@ -70,18 +73,20 @@ class StatementRelationCheckerTest {
     @Test
     fun `fails if target does not match`() {
         val target = AssetDescriptor.Web("https://mozilla.org")
-        val listFetcher = object : StatementListFetcher {
-            override fun listStatements(source: AssetDescriptor.Web) = sequenceOf(
-                Statement(
-                    relation = Relation.HANDLE_ALL_URLS,
-                    target = AssetDescriptor.Web("https://mozilla.com"),
-                ),
-                Statement(
-                    relation = Relation.HANDLE_ALL_URLS,
-                    target = AssetDescriptor.Web("http://mozilla.org"),
-                ),
-            )
-        }
+        val listFetcher =
+            object : StatementListFetcher {
+                override fun listStatements(source: AssetDescriptor.Web) =
+                    sequenceOf(
+                        Statement(
+                            relation = Relation.HANDLE_ALL_URLS,
+                            target = AssetDescriptor.Web("https://mozilla.com"),
+                        ),
+                        Statement(
+                            relation = Relation.HANDLE_ALL_URLS,
+                            target = AssetDescriptor.Web("http://mozilla.org"),
+                        ),
+                    )
+            }
 
         val checker = StatementRelationChecker(listFetcher)
         assertFalse(checker.checkRelationship(mock(), Relation.HANDLE_ALL_URLS, target))

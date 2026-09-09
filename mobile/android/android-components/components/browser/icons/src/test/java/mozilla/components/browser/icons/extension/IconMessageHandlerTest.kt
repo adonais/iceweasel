@@ -6,6 +6,7 @@ package mozilla.components.browser.icons.extension
 
 import android.graphics.Bitmap
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
@@ -29,7 +30,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.verify
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class IconMessageHandlerTest {
@@ -42,13 +42,8 @@ class IconMessageHandlerTest {
             val icon = Icon(bitmap, source = Icon.Source.DOWNLOAD)
             val deferredIcon = GlobalScope.async { icon }
 
-            val store: BrowserStore = BrowserStore(
-                BrowserState(
-                    tabs = listOf(
-                        createTab(url = "https://www.theverge.com/", id = "test-url"),
-                    ),
-                ),
-            )
+            val store: BrowserStore =
+                BrowserStore(BrowserState(tabs = listOf(createTab(url = "https://www.theverge.com/", id = "test-url"))))
 
             store.state.findTab("test-url")!!.apply {
                 assertNotNull(this)
@@ -60,71 +55,73 @@ class IconMessageHandlerTest {
 
             val handler = IconMessageHandler(store, "test-url", false, icons)
 
-            val message = """
-            {
-              "url": "https:\/\/www.theverge.com\/",
-              "icons": [
+            val message =
+                """
                 {
-                  "mimeType": "image\/png",
-                  "href": "https:\/\/cdn.vox-cdn.com\/uploads\/chorus_asset\/file\/7395367\/favicon-16x16.0.png",
-                  "type": "icon",
-                  "sizes": [
-                    "16x16"
+                  "url": "https:\/\/www.theverge.com\/",
+                  "icons": [
+                    {
+                      "mimeType": "image\/png",
+                      "href": "https:\/\/cdn.vox-cdn.com\/uploads\/chorus_asset\/file\/7395367\/favicon-16x16.0.png",
+                      "type": "icon",
+                      "sizes": [
+                        "16x16"
+                      ]
+                    },
+                    {
+                      "mimeType": "image\/png",
+                      "href": "https:\/\/cdn.vox-cdn.com\/uploads\/chorus_asset\/file\/7395363\/favicon-32x32.0.png",
+                      "type": "icon",
+                      "sizes": [
+                        "32x32"
+                      ]
+                    },
+                    {
+                      "mimeType": "image\/png",
+                      "href": "https:\/\/cdn.vox-cdn.com\/uploads\/chorus_asset\/file\/7395365\/favicon-96x96.0.png",
+                      "type": "icon",
+                      "sizes": [
+                        "96x96"
+                      ]
+                    },
+                    {
+                      "mimeType": "image\/png",
+                      "href": "https:\/\/cdn.vox-cdn.com\/uploads\/chorus_asset\/file\/7395351\/android-chrome-192x192.0.png",
+                      "type": "icon",
+                      "sizes": [
+                        "192x192"
+                      ]
+                    },
+                    {
+                      "mimeType": "",
+                      "href": "https:\/\/cdn.vox-cdn.com\/uploads\/chorus_asset\/file\/7395361\/favicon-64x64.0.ico",
+                      "type": "shortcut icon",
+                      "sizes": []
+                    },
+                    {
+                      "mimeType": "",
+                      "href": "https:\/\/cdn.vox-cdn.com\/uploads\/chorus_asset\/file\/7395359\/ios-icon.0.png",
+                      "type": "apple-touch-icon",
+                      "sizes": [
+                        "180x180"
+                      ]
+                    },
+                    {
+                      "href": "https:\/\/cdn.vox-cdn.com\/uploads\/chorus_asset\/file\/9672633\/VergeOG.0_1200x627.0.png",
+                      "type": "og:image"
+                    },
+                    {
+                      "href": "https:\/\/cdn.vox-cdn.com\/community_logos\/52803\/VER_Logomark_175x92..png",
+                      "type": "twitter:image"
+                    },
+                    {
+                      "href": "https:\/\/cdn.vox-cdn.com\/uploads\/chorus_asset\/file\/7396113\/221a67c8-a10f-11e6-8fae-983107008690.0.png",
+                      "type": "msapplication-TileImage"
+                    }
                   ]
-                },
-                {
-                  "mimeType": "image\/png",
-                  "href": "https:\/\/cdn.vox-cdn.com\/uploads\/chorus_asset\/file\/7395363\/favicon-32x32.0.png",
-                  "type": "icon",
-                  "sizes": [
-                    "32x32"
-                  ]
-                },
-                {
-                  "mimeType": "image\/png",
-                  "href": "https:\/\/cdn.vox-cdn.com\/uploads\/chorus_asset\/file\/7395365\/favicon-96x96.0.png",
-                  "type": "icon",
-                  "sizes": [
-                    "96x96"
-                  ]
-                },
-                {
-                  "mimeType": "image\/png",
-                  "href": "https:\/\/cdn.vox-cdn.com\/uploads\/chorus_asset\/file\/7395351\/android-chrome-192x192.0.png",
-                  "type": "icon",
-                  "sizes": [
-                    "192x192"
-                  ]
-                },
-                {
-                  "mimeType": "",
-                  "href": "https:\/\/cdn.vox-cdn.com\/uploads\/chorus_asset\/file\/7395361\/favicon-64x64.0.ico",
-                  "type": "shortcut icon",
-                  "sizes": []
-                },
-                {
-                  "mimeType": "",
-                  "href": "https:\/\/cdn.vox-cdn.com\/uploads\/chorus_asset\/file\/7395359\/ios-icon.0.png",
-                  "type": "apple-touch-icon",
-                  "sizes": [
-                    "180x180"
-                  ]
-                },
-                {
-                  "href": "https:\/\/cdn.vox-cdn.com\/uploads\/chorus_asset\/file\/9672633\/VergeOG.0_1200x627.0.png",
-                  "type": "og:image"
-                },
-                {
-                  "href": "https:\/\/cdn.vox-cdn.com\/community_logos\/52803\/VER_Logomark_175x92..png",
-                  "type": "twitter:image"
-                },
-                {
-                  "href": "https:\/\/cdn.vox-cdn.com\/uploads\/chorus_asset\/file\/7396113\/221a67c8-a10f-11e6-8fae-983107008690.0.png",
-                  "type": "msapplication-TileImage"
                 }
-              ]
-            }
-            """.trimIndent()
+                """
+                    .trimIndent()
 
             handler.onMessage(JSONObject(message), source = null)
 
@@ -165,7 +162,10 @@ class IconMessageHandlerTest {
 
             with(request.resources[3]) {
                 assertEquals("image/png", mimeType)
-                assertEquals("https://cdn.vox-cdn.com/uploads/chorus_asset/file/7395351/android-chrome-192x192.0.png", url)
+                assertEquals(
+                    "https://cdn.vox-cdn.com/uploads/chorus_asset/file/7395351/android-chrome-192x192.0.png",
+                    url,
+                )
                 assertEquals(IconRequest.Resource.Type.FAVICON, type)
                 assertEquals(1, sizes.size)
                 assertEquals(Size(192, 192), sizes[0])
@@ -202,7 +202,10 @@ class IconMessageHandlerTest {
 
             with(request.resources[8]) {
                 assertNull(mimeType)
-                assertEquals("https://cdn.vox-cdn.com/uploads/chorus_asset/file/7396113/221a67c8-a10f-11e6-8fae-983107008690.0.png", url)
+                assertEquals(
+                    "https://cdn.vox-cdn.com/uploads/chorus_asset/file/7396113/221a67c8-a10f-11e6-8fae-983107008690.0.png",
+                    url,
+                )
                 assertEquals(IconRequest.Resource.Type.MICROSOFT_TILE, type)
                 assertEquals(0, sizes.size)
             }

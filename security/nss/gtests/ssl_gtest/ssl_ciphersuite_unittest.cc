@@ -489,8 +489,8 @@ struct SecStatusParams {
   int keySize;
 };
 
-inline std::ostream &operator<<(std::ostream &stream,
-                                const SecStatusParams &vals) {
+inline std::ostream& operator<<(std::ostream& stream,
+                                const SecStatusParams& vals) {
   SSLCipherSuiteInfo csinfo;
   SECStatus rv =
       SSL_GetCipherSuiteInfo(vals.cipher_suite, &csinfo, sizeof(csinfo));
@@ -522,11 +522,11 @@ TEST_P(SecurityStatusTest, CheckSecurityStatus) {
   ConnectAndCheckCipherSuite();
 
   int on;
-  char *cipher;
+  char* cipher;
   int keySize;
   int secretKeySize;
-  char *issuer;
-  char *subject;
+  char* issuer;
+  char* subject;
   EXPECT_EQ(SECSuccess,
             SSL_SecurityStatus(client_->ssl_fd(), &on, &cipher, &keySize,
                                &secretKeySize, &issuer, &subject));

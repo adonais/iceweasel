@@ -45,6 +45,40 @@ export const MONITOR_PROMPT_VERSION = String(
 export const MONITOR_AGENTS_CHANGED_TOPIC =
   "smartwindow-monitor-agents-changed";
 
+// Failure categories for monitor runs. Stored on error history entries as
+// errorCode for the UI and reused as the telemetry error_code.
+export const MONITOR_ERROR_CODES = Object.freeze({
+  NETWORK: "network_error",
+  TIMEOUT: "timeout",
+  RATE_LIMIT: "rate_limit",
+  AUTH: "auth_error",
+  CONTENT_EXTRACTION: "content_extraction_error",
+  CANCELED: "canceled",
+  INTERRUPTED: "interrupted",
+  MODEL: "model_error",
+  PROMPT_LOAD: "prompt_load_error",
+  UNKNOWN: "unknown_error",
+});
+
+/**
+ * Error thrown by monitor runs that already know their failure category,
+ * so it doesn't have to be guessed from the message afterwards.
+ */
+export class MonitorRunError extends Error {
+  /**
+   * @param {string} code - One of MONITOR_ERROR_CODES.
+   * @param {string} message
+   * @param {object} [options]
+   * @param {Error} [options.cause] - The original error being wrapped, kept
+   *   attached for debugging.
+   */
+  constructor(code, message, options) {
+    super(message, options);
+    this.name = "MonitorRunError";
+    this.code = code;
+  }
+}
+
 const MONITOR_RESULT_SCHEMA = {
   type: "object",
   additionalProperties: false,
@@ -70,6 +104,8 @@ export class Monitor {
   #running = false;
   #disposed = false;
   #abortController = null;
+  #snapshotCapture = null;
+  #snapshotAbortController = null;
 
   /**
    * @param {object} options
@@ -86,6 +122,10 @@ export class Monitor {
    * @param {string} [options.lastRunTime] - Last run timestamp.
    * @param {string} [options.nextRunTime] - Next run timestamp.
    * @param {object[]} [options.history] - Saved monitor history entries.
+   * @param {{ capturedAt: string, pageContent: string }} [options.initialSnapshot] -
+   *   Page content extracted when the monitor was created, used as the
+   *   baseline for change detection. The page content covers all watch URLs
+   *   in the same concatenated format as run-time extraction.
    */
   constructor({
     id = crypto.randomUUID(),
@@ -100,6 +140,7 @@ export class Monitor {
     lastRunTime,
     nextRunTime,
     history = [],
+    initialSnapshot = null,
   } = {}) {
     // validate the schedule is an actual schedule object and not a serialized object
     if (!schedule?.getNextRunTime) {
@@ -124,6 +165,7 @@ export class Monitor {
     this.nextRunTime =
       nextRunTime ?? schedule.getNextRunTime(lastRunTime).toISOString();
     this.history = Array.isArray(history) ? history : [];
+    this.initialSnapshot = initialSnapshot;
 
     // final verification that the monitor is valid
     if (!this.id || !this.monitorPrompt || !this.watchUrls.length) {
@@ -153,6 +195,7 @@ export class Monitor {
       lastRunTime: savedMonitor.lastRunTime,
       nextRunTime: savedMonitor.nextRunTime,
       history: normalizeLoadedHistory(savedMonitor.history),
+      initialSnapshot: savedMonitor.initialSnapshot ?? null,
     });
   }
 
@@ -225,6 +268,7 @@ export class Monitor {
     } catch (error) {
       historyEntry.status = "error";
       historyEntry.resultExplanation = error.message || String(error);
+      historyEntry.errorCode = monitorErrorCode(error, timedOut);
     } finally {
       this.lastRunTime = checkedAt.toISOString();
       this.nextRunTime = this.schedule
@@ -246,9 +290,7 @@ export class Monitor {
           manual,
           MONITOR_PROMPT_VERSION,
           historyEntry.status === "error",
-          historyEntry.status === "error"
-            ? categorizeError(historyEntry.resultExplanation)
-            : null
+          historyEntry.errorCode ?? null
         );
       }
     }
@@ -274,6 +316,27 @@ export class Monitor {
       { flowId }
     );
 
+    // Backfill the baseline for monitors without one (created before
+    // snapshots existed, or the creation-time capture failed). The first
+    // successful run then becomes the comparison baseline.
+    let initialSnapshot = this.initialSnapshot;
+    if (!initialSnapshot) {
+      try {
+        initialSnapshot = await this.ensureInitialSnapshot({
+          conversation,
+          signal,
+        });
+      } catch (error) {
+        throwIfAborted(signal);
+        lazy.log.warn(
+          `Monitor check proceeding without a baseline snapshot: ${
+            error.message ?? error
+          }`
+        );
+        initialSnapshot = null;
+      }
+    }
+
     const pageContent = await extractMonitorPageContent(
       this.watchUrls,
       conversation,
@@ -283,15 +346,24 @@ export class Monitor {
     );
     throwIfAborted(signal);
 
-    const [
-      { prompt: monitorAgentSystemPrompt },
-      { prompt: monitorAgentUserPrompt },
-    ] = await Promise.all([
-      lazy.loadPrompt(MODEL_FEATURES.AGENT_MONITOR, {
-        module: "system-instructions",
-      }),
-      lazy.loadPrompt(MODEL_FEATURES.AGENT_MONITOR, { module: "user-data" }),
-    ]);
+    let monitorAgentSystemPrompt, monitorAgentUserPrompt;
+    try {
+      [
+        { prompt: monitorAgentSystemPrompt },
+        { prompt: monitorAgentUserPrompt },
+      ] = await Promise.all([
+        lazy.loadPrompt(MODEL_FEATURES.AGENT_MONITOR, {
+          module: "system-instructions",
+        }),
+        lazy.loadPrompt(MODEL_FEATURES.AGENT_MONITOR, { module: "user-data" }),
+      ]);
+    } catch (error) {
+      throw new MonitorRunError(
+        MONITOR_ERROR_CODES.PROMPT_LOAD,
+        error.message || String(error),
+        { cause: error }
+      );
+    }
 
     const systemPrompt = renderPrompt(monitorAgentSystemPrompt, {
       monitorPrompt: this.monitorPrompt,
@@ -300,6 +372,10 @@ export class Monitor {
       pageUrls: this.watchUrls.join("\n - "),
       checkedAt: now.toISOString(),
       pageContent,
+      snapshotCapturedAt: initialSnapshot?.capturedAt ?? "unavailable",
+      snapshotContent:
+        initialSnapshot?.pageContent ||
+        "No initial snapshot is available for this monitor.",
     });
 
     // add messages to the conversation
@@ -307,26 +383,130 @@ export class Monitor {
     conversation.addUserMessage(userPrompt);
 
     // run the conversation
-    const response = await withAbortSignal(
-      conversation.run({
-        fxAccountToken: await withAbortSignal(
-          openAIEngine.getFxAccountToken(),
-          signal
-        ),
-        inferenceParams: {
-          response_format: makeJSONSchemaBlob(
-            "MonitorResult",
-            MONITOR_RESULT_SCHEMA
+    let response;
+    try {
+      response = await withAbortSignal(
+        conversation.run({
+          fxAccountToken: await withAbortSignal(
+            openAIEngine.getFxAccountToken(),
+            signal
           ),
-        },
-        tools: [],
-      }),
-      signal
-    );
+          inferenceParams: {
+            response_format: makeJSONSchemaBlob(
+              "MonitorResult",
+              MONITOR_RESULT_SCHEMA
+            ),
+          },
+          tools: [],
+        }),
+        signal
+      );
+    } catch (error) {
+      throwIfAborted(signal);
+      // The failure happened in the inference call, so anything the message
+      // sniffing can't place more precisely is a model error.
+      const code = categorizeError(error);
+      throw new MonitorRunError(
+        code === MONITOR_ERROR_CODES.UNKNOWN ? MONITOR_ERROR_CODES.MODEL : code,
+        error.message || String(error),
+        { cause: error }
+      );
+    }
 
     // parse and return the result
     throwIfAborted(signal);
     return this.parseMonitorResult(response);
+  }
+
+  /**
+   * Extract the current page content of the watch URLs and store it as the
+   * monitor's initial snapshot, replacing any previous one.
+   *
+   * The extraction runs through the same code path as run-time extraction so
+   * the snapshot and later page content are directly comparable by the model.
+   *
+   * @param {object} [options]
+   * @param {object} [options.conversation] - Existing conversation to reuse
+   *   for the extraction; a fresh one is built when not provided.
+   * @param {AbortSignal} [options.signal]
+   * @returns {Promise<{ capturedAt: string, pageContent: string }>}
+   */
+  async captureInitialSnapshot({ conversation = null, signal = null } = {}) {
+    throwIfAborted(signal);
+    // own controller so dispose() and cancelSnapshotCapture() can cancel a
+    // capture that no caller waits on
+    const abortController = new AbortController();
+    this.#snapshotAbortController = abortController;
+    const captureSignal = signal
+      ? AbortSignal.any([signal, abortController.signal])
+      : abortController.signal;
+    const watchUrlsAtCapture = this.watchUrls;
+    try {
+      conversation ??= await lazy.buildConversation(
+        MODEL_FEATURES.AGENT_MONITOR,
+        { flowId: this.id }
+      );
+      const pageContent = await extractMonitorPageContent(
+        watchUrlsAtCapture,
+        conversation,
+        { signal: captureSignal }
+      );
+      throwIfAborted(captureSignal);
+      // An edit may have replaced the watch URLs while extraction ran; the
+      // old pages must not become the baseline for the new ones.
+      if (!urlListsEqual(this.watchUrls, watchUrlsAtCapture)) {
+        throw new Error("Monitor watch URLs changed during snapshot capture.");
+      }
+      this.initialSnapshot = {
+        capturedAt: new Date().toISOString(),
+        pageContent,
+      };
+      return this.initialSnapshot;
+    } finally {
+      if (this.#snapshotAbortController === abortController) {
+        this.#snapshotAbortController = null;
+      }
+    }
+  }
+
+  /**
+   * Cancel any in-flight initial-snapshot capture, so a capture started for a
+   * previous monitor definition can't become the baseline of the new one.
+   * The next ensureInitialSnapshot() call starts a fresh capture.
+   */
+  cancelSnapshotCapture() {
+    this.#snapshotAbortController?.abort(
+      new Error("Monitor snapshot capture canceled by an edit.")
+    );
+    this.#snapshotCapture = null;
+  }
+
+  /**
+   * Return the initial snapshot, capturing one first if the monitor doesn't
+   * have one yet. Concurrent callers share a single in-flight capture.
+   *
+   * @param {object} [options]
+   * @param {object} [options.conversation]
+   * @param {AbortSignal} [options.signal]
+   * @returns {Promise<{ capturedAt: string, pageContent: string }>}
+   */
+  async ensureInitialSnapshot({ conversation = null, signal = null } = {}) {
+    if (this.initialSnapshot) {
+      return this.initialSnapshot;
+    }
+    if (!this.#snapshotCapture) {
+      const capture = this.captureInitialSnapshot({
+        conversation,
+        signal,
+      }).finally(() => {
+        // a canceled capture must not clear its replacement
+        if (this.#snapshotCapture === capture) {
+          this.#snapshotCapture = null;
+        }
+      });
+      this.#snapshotCapture = capture;
+    }
+    return this.#snapshotCapture;
   }
 
   /**
@@ -419,6 +599,9 @@ export class Monitor {
       lastRunTime: this.lastRunTime,
       nextRunTime: this.nextRunTime,
       history: this.history.map(entry => ({ ...entry })),
+      initialSnapshot: this.initialSnapshot
+        ? { ...this.initialSnapshot }
+        : null,
     };
   }
 
@@ -429,9 +612,24 @@ export class Monitor {
     }
   }
 
-  dispose() {
+  /**
+   * @param {string} [errorCode] - MONITOR_ERROR_CODES entry recorded on an
+   *   in-flight run: CANCELED when the user tears the monitor down,
+   *   INTERRUPTED for shutdown.
+   */
+  dispose(errorCode = MONITOR_ERROR_CODES.INTERRUPTED) {
     this.#disposed = true;
-    this.#abortController?.abort(new Error("Monitor check aborted."));
+    this.#abortController?.abort(
+      new MonitorRunError(
+        errorCode,
+        errorCode === MONITOR_ERROR_CODES.CANCELED
+          ? "Monitor check was canceled before it finished."
+          : "Monitor check was interrupted before it finished."
+      )
+    );
+    this.#snapshotAbortController?.abort(
+      new Error("Monitor snapshot capture aborted.")
+    );
     this.clearTimer();
   }
 
@@ -535,8 +733,33 @@ function normalizeLoadedHistory(history) {
       status: "error",
       resultExplanation: "Monitor check was interrupted before it finished.",
       conditionMet: false,
+      errorCode: MONITOR_ERROR_CODES.INTERRUPTED,
     };
   });
+}
+
+/**
+ * Resolves the error code for a failed run. The caller's timed-out flag is
+ * the most reliable signal so it wins over everything, including typed
+ * errors that may have raced with the timeout abort. Typed errors then carry
+ * their own code, abort wrappers are recognized by shape, and anything else
+ * falls back to message-based categorization.
+ *
+ * @param {Error|string} error
+ * @param {boolean} [timedOut]
+ * @returns {string} One of MONITOR_ERROR_CODES.
+ */
+export function monitorErrorCode(error, timedOut = false) {
+  if (timedOut || error?.name === "TimeoutError") {
+    return MONITOR_ERROR_CODES.TIMEOUT;
+  }
+  if (error instanceof MonitorRunError) {
+    return error.code;
+  }
+  if (error?.name === "AbortError" || /abort/i.test(error?.message ?? "")) {
+    return MONITOR_ERROR_CODES.INTERRUPTED;
+  }
+  return categorizeError(error);
 }
 
 async function extractMonitorPageContent(
@@ -545,15 +768,32 @@ async function extractMonitorPageContent(
   { signal = null } = {}
 ) {
   throwIfAborted(signal);
-  const pageContents = await withAbortSignal(
-    lazy.GetPageContent.getPageContent({ url_list: urls }, conversation),
+  const results = await withAbortSignal(
+    lazy.GetPageContent.getPageContentResults(
+      { url_list: urls, signal },
+      conversation
+    ),
     signal
   );
   throwIfAborted(signal);
 
-  return Array.isArray(pageContents)
-    ? pageContents.join("\n\n<----- PAGE BREAK ---->\n\n")
-    : pageContents;
+  // Partial failures still give the model something to check, but when no
+  // page could be read (or, defensively, there were no pages at all) the run
+  // must fail rather than report "not met".
+  if (!results.some(result => result.ok)) {
+    throw new MonitorRunError(
+      MONITOR_ERROR_CODES.CONTENT_EXTRACTION,
+      "None of the watched pages could be read, so this check did not run."
+    );
+  }
+
+  return results
+    .map(result => result.content)
+    .join("\n\n<----- PAGE BREAK ---->\n\n");
+}
+
+export function urlListsEqual(a, b) {
+  return a.length === b.length && a.every((url, index) => url === b[index]);
 }
 
 export function trimAndFilterWatchUrls(urls) {
@@ -624,6 +864,26 @@ export function monitorAgeMs(monitor) {
  */
 export function categorizeError(error) {
   const message = (error?.message ?? String(error)).toLowerCase();
+
+  // MLPA failures carry an HTTP status (or encode it in the message as
+  // "NNN status code") rather than descriptive text, so map status first.
+  // MLPA reports budget, QPS, and upstream limits all as 429.
+  const status =
+    typeof error?.status === "number"
+      ? error.status
+      : Number(message.match(/(\d{3}) status code/)?.[1]);
+  if (status === 429) {
+    return MONITOR_ERROR_CODES.RATE_LIMIT;
+  }
+  if (status === 401 || status === 403) {
+    return MONITOR_ERROR_CODES.AUTH;
+  }
+  if (status === 408) {
+    return MONITOR_ERROR_CODES.TIMEOUT;
+  }
+  if (status >= 500 && status <= 599) {
+    return MONITOR_ERROR_CODES.MODEL;
+  }
 
   const categories = [
     ["network_error", ["network", "fetch failed", "failed to connect"]],

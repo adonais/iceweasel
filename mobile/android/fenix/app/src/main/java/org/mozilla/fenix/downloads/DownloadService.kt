@@ -34,9 +34,10 @@ class DownloadService : AbstractFetchDownloadService() {
             context = applicationContext,
             downloadLocation = {
                 DownloadLocationManager(
-                    applicationContext.components.settings,
-                    applicationContext.contentResolver,
-                ).defaultLocation
+                        applicationContext.components.settings,
+                        applicationContext.contentResolver,
+                    )
+                    .defaultLocation
             },
         )
     }

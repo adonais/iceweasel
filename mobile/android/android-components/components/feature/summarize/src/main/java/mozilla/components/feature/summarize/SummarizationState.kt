@@ -5,12 +5,11 @@
 package mozilla.components.feature.summarize
 
 import mozilla.components.concept.llm.LlmProvider
+import mozilla.components.feature.summarize.settings.SummarizeSettingsState
 import mozilla.components.lib.state.State
 import mozilla.components.ui.richtext.ir.RichDocument
 
-/**
- * The [State] of the [SummarizationStore]
- */
+/** The [State] of the [SummarizationStore] */
 sealed class SummarizationState : State {
     /**
      * The feature is idle and not actively summarizing.
@@ -19,9 +18,7 @@ sealed class SummarizationState : State {
      */
     data class Inert(val initializedWithShake: Boolean) : SummarizationState()
 
-    /**
-     * The user has requested summary but the feature is waiting for the browser page to load.
-     */
+    /** The user has requested summary but the feature is waiting for the browser page to load. */
     data object PageLoading : SummarizationState()
 
     /** The user must consent to shake-to-summarize before proceeding. */
@@ -33,9 +30,10 @@ sealed class SummarizationState : State {
     /** The user must download an on-device model before continuing */
     data object DownloadConsentRequired : SummarizationState()
 
-    /** The on-device model is downloading  */
+    /** The on-device model is downloading */
     data class Downloading(val bytesToDownload: Float, val bytesDownloaded: Float) : SummarizationState() {
-        val downloadProgress: Float get() = bytesToDownload / bytesToDownload
+        val downloadProgress: Float
+            get() = bytesToDownload / bytesToDownload
     }
 
     /**
@@ -61,10 +59,13 @@ sealed class SummarizationState : State {
      *
      * @param info metadata about the LLM that generated the summary
      * @param document The generated document.
+     * @param feedback The rating the user gave the summary. The user can change the rating for as long as the summary
+     *   is on screen.
      */
     data class Summarized(
         val info: LlmProvider.Info,
         val document: RichDocument = RichDocument(listOf()),
+        val feedback: SummaryFeedback = SummaryFeedback.NOT_PROVIDED,
     ) : SummarizationState()
 
     /**
@@ -79,8 +80,15 @@ sealed class SummarizationState : State {
      *
      * @param info metadata about the LLM that generated the summary
      * @param document The document to return to when navigating back.
+     * @param settingsState The state of the embedded summarize settings.
+     * @param feedback The rating to restore when navigating back to the summary.
      */
-    data class Settings(val info: LlmProvider.Info, val document: RichDocument) : SummarizationState()
+    data class Settings(
+        val info: LlmProvider.Info,
+        val document: RichDocument,
+        val settingsState: SummarizeSettingsState,
+        val feedback: SummaryFeedback = SummaryFeedback.NOT_PROVIDED,
+    ) : SummarizationState()
 
     /** User is finished with the Summarization Flow */
     sealed class Finished : SummarizationState() {
@@ -104,13 +112,12 @@ sealed class SummarizationState : State {
     data object SignInRequired : SummarizationState()
 
     companion object {
-        val initial: SummarizationState get() = Inert(false)
+        val initial: SummarizationState
+            get() = Inert(false)
     }
 }
 
-/**
-* Describes the possible failure modes of the summarization feature.
-*/
+/** Describes the possible failure modes of the summarization feature. */
 sealed class SummarizationError {
     /** The model download did not complete successfully. */
     data object DownloadFailed : SummarizationError()
@@ -119,7 +126,26 @@ sealed class SummarizationError {
     data class SummarizationFailed(val exception: Throwable) : SummarizationError()
 }
 
-val SummarizationState.isLoading get() = this is SummarizationState.Loading
-val SummarizationState.isPageLoading get() = this is SummarizationState.PageLoading
-val SummarizationState.isSummarizing get() = this is SummarizationState.Summarizing
-val SummarizationState.isSummarized get() = this is SummarizationState.Summarized
+/** The rating a user can give a generated summary via the feedback control. */
+enum class SummaryFeedback {
+    /** The summary cannot be rated yet, so the feedback control is not shown. */
+    NOT_READY,
+
+    /** The summary can be rated but the user has not done so. */
+    NOT_PROVIDED,
+
+    /** The user found the summary helpful. */
+    GOOD,
+
+    /** The user found the summary unhelpful. */
+    BAD,
+}
+
+val SummarizationState.isLoading
+    get() = this is SummarizationState.Loading
+val SummarizationState.isPageLoading
+    get() = this is SummarizationState.PageLoading
+val SummarizationState.isSummarizing
+    get() = this is SummarizationState.Summarizing
+val SummarizationState.isSummarized
+    get() = this is SummarizationState.Summarized

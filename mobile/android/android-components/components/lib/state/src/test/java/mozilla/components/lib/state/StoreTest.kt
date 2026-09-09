@@ -4,6 +4,10 @@
 
 package mozilla.components.lib.state
 
+import java.io.IOException
+import java.util.concurrent.Executors
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.delay
@@ -14,18 +18,15 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.IOException
-import java.util.concurrent.Executors
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 class StoreTest {
     @Test
     fun `Dispatching Action executes reducers and creates new State`() {
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         store.dispatch(TestAction.IncrementAction)
 
@@ -39,16 +40,19 @@ class StoreTest {
 
     @Test
     fun `Observer gets notified about state changes`() {
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         var observedValue = 0
 
-        store.observeManually { state -> observedValue = state.counter }.also {
-            it.resume()
-        }
+        store
+            .observeManually { state -> observedValue = state.counter }
+            .also {
+                it.resume()
+            }
 
         store.dispatch(TestAction.IncrementAction)
 
@@ -57,32 +61,38 @@ class StoreTest {
 
     @Test
     fun `Observer gets initial value before state changes`() {
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         var observedValue = 0
 
-        store.observeManually { state -> observedValue = state.counter }.also {
-            it.resume()
-        }
+        store
+            .observeManually { state -> observedValue = state.counter }
+            .also {
+                it.resume()
+            }
 
         assertEquals(23, observedValue)
     }
 
     @Test
     fun `Observer does not get notified if state does not change`() {
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         var stateChangeObserved = false
 
-        store.observeManually { stateChangeObserved = true }.also {
-            it.resume()
-        }
+        store
+            .observeManually { stateChangeObserved = true }
+            .also {
+                it.resume()
+            }
 
         // Initial state observed
         assertTrue(stateChangeObserved)
@@ -95,18 +105,22 @@ class StoreTest {
 
     @Test
     fun `Observer does not get notified after unsubscribe`() {
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         var observedValue = 0
 
-        val subscription = store.observeManually { state ->
-            observedValue = state.counter
-        }.also {
-            it.resume()
-        }
+        val subscription =
+            store
+                .observeManually { state ->
+                    observedValue = state.counter
+                }
+                .also {
+                    it.resume()
+                }
 
         store.dispatch(TestAction.IncrementAction)
 
@@ -142,14 +156,15 @@ class StoreTest {
             next(action)
         }
 
-        val store = Store(
-            TestState(counter = 0),
-            ::reducer,
-            listOf(
-                incrementMiddleware,
-                doubleMiddleware,
-            ),
-        )
+        val store =
+            Store(
+                TestState(counter = 0),
+                ::reducer,
+                listOf(
+                    incrementMiddleware,
+                    doubleMiddleware,
+                ),
+            )
 
         store.dispatch(TestAction.DoNothingAction)
 
@@ -174,11 +189,12 @@ class StoreTest {
             // Do nothing!
         }
 
-        val store = Store(
-            TestState(counter = 0),
-            ::reducer,
-            listOf(interceptingMiddleware),
-        )
+        val store =
+            Store(
+                TestState(counter = 0),
+                ::reducer,
+                listOf(interceptingMiddleware),
+            )
 
         store.dispatch(TestAction.IncrementAction)
         assertEquals(0, store.state.counter)
@@ -196,11 +212,12 @@ class StoreTest {
             next(TestAction.DecrementAction)
         }
 
-        val store = Store(
-            TestState(counter = 0),
-            ::reducer,
-            listOf(rewritingMiddleware),
-        )
+        val store =
+            Store(
+                TestState(counter = 0),
+                ::reducer,
+                listOf(rewritingMiddleware),
+            )
 
         store.dispatch(TestAction.IncrementAction)
         assertEquals(-1, store.state.counter)
@@ -222,11 +239,12 @@ class StoreTest {
             }
         }
 
-        val store = Store(
-            TestState(counter = 0),
-            ::reducer,
-            listOf(rewritingMiddleware),
-        )
+        val store =
+            Store(
+                TestState(counter = 0),
+                ::reducer,
+                listOf(rewritingMiddleware),
+            )
 
         store.dispatch(TestAction.IncrementAction)
         assertEquals(-1, store.state.counter)
@@ -249,11 +267,12 @@ class StoreTest {
             countAfter = store.state.counter
         }
 
-        val store = Store(
-            TestState(counter = 0),
-            ::reducer,
-            listOf(observingMiddleware),
-        )
+        val store =
+            Store(
+                TestState(counter = 0),
+                ::reducer,
+                listOf(observingMiddleware),
+            )
 
         store.dispatch(TestAction.IncrementAction)
         assertEquals(0, countBefore)
@@ -284,11 +303,12 @@ class StoreTest {
             }
         }
 
-        val store = Store(
-            TestState(counter = 0),
-            { _: State, _: Action -> throw IOException() },
-            listOf(catchingMiddleware),
-        )
+        val store =
+            Store(
+                TestState(counter = 0),
+                { _: State, _: Action -> throw IOException() },
+                listOf(catchingMiddleware),
+            )
 
         store.dispatch(TestAction.IncrementAction)
 
@@ -297,41 +317,45 @@ class StoreTest {
     }
 
     @Test
-    fun `Dispatching Actions from a different thread from middleware does not create concurrent write problems`() = runTest {
-        val middlewareJobs = mutableListOf<Job>()
-        val middlewareDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-        val storeDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-        val middleware = object : Middleware<TestState, TestAction> {
-            override fun invoke(
-                store: Store<TestState, TestAction>,
-                next: (TestAction) -> Unit,
-                action: TestAction,
-            ) {
-                if (action is TestAction.DecrementAction) {
-                    middlewareJobs += this@runTest.launch(middlewareDispatcher) {
-                        delay(5)
-                        store.dispatch(TestAction.IncrementAction)
+    fun `Dispatching Actions from a different thread from middleware does not create concurrent write problems`() =
+        runTest {
+            val middlewareJobs = mutableListOf<Job>()
+            val middlewareDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+            val storeDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+            val middleware =
+                object : Middleware<TestState, TestAction> {
+                    override fun invoke(
+                        store: Store<TestState, TestAction>,
+                        next: (TestAction) -> Unit,
+                        action: TestAction,
+                    ) {
+                        if (action is TestAction.DecrementAction) {
+                            middlewareJobs +=
+                                this@runTest.launch(middlewareDispatcher) {
+                                    delay(5)
+                                    store.dispatch(TestAction.IncrementAction)
+                                }
+                        }
+                        next(action)
                     }
                 }
-                next(action)
+            val store =
+                Store(
+                    TestState(counter = 23),
+                    ::reducer,
+                    listOf(middleware),
+                )
+
+            val storeJobs = mutableListOf<Job>()
+            repeat(10_001) {
+                storeJobs += this.launch(storeDispatcher) { store.dispatch(TestAction.DecrementAction) }
             }
-        }
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-            listOf(middleware),
-        )
+            storeJobs.joinAll()
+            assertEquals(10_001 * 2, storeJobs.size + middlewareJobs.size)
+            middlewareJobs.joinAll()
+            middlewareDispatcher.close()
+            storeDispatcher.close()
 
-        val storeJobs = mutableListOf<Job>()
-        for (i in 0..10_000) {
-            storeJobs += this.launch(storeDispatcher) { store.dispatch(TestAction.DecrementAction) }
+            assertEquals(23, store.state.counter)
         }
-        storeJobs.joinAll()
-        assertEquals(10_001 * 2, storeJobs.size + middlewareJobs.size)
-        middlewareJobs.joinAll()
-        middlewareDispatcher.close()
-        storeDispatcher.close()
-
-        assertEquals(23, store.state.counter)
-    }
 }

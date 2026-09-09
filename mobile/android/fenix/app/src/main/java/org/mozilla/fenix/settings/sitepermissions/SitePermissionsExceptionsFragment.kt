@@ -39,9 +39,7 @@ import org.mozilla.fenix.ext.nav
 
 private const val MAX_ITEMS_PER_PAGE = 50
 
-/**
- * Settings screen allowing users to configure browser permissions exceptions for specific websites.
- */
+/** Settings screen allowing users to configure browser permissions exceptions for specific websites. */
 class SitePermissionsExceptionsFragment :
     Fragment(R.layout.fragment_site_permissions_exceptions), View.OnClickListener, SystemInsetsPaddedFragment {
     private lateinit var emptyContainerMessage: View
@@ -64,29 +62,32 @@ class SitePermissionsExceptionsFragment :
         recyclerView = rootView.findViewById(R.id.exceptions)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        val adapter = ExceptionsAdapter(this).apply {
-            addLoadStateListener { loadState ->
-                if (loadState.source.refresh is LoadState.NotLoading &&
-                    loadState.append.endOfPaginationReached &&
-                    itemCount < 1
-                ) {
-                    showEmptyListMessage()
-                } else {
-                    if (itemCount != 0) {
-                        hideEmptyListMessage()
+        val adapter =
+            ExceptionsAdapter(this).apply {
+                addLoadStateListener { loadState ->
+                    if (
+                        loadState.source.refresh is LoadState.NotLoading &&
+                            loadState.append.endOfPaginationReached &&
+                            itemCount < 1
+                    ) {
+                        showEmptyListMessage()
+                    } else {
+                        if (itemCount != 0) {
+                            hideEmptyListMessage()
+                        }
                     }
                 }
+                recyclerView.adapter = this
             }
-            recyclerView.adapter = this
-        }
 
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-            val dataSourceFactory =
-                requireContext().components.core.permissionStorage.getSitePermissionsPaged()
+            val dataSourceFactory = requireContext().components.core.permissionStorage.getSitePermissionsPaged()
 
-            val permissions = Pager(PagingConfig(MAX_ITEMS_PER_PAGE), null) {
-                dataSourceFactory.asPagingSourceFactory().invoke()
-            }.flow
+            val permissions =
+                Pager(PagingConfig(MAX_ITEMS_PER_PAGE), null) {
+                        dataSourceFactory.asPagingSourceFactory().invoke()
+                    }
+                    .flow
 
             permissions.collect {
                 adapter.submitData(it)
@@ -113,17 +114,20 @@ class SitePermissionsExceptionsFragment :
     private fun bindClearButton(rootView: View) {
         clearButton = rootView.findViewById(R.id.delete_all_site_permissions_button)
         clearButton.setOnClickListener {
-            MaterialAlertDialogBuilder(requireContext()).apply {
-                setMessage(R.string.confirm_clear_permissions_on_all_sites)
-                setTitle(R.string.clear_permissions)
-                setPositiveButton(R.string.clear_permissions_positive) { dialog: DialogInterface, _ ->
-                    deleteAllSitePermissions()
-                    dialog.dismiss()
+            MaterialAlertDialogBuilder(requireContext())
+                .apply {
+                    setMessage(R.string.confirm_clear_permissions_on_all_sites)
+                    setTitle(R.string.clear_permissions)
+                    setPositiveButton(R.string.clear_permissions_positive) { dialog: DialogInterface, _ ->
+                        deleteAllSitePermissions()
+                        dialog.dismiss()
+                    }
+                    setNegativeButton(R.string.clear_permissions_negative) { dialog: DialogInterface, _ ->
+                        dialog.cancel()
+                    }
                 }
-                setNegativeButton(R.string.clear_permissions_negative) { dialog: DialogInterface, _ ->
-                    dialog.cancel()
-                }
-            }.show().withCenterAlignedButtons()
+                .show()
+                .withCenterAlignedButtons()
         }
     }
 
@@ -139,8 +143,10 @@ class SitePermissionsExceptionsFragment :
 
     override fun onClick(view: View) {
         val sitePermissions = view.tag as SitePermissions
-        val directions = SitePermissionsExceptionsFragmentDirections
-            .actionSitePermissionsToExceptionsToSitePermissionsDetails(sitePermissions)
+        val directions =
+            SitePermissionsExceptionsFragmentDirections.actionSitePermissionsToExceptionsToSitePermissionsDetails(
+                sitePermissions
+            )
         nav(R.id.sitePermissionsExceptionsFragment, directions)
     }
 }
@@ -149,20 +155,16 @@ class SitePermissionsViewHolder(
     val view: View,
     val iconView: ImageView,
     val siteTextView: TextView,
-) :
-    RecyclerView.ViewHolder(view)
+) : RecyclerView.ViewHolder(view)
 
-/**
- * Adapter for the list of site permission exceptions.
- */
+/** Adapter for the list of site permission exceptions. */
 class ExceptionsAdapter(private val clickListener: View.OnClickListener) :
     PagingDataAdapter<SitePermissions, SitePermissionsViewHolder>(diffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SitePermissionsViewHolder {
         val context = parent.context
         val inflater = LayoutInflater.from(context)
-        val view =
-            inflater.inflate(R.layout.fragment_site_permissions_exceptions_item, parent, false)
+        val view = inflater.inflate(R.layout.fragment_site_permissions_exceptions_item, parent, false)
         val iconView = view.findViewById<ImageView>(R.id.exception_icon)
         val siteTextView = view.findViewById<TextView>(R.id.exception_text)
         return SitePermissionsViewHolder(view, iconView, siteTextView)
@@ -179,12 +181,11 @@ class ExceptionsAdapter(private val clickListener: View.OnClickListener) :
 
     companion object {
 
-        private val diffCallback = object :
-            DiffUtil.ItemCallback<SitePermissions>() {
-            override fun areItemsTheSame(old: SitePermissions, new: SitePermissions) =
-                old.origin == new.origin
+        private val diffCallback =
+            object : DiffUtil.ItemCallback<SitePermissions>() {
+                override fun areItemsTheSame(old: SitePermissions, new: SitePermissions) = old.origin == new.origin
 
-            override fun areContentsTheSame(old: SitePermissions, new: SitePermissions) = old == new
-        }
+                override fun areContentsTheSame(old: SitePermissions, new: SitePermissions) = old == new
+            }
     }
 }

@@ -41,7 +41,7 @@ class RecentAppsDaoTest {
                 RecentAppEntity("first"),
                 RecentAppEntity("second"),
                 RecentAppEntity("third"),
-            ),
+            )
         )
 
         assertEquals(
@@ -78,11 +78,12 @@ class RecentAppsDaoTest {
         val secondActivityName = "second"
         val thirdActivityName = "third"
         val fourthActivityName = "fourth"
-        val appsInDatabase = listOf(
-            RecentAppEntity(firstActivityName),
-            RecentAppEntity(secondActivityName),
-            RecentAppEntity(thirdActivityName),
-        )
+        val appsInDatabase =
+            listOf(
+                RecentAppEntity(firstActivityName),
+                RecentAppEntity(secondActivityName),
+                RecentAppEntity(thirdActivityName),
+            )
         val additionalApp = RecentAppEntity(fourthActivityName)
 
         dao.insertRecentApps(appsInDatabase)

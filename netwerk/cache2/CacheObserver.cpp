@@ -214,9 +214,10 @@ CacheObserver::Observe(nsISupports* aSubject, const char* aTopic,
   if (!strcmp(aTopic, "profile-do-change")) {
     AttachToPreferences();
     CacheFileIOManager::Init();
-    // Load the encryption key (no-op while the feature pref is off) before
-    // OnProfile() kicks off the index read: that read runs on the cache I/O
-    // thread and consults CacheCrypto's state, which must be set first.
+    // Start the encryption key load (a no-op while the feature pref is off)
+    // before OnProfile() queues the index read and before any entry can be
+    // opened. The load completes on the cache I/O thread ahead of both,
+    // because it is queued first and at the highest priority level.
     CacheCrypto::Init();
     CacheFileIOManager::OnProfile();
     return NS_OK;

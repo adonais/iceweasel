@@ -4,12 +4,8 @@
 
 package org.mozilla.fenix.home.toolbar
 
-/**
- * Interface for toolbar related actions.
- */
+/** Interface for toolbar related actions. */
 interface ToolbarInteractor {
-    /**
-     * Navigates to the search dialog.
-     */
+    /** Navigates to the search dialog. */
     fun onNavigateSearch()
 }

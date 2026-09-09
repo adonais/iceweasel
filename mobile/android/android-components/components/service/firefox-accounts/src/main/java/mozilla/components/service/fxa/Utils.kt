@@ -9,8 +9,8 @@ import mozilla.components.service.fxa.manager.GlobalAccountManager
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * Runs a provided lambda, and if that throws non-panic, non-auth FxA exception, runs [handleErrorBlock].
- * If that lambda throws an FxA auth exception, notifies [authErrorRegistry], and runs [postHandleAuthErrorBlock].
+ * Runs a provided lambda, and if that throws non-panic, non-auth FxA exception, runs [handleErrorBlock]. If that lambda
+ * throws an FxA auth exception, notifies [authErrorRegistry], and runs [postHandleAuthErrorBlock].
  *
  * @param block A lambda to execute which mail fail with an [FxaException].
  * @param postHandleAuthErrorBlock A lambda to execute if [block] failed with [FxaUnauthorizedException].
@@ -49,8 +49,8 @@ suspend fun <T> handleFxaExceptions(
 }
 
 /**
- * Helper method that handles [FxaException] and allows specifying a lazy default value via [default]
- * block for use in case of errors. Execution is wrapped in log statements.
+ * Helper method that handles [FxaException] and allows specifying a lazy default value via [default] block for use in
+ * case of errors. Execution is wrapped in log statements.
  */
 suspend fun <T> handleFxaExceptions(
     logger: Logger,
@@ -61,9 +61,7 @@ suspend fun <T> handleFxaExceptions(
     return handleFxaExceptions(logger, operation, block, { default(it) }, { default(it) })
 }
 
-/**
- * Helper method that handles [FxaException] and returns a [Boolean] success flag as a result.
- */
+/** Helper method that handles [FxaException] and returns a [Boolean] success flag as a result. */
 suspend fun handleFxaExceptions(logger: Logger, operation: String, block: () -> Unit): Boolean {
     return handleFxaExceptions(
         logger,
@@ -76,11 +74,10 @@ suspend fun handleFxaExceptions(logger: Logger, operation: String, block: () -> 
     )
 }
 
-/**
- * Simplified version of Kotlin's inline class version that can be used as a return value.
- */
+/** Simplified version of Kotlin's inline class version that can be used as a return value. */
 internal sealed class Result<out T> {
     data class Success<out T>(val value: T) : Result<T>()
+
     object Failure : Result<Nothing>()
 }
 
@@ -90,8 +87,8 @@ internal sealed class Result<out T> {
  * @param logger [Logger] that will be used to log retry attempts/results
  * @param retryCount How many retry attempts are allowed
  * @param block A suspend function to execute
- * @return A [Result.Success] wrapping result of execution of [block] on (eventual) success,
- * or [Result.Failure] otherwise.
+ * @return A [Result.Success] wrapping result of execution of [block] on (eventual) success, or [Result.Failure]
+ *   otherwise.
  */
 internal suspend fun <T> withRetries(logger: Logger, retryCount: Int, block: suspend () -> T): Result<T> {
     var attempt = 0
@@ -110,8 +107,8 @@ internal suspend fun <T> withRetries(logger: Logger, retryCount: Int, block: sus
 }
 
 /**
- * A helper function which allows retrying a [block] of suspend code for a few times in case it fails.
- * Short-circuits execution if [block] returns [ServiceResult.AuthError] during any of its attempts.
+ * A helper function which allows retrying a [block] of suspend code for a few times in case it fails. Short-circuits
+ * execution if [block] returns [ServiceResult.AuthError] during any of its attempts.
  *
  * @param logger [Logger] that will be used to log retry attempts/results
  * @param retryCount How many retry attempts are allowed
@@ -128,7 +125,8 @@ internal suspend fun withServiceRetries(
         attempt += 1
         logger.info("withServiceRetries: attempt $attempt/$retryCount")
         when (val res = block()) {
-            ServiceResult.Ok, ServiceResult.AuthError -> return res
+            ServiceResult.Ok,
+            ServiceResult.AuthError -> return res
             ServiceResult.OtherError -> {}
         }
     } while (attempt < retryCount)

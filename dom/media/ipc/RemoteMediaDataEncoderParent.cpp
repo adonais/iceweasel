@@ -43,10 +43,12 @@ RemoteMediaDataEncoderParent::~RemoteMediaDataEncoderParent() = default;
 
 IPCResult RemoteMediaDataEncoderParent::RecvConstruct(
     ConstructResolver&& aResolver) {
-  if (mEncoder || mShutdown) {
+  if (mEncoder || mShutdown || mConstructAttempted) {
     aResolver(MediaResult(NS_ERROR_ALREADY_INITIALIZED, __func__));
     return IPC_OK();
   }
+
+  mConstructAttempted = true;
 
   RefPtr<TaskQueue> taskQueue =
       TaskQueue::Create(GetMediaThreadPool(MediaThreadType::PLATFORM_ENCODER),
@@ -89,16 +91,23 @@ IPCResult RemoteMediaDataEncoderParent::RecvInit(InitResolver&& aResolver) {
 
   mEncoder->Init()->Then(
       GetCurrentSerialEventTarget(), __func__,
-      [encoder = RefPtr{mEncoder}, resolver = std::move(aResolver)](
+      [self = RefPtr{this}, resolver = std::move(aResolver)](
           MediaDataEncoder::InitPromise::ResolveOrRejectValue&& aValue) {
+        if (!self->mEncoder) {
+          resolver(MediaResult(NS_ERROR_ABORT, __func__));
+          return;
+        }
+
         if (aValue.IsReject()) {
           resolver(aValue.RejectValue());
           return;
         }
 
+        self->mInitialized = true;
+
         nsCString hardwareReason;
-        bool hardware = encoder->IsHardwareAccelerated(hardwareReason);
-        resolver(EncodeInitCompletionIPDL{encoder->GetDescriptionName(),
+        bool hardware = self->mEncoder->IsHardwareAccelerated(hardwareReason);
+        resolver(EncodeInitCompletionIPDL{self->mEncoder->GetDescriptionName(),
                                           hardware, std::move(hardwareReason)});
       });
   return IPC_OK();
@@ -106,7 +115,7 @@ IPCResult RemoteMediaDataEncoderParent::RecvInit(InitResolver&& aResolver) {
 
 IPCResult RemoteMediaDataEncoderParent::RecvEncode(
     const EncodedInputIPDL& aData, EncodeResolver&& aResolver) {
-  if (!mEncoder) {
+  if (!mEncoder || !mInitialized) {
     aResolver(MediaResult(NS_ERROR_ABORT, __func__));
     return IPC_OK();
   }
@@ -211,7 +220,14 @@ IPCResult RemoteMediaDataEncoderParent::RecvEncode(
             }
 
             uint32_t ticketId = ++self->mTicketCounter;
-            self->mTickets[ticketId] = std::move(ticket);
+            auto [i, success] =
+                self->mTickets.try_emplace(ticketId, std::move(ticket));
+            if (!success) {
+              self->ReleaseTicket(ticket);
+              resolver(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, __func__));
+              return;
+            }
+
             resolver(EncodeCompletionIPDL(samples, ticketId));
           });
   return IPC_OK();
@@ -220,7 +236,7 @@ IPCResult RemoteMediaDataEncoderParent::RecvEncode(
 IPCResult RemoteMediaDataEncoderParent::RecvReconfigure(
     EncoderConfigurationChangeList* aConfigurationChanges,
     ReconfigureResolver&& aResolver) {
-  if (!mEncoder) {
+  if (!mEncoder || !mInitialized) {
     aResolver(MediaResult(NS_ERROR_ABORT, __func__));
     return IPC_OK();
   }
@@ -242,7 +258,7 @@ IPCResult RemoteMediaDataEncoderParent::RecvReconfigure(
 }
 
 IPCResult RemoteMediaDataEncoderParent::RecvDrain(DrainResolver&& aResolver) {
-  if (!mEncoder) {
+  if (!mEncoder || !mInitialized) {
     aResolver(MediaResult(NS_ERROR_ABORT, __func__));
     return IPC_OK();
   }
@@ -267,7 +283,14 @@ IPCResult RemoteMediaDataEncoderParent::RecvDrain(DrainResolver&& aResolver) {
         }
 
         uint32_t ticketId = ++self->mTicketCounter;
-        self->mTickets[ticketId] = std::move(ticket);
+        auto [i, success] =
+            self->mTickets.try_emplace(ticketId, std::move(ticket));
+        if (!success) {
+          self->ReleaseTicket(ticket);
+          resolver(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, __func__));
+          return;
+        }
+
         resolver(EncodeCompletionIPDL(samples, ticketId));
       });
   return IPC_OK();
@@ -303,7 +326,7 @@ IPCResult RemoteMediaDataEncoderParent::RecvShutdown(
 
 IPCResult RemoteMediaDataEncoderParent::RecvSetBitrate(
     const uint32_t& aBitrate, SetBitrateResolver&& aResolver) {
-  if (!mEncoder) {
+  if (!mEncoder || !mInitialized) {
     aResolver(NS_ERROR_ABORT);
     return IPC_OK();
   }

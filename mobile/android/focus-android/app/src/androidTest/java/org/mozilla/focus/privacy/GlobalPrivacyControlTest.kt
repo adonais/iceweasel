@@ -4,6 +4,7 @@
 package org.mozilla.focus.privacy
 
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
+import java.io.IOException
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -14,23 +15,19 @@ import org.mozilla.focus.helpers.FeatureSettingsHelper
 import org.mozilla.focus.helpers.FocusTestRule
 import org.mozilla.focus.helpers.MainActivityFirstrunTestRule
 import org.mozilla.focus.helpers.TestAssetHelper.getStorageTestAsset
-import java.io.IOException
 
-/**
- * Test that Global Privacy Control is always enabled in Focus.
- */
+/** Test that Global Privacy Control is always enabled in Focus. */
 @RunWith(AndroidJUnit4ClassRunner::class)
 class GlobalPrivacyControlTest {
 
     private val featureSettingsHelper = FeatureSettingsHelper()
 
-    @get:Rule(order = 0)
-    val focusTestRule: FocusTestRule = FocusTestRule()
+    @get:Rule(order = 0) val focusTestRule: FocusTestRule = FocusTestRule()
 
-    private val webServerRule get() = focusTestRule.mockWebServerRule
+    private val webServerRule
+        get() = focusTestRule.mockWebServerRule
 
-    @get:Rule
-    val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
+    @get:Rule val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
 
     @Before
     fun setUp() {
@@ -40,8 +37,7 @@ class GlobalPrivacyControlTest {
 
     @After
     fun tearDown() {
-        try {
-            } catch (e: IOException) {
+        try {} catch (e: IOException) {
             throw AssertionError("Could not stop web server", e)
         }
     }
@@ -50,9 +46,9 @@ class GlobalPrivacyControlTest {
     fun gpcTest() {
         val storageStartUrl = webServerRule.server.getStorageTestAsset("global_privacy_control.html").url
 
-        searchScreen {
-        }.loadPage(storageStartUrl) {
-            verifyPageContent("GPC is enabled.")
-        }
+        searchScreen {}
+            .loadPage(storageStartUrl) {
+                verifyPageContent("GPC is enabled.")
+            }
     }
 }

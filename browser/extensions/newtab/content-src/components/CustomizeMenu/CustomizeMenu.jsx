@@ -53,6 +53,7 @@ export class _CustomizeMenu extends React.PureComponent {
     this.personalizeButtonRef = React.createRef();
     this.dialogRef = React.createRef();
     this.closeButtonRef = React.createRef();
+    this._hadLockedPrefs = false;
     this.state = {
       subpanelOpen: false,
     };
@@ -66,6 +67,7 @@ export class _CustomizeMenu extends React.PureComponent {
     if (this.props.showing && this.props.Prefs.values.browserNovaEnabled) {
       loadThemePickerElements();
     }
+    this.disableLockedControls();
   }
 
   componentDidUpdate(prevProps) {
@@ -76,6 +78,29 @@ export class _CustomizeMenu extends React.PureComponent {
       if (!this.dialogRef.current?.open) {
         this.dialogRef.current?.showModal();
       }
+    }
+    this.disableLockedControls();
+  }
+
+  /**
+   * Disables the controls whose pref an administrator has locked. Controls with
+   * a `disabled` condition of their own set `data-lock-managed` and apply the
+   * lock in their own render, so this stays the only writer of `disabled` for
+   * everything it touches.
+   */
+  disableLockedControls() {
+    const lockedPrefs = this.props.Prefs.values.lockedPrefs ?? [];
+    if (!lockedPrefs.length && !this._hadLockedPrefs) {
+      return;
+    }
+    this._hadLockedPrefs = !!lockedPrefs.length;
+
+    const controls =
+      this.dialogRef.current?.querySelectorAll(
+        "[data-preference]:not([data-lock-managed])"
+      ) ?? [];
+    for (const control of controls) {
+      control.disabled = lockedPrefs.includes(control.dataset.preference);
     }
   }
 
@@ -121,7 +146,7 @@ export class _CustomizeMenu extends React.PureComponent {
     // @nova-cleanup(remove-pref): remove nova pref
     const novaEnabled = this.props.Prefs.values[PREF_NOVA_ENABLED];
     // Browser-wide Nova gate for the theme picker (distinct from novaEnabled).
-    const { browserNovaEnabled } = this.props.Prefs.values;
+    const { browserNovaEnabled, lockedPrefs } = this.props.Prefs.values;
 
     return (
       <span>
@@ -224,6 +249,9 @@ export class _CustomizeMenu extends React.PureComponent {
                 mayHavePictureOfTheDayWidget={
                   this.props.mayHavePictureOfTheDayWidget
                 }
+                mayHaveRecentSearchesWidget={
+                  this.props.mayHaveRecentSearchesWidget
+                }
                 dispatch={this.props.dispatch}
                 onSubpanelToggle={this.onSubpanelToggle}
                 toggleSectionsMgmtPanel={this.props.toggleSectionsMgmtPanel}
@@ -239,6 +267,7 @@ export class _CustomizeMenu extends React.PureComponent {
                   this.props.showWidgetsManagementPanel
                 }
                 widgetsEnabled={this.props.widgetsEnabled}
+                lockedPrefs={lockedPrefs}
               />
             </div>
           </dialog>

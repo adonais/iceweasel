@@ -573,7 +573,7 @@ add_task(async function test_icon() {
 
   // Edit engine and check favicon.
   let engineRow = [...engineList.children].find(
-    row => row.__config.controlAttrs.label == "Bugzilla"
+    row => row.config.controlAttrs.label == "Bugzilla"
   );
   let editButton = [
     ...engineRow.children[0].getElementsByTagName("moz-button"),
@@ -606,13 +606,17 @@ add_task(async function test_icon() {
  *   The l10n id of the expected error message or null if no error is expected.
  */
 async function assertError(elt, error = null) {
+  // Errors are only revealed once a field loses focus or the user tries to
+  // submit, so force that here to check the current validity.
+  elt.dispatchEvent(new Event("focusout", { bubbles: true }));
+
   let errorLabel = elt.parentElement.querySelector(".error-label");
 
   if (error) {
     let msg = await document.l10n.formatValue(error);
     Assert.equal(errorLabel.textContent, msg);
   } else {
-    Assert.equal(errorLabel.textContent, "valid");
+    Assert.equal(errorLabel.textContent, "");
   }
 }
 

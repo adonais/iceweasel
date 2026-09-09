@@ -163,13 +163,13 @@ bool WebTask::Run() {
     return false;
   }
 
-  // 11.2.2 Set event loop’s current scheduling state to state.
-  global->SetWebTaskSchedulingState(mSchedulingState);
-
   AutoJSAPI jsapi;
   if (!jsapi.Init(global)) {
     return false;
   }
+
+  // 11.2.2 Set event loop’s current scheduling state to state.
+  global->SetWebTaskSchedulingState(mSchedulingState);
 
   JS::Rooted<JS::Value> returnVal(jsapi.cx());
 

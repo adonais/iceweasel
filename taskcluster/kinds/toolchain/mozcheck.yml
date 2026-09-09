@@ -24,7 +24,6 @@ linux64-mozcheck:
         symbol: TL(mozcheck)
         platform: linux64/opt
     run:
-        clone-with: hg
         arguments: ['x86_64-unknown-linux-musl']
     attributes:
         build_platform: linux64-mozcheck
@@ -36,7 +35,6 @@ macosx64-mozcheck:
     treeherder:
         symbol: TM(mozcheck)
     run:
-        clone-with: hg
         arguments: ['x86_64-apple-darwin']
     fetches:
         toolchain:
@@ -48,7 +46,6 @@ macosx64-aarch64-mozcheck:
     treeherder:
         symbol: TMA64(mozcheck)
     run:
-        clone-with: hg
         arguments: ['aarch64-apple-darwin']
     fetches:
         toolchain:
@@ -60,7 +57,6 @@ win64-mozcheck:
     treeherder:
         symbol: TW64(mozcheck)
     run:
-        clone-with: hg
         arguments: ['x86_64-pc-windows-msvc']
     fetches:
         toolchain:

@@ -8,8 +8,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Snackbar as M3Snackbar
+import androidx.compose.material3.SnackbarData as M3SnackbarData
 import androidx.compose.material3.SnackbarDefaults
 import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarVisuals as M3SnackbarVisuals
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
@@ -34,9 +37,6 @@ import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.base.theme.acornPrivateColorScheme
 import mozilla.components.compose.base.theme.privateColorPalette
-import androidx.compose.material3.Snackbar as M3Snackbar
-import androidx.compose.material3.SnackbarData as M3SnackbarData
-import androidx.compose.material3.SnackbarVisuals as M3SnackbarVisuals
 import mozilla.components.ui.icons.R as iconsR
 
 private val SnackbarPadding = 12.dp
@@ -46,8 +46,7 @@ const val SNACKBAR_BUTTON_TEST_TAG = "snackbar_button"
 /**
  * Displays a Snackbar using the provided [SnackbarData].
  *
- * This composable creates a transient message at the bottom of the screen for
- * alerts and confirmation messages.
+ * This composable creates a transient message at the bottom of the screen for alerts and confirmation messages.
  *
  * @param snackbarData The data representing the message, action label, and dismiss behavior.
  * @param modifier The [Modifier] used to configure the layout or appearance of the Snackbar.
@@ -61,10 +60,9 @@ fun Snackbar(
 ) {
     val dismissState = rememberSwipeToDismissBoxState()
     val actionLabel = snackbarData.visuals.actionLabel
-    val actionComposable: (@Composable () -> Unit)? =
-        actionLabel?.let {
-            @Composable { SnackbarAction(actionLabel = it, onClick = snackbarData::performAction) }
-        }
+    val actionComposable: (@Composable () -> Unit)? = actionLabel?.let {
+        @Composable { SnackbarAction(actionLabel = it, onClick = snackbarData::performAction) }
+    }
 
     val dismissActionComposable: (@Composable () -> Unit)? =
         if (snackbarData.visuals.withDismissAction) {
@@ -76,7 +74,8 @@ fun Snackbar(
     LaunchedEffect(dismissState.currentValue) {
         val value = dismissState.currentValue
         when (value) {
-            SwipeToDismissBoxValue.StartToEnd, SwipeToDismissBoxValue.EndToStart -> {
+            SwipeToDismissBoxValue.StartToEnd,
+            SwipeToDismissBoxValue.EndToStart -> {
                 snackbarData.dismiss()
             }
             SwipeToDismissBoxValue.Settled -> {} // no-op
@@ -88,10 +87,8 @@ fun Snackbar(
         backgroundContent = {},
     ) {
         M3Snackbar(
-            modifier = modifier
-                .padding(SnackbarPadding)
-                .semantics { testTagsAsResourceId = true }
-                .testTag(SNACKBAR_TEST_TAG),
+            modifier =
+                modifier.padding(SnackbarPadding).semantics { testTagsAsResourceId = true }.testTag(SNACKBAR_TEST_TAG),
             action = actionComposable,
             dismissAction = dismissActionComposable,
             actionOnNewLine = actionOnNewLine,
@@ -124,9 +121,7 @@ private fun SnackbarAction(actionLabel: String, onClick: () -> Unit) {
         text = actionLabel,
         onClick = onClick,
         modifier = Modifier.testTag(SNACKBAR_BUTTON_TEST_TAG),
-        colors = ButtonDefaults.textButtonColors(
-            contentColor = SnackbarDefaults.actionColor,
-        ),
+        colors = ButtonDefaults.textButtonColors(contentColor = SnackbarDefaults.actionColor),
     )
 }
 
@@ -134,9 +129,7 @@ private fun SnackbarAction(actionLabel: String, onClick: () -> Unit) {
 private fun SnackbarDismissButton(onClick: () -> Unit) {
     IconButton(
         onClick = onClick,
-        contentDescription = stringResource(
-            id = R.string.mozac_compose_base_snackbar_dismiss_content_description,
-        ),
+        contentDescription = stringResource(id = R.string.mozac_compose_base_snackbar_dismiss_content_description),
     ) {
         Icon(
             painter = painterResource(id = iconsR.drawable.mozac_ic_cross_24),
@@ -205,14 +198,15 @@ open class SnackbarVisuals(
         actionLabel: String? = this.actionLabel,
         withDismissAction: Boolean = this.withDismissAction,
         duration: SnackbarDuration = this.duration,
-    ): SnackbarVisuals = SnackbarVisuals(
-        message = message,
-        subMessage = subMessage,
-        subMessageTextOverflow = subMessageTextOverflow,
-        actionLabel = actionLabel,
-        withDismissAction = withDismissAction,
-        duration = duration,
-    )
+    ): SnackbarVisuals =
+        SnackbarVisuals(
+            message = message,
+            subMessage = subMessage,
+            subMessageTextOverflow = subMessageTextOverflow,
+            actionLabel = actionLabel,
+            withDismissAction = withDismissAction,
+            duration = duration,
+        )
 }
 
 private data class SnackbarPreviewState(
@@ -223,118 +217,112 @@ private data class SnackbarPreviewState(
     override val withDismissAction: Boolean = false,
     val actionOnNewLine: Boolean = false,
     override val duration: SnackbarDuration = SnackbarDuration.Short,
-) : SnackbarVisuals(
-    message = message,
-)
+) : SnackbarVisuals(message = message)
 
 private class SnackbarParameterProvider : PreviewParameterProvider<SnackbarPreviewState> {
     override val values: Sequence<SnackbarPreviewState>
-        get() = sequenceOf(
-            SnackbarPreviewState(
-                message = "Regular snackbar",
-            ),
-            SnackbarPreviewState(
-                message = "Regular snackbar",
-                actionLabel = "Action",
-                withDismissAction = false,
-            ),
-            SnackbarPreviewState(
-                message = "Regular snackbar",
-                subMessage = "",
-                withDismissAction = false,
-            ),
-            SnackbarPreviewState(
-                message = "Regular snackbar",
-                subMessage = "",
-                actionLabel = "Action",
-                withDismissAction = false,
-            ),
-            SnackbarPreviewState(
-                message = "Regular snackbar",
-                subMessage = "",
-                actionLabel = "Longer action",
-                withDismissAction = false,
-                actionOnNewLine = true,
-            ),
-            SnackbarPreviewState(
-                message = "Regular snackbar",
-                withDismissAction = true,
-            ),
-            SnackbarPreviewState(
-                message = "Regular snackbar",
-                actionLabel = "Action",
-                withDismissAction = true,
-            ),
-            SnackbarPreviewState(
-                message = "Regular snackbar",
-                subMessage = "",
-                withDismissAction = true,
-            ),
-            SnackbarPreviewState(
-                message = "Regular snackbar",
-                subMessage = "",
-                actionLabel = "Action",
-                withDismissAction = true,
-            ),
-            SnackbarPreviewState(
-                message = "Regular snackbar",
-                subMessage = "",
-                actionLabel = "Longer action",
-                withDismissAction = true,
-                actionOnNewLine = true,
-            ),
-            SnackbarPreviewState(
-                message = "Regular snackbar with a very very long wrapping message",
-            ),
-            SnackbarPreviewState(
-                message = "Regular snackbar with a very very long wrapping message",
-                withDismissAction = true,
-            ),
-            SnackbarPreviewState(
-                message = "Regular snackbar with a very very long wrapping message",
-                actionLabel = "Action",
-                withDismissAction = true,
-            ),
-            SnackbarPreviewState(
-                message = "Regular snackbar with a very very long wrapping message",
-                actionLabel = "Longer action",
-                withDismissAction = true,
-                actionOnNewLine = true,
-            ),
-            SnackbarPreviewState(
-                message = "Regular snackbar",
-                subMessage = "Submessage",
-                actionLabel = "Action",
-                withDismissAction = true,
-            ),
-            SnackbarPreviewState(
-                message = "Regular snackbar",
-                subMessage = "Submessage with a very very long wrapping message",
-                actionLabel = "Action",
-                withDismissAction = true,
-            ),
-            SnackbarPreviewState(
-                message = "Regular snackbar",
-                subMessage = "Submessage with a very very long wrapping message ellipsized in the middle",
-                subMessageTextOverflow = TextOverflow.MiddleEllipsis,
-                actionLabel = "Action",
-                withDismissAction = true,
-            ),
-        )
+        get() =
+            sequenceOf(
+                SnackbarPreviewState(message = "Regular snackbar"),
+                SnackbarPreviewState(
+                    message = "Regular snackbar",
+                    actionLabel = "Action",
+                    withDismissAction = false,
+                ),
+                SnackbarPreviewState(
+                    message = "Regular snackbar",
+                    subMessage = "",
+                    withDismissAction = false,
+                ),
+                SnackbarPreviewState(
+                    message = "Regular snackbar",
+                    subMessage = "",
+                    actionLabel = "Action",
+                    withDismissAction = false,
+                ),
+                SnackbarPreviewState(
+                    message = "Regular snackbar",
+                    subMessage = "",
+                    actionLabel = "Longer action",
+                    withDismissAction = false,
+                    actionOnNewLine = true,
+                ),
+                SnackbarPreviewState(
+                    message = "Regular snackbar",
+                    withDismissAction = true,
+                ),
+                SnackbarPreviewState(
+                    message = "Regular snackbar",
+                    actionLabel = "Action",
+                    withDismissAction = true,
+                ),
+                SnackbarPreviewState(
+                    message = "Regular snackbar",
+                    subMessage = "",
+                    withDismissAction = true,
+                ),
+                SnackbarPreviewState(
+                    message = "Regular snackbar",
+                    subMessage = "",
+                    actionLabel = "Action",
+                    withDismissAction = true,
+                ),
+                SnackbarPreviewState(
+                    message = "Regular snackbar",
+                    subMessage = "",
+                    actionLabel = "Longer action",
+                    withDismissAction = true,
+                    actionOnNewLine = true,
+                ),
+                SnackbarPreviewState(message = "Regular snackbar with a very very long wrapping message"),
+                SnackbarPreviewState(
+                    message = "Regular snackbar with a very very long wrapping message",
+                    withDismissAction = true,
+                ),
+                SnackbarPreviewState(
+                    message = "Regular snackbar with a very very long wrapping message",
+                    actionLabel = "Action",
+                    withDismissAction = true,
+                ),
+                SnackbarPreviewState(
+                    message = "Regular snackbar with a very very long wrapping message",
+                    actionLabel = "Longer action",
+                    withDismissAction = true,
+                    actionOnNewLine = true,
+                ),
+                SnackbarPreviewState(
+                    message = "Regular snackbar",
+                    subMessage = "Submessage",
+                    actionLabel = "Action",
+                    withDismissAction = true,
+                ),
+                SnackbarPreviewState(
+                    message = "Regular snackbar",
+                    subMessage = "Submessage with a very very long wrapping message",
+                    actionLabel = "Action",
+                    withDismissAction = true,
+                ),
+                SnackbarPreviewState(
+                    message = "Regular snackbar",
+                    subMessage = "Submessage with a very very long wrapping message ellipsized in the middle",
+                    subMessageTextOverflow = TextOverflow.MiddleEllipsis,
+                    actionLabel = "Action",
+                    withDismissAction = true,
+                ),
+            )
 }
 
 @Composable
 @PreviewLightDark
-private fun SnackbarPreview(
-    @PreviewParameter(SnackbarParameterProvider::class) snackbarState: SnackbarPreviewState,
-) {
+private fun SnackbarPreview(@PreviewParameter(SnackbarParameterProvider::class) snackbarState: SnackbarPreviewState) {
     AcornTheme {
         Snackbar(
-            snackbarData = SnackbarData(
-                visuals = snackbarState,
-                dismiss = {},
-                performAction = {},
-            ),
+            snackbarData =
+                SnackbarData(
+                    visuals = snackbarState,
+                    dismiss = {},
+                    performAction = {},
+                ),
             modifier = Modifier,
             actionOnNewLine = snackbarState.actionOnNewLine,
         )
@@ -344,18 +332,19 @@ private fun SnackbarPreview(
 @Composable
 @Preview
 private fun PrivateSnackbarPreview(
-    @PreviewParameter(SnackbarParameterProvider::class) snackbarState: SnackbarPreviewState,
+    @PreviewParameter(SnackbarParameterProvider::class) snackbarState: SnackbarPreviewState
 ) {
     AcornTheme(
         colors = privateColorPalette,
         colorScheme = acornPrivateColorScheme(),
     ) {
         Snackbar(
-            snackbarData = SnackbarData(
-                visuals = snackbarState,
-                dismiss = {},
-                performAction = {},
-            ),
+            snackbarData =
+                SnackbarData(
+                    visuals = snackbarState,
+                    dismiss = {},
+                    performAction = {},
+                ),
             modifier = Modifier,
             actionOnNewLine = snackbarState.actionOnNewLine,
         )

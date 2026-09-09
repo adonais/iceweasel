@@ -86,17 +86,11 @@ class WebCompatReporterSubmissionMiddleware(
         appStore.dispatch(AppAction.WebCompatAction.WebCompatReportSent)
     }
 
-    private suspend fun handleOpenPreviewClicked(
-        store: Store<WebCompatReporterState, WebCompatReporterAction>,
-    ) {
+    private suspend fun handleOpenPreviewClicked(store: Store<WebCompatReporterState, WebCompatReporterAction>) {
         val webCompatInfo = webCompatReporterRetrievalService.retrieveInfo()
 
         val webCompatJSON = generatePreviewJSON(store.state, webCompatInfo)
-        store.dispatch(
-            WebCompatReporterAction.PreviewItemsUpdated(
-                parseWebCompatPreviewJson(webCompatJSON),
-            ),
-        )
+        store.dispatch(WebCompatReporterAction.PreviewItemsUpdated(parseWebCompatPreviewJson(webCompatJSON)))
     }
 
     private fun checkReportedURLHostMatchesTab(
@@ -142,28 +136,29 @@ class WebCompatReporterSubmissionMiddleware(
         groupName: String,
         key: String,
     ): JsonObject {
-        val values = this.mapValues { (name, element) ->
-            if (name != groupName) {
-                element
-            } else {
-                JsonObject(
-                    element.jsonObject
-                        .filterKeys { itemName -> itemName != key },
-                )
+        val values =
+            this.mapValues { (name, element) ->
+                if (name != groupName) {
+                    element
+                } else {
+                    JsonObject(element.jsonObject.filterKeys { itemName -> itemName != key })
+                }
             }
-        }
 
         return JsonObject(values)
     }
 
     companion object {
         /**
-         * Returns the given WebCompat JSON object with the active Nimbus experiments updated to match the ones specified in the given provider.
+         * Returns the given WebCompat JSON object with the active Nimbus experiments updated to match the ones
+         * specified in the given provider.
          *
          * @param nimbusExperimentsProvider A [NimbusExperimentsProvider] used to get active experiments.
          */
         @Suppress("MaxLineLength")
-        fun JSONObject.addActiveExperimentsToWebCompatInfo(nimbusExperimentsProvider: NimbusExperimentsProvider): JSONObject {
+        fun JSONObject.addActiveExperimentsToWebCompatInfo(
+            nimbusExperimentsProvider: NimbusExperimentsProvider
+        ): JSONObject {
             val experiments = JSONArray()
             for (experiment in nimbusExperimentsProvider.activeExperiments) {
                 experiments.put(
@@ -171,7 +166,7 @@ class WebCompatReporterSubmissionMiddleware(
                         put("branch", nimbusExperimentsProvider.getExperimentBranch(experiment.slug))
                         put("kind", "nimbusExperiment")
                         put("slug", experiment.slug)
-                    },
+                    }
                 )
             }
 
@@ -202,7 +197,7 @@ class WebCompatReporterSubmissionMiddleware(
             noTabSpecificData: Boolean = false,
         ): JsonObject {
             if (webCompatJSON == null) {
-              return this
+                return this
             }
 
             // Filter out the screenshot and other not-to-be-previewed data, as well as
@@ -210,34 +205,39 @@ class WebCompatReporterSubmissionMiddleware(
             // make it unlikely to be the URL for the tab we recorded.
             val webCompatJson = Json.parseToJsonElement(webCompatJSON.toString()).jsonObject
 
-            val webCompatPreview = webCompatJson.mapNotNull { (groupName, groupElement) ->
-                    val items = groupElement.jsonObject
-                    if (noTabSpecificData && items["isTabSpecific"]?.jsonPrimitive?.booleanOrNull == true) {
-                        return@mapNotNull null
+            val webCompatPreview =
+                webCompatJson
+                    .mapNotNull { (groupName, groupElement) ->
+                        val items = groupElement.jsonObject
+                        if (noTabSpecificData && items["isTabSpecific"]?.jsonPrimitive?.booleanOrNull == true) {
+                            return@mapNotNull null
+                        }
+
+                        val values =
+                            items
+                                .filterKeys { it != "isTabSpecific" }
+                                .filterNot { (_, itemElement) ->
+                                    val item = itemElement.jsonObject
+                                    val doNotPreview = item["doNotPreview"]?.jsonPrimitive?.booleanOrNull == true
+                                    doNotPreview ||
+                                        (noTabSpecificData &&
+                                            item["isTabSpecific"]?.jsonPrimitive?.booleanOrNull == true)
+                                }
+                                .mapValues { (_, itemElement) ->
+                                    itemElement.jsonObject["value"] ?: JsonNull
+                                }
+
+                        groupName to JsonObject(values)
                     }
-
-                    val values = items
-                        .filterKeys { it != "isTabSpecific" }
-                        .filterNot { (_, itemElement) ->
-                            val item = itemElement.jsonObject
-                            val doNotPreview = item["doNotPreview"]?.jsonPrimitive?.booleanOrNull == true
-                            doNotPreview || (noTabSpecificData && item["isTabSpecific"]?.jsonPrimitive?.booleanOrNull == true)
-                        }
-                        .mapValues { (_, itemElement) ->
-                            itemElement.jsonObject["value"] ?: JsonNull
-                        }
-
-                    groupName to JsonObject(values)
-                }.toMap()
+                    .toMap()
 
             return JsonObject(this + webCompatPreview)
         }
     }
 
     /**
-     * Dynamically parses a [JsonObject] into a list of [PreviewReporterItem].
-     * It iterates through each top-level key (e.g., "basic", "app") and
-     * collects its nested fields as a map of String to String.
+     * Dynamically parses a [JsonObject] into a list of [PreviewReporterItem]. It iterates through each top-level key
+     * (e.g., "basic", "app") and collects its nested fields as a map of String to String.
      */
     @VisibleForTesting
     internal fun parseWebCompatPreviewJson(webCompatJSON: JsonObject): List<PreviewReporterItem> {

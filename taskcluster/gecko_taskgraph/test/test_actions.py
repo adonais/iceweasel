@@ -1101,5 +1101,70 @@ def test_backfill_sliced_boundary_gap(mocker, run_action):
     assert set(called_pids) == {"101", "103", "105"}
 
 
+def _bhr_graph():
+    return make_graph(
+        make_task(
+            label="bhr-aggregate-cron",
+            task_def={
+                "payload": {
+                    "env": {
+                        "BHR_AGGREGATE_DATE_OFFSET_DAYS": "4",
+                        "BHR_AGGREGATE_SAMPLE_SIZE": "0.5",
+                    }
+                },
+                "extra": {"treeherder": {"symbol": "BHR"}},
+            },
+        ),
+    )
+
+
+@pytest.fixture
+def run_bhr_action(mocker, run_action, get_artifact):
+    def inner(action_input):
+        graph = _bhr_graph()
+        m = mocker.patch("gecko_taskgraph.actions.bhr_aggregate.fetch_graph_and_labels")
+        m.return_value = (
+            "gid",
+            graph,
+            {label: "tid" for label in graph.tasks.keys()},
+            None,
+        )
+        run_action("bhr-aggregate", input=action_input)
+        # task-graph.json is keyed by taskid, so find our task by its label.
+        task_graph = get_artifact("task-graph.json")
+        entries = [e for e in task_graph.values() if e["label"] == "bhr-aggregate-cron"]
+        assert len(entries) == 1
+        return entries[0]["task"]
+
+    return inner
+
+
+def test_bhr_aggregate_pins_date_and_sample_size(run_bhr_action):
+    task = run_bhr_action({"date": "20260401", "sample_size": 0.02})
+    env = task["payload"]["env"]
+    assert env["BHR_AGGREGATE_DATE"] == "20260401"
+    assert env["BHR_AGGREGATE_SAMPLE_SIZE"] == "0.02"
+    # The offset stays, but the script prefers an explicit date over it.
+    assert env["BHR_AGGREGATE_DATE_OFFSET_DAYS"] == "4"
+    assert task["extra"]["treeherder"]["symbol"] == "BHR-custom"
+
+
+def test_bhr_aggregate_empty_input_keeps_cron_defaults(run_bhr_action):
+    task = run_bhr_action({})
+    env = task["payload"]["env"]
+    assert "BHR_AGGREGATE_DATE" not in env
+    assert env["BHR_AGGREGATE_SAMPLE_SIZE"] == "0.5"
+
+
+def test_bhr_aggregate_accepts_either_field_alone(run_bhr_action):
+    env = run_bhr_action({"sample_size": 0.001})["payload"]["env"]
+    assert "BHR_AGGREGATE_DATE" not in env
+    assert env["BHR_AGGREGATE_SAMPLE_SIZE"] == "0.001"
+
+    env = run_bhr_action({"date": "20260401"})["payload"]["env"]
+    assert env["BHR_AGGREGATE_DATE"] == "20260401"
+    assert env["BHR_AGGREGATE_SAMPLE_SIZE"] == "0.5"
+
+
 if __name__ == "__main__":
     main()

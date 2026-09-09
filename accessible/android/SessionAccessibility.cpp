@@ -24,6 +24,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/MouseEventBinding.h"
+#include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/jni/GeckoBundleUtils.h"
 #include "mozilla/jni/NativesInlines.h"
 #include "mozilla/widget/GeckoViewSupport.h"
@@ -52,7 +53,8 @@ class Settings final
   static void ToggleNativeAccessibility(bool aEnable) {
     if (aEnable) {
       GetOrCreateAccService();
-    } else {
+    } else if (PlatformDisabledState() != ePlatformIsForceEnabled) {
+      // Accessibility isn't force enabled, so shut it down.
       MaybeShutdownAccService(nsAccessibilityService::ePlatformAPI);
     }
   }
@@ -361,7 +363,7 @@ RefPtr<SessionAccessibility> SessionAccessibility::GetInstanceFor(
                                              ->Top();
     dom::BrowserParent* bp = cbc->GetBrowserParent();
     if (!bp) {
-      bp = aAccessible->AsRemote()->Document()->Manager();
+      bp = aAccessible->AsRemote()->Document()->GetBrowserParent();
     }
     if (auto element = bp->GetOwnerElement()) {
       if (auto doc = element->OwnerDoc()) {
@@ -632,6 +634,8 @@ void SessionAccessibility::PopulateNodeInfo(
   aAccessible->DOMNodeID(nodeID);
   nsAutoString accDesc;
   aAccessible->Description(accDesc);
+  nsAutoString language;
+  aAccessible->Language(language);
   uint64_t state = aAccessible->State();
   LayoutDeviceIntRect bounds = aAccessible->Bounds();
   int32_t virtualViewID = AccessibleWrap::GetVirtualViewID(aAccessible);
@@ -651,6 +655,7 @@ void SessionAccessibility::PopulateNodeInfo(
   nsAutoString hint;
   nsAutoString text;
   nsAutoString description;
+  nsAutoString containerTitle;
   if (state & states::EDITABLE) {
     // An editable field's name is populated in the hint.
     hint.Assign(name);
@@ -658,6 +663,8 @@ void SessionAccessibility::PopulateNodeInfo(
   } else {
     if (role == roles::LINK || role == roles::HEADING) {
       description.Assign(name);
+    } else if (role == roles::GROUPING) {
+      containerTitle.Assign(name);
     } else if (role != roles::CELL || nameFlag != eNameFromSubtree) {
       // In most cases, use the name as the text. We discard the name completely
       // for a table cell where the name is computed from the subtree because
@@ -677,14 +684,31 @@ void SessionAccessibility::PopulateNodeInfo(
     hint.Append(accDesc);
   }
 
-  if ((state & states::REQUIRED) != 0) {
-    nsAutoString requiredString;
-    if (LocalizeString(u"stateRequired"_ns, requiredString)) {
+  if (mozilla::jni::GetAPIVersion() < 36) {
+    // Version 36 introduces isFieldRequired and partial checked states,
+    // but for older devices we add these states to the hint string.
+    AutoTArray<nsString, 1> stateStrings;
+    if ((state & states::REQUIRED) != 0) {
+      nsAutoString requiredString;
+      if (LocalizeString(u"stateRequired"_ns, requiredString)) {
+        stateStrings.AppendElement(requiredString);
+      }
+    }
+
+    if ((state & states::MIXED) != 0 && (state & states::CHECKABLE) != 0) {
+      // A checkable widget is in a "mixed" state.
+      nsAutoString partiallyCheckedString;
+      if (LocalizeString(u"statePartiallyChecked"_ns, partiallyCheckedString)) {
+        stateStrings.AppendElement(partiallyCheckedString);
+      }
+    }
+
+    if (!stateStrings.IsEmpty()) {
       if (!hint.IsEmpty()) {
         // If the hint is non-empty, concatenate with a comma for a brief pause.
         hint.AppendLiteral(", ");
       }
-      hint.Append(requiredString);
+      StringJoinAppend(hint, u" "_ns, stateStrings);
     }
   }
 
@@ -722,7 +746,8 @@ void SessionAccessibility::PopulateNodeInfo(
       className, jni::IntArray::New(boundsArray, 4), jni::StringParam(text),
       jni::StringParam(description), jni::StringParam(hint),
       jni::StringParam(geckoRole), jni::StringParam(roleDescription),
-      jni::StringParam(nodeID), inputType);
+      jni::StringParam(nodeID), jni::StringParam(containerTitle),
+      jni::StringParam(language), inputType);
 
   if (aAccessible->HasNumericValue()) {
     double curValue = aAccessible->CurValue();

@@ -5057,10 +5057,7 @@ static unsigned int WindowMaskForBorderStyle(BorderStyle aBorderStyle) {
     return NSWindowStyleMaskBorderless;
   }
 
-  unsigned int mask = NSWindowStyleMaskTitled;
-  if (allOrDefault || aBorderStyle & BorderStyle::Close) {
-    mask |= NSWindowStyleMaskClosable;
-  }
+  unsigned int mask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable;
   if (allOrDefault || aBorderStyle & BorderStyle::Minimize) {
     mask |= NSWindowStyleMaskMiniaturizable;
   }
@@ -5089,13 +5086,6 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
     case WindowType::Invisible:
       break;
     case WindowType::Popup:
-      if (aBorderStyle != BorderStyle::Default &&
-          mBorderStyle & BorderStyle::Title) {
-        features |= NSWindowStyleMaskTitled;
-        if (aBorderStyle & BorderStyle::Close) {
-          features |= NSWindowStyleMaskClosable;
-        }
-      }
       break;
     case WindowType::TopLevel:
     case WindowType::Dialog:
@@ -6665,8 +6655,7 @@ void nsCocoaWindow::EndOurNativeTransition() {
 
 // Coordinates are desktop pixels
 void nsCocoaWindow::DoResize(double aX, double aY, double aWidth,
-                             double aHeight, bool aRepaint,
-                             bool aConstrainToCurrentScreen) {
+                             double aHeight, bool aRepaint) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!mWindow || mInResize) {
@@ -6730,14 +6719,14 @@ void nsCocoaWindow::DoResize(double aX, double aY, double aWidth,
 }
 
 void nsCocoaWindow::Resize(const DesktopRect& aRect, bool aRepaint) {
-  DoResize(aRect.x, aRect.y, aRect.width, aRect.height, aRepaint, false);
+  DoResize(aRect.x, aRect.y, aRect.width, aRect.height, aRepaint);
 }
 
 // Coordinates are desktop pixels
 void nsCocoaWindow::Resize(const DesktopSize& aSize, bool aRepaint) {
   double invScale = 1.0 / BackingScaleFactor();
   DoResize(mBounds.x * invScale, mBounds.y * invScale, aSize.width,
-           aSize.height, aRepaint, true);
+           aSize.height, aRepaint);
 }
 
 // Return the area that the Gecko ChildView in our window should cover, as an

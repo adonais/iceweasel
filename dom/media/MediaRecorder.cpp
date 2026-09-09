@@ -1171,6 +1171,8 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
                      });
     }
 
+    // This can race with other RequestData callers. See
+    // MediaEncoder::MaybeExtractOrGatherBlob for details.
     blobPromise
         ->Then(
             GetMainThreadSerialEventTarget(), __func__,

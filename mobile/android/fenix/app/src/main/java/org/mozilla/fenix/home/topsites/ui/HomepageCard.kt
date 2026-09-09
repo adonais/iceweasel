@@ -20,12 +20,10 @@ import androidx.compose.ui.unit.dp
 private val cardElevation = 6.dp
 
 private val homepageCardShape: Shape
-    @Composable
-    get() = MaterialTheme.shapes.large
+    @Composable get() = MaterialTheme.shapes.large
 
 val homepageCardImageShape: Shape
-    @Composable
-    get() = MaterialTheme.shapes.medium
+    @Composable get() = MaterialTheme.shapes.medium
 
 /**
  * Card for use on the homepage, with the default style including a border and rounded corner shape.
@@ -49,10 +47,11 @@ internal fun HomepageCard(
     HomepageCard(
         modifier = modifier,
         shape = shape,
-        colors = CardDefaults.cardColors(
-            containerColor = backgroundColor,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = backgroundColor,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ),
         elevation = elevation,
         border = border,
         content = content,

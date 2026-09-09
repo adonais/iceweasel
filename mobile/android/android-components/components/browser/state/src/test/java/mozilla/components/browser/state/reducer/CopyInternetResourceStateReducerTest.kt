@@ -4,6 +4,7 @@
 
 package mozilla.components.browser.state.reducer
 
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.action.CopyInternetResourceAction
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.ContentState
@@ -15,7 +16,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlin.test.assertNotNull
 
 class CopyInternetResourceStateReducerTest {
     @Test
@@ -23,10 +23,11 @@ class CopyInternetResourceStateReducerTest {
         val reducer = CopyInternetResourceStateReducer
         val state = BrowserState(tabs = listOf(TabSessionState("tabId", ContentState("contentStateUrl"))))
         val response: Response = mock()
-        val action = CopyInternetResourceAction.AddCopyAction(
-            "tabId",
-            ShareResourceState.InternetResource("internetResourceUrl", "type", true, response),
-        )
+        val action =
+            CopyInternetResourceAction.AddCopyAction(
+                "tabId",
+                ShareResourceState.InternetResource("internetResourceUrl", "type", true, response),
+            )
 
         assertNull(state.tabs[0].content.copy)
 
@@ -43,11 +44,8 @@ class CopyInternetResourceStateReducerTest {
     fun `reduce - ConsumeCopyAction should remove the CopyInternetResourceState ContentState`() {
         val reducer = CopyInternetResourceStateReducer
         val shareState: ShareResourceState.InternetResource = mock()
-        val state = BrowserState(
-            tabs = listOf(
-                TabSessionState("tabId", ContentState("contentStateUrl", copy = shareState)),
-            ),
-        )
+        val state =
+            BrowserState(tabs = listOf(TabSessionState("tabId", ContentState("contentStateUrl", copy = shareState))))
         val action = CopyInternetResourceAction.ConsumeCopyAction("tabId")
 
         assertNotNull(state.tabs[0].content.copy)

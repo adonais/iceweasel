@@ -70,3 +70,16 @@ trustpanel:
           full longform animation, vs. a return visit showing only the
           shortform count animation.
         type: boolean
+  breach_alert_shield_animated:
+    type: event
+    description: |
+      Event to record when the shield icon animates to indicate a breach alert.
+    bugs: *trustpanel_bugs
+    data_reviews: *trustpanel_data_reviews
+    notification_emails: *trustpanel_emails
+    expires: never
+    extra_keys:
+      breach_status:
+        description: >
+          What type of breach alert triggered the animation.
+        type: string

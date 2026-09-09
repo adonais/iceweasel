@@ -11,8 +11,8 @@ import mozilla.components.feature.toolbar.ToolbarBehaviorController
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 
 /**
- * The feature responsible for scrolling behaviour of the bottom toolbar container.
- * When the content of a tab is being scrolled, the toolbar will react to user interactions.
+ * The feature responsible for scrolling behaviour of the bottom toolbar container. When the content of a tab is being
+ * scrolled, the toolbar will react to user interactions.
  */
 class BottomToolbarContainerIntegration(
     toolbar: ScrollableToolbar,

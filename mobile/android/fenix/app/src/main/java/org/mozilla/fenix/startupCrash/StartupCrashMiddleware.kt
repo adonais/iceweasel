@@ -47,21 +47,24 @@ internal class StartupCrashMiddleware(
                     cache.setDeferredUntil(currentTimeInMillis() + FIVE_DAYS_IN_MILLIS)
                 }
             }
-            CrashReportCompleted,
-            -> {}
+            CrashReportCompleted -> {}
         }
     }
 
     private suspend fun sendUnsentCrashReports(store: Store<StartupCrashState, StartupCrashAction>) {
-        crashReporter.unsentCrashReportsSince(cutoffDate()).map {
-            crashReporter.submitReport(it)
-        }.joinAll()
+        crashReporter
+            .unsentCrashReportsSince(cutoffDate())
+            .map {
+                crashReporter.submitReport(it)
+            }
+            .joinAll()
         store.dispatch(CrashReportCompleted)
     }
 
     private suspend fun cutoffDate(): TimeInMillis {
-        return cache.getCutoffDate() ?: currentTimeInMillis().also {
-            cache.setCutoffDate(it)
-        }
+        return cache.getCutoffDate()
+            ?: currentTimeInMillis().also {
+                cache.setCutoffDate(it)
+            }
     }
 }

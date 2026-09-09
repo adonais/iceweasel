@@ -56,26 +56,30 @@ class AddressStructureMiddleware(
 
         when (action) {
             is ViewAppeared -> loadAddressStructure(store, true)
-            is FormChange.Country -> if (preReductionCountry != store.state.address.country) {
-                loadAddressStructure(store, false)
+            is FormChange.Country ->
+                if (preReductionCountry != store.state.address.country) {
+                    loadAddressStructure(store, false)
+                }
+            else -> {
+                /* noop */
             }
-            else -> { /* noop */ }
         }
     }
 
     private fun loadAddressStructure(
         store: Store<AddressState, AddressAction>,
         initialLoad: Boolean,
-    ) = scope.launch(ioDispatcher) {
-        val structure = environment.getAddressStructure(store.state.address.country)
-        structure.validate(store.state.address.country)
-        store.dispatch(
-            AddressStructureLoaded(
-                structure,
-                initialLoad,
-            ),
-        )
-    }
+    ) =
+        scope.launch(ioDispatcher) {
+            val structure = environment.getAddressStructure(store.state.address.country)
+            structure.validate(store.state.address.country)
+            store.dispatch(
+                AddressStructureLoaded(
+                    structure,
+                    initialLoad,
+                )
+            )
+        }
 
     private fun AddressStructure.validate(countryCode: String) {
         for (field in fields) {
@@ -87,9 +91,7 @@ class AddressStructureMiddleware(
             }
 
             if (localizationKey is AddressStructure.Field.LocalizationKey.Unknown) {
-                environment.submitCaughtException(
-                    UnknownLocalizationKey(countryCode, localizationKey.value),
-                )
+                environment.submitCaughtException(UnknownLocalizationKey(countryCode, localizationKey.value))
             }
         }
     }

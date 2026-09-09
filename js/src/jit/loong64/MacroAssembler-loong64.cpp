@@ -349,6 +349,10 @@ FaultingCodeRange MacroAssemblerLOONG64::ma_st_d(Register src,
 
 // Add.
 void MacroAssemblerLOONG64::ma_add_d(Register rd, Register rj, Imm32 imm) {
+  if (rd == rj && imm.value == 0) {
+    // This is nop.
+    return;
+  }
   if (is_intN(imm.value, 12)) {
     as_addi_d(rd, rj, imm.value);
   } else if (rd != rj) {
@@ -604,34 +608,34 @@ void MacroAssemblerLOONG64::ma_sub32TestOverflow(Register rd, Register rj,
 void MacroAssemblerLOONG64::ma_subPtrTestOverflow(Register rd, Register rj,
                                                   Register rk,
                                                   Label* overflow) {
-  UseScratchRegisterScope temps2(asMasm());
-  Register scratch2 = temps2.Acquire();
+  UseScratchRegisterScope temps(asMasm());
+  Register scratch = temps.Acquire();
   MOZ_ASSERT_IF(rj == rd, rj != rk);
-  MOZ_ASSERT(rj != scratch2);
-  MOZ_ASSERT(rk != scratch2);
-  MOZ_ASSERT(rd != scratch2);
+  MOZ_ASSERT(rj != scratch);
+  MOZ_ASSERT(rk != scratch);
+  MOZ_ASSERT(rd != scratch);
 
   Register rj_copy = rj;
 
   if (rj == rd) {
-    as_or(scratch2, rj, zero);
-    rj_copy = scratch2;
+    as_or(scratch, rj, zero);
+    rj_copy = scratch;
   }
 
   {
-    UseScratchRegisterScope temps(asMasm());
-    Register scratch = temps.Acquire();
-    MOZ_ASSERT(rd != scratch);
+    UseScratchRegisterScope temps2(asMasm());
+    Register scratch2 = temps2.Acquire();
+    MOZ_ASSERT(rd != scratch2);
 
     as_sub_d(rd, rj, rk);
     // If the sign of rj and rk are the same, no overflow
-    as_xor(scratch, rj_copy, rk);
+    as_xor(scratch2, rj_copy, rk);
     // Check if the sign of rd and rj are the same
-    as_xor(scratch2, rd, rj_copy);
-    as_and(scratch2, scratch2, scratch);
+    as_xor(scratch, rd, rj_copy);
+    as_and(scratch, scratch, scratch2);
   }
 
-  ma_b(scratch2, zero, overflow, Assembler::LessThan);
+  ma_b(scratch, zero, overflow, Assembler::LessThan);
 }
 
 void MacroAssemblerLOONG64::ma_subPtrTestOverflow(Register rd, Register rj,
@@ -983,7 +987,7 @@ void MacroAssemblerLOONG64::ma_push(Register r) {
 // Branches when done from within loongarch-specific code.
 void MacroAssemblerLOONG64::ma_b(Register lhs, ImmWord imm, Label* label,
                                  Condition c, JumpKind jumpKind) {
-  if (imm.value <= INT32_MAX) {
+  if (is_intN(imm.value, 32)) {
     ma_b(lhs, Imm32(uint32_t(imm.value)), label, c, jumpKind);
   } else {
     UseScratchRegisterScope temps(asMasm());
@@ -1156,7 +1160,7 @@ void MacroAssemblerLOONG64::branchWithCode(InstImm code, Label* label,
 
 void MacroAssemblerLOONG64::ma_cmp_set(Register rd, Register rj, ImmWord imm,
                                        Condition c) {
-  if (imm.value <= INT32_MAX) {
+  if (is_intN(imm.value, 32)) {
     ma_cmp_set(rd, rj, Imm32(uint32_t(imm.value)), c);
   } else {
     UseScratchRegisterScope temps(asMasm());
@@ -1451,6 +1455,14 @@ void MacroAssemblerLOONG64::ma_fmovn(FloatFormat fmt, FloatRegister fd,
 void MacroAssemblerLOONG64::ma_and(Register rd, Register rj, Imm32 imm) {
   if (is_uintN(imm.value, 12)) {
     as_andi(rd, rj, imm.value);
+  } else if (const auto maybeRange =
+                 GetContiguousMaskRange(mozilla::BitwiseCast<uint64_t>(
+                     static_cast<int64_t>(imm.value)))) {
+    const auto [msb, lsb] = *maybeRange;
+    as_bstrpick_d(rd, rj, msb, lsb);
+    if (lsb != 0) {
+      as_slli_d(rd, rd, lsb);
+    }
   } else if (rd != rj) {
     ma_li(rd, imm);
     as_and(rd, rj, rd);
@@ -1485,6 +1497,14 @@ void MacroAssemblerLOONG64::ma_xor(Register rd, Register rj, Imm32 imm) {
     ma_li(scratch, imm);
     as_xor(rd, rj, scratch);
   }
+}
+
+void MacroAssemblerLOONG64::ma_nor(Register rd, Register rj, Imm32 imm) {
+  UseScratchRegisterScope temps(asMasm());
+  Register scratch = temps.Acquire();
+  MOZ_ASSERT(rj != scratch);
+  ma_li(scratch, imm);
+  as_nor(rd, rj, scratch);
 }
 
 // Arithmetic-based ops.
@@ -3020,7 +3040,7 @@ void MacroAssembler::callWithABIPost(uint32_t stackAdjust, ABIType result) {
 void MacroAssembler::callWithABINoProfiler(Register fun, ABIType result) {
   UseScratchRegisterScope temps(asMasm());
   Register scratch = temps.Acquire();
-  // Load the callee in scratch2, no instruction between the movePtr and
+  // Load the callee in scratch, no instruction between the movePtr and
   // call should clobber it. Note that we can't use fun because it may be
   // one of the IntArg registers clobbered before the call.
   movePtr(fun, scratch);
@@ -3331,25 +3351,25 @@ void MacroAssembler::wasmTruncateDoubleToUInt64(
   loadConstantDouble(double(INT64_MAX + 1ULL), fpscratch);
 
   UseScratchRegisterScope temps(asMasm());
-  Register scratch2 = temps.Acquire();
-  ma_li(scratch2, ImmWord(INT64_MAX));
+  Register scratch = temps.Acquire();
+  ma_li(scratch, ImmWord(INT64_MAX));
   // For numbers in  -1.[ : ]INT64_MAX range do nothing more
-  ma_b(output, Register(scratch2), &done, Assembler::Below, ShortJump);
+  ma_b(output, Register(scratch), &done, Assembler::Below, ShortJump);
 
-  ma_li(scratch2, ImmWord(INT64_MIN));
+  ma_li(scratch, ImmWord(INT64_MIN));
   as_fsub_d(fpscratch, input, fpscratch);
   as_ftintrz_l_d(fpscratch, fpscratch);
-  Register scratch = temps.Acquire();
-  as_movfcsr2gr(scratch);
+  Register scratch2 = temps.Acquire();
+  as_movfcsr2gr(scratch2);
   moveFromDouble(fpscratch, output);
-  as_bstrpick_d(scratch, scratch, Assembler::CauseV, Assembler::CauseV);
-  as_add_d(output, output, scratch2);
+  as_bstrpick_d(scratch2, scratch2, Assembler::CauseV, Assembler::CauseV);
+  as_add_d(output, output, scratch);
 
   // Guard against negative values that result in 0 due the precision loss.
-  as_sltui(scratch2, output, 1);
-  as_or(scratch, scratch, scratch2);
+  as_sltui(scratch, output, 1);
+  as_or(scratch2, scratch2, scratch);
 
-  ma_b(scratch, zero, oolEntry, Assembler::NotEqual);
+  ma_b(scratch2, zero, oolEntry, Assembler::NotEqual);
 
   bind(&done);
 
@@ -3375,25 +3395,25 @@ void MacroAssembler::wasmTruncateFloat32ToUInt64(
   loadConstantFloat32(float(INT64_MAX + 1ULL), fpscratch);
 
   UseScratchRegisterScope temps(asMasm());
-  Register scratch2 = temps.Acquire();
-  ma_li(scratch2, ImmWord(INT64_MAX));
+  Register scratch = temps.Acquire();
+  ma_li(scratch, ImmWord(INT64_MAX));
   // For numbers in  -1.[ : ]INT64_MAX range do nothing more
-  ma_b(output, Register(scratch2), &done, Assembler::Below, ShortJump);
+  ma_b(output, Register(scratch), &done, Assembler::Below, ShortJump);
 
-  ma_li(scratch2, ImmWord(INT64_MIN));
+  ma_li(scratch, ImmWord(INT64_MIN));
   as_fsub_s(fpscratch, input, fpscratch);
   as_ftintrz_l_s(fpscratch, fpscratch);
-  Register scratch = temps.Acquire();
-  as_movfcsr2gr(scratch);
+  Register scratch2 = temps.Acquire();
+  as_movfcsr2gr(scratch2);
   moveFromDouble(fpscratch, output);
-  as_bstrpick_d(scratch, scratch, Assembler::CauseV, Assembler::CauseV);
-  as_add_d(output, output, scratch2);
+  as_bstrpick_d(scratch2, scratch2, Assembler::CauseV, Assembler::CauseV);
+  as_add_d(output, output, scratch);
 
   // Guard against negative values that result in 0 due the precision loss.
-  as_sltui(scratch2, output, 1);
-  as_or(scratch, scratch, scratch2);
+  as_sltui(scratch, output, 1);
+  as_or(scratch2, scratch2, scratch);
 
-  ma_b(scratch, zero, oolEntry, Assembler::NotEqual);
+  ma_b(scratch2, zero, oolEntry, Assembler::NotEqual);
 
   bind(&done);
 
@@ -3765,8 +3785,8 @@ static void AtomicExchange(MacroAssembler& masm,
   bool signExtend = Scalar::isSignedIntType(type);
   unsigned nbytes = Scalar::byteSize(type);
 
-  Register scratch2 = temps.Acquire();
-  masm.computeEffectiveAddress(mem, scratch2);
+  Register scratch = temps.Acquire();
+  masm.computeEffectiveAddress(mem, scratch);
 
   switch (nbytes) {
     case 1: {
@@ -3778,7 +3798,7 @@ static void AtomicExchange(MacroAssembler& masm,
       MOZ_ASSERT(maskTemp == InvalidReg);
 
       FaultingCodeRange fcr(masm.currentOffset());
-      masm.as_amswap_db_b(output, scratch2, value);
+      masm.as_amswap_db_b(output, scratch, value);
       if (access) {
         masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic, fcr);
       }
@@ -3803,7 +3823,7 @@ static void AtomicExchange(MacroAssembler& masm,
       MOZ_ASSERT(maskTemp == InvalidReg);
 
       FaultingCodeRange fcr(masm.currentOffset());
-      masm.as_amswap_db_h(output, scratch2, value);
+      masm.as_amswap_db_h(output, scratch, value);
       if (access) {
         masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic, fcr);
       }
@@ -3820,7 +3840,7 @@ static void AtomicExchange(MacroAssembler& masm,
       MOZ_ASSERT(maskTemp == InvalidReg);
 
       FaultingCodeRange fcr(masm.currentOffset());
-      masm.as_amswap_db_w(output, scratch2, value);
+      masm.as_amswap_db_w(output, scratch, value);
       if (access) {
         masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic, fcr);
       }
@@ -3832,10 +3852,10 @@ static void AtomicExchange(MacroAssembler& masm,
   }
 
   Label again;
-  Register scratch = temps.Acquire();
+  Register scratch2 = temps.Acquire();
 
-  masm.as_andi(offsetTemp, scratch2, 3);
-  masm.subPtr(offsetTemp, scratch2);
+  masm.as_andi(offsetTemp, scratch, 3);
+  masm.subPtr(offsetTemp, scratch);
   masm.as_slli_w(offsetTemp, offsetTemp, 3);
   masm.ma_li(maskTemp, Imm32(UINT32_MAX >> ((4 - nbytes) * 8)));
   masm.as_sll_w(maskTemp, maskTemp, offsetTemp);
@@ -3855,17 +3875,17 @@ static void AtomicExchange(MacroAssembler& masm,
   masm.bind(&again);
 
   FaultingCodeRange fcr(masm.currentOffset());
-  masm.as_ll_w(output, scratch2, 0);
+  masm.as_ll_w(output, scratch, 0);
   if (access) {
     masm.appendAndVerify(*access, wasm::TrapMachineInsn::Load32, fcr);
   }
 
-  masm.as_and(scratch, output, maskTemp);
-  masm.as_or(scratch, scratch, valueTemp);
+  masm.as_and(scratch2, output, maskTemp);
+  masm.as_or(scratch2, scratch2, valueTemp);
 
-  masm.as_sc_w(scratch, scratch2, 0);
+  masm.as_sc_w(scratch2, scratch, 0);
 
-  masm.ma_b(scratch, Register(scratch), &again, Assembler::Zero, ShortJump);
+  masm.ma_b(scratch2, Register(scratch2), &again, Assembler::Zero, ShortJump);
 
   masm.as_srl_w(output, output, offsetTemp);
 
@@ -3918,8 +3938,8 @@ static void AtomicFetchOp(MacroAssembler& masm,
   bool signExtend = Scalar::isSignedIntType(type);
   unsigned nbytes = Scalar::byteSize(type);
 
-  Register scratch2 = temps.Acquire();
-  masm.computeEffectiveAddress(mem, scratch2);
+  Register scratch = temps.Acquire();
+  masm.computeEffectiveAddress(mem, scratch);
 
   if (nbytes == 4) {
     MOZ_ASSERT(valueTemp == InvalidReg);
@@ -3937,16 +3957,16 @@ static void AtomicFetchOp(MacroAssembler& masm,
     switch (op) {
       case AtomicOp::Add:
       case AtomicOp::Sub:
-        masm.as_amadd_db_w(output, scratch2, operand);
+        masm.as_amadd_db_w(output, scratch, operand);
         break;
       case AtomicOp::And:
-        masm.as_amand_db_w(output, scratch2, operand);
+        masm.as_amand_db_w(output, scratch, operand);
         break;
       case AtomicOp::Or:
-        masm.as_amor_db_w(output, scratch2, operand);
+        masm.as_amor_db_w(output, scratch, operand);
         break;
       case AtomicOp::Xor:
-        masm.as_amxor_db_w(output, scratch2, operand);
+        masm.as_amxor_db_w(output, scratch, operand);
         break;
       default:
         MOZ_CRASH();
@@ -3972,7 +3992,7 @@ static void AtomicFetchOp(MacroAssembler& masm,
 
     if (nbytes == 1) {
       FaultingCodeRange fcr(masm.currentOffset());
-      masm.as_amadd_db_b(output, scratch2, operand);
+      masm.as_amadd_db_b(output, scratch, operand);
       if (access) {
         masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic, fcr);
       }
@@ -3983,7 +4003,7 @@ static void AtomicFetchOp(MacroAssembler& masm,
       }
     } else {
       FaultingCodeRange fcr(masm.currentOffset());
-      masm.as_amadd_db_h(output, scratch2, operand);
+      masm.as_amadd_db_h(output, scratch, operand);
       if (access) {
         masm.appendAndVerify(*access, wasm::TrapMachineInsn::Atomic, fcr);
       }
@@ -3996,8 +4016,8 @@ static void AtomicFetchOp(MacroAssembler& masm,
     return;
   }
 
-  masm.as_andi(offsetTemp, scratch2, 3);
-  masm.subPtr(offsetTemp, scratch2);
+  masm.as_andi(offsetTemp, scratch, 3);
+  masm.subPtr(offsetTemp, scratch);
   masm.as_slli_w(offsetTemp, offsetTemp, 3);
   masm.ma_li(maskTemp, Imm32(UINT32_MAX >> ((4 - nbytes) * 8)));
   masm.as_sll_w(maskTemp, maskTemp, offsetTemp);
@@ -4023,13 +4043,13 @@ static void AtomicFetchOp(MacroAssembler& masm,
     FaultingCodeRange fcr(masm.currentOffset());
     switch (op) {
       case AtomicOp::And:
-        masm.as_amand_db_w(output, scratch2, valueTemp);
+        masm.as_amand_db_w(output, scratch, valueTemp);
         break;
       case AtomicOp::Or:
-        masm.as_amor_db_w(output, scratch2, valueTemp);
+        masm.as_amor_db_w(output, scratch, valueTemp);
         break;
       case AtomicOp::Xor:
-        masm.as_amxor_db_w(output, scratch2, valueTemp);
+        masm.as_amxor_db_w(output, scratch, valueTemp);
         break;
       default:
         MOZ_CRASH();
@@ -4063,19 +4083,19 @@ static void AtomicFetchOp(MacroAssembler& masm,
   // Without LAM_BH, byte and halfword addition and subtraction require an LL/SC
   // loop.
   Label again;
-  Register scratch = temps.Acquire();
+  Register scratch2 = temps.Acquire();
 
   masm.memoryBarrierBefore(sync);
 
   masm.bind(&again);
 
   FaultingCodeRange fcr(masm.currentOffset());
-  masm.as_ll_w(scratch, scratch2, 0);
+  masm.as_ll_w(scratch2, scratch, 0);
   if (access) {
     masm.appendAndVerify(*access, wasm::TrapMachineInsn::Load32, fcr);
   }
 
-  masm.as_srl_w(output, scratch, offsetTemp);
+  masm.as_srl_w(output, scratch2, offsetTemp);
 
   switch (op) {
     case AtomicOp::Add:
@@ -4099,12 +4119,12 @@ static void AtomicFetchOp(MacroAssembler& masm,
 
   masm.as_sll_w(valueTemp, valueTemp, offsetTemp);
 
-  masm.as_and(scratch, scratch, maskTemp);
-  masm.as_or(scratch, scratch, valueTemp);
+  masm.as_and(scratch2, scratch2, maskTemp);
+  masm.as_or(scratch2, scratch2, valueTemp);
 
-  masm.as_sc_w(scratch, scratch2, 0);
+  masm.as_sc_w(scratch2, scratch, 0);
 
-  masm.ma_b(scratch, scratch, &again, Assembler::Zero, ShortJump);
+  masm.ma_b(scratch2, scratch2, &again, Assembler::Zero, ShortJump);
 
   switch (nbytes) {
     case 1:

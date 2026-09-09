@@ -16,7 +16,9 @@ import org.mozilla.fenix.nimbus.FxNimbus
 
 const val EXPANDED_TOOLBAR_TYPE = "expanded"
 
-internal class ToolbarExpandedShortcutPreference @JvmOverloads constructor(
+internal class ToolbarExpandedShortcutPreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : ToolbarShortcutPreference(context, attrs) {

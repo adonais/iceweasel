@@ -4,10 +4,6 @@
 // found in the LICENSE file.
 //
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 // Note: During transition to IR, ParseContext.cpp builds the AST and IR at the same time, which is
 // not efficient.  The AST is used for validation purposes, but a stack that only contains the
 // necessary information needed for validation is sufficient, so for example operations such as
@@ -18,6 +14,8 @@
 // a fallback to AST maintained at the same time.
 
 #include "compiler/translator/ParseContext.h"
+#include "common/unsafe_buffers.h"
+#include "compiler/translator/Compiler.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -26,6 +24,7 @@
 #include "common/utilities.h"
 #include "compiler/preprocessor/SourceLocation.h"
 #include "compiler/translator/Declarator.h"
+#include "compiler/translator/ImmutableStringBuilder.h"
 #include "compiler/translator/ValidateGlobalInitializer.h"
 #include "compiler/translator/glslang.h"
 #include "compiler/translator/tree_util/BuiltIn.h"
@@ -48,14 +47,11 @@ const int kWebGLMaxStructNesting = 4;
 // The 1024 character identifier limit, `-2` for the `_u`
 constexpr size_t kMaxAvailableIdentifierLength = 1022;
 
-bool ShouldEnforceESSL100LoopAndIndexingLimitations(ShShaderSpec spec,
-                                                    int shaderVersion,
-                                                    const ShCompileOptions &compileOptions)
+bool ShouldEnforceESSL100LoopAndIndexingLimitations(ShShaderSpec spec, int shaderVersion)
 {
-    // If compiling an ESSL 1.00 shader for WebGL, or if its been requested through the API,
-    // validate loop and indexing as well (to verify that the shader only uses minimal functionality
-    // of ESSL 1.00 as in Appendix A of the spec).
-    return (IsWebGLBasedSpec(spec) && shaderVersion == 100) || compileOptions.validateLoopIndexing;
+    // If compiling an ESSL 1.00 shader for WebGL, validate loop and indexing as well (to verify
+    // that the shader only uses minimal functionality of ESSL 1.00 as in Appendix A of the spec).
+    return IsWebGLBasedSpec(spec) && shaderVersion == 100;
 }
 
 struct IsSamplerFunc
@@ -276,6 +272,11 @@ bool IsSamplerOrStructWithOnlySamplers(const TType *type)
     return IsSampler(type->getBasicType()) || type->isStructureContainingOnlySamplers();
 }
 
+bool IsClipCullEncountered(const ClipCullDistanceInfo &info)
+{
+    return info.maxIndex >= 0 || info.hasNonConstIndex || info.hasArrayLengthMethodCall;
+}
+
 void MarkClipCullFirstEncounter(const TSourceLoc &line, ClipCullDistanceInfo *info)
 {
     if (info->firstEncounter.first_line < 0)
@@ -347,10 +348,7 @@ void ValidateFragColorAndFragData(GLenum shaderType,
     {
         usesFragColor = true;
     }
-    // Extension variables may not always be initialized (saves some time at symbol table init).
-    bool secondaryFragDataUsed =
-        symbolTable.gl_SecondaryFragDataEXT() != nullptr &&
-        symbolTable.isStaticallyUsed(*symbolTable.gl_SecondaryFragDataEXT());
+    const bool secondaryFragDataUsed = symbolTable.isSecondaryFragDataUsed();
     if (symbolTable.isStaticallyUsed(*symbolTable.gl_FragData()) || secondaryFragDataUsed)
     {
         usesFragData = true;
@@ -385,18 +383,20 @@ angle::base::CheckedNumeric<size_t> CalculateVariableSize(const TType *type, boo
     if (type->isArray())
     {
         TType elementType = *type;
-        elementType.toArrayElementType();
+        elementType.toArrayBaseType();
         angle::base::CheckedNumeric<size_t> elementSize =
             CalculateVariableSize(&elementType, isStd140);
 
         return elementSize * type->getArraySizeProduct();
     }
 
-    if (type->getBasicType() == EbtStruct)
+    if (type->getBasicType() == EbtStruct || type->getBasicType() == EbtInterfaceBlock)
     {
-        const TStructure *structure                   = type->getStruct();
+        const TFieldList &fields                      = type->getBasicType() == EbtStruct
+                                                            ? type->getStruct()->fields()
+                                                            : type->getInterfaceBlock()->fields();
         angle::base::CheckedNumeric<size_t> totalSize = 0;
-        for (const TField *field : structure->fields())
+        for (const TField *field : fields)
         {
             const TType *fieldType = field->type();
             totalSize += CalculateVariableSize(fieldType, isStd140);
@@ -455,6 +455,90 @@ unsigned int GetMaxUniformBlocksForShaderType(sh::GLenum shaderType,
             UNREACHABLE();
             return 0;
     }
+}
+
+enum class StructureOriginalScope
+{
+    Global,
+    FunctionLocal,
+};
+
+TIntermDeclaration *RenameAndDeclareStruct(TSymbolTable *symbolTable,
+                                           TStructure *structure,
+                                           StructureOriginalScope scope)
+{
+    ASSERT(!structure->name().empty());
+
+    // We need +2 space for _0 if global, or +11 for "_uniqueId" if function-local.  Using +11
+    // always for simplicity.  +1 for the NUL terminator.
+    //
+    // If appending ID and the name is too long, cut off the end of the name.  The ID makes it
+    // unique.
+    constexpr uint32_t kAppendExtraChars = 1 + 11;  // underscore + 32-bit number
+    const ImmutableString name(
+        structure->name().data(),
+        std::min<size_t>(structure->name().length(), kESSLMaxIdentifierLength - kAppendExtraChars));
+
+    ImmutableStringBuilder builder(structure->name().length() + kAppendExtraChars);
+    builder << name << "_"
+            << (scope == StructureOriginalScope::Global ? 0 : structure->uniqueId().get());
+    structure->setName(builder);
+
+    TType *namedType = new TType(structure, true);
+    namedType->setQualifier(EvqGlobal);
+
+    TVariable *structVariable =
+        new TVariable(symbolTable, kEmptyImmutableString, namedType, SymbolType::Empty);
+    TIntermSymbol *structDeclarator       = new TIntermSymbol(structVariable);
+    TIntermDeclaration *structDeclaration = new TIntermDeclaration;
+    structDeclaration->appendDeclarator(structDeclarator);
+    return structDeclaration;
+}
+
+unsigned int GetTypeComponentCount(const TType &type)
+{
+    unsigned int components = 0;
+    if (type.getBasicType() == EbtInterfaceBlock)
+    {
+        for (const TField *field : type.getInterfaceBlock()->fields())
+        {
+            components += GetTypeComponentCount(*field->type());
+        }
+    }
+    else if (type.getStruct())
+    {
+        for (const TField *field : type.getStruct()->fields())
+        {
+            components += GetTypeComponentCount(*field->type());
+        }
+    }
+    else
+    {
+        components = static_cast<unsigned int>(type.getNominalSize()) * type.getSecondarySize();
+    }
+    components *= type.getArraySizeProduct();
+    return components;
+}
+
+bool IsWholeArrayFragDataUsed(TIntermTyped *node)
+{
+    if (node->getQualifier() == EvqFragData)
+    {
+        return true;
+    }
+
+    TIntermBinary *asBinary = node->getAsBinaryNode();
+    if (asBinary != nullptr && asBinary->getOp() == EOpComma)
+    {
+        return IsWholeArrayFragDataUsed(asBinary->getRight());
+    }
+
+    // Either this is not ESSL 100 (where gl_FragData may be used), or gl_FragData is not used as a
+    // whole array.
+    //
+    // Note: ESSL 100 does not allow arrays in ternary operator, so there is no need to check for
+    // TIntermTernary here for a whole-array use of gl_FragData.
+    return false;
 }
 }  // namespace
 
@@ -522,21 +606,29 @@ TParseContext::TParseContext(TSymbolTable &symt,
       mDefaultBufferBlockStorage(sh::IsWebGLBasedSpec(spec) ? EbsStd140 : EbsShared),
       mDiagnostics(diagnostics),
       mDirectiveHandler(ext, *mDiagnostics, *this, mShaderType),
-      mPreprocessor(mDiagnostics, &mDirectiveHandler, angle::pp::PreprocessorSettings(spec)),
+      mPreprocessor(mDiagnostics,
+                    &mDirectiveHandler,
+                    angle::pp::PreprocessorSettings(
+                        spec,
+                        options.allowExtensionDisableAfterNonPPTokensInWebGL
+                            ? angle::pp::WebGLExtensionDisableBehavior::AnywhereInShader
+                            : angle::pp::WebGLExtensionDisableBehavior::Standard)),
       mScanner(nullptr),
       mComputeShaderLocalSizeDeclared(false),
       mComputeShaderLocalSize(-1),
       mNumViews(-1),
       mMaxUniformBlocks(GetMaxUniformBlocksForShaderType(mShaderType, options, resources)),
       mNumUniformBlocks(0),
+      mNumOutputVaryingComponents(0),
       mDeclaringFunction(false),
       mDeclaringMain(false),
       mMainFunction(nullptr),
       mIsReturnVisitedInMain(false),
       mValidateESSL100Limitations(
-          ShouldEnforceESSL100LoopAndIndexingLimitations(spec, mShaderVersion, options)),
+          ShouldEnforceESSL100LoopAndIndexingLimitations(spec, mShaderVersion)),
       mFragmentOutputIndex1Used(false),
       mFragmentOutputFragDepthUsed(false),
+      mMaxFragDataArrayIndexUsed(0),
       mGeometryShaderInputPrimitiveType(EptUndefined),
       mGeometryShaderOutputPrimitiveType(EptUndefined),
       mGeometryShaderInvocations(0),
@@ -579,12 +671,100 @@ ir::IR TParseContext::getIR()
     return ir::Builder::destroy(std::move(mIRBuilder));
 }
 
-void TParseContext::onShaderVersionDeclared(int version)
+void TParseContext::onShaderVersionDeclared(const TSourceLoc &loc, int version)
 {
     mShaderVersion = version;
+    checkShaderVersion(loc);
     // Update cached decisions that depend on the shader version
-    mValidateESSL100Limitations = ShouldEnforceESSL100LoopAndIndexingLimitations(
-        mShaderSpec, mShaderVersion, mCompileOptions);
+    mValidateESSL100Limitations =
+        ShouldEnforceESSL100LoopAndIndexingLimitations(mShaderSpec, mShaderVersion);
+}
+
+void TParseContext::fatal(const TSourceLoc &loc, const char *reason)
+{
+    error(loc, reason, "");
+    mPreprocessor.forceEOF();
+}
+
+bool TParseContext::checkShaderVersion(const TSourceLoc &loc)
+{
+    if (GetMaxShaderVersionForSpec(mShaderSpec) < mShaderVersion)
+    {
+        std::stringstream reasonStream = sh::InitializeStream<std::stringstream>();
+        reasonStream << "unsupported shader version ";
+        reasonStream << mShaderVersion;
+        fatal(loc, reasonStream.str().c_str());
+        return false;
+    }
+
+    switch (mShaderType)
+    {
+        case GL_COMPUTE_SHADER:
+            if (mShaderVersion < 310)
+            {
+                fatal(loc, "Compute shader is not supported in this shader version.");
+                return false;
+            }
+            break;
+
+        case GL_GEOMETRY_SHADER_EXT:
+            if (mShaderVersion < 310)
+            {
+                fatal(loc, "Geometry shader is not supported in this shader version.");
+                return false;
+            }
+            break;
+
+        case GL_TESS_CONTROL_SHADER_EXT:
+        case GL_TESS_EVALUATION_SHADER_EXT:
+            if (mShaderVersion < 310)
+            {
+                fatal(loc, "Tessellation shaders are not supported in this shader version.");
+                return false;
+            }
+            break;
+
+        default:
+            break;
+    }
+
+    return true;
+}
+
+bool TParseContext::checkCanUseShaderType(const TSourceLoc &loc)
+{
+    switch (mShaderType)
+    {
+        case GL_GEOMETRY_SHADER_EXT:
+            if (mShaderVersion == 310)
+            {
+                if (!checkCanUseOneOfExtensions(
+                        loc, std::array<TExtension, 2u>{{TExtension::EXT_geometry_shader,
+                                                         TExtension::OES_geometry_shader}}))
+                {
+                    return false;
+                }
+            }
+            break;
+
+        case GL_TESS_CONTROL_SHADER_EXT:
+        case GL_TESS_EVALUATION_SHADER_EXT:
+            if (mShaderVersion == 310)
+            {
+                if (!checkCanUseOneOfExtensions(
+                        loc, std::array<TExtension, 2u>{{TExtension::EXT_tessellation_shader,
+                                                         TExtension::OES_tessellation_shader}}))
+                {
+                    return false;
+                }
+            }
+            break;
+
+        default:
+            break;
+    }
+
+    return true;
 }
 
 bool TParseContext::anyMultiviewExtensionAvailable()
@@ -619,53 +799,77 @@ bool TParseContext::parseVectorFields(const TSourceLoc &line,
         switch (compString[i])
         {
             case 'x':
-                (*fieldOffsets)[i] = 0;
-                fieldSet[i]        = exyzw;
+                ANGLE_UNSAFE_TODO({
+                    (*fieldOffsets)[i] = 0;
+                    fieldSet[i]        = exyzw;
+                })
                 break;
             case 'r':
-                (*fieldOffsets)[i] = 0;
-                fieldSet[i]        = ergba;
+                ANGLE_UNSAFE_TODO({
+                    (*fieldOffsets)[i] = 0;
+                    fieldSet[i]        = ergba;
+                })
                 break;
             case 's':
-                (*fieldOffsets)[i] = 0;
-                fieldSet[i]        = estpq;
+                ANGLE_UNSAFE_TODO({
+                    (*fieldOffsets)[i] = 0;
+                    fieldSet[i]        = estpq;
+                })
                 break;
             case 'y':
-                (*fieldOffsets)[i] = 1;
-                fieldSet[i]        = exyzw;
+                ANGLE_UNSAFE_TODO({
+                    (*fieldOffsets)[i] = 1;
+                    fieldSet[i]        = exyzw;
+                })
                 break;
             case 'g':
-                (*fieldOffsets)[i] = 1;
-                fieldSet[i]        = ergba;
+                ANGLE_UNSAFE_TODO({
+                    (*fieldOffsets)[i] = 1;
+                    fieldSet[i]        = ergba;
+                })
                 break;
             case 't':
-                (*fieldOffsets)[i] = 1;
-                fieldSet[i]        = estpq;
+                ANGLE_UNSAFE_TODO({
+                    (*fieldOffsets)[i] = 1;
+                    fieldSet[i]        = estpq;
+                })
                 break;
             case 'z':
-                (*fieldOffsets)[i] = 2;
-                fieldSet[i]        = exyzw;
+                ANGLE_UNSAFE_TODO({
+                    (*fieldOffsets)[i] = 2;
+                    fieldSet[i]        = exyzw;
+                })
                 break;
             case 'b':
-                (*fieldOffsets)[i] = 2;
-                fieldSet[i]        = ergba;
+                ANGLE_UNSAFE_TODO({
+                    (*fieldOffsets)[i] = 2;
+                    fieldSet[i]        = ergba;
+                })
                 break;
             case 'p':
-                (*fieldOffsets)[i] = 2;
-                fieldSet[i]        = estpq;
+                ANGLE_UNSAFE_TODO({
+                    (*fieldOffsets)[i] = 2;
+                    fieldSet[i]        = estpq;
+                })
                 break;
 
             case 'w':
-                (*fieldOffsets)[i] = 3;
-                fieldSet[i]        = exyzw;
+                ANGLE_UNSAFE_TODO({
+                    (*fieldOffsets)[i] = 3;
+                    fieldSet[i]        = exyzw;
+                })
                 break;
             case 'a':
-                (*fieldOffsets)[i] = 3;
-                fieldSet[i]        = ergba;
+                ANGLE_UNSAFE_TODO({
+                    (*fieldOffsets)[i] = 3;
+                    fieldSet[i]        = ergba;
+                })
                 break;
             case 'q':
-                (*fieldOffsets)[i] = 3;
-                fieldSet[i]        = estpq;
+                ANGLE_UNSAFE_TODO({
+                    (*fieldOffsets)[i] = 3;
+                    fieldSet[i]        = estpq;
+                })
                 break;
             default:
                 error(line, "illegal vector field selection", compString);
@@ -683,7 +887,7 @@ bool TParseContext::parseVectorFields(const TSourceLoc &line,
 
         if (i > 0)
         {
-            if (fieldSet[i] != fieldSet[i - 1])
+            if (ANGLE_UNSAFE_TODO(fieldSet[i] != fieldSet[i - 1]))
             {
                 error(line, "illegal - vector component fields not from the same set", compString);
                 return false;
@@ -1090,6 +1294,25 @@ bool TParseContext::checkCanBeLValue(const TSourceLoc &line, const char *op, TIn
             }
     }
 
+    // Disallow modification of structs that have samplers, even if the field being modified is not
+    // a sampler for example in code like this:
+    //
+    //     void f(StructWithSampler s) {
+    //         s.non_sampler = 1.0;
+    //     }
+    //
+    // The above is valid GLSL code, but is not currently supported due to limitations of the
+    // MonomorphizeUnsupportedFunctions pass.  On mesa/GL drivers, where
+    // MonomorphizeUnsupportedFunctions is not used, code like the above crashes the compiler.
+    if (message.empty())
+    {
+        TIntermTyped *lvalueBase = FindLValueBase(node);
+        if (lvalueBase->getType().isStructureContainingSamplers())
+        {
+            message = "modifying structures containing samplers is not currently supported";
+        }
+    }
+
     ASSERT(binaryNode == nullptr && swizzleNode == nullptr);
     TIntermSymbol *symNode = node->getAsSymbolNode();
     if (message.empty() && symNode != nullptr)
@@ -1219,11 +1442,11 @@ bool TParseContext::checkIsNotReserved(const TSourceLoc &line, const ImmutableSt
 
     // Validate that identifier names won't conflict with the name hashing done later.
     // See https://crbug.com/499176133
-    if ((identifier.length() >= kMaxAvailableIdentifierLength) &&
-        mResources.UserVariableNamePrefix != '\0' && identifier[0] == '_' &&
-        identifier[1] == mResources.UserVariableNamePrefix)
+    if (identifier.length() >= kMaxAvailableIdentifierLength && identifier[0] == '_' &&
+        (identifier[1] == mResources.UserVariableNamePrefix ||
+         identifier[1] == mResources.UserBlockNamePrefix))
     {
-        std::string err = "identifiers beginning with `_u` must be < " +
+        std::string err = "identifiers beginning with `_` must be < " +
                           std::to_string(kMaxAvailableIdentifierLength) + " characters";
         error(line, err.c_str(), identifier);
         return false;
@@ -1727,27 +1950,36 @@ bool TParseContext::checkVariableSize(const TSourceLoc &line,
     // shader should ever hit it.
     //
     // The size check does not take std430 into account as it is intended for WebGL shaders.  For
-    // the same reason, other shader stages than vertex/fragment are ignored as defer-sized
+    // the same reason, other shader stages than vertex/fragment/compute are ignored as defer-sized
     // variables e.g. in geometry shaders are not handled.
-    //
-    // Additionally, if the shader has already failed compilation, do not validate the type sizes.
-    // For example, if previously an error is generated due to too-deep struct nesting the
-    // calculation here could overflow the stack if performed.
-    if (!mCompileOptions.rejectWebglShadersWithLargeVariables || numErrors() > 0 ||
-        (mShaderType != GL_VERTEX_SHADER && mShaderType != GL_FRAGMENT_SHADER))
+    if (!mCompileOptions.rejectWebglShadersWithLargeVariables ||
+        (mShaderType != GL_VERTEX_SHADER && mShaderType != GL_FRAGMENT_SHADER &&
+         mShaderType != GL_COMPUTE_SHADER))
     {
         return true;
     }
 
-    // Note: the only allowed interface block in webgl shaders is UBOs in std140 mode, so the size
-    // is unconditionally calculated with std140 rules if the variable is an interface block.
-    // Uniform variables are treated the same way as UBOs, as they are often packed the same way
-    // later on.
-    const size_t variableSize =
-        CalculateVariableSize(type, type->isInterfaceBlock() || type->getQualifier() == EvqUniform)
-            .ValueOrDefault(std::numeric_limits<size_t>::max());
-    if (mResources.MaxVariableSizeInBytes &&
-        variableSize > mResources.MaxVariableSizeInBytes)
+    // Check the cache of validated types first.
+    size_t variableSize   = 0;
+    auto preValidatedIter = mValidatedVariableTypeSizes.find(*type);
+    if (preValidatedIter != mValidatedVariableTypeSizes.end())
+    {
+        variableSize = preValidatedIter->second;
+    }
+    else
+    {
+        // Note: the only allowed interface block in webgl shaders is UBOs in std140 mode, so the
+        // size is unconditionally calculated with std140 rules if the variable is an interface
+        // block. Uniform variables are treated the same way as UBOs, as they are often packed the
+        // same way later on.
+        variableSize = CalculateVariableSize(
+                           type, type->isInterfaceBlock() || type->getQualifier() == EvqUniform)
+                           .ValueOrDefault(std::numeric_limits<size_t>::max());
+
+        mValidatedVariableTypeSizes[*type] = variableSize;
+    }
+
+    if (mResources.MaxVariableSizeInBytes && variableSize > mResources.MaxVariableSizeInBytes)
     {
         error(line, "Size of declared variable exceeds implementation-defined limit", identifier);
         return false;
@@ -1804,6 +2036,7 @@ bool TParseContext::checkVariableSize(const TSourceLoc &line,
         default:
             break;
     }
+
     return true;
 }
 
@@ -2131,12 +2364,29 @@ bool TParseContext::declareVariable(const TSourceLoc &line,
             }
         }
 
+        // Record the redeclared size of gl_Clip/CullDistance.  Do not allow redeclaration after
+        // these built-ins are already referenced to avoid having to fix the AST after the fact.
+        // With IR, this could be more easily supported if needed.
         switch (expectedType.getQualifier())
         {
             case EvqClipDistance:
+                if (IsClipCullEncountered(mClipDistanceInfo))
+                {
+                    error(line,
+                          "redeclaration of gl_ClipDistance after it is referenced is not allowed",
+                          identifier);
+                    return false;
+                }
                 MarkClipCullRedeclaredSize(line, type->getOutermostArraySize(), &mClipDistanceInfo);
                 break;
             case EvqCullDistance:
+                if (IsClipCullEncountered(mCullDistanceInfo))
+                {
+                    error(line,
+                          "redeclaration of gl_CullDistance after it is referenced is not allowed",
+                          identifier);
+                    return false;
+                }
                 MarkClipCullRedeclaredSize(line, type->getOutermostArraySize(), &mCullDistanceInfo);
                 break;
             default:
@@ -2154,6 +2404,7 @@ bool TParseContext::declareVariable(const TSourceLoc &line,
         error(line, "redefinition", identifier);
         return false;
     }
+    addAndCheckOutputVaryings(**variable, line);
 
     if (!checkIsNonVoid(line, identifier, type->getBasicType()))
     {
@@ -3031,7 +3282,7 @@ void TParseContext::functionCallRValueLValueErrorCheck(const TFunction *fnCandid
     for (size_t i = 0; i < fnCandidate->getParamCount(); ++i)
     {
         TQualifier qual        = fnCandidate->getParam(i)->getType().getQualifier();
-        TIntermTyped *argument = (*(fnCall->getSequence()))[i]->getAsTyped();
+        TIntermTyped *argument = (*fnCall->getSequence())[i]->getAsTyped();
         bool argumentIsRead    = (IsQualifierUnspecified(qual) || qual == EvqParamIn ||
                                qual == EvqParamInOut || qual == EvqParamConst);
         if (argumentIsRead)
@@ -3057,6 +3308,77 @@ void TParseContext::functionCallRValueLValueErrorCheck(const TFunction *fnCandid
                       fnCall->functionName());
                 return;
             }
+        }
+    }
+}
+
+void TParseContext::checkClipCullDistanceWholeArrayUse(const TSourceLoc &location,
+                                                       TIntermTyped *node,
+                                                       const char *message)
+{
+    switch (node->getQualifier())
+    {
+        case EvqClipDistance:
+            if (mClipDistanceInfo.size == 0)
+            {
+                error(location, message, "gl_ClipDistance");
+                return;
+            }
+            break;
+        case EvqCullDistance:
+            if (mCullDistanceInfo.size == 0)
+            {
+                error(location, message, "gl_CullDistance");
+                return;
+            }
+            break;
+        default:
+        {
+            TIntermBinary *asBinary = node->getAsBinaryNode();
+            if (asBinary != nullptr && asBinary->getOp() == EOpComma)
+            {
+                checkClipCullDistanceWholeArrayUse(location, asBinary->getRight(), message);
+                return;
+            }
+            TIntermTernary *asTernary = node->getAsTernaryNode();
+            if (asTernary != nullptr)
+            {
+                checkClipCullDistanceWholeArrayUse(location, asTernary->getTrueExpression(),
+                                                   message);
+                checkClipCullDistanceWholeArrayUse(location, asTernary->getFalseExpression(),
+                                                   message);
+            }
+        }
+            break;
+    }
+}
+
+void TParseContext::functionCallClipCullDistanceCheck(const TFunction *fnCandidate,
+                                                      TIntermAggregate *fnCall)
+{
+    // If clip/cull distance is not redeclared, they can't be passed to a function because their
+    // size is unknown.  Per EXT_clip_cull_distance, only indexing with constants can implicitly
+    // size the built-ins, passing to a function shouldn't try to size them.
+    for (size_t i = 0; i < fnCandidate->getParamCount(); ++i)
+    {
+        TIntermTyped *argument = (*fnCall->getSequence())[i]->getAsTyped();
+        checkClipCullDistanceWholeArrayUse(argument->getLine(), argument,
+                                           "Cannot pass to function unless it is explicitly sized");
+    }
+}
+
+void TParseContext::functionCallFragDataCheck(const TFunction *fnCandidate,
+                                              TIntermAggregate *fnCall)
+{
+    for (size_t i = 0; i < fnCandidate->getParamCount(); ++i)
+    {
+        TIntermTyped *argument = (*fnCall->getSequence())[i]->getAsTyped();
+        if (IsWholeArrayFragDataUsed(argument))
+        {
+            // The whole array is passed to the function.  For validation purposes, assume all
+            // indices are accessed in the function.
+            ASSERT(argument->getType().isArray());
+            mMaxFragDataArrayIndexUsed = argument->getType().getOutermostArraySize() - 1;
         }
     }
 }
@@ -3328,10 +3650,10 @@ void TParseContext::declareFunction(const TFunction *function, FunctionDeclarati
             paramDirections.push_back(paramType.getQualifier());
         }
 
-        mFunctionToId[function] =
-            mIRBuilder.newFunction(function->name(), angle::Span(params.data(), params.size()),
-                                   angle::Span(paramDirections.data(), paramDirections.size()),
-                                   getTypeId(function->getReturnType()), function->getReturnType());
+        mFunctionToId[function] = ANGLE_UNSAFE_TODO(mIRBuilder.newFunction(
+            function->name(), angle::Span(params.data(), params.size()),
+            angle::Span(paramDirections.data(), paramDirections.size()),
+            getTypeId(function->getReturnType()), function->getReturnType()));
     }
     else if (declaration == FunctionDeclaration::Definition)
     {
@@ -3342,9 +3664,9 @@ void TParseContext::declareFunction(const TFunction *function, FunctionDeclarati
             const TVariable *param = function->getParam(i);
             paramNames.push_back(param->name());
         }
-        mIRBuilder.updateFunctionParamNames(mFunctionToId[function],
-                                            angle::Span(paramNames.data(), paramNames.size()),
-                                            angle::Span(paramIds.data(), paramIds.size()));
+        ANGLE_UNSAFE_TODO(mIRBuilder.updateFunctionParamNames(
+            mFunctionToId[function], angle::Span(paramNames.data(), paramNames.size()),
+            angle::Span(paramIds.data(), paramIds.size())));
 
         // When a prototype is previously visited, `declareFunction` has already created the
         // variables for the function parameters in the |if| above.  When the function prototype is
@@ -3390,7 +3712,7 @@ TIntermTyped *TParseContext::parseVariableIdentifier(const TSourceLoc &location,
         TConstantUnion *constArray      = new TConstantUnion[3];
         for (size_t i = 0; i < 3; ++i)
         {
-            constArray[i].setUConst(static_cast<unsigned int>(workGroupSize[i]));
+            ANGLE_UNSAFE_TODO(constArray[i]).setUConst(static_cast<unsigned int>(workGroupSize[i]));
         }
 
         ASSERT(variableType.getBasicType() == EbtUInt);
@@ -3567,22 +3889,33 @@ bool TParseContext::executeInitializer(const TSourceLoc &line,
         IsExtensionEnabled(mDirectiveHandler.extensionBehavior(),
                            TExtension::EXT_shader_non_constant_global_initializers);
     bool globalInitWarning = false;
-    if (symbolTable.atGlobalLevel() &&
-        !ValidateGlobalInitializer(initializer, mShaderVersion, sh::IsWebGLBasedSpec(mShaderSpec),
-                                   nonConstGlobalInitializers, &globalInitWarning))
+    bool tooComplex        = false;
+    if (symbolTable.atGlobalLevel())
     {
-        // Error message does not completely match behavior with ESSL 1.00, but
-        // we want to steer developers towards only using constant expressions.
-        error(line, "global variable initializers must be constant expressions", "=");
-        return false;
-    }
-    if (globalInitWarning)
-    {
-        warning(
-            line,
-            "global variable initializers should be constant expressions "
-            "(uniforms and globals are allowed in global initializers for legacy compatibility)",
-            "=");
+        bool valid = ValidateGlobalInitializer(
+            initializer, mShaderVersion, sh::IsWebGLBasedSpec(mShaderSpec),
+            nonConstGlobalInitializers, &globalInitWarning, &tooComplex);
+        if (!valid || tooComplex)
+        {
+            // Error message does not completely match behavior with ESSL 1.00, but
+            // we want to steer developers towards only using constant expressions.
+            //
+            // Note: the "Expression too complex" check can be removed once IR is the only path, as
+            // it's not sensitive to expression depth.
+            error(line,
+                  tooComplex ? "Expression too complex"
+                             : "global variable initializers must be constant expressions",
+                  "=");
+            return false;
+        }
+        if (globalInitWarning)
+        {
+            warning(line,
+                    "global variable initializers should be constant expressions "
+                    "(uniforms and globals are allowed in global initializers for legacy "
+                    "compatibility)",
+                    "=");
+        }
     }
 
     // identifier must be of type constant, a global, or a temporary
@@ -5661,7 +5994,8 @@ void TParseContext::parseGlobalLayoutQualifier(const TTypeQualifierBuilder &type
             if (layoutQualifier.localSize[i] != -1)
             {
                 mComputeShaderLocalSize[i]             = layoutQualifier.localSize[i];
-                const int maxComputeWorkGroupSizeValue = maxComputeWorkGroupSizeData[i].getIConst();
+                const int maxComputeWorkGroupSizeValue =
+                    ANGLE_UNSAFE_TODO(maxComputeWorkGroupSizeData[i]).getIConst();
                 if (mComputeShaderLocalSize[i] < 1 ||
                     mComputeShaderLocalSize[i] > maxComputeWorkGroupSizeValue)
                 {
@@ -6162,7 +6496,7 @@ TFunctionLookup *TParseContext::addConstructorFunc(const TPublicType &publicType
         error(publicType.getLine(), "array constructor supported in GLSL ES 3.00 and above only",
               "[]");
     }
-    if (publicType.isStructSpecifier())
+    if (publicType.isStructSpecifierForValidation())
     {
         error(publicType.getLine(), "constructor can't be a structure definition",
               getBasicString(publicType.getBasicType()));
@@ -6201,7 +6535,7 @@ TParameter TParseContext::parseParameterDeclarator(const TPublicType &type,
             error(nameLoc, "illegal use of type 'void'", name);
         }
     }
-    if (type.isStructSpecifier())
+    if (type.isStructSpecifierForValidation())
     {
         // ESSL 3.00.6 section 12.10.
         error(nameLoc, "Function parameter type cannot be a structure definition", name);
@@ -6280,7 +6614,9 @@ bool TParseContext::checkUnsizedArrayConstructorArgumentDimensionality(
 //
 TIntermTyped *TParseContext::addConstructor(TFunctionLookup *fnCall, const TSourceLoc &line)
 {
-    TType type                 = fnCall->constructorType();
+    TType type = fnCall->constructorType();
+    checkVariableSize(line, ImmutableString(""), &type);
+
     TIntermSequence &arguments = fnCall->arguments();
     if (type.isUnsizedArray())
     {
@@ -6789,6 +7125,7 @@ TIntermDeclaration *TParseContext::addInterfaceBlock(
         new TVariable(&symbolTable, instanceName, interfaceBlockType,
                       instanceName.empty() ? SymbolType::Empty : instanceSymbolType);
 
+    checkVariableSize(nameLine, blockName, interfaceBlockType);
     checkVariableLocations(nameLine, instanceVariable);
     declareIRVariable(instanceVariable, sized);
 
@@ -6831,6 +7168,7 @@ TIntermDeclaration *TParseContext::addInterfaceBlock(
                 error(field->line(), "redefinition of an interface block member name",
                       field->name());
             }
+            addAndCheckOutputVaryings(*fieldVariable, field->line());
 
             // Don't declare variables for fields of nameless interface blocks in the IR, just
             // remember to implicitly index the instance variable when referenced.
@@ -6860,6 +7198,7 @@ TIntermDeclaration *TParseContext::addInterfaceBlock(
         {
             error(instanceLine, "redefinition of an interface block instance name", instanceName);
         }
+        addAndCheckOutputVaryings(*instanceVariable, instanceLine);
     }
 
     TIntermSymbol *blockSymbol = new TIntermSymbol(instanceVariable);
@@ -7114,18 +7453,16 @@ TIntermTyped *TParseContext::addIndexExpression(TIntermTyped *baseExpression,
 
         if (!baseExpression->getType().isUnsizedArray())
         {
-            if (baseExpression->isArray())
+            if (baseExpression->isArray() && baseExpression->getQualifier() == EvqFragData)
             {
-                if (baseExpression->getQualifier() == EvqFragData && index > 0)
+                mMaxFragDataArrayIndexUsed = std::max(mMaxFragDataArrayIndexUsed, index);
+                if (index > 0 && !isExtensionEnabled(TExtension::EXT_draw_buffers))
                 {
-                    if (!isExtensionEnabled(TExtension::EXT_draw_buffers))
-                    {
-                        outOfRangeError(outOfRangeIndexIsError, location,
-                                        "array index for gl_FragData must be zero when "
-                                        "GL_EXT_draw_buffers is disabled",
-                                        "[]");
-                        safeIndex = 0;
-                    }
+                    outOfRangeError(outOfRangeIndexIsError, location,
+                                    "array index for gl_FragData must be zero when "
+                                    "GL_EXT_draw_buffers is disabled",
+                                    "[]");
+                    safeIndex = 0;
                 }
             }
             // Only do generic out-of-range check if similar error hasn't already been reported.
@@ -7249,7 +7586,8 @@ TIntermTyped *TParseContext::addFieldSelectionExpression(TIntermTyped *baseExpre
         }
         else
         {
-            mIRBuilder.vectorComponentMulti(angle::Span(fieldOffsets.data(), fieldOffsets.size()));
+            ANGLE_UNSAFE_TODO(mIRBuilder.vectorComponentMulti(
+                angle::Span(fieldOffsets.data(), fieldOffsets.size())));
         }
 
         TIntermSwizzle *node = new TIntermSwizzle(baseExpression, fieldOffsets);
@@ -7280,6 +7618,18 @@ TIntermTyped *TParseContext::addFieldSelectionExpression(TIntermTyped *baseExpre
             if (fieldFound)
             {
                 mIRBuilder.structField(i);
+
+                // The AST RewriteStructSamplers transformation cannot handle (..., struct).sampler.
+                // Fail compilation until the IR.
+                if (!mCompileOptions.useIR && baseExpression->getAsBinaryNode() &&
+                    baseExpression->getAsBinaryNode()->getOp() == EOpComma &&
+                    baseExpression->getType().isStructureContainingSamplers())
+                {
+                    error(dotLocation,
+                          "accessing fields of the result of a comma expression that is a "
+                          "structure with samplers is not currently supported",
+                          "Internal Error");
+                }
 
                 TIntermTyped *index = CreateIndexNode(i);
                 index->setLine(fieldLocation);
@@ -7318,6 +7668,48 @@ TIntermTyped *TParseContext::addFieldSelectionExpression(TIntermTyped *baseExpre
             if (fieldFound)
             {
                 mIRBuilder.structField(i);
+
+                // Validate extension requirements for gl_PerVertex fields.
+                const TInterfaceBlock *interfaceBlock =
+                    baseExpression->getType().getInterfaceBlock();
+                if (interfaceBlock && interfaceBlock->name() == "gl_PerVertex")
+                {
+                    TQualifier fieldQualifier = fields[i]->type()->getQualifier();
+                    if (fieldQualifier == EvqClipDistance || fieldQualifier == EvqCullDistance)
+                    {
+                        // gl_ClipDistance and gl_CullDistance require EXT_clip_cull_distance or
+                        // ANGLE_clip_cull_distance extension.
+                        if (!checkCanUseOneOfExtensions(
+                                fieldLocation,
+                                std::array<TExtension, 2u>{{TExtension::EXT_clip_cull_distance,
+                                                            TExtension::ANGLE_clip_cull_distance}}))
+                        {
+                            return baseExpression;
+                        }
+                    }
+                    else if (mShaderType == GL_GEOMETRY_SHADER && fieldQualifier == EvqPointSize)
+                    {
+                        if (!checkCanUseOneOfExtensions(
+                                fieldLocation,
+                                std::array<TExtension, 2u>{{TExtension::EXT_geometry_point_size,
+                                                            TExtension::OES_geometry_point_size}}))
+                        {
+                            return baseExpression;
+                        }
+                    }
+                    else if ((mShaderType == GL_TESS_CONTROL_SHADER ||
+                              mShaderType == GL_TESS_EVALUATION_SHADER) &&
+                             fieldQualifier == EvqPointSize)
+                    {
+                        if (!checkCanUseOneOfExtensions(
+                                fieldLocation, std::array<TExtension, 2u>{
+                                                   {TExtension::EXT_tessellation_point_size,
+                                                    TExtension::OES_tessellation_point_size}}))
+                        {
+                            return baseExpression;
+                        }
+                    }
+                }
 
                 TIntermTyped *index = CreateIndexNode(i);
                 index->setLine(fieldLocation);
@@ -8213,7 +8605,8 @@ TTypeSpecifierNonArray TParseContext::addStructure(const TSourceLoc &structLine,
                                                    TFieldList *fieldList)
 {
     SymbolType structSymbolType = SymbolType::UserDefined;
-    if (structName.empty())
+    const bool isNamelessStruct = structName.empty();
+    if (isNamelessStruct)
     {
         structSymbolType = SymbolType::Empty;
     }
@@ -8318,12 +8711,27 @@ TTypeSpecifierNonArray TParseContext::addStructure(const TSourceLoc &structLine,
 
     mSymbolToTypeId[structure] = mIRBuilder.getStructTypeId(
         structure->symbolType() == SymbolType::Empty ? kEmptyImmutableString : structure->name(),
-        angle::Span<const TField *const>(reorderedFields->data(), reorderedFields->size()), {},
-        false, false, symbolTable.atGlobalLevel());
+        ANGLE_UNSAFE_TODO(
+            angle::Span<const TField *const>(reorderedFields->data(), reorderedFields->size())),
+        {}, false, false, symbolTable.atGlobalLevel());
 
+    // Nameless structs are declared inline with their variables.  But named structs are always
+    // separately declared at the end of parse.
     TTypeSpecifierNonArray typeSpecifierNonArray;
-    typeSpecifierNonArray.initializeStruct(structure, true, structLine);
+    typeSpecifierNonArray.initializeStruct(structure, isNamelessStruct, true, structLine);
     exitStructDeclaration();
+
+    if (!isNamelessStruct)
+    {
+        if (symbolTable.atGlobalLevel())
+        {
+            mGlobalNamedStructs.push_back(structure);
+        }
+        else
+        {
+            mFunctionLocalNamedStructs.push_back(structure);
+        }
+    }
 
     return typeSpecifierNonArray;
 }
@@ -8714,6 +9122,15 @@ bool TParseContext::binaryOpCommonCheck(TOperator op,
             error(loc, "array size mismatch", GetOperatorString(op));
             return false;
         }
+
+        // If either side is gl_Clip/CullDistance but the built-in is not sized, that's not allowed.
+        // Per EXT_clip_cull_distance, only indexing with constants can implicitly size the
+        // built-ins, using them in whole-array assignment shouldn't try to size them.
+        checkClipCullDistanceWholeArrayUse(
+            loc, left, "Cannot use as left-hand side of assignment unless it is explicitly sized");
+        checkClipCullDistanceWholeArrayUse(
+            loc, right,
+            "Cannot use as right-hand side of assignment unless it is explicitly sized");
     }
 
     // Check ops which require integer / ivec parameters
@@ -8775,8 +9192,7 @@ bool TParseContext::binaryOpCommonCheck(TOperator op,
             // Samplers as l-values are disallowed also in ESSL 3.00, see section 4.1.7,
             // we interpret the spec so that this extends to structs containing samplers,
             // similarly to ESSL 1.00 spec.
-            if ((mShaderVersion < 300 || op == EOpAssign || op == EOpInitialize) &&
-                left->getType().isStructureContainingSamplers())
+            if (left->getType().isStructureContainingSamplers())
             {
                 error(loc, "undefined operation for structs containing samplers",
                       GetOperatorString(op));
@@ -9362,8 +9778,8 @@ void TParseContext::checkTextureOffset(TIntermAggregate *functionCall)
         size_t size = offsetType.getObjectSize() / kOffsetsCount;
         for (unsigned int i = 0; i < kOffsetsCount; ++i)
         {
-            checkSingleTextureOffset(offset->getLine(), &offsetValues[i * size], size,
-                                     minOffsetValue, maxOffsetValue);
+            ANGLE_UNSAFE_TODO(checkSingleTextureOffset(offset->getLine(), &offsetValues[i * size],
+                                                       size, minOffsetValue, maxOffsetValue));
         }
     }
     else
@@ -9410,8 +9826,8 @@ void TParseContext::checkSingleTextureOffset(const TSourceLoc &line,
 {
     for (size_t i = 0u; i < size; ++i)
     {
-        ASSERT(values[i].getType() == EbtInt);
-        int offsetValue = values[i].getIConst();
+        ANGLE_UNSAFE_TODO(ASSERT(values[i].getType() == EbtInt));
+        int offsetValue = ANGLE_UNSAFE_TODO(values[i].getIConst());
         if (offsetValue > maxOffsetValue || offsetValue < minOffsetValue)
         {
             std::stringstream tokenStream = sh::InitializeStream<std::stringstream>();
@@ -9689,6 +10105,8 @@ TIntermTyped *TParseContext::addNonConstructorFunctionCallImpl(TFunctionLookup *
             callNode->setLine(loc);
             checkImageMemoryAccessForUserDefinedFunctions(fnCandidate, callNode);
             functionCallRValueLValueErrorCheck(fnCandidate, callNode);
+            functionCallClipCullDistanceCheck(fnCandidate, callNode);
+            functionCallFragDataCheck(fnCandidate, callNode);
 
             mCallGraph[mCurrentFunction].insert(fnCandidate);
             mIRBuilder.callFunction(mFunctionToId.at(fnCandidate));
@@ -9916,11 +10334,11 @@ ir::TypeId TParseContext::getTypeId(const TType &type)
 
             // Same issue with built-ins where the type id is not baked in.  So the type id of each
             // field is also calculated here and passed in.
-            id = mIRBuilder.getStructTypeId(
+            id                     = ANGLE_UNSAFE_TODO(mIRBuilder.getStructTypeId(
                 block->symbolType() == SymbolType::Empty ? kEmptyImmutableString : block->name(),
                 angle::Span<const TField *const>(fields->data(), fields->size()),
                 angle::Span<ir::TypeId>(fieldTypeIds.data(), fieldTypeIds.size()),
-                block->isInterfaceBlock(), block->symbolType() == SymbolType::BuiltIn, true);
+                block->isInterfaceBlock(), block->symbolType() == SymbolType::BuiltIn, true));
             mSymbolToTypeId[block] = id;
         }
     }
@@ -9985,7 +10403,7 @@ const TConstantUnion *TParseContext::pushConstant(const TConstantUnion *constant
     else
     {
         size_t size = type.getObjectSize();
-        for (size_t i = 0; i < size; ++i, ++constant)
+        for (size_t i = 0; i < size; ++i, ANGLE_UNSAFE_TODO(++constant))
         {
             switch (constant->getType())
             {
@@ -10024,6 +10442,39 @@ void TParseContext::endStatementWithValue(TIntermNode *statement)
     {
         mIRBuilder.endStatementWithValue();
     }
+}
+
+void TParseContext::prependPendingStructDeclarations()
+{
+    TIntermSequence allStructDecls;
+
+    // Do the following for all structs:
+    //
+    // * First, modify the name of the struct.  This breaks the symbol table, as names cannot be
+    //   looked up anymore, but that's ok because this is the end of parse and no transformation
+    //   looks up user symbol names anymore.  The struct names are used during link to match
+    //   uniforms, and so for global structs, the name is suffixed by |_0| to be identical between
+    //   shader stages.  For function-local structs it's suffixed by |_uniqueId|
+    // * Then, create a global declarator for the struct and append it to the list of declarations.
+    //
+    // The whole list is prepended to the shader at the end.  Global structs are declared first, as
+    // they may be used by function-local structs.  Within global or function-local structs, they
+    // are declared in the order they are encountered in the shader for the same reason.
+
+    for (TStructure *structure : mGlobalNamedStructs)
+    {
+        allStructDecls.push_back(
+            RenameAndDeclareStruct(&symbolTable, structure, StructureOriginalScope::Global));
+    }
+
+    for (TStructure *structure : mFunctionLocalNamedStructs)
+    {
+        allStructDecls.push_back(
+            RenameAndDeclareStruct(&symbolTable, structure, StructureOriginalScope::FunctionLocal));
+    }
+
+    mTreeRoot->getSequence()->insert(mTreeRoot->getSequence()->begin(), allStructDecls.begin(),
+                                     allStructDecls.end());
 }
 
 void TParseContext::checkCallGraph()
@@ -10293,6 +10744,24 @@ void TParseContext::postParseValidateFragmentOutputLocations()
                   variable.variable->name());
         }
     }
+
+    // If gl_SecondaryFragDataEXT is used, then indices to gl_FragData must be smaller than
+    // gl_MaxDualSourceDrawBuffersEXT.  This cannot be validated until the end of the shader because
+    // it would be unknown if gl_SecondaryFragDataEXT is ever used.
+    //
+    // Note that gl_SecondaryFragColorEXT is not checked, because simultaneous use of gl_FragData
+    // and gl_SecondaryFragColorEXT is already forbidden.  Additionally, mFragmentOutputIndex1Used
+    // is not checked as it pertains to ESSL 300+.
+    const bool secondaryFragDataUsed =
+        symbolTable.gl_SecondaryFragDataEXT() != nullptr &&
+        symbolTable.isStaticallyUsed(*symbolTable.gl_SecondaryFragDataEXT());
+    if (secondaryFragDataUsed && mMaxFragDataArrayIndexUsed >= mResources.MaxDualSourceDrawBuffers)
+    {
+        mDiagnostics->globalError(
+            "array index for gl_FragData must be less than "
+            "GL_MAX_DUAL_SOURCE_DRAW_BUFFERS_EXT when "
+            "gl_SecondaryFragDataEXT is used");
+    }
 }
 
 bool TParseContext::postParseChecks()
@@ -10301,6 +10770,12 @@ bool TParseContext::postParseChecks()
     // If parse failed, we shouldn't reach here.
     ASSERT(!mCompileOptions.useIR || mTreeRoot != nullptr);
 #endif
+
+    // Struct declarations are delayed to the end of parse, add them to the AST now
+    if (mTreeRoot != nullptr)
+    {
+        prependPendingStructDeclarations();
+    }
 
     // If gl_Position is expected to be zero-initialized, make sure it's declared to the IR; it
     // should still be done if gl_Position is statically not used by the shader.
@@ -10430,9 +10905,52 @@ bool TParseContext::postParseChecks()
         // No need to set it for the IR, the PLS rewrite transformation will do that.
     }
 
+    if (!checkCanUseShaderType(kNoSourceLoc))
+    {
+        return false;
+    }
+
     checkCallGraph();
 
     return numErrors() == 0;
+}
+
+void TParseContext::addAndCheckOutputVaryings(const TVariable &variable, const TSourceLoc &line)
+{
+    if (mShaderType != GL_VERTEX_SHADER)
+    {
+        return;
+    }
+
+    if (!mCompileOptions.limitOutputVaryingsTo256)
+    {
+        return;
+    }
+
+    if (variable.symbolType() == SymbolType::BuiltIn)
+    {
+        return;
+    }
+
+    if (!IsVaryingOut(variable.getType().getQualifier()))
+    {
+        return;
+    }
+
+    angle::CheckedNumeric<unsigned int> checkedNum = mNumOutputVaryingComponents;
+    checkedNum += GetTypeComponentCount(variable.getType());
+    mNumOutputVaryingComponents =
+        checkedNum.ValueOrDefault(std::numeric_limits<unsigned int>::max());
+
+    // The cap to 256 vec4s = 1024 components seems somewhat arbitrary, but this is intended as a
+    // workaround for a specific driver bug, and this limit being much
+    // higher than the device limits (mResources.MaxVertexOutputVectors *
+    // 4), it avoids regressing both tests and applications.
+    if (mNumOutputVaryingComponents > 1024)
+    {
+        error(line, "Too many declared shader output varying components for this device",
+              variable.name());
+    }
 }
 
 //

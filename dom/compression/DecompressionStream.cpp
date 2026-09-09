@@ -26,10 +26,13 @@ using namespace compression;
  * Brotli/ZstdDecompressionStreamAlgorithms, based on the CompressionFormat.
  */
 static Result<already_AddRefed<DecompressionStreamAlgorithms>, nsresult>
-CreateDecompressionStreamAlgorithms(CompressionFormat aFormat) {
+CreateDecompressionStreamAlgorithms(CompressionFormat aFormat, bool aIsPDFJS) {
   if (aFormat == CompressionFormat::Brotli) {
+    bool enableLargeWindow =
+        aIsPDFJS ||
+        StaticPrefs::dom_compression_streams_brotli_large_window_enabled();
     RefPtr<DecompressionStreamAlgorithms> brotliAlgos =
-        MOZ_TRY(BrotliDecompressionStreamAlgorithms::Create());
+        MOZ_TRY(BrotliDecompressionStreamAlgorithms::Create(enableLargeWindow));
     return brotliAlgos.forget();
   }
   if (aFormat == CompressionFormat::Zstd) {
@@ -74,6 +77,8 @@ already_AddRefed<DecompressionStream> DecompressionStream::Constructor(
     return nullptr;
   }
 
+  bool isPDFJS = nsContentUtils::IsPDFJS(aGlobal.GetSubjectPrincipal());
+
   // Step 1: If format is unsupported in DecompressionStream, then throw a
   // TypeError.
   // XXX: Skipped as we are using enum for this
@@ -86,7 +91,7 @@ already_AddRefed<DecompressionStream> DecompressionStream::Constructor(
   // transformAlgorithm and flushAlgorithm set to flushAlgorithm.
 
   Result<already_AddRefed<DecompressionStreamAlgorithms>, nsresult> algorithms =
-      CreateDecompressionStreamAlgorithms(aFormat);
+      CreateDecompressionStreamAlgorithms(aFormat, isPDFJS);
   if (algorithms.isErr()) {
     aRv.ThrowUnknownError("Not enough memory");
     return nullptr;

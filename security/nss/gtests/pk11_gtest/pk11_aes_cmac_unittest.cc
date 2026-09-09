@@ -21,7 +21,7 @@ namespace nss_test {
 
 class Pkcs11AesCmacTest : public ::testing::TestWithParam<AesCmacTestVector> {
  protected:
-  ScopedPK11SymKey ImportKey(CK_MECHANISM_TYPE mech, SECItem *key_item) {
+  ScopedPK11SymKey ImportKey(CK_MECHANISM_TYPE mech, SECItem* key_item) {
     ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
     if (!slot) {
       ADD_FAILURE() << "Can't get slot";
@@ -34,8 +34,8 @@ class Pkcs11AesCmacTest : public ::testing::TestWithParam<AesCmacTestVector> {
     return result;
   }
 
-  void RunTest(uint8_t *key, unsigned int key_len, uint8_t *data,
-               unsigned int data_len, uint8_t *expected,
+  void RunTest(uint8_t* key, unsigned int key_len, uint8_t* data,
+               unsigned int data_len, uint8_t* expected,
                unsigned int expected_len, CK_ULONG mechanism) {
     // Create SECItems for everything...
     std::vector<uint8_t> output(expected_len);

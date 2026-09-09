@@ -517,6 +517,7 @@ CERTUTIL_GeneratePrivateKey(KeyType keytype, PK11SlotInfo *slot, int size,
     CK_MECHANISM_TYPE mechanism;
     PK11RSAGenParams rsaparams;
     SECKEYPQGParams *dsaparams = NULL;
+    CK_ULONG paramSet;
     void *params;
     SECKEYPrivateKey *privKey = NULL;
 
@@ -569,6 +570,50 @@ CERTUTIL_GeneratePrivateKey(KeyType keytype, PK11SlotInfo *slot, int size,
             if ((params = (void *)getECParams(pqgFile)) == NULL)
                 return NULL;
             break;
+        case mldsaKey:
+            mechanism = CKM_ML_DSA_KEY_PAIR_GEN;
+            /* set paramset */
+            paramSet = 0;
+            if (pqgFile) {
+                if (PORT_Strcasecmp(pqgFile, "ML-DSA-44") == 0) {
+                    paramSet = CKP_ML_DSA_44;
+                } else if (PORT_Strcasecmp(pqgFile, "ML-DSA-65") == 0) {
+                    paramSet = CKP_ML_DSA_65;
+                } else if (PORT_Strcasecmp(pqgFile, "ML-DSA-87") == 0) {
+                    paramSet = CKP_ML_DSA_87;
+                } else {
+                    /* if we set pqgfile, it had better be right, don't
+                     * fall back to key size */
+                    return NULL;
+                }
+            } else
+                switch (size) {
+                    /* optionally use the size, either the actual size in bytes
+                     * or the short hand ('44', '65', '87') */
+                    case 44:
+                    case 2560:
+                        paramSet = CKP_ML_DSA_44;
+                        break;
+                    case 65:
+                    case 4032:
+                        paramSet = CKP_ML_DSA_65;
+                        break;
+                    case 87:
+                    case 4896:
+                        paramSet = CKP_ML_DSA_87;
+                        break;
+                    default:
+                        /* force a size to be specified somewhere */
+                        return NULL;
+                }
+            /* paranoia, shouldn't be able to happen logically. Code
+             * scanners will scream, but I like belt and suspenders */
+            if (paramSet == 0) {
+                return NULL;
+            }
+            params = &paramSet;
+            break;
+
         default:
             return NULL;
     }

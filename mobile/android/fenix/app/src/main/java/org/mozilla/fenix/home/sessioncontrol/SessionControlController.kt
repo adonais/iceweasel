@@ -8,6 +8,7 @@ import android.app.Activity
 import androidx.annotation.VisibleForTesting
 import androidx.navigation.NavController
 import androidx.navigation.NavDirections
+import java.lang.ref.WeakReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.selector.getNormalOrPrivateTabs
@@ -15,6 +16,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.feature.session.SessionUseCases
+import mozilla.components.feature.tab.collections.Tab as ComponentTab
 import mozilla.components.feature.tab.collections.TabCollection
 import mozilla.components.feature.tab.collections.ext.invoke
 import mozilla.components.feature.tabs.TabsUseCases
@@ -42,119 +44,74 @@ import org.mozilla.fenix.onboarding.WallpaperOnboardingDialogFragment.Companion.
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.wallpapers.Wallpaper
 import org.mozilla.fenix.wallpapers.WallpaperState
-import java.lang.ref.WeakReference
-import mozilla.components.feature.tab.collections.Tab as ComponentTab
 
 /**
- * [HomeFragment] controller. An interface that handles the view manipulation of the Tabs triggered
- * by the Interactor.
+ * [HomeFragment] controller. An interface that handles the view manipulation of the Tabs triggered by the Interactor.
  */
 @Suppress("TooManyFunctions")
 interface SessionControlController {
-    /**
-     * @see [CollectionInteractor.onCollectionAddTabTapped]
-     */
+    /** @see [CollectionInteractor.onCollectionAddTabTapped] */
     fun handleCollectionAddTabTapped(collection: TabCollection)
 
-    /**
-     * @see [CollectionInteractor.onCollectionOpenTabClicked]
-     */
+    /** @see [CollectionInteractor.onCollectionOpenTabClicked] */
     fun handleCollectionOpenTabClicked(tab: ComponentTab)
 
-    /**
-     * @see [CollectionInteractor.onCollectionOpenTabsTapped]
-     */
+    /** @see [CollectionInteractor.onCollectionOpenTabsTapped] */
     fun handleCollectionOpenTabsTapped(collection: TabCollection)
 
-    /**
-     * @see [CollectionInteractor.onCollectionRemoveTab]
-     */
+    /** @see [CollectionInteractor.onCollectionRemoveTab] */
     fun handleCollectionRemoveTab(collection: TabCollection, tab: ComponentTab)
 
-    /**
-     * @see [CollectionInteractor.onCollectionShareTabsClicked]
-     */
+    /** @see [CollectionInteractor.onCollectionShareTabsClicked] */
     fun handleCollectionShareTabsClicked(collection: TabCollection)
 
-    /**
-     * @see [CollectionInteractor.onDeleteCollectionTapped]
-     */
+    /** @see [CollectionInteractor.onDeleteCollectionTapped] */
     fun handleDeleteCollectionTapped(collection: TabCollection)
 
-    /**
-     * @see [CollectionInteractor.onRenameCollectionTapped]
-     */
+    /** @see [CollectionInteractor.onRenameCollectionTapped] */
     fun handleRenameCollectionTapped(collection: TabCollection)
 
-    /**
-     * @see [CollectionInteractor.onToggleCollectionExpanded]
-     */
+    /** @see [CollectionInteractor.onToggleCollectionExpanded] */
     fun handleToggleCollectionExpanded(collection: TabCollection, expand: Boolean)
 
-    /**
-     * @see [CollectionInteractor.onAddTabsToCollectionTapped]
-     */
+    /** @see [CollectionInteractor.onAddTabsToCollectionTapped] */
     fun handleCreateCollection()
 
-    /**
-     * @see [MessageCardInteractor.onMessageClicked]
-     */
+    /** @see [MessageCardInteractor.onMessageClicked] */
     fun handleMessageClicked(message: Message)
 
-    /**
-     * @see [MessageCardInteractor.onMessageClosedClicked]
-     */
+    /** @see [MessageCardInteractor.onMessageClosedClicked] */
     fun handleMessageClosed(message: Message)
 
-    /**
-     * @see [WallpaperInteractor.showWallpapersOnboardingDialog]
-     */
+    /** @see [WallpaperInteractor.showWallpapersOnboardingDialog] */
     fun handleShowWallpapersOnboardingDialog(state: WallpaperState): Boolean
 
-    /**
-     * @see [SessionControlInteractor.reportSessionMetrics]
-     */
+    /** @see [SessionControlInteractor.reportSessionMetrics] */
     fun handleReportSessionMetrics(state: AppState)
 
-    /**
-     * @see [SetupChecklistInteractor.onChecklistItemClicked]
-     */
+    /** @see [SetupChecklistInteractor.onChecklistItemClicked] */
     fun onChecklistItemClicked(item: ChecklistItem)
 
-    /**
-     * @see [SetupChecklistInteractor.onRemoveChecklistButtonClicked]
-     */
+    /** @see [SetupChecklistInteractor.onRemoveChecklistButtonClicked] */
     fun onRemoveChecklistButtonClicked()
 
-    /**
-     * Registers a [SessionControlControllerCallback] to handle callbacks that are implemented in the UI layer.
-     */
+    /** Registers a [SessionControlControllerCallback] to handle callbacks that are implemented in the UI layer. */
     fun registerCallback(callback: SessionControlControllerCallback)
 
-    /**
-     * Unregisters the callback is typically called as part of cleaning up.
-     */
+    /** Unregisters the callback is typically called as part of cleaning up. */
     fun unregisterCallback()
 }
 
-/**
- * Interface for [SessionControlController] callbacks that are implemented in the UI.
- */
+/** Interface for [SessionControlController] callbacks that are implemented in the UI. */
 interface SessionControlControllerCallback {
 
-    /**
-     * Callback to register the [TabCollectionStorage.Observer].
-     */
+    /** Callback to register the [TabCollectionStorage.Observer]. */
     fun registerCollectionStorageObserver()
 
-    /**
-     * Callback to remove collection.
-     */
+    /** Callback to remove collection. */
     fun removeCollection(tabCollection: TabCollection)
 
-    /**
-     * Callback to show tab tray.
-     */
+    /** Callback to show tab tray. */
     fun showTabTray()
 }
 
@@ -263,7 +220,7 @@ class DefaultSessionControlController(
     override fun handleCollectionShareTabsClicked(collection: TabCollection) {
         showShareFragment(
             collection.title,
-            collection.tabs.map { ShareData(url = it.url, title = it.title) },
+            collection.tabs.map { ShareData(url = it.url, title = it.title, private = false) },
         )
         Collections.shared.record(NoExtras())
     }
@@ -285,29 +242,32 @@ class DefaultSessionControlController(
         return if (appStore.state.mode.isPrivate) {
             false
         } else {
-            state.availableWallpapers.filter { wallpaper ->
-                wallpaper.thumbnailFileState == Wallpaper.ImageFileState.Downloaded
-            }.size.let { downloadedCount ->
-                // We only display the dialog if enough thumbnails have been downloaded for it.
-                downloadedCount >= THUMBNAILS_SELECTION_COUNT
-            }.also { showOnboarding ->
-                if (showOnboarding) {
-                    navController.nav(
-                        R.id.homeFragment,
-                        HomeFragmentDirections.actionGlobalWallpaperOnboardingDialog(),
-                    )
+            state.availableWallpapers
+                .filter { wallpaper ->
+                    wallpaper.thumbnailFileState == Wallpaper.ImageFileState.Downloaded
                 }
-            }
+                .size
+                .let { downloadedCount ->
+                    // We only display the dialog if enough thumbnails have been downloaded for it.
+                    downloadedCount >= THUMBNAILS_SELECTION_COUNT
+                }
+                .also { showOnboarding ->
+                    if (showOnboarding) {
+                        navController.nav(
+                            R.id.homeFragment,
+                            HomeFragmentDirections.actionGlobalWallpaperOnboardingDialog(),
+                        )
+                    }
+                }
         }
     }
+
     override fun handleToggleCollectionExpanded(collection: TabCollection, expand: Boolean) {
         appStore.dispatch(AppAction.CollectionExpanded(collection, expand))
     }
 
     private fun showTabTrayCollectionCreation() {
-        val directions = HomeFragmentDirections.actionGlobalTabManagementFragment(
-            enterMultiselect = true,
-        )
+        val directions = HomeFragmentDirections.actionGlobalTabManagementFragment(enterMultiselect = true)
         navController.nav(R.id.homeFragment, directions)
     }
 
@@ -321,17 +281,19 @@ class DefaultSessionControlController(
         // Only register the observer right before moving to collection creation
         callback?.registerCollectionStorageObserver()
 
-        val tabIds = store.state
-            .getNormalOrPrivateTabs(private = appStore.state.mode.isPrivate)
-            .map { session -> session.id }
-            .toList()
-            .toTypedArray()
-        val directions = HomeFragmentDirections.actionGlobalCollectionCreationFragment(
-            tabIds = tabIds,
-            saveCollectionStep = step,
-            selectedTabIds = selectedTabIds,
-            selectedTabCollectionId = selectedTabCollectionId ?: -1,
-        )
+        val tabIds =
+            store.state
+                .getNormalOrPrivateTabs(private = appStore.state.mode.isPrivate)
+                .map { session -> session.id }
+                .toList()
+                .toTypedArray()
+        val directions =
+            HomeFragmentDirections.actionGlobalCollectionCreationFragment(
+                tabIds = tabIds,
+                saveCollectionStep = step,
+                selectedTabIds = selectedTabIds,
+                selectedTabCollectionId = selectedTabCollectionId ?: -1,
+            )
         navController.nav(R.id.homeFragment, directions)
     }
 
@@ -345,11 +307,12 @@ class DefaultSessionControlController(
             source = ShareSource.HOME,
             subject = shareSubject,
             navigateToShareFragment = {
-                val directions = HomeFragmentDirections.actionGlobalShareFragment(
-                    sessionId = store.state.selectedTabId,
-                    shareSubject = shareSubject,
-                    data = data.toTypedArray(),
-                )
+                val directions =
+                    HomeFragmentDirections.actionGlobalShareFragment(
+                        sessionId = store.state.selectedTabId,
+                        shareSubject = shareSubject,
+                        data = data.toTypedArray(),
+                    )
                 navController.nav(R.id.homeFragment, directions)
             },
         )
@@ -383,26 +346,26 @@ class DefaultSessionControlController(
     }
 
     @VisibleForTesting
-    internal fun navigationActionFor(item: ChecklistItem.Task) = when (item.type) {
-        ChecklistItem.Task.Type.SET_AS_DEFAULT -> requestSetDefaultBrowserPrompt()
+    internal fun navigationActionFor(item: ChecklistItem.Task) =
+        when (item.type) {
+            ChecklistItem.Task.Type.SET_AS_DEFAULT -> requestSetDefaultBrowserPrompt()
 
-        ChecklistItem.Task.Type.SIGN_IN ->
-            navigateTo(HomeFragmentDirections.actionGlobalTurnOnSync(FenixFxAEntryPoint.NewUserOnboarding))
+            ChecklistItem.Task.Type.SIGN_IN ->
+                navigateTo(HomeFragmentDirections.actionGlobalTurnOnSync(FenixFxAEntryPoint.NewUserOnboarding))
 
-        ChecklistItem.Task.Type.SELECT_THEME ->
-            navigateTo(HomeFragmentDirections.actionGlobalCustomizationFragment())
+            ChecklistItem.Task.Type.SELECT_THEME ->
+                navigateTo(HomeFragmentDirections.actionGlobalCustomizationFragment())
 
-        ChecklistItem.Task.Type.CHANGE_TOOLBAR_PLACEMENT ->
-            navigateTo(HomeFragmentDirections.actionGlobalCustomizationFragment())
+            ChecklistItem.Task.Type.CHANGE_TOOLBAR_PLACEMENT ->
+                navigateTo(HomeFragmentDirections.actionGlobalCustomizationFragment())
 
-        ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET -> showAddSearchWidgetPrompt()
+            ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET -> showAddSearchWidgetPrompt()
 
-        ChecklistItem.Task.Type.EXPLORE_EXTENSION ->
-            navigateTo(HomeFragmentDirections.actionGlobalAddonsManagementFragment())
-    }
+            ChecklistItem.Task.Type.EXPLORE_EXTENSION ->
+                navigateTo(HomeFragmentDirections.actionGlobalAddonsManagementFragment())
+        }
 
-    private fun navigateTo(directions: NavDirections) =
-        navController.nav(R.id.homeFragment, directions)
+    private fun navigateTo(directions: NavDirections) = navController.nav(R.id.homeFragment, directions)
 
     override fun onRemoveChecklistButtonClicked() {
         appStore.dispatch(AppAction.SetupChecklistAction.Closed)

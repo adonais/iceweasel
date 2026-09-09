@@ -139,7 +139,9 @@ panel-list:not(:defined) {
   display: none;
 }
 
-panel-item::part(button) {
+// Opt-in for menus that are icon-free. A panel-list embedded by another
+// component may have icons; the default padding leaves room for them.
+.panel-list-no-icons panel-item::part(button) {
   padding-inline-start: var(--space-medium);
 }
 
@@ -164,6 +166,7 @@ panel-item::part(button) {
 @import '../components/TopSitesHoverCard/TopSitesHoverCard';
 @import '../components/TopSiteWebNotification/TopSiteWebNotification';
 @import '../components/Sections/Sections';
+@import '../components/Spaces/Spaces';
 @import '../components/Search/Search';
 @import '../components/ContextMenu/ContextMenu';
 @import '../components/ConfirmDialog/ConfirmDialog';
@@ -196,10 +199,12 @@ panel-item::part(button) {
 @import '../components/Widgets/Crossword/Crossword';
 @import '../components/Widgets/Stocks/Stocks';
 @import '../components/Widgets/PictureOfTheDay/PictureOfTheDay';
+@import '../components/Widgets/RecentSearches/RecentSearches';
 @import '../components/Widgets/WeatherForecast/WeatherForecast';
 
 // Discovery Stream Components
 @import '../components/DiscoveryStreamComponents/CardGrid/CardGrid';
+@import '../components/DiscoveryStreamComponents/CardCarousel/CardCarousel';
 @import '../components/DiscoveryStreamComponents/CardSections/CardSections';
 @import '../components/DiscoveryStreamComponents/Highlights/Highlights';
 @import '../components/DiscoveryStreamComponents/HorizontalRule/HorizontalRule';
@@ -225,7 +230,6 @@ panel-item::part(button) {
 @import '../components/DiscoveryStreamComponents/AdBanner/AdBanner';
 @import '../components/DiscoveryStreamComponents/AdBannerContextMenu/AdBannerContextMenu';
 @import '../components/DiscoveryStreamComponents/PromoCard/PromoCard';
-@import '../components/DiscoveryStreamComponents/BriefingCard/BriefingCard';
 @import '../components/DiscoveryStreamComponents/SectionContextMenu/SectionContextMenu';
 @import '../components/DiscoveryStreamComponents/InterestPicker/InterestPicker';
 @import '../components/DiscoveryStreamComponents/ReportContent/ReportContent';

@@ -8,6 +8,8 @@ import android.os.Bundle
 import android.util.JsonReader
 import android.util.JsonWriter
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.ByteArrayOutputStream
+import kotlin.test.assertNotNull
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -15,21 +17,20 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.ByteArrayOutputStream
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class SystemEngineSessionStateTest {
     @Test
     fun fromJSON() {
-        val json = JSONObject().apply {
-            put("k0", "v0")
-            put("k1", 1)
-            put("k2", true)
-            put("k3", 5.0)
-            put("k4", 1.0f)
-            put("k5", JSONArray(listOf(1, 2, 3)))
-        }
+        val json =
+            JSONObject().apply {
+                put("k0", "v0")
+                put("k1", 1)
+                put("k2", true)
+                put("k3", 5.0)
+                put("k4", 1.0f)
+                put("k5", JSONArray(listOf(1, 2, 3)))
+            }
 
         val state = SystemEngineSessionState.fromJSON(json)
         val bundle = state.bundle!!
@@ -51,25 +52,24 @@ class SystemEngineSessionStateTest {
 
     @Test
     fun writeToAndFromJSON() {
-        val state = SystemEngineSessionState(
-            Bundle().apply {
-                putString("k0", "v0")
-                putInt("k1", 1)
-                putBoolean("k2", true)
-                putStringArrayList("k3", ArrayList<String>(listOf("Hello", "World")))
-                putDouble("k4", 5.0)
-                putFloat("k5", 1.0f)
-                putFloat("k6", 42.25f)
-                putDouble("k7", 23.23)
-            },
-        )
+        val state =
+            SystemEngineSessionState(
+                Bundle().apply {
+                    putString("k0", "v0")
+                    putInt("k1", 1)
+                    putBoolean("k2", true)
+                    putStringArrayList("k3", ArrayList<String>(listOf("Hello", "World")))
+                    putDouble("k4", 5.0)
+                    putFloat("k5", 1.0f)
+                    putFloat("k6", 42.25f)
+                    putDouble("k7", 23.23)
+                }
+            )
 
         val outputStream = ByteArrayOutputStream()
         state.writeTo(JsonWriter(outputStream.writer()))
 
-        val bundle = SystemEngineSessionState.fromJSON(
-            JSONObject(outputStream.toString()),
-        ).bundle
+        val bundle = SystemEngineSessionState.fromJSON(JSONObject(outputStream.toString())).bundle
 
         assertNotNull(bundle)
 
@@ -95,18 +95,19 @@ class SystemEngineSessionStateTest {
 
     @Test
     fun writeToAndReadFrom() {
-        val state = SystemEngineSessionState(
-            Bundle().apply {
-                putString("k0", "v0")
-                putInt("k1", 1)
-                putBoolean("k2", true)
-                putStringArrayList("k3", ArrayList<String>(listOf("Hello", "World")))
-                putDouble("k4", 5.0)
-                putFloat("k5", 1.0f)
-                putFloat("k6", 42.25f)
-                putDouble("k7", 23.23)
-            },
-        )
+        val state =
+            SystemEngineSessionState(
+                Bundle().apply {
+                    putString("k0", "v0")
+                    putInt("k1", 1)
+                    putBoolean("k2", true)
+                    putStringArrayList("k3", ArrayList<String>(listOf("Hello", "World")))
+                    putDouble("k4", 5.0)
+                    putFloat("k5", 1.0f)
+                    putFloat("k6", 42.25f)
+                    putDouble("k7", 23.23)
+                }
+            )
 
         val outputStream = ByteArrayOutputStream()
         state.writeTo(JsonWriter(outputStream.writer()))
@@ -128,7 +129,11 @@ class SystemEngineSessionStateTest {
         assertTrue(bundle.containsKey("k7"))
 
         assertEquals("v0", bundle.getString("k0"))
-        assertEquals(1.0, bundle.getDouble("k1"), 0.0) // We only see token "number", so we have to read a double and can't know that this was an int.
+        assertEquals(
+            1.0,
+            bundle.getDouble("k1"),
+            0.0,
+        ) // We only see token "number", so we have to read a double and can't know that this was an int.
         assertEquals(true, bundle.getBoolean("k2"))
         assertEquals(5.0, bundle.getDouble("k4"), 0.0)
         assertEquals(1.0, bundle.getDouble("k5"), 0.0)

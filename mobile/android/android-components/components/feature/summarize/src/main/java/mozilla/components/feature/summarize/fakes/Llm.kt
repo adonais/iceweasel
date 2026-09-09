@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.summarize.fakes
 
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,13 +15,12 @@ import mozilla.components.concept.llm.LlmProvider
 import mozilla.components.concept.llm.LocalLlmProvider
 import mozilla.components.concept.llm.Prompt
 import mozilla.components.feature.summarize.R
-import kotlin.time.Duration.Companion.seconds
 
 /**
  * A fake implementation of [CloudLlmProvider] for use in tests and Compose previews.
  *
- * @property state The mutable state flow representing the current provider state.
- * Defaults to [CloudLlmProvider.State.Available].
+ * @property state The mutable state flow representing the current provider state. Defaults to
+ *   [CloudLlmProvider.State.Available].
  * @property preparedState The state to transition to while preparing
  */
 data class FakeCloudProvider(
@@ -37,14 +37,12 @@ data class FakeCloudProvider(
 /**
  * A fake implementation of [Llm] for use in tests and Compose previews.
  *
- * Emits each item in [responses] sequentially, with a 2-second delay between
- * each emission to simulate real LLM streaming latency.
+ * Emits each item in [responses] sequentially, with a 2-second delay between each emission to simulate real LLM
+ * streaming latency.
  *
  * @property responses values to emit.
  */
-data class FakeLlm(
-    val responses: List<String> = listOf(),
-) : Llm {
+data class FakeLlm(val responses: List<String> = listOf()) : Llm {
 
     var lastPrompt: Prompt? = null
 
@@ -53,25 +51,27 @@ data class FakeLlm(
             emit(response)
             delay(2.seconds)
         }
-    }.also {
-        lastPrompt = prompt
     }
+        .also {
+            lastPrompt = prompt
+        }
 
     companion object {
-        val successful get() = FakeLlm(
-            listOf(
-               "This is the article\n",
-               "This is some content...\n",
-               "This is some *bold* content.\n",
-            ),
-        )
+        val successful
+            get() =
+                FakeLlm(
+                    listOf(
+                        "This is the article\n",
+                        "This is some content...\n",
+                        "This is some *bold* content.\n",
+                    )
+                )
     }
 }
 
 internal data class FakeLocalProvider(
-    override val state: MutableStateFlow<LocalLlmProvider.State> = MutableStateFlow(
-        LocalLlmProvider.State.ReadyToDownload,
-    ),
+    override val state: MutableStateFlow<LocalLlmProvider.State> =
+        MutableStateFlow(LocalLlmProvider.State.ReadyToDownload),
     val llm: Llm,
 ) : LocalLlmProvider {
     override val info = LlmProvider.Info(nameRes = R.string.mozac_summarize_fake_llm_name)

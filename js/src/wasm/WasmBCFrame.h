@@ -1380,12 +1380,22 @@ struct StackMapGenerator {
   [[nodiscard]] bool generateStackmapEntriesForTrapExit(
       const ArgTypeVector& args, ExitStubMapVector* extras);
 
-  // Creates a stackmap incorporating pointers from the current operand
-  // stack |stk|, incorporating possible extra pointers in |extra| at the
-  // lower addressed end, and possibly with the associated frame having a
-  // DebugFrame that must be traced, as indicated by |debugFrameWithLiveRefs|.
+  // Creates a stackmap incorporating pointers from the current operand stack
+  // |stk|, incorporating possible extra pointers in |extra| at the lower
+  // addressed end, and possibly with the associated frame having a DebugFrame
+  // that must be traced, as indicated by |debugFrameWithLiveRefs|.
+  //
+  // `reason` says something about the instruction for which the stackmap is
+  // being made.  When it is `Nothing`, the stack map is for a call instruction,
+  // which is assumed to be resumable.  When it is `Some(Trap t)`, it is for a
+  // Trap of kind `t`, and whether or not it is resumable depends on `t`.
+  //
+  // If the stackmap is for a resumable trap, register-resident references in
+  // the local frame are disallowed (by MOZ_CRASH-ing).  For non-resumable
+  // traps, they are tolerated on the basis that, once the trap happens, the
+  // frame is dead, so there is no need to trace it (for GC).
   [[nodiscard]] bool createStackMap(
-      const char* who, const ExitStubMapVector& extras,
+      Maybe<Trap> reason, const ExitStubMapVector& extras,
       HasDebugFrameWithLiveRefs debugFrameWithLiveRefs, const StkVector& stk,
       wasm::StackMap** result);
 };

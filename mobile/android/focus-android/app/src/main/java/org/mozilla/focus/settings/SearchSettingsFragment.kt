@@ -16,12 +16,8 @@ import org.mozilla.focus.ext.showToolbar
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.state.Screen
 
-/**
- * Settings fragment for search-related options.
- */
-class SearchSettingsFragment :
-    BaseSettingsFragment(),
-    SharedPreferences.OnSharedPreferenceChangeListener {
+/** Settings fragment for search-related options. */
+class SearchSettingsFragment : BaseSettingsFragment(), SharedPreferences.OnSharedPreferenceChangeListener {
     override fun onCreatePreferences(p0: Bundle?, p1: String?) {
         addPreferencesFromResource(R.xml.search_settings)
     }
@@ -41,15 +37,14 @@ class SearchSettingsFragment :
 
     override fun onPreferenceTreeClick(preference: Preference): Boolean {
         when (preference.key) {
-            resources.getString(R.string.pref_key_search_engine) -> run {
-                requireComponents.appStore.dispatch(
-                    AppAction.OpenSettings(page = Screen.Settings.Page.SearchList),
-                )
-                SearchEngines.openSettings.record(NoExtras())
-            }
+            resources.getString(R.string.pref_key_search_engine) ->
+                run {
+                    requireComponents.appStore.dispatch(AppAction.OpenSettings(page = Screen.Settings.Page.SearchList))
+                    SearchEngines.openSettings.record(NoExtras())
+                }
             resources.getString(R.string.pref_key_screen_autocomplete) ->
                 requireComponents.appStore.dispatch(
-                    AppAction.OpenSettings(page = Screen.Settings.Page.SearchAutocomplete),
+                    AppAction.OpenSettings(page = Screen.Settings.Page.SearchAutocomplete)
                 )
         }
         return super.onPreferenceTreeClick(preference)
@@ -59,7 +54,7 @@ class SearchSettingsFragment :
         when (key) {
             resources.getString(R.string.pref_key_show_search_suggestions) ->
                 ShowSearchSuggestions.changedFromSettings.record(
-                    ShowSearchSuggestions.ChangedFromSettingsExtra(sharedPreferences.getBoolean(key, false)),
+                    ShowSearchSuggestions.ChangedFromSettingsExtra(sharedPreferences.getBoolean(key, false))
                 )
         }
     }

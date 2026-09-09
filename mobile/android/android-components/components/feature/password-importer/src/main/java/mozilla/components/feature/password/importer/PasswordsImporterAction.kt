@@ -7,9 +7,7 @@ package mozilla.components.feature.password.importer
 import android.net.Uri
 import mozilla.components.lib.state.Action
 
-/**
- * Actions for the [PasswordsImporterStore].
- */
+/** Actions for the [PasswordsImporterStore]. */
 sealed interface PasswordsImporterAction : Action {
 
     /** The import UI became visible. */
@@ -24,10 +22,11 @@ sealed interface PasswordsImporterAction : Action {
     /** An import started. */
     data object ImportStarted : PasswordsImporterAction
 
-    /** The in-progress import completed successfully.
+    /**
+     * The in-progress import completed successfully.
      *
      * @property passwordsImported the number of passwords imported
-     **/
+     */
     data class ImportFinished(val passwordsImported: Int) : PasswordsImporterAction
 
     /** The in-progress import completed with a failure. */

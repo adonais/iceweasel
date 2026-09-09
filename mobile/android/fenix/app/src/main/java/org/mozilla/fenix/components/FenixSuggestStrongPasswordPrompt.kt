@@ -14,16 +14,14 @@ import org.mozilla.fenix.components.toolbar.ToolbarPosition
 /**
  * Fenix specific implementation of [PasswordPromptView]. This class accomplishes two things:
  * 1. Allows us to add Fenix specific CoordinatorLayout behavior when a prompt is presented.
- * 2. The `PromptFeature` delegates require a [PasswordPromptView] on initialization.
- *  With Bug 1947519 we need to have the ability to delay creating the view until we need it.
- *  This class allows us to pass a concrete [PasswordPromptView] to the `PromptFeature` and lazily
- *  initialize the view.
+ * 2. The `PromptFeature` delegates require a [PasswordPromptView] on initialization. With Bug 1947519 we need to have
+ *    the ability to delay creating the view until we need it. This class allows us to pass a concrete
+ *    [PasswordPromptView] to the `PromptFeature` and lazily initialize the view.
  *
  * @param viewProvider Closure to provide a view of type V where V is a View AND an [PasswordPromptView].
  * @param toolbarPositionProvider Closure to provide the current [ToolbarPosition].
  * @param onShow callback that is called when the prompt is presented.
  * @param onHide callback that is called when the prompt is dismissed.
- *
  * @see [FenixAutocompletePrompt]
  */
 class FenixSuggestStrongPasswordPrompt<V>(
@@ -43,28 +41,31 @@ class FenixSuggestStrongPasswordPrompt<V>(
     override val isPromptDisplayed: Boolean
         get() = isVisible
 
-    override fun showPrompt() = with(view) {
-        showPrompt()
-        behavior = createCustomAutofillBarBehavior()
-        toggleablePromptListener = this@FenixSuggestStrongPasswordPrompt.toggleablePromptListener
-        passwordPromptListener = this@FenixSuggestStrongPasswordPrompt.passwordPromptListener
-        this@FenixSuggestStrongPasswordPrompt.onShow()
-        isVisible = true
-    }
+    override fun showPrompt() =
+        with(view) {
+            showPrompt()
+            behavior = createCustomAutofillBarBehavior()
+            toggleablePromptListener = this@FenixSuggestStrongPasswordPrompt.toggleablePromptListener
+            passwordPromptListener = this@FenixSuggestStrongPasswordPrompt.passwordPromptListener
+            this@FenixSuggestStrongPasswordPrompt.onShow()
+            isVisible = true
+        }
 
-    override fun hidePrompt() = with(view) {
-        hidePrompt()
-        behavior = null
-        toggleablePromptListener = null
-        passwordPromptListener = null
-        this@FenixSuggestStrongPasswordPrompt.onHide()
-        isVisible = false
-    }
+    override fun hidePrompt() =
+        with(view) {
+            hidePrompt()
+            behavior = null
+            toggleablePromptListener = null
+            passwordPromptListener = null
+            this@FenixSuggestStrongPasswordPrompt.onHide()
+            isVisible = false
+        }
 
-    private fun <T : View> T.createCustomAutofillBarBehavior() = AutofillSelectBarBehavior<T>(
-        context = context,
-        toolbarPosition = toolbarPositionProvider(),
-    )
+    private fun <T : View> T.createCustomAutofillBarBehavior() =
+        AutofillSelectBarBehavior<T>(
+            context = context,
+            toolbarPosition = toolbarPositionProvider(),
+        )
 
     private var View.behavior: CoordinatorLayout.Behavior<*>?
         get() = (layoutParams as? CoordinatorLayout.LayoutParams)?.behavior

@@ -8,7 +8,7 @@ import {
   formatDateTimeAttr,
   formatTime,
   getCityAbbreviation,
-  getCityFromTimeZone,
+  getClockCityDisplay,
   getTimeZoneAbbreviation,
   isValidPaletteName,
 } from "./ClocksHelpers";
@@ -17,7 +17,8 @@ import {
  * Single row for the Clocks widget; parent pre-computes per-row flags.
  *
  * @param {object} props
- * @param {{timeZone: string, city?: string, label: string|null, labelColor: string|null}} props.clock
+ * @param {{timeZone: string, city?: string, cityId?: string, label: string|null, labelColor: string|null}} props.clock
+ * @param {{[key: string]: string}} [props.curatedNames] cityId to localized name.
  * @param {string} [props.locale]
  * @param {Date|null} props.now Null before the first tick.
  * @param {Function|null} [props.onEdit]
@@ -30,6 +31,7 @@ import {
  */
 export function ClocksRow({
   clock,
+  curatedNames,
   locale,
   now,
   onEdit,
@@ -40,8 +42,10 @@ export function ClocksRow({
   showInlineActions,
   use12HourFormat,
 }) {
-  const city = clock.city || getCityFromTimeZone(clock.timeZone);
-  const cityDisplay = shouldAbbreviate ? getCityAbbreviation(city) : city;
+  const city = getClockCityDisplay(clock, curatedNames);
+  const cityDisplay = shouldAbbreviate
+    ? getCityAbbreviation(city, clock.cityId)
+    : city;
   // Pass `now` so the TZ label and time resolve from the same instant;
   // otherwise they can disagree across a DST boundary.
   const tzLabel = getTimeZoneAbbreviation(
@@ -80,16 +84,23 @@ export function ClocksRow({
     >
       <div className="clocks-meta" aria-hidden="true">
         <div className="clocks-label">
-          <span className="clocks-city">{cityDisplay}</span>
-          <span className="clocks-timezone">{tzLabel}</span>
+          <span className="clocks-city" dir="auto">
+            {cityDisplay}
+          </span>
+          <span className="clocks-timezone" dir="auto">
+            {tzLabel}
+          </span>
         </div>
         {showLabel && !!clock.label && (
-          <span className={chipClassName}>{clock.label}</span>
+          <span className={chipClassName} dir="auto">
+            {clock.label}
+          </span>
         )}
       </div>
       <time
         className="clocks-time"
         aria-hidden="true"
+        dir="auto"
         dateTime={now ? formatDateTimeAttr(now, clock.timeZone) : undefined}
       >
         {timeDisplay}

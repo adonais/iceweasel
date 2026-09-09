@@ -5,6 +5,8 @@
 package mozilla.components.browser.storage.sync
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.concurrent.TimeUnit
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.appservices.places.uniffi.PlacesApiException
@@ -22,8 +24,6 @@ import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.TimeUnit
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class PlacesBookmarksStorageTest {
@@ -183,15 +183,14 @@ class PlacesBookmarksStorageTest {
         assertTrue(bookmarks.deleteNode(secondInsertedItem).getOrNull()!!)
         assertTrue(bookmarks.deleteNode(folderGuid).getOrNull()!!)
 
-        for (
-        root in listOf(
-            BookmarkRoot.Mobile,
-            BookmarkRoot.Root,
-            BookmarkRoot.Menu,
-            BookmarkRoot.Toolbar,
-            BookmarkRoot.Unfiled,
-        )
-        ) {
+        for (root in
+            listOf(
+                BookmarkRoot.Mobile,
+                BookmarkRoot.Root,
+                BookmarkRoot.Menu,
+                BookmarkRoot.Toolbar,
+                BookmarkRoot.Unfiled,
+            )) {
             try {
                 if (bookmarks.deleteNode(root.id).isSuccess) {
                     fail("Expected root deletion for ${root.id} to fail")
@@ -208,31 +207,34 @@ class PlacesBookmarksStorageTest {
 
     @Test
     fun `insertTree inserts a folder with items and reads them back`() = runTest {
-        val tree = InsertableBookmarkTreeRoot(
-            parentGuid = BookmarkRoot.Mobile.id,
-            rootFolder = InsertableBookmarkTreeNode.Folder(
-                title = "Imported",
-                dateAddedTimestamp = 0L,
-                lastModifiedTimestamp = 0L,
-                position = null,
-                children = listOf(
-                    InsertableBookmarkTreeNode.Item(
-                        title = "Mozilla",
-                        url = "https://www.mozilla.org/",
+        val tree =
+            InsertableBookmarkTreeRoot(
+                parentGuid = BookmarkRoot.Mobile.id,
+                rootFolder =
+                    InsertableBookmarkTreeNode.Folder(
+                        title = "Imported",
                         dateAddedTimestamp = 0L,
                         lastModifiedTimestamp = 0L,
-                        position = 0u,
+                        position = null,
+                        children =
+                            listOf(
+                                InsertableBookmarkTreeNode.Item(
+                                    title = "Mozilla",
+                                    url = "https://www.mozilla.org/",
+                                    dateAddedTimestamp = 0L,
+                                    lastModifiedTimestamp = 0L,
+                                    position = 0u,
+                                ),
+                                InsertableBookmarkTreeNode.Item(
+                                    title = "Firefox",
+                                    url = "https://www.firefox.com/",
+                                    dateAddedTimestamp = 0L,
+                                    lastModifiedTimestamp = 0L,
+                                    position = 1u,
+                                ),
+                            ),
                     ),
-                    InsertableBookmarkTreeNode.Item(
-                        title = "Firefox",
-                        url = "https://www.firefox.com/",
-                        dateAddedTimestamp = 0L,
-                        lastModifiedTimestamp = 0L,
-                        position = 1u,
-                    ),
-                ),
-            ),
-        )
+            )
 
         val rootGuid = bookmarks.insertTree(tree).getOrThrow()
         assertNotNull(rootGuid)
@@ -257,32 +259,36 @@ class PlacesBookmarksStorageTest {
 
     @Test
     fun `insertTree inserts nested folders`() = runTest {
-        val tree = InsertableBookmarkTreeRoot(
-            parentGuid = BookmarkRoot.Unfiled.id,
-            rootFolder = InsertableBookmarkTreeNode.Folder(
-                title = "Outer",
-                dateAddedTimestamp = 0L,
-                lastModifiedTimestamp = 0L,
-                position = null,
-                children = listOf(
+        val tree =
+            InsertableBookmarkTreeRoot(
+                parentGuid = BookmarkRoot.Unfiled.id,
+                rootFolder =
                     InsertableBookmarkTreeNode.Folder(
-                        title = "Inner",
+                        title = "Outer",
                         dateAddedTimestamp = 0L,
                         lastModifiedTimestamp = 0L,
                         position = null,
-                        children = listOf(
-                            InsertableBookmarkTreeNode.Item(
-                                title = "Deep Link",
-                                url = "https://example.com/",
-                                dateAddedTimestamp = 0L,
-                                lastModifiedTimestamp = 0L,
-                                position = null,
+                        children =
+                            listOf(
+                                InsertableBookmarkTreeNode.Folder(
+                                    title = "Inner",
+                                    dateAddedTimestamp = 0L,
+                                    lastModifiedTimestamp = 0L,
+                                    position = null,
+                                    children =
+                                        listOf(
+                                            InsertableBookmarkTreeNode.Item(
+                                                title = "Deep Link",
+                                                url = "https://example.com/",
+                                                dateAddedTimestamp = 0L,
+                                                lastModifiedTimestamp = 0L,
+                                                position = null,
+                                            )
+                                        ),
+                                )
                             ),
-                        ),
                     ),
-                ),
-            ),
-        )
+            )
 
         val rootGuid = bookmarks.insertTree(tree).getOrThrow()
         val outerFolder = bookmarks.getTree(rootGuid, true).getOrNull()
@@ -303,16 +309,18 @@ class PlacesBookmarksStorageTest {
 
     @Test
     fun `insertTree inserts an empty folder`() = runTest {
-        val tree = InsertableBookmarkTreeRoot(
-            parentGuid = BookmarkRoot.Mobile.id,
-            rootFolder = InsertableBookmarkTreeNode.Folder(
-                title = "Empty Folder",
-                dateAddedTimestamp = 0L,
-                lastModifiedTimestamp = 0L,
-                position = null,
-                children = emptyList(),
-            ),
-        )
+        val tree =
+            InsertableBookmarkTreeRoot(
+                parentGuid = BookmarkRoot.Mobile.id,
+                rootFolder =
+                    InsertableBookmarkTreeNode.Folder(
+                        title = "Empty Folder",
+                        dateAddedTimestamp = 0L,
+                        lastModifiedTimestamp = 0L,
+                        position = null,
+                        children = emptyList(),
+                    ),
+            )
 
         val rootGuid = bookmarks.insertTree(tree).getOrThrow()
         val folder = bookmarks.getTree(rootGuid).getOrNull()
@@ -323,33 +331,34 @@ class PlacesBookmarksStorageTest {
     }
 
     @Test
-    fun `GIVEN bookmarks exist WHEN asked for autocomplete suggestions THEN return the first matching bookmark`() = runTest {
-        bookmarks.apply {
-            addItem(BookmarkRoot.Mobile.id, "https://www.mozilla.org/en-us/firefox", "Mozilla", 5u)
-            addItem(BookmarkRoot.Toolbar.id, "https://support.mozilla.org/", "Support", 2u)
+    fun `GIVEN bookmarks exist WHEN asked for autocomplete suggestions THEN return the first matching bookmark`() =
+        runTest {
+            bookmarks.apply {
+                addItem(BookmarkRoot.Mobile.id, "https://www.mozilla.org/en-us/firefox", "Mozilla", 5u)
+                addItem(BookmarkRoot.Toolbar.id, "https://support.mozilla.org/", "Support", 2u)
+            }
+
+            // Try querying for a bookmarks that doesn't exist
+            var suggestion = bookmarks.getAutocompleteSuggestion("test")
+            assertNull(suggestion)
+
+            // And now for ones that do exist
+            suggestion = bookmarks.getAutocompleteSuggestion("moz")
+            assertNotNull(suggestion)
+            assertEquals("moz", suggestion.input)
+            // There are multiple bookmarks from the mozilla host with no guarantee about the read order.
+            // Use a smaller URL that would match all.
+            assertTrue(suggestion.text.startsWith("mozilla.org/en-us/"))
+            assertTrue(suggestion.url.startsWith("https://www.mozilla.org/en-us/"))
+            assertEquals(BOOKMARKS_AUTOCOMPLETE_SOURCE_NAME, suggestion.source)
+            assertEquals(1, suggestion.totalItems)
+
+            suggestion = bookmarks.getAutocompleteSuggestion("sup")
+            assertNotNull(suggestion)
+            assertEquals("sup", suggestion.input)
+            assertEquals("support.mozilla.org/", suggestion.text)
+            assertEquals("https://support.mozilla.org/", suggestion.url)
+            assertEquals(BOOKMARKS_AUTOCOMPLETE_SOURCE_NAME, suggestion.source)
+            assertEquals(1, suggestion.totalItems)
         }
-
-        // Try querying for a bookmarks that doesn't exist
-        var suggestion = bookmarks.getAutocompleteSuggestion("test")
-        assertNull(suggestion)
-
-        // And now for ones that do exist
-        suggestion = bookmarks.getAutocompleteSuggestion("moz")
-        assertNotNull(suggestion)
-        assertEquals("moz", suggestion.input)
-        // There are multiple bookmarks from the mozilla host with no guarantee about the read order.
-        // Use a smaller URL that would match all.
-        assertTrue(suggestion.text.startsWith("mozilla.org/en-us/"))
-        assertTrue(suggestion.url.startsWith("https://www.mozilla.org/en-us/"))
-        assertEquals(BOOKMARKS_AUTOCOMPLETE_SOURCE_NAME, suggestion.source)
-        assertEquals(1, suggestion.totalItems)
-
-        suggestion = bookmarks.getAutocompleteSuggestion("sup")
-        assertNotNull(suggestion)
-        assertEquals("sup", suggestion.input)
-        assertEquals("support.mozilla.org/", suggestion.text)
-        assertEquals("https://support.mozilla.org/", suggestion.url)
-        assertEquals(BOOKMARKS_AUTOCOMPLETE_SOURCE_NAME, suggestion.source)
-        assertEquals(1, suggestion.totalItems)
-    }
 }

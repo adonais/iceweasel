@@ -326,7 +326,8 @@ class nsFocusManager final : public nsIFocusManager,
   /**
    * Activate or deactivate the window and send the activate/deactivate events.
    */
-  void ActivateOrDeactivate(nsPIDOMWindowOuter* aWindow, bool aActive);
+  MOZ_CAN_RUN_SCRIPT void ActivateOrDeactivate(nsPIDOMWindowOuter* aWindow,
+                                               bool aActive);
 
   /**
    * Blur whatever is currently focused and focus aNewContent. aFlags is a

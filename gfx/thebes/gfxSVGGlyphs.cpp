@@ -321,8 +321,8 @@ gfxSVGGlyphsDocument::gfxSVGGlyphsDocument(const uint8_t* aBuffer,
 }
 
 gfxSVGGlyphsDocument::~gfxSVGGlyphsDocument() {
-  if (mDocument) {
-    mDocument->OnPageHide(false, nullptr);
+  if (const RefPtr<Document> doc = std::move(mDocument)) {
+    doc->OnPageHide(false, nullptr);
   }
   if (mPresShell) {
     mPresShell->RemovePostRefreshObserver(this);

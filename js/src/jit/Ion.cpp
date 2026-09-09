@@ -57,7 +57,6 @@
 #include "jit/WarpOracle.h"
 #include "jit/WasmBCE.h"
 #include "jit/WasmRefTypeAnalysis.h"
-#include "js/friend/UsageStatistics.h"  // JSUseCounter
 #include "js/Printf.h"
 #include "js/UniquePtr.h"
 #include "util/Memory.h"
@@ -399,8 +398,9 @@ uint8_t* jit::LazyLinkTopActivation(JSContext* cx,
 
   // Enter the Baseline code instead of Ion code in two cases:
   //
-  // * The caller is resuming a suspended generator: the Ion prologue doesn't
-  //   support this.
+  // * The caller is resuming a suspended generator. We currently don't resume
+  //   GeneratorResumeKind::Throw in Ion so this just means a resume that hits
+  //   this rare window doesn't enter Ion yet.
   // * The caller pushed a trial-inlining ICScript for us: it's only used by
   //   Baseline code.
   FrameDescriptor descriptor = jsFrame->descriptor();
@@ -2032,17 +2032,6 @@ static MethodStatus Compile(JSContext* cx, HandleScript script,
     return Method_CantCompile;
   }
 
-  // TODO(Bug 2039389): Remove generator use counters
-  if (script->isGenerator()) {
-    if (script->isAsync()) {
-      cx->runtime()->setUseCounter(
-          cx->global(), JSUseCounter::ASYNC_GENERATOR_FUNCTION_ION_ELIGIBLE);
-    } else {
-      cx->runtime()->setUseCounter(
-          cx->global(), JSUseCounter::GENERATOR_FUNCTION_ION_ELIGIBLE);
-    }
-  }
-
   OptimizationLevel optimizationLevel =
       IonOptimizations.levelForScript(cx, script, osrPc);
   if (optimizationLevel == OptimizationLevel::DontCompile) {
@@ -2389,6 +2378,7 @@ bool jit::IonCompileScriptForBaselineOSR(JSContext* cx, BaselineFrame* frame,
   MOZ_ASSERT(infoPtr);
   *infoPtr = nullptr;
 
+  MOZ_ASSERT(!frame->isResumingGenerator());
   MOZ_ASSERT(frame->debugFrameSize() == frameSize);
   MOZ_ASSERT(JSOp(*pc) == JSOp::LoopHead);
 

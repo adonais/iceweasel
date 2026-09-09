@@ -262,6 +262,10 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
     return offsetOfTypeDefInstanceData(typeIndex) +
            offsetof(TypeDefInstanceData, superTypeVector);
   }
+  uint32_t offsetOfContBaseFrameStub(uint32_t typeIndex) const {
+    return offsetOfTypeDefInstanceData(typeIndex) +
+           TypeDefInstanceData::offsetOfContBaseFrameStub();
+  }
 
   uint32_t offsetOfMemoryInstanceData(uint32_t memoryIndex) const {
     MOZ_RELEASE_ASSERT(memoryIndex < memories.length());

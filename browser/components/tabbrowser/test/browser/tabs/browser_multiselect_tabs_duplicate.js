@@ -67,7 +67,7 @@ add_task(async function test() {
   ok(!tab3.multiselected, "Tab3 is not multiselected");
   ok(!tab4.multiselected, "Tab4 is not multiselected");
 
-  is(gBrowser.selectedTab._tPos, tab4._tPos, "Tab4 should be selected");
+  is(gBrowser.selectedTab.index, tab4.index, "Tab4 should be selected");
 
   await BrowserTestUtils.switchTab(gBrowser, tab1);
   await triggerClickOn(tab3, { ctrlKey: true });

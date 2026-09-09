@@ -32,69 +32,67 @@ import android.view.inputmethod.InputMethodManager
 import android.view.inputmethod.TextAttribute
 import androidx.annotation.ChecksSdkIntAtLeast
 import androidx.annotation.VisibleForTesting
+import androidx.appcompat.R as appcompatR
 import androidx.appcompat.widget.AppCompatEditText
 import mozilla.components.support.base.Component
 import mozilla.components.support.base.facts.Action
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.collect
 import mozilla.components.support.utils.SafeUrl
-import androidx.appcompat.R as appcompatR
 
 typealias OnCommitListener = () -> Unit
+
 typealias OnFilterListener = (String) -> Unit
+
 typealias OnSearchStateChangeListener = (Boolean) -> Unit
+
 typealias OnTextChangeListener = (String, String) -> Unit
+
 typealias OnDispatchKeyEventPreImeListener = (KeyEvent?) -> Boolean
+
 typealias OnKeyPreImeListener = (View, Int, KeyEvent) -> Boolean
+
 typealias OnSelectionChangedListener = (Int, Int) -> Unit
+
 typealias OnWindowsFocusChangeListener = (Boolean) -> Unit
 
 typealias TextFormatter = (String) -> String
 
-/**
- * Aids in testing functionality which relies on some aspects of InlineAutocompleteEditText.
- */
+/** Aids in testing functionality which relies on some aspects of InlineAutocompleteEditText. */
 interface AutocompleteView {
 
-    /**
-     * Current text.
-     */
+    /** Current text. */
     val originalText: String
 
-    /**
-     * Apply provided [result] autocomplete result.
-     */
+    /** Apply provided [result] autocomplete result. */
     fun applyAutocompleteResult(result: InlineAutocompleteEditText.AutocompleteResult)
 
-    /**
-     * Notify that there is no autocomplete result available.
-     */
+    /** Notify that there is no autocomplete result available. */
     fun noAutocompleteResult()
 }
 
 /**
  * A UI edit text component which supports inline autocompletion.
  *
- * The background color of autocomplete spans can be configured using
- * the custom autocompleteBackgroundColor attribute e.g.
- * app:autocompleteBackgroundColor="#ffffff".
+ * The background color of autocomplete spans can be configured using the custom autocompleteBackgroundColor attribute
+ * e.g. app:autocompleteBackgroundColor="#ffffff".
  *
- * A filter listener (see [setOnFilterListener]) needs to be attached to
- * provide autocomplete results. It will be invoked when the input
- * text changes. The listener gets direct access to this component (via its view
- * parameter), so it can call {@link applyAutocompleteResult} in return.
+ * A filter listener (see [setOnFilterListener]) needs to be attached to provide autocomplete results. It will be
+ * invoked when the input text changes. The listener gets direct access to this component (via its view parameter), so
+ * it can call {@link applyAutocompleteResult} in return.
  *
- * A commit listener (see [setOnCommitListener]) can be attached which is
- * invoked when the user selected the result i.e. is done editing.
+ * A commit listener (see [setOnCommitListener]) can be attached which is invoked when the user selected the result i.e.
+ * is done editing.
  *
- * Various other listeners can be attached to enhance default behaviour e.g.
- * [setOnSelectionChangedListener] and [setOnWindowsFocusChangeListener] which
- * will be invoked in response to [onSelectionChanged] and [onWindowFocusChanged]
- * respectively (see also [setOnTextChangeListener],
- * [setOnSelectionChangedListener], and [setOnWindowsFocusChangeListener]).
+ * Various other listeners can be attached to enhance default behaviour e.g. [setOnSelectionChangedListener] and
+ * [setOnWindowsFocusChangeListener] which will be invoked in response to [onSelectionChanged] and
+ * [onWindowFocusChanged] respectively (see also [setOnTextChangeListener], [setOnSelectionChangedListener], and
+ * [setOnWindowsFocusChangeListener]).
  */
 @Suppress("LargeClass", "TooManyFunctions")
-open class InlineAutocompleteEditText @JvmOverloads constructor(
+open class InlineAutocompleteEditText
+@JvmOverloads
+constructor(
     ctx: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = appcompatR.attr.editTextStyle,
@@ -109,34 +107,60 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
     }
 
     private var commitListener: OnCommitListener? = null
-    fun setOnCommitListener(l: OnCommitListener) { commitListener = l }
+
+    fun setOnCommitListener(l: OnCommitListener) {
+        commitListener = l
+    }
 
     private var filterListener: OnFilterListener? = null
-    fun setOnFilterListener(l: OnFilterListener) { filterListener = l }
-    fun refreshAutocompleteSuggestions() { filterListener?.invoke(originalText) }
+
+    fun setOnFilterListener(l: OnFilterListener) {
+        filterListener = l
+    }
+
+    fun refreshAutocompleteSuggestions() {
+        filterListener?.invoke(originalText)
+    }
 
     private var searchStateChangeListener: OnSearchStateChangeListener? = null
-    fun setOnSearchStateChangeListener(l: OnSearchStateChangeListener) { searchStateChangeListener = l }
+
+    fun setOnSearchStateChangeListener(l: OnSearchStateChangeListener) {
+        searchStateChangeListener = l
+    }
 
     private var textChangeListener: OnTextChangeListener? = null
-    fun setOnTextChangeListener(l: OnTextChangeListener) { textChangeListener = l }
+
+    fun setOnTextChangeListener(l: OnTextChangeListener) {
+        textChangeListener = l
+    }
 
     private var dispatchKeyEventPreImeListener: OnDispatchKeyEventPreImeListener? = null
-    fun setOnDispatchKeyEventPreImeListener(l: OnDispatchKeyEventPreImeListener?) { dispatchKeyEventPreImeListener = l }
+
+    fun setOnDispatchKeyEventPreImeListener(l: OnDispatchKeyEventPreImeListener?) {
+        dispatchKeyEventPreImeListener = l
+    }
 
     private var keyPreImeListener: OnKeyPreImeListener? = null
-    fun setOnKeyPreImeListener(l: OnKeyPreImeListener) { keyPreImeListener = l }
+
+    fun setOnKeyPreImeListener(l: OnKeyPreImeListener) {
+        keyPreImeListener = l
+    }
 
     private var selectionChangedListener: OnSelectionChangedListener? = null
-    fun setOnSelectionChangedListener(l: OnSelectionChangedListener) { selectionChangedListener = l }
+
+    fun setOnSelectionChangedListener(l: OnSelectionChangedListener) {
+        selectionChangedListener = l
+    }
 
     private var windowFocusChangeListener: OnWindowsFocusChangeListener? = null
-    fun setOnWindowsFocusChangeListener(l: OnWindowsFocusChangeListener) { windowFocusChangeListener = l }
+
+    fun setOnWindowsFocusChangeListener(l: OnWindowsFocusChangeListener) {
+        windowFocusChangeListener = l
+    }
 
     // The previous autocomplete result returned to us
     var autocompleteResult: AutocompleteResult? = null
-        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-        set
+        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) set
 
     // Length of the user-typed portion of the result
     private var autoCompletePrefixLength: Int = 0
@@ -150,16 +174,12 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
     // Do not process autocomplete result
     private var discardAutoCompleteResult: Boolean = false
 
-    /**
-     * Set of flags to be added to the next [AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED]
-     * accessibility event.
-     */
+    /** Set of flags to be added to the next [AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED] accessibility event. */
     private var pendingTextChangeTypes: Int = 0
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.CINNAMON_BUN)
-    internal fun isAtLeastCinnamonBun(): Boolean =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN
+    internal fun isAtLeastCinnamonBun(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal var onPendingTextChangeTypesSet: ((Int) -> Unit)? = null
@@ -168,100 +188,98 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
         get() = getNonAutocompleteText(text)
 
     override val originalText: String
-        get() = try {
-            text.subSequence(0, autoCompletePrefixLength).toString()
-        } catch (_: IndexOutOfBoundsException) {
-            autoCompletePrefixLength = text.length
-            text.toString()
-        }
+        get() =
+            try {
+                text.subSequence(0, autoCompletePrefixLength).toString()
+            } catch (_: IndexOutOfBoundsException) {
+                autoCompletePrefixLength = text.length
+                text.toString()
+            }
 
-    /**
-     * The background color used for the autocomplete suggestion.
-     */
-    var autoCompleteBackgroundColor: Int = {
-        val a = context.obtainStyledAttributes(attrs, R.styleable.InlineAutocompleteEditText)
-        val color = a.getColor(
-            R.styleable.InlineAutocompleteEditText_autocompleteBackgroundColor,
-            DEFAULT_AUTOCOMPLETE_BACKGROUND_COLOR,
-        )
-        a.recycle()
-        color
-    }()
+    /** The background color used for the autocomplete suggestion. */
+    var autoCompleteBackgroundColor: Int =
+        {
+            val a = context.obtainStyledAttributes(attrs, R.styleable.InlineAutocompleteEditText)
+            val color =
+                a.getColor(
+                    R.styleable.InlineAutocompleteEditText_autocompleteBackgroundColor,
+                    DEFAULT_AUTOCOMPLETE_BACKGROUND_COLOR,
+                )
+            a.recycle()
+            color
+        }()
 
-    /**
-     * The Foreground color used for the autocomplete suggestion.
-     */
+    /** The Foreground color used for the autocomplete suggestion. */
     var autoCompleteForegroundColor: Int? = null
 
-    private val inputMethodManger get() = context.getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager?
+    private val inputMethodManger
+        get() = context.getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager?
 
     @Suppress("FunctionParameterNaming", "ReturnCount", "UnusedParameter")
-    private val onKeyPreIme = fun (_: View, keyCode: Int, event: KeyEvent): Boolean {
-        // We only want to process one event per tap
-        if (event.action != KeyEvent.ACTION_DOWN) {
+    private val onKeyPreIme =
+        fun(_: View, keyCode: Int, event: KeyEvent): Boolean {
+            // We only want to process one event per tap
+            if (event.action != KeyEvent.ACTION_DOWN) {
+                return false
+            }
+
+            if (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+                // If the edit text has a composition string, don't submit the text yet.
+                // ENTER is needed to commit the composition string.
+                val content = text
+                if (!hasCompositionString(content)) {
+                    commitListener?.invoke()
+                    return true
+                }
+            }
+
+            if (keyCode == KeyEvent.KEYCODE_BACK) {
+                removeAutocomplete(text)
+                return false
+            }
+
             return false
         }
 
-        if (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER) {
-            // If the edit text has a composition string, don't submit the text yet.
-            // ENTER is needed to commit the composition string.
-            val content = text
-            if (!hasCompositionString(content)) {
+    @Suppress("FunctionParameterNaming", "UnusedParameter")
+    private val onKey =
+        fun(_: View, keyCode: Int, event: KeyEvent): Boolean {
+            if (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+                if (event.action != KeyEvent.ACTION_DOWN) {
+                    return true
+                }
+
                 commitListener?.invoke()
                 return true
             }
+
+            // Delete autocomplete text when backspacing or forward deleting.
+            return ((keyCode == KeyEvent.KEYCODE_DEL || keyCode == KeyEvent.KEYCODE_FORWARD_DEL) &&
+                removeAutocomplete(text))
         }
 
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            removeAutocomplete(text)
-            return false
-        }
+    private val onSelectionChanged =
+        fun(selStart: Int, selEnd: Int) {
+            // The user has repositioned the cursor somewhere. We need to adjust
+            // the autocomplete text depending on where the new cursor is.
+            val text = text
+            val start = text.getSpanStart(AUTOCOMPLETE_SPAN)
 
-        return false
-    }
-
-    @Suppress("FunctionParameterNaming", "UnusedParameter")
-    private val onKey = fun (_: View, keyCode: Int, event: KeyEvent): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER) {
-            if (event.action != KeyEvent.ACTION_DOWN) {
-                return true
+            val nothingSelected = start == selStart && start == selEnd
+            if (settingAutoComplete || nothingSelected || start < 0) {
+                // Do not commit autocomplete text if there is no autocomplete text
+                // or if selection is still at start of autocomplete text
+                return
             }
 
-            commitListener?.invoke()
-            return true
-        }
-
-        // Delete autocomplete text when backspacing or forward deleting.
-        return (
-            (
-                keyCode == KeyEvent.KEYCODE_DEL ||
-                    keyCode == KeyEvent.KEYCODE_FORWARD_DEL
-                ) &&
+            if (selStart <= start && selEnd <= start) {
+                // The cursor is in user-typed text; remove any autocomplete text.
                 removeAutocomplete(text)
-            )
-    }
-
-    private val onSelectionChanged = fun (selStart: Int, selEnd: Int) {
-        // The user has repositioned the cursor somewhere. We need to adjust
-        // the autocomplete text depending on where the new cursor is.
-        val text = text
-        val start = text.getSpanStart(AUTOCOMPLETE_SPAN)
-
-        val nothingSelected = start == selStart && start == selEnd
-        if (settingAutoComplete || nothingSelected || start < 0) {
-            // Do not commit autocomplete text if there is no autocomplete text
-            // or if selection is still at start of autocomplete text
-            return
+            } else {
+                // The cursor is in the autocomplete text; commit it so it becomes regular text.
+                commitAutocomplete(text)
+            }
         }
-
-        if (selStart <= start && selEnd <= start) {
-            // The cursor is in user-typed text; remove any autocomplete text.
-            removeAutocomplete(text)
-        } else {
-            // The cursor is in the autocomplete text; commit it so it becomes regular text.
-            commitAutocomplete(text)
-        }
-    }
 
     private val isAmazonEchoShowKeyboard: Boolean
         get() = INPUT_METHOD_AMAZON_ECHO_SHOW == getCurrentInputMethod()
@@ -269,8 +287,12 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
     public override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
-        if (this.keyPreImeListener == null) { this.keyPreImeListener = onKeyPreIme }
-        if (this.selectionChangedListener == null) { this.selectionChangedListener = onSelectionChanged }
+        if (this.keyPreImeListener == null) {
+            this.keyPreImeListener = onKeyPreIme
+        }
+        if (this.selectionChangedListener == null) {
+            this.selectionChangedListener = onSelectionChanged
+        }
 
         setOnKeyListener(onKey)
         addTextChangedListener(TextChangeListener())
@@ -303,6 +325,7 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
 
     /**
      * Sets the text of the edit text.
+     *
      * @param text The text to set.
      * @param shouldAutoComplete If false, [TextChangeListener] the text watcher will be disabled for this set.
      */
@@ -317,6 +340,7 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
 
     /**
      * Appends the given text to the end of the current text.
+     *
      * @param text The text to append.
      * @param shouldAutoComplete If false, [TextChangeListener] text watcher will be disabled for this append.
      */
@@ -334,9 +358,10 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
     }
 
     override fun sendAccessibilityEventUnchecked(event: AccessibilityEvent) {
-        if (isAtLeastCinnamonBun() &&
-            event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED &&
-            pendingTextChangeTypes != 0
+        if (
+            isAtLeastCinnamonBun() &&
+                event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED &&
+                pendingTextChangeTypes != 0
         ) {
             event.textChangeTypes = pendingTextChangeTypes
             clearPendingTextChangeTypes()
@@ -345,9 +370,7 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
         // We need to bypass the isShown() check in the default implementation
         // for TYPE_VIEW_TEXT_SELECTION_CHANGED events so that accessibility
         // services could detect a url change.
-        if (event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED &&
-            parent != null && !isShown
-        ) {
+        if (event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED && parent != null && !isShown) {
             onInitializeAccessibilityEvent(event)
             dispatchPopulateAccessibilityEvent(event)
             parent.requestSendAccessibilityEvent(this, event)
@@ -357,32 +380,29 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
     }
 
     /**
-     * Mark the start of autocomplete changes so our text change
-     * listener does not react to changes in autocomplete text
+     * Mark the start of autocomplete changes so our text change listener does not react to changes in autocomplete text
      */
     private fun beginSettingAutocomplete() {
         beginBatchEdit()
         settingAutoComplete = true
     }
 
-    /**
-     * Mark the end of autocomplete changes
-     */
+    /** Mark the end of autocomplete changes */
     private fun endSettingAutocomplete() {
         settingAutoComplete = false
         endBatchEdit()
     }
 
-    /**
-     * Reset autocomplete states to their initial values
-     */
+    /** Reset autocomplete states to their initial values */
     private fun resetAutocompleteState() {
-        autoCompleteSpans = mutableListOf(
-            AUTOCOMPLETE_SPAN,
-            BackgroundColorSpan(autoCompleteBackgroundColor),
-        ).apply {
-            autoCompleteForegroundColor?.let { add(ForegroundColorSpan(it)) }
-        }
+        autoCompleteSpans =
+            mutableListOf(
+                    AUTOCOMPLETE_SPAN,
+                    BackgroundColorSpan(autoCompleteBackgroundColor),
+                )
+                .apply {
+                    autoCompleteForegroundColor?.let { add(ForegroundColorSpan(it)) }
+                }
         autocompleteResult = null
         // Pretend we already autocompleted the existing text,
         // so that actions like backspacing don't trigger autocompletion.
@@ -456,8 +476,7 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
     }
 
     /**
-     * Applies the provided result by updating the current autocomplete
-     * text and selection, if any.
+     * Applies the provided result by updating the current autocomplete text and selection, if any.
      *
      * @param result the [AutocompleteResult] to apply
      */
@@ -485,8 +504,7 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
             addAutocompleteText(result)
         }
 
-        @Suppress("DEPRECATION")
-        announceForAccessibility(text.toString())
+        @Suppress("DEPRECATION") announceForAccessibility(text.toString())
     }
 
     private fun replaceAutocompleteText(result: AutocompleteResult, autoCompleteStart: Int) {
@@ -538,9 +556,10 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
 
             // We don't care about spans that are not selection or composing spans.
             // For those spans, spanFlag[i] will be 0 and we don't restore them.
-            if (spanFlag and Spanned.SPAN_COMPOSING == 0 &&
-                span !== Selection.SELECTION_START &&
-                span !== Selection.SELECTION_END
+            if (
+                spanFlag and Spanned.SPAN_COMPOSING == 0 &&
+                    span !== Selection.SELECTION_START &&
+                    span !== Selection.SELECTION_END
             ) {
                 continue
             }
@@ -587,10 +606,9 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
     }
 
     /**
-     * Code to handle deleting autocomplete first when backspacing.
-     * If there is no autocomplete text, both removeAutocomplete() and commitAutocomplete()
-     * are no-ops and return false. Therefore we can use them here without checking explicitly
-     * if we have autocomplete text or not.
+     * Code to handle deleting autocomplete first when backspacing. If there is no autocomplete text, both
+     * removeAutocomplete() and commitAutocomplete() are no-ops and return false. Therefore we can use them here without
+     * checking explicitly if we have autocomplete text or not.
      *
      * Also turns off text prediction for private mode tabs.
      */
@@ -629,8 +647,8 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
              * Optionally remove the current autocompletion depending on the new [text].
              *
              * Cases in which the autocompletion will be removed:
-             *  - if the user pressed the backspace to remove the autocompletion or
-             *  - if the user modified their input such that the autocompletion does not apply anymore.
+             * - if the user pressed the backspace to remove the autocompletion or
+             * - if the user modified their input such that the autocompletion does not apply anymore.
              *
              * @return `true` if this method consumed the user input, `false` otherwise.
              */
@@ -647,10 +665,11 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
                 val composingEnd = BaseInputConnection.getComposingSpanEnd(editable)
                 // We only delete the autocomplete text when the user is backspacing,
                 // i.e. when the composing text is getting shorter.
-                if (composingStart >= 0 &&
-                    composingEnd >= 0 &&
-                    composingEnd - composingStart > text.length &&
-                    removeAutocomplete(editable)
+                if (
+                    composingStart >= 0 &&
+                        composingEnd >= 0 &&
+                        composingEnd - composingStart > text.length &&
+                        removeAutocomplete(editable)
                 ) {
                     finishComposingText()
                     // Make the IME aware that we interrupted the setComposingText call,
@@ -738,25 +757,22 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
     }
 
     /**
-     * This class watches for text changes and adds or removes autocomplete text accordingly.
-     * Using this class is preferred when making text changes as it will not interfere
-     * with any composing text at the same time as custom keyboards.
+     * This class watches for text changes and adds or removes autocomplete text accordingly. Using this class is
+     * preferred when making text changes as it will not interfere with any composing text at the same time as custom
+     * keyboards.
      *
-     * Known issue: autocomplete will not be added when replacing the current text with one
-     * that has a text length equal to the one being replaced minus 1.
-     * */
+     * Known issue: autocomplete will not be added when replacing the current text with one that has a text length equal
+     * to the one being replaced minus 1.
+     */
     private inner class TextChangeListener : TextWatcher {
 
-        /**
-         * Holds the value of the non-autocomplete text before any changes have been made.
-         * */
+        /** Holds the value of the non-autocomplete text before any changes have been made. */
         private var beforeChangedTextNonAutocomplete: String = ""
 
         /**
-         * The number of characters that have been changed in [onTextChanged].
-         * When using keyboards that do not have their own text correction enabled
-         * and the user is pressing backspace this value will be 0.
-         * */
+         * The number of characters that have been changed in [onTextChanged]. When using keyboards that do not have
+         * their own text correction enabled and the user is pressing backspace this value will be 0.
+         */
         private var textChangedCount: Int = 0
 
         override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
@@ -785,17 +801,14 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
                 beforeChangedTextNonAutocomplete.length == afterNonAutocompleteText.length + 1
 
             // Covers both keyboards with text correction activated and those without.
-            val hasBackspaceBeenPressed =
-                textChangedCount == 0 || hasTextShortenedByOne
+            val hasBackspaceBeenPressed = textChangedCount == 0 || hasTextShortenedByOne
 
             // No autocompleting when typing a search query
             val afterTextIsSearch = afterNonAutocompleteText.contains(" ")
 
             val hasTextBeenAdded: Boolean =
-                (
-                    afterNonAutocompleteText.contains(beforeChangedTextNonAutocomplete) ||
-                        beforeChangedTextNonAutocomplete.isEmpty()
-                    ) &&
+                (afterNonAutocompleteText.contains(beforeChangedTextNonAutocomplete) ||
+                    beforeChangedTextNonAutocomplete.isEmpty()) &&
                     afterNonAutocompleteText.length > beforeChangedTextNonAutocomplete.length
 
             var shouldAddAutocomplete: Boolean = hasTextBeenAdded || (!afterTextIsSearch && !hasBackspaceBeenPressed)
@@ -812,10 +825,12 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
             } else {
                 // If this text already matches our autocomplete text, autocomplete likely
                 // won't change. Just reuse the old autocomplete value.
-                autocompleteResult?.takeIf { it.startsWith(afterNonAutocompleteText) }?.let {
-                    applyAutocompleteResult(it)
-                    shouldAddAutocomplete = false
-                }
+                autocompleteResult
+                    ?.takeIf { it.startsWith(afterNonAutocompleteText) }
+                    ?.let {
+                        applyAutocompleteResult(it)
+                        shouldAddAutocomplete = false
+                    }
             }
 
             // Update search icon with an active state since user is typing
@@ -867,8 +882,7 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
         return callOnTextContextMenuItemSuper(id)
     }
 
-    @VisibleForTesting
-    internal fun callOnTextContextMenuItemSuper(id: Int) = super.onTextContextMenuItem(id)
+    @VisibleForTesting internal fun callOnTextContextMenuItemSuper(id: Int) = super.onTextContextMenuItem(id)
 
     /**
      * Paste clipboard content between min and max positions.
@@ -885,13 +899,14 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
             var didFirst = false
             for (i in 0 until clip.itemCount) {
                 val textToBePasted: CharSequence?
-                textToBePasted = if (withFormatting) {
-                    clip.getItemAt(i).coerceToStyledText(context)
-                } else {
-                    // Get an item as text and remove all spans by toString().
-                    val text = clip.getItemAt(i).coerceToText(context)
-                    (text as? Spanned)?.toString() ?: text
-                }
+                textToBePasted =
+                    if (withFormatting) {
+                        clip.getItemAt(i).coerceToStyledText(context)
+                    } else {
+                        // Get an item as text and remove all spans by toString().
+                        val text = clip.getItemAt(i).coerceToText(context)
+                        (text as? Spanned)?.toString() ?: text
+                    }
 
                 // Actually stripping unwanted schemes
                 val safeTextToBePasted = SafeUrl.stripUnsafeUrlSchemes(context, textToBePasted)

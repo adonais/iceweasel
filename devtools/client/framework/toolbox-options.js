@@ -112,7 +112,7 @@ class OptionsPanel extends EventEmitter {
     await this.populatePreferences();
     this.#setupLocalMode();
     this.setupNetworkBodySizeLimit();
-
+    this.#setUpExperimentalFeatures();
     return this;
   }
 
@@ -243,6 +243,18 @@ class OptionsPanel extends EventEmitter {
 
       enabledToolbarButtonsBox.appendChild(createCommandCheckbox(button));
     }
+  }
+
+  #setUpExperimentalFeatures() {
+    this.panelDoc
+      .getElementById("devtools-debugger-features-stylesheets-in-debugger")
+      .addEventListener("change", event => {
+        if (event.target.checked) {
+          Glean.devtoolsDebuggerStylesheets.stylesheetPrefEnabledCount.add(1);
+        } else {
+          Glean.devtoolsDebuggerStylesheets.stylesheetPrefDisabledCount.add(1);
+        }
+      });
   }
 
   setupToolsList() {

@@ -102,7 +102,7 @@ add_task(async function testReopen() {
   let tabs = gBrowser.visibleTabs;
   is(tabs.length, 8, "Now we have 8 tabs open");
 
-  is(containerTab1._tPos, 2, "containerTab1 position is 3");
+  is(containerTab1.index, 2, "containerTab1 position is 3");
   is(
     containerTab1.getAttribute("usercontextid"),
     "1",

@@ -106,7 +106,9 @@
  *
  * Operands named `resumeIndex` (`JOF_RESUMEINDEX`) refer to a resume point in
  * the current script. `resumeIndex` must be a valid index into
- * `script->resumeOffsets()`.
+ * `script->resumeOffsets()`. That list starts with an entry for each of the
+ * script's yield and await ops, in bytecode order, followed by the case
+ * targets of the `JSOp::TableSwitch` ops.
  *
  * Operands named `hops` and `slot` (`JOF_ENVCOORD`) refer a slot in an
  * `EnvironmentObject`. At run time, they must point to a fixed slot in an
@@ -1969,8 +1971,8 @@
      * until the first `.next()` call, so after setup the script suspends
      * itself: the "initial yield".
      *
-     * Later, when resuming execution, `rval`, `gen` and `resumeKind` will
-     * receive the values passed in by `JSOp::Resume`. `resumeKind` is the
+     * Later, when resuming execution, `rval` and `resumeKind` will receive the
+     * values passed in by `JSOp::Resume`. `resumeKind` is the
      * `GeneratorResumeKind` stored as an Int32 value.
      *
      * This instruction must appear only in scripts for generators and async
@@ -1988,9 +1990,9 @@
      *   Category: Functions
      *   Type: Generators and async functions
      *   Operands: uint24_t resumeIndex
-     *   Stack: gen => rval, gen, resumeKind
+     *   Stack: gen => rval, resumeKind
      */ \
-    MACRO(InitialYield, initial_yield, NULL, 4, 1, 3, JOF_RESUMEINDEX) \
+    MACRO(InitialYield, initial_yield, NULL, 4, 1, 2, JOF_RESUMEINDEX) \
     /*
      * Bytecode emitted after `yield` expressions. This is useful for the
      * Debugger and `AbstractGeneratorObject::isAfterYieldOrAwait`. It's
@@ -2041,8 +2043,8 @@
      * frame. The resume point indicated by `resumeIndex` must be the next
      * instruction in the script, which must be `AfterYield`.
      *
-     * When resuming execution, `rval2`, `gen` and `resumeKind` receive the
-     * values passed in by `JSOp::Resume`.
+     * When resuming execution, `rval2` and `resumeKind` receive the values
+     * passed in by `JSOp::Resume`.
      *
      * Implements: [GeneratorYield][1] and [AsyncGeneratorYield][2].
      *
@@ -2052,19 +2054,9 @@
      *   Category: Functions
      *   Type: Generators and async functions
      *   Operands: uint24_t resumeIndex
-     *   Stack: rval1, gen => rval2, gen, resumeKind
+     *   Stack: rval1, gen => rval2, resumeKind
      */ \
-    MACRO(Yield, yield, NULL, 4, 2, 3, JOF_RESUMEINDEX) \
-    /*
-     * Pushes a boolean indicating whether the top of the stack is
-     * `MagicValue(JS_GENERATOR_CLOSING)`.
-     *
-     *   Category: Functions
-     *   Type: Generators and async functions
-     *   Operands:
-     *   Stack: val => val, res
-     */ \
-    MACRO(IsGenClosing, is_gen_closing, NULL, 1, 1, 2, JOF_BYTE) \
+    MACRO(Yield, yield, NULL, 4, 2, 2, JOF_RESUMEINDEX) \
     /*
      * Arrange for this async function to resume asynchronously when `value`
      * becomes resolved.
@@ -2142,8 +2134,8 @@
      * current frame.
      *
      * This returns `promise` to the caller. Later, when this async call is
-     * resumed, `resolved`, `gen` and `resumeKind` receive the values passed in
-     * by `JSOp::Resume`, and execution continues at the next instruction,
+     * resumed, `resolved` and `resumeKind` receive the values passed in by
+     * js::ResumeGenerator, and execution continues at the next instruction,
      * which must be `AfterYield`.
      *
      * This instruction is used in two subtly different ways.
@@ -2154,7 +2146,7 @@
      *         GetAliasedVar ".generator"   # valueToAwait gen
      *         AsyncAwait                   # resultPromise
      *         GetAliasedVar ".generator"   # resultPromise gen
-     *         Await                        # resolved gen resumeKind
+     *         Await                        # resolved resumeKind
      *         AfterYield
      *
      *     `AsyncAwait` arranges for this frame to be resumed later and pushes
@@ -2167,7 +2159,7 @@
      *
      *         ...                          # valueToAwait
      *         GetAliasedVar ".generator"   # valueToAwait gen
-     *         Await                        # resolved gen resumeKind
+     *         Await                        # resolved resumeKind
      *         AfterYield
      *
      *     `AsyncAwait` is not used, so (1) the value returned to the caller by
@@ -2184,9 +2176,9 @@
      *   Category: Functions
      *   Type: Generators and async functions
      *   Operands: uint24_t resumeIndex
-     *   Stack: promise, gen => resolved, gen, resumeKind
+     *   Stack: promise, gen => resolved, resumeKind
      */ \
-    MACRO(Await, await, NULL, 4, 2, 3, JOF_RESUMEINDEX) \
+    MACRO(Await, await, NULL, 4, 2, 2, JOF_RESUMEINDEX) \
     /*
      * Test if the re-entry to the microtask loop may be skipped.
      *
@@ -2228,21 +2220,6 @@
      *   Stack: => resumeKind
      */ \
     MACRO(ResumeKind, resume_kind, NULL, 2, 0, 1, JOF_UINT8) \
-    /*
-     * Handle Throw and Return resumption.
-     *
-     * `gen` must be the generator object for the current frame. `resumeKind`
-     * must be a `GeneratorResumeKind` stored as an `Int32` value. If it is
-     * `Next`, continue to the next instruction. If `resumeKind` is `Throw` or
-     * `Return`, these completions are handled by throwing an exception. See
-     * `GeneratorThrowOrReturn`.
-     *
-     *   Category: Functions
-     *   Type: Generators and async functions
-     *   Operands:
-     *   Stack: rval, gen, resumeKind => rval
-     */ \
-    MACRO(CheckResumeKind, check_resume_kind, NULL, 1, 3, 1, JOF_BYTE) \
     /*
      * Resume execution of a generator function. Async functions and modules are
      * resumed without going through this op.
@@ -3616,6 +3593,8 @@
  */
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+  MACRO(239)                                   \
+  MACRO(240)                                   \
   MACRO(241)                                   \
   MACRO(242)                                   \
   MACRO(243)                                   \

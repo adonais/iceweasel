@@ -15,6 +15,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import java.io.IOException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -28,11 +29,8 @@ import org.json.JSONException
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.gecko.GeckoJavaSampler
-import java.io.IOException
 
-/**
- * Represents the various states of the profiler UI.
- */
+/** Represents the various states of the profiler UI. */
 sealed class ProfilerUiState {
     /** The profiler is idle and ready to start */
     data object Idle : ProfilerUiState()
@@ -49,42 +47,28 @@ sealed class ProfilerUiState {
     /** The profiler is in the process of shutting down */
     data object Stopping : ProfilerUiState()
 
-    /**
-     * A toast message should be displayed to the user.
-     */
+    /** A toast message should be displayed to the user. */
     data class ShowToast(
         @param:StringRes val messageResId: Int,
         val extra: String = "",
-    ) :
-        ProfilerUiState()
+    ) : ProfilerUiState()
 
-    /**
-     * The profiling session has finished.
-     */
+    /** The profiling session has finished. */
     data class Finished(val profileUrl: String?) : ProfilerUiState()
 
-    /**
-     * An error occurred during profiling.
-     */
+    /** An error occurred during profiling. */
     data class Error(
         @param:StringRes val messageResId: Int,
         val errorDetails: String = "",
-    ) :
-        ProfilerUiState()
+    ) : ProfilerUiState()
 
-    /**
-     * Determines whether the dialog should be dismissed.
-     */
+    /** Determines whether the dialog should be dismissed. */
     fun shouldDismiss(): Boolean {
-        return this is Running ||
-                this is Finished ||
-                this is Error
+        return this is Running || this is Finished || this is Error
     }
 }
 
-/**
- * Factory for creating ProfilerViewModel instances with injectable dependencies.
- */
+/** Factory for creating ProfilerViewModel instances with injectable dependencies. */
 class ProfilerViewModelFactory(
     private val application: Application,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
@@ -100,8 +84,8 @@ class ProfilerViewModelFactory(
 }
 
 /**
- * ViewModel for managing profiler operations and UI state.
- * Simplified to use ProfilerService with NotificationsDelegate integration.
+ * ViewModel for managing profiler operations and UI state. Simplified to use ProfilerService with NotificationsDelegate
+ * integration.
  */
 class ProfilerViewModel(
     private val application: Application,
@@ -121,23 +105,24 @@ class ProfilerViewModel(
     private var stateReceiver: BroadcastReceiver? = null
 
     init {
-        stateReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                if (intent?.action == GeckoJavaSampler.INTENT_PROFILER_STATE_CHANGED) {
-                    val active = intent.getBooleanExtra(ProfilerService.IS_PROFILER_ACTIVE, false)
-                    _isActive.value = active
-                    if (active && _uiState.value is ProfilerUiState.Starting) {
-                        _uiState.value = ProfilerUiState.ShowToast(R.string.profiler_start_dialog_started)
-                        _uiState.value = ProfilerUiState.Running
-                    } else if (!active) {
-                        val currentState = _uiState.value
-                        if (currentState is ProfilerUiState.Running || currentState is ProfilerUiState.Stopping) {
-                            _uiState.value = ProfilerUiState.Finished(null)
+        stateReceiver =
+            object : BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    if (intent?.action == GeckoJavaSampler.INTENT_PROFILER_STATE_CHANGED) {
+                        val active = intent.getBooleanExtra(ProfilerService.IS_PROFILER_ACTIVE, false)
+                        _isActive.value = active
+                        if (active && _uiState.value is ProfilerUiState.Starting) {
+                            _uiState.value = ProfilerUiState.ShowToast(R.string.profiler_start_dialog_started)
+                            _uiState.value = ProfilerUiState.Running
+                        } else if (!active) {
+                            val currentState = _uiState.value
+                            if (currentState is ProfilerUiState.Running || currentState is ProfilerUiState.Stopping) {
+                                _uiState.value = ProfilerUiState.Finished(null)
+                            }
                         }
                     }
                 }
             }
-        }
         val filter = IntentFilter(GeckoJavaSampler.INTENT_PROFILER_STATE_CHANGED)
         val permission = "${application.packageName}.permission.PROFILER_INTERNAL"
         ContextCompat.registerReceiver(
@@ -151,8 +136,8 @@ class ProfilerViewModel(
     }
 
     /**
-     * Initiates the profiler start process. The polling is done in order to make sure the profiler
-     * is started when the notification from the [ProfilerService] is shown
+     * Initiates the profiler start process. The polling is done in order to make sure the profiler is started when the
+     * notification from the [ProfilerService] is shown
      */
     fun initiateProfilerStartProcess(settings: ProfilerSettings) {
         if (profiler == null) {
@@ -169,8 +154,8 @@ class ProfilerViewModel(
     }
 
     /**
-     * Stops the profiler and saves the collected profile data.
-     * This is for UI-initiated stops, so it should NOT create files via ProfilerService.
+     * Stops the profiler and saves the collected profile data. This is for UI-initiated stops, so it should NOT create
+     * files via ProfilerService.
      */
     fun stopProfilerAndSave() {
         if (profiler == null || !isProfilerActive.value) {
@@ -200,8 +185,8 @@ class ProfilerViewModel(
     }
 
     /**
-     * Stops the profiler without saving the collected data.
-     * This is for UI-initiated stops, so it should NOT create files via ProfilerService.
+     * Stops the profiler without saving the collected data. This is for UI-initiated stops, so it should NOT create
+     * files via ProfilerService.
      */
     fun stopProfilerWithoutSaving() {
         if (profiler == null || !isProfilerActive.value) {
@@ -251,9 +236,7 @@ class ProfilerViewModel(
         }
     }
 
-    /**
-     * Resets the UI state to idle if it isn't already.
-     */
+    /** Resets the UI state to idle if it isn't already. */
     fun resetUiState() {
         if (_uiState.value != ProfilerUiState.Idle) {
             _uiState.value = ProfilerUiState.Idle
@@ -269,9 +252,10 @@ class ProfilerViewModel(
         @StringRes errorMessageRes: Int,
         fallbackMessage: String = "Operation failed",
     ) {
-        _uiState.value = ProfilerUiState.Error(
-            errorMessageRes,
-            exception.message ?: fallbackMessage,
-        )
+        _uiState.value =
+            ProfilerUiState.Error(
+                errorMessageRes,
+                exception.message ?: fallbackMessage,
+            )
     }
 }

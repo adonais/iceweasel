@@ -379,7 +379,8 @@ bool SwitchEmitter::emitEnd() {
     uint32_t firstResumeIndex = 0;
     mozilla::Span<BytecodeOffset> offsets =
         mozilla::Span(caseOffsets_.begin(), caseOffsets_.end());
-    if (!bce_->allocateResumeIndexRange(offsets, &firstResumeIndex)) {
+    if (!bce_->allocateTableSwitchResumeIndexRange(offsets, top_,
+                                                   &firstResumeIndex)) {
       return false;
     }
     SET_RESUMEINDEX(pc, firstResumeIndex);

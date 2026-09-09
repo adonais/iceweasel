@@ -515,29 +515,41 @@ document.addEventListener(
       "sidebar-history-context-menu-container-popup"
     );
     containerHistoryPopup.addEventListener("command", event => {
-      PlacesUIUtils.openInContainerTab(event);
+      PlacesUIUtils.openInContainerTab(event, "sidebar_history_context_menu");
       Glean.browserUiInteraction.sidebarHistory.open_in_new_container_tab.add(
         1
       );
     });
     containerHistoryPopup.addEventListener("popupshowing", event =>
-      PlacesUIUtils.createContainerTabMenu(event)
+      PlacesUIUtils.createContainerTabMenu(
+        event,
+        "sidebar_history_context_menu"
+      )
     );
 
     const containerSyncedTabsPopup = document.getElementById(
       "sidebar-synced-tabs-context-menu-container-popup"
     );
     containerSyncedTabsPopup.addEventListener("command", event =>
-      PlacesUIUtils.openInContainerTab(event)
+      PlacesUIUtils.openInContainerTab(
+        event,
+        "sidebar_synced_tabs_context_menu"
+      )
     );
     containerSyncedTabsPopup.addEventListener("popupshowing", event =>
-      PlacesUIUtils.createContainerTabMenu(event)
+      PlacesUIUtils.createContainerTabMenu(
+        event,
+        "sidebar_synced_tabs_context_menu"
+      )
     );
 
     document
       .getElementById("sidebar-bookmarks-context-container-tab-popup")
       .addEventListener("popupshowing", event =>
-        PlacesUIUtils.createContainerTabMenu(event)
+        PlacesUIUtils.createContainerTabMenu(
+          event,
+          "sidebar_bookmarks_context_menu"
+        )
       );
 
     document
@@ -643,7 +655,10 @@ document.addEventListener(
           DynamicShortcutTooltip.updateText(event.target);
           break;
         case "SyncedTabsOpenSelectedInContainerTabMenu":
-          createUserContextMenu(event, { isContextMenu: true });
+          createUserContextMenu(event, {
+            isContextMenu: true,
+            containerSource: "synced_tabs_context_menu",
+          });
           break;
         case "unified-extensions-context-menu":
           gUnifiedExtensions.updateContextMenu(event.target, event);

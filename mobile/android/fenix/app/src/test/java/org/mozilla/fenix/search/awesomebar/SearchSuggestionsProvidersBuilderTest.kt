@@ -7,6 +7,8 @@ package org.mozilla.fenix.search.awesomebar
 import androidx.core.net.toUri
 import io.mockk.every
 import io.mockk.mockk
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.TestScope
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.search.SearchEngineProvider
@@ -41,8 +43,6 @@ import org.mozilla.fenix.search.SearchEngineSource
 import org.mozilla.fenix.search.awesomebar.SearchSuggestionsProvidersBuilder.SearchProviderState
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class SearchSuggestionsProvidersBuilderTest {
@@ -58,38 +58,43 @@ class SearchSuggestionsProvidersBuilderTest {
         components = mockk(relaxed = true)
         every { components.core.store.state.search } returns mockk(relaxed = true)
 
-        searchEngineProvider = mockk<SearchEngineProvider>(relaxed = true) {
-            every { getDefaultSearchEngine() } returns mockk {
-                every { name } returns "Google"
+        searchEngineProvider =
+            mockk<SearchEngineProvider>(relaxed = true) {
+                every { getDefaultSearchEngine() } returns
+                    mockk {
+                        every { name } returns "Google"
+                    }
             }
-        }
 
         suggestionsStringsProvider = DefaultSuggestionsStringsProvider(testContext, searchEngineProvider)
 
-        builder = SearchSuggestionsProvidersBuilder(
-            components = components,
-            scope = TestScope(),
-            browsingModeManager = browsingModeManager,
-            includeSelectedTab = false,
-            loadUrlUseCase = mockk(),
-            searchUseCase = mockk(),
-            selectTabUseCase = mockk(),
-            suggestionsStringsProvider = suggestionsStringsProvider,
-            suggestionIconProvider = mockk(relaxed = true),
-            onSearchEngineSuggestionSelected = {},
-        )
+        builder =
+            SearchSuggestionsProvidersBuilder(
+                components = components,
+                scope = TestScope(),
+                browsingModeManager = browsingModeManager,
+                includeSelectedTab = false,
+                loadUrlUseCase = mockk(),
+                searchUseCase = mockk(),
+                selectTabUseCase = mockk(),
+                suggestionsStringsProvider = suggestionsStringsProvider,
+                suggestionIconProvider = mockk(relaxed = true),
+                onSearchEngineSuggestionSelected = {},
+            )
     }
 
     @Test
     fun `GIVEN a search from history and history metadata is enabled and sponsored suggestions are enabled WHEN setting the providers THEN set less suggestions to be shown`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns true
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns true
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.History(mockk(relaxed = true)),
-            showSponsoredSuggestions = true,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.History(mockk(relaxed = true)),
+                showSponsoredSuggestions = true,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -103,14 +108,16 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN a search from history and history metadata is enabled and sponsored suggestions are disabled WHEN setting the providers THEN set more suggestions to be shown`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns true
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns true
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.History(mockk(relaxed = true)),
-            showSponsoredSuggestions = false,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.History(mockk(relaxed = true)),
+                showSponsoredSuggestions = false,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -124,14 +131,16 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN a search from history and history metadata is disabled and sponsored suggestions are enabled WHEN setting the providers THEN set less suggestions to be shown`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns false
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns false
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.History(mockk(relaxed = true)),
-            showSponsoredSuggestions = true,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.History(mockk(relaxed = true)),
+                showSponsoredSuggestions = true,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -145,14 +154,16 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN a search from history and history metadata is disabled and sponsored suggestions are disabled WHEN setting the providers THEN set more suggestions to be shown`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns false
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns false
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.History(mockk(relaxed = true)),
-            showSponsoredSuggestions = false,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.History(mockk(relaxed = true)),
+                showSponsoredSuggestions = false,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -166,14 +177,16 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN a search not from history and history metadata is enabled and sponsored suggestions are enabled WHEN setting the providers THEN set less suggestions to be shown`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns true
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns true
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Shortcut(mockk(relaxed = true)),
-            showSponsoredSuggestions = true,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.Shortcut(mockk(relaxed = true)),
+                showSponsoredSuggestions = true,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -187,14 +200,16 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN a search not from history and history metadata is enabled and sponsored suggestions are disabled WHEN setting the providers THEN set less suggestions to be shown`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns true
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns true
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Shortcut(mockk(relaxed = true)),
-            showSponsoredSuggestions = false,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.Shortcut(mockk(relaxed = true)),
+                showSponsoredSuggestions = false,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -208,14 +223,16 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN a search not from history and history metadata is disabled and sponsored suggestions are enabled WHEN setting the providers THEN set less suggestions to be shown`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns true
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns true
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Bookmarks(mockk(relaxed = true)),
-            showSponsoredSuggestions = true,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.Bookmarks(mockk(relaxed = true)),
+                showSponsoredSuggestions = true,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -229,13 +246,12 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN a search not from history and history metadata disabled WHEN setting the providers THEN set less suggestions to be shown`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns true
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns true
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Bookmarks(mockk(relaxed = true)),
-        )
+        val state = getSearchProviderState(searchEngineSource = SearchEngineSource.Bookmarks(mockk(relaxed = true)))
 
         val result = builder.getProvidersToAdd(state)
 
@@ -249,45 +265,54 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN a search that should show filtered history WHEN history metadata is enabled and sponsored suggestions are enabled THEN return a history metadata provider with an engine filter`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns true
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns true
+            }
         val url = "test.com".toUri()
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showAllHistorySuggestions = false,
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { resultsUrl } returns url
-                },
-            ),
-            showSponsoredSuggestions = true,
-        )
+        val state =
+            getSearchProviderState(
+                showAllHistorySuggestions = false,
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { resultsUrl } returns url
+                        }
+                    ),
+                showSponsoredSuggestions = true,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
         val historyProvider = result.firstOrNull { it is CombinedHistorySuggestionProvider }
         assertNotNull(historyProvider)
         assertNotNull((historyProvider as CombinedHistorySuggestionProvider).resultsUriFilter)
-        assertEquals(SearchSuggestionsProvidersBuilder.METADATA_SUGGESTION_LIMIT, historyProvider.getMaxNumberOfSuggestions())
+        assertEquals(
+            SearchSuggestionsProvidersBuilder.METADATA_SUGGESTION_LIMIT,
+            historyProvider.getMaxNumberOfSuggestions(),
+        )
     }
 
     @Test
     fun `GIVEN a search that should show filtered history WHEN history metadata is enabled and sponsored suggestions are disabled THEN return a history metadata provider with an engine filter`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns true
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns true
+            }
         val url = "test.com".toUri()
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showAllHistorySuggestions = false,
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { resultsUrl } returns url
-                },
-            ),
-            showSponsoredSuggestions = false,
-        )
+        val state =
+            getSearchProviderState(
+                showAllHistorySuggestions = false,
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { resultsUrl } returns url
+                        }
+                    ),
+                showSponsoredSuggestions = false,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -302,75 +327,86 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN the default engine is selected WHEN history metadata is enabled THEN suggestions are disabled in history and bookmark providers`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns true
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns true
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showHistorySuggestionsForCurrentEngine = false,
-            showBookmarksSuggestionsForCurrentEngine = false,
-            showSyncedTabsSuggestionsForCurrentEngine = false,
-            showSessionSuggestionsForCurrentEngine = false,
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-        )
+        val state =
+            getSearchProviderState(
+                showHistorySuggestionsForCurrentEngine = false,
+                showBookmarksSuggestionsForCurrentEngine = false,
+                showSyncedTabsSuggestionsForCurrentEngine = false,
+                showSessionSuggestionsForCurrentEngine = false,
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+            )
 
         val result = builder.getProvidersToAdd(state)
 
-        val combinedHistoryProvider = result.firstOrNull { it is CombinedHistorySuggestionProvider } as CombinedHistorySuggestionProvider
+        val combinedHistoryProvider =
+            result.firstOrNull { it is CombinedHistorySuggestionProvider } as CombinedHistorySuggestionProvider
         assertNotNull(combinedHistoryProvider)
         assertFalse(combinedHistoryProvider.showEditSuggestion)
 
-        val bookmarkProvider = result.firstOrNull { it is BookmarksStorageSuggestionProvider } as BookmarksStorageSuggestionProvider
+        val bookmarkProvider =
+            result.firstOrNull { it is BookmarksStorageSuggestionProvider } as BookmarksStorageSuggestionProvider
         assertNotNull(bookmarkProvider)
         assertFalse(bookmarkProvider.showEditSuggestion)
     }
 
     @Test
     fun `GIVEN the default engine is selected WHEN history metadata is disabled THEN suggestions are disabled in history and bookmark providers`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns false
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns false
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showHistorySuggestionsForCurrentEngine = false,
-            showBookmarksSuggestionsForCurrentEngine = false,
-            showSyncedTabsSuggestionsForCurrentEngine = false,
-            showSessionSuggestionsForCurrentEngine = false,
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-        )
+        val state =
+            getSearchProviderState(
+                showHistorySuggestionsForCurrentEngine = false,
+                showBookmarksSuggestionsForCurrentEngine = false,
+                showSyncedTabsSuggestionsForCurrentEngine = false,
+                showSessionSuggestionsForCurrentEngine = false,
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+            )
 
         val result = builder.getProvidersToAdd(state)
 
-        val defaultHistoryProvider = result.firstOrNull { it is HistoryStorageSuggestionProvider } as HistoryStorageSuggestionProvider
+        val defaultHistoryProvider =
+            result.firstOrNull { it is HistoryStorageSuggestionProvider } as HistoryStorageSuggestionProvider
         assertNotNull(defaultHistoryProvider)
         assertFalse(defaultHistoryProvider.showEditSuggestion)
 
-        val bookmarkProvider = result.firstOrNull { it is BookmarksStorageSuggestionProvider } as BookmarksStorageSuggestionProvider
+        val bookmarkProvider =
+            result.firstOrNull { it is BookmarksStorageSuggestionProvider } as BookmarksStorageSuggestionProvider
         assertNotNull(bookmarkProvider)
         assertFalse(bookmarkProvider.showEditSuggestion)
     }
 
     @Test
     fun `GIVEN the non default general engine is selected WHEN history metadata is enabled THEN history and bookmark providers are not set`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns true
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns true
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showHistorySuggestionsForCurrentEngine = false,
-            showAllHistorySuggestions = false,
-            showBookmarksSuggestionsForCurrentEngine = false,
-            showAllBookmarkSuggestions = false,
-            showSyncedTabsSuggestionsForCurrentEngine = false,
-            showAllSyncedTabsSuggestions = false,
-            showSessionSuggestionsForCurrentEngine = false,
-            showAllSessionSuggestions = false,
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { isGeneral } returns true
-                },
-            ),
-        )
+        val state =
+            getSearchProviderState(
+                showHistorySuggestionsForCurrentEngine = false,
+                showAllHistorySuggestions = false,
+                showBookmarksSuggestionsForCurrentEngine = false,
+                showAllBookmarkSuggestions = false,
+                showSyncedTabsSuggestionsForCurrentEngine = false,
+                showAllSyncedTabsSuggestions = false,
+                showSessionSuggestionsForCurrentEngine = false,
+                showAllSessionSuggestions = false,
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { isGeneral } returns true
+                        }
+                    ),
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -383,25 +419,28 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN the non default general engine is selected WHEN history metadata is disabled THEN history and bookmark providers are not set`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns false
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns false
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showHistorySuggestionsForCurrentEngine = false,
-            showAllHistorySuggestions = false,
-            showBookmarksSuggestionsForCurrentEngine = false,
-            showAllBookmarkSuggestions = false,
-            showSyncedTabsSuggestionsForCurrentEngine = false,
-            showAllSyncedTabsSuggestions = false,
-            showSessionSuggestionsForCurrentEngine = false,
-            showAllSessionSuggestions = false,
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { isGeneral } returns true
-                },
-            ),
-        )
+        val state =
+            getSearchProviderState(
+                showHistorySuggestionsForCurrentEngine = false,
+                showAllHistorySuggestions = false,
+                showBookmarksSuggestionsForCurrentEngine = false,
+                showAllBookmarkSuggestions = false,
+                showSyncedTabsSuggestionsForCurrentEngine = false,
+                showAllSyncedTabsSuggestions = false,
+                showSessionSuggestionsForCurrentEngine = false,
+                showAllSessionSuggestions = false,
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { isGeneral } returns true
+                        }
+                    ),
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -414,84 +453,97 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN the non default non general engine is selected WHEN history metadata is enabled THEN suggestions are disabled in history and bookmark providers`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns true
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns true
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showAllHistorySuggestions = false,
-            showAllBookmarkSuggestions = false,
-            showAllSyncedTabsSuggestions = false,
-            showAllSessionSuggestions = false,
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { isGeneral } returns false
-                },
-            ),
-        )
+        val state =
+            getSearchProviderState(
+                showAllHistorySuggestions = false,
+                showAllBookmarkSuggestions = false,
+                showAllSyncedTabsSuggestions = false,
+                showAllSessionSuggestions = false,
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { isGeneral } returns false
+                        }
+                    ),
+            )
 
         val result = builder.getProvidersToAdd(state)
 
-        val combinedHistoryProvider = result.firstOrNull { it is CombinedHistorySuggestionProvider } as CombinedHistorySuggestionProvider
+        val combinedHistoryProvider =
+            result.firstOrNull { it is CombinedHistorySuggestionProvider } as CombinedHistorySuggestionProvider
         assertNotNull(combinedHistoryProvider)
         assertFalse(combinedHistoryProvider.showEditSuggestion)
 
-        val bookmarkProvider = result.firstOrNull { it is BookmarksStorageSuggestionProvider } as BookmarksStorageSuggestionProvider
+        val bookmarkProvider =
+            result.firstOrNull { it is BookmarksStorageSuggestionProvider } as BookmarksStorageSuggestionProvider
         assertNotNull(bookmarkProvider)
         assertFalse(bookmarkProvider.showEditSuggestion)
     }
 
     @Test
     fun `GIVEN the non default non general engine is selected WHEN history metadata is disabled THEN suggestions are disabled in history and bookmark providers`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns false
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns false
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showAllHistorySuggestions = false,
-            showAllBookmarkSuggestions = false,
-            showAllSyncedTabsSuggestions = false,
-            showAllSessionSuggestions = false,
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { isGeneral } returns false
-                },
-            ),
-        )
+        val state =
+            getSearchProviderState(
+                showAllHistorySuggestions = false,
+                showAllBookmarkSuggestions = false,
+                showAllSyncedTabsSuggestions = false,
+                showAllSessionSuggestions = false,
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { isGeneral } returns false
+                        }
+                    ),
+            )
 
         val result = builder.getProvidersToAdd(state)
 
-        val defaultHistoryProvider = result.firstOrNull { it is HistoryStorageSuggestionProvider } as HistoryStorageSuggestionProvider
+        val defaultHistoryProvider =
+            result.firstOrNull { it is HistoryStorageSuggestionProvider } as HistoryStorageSuggestionProvider
         assertNotNull(defaultHistoryProvider)
         assertFalse(defaultHistoryProvider.showEditSuggestion)
 
-        val bookmarkProvider = result.firstOrNull { it is BookmarksStorageSuggestionProvider } as BookmarksStorageSuggestionProvider
+        val bookmarkProvider =
+            result.firstOrNull { it is BookmarksStorageSuggestionProvider } as BookmarksStorageSuggestionProvider
         assertNotNull(bookmarkProvider)
         assertFalse(bookmarkProvider.showEditSuggestion)
     }
 
     @Test
     fun `GIVEN history is selected WHEN history metadata is enabled THEN suggestions are disabled in history provider, bookmark provider is not set`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns true
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns true
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showSearchTermHistory = false,
-            showHistorySuggestionsForCurrentEngine = false,
-            showBookmarksSuggestionsForCurrentEngine = false,
-            showAllBookmarkSuggestions = false,
-            showSearchSuggestions = false,
-            showSyncedTabsSuggestionsForCurrentEngine = false,
-            showAllSyncedTabsSuggestions = false,
-            showSessionSuggestionsForCurrentEngine = false,
-            showAllSessionSuggestions = false,
-            searchEngineSource = SearchEngineSource.History(mockk(relaxed = true)),
-        )
+        val state =
+            getSearchProviderState(
+                showSearchTermHistory = false,
+                showHistorySuggestionsForCurrentEngine = false,
+                showBookmarksSuggestionsForCurrentEngine = false,
+                showAllBookmarkSuggestions = false,
+                showSearchSuggestions = false,
+                showSyncedTabsSuggestionsForCurrentEngine = false,
+                showAllSyncedTabsSuggestions = false,
+                showSessionSuggestionsForCurrentEngine = false,
+                showAllSessionSuggestions = false,
+                searchEngineSource = SearchEngineSource.History(mockk(relaxed = true)),
+            )
 
         val result = builder.getProvidersToAdd(state)
 
-        val combinedHistoryProvider = result.firstOrNull { it is CombinedHistorySuggestionProvider } as CombinedHistorySuggestionProvider
+        val combinedHistoryProvider =
+            result.firstOrNull { it is CombinedHistorySuggestionProvider } as CombinedHistorySuggestionProvider
         assertNotNull(combinedHistoryProvider)
         assertFalse(combinedHistoryProvider.showEditSuggestion)
 
@@ -501,26 +553,29 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN history is selected WHEN history metadata is disabled THEN suggestions are disabled in history provider, bookmark provider is not set`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns false
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns false
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showSearchTermHistory = false,
-            showHistorySuggestionsForCurrentEngine = false,
-            showBookmarksSuggestionsForCurrentEngine = false,
-            showAllBookmarkSuggestions = false,
-            showSearchSuggestions = false,
-            showSyncedTabsSuggestionsForCurrentEngine = false,
-            showAllSyncedTabsSuggestions = false,
-            showSessionSuggestionsForCurrentEngine = false,
-            showAllSessionSuggestions = false,
-            searchEngineSource = SearchEngineSource.History(mockk(relaxed = true)),
-        )
+        val state =
+            getSearchProviderState(
+                showSearchTermHistory = false,
+                showHistorySuggestionsForCurrentEngine = false,
+                showBookmarksSuggestionsForCurrentEngine = false,
+                showAllBookmarkSuggestions = false,
+                showSearchSuggestions = false,
+                showSyncedTabsSuggestionsForCurrentEngine = false,
+                showAllSyncedTabsSuggestions = false,
+                showSessionSuggestionsForCurrentEngine = false,
+                showAllSessionSuggestions = false,
+                searchEngineSource = SearchEngineSource.History(mockk(relaxed = true)),
+            )
 
         val result = builder.getProvidersToAdd(state)
 
-        val defaultHistoryProvider = result.firstOrNull { it is HistoryStorageSuggestionProvider } as HistoryStorageSuggestionProvider
+        val defaultHistoryProvider =
+            result.firstOrNull { it is HistoryStorageSuggestionProvider } as HistoryStorageSuggestionProvider
         assertNotNull(defaultHistoryProvider)
         assertFalse(defaultHistoryProvider.showEditSuggestion)
 
@@ -530,21 +585,23 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN tab engine is selected WHEN history metadata is enabled THEN history and bookmark providers are not set`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns true
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns true
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showSearchTermHistory = false,
-            showHistorySuggestionsForCurrentEngine = false,
-            showAllHistorySuggestions = false,
-            showBookmarksSuggestionsForCurrentEngine = false,
-            showAllBookmarkSuggestions = false,
-            showSearchSuggestions = false,
-            showSyncedTabsSuggestionsForCurrentEngine = false,
-            showSessionSuggestionsForCurrentEngine = false,
-            searchEngineSource = SearchEngineSource.Tabs(mockk(relaxed = true)),
-        )
+        val state =
+            getSearchProviderState(
+                showSearchTermHistory = false,
+                showHistorySuggestionsForCurrentEngine = false,
+                showAllHistorySuggestions = false,
+                showBookmarksSuggestionsForCurrentEngine = false,
+                showAllBookmarkSuggestions = false,
+                showSearchSuggestions = false,
+                showSyncedTabsSuggestionsForCurrentEngine = false,
+                showSessionSuggestionsForCurrentEngine = false,
+                searchEngineSource = SearchEngineSource.Tabs(mockk(relaxed = true)),
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -557,21 +614,23 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN tab engine is selected WHEN history metadata is disabled THEN history and bookmark providers are not set`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns false
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns false
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showSearchTermHistory = false,
-            showHistorySuggestionsForCurrentEngine = false,
-            showAllHistorySuggestions = false,
-            showBookmarksSuggestionsForCurrentEngine = false,
-            showAllBookmarkSuggestions = false,
-            showSearchSuggestions = false,
-            showSyncedTabsSuggestionsForCurrentEngine = false,
-            showSessionSuggestionsForCurrentEngine = false,
-            searchEngineSource = SearchEngineSource.Tabs(mockk(relaxed = true)),
-        )
+        val state =
+            getSearchProviderState(
+                showSearchTermHistory = false,
+                showHistorySuggestionsForCurrentEngine = false,
+                showAllHistorySuggestions = false,
+                showBookmarksSuggestionsForCurrentEngine = false,
+                showAllBookmarkSuggestions = false,
+                showSearchSuggestions = false,
+                showSyncedTabsSuggestionsForCurrentEngine = false,
+                showSessionSuggestionsForCurrentEngine = false,
+                searchEngineSource = SearchEngineSource.Tabs(mockk(relaxed = true)),
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -584,120 +643,139 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN bookmarks engine is selected WHEN history metadata is enabled THEN history provider is not set, suggestions are disabled in bookmark provider`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns true
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns true
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showSearchTermHistory = false,
-            showHistorySuggestionsForCurrentEngine = false,
-            showAllHistorySuggestions = false,
-            showBookmarksSuggestionsForCurrentEngine = false,
-            showSearchSuggestions = false,
-            showSyncedTabsSuggestionsForCurrentEngine = false,
-            showAllSyncedTabsSuggestions = false,
-            showSessionSuggestionsForCurrentEngine = false,
-            showAllSessionSuggestions = false,
-            searchEngineSource = SearchEngineSource.Bookmarks(mockk(relaxed = true)),
-        )
+        val state =
+            getSearchProviderState(
+                showSearchTermHistory = false,
+                showHistorySuggestionsForCurrentEngine = false,
+                showAllHistorySuggestions = false,
+                showBookmarksSuggestionsForCurrentEngine = false,
+                showSearchSuggestions = false,
+                showSyncedTabsSuggestionsForCurrentEngine = false,
+                showAllSyncedTabsSuggestions = false,
+                showSessionSuggestionsForCurrentEngine = false,
+                showAllSessionSuggestions = false,
+                searchEngineSource = SearchEngineSource.Bookmarks(mockk(relaxed = true)),
+            )
 
         val result = builder.getProvidersToAdd(state)
 
         val combinedHistoryProvider = result.firstOrNull { it is CombinedHistorySuggestionProvider }
         assertNull(combinedHistoryProvider)
 
-        val bookmarkProvider = result.firstOrNull { it is BookmarksStorageSuggestionProvider } as BookmarksStorageSuggestionProvider
+        val bookmarkProvider =
+            result.firstOrNull { it is BookmarksStorageSuggestionProvider } as BookmarksStorageSuggestionProvider
         assertNotNull(bookmarkProvider)
         assertFalse(bookmarkProvider.showEditSuggestion)
     }
 
     @Test
     fun `GIVEN bookmarks engine is selected WHEN history metadata is disabled THEN history provider is not set, suggestions are disabled in bookmark provider`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns false
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns false
+            }
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showSearchTermHistory = false,
-            showHistorySuggestionsForCurrentEngine = false,
-            showAllHistorySuggestions = false,
-            showBookmarksSuggestionsForCurrentEngine = false,
-            showSearchSuggestions = false,
-            showSyncedTabsSuggestionsForCurrentEngine = false,
-            showAllSyncedTabsSuggestions = false,
-            showSessionSuggestionsForCurrentEngine = false,
-            showAllSessionSuggestions = false,
-            searchEngineSource = SearchEngineSource.Bookmarks(mockk(relaxed = true)),
-        )
+        val state =
+            getSearchProviderState(
+                showSearchTermHistory = false,
+                showHistorySuggestionsForCurrentEngine = false,
+                showAllHistorySuggestions = false,
+                showBookmarksSuggestionsForCurrentEngine = false,
+                showSearchSuggestions = false,
+                showSyncedTabsSuggestionsForCurrentEngine = false,
+                showAllSyncedTabsSuggestions = false,
+                showSessionSuggestionsForCurrentEngine = false,
+                showAllSessionSuggestions = false,
+                searchEngineSource = SearchEngineSource.Bookmarks(mockk(relaxed = true)),
+            )
 
         val result = builder.getProvidersToAdd(state)
 
         val defaultHistoryProvider = result.firstOrNull { it is HistoryStorageSuggestionProvider }
         assertNull(defaultHistoryProvider)
 
-        val bookmarkProvider = result.firstOrNull { it is BookmarksStorageSuggestionProvider } as BookmarksStorageSuggestionProvider
+        val bookmarkProvider =
+            result.firstOrNull { it is BookmarksStorageSuggestionProvider } as BookmarksStorageSuggestionProvider
         assertNotNull(bookmarkProvider)
         assertFalse(bookmarkProvider.showEditSuggestion)
     }
 
     @Test
     fun `GIVEN a search that should show filtered history WHEN history metadata is disabled and sponsored suggestions are enabled THEN return a history provider with an engine filter`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns false
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns false
+            }
         val url = "test.com".toUri()
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showAllHistorySuggestions = false,
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { resultsUrl } returns url
-                },
-            ),
-            showSponsoredSuggestions = true,
-        )
+        val state =
+            getSearchProviderState(
+                showAllHistorySuggestions = false,
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { resultsUrl } returns url
+                        }
+                    ),
+                showSponsoredSuggestions = true,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
         val historyProvider = result.firstOrNull { it is HistoryStorageSuggestionProvider }
         assertNotNull(historyProvider)
         assertNotNull((historyProvider as HistoryStorageSuggestionProvider).resultsUriFilter)
-        assertEquals(SearchSuggestionsProvidersBuilder.METADATA_SUGGESTION_LIMIT, historyProvider.getMaxNumberOfSuggestions())
+        assertEquals(
+            SearchSuggestionsProvidersBuilder.METADATA_SUGGESTION_LIMIT,
+            historyProvider.getMaxNumberOfSuggestions(),
+        )
     }
 
     @Test
     fun `GIVEN a search that should show filtered history WHEN history metadata is disabled and sponsored suggestions are disabled THEN return a history provider with an engine filter`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { historyMetadataUIFeature } returns false
-        }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { historyMetadataUIFeature } returns false
+            }
         val url = "test.com".toUri()
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showAllHistorySuggestions = false,
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { resultsUrl } returns url
-                },
-            ),
-            showSponsoredSuggestions = false,
-        )
+        val state =
+            getSearchProviderState(
+                showAllHistorySuggestions = false,
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { resultsUrl } returns url
+                        }
+                    ),
+                showSponsoredSuggestions = false,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
         val historyProvider = result.firstOrNull { it is HistoryStorageSuggestionProvider }
         assertNotNull(historyProvider)
         assertNotNull((historyProvider as HistoryStorageSuggestionProvider).resultsUriFilter)
-        assertEquals(SearchSuggestionsProvidersBuilder.METADATA_SUGGESTION_LIMIT, historyProvider.getMaxNumberOfSuggestions())
+        assertEquals(
+            SearchSuggestionsProvidersBuilder.METADATA_SUGGESTION_LIMIT,
+            historyProvider.getMaxNumberOfSuggestions(),
+        )
     }
 
     @Test
     fun `GIVEN a search from the default engine WHEN configuring providers THEN add search action and search suggestions providers`() {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showAllHistorySuggestions = false,
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-        )
+        val state =
+            getSearchProviderState(
+                showAllHistorySuggestions = false,
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -709,10 +787,11 @@ class SearchSuggestionsProvidersBuilderTest {
     fun `GIVEN a search from a shortcut engine WHEN configuring providers THEN add search action and search suggestions providers`() {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showAllHistorySuggestions = false,
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-        )
+        val state =
+            getSearchProviderState(
+                showAllHistorySuggestions = false,
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -725,15 +804,11 @@ class SearchSuggestionsProvidersBuilderTest {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
 
-        val historyState = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.History(mockk(relaxed = true)),
-        )
-        val bookmarksState = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Bookmarks(mockk(relaxed = true)),
-        )
-        val tabsState = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Tabs(mockk(relaxed = true)),
-        )
+        val historyState =
+            getSearchProviderState(searchEngineSource = SearchEngineSource.History(mockk(relaxed = true)))
+        val bookmarksState =
+            getSearchProviderState(searchEngineSource = SearchEngineSource.Bookmarks(mockk(relaxed = true)))
+        val tabsState = getSearchProviderState(searchEngineSource = SearchEngineSource.Tabs(mockk(relaxed = true)))
         val noneState = getSearchProviderState()
 
         val historyResult = builder.getProvidersToAdd(historyState)
@@ -752,15 +827,17 @@ class SearchSuggestionsProvidersBuilderTest {
         val url = "https://www.test.com".toUri()
         every { components.settings } returns settings
         every { browsingModeManager.mode } returns BrowsingMode.Normal
-        val state = getSearchProviderState(
-            showSessionSuggestionsForCurrentEngine = false,
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { resultsUrl } returns url
-                },
-            ),
-            showSponsoredSuggestions = true,
-        )
+        val state =
+            getSearchProviderState(
+                showSessionSuggestionsForCurrentEngine = false,
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { resultsUrl } returns url
+                        }
+                    ),
+                showSponsoredSuggestions = true,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -775,15 +852,17 @@ class SearchSuggestionsProvidersBuilderTest {
         val url = "https://www.test.com".toUri()
         every { components.settings } returns settings
         every { browsingModeManager.mode } returns BrowsingMode.Normal
-        val state = getSearchProviderState(
-            showSessionSuggestionsForCurrentEngine = false,
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { resultsUrl } returns url
-                },
-            ),
-            showSponsoredSuggestions = false,
-        )
+        val state =
+            getSearchProviderState(
+                showSessionSuggestionsForCurrentEngine = false,
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { resultsUrl } returns url
+                        }
+                    ),
+                showSponsoredSuggestions = false,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -798,14 +877,16 @@ class SearchSuggestionsProvidersBuilderTest {
         val url = "https://www.test.com".toUri()
         every { components.settings } returns settings
         every { browsingModeManager.mode } returns BrowsingMode.Normal
-        val state = getSearchProviderState(
-            showAllSessionSuggestions = false,
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { resultsUrl } returns url
-                },
-            ),
-        )
+        val state =
+            getSearchProviderState(
+                showAllSessionSuggestions = false,
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { resultsUrl } returns url
+                        }
+                    ),
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -819,9 +900,7 @@ class SearchSuggestionsProvidersBuilderTest {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
         every { browsingModeManager.mode } returns BrowsingMode.Private
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Shortcut(mockk(relaxed = true)),
-        )
+        val state = getSearchProviderState(searchEngineSource = SearchEngineSource.Shortcut(mockk(relaxed = true)))
 
         val result = builder.getProvidersToAdd(state)
 
@@ -834,15 +913,17 @@ class SearchSuggestionsProvidersBuilderTest {
         val url = "https://www.test.com".toUri()
         every { components.settings } returns settings
         every { browsingModeManager.mode } returns BrowsingMode.Normal
-        val state = getSearchProviderState(
-            showSyncedTabsSuggestionsForCurrentEngine = false,
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { resultsUrl } returns url
-                },
-            ),
-            showSponsoredSuggestions = true,
-        )
+        val state =
+            getSearchProviderState(
+                showSyncedTabsSuggestionsForCurrentEngine = false,
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { resultsUrl } returns url
+                        }
+                    ),
+                showSponsoredSuggestions = true,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -857,15 +938,17 @@ class SearchSuggestionsProvidersBuilderTest {
         val url = "https://www.test.com".toUri()
         every { components.settings } returns settings
         every { browsingModeManager.mode } returns BrowsingMode.Normal
-        val state = getSearchProviderState(
-            showAllSyncedTabsSuggestions = false,
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { resultsUrl } returns url
-                },
-            ),
-            showSponsoredSuggestions = true,
-        )
+        val state =
+            getSearchProviderState(
+                showAllSyncedTabsSuggestions = false,
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { resultsUrl } returns url
+                        }
+                    ),
+                showSponsoredSuggestions = true,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -880,15 +963,17 @@ class SearchSuggestionsProvidersBuilderTest {
         val url = "https://www.test.com".toUri()
         every { components.settings } returns settings
         every { browsingModeManager.mode } returns BrowsingMode.Normal
-        val state = getSearchProviderState(
-            showSyncedTabsSuggestionsForCurrentEngine = false,
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { resultsUrl } returns url
-                },
-            ),
-            showSponsoredSuggestions = false,
-        )
+        val state =
+            getSearchProviderState(
+                showSyncedTabsSuggestionsForCurrentEngine = false,
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { resultsUrl } returns url
+                        }
+                    ),
+                showSponsoredSuggestions = false,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -903,15 +988,17 @@ class SearchSuggestionsProvidersBuilderTest {
         val url = "https://www.test.com".toUri()
         every { components.settings } returns settings
         every { browsingModeManager.mode } returns BrowsingMode.Normal
-        val state = getSearchProviderState(
-            showBookmarksSuggestionsForCurrentEngine = false,
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { resultsUrl } returns url
-                },
-            ),
-            showSponsoredSuggestions = true,
-        )
+        val state =
+            getSearchProviderState(
+                showBookmarksSuggestionsForCurrentEngine = false,
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { resultsUrl } returns url
+                        }
+                    ),
+                showSponsoredSuggestions = true,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -926,15 +1013,17 @@ class SearchSuggestionsProvidersBuilderTest {
         val url = "https://www.test.com".toUri()
         every { components.settings } returns settings
         every { browsingModeManager.mode } returns BrowsingMode.Normal
-        val state = getSearchProviderState(
-            showBookmarksSuggestionsForCurrentEngine = false,
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { resultsUrl } returns url
-                },
-            ),
-            showSponsoredSuggestions = false,
-        )
+        val state =
+            getSearchProviderState(
+                showBookmarksSuggestionsForCurrentEngine = false,
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { resultsUrl } returns url
+                        }
+                    ),
+                showSponsoredSuggestions = false,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -949,14 +1038,16 @@ class SearchSuggestionsProvidersBuilderTest {
         val url = "https://www.test.com".toUri()
         every { components.settings } returns settings
         every { browsingModeManager.mode } returns BrowsingMode.Normal
-        val state = getSearchProviderState(
-            showAllBookmarkSuggestions = false,
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { resultsUrl } returns url
-                },
-            ),
-        )
+        val state =
+            getSearchProviderState(
+                showAllBookmarkSuggestions = false,
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { resultsUrl } returns url
+                        }
+                    ),
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -969,9 +1060,7 @@ class SearchSuggestionsProvidersBuilderTest {
     fun `GIVEN a search is made by the user WHEN configuring providers THEN search engine suggestion provider should always be added`() {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-        )
+        val state = getSearchProviderState(searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)))
 
         val result = builder.getProvidersToAdd(state)
 
@@ -984,28 +1073,33 @@ class SearchSuggestionsProvidersBuilderTest {
         val url = "https://www.test.com".toUri()
         every { components.settings } returns settings
         every { browsingModeManager.mode } returns BrowsingMode.Normal
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Default(
-                mockk(relaxed = true) {
-                    every { resultsUrl } returns url
-                },
-            ),
-            showSponsoredSuggestions = true,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource =
+                    SearchEngineSource.Default(
+                        mockk(relaxed = true) {
+                            every { resultsUrl } returns url
+                        }
+                    ),
+                showSponsoredSuggestions = true,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
-        val historyProviders: List<HistoryStorageSuggestionProvider> = result.filterIsInstance<HistoryStorageSuggestionProvider>()
+        val historyProviders: List<HistoryStorageSuggestionProvider> =
+            result.filterIsInstance<HistoryStorageSuggestionProvider>()
         assertEquals(2, historyProviders.size)
         assertNotNull(historyProviders[0].resultsUriFilter) // the general history provider
         assertNotNull(historyProviders[1].resultsUriFilter) // the filtered history provider
-        val bookmarksProviders: List<BookmarksStorageSuggestionProvider> = result.filterIsInstance<BookmarksStorageSuggestionProvider>()
+        val bookmarksProviders: List<BookmarksStorageSuggestionProvider> =
+            result.filterIsInstance<BookmarksStorageSuggestionProvider>()
         assertEquals(2, bookmarksProviders.size)
         assertNotNull(bookmarksProviders[0].resultsUriFilter) // the general bookmarks provider
         assertNotNull(bookmarksProviders[1].resultsUriFilter) // the filtered bookmarks provider
         assertEquals(1, result.filterIsInstance<SearchActionProvider>().size)
         assertEquals(1, result.filterIsInstance<SearchSuggestionProvider>().size)
-        val syncedTabsProviders: List<SyncedTabsStorageSuggestionProvider> = result.filterIsInstance<SyncedTabsStorageSuggestionProvider>()
+        val syncedTabsProviders: List<SyncedTabsStorageSuggestionProvider> =
+            result.filterIsInstance<SyncedTabsStorageSuggestionProvider>()
         assertEquals(2, syncedTabsProviders.size)
         assertNotNull(syncedTabsProviders[0].resultsUrlFilter) // the general synced tabs provider
         assertNotNull(syncedTabsProviders[1].resultsUrlFilter) // the filtered synced tabs provider
@@ -1022,28 +1116,33 @@ class SearchSuggestionsProvidersBuilderTest {
         val url = "https://www.test.com".toUri()
         every { components.settings } returns settings
         every { browsingModeManager.mode } returns BrowsingMode.Normal
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Default(
-                mockk(relaxed = true) {
-                    every { resultsUrl } returns url
-                },
-            ),
-            showSponsoredSuggestions = false,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource =
+                    SearchEngineSource.Default(
+                        mockk(relaxed = true) {
+                            every { resultsUrl } returns url
+                        }
+                    ),
+                showSponsoredSuggestions = false,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
-        val historyProviders: List<HistoryStorageSuggestionProvider> = result.filterIsInstance<HistoryStorageSuggestionProvider>()
+        val historyProviders: List<HistoryStorageSuggestionProvider> =
+            result.filterIsInstance<HistoryStorageSuggestionProvider>()
         assertEquals(2, historyProviders.size)
         assertNull(historyProviders[0].resultsUriFilter) // the general history provider
         assertNotNull(historyProviders[1].resultsUriFilter) // the filtered history provider
-        val bookmarksProviders: List<BookmarksStorageSuggestionProvider> = result.filterIsInstance<BookmarksStorageSuggestionProvider>()
+        val bookmarksProviders: List<BookmarksStorageSuggestionProvider> =
+            result.filterIsInstance<BookmarksStorageSuggestionProvider>()
         assertEquals(2, bookmarksProviders.size)
         assertNull(bookmarksProviders[0].resultsUriFilter) // the general bookmarks provider
         assertNotNull(bookmarksProviders[1].resultsUriFilter) // the filtered bookmarks provider
         assertEquals(1, result.filterIsInstance<SearchActionProvider>().size)
         assertEquals(1, result.filterIsInstance<SearchSuggestionProvider>().size)
-        val syncedTabsProviders: List<SyncedTabsStorageSuggestionProvider> = result.filterIsInstance<SyncedTabsStorageSuggestionProvider>()
+        val syncedTabsProviders: List<SyncedTabsStorageSuggestionProvider> =
+            result.filterIsInstance<SyncedTabsStorageSuggestionProvider>()
         assertEquals(2, syncedTabsProviders.size)
         assertNull(syncedTabsProviders[0].resultsUrlFilter) // the general synced tabs provider
         assertNotNull(syncedTabsProviders[1].resultsUrlFilter) // the filtered synced tabs provider
@@ -1059,18 +1158,19 @@ class SearchSuggestionsProvidersBuilderTest {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
         every { browsingModeManager.mode } returns BrowsingMode.Normal
-        val state = getSearchProviderState(
-            showHistorySuggestionsForCurrentEngine = false,
-            showAllHistorySuggestions = false,
-            showBookmarksSuggestionsForCurrentEngine = false,
-            showAllBookmarkSuggestions = false,
-            showSearchSuggestions = false,
-            showSyncedTabsSuggestionsForCurrentEngine = false,
-            showAllSyncedTabsSuggestions = false,
-            showSessionSuggestionsForCurrentEngine = false,
-            showAllSessionSuggestions = false,
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-        )
+        val state =
+            getSearchProviderState(
+                showHistorySuggestionsForCurrentEngine = false,
+                showAllHistorySuggestions = false,
+                showBookmarksSuggestionsForCurrentEngine = false,
+                showAllBookmarkSuggestions = false,
+                showSearchSuggestions = false,
+                showSyncedTabsSuggestionsForCurrentEngine = false,
+                showAllSyncedTabsSuggestions = false,
+                showSessionSuggestionsForCurrentEngine = false,
+                showAllSessionSuggestions = false,
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -1087,10 +1187,11 @@ class SearchSuggestionsProvidersBuilderTest {
     fun `GIVEN sponsored suggestions are enabled WHEN configuring providers THEN add the Firefox Suggest suggestion provider`() {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showSponsoredSuggestions = true,
-            showNonSponsoredSuggestions = false,
-        )
+        val state =
+            getSearchProviderState(
+                showSponsoredSuggestions = true,
+                showNonSponsoredSuggestions = false,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -1102,10 +1203,11 @@ class SearchSuggestionsProvidersBuilderTest {
     fun `GIVEN non-sponsored suggestions are enabled WHEN configuring providers THEN add the Firefox Suggest suggestion provider`() {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showSponsoredSuggestions = false,
-            showNonSponsoredSuggestions = true,
-        )
+        val state =
+            getSearchProviderState(
+                showSponsoredSuggestions = false,
+                showNonSponsoredSuggestions = true,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -1117,10 +1219,11 @@ class SearchSuggestionsProvidersBuilderTest {
     fun `GIVEN sponsored and non-sponsored suggestions are enabled WHEN configuring providers THEN add the Firefox Suggest suggestion provider`() {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showSponsoredSuggestions = true,
-            showNonSponsoredSuggestions = true,
-        )
+        val state =
+            getSearchProviderState(
+                showSponsoredSuggestions = true,
+                showNonSponsoredSuggestions = true,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -1132,10 +1235,11 @@ class SearchSuggestionsProvidersBuilderTest {
     fun `GIVEN sponsored and non-sponsored suggestions are disabled WHEN configuring providers THEN don't add the Firefox Suggest suggestion provider`() {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showSponsoredSuggestions = false,
-            showNonSponsoredSuggestions = false,
-        )
+        val state =
+            getSearchProviderState(
+                showSponsoredSuggestions = false,
+                showNonSponsoredSuggestions = false,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -1152,9 +1256,7 @@ class SearchSuggestionsProvidersBuilderTest {
         val searchEngineSource = SearchEngineSource.Shortcut(mockk(relaxed = true))
         val state = getSearchProviderState(searchEngineSource = searchEngineSource)
 
-        val result = builder.getHistoryProvider(
-            filter = builder.getFilterForCurrentEngineResults(state),
-        )
+        val result = builder.getHistoryProvider(filter = builder.getFilterForCurrentEngineResults(state))
 
         assertNotNull(result)
         assertIs<CombinedHistorySuggestionProvider>(result)
@@ -1169,13 +1271,9 @@ class SearchSuggestionsProvidersBuilderTest {
         }
         every { components.settings } returns settings
         val searchEngineSource = SearchEngineSource.Shortcut(mockk(relaxed = true))
-        val state = getSearchProviderState(
-            searchEngineSource = searchEngineSource,
-        )
+        val state = getSearchProviderState(searchEngineSource = searchEngineSource)
 
-        val result = builder.getHistoryProvider(
-            filter = builder.getFilterForCurrentEngineResults(state),
-        )
+        val result = builder.getHistoryProvider(filter = builder.getFilterForCurrentEngineResults(state))
 
         assertNotNull(result)
         assertIs<HistoryStorageSuggestionProvider>(result)
@@ -1247,11 +1345,12 @@ class SearchSuggestionsProvidersBuilderTest {
     @Test
     fun `GIVEN history search term suggestions disabled WHEN getting suggestions providers THEN don't search term provider of past searches`() {
         every { components.settings } returns mockk(relaxed = true)
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-            showSearchTermHistory = false,
-            showRecentSearches = false,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+                showSearchTermHistory = false,
+                showRecentSearches = false,
+            )
         val result = builder.getProvidersToAdd(state)
 
         assertEquals(0, result.filterIsInstance<SearchTermSuggestionsProvider>().size)
@@ -1260,11 +1359,12 @@ class SearchSuggestionsProvidersBuilderTest {
     @Test
     fun `GIVEN history search term suggestions enabled WHEN getting suggestions providers THEN add a search term provider of past searches`() {
         every { components.settings } returns mockk(relaxed = true)
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-            showSearchTermHistory = true,
-            showRecentSearches = false,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+                showSearchTermHistory = true,
+                showRecentSearches = false,
+            )
         val result = builder.getProvidersToAdd(state)
 
         assertEquals(1, result.filterIsInstance<SearchTermSuggestionsProvider>().size)
@@ -1272,13 +1372,15 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN sponsored suggestions are enabled WHEN getting a filter to exclude sponsored suggestions THEN return the filter`() {
-        every { components.settings } returns mockk(relaxed = true) {
-            every { frecencyFilterQuery } returns "query=value"
-        }
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-            showSponsoredSuggestions = true,
-        )
+        every { components.settings } returns
+            mockk(relaxed = true) {
+                every { frecencyFilterQuery } returns "query=value"
+            }
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+                showSponsoredSuggestions = true,
+            )
         val filter = builder.getFilterToExcludeSponsoredResults(state)
 
         assertEquals(SearchSuggestionsProvidersBuilder.SearchResultFilter.ExcludeSponsored("query=value"), filter)
@@ -1286,13 +1388,15 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN sponsored suggestions are disabled WHEN getting a filter to exclude sponsored suggestions THEN return null`() {
-        every { components.settings } returns mockk(relaxed = true) {
-            every { frecencyFilterQuery } returns "query=value"
-        }
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-            showSponsoredSuggestions = false,
-        )
+        every { components.settings } returns
+            mockk(relaxed = true) {
+                every { frecencyFilterQuery } returns "query=value"
+            }
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+                showSponsoredSuggestions = false,
+            )
         val filter = builder.getFilterToExcludeSponsoredResults(state)
 
         assertNull(filter)
@@ -1300,13 +1404,15 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN a sponsored query parameter and a sponsored filter WHEN a URL contains the sponsored query parameter THEN that URL should be excluded`() {
-        every { components.settings } returns mockk(relaxed = true) {
-            every { frecencyFilterQuery } returns "query=value"
-        }
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-            showSponsoredSuggestions = true,
-        )
+        every { components.settings } returns
+            mockk(relaxed = true) {
+                every { frecencyFilterQuery } returns "query=value"
+            }
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+                showSponsoredSuggestions = true,
+            )
         val filter = requireNotNull(builder.getFilterToExcludeSponsoredResults(state))
 
         assertFalse(filter.shouldIncludeUri("http://example.com?query=value".toUri()))
@@ -1322,13 +1428,15 @@ class SearchSuggestionsProvidersBuilderTest {
 
     @Test
     fun `GIVEN a sponsored query parameter and a sponsored filter WHEN a URL does not contain the sponsored query parameter THEN that URL should be included`() {
-        every { components.settings } returns mockk(relaxed = true) {
-            every { frecencyFilterQuery } returns "query=value"
-        }
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-            showSponsoredSuggestions = true,
-        )
+        every { components.settings } returns
+            mockk(relaxed = true) {
+                every { frecencyFilterQuery } returns "query=value"
+            }
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+                showSponsoredSuggestions = true,
+            )
         val filter = requireNotNull(builder.getFilterToExcludeSponsoredResults(state))
 
         assertTrue(filter.shouldIncludeUri("http://example.com".toUri()))
@@ -1347,13 +1455,15 @@ class SearchSuggestionsProvidersBuilderTest {
     @Test
     fun `GIVEN an engine with a results URL and an engine filter WHEN a URL matches the results URL THEN that URL should be included`() {
         val url = "http://test.com".toUri()
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { resultsUrl } returns url
-                },
-            ),
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { resultsUrl } returns url
+                        }
+                    )
+            )
 
         val filter = requireNotNull(builder.getFilterForCurrentEngineResults(state))
 
@@ -1369,13 +1479,15 @@ class SearchSuggestionsProvidersBuilderTest {
     @Test
     fun `GIVEN an engine with a results URL and an engine filter WHEN a URL does not match the results URL THEN that URL should be excluded`() {
         val url = "http://test.com".toUri()
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Shortcut(
-                mockk(relaxed = true) {
-                    every { resultsUrl } returns url
-                },
-            ),
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource =
+                    SearchEngineSource.Shortcut(
+                        mockk(relaxed = true) {
+                            every { resultsUrl } returns url
+                        }
+                    )
+            )
 
         val filter = requireNotNull(builder.getFilterForCurrentEngineResults(state))
 
@@ -1389,9 +1501,7 @@ class SearchSuggestionsProvidersBuilderTest {
     fun `GIVEN should show trending searches WHEN configuring providers THEN add the trending search provider`() {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showTrendingSearches = true,
-        )
+        val state = getSearchProviderState(showTrendingSearches = true)
 
         val result = builder.getProvidersToAdd(state)
 
@@ -1402,9 +1512,7 @@ class SearchSuggestionsProvidersBuilderTest {
     fun `GIVEN should not show trending searches WHEN configuring providers THEN don't add the trending search provider`() {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            showTrendingSearches = false,
-        )
+        val state = getSearchProviderState(showTrendingSearches = false)
 
         val result = builder.getProvidersToAdd(state)
 
@@ -1415,11 +1523,12 @@ class SearchSuggestionsProvidersBuilderTest {
     fun `GIVEN should show recent searches WHEN configuring providers THEN add the recent search suggestions provider`() {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-            showSearchTermHistory = false,
-            showRecentSearches = true,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+                showSearchTermHistory = false,
+                showRecentSearches = true,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -1430,11 +1539,12 @@ class SearchSuggestionsProvidersBuilderTest {
     fun `GIVEN should not show recent searches WHEN configuring providers THEN don't add the recent search suggestions provider`() {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-            showSearchTermHistory = false,
-            showRecentSearches = false,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+                showSearchTermHistory = false,
+                showRecentSearches = false,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -1445,10 +1555,11 @@ class SearchSuggestionsProvidersBuilderTest {
     fun `GIVEN should show stock cards WHEN configuring providers THEN add the stocks online suggestion provider`() {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-            showStocksSuggestions = true,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+                showStocksSuggestions = true,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -1459,10 +1570,11 @@ class SearchSuggestionsProvidersBuilderTest {
     fun `GIVEN should not show stock cards WHEN configuring providers THEN don't add the stocks online suggestion provider`() {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-            showStocksSuggestions = false,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+                showStocksSuggestions = false,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -1473,10 +1585,11 @@ class SearchSuggestionsProvidersBuilderTest {
     fun `GIVEN should show sport cards WHEN configuring providers THEN add the sports online suggestion provider`() {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-            showSportsSuggestions = true,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+                showSportsSuggestions = true,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -1487,10 +1600,11 @@ class SearchSuggestionsProvidersBuilderTest {
     fun `GIVEN should not show sport cards WHEN configuring providers THEN don't add the sports online suggestion provider`() {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-            showSportsSuggestions = false,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+                showSportsSuggestions = false,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -1501,10 +1615,11 @@ class SearchSuggestionsProvidersBuilderTest {
     fun `GIVEN should show flight cards WHEN configuring providers THEN add the flights online suggestion provider`() {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-            showFlightsSuggestions = true,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+                showFlightsSuggestions = true,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -1515,10 +1630,11 @@ class SearchSuggestionsProvidersBuilderTest {
     fun `GIVEN should not show flight cards WHEN configuring providers THEN don't add the flights online suggestion provider`() {
         val settings: Settings = mockk(relaxed = true)
         every { components.settings } returns settings
-        val state = getSearchProviderState(
-            searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
-            showFlightsSuggestions = false,
-        )
+        val state =
+            getSearchProviderState(
+                searchEngineSource = SearchEngineSource.Default(mockk(relaxed = true)),
+                showFlightsSuggestions = false,
+            )
 
         val result = builder.getProvidersToAdd(state)
 
@@ -1526,9 +1642,7 @@ class SearchSuggestionsProvidersBuilderTest {
     }
 }
 
-/**
- * Get a default [SearchProviderState] that by default will ask for all types of suggestions.
- */
+/** Get a default [SearchProviderState] that by default will ask for all types of suggestions. */
 private fun getSearchProviderState(
     showSearchTermHistory: Boolean = true,
     showHistorySuggestionsForCurrentEngine: Boolean = true,
@@ -1548,23 +1662,24 @@ private fun getSearchProviderState(
     showFlightsSuggestions: Boolean = true,
     showTrendingSearches: Boolean = true,
     showRecentSearches: Boolean = true,
-) = SearchProviderState(
-    showSearchTermHistory = showSearchTermHistory,
-    showHistorySuggestionsForCurrentEngine = showHistorySuggestionsForCurrentEngine,
-    showAllHistorySuggestions = showAllHistorySuggestions,
-    showBookmarksSuggestionsForCurrentEngine = showBookmarksSuggestionsForCurrentEngine,
-    showAllBookmarkSuggestions = showAllBookmarkSuggestions,
-    showSearchSuggestions = showSearchSuggestions,
-    showSyncedTabsSuggestionsForCurrentEngine = showSyncedTabsSuggestionsForCurrentEngine,
-    showAllSyncedTabsSuggestions = showAllSyncedTabsSuggestions,
-    showSessionSuggestionsForCurrentEngine = showSessionSuggestionsForCurrentEngine,
-    showAllSessionSuggestions = showAllSessionSuggestions,
-    showSponsoredSuggestions = showSponsoredSuggestions,
-    showNonSponsoredSuggestions = showNonSponsoredSuggestions,
-    showStocksSuggestions = showStocksSuggestions,
-    showSportsSuggestions = showSportsSuggestions,
-    showFlightsSuggestions = showFlightsSuggestions,
-    showTrendingSearches = showTrendingSearches,
-    showRecentSearches = showRecentSearches,
-    searchEngineSource = searchEngineSource,
-)
+) =
+    SearchProviderState(
+        showSearchTermHistory = showSearchTermHistory,
+        showHistorySuggestionsForCurrentEngine = showHistorySuggestionsForCurrentEngine,
+        showAllHistorySuggestions = showAllHistorySuggestions,
+        showBookmarksSuggestionsForCurrentEngine = showBookmarksSuggestionsForCurrentEngine,
+        showAllBookmarkSuggestions = showAllBookmarkSuggestions,
+        showSearchSuggestions = showSearchSuggestions,
+        showSyncedTabsSuggestionsForCurrentEngine = showSyncedTabsSuggestionsForCurrentEngine,
+        showAllSyncedTabsSuggestions = showAllSyncedTabsSuggestions,
+        showSessionSuggestionsForCurrentEngine = showSessionSuggestionsForCurrentEngine,
+        showAllSessionSuggestions = showAllSessionSuggestions,
+        showSponsoredSuggestions = showSponsoredSuggestions,
+        showNonSponsoredSuggestions = showNonSponsoredSuggestions,
+        showStocksSuggestions = showStocksSuggestions,
+        showSportsSuggestions = showSportsSuggestions,
+        showFlightsSuggestions = showFlightsSuggestions,
+        showTrendingSearches = showTrendingSearches,
+        showRecentSearches = showRecentSearches,
+        searchEngineSource = searchEngineSource,
+    )

@@ -43,6 +43,11 @@ class DepthAndStencilBuffer final : public SupportsWeakPtr {
 };
 
 class MozFramebuffer final {
+ public:
+  // A borrowed color backing must outlive the MozFramebuffer that wraps it.
+  enum class ColorBackingOwnership { Owned, Borrowed };
+
+ private:
   const WeakPtr<GLContext> mWeakGL;
 
  public:
@@ -54,6 +59,7 @@ class MozFramebuffer final {
  private:
   const RefPtr<DepthAndStencilBuffer> mDepthAndStencilBuffer;
   const GLuint mColorName;
+  const ColorBackingOwnership mColorBackingOwnership;
 
  public:
   // Create a new framebuffer with the specified properties.
@@ -63,10 +69,14 @@ class MozFramebuffer final {
                                           bool stencil);
 
   // Create a new framebuffer backed by an existing texture or buffer.
+  // An owned backing is deleted with the framebuffer; a borrowed backing is
+  // left untouched.
   // Assumes that gl is the current context.
   static UniquePtr<MozFramebuffer> CreateForBacking(
       GLContext* gl, const gfx::IntSize& size, uint32_t samples, bool depth,
-      bool stencil, GLenum colorTarget, GLuint colorName);
+      bool stencil, GLenum colorTarget, GLuint colorName,
+      ColorBackingOwnership colorBackingOwnership =
+          ColorBackingOwnership::Owned);
 
   // Create a new framebuffer backed by an existing texture or buffer.
   // Use the same GLContext, size, and samples as framebufferToShareWith.
@@ -76,19 +86,23 @@ class MozFramebuffer final {
   static UniquePtr<MozFramebuffer> CreateForBackingWithSharedDepthAndStencil(
       const gfx::IntSize& size, const uint32_t samples, GLenum colorTarget,
       GLuint colorName,
-      const RefPtr<DepthAndStencilBuffer>& depthAndStencilBuffer);
+      const RefPtr<DepthAndStencilBuffer>& depthAndStencilBuffer,
+      ColorBackingOwnership colorBackingOwnership =
+          ColorBackingOwnership::Owned);
 
  private:
   MozFramebuffer(GLContext* gl, const gfx::IntSize& size, GLuint fb,
                  uint32_t samples,
                  RefPtr<DepthAndStencilBuffer> depthAndStencilBuffer,
-                 GLenum colorTarget, GLuint colorName);
+                 GLenum colorTarget, GLuint colorName,
+                 ColorBackingOwnership colorBackingOwnership);
 
   // gl must be the current context when this is called.
   static UniquePtr<MozFramebuffer> CreateImpl(
       GLContext* const gl, const gfx::IntSize& size, const uint32_t samples,
       const RefPtr<DepthAndStencilBuffer>& depthAndStencilBuffer,
-      const GLenum colorTarget, const GLuint colorName);
+      const GLenum colorTarget, const GLuint colorName,
+      ColorBackingOwnership colorBackingOwnership);
 
  public:
   ~MozFramebuffer();

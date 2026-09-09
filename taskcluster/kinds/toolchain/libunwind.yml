@@ -11,72 +11,11 @@ task-defaults:
         using: toolchain-script
         script: build-libunwind.sh
 
-android-aarch64-libunwind-21:
-    description: "android aarch64 libunwind for Clang 21 toolchain build"
-    treeherder:
-        symbol: TA(aarch64-unwind-21)
-    run:
-        clone-with: hg
-        arguments:
-            - build/build-clang/clang-21.json
-        resources:
-            - build/build-clang/clang-21.json
-            - taskcluster/scripts/misc/build-llvm-common.sh
-        toolchain-artifact: public/build/libunwind-aarch64-linux-android.tar.zst
-    fetches:
-        fetch:
-            - clang-21
-        toolchain:
-            - android-aarch64-compiler-rt-21
-            - linux64-clang-21-stage1
-            - linux64-android-ndk-linux-repack
-
-android-arm-libunwind-21:
-    description: "android arm libunwind for Clang 21 toolchain build"
-    treeherder:
-        symbol: TA(arm-unwind-21)
-    run:
-        clone-with: hg
-        arguments:
-            - build/build-clang/clang-21.json
-        resources:
-            - build/build-clang/clang-21.json
-            - taskcluster/scripts/misc/build-llvm-common.sh
-        toolchain-artifact: public/build/libunwind-armv7-linux-android.tar.zst
-    fetches:
-        fetch:
-            - clang-21
-        toolchain:
-            - android-arm-compiler-rt-21
-            - linux64-clang-21-stage1
-            - linux64-android-ndk-linux-repack
-
-android-x64-libunwind-21:
-    description: "android x64 libunwind for Clang 21 toolchain build"
-    treeherder:
-        symbol: TA(x64-unwind-21)
-    run:
-        clone-with: hg
-        arguments:
-            - build/build-clang/clang-21.json
-        resources:
-            - build/build-clang/clang-21.json
-            - taskcluster/scripts/misc/build-llvm-common.sh
-        toolchain-artifact: public/build/libunwind-x86_64-linux-android.tar.zst
-    fetches:
-        fetch:
-            - clang-21
-        toolchain:
-            - android-x64-compiler-rt-21
-            - linux64-clang-21-stage1
-            - linux64-android-ndk-linux-repack
-
 android-aarch64-libunwind-22:
     description: "android aarch64 libunwind for Clang 22 toolchain build"
     treeherder:
         symbol: TA(aarch64-unwind-22)
     run:
-        clone-with: hg
         arguments:
             - build/build-clang/clang-22.json
         resources:
@@ -96,7 +35,6 @@ android-arm-libunwind-22:
     treeherder:
         symbol: TA(arm-unwind-22)
     run:
-        clone-with: hg
         arguments:
             - build/build-clang/clang-22.json
         resources:
@@ -116,7 +54,6 @@ android-x64-libunwind-22:
     treeherder:
         symbol: TA(x64-unwind-22)
     run:
-        clone-with: hg
         arguments:
             - build/build-clang/clang-22.json
         resources:
@@ -138,7 +75,6 @@ android-aarch64-libunwind-trunk:
     treeherder:
         symbol: TA(aarch64-unwind-trunk)
     run:
-        clone-with: hg
         arguments:
             - build/build-clang/clang-trunk.json
         resources:
@@ -160,7 +96,6 @@ android-arm-libunwind-trunk:
     treeherder:
         symbol: TA(arm-unwind-trunk)
     run:
-        clone-with: hg
         arguments:
             - build/build-clang/clang-trunk.json
         resources:
@@ -182,7 +117,6 @@ android-x64-libunwind-trunk:
     treeherder:
         symbol: TA(x64-unwind-trunk)
     run:
-        clone-with: hg
         arguments:
             - build/build-clang/clang-trunk.json
         resources:

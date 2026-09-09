@@ -14,11 +14,12 @@ class StartForegroundServiceTest {
 
     @Test
     fun `WHEN build version below S THEN start foreground service should return true regardless of foreground importance`() {
-        val tested = StartForegroundService(
-            FakeProcessInfoProvider(false),
-            FakeBuildVersionProvider(Build.VERSION_CODES.P),
-            FakePowerManagerInfoProvider(false),
-        )
+        val tested =
+            StartForegroundService(
+                FakeProcessInfoProvider(false),
+                FakeBuildVersionProvider(Build.VERSION_CODES.P),
+                FakePowerManagerInfoProvider(false),
+            )
 
         var isInvoked = false
         val actual = tested.invoke {
@@ -32,11 +33,12 @@ class StartForegroundServiceTest {
 
     @Test
     fun `WHEN build version is S and above and foreground importance is false THEN start foreground service should return false`() {
-        val tested = StartForegroundService(
-            FakeProcessInfoProvider(false),
-            FakeBuildVersionProvider(Build.VERSION_CODES.S),
-            FakePowerManagerInfoProvider(false),
-        )
+        val tested =
+            StartForegroundService(
+                FakeProcessInfoProvider(false),
+                FakeBuildVersionProvider(Build.VERSION_CODES.S),
+                FakePowerManagerInfoProvider(false),
+            )
 
         var isInvoked = false
         val actual = tested.invoke {
@@ -49,11 +51,12 @@ class StartForegroundServiceTest {
 
     @Test
     fun `WHEN build version is S and above and foreground importance is true THEN start foreground service should return true`() {
-        val tested = StartForegroundService(
-            FakeProcessInfoProvider(true),
-            FakeBuildVersionProvider(Build.VERSION_CODES.S),
-            FakePowerManagerInfoProvider(false),
-        )
+        val tested =
+            StartForegroundService(
+                FakeProcessInfoProvider(true),
+                FakeBuildVersionProvider(Build.VERSION_CODES.S),
+                FakePowerManagerInfoProvider(false),
+            )
 
         var isInvoked = false
         val actual = tested.invoke {
@@ -66,11 +69,12 @@ class StartForegroundServiceTest {
 
     @Test
     fun `WHEN build version is S, foreground importance is false and battery optimisations are disabled THEN start foreground service should return true`() {
-        val tested = StartForegroundService(
-            FakeProcessInfoProvider(false),
-            FakeBuildVersionProvider(Build.VERSION_CODES.S),
-            FakePowerManagerInfoProvider(true),
-        )
+        val tested =
+            StartForegroundService(
+                FakeProcessInfoProvider(false),
+                FakeBuildVersionProvider(Build.VERSION_CODES.S),
+                FakePowerManagerInfoProvider(true),
+            )
 
         var isInvoked = true
         val actual = tested.invoke {
@@ -81,8 +85,7 @@ class StartForegroundServiceTest {
         assertTrue(isInvoked)
     }
 
-    class FakeProcessInfoProvider(private val isForegroundImportance: Boolean) :
-        ProcessInfoProvider {
+    class FakeProcessInfoProvider(private val isForegroundImportance: Boolean) : ProcessInfoProvider {
         override fun isForegroundImportance(): Boolean = isForegroundImportance
     }
 
@@ -90,9 +93,7 @@ class StartForegroundServiceTest {
         override fun sdkInt(): Int = sdkInt
     }
 
-    class FakePowerManagerInfoProvider(
-        private val isIgnoringBatteryOptimizations: Boolean,
-    ) : PowerManagerInfoProvider {
+    class FakePowerManagerInfoProvider(private val isIgnoringBatteryOptimizations: Boolean) : PowerManagerInfoProvider {
         override fun isIgnoringBatteryOptimizations(): Boolean = isIgnoringBatteryOptimizations
     }
 }

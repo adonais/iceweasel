@@ -8,9 +8,7 @@ import android.view.View
 import androidx.compose.ui.text.style.TextOverflow
 import com.google.android.material.snackbar.Snackbar
 
-/**
- * Delegate to display a snackbar.
- */
+/** Delegate to display a snackbar. */
 interface SnackbarDelegate {
     /**
      * Displays a snackbar.
@@ -46,11 +44,10 @@ interface SnackbarDelegate {
      * @property subTextOverflow Defines how visual overflow of the [subText] should be handled.
      * @param duration How long to display the message.
      * @param isError Whether the snackbar should be styled as an error.
-     * @param action Text of the optional action.
-     * The [listener] must also be provided to show an action button.
+     * @param action Text of the optional action. The [listener] must also be provided to show an action button.
      * @param withDismissAction Whether to display a dismiss button.
-     * @param listener callback to be invoked when the action is clicked.
-     * An [action] must also be provided to show an action button.
+     * @param listener callback to be invoked when the action is clicked. An [action] must also be provided to show an
+     *   action button.
      */
     fun show(
         snackBarParentView: View,
@@ -65,9 +62,7 @@ interface SnackbarDelegate {
     )
 }
 
-/**
- * Default implementation for [SnackbarDelegate]. Will display a standard default Snackbar.
- */
+/** Default implementation for [SnackbarDelegate]. Will display a standard default Snackbar. */
 class DefaultSnackbarDelegate : SnackbarDelegate {
     override fun show(
         snackBarParentView: View,
@@ -80,11 +75,12 @@ class DefaultSnackbarDelegate : SnackbarDelegate {
         withDismissAction: Boolean,
         listener: ((v: View) -> Unit)?,
     ) {
-        val snackbar = Snackbar.make(
-            snackBarParentView,
-            text,
-            duration,
-        )
+        val snackbar =
+            Snackbar.make(
+                snackBarParentView,
+                text,
+                duration,
+            )
 
         if (action != null && listener != null) {
             snackbar.setAction(action) { view -> listener.invoke(view) }
@@ -103,14 +99,15 @@ class DefaultSnackbarDelegate : SnackbarDelegate {
         action: Int,
         withDismissAction: Boolean,
         listener: ((v: View) -> Unit)?,
-    ) = show(
-        snackBarParentView = snackBarParentView,
-        text = snackBarParentView.context.getString(text),
-        subText = subText,
-        subTextOverflow = subTextOverflow,
-        duration = duration,
-        isError = isError,
-        action = if (action == 0) null else snackBarParentView.context.getString(action),
-        listener = listener,
-    )
+    ) =
+        show(
+            snackBarParentView = snackBarParentView,
+            text = snackBarParentView.context.getString(text),
+            subText = subText,
+            subTextOverflow = subTextOverflow,
+            duration = duration,
+            isError = isError,
+            action = if (action == 0) null else snackBarParentView.context.getString(action),
+            listener = listener,
+        )
 }

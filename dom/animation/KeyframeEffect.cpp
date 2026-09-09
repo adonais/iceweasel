@@ -1519,9 +1519,10 @@ bool KeyframeEffect::CanThrottle() const {
     // a) No target element
     // b) The target element has no frame, e.g. because it is in a display:none
     //    subtree.
-    // In either case we can throttle the animation because there is no
-    // need to update on the main thread.
-    return true;
+    // Both normally throttle: a frameless element has nothing to restyle. The
+    // exception is a `display` animation, whose sample may return `display` to
+    // a visible value. Throttling it skips the restyle that rebuilds the frame.
+    return !mCumulativeChanges.mDisplay;
   }
 
   // Do not throttle any animations during print preview.
@@ -1900,6 +1901,9 @@ void KeyframeEffect::CalculateCumulativeChangesForProperty(
     return;
   }
 
+  if (aProperty.mProperty.mId == eCSSProperty_display) {
+    mCumulativeChanges.mDisplay = true;
+  }
   mCumulativeChanges.mOverflow |= bool(flags & CSSPropFlags::AffectsOverflow);
   mCumulativeChanges.mLayout |= bool(flags & CSSPropFlags::AffectsLayout);
 }

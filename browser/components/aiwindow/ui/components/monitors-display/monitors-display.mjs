@@ -51,6 +51,7 @@ export class MonitorsDisplay extends MozLitElement {
       monitorName: monitor.title || "Untitled Monitor",
       url: monitor.watchUrls?.[0] || "",
       watchUrls: monitor.watchUrls || [],
+      watchUrlTitles: monitor.watchUrlTitles || {},
       condition: monitor.monitorPrompt || "",
       status: monitorStatus,
       value: monitor.currentValue || "",

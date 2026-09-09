@@ -230,7 +230,6 @@ security.ui.certerror:
         description: >
           If the error page is for a site with HSTS headers or with a pinned key.
         type: boolean
-    telemetry_mirror: SecurityUiCerterror_Click_AdvancedButton
 
   click_exception_button:
     type: event
@@ -245,7 +244,6 @@ security.ui.certerror:
     notification_emails: *security_ui_certerror_click_emails
     expires: never
     extra_keys: *security_ui_certerror_click_extra
-    telemetry_mirror: SecurityUiCerterror_Click_ExceptionButton
 
   click_return_button_top:
     type: event
@@ -260,7 +258,6 @@ security.ui.certerror:
     notification_emails: *security_ui_certerror_click_emails
     expires: never
     extra_keys: *security_ui_certerror_click_extra
-    telemetry_mirror: SecurityUiCerterror_Click_ReturnButtonTop
 
   click_return_button_adv:
     type: event
@@ -275,7 +272,6 @@ security.ui.certerror:
     notification_emails: *security_ui_certerror_click_emails
     expires: never
     extra_keys: *security_ui_certerror_click_extra
-    telemetry_mirror: SecurityUiCerterror_Click_ReturnButtonAdv
 
   click_learn_more_link:
     type: event
@@ -290,7 +286,6 @@ security.ui.certerror:
     notification_emails: *security_ui_certerror_click_emails
     expires: never
     extra_keys: *security_ui_certerror_click_extra
-    telemetry_mirror: SecurityUiCerterror_Click_LearnMoreLink
 
   click_auto_report_cb:
     type: event
@@ -305,7 +300,6 @@ security.ui.certerror:
     notification_emails: *security_ui_certerror_click_emails
     expires: never
     extra_keys: *security_ui_certerror_click_extra
-    telemetry_mirror: SecurityUiCerterror_Click_AutoReportCb
 
   click_error_code_link:
     type: event
@@ -320,7 +314,6 @@ security.ui.certerror:
     notification_emails: *security_ui_certerror_click_emails
     expires: never
     extra_keys: *security_ui_certerror_click_extra
-    telemetry_mirror: SecurityUiCerterror_Click_ErrorCodeLink
 
   click_clipboard_button_top:
     type: event
@@ -335,7 +328,6 @@ security.ui.certerror:
     notification_emails: *security_ui_certerror_click_emails
     expires: never
     extra_keys: *security_ui_certerror_click_extra
-    telemetry_mirror: SecurityUiCerterror_Click_ClipboardButtonTop
 
   click_clipboard_button_bot:
     type: event
@@ -350,7 +342,6 @@ security.ui.certerror:
     notification_emails: *security_ui_certerror_click_emails
     expires: never
     extra_keys: *security_ui_certerror_click_extra
-    telemetry_mirror: SecurityUiCerterror_Click_ClipboardButtonBot
 
 security.ui.tlserror:
   load_abouttlserror:
@@ -485,6 +476,216 @@ security.ui.neterror:
       User clicked the Advanced button on the network error page.
     bugs: *security_ui_neterror_click_bugs
     data_reviews: *security_ui_neterror_click_data_reviews
+    notification_emails: *security_ui_neterror_click_emails
+    expires: never
+    data_sensitivity: *security_ui_neterror_click_sensitivity
+    extra_keys: *security_ui_neterror_click_extra
+
+  search_cta_action:
+    type: labeled_counter
+    description: >
+      The action taken by the online dnsNotFound Search CTA decision, recorded
+      once per eligible page load (gated by browser.netError.searchCTA.enabled).
+      "keywords" and "host" mean a CTA was shown searching path keywords or the
+      registrable domain respectively; "none" means no CTA was shown. Records
+      only the action label, never the URL, keywords, or host.
+    labels:
+      - keywords
+      - host
+      - none
+    bugs:
+      - https://bugzil.la/2055675
+    data_reviews:
+      - https://bugzil.la/2055675
+    notification_emails:
+      - jbrown@mozilla.com
+      - seceng-telemetry@mozilla.com
+    expires: never
+    data_sensitivity:
+      - technical
+
+  search_cta_reason:
+    type: labeled_counter
+    description: >
+      Why the online dnsNotFound Search CTA reached its action, recorded once
+      per eligible page load, paired with search_cta_action. keywords_found is a
+      keyword query; no_path and no_meaningful_keywords fall back to the host;
+      host_unusable and search_unavailable show no CTA. engine_not_general means
+      a default search engine exists but is special-purpose (e.g. Wikipedia), so
+      the CTA is not shown. connectivity_unconfirmed means we could not confirm
+      we were online at page load: the captive-portal reading was stale and the
+      authoritative re-check came back offline/captive or timed out, so no CTA
+      was shown. Connectivity dropping *after* the CTA was shown is a different
+      thing and is counted by search_cta_click_aborted, not here.
+      not_top_level means the error document was not the top-level document (a
+      DNS failure inside an embedded document on a page that loaded fine), so no
+      CTA was offered; it is evaluated before the failed URL is looked at, which
+      is why such a load can never appear under keywords_found, no_path or
+      no_meaningful_keywords. When computing shown-rate or click-through rate,
+      exclude not_top_level from the denominator: it is a scope exclusion, not a
+      failure to find keywords. Records only the reason label, never content.
+    labels:
+      - keywords_found
+      - no_path
+      - no_meaningful_keywords
+      - host_unusable
+      - search_unavailable
+      - engine_not_general
+      - connectivity_unconfirmed
+      - not_top_level
+    bugs:
+      - https://bugzil.la/2055675
+      - https://bugzil.la/2055637
+      - https://bugzil.la/2055712
+      - https://bugzil.la/2063091
+    data_reviews:
+      - https://bugzil.la/2055675
+      - https://bugzil.la/2055637
+      - https://bugzil.la/2055712
+      - https://bugzil.la/2063091
+    notification_emails:
+      - jbrown@mozilla.com
+      - seceng-telemetry@mozilla.com
+    expires: never
+    data_sensitivity:
+      - technical
+
+  search_cta_shown:
+    type: counter
+    description: >
+      Count of times the online dnsNotFound Search CTA button was actually
+      shown (gates passed and a default search engine exists). Content-free.
+    bugs:
+      - https://bugzil.la/2055675
+    data_reviews:
+      - https://bugzil.la/2055675
+    notification_emails:
+      - jbrown@mozilla.com
+      - seceng-telemetry@mozilla.com
+    expires: never
+    data_sensitivity:
+      - interaction
+
+  search_cta_clicked:
+    type: counter
+    description: >
+      Count of times the user clicked the online dnsNotFound Search CTA
+      button. Content-free.
+    bugs:
+      - https://bugzil.la/2055675
+    data_reviews:
+      - https://bugzil.la/2055675
+    notification_emails:
+      - jbrown@mozilla.com
+      - seceng-telemetry@mozilla.com
+    expires: never
+    data_sensitivity:
+      - interaction
+
+  search_cta_click_aborted:
+    type: labeled_counter
+    description: >
+      Count of times the user clicked the online dnsNotFound Search CTA button
+      but no search was run. connectivity_lost means the page was online when
+      the CTA was shown, connectivity dropped before the click, and the click
+      was aborted with an offline message shown in the button's place. These
+      clicks are also counted by search_cta_clicked, so searches actually
+      launched = search_cta_clicked minus search_cta_click_aborted. Kept
+      separate from search_cta_reason because that metric describes the
+      page-load decision, one per eligible page load. Content-free.
+    labels:
+      - connectivity_lost
+    bugs:
+      - https://bugzil.la/2055712
+    data_reviews:
+      - https://bugzil.la/2055712
+    notification_emails:
+      - jbrown@mozilla.com
+      - seceng-telemetry@mozilla.com
+    expires: never
+    data_sensitivity:
+      - interaction
+
+  search_cta_exit:
+    type: event
+    description: >
+      How the user left an online dnsNotFound page on which the search CTA was
+      eligible (browser.netError.searchCTA.enabled on, online, not TRR-only, and
+      the top-level document, so a frame records nothing here).
+      Recorded exactly once per page: at the click for the three click-driven
+      reasons, and at pagehide otherwise. Clicking Search opens a separate tab
+      and leaves the error page loaded, so recording that outcome at pagehide
+      would delay it indefinitely and lose it whenever pagehide never fires.
+      This is the feature's only efficacy signal: whether the CTA helped the
+      user recover. Content-free (no url, query, keywords, host, or
+      destination).
+    bugs:
+      - https://bugzil.la/2055717
+      - https://bugzil.la/2063091
+    data_reviews:
+      - https://bugzil.la/2055717
+    notification_emails:
+      - jbrown@mozilla.com
+      - seceng-telemetry@mozilla.com
+    expires: never
+    data_sensitivity:
+      - interaction
+    extra_keys:
+      reason:
+        description: >
+          How the page was left: "clicked-cta" (clicked the Search button and a
+          search was launched), "clicked-reload" (clicked Reload),
+          "clicked-suggestion" (clicked the "did you mean" domain suggestion), or
+          "navigated-or-closed" (left any other way; in-page navigation and
+          tab/window close cannot be distinguished at pagehide, so they are
+          merged).
+        type: string
+      cta_shown:
+        description: >
+          Whether the Search button was actually shown (a default engine existed
+          and the query derivation produced a query). False when the CTA page
+          rendered but the Search button was suppressed (no engine, connectivity
+          lost, or an unusable host), leaving Reload only.
+        type: boolean
+      suggestion_shown:
+        description: >
+          Whether the "did you mean" alternate-host suggestion was present on the
+          page. Provides the denominator for the "clicked-suggestion" reason,
+          which is otherwise uninterpretable: a low rate cannot be distinguished
+          from the suggestion rarely being offered. Content-free (whether a
+          suggestion existed, never what it was).
+        type: boolean
+
+  alternate_host_suggested:
+    type: counter
+    description: >
+      Count of times the "did you mean" alternate-host suggestion was injected
+      into a dnsNotFound error page. Counted on both of the error page
+      implementations that can show it, the legacy about:neterror markup and the
+      net-error-card element used by the Felt Privacy redesign. The suggestion
+      depends on an async DNS lookup that resolves after load_aboutneterror has
+      already recorded, so it cannot be an extra key on that event. This counter
+      is the impression signal instead, and the denominator for
+      click_dns_suggestion_link. Content-free: a count only, never the
+      suggested host.
+    bugs:
+      - https://bugzil.la/2058380
+    data_reviews:
+      - https://bugzil.la/2058380
+    notification_emails: *security_ui_neterror_click_emails
+    expires: never
+    data_sensitivity:
+      - technical
+
+  click_dns_suggestion_link:
+    type: event
+    description: >
+      User clicked the "did you mean" alternate-host suggestion link on the
+      network error page. Content-free: the suggested host is never recorded.
+    bugs:
+      - https://bugzil.la/2058380
+    data_reviews:
+      - https://bugzil.la/2058380
     notification_emails: *security_ui_neterror_click_emails
     expires: never
     data_sensitivity: *security_ui_neterror_click_sensitivity

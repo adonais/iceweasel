@@ -15,7 +15,7 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.doReturn
 
 @RunWith(AndroidJUnit4::class)
-class GeckoServiceWorkerDelegateTest() {
+class GeckoServiceWorkerDelegateTest {
     @Test
     fun `GIVEN a delegate to add tabs WHEN it added a new tab for the request to open a new window THEN return a the new closed session`() {
         val delegate = mock<ServiceWorkerDelegate>()

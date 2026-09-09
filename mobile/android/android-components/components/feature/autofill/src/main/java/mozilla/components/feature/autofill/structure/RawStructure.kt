@@ -7,9 +7,7 @@ package mozilla.components.feature.autofill.structure
 import android.app.assist.AssistStructure
 import android.view.autofill.AutofillId
 
-/**
- * A raw view structure provided by an application - to be parsed into a [ParsedStructure].
- */
+/** A raw view structure provided by an application - to be parsed into a [ParsedStructure]. */
 internal interface RawStructure {
     val activityPackageName: String
 
@@ -20,9 +18,7 @@ internal fun AssistStructure.toRawStructure(): RawStructure {
     return AssistStructureWrapper(this)
 }
 
-private class AssistStructureWrapper(
-    private val actual: AssistStructure,
-) : RawStructure {
+private class AssistStructureWrapper(private val actual: AssistStructure) : RawStructure {
     override val activityPackageName: String
         get() = actual.activityComponent.packageName
 

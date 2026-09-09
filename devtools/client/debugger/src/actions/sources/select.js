@@ -25,6 +25,7 @@ import {
   getFirstSourceActorForGeneratedSource,
   getSourceByURL,
   getSelectedLocation,
+  getSelectedSource,
   getShouldSelectOriginalLocation,
   tabExists,
   hasSource,
@@ -291,6 +292,7 @@ export function selectLocation(
       location = createLocation({ ...location, sourceActor });
     }
 
+    const previousSelectedSource = getSelectedSource(getState());
     if (!tabExists(getState(), source)) {
       dispatch(addTab(source));
     }
@@ -302,6 +304,10 @@ export function selectLocation(
         scroll
       )
     );
+
+    if (source.isStyleSheet && source !== previousSelectedSource) {
+      Glean.devtoolsDebuggerStylesheets.stylesheetsOpenedCount.add(1);
+    }
 
     await dispatch(loadSourceText(source, sourceActor));
 

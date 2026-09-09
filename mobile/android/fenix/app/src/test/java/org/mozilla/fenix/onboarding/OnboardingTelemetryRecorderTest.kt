@@ -20,17 +20,17 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class OnboardingTelemetryRecorderTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private lateinit var telemetryRecorder: OnboardingTelemetryRecorder
 
     @Before
     fun setup() {
-        telemetryRecorder = OnboardingTelemetryRecorder(
-            onboardingReason = OnboardingReason.NEW_USER,
-            installSource = "source",
-        )
+        telemetryRecorder =
+            OnboardingTelemetryRecorder(
+                onboardingReason = OnboardingReason.NEW_USER,
+                installSource = "source",
+            )
     }
 
     @Test
@@ -62,9 +62,10 @@ class OnboardingTelemetryRecorderTest {
     @Test
     fun `WHEN onboarding is complete THEN the onboarding ping is sent`() {
         var sent = false
-        val job = Pings.onboarding.testBeforeNextSubmit {
-            sent = true
-        }
+        val job =
+            Pings.onboarding.testBeforeNextSubmit {
+                sent = true
+            }
 
         telemetryRecorder.onOnboardingComplete("", "")
 
@@ -75,9 +76,10 @@ class OnboardingTelemetryRecorderTest {
     @Test
     fun `WHEN navigating to the next onboarding page THEN the onboarding ping is sent`() {
         var sent = false
-        val job = Pings.onboarding.testBeforeNextSubmit {
-            sent = true
-        }
+        val job =
+            Pings.onboarding.testBeforeNextSubmit {
+                sent = true
+            }
 
         telemetryRecorder.onNavigatedToNextPage()
 

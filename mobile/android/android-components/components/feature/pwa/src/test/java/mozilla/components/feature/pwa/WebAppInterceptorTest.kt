@@ -32,11 +32,12 @@ class WebAppInterceptorTest {
         mockEngineSession = mock()
         mockManifestStorage = mock()
 
-        webAppInterceptor = WebAppInterceptor(
-            context = mockContext,
-            manifestStorage = mockManifestStorage,
-            launchFromInterceptor = true,
-        )
+        webAppInterceptor =
+            WebAppInterceptor(
+                context = mockContext,
+                manifestStorage = mockManifestStorage,
+                launchFromInterceptor = true,
+            )
     }
 
     @Test
@@ -44,7 +45,8 @@ class WebAppInterceptorTest {
         whenever(mockManifestStorage.getInstalledScope(webUrlWithWebApp)).thenReturn(webUrlWithWebApp)
         whenever(mockManifestStorage.getStartUrlForInstalledScope(webUrlWithWebApp)).thenReturn(webUrlWithWebApp)
 
-        val response = webAppInterceptor.onLoadRequest(mockEngineSession, webUrlWithWebApp, null, true, false, false, false, false)
+        val response =
+            webAppInterceptor.onLoadRequest(mockEngineSession, webUrlWithWebApp, null, true, false, false, false, false)
 
         assert(response is RequestInterceptor.InterceptionResponse.Deny)
     }
@@ -54,7 +56,8 @@ class WebAppInterceptorTest {
         whenever(mockManifestStorage.getInstalledScope(webUrlOutOfScope)).thenReturn(null)
         whenever(mockManifestStorage.getStartUrlForInstalledScope(webUrlOutOfScope)).thenReturn(null)
 
-        val response = webAppInterceptor.onLoadRequest(mockEngineSession, webUrlOutOfScope, null, true, false, false, false, false)
+        val response =
+            webAppInterceptor.onLoadRequest(mockEngineSession, webUrlOutOfScope, null, true, false, false, false, false)
 
         assertNull(response)
     }
@@ -64,38 +67,43 @@ class WebAppInterceptorTest {
         whenever(mockManifestStorage.getInstalledScope(webUrl)).thenReturn(null)
         whenever(mockManifestStorage.getStartUrlForInstalledScope(webUrl)).thenReturn(null)
 
-        val response = webAppInterceptor.onLoadRequest(mockEngineSession, webUrl, null, true, false, false, false, false)
+        val response =
+            webAppInterceptor.onLoadRequest(mockEngineSession, webUrl, null, true, false, false, false, false)
 
         assertNull(response)
     }
 
     @Test
     fun `request is intercepted with app intent if not launchFromInterceptor`() {
-        webAppInterceptor = WebAppInterceptor(
-            context = mockContext,
-            manifestStorage = mockManifestStorage,
-            launchFromInterceptor = false,
-        )
+        webAppInterceptor =
+            WebAppInterceptor(
+                context = mockContext,
+                manifestStorage = mockManifestStorage,
+                launchFromInterceptor = false,
+            )
 
         whenever(mockManifestStorage.getInstalledScope(webUrlWithWebApp)).thenReturn(webUrlWithWebApp)
         whenever(mockManifestStorage.getStartUrlForInstalledScope(webUrlWithWebApp)).thenReturn(webUrlWithWebApp)
 
-        val response = webAppInterceptor.onLoadRequest(mockEngineSession, webUrlWithWebApp, null, true, false, false, false, false)
+        val response =
+            webAppInterceptor.onLoadRequest(mockEngineSession, webUrlWithWebApp, null, true, false, false, false, false)
 
         assert(response is RequestInterceptor.InterceptionResponse.AppIntent)
     }
 
     @Test
     fun `launchFromInterceptor is enabled by default`() {
-        webAppInterceptor = WebAppInterceptor(
-            context = mockContext,
-            manifestStorage = mockManifestStorage,
-        )
+        webAppInterceptor =
+            WebAppInterceptor(
+                context = mockContext,
+                manifestStorage = mockManifestStorage,
+            )
 
         whenever(mockManifestStorage.getInstalledScope(webUrlWithWebApp)).thenReturn(webUrlWithWebApp)
         whenever(mockManifestStorage.getStartUrlForInstalledScope(webUrlWithWebApp)).thenReturn(webUrlWithWebApp)
 
-        val response = webAppInterceptor.onLoadRequest(mockEngineSession, webUrlWithWebApp, null, true, false, false, false, false)
+        val response =
+            webAppInterceptor.onLoadRequest(mockEngineSession, webUrlWithWebApp, null, true, false, false, false, false)
 
         assert(response is RequestInterceptor.InterceptionResponse.Deny)
     }

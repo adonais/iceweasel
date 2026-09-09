@@ -12,8 +12,8 @@ import mozilla.components.concept.engine.manifest.getOrNull
 internal const val EXTRA_WEB_APP_MANIFEST = "mozilla.components.feature.pwa.EXTRA_WEB_APP_MANIFEST"
 
 /**
- * Serializes and inserts a [WebAppManifest] value into the mapping of this [Bundle],
- * replacing any existing web app manifest.
+ * Serializes and inserts a [WebAppManifest] value into the mapping of this [Bundle], replacing any existing web app
+ * manifest.
  */
 fun Bundle.putWebAppManifest(webAppManifest: WebAppManifest?) {
     val json = webAppManifest?.let { WebAppManifestParser().serialize(it).toString() }
@@ -21,8 +21,8 @@ fun Bundle.putWebAppManifest(webAppManifest: WebAppManifest?) {
 }
 
 /**
- * Parses and returns the [WebAppManifest] associated with this [Bundle],
- * or null if no mapping of the desired type exists.
+ * Parses and returns the [WebAppManifest] associated with this [Bundle], or null if no mapping of the desired type
+ * exists.
  */
 fun Bundle.getWebAppManifest(): WebAppManifest? {
     return getString(EXTRA_WEB_APP_MANIFEST)?.let { json ->

@@ -34,10 +34,11 @@ class OnDeviceSitePermissionsStorageTest {
     private lateinit var database: SitePermissionsDatabase
 
     @get:Rule
-    val helper: MigrationTestHelper = MigrationTestHelper(
-        InstrumentationRegistry.getInstrumentation(),
-        SitePermissionsDatabase::class.java,
-    )
+    val helper: MigrationTestHelper =
+        MigrationTestHelper(
+            InstrumentationRegistry.getInstrumentation(),
+            SitePermissionsDatabase::class.java,
+        )
 
     @Before
     fun setUp() {
@@ -56,11 +57,12 @@ class OnDeviceSitePermissionsStorageTest {
     @Test
     fun testStorageInteraction() = runTest {
         val origin = "https://www.mozilla.org".toUri().host!!
-        val sitePermissions = SitePermissions(
-            origin = origin,
-            camera = Status.BLOCKED,
-            savedAt = System.currentTimeMillis(),
-        )
+        val sitePermissions =
+            SitePermissions(
+                origin = origin,
+                camera = Status.BLOCKED,
+                savedAt = System.currentTimeMillis(),
+            )
         storage.save(sitePermissions, private = false)
         val sitePermissionsFromStorage = storage.findSitePermissionsBy(origin, private = false)!!
 
@@ -70,34 +72,38 @@ class OnDeviceSitePermissionsStorageTest {
 
     @Test
     fun migrate1to2() {
-        val dbVersion1 = helper.createDatabase(MIGRATION_TEST_DB, 1).apply {
-            execSQL(
-                "INSERT INTO " +
-                    "site_permissions " +
-                    "(origin, location, notification, microphone,camera_front,camera_back,bluetooth,local_storage,saved_at) " +
-                    "VALUES " +
-                    "('mozilla.org',1,1,1,1,1,1,1,1)",
-            )
-        }
+        val dbVersion1 =
+            helper.createDatabase(MIGRATION_TEST_DB, 1).apply {
+                execSQL(
+                    "INSERT INTO " +
+                        "site_permissions " +
+                        "(origin, location, notification, microphone,camera_front,camera_back,bluetooth,local_storage,saved_at) " +
+                        "VALUES " +
+                        "('mozilla.org',1,1,1,1,1,1,1,1)"
+                )
+            }
 
         dbVersion1.query("SELECT * FROM site_permissions").use { cursor ->
             assertEquals(9, cursor.columnCount)
         }
 
-        val dbVersion2 = helper.runMigrationsAndValidate(
-            MIGRATION_TEST_DB,
-            2,
-            true,
-            Migrations.migration_1_2,
-        ).apply {
-            execSQL(
-                "INSERT INTO " +
-                    "site_permissions " +
-                    "(origin, location, notification, microphone,camera,bluetooth,local_storage,saved_at) " +
-                    "VALUES " +
-                    "('mozilla.org',1,1,1,1,1,1,1)",
-            )
-        }
+        val dbVersion2 =
+            helper
+                .runMigrationsAndValidate(
+                    MIGRATION_TEST_DB,
+                    2,
+                    true,
+                    Migrations.migration_1_2,
+                )
+                .apply {
+                    execSQL(
+                        "INSERT INTO " +
+                            "site_permissions " +
+                            "(origin, location, notification, microphone,camera,bluetooth,local_storage,saved_at) " +
+                            "VALUES " +
+                            "('mozilla.org',1,1,1,1,1,1,1)"
+                    )
+                }
 
         dbVersion2.query("SELECT * FROM site_permissions").use { cursor ->
             assertEquals(8, cursor.columnCount)
@@ -118,7 +124,7 @@ class OnDeviceSitePermissionsStorageTest {
                     "site_permissions " +
                     "(origin, location, notification, microphone,camera,bluetooth,local_storage,saved_at) " +
                     "VALUES " +
-                    "('mozilla.org',1,1,1,1,1,1,1)",
+                    "('mozilla.org',1,1,1,1,1,1,1)"
             )
         }
 
@@ -144,7 +150,7 @@ class OnDeviceSitePermissionsStorageTest {
                     "site_permissions " +
                     "(origin, location, notification, microphone,camera,bluetooth,local_storage,autoplay_audible,autoplay_inaudible,saved_at) " +
                     "VALUES " +
-                    "('mozilla.org',1,1,1,1,1,1,1,1,1)",
+                    "('mozilla.org',1,1,1,1,1,1,1,1,1)"
             )
         }
 
@@ -166,7 +172,7 @@ class OnDeviceSitePermissionsStorageTest {
                     "site_permissions " +
                     "(origin, location, notification, microphone,camera,bluetooth,local_storage,autoplay_audible,autoplay_inaudible,media_key_system_access,saved_at) " +
                     "VALUES " +
-                    "('mozilla.org',1,1,1,1,1,1,0,0,1,1)",
+                    "('mozilla.org',1,1,1,1,1,1,0,0,1,1)"
             )
         }
 
@@ -189,12 +195,11 @@ class OnDeviceSitePermissionsStorageTest {
                     "site_permissions " +
                     "(origin, location, notification, microphone,camera,bluetooth,local_storage,autoplay_audible,autoplay_inaudible,media_key_system_access,saved_at) " +
                     "VALUES " +
-                    "('${url.tryGetHostFromUrl()}',1,1,1,1,1,1,0,0,1,1)",
+                    "('${url.tryGetHostFromUrl()}',1,1,1,1,1,1,0,0,1,1)"
             )
         }
 
-        val dbVersion6 =
-            helper.runMigrationsAndValidate(MIGRATION_TEST_DB, 6, true, Migrations.migration_5_6)
+        val dbVersion6 = helper.runMigrationsAndValidate(MIGRATION_TEST_DB, 6, true, Migrations.migration_5_6)
 
         dbVersion6.query("SELECT * FROM site_permissions").use { cursor ->
             cursor.moveToFirst()
@@ -213,12 +218,11 @@ class OnDeviceSitePermissionsStorageTest {
                     "site_permissions " +
                     "(origin, location, notification, microphone,camera,bluetooth,local_storage,autoplay_audible,autoplay_inaudible,media_key_system_access,saved_at) " +
                     "VALUES " +
-                    "('${url.tryGetHostFromUrl()}',1,1,1,1,1,1,-1,-1,1,1)",
+                    "('${url.tryGetHostFromUrl()}',1,1,1,1,1,1,-1,-1,1,1)"
             ) // Block audio and video.
         }
 
-        val dbVersion6 =
-            helper.runMigrationsAndValidate(MIGRATION_TEST_DB, 7, true, Migrations.migration_6_7)
+        val dbVersion6 = helper.runMigrationsAndValidate(MIGRATION_TEST_DB, 7, true, Migrations.migration_6_7)
 
         dbVersion6.query("SELECT * FROM site_permissions").use { cursor ->
             cursor.moveToFirst()
@@ -250,12 +254,12 @@ class OnDeviceSitePermissionsStorageTest {
                         cross_origin_storage_access, 
                         saved_at)
                     VALUES ('${url.tryGetHostFromUrl()}',1,1,1,1,1,1,0,0,1,1,0)
-                """.trimIndent(),
+                """
+                    .trimIndent()
             )
         }
 
-        val dbVersion9 =
-            helper.runMigrationsAndValidate(MIGRATION_TEST_DB, 9, true, Migrations.migration_8_9)
+        val dbVersion9 = helper.runMigrationsAndValidate(MIGRATION_TEST_DB, 9, true, Migrations.migration_8_9)
 
         dbVersion9.query("SELECT * FROM site_permissions").use { cursor ->
             cursor.moveToFirst()
@@ -318,6 +322,7 @@ class OnDeviceSitePermissionsStorageTest {
     private fun Cursor.getStringValue(columnName: String): String {
         return getString(getColumnIndexOrThrow(columnName))
     }
+
     private fun Cursor.getIntValue(columnName: String): Int {
         return getInt(getColumnIndexOrThrow(columnName))
     }

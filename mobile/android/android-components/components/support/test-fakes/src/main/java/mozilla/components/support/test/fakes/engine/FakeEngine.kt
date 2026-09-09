@@ -21,9 +21,9 @@ import org.junit.Assert.assertEquals
 /**
  * A fake [Engine] implementation to be used in tests that require an [Engine] instance.
  *
- * @param expectToRestoreRealEngineSessionState Whether this fake engine should expect to restore
- * engine sessions from actual engine session state JSON (e.g. from GeckoView). Otherwise this fake
- * will expect to always deal with [FakeEngineSessionState] instances.
+ * @param expectToRestoreRealEngineSessionState Whether this fake engine should expect to restore engine sessions from
+ *   actual engine session state JSON (e.g. from GeckoView). Otherwise this fake will expect to always deal with
+ *   [FakeEngineSessionState] instances.
  */
 class FakeEngine(
     private val expectToRestoreRealEngineSessionState: Boolean = false,
@@ -32,8 +32,7 @@ class FakeEngine(
     override val version: EngineVersion
         get() = throw NotImplementedError()
 
-    override fun createView(context: Context, attrs: AttributeSet?): EngineView =
-        FakeEngineView(context)
+    override fun createView(context: Context, attrs: AttributeSet?): EngineView = FakeEngineView(context)
 
     override fun createSession(private: Boolean, contextId: String?): EngineSession =
         throw UnsupportedOperationException()
@@ -62,8 +61,7 @@ class FakeEngine(
 
     override fun name(): String = "fake_engine"
 
-    override fun speculativeConnect(url: String) =
-        throw UnsupportedOperationException()
+    override fun speculativeConnect(url: String) = throw UnsupportedOperationException()
 
     override val profiler: Profiler
         get() = throw NotImplementedError()

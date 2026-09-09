@@ -13,18 +13,17 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.sp
+import kotlin.test.assertNotNull
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class HighlightedDomainUrlLayoutTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun `WHEN text changes without resizing THEN the measured layout uses the current text`() {
@@ -65,12 +64,13 @@ class HighlightedDomainUrlLayoutTest {
         }
 
         composeTestRule.runOnIdle {
-            result = computeDomainEndScrollValue(
-                text = text,
-                highlightRange = outOfBoundsRange,
-                scrollState = ScrollState(initial = 0),
-                textLayoutResult = requireNotNull(layout),
-            )
+            result =
+                computeDomainEndScrollValue(
+                    text = text,
+                    highlightRange = outOfBoundsRange,
+                    scrollState = ScrollState(initial = 0),
+                    textLayoutResult = requireNotNull(layout),
+                )
         }
 
         assertNotNull(result)

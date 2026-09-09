@@ -204,7 +204,7 @@ add_task(async function test_replaceGroupWithWindow() {
 
   await extension.startup();
   let groupBefore = await extension.awaitMessage("initial_group");
-  let oldPosition = tab._tPos;
+  let oldPosition = tab.index;
   let newWindow = gBrowser.replaceGroupWithWindow(group);
   let newWindowId = await extension.awaitMessage("created_windowId");
   let groupAfter = await extension.awaitMessage("moved_group");

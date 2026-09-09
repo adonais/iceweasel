@@ -4,13 +4,13 @@
 
 package org.mozilla.fenix.summarization
 
+import kotlin.test.assertIs
 import mozilla.components.concept.llm.Llm
 import mozilla.components.lib.llm.mlpa.service.IntegrityHandshakeFailure
 import mozilla.components.lib.llm.mlpa.service.RateLimited
 import mozilla.components.lib.llm.mlpa.service.RequestTooLarge
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import kotlin.test.assertIs
 
 class ErrorCodeLookupTest {
 

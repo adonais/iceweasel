@@ -29,58 +29,64 @@ class WebExtensionsMenuBindingTest {
     @Test
     fun `WHEN browser web extension state get updated in the browserStore THEN invoke action update browser web extension menu items`() =
         runTest {
-            val defaultBrowserAction =
-                createWebExtensionBrowserAction("default_browser_action_title")
+            val defaultBrowserAction = createWebExtensionBrowserAction("default_browser_action_title")
 
-            val overriddenBrowserAction =
-                createWebExtensionBrowserAction("overridden_browser_action_title")
+            val overriddenBrowserAction = createWebExtensionBrowserAction("overridden_browser_action_title")
 
-            val extensions: Map<String, WebExtensionState> = mapOf(
-                "id" to WebExtensionState(
-                    id = "id",
-                    url = "url",
-                    name = "name",
-                    enabled = true,
-                    browserAction = defaultBrowserAction,
-                ),
-            )
-            val overriddenExtensions: Map<String, WebExtensionState> = mapOf(
-                "id" to WebExtensionState(
-                    id = "id",
-                    url = "url",
-                    name = "name",
-                    enabled = true,
-                    browserAction = overriddenBrowserAction,
-                ),
-            )
+            val extensions: Map<String, WebExtensionState> =
+                mapOf(
+                    "id" to
+                        WebExtensionState(
+                            id = "id",
+                            url = "url",
+                            name = "name",
+                            enabled = true,
+                            browserAction = defaultBrowserAction,
+                        )
+                )
+            val overriddenExtensions: Map<String, WebExtensionState> =
+                mapOf(
+                    "id" to
+                        WebExtensionState(
+                            id = "id",
+                            url = "url",
+                            name = "name",
+                            enabled = true,
+                            browserAction = overriddenBrowserAction,
+                        )
+                )
 
             val captureActionsMiddleware = CaptureActionsMiddleware<MenuState, MenuAction>()
-            menuStore = MenuStore(
-                initialState = MenuState(),
-                middleware = listOf(captureActionsMiddleware),
-            )
-            browserStore = BrowserStore(
-                BrowserState(
-                    tabs = listOf(
-                        createTab(
-                            url = "https://www.example.org",
-                            id = "tab1",
-                            extensions = overriddenExtensions,
-                        ),
-                    ),
-                    selectedTabId = "tab1",
-                    extensions = extensions,
-                ),
-            )
+            menuStore =
+                MenuStore(
+                    initialState = MenuState(),
+                    middleware = listOf(captureActionsMiddleware),
+                )
+            browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab(
+                                    url = "https://www.example.org",
+                                    id = "tab1",
+                                    extensions = overriddenExtensions,
+                                )
+                            ),
+                        selectedTabId = "tab1",
+                        extensions = extensions,
+                    )
+                )
 
-            val binding = WebExtensionsMenuBinding(
-                browserStore = browserStore,
-                customTabId = null,
-                menuStore = menuStore,
-                iconSize = 24,
-                onDismiss = {},
-                mainDispatcher = testDispatcher,
-            )
+            val binding =
+                WebExtensionsMenuBinding(
+                    browserStore = browserStore,
+                    customTabId = null,
+                    menuStore = menuStore,
+                    iconSize = 24,
+                    onDismiss = {},
+                    mainDispatcher = testDispatcher,
+                )
             binding.start()
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -101,58 +107,64 @@ class WebExtensionsMenuBindingTest {
         runTest {
             val extensionName = "extensionName"
 
-            val defaultBrowserAction =
-                createWebExtensionBrowserAction("default_browser_action_title")
+            val defaultBrowserAction = createWebExtensionBrowserAction("default_browser_action_title")
 
-            val overriddenBrowserAction =
-                createWebExtensionBrowserAction("")
+            val overriddenBrowserAction = createWebExtensionBrowserAction("")
 
-            val extensions: Map<String, WebExtensionState> = mapOf(
-                "id" to WebExtensionState(
-                    id = "id",
-                    url = "url",
-                    name = extensionName,
-                    enabled = true,
-                    browserAction = defaultBrowserAction,
-                ),
-            )
-            val overriddenExtensions: Map<String, WebExtensionState> = mapOf(
-                "id" to WebExtensionState(
-                    id = "id",
-                    url = "url",
-                    name = extensionName,
-                    enabled = true,
-                    browserAction = overriddenBrowserAction,
-                ),
-            )
+            val extensions: Map<String, WebExtensionState> =
+                mapOf(
+                    "id" to
+                        WebExtensionState(
+                            id = "id",
+                            url = "url",
+                            name = extensionName,
+                            enabled = true,
+                            browserAction = defaultBrowserAction,
+                        )
+                )
+            val overriddenExtensions: Map<String, WebExtensionState> =
+                mapOf(
+                    "id" to
+                        WebExtensionState(
+                            id = "id",
+                            url = "url",
+                            name = extensionName,
+                            enabled = true,
+                            browserAction = overriddenBrowserAction,
+                        )
+                )
 
             val captureActionsMiddleware = CaptureActionsMiddleware<MenuState, MenuAction>()
-            menuStore = MenuStore(
-                initialState = MenuState(),
-                middleware = listOf(captureActionsMiddleware),
-            )
-            browserStore = BrowserStore(
-                BrowserState(
-                    tabs = listOf(
-                        createTab(
-                            url = "https://www.example.org",
-                            id = "tab1",
-                            extensions = overriddenExtensions,
-                        ),
-                    ),
-                    selectedTabId = "tab1",
-                    extensions = extensions,
-                ),
-            )
+            menuStore =
+                MenuStore(
+                    initialState = MenuState(),
+                    middleware = listOf(captureActionsMiddleware),
+                )
+            browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab(
+                                    url = "https://www.example.org",
+                                    id = "tab1",
+                                    extensions = overriddenExtensions,
+                                )
+                            ),
+                        selectedTabId = "tab1",
+                        extensions = extensions,
+                    )
+                )
 
-            val binding = WebExtensionsMenuBinding(
-                browserStore = browserStore,
-                customTabId = null,
-                menuStore = menuStore,
-                iconSize = 24,
-                onDismiss = {},
-                mainDispatcher = testDispatcher,
-            )
+            val binding =
+                WebExtensionsMenuBinding(
+                    browserStore = browserStore,
+                    customTabId = null,
+                    menuStore = menuStore,
+                    iconSize = 24,
+                    onDismiss = {},
+                    mainDispatcher = testDispatcher,
+                )
             binding.start()
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -175,52 +187,60 @@ class WebExtensionsMenuBindingTest {
 
             val overriddenPageAction = createWebExtensionPageAction("overridden_page_action_title")
 
-            val extensions: Map<String, WebExtensionState> = mapOf(
-                "id" to WebExtensionState(
-                    id = "id",
-                    url = "url",
-                    name = "name",
-                    enabled = true,
-                    pageAction = defaultPageAction,
-                ),
-            )
-            val overriddenExtensions: Map<String, WebExtensionState> = mapOf(
-                "id" to WebExtensionState(
-                    id = "id",
-                    url = "url",
-                    name = "name",
-                    enabled = true,
-                    pageAction = overriddenPageAction,
-                ),
-            )
+            val extensions: Map<String, WebExtensionState> =
+                mapOf(
+                    "id" to
+                        WebExtensionState(
+                            id = "id",
+                            url = "url",
+                            name = "name",
+                            enabled = true,
+                            pageAction = defaultPageAction,
+                        )
+                )
+            val overriddenExtensions: Map<String, WebExtensionState> =
+                mapOf(
+                    "id" to
+                        WebExtensionState(
+                            id = "id",
+                            url = "url",
+                            name = "name",
+                            enabled = true,
+                            pageAction = overriddenPageAction,
+                        )
+                )
 
             val captureActionsMiddleware = CaptureActionsMiddleware<MenuState, MenuAction>()
-            menuStore = MenuStore(
-                initialState = MenuState(),
-                middleware = listOf(captureActionsMiddleware),
-            )
-            browserStore = BrowserStore(
-                BrowserState(
-                    tabs = listOf(
-                        createTab(
-                            url = "https://www.example.org",
-                            id = "tab1",
-                            extensions = overriddenExtensions,
-                        ),
-                    ),
-                    selectedTabId = "tab1",
-                    extensions = extensions,
-                ),
-            )
+            menuStore =
+                MenuStore(
+                    initialState = MenuState(),
+                    middleware = listOf(captureActionsMiddleware),
+                )
+            browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab(
+                                    url = "https://www.example.org",
+                                    id = "tab1",
+                                    extensions = overriddenExtensions,
+                                )
+                            ),
+                        selectedTabId = "tab1",
+                        extensions = extensions,
+                    )
+                )
 
-            val binding = WebExtensionsMenuBinding(
-                browserStore = browserStore,
-                customTabId = null,
-                menuStore = menuStore,
-                iconSize = 24,
-                onDismiss = {},
-                mainDispatcher = testDispatcher,
-            )
+            val binding =
+                WebExtensionsMenuBinding(
+                    browserStore = browserStore,
+                    customTabId = null,
+                    menuStore = menuStore,
+                    iconSize = 24,
+                    onDismiss = {},
+                    mainDispatcher = testDispatcher,
+                )
             binding.start()
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -239,46 +259,51 @@ class WebExtensionsMenuBindingTest {
     @Test
     fun `WHEN page web extension state disabled get updated in the browserStore THEN not invoke action update page web extension menu items`() =
         runTest {
-            val defaultPageAction =
-                createWebExtensionPageAction("default_page_action_title", enabled = false)
+            val defaultPageAction = createWebExtensionPageAction("default_page_action_title", enabled = false)
 
-            val extensions: Map<String, WebExtensionState> = mapOf(
-                "id" to WebExtensionState(
-                    id = "id",
-                    url = "url",
-                    name = "name",
-                    enabled = true,
-                    pageAction = defaultPageAction,
-                ),
-            )
+            val extensions: Map<String, WebExtensionState> =
+                mapOf(
+                    "id" to
+                        WebExtensionState(
+                            id = "id",
+                            url = "url",
+                            name = "name",
+                            enabled = true,
+                            pageAction = defaultPageAction,
+                        )
+                )
 
             val captureActionsMiddleware = CaptureActionsMiddleware<MenuState, MenuAction>()
-            menuStore = MenuStore(
-                initialState = MenuState(),
-                middleware = listOf(captureActionsMiddleware),
-            )
-            browserStore = BrowserStore(
-                BrowserState(
-                    tabs = listOf(
-                        createTab(
-                            url = "https://www.example.org",
-                            id = "tab1",
-                            extensions = extensions,
-                        ),
-                    ),
-                    selectedTabId = "tab1",
-                    extensions = extensions,
-                ),
-            )
+            menuStore =
+                MenuStore(
+                    initialState = MenuState(),
+                    middleware = listOf(captureActionsMiddleware),
+                )
+            browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab(
+                                    url = "https://www.example.org",
+                                    id = "tab1",
+                                    extensions = extensions,
+                                )
+                            ),
+                        selectedTabId = "tab1",
+                        extensions = extensions,
+                    )
+                )
 
-            val binding = WebExtensionsMenuBinding(
-                browserStore = browserStore,
-                customTabId = null,
-                menuStore = menuStore,
-                iconSize = 24,
-                onDismiss = {},
-                mainDispatcher = testDispatcher,
-            )
+            val binding =
+                WebExtensionsMenuBinding(
+                    browserStore = browserStore,
+                    customTabId = null,
+                    menuStore = menuStore,
+                    iconSize = 24,
+                    onDismiss = {},
+                    mainDispatcher = testDispatcher,
+                )
             binding.start()
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -298,13 +323,14 @@ class WebExtensionsMenuBindingTest {
             onClick = {},
         )
 
-    private fun createWebExtensionBrowserAction(title: String) = WebExtensionBrowserAction(
-        title,
-        enabled = true,
-        loadIcon = { null },
-        badgeText = "",
-        badgeTextColor = 0,
-        badgeBackgroundColor = 0,
-        onClick = {},
-    )
+    private fun createWebExtensionBrowserAction(title: String) =
+        WebExtensionBrowserAction(
+            title,
+            enabled = true,
+            loadIcon = { null },
+            badgeText = "",
+            badgeTextColor = 0,
+            badgeBackgroundColor = 0,
+            onClick = {},
+        )
 }

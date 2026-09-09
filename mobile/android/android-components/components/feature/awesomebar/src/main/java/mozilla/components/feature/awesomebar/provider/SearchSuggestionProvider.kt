@@ -5,6 +5,9 @@
 package mozilla.components.feature.awesomebar.provider
 
 import android.graphics.Bitmap
+import java.io.IOException
+import java.util.UUID
+import java.util.concurrent.TimeUnit
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.awesomebar.AwesomeBar
@@ -18,15 +21,13 @@ import mozilla.components.feature.search.ext.buildSearchUrl
 import mozilla.components.feature.search.suggestions.SearchSuggestionClient
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlin.sanitizeURL
-import java.io.IOException
-import java.util.UUID
-import java.util.concurrent.TimeUnit
 
 /**
  * A [AwesomeBar.SuggestionProvider] implementation that provides a suggestion containing search engine suggestions (as
  * chips) from the passed in [SearchEngine].
  */
-class SearchSuggestionProvider private constructor(
+class SearchSuggestionProvider
+private constructor(
     internal val client: SearchSuggestionClient,
     private val searchUseCase: SearchUseCases.SearchUseCase,
     private val limit: Int = 15,
@@ -51,13 +52,12 @@ class SearchSuggestionProvider private constructor(
      * @param fetchClient The HTTP client for requesting suggestions from the search engine.
      * @param limit The maximum number of suggestions that should be returned. It needs to be >= 1.
      * @param mode Whether to return a single search suggestion (with chips) or one suggestion per item.
-     * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the
-     * highest scored search suggestion URL.
+     * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the highest scored search
+     *   suggestion URL.
      * @param icon The image to display next to the result. If not specified, the engine icon is used.
      * @param showDescription whether or not to add the search engine name as description.
      * @param filterExactMatch If true filters out suggestions that exactly match the entered text.
-     * @param private When set to `true` then all requests to search engines will be made in private
-     * mode.
+     * @param private When set to `true` then all requests to search engines will be made in private mode.
      */
     constructor(
         searchEngine: SearchEngine,
@@ -70,7 +70,7 @@ class SearchSuggestionProvider private constructor(
         showDescription: Boolean = true,
         filterExactMatch: Boolean = false,
         private: Boolean = false,
-    ) : this (
+    ) : this(
         SearchSuggestionClient(searchEngine) { url -> fetch(fetchClient, url, private) },
         searchUseCase,
         limit,
@@ -82,21 +82,19 @@ class SearchSuggestionProvider private constructor(
     )
 
     /**
-     * Creates a [SearchSuggestionProvider] using the default engine as provided by the given
-     * [BrowserStore].
+     * Creates a [SearchSuggestionProvider] using the default engine as provided by the given [BrowserStore].
      *
      * @param store The [BrowserStore] to look up search engines.
      * @param searchUseCase The use case to invoke for searches.
      * @param fetchClient The HTTP client for requesting suggestions from the search engine.
      * @param limit The maximum number of suggestions that should be returned. It needs to be >= 1.
      * @param mode Whether to return a single search suggestion (with chips) or one suggestion per item.
-     * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the
-     * highest scored search suggestion URL.
+     * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the highest scored search
+     *   suggestion URL.
      * @param icon The image to display next to the result. If not specified, the engine icon is used.
      * @param showDescription whether or not to add the search engine name as description.
      * @param filterExactMatch If true filters out suggestions that exactly match the entered text.
-     * @param private When set to `true` then all requests to search engines will be made in private
-     * mode.
+     * @param private When set to `true` then all requests to search engines will be made in private mode.
      * @param suggestionsHeader Optional suggestions header to display.
      */
     constructor(
@@ -111,7 +109,7 @@ class SearchSuggestionProvider private constructor(
         filterExactMatch: Boolean = false,
         private: Boolean = false,
         suggestionsHeader: String? = null,
-    ) : this (
+    ) : this(
         SearchSuggestionClient(store) { url -> fetch(fetchClient, url, private) },
         searchUseCase,
         limit,
@@ -136,14 +134,16 @@ class SearchSuggestionProvider private constructor(
         val suggestions = fetchSuggestions(text)
 
         return when (mode) {
-            Mode.MULTIPLE_SUGGESTIONS -> createMultipleSuggestions(text, suggestions).also {
-                // Call speculativeConnect for URL of first (highest scored) suggestion
-                it.firstOrNull()?.title?.let { searchTerms -> maybeCallSpeculativeConnect(searchTerms) }
-            }
-            Mode.SINGLE_SUGGESTION -> createSingleSearchSuggestion(text, suggestions).also {
-                // Call speculativeConnect for URL of first (highest scored) chip
-                it.firstOrNull()?.chips?.firstOrNull()?.let { chip -> maybeCallSpeculativeConnect(chip.title) }
-            }
+            Mode.MULTIPLE_SUGGESTIONS ->
+                createMultipleSuggestions(text, suggestions).also {
+                    // Call speculativeConnect for URL of first (highest scored) suggestion
+                    it.firstOrNull()?.title?.let { searchTerms -> maybeCallSpeculativeConnect(searchTerms) }
+                }
+            Mode.SINGLE_SUGGESTION ->
+                createSingleSearchSuggestion(text, suggestions).also {
+                    // Call speculativeConnect for URL of first (highest scored) chip
+                    it.firstOrNull()?.chips?.firstOrNull()?.let { chip -> maybeCallSpeculativeConnect(chip.title) }
+                }
         }
     }
 
@@ -179,11 +179,12 @@ class SearchSuggestionProvider private constructor(
             list.remove(text)
         }
 
-        val description = if (showDescription) {
-            client.searchEngine?.name
-        } else {
-            null
-        }
+        val description =
+            if (showDescription) {
+                client.searchEngine?.name
+            } else {
+                null
+            }
 
         list.distinct().take(limit).forEachIndexed { index, item ->
             suggestions.add(
@@ -203,7 +204,7 @@ class SearchSuggestionProvider private constructor(
                         searchUseCase.invoke(item)
                         emitSearchSuggestionClickedFact()
                     },
-                ),
+                )
             )
         }
 
@@ -219,7 +220,7 @@ class SearchSuggestionProvider private constructor(
             chips.add(AwesomeBar.Suggestion.Chip(text))
         }
 
-        result?.take(limit - chips.size)?. forEach { title ->
+        result?.take(limit - chips.size)?.forEach { title ->
             if (!filterExactMatch || title != text) {
                 chips.add(AwesomeBar.Suggestion.Chip(title))
             }
@@ -237,7 +238,7 @@ class SearchSuggestionProvider private constructor(
                     searchUseCase.invoke(chip.title)
                     emitSearchSuggestionClickedFact()
                 },
-            ),
+            )
         )
     }
 
@@ -254,12 +255,13 @@ class SearchSuggestionProvider private constructor(
         @Suppress("ReturnCount", "TooGenericExceptionCaught")
         private fun fetch(fetchClient: Client, url: String, private: Boolean): String? {
             try {
-                val request = Request(
-                    url = url.sanitizeURL(),
-                    readTimeout = Pair(READ_TIMEOUT_IN_MS, TimeUnit.MILLISECONDS),
-                    connectTimeout = Pair(CONNECT_TIMEOUT_IN_MS, TimeUnit.MILLISECONDS),
-                    private = private,
-                )
+                val request =
+                    Request(
+                        url = url.sanitizeURL(),
+                        readTimeout = Pair(READ_TIMEOUT_IN_MS, TimeUnit.MILLISECONDS),
+                        connectTimeout = Pair(CONNECT_TIMEOUT_IN_MS, TimeUnit.MILLISECONDS),
+                        private = private,
+                    )
 
                 val response = fetchClient.fetch(request)
                 if (!response.isSuccess) {

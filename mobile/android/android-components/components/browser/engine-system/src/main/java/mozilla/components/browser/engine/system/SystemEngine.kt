@@ -10,6 +10,7 @@ import android.util.JsonReader
 import android.webkit.WebSettings
 import android.webkit.WebView
 import androidx.annotation.VisibleForTesting
+import java.lang.IllegalStateException
 import mozilla.components.concept.base.profiler.Profiler
 import mozilla.components.concept.engine.DefaultSettings
 import mozilla.components.concept.engine.Engine
@@ -21,11 +22,8 @@ import mozilla.components.concept.engine.Settings
 import mozilla.components.concept.engine.history.HistoryTrackingDelegate
 import mozilla.components.concept.engine.utils.EngineVersion
 import org.json.JSONObject
-import java.lang.IllegalStateException
 
-/**
- * WebView-based implementation of the Engine interface.
- */
+/** WebView-based implementation of the Engine interface. */
 class SystemEngine(
     private val context: Context,
     private val defaultSettings: Settings = DefaultSettings(),
@@ -34,23 +32,19 @@ class SystemEngine(
         initDefaultUserAgent(context)
     }
 
-    /**
-     * Creates a new WebView-based EngineView implementation.
-     */
+    /** Creates a new WebView-based EngineView implementation. */
     override fun createView(context: Context, attrs: AttributeSet?): EngineView {
         return SystemEngineView(context, attrs)
     }
 
-    /**
-     * Creates a new WebView-based EngineSession implementation.
-     */
+    /** Creates a new WebView-based EngineSession implementation. */
     override fun createSession(private: Boolean, contextId: String?): EngineSession {
         if (private) {
             // TODO Implement private browsing: https://github.com/mozilla-mobile/android-components/issues/649
             throw UnsupportedOperationException("Private browsing is not supported in ${this::class.java.simpleName}")
         } else if (contextId != null) {
             throw UnsupportedOperationException(
-                "Contextual identities are not supported in ${this::class.java.simpleName}",
+                "Contextual identities are not supported in ${this::class.java.simpleName}"
             )
         }
 
@@ -64,28 +58,25 @@ class SystemEngine(
      */
     override fun speculativeConnect(url: String) = Unit
 
-    /**
-     * See [Engine.profiler].
-     */
+    /** See [Engine.profiler]. */
     override val profiler: Profiler? = null
 
-    /**
-     * See [Engine.name]
-     */
+    /** See [Engine.name] */
     override fun name(): String = "System"
 
     @Suppress("TooGenericExceptionCaught")
     override val version: EngineVersion
         get() {
             val userAgent = WebSettings.getDefaultUserAgent(context)
-            val version = try {
-                "Chrome/([^ ]+)".toRegex().find(userAgent)?.groups?.get(1)?.value
-                    ?: throw IllegalStateException("Could not get version from user agent: $userAgent")
-            } catch (e: IllegalStateException) {
-                throw IllegalStateException("Could not get version from user agent: $userAgent")
-            } catch (e: IndexOutOfBoundsException) {
-                throw IllegalStateException("Could not get version from user agent: $userAgent")
-            }
+            val version =
+                try {
+                    "Chrome/([^ ]+)".toRegex().find(userAgent)?.groups?.get(1)?.value
+                        ?: throw IllegalStateException("Could not get version from user agent: $userAgent")
+                } catch (e: IllegalStateException) {
+                    throw IllegalStateException("Could not get version from user agent: $userAgent")
+                } catch (e: IndexOutOfBoundsException) {
+                    throw IllegalStateException("Could not get version from user agent: $userAgent")
+                }
 
             return EngineVersion.parse(version)
                 ?: throw IllegalStateException("Could not determine engine version: $version")
@@ -99,48 +90,47 @@ class SystemEngine(
         return SystemEngineSessionState.from(reader)
     }
 
-    /**
-     * See [Engine.settings]
-     */
-    override val settings: Settings = object : Settings() {
-        private var internalRemoteDebuggingEnabled = false
-        override var remoteDebuggingEnabled: Boolean
-            get() = internalRemoteDebuggingEnabled
-            set(value) {
-                WebView.setWebContentsDebuggingEnabled(value)
-                internalRemoteDebuggingEnabled = value
-            }
+    /** See [Engine.settings] */
+    override val settings: Settings =
+        object : Settings() {
+                private var internalRemoteDebuggingEnabled = false
+                override var remoteDebuggingEnabled: Boolean
+                    get() = internalRemoteDebuggingEnabled
+                    set(value) {
+                        WebView.setWebContentsDebuggingEnabled(value)
+                        internalRemoteDebuggingEnabled = value
+                    }
 
-        override var userAgentString: String?
-            get() = defaultSettings.userAgentString
-            set(value) {
-                defaultSettings.userAgentString = value
-            }
+                override var userAgentString: String?
+                    get() = defaultSettings.userAgentString
+                    set(value) {
+                        defaultSettings.userAgentString = value
+                    }
 
-        override var trackingProtectionPolicy: TrackingProtectionPolicy?
-            get() = defaultSettings.trackingProtectionPolicy
-            set(value) {
-                defaultSettings.trackingProtectionPolicy = value
-            }
+                override var trackingProtectionPolicy: TrackingProtectionPolicy?
+                    get() = defaultSettings.trackingProtectionPolicy
+                    set(value) {
+                        defaultSettings.trackingProtectionPolicy = value
+                    }
 
-        override var historyTrackingDelegate: HistoryTrackingDelegate?
-            get() = defaultSettings.historyTrackingDelegate
-            set(value) {
-                defaultSettings.historyTrackingDelegate = value
+                override var historyTrackingDelegate: HistoryTrackingDelegate?
+                    get() = defaultSettings.historyTrackingDelegate
+                    set(value) {
+                        defaultSettings.historyTrackingDelegate = value
+                    }
             }
-    }.apply {
-        this.remoteDebuggingEnabled = defaultSettings.remoteDebuggingEnabled
-        this.trackingProtectionPolicy = defaultSettings.trackingProtectionPolicy
-        if (defaultSettings.userAgentString == null) {
-            defaultSettings.userAgentString = defaultUserAgent
-        }
-    }
+            .apply {
+                this.remoteDebuggingEnabled = defaultSettings.remoteDebuggingEnabled
+                this.trackingProtectionPolicy = defaultSettings.trackingProtectionPolicy
+                if (defaultSettings.userAgentString == null) {
+                    defaultSettings.userAgentString = defaultUserAgent
+                }
+            }
 
     companion object {
         // In Robolectric tests we can't call WebSettings.getDefaultUserAgent(context)
         // as this would result in a NPE. So, we expose this field to circumvent the call.
-        @VisibleForTesting
-        var defaultUserAgent: String? = null
+        @VisibleForTesting var defaultUserAgent: String? = null
 
         private fun initDefaultUserAgent(context: Context): String {
             if (defaultUserAgent == null) {

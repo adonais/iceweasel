@@ -10,24 +10,24 @@ import androidx.lifecycle.viewModelScope
 import mozilla.components.concept.passwords.file.PasswordsFileImporter
 
 /**
- * [ViewModel] that owns the [PasswordsImporterStore] for the passwords import flow so that its state and
- * side-effects survive configuration changes.
+ * [ViewModel] that owns the [PasswordsImporterStore] for the passwords import flow so that its state and side-effects
+ * survive configuration changes.
  */
-internal class PasswordsImporterViewModel(
-    passwordsImporter: PasswordsFileImporter,
-) : ViewModel() {
-    val store = PasswordsImporterStore(
-        initialState = PasswordsImporterState.Inert,
-        reducer = ::passwordsImporterReducer,
-        middleware = listOf(PasswordsImporterMiddleware(passwordsImporter, viewModelScope)),
-    )
+internal class PasswordsImporterViewModel(passwordsImporter: PasswordsFileImporter) : ViewModel() {
+    val store =
+        PasswordsImporterStore(
+            initialState = PasswordsImporterState.Inert,
+            reducer = ::passwordsImporterReducer,
+            middleware = listOf(PasswordsImporterMiddleware(passwordsImporter, viewModelScope)),
+        )
 
     companion object {
-        fun factory(passwordsImporter: PasswordsFileImporter) = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                return PasswordsImporterViewModel(passwordsImporter) as T
+        fun factory(passwordsImporter: PasswordsFileImporter) =
+            object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                    return PasswordsImporterViewModel(passwordsImporter) as T
+                }
             }
-        }
     }
 }

@@ -49,11 +49,3 @@ https_first_disabled = true
 ["browser_ext_settings_overrides_default_search.js"]
 
 ["browser_ext_url_overrides_newtab.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1651261
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1869793
-  "os == 'win' && os_version == '11.26100' && arch == 'x86' && debug", # Bug 1797751
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && !opt", # Bug 1797751
-  "os == 'win' && os_version == '11.26200' && arch == 'x86' && debug", # Bug 1797751
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && !opt", # Bug 1797751
-]

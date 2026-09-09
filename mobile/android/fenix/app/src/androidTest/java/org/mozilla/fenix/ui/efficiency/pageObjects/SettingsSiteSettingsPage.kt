@@ -15,23 +15,31 @@ import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSiteSettingsSelectors
 
-class SettingsSiteSettingsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
+class SettingsSiteSettingsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) :
+    BasePage(composeRule) {
     override val pageName = "SettingsSiteSettingsPage"
 
     init {
         NavigationRegistry.register(
             from = "HomePage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
-                NavigationStep.Click(MainMenuSelectors.SETTINGS_BUTTON),
-                NavigationStep.Swipe(SettingsSelectors.SITE_SETTINGS_BUTTON),
-                NavigationStep.Click(SettingsSelectors.SITE_SETTINGS_BUTTON),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
+                    NavigationStep.Click(MainMenuSelectors.SETTINGS_BUTTON),
+                    NavigationStep.Swipe(SettingsSelectors.SITE_SETTINGS_BUTTON),
+                    NavigationStep.Click(SettingsSelectors.SITE_SETTINGS_BUTTON),
+                ),
         )
     }
 
     override fun mozGetSelectorsByGroup(group: String): List<Selector> {
         return SettingsSiteSettingsSelectors.all.filter { it.groups.contains(group) }
+    }
+
+    /** Open a permission's detail screen from the Site settings list (Autoplay, Camera, Location, Microphone, …). */
+    fun openPermission(row: Selector): SettingsSiteSettingsPage {
+        mozClick(row)
+        return this
     }
 }

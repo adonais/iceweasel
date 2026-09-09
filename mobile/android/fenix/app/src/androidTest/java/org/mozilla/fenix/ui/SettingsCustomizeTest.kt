@@ -5,6 +5,7 @@
 package org.mozilla.fenix.ui
 
 import android.content.res.Configuration
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.Converted
@@ -12,9 +13,7 @@ import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.enableOrDisableBackGestureNavigationOnDevice
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
-import org.mozilla.fenix.helpers.TestAssetHelper.firstForeignWebPageAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
-import org.mozilla.fenix.helpers.TestAssetHelper.secondForeignWebPageAsset
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.helpers.TestHelper.restartApp
 import org.mozilla.fenix.helpers.TestHelper.verifyDarkThemeApplied
@@ -24,26 +23,21 @@ import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
-import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 class SettingsCustomizeTest {
-    @get:Rule(order = 0)
-    val fenixTestRule: FenixTestRule = FenixTestRule()
+    @get:Rule(order = 0) val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    private val mockWebServer get() = fenixTestRule.mockWebServer
+    private val mockWebServer
+        get() = fenixTestRule.mockWebServer
 
     @get:Rule(order = 1)
     val composeTestRule =
-        AndroidComposeTestRuleV2(
-            HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
-        ) { it.activity }
+        AndroidComposeTestRuleV2(HomeActivityIntentTestRule.withDefaultSettingsOverrides()) { it.activity }
 
-    @get:Rule(order = 2)
-    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
+    @get:Rule(order = 2) val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     private fun getUiTheme(): Boolean {
-        val mode =
-            composeTestRule.activity.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)
+        val mode = composeTestRule.activity.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)
 
         return when (mode) {
             Configuration.UI_MODE_NIGHT_YES -> true // dark theme is set
@@ -56,38 +50,40 @@ class SettingsCustomizeTest {
     @Test
     fun changeThemeOfTheAppTest() {
         // Goes through the settings and changes the default search engine, then verifies it changes.
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openCustomizeSubMenu {
-            verifyThemes()
-            selectDarkMode()
-            verifyDarkThemeApplied(getUiTheme())
-            selectLightMode()
-            verifyLightThemeApplied(getUiTheme())
-        }
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openCustomizeSubMenu {
+                verifyThemes()
+                selectDarkMode()
+                verifyDarkThemeApplied(getUiTheme())
+                selectLightMode()
+                verifyLightThemeApplied(getUiTheme())
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/466571
     @Test
     fun setToolbarPositionTest() {
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openCustomizeSubMenu {
-            verifyAddressBarPositionPreference("Bottom")
-            clickTopToolbarToggle()
-            verifyAddressBarPositionPreference("Top")
-        }.goBack {
-        }.goBack(composeTestRule) {
-            verifyToolbarPosition(bottomPosition = false)
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openCustomizeSubMenu {
-            clickBottomToolbarToggle()
-            verifyAddressBarPositionPreference("Bottom")
-            exitMenu()
-        }
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openCustomizeSubMenu {
+                verifyAddressBarPositionPreference("Bottom")
+                clickTopToolbarToggle()
+                verifyAddressBarPositionPreference("Top")
+            }
+            .goBack {}
+            .goBack(composeTestRule) {
+                verifyToolbarPosition(bottomPosition = false)
+            }
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openCustomizeSubMenu {
+                clickBottomToolbarToggle()
+                verifyAddressBarPositionPreference("Bottom")
+                exitMenu()
+            }
         homeScreen(composeTestRule) {
             verifyToolbarPosition(bottomPosition = true)
         }
@@ -102,38 +98,38 @@ class SettingsCustomizeTest {
         // Disable the back gesture from the edge of the screen on the device.
         enableOrDisableBackGestureNavigationOnDevice(backGestureNavigationEnabled = false)
 
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openCustomizeSubMenu {
-            verifySwipeToolbarGesturePrefState(true)
-            clickSwipeToolbarToSwitchTabToggle()
-            verifySwipeToolbarGesturePrefState(false)
-            exitMenu()
-        }
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser(firstWebPage.url) {
-        }.openTabDrawer(composeTestRule) {
-        }.openNewTab {
-        }.submitQuery(secondWebPage.url.toString()) {
-            swipeNavBarRight(secondWebPage.url.toString())
-            verifyUrl(secondWebPage.url.toString())
-            swipeNavBarLeft(secondWebPage.url.toString())
-            verifyUrl(secondWebPage.url.toString())
-        }
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openCustomizeSubMenu {
+                verifySwipeToolbarGesturePrefState(true)
+                clickSwipeToolbarToSwitchTabToggle()
+                verifySwipeToolbarGesturePrefState(false)
+                exitMenu()
+            }
+        navigationToolbar(composeTestRule) {}
+            .enterURLAndEnterToBrowser(firstWebPage.url) {}
+            .openTabDrawer(composeTestRule) {}
+            .openNewTab {}
+            .submitQuery(secondWebPage.url.toString()) {
+                swipeNavBarRight(secondWebPage.url.toString())
+                verifyUrl(secondWebPage.url.toString())
+                swipeNavBarLeft(secondWebPage.url.toString())
+                verifyUrl(secondWebPage.url.toString())
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1992289
     @Test
     fun pullToRefreshPreferenceTest() {
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openCustomizeSubMenu {
-            verifyPullToRefreshGesturePrefState(isEnabled = true)
-            clickPullToRefreshToggle()
-            verifyPullToRefreshGesturePrefState(isEnabled = false)
-        }
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openCustomizeSubMenu {
+                verifyPullToRefreshGesturePrefState(isEnabled = true)
+                clickPullToRefreshToggle()
+                verifyPullToRefreshGesturePrefState(isEnabled = false)
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3186732
@@ -145,12 +141,12 @@ class SettingsCustomizeTest {
     @SmokeTest
     @Test
     fun verifyTheDefaultAppIconSettingTest() {
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openCustomizeSubMenu {
-            verifyAppIconOption(composeTestRule, "Default")
-        }
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openCustomizeSubMenu {
+                verifyAppIconOption(composeTestRule, "Default")
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3186731
@@ -162,13 +158,13 @@ class SettingsCustomizeTest {
     @SmokeTest
     @Test
     fun verifyTheAppIconSelectionPageTest() {
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openCustomizeSubMenu {
-            clickTheAppIconOption(composeTestRule)
-            verifyAppIconSettingItems(composeTestRule)
-        }
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openCustomizeSubMenu {
+                clickTheAppIconOption(composeTestRule)
+                verifyAppIconSettingItems(composeTestRule)
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3186734
@@ -180,23 +176,23 @@ class SettingsCustomizeTest {
     @SmokeTest
     @Test
     fun verifyTheChangeAppIconButtonTest() {
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openCustomizeSubMenu {
-            verifyAppIconOption(composeTestRule, "Default")
-            clickTheAppIconOption(composeTestRule)
-            clickAppIconOption(composeTestRule, appIconOptionName = "Dark")
-            verifyChangeAppIconDialog(composeTestRule)
-            clickTheChangeIconDialogButton(composeTestRule)
-            restartApp(composeTestRule.activityRule)
-        }
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openCustomizeSubMenu {
-            verifyAppIconOption(composeTestRule, "Dark")
-        }
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openCustomizeSubMenu {
+                verifyAppIconOption(composeTestRule, "Default")
+                clickTheAppIconOption(composeTestRule)
+                clickAppIconOption(composeTestRule, appIconOptionName = "Dark")
+                verifyChangeAppIconDialog(composeTestRule)
+                clickTheChangeIconDialogButton(composeTestRule)
+                restartApp(composeTestRule.activityRule)
+            }
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openCustomizeSubMenu {
+                verifyAppIconOption(composeTestRule, "Dark")
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3333174
@@ -207,39 +203,39 @@ class SettingsCustomizeTest {
     )
     @Test
     fun verifyTheToolbarLayoutSectionTest() {
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openCustomizeSubMenu {
-            verifyToolbarLayout()
-            verifyToolbarLayoutPreference("Simple")
-            scrollToExpandedToolbarOption()
-            selectExpandedToolbarLayout()
-            scrollToAddressBarLocation()
-            clickBottomToolbarToggle()
-            verifyAddressBarPositionPreference("Bottom")
-            verifyToolbarLayout()
-            verifyToolbarLayoutPreference("Expanded")
-        }
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openCustomizeSubMenu {
+                verifyToolbarLayout()
+                verifyToolbarLayoutPreference("Simple")
+                scrollToExpandedToolbarOption()
+                selectExpandedToolbarLayout()
+                scrollToAddressBarLocation()
+                clickBottomToolbarToggle()
+                verifyAddressBarPositionPreference("Bottom")
+                verifyToolbarLayout()
+                verifyToolbarLayoutPreference("Expanded")
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3909009
     @Test
     fun verifyTheSimpleToolbarShortcutUI() {
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openCustomizeSubMenu {
-            clickTopToolbarToggle()
-            verifyToolbarLayout()
-            verifyToolbarLayoutPreference("Simple")
-            scrollToTheScrollToHideToolbarOption()
-            verifyTheSimpleToolbarShortcutOptions()
-            scrollToAddressBarLocation()
-            clickBottomToolbarToggle()
-            scrollToTheScrollToHideToolbarOption()
-            verifyTheSimpleToolbarShortcutOptions()
-        }
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openCustomizeSubMenu {
+                clickTopToolbarToggle()
+                verifyToolbarLayout()
+                verifyToolbarLayoutPreference("Simple")
+                scrollToTheScrollToHideToolbarOption()
+                verifyTheSimpleToolbarShortcutOptions()
+                scrollToAddressBarLocation()
+                clickBottomToolbarToggle()
+                scrollToTheScrollToHideToolbarOption()
+                verifyTheSimpleToolbarShortcutOptions()
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3909001
@@ -251,25 +247,24 @@ class SettingsCustomizeTest {
         // Disable the back gesture from the edge of the screen on the device.
         enableOrDisableBackGestureNavigationOnDevice(backGestureNavigationEnabled = false)
 
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openCustomizeSubMenu {
-            clickTopToolbarToggle()
-            verifyToolbarLayoutPreference("Simple")
-            scrollToTheScrollToHideToolbarOption()
-            verifyTheOpenANewTabToolbarShortcutIsSelected()
-            exitMenu()
-        }
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openCustomizeSubMenu {
+                clickTopToolbarToggle()
+                verifyToolbarLayoutPreference("Simple")
+                scrollToTheScrollToHideToolbarOption()
+                verifyTheOpenANewTabToolbarShortcutIsSelected()
+                exitMenu()
+            }
+        navigationToolbar(composeTestRule) {}.enterURLAndEnterToBrowser(firstPage.url) {}
         navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser(firstPage.url) {
-        }
-        navigationToolbar(composeTestRule) {
-            verifyTheNewTabButton(false)
-        }.clickTheNewTabButton(false) {
-            verifySearchBarPlaceholder("Search or enter address")
-        }.submitQuery(secondPage.url.toString()) {
-        }
+                verifyTheNewTabButton(false)
+            }
+            .clickTheNewTabButton(false) {
+                verifySearchBarPlaceholder("Search or enter address")
+            }
+            .submitQuery(secondPage.url.toString()) {}
         navigationToolbar(composeTestRule) {
             verifyTheNewTabButton(false)
         }
@@ -284,40 +279,39 @@ class SettingsCustomizeTest {
         // Disable the back gesture from the edge of the screen on the device.
         enableOrDisableBackGestureNavigationOnDevice(backGestureNavigationEnabled = false)
 
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openCustomizeSubMenu {
-            clickTopToolbarToggle()
-            verifyToolbarLayoutPreference("Simple")
-            scrollToTheScrollToHideToolbarOption()
-            clickTheShareToolbarShortcut()
-            verifyTheShareToolbarShortcutIsSelected()
-            exitMenu()
-        }
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser(firstPage.url) {
-        }
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openCustomizeSubMenu {
+                clickTopToolbarToggle()
+                verifyToolbarLayoutPreference("Simple")
+                scrollToTheScrollToHideToolbarOption()
+                clickTheShareToolbarShortcut()
+                verifyTheShareToolbarShortcutIsSelected()
+                exitMenu()
+            }
+        navigationToolbar(composeTestRule) {}.enterURLAndEnterToBrowser(firstPage.url) {}
         navigationToolbar(composeTestRule) {
             verifyTheNavigationBarShareButton()
         }
 
+        navigationToolbar(composeTestRule) {}
+            .enterURLAndEnterToBrowser(secondPage.url) {
+                swipeNavBarRight(secondPage.url.toString())
+                waitForPageToLoad()
+                verifyUrl(firstPage.url.toString())
+            }
         navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser(secondPage.url) {
-            swipeNavBarRight(secondPage.url.toString())
-            waitForPageToLoad()
-            verifyUrl(firstPage.url.toString())
-        }
-        navigationToolbar(composeTestRule) {
-            verifyTheNavigationBarShareButton()
-        }.clickTheNavigationBarShareButton {
-            verifyShareTabLayout()
-            verifySharingWithSelectedApp(
-                appName = "Gmail",
-                content = secondPage.url.toString(),
-                subject = secondPage.title,
-            )
-        }
+                verifyTheNavigationBarShareButton()
+            }
+            .clickTheNavigationBarShareButton {
+                verifyShareTabLayout()
+                verifySharingWithSelectedApp(
+                    appName = "Gmail",
+                    content = secondPage.url.toString(),
+                    subject = secondPage.title,
+                )
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3909003
@@ -325,20 +319,18 @@ class SettingsCustomizeTest {
     fun verifyTheSimpleToolbarLayoutAddBookmarkShortcut() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
 
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openCustomizeSubMenu {
-            clickTopToolbarToggle()
-            verifyToolbarLayoutPreference("Simple")
-            scrollToTheScrollToHideToolbarOption()
-            clickTheAddBookmarkToolbarShortcut()
-            verifyTheAddBookmarkToolbarShortcutIsSelected()
-            exitMenu()
-        }
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser(defaultWebPage.url) {
-        }
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openCustomizeSubMenu {
+                clickTopToolbarToggle()
+                verifyToolbarLayoutPreference("Simple")
+                scrollToTheScrollToHideToolbarOption()
+                clickTheAddBookmarkToolbarShortcut()
+                verifyTheAddBookmarkToolbarShortcutIsSelected()
+                exitMenu()
+            }
+        navigationToolbar(composeTestRule) {}.enterURLAndEnterToBrowser(defaultWebPage.url) {}
 
         navigationToolbar(composeTestRule) {
             verifyTheNavigationBarAddBookmarkButton()
@@ -346,11 +338,12 @@ class SettingsCustomizeTest {
         }
 
         browserScreen(composeTestRule) {
-            waitUntilSnackbarGone()
-        }.openThreeDotMenu {
-        }.clickBookmarksButton {
-            verifyBookmarkedURL(defaultWebPage.url.toString())
-        }
+                waitUntilSnackbarGone()
+            }
+            .openThreeDotMenu {}
+            .clickBookmarksButton {
+                verifyBookmarkedURL(defaultWebPage.url.toString())
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3909005
@@ -362,53 +355,50 @@ class SettingsCustomizeTest {
         // Disable the back gesture from the edge of the screen on the device.
         enableOrDisableBackGestureNavigationOnDevice(backGestureNavigationEnabled = false)
 
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openCustomizeSubMenu {
-            clickTopToolbarToggle()
-            verifyToolbarLayoutPreference("Simple")
-            scrollToTheScrollToHideToolbarOption()
-            clickTheHomepageToolbarShortcut()
-            verifyTheHomepageToolbarShortcutIsSelected()
-            exitMenu()
-        }
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser(firstPage.url) {
-        }
-        navigationToolbar(composeTestRule) {
-            verifyTheNavigationBarHomepageButton()
-        }.clickTheNavigationBarHomepageButton {
-            verifyHomeWordmark()
-            navigationToolbar(composeTestRule) {
-            }.enterURLAndEnterToBrowser(secondPage.url) {
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openCustomizeSubMenu {
+                clickTopToolbarToggle()
+                verifyToolbarLayoutPreference("Simple")
+                scrollToTheScrollToHideToolbarOption()
+                clickTheHomepageToolbarShortcut()
+                verifyTheHomepageToolbarShortcutIsSelected()
+                exitMenu()
             }
-            navigationToolbar(composeTestRule) {
+        navigationToolbar(composeTestRule) {}.enterURLAndEnterToBrowser(firstPage.url) {}
+        navigationToolbar(composeTestRule) {
                 verifyTheNavigationBarHomepageButton()
             }
-        }
+            .clickTheNavigationBarHomepageButton {
+                verifyHomeWordmark()
+                navigationToolbar(composeTestRule) {}.enterURLAndEnterToBrowser(secondPage.url) {}
+                navigationToolbar(composeTestRule) {
+                    verifyTheNavigationBarHomepageButton()
+                }
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3908992
     @Test
     fun verifyTheExpandedToolbarShortcutUI() {
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openCustomizeSubMenu {
-            clickTopToolbarToggle()
-            verifyToolbarLayout()
-            scrollToExpandedToolbarOption()
-            selectExpandedToolbarLayout()
-            verifyToolbarLayoutPreference("Expanded")
-            scrollToTheScrollToHideToolbarOption()
-            verifyTheExpandedToolbarShortcutOptions()
-            scrollToAddressBarLocation()
-            clickBottomToolbarToggle()
-            selectDarkMode()
-            verifyDarkThemeApplied(getUiTheme())
-            scrollToTheScrollToHideToolbarOption()
-            verifyTheExpandedToolbarShortcutOptions()
-        }
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openCustomizeSubMenu {
+                clickTopToolbarToggle()
+                verifyToolbarLayout()
+                scrollToExpandedToolbarOption()
+                selectExpandedToolbarLayout()
+                verifyToolbarLayoutPreference("Expanded")
+                scrollToTheScrollToHideToolbarOption()
+                verifyTheExpandedToolbarShortcutOptions()
+                scrollToAddressBarLocation()
+                clickBottomToolbarToggle()
+                selectDarkMode()
+                verifyDarkThemeApplied(getUiTheme())
+                scrollToTheScrollToHideToolbarOption()
+                verifyTheExpandedToolbarShortcutOptions()
+            }
     }
 }

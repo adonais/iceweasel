@@ -10,47 +10,34 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 /**
- * The current [WallpaperState] for the composition, used by [WallpaperTheme] to resolve its default
- * colors. Provide the observed wallpaper in the root Composable (e.g. around the `Homepage`
- * Composable) via `CompositionLocalProvider(LocalWallpaperState provides wallpaperState)`.
+ * The current [WallpaperState] for the composition, used by [WallpaperTheme] to resolve its default colors. Provide the
+ * observed wallpaper in the root Composable (e.g. around the `Homepage` Composable) via
+ * `CompositionLocalProvider(LocalWallpaperState provides wallpaperState)`.
  *
- * Defaults to [WallpaperState.default] so composables (and their `@Preview`s) that don't provide it
- * resolve to the default wallpaper's colors automatically, with no store access.
+ * Defaults to [WallpaperState.default] so composables (and their `@Preview`s) that don't provide it resolve to the
+ * default wallpaper's colors automatically, with no store access.
  */
 val LocalWallpaperState = compositionLocalOf { WallpaperState.default }
 
 /**
- * Design tokens for content themed against the wallpaper, accessed as `WallpaperTheme.<token>`. Each
- * falls back to the corresponding default-wallpaper color when no [WallpaperTheme] is in scope.
+ * Design tokens for content themed against the wallpaper, accessed as `WallpaperTheme.<token>`. Each falls back to the
+ * corresponding default-wallpaper color when no [WallpaperTheme] is in scope.
  */
 object WallpaperTheme {
 
-    /**
-     * Color for content (text, icons) drawn directly on the wallpaper.
-     */
+    /** Color for content (text, icons) drawn directly on the wallpaper. */
     val onWallpaper: Color
-        @Composable
-        get() = LocalWallpaperState.current.textColor
+        @Composable get() = LocalWallpaperState.current.textColor
 
-    /**
-     * Background color for cards laid over the wallpaper.
-     */
+    /** Background color for cards laid over the wallpaper. */
     val cardBackgroundColor: Color
-        @Composable
-        @ReadOnlyComposable
-        get() = LocalWallpaperState.current.cardBackgroundColor
+        @Composable @ReadOnlyComposable get() = LocalWallpaperState.current.cardBackgroundColor
 
-    /**
-     * Background color for buttons drawn over the wallpaper.
-     */
+    /** Background color for buttons drawn over the wallpaper. */
     val buttonBackgroundColor: Color
-        @Composable
-        get() = LocalWallpaperState.current.buttonBackgroundColor
+        @Composable get() = LocalWallpaperState.current.buttonBackgroundColor
 
-    /**
-     * Content color for buttons drawn over the wallpaper.
-     */
+    /** Content color for buttons drawn over the wallpaper. */
     val buttonTextColor: Color
-        @Composable
-        get() = LocalWallpaperState.current.buttonTextColor
+        @Composable get() = LocalWallpaperState.current.buttonTextColor
 }

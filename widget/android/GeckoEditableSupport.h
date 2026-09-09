@@ -128,7 +128,7 @@ class GeckoEditableSupport final
   void OnNotifyIMEOfCompositionEventHandled();
   void NotifyIMEContext(const InputContext& aContext,
                         const InputContextAction& aAction);
-  void EnsureEditableParent(uint64_t aContentId, uint64_t aTabId);
+  void EnsureEditableParent(uint64_t aTabId);
 
  public:
   template <typename Functor>

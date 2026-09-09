@@ -230,7 +230,7 @@ ec_secp521r1_sign_digest(ECPrivateKey *ecPrivKey, SECItem *signature,
     bool b = Hacl_P521_ecdsa_sign_p521_without_hash(
         signature->data, 66, hash, key, nonce);
 #else
-    bool b = key != NULL;     /* Avoiding unused variable warnings */
+    bool b = key != NULL; /* Avoiding unused variable warnings */
 #endif
 
     if (!b) {
@@ -306,7 +306,7 @@ ec_secp521r1_verify_digest(ECPublicKey *key, const SECItem *signature,
     bool b = Hacl_P521_ecdsa_verif_without_hash(
         66, hash, key->publicValue.data + 1, sig, sig + 66);
 #else
-    bool b = sig != NULL;     /* Avoiding unused variable warnings */
+    bool b = sig != NULL; /* Avoiding unused variable warnings */
 #endif
 
     if (!b) {

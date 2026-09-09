@@ -5,6 +5,12 @@
 package mozilla.components.concept.fetch
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.File
+import java.io.IOException
+import java.io.InputStream
+import java.net.URLEncoder
+import java.util.UUID
+import java.util.concurrent.TimeUnit
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -14,12 +20,6 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
-import java.io.File
-import java.io.IOException
-import java.io.InputStream
-import java.net.URLEncoder
-import java.util.UUID
-import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class RequestTest {
@@ -34,23 +34,25 @@ class RequestTest {
 
     @Test
     fun `Fully configured Request`() {
-        val request = Request(
-            url = "https://www.mozilla.org",
-            method = Request.Method.POST,
-            headers = MutableHeaders(
-                "Accept-Language" to "en-US,en;q=0.9",
-                "Connection" to "keep-alive",
-                "Dnt" to "1",
-            ),
-            connectTimeout = Pair(10, TimeUnit.SECONDS),
-            readTimeout = Pair(1, TimeUnit.MINUTES),
-            body = Request.Body.fromString("Hello World!"),
-            redirect = Request.Redirect.MANUAL,
-            cookiePolicy = Request.CookiePolicy.INCLUDE,
-            useCaches = true,
-            referrerUrl = "https://mozilla.org",
-            conservative = true,
-        )
+        val request =
+            Request(
+                url = "https://www.mozilla.org",
+                method = Request.Method.POST,
+                headers =
+                    MutableHeaders(
+                        "Accept-Language" to "en-US,en;q=0.9",
+                        "Connection" to "keep-alive",
+                        "Dnt" to "1",
+                    ),
+                connectTimeout = Pair(10, TimeUnit.SECONDS),
+                readTimeout = Pair(1, TimeUnit.MINUTES),
+                body = Request.Body.fromString("Hello World!"),
+                redirect = Request.Redirect.MANUAL,
+                cookiePolicy = Request.CookiePolicy.INCLUDE,
+                useCaches = true,
+                referrerUrl = "https://mozilla.org",
+                conservative = true,
+            )
 
         assertEquals("https://www.mozilla.org", request.url)
         assertEquals(Request.Method.POST, request.method)
@@ -104,11 +106,12 @@ class RequestTest {
     fun `WHEN creating a request body from params with empty keys or values THEN they are represented as the empty string in the result`() {
         // In practice, we don't expect anyone to do this but this test is here as to documentation of what happens.
         val expected = "=value&hello=world&key="
-        val body = Request.Body.fromParamsForFormUrlEncoded(
-            "" to "value",
-            "hello" to "world",
-            "key" to "",
-        )
+        val body =
+            Request.Body.fromParamsForFormUrlEncoded(
+                "" to "value",
+                "hello" to "world",
+                "key" to "",
+            )
         assertEquals(expected, body.readText())
     }
 
@@ -118,10 +121,11 @@ class RequestTest {
         val encodedURL = URLEncoder.encode(inputUrl, Charsets.UTF_8.name())
         val expected = "v=2&url=$encodedURL"
 
-        val body = Request.Body.fromParamsForFormUrlEncoded(
-            "v" to "2",
-            "url" to inputUrl,
-        )
+        val body =
+            Request.Body.fromParamsForFormUrlEncoded(
+                "v" to "2",
+                "url" to inputUrl,
+            )
         assertEquals(expected, body.readText())
     }
 

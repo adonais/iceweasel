@@ -21,7 +21,7 @@
 #include "prerror.h"
 #include "prenv.h"
 #include "prnetdb.h"
-#include "prtpool.h"
+#include "prthread.h"
 #include "nss.h"
 #include "keyhi.h"
 #include "ssl.h"
@@ -189,26 +189,33 @@ struct relayBuffer {
   size_t present() { return buffertail - bufferhead; }
 };
 
-// These numbers are multiplied by the number of listening ports (actual
-// servers running).  According the thread pool implementation there is no
-// need to limit the number of threads initially, threads are allocated
-// dynamically and stored in a linked list.  Initial number of 2 is chosen
-// to allocate a thread for socket accept and preallocate one for the first
-// connection that is with high probability expected to come.
-const uint32_t INITIAL_THREADS = 2;
-const uint32_t MAX_THREADS = 100;
 const uint32_t DEFAULT_STACKSIZE = (512 * 1024);
+
+// Replaces NSPR's PRThreadPool, removed from the build. Every job is
+// long-lived - one per listening server, one per connection - so a thread per
+// job is equivalent. Unjoinable on purpose: StartServer parks in PR_Accept and
+// only re-checks shutdown_server at the top of its loop, so waiting on one can
+// block forever.
+static bool QueueJob(void (*aEntry)(void*), void* aArg) {
+  PRThread* thread = PR_CreateThread(PR_USER_THREAD, aEntry, aArg,
+                                     PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
+                                     PR_UNJOINABLE_THREAD, DEFAULT_STACKSIZE);
+  return thread != nullptr;
+}
 
 // global data
 MOZ_GLIBCXX_CONSTINIT string nssconfigdir;
 MOZ_GLIBCXX_CONSTINIT vector<server_info_t> servers;
 PRNetAddr remote_addr;
 PRNetAddr websocket_server;
-PRThreadPool* threads = nullptr;
 PRLock* shutdown_lock = nullptr;
 PRCondVar* shutdown_condvar = nullptr;
 // Not really used, unless something fails to start
 bool shutdown_server = false;
+// Predicate for shutdown_condvar, guarded by shutdown_lock. Without it a
+// SignalShutdown that runs before main reaches PR_WaitCondVar is lost and main
+// blocks forever.
+bool shutdown_requested = false;
 bool do_http_proxy = false;
 bool any_host_spec_config = false;
 bool listen_public = false;
@@ -234,6 +241,7 @@ static int match_hostname(PLHashEntry* he, int index, void* arg) {
  */
 void SignalShutdown() {
   PR_Lock(shutdown_lock);
+  shutdown_requested = true;
   PR_NotifyCondVar(shutdown_condvar);
   PR_Unlock(shutdown_lock);
 }
@@ -993,12 +1001,13 @@ void StartServer(void* data) {
     option.value.non_blocking = true;
     PR_SetSocketOption(ci->client_sock, &option);
 
-    if (ci->client_sock)
-      // Not actually using this PRJob*...
-      // PRJob* job =
-      PR_QueueJob(threads, HandleConnection, ci, true);
-    else
+    if (!ci->client_sock) {
       delete ci;
+    } else if (!QueueJob(HandleConnection, ci)) {
+      LOG_ERROR(("Failed to start connection thread\n"));
+      PR_Close(ci->client_sock);
+      delete ci;
+    }
   }
 }
 
@@ -1559,25 +1568,14 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  // create a thread pool to handle connections
-  threads =
-      PR_CreateThreadPool(INITIAL_THREADS * servers.size(),
-                          MAX_THREADS * servers.size(), DEFAULT_STACKSIZE);
-  if (!threads) {
-    LOG_ERROR(("Failed to create thread pool\n"));
-    return 1;
-  }
-
   shutdown_lock = PR_NewLock();
   if (!shutdown_lock) {
     LOG_ERROR(("Failed to create lock\n"));
-    PR_ShutdownThreadPool(threads);
     return 1;
   }
   shutdown_condvar = PR_NewCondVar(shutdown_lock);
   if (!shutdown_condvar) {
     LOG_ERROR(("Failed to create condvar\n"));
-    PR_ShutdownThreadPool(threads);
     PR_DestroyLock(shutdown_lock);
     return 1;
   }
@@ -1594,7 +1592,6 @@ int main(int argc, char** argv) {
     } else {
       LOG_ERROR(("Failed to init NSS: Cannot get error from NSPR."));
     }
-    PR_ShutdownThreadPool(threads);
     PR_DestroyCondVar(shutdown_condvar);
     PR_DestroyLock(shutdown_lock);
     return 1;
@@ -1602,7 +1599,6 @@ int main(int argc, char** argv) {
 
   if (NSS_SetDomesticPolicy() != SECSuccess) {
     LOG_ERROR(("NSS_SetDomesticPolicy failed\n"));
-    PR_ShutdownThreadPool(threads);
     PR_DestroyCondVar(shutdown_condvar);
     PR_DestroyLock(shutdown_lock);
     NSS_Shutdown();
@@ -1612,7 +1608,6 @@ int main(int argc, char** argv) {
   // these values should make NSS use the defaults
   if (SSL_ConfigServerSessionIDCache(0, 0, 0, nullptr) != SECSuccess) {
     LOG_ERROR(("SSL_ConfigServerSessionIDCache failed\n"));
-    PR_ShutdownThreadPool(threads);
     PR_DestroyCondVar(shutdown_condvar);
     PR_DestroyLock(shutdown_lock);
     NSS_Shutdown();
@@ -1620,19 +1615,21 @@ int main(int argc, char** argv) {
   }
 
   for (auto& server : servers) {
-    // Not actually using this PRJob*...
-    // PRJob* server_job =
-    PR_QueueJob(threads, StartServer, &server, true);
+    if (!QueueJob(StartServer, &server)) {
+      LOG_ERROR(("Failed to start server thread\n"));
+      SignalShutdown();
+      break;
+    }
   }
   // now wait for someone to tell us to quit
   PR_Lock(shutdown_lock);
-  PR_WaitCondVar(shutdown_condvar, PR_INTERVAL_NO_TIMEOUT);
+  while (!shutdown_requested) {
+    PR_WaitCondVar(shutdown_condvar, PR_INTERVAL_NO_TIMEOUT);
+  }
   PR_Unlock(shutdown_lock);
   shutdown_server = true;
   LOG_INFO(("Shutting down...\n"));
   // cleanup
-  PR_ShutdownThreadPool(threads);
-  PR_JoinThreadPool(threads);
   PR_DestroyCondVar(shutdown_condvar);
   PR_DestroyLock(shutdown_lock);
   if (NSS_Shutdown() == SECFailure) {

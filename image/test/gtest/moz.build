@@ -30,6 +30,8 @@ UNIFIED_SOURCES = [
 
 TEST_HARNESS_FILES.gtest += [
     "animated-with-extra-image-sub-blocks.gif",
+    "avif_420_film_grain.avif",
+    "avif_444_film_grain.avif",
     "blend.avif",
     "blend.gif",
     "blend.jxl",
@@ -82,6 +84,7 @@ TEST_HARNESS_FILES.gtest += [
     "gray-235-8bit-limited-range-bt709.avif",
     "gray-235-8bit-limited-range-grayscale.avif",
     "green-1x1-truncated.gif",
+    "green-exif-orient6.jpg",
     "green-large-bmp.ico",
     "green-large-png.ico",
     "green-multiple-sizes.ico",

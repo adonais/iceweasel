@@ -12,9 +12,7 @@ import mozilla.components.browser.menu.R
 import mozilla.components.concept.menu.candidate.ContainerStyle
 import mozilla.components.concept.menu.candidate.DividerMenuCandidate
 
-/**
- * A browser menu item to display a horizontal divider.
- */
+/** A browser menu item to display a horizontal divider. */
 class BrowserMenuDivider : BrowserMenuItem {
     override var visible: () -> Boolean = { true }
 
@@ -24,7 +22,6 @@ class BrowserMenuDivider : BrowserMenuItem {
 
     override fun bind(menu: BrowserMenu, view: View) = Unit
 
-    override fun asCandidate(context: Context) = DividerMenuCandidate(
-        containerStyle = ContainerStyle(isVisible = visible()),
-    )
+    override fun asCandidate(context: Context) =
+        DividerMenuCandidate(containerStyle = ContainerStyle(isVisible = visible()))
 }

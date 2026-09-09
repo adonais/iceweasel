@@ -1,0 +1,10 @@
+[DEFAULT]
+subsuite = "a11y"
+prefs = [
+  # Force enable accessibility before the browser starts, so we can verify
+  # that this alone is enough to start the platform accessibility engine,
+  # without anything else (e.g. XPCOM) requesting it first.
+  "accessibility.force_disabled=-1",
+]
+
+["browser_forceEnabled.js"]

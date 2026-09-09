@@ -7,7 +7,8 @@ package mozilla.components.service.fxrelay.eligibility
 /**
  * Firefox Relay service client identifiers for different environments.
  *
- * Source: https://github.com/mozilla/fxa/blob/35c7a999010a4ff053fc65edbc39d343b8e6f143/packages/fxa-settings/src/models/integrations/client-matching.ts#L12-L16
+ * Source:
+ * https://github.com/mozilla/fxa/blob/35c7a999010a4ff053fc65edbc39d343b8e6f143/packages/fxa-settings/src/models/integrations/client-matching.ts#L12-L16
  */
 enum class ServiceClientId(val id: String) {
     Stage("41b4363ae36440a9"),

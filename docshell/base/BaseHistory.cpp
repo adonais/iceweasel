@@ -16,10 +16,6 @@ namespace mozilla {
 using mozilla::dom::ContentParent;
 using mozilla::dom::Link;
 
-BaseHistory::BaseHistory() : mTrackedURIs(kTrackedUrisInitialSize) {}
-
-BaseHistory::~BaseHistory() = default;
-
 static constexpr nsLiteralCString kDisallowedSchemes[] = {
     "about"_ns,         "blob"_ns,           "cached-favicon"_ns,
     "chrome"_ns,        "data"_ns,           "imap"_ns,

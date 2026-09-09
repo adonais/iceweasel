@@ -21,10 +21,12 @@ import mozilla.components.concept.toolbar.Toolbar.SiteTrackingProtection.ON_NO_T
 import mozilla.components.concept.toolbar.Toolbar.SiteTrackingProtection.ON_TRACKERS_BLOCKED
 
 /**
- * Internal widget to display the different icons of tracking protection, relies on the
- * [SiteTrackingProtection] state of each page.
+ * Internal widget to display the different icons of tracking protection, relies on the [SiteTrackingProtection] state
+ * of each page.
  */
-internal class TrackingProtectionIconView @JvmOverloads constructor(
+internal class TrackingProtectionIconView
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
@@ -37,8 +39,7 @@ internal class TrackingProtectionIconView @JvmOverloads constructor(
             }
         }
 
-    @VisibleForTesting
-    internal var trackingProtectionTint: Int? = null
+    @VisibleForTesting internal var trackingProtectionTint: Int? = null
 
     private var iconOnNoTrackersBlocked: Drawable =
         requireNotNull(AppCompatResources.getDrawable(context, DEFAULT_ICON_ON_NO_TRACKERS_BLOCKED))
@@ -69,11 +70,12 @@ internal class TrackingProtectionIconView @JvmOverloads constructor(
 
         isVisible = update.visible
 
-        contentDescription = if (update.contentDescription != null) {
-            context.getString(update.contentDescription)
-        } else {
-            null
-        }
+        contentDescription =
+            if (update.contentDescription != null) {
+                context.getString(update.contentDescription)
+            } else {
+                null
+            }
 
         setOrClearColorFilter(update.drawable)
         setImageDrawable(update.drawable)
@@ -93,39 +95,41 @@ internal class TrackingProtectionIconView @JvmOverloads constructor(
     }
 
     companion object {
-        val DEFAULT_ICON_ON_NO_TRACKERS_BLOCKED =
-            R.drawable.mozac_ic_tracking_protection_on_no_trackers_blocked
-        val DEFAULT_ICON_ON_TRACKERS_BLOCKED =
-            R.drawable.mozac_ic_tracking_protection_on_trackers_blocked
-        val DEFAULT_ICON_OFF_FOR_A_SITE =
-            R.drawable.mozac_ic_tracking_protection_off_for_a_site
+        val DEFAULT_ICON_ON_NO_TRACKERS_BLOCKED = R.drawable.mozac_ic_tracking_protection_on_no_trackers_blocked
+        val DEFAULT_ICON_ON_TRACKERS_BLOCKED = R.drawable.mozac_ic_tracking_protection_on_trackers_blocked
+        val DEFAULT_ICON_OFF_FOR_A_SITE = R.drawable.mozac_ic_tracking_protection_off_for_a_site
     }
 
-    private fun SiteTrackingProtection.toUpdate(): Update = when (this) {
-        ON_NO_TRACKERS_BLOCKED -> Update(
-            iconOnNoTrackersBlocked,
-            R.string.mozac_browser_toolbar_content_description_tracking_protection_on_no_trackers_blocked,
-            true,
-        )
+    private fun SiteTrackingProtection.toUpdate(): Update =
+        when (this) {
+            ON_NO_TRACKERS_BLOCKED ->
+                Update(
+                    iconOnNoTrackersBlocked,
+                    R.string.mozac_browser_toolbar_content_description_tracking_protection_on_no_trackers_blocked,
+                    true,
+                )
 
-        ON_TRACKERS_BLOCKED -> Update(
-            iconOnTrackersBlocked,
-            R.string.mozac_browser_toolbar_content_description_tracking_protection_on_trackers_blocked1,
-            true,
-        )
+            ON_TRACKERS_BLOCKED ->
+                Update(
+                    iconOnTrackersBlocked,
+                    R.string.mozac_browser_toolbar_content_description_tracking_protection_on_trackers_blocked1,
+                    true,
+                )
 
-        OFF_FOR_A_SITE -> Update(
-            disabledForSite,
-            R.string.mozac_browser_toolbar_content_description_tracking_protection_off_for_a_site1,
-            true,
-        )
+            OFF_FOR_A_SITE ->
+                Update(
+                    disabledForSite,
+                    R.string.mozac_browser_toolbar_content_description_tracking_protection_off_for_a_site1,
+                    true,
+                )
 
-        OFF_GLOBALLY -> Update(
-            null,
-            null,
-            false,
-        )
-    }
+            OFF_GLOBALLY ->
+                Update(
+                    null,
+                    null,
+                    false,
+                )
+        }
 }
 
 internal class Update(

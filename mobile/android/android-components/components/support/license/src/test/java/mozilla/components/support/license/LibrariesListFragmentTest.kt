@@ -4,19 +4,20 @@
 
 package mozilla.components.support.license
 
-import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.junit.Test
 
 class LibrariesListFragmentTest {
 
     @Test
     fun `parseLibraries maps each metadata offset to the correct slice of the license blob`() {
         val licensesData = "AAAABBBB".toByteArray(Charsets.UTF_8)
-        val metadata = listOf(
-            "0:4 libA",
-            "4:4 libB",
-        )
+        val metadata =
+            listOf(
+                "0:4 libA",
+                "4:4 libB",
+            )
 
         val libraries = parseLibraries(licensesData, metadata)
 
@@ -40,10 +41,11 @@ class LibrariesListFragmentTest {
     @Test
     fun `parseLibraries removes duplicate names case-insensitively keeping the first occurrence`() {
         val licensesData = "XXYY".toByteArray(Charsets.UTF_8)
-        val metadata = listOf(
-            "0:2 Foo",
-            "2:2 foo",
-        )
+        val metadata =
+            listOf(
+                "0:2 Foo",
+                "2:2 foo",
+            )
 
         val libraries = parseLibraries(licensesData, metadata)
 
@@ -55,11 +57,12 @@ class LibrariesListFragmentTest {
     @Test
     fun `parseLibraries sorts libraries by name case-insensitively`() {
         val licensesData = "abc".toByteArray(Charsets.UTF_8)
-        val metadata = listOf(
-            "0:1 zebra",
-            "1:1 Apple",
-            "2:1 mango",
-        )
+        val metadata =
+            listOf(
+                "0:1 zebra",
+                "1:1 Apple",
+                "2:1 mango",
+            )
 
         val libraries = parseLibraries(licensesData, metadata)
 
@@ -91,15 +94,16 @@ class LibrariesListFragmentTest {
     @Test
     fun `parseLibraries skips malformed lines and keeps the valid ones`() {
         val licensesData = "AB".toByteArray(Charsets.UTF_8)
-        val metadata = listOf(
-            "",
-            "0:1 valid1",
-            "noSpaceHere",
-            "0-1 badSection",
-            "x:1 nonNumericOffset",
-            "0:y nonNumericLength",
-            "1:1 valid2",
-        )
+        val metadata =
+            listOf(
+                "",
+                "0:1 valid1",
+                "noSpaceHere",
+                "0-1 badSection",
+                "x:1 nonNumericOffset",
+                "0:y nonNumericLength",
+                "1:1 valid2",
+            )
 
         val libraries = parseLibraries(licensesData, metadata)
 
@@ -111,10 +115,11 @@ class LibrariesListFragmentTest {
     @Test
     fun `parseLibraries skips lines with a blank library name`() {
         val licensesData = "AB".toByteArray(Charsets.UTF_8)
-        val metadata = listOf(
-            "0:1 ",
-            "1:1 valid",
-        )
+        val metadata =
+            listOf(
+                "0:1 ",
+                "1:1 valid",
+            )
 
         val libraries = parseLibraries(licensesData, metadata)
 
@@ -125,13 +130,14 @@ class LibrariesListFragmentTest {
     @Test
     fun `parseLibraries skips lines whose slice is out of bounds`() {
         val licensesData = "AB".toByteArray(Charsets.UTF_8)
-        val metadata = listOf(
-            "0:1 valid",
-            "1:5 tooLong",
-            "5:1 startPastEnd",
-            "-1:1 negativeStart",
-            "1:2147483647 overflowLength",
-        )
+        val metadata =
+            listOf(
+                "0:1 valid",
+                "1:5 tooLong",
+                "5:1 startPastEnd",
+                "-1:1 negativeStart",
+                "1:2147483647 overflowLength",
+            )
 
         val libraries = parseLibraries(licensesData, metadata)
 

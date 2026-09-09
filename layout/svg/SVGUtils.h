@@ -374,14 +374,13 @@ class SVGUtils final {
    * See https://svgwg.org/svg2-draft/painting.html#NonScalingStroke
    *
    * If the computed value of the 'vector-effect' property on aFrame is
-   * 'non-scaling-stroke', then this function will set aUserToOuterSVG to the
+   * 'non-scaling-stroke', then this function will return the
    * transform from aFrame's SVG user space to the initial coordinate system
    * established by the viewport of aFrame's outer-<svg>'s (the coordinate
-   * system in which the stroke is fixed).  If aUserToOuterSVG is set to a
-   * non-identity matrix this function returns true, else it returns false.
+   * system in which the stroke is fixed). If the transform is an identity
+   * matrix or singular then Nothing() is returned.
    */
-  static bool GetNonScalingStrokeTransform(const nsIFrame* aFrame,
-                                           gfxMatrix* aUserToOuterSVG);
+  static Maybe<gfxMatrix> GetNonScalingStrokeTransform(const nsIFrame* aFrame);
 
   /**
    * We need to track whether content has non-scaling-stroke because we can't

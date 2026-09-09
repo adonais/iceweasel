@@ -4,6 +4,7 @@
 
 package mozilla.components.lib.bookmark.parser.jsoup
 
+import kotlin.test.assertIs
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.bookmark.parser.BookmarksParserError
@@ -12,7 +13,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertIs
 
 class JsoupBookmarksFileParserTest {
 
@@ -21,9 +21,7 @@ class JsoupBookmarksFileParserTest {
 
     @Before
     fun setup() {
-        parser = JsoupBookmarksFileParser(
-            ioDispatcher = testDispatcher,
-        )
+        parser = JsoupBookmarksFileParser(ioDispatcher = testDispatcher)
     }
 
     // region parse() — public entry point
@@ -47,29 +45,30 @@ class JsoupBookmarksFileParserTest {
                     dateAddedTimestamp = 0L,
                     lastModifiedTimestamp = 0L,
                     position = 0u,
-                    children = listOf(
-                        InsertableBookmarkTreeNode.Item(
-                            title = "One",
-                            url = "https://one.com",
-                            dateAddedTimestamp = 100,
-                            lastModifiedTimestamp = 200,
-                            position = 0u,
+                    children =
+                        listOf(
+                            InsertableBookmarkTreeNode.Item(
+                                title = "One",
+                                url = "https://one.com",
+                                dateAddedTimestamp = 100,
+                                lastModifiedTimestamp = 200,
+                                position = 0u,
+                            ),
+                            InsertableBookmarkTreeNode.Item(
+                                title = "Two",
+                                url = "https://two.com",
+                                dateAddedTimestamp = 300,
+                                lastModifiedTimestamp = 400,
+                                position = 1u,
+                            ),
+                            InsertableBookmarkTreeNode.Item(
+                                title = "Three",
+                                url = "https://three.com",
+                                dateAddedTimestamp = 500,
+                                lastModifiedTimestamp = 600,
+                                position = 2u,
+                            ),
                         ),
-                        InsertableBookmarkTreeNode.Item(
-                            title = "Two",
-                            url = "https://two.com",
-                            dateAddedTimestamp = 300,
-                            lastModifiedTimestamp = 400,
-                            position = 1u,
-                        ),
-                        InsertableBookmarkTreeNode.Item(
-                            title = "Three",
-                            url = "https://three.com",
-                            dateAddedTimestamp = 500,
-                            lastModifiedTimestamp = 600,
-                            position = 2u,
-                        ),
-                    ),
                 ),
                 result.getOrThrow().folder,
             )
@@ -80,9 +79,8 @@ class JsoupBookmarksFileParserTest {
         runTest(testDispatcher) {
             // given the file with multiple bookmarks
             // when parse is called with valid content
-            val result = parser.parse(
-                inputStream = TestData.MULTIPLE_BOOKMARKS_FOLDERS_SEPARATORS_LEVELS.byteInputStream(),
-            )
+            val result =
+                parser.parse(inputStream = TestData.MULTIPLE_BOOKMARKS_FOLDERS_SEPARATORS_LEVELS.byteInputStream())
             val parseResult = result.getOrThrow()
 
             assertEquals(
@@ -103,9 +101,8 @@ class JsoupBookmarksFileParserTest {
         runTest(testDispatcher) {
             // given the file with multiple bookmarks
             // when parse is called with valid content
-            val result = parser.parse(
-                inputStream = TestData.MULTIPLE_BOOKMARKS_FOLDERS_SEPARATORS_LEVELS.byteInputStream(),
-            )
+            val result =
+                parser.parse(inputStream = TestData.MULTIPLE_BOOKMARKS_FOLDERS_SEPARATORS_LEVELS.byteInputStream())
             val parseResult = result.getOrThrow()
             val tree = parseResult.folder
 
@@ -115,77 +112,81 @@ class JsoupBookmarksFileParserTest {
                     dateAddedTimestamp = 0L,
                     lastModifiedTimestamp = 0L,
                     position = 0u,
-                    children = listOf(
-                        InsertableBookmarkTreeNode.Item(
-                            title = "Top Bookmark",
-                            url = "https://top.com",
-                            dateAddedTimestamp = 0L,
-                            lastModifiedTimestamp = 0L,
-                            position = 0u,
-                        ),
-                        InsertableBookmarkTreeNode.Separator(
-                            dateAddedTimestamp = 0L,
-                            lastModifiedTimestamp = 0L,
-                            position = 1u,
-                        ),
-                        InsertableBookmarkTreeNode.Folder(
-                            title = "Level 1",
-                            dateAddedTimestamp = 0L,
-                            lastModifiedTimestamp = 0L,
-                            position = 2u,
-                            children = listOf(
-                                InsertableBookmarkTreeNode.Item(
-                                    title = "One",
-                                    url = "https://one.com",
-                                    dateAddedTimestamp = 0L,
-                                    lastModifiedTimestamp = 0L,
-                                    position = 0u,
-                                ),
-                                InsertableBookmarkTreeNode.Folder(
-                                    title = "Level 2",
-                                    dateAddedTimestamp = 0L,
-                                    lastModifiedTimestamp = 0L,
-                                    position = 1u,
-                                    children = listOf(
-                                        InsertableBookmarkTreeNode.Folder(
-                                            title = "Level 3",
+                    children =
+                        listOf(
+                            InsertableBookmarkTreeNode.Item(
+                                title = "Top Bookmark",
+                                url = "https://top.com",
+                                dateAddedTimestamp = 0L,
+                                lastModifiedTimestamp = 0L,
+                                position = 0u,
+                            ),
+                            InsertableBookmarkTreeNode.Separator(
+                                dateAddedTimestamp = 0L,
+                                lastModifiedTimestamp = 0L,
+                                position = 1u,
+                            ),
+                            InsertableBookmarkTreeNode.Folder(
+                                title = "Level 1",
+                                dateAddedTimestamp = 0L,
+                                lastModifiedTimestamp = 0L,
+                                position = 2u,
+                                children =
+                                    listOf(
+                                        InsertableBookmarkTreeNode.Item(
+                                            title = "One",
+                                            url = "https://one.com",
                                             dateAddedTimestamp = 0L,
                                             lastModifiedTimestamp = 0L,
                                             position = 0u,
-                                            children = listOf(
-                                                InsertableBookmarkTreeNode.Item(
-                                                    title = "Bottom",
-                                                    url = "https://bottom.com",
-                                                    dateAddedTimestamp = 0L,
-                                                    lastModifiedTimestamp = 0L,
-                                                    position = 0u,
-                                                ),
-                                            ),
                                         ),
-                                        InsertableBookmarkTreeNode.Separator(
+                                        InsertableBookmarkTreeNode.Folder(
+                                            title = "Level 2",
                                             dateAddedTimestamp = 0L,
                                             lastModifiedTimestamp = 0L,
                                             position = 1u,
-                                        ),
-                                        InsertableBookmarkTreeNode.Item(
-                                            title = "Two",
-                                            url = "https://two.com",
-                                            dateAddedTimestamp = 0L,
-                                            lastModifiedTimestamp = 0L,
-                                            position = 2u,
+                                            children =
+                                                listOf(
+                                                    InsertableBookmarkTreeNode.Folder(
+                                                        title = "Level 3",
+                                                        dateAddedTimestamp = 0L,
+                                                        lastModifiedTimestamp = 0L,
+                                                        position = 0u,
+                                                        children =
+                                                            listOf(
+                                                                InsertableBookmarkTreeNode.Item(
+                                                                    title = "Bottom",
+                                                                    url = "https://bottom.com",
+                                                                    dateAddedTimestamp = 0L,
+                                                                    lastModifiedTimestamp = 0L,
+                                                                    position = 0u,
+                                                                )
+                                                            ),
+                                                    ),
+                                                    InsertableBookmarkTreeNode.Separator(
+                                                        dateAddedTimestamp = 0L,
+                                                        lastModifiedTimestamp = 0L,
+                                                        position = 1u,
+                                                    ),
+                                                    InsertableBookmarkTreeNode.Item(
+                                                        title = "Two",
+                                                        url = "https://two.com",
+                                                        dateAddedTimestamp = 0L,
+                                                        lastModifiedTimestamp = 0L,
+                                                        position = 2u,
+                                                    ),
+                                                ),
                                         ),
                                     ),
-                                ),
+                            ),
+                            InsertableBookmarkTreeNode.Item(
+                                title = "Last Bookmark",
+                                url = "https://last.com",
+                                dateAddedTimestamp = 0L,
+                                lastModifiedTimestamp = 0L,
+                                position = 3u,
                             ),
                         ),
-                        InsertableBookmarkTreeNode.Item(
-                            title = "Last Bookmark",
-                            url = "https://last.com",
-                            dateAddedTimestamp = 0L,
-                            lastModifiedTimestamp = 0L,
-                            position = 3u,
-                        ),
-                    ),
                 ),
                 tree,
             )
@@ -194,9 +195,7 @@ class JsoupBookmarksFileParserTest {
     @Test
     fun `GIVEN an invalid html content WHEN parse is called THEN a parsing error is returned`() =
         runTest(testDispatcher) {
-            val result = parser.parse(
-                inputStream = TestData.INVALID_HTML_CONTENT.byteInputStream(),
-            )
+            val result = parser.parse(inputStream = TestData.INVALID_HTML_CONTENT.byteInputStream())
 
             assertIs<BookmarksParserError.UnsupportedContentType>(result.exceptionOrNull())
         }
@@ -204,10 +203,7 @@ class JsoupBookmarksFileParserTest {
     @Test
     fun `GIVEN a valid HTML but invalid Netscape file content WHEN parse is called THEN a parsing error is returned `() =
         runTest(testDispatcher) {
-            val result = parser.parse(
-                inputStream = TestData.VALID_HTML_BUT_INVALID_BOOKMARK_CONTENT
-                    .byteInputStream(),
-            )
+            val result = parser.parse(inputStream = TestData.VALID_HTML_BUT_INVALID_BOOKMARK_CONTENT.byteInputStream())
 
             assertIs<BookmarksParserError.UnsupportedContentType>(result.exceptionOrNull())
         }
@@ -219,9 +215,7 @@ class JsoupBookmarksFileParserTest {
     @Test
     fun `GIVEN a file with a bookmark WHEN parsed THEN item has correct url, title and position`() =
         runTest(testDispatcher) {
-            val result = parser.parse(
-                inputStream = TestData.SINGLE_BOOKMARK.byteInputStream(),
-            )
+            val result = parser.parse(inputStream = TestData.SINGLE_BOOKMARK.byteInputStream())
 
             val root = result.getOrThrow().folder
             val item = root.children.first()
@@ -235,9 +229,7 @@ class JsoupBookmarksFileParserTest {
     @Test
     fun `GIVEN a bookmark with ADD_DATE and LAST_MODIFIED WHEN parsed THEN timestamps are set`() =
         runTest(testDispatcher) {
-            val result = parser.parse(
-                inputStream = TestData.SINGLE_BOOKMARK.byteInputStream(),
-            )
+            val result = parser.parse(inputStream = TestData.SINGLE_BOOKMARK.byteInputStream())
 
             val root = result.getOrThrow().folder
             val item = root.children.first()
@@ -257,9 +249,7 @@ class JsoupBookmarksFileParserTest {
     @Test
     fun `GIVEN a bookmark without timestamps WHEN parsed THEN timestamps default to 0`() =
         runTest(testDispatcher) {
-            val result = parser.parse(
-                inputStream = TestData.BOOKMARK_WITHOUT_TIMESTAMPS.byteInputStream(),
-            )
+            val result = parser.parse(inputStream = TestData.BOOKMARK_WITHOUT_TIMESTAMPS.byteInputStream())
 
             val root = result.getOrThrow().folder
             val item = root.children.first()
@@ -279,9 +269,7 @@ class JsoupBookmarksFileParserTest {
     @Test
     fun `GIVEN a bookmark with empty href WHEN parsed THEN result is failure with a parsing error`() =
         runTest(testDispatcher) {
-            val result = parser.parse(
-                inputStream = TestData.BOOKMARK_EMPTY_HREF.byteInputStream(),
-            )
+            val result = parser.parse(inputStream = TestData.BOOKMARK_EMPTY_HREF.byteInputStream())
 
             assertTrue(
                 "Expected result to be a failure but got ${result.getOrNull()}",
@@ -293,9 +281,7 @@ class JsoupBookmarksFileParserTest {
     @Test
     fun `GIVEN a bookmark with empty text WHEN parsed THEN title is empty string`() =
         runTest(testDispatcher) {
-            val result = parser.parse(
-                inputStream = TestData.BOOKMARK_EMPTY_TEXT.byteInputStream(),
-            )
+            val result = parser.parse(inputStream = TestData.BOOKMARK_EMPTY_TEXT.byteInputStream())
 
             val root = result.getOrThrow().folder
             val item = root.children.first() as InsertableBookmarkTreeNode.Item
@@ -310,9 +296,7 @@ class JsoupBookmarksFileParserTest {
     @Test
     fun `GIVEN multiple bookmarks WHEN parsed THEN positions are sequential and 0-based`() =
         runTest(testDispatcher) {
-            val result = parser.parse(
-                inputStream = TestData.MULTIPLE_BOOKMARKS.byteInputStream(),
-            )
+            val result = parser.parse(inputStream = TestData.MULTIPLE_BOOKMARKS.byteInputStream())
 
             val root = result.getOrThrow().folder
 
@@ -329,9 +313,7 @@ class JsoupBookmarksFileParserTest {
     @Test
     fun `GIVEN a folder WHEN parsed THEN folder has correct title, timestamps and children`() =
         runTest(testDispatcher) {
-            val result = parser.parse(
-                inputStream = TestData.FOLDER_WITH_BOOKMARK.byteInputStream(),
-            )
+            val result = parser.parse(inputStream = TestData.FOLDER_WITH_BOOKMARK.byteInputStream())
 
             val root = result.getOrThrow().folder
             assertEquals(1, root.children.size)
@@ -352,9 +334,7 @@ class JsoupBookmarksFileParserTest {
     @Test
     fun `GIVEN nested folders WHEN parsed THEN tree structure is correct`() =
         runTest(testDispatcher) {
-            val result = parser.parse(
-                inputStream = TestData.NESTED_FOLDERS.byteInputStream(),
-            )
+            val result = parser.parse(inputStream = TestData.NESTED_FOLDERS.byteInputStream())
 
             val root = result.getOrThrow().folder
             assertEquals(1, root.children.size)
@@ -379,9 +359,7 @@ class JsoupBookmarksFileParserTest {
     @Test
     fun `GIVEN deeply nested folders WHEN parsed THEN all levels are represented`() =
         runTest(testDispatcher) {
-            val result = parser.parse(
-                inputStream = TestData.DEEPLY_NESTED_FOLDERS.byteInputStream(),
-            )
+            val result = parser.parse(inputStream = TestData.DEEPLY_NESTED_FOLDERS.byteInputStream())
 
             val root = result.getOrThrow().folder
 
@@ -422,9 +400,7 @@ class JsoupBookmarksFileParserTest {
     @Test
     fun `GIVEN an empty folder WHEN parsed THEN folder has no children`() =
         runTest(testDispatcher) {
-            val result = parser.parse(
-                inputStream = TestData.EMPTY_FOLDER.byteInputStream(),
-            )
+            val result = parser.parse(inputStream = TestData.EMPTY_FOLDER.byteInputStream())
 
             val root = result.getOrThrow().folder
             val folder = root.children.first() as InsertableBookmarkTreeNode.Folder
@@ -436,9 +412,7 @@ class JsoupBookmarksFileParserTest {
     @Test
     fun `GIVEN a folder without timestamps WHEN parsed THEN timestamps default to 0`() =
         runTest(testDispatcher) {
-            val result = parser.parse(
-                inputStream = TestData.FOLDER_WITHOUT_TIMESTAMPS.byteInputStream(),
-            )
+            val result = parser.parse(inputStream = TestData.FOLDER_WITHOUT_TIMESTAMPS.byteInputStream())
 
             val root = result.getOrThrow().folder
             val folder = root.children.first() as InsertableBookmarkTreeNode.Folder
@@ -462,9 +436,7 @@ class JsoupBookmarksFileParserTest {
     @Test
     fun `GIVEN a separator between bookmarks WHEN parsed THEN separator has correct position`() =
         runTest(testDispatcher) {
-            val result = parser.parse(
-                inputStream = TestData.SEPARATOR_BETWEEN_BOOKMARKS.byteInputStream(),
-            )
+            val result = parser.parse(inputStream = TestData.SEPARATOR_BETWEEN_BOOKMARKS.byteInputStream())
 
             val root = result.getOrThrow().folder
 
@@ -482,22 +454,18 @@ class JsoupBookmarksFileParserTest {
     @Test
     fun `GIVEN a separator with timestamps WHEN parsed THEN timestamps are set`() =
         runTest(testDispatcher) {
-            val result = parser.parse(
-                inputStream = TestData.SEPARATOR_WITH_TIMESTAMPS.byteInputStream(),
-            )
+            val result = parser.parse(inputStream = TestData.SEPARATOR_WITH_TIMESTAMPS.byteInputStream())
 
             val root = result.getOrThrow().folder
             val separator = root.children.first()
             assertIs<InsertableBookmarkTreeNode.Separator>(separator)
             assertEquals(
-                "Expected the date added timestamp to be 1000 " +
-                    "but got ${separator.dateAddedTimestamp}",
+                "Expected the date added timestamp to be 1000 " + "but got ${separator.dateAddedTimestamp}",
                 1000L,
                 separator.dateAddedTimestamp,
             )
             assertEquals(
-                "Expected the last modified timestamp to be 2000 " +
-                    "but got ${separator.lastModifiedTimestamp}",
+                "Expected the last modified timestamp to be 2000 " + "but got ${separator.lastModifiedTimestamp}",
                 2000L,
                 separator.lastModifiedTimestamp,
             )
@@ -506,17 +474,14 @@ class JsoupBookmarksFileParserTest {
     @Test
     fun `GIVEN a separator without timestamps WHEN parsed THEN timestamps falls back to 0`() =
         runTest(testDispatcher) {
-            val result = parser.parse(
-                inputStream = TestData.SEPARATOR_WITHOUT_TIMESTAMPS.byteInputStream(),
-            )
+            val result = parser.parse(inputStream = TestData.SEPARATOR_WITHOUT_TIMESTAMPS.byteInputStream())
 
             val parseResult = result.getOrThrow()
             val root = parseResult.folder
 
             val separator = root.children.first()
             assertEquals(
-                "Expected the date added to fallback to 0 " +
-                    "but got ${separator.dateAddedTimestamp}",
+                "Expected the date added to fallback to 0 " + "but got ${separator.dateAddedTimestamp}",
                 0L,
                 separator.dateAddedTimestamp,
             )
@@ -535,9 +500,7 @@ class JsoupBookmarksFileParserTest {
     @Test
     fun `GIVEN bookmarks, folders and separators at the same level WHEN parsed THEN positions are sequential`() =
         runTest(testDispatcher) {
-            val result = parser.parse(
-                inputStream = TestData.MIXED_CONTENT.byteInputStream(),
-            )
+            val result = parser.parse(inputStream = TestData.MIXED_CONTENT.byteInputStream())
 
             val parseResult = result.getOrThrow()
             val root = parseResult.folder

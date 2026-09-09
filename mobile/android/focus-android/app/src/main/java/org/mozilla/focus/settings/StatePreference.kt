@@ -12,9 +12,7 @@ import androidx.preference.PreferenceViewHolder
 import org.mozilla.focus.R
 import org.mozilla.focus.ext.settings
 
-/**
- * State preference that will show the current state as a summary and a sub screen to configure the behavior.
- */
+/** State preference that will show the current state as a summary and a sub screen to configure the behavior. */
 class StatePreference(context: Context, attrs: AttributeSet?) : Preference(context, attrs) {
     private var summaryView: TextView? = null
 
@@ -27,17 +25,19 @@ class StatePreference(context: Context, attrs: AttributeSet?) : Preference(conte
 
     private fun setValueByKey(key: String?) {
         key?.let {
-            val state = when (key) {
-                context.getString(R.string.pref_key_screen_autocomplete) ->
-                    context.settings.shouldAutocompleteFromShippedDomainList() ||
-                        context.settings.shouldAutocompleteFromCustomDomainList()
-                else -> false
-            }
-            val summaryText = if (state) {
-                R.string.preference_state_on
-            } else {
-                R.string.preference_state_off
-            }
+            val state =
+                when (key) {
+                    context.getString(R.string.pref_key_screen_autocomplete) ->
+                        context.settings.shouldAutocompleteFromShippedDomainList() ||
+                            context.settings.shouldAutocompleteFromCustomDomainList()
+                    else -> false
+                }
+            val summaryText =
+                if (state) {
+                    R.string.preference_state_on
+                } else {
+                    R.string.preference_state_off
+                }
 
             summaryView?.setText(summaryText)
         }

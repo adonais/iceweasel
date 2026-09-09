@@ -162,7 +162,16 @@ Opens a customized AI Window Firefox accounts sign-up or sign-in flow, and redir
 Returns a Promise that resolves to `true` if sign-in succeeded, or to `false` if the sign-in
 window or tab closed before sign-in could be completed.
 
-- args: (none)
+- args:
+```ts
+{
+  data?: {
+    // Identifies the surface that requested the launch, recorded as the
+    // `trigger` extra key on Smart Window telemetry. Defaults to "asrouter".
+    source?: string;
+  }
+}
+```
 
 ### `SHOW_MIGRATION_WIZARD`
 
@@ -284,6 +293,17 @@ Action for pinning Firefox to the user's taskbar and setting it as the default b
 ### `SET_DEFAULT_BROWSER`
 
 Action for setting the default browser to Firefox on the user's system.
+
+- args: (none)
+
+### `SET_DEFAULT_BROWSER_OPEN_WITH`
+
+Action for setting Firefox as the default browser via the OS "Open with" picker
+(IOpenWithLauncher), which guarantees an OS-level prompt. Claiming the `https`
+handler this way sets the whole web-browser default (both `http` and `https`)
+with a single picker.
+
+Windows only.
 
 - args: (none)
 

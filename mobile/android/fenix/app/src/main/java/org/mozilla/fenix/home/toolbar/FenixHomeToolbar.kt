@@ -6,21 +6,15 @@ package org.mozilla.fenix.home.toolbar
 
 import androidx.compose.runtime.Composable
 
-/**
- * Home screen toolbar.
- */
+/** Home screen toolbar. */
 interface FenixHomeToolbar {
-    /**
-     * Renders the toolbar content.
-     */
-    @Composable
-    fun Content()
+    /** Renders the toolbar content. */
+    @Composable fun Content()
 
     /**
      * Setups the home screen toolbar.
      *
-     * @param middleSearchEnabled Whether middle search is enabled, and the address bar
-     * should be invisible.
+     * @param middleSearchEnabled Whether middle search is enabled, and the address bar should be invisible.
      */
     fun build(middleSearchEnabled: Boolean)
 

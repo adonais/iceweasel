@@ -34,23 +34,23 @@ class SearchFeatureTest {
 
     @Before
     fun before() {
-        store = BrowserStore(
-            mockBrowserState(),
-        )
+        store = BrowserStore(mockBrowserState())
         performSearch = mock()
-        searchFeature = SearchFeature(store, null, testDispatcher, performSearch).apply {
-            start()
-            testDispatcher.scheduler.advanceUntilIdle()
-        }
+        searchFeature =
+            SearchFeature(store, null, testDispatcher, performSearch).apply {
+                start()
+                testDispatcher.scheduler.advanceUntilIdle()
+            }
     }
 
     private fun mockBrowserState(): BrowserState {
         return BrowserState(
-            tabs = listOf(
-                createTab("https://www.duckduckgo.com", id = "0"),
-                createTab("https://www.mozilla.org", id = SELECTED_TAB_ID),
-                createTab("https://www.wikipedia.org", id = "2"),
-            ),
+            tabs =
+                listOf(
+                    createTab("https://www.duckduckgo.com", id = "0"),
+                    createTab("https://www.mozilla.org", id = SELECTED_TAB_ID),
+                    createTab("https://www.wikipedia.org", id = "2"),
+                ),
             selectedTabId = SELECTED_TAB_ID,
         )
     }
@@ -61,75 +61,79 @@ class SearchFeatureTest {
     }
 
     @Test
-    fun `GIVEN a tab is selected WHEN a search request is sent THEN a search should be performed`() = runTest(testDispatcher) {
-        verify(performSearch, times(0)).invoke(any(), eq(SELECTED_TAB_ID))
+    fun `GIVEN a tab is selected WHEN a search request is sent THEN a search should be performed`() =
+        runTest(testDispatcher) {
+            verify(performSearch, times(0)).invoke(any(), eq(SELECTED_TAB_ID))
 
-        val normalSearchRequest = SearchRequest(isPrivate = false, query = "query")
-        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, normalSearchRequest))
-        testDispatcher.scheduler.advanceUntilIdle()
+            val normalSearchRequest = SearchRequest(isPrivate = false, query = "query")
+            store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, normalSearchRequest))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(performSearch, times(1)).invoke(any(), eq(SELECTED_TAB_ID))
-        verify(performSearch, times(1)).invoke(normalSearchRequest, SELECTED_TAB_ID)
+            verify(performSearch, times(1)).invoke(any(), eq(SELECTED_TAB_ID))
+            verify(performSearch, times(1)).invoke(normalSearchRequest, SELECTED_TAB_ID)
 
-        val privateSearchRequest = SearchRequest(isPrivate = true, query = "query")
-        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, privateSearchRequest))
-        testDispatcher.scheduler.advanceUntilIdle()
+            val privateSearchRequest = SearchRequest(isPrivate = true, query = "query")
+            store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, privateSearchRequest))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(performSearch, times(2)).invoke(any(), eq(SELECTED_TAB_ID))
-        verify(performSearch, times(1)).invoke(privateSearchRequest, SELECTED_TAB_ID)
-    }
-
-    @Test
-    fun `GIVEN no tab is selected WHEN a search request is sent THEN no search should be performed`() = runTest(testDispatcher) {
-        store.dispatch(TabListAction.RemoveTabAction(tabId = SELECTED_TAB_ID, selectParentIfExists = false))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        verify(performSearch, times(0)).invoke(any(), eq(SELECTED_TAB_ID))
-
-        val normalSearchRequest = SearchRequest(isPrivate = false, query = "query")
-        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, normalSearchRequest))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        verify(performSearch, times(0)).invoke(any(), eq(SELECTED_TAB_ID))
-        verify(performSearch, times(0)).invoke(normalSearchRequest, SELECTED_TAB_ID)
-
-        val privateSearchRequest = SearchRequest(isPrivate = true, query = "query")
-        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, privateSearchRequest))
-
-        verify(performSearch, times(0)).invoke(any(), eq(SELECTED_TAB_ID))
-        verify(performSearch, times(0)).invoke(privateSearchRequest, SELECTED_TAB_ID)
-    }
+            verify(performSearch, times(2)).invoke(any(), eq(SELECTED_TAB_ID))
+            verify(performSearch, times(1)).invoke(privateSearchRequest, SELECTED_TAB_ID)
+        }
 
     @Test
-    fun `WHEN a search request has been handled THEN that request should have been consumed`() = runTest(testDispatcher) {
-        val normalSearchRequest = SearchRequest(isPrivate = false, query = "query")
-        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, normalSearchRequest))
-        testDispatcher.scheduler.advanceUntilIdle()
+    fun `GIVEN no tab is selected WHEN a search request is sent THEN no search should be performed`() =
+        runTest(testDispatcher) {
+            store.dispatch(TabListAction.RemoveTabAction(tabId = SELECTED_TAB_ID, selectParentIfExists = false))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertNull(store.state.selectedTab!!.content.searchRequest)
+            verify(performSearch, times(0)).invoke(any(), eq(SELECTED_TAB_ID))
 
-        val privateSearchRequest = SearchRequest(isPrivate = true, query = "query")
-        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, privateSearchRequest))
-        testDispatcher.scheduler.advanceUntilIdle()
+            val normalSearchRequest = SearchRequest(isPrivate = false, query = "query")
+            store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, normalSearchRequest))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertNull(store.state.selectedTab!!.content.searchRequest)
-    }
+            verify(performSearch, times(0)).invoke(any(), eq(SELECTED_TAB_ID))
+            verify(performSearch, times(0)).invoke(normalSearchRequest, SELECTED_TAB_ID)
+
+            val privateSearchRequest = SearchRequest(isPrivate = true, query = "query")
+            store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, privateSearchRequest))
+
+            verify(performSearch, times(0)).invoke(any(), eq(SELECTED_TAB_ID))
+            verify(performSearch, times(0)).invoke(privateSearchRequest, SELECTED_TAB_ID)
+        }
 
     @Test
-    fun `WHEN the same search is requested two times THEN both search requests are preformed and consumed`() = runTest(testDispatcher) {
-        val searchRequest = SearchRequest(isPrivate = false, query = "query")
-        verify(performSearch, times(0)).invoke(searchRequest, SELECTED_TAB_ID)
+    fun `WHEN a search request has been handled THEN that request should have been consumed`() =
+        runTest(testDispatcher) {
+            val normalSearchRequest = SearchRequest(isPrivate = false, query = "query")
+            store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, normalSearchRequest))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, searchRequest))
-        testDispatcher.scheduler.advanceUntilIdle()
+            assertNull(store.state.selectedTab!!.content.searchRequest)
 
-        verify(performSearch, times(1)).invoke(searchRequest, SELECTED_TAB_ID)
-        assertNull(store.state.selectedTab!!.content.searchRequest)
+            val privateSearchRequest = SearchRequest(isPrivate = true, query = "query")
+            store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, privateSearchRequest))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, searchRequest))
-        testDispatcher.scheduler.advanceUntilIdle()
+            assertNull(store.state.selectedTab!!.content.searchRequest)
+        }
 
-        verify(performSearch, times(2)).invoke(searchRequest, SELECTED_TAB_ID)
-        assertNull(store.state.selectedTab!!.content.searchRequest)
-    }
+    @Test
+    fun `WHEN the same search is requested two times THEN both search requests are preformed and consumed`() =
+        runTest(testDispatcher) {
+            val searchRequest = SearchRequest(isPrivate = false, query = "query")
+            verify(performSearch, times(0)).invoke(searchRequest, SELECTED_TAB_ID)
+
+            store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, searchRequest))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(performSearch, times(1)).invoke(searchRequest, SELECTED_TAB_ID)
+            assertNull(store.state.selectedTab!!.content.searchRequest)
+
+            store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, searchRequest))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(performSearch, times(2)).invoke(searchRequest, SELECTED_TAB_ID)
+            assertNull(store.state.selectedTab!!.content.searchRequest)
+        }
 }

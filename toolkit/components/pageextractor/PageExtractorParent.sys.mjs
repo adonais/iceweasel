@@ -107,7 +107,7 @@ export class PageExtractorParent extends JSWindowActorParent {
    */
   async #getTextFromPDF(options) {
     let text = await this.browsingContext.currentWindowGlobal
-      .getActor("Pdfjs")
+      .getActor("PdfJs")
       .getTextContent();
 
     if (options.sufficientLength && text.length > options.sufficientLength) {

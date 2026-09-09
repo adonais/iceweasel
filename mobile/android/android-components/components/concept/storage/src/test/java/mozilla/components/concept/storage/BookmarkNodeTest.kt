@@ -9,18 +9,21 @@ import org.junit.Test
 
 class BookmarkNodeTest {
 
-    private val bookmarkChild1 = testBookmarkItem(
-        url = "http://www.mockurl.com/1",
-        title = "Child 1",
-    )
-    private val bookmarkChild2 = testBookmarkItem(
-        url = "http://www.mockurl.com/2",
-        title = "Child 2",
-    )
-    private val bookmarkChild3 = testBookmarkItem(
-        url = "http://www.mockurl.com/3",
-        title = "Child 3",
-    )
+    private val bookmarkChild1 =
+        testBookmarkItem(
+            url = "http://www.mockurl.com/1",
+            title = "Child 1",
+        )
+    private val bookmarkChild2 =
+        testBookmarkItem(
+            url = "http://www.mockurl.com/2",
+            title = "Child 2",
+        )
+    private val bookmarkChild3 =
+        testBookmarkItem(
+            url = "http://www.mockurl.com/3",
+            title = "Child 3",
+        )
     private val allChildren = listOf(bookmarkChild1, bookmarkChild2)
 
     @Test
@@ -89,17 +92,18 @@ class BookmarkNodeTest {
         title: String = "Item for $url",
         guid: String = "guid#${Math.random() * 1000}",
         position: UInt = 0u,
-    ) = BookmarkNode(
-        type = BookmarkNodeType.ITEM,
-        dateAdded = 0,
-        lastModified = 0,
-        children = null,
-        guid = guid,
-        parentGuid = parentGuid,
-        position = position,
-        title = title,
-        url = url,
-    )
+    ) =
+        BookmarkNode(
+            type = BookmarkNodeType.ITEM,
+            dateAdded = 0,
+            lastModified = 0,
+            children = null,
+            guid = guid,
+            parentGuid = parentGuid,
+            position = position,
+            title = title,
+            url = url,
+        )
 
     private fun testFolder(
         guid: String,
@@ -107,15 +111,16 @@ class BookmarkNodeTest {
         children: List<BookmarkNode>?,
         title: String = "Folder: $guid",
         position: UInt = 0u,
-    ) = BookmarkNode(
-        type = BookmarkNodeType.FOLDER,
-        url = null,
-        dateAdded = 0,
-        lastModified = 0,
-        guid = guid,
-        parentGuid = parentGuid,
-        position = position,
-        title = title,
-        children = children,
-    )
+    ) =
+        BookmarkNode(
+            type = BookmarkNodeType.FOLDER,
+            url = null,
+            dateAdded = 0,
+            lastModified = 0,
+            guid = guid,
+            parentGuid = parentGuid,
+            position = position,
+            title = title,
+            children = children,
+        )
 }

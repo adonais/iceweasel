@@ -6,8 +6,15 @@ LOCAL_INCLUDES += [
     "/gfx/gl",
 ]
 
+include("/ipc/chromium/chromium-config.mozbuild")
+
 UNIFIED_SOURCES += [
     "TestColorspaces.cpp",
 ]
+
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
+    UNIFIED_SOURCES += [
+        "TestMozFramebuffer.cpp",
+    ]
 
 FINAL_LIBRARY = "xul-gtest"

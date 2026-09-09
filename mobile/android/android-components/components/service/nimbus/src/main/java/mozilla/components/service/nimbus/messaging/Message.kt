@@ -9,18 +9,17 @@ import androidx.annotation.VisibleForTesting
 /**
  * A data class that holds a representation of a message from Nimbus.
  *
- * In order to be eligible to be shown, all `triggerIfAll` expressions
- * AND none of the `excludeIfAny` expressions must evaluate to `true`.
+ * In order to be eligible to be shown, all `triggerIfAll` expressions AND none of the `excludeIfAny` expressions must
+ * evaluate to `true`.
  *
  * @property id identifies a message as unique.
  * @property data Data information provided from Nimbus.
- * @property action A strings that represents which action should be performed
- * after a message is clicked.
+ * @property action A strings that represents which action should be performed after a message is clicked.
  * @property style Indicates how a message should be styled.
- * @property triggerIfAll A list of strings corresponding to JEXL targeting expressions. The message
- * will be shown if _all_ expressions evaluate to `true`.
- * @property excludeIfAny A list of strings corresponding to JEXL targeting expressions. The message
- * will _not_ be shown if _any_ expressions evaluate to `true`.
+ * @property triggerIfAll A list of strings corresponding to JEXL targeting expressions. The message will be shown if
+ *   _all_ expressions evaluate to `true`.
+ * @property excludeIfAny A list of strings corresponding to JEXL targeting expressions. The message will _not_ be shown
+ *   if _any_ expressions evaluate to `true`.
  * @property metadata Metadata that help to identify if a message should shown.
  */
 data class Message(
@@ -58,8 +57,8 @@ data class Message(
         get() = data.microsurveyConfig
 
     /**
-     * Returns true if the passed boot id, taken from [BootUtils] matches the one associated
-     * with this message when it was last displayed.
+     * Returns true if the passed boot id, taken from [BootUtils] matches the one associated with this message when it
+     * was last displayed.
      */
     fun hasShownThisCycle(bootId: String) = bootId == metadata.latestBootIdentifier
 
@@ -71,8 +70,8 @@ data class Message(
      * @param pressed Indicates if a message has been clicked.
      * @param dismissed Indicates if a message has been closed.
      * @param lastTimeShown A timestamp indicating when was the last time, the message was shown.
-     * @param latestBootIdentifier A unique boot identifier for when the message was last displayed
-     * (this may be a boot count or a boot id).
+     * @param latestBootIdentifier A unique boot identifier for when the message was last displayed (this may be a boot
+     *   count or a boot id).
      */
     data class Metadata(
         val id: String,

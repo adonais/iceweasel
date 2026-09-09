@@ -11,9 +11,7 @@ import mozilla.components.service.nimbus.ui.NimbusBranchAdapter
 import org.mozilla.fenix.nimbus.NimbusBranchesState
 import org.mozilla.fenix.nimbus.controller.NimbusBranchesController
 
-/**
- * View used for managing a Nimbus experiment's branches.
- */
+/** View used for managing a Nimbus experiment's branches. */
 class NimbusBranchesView(
     private val containerView: ViewGroup,
     val controller: NimbusBranchesController,

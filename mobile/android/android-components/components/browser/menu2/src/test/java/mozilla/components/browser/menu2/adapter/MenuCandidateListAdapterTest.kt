@@ -39,14 +39,15 @@ class MenuCandidateListAdapterTest {
 
     @Test
     fun `items use layout resource as view type`() {
-        val items = listOf(
-            DecorativeTextMenuCandidate("one"),
-            TextMenuCandidate("two"),
-            CompoundMenuCandidate("three", false, end = CompoundMenuCandidate.ButtonType.CHECKBOX),
-            CompoundMenuCandidate("four", false, end = CompoundMenuCandidate.ButtonType.SWITCH),
-            DividerMenuCandidate(),
-            RowMenuCandidate(emptyList()),
-        )
+        val items =
+            listOf(
+                DecorativeTextMenuCandidate("one"),
+                TextMenuCandidate("two"),
+                CompoundMenuCandidate("three", false, end = CompoundMenuCandidate.ButtonType.CHECKBOX),
+                CompoundMenuCandidate("four", false, end = CompoundMenuCandidate.ButtonType.SWITCH),
+                DividerMenuCandidate(),
+                RowMenuCandidate(emptyList()),
+            )
         adapter.submitList(items)
 
         assertEquals(6, adapter.itemCount)
@@ -60,11 +61,7 @@ class MenuCandidateListAdapterTest {
 
     @Test
     fun `bind will be forwarded to item implementation`() {
-        adapter.submitList(
-            listOf(
-                DividerMenuCandidate(),
-            ),
-        )
+        adapter.submitList(listOf(DividerMenuCandidate()))
 
         val holder: DividerMenuCandidateViewHolder = mock()
 

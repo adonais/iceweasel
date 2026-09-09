@@ -34,9 +34,7 @@ import mozilla.components.compose.base.snackbar.displaySnackbar
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.ui.icons.R as iconsR
 
-/**
- * Displays demos of the Acorn snackbar component.
- */
+/** Displays demos of the Acorn snackbar component. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SnackbarScreen(onNavigateUp: () -> Unit = {}) {
@@ -73,10 +71,7 @@ fun SnackbarScreen(onNavigateUp: () -> Unit = {}) {
         },
     ) { innerPadding ->
         SnackbarContent(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
             snackbarHostState = snackbarHostState,
             scope = scope,
         )
@@ -98,9 +93,7 @@ private fun SnackbarContent(
             modifier = Modifier.fillMaxWidth(),
             onClick = {
                 scope.launch {
-                    snackbarHostState.displaySnackbar(
-                        message = "This is a snackbar message",
-                    )
+                    snackbarHostState.displaySnackbar(message = "This is a snackbar message")
                 }
             },
         )
@@ -137,12 +130,13 @@ private fun SnackbarContent(
             onClick = {
                 scope.launch {
                     snackbarHostState.displaySnackbar(
-                        visuals = SnackbarVisuals(
-                            message = "Download complete",
-                            subMessage = "document.pdf",
-                            actionLabel = "Open",
-                            withDismissAction = true,
-                        ),
+                        visuals =
+                            SnackbarVisuals(
+                                message = "Download complete",
+                                subMessage = "document.pdf",
+                                actionLabel = "Open",
+                                withDismissAction = true,
+                            )
                     )
                 }
             },

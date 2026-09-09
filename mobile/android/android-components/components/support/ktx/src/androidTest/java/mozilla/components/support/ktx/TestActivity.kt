@@ -6,7 +6,5 @@ package mozilla.components.support.ktx
 
 import android.app.Activity
 
-/**
- * Empty activity only to be used in UI tests.
- */
+/** Empty activity only to be used in UI tests. */
 internal class TestActivity : Activity()

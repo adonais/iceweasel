@@ -37,8 +37,7 @@ import mozilla.components.support.ktx.android.view.showKeyboard
 import mozilla.components.support.utils.ext.getParcelableExtraCompat
 
 /**
- * Activity responsible for letting the user manually search and pick credentials for auto-filling a
- * third-party app.
+ * Activity responsible for letting the user manually search and pick credentials for auto-filling a third-party app.
  */
 abstract class AbstractAutofillSearchActivity : FragmentActivity() {
     abstract val configuration: AutofillConfiguration
@@ -114,13 +113,10 @@ abstract class AbstractAutofillSearchActivity : FragmentActivity() {
         val logins = loginsDeferred.await()
 
         val filteredLogins = logins.filter { login ->
-            login.username.contains(text) ||
-                login.origin.contains(text)
+            login.username.contains(text) || login.origin.contains(text)
         }
 
-        if (filteredLogins.isNotEmpty() &&
-            filteredLogins[0].password.isNotEmpty()
-        ) {
+        if (filteredLogins.isNotEmpty() && filteredLogins[0].password.isNotEmpty()) {
             emitLoginPasswordDetectedFact()
         }
 

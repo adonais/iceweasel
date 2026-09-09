@@ -48,29 +48,22 @@ private const val MAX_REGION_LENGTH = 2
 private const val PREFERENCE_FILE = "mozac_feature_search_region"
 private const val PREFERENCE_KEY_HOME_REGION = "region.home"
 
-/**
- * Region UI that display region related tools.
- */
+/** Region UI that display region related tools. */
 @Composable
 @Suppress("LongMethod")
-fun RegionTools(
-    browserStore: BrowserStore,
-) {
+fun RegionTools(browserStore: BrowserStore) {
     val region by remember {
         browserStore.stateFlow.map { state ->
             state.search.region ?: RegionState.Default
         }
-    }.collectAsState(initial = RegionState.Default)
+    }
+        .collectAsState(initial = RegionState.Default)
     val viewModel: RegionToolsViewModel = viewModel()
     val homeRegion = viewModel.homeRegion
     val currentRegion = viewModel.currentRegion
 
     Surface {
-        Column(
-            modifier = Modifier
-                .padding(all = 16.dp)
-                .verticalScroll(state = rememberScrollState()),
-        ) {
+        Column(modifier = Modifier.padding(all = 16.dp).verticalScroll(state = rememberScrollState())) {
             Text(
                 text = stringResource(R.string.debug_drawer_regin_tools_description),
                 style = FirefoxTheme.typography.headline8,
@@ -138,21 +131,23 @@ fun RegionTools(
                 onClick = {
                     browserStore.dispatch(
                         SearchAction.SetRegionAction(
-                            regionState = RegionState(
-                                home = homeRegion.ifBlank { DEFAULT_REGION },
-                                current = currentRegion.ifBlank { DEFAULT_REGION },
-                            ),
+                            regionState =
+                                RegionState(
+                                    home = homeRegion.ifBlank { DEFAULT_REGION },
+                                    current = currentRegion.ifBlank { DEFAULT_REGION },
+                                ),
                             distribution = null,
-                        ),
+                        )
                     )
                 },
             )
 
             if (Config.channel.isNightlyOrDebug) {
-                val preferences = LocalContext.current.getSharedPreferences(
-                    PREFERENCE_FILE,
-                    Context.MODE_PRIVATE,
-                )
+                val preferences =
+                    LocalContext.current.getSharedPreferences(
+                        PREFERENCE_FILE,
+                        Context.MODE_PRIVATE,
+                    )
 
                 FilledButton(
                     text = stringResource(R.string.debug_drawer_override_home_region_permanently),
@@ -179,9 +174,7 @@ private fun String.validRegionInput(maxLength: Int): String? {
     }
 }
 
-/**
- * Holds user input for overriding home and current regions in the debug UI.
- */
+/** Holds user input for overriding home and current regions in the debug UI. */
 class RegionToolsViewModel : ViewModel() {
     var homeRegion by mutableStateOf("")
     var currentRegion by mutableStateOf("")
@@ -189,12 +182,8 @@ class RegionToolsViewModel : ViewModel() {
 
 @Preview
 @Composable
-private fun RegionScreenPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun RegionScreenPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
-        RegionTools(
-            browserStore = BrowserStore(),
-        )
+        RegionTools(browserStore = BrowserStore())
     }
 }

@@ -52,16 +52,17 @@ fun SelectableChip(
                 style = if (selected) AcornTheme.typography.headline8 else AcornTheme.typography.body2,
             )
         },
-        leadingIcon = if (selected) {
-            {
-                Icon(
-                    painter = painterResource(id = iconsR.drawable.mozac_ic_checkmark_16),
-                    contentDescription = null,
-                )
-            }
-        } else {
-            null
-        },
+        leadingIcon =
+            if (selected) {
+                {
+                    Icon(
+                        painter = painterResource(id = iconsR.drawable.mozac_ic_checkmark_16),
+                        contentDescription = null,
+                    )
+                }
+            } else {
+                null
+            },
         colors = colors,
         shape = MaterialTheme.shapes.large,
     )
@@ -114,25 +115,27 @@ private fun SelectableChipWithCustomColorsPreview() {
                 SelectableChip(
                     text = "Yellow",
                     selected = false,
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Color.Yellow,
-                        containerColor = Color.DarkGray,
-                        selectedLabelColor = Color.Black,
-                        labelColor = Color.Gray,
-                    ),
+                    colors =
+                        FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color.Yellow,
+                            containerColor = Color.DarkGray,
+                            selectedLabelColor = Color.Black,
+                            labelColor = Color.Gray,
+                        ),
                     onClick = {},
                 )
 
                 SelectableChip(
                     text = "Cyan",
                     selected = true,
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Color.Cyan,
-                        containerColor = Color.DarkGray,
-                        selectedLabelColor = Color.Red,
-                        selectedLeadingIconColor = Color.Red,
-                        labelColor = Color.Gray,
-                    ),
+                    colors =
+                        FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color.Cyan,
+                            containerColor = Color.DarkGray,
+                            selectedLabelColor = Color.Red,
+                            selectedLeadingIconColor = Color.Red,
+                            labelColor = Color.Gray,
+                        ),
                     onClick = {},
                 )
             }

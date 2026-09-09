@@ -29,11 +29,12 @@ class SearchActionProviderTest {
 
     @Test
     fun `provider returns suggestion matching input`() = runTest {
-        val provider = SearchActionProvider(
-            store = BrowserStore(),
-            searchEngine = mock(),
-            searchUseCase = mock(),
-        )
+        val provider =
+            SearchActionProvider(
+                store = BrowserStore(),
+                searchEngine = mock(),
+                searchUseCase = mock(),
+            )
         val suggestions = provider.onInputChanged("firefox")
 
         assertEquals(1, suggestions.size)

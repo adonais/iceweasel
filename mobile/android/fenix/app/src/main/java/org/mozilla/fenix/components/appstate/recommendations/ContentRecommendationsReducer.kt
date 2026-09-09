@@ -15,42 +15,31 @@ import org.mozilla.fenix.ext.getFilteredStories
 import org.mozilla.fenix.ext.getStories
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesSelectedCategory
 
-/**
- * A [ContentRecommendationsAction] reducer for updating the content recommendations state in
- * [AppState].
- */
+/** A [ContentRecommendationsAction] reducer for updating the content recommendations state in [AppState]. */
 internal object ContentRecommendationsReducer {
 
-    /**
-     * Reduces the given [ContentRecommendationsAction] into a new [AppState].
-     */
+    /** Reduces the given [ContentRecommendationsAction] into a new [AppState]. */
     @Suppress("LongMethod", "CognitiveComplexMethod")
     fun reduce(state: AppState, action: ContentRecommendationsAction): AppState {
         return when (action) {
             is ContentRecommendationsAction.ContentRecommendationsFetched -> {
                 val updatedRecommendationsState = state.copyWithRecommendationsState {
-                    it.copy(
-                        contentRecommendations = action.recommendations,
-                    )
+                    it.copy(contentRecommendations = action.recommendations)
                 }
 
                 updatedRecommendationsState.copyWithRecommendationsState {
-                    it.copy(
-                        pocketStories = updatedRecommendationsState.getStories(),
-                    )
+                    it.copy(pocketStories = updatedRecommendationsState.getStories())
                 }
             }
 
             is ContentRecommendationsAction.SelectPocketStoriesCategory -> {
-                val updatedCategoriesState =
-                    state.copyWithRecommendationsState {
-                        it.copy(
-                            pocketStoriesCategoriesSelections =
-                            it.pocketStoriesCategoriesSelections + PocketRecommendedStoriesSelectedCategory(
-                                name = action.categoryName,
-                            ),
-                        )
-                    }
+                val updatedCategoriesState = state.copyWithRecommendationsState {
+                    it.copy(
+                        pocketStoriesCategoriesSelections =
+                            it.pocketStoriesCategoriesSelections +
+                                PocketRecommendedStoriesSelectedCategory(name = action.categoryName)
+                    )
+                }
 
                 // Selecting a category means the stories to be displayed needs to also be changed.
                 updatedCategoriesState.copyWithRecommendationsState {
@@ -62,9 +51,9 @@ internal object ContentRecommendationsReducer {
                 val updatedCategoriesState = state.copyWithRecommendationsState {
                     it.copy(
                         pocketStoriesCategoriesSelections =
-                        it.pocketStoriesCategoriesSelections.filterNot { category ->
-                            category.name == action.categoryName
-                        },
+                            it.pocketStoriesCategoriesSelections.filterNot { category ->
+                                category.name == action.categoryName
+                            }
                     )
                 }
 
@@ -99,27 +88,24 @@ internal object ContentRecommendationsReducer {
                 }
             }
 
-            is ContentRecommendationsAction.PocketStoriesClean -> state.copyWithRecommendationsState {
-                it.copy(
-                    pocketStoriesCategories = emptyList(),
-                    pocketStoriesCategoriesSelections = emptyList(),
-                    pocketStories = emptyList(),
-                    contentRecommendations = emptyList(),
-                    sponsoredContents = emptyList(),
-                )
-            }
-
-            is ContentRecommendationsAction.SponsoredContentsChange -> {
-                val updatedSponsoredContentsState = state.copyWithRecommendationsState {
+            is ContentRecommendationsAction.PocketStoriesClean ->
+                state.copyWithRecommendationsState {
                     it.copy(
-                        sponsoredContents = action.sponsoredContents,
+                        pocketStoriesCategories = emptyList(),
+                        pocketStoriesCategoriesSelections = emptyList(),
+                        pocketStories = emptyList(),
+                        contentRecommendations = emptyList(),
+                        sponsoredContents = emptyList(),
                     )
                 }
 
+            is ContentRecommendationsAction.SponsoredContentsChange -> {
+                val updatedSponsoredContentsState = state.copyWithRecommendationsState {
+                    it.copy(sponsoredContents = action.sponsoredContents)
+                }
+
                 updatedSponsoredContentsState.copyWithRecommendationsState {
-                    it.copy(
-                        pocketStories = updatedSponsoredContentsState.getStories(),
-                    )
+                    it.copy(pocketStories = updatedSponsoredContentsState.getStories())
                 }
             }
 
@@ -127,45 +113,45 @@ internal object ContentRecommendationsReducer {
                 val stories = action.impressions.map { it.story }
                 var updatedCategories = state.recommendationState.pocketStoriesCategories
 
-                stories.filterIsInstance<PocketRecommendedStory>()
-                    .forEach { shownStory ->
-                        updatedCategories = updatedCategories.map { category ->
-                            when (category.name == shownStory.category) {
-                                true -> {
-                                    category.copy(
-                                        stories = category.stories.map { story ->
+                stories.filterIsInstance<PocketRecommendedStory>().forEach { shownStory ->
+                    updatedCategories = updatedCategories.map { category ->
+                        when (category.name == shownStory.category) {
+                            true -> {
+                                category.copy(
+                                    stories =
+                                        category.stories.map { story ->
                                             when (story.title == shownStory.title) {
                                                 true -> story.copy(timesShown = story.timesShown.inc())
                                                 false -> story
                                             }
-                                        },
-                                    )
-                                }
-
-                                false -> category
+                                        }
+                                )
                             }
+
+                            false -> category
+                        }
+                    }
+                }
+
+                val recommendationsShown = stories.filterIsInstance<ContentRecommendation>()
+                val updatedRecommendations =
+                    state.recommendationState.contentRecommendations.map { recommendation ->
+                        if (recommendationsShown.contains(recommendation)) {
+                            recommendation.copy(impressions = recommendation.impressions.inc())
+                        } else {
+                            recommendation
                         }
                     }
 
-                val recommendationsShown = stories.filterIsInstance<ContentRecommendation>()
-                val updatedRecommendations = state.recommendationState.contentRecommendations.map { recommendation ->
-                    if (recommendationsShown.contains(recommendation)) {
-                        recommendation.copy(
-                            impressions = recommendation.impressions.inc(),
-                        )
-                    } else {
-                        recommendation
-                    }
-                }
-
                 val sponsoredContentShown = stories.filterIsInstance<SponsoredContent>()
-                val updatedSponsoredContents = state.recommendationState.sponsoredContents.map { spoc ->
-                    if (sponsoredContentShown.contains(spoc)) {
-                        spoc.recordNewImpression()
-                    } else {
-                        spoc
+                val updatedSponsoredContents =
+                    state.recommendationState.sponsoredContents.map { spoc ->
+                        if (sponsoredContentShown.contains(spoc)) {
+                            spoc.recordNewImpression()
+                        } else {
+                            spoc
+                        }
                     }
-                }
 
                 state.copyWithRecommendationsState {
                     it.copy(
@@ -176,15 +162,14 @@ internal object ContentRecommendationsReducer {
                 }
             }
 
-            is ContentRecommendationsAction.ContentRecommendationClicked,
-            -> state
+            is ContentRecommendationsAction.ContentRecommendationClicked -> state
         }
     }
 }
 
 @VisibleForTesting
 internal inline fun AppState.copyWithRecommendationsState(
-    crossinline update: (ContentRecommendationsState) -> ContentRecommendationsState,
+    crossinline update: (ContentRecommendationsState) -> ContentRecommendationsState
 ): AppState {
     return this.copy(recommendationState = update(recommendationState))
 }

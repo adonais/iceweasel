@@ -22,8 +22,8 @@ sealed class ShareResourceState(
      * @property url The full url to the content that should be shared.
      * @property contentType Content type (MIME type) to indicate the media type of the resource.
      * @property private Indicates if the share operation initiated from a private session.
-     * @property response A response object associated with this request, when provided can be
-     * used instead of performing a manual a download.
+     * @property response A response object associated with this request, when provided can be used instead of
+     *   performing a manual a download.
      * @property referrerUrl An optional url of the referrer.
      */
     data class InternetResource(

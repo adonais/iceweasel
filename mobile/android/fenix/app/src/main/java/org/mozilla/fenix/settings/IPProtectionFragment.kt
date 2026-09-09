@@ -20,6 +20,7 @@ import androidx.fragment.compose.content
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import java.time.LocalDate
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow
@@ -44,7 +45,6 @@ import org.mozilla.fenix.ipprotection.ui.IPProtectionSnackbarBinding
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
 import org.mozilla.fenix.theme.FirefoxTheme
-import java.time.LocalDate
 
 /** Fragment hosting the IP Protection settings screen. */
 class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
@@ -78,14 +78,15 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
         // To make the transition smoother, we prevent the fragment from drawing UI in that case.
         if (shouldHideUi(state)) return@content
 
-        val promoDate = FxNimbus.features.ipProtection.value().promoDeadline.let { promoDate ->
-            IsoPromoDeadline(promoDate)
-                .formatPromoDateOrCatch { requireComponents.analytics.crashReporter.submitCaughtException(it) }
-                ?.takeIf { LocalDate.now() <= LocalDate.parse(promoDate) }
-        }
+        val promoDate =
+            FxNimbus.features.ipProtection.value().promoDeadline.let { promoDate ->
+                IsoPromoDeadline(promoDate)
+                    .formatPromoDateOrCatch { requireComponents.analytics.crashReporter.submitCaughtException(it) }
+                    ?.takeIf { LocalDate.now() <= LocalDate.parse(promoDate) }
+            }
 
         LaunchedEffect(Unit) {
-           requireComponents.ipProtection.store.dispatch(IPProtectionAction.CheckAccount)
+            requireComponents.ipProtection.store.dispatch(IPProtectionAction.CheckAccount)
         }
 
         FirefoxTheme {
@@ -140,87 +141,85 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
         super.onViewCreated(view, savedInstanceState)
 
         fxaAccountAuthFlow.set(
-            feature = IPProtectionFxaAuthFlow(
-                accountManager = requireComponents.backgroundServices.accountManager,
-                store = requireComponents.ipProtection.store,
-                entrypoint = args.entrypoint,
-                onAuthRequested = { url, onCompleteAction ->
-                    val intent = SupportUtils.createAuthCustomTabIntent(requireContext(), url)
-                    intent.putExtra(INTENT_ON_COMPLETE, onCompleteAction)
-                    startActivity(intent)
-                },
-            ),
+            feature =
+                IPProtectionFxaAuthFlow(
+                    accountManager = requireComponents.backgroundServices.accountManager,
+                    store = requireComponents.ipProtection.store,
+                    entrypoint = args.entrypoint,
+                    onAuthRequested = { url, onCompleteAction ->
+                        val intent = SupportUtils.createAuthCustomTabIntent(requireContext(), url)
+                        intent.putExtra(INTENT_ON_COMPLETE, onCompleteAction)
+                        startActivity(intent)
+                    },
+                ),
             view = view,
             owner = this,
         )
 
         ipProtectionWarningBinding.set(
-            feature = IPProtectionWarningBinding(
-                store = requireComponents.ipProtection.store,
-                proxyUnavailable = {
-                    Vpn.proxyUnavailable.record()
-                    findNavController().navigate(
-                        HomeFragmentDirections.actionGlobalIpProtectionUnavailableDialog(),
-                    )
-                },
-            ),
+            feature =
+                IPProtectionWarningBinding(
+                    store = requireComponents.ipProtection.store,
+                    proxyUnavailable = {
+                        Vpn.proxyUnavailable.record()
+                        findNavController().navigate(HomeFragmentDirections.actionGlobalIpProtectionUnavailableDialog())
+                    },
+                ),
             owner = this,
             view = view,
         )
 
         ipProtectionSnackbarBinding.set(
-            feature = IPProtectionSnackbarBinding(
-                appStore = requireComponents.appStore,
-                snackbarDelegate = FenixSnackbarDelegate(
-                    snackbarHostState = snackbarHostState,
-                    scope = viewLifecycleOwner.lifecycleScope,
-                    context = requireContext(),
+            feature =
+                IPProtectionSnackbarBinding(
+                    appStore = requireComponents.appStore,
+                    snackbarDelegate =
+                        FenixSnackbarDelegate(
+                            snackbarHostState = snackbarHostState,
+                            scope = viewLifecycleOwner.lifecycleScope,
+                            context = requireContext(),
+                        ),
                 ),
-            ),
             owner = this,
             view = view,
         )
     }
 
     private fun handleOnLocationClicked() {
-        findNavController().navigate(
-            IPProtectionFragmentDirections.actionIpProtectionFragmentToIpProtectionLocationFragment(),
-        )
+        findNavController()
+            .navigate(IPProtectionFragmentDirections.actionIpProtectionFragmentToIpProtectionLocationFragment())
     }
 
     /**
-     * ServiceState is the source of truth for vpn "readiness". Proxy might error out, the data limit might
-     * be reached, but the user is entitled to interrace with it. We also have AccountStatus entitlement,
-     * but there is a tiny gap between as enrolling for IPProtection service, and the service actually
-     * becoming active and sending us data - the gap that should be presented as "connecting" state.
+     * ServiceState is the source of truth for vpn "readiness". Proxy might error out, the data limit might be reached,
+     * but the user is entitled to interrace with it. We also have AccountStatus entitlement, but there is a tiny gap
+     * between as enrolling for IPProtection service, and the service actually becoming active and sending us data - the
+     * gap that should be presented as "connecting" state.
      */
     @OptIn(ExperimentalAndroidComponentsApi::class)
     private fun IPProtectionState.readyToUse() = serviceStatus == ServiceState.Ready
 
     /**
-     * Syncing state locks the screen from interaction, so we want to be explicit about it: for now, it is
-     * specifically for the enrollment state - when the user has passed the auth flow, but the toolkit
-     * service has not been updated yet.
-     * Otherwise, if the ServiceState is not `Ready`, the user gets a "get started" button.
+     * Syncing state locks the screen from interaction, so we want to be explicit about it: for now, it is specifically
+     * for the enrollment state - when the user has passed the auth flow, but the toolkit service has not been updated
+     * yet. Otherwise, if the ServiceState is not `Ready`, the user gets a "get started" button.
      */
     @OptIn(ExperimentalAndroidComponentsApi::class)
     private fun IPProtectionState.syncingData(): Boolean {
         return serviceStatus == ServiceState.Unauthenticated &&
-            (
-                accountState.status == AccountStatus.AwaitingEnrollment ||
-                    accountState.status == AccountStatus.Authenticated ||
-                    accountState.status == AccountStatus.EnrolledAndEntitled
-            )
+            (accountState.status == AccountStatus.AwaitingEnrollment ||
+                accountState.status == AccountStatus.Authenticated ||
+                accountState.status == AccountStatus.EnrolledAndEntitled)
     }
 
-    private fun IPProtectionState.authInProgress() = when (accountState.status) {
-        AccountStatus.RequestingAuthentication,
-        AccountStatus.RequestingAuthorization,
-        AccountStatus.AwaitingAuthentication,
-        AccountStatus.AwaitingAuthorization,
-            -> true
-        else -> false
-    }
+    private fun IPProtectionState.authInProgress() =
+        when (accountState.status) {
+            AccountStatus.RequestingAuthentication,
+            AccountStatus.RequestingAuthorization,
+            AccountStatus.AwaitingAuthentication,
+            AccountStatus.AwaitingAuthorization -> true
+            else -> false
+        }
 
     private fun shouldHideUi(
         state: IPProtectionState,

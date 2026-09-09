@@ -8,7 +8,6 @@ const DEBUG_CONTRACTID = "@mozilla.org/xpcom/debug;1";
 const PRINTSETTINGS_CONTRACTID = "@mozilla.org/gfx/printsettings-service;1";
 const NS_OBSERVER_SERVICE_CONTRACTID = "@mozilla.org/observer-service;1";
 const NS_GFXINFO_CONTRACTID = "@mozilla.org/gfx/info;1";
-const IO_SERVICE_CONTRACTID = "@mozilla.org/network/io-service;1";
 
 // "<!--CLEAR-->"
 const BLANK_URL_FOR_CLEARING =

@@ -376,7 +376,7 @@ class ZeroLengthInnerPlaintextSetupTls13
       : TlsConnectTestBase(std::get<0>(GetParam()),
                            SSL_LIBRARY_VERSION_TLS_1_3),
         contentType_(std::get<1>(GetParam())),
-        padding_(std::get<2>(GetParam())){};
+        padding_(std::get<2>(GetParam())) {};
 
  protected:
   SSLContentType contentType_;
@@ -469,7 +469,7 @@ class ZeroLengthRecordSetup
   ZeroLengthRecordSetup()
       : TlsConnectTestBase(std::get<0>(GetParam()), std::get<1>(GetParam())),
         variant_(std::get<0>(GetParam())),
-        contentType_(std::get<2>(GetParam())){};
+        contentType_(std::get<2>(GetParam())) {};
 
   void createZeroLengthRecord(DataBuffer& buffer, unsigned epoch = 0,
                               unsigned seqn = 0) {

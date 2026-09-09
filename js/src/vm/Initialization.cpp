@@ -155,7 +155,7 @@ JS_PUBLIC_API const char* JS::detail::InitWithFailureDiagnostic(
 
   js::InitMallocAllocator();
 
-  RETURN_IF_FAIL(js::Mutex::Init());
+  RETURN_IF_FAIL(js::MutexBase::Init());
 
   js::gc::InitMemorySubsystem();  // Ensure gc::SystemPageSize() works.
 

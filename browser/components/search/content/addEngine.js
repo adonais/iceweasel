@@ -70,6 +70,18 @@ class EngineDialog {
     this._suggestUrl = document.getElementById("suggestUrl");
 
     this._form.addEventListener("input", e => this.validateInput(e.target));
+    // Errors are only revealed once the user leaves a field, or tries to
+    // submit, rather than while they're still typing; see `setValidity`.
+    this._form.addEventListener("focusout", e => {
+      if (e.target.localName == "input") {
+        this._revealValidity(e.target, e.target.validationMessage);
+      }
+    });
+    this._form.addEventListener("keypress", e => {
+      if (e.key == "Enter") {
+        this._revealAllValidity();
+      }
+    });
     document.addEventListener("dialogaccept", this.onAccept.bind(this));
     document.addEventListener("dialogextra1", () => this.showAdvanced());
   }
@@ -236,14 +248,49 @@ class EngineDialog {
       inputElement.setCustomValidity("");
     }
 
-    let errorLabel = inputElement.parentElement.querySelector(".error-label");
-    let validationMessage = inputElement.validationMessage;
-
-    // If valid, set the error label to "valid" to ensure the layout doesn't shift.
-    // The CSS already hides the error label based on the validity of `inputElement`.
-    errorLabel.textContent = validationMessage || "valid";
-
+    // The error label itself is only ever updated by `_revealValidity`, on
+    // focusout or on submit; updating it here too, on every keystroke, would
+    // mean assistive technology announces error messages while the user is
+    // still typing, talking over them.
     this._dialog.getButton("accept").disabled = !this._form.checkValidity();
+  }
+
+  /**
+   * Reveals the current validity of every field in the form, e.g. when the
+   * user tries to submit via Enter while the form is still invalid.
+   */
+  _revealAllValidity() {
+    for (let input of this._form.elements) {
+      this._revealValidity(input, input.validationMessage);
+    }
+  }
+
+  /**
+   * Updates the error label and ARIA attributes belonging to the passed
+   * input element to reflect its current validity.
+   *
+   * @param {HTMLInputElement} inputElement
+   * @param {string} validationMessage
+   *   The input's validation message, or an empty string if it is valid.
+   */
+  _revealValidity(inputElement, validationMessage) {
+    let errorLabel = inputElement.parentElement.querySelector(".error-label");
+
+    // The CSS reserves space for this label regardless of its content, so
+    // leaving it empty when valid doesn't shift the layout. Leaving it empty
+    // also means there's nothing for assistive technology to announce, since
+    // an empty node holds no useful information.
+    errorLabel.textContent = validationMessage;
+
+    // Only expose the error label to assistive technology while it holds a
+    // real error message.
+    if (validationMessage) {
+      inputElement.setAttribute("aria-invalid", "true");
+      inputElement.setAttribute("aria-describedby", errorLabel.id);
+    } else {
+      inputElement.removeAttribute("aria-invalid");
+      inputElement.removeAttribute("aria-describedby");
+    }
   }
 
   /**

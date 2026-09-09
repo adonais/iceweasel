@@ -8,12 +8,17 @@ import kotlin.test.assertNotNull
 
 /**
  * Loads a file from the resources folder and returns its content as a string object.
+ *
  * @param path The path where the file is located
  */
 fun Any.loadResourceAsString(path: String): String {
-    return javaClass.getResourceAsStream(path)!!.bufferedReader().use {
-        it.readText()
-    }.also {
-        assertNotNull(it)
-    }
+    return javaClass
+        .getResourceAsStream(path)!!
+        .bufferedReader()
+        .use {
+            it.readText()
+        }
+        .also {
+            assertNotNull(it)
+        }
 }

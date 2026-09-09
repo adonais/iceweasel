@@ -18,13 +18,15 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
         return NoStaticOrObjectMockingDetector()
     }
 
-    override fun getIssues(): List<Issue> = listOf(
-        NoStaticOrObjectMockingDetector.ISSUE_NO_STATIC_MOCKING,
-        NoStaticOrObjectMockingDetector.ISSUE_NO_OBJECT_MOCKING,
-    )
+    override fun getIssues(): List<Issue> =
+        listOf(
+            NoStaticOrObjectMockingDetector.ISSUE_NO_STATIC_MOCKING,
+            NoStaticOrObjectMockingDetector.ISSUE_NO_OBJECT_MOCKING,
+        )
 
-    private val mockkStubs = TestFiles.kotlin(
-        """
+    private val mockkStubs =
+        TestFiles.kotlin(
+                """
         package io.mockk
 
         annotation class JvmStatic
@@ -43,11 +45,13 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
         class MockKStubScope<T, R> {
             infix fun returns(value: R) { /* stub */ }
         }
-        """,
-    ).indented()
-
-    private val mockitoStubs = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val mockitoStubs =
+        TestFiles.kotlin(
+                """
         package org.mockito
 
         object Mockito {
@@ -65,11 +69,13 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
         interface StaticMockControl<T>
         interface ConstructionMockControl<T>
 
-        """,
-    ).indented()
-
-    private val logStub = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val logStub =
+        TestFiles.kotlin(
+                """
         package android.util
 
         object Log {
@@ -77,24 +83,28 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
             @JvmStatic fun w(tag: String, msg: String): Int = 0
             @JvmStatic fun d(tag: String, msg: String, tr: Throwable): Int = 0
         }
-        """,
-    ).indented()
-
-    private val singletonObjectStub = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val singletonObjectStub =
+        TestFiles.kotlin(
+                """
         package com.example.utils
 
         object MySingleton {
             fun doSomething() {}
             fun doSomethingElse(): String = "hello"
         }
-        """,
-    ).indented()
+        """
+            )
+            .indented()
 
     // --- Test Files with violations ---
 
-    private val mockkStaticUsage = TestFiles.kotlin(
-        """
+    private val mockkStaticUsage =
+        TestFiles.kotlin(
+                """
         package com.example.test
 
         import io.mockk.every
@@ -107,11 +117,13 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
                 every { Log.d(any(), any()) } returns 0
             }
         }
-        """,
-    ).indented()
-
-    private val unmockkStaticUsage = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val unmockkStaticUsage =
+        TestFiles.kotlin(
+                """
         package com.example.test
         import io.mockk.unmockkStatic
         import android.util.Log
@@ -120,11 +132,13 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
                 unmockkStatic(Log::class) // VIOLATION
             }
         }
-        """,
-    ).indented()
-
-    private val clearStaticMockUsage = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val clearStaticMockUsage =
+        TestFiles.kotlin(
+                """
         package com.example.test
         import io.mockk.clearStaticMock
         import android.util.Log
@@ -133,11 +147,13 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
                 clearStaticMock(Log::class) // VIOLATION
             }
         }
-        """,
-    ).indented()
-
-    private val mockkObjectUsage = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val mockkObjectUsage =
+        TestFiles.kotlin(
+                """
         package com.example.test
         import io.mockk.mockkObject
         import io.mockk.every
@@ -149,11 +165,13 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
                 every { MySingleton.doSomethingElse() } returns "mocked"
             }
         }
-        """,
-    ).indented()
-
-    private val unmockkObjectUsage = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val unmockkObjectUsage =
+        TestFiles.kotlin(
+                """
         package com.example.test
         import io.mockk.unmockkObject
         import com.example.utils.MySingleton // Needs singletonObjectStub
@@ -163,11 +181,13 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
                 unmockkObject(MySingleton) // VIOLATION
             }
         }
-        """,
-    ).indented()
-
-    private val clearObjectMockUsage = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val clearObjectMockUsage =
+        TestFiles.kotlin(
+                """
         package com.example.test
         import io.mockk.clearObjectMock
         import com.example.utils.MySingleton // Needs singletonObjectStub
@@ -177,11 +197,13 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
                 clearObjectMock(MySingleton) // VIOLATION
             }
         }
-        """,
-    ).indented()
-
-    private val mockitoMockStaticUsage = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val mockitoMockStaticUsage =
+        TestFiles.kotlin(
+                """
         package com.example.test
         import org.mockito.Mockito
         import android.util.Log
@@ -194,11 +216,13 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
                 Mockito.mockStatic(android.util.Log::class.java) // VIOLATION
             }
         }
-        """,
-    ).indented()
-
-    private val mockitoMockConstructionUsage = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val mockitoMockConstructionUsage =
+        TestFiles.kotlin(
+                """
         package com.example.test
         import org.mockito.Mockito
 
@@ -210,12 +234,14 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
                 Mockito.mockConstruction(SomeDependency::class.java) // VIOLATION
             }
         }
-        """,
-    ).indented()
+        """
+            )
+            .indented()
 
     // --- Test File with NO violations ---
-    private val acceptableMockingUsage = TestFiles.kotlin(
-        """
+    private val acceptableMockingUsage =
+        TestFiles.kotlin(
+                """
         package com.example.test
 
         import io.mockk.every
@@ -238,8 +264,9 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
                 service.performAction()
             }
         }
-        """,
-    ).indented()
+        """
+            )
+            .indented()
 
     @Test
     fun `mockkStatic usage reports NoStaticMocking`() {

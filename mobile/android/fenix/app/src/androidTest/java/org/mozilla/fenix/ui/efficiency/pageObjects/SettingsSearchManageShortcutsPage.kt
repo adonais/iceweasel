@@ -16,7 +16,8 @@ import org.mozilla.fenix.ui.efficiency.selectors.SettingsSearchManageShortcutsSe
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSearchSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
 
-class SettingsSearchManageShortcutsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
+class SettingsSearchManageShortcutsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) :
+    BasePage(composeRule) {
     override val pageName = "SettingsSearchManageShortcutsPage"
 
     init {
@@ -47,15 +48,13 @@ class SettingsSearchManageShortcutsPage(composeRule: AndroidComposeTestRule<Home
     /**
      * Toggles a search engine's shortcut checkbox.
      *
-     * The Compose checkbox exposes no testTag or content-description, so it can only be reached by its
-     * UIAutomator sibling index relative to the engine-name text node - the same handle the legacy
-     * SettingsSubMenuSearchRobot.selectSearchShortcut uses. checkboxIndex is engine-specific (e.g.
-     * Reddit = 10, YouTube = 13) and comes from the legacy EngineShortcut definitions.
+     * The Compose checkbox exposes no testTag or content-description, so it can only be reached by its UIAutomator
+     * sibling index relative to the engine-name text node - the same handle the legacy
+     * SettingsSubMenuSearchRobot.selectSearchShortcut uses. checkboxIndex is engine-specific (e.g. Reddit = 10, YouTube
+     * = 13) and comes from the legacy EngineShortcut definitions.
      */
     fun selectSearchShortcut(engineName: String, checkboxIndex: Int): SettingsSearchManageShortcutsPage {
-        mDevice.findObject(UiSelector().text(engineName))
-            .getFromParent(UiSelector().index(checkboxIndex))
-            .click()
+        mDevice.findObject(UiSelector().text(engineName)).getFromParent(UiSelector().index(checkboxIndex)).click()
         return this
     }
 }

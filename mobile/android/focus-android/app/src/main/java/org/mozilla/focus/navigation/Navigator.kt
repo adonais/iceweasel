@@ -18,12 +18,10 @@ import org.mozilla.focus.state.AppState
 import org.mozilla.focus.state.Screen
 
 /**
- * The [Navigator] observes changes to the [AppState] and triggers navigation
- * actions based on the current [Screen].
+ * The [Navigator] observes changes to the [AppState] and triggers navigation actions based on the current [Screen].
  *
- * It subscribes to a flow of [AppState], and whenever the [Screen] changes,
- * it calls the appropriate method on the provided [AppNavigation] implementation
- * to navigate the user to the new screen.
+ * It subscribes to a flow of [AppState], and whenever the [Screen] changes, it calls the appropriate method on the
+ * provided [AppNavigation] implementation to navigate the user to the new screen.
  *
  * @param stateFlow A [Flow] that emits the current [AppState].
  * @param navigation An implementation of [AppNavigation] that handles the actual screen transitions.
@@ -39,10 +37,12 @@ class Navigator(
     override fun start() {
         if (navigationJob?.isActive == true) return
 
-        navigationJob = stateFlow.map { state -> state.screen }
-            .distinctUntilChangedBy { screen -> screen.id }
-            .onEach { screen -> navigateTo(screen) }
-            .launchIn(scope)
+        navigationJob =
+            stateFlow
+                .map { state -> state.screen }
+                .distinctUntilChangedBy { screen -> screen.id }
+                .onEach { screen -> navigateTo(screen) }
+                .launchIn(scope)
     }
 
     override fun stop() {
@@ -54,9 +54,7 @@ class Navigator(
         when (screen) {
             is Screen.Home -> navigation.navigateToHome()
             is Screen.Browser -> navigation.navigateToBrowser(screen.tabId)
-            is Screen.EditUrl -> navigation.navigateToEditUrl(
-                screen.tabId,
-            )
+            is Screen.EditUrl -> navigation.navigateToEditUrl(screen.tabId)
             is Screen.FirstRun -> navigation.navigateToFirstRun()
             is Screen.Locked -> navigation.navigateToLockScreen(screen.bundle)
             is Screen.Settings -> navigation.navigateToSettings(screen.page)
@@ -68,13 +66,11 @@ class Navigator(
 }
 
 /**
- * Defines the navigation actions available within the application.
- * Each method corresponds to a specific screen or navigation flow.
+ * Defines the navigation actions available within the application. Each method corresponds to a specific screen or
+ * navigation flow.
  */
 interface AppNavigation {
-    /**
-     * Navigates to the home screen.
-     */
+    /** Navigates to the home screen. */
     fun navigateToHome()
 
     /**
@@ -91,9 +87,7 @@ interface AppNavigation {
      */
     fun navigateToEditUrl(tabId: String)
 
-    /**
-     * Navigates to the first run screen.
-     */
+    /** Navigates to the first run screen. */
     fun navigateToFirstRun()
 
     /**
@@ -110,9 +104,7 @@ interface AppNavigation {
      */
     fun navigateToSitePermissionOptions(sitePermission: SitePermission)
 
-    /**
-     * Navigates to the second screen of the onboarding flow.
-     */
+    /** Navigates to the second screen of the onboarding flow. */
     fun navigateToOnboardingSecondScreen()
 
     /**
@@ -122,8 +114,6 @@ interface AppNavigation {
      */
     fun navigateToLockScreen(bundle: Bundle? = null)
 
-    /**
-     * Navigates to the crash list screen.
-     */
+    /** Navigates to the crash list screen. */
     fun showCrashList()
 }

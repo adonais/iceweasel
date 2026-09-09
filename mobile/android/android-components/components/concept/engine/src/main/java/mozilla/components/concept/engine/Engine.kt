@@ -30,18 +30,10 @@ import mozilla.components.concept.engine.webpush.WebPushDelegate
 import mozilla.components.concept.engine.webpush.WebPushHandler
 import org.json.JSONObject
 
-/**
- * Entry point for interacting with the engine implementation.
- */
+/** Entry point for interacting with the engine implementation. */
 interface Engine :
-    WebExtensionRuntime,
-    TranslationsRuntime,
-    BrowserPreferencesRuntime,
-    AddressStructureRuntime,
-    DataCleanable {
-    /**
-     * Describes a combination of browsing data types stored by the engine.
-     */
+    WebExtensionRuntime, TranslationsRuntime, BrowserPreferencesRuntime, AddressStructureRuntime, DataCleanable {
+    /** Describes a combination of browsing data types stored by the engine. */
     class BrowsingData internal constructor(val types: Int) {
         companion object {
             const val COOKIES: Int = 1 shl 0
@@ -56,9 +48,13 @@ interface Engine :
             const val ALL: Int = 1 shl 9
 
             fun allCaches() = BrowsingData(ALL_CACHES)
+
             fun allSiteSettings() = BrowsingData(ALL_SITE_SETTINGS)
+
             fun allSiteData() = BrowsingData(ALL_SITE_DATA)
+
             fun all() = BrowsingData(ALL)
+
             fun select(vararg types: Int) = BrowsingData(types.sum())
         }
 
@@ -74,124 +70,88 @@ interface Engine :
         override fun hashCode() = types
     }
 
-    /**
-     * HTTPS-Only mode: Connections will be upgraded to HTTPS.
-     */
+    /** HTTPS-Only mode: Connections will be upgraded to HTTPS. */
     enum class HttpsOnlyMode {
-        /**
-         * HTTPS-Only Mode disabled: Allow all insecure connections.
-         */
+        /** HTTPS-Only Mode disabled: Allow all insecure connections. */
         DISABLED,
 
         /**
-         * HTTPS-Only Mode enabled only in private tabs: Allow insecure connections in normal
-         * browsing, but only HTTPS in private browsing.
+         * HTTPS-Only Mode enabled only in private tabs: Allow insecure connections in normal browsing, but only HTTPS
+         * in private browsing.
          */
         ENABLED_PRIVATE_ONLY,
 
-        /**
-         * HTTPS-Only Mode enabled: Only allow HTTPS connections.
-         */
+        /** HTTPS-Only Mode enabled: Only allow HTTPS connections. */
         ENABLED,
     }
 
-    /**
-     * DoH Settings Mode
-     */
+    /** DoH Settings Mode */
     enum class DohSettingsMode {
-        /**
-         * DoH setting is set to "Default", corresponds to TRR_MODE_OFF (0) from GeckoView.
-         */
+        /** DoH setting is set to "Default", corresponds to TRR_MODE_OFF (0) from GeckoView. */
         DEFAULT,
 
-        /**
-         * DoH setting is set to "Increased", corresponds to TRR_MODE_FIRST (2) from GeckoView.
-         */
+        /** DoH setting is set to "Increased", corresponds to TRR_MODE_FIRST (2) from GeckoView. */
         INCREASED,
 
-        /**
-         * DoH setting is set to "Max", corresponds to TRR_MODE_ONLY (3) from GeckoView.
-         */
+        /** DoH setting is set to "Max", corresponds to TRR_MODE_ONLY (3) from GeckoView. */
         MAX,
 
-        /**
-         * DoH is disabled, corresponds to TRR_MODE_DISABLED (5) from GeckoView.
-         */
+        /** DoH is disabled, corresponds to TRR_MODE_DISABLED (5) from GeckoView. */
         OFF,
     }
 
-    /**
-     * Firefox Relay feature mode for controlling the state of the integration.
-     */
+    /** Firefox Relay feature mode for controlling the state of the integration. */
     enum class FirefoxRelayMode {
-        /**
-         * Firefox Relay is available but not yet offered to the user.
-         */
+        /** Firefox Relay is available but not yet offered to the user. */
         AVAILABLE,
 
-        /**
-         * Firefox Relay has been offered to the user.
-         */
+        /** Firefox Relay has been offered to the user. */
         OFFERED,
 
-        /**
-         * Firefox Relay is enabled.
-         */
+        /** Firefox Relay is enabled. */
         ENABLED,
 
-        /**
-         * Firefox Relay is disabled.
-         */
+        /** Firefox Relay is disabled. */
         DISABLED,
     }
 
     /**
-     * Makes sure all required engine initialization logic is executed. The
-     * details are specific to individual implementations, but the following must be true:
+     * Makes sure all required engine initialization logic is executed. The details are specific to individual
+     * implementations, but the following must be true:
      *
      * - The engine must be operational after this method was called successfully
      * - Calling this method on an engine that is already initialized has no effect
      */
-    @MainThread
-    fun warmUp() = Unit
+    @MainThread fun warmUp() = Unit
 
     /**
      * Creates a new view for rendering web content.
      *
      * @param context an application context
      * @param attrs optional set of attributes
-     *
      * @return new newly created [EngineView].
      */
     fun createView(context: Context, attrs: AttributeSet? = null): EngineView
 
     /**
-     * Creates a new engine session. If [speculativeCreateSession] is supported this
-     * method returns the prepared [EngineSession] if it is still applicable i.e.
-     * the parameter(s) ([private]) are equal.
+     * Creates a new engine session. If [speculativeCreateSession] is supported this method returns the prepared
+     * [EngineSession] if it is still applicable i.e. the parameter(s) ([private]) are equal.
      *
      * @param private whether or not this session should use private mode.
      * @param contextId the session context ID for this session.
-     *
      * @return the newly created [EngineSession].
      */
-    @MainThread
-    fun createSession(private: Boolean = false, contextId: String? = null): EngineSession
+    @MainThread fun createSession(private: Boolean = false, contextId: String? = null): EngineSession
 
-    /**
-     * Create a new [EngineSessionState] instance from the serialized JSON representation.
-     */
+    /** Create a new [EngineSessionState] instance from the serialized JSON representation. */
     fun createSessionState(json: JSONObject): EngineSessionState
 
-    /**
-     * Creates a new [EngineSessionState] instances from the serialized JSON representation.
-     */
+    /** Creates a new [EngineSessionState] instances from the serialized JSON representation. */
     fun createSessionStateFrom(reader: JsonReader): EngineSessionState
 
     /**
-     * Returns the name of this engine. The returned string might be used
-     * in filenames and must therefore only contain valid filename
-     * characters.
+     * Returns the name of this engine. The returned string might be used in filenames and must therefore only contain
+     * valid filename characters.
      *
      * @return the engine name as specified by concrete implementations.
      */
@@ -200,52 +160,44 @@ interface Engine :
     /**
      * Opens a speculative connection to the host of [url].
      *
-     * This is useful if an app thinks it may be making a request to that host in the near future. If no request
-     * is made, the connection will be cleaned up after an unspecified.
+     * This is useful if an app thinks it may be making a request to that host in the near future. If no request is
+     * made, the connection will be cleaned up after an unspecified.
      *
      * Not all [Engine] implementations may actually implement this.
      */
     fun speculativeConnect(url: String)
 
     /**
-     * Informs the engine that an [EngineSession] is likely to be requested soon
-     * via [createSession]. This is useful in case creating an engine session is
-     * costly and an application wants to decide when the session should be created
-     * without having to manage the session itself i.e. when it may or may not
-     * need it.
+     * Informs the engine that an [EngineSession] is likely to be requested soon via [createSession]. This is useful in
+     * case creating an engine session is costly and an application wants to decide when the session should be created
+     * without having to manage the session itself i.e. when it may or may not need it.
      *
      * @param private whether or not the session should use private mode.
      * @param contextId the session context ID for the session.
      */
-    @MainThread
-    fun speculativeCreateSession(private: Boolean = false, contextId: String? = null) = Unit
+    @MainThread fun speculativeCreateSession(private: Boolean = false, contextId: String? = null) = Unit
 
     /**
-     * Removes and closes a speculative session created by [speculativeCreateSession]. This is
-     * useful in case the session should no longer be used e.g. because engine settings have
-     * changed.
+     * Removes and closes a speculative session created by [speculativeCreateSession]. This is useful in case the
+     * session should no longer be used e.g. because engine settings have changed.
      */
-    @MainThread
-    fun clearSpeculativeSession() = Unit
+    @MainThread fun clearSpeculativeSession() = Unit
 
     /**
-     * Registers a [WebNotificationDelegate] to be notified of engine events
-     * related to web notifications
+     * Registers a [WebNotificationDelegate] to be notified of engine events related to web notifications
      *
      * @param webNotificationDelegate callback to be invoked for web notification events.
      */
-    fun registerWebNotificationDelegate(
-        webNotificationDelegate: WebNotificationDelegate,
-    ): Unit = throw UnsupportedOperationException("Web notification support is not available in this engine")
+    fun registerWebNotificationDelegate(webNotificationDelegate: WebNotificationDelegate): Unit =
+        throw UnsupportedOperationException("Web notification support is not available in this engine")
 
     /**
      * Registers a [WebPushDelegate] to be notified of engine events related to web extensions.
      *
      * @return A [WebPushHandler] to notify the engine with messages and subscriptions when are delivered.
      */
-    fun registerWebPushDelegate(
-        webPushDelegate: WebPushDelegate,
-    ): WebPushHandler = throw UnsupportedOperationException("Web Push support is not available in this engine")
+    fun registerWebPushDelegate(webPushDelegate: WebPushDelegate): WebPushHandler =
+        throw UnsupportedOperationException("Web Push support is not available in this engine")
 
     /**
      * Registers an [IPProtectionDelegate] to be notified of IP protection state changes.
@@ -253,42 +205,30 @@ interface Engine :
      * @return An [IPProtectionHandler] to control the IP protection proxy and manage auth tokens.
      */
     @ExperimentalAndroidComponentsApi
-    fun registerIPProtectionDelegate(
-        delegate: IPProtectionDelegate,
-    ): IPProtectionHandler = throw UnsupportedOperationException("IP Protection is not available in this engine")
+    fun registerIPProtectionDelegate(delegate: IPProtectionDelegate): IPProtectionHandler =
+        throw UnsupportedOperationException("IP Protection is not available in this engine")
 
-    /**
-     * Un-registers the attached [IPProtectionDelegate] if one was added with [registerIPProtectionDelegate].
-     */
+    /** Un-registers the attached [IPProtectionDelegate] if one was added with [registerIPProtectionDelegate]. */
     @ExperimentalAndroidComponentsApi
     fun unregisterIPProtectionDelegate(): Unit =
         throw UnsupportedOperationException("IP Protection is not available in this engine")
 
-    /**
-     * Registers an [ActivityDelegate] to be notified on activity events that are needed by the engine.
-     */
-    fun registerActivityDelegate(
-        activityDelegate: ActivityDelegate,
-    ): Unit = throw UnsupportedOperationException("This engine does not have support for an Activity delegate.")
+    /** Registers an [ActivityDelegate] to be notified on activity events that are needed by the engine. */
+    fun registerActivityDelegate(activityDelegate: ActivityDelegate): Unit =
+        throw UnsupportedOperationException("This engine does not have support for an Activity delegate.")
 
-    /**
-     * Un-registers the attached [ActivityDelegate] if one was added with [registerActivityDelegate].
-     */
+    /** Un-registers the attached [ActivityDelegate] if one was added with [registerActivityDelegate]. */
     fun unregisterActivityDelegate(): Unit =
         throw UnsupportedOperationException("This engine does not have support for an Activity delegate.")
 
     /**
-     * Registers an [OrientationDelegate] to be notified when a website asked the engine
-     * to lock the the app on a certain screen orientation.
+     * Registers an [OrientationDelegate] to be notified when a website asked the engine to lock the the app on a
+     * certain screen orientation.
      */
-    fun registerScreenOrientationDelegate(
-        delegate: OrientationDelegate,
-    ): Unit = throw UnsupportedOperationException("This engine does not have support for an Activity delegate.")
+    fun registerScreenOrientationDelegate(delegate: OrientationDelegate): Unit =
+        throw UnsupportedOperationException("This engine does not have support for an Activity delegate.")
 
-    /**
-     * Un-registers the attached [OrientationDelegate] if one was added with
-     * [registerScreenOrientationDelegate].
-     */
+    /** Un-registers the attached [OrientationDelegate] if one was added with [registerScreenOrientationDelegate]. */
     fun unregisterScreenOrientationDelegate(): Unit =
         throw UnsupportedOperationException("This engine does not have support for an Activity delegate.")
 
@@ -297,24 +237,19 @@ interface Engine :
      *
      * @param serviceWorkerDelegate [ServiceWorkerDelegate] responding to all service workers events and requests.
      */
-    fun registerServiceWorkerDelegate(
-        serviceWorkerDelegate: ServiceWorkerDelegate,
-    ): Unit = throw UnsupportedOperationException("Service workers support not available in this engine")
+    fun registerServiceWorkerDelegate(serviceWorkerDelegate: ServiceWorkerDelegate): Unit =
+        throw UnsupportedOperationException("Service workers support not available in this engine")
 
-    /**
-     * Un-registers the attached [ServiceWorkerDelegate] if one was added with
-     * [registerServiceWorkerDelegate].
-     */
+    /** Un-registers the attached [ServiceWorkerDelegate] if one was added with [registerServiceWorkerDelegate]. */
     fun unregisterServiceWorkerDelegate(): Unit =
         throw UnsupportedOperationException("Service workers support not available in this engine")
 
     /**
      * Handles user interacting with a web notification.
      *
-     * @param webNotification [Parcelable] representing a web notification.
-     * If the `Parcelable` is not a web notification this method will be no-op.
+     * @param webNotification [Parcelable] representing a web notification. If the `Parcelable` is not a web
+     *   notification this method will be no-op.
      * @param action The action name if an action button is clicked, otherwise null.
-     *
      * @see <a href="https://developer.mozilla.org/en-US/docs/Web/API/Notification">MDN Notification docs</a>
      */
     fun handleWebNotificationClick(webNotification: Parcelable, action: String?): Unit =
@@ -338,12 +273,8 @@ interface Engine :
     fun getTrackersLog(
         session: EngineSession,
         onSuccess: (List<TrackerLog>) -> Unit,
-        onError: (Throwable) -> Unit = { },
-    ): Unit = onError(
-        UnsupportedOperationException(
-            "getTrackersLog is not supported by this engine.",
-        ),
-    )
+        onError: (Throwable) -> Unit = {},
+    ): Unit = onError(UnsupportedOperationException("getTrackersLog is not supported by this engine."))
 
     /**
      * Fetch aggregate content blocking events by date range from the tracking protection database.
@@ -357,12 +288,11 @@ interface Engine :
         dateFrom: Long,
         dateTo: Long,
         onSuccess: (List<TrackingProtectionEvent>) -> Unit,
-        onError: (Throwable) -> Unit = { },
-    ): Unit = onError(
-        UnsupportedOperationException(
-            "getTrackingProtectionEventsByDateRange is not supported by this engine.",
-        ),
-    )
+        onError: (Throwable) -> Unit = {},
+    ): Unit =
+        onError(
+            UnsupportedOperationException("getTrackingProtectionEventsByDateRange is not supported by this engine.")
+        )
 
     /**
      * Get the total count of all content blocking events ever recorded.
@@ -372,28 +302,20 @@ interface Engine :
      */
     fun sumAllTrackingProtectionEvents(
         onSuccess: (Int) -> Unit,
-        onError: (Throwable) -> Unit = { },
-    ): Unit = onError(
-        UnsupportedOperationException(
-            "sumAllTrackingProtectionEvents is not supported by this engine.",
-        ),
-    )
+        onError: (Throwable) -> Unit = {},
+    ): Unit = onError(UnsupportedOperationException("sumAllTrackingProtectionEvents is not supported by this engine."))
 
     /**
      * Get the earliest recorded date in the content blocking database.
      *
-     * @param onSuccess callback invoked with the earliest date as milliseconds since epoch,
-     *  or null if no data exists.
+     * @param onSuccess callback invoked with the earliest date as milliseconds since epoch, or null if no data exists.
      * @param onError callback invoked if fetching failed.
      */
     fun getEarliestTrackingProtectionDate(
         onSuccess: (Long?) -> Unit,
-        onError: (Throwable) -> Unit = { },
-    ): Unit = onError(
-        UnsupportedOperationException(
-            "getEarliestTrackingProtectionDate is not supported by this engine.",
-        ),
-    )
+        onError: (Throwable) -> Unit = {},
+    ): Unit =
+        onError(UnsupportedOperationException("getEarliestTrackingProtectionDate is not supported by this engine."))
 
     /**
      * Clear all persisted data about trackers blocked in previous browsing sessions.
@@ -402,39 +324,24 @@ interface Engine :
      * @param onError optional callback invoked if clearing failed.
      */
     fun clearTrackingProtectionData(
-        onSuccess: () -> Unit = { },
-        onError: (Throwable) -> Unit = { },
-    ): Unit = onError(
-        UnsupportedOperationException(
-            "clearTrackingProtectionData is not supported by this engine.",
-        ),
-    )
+        onSuccess: () -> Unit = {},
+        onError: (Throwable) -> Unit = {},
+    ): Unit = onError(UnsupportedOperationException("clearTrackingProtectionData is not supported by this engine."))
 
-    /**
-     * Provides access to the tracking protection exception list for this engine.
-     */
+    /** Provides access to the tracking protection exception list for this engine. */
     val trackingProtectionExceptionStore: TrackingProtectionExceptionStorage
         get() = throw UnsupportedOperationException("TrackingProtectionExceptionStorage not supported by this engine.")
 
-    /**
-     * Provides access to Firefox Profiler features.
-     * See [Profiler] for more information.
-     */
+    /** Provides access to Firefox Profiler features. See [Profiler] for more information. */
     val profiler: Profiler?
 
-    /**
-     * Provides access to the settings of this engine.
-     */
+    /** Provides access to the settings of this engine. */
     val settings: Settings
 
-    /**
-     * Returns the version of the engine as [EngineVersion] object.
-     */
+    /** Returns the version of the engine as [EngineVersion] object. */
     val version: EngineVersion
 
-    /**
-     * Provides access to the runtime AI features for this engine.
-     */
+    /** Provides access to the runtime AI features for this engine. */
     val aiFeatures: AIFeaturesRuntime
         get() = object : AIFeaturesRuntime {}
 }

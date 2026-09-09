@@ -26,7 +26,8 @@ class PositionOnScreenMatcher(
 ) : TypeSafeMatcher<View>() {
 
     enum class Position {
-        TOP, BOTTOM,
+        TOP,
+        BOTTOM,
     }
 
     private var failureReason: String = ""
@@ -56,23 +57,24 @@ class PositionOnScreenMatcher(
                 if (!isAtTop) {
                     failureReason =
                         "${view.resources.getResourceName(view.id)} top ($viewTopY) " +
-                                "is not aligned with visible screen top (${visibleDisplayFrame.top}). " +
-                                "View bottom: $viewBottomY, View height: ${view.height}. " +
-                                "Usable screen height (approx): $screenHeight"
+                            "is not aligned with visible screen top (${visibleDisplayFrame.top}). " +
+                            "View bottom: $viewBottomY, View height: ${view.height}. " +
+                            "Usable screen height (approx): $screenHeight"
                 }
 
                 isAtTop
             }
             Position.BOTTOM -> {
-                val isAtBottom = viewBottomY >= visibleDisplayFrame.bottom - tolerance &&
+                val isAtBottom =
+                    viewBottomY >= visibleDisplayFrame.bottom - tolerance &&
                         viewBottomY <= visibleDisplayFrame.bottom + tolerance
 
                 if (!isAtBottom) {
                     failureReason =
                         "${view.resources.getResourceName(view.id)} bottom ($viewBottomY) " +
-                                "is not aligned with visible screen bottom (${visibleDisplayFrame.bottom}). " +
-                                "View top: $viewTopY, View height: ${view.height}. " +
-                                "Usable screen height (approx): $screenHeight"
+                            "is not aligned with visible screen bottom (${visibleDisplayFrame.bottom}). " +
+                            "View top: $viewTopY, View height: ${view.height}. " +
+                            "Usable screen height (approx): $screenHeight"
                 }
                 isAtBottom
             }
@@ -85,7 +87,6 @@ class PositionOnScreenMatcher(
  *
  * @param position The position to check for.
  * @param tolerance Tolerance for avoiding pixel rounding issues or minor layout differences. Defaults to 10.
- *
  * @throws AssertionFailedError if there current View is not at the wanted position.
  */
 fun isAtPosition(position: PositionOnScreenMatcher.Position, tolerance: Int = TOLERANCE): Matcher<View> {

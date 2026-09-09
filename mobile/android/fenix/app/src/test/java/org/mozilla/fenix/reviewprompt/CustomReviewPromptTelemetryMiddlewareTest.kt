@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.reviewprompt
 
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.telemetry.glean.private.RecordedEvent
 import org.junit.Assert.assertEquals
@@ -14,13 +15,11 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.CustomReviewPrompt
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class) // For gleanTestRule
 class CustomReviewPromptTelemetryMiddlewareTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     @Test
     fun `WHEN Displayed action is dispatched THEN promptDisplayed event is recorded`() {
@@ -95,13 +94,11 @@ class CustomReviewPromptTelemetryMiddlewareTest {
     }
 
     private fun createStore(
-        initialState: CustomReviewPromptState = CustomReviewPromptState.PrePrompt,
+        initialState: CustomReviewPromptState = CustomReviewPromptState.PrePrompt
     ): CustomReviewPromptStore {
         return CustomReviewPromptStore(
             initialState = initialState,
-            middleware = listOf(
-                CustomReviewPromptTelemetryMiddleware(),
-            ),
+            middleware = listOf(CustomReviewPromptTelemetryMiddleware()),
         )
     }
 

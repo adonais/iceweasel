@@ -23,16 +23,17 @@ class PasswordGeneratorDialogFragmentTest {
     @Before
     fun setup() {
         openMocks(this)
-        fragment = spy(
-            PasswordGeneratorDialogFragment.newInstance(
-                sessionId = "sessionId",
-                promptRequestUID = "uid",
-                generatedPassword = "StrongPassword123#",
-                currentUrl = "https://www.mozilla.org",
-                onSavedGeneratedPassword = { _ -> },
-                colorsProvider = mock(),
-            ),
-        )
+        fragment =
+            spy(
+                PasswordGeneratorDialogFragment.newInstance(
+                    sessionId = "sessionId",
+                    promptRequestUID = "uid",
+                    generatedPassword = "StrongPassword123#",
+                    currentUrl = "https://www.mozilla.org",
+                    onSavedGeneratedPassword = { _ -> },
+                    colorsProvider = mock(),
+                )
+            )
     }
 
     @Test

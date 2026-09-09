@@ -1,4 +1,5 @@
 import { render } from "@testing-library/react";
+import { WrapWithProvider } from "test/jest/test-utils";
 import { AdBannerContextMenu } from "content-src/components/DiscoveryStreamComponents/AdBannerContextMenu/AdBannerContextMenu";
 
 const defaultSpoc = {
@@ -10,13 +11,15 @@ const defaultSpoc = {
 describe("<AdBannerContextMenu>", () => {
   it("should render", () => {
     const { container } = render(
-      <AdBannerContextMenu
-        dispatch={jest.fn()}
-        spoc={defaultSpoc}
-        position={0}
-        type="newtab_spocs"
-        showAdReporting={false}
-      />
+      <WrapWithProvider>
+        <AdBannerContextMenu
+          dispatch={jest.fn()}
+          spoc={defaultSpoc}
+          position={0}
+          type="newtab_spocs"
+          showAdReporting={false}
+        />
+      </WrapWithProvider>
     );
     expect(
       container.querySelector(".ads-context-menu-wrapper")

@@ -9,16 +9,16 @@ import android.content.Intent
 import androidx.browser.customtabs.CustomTabColorSchemeParams
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.net.toUri
+import com.google.android.material.R as materialR
+import java.io.UnsupportedEncodingException
+import java.net.URLEncoder
+import java.util.Locale
 import mozilla.components.support.ktx.android.content.appVersionName
 import mozilla.components.support.ktx.android.content.getColorFromAttr
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.IntentReceiverActivity
 import org.mozilla.fenix.customtabs.EXTRA_IS_SANDBOX_CUSTOM_TAB
 import org.mozilla.fenix.settings.account.AuthIntentReceiverActivity
-import java.io.UnsupportedEncodingException
-import java.net.URLEncoder
-import java.util.Locale
-import com.google.android.material.R as materialR
 
 object SupportUtils {
     const val RATE_APP_URL = "market://details?id=" + BuildConfig.APPLICATION_ID
@@ -54,7 +54,7 @@ object SupportUtils {
         HTTPS_ONLY_MODE("https-only-mode-firefox-android"),
         DNS_OVER_HTTPS("configure-dns-over-https-protection-levels-firefox-android"),
         DNS_OVER_HTTPS_LOCAL_PROVIDER(
-            "configure-dns-over-https-protection-levels-firefox-android#w_what-is-a-local-provider",
+            "configure-dns-over-https-protection-levels-firefox-android#w_what-is-a-local-provider"
         ),
         DNS_OVER_HTTPS_NETWORK("configure-dns-over-https-protection-levels-firefox-android"),
         UNSIGNED_ADDONS("unsigned-addons"),
@@ -72,12 +72,9 @@ object SupportUtils {
         RELAY("relay-masks-android"),
         VPN("mobile-android-vpn"),
 
-        /**
-         * SUMO page for Local Network Access & Local Device Access permissions
-         */
+        /** SUMO page for Local Network Access & Local Device Access permissions */
         LOCAL_NETWORK_AND_DEVICE_ACCESS("control-personal-device-local-network-permissions-firefox-android"),
         PAGE_SUMMARIZATION("summarize-pages-android"),
-
         CLOUD_SUPPORTED_FEATURES("accessing-cloud-supported-features-firefox"),
     }
 
@@ -89,9 +86,7 @@ object SupportUtils {
         TERMS_OF_SERVICE("about/legal/terms/firefox/"),
     }
 
-    /**
-     * Gets a support page URL for the corresponding topic.
-     */
+    /** Gets a support page URL for the corresponding topic. */
     fun getSumoURLForTopic(
         context: Context,
         topic: SumoTopic,
@@ -103,17 +98,17 @@ object SupportUtils {
         val appVersion = context.appVersionName.replace(" ", "")
         val osTarget = "Android"
         val langTag = getLanguageTag(locale)
-        val platform = if (useMobilePage) {
-            "mobile"
-        } else {
-            "firefox"
-        }
+        val platform =
+            if (useMobilePage) {
+                "mobile"
+            } else {
+                "firefox"
+            }
         return "https://support.mozilla.org/1/$platform/$appVersion/$osTarget/$langTag/$escapedTopic"
     }
 
     /**
-     * Gets a support page URL for the corresponding topic.
-     * Used when the app version and os are not part of the URL.
+     * Gets a support page URL for the corresponding topic. Used when the app version and os are not part of the URL.
      */
     fun getGenericSumoURLForTopic(topic: SumoTopic, locale: Locale = Locale.getDefault()): String {
         val escapedTopic = getEncodedTopicUTF8(topic.topicStr)
@@ -127,24 +122,26 @@ object SupportUtils {
         return "https://www.mozilla.org/$langTag/$path"
     }
 
-    fun createCustomTabIntent(context: Context, url: String): Intent = CustomTabsIntent.Builder()
-        .setInstantAppsEnabled(false)
-        .setDefaultColorSchemeParams(
-            CustomTabColorSchemeParams.Builder()
-                .setToolbarColor(context.getColorFromAttr(materialR.attr.colorSurface)).build(),
-        )
-        .build()
-        .intent
-        .setData(url.toUri())
-        .setClassName(context, IntentReceiverActivity::class.java.name)
-        .setPackage(context.packageName)
+    fun createCustomTabIntent(context: Context, url: String): Intent =
+        CustomTabsIntent.Builder()
+            .setInstantAppsEnabled(false)
+            .setDefaultColorSchemeParams(
+                CustomTabColorSchemeParams.Builder()
+                    .setToolbarColor(context.getColorFromAttr(materialR.attr.colorSurface))
+                    .build()
+            )
+            .build()
+            .intent
+            .setData(url.toUri())
+            .setClassName(context, IntentReceiverActivity::class.java.name)
+            .setPackage(context.packageName)
 
     fun createAuthCustomTabIntent(context: Context, url: String): Intent =
         createCustomTabIntent(context, url).setClassName(context, AuthIntentReceiverActivity::class.java.name)
 
     /**
-     * Custom tab that cannot open the content in Firefox directly.
-     * This ensures the content is contained to this custom tab only.
+     * Custom tab that cannot open the content in Firefox directly. This ensures the content is contained to this custom
+     * tab only.
      */
     private fun createSandboxCustomTabIntent(context: Context, url: String): Intent =
         createCustomTabIntent(context, url).putExtra(EXTRA_IS_SANDBOX_CUSTOM_TAB, true)

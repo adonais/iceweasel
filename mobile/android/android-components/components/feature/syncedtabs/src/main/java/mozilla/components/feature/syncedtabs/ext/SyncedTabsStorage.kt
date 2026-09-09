@@ -30,7 +30,7 @@ internal suspend fun SyncedTabsStorage.getActiveDeviceTabs(
                         tab = activeTabEntry,
                         lastUsed = tab.lastUsed,
                         deviceType = client.deviceType,
-                    ),
+                    )
                 )
 
                 if (result.size == limit) {

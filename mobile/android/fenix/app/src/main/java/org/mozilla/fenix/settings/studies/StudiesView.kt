@@ -46,8 +46,7 @@ class StudiesView(
 ) : StudiesAdapterDelegate {
     private val logger = Logger("StudiesView")
 
-    @VisibleForTesting
-    internal lateinit var adapter: StudiesAdapter
+    @VisibleForTesting internal lateinit var adapter: StudiesAdapter
 
     @Suppress("TooGenericExceptionCaught", "ApplySharedPref")
     fun bind() {
@@ -55,9 +54,7 @@ class StudiesView(
         provideStudiesSwitch().isChecked = settings.isExperimentationEnabled
         provideStudiesSwitch().setOnClickListener {
             val isChecked = provideStudiesSwitch().isChecked
-            Preferences.studiesPreferenceEnabled.record(
-                Preferences.StudiesPreferenceEnabledExtra(isChecked),
-            )
+            Preferences.studiesPreferenceEnabled.record(Preferences.StudiesPreferenceEnabledExtra(isChecked))
             provideStudiesTitle().text = getSwitchCheckedTitle()
 
             settings.isExperimentationEnabled = isChecked
@@ -72,14 +69,16 @@ class StudiesView(
 
         scope.launch {
             try {
-                val activeExperiments = withContext(ioDispatcher) {
-                    experiments.getActiveExperiments()
-                }
+                val activeExperiments =
+                    withContext(ioDispatcher) {
+                        experiments.getActiveExperiments()
+                    }
                 if (isAttached()) {
-                    adapter = StudiesAdapter(
-                        this@StudiesView,
-                        activeExperiments,
-                    )
+                    adapter =
+                        StudiesAdapter(
+                            this@StudiesView,
+                            activeExperiments,
+                        )
                     provideStudiesList().adapter = adapter
                 }
             } catch (e: Throwable) {
@@ -117,43 +116,43 @@ class StudiesView(
         val start = spannableStringBuilder.getSpanStart(link)
         val end = spannableStringBuilder.getSpanEnd(link)
         val flags = spannableStringBuilder.getSpanFlags(link)
-        val clickable: ClickableSpan = object : ClickableSpan() {
-            override fun onClick(view: View) {
-                view.setOnClickListener {
-                    interactor.openWebsite(link.url)
+        val clickable: ClickableSpan =
+            object : ClickableSpan() {
+                override fun onClick(view: View) {
+                    view.setOnClickListener {
+                        interactor.openWebsite(link.url)
+                    }
                 }
             }
-        }
         spannableStringBuilder.setSpan(clickable, start, end, flags)
         spannableStringBuilder.removeSpan(link)
     }
 
     @VisibleForTesting
     internal fun getSwitchTitle(): String {
-        val stringId = if (settings.isExperimentationEnabled) {
-            R.string.studies_on
-        } else {
-            R.string.studies_off
-        }
+        val stringId =
+            if (settings.isExperimentationEnabled) {
+                R.string.studies_on
+            } else {
+                R.string.studies_off
+            }
         return context.getString(stringId)
     }
 
     @VisibleForTesting
     internal fun getSwitchCheckedTitle(): String {
-        val stringId = if (provideStudiesSwitch().isChecked) {
-            R.string.studies_on
-        } else {
-            R.string.studies_off
-        }
+        val stringId =
+            if (provideStudiesSwitch().isChecked) {
+                R.string.studies_on
+            } else {
+                R.string.studies_off
+            }
         return context.getString(stringId)
     }
 
-    @VisibleForTesting
-    internal fun provideStudiesTitle(): TextView = binding.studiesTitle
+    @VisibleForTesting internal fun provideStudiesTitle(): TextView = binding.studiesTitle
 
-    @VisibleForTesting
-    internal fun provideStudiesSwitch(): MaterialSwitch = binding.studiesSwitch
+    @VisibleForTesting internal fun provideStudiesSwitch(): MaterialSwitch = binding.studiesSwitch
 
-    @VisibleForTesting
-    internal fun provideStudiesList(): RecyclerView = binding.studiesList
+    @VisibleForTesting internal fun provideStudiesList(): RecyclerView = binding.studiesList
 }

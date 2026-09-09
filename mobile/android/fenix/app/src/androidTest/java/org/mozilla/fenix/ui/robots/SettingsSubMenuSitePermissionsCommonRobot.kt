@@ -32,15 +32,19 @@ import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.assertIsChecked
 import org.mozilla.fenix.helpers.click
 
-/**
- * Implementation of Robot Pattern for the settings Site Permissions sub menu.
- */
+/** Implementation of Robot Pattern for the settings Site Permissions sub menu. */
 class SettingsSubMenuSitePermissionsCommonRobot {
 
     fun verifyBlockAudioAndVideoOnMobileDataOnly() {
-        Log.i(TAG, "verifyBlockAudioAndVideoOnMobileDataOnly: Trying to verify that the \"Block audio and video on cellular data only\" option is visible")
+        Log.i(
+            TAG,
+            "verifyBlockAudioAndVideoOnMobileDataOnly: Trying to verify that the \"Block audio and video on cellular data only\" option is visible",
+        )
         blockRadioButton().check((matches(withEffectiveVisibility(Visibility.VISIBLE))))
-        Log.i(TAG, "verifyBlockAudioAndVideoOnMobileDataOnly: Verified that the \"Block audio and video on cellular data only\" option is visible")
+        Log.i(
+            TAG,
+            "verifyBlockAudioAndVideoOnMobileDataOnly: Verified that the \"Block audio and video on cellular data only\" option is visible",
+        )
     }
 
     fun verifyBlockAudioOnly() {
@@ -50,81 +54,112 @@ class SettingsSubMenuSitePermissionsCommonRobot {
     }
 
     fun verifyVideoAndAudioBlockedRecommended() {
-        Log.i(TAG, "verifyVideoAndAudioBlockedRecommended: Trying to verify that the \"Block audio and video\" option is visible")
+        Log.i(
+            TAG,
+            "verifyVideoAndAudioBlockedRecommended: Trying to verify that the \"Block audio and video\" option is visible",
+        )
         onView(withId(R.id.fourth_radio)).check((matches(withEffectiveVisibility(Visibility.VISIBLE))))
-        Log.i(TAG, "verifyVideoAndAudioBlockedRecommended: Verified that the \"Block audio and video\" option is visible")
+        Log.i(
+            TAG,
+            "verifyVideoAndAudioBlockedRecommended: Verified that the \"Block audio and video\" option is visible",
+        )
     }
 
     fun verifyCheckAutoPlayRadioButtonDefault() {
         // Allow audio and video
-        Log.i(TAG, "verifyCheckAutoPlayRadioButtonDefault: Trying to verify that the \"Allow audio and video\" radio button is not checked")
-        askToAllowRadioButton()
-            .assertIsChecked(isChecked = false)
-        Log.i(TAG, "verifyCheckAutoPlayRadioButtonDefault: Verified that the \"Allow audio and video\" radio button is not checked")
-        Log.i(TAG, "verifyCheckAutoPlayRadioButtonDefault: Trying to verify that the \"Block audio and video on cellular data only\" radio button is not checked")
+        Log.i(
+            TAG,
+            "verifyCheckAutoPlayRadioButtonDefault: Trying to verify that the \"Allow audio and video\" radio button is not checked",
+        )
+        askToAllowRadioButton().assertIsChecked(isChecked = false)
+        Log.i(
+            TAG,
+            "verifyCheckAutoPlayRadioButtonDefault: Verified that the \"Allow audio and video\" radio button is not checked",
+        )
+        Log.i(
+            TAG,
+            "verifyCheckAutoPlayRadioButtonDefault: Trying to verify that the \"Block audio and video on cellular data only\" radio button is not checked",
+        )
         // Block audio and video on cellular data only
-        blockRadioButton()
-            .assertIsChecked(isChecked = false)
-        Log.i(TAG, "verifyCheckAutoPlayRadioButtonDefault: Verified that the \"Block audio and video on cellular data only\" radio button is not checked")
-        Log.i(TAG, "verifyCheckAutoPlayRadioButtonDefault: Trying to verify that the \"Block audio only\" radio button is checked")
+        blockRadioButton().assertIsChecked(isChecked = false)
+        Log.i(
+            TAG,
+            "verifyCheckAutoPlayRadioButtonDefault: Verified that the \"Block audio and video on cellular data only\" radio button is not checked",
+        )
+        Log.i(
+            TAG,
+            "verifyCheckAutoPlayRadioButtonDefault: Trying to verify that the \"Block audio only\" radio button is checked",
+        )
         // Block audio only (default)
-        thirdRadioButton()
-            .assertIsChecked(isChecked = true)
-        Log.i(TAG, "verifyCheckAutoPlayRadioButtonDefault: Verified that the \"Block audio only\" radio button is checked")
-        Log.i(TAG, "verifyCheckAutoPlayRadioButtonDefault: Trying to verify that the \"Block audio and video\" radio button is not checked")
+        thirdRadioButton().assertIsChecked(isChecked = true)
+        Log.i(
+            TAG,
+            "verifyCheckAutoPlayRadioButtonDefault: Verified that the \"Block audio only\" radio button is checked",
+        )
+        Log.i(
+            TAG,
+            "verifyCheckAutoPlayRadioButtonDefault: Trying to verify that the \"Block audio and video\" radio button is not checked",
+        )
         // Block audio and video
-        fourthRadioButton()
-            .assertIsChecked(isChecked = false)
-        Log.i(TAG, "verifyCheckAutoPlayRadioButtonDefault: Verified that the \"Block audio and video\" radio button is not checked")
+        fourthRadioButton().assertIsChecked(isChecked = false)
+        Log.i(
+            TAG,
+            "verifyCheckAutoPlayRadioButtonDefault: Verified that the \"Block audio and video\" radio button is not checked",
+        )
     }
 
     fun verifyAskToAllowButton(isChecked: Boolean = true) {
-        Log.i(TAG, "verifyAskToAllowButton: Trying to verify that the \"Ask to allow\" radio button is checked: $isChecked")
-        onView(withId(R.id.ask_to_allow_radio))
-            .check((matches(isDisplayed()))).assertIsChecked(isChecked)
+        Log.i(
+            TAG,
+            "verifyAskToAllowButton: Trying to verify that the \"Ask to allow\" radio button is checked: $isChecked",
+        )
+        onView(withId(R.id.ask_to_allow_radio)).check((matches(isDisplayed()))).assertIsChecked(isChecked)
         Log.i(TAG, "verifyAskToAllowButton: Verified that the \"Ask to allow\" radio button is checked: $isChecked")
     }
 
     fun verifyBlockedButton(isChecked: Boolean = false) {
         Log.i(TAG, "verifyBlockedButton: Trying to verify that the \"Blocked\" radio button is checked: $isChecked")
-        onView(withId(R.id.block_radio))
-            .check((matches(isDisplayed()))).assertIsChecked(isChecked)
+        onView(withId(R.id.block_radio)).check((matches(isDisplayed()))).assertIsChecked(isChecked)
         Log.i(TAG, "verifyBlockedButton: Verified that the \"Blocked\" radio button is checked: $isChecked")
     }
 
     fun verifyBlockedByAndroid() {
-        Log.i(TAG, "verifyBlockedByAndroid: Waiting for $waitingTime ms for the \"Blocked by Android\" heading to exist")
+        Log.i(
+            TAG,
+            "verifyBlockedByAndroid: Waiting for $waitingTime ms for the \"Blocked by Android\" heading to exist",
+        )
         blockedByAndroidContainer().waitForExists(waitingTime)
         Log.i(TAG, "verifyBlockedByAndroid: Waited for $waitingTime ms for the \"Blocked by Android\" heading to exist")
         assertUIObjectExists(itemContainingText(getStringResource(R.string.phone_feature_blocked_by_android)))
     }
 
     fun verifyUnblockedByAndroid() {
-        Log.i(TAG, "verifyUnblockedByAndroid: Waiting for $waitingTime ms for the \"Blocked by Android\" heading to be gone")
+        Log.i(
+            TAG,
+            "verifyUnblockedByAndroid: Waiting for $waitingTime ms for the \"Blocked by Android\" heading to be gone",
+        )
         blockedByAndroidContainer().waitUntilGone(waitingTime)
-        Log.i(TAG, "verifyUnblockedByAndroid: Waited for $waitingTime ms for the \"Blocked by Android\" heading to be gone")
-        assertUIObjectExists(itemContainingText(getStringResource(R.string.phone_feature_blocked_by_android)), exists = false)
+        Log.i(
+            TAG,
+            "verifyUnblockedByAndroid: Waited for $waitingTime ms for the \"Blocked by Android\" heading to be gone",
+        )
+        assertUIObjectExists(
+            itemContainingText(getStringResource(R.string.phone_feature_blocked_by_android)),
+            exists = false,
+        )
     }
 
     fun verifyToAllowIt() {
         Log.i(TAG, "verifyToAllowIt: Trying to verify that the \"To allow it:\" instruction is visible")
-        onView(withText(R.string.phone_feature_blocked_intro)).check(
-            matches(
-                withEffectiveVisibility(
-                    Visibility.VISIBLE,
-                ),
-            ),
-        )
+        onView(withText(R.string.phone_feature_blocked_intro))
+            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyToAllowIt: Verified that the \"To allow it:\" instruction is visible")
     }
 
     fun verifyGotoAndroidSettings() {
         Log.i(TAG, "verifyGotoAndroidSettings: Trying to verify that the \"1. Go to Android Settings\" step is visible")
-        onView(withText(R.string.phone_feature_blocked_step_settings)).check(
-            matches(
-                withEffectiveVisibility(Visibility.VISIBLE),
-            ),
-        )
+        onView(withText(R.string.phone_feature_blocked_step_settings))
+            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyGotoAndroidSettings: Verified that the \"1. Go to Android Settings\" step is visible")
     }
 
@@ -174,7 +209,10 @@ class SettingsSubMenuSitePermissionsCommonRobot {
         verifyAskToAllowButton()
         verifyBlockedButton()
         // Third option is "Allowed"
-        Log.i(TAG, "verifyDRMControlledContentSubMenuItems: Trying to verify that \"Allowed\" is the third radio button")
+        Log.i(
+            TAG,
+            "verifyDRMControlledContentSubMenuItems: Trying to verify that \"Allowed\" is the third radio button",
+        )
         thirdRadioButton().check(matches(withText("Allowed")))
         Log.i(TAG, "verifyDRMControlledContentSubMenuItems: Verified that \"Allowed\" is the third radio button")
     }
@@ -184,8 +222,7 @@ class SettingsSubMenuSitePermissionsCommonRobot {
         goToSettingsButton().click()
         Log.i(TAG, "clickGoToSettingsButton: Clicked the \"Go to settings\" button")
         Log.i(TAG, "clickGoToSettingsButton: Waiting for $waitingTime ms for system app info list to exist")
-        mDevice.findObject(UiSelector().resourceId("com.android.settings:id/list"))
-            .waitForExists(waitingTime)
+        mDevice.findObject(UiSelector().resourceId("com.android.settings:id/list")).waitForExists(waitingTime)
         Log.i(TAG, "clickGoToSettingsButton: Waited for $waitingTime ms for system app info list to exist")
     }
 
@@ -196,11 +233,20 @@ class SettingsSubMenuSitePermissionsCommonRobot {
     }
 
     fun switchAppPermissionSystemSetting(permissionCategory: String, permission: String) {
-        Log.i(TAG, "switchAppPermissionSystemSetting: Waiting for $waitingTime ms for the $permissionCategory permission category to exist")
+        Log.i(
+            TAG,
+            "switchAppPermissionSystemSetting: Waiting for $waitingTime ms for the $permissionCategory permission category to exist",
+        )
         mDevice.findObject(UiSelector().textContains(permissionCategory)).waitForExists(waitingTime)
-        Log.i(TAG, "switchAppPermissionSystemSetting: Trying to click the system permission category: $permissionCategory button")
+        Log.i(
+            TAG,
+            "switchAppPermissionSystemSetting: Trying to click the system permission category: $permissionCategory button",
+        )
         mDevice.findObject(UiSelector().textContains(permissionCategory)).click()
-        Log.i(TAG, "switchAppPermissionSystemSetting: Clicked the system permission category: $permissionCategory button")
+        Log.i(
+            TAG,
+            "switchAppPermissionSystemSetting: Clicked the system permission category: $permissionCategory button",
+        )
 
         if (permission == "Allow") {
             Log.i(TAG, "switchAppPermissionSystemSetting: Trying to click the system permission option: $permission")
@@ -239,27 +285,15 @@ class SettingsSubMenuSitePermissionsCommonRobot {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
             assertUIObjectExists(
                 itemWithClassName("android.widget.RelativeLayout")
-                    .getChild(
-                        UiSelector()
-                            .resourceId("android:id/title")
-                            .textContains(permissionCategory),
-                    ),
+                    .getChild(UiSelector().resourceId("android:id/title").textContains(permissionCategory)),
                 itemWithClassName("android.widget.RelativeLayout")
-                    .getChild(
-                        UiSelector()
-                            .resourceId("android:id/summary")
-                            .textContains("Only while app is in use"),
-                    ),
+                    .getChild(UiSelector().resourceId("android:id/summary").textContains("Only while app is in use")),
             )
         } else {
             // The summary of the permission will be not be displayed in the app system settings
             assertUIObjectExists(
                 itemWithClassName("android.widget.RelativeLayout")
-                    .getChild(
-                        UiSelector()
-                            .resourceId("android:id/title")
-                            .textContains(permissionCategory),
-                    ),
+                    .getChild(UiSelector().resourceId("android:id/title").textContains(permissionCategory))
             )
         }
     }
@@ -301,7 +335,9 @@ class SettingsSubMenuSitePermissionsCommonRobot {
     }
 
     class Transition {
-        fun goBack(interact: SettingsSubMenuSitePermissionsRobot.() -> Unit): SettingsSubMenuSitePermissionsRobot.Transition {
+        fun goBack(
+            interact: SettingsSubMenuSitePermissionsRobot.() -> Unit
+        ): SettingsSubMenuSitePermissionsRobot.Transition {
             Log.i(TAG, "goBack: Trying to click the navigate up button")
             goBackButton().click()
             Log.i(TAG, "goBack: Clicked the navigate up button")
@@ -310,7 +346,10 @@ class SettingsSubMenuSitePermissionsCommonRobot {
             return SettingsSubMenuSitePermissionsRobot.Transition()
         }
 
-        fun goBackToSignInToSync(composeTestRule: ComposeTestRule, interact: SettingsSignInToSyncRobot.() -> Unit): SettingsSignInToSyncRobot.Transition {
+        fun goBackToSignInToSync(
+            composeTestRule: ComposeTestRule,
+            interact: SettingsSignInToSyncRobot.() -> Unit,
+        ): SettingsSignInToSyncRobot.Transition {
             for (i in 0..2) {
                 Log.i(TAG, "goBackToSignInToSync: Trying to click the device back button")
                 mDevice.pressBack()
@@ -336,11 +375,11 @@ private fun thirdRadioButton() = onView(withId(R.id.third_radio))
 // common extra 4th radio button for all settings
 private fun fourthRadioButton() = onView(withId(R.id.fourth_radio))
 
-private fun blockedByAndroidContainer() = mDevice.findObject(UiSelector().resourceId("$packageName:id/permissions_blocked_container"))
+private fun blockedByAndroidContainer() =
+    mDevice.findObject(UiSelector().resourceId("$packageName:id/permissions_blocked_container"))
 
 private fun permissionSettingMenu() = mDevice.findObject(UiSelector().resourceId("$packageName:id/container"))
 
-private fun goBackButton() =
-    onView(allOf(withContentDescription("Navigate up")))
+private fun goBackButton() = onView(allOf(withContentDescription("Navigate up")))
 
 private fun goToSettingsButton() = onView(withId(R.id.settings_button))

@@ -81,8 +81,7 @@ NS_IMPL_ISUPPORTS_INHERITED(GeckoMediaPluginServiceParent,
                             mozIGeckoMediaPluginChromeService)
 
 GeckoMediaPluginServiceParent::GeckoMediaPluginServiceParent()
-    : mScannedPluginOnDisk(false),
-      mShuttingDown(false),
+    : mShuttingDown(false),
       mWaitingForPluginsSyncShutdown(false),
       mInitPromiseMonitor("GeckoMediaPluginServiceParent::mInitPromiseMonitor"),
       mInitPromise(&mInitPromiseMonitor),
@@ -304,6 +303,16 @@ GeckoMediaPluginServiceParent::Observe(nsISupports* aSubject,
     MOZ_ASSERT(mShuttingDown);
 #endif
     ShutdownGMPThread();
+
+    // InitializePlugins() settles mInitPromise from the GMP thread, which has
+    // now been joined, so a scan still in flight will never settle it. Do it
+    // here instead, so that EnsureInitialized() cannot leave a caller waiting
+    // forever.
+    MonitorAutoLock lock(mInitPromiseMonitor);
+    if (!mLoadPluginsFromDiskComplete) {
+      mLoadPluginsFromDiskComplete = true;
+      mInitPromise.RejectIfExists(NS_ERROR_ABORT, __func__);
+    }
   } else if (!strcmp(NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID, aTopic)) {
     mXPCOMWillShutdown = true;
   } else if (!strcmp("last-pb-context-exited", aTopic)) {
@@ -574,7 +583,6 @@ RefPtr<GenericPromise> GeckoMediaPluginServiceParent::LoadFromEnvironment() {
     }
   }
 
-  mScannedPluginOnDisk = true;
   return GenericPromise::All(thread, promises)
       ->Then(
           thread, __func__,
@@ -946,22 +954,70 @@ GeckoMediaPluginServiceParent::FindPluginDirectoryForAPI(
 }
 
 nsresult GeckoMediaPluginServiceParent::EnsurePluginsOnDiskScanned() {
-  const char* env = nullptr;
-  if (!mScannedPluginOnDisk && (env = PR_GetEnv("MOZ_GMP_PATH")) && *env) {
-    // We have a MOZ_GMP_PATH environment variable which may specify the
-    // location of plugins to load, and we haven't yet scanned the disk to
-    // see if there are plugins there. Get the GMP thread, which will
-    // cause an event to be dispatched to which scans for plugins. We
-    // dispatch a sync event to the GMP thread here in order to wait until
-    // after the GMP thread has scanned any paths in MOZ_GMP_PATH.
-    nsCOMPtr<nsIThread> thread;
-    nsresult rv = GetThread(getter_AddRefs(thread));
+  const char* env = PR_GetEnv("MOZ_GMP_PATH");
+  if (!env || !*env) {
+    // No MOZ_GMP_PATH, so there are no plugins on disk to scan for.
+    return NS_OK;
+  }
+
+  {
+    MonitorAutoLock lock(mInitPromiseMonitor);
+    if (mLoadPluginsFromDiskComplete) {
+      return NS_OK;
+    }
+  }
+
+  // Getting the GMP thread creates it if needed, which is what kicks off
+  // scanning the paths in MOZ_GMP_PATH.
+  nsCOMPtr<nsIThread> thread;
+  nsresult rv = GetThread(getter_AddRefs(thread));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (thread->IsOnCurrentThread()) {
+    // The scan is what this thread is here to run, so there is no way to wait
+    // for it. Answer with whatever has been registered so far.
+    MOZ_ASSERT_UNREACHABLE("Cannot wait for the GMP thread from itself");
+    return NS_OK;
+  }
+
+  // What we wait for below is EnsureInitialized(), not the GMP thread running a
+  // task. The latter is not a barrier for registration: LoadFromEnvironment()
+  // returns before the plugins it found have been appended to mPlugins, so a
+  // caller doing that could still observe an incomplete mPlugins. See bug
+  // 2050519.
+  if (!NS_IsMainThread()) {
+    // Registering a plugin needs the GMP thread, and the main thread for one
+    // described by a Chromium manifest.json, but never this thread. So we can
+    // block, and Await() takes a background queue for its own continuation
+    // rather than dispatching to this thread, which may be a thread pool worker
+    // that refuses dispatches while it is running a task.
+    nsCOMPtr<nsISerialEventTarget> queue;
+    rv = NS_CreateBackgroundTaskQueue("EnsurePluginsOnDiskScanned",
+                                      getter_AddRefs(queue));
     NS_ENSURE_SUCCESS(rv, rv);
-    rv = NS_DispatchAndSpinEventLoopUntilComplete(
-        "GeckoMediaPluginServiceParent::EnsurePluginsOnDiskScanned"_ns, thread,
-        MakeAndAddRef<mozilla::Runnable>("GMPDummyRunnable"));
-    NS_ENSURE_SUCCESS(rv, rv);
-    MOZ_ASSERT(mScannedPluginOnDisk, "Should have scanned MOZ_GMP_PATH by now");
+    media::Await(queue.forget(), EnsureInitialized());
+    return NS_OK;
+  }
+
+  // On the main thread we cannot block, because registering a plugin described
+  // by a Chromium manifest.json parses it on the main thread, so a blocking
+  // wait here would deadlock against the scan we are waiting for. See
+  // GMPParent::ReadChromiumManifestFile().
+  MozPromiseRequestHolder<GenericNonExclusivePromise> request;
+  bool scanned = false;
+  EnsureInitialized()
+      ->Then(GetMainThreadSerialEventTarget(), __func__,
+             [&](const GenericNonExclusivePromise::ResolveOrRejectValue&) {
+               request.Complete();
+               scanned = true;
+             })
+      ->Track(request);
+
+  if (!SpinEventLoopUntil(
+          "GeckoMediaPluginServiceParent::EnsurePluginsOnDiskScanned"_ns,
+          [&] { return scanned; })) {
+    request.Disconnect();
+    return NS_ERROR_ABORT;
   }
 
   return NS_OK;
@@ -1502,7 +1558,7 @@ nsresult GeckoMediaPluginServiceParent::GetNodeId(
     return NS_OK;
   }
   // The union contains a NodeIdParts, convert it to a node ID string.
-  NodeIdParts nodeIdParts{aNodeIdVariant.get_NodeIdParts()};
+  const NodeIdParts& nodeIdParts = aNodeIdVariant.get_NodeIdParts();
   return GetNodeId(nodeIdParts.mOrigin(), nodeIdParts.mTopLevelOrigin(),
                    nodeIdParts.mGMPName(), aOutId);
 }

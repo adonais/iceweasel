@@ -25,7 +25,6 @@
 #include "mozilla/dom/DirectionalityUtils.h"
 
 #include "mozilla/Maybe.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Utf16.h"
 #include "mozilla/dom/CharacterDataBuffer.h"
 #include "mozilla/dom/Document.h"
@@ -565,43 +564,18 @@ static void MaybeClearAffectsDirAutoSlot(nsIContent* aContent) {
   }
 }
 
-void SlotAssignedNodeAdded(HTMLSlotElement* aSlot, nsIContent& aAssignedNode) {
+void SlotAssignedNodeAddedForDir(HTMLSlotElement* aSlot,
+                                 nsIContent& aAssignedNode) {
   MOZ_ASSERT(aSlot);
-  if (aSlot->IsMaybeSelected()) {
-    // Normally it's nsRange::ContentAppended's responsibility to
-    // mark new descendants, however this doesn't work for slotted
-    // content because nsRange observes the common ancestor of
-    // start/end, whereas slotted element may not have the same
-    // ancestor as them.
-    dom::AbstractRange::UpdateDescendantsInFlattenedTree(
-        aAssignedNode, true /* aMarkDesendants*/);
-  }
-
   if (aSlot->HasDirAuto()) {
     aAssignedNode.SetAffectsDirAutoSlot();
     DownwardPropagateDirAutoFlags(&aAssignedNode);
   }
   SlotStateChanged(aSlot);
-
-  if (StaticPrefs::dom_headingoffset_enabled()) {
-    aAssignedNode.UpdateHeadingElementsOffsetChange();
-  }
 }
 
-void SlotAssignedNodeRemoved(HTMLSlotElement* aSlot,
-                             nsIContent& aUnassignedNode) {
-  if (aUnassignedNode.IsMaybeSelected()) {
-    // Normally, this shouldn't happen because nsRange::ContentRemoved
-    // should be called for content removal, and then
-    // AbstractRange::UnmarkDescendants will be used to clear the flags.
-    // Though this doesn't work for slotted element because nsRange
-    // observers the common ancestor of start/end, whereas slotted element
-    // may not have the same ancestor as them, so we have to clear
-    // the flags manually here.
-    dom::AbstractRange::UpdateDescendantsInFlattenedTree(
-        aUnassignedNode, false /* aMarkDesendants*/);
-  }
-
+void SlotAssignedNodeRemovedForDir(HTMLSlotElement* aSlot,
+                                   nsIContent& aUnassignedNode) {
   if (aSlot->HasDirAuto()) {
     MaybeClearAffectsDirAutoSlot(&aUnassignedNode);
   }

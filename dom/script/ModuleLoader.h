@@ -82,7 +82,7 @@ class ModuleLoader final : public JS::loader::ModuleLoaderBase {
   }
 
   void AsyncExecuteInlineModule(ModuleLoadRequest* aRequest);
-  void ExecuteInlineModule(ModuleLoadRequest* aRequest);
+  MOZ_CAN_RUN_SCRIPT void ExecuteInlineModule(ModuleLoadRequest* aRequest);
 
  private:
   nsresult CompileJavaScriptOrWasmModule(

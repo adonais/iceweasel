@@ -20,13 +20,9 @@ data class PrivacyPreferencesState(
     val usageDataEnabled: Boolean = true,
 ) : State
 
-/**
- * [Action] implementation related to [PrivacyPreferencesState].
- */
+/** [Action] implementation related to [PrivacyPreferencesState]. */
 sealed class PrivacyPreferencesAction : Action {
-    /**
-     * Dispatched when the store is initialized.
-     */
+    /** Dispatched when the store is initialized. */
     data object Init : PrivacyPreferencesAction()
 
     /**
@@ -43,20 +39,14 @@ sealed class PrivacyPreferencesAction : Action {
      */
     data class UsageDataPreferenceUpdatedTo(val enabled: Boolean) : PrivacyPreferencesAction()
 
-    /**
-     * [PrivacyPreferencesAction] indicates the crash reporting option "learn more" link was used.
-     */
+    /** [PrivacyPreferencesAction] indicates the crash reporting option "learn more" link was used. */
     data object CrashReportingLearnMore : PrivacyPreferencesAction()
 
-    /**
-     * [PrivacyPreferencesAction] indicates the usage data option "learn more" link was used.
-     */
+    /** [PrivacyPreferencesAction] indicates the usage data option "learn more" link was used. */
     data object UsageDataUserLearnMore : PrivacyPreferencesAction()
 }
 
-/**
- * Reducer for [PrivacyPreferencesStore].
- */
+/** Reducer for [PrivacyPreferencesStore]. */
 internal object PrivacyPreferencesReducer {
     fun reduce(
         state: PrivacyPreferencesState,
@@ -65,14 +55,12 @@ internal object PrivacyPreferencesReducer {
         return when (action) {
             is PrivacyPreferencesAction.Init,
             is PrivacyPreferencesAction.CrashReportingLearnMore,
-            is PrivacyPreferencesAction.UsageDataUserLearnMore,
-            -> state
+            is PrivacyPreferencesAction.UsageDataUserLearnMore -> state
 
             is PrivacyPreferencesAction.CrashReportingPreferenceUpdatedTo ->
                 state.copy(crashReportingEnabled = action.enabled)
 
-            is PrivacyPreferencesAction.UsageDataPreferenceUpdatedTo ->
-                state.copy(usageDataEnabled = action.enabled)
+            is PrivacyPreferencesAction.UsageDataPreferenceUpdatedTo -> state.copy(usageDataEnabled = action.enabled)
         }
     }
 }
@@ -84,11 +72,12 @@ internal object PrivacyPreferencesReducer {
 class PrivacyPreferencesStore(
     initialState: PrivacyPreferencesState = PrivacyPreferencesState(),
     middlewares: List<Middleware<PrivacyPreferencesState, PrivacyPreferencesAction>> = emptyList(),
-) : Store<PrivacyPreferencesState, PrivacyPreferencesAction>(
-    initialState,
-    PrivacyPreferencesReducer::reduce,
-    middlewares,
-) {
+) :
+    Store<PrivacyPreferencesState, PrivacyPreferencesAction>(
+        initialState,
+        PrivacyPreferencesReducer::reduce,
+        middlewares,
+    ) {
     init {
         dispatch(PrivacyPreferencesAction.Init)
     }

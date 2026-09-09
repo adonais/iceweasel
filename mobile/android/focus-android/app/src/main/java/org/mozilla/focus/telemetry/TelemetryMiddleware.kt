@@ -4,6 +4,7 @@
 
 package org.mozilla.focus.telemetry
 
+import kotlin.collections.forEach as withEach
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.CustomTabListAction
@@ -22,11 +23,8 @@ import org.mozilla.focus.GleanMetrics.AppOpened
 import org.mozilla.focus.GleanMetrics.Browser
 import org.mozilla.focus.GleanMetrics.Downloads
 import org.mozilla.focus.GleanMetrics.TabCount
-import kotlin.collections.forEach as withEach
 
-/**
- * Middleware that collects telemetry based on browser actions.
- */
+/** Middleware that collects telemetry based on browser actions. */
 class TelemetryMiddleware : Middleware<BrowserState, BrowserAction> {
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,
@@ -39,14 +37,13 @@ class TelemetryMiddleware : Middleware<BrowserState, BrowserAction> {
             is TabListAction.AddTabAction -> {
                 collectTelemetry(action.tab, store)
             }
-            is TabListAction.AddMultipleTabsAction -> action.tabs.withEach {
-                collectTelemetry(it, store)
-            }
+            is TabListAction.AddMultipleTabsAction ->
+                action.tabs.withEach {
+                    collectTelemetry(it, store)
+                }
 
             is CustomTabListAction.TurnCustomTabIntoNormalTabAction -> {
-                TabCount.newTabOpened.record(
-                    TabCount.NewTabOpenedExtra(store.state.tabs.size, "custom tab"),
-                )
+                TabCount.newTabOpened.record(TabCount.NewTabOpenedExtra(store.state.tabs.size, "custom tab"))
             }
 
             is ContentAction.UpdateLoadingStateAction -> {
@@ -84,9 +81,7 @@ class TelemetryMiddleware : Middleware<BrowserState, BrowserAction> {
                 AppOpened.browseIntent.record(NoExtras())
             }
             is SessionState.Source.External.ActionSend -> {
-                AppOpened.shareIntent.record(
-                    AppOpened.ShareIntentExtra(tab.content.searchTerms.isNotEmpty()),
-                )
+                AppOpened.shareIntent.record(AppOpened.ShareIntentExtra(tab.content.searchTerms.isNotEmpty()))
             }
             SessionState.Source.Internal.TextSelection -> {
                 AppOpened.textSelectionIntent.record(NoExtras())
@@ -97,13 +92,9 @@ class TelemetryMiddleware : Middleware<BrowserState, BrowserAction> {
             SessionState.Source.Internal.NewTab -> {
                 val parentTab = (tab as TabSessionState).parentId?.let { store.state.findTab(it) }
                 if (parentTab?.content?.windowRequest?.type == WindowRequest.Type.OPEN) {
-                    TabCount.newTabOpened.record(
-                        TabCount.NewTabOpenedExtra(tabCount, "Window.open()"),
-                    )
+                    TabCount.newTabOpened.record(TabCount.NewTabOpenedExtra(tabCount, "Window.open()"))
                 } else {
-                    TabCount.newTabOpened.record(
-                        TabCount.NewTabOpenedExtra(tabCount, "context menu"),
-                    )
+                    TabCount.newTabOpened.record(TabCount.NewTabOpenedExtra(tabCount, "context menu"))
                 }
             }
 

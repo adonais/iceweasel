@@ -18,14 +18,14 @@
 namespace nss_test {
 
 static void ArenaOobAccess(size_t alloc_size) {
-  PLArenaPool *arena = PORT_NewArena(1024);
+  PLArenaPool* arena = PORT_NewArena(1024);
   ASSERT_NE(nullptr, arena);
 
-  unsigned char *alloc1 =
-      static_cast<unsigned char *>(PORT_ArenaAlloc(arena, alloc_size));
+  unsigned char* alloc1 =
+      static_cast<unsigned char*>(PORT_ArenaAlloc(arena, alloc_size));
   ASSERT_NE(nullptr, alloc1);
-  unsigned char *alloc2 =
-      static_cast<unsigned char *>(PORT_ArenaAlloc(arena, alloc_size));
+  unsigned char* alloc2 =
+      static_cast<unsigned char*>(PORT_ArenaAlloc(arena, alloc_size));
   ASSERT_NE(nullptr, alloc2);
 
   // Write one byte past the end of the first allocation, which lands in

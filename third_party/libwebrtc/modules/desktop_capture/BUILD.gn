@@ -49,46 +49,93 @@ rtc_library("primitives") {
 }
 
 if (rtc_include_tests) {
-  rtc_library("desktop_capture_modules_tests") {
-    testonly = true
-
-    defines = []
-    sources = []
+  rtc_cc_test("screen_capturer_integration_test") {
+    sources = [ "screen_capturer_integration_test.cc" ]
     deps = [
       ":desktop_capture",
+      ":desktop_capture_mock",
+      ":primitives",
+      ":screen_drawer",
       "../../api:function_view",
       "../../api:scoped_refptr",
+      "../../rtc_base:base64",
       "../../rtc_base:checks",
       "../../rtc_base:logging",
       "../../rtc_base:platform_thread",
       "../../rtc_base:random",
+      "../../rtc_base:threading",
       "../../rtc_base:timeutils",
+      "../../test:test_support",
     ]
-    if (rtc_desktop_capture_supported) {
-      deps += [
-        ":desktop_capture_mock",
-        ":primitives",
-        ":screen_drawer",
-        "../../rtc_base:base64",
-        "../../rtc_base:threading",
-        "../../test:test_support",
-      ]
-      sources += [
-        "screen_capturer_integration_test.cc",
-        "screen_drawer_unittest.cc",
-        "window_finder_unittest.cc",
-      ]
-
-      if ((is_linux || is_chromeos) && rtc_use_pipewire) {
-        configs += [ "../portal:gio" ]
-      }
-
-      public_configs = [ ":x11_config" ]
-
-      if (is_win) {
-        deps += [ "../../rtc_base/win:windows_version" ]
-      }
+    if (is_win) {
+      deps += [ "../../rtc_base/win:windows_version" ]
     }
+    if ((is_linux || is_chromeos) && rtc_use_pipewire) {
+      configs += [ "../portal:gio" ]
+    }
+    public_configs = [ ":x11_config" ]
+  }
+
+  rtc_cc_test("screen_drawer_unittest") {
+    sources = [ "screen_drawer_unittest.cc" ]
+    deps = [
+      ":desktop_capture",
+      ":desktop_capture_mock",
+      ":primitives",
+      ":screen_drawer",
+      "../../api:function_view",
+      "../../api:scoped_refptr",
+      "../../rtc_base:base64",
+      "../../rtc_base:checks",
+      "../../rtc_base:logging",
+      "../../rtc_base:platform_thread",
+      "../../rtc_base:random",
+      "../../rtc_base:threading",
+      "../../rtc_base:timeutils",
+      "../../test:test_support",
+    ]
+    if (is_win) {
+      deps += [ "../../rtc_base/win:windows_version" ]
+    }
+    if ((is_linux || is_chromeos) && rtc_use_pipewire) {
+      configs += [ "../portal:gio" ]
+    }
+    public_configs = [ ":x11_config" ]
+  }
+
+  rtc_cc_test("window_finder_unittest") {
+    sources = [ "window_finder_unittest.cc" ]
+    deps = [
+      ":desktop_capture",
+      ":desktop_capture_mock",
+      ":primitives",
+      ":screen_drawer",
+      "../../api:function_view",
+      "../../api:scoped_refptr",
+      "../../rtc_base:base64",
+      "../../rtc_base:checks",
+      "../../rtc_base:logging",
+      "../../rtc_base:platform_thread",
+      "../../rtc_base:random",
+      "../../rtc_base:threading",
+      "../../rtc_base:timeutils",
+      "../../test:test_support",
+    ]
+    if (is_win) {
+      deps += [ "../../rtc_base/win:windows_version" ]
+    }
+    if ((is_linux || is_chromeos) && rtc_use_pipewire) {
+      configs += [ "../portal:gio" ]
+    }
+    public_configs = [ ":x11_config" ]
+  }
+
+  rtc_test_suite("desktop_capture_modules_tests") {
+    tests = [
+      ":screen_capturer_integration_test",
+      ":screen_drawer_unittest",
+      ":window_finder_unittest",
+    ]
   }
 
   if ((is_linux || is_chromeos) && rtc_use_pipewire) {
@@ -144,8 +191,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("desktop_frame_texture_unittest") {
-    testonly = true
+  rtc_cc_test("desktop_frame_texture_unittest") {
     sources = [ "desktop_frame_texture_unittest.cc" ]
     deps = [
       ":primitives",
@@ -153,8 +199,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("desktop_frame_unittest") {
-    testonly = true
+  rtc_cc_test("desktop_frame_unittest") {
     sources = [ "desktop_frame_unittest.cc" ]
     deps = [
       ":primitives",
@@ -162,8 +207,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("desktop_geometry_unittest") {
-    testonly = true
+  rtc_cc_test("desktop_geometry_unittest") {
     sources = [ "desktop_geometry_unittest.cc" ]
     deps = [
       ":primitives",
@@ -171,8 +215,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("desktop_region_unittest") {
-    testonly = true
+  rtc_cc_test("desktop_region_unittest") {
     sources = [ "desktop_region_unittest.cc" ]
     deps = [
       ":primitives",
@@ -180,8 +223,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("desktop_capturer_differ_wrapper_unittest") {
-    testonly = true
+  rtc_cc_test("desktop_capturer_differ_wrapper_unittest") {
     sources = [ "desktop_capturer_differ_wrapper_unittest.cc" ]
     deps = [
       ":desktop_capture",
@@ -200,8 +242,7 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_library("differ_block_unittest") {
-    testonly = true
+  rtc_cc_test("differ_block_unittest") {
     sources = [ "differ_block_unittest.cc" ]
     deps = [
       ":desktop_capture",
@@ -209,8 +250,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("blank_detector_desktop_capturer_wrapper_unittest") {
-    testonly = true
+  rtc_cc_test("blank_detector_desktop_capturer_wrapper_unittest") {
     sources = [ "blank_detector_desktop_capturer_wrapper_unittest.cc" ]
     deps = [
       ":desktop_capture",
@@ -222,8 +262,7 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_library("desktop_and_cursor_composer_unittest") {
-    testonly = true
+  rtc_cc_test("desktop_and_cursor_composer_unittest") {
     sources = [ "desktop_and_cursor_composer_unittest.cc" ]
     deps = [
       ":desktop_capture",
@@ -235,8 +274,7 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_library("fallback_desktop_capturer_wrapper_unittest") {
-    testonly = true
+  rtc_cc_test("fallback_desktop_capturer_wrapper_unittest") {
     sources = [ "fallback_desktop_capturer_wrapper_unittest.cc" ]
     deps = [
       ":desktop_capture",
@@ -248,8 +286,7 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_library("cropped_desktop_frame_unittest") {
-    testonly = true
+  rtc_cc_test("cropped_desktop_frame_unittest") {
     sources = [ "cropped_desktop_frame_unittest.cc" ]
     deps = [
       ":desktop_capture",
@@ -258,8 +295,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("desktop_frame_rotation_unittest") {
-    testonly = true
+  rtc_cc_test("desktop_frame_rotation_unittest") {
     sources = [ "desktop_frame_rotation_unittest.cc" ]
     deps = [
       ":desktop_capture",
@@ -269,8 +305,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("rgba_color_unittest") {
-    testonly = true
+  rtc_cc_test("rgba_color_unittest") {
     sources = [ "rgba_color_unittest.cc" ]
     deps = [
       ":desktop_capture",
@@ -278,8 +313,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("test_utils_unittest") {
-    testonly = true
+  rtc_cc_test("test_utils_unittest") {
     sources = [ "test_utils_unittest.cc" ]
     deps = [
       ":desktop_capture",
@@ -298,8 +332,7 @@ if (rtc_include_tests) {
       ]
     }
 
-    rtc_library("cursor_unittest") {
-      testonly = true
+    rtc_cc_test("cursor_unittest") {
       sources = [
         "win/cursor_unittest.cc",
         "win/cursor_unittest_resources.h",
@@ -312,8 +345,7 @@ if (rtc_include_tests) {
       ]
     }
 
-    rtc_library("full_screen_win_application_handler_unittest") {
-      testonly = true
+    rtc_cc_test("full_screen_win_application_handler_unittest") {
       sources = [ "win/full_screen_win_application_handler_unittest.cc" ]
       deps = [
         ":desktop_capture",
@@ -323,8 +355,7 @@ if (rtc_include_tests) {
       ]
     }
 
-    rtc_library("screen_capture_utils_unittest") {
-      testonly = true
+    rtc_cc_test("screen_capture_utils_unittest") {
       sources = [ "win/screen_capture_utils_unittest.cc" ]
       deps = [
         ":desktop_capture",
@@ -334,8 +365,7 @@ if (rtc_include_tests) {
       ]
     }
 
-    rtc_library("screen_capturer_win_directx_unittest") {
-      testonly = true
+    rtc_cc_test("screen_capturer_win_directx_unittest") {
       sources = [ "win/screen_capturer_win_directx_unittest.cc" ]
       deps = [
         ":desktop_capture",
@@ -345,8 +375,7 @@ if (rtc_include_tests) {
       ]
     }
 
-    rtc_library("window_capture_utils_unittest") {
-      testonly = true
+    rtc_cc_test("window_capture_utils_unittest") {
       sources = [ "win/window_capture_utils_unittest.cc" ]
       deps = [
         ":desktop_capture",
@@ -357,95 +386,109 @@ if (rtc_include_tests) {
         "../../test:test_support",
       ]
     }
+
+    rtc_test_suite("desktop_capture_win_unittests") {
+      tests = [
+        ":cursor_unittest",
+        ":full_screen_win_application_handler_unittest",
+        ":screen_capture_utils_unittest",
+        ":screen_capturer_win_directx_unittest",
+        ":window_capture_utils_unittest",
+      ]
+      if (rtc_enable_win_wgc) {
+        tests += [
+          ":wgc_capture_source_unittest",
+          ":wgc_capturer_win_unittest",
+        ]
+      }
+    }
   }
 
-  if (rtc_desktop_capture_supported) {
-    rtc_library("screen_capturer_helper_unittest") {
-      testonly = true
-      sources = [ "screen_capturer_helper_unittest.cc" ]
-      deps = [
-        ":desktop_capture",
-        ":primitives",
-        "../../test:test_support",
-      ]
-      if ((is_linux || is_chromeos) && rtc_use_pipewire) {
-        configs += [ "../portal:gio" ]
-      }
+  rtc_cc_test("screen_capturer_helper_unittest") {
+    sources = [ "screen_capturer_helper_unittest.cc" ]
+    deps = [
+      ":desktop_capture",
+      ":primitives",
+      "../../test:test_support",
+    ]
+    if ((is_linux || is_chromeos) && rtc_use_pipewire) {
+      configs += [ "../portal:gio" ]
     }
+  }
 
-    rtc_cc_test("screen_capturer_unittest") {
-      sources = [ "screen_capturer_unittest.cc" ]
+  rtc_cc_test("screen_capturer_unittest") {
+    sources = [ "screen_capturer_unittest.cc" ]
+    deps = [
+      ":desktop_capture",
+      ":desktop_capture_mock",
+      ":primitives",
+      "../../rtc_base:logging",
+      "../../test:test_support",
+    ]
+    if ((is_linux || is_chromeos) && rtc_use_pipewire) {
+      configs += [ "../portal:gio" ]
+    }
+  }
+
+  rtc_cc_test("window_capturer_unittest") {
+    sources = [ "window_capturer_unittest.cc" ]
+    deps = [
+      ":desktop_capture",
+      ":desktop_capture_mock",
+      ":primitives",
+      "../../test:test_support",
+    ]
+    if ((is_linux || is_chromeos) && rtc_use_pipewire) {
+      configs += [ "../portal:gio" ]
+    }
+  }
+
+  if (is_mac) {
+    rtc_cc_test("screen_capturer_mac_unittest") {
+      sources = [ "screen_capturer_mac_unittest.cc" ]
       deps = [
         ":desktop_capture",
         ":desktop_capture_mock",
         ":primitives",
+        "../../test:test_support",
+      ]
+    }
+
+    rtc_test_suite("desktop_capture_mac_unittests") {
+      tests = [ ":screen_capturer_mac_unittest" ]
+    }
+  }
+
+  if (rtc_enable_win_wgc) {
+    rtc_cc_test("wgc_capture_source_unittest") {
+      sources = [ "win/wgc_capture_source_unittest.cc" ]
+      deps = [
+        ":desktop_capture",
+        ":primitives",
+        ":test_window",
+        "../../rtc_base:checks",
         "../../rtc_base:logging",
+        "../../rtc_base/win:scoped_com_initializer",
         "../../test:test_support",
       ]
-      if ((is_linux || is_chromeos) && rtc_use_pipewire) {
-        configs += [ "../portal:gio" ]
-      }
     }
 
-    rtc_cc_test("window_capturer_unittest") {
-      sources = [ "window_capturer_unittest.cc" ]
+    rtc_cc_test("wgc_capturer_win_unittest") {
+      sources = [ "win/wgc_capturer_win_unittest.cc" ]
       deps = [
         ":desktop_capture",
-        ":desktop_capture_mock",
         ":primitives",
+        ":test_window",
+        "../../api:make_ref_counted",
+        "../../rtc_base:logging",
+        "../../rtc_base:task_queue_for_test",
+        "../../rtc_base:threading",
+        "../../rtc_base:timeutils",
+        "../../rtc_base/win:scoped_com_initializer",
+        "../../rtc_base/win:windows_version",
+        "../../system_wrappers:metrics",
         "../../test:test_support",
       ]
-      if ((is_linux || is_chromeos) && rtc_use_pipewire) {
-        configs += [ "../portal:gio" ]
-      }
-    }
-
-    if (is_mac) {
-      rtc_library("screen_capturer_mac_unittest") {
-        testonly = true
-        sources = [ "screen_capturer_mac_unittest.cc" ]
-        deps = [
-          ":desktop_capture",
-          ":desktop_capture_mock",
-          ":primitives",
-          "../../test:test_support",
-        ]
-      }
-    }
-
-    if (rtc_enable_win_wgc) {
-      rtc_library("wgc_capture_source_unittest") {
-        testonly = true
-        sources = [ "win/wgc_capture_source_unittest.cc" ]
-        deps = [
-          ":desktop_capture",
-          ":primitives",
-          ":test_window",
-          "../../rtc_base:checks",
-          "../../rtc_base:logging",
-          "../../rtc_base/win:scoped_com_initializer",
-          "../../test:test_support",
-        ]
-      }
-
-      rtc_library("wgc_capturer_win_unittest") {
-        testonly = true
-        sources = [ "win/wgc_capturer_win_unittest.cc" ]
-        deps = [
-          ":desktop_capture",
-          ":primitives",
-          ":test_window",
-          "../../api:make_ref_counted",
-          "../../rtc_base:logging",
-          "../../rtc_base:task_queue_for_test",
-          "../../rtc_base:threading",
-          "../../rtc_base:timeutils",
-          "../../rtc_base/win:scoped_com_initializer",
-          "../../rtc_base/win:windows_version",
-          "../../system_wrappers:metrics",
-          "../../test:test_support",
-        ]
-      }
     }
   }
 
@@ -456,10 +499,8 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_library("desktop_capture_unittests") {
-    testonly = true
-
-    deps = [
+  rtc_test_suite("desktop_capture_unittests") {
+    tests = [
       ":blank_detector_desktop_capturer_wrapper_unittest",
       ":cropped_desktop_frame_unittest",
       ":desktop_and_cursor_composer_unittest",
@@ -472,31 +513,9 @@ if (rtc_include_tests) {
       ":differ_block_unittest",
       ":fallback_desktop_capturer_wrapper_unittest",
       ":rgba_color_unittest",
+      ":screen_capturer_helper_unittest",
       ":test_utils_unittest",
     ]
-
-    if (is_win) {
-      deps += [
-        ":cursor_unittest",
-        ":full_screen_win_application_handler_unittest",
-        ":screen_capture_utils_unittest",
-        ":screen_capturer_win_directx_unittest",
-        ":window_capture_utils_unittest",
-      ]
-    }
-
-    if (rtc_desktop_capture_supported) {
-      deps += [ ":screen_capturer_helper_unittest" ]
-      if (is_mac) {
-        deps += [ ":screen_capturer_mac_unittest" ]
-      }
-      if (rtc_enable_win_wgc) {
-        deps += [
-          ":wgc_capture_source_unittest",
-          ":wgc_capturer_win_unittest",
-        ]
-      }
-    }
   }
 
   rtc_library("screen_drawer") {

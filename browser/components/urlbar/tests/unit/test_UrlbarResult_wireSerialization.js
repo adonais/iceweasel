@@ -172,3 +172,26 @@ add_task(function test_queryContext_roundtrip() {
     "allowRemoteResults returns a result"
   );
 });
+
+add_task(function test_queryContext_isSearchbarSAP_roundtrip() {
+  for (let [sapName, expected] of [
+    ["newtab_searchbar", true],
+    ["urlbar", false],
+  ]) {
+    let context = createContext("foo", { sapName });
+    let wire = structuredClone(context.toWire());
+    Assert.equal(
+      wire.isSearchbarSAP,
+      undefined,
+      `isSearchbarSAP is a getter, so ${sapName}'s wire form omits it`
+    );
+
+    let restored = UrlbarQueryContext.fromWire(wire);
+    Assert.equal(restored.sapName, sapName, `${sapName} preserved`);
+    Assert.equal(
+      restored.isSearchbarSAP,
+      expected,
+      `isSearchbarSAP is recomputed from ${sapName} after the round trip`
+    );
+  }
+});

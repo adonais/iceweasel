@@ -28,8 +28,7 @@ import mozilla.components.compose.base.BottomSheetHandle
  * The menu dialog bottom sheet.
  *
  * @param modifier [Modifier] to be applied to [BottomSheetHandle].
- * @param onRequestDismiss Invoked when accessibility services or UI automation requests
- * dismissal of the bottom sheet.
+ * @param onRequestDismiss Invoked when accessibility services or UI automation requests dismissal of the bottom sheet.
  * @param menuHandleState Configuration of the handle to use for the menu layout.
  * @param snackbarHostState The [SnackbarHostState] to display snackbars in.
  * @param cornerShape The shape of the bottom sheet's top corners.
@@ -41,20 +40,21 @@ fun MenuDialogBottomSheet(
     onRequestDismiss: () -> Unit,
     menuHandleState: MenuHandleState,
     snackbarHostState: SnackbarHostState,
-    cornerShape: Shape = MaterialTheme.shapes.large.copy(
-        bottomStart = CornerSize(0.dp),
-        bottomEnd = CornerSize(0.dp),
-    ),
+    cornerShape: Shape =
+        MaterialTheme.shapes.large.copy(
+            bottomStart = CornerSize(0.dp),
+            bottomEnd = CornerSize(0.dp),
+        ),
     content: @Composable () -> Unit,
 ) {
     Box {
         Column(
-            modifier = Modifier
-                .background(
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = cornerShape,
-                )
-                .nestedScroll(rememberNestedScrollInteropConnection()),
+            modifier =
+                Modifier.background(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = cornerShape,
+                    )
+                    .nestedScroll(rememberNestedScrollInteropConnection())
         ) {
             if (menuHandleState.visible) {
                 MenuBottomSheetHandle(
@@ -82,23 +82,25 @@ private fun MenuBottomSheetHandle(
     onRequestDismiss: () -> Unit,
     contentDescription: String,
     isMenuDragBarDark: Boolean = false,
-    cornerShape: Shape = MaterialTheme.shapes.large.copy(
-        bottomStart = CornerSize(0.dp),
-        bottomEnd = CornerSize(0.dp),
-    ),
+    cornerShape: Shape =
+        MaterialTheme.shapes.large.copy(
+            bottomStart = CornerSize(0.dp),
+            bottomEnd = CornerSize(0.dp),
+        ),
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                color = if (isMenuDragBarDark) {
-                    MaterialTheme.colorScheme.surfaceContainerHigh
-                } else {
-                    Color.Transparent
-                },
-                shape = cornerShape,
-            )
-            .verticalScroll(rememberScrollState()),
+        modifier =
+            Modifier.fillMaxWidth()
+                .background(
+                    color =
+                        if (isMenuDragBarDark) {
+                            MaterialTheme.colorScheme.surfaceContainerHigh
+                        } else {
+                            Color.Transparent
+                        },
+                    shape = cornerShape,
+                )
+                .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         BottomSheetHandle(

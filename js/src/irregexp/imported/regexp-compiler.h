@@ -678,7 +678,6 @@ class V8_EXPORT_PRIVATE Compiler {
   }
   bool read_backward() { return read_backward_; }
   void set_read_backward(bool value) { read_backward_ = value; }
-  bool has_search_prefix() const { return has_search_prefix_; }
   FrequencyCollator* frequency_collator() { return &frequency_collator_; }
 
   int current_expansion_factor() { return current_expansion_factor_; }
@@ -708,11 +707,6 @@ class V8_EXPORT_PRIVATE Compiler {
   static const int kNoRegister = -1;
 
  private:
-  // Computes the filters that let RegExpExecInternal reject a match attempt
-  // without entering the engine. Defined next to the match-set helpers it
-  // shares.
-  void ComputeQuickCheckFilters(Node* start, DirectHandle<RegExpData> re_data);
-
   EndNode* accept_;
   int next_register_;
   int unicode_lookaround_stack_register_;
@@ -727,8 +721,6 @@ class V8_EXPORT_PRIVATE Compiler {
   int to_node_overflow_check_ticks_ = 0;
   bool optimize_;
   bool read_backward_;
-  // Set by PreprocessRegExp when it prepends the `.*?` search loop.
-  bool has_search_prefix_ = false;
   int current_expansion_factor_;
   FrequencyCollator frequency_collator_;
 #ifdef V8_ENABLE_REGEXP_DIAGNOSTICS

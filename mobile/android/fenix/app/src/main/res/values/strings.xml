@@ -134,12 +134,10 @@
     <string name="home_screen_shortcut_uninstall_survey">Uninstall, why?</string>
 
     <!-- Recent Tabs -->
-    <!-- Header text for jumping back into the recent tab in the home screen -->
-    <string name="recent_tabs_header">Jump back in</string>
+    <!-- Header text on the homescreen for continuing to browse the most recent browser tab -->
+    <string name="recent_tabs_header_2">Continue</string>
     <!-- Button text for showing all the tabs in the tabs tray -->
     <string name="recent_tabs_show_all">Show all</string>
-    <!-- Content description for the button which navigates the user to show all recent tabs in the tabs tray. -->
-    <string name="recent_tabs_show_all_content_description_2">Show all recent tabs button</string>
     <!-- Text for button in synced tab card that opens synced tabs tray -->
     <string name="recent_tabs_see_all_synced_tabs_button_text">See all synced tabs</string>
     <!-- Accessibility description for device icon used for recent synced tab -->
@@ -941,8 +939,8 @@
     <!-- Customize Home -->
     <!-- Title for the customize home screen section with privacy report. -->
     <string name="customize_toggle_privacy_report">Privacy report</string>
-    <!-- Header text for jumping back into the recent tab in customize the home screen -->
-    <string name="customize_toggle_jump_back_in">Jump back in</string>
+    <!-- Title for a customize home screen section. Continue is a section that displays the most recent browser tab, so users can continue browsing where they left off. -->
+    <string name="customize_toggle_continue">Continue</string>
     <!-- Title for the customize home screen section with bookmarks. -->
     <string name="customize_toggle_bookmarks">Bookmarks</string>
     <!-- Title for the customize home screen section with recently visited. Recently visited is
@@ -1072,6 +1070,9 @@
     <string name="extension_process_crash_dialog_retry_button_text" tools:ignore="UnusedResources">Try restarting extensions</string>
     <!-- Button text on the extension crash dialog to prompt the user to continue with all extensions disabled. -->
     <string name="extension_process_crash_dialog_disable_extensions_button_text">Continue with extensions disabled</string>
+
+    <!-- Text shown in the snackbar action button that lets the user retry an add-on operation that just failed. -->
+    <string name="addon_failure_retry_action">Retry</string>
 
     <!-- Account Preferences -->
     <!-- Preference for managing your account via accounts.firefox.com -->
@@ -1230,6 +1231,9 @@
     <string name="preference_light_theme">Light</string>
     <!-- Preference for using dark theme -->
     <string name="preference_dark_theme">Dark</string>
+    <!-- Preference for using the OLED theme. For localization, this can be translated as "True Black", "Maximum Darkness",
+      or "Full dark" if needed. -->
+    <string name="preference_oled_theme">Darkest</string>
     <!-- Preference for using using dark or light theme automatically set by battery -->
     <string name="preference_auto_battery_theme">Set by Battery Saver</string>
     <!-- Preference for using following device theme -->
@@ -1355,6 +1359,8 @@
     <string name="preferences_inactive_tabs">Move old tabs to inactive</string>
     <!-- Title of inactive tabs preference -->
     <string name="preferences_inactive_tabs_title">Tabs you haven’t viewed for two weeks get moved to the inactive section.</string>
+    <!-- Title for the preference to enable or disable the tab groups feature -->
+    <string name="preferences_tab_groups_feature">Enable Tab Groups</string>
 
     <!-- Privacy report -->
     <!-- Category header of a preference that allows a user to enable or disable the privacy report feature -->
@@ -1566,6 +1572,14 @@
   <string name="ungroup_tab_group_confirmation_dialog_confirm">Ungroup</string>
   <!-- Text shown on the cancel button in the Ungroup tab group confirmation dialog. -->
   <string name="ungroup_tab_group_confirmation_dialog_cancel">Cancel</string>
+  <!-- Custom accessibility action to reorder a tab up rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_up">Move tab up</string>
+  <!-- Custom accessibility action to reorder a tab left rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_left">Move tab left</string>
+  <!-- Custom accessibility action to reorder a tab right rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_right">Move tab right</string>
+  <!-- Custom accessibility action to reorder a tab down rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_down">Move tab down</string>
 
 
   <!-- Color labels for tab groups, used for accessibility and selection UI. -->
@@ -2229,6 +2243,16 @@
     The app name is in the text, due to limitations with localizing Nimbus experiments -->
     <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Make Firefox your default browser</string>
 
+    <!-- Privacy report notification -->
+    <!-- Name of the weekly privacy report notification channel. Displayed in the "App notifications" system settings for the app. -->
+    <string name="notification_privacy_report_channel_name">Privacy report</string>
+    <!-- Description of the weekly privacy report notification channel. Displayed in the "App notifications" system settings for the app. %1$s is the app name (e.g. Firefox) -->
+    <string name="notification_privacy_report_channel_description">%1$s shows how many trackers were blocked while you browsed.</string>
+    <!-- Body text for the weekly privacy report notification for when trackers have been blocked. %1$s is the app name (e.g. Firefox) -->
+    <string name="notification_privacy_report_body_has_trackers">Keep browsing. %1$s will keep blocking.</string>
+    <!-- Headline text of the weekly privacy report notification for when no trackers have been blocked. %1$s is the app name (e.g. Firefox) -->
+    <string name="notification_privacy_report_headline_no_trackers">%1$s blocks trackers as you browse. You’ll see them here.</string>
+
     <!-- Survey -->
     <!-- Text shown in the fullscreen message that pops up to ask user to take a short survey.
     The app name is in the text, due to limitations with localizing Nimbus experiments -->
@@ -2807,8 +2831,8 @@
     <string name="ip_protection_menu_paused">Paused</string>
     <!-- Badge label shown in the menu item when the browser VPN has an error -->
     <string name="ip_protection_menu_error">Error</string>
-    <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
-    <string name="ip_protection_menu_auth_required">Try it</string>
+    <!-- Badge label shown in the VPN menu item when the user is eligible for the feature but needs to authenticate / authorize to enable it -->
+    <string name="ip_protection_menu_try_vpn_cta">Try it free</string>
     <!-- Content description for the chevron button that opens the browser VPN settings screen -->
     <string name="ip_protection_navigate_settings">Open VPN settings</string>
     <!-- Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
@@ -2821,6 +2845,10 @@
     <string name="ip_protection_toolbar_pill_label">VPN on</string>
     <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
     <string name="ip_protection_toolbar_pill_description">VPN is active.</string>
+    <!-- Label shown next to the browser protection icon in the address bar when the browser VPN turns off -->
+    <string name="ip_protection_toolbar_pill_label_off">VPN off</string>
+    <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has turned off -->
+    <string name="ip_protection_toolbar_pill_description_off">VPN is off.</string>
     <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
     <string name="ip_protection_get_started">Get started</string>
     <!-- Label for the "connecting" state of the button that starts the browser VPN authentication or authorization flow on the settings screen -->
@@ -2843,6 +2871,8 @@
     <string name="ip_protection_onboarding_not_now_button">Not now</string>
     <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
     <string name="ip_protection_connection_error_snackbar">Couldn’t connect to VPN. Try again in a few minutes.</string>
+    <!-- Snackbar (in-app pop-up notification) text to signal the VPN location has been reset due to the previously selected VPN location being no longer available. -->
+    <string name="ip_protection_location_selection_reset_snackbar">Selected VPN location unavailable. Switched to the recommended location.</string>
     <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
         %1$d is the total monthly allowance in GB (for example "50"). -->
     <string name="ip_protection_data_limit_reached_snackbar">%1$d GB of VPN data used. Access will reset next month.</string>
@@ -2864,6 +2894,8 @@
     <string name="ip_protection_location_picker_title" tools:ignore="UnusedResources">Choose VPN location</string>
     <!-- Description for what it means to use the Recommended setting and let the app automatically pick the best server location. -->
     <string name="ip_protection_location_fastest_description" tools:ignore="BrandUsage">Firefox finds the fastest location</string>
+    <!-- Description for an unavailable VPN location in the location list. -->
+    <string name="ip_protection_location_unavailable_description">Unavailable</string>
     <!-- Error message shown when the selected browser VPN location is unavailable. -->
     <string name="ip_protection_location_unavailable" tools:ignore="UnusedResources">Location unavailable. Choose another location.</string>
     <!-- Snackbar (in-app pop-up notification) text shown when the previously selected browser VPN location is unavailable and the recommended location was used instead. -->
@@ -3157,6 +3189,12 @@
     <!-- Context description text for the "Show all" button in the shortcuts home screen section
         which navigates the user to a screen displaying all the shortcuts. -->
     <string name="homepage_shortcuts_show_all_content_description">Show all shortcuts</string>
+    <!-- Label for the button in the shortcuts home screen section that expands the section to show
+        every shortcut. -->
+    <string name="homepage_shortcuts_show_all">Show all</string>
+    <!-- Label for the button in the shortcuts home screen section that collapses the section back
+        to showing only the first shortcuts. -->
+    <string name="homepage_shortcuts_show_less">Show less</string>
     <!-- Label for the "Add shortcut" button displayed as a tile. -->
     <string name="homepage_shortcuts_add_shortcut">Add shortcut</string>
     <!-- Title for the "Add to homepage" bottom sheet. -->
@@ -4120,4 +4158,26 @@
     <string name="firefox_labs_website_isolation_title" tools:ignore="UnusedResources">Website isolation</string>
     <!-- Description of the Firefox Labs Sandboxing experiment. -->
     <string name="firefox_labs_website_isolation_description" tools:ignore="UnusedResources">An extra barrier between websites that helps protect your data across tabs. May affect performance, stability, website compatibility, and how browsing history is saved.</string>
+
+    <!-- PDF viewer toolbar and buttons -->
+    <!-- Content description for accessibility (used by screen readers): Description for the button that triggers the start of a signature workflow on the PDF displayed on the screen. -->
+    <string name="pdf_tools_sign_content_description">Sign PDF</string>
+    <!-- Content description for accessibility (used by screen readers): Description of the button that downloads the PDF displayed on the screen to the user's device. -->
+    <string name="pdf_tools_download_content_description">Download PDF</string>
+    <!-- Content description for accessibility (used by screen readers): Description for the button that opens the printing dialogue window for the PDF displayed on the screen. -->
+    <string name="pdf_tools_print_content_description">Print PDF</string>
+    <!-- Content description for accessibility (used by screen readers): Description for the button that opens the sharing options for the PDF being displayed on the screen. -->
+    <string name="pdf_tools_share_content_description">Share PDF</string>
+
+    <!-- PDF viewer add a signature dialog -->
+    <!-- The title of the dialog for adding a signature to a PDF. -->
+    <string name="pdf_tools_signature_title">Add a signature</string>
+    <!-- Content description for accessibility (used by screen readers): Description for the button that closes the dialog for adding a signature to a PDF. -->
+    <string name="pdf_tools_signature_close_content_description">Close PDF signature panel</string>
+    <!-- The placeholder text shown in the empty text input field where users can enter the signature they wish to add to a PDF. -->
+    <string name="pdf_tools_signature_placeholder">Type signature</string>
+    <!-- The text for the button that erases the text the user entered in the "add a signature" field. -->
+    <string name="pdf_tools_signature_clear_button">Clear</string>
+    <!-- The text for the button that adds the signature the user has typed to the PDF. -->
+    <string name="pdf_tools_signature_add_button">Add</string>
 </resources>

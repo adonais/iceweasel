@@ -140,21 +140,20 @@ class ConstellationObserverTest {
         verify(verifier).increment()
     }
 
-    private fun testSubscription() = AutoPushSubscription(
-        scope = "testScope",
-        endpoint = "https://example.com/foobar",
-        publicKey = "",
-        authKey = "",
-        appServerKey = null,
-    )
+    private fun testSubscription() =
+        AutoPushSubscription(
+            scope = "testScope",
+            endpoint = "https://example.com/foobar",
+            publicKey = "",
+            authKey = "",
+            appServerKey = null,
+        )
 
     @Suppress("UNCHECKED_CAST")
     private fun whenSubscribe(): OngoingStubbing<Unit>? {
         return `when`(push.subscribe(any(), nullable(), any(), any())).thenAnswer {
             // Invoke the `onSubscribe` lambda with a fake subscription.
-            (it.arguments[3] as ((AutoPushSubscription) -> Unit)).invoke(
-                testSubscription(),
-            )
+            (it.arguments[3] as ((AutoPushSubscription) -> Unit)).invoke(testSubscription())
         }
     }
 
@@ -162,9 +161,7 @@ class ConstellationObserverTest {
     private fun whenSubscribeError(): OngoingStubbing<Unit>? {
         return `when`(push.subscribe(any(), nullable(), any(), any())).thenAnswer {
             // Invoke the `onSubscribeError` lambda with a fake exception.
-            (it.arguments[2] as ((Exception) -> Unit)).invoke(
-                IllegalStateException("test"),
-            )
+            (it.arguments[2] as ((Exception) -> Unit)).invoke(IllegalStateException("test"))
         }
     }
 
@@ -184,6 +181,6 @@ class ConstellationObserverTest {
             verifier = verifier,
             crashReporter = crashReporter,
             uiContext = coroutineContext,
-            )
+        )
     }
 }

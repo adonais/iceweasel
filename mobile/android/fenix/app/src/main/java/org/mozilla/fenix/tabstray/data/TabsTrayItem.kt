@@ -7,6 +7,7 @@ package org.mozilla.fenix.tabstray.data
 import android.graphics.Bitmap
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.asImageBitmap
+import java.util.UUID
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.isActive
 import mozilla.components.compose.base.theme.layout.AcornWindowSize
@@ -14,29 +15,20 @@ import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import org.mozilla.fenix.compose.TabThumbnailImageData
 import org.mozilla.fenix.ext.maxActiveTime
 import org.mozilla.fenix.tabstray.ext.toDisplayTitle
-import java.util.UUID
 
 private const val SMALL_WINDOW_FULL_EXPAND_TAB_COUNT = 4
 private const val MEDIUM_LARGE_WINDOW_FULL_EXPAND_TAB_COUNT = 8
 
-/**
- * Data entity representing items in the Tabs Tray.
- */
+/** Data entity representing items in the Tabs Tray. */
 @Immutable
 sealed interface TabsTrayItem {
-    /**
-     * The ID of the item.
-     */
+    /** The ID of the item. */
     val id: String
 
-    /**
-     * Whether the entity represents a Homepage item.
-     */
+    /** Whether the entity represents a Homepage item. */
     val isHomepageItem: Boolean
 
-    /**
-     * Whether the entity is focused.
-     */
+    /** Whether the entity is focused. */
     val isFocused: Boolean
 
     /**
@@ -78,15 +70,14 @@ sealed interface TabsTrayItem {
             isFocused = isFocused,
         )
 
-        /**
-         * Constructs a [TabThumbnailImageData] from the given tab data
-         */
-        fun toThumbnailImageData(): TabThumbnailImageData = TabThumbnailImageData(
-            tabId = id,
-            isPrivate = private,
-            tabUrl = url,
-            tabIcon = icon?.asImageBitmap(),
-        )
+        /** Constructs a [TabThumbnailImageData] from the given tab data */
+        fun toThumbnailImageData(): TabThumbnailImageData =
+            TabThumbnailImageData(
+                tabId = id,
+                isPrivate = private,
+                tabUrl = url,
+                tabIcon = icon?.asImageBitmap(),
+            )
     }
 
     /**
@@ -100,7 +91,7 @@ sealed interface TabsTrayItem {
      * @property lastModified Timestamp indicating the last time this group was updated.
      * @property isFocused Whether the tab is focused. This is only set when the tab data model is generated.
      * @property initialScrollIndex The index to open the tab group to when first expanded. This is only set when the
-     * tab data model is generated.
+     *   tab data model is generated.
      */
     @Immutable
     data class TabGroup(
@@ -115,9 +106,7 @@ sealed interface TabsTrayItem {
     ) : TabsTrayItem {
         override val isHomepageItem: Boolean = false
 
-        /**
-         * Retrieves the thumbnail image data for the first 4 tabs in the group's tab collection.
-         */
+        /** Retrieves the thumbnail image data for the first 4 tabs in the group's tab collection. */
         val thumbnails by lazy {
             tabs.take(4).map { it.toThumbnailImageData() }
         }
@@ -134,14 +123,12 @@ sealed interface TabsTrayItem {
 
     /**
      * @param text The text to search for.
-     *
      * @return true if the item contains the given text.
      */
     fun contains(text: String): Boolean {
         return when (this) {
             is Tab -> {
-                url.contains(text, ignoreCase = true) ||
-                        title.contains(text, ignoreCase = true)
+                url.contains(text, ignoreCase = true) || title.contains(text, ignoreCase = true)
             }
             is TabGroup -> false
         }
@@ -156,16 +143,17 @@ internal fun createTab(
     private: Boolean = false,
     lastAccess: Long = 0L,
     isFocused: Boolean = false,
-): TabsTrayItem.Tab = TabsTrayItem.Tab(
-    id = id,
-    url = url,
-    title = title,
-    inactive = inactive,
-    private = private,
-    icon = null,
-    lastAccess = lastAccess,
-    isFocused = isFocused,
-)
+): TabsTrayItem.Tab =
+    TabsTrayItem.Tab(
+        id = id,
+        url = url,
+        title = title,
+        inactive = inactive,
+        private = private,
+        icon = null,
+        lastAccess = lastAccess,
+        isFocused = isFocused,
+    )
 
 internal fun createTabGroup(
     id: String = UUID.randomUUID().toString(),
@@ -176,16 +164,17 @@ internal fun createTabGroup(
     lastModified: Long = 0L,
     isFocused: Boolean = false,
     initialScrollIndex: Int = 0,
-): TabsTrayItem.TabGroup = TabsTrayItem.TabGroup(
-    id = id,
-    title = title,
-    theme = theme,
-    tabs = tabs,
-    closed = closed,
-    lastModified = lastModified,
-    isFocused = isFocused,
-    initialScrollIndex = initialScrollIndex,
-)
+): TabsTrayItem.TabGroup =
+    TabsTrayItem.TabGroup(
+        id = id,
+        title = title,
+        theme = theme,
+        tabs = tabs,
+        closed = closed,
+        lastModified = lastModified,
+        isFocused = isFocused,
+        initialScrollIndex = initialScrollIndex,
+    )
 
 internal fun List<TabsTrayItem>.toTabList(): List<TabsTrayItem.Tab> = flatMap {
     when (it) {

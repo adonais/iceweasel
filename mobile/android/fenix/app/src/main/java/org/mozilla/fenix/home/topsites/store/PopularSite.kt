@@ -19,11 +19,10 @@ data class PopularSite(
     val iconUrl: String?,
 )
 
-/**
- * Converts a [ManifestEntry] to a [PopularSite].
- */
-fun ManifestEntry.toPopularSite(): PopularSite = PopularSite(
-    title = title,
-    url = url,
-    iconUrl = icon.ifEmpty { null },
-)
+/** Converts a [ManifestEntry] to a [PopularSite]. */
+fun ManifestEntry.toPopularSite(): PopularSite =
+    PopularSite(
+        title = title,
+        url = url,
+        iconUrl = icon.ifEmpty { null },
+    )

@@ -358,10 +358,7 @@ class ScrollTimeline : public AnimationTimeline,
     // needs to take care of that.
     nscoord mPosition = 0;
     nscoord mMaxScrollOffset = 0;
-    bool operator==(const CurrentTimeData& aOther) const {
-      return mPosition == aOther.mPosition &&
-             mMaxScrollOffset == aOther.mMaxScrollOffset;
-    }
+    bool operator==(const CurrentTimeData& aOther) const = default;
   };
 
  private:

@@ -39,14 +39,16 @@ class PrivateBrowsingLockFeatureTest {
     }
 
     private val testDispatcher = StandardTestDispatcher()
-    private val regularTabs: List<TabSessionState> = listOf(
-        createTab("https://www.firefox.com", id = "firefox"),
-        createTab("https://www.mozilla.org", id = "mozilla"),
-    )
-    private val mixedTabs: List<TabSessionState> = listOf(
-        createTab("https://www.firefox.com", id = "firefox", private = true),
-        createTab("https://www.mozilla.org", id = "mozilla"),
-    )
+    private val regularTabs: List<TabSessionState> =
+        listOf(
+            createTab("https://www.firefox.com", id = "firefox"),
+            createTab("https://www.mozilla.org", id = "mozilla"),
+        )
+    private val mixedTabs: List<TabSessionState> =
+        listOf(
+            createTab("https://www.firefox.com", id = "firefox", private = true),
+            createTab("https://www.mozilla.org", id = "mozilla"),
+        )
 
     // zero tabs cases
     @Test
@@ -90,7 +92,11 @@ class PrivateBrowsingLockFeatureTest {
 
         val appStore = createAppStore(mode)
         val browserStore = createBrowserStore(mixedTabs)
-        createFeature(browserStore = browserStore, appStore = appStore, storage = createStorage(isFeatureEnabled = isFeatureEnabled))
+        createFeature(
+            browserStore = browserStore,
+            appStore = appStore,
+            storage = createStorage(isFeatureEnabled = isFeatureEnabled),
+        )
 
         assertFalse(appStore.state.isPrivateScreenLocked)
 
@@ -190,56 +196,60 @@ class PrivateBrowsingLockFeatureTest {
 
     // observePrivateModeLock tests
     @Test
-    fun `GIVEN normal mode and enabled lock WHEN observePrivateModeLock is triggered THEN observing lock doesn't trigger`() = runTest {
-        var result = false
-        val appState = AppState(mode = BrowsingMode.Normal, isPrivateScreenLocked = true)
+    fun `GIVEN normal mode and enabled lock WHEN observePrivateModeLock is triggered THEN observing lock doesn't trigger`() =
+        runTest {
+            var result = false
+            val appState = AppState(mode = BrowsingMode.Normal, isPrivateScreenLocked = true)
 
-        observePrivateModeLock(
-            flow = flowOf(appState),
-            onPrivateModeLocked = { result = true },
-        )
+            observePrivateModeLock(
+                flow = flowOf(appState),
+                onPrivateModeLocked = { result = true },
+            )
 
-        assertFalse(result)
-    }
-
-    @Test
-    fun `GIVEN normal mode and disabled lock WHEN observePrivateModeLock is triggered THEN observing lock doesn't trigger`() = runTest {
-        var result = false
-        val appState = AppState(mode = BrowsingMode.Normal, isPrivateScreenLocked = false)
-
-        observePrivateModeLock(
-            flow = flowOf(appState),
-            onPrivateModeLocked = { result = true },
-        )
-
-        assertFalse(result)
-    }
+            assertFalse(result)
+        }
 
     @Test
-    fun `GIVEN private mode and enabled lock WHEN observePrivateModeLock is triggered THEN observing lock triggers`() = runTest {
-        var result = false
-        val appState = AppState(mode = BrowsingMode.Private, isPrivateScreenLocked = true)
+    fun `GIVEN normal mode and disabled lock WHEN observePrivateModeLock is triggered THEN observing lock doesn't trigger`() =
+        runTest {
+            var result = false
+            val appState = AppState(mode = BrowsingMode.Normal, isPrivateScreenLocked = false)
 
-        observePrivateModeLock(
-            flow = flowOf(appState),
-            onPrivateModeLocked = { result = true },
-        )
+            observePrivateModeLock(
+                flow = flowOf(appState),
+                onPrivateModeLocked = { result = true },
+            )
 
-        assertTrue(result)
-    }
+            assertFalse(result)
+        }
 
     @Test
-    fun `GIVEN private mode and disabled lock WHEN observePrivateModeLock is triggered THEN observing lock doesn't trigger`() = runTest {
-        var result = false
-        val appState = AppState(mode = BrowsingMode.Private, isPrivateScreenLocked = false)
+    fun `GIVEN private mode and enabled lock WHEN observePrivateModeLock is triggered THEN observing lock triggers`() =
+        runTest {
+            var result = false
+            val appState = AppState(mode = BrowsingMode.Private, isPrivateScreenLocked = true)
 
-        observePrivateModeLock(
-            flow = flowOf(appState),
-            onPrivateModeLocked = { result = true },
-        )
+            observePrivateModeLock(
+                flow = flowOf(appState),
+                onPrivateModeLocked = { result = true },
+            )
 
-        assertFalse(result)
-    }
+            assertTrue(result)
+        }
+
+    @Test
+    fun `GIVEN private mode and disabled lock WHEN observePrivateModeLock is triggered THEN observing lock doesn't trigger`() =
+        runTest {
+            var result = false
+            val appState = AppState(mode = BrowsingMode.Private, isPrivateScreenLocked = false)
+
+            observePrivateModeLock(
+                flow = flowOf(appState),
+                onPrivateModeLocked = { result = true },
+            )
+
+            assertFalse(result)
+        }
 
     // on stop tests
     @Test
@@ -316,7 +326,12 @@ class PrivateBrowsingLockFeatureTest {
 
         val appStore = createAppStore(mode)
         val browserStore = createBrowserStore(regularTabs)
-        val feature = createFeature(browserStore = browserStore, appStore = appStore, storage = createStorage(isFeatureEnabled = isFeatureEnabled))
+        val feature =
+            createFeature(
+                browserStore = browserStore,
+                appStore = appStore,
+                storage = createStorage(isFeatureEnabled = isFeatureEnabled),
+            )
 
         assertTrue(appStore.state.mode == mode)
         assertFalse(appStore.state.isPrivateScreenLocked)
@@ -381,7 +396,12 @@ class PrivateBrowsingLockFeatureTest {
         val appStore = AppStore(initialState = AppState(mode = mode))
         val browserStore = createBrowserStore(mixedTabs)
         val useCase = PrivateBrowsingLockUseCases.AuthenticatedUseCase(appStore)
-        val feature = createFeature(browserStore = browserStore, appStore = appStore, storage = createStorage(isFeatureEnabled = isFeatureEnabled))
+        val feature =
+            createFeature(
+                browserStore = browserStore,
+                appStore = appStore,
+                storage = createStorage(isFeatureEnabled = isFeatureEnabled),
+            )
 
         useCase.invoke()
 
@@ -709,14 +729,14 @@ class PrivateBrowsingLockFeatureTest {
     }
 
     internal class MockedLifecycleOwner(initialState: Lifecycle.State) : LifecycleOwner {
-        override val lifecycle: Lifecycle = LifecycleRegistry(this).apply {
-            currentState = initialState
-        }
+        override val lifecycle: Lifecycle =
+            LifecycleRegistry(this).apply {
+                currentState = initialState
+            }
     }
 
-    internal class MockedPrivateBrowsingLockStorage(
-        override val isFeatureEnabled: Boolean = true,
-    ) : PrivateBrowsingLockStorage {
+    internal class MockedPrivateBrowsingLockStorage(override val isFeatureEnabled: Boolean = true) :
+        PrivateBrowsingLockStorage {
         var listener: ((Boolean) -> Unit)? = null
 
         var startCalled = false
@@ -734,29 +754,33 @@ class PrivateBrowsingLockFeatureTest {
         appStore: AppStore,
         browserStore: BrowserStore,
         storage: PrivateBrowsingLockStorage,
-    ) = PrivateBrowsingLockFeature(
-        appStore = appStore,
-        browserStore = browserStore,
-        storage = storage,
-        mainDispatcher = testDispatcher,
-    )
+    ) =
+        PrivateBrowsingLockFeature(
+            appStore = appStore,
+            browserStore = browserStore,
+            storage = storage,
+            mainDispatcher = testDispatcher,
+        )
 
     private fun createStorage(isFeatureEnabled: Boolean = true) = MockedPrivateBrowsingLockStorage(isFeatureEnabled)
 
-    private fun createBrowserStore(tabs: List<TabSessionState>) = BrowserStore(
-        BrowserState(
-            tabs = tabs,
-            selectedTabId = "mozilla",
-        ),
-    )
+    private fun createBrowserStore(tabs: List<TabSessionState>) =
+        BrowserStore(
+            BrowserState(
+                tabs = tabs,
+                selectedTabId = "mozilla",
+            )
+        )
 
     private fun createAppStore(
         mode: BrowsingMode,
         isPrivateScreenLocked: Boolean = false,
-    ) = AppStore(
-        initialState = AppState(
-            mode = mode,
-            isPrivateScreenLocked = isPrivateScreenLocked,
-        ),
-    )
+    ) =
+        AppStore(
+            initialState =
+                AppState(
+                    mode = mode,
+                    isPrivateScreenLocked = isPrivateScreenLocked,
+                )
+        )
 }

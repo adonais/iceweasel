@@ -29,16 +29,17 @@ open class TabCounterMenu(
     /**
      * Represents the menu items.
      *
-     * [CloseTab] menu item for closing a tab.
-     * [NewTab] menu item for opening a new tab.
-     * [NewPrivateTab] menu item for opening a new private tab.
-     * [DuplicateTab] menu item for duplicating the current tab.
+     * [CloseTab] menu item for closing a tab. [NewTab] menu item for opening a new tab. [NewPrivateTab] menu item for
+     * opening a new private tab. [DuplicateTab] menu item for duplicating the current tab.
      */
     @Suppress("UndocumentedPublicClass")
     open class Item {
         object CloseTab : Item()
+
         object NewTab : Item()
+
         object NewPrivateTab : Item()
+
         object DuplicateTab : Item()
     }
 
@@ -50,52 +51,60 @@ open class TabCounterMenu(
     val menuController: MenuController by lazy { BrowserMenuController() }
 
     init {
-        newTabItem = TextMenuCandidate(
-            text = context.getString(R.string.mozac_browser_menu_new_tab),
-            start = DrawableMenuIcon(
-                context,
-                iconsR.drawable.mozac_ic_plus_24,
-                tint = iconColor ?: getColor(context, R.color.mozac_ui_tabcounter_default_text),
-            ),
-            textStyle = TextStyle(),
-        ) {
-            onItemTapped(Item.NewTab)
-        }
+        newTabItem =
+            TextMenuCandidate(
+                text = context.getString(R.string.mozac_browser_menu_new_tab),
+                start =
+                    DrawableMenuIcon(
+                        context,
+                        iconsR.drawable.mozac_ic_plus_24,
+                        tint = iconColor ?: getColor(context, R.color.mozac_ui_tabcounter_default_text),
+                    ),
+                textStyle = TextStyle(),
+            ) {
+                onItemTapped(Item.NewTab)
+            }
 
-        newPrivateTabItem = TextMenuCandidate(
-            text = context.getString(R.string.mozac_browser_menu_new_private_tab),
-            start = DrawableMenuIcon(
-                context,
-                iconsR.drawable.mozac_ic_private_mode_fill_24,
-                tint = iconColor ?: getColor(context, R.color.mozac_ui_tabcounter_default_text),
-            ),
-            textStyle = TextStyle(),
-        ) {
-            onItemTapped(Item.NewPrivateTab)
-        }
+        newPrivateTabItem =
+            TextMenuCandidate(
+                text = context.getString(R.string.mozac_browser_menu_new_private_tab),
+                start =
+                    DrawableMenuIcon(
+                        context,
+                        iconsR.drawable.mozac_ic_private_mode_fill_24,
+                        tint = iconColor ?: getColor(context, R.color.mozac_ui_tabcounter_default_text),
+                    ),
+                textStyle = TextStyle(),
+            ) {
+                onItemTapped(Item.NewPrivateTab)
+            }
 
-        closeTabItem = TextMenuCandidate(
-            text = context.getString(R.string.mozac_close_tab),
-            start = DrawableMenuIcon(
-                context,
-                iconsR.drawable.mozac_ic_cross_24,
-                tint = iconColor ?: getColor(context, R.color.mozac_ui_tabcounter_default_text),
-            ),
-            textStyle = TextStyle(),
-        ) {
-            onItemTapped(Item.CloseTab)
-        }
+        closeTabItem =
+            TextMenuCandidate(
+                text = context.getString(R.string.mozac_close_tab),
+                start =
+                    DrawableMenuIcon(
+                        context,
+                        iconsR.drawable.mozac_ic_cross_24,
+                        tint = iconColor ?: getColor(context, R.color.mozac_ui_tabcounter_default_text),
+                    ),
+                textStyle = TextStyle(),
+            ) {
+                onItemTapped(Item.CloseTab)
+            }
 
-        duplicateTabItem = TextMenuCandidate(
-            text = context.getString(R.string.mozac_ui_tabcounter_duplicate_tab),
-            start = DrawableMenuIcon(
-                context,
-                iconsR.drawable.mozac_ic_tab_24,
-                tint = iconColor ?: getColor(context, R.color.mozac_ui_tabcounter_default_text),
-            ),
-            textStyle = TextStyle(),
-        ) {
-            onItemTapped(Item.DuplicateTab)
-        }
+        duplicateTabItem =
+            TextMenuCandidate(
+                text = context.getString(R.string.mozac_ui_tabcounter_duplicate_tab),
+                start =
+                    DrawableMenuIcon(
+                        context,
+                        iconsR.drawable.mozac_ic_tab_24,
+                        tint = iconColor ?: getColor(context, R.color.mozac_ui_tabcounter_default_text),
+                    ),
+                textStyle = TextStyle(),
+            ) {
+                onItemTapped(Item.DuplicateTab)
+            }
     }
 }

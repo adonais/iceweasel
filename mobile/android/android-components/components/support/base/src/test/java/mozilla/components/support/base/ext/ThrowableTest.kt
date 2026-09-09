@@ -5,11 +5,11 @@
 package mozilla.components.support.base.ext
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.lang.RuntimeException
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.lang.RuntimeException
 
 @RunWith(AndroidJUnit4::class)
 class ThrowableTest {
@@ -25,7 +25,13 @@ class ThrowableTest {
     fun `throwable stack trace to string works correctly`() {
         val throwable = RuntimeException("TEST ONLY")
 
-        assert(throwable.getStacktraceAsString().contains("mozilla.components.support.base.ext.ThrowableTest.throwable stack trace to string works correctly(ThrowableTest.kt:"))
+        assert(
+            throwable
+                .getStacktraceAsString()
+                .contains(
+                    "mozilla.components.support.base.ext.ThrowableTest.throwable stack trace to string works correctly(ThrowableTest.kt:"
+                )
+        )
     }
 
     @Test
@@ -53,18 +59,33 @@ class ThrowableTest {
         val throwable = RuntimeException("TEST ONLY")
 
         var json = JSONObject(throwable.getStacktraceAsJsonString(1))
-        var frames = json.getJSONObject("exception").getJSONArray("values").getJSONObject(0)
-            .getJSONObject("stacktrace").getJSONArray("frames")
+        var frames =
+            json
+                .getJSONObject("exception")
+                .getJSONArray("values")
+                .getJSONObject(0)
+                .getJSONObject("stacktrace")
+                .getJSONArray("frames")
         assertEquals(frames.length(), 1)
 
         json = JSONObject(throwable.getStacktraceAsJsonString(5))
-        frames = json.getJSONObject("exception").getJSONArray("values").getJSONObject(0)
-            .getJSONObject("stacktrace").getJSONArray("frames")
+        frames =
+            json
+                .getJSONObject("exception")
+                .getJSONArray("values")
+                .getJSONObject(0)
+                .getJSONObject("stacktrace")
+                .getJSONArray("frames")
         assertEquals(frames.length(), 5)
 
         json = JSONObject(throwable.getStacktraceAsJsonString(10))
-        frames = json.getJSONObject("exception").getJSONArray("values").getJSONObject(0)
-            .getJSONObject("stacktrace").getJSONArray("frames")
+        frames =
+            json
+                .getJSONObject("exception")
+                .getJSONArray("values")
+                .getJSONObject(0)
+                .getJSONObject("stacktrace")
+                .getJSONArray("frames")
         assertEquals(frames.length(), 10)
     }
 }

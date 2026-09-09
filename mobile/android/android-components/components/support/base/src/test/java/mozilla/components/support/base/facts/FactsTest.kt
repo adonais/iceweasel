@@ -25,7 +25,7 @@ class FactsTest {
                 Component.SUPPORT_TEST,
                 Action.CLICK,
                 "test",
-            ),
+            )
         )
     }
 
@@ -34,26 +34,26 @@ class FactsTest {
         val processor1: FactProcessor = mock()
         val processor2: FactProcessor = mock()
 
-        Facts
-            .registerProcessor(processor1)
-            .registerProcessor(processor2)
+        Facts.registerProcessor(processor1).registerProcessor(processor2)
 
-        val fact1 = Fact(
-            Component.SUPPORT_TEST,
-            Action.CLICK,
-            "test",
-        )
+        val fact1 =
+            Fact(
+                Component.SUPPORT_TEST,
+                Action.CLICK,
+                "test",
+            )
 
         Facts.collect(fact1)
 
         verify(processor1).process(fact1)
         verify(processor2).process(fact1)
 
-        val fact2 = Fact(
-            Component.SUPPORT_BASE,
-            Action.TOGGLE,
-            "test",
-        )
+        val fact2 =
+            Fact(
+                Component.SUPPORT_BASE,
+                Action.TOGGLE,
+                "test",
+            )
 
         Facts.collect(fact2)
 

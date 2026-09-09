@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -18,16 +18,16 @@ class UserCharUUIDResetTest : BaseSessionTest() {
         val prefName = "toolkit.telemetry.user_characteristics_ping.uuid"
         val prefVal = "Hello World!"
 
-        sessionRule.setPrefsUntilTestEnd(
-            mapOf(
-                prefName to prefVal,
-            ),
-        )
+        sessionRule.setPrefsUntilTestEnd(mapOf(prefName to prefVal))
 
         assertThat("Pref is set", sessionRule.getPrefs(prefName)[0], equalTo(prefVal))
 
         RuntimeCreator.getRuntime().notifyTelemetryPrefChanged(true)
-        assertThat("Pref is still the same when telemetry is enabled", sessionRule.getPrefs(prefName)[0], equalTo(prefVal))
+        assertThat(
+            "Pref is still the same when telemetry is enabled",
+            sessionRule.getPrefs(prefName)[0],
+            equalTo(prefVal),
+        )
 
         RuntimeCreator.getRuntime().notifyTelemetryPrefChanged(false)
         assertThat("Pref is reset when telemetry is disabled", sessionRule.getPrefs(prefName)[0], equalTo(""))

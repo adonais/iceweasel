@@ -17,12 +17,13 @@ import {
 import { PinnedAreaOverlay } from "./PinnedAreaOverlay.jsx";
 import { TopSitesHoverCard } from "content-src/components/TopSitesHoverCard/TopSitesHoverCard";
 import { TopSiteWebNotification } from "content-src/components/TopSiteWebNotification/TopSiteWebNotification";
-import { LinkMenu } from "content-src/components/LinkMenu/LinkMenu";
+import { getLinkMenuOptions } from "content-src/lib/link-menu-options";
+import { PanelListItems } from "content-src/components/LinkMenu/PanelListItems";
+import { subscribePanelListToggle } from "content-src/lib/panel-list-utils";
 import { ImpressionStats } from "../DiscoveryStreamImpressionStats/ImpressionStats";
 import React from "react";
 import { ScreenshotUtils } from "content-src/lib/screenshot-utils";
 import { TOP_SITES_MAX_SITES_PER_ROW } from "common/Reducers.sys.mjs";
-import { ContextMenuButton } from "content-src/components/ContextMenu/ContextMenuButton";
 import { TopSiteImpressionWrapper } from "./TopSiteImpressionWrapper";
 import { connect } from "react-redux";
 
@@ -46,7 +47,7 @@ function createDragGhost(e, el) {
   const clone = el.cloneNode(true);
   clone.classList.add("drag-ghost", "active");
   // Drop any open context menu from the clone so only the tile is lifted.
-  clone.querySelector(".context-menu")?.remove();
+  clone.querySelector("panel-list")?.remove();
   // Size the ghost to the hover/expanded tile (--col-width, per Figma), falling
   // back to the resting size where that token isn't defined.
   clone.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:var(--col-width, ${restingSize}px);height:var(--col-width, ${restingSize}px);margin:0;pointer-events:none;transform:rotate(${DRAG_GHOST_ROTATION_DEG}deg)`;
@@ -461,6 +462,94 @@ export class TopSite extends React.PureComponent {
     this.state = { showContextMenu: false };
     this.onLinkClick = this.onLinkClick.bind(this);
     this.onMenuUpdate = this.onMenuUpdate.bind(this);
+    this.panelListRef = React.createRef();
+    this.menuButtonRef = React.createRef();
+    this.onMenuShown = this.onMenuShown.bind(this);
+    this.onMenuHidden = this.onMenuHidden.bind(this);
+    this.onMenuButtonMouseDown = this.onMenuButtonMouseDown.bind(this);
+    this.onMenuButtonClick = this.onMenuButtonClick.bind(this);
+    this.onMenuButtonKeyDown = this.onMenuButtonKeyDown.bind(this);
+  }
+
+  componentDidMount() {
+    // The panel-list is persistent, so mirror its open/close state into the
+    // tile's active flag via panel-list's shown/hidden events (replacing
+    // ContextMenuButton's onUpdate callback).
+    this.teardownMenuEvents = subscribePanelListToggle(
+      this.panelListRef.current,
+      { onShown: this.onMenuShown, onHidden: this.onMenuHidden }
+    );
+
+    // Register the trigger as the panel-list's popover invoker. panel-list is a
+    // popover="auto", so without this the platform treats a click on the
+    // trigger as a click outside the popover and light-dismisses it on
+    // pointerup, right after our mousedown opened it. The invoker relationship
+    // is what exempts it (see nsINode::GetTopmostClickedPopover). moz-button
+    // does the same thing in its MenuController. Our click handler calls
+    // preventDefault, which cancels the invoker's own default toggle, so the
+    // menu is not toggled twice.
+    if (this.menuButtonRef.current && this.panelListRef.current) {
+      this.menuButtonRef.current.popoverTargetElement =
+        this.panelListRef.current;
+    }
+  }
+
+  componentWillUnmount() {
+    this.teardownMenuEvents?.();
+  }
+
+  onMenuShown() {
+    this.onMenuUpdate(true);
+  }
+
+  onMenuHidden() {
+    this.onMenuUpdate(false);
+  }
+
+  /**
+   * Opens the menu on mousedown rather than click. panel-list hides itself on
+   * any document mousedown landing outside the panel, so toggling on click
+   * would close it on mousedown and immediately reopen it on click, leaving the
+   * menu stuck open. Toggling here runs before that document listener, and
+   * panel-list's hide() then records this event so the listener ignores it.
+   *
+   * @param {MouseEvent} event
+   */
+  onMenuButtonMouseDown(event) {
+    if (event.button !== 0) {
+      return;
+    }
+    this.panelListRef.current?.toggle(event, event.currentTarget);
+  }
+
+  /**
+   * Activations that produce no mousedown still arrive as a click: a
+   * programmatic .click() and a keyboard-generated click both carry detail 0.
+   * Real mouse clicks (detail >= 1) were already handled on mousedown and must
+   * not toggle a second time here. This mirrors moz-button's MenuController.
+   *
+   * @param {MouseEvent} event
+   */
+  onMenuButtonClick(event) {
+    event.preventDefault();
+    if (!event.detail) {
+      this.panelListRef.current?.toggle(event, event.currentTarget);
+    }
+  }
+
+  /**
+   * Keyboard activation. The event is handed to panel-list so it can tell this
+   * apart from a pointer open, which is what makes it focus the first item and
+   * return focus to the trigger on close. preventDefault stops the browser
+   * synthesizing a click, which would toggle the menu straight back closed.
+   *
+   * @param {KeyboardEvent} event
+   */
+  onMenuButtonKeyDown(event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      this.panelListRef.current?.toggle(event, event.currentTarget);
+    }
   }
 
   /**
@@ -647,6 +736,20 @@ export class TopSite extends React.PureComponent {
       menuOptions = TOP_SITES_CONTEXT_MENU_OPTIONS;
     }
 
+    const menuId = `topsite-context-menu-${props.index}`;
+    const options = getLinkMenuOptions({
+      dispatch: props.dispatch,
+      index: props.index,
+      source: TOP_SITES_SOURCE,
+      isPrivateBrowsingEnabled: props.isPrivateBrowsingEnabled,
+      platform: props.platform,
+      privacyInfoUrl: props.privacyInfoUrl,
+      options: menuOptions,
+      site: link,
+      shouldSendImpressionStats: link.type === SPOC_TYPE,
+      siteInfo: this._getTelemetryInfo(),
+    });
+
     return (
       <TopSiteLink
         {...props}
@@ -661,24 +764,34 @@ export class TopSite extends React.PureComponent {
         onFocus={this.props.onFocus}
       >
         <div>
-          <ContextMenuButton
-            tooltip="newtab-menu-content-tooltip"
-            tooltipArgs={{ title }}
-            onUpdate={this.onMenuUpdate}
+          {/* Deliberately a plain <button> rather than moz-button, unlike the
+              other menus in this bug. The tile hides this button until it is
+              hovered or focused, which needs :focus-visible to tell keyboard
+              focus from the pointer focus moz-button retains after its menu
+              closes. moz-button delegates focus into its shadow root, and a
+              shadow host never matches :focus-visible, so that is not
+              expressible in CSS today. Bug 2062844 adds the state we need;
+              switch this to moz-button once it has ridden to release. */}
+          <button
+            className="context-menu-button icon"
+            aria-haspopup="menu"
+            aria-expanded={isContextMenuOpen}
+            data-l10n-id="newtab-menu-content-tooltip"
+            data-l10n-args={JSON.stringify({ title })}
             tabIndex={this.props.tabIndex}
+            ref={this.menuButtonRef}
             onFocus={this.props.onFocus}
+            onMouseDown={this.onMenuButtonMouseDown}
+            onClick={this.onMenuButtonClick}
+            onKeyDown={this.onMenuButtonKeyDown}
+          />
+          <panel-list
+            className="panel-list-no-icons"
+            id={menuId}
+            ref={this.panelListRef}
           >
-            <LinkMenu
-              dispatch={props.dispatch}
-              index={props.index}
-              onUpdate={this.onMenuUpdate}
-              options={menuOptions}
-              site={link}
-              shouldSendImpressionStats={link.type === SPOC_TYPE}
-              siteInfo={this._getTelemetryInfo()}
-              source={TOP_SITES_SOURCE}
-            />
-          </ContextMenuButton>
+            <PanelListItems options={options} />
+          </panel-list>
         </div>
       </TopSiteLink>
     );
@@ -911,6 +1024,12 @@ export class _TopSiteList extends React.PureComponent {
       // handlers). The reorder+append path keeps per-tile handlers and adds a
       // list-level append target, so it passes listProps without this flag.
       dropsOnList: !!this.props.dropsOnList,
+      // Prefs needed by getLinkMenuOptions (previously supplied by LinkMenu's
+      // own connect()). TopSite now builds the options itself for panel-list.
+      isPrivateBrowsingEnabled:
+        this.props.Prefs.values.isPrivateBrowsingEnabled,
+      platform: this.props.Prefs.values.platform,
+      privacyInfoUrl: this.props.Prefs.values["privacyInfo.url"],
     };
     const { decorations } = this.props;
     // We assign a key to each placeholder slot. We need it to be independent

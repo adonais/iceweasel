@@ -9,13 +9,9 @@ import mozilla.components.support.base.facts.Action
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.collect
 
-/**
- * Facts emitted for telemetry related to [CustomTabsToolbarFeature]
- */
+/** Facts emitted for telemetry related to [CustomTabsToolbarFeature] */
 class CustomTabsFacts {
-    /**
-     * Items that specify which portion of the [CustomTabsToolbarFeature] was interacted with
-     */
+    /** Items that specify which portion of the [CustomTabsToolbarFeature] was interacted with */
     object Items {
         const val CLOSE = "close"
         const val ACTION_BUTTON = "action_button"
@@ -27,11 +23,13 @@ private fun emitCustomTabsFact(
     item: String,
 ) {
     Fact(
-        Component.FEATURE_CUSTOMTABS,
-        action,
-        item,
-    ).collect()
+            Component.FEATURE_CUSTOMTABS,
+            action,
+            item,
+        )
+        .collect()
 }
 
 internal fun emitCloseFact() = emitCustomTabsFact(Action.CLICK, CustomTabsFacts.Items.CLOSE)
+
 internal fun emitActionButtonFact() = emitCustomTabsFact(Action.CLICK, CustomTabsFacts.Items.ACTION_BUTTON)

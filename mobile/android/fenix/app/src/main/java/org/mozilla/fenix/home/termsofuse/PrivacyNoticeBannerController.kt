@@ -7,37 +7,24 @@ package org.mozilla.fenix.home.termsofuse
 import org.mozilla.fenix.termsofuse.store.PrivacyNoticeBannerAction
 import org.mozilla.fenix.termsofuse.store.PrivacyNoticeBannerStore
 
-/**
- * Interface for handling actions from the Privacy Notice banner.
- */
+/** Interface for handling actions from the Privacy Notice banner. */
 interface PrivacyNoticeBannerController {
-    /**
-     * Called when the user clicks the close button.
-     */
+    /** Called when the user clicks the close button. */
     fun onBannerCloseClicked()
 
-    /**
-     * Called when the user clicks the Privacy Notice link.
-     */
+    /** Called when the user clicks the Privacy Notice link. */
     fun onBannerPrivacyNoticeClicked()
 
-    /**
-     * Called when the user clicks the Learn more link.
-     */
+    /** Called when the user clicks the Learn more link. */
     fun onBannerLearnMoreClicked()
 
-    /**
-     * Called when the banner is displayed.
-     */
+    /** Called when the banner is displayed. */
     fun onBannerDisplayed()
 }
 
-/**
- * The default implementation of [PrivacyNoticeBannerController].
- */
-class DefaultPrivacyNoticeBannerController(
-    private val privacyNoticeBannerStore: PrivacyNoticeBannerStore,
-) : PrivacyNoticeBannerController {
+/** The default implementation of [PrivacyNoticeBannerController]. */
+class DefaultPrivacyNoticeBannerController(private val privacyNoticeBannerStore: PrivacyNoticeBannerStore) :
+    PrivacyNoticeBannerController {
     override fun onBannerCloseClicked() {
         privacyNoticeBannerStore.dispatch(PrivacyNoticeBannerAction.OnCloseClicked)
     }

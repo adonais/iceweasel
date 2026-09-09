@@ -10,13 +10,9 @@ import mozilla.components.support.base.facts.Action
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.collect
 
-/**
- * Facts emitted for telemetry related to [DownloadsFeature]
- */
+/** Facts emitted for telemetry related to [DownloadsFeature] */
 class DownloadsFacts {
-    /**
-     * Items that specify which portion of the [DownloadsFeature] was interacted with
-     */
+    /** Items that specify which portion of the [DownloadsFeature] was interacted with */
     object Items {
         const val NOTIFICATION = "notification"
         const val PROMPT = "prompt"
@@ -24,11 +20,17 @@ class DownloadsFacts {
 }
 
 internal fun emitNotificationResumeFact() = emitFact(Action.RESUME)
+
 internal fun emitNotificationPauseFact() = emitFact(Action.PAUSE)
+
 internal fun emitNotificationCancelFact() = emitFact(Action.CANCEL)
+
 internal fun emitNotificationTryAgainFact() = emitFact(Action.TRY_AGAIN)
+
 internal fun emitNotificationOpenFact() = emitFact(Action.OPEN)
+
 internal fun emitPromptDisplayedFact() = emitFact(Action.DISPLAY, item = PROMPT)
+
 internal fun emitPromptDismissedFact() = emitFact(Action.CANCEL, item = PROMPT)
 
 private fun emitFact(
@@ -36,8 +38,9 @@ private fun emitFact(
     item: String = DownloadsFacts.Items.NOTIFICATION,
 ) {
     Fact(
-        Component.FEATURE_DOWNLOADS,
-        action,
-        item,
-    ).collect()
+            Component.FEATURE_DOWNLOADS,
+            action,
+            item,
+        )
+        .collect()
 }

@@ -6,6 +6,7 @@ package mozilla.components.feature.syncedtabs
 
 import android.graphics.drawable.Drawable
 import androidx.annotation.VisibleForTesting
+import java.util.UUID
 import mozilla.components.browser.icons.BrowserIcons
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.concept.awesomebar.AwesomeBar
@@ -15,11 +16,10 @@ import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.syncedtabs.ext.getActiveDeviceTabs
 import mozilla.components.feature.syncedtabs.facts.emitSyncedTabSuggestionClickedFact
 import mozilla.components.feature.syncedtabs.storage.SyncedTabsStorage
-import java.util.UUID
 
 /**
- * A [AwesomeBar.SuggestionProvider] implementation that provides suggestions for remote tabs
- * based on [SyncedTabsStorage].
+ * A [AwesomeBar.SuggestionProvider] implementation that provides suggestions for remote tabs based on
+ * [SyncedTabsStorage].
  */
 class SyncedTabsStorageSuggestionProvider(
     private val syncedTabs: SyncedTabsStorage,
@@ -49,28 +49,26 @@ class SyncedTabsStorageSuggestionProvider(
         return results.sortedByDescending { it.lastUsed }.into()
     }
 
-    /**
-     * Expects list of BookmarkNode to be specifically of bookmarks (e.g. nodes with a url).
-     */
+    /** Expects list of BookmarkNode to be specifically of bookmarks (e.g. nodes with a url). */
     private suspend fun List<ClientTabPair>.into(): List<AwesomeBar.Suggestion> {
-        val iconRequests = this.map { client ->
-            client.tab.iconUrl?.let { iconUrl ->
-                icons?.loadIcon(
-                    IconRequest(url = iconUrl, waitOnNetworkLoad = false),
-                )
+        val iconRequests =
+            this.map { client ->
+                client.tab.iconUrl?.let { iconUrl ->
+                    icons?.loadIcon(IconRequest(url = iconUrl, waitOnNetworkLoad = false))
+                }
             }
-        }
 
         return this.zip(iconRequests) { result, icon ->
             AwesomeBar.Suggestion(
                 provider = this@SyncedTabsStorageSuggestionProvider,
                 icon = icon?.await()?.bitmap,
-                indicatorIcon = when (result.deviceType) {
-                    DeviceType.DESKTOP -> deviceIndicators.desktop
-                    DeviceType.MOBILE -> deviceIndicators.mobile
-                    DeviceType.TABLET -> deviceIndicators.tablet
-                    else -> null
-                },
+                indicatorIcon =
+                    when (result.deviceType) {
+                        DeviceType.DESKTOP -> deviceIndicators.desktop
+                        DeviceType.MOBILE -> deviceIndicators.mobile
+                        DeviceType.TABLET -> deviceIndicators.tablet
+                        else -> null
+                    },
                 flags = setOf(Flag.SYNC_TAB),
                 title = result.tab.title,
                 description = result.clientName,
@@ -83,9 +81,7 @@ class SyncedTabsStorageSuggestionProvider(
     }
 }
 
-/**
- * AwesomeBar suggestion indicators data class for desktop, mobile, tablet device types.
- */
+/** AwesomeBar suggestion indicators data class for desktop, mobile, tablet device types. */
 data class DeviceIndicators(
     val desktop: Drawable? = null,
     val mobile: Drawable? = null,

@@ -243,7 +243,7 @@ class ContextMtl : public ContextImpl, public mtl::Context
     // Query and Fence creation
     QueryImpl *createQuery(gl::QueryType type) override;
     FenceNVImpl *createFenceNV() override;
-    SyncImpl *createSync(const gl::Context *context) override;
+    SyncImpl *createSync() override;
 
     // Transform Feedback creation
     TransformFeedbackImpl *createTransformFeedback(
@@ -260,9 +260,6 @@ class ContextMtl : public ContextImpl, public mtl::Context
 
     // Semaphore creation.
     SemaphoreImpl *createSemaphore() override;
-
-    // Overlay creation.
-    OverlayImpl *createOverlay(const gl::OverlayState &state) override;
 
     angle::Result dispatchCompute(const gl::Context *context,
                                   GLuint numGroupsX,
@@ -401,6 +398,8 @@ class ContextMtl : public ContextImpl, public mtl::Context
 
     mtl::BufferManager &getBufferManager() { return mBufferManager; }
 
+    ProvokingVertexHelper &getProvokingVertexHelper() { return mProvokingVertexHelper; }
+
     mtl::PipelineCache &getPipelineCache() { return mPipelineCache; }
 
     const angle::ImageLoadContext &getImageLoadContext() const { return mImageLoadContext; }
@@ -413,7 +412,6 @@ class ContextMtl : public ContextImpl, public mtl::Context
     void endBlitAndComputeEncoding();
     angle::Result resyncDrawFramebufferIfNeeded(const gl::Context *context);
     angle::Result setupDraw(const gl::Context *context,
-                            gl::PrimitiveMode mode,
                             GLint firstVertex,
                             GLsizei vertexOrIndexCount,
                             GLsizei instanceCount,
@@ -423,7 +421,6 @@ class ContextMtl : public ContextImpl, public mtl::Context
                             bool *isNoOp);
 
     angle::Result setupDrawImpl(const gl::Context *context,
-                                gl::PrimitiveMode mode,
                                 GLint firstVertex,
                                 GLsizei vertexOrIndexCount,
                                 GLsizei instanceCount,
@@ -527,7 +524,6 @@ class ContextMtl : public ContextImpl, public mtl::Context
     angle::Result handleDirtyDepthBias(const gl::Context *context);
     angle::Result handleDirtyRenderPass(const gl::Context *context);
     angle::Result checkIfPipelineChanged(const gl::Context *context,
-                                         gl::PrimitiveMode primitiveMode,
                                          bool xfbPass,
                                          bool *pipelineDescChanged);
 

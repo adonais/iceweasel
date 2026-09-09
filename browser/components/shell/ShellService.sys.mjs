@@ -440,6 +440,11 @@ let ShellServiceInternal = {
 
   // override nsIShellService.setDefaultBrowser() on the ShellService proxy.
   async setDefaultBrowser(forAllUsers) {
+    if (!Services.policies.isAllowed("setDefaultBrowser")) {
+      lazy.log.warn("Setting the default browser is disallowed by policy");
+      return;
+    }
+
     // On Windows, our best chance is to set UserChoice, so try that first.
     if (
       AppConstants.platform == "win" &&

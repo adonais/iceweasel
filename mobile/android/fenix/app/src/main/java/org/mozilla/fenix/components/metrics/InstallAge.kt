@@ -11,9 +11,7 @@ import java.util.Locale
  * Helper class to see how many days have passed since the user installed the app. This helps us know if the user is in
  * their first day, first week, or first month.
  */
-internal class InstallAge(
-    private val installedTime: Long,
-) {
+internal class InstallAge(private val installedTime: Long) {
 
     /**
      * Holds the time when the installation day started (at 00:00 midnight).Used to calculate full calendar days instead
@@ -42,16 +40,17 @@ internal class InstallAge(
     fun isDuringLastThreeDays(currentTime: Long) =
         currentTime >= installedTimeToMidnight + FOUR_DAY_MILLIS && isDuringFirst7Days(currentTime)
 
-    /**
-     * Changes any time to 00:00 midnight of that same day by removing hours, minutes, seconds, and milliseconds.
-     */
-    private fun Long.toMidnight(): Long = Calendar.getInstance(Locale.US).also { calendar ->
-        calendar.timeInMillis = this
-        calendar.set(Calendar.HOUR_OF_DAY, 0)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        calendar.set(Calendar.MILLISECOND, 0)
-    }.timeInMillis
+    /** Changes any time to 00:00 midnight of that same day by removing hours, minutes, seconds, and milliseconds. */
+    private fun Long.toMidnight(): Long =
+        Calendar.getInstance(Locale.US)
+            .also { calendar ->
+                calendar.timeInMillis = this
+                calendar.set(Calendar.HOUR_OF_DAY, 0)
+                calendar.set(Calendar.MINUTE, 0)
+                calendar.set(Calendar.SECOND, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+            }
+            .timeInMillis
 
     companion object {
         private const val DAY_MILLIS: Long = 1000 * 60 * 60 * 24
@@ -63,9 +62,7 @@ internal class InstallAge(
         // of the 7th day after install
         private const val FULL_WEEK_MILLIS: Long = DAY_MILLIS * 8
 
-        /**
-         * Set to 28 days because February is the shortest month. This makes monthly checks safe and predictable.
-         */
+        /** Set to 28 days because February is the shortest month. This makes monthly checks safe and predictable. */
         private const val SHORTEST_MONTH_MILLIS: Long = DAY_MILLIS * 28
     }
 }

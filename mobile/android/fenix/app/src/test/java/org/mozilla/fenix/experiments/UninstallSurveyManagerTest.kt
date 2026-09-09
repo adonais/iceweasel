@@ -35,9 +35,10 @@ class UninstallSurveyManagerTest {
     fun `WHEN feature flag is disabled THEN remove dynamic shortcuts`() {
         // Given
         val wrapper = FakeShortcutManagerCompatWrapper()
-        val settings = Settings(context).apply {
-            uninstallSurveyFeatureFlagEnabled = false
-        }
+        val settings =
+            Settings(context).apply {
+                uninstallSurveyFeatureFlagEnabled = false
+            }
         val manager = UninstallSurveyManager(context, wrapper, settings)
 
         // When
@@ -52,9 +53,10 @@ class UninstallSurveyManagerTest {
     fun `WHEN feature flag is enabled THEN push dynamic shortcut`() {
         // Given
         val wrapper = FakeShortcutManagerCompatWrapper()
-        val settings = Settings(context).apply {
-            uninstallSurveyFeatureFlagEnabled = true
-        }
+        val settings =
+            Settings(context).apply {
+                uninstallSurveyFeatureFlagEnabled = true
+            }
         val manager = UninstallSurveyManager(context, wrapper, settings)
 
         // When
@@ -69,9 +71,10 @@ class UninstallSurveyManagerTest {
     fun `WHEN updateUninstallSurveyShortcut throws SecurityException THEN catch it gracefully`() {
         // Given
         val wrapper = FakeShortcutManagerCompatWrapper(pushDynamicShortcutException = SecurityException("Knox block"))
-        val settings = Settings(context).apply {
-            uninstallSurveyFeatureFlagEnabled = true
-        }
+        val settings =
+            Settings(context).apply {
+                uninstallSurveyFeatureFlagEnabled = true
+            }
         val manager = UninstallSurveyManager(context, wrapper, settings)
 
         // When
@@ -133,7 +136,12 @@ class UninstallSurveyManagerTest {
         var lastRemovedShortcutIds: List<String>? = null
 
         override fun isRequestPinShortcutSupported(context: Context): Boolean = false
-        override fun requestPinShortcut(context: Context, shortcut: ShortcutInfoCompat, intentSender: android.content.IntentSender?): Boolean = false
+
+        override fun requestPinShortcut(
+            context: Context,
+            shortcut: ShortcutInfoCompat,
+            intentSender: android.content.IntentSender?,
+        ): Boolean = false
 
         override fun pushDynamicShortcut(context: Context, shortcut: ShortcutInfoCompat) {
             pushDynamicShortcutInvocations++

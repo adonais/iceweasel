@@ -8,6 +8,8 @@ import android.content.Context
 import android.os.Build
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.VisibleForTesting.Companion.PRIVATE
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import mozilla.components.browser.storage.sync.PlacesBookmarksStorage
@@ -59,18 +61,16 @@ import org.mozilla.fenix.perf.lazyMonitored
 import org.mozilla.fenix.sync.SyncedTabsIntegration
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.getUndoDelay
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
 /**
- * The additional time to wait after the "undo closed tab" snackbar has
- * disappeared before triggering a [SyncedTabsCommands] flush.
+ * The additional time to wait after the "undo closed tab" snackbar has disappeared before triggering a
+ * [SyncedTabsCommands] flush.
  */
 private val DEFAULT_SYNCED_TABS_COMMANDS_EXTRA_FLUSH_DELAY = 5.seconds
 
 /**
- * Component group for background services. These are the components that need to be accessed from within a
- * background worker.
+ * Component group for background services. These are the components that need to be accessed from within a background
+ * worker.
  */
 @Suppress("LongParameterList")
 class BackgroundServices(
@@ -97,21 +97,23 @@ class BackgroundServices(
         )
 
     val serverConfig = FxaServer.config(context)
-    private val deviceConfig = DeviceConfig(
-        name = defaultDeviceName(context),
-        type = DeviceType.MOBILE,
-        // NB: flipping this flag back and worth is currently not well supported and may need hand-holding.
-        // Consult with the android-components peers before changing.
-        // See https://github.com/mozilla/application-services/issues/1308
-        capabilities = buildSet {
-            add(DeviceCapability.SEND_TAB)
-            add(DeviceCapability.CLOSE_TABS)
-        },
-        // Enable encryption for account state on supported API levels (23+).
-        // Just on Nightly and local builds for now.
-        // Enabling this for all channels is tracked in https://github.com/mozilla-mobile/fenix/issues/6704
-        secureStateAtRest = Config.channel.isNightlyOrDebug,
-    )
+    private val deviceConfig =
+        DeviceConfig(
+            name = defaultDeviceName(context),
+            type = DeviceType.MOBILE,
+            // NB: flipping this flag back and worth is currently not well supported and may need hand-holding.
+            // Consult with the android-components peers before changing.
+            // See https://github.com/mozilla/application-services/issues/1308
+            capabilities =
+                buildSet {
+                    add(DeviceCapability.SEND_TAB)
+                    add(DeviceCapability.CLOSE_TABS)
+                },
+            // Enable encryption for account state on supported API levels (23+).
+            // Just on Nightly and local builds for now.
+            // Enabling this for all channels is tracked in https://github.com/mozilla-mobile/fenix/issues/6704
+            secureStateAtRest = Config.channel.isNightlyOrDebug,
+        )
 
     @VisibleForTesting
     val supportedEngines =
@@ -123,8 +125,7 @@ class BackgroundServices(
             SyncEngine.CreditCards,
             if (settings.isAddressSyncEnabled) SyncEngine.Addresses else null,
         )
-    private val syncConfig =
-        SyncConfig(supportedEngines, PeriodicSyncConfig(periodMinutes = 240)) // four hours
+    private val syncConfig = SyncConfig(supportedEngines, PeriodicSyncConfig(periodMinutes = 240)) // four hours
 
     private val creditCardKeyProvider by lazyMonitored { creditCardsStorage.value.crypto }
     private val passwordKeyProvider by lazyMonitored { passwordsStorage.value.crypto }
@@ -148,10 +149,11 @@ class BackgroundServices(
         }
     }
 
-    private val telemetryAccountObserver = TelemetryAccountObserver(
-        context,
-        settings,
-    )
+    private val telemetryAccountObserver =
+        TelemetryAccountObserver(
+            context,
+            settings,
+        )
 
     val accountAbnormalities = AccountAbnormalities(context, crashReporter, strictMode)
 
@@ -195,64 +197,63 @@ class BackgroundServices(
         deviceConfig: DeviceConfig,
         syncConfig: SyncConfig?,
         crashReporter: CrashReporter?,
-    ) = FxaAccountManager(
-        context,
-        serverConfig,
-        deviceConfig,
-        syncConfig,
-        setOf(
-            // We don't need to specify sync scope explicitly, but `syncConfig` may be disabled due to
-            // an 'experiments' flag. In that case, sync scope necessary for syncing won't be acquired
-            // during authentication unless we explicitly specify it below.
-            // This is a good example of an information leak at the API level.
-            // See https://github.com/mozilla-mobile/android-components/issues/3732
-            SCOPE_SYNC,
-        ),
-        crashReporter,
-    ).also { accountManager ->
-        // Register a telemetry account observer to keep track of FxA auth metrics.
-        accountManager.register(telemetryAccountObserver)
+    ) =
+        FxaAccountManager(
+                context,
+                serverConfig,
+                deviceConfig,
+                syncConfig,
+                setOf(
+                    // We don't need to specify sync scope explicitly, but `syncConfig` may be disabled due to
+                    // an 'experiments' flag. In that case, sync scope necessary for syncing won't be acquired
+                    // during authentication unless we explicitly specify it below.
+                    // This is a good example of an information leak at the API level.
+                    // See https://github.com/mozilla-mobile/android-components/issues/3732
+                    SCOPE_SYNC
+                ),
+                crashReporter,
+            )
+            .also { accountManager ->
+                // Register a telemetry account observer to keep track of FxA auth metrics.
+                accountManager.register(telemetryAccountObserver)
 
-        // Register an "abnormal fxa behaviour" middleware to keep track of events such as
-        // unexpected logouts.
-        accountManager.register(accountAbnormalities)
+                // Register an "abnormal fxa behaviour" middleware to keep track of events such as
+                // unexpected logouts.
+                accountManager.register(accountAbnormalities)
 
-        accountManager.register(AccountManagerReadyObserver(accountManagerAvailableQueue))
+                accountManager.register(AccountManagerReadyObserver(accountManagerAvailableQueue))
 
-        // Enable push if it's configured.
-        push.feature?.let { autoPushFeature ->
-            FxaPushSupportFeature(context, accountManager, autoPushFeature, crashReporter)
-                .initialize()
-        }
+                // Enable push if it's configured.
+                push.feature?.let { autoPushFeature ->
+                    FxaPushSupportFeature(context, accountManager, autoPushFeature, crashReporter).initialize()
+                }
 
-        SendTabFeature(accountManager) { device, tabs ->
-            notificationManager.showReceivedTabs(context, device, tabs)
-        }
+                SendTabFeature(accountManager) { device, tabs ->
+                    notificationManager.showReceivedTabs(context, device, tabs)
+                }
 
-        CloseTabsFeature(closeSyncedTabsCommandReceiver, accountManager).observe()
+                CloseTabsFeature(closeSyncedTabsCommandReceiver, accountManager).observe()
 
-        SyncedTabsIntegration(context, accountManager).launch()
+                SyncedTabsIntegration(context, accountManager).launch()
 
-        syncStoreSupport = SyncStoreSupport(syncStore, lazyOf(accountManager)).also {
-            it.initialize()
-        }
+                syncStoreSupport =
+                    SyncStoreSupport(syncStore, lazyOf(accountManager)).also {
+                        it.initialize()
+                    }
 
-        MainScope().launch {
-            accountManager.start()
-        }
-    }
+                MainScope().launch {
+                    accountManager.start()
+                }
+            }
 
-    /**
-     * Provides notification functionality, manages notification channels.
-     */
+    /** Provides notification functionality, manages notification channels. */
     private val notificationManager by lazyMonitored {
         NotificationManager(context)
     }
 }
 
-private class AccountManagerReadyObserver(
-    private val accountManagerAvailableQueue: RunWhenReadyQueue,
-) : AccountObserver {
+private class AccountManagerReadyObserver(private val accountManagerAvailableQueue: RunWhenReadyQueue) :
+    AccountObserver {
     override fun onReady(authenticatedAccount: OAuthAccount?) {
         accountManagerAvailableQueue.ready()
     }
@@ -306,8 +307,7 @@ internal class TelemetryAccountObserver(
             // User signed-in into an FxA account shared from another locally installed app using the reuse flow.
             AuthType.MigratedReuse,
             // Account restored from a hydrated state on disk (e.g. during startup).
-            AuthType.Existing,
-            -> {
+            AuthType.Existing -> {
                 // no-op, events not recorded in Glean
             }
         }
@@ -319,9 +319,8 @@ internal class TelemetryAccountObserver(
     }
 }
 
-internal class SyncedTabsCommandsObserver(
-    private val flushScheduler: SyncedTabsCommandsFlushScheduler,
-) : DeviceCommandQueue.Observer {
+internal class SyncedTabsCommandsObserver(private val flushScheduler: SyncedTabsCommandsFlushScheduler) :
+    DeviceCommandQueue.Observer {
     override fun onAdded() {
         flushScheduler.requestFlush()
     }
@@ -334,8 +333,8 @@ internal class SyncedTabsCommandsObserver(
 }
 
 /**
- * A [CloseTabsCommandReceiver.Observer] that shows a status bar notification
- * when the user closes one or more tabs on this device from another device.
+ * A [CloseTabsCommandReceiver.Observer] that shows a status bar notification when the user closes one or more tabs on
+ * this device from another device.
  */
 internal class SyncedTabsClosedNotificationObserver(
     private val context: Context,

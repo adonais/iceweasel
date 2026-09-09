@@ -404,8 +404,8 @@ nsresult ScriptLoadHandler::EnsureKnownDataType(nsIChannel* aChannel) {
 NS_IMETHODIMP
 ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
                                     nsISupports* aContext, nsresult aStatus,
-                                    uint32_t aDataLength,
-                                    const uint8_t* aData) {
+                                    uint32_t aDataLength, const uint8_t* aData)
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   nsCOMPtr<nsIRequest> channelRequest;
   aLoader->GetRequest(getter_AddRefs(channelRequest));
   nsCOMPtr<nsIChannel> channel = do_QueryInterface(channelRequest);
@@ -450,7 +450,7 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
       GetCurrentSerialEventTarget(), __func__,
       [self = RefPtr{this}, channel = std::move(channel),
        integrity = RefPtr{integrity}, computedHash = std::move(computedHash),
-       aStatus, aDataLength, aData](bool) {
+       aStatus, aDataLength, aData](bool) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
         MOZ_LOG_FMT(gWaictLog, LogLevel::Debug,
                     "ScriptLoadHandler::OnStreamComplete: WaitForManifestLoad "
                     "promise resolved");
@@ -590,8 +590,10 @@ nsresult ScriptLoadHandler::DoOnStreamComplete(nsIChannel* aChannel,
   // Everything went well, keep the CacheInfoChannel alive such that we can
   // later save the serialized stencil on the cache entry.
   // we have to mediate and use mRequest.
-  rv = mScriptLoader->OnStreamComplete(aChannel, mRequest, aStatus, mSRIStatus,
-                                       mSRIDataVerifier.get());
+  const RefPtr<ScriptLoader> scriptLoader = mScriptLoader;
+  const RefPtr<JS::loader::ScriptLoadRequest> request = mRequest;
+  rv = scriptLoader->OnStreamComplete(aChannel, request, aStatus, mSRIStatus,
+                                      mSRIDataVerifier.get());
 
   return rv;
 }

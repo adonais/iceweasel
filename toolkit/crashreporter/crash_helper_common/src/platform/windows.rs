@@ -71,14 +71,16 @@ pub enum PlatformError {
     AcceptFailed(WIN32_ERROR),
     #[error("Broken pipe")]
     BrokenPipe,
-    #[error("Failed to duplicate handle: {0}")]
-    DuplicateHandleFailed(WIN32_ERROR),
     #[error("Could not create event: {0}")]
     CreateEventFailed(WIN32_ERROR),
     #[error("Could not create or add an I/O completion port: {0}")]
     CreateIoCompletionPortFailed(WIN32_ERROR),
     #[error("Could not create a pipe: {0}")]
     CreatePipeFailure(WIN32_ERROR),
+    #[error("Failed to duplicate handle: {0}")]
+    DuplicateHandleFailed(WIN32_ERROR),
+    #[error("Attempted to duplicate a pseudo-handle")]
+    DuplicatePseudoHandle,
     #[error("Malformed string cannot be converted")]
     InvalidString,
     #[error("I/O error: {0}")]

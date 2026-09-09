@@ -68,8 +68,6 @@ class TestSubsessionManagement(TelemetryTestCase):
 
         ping2 = self.wait_for_ping(self.install_addon, MAIN_ENVIRONMENT_CHANGE_PING)
 
-        [addon_id] = self.addon_ids  # Store the addon ID for verifying ping3 later
-
         # Session S2, subsession 2
         # Outcome 2:
         # Received a main ping P2 for previous subsession
@@ -122,7 +120,9 @@ class TestSubsessionManagement(TelemetryTestCase):
         #     - profileSubSessionCounter should be 3
         #     - reason should be "shutdown"
         # - Other ping contents:
-        #     - addon ID in activeAddons in environment
+        #     - none, environment.addons was removed (Bug 2055613), but add-ons
+        #       install is expected to still trigger this ping even if the
+        #       ping data will not be including active add-ons data anymore
 
         self.assertEqual(ping3["clientId"], client_id)
 
@@ -142,6 +142,3 @@ class TestSubsessionManagement(TelemetryTestCase):
         scalars3 = ping3["payload"]["processes"]["parent"]["scalars"]
         self.assertNotIn("browser.engagement.window_open_event_count", scalars3)
         self.assertNotIn("browser.engagement.tab_open_event_count", scalars3)
-
-        active_addons = ping3["environment"]["addons"]["activeAddons"]
-        self.assertIn(addon_id, active_addons)

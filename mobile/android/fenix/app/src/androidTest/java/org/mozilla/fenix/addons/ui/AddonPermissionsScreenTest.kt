@@ -19,8 +19,7 @@ import org.mozilla.fenix.addons.AddonPermissionsUpdateRequest
 import org.mozilla.fenix.theme.FirefoxTheme
 
 class AddonPermissionsScreenTest {
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun testNoPermissions() {
@@ -90,12 +89,13 @@ class AddonPermissionsScreenTest {
             FirefoxTheme {
                 AddonPermissionsScreen(
                     permissions = emptyList(),
-                    optionalPermissions = listOf(
-                        Addon.LocalizedPermission(
-                            "Read and modify bookmarks",
-                            Addon.Permission("bookmarks", false),
+                    optionalPermissions =
+                        listOf(
+                            Addon.LocalizedPermission(
+                                "Read and modify bookmarks",
+                                Addon.Permission("bookmarks", false),
+                            )
                         ),
-                    ),
                     originPermissions = emptyList(),
                     requiredDataCollectionPermissions = emptyList(),
                     optionalDataCollectionPermissions = emptyList(),
@@ -135,12 +135,13 @@ class AddonPermissionsScreenTest {
             FirefoxTheme {
                 AddonPermissionsScreen(
                     permissions = listOf("Access browser tabs"),
-                    optionalPermissions = listOf(
-                        Addon.LocalizedPermission(
-                            "Read and modify bookmarks",
-                            Addon.Permission("bookmarks", false),
+                    optionalPermissions =
+                        listOf(
+                            Addon.LocalizedPermission(
+                                "Read and modify bookmarks",
+                                Addon.Permission("bookmarks", false),
+                            )
                         ),
-                    ),
                     originPermissions = emptyList(),
                     requiredDataCollectionPermissions = emptyList(),
                     optionalDataCollectionPermissions = emptyList(),
@@ -191,7 +192,8 @@ class AddonPermissionsScreenTest {
         composeTestRule.onNodeWithText("Required permissions:").assertIsNotDisplayed()
         composeTestRule.onNodeWithText("Optional permissions:").assertIsNotDisplayed()
         composeTestRule.onNodeWithText("Required data collection:").assertIsDisplayed()
-        composeTestRule.onNodeWithText("The developer says this extension collects: health information")
+        composeTestRule
+            .onNodeWithText("The developer says this extension collects: health information")
             .assertIsDisplayed()
         composeTestRule.onNodeWithText("Optional data collection:").assertIsNotDisplayed()
 
@@ -224,7 +226,8 @@ class AddonPermissionsScreenTest {
         composeTestRule.onNodeWithText("Required permissions:").assertIsNotDisplayed()
         composeTestRule.onNodeWithText("Optional permissions:").assertIsNotDisplayed()
         composeTestRule.onNodeWithText("Required data collection:").assertIsDisplayed()
-        composeTestRule.onNodeWithText("The developer says this extension doesn’t require data collection.")
+        composeTestRule
+            .onNodeWithText("The developer says this extension doesn’t require data collection.")
             .assertIsDisplayed()
         composeTestRule.onNodeWithText("Optional data collection:").assertIsNotDisplayed()
 
@@ -241,12 +244,13 @@ class AddonPermissionsScreenTest {
                     optionalPermissions = emptyList(),
                     originPermissions = emptyList(),
                     requiredDataCollectionPermissions = emptyList(),
-                    optionalDataCollectionPermissions = listOf(
-                        Addon.LocalizedPermission(
-                            "Share health information with extension developer",
-                            Addon.Permission("healthInfo", false),
+                    optionalDataCollectionPermissions =
+                        listOf(
+                            Addon.LocalizedPermission(
+                                "Share health information with extension developer",
+                                Addon.Permission("healthInfo", false),
+                            )
                         ),
-                    ),
                     isAllSitesSwitchVisible = false,
                     isAllSitesEnabled = false,
                     onAddOptionalPermissions = {
@@ -283,25 +287,28 @@ class AddonPermissionsScreenTest {
             FirefoxTheme {
                 AddonPermissionsScreen(
                     permissions = listOf("Access browser tabs"),
-                    optionalPermissions = listOf(
-                        Addon.LocalizedPermission(
-                            "Read and modify bookmarks",
-                            Addon.Permission("bookmarks", false),
+                    optionalPermissions =
+                        listOf(
+                            Addon.LocalizedPermission(
+                                "Read and modify bookmarks",
+                                Addon.Permission("bookmarks", false),
+                            )
                         ),
-                    ),
-                    originPermissions = listOf(
-                        Addon.LocalizedPermission(
-                            "Access mozilla.org",
-                            Addon.Permission("*://mozilla.org/*", false),
+                    originPermissions =
+                        listOf(
+                            Addon.LocalizedPermission(
+                                "Access mozilla.org",
+                                Addon.Permission("*://mozilla.org/*", false),
+                            )
                         ),
-                    ),
                     requiredDataCollectionPermissions = listOf("health information"),
-                    optionalDataCollectionPermissions = listOf(
-                        Addon.LocalizedPermission(
-                            "Share health information with extension developer",
-                            Addon.Permission("healthInfo", false),
+                    optionalDataCollectionPermissions =
+                        listOf(
+                            Addon.LocalizedPermission(
+                                "Share health information with extension developer",
+                                Addon.Permission("healthInfo", false),
+                            )
                         ),
-                    ),
                     isAllSitesSwitchVisible = false,
                     isAllSitesEnabled = false,
                     onAddOptionalPermissions = {},
@@ -320,7 +327,8 @@ class AddonPermissionsScreenTest {
         composeTestRule.onNodeWithText("Optional permissions:").assertIsDisplayed()
         composeTestRule.onNodeWithText("Read and modify bookmarks").assertIsDisplayed()
         composeTestRule.onNodeWithText("Required data collection:").assertIsDisplayed()
-        composeTestRule.onNodeWithText("The developer says this extension collects: health information")
+        composeTestRule
+            .onNodeWithText("The developer says this extension collects: health information")
             .assertIsDisplayed()
         composeTestRule.onNodeWithText("Optional data collection:").assertIsDisplayed()
         composeTestRule.onNodeWithText("Share health information with extension developer").assertIsDisplayed()

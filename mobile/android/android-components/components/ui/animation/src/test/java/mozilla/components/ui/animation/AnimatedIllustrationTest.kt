@@ -15,13 +15,13 @@ import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.airbnb.lottie.LottieCompositionFactory
+import kotlin.test.assertNotNull
+import kotlin.time.Duration.Companion.milliseconds
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertNotNull
-import kotlin.time.Duration.Companion.milliseconds
 
 private const val MINIMAL_LOTTIE_JSON =
     """{"v":"5.5.7","fr":60,"ip":0,"op":60,"w":100,"h":100,"nm":"test","ddd":0,"assets":[],"layers":[]}"""
@@ -29,8 +29,7 @@ private const val MINIMAL_LOTTIE_JSON =
 @RunWith(AndroidJUnit4::class)
 class AnimatedIllustrationTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     private val context: Context = ApplicationProvider.getApplicationContext()
 

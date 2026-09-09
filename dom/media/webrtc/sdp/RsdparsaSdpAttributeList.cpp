@@ -1188,7 +1188,7 @@ void RsdparsaSdpAttributeList::LoadExtmap(RustAttributeList* attributeList) {
   }
   auto extmaps = MakeUnique<SdpExtmapAttributeList>();
   for (const auto& rustExtmap : rustExtmaps) {
-    std::string name(convertStringView(rustExtmap.url));
+    nsCString name(convertStringView(rustExtmap.url));
     SdpDirectionAttribute::Direction direction;
     bool directionSpecified = rustExtmap.direction_specified;
     switch (rustExtmap.direction) {
@@ -1205,7 +1205,7 @@ void RsdparsaSdpAttributeList::LoadExtmap(RustAttributeList* attributeList) {
         direction = SdpDirectionAttribute::kInactive;
         break;
     }
-    std::string extensionAttributes(
+    nsCString extensionAttributes(
         convertStringView(rustExtmap.extension_attributes));
     extmaps->PushEntry(rustExtmap.id, direction, directionSpecified, name,
                        extensionAttributes);

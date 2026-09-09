@@ -11,6 +11,4 @@ import mozilla.components.lib.state.State
  *
  * @property drawerStatus The [DrawerStatus] indicating the physical state of the drawer.
  */
-data class DebugDrawerState(
-    val drawerStatus: DrawerStatus = DrawerStatus.Closed,
-) : State
+data class DebugDrawerState(val drawerStatus: DrawerStatus = DrawerStatus.Closed) : State

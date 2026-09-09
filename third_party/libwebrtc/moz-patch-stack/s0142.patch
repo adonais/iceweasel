@@ -41,7 +41,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/98da8060c3ad5cf8d
  sdk/android/api/org/webrtc/YuvHelper.java     | 177 +++---------------
  .../webrtc/audio/JavaAudioDeviceModule.java   |  33 +---
  .../src/java/org/webrtc/CalledByNative.java   |   1 -
- .../src/java/org/webrtc/EglBase10Impl.java    |   8 +-
+ .../src/java/org/webrtc/EglBase10Impl.java    |  10 +-
  .../src/java/org/webrtc/H264Utils.java        |  11 +-
  .../src/java/org/webrtc/Histogram.java        |   2 -
  .../src/java/org/webrtc/JniCommon.java        |  30 +--
@@ -53,13 +53,13 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/98da8060c3ad5cf8d
  .../org/webrtc/audio/WebRtcAudioRecord.java   |  21 +--
  .../org/webrtc/audio/WebRtcAudioTrack.java    |  15 +-
  webrtc.gni                                    |  19 +-
- 42 files changed, 240 insertions(+), 719 deletions(-)
+ 42 files changed, 241 insertions(+), 720 deletions(-)
 
 diff --git a/examples/androidnativeapi/BUILD.gn b/examples/androidnativeapi/BUILD.gn
-index 6a2349149b..72e59ef885 100644
+index fd6a836223..28589325c3 100644
 --- a/examples/androidnativeapi/BUILD.gn
 +++ b/examples/androidnativeapi/BUILD.gn
-@@ -78,8 +78,6 @@ if (is_android) {
+@@ -80,8 +80,6 @@ if (is_android) {
        "//sdk/android:native_api_jni",
        "//sdk/android:native_api_video",
      ]
@@ -69,10 +69,10 @@ index 6a2349149b..72e59ef885 100644
  
    android_resources("resources") {
 diff --git a/examples/androidvoip/BUILD.gn b/examples/androidvoip/BUILD.gn
-index 8fa3e9c794..c9b63d576d 100644
+index 2f2834fb28..47557d31ba 100644
 --- a/examples/androidvoip/BUILD.gn
 +++ b/examples/androidvoip/BUILD.gn
-@@ -28,7 +28,6 @@ if (is_android) {
+@@ -29,7 +29,6 @@ if (is_android) {
        "//rtc_base:base_java",
        "//sdk/android:base_java",
        "//sdk/android:java_audio_device_module_java",
@@ -80,7 +80,7 @@ index 8fa3e9c794..c9b63d576d 100644
        "//sdk/android:video_java",
        "//third_party/androidx:androidx_core_core_java",
        "//third_party/androidx:androidx_legacy_legacy_support_v4_java",
-@@ -86,8 +85,6 @@ if (is_android) {
+@@ -88,8 +87,6 @@ if (is_android) {
        "//third_party/abseil-cpp/absl/memory",
        "//third_party/jni_zero",
      ]
@@ -90,10 +90,10 @@ index 8fa3e9c794..c9b63d576d 100644
  
    android_resources("resources") {
 diff --git a/rtc_tools/network_tester/BUILD.gn b/rtc_tools/network_tester/BUILD.gn
-index 8d156a0d2a..e33f674a07 100644
+index 3520196b3b..6b1f515a13 100644
 --- a/rtc_tools/network_tester/BUILD.gn
 +++ b/rtc_tools/network_tester/BUILD.gn
-@@ -185,7 +185,5 @@ if (is_android) {
+@@ -197,7 +197,5 @@ if (is_android) {
      configs += [ "//chromium/build/config/android:hide_all_but_jni" ]
  
      output_extension = "so"
@@ -1482,7 +1482,7 @@ index 666f347608..9b410ceaef 100644
    /*
     *  If present, tells which inner class the method belongs to.
 diff --git a/sdk/android/src/java/org/webrtc/EglBase10Impl.java b/sdk/android/src/java/org/webrtc/EglBase10Impl.java
-index 0aa45d579e..7d534510ba 100644
+index 8b58160644..5f9e27234c 100644
 --- a/sdk/android/src/java/org/webrtc/EglBase10Impl.java
 +++ b/sdk/android/src/java/org/webrtc/EglBase10Impl.java
 @@ -22,7 +22,6 @@ import javax.microedition.khronos.egl.EGLConfig;
@@ -1493,7 +1493,7 @@ index 0aa45d579e..7d534510ba 100644
  
  /**
   * Holds EGL state and utility methods for handling an egl 1.0 EGLContext, an EGLDisplay,
-@@ -72,7 +71,7 @@ class EglBase10Impl implements EglBase10 {
+@@ -73,7 +72,7 @@ class EglBase10Impl implements EglBase10 {
            }
          }
  
@@ -1502,7 +1502,7 @@ index 0aa45d579e..7d534510ba 100644
        } finally {
          if (tempEglSurface != null) {
            egl.eglMakeCurrent(
-@@ -443,8 +442,5 @@ class EglBase10Impl implements EglBase10 {
+@@ -457,8 +456,5 @@ class EglBase10Impl implements EglBase10 {
      return eglContext;
    }
  
@@ -1510,8 +1510,10 @@ index 0aa45d579e..7d534510ba 100644
 -  interface Natives {
 -    long getCurrentNativeEGLContext();
 -  }
+-}
+\ No newline at end of file
 +  private static native long nativeGetCurrentNativeEGLContext();
- }
++}
 diff --git a/sdk/android/src/java/org/webrtc/H264Utils.java b/sdk/android/src/java/org/webrtc/H264Utils.java
 index 069d1f386e..abb79c6582 100644
 --- a/sdk/android/src/java/org/webrtc/H264Utils.java
@@ -2047,7 +2049,7 @@ index 58f2743d16..40d4dacec9 100644
    // Sets all samples to be played out to zero if `mute` is true, i.e.,
    // ensures that the speaker is muted.
 diff --git a/webrtc.gni b/webrtc.gni
-index 83fe2274cb..ddd809fb9a 100644
+index a5b7b51b19..82b7935174 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -31,10 +31,6 @@ if (is_ios) {
@@ -2061,7 +2063,7 @@ index 83fe2274cb..ddd809fb9a 100644
  if (is_mac) {
    import("//chromium/build/config/mac/rules.gni")
  }
-@@ -1093,12 +1089,7 @@ template("rtc_executable") {
+@@ -1096,12 +1092,7 @@ template("rtc_executable") {
  }
  
  template("rtc_shared_library") {
@@ -2075,7 +2077,7 @@ index 83fe2274cb..ddd809fb9a 100644
      forward_variables_from(invoker,
                             "*",
                             [
-@@ -1381,14 +1372,6 @@ if (is_android && !build_with_mozilla) {
+@@ -1384,14 +1375,6 @@ if (is_android && !build_with_mozilla) {
                                 "suppressed_configs",
                                 "visibility",
                               ])

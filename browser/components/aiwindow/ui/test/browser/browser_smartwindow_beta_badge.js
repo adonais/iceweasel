@@ -24,7 +24,10 @@ add_task(async function test_beta_badge_in_window_switcher() {
     "Beta badge should be visible in the window switcher"
   );
 
-  PanelUI.panel.hidePopup();
+  const panel = view.closest("panel");
+  const panelHidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
+  panel.hidePopup();
+  await panelHidden;
 });
 
 add_task(async function test_beta_badge_in_app_menu() {

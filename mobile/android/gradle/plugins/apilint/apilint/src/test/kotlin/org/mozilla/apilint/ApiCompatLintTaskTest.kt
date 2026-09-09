@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * The doclet derives the map's name from the API file it is handed, and the lint tasks read the map
- * back, so the two paths have to agree or the declared output will not match what gets written.
+ * The doclet derives the map's name from the API file it is handed, and the lint tasks read the map back, so the two
+ * paths have to agree or the declared output will not match what gets written.
  */
 class ApiCompatLintTaskTest {
     private val project: Project = ProjectBuilder.builder().build()

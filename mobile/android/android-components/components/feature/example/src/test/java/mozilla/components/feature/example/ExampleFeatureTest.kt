@@ -18,25 +18,28 @@ class ExampleFeatureTest {
     @Before
     fun setup() {
         updateMessages.clear()
-        feature = ExampleFeature(
-            onUpdate = { message -> updateMessages.add(message) },
-            mainDispatcher = testDispatcher,
-        )
+        feature =
+            ExampleFeature(
+                onUpdate = { message -> updateMessages.add(message) },
+                mainDispatcher = testDispatcher,
+            )
     }
 
     @Test
-    fun `start triggers onUpdate callback`() = runTest(testDispatcher) {
-        feature.start()
-        testDispatcher.scheduler.advanceUntilIdle()
-        assertEquals(1, updateMessages.size)
-        assert(updateMessages[0].startsWith("Example feature update: Processed: data-"))
-    }
+    fun `start triggers onUpdate callback`() =
+        runTest(testDispatcher) {
+            feature.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+            assertEquals(1, updateMessages.size)
+            assert(updateMessages[0].startsWith("Example feature update: Processed: data-"))
+        }
 
     @Test
-    fun `stop cancels running job`() = runTest(testDispatcher) {
-        feature.start()
-        testDispatcher.scheduler.advanceUntilIdle()
-        feature.stop()
-        testDispatcher.scheduler.advanceUntilIdle()
-    }
+    fun `stop cancels running job`() =
+        runTest(testDispatcher) {
+            feature.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+            feature.stop()
+            testDispatcher.scheduler.advanceUntilIdle()
+        }
 }

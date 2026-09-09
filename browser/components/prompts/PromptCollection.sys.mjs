@@ -185,7 +185,7 @@ export class PromptCollection {
             "pdfjs:saveComplete"
           );
         });
-        const actor = browsingContext.currentWindowGlobal.getActor("Pdfjs");
+        const actor = browsingContext.currentWindowGlobal.getActor("PdfJs");
         actor.sendAsyncMessage("PDFJS:Save");
         await savePdfPromise;
       }

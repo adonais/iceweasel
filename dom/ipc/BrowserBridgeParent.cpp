@@ -139,14 +139,15 @@ CanonicalBrowsingContext* BrowserBridgeParent::GetBrowsingContext() {
 
 BrowserParent* BrowserBridgeParent::Manager() {
   MOZ_ASSERT(CanSend());
-  return static_cast<BrowserParent*>(PBrowserBridgeParent::Manager());
+  return mozilla::ipc::ActorCast<BrowserParent>(
+      PBrowserBridgeParent::Manager());
 }
 
 void BrowserBridgeParent::Destroy() {
   if (mBrowserParent) {
 #ifdef ACCESSIBILITY
-    if (mEmbedderAccessibleDoc && !mEmbedderAccessibleDoc->IsShutdown()) {
-      mEmbedderAccessibleDoc->RemovePendingOOPChildDoc(this);
+    if (a11y::DocAccessibleParent* embedderDoc = GetEmbedderAccessibleDoc()) {
+      embedderDoc->RemovePendingOOPChildDoc(this);
     }
 #endif
     mBrowserParent->Destroy();
@@ -277,38 +278,26 @@ a11y::DocAccessibleParent* BrowserBridgeParent::GetDocAccessibleParent() {
   return docAcc && !docAcc->IsShutdown() ? docAcc : nullptr;
 }
 
-IPCResult BrowserBridgeParent::RecvSetEmbedderAccessible(
-    PDocAccessibleParent* aDoc, uint64_t aID) {
+IPCResult BrowserBridgeParent::RecvSetEmbedderAccessible(uint64_t aID) {
 #  if defined(ANDROID)
   MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
 #  endif
-  if (!aDoc && !mEmbedderAccessibleDoc) {
-    return IPC_FAIL(this, "Embedder doc shouldn't be cleared if it wasn't set");
-  }
-  if (mEmbedderAccessibleDoc && aDoc && mEmbedderAccessibleDoc != aDoc) {
+  if (!aID && !mEmbedderAccessibleID) {
     return IPC_FAIL(this,
-                    "Embedder doc shouldn't change from one doc to another");
-  }
-  if (aDoc && aDoc->Manager() != Manager()) {
-    return IPC_FAIL(this, "Embedder doc not managed by our PBrowser");
-  }
-  if (!aDoc && mEmbedderAccessibleDoc &&
-      !mEmbedderAccessibleDoc->IsShutdown()) {
-    // We're clearing the embedder doc, so remove the pending child doc addition
-    // (if any).
-    mEmbedderAccessibleDoc->RemovePendingOOPChildDoc(this);
-  }
-  mEmbedderAccessibleDoc = static_cast<a11y::DocAccessibleParent*>(aDoc);
-  mEmbedderAccessibleID = aID;
-  if (!aDoc) {
-    if (aID) {
-      return IPC_FAIL(this, "Attempt to clear embedder but id given");
-    }
-    return IPC_OK();
+                    "Embedder accessible shouldn't be cleared if it wasn't "
+                    "set");
   }
   if (!aID) {
-    return IPC_FAIL(this, "Attempt to set embedder without id");
+    // We're clearing the embedder accessible, so remove the pending child
+    // doc addition (if any).
+    if (a11y::DocAccessibleParent* embedderDoc = GetEmbedderAccessibleDoc()) {
+      embedderDoc->RemovePendingOOPChildDoc(this);
+    }
+    mEmbedderAccessibleID = 0;
+    return IPC_OK();
   }
+
+  mEmbedderAccessibleID = aID;
   if (GetDocAccessibleParent()) {
     // The embedded DocAccessibleParent has already been created. This can
     // happen if, for example, an iframe is hidden and then shown or an iframe
@@ -317,15 +306,29 @@ IPCResult BrowserBridgeParent::RecvSetEmbedderAccessible(
     // received *before* we receive the accessibility hide and show events. This
     // is okay; DocAccessibleParent will store this as a pending OOP child
     // document and add it when the new OuterDocAccessible arrives.
-    mEmbedderAccessibleDoc->AddChildDoc(this);
+    RefPtr<WindowGlobalParent> embedderWgp =
+        GetBrowsingContext()->GetEmbedderWindowGlobal();
+    auto* embedderDoc = embedderWgp
+                            ? a11y::DocAccessibleParent::GetFrom(
+                                  embedderWgp, /* aAllowShutdown */ true)
+                            : nullptr;
+    if (!embedderDoc) {
+      return IPC_FAIL(this, "Embedder's PDocAccessible doesn't exist");
+    }
+    if (!embedderDoc->IsShutdown()) {
+      embedderDoc->AddChildDoc(this);
+    }
   }
   return IPC_OK();
 }
 
 a11y::DocAccessibleParent* BrowserBridgeParent::GetEmbedderAccessibleDoc() {
-  return mEmbedderAccessibleDoc && !mEmbedderAccessibleDoc->IsShutdown()
-             ? mEmbedderAccessibleDoc.get()
-             : nullptr;
+  if (!mEmbedderAccessibleID) {
+    return nullptr;
+  }
+  RefPtr<WindowGlobalParent> embedderWgp =
+      GetBrowsingContext()->GetEmbedderWindowGlobal();
+  return a11y::DocAccessibleParent::GetFrom(embedderWgp);
 }
 #endif
 

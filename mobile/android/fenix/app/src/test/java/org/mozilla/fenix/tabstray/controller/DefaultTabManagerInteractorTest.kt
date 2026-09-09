@@ -18,7 +18,7 @@ class DefaultTabManagerInteractorTest {
 
     private val testTab = TabsTrayItem.Tab(tab = createTab(id = "testTabId", url = "url"))
 
-        @Test
+    @Test
     fun `WHEN user selects a new browser tab THEN the Interactor delegates to the controller`() {
         interactor.onTabSelected(testTab, null)
 

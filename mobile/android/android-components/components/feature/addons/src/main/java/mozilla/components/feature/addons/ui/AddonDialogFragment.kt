@@ -14,23 +14,20 @@ import mozilla.components.feature.addons.Addon
 import mozilla.components.support.base.android.NoObscuredTouchesDialogFragment
 import mozilla.components.support.utils.ext.getParcelableCompat
 
-@VisibleForTesting
-internal const val KEY_ICON = "KEY_ICON"
+@VisibleForTesting internal const val KEY_ICON = "KEY_ICON"
 
-/**
- * A generic [Addon] dialog which has an [Addon]'s icon.
- */
+/** A generic [Addon] dialog which has an [Addon]'s icon. */
 open class AddonDialogFragment : NoObscuredTouchesDialogFragment() {
     init {
         arguments = arguments ?: Bundle()
     }
 
     @VisibleForTesting
-    internal val safeArguments get() = requireNotNull(arguments)
+    internal val safeArguments
+        get() = requireNotNull(arguments)
 
     internal fun loadIcon(addon: Addon, iconView: AppCompatImageView) {
-        val icon =
-            safeArguments.getParcelableCompat(KEY_ICON, Bitmap::class.java)
+        val icon = safeArguments.getParcelableCompat(KEY_ICON, Bitmap::class.java)
         if (icon != null) {
             iconView.setImageDrawable(addon.icon?.toDrawable(iconView.resources))
         } else {
@@ -39,9 +36,7 @@ open class AddonDialogFragment : NoObscuredTouchesDialogFragment() {
         }
     }
 
-    /**
-     * Styling for the addon installation dialog.
-     */
+    /** Styling for the addon installation dialog. */
     data class PromptsStyling(
         val gravity: Int,
         val shouldWidthMatchParent: Boolean = false,

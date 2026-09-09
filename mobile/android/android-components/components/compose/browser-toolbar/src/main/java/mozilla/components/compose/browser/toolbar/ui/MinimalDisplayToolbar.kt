@@ -58,30 +58,33 @@ internal fun MinimalDisplayToolbar(
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    val registrableDomain = remember(pageOrigin.url) {
-        val url = pageOrigin.url ?: return@remember ""
-        val (start, end) = url.getRegistrableDomainIndexRange() ?: return@remember url
-        url.substring(start, end)
-    }
-    val contentDescription = stringResource(
-        R.string.mozac_minimal_display_toolbar_content_description,
-        registrableDomain,
-    )
+    val registrableDomain =
+        remember(pageOrigin.url) {
+            val url = pageOrigin.url ?: return@remember ""
+            val (start, end) = url.getRegistrableDomainIndexRange() ?: return@remember url
+            url.substring(start, end)
+        }
+    val contentDescription =
+        stringResource(
+            R.string.mozac_minimal_display_toolbar_content_description,
+            registrableDomain,
+        )
 
     Surface(color = backgroundColor) {
         Box {
             Row(
-                modifier = modifier
-                    .requiredHeight(dimensionResource(R.dimen.mozac_minimal_display_toolbar_height))
-                    .clearAndSetSemantics {
-                        this.contentDescription = contentDescription
-                        testTagsAsResourceId = true
-                        testTag = MINIMAL_ADDRESS_BAR
-                    }
-                    .pointerInput(Unit) {
-                        focusRequester.requestFocus()
-                        keyboardController?.hide()
-                    },
+                modifier =
+                    modifier
+                        .requiredHeight(dimensionResource(R.dimen.mozac_minimal_display_toolbar_height))
+                        .clearAndSetSemantics {
+                            this.contentDescription = contentDescription
+                            testTagsAsResourceId = true
+                            testTag = MINIMAL_ADDRESS_BAR
+                        }
+                        .pointerInput(Unit) {
+                            focusRequester.requestFocus()
+                            keyboardController?.hide()
+                        },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
             ) {
@@ -102,19 +105,18 @@ internal fun MinimalDisplayToolbar(
                     onClick = null,
                     onLongClick = null,
                     onInteraction = {},
-                    modifier = Modifier
-                        .testTag(ADDRESSBAR_URL_BOX)
-                        .then(originModifier),
+                    modifier = Modifier.testTag(ADDRESSBAR_URL_BOX).then(originModifier),
                 )
             }
 
             HorizontalDivider(
-                modifier = Modifier.align(
-                    when (gravity) {
-                        Top -> Alignment.BottomCenter
-                        Bottom -> Alignment.TopCenter
-                    },
-                ),
+                modifier =
+                    Modifier.align(
+                        when (gravity) {
+                            Top -> Alignment.BottomCenter
+                            Bottom -> Alignment.TopCenter
+                        }
+                    ),
                 color = outlineColor,
             )
         }
@@ -124,17 +126,18 @@ internal fun MinimalDisplayToolbar(
 @PreviewLightDark
 @Composable
 private fun MinimalDisplayToolbarPreview(
-    @PreviewParameter(DisplayToolbarDataProvider::class) config: DisplayToolbarPreviewModel,
+    @PreviewParameter(DisplayToolbarDataProvider::class) config: DisplayToolbarPreviewModel
 ) {
     AcornTheme {
         Surface {
             MinimalDisplayToolbar(
-                pageOrigin = PageOrigin(
-                    hint = R.string.mozac_browser_toolbar_search_hint,
-                    title = config.title,
-                    url = config.url,
-                    onClick = object : BrowserToolbarEvent {},
-                ),
+                pageOrigin =
+                    PageOrigin(
+                        hint = R.string.mozac_browser_toolbar_search_hint,
+                        title = config.title,
+                        url = config.url,
+                        onClick = object : BrowserToolbarEvent {},
+                    ),
                 pageActionsStart = config.pageActionsStart,
                 gravity = config.gravity,
             )

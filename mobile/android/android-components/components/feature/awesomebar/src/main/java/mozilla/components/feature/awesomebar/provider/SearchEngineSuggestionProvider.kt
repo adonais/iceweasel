@@ -5,10 +5,10 @@
 package mozilla.components.feature.awesomebar.provider
 
 import android.graphics.Bitmap
-import mozilla.components.browser.state.search.SearchEngine
-import mozilla.components.concept.awesomebar.AwesomeBar
 import java.lang.Integer.MAX_VALUE
 import java.util.UUID
+import mozilla.components.browser.state.search.SearchEngine
+import mozilla.components.concept.awesomebar.AwesomeBar
 
 /**
  * [AwesomeBar.SuggestionProvider] implementation that provides suggestions based on the search engine list.
@@ -37,8 +37,7 @@ class SearchEngineSuggestionProvider(
             return emptyList()
         }
 
-        val suggestions = searchEnginesList
-            .filter { it.name.startsWith(text, true) }.take(maxSuggestions)
+        val suggestions = searchEnginesList.filter { it.name.startsWith(text, true) }.take(maxSuggestions)
 
         return if (suggestions.isNotEmpty()) {
             suggestions.into()
@@ -47,9 +46,7 @@ class SearchEngineSuggestionProvider(
         }
     }
 
-    /**
-     *  Generates a list of [AwesomeBar.Suggestion] from a [SearchEngine] list
-     */
+    /** Generates a list of [AwesomeBar.Suggestion] from a [SearchEngine] list */
     private fun List<SearchEngine>.into(): List<AwesomeBar.Suggestion> {
         return this.map {
             AwesomeBar.Suggestion(

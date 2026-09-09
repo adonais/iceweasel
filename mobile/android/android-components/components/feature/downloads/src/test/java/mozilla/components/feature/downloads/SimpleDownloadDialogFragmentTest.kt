@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.appcompat.R as appcompatR
 import androidx.core.content.ContextCompat
 import androidx.core.view.marginEnd
 import androidx.fragment.app.FragmentManager
@@ -28,7 +29,6 @@ import org.mockito.Mockito
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.doReturn
 import org.robolectric.annotation.Config
-import androidx.appcompat.R as appcompatR
 
 @RunWith(AndroidJUnit4::class)
 @Config(application = TestApplication::class)
@@ -41,13 +41,15 @@ class SimpleDownloadDialogFragmentTest {
     @Before
     fun setup() {
         mockFragmentManager = mock()
-        download = DownloadState(
-            "http://ipv4.download.thinkbroadband.com/5MB.zip",
-            "5MB.zip",
-            "application/zip",
-            5242880,
-            userAgent = "Mozilla/5.0 (Linux; Android 7.1.1) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Focus/8.0 Chrome/69.0.3497.100 Mobile Safari/537.36",
-        )
+        download =
+            DownloadState(
+                "http://ipv4.download.thinkbroadband.com/5MB.zip",
+                "5MB.zip",
+                "application/zip",
+                5242880,
+                userAgent =
+                    "Mozilla/5.0 (Linux; Android 7.1.1) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Focus/8.0 Chrome/69.0.3497.100 Mobile Safari/537.36",
+            )
         dialog = SimpleDownloadDialogFragment.newInstance()
     }
 
@@ -103,23 +105,25 @@ class SimpleDownloadDialogFragmentTest {
 
     @Test
     fun `dialog must adhere to promptsStyling`() {
-        val promptsStyling = DownloadsFeature.PromptsStyling(
-            gravity = Gravity.TOP,
-            shouldWidthMatchParent = true,
-            positiveButtonBackgroundColor = android.R.color.white,
-            positiveButtonTextColor = android.R.color.black,
-            positiveButtonRadius = 4f,
-            fileNameEndMargin = 56,
-        )
+        val promptsStyling =
+            DownloadsFeature.PromptsStyling(
+                gravity = Gravity.TOP,
+                shouldWidthMatchParent = true,
+                positiveButtonBackgroundColor = android.R.color.white,
+                positiveButtonTextColor = android.R.color.black,
+                positiveButtonRadius = 4f,
+                fileNameEndMargin = 56,
+            )
 
-        val fragment = Mockito.spy(
-            SimpleDownloadDialogFragment.newInstance(
-                R.string.mozac_feature_downloads_dialog_title_3,
-                R.string.mozac_feature_downloads_dialog_download,
-                0,
-                promptsStyling,
-            ),
-        )
+        val fragment =
+            Mockito.spy(
+                SimpleDownloadDialogFragment.newInstance(
+                    R.string.mozac_feature_downloads_dialog_title_3,
+                    R.string.mozac_feature_downloads_dialog_download,
+                    0,
+                    promptsStyling,
+                )
+            )
         doReturn(testContext).`when`(fragment).requireContext()
 
         val dialog = fragment.onCreateDialog(null)
@@ -127,9 +131,18 @@ class SimpleDownloadDialogFragmentTest {
         val positiveButton = dialog.findViewById<Button>(R.id.download_button)
         val filename = dialog.findViewById<TextView>(R.id.filename)
 
-        assertEquals(ContextCompat.getColor(testContext, promptsStyling.positiveButtonBackgroundColor!!), (positiveButton.background as GradientDrawable).color?.defaultColor)
-        assertEquals(promptsStyling.positiveButtonRadius!!, (positiveButton.background as GradientDrawable).cornerRadius)
-        assertEquals(ContextCompat.getColor(testContext, promptsStyling.positiveButtonTextColor!!), positiveButton.textColors.defaultColor)
+        assertEquals(
+            ContextCompat.getColor(testContext, promptsStyling.positiveButtonBackgroundColor!!),
+            (positiveButton.background as GradientDrawable).color?.defaultColor,
+        )
+        assertEquals(
+            promptsStyling.positiveButtonRadius!!,
+            (positiveButton.background as GradientDrawable).cornerRadius,
+        )
+        assertEquals(
+            ContextCompat.getColor(testContext, promptsStyling.positiveButtonTextColor!!),
+            positiveButton.textColors.defaultColor,
+        )
         assertTrue(dialogAttributes.gravity == Gravity.TOP)
         assertTrue(dialogAttributes.width == ViewGroup.LayoutParams.MATCH_PARENT)
         assertTrue(filename.marginEnd == 56)

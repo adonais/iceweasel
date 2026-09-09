@@ -532,7 +532,7 @@ class WinUtils {
   static nsresult WriteBitmap(nsIFile* aFile, imgIContainer* aImage);
 
   /**
-   * Wrapper for PathCanonicalize().
+   * Wrapper for PathCchCanonicalize().
    * Upon success, the resulting output string length is <= MAX_PATH.
    * @param  aPath [in,out] The path to transform.
    * @return true on success, false on failure.

@@ -229,6 +229,8 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
 
   std::optional<RtpRtcpInterface::SenderReportStats> GetSenderReportStats()
       const;
+  std::optional<RtpRtcpInterface::NonSenderRttStats> GetNonSenderRttStats()
+      const;
 
   // Mozilla modification: VideoReceiveStream2 and friends do not surface RTCP
   // stats at all, and even on the most recent libwebrtc code there does not

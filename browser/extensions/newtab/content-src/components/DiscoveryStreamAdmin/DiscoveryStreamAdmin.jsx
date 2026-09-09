@@ -3,14 +3,26 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { WIDGET_REGISTRY } from "common/WidgetsRegistry.mjs";
+import {
+  WIDGET_REGISTRY,
+  hasContentAreaWidgets,
+  isWidgetsContainerVisible,
+} from "common/WidgetsRegistry.mjs";
+import {
+  DEFAULT_PAGE_LAYOUT_VARIANT,
+  PAGE_LAYOUT_VARIANTS,
+  PREF_PAGE_LAYOUT_VARIANT,
+  isSideBySideAssigned,
+  isSpacesAssigned,
+  resolvePageLayoutVariant,
+  resolvePopulatedSpaces,
+} from "common/PageLayoutVariants.mjs";
 import { connect } from "react-redux";
 import React from "react";
 
 // Pref Constants
 const PREF_AD_SIZE_MEDIUM_RECTANGLE = "newtabAdSize.mediumRectangle";
 const PREF_AD_SIZE_BILLBOARD = "newtabAdSize.billboard";
-const PREF_AD_SIZE_LEADERBOARD = "newtabAdSize.leaderboard";
 const PREF_SECTIONS_ENABLED = "discoverystream.sections.enabled";
 const PREF_SPOC_PLACEMENTS = "discoverystream.placements.spocs";
 const PREF_SPOC_COUNTS = "discoverystream.placements.spocs.counts";
@@ -46,13 +58,51 @@ const WIDGET_EXTRA_FEATURES = {
     },
   ],
   privacy: [{ pref: "widgets.privacy.showVpnMessages", label: "VPN messages" }],
-  sportsWidget: [
-    { pref: "widgets.sportsWidget.live.enabled", label: "Live scores" },
-    {
-      pref: "widgets.sportsWidget.celebrations.enabled",
-      label: "Celebrations",
-    },
-  ],
+};
+
+// Devtools-only copy, so not localized. A variant with no entry falls back to its
+// raw pref value and renders no description.
+const PAGE_LAYOUTS_INFO = {
+  [PAGE_LAYOUT_VARIANTS.NOVA_FULL_WIDTH]: {
+    label: "Nova",
+    description:
+      "Today's layout. Widgets sit in a row above the stories, and both run " +
+      "the full width of the screen.",
+  },
+  [PAGE_LAYOUT_VARIANTS.SIDE_BY_SIDE_CONTENT_LEAD]: {
+    label: "Side-by-side (Content lead)",
+    description:
+      "Stories on the left, widgets stacked in one narrow column on the " +
+      "right. Stories get up to three cards across.",
+  },
+  [PAGE_LAYOUT_VARIANTS.SIDE_BY_SIDE_WIDGETS_LEAD]: {
+    label: "Side-by-side (Widgets lead)",
+    description:
+      "Widgets stacked in one narrow column on the left, stories on the " +
+      "right. Stories get up to three cards across.",
+  },
+  [PAGE_LAYOUT_VARIANTS.SIDE_BY_SIDE_CONTENT_LEAD_FIVE]: {
+    label: "Side-by-side (Content lead, five columns)",
+    description:
+      "Same as Content lead, but stories get a fourth card across on wide " +
+      "screens.",
+  },
+  [PAGE_LAYOUT_VARIANTS.SIDE_BY_SIDE_WIDGETS_LEAD_FIVE]: {
+    label: "Side-by-side (Widgets lead, five columns)",
+    description:
+      "Same as Widgets lead, but stories get a fourth card across on wide " +
+      "screens.",
+  },
+  [PAGE_LAYOUT_VARIANTS.SPACES_BUTTONS_BOTTOM]: {
+    label: "Spaces (Buttons at the bottom)",
+    description:
+      "Stories, widgets and Highlights each get their own panel, navigated " +
+      "with a segmented control below the content and arrows at either edge.",
+  },
+  [PAGE_LAYOUT_VARIANTS.SPACES_BUTTONS_TOP]: {
+    label: "Spaces (Buttons at the top)",
+    description: "Same as above, with the segmented control above the content.",
+  },
 };
 
 const Row = props => (
@@ -152,6 +202,8 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
       this.handleResetWidgetInteractions.bind(this);
     this.handleResetWidgetsToDefaults =
       this.handleResetWidgetsToDefaults.bind(this);
+    this.handlePageLayoutChange = this.handlePageLayoutChange.bind(this);
+    this.handleResetPageLayout = this.handleResetPageLayout.bind(this);
     this.toggleIABBanners = this.toggleIABBanners.bind(this);
     this.handleAllizomToggle = this.handleAllizomToggle.bind(this);
     this.sendConversionEvent = this.sendConversionEvent.bind(this);
@@ -341,11 +393,6 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
         this.props.dispatch(ac.SetPref(PREF_AD_SIZE_BILLBOARD, pressed));
 
         break;
-      case "newtab_leaderboard":
-        // Update boolean pref for billboard ad size
-        this.props.dispatch(ac.SetPref(PREF_AD_SIZE_LEADERBOARD, pressed));
-
-        break;
       case "newtab_rectangle":
         // Update boolean pref for mediumRectangle (MREC) ad size
         this.props.dispatch(ac.SetPref(PREF_AD_SIZE_MEDIUM_RECTANGLE, pressed));
@@ -369,11 +416,7 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
           .filter(item => item) || [];
 
       // Confirm that the IAB type will have a count value of "1"
-      const supportIABAdTypes = [
-        "newtab_leaderboard",
-        "newtab_rectangle",
-        "newtab_billboard",
-      ];
+      const supportIABAdTypes = ["newtab_rectangle", "newtab_billboard"];
       let countValue;
       if (supportIABAdTypes.includes(id)) {
         countValue = "1"; // Default count value for all IAB ad types
@@ -417,19 +460,15 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
           ac.SetPref(PREF_CONTEXTUAL_BANNER_PLACEMENTS, "newtab_billboard")
         );
         this.props.dispatch(ac.SetPref(PREF_CONTEXTUAL_BANNER_COUNTS, "1"));
-      } else if (
-        PREF_AD_SIZE_LEADERBOARD &&
-        placements.includes("newtab_leaderboard")
-      ) {
-        this.props.dispatch(
-          ac.SetPref(PREF_CONTEXTUAL_BANNER_PLACEMENTS, "newtab_leaderboard")
-        );
-        this.props.dispatch(ac.SetPref(PREF_CONTEXTUAL_BANNER_COUNTS, "1"));
       } else {
         this.props.dispatch(ac.SetPref(PREF_CONTEXTUAL_BANNER_PLACEMENTS, ""));
         this.props.dispatch(ac.SetPref(PREF_CONTEXTUAL_BANNER_COUNTS, ""));
       }
     }
+
+    // The layout is cached, so the new placements only take effect once the
+    // cache is rebuilt.
+    this.refreshCache();
   }
 
   handleSectionsToggle(e) {
@@ -489,6 +528,108 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
       Object.keys(this.props.otherPrefs).filter(prefName =>
         prefName.startsWith("widgets.")
       )
+    );
+  }
+
+  handlePageLayoutChange(e) {
+    this.props.dispatch(ac.SetPref(PREF_PAGE_LAYOUT_VARIANT, e.target.value));
+  }
+
+  handleResetPageLayout() {
+    this.clearPrefs([PREF_PAGE_LAYOUT_VARIANT]);
+  }
+
+  // Names the first isSideBySideActive gate that fails, so a variant falling back to
+  // one column says why. Callers check the variant is side-by-side first.
+  pageLayoutInactiveReason() {
+    const prefs = this.props.otherPrefs;
+    if (!prefs["feeds.section.topstories"]) {
+      return "stories are turned off (feeds.section.topstories)";
+    }
+    if (!prefs["feeds.system.topstories"]) {
+      return "stories are turned off (feeds.system.topstories)";
+    }
+    if (!isWidgetsContainerVisible(prefs)) {
+      return "widgets are turned off (widgets.system.enabled)";
+    }
+    if (!hasContentAreaWidgets(prefs)) {
+      return "no widgets are showing to sit beside the stories";
+    }
+    return null;
+  }
+
+  // Same idea for spaces, which needs two places to navigate between. Without
+  // this an assigned-but-inactive spaces variant is indistinguishable from
+  // today's page, since spaces adds no visible frame of its own when it falls
+  // back. Callers check the variant is spaces first.
+  spacesInactiveReason() {
+    const populated = resolvePopulatedSpaces(this.props.otherPrefs);
+    if (populated.length > 1) {
+      return null;
+    }
+    return populated.length
+      ? `only the ${populated[0]} space has content, so there is nowhere to navigate to`
+      : "no space has content";
+  }
+
+  renderLayouts() {
+    const prefs = this.props.otherPrefs;
+    // The pref, not the effective value: what the radio sets and reset clears.
+    const prefVariant =
+      prefs[PREF_PAGE_LAYOUT_VARIANT] || DEFAULT_PAGE_LAYOUT_VARIANT;
+    const effectiveVariant = resolvePageLayoutVariant(prefs);
+    const trainhopOverride = effectiveVariant !== prefVariant;
+    const inactiveReason =
+      (isSideBySideAssigned(prefs) && this.pageLayoutInactiveReason()) ||
+      (isSpacesAssigned(prefs) && this.spacesInactiveReason());
+
+    return (
+      <>
+        <div className="layout-variants">
+          {Object.values(PAGE_LAYOUT_VARIANTS).map(variant => (
+            <label key={variant} className="layout-variant">
+              <input
+                type="radio"
+                name="page-layout-variant"
+                value={variant}
+                checked={prefVariant === variant}
+                onChange={this.handlePageLayoutChange}
+              />
+              <span className="layout-variant-text">
+                <span className="layout-variant-name">
+                  {PAGE_LAYOUTS_INFO[variant]?.label ?? variant}
+                  {variant === DEFAULT_PAGE_LAYOUT_VARIANT ? " (default)" : ""}
+                  {/* The pref value, for a Nimbus recipe or about:config. */}
+                  <code className="layout-variant-value">{variant}</code>
+                </span>
+                {PAGE_LAYOUTS_INFO[variant]?.description && (
+                  <span className="layout-variant-description">
+                    {PAGE_LAYOUTS_INFO[variant].description}
+                  </span>
+                )}
+              </span>
+            </label>
+          ))}
+        </div>
+        <moz-button
+          disabled={prefVariant === DEFAULT_PAGE_LAYOUT_VARIANT ? true : null}
+          onClick={this.handleResetPageLayout}
+        >
+          Reset layout
+        </moz-button>
+        {trainhopOverride && (
+          <p className="layout-status layout-status-warning">
+            A train-hop experiment is forcing <code>{effectiveVariant}</code>,
+            so picking a layout here does nothing. See Train Hop above.
+          </p>
+        )}
+        {inactiveReason && (
+          <p className="layout-status">
+            Showing as one column instead of side-by-side because{" "}
+            {inactiveReason}.
+          </p>
+        )}
+      </>
     );
   }
 
@@ -1022,14 +1163,11 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
     const mediumRectangleEnabled =
       this.props.otherPrefs[PREF_AD_SIZE_MEDIUM_RECTANGLE];
     const billboardsEnabled = this.props.otherPrefs[PREF_AD_SIZE_BILLBOARD];
-    const leaderboardEnabled = this.props.otherPrefs[PREF_AD_SIZE_LEADERBOARD];
     const spocPlacements = this.props.otherPrefs[PREF_SPOC_PLACEMENTS];
     const mediumRectangleEnabledPressed =
       mediumRectangleEnabled && spocPlacements.includes("newtab_rectangle");
     const billboardPressed =
       billboardsEnabled && spocPlacements.includes("newtab_billboard");
-    const leaderboardPressed =
-      leaderboardEnabled && spocPlacements.includes("newtab_leaderboard");
 
     const widgetsSystemEnabled =
       this.props.otherPrefs[PREF_WIDGETS_SYSTEM_ENABLED];
@@ -1065,15 +1203,11 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
           {this.renderTrainhop()}
         </details>
         <details className="details-section">
+          <summary>Page Layouts (experimental)</summary>
+          {this.renderLayouts()}
+        </details>
+        <details className="details-section">
           <summary>IAB Banner Ad Sizes</summary>
-          <div className="toggle-wrapper">
-            <moz-toggle
-              id="newtab_leaderboard"
-              pressed={leaderboardPressed || null}
-              ontoggle={this.toggleIABBanners}
-              label="Enable IAB Leaderboard"
-            />
-          </div>
           <div className="toggle-wrapper">
             <moz-toggle
               id="newtab_billboard"
@@ -1116,7 +1250,7 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
             </moz-button>
           </div>
           <hr />
-          {WIDGET_REGISTRY.map(widget => (
+          {WIDGET_REGISTRY.filter(w => !w.retired).map(widget => (
             <React.Fragment key={widget.id}>
               <div className="toggle-wrapper">
                 <moz-toggle

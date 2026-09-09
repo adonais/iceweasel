@@ -582,6 +582,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void setChunkHasNurseryAllocs(BufferChunk* chunk);
   void recommitRegion(FreeRegion* region);
   bool stealOrAllocNewChunk(size_t sizeClass, bool inGC);
+  bool tryToStealQueuedChunk(size_t sizeClass);
   bool allocNewChunk(bool inGC);
   bool sweepChunk(BufferChunk* chunk, SweepKind sweepKind, bool shouldDecommit);
   void addSweptRegion(BufferChunk* chunk, uintptr_t freeStart,

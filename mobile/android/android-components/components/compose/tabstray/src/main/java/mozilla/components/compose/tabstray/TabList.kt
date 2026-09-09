@@ -60,11 +60,7 @@ fun TabList(
     onTabSelected: (TabSessionState) -> Unit,
     onTabClosed: (TabSessionState) -> Unit,
 ) {
-    LazyColumn(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface),
-    ) {
+    LazyColumn(modifier = modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)) {
         items(tabs) { tab ->
             Tab(
                 tab,

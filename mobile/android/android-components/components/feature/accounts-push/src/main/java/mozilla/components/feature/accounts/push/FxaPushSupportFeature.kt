@@ -9,6 +9,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.content.edit
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -16,6 +17,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.concept.base.crash.CrashReporting
+import mozilla.components.concept.sync.AccountObserver as SyncAccountObserver
 import mozilla.components.concept.sync.AuthType
 import mozilla.components.concept.sync.ConstellationState
 import mozilla.components.concept.sync.Device
@@ -33,8 +35,6 @@ import mozilla.components.service.fxa.manager.ext.withConstellationIfExists
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.utils.SharedPreferencesCache
 import org.json.JSONObject
-import kotlin.coroutines.CoroutineContext
-import mozilla.components.concept.sync.AccountObserver as SyncAccountObserver
 
 internal const val PREFERENCE_NAME = "mozac_feature_accounts_push"
 internal const val PREF_LAST_VERIFIED = "last_verified_push_subscription"
@@ -42,8 +42,8 @@ internal const val PREF_FXA_SCOPE = "fxa_push_scope"
 
 /**
  * A feature used for supporting FxA and push integration where needed. One of the main functions is when FxA notifies
- * the device during a sync, that it's unable to reach the device via push messaging; triggering a push
- * registration renewal.
+ * the device during a sync, that it's unable to reach the device via push messaging; triggering a push registration
+ * renewal.
  *
  * @param context The application Android context.
  * @param accountManager The FxaAccountManager.
@@ -52,8 +52,8 @@ internal const val PREF_FXA_SCOPE = "fxa_push_scope"
  * @param coroutineScope The scope in which IO work within the feature should be performed on.
  * @param uiContext The context on which UI-related operations should be performed. Defaults to [Dispatchers.Main].
  * @param owner the lifecycle owner for the observer. Defaults to [ProcessLifecycleOwner].
- * @param autoPause whether to stop notifying the observer during onPause lifecycle events.
- * Defaults to false so that observers are always notified.
+ * @param autoPause whether to stop notifying the observer during onPause lifecycle events. Defaults to false so that
+ *   observers are always notified.
  */
 class FxaPushSupportFeature(
     private val context: Context,
@@ -69,28 +69,27 @@ class FxaPushSupportFeature(
     /**
      * A unique scope for the FxA push subscription that is generated once and stored in SharedPreferences.
      *
-     * This scope is randomly generated and unique to the app install.
-     * (why this uuid? Note it is *not* reset on logout!)
+     * This scope is randomly generated and unique to the app install. (why this uuid? Note it is *not* reset on
+     * logout!)
      */
     private val pushScope = PushScopeProperty(context, coroutineScope)
 
-    /**
-     * Initialize the support feature to launch the appropriate observers.
-     */
+    /** Initialize the support feature to launch the appropriate observers. */
     fun initialize() = coroutineScope.launch {
         val scopeValue = pushScope.value()
 
         val autoPushObserver = AutoPushObserver(accountManager, pushFeature, scopeValue, uiContext)
 
-        val accountObserver = AccountObserver(
-            context,
-            pushFeature,
-            scopeValue,
-            crashReporter,
-            owner,
-            uiContext,
-            autoPause,
-        )
+        val accountObserver =
+            AccountObserver(
+                context,
+                pushFeature,
+                scopeValue,
+                crashReporter,
+                owner,
+                uiContext,
+                autoPause,
+            )
 
         coroutineScope.launch(uiContext) {
             accountManager.register(accountObserver)
@@ -123,14 +122,15 @@ internal class AccountObserver(
 
     @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     override fun onAuthenticated(account: OAuthAccount, authType: AuthType) {
-        val constellationObserver = ConstellationObserver(
-            context = context,
-            push = push,
-            scope = fxaPushScope,
-            account = account,
-            verifier = verificationDelegate,
-            crashReporter = crashReporter,
-        )
+        val constellationObserver =
+            ConstellationObserver(
+                context = context,
+                push = push,
+                scope = fxaPushScope,
+                account = account,
+                verifier = verificationDelegate,
+                crashReporter = crashReporter,
+            )
 
         // NB: can we just expose registerDeviceObserver on account manager?
         // registration could happen after onDevicesUpdate has been called, without having to tie this
@@ -153,9 +153,8 @@ internal class AccountObserver(
 }
 
 /**
- * Subscribes to the AutoPushFeature, and updates the FxA device record if necessary.
- * Note that if the subscription already exists, then this doesn't hit any servers, so
- * it's OK to call this somewhat frequently.
+ * Subscribes to the AutoPushFeature, and updates the FxA device record if necessary. Note that if the subscription
+ * already exists, then this doesn't hit any servers, so it's OK to call this somewhat frequently.
  */
 internal fun pushSubscribe(
     push: AutoPushFeature,
@@ -184,9 +183,7 @@ internal fun pushSubscribe(
             // after getting a new one, our push endpoint will remain the same as it was. So here
             // we always update the endpoint if `subscriptionExpired` is true, even when the
             // subscription matches, just to ensure `subscriptionExpired` is reset.
-            if (currentDevice.subscriptionExpired ||
-                currentDevice.subscription?.endpoint != subscription.endpoint
-            ) {
+            if (currentDevice.subscriptionExpired || currentDevice.subscription?.endpoint != subscription.endpoint) {
                 logger.info("Updating account with new subscription info.")
                 CoroutineScope(uiContext).launch {
                     account.deviceConstellation().setDevicePushSubscription(subscription.into())
@@ -208,7 +205,7 @@ internal class ConstellationObserver(
     private val verifier: VerificationDelegate = VerificationDelegate(context),
     private val crashReporter: CrashReporting?,
     private val uiContext: CoroutineContext = Dispatchers.Main,
-    ) : DeviceConstellationObserver {
+) : DeviceConstellationObserver {
 
     private val logger = Logger(ConstellationObserver::class.java.simpleName)
 
@@ -226,12 +223,10 @@ internal class ConstellationObserver(
 
                 logger.info("Incrementing verifier")
                 logger.debug(
-                    "Verifier state before: timestamp=${verifier.innerTimestamp}, count=${verifier.innerCount}",
+                    "Verifier state before: timestamp=${verifier.innerTimestamp}, count=${verifier.innerCount}"
                 )
                 verifier.increment()
-                logger.debug(
-                    "Verifier state after: timestamp=${verifier.innerTimestamp}, count=${verifier.innerCount}",
-                )
+                logger.debug("Verifier state after: timestamp=${verifier.innerTimestamp}, count=${verifier.innerCount}")
             } else {
                 logger.info("Short-circuiting onDevicesUpdate: rate-limited")
             }
@@ -244,9 +239,7 @@ internal class ConstellationObserver(
     }
 }
 
-/**
- * An [AutoPushFeature] observer to handle [FxaAccountManager] subscriptions and push events.
- */
+/** An [AutoPushFeature] observer to handle [FxaAccountManager] subscriptions and push events. */
 internal class AutoPushObserver(
     private val accountManager: FxaAccountManager,
     private val pushFeature: AutoPushFeature,
@@ -289,8 +282,8 @@ internal class AutoPushObserver(
 }
 
 /**
- * A helper that rate limits how often we should notify our servers to renew push registration. For debugging, we
- * can override this rate-limit check by enabling the [disableRateLimit] flag.
+ * A helper that rate limits how often we should notify our servers to renew push registration. For debugging, we can
+ * override this rate-limit check by enabling the [disableRateLimit] flag.
  *
  * Implementation notes: This saves the timestamp of our renewal and the number of times we have renewed our
  * registration within the [PERIODIC_INTERVAL_MILLISECONDS] interval of time.
@@ -316,11 +309,9 @@ internal class VerificationDelegate(
             obj.getInt(KEY_TOTAL_COUNT),
         )
 
-    @VisibleForTesting
-    internal var innerCount: Int = 0
+    @VisibleForTesting internal var innerCount: Int = 0
 
-    @VisibleForTesting
-    internal var innerTimestamp: Long = currentTimeMillis()
+    @VisibleForTesting internal var innerTimestamp: Long = currentTimeMillis()
 
     init {
         getCached()?.let { cache ->
@@ -329,9 +320,7 @@ internal class VerificationDelegate(
         }
     }
 
-    /**
-     * Checks whether we're within our rate limiting constraints.
-     */
+    /** Checks whether we're within our rate limiting constraints. */
     fun allowedToRenew(): Boolean {
         logger.info("Allowed to renew?")
 
@@ -359,9 +348,7 @@ internal class VerificationDelegate(
         return true
     }
 
-    /**
-     * Should be called whenever a successful invocation has taken place and we want to record it.
-     */
+    /** Should be called whenever a successful invocation has taken place and we want to record it. */
     fun increment() {
         logger.info("Incrementing verification state.")
         val count = innerCount + 1
@@ -393,8 +380,9 @@ internal data class VerificationState(val timestamp: Long, val totalCount: Int)
 
 internal fun preference(context: Context) = context.getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE)
 
-internal fun AutoPushSubscription.into() = DevicePushSubscription(
-    endpoint = this.endpoint,
-    publicKey = this.publicKey,
-    authKey = this.authKey,
-)
+internal fun AutoPushSubscription.into() =
+    DevicePushSubscription(
+        endpoint = this.endpoint,
+        publicKey = this.publicKey,
+        authKey = this.authKey,
+    )

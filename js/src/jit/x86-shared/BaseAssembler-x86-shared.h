@@ -3937,14 +3937,16 @@ class BaseAssembler : public GenericAssembler {
     twoByteOpSimd("vsqrtss", VEX_SS, OP2_SQRTSS_VssWss, src1, src0, dst);
   }
 
-  void vroundsd_irr(RoundingMode mode, XMMRegisterID src, XMMRegisterID dst) {
+  void vroundsd_irr(RoundingMode mode, XMMRegisterID src1, XMMRegisterID src0,
+                    XMMRegisterID dst) {
     threeByteOpImmSimd("vroundsd", VEX_PD, OP3_ROUNDSD_VsdWsd, ESCAPE_3A, mode,
-                       src, invalid_xmm, dst);
+                       src1, src0, dst);
   }
 
-  void vroundss_irr(RoundingMode mode, XMMRegisterID src, XMMRegisterID dst) {
+  void vroundss_irr(RoundingMode mode, XMMRegisterID src1, XMMRegisterID src0,
+                    XMMRegisterID dst) {
     threeByteOpImmSimd("vroundss", VEX_PD, OP3_ROUNDSS_VsdWsd, ESCAPE_3A, mode,
-                       src, invalid_xmm, dst);
+                       src1, src0, dst);
   }
   void vroundps_irr(SSERoundingMode mode, XMMRegisterID src,
                     XMMRegisterID dst) {

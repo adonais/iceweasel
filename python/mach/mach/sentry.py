@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import abc
+import subprocess
 import sys
 from pathlib import Path
 
@@ -192,12 +193,19 @@ def _delete_server_name(sentry_event, _):
 
 
 def _get_repository_object(topsrcdir: Path):
-    from mozversioncontrol import InvalidRepoPath, MissingVCSTool, get_repository_object
+    from mozversioncontrol import (
+        InvalidRepoPath,
+        MissingVCSTool,
+        StaleWorkspaceError,
+        get_repository_object,
+    )
 
     try:
         return get_repository_object(str(topsrcdir))
     except (InvalidRepoPath, MissingVCSTool) as e:
         print(f"Warning: {e}", file=sys.stderr)
+        return None
+    except StaleWorkspaceError:
         return None
 
 
@@ -214,20 +222,21 @@ def _is_unmodified_mach_core(topsrcdir: Path):
     pretty confident that the Mach behaviour that caused the exception
     also exists in the public tree.
     """
-    from mozversioncontrol import MissingUpstreamRepo
-
     global _is_unmodified_mach_core_result
+    _is_unmodified_mach_core_result = False
 
     repo = _get_repository_object(topsrcdir)
+    if repo is None:
+        return
+
     try:
         files = set(repo.get_outgoing_files()) | set(repo.get_changed_files())
-        _is_unmodified_mach_core_result = not any([
-            file for file in files if file == "mach" or file.endswith(".py")
-        ])
-    except MissingUpstreamRepo:
-        # If we don't know the upstream state, we don't know if the mach files
-        # have been unmodified.
-        _is_unmodified_mach_core_result = False
+    except (subprocess.CalledProcessError, OSError):
+        return
+
+    _is_unmodified_mach_core_result = not any([
+        file for file in files if file == "mach" or file.endswith(".py")
+    ])
 
 
 _is_unmodified_mach_core_result = None

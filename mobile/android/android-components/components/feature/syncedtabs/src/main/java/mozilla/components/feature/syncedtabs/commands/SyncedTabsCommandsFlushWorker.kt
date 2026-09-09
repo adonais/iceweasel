@@ -15,8 +15,7 @@ import mozilla.components.concept.sync.DeviceCommandQueue
  * @param context The Android application context.
  * @param params Parameters for this worker's internal state.
  */
-class SyncedTabsCommandsFlushWorker(context: Context, params: WorkerParameters) :
-    CoroutineWorker(context, params) {
+class SyncedTabsCommandsFlushWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         val commands = GlobalSyncedTabsCommandsProvider.requireCommands()

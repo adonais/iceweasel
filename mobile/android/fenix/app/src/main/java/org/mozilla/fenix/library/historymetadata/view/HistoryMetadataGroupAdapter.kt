@@ -13,14 +13,11 @@ import org.mozilla.fenix.library.history.PendingDeletionHistory
 import org.mozilla.fenix.library.historymetadata.interactor.HistoryMetadataGroupInteractor
 import org.mozilla.fenix.selection.SelectionHolder
 
-/**
- * Adapter for a list of history metadata items to be displayed.
- */
+/** Adapter for a list of history metadata items to be displayed. */
 class HistoryMetadataGroupAdapter(
     private val interactor: HistoryMetadataGroupInteractor,
     private val onEmptyStateChanged: (Boolean) -> Unit,
-) : ListAdapter<History.Metadata, HistoryMetadataGroupItemViewHolder>(DiffCallback),
-    SelectionHolder<History.Metadata> {
+) : ListAdapter<History.Metadata, HistoryMetadataGroupItemViewHolder>(DiffCallback), SelectionHolder<History.Metadata> {
 
     private var selectedHistoryItems: Set<History.Metadata> = emptySet()
     private var pendingDeletionItems = emptySet<PendingDeletionHistory>()
@@ -33,8 +30,8 @@ class HistoryMetadataGroupAdapter(
         parent: ViewGroup,
         viewType: Int,
     ): HistoryMetadataGroupItemViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(HistoryMetadataGroupItemViewHolder.LAYOUT_ID, parent, false)
+        val view =
+            LayoutInflater.from(parent.context).inflate(HistoryMetadataGroupItemViewHolder.LAYOUT_ID, parent, false)
         return HistoryMetadataGroupItemViewHolder(view, interactor, this)
     }
 
@@ -73,16 +70,12 @@ class HistoryMetadataGroupAdapter(
         submitList(items)
     }
 
-    /**
-     * @param selectedHistoryItems is used to keep track of the items selected by the user.
-     */
+    /** @param selectedHistoryItems is used to keep track of the items selected by the user. */
     fun updateSelectedItems(selectedHistoryItems: Set<History.Metadata>) {
         this.selectedHistoryItems = selectedHistoryItems
     }
 
-    /**
-     * @param pendingDeletionItems is used to keep track of the items selected by the user.
-     */
+    /** @param pendingDeletionItems is used to keep track of the items selected by the user. */
     fun updatePendingDeletionItems(pendingDeletionItems: Set<PendingDeletionHistory>) {
         this.pendingDeletionItems = pendingDeletionItems
     }
@@ -91,7 +84,6 @@ class HistoryMetadataGroupAdapter(
         override fun areContentsTheSame(oldItem: History.Metadata, newItem: History.Metadata): Boolean =
             oldItem.position == newItem.position
 
-        override fun areItemsTheSame(oldItem: History.Metadata, newItem: History.Metadata): Boolean =
-            oldItem == newItem
+        override fun areItemsTheSame(oldItem: History.Metadata, newItem: History.Metadata): Boolean = oldItem == newItem
     }
 }

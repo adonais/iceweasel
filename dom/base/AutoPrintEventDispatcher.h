@@ -14,6 +14,19 @@
 namespace mozilla::dom {
 
 class AutoPrintEventDispatcher {
+ public:
+  MOZ_CAN_RUN_SCRIPT explicit AutoPrintEventDispatcher(Document& aDoc) {
+    if (!aDoc.IsStaticDocument()) {
+      mDocuments.AppendElement(&aDoc);
+      CollectInProcessSubdocuments(aDoc, mDocuments);
+    }
+
+    DispatchEvent(true);
+  }
+
+  MOZ_CAN_RUN_SCRIPT ~AutoPrintEventDispatcher() { DispatchEvent(false); }
+
+ private:
   // NOTE(emilio): For fission iframes, we dispatch this event in
   // RecvCloneDocumentTreeIntoSelf.
   static void CollectInProcessSubdocuments(
@@ -26,9 +39,13 @@ class AutoPrintEventDispatcher {
   }
 
   MOZ_CAN_RUN_SCRIPT void DispatchEvent(bool aBefore) {
-    for (auto& doc : mDocuments) {
+    for (const auto& doc : mDocuments) {
+      const RefPtr<nsGlobalWindowOuter> window =
+          nsGlobalWindowOuter::Cast(doc->GetWindow());
+      // mDocuments won't be modified. Therefore, we can use MOZ_KnownLive(doc)
+      // here.
       nsContentUtils::DispatchTrustedEvent(
-          doc, nsGlobalWindowOuter::Cast(doc->GetWindow()),
+          MOZ_KnownLive(doc), window,
           aBefore ? u"beforeprint"_ns : u"afterprint"_ns, CanBubble::eNo,
           Cancelable::eNo, nullptr);
       if (RefPtr<nsPresContext> presContext = doc->GetPresContext()) {
@@ -40,18 +57,6 @@ class AutoPrintEventDispatcher {
       }
     }
   }
-
- public:
-  MOZ_CAN_RUN_SCRIPT explicit AutoPrintEventDispatcher(Document& aDoc) {
-    if (!aDoc.IsStaticDocument()) {
-      mDocuments.AppendElement(&aDoc);
-      CollectInProcessSubdocuments(aDoc, mDocuments);
-    }
-
-    DispatchEvent(true);
-  }
-
-  MOZ_CAN_RUN_SCRIPT ~AutoPrintEventDispatcher() { DispatchEvent(false); }
 
   AutoTArray<nsCOMPtr<Document>, 8> mDocuments;
   const nsSize mPageSize;

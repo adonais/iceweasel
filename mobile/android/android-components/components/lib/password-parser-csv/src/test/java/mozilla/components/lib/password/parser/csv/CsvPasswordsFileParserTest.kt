@@ -4,6 +4,7 @@
 
 package mozilla.components.lib.password.parser.csv
 
+import kotlin.test.assertIs
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -14,7 +15,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlin.test.assertIs
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CsvPasswordsFileParserTest {
@@ -23,10 +23,12 @@ class CsvPasswordsFileParserTest {
 
     @Test
     fun `parses chrome export`() = runTest {
-        val csv = """
+        val csv =
+            """
             name,url,username,password,note
             Example,https://example.com,alice,hunter2,a note
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val result = parser.parse(csv.byteInputStream()).getOrThrow()
 
@@ -37,7 +39,7 @@ class CsvPasswordsFileParserTest {
                     origin = "https://example.com",
                     username = "alice",
                     password = "hunter2",
-                ),
+                )
             ),
             result.logins,
         )
@@ -45,13 +47,14 @@ class CsvPasswordsFileParserTest {
 
     @Test
     fun `parses multi-row firefox export with form and HTTP-auth logins`() = runTest {
-        val csv = "﻿" +
-            "\"url\",\"username\",\"password\",\"httpRealm\",\"formActionOrigin\"," +
-            "\"guid\",\"timeCreated\",\"timeLastUsed\",\"timePasswordChanged\"\n" +
-            "\"https://example.com\",\"alice\",\"hun,ter2\",,\"https://example.com/login\"," +
-            "\"{guid-1}\",\"1700\",\"1700\",\"1700\"\n" +
-            "\"https://intranet.example.com\",\"carol\",\"hunter3\",\"Corp Realm\",," +
-            "\"{guid-2}\",\"1710\",\"1711\",\"1712\""
+        val csv =
+            "﻿" +
+                "\"url\",\"username\",\"password\",\"httpRealm\",\"formActionOrigin\"," +
+                "\"guid\",\"timeCreated\",\"timeLastUsed\",\"timePasswordChanged\"\n" +
+                "\"https://example.com\",\"alice\",\"hun,ter2\",,\"https://example.com/login\"," +
+                "\"{guid-1}\",\"1700\",\"1700\",\"1700\"\n" +
+                "\"https://intranet.example.com\",\"carol\",\"hunter3\",\"Corp Realm\",," +
+                "\"{guid-2}\",\"1710\",\"1711\",\"1712\""
 
         val result = parser.parse(csv.byteInputStream()).getOrThrow()
 
@@ -79,10 +82,12 @@ class CsvPasswordsFileParserTest {
 
     @Test
     fun `parses 1Password export`() = runTest {
-        val csv = """
+        val csv =
+            """
             Title,Url,Username,Password,OTPAuth,Favorite,Archived,Tags,Notes
             Example,https://example.com,alice,"hun""ter2",,false,false,Starter Kit,a note
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val result = parser.parse(csv.byteInputStream()).getOrThrow()
 
@@ -98,10 +103,12 @@ class CsvPasswordsFileParserTest {
 
     @Test
     fun `parses Bitwarden export using login_ aliases`() = runTest {
-        val csv = """
+        val csv =
+            """
             folder,favorite,type,name,notes,fields,reprompt,archivedDate,login_uri,login_username,login_password,login_totp
             ,,login,Example,,,0,,https://example.com,alice,hunter2,
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val result = parser.parse(csv.byteInputStream()).getOrThrow()
 
@@ -113,9 +120,10 @@ class CsvPasswordsFileParserTest {
 
     @Test
     fun `parses Dashlane export with multi-line quoted note`() = runTest {
-        val csv = "username,username2,username3,title,password,note,url,category,otpUrl\n" +
-            "alice,,,example.com,hunter2," +
-            "\"formactionorigin: https://example.com\nguid: {abc}\",https://example.com,,"
+        val csv =
+            "username,username2,username3,title,password,note,url,category,otpUrl\n" +
+                "alice,,,example.com,hunter2," +
+                "\"formactionorigin: https://example.com\nguid: {abc}\",https://example.com,,"
 
         val result = parser.parse(csv.byteInputStream()).getOrThrow()
 
@@ -127,10 +135,12 @@ class CsvPasswordsFileParserTest {
 
     @Test
     fun `parses LastPass export`() = runTest {
-        val csv = """
+        val csv =
+            """
             url,username,password,totp,extra,name,grouping,fav
             https://example.com,alice,hunter2,,,Example,Email,0
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val result = parser.parse(csv.byteInputStream()).getOrThrow()
 
@@ -142,10 +152,12 @@ class CsvPasswordsFileParserTest {
 
     @Test
     fun `parses Safari export`() = runTest {
-        val csv = """
+        val csv =
+            """
             Title,URL,Username,Password,Notes,OTPAuth
             Example,https://example.com,alice,hunter2,,
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val result = parser.parse(csv.byteInputStream()).getOrThrow()
 
@@ -157,10 +169,12 @@ class CsvPasswordsFileParserTest {
 
     @Test
     fun `empty httpRealm becomes null`() = runTest {
-        val csv = """
+        val csv =
+            """
             url,username,password,httpRealm
             https://example.com,alice,hunter2,
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val result = parser.parse(csv.byteInputStream()).getOrThrow()
 
@@ -170,10 +184,12 @@ class CsvPasswordsFileParserTest {
     @Test
     fun `empty formActionOrigin is preserved as empty string`() = runTest {
         // Matches desktop LoginCSVImport, which only null-coerces httpRealm.
-        val csv = """
+        val csv =
+            """
             url,username,password,formActionOrigin
             https://example.com,alice,hunter2,
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val result = parser.parse(csv.byteInputStream()).getOrThrow()
 
@@ -225,10 +241,12 @@ class CsvPasswordsFileParserTest {
 
     @Test
     fun `conflicting header columns mapped to same field`() = runTest {
-        val csv = """
+        val csv =
+            """
             url,login_uri,username,password
             https://a.example.com,https://b.example.com,alice,hunter2
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val result = parser.parse(csv.byteInputStream())
 
@@ -238,10 +256,12 @@ class CsvPasswordsFileParserTest {
 
     @Test
     fun `missing required column`() = runTest {
-        val csv = """
+        val csv =
+            """
             url,username
             https://example.com,alice
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val result = parser.parse(csv.byteInputStream())
 
@@ -251,11 +271,13 @@ class CsvPasswordsFileParserTest {
 
     @Test
     fun `row with empty password is skipped`() = runTest {
-        val csv = """
+        val csv =
+            """
             url,username,password
             https://example.com,alice,hunter2
             https://other.example.com,bob,
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val result = parser.parse(csv.byteInputStream()).getOrThrow()
 
@@ -276,9 +298,10 @@ class CsvPasswordsFileParserTest {
 
     @Test
     fun `CancellationException from the stream is not swallowed by runCatching`() = runTest {
-        val cancelling = object : java.io.InputStream() {
-            override fun read(): Int = throw CancellationException("cancelled while reading")
-        }
+        val cancelling =
+            object : java.io.InputStream() {
+                override fun read(): Int = throw CancellationException("cancelled while reading")
+            }
         var caught: Throwable? = null
 
         try {

@@ -3176,6 +3176,7 @@ export class LoginManagerChild extends JSWindowActorChild {
       searchString,
       forcePasswordGeneration,
       hasBeenTypePassword,
+      inputType: input.type,
       isProbablyANewPasswordField,
       scenarioName,
       inputMaxLength: input.maxLength,

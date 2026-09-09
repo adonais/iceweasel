@@ -12,9 +12,7 @@ import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import org.mozilla.focus.R
 import org.mozilla.focus.ext.components
 
-/**
- * Preference for setting the default search engine.
- */
+/** Preference for setting the default search engine. */
 class SearchEnginePreference : Preference, SharedPreferences.OnSharedPreferenceChangeListener {
     internal val context: Context
 

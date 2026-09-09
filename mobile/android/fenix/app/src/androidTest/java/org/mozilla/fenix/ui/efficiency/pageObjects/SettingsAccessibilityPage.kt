@@ -23,7 +23,8 @@ import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsAccessibilitySelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
 
-class SettingsAccessibilityPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
+class SettingsAccessibilityPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) :
+    BasePage(composeRule) {
     override val pageName = "SettingsAccessibilityPage"
 
     init {
@@ -45,10 +46,10 @@ class SettingsAccessibilityPage(composeRule: AndroidComposeTestRule<HomeActivity
 
     /**
      * Assert the full font-sizing section against a given state, mirroring the legacy
-     * SettingsSubMenuAccessibilityRobot.verifyFontSizingMenuItems: titles/summaries present, both
-     * switch toggles in the expected checked state, the slider present at 100% and enabled or not.
-     * The toggle checks stay on Espresso's hasCousin(Switch) matcher because each toggle is a
-     * SwitchPreferenceCompat whose Switch is a cousin of the title text, not the title itself.
+     * SettingsSubMenuAccessibilityRobot.verifyFontSizingMenuItems: titles/summaries present, both switch toggles in the
+     * expected checked state, the slider present at 100% and enabled or not. The toggle checks stay on Espresso's
+     * hasCousin(Switch) matcher because each toggle is a SwitchPreferenceCompat whose Switch is a cousin of the title
+     * text, not the title itself.
      */
     fun verifyFontSizingMenuItems(
         isTheAutomaticFontSizingToggleChecked: Boolean,
@@ -91,15 +92,16 @@ class SettingsAccessibilityPage(composeRule: AndroidComposeTestRule<HomeActivity
     }
 
     private fun verifyToggleChecked(titleResId: Int, isChecked: Boolean) {
-        onView(withText(titleResId)).check(
-            matches(
-                hasCousin(
-                    allOf(
-                        withClassName(endsWith("Switch")),
-                        if (isChecked) isChecked() else isNotChecked(),
-                    ),
-                ),
-            ),
-        )
+        onView(withText(titleResId))
+            .check(
+                matches(
+                    hasCousin(
+                        allOf(
+                            withClassName(endsWith("Switch")),
+                            if (isChecked) isChecked() else isNotChecked(),
+                        )
+                    )
+                )
+            )
     }
 }

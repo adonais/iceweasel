@@ -15,17 +15,16 @@ import androidx.annotation.RawRes
 import androidx.annotation.VisibleForTesting
 import androidx.fragment.app.Fragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import java.util.Locale
 import mozilla.components.support.license.databinding.FragmentLibrariesListBinding
 import mozilla.components.ui.widgets.withCenterAlignedButtons
-import java.util.Locale
 
 /**
  * Displays the licenses of all the libraries used by the app.
  *
- * This is a re-implementation of the play-services-oss-licenses library,
- * which cannot be used in OSS builds because it is proprietary and closed-source.
- * It uses Google's gradle plugin to extract the dependencies and their licenses,
- * and displays them to the end-user.
+ * This is a re-implementation of the play-services-oss-licenses library, which cannot be used in OSS builds because it
+ * is proprietary and closed-source. It uses Google's gradle plugin to extract the dependencies and their licenses, and
+ * displays them to the end-user.
  */
 abstract class LibrariesListFragment : Fragment(R.layout.fragment_libraries_list) {
 
@@ -40,9 +39,7 @@ abstract class LibrariesListFragment : Fragment(R.layout.fragment_libraries_list
         @param:RawRes val metadata: Int,
     )
 
-    /**
-     * Required data from the app that was generated using the OSS license plugin.
-     */
+    /** Required data from the app that was generated using the OSS license plugin. */
     abstract val licenseData: LicenseData
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -52,33 +49,31 @@ abstract class LibrariesListFragment : Fragment(R.layout.fragment_libraries_list
 
     private fun setupLibrariesListView(listView: ListView) {
         val libraries = loadLibraries()
-        listView.adapter = ArrayAdapter(
-            listView.context,
-            android.R.layout.simple_list_item_1,
-            libraries,
-        )
+        listView.adapter =
+            ArrayAdapter(
+                listView.context,
+                android.R.layout.simple_list_item_1,
+                libraries,
+            )
         listView.setOnItemClickListener { _, _, position, _ ->
             showLicenseDialog(libraries[position])
         }
     }
 
     private fun loadLibraries(): List<LibraryItem> {
-        val licensesData = resources
-            .openRawResource(licenseData.licenses)
-            .use { it.readBytes() }
-        val metadataLines = resources
-            .openRawResource(licenseData.metadata)
-            .bufferedReader()
-            .use { reader -> reader.readLines() }
+        val licensesData = resources.openRawResource(licenseData.licenses).use { it.readBytes() }
+        val metadataLines =
+            resources.openRawResource(licenseData.metadata).bufferedReader().use { reader -> reader.readLines() }
         return parseLibraries(licensesData, metadataLines)
     }
 
     private fun showLicenseDialog(libraryItem: LibraryItem) {
-        val dialog = MaterialAlertDialogBuilder(requireContext())
-            .setTitle(libraryItem.name)
-            .setMessage(libraryItem.license)
-            .create()
-            .withCenterAlignedButtons()
+        val dialog =
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(libraryItem.name)
+                .setMessage(libraryItem.license)
+                .create()
+                .withCenterAlignedButtons()
         dialog.show()
 
         val textView = dialog.findViewById<TextView>(android.R.id.message)!!
@@ -96,9 +91,9 @@ abstract class LibrariesListFragment : Fragment(R.layout.fragment_libraries_list
 /**
  * Parses the "oss-licenses-plugin" raw resources into a sorted, de-duplicated list of libraries.
  *
- * [licensesData] is the binary concatenation of every license text; [metadataLines] holds one
- * entry per line formatted "[start_offset]:[length] [name]" pointing into that blob. Lines that
- * don't match this format or point out of bounds are skipped rather than throwing.
+ * [licensesData] is the binary concatenation of every license text; [metadataLines] holds one entry per line formatted
+ * "[start_offset]:[length] [name]" pointing into that blob. Lines that don't match this format or point out of bounds
+ * are skipped rather than throwing.
  *
  * See https://github.com/google/play-services-plugins/tree/main/oss-licenses-plugin
  */
@@ -107,7 +102,8 @@ internal fun parseLibraries(
     licensesData: ByteArray,
     metadataLines: List<String>,
 ): List<LibraryItem> =
-    metadataLines.mapNotNull { line -> parseLibraryLine(licensesData, line) }
+    metadataLines
+        .mapNotNull { line -> parseLibraryLine(licensesData, line) }
         .distinctBy { it.name.lowercase(Locale.ROOT) }
         .sortedBy { it.name.lowercase(Locale.ROOT) }
 
@@ -120,9 +116,7 @@ private fun parseLibraryLine(licensesData: ByteArray, line: String): LibraryItem
     if (startOffset < 0 || length < 0 || startOffset.toLong() + length > licensesData.size) {
         return null
     }
-    val licenseText = licensesData
-        .sliceArray(startOffset until startOffset + length)
-        .toString(Charsets.UTF_8)
+    val licenseText = licensesData.sliceArray(startOffset until startOffset + length).toString(Charsets.UTF_8)
     return LibraryItem(name, licenseText)
 }
 

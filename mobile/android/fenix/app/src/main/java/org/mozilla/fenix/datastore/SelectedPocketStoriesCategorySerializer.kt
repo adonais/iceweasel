@@ -8,9 +8,7 @@ import androidx.datastore.core.Serializer
 import java.io.InputStream
 import java.io.OutputStream
 
-/**
- * Serializer for [SelectedPocketStoriesCategories] defined in selected_pocket_stories_categories.proto.
- */
+/** Serializer for [SelectedPocketStoriesCategories] defined in selected_pocket_stories_categories.proto. */
 @Suppress("BlockingMethodInNonBlockingContext")
 object SelectedPocketStoriesCategorySerializer : Serializer<SelectedPocketStoriesCategories> {
     override val defaultValue: SelectedPocketStoriesCategories = SelectedPocketStoriesCategories.getDefaultInstance()

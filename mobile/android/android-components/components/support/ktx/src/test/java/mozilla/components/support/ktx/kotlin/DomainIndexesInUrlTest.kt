@@ -116,11 +116,11 @@ class DomainIndexesInUrlTest {
     private fun testDomainIndexesInURL(
         url: String,
         expectedIndexes: Pair<Int, Int>?,
-    ) = runTest(testDispatcher) {
-        val urlWithMarkedDomain = url.applyRegistrableDomainSpan(
-            publicSuffixList = PublicSuffixList(testContext, testDispatcher),
-        )
+    ) =
+        runTest(testDispatcher) {
+            val urlWithMarkedDomain =
+                url.applyRegistrableDomainSpan(publicSuffixList = PublicSuffixList(testContext, testDispatcher))
 
-        assertEquals(expectedIndexes, urlWithMarkedDomain.getRegistrableDomainIndexRange())
-    }
+            assertEquals(expectedIndexes, urlWithMarkedDomain.getRegistrableDomainIndexRange())
+        }
 }

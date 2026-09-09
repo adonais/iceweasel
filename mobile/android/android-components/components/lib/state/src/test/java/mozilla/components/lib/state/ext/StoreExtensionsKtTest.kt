@@ -13,6 +13,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.consumeEach
@@ -31,8 +33,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class StoreExtensionsKtTest {
@@ -45,10 +45,11 @@ class StoreExtensionsKtTest {
         // so we simulate lifecycle getting destroyed.
         owner.lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
 
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         var stateObserved = false
 
@@ -62,10 +63,11 @@ class StoreExtensionsKtTest {
     fun `Observer will get unregistered if lifecycle gets destroyed`() = runTest {
         val owner = MockedLifecycleOwner(Lifecycle.State.STARTED)
 
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         var stateObserved = false
         store.observe(owner) { stateObserved = true }
@@ -85,10 +87,11 @@ class StoreExtensionsKtTest {
     fun `non-destroy lifecycle changes do not affect observer registration`() = runTest {
         val owner = MockedLifecycleOwner(Lifecycle.State.INITIALIZED)
 
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         // Observer does not get invoked since lifecycle is not started
         var stateObserved = false
@@ -134,10 +137,11 @@ class StoreExtensionsKtTest {
     fun `Reading state updates from channel`() = runTest {
         val owner = MockedLifecycleOwner(Lifecycle.State.INITIALIZED)
 
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         var receivedValue = 0
         var latch = CountDownLatch(1)
@@ -204,10 +208,11 @@ class StoreExtensionsKtTest {
         // so we simulate lifecycle getting destroyed.
         owner.lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
 
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         store.channel(owner)
     }
@@ -217,10 +222,11 @@ class StoreExtensionsKtTest {
     fun `Reading state updates from Flow with lifecycle owner`() = runTest {
         val owner = MockedLifecycleOwner(Lifecycle.State.INITIALIZED)
 
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         var receivedValue = 0
         var latch = CountDownLatch(1)
@@ -285,10 +291,11 @@ class StoreExtensionsKtTest {
         val owner = MockedLifecycleOwner(Lifecycle.State.STARTED)
         val latch = CountDownLatch(1)
 
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         owner.lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
         val flow = store.flow(owner)
@@ -308,10 +315,11 @@ class StoreExtensionsKtTest {
         val owner = MockedLifecycleOwner(Lifecycle.State.STARTED)
         val latch = CountDownLatch(1)
 
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         val flow = store.flow(owner)
         owner.lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
@@ -331,10 +339,11 @@ class StoreExtensionsKtTest {
     @Test
     @Synchronized
     fun `Reading state updates from Flow without lifecycle owner`() = runTest {
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         var receivedValue = 0
         var latch = CountDownLatch(1)
@@ -389,22 +398,24 @@ class StoreExtensionsKtTest {
     @Test
     @Synchronized
     fun `Reading state from scoped flow without lifecycle owner`() = runTest {
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         var receivedValue = 0
         var latch = CountDownLatch(1)
 
         val dispatcher = StandardTestDispatcher(testScheduler)
 
-        val scope = store.flowScoped(dispatcher = dispatcher) { flow ->
-            flow.collect { state ->
-                receivedValue = state.counter
-                latch.countDown()
+        val scope =
+            store.flowScoped(dispatcher = dispatcher) { flow ->
+                flow.collect { state ->
+                    receivedValue = state.counter
+                    latch.countDown()
+                }
             }
-        }
         testScheduler.advanceUntilIdle()
 
         // Receiving immediately
@@ -448,22 +459,24 @@ class StoreExtensionsKtTest {
     fun `Reading state from scoped flow with lifecycle owner`() = runTest {
         val owner = MockedLifecycleOwner(Lifecycle.State.INITIALIZED)
 
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         var receivedValue = 0
         var latch = CountDownLatch(1)
 
         val dispatcher = StandardTestDispatcher(testScheduler)
 
-        val scope = store.flowScoped(owner, dispatcher = dispatcher) { flow ->
-            flow.collect { state ->
-                receivedValue = state.counter
-                latch.countDown()
+        val scope =
+            store.flowScoped(owner, dispatcher = dispatcher) { flow ->
+                flow.collect { state ->
+                    receivedValue = state.counter
+                    latch.countDown()
+                }
             }
-        }
 
         testScheduler.advanceUntilIdle()
 
@@ -513,10 +526,11 @@ class StoreExtensionsKtTest {
 
     @Test
     fun `Observer registered with observeForever will get notified about state changes`() = runTest {
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         var observedValue = 0
 
@@ -539,10 +553,11 @@ class StoreExtensionsKtTest {
 
         assertTrue(view.isAttachedToWindow)
 
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         var stateObserved = false
         store.observe(view) { stateObserved = true }
@@ -568,10 +583,11 @@ class StoreExtensionsKtTest {
 
         assertFalse(view.isAttachedToWindow)
 
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         var stateObserved = false
         store.observe(view) { stateObserved = true }
@@ -606,9 +622,10 @@ class StoreExtensionsKtTest {
 }
 
 internal class MockedLifecycleOwner(initialState: Lifecycle.State) : LifecycleOwner {
-    val lifecycleRegistry = LifecycleRegistry(this).apply {
-        currentState = initialState
-    }
+    val lifecycleRegistry =
+        LifecycleRegistry(this).apply {
+            currentState = initialState
+        }
 
     override val lifecycle: Lifecycle = lifecycleRegistry
 }

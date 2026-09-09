@@ -19,24 +19,19 @@ import org.mozilla.focus.helpers.TestHelper.randomString
 import org.mozilla.focus.helpers.TestHelper.waitingTime
 import org.mozilla.focus.testAnnotations.SmokeTest
 
-/**
- * Tests to verify the functionality of Add to homescreen from the main menu
- */
+/** Tests to verify the functionality of Add to homescreen from the main menu */
 @RunWith(AndroidJUnit4ClassRunner::class)
 class AddToHomescreenTest {
     private val featureSettingsHelper = FeatureSettingsHelper()
 
-    @get:Rule(order = 0)
-    val focusTestRule: FocusTestRule = FocusTestRule()
+    @get:Rule(order = 0) val focusTestRule: FocusTestRule = FocusTestRule()
 
-    private val webServerRule get() = focusTestRule.mockWebServerRule
+    private val webServerRule
+        get() = focusTestRule.mockWebServerRule
 
-    @get:Rule
-    val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
+    @get:Rule val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
 
-    @Rule
-    @JvmField
-    val retryTestRule = RetryTestRule(3)
+    @Rule @JvmField val retryTestRule = RetryTestRule(3)
 
     @Before
     fun setUp() {
@@ -54,16 +49,18 @@ class AddToHomescreenTest {
         val pageUrl = webServerRule.server.getGenericTabAsset(1).url
         val pageTitle = randomString(5)
 
-        searchScreen {
-        }.loadPage(pageUrl) {
-            progressBar.waitUntilGone(waitingTime)
-        }.openMainMenu {
-        }.openAddToHSDialog {
-            addShortcutWithTitle(pageTitle)
-            handleAddAutomaticallyDialog()
-        }.searchAndOpenHomeScreenShortcut(pageTitle) {
-            verifyPageURL(pageUrl)
-        }
+        searchScreen {}
+            .loadPage(pageUrl) {
+                progressBar.waitUntilGone(waitingTime)
+            }
+            .openMainMenu {}
+            .openAddToHSDialog {
+                addShortcutWithTitle(pageTitle)
+                handleAddAutomaticallyDialog()
+            }
+            .searchAndOpenHomeScreenShortcut(pageTitle) {
+                verifyPageURL(pageUrl)
+            }
     }
 
     @SmokeTest
@@ -71,17 +68,18 @@ class AddToHomescreenTest {
     fun noNameShortcutTest() {
         val pageUrl = webServerRule.server.getGenericTabAsset(1).url
 
-        searchScreen {
-        }.loadPage(pageUrl) {
-        }.openMainMenu {
-        }.openAddToHSDialog {
-            // leave shortcut title empty and add it to HS
-            addShortcutNoTitle()
-            handleAddAutomaticallyDialog()
-        }.searchAndOpenHomeScreenShortcut(webServerRule.server.hostName) {
-            // only checking a part of the URL that is constant,
-            // in case it opens a different shortcut on a retry
-            verifyPageURL("tab1.html")
-        }
+        searchScreen {}
+            .loadPage(pageUrl) {}
+            .openMainMenu {}
+            .openAddToHSDialog {
+                // leave shortcut title empty and add it to HS
+                addShortcutNoTitle()
+                handleAddAutomaticallyDialog()
+            }
+            .searchAndOpenHomeScreenShortcut(webServerRule.server.hostName) {
+                // only checking a part of the URL that is constant,
+                // in case it opens a different shortcut on a retry
+                verifyPageURL("tab1.html")
+            }
     }
 }

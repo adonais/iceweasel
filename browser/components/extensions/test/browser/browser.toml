@@ -31,10 +31,6 @@ support-files = ["silence.ogg"]
 ["browser_ext_browsingData_history.js"]
 
 ["browser_ext_canOpenModalPicker.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && socketprocess_networking", # Bug 1949651
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1949651
-]
 
 ["browser_ext_commands_execute_browser_action.js"]
 
@@ -105,9 +101,6 @@ support-files = ["head_devtools.js"]
 ["browser_ext_themes_validation.js"]
 
 ["browser_ext_topSites.js"]
-skip-if = [
-  "os == 'linux' && display == 'x11' && opt", # Bug 1775583
-]
 
 ["browser_ext_user_events.js"]
 
@@ -140,10 +133,5 @@ https_first_disabled = true
 support-files = ["file_slowed_document.sjs"]
 
 ["browser_ext_webrtc.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1565738
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1565738
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1565738
-]
 
 ["browser_toolbar_prefers_color_scheme.js"]

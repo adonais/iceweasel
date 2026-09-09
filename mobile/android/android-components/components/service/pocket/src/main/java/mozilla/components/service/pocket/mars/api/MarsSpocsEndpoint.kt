@@ -17,25 +17,25 @@ import mozilla.components.service.pocket.stories.api.PocketResponse
  *
  * @see [newInstance] to retrieve an instance.
  */
-internal class MarsSpocsEndpoint internal constructor(
-    @get:VisibleForTesting internal val rawEndpoint: MarsSpocsEndpointRaw,
-) {
+internal class MarsSpocsEndpoint
+internal constructor(@get:VisibleForTesting internal val rawEndpoint: MarsSpocsEndpointRaw) {
     /**
      * Returns a response containing the sponsored stories from the provided endpoint on success.
      *
-     * @return a [PocketResponse.Success] with the decoded payload response of the sponsored
-     * stories or a [PocketResponse.Failure] on error.
+     * @return a [PocketResponse.Success] with the decoded payload response of the sponsored stories or a
+     *   [PocketResponse.Failure] on error.
      */
     @WorkerThread
     fun getSponsoredStories(): PocketResponse<MarsSpocsResponse> {
-        val response = rawEndpoint.getSponsoredStories()?.let {
-            try {
-                val json = Json { ignoreUnknownKeys = true }
-                json.decodeFromString<MarsSpocsResponse>(it)
-            } catch (e: SerializationException) {
-                null
+        val response =
+            rawEndpoint.getSponsoredStories()?.let {
+                try {
+                    val json = Json { ignoreUnknownKeys = true }
+                    json.decodeFromString<MarsSpocsResponse>(it)
+                } catch (e: SerializationException) {
+                    null
+                }
             }
-        }
 
         return PocketResponse.wrap(response)
     }

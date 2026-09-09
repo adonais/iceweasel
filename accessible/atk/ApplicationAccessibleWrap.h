@@ -16,6 +16,7 @@ class ApplicationAccessibleWrap : public ApplicationAccessible {
   virtual ~ApplicationAccessibleWrap();
 
   // LocalAccessible
+  virtual void Shutdown() override;
   virtual mozilla::a11y::ENameValueFlag DirectName(
       nsString& aName) const override;
   virtual bool InsertChildAt(uint32_t aIdx, LocalAccessible* aChild) override;

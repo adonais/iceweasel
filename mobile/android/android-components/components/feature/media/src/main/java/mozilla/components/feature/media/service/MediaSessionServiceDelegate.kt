@@ -15,6 +15,8 @@ import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.ContextCompat
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
@@ -46,8 +48,6 @@ import mozilla.components.support.base.ids.SharedIdsHelper
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.ext.registerReceiverCompat
 import mozilla.components.support.utils.ext.stopForegroundCompat
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
 
 @VisibleForTesting
 internal class BecomingNoisyReceiver(private val controller: MediaSession.Controller?) : BroadcastReceiver() {
@@ -79,41 +79,34 @@ internal class MediaSessionServiceDelegate(
 ) : MediaSessionDelegate {
     private val logger = Logger("MediaSessionService")
 
-    @VisibleForTesting
-    internal var notificationHelper = MediaNotification(context, service::class.java)
+    @VisibleForTesting internal var notificationHelper = MediaNotification(context, service::class.java)
+
+    @VisibleForTesting internal var mediaSession = MediaSessionCompat(context, "MozacMediaSession")
 
     @VisibleForTesting
-    internal var mediaSession = MediaSessionCompat(context, "MozacMediaSession")
-
-    @VisibleForTesting
-    internal var audioFocus = AudioFocus(
-        context.getSystemService(Context.AUDIO_SERVICE) as AudioManager,
-        store,
-        onTransientFocusLoss = { isTransientAudioFocusLoss = it },
-    )
+    internal var audioFocus =
+        AudioFocus(
+            context.getSystemService(Context.AUDIO_SERVICE) as AudioManager,
+            store,
+            onTransientFocusLoss = { isTransientAudioFocusLoss = it },
+        )
 
     @VisibleForTesting
     internal val notificationId by lazy {
         SharedIdsHelper.getIdForTag(context, AbstractMediaSessionService.NOTIFICATION_TAG)
     }
 
-    @VisibleForTesting
-    internal var controller: MediaSession.Controller? = null
+    @VisibleForTesting internal var controller: MediaSession.Controller? = null
 
-    @VisibleForTesting
-    internal var notificationScope: CoroutineScope? = null
+    @VisibleForTesting internal var notificationScope: CoroutineScope? = null
 
-    @VisibleForTesting
-    internal val intentFilter = IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY)
+    @VisibleForTesting internal val intentFilter = IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY)
 
-    @VisibleForTesting
-    internal var noisyAudioStreamReceiver: BecomingNoisyReceiver? = null
+    @VisibleForTesting internal var noisyAudioStreamReceiver: BecomingNoisyReceiver? = null
 
-    @VisibleForTesting
-    internal var isForegroundService: Boolean = false
+    @VisibleForTesting internal var isForegroundService: Boolean = false
 
-    @VisibleForTesting
-    internal var isTransientAudioFocusLoss: Boolean = false
+    @VisibleForTesting internal var isTransientAudioFocusLoss: Boolean = false
 
     // On a track change the page often keeps reporting the previous track's positionState for a
     // short while before pushing a fresh one. While that stale value persists we report a position
@@ -182,8 +175,7 @@ internal class MediaSessionServiceDelegate(
             // silently returns AUDIOFOCUS_REQUEST_FAILED.
             audioFocus.request(
                 sessionState.id,
-                sessionState.mediaSessionState?.audioSessionType
-                    ?: MediaSession.AudioSessionType.AUTO,
+                sessionState.mediaSessionState?.audioSessionType ?: MediaSession.AudioSessionType.AUTO,
             )
             updateNotification(sessionState)
         } else {
@@ -234,7 +226,8 @@ internal class MediaSessionServiceDelegate(
     internal fun updateNotification(sessionState: SessionState) {
         notificationScope?.launch {
             when (sessionState.mediaSessionState?.playbackState) {
-                PLAYING, PAUSED -> {
+                PLAYING,
+                PAUSED -> {
                     val notification = notificationHelper.create(sessionState, mediaSession)
                     notificationsDelegate.notify(
                         notificationId = notificationId,
@@ -259,10 +252,7 @@ internal class MediaSessionServiceDelegate(
             try {
                 service.startForeground(notificationId, notification)
             } catch (e: Exception) {
-                if (
-                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                    e is ForegroundServiceStartNotAllowedException
-                ) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && e is ForegroundServiceStartNotAllowedException) {
                     // We should not encounter this exception if `android:foregroundServiceType="mediaPlayback"`
                     // is added to the service. The crash reporter loses the stack trace for this
                     // exception so we want to be able to track this crash independently to ensure
@@ -290,35 +280,36 @@ internal class MediaSessionServiceDelegate(
         val mss = sessionState.mediaSessionState
         val improvementsEnabled = MediaNimbus.features.mediaNotificationImprovements.value().enabled
 
-        val resetPosition: Boolean = if (improvementsEnabled) {
-            val newTitle = mss?.metadata?.title
-            val currentPositionState = mss?.positionState
-            if (hasTrackedMedia && newTitle != lastTitle) {
-                stalePositionState = currentPositionState
-            }
-            hasTrackedMedia = true
-            lastTitle = newTitle
-            if (stalePositionState != null && currentPositionState == stalePositionState) {
-                true
+        val resetPosition: Boolean =
+            if (improvementsEnabled) {
+                val newTitle = mss?.metadata?.title
+                val currentPositionState = mss?.positionState
+                if (hasTrackedMedia && newTitle != lastTitle) {
+                    stalePositionState = currentPositionState
+                }
+                hasTrackedMedia = true
+                lastTitle = newTitle
+                if (stalePositionState != null && currentPositionState == stalePositionState) {
+                    true
+                } else {
+                    stalePositionState = null
+                    false
+                }
             } else {
-                stalePositionState = null
                 false
             }
-        } else {
-            false
-        }
 
         mediaSession.setPlaybackState(mss?.toPlaybackState(resetPosition))
         mediaSession.isActive = true
-        val durationMs = if (improvementsEnabled) {
-            val duration =
-                mss?.positionState?.duration?.takeIf { it > 0 }
-                    ?: mss?.elementMetadata?.duration?.takeIf { it > 0 }
+        val durationMs =
+            if (improvementsEnabled) {
+                val duration =
+                    mss?.positionState?.duration?.takeIf { it > 0 } ?: mss?.elementMetadata?.duration?.takeIf { it > 0 }
 
-            duration?.times(MS_PER_SECOND)?.toLong() ?: -1L
-        } else {
-            -1L
-        }
+                duration?.times(MS_PER_SECOND)?.toLong() ?: -1L
+            } else {
+                -1L
+            }
         notificationScope?.launch {
             mediaSession.setMetadata(
                 MediaMetadataCompat.Builder()
@@ -338,7 +329,7 @@ internal class MediaSessionServiceDelegate(
                         MediaMetadataCompat.METADATA_KEY_DURATION,
                         durationMs,
                     )
-                    .build(),
+                    .build()
             )
         }
     }

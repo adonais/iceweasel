@@ -5,6 +5,7 @@
 package mozilla.components.browser.engine.gecko.util
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.whenever
 import org.junit.Assert.assertFalse
@@ -16,7 +17,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.geckoview.GeckoRuntime
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class SpeculativeSessionFactoryTest {

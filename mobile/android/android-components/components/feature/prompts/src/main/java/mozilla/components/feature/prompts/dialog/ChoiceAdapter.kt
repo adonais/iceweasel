@@ -13,9 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import mozilla.components.concept.engine.prompt.Choice
 import mozilla.components.feature.prompts.R
 
-/**
- * RecyclerView adapter for displaying choice items.
- */
+/** RecyclerView adapter for displaying choice items. */
 internal class ChoiceAdapter(
     private val fragment: ChoiceDialogFragment,
     private val inflater: LayoutInflater,
@@ -103,9 +101,7 @@ internal class ChoiceAdapter(
         }
     }
 
-    /**
-     * View holder for a single choice item.
-     */
+    /** View holder for a single choice item. */
     internal class SingleViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         internal val labelView = itemView.findViewById<CheckedTextView>(R.id.labelView)
 
@@ -125,9 +121,7 @@ internal class ChoiceAdapter(
         }
     }
 
-    /**
-     * View holder for a Multiple choice item.
-     */
+    /** View holder for a Multiple choice item. */
     internal class MultipleViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         internal val labelView = itemView.findViewById<CheckedTextView>(R.id.labelView)
 
@@ -153,9 +147,7 @@ internal class ChoiceAdapter(
         }
     }
 
-    /**
-     * View holder for a Menu choice item.
-     */
+    /** View holder for a Menu choice item. */
     internal class MenuViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         internal val labelView = itemView.findViewById<TextView>(R.id.labelView)
 
@@ -173,14 +165,10 @@ internal class ChoiceAdapter(
         }
     }
 
-    /**
-     * View holder for a menu separator choice item.
-     */
+    /** View holder for a menu separator choice item. */
     internal class MenuSeparatorViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 
-    /**
-     * View holder for a group choice item.
-     */
+    /** View holder for a group choice item. */
     internal class GroupViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         internal val labelView = itemView.findViewById<TextView>(R.id.labelView)
 

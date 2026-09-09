@@ -20,16 +20,16 @@ import mozilla.components.service.fxa.manager.SCOPE_PROFILE
 import mozilla.components.service.fxa.manager.SCOPE_SYNC
 
 /**
- * Lifecycle observer that drives the FxA authentication and authorization flows required by IP
- * protection by observing the [IPProtectionStore] for [AccountStatus.RequestingAuthentication]
- * and [AccountStatus.RequestingAuthorization] states
+ * Lifecycle observer that drives the FxA authentication and authorization flows required by IP protection by observing
+ * the [IPProtectionStore] for [AccountStatus.RequestingAuthentication] and [AccountStatus.RequestingAuthorization]
+ * states
  *
  * @param accountManager [FxaAccountManager] used to begin the OAuth authentication flow.
  * @param store [IPProtectionStore] whose account state is observed to trigger auth flows.
  * @param entrypoint the [FxAEntryPoint] for the auth flow.
- * @param onAuthRequested Callback invoked with the OAuth URL and a completion callback once the
- * URL is ready. The caller is responsible for presenting the URL to the user (e.g. a Custom Tab)
- * and invoking the completion callback when the flow finishes.
+ * @param onAuthRequested Callback invoked with the OAuth URL and a completion callback once the URL is ready. The
+ *   caller is responsible for presenting the URL to the user (e.g. a Custom Tab) and invoking the completion callback
+ *   when the flow finishes.
  * @param dispatcher [CoroutineDispatcher] on which store observations run.
  */
 class IPProtectionFxaAuthFlow(
@@ -40,16 +40,18 @@ class IPProtectionFxaAuthFlow(
     private val dispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : AbstractBinding<IPProtectionState>(store, dispatcher) {
     override suspend fun onState(flow: Flow<IPProtectionState>) {
-        flow.map { it.accountState.status }
+        flow
+            .map { it.accountState.status }
             .distinctUntilChanged()
             .collect { status ->
                 if (status == AccountStatus.RequestingAuthorization) {
-                    val url = accountManager.beginAuthentication(
-                        pairingUrl = null,
-                        entrypoint = entrypoint,
-                        authScopes = setOf(SCOPE_IPPROTECTION, SCOPE_PROFILE),
-                        service = "vpn", // This gives us the passwordless authorization flow.
-                    )
+                    val url =
+                        accountManager.beginAuthentication(
+                            pairingUrl = null,
+                            entrypoint = entrypoint,
+                            authScopes = setOf(SCOPE_IPPROTECTION, SCOPE_PROFILE),
+                            service = "vpn", // This gives us the passwordless authorization flow.
+                        )
 
                     // FIXME(IPP) add some account auth failure notification here.
                     if (url == null) {
@@ -65,14 +67,15 @@ class IPProtectionFxaAuthFlow(
                     // request all the scopes needed for the device, which includes sync and session.
                     //
                     // After bug 1977876, there should be no distinction between authenticate/authorize.
-                    val url = accountManager.beginAuthentication(
-                        pairingUrl = null,
-                        entrypoint = entrypoint,
-                        authScopes = setOf(SCOPE_IPPROTECTION, SCOPE_PROFILE, SCOPE_SYNC),
-                        // We don't get passwordles-login here for authentication,
-                        // we send this for FxA consistency.
-                        service = "vpn",
-                    )
+                    val url =
+                        accountManager.beginAuthentication(
+                            pairingUrl = null,
+                            entrypoint = entrypoint,
+                            authScopes = setOf(SCOPE_IPPROTECTION, SCOPE_PROFILE, SCOPE_SYNC),
+                            // We don't get passwordles-login here for authentication,
+                            // we send this for FxA consistency.
+                            service = "vpn",
+                        )
 
                     // FIXME(IPP) add some account auth failure notification here.
                     if (url == null) {
@@ -99,14 +102,12 @@ class IPProtectionFxaAuthFlow(
         /**
          * Whether the notify if the auth was successful.
          *
-         * N.B: This was originally a callback when the auth flow is completed, whether successful or not.
-         * See comment in AuthCustomTabActivity.
+         * N.B: This was originally a callback when the auth flow is completed, whether successful or not. See comment
+         * in AuthCustomTabActivity.
          */
         typealias AuthCompletionCallback = Boolean
 
-        /**
-         * Intent key for knowing if a complete notification needs to be sent.
-         */
+        /** Intent key for knowing if a complete notification needs to be sent. */
         const val INTENT_ON_COMPLETE = "OnCompleteAction"
     }
 }

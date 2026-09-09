@@ -71,7 +71,7 @@ class SamplyProfile(RaptorProfiling):
         self.upload_dir = Path(self.upload_dir)
         self.local = self.raptor_config.get("run_local")
         self.profile = (
-            self.upload_dir / f"profile_samply_{self.test_name}_unprocessed.json.gz"
+            self.upload_dir / f"profile_samply_{self.test_name}_unprocessed.jslb.gz"
         )
         self.temp_dir = Path(tempfile.mkdtemp())
         self.running = False

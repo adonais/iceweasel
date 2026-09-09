@@ -26,12 +26,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import mozilla.components.compose.base.button.IconButton
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Displays the debug info as a JSON report.
@@ -55,10 +55,10 @@ internal fun DebugInfoJsonReport(
         Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static150))
 
         Column(
-            modifier = Modifier
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = FirefoxTheme.layout.space.static200)
-                .padding(bottom = FirefoxTheme.layout.space.static400),
+            modifier =
+                Modifier.verticalScroll(rememberScrollState())
+                    .padding(horizontal = FirefoxTheme.layout.space.static200)
+                    .padding(bottom = FirefoxTheme.layout.space.static400)
         ) {
             SelectionContainer {
                 Text(
@@ -83,9 +83,7 @@ private fun Header(
     ) {
         IconButton(
             onClick = onBackClick,
-            contentDescription = stringResource(
-                id = R.string.debug_drawer_back_button_content_description,
-            ),
+            contentDescription = stringResource(id = R.string.debug_drawer_back_button_content_description),
         ) {
             Icon(
                 painter = painterResource(iconsR.drawable.mozac_ic_back_24),
@@ -115,9 +113,7 @@ private fun Header(
 
 @Preview
 @Composable
-private fun DebugInfoJsonReportPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun DebugInfoJsonReportPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme = theme) {
         Surface {
             DebugInfoJsonReport(

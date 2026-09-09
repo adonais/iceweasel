@@ -9,6 +9,7 @@ effviewdump v2 - Enhanced with overlapping element detection, smart ranking, and
 
 import base64
 import json
+import os
 import sys
 
 
@@ -62,17 +63,48 @@ def rank_selector(layer, strategy):
     return layer_rank * 10 + strat_rank
 
 
+# Prefixes that say nothing about which page is on screen. "compose", "mozac", "android" and
+# "debug" are framework namespaces; the rest are the first component of a reverse-DNS package name,
+# which is a property of who wrote the widget and not of where the user is.
+GENERIC_PREFIXES = {
+    "compose",
+    "mozac",
+    "android",
+    "debug",
+    "com",
+    "org",
+    "net",
+    "io",
+    "androidx",
+    "google",
+}
+
+
+def id_name(tag):
+    """The meaningful part of an element identifier.
+
+    An Android resource id arrives fully qualified --- `com.google.android.inputmethod.latin:id/
+    key_pos_0_0` --- and only the part after `:id/` names anything. Splitting the whole string on
+    "." yields "com", which is how a screen full of keyboard keys came to be identified as
+    "ComPage": 132 elements contributed the prefix "com" and drowned out the 8 that contributed
+    "homepage". A Compose test tag has no package, so it is used as-is.
+    """
+    if ":id/" in tag:
+        return tag.split(":id/", 1)[1]
+    return tag
+
+
 def detect_page(elements):
     """Detect which page we're on based on visible element patterns (dynamic + static fallbacks)"""
     # Collect element prefixes to infer page
     prefixes = {}
     for e in elements:
-        tag = e.get("testTag", "") or e.get("resId", "")
+        tag = id_name(e.get("testTag", "") or e.get("resId", ""))
         if tag and "." in tag:
             # Extract prefix (e.g., "homepage.view" → "homepage")
             prefix = tag.split(".")[0].lower()
             # Skip generic prefixes
-            if prefix not in ["compose", "mozac", "android", "debug"]:
+            if prefix not in GENERIC_PREFIXES:
                 prefixes[prefix] = prefixes.get(prefix, 0) + 1
 
     # Find most common prefix (likely indicates the page)
@@ -92,7 +124,9 @@ def detect_page(elements):
             return page_name + "Page"  # Default: prefix + "Page"
 
     # Static fallbacks for edge cases
-    tags = {(e.get("testTag", "") or e.get("resId", "")).lower() for e in elements}
+    tags = {
+        id_name(e.get("testTag", "") or e.get("resId", "")).lower() for e in elements
+    }
     if "homepage.view" in tags:
         return "HomePage"
     if "browserWrapper" in tags:
@@ -396,8 +430,91 @@ document.getElementById('filterClick')?.addEventListener('change', e => {{
     )
 
 
+def analyze(json_path):
+    """The same grouping and ranking the HTML overlay draws, as data.
+
+    Mission Control renders the overlay itself - live on the inspect page, and over a screenshot
+    captured when a test failed. It needs the groups, their bounds and their ranked selectors, not
+    an HTML document. Emitting them from here rather than reimplementing the ranking is the whole
+    point: otherwise the selector you are shown depends on which tool you happened to open.
+    """
+    d, groups = load_and_group(json_path)
+    out = []
+    for gid, group in enumerate(groups):
+        ranked = sorted(
+            group,
+            key=lambda e: rank_selector(e.get("layer", ""), e.get("strategy", "")),
+        )
+        best = ranked[0]
+        b = best["_bounds_parsed"]
+        out.append({
+            "id": gid,
+            "layer": best.get("layer"),
+            "bounds": [b[0], b[1], b[0] + b[2], b[1] + b[3]] if b else None,
+            "selectors": [
+                {
+                    "layer": e.get("layer"),
+                    "strategy": e.get("strategy"),
+                    "value": e.get("value"),
+                    "handles": e.get("handles"),
+                }
+                for e in ranked
+            ],
+        })
+    return {
+        "page": detect_page(d.get("elements", [])),
+        "screen": d.get("screen"),
+        "state": d.get("state") or {},
+        "groups": out,
+        "counts": {"groups": len(out), "selectors": len(d.get("elements", []))},
+    }
+
+
+SELECTOR_KT = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "..", "helpers", "Selector.kt"
+)
+
+
+def selector_strategies():
+    """Every SelectorStrategy constant that actually exists, read from the enum.
+
+    Codegen validates the strategy it is about to write against this list, and it fails CLOSED for
+    raw resource ids: if the list is empty it cannot confirm UIAUTOMATOR_WITH_RAW_RES_ID exists, so
+    it falls through to UIAUTOMATOR_WITH_RES_ID --- which prepends "<package>:id/" and therefore
+    can never match the bare tag it was asked for. A missing list does not degrade the answer, it
+    inverts it, and the generated selector then finds nothing without ever erroring.
+
+    This mode existed on the previous renderer and was not carried over to v2, so the list had been
+    empty since. Read from the source rather than hardcoded: a hardcoded copy is the same failure
+    with an extra step.
+    """
+    out = []
+    body = False
+    with open(SELECTOR_KT, encoding="utf-8") as fh:
+        for line in fh:
+            stripped = line.strip()
+            if stripped.startswith("enum class SelectorStrategy"):
+                body = True
+                continue
+            if body:
+                if stripped.startswith("}"):
+                    break
+                name = stripped.rstrip(",").strip()
+                if name and name.replace("_", "").isalnum() and name.isupper():
+                    out.append(name)
+    return out
+
+
 if __name__ == "__main__":
+    if len(sys.argv) >= 2 and sys.argv[1] == "--strategies":
+        json.dump(selector_strategies(), sys.stdout)
+        sys.exit(0)
+    if len(sys.argv) >= 3 and sys.argv[1] == "--json":
+        json.dump(analyze(sys.argv[2]), sys.stdout)
+        sys.exit(0)
     if len(sys.argv) < 4:
         print("Usage: effviewdump-v2.py <json> <png> <out.html>")
+        print("       effviewdump-v2.py --json <json>")
+        print("       effviewdump-v2.py --strategies")
         sys.exit(1)
     render_v2(sys.argv[1], sys.argv[2], sys.argv[3])

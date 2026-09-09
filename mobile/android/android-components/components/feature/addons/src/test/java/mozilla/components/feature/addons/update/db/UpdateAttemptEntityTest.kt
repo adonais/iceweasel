@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.addons.update.db
 
+import java.util.Date
 import mozilla.components.feature.addons.update.AddonUpdater
 import mozilla.components.feature.addons.update.AddonUpdater.Status.Error
 import mozilla.components.feature.addons.update.AddonUpdater.Status.NoUpdateAvailable
@@ -16,17 +17,17 @@ import mozilla.components.feature.addons.update.db.UpdateAttemptEntity.Companion
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import java.util.Date
 
 class UpdateAttemptEntityTest {
 
     @Test
     fun `convert from db entity to domain class`() {
-        val dbEntity = UpdateAttemptEntity(
-            addonId = "mozilla-dev",
-            date = Date().time,
-            status = SUCCESSFULLY_UPDATED_DB,
-        )
+        val dbEntity =
+            UpdateAttemptEntity(
+                addonId = "mozilla-dev",
+                date = Date().time,
+                status = SUCCESSFULLY_UPDATED_DB,
+            )
 
         val domainClass = dbEntity.toUpdateAttempt()
 
@@ -39,11 +40,12 @@ class UpdateAttemptEntityTest {
 
     @Test
     fun `convert from domain class to db entity`() {
-        val domainClass = AddonUpdater.UpdateAttempt(
-            addonId = "mozilla-dev",
-            date = Date(),
-            status = Error("error", Exception()),
-        )
+        val domainClass =
+            AddonUpdater.UpdateAttempt(
+                addonId = "mozilla-dev",
+                date = Date(),
+                status = Error("error", Exception()),
+            )
 
         val dbEntity = domainClass.toEntity()
 
@@ -85,25 +87,22 @@ class UpdateAttemptEntityTest {
 
         assertEquals(NOT_INSTALLED_DB, dbStatus)
 
-        dbStatus = request.copy(status = SuccessfullyUpdated)
-            .toEntity()
-            .status
+        dbStatus = request.copy(status = SuccessfullyUpdated).toEntity().status
 
         assertEquals(SUCCESSFULLY_UPDATED_DB, dbStatus)
 
-        dbStatus = request.copy(status = NoUpdateAvailable)
-            .toEntity()
-            .status
+        dbStatus = request.copy(status = NoUpdateAvailable).toEntity().status
 
         assertEquals(NO_UPDATE_AVAILABLE_DB, dbStatus)
 
         val exception = Exception("")
-        val dbEntity = AddonUpdater.UpdateAttempt(
-            addonId = "id",
-            date = Date(),
-            status = Error("error message", exception),
-        )
-            .toEntity()
+        val dbEntity =
+            AddonUpdater.UpdateAttempt(
+                    addonId = "id",
+                    date = Date(),
+                    status = Error("error message", exception),
+                )
+                .toEntity()
 
         assertEquals(ERROR_DB, dbEntity.status)
         assertEquals(exception.stackTrace.first().toString(), dbEntity.errorTrace)

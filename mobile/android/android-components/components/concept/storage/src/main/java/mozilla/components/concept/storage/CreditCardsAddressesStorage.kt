@@ -6,23 +6,20 @@ package mozilla.components.concept.storage
 
 import android.os.Parcelable
 import androidx.annotation.VisibleForTesting
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 import kotlinx.parcelize.Parcelize
 import mozilla.components.concept.storage.CreditCard.Companion.ELLIPSES_END
 import mozilla.components.concept.storage.CreditCard.Companion.ELLIPSES_START
 import mozilla.components.concept.storage.CreditCard.Companion.ELLIPSIS
 import mozilla.components.support.ktx.kotlin.last4Digits
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 
-/**
- * An interface which defines read/write methods for credit card and address data.
- */
+/** An interface which defines read/write methods for credit card and address data. */
 interface CreditCardsAddressesStorage : Storage, StorageMaintenanceRegistry {
 
     /**
-     * Inserts the provided credit card into the database, and returns
-     * the newly added [CreditCard].
+     * Inserts the provided credit card into the database, and returns the newly added [CreditCard].
      *
      * @param creditCardFields A [NewCreditCardFields] record to add.
      * @return [CreditCard] for the added credit card.
@@ -75,8 +72,7 @@ interface CreditCardsAddressesStorage : Storage, StorageMaintenanceRegistry {
     suspend fun touchCreditCard(guid: String)
 
     /**
-     * Inserts the provided address into the database, and returns
-     * the newly added [Address].
+     * Inserts the provided address into the database, and returns the newly added [Address].
      *
      * @param addressFields A [UpdatableAddressFields] record to add.
      * @return [Address] for the added address.
@@ -128,16 +124,13 @@ interface CreditCardsAddressesStorage : Storage, StorageMaintenanceRegistry {
     suspend fun touchAddress(guid: String)
 
     /**
-     * Returns an instance of [CreditCardCrypto] that knows how to encrypt and decrypt credit card
-     * numbers.
+     * Returns an instance of [CreditCardCrypto] that knows how to encrypt and decrypt credit card numbers.
      *
      * @return [CreditCardCrypto] instance.
      */
     fun getCreditCardCrypto(): CreditCardCrypto
 
-    /**
-     * Removes any encrypted data from this storage. Useful after encountering key loss.
-     */
+    /** Removes any encrypted data from this storage. Useful after encountering key loss. */
     suspend fun scrubEncryptedData()
 
     override suspend fun runMaintenance(dbSizeLimit: UInt) {
@@ -157,14 +150,12 @@ interface CreditCardsAddressesStorage : Storage, StorageMaintenanceRegistry {
     }
 }
 
-/**
- * An interface that defines methods for encrypting and decrypting a credit card number.
- */
+/** An interface that defines methods for encrypting and decrypting a credit card number. */
 interface CreditCardCrypto : KeyProvider {
 
     /**
-     * Encrypt a [CreditCardNumber.Plaintext] using the provided key. A `null` result means a
-     * bad key was provided. In that case caller should obtain a new key and try again.
+     * Encrypt a [CreditCardNumber.Plaintext] using the provided key. A `null` result means a bad key was provided. In
+     * that case caller should obtain a new key and try again.
      *
      * @param key The encryption key to encrypt the plaintext credit card number.
      * @param plaintextCardNumber A plaintext credit card number to be encrypted.
@@ -176,8 +167,8 @@ interface CreditCardCrypto : KeyProvider {
     ): CreditCardNumber.Encrypted?
 
     /**
-     * Decrypt a [CreditCardNumber.Encrypted] using the provided key. A `null` result means a
-     * bad key was provided. In that case caller should obtain a new key and try again.
+     * Decrypt a [CreditCardNumber.Encrypted] using the provided key. A `null` result means a bad key was provided. In
+     * that case caller should obtain a new key and try again.
      *
      * @param key The encryption key to decrypt the decrypt credit card number.
      * @param encryptedCardNumber An encrypted credit card number to be decrypted.
@@ -195,15 +186,10 @@ interface CreditCardCrypto : KeyProvider {
  * @property number Either a plaintext or a ciphertext of the credit card number, depending on the subtype.
  */
 sealed class CreditCardNumber(val number: String) {
-    /**
-     * An encrypted credit card number.
-     */
-    @Parcelize
-    data class Encrypted(private val data: String) : CreditCardNumber(data), Parcelable
+    /** An encrypted credit card number. */
+    @Parcelize data class Encrypted(private val data: String) : CreditCardNumber(data), Parcelable
 
-    /**
-     * A plaintext, non-encrypted credit card number.
-     */
+    /** A plaintext, non-encrypted credit card number. */
     data class Plaintext(private val data: String) : CreditCardNumber(data)
 }
 
@@ -237,10 +223,7 @@ data class CreditCard(
     val timesUsed: Long = 0L,
 ) : Parcelable {
     val obfuscatedCardNumber: String
-        get() = ELLIPSES_START +
-            ELLIPSIS + ELLIPSIS + ELLIPSIS + ELLIPSIS +
-            cardNumberLast4 +
-            ELLIPSES_END
+        get() = ELLIPSES_START + ELLIPSIS + ELLIPSIS + ELLIPSIS + ELLIPSIS + cardNumberLast4 + ELLIPSES_END
 
     companion object {
         // Left-To-Right Embedding (LTE) mark
@@ -276,14 +259,11 @@ data class CreditCardEntry(
     val cardType: String,
 ) : Parcelable {
     val obfuscatedCardNumber: String
-        get() = ELLIPSES_START +
-            ELLIPSIS + ELLIPSIS + ELLIPSIS + ELLIPSIS +
-            number.last4Digits() +
-            ELLIPSES_END
+        get() = ELLIPSES_START + ELLIPSIS + ELLIPSIS + ELLIPSIS + ELLIPSIS + number.last4Digits() + ELLIPSES_END
 
     /**
-     * Credit card expiry date formatted according to the locale. Returns an empty string if either
-     * the expiration month or expiration year is not set.
+     * Credit card expiry date formatted according to the locale. Returns an empty string if either the expiration month
+     * or expiration year is not set.
      */
     val expiryDate: String
         get() {
@@ -302,9 +282,7 @@ data class CreditCardEntry(
             }
         }
 
-    /**
-     * Whether this entry contains all data needed to be considered well-formed.
-     */
+    /** Whether this entry contains all data needed to be considered well-formed. */
     val isValid: Boolean
         get() = number.isNotEmpty() && expiryDate.isNotEmpty()
 
@@ -315,8 +293,8 @@ data class CreditCardEntry(
 }
 
 /**
- * Information about a new credit card.
- * Use this when creating a credit card via [CreditCardsAddressesStorage.addCreditCard].
+ * Information about a new credit card. Use this when creating a credit card via
+ * [CreditCardsAddressesStorage.addCreditCard].
  *
  * @property billingName The credit card billing name.
  * @property plaintextCardNumber A plaintext credit card number.
@@ -335,12 +313,12 @@ data class NewCreditCardFields(
 )
 
 /**
- * Information about a new credit card.
- * Use this when creating a credit card via [CreditCardsAddressesStorage.updateAddress].
+ * Information about a new credit card. Use this when creating a credit card via
+ * [CreditCardsAddressesStorage.updateAddress].
  *
  * @property billingName The credit card billing name.
- * @property cardNumber A [CreditCardNumber] that is either encrypted or plaintext. Passing in plaintext
- * version will update the stored credit card number.
+ * @property cardNumber A [CreditCardNumber] that is either encrypted or plaintext. Passing in plaintext version will
+ *   update the stored credit card number.
  * @property cardNumberLast4 The last 4 digits of the credit card number.
  * @property expiryMonth The credit card expiry month.
  * @property expiryYear The credit card expiry year.
@@ -394,28 +372,30 @@ data class Address(
 ) : Parcelable {
 
     /**
-     * Returns a label for the [Address]. The ordering is based on the
-     * priorities defined by the desktop code found here:
+     * Returns a label for the [Address]. The ordering is based on the priorities defined by the desktop code found
+     * here:
      * https://searchfox.org/mozilla-central/rev/d989c65584ded72c2de85cb40bede7ac2f176387/toolkit/components/formautofill/FormAutofillUtils.jsm#323
      */
     val addressLabel: String
-        get() = listOf(
-            name,
-            streetAddress.toOneLineAddress(),
-            addressLevel3,
-            addressLevel2,
-            organization,
-            addressLevel1,
-            country,
-            postalCode,
-            tel,
-            email,
-        ).filter { it.isNotEmpty() }.joinToString(", ")
+        get() =
+            listOf(
+                    name,
+                    streetAddress.toOneLineAddress(),
+                    addressLevel3,
+                    addressLevel2,
+                    organization,
+                    addressLevel1,
+                    country,
+                    postalCode,
+                    tel,
+                    email,
+                )
+                .filter { it.isNotEmpty() }
+                .joinToString(", ")
 
     companion object {
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-        internal fun String.toOneLineAddress(): String =
-            this.split("\n").joinToString(separator = " ") { it.trim() }
+        internal fun String.toOneLineAddress(): String = this.split("\n").joinToString(separator = " ") { it.trim() }
     }
 }
 
@@ -446,25 +426,23 @@ data class UpdatableAddressFields(
     val email: String,
 )
 
-/**
- * Provides a method for checking whether or not a given credit card can be stored.
- */
+/** Provides a method for checking whether or not a given credit card can be stored. */
 interface CreditCardValidationDelegate {
 
     /**
-     * The result from validating a given [CreditCard] against the credit card storage. This will
-     * include whether or not it can be created or updated.
+     * The result from validating a given [CreditCard] against the credit card storage. This will include whether or not
+     * it can be created or updated.
      */
     sealed class Result {
         /**
-         * Indicates that the [CreditCard] does not currently exist in the storage, and a new
-         * credit card entry can be created.
+         * Indicates that the [CreditCard] does not currently exist in the storage, and a new credit card entry can be
+         * created.
          */
         object CanBeCreated : Result()
 
         /**
-         * Indicates that a matching [CreditCard] was found in the storage, and the [CreditCard]
-         * can be used to update its information.
+         * Indicates that a matching [CreditCard] was found in the storage, and the [CreditCard] can be used to update
+         * its information.
          */
         data class CanBeUpdated(val foundCreditCard: CreditCard) : Result()
     }
@@ -473,21 +451,19 @@ interface CreditCardValidationDelegate {
      * Determines whether a [CreditCardEntry] can be added or updated in the credit card storage.
      *
      * @param creditCard [CreditCardEntry] to be added or updated in the credit card storage.
-     * @return [Result] that indicates whether or not the [CreditCardEntry] should be saved or
-     * updated.
+     * @return [Result] that indicates whether or not the [CreditCardEntry] should be saved or updated.
      */
     suspend fun shouldCreateOrUpdate(creditCard: CreditCardEntry): Result
 }
 
 /**
- * Used to handle [Address] and [CreditCard] storage so that the underlying engine doesn't have to.
- * An instance of this should be attached to the Gecko runtime in order to be used.
+ * Used to handle [Address] and [CreditCard] storage so that the underlying engine doesn't have to. An instance of this
+ * should be attached to the Gecko runtime in order to be used.
  */
 interface CreditCardsAddressesStorageDelegate : KeyProvider {
 
     /**
-     * Decrypt a [CreditCardNumber.Encrypted] into its plaintext equivalent or `null` if
-     * it fails to decrypt.
+     * Decrypt a [CreditCardNumber.Encrypted] into its plaintext equivalent or `null` if it fails to decrypt.
      *
      * @param key The encryption key to decrypt the decrypt credit card number.
      * @param encryptedCardNumber An encrypted credit card number to be decrypted.
@@ -499,8 +475,7 @@ interface CreditCardsAddressesStorageDelegate : KeyProvider {
     ): CreditCardNumber.Plaintext?
 
     /**
-     * Returns all stored addresses. This is called when the engine believes an address field
-     * should be autofilled.
+     * Returns all stored addresses. This is called when the engine believes an address field should be autofilled.
      *
      * @return A list of all stored addresses.
      */
@@ -514,8 +489,8 @@ interface CreditCardsAddressesStorageDelegate : KeyProvider {
     suspend fun onAddressSave(address: Address)
 
     /**
-     * Returns all stored credit cards. This is called when the engine believes a credit card
-     * field should be autofilled.
+     * Returns all stored credit cards. This is called when the engine believes a credit card field should be
+     * autofilled.
      *
      * @return A list of all stored credit cards.
      */

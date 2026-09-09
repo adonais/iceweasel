@@ -89,7 +89,6 @@ using test::MockAudioProcessingBuilder;
 using ::testing::_;
 using ::testing::A;
 using ::testing::AtLeast;
-using ::testing::InvokeWithoutArgs;
 using ::testing::NiceMock;
 using ::testing::NotNull;
 using ::testing::Return;
@@ -699,7 +698,7 @@ TEST(PeerConnectionFactoryDependenciesTest, UsesNetworkManager) {
   Event called;
   EXPECT_CALL(*mock_network_manager, StartUpdating())
       .Times(AtLeast(1))
-      .WillRepeatedly(InvokeWithoutArgs([&] { called.Set(); }));
+      .WillRepeatedly([&] { called.Set(); });
 
   PeerConnectionFactoryDependencies pcf_dependencies;
   pcf_dependencies.network_manager = std::move(mock_network_manager);

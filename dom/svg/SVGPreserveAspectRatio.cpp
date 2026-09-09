@@ -91,9 +91,7 @@ void SVGPreserveAspectRatio::ToString(nsAString& aValueAsString) const {
 }
 
 bool SVGPreserveAspectRatio::operator==(
-    const SVGPreserveAspectRatio& aOther) const {
-  return mAlign == aOther.mAlign && mMeetOrSlice == aOther.mMeetOrSlice;
-}
+    const SVGPreserveAspectRatio& aOther) const = default;
 
 JSObject* DOMSVGPreserveAspectRatio::WrapObject(
     JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {

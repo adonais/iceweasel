@@ -9,9 +9,7 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 import org.mozilla.focus.R
 
-/**
- * Represents the different types of site permissions and their associated Android permissions.
- */
+/** Represents the different types of site permissions and their associated Android permissions. */
 @Parcelize
 enum class SitePermission(
     val androidPermissionsList: Array<String>,

@@ -30,8 +30,8 @@ import mozilla.components.concept.menu.candidate.TextStyle
  * @param secondaryStateIconResource ID of a drawable resource to be shown as icon in secondary state.
  * @param iconTintColorResource Optional ID of color resource to tint the checkbox drawable.
  * @param isCollapsingMenuLimit Whether this menu item can serve as the limit of a collapsing menu.
- * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards
- * depending on the menu position).
+ * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards depending on the menu
+ *   position).
  * @param isInPrimaryState Lambda to return true/false to indicate item is in primary state.
  * @param isInSecondaryState Lambda to return true/false to indicate item is in secondary state
  * @param primaryStateAction Callback to be invoked when this menu item is clicked in primary state.
@@ -49,22 +49,22 @@ class TwoStateBrowserMenuImageText(
     override val isSticky: Boolean = false,
     val isInPrimaryState: () -> Boolean = { true },
     val isInSecondaryState: () -> Boolean = { false },
-    private val primaryStateAction: () -> Unit = { },
-    private val secondaryStateAction: () -> Unit = { },
-) : BrowserMenuImageText(
-    primaryLabel,
-    primaryStateIconResource,
-    iconTintColorResource,
-    textColorResource,
-    enabled,
-    isCollapsingMenuLimit,
-    isSticky,
-    primaryStateAction,
-) {
+    private val primaryStateAction: () -> Unit = {},
+    private val secondaryStateAction: () -> Unit = {},
+) :
+    BrowserMenuImageText(
+        primaryLabel,
+        primaryStateIconResource,
+        iconTintColorResource,
+        textColorResource,
+        enabled,
+        isCollapsingMenuLimit,
+        isSticky,
+        primaryStateAction,
+    ) {
     override var visible: () -> Boolean = { isInPrimaryState() || isInSecondaryState() }
 
-    override fun getLayoutResource(): Int =
-        R.layout.mozac_browser_menu_item_image_text
+    override fun getLayoutResource(): Int = R.layout.mozac_browser_menu_item_image_text
 
     override fun bind(menu: BrowserMenu, view: View) {
         val isInPrimaryState = isInPrimaryState()
@@ -86,8 +86,7 @@ class TwoStateBrowserMenuImageText(
 
     private fun bindImage(view: View, isInPrimaryState: Boolean) {
         val imageView = view.findViewById<AppCompatImageView>(R.id.image)
-        val imageResource =
-            if (isInPrimaryState) primaryStateIconResource else secondaryStateIconResource
+        val imageResource = if (isInPrimaryState) primaryStateIconResource else secondaryStateIconResource
 
         with(imageView) {
             setImageResource(imageResource)
@@ -95,39 +94,45 @@ class TwoStateBrowserMenuImageText(
         }
     }
 
-    override fun asCandidate(context: Context): MenuCandidate = TextMenuCandidate(
-        if (isInPrimaryState()) {
-            primaryLabel
-        } else {
-            secondaryLabel
-        },
-        start = DrawableMenuIcon(
-            context,
-            resource = if (isInPrimaryState()) {
-                primaryStateIconResource
+    override fun asCandidate(context: Context): MenuCandidate =
+        TextMenuCandidate(
+            if (isInPrimaryState()) {
+                primaryLabel
             } else {
-                secondaryStateIconResource
+                secondaryLabel
             },
-            tint = if (iconTintColorResource == NO_ID) {
-                null
-            } else {
-                ContextCompat.getColor(
+            start =
+                DrawableMenuIcon(
                     context,
-                    iconTintColorResource,
-                )
-            },
-        ),
-        textStyle = TextStyle(
-            color = if (textColorResource == NO_ID) {
-                null
-            } else {
-                ContextCompat.getColor(
-                    context,
-                    textColorResource,
-                )
-            },
-        ),
-        containerStyle = ContainerStyle(isVisible = visible()),
-        onClick = if (isInPrimaryState()) primaryStateAction else secondaryStateAction,
-    )
+                    resource =
+                        if (isInPrimaryState()) {
+                            primaryStateIconResource
+                        } else {
+                            secondaryStateIconResource
+                        },
+                    tint =
+                        if (iconTintColorResource == NO_ID) {
+                            null
+                        } else {
+                            ContextCompat.getColor(
+                                context,
+                                iconTintColorResource,
+                            )
+                        },
+                ),
+            textStyle =
+                TextStyle(
+                    color =
+                        if (textColorResource == NO_ID) {
+                            null
+                        } else {
+                            ContextCompat.getColor(
+                                context,
+                                textColorResource,
+                            )
+                        }
+                ),
+            containerStyle = ContainerStyle(isVisible = visible()),
+            onClick = if (isInPrimaryState()) primaryStateAction else secondaryStateAction,
+        )
 }

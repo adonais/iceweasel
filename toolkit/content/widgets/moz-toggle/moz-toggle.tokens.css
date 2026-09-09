@@ -7,9 +7,9 @@
 
 @layer tokens-foundation, tokens-browser-theme, tokens-foundation-brand, tokens-foundation-nova, tokens-browser-theme-nova, tokens-foundation-brand-nova, tokens-prefers-contrast, tokens-prefers-contrast-nova, tokens-forced-colors, tokens-forced-colors-nova;
 
-@layer tokens-foundation {
-  :root,
-  :host {
+:root,
+:host {
+  @layer tokens-foundation {
     --toggle-background-color: var(--button-background-color);
     --toggle-background-color-hover: var(--button-background-color-hover);
     --toggle-background-color-active: var(--button-background-color-active);
@@ -34,25 +34,15 @@
     --toggle-opacity-disabled: var(--button-opacity-disabled);
     --toggle-width: var(--size-item-large);
   }
-}
 
-/* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-@layer tokens-prefers-contrast {
-  @media (prefers-contrast) {
-    :root,
-    :host {
+  @layer tokens-prefers-contrast {
+    @media (prefers-contrast) {
       --toggle-border-color: var(--border-color-interactive);
     }
   }
-}
 
-/* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-@layer tokens-forced-colors {
-  @media (forced-colors) {
-    :root,
-    :host {
+  @layer tokens-forced-colors {
+    @media (forced-colors) {
       --toggle-border-color: var(--border-color-interactive);
       --toggle-border-color-hover: var(--border-color-interactive-hover);
       --toggle-border-color-active: var(--border-color-interactive-active);
@@ -62,12 +52,9 @@
       --toggle-dot-background-color-on-pressed: var(--button-background-color);
     }
   }
-}
 
-@media -moz-pref("browser.nova.enabled") {
-  @layer tokens-foundation-nova {
-    :root,
-    :host {
+  @media -moz-pref("browser.nova.enabled") {
+    @layer tokens-foundation-nova {
       --toggle-background-color-pressed: var(--button-background-color-primary);
       --toggle-background-color-pressed-hover: var(--button-background-color-primary-hover);
       --toggle-background-color-pressed-active: var(--button-background-color-primary-active);

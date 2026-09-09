@@ -15,28 +15,25 @@ import mozilla.components.service.pocket.recommendations.db.ContentRecommendatio
  *
  * @property url The url of the sponsored content.
  * @property impressionId Unique id of the impression.
- * @property impressionDateInSeconds Epoch based timestamp expressed in seconds
- * (from System.currentTimeMillis / 1000) for when the sponsored content identified by [url] was
- * shown to the user.
+ * @property impressionDateInSeconds Epoch based timestamp expressed in seconds (from System.currentTimeMillis / 1000)
+ *   for when the sponsored content identified by [url] was shown to the user.
  */
 @Entity(
     tableName = ContentRecommendationsDatabase.SPONSORED_CONTENT_IMPRESSION_TABLE,
-    foreignKeys = [
-        ForeignKey(
-            entity = SponsoredContentEntity::class,
-            parentColumns = arrayOf("url"),
-            childColumns = arrayOf("url"),
-            onDelete = ForeignKey.CASCADE,
-        ),
-    ],
-    indices = [
-        Index(value = ["url"], unique = false),
-    ],
+    foreignKeys =
+        [
+            ForeignKey(
+                entity = SponsoredContentEntity::class,
+                parentColumns = arrayOf("url"),
+                childColumns = arrayOf("url"),
+                onDelete = ForeignKey.CASCADE,
+            )
+        ],
+    indices = [Index(value = ["url"], unique = false)],
 )
 internal data class SponsoredContentImpressionEntity(
     val url: String,
     var impressionDateInSeconds: Long = System.currentTimeMillis() / 1000,
 ) {
-    @PrimaryKey(autoGenerate = true)
-    var impressionId: Int = 0
+    @PrimaryKey(autoGenerate = true) var impressionId: Int = 0
 }

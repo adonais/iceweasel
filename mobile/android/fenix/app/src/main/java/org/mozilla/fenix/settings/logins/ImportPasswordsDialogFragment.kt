@@ -23,10 +23,11 @@ internal class ImportPasswordsDialogFragment : DialogFragment() {
         savedInstanceState: Bundle?,
     ): View = content {
         PasswordsImporter(
-            importer = PasswordsFileImporter.csvImporter(
-                context = requireContext(),
-                loginsStorage = requireComponents.core.passwordsStorage,
-            ),
+            importer =
+                PasswordsFileImporter.csvImporter(
+                    context = requireContext(),
+                    loginsStorage = requireComponents.core.passwordsStorage,
+                ),
             onFinished = { result ->
                 parentFragmentManager.setFragmentResult(REQUEST_KEY, encodeResult(result))
                 dismiss()
@@ -52,15 +53,16 @@ internal class ImportPasswordsDialogFragment : DialogFragment() {
                 else -> null
             }
 
-        private fun encodeResult(result: PasswordsImporterResult): Bundle = Bundle().apply {
-            when (result) {
-                is PasswordsImporterResult.Success -> {
-                    putString(KEY_RESULT, RESULT_SUCCESS)
-                    putInt(KEY_COUNT, result.importCount)
+        private fun encodeResult(result: PasswordsImporterResult): Bundle =
+            Bundle().apply {
+                when (result) {
+                    is PasswordsImporterResult.Success -> {
+                        putString(KEY_RESULT, RESULT_SUCCESS)
+                        putInt(KEY_COUNT, result.importCount)
+                    }
+                    PasswordsImporterResult.Failure -> putString(KEY_RESULT, RESULT_FAILURE)
+                    PasswordsImporterResult.Canceled -> putString(KEY_RESULT, RESULT_CANCELLED)
                 }
-                PasswordsImporterResult.Failure -> putString(KEY_RESULT, RESULT_FAILURE)
-                PasswordsImporterResult.Canceled -> putString(KEY_RESULT, RESULT_CANCELLED)
             }
-        }
     }
 }

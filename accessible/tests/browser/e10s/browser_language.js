@@ -27,6 +27,10 @@ addAccessibleTask(
     is(imgFr.language, "fr", "imgFr language correct");
     const radioFr = findAccessibleChildByID(docAcc, "radioFr");
     is(radioFr.language, "fr", "radioFr language correct");
+    const optionInheritIt = findAccessibleChildByID(docAcc, "optionInheritIt");
+    is(optionInheritIt.language, "it", "optionInheritIt language correct");
+    const selectIt = findAccessibleChildByID(docAcc, "selectIt");
+    is(selectIt.language, "it", "selectIt language correct");
   },
   { chrome: true, topLevel: true, remoteIframe: true }
 );

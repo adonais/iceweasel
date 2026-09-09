@@ -24,28 +24,22 @@ import mozilla.components.concept.engine.InputResultDetail
 /**
  * WebView that supports nested scrolls (for using in a CoordinatorLayout).
  *
- * This code is a simplified version of the NestedScrollView implementation
- * which can be found in the support library:
+ * This code is a simplified version of the NestedScrollView implementation which can be found in the support library:
  * [android.support.v4.widget.NestedScrollView]
  *
- * Based on:
- * https://github.com/takahirom/webview-in-coordinatorlayout
+ * Based on: https://github.com/takahirom/webview-in-coordinatorlayout
  */
 class NestedWebView(context: Context) : WebView(context), NestedScrollingChild {
 
-    @VisibleForTesting
-    internal var lastY: Int = 0
+    @VisibleForTesting internal var lastY: Int = 0
 
-    @VisibleForTesting
-    internal val scrollOffset = IntArray(2)
+    @VisibleForTesting internal val scrollOffset = IntArray(2)
 
     private val scrollConsumed = IntArray(2)
 
-    @VisibleForTesting
-    internal var nestedOffsetY: Int = 0
+    @VisibleForTesting internal var nestedOffsetY: Int = 0
 
-    @VisibleForTesting
-    internal var childHelper: NestedScrollingChildHelper = NestedScrollingChildHelper(this)
+    @VisibleForTesting internal var childHelper: NestedScrollingChildHelper = NestedScrollingChildHelper(this)
 
     /**
      * How user's MotionEvent will be handled.
@@ -95,7 +89,8 @@ class NestedWebView(context: Context) : WebView(context), NestedScrollingChild {
             }
 
             // We don't care about other touch events
-            ACTION_UP, ACTION_CANCEL -> stopNestedScroll()
+            ACTION_UP,
+            ACTION_CANCEL -> stopNestedScroll()
         }
 
         // Execute event handler from parent class in all cases
@@ -159,12 +154,13 @@ class NestedWebView(context: Context) : WebView(context), NestedScrollingChild {
 
     @VisibleForTesting
     internal fun updateInputResult(eventHandled: Boolean) {
-        inputResultDetail = inputResultDetail.copy(
-            if (eventHandled) {
-                INPUT_HANDLED
-            } else {
-                INPUT_UNHANDLED
-            },
-        )
+        inputResultDetail =
+            inputResultDetail.copy(
+                if (eventHandled) {
+                    INPUT_HANDLED
+                } else {
+                    INPUT_UNHANDLED
+                }
+            )
     }
 }

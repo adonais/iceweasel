@@ -10,17 +10,18 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.preference.PreferenceManager
+import java.util.UUID
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.GleanMetrics.Usage
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.getPreferenceKey
-import java.util.UUID
 
 /**
  * Metrics service which encapsulates sending the usage reporting ping.
+ *
  * @param lifecycleOwner the top level container whose lifecycle is followed by usage data
- * @param gleanUsageReportingLifecycleObserver this can be provided to control
- * the start / stop sending events for the usage reporting ping
+ * @param gleanUsageReportingLifecycleObserver this can be provided to control the start / stop sending events for the
+ *   usage reporting ping
  * @param gleanUsageReporting this can be provided to encapsulate interactions with the glean API
  * @param gleanProfileId the glean profile id for usage reporting
  * @param gleanProfileIdStore the app level storage mechanism for the glean profile id
@@ -72,41 +73,31 @@ class GleanUsageReportingMetricsService(
     }
 }
 
-/**
- * An abstraction to represent a profile id as required by Glean.
- */
+/** An abstraction to represent a profile id as required by Glean. */
 interface GleanProfileId {
-    /**
-     * Create a random UUID and set it in Glean.
-     */
+    /** Create a random UUID and set it in Glean. */
     fun generateAndSet(): UUID
 
-    /**
-     * Set the given profile id in Glean.
-     */
+    /** Set the given profile id in Glean. */
     fun set(profileId: UUID)
 
-    /**
-     * Unset the current profile id in Glean.
-     */
+    /** Unset the current profile id in Glean. */
     fun unset()
 }
 
-/**
- * Represents the profile id used by Glean for usage reporting.
- */
+/** Represents the profile id used by Glean for usage reporting. */
 class UsageProfileId : GleanProfileId {
 
     /**
-     * Glean doesn't have an API to remove a value,
-     * so we have to use this canary value.
-     * (would also allow us to notice if we ever accidentally sent data after we shouldn't).
+     * Glean doesn't have an API to remove a value, so we have to use this canary value. (would also allow us to notice
+     * if we ever accidentally sent data after we shouldn't).
      */
     companion object {
         private const val CANARY_VALUE = "beefbeef-beef-beef-beef-beeefbeefbee"
     }
 
     override fun generateAndSet(): UUID = Usage.profileId.generateAndSet()
+
     override fun set(profileId: UUID) {
         Usage.profileId.set(profileId)
     }
@@ -116,33 +107,26 @@ class UsageProfileId : GleanProfileId {
     }
 }
 
-/**
- * An abstraction to represent the storage mechanism within the app for a Glean profile id.
- */
+/** An abstraction to represent the storage mechanism within the app for a Glean profile id. */
 interface GleanProfileIdStore {
-    /**
-     * Property allowing access to the profile id which is stored.
-     */
+    /** Property allowing access to the profile id which is stored. */
     var profileId: String?
 
-    /**
-     * Remove the stored profile id.
-     */
+    /** Remove the stored profile id. */
     fun clear()
 }
 
-/**
- * The actual preference store used to store the Glean profile id.
- */
+/** The actual preference store used to store the Glean profile id. */
 class GleanProfileIdPreferenceStore(context: Context) : GleanProfileIdStore {
     private val defaultSharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
     private val preferenceKey = context.getPreferenceKey(R.string.pref_key_glean_usage_profile_id)
 
     override var profileId: String?
-        get() = defaultSharedPreferences.getString(
-            preferenceKey,
-            null,
-        )
+        get() =
+            defaultSharedPreferences.getString(
+                preferenceKey,
+                null,
+            )
         set(value) {
             defaultSharedPreferences.edit {
                 putString(preferenceKey, value)

@@ -11,13 +11,8 @@ import org.mozilla.fenix.tabstray.browser.TabsTrayFabInteractor
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.state.Page
 
-/**
- * Interactor for responding to all user actions in the tab manager.
- */
-interface TabManagerInteractor :
-    SyncedTabsInteractor,
-    InactiveTabsInteractor,
-    TabsTrayFabInteractor {
+/** Interactor for responding to all user actions in the tab manager. */
+interface TabManagerInteractor : SyncedTabsInteractor, InactiveTabsInteractor, TabsTrayFabInteractor {
 
     /**
      * Invoked when a page in the tab manager is clicked.
@@ -34,34 +29,22 @@ interface TabManagerInteractor :
      */
     fun onDeletePrivateTabWarningAccepted(tabId: String, source: String? = null)
 
-    /**
-     * Invoked when the selected tabs are requested to be deleted.
-     */
+    /** Invoked when the selected tabs are requested to be deleted. */
     fun onDeleteSelectedTabsClicked()
 
-    /**
-     * Invoked when the debug menu option for inactive tabs is clicked.
-     */
+    /** Invoked when the debug menu option for inactive tabs is clicked. */
     fun onForceSelectedTabsAsInactiveClicked()
 
-    /**
-     * Invoked when the bookmark button in the multi selection banner is clicked.
-     */
+    /** Invoked when the bookmark button in the multi selection banner is clicked. */
     fun onBookmarkSelectedTabsClicked()
 
-    /**
-     * Invoked when the collections button in the multi selection banner is clicked.
-     */
+    /** Invoked when the collections button in the multi selection banner is clicked. */
     fun onAddSelectedTabsToCollectionClicked()
 
-    /**
-     * Invoked when the share button in the multi selection banner is clicked.
-     */
+    /** Invoked when the share button in the multi selection banner is clicked. */
     fun onShareSelectedTabs()
 
-    /**
-     * Invoked when the recently closed item is clicked.
-     */
+    /** Invoked when the recently closed item is clicked. */
     fun onRecentlyClosedClicked()
 
     /**
@@ -71,19 +54,13 @@ interface TabManagerInteractor :
      */
     fun onBackPressed(): Boolean
 
-    /**
-     * Invoked when the sign into sync button is clicked.
-     */
+    /** Invoked when the sign into sync button is clicked. */
     fun onSignInClicked()
 
-    /**
-     * A new tab has been selected.
-     */
+    /** A new tab has been selected. */
     fun onTabSelected(tab: TabsTrayItem.Tab, source: String? = null)
 
-    /**
-     * A tab has been closed.
-     */
+    /** A tab has been closed. */
     fun onTabClosed(tab: TabsTrayItem.Tab, source: String? = null)
 }
 
@@ -92,9 +69,7 @@ interface TabManagerInteractor :
  *
  * @param controller [TabManagerController] to which user actions can be delegated for app updates.
  */
-class DefaultTabManagerInteractor(
-    private val controller: TabManagerController,
-) : TabManagerInteractor {
+class DefaultTabManagerInteractor(private val controller: TabManagerController) : TabManagerInteractor {
 
     override fun onTabPageClicked(page: Page) {
         controller.handleTabPageClicked(page)
@@ -158,44 +133,32 @@ class DefaultTabManagerInteractor(
         controller.handleNavigateToRecentlyClosed()
     }
 
-    /**
-     * See [InactiveTabsInteractor.onInactiveTabsHeaderClicked].
-     */
+    /** See [InactiveTabsInteractor.onInactiveTabsHeaderClicked]. */
     override fun onInactiveTabsHeaderClicked(expanded: Boolean) {
         controller.handleInactiveTabsHeaderClicked(expanded)
     }
 
-    /**
-     * See [InactiveTabsInteractor.onAutoCloseDialogCloseButtonClicked].
-     */
+    /** See [InactiveTabsInteractor.onAutoCloseDialogCloseButtonClicked]. */
     override fun onAutoCloseDialogCloseButtonClicked() {
         controller.handleInactiveTabsAutoCloseDialogDismiss()
     }
 
-    /**
-     * See [InactiveTabsInteractor.onEnableAutoCloseClicked].
-     */
+    /** See [InactiveTabsInteractor.onEnableAutoCloseClicked]. */
     override fun onEnableAutoCloseClicked() {
         controller.handleEnableInactiveTabsAutoCloseClicked()
     }
 
-    /**
-     * See [InactiveTabsInteractor.onInactiveTabClicked].
-     */
+    /** See [InactiveTabsInteractor.onInactiveTabClicked]. */
     override fun onInactiveTabClicked(tab: TabsTrayItem.Tab) {
         controller.handleInactiveTabClicked(tab)
     }
 
-    /**
-     * See [InactiveTabsInteractor.onInactiveTabClosed].
-     */
+    /** See [InactiveTabsInteractor.onInactiveTabClosed]. */
     override fun onInactiveTabClosed(tab: TabsTrayItem.Tab) {
         controller.handleCloseInactiveTabClicked(tab)
     }
 
-    /**
-     * See [InactiveTabsInteractor.onDeleteAllInactiveTabsClicked].
-     */
+    /** See [InactiveTabsInteractor.onDeleteAllInactiveTabsClicked]. */
     override fun onDeleteAllInactiveTabsClicked() {
         controller.handleDeleteAllInactiveTabsClicked()
     }

@@ -529,3 +529,299 @@ add_task(async function test_wallpaperSetup_migration_does_not_rerun() {
   Services.prefs.clearUserPref(PREF_WALLPAPERS_USER_ENABLED_MIGRATED);
   sandbox.restore();
 });
+
+const wallpaperDirForTest = () =>
+  PathUtils.join(PathUtils.profileDir, "wallpaper");
+
+const clearWallpaperDirForTest = async () => {
+  await IOUtils.remove(wallpaperDirForTest(), {
+    recursive: true,
+    ignoreAbsent: true,
+  });
+  Services.prefs.clearUserPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID);
+};
+
+add_task(async function test_upload_sweeps_before_writing() {
+  let feed = getWallpaperFeedForTest();
+  await clearWallpaperDirForTest();
+
+  info("Every upload should clear orphans before writing its own file");
+
+  const dir = wallpaperDirForTest();
+  await IOUtils.makeDirectory(dir, { ignoreExisting: true });
+  await IOUtils.writeUTF8(PathUtils.join(dir, "pre-existing-orphan"), "junk");
+  // A .tmp left by a write that was interrupted partway through.
+  await IOUtils.writeUTF8(
+    PathUtils.join(dir, "orphan-uuid.tmp"),
+    "interrupted"
+  );
+
+  const written = await feed.wallpaperUpload(
+    new Blob(["fresh"], { type: "image/png" }),
+    "light"
+  );
+
+  Assert.deepEqual(
+    await IOUtils.getChildren(dir),
+    [written],
+    "Orphans and leftover .tmp files are gone, only the new upload remains"
+  );
+
+  await clearWallpaperDirForTest();
+});
+
+add_task(async function test_upload_sweep_keeps_directories() {
+  let feed = getWallpaperFeedForTest();
+  await clearWallpaperDirForTest();
+
+  info("The sweep an upload runs should only remove regular files");
+
+  const dir = wallpaperDirForTest();
+  const nested = PathUtils.join(dir, "nested");
+  await IOUtils.makeDirectory(nested, { createAncestors: true });
+  // Orphans either side of the directory, so a sweep that trips over it leaves
+  // one of them behind whichever order the children come back in.
+  await IOUtils.writeUTF8(PathUtils.join(dir, "aaa-orphan"), "before");
+  await IOUtils.writeUTF8(PathUtils.join(dir, "zzz-orphan"), "after");
+
+  const written = await feed.wallpaperUpload(
+    new Blob(["fresh"], { type: "image/png" }),
+    "light"
+  );
+
+  const children = await IOUtils.getChildren(dir);
+  Assert.ok(children.includes(nested), "A directory is left alone");
+  Assert.ok(children.includes(written), "The new upload is written");
+  Assert.equal(children.length, 2, "Both orphaned files are removed");
+
+  await clearWallpaperDirForTest();
+});
+
+add_task(async function test_concurrent_uploads_are_serialized() {
+  let feed = getWallpaperFeedForTest();
+  await clearWallpaperDirForTest();
+
+  info("Two uploads at once should leave exactly one file");
+
+  const [first, second] = await Promise.all([
+    feed.wallpaperUpload(new Blob(["one"], { type: "image/png" }), "light"),
+    feed.wallpaperUpload(new Blob(["two"], { type: "image/png" }), "dark"),
+  ]);
+
+  Assert.notEqual(first, second, "Each upload wrote its own file");
+  Assert.deepEqual(
+    await IOUtils.getChildren(wallpaperDirForTest()),
+    [second],
+    "Only the second upload is left on disk"
+  );
+  Assert.ok(!(await IOUtils.exists(first)), "The first upload was deleted");
+  Assert.ok(await IOUtils.exists(second), "The second upload is kept");
+  Assert.equal(
+    Services.prefs.getStringPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID),
+    PathUtils.filename(second),
+    "The uuid pref names the second upload"
+  );
+
+  await clearWallpaperDirForTest();
+});
+
+add_task(async function test_remove_requested_after_upload_wins() {
+  let feed = getWallpaperFeedForTest();
+  await clearWallpaperDirForTest();
+
+  info("Reset requested after an upload should delete that upload");
+
+  const uploadPromise = feed.wallpaperUpload(
+    new Blob(["doomed"], { type: "image/png" }),
+    "light"
+  );
+  const removePromise = feed.removeCustomWallpaper();
+  const written = await uploadPromise;
+  await removePromise;
+
+  Assert.ok(!(await IOUtils.exists(written)), "The uploaded file is deleted");
+  Assert.ok(
+    !Services.prefs.prefHasUserValue(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID),
+    "No wallpaper is selected afterwards"
+  );
+
+  await clearWallpaperDirForTest();
+});
+
+add_task(async function test_upload_requested_after_remove_wins() {
+  let feed = getWallpaperFeedForTest();
+  await clearWallpaperDirForTest();
+
+  info("An upload requested after Reset should be the stored wallpaper");
+
+  await feed.wallpaperUpload(new Blob(["old"], { type: "image/png" }), "light");
+
+  const removePromise = feed.removeCustomWallpaper();
+  const uploadPromise = feed.wallpaperUpload(
+    new Blob(["new"], { type: "image/png" }),
+    "dark"
+  );
+  await removePromise;
+  const written = await uploadPromise;
+
+  Assert.deepEqual(
+    await IOUtils.getChildren(wallpaperDirForTest()),
+    [written],
+    "Only the newest upload is on disk"
+  );
+  Assert.equal(
+    Services.prefs.getStringPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID),
+    PathUtils.filename(written),
+    "The uuid pref names the newest upload"
+  );
+
+  await clearWallpaperDirForTest();
+});
+
+add_task(async function test_wallpaperUpload_removes_replaced_file() {
+  let feed = getWallpaperFeedForTest();
+  await clearWallpaperDirForTest();
+
+  info("Replacing a custom wallpaper should delete the file it replaced");
+
+  const first = await feed.wallpaperUpload(
+    new Blob(["first"], { type: "image/png" }),
+    "light"
+  );
+  const second = await feed.wallpaperUpload(
+    new Blob(["second"], { type: "image/png" }),
+    "dark"
+  );
+
+  Assert.notEqual(first, second, "A replacement gets its own file");
+  Assert.ok(
+    !(await IOUtils.exists(first)),
+    "The replaced wallpaper file is deleted"
+  );
+  Assert.ok(await IOUtils.exists(second), "The new wallpaper file is kept");
+  Assert.equal(
+    Services.prefs.getStringPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID),
+    PathUtils.filename(second),
+    "The uuid pref names the new file"
+  );
+
+  await clearWallpaperDirForTest();
+});
+
+add_task(async function test_wallpaperUpload_unreadable_file_keeps_previous() {
+  let feed = getWallpaperFeedForTest();
+  await clearWallpaperDirForTest();
+
+  info("An unreadable upload should leave the previous one referenced");
+
+  const first = await feed.wallpaperUpload(
+    new Blob(["first"], { type: "image/png" }),
+    "light"
+  );
+  const firstUuid = PathUtils.filename(first);
+
+  // A Blob that cannot be read, so the upload fails before anything is written.
+  class UnreadableBlob extends Blob {
+    arrayBuffer() {
+      return Promise.reject(new Error("could not read the file"));
+    }
+  }
+
+  const failed = await feed.wallpaperUpload(
+    new UnreadableBlob(["second"], { type: "image/png" }),
+    "dark"
+  );
+
+  Assert.strictEqual(failed, null, "A failed upload returns null");
+  Assert.ok(await IOUtils.exists(first), "The previous wallpaper file is kept");
+  Assert.equal(
+    Services.prefs.getStringPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID),
+    firstUuid,
+    "The uuid pref still names the previous file"
+  );
+
+  await clearWallpaperDirForTest();
+});
+
+add_task(async function test_wallpaperUpload_failed_write_keeps_previous() {
+  let sandbox = sinon.createSandbox();
+  let feed = getWallpaperFeedForTest();
+  await clearWallpaperDirForTest();
+
+  info("A write that fails should not move the uuid pref off the old file");
+
+  const first = await feed.wallpaperUpload(
+    new Blob(["first"], { type: "image/png" }),
+    "light"
+  );
+  const firstUuid = PathUtils.filename(first);
+
+  // Fail the disk write itself. That is the only point that proves the pref
+  // moves after the file lands rather than before it: a failure earlier, say an
+  // unreadable file, would pass even if the pref were set first.
+  sandbox.stub(feed, "writeFile").rejects(new Error("no space left on device"));
+
+  const failed = await feed.wallpaperUpload(
+    new Blob(["second"], { type: "image/png" }),
+    "dark"
+  );
+
+  sandbox.restore();
+
+  Assert.strictEqual(failed, null, "A failed write returns null");
+  Assert.ok(await IOUtils.exists(first), "The previous wallpaper file is kept");
+  Assert.equal(
+    Services.prefs.getStringPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID),
+    firstUuid,
+    "The uuid pref still names the previous file"
+  );
+  Assert.deepEqual(
+    await IOUtils.getChildren(wallpaperDirForTest()),
+    [first],
+    "Nothing new is left behind by the failed write"
+  );
+
+  await clearWallpaperDirForTest();
+});
+
+add_task(async function test_removeCustomWallpaper() {
+  let feed = getWallpaperFeedForTest();
+  await clearWallpaperDirForTest();
+
+  info(
+    "removeCustomWallpaper should delete the applied file and clear the pref"
+  );
+
+  const applied = await feed.wallpaperUpload(
+    new Blob(["applied"], { type: "image/png" }),
+    "light"
+  );
+
+  await feed.removeCustomWallpaper();
+
+  Assert.ok(!(await IOUtils.exists(applied)), "The applied file is deleted");
+  Assert.ok(
+    !Services.prefs.prefHasUserValue(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID),
+    "The uuid pref is cleared"
+  );
+  Assert.ok(
+    feed.store.dispatch.calledWith(
+      actionCreators.BroadcastToContent({
+        type: actionTypes.WALLPAPERS_CUSTOM_SET,
+        data: null,
+      })
+    ),
+    "Content is told there is no custom wallpaper"
+  );
+
+  info("removeCustomWallpaper should be a no-op with no wallpaper set");
+  feed.store.dispatch.resetHistory();
+  await feed.removeCustomWallpaper();
+
+  Assert.ok(
+    feed.store.dispatch.notCalled,
+    "Nothing is dispatched when there is no wallpaper to remove"
+  );
+
+  await clearWallpaperDirForTest();
+});

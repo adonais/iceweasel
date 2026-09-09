@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package mozilla.components.tooling.detekt.naming
 
 import io.gitlab.arturbosch.detekt.test.lint
@@ -13,10 +17,13 @@ class ClassAcronymCasingRuleTest {
 
         assertEquals(1, findings.size)
         assertTrue(
-            findings.first().message.contains(
-                "Acronym `XML` in class name `XMLFormatter` has more than two letters and " +
-                    "should capitalize only the first letter, e.g. `XmlFormatter`.",
-            ),
+            findings
+                .first()
+                .message
+                .contains(
+                    "Acronym `XML` in class name `XMLFormatter` has more than two letters and " +
+                        "should capitalize only the first letter, e.g. `XmlFormatter`."
+                )
         )
     }
 
@@ -26,10 +33,13 @@ class ClassAcronymCasingRuleTest {
 
         assertEquals(1, findings.size)
         assertTrue(
-            findings.first().message.contains(
-                "Acronym `HTTPS` in class name `HTTPSConnection` has more than two letters and " +
-                    "should capitalize only the first letter, e.g. `HttpsConnection`.",
-            ),
+            findings
+                .first()
+                .message
+                .contains(
+                    "Acronym `HTTPS` in class name `HTTPSConnection` has more than two letters and " +
+                        "should capitalize only the first letter, e.g. `HttpsConnection`."
+                )
         )
     }
 
@@ -39,10 +49,13 @@ class ClassAcronymCasingRuleTest {
 
         assertEquals(1, findings.size)
         assertTrue(
-            findings.first().message.contains(
-                "Acronym `HTML` in class name `HTML5Parser` has more than two letters and " +
-                    "should capitalize only the first letter, e.g. `Html5Parser`.",
-            ),
+            findings
+                .first()
+                .message
+                .contains(
+                    "Acronym `HTML` in class name `HTML5Parser` has more than two letters and " +
+                        "should capitalize only the first letter, e.g. `Html5Parser`."
+                )
         )
     }
 
@@ -52,10 +65,13 @@ class ClassAcronymCasingRuleTest {
 
         assertEquals(1, findings.size)
         assertTrue(
-            findings.first().message.contains(
-                "Acronym `XML` in class name `XMLHttpRequest` has more than two letters and " +
-                    "should capitalize only the first letter, e.g. `XmlHttpRequest`.",
-            ),
+            findings
+                .first()
+                .message
+                .contains(
+                    "Acronym `XML` in class name `XMLHttpRequest` has more than two letters and " +
+                        "should capitalize only the first letter, e.g. `XmlHttpRequest`."
+                )
         )
     }
 
@@ -68,40 +84,49 @@ class ClassAcronymCasingRuleTest {
 
     @Test
     fun `class with two-letter acronym is clean`() {
-        val findings = ClassAcronymCasingRule().lint(
-            """
-            class IOStream
-            class IOInputStream
-            """.trimIndent(),
-        )
+        val findings =
+            ClassAcronymCasingRule()
+                .lint(
+                    """
+                    class IOStream
+                    class IOInputStream
+                    """
+                        .trimIndent()
+                )
 
         assertEquals(0, findings.size)
     }
 
     @Test
     fun `all-caps enum entries are not flagged`() {
-        val findings = ClassAcronymCasingRule().lint(
-            """
-            enum class SortOption {
-                NAME,
-                POPULARITY,
-            }
-            """.trimIndent(),
-        )
+        val findings =
+            ClassAcronymCasingRule()
+                .lint(
+                    """
+                    enum class SortOption {
+                        NAME,
+                        POPULARITY,
+                    }
+                    """
+                        .trimIndent()
+                )
 
         assertEquals(0, findings.size)
     }
 
     @Test
     fun `method with a long acronym is not flagged`() {
-        val findings = ClassAcronymCasingRule().lint(
-            """
-            class Site {
-                fun getURL(): String = ""
-                fun parseHTML5() {}
-            }
-            """.trimIndent(),
-        )
+        val findings =
+            ClassAcronymCasingRule()
+                .lint(
+                    """
+                    class Site {
+                        fun getURL(): String = ""
+                        fun parseHTML5() {}
+                    }
+                    """
+                        .trimIndent()
+                )
 
         assertEquals(0, findings.size)
     }
@@ -115,13 +140,16 @@ class ClassAcronymCasingRuleTest {
 
     @Test
     fun `anonymous object declaration is skipped`() {
-        val findings = ClassAcronymCasingRule().lint(
-            """
-            val listener = object : Runnable {
-                override fun run() {}
-            }
-            """.trimIndent(),
-        )
+        val findings =
+            ClassAcronymCasingRule()
+                .lint(
+                    """
+                    val listener = object : Runnable {
+                        override fun run() {}
+                    }
+                    """
+                        .trimIndent()
+                )
 
         assertEquals(0, findings.size)
     }

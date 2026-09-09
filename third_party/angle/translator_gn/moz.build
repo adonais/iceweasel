@@ -96,9 +96,10 @@ UNIFIED_SOURCES += [
     "/third_party/angle/src/compiler/translator/tree_ops/EmulateMultiDrawShaderBuiltins.cpp",
     "/third_party/angle/src/compiler/translator/tree_ops/FoldExpressions.cpp",
     "/third_party/angle/src/compiler/translator/tree_ops/GatherDefaultUniforms.cpp",
-    "/third_party/angle/src/compiler/translator/tree_ops/glsl/RegenerateStructNames.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/glsl/ExpandFragmentOutputsToVec4.cpp",
     "/third_party/angle/src/compiler/translator/tree_ops/glsl/RewriteRepeatedAssignToSwizzled.cpp",
     "/third_party/angle/src/compiler/translator/tree_ops/glsl/UseInterfaceBlockFields.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/glsl/WrapStructConstructors.cpp",
     "/third_party/angle/src/compiler/translator/tree_ops/InitializeVariables.cpp",
     "/third_party/angle/src/compiler/translator/tree_ops/MonomorphizeUnsupportedFunctions.cpp",
     "/third_party/angle/src/compiler/translator/tree_ops/PreTransformTextureCubeGradDerivatives.cpp",
@@ -136,7 +137,6 @@ UNIFIED_SOURCES += [
     "/third_party/angle/src/compiler/translator/tree_util/RewriteSampleMaskVariable.cpp",
     "/third_party/angle/src/compiler/translator/tree_util/RunAtTheBeginningOfShader.cpp",
     "/third_party/angle/src/compiler/translator/tree_util/RunAtTheEndOfShader.cpp",
-    "/third_party/angle/src/compiler/translator/tree_util/SpecializationConstant.cpp",
     "/third_party/angle/src/compiler/translator/Types.cpp",
     "/third_party/angle/src/compiler/translator/util.cpp",
     "/third_party/angle/src/compiler/translator/ValidateAST.cpp",
@@ -171,6 +171,7 @@ if CONFIG["OS_TARGET"] == "Android":
     DEFINES["ANDROID_NDK_VERSION_ROLL"] = "r27_1"
     DEFINES["ANGLE_ENABLE_GLOBAL_MUTEX_LOAD_TIME_ALLOCATE"] = "1"
     DEFINES["ANGLE_USE_ANDROID_TLS_SLOT"] = "1"
+    DEFINES["EGL_NO_X11"] = True
     DEFINES["HAVE_SYS_UIO_H"] = True
     DEFINES["_GNU_SOURCE"] = True
     DEFINES["__ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__"] = True
@@ -183,7 +184,7 @@ if CONFIG["OS_TARGET"] == "Android":
 
 if CONFIG["OS_TARGET"] == "Darwin":
 
-    DEFINES["ANGLE_ENABLE_METAL"] = True
+    DEFINES["EGL_NO_X11"] = True
     DEFINES["__STDC_CONSTANT_MACROS"] = True
     DEFINES["__STDC_FORMAT_MACROS"] = True
 
@@ -191,46 +192,10 @@ if CONFIG["OS_TARGET"] == "Darwin":
         "-framework Metal"
     ]
 
-    SOURCES += [
-        "/third_party/angle/src/compiler/translator/msl/AstHelpers.cpp",
-        "/third_party/angle/src/compiler/translator/tree_ops/msl/AddExplicitTypeCasts.cpp",
-        "/third_party/angle/src/compiler/translator/tree_ops/msl/GuardFragDepthWrite.cpp",
-        "/third_party/angle/src/compiler/translator/tree_ops/msl/HoistConstants.cpp",
-        "/third_party/angle/src/compiler/translator/tree_ops/msl/IntroduceVertexIndexID.cpp",
-        "/third_party/angle/src/compiler/translator/tree_ops/msl/RewriteCaseDeclarations.cpp",
-        "/third_party/angle/src/compiler/translator/tree_ops/msl/RewriteOutArgs.cpp",
-        "/third_party/angle/src/compiler/translator/tree_ops/msl/TransposeRowMajorMatrices.cpp"
-    ]
-
     UNIFIED_SOURCES += [
-        "/third_party/angle/src/compiler/translator/msl/ConstantNames.cpp",
-        "/third_party/angle/src/compiler/translator/msl/DiscoverDependentFunctions.cpp",
-        "/third_party/angle/src/compiler/translator/msl/DiscoverEnclosingFunctionTraverser.cpp",
-        "/third_party/angle/src/compiler/translator/msl/DriverUniformMetal.cpp",
-        "/third_party/angle/src/compiler/translator/msl/EmitMetal.cpp",
-        "/third_party/angle/src/compiler/translator/msl/IdGen.cpp",
-        "/third_party/angle/src/compiler/translator/msl/Layout.cpp",
-        "/third_party/angle/src/compiler/translator/msl/MapFunctionsToDefinitions.cpp",
-        "/third_party/angle/src/compiler/translator/msl/MapSymbols.cpp",
-        "/third_party/angle/src/compiler/translator/msl/ModifyStruct.cpp",
-        "/third_party/angle/src/compiler/translator/msl/Pipeline.cpp",
-        "/third_party/angle/src/compiler/translator/msl/ProgramPrelude.cpp",
-        "/third_party/angle/src/compiler/translator/msl/RewritePipelines.cpp",
-        "/third_party/angle/src/compiler/translator/msl/SymbolEnv.cpp",
-        "/third_party/angle/src/compiler/translator/msl/ToposortStructs.cpp",
-        "/third_party/angle/src/compiler/translator/msl/TranslatorMSL.cpp",
-        "/third_party/angle/src/compiler/translator/msl/UtilsMSL.cpp",
         "/third_party/angle/src/compiler/translator/tree_ops/glsl/apple/AddAndTrueToLoopCondition.cpp",
         "/third_party/angle/src/compiler/translator/tree_ops/glsl/apple/RewriteRowMajorMatrices.cpp",
-        "/third_party/angle/src/compiler/translator/tree_ops/glsl/apple/UnfoldShortCircuitAST.cpp",
-        "/third_party/angle/src/compiler/translator/tree_ops/msl/ConvertUnsupportedConstructorsToFunctionCalls.cpp",
-        "/third_party/angle/src/compiler/translator/tree_ops/msl/EnsureLoopForwardProgress.cpp",
-        "/third_party/angle/src/compiler/translator/tree_ops/msl/FixTypeConstructors.cpp",
-        "/third_party/angle/src/compiler/translator/tree_ops/msl/RescopeGlobalVariables.cpp",
-        "/third_party/angle/src/compiler/translator/tree_ops/msl/RewriteInterpolants.cpp",
-        "/third_party/angle/src/compiler/translator/tree_ops/msl/RewriteUnaddressableReferences.cpp",
-        "/third_party/angle/src/compiler/translator/tree_ops/msl/SeparateCompoundExpressions.cpp",
-        "/third_party/angle/src/compiler/translator/tree_ops/msl/WrapMain.cpp"
+        "/third_party/angle/src/compiler/translator/tree_ops/glsl/apple/UnfoldShortCircuitAST.cpp"
     ]
 
 if CONFIG["OS_TARGET"] == "Linux":
@@ -254,6 +219,7 @@ if CONFIG["OS_TARGET"] == "Linux":
 
 if CONFIG["OS_TARGET"] == "OpenBSD":
 
+    DEFINES["EGL_NO_X11"] = True
     DEFINES["USE_GLIB"] = "1"
     DEFINES["USE_OZONE"] = "1"
     DEFINES["_FILE_OFFSET_BITS"] = "64"
@@ -267,6 +233,7 @@ if CONFIG["OS_TARGET"] == "WINNT":
     DEFINES["ANGLE_ENABLE_HLSL"] = True
     DEFINES["ANGLE_IS_WIN"] = True
     DEFINES["CERT_CHAIN_PARA_HAS_EXTRA_FIELDS"] = True
+    DEFINES["EGL_NO_X11"] = True
     DEFINES["NOMINMAX"] = True
     DEFINES["NTDDI_VERSION"] = "0x0A000000"
     DEFINES["PSAPI_VERSION"] = "2"
@@ -321,6 +288,49 @@ if CONFIG["OS_TARGET"] == "WINNT":
         "/third_party/angle/src/compiler/translator/tree_ops/hlsl/SeparateExpressionsReturningArrays.cpp",
         "/third_party/angle/src/compiler/translator/tree_ops/hlsl/UnfoldShortCircuitToIf.cpp",
         "/third_party/angle/src/compiler/translator/tree_ops/hlsl/WrapSwitchStatementsInBlocks.cpp"
+    ]
+
+if CONFIG["OS_TARGET"] == "Darwin" and CONFIG["TARGET_OS"] == "OSX":
+
+    DEFINES["ANGLE_ENABLE_METAL"] = True
+
+    SOURCES += [
+        "/third_party/angle/src/compiler/translator/msl/AstHelpers.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/AddExplicitTypeCasts.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/GuardFragDepthWrite.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/HoistConstants.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/IntroduceVertexIndexID.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/RewriteCaseDeclarations.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/RewriteOutArgs.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/TransposeRowMajorMatrices.cpp"
+    ]
+
+    UNIFIED_SOURCES += [
+        "/third_party/angle/src/compiler/translator/msl/ConstantNames.cpp",
+        "/third_party/angle/src/compiler/translator/msl/DiscoverDependentFunctions.cpp",
+        "/third_party/angle/src/compiler/translator/msl/DiscoverEnclosingFunctionTraverser.cpp",
+        "/third_party/angle/src/compiler/translator/msl/DriverUniformMetal.cpp",
+        "/third_party/angle/src/compiler/translator/msl/EmitMetal.cpp",
+        "/third_party/angle/src/compiler/translator/msl/IdGen.cpp",
+        "/third_party/angle/src/compiler/translator/msl/Layout.cpp",
+        "/third_party/angle/src/compiler/translator/msl/MapFunctionsToDefinitions.cpp",
+        "/third_party/angle/src/compiler/translator/msl/MapSymbols.cpp",
+        "/third_party/angle/src/compiler/translator/msl/ModifyStruct.cpp",
+        "/third_party/angle/src/compiler/translator/msl/Pipeline.cpp",
+        "/third_party/angle/src/compiler/translator/msl/ProgramPrelude.cpp",
+        "/third_party/angle/src/compiler/translator/msl/RewritePipelines.cpp",
+        "/third_party/angle/src/compiler/translator/msl/SymbolEnv.cpp",
+        "/third_party/angle/src/compiler/translator/msl/ToposortStructs.cpp",
+        "/third_party/angle/src/compiler/translator/msl/TranslatorMSL.cpp",
+        "/third_party/angle/src/compiler/translator/msl/UtilsMSL.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/ConvertUnsupportedConstructorsToFunctionCalls.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/EnsureLoopForwardProgress.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/FixTypeConstructors.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/RescopeGlobalVariables.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/RewriteInterpolants.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/RewriteUnaddressableReferences.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/SeparateCompoundExpressions.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/WrapMain.cpp"
     ]
 
 if CONFIG["TARGET_CPU"] == "aarch64":

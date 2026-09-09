@@ -15,13 +15,11 @@ import mozilla.components.concept.storage.CreditCardEntry
  *
  * @param onCreditCardSelected Callback invoked when a credit card item is selected.
  */
-class CreditCardsAdapter(
-    private val onCreditCardSelected: (CreditCardEntry) -> Unit,
-) : ListAdapter<CreditCardEntry, CreditCardItemViewHolder>(DiffCallback) {
+class CreditCardsAdapter(private val onCreditCardSelected: (CreditCardEntry) -> Unit) :
+    ListAdapter<CreditCardEntry, CreditCardItemViewHolder>(DiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CreditCardItemViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(CreditCardItemViewHolder.LAYOUT_ID, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(CreditCardItemViewHolder.LAYOUT_ID, parent, false)
         return CreditCardItemViewHolder(view, onCreditCardSelected)
     }
 
@@ -30,10 +28,8 @@ class CreditCardsAdapter(
     }
 
     internal object DiffCallback : DiffUtil.ItemCallback<CreditCardEntry>() {
-        override fun areItemsTheSame(oldItem: CreditCardEntry, newItem: CreditCardEntry) =
-            oldItem.guid == newItem.guid
+        override fun areItemsTheSame(oldItem: CreditCardEntry, newItem: CreditCardEntry) = oldItem.guid == newItem.guid
 
-        override fun areContentsTheSame(oldItem: CreditCardEntry, newItem: CreditCardEntry) =
-            oldItem == newItem
+        override fun areContentsTheSame(oldItem: CreditCardEntry, newItem: CreditCardEntry) = oldItem == newItem
     }
 }

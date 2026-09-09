@@ -13,11 +13,12 @@ import mozilla.components.ui.colors.PhotonColors
 
 @Composable
 internal fun DialogPreviewMaterialTheme(content: @Composable () -> Unit) {
-    val colorScheme = if (!isSystemInDarkTheme()) {
-        lightColorScheme()
-    } else {
-        darkColorScheme(background = PhotonColors.DarkGrey30)
-    }
+    val colorScheme =
+        if (!isSystemInDarkTheme()) {
+            lightColorScheme()
+        } else {
+            darkColorScheme(background = PhotonColors.DarkGrey30)
+        }
     MaterialTheme(colorScheme = colorScheme) {
         content()
     }

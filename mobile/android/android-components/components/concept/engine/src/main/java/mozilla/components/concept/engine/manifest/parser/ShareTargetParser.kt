@@ -4,19 +4,17 @@
 
 package mozilla.components.concept.engine.manifest.parser
 
+import java.util.Locale
 import mozilla.components.concept.engine.manifest.WebAppManifest.ShareTarget
 import mozilla.components.support.ktx.android.org.json.asSequence
 import mozilla.components.support.ktx.android.org.json.toJSONArray
 import mozilla.components.support.ktx.android.org.json.tryGetString
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.Locale
 
 internal object ShareTargetParser {
 
-    /**
-     * Parses a share target inside a web app manifest.
-     */
+    /** Parses a share target inside a web app manifest. */
     fun parse(json: JSONObject?): ShareTarget? {
         val action = json?.tryGetString("action") ?: return null
         val method = parseMethod(json.tryGetString("method"))
@@ -28,21 +26,20 @@ internal object ShareTargetParser {
                 action = action,
                 method = method,
                 encType = encType,
-                params = ShareTarget.Params(
-                    title = params?.tryGetString("title"),
-                    text = params?.tryGetString("text"),
-                    url = params?.tryGetString("url"),
-                    files = parseFiles(params),
-                ),
+                params =
+                    ShareTarget.Params(
+                        title = params?.tryGetString("title"),
+                        text = params?.tryGetString("text"),
+                        url = params?.tryGetString("url"),
+                        files = parseFiles(params),
+                    ),
             )
         } else {
             null
         }
     }
 
-    /**
-     * Serializes a share target to JSON for a web app manifest.
-     */
+    /** Serializes a share target to JSON for a web app manifest. */
     fun serialize(shareTarget: ShareTarget?): JSONObject? {
         shareTarget ?: return null
         return JSONObject().apply {
@@ -50,30 +47,30 @@ internal object ShareTargetParser {
             put("method", shareTarget.method.name)
             put("enctype", shareTarget.encType.type)
 
-            val params = JSONObject().apply {
-                put("title", shareTarget.params.title)
-                put("text", shareTarget.params.text)
-                put("url", shareTarget.params.url)
-                put(
-                    "files",
-                    shareTarget.params.files.asSequence()
-                        .map { file ->
-                            JSONObject().apply {
-                                put("name", file.name)
-                                putOpt("accept", file.accept.toJSONArray())
+            val params =
+                JSONObject().apply {
+                    put("title", shareTarget.params.title)
+                    put("text", shareTarget.params.text)
+                    put("url", shareTarget.params.url)
+                    put(
+                        "files",
+                        shareTarget.params.files
+                            .asSequence()
+                            .map { file ->
+                                JSONObject().apply {
+                                    put("name", file.name)
+                                    putOpt("accept", file.accept.toJSONArray())
+                                }
                             }
-                        }
-                        .asIterable()
-                        .toJSONArray(),
-                )
-            }
+                            .asIterable()
+                            .toJSONArray(),
+                    )
+                }
             put("params", params)
         }
     }
 
-    /**
-     * Convert string to [ShareTarget.RequestMethod]. Returns null if the string is invalid.
-     */
+    /** Convert string to [ShareTarget.RequestMethod]. Returns null if the string is invalid. */
     private fun parseMethod(method: String?): ShareTarget.RequestMethod? {
         method ?: return ShareTarget.RequestMethod.GET
         return try {
@@ -83,31 +80,26 @@ internal object ShareTargetParser {
         }
     }
 
-    /**
-     * Convert string to [ShareTarget.EncodingType]. Returns null if the string is invalid.
-     */
+    /** Convert string to [ShareTarget.EncodingType]. Returns null if the string is invalid. */
     private fun parseEncType(encType: String?): ShareTarget.EncodingType? {
         val typeString = encType?.lowercase(Locale.ROOT) ?: return ShareTarget.EncodingType.URL_ENCODED
         return ShareTarget.EncodingType.entries.find { it.type == typeString }
     }
 
-    /**
-     * Checks that [encType] is URL_ENCODED (if [method] is GET or POST) or MULTIPART (only if POST)
-     */
+    /** Checks that [encType] is URL_ENCODED (if [method] is GET or POST) or MULTIPART (only if POST) */
     private fun validMethodAndEncType(
         method: ShareTarget.RequestMethod,
         encType: ShareTarget.EncodingType,
-    ) = when (encType) {
-        ShareTarget.EncodingType.URL_ENCODED -> true
-        ShareTarget.EncodingType.MULTIPART -> method == ShareTarget.RequestMethod.POST
-    }
+    ) =
+        when (encType) {
+            ShareTarget.EncodingType.URL_ENCODED -> true
+            ShareTarget.EncodingType.MULTIPART -> method == ShareTarget.RequestMethod.POST
+        }
 
     private fun parseFiles(params: JSONObject?) =
         when (val files = params?.opt("files")) {
             is JSONObject -> listOfNotNull(parseFile(files))
-            is JSONArray -> files.asSequence { i -> getJSONObject(i) }
-                .mapNotNull(::parseFile)
-                .toList()
+            is JSONArray -> files.asSequence { i -> getJSONObject(i) }.mapNotNull(::parseFile).toList()
             else -> emptyList()
         }
 
@@ -119,12 +111,13 @@ internal object ShareTargetParser {
 
         return ShareTarget.Files(
             name = name,
-            accept = when (accept) {
-                is String -> listOf(accept)
-                is JSONArray -> accept.asSequence { i -> getString(i) }.toList()
-                null -> emptyList()
-                else -> emptyList()
-            },
+            accept =
+                when (accept) {
+                    is String -> listOf(accept)
+                    is JSONArray -> accept.asSequence { i -> getString(i) }.toList()
+                    null -> emptyList()
+                    else -> emptyList()
+                },
         )
     }
 }

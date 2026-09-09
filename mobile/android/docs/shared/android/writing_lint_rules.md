@@ -9,7 +9,6 @@ If you get into trouble, _ask for help!_ These APIs can be confusing to get star
 We have a few common lint systems for Mozilla Android apps:
 
 - **detekt:** (probably) the go-to for analyzing Kotlin code
-- **ktlint:** similar to detekt but use it instead if you don't want your lint rule to be suppressed, ever
 - **android lint:** most useful when analyzing more than Kotlin code: Android-specific concerns (e.g. resource XML files), Gradle files, ProGuard files, etc. It is slow because it needs to compile the project and does multiple passes over the code; however, if your new lint check needs multiple passes, it can be useful.
 - **Gradle tasks + hand-rolled check:** less performant but probably more familiar for devs to write. Use if you can't figure out how to use one of the other tools or if you're short on time
 
@@ -46,11 +45,6 @@ Execution failed for task ':detekt'.
 
 detekt is lacking good documentation for writing custom rules: to understand how to write lint rules, look at our custom rules and the source of the rules built into detekt. You can also use `println` to output values inside `visit*` methods to understand what is available (ideally we can figure out how to launch a debugger to analyze it at runtime but we haven't yet).
 
-## ktlint
-
-TODO: fill this out!
-
-We haven't written any ktlint rules so we're lacking knowledge here.
 
 ## Android Lint
 

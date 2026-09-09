@@ -16,30 +16,27 @@ import org.mozilla.fenix.tabstray.redux.reducer.TabsTrayReducer
 import org.mozilla.fenix.tabstray.redux.state.TabGroupFormState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 
-/**
- * A [Store] that holds the [TabsTrayState] for the tabs tray and reduces [TabsTrayAction]s
- * dispatched to the store.
- */
+/** A [Store] that holds the [TabsTrayState] for the tabs tray and reduces [TabsTrayAction]s dispatched to the store. */
 class TabsTrayStore(
     initialState: TabsTrayState = TabsTrayState(),
     middlewares: List<Middleware<TabsTrayState, TabsTrayAction>> = emptyList(),
-) : Store<TabsTrayState, TabsTrayAction>(
-    initialState,
-    TabsTrayReducer::reduce,
-    middlewares,
-) {
+) :
+    Store<TabsTrayState, TabsTrayAction>(
+        initialState,
+        TabsTrayReducer::reduce,
+        middlewares,
+    ) {
     val tabGroupFormStateFlow: Flow<TabGroupFormState> = stateFlow.mapNotNull { it.tabGroupState.formState }
 
     init {
         dispatch(TabsTrayAction.InitAction)
     }
 
-    /**
-     * Observe [TabsTrayStore] to listen to changes to the provided [TabsTrayItem.TabGroup].
-     */
-    fun observeTabGroup(tabGroup: TabsTrayItem.TabGroup): Flow<TabsTrayItem.TabGroup> = stateFlow
-        .map { it.tabGroupState.groups }
-        .distinctUntilChanged()
-        .map { it.find { group -> group.id == tabGroup.id } ?: tabGroup }
-        .distinctUntilChanged()
+    /** Observe [TabsTrayStore] to listen to changes to the provided [TabsTrayItem.TabGroup]. */
+    fun observeTabGroup(tabGroup: TabsTrayItem.TabGroup): Flow<TabsTrayItem.TabGroup> =
+        stateFlow
+            .map { it.tabGroupState.groups }
+            .distinctUntilChanged()
+            .map { it.find { group -> group.id == tabGroup.id } ?: tabGroup }
+            .distinctUntilChanged()
 }

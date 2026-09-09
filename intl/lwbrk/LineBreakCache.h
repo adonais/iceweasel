@@ -15,8 +15,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/intl/Segmenter.h"
 
-namespace mozilla {
-namespace intl {
+namespace mozilla::intl {
 
 namespace detail {
 struct LBCacheKey {
@@ -40,8 +39,6 @@ struct LBCacheEntry {
 
 // Most-recently-used cache for line-break results, because finding line-
 // breaks may be slow for complex writing systems (e.g. Thai, Khmer).
-// The MruCache size should be a prime number that is slightly less than a
-// power of two.
 class LineBreakCache : public MruCache<detail::LBCacheKey, detail::LBCacheEntry,
                                        LineBreakCache, 4096> {
  public:
@@ -64,6 +61,10 @@ class LineBreakCache : public MruCache<detail::LBCacheKey, detail::LBCacheEntry,
     h = AddToHash(h, aKey.mLineBreak);
     h = AddToHash(h, aKey.mIsChineseOrJapanese);
     return h;
+  }
+
+  static bool IsEmpty(const EntryType& aEntry) {
+    return aEntry.mText.IsEmpty();
   }
 
   static bool Match(const KeyType& aKey, const EntryType& aEntry) {
@@ -93,7 +94,6 @@ class LineBreakCache : public MruCache<detail::LBCacheKey, detail::LBCacheEntry,
   static StaticAutoPtr<LineBreakCache> sBreakCache;
 };
 
-}  // namespace intl
-}  // namespace mozilla
+}  // namespace mozilla::intl
 
 #endif /* mozilla_intl_LineBreakCache_h_ */

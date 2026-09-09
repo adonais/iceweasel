@@ -20,12 +20,12 @@ namespace nss_test {
 
 struct Ucs4Case {
   PRUint32 c;
-  const char *utf8;
+  const char* utf8;
 };
 
 struct Ucs2Case {
   PRUint16 c;
-  const char *utf8;
+  const char* utf8;
 };
 
 struct Utf16Case {
@@ -45,7 +45,7 @@ class Ucs2Test : public ::testing::TestWithParam<Ucs2Case> {};
 
 class Utf16Test : public ::testing::TestWithParam<Utf16Case> {};
 
-class BadUtf8Test : public ::testing::TestWithParam<const char *> {};
+class BadUtf8Test : public ::testing::TestWithParam<const char*> {};
 
 class BadUtf16Test : public ::testing::TestWithParam<Utf16BadCase> {};
 
@@ -61,11 +61,11 @@ TEST_P(Ucs4Test, ToUtf8) {
   unsigned int len = 0;
 
   PRBool result = sec_port_ucs4_utf8_conversion_function(
-      PR_FALSE, (unsigned char *)&nc, sizeof(nc), utf8, sizeof(utf8), &len);
+      PR_FALSE, (unsigned char*)&nc, sizeof(nc), utf8, sizeof(utf8), &len);
 
   ASSERT_TRUE(result);
   ASSERT_LT(len, sizeof(utf8));
-  EXPECT_EQ(std::string(testCase.utf8), std::string((char *)utf8, len));
+  EXPECT_EQ(std::string(testCase.utf8), std::string((char*)utf8, len));
   EXPECT_EQ('\0', utf8[len]);
 }
 
@@ -75,8 +75,8 @@ TEST_P(Ucs4Test, FromUtf8) {
   unsigned int len = 0;
 
   PRBool result = sec_port_ucs4_utf8_conversion_function(
-      PR_TRUE, (unsigned char *)testCase.utf8, strlen(testCase.utf8),
-      (unsigned char *)&nc, sizeof(nc), &len);
+      PR_TRUE, (unsigned char*)testCase.utf8, strlen(testCase.utf8),
+      (unsigned char*)&nc, sizeof(nc), &len);
 
   ASSERT_TRUE(result);
   ASSERT_EQ(sizeof(nc), len);
@@ -87,13 +87,13 @@ TEST_P(Ucs4Test, DestTooSmall) {
   const Ucs4Case testCase = GetParam();
   PRUint32 nc = PR_htonl(testCase.c);
   unsigned char utf8[8];
-  unsigned char *utf8end = utf8 + sizeof(utf8);
+  unsigned char* utf8end = utf8 + sizeof(utf8);
   unsigned int len = strlen(testCase.utf8) - 1;
 
   ASSERT_LE(len, sizeof(utf8));
 
   PRBool result = sec_port_ucs4_utf8_conversion_function(
-      PR_FALSE, (unsigned char *)&nc, sizeof(nc), utf8end - len, len, &len);
+      PR_FALSE, (unsigned char*)&nc, sizeof(nc), utf8end - len, len, &len);
 
   ASSERT_FALSE(result);
   ASSERT_EQ(strlen(testCase.utf8), len);
@@ -109,11 +109,11 @@ TEST_P(Ucs2Test, ToUtf8) {
   unsigned int len = 0;
 
   PRBool result = sec_port_ucs2_utf8_conversion_function(
-      PR_FALSE, (unsigned char *)&nc, sizeof(nc), utf8, sizeof(utf8), &len);
+      PR_FALSE, (unsigned char*)&nc, sizeof(nc), utf8, sizeof(utf8), &len);
 
   ASSERT_TRUE(result);
   ASSERT_LT(len, sizeof(utf8));
-  EXPECT_EQ(std::string(testCase.utf8), std::string((char *)utf8, len));
+  EXPECT_EQ(std::string(testCase.utf8), std::string((char*)utf8, len));
   EXPECT_EQ('\0', utf8[len]);
 }
 
@@ -123,8 +123,8 @@ TEST_P(Ucs2Test, FromUtf8) {
   unsigned int len = 0;
 
   PRBool result = sec_port_ucs2_utf8_conversion_function(
-      PR_TRUE, (unsigned char *)testCase.utf8, strlen(testCase.utf8),
-      (unsigned char *)&nc, sizeof(nc), &len);
+      PR_TRUE, (unsigned char*)testCase.utf8, strlen(testCase.utf8),
+      (unsigned char*)&nc, sizeof(nc), &len);
 
   ASSERT_EQ(PR_TRUE, result);
   ASSERT_EQ(sizeof(nc), len);
@@ -135,13 +135,13 @@ TEST_P(Ucs2Test, DestTooSmall) {
   const Ucs2Case testCase = GetParam();
   PRUint16 nc = PR_htons(testCase.c);
   unsigned char utf8[8];
-  unsigned char *utf8end = utf8 + sizeof(utf8);
+  unsigned char* utf8end = utf8 + sizeof(utf8);
   unsigned int len = strlen(testCase.utf8) - 1;
 
   ASSERT_LE(len, sizeof(utf8));
 
   PRBool result = sec_port_ucs2_utf8_conversion_function(
-      PR_FALSE, (unsigned char *)&nc, sizeof(nc), utf8end - len, len, &len);
+      PR_FALSE, (unsigned char*)&nc, sizeof(nc), utf8end - len, len, &len);
 
   ASSERT_EQ(result, PR_FALSE);
   ASSERT_EQ(strlen(testCase.utf8), len);
@@ -157,12 +157,12 @@ TEST_P(Utf16Test, From16To32) {
   unsigned int len = 0;
 
   PRBool result = sec_port_ucs2_utf8_conversion_function(
-      PR_FALSE, (unsigned char *)&from, sizeof(from), utf8, sizeof(utf8), &len);
+      PR_FALSE, (unsigned char*)&from, sizeof(from), utf8, sizeof(utf8), &len);
 
   ASSERT_EQ(PR_TRUE, result);
 
   result = sec_port_ucs4_utf8_conversion_function(
-      PR_TRUE, utf8, len, (unsigned char *)&to, sizeof(to), &len);
+      PR_TRUE, utf8, len, (unsigned char*)&to, sizeof(to), &len);
 
   ASSERT_EQ(PR_TRUE, result);
   ASSERT_EQ(sizeof(to), len);
@@ -176,14 +176,14 @@ TEST_P(Utf16Test, From32To16) {
   unsigned int len = 0;
 
   PRBool result = sec_port_ucs4_utf8_conversion_function(
-      PR_FALSE, (unsigned char *)&from, sizeof(from), utf8, sizeof(utf8), &len);
+      PR_FALSE, (unsigned char*)&from, sizeof(from), utf8, sizeof(utf8), &len);
 
   ASSERT_EQ(PR_TRUE, result);
-  const std::string utf8copy((char *)utf8, len);
+  const std::string utf8copy((char*)utf8, len);
   PRUint16 to[2];
 
   result = sec_port_ucs2_utf8_conversion_function(
-      PR_TRUE, utf8, len, (unsigned char *)&to, sizeof(to), &len);
+      PR_TRUE, utf8, len, (unsigned char*)&to, sizeof(to), &len);
 
   ASSERT_EQ(PR_TRUE, result);
   ASSERT_EQ(sizeof(to), len);
@@ -198,7 +198,7 @@ TEST_P(Utf16Test, SameUtf8) {
   unsigned int lenFrom32 = 0;
 
   PRBool result = sec_port_ucs4_utf8_conversion_function(
-      PR_FALSE, (unsigned char *)&from32, sizeof(from32), utf8from32,
+      PR_FALSE, (unsigned char*)&from32, sizeof(from32), utf8from32,
       sizeof(utf8from32), &lenFrom32);
 
   ASSERT_TRUE(result);
@@ -209,37 +209,37 @@ TEST_P(Utf16Test, SameUtf8) {
   unsigned int lenFrom16 = 0;
 
   result = sec_port_ucs2_utf8_conversion_function(
-      PR_FALSE, (unsigned char *)&from16, sizeof(from16), utf8from16,
+      PR_FALSE, (unsigned char*)&from16, sizeof(from16), utf8from16,
       sizeof(utf8from16), &lenFrom16);
 
   ASSERT_TRUE(result);
   ASSERT_LE(lenFrom16, sizeof(utf8from16));
 
-  EXPECT_EQ(std::string((char *)utf8from32, lenFrom32),
-            std::string((char *)utf8from16, lenFrom16));
+  EXPECT_EQ(std::string((char*)utf8from32, lenFrom32),
+            std::string((char*)utf8from16, lenFrom16));
 }
 
 // Tests of invalid UTF-8 input:
 
 TEST_P(BadUtf8Test, HasNoUcs2) {
-  const char *const utf8 = GetParam();
+  const char* const utf8 = GetParam();
   unsigned char destBuf[30];
   unsigned int len = 0;
 
   PRBool result = sec_port_ucs2_utf8_conversion_function(
-      PR_TRUE, (unsigned char *)utf8, strlen(utf8), destBuf, sizeof(destBuf),
+      PR_TRUE, (unsigned char*)utf8, strlen(utf8), destBuf, sizeof(destBuf),
       &len);
 
   EXPECT_FALSE(result);
 }
 
 TEST_P(BadUtf8Test, HasNoUcs4) {
-  const char *const utf8 = GetParam();
+  const char* const utf8 = GetParam();
   unsigned char destBuf[30];
   unsigned int len = 0;
 
   PRBool result = sec_port_ucs4_utf8_conversion_function(
-      PR_TRUE, (unsigned char *)utf8, strlen(utf8), destBuf, sizeof(destBuf),
+      PR_TRUE, (unsigned char*)utf8, strlen(utf8), destBuf, sizeof(destBuf),
       &len);
 
   EXPECT_FALSE(result);
@@ -262,7 +262,7 @@ TEST_P(BadUtf16Test, HasNoUtf8) {
 
   unsigned char destBuf[18];
   PRBool result = sec_port_ucs2_utf8_conversion_function(
-      PR_FALSE, (unsigned char *)srcBuf.w, srcLen * sizeof(PRUint16), destBuf,
+      PR_FALSE, (unsigned char*)srcBuf.w, srcLen * sizeof(PRUint16), destBuf,
       sizeof(destBuf), &len);
 
   EXPECT_FALSE(result);
@@ -283,7 +283,7 @@ TEST_P(Iso88591Test, ToUtf8) {
 
   ASSERT_TRUE(result);
   ASSERT_LT(len, sizeof(utf8));
-  EXPECT_EQ(std::string(testCase.utf8), std::string((char *)utf8, len));
+  EXPECT_EQ(std::string(testCase.utf8), std::string((char*)utf8, len));
   EXPECT_EQ(0U, utf8[len]);
 }
 
@@ -296,7 +296,7 @@ TEST(Utf8Zeroes, From32To8) {
   unsigned char to;
 
   PRBool result = sec_port_ucs4_utf8_conversion_function(
-      PR_FALSE, (unsigned char *)&from, sizeof(from), &to, sizeof(to), &len);
+      PR_FALSE, (unsigned char*)&from, sizeof(from), &to, sizeof(to), &len);
 
   ASSERT_TRUE(result);
   ASSERT_EQ(sizeof(to), len);
@@ -309,7 +309,7 @@ TEST(Utf8Zeroes, From16To8) {
   unsigned char to;
 
   PRBool result = sec_port_ucs2_utf8_conversion_function(
-      PR_FALSE, (unsigned char *)&from, sizeof(from), &to, sizeof(to), &len);
+      PR_FALSE, (unsigned char*)&from, sizeof(from), &to, sizeof(to), &len);
 
   ASSERT_TRUE(result);
   ASSERT_EQ(sizeof(to), len);
@@ -322,7 +322,7 @@ TEST(Utf8Zeroes, From8To32) {
   PRUint32 to;
 
   PRBool result = sec_port_ucs4_utf8_conversion_function(
-      PR_TRUE, &from, sizeof(from), (unsigned char *)&to, sizeof(to), &len);
+      PR_TRUE, &from, sizeof(from), (unsigned char*)&to, sizeof(to), &len);
 
   ASSERT_TRUE(result);
   ASSERT_EQ(sizeof(to), len);
@@ -335,7 +335,7 @@ TEST(Utf8Zeroes, From8To16) {
   PRUint16 to;
 
   PRBool result = sec_port_ucs2_utf8_conversion_function(
-      PR_TRUE, &from, sizeof(from), (unsigned char *)&to, sizeof(to), &len);
+      PR_TRUE, &from, sizeof(from), (unsigned char*)&to, sizeof(to), &len);
 
   ASSERT_TRUE(result);
   ASSERT_EQ(sizeof(to), len);
@@ -901,7 +901,7 @@ const Utf16Case kUtf16Cases[] = {{0x00010000, {0xD800, 0xDC00}},
 
 // Invalid UTF-8 sequences
 
-const char *const kUtf8BadCases[] = {
+const char* const kUtf8BadCases[] = {
     "\xC0\x80",
     "\xC1\xBF",
     "\xE0\x80\x80",

@@ -11,14 +11,6 @@
 @namespace xul url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 @namespace html url("http://www.w3.org/1999/xhtml");
 
-@media (prefers-contrast) {
-  :root {
-    /* In high-contrast mode on Windows, ThreeDLightShadow provides more
-       contrast than ThreeDShadow. See bug 1022564. */
-    --panel-border-color: ThreeDLightShadow;
-  }
-}
-
 /* ::::: Alert icons :::::*/
 
 .message-icon,

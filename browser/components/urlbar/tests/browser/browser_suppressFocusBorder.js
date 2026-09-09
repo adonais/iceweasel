@@ -40,6 +40,12 @@ class AwaitPromiseProvider extends UrlbarTestUtils.TestProvider {
 add_setup(async function () {
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
 
+  // Several tasks below drive the handoff search bar, which the newtab
+  // <moz-urlbar> supersedes when its feature gate is on.
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.newtab.featureGate", false]],
+  });
+
   registerCleanupFunction(function () {
     SpecialPowers.clipboardCopyString("");
   });

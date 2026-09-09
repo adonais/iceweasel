@@ -41,7 +41,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/openssl_adapter.h"
 #include "rtc_base/openssl_digest.h"
 #include "rtc_base/openssl_utility.h"
 #include "rtc_base/span_helpers.h"
@@ -1180,8 +1179,7 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
     return nullptr;
   }
 
-  // TODO(bugs.webrtc.org/339300437): Remove dependency.
-  SSL_CTX_set_info_callback(ctx, OpenSSLAdapter::SSLInfoCallback);
+  SSL_CTX_set_info_callback(ctx, openssl::SSLInfoCallback);
 
   int mode = SSL_VERIFY_PEER;
   if (GetClientAuthEnabled()) {

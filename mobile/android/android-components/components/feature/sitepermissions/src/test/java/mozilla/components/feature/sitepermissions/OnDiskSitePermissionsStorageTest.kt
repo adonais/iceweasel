@@ -52,11 +52,12 @@ class OnDiskSitePermissionsStorageTest {
     fun setup() {
         mockDAO = mock()
         mockDataCleanable = mock()
-        storage = spy(
-            OnDiskSitePermissionsStorage(mock(), mockDataCleanable).apply {
-                databaseInitializer = { mockDatabase(mockDAO) }
-            },
-        )
+        storage =
+            spy(
+                OnDiskSitePermissionsStorage(mock(), mockDataCleanable).apply {
+                    databaseInitializer = { mockDatabase(mockDAO) }
+                }
+            )
     }
 
     @Test
@@ -96,10 +97,11 @@ class OnDiskSitePermissionsStorageTest {
         shadowOf(getMainLooper()).idle()
 
         verify(mockDAO, times(0)).update(any())
-        verify(mockDataCleanable, times(0)).clearData(
-            BrowsingData.select(BrowsingData.PERMISSIONS),
-            sitePermissions.origin,
-        )
+        verify(mockDataCleanable, times(0))
+            .clearData(
+                BrowsingData.select(BrowsingData.PERMISSIONS),
+                sitePermissions.origin,
+            )
     }
 
     @Test
@@ -110,9 +112,9 @@ class OnDiskSitePermissionsStorageTest {
     }
 
     @Test
-    fun `GIVEN private sitePermissions WHEN findSitePermissionsBy THEN reset SitePermissions`() =
-        runTest {
-            val dbPermission = SitePermissionsEntity(
+    fun `GIVEN private sitePermissions WHEN findSitePermissionsBy THEN reset SitePermissions`() = runTest {
+        val dbPermission =
+            SitePermissionsEntity(
                 origin = "mozilla.dev",
                 localStorage = ALLOWED,
                 crossOriginStorageAccess = ALLOWED,
@@ -129,19 +131,16 @@ class OnDiskSitePermissionsStorageTest {
                 savedAt = 0,
             )
 
-            doReturn(dbPermission).`when`(mockDAO)
-                .getSitePermissionsBy(origin = dbPermission.origin)
+        doReturn(dbPermission).`when`(mockDAO).getSitePermissionsBy(origin = dbPermission.origin)
 
-            val foundPermissions =
-                storage.findSitePermissionsBy(dbPermission.origin, private = true)
+        val foundPermissions = storage.findSitePermissionsBy(dbPermission.origin, private = true)
 
-            assertNull(foundPermissions)
-        }
+        assertNull(foundPermissions)
+    }
 
     @Test
     fun `find all sitePermissions grouped by permission`() = runTest {
-        doReturn(dummySitePermissionEntitiesList())
-            .`when`(mockDAO).getSitePermissions()
+        doReturn(dummySitePermissionEntitiesList()).`when`(mockDAO).getSitePermissions()
 
         val map = storage.findAllSitePermissionsGroupedByPermission()
 
@@ -183,12 +182,14 @@ class OnDiskSitePermissionsStorageTest {
         val mockDataSource: DataSource<Int, SitePermissionsEntity> = mock()
 
         doReturn(
-            object : DataSource.Factory<Int, SitePermissionsEntity>() {
-                override fun create(): DataSource<Int, SitePermissionsEntity> {
-                    return mockDataSource
+                object : DataSource.Factory<Int, SitePermissionsEntity>() {
+                    override fun create(): DataSource<Int, SitePermissionsEntity> {
+                        return mockDataSource
+                    }
                 }
-            },
-        ).`when`(mockDAO).getSitePermissionsPaged()
+            )
+            .`when`(mockDAO)
+            .getSitePermissionsPaged()
 
         storage.getSitePermissionsPaged()
 
@@ -245,9 +246,12 @@ class OnDiskSitePermissionsStorageTest {
         )
     }
 
-    private fun mockDatabase(dao: SitePermissionsDao) = object : SitePermissionsDatabase() {
-        override fun sitePermissionsDao() = dao
-        override fun createInvalidationTracker(): InvalidationTracker = mock()
-        override fun clearAllTables() = Unit
-    }
+    private fun mockDatabase(dao: SitePermissionsDao) =
+        object : SitePermissionsDatabase() {
+            override fun sitePermissionsDao() = dao
+
+            override fun createInvalidationTracker(): InvalidationTracker = mock()
+
+            override fun clearAllTables() = Unit
+        }
 }

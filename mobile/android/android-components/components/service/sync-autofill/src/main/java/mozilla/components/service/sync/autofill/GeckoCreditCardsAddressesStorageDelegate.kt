@@ -26,8 +26,8 @@ import mozilla.components.support.ktx.kotlin.last4Digits
  * @param storage The [CreditCardsAddressesStorage] used for looking up addresses and credit cards to autofill.
  * @param dispatcher [CoroutineDispatcher] for long running operations. Defaults to using the [Dispatchers.IO].
  * @param isCreditCardAutofillEnabled callback allowing to limit [storage] operations if autofill is disabled.
- * @param validationDelegate The [DefaultCreditCardValidationDelegate] used to check if a credit card
- * can be saved in [storage] and returns information about why it can or cannot
+ * @param validationDelegate The [DefaultCreditCardValidationDelegate] used to check if a credit card can be saved in
+ *   [storage] and returns information about why it can or cannot
  */
 class GeckoCreditCardsAddressesStorageDelegate(
     private val storage: Lazy<CreditCardsAddressesStorage>,
@@ -50,27 +50,29 @@ class GeckoCreditCardsAddressesStorageDelegate(
         return crypto.decrypt(key, encryptedCardNumber)
     }
 
-    override suspend fun onAddressesFetch(): List<Address> = withContext(dispatcher) {
-        if (!isAddressAutofillEnabled()) {
-            emptyList()
-        } else {
-            storage.value.getAllAddresses()
+    override suspend fun onAddressesFetch(): List<Address> =
+        withContext(dispatcher) {
+            if (!isAddressAutofillEnabled()) {
+                emptyList()
+            } else {
+                storage.value.getAllAddresses()
+            }
         }
-    }
 
     override suspend fun onAddressSave(address: Address) {
-        val fields = UpdatableAddressFields(
-            name = address.name,
-            organization = address.organization,
-            streetAddress = address.streetAddress,
-            addressLevel3 = address.addressLevel3,
-            addressLevel2 = address.addressLevel2,
-            addressLevel1 = address.addressLevel1,
-            postalCode = address.postalCode,
-            country = address.country,
-            tel = address.tel,
-            email = address.email,
-        )
+        val fields =
+            UpdatableAddressFields(
+                name = address.name,
+                organization = address.organization,
+                streetAddress = address.streetAddress,
+                addressLevel3 = address.addressLevel3,
+                addressLevel2 = address.addressLevel2,
+                addressLevel1 = address.addressLevel1,
+                postalCode = address.postalCode,
+                country = address.country,
+                tel = address.tel,
+                email = address.email,
+            )
 
         withContext(dispatcher) {
             if (address.guid.isBlank()) {
@@ -104,20 +106,21 @@ class GeckoCreditCardsAddressesStorageDelegate(
                             expiryMonth = creditCard.expiryMonth.toLong(),
                             expiryYear = creditCard.expiryYear.toLong(),
                             cardType = creditCard.cardType,
-                        ),
+                        )
                     )
                 }
                 is CreditCardValidationDelegate.Result.CanBeUpdated -> {
                     storage.value.updateCreditCard(
                         guid = result.foundCreditCard.guid,
-                        creditCardFields = UpdatableCreditCardFields(
-                            billingName = creditCard.name,
-                            cardNumber = CreditCardNumber.Plaintext(creditCard.number),
-                            cardNumberLast4 = creditCard.number.last4Digits(),
-                            expiryMonth = creditCard.expiryMonth.toLong(),
-                            expiryYear = creditCard.expiryYear.toLong(),
-                            cardType = creditCard.cardType,
-                        ),
+                        creditCardFields =
+                            UpdatableCreditCardFields(
+                                billingName = creditCard.name,
+                                cardNumber = CreditCardNumber.Plaintext(creditCard.number),
+                                cardNumberLast4 = creditCard.number.last4Digits(),
+                                expiryMonth = creditCard.expiryMonth.toLong(),
+                                expiryYear = creditCard.expiryYear.toLong(),
+                                cardType = creditCard.cardType,
+                            ),
                     )
                 }
             }

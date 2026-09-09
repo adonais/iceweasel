@@ -5,15 +5,13 @@
 package org.mozilla.fenix.debugsettings.info
 
 import android.util.JsonWriter
-import mozilla.components.support.base.log.logger.Logger
 import java.io.IOException
 import java.io.StringWriter
+import mozilla.components.support.base.log.logger.Logger
 
 private const val JSON_INDENT = "   "
 
-/**
- * Serializes the debug info [DebugInfoSection]s into a JSON string.
- */
+/** Serializes the debug info [DebugInfoSection]s into a JSON string. */
 internal fun List<DebugInfoSection>.toJson(): String {
     val stringWriter = StringWriter()
 

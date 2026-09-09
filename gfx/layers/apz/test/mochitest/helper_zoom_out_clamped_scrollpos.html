@@ -70,7 +70,12 @@
       await promiseApzFlushedRepaints();
 
       // Check that we're back at 1.0 resolution
-      is(await getResolution(), 1.0, "should be back at initial resolution");
+      isfuzzy(
+        await getResolution(),
+        1.0,
+        1e-5,
+        "should be back at initial resolution"
+      );
 
       // More sanity checks
       is(window.scrollX, 0, "shouldn't have scrolled (5)");

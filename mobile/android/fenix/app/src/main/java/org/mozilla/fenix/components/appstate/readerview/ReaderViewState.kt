@@ -4,28 +4,18 @@
 
 package org.mozilla.fenix.components.appstate.readerview
 
-/**
- * The state of the reader view to display.
- */
+/** The state of the reader view to display. */
 sealed class ReaderViewState {
 
-    /**
-     * Reader view is active.
-     */
+    /** Reader view is active. */
     data object Active : ReaderViewState()
 
-    /**
-     * Dismiss reader view.
-     */
+    /** Dismiss reader view. */
     data object Dismiss : ReaderViewState()
 
-    /**
-     * Reader view is active and the reader view controls should be displayed.
-     */
+    /** Reader view is active and the reader view controls should be displayed. */
     data object ShowControls : ReaderViewState()
 
-    /**
-     * No reader view state to display.
-     */
+    /** No reader view state to display. */
     data object None : ReaderViewState()
 }

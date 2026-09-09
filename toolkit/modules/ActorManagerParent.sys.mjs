@@ -68,10 +68,12 @@ let JSPROCESSACTORS = {
   MLEngine: {
     remoteTypes: ["inference"],
     parent: {
-      esModuleURI: "resource://gre/actors/MLEngineParent.sys.mjs",
+      esModuleURI:
+        "moz-src:///toolkit/components/ml/actors/MLEngineParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://gre/actors/MLEngineChild.sys.mjs",
+      esModuleURI:
+        "moz-src:///toolkit/components/ml/actors/MLEngineChild.sys.mjs",
     },
     enablePreference: "browser.ml.enable",
   },
@@ -132,10 +134,11 @@ let JSWINDOWACTORS = {
 
   AboutHttpsOnlyError: {
     parent: {
-      esModuleURI: "resource://gre/actors/AboutHttpsOnlyErrorParent.sys.mjs",
+      esModuleURI:
+        "moz-src:///toolkit/actors/AboutHttpsOnlyErrorParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://gre/actors/AboutHttpsOnlyErrorChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/AboutHttpsOnlyErrorChild.sys.mjs",
       events: {
         DOMDocElementInserted: {},
       },
@@ -147,10 +150,10 @@ let JSWINDOWACTORS = {
 
   AboutRestricted: {
     parent: {
-      esModuleURI: "resource://gre/actors/AboutRestrictedParent.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/AboutRestrictedParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://gre/actors/AboutRestrictedChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/AboutRestrictedChild.sys.mjs",
       events: {
         DOMDocElementInserted: {},
       },
@@ -162,11 +165,11 @@ let JSWINDOWACTORS = {
 
   AudioPlayback: {
     parent: {
-      esModuleURI: "resource://gre/actors/AudioPlaybackParent.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/AudioPlaybackParent.sys.mjs",
     },
 
     child: {
-      esModuleURI: "resource://gre/actors/AudioPlaybackChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/AudioPlaybackChild.sys.mjs",
       observers: ["audio-playback"],
     },
 
@@ -176,7 +179,7 @@ let JSWINDOWACTORS = {
 
   AutoComplete: {
     parent: {
-      esModuleURI: "resource://gre/actors/AutoCompleteParent.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/AutoCompleteParent.sys.mjs",
       // These two messages are also used, but are currently synchronous calls
       // through the per-process message manager.
       // "AutoComplete:GetSelectedIndex",
@@ -184,7 +187,7 @@ let JSWINDOWACTORS = {
     },
 
     child: {
-      esModuleURI: "resource://gre/actors/AutoCompleteChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/AutoCompleteChild.sys.mjs",
       // On GeckoView the autocomplete popup is a delegated native prompt; we
       // listen for pagehide (which also fires for bfcache) to tear it down so
       // it can't outlive its document. Other platforms close the popup via
@@ -203,11 +206,11 @@ let JSWINDOWACTORS = {
 
   Autoplay: {
     parent: {
-      esModuleURI: "resource://gre/actors/AutoplayParent.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/AutoplayParent.sys.mjs",
     },
 
     child: {
-      esModuleURI: "resource://gre/actors/AutoplayChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/AutoplayChild.sys.mjs",
       events: {
         GloballyAutoplayBlocked: {},
       },
@@ -219,11 +222,11 @@ let JSWINDOWACTORS = {
 
   AutoScroll: {
     parent: {
-      esModuleURI: "resource://gre/actors/AutoScrollParent.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/AutoScrollParent.sys.mjs",
     },
 
     child: {
-      esModuleURI: "resource://gre/actors/AutoScrollChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/AutoScrollChild.sys.mjs",
       events: {
         mousedown: { capture: true, mozSystemGroup: true },
       },
@@ -235,7 +238,8 @@ let JSWINDOWACTORS = {
 
   BackgroundThumbnails: {
     child: {
-      esModuleURI: "resource://gre/actors/BackgroundThumbnailsChild.sys.mjs",
+      esModuleURI:
+        "moz-src:///toolkit/actors/BackgroundThumbnailsChild.sys.mjs",
       events: {
         DOMDocElementInserted: { capture: true },
       },
@@ -246,11 +250,11 @@ let JSWINDOWACTORS = {
 
   BrowserElement: {
     parent: {
-      esModuleURI: "resource://gre/actors/BrowserElementParent.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/BrowserElementParent.sys.mjs",
     },
 
     child: {
-      esModuleURI: "resource://gre/actors/BrowserElementChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/BrowserElementChild.sys.mjs",
       events: {
         DOMWindowClose: {},
       },
@@ -275,10 +279,10 @@ let JSWINDOWACTORS = {
 
   Controllers: {
     parent: {
-      esModuleURI: "resource://gre/actors/ControllersParent.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/ControllersParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://gre/actors/ControllersChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/ControllersChild.sys.mjs",
     },
 
     allFrames: true,
@@ -287,10 +291,12 @@ let JSWINDOWACTORS = {
 
   CaptchaDetection: {
     parent: {
-      esModuleURI: "resource://gre/actors/CaptchaDetectionParent.sys.mjs",
+      esModuleURI:
+        "moz-src:///toolkit/components/captchadetection/CaptchaDetectionParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://gre/actors/CaptchaDetectionChild.sys.mjs",
+      esModuleURI:
+        "moz-src:///toolkit/components/captchadetection/CaptchaDetectionChild.sys.mjs",
       events: {
         DOMContentLoaded: { capture: true },
         pageshow: {},
@@ -325,11 +331,12 @@ let JSWINDOWACTORS = {
 
   CaptchaDetectionCommunication: {
     parent: {
-      esModuleURI: "resource://gre/actors/CaptchaDetectionParent.sys.mjs",
+      esModuleURI:
+        "moz-src:///toolkit/components/captchadetection/CaptchaDetectionParent.sys.mjs",
     },
     child: {
       esModuleURI:
-        "resource://gre/actors/CaptchaDetectionCommunicationChild.sys.mjs",
+        "moz-src:///toolkit/components/captchadetection/CaptchaDetectionCommunicationChild.sys.mjs",
     },
     allFrames: true,
     safeForUntrustedWebProcess: true,
@@ -337,7 +344,7 @@ let JSWINDOWACTORS = {
 
   ExtFind: {
     child: {
-      esModuleURI: "resource://gre/actors/ExtFindChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/ExtFindChild.sys.mjs",
     },
 
     allFrames: true,
@@ -346,10 +353,10 @@ let JSWINDOWACTORS = {
 
   FindBar: {
     parent: {
-      esModuleURI: "resource://gre/actors/FindBarParent.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/FindBarParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://gre/actors/FindBarChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/FindBarChild.sys.mjs",
       events: {
         keypress: { mozSystemGroup: true },
       },
@@ -364,7 +371,7 @@ let JSWINDOWACTORS = {
   // searches for matches and highlights them.
   Finder: {
     child: {
-      esModuleURI: "resource://gre/actors/FinderChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/FinderChild.sys.mjs",
     },
 
     allFrames: true,
@@ -403,11 +410,11 @@ let JSWINDOWACTORS = {
 
   InlineSpellChecker: {
     parent: {
-      esModuleURI: "resource://gre/actors/InlineSpellCheckerParent.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/InlineSpellCheckerParent.sys.mjs",
     },
 
     child: {
-      esModuleURI: "resource://gre/actors/InlineSpellCheckerChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/InlineSpellCheckerChild.sys.mjs",
     },
 
     allFrames: true,
@@ -417,7 +424,7 @@ let JSWINDOWACTORS = {
   KeyPressEventModelChecker: {
     child: {
       esModuleURI:
-        "resource://gre/actors/KeyPressEventModelCheckerChild.sys.mjs",
+        "moz-src:///toolkit/actors/KeyPressEventModelCheckerChild.sys.mjs",
       events: {
         CheckKeyPressEventModel: { capture: true, mozSystemGroup: true },
       },
@@ -461,10 +468,10 @@ let JSWINDOWACTORS = {
 
   NetError: {
     parent: {
-      esModuleURI: "resource://gre/actors/NetErrorParent.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/NetErrorParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://gre/actors/NetErrorChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/NetErrorChild.sys.mjs",
       events: {
         DOMDocElementInserted: {},
         click: {},
@@ -508,11 +515,11 @@ let JSWINDOWACTORS = {
   PopupAndRedirectBlocking: {
     parent: {
       esModuleURI:
-        "resource://gre/actors/PopupAndRedirectBlockingParent.sys.mjs",
+        "moz-src:///toolkit/actors/PopupAndRedirectBlockingParent.sys.mjs",
     },
     child: {
       esModuleURI:
-        "resource://gre/actors/PopupAndRedirectBlockingChild.sys.mjs",
+        "moz-src:///toolkit/actors/PopupAndRedirectBlockingChild.sys.mjs",
       events: {
         DOMPopupBlocked: { capture: true },
         DOMRedirectBlocked: { capture: true },
@@ -527,10 +534,10 @@ let JSWINDOWACTORS = {
 
   Printing: {
     parent: {
-      esModuleURI: "resource://gre/actors/PrintingParent.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/PrintingParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://gre/actors/PrintingChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/PrintingChild.sys.mjs",
       events: {
         PrintingError: { capture: true },
         printPreviewUpdate: { capture: true },
@@ -541,7 +548,7 @@ let JSWINDOWACTORS = {
 
   PrintingSelection: {
     child: {
-      esModuleURI: "resource://gre/actors/PrintingSelectionChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/PrintingSelectionChild.sys.mjs",
     },
     allFrames: true,
     safeForUntrustedWebProcess: true,
@@ -567,7 +574,8 @@ let JSWINDOWACTORS = {
 
   TLSCertificateBinding: {
     child: {
-      esModuleURI: "resource://gre/actors/TLSCertificateBindingChild.sys.mjs",
+      esModuleURI:
+        "moz-src:///toolkit/actors/TLSCertificateBindingChild.sys.mjs",
     },
 
     messageManagerGroups: ["browsers"],
@@ -580,7 +588,7 @@ let JSWINDOWACTORS = {
   // 'ViewSource:LoadSource' or 'ViewSource:LoadSourceWithSelection'.
   ViewSource: {
     child: {
-      esModuleURI: "resource://gre/actors/ViewSourceChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/ViewSourceChild.sys.mjs",
     },
 
     allFrames: true,
@@ -590,10 +598,10 @@ let JSWINDOWACTORS = {
   // This actor is for the view-source page itself.
   ViewSourcePage: {
     parent: {
-      esModuleURI: "resource://gre/actors/ViewSourcePageParent.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/ViewSourcePageParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://gre/actors/ViewSourcePageChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/ViewSourcePageChild.sys.mjs",
       events: {
         pageshow: { capture: true },
         click: {},
@@ -607,7 +615,7 @@ let JSWINDOWACTORS = {
 
   Thumbnails: {
     child: {
-      esModuleURI: "resource://gre/actors/ThumbnailsChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/ThumbnailsChild.sys.mjs",
     },
     safeForUntrustedWebProcess: true,
   },
@@ -643,7 +651,7 @@ let JSWINDOWACTORS = {
 
   UAWidgets: {
     child: {
-      esModuleURI: "resource://gre/actors/UAWidgetsChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/UAWidgetsChild.sys.mjs",
       events: {
         UAWidgetSetupOrChange: {},
         UAWidgetTeardown: {},
@@ -657,10 +665,10 @@ let JSWINDOWACTORS = {
 
   UnselectedTabHover: {
     parent: {
-      esModuleURI: "resource://gre/actors/UnselectedTabHoverParent.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/UnselectedTabHoverParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://gre/actors/UnselectedTabHoverChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/UnselectedTabHoverChild.sys.mjs",
       events: {
         "UnselectedTabHover:Enable": {},
         "UnselectedTabHover:Disable": {},
@@ -679,11 +687,11 @@ let JSWINDOWACTORS = {
 if (!Services.prefs.getBoolPref("browser.pagedata.enabled", false)) {
   JSWINDOWACTORS.ContentMeta = {
     parent: {
-      esModuleURI: "resource://gre/actors/ContentMetaParent.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/ContentMetaParent.sys.mjs",
     },
 
     child: {
-      esModuleURI: "resource://gre/actors/ContentMetaChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/ContentMetaChild.sys.mjs",
       events: {
         DOMContentLoaded: {},
         DOMMetaAdded: { createActor: false },
@@ -696,14 +704,24 @@ if (!Services.prefs.getBoolPref("browser.pagedata.enabled", false)) {
 }
 
 if (AppConstants.platform != "android") {
+  // The stream converter sends this actor's message from the scriptless
+  // object/embed fallback page; no child module is needed.
+  JSWINDOWACTORS.PdfEmbedFallback = {
+    parent: {
+      esModuleURI: "resource://pdf.js/PdfEmbedFallbackParent.sys.mjs",
+    },
+    allFrames: true,
+    safeForUntrustedWebProcess: true,
+  };
+
   // Note that GeckoView has another implementation in mobile/android/actors.
   JSWINDOWACTORS.Select = {
     parent: {
-      esModuleURI: "resource://gre/actors/SelectParent.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/SelectParent.sys.mjs",
     },
 
     child: {
-      esModuleURI: "resource://gre/actors/SelectChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/SelectChild.sys.mjs",
       events: {
         mozshowdropdown: {},
         "mozshowdropdown-sourcetouch": {},
@@ -741,7 +759,7 @@ if (AppConstants.platform != "android") {
         "moz-src:///toolkit/components/pictureinpicture/PictureInPicture.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://gre/actors/PictureInPictureChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/PictureInPictureChild.sys.mjs",
       events: {
         MozTogglePictureInPicture: { capture: true },
       },
@@ -757,7 +775,7 @@ if (AppConstants.platform != "android") {
         "moz-src:///toolkit/components/pictureinpicture/PictureInPicture.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://gre/actors/PictureInPictureChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/PictureInPictureChild.sys.mjs",
     },
     messageManagerGroups: ["browsers", "pip-player"],
     allFrames: true,
@@ -770,7 +788,7 @@ if (AppConstants.platform != "android") {
         "moz-src:///toolkit/components/pictureinpicture/PictureInPicture.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://gre/actors/PictureInPictureChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/PictureInPictureChild.sys.mjs",
       events: {
         UAWidgetSetupOrChange: {},
         contextmenu: { capture: true },
@@ -783,10 +801,10 @@ if (AppConstants.platform != "android") {
 
   JSWINDOWACTORS.AboutPDF = {
     parent: {
-      esModuleURI: "resource://gre/actors/AboutPDFParent.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/AboutPDFParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://gre/actors/AboutPDFChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/AboutPDFChild.sys.mjs",
       events: {
         DOMDocElementInserted: {},
       },
@@ -832,10 +850,10 @@ if (AppConstants.platform != "android") {
   // GeckoView implements WebChannel communication at the embedder-level.
   JSWINDOWACTORS.WebChannel = {
     parent: {
-      esModuleURI: "resource://gre/actors/WebChannelParent.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/WebChannelParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://gre/actors/WebChannelChild.sys.mjs",
+      esModuleURI: "moz-src:///toolkit/actors/WebChannelChild.sys.mjs",
       events: {
         WebChannelMessageToChrome: { capture: true, wantUntrusted: true },
       },

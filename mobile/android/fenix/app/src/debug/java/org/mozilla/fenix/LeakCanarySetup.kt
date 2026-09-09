@@ -13,9 +13,7 @@ import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.ext.getPreferenceKey
 
-/**
- * Debug implementation for activating LeakCanary.
- */
+/** Debug implementation for activating LeakCanary. */
 object LeakCanarySetup : LeakCanarySetupInterface {
     private val logger = Logger("LeakCanarySetup")
 
@@ -34,13 +32,14 @@ object LeakCanarySetup : LeakCanarySetupInterface {
             )
         }
 
-        val isEnabled = components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
-            PreferenceManager.getDefaultSharedPreferences(application)
-                .getBoolean(
-                    application.getPreferenceKey(R.string.pref_key_leakcanary),
-                    BuildConfig.LEAKCANARY,
-                )
-        }
+        val isEnabled =
+            components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
+                PreferenceManager.getDefaultSharedPreferences(application)
+                    .getBoolean(
+                        application.getPreferenceKey(R.string.pref_key_leakcanary),
+                        BuildConfig.LEAKCANARY,
+                    )
+            }
 
         updateState(isEnabled, components)
     }

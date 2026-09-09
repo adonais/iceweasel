@@ -47,7 +47,6 @@ tasks:
         attributes:
             build-type: focus-debug
         run:
-            clone-with: hg
             pre-gradlew:
                 - ["cd", "mobile/android/focus-android"]
             gradlew: ['clean', 'test']
@@ -69,7 +68,6 @@ tasks:
         attributes:
             build-type: fenix-debug
         run:
-            clone-with: hg
             pre-gradlew:
                 - ["cd", "mobile/android/fenix"]
                 - ['java', '-version']

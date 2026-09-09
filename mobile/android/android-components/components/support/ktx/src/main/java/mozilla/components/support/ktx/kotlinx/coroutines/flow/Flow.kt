@@ -55,21 +55,22 @@ fun <T, R> Flow<List<T>>.filterChanged(transform: (T) -> R): Flow<T> {
     var lastMappedValues: Map<T, R>? = null
     return flatMapConcat { values ->
         val lastMapped = lastMappedValues
-        val changed = if (lastMapped == null) {
-            values
-        } else {
-            values.filter {
-                !lastMapped.containsKey(it) || lastMapped[it] != transform(it)
+        val changed =
+            if (lastMapped == null) {
+                values
+            } else {
+                values.filter {
+                    !lastMapped.containsKey(it) || lastMapped[it] != transform(it)
+                }
             }
-        }
         lastMappedValues = values.associateWith { transform(it) }
         changed.asFlow()
     }
 }
 
 /**
- * Returns a [Flow] containing only values of the original [Flow] where the result array
- * of calling [transform] contains at least one different value.
+ * Returns a [Flow] containing only values of the original [Flow] where the result array of calling [transform] contains
+ * at least one different value.
  *
  * Example:
  * ```
@@ -85,10 +86,7 @@ fun <T> Flow<T>.ifAnyChanged(transform: (T) -> Array<Any?>): Flow<T> {
 
     return filter { value ->
         val mapped = transform(value)
-        val hasChanges = lastMappedValues
-            ?.asSequence()
-            ?.filterIndexed { i, r -> mapped[i] != r }
-            ?.any()
+        val hasChanges = lastMappedValues?.asSequence()?.filterIndexed { i, r -> mapped[i] != r }?.any()
 
         if (!observedValueOnce || hasChanges == true) {
             lastMappedValues = mapped
@@ -101,22 +99,19 @@ fun <T> Flow<T>.ifAnyChanged(transform: (T) -> Array<Any?>): Flow<T> {
 }
 
 /**
- * Partition the elements emitted by the original flow in groups of [size] elements, with each new emission
- * being advanced by [step] elements.
+ * Partition the elements emitted by the original flow in groups of [size] elements, with each new emission being
+ * advanced by [step] elements.
  *
  * @param size the number of elements to take in each window.
  * @param step the number of elements to move forward between windows.
- * @param partialWindows if `true`, windows at the end of the flow that are smaller than [size]
- * will also be emitted.
+ * @param partialWindows if `true`, windows at the end of the flow that are smaller than [size] will also be emitted.
  */
 fun <T> Flow<T>.windowed(size: Int, step: Int, partialWindows: Boolean = false): Flow<List<T>> = flow {
     require(size > 0 && step > 0) { "size and step must be positive, was size=$size, step=$step" }
 
     val window = ArrayDeque<T>(size)
 
-    /**
-     * Helper function to emit the current window and slide it forward by the step size.
-     */
+    /** Helper function to emit the current window and slide it forward by the step size. */
     suspend fun emitAndSlide() {
         emit(window.toList())
         repeat(step) {

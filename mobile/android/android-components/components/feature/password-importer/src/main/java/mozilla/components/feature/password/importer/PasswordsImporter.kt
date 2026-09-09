@@ -12,20 +12,18 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import mozilla.components.concept.passwords.file.PasswordsFileImporter
 
 /**
- * Self-contained passwords import flow that drives file selection, the in-progress dialog, and
- * completion via an internal [PasswordsImporterStore].
+ * Self-contained passwords import flow that drives file selection, the in-progress dialog, and completion via an
+ * internal [PasswordsImporterStore].
  *
- * @param onFinished Invoked when the import flow has reached a terminal [PasswordsImporterState.Finished]
- * state, carrying the [PasswordsImporterResult]. Hosts typically use this to dismiss the surrounding UI.
+ * @param onFinished Invoked when the import flow has reached a terminal [PasswordsImporterState.Finished] state,
+ *   carrying the [PasswordsImporterResult]. Hosts typically use this to dismiss the surrounding UI.
  */
 @Composable
 fun PasswordsImporter(
     importer: PasswordsFileImporter,
     onFinished: (PasswordsImporterResult) -> Unit,
 ) {
-    val viewModel: PasswordsImporterViewModel = viewModel(
-        factory = PasswordsImporterViewModel.factory(importer),
-    )
+    val viewModel: PasswordsImporterViewModel = viewModel(factory = PasswordsImporterViewModel.factory(importer))
     val state by viewModel.store.stateFlow.collectAsState(initial = viewModel.store.state)
 
     when (val current = state) {
@@ -42,14 +40,14 @@ fun PasswordsImporter(
                     } else {
                         viewModel.store.dispatch(PasswordsImporterAction.FileSelectionCanceled)
                     }
-                },
+                }
             )
         }
         PasswordsImporterState.Loading -> {
             PasswordsImporterDialog(
                 onCancel = {
                     viewModel.store.dispatch(PasswordsImporterAction.ImportCanceled)
-                },
+                }
             )
         }
         is PasswordsImporterState.Finished -> {

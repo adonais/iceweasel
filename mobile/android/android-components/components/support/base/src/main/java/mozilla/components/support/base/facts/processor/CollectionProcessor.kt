@@ -30,7 +30,6 @@ class CollectionProcessor : FactProcessor {
          * Helper for creating a [CollectionProcessor], registering it and clearing the processors again.
          *
          * Use in tests like:
-         *
          * ```
          * CollectionProcessor.withFactCollection { facts ->
          *   // During execution of this block the "facts" list will be updated automatically to contain

@@ -10,7 +10,7 @@ and the states are defined in the `IPProtectionStates` object.
 The service transitions across the following states:
 
 - `UNINITIALIZED`: Service not initialized or feature disabled.
-- `UNAVAILABLE`: User not eligible (Nimbus) or signed out with no eligibility; UI hidden.
+- `UNAVAILABLE`: User not eligible (Nimbus), signed out with no eligibility, or the feature is not sufficiently localized for a user who never interacted with it; UI hidden.
 - `UNAUTHENTICATED`: User signed out but eligible; UI shows login.
 - `READY`: Ready to activate the proxy.
 
@@ -18,6 +18,7 @@ The service transitions across the following states:
 
 - Feature disabled → `UNINITIALIZED`.
 - During startup, if initialization isn’t complete, use cached state from `IPPStartupCache`.
+- Not eligible, or not localized enough for a user who never opened the panel → `UNAVAILABLE`.
 - Not signed in → `UNAVAILABLE` if not eligible, otherwise `UNAUTHENTICATED`.
 - If an entitlement is cached/valid → `READY`.
 - Otherwise, check enrollment with Guardian (via `IPPFxaActivateAuthProvider.updateEntitlement()`):

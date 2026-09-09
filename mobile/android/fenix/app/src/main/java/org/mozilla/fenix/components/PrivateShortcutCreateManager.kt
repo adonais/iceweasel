@@ -10,16 +10,15 @@ import android.content.Intent
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
+import java.util.UUID
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.home.intent.StartSearchIntentProcessor
 import org.mozilla.fenix.utils.IntentUtils
-import java.util.UUID
 
 /**
- * Interface for creating [PendingIntent]s.
- * This interface is used to abstract the creation of PendingIntents,
- * allowing for easier testing and dependency injection.
+ * Interface for creating [PendingIntent]s. This interface is used to abstract the creation of PendingIntents, allowing
+ * for easier testing and dependency injection.
  */
 interface PendingIntentFactory {
     /**
@@ -29,18 +28,16 @@ interface PendingIntentFactory {
      * @param requestCode Private request code for the sender.
      * @param intent Intent of the activity to be launched.
      * @param flags May be [PendingIntent.FLAG_ONE_SHOT], [PendingIntent.FLAG_NO_CREATE],
-     *              [PendingIntent.FLAG_CANCEL_CURRENT], [PendingIntent.FLAG_UPDATE_CURRENT],
-     *              [PendingIntent.FLAG_IMMUTABLE], or any of the flags as supported by
-     *              [Intent.fillIn] to control which parts of the intent that is updated.
-     * @return Returns an existing or new PendingIntent matching the given parameters.
-     *         May return null if the activity target is not found.
+     *   [PendingIntent.FLAG_CANCEL_CURRENT], [PendingIntent.FLAG_UPDATE_CURRENT], [PendingIntent.FLAG_IMMUTABLE], or
+     *   any of the flags as supported by [Intent.fillIn] to control which parts of the intent that is updated.
+     * @return Returns an existing or new PendingIntent matching the given parameters. May return null if the activity
+     *   target is not found.
      */
     fun createPendingIntent(context: Context, requestCode: Int, intent: Intent, flags: Int): PendingIntent?
 }
 
 /**
- * A default implementation of [PendingIntentFactory] that uses [PendingIntent.getActivity]
- * to create a [PendingIntent].
+ * A default implementation of [PendingIntentFactory] that uses [PendingIntent.getActivity] to create a [PendingIntent].
  */
 class DefaultPendingIntentFactory : PendingIntentFactory {
     override fun createPendingIntent(
@@ -56,11 +53,11 @@ class DefaultPendingIntentFactory : PendingIntentFactory {
 /**
  * Manages the creation of pinned shortcuts for private browsing mode.
  *
- * This class provides functionality to create a shortcut on the device's home screen
- * that directly opens the app in private browsing mode with the search bar focused.
+ * This class provides functionality to create a shortcut on the device's home screen that directly opens the app in
+ * private browsing mode with the search bar focused.
  *
- * @param shortcutManagerWrapper A wrapper around [ShortcutManagerCompat] used for interacting
- *                               with the system's shortcut manager.
+ * @param shortcutManagerWrapper A wrapper around [ShortcutManagerCompat] used for interacting with the system's
+ *   shortcut manager.
  * @param pendingIntentFactory A utility to create [PendingIntent] instances.
  */
 class PrivateShortcutCreateManager(
@@ -70,15 +67,15 @@ class PrivateShortcutCreateManager(
     /**
      * Creates a pinned shortcut for private browsing.
      *
-     * This function checks if pinning shortcuts is supported by the system.
-     * If supported, it creates a [ShortcutInfoCompat] object with the following properties:
+     * This function checks if pinning shortcuts is supported by the system. If supported, it creates a
+     * [ShortcutInfoCompat] object with the following properties:
      * - A unique ID generated using [UUID.randomUUID].
      * - Short and long labels derived from string resources.
      * - An icon loaded from a mipmap resource.
      * - An intent that launches [HomeActivity] in private browsing mode and opens the search bar.
      *
-     * After creating the shortcut, it requests the system to pin it.
-     * The `intentSender` for the pin request is configured to open the home screen.
+     * After creating the shortcut, it requests the system to pin it. The `intentSender` for the pin request is
+     * configured to open the home screen.
      *
      * @param context The application context.
      */
@@ -89,26 +86,29 @@ class PrivateShortcutCreateManager(
         val appName = context.getString(R.string.app_name)
         val privateShortcutLabel = context.getString(R.string.app_name_private_5, appName)
 
-        val shortcut = ShortcutInfoCompat.Builder(context, UUID.randomUUID().toString())
-            .setShortLabel(privateShortcutLabel)
-            .setLongLabel(privateShortcutLabel)
-            .setIcon(icon)
-            .setIntent(createPrivateHomeActivityIntent(context))
-            .build()
+        val shortcut =
+            ShortcutInfoCompat.Builder(context, UUID.randomUUID().toString())
+                .setShortLabel(privateShortcutLabel)
+                .setLongLabel(privateShortcutLabel)
+                .setIcon(icon)
+                .setIntent(createPrivateHomeActivityIntent(context))
+                .build()
 
-        val createPrivateShortcutIntentFlags = IntentUtils.DEFAULT_PENDING_INTENT_FLAGS or
-            PendingIntent.FLAG_UPDATE_CURRENT
+        val createPrivateShortcutIntentFlags =
+            IntentUtils.DEFAULT_PENDING_INTENT_FLAGS or PendingIntent.FLAG_UPDATE_CURRENT
 
-        val homeScreenIntent = Intent(Intent.ACTION_MAIN)
-            .addCategory(Intent.CATEGORY_HOME)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val homeScreenIntent =
+            Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-        val intentSender = pendingIntentFactory.createPendingIntent(
-            context,
-            0,
-            homeScreenIntent,
-            createPrivateShortcutIntentFlags,
-        )?.intentSender
+        val intentSender =
+            pendingIntentFactory
+                .createPendingIntent(
+                    context,
+                    0,
+                    homeScreenIntent,
+                    createPrivateShortcutIntentFlags,
+                )
+                ?.intentSender
 
         shortcutManagerWrapper.requestPinShortcut(context, shortcut, intentSender)
     }
@@ -120,8 +120,8 @@ class PrivateShortcutCreateManager(
      * - `action`: [Intent.ACTION_VIEW]
      * - `flags`: [Intent.FLAG_ACTIVITY_NEW_TASK] or [Intent.FLAG_ACTIVITY_CLEAR_TASK]
      * - `putExtra(HomeActivity.PRIVATE_BROWSING_MODE, true)`: Enables private browsing mode.
-     * - `putExtra(HomeActivity.OPEN_TO_SEARCH, StartSearchIntentProcessor.PRIVATE_BROWSING_PINNED_SHORTCUT)`:
-     *   Focuses the search bar upon launching.
+     * - `putExtra(HomeActivity.OPEN_TO_SEARCH, StartSearchIntentProcessor.PRIVATE_BROWSING_PINNED_SHORTCUT)`: Focuses
+     *   the search bar upon launching.
      *
      * @param context The application context.
      * @return An [Intent] configured to launch [HomeActivity] in private browsing mode with search.

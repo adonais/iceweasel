@@ -31,9 +31,9 @@ fun <T> JSONArray?.toList(): List<T> {
 }
 
 /**
- * Returns a list containing only the non-null results of applying the given [transform] function
- * to each element in the original collection as returned by [getFromArray]. If [getFromArray]
- * or [transform] throws a [JSONException], these elements will also be omitted.
+ * Returns a list containing only the non-null results of applying the given [transform] function to each element in the
+ * original collection as returned by [getFromArray]. If [getFromArray] or [transform] throws a [JSONException], these
+ * elements will also be omitted.
  *
  * Here's an example call:
  * ```kotlin
@@ -45,7 +45,9 @@ inline fun <T, R : Any> JSONArray.mapNotNull(getFromArray: JSONArray.(index: Int
     for (i in 0 until this.length()) {
         try {
             val transformed = transform(getFromArray(i))
-            if (transformed != null) { transformedResults.add(transformed) }
+            if (transformed != null) {
+                transformedResults.add(transformed)
+            }
         } catch (e: JSONException) {
             // Do nothing: we skip bad data.
         }
@@ -54,6 +56,7 @@ inline fun <T, R : Any> JSONArray.mapNotNull(getFromArray: JSONArray.(index: Int
     return transformedResults
 }
 
-fun Iterable<Any>.toJSONArray() = JSONArray().also { array ->
-    forEach { array.put(it) }
-}
+fun Iterable<Any>.toJSONArray() =
+    JSONArray().also { array ->
+        forEach { array.put(it) }
+    }

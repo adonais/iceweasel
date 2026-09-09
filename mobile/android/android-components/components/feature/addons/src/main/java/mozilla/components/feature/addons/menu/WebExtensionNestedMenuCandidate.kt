@@ -22,30 +22,34 @@ import mozilla.components.ui.icons.R as iconsR
 private fun createBackMenuItem(
     context: Context,
     @ColorInt webExtIconTintColor: Int?,
-) = NestedMenuCandidate(
-    id = iconsR.drawable.mozac_ic_back_24,
-    text = context.getString(R.string.mozac_feature_addons_addons),
-    start = DrawableMenuIcon(
-        context,
-        iconsR.drawable.mozac_ic_back_24,
-        tint = webExtIconTintColor,
-    ),
-    subMenuItems = null,
-)
+) =
+    NestedMenuCandidate(
+        id = iconsR.drawable.mozac_ic_back_24,
+        text = context.getString(R.string.mozac_feature_addons_addons),
+        start =
+            DrawableMenuIcon(
+                context,
+                iconsR.drawable.mozac_ic_back_24,
+                tint = webExtIconTintColor,
+            ),
+        subMenuItems = null,
+    )
 
 private fun createAddonsManagerItem(
     context: Context,
     @ColorInt webExtIconTintColor: Int?,
     onAddonsManagerTapped: () -> Unit,
-) = TextMenuCandidate(
-    text = context.getString(R.string.mozac_feature_addons_addons_manager),
-    start = DrawableMenuIcon(
-        context,
-        iconsR.drawable.mozac_ic_extension_24,
-        tint = webExtIconTintColor,
-    ),
-    onClick = onAddonsManagerTapped,
-)
+) =
+    TextMenuCandidate(
+        text = context.getString(R.string.mozac_feature_addons_addons_manager),
+        start =
+            DrawableMenuIcon(
+                context,
+                iconsR.drawable.mozac_ic_extension_24,
+                tint = webExtIconTintColor,
+            ),
+        onClick = onAddonsManagerTapped,
+    )
 
 private fun createWebExtensionSubMenuItems(
     context: Context,
@@ -63,23 +67,19 @@ private fun createWebExtensionSubMenuItems(
             val tabExtensionState = tab?.extensionState?.get(extension.id)
             extension.browserAction?.let { browserAction ->
                 menuItems.add(
-                    browserAction.copyWithOverride(tabExtensionState?.browserAction).createMenuCandidate(
-                        context,
-                    ) {
+                    browserAction.copyWithOverride(tabExtensionState?.browserAction).createMenuCandidate(context) {
                         onAddonsItemTapped(extension.id)
                         browserAction.onClick()
-                    },
+                    }
                 )
             }
 
             extension.pageAction?.let { pageAction ->
                 menuItems.add(
-                    pageAction.copyWithOverride(tabExtensionState?.pageAction).createMenuCandidate(
-                        context,
-                    ) {
+                    pageAction.copyWithOverride(tabExtensionState?.pageAction).createMenuCandidate(context) {
                         onAddonsItemTapped(extension.id)
                         pageAction.onClick()
-                    },
+                    }
                 )
             }
         }
@@ -92,10 +92,10 @@ private fun createWebExtensionSubMenuItems(
  *
  * @param tabId ID of tab used to load tab-specific extension state.
  * @param webExtIconTintColor Optional color used to tint the icons of back and add-ons manager menu items.
- * @param appendExtensionSubMenuAt If web extension sub menu should appear at the top (start) of
- * the menu, or if web extensions should appear at the bottom of the menu (end).
- * @param onAddonsItemTapped Callback to be invoked when a web extension action item is selected.
- * Can be used to emit telemetry.
+ * @param appendExtensionSubMenuAt If web extension sub menu should appear at the top (start) of the menu, or if web
+ *   extensions should appear at the bottom of the menu (end).
+ * @param onAddonsItemTapped Callback to be invoked when a web extension action item is selected. Can be used to emit
+ *   telemetry.
  * @param onAddonsManagerTapped Callback to be invoked when add-ons manager menu item is selected.
  */
 fun BrowserState.createWebExtensionMenuCandidate(
@@ -106,18 +106,20 @@ fun BrowserState.createWebExtensionMenuCandidate(
     onAddonsItemTapped: (String) -> Unit = {},
     onAddonsManagerTapped: () -> Unit = {},
 ): MenuCandidate {
-    val items = createWebExtensionSubMenuItems(
-        context,
-        extensions = extensions.values,
-        tab = findTabOrCustomTabOrSelectedTab(tabId),
-        onAddonsItemTapped = onAddonsItemTapped,
-    )
+    val items =
+        createWebExtensionSubMenuItems(
+            context,
+            extensions = extensions.values,
+            tab = findTabOrCustomTabOrSelectedTab(tabId),
+            onAddonsItemTapped = onAddonsItemTapped,
+        )
 
-    val addonsManagerItem = createAddonsManagerItem(
-        context,
-        webExtIconTintColor = webExtIconTintColor,
-        onAddonsManagerTapped = onAddonsManagerTapped,
-    )
+    val addonsManagerItem =
+        createAddonsManagerItem(
+            context,
+            webExtIconTintColor = webExtIconTintColor,
+            onAddonsManagerTapped = onAddonsManagerTapped,
+        )
 
     return if (items.isNotEmpty()) {
         val firstItem: MenuCandidate
@@ -137,12 +139,9 @@ fun BrowserState.createWebExtensionMenuCandidate(
             id = R.string.mozac_feature_addons_addons,
             text = context.getString(R.string.mozac_feature_addons_addons),
             start = addonsManagerItem.start,
-            subMenuItems = listOf(firstItem, DividerMenuCandidate()) +
-                items + listOf(DividerMenuCandidate(), lastItem),
+            subMenuItems = listOf(firstItem, DividerMenuCandidate()) + items + listOf(DividerMenuCandidate(), lastItem),
         )
     } else {
-        addonsManagerItem.copy(
-            text = context.getString(R.string.mozac_feature_addons_addons),
-        )
+        addonsManagerItem.copy(text = context.getString(R.string.mozac_feature_addons_addons))
     }
 }

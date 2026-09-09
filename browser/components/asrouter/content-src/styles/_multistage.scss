@@ -167,13 +167,13 @@ html {
 
       .section-secondary {
         // Swap the wide-layout hero image for the pink hero gradient. Each stop
-        // resolves to the flat #210340 in dark mode (see the smart-window
+        // resolves to the same flat color in dark mode (see the smart-window
         // gradient above for the same per-stop light-dark() pattern).
         background: linear-gradient(
           0deg,
-          light-dark(rgb(252, 245, 240), #210340) 0%,
-          light-dark(rgb(250, 236, 241), #210340) 57%,
-          light-dark(rgb(245, 212, 245), #210340) 100%
+          light-dark(rgb(252, 245, 240), var(--onboarding-dark-backdrop-color)) 0%,
+          light-dark(rgb(250, 236, 241), var(--onboarding-dark-backdrop-color)) 57%,
+          light-dark(rgb(245, 212, 245), var(--onboarding-dark-backdrop-color)) 100%
         );
         height: auto;
         min-height: $small-secondary-section-height;
@@ -255,6 +255,18 @@ html {
   --screen-1-yellow-circle-background-color: var(--color-purple-60);
   --screen-2-yellow-circle-background-color: var(--color-pink-50);
   --message-bar-icon-color: light-dark(var(--color-blue-60), var(--color-blue-20));
+  // Dark value is #271C48 under Nova. The light value is a placeholder so the
+  // row stays readable in light mode; design has only specified the dark one.
+  --multi-select-card-background-color: light-dark(var(--color-violet-10), var(--color-violet-80));
+  // The notice reads as a lighter panel than the card row it belongs to: the
+  // dark values sample as the card colour at 30% over the screen backdrop, with
+  // a faint violet border. Light values are chosen to keep the same
+  // relationship; design has only specified the dark ones.
+  --multi-select-notice-background-color: light-dark(color-mix(in srgb, var(--color-violet-10) 40%, transparent), color-mix(in srgb, var(--color-violet-80) 30%, transparent));
+  --multi-select-notice-border-color: light-dark(color-mix(in srgb, var(--color-violet-70) 15%, transparent), color-mix(in srgb, var(--color-violet-30) 10%, transparent));
+  --multi-select-notice-icon-color: light-dark(var(--color-violet-70), var(--color-violet-30));
+  --onboarding-dark-backdrop-color: #210340;
+  --center-large-glow-color: light-dark(var(--color-white), var(--onboarding-dark-backdrop-color));
 
   @media (forced-colors: active) {
     --picker-background-color: ButtonFace;
@@ -262,9 +274,13 @@ html {
     --picker-border-color: ButtonText;
     --picker-checked-border-color: var(--picker-border-color);
     --picker-hover-border-color: SelectedItem;
-    --picker-focus-ring-color: CanvasText;
     --picker-checkbox-color: ButtonText;
     --picker-checkbox-hover-color: SelectedItem;
+    --picker-focus-ring-color: CanvasText;
+    --multi-select-card-background-color: ButtonFace;
+    --multi-select-notice-background-color: ButtonFace;
+    --multi-select-notice-border-color: ButtonText;
+    --multi-select-notice-icon-color: ButtonText;
   }
 
   font-family: system-ui;
@@ -318,6 +334,116 @@ html {
     height: auto;
     display: flex;
     flex-direction: column;
+  }
+
+  &:has([pos='center-large'][fullscreen]) {
+    .section-main {
+      height: 90%;
+      width: 90%;
+      margin: auto;
+
+      .main-content {
+        box-shadow: none;
+        position: relative;
+        justify-content: center;
+        // Prevent the blurred "glow" on the child component
+        // from getting clipped and creating a sharp border
+        // at smaller screen sizes
+        overflow: visible;
+
+        > .secondary-buttons-top-container,
+        > .secondary-cta.top {
+          position: static;
+          align-self: flex-end;
+          padding-block: var(--space-large);
+          padding-inline-end: var(--space-xxlarge);
+        }
+
+        .secondary-buttons-top-container .secondary-cta.top {
+          padding-inline-end: 0;
+        }
+
+        @media not (prefers-contrast) {
+          background-color: transparent;
+        }
+
+        .main-content-inner {
+          position: relative;
+          width: 50%;
+          margin: auto;
+          // Size to content instead of stretching to fill .main-content, so the
+          // glow behind it hugs the rendered content's actual height instead of
+          // the full card.
+          flex-grow: 0;
+          justify-content: center;
+
+          @media (width <= 720px) {
+            width: 80%;
+          }
+
+          @media not (prefers-contrast) {
+            &::before {
+              content: '';
+              position: absolute;
+              inset-inline: -100px;
+              margin: auto;
+              z-index: -1;
+              width: calc(100% + 200px);
+              height: calc(100% + 120px);
+              border-radius: 50%;
+              background-color: var(--center-large-glow-color);
+              filter: blur(70px);
+              pointer-events: none;
+            }
+          }
+        }
+      }
+    }
+
+    .corner-image-container {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+
+      @media (width <= 720px) {
+        display: none;
+      }
+
+      .brand-logo {
+        margin-block: 0;
+      }
+
+      .corner-image {
+        position: absolute;
+
+        &.bottom-left {
+          bottom: -10px;
+          left: 20px;
+        }
+
+        &.bottom-right {
+          bottom: -10px;
+          right: 20px;
+        }
+
+        &.top-left {
+          top: -10px;
+          left: 20px;
+        }
+
+        &.top-right {
+          top: -10px;
+          right: 20px;
+        }
+      }
+    }
+
+    &:has(theme-picker) {
+      .content-tile {
+        margin-inline: auto;
+      }
+    }
   }
 
   .section-main {
@@ -720,7 +846,7 @@ html {
       }
     }
 
-    &:not([pos='split']) {
+    &:not([pos='split'], [pos='center-large']) {
       .secondary-cta {
         .secondary {
           @include text-link-styles;
@@ -1910,6 +2036,15 @@ html {
     @include text-link-styles;
   }
 
+  .inline-icon {
+    -moz-context-properties: fill;
+    fill: currentColor;
+    block-size: 1.2em;
+    inline-size: auto;
+    vertical-align: middle;
+    margin-inline: 0.15em;
+  }
+
   .welcome-text {
     display: flex;
     flex-direction: column;
@@ -2398,6 +2533,102 @@ html {
         flex-grow: 0;
         flex-shrink: 0;
       }
+    }
+
+    .multi-select-item-group {
+      align-self: stretch;
+      text-align: initial;
+    }
+
+    // Full-width rows with the label on the inline-start edge and the checkbox
+    // on the inline-end edge. `row-reverse` flips them visually while leaving
+    // the input before its label in the DOM, so the label association and
+    // focus order are unchanged.
+    // Not named "card": the design value becomes a class on the container, and
+    // in-content/common.css — which the Spotlight loads — has a global `.card`
+    // utility that would paint its own background, border and box-shadow here.
+    &.select-card {
+      align-items: stretch;
+      gap: var(--space-medium);
+      // The default container is inset from the content column; card rows are
+      // meant to line up with it.
+      margin-block: 0;
+      margin-inline: 0;
+      padding: 0;
+
+      .checkbox-container.multi-select-item {
+        flex-direction: row-reverse;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--space-medium);
+        padding: var(--space-xxlarge);
+        border-radius: var(--border-radius-medium);
+        background-color: var(--multi-select-card-background-color);
+        font-size: 16px;
+
+        @media (forced-colors: active) {
+          border: 1px solid ButtonText;
+        }
+
+        label {
+          flex: 1 1 auto;
+          margin: 0;
+          color: var(--text-color);
+        }
+
+        > input {
+          margin: 0;
+        }
+      }
+    }
+
+    // Kept in the DOM while empty so that assistive technology announces the
+    // notice when it is revealed. An empty div generates no box of its own.
+    .multi-select-notice-region:not(:empty) {
+      display: block;
+      margin-block-start: var(--space-small);
+    }
+
+    .multi-select-notice {
+      display: flex;
+      align-items: center;
+      gap: var(--space-small);
+      padding: var(--space-large);
+      border: 1px solid var(--multi-select-notice-border-color);
+      border-radius: var(--border-radius-medium);
+      background-color: var(--multi-select-notice-background-color);
+      font-size: 15px;
+
+      @media (prefers-reduced-motion: no-preference) {
+        animation: fadein 0.2s;
+      }
+    }
+
+    .multi-select-notice-icon {
+      flex: 0 0 auto;
+      width: var(--size-item-small);
+      height: var(--size-item-small);
+      background-image: url('chrome://global/skin/icons/info.svg');
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: contain;
+      -moz-context-properties: fill;
+      fill: var(--multi-select-notice-icon-color);
+    }
+
+    .multi-select-notice-content {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .multi-select-notice-title {
+      margin-block: 0;
+      font-weight: var(--font-weight-bold);
+      color: var(--text-color);
+    }
+
+    .multi-select-notice-subtitle {
+      margin-block: var(--space-xxsmall) 0;
     }
   }
 
@@ -3170,6 +3401,10 @@ html {
         inset-block: 4px;
         inset-inline-start: 0;
         border-inline-start: 1px solid var(--button-border-color);
+      }
+
+      .fxms-multi-stage-submenu {
+        text-align: start;
       }
     }
 

@@ -14,18 +14,16 @@ import android.content.pm.ResolveInfo
 import android.os.Build
 
 /**
- * Compatibility layer over [PackageManagerWrapper] APIs, providing safe access to common
- * package management operations across Android versions.
+ * Compatibility layer over [PackageManagerWrapper] APIs, providing safe access to common package management operations
+ * across Android versions.
  */
 interface PackageManagerCompatHelper {
     /**
      * Get [ResolveInfo] list for an [Intent] with the specified flag.
      *
      * @param intent the [intent] to resolve.
-     *
-     * @return a list of [ResolveInfo] objects containing one entry for each matching activity,
-     * ordered from best to worst. If there are no matching activities, an empty list is returned.
-     *
+     * @return a list of [ResolveInfo] objects containing one entry for each matching activity, ordered from best to
+     *   worst. If there are no matching activities, an empty list is returned.
      * @see PackageManager.queryIntentActivities
      */
     fun queryIntentActivitiesCompat(intent: Intent, flag: Int): List<ResolveInfo>
@@ -34,10 +32,8 @@ interface PackageManagerCompatHelper {
      * Get [ResolveInfo] for an [Intent] with a specified flag
      *
      * @param intent the [intent] to resolve.
-     *
-     * @return a [ResolveInfo] object containing the final activity intent that was determined to be
-     * the best action. Returns `null` if no matching activity was found.
-     *
+     * @return a [ResolveInfo] object containing the final activity intent that was determined to be the best action.
+     *   Returns `null` if no matching activity was found.
      * @see PackageManager.resolveActivity
      */
     fun resolveActivityCompat(intent: Intent, flag: Int): ResolveInfo?
@@ -46,12 +42,9 @@ interface PackageManagerCompatHelper {
      * Get a [PackageInfo] with a specified flag.
      *
      * @param packageName The name of the package to check for.
-     *
      * @return a [PackageInfo] object containing information about the package.
-     *
      * @throws PackageManager.NameNotFoundException if the package for [packageName] is not installed.
      * @throws UnsupportedOperationException if [PackageManager.getPackageInfo] is not implemented in subclass.
-     *
      * @see PackageManager.getPackageInfo
      */
     @Throws(PackageManager.NameNotFoundException::class, UnsupportedOperationException::class)
@@ -61,12 +54,9 @@ interface PackageManagerCompatHelper {
      * Get [ApplicationInfo] with the specified flag
      *
      * @param packageName The URI host.
-     *
      * @return An [ApplicationInfo] containing information about the package.
-     *
      * @throws PackageManager.NameNotFoundException if the package for [packageName] is not installed.
      * @throws UnsupportedOperationException if [PackageManager.getApplicationInfo] is not implemented in subclass.
-     *
      * @see PackageManager.getApplicationInfo
      */
     @Throws(PackageManager.NameNotFoundException::class, UnsupportedOperationException::class)
@@ -78,9 +68,7 @@ interface PackageManagerCompatHelper {
  *
  * @param packageManagerWrapper the [PackageManagerWrapper] to use.
  */
-class DefaultPackageManagerCompatHelper(
-    val packageManagerWrapper: PackageManagerWrapper,
-) : PackageManagerCompatHelper {
+class DefaultPackageManagerCompatHelper(val packageManagerWrapper: PackageManagerWrapper) : PackageManagerCompatHelper {
     override fun queryIntentActivitiesCompat(intent: Intent, flag: Int): List<ResolveInfo> {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             packageManagerWrapper.queryIntentActivities(
@@ -88,8 +76,7 @@ class DefaultPackageManagerCompatHelper(
                 ResolveInfoFlags.of(flag.toLong()),
             )
         } else {
-            @Suppress("DEPRECATION")
-            packageManagerWrapper.queryIntentActivities(intent, flag)
+            @Suppress("DEPRECATION") packageManagerWrapper.queryIntentActivities(intent, flag)
         }
     }
 
@@ -100,8 +87,7 @@ class DefaultPackageManagerCompatHelper(
                 ResolveInfoFlags.of(flag.toLong()),
             )
         } else {
-            @Suppress("DEPRECATION")
-            packageManagerWrapper.resolveActivity(intent, flag)
+            @Suppress("DEPRECATION") packageManagerWrapper.resolveActivity(intent, flag)
         }
     }
 
@@ -112,8 +98,7 @@ class DefaultPackageManagerCompatHelper(
                 PackageInfoFlags.of(flag.toLong()),
             )
         } else {
-            @Suppress("DEPRECATION")
-            packageManagerWrapper.getPackageInfo(packageName, flag)
+            @Suppress("DEPRECATION") packageManagerWrapper.getPackageInfo(packageName, flag)
         }
     }
 
@@ -124,8 +109,7 @@ class DefaultPackageManagerCompatHelper(
                 PackageManager.ApplicationInfoFlags.of(flag.toLong()),
             )
         } else {
-            @Suppress("DEPRECATION")
-            packageManagerWrapper.getApplicationInfo(packageName, flag)
+            @Suppress("DEPRECATION") packageManagerWrapper.getApplicationInfo(packageName, flag)
         }
     }
 }

@@ -6,18 +6,17 @@ package org.mozilla.fenix.components
 
 import android.content.Context
 import androidx.paging.DataSource
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mozilla.components.concept.engine.permission.SitePermissions
 import mozilla.components.concept.engine.permission.SitePermissionsStorage
 import org.mozilla.fenix.ext.components
-import kotlin.coroutines.CoroutineContext
 
 class PermissionStorage(
     private val context: Context,
     private val dispatcher: CoroutineContext = Dispatchers.IO,
-    internal val permissionsStorage: SitePermissionsStorage =
-        context.components.core.geckoSitePermissionsStorage,
+    internal val permissionsStorage: SitePermissionsStorage = context.components.core.geckoSitePermissionsStorage,
 ) {
 
     /**
@@ -26,9 +25,10 @@ class PermissionStorage(
      * @param sitePermissions The [SitePermissions] to be stored.
      * @param private Indicates if the [SitePermissions] belongs to a private session.
      */
-    suspend fun add(sitePermissions: SitePermissions, private: Boolean) = withContext(dispatcher) {
-        permissionsStorage.save(sitePermissions, private = private)
-    }
+    suspend fun add(sitePermissions: SitePermissions, private: Boolean) =
+        withContext(dispatcher) {
+            permissionsStorage.save(sitePermissions, private = private)
+        }
 
     /**
      * Finds all [SitePermissions] that match the [origin].
@@ -67,16 +67,17 @@ class PermissionStorage(
 
     /**
      * Deletes all sitePermissions that match the sitePermissions provided as a parameter.
+     *
      * @param sitePermissions The [SitePermissions] to be deleted from the storage.
      */
-    suspend fun deleteSitePermissions(sitePermissions: SitePermissions) = withContext(dispatcher) {
-        permissionsStorage.remove(sitePermissions, private = false)
-    }
+    suspend fun deleteSitePermissions(sitePermissions: SitePermissions) =
+        withContext(dispatcher) {
+            permissionsStorage.remove(sitePermissions, private = false)
+        }
 
-    /**
-     * Deletes all sitePermissions sitePermissions.
-     */
-    suspend fun deleteAllSitePermissions() = withContext(dispatcher) {
-        permissionsStorage.removeAll()
-    }
+    /** Deletes all sitePermissions sitePermissions. */
+    suspend fun deleteAllSitePermissions() =
+        withContext(dispatcher) {
+            permissionsStorage.removeAll()
+        }
 }

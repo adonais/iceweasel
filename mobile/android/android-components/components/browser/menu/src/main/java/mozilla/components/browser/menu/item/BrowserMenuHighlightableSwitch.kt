@@ -25,8 +25,8 @@ import mozilla.components.concept.menu.candidate.LowPriorityHighlightEffect
  *
  * @param label The visible label of this menu item.
  * @param isCollapsingMenuLimit Whether this menu item can serve as the limit of a collapsing menu.
- * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards
- * depending on the menu position).
+ * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards depending on the menu
+ *   position).
  * @param initialState The initial value the checkbox should have.
  * @param listener Callback to be invoked when this menu item is checked.
  */
@@ -88,9 +88,10 @@ class BrowserMenuHighlightableSwitch(
         return if (isHighlighted()) {
             base.copy(
                 text = highlight.label ?: label,
-                start = (base.start as? DrawableMenuIcon)?.copy(
-                    effect = LowPriorityHighlightEffect(notificationTint = highlight.notificationTint),
-                ),
+                start =
+                    (base.start as? DrawableMenuIcon)?.copy(
+                        effect = LowPriorityHighlightEffect(notificationTint = highlight.notificationTint)
+                    ),
             )
         } else {
             base

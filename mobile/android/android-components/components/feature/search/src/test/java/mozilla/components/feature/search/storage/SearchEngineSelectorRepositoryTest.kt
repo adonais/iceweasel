@@ -4,6 +4,8 @@
 
 package mozilla.components.feature.search.storage
 
+import java.util.Locale
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.remotesettings.RemoteSettingsClient
@@ -27,8 +29,6 @@ import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import java.util.Locale
-import kotlin.coroutines.CoroutineContext
 
 class SearchEngineSelectorRepositoryTest {
 
@@ -47,32 +47,35 @@ class SearchEngineSelectorRepositoryTest {
         searchConfigIconsUpdateService = mock<SearchConfigIconsUpdateService>()
 
         // Mocking SearchEngineSelectorConfig with a fake app configuration
-        mockConfig = SearchEngineSelectorConfig(
-            appName = SearchApplicationName.FIREFOX_ANDROID,
-            appVersion = "1.0.0",
-            deviceType = SearchDeviceType.SMARTPHONE,
-            experiment = "test_experiment",
-            updateChannel = SearchUpdateChannel.RELEASE,
-            service = mockService,
-        )
+        mockConfig =
+            SearchEngineSelectorConfig(
+                appName = SearchApplicationName.FIREFOX_ANDROID,
+                appVersion = "1.0.0",
+                deviceType = SearchDeviceType.SMARTPHONE,
+                experiment = "test_experiment",
+                updateChannel = SearchUpdateChannel.RELEASE,
+                service = mockService,
+            )
 
         // Mock the useRemoteSettingsServer to avoid API calls
         doNothing().`when`(mockSelector).useRemoteSettingsServer(service = any(), applyEngineOverrides = eq(false))
 
         // Instantiate the repository with the mocked config
-        repository = SearchEngineSelectorRepository(
-            context = mock(),
-            searchEngineSelectorConfig = mockConfig,
-            defaultSearchEngineIcon = mock(),
-            selector = mockSelector,
-            client = mockClient,
-        )
+        repository =
+            SearchEngineSelectorRepository(
+                context = mock(),
+                searchEngineSelectorConfig = mockConfig,
+                defaultSearchEngineIcon = mock(),
+                selector = mockSelector,
+                client = mockClient,
+            )
     }
 
     @Test
     fun `test repository initialization calls useRemoteSettingsServer`() {
         // Verify that useRemoteSettingsServer was called once with correct arguments
-        verify(mockSelector, times(1)).useRemoteSettingsServer(service = mockService.remoteSettingsService, applyEngineOverrides = false)
+        verify(mockSelector, times(1))
+            .useRemoteSettingsServer(service = mockService.remoteSettingsService, applyEngineOverrides = false)
     }
 
     @Test
@@ -83,17 +86,19 @@ class SearchEngineSelectorRepositoryTest {
         val fakeSearchExtraParams: SearchExtraParams? = null
         val fakeCoroutineContext: CoroutineContext = StandardTestDispatcher()
 
-        val expectedBundle = SearchMiddleware.BundleStorage.Bundle(
-            emptyList(),
-            defaultSearchEngineId = "",
-            searchEnvironmentId = null,
-        )
+        val expectedBundle =
+            SearchMiddleware.BundleStorage.Bundle(
+                emptyList(),
+                defaultSearchEngineId = "",
+                searchEnvironmentId = null,
+            )
 
-        val expectedConfig = RefinedSearchConfig(
-            emptyList(),
-            appDefaultEngineId = null,
-            appPrivateDefaultEngineId = null,
-        ) // Fake response
+        val expectedConfig =
+            RefinedSearchConfig(
+                emptyList(),
+                appDefaultEngineId = null,
+                appPrivateDefaultEngineId = null,
+            ) // Fake response
 
         // Mock the filterEngineConfiguration to return our fake config
         `when`(mockSelector.filterEngineConfiguration(any())).thenReturn(expectedConfig)
@@ -102,7 +107,8 @@ class SearchEngineSelectorRepositoryTest {
         `when`(searchConfigIconsUpdateService.fetchIconsRecords(any())).thenReturn(emptyList())
 
         // Run the repository load function
-        val result = repository.load(fakeRegion, fakeLocale, fakeDistribution, fakeSearchExtraParams, fakeCoroutineContext)
+        val result =
+            repository.load(fakeRegion, fakeLocale, fakeDistribution, fakeSearchExtraParams, fakeCoroutineContext)
 
         // Verify that filterEngineConfiguration was called once
         verify(mockSelector, times(1)).filterEngineConfiguration(any())
@@ -119,17 +125,19 @@ class SearchEngineSelectorRepositoryTest {
         val fakeSearchExtraParams: SearchExtraParams? = null
         val fakeCoroutineContext: CoroutineContext = StandardTestDispatcher()
 
-        val expectedBundle = SearchMiddleware.BundleStorage.Bundle(
-            emptyList(),
-            defaultSearchEngineId = "",
-            searchEnvironmentId = null,
-        )
+        val expectedBundle =
+            SearchMiddleware.BundleStorage.Bundle(
+                emptyList(),
+                defaultSearchEngineId = "",
+                searchEnvironmentId = null,
+            )
 
-        val expectedConfig = RefinedSearchConfig(
-            emptyList(),
-            appDefaultEngineId = null,
-            appPrivateDefaultEngineId = null,
-        ) // Fake response
+        val expectedConfig =
+            RefinedSearchConfig(
+                emptyList(),
+                appDefaultEngineId = null,
+                appPrivateDefaultEngineId = null,
+            ) // Fake response
 
         // Mock the filterEngineConfiguration to return our fake config
         `when`(mockSelector.filterEngineConfiguration(any())).thenReturn(expectedConfig)
@@ -138,7 +146,8 @@ class SearchEngineSelectorRepositoryTest {
         `when`(searchConfigIconsUpdateService.fetchIconsRecords(any())).thenReturn(emptyList())
 
         // Run the repository load function
-        val result = repository.load(fakeRegion, fakeLocale, fakeDistribution, fakeSearchExtraParams, fakeCoroutineContext)
+        val result =
+            repository.load(fakeRegion, fakeLocale, fakeDistribution, fakeSearchExtraParams, fakeCoroutineContext)
 
         // Verify that filterEngineConfiguration was called once
         verify(mockSelector, times(1)).filterEngineConfiguration(any())

@@ -5,3 +5,8 @@
 DevToolsModules(
     "css-properties.json",
 )
+
+# Available during tests at resource://testing-common/devtools/compatibility
+TESTING_JS_MODULES.devtools.compatibility += [
+    "mock-css-properties.json",
+]

@@ -135,6 +135,21 @@ mapping:
         destinations:
             - ${year}/${month}/${upload_date}-${branch}
             - latest-${branch}
+    RPM-KEY:
+        <<: *default
+        from:
+            - repackage-rpm-signing
+        description: "Public GPG Key used to sign the .rpm packages, without the revoked subkeys that rpm chokes on"
+        pretty_name: RPM-KEY
+        checksums_path: RPM-KEY
+        only_for_platforms:
+            - linux64-shippable
+            - linux64-aarch64-shippable
+            - linux64-devedition
+            - linux64-aarch64-devedition
+        destinations:
+            - ${year}/${month}/${upload_date}-${branch}
+            - latest-${branch}
     target.crashreporter-symbols.zip:
         <<: *default
         description: "Crashreporter symbols to be consumed by Socorro"

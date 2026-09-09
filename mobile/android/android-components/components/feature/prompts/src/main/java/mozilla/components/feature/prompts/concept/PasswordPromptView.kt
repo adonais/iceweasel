@@ -4,24 +4,15 @@
 
 package mozilla.components.feature.prompts.concept
 
-/**
- * A prompt for displaying a generated strong password.
- */
+/** A prompt for displaying a generated strong password. */
 interface PasswordPromptView : ToggleablePrompt {
 
-    /**
-     * Listener for user interactions with the prompt.
-     *
-     */
+    /** Listener for user interactions with the prompt. */
     var passwordPromptListener: Listener?
 
-    /**
-     * Interface to allow a class to listen to generated strong password event events.
-     */
+    /** Interface to allow a class to listen to generated strong password event events. */
     interface Listener {
-        /**
-         * Called when a user clicks on the password generator prompt
-         */
+        /** Called when a user clicks on the password generator prompt */
         fun onGeneratedPasswordPromptClick()
     }
 }

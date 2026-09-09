@@ -9,20 +9,25 @@
 #include "TransportSecurityInfo.h"
 #include "brotli/decode.h"
 #include "brotli/encode.h"
+#include "mozIStorageConnection.h"
+#include "mozIStorageService.h"
+#include "mozIStorageStatement.h"
+#include "mozStorageCID.h"
+#include "mozStorageHelper.h"
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/Components.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
+#include "mozilla/Span.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/glean/NetwerkMetrics.h"
-#include "mozilla/ipc/ByteBuf.h"
 #include "mozilla/net/SocketProcessChild.h"
 #include "mozilla/net/SocketProcessParent.h"
-#include "mozilla/net/ssl_tokens_cache.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsIEventTarget.h"
@@ -36,10 +41,27 @@
 #include "sslexp.h"
 #include "xpcpublic.h"
 
+#define SSL_TOKENS_CACHE_DB_FILE "ssl_tokens_cache.sqlite"
+
+constexpr int32_t kSSLTokensCacheSchemaVersion = 1;
+
 namespace mozilla {
 namespace net {
 
 static LazyLogModule gSSLTokensCacheLog("SSLTokensCache");
+
+// Main thread only: <profile>/ssl_tokens_cache.sqlite, or null if no profile.
+static already_AddRefed<nsIFile> ProfileDBFile() {
+  MOZ_ASSERT(NS_IsMainThread());
+  nsCOMPtr<nsIFile> file;
+  if (NS_FAILED(NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
+                                       getter_AddRefs(file)))) {
+    return nullptr;
+  }
+  file->AppendNative(nsLiteralCString(SSL_TOKENS_CACHE_DB_FILE));
+  return file.forget();
+}
+
 #undef LOG
 #define LOG(args) MOZ_LOG(gSSLTokensCacheLog, mozilla::LogLevel::Debug, args)
 #undef LOG5_ENABLED
@@ -87,7 +109,13 @@ SessionCacheInfo SessionCacheInfo::Clone() const {
 //   [1: has_succeeded_chain] if 1: [1: count] then for each [4: len][bytes]
 //   [1: has_handshake_certs] if 1: [1: count] then for each [4: len][bytes]
 //
-// Stored compressed with a 4-byte LE original-size prefix.
+// Stored compressed with an LE original-size prefix.
+static constexpr size_t kOriginalLenSize = sizeof(uint32_t);
+
+// Sanity bounds on the length fields above.
+static constexpr uint32_t kMaxPayloadSize = 256 * 1024;
+static constexpr uint32_t kMaxTokenSize = 256 * 1024;
+static constexpr uint32_t kMaxCertSize = 0xffff;
 
 template <typename T>
 static void AppendLE(nsTArray<uint8_t>& aBuf, T aVal) {
@@ -129,32 +157,43 @@ static nsTArray<uint8_t> SerializeRecord(Span<const uint8_t> aToken,
   return buf;
 }
 
+// Records are compressed on the socket thread during the handshake. Quality 1
+// encodes ~3.5x faster than 5 for ~5% larger output, and the cache is bounded
+// in bytes, so that costs cached sessions rather than memory. Quality 2 to 4
+// compress this data worse than 1 for no speed gain.
+static constexpr int kRecordCompressionQuality = 1;
+
 // Returns empty array on failure.
 static nsTArray<uint8_t> CompressRecord(Span<const uint8_t> aPayload) {
-  size_t bound = BrotliEncoderMaxCompressedSize(aPayload.Length());
+  nsTArray<uint8_t> encoded;
+  if (!encoded.SetLength(BrotliEncoderMaxCompressedSize(aPayload.Length()),
+                         fallible)) {
+    return {};
+  }
+  size_t encodedSize = encoded.Length();
+  if (!BrotliEncoderCompress(kRecordCompressionQuality, BROTLI_DEFAULT_WINDOW,
+                             BROTLI_MODE_GENERIC, aPayload.Length(),
+                             aPayload.Elements(), &encodedSize,
+                             encoded.Elements())) {
+    return {};
+  }
+
   nsTArray<uint8_t> result;
-  if (!result.SetLength(4 + bound, fallible)) {
+  if (!result.SetCapacity(kOriginalLenSize + encodedSize, fallible)) {
     return {};
   }
-  uint32_t originalLen = AssertedCast<uint32_t>(aPayload.Length());
-  LittleEndian::writeUint32(result.Elements(), originalLen);
-  size_t encodedSize = bound;
-  if (!BrotliEncoderCompress(5, BROTLI_DEFAULT_WINDOW, BROTLI_MODE_GENERIC,
-                             aPayload.Length(), aPayload.Elements(),
-                             &encodedSize, result.Elements() + 4)) {
-    return {};
-  }
-  result.TruncateLength(4 + encodedSize);
+  AppendLE(result, AssertedCast<uint32_t>(aPayload.Length()));
+  result.AppendElements(encoded.Elements(), encodedSize);
   return result;
 }
 
 // Returns empty array on failure.
 static nsTArray<uint8_t> DecompressRecord(Span<const uint8_t> aCompressed) {
-  if (aCompressed.Length() < 4) {
+  if (aCompressed.Length() < kOriginalLenSize) {
     return {};
   }
   uint32_t originalLen = LittleEndian::readUint32(aCompressed.Elements());
-  if (originalLen > 256 * 1024) {
+  if (originalLen > kMaxPayloadSize) {
     LOG(("SSLTokensCache: implausible payload originalLen %" PRIu32,
          originalLen));
     return {};
@@ -163,10 +202,10 @@ static nsTArray<uint8_t> DecompressRecord(Span<const uint8_t> aCompressed) {
   if (!result.SetLength(originalLen, fallible)) {
     return {};
   }
+  auto encoded = aCompressed.From(kOriginalLenSize);
   size_t decodedSize = originalLen;
   BrotliDecoderResult r = BrotliDecoderDecompress(
-      aCompressed.Length() - 4, aCompressed.Elements() + 4, &decodedSize,
-      result.Elements());
+      encoded.Length(), encoded.Elements(), &decodedSize, result.Elements());
   if (r != BROTLI_DECODER_RESULT_SUCCESS || decodedSize != originalLen) {
     return {};
   }
@@ -207,7 +246,7 @@ static bool DeserializeRecord(Span<const uint8_t> aBuf,
 
   uint32_t tokenLen;
   if (!r.Read(tokenLen)) return false;
-  if (tokenLen > 256 * 1024) return false;
+  if (tokenLen > kMaxTokenSize) return false;
   if (!r.Bytes(aToken, tokenLen)) return false;
 
   uint8_t evStatus;
@@ -238,7 +277,7 @@ static bool DeserializeRecord(Span<const uint8_t> aBuf,
 
   uint32_t serverCertLen;
   if (!r.Read(serverCertLen)) return false;
-  if (serverCertLen > 64 * 1024) return false;
+  if (serverCertLen > kMaxCertSize) return false;
   if (!r.Bytes(aInfo.mServerCertBytes, serverCertLen)) return false;
 
   auto readChain = [&](Maybe<nsTArray<nsTArray<uint8_t>>>& aChain) -> bool {
@@ -254,7 +293,7 @@ static bool DeserializeRecord(Span<const uint8_t> aBuf,
     for (uint8_t i = 0; i < count; i++) {
       uint32_t certLen;
       if (!r.Read(certLen)) return false;
-      if (certLen > 64 * 1024) return false;
+      if (certLen > kMaxCertSize) return false;
       nsTArray<uint8_t> cert;
       if (!r.Bytes(cert, certLen)) return false;
       chain.AppendElement(std::move(cert));
@@ -344,22 +383,6 @@ void SSLTokensCache::RemoveMatchingLocked(Pred&& aPredicate) {
   }
 }
 
-// static
-void SSLTokensCache::PutFromPersistedCallback(
-    void* aCtx, const SslTokensPersistedRecord* aRec) {
-  auto* ctx = static_cast<PersistedPutCtx*>(aCtx);
-  (void)PutFromPersisted(aRec, ctx->loadGen, ctx->restored);
-}
-
-// static
-void SSLTokensCache::LoadCallback(void* aCtx,
-                                  const SslTokensPersistedRecord* aRec) {
-  auto* ctx = static_cast<LoadCtx*>(aCtx);
-  if (PutFromPersisted(aRec, ctx->loadGen, /* aRestored */ true)) {
-    ctx->count++;
-  }
-}
-
 void SSLTokensCache::ClearCacheLocked() {
   sLock.AssertCurrentThreadOwns();
   mLoadGeneration++;
@@ -369,9 +392,14 @@ void SSLTokensCache::ClearCacheLocked() {
 }
 
 // static
-nsTArray<uint8_t> SSLTokensCache::SerializeForIPC() {
+nsTArray<SSLTokensCacheRecordInfo> SSLTokensCache::SerializeForIPC() {
   StaticMutexAutoLock lock(sLock);
-  return SerializeSnapshotLocked();
+  nsTArray<SSLTokensCacheRecordInfo> records;
+  if (gInstance) {
+    gInstance->CollectRecordInfosLocked(records,
+                                        /* aFilterForPersistence */ true);
+  }
+  return records;
 }
 
 void SSLTokensCache::CollectRecordInfosLocked(
@@ -436,36 +464,39 @@ bool SSLTokensCache::DecodeCompressedPayload(Span<const uint8_t> aCompressed,
 }
 
 // static
-void SSLTokensCache::DeserializeFromIPC(Span<const uint8_t> aData,
-                                        bool aRestored) {
-  if (aData.IsEmpty()) {
+void SSLTokensCache::DeserializeFromIPC(
+    nsTArray<SSLTokensCacheRecordInfo>&& aRecords, bool aRestored) {
+  if (aRecords.IsEmpty()) {
     return;
   }
-  PersistedPutCtx ctx{0, aRestored};
+  uint32_t loadGen = 0;
   {
     StaticMutexAutoLock lock(sLock);
     if (!gInstance) {
       return;
     }
     gInstance->ClearCacheLocked();
-    ctx.loadGen = gInstance->mLoadGeneration;
+    loadGen = gInstance->mLoadGeneration;
   }
-  // callback is invoked synchronously within ssl_tokens_cache_deserialize_ipc,
-  // so &ctx remains valid for the entire call.
-  ssl_tokens_cache_deserialize_ipc(aData.data(), aData.Length(), PR_Now(),
-                                   PutFromPersistedCallback, &ctx);
+  PRTime now = PR_Now();
+  for (const auto& rec : aRecords) {
+    if (rec.expirationTime <= now) {
+      continue;
+    }
+    PutFromPersisted(rec, loadGen, aRestored);
+  }
 }
 
 // static
-void SSLTokensCache::DeserializeFromIPCAsync(mozilla::ipc::ByteBuf&& aBuf,
-                                             bool aRestored) {
-  if (aBuf.mLen == 0) {
+void SSLTokensCache::DeserializeFromIPCAsync(
+    nsTArray<SSLTokensCacheRecordInfo>&& aRecords, bool aRestored) {
+  if (aRecords.IsEmpty()) {
     return;
   }
   NS_DispatchBackgroundTask(NS_NewRunnableFunction(
       "SSLTokensCache::DeserializeFromIPCAsync",
-      [buf = std::move(aBuf), aRestored]() {
-        DeserializeFromIPC(Span(buf.mData, buf.mLen), aRestored);
+      [records = std::move(aRecords), aRestored]() mutable {
+        DeserializeFromIPC(std::move(records), aRestored);
       }));
 }
 
@@ -501,86 +532,100 @@ OriginAttributes SSLTokensCache::OAFromPeerId(const nsACString& aPeerId) {
 }
 
 // static
-nsCString SSLTokensCache::SetupPersistenceLocked(uint32_t& aLoadGen) {
+bool SSLTokensCache::SetupPersistenceLocked(uint32_t& aLoadGen,
+                                            bool aStorageServiceAvailable) {
   sLock.AssertCurrentThreadOwns();
   MOZ_ASSERT(gInstance);
-  MOZ_ASSERT(!gInstance->mBackingFile);
+  MOZ_ASSERT(!gInstance->mDBActive);
 
-  nsCOMPtr<nsIFile> profileDir;
-  if (NS_FAILED(NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
-                                       getter_AddRefs(profileDir)))) {
-    return ""_ns;
+  if (!aStorageServiceAvailable) {
+    return false;
   }
-  profileDir->Clone(getter_AddRefs(gInstance->mBackingFile));
-  gInstance->mBackingFile->AppendNative("ssl_tokens_cache.bin"_ns);
 
-  nsCOMPtr<nsISerialEventTarget> writeQueue;
-  NS_CreateBackgroundTaskQueue("SslTokensCachePersist",
-                               getter_AddRefs(writeQueue));
-  gInstance->mWriteTaskQueue = writeQueue;
+  if (!gInstance->mDBFile) {
+    nsCOMPtr<nsIFile> dbFile = ProfileDBFile();
+    if (!dbFile) {
+      return false;
+    }
+    gInstance->mDBFile = dbFile;
+  }
 
+  if (!gInstance->mDBQueue) {
+    nsCOMPtr<nsISerialEventTarget> queue;
+    NS_CreateBackgroundTaskQueue("SSLTokensDB", getter_AddRefs(queue));
+    if (!queue) {
+      return false;
+    }
+    gInstance->mDBQueue = queue;
+  }
+
+  gInstance->mDBActive = true;
   gInstance->mLoadStartTime = TimeStamp::Now();
   aLoadGen = gInstance->mLoadGeneration;
+  return true;
+}
 
-  nsAutoString widePath;
-  gInstance->mBackingFile->GetPath(widePath);
-  return NS_ConvertUTF16toUTF8(widePath);
+// Best-effort removal of the pre-mozStorage backing files.
+static void RemoveLegacyBackingFilesSync(nsIFile* aDbFile) {
+  nsCOMPtr<nsIFile> legacy;
+  if (NS_FAILED(aDbFile->Clone(getter_AddRefs(legacy)))) {
+    return;
+  }
+  legacy->SetLeafName(u"ssl_tokens_cache.bin"_ns);
+  (void)legacy->Remove(false);
+  legacy->SetLeafName(u"ssl_tokens_cache.tmp"_ns);
+  (void)legacy->Remove(false);
 }
 
 // static
 nsresult SSLTokensCache::Init() {
   MOZ_ASSERT(NS_IsMainThread());
-  nsCString backgroundLoadPath;
-  uint32_t loadGen = 0;
-  {
-    StaticMutexAutoLock lock(sLock);
 
-    // SSLTokensCache is used in both the parent process and the socket process.
-    // The socket process runs TLS handshakes and holds the live token cache;
-    // the parent process holds the persistence layer (disk I/O) and receives
-    // periodic token updates from the socket process via IPC.
-    // Some xpcshell tests also use sockets directly in the parent process.
-    if (!(XRE_IsSocketProcess() || XRE_IsParentProcess())) {
-      return NS_OK;
+  if (XRE_IsParentProcess()) {
+    if (nsCOMPtr<nsIFile> dbFile = ProfileDBFile()) {
+      NS_DispatchBackgroundTask(NS_NewRunnableFunction(
+          "SSLTokensCache::RemoveLegacyBackingFiles",
+          [dbFile]() { RemoveLegacyBackingFilesSync(dbFile); }));
     }
+  }
 
-    MOZ_ASSERT(!gInstance);
+  StaticMutexAutoLock lock(sLock);
 
-    gInstance = new SSLTokensCache();
+  // The socket process holds the live token cache, the parent process the
+  // persistence layer. Some xpcshell tests use sockets in the parent, too.
+  if (!(XRE_IsSocketProcess() || XRE_IsParentProcess())) {
+    return NS_OK;
+  }
 
-    RegisterWeakMemoryReporter(gInstance);
+  MOZ_ASSERT(!gInstance);
 
-    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-    if (obs && XRE_IsParentProcess()) {
-      obs->AddObserver(gInstance, "profile-after-change", false);
-      obs->AddObserver(gInstance, "last-pb-context-exited", false);
-    }
+  gInstance = new SSLTokensCache();
 
-    if (!StaticPrefs::network_ssl_tokens_cache_persistence()) {
-      return NS_OK;
-    }
+  RegisterWeakMemoryReporter(gInstance);
 
-    if (obs) {
-      obs->AddObserver(gInstance, "application-background", false);
-      obs->AddObserver(gInstance, "idle-daily", false);
-      gInstance->mWriteObserversRegistered = true;
-    }
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  if (obs && XRE_IsParentProcess()) {
+    obs->AddObserver(gInstance, "profile-after-change", false);
+    obs->AddObserver(gInstance, "last-pb-context-exited", false);
+  }
 
-    if (!XRE_IsParentProcess()) {
-      return NS_OK;
-    }
+  if (!StaticPrefs::network_ssl_tokens_cache_persistence()) {
+    return NS_OK;
+  }
 
-    backgroundLoadPath = SetupPersistenceLocked(loadGen);
-  }  // sLock released before dispatching
+  if (obs) {
+    obs->AddObserver(gInstance, "application-background", false);
+    obs->AddObserver(gInstance, "idle-daily", false);
+    gInstance->mWriteObserversRegistered = true;
+  }
 
-  DispatchLoad(std::move(backgroundLoadPath), loadGen);
   return NS_OK;
 }
 
 // static
 nsresult SSLTokensCache::Shutdown() {
+  MOZ_ASSERT(NS_IsMainThread());
   RefPtr<SSLTokensCache> instance;
-  nsCOMPtr<nsIObserverService> obs;
   bool blockerRegistered = false;
   {
     StaticMutexAutoLock lock(sLock);
@@ -589,82 +634,182 @@ nsresult SSLTokensCache::Shutdown() {
       return NS_ERROR_UNEXPECTED;
     }
 
-    UnregisterWeakMemoryReporter(gInstance);
     instance = gInstance;
-    obs = mozilla::services::GetObserverService();
     blockerRegistered = gInstance->mShutdownBarrier != nullptr;
   }
 
   // With no blocker, BlockShutdown will never fire: write synchronously
-  // (test environments only) and clear gInstance now. Otherwise leave
-  // gInstance set so BlockShutdown -> DoWrite -> SerializeSnapshotLocked
-  // can build the snapshot; RemoveShutdownBlocker nulls it afterward.
+  // (test environments only), unregister, and clear gInstance now.
   if (!blockerRegistered) {
 #ifdef ENABLE_TESTS
     instance->DoWrite(true);
 #endif
+    UnregisterFromServices(instance);
     StaticMutexAutoLock lock(sLock);
     gInstance = nullptr;
   }
-
-  if (obs && instance) {
-    bool hadWriteObservers;
-    {
-      StaticMutexAutoLock lock(sLock);
-      hadWriteObservers = instance->mWriteObserversRegistered;
-    }
-    if (hadWriteObservers) {
-      obs->RemoveObserver(instance, "application-background");
-      obs->RemoveObserver(instance, "idle-daily");
-    }
-    if (XRE_IsParentProcess()) {
-      Preferences::UnregisterCallback(&SSLTokensCache::ReconcilePersistence,
-                                      "network.ssl_tokens_cache_persistence");
-      obs->RemoveObserver(instance, "profile-after-change");
-      obs->RemoveObserver(instance, "last-pb-context-exited");
-    }
-  }
   return NS_OK;
+}
+
+// static
+void SSLTokensCache::UnregisterFromServices(SSLTokensCache* aInstance) {
+  MOZ_ASSERT(NS_IsMainThread());
+  UnregisterWeakMemoryReporter(aInstance);
+
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  if (!obs) {
+    return;
+  }
+
+  bool hadWriteObservers;
+  {
+    StaticMutexAutoLock lock(sLock);
+    hadWriteObservers = aInstance->mWriteObserversRegistered;
+  }
+  if (hadWriteObservers) {
+    obs->RemoveObserver(aInstance, "application-background");
+    obs->RemoveObserver(aInstance, "idle-daily");
+  }
+  if (XRE_IsParentProcess()) {
+    Preferences::UnregisterCallback(&SSLTokensCache::ReconcilePersistence,
+                                    "network.ssl_tokens_cache_persistence");
+    obs->RemoveObserver(aInstance, "profile-after-change");
+    obs->RemoveObserver(aInstance, "last-pb-context-exited");
+  }
 }
 
 SSLTokensCache::SSLTokensCache() { LOG(("SSLTokensCache::SSLTokensCache")); }
 
 SSLTokensCache::~SSLTokensCache() { LOG(("SSLTokensCache::~SSLTokensCache")); }
 
-nsTArray<SslTokensPersistedRecord> SSLTokensCache::CollectSnapshotLocked()
-    const {
-  sLock.AssertCurrentThreadOwns();
-  nsTArray<SslTokensPersistedRecord> snapshot;
-  for (const auto& entry : mTokenCacheRecords.Values()) {
-    for (const auto& rec : entry->Records()) {
-      if (!ShouldPersistKey(rec->mKey, rec->mOverridableError)) {
-        continue;
-      }
-      auto& ffi = *snapshot.AppendElement();
-      ffi.id = rec->mId;
-      ffi.key = rec->mKey;
-      ffi.expiration_time = static_cast<int64_t>(rec->mExpirationTime);
-      ffi.overridable_error = rec->mOverridableError;
-      ffi.compressed_payload = rec->mCompressedPayload.Elements();
-      ffi.compressed_payload_len = rec->mCompressedPayload.Length();
-    }
-  }
-  return snapshot;
+// static
+nsresult SSLTokensCache::CreateSchemaOn(mozIStorageConnection* aConn) {
+  nsresult rv = aConn->SetSchemaVersion(kSSLTokensCacheSchemaVersion);
+  NS_ENSURE_SUCCESS(rv, rv);
+  return aConn->ExecuteSimpleSQL(
+      nsLiteralCString("CREATE TABLE ssl_tokens ("
+                       "key TEXT NOT NULL,"
+                       "expiration_time INTEGER NOT NULL,"
+                       "overridable_error INTEGER NOT NULL,"
+                       "payload BLOB NOT NULL)"));
 }
 
 // static
-nsTArray<uint8_t> SSLTokensCache::SerializeSnapshotLocked() {
-  sLock.AssertCurrentThreadOwns();
-  if (!gInstance) {
-    return {};
+nsresult SSLTokensCache::EnsureSchema(mozIStorageConnection* aConn) {
+  bool tableExists = false;
+  nsresult rv = aConn->TableExists("ssl_tokens"_ns, &tableExists);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (!tableExists) {
+    return CreateSchemaOn(aConn);
   }
-  auto snapshot = gInstance->CollectSnapshotLocked();
-  if (snapshot.IsEmpty()) {
-    return {};
+
+  // An unreadable version is as good as a wrong one: recreate.
+  int32_t dbSchemaVersion = 0;
+  rv = aConn->GetSchemaVersion(&dbSchemaVersion);
+  if (NS_SUCCEEDED(rv) && dbSchemaVersion == kSSLTokensCacheSchemaVersion) {
+    return NS_OK;
   }
-  nsTArray<uint8_t> out;
-  ssl_tokens_cache_serialize_snapshot(&snapshot, &out);
-  return out;
+
+  mozStorageTransaction transaction(aConn, false);
+  rv = transaction.Start();
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = aConn->ExecuteSimpleSQL("DROP TABLE ssl_tokens"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = CreateSchemaOn(aConn);
+  NS_ENSURE_SUCCESS(rv, rv);
+  return transaction.Commit();
+}
+
+// static
+nsresult SSLTokensCache::PrepareInsertStatement(
+    mozIStorageConnection* aConn, nsCOMPtr<mozIStorageStatement>& aStmtInsert) {
+  return aConn->CreateStatement(
+      nsLiteralCString("INSERT INTO ssl_tokens (key, expiration_time, "
+                       "overridable_error, payload) VALUES (:key, "
+                       ":expiration_time, :overridable_error, :payload)"),
+      getter_AddRefs(aStmtInsert));
+}
+
+// static
+nsresult SSLTokensCache::WriteSnapshotTo(
+    mozIStorageConnection* aConn, mozIStorageStatement* aStmtInsert,
+    const nsTArray<SSLTokensCacheRecordInfo>& aSnapshot) {
+  mozStorageTransaction transaction(aConn, false);
+  nsresult rv = transaction.Start();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = aConn->ExecuteSimpleSQL("DELETE FROM ssl_tokens"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  for (const auto& rec : aSnapshot) {
+    mozStorageStatementScoper scoper(aStmtInsert);
+    rv = aStmtInsert->BindUTF8StringByName("key"_ns, rec.key);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = aStmtInsert->BindInt64ByName("expiration_time"_ns, rec.expirationTime);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = aStmtInsert->BindInt32ByName("overridable_error"_ns,
+                                      rec.overridableError);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = aStmtInsert->BindBlobByName("payload"_ns,
+                                     rec.compressedPayload.Elements(),
+                                     rec.compressedPayload.Length());
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = aStmtInsert->Execute();
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  return transaction.Commit();
+}
+
+// static
+uint32_t SSLTokensCache::LoadValidRecordsFrom(mozIStorageConnection* aConn,
+                                              uint32_t aLoadGen,
+                                              bool* aCorrupted) {
+  nsCOMPtr<mozIStorageStatement> stmt;
+  nsresult rv = aConn->CreateStatement(
+      nsLiteralCString("SELECT key, expiration_time, overridable_error, "
+                       "payload FROM ssl_tokens WHERE expiration_time > "
+                       ":now"),
+      getter_AddRefs(stmt));
+  NS_ENSURE_SUCCESS(rv, 0);
+
+  rv = stmt->BindInt64ByName("now"_ns, PR_Now());
+  NS_ENSURE_SUCCESS(rv, 0);
+
+  uint32_t count = 0;
+  bool hasResult = false;
+  for (;;) {
+    rv = stmt->ExecuteStep(&hasResult);
+    if (NS_FAILED(rv)) {
+      LOG(("SSLTokensCache::LoadValidRecordsFrom: ExecuteStep failed"));
+      if (aCorrupted) {
+        *aCorrupted = true;
+      }
+      break;
+    }
+    if (!hasResult) {
+      break;
+    }
+    SSLTokensCacheRecordInfo rec{};
+    uint32_t len = 0;
+    const uint8_t* blob = nullptr;
+    if (NS_FAILED(stmt->GetUTF8String(0, rec.key)) ||
+        NS_FAILED(stmt->GetSharedBlob(3, &len, &blob))) {
+      // Corruption the open check can't see; don't pass off a partial load.
+      if (aCorrupted) {
+        *aCorrupted = true;
+      }
+      continue;
+    }
+    rec.expirationTime = stmt->AsInt64(1);
+    rec.overridableError = static_cast<uint8_t>(stmt->AsInt32(2));
+    rec.compressedPayload.AppendElements(blob, len);
+    // Loaded from disk, so restored by definition.
+    if (PutFromPersisted(rec, aLoadGen, /* aRestored */ true)) {
+      count++;
+    }
+  }
+  return count;
 }
 
 // static
@@ -848,7 +993,7 @@ UniquePtr<SSLTokensCache::TokenCacheRecord> SSLTokensCache::GetRecordLocked(
     const nsACString& aKey, uint64_t* aTokenId) {
   sLock.AssertCurrentThreadOwns();
 
-  if (!mLoadComplete && mBackingFile) {
+  if (!mLoadComplete && mDBActive) {
     LOG(("SSLTokensCache::GetRecordLocked: connection before load complete"));
     mozilla::glean::network::ssl_token_cache_early_connections.Add(1);
   }
@@ -1054,21 +1199,6 @@ SSLTokensCache::CollectReports(nsIHandleReportCallback* aHandleReport,
   return NS_OK;
 }
 
-static void RemoveFilesSync(nsIFile* aBackingFile) {
-  aBackingFile->Remove(false);
-  nsCOMPtr<nsIFile> tmp;
-  aBackingFile->Clone(getter_AddRefs(tmp));
-  tmp->SetLeafName(u"ssl_tokens_cache.tmp"_ns);
-  tmp->Remove(false);
-}
-
-static void DispatchFileRemoval(nsCOMPtr<nsIFile> aBackingFile) {
-  NS_DispatchBackgroundTask(NS_NewRunnableFunction(
-      "SSLTokensCache::RemoveFiles", [backingFile = std::move(aBackingFile)]() {
-        RemoveFilesSync(backingFile);
-      }));
-}
-
 // static
 void SSLTokensCache::ClearPrivateBrowsing() {
   LOG(("SSLTokensCache::ClearPrivateBrowsing"));
@@ -1136,8 +1266,7 @@ void SSLTokensCache::ClearSessionCacheAndPBMTokens() {
 void SSLTokensCache::Clear() {
   LOG(("SSLTokensCache::Clear"));
 
-  nsCOMPtr<nsIFile> backingFile;
-  nsCOMPtr<nsISerialEventTarget> taskQueue;
+  nsCOMPtr<nsISerialEventTarget> queue;
   {
     StaticMutexAutoLock lock(sLock);
     if (!gInstance) {
@@ -1146,108 +1275,105 @@ void SSLTokensCache::Clear() {
     }
 
     gInstance->ClearCacheLocked();
-    backingFile = gInstance->mBackingFile;
-    taskQueue = gInstance->mWriteTaskQueue;
+    if (gInstance->mDBActive) {
+      queue = gInstance->mDBQueue;
+    }
   }
 
-  if (backingFile) {
-    if (taskQueue) {
-      // Route through the serial write queue so the deletion is ordered after
-      // any pending write task and cannot re-create the file after deletion.
-      InvokeAsync(taskQueue.get(), __func__,
-                  [bf = std::move(backingFile)]() mutable {
-                    RemoveFilesSync(bf);
-                    return GenericPromise::CreateAndResolve(true, __func__);
-                  });
-    } else {
-      DispatchFileRemoval(std::move(backingFile));
-    }
+  if (queue) {
+    // The serial queue guarantees this runs after any pending write.
+    queue->Dispatch(
+        NS_NewRunnableFunction("SSLTokensCache::ClearDB", [] { ClearDB(); }),
+        NS_DISPATCH_EVENT_MAY_BLOCK);
   }
 }
 
 void SSLTokensCache::DoWrite(bool aSynchronous) {
-  nsCOMPtr<nsIFile> backingFile;
-  nsCOMPtr<nsISerialEventTarget> taskQueue;
-  nsTArray<uint8_t> serialized;
-  nsTArray<SSLTokensCacheRecordInfo> records;
+  nsCOMPtr<nsISerialEventTarget> queue;
   {
     StaticMutexAutoLock lock(sLock);
     if (!gInstance) {
       return;
     }
-    backingFile = mBackingFile;
-    taskQueue = mWriteTaskQueue;
-    if (backingFile) {
-      serialized = SerializeSnapshotLocked();
-    } else if (XRE_IsSocketProcess()) {
-      CollectRecordInfosLocked(records, /* aFilterForPersistence */ true);
+    if (mDBActive) {
+      queue = mDBQueue;
     }
   }
 
-  if (!backingFile) {
-    if (XRE_IsSocketProcess() && !records.IsEmpty()) {
-      NS_DispatchToMainThread(NS_NewRunnableFunction(
-          "SSLTokensCache::SendToParent",
-          [records = std::move(records)]() mutable {
-            auto* child = SocketProcessChild::GetSingleton();
-            if (child && child->CanSend()) {
-              (void)child->SendSSLTokensCacheData(std::move(records));
-            }
-          }));
+  if (!queue) {
+    if (XRE_IsSocketProcess()) {
+      nsTArray<SSLTokensCacheRecordInfo> snapshot;
+      {
+        StaticMutexAutoLock lock(sLock);
+        if (gInstance) {
+          gInstance->CollectRecordInfosLocked(snapshot,
+                                              /* aFilterForPersistence */ true);
+        }
+      }
+      if (!snapshot.IsEmpty()) {
+        NS_DispatchToMainThread(NS_NewRunnableFunction(
+            "SSLTokensCache::SendToParent",
+            [records = std::move(snapshot)]() mutable {
+              auto* child = SocketProcessChild::GetSingleton();
+              if (child && child->CanSend()) {
+                (void)child->SendSSLTokensCacheData(std::move(records));
+              }
+            }));
+      }
     }
     return;
   }
-
-  if (serialized.IsEmpty()) {
-    if (aSynchronous) {
-      RemoveFilesSync(backingFile);
-    } else if (!taskQueue) {
-      DispatchFileRemoval(std::move(backingFile));
-    } else {
-      InvokeAsync(taskQueue.get(), __func__,
-                  [bf = std::move(backingFile)]() mutable {
-                    RemoveFilesSync(bf);
-                    return GenericPromise::CreateAndResolve(true, __func__);
-                  });
-    }
-    return;
-  }
-
-  nsAutoString widePath;
-  if (NS_FAILED(backingFile->GetPath(widePath))) {
-    return;
-  }
-  nsCString pathStr = NS_ConvertUTF16toUTF8(widePath);
 
   if (aSynchronous) {
-    ssl_tokens_cache_write_bytes(&pathStr, &serialized);
-  } else {
-    if (!taskQueue) {
-      return;
-    }
-    InvokeAsync(taskQueue.get(), __func__,
-                [path = std::move(pathStr), data = std::move(serialized)]() {
-                  ssl_tokens_cache_write_bytes(&path, &data);
-                  return GenericPromise::CreateAndResolve(true, __func__);
-                });
+    // Test-only synchronous path; block until write completes on the queue.
+    nsCOMPtr<nsIRunnable> event =
+        NS_NewRunnableFunction("SSLTokensCache::DoWriteSync",
+                               [] { CollectAndWriteSnapshotIfLoaded(); });
+    NS_DispatchAndSpinEventLoopUntilComplete(
+        "SSLTokensCache::DoWrite synchronous test-only write"_ns, queue.get(),
+        event.forget());
+    return;
   }
+
+  queue->Dispatch(
+      NS_NewRunnableFunction("SSLTokensCache::DoWriteAsync",
+                             [] { CollectAndWriteSnapshotIfLoaded(); }),
+      NS_DISPATCH_EVENT_MAY_BLOCK);
 }
 
 // static
-void SSLTokensCache::DispatchLoad(nsCString aPath, uint32_t aLoadGen) {
-  if (aPath.IsEmpty()) {
-    return;
+void SSLTokensCache::CollectAndWriteSnapshotIfLoaded() {
+  MOZ_ASSERT(!NS_IsMainThread());
+  // The serial queue guarantees this runs after any queued OpenAndLoad.
+  nsTArray<SSLTokensCacheRecordInfo> snapshot;
+  {
+    StaticMutexAutoLock lock(sLock);
+    if (!gInstance || !gInstance->mLoadComplete) {
+      return;
+    }
+    gInstance->CollectRecordInfosLocked(snapshot,
+                                        /* aFilterForPersistence */ true);
   }
-  NS_DispatchBackgroundTask(
-      NS_NewRunnableFunction("SSLTokensCache::LoadPersisted",
-                             [path = std::move(aPath), aLoadGen]() {
-                               nsAutoLowPriorityIO lowPriorityIO;
-                               LoadCtx ctx{aLoadGen};
-                               ssl_tokens_cache_read(&path, PR_Now(),
-                                                     LoadCallback, &ctx);
-                               OnLoadCompleteNotify(ctx.count);
-                             }),
-      NS_DISPATCH_EVENT_MAY_BLOCK);
+  WriteSnapshotToDB(std::move(snapshot));
+}
+
+// static
+void SSLTokensCache::DispatchOpenAndLoad(uint32_t aLoadGen) {
+  nsCOMPtr<nsISerialEventTarget> queue;
+  {
+    StaticMutexAutoLock lock(sLock);
+    if (!gInstance || !gInstance->mDBActive) {
+      return;
+    }
+    queue = gInstance->mDBQueue;
+  }
+  queue->Dispatch(NS_NewRunnableFunction("SSLTokensCache::OpenAndLoad",
+                                         [aLoadGen]() {
+                                           uint32_t count =
+                                               LoadFromDB(aLoadGen);
+                                           OnLoadCompleteNotify(count);
+                                         }),
+                  NS_DISPATCH_EVENT_MAY_BLOCK);
 }
 
 // static
@@ -1284,18 +1410,19 @@ void SSLTokensCache::OnLoadCompleteNotify(uint32_t aCount) {
           gIOService->CallOrWaitForSocketProcess([]() {
             NS_DispatchBackgroundTask(NS_NewRunnableFunction(
                 "SSLTokensCache::SerializeForSocket", []() {
-                  nsTArray<uint8_t> data = SSLTokensCache::SerializeForIPC();
-                  if (data.IsEmpty()) {
+                  nsTArray<SSLTokensCacheRecordInfo> records =
+                      SSLTokensCache::SerializeForIPC();
+                  if (records.IsEmpty()) {
                     return;
                   }
                   NS_DispatchToMainThread(NS_NewRunnableFunction(
                       "SSLTokensCache::SendToSocket",
-                      [data = std::move(data)]() {
+                      [records = std::move(records)]() mutable {
                         RefPtr<SocketProcessParent> parent =
                             SocketProcessParent::GetSingleton();
                         if (parent && parent->CanSend()) {
                           (void)parent->SendLoadSSLTokensCache(
-                              mozilla::ipc::ByteBufFrom(data));
+                              std::move(records));
                         }
                       }));
                 }));
@@ -1318,19 +1445,203 @@ UniquePtr<SSLTokensCache::TokenCacheRecord> SSLTokensCache::MakeRecord(
 }
 
 // static
-bool SSLTokensCache::PutFromPersisted(const SslTokensPersistedRecord* aRec,
+bool SSLTokensCache::PutFromPersisted(const SSLTokensCacheRecordInfo& aRec,
                                       uint32_t aExpectedGen, bool aRestored) {
   StaticMutexAutoLock lock(sLock);
   if (!gInstance || gInstance->mLoadGeneration != aExpectedGen) {
     return false;
   }
-  nsTArray<uint8_t> payload;
-  payload.AppendElements(aRec->compressed_payload,
-                         aRec->compressed_payload_len);
-  auto rec = MakeRecord(aRec->key, static_cast<PRTime>(aRec->expiration_time),
-                        aRec->overridable_error, aRestored, std::move(payload));
+  auto rec = MakeRecord(aRec.key, static_cast<PRTime>(aRec.expirationTime),
+                        aRec.overridableError, aRestored,
+                        aRec.compressedPayload.Clone());
   gInstance->InsertRecordLocked(std::move(rec));
   return true;
+}
+
+#ifdef DEBUG
+// static
+void SSLTokensCache::AssertOnDBThread() {
+  MOZ_ASSERT(!NS_IsMainThread());
+  nsCOMPtr<nsISerialEventTarget> queue;
+  {
+    StaticMutexAutoLock lock(sLock);
+    if (gInstance) {
+      queue = gInstance->mDBQueue;
+    }
+  }
+  MOZ_ASSERT(!queue || queue->IsOnCurrentThread());
+}
+#endif
+
+// static
+bool SSLTokensCache::IsPersistenceStillActive() {
+  // Re-checked so a task queued before the pref flipped off can't write.
+  if (!StaticPrefs::network_ssl_tokens_cache_persistence()) {
+    return false;
+  }
+  StaticMutexAutoLock lock(sLock);
+  return gInstance && gInstance->mDBActive;
+}
+
+// static
+already_AddRefed<nsIFile> SSLTokensCache::GetCachedDBFile() {
+  StaticMutexAutoLock lock(sLock);
+  if (!gInstance || !gInstance->mDBFile) {
+    return nullptr;
+  }
+  nsCOMPtr<nsIFile> dbFile = gInstance->mDBFile;
+  return dbFile.forget();
+}
+
+// static
+bool SSLTokensCache::RemoveDBFile(nsIFile* aDbFile) {
+  MOZ_ASSERT(!NS_IsMainThread());
+  return NS_SUCCEEDED(aDbFile->Remove(false));
+}
+
+// True if the file itself is unusable, so removal is the only recovery.
+static bool DBFileIsUnusable(nsresult aRv) {
+  switch (aRv) {
+    case NS_ERROR_STORAGE_BUSY:
+    case NS_ERROR_FILE_IS_LOCKED:
+    case NS_ERROR_FILE_ACCESS_DENIED:
+    case NS_ERROR_FILE_READ_ONLY:
+    case NS_ERROR_OUT_OF_MEMORY:
+    case NS_ERROR_NOT_INITIALIZED:
+      return false;
+    default:
+      return true;
+  }
+}
+
+// Shared by OpenDB and the test-only connection helper below.
+static nsresult OpenUnsharedDatabaseAt(nsIFile* aFile,
+                                       mozIStorageConnection** aConn) {
+  nsCOMPtr<mozIStorageService> storageService =
+      do_GetService(MOZ_STORAGE_SERVICE_CONTRACTID);
+  if (!storageService) {
+    return NS_ERROR_FAILURE;
+  }
+  return storageService->OpenUnsharedDatabase(
+      aFile, mozIStorageService::CONNECTION_DEFAULT, aConn);
+}
+
+// static
+bool SSLTokensCache::OpenDB(nsCOMPtr<mozIStorageConnection>& aConn) {
+  MOZ_ASSERT(!NS_IsMainThread());
+#ifdef DEBUG
+  AssertOnDBThread();
+#endif
+  MOZ_ASSERT(!aConn);
+
+  nsCOMPtr<nsIFile> dbFile = GetCachedDBFile();
+  if (!dbFile) {
+    return false;
+  }
+
+  nsresult rv = OpenUnsharedDatabaseAt(dbFile, getter_AddRefs(aConn));
+  // Corruption or a missing encryption key never opens again; retry once.
+  if (NS_FAILED(rv) && DBFileIsUnusable(rv)) {
+    LOG(("SSLTokensCache::OpenDB: unopenable (0x%" PRIx32 "), removing",
+         static_cast<uint32_t>(rv)));
+    mozilla::glean::network::ssl_token_cache_db_errors.Get("open"_ns).Add(1);
+    aConn = nullptr;
+    RemoveDBFile(dbFile);
+    rv = OpenUnsharedDatabaseAt(dbFile, getter_AddRefs(aConn));
+  }
+  if (NS_FAILED(rv)) {
+    aConn = nullptr;
+    return false;
+  }
+
+  // Disposable cache, so skip fsync entirely.
+  (void)NS_WARN_IF(
+      NS_FAILED(aConn->ExecuteSimpleSQL("PRAGMA synchronous = OFF"_ns)));
+
+  // Tolerate brief contention; matches Places' DATABASE_BUSY_TIMEOUT_MS.
+  (void)NS_WARN_IF(
+      NS_FAILED(aConn->ExecuteSimpleSQL("PRAGMA busy_timeout = 100"_ns)));
+
+  if (NS_FAILED(EnsureSchema(aConn))) {
+    aConn->Close();
+    aConn = nullptr;
+    // Opened but unusable; drop it so the next open starts clean.
+    mozilla::glean::network::ssl_token_cache_db_errors.Get("schema"_ns).Add(1);
+    (void)RemoveDBFile(dbFile);
+    return false;
+  }
+
+  return true;
+}
+
+// static
+already_AddRefed<mozIStorageConnection> SSLTokensCache::OpenActiveDB() {
+  MOZ_ASSERT(!NS_IsMainThread());
+  if (!IsPersistenceStillActive()) {
+    return nullptr;
+  }
+  nsCOMPtr<mozIStorageConnection> conn;
+  if (!OpenDB(conn)) {
+    return nullptr;
+  }
+  return conn.forget();
+}
+
+// static
+uint32_t SSLTokensCache::LoadFromDB(uint32_t aLoadGen) {
+  nsCOMPtr<mozIStorageConnection> conn = OpenActiveDB();
+  if (!conn) {
+    return 0;
+  }
+  bool corrupted = false;
+  uint32_t count = LoadValidRecordsFrom(conn, aLoadGen, &corrupted);
+  conn->Close();
+  if (corrupted) {
+    mozilla::glean::network::ssl_token_cache_db_errors.Get("read"_ns).Add(1);
+    nsCOMPtr<nsIFile> dbFile = GetCachedDBFile();
+    if (dbFile) {
+      RemoveDBFile(dbFile);
+    }
+  }
+  return count;
+}
+
+// static
+void SSLTokensCache::WriteSnapshotToDB(
+    nsTArray<SSLTokensCacheRecordInfo>&& aSnapshot) {
+  nsCOMPtr<mozIStorageConnection> conn = OpenActiveDB();
+  if (!conn) {
+    return;
+  }
+  nsCOMPtr<mozIStorageStatement> stmtInsert;
+  nsresult rv = PrepareInsertStatement(conn, stmtInsert);
+  if (NS_SUCCEEDED(rv)) {
+    rv = WriteSnapshotTo(conn, stmtInsert, aSnapshot);
+    stmtInsert = nullptr;
+  }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    mozilla::glean::network::ssl_token_cache_db_errors.Get("write"_ns).Add(1);
+  }
+  conn->Close();
+}
+
+// static
+void SSLTokensCache::ClearDB() {
+  nsCOMPtr<mozIStorageConnection> conn = OpenActiveDB();
+  if (!conn) {
+    return;
+  }
+  (void)NS_WARN_IF(
+      NS_FAILED(conn->ExecuteSimpleSQL("DELETE FROM ssl_tokens"_ns)));
+  conn->Close();
+}
+
+// static
+void SSLTokensCache::RemoveDBFileSync() {
+  nsCOMPtr<nsIFile> dbFile = GetCachedDBFile();
+  if (dbFile) {
+    (void)RemoveDBFile(dbFile);
+  }
 }
 
 uint64_t SSLTokensCache::InsertRecordLocked(UniquePtr<TokenCacheRecord> aRec) {
@@ -1416,35 +1727,69 @@ void SSLTokensCache::RemoveBySiteAndOAPattern(
 
 #ifdef ENABLE_TESTS
 
+// Throwaway connection at aPath, independent of mDBQueue/OpenDB, so tests
+// can exercise persistence without the pref or observers.
+static already_AddRefed<mozIStorageConnection> OpenTestConnection(
+    const nsACString& aPath) {
+  nsCOMPtr<nsIFile> file;
+  if (NS_FAILED(NS_NewNativeLocalFile(aPath, getter_AddRefs(file)))) {
+    return nullptr;
+  }
+  nsCOMPtr<mozIStorageConnection> conn;
+  if (NS_FAILED(OpenUnsharedDatabaseAt(file, getter_AddRefs(conn)))) {
+    return nullptr;
+  }
+  return conn.forget();
+}
+
 // static
 void SSLTokensCache::TriggerWriteForTest(const nsACString& aPath) {
-  nsTArray<uint8_t> serialized;
+  nsTArray<SSLTokensCacheRecordInfo> snapshot;
   {
     StaticMutexAutoLock lock(sLock);
-    serialized = SerializeSnapshotLocked();
-  }
-  nsCString flatPath(aPath);
-  if (serialized.IsEmpty()) {
-    nsCOMPtr<nsIFile> file;
-    if (NS_SUCCEEDED(NS_NewNativeLocalFile(flatPath, getter_AddRefs(file)))) {
-      (void)file->Remove(false);
+    if (gInstance) {
+      gInstance->CollectRecordInfosLocked(snapshot,
+                                          /* aFilterForPersistence */ true);
     }
+  }
+
+  nsCOMPtr<mozIStorageConnection> conn = OpenTestConnection(aPath);
+  if (!conn) {
     return;
   }
-  ssl_tokens_cache_write_bytes(&flatPath, &serialized);
+  if (NS_FAILED(EnsureSchema(conn))) {
+    conn->Close();
+    return;
+  }
+
+  nsCOMPtr<mozIStorageStatement> stmt;
+  if (NS_SUCCEEDED(PrepareInsertStatement(conn, stmt))) {
+    (void)NS_WARN_IF(NS_FAILED(WriteSnapshotTo(conn, stmt, snapshot)));
+    stmt = nullptr;
+  }
+  conn->Close();
 }
 
 // static
 void SSLTokensCache::LoadForTest(const nsACString& aPath) {
-  PersistedPutCtx ctx{0, /* restored */ true};
+  uint32_t loadGen = 0;
   {
     StaticMutexAutoLock lock(sLock);
     if (gInstance) {
-      ctx.loadGen = gInstance->mLoadGeneration;
+      loadGen = gInstance->mLoadGeneration;
     }
   }
-  nsCString flatPath(aPath);
-  ssl_tokens_cache_read(&flatPath, PR_Now(), PutFromPersistedCallback, &ctx);
+
+  nsCOMPtr<mozIStorageConnection> conn = OpenTestConnection(aPath);
+  if (!conn) {
+    return;
+  }
+  bool tableExists = false;
+  if (NS_SUCCEEDED(conn->TableExists("ssl_tokens"_ns, &tableExists)) &&
+      tableExists) {
+    LoadValidRecordsFrom(conn, loadGen);
+  }
+  conn->Close();
 }
 
 // static
@@ -1479,12 +1824,11 @@ void SSLTokensCache::PutForTest(const nsACString& aKey) {
   if (compressed.IsEmpty()) {
     return;
   }
-  SslTokensPersistedRecord rec{};
+  SSLTokensCacheRecordInfo rec{};
   rec.key = aKey;
-  rec.expiration_time = PR_Now() + 3600LL * PR_USEC_PER_SEC;
-  rec.compressed_payload = compressed.Elements();
-  rec.compressed_payload_len = compressed.Length();
-  PutFromPersisted(&rec, gen, /* aRestored */ false);
+  rec.expirationTime = PR_Now() + 3600LL * PR_USEC_PER_SEC;
+  rec.compressedPayload = std::move(compressed);
+  PutFromPersisted(rec, gen, /* aRestored */ false);
 }
 
 #endif  // ENABLE_TESTS
@@ -1498,13 +1842,20 @@ void SSLTokensCache::ReconcilePersistence(const char*, void*) {
   }
 
   bool wantPersistence = StaticPrefs::network_ssl_tokens_cache_persistence();
+  // Checked before sLock; see SetupPersistenceLocked's doc comment.
+  bool storageServiceAvailable = false;
+  if (wantPersistence) {
+    nsCOMPtr<mozIStorageService> storageService =
+        do_GetService(MOZ_STORAGE_SERVICE_CONTRACTID);
+    storageServiceAvailable = storageService != nullptr;
+  }
+
   bool addObservers = false;
   bool removeObservers = false;
-  nsCString loadPath;
+  bool loadOnActivation = false;
   uint32_t loadGen = 0;
   RefPtr<SSLTokensCache> instance;
-  nsCOMPtr<nsIFile> backingFileToRemove;
-  nsCOMPtr<nsISerialEventTarget> backingTaskQueue;
+  nsCOMPtr<nsISerialEventTarget> queueForRemoval;
   {
     StaticMutexAutoLock lock(sLock);
     instance = gInstance;
@@ -1515,28 +1866,32 @@ void SSLTokensCache::ReconcilePersistence(const char*, void*) {
     instance->mWriteObserversRegistered = wantPersistence;
     addObservers = wantPersistence && !wasRegistered;
     removeObservers = !wantPersistence && wasRegistered;
-    if (wantPersistence && !instance->mBackingFile) {
-      loadPath = SetupPersistenceLocked(loadGen);
+    if (wantPersistence && !instance->mDBActive &&
+        SetupPersistenceLocked(loadGen, storageServiceAvailable)) {
+      // Only the startup activation loads from disk; a later re-enable
+      // resumes writing without reloading a possibly-stale cache.
+      loadOnActivation = !instance->mPrefCallbackRegistered;
+      instance->mLoadComplete = !loadOnActivation;
     }
-    if (!wantPersistence) {
-      backingFileToRemove = std::move(instance->mBackingFile);
-      // Capture the queue before nulling so the deletion can be ordered
-      // after any write tasks already queued on it.
-      backingTaskQueue = std::move(instance->mWriteTaskQueue);
+    if (!wantPersistence && instance->mDBActive) {
+      instance->mDBActive = false;
+      // mDBQueue stays alive, only the DB file is removed.
+      queueForRemoval = instance->mDBQueue;
       instance->ClearCacheLocked();
     }
   }
-  if (backingFileToRemove) {
-    if (backingTaskQueue) {
-      // Route deletion through the serial write queue so it runs after any
-      // pending write task (mirrors the pattern in Clear()).
-      InvokeAsync(backingTaskQueue.get(), __func__,
-                  [bf = std::move(backingFileToRemove)]() mutable {
-                    RemoveFilesSync(bf);
-                    return GenericPromise::CreateAndResolve(true, __func__);
-                  });
-    } else {
-      DispatchFileRemoval(std::move(backingFileToRemove));
+  if (!wantPersistence) {
+    // Drop any DB left behind by a session that had persistence on.
+    if (queueForRemoval) {
+      // Ordered after any pending write.
+      queueForRemoval->Dispatch(
+          NS_NewRunnableFunction("SSLTokensCache::RemoveDB",
+                                 []() { RemoveDBFileSync(); }),
+          NS_DISPATCH_EVENT_MAY_BLOCK);
+    } else if (nsCOMPtr<nsIFile> dbFile = ProfileDBFile()) {
+      NS_DispatchBackgroundTask(
+          NS_NewRunnableFunction("SSLTokensCache::RemoveDB",
+                                 [dbFile]() { (void)RemoveDBFile(dbFile); }));
     }
   }
   if (addObservers) {
@@ -1547,7 +1902,9 @@ void SSLTokensCache::ReconcilePersistence(const char*, void*) {
     obs->RemoveObserver(instance, "idle-daily");
   }
   if (wantPersistence) {
-    DispatchLoad(std::move(loadPath), loadGen);
+    if (loadOnActivation) {
+      DispatchOpenAndLoad(loadGen);
+    }
     instance->RegisterShutdownBlocker();
   }
 }
@@ -1590,28 +1947,30 @@ SSLTokensCache::BlockShutdown(nsIAsyncShutdownClient* /* aClient */) {
 
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(XRE_IsParentProcess());
-  nsCOMPtr<nsISerialEventTarget> taskQueue;
+  nsCOMPtr<nsISerialEventTarget> queue;
   {
     StaticMutexAutoLock lock(sLock);
-    taskQueue = mWriteTaskQueue;
+    if (mDBActive) {
+      queue = mDBQueue;
+    }
   }
-  if (!taskQueue) {
+  if (!queue) {
     RemoveShutdownBlocker();
     return NS_OK;
   }
 
-  // Deserialize socket tokens (if any) then write; both run on the same serial
-  // queue for atomicity. The blocker keeps the main thread alive until done.
+  // Merge the socket process's tokens, then write the final snapshot. The
+  // blocker keeps the main thread alive until that completes.
   RefPtr<SSLTokensCache> self = this;
-  auto writeAndRelease = [taskQueue, self](mozilla::ipc::ByteBuf aBuf) {
-    InvokeAsync(taskQueue.get(), __func__,
-                [self, buf = std::move(aBuf)]() {
-                  if (buf.mLen > 0) {
-                    SSLTokensCache::DeserializeFromIPC(
-                        Span(buf.mData, buf.mLen),
-                        /* aRestored */ false);
+  auto writeAndRelease = [queue,
+                          self](nsTArray<SSLTokensCacheRecordInfo> aRecords) {
+    InvokeAsync(queue.get(), __func__,
+                [records = std::move(aRecords)]() mutable {
+                  if (!records.IsEmpty()) {
+                    SSLTokensCache::DeserializeFromIPC(std::move(records),
+                                                       /* aRestored */ false);
                   }
-                  self->DoWrite(true);
+                  CollectAndWriteSnapshotIfLoaded();
                   return GenericPromise::CreateAndResolve(true, __func__);
                 })
         ->Then(
@@ -1621,21 +1980,21 @@ SSLTokensCache::BlockShutdown(nsIAsyncShutdownClient* /* aClient */) {
   };
 
   // If the socket process is alive, flush its token cache first so the
-  // persisted file reflects the most recent handshake data.
+  // persisted DB reflects the most recent handshake data.
   RefPtr<SocketProcessParent> socketParent =
       SocketProcessParent::GetSingleton();
   if (!socketParent || !socketParent->CanSend()) {
-    writeAndRelease(mozilla::ipc::ByteBuf{});
+    writeAndRelease({});
     return NS_OK;
   }
 
   socketParent->SendFlushSSLTokensCache()->Then(
       GetMainThreadSerialEventTarget(), __func__,
-      [writeAndRelease](mozilla::ipc::ByteBuf&& aBuf) {
-        writeAndRelease(std::move(aBuf));
+      [writeAndRelease](nsTArray<SSLTokensCacheRecordInfo>&& aRecords) {
+        writeAndRelease(std::move(aRecords));
       },
       [writeAndRelease](mozilla::ipc::ResponseRejectReason) {
-        writeAndRelease(mozilla::ipc::ByteBuf{});
+        writeAndRelease({});
       });
   return NS_OK;
 }
@@ -1657,7 +2016,7 @@ void SSLTokensCache::RegisterShutdownBlocker() {
   MOZ_ASSERT(XRE_IsParentProcess());
   {
     StaticMutexAutoLock lock(sLock);
-    if (!gInstance || !gInstance->mWriteTaskQueue) {
+    if (!gInstance || !gInstance->mDBQueue) {
       return;
     }
     if (gInstance->mShutdownBarrier) {
@@ -1675,22 +2034,31 @@ void SSLTokensCache::RegisterShutdownBlocker() {
   if (!client) {
     return;
   }
+  LOG(("SSLTokensCache::RegisterShutdownBlocker"));
+  nsresult rv = client->AddBlocker(
+      this, NS_LITERAL_STRING_FROM_CSTRING(__FILE__), __LINE__, u""_ns);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    // Too late to add a blocker, so don't record one: Shutdown() would
+    // assume it is pending and skip its own cleanup.
+    return;
+  }
   {
     StaticMutexAutoLock lock(sLock);
     mShutdownBarrier = client;
   }
-  LOG(("SSLTokensCache::RegisterShutdownBlocker"));
-  client->AddBlocker(this, NS_LITERAL_STRING_FROM_CSTRING(__FILE__), __LINE__,
-                     u""_ns);
 }
 
 void SSLTokensCache::RemoveShutdownBlocker() {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(XRE_IsParentProcess());
+  // Shutdown() left gInstance set so BlockShutdown could write, so
+  // unregister here instead.
+  UnregisterFromServices(this);
+
   nsCOMPtr<nsIAsyncShutdownClient> barrier;
   {
     StaticMutexAutoLock lock(sLock);
     barrier = std::move(mShutdownBarrier);
-    // Shutdown() left gInstance set so BlockShutdown could write; tear it
-    // down now that the blocker is releasing.
     gInstance = nullptr;
   }
   if (barrier) {

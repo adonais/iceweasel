@@ -8,12 +8,10 @@ import android.content.Context
 import mozilla.components.browser.icons.IconRequest
 
 /**
- * [IconPreprarer] implementation implementation that will add known resource URLs (from a disk cache) to the request
- * if the request doesn't contain a list of resources yet.
+ * [IconPreprarer] implementation implementation that will add known resource URLs (from a disk cache) to the request if
+ * the request doesn't contain a list of resources yet.
  */
-class DiskIconPreparer(
-    private val cache: PreparerDiskCache,
-) : IconPreprarer {
+class DiskIconPreparer(private val cache: PreparerDiskCache) : IconPreprarer {
     interface PreparerDiskCache {
         fun getResources(context: Context, request: IconRequest): List<IconRequest.Resource>
     }

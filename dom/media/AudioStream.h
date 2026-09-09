@@ -268,6 +268,10 @@ class AudioStream final {
                                bool aAudioThreadChanged) = 0;
     // Return true if no more data will be added to the source.
     virtual bool Ended() const = 0;
+    // Return true when a shortfall from PopFrames is deliberate rather than a
+    // glitch. Such frames are still accounted as underrun, which is what stops
+    // them advancing the reported position; this only suppresses the reporting.
+    virtual bool IsIntentionallySilent() const { return false; }
 
    protected:
     virtual ~DataSource() = default;

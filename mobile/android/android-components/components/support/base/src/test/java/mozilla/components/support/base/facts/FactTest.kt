@@ -4,6 +4,7 @@
 
 package mozilla.components.support.base.facts
 
+import kotlin.test.assertNotNull
 import mozilla.components.support.base.Component
 import mozilla.components.support.test.mock
 import org.junit.After
@@ -12,7 +13,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.verify
-import kotlin.test.assertNotNull
 
 class FactTest {
     @Before
@@ -26,11 +26,12 @@ class FactTest {
         val processor: FactProcessor = mock()
         Facts.registerProcessor(processor)
 
-        val fact = Fact(
-            Component.SUPPORT_TEST,
-            Action.CLICK,
-            "test",
-        )
+        val fact =
+            Fact(
+                Component.SUPPORT_TEST,
+                Action.CLICK,
+                "test",
+            )
 
         fact.collect()
 
@@ -39,16 +40,17 @@ class FactTest {
 
     @Test
     fun `Accessing values`() {
-        val fact = Fact(
-            Component.SUPPORT_TEST,
-            Action.CLICK,
-            "test-item",
-            "test-value",
-            mapOf(
-                "key1" to "value1",
-                "key2" to "value2",
-            ),
-        )
+        val fact =
+            Fact(
+                Component.SUPPORT_TEST,
+                Action.CLICK,
+                "test-item",
+                "test-value",
+                mapOf(
+                    "key1" to "value1",
+                    "key2" to "value2",
+                ),
+            )
 
         assertEquals(Component.SUPPORT_TEST, fact.component)
         assertEquals(Action.CLICK, fact.action)

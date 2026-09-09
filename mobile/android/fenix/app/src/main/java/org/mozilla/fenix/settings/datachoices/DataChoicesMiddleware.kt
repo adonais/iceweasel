@@ -44,18 +44,19 @@ internal class DataChoicesMiddleware(
         next(action)
 
         when (action) {
-            is ViewCreated -> scope.launch {
-                store.dispatch(
-                    SettingsLoaded(
-                        telemetryEnabled = settings.isTelemetryEnabled,
-                        usagePingEnabled = settings.isDailyUsagePingEnabled,
-                        studiesEnabled = settings.isExperimentationEnabled,
-                        showMeasurementDataSection = settings.hasMadeMarketingTelemetrySelection,
-                        measurementDataEnabled = settings.isMarketingTelemetryEnabled,
-                        crashReportOption = crashReportCache.getReportOption(),
-                    ),
-                )
-            }
+            is ViewCreated ->
+                scope.launch {
+                    store.dispatch(
+                        SettingsLoaded(
+                            telemetryEnabled = settings.isTelemetryEnabled,
+                            usagePingEnabled = settings.isDailyUsagePingEnabled,
+                            studiesEnabled = settings.isExperimentationEnabled,
+                            showMeasurementDataSection = settings.hasMadeMarketingTelemetrySelection,
+                            measurementDataEnabled = settings.isMarketingTelemetryEnabled,
+                            crashReportOption = crashReportCache.getReportOption(),
+                        )
+                    )
+                }
             is ChoiceAction.TelemetryClicked -> {
                 updateTelemetryChoice()
                 store.dispatch(StudiesLoaded(settings.isExperimentationEnabled))
@@ -70,9 +71,10 @@ internal class DataChoicesMiddleware(
                 val navAction = DataChoicesFragmentDirections.actionDataChoicesFragmentToStudiesFragment()
                 navController?.nav(R.id.dataChoicesFragment, navAction)
             }
-            is ChoiceAction.ReportOptionClicked -> scope.launch {
-                updateCrashChoice(action.reportOption)
-            }
+            is ChoiceAction.ReportOptionClicked ->
+                scope.launch {
+                    updateCrashChoice(action.reportOption)
+                }
 
             LearnMore.MeasurementDataLearnMoreClicked -> {
                 learnMoreClicked(SupportUtils.SumoTopic.MARKETING_DATA)

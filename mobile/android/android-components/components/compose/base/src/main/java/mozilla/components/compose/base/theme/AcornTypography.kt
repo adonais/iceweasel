@@ -71,111 +71,122 @@ class AcornTypography(
 /**
  * A base [TextStyle] that ensures consistent line-height behavior across all Acorn typography tokens.
  *
- * This default style applies a centered line-height alignment and disables trimming so that
- * extra padding above and below text is preserved, which is matching Material 3’s line height handling.
+ * This default style applies a centered line-height alignment and disables trimming so that extra padding above and
+ * below text is preserved, which is matching Material 3’s line height handling.
  */
-private val DefaultTextStyle = TextStyle.Default.copy(
-    lineHeightStyle = LineHeightStyle(
-        alignment = LineHeightStyle.Alignment.Center,
-        trim = LineHeightStyle.Trim.None,
-    ),
-)
+private val DefaultTextStyle =
+    TextStyle.Default.copy(
+        lineHeightStyle =
+            LineHeightStyle(
+                alignment = LineHeightStyle.Alignment.Center,
+                trim = LineHeightStyle.Trim.None,
+            )
+    )
 
-val defaultTypography = AcornTypography(
-    headline5 = DefaultTextStyle.copy(
-        fontSize = 24.sp,
-        fontWeight = FontWeight.W400,
-        letterSpacing = 0.18.sp,
-        lineHeight = 32.sp,
-    ),
-    headline6 = DefaultTextStyle.copy(
-        fontSize = 20.sp,
-        fontWeight = FontWeight.W500,
-        letterSpacing = 0.15.sp,
-        lineHeight = 24.sp,
-    ),
-    headline7 = DefaultTextStyle.copy(
-        fontSize = 16.sp,
-        fontWeight = FontWeight.W500,
-        letterSpacing = 0.15.sp,
-        lineHeight = 24.sp,
-    ),
-    headline8 = DefaultTextStyle.copy(
-        fontSize = 14.sp,
-        fontWeight = FontWeight.W500,
-        letterSpacing = 0.4.sp,
-        lineHeight = 20.sp,
-    ),
-    subtitle1 = DefaultTextStyle.copy(
-        fontSize = 16.sp,
-        fontWeight = FontWeight.W400,
-        letterSpacing = 0.15.sp,
-        lineHeight = 24.sp,
-    ),
-    subtitle2 = DefaultTextStyle.copy(
-        fontSize = 14.sp,
-        fontWeight = FontWeight.W500,
-        letterSpacing = 0.1.sp,
-        lineHeight = 24.sp,
-    ),
-    body1 = DefaultTextStyle.copy(
-        fontSize = 16.sp,
-        fontWeight = FontWeight.W400,
-        letterSpacing = 0.5.sp,
-        lineHeight = 24.sp,
-    ),
-    body2 = DefaultTextStyle.copy(
-        fontSize = 14.sp,
-        fontWeight = FontWeight.W400,
-        letterSpacing = 0.25.sp,
-        lineHeight = 20.sp,
-    ),
-    button = DefaultTextStyle.copy(
-        fontSize = 14.sp,
-        fontWeight = FontWeight.W500,
-        letterSpacing = 0.25.sp,
-        lineHeight = 14.sp,
-    ),
-    caption = DefaultTextStyle.copy(
-        fontSize = 12.sp,
-        fontWeight = FontWeight.W400,
-        letterSpacing = 0.4.sp,
-        lineHeight = 16.sp,
-    ),
-    overline = DefaultTextStyle.copy(
-        fontSize = 10.sp,
-        fontWeight = FontWeight.W400,
-        letterSpacing = 1.5.sp,
-        lineHeight = 16.sp,
-    ),
-)
+val defaultTypography =
+    AcornTypography(
+        headline5 =
+            DefaultTextStyle.copy(
+                fontSize = 24.sp,
+                fontWeight = FontWeight.W400,
+                letterSpacing = 0.18.sp,
+                lineHeight = 32.sp,
+            ),
+        headline6 =
+            DefaultTextStyle.copy(
+                fontSize = 20.sp,
+                fontWeight = FontWeight.W500,
+                letterSpacing = 0.15.sp,
+                lineHeight = 24.sp,
+            ),
+        headline7 =
+            DefaultTextStyle.copy(
+                fontSize = 16.sp,
+                fontWeight = FontWeight.W500,
+                letterSpacing = 0.15.sp,
+                lineHeight = 24.sp,
+            ),
+        headline8 =
+            DefaultTextStyle.copy(
+                fontSize = 14.sp,
+                fontWeight = FontWeight.W500,
+                letterSpacing = 0.4.sp,
+                lineHeight = 20.sp,
+            ),
+        subtitle1 =
+            DefaultTextStyle.copy(
+                fontSize = 16.sp,
+                fontWeight = FontWeight.W400,
+                letterSpacing = 0.15.sp,
+                lineHeight = 24.sp,
+            ),
+        subtitle2 =
+            DefaultTextStyle.copy(
+                fontSize = 14.sp,
+                fontWeight = FontWeight.W500,
+                letterSpacing = 0.1.sp,
+                lineHeight = 24.sp,
+            ),
+        body1 =
+            DefaultTextStyle.copy(
+                fontSize = 16.sp,
+                fontWeight = FontWeight.W400,
+                letterSpacing = 0.5.sp,
+                lineHeight = 24.sp,
+            ),
+        body2 =
+            DefaultTextStyle.copy(
+                fontSize = 14.sp,
+                fontWeight = FontWeight.W400,
+                letterSpacing = 0.25.sp,
+                lineHeight = 20.sp,
+            ),
+        button =
+            DefaultTextStyle.copy(
+                fontSize = 14.sp,
+                fontWeight = FontWeight.W500,
+                letterSpacing = 0.25.sp,
+                lineHeight = 14.sp,
+            ),
+        caption =
+            DefaultTextStyle.copy(
+                fontSize = 12.sp,
+                fontWeight = FontWeight.W400,
+                letterSpacing = 0.4.sp,
+                lineHeight = 16.sp,
+            ),
+        overline =
+            DefaultTextStyle.copy(
+                fontSize = 10.sp,
+                fontWeight = FontWeight.W400,
+                letterSpacing = 1.5.sp,
+                lineHeight = 16.sp,
+            ),
+    )
 
 @Composable
 @Preview
 private fun NewTypographyPreview() {
-    val textStyles = listOf(
-        Pair("Headline 5", defaultTypography.headline5),
-        Pair("Headline 6", defaultTypography.headline6),
-        Pair("Headline 7", defaultTypography.headline7),
-        Pair("Headline 8", defaultTypography.headline8),
-        Pair("Subtitle1", defaultTypography.subtitle1),
-        Pair("Subtitle2", defaultTypography.subtitle2),
-        Pair("Body1", defaultTypography.body1),
-        Pair("Body2", defaultTypography.body2),
-        Pair("Button", defaultTypography.button),
-        Pair("Caption", defaultTypography.caption),
-        Pair("Overline", defaultTypography.overline),
-    )
+    val textStyles =
+        listOf(
+            Pair("Headline 5", defaultTypography.headline5),
+            Pair("Headline 6", defaultTypography.headline6),
+            Pair("Headline 7", defaultTypography.headline7),
+            Pair("Headline 8", defaultTypography.headline8),
+            Pair("Subtitle1", defaultTypography.subtitle1),
+            Pair("Subtitle2", defaultTypography.subtitle2),
+            Pair("Body1", defaultTypography.body1),
+            Pair("Body2", defaultTypography.body2),
+            Pair("Button", defaultTypography.button),
+            Pair("Caption", defaultTypography.caption),
+            Pair("Overline", defaultTypography.overline),
+        )
 
     var textShadingEnabled by remember { mutableStateOf(true) }
 
     AcornTheme(colors = lightColorPalette) {
         Surface {
-            Column(
-                modifier = Modifier
-                    .width(200.dp)
-                    .padding(all = 8.dp),
-            ) {
+            Column(modifier = Modifier.width(200.dp).padding(all = 8.dp)) {
                 Row {
                     Column {
                         Text(
@@ -204,9 +215,7 @@ private fun NewTypographyPreview() {
                 Column {
                     for (index in 0..<textStyles.size) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 8.dp),
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             LineHeightText(
@@ -228,25 +237,27 @@ private fun LineHeightText(
     style: TextStyle,
     textShadingEnabled: Boolean,
 ) {
-    val convertedTextSize: Dp = with(LocalDensity.current) {
-        style.fontSize.toDp()
-    }
+    val convertedTextSize: Dp =
+        with(LocalDensity.current) {
+            style.fontSize.toDp()
+        }
 
     Box(
-        modifier = Modifier
-            .width(intrinsicSize = IntrinsicSize.Max)
-            .thenConditional(modifier = Modifier.background(color = MaterialTheme.colorScheme.primaryContainer)) {
+        modifier =
+            Modifier.width(intrinsicSize = IntrinsicSize.Max).thenConditional(
+                modifier = Modifier.background(color = MaterialTheme.colorScheme.primaryContainer)
+            ) {
                 textShadingEnabled
-            },
+            }
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(convertedTextSize)
-                .thenConditional(modifier = Modifier.background(color = MaterialTheme.colorScheme.errorContainer)) {
-                    textShadingEnabled
-                }
-                .align(alignment = Alignment.Center),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(convertedTextSize)
+                    .thenConditional(modifier = Modifier.background(color = MaterialTheme.colorScheme.errorContainer)) {
+                        textShadingEnabled
+                    }
+                    .align(alignment = Alignment.Center)
         )
 
         BasicText(

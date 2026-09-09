@@ -2,5 +2,5 @@
 
 ["test_signature_bridge.js"]
 skip-if = [
-  "os == 'android'", # PdfjsParent.sys.mjs isn't packaged on Android (see jar.mn)
+  "os == 'android'", # PdfJsParent.sys.mjs isn't packaged on Android (see jar.mn)
 ]

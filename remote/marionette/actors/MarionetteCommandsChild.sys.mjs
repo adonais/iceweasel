@@ -487,12 +487,23 @@ export class MarionetteCommandsChild extends JSWindowActorChild {
   }
 
   /**
-   * Get the tagName for the given element.
+   * Get the qualified name of the given element.
+   *
+   * Elements without a namespace prefix are represented by their local name.
+   * For elements with a namespace prefix, return the qualified name in the
+   * form `prefix:localName`.
+   *
+   * This preserves the casing of local names, such as for SVG and XML
+   * elements.
    */
   async getElementTagName(options = {}) {
     const { elem } = options;
 
-    return elem.tagName.toLowerCase();
+    if (elem.prefix === null) {
+      return elem.localName;
+    }
+
+    return `${elem.prefix}:${elem.localName}`;
   }
 
   /**
@@ -601,8 +612,10 @@ export class MarionetteCommandsChild extends JSWindowActorChild {
       rect = new DOMRect(
         win.pageXOffset,
         win.pageYOffset,
-        win.innerWidth,
-        win.innerHeight
+        // Bug 2055445 made system calls to innerWidth/innerHeight return non-rounded
+        // values. So round them up again to keep the behavior the same as it was before.
+        Math.round(win.innerWidth),
+        Math.round(win.innerHeight)
       );
     }
 

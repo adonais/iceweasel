@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.edit
+import java.lang.ref.WeakReference
 import mozilla.appservices.fxaclient.FxaRustAuthState
 import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.concept.sync.AccountEvent
@@ -17,18 +18,16 @@ import mozilla.components.lib.dataprotect.SecureAbove22Preferences
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.observer.ObserverRegistry
-import java.lang.ref.WeakReference
 
 const val FXA_STATE_PREFS_KEY = "fxaAppState"
 const val FXA_STATE_KEY = "fxaState"
 
-/**
- * Represents state of our account on disk - is it new, or restored?
- */
+/** Represents state of our account on disk - is it new, or restored? */
 internal sealed class AccountOnDisk : WithAccount {
     data class Restored(val account: FirefoxAccount) : AccountOnDisk() {
         override fun account() = account
     }
+
     data class New(val account: FirefoxAccount) : AccountOnDisk() {
         override fun account() = account
     }
@@ -39,8 +38,8 @@ internal interface WithAccount {
 }
 
 /**
- * Knows how to read account from disk (or creating a new instance if there's no account),
- * registering necessary watchers.
+ * Knows how to read account from disk (or creating a new instance if there's no account), registering necessary
+ * watchers.
  */
 open class StorageWrapper(
     private val accountManager: FxaAccountManager,
@@ -48,9 +47,8 @@ open class StorageWrapper(
     private val serverConfig: ServerConfig,
     private val crashReporter: CrashReporting? = null,
 ) {
-    private class PersistenceCallback(
-        private val accountManager: WeakReference<FxaAccountManager>,
-    ) : StatePersistenceCallback {
+    private class PersistenceCallback(private val accountManager: WeakReference<FxaAccountManager>) :
+        StatePersistenceCallback {
         private val logger = Logger("FxaStatePersistenceCallback")
 
         override fun persist(data: String) {
@@ -65,19 +63,20 @@ open class StorageWrapper(
 
     internal fun account(): AccountOnDisk {
         return try {
-            when (val account = accountManager.getAccountStorage().read()) {
-                null -> AccountOnDisk.New(obtainAccount())
-                else -> AccountOnDisk.Restored(account)
+                when (val account = accountManager.getAccountStorage().read()) {
+                    null -> AccountOnDisk.New(obtainAccount())
+                    else -> AccountOnDisk.Restored(account)
+                }
+            } catch (e: FxaPanicException) {
+                // Don't swallow panics from the underlying library.
+                throw e
+            } catch (e: FxaException) {
+                // Locally corrupt accounts are simply treated as 'absent'.
+                AccountOnDisk.New(obtainAccount())
             }
-        } catch (e: FxaPanicException) {
-            // Don't swallow panics from the underlying library.
-            throw e
-        } catch (e: FxaException) {
-            // Locally corrupt accounts are simply treated as 'absent'.
-            AccountOnDisk.New(obtainAccount())
-        }.also {
-            watchAccount(it.account())
-        }
+            .also {
+                watchAccount(it.account())
+            }
     }
 
     private fun watchAccount(account: FirefoxAccount) {
@@ -85,21 +84,16 @@ open class StorageWrapper(
         account.deviceConstellation().register(accountEventsIntegration)
     }
 
-    /**
-     * Exists strictly for testing purposes, allowing tests to specify their own implementation of [FirefoxAccount].
-     */
-    @VisibleForTesting
-    open fun obtainAccount(): FirefoxAccount = FirefoxAccount(serverConfig, crashReporter)
+    /** Exists strictly for testing purposes, allowing tests to specify their own implementation of [FirefoxAccount]. */
+    @VisibleForTesting open fun obtainAccount(): FirefoxAccount = FirefoxAccount(serverConfig, crashReporter)
 }
 
 /**
- * In the future, this could be an internal account-related events processing layer.
- * E.g., once we grow events such as "please logout".
- * For now, we just pass everything downstream as-is.
+ * In the future, this could be an internal account-related events processing layer. E.g., once we grow events such as
+ * "please logout". For now, we just pass everything downstream as-is.
  */
-internal class AccountEventsIntegration(
-    private val listenerRegistry: ObserverRegistry<AccountEventsObserver>,
-) : AccountEventsObserver {
+internal class AccountEventsIntegration(private val listenerRegistry: ObserverRegistry<AccountEventsObserver>) :
+    AccountEventsObserver {
     private val logger = Logger("AccountEventsIntegration")
 
     override fun onEvents(events: List<AccountEvent>) {
@@ -109,17 +103,18 @@ internal class AccountEventsIntegration(
 }
 
 internal interface AccountStorage {
-    @Throws(Exception::class)
-    fun read(): FirefoxAccount?
+    @Throws(Exception::class) fun read(): FirefoxAccount?
+
     fun write(accountState: String)
+
     fun clear()
 }
 
 /**
  * Account storage layer which uses plaintext storage implementation.
  *
- * Migration from [SecureAbove22AccountStorage] will happen upon initialization,
- * unless disabled via [migrateFromSecureStorage].
+ * Migration from [SecureAbove22AccountStorage] will happen upon initialization, unless disabled via
+ * [migrateFromSecureStorage].
  */
 @SuppressWarnings("TooGenericExceptionCaught")
 internal class SharedPrefAccountStorage(
@@ -133,11 +128,12 @@ internal class SharedPrefAccountStorage(
         if (migrateFromSecureStorage) {
             // In case we switched from SecureAbove22AccountStorage to this implementation, migrate persisted account
             // and clear out the old storage layer.
-            val secureStorage = SecureAbove22AccountStorage(
-                context,
-                crashReporter,
-                migrateFromPlaintextStorage = false,
-            )
+            val secureStorage =
+                SecureAbove22AccountStorage(
+                    context,
+                    crashReporter,
+                    migrateFromPlaintextStorage = false,
+                )
             try {
                 secureStorage.read()?.let { secureAccount ->
                     this.write(secureAccount.toJSONString())
@@ -152,13 +148,10 @@ internal class SharedPrefAccountStorage(
         }
     }
 
-    /**
-     * @throws FxaException if JSON failed to parse into a [FirefoxAccount].
-     */
+    /** @throws FxaException if JSON failed to parse into a [FirefoxAccount]. */
     @Throws(FxaException::class)
     override fun read(): FirefoxAccount? {
-        val savedJSON = accountPreferences().getString(FXA_STATE_KEY, null)
-            ?: return null
+        val savedJSON = accountPreferences().getString(FXA_STATE_KEY, null) ?: return null
 
         // May throw a generic FxaException if it fails to process saved JSON.
         val account = FirefoxAccount.fromJSONString(savedJSON, crashReporter)
@@ -166,8 +159,8 @@ internal class SharedPrefAccountStorage(
         if (state != FxaRustAuthState.CONNECTED && crashReporter != null) {
             crashReporter.submitCaughtException(
                 AbnormalAccountStorageEvent.RestoringNonConnectedAccount(
-                    "Restoring account from an unexpected state: $state",
-                ),
+                    "Restoring account from an unexpected state: $state"
+                )
             )
         }
         return account
@@ -186,23 +179,20 @@ internal class SharedPrefAccountStorage(
     }
 }
 
-/**
- * A base class for exceptions describing abnormal account storage behaviour.
- */
+/** A base class for exceptions describing abnormal account storage behaviour. */
 internal abstract class AbnormalAccountStorageEvent(message: String? = null) : Exception(message) {
-    /**
-     * Account state was expected to be present, but it wasn't.
-     */
+    /** Account state was expected to be present, but it wasn't. */
     internal class UnexpectedlyMissingAccountState(message: String? = null) : AbnormalAccountStorageEvent(message)
+
     internal class RestoringNonConnectedAccount(message: String? = null) : AbnormalAccountStorageEvent(message)
 }
 
 /**
- * Account storage layer which uses encrypted-at-rest storage implementation for supported API levels (23+).
- * On older API versions account state is stored in plaintext.
+ * Account storage layer which uses encrypted-at-rest storage implementation for supported API levels (23+). On older
+ * API versions account state is stored in plaintext.
  *
- * Migration from [SharedPrefAccountStorage] will happen upon initialization,
- * unless disabled via [migrateFromPlaintextStorage].
+ * Migration from [SharedPrefAccountStorage] will happen upon initialization, unless disabled via
+ * [migrateFromPlaintextStorage].
  */
 internal class SecureAbove22AccountStorage(
     context: Context,
@@ -234,19 +224,20 @@ internal class SecureAbove22AccountStorage(
         }
     }
 
-    /**
-     * @throws FxaException if JSON failed to parse into a [FirefoxAccount].
-     */
+    /** @throws FxaException if JSON failed to parse into a [FirefoxAccount]. */
     @Throws(FxaException::class)
     override fun read(): FirefoxAccount? {
-        return store.getString(KEY_ACCOUNT_STATE).also {
-            // If account state is missing, but we expected it to be present, report an exception.
-            if (it == null && prefs.getBoolean(PREF_KEY_HAS_STATE, false)) {
-                crashReporter?.submitCaughtException(AbnormalAccountStorageEvent.UnexpectedlyMissingAccountState())
-                // Clear prefs to make sure we only submit this exception once.
-                prefs.edit { clear() }
+        return store
+            .getString(KEY_ACCOUNT_STATE)
+            .also {
+                // If account state is missing, but we expected it to be present, report an exception.
+                if (it == null && prefs.getBoolean(PREF_KEY_HAS_STATE, false)) {
+                    crashReporter?.submitCaughtException(AbnormalAccountStorageEvent.UnexpectedlyMissingAccountState())
+                    // Clear prefs to make sure we only submit this exception once.
+                    prefs.edit { clear() }
+                }
             }
-        }?.let { FirefoxAccount.fromJSONString(it, crashReporter) }
+            ?.let { FirefoxAccount.fromJSONString(it, crashReporter) }
     }
 
     override fun write(accountState: String) {

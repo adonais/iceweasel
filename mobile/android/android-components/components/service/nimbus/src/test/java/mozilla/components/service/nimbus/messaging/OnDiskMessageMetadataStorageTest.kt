@@ -27,34 +27,30 @@ class OnDiskMessageMetadataStorageTest {
 
     @Before
     fun setup() {
-        storage = OnDiskMessageMetadataStorage(
-            testContext,
-        )
+        storage = OnDiskMessageMetadataStorage(testContext)
     }
 
     @Test
-    fun `GIVEN metadata is not loaded from disk WHEN calling getMetadata THEN load it`() =
-        runTest {
-            val spiedStorage = spy(storage)
+    fun `GIVEN metadata is not loaded from disk WHEN calling getMetadata THEN load it`() = runTest {
+        val spiedStorage = spy(storage)
 
-            `when`(spiedStorage.readFromDisk()).thenReturn(emptyMap())
+        `when`(spiedStorage.readFromDisk()).thenReturn(emptyMap())
 
-            spiedStorage.getMetadata()
+        spiedStorage.getMetadata()
 
-            verify(spiedStorage).readFromDisk()
-        }
+        verify(spiedStorage).readFromDisk()
+    }
 
     @Test
-    fun `GIVEN metadata is loaded from disk WHEN calling getMetadata THEN do not load it from disk`() =
-        runTest {
-            val spiedStorage = spy(storage)
+    fun `GIVEN metadata is loaded from disk WHEN calling getMetadata THEN do not load it from disk`() = runTest {
+        val spiedStorage = spy(storage)
 
-            spiedStorage.metadataMap = hashMapOf("" to Message.Metadata("id"))
+        spiedStorage.metadataMap = hashMapOf("" to Message.Metadata("id"))
 
-            spiedStorage.getMetadata()
+        spiedStorage.getMetadata()
 
-            verify(spiedStorage, never()).readFromDisk()
-        }
+        verify(spiedStorage, never()).readFromDisk()
+    }
 
     @Test
     fun `WHEN calling addMetadata THEN add in memory and disk`() = runTest {
@@ -62,7 +58,7 @@ class OnDiskMessageMetadataStorageTest {
 
         assertTrue(spiedStorage.metadataMap.isEmpty())
 
-        `when`(spiedStorage.writeToDisk()).then { }
+        `when`(spiedStorage.writeToDisk()).then {}
 
         spiedStorage.addMetadata(Message.Metadata("id"))
 
@@ -74,7 +70,7 @@ class OnDiskMessageMetadataStorageTest {
     fun `WHEN calling updateMetadata THEN delegate to addMetadata`() = runTest {
         val spiedStorage = spy(storage)
         val metadata = Message.Metadata("id")
-        `when`(spiedStorage.writeToDisk()).then { }
+        `when`(spiedStorage.writeToDisk()).then {}
 
         spiedStorage.updateMetadata(metadata)
 
@@ -83,14 +79,15 @@ class OnDiskMessageMetadataStorageTest {
 
     @Test
     fun `WHEN calling toJson THEN return an string json representation`() {
-        val metadata = Message.Metadata(
-            id = "id",
-            displayCount = 1,
-            pressed = false,
-            dismissed = false,
-            lastTimeShown = 0L,
-            latestBootIdentifier = "9",
-        )
+        val metadata =
+            Message.Metadata(
+                id = "id",
+                displayCount = 1,
+                pressed = false,
+                dismissed = false,
+                lastTimeShown = 0L,
+                latestBootIdentifier = "9",
+            )
 
         val expected =
             """{"id":"id","displayCount":1,"pressed":false,"dismissed":false,"lastTimeShown":0,"latestBootIdentifier":"9"}"""
@@ -105,14 +102,15 @@ class OnDiskMessageMetadataStorageTest {
 
         val jsonObject = JSONObject(json)
 
-        val metadata = Message.Metadata(
-            id = "id",
-            displayCount = 1,
-            pressed = false,
-            dismissed = false,
-            lastTimeShown = 0L,
-            latestBootIdentifier = "9",
-        )
+        val metadata =
+            Message.Metadata(
+                id = "id",
+                displayCount = 1,
+                pressed = false,
+                dismissed = false,
+                lastTimeShown = 0L,
+                latestBootIdentifier = "9",
+            )
 
         assertEquals(metadata, jsonObject.toMetadata())
     }
@@ -124,14 +122,15 @@ class OnDiskMessageMetadataStorageTest {
 
         val jsonArray = JSONArray(json)
 
-        val metadata = Message.Metadata(
-            id = "id",
-            displayCount = 1,
-            pressed = false,
-            dismissed = false,
-            lastTimeShown = 0L,
-            latestBootIdentifier = "9",
-        )
+        val metadata =
+            Message.Metadata(
+                id = "id",
+                displayCount = 1,
+                pressed = false,
+                dismissed = false,
+                lastTimeShown = 0L,
+                latestBootIdentifier = "9",
+            )
 
         assertEquals(metadata, jsonArray.toMetadataMap()[metadata.id])
     }

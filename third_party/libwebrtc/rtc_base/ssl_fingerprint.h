@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
 
@@ -39,6 +40,10 @@ struct RTC_EXPORT SSLFingerprint {
       const SSLCertificate& cert);
 
   static absl_nullable std::unique_ptr<SSLFingerprint> CreateFromRfc4572(
+      absl::string_view algorithm,
+      absl::string_view fingerprint);
+
+  static std::optional<SSLFingerprint> CreateOptionalFromRfc4572(
       absl::string_view algorithm,
       absl::string_view fingerprint);
 

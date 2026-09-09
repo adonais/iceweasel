@@ -53,7 +53,7 @@ class SmallMenuCandidateViewHolderTest {
             SmallMenuCandidate(
                 "hello",
                 DrawableMenuIcon(null, tint = Color.BLUE),
-            ),
+            )
         )
         verify(view).setImageDrawable(null)
         verify(view).imageTintList = ColorStateList.valueOf(Color.BLUE)
@@ -83,7 +83,7 @@ class SmallMenuCandidateViewHolderTest {
                 DrawableMenuIcon(null),
             ) {
                 clicked = true
-            },
+            }
         )
 
         holder.onClick(null)
@@ -120,7 +120,7 @@ class SmallMenuCandidateViewHolderTest {
                     clicked = true
                     true
                 },
-            ) {},
+            ) {}
         )
         verify(view).isLongClickable = true
 

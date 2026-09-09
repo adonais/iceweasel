@@ -11,14 +11,12 @@ import org.mozilla.fenix.ext.removeSecure
 import org.mozilla.fenix.ext.secure
 
 /**
- * A [Fragment] implementation that can be used to secure screens displaying sensitive information
- * by not allowing taking screenshots of their content.
+ * A [Fragment] implementation that can be used to secure screens displaying sensitive information by not allowing
+ * taking screenshots of their content.
  *
  * Fragments displaying such screens should extend [SecureFragment] instead of [Fragment] class.
  */
-open class SecureFragment(
-    @LayoutRes contentLayoutId: Int,
-) : Fragment(contentLayoutId) {
+open class SecureFragment(@LayoutRes contentLayoutId: Int) : Fragment(contentLayoutId) {
 
     constructor() : this(0) {
         Fragment()

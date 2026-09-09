@@ -33,8 +33,8 @@ TEST(EncryptedRandomAccessBlockTest, EncryptedRandomAccessBlock_accessors)
   std::iota(rawData.begin(), rawData.end(), 1);
 
   EncryptedRandomAccessBlock block;
-  block.AssignFromBytes(Span<const uint8_t>{
-      rawData.data(), EncryptedRandomAccessBlock::BlockSize});
+  memcpy(block.MutableWholeBlock().Elements(), rawData.data(),
+         EncryptedRandomAccessBlock::BlockSize);
 
   const Span<const uint8_t> raw{rawData.data(), rawData.size()};
 

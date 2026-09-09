@@ -37,21 +37,20 @@ import org.mozilla.gecko.util.ThreadUtils.runOnUiThread
 
 // Tests for the General settings sub-menu: changing theme, locale and default browser
 class SettingsGeneralTest {
-    @get:Rule(order = 0)
-    val focusTestRule: FocusTestRule = FocusTestRule()
+    @get:Rule(order = 0) val focusTestRule: FocusTestRule = FocusTestRule()
+
+    @get:Rule val mActivityTestRule = MainActivityIntentsTestRule(showFirstRun = false)
 
     @get:Rule
-    val mActivityTestRule = MainActivityIntentsTestRule(showFirstRun = false)
-
-    @get:Rule
-    var watcher: TestRule = object : TestWatcher() {
-        override fun starting(description: Description) {
-            println("Starting test: " + description.methodName)
-            if (description.methodName == "frenchLocaleTest") {
-                changeLocale("fr")
+    var watcher: TestRule =
+        object : TestWatcher() {
+            override fun starting(description: Description) {
+                println("Starting test: " + description.methodName)
+                if (description.methodName == "frenchLocaleTest") {
+                    changeLocale("fr")
+                }
             }
         }
-    }
 
     @After
     fun tearDown() {
@@ -61,93 +60,92 @@ class SettingsGeneralTest {
     @SmokeTest
     @Test
     fun changeThemeTest() {
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openGeneralSettingsMenu {
-            verifyThemesList()
-            selectDarkTheme()
-            verifyThemeApplied(isDarkTheme = true, getThemeState = getUiTheme())
-            selectLightTheme()
-            verifyThemeApplied(isLightTheme = true, getThemeState = getUiTheme())
-            selectDeviceTheme()
-            verifyThemeApplied(isLightTheme = true, getThemeState = getUiTheme())
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openGeneralSettingsMenu {
+                verifyThemesList()
+                selectDarkTheme()
+                verifyThemeApplied(isDarkTheme = true, getThemeState = getUiTheme())
+                selectLightTheme()
+                verifyThemeApplied(isLightTheme = true, getThemeState = getUiTheme())
+                selectDeviceTheme()
+                verifyThemeApplied(isLightTheme = true, getThemeState = getUiTheme())
+            }
     }
 
     @SmokeTest
     @Test
     fun englishSystemLocaleTest() {
         // Go to Settings and change language to French
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openGeneralSettingsMenu {
-            openLanguageSelectionMenu()
-            verifySystemLocaleSelected()
-            selectLanguage(EN_AFRIKAANS_LOCALE)
-            verifyTranslatedTextExists(AF_LANGUAGE_MENU)
-            exitToTop()
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openGeneralSettingsMenu {
+                openLanguageSelectionMenu()
+                verifySystemLocaleSelected()
+                selectLanguage(EN_AFRIKAANS_LOCALE)
+                verifyTranslatedTextExists(AF_LANGUAGE_MENU)
+                exitToTop()
+            }
         // Exit to main and see the UI is localized as well
-        homeScreen {
-        }.openMainMenu {
-            verifyTranslatedTextExists(AF_SETTINGS)
-            verifyTranslatedTextExists(AF_HELP)
-            // change back to system locale, verify the locale is changed
-        }.openSettings(AF_SETTINGS) {
-        }.openGeneralSettingsMenu(AF_GENERAL_HEADING) {
-            openLanguageSelectionMenu(AF_LANGUAGE_MENU)
-            selectSystemDefault()
-            verifyTranslatedTextExists(EN_LANGUAGE_MENU_HEADING)
-            exitToTop()
-        }
-        homeScreen {
-        }.openMainMenu {
-            verifySettingsButtonExists()
-            verifyHelpPageLinkExists()
-        }
+        homeScreen {}
+            .openMainMenu {
+                verifyTranslatedTextExists(AF_SETTINGS)
+                verifyTranslatedTextExists(AF_HELP)
+                // change back to system locale, verify the locale is changed
+            }
+            .openSettings(AF_SETTINGS) {}
+            .openGeneralSettingsMenu(AF_GENERAL_HEADING) {
+                openLanguageSelectionMenu(AF_LANGUAGE_MENU)
+                selectSystemDefault()
+                verifyTranslatedTextExists(EN_LANGUAGE_MENU_HEADING)
+                exitToTop()
+            }
+        homeScreen {}
+            .openMainMenu {
+                verifySettingsButtonExists()
+                verifyHelpPageLinkExists()
+            }
     }
 
     @Test
     fun frenchLocaleTest() {
         // Go to Settings
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings(FR_SETTINGS) {
-        }.openGeneralSettingsMenu(FR_GENERAL_HEADING) {
-            openLanguageSelectionMenu(FR_LANGUAGE_MENU)
-            verifySystemLocaleSelected(FR_LANGUAGE_SYSTEM_DEFAULT)
-            // change locale to English, verify the locale is changed
-            selectLanguage(EN_AFRIKAANS_LOCALE)
-            verifyTranslatedTextExists(AF_LANGUAGE_MENU)
-            exitToTop()
-        }
-        homeScreen {
-        }.openMainMenu {
-            verifyTranslatedTextExists(AF_SETTINGS)
-            verifyTranslatedTextExists(AF_HELP)
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings(FR_SETTINGS) {}
+            .openGeneralSettingsMenu(FR_GENERAL_HEADING) {
+                openLanguageSelectionMenu(FR_LANGUAGE_MENU)
+                verifySystemLocaleSelected(FR_LANGUAGE_SYSTEM_DEFAULT)
+                // change locale to English, verify the locale is changed
+                selectLanguage(EN_AFRIKAANS_LOCALE)
+                verifyTranslatedTextExists(AF_LANGUAGE_MENU)
+                exitToTop()
+            }
+        homeScreen {}
+            .openMainMenu {
+                verifyTranslatedTextExists(AF_SETTINGS)
+                verifyTranslatedTextExists(AF_HELP)
+            }
     }
 
     @SmokeTest
     @Test
     fun changeDefaultBrowserTest() {
-        val supportPageUrl = "https://support.mozilla.org/en-US/kb/set-firefox-focus-default-browser-android"
-
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openGeneralSettingsMenu {
-            clickSetDefaultBrowser()
-            verifyAndroidDefaultAppsMenuAppears()
-            // for API <29 we'll skip these steps because the switch doesn't update after
-            // returning from Default apps settings, not reproducing manually
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                selectFocusDefaultBrowser()
-                verifySwitchIsToggled(true)
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openGeneralSettingsMenu {
+                clickSetDefaultBrowser()
+                verifyAndroidDefaultAppsMenuAppears()
+                // for API <29 we'll skip these steps because the switch doesn't update after
+                // returning from Default apps settings, not reproducing manually
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    selectFocusDefaultBrowser()
+                    verifySwitchIsToggled(true)
+                }
             }
-        }
     }
 
     fun changeLocale(languageTag: String) {
@@ -162,8 +160,7 @@ class SettingsGeneralTest {
     }
 
     private fun getUiTheme(): Boolean {
-        val mode =
-            mActivityTestRule.activity.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)
+        val mode = mActivityTestRule.activity.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)
 
         return when (mode) {
             Configuration.UI_MODE_NIGHT_YES -> true // dark theme is set

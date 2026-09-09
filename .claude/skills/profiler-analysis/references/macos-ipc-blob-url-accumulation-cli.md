@@ -9,8 +9,8 @@ Profile: https://profiler.firefox.com/public/325xgq000zjz7e3mdv85b4xhxn1jt6r03hj
 ## Load the profile and get an overview
 
 ```
-profiler-cli load https://profiler.firefox.com/public/325xgq000zjz7e3mdv85b4xhxn1jt6r03hjce3r
-profiler-cli profile info
+profiler-cli load https://profiler.firefox.com/public/325xgq000zjz7e3mdv85b4xhxn1jt6r03hjce3r --session blob-accumulation
+profiler-cli profile info --session blob-accumulation
 ```
 
 ```
@@ -39,8 +39,8 @@ The IPC I/O Parent thread (t-1) has 884ms of CPU in a 12.97-second profile, near
 ## Check GeckoMain: idle, but IPC messages are taking 4 seconds
 
 ```
-profiler-cli thread select t-0
-profiler-cli thread markers --min-duration 50
+profiler-cli thread select t-0 --session blob-accumulation
+profiler-cli thread markers --min-duration 50 --session blob-accumulation
 ```
 
 ```
@@ -65,7 +65,7 @@ The marker durations here are queuing latency, not execution time. An `IPCIn` du
 ## Group IPCIn by source process to find the pattern
 
 ```
-profiler-cli thread markers --auto-group --min-duration 50
+profiler-cli thread markers --auto-group --min-duration 50 --session blob-accumulation
 ```
 
 ```
@@ -90,7 +90,7 @@ By Name (top 15):
 ## Inspect the worst markers to identify the process and timing
 
 ```
-profiler-cli marker info m-11
+profiler-cli marker info m-11 --session blob-accumulation
 ```
 
 ```
@@ -104,7 +104,7 @@ Fields:
 ```
 
 ```
-profiler-cli marker info m-16
+profiler-cli marker info m-16 --session blob-accumulation
 ```
 
 ```
@@ -121,8 +121,8 @@ The long `IPCIn` from PID 51147 and the delayed `ExtensionParent` event for `spr
 ## Zoom into the blockage window to confirm
 
 ```
-profiler-cli zoom push m-11
-profiler-cli thread samples
+profiler-cli zoom push m-11 --session blob-accumulation
+profiler-cli thread samples --session blob-accumulation
 ```
 
 ```
@@ -133,7 +133,7 @@ Pushed view range: ts-L (6.785s) to ts-Uc (10.986s) (duration: 4.20s)
 Zooming to a marker handle with `profiler-cli zoom push m-11` sets the view range to exactly the marker's time window. After zooming, `thread samples` confirms the main thread is almost entirely idle inside this 4.2-second window -- the backlog is not caused by the main thread doing CPU-intensive work.
 
 ```
-profiler-cli zoom pop
+profiler-cli zoom pop --session blob-accumulation
 ```
 
 ---
@@ -141,8 +141,8 @@ profiler-cli zoom pop
 ## Find the cause: IPC I/O Parent blocked on a mutex
 
 ```
-profiler-cli thread select t-1
-profiler-cli thread samples-top-down --max-lines 40
+profiler-cli thread select t-1 --session blob-accumulation
+profiler-cli thread samples-top-down --max-lines 40 --session blob-accumulation
 ```
 
 ```
@@ -179,9 +179,9 @@ While blocked, the IPC I/O thread cannot deliver incoming messages from any othe
 The number of ports per dying process depends on how many actors it has. To understand where these actors come from, look at a newly spawned process:
 
 ```
-profiler-cli thread select t-5
-profiler-cli zoom push 11.5,12.0
-profiler-cli thread samples-top-down --max-lines 40
+profiler-cli thread select t-5 --session blob-accumulation
+profiler-cli zoom push 11.5,12.0 --session blob-accumulation
+profiler-cli thread samples-top-down --max-lines 40 --session blob-accumulation
 ```
 
 ```
@@ -208,7 +208,7 @@ This process was just spawned. The very first real work it does is deserialize `
 Each `BlobURLRegistrationData` contains a `RemoteLazyInputStream`, which creates a `PRemoteLazyInputStream` actor when deserialized. Each actor is one port. When the process later dies, all those ports must be cleaned up via `DestroyAllPortsWithPeer`.
 
 ```
-profiler-cli zoom pop
+profiler-cli zoom pop --session blob-accumulation
 ```
 
 ---
@@ -248,5 +248,5 @@ The WebExtensions process itself is 99.2% idle throughout. This is not a case of
 **Extension blob URL leaks.** Extensions using `URL.createObjectURL()` without `URL.revokeObjectURL()` accumulate blob URLs under their addon principal. These are broadcast to all processes. Use `about:memory -> Measure` and search for `memory-blob-urls` to find the extension responsible and count its URLs.
 
 ```
-profiler-cli stop
+profiler-cli stop --session blob-accumulation
 ```

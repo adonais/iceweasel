@@ -12,29 +12,21 @@ import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
-/**
- * Internal dao for accessing and modifying Downloads in the database.
- */
+/** Internal dao for accessing and modifying Downloads in the database. */
 @Dao
 internal interface DownloadDao {
 
-    @Insert
-    suspend fun insert(entity: DownloadEntity): Long
+    @Insert suspend fun insert(entity: DownloadEntity): Long
 
-    @Update
-    suspend fun update(entity: DownloadEntity)
+    @Update suspend fun update(entity: DownloadEntity)
 
-    @Query("SELECT * FROM downloads ORDER BY created_at DESC")
-    fun getDownloads(): Flow<List<DownloadEntity>>
+    @Query("SELECT * FROM downloads ORDER BY created_at DESC") fun getDownloads(): Flow<List<DownloadEntity>>
 
-    @Query("SELECT * FROM downloads ORDER BY created_at DESC")
-    suspend fun getDownloadsList(): List<DownloadEntity>
+    @Query("SELECT * FROM downloads ORDER BY created_at DESC") suspend fun getDownloadsList(): List<DownloadEntity>
 
-    @Delete
-    suspend fun delete(entity: DownloadEntity)
+    @Delete suspend fun delete(entity: DownloadEntity)
 
-    @Query("DELETE FROM downloads")
-    suspend fun deleteAllDownloads()
+    @Query("DELETE FROM downloads") suspend fun deleteAllDownloads()
 
     @Query("SELECT * FROM downloads ORDER BY created_at DESC")
     fun getDownloadsPaged(): DataSource.Factory<Int, DownloadEntity>

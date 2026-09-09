@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.password.importer
 
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -13,7 +14,6 @@ import kotlinx.coroutines.launch
 import mozilla.components.concept.passwords.file.PasswordsFileImporter
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
-import kotlin.time.Duration.Companion.seconds
 
 /**
  * [Middleware] that handles side-effects for [PasswordsImporterAction]s.
@@ -45,7 +45,8 @@ class PasswordsImporterMiddleware(
 
                     awaitAll(minimumWait, result)
 
-                    result.await()
+                    result
+                        .await()
                         .onFailure { store.dispatch(PasswordsImporterAction.ImportFailed) }
                         .onSuccess { store.dispatch(PasswordsImporterAction.ImportFinished(it.count)) }
                 }
@@ -60,8 +61,7 @@ class PasswordsImporterMiddleware(
             PasswordsImporterAction.ImportStarted,
             PasswordsImporterAction.ViewAppeared,
             is PasswordsImporterAction.ImportFinished,
-            PasswordsImporterAction.ImportFailed,
-                -> Unit
+            PasswordsImporterAction.ImportFailed -> Unit
         }
     }
 }

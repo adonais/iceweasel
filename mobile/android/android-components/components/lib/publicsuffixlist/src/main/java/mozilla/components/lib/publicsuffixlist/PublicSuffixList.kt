@@ -20,8 +20,7 @@ import kotlinx.coroutines.async
  *
  * Note that this implementation applies the rules of the public suffix list only and does not validate domains.
  *
- * https://publicsuffix.org/
- * https://github.com/publicsuffix/list
+ * https://publicsuffix.org/ https://github.com/publicsuffix/list
  */
 class PublicSuffixList(
     context: Context,
@@ -30,11 +29,9 @@ class PublicSuffixList(
 ) {
     private val data: PublicSuffixListData by lazy { PublicSuffixListLoader.load(context) }
 
-    /**
-     * Prefetch the public suffix list from disk so that it is available in memory.
-     */
+    /** Prefetch the public suffix list from disk so that it is available in memory. */
     fun prefetch(): Deferred<Unit> = scope.async {
-        data.run { }
+        data.run {}
     }
 
     /**
@@ -52,7 +49,7 @@ class PublicSuffixList(
      * If no rule matches then the passed [domain] is assumed to *not* be a public suffix.
      *
      * @param [domain] _must_ be a valid domain. [PublicSuffixList] performs no validation, and if any unexpected values
-     * are passed (e.g., a full URL, a domain with a trailing '/', etc) this may return an incorrect result.
+     *   are passed (e.g., a full URL, a domain with a trailing '/', etc) this may return an incorrect result.
      */
     fun isPublicSuffix(domain: String): Deferred<Boolean> = scope.async {
         when (data.getPublicSuffixOffset(domain)) {
@@ -62,8 +59,8 @@ class PublicSuffixList(
     }
 
     /**
-     * Returns the public suffix and one more level; known as the registrable domain. Returns `null` if
-     * [domain] is a public suffix itself.
+     * Returns the public suffix and one more level; known as the registrable domain. Returns `null` if [domain] is a
+     * public suffix itself.
      *
      * E.g.:
      * ```
@@ -73,15 +70,11 @@ class PublicSuffixList(
      * ```
      *
      * @param [domain] _must_ be a valid domain. [PublicSuffixList] performs no validation, and if any unexpected values
-     * are passed (e.g., a full URL, a domain with a trailing '/', etc) this may return an incorrect result.
+     *   are passed (e.g., a full URL, a domain with a trailing '/', etc) this may return an incorrect result.
      */
     fun getPublicSuffixPlusOne(domain: String): Deferred<String?> = scope.async {
         when (val offset = data.getPublicSuffixOffset(domain)) {
-            is PublicSuffixOffset.Offset ->
-                domain
-                    .split('.')
-                    .drop(offset.value)
-                    .joinToString(separator = ".")
+            is PublicSuffixOffset.Offset -> domain.split('.').drop(offset.value).joinToString(separator = ".")
             else -> null
         }
     }
@@ -98,15 +91,11 @@ class PublicSuffixList(
      * ```
      *
      * @param [domain] _must_ be a valid domain. [PublicSuffixList] performs no validation, and if any unexpected values
-     * are passed (e.g., a full URL, a domain with a trailing '/', etc) this may return an incorrect result.
+     *   are passed (e.g., a full URL, a domain with a trailing '/', etc) this may return an incorrect result.
      */
     fun getPublicSuffix(domain: String) = scope.async {
         when (val offset = data.getPublicSuffixOffset(domain)) {
-            is PublicSuffixOffset.Offset ->
-                domain
-                    .split('.')
-                    .drop(offset.value + 1)
-                    .joinToString(separator = ".")
+            is PublicSuffixOffset.Offset -> domain.split('.').drop(offset.value + 1).joinToString(separator = ".")
             else -> null
         }
     }
@@ -123,15 +112,12 @@ class PublicSuffixList(
      * ```
      *
      * @param [domain] _must_ be a valid domain. [PublicSuffixList] performs no validation, and if any unexpected values
-     * are passed (e.g., a full URL, a domain with a trailing '/', etc) this may return an incorrect result.
+     *   are passed (e.g., a full URL, a domain with a trailing '/', etc) this may return an incorrect result.
      */
     fun stripPublicSuffix(domain: String) = scope.async {
         when (val offset = data.getPublicSuffixOffset(domain)) {
             is PublicSuffixOffset.Offset ->
-                domain
-                    .split('.')
-                    .joinToString(separator = ".", limit = offset.value + 1, truncated = "")
-                    .dropLast(1)
+                domain.split('.').joinToString(separator = ".", limit = offset.value + 1, truncated = "").dropLast(1)
             else -> domain
         }
     }

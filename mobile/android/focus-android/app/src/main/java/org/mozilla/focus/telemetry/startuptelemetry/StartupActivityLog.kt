@@ -19,22 +19,19 @@ import mozilla.components.support.base.log.logger.Logger
 private val logger = Logger("StartupActivityLog")
 
 /**
- * A record of the [Activity] created, started, and stopped events as well as [Application]
- * foreground and background events. See [log] for the log. This class is expected to be
- * registered in [Application.onCreate] by calling [registerInAppOnCreate].
+ * A record of the [Activity] created, started, and stopped events as well as [Application] foreground and background
+ * events. See [log] for the log. This class is expected to be registered in [Application.onCreate] by calling
+ * [registerInAppOnCreate].
  *
- * To prevent this list from growing infinitely, we clear the list when the application is stopped.
- * This is acceptable from the current requirements: we never need to inspect more than the current
- * start up.
+ * To prevent this list from growing infinitely, we clear the list when the application is stopped. This is acceptable
+ * from the current requirements: we never need to inspect more than the current start up.
  */
 class StartupActivityLog {
 
     private val _log = mutableListOf<LogEntry>()
     val log: List<LogEntry> = _log
 
-    /**
-     * Registers the activity and process lifecycle observers.
-     */
+    /** Registers the activity and process lifecycle observers. */
     fun registerInAppOnCreate(
         application: Application,
         processLifecycleOwner: LifecycleOwner = ProcessLifecycleOwner.get(),
@@ -43,15 +40,11 @@ class StartupActivityLog {
         application.registerActivityLifecycleCallbacks(StartupLogActivityLifecycleCallbacks())
     }
 
-    /**
-     * Returns the app and activity lifecycle observers for testing.
-     */
+    /** Returns the app and activity lifecycle observers for testing. */
     @VisibleForTesting(otherwise = NONE)
     fun getObserversForTesting() = Pair(StartupLogAppLifecycleObserver(), StartupLogActivityLifecycleCallbacks())
 
-    /**
-     * Logs the captured startup entries.
-     */
+    /** Logs the captured startup entries. */
     @VisibleForTesting(otherwise = PRIVATE)
     fun logEntries(loggerArg: Logger = logger, logLevel: Log.Priority = Log.logLevel) {
         // Optimization: we want to avoid the potentially expensive conversions
@@ -73,9 +66,7 @@ class StartupActivityLog {
         loggerArg.debug(transformedEntries.toString())
     }
 
-    /**
-     * [DefaultLifecycleObserver] that logs app-level start and stop events.
-     */
+    /** [DefaultLifecycleObserver] that logs app-level start and stop events. */
     @VisibleForTesting(otherwise = PRIVATE)
     inner class StartupLogAppLifecycleObserver : DefaultLifecycleObserver {
         override fun onStart(owner: LifecycleOwner) {
@@ -89,9 +80,7 @@ class StartupActivityLog {
         }
     }
 
-    /**
-     * [DefaultActivityLifecycleCallbacks] that logs activity-level events.
-     */
+    /** [DefaultActivityLifecycleCallbacks] that logs activity-level events. */
     @VisibleForTesting(otherwise = PRIVATE)
     inner class StartupLogActivityLifecycleCallbacks : DefaultActivityLifecycleCallbacks {
         override fun onActivityCreated(activity: Activity, bundle: Bundle?) {
@@ -107,33 +96,21 @@ class StartupActivityLog {
         }
     }
 
-    /**
-     * A log entry with its detailed information for the [StartupActivityLog].
-     */
+    /** A log entry with its detailed information for the [StartupActivityLog]. */
     sealed class LogEntry {
-        /**
-         * Represents an application-started event.
-         */
+        /** Represents an application-started event. */
         object AppStarted : LogEntry()
 
-        /**
-         * Represents an application-stopped event.
-         */
+        /** Represents an application-stopped event. */
         object AppStopped : LogEntry()
 
-        /**
-         * Represents an activity-created event.
-         */
+        /** Represents an activity-created event. */
         data class ActivityCreated(val activityClass: Class<out Activity>) : LogEntry()
 
-        /**
-         * Represents an activity-started event.
-         */
+        /** Represents an activity-started event. */
         data class ActivityStarted(val activityClass: Class<out Activity>) : LogEntry()
 
-        /**
-         * Represents an activity-stopped event.
-         */
+        /** Represents an activity-stopped event. */
         data class ActivityStopped(val activityClass: Class<out Activity>) : LogEntry()
     }
 }

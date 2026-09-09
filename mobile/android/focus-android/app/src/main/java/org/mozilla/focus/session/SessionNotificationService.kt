@@ -17,18 +17,18 @@ import android.os.IBinder
 import android.os.RemoteException
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import java.lang.ref.WeakReference
 import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.ThreadUtils
 import mozilla.components.support.utils.ext.stopForegroundCompat
+import mozilla.components.ui.icons.R as iconsR
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.focus.GleanMetrics.Notifications
 import org.mozilla.focus.GleanMetrics.RecentApps
 import org.mozilla.focus.R
 import org.mozilla.focus.activity.MainActivity
 import org.mozilla.focus.ext.components
-import java.lang.ref.WeakReference
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Custom exception class for handling errors related to the SessionNotificationService.
@@ -43,9 +43,7 @@ class SessionNotificationServiceException(
     extraInfo: String,
 ) : Exception("$message; importance:$extraInfo", cause)
 
-/**
- * As long as a session is active this service will keep the notification (and our process) alive.
- */
+/** As long as a session is active this service will keep the notification (and our process) alive. */
 class SessionNotificationService : Service() {
 
     private var shouldSendTaskRemovedTelemetry = true
@@ -117,17 +115,19 @@ class SessionNotificationService : Service() {
 
     private fun buildNotification(): Notification {
         val eraseIntent = createEraseIntent()
-        val contentTitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            applicationContext.getString(R.string.notification_erase_title_android_14)
-        } else {
-            getString(R.string.app_name)
-        }
+        val contentTitle =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                applicationContext.getString(R.string.notification_erase_title_android_14)
+            } else {
+                getString(R.string.app_name)
+            }
 
-        val contentText = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            applicationContext.getString(R.string.notification_erase_text_android_14_1)
-        } else {
-            applicationContext.getString(R.string.notification_erase_text)
-        }
+        val contentText =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                applicationContext.getString(R.string.notification_erase_text_android_14_1)
+            } else {
+                applicationContext.getString(R.string.notification_erase_text)
+            }
 
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setOngoing(true)
@@ -144,14 +144,14 @@ class SessionNotificationService : Service() {
                     R.drawable.ic_notification,
                     applicationContext.getString(R.string.notification_action_open),
                     createOpenActionIntent(),
-                ),
+                )
             )
             .addAction(
                 NotificationCompat.Action(
                     iconsR.drawable.mozac_ic_delete_24,
                     applicationContext.getString(R.string.notification_action_erase_and_open),
                     createOpenAndEraseActionIntent(),
-                ),
+                )
             )
             .apply {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -162,8 +162,7 @@ class SessionNotificationService : Service() {
     }
 
     private fun createEraseIntent(): PendingIntent {
-        val notificationIntentFlags =
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_ONE_SHOT
+        val notificationIntentFlags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_ONE_SHOT
         val intent = Intent(this, SessionNotificationService::class.java)
         intent.action = ACTION_ERASE
 
@@ -171,8 +170,7 @@ class SessionNotificationService : Service() {
     }
 
     private fun createOpenActionIntent(): PendingIntent {
-        val openActionIntentFlags =
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        val openActionIntentFlags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         val intent = Intent(this, MainActivity::class.java)
         intent.action = MainActivity.ACTION_OPEN
 
@@ -180,8 +178,7 @@ class SessionNotificationService : Service() {
     }
 
     private fun createOpenAndEraseActionIntent(): PendingIntent {
-        val openAndEraseActionIntentFlags =
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        val openAndEraseActionIntentFlags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         val intent = Intent(this, MainActivity::class.java)
 
         intent.action = MainActivity.ACTION_ERASE
@@ -193,16 +190,18 @@ class SessionNotificationService : Service() {
 
     private fun createNotificationChannel() {
         val notificationChannelName = applicationContext.getString(R.string.notification_browsing_session_channel_name)
-        val notificationChannelDescription = applicationContext.getString(
-            R.string.notification_browsing_session_channel_description,
-            getString(R.string.app_name),
-        )
+        val notificationChannelDescription =
+            applicationContext.getString(
+                R.string.notification_browsing_session_channel_description,
+                getString(R.string.app_name),
+            )
 
-        val channel = NotificationChannel(
-            NOTIFICATION_CHANNEL_ID,
-            notificationChannelName,
-            NotificationManager.IMPORTANCE_MIN,
-        )
+        val channel =
+            NotificationChannel(
+                NOTIFICATION_CHANNEL_ID,
+                notificationChannelName,
+                NotificationManager.IMPORTANCE_MIN,
+            )
         channel.importance = NotificationManager.IMPORTANCE_LOW
         channel.description = notificationChannelDescription
         channel.enableLights(false)

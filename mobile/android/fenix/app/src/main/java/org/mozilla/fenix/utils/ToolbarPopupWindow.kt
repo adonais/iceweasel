@@ -16,6 +16,8 @@ import android.widget.PopupWindow
 import androidx.annotation.VisibleForTesting
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.isVisible
+import java.lang.ref.WeakReference
+import mozilla.components.browser.menu.R as menuR
 import mozilla.components.browser.state.selector.findCustomTab
 import mozilla.components.browser.state.selector.findCustomTabOrSelectedTab
 import mozilla.components.browser.state.selector.selectedTab
@@ -31,12 +33,10 @@ import org.mozilla.fenix.compose.snackbar.SnackbarState
 import org.mozilla.fenix.databinding.BrowserToolbarPopupWindowBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.isToolbarAtBottom
-import java.lang.ref.WeakReference
-import mozilla.components.browser.menu.R as menuR
 
 /**
- * Since Android 12 reading the clipboard triggers an OS notification.
- * As such it is important that we do not read it prematurely and only when the user trigger a paste action.
+ * Since Android 12 reading the clipboard triggers an OS notification. As such it is important that we do not read it
+ * prematurely and only when the user trigger a paste action.
  */
 object ToolbarPopupWindow {
     /**
@@ -67,14 +67,14 @@ object ToolbarPopupWindow {
         if (!copyVisible && pasteDeactivated) return
 
         val binding = BrowserToolbarPopupWindowBinding.inflate(LayoutInflater.from(context))
-        val popupWindow = PopupWindow(
-            binding.root,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            context.pixelSizeFor(R.dimen.context_menu_height),
-            true,
-        )
-        popupWindow.elevation =
-            context.resources.getDimension(menuR.dimen.mozac_browser_menu_elevation)
+        val popupWindow =
+            PopupWindow(
+                binding.root,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                context.pixelSizeFor(R.dimen.context_menu_height),
+                true,
+            )
+        popupWindow.elevation = context.resources.getDimension(menuR.dimen.mozac_browser_menu_elevation)
 
         // This is a workaround for SDK<23 to allow popup dismissal on outside or back button press
         // See: https://github.com/mozilla-mobile/fenix/issues/10027
@@ -100,9 +100,10 @@ object ToolbarPopupWindow {
                 popupWindow.dismiss()
                 clipboard.extractURL()?.also {
                     handlePasteAndGo(it)
-                } ?: run {
-                    Logger("ToolbarPopupWindow").error("Clipboard contains URL but unable to read text")
                 }
+                    ?: run {
+                        Logger("ToolbarPopupWindow").error("Clipboard contains URL but unable to read text")
+                    }
             }
         }
 
@@ -142,21 +143,22 @@ object ToolbarPopupWindow {
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
                 snackbarParent.get()?.let { snackbarParent ->
                     Snackbar.make(
-                        snackBarParentView = snackbarParent,
-                        snackbarState = SnackbarState(
-                            message = context.getString(R.string.browser_toolbar_url_copied_to_clipboard_snackbar),
-                            duration = SnackbarState.Duration.Preset.Long,
-                        ),
-                    ).show()
+                            snackBarParentView = snackbarParent,
+                            snackbarState =
+                                SnackbarState(
+                                    message =
+                                        context.getString(R.string.browser_toolbar_url_copied_to_clipboard_snackbar),
+                                    duration = SnackbarState.Duration.Preset.Long,
+                                ),
+                        )
+                        .show()
                 }
             }
             Events.copyUrlTapped.record(NoExtras())
         }
     }
 
-    /**
-     * Calculates if the popup should be shown above or below the toolbar.
-     */
+    /** Calculates if the popup should be shown above or below the toolbar. */
     private fun calculatePopupVerticalOffset(
         context: Context,
         toolbarLayout: WeakReference<View>,

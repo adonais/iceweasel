@@ -6,24 +6,14 @@ package mozilla.components.support.images.compose.loader
 
 import androidx.compose.ui.graphics.painter.BitmapPainter
 
-/**
- * The state an [ImageLoaderScope] is in.
- */
+/** The state an [ImageLoaderScope] is in. */
 sealed class ImageLoaderState {
-    /**
-     * The [ImageLoader] is currently loading the image.
-     */
+    /** The [ImageLoader] is currently loading the image. */
     object Loading : ImageLoaderState()
 
-    /**
-     * The [ImageLoader] succesfully loaded the image.
-     */
-    data class Image(
-        val painter: BitmapPainter,
-    ) : ImageLoaderState()
+    /** The [ImageLoader] succesfully loaded the image. */
+    data class Image(val painter: BitmapPainter) : ImageLoaderState()
 
-    /**
-     * Loading the image failed.
-     */
+    /** Loading the image failed. */
     object Failed : ImageLoaderState()
 }

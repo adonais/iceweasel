@@ -7,9 +7,7 @@ package mozilla.components.support.images
 import android.view.View
 import kotlinx.coroutines.Job
 
-/**
- * Cancels the provided job when a view is detached from the window
- */
+/** Cancels the provided job when a view is detached from the window */
 class CancelOnDetach(private val job: Job) : View.OnAttachStateChangeListener {
 
     override fun onViewAttachedToWindow(v: View) = Unit

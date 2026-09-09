@@ -1,5 +1,10 @@
 async function test() {
   waitForExplicitFinish();
+  // This test isn't about the downloads panel, and starting a download would
+  // otherwise leave it open.
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.download.alwaysOpenPanel", false]],
+  });
   const target = "http://example.com/browser/dom/url/tests/empty.html";
   info("Loading download page...");
   let tab = BrowserTestUtils.addTab(gBrowser, target);

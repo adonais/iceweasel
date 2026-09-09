@@ -17,12 +17,13 @@ fun getApplicationInstalledTime(
     packageManagerCompatHelper: PackageManagerCompatHelper,
     packageName: String,
     logger: Logger,
-): Long = try {
-    packageManagerCompatHelper.getPackageInfoCompat(packageName, 0).firstInstallTime
-} catch (e: PackageManager.NameNotFoundException) {
-    logger.warn("Unable to retrieve package info for $packageName", e)
-    0L
-} catch (e: UnsupportedOperationException) {
-    logger.warn("Unable to retrieve package info for $packageName", e)
-    0L
-}
+): Long =
+    try {
+        packageManagerCompatHelper.getPackageInfoCompat(packageName, 0).firstInstallTime
+    } catch (e: PackageManager.NameNotFoundException) {
+        logger.warn("Unable to retrieve package info for $packageName", e)
+        0L
+    } catch (e: UnsupportedOperationException) {
+        logger.warn("Unable to retrieve package info for $packageName", e)
+        0L
+    }

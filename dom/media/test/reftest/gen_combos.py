@@ -203,6 +203,109 @@ for c in COMBOS:
     todo.append(args)
 
 # -
+# Combinations where the transfer function is not implied by the primaries.
+# The cross-combined set above ties primaries, transfer and matrix together, so
+# it cannot express BT.2100 PQ/HLG or wide gamut SDR. Those need explicit
+# per-encoder signalling, because the decoder reads them out of the bitstream.
+
+# name -> (ffmpeg primaries, ffmpeg transfer, ffmpeg matrix,
+#          AV1/HEVC enum primaries, transfer, matrix)
+TRANSFER_COMBOS = {
+    ("bt2020", "pq"): ("bt2020", "smpte2084", "bt2020nc", 9, 16, 9),
+    ("bt2020", "hlg"): ("bt2020", "arib-std-b67", "bt2020nc", 9, 18, 9),
+    ("bt2020", "bt2020"): ("bt2020", "bt2020-10", "bt2020nc", 9, 14, 9),
+    ("bt709", "bt709"): ("bt709", "bt709", "bt709", 1, 1, 1),
+}
+
+# (primaries, transfer, format) -> codecs. PQ and HLG are 10 bit only.
+TRANSFER_TARGETS = [
+    (("bt2020", "pq"), "yuv420p10", ["hevc.mp4", "av1.mp4", "av1.webm", "vp9.webm"]),
+    (("bt2020", "hlg"), "yuv420p10", ["hevc.mp4", "av1.mp4", "av1.webm", "vp9.webm"]),
+    (("bt2020", "bt2020"), "yuv420p10", ["hevc.mp4", "av1.mp4", "av1.webm"]),
+    (("bt709", "bt709"), "yuv420p", ["hevc.mp4"]),
+]
+
+
+def transfer_args(vcodec, prim, trc, mtx, e_prim, e_trc, e_mtx, full_range):
+    """Encoder specific signalling, so the values land in the bitstream and not
+    just in the container."""
+    if vcodec == "hevc":
+        rng = "full" if full_range else "limited"
+        return [
+            "-c:v",
+            "libx265",
+            "-x265-params",
+            f"colorprim={prim}:transfer={trc}:colormatrix={mtx}:range={rng}",
+        ]
+    if vcodec == "av1":
+        rng = 1 if full_range else 0
+        return [
+            "-c:v",
+            "libsvtav1",
+            "-svtav1-params",
+            f"color-primaries={e_prim}:transfer-characteristics={e_trc}"
+            f":matrix-coefficients={e_mtx}:color-range={rng}",
+        ]
+    assert vcodec == "vp9", vcodec
+    return ["-c:v", "libvpx-vp9"]
+
+
+for (prim_name, trc_name), fmt, targets in TRANSFER_TARGETS:
+    prim, trc, mtx, e_prim, e_trc, e_mtx = TRANSFER_COMBOS[(prim_name, trc_name)]
+    for target in targets:
+        vcodec, ext = target.split(".")
+        dst_name = ".".join([
+            SRC_PATH.name,
+            prim_name,
+            trc_name,
+            "tv",
+            fmt,
+            vcodec,
+            ext,
+        ])
+
+        # zscale converts the samples through linear light, so the output is
+        # genuinely encoded with the requested transfer function rather than
+        # merely tagged with it.
+        vf = (
+            f"zscale=pin=bt709:tin=iec61966-2-1:min=bt709:rin=pc"
+            f":p={prim}:t={trc}:m={mtx}:r=tv:npl=100"
+        )
+        args = [
+            "ffmpeg",
+            "-y",
+            "-color_primaries",
+            "bt709",
+            "-color_trc",
+            "bt709",
+            "-colorspace",
+            "bt709",
+            "-i",
+            SRC_PATH.as_posix(),
+            "-bitexact",
+            "-vf",
+            vf,
+            "-pix_fmt",
+            fmt,
+            "-color_primaries",
+            prim,
+            "-color_trc",
+            trc,
+            "-colorspace",
+            mtx,
+            "-color_range",
+            "tv",
+        ]
+        args += transfer_args(vcodec, prim, trc, mtx, e_prim, e_trc, e_mtx, False)
+        args += ["-crf", "1", (DIR / dst_name).as_posix()]
+
+        if "-v" in ARGS or "-vv" in ARGS:
+            print("$ " + " ".join(args))
+        else:
+            print("  " + args[-1])
+        todo.append(args)
+
+# -
 
 with open(DIR / "reftest.list") as f:
     reftest_list_text = f.read()

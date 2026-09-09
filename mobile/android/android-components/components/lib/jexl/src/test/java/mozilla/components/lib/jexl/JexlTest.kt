@@ -62,25 +62,27 @@ class JexlTest {
     fun `Should use context`() {
         val jexl = Jexl()
 
-        val context = JexlContext(
-            "employees" to JexlArray(
-                JexlObject(
-                    "first" to "Sterling".toJexl(),
-                    "last" to "Archer".toJexl(),
-                    "age" to 36.toJexl(),
-                ),
-                JexlObject(
-                    "first" to "Malory".toJexl(),
-                    "last" to "Archer".toJexl(),
-                    "age" to 75.toJexl(),
-                ),
-                JexlObject(
-                    "first" to "Malory".toJexl(),
-                    "last" to "Archer".toJexl(),
-                    "age" to 33.toJexl(),
-                ),
-            ),
-        )
+        val context =
+            JexlContext(
+                "employees" to
+                    JexlArray(
+                        JexlObject(
+                            "first" to "Sterling".toJexl(),
+                            "last" to "Archer".toJexl(),
+                            "age" to 36.toJexl(),
+                        ),
+                        JexlObject(
+                            "first" to "Malory".toJexl(),
+                            "last" to "Archer".toJexl(),
+                            "age" to 75.toJexl(),
+                        ),
+                        JexlObject(
+                            "first" to "Malory".toJexl(),
+                            "last" to "Archer".toJexl(),
+                            "age" to 33.toJexl(),
+                        ),
+                    )
+            )
 
         assertEquals(
             JexlArray(
@@ -104,7 +106,7 @@ class JexlTest {
                     "first" to "Malory".toJexl(),
                     "last" to "Archer".toJexl(),
                     "age" to 33.toJexl(),
-                ),
+                )
             ),
             jexl.evaluate("employees[.age >= 30 && .age < 90][.age < 35]", context),
         )

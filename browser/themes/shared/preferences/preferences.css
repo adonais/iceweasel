@@ -1665,6 +1665,10 @@ setting-pane[onsearchpane] {
   --box-label-font-weight: var(--font-weight-heading);
 }
 
+#containers-list {
+  --box-group-max-height: 525px;
+}
+
 .containers-identity-item {
   --box-icon-start-fill: var(--identity-icon-color);
   --box-icon-size: var(--icon-size-xlarge);
@@ -1674,6 +1678,15 @@ setting-pane[onsearchpane] {
     --box-icon-padding: round(up, var(--space-small), 0.5px);
     --box-icon-border-radius: var(--border-radius-circle);
     --box-icon-background: var(--identity-fill-tint);
+  }
+}
+
+#site-containers-list {
+  --box-group-max-height: 500px;
+
+  container-select {
+    --select-min-width: 10em;
+    --select-max-width: 10em;
   }
 }
 

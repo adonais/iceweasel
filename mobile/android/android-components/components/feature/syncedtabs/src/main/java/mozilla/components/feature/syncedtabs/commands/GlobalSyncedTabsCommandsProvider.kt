@@ -5,15 +5,14 @@
 package mozilla.components.feature.syncedtabs.commands
 
 /**
- * A singleton that provides access to the synced tabs command queue.
- * This object lets the [SyncedTabsCommandsFlushWorker] access the queue.
+ * A singleton that provides access to the synced tabs command queue. This object lets the
+ * [SyncedTabsCommandsFlushWorker] access the queue.
  */
 object GlobalSyncedTabsCommandsProvider {
     private var lazyCommands: Lazy<SyncedTabsCommands>? = null
 
     /**
-     * Initializes this provider with a lazily-initialized
-     * synced tabs command queue.
+     * Initializes this provider with a lazily-initialized synced tabs command queue.
      *
      * @param value The lazily-initialized [SyncedTabsCommands] instance.
      */

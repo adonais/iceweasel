@@ -1,0 +1,124 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+.main-content {
+  max-width: 72em;
+  margin-inline: auto;
+  padding: var(--space-large);
+}
+
+moz-page-header {
+  margin-block-end: var(--space-xlarge);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-medium);
+  padding-block-end: var(--space-medium);
+  border-block-end: 1px solid var(--border-color);
+
+  .filter-search {
+    flex: 1;
+    min-inline-size: var(--size-layout-small);
+  }
+
+  .toolbar-actions {
+    margin-inline-start: auto;
+  }
+}
+
+.log-count {
+  color: var(--text-color-deemphasized);
+  margin-block: var(--space-medium);
+}
+
+.log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xsmall);
+}
+
+.log-row {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-medium);
+  overflow: hidden;
+
+  .log-row-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-medium);
+    padding: var(--space-small) var(--space-medium);
+    list-style: none;
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--background-color-list-item-hover);
+    }
+  }
+
+  .log-open-raw {
+    flex: none;
+    margin-inline-start: var(--space-small);
+  }
+
+  .log-contents {
+    margin: 0;
+    padding: var(--space-medium);
+    max-block-size: 30em;
+    overflow: auto;
+    border-block-start: 1px solid var(--border-color);
+    background-color: var(--background-color-canvas);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-family: monospace;
+  }
+}
+
+.log-badge {
+  flex: none;
+  padding: var(--space-xxsmall) var(--space-small);
+  border-radius: var(--border-radius-small);
+  font-weight: var(--font-weight-semibold);
+
+  &.success {
+    background-color: var(--background-color-success);
+  }
+
+  &.error {
+    background-color: var(--background-color-critical);
+    color: var(--text-color-error);
+  }
+}
+
+.log-date {
+  flex: 1;
+}
+
+.log-size {
+  flex: none;
+  color: var(--text-color-deemphasized);
+  font-variant-numeric: tabular-nums;
+}
+
+.log-line {
+  &.error {
+    color: var(--text-color-error);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  &.warn {
+    color: var(--text-color-deemphasized);
+  }
+}
+
+.empty-state {
+  margin-block: var(--space-xlarge);
+  text-align: center;
+  color: var(--text-color-deemphasized);
+}

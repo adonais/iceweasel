@@ -58,11 +58,12 @@ already_AddRefed<Promise> IdentityProvider::Resolve(
   identityHandler->ResolveContinuationWindow(aToken, aOptions)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [promise, window](nsresult aSuccess) {
-            MOZ_ASSERT(NS_SUCCEEDED(aSuccess));
-            promise->MaybeResolveWithUndefined();
-            window->Close();
-          },
+          [promise, window](nsresult aSuccess)
+              MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                MOZ_ASSERT(NS_SUCCEEDED(aSuccess));
+                promise->MaybeResolveWithUndefined();
+                window->Close();
+              },
           [promise](nsresult aFailure) {
             promise->MaybeRejectWithNotAllowedError(
                 "IdentityProvider.resolve could not find a pending request to "

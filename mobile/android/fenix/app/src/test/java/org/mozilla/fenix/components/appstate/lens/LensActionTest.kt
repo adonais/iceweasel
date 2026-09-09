@@ -18,13 +18,15 @@ class LensActionTest {
 
         val finalState = AppStoreReducer.reduce(initialState, AppAction.LensAction.LensRequested)
 
-        val expectedState = AppState(
-            lensState = LensState(
-                isRequesting = true,
-                inProgress = false,
-                resultUrl = null,
-            ),
-        )
+        val expectedState =
+            AppState(
+                lensState =
+                    LensState(
+                        isRequesting = true,
+                        inProgress = false,
+                        resultUrl = null,
+                    )
+            )
 
         assertEquals(expectedState, finalState)
     }
@@ -34,19 +36,22 @@ class LensActionTest {
         val initialState = AppState()
         val imageUrl = "https://example.com/image.jpg"
 
-        val finalState = AppStoreReducer.reduce(
-            initialState,
-            AppAction.LensAction.LensRequestedWithImageUrl(imageUrl),
-        )
+        val finalState =
+            AppStoreReducer.reduce(
+                initialState,
+                AppAction.LensAction.LensRequestedWithImageUrl(imageUrl),
+            )
 
-        val expectedState = AppState(
-            lensState = LensState(
-                isRequesting = true,
-                inProgress = false,
-                resultUrl = null,
-                pendingImageUrl = imageUrl,
-            ),
-        )
+        val expectedState =
+            AppState(
+                lensState =
+                    LensState(
+                        isRequesting = true,
+                        inProgress = false,
+                        resultUrl = null,
+                        pendingImageUrl = imageUrl,
+                    )
+            )
 
         assertEquals(expectedState, finalState)
     }
@@ -57,25 +62,29 @@ class LensActionTest {
 
         state = AppStoreReducer.reduce(state, AppAction.LensAction.LensRequested)
 
-        var expectedState = AppState(
-            lensState = LensState(
-                isRequesting = true,
-                inProgress = false,
-                resultUrl = null,
-            ),
-        )
+        var expectedState =
+            AppState(
+                lensState =
+                    LensState(
+                        isRequesting = true,
+                        inProgress = false,
+                        resultUrl = null,
+                    )
+            )
 
         assertEquals(expectedState, state)
 
         state = AppStoreReducer.reduce(state, AppAction.LensAction.LensRequestConsumed)
 
-        expectedState = AppState(
-            lensState = LensState(
-                isRequesting = false,
-                inProgress = true,
-                resultUrl = null,
-            ),
-        )
+        expectedState =
+            AppState(
+                lensState =
+                    LensState(
+                        isRequesting = false,
+                        inProgress = true,
+                        resultUrl = null,
+                    )
+            )
 
         assertEquals(expectedState, state)
     }
@@ -84,18 +93,21 @@ class LensActionTest {
     fun `WHEN the Lens result is available THEN the state should reflect that`() {
         val initialState = AppState()
 
-        val finalState = AppStoreReducer.reduce(
-            initialState,
-            AppAction.LensAction.LensResultAvailable("https://lens.google.com/results"),
-        )
+        val finalState =
+            AppStoreReducer.reduce(
+                initialState,
+                AppAction.LensAction.LensResultAvailable("https://lens.google.com/results"),
+            )
 
-        val expectedState = AppState(
-            lensState = LensState(
-                isRequesting = false,
-                inProgress = false,
-                resultUrl = "https://lens.google.com/results",
-            ),
-        )
+        val expectedState =
+            AppState(
+                lensState =
+                    LensState(
+                        isRequesting = false,
+                        inProgress = false,
+                        resultUrl = "https://lens.google.com/results",
+                    )
+            )
 
         assertEquals(expectedState, finalState)
     }
@@ -104,18 +116,21 @@ class LensActionTest {
     fun `WHEN the Lens result is consumed THEN the state should reflect that`() {
         var state = AppState()
 
-        state = AppStoreReducer.reduce(
-            state,
-            AppAction.LensAction.LensResultAvailable("https://lens.google.com/results"),
-        )
+        state =
+            AppStoreReducer.reduce(
+                state,
+                AppAction.LensAction.LensResultAvailable("https://lens.google.com/results"),
+            )
 
-        var expectedState = AppState(
-            lensState = LensState(
-                isRequesting = false,
-                inProgress = false,
-                resultUrl = "https://lens.google.com/results",
-            ),
-        )
+        var expectedState =
+            AppState(
+                lensState =
+                    LensState(
+                        isRequesting = false,
+                        inProgress = false,
+                        resultUrl = "https://lens.google.com/results",
+                    )
+            )
 
         assertEquals(expectedState, state)
 
@@ -132,13 +147,15 @@ class LensActionTest {
 
         state = AppStoreReducer.reduce(state, AppAction.LensAction.LensRequested)
 
-        var expectedState = AppState(
-            lensState = LensState(
-                isRequesting = true,
-                inProgress = false,
-                resultUrl = null,
-            ),
-        )
+        var expectedState =
+            AppState(
+                lensState =
+                    LensState(
+                        isRequesting = true,
+                        inProgress = false,
+                        resultUrl = null,
+                    )
+            )
 
         assertEquals(expectedState, state)
 

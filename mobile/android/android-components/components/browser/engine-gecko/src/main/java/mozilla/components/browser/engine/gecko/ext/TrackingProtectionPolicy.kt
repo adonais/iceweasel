@@ -34,41 +34,40 @@ fun TrackingProtectionPolicy.toContentBlockingSetting(
     safeBrowsingRealTimeSimulationCacheTTLSec: Int = 300,
     safeBrowsingRealTimeSimulationNegativeCacheEnabled: Boolean = false,
     safeBrowsingRealTimeSimulationNegativeCacheTTLSec: Int = 300,
-) = ContentBlocking.Settings.Builder().apply {
-    enhancedTrackingProtectionLevel(getEtpLevel())
-    enhancedTrackingProtectionCategory(getEtpCategory())
-    antiTracking(getAntiTrackingPolicy())
-    cookieBehavior(cookiePolicy.id)
-    cookieBehaviorPrivateMode(cookiePolicyPrivateMode.id)
-    cookiePurging(cookiePurging)
-    safeBrowsing(safeBrowsingPolicy.sumOf { it.id })
-    strictSocialTrackingProtection(getStrictSocialTrackingProtection())
-    queryParameterStrippingEnabled(queryParameterStripping)
-    queryParameterStrippingPrivateBrowsingEnabled(queryParameterStrippingPrivateBrowsing)
-    queryParameterStrippingAllowList(*queryParameterStrippingAllowList.split(",").toTypedArray())
-    queryParameterStrippingStripList(*queryParameterStrippingStripList.split(",").toTypedArray())
-    bounceTrackingProtectionMode(bounceTrackingProtectionMode.mode)
-    allowListBaselineTrackingProtection(allowListBaselineTrackingProtection)
-    allowListConvenienceTrackingProtection(allowListConvenienceTrackingProtection)
-    safeBrowsingGlobalCacheEnabled(safeBrowsingGlobalCacheEnabled)
-    safeBrowsingRealTimeEnabled(safeBrowsingRealTimeEnabled)
-    safeBrowsingRealTimeSimulationEnabled(safeBrowsingRealTimeSimulationEnabled)
-    safeBrowsingRealTimeSimulationHitProbability(safeBrowsingRealTimeSimulationHitProbability)
-    safeBrowsingRealTimeSimulationCacheTTLSec(safeBrowsingRealTimeSimulationCacheTTLSec)
-    safeBrowsingRealTimeSimulationNegativeCacheEnabled(safeBrowsingRealTimeSimulationNegativeCacheEnabled)
-    safeBrowsingRealTimeSimulationNegativeCacheTTLSec(safeBrowsingRealTimeSimulationNegativeCacheTTLSec)
-}.build()
+) =
+    ContentBlocking.Settings.Builder()
+        .apply {
+            enhancedTrackingProtectionLevel(getEtpLevel())
+            enhancedTrackingProtectionCategory(getEtpCategory())
+            antiTracking(getAntiTrackingPolicy())
+            cookieBehavior(cookiePolicy.id)
+            cookieBehaviorPrivateMode(cookiePolicyPrivateMode.id)
+            cookiePurging(cookiePurging)
+            safeBrowsing(safeBrowsingPolicy.sumOf { it.id })
+            strictSocialTrackingProtection(getStrictSocialTrackingProtection())
+            queryParameterStrippingEnabled(queryParameterStripping)
+            queryParameterStrippingPrivateBrowsingEnabled(queryParameterStrippingPrivateBrowsing)
+            queryParameterStrippingAllowList(*queryParameterStrippingAllowList.split(",").toTypedArray())
+            queryParameterStrippingStripList(*queryParameterStrippingStripList.split(",").toTypedArray())
+            bounceTrackingProtectionMode(bounceTrackingProtectionMode.mode)
+            allowListBaselineTrackingProtection(allowListBaselineTrackingProtection)
+            allowListConvenienceTrackingProtection(allowListConvenienceTrackingProtection)
+            safeBrowsingGlobalCacheEnabled(safeBrowsingGlobalCacheEnabled)
+            safeBrowsingRealTimeEnabled(safeBrowsingRealTimeEnabled)
+            safeBrowsingRealTimeSimulationEnabled(safeBrowsingRealTimeSimulationEnabled)
+            safeBrowsingRealTimeSimulationHitProbability(safeBrowsingRealTimeSimulationHitProbability)
+            safeBrowsingRealTimeSimulationCacheTTLSec(safeBrowsingRealTimeSimulationCacheTTLSec)
+            safeBrowsingRealTimeSimulationNegativeCacheEnabled(safeBrowsingRealTimeSimulationNegativeCacheEnabled)
+            safeBrowsingRealTimeSimulationNegativeCacheTTLSec(safeBrowsingRealTimeSimulationNegativeCacheTTLSec)
+        }
+        .build()
 
-/**
- * Returns whether [TrackingCategory.STRICT] is enabled in the [TrackingProtectionPolicy].
- */
+/** Returns whether [TrackingCategory.STRICT] is enabled in the [TrackingProtectionPolicy]. */
 internal fun TrackingProtectionPolicy.getStrictSocialTrackingProtection(): Boolean {
     return strictSocialTrackingProtection ?: trackingCategories.contains(TrackingCategory.STRICT)
 }
 
-/**
- * Returns the [TrackingProtectionPolicy] categories as an Enhanced Tracking Protection level for GeckoView.
- */
+/** Returns the [TrackingProtectionPolicy] categories as an Enhanced Tracking Protection level for GeckoView. */
 internal fun TrackingProtectionPolicy.getEtpLevel(): Int {
     return when {
         trackingCategories.contains(TrackingCategory.NONE) -> ContentBlocking.EtpLevel.NONE
@@ -78,8 +77,7 @@ internal fun TrackingProtectionPolicy.getEtpLevel(): Int {
 }
 
 /**
- * Returns the [TrackingProtectionPolicy] categories as an Enhanced Tracking
- * Protection category preset for GeckoView.
+ * Returns the [TrackingProtectionPolicy] categories as an Enhanced Tracking Protection category preset for GeckoView.
  * If no preset matches the configured categories CUSTOM is returned.
  */
 internal fun TrackingProtectionPolicy.getEtpCategory(): Int {
@@ -91,15 +89,12 @@ internal fun TrackingProtectionPolicy.getEtpCategory(): Int {
     }
 }
 
-/**
- * Returns the [TrackingProtectionPolicy] as a tracking policy for GeckoView.
- */
+/** Returns the [TrackingProtectionPolicy] as a tracking policy for GeckoView. */
 internal fun TrackingProtectionPolicy.getAntiTrackingPolicy(): Int {
     /**
-     * The [TrackingProtectionPolicy.TrackingCategory.SCRIPTS_AND_SUB_RESOURCES] is an
-     * artificial category, created with the sole purpose of going around this bug
-     * https://bugzilla.mozilla.org/show_bug.cgi?id=1579264, for this reason we have to
-     * remove its value from the valid anti tracking categories, when is present.
+     * The [TrackingProtectionPolicy.TrackingCategory.SCRIPTS_AND_SUB_RESOURCES] is an artificial category, created with
+     * the sole purpose of going around this bug https://bugzilla.mozilla.org/show_bug.cgi?id=1579264, for this reason
+     * we have to remove its value from the valid anti tracking categories, when is present.
      */
     val total = trackingCategories.sumOf { it.id }
     return if (contains(TrackingCategory.SCRIPTS_AND_SUB_RESOURCES)) {

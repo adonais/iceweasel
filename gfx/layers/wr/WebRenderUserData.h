@@ -124,9 +124,7 @@ struct WebRenderUserDataKey {
                        WebRenderUserData::UserDataType aType)
       : mFrameKey(aFrameKey), mType(aType) {}
 
-  bool operator==(const WebRenderUserDataKey& other) const {
-    return mFrameKey == other.mFrameKey && mType == other.mType;
-  }
+  bool operator==(const WebRenderUserDataKey& other) const = default;
   PLDHashNumber Hash() const {
     return HashGeneric(
         mFrameKey, static_cast<std::underlying_type_t<decltype(mType)>>(mType));

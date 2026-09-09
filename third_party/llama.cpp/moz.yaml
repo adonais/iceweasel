@@ -2,7 +2,7 @@ schema: 1
 
 bugzilla:
   product: Core
-  component: "xul"
+  component: "Machine Learning: General"
 
 origin:
   name: llama.cpp
@@ -10,6 +10,10 @@ origin:
 
   url: https://github.com/ggml-org/llama.cpp
 
+  # When bumping `revision`, also update LLAMA_CPP_VERSION in
+  # toolkit/components/ml/actors/MLEngineParent.sys.mjs so the
+  # firefox.ai.runtime.engine_run backend_source_revision telemetry reflects
+  # the running library.
   release: 74ade52741203e5c8f81eaf06a96cb1cfe15f2a3 (2026-06-16T18:24:28Z).
   revision: 74ade52741203e5c8f81eaf06a96cb1cfe15f2a3
 
@@ -89,3 +93,4 @@ vendoring:
      - profiler-hooks.patch # add thread callbacks for Firefox Profiler integration
      - missing-includes.patch # missing include cerrno in gguf.cpp, include mutex in llama-model-loader.cpp
      - skip-metadata-dump.patch # skip dumping metadata strings that proved costly in profiling
+     - include-order.patch # include system headers before models.h, which pulls in moz-overrides.h

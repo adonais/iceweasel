@@ -84,6 +84,11 @@
   @media (prefers-contrast) {
     --urlbarView-result-button-background-opacity: 100%;
     --urlbarview-text-color-secondary: currentColor;
+
+    /* Align the result buttons with the toolbar buttons by borrowing the
+       generic ghost-button hover colors. */
+    --urlbarView-result-button-hover-color: var(--button-text-color-ghost-hover);
+    --urlbarView-result-button-hover-background-color: var(--button-background-color-ghost-hover);
   }
 }
 
@@ -95,22 +100,40 @@
   /* Don't handle window drag events in case we are overlapping a toolbar */
   -moz-window-dragging: no-drag;
 
-  display: block;
+  display: none;
   text-shadow: none;
   overflow: clip;
+
+  .urlbar[breakout][open] > & {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* When hosted in content, let the view scroll when there's limited space
+     below the input due to small viewport size or page scroll position. */
+  .urlbar[in-page] > & {
+    min-height: 0;
+
+    > .urlbarView-body-outer {
+      min-height: 0;
+      overflow-y: auto;
+    }
+  }
+
+  /* The gap under the input sits outside the scrollport, so a row scrolling
+     past it doesn't paint over the input's border edge. */
+  :where(.urlbar:not([noresults])) > & {
+    padding-block-start: var(--urlbarView-padding);
+
+    :where(:root[uidensity="compact"]) & {
+      padding: var(--urlbarView-padding);
+    }
+  }
 }
 
 .urlbarView-results {
   white-space: nowrap;
   container-type: inline-size;
-
-  .urlbar:not([noresults]) > .urlbarView > .urlbarView-body-outer > .urlbarView-body-inner > & {
-    padding-block-start: var(--urlbarView-padding);
-
-    :root[uidensity="compact"] & {
-      padding: var(--urlbarView-padding);
-    }
-  }
 }
 
 /* Row structure */
@@ -134,7 +157,7 @@
     display: none !important;
   }
 
-  &[context-menu-trigger],
+  &[menu-trigger],
   &[row-selectable]:not([selected]):hover {
     background-color: var(--urlbarview-background-color-hover);
   }
@@ -194,8 +217,14 @@
 .urlbarView-row-body-top-no-wrap {
   display: flex;
   align-items: baseline;
-  min-width: 0;
   max-width: 100%;
+
+  /* For rows with result explanations but no URL (e.g., "Visit" actions like
+     bookmark keywords), let the title start to overflow more quickly than usual
+     so there's room for the explanation. Normally the URL overflows instead. */
+  .urlbarView-row[has-explanation]:not([has-url]) & {
+    min-width: 0;
+  }
 }
 
 .urlbarView-row-body-description,
@@ -222,7 +251,7 @@
   /* When wrapping is not enabled, show the URL next to the title and give the
      title and other elements in the no-wrap a max width to ensure the URL is at
      least partially visible. */
-  .urlbarView[action-override] .urlbarView-row[has-url] &,
+  .urlbarView[action-override] .urlbarView-row[has-url][type="switchtab"] &,
   .urlbarView-row[has-url]:not([type$="tab"]) &,
   .urlbarView-row[has-url]:is([type="remotetab"], [sponsored]):is(:hover, [selected]) & {
     max-width: 70%;
@@ -232,16 +261,9 @@
 @media screen and (min-height: 600px) {
   /* Enable wrapping when the window is narrow (the "wrap" attribute, set in JS)
      but not too short, since wrapping in that case would cause fewer rows to be
-     shown. Wrap the URL under the title and other no-wrap elements.
-
-     Switch-to-tab rows are excluded because their URL is collapsed, which would
-     leave an empty second row and misplace the chiclet. The exception is when
-     `action-override` is active: then the chiclet is hidden and the URL is
-     shown, so it should wrap under the title like other rows. */
-  .urlbarView-results[wrap] > .urlbarView-row[has-url]:not([type="switchtab"]) > .urlbarView-row-inner > .urlbarView-row-body > .urlbarView-row-body-top,
-  .urlbarView[action-override]
-    .urlbarView-results[wrap]
-    > .urlbarView-row[has-url][type="switchtab"]
+     shown. Wrap the URL under the title and other no-wrap elements. */
+  .urlbarView-results[wrap]
+    > .urlbarView-row[has-url]:not([type="switchtab"], [type="remotetab"], [sponsored], [restyled-search])
     > .urlbarView-row-inner
     > .urlbarView-row-body
     > .urlbarView-row-body-top {
@@ -250,7 +272,6 @@
     grid-template-areas:
       "title title"
       "url   explanation";
-    row-gap: 2px;
 
     @container (width >= 450px) {
       grid-template-columns: minmax(0, 1fr) minmax(0, max-content);
@@ -442,7 +463,7 @@
   -moz-context-properties: fill, fill-opacity;
   border-radius: var(--border-radius-circle);
 
-  &:not(:hover, [selected], [primary], [aria-expanded="true"]) {
+  &:not([primary]) {
     @media (prefers-contrast) {
       outline: 1px solid currentColor;
       outline-offset: -1px;
@@ -482,6 +503,7 @@
 .urlbarView-button-result-menu {
   background-image: url("chrome://global/skin/icons/more.svg");
   background-color: var(--button-background-color);
+  color: var(--button-text-color);
 
   .urlbarView-results:not([disable-resultmenu-autohide])
     > .urlbarView-row:not(:hover, [selected], [descendant-selected])
@@ -837,7 +859,17 @@
   display: flex;
   align-items: baseline;
   margin-inline: calc(var(--urlbarView-row-padding-inline) + var(--urlbarView-icon-margin-start));
-  flex: 0 0 auto;
+  flex: 1 0 auto;
+  justify-content: end;
+
+  /* For rows with no URL (e.g., "Visit" actions like bookmark keywords), add
+     plenty of space between the explanation and action or title. In this case
+     the separator character doesn't appear like it does when the explanation is
+     next to an overflowed URL. Even `--space-xxlarge` is too small, so we use a
+     larger literal value. */
+  .urlbarView-url:empty + & {
+    margin-inline-start: 3em;
+  }
 
   .urlbarView-row[has-menu-button] & {
     margin-inline-end: 0;
@@ -1169,20 +1201,27 @@
   background-color: var(--urlbarview-action-button-background-color);
   margin-inline-end: var(--space-large);
 
+  &[aria-disabled="true"] {
+    color: var(--text-color-disabled);
+    opacity: var(--button-opacity-disabled);
+  }
+
+  &:not([aria-disabled="true"]) {
+    &:hover {
+      background-color: var(--urlbarview-action-button-background-color-hover);
+    }
+
+    &[selected],
+    &:hover:active {
+      outline: var(--focus-outline);
+    }
+  }
+
   > img {
-    width: 16px;
-    height: 16px;
+    width: var(--icon-size-small);
+    height: var(--icon-size-small);
     margin-inline-end: var(--space-medium);
     -moz-context-properties: fill, fill-opacity;
-  }
-
-  &:hover {
-    background-color: var(--urlbarview-action-button-background-color-hover);
-  }
-
-  &[selected],
-  &:hover:active {
-    outline: var(--focus-outline);
   }
 
   .urlbarView[action-override] &[data-action="tabswitch"] {
@@ -1742,8 +1781,6 @@
   align-items: start;
   padding-block: 10px;
   flex-wrap: wrap;
-  width: unset;
-  margin-inline: calc(var(--urlbarView-padding) + var(--urlbarView-favicon-margin-start));
 }
 
 #urlbar:not([noresults]) > .urlbarView > .search-one-offs:not([hidden]) {

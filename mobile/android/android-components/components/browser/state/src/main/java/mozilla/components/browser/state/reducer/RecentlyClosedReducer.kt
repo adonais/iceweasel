@@ -11,21 +11,14 @@ internal object RecentlyClosedReducer {
     fun reduce(state: BrowserState, action: RecentlyClosedAction): BrowserState {
         return when (action) {
             is RecentlyClosedAction.AddClosedTabsAction -> {
-                state.copy(
-                    closedTabs = state.closedTabs + action.tabs.map { it.state },
-                )
+                state.copy(closedTabs = state.closedTabs + action.tabs.map { it.state })
             }
             is RecentlyClosedAction.PruneClosedTabsAction -> {
-                state.copy(
-                    closedTabs = state.closedTabs.sortedByDescending { it.lastAccess }
-                        .take(action.maxTabs),
-                )
+                state.copy(closedTabs = state.closedTabs.sortedByDescending { it.lastAccess }.take(action.maxTabs))
             }
             is RecentlyClosedAction.ReplaceTabsAction -> state.copy(closedTabs = action.tabs)
             is RecentlyClosedAction.RemoveClosedTabAction -> {
-                state.copy(
-                    closedTabs = state.closedTabs - action.tab,
-                )
+                state.copy(closedTabs = state.closedTabs - action.tab)
             }
             is RecentlyClosedAction.RemoveAllClosedTabAction -> {
                 state.copy(closedTabs = listOf())

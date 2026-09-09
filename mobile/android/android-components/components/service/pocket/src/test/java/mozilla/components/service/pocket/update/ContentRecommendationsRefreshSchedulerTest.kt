@@ -9,6 +9,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit
 import mozilla.components.lib.fetch.httpurlconnection.HttpURLConnectionClient
 import mozilla.components.service.pocket.PocketStoriesConfig
 import mozilla.components.service.pocket.update.ContentRecommendationsRefreshWorker.Companion.REFRESH_WORK_TAG
@@ -24,7 +25,6 @@ import org.mockito.Mockito
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class ContentRecommendationsRefreshSchedulerTest {
@@ -32,14 +32,16 @@ class ContentRecommendationsRefreshSchedulerTest {
     @Test
     fun `WHEN periodic work is started THEN work is queued`() {
         val client: HttpURLConnectionClient = mock()
-        val scheduler = spy(
-            ContentRecommendationsRefreshScheduler(
-                config = PocketStoriesConfig(
-                    client = client,
-                    contentRecommendationsRefreshFrequency = Frequency(1, TimeUnit.HOURS),
-                ),
-            ),
-        )
+        val scheduler =
+            spy(
+                ContentRecommendationsRefreshScheduler(
+                    config =
+                        PocketStoriesConfig(
+                            client = client,
+                            contentRecommendationsRefreshFrequency = Frequency(1, TimeUnit.HOURS),
+                        )
+                )
+            )
         val workManager = mock<WorkManager>()
         val worker = mock<PeriodicWorkRequest>()
         doReturn(workManager).`when`(scheduler).getWorkManager(any())
@@ -47,11 +49,12 @@ class ContentRecommendationsRefreshSchedulerTest {
 
         scheduler.startPeriodicWork(testContext)
 
-        verify(workManager).enqueueUniquePeriodicWork(
-            REFRESH_WORK_TAG,
-            ExistingPeriodicWorkPolicy.KEEP,
-            worker,
-        )
+        verify(workManager)
+            .enqueueUniquePeriodicWork(
+                REFRESH_WORK_TAG,
+                ExistingPeriodicWorkPolicy.KEEP,
+                worker,
+            )
     }
 
     @Test
@@ -70,9 +73,7 @@ class ContentRecommendationsRefreshSchedulerTest {
     fun `WHEN periodic work request is created THEN ensure the work request has the correct constraints configured`() {
         val scheduler = spy(ContentRecommendationsRefreshScheduler(mock()))
 
-        val result = scheduler.createPeriodicWorkRequest(
-            Frequency(1, TimeUnit.HOURS),
-        )
+        val result = scheduler.createPeriodicWorkRequest(Frequency(1, TimeUnit.HOURS))
 
         verify(scheduler).getWorkerConstraints()
         assertTrue(result.workSpec.intervalDuration == TimeUnit.HOURS.toMillis(1))

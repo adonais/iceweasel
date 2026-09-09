@@ -19,18 +19,19 @@ internal fun BrowserStore.createPdfShareAction(
 
     if (url == null || session == null) return null
 
-    val resource = if (url.isContentUrl()) {
-        ShareResourceState.LocalResource(url, contentType = INTENT_TYPE_PDF)
-    } else if (session.content.isPdf) {
-        ShareResourceState.InternetResource(
-            url = url,
-            contentType = INTENT_TYPE_PDF,
-            private = session.content.private,
-            referrerUrl = session.content.url,
-        )
-    } else {
-        return null
-    }
+    val resource =
+        if (url.isContentUrl()) {
+            ShareResourceState.LocalResource(url, contentType = INTENT_TYPE_PDF)
+        } else if (session.content.isPdf) {
+            ShareResourceState.InternetResource(
+                url = url,
+                contentType = INTENT_TYPE_PDF,
+                private = session.content.private,
+                referrerUrl = session.content.url,
+            )
+        } else {
+            return null
+        }
 
     return ShareResourceAction.AddShareAction(session.id, resource)
 }

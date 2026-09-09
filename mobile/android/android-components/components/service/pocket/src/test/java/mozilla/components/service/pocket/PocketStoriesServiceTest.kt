@@ -5,6 +5,8 @@
 package mozilla.components.service.pocket
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.reflect.KVisibility
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.service.pocket.PocketStory.ContentRecommendation
 import mozilla.components.service.pocket.PocketStory.SponsoredContent
@@ -25,19 +27,18 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.verify
-import kotlin.reflect.KVisibility
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class PocketStoriesServiceTest {
     private val contentRecommendationsUseCases: ContentRecommendationsUseCases = mock()
     private val sponsoredContentsUseCases: SponsoredContentsUseCases = mock()
-    private val service = PocketStoriesService(testContext, PocketStoriesConfig(mock())).also {
-        it.contentRecommendationsRefreshScheduler = mock()
-        it.sponsoredContentsRefreshScheduler = mock()
-        it.contentRecommendationsUseCases = contentRecommendationsUseCases
-        it.sponsoredContentsUseCases = sponsoredContentsUseCases
-    }
+    private val service =
+        PocketStoriesService(testContext, PocketStoriesConfig(mock())).also {
+            it.contentRecommendationsRefreshScheduler = mock()
+            it.sponsoredContentsRefreshScheduler = mock()
+            it.contentRecommendationsUseCases = contentRecommendationsUseCases
+            it.sponsoredContentsUseCases = sponsoredContentsUseCases
+        }
 
     @After
     fun teardown() {
@@ -67,27 +68,31 @@ class PocketStoriesServiceTest {
     }
 
     @Test
-    fun `WHEN get content recommendations is invoked THEN content recommendations use cases should return a list of content recommendations`() = runTest {
-        val recommendations = listOf(mock<ContentRecommendation>())
-        val getContentRecommendations: GetContentRecommendations = mock()
-        doReturn(recommendations).`when`(getContentRecommendations).invoke()
-        doReturn(getContentRecommendations).`when`(contentRecommendationsUseCases).getContentRecommendations
+    fun `WHEN get content recommendations is invoked THEN content recommendations use cases should return a list of content recommendations`() =
+        runTest {
+            val recommendations = listOf(mock<ContentRecommendation>())
+            val getContentRecommendations: GetContentRecommendations = mock()
+            doReturn(recommendations).`when`(getContentRecommendations).invoke()
+            doReturn(getContentRecommendations).`when`(contentRecommendationsUseCases).getContentRecommendations
 
-        val result = service.getContentRecommendations()
+            val result = service.getContentRecommendations()
 
-        assertEquals(recommendations, result)
-    }
+            assertEquals(recommendations, result)
+        }
 
     @Test
-    fun `WHEN update content recommendations impressions is invoked THEN delegate to the content recommendations use cases`() = runTest {
-        val recommendationsShown = listOf(mock<ContentRecommendation>())
-        val updateRecommendationsImpressions: UpdateRecommendationsImpressions = mock()
-        doReturn(updateRecommendationsImpressions).`when`(contentRecommendationsUseCases).updateRecommendationsImpressions
+    fun `WHEN update content recommendations impressions is invoked THEN delegate to the content recommendations use cases`() =
+        runTest {
+            val recommendationsShown = listOf(mock<ContentRecommendation>())
+            val updateRecommendationsImpressions: UpdateRecommendationsImpressions = mock()
+            doReturn(updateRecommendationsImpressions)
+                .`when`(contentRecommendationsUseCases)
+                .updateRecommendationsImpressions
 
-        service.updateRecommendationsImpressions(recommendationsShown)
+            service.updateRecommendationsImpressions(recommendationsShown)
 
-        verify(updateRecommendationsImpressions).invoke(recommendationsShown)
-    }
+            verify(updateRecommendationsImpressions).invoke(recommendationsShown)
+        }
 
     @Test
     fun `WHEN start periodic sponsored contents refresh is invoked THEN schedule sponsored contents refreshes`() {
@@ -106,27 +111,29 @@ class PocketStoriesServiceTest {
     }
 
     @Test
-    fun `WHEN get sponsored contents is invoked THEN sponsored contents use cases should return a list of sponsored contents`() = runTest {
-        val sponsoredContents = listOf(mock<SponsoredContent>())
-        val getSponsoredContents: GetSponsoredContents = mock()
-        doReturn(sponsoredContents).`when`(getSponsoredContents).invoke()
-        doReturn(getSponsoredContents).`when`(sponsoredContentsUseCases).getSponsoredContents
+    fun `WHEN get sponsored contents is invoked THEN sponsored contents use cases should return a list of sponsored contents`() =
+        runTest {
+            val sponsoredContents = listOf(mock<SponsoredContent>())
+            val getSponsoredContents: GetSponsoredContents = mock()
+            doReturn(sponsoredContents).`when`(getSponsoredContents).invoke()
+            doReturn(getSponsoredContents).`when`(sponsoredContentsUseCases).getSponsoredContents
 
-        val result = service.getSponsoredContents()
+            val result = service.getSponsoredContents()
 
-        assertEquals(sponsoredContents, result)
-    }
+            assertEquals(sponsoredContents, result)
+        }
 
     @Test
-    fun `WHEN record sponsored content impressions is invoked THEN delegate to the sponsored contents use cases`() = runTest {
-        val impressions = listOf("http://www.mozilla.org")
-        val recordImpressions: RecordImpressions = mock()
-        doReturn(recordImpressions).`when`(sponsoredContentsUseCases).recordImpressions
+    fun `WHEN record sponsored content impressions is invoked THEN delegate to the sponsored contents use cases`() =
+        runTest {
+            val impressions = listOf("http://www.mozilla.org")
+            val recordImpressions: RecordImpressions = mock()
+            doReturn(recordImpressions).`when`(sponsoredContentsUseCases).recordImpressions
 
-        service.recordSponsoredContentImpressions(impressions)
+            service.recordSponsoredContentImpressions(impressions)
 
-        verify(recordImpressions).invoke(impressions)
-    }
+            verify(recordImpressions).invoke(impressions)
+        }
 
     @Test
     fun `WHEN delete user is invoked THEN stop sponsored content refreshes and schedule user deletion`() {

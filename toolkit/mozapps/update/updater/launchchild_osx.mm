@@ -11,6 +11,7 @@
 #include <SystemConfiguration/SystemConfiguration.h>
 #include <sys/types.h>
 #include <sys/sysctl.h>
+#include <unistd.h>
 #include "readstrings.h"
 
 #define ARCH_PATH "/usr/bin/arch"
@@ -68,7 +69,66 @@ static void StripQuarantineBit(NSString* aBundlePath) {
   LaunchTask(@"/usr/bin/xattr", arguments);
 }
 
-void LaunchMacApp(int argc, const char** argv) {
+// How long to wait for the process we are replacing to go away before we give
+// up and launch anyway.
+static const NSTimeInterval kWaitForExitSeconds = 10.0;
+
+// How often to ask Launch Services whether the process is gone yet.
+static const useconds_t kWaitForExitPollMicroseconds = 50000;
+
+/**
+ * Wait for the process we are replacing to go away.
+ *
+ * We ask Launch Services rather than looking at the process table because the
+ * dock follows the Launch Services registration, which can outlive the process
+ * itself for a moment. Re-querying on every pass avoids relying on a run loop
+ * to deliver property updates.
+ */
+static void WaitForAppToTerminate(pid_t aPid, NSTimeInterval aTimeout) {
+  NSDate* deadline = [NSDate dateWithTimeIntervalSinceNow:aTimeout];
+  while (true) {
+    {
+      MacAutoreleasePool pool;
+      NSRunningApplication* app =
+          [NSRunningApplication runningApplicationWithProcessIdentifier:aPid];
+      if (!app || [app isTerminated]) {
+        return;
+      }
+      if ([deadline timeIntervalSinceNow] <= 0) {
+        NSLog(@"Timed out waiting for pid %d to exit before relaunching.",
+              (int)aPid);
+        return;
+      }
+    }
+    usleep(kWaitForExitPollMicroseconds);
+  }
+}
+
+/**
+ * While two processes of the same app bundle are registered with macOS at the
+ * same time, the second one counts as another instance of the app and is given
+ * its own dock tile, which then sticks around in the dock's list of recently
+ * used applications. So only ask for a new instance when we have to.
+ *
+ * We have to whenever any process of this bundle identifier is running, even
+ * one running from a different copy of the application. macOS resolves the
+ * open by bundle identifier rather than by the path we pass: without the
+ * request it hands us that other process, drops the arguments, and the
+ * application we were asked to launch never comes up.
+ */
+static BOOL ShouldCreateNewAppInstance(NSString* aBundlePath) {
+  MacAutoreleasePool pool;
+
+  NSString* bundleId = [[NSBundle bundleWithPath:aBundlePath] bundleIdentifier];
+  if (!bundleId) {
+    return YES;
+  }
+
+  return [[NSRunningApplication
+             runningApplicationsWithBundleIdentifier:bundleId] count] > 0;
+}
+
+void LaunchMacApp(int argc, const char** argv, pid_t aWaitForPid) {
   MacAutoreleasePool pool;
 
   @try {
@@ -88,6 +148,10 @@ void LaunchMacApp(int argc, const char** argv) {
     StripQuarantineBit(launchPath);
     RegisterAppWithLaunchServices(launchPath);
 
+    if (aWaitForPid > 0) {
+      WaitForAppToTerminate(aWaitForPid, kWaitForExitSeconds);
+    }
+
     // We use NSWorkspace to register the application into the
     // `TALAppsToRelaunchAtLogin` list and allow for macOS session resume.
     // This API only works with `.app`s.
@@ -96,7 +160,8 @@ void LaunchMacApp(int argc, const char** argv) {
         [NSWorkspaceOpenConfiguration configuration];
     [config setArguments:arguments];
     [config setActivates:NO];
-    [config setCreatesNewApplicationInstance:YES];
+    [config setCreatesNewApplicationInstance:ShouldCreateNewAppInstance(
+                                                 launchPath)];
     [config setEnvironment:[[NSProcessInfo processInfo] environment]];
 
     [[NSWorkspace sharedWorkspace]

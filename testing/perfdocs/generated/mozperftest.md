@@ -112,6 +112,25 @@ browser_implicitRoleARIAExpanded.js
 
 **Audit a11y performance when adding 10000 elements with implicit ARIA roles**
 
+browser_panManySVGShapes.js
+===========================
+
+:owner: Accessibility Team
+:name: browser_panManySVGShapes.js
+:Default options:
+
+::
+
+ --extra-args headless
+ --manifest perftest.toml
+ --manifest-flavor browser-chrome
+ --perfherder
+ --perfherder-metrics name:A11Y_TotalTime,unit:ms,shouldAlert:True, name:A11Y_DoInitialUpdate_parent,unit:ms,shouldAlert:False, name:A11Y_ProcessQueuedCacheUpdate_parent,unit:ms,shouldAlert:False, name:A11Y_ContentRemovedNode_parent,unit:ms,shouldAlert:False, name:A11Y_ContentRemovedAcc_parent,unit:ms,shouldAlert:False, name:A11Y_PruneOrInsertSubtree_parent,unit:ms,shouldAlert:False, name:A11Y_ShutdownChildrenInSubtree_parent,unit:ms,shouldAlert:False, name:A11Y_ShowEvent_parent,unit:ms,shouldAlert:False, name:A11Y_RecvCache_parent,unit:ms,shouldAlert:False, name:A11Y_ProcessShowEvent_parent,unit:ms,shouldAlert:False, name:A11Y_CoalesceEvents_parent,unit:ms,shouldAlert:False, name:A11Y_CoalesceMutationEvents_parent,unit:ms,shouldAlert:False, name:A11Y_ProcessHideEvent_parent,unit:ms,shouldAlert:False, name:A11Y_SendCache_parent,unit:ms,shouldAlert:False, name:A11Y_WillRefresh_parent,unit:ms,shouldAlert:False, name:A11Y_AccessibilityServiceInit_parent,unit:ms,shouldAlert:False, name:A11Y_PlatformShowHideEvent_parent,unit:ms,shouldAlert:False, name:A11Y_DoInitialUpdate_Count_parent,unit:iterations,shouldAlert:False, name:A11Y_ProcessQueuedCacheUpdate_Count_parent,unit:iterations,shouldAlert:False, name:A11Y_ContentRemovedNode_Count_parent,unit:iterations,shouldAlert:False, name:A11Y_ContentRemovedAcc_Count_parent,unit:iterations,shouldAlert:False, name:A11Y_PruneOrInsertSubtree_Count_parent,unit:iterations,shouldAlert:False, name:A11Y_ShutdownChildrenInSubtree_Count_parent,unit:iterations,shouldAlert:False, name:A11Y_ShowEvent_Count_parent,unit:iterations,shouldAlert:False, name:A11Y_RecvCache_Count_parent,unit:iterations,shouldAlert:False, name:A11Y_ProcessShowEvent_Count_parent,unit:iterations,shouldAlert:False, name:A11Y_CoalesceEvents_Count_parent,unit:iterations,shouldAlert:False, name:A11Y_CoalesceMutationEvents_Count_parent,unit:iterations,shouldAlert:False, name:A11Y_ProcessHideEvent_Count_parent,unit:iterations,shouldAlert:False, name:A11Y_SendCache_Count_parent,unit:iterations,shouldAlert:False, name:A11Y_WillRefresh_Count_parent,unit:iterations,shouldAlert:False, name:A11Y_AccessibilityServiceInit_Count_parent,unit:iterations,shouldAlert:False, name:A11Y_PlatformShowHideEvent_Count_parent,unit:iterations,shouldAlert:False, name:A11Y_DoInitialUpdate_content,unit:ms,shouldAlert:False, name:A11Y_ProcessQueuedCacheUpdate_content,unit:ms,shouldAlert:False, name:A11Y_ContentRemovedNode_content,unit:ms,shouldAlert:False, name:A11Y_ContentRemovedAcc_content,unit:ms,shouldAlert:False, name:A11Y_PruneOrInsertSubtree_content,unit:ms,shouldAlert:False, name:A11Y_ShutdownChildrenInSubtree_content,unit:ms,shouldAlert:False, name:A11Y_ShowEvent_content,unit:ms,shouldAlert:False, name:A11Y_RecvCache_content,unit:ms,shouldAlert:False, name:A11Y_ProcessShowEvent_content,unit:ms,shouldAlert:False, name:A11Y_CoalesceEvents_content,unit:ms,shouldAlert:False, name:A11Y_CoalesceMutationEvents_content,unit:ms,shouldAlert:False, name:A11Y_ProcessHideEvent_content,unit:ms,shouldAlert:False, name:A11Y_SendCache_content,unit:ms,shouldAlert:False, name:A11Y_WillRefresh_content,unit:ms,shouldAlert:False, name:A11Y_AccessibilityServiceInit_content,unit:ms,shouldAlert:False, name:A11Y_PlatformShowHideEvent_content,unit:ms,shouldAlert:False, name:A11Y_DoInitialUpdate_Count_content,unit:iterations,shouldAlert:False, name:A11Y_ProcessQueuedCacheUpdate_Count_content,unit:iterations,shouldAlert:False, name:A11Y_ContentRemovedNode_Count_content,unit:iterations,shouldAlert:False, name:A11Y_ContentRemovedAcc_Count_content,unit:iterations,shouldAlert:False, name:A11Y_PruneOrInsertSubtree_Count_content,unit:iterations,shouldAlert:False, name:A11Y_ShutdownChildrenInSubtree_Count_content,unit:iterations,shouldAlert:False, name:A11Y_ShowEvent_Count_content,unit:iterations,shouldAlert:False, name:A11Y_RecvCache_Count_content,unit:iterations,shouldAlert:False, name:A11Y_ProcessShowEvent_Count_content,unit:iterations,shouldAlert:False, name:A11Y_CoalesceEvents_Count_content,unit:iterations,shouldAlert:False, name:A11Y_CoalesceMutationEvents_Count_content,unit:iterations,shouldAlert:False, name:A11Y_ProcessHideEvent_Count_content,unit:iterations,shouldAlert:False, name:A11Y_SendCache_Count_content,unit:iterations,shouldAlert:False, name:A11Y_WillRefresh_Count_content,unit:iterations,shouldAlert:False, name:A11Y_AccessibilityServiceInit_Count_content,unit:iterations,shouldAlert:False, name:A11Y_PlatformShowHideEvent_Count_content,unit:iterations,shouldAlert:False
+ --try-platform linux, mac, win
+ --verbose
+
+**Audit a11y performance when panning an SVG workspace containing 2000 transformed groups, each with an ARIA labelled path. Modelled on the Blockly workspace in bug 2059322.**
+
 browser_reflowPseudoelements.js
 ===============================
 
@@ -658,24 +677,6 @@ browser_ml_smart_tab_clustering_perf.js
 
 **Testing Smart Tab Clustering**
 
-browser_ml_speecht5_tts.js
-==========================
-
-:owner: GenAI Team
-:name: ML Speech T5 TTS
-:Default options:
-
-::
-
- --perfherder
- --perfherder-metrics name:latency,unit:ms,shouldAlert:False, name:memory,unit:MiB,shouldAlert:False
- --verbose
- --manifest perftest.toml
- --manifest-flavor browser-chrome
- --try-platform linux, mac, win
-
-**Testing Speech T5 TTS**
-
 browser_ml_autofill_perf.js
 ===========================
 
@@ -686,13 +687,13 @@ browser_ml_autofill_perf.js
 ::
 
  --perfherder
- --perfherder-metrics name:AUTOFILL-pipeline-ready-latency,unit:ms,shouldAlert:False, name:AUTOFILL-initialization-latency,unit:ms,shouldAlert:False, name:AUTOFILL-model-run-latency,unit:ms,shouldAlert:False, name:AUTOFILL-total-memory-usage,unit:MiB,shouldAlert:False, name:tokenSpeed,unit:tokens/s,shouldAlert:False,lowerIsBetter:False, name:charactersSpeed,unit:chars/s,shouldAlert:False,lowerIsBetter:False, name:AUTOFILL-concurrent-init-latency,unit:ms,shouldAlert:False, name:AUTOFILL-two-engine-e2e-run-latency,unit:ms,shouldAlert:False, name:AUTOFILL-two-engine-total-memory-usage,unit:MiB,shouldAlert:False, name:AUTOFILL-encoder-pipeline-ready-latency,unit:ms,shouldAlert:False, name:AUTOFILL-encoder-initialization-latency,unit:ms,shouldAlert:False, name:AUTOFILL-encoder-model-run-latency,unit:ms,shouldAlert:False, name:AUTOFILL-head-pipeline-ready-latency,unit:ms,shouldAlert:False, name:AUTOFILL-head-initialization-latency,unit:ms,shouldAlert:False, name:AUTOFILL-head-model-run-latency,unit:ms,shouldAlert:False
+ --perfherder-metrics name:AUTOFILL-pipeline-ready-latency,unit:ms,shouldAlert:False, name:AUTOFILL-initialization-latency,unit:ms,shouldAlert:False, name:AUTOFILL-model-run-latency,unit:ms,shouldAlert:False, name:AUTOFILL-total-memory-usage,unit:MiB,shouldAlert:False, name:tokenSpeed,unit:tokens/s,shouldAlert:False,lowerIsBetter:False, name:charactersSpeed,unit:chars/s,shouldAlert:False,lowerIsBetter:False, name:AUTOFILL-two-engine-concurrent-init-latency,unit:ms,shouldAlert:False, name:AUTOFILL-two-engine-e2e-run-latency,unit:ms,shouldAlert:False, name:AUTOFILL-two-engine-total-memory-usage,unit:MiB,shouldAlert:False, name:AUTOFILL-encoder-pipeline-ready-latency,unit:ms,shouldAlert:False, name:AUTOFILL-encoder-initialization-latency,unit:ms,shouldAlert:False, name:AUTOFILL-encoder-model-run-latency,unit:ms,shouldAlert:False, name:AUTOFILL-head-pipeline-ready-latency,unit:ms,shouldAlert:False, name:AUTOFILL-head-initialization-latency,unit:ms,shouldAlert:False, name:AUTOFILL-head-model-run-latency,unit:ms,shouldAlert:False
  --verbose
  --manifest perftest.toml
  --manifest-flavor browser-chrome
  --try-platform linux, mac, win
 
-**Latency for the ML Autofill model (legacy single-model and new two-engine)**
+**Latency for the ML Autofill model (default single-model and opt-in two-engine)**
 
 browser_ml_engine_multi_perf.js
 ===============================
@@ -704,7 +705,7 @@ browser_ml_engine_multi_perf.js
 ::
 
  --perfherder
- --perfherder-metrics name:latency,unit:ms,shouldAlert:False, name:memory,unit:MiB,shouldAlert:False, name:intent-PIPELINE_READY_LATENCY,unit:MiB,shouldAlert:False, name:intent-INITIALIZATION_LATENCY,unit:MiB,shouldAlert:False, name:intent-MODEL_RUN_LATENCY,unit:MiB,shouldAlert:False, name:suggest-PIPELINE_READY_LATENCY,unit:MiB,shouldAlert:False, name:suggest-INITIALIZATION_LATENCY,unit:MiB,shouldAlert:False, name:suggest-MODEL_RUN_LATENCY,unit:MiB,shouldAlert:False, name:engine3-PIPELINE_READY_LATENCY,unit:MiB,shouldAlert:False, name:engine3-INITIALIZATION_LATENCY,unit:MiB,shouldAlert:False, name:engine3-MODEL_RUN_LATENCY,unit:MiB,shouldAlert:False, name:engine4-PIPELINE_READY_LATENCY,unit:MiB,shouldAlert:False, name:engine4-INITIALIZATION_LATENCY,unit:MiB,shouldAlert:False, name:engine4-MODEL_RUN_LATENCY,unit:MiB,shouldAlert:False, name:TOTAL_MEMORY_USAGE,unit:MiB,shouldAlert:False
+ --perfherder-metrics name:latency,unit:ms,shouldAlert:False, name:memory,unit:MiB,shouldAlert:False
  --verbose
  --manifest perftest.toml
  --manifest-flavor browser-chrome
@@ -811,31 +812,13 @@ browser_ml_suggest_inference.js
 ::
 
  --perfherder
- --perfherder-metrics name:inference-pipeline-ready-latency,unit:ms,shouldAlert:False, name:inference-initialization-latency,unit:ms,shouldAlert:False, name:inference-model-run-latency,unit:ms,shouldAlert:False, name:inference-total-memory-usage,unit:ms,shouldAlert:False
+ --perfherder-metrics name:inference-pipeline-ready-latency,unit:ms,shouldAlert:False, name:inference-initialization-latency,unit:ms,shouldAlert:False, name:inference-model-run-latency,unit:ms,shouldAlert:False, name:inference-total-memory-usage,unit:MiB,shouldAlert:False
  --verbose
  --manifest perftest.toml
  --manifest-flavor browser-chrome
  --try-platform linux, mac, win
 
 **Template test for ML suggest Inference Model**
-
-browser_ml_summarizer_perf.js
-=============================
-
-:owner: GenAI Team
-:name: browser_ml_summarizer_perf.js
-:Default options:
-
-::
-
- --perfherder
- --perfherder-metrics name:latency,unit:ms,shouldAlert:True, name:memory,unit:MiB,shouldAlert:True, name:tokenSpeed,unit:tokens/s,shouldAlert:True,lowerIsBetter:False, name:charactersSpeed,unit:chars/s,shouldAlert:True,lowerIsBetter:False
- --verbose
- --manifest perftest.toml
- --manifest-flavor browser-chrome
- --try-platform linux, mac, win
-
-**Template test for latency for Summarizer model**
 
 
 ## toolkit/components/places/tests/browser/performance

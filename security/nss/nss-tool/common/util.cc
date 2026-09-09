@@ -19,7 +19,7 @@
 #include <Windows.h>
 #endif
 
-static std::string GetPassword(const std::string &prompt) {
+static std::string GetPassword(const std::string& prompt) {
   std::cout << prompt << std::endl;
 
 #if defined(__unix__) || defined(__APPLE__)
@@ -47,12 +47,12 @@ static std::string GetPassword(const std::string &prompt) {
   return pw;
 }
 
-static char *GetModulePassword(PK11SlotInfo *slot, int retry, void *arg) {
+static char* GetModulePassword(PK11SlotInfo* slot, int retry, void* arg) {
   if (arg == nullptr) {
     return nullptr;
   }
 
-  PwData *pwData = reinterpret_cast<PwData *>(arg);
+  PwData* pwData = reinterpret_cast<PwData*>(arg);
 
   if (retry > 0) {
     std::cerr << "Incorrect password/PIN entered." << std::endl;
@@ -74,7 +74,7 @@ static char *GetModulePassword(PK11SlotInfo *slot, int retry, void *arg) {
   return nullptr;
 }
 
-static std::vector<uint8_t> ReadFromIstream(std::istream &is) {
+static std::vector<uint8_t> ReadFromIstream(std::istream& is) {
   std::vector<uint8_t> data;
   while (is) {
     char buf[1024];
@@ -131,7 +131,7 @@ bool ChangeSlotPassword(void) {
   // get old password and authenticate to db
   PK11_SetPasswordFunc(&GetModulePassword);
   std::string oldPw = GetPassword("Enter your current password: ");
-  PwData pwData = {PW_PLAINTEXT, const_cast<char *>(oldPw.c_str())};
+  PwData pwData = {PW_PLAINTEXT, const_cast<char*>(oldPw.c_str())};
   SECStatus rv = PK11_Authenticate(slot.get(), false /*loadCerts*/, &pwData);
   if (rv != SECSuccess) {
     std::cerr << "Password incorrect." << std::endl;
@@ -150,14 +150,14 @@ bool ChangeSlotPassword(void) {
   return true;
 }
 
-bool DBLoginIfNeeded(const ScopedPK11SlotInfo &slot) {
+bool DBLoginIfNeeded(const ScopedPK11SlotInfo& slot) {
   if (!PK11_NeedLogin(slot.get())) {
     return true;
   }
 
   PK11_SetPasswordFunc(&GetModulePassword);
   std::string pw = GetPassword("Enter your password: ");
-  PwData pwData = {PW_PLAINTEXT, const_cast<char *>(pw.c_str())};
+  PwData pwData = {PW_PLAINTEXT, const_cast<char*>(pw.c_str())};
   SECStatus rv = PK11_Authenticate(slot.get(), true /*loadCerts*/, &pwData);
   if (rv != SECSuccess) {
     std::cerr << "Could not authenticate to token "
@@ -170,7 +170,7 @@ bool DBLoginIfNeeded(const ScopedPK11SlotInfo &slot) {
   return true;
 }
 
-std::string StringToHex(const ScopedSECItem &input) {
+std::string StringToHex(const ScopedSECItem& input) {
   std::stringstream ss;
   ss << "0x";
   for (size_t i = 0; i < input->len; i++) {
@@ -200,7 +200,7 @@ std::vector<uint8_t> ReadInputData(std::string dataPath) {
   return data;
 }
 
-std::istream &GetStreamFromFileOrStdin(std::string &path, std::ifstream &ifs) {
+std::istream& GetStreamFromFileOrStdin(std::string& path, std::ifstream& ifs) {
   if (path.empty()) {
     return std::cin;
   }

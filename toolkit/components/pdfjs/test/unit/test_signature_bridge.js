@@ -5,7 +5,7 @@
 "use strict";
 
 const { validateVerifyPdfSignatureArgs, filterCertsForView } =
-  ChromeUtils.importESModule("resource://pdf.js/PdfjsParent.sys.mjs");
+  ChromeUtils.importESModule("resource://pdf.js/PdfJsParent.sys.mjs");
 
 // ---------------------------------------------------------------------
 // validateVerifyPdfSignatureArgs — guards `_verifyPdfSignature` before

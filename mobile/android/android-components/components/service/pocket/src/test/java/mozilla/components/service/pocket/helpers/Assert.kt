@@ -4,6 +4,8 @@
 
 package mozilla.components.service.pocket.helpers
 
+import kotlin.reflect.KClass
+import kotlin.reflect.KVisibility
 import mozilla.components.concept.fetch.Client
 import mozilla.components.concept.fetch.MutableHeaders
 import mozilla.components.concept.fetch.Request
@@ -16,8 +18,6 @@ import org.junit.Assert.assertEquals
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
-import kotlin.reflect.KClass
-import kotlin.reflect.KVisibility
 
 fun <T : Any> assertConstructorsVisibility(assertedClass: KClass<T>, visibility: KVisibility) {
     assertedClass.constructors.forEach {
@@ -53,12 +53,14 @@ fun assertRequestParams(client: Client, makeRequest: () -> Unit, assertParams: (
  */
 fun assertSuccessfulRequestReturnsResponseBody(client: Client, makeRequest: () -> String?) {
     val expectedBody = "{\"jsonStr\": true}"
-    val body = mock(Response.Body::class.java).also {
-        whenever(it.string(Charsets.UTF_8)).thenReturn(expectedBody)
-    }
-    val response = MockResponses.getSuccess().also {
-        whenever(it.body).thenReturn(body)
-    }
+    val body =
+        mock(Response.Body::class.java).also {
+            whenever(it.string(Charsets.UTF_8)).thenReturn(expectedBody)
+        }
+    val response =
+        MockResponses.getSuccess().also {
+            whenever(it.body).thenReturn(body)
+        }
     whenever(client.fetch(any())).thenReturn(response)
 
     assertEquals(expectedBody, makeRequest())

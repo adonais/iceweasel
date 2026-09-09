@@ -12,13 +12,9 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteractio
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarMenu
 import mozilla.components.lib.state.Action
 
-/**
- * All possible ways to handle an interaction with browser toolbar elements.
- */
+/** All possible ways to handle an interaction with browser toolbar elements. */
 sealed interface BrowserToolbarInteraction {
-    /**
-     * [Action]s to be dispatched on [BrowserToolbarStore] when the user interacts with a toolbar element.
-     */
+    /** [Action]s to be dispatched on [BrowserToolbarStore] when the user interacts with a toolbar element. */
     interface BrowserToolbarEvent : BrowserToolbarInteraction, BrowserToolbarAction {
         /**
          * The interaction source of this event.
@@ -29,74 +25,56 @@ sealed interface BrowserToolbarInteraction {
             get() = Source.Unknown
 
         /**
-         * Convenience method to combine dispatching a [BrowserToolbarEvent] with
-         * showing a [BrowserToolbarMenu] for the same user interaction.
+         * Convenience method to combine dispatching a [BrowserToolbarEvent] with showing a [BrowserToolbarMenu] for the
+         * same user interaction.
          *
          * @param menu [BrowserToolbarMenu] to show in addition to dispatching this event.
          */
-        operator fun plus(menu: BrowserToolbarMenu) = CombinedEventAndMenu(
-            event = this,
-            menu = menu,
-        )
+        operator fun plus(menu: BrowserToolbarMenu) =
+            CombinedEventAndMenu(
+                event = this,
+                menu = menu,
+            )
 
-        /**
-         * Possible sources of a [BrowserToolbarEvent].
-         */
+        /** Possible sources of a [BrowserToolbarEvent]. */
         sealed interface Source {
             /**
              * Sources representing parts of the address bar where an interaction originated.
              *
-             * Use these to differentiate interactions on the browser/page start/end areas
-             * of the address bar.
+             * Use these to differentiate interactions on the browser/page start/end areas of the address bar.
              */
             sealed interface AddressBar : Source {
-                /**
-                 * The user interacted with a browser start toolbar element.
-                 */
+                /** The user interacted with a browser start toolbar element. */
                 data object BrowserStart : AddressBar
 
-                /**
-                 * The user interacted with a page start toolbar element.
-                 */
+                /** The user interacted with a page start toolbar element. */
                 data object PageStart : AddressBar
 
-                /**
-                 * The user interacted with a page end toolbar element.
-                 */
+                /** The user interacted with a page end toolbar element. */
                 data object PageEnd : AddressBar
 
-                /**
-                 * The user interacted with a browser end toolbar element.
-                 */
+                /** The user interacted with a browser end toolbar element. */
                 data object BrowserEnd : AddressBar
             }
 
-            /**
-             * The user interacted with a navigation bar element.
-             */
+            /** The user interacted with a navigation bar element. */
             data object NavigationBar : Source
 
-            /**
-             * Default/unknown source when none of the specific sources apply.
-             */
+            /** Default/unknown source when none of the specific sources apply. */
             data object Unknown : Source
         }
     }
 
-    /**
-     * Popup menu to show when the user interacts with a toolbar element.
-     */
+    /** Popup menu to show when the user interacts with a toolbar element. */
     @Immutable
     fun interface BrowserToolbarMenu : BrowserToolbarInteraction {
-        /**
-         * List of items to show in the menu.
-         */
+        /** List of items to show in the menu. */
         fun items(): List<BrowserToolbarMenuItem>
     }
 
     /**
-     * Combined [BrowserToolbarEvent] to be dispatched and [BrowserToolbarMenu] to be shown
-     * for the same user interaction.
+     * Combined [BrowserToolbarEvent] to be dispatched and [BrowserToolbarMenu] to be shown for the same user
+     * interaction.
      *
      * @param event [BrowserToolbarEvent] to be dispatched when the menu is shown.
      * @param menu [BrowserToolbarMenu] to show.
@@ -107,9 +85,7 @@ sealed interface BrowserToolbarInteraction {
     ) : BrowserToolbarInteraction
 }
 
-/**
- * Items which can be shown in a [BrowserToolbarMenu].
- */
+/** Items which can be shown in a [BrowserToolbarMenu]. */
 sealed class BrowserToolbarMenuItem {
     /**
      * Button to shown in a [BrowserToolbarMenu].
@@ -126,71 +102,43 @@ sealed class BrowserToolbarMenuItem {
         val onClick: BrowserToolbarEvent?,
     ) : BrowserToolbarMenuItem() {
 
-        /**
-         * The image to use as icon for this menu item.
-         */
+        /** The image to use as icon for this menu item. */
         sealed interface Icon {
             /**
-             *  The [Drawable] as icon for this menu item.
+             * The [Drawable] as icon for this menu item.
              *
-             *  @property drawable The [Drawable] to use as icon.
-             *  @property shouldTint Whether or not to apply the application default tint to this icon.
+             * @property drawable The [Drawable] to use as icon.
+             * @property shouldTint Whether or not to apply the application default tint to this icon.
              */
             data class DrawableIcon(
                 val drawable: Drawable,
                 val shouldTint: Boolean = true,
             ) : Icon
 
-            /**
-             * The [DrawableRes] as icon for this menu item.
-             */
-            @JvmInline
-            value class DrawableResIcon(
-                @param:DrawableRes val resourceId: Int,
-            ) : Icon
+            /** The [DrawableRes] as icon for this menu item. */
+            @JvmInline value class DrawableResIcon(@param:DrawableRes val resourceId: Int) : Icon
         }
 
-        /**
-         * The text that this menu item should display.
-         */
+        /** The text that this menu item should display. */
         sealed interface Text {
-            /**
-             * The [String] to display in this this menu item.
-             */
-            @JvmInline
-            value class StringText(val text: String) : Text
+            /** The [String] to display in this this menu item. */
+            @JvmInline value class StringText(val text: String) : Text
 
-            /**
-             * The [StringRes] to display as text in this menu item.
-             */
-            @JvmInline
-            value class StringResText(
-                @param:StringRes val resourceId: Int,
-            ) : Text
+            /** The [StringRes] to display as text in this menu item. */
+            @JvmInline value class StringResText(@param:StringRes val resourceId: Int) : Text
         }
 
-        /**
-         * The content description menu item.
-         */
+        /** The content description menu item. */
         sealed interface ContentDescription {
-            /**
-             * The [String] to use as content description of this menu item.
-             */
-            @JvmInline
-            value class StringContentDescription(val text: String) : ContentDescription
+            /** The [String] to use as content description of this menu item. */
+            @JvmInline value class StringContentDescription(val text: String) : ContentDescription
 
-            /**
-             * The [StringRes] to use as content description of this menu item.
-             */
+            /** The [StringRes] to use as content description of this menu item. */
             @JvmInline
-            value class StringResContentDescription(
-                @param:StringRes val resourceId: Int,
-            ) : ContentDescription
+            value class StringResContentDescription(@param:StringRes val resourceId: Int) : ContentDescription
         }
     }
 
-    /**
-     * Divider to show in a [BrowserToolbarMenu].
-     */
+    /** Divider to show in a [BrowserToolbarMenu]. */
     data object BrowserToolbarMenuDivider : BrowserToolbarMenuItem()
 }

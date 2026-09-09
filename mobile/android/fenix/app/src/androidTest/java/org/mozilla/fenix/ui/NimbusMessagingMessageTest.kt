@@ -13,7 +13,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.ext.components
@@ -24,8 +23,8 @@ import org.mozilla.fenix.helpers.TestHelper
 /**
  * This test is to test the integrity of messages hardcoded in the FML.
  *
- * It tests if the trigger expressions are valid, all the fields are complete
- * and a simple check if they are localized (don't contain `_`).
+ * It tests if the trigger expressions are valid, all the fields are complete and a simple check if they are localized
+ * (don't contain `_`).
  */
 class NimbusMessagingMessageTest {
     private lateinit var feature: Messaging
@@ -34,12 +33,9 @@ class NimbusMessagingMessageTest {
     private val messaging
         get() = context.components.nimbus.messaging
 
-    @get:Rule(order = 0)
-    val fenixTestRule: FenixTestRule = FenixTestRule()
+    @get:Rule(order = 0) val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    @get:Rule
-    val activityTestRule =
-        HomeActivityIntentTestRule.withDefaultSettingsOverrides()
+    @get:Rule val activityTestRule = HomeActivityIntentTestRule.withDefaultSettingsOverrides()
 
     @Before
     fun setUp() {
@@ -48,9 +44,8 @@ class NimbusMessagingMessageTest {
     }
 
     /**
-     * Check if all messages in the FML are internally consistent with the
-     * rest of the FML. This check is done in the `NimbusMessagingStorage`
-     * class.
+     * Check if all messages in the FML are internally consistent with the rest of the FML. This check is done in the
+     * `NimbusMessagingStorage` class.
      */
     @Test
     fun testAllMessageIntegrity() = runTest {
@@ -74,9 +69,7 @@ class NimbusMessagingMessageTest {
         assertFalse(string.matches(Regex("[a-z][_a-z\\d]*")))
     }
 
-    /**
-     * Check that the messages are localized.
-     */
+    /** Check that the messages are localized. */
     @Test
     fun testAllMessagesAreLocalized() {
         feature.messages.values.forEach { message ->
@@ -88,10 +81,11 @@ class NimbusMessagingMessageTest {
 
     @Test
     fun testIndividualMessagesAreValid() {
-        val expectedMessages = listOf(
-            "default-browser",
-            "default-browser-notification",
-        )
+        val expectedMessages =
+            listOf(
+                "default-browser",
+                "default-browser-notification",
+            )
         val rawMessages = feature.messages
         for (id in expectedMessages) {
             assertTrue(rawMessages.containsKey(id))

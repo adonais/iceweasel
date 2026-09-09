@@ -11,9 +11,9 @@ import org.mozilla.fenix.debugsettings.cfrs.CfrPreferencesRepository
 class FakeCfrPreferencesRepository : CfrPreferencesRepository {
     override val cfrPreferenceUpdates: Flow<CfrPreferencesRepository.CfrPreferenceUpdate> = flowOf()
 
-    override fun init() { }
+    override fun init() {}
 
-    override fun updateCfrPreference(preferenceUpdate: CfrPreferencesRepository.CfrPreferenceUpdate) { }
+    override fun updateCfrPreference(preferenceUpdate: CfrPreferencesRepository.CfrPreferenceUpdate) {}
 
-    override fun resetLastCfrTimestamp() { }
+    override fun resetLastCfrTimestamp() {}
 }

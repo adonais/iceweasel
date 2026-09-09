@@ -9,22 +9,16 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 
-/**
- * A base view holder for Studies.
- */
+/** A base view holder for Studies. */
 sealed class CustomViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-    /**
-     * A view holder for displaying section items.
-     */
+    /** A view holder for displaying section items. */
     class SectionViewHolder(
         view: View,
         val titleView: TextView,
         val divider: View,
     ) : CustomViewHolder(view)
 
-    /**
-     * A view holder for displaying study items.
-     */
+    /** A view holder for displaying study items. */
     class StudyViewHolder(
         view: View,
         val titleView: TextView,

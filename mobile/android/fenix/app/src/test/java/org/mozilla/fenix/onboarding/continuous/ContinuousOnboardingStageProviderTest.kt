@@ -4,6 +4,9 @@
 
 package org.mozilla.fenix.onboarding.continuous
 
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.util.concurrent.TimeUnit
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.FakeDateTimeProvider
 import org.junit.Assert.assertEquals
@@ -12,9 +15,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
-import java.time.LocalDate
-import java.time.ZoneOffset
-import java.util.concurrent.TimeUnit
 
 private val ONE_DAY_MILLIS = TimeUnit.DAYS.toMillis(1)
 
@@ -96,7 +96,7 @@ class ContinuousOnboardingStageProviderTest {
     }
 
     @Test
-    fun `WHEN day 3 shown today and day 7 not shown THEN get stage returns NONE`() {
+    fun `WHEN day 3 shown today and day 5 not shown THEN get stage returns NONE`() {
         settings.secondDayOnboardingCompletedTimestamp = day1Millis
         settings.thirdDayOnboardingCompletedTimestamp = day2Millis
 
@@ -104,9 +104,67 @@ class ContinuousOnboardingStageProviderTest {
     }
 
     @Test
-    fun `WHEN day 3 shown 3 days ago and day 7 not shown THEN get stage returns NONE`() {
+    fun `WHEN day 3 shown 1 day ago and day 5 not shown THEN get stage returns NONE`() {
         settings.secondDayOnboardingCompletedTimestamp = day1Millis
         settings.thirdDayOnboardingCompletedTimestamp = day2Millis
+
+        assertEquals(
+            ContinuousOnboardingStage.NONE,
+            getStage(day2Millis + ONE_DAY_MILLIS),
+        )
+    }
+
+    @Test
+    fun `WHEN day 3 shown 2 days ago and day 5 not shown THEN get stage returns DAY_5`() {
+        settings.secondDayOnboardingCompletedTimestamp = day1Millis
+        settings.thirdDayOnboardingCompletedTimestamp = day2Millis
+
+        assertEquals(
+            ContinuousOnboardingStage.DAY_5,
+            getStage(day2Millis + 2 * ONE_DAY_MILLIS),
+        )
+    }
+
+    @Test
+    fun `WHEN day 3 shown 3 days ago and day 5 not shown THEN get stage returns DAY_5`() {
+        settings.secondDayOnboardingCompletedTimestamp = day1Millis
+        settings.thirdDayOnboardingCompletedTimestamp = day2Millis
+
+        assertEquals(
+            ContinuousOnboardingStage.DAY_5,
+            getStage(day2Millis + 3 * ONE_DAY_MILLIS),
+        )
+    }
+
+    @Test
+    fun `WHEN day 3 shown 2 days ago and day 5 already shown THEN get stage returns NONE`() {
+        settings.secondDayOnboardingCompletedTimestamp = day1Millis
+        settings.thirdDayOnboardingCompletedTimestamp = day2Millis
+        settings.fifthDayOnboardingCompletedTimestamp = day2Millis + 2 * ONE_DAY_MILLIS
+
+        assertEquals(
+            ContinuousOnboardingStage.NONE,
+            getStage(day2Millis + 2 * ONE_DAY_MILLIS),
+        )
+    }
+
+    @Test
+    fun `WHEN day 5 shown today and day 7 not shown THEN get stage returns NONE`() {
+        settings.secondDayOnboardingCompletedTimestamp = day1Millis
+        settings.thirdDayOnboardingCompletedTimestamp = day2Millis
+        settings.fifthDayOnboardingCompletedTimestamp = day2Millis + 2 * ONE_DAY_MILLIS
+
+        assertEquals(
+            ContinuousOnboardingStage.NONE,
+            getStage(day2Millis + 2 * ONE_DAY_MILLIS),
+        )
+    }
+
+    @Test
+    fun `WHEN day 5 shown 1 day ago and day 7 not shown THEN get stage returns NONE`() {
+        settings.secondDayOnboardingCompletedTimestamp = day1Millis
+        settings.thirdDayOnboardingCompletedTimestamp = day2Millis
+        settings.fifthDayOnboardingCompletedTimestamp = day2Millis + 2 * ONE_DAY_MILLIS
 
         assertEquals(
             ContinuousOnboardingStage.NONE,
@@ -115,9 +173,10 @@ class ContinuousOnboardingStageProviderTest {
     }
 
     @Test
-    fun `WHEN day 3 shown 4 days ago and day 7 not shown THEN get stage returns DAY_7`() {
+    fun `WHEN day 5 shown 2 days ago and day 7 not shown THEN get stage returns DAY_7`() {
         settings.secondDayOnboardingCompletedTimestamp = day1Millis
         settings.thirdDayOnboardingCompletedTimestamp = day2Millis
+        settings.fifthDayOnboardingCompletedTimestamp = day2Millis + 2 * ONE_DAY_MILLIS
 
         assertEquals(
             ContinuousOnboardingStage.DAY_7,
@@ -126,9 +185,10 @@ class ContinuousOnboardingStageProviderTest {
     }
 
     @Test
-    fun `WHEN day 3 shown 5 days ago and day 7 not shown THEN get stage returns DAY_7`() {
+    fun `WHEN day 5 shown 3 days ago and day 7 not shown THEN get stage returns DAY_7`() {
         settings.secondDayOnboardingCompletedTimestamp = day1Millis
         settings.thirdDayOnboardingCompletedTimestamp = day2Millis
+        settings.fifthDayOnboardingCompletedTimestamp = day2Millis + 2 * ONE_DAY_MILLIS
 
         assertEquals(
             ContinuousOnboardingStage.DAY_7,
@@ -137,9 +197,10 @@ class ContinuousOnboardingStageProviderTest {
     }
 
     @Test
-    fun `WHEN day 3 shown 4 days ago and day 7 already shown THEN get stage returns NONE`() {
+    fun `WHEN day 5 shown 2 days ago and day 7 already shown THEN get stage returns NONE`() {
         settings.secondDayOnboardingCompletedTimestamp = day1Millis
         settings.thirdDayOnboardingCompletedTimestamp = day2Millis
+        settings.fifthDayOnboardingCompletedTimestamp = day2Millis + 2 * ONE_DAY_MILLIS
         settings.seventhDayOnboardingCompletedTimestamp = day2Millis + 4 * ONE_DAY_MILLIS
 
         assertEquals(
@@ -152,6 +213,7 @@ class ContinuousOnboardingStageProviderTest {
     fun `WHEN all stages completed THEN returns NONE`() {
         settings.secondDayOnboardingCompletedTimestamp = day1Millis
         settings.thirdDayOnboardingCompletedTimestamp = day2Millis
+        settings.fifthDayOnboardingCompletedTimestamp = day2Millis + 2 * ONE_DAY_MILLIS
         settings.seventhDayOnboardingCompletedTimestamp = day2Millis + 4 * ONE_DAY_MILLIS
 
         assertEquals(
@@ -160,9 +222,11 @@ class ContinuousOnboardingStageProviderTest {
         )
     }
 
-    private fun getStage(currentTimeMillis: Long) = ContinuousOnboardingStageProviderDefault(
-        settings = settings,
-        dateTimeProvider = FakeDateTimeProvider(currentTime = currentTimeMillis),
-        zoneId = ZoneOffset.UTC,
-    ).getContinuousOnboardingStage()
+    private fun getStage(currentTimeMillis: Long) =
+        ContinuousOnboardingStageProviderDefault(
+                settings = settings,
+                dateTimeProvider = FakeDateTimeProvider(currentTime = currentTimeMillis),
+                zoneId = ZoneOffset.UTC,
+            )
+            .getContinuousOnboardingStage()
 }

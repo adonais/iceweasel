@@ -36,38 +36,32 @@ class SummarizeToolbarCFRBindingTest {
     fun `GIVEN all conditions met WHEN tab is selected THEN cfr is dispatched to toolbar store`() =
         runTest(testDispatcher) {
             val actions = mutableListOf<BrowserToolbarAction>()
-            val binding = createBindingWithEligibleTab(
-                browserToolbarStore = BrowserToolbarStore(
-                    middleware = listOf(actionListenerMiddleware(actions)),
-                ),
-            )
+            val binding =
+                createBindingWithEligibleTab(
+                    browserToolbarStore = BrowserToolbarStore(middleware = listOf(actionListenerMiddleware(actions)))
+                )
             binding.start()
 
             testDispatcher.scheduler.advanceUntilIdle()
 
-            val expectedAddedCfr = BrowserToolbarCFR(
-                tag = SummarizeToolbarCFRBinding.CFR_TAG_SHAKE_TO_SUMMARIZE,
-                enabled = true,
-                title = null,
-                description = R.string.browser_toolbar_summarize_cfr_description,
-            )
+            val expectedAddedCfr =
+                BrowserToolbarCFR(
+                    tag = SummarizeToolbarCFRBinding.CFR_TAG_SHAKE_TO_SUMMARIZE,
+                    enabled = true,
+                    title = null,
+                    description = R.string.browser_toolbar_summarize_cfr_description,
+                )
             assertEquals(
                 expectedAddedCfr,
-                actions.filterIsInstance<ToolbarCFRShown>()
-                    .first()
-                    .cfr,
+                actions.filterIsInstance<ToolbarCFRShown>().first().cfr,
             )
         }
 
     @Test
     fun `GIVEN all conditions met WHEN cfr is shown THEN cfr exposure event is cached`() =
         runTest(testDispatcher) {
-            val featureDiscoverySettings = FakeSummarizationFeatureConfiguration(
-                shouldToolbarShowCfr = true,
-            )
-            val binding = createBindingWithEligibleTab(
-                featureDiscoverySettings = featureDiscoverySettings,
-            )
+            val featureDiscoverySettings = FakeSummarizationFeatureConfiguration(shouldToolbarShowCfr = true)
+            val binding = createBindingWithEligibleTab(featureDiscoverySettings = featureDiscoverySettings)
             binding.start()
 
             testDispatcher.scheduler.advanceUntilIdle()
@@ -78,28 +72,27 @@ class SummarizeToolbarCFRBindingTest {
     @Test
     fun `GIVEN selected tab is private WHEN tab is selected THEN cfr is not shown`() =
         runTest(testDispatcher) {
-            val tab = createTab(
-                url = "https://www.mozilla.org",
-                id = "1",
-                private = true,
-                readerState = ReaderState(readerable = true),
-                engineSession = TestEngineSession(),
-            )
+            val tab =
+                createTab(
+                    url = "https://www.mozilla.org",
+                    id = "1",
+                    private = true,
+                    readerState = ReaderState(readerable = true),
+                    engineSession = TestEngineSession(),
+                )
 
             val actions = mutableListOf<BrowserToolbarAction>()
-            val binding = createBinding(
-                browserStore = BrowserStore(BrowserState(tabs = listOf(tab), selectedTabId = "1")),
-                browserToolbarStore = BrowserToolbarStore(
-                    middleware = listOf(actionListenerMiddleware(actions)),
-                ),
-            )
+            val binding =
+                createBinding(
+                    browserStore = BrowserStore(BrowserState(tabs = listOf(tab), selectedTabId = "1")),
+                    browserToolbarStore = BrowserToolbarStore(middleware = listOf(actionListenerMiddleware(actions))),
+                )
             binding.start()
 
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertTrue(
-                "Expected that the ToolbarCFRAdded action is not dispatched. " +
-                        "Recorded actions are: $actions",
+                "Expected that the ToolbarCFRAdded action is not dispatched. " + "Recorded actions are: $actions",
                 actions.filterIsInstance<ToolbarCFRShown>().isEmpty(),
             )
         }
@@ -107,37 +100,34 @@ class SummarizeToolbarCFRBindingTest {
     @Test
     fun `GIVEN shouldToolbarShowCfr is false WHEN tab is selected THEN cfr is not shown`() =
         runTest(testDispatcher) {
-            val tab = createTab(
-                url = "https://www.mozilla.org",
-                id = "1",
-                readerState = ReaderState(readerable = true),
-                engineSession = TestEngineSession(),
-            )
+            val tab =
+                createTab(
+                    url = "https://www.mozilla.org",
+                    id = "1",
+                    readerState = ReaderState(readerable = true),
+                    engineSession = TestEngineSession(),
+                )
             val actions = mutableListOf<BrowserToolbarAction>()
-            val binding = createBinding(
-                featureDiscoverySettings = FakeSummarizationFeatureConfiguration(
-                    shouldToolbarShowCfr = false,
-                ),
-                testEligibilityChecker = object : SummarizationEligibilityChecker {
-                    override suspend fun check(session: EngineSession): Result<Boolean> =
-                        Result.success(true)
+            val binding =
+                createBinding(
+                    featureDiscoverySettings = FakeSummarizationFeatureConfiguration(shouldToolbarShowCfr = false),
+                    testEligibilityChecker =
+                        object : SummarizationEligibilityChecker {
+                            override suspend fun check(session: EngineSession): Result<Boolean> = Result.success(true)
 
-                    override suspend fun checkLanguage(session: EngineSession): Result<Boolean> {
-                        TODO("Not yet implemented")
-                    }
-                },
-                browserStore = BrowserStore(BrowserState(tabs = listOf(tab), selectedTabId = "1")),
-                browserToolbarStore = BrowserToolbarStore(
-                    middleware = listOf(actionListenerMiddleware(actions)),
-                ),
-            )
+                            override suspend fun checkLanguage(session: EngineSession): Result<Boolean> {
+                                TODO("Not yet implemented")
+                            }
+                        },
+                    browserStore = BrowserStore(BrowserState(tabs = listOf(tab), selectedTabId = "1")),
+                    browserToolbarStore = BrowserToolbarStore(middleware = listOf(actionListenerMiddleware(actions))),
+                )
             binding.start()
 
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertTrue(
-                "Expected that the ToolbarCFRAdded action is not dispatched. " +
-                        "Recorded actions are: $actions",
+                "Expected that the ToolbarCFRAdded action is not dispatched. " + "Recorded actions are: $actions",
                 actions.filterIsInstance<ToolbarCFRShown>().isEmpty(),
             )
         }
@@ -145,29 +135,26 @@ class SummarizeToolbarCFRBindingTest {
     @Test
     fun `GIVEN tab is not readerable WHEN tab is selected THEN cfr is not shown`() =
         runTest(testDispatcher) {
-            val tab = createTab(
-                url = "https://www.mozilla.org",
-                id = "1",
-                readerState = ReaderState(readerable = false),
-                engineSession = TestEngineSession(),
-            )
+            val tab =
+                createTab(
+                    url = "https://www.mozilla.org",
+                    id = "1",
+                    readerState = ReaderState(readerable = false),
+                    engineSession = TestEngineSession(),
+                )
 
             val actions = mutableListOf<BrowserToolbarAction>()
-            val binding = createBinding(
-                browserStore = BrowserStore(
-                    BrowserState(tabs = listOf(tab), selectedTabId = "1"),
-                ),
-                browserToolbarStore = BrowserToolbarStore(
-                    middleware = listOf(actionListenerMiddleware(actions)),
-                ),
-            )
+            val binding =
+                createBinding(
+                    browserStore = BrowserStore(BrowserState(tabs = listOf(tab), selectedTabId = "1")),
+                    browserToolbarStore = BrowserToolbarStore(middleware = listOf(actionListenerMiddleware(actions))),
+                )
             binding.start()
 
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertTrue(
-                "Expected that the ToolbarCFRAdded action is not dispatched. " +
-                        "Recorded actions are: $actions",
+                "Expected that the ToolbarCFRAdded action is not dispatched. " + "Recorded actions are: $actions",
                 actions.filterIsInstance<ToolbarCFRShown>().isEmpty(),
             )
         }
@@ -175,34 +162,32 @@ class SummarizeToolbarCFRBindingTest {
     @Test
     fun `GIVEN tab is still loading WHEN tab is selected THEN cfr is not shown`() =
         runTest(testDispatcher) {
-            val tab = createTab(
-                url = "https://www.mozilla.org",
-                id = "1",
-                readerState = ReaderState(readerable = true),
-                engineSession = TestEngineSession(),
-            )
+            val tab =
+                createTab(
+                    url = "https://www.mozilla.org",
+                    id = "1",
+                    readerState = ReaderState(readerable = true),
+                    engineSession = TestEngineSession(),
+                )
 
             val actions = mutableListOf<BrowserToolbarAction>()
-            val binding = createBinding(
-                browserStore = BrowserStore(
-                    BrowserState(
-                        tabs = listOf(
-                            tab.copy(content = tab.content.copy(loading = true, progress = 50)),
+            val binding =
+                createBinding(
+                    browserStore =
+                        BrowserStore(
+                            BrowserState(
+                                tabs = listOf(tab.copy(content = tab.content.copy(loading = true, progress = 50))),
+                                selectedTabId = "1",
+                            )
                         ),
-                        selectedTabId = "1",
-                    ),
-                ),
-                browserToolbarStore = BrowserToolbarStore(
-                    middleware = listOf(actionListenerMiddleware(actions)),
-                ),
-            )
+                    browserToolbarStore = BrowserToolbarStore(middleware = listOf(actionListenerMiddleware(actions))),
+                )
             binding.start()
 
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertTrue(
-                "Expected that the ToolbarCFRAdded action is not dispatched. " +
-                        "Recorded actions are: $actions",
+                "Expected that the ToolbarCFRAdded action is not dispatched. " + "Recorded actions are: $actions",
                 actions.filterIsInstance<ToolbarCFRShown>().isEmpty(),
             )
         }
@@ -210,38 +195,36 @@ class SummarizeToolbarCFRBindingTest {
     @Test
     fun `GIVEN eligibility check fails WHEN tab is selected THEN cfr is not shown`() =
         runTest(testDispatcher) {
-            val tab = createTab(
-                url = "https://www.mozilla.org",
-                id = "1",
-                readerState = ReaderState(readerable = true),
-                engineSession = TestEngineSession(),
-            )
-            val browserStore = BrowserStore(
-                BrowserState(tabs = listOf(tab), selectedTabId = "1"),
-            )
+            val tab =
+                createTab(
+                    url = "https://www.mozilla.org",
+                    id = "1",
+                    readerState = ReaderState(readerable = true),
+                    engineSession = TestEngineSession(),
+                )
+            val browserStore = BrowserStore(BrowserState(tabs = listOf(tab), selectedTabId = "1"))
 
             val actions = mutableListOf<BrowserToolbarAction>()
-            val binding = createBinding(
-                testEligibilityChecker = object : SummarizationEligibilityChecker {
-                    override suspend fun check(session: EngineSession): Result<Boolean> =
-                        Result.failure(Exception("Not eligible"))
+            val binding =
+                createBinding(
+                    testEligibilityChecker =
+                        object : SummarizationEligibilityChecker {
+                            override suspend fun check(session: EngineSession): Result<Boolean> =
+                                Result.failure(Exception("Not eligible"))
 
-                    override suspend fun checkLanguage(session: EngineSession): Result<Boolean> {
-                        TODO("Not yet implemented")
-                    }
-                },
-                browserStore = browserStore,
-                browserToolbarStore = BrowserToolbarStore(
-                    middleware = listOf(actionListenerMiddleware(actions)),
-                ),
-            )
+                            override suspend fun checkLanguage(session: EngineSession): Result<Boolean> {
+                                TODO("Not yet implemented")
+                            }
+                        },
+                    browserStore = browserStore,
+                    browserToolbarStore = BrowserToolbarStore(middleware = listOf(actionListenerMiddleware(actions))),
+                )
             binding.start()
 
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertTrue(
-                "Expected that the ToolbarCFRAdded action is not dispatched. " +
-                        "Recorded actions are: $actions",
+                "Expected that the ToolbarCFRAdded action is not dispatched. " + "Recorded actions are: $actions",
                 actions.filterIsInstance<ToolbarCFRShown>().isEmpty(),
             )
         }
@@ -249,27 +232,29 @@ class SummarizeToolbarCFRBindingTest {
     @Test
     fun `GIVEN another cfr is already active WHEN tab becomes eligible THEN cfr is not shown`() =
         runTest(testDispatcher) {
-            val existingCfr = BrowserToolbarCFR(
-                tag = "existing-tag",
-                enabled = true,
-                title = null,
-                description = R.string.browser_toolbar_summarize_cfr_description,
-            )
+            val existingCfr =
+                BrowserToolbarCFR(
+                    tag = "existing-tag",
+                    enabled = true,
+                    title = null,
+                    description = R.string.browser_toolbar_summarize_cfr_description,
+                )
 
             val actions = mutableListOf<BrowserToolbarAction>()
-            val binding = createBindingWithEligibleTab(
-                browserToolbarStore = BrowserToolbarStore(
-                    initialState = BrowserToolbarState(displayState = DisplayState(cfr = existingCfr)),
-                    middleware = listOf(actionListenerMiddleware(actions)),
-                ),
-            )
+            val binding =
+                createBindingWithEligibleTab(
+                    browserToolbarStore =
+                        BrowserToolbarStore(
+                            initialState = BrowserToolbarState(displayState = DisplayState(cfr = existingCfr)),
+                            middleware = listOf(actionListenerMiddleware(actions)),
+                        )
+                )
             binding.start()
 
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertTrue(
-                "Expected that the ToolbarCFRAdded action is not dispatched. " +
-                        "Recorded actions are: $actions",
+                "Expected that the ToolbarCFRAdded action is not dispatched. " + "Recorded actions are: $actions",
                 actions.filterIsInstance<ToolbarCFRShown>().isEmpty(),
             )
         }
@@ -277,58 +262,56 @@ class SummarizeToolbarCFRBindingTest {
     @Test
     fun `GIVEN no selected tab WHEN state is observed THEN cfr is not shown`() =
         runTest(testDispatcher) {
-            val tab = createTab(
-                url = "https://www.mozilla.org",
-                id = "1",
-                readerState = ReaderState(readerable = true),
-                engineSession = TestEngineSession(),
-            )
+            val tab =
+                createTab(
+                    url = "https://www.mozilla.org",
+                    id = "1",
+                    readerState = ReaderState(readerable = true),
+                    engineSession = TestEngineSession(),
+                )
 
             val actions = mutableListOf<BrowserToolbarAction>()
-            val binding = createBinding(
-                browserStore = BrowserStore(
-                    BrowserState(tabs = listOf(tab), selectedTabId = null),
-                ),
-                browserToolbarStore = BrowserToolbarStore(
-                    middleware = listOf(actionListenerMiddleware(actions)),
-                ),
-            )
+            val binding =
+                createBinding(
+                    browserStore = BrowserStore(BrowserState(tabs = listOf(tab), selectedTabId = null)),
+                    browserToolbarStore = BrowserToolbarStore(middleware = listOf(actionListenerMiddleware(actions))),
+                )
             binding.start()
 
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertTrue(
-                "Expected that the ToolbarCFRAdded action is not dispatched. " +
-                        "Recorded actions are: $actions",
+                "Expected that the ToolbarCFRAdded action is not dispatched. " + "Recorded actions are: $actions",
                 actions.filterIsInstance<ToolbarCFRShown>().isEmpty(),
             )
         }
 
     private fun createBindingWithEligibleTab(
-        eligibilityChecker: SummarizationEligibilityChecker = object : SummarizationEligibilityChecker {
-            override suspend fun check(session: EngineSession): Result<Boolean> =
-                Result.success(true)
+        eligibilityChecker: SummarizationEligibilityChecker =
+            object : SummarizationEligibilityChecker {
+                override suspend fun check(session: EngineSession): Result<Boolean> = Result.success(true)
 
-            override suspend fun checkLanguage(session: EngineSession): Result<Boolean> {
-                TODO("Not yet implemented")
-            }
-        },
-        featureDiscoverySettings: FakeSummarizationFeatureConfiguration = FakeSummarizationFeatureConfiguration(
-            shouldToolbarShowCfr = true,
-        ),
-        browserStore: BrowserStore = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab(
-                        url = "https://www.mozilla.org",
-                        id = "1",
-                        readerState = ReaderState(readerable = true),
-                        engineSession = TestEngineSession(),
-                    ),
-                ),
-                selectedTabId = "1",
+                override suspend fun checkLanguage(session: EngineSession): Result<Boolean> {
+                    TODO("Not yet implemented")
+                }
+            },
+        featureDiscoverySettings: FakeSummarizationFeatureConfiguration =
+            FakeSummarizationFeatureConfiguration(shouldToolbarShowCfr = true),
+        browserStore: BrowserStore =
+            BrowserStore(
+                BrowserState(
+                    tabs =
+                        listOf(
+                            createTab(
+                                url = "https://www.mozilla.org",
+                                id = "1",
+                                readerState = ReaderState(readerable = true),
+                                engineSession = TestEngineSession(),
+                            )
+                        ),
+                    selectedTabId = "1",
+                )
             ),
-        ),
         browserToolbarStore: BrowserToolbarStore = BrowserToolbarStore(),
     ): SummarizeToolbarCFRBinding {
         return SummarizeToolbarCFRBinding(
@@ -342,19 +325,18 @@ class SummarizeToolbarCFRBindingTest {
     }
 
     private fun createBinding(
-        featureDiscoverySettings: SummarizationFeatureDiscoveryConfiguration = FakeSummarizationFeatureConfiguration(
-            shouldToolbarShowCfr = true,
-        ),
+        featureDiscoverySettings: SummarizationFeatureDiscoveryConfiguration =
+            FakeSummarizationFeatureConfiguration(shouldToolbarShowCfr = true),
         browserStore: BrowserStore = BrowserStore(),
         browserToolbarStore: BrowserToolbarStore = BrowserToolbarStore(),
-        testEligibilityChecker: SummarizationEligibilityChecker = object : SummarizationEligibilityChecker {
-            override suspend fun check(session: EngineSession): Result<Boolean> =
-                Result.success(true)
+        testEligibilityChecker: SummarizationEligibilityChecker =
+            object : SummarizationEligibilityChecker {
+                override suspend fun check(session: EngineSession): Result<Boolean> = Result.success(true)
 
-            override suspend fun checkLanguage(session: EngineSession): Result<Boolean> {
-                TODO("Not yet implemented")
-            }
-        },
+                override suspend fun checkLanguage(session: EngineSession): Result<Boolean> {
+                    TODO("Not yet implemented")
+                }
+            },
     ): SummarizeToolbarCFRBinding {
         return SummarizeToolbarCFRBinding(
             featureDiscovery = featureDiscoverySettings,
@@ -367,7 +349,7 @@ class SummarizeToolbarCFRBindingTest {
     }
 
     private fun actionListenerMiddleware(
-        actions: MutableList<BrowserToolbarAction>,
+        actions: MutableList<BrowserToolbarAction>
     ): Middleware<BrowserToolbarState, BrowserToolbarAction> {
         return object : Middleware<BrowserToolbarState, BrowserToolbarAction> {
             override fun invoke(

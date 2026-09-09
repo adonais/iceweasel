@@ -27,30 +27,33 @@ class TabSearchStateTest {
 
     @Test
     fun `WHEN query is empty AND searchResults is empty THEN showNoResults is false`() {
-        val state = TabSearchState(
-            query = "",
-            searchResults = emptyList(),
-        )
+        val state =
+            TabSearchState(
+                query = "",
+                searchResults = emptyList(),
+            )
 
         assertFalse(state.showNoResults)
     }
 
     @Test
     fun `WHEN query is not empty AND searchResults is empty THEN showNoResults is true`() {
-        val state = TabSearchState(
-            query = "Mozilla",
-            searchResults = emptyList(),
-        )
+        val state =
+            TabSearchState(
+                query = "Mozilla",
+                searchResults = emptyList(),
+            )
 
         assertTrue(state.showNoResults)
     }
 
     @Test
     fun `WHEN query is not empty AND searchResults is not empty THEN showNoResults is false`() {
-        val state = TabSearchState(
-            query = "Mozilla",
-            searchResults = listOf(TabsTrayItem.Tab(tab = createTab("mozilla.org", id = "mozilla"))),
-        )
+        val state =
+            TabSearchState(
+                query = "Mozilla",
+                searchResults = listOf(TabsTrayItem.Tab(tab = createTab("mozilla.org", id = "mozilla"))),
+            )
 
         assertFalse(state.showNoResults)
     }

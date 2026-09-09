@@ -9,6 +9,7 @@
 
 #include "libANGLE/renderer/metal/ProvokingVertexHelper.h"
 #import <Foundation/Foundation.h>
+#include "common/FastVector.h"
 #include "common/base/anglebase/numerics/checked_math.h"
 #include "libANGLE/Display.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
@@ -21,6 +22,13 @@ namespace rx
 
 namespace
 {
+struct IndexRewriteRange
+{
+    uint32_t indexCount;
+    uint32_t primitiveCount;
+    size_t srcOffset;
+    size_t dstOffset;
+};
 constexpr size_t kInitialIndexBufferSize = 0xFFFF;  // Initial 64k pool.
 }
 static inline uint32_t primCountForIndexCount(const uint fixIndexBufferKey,
@@ -189,58 +197,115 @@ angle::Result ProvokingVertexHelper::prepareCommandEncoderForFunction(
     return angle::Result::Continue;
 }
 
-angle::Result ProvokingVertexHelper::preconditionIndexBuffer(ContextMtl *context,
-                                                             mtl::BufferRef indexBuffer,
-                                                             GLsizei glCount,
-                                                             size_t indexOffset,
-                                                             bool primitiveRestartEnabled,
-                                                             gl::PrimitiveMode primitiveMode,
-                                                             gl::DrawElementsType elementsType,
-                                                             uint32_t &outIndexCount,
-                                                             size_t &outIndexOffset,
-                                                             gl::PrimitiveMode &outPrimitiveMode,
-                                                             mtl::BufferRef &outNewBuffer)
+angle::Result ProvokingVertexHelper::preconditionIndexBuffer(
+    ContextMtl *context,
+    GLsizei count,
+    gl::PrimitiveMode mode,
+    size_t firstIndex,
+    bool primitiveRestartEnabled,
+    const std::vector<DrawIndexRange> &drawIndexRanges,
+    mtl::BufferSlice indexBuffer,
+    gl::DrawElementsType indexBufferType,
+    mtl::BufferSlice *outNewIndexBuffer)
 {
     // Get specialized program
     // Upload index buffer
     // dispatch per-primitive?
-    uint indexBufferKey = buildIndexBufferKey(elementsType, primitiveRestartEnabled, primitiveMode);
-    uint32_t primCount     = primCountForIndexCount(indexBufferKey, glCount);
-    uint32_t newIndexCount = 0;
-    ANGLE_CHECK_GL_MATH(context, indexCountForPrimCount(indexBufferKey, primCount, &newIndexCount));
+    uint indexBufferKey       = buildIndexBufferKey(indexBufferType, primitiveRestartEnabled, mode);
+    gl::PrimitiveMode newMode = getNewPrimitiveMode(indexBufferKey);
 
-    size_t indexSize   = gl::GetDrawElementsTypeSize(elementsType);
-    size_t newOffset   = 0;
-    mtl::BufferRef newBuffer;
+    uint32_t perPrimitiveIndexCount;
+    switch (newMode)
+    {
+        case gl::PrimitiveMode::Points:
+            perPrimitiveIndexCount = 1;
+            break;
+        case gl::PrimitiveMode::Lines:
+            perPrimitiveIndexCount = 2;
+            break;
+        case gl::PrimitiveMode::Triangles:
+            perPrimitiveIndexCount = 3;
+            break;
+        default:
+            UNREACHABLE();
+            return angle::Result::Stop;
+    }
 
-    angle::CheckedNumeric<size_t> checkedBufferSize(newIndexCount);
-    checkedBufferSize *= indexSize;
-    checkedBufferSize += indexOffset;
+    const size_t indexTypeShift = gl::GetDrawElementsTypeShift(indexBufferType);
+    angle::FastVector<IndexRewriteRange, 4> rewriteRanges;
+    angle::CheckedNumeric<size_t> checkedBufferSize = 0;
+
+    const size_t lastIndex = firstIndex + count - 1;
+    for (const auto &range : drawIndexRanges)
+    {
+        if (range.end < firstIndex)
+        {
+            continue;
+        }
+        if (range.begin > lastIndex)
+        {
+            break;
+        }
+        DrawIndexRange clippedRange{std::max(range.begin, firstIndex),
+                                    std::min(range.end, lastIndex)};
+        uint32_t indexCount = static_cast<uint32_t>(clippedRange.end - clippedRange.begin + 1);
+        if (indexCount < perPrimitiveIndexCount)
+        {
+            continue;
+        }
+        angle::CheckedNumeric<size_t> srcOffset = clippedRange.begin;
+        srcOffset <<= indexTypeShift;
+
+        uint32_t primitiveCount;
+        angle::CheckedNumeric<size_t> dstOffset = srcOffset;
+        if (mode == newMode)
+        {
+            primitiveCount = indexCount / perPrimitiveIndexCount;
+        }
+        else
+        {
+            // Expanded modes: `N` source indices produce `(N - perPrimitiveIndexCount + 1)`
+            // primitives.
+            primitiveCount = indexCount - perPrimitiveIndexCount + 1;
+            dstOffset *= perPrimitiveIndexCount;
+        }
+
+        ANGLE_CHECK_GL_MATH(context, srcOffset.IsValid() && dstOffset.IsValid());
+        rewriteRanges.push_back(
+            {indexCount, primitiveCount, srcOffset.ValueOrDie(), dstOffset.ValueOrDie()});
+
+        angle::CheckedNumeric<size_t> rangeEndOffset(primitiveCount);
+        rangeEndOffset *= perPrimitiveIndexCount;
+        rangeEndOffset <<= indexTypeShift;
+        rangeEndOffset += dstOffset;
+        checkedBufferSize = checkedBufferSize.Max(rangeEndOffset);
+    }
 
     ANGLE_CHECK_GL_MATH(context, checkedBufferSize.IsValid());
-    ANGLE_TRY(mIndexBuffers.allocate(context, checkedBufferSize.ValueOrDie(), nullptr, &newBuffer,
-                                     &newOffset));
-    auto threadsPerThreadgroup = MTLSizeMake(MIN(primCount, 64u), 1, 1);
+    mtl::BufferSlice newBuffer;
+    ANGLE_TRY(mIndexBuffers.allocate(context, checkedBufferSize.ValueOrDie(), &newBuffer));
 
     mtl::ComputeCommandEncoder *encoder =
         context->getComputeCommandEncoderWithoutEndingRenderEncoder();
     const bool isForGenerateIndices = false;
     ANGLE_TRY(
         prepareCommandEncoderForFunction(context, encoder, indexBufferKey, isForGenerateIndices));
-    encoder->setBuffer(indexBuffer, static_cast<uint32_t>(indexOffset), 0);
-    encoder->setBufferForWrite(
-        newBuffer, static_cast<uint32_t>(indexOffset) + static_cast<uint32_t>(newOffset), 1);
-    encoder->setData(static_cast<uint>(glCount), 2);
-    encoder->setData(primCount, 3);
-    encoder->dispatch(
-        MTLSizeMake((static_cast<NSUInteger>(primCount) + threadsPerThreadgroup.width - 1) /
-                        threadsPerThreadgroup.width,
-                    1, 1),
-        threadsPerThreadgroup);
-    outIndexCount    = static_cast<uint32_t>(newIndexCount);
-    outIndexOffset   = newOffset;
-    outPrimitiveMode = getNewPrimitiveMode(indexBufferKey);
-    outNewBuffer     = newBuffer;
+
+    for (const IndexRewriteRange &rangeInfo : rewriteRanges)
+    {
+        auto threadsPerThreadgroup = MTLSizeMake(MIN(rangeInfo.primitiveCount, 64u), 1, 1);
+        encoder->setBuffer(indexBuffer.buffer(), indexBuffer.offset() + rangeInfo.srcOffset, 0);
+        encoder->setBufferForWrite(newBuffer.buffer(), newBuffer.offset() + rangeInfo.dstOffset, 1);
+        encoder->setData(rangeInfo.indexCount, 2);
+        encoder->setData(rangeInfo.primitiveCount, 3);
+        encoder->dispatch(MTLSizeMake((static_cast<NSUInteger>(rangeInfo.primitiveCount) +
+                                       threadsPerThreadgroup.width - 1) /
+                                          threadsPerThreadgroup.width,
+                                      1, 1),
+                          threadsPerThreadgroup);
+    }
+
+    *outNewIndexBuffer = std::move(newBuffer);
     return angle::Result::Continue;
 }
 
@@ -265,15 +330,13 @@ angle::Result ProvokingVertexHelper::generateIndexBuffer(ContextMtl *context,
     ANGLE_CHECK_GL_MATH(context, indexCountForPrimCount(indexBufferKey, primCount, &newIndexCount));
 
     size_t indexSize      = gl::GetDrawElementsTypeSize(elementsType);
-    size_t newIndexOffset = 0;
-    mtl::BufferRef newBuffer;
+    mtl::BufferSlice newBuffer;
 
     angle::CheckedNumeric<size_t> checkedBufferSize = newIndexCount;
     checkedBufferSize *= indexSize;
 
     ANGLE_CHECK_GL_MATH(context, checkedBufferSize.IsValid());
-    ANGLE_TRY(mIndexBuffers.allocate(context, checkedBufferSize.ValueOrDie(), nullptr, &newBuffer,
-                                     &newIndexOffset));
+    ANGLE_TRY(mIndexBuffers.allocate(context, checkedBufferSize.ValueOrDie(), &newBuffer));
     auto threadsPerThreadgroup = MTLSizeMake(MIN(primCount, 64u), 1, 1);
 
     mtl::ComputeCommandEncoder *encoder =
@@ -281,7 +344,7 @@ angle::Result ProvokingVertexHelper::generateIndexBuffer(ContextMtl *context,
     const bool isForGenerateIndices = true;
     ANGLE_TRY(
         prepareCommandEncoderForFunction(context, encoder, indexBufferKey, isForGenerateIndices));
-    encoder->setBufferForWrite(newBuffer, static_cast<uint>(newIndexOffset), 1);
+    encoder->setBufferForWrite(newBuffer.buffer(), newBuffer.offset(), 1);
     encoder->setData(static_cast<uint>(glCount), 2);
     encoder->setData(primCount, 3);
     encoder->setData(static_cast<uint>(first), 4);
@@ -291,9 +354,9 @@ angle::Result ProvokingVertexHelper::generateIndexBuffer(ContextMtl *context,
                     1, 1),
         threadsPerThreadgroup);
     outIndexCount    = static_cast<uint32_t>(newIndexCount);
-    outIndexOffset   = newIndexOffset;
+    outIndexOffset   = newBuffer.offset();
     outPrimitiveMode = getNewPrimitiveMode(indexBufferKey);
-    outNewBuffer     = newBuffer;
+    outNewBuffer     = newBuffer.buffer();
     return angle::Result::Continue;
 }
 

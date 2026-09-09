@@ -18,9 +18,7 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.theme.FirefoxTheme
 
-/**
- * A dialog fragment displaying never translate site item.
- */
+/** A dialog fragment displaying never translate site item. */
 class NeverTranslateSiteDialogPreferenceFragment : DialogFragment() {
 
     private val args by navArgs<NeverTranslateSiteDialogPreferenceFragmentArgs>()
@@ -43,9 +41,7 @@ class NeverTranslateSiteDialogPreferenceFragment : DialogFragment() {
                 websiteUrl = args.neverTranslateSiteUrl,
                 onConfirmDelete = {
                     browserStore.dispatch(
-                        TranslationsAction.RemoveNeverTranslateSiteAction(
-                            origin = args.neverTranslateSiteUrl,
-                        ),
+                        TranslationsAction.RemoveNeverTranslateSiteAction(origin = args.neverTranslateSiteUrl)
                     )
                     runIfFragmentIsAttached {
                         findNavController().popBackStack()

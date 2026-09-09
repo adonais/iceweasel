@@ -801,7 +801,7 @@ struct BuiltDisplayList {
 struct WrClipChainId {
   uint64_t id;
 
-  bool operator==(const WrClipChainId& other) const { return id == other.id; }
+  bool operator==(const WrClipChainId& other) const = default;
 
   static WrClipChainId Empty() {
     WrClipChainId id = {0};

@@ -16,10 +16,7 @@ class RtpRtcpConfig {
   webrtc::RtcpMode GetRtcpMode() const { return mRtcpMode; }
   bool GetExtmapAllowMixed() const { return mExtmapAllowMixed; }
 
-  bool operator==(const RtpRtcpConfig& aOther) const {
-    return mRtcpMode == aOther.mRtcpMode &&
-           mExtmapAllowMixed == aOther.mExtmapAllowMixed;
-  }
+  bool operator==(const RtpRtcpConfig& aOther) const = default;
 
  private:
   webrtc::RtcpMode mRtcpMode;

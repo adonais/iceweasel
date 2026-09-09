@@ -10,6 +10,10 @@ import androidx.room.Room
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.feature.top.sites.db.Migrations
 import mozilla.components.feature.top.sites.db.TopSiteDatabase
@@ -18,10 +22,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 private const val MIGRATION_TEST_DB = "migration-test"
 
@@ -31,14 +31,14 @@ class OnDevicePinnedSitesStorageTest {
     private lateinit var storage: PinnedSiteStorage
     private lateinit var executor: ExecutorService
 
-    @get:Rule
-    var instantTaskExecutorRule = InstantTaskExecutorRule()
+    @get:Rule var instantTaskExecutorRule = InstantTaskExecutorRule()
 
     @get:Rule
-    val helper: MigrationTestHelper = MigrationTestHelper(
-        InstrumentationRegistry.getInstrumentation(),
-        TopSiteDatabase::class.java,
-    )
+    val helper: MigrationTestHelper =
+        MigrationTestHelper(
+            InstrumentationRegistry.getInstrumentation(),
+            TopSiteDatabase::class.java,
+        )
 
     @Before
     fun setUp() {
@@ -58,12 +58,13 @@ class OnDevicePinnedSitesStorageTest {
 
     @Test
     fun testAddingAllDefaultSites() = runTest {
-        val defaultTopSites = listOf(
-            Pair("Mozilla", "https://www.mozilla.org"),
-            Pair("Firefox", "https://www.firefox.com"),
-            Pair("Wikipedia", "https://www.wikipedia.com"),
-            Pair("Pocket", "https://www.getpocket.com"),
-        )
+        val defaultTopSites =
+            listOf(
+                Pair("Mozilla", "https://www.mozilla.org"),
+                Pair("Firefox", "https://www.firefox.com"),
+                Pair("Wikipedia", "https://www.wikipedia.com"),
+                Pair("Pocket", "https://www.getpocket.com"),
+            )
 
         storage.addAllPinnedSites(defaultTopSites, isDefault = true)
 
@@ -178,38 +179,42 @@ class OnDevicePinnedSitesStorageTest {
 
     @Test
     fun migrate1to2() {
-        val dbVersion1 = helper.createDatabase(MIGRATION_TEST_DB, 1).apply {
-            execSQL(
-                "INSERT INTO " +
-                    "top_sites " +
-                    "(title, url, created_at) " +
-                    "VALUES " +
-                    "('Mozilla','mozilla.org',1)," +
-                    "('Top Articles','https://getpocket.com/fenix-top-articles',2)," +
-                    "('Wikipedia','https://www.wikipedia.org/',3)," +
-                    "('YouTube','https://www.youtube.com/',4)",
-            )
-        }
+        val dbVersion1 =
+            helper.createDatabase(MIGRATION_TEST_DB, 1).apply {
+                execSQL(
+                    "INSERT INTO " +
+                        "top_sites " +
+                        "(title, url, created_at) " +
+                        "VALUES " +
+                        "('Mozilla','mozilla.org',1)," +
+                        "('Top Articles','https://getpocket.com/fenix-top-articles',2)," +
+                        "('Wikipedia','https://www.wikipedia.org/',3)," +
+                        "('YouTube','https://www.youtube.com/',4)"
+                )
+            }
 
         dbVersion1.query("SELECT * FROM top_sites").use { cursor ->
             assertEquals(4, cursor.columnCount)
         }
 
-        val dbVersion2 = helper.runMigrationsAndValidate(
-            MIGRATION_TEST_DB,
-            2,
-            true,
-            Migrations.migration_1_2,
-        ).apply {
-            execSQL(
-                "INSERT INTO " +
-                    "top_sites " +
-                    "(title, url, is_default, created_at) " +
-                    "VALUES " +
-                    "('Firefox','firefox.com',1,5)," +
-                    "('Monitor','https://monitor.firefox.com/',0,5)",
-            )
-        }
+        val dbVersion2 =
+            helper
+                .runMigrationsAndValidate(
+                    MIGRATION_TEST_DB,
+                    2,
+                    true,
+                    Migrations.migration_1_2,
+                )
+                .apply {
+                    execSQL(
+                        "INSERT INTO " +
+                            "top_sites " +
+                            "(title, url, is_default, created_at) " +
+                            "VALUES " +
+                            "('Firefox','firefox.com',1,5)," +
+                            "('Monitor','https://monitor.firefox.com/',0,5)"
+                    )
+                }
 
         dbVersion2.query("SELECT * FROM top_sites").use { cursor ->
             assertEquals(5, cursor.columnCount)
@@ -242,29 +247,31 @@ class OnDevicePinnedSitesStorageTest {
 
     @Test
     fun migrate2to3() {
-        val dbVersion2 = helper.createDatabase(MIGRATION_TEST_DB, 2).apply {
-            execSQL(
-                "INSERT INTO " +
-                    "top_sites " +
-                    "(title, url, is_default, created_at) " +
-                    "VALUES " +
-                    "('Mozilla','mozilla.org',0,1)," +
-                    "('Top Articles','https://getpocket.com/fenix-top-articles',0,2)," +
-                    "('Wikipedia','https://www.wikipedia.org/',0,3)," +
-                    "('YouTube','https://www.youtube.com/',0,4)",
-            )
-        }
+        val dbVersion2 =
+            helper.createDatabase(MIGRATION_TEST_DB, 2).apply {
+                execSQL(
+                    "INSERT INTO " +
+                        "top_sites " +
+                        "(title, url, is_default, created_at) " +
+                        "VALUES " +
+                        "('Mozilla','mozilla.org',0,1)," +
+                        "('Top Articles','https://getpocket.com/fenix-top-articles',0,2)," +
+                        "('Wikipedia','https://www.wikipedia.org/',0,3)," +
+                        "('YouTube','https://www.youtube.com/',0,4)"
+                )
+            }
 
         dbVersion2.query("SELECT * FROM top_sites").use { cursor ->
             assertEquals(5, cursor.columnCount)
         }
 
-        val dbVersion3 = helper.runMigrationsAndValidate(
-            MIGRATION_TEST_DB,
-            3,
-            true,
-            Migrations.migration_2_3,
-        )
+        val dbVersion3 =
+            helper.runMigrationsAndValidate(
+                MIGRATION_TEST_DB,
+                3,
+                true,
+                Migrations.migration_2_3,
+            )
 
         dbVersion3.query("SELECT * FROM top_sites").use { cursor ->
             assertEquals(5, cursor.columnCount)

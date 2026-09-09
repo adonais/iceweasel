@@ -11,62 +11,50 @@ import mozilla.components.ui.widgets.behavior.DependencyGravity.Top
 /**
  * Helper class with methods for translating on the Y axis a top / bottom [View].
  *
- * @param viewPosition whether the view is displayed immediately at the top of the screen or
- * immediately at the bottom. This affects how it will be translated:
- *   - if place at the bottom it will be Y translated between 0 and [View.getHeight]
- *   - if place at the top it will be Y translated between -[View.getHeight] and 0
+ * @param viewPosition whether the view is displayed immediately at the top of the screen or immediately at the bottom.
+ *   This affects how it will be translated:
+ *     - if place at the bottom it will be Y translated between 0 and [View.getHeight]
+ *     - if place at the top it will be Y translated between -[View.getHeight] and 0
  */
 class ViewYTranslator(viewPosition: DependencyGravity) {
-    @VisibleForTesting
-    internal var strategy = getTranslationStrategy(viewPosition)
+    @VisibleForTesting internal var strategy = getTranslationStrategy(viewPosition)
 
     /**
-     * Snap the [View] to be collapsed or expanded, depending on whatever state is closer
-     * over a short amount of time.
+     * Snap the [View] to be collapsed or expanded, depending on whatever state is closer over a short amount of time.
      */
     internal fun snapWithAnimation(view: View) {
         strategy.snapWithAnimation(view)
     }
 
-    /**
-     * Snap the [View] to be collapsed or expanded, depending on whatever state is closer immediately.
-     */
+    /** Snap the [View] to be collapsed or expanded, depending on whatever state is closer immediately. */
     fun snapImmediately(view: View?) {
         strategy.snapImmediately(view)
     }
 
-    /**
-     * Translate the [View] to it's full visible height over a short amount of time.
-     */
+    /** Translate the [View] to it's full visible height over a short amount of time. */
     internal fun expandWithAnimation(view: View) {
         strategy.expandWithAnimation(view)
     }
 
-    /**
-     * Translate the [View] to be hidden from view over a short amount of time.
-     */
+    /** Translate the [View] to be hidden from view over a short amount of time. */
     internal fun collapseWithAnimation(view: View) {
         strategy.collapseWithAnimation(view)
     }
 
     /**
-     * Force expanding the [View] depending on the [distance] value that should be translated
-     * cancelling any other translation already in progress.
+     * Force expanding the [View] depending on the [distance] value that should be translated cancelling any other
+     * translation already in progress.
      */
     fun forceExpandIfNotAlready(view: View, distance: Float) {
         strategy.forceExpandWithAnimation(view, distance)
     }
 
-    /**
-     * Translate [view] immediately to the specified [distance] amount (positive or negative).
-     */
+    /** Translate [view] immediately to the specified [distance] amount (positive or negative). */
     fun translate(view: View, distance: Float) {
         strategy.translate(view, distance)
     }
 
-    /**
-     * Cancel any translation animations currently in progress.
-     */
+    /** Cancel any translation animations currently in progress. */
     fun cancelInProgressTranslation() {
         strategy.cancelInProgressTranslation()
     }

@@ -12,7 +12,7 @@ class APZScrollbarDraggingTester : public APZCTreeManagerTester {
 
  protected:
   UniquePtr<ScopedLayerTreeRegistration> registration;
-  ScrollableLayerGuid::ViewID scrollId = ScrollableLayerGuid::START_SCROLL_ID;
+  ViewID scrollId = START_SCROLL_ID;
   TestAsyncPanZoomController* apzc = nullptr;
 
   ParentLayerCoord ScrollY() const {

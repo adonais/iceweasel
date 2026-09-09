@@ -34,9 +34,7 @@ import org.mozilla.fenix.settings.logins.ui.LoginsTelemetryMiddleware
 import org.mozilla.fenix.settings.logins.ui.SavedLoginsScreen
 import org.mozilla.fenix.theme.FirefoxTheme
 
-/**
- * Defines the fragment containing the saved logins.
- */
+/** Defines the fragment containing the saved logins. */
 class SavedLoginsFragment : SecureFragment(), SystemInsetsPaddedFragment {
 
     private var loginsStore: LoginsStore? = null
@@ -66,53 +64,57 @@ class SavedLoginsFragment : SecureFragment(), SystemInsetsPaddedFragment {
         val buildStore = { composeNavController: NavHostController ->
             val navController = findNavController()
 
-            val store by fragmentStore(
-                LoginsState.default.copy(
-                    showPasswordsImport = requireComponents.settings.importPasswordsFeatureFlagEnabled,
-                    sortOrder = LoginsSortOrder.fromString(
-                        value = requireComponents.settings.loginsListSortOrder,
-                        default = LoginsSortOrder.Alphabetical,
-                    ),
-                ),
-            ) {
-                LoginsStore(
-                    initialState = it,
-                    middleware = listOf(
-                        LogMiddleware(
-                            tag = "LoginsStore",
-                            shouldIncludeDetailedData = { Config.channel.isDebug },
-                        ),
-                        LoginsTelemetryMiddleware(),
-                        LoginsMiddleware(
-                            loginsStorage = requireContext().components.core.passwordsStorage,
-                            getNavController = { composeNavController },
-                            exitLogins = { navController.popBackStack() },
-                            persistLoginsSortOrder = { sortOrder ->
-                                DefaultSavedLoginsStorage(
-                                    requireComponents.settings,
-                                ).savedLoginsSortOrder = sortOrder
-                            },
-                            navigateToImportDialog = {
-                                ImportPasswordsDialogFragment().show(
-                                    childFragmentManager,
-                                    ImportPasswordsDialogFragment.TAG,
-                                )
-                            },
-                            openTab = { url, openInNewTab ->
-                                findNavController().openToBrowser()
-                                requireComponents.useCases.fenixBrowserUseCases.loadUrlOrSearch(
-                                    searchTermOrURL = url,
-                                    newTab = openInNewTab,
-                                    flags = EngineSession.LoadUrlFlags.select(
-                                        EngineSession.LoadUrlFlags.ALLOW_JAVASCRIPT_URL,
-                                    ),
-                                )
-                            },
-                            clipboardManager = requireContext().getSystemService(),
-                        ),
-                    ),
-                )
-            }
+            val store by
+                fragmentStore(
+                    LoginsState.default.copy(
+                        showPasswordsImport = requireComponents.settings.importPasswordsFeatureFlagEnabled,
+                        sortOrder =
+                            LoginsSortOrder.fromString(
+                                value = requireComponents.settings.loginsListSortOrder,
+                                default = LoginsSortOrder.Alphabetical,
+                            ),
+                    )
+                ) {
+                    LoginsStore(
+                        initialState = it,
+                        middleware =
+                            listOf(
+                                LogMiddleware(
+                                    tag = "LoginsStore",
+                                    shouldIncludeDetailedData = { Config.channel.isDebug },
+                                ),
+                                LoginsTelemetryMiddleware(),
+                                LoginsMiddleware(
+                                    loginsStorage = requireContext().components.core.passwordsStorage,
+                                    getNavController = { composeNavController },
+                                    exitLogins = { navController.popBackStack() },
+                                    persistLoginsSortOrder = { sortOrder ->
+                                        DefaultSavedLoginsStorage(requireComponents.settings).savedLoginsSortOrder =
+                                            sortOrder
+                                    },
+                                    navigateToImportDialog = {
+                                        ImportPasswordsDialogFragment()
+                                            .show(
+                                                childFragmentManager,
+                                                ImportPasswordsDialogFragment.TAG,
+                                            )
+                                    },
+                                    openTab = { url, openInNewTab ->
+                                        findNavController().openToBrowser()
+                                        requireComponents.useCases.fenixBrowserUseCases.loadUrlOrSearch(
+                                            searchTermOrURL = url,
+                                            newTab = openInNewTab,
+                                            flags =
+                                                EngineSession.LoadUrlFlags.select(
+                                                    EngineSession.LoadUrlFlags.ALLOW_JAVASCRIPT_URL
+                                                ),
+                                        )
+                                    },
+                                    clipboardManager = requireContext().getSystemService(),
+                                ),
+                            ),
+                    )
+                }
             loginsStore = store
             store
         }

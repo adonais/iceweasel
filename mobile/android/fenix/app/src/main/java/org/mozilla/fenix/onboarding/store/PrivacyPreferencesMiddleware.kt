@@ -12,9 +12,8 @@ import mozilla.components.lib.state.Store
  *
  * @param repository [PrivacyPreferencesRepository] used to access the privacy preferences.
  */
-class PrivacyPreferencesMiddleware(
-    private val repository: PrivacyPreferencesRepository,
-) : Middleware<PrivacyPreferencesState, PrivacyPreferencesAction> {
+class PrivacyPreferencesMiddleware(private val repository: PrivacyPreferencesRepository) :
+    Middleware<PrivacyPreferencesState, PrivacyPreferencesAction> {
 
     override fun invoke(
         store: Store<PrivacyPreferencesState, PrivacyPreferencesAction>,
@@ -41,8 +40,7 @@ class PrivacyPreferencesMiddleware(
             // no-ops
             is PrivacyPreferencesAction.Init,
             is PrivacyPreferencesAction.CrashReportingLearnMore,
-            is PrivacyPreferencesAction.UsageDataUserLearnMore,
-            -> {}
+            is PrivacyPreferencesAction.UsageDataUserLearnMore -> {}
         }
     }
 }

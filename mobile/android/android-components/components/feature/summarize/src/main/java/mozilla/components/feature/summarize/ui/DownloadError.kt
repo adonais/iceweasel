@@ -106,9 +106,7 @@ private fun DownloadErrorButtons(
     onClickTryAgain: () -> Unit,
     onClickCancel: () -> Unit,
 ) {
-    Column(
-        modifier = modifier,
-    ) {
+    Column(modifier = modifier) {
         FilledButton(
             modifier = Modifier.fillMaxWidth(),
             onClick = onClickTryAgain,

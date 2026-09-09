@@ -1393,7 +1393,7 @@ SettingGroupManager.registerGroups({
               {
                 value: Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER.toString(),
                 l10nId:
-                  "preferences-etp-custom-cookie-behavior-block-cross-site-cookies",
+                  "preferences-etp-custom-cookie-behavior-block-cross-site-tracking-cookies",
                 hidden:
                   Services.prefs.getIntPref("network.cookie.cookieBehavior") !==
                   Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,

@@ -2,6 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+import {
+  BASE_ZONE_IATA_CODES,
+  CLOCK_CITIES,
+  CLOCK_CITY_BY_ID,
+  CLOCK_CITY_BY_NAME,
+} from "./ClockCityRegistry.mjs";
+
 // Fixed-order palette; each name needs a matching `.clocks-chip-<name>` in
 // _Clocks.scss and drives isValidPaletteName's allow-list.
 const LABEL_PALETTE = [
@@ -41,67 +48,6 @@ const FIXED_DEFAULT_ZONES = [
   "America/Los_Angeles",
 ];
 export const MAX_CLOCK_COUNT = 4;
-
-// IATA city codes for cities where the code differs from slice(0,3).
-// Cities whose code matches that slice (e.g. Sydney -> SYD, Berlin ->
-// BER) are omitted; getCityAbbreviation falls back to the slice.
-// Both legacy and canonical spellings (Kiev/Kyiv, Calcutta/Kolkata,
-// Saigon/Ho Chi Minh) are present — the user's OS may report either,
-// depending on its tzdata version.
-const CITY_IATA_CODES = {
-  // North America
-  Detroit: "DTW",
-  Halifax: "YHZ",
-  Honolulu: "HNL",
-  "Los Angeles": "LAX",
-  "New York": "NYC",
-  Phoenix: "PHX",
-  "San Francisco": "SFO",
-  Toronto: "YTO",
-  Vancouver: "YVR",
-  // South America
-  Santiago: "SCL",
-  // Europe
-  Copenhagen: "CPH",
-  Geneva: "GVA",
-  Kiev: "IEV",
-  Kyiv: "IEV",
-  Moscow: "MOW",
-  Prague: "PRG",
-  Warsaw: "WAW",
-  Zurich: "ZRH",
-  // Asia
-  Bangkok: "BKK",
-  Beijing: "BJS",
-  Beirut: "BEY",
-  Calcutta: "CCU",
-  Kolkata: "CCU",
-  Colombo: "CMB",
-  Dhaka: "DAC",
-  Dubai: "DXB",
-  "Ho Chi Minh": "SGN",
-  "Hong Kong": "HKG",
-  Jakarta: "JKT",
-  Jerusalem: "JRS",
-  Karachi: "KHI",
-  "Kuala Lumpur": "KUL",
-  Manila: "MNL",
-  Riyadh: "RUH",
-  Saigon: "SGN",
-  Seoul: "SEL",
-  Taipei: "TPE",
-  Tehran: "THR",
-  "Tel Aviv": "TLV",
-  Tokyo: "TYO",
-  // Africa
-  Johannesburg: "JNB",
-  Lagos: "LOS",
-  Nairobi: "NBO",
-  // Australia & Pacific
-  Adelaide: "ADL",
-  Auckland: "AKL",
-  Brisbane: "BNE",
-};
 
 function is12HourLocale(locale) {
   try {
@@ -241,8 +187,16 @@ const normalizeClockZone = clock => {
     typeof normalizedClock.city === "string" && normalizedClock.city.trim()
       ? normalizedClock.city.trim()
       : undefined;
+  // Only a cityId still in the registry survives; a stale or hand-edited one
+  // is dropped so the clock falls back to its stored city or zone name.
+  const cityId =
+    typeof normalizedClock.cityId === "string" &&
+    CLOCK_CITY_BY_ID.has(normalizedClock.cityId.trim())
+      ? normalizedClock.cityId.trim()
+      : undefined;
   return {
     timeZone: normalizedClock.timeZone,
+    ...(cityId !== undefined && { cityId }),
     ...(city !== undefined && { city }),
     label,
     labelColor,
@@ -289,9 +243,14 @@ export function getCityFromTimeZone(tz) {
  * color start null and are filled in later only if the user adds a
  * nickname.
  */
-export const buildClockZone = timeZone => ({
+export const buildClockZone = (
   timeZone,
-  city: getCityFromTimeZone(timeZone),
+  city = getCityFromTimeZone(timeZone),
+  cityId = null
+) => ({
+  timeZone,
+  city,
+  ...(cityId ? { cityId } : {}),
   label: null,
   labelColor: null,
 });
@@ -306,59 +265,133 @@ export const backfillClockLabelColors = clockZones =>
       : clock
   );
 
-export const getClockFormDerivedState = ({
-  canAddClock,
-  clockSearchQuery,
-  clockSelectedTimeZone,
-  isEditingClock,
-  localizedTimeZoneMap,
-  supportedTimeZones,
-}) => {
-  let resolvedClockTimeZone = "";
-  const query = clockSearchQuery.trim().toLowerCase();
-  const getLocalized = timeZone =>
-    (localizedTimeZoneMap?.get(timeZone) ?? "").toLowerCase();
+// The same zone is spelled differently across tzdata vintages (Asia/Kolkata
+// vs Asia/Calcutta); resolve both sides to whichever id this platform uses.
+const canonicalZoneCache = new Map();
+const canonicalTimeZone = timeZone => {
+  if (!timeZone) {
+    return "";
+  }
+  if (!canonicalZoneCache.has(timeZone)) {
+    let canonical = timeZone;
+    try {
+      canonical = new Intl.DateTimeFormat(undefined, {
+        timeZone,
+      }).resolvedOptions().timeZone;
+    } catch (e) {
+      // Not a zone this platform knows; match on the id as given.
+    }
+    canonicalZoneCache.set(timeZone, canonical);
+  }
+  return canonicalZoneCache.get(timeZone);
+};
 
-  if (clockSelectedTimeZone && isValidTimeZone(clockSelectedTimeZone)) {
-    resolvedClockTimeZone = clockSelectedTimeZone;
-  } else if (query) {
-    const idOrCityMatch = supportedTimeZones.find(timeZone => {
-      const city = getCityFromTimeZone(timeZone).toLowerCase();
-      return timeZone.toLowerCase() === query || city === query;
-    });
-    if (idOrCityMatch) {
-      resolvedClockTimeZone = idOrCityMatch;
-    } else {
-      // Localized zone names can be shared by multiple IANA zones.
-      const localizedMatches = supportedTimeZones.filter(
-        timeZone => getLocalized(timeZone) === query
+// Either spelling of an abbreviated prefix should find the other.
+const PREFIX_EXPANSIONS = [
+  [/\bst\s/g, "saint "],
+  [/\bft\s/g, "fort "],
+  [/\bmt\s/g, "mount "],
+];
+
+/**
+ * Folds accents, case and punctuation so matching ignores how a name is
+ * written: "Washington, D.C." and "washington dc" normalize alike, as do
+ * "America/Los_Angeles" and "los angeles". `+` and `:` survive for offsets.
+ */
+export const normalizeCityQuery = value => {
+  const folded = (value ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    // Dropped rather than spaced, so "D.C." folds to "dc" and not "d c".
+    .replace(/['\u2019.]/g, "")
+    .replace(/[^\p{L}\p{N}+:]+/gu, " ")
+    .trim();
+  return PREFIX_EXPANSIONS.reduce(
+    (text, [pattern, expanded]) => text.replace(pattern, expanded),
+    folded
+  );
+};
+
+const MAX_CLOCK_RESULTS = 8;
+// Below this, a query is too short for substring matches to be meaningful:
+// "a" would otherwise return eight arbitrary cities.
+const MIN_SUBSTRING_QUERY = 3;
+
+// How well a key matched, best first; results sort on this.
+const MATCH_EXACT = 0;
+const MATCH_PREFIX = 1;
+const MATCH_SUBSTRING = 2;
+const MATCH_FUZZY = 3;
+const MATCH_NONE = 4;
+
+// Typo budget scales with length so short queries can't fuzzy-match everything.
+const maxTypos = query => {
+  if (query.length <= 3) {
+    return 0;
+  }
+  if (query.length <= 6) {
+    return 1;
+  }
+  return 2;
+};
+
+/**
+ * Optimal string alignment distance (Levenshtein plus adjacent transposition),
+ * answering only "within `max`?" so it can bail out a row at a time.
+ */
+const isWithinEditDistance = (a, b, max) => {
+  if (Math.abs(a.length - b.length) > max) {
+    return false;
+  }
+  let twoRowsBack = [];
+  let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const current = [i];
+    let rowBest = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      let value = Math.min(
+        previous[j] + 1,
+        current[j - 1] + 1,
+        previous[j - 1] + cost
       );
-      if (localizedMatches.length === 1) {
-        [resolvedClockTimeZone] = localizedMatches;
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        value = Math.min(value, twoRowsBack[j - 2] + 1);
+      }
+      current[j] = value;
+      rowBest = Math.min(rowBest, value);
+    }
+    if (rowBest > max) {
+      return false;
+    }
+    twoRowsBack = previous;
+    previous = current;
+  }
+  return previous[b.length] <= max;
+};
+
+const matchScore = (searchKeys, query, { allowSubstring, allowFuzzy }) => {
+  let best = MATCH_NONE;
+  for (const key of searchKeys) {
+    if (key === query) {
+      return MATCH_EXACT;
+    }
+    if (key.startsWith(query)) {
+      best = Math.min(best, MATCH_PREFIX);
+    } else if (allowSubstring && key.includes(query)) {
+      best = Math.min(best, MATCH_SUBSTRING);
+    }
+  }
+  const budget = maxTypos(query);
+  if (best === MATCH_NONE && allowFuzzy && budget) {
+    for (const key of searchKeys) {
+      if (isWithinEditDistance(key, query, budget)) {
+        return MATCH_FUZZY;
       }
     }
   }
-
-  const filteredTimeZones = query
-    ? supportedTimeZones
-        .filter(timeZone => {
-          const city = getCityFromTimeZone(timeZone).toLowerCase();
-          return (
-            timeZone.toLowerCase().includes(query) ||
-            city.includes(query) ||
-            getLocalized(timeZone).includes(query)
-          );
-        })
-        .slice(0, 8)
-    : [];
-
-  return {
-    canAddSelectedClock:
-      (isEditingClock || canAddClock) && !!resolvedClockTimeZone,
-    filteredTimeZones,
-    resolvedClockTimeZone,
-    showLocationDropdown: !!(query && !clockSelectedTimeZone),
-  };
+  return best;
 };
 
 export const buildNextClockZones = (clockZones, editingClockIndex, zone) =>
@@ -372,18 +405,37 @@ export const removeClockZoneAtIndex = (clockZones, indexToRemove) =>
   clockZones.filter((_, index) => index !== indexToRemove);
 
 /**
- * IATA code for known cities, else first 3 non-whitespace chars upcased.
- * Stripping whitespace avoids trailing space on multi-word names.
+ * Compact code for a clock. A curated clock's `cityId` gives a locale-proof
+ * code from the registry; otherwise fall back to the code for the display
+ * name (curated by fallbackName, then base-zone/legacy), else the first three
+ * non-whitespace characters upcased.
  */
-export function getCityAbbreviation(cityName) {
+export function getCityAbbreviation(cityName, cityId) {
+  const byId = cityId && CLOCK_CITY_BY_ID.get(cityId);
+  if (byId) {
+    return byId.iataCode;
+  }
   if (!cityName) {
     return "";
   }
-  if (CITY_IATA_CODES[cityName]) {
-    return CITY_IATA_CODES[cityName];
+  const byName = CLOCK_CITY_BY_NAME.get(cityName);
+  if (byName) {
+    return byName.iataCode;
+  }
+  if (BASE_ZONE_IATA_CODES[cityName]) {
+    return BASE_ZONE_IATA_CODES[cityName];
   }
   return cityName.replace(/\s/g, "").slice(0, 3).toUpperCase();
 }
+
+// Display name for a saved clock: curated clocks resolve the current localized
+// name from cityId (so they follow a locale switch); custom clocks use the
+// stored city, falling back to the zone-derived name.
+export const getClockCityDisplay = (clock, curatedNames = null) =>
+  curatedNames?.[clock.cityId] ||
+  clock.city ||
+  CLOCK_CITY_BY_ID.get(clock.cityId)?.fallbackName ||
+  getCityFromTimeZone(clock.timeZone);
 
 /**
  * Returns the short name for a time zone at a given moment, like "CET"
@@ -405,6 +457,314 @@ export function getTimeZoneAbbreviation(tz, locale, date = new Date()) {
     return tz;
   }
 }
+
+/**
+ * Current UTC offset of a zone as a compact label, e.g. "UTC+5:30",
+ * "UTC-8", or "UTC". DST-dependent, so pass the same `date` you display.
+ */
+export const getTimeZoneOffsetLabel = (timeZone, date = new Date()) => {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      timeZoneName: "longOffset",
+    }).formatToParts(date);
+    const raw = parts.find(p => p.type === "timeZoneName")?.value ?? "";
+    const match = raw.match(/GMT([+-])(\d{2}):(\d{2})/);
+    if (!match) {
+      return "UTC";
+    }
+    const [, sign, hours, minutes] = match;
+    const h = String(parseInt(hours, 10));
+    return `UTC${sign}${h}${minutes === "00" ? "" : `:${minutes}`}`;
+  } catch (e) {
+    return "";
+  }
+};
+
+// Readable label for the custom-add zone picker, e.g. "Los Angeles · UTC-7".
+export const formatCustomZoneLabel = (timeZone, date = new Date()) =>
+  `${getCityFromTimeZone(timeZone)} · ${getTimeZoneOffsetLabel(timeZone, date)}`;
+
+// Offset variants so "utc+5:30", "gmt+5:30", "+5:30", "+05:30", and "5:30"
+// all match a zone at UTC+5:30.
+const offsetSearchKeys = offsetLabel => {
+  const match = offsetLabel.match(/UTC([+-])(\d{1,2})(?::(\d{2}))?/);
+  if (!match) {
+    return ["utc"];
+  }
+  const [, sign, hours, minutes] = match;
+  const hh = hours.padStart(2, "0");
+  const min = minutes ? `:${minutes}` : "";
+  const minPad = minutes ? `:${minutes}` : ":00";
+  return [
+    `utc${sign}${hours}${min}`,
+    `utc${sign}${hh}${minPad}`,
+    `gmt${sign}${hours}${min}`,
+    `${sign}${hours}${min}`,
+    `${sign}${hh}${minPad}`,
+    `${hours}${min}`,
+  ];
+};
+
+const dedupeKeys = keys => [...new Set(keys.filter(Boolean))];
+
+// Localized country name per ISO 3166-1 alpha-2 code, "" where unavailable.
+const buildRegionNameLookup = locale => {
+  let displayNames = null;
+  try {
+    displayNames = new Intl.DisplayNames(locale, { type: "region" });
+  } catch (e) {
+    return () => "";
+  }
+  return code => {
+    try {
+      return displayNames.of(code) || "";
+    } catch (e) {
+      return "";
+    }
+  };
+};
+
+// Curated keys per canonical zone, so "mumbai" finds Asia/Calcutta in the zone
+// picker. Localized names are not folded in; those belong to the city entries.
+let curatedKeysByZone = null;
+const getCuratedKeysByZone = () => {
+  if (!curatedKeysByZone) {
+    curatedKeysByZone = new Map();
+    for (const entry of CLOCK_CITIES) {
+      const zone = canonicalTimeZone(entry.timeZone);
+      curatedKeysByZone.set(zone, [
+        ...(curatedKeysByZone.get(zone) ?? []),
+        normalizeCityQuery(entry.fallbackName),
+        ...(entry.aliases ?? []).map(normalizeCityQuery),
+      ]);
+    }
+  }
+  return curatedKeysByZone;
+};
+
+const buildZoneEntries = (
+  supportedTimeZones,
+  localizedTimeZoneMap,
+  locale,
+  date
+) => {
+  const curatedKeys = getCuratedKeysByZone();
+  return supportedTimeZones.map(timeZone => {
+    const zone = canonicalTimeZone(timeZone);
+    const city = getCityFromTimeZone(timeZone);
+    const zoneName =
+      localizedTimeZoneMap?.get(timeZone) ||
+      getLocalizedTimeZoneName(timeZone, locale);
+    const offsetLabel = getTimeZoneOffsetLabel(timeZone, date);
+    return {
+      kind: "zone",
+      cityId: null,
+      timeZone,
+      zone,
+      city,
+      zoneName,
+      offsetLabel,
+      searchKeys: dedupeKeys([
+        normalizeCityQuery(timeZone),
+        normalizeCityQuery(city),
+        normalizeCityQuery(zoneName),
+        normalizeCityQuery(getTimeZoneAbbreviation(timeZone, locale, date)),
+        ...offsetSearchKeys(offsetLabel).map(normalizeCityQuery),
+        ...(curatedKeys.get(zone) ?? []),
+      ]),
+    };
+  });
+};
+
+/**
+ * One index behind both clock searches, so the add form and the custom-zone
+ * picker match identically. Curated entries (`kind: "city"`) match their
+ * en-US and localized names, aliases and country; zone entries
+ * (`kind: "zone"`) match the IANA id, exemplar city, localized zone name,
+ * abbreviation, UTC offset, and any curated name sharing that zone.
+ */
+export const buildClockSearchIndex = ({
+  supportedTimeZones = [],
+  localizedTimeZoneMap = null,
+  curatedCities = CLOCK_CITIES,
+  curatedNames = null,
+  locale = undefined,
+  date = new Date(),
+} = {}) => {
+  const regionNameOf = buildRegionNameLookup(locale);
+  const zoneEntries = buildZoneEntries(
+    supportedTimeZones,
+    localizedTimeZoneMap,
+    locale,
+    date
+  );
+  // Curated cities show the same zone name as the zone they sit in.
+  const zoneNameByZone = new Map(
+    zoneEntries.map(entry => [entry.zone, entry.zoneName])
+  );
+
+  const cityEntries = curatedCities.map(entry => {
+    const zone = canonicalTimeZone(entry.timeZone);
+    const city = curatedNames?.[entry.id] || entry.fallbackName;
+    return {
+      kind: "city",
+      cityId: entry.id,
+      timeZone: entry.timeZone,
+      zone,
+      city,
+      zoneName:
+        zoneNameByZone.get(zone) ||
+        getLocalizedTimeZoneName(entry.timeZone, locale),
+      searchKeys: dedupeKeys([
+        normalizeCityQuery(entry.fallbackName),
+        normalizeCityQuery(city),
+        ...(entry.aliases ?? []).map(normalizeCityQuery),
+        // `id` is `<iso2>-<slug>`, so the country comes free.
+        normalizeCityQuery(regionNameOf(entry.id.slice(0, 2).toUpperCase())),
+      ]),
+    };
+  });
+
+  return [...cityEntries, ...zoneEntries];
+};
+
+/**
+ * Ranks the index against a query, best first, each entry carrying its
+ * `score`. Exact and prefix always count; substring needs a query of at
+ * least MIN_SUBSTRING_QUERY, and a typo-tolerant pass runs only when nothing
+ * else matched. Pass `kinds` to restrict to curated cities or zones.
+ */
+export const filterClockSearchIndex = (
+  index,
+  query,
+  { limit = MAX_CLOCK_RESULTS, kinds = null } = {}
+) => {
+  const normalized = normalizeCityQuery(query);
+  if (!normalized) {
+    return [];
+  }
+  const pool = kinds
+    ? index.filter(entry => kinds.includes(entry.kind))
+    : index;
+  const allowSubstring = normalized.length >= MIN_SUBSTRING_QUERY;
+  const rank = allowFuzzy =>
+    pool
+      .map(entry => ({
+        entry,
+        score: matchScore(entry.searchKeys, normalized, {
+          allowSubstring,
+          allowFuzzy,
+        }),
+      }))
+      .filter(({ score }) => score < MATCH_NONE);
+
+  let scored = rank(false);
+  if (!scored.length) {
+    scored = rank(true);
+  }
+
+  // A zone row a matched curated city already stands for is a duplicate
+  // ("Kolkata" and "Calcutta" are one place), so drop it.
+  const citiesMatchedZones = new Set(
+    scored
+      .filter(({ entry }) => entry.kind === "city")
+      .map(({ entry }) => entry.zone)
+  );
+  return scored
+    .filter(
+      ({ entry }) =>
+        entry.kind !== "zone" || !citiesMatchedZones.has(entry.zone)
+    )
+    .sort((a, b) => a.score - b.score)
+    .slice(0, limit)
+    .map(({ entry, score }) => ({ ...entry, score }));
+};
+
+/**
+ * Zone-only results for the custom-add picker, where the user names the city
+ * themselves and only needs to land on a zone.
+ */
+export const filterCustomZoneResults = (
+  index,
+  query,
+  limit = MAX_CLOCK_RESULTS
+) =>
+  filterClockSearchIndex(index, query, { limit, kinds: ["zone"] }).map(
+    ({ timeZone, city, zoneName, offsetLabel }) => ({
+      timeZone,
+      city,
+      zoneName,
+      offsetLabel,
+    })
+  );
+
+export const getClockFormDerivedState = ({
+  canAddClock,
+  clockSearchQuery,
+  clockSelectedTimeZone,
+  clockSelectedCity,
+  clockSelectedCityId,
+  isEditingClock,
+  searchIndex = [],
+}) => {
+  const query = normalizeCityQuery(clockSearchQuery);
+  const matches = filterClockSearchIndex(searchIndex, clockSearchQuery);
+  const hasExactMatch = matches.some(({ score }) => score === MATCH_EXACT);
+  const filteredResults = matches.map(entry => ({
+    timeZone: entry.timeZone,
+    city: entry.city,
+    ...(entry.zoneName ? { zoneName: entry.zoneName } : {}),
+    ...(entry.cityId ? { cityId: entry.cityId } : {}),
+  }));
+
+  let resolvedClockTimeZone = "";
+  let resolvedClockCity = "";
+  let resolvedClockCityId = "";
+  if (clockSelectedTimeZone && isValidTimeZone(clockSelectedTimeZone)) {
+    resolvedClockTimeZone = clockSelectedTimeZone;
+    resolvedClockCity =
+      clockSelectedCity || getCityFromTimeZone(clockSelectedTimeZone);
+    resolvedClockCityId = clockSelectedCityId || "";
+  } else if (query) {
+    const zoneEntries = searchIndex.filter(entry => entry.kind === "zone");
+    const exactCity = filteredResults.find(
+      result => normalizeCityQuery(result.city) === query
+    );
+    const exactId = zoneEntries.find(
+      entry => normalizeCityQuery(entry.timeZone) === query
+    );
+    if (exactCity) {
+      resolvedClockTimeZone = exactCity.timeZone;
+      resolvedClockCity = exactCity.city;
+      resolvedClockCityId = exactCity.cityId || "";
+    } else if (exactId) {
+      resolvedClockTimeZone = exactId.timeZone;
+      resolvedClockCity = exactId.city;
+    } else {
+      // A localized zone name that uniquely identifies one zone resolves too.
+      const localizedMatches = zoneEntries.filter(
+        entry => normalizeCityQuery(entry.zoneName) === query
+      );
+      if (localizedMatches.length === 1) {
+        const [only] = localizedMatches;
+        resolvedClockTimeZone = only.timeZone;
+        resolvedClockCity = only.city;
+      }
+    }
+  }
+
+  return {
+    canAddSelectedClock:
+      (isEditingClock || canAddClock) && !!resolvedClockTimeZone,
+    filteredResults,
+    resolvedClockTimeZone,
+    resolvedClockCity,
+    resolvedClockCityId,
+    hasExactMatch,
+    showLocationDropdown: !!(query && !clockSelectedTimeZone),
+  };
+};
 
 /**
  * Formats Date as a local datetime string (YYYY-MM-DDTHH:mm) in the given

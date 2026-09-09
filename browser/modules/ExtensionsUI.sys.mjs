@@ -501,6 +501,11 @@ export var ExtensionsUI = {
         persistent: true,
         eventCallback,
         removeOnDismissal: true,
+        // Autofocus the panel on open, so users using keyboard navigation can
+        // reach it more easily (Bug 2059855). This flag does not focus yet
+        // any specific control inside it (so that a user pressing Enter
+        // right after the panel opens can't accidentally grant permissions).
+        autofocus: true,
         popupOptions: {
           position: "bottomright topright",
         },

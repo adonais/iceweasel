@@ -48,7 +48,7 @@ class PromiseNativeThenHandlerBase : public PromiseNativeHandler {
   RefPtr<Promise> mPromise;
 };
 
-namespace {
+namespace promise_detail {
 
 template <typename T, bool = IsRefcounted<std::remove_pointer_t<T>>::value,
           bool = (std::is_convertible_v<T, nsISupports*> ||
@@ -220,7 +220,7 @@ class NativeThenHandler<ResolveCallback, RejectCallback, std::tuple<Args...>,
   std::tuple<StorageType<JSArgs>...> mJSArgs;
 };
 
-}  // anonymous namespace
+}  // namespace promise_detail
 
 template <typename ResolveCallback, typename RejectCallback, typename... Args,
           typename... JSArgs>
@@ -229,8 +229,9 @@ Promise::ThenCatchWithCycleCollectedArgsJSImpl(
     Maybe<ResolveCallback>&& aOnResolve, Maybe<RejectCallback>&& aOnReject,
     std::tuple<Args...>&& aArgs, std::tuple<JSArgs...>&& aJSArgs) {
   using HandlerType =
-      NativeThenHandler<ResolveCallback, RejectCallback, std::tuple<Args...>,
-                        std::tuple<JSArgs...>>;
+      promise_detail::NativeThenHandler<ResolveCallback, RejectCallback,
+                                        std::tuple<Args...>,
+                                        std::tuple<JSArgs...>>;
 
   ErrorResult rv;
   RefPtr<Promise> promise = Promise::Create(GetParentObject(), rv);
@@ -310,16 +311,17 @@ template <typename ResolveCallback, typename RejectCallback, typename... Args>
 void Promise::AddCallbacksWithCycleCollectedArgs(ResolveCallback&& aOnResolve,
                                                  RejectCallback&& aOnReject,
                                                  Args&&... aArgs) {
-  auto onResolve =
-      [aOnResolve](JSContext* aCx, JS::Handle<JS::Value> value,
-                   ErrorResult& aRv,
-                   StorageType<Args>&&... aArgs) -> already_AddRefed<Promise> {
+  auto onResolve = [aOnResolve](JSContext* aCx, JS::Handle<JS::Value> value,
+                                ErrorResult& aRv,
+                                promise_detail::StorageType<Args>&&... aArgs)
+      -> already_AddRefed<Promise> {
     aOnResolve(aCx, value, aRv, aArgs...);
     return nullptr;
   };
-  auto onReject =
-      [aOnReject](JSContext* aCx, JS::Handle<JS::Value> value, ErrorResult& aRv,
-                  StorageType<Args>&&... aArgs) -> already_AddRefed<Promise> {
+  auto onReject = [aOnReject](JSContext* aCx, JS::Handle<JS::Value> value,
+                              ErrorResult& aRv,
+                              promise_detail::StorageType<Args>&&... aArgs)
+      -> already_AddRefed<Promise> {
     aOnReject(aCx, value, aRv, aArgs...);
     return nullptr;
   };
@@ -327,8 +329,9 @@ void Promise::AddCallbacksWithCycleCollectedArgs(ResolveCallback&& aOnResolve,
   // Note: explicit template parameters for clang<7/gcc<8 without "Template
   // argument deduction for class templates" support
   AppendNativeHandler(
-      new NativeThenHandler<decltype(onResolve), decltype(onReject),
-                            std::tuple<Args...>, std::tuple<>>(
+      new promise_detail::NativeThenHandler<decltype(onResolve),
+                                            decltype(onReject),
+                                            std::tuple<Args...>, std::tuple<>>(
           nullptr, Some(onResolve), Some(onReject),
           std::make_tuple(std::forward<Args>(aArgs)...), std::make_tuple()));
 }

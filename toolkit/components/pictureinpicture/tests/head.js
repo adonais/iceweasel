@@ -473,7 +473,7 @@ async function prepareForToggleClick(browser, videoID) {
       // will fire, so we poll a special testing function that will tell us when
       // the video that we care about is being tracked.
       let { PictureInPictureToggleChild } = ChromeUtils.importESModule(
-        "resource://gre/actors/PictureInPictureChild.sys.mjs"
+        "moz-src:///toolkit/actors/PictureInPictureChild.sys.mjs"
       );
       await ContentTaskUtils.waitForCondition(
         () => {

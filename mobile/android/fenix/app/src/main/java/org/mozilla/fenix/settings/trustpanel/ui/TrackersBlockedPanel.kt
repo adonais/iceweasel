@@ -22,6 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.compose.MenuGroup
 import org.mozilla.fenix.components.menu.compose.MenuItem
@@ -35,11 +36,12 @@ import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory.CRYPTOMIN
 import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory.FINGERPRINTERS
 import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory.SOCIAL_MEDIA_TRACKERS
 import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory.TRACKING_CONTENT
-import mozilla.components.ui.icons.R as iconsR
 
+@Suppress("LongParameterList")
 @Composable
 internal fun TrackersBlockedPanel(
     title: String,
+    url: String,
     numberOfTrackersBlocked: Int,
     numberOfTrackersBlockedThisWeek: Int,
     bucketedTrackers: TrackerBuckets,
@@ -50,24 +52,24 @@ internal fun TrackersBlockedPanel(
     MenuScaffold(
         header = {
             SubmenuHeader(
-                header = title,
+                title = title,
+                url = url,
                 onClick = onBackButtonClick,
             )
-        },
+        }
     ) {
         Column {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = pluralStringResource(
-                        R.plurals.trackers_blocked_panel_total_num_trackers_blocked_2,
-                        numberOfTrackersBlocked,
-                        numberOfTrackersBlocked,
-                    ),
+                    text =
+                        pluralStringResource(
+                            R.plurals.trackers_blocked_panel_total_num_trackers_blocked_2,
+                            numberOfTrackersBlocked,
+                            numberOfTrackersBlocked,
+                        ),
                     modifier = Modifier.weight(1f),
                     color = MaterialTheme.colorScheme.onSurface,
                     style = FirefoxTheme.typography.headline8,
@@ -81,9 +83,10 @@ internal fun TrackersBlockedPanel(
                     .filter { bucketedTrackers.get(it, true).isNotEmpty() }
                     .forEach { trackingProtectionCategory ->
                         MenuItem(
-                            label = trackingProtectionCategory.displayLabel(
-                                bucketedTrackers.get(trackingProtectionCategory, true).size,
-                            ),
+                            label =
+                                trackingProtectionCategory.displayLabel(
+                                    bucketedTrackers.get(trackingProtectionCategory, true).size
+                                ),
                             beforeIconPainter = painterResource(id = trackingProtectionCategory.icon),
                             onClick = { onTrackerCategoryClick(trackingProtectionCategory) },
                         )
@@ -94,11 +97,12 @@ internal fun TrackersBlockedPanel(
 
             MenuGroup {
                 MenuItem(
-                    label = pluralStringResource(
-                        R.plurals.trackers_blocked_panel_num_trackers_blocked_this_week_2,
-                        numberOfTrackersBlockedThisWeek,
-                        numberOfTrackersBlockedThisWeek,
-                    ),
+                    label =
+                        pluralStringResource(
+                            R.plurals.trackers_blocked_panel_num_trackers_blocked_this_week_2,
+                            numberOfTrackersBlockedThisWeek,
+                            numberOfTrackersBlockedThisWeek,
+                        ),
                     beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_shield_checkmark_24),
                     onClick = { onTrackersBlockedThisWeekClicked() },
                 )
@@ -109,28 +113,27 @@ internal fun TrackersBlockedPanel(
 
 @Composable
 @ReadOnlyComposable
-private fun TrackingProtectionCategory.displayLabel(count: Int): String = LocalResources.current.getQuantityString(
-    when (this) {
-        SOCIAL_MEDIA_TRACKERS -> R.plurals.trackers_blocked_panel_num_social_media_trackers
-        CROSS_SITE_TRACKING_COOKIES -> R.plurals.trackers_blocked_panel_num_cross_site_cookies
-        CRYPTOMINERS -> R.plurals.trackers_blocked_panel_num_cryptominers
-        FINGERPRINTERS -> R.plurals.trackers_blocked_panel_num_fingerprinters
-        TRACKING_CONTENT -> R.plurals.trackers_blocked_panel_num_trackers_2
-    },
-    count,
-    count,
-)
+private fun TrackingProtectionCategory.displayLabel(count: Int): String =
+    LocalResources.current.getQuantityString(
+        when (this) {
+            SOCIAL_MEDIA_TRACKERS -> R.plurals.trackers_blocked_panel_num_social_media_trackers
+            CROSS_SITE_TRACKING_COOKIES -> R.plurals.trackers_blocked_panel_num_cross_site_cookies
+            CRYPTOMINERS -> R.plurals.trackers_blocked_panel_num_cryptominers
+            FINGERPRINTERS -> R.plurals.trackers_blocked_panel_num_fingerprinters
+            TRACKING_CONTENT -> R.plurals.trackers_blocked_panel_num_trackers_2
+        },
+        count,
+        count,
+    )
 
 @PreviewLightDark
 @Composable
 private fun TrackersBlockedPanelPreview() {
     FirefoxTheme {
-        Column(
-            modifier = Modifier
-                .background(color = MaterialTheme.colorScheme.surface),
-        ) {
+        Column(modifier = Modifier.background(color = MaterialTheme.colorScheme.surface)) {
             TrackersBlockedPanel(
                 title = "Mozilla",
+                url = "www.mozilla.com",
                 numberOfTrackersBlocked = 0,
                 numberOfTrackersBlockedThisWeek = 33,
                 bucketedTrackers = TrackerBuckets(),

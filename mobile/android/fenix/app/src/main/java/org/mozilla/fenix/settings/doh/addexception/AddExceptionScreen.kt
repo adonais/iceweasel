@@ -44,11 +44,7 @@ internal fun AddExceptionScreen(
     var urlInput by remember { mutableStateOf("") }
 
     Surface {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-        ) {
+        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
             Spacer(modifier = Modifier.height(8.dp))
 
             TextField(
@@ -76,24 +72,24 @@ internal fun AddExceptionScreen(
 
 @FlexibleWindowPreview
 @Composable
-private fun AddExceptionScreenPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun AddExceptionScreenPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         AddExceptionScreen(
-            state = DohSettingsState(
-                allProtectionLevels = listOf(
-                    ProtectionLevel.Default,
-                    ProtectionLevel.Increased,
-                    ProtectionLevel.Max,
-                    ProtectionLevel.Off,
-                ),
-                selectedProtectionLevel = ProtectionLevel.Off,
-                providers = emptyList(),
-                selectedProvider = null,
-                exceptionsList = emptyList(),
-                isUserExceptionValid = false,
-            ),
+            state =
+                DohSettingsState(
+                    allProtectionLevels =
+                        listOf(
+                            ProtectionLevel.Default,
+                            ProtectionLevel.Increased,
+                            ProtectionLevel.Max,
+                            ProtectionLevel.Off,
+                        ),
+                    selectedProtectionLevel = ProtectionLevel.Off,
+                    providers = emptyList(),
+                    selectedProvider = null,
+                    exceptionsList = emptyList(),
+                    isUserExceptionValid = false,
+                )
         )
     }
 }

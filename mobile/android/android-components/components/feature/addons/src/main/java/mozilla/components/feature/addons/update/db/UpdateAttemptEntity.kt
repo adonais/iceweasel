@@ -7,6 +7,7 @@ package mozilla.components.feature.addons.update.db
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.util.Date
 import mozilla.components.feature.addons.update.AddonUpdater
 import mozilla.components.feature.addons.update.AddonUpdater.Status.Error
 import mozilla.components.feature.addons.update.AddonUpdater.Status.NoUpdateAvailable
@@ -16,24 +17,15 @@ import mozilla.components.feature.addons.update.db.UpdateAttemptEntity.Companion
 import mozilla.components.feature.addons.update.db.UpdateAttemptEntity.Companion.NOT_INSTALLED_DB
 import mozilla.components.feature.addons.update.db.UpdateAttemptEntity.Companion.NO_UPDATE_AVAILABLE_DB
 import mozilla.components.feature.addons.update.db.UpdateAttemptEntity.Companion.SUCCESSFULLY_UPDATED_DB
-import java.util.Date
 
-/**
- * Internal entity representing a [AddonUpdater.UpdateAttempt] as it gets saved to the database.
- */
+/** Internal entity representing a [AddonUpdater.UpdateAttempt] as it gets saved to the database. */
 @Entity(tableName = "update_attempts")
 internal data class UpdateAttemptEntity(
-    @PrimaryKey
-    @ColumnInfo(name = "addon_id")
-    var addonId: String,
-    @ColumnInfo(name = "date")
-    var date: Long,
-    @ColumnInfo(name = "status")
-    var status: Int,
-    @ColumnInfo(name = "error_message")
-    var errorMessage: String = "",
-    @ColumnInfo(name = "error_trace")
-    var errorTrace: String = "",
+    @PrimaryKey @ColumnInfo(name = "addon_id") var addonId: String,
+    @ColumnInfo(name = "date") var date: Long,
+    @ColumnInfo(name = "status") var status: Int,
+    @ColumnInfo(name = "error_message") var errorMessage: String = "",
+    @ColumnInfo(name = "error_trace") var errorTrace: String = "",
 ) {
     internal fun toUpdateAttempt(): AddonUpdater.UpdateAttempt {
         return AddonUpdater.UpdateAttempt(addonId, Date(date), toStatus())

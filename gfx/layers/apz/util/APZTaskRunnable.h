@@ -60,10 +60,7 @@ class APZTaskRunnable final : public Runnable {
   struct RepaintRequestKey {
     ScrollableLayerGuid::ViewID mScrollId;
     RepaintRequest::ScrollOffsetUpdateType mScrollUpdateType;
-    bool operator==(const RepaintRequestKey& aOther) const {
-      return mScrollId == aOther.mScrollId &&
-             mScrollUpdateType == aOther.mScrollUpdateType;
-    }
+    bool operator==(const RepaintRequestKey& aOther) const = default;
     struct HashFn {
       std::size_t operator()(const RepaintRequestKey& aKey) const {
         return HashGeneric(aKey.mScrollId, aKey.mScrollUpdateType);

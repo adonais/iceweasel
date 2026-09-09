@@ -4,31 +4,20 @@
 
 package org.mozilla.fenix.tabstray.redux.state
 
-/**
- * The different pages in the Tab Manager.
- */
+/** The different pages in the Tab Manager. */
 enum class Page {
 
-    /**
-     * The page that displays normal tabs.
-     */
+    /** The page that displays normal tabs. */
     NormalTabs,
 
-    /**
-     * The page that displays private tabs.
-     */
+    /** The page that displays private tabs. */
     PrivateTabs,
 
-    /**
-     * The page that displays Tab Groups.
-     */
+    /** The page that displays Tab Groups. */
     TabGroups,
 
-    /**
-     * The page that displays Synced Tabs.
-     */
-    SyncedTabs,
-    ;
+    /** The page that displays Synced Tabs. */
+    SyncedTabs;
 
     companion object {
         /**

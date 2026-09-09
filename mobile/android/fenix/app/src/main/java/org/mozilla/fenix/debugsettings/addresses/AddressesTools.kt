@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.concept.storage.Address
 import mozilla.components.concept.storage.CreditCardsAddressesStorage
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.RadioButtonListItem
 import org.mozilla.fenix.compose.list.SwitchListItem
@@ -38,11 +39,8 @@ import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
-/**
- * Addresses UI for the debug drawer that displays various addresses related tools.
- */
+/** Addresses UI for the debug drawer that displays various addresses related tools. */
 @Composable
 fun AddressesTools(
     debugRegionRepository: AddressesDebugRegionRepository,
@@ -103,11 +101,7 @@ private fun AddressesContent(
     onDeleteAddressClick: (Address) -> Unit,
     onDeleteAllAddressesClick: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .padding(all = 16.dp)
-            .verticalScroll(state = rememberScrollState()),
-    ) {
+    Column(modifier = Modifier.padding(all = 16.dp).verticalScroll(state = rememberScrollState())) {
         Text(
             text = stringResource(R.string.debug_drawer_addresses_title),
             style = FirefoxTheme.typography.headline5,
@@ -234,9 +228,7 @@ private fun List<DebugRegionEnabledState>.updateRegionEnabled(regionToUpdate: De
 
 @Preview
 @Composable
-private fun AddressesScreenPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun AddressesScreenPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         AddressesTools(
             debugRegionRepository = FakeAddressesDebugRegionRepository(),

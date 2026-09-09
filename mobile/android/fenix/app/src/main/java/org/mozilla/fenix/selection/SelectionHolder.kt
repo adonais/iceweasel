@@ -4,9 +4,7 @@
 
 package org.mozilla.fenix.selection
 
-/**
- * Contains the selection of items added or removed using the [SelectionInteractor].
- */
+/** Contains the selection of items added or removed using the [SelectionInteractor]. */
 interface SelectionHolder<T> {
     val selectedItems: Set<T>
 }

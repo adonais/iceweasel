@@ -398,7 +398,7 @@ add_task(async function switchTab() {
           makeUrlResult({
             type: first,
             payload: {
-              userContextId: 1,
+              userContext: { id: 1 },
               url: "https://example.com/first",
               title: "first example",
             },

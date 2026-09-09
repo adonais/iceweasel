@@ -10,9 +10,7 @@ import mozilla.components.browser.state.selector.findTabOrCustomTabOrSelectedTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.manifest.WebAppManifest
 
-/**
- * Feature used to handle web content settings from manifest file.
- */
+/** Feature used to handle web content settings from manifest file. */
 class WebAppContentFeature(
     private val store: BrowserStore,
     private val tabId: String? = null,

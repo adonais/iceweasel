@@ -50,12 +50,13 @@ class CompositeSplashScreenOperationTest {
 
     @Test
     fun `GIVEN multiple child operations WHEN checking the operation type THEN get the joined names of child operations`() {
-        val composite = CompositeSplashScreenOperation(
-            listOf(
-                FakeSplashScreenOperation("alpha"),
-                FakeSplashScreenOperation("beta"),
-            ),
-        )
+        val composite =
+            CompositeSplashScreenOperation(
+                listOf(
+                    FakeSplashScreenOperation("alpha"),
+                    FakeSplashScreenOperation("beta"),
+                )
+            )
 
         assertEquals("alpha+beta", composite.type)
     }
@@ -111,6 +112,7 @@ private class FakeSplashScreenOperation(
 
     var wasRun = false
         private set
+
     var wasDisposed = false
         private set
 

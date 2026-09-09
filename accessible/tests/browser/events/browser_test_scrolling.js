@@ -290,3 +290,62 @@ add_task(async function testSlowLoad() {
     }
   );
 });
+
+// Test scaled scrolling events
+addAccessibleTask(
+  `
+    <div style="height: 1000vh">hello</div>
+  `,
+  async function (browser, accDoc) {
+    const { Layout } = ChromeUtils.importESModule(
+      "chrome://mochitests/content/browser/accessible/tests/browser/Layout.sys.mjs"
+    );
+
+    async function scrollToAndAwaitEvent(scrollY) {
+      let onScrolling = waitForEvent(EVENT_SCROLLING_END, accDoc);
+      await SpecialPowers.spawn(browser, [scrollY], _scrollY => {
+        content.scrollTo(0, _scrollY);
+      });
+      let scrollingEvent = await onScrolling;
+      scrollingEvent.QueryInterface(nsIAccessibleScrollingEvent);
+      return scrollingEvent;
+    }
+
+    // Scroll at default resolution
+    let scrollingEvent = await scrollToAndAwaitEvent(100);
+
+    // Reset scroll
+    await scrollToAndAwaitEvent(0);
+
+    // Double resolution and scroll
+    await SpecialPowers.spawn(browser, [], () => {
+      const utils = SpecialPowers.getDOMWindowUtils(content.window);
+      utils.setResolutionAndScaleTo(2);
+    });
+    let scrollingEventDouble = await scrollToAndAwaitEvent(100);
+
+    Layout.isWithin(
+      scrollingEvent.scrollY * 2,
+      scrollingEventDouble.scrollY,
+      1,
+      "Scroll delta is doubled correctly"
+    );
+
+    // Reset scroll
+    await scrollToAndAwaitEvent(0);
+
+    // Half resolution and scroll
+    await SpecialPowers.spawn(browser, [], () => {
+      const utils = SpecialPowers.getDOMWindowUtils(content.window);
+      utils.setResolutionAndScaleTo(0.5);
+    });
+    let scrollingEventHalf = await scrollToAndAwaitEvent(100);
+
+    Layout.isWithin(
+      scrollingEvent.scrollY / 2,
+      scrollingEventHalf.scrollY,
+      1,
+      "Scroll delta is halved correctly"
+    );
+  }
+);

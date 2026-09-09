@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.components.menu
 
+import kotlin.test.assertNotNull
 import mozilla.components.feature.addons.Addon
 import mozilla.components.service.fxa.manager.AccountState
 import mozilla.components.support.test.robolectric.testContext
@@ -26,12 +27,10 @@ import org.mozilla.fenix.components.menu.store.MenuState
 import org.mozilla.fenix.components.menu.store.MenuStore
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class MenuTelemetryMiddlewareTest {
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     @Test
     fun `WHEN adding a bookmark THEN record the bookmark browser menu telemetry`() {
@@ -131,7 +130,7 @@ class MenuTelemetryMiddlewareTest {
             MenuAction.Navigate.MozillaAccount(
                 accountState = AccountState.NotAuthenticated,
                 accesspoint = MenuAccessPoint.Browser,
-            ),
+            )
         )
 
         assertTelemetryRecorded(Events.browserMenuAction, item = "sync_account")
@@ -530,12 +529,9 @@ class MenuTelemetryMiddlewareTest {
     private fun createStore(
         menuState: MenuState = MenuState(),
         accessPoint: MenuAccessPoint = MenuAccessPoint.Browser,
-    ) = MenuStore(
-        initialState = menuState,
-        middleware = listOf(
-            MenuTelemetryMiddleware(
-                accessPoint = accessPoint,
-            ),
-        ),
-    )
+    ) =
+        MenuStore(
+            initialState = menuState,
+            middleware = listOf(MenuTelemetryMiddleware(accessPoint = accessPoint)),
+        )
 }

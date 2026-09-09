@@ -1200,8 +1200,8 @@ static bool CallJSAddPropertyOp(JSContext* cx, JSAddPropertyOp op,
   return op(cx, obj, id, v);
 }
 
-static MOZ_ALWAYS_INLINE bool PreserveAnyUnpreservedWrapper(
-    JSContext* cx, Handle<NativeObject*> obj) {
+bool js::PreserveAnyUnpreservedWrapper(JSContext* cx,
+                                       Handle<NativeObject*> obj) {
   if (MOZ_LIKELY(!obj->hasUnpreservedWrapper())) {
     return true;
   }

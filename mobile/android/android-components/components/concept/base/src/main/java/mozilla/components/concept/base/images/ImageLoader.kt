@@ -8,14 +8,12 @@ import android.graphics.drawable.Drawable
 import android.widget.ImageView
 import androidx.annotation.MainThread
 
-/**
- * A loader that can load an image from an ID directly into an [ImageView].
- */
+/** A loader that can load an image from an ID directly into an [ImageView]. */
 interface ImageLoader {
 
     /**
-     * Loads an image asynchronously and then displays it in the [ImageView].
-     * If the view is detached from the window before loading is completed, then loading is cancelled.
+     * Loads an image asynchronously and then displays it in the [ImageView]. If the view is detached from the window
+     * before loading is completed, then loading is cancelled.
      *
      * @param view [ImageView] to load the image into.
      * @param request [ImageLoadRequest] Load image for this given request.

@@ -4,6 +4,7 @@
 
 DIRS += [
     "legacy-listeners",
+    "nested-update-processors",
     "transformers",
 ]
 

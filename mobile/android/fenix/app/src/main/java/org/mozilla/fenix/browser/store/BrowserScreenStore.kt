@@ -21,28 +21,22 @@ import org.mozilla.fenix.browser.store.BrowserScreenAction.ReaderModeStatusUpdat
 class BrowserScreenStore(
     initialState: BrowserScreenState = BrowserScreenState(),
     middleware: List<Middleware<BrowserScreenState, BrowserScreenAction>> = emptyList(),
-) : Store<BrowserScreenState, BrowserScreenAction>(
-    initialState = initialState,
-    reducer = ::reduce,
-    middleware = middleware,
-)
-
-private fun reduce(state: BrowserScreenState, action: BrowserScreenAction): BrowserScreenState = when (action) {
-    is ClosingLastPrivateTab -> state.copy(
-        cancelPrivateDownloadsAccepted = false,
+) :
+    Store<BrowserScreenState, BrowserScreenAction>(
+        initialState = initialState,
+        reducer = ::reduce,
+        middleware = middleware,
     )
 
-    is CancelPrivateDownloadsOnPrivateTabsClosedAccepted -> state.copy(
-        cancelPrivateDownloadsAccepted = true,
-    )
+private fun reduce(state: BrowserScreenState, action: BrowserScreenAction): BrowserScreenState =
+    when (action) {
+        is ClosingLastPrivateTab -> state.copy(cancelPrivateDownloadsAccepted = false)
 
-    is ReaderModeStatusUpdated -> state.copy(
-        readerModeStatus = action.readerModeStatus,
-    )
+        is CancelPrivateDownloadsOnPrivateTabsClosedAccepted -> state.copy(cancelPrivateDownloadsAccepted = true)
 
-    is PageTranslationStatusUpdated -> state.copy(pageTranslationStatus = action.pageTranslationStatus)
+        is ReaderModeStatusUpdated -> state.copy(readerModeStatus = action.readerModeStatus)
 
-    is CustomTabColorsUpdated -> state.copy(
-        customTabColors = action.customTabColors,
-    )
-}
+        is PageTranslationStatusUpdated -> state.copy(pageTranslationStatus = action.pageTranslationStatus)
+
+        is CustomTabColorsUpdated -> state.copy(customTabColors = action.customTabColors)
+    }

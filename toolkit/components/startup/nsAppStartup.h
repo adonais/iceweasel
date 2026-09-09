@@ -40,7 +40,7 @@ class nsAppStartup final : public nsIAppStartup,
  private:
   ~nsAppStartup();
 
-  void CloseAllWindows();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void CloseAllWindows();
 
   friend class nsAppExitEvent;
 

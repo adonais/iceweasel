@@ -6,6 +6,7 @@ package org.mozilla.fenix.wallpapers
 
 import io.mockk.every
 import io.mockk.mockk
+import java.io.File
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.fetch.Client
@@ -19,12 +20,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mozilla.fenix.BuildConfig
-import java.io.File
 
 class WallpaperDownloaderTest {
-    @Rule
-    @JvmField
-    val tempFolder = TemporaryFolder()
+    @Rule @JvmField val tempFolder = TemporaryFolder()
 
     private val remoteHost = BuildConfig.WALLPAPER_URL
 
@@ -37,15 +35,16 @@ class WallpaperDownloaderTest {
 
     private val dispatcher = StandardTestDispatcher()
 
-    private val wallpaperCollection = Wallpaper.Collection(
-        name = "collection",
-        heading = null,
-        description = null,
-        learnMoreUrl = null,
-        availableLocales = null,
-        startDate = null,
-        endDate = null,
-    )
+    private val wallpaperCollection =
+        Wallpaper.Collection(
+            name = "collection",
+            heading = null,
+            description = null,
+            learnMoreUrl = null,
+            availableLocales = null,
+            startDate = null,
+            endDate = null,
+        )
 
     private lateinit var downloader: WallpaperDownloader
 
@@ -55,91 +54,97 @@ class WallpaperDownloaderTest {
     }
 
     @Test
-    fun `GIVEN that asset request is successful WHEN downloading assets THEN both files are created in expected location`() = runTest(dispatcher) {
-        val wallpaper = generateWallpaper()
-        val portraitRequest = wallpaper.generateRequest("portrait")
-        val landscapeRequest = wallpaper.generateRequest("landscape")
-        every { mockPortraitResponse.status } returns 200
-        every { mockLandscapeResponse.status } returns 200
-        every { mockPortraitResponse.body } returns portraitResponseBodySuccess
-        every { mockLandscapeResponse.body } returns landscapeResponseBodySuccess
-        every { mockClient.fetch(portraitRequest) } returns mockPortraitResponse
-        every { mockClient.fetch(landscapeRequest) } returns mockLandscapeResponse
+    fun `GIVEN that asset request is successful WHEN downloading assets THEN both files are created in expected location`() =
+        runTest(dispatcher) {
+            val wallpaper = generateWallpaper()
+            val portraitRequest = wallpaper.generateRequest("portrait")
+            val landscapeRequest = wallpaper.generateRequest("landscape")
+            every { mockPortraitResponse.status } returns 200
+            every { mockLandscapeResponse.status } returns 200
+            every { mockPortraitResponse.body } returns portraitResponseBodySuccess
+            every { mockLandscapeResponse.body } returns landscapeResponseBodySuccess
+            every { mockClient.fetch(portraitRequest) } returns mockPortraitResponse
+            every { mockClient.fetch(landscapeRequest) } returns mockLandscapeResponse
 
-        downloader.downloadWallpaper(wallpaper)
+            downloader.downloadWallpaper(wallpaper)
 
-        val expectedPortraitFile = File(tempFolder.root, "wallpapers/${wallpaper.name}/portrait.png")
-        val expectedLandscapeFile = File(tempFolder.root, "wallpapers/${wallpaper.name}/landscape.png")
-        assertTrue(expectedPortraitFile.exists() && expectedPortraitFile.readText() == wallpaperBytes)
-        assertTrue(expectedLandscapeFile.exists() && expectedLandscapeFile.readText() == wallpaperBytes)
-    }
-
-    @Test
-    fun `GIVEN that thumbnail request is successful WHEN downloading THEN file is created in expected location`() = runTest(dispatcher) {
-        val wallpaper = generateWallpaper()
-        val thumbnailRequest = wallpaper.generateRequest("thumbnail")
-        val mockThumbnailResponse = mockk<Response>()
-        every { mockThumbnailResponse.status } returns 200
-        every { mockThumbnailResponse.body } returns Response.Body(wallpaperBytes.byteInputStream())
-        every { mockClient.fetch(thumbnailRequest) } returns mockThumbnailResponse
-
-        val result = downloader.downloadThumbnail(wallpaper)
-
-        val expectedThumbnailFile = File(tempFolder.root, "wallpapers/${wallpaper.name}/thumbnail.png")
-        assertTrue(expectedThumbnailFile.exists() && expectedThumbnailFile.readText() == wallpaperBytes)
-        assertEquals(Wallpaper.ImageFileState.Downloaded, result)
-    }
+            val expectedPortraitFile = File(tempFolder.root, "wallpapers/${wallpaper.name}/portrait.png")
+            val expectedLandscapeFile = File(tempFolder.root, "wallpapers/${wallpaper.name}/landscape.png")
+            assertTrue(expectedPortraitFile.exists() && expectedPortraitFile.readText() == wallpaperBytes)
+            assertTrue(expectedLandscapeFile.exists() && expectedLandscapeFile.readText() == wallpaperBytes)
+        }
 
     @Test
-    fun `GIVEN that request fails WHEN downloading THEN file is not created`() = runTest(dispatcher) {
-        val wallpaper = generateWallpaper()
-        val portraitRequest = wallpaper.generateRequest("portrait")
-        val landscapeRequest = wallpaper.generateRequest("landscape")
-        every { mockPortraitResponse.status } returns 400
-        every { mockLandscapeResponse.status } returns 400
-        every { mockClient.fetch(portraitRequest) } returns mockPortraitResponse
-        every { mockClient.fetch(landscapeRequest) } returns mockLandscapeResponse
+    fun `GIVEN that thumbnail request is successful WHEN downloading THEN file is created in expected location`() =
+        runTest(dispatcher) {
+            val wallpaper = generateWallpaper()
+            val thumbnailRequest = wallpaper.generateRequest("thumbnail")
+            val mockThumbnailResponse = mockk<Response>()
+            every { mockThumbnailResponse.status } returns 200
+            every { mockThumbnailResponse.body } returns Response.Body(wallpaperBytes.byteInputStream())
+            every { mockClient.fetch(thumbnailRequest) } returns mockThumbnailResponse
 
-        downloader.downloadWallpaper(wallpaper)
+            val result = downloader.downloadThumbnail(wallpaper)
 
-        val expectedPortraitFile = File(tempFolder.root, "wallpapers/${wallpaper.name}/portrait.png")
-        val expectedLandscapeFile = File(tempFolder.root, "wallpapers/${wallpaper.name}/landscape.png")
-        assertFalse(expectedPortraitFile.exists())
-        assertFalse(expectedLandscapeFile.exists())
-    }
+            val expectedThumbnailFile = File(tempFolder.root, "wallpapers/${wallpaper.name}/thumbnail.png")
+            assertTrue(expectedThumbnailFile.exists() && expectedThumbnailFile.readText() == wallpaperBytes)
+            assertEquals(Wallpaper.ImageFileState.Downloaded, result)
+        }
 
     @Test
-    fun `GIVEN that copying the file fails WHEN downloading THEN file is not created`() = runTest(dispatcher) {
-        val wallpaper = generateWallpaper()
-        val portraitRequest = wallpaper.generateRequest("portrait")
-        val landscapeRequest = wallpaper.generateRequest("landscape")
-        every { mockPortraitResponse.status } returns 200
-        every { mockLandscapeResponse.status } returns 200
-        every { mockPortraitResponse.body } throws IllegalStateException()
-        every { mockClient.fetch(portraitRequest) } throws IllegalStateException()
-        every { mockClient.fetch(landscapeRequest) } returns mockLandscapeResponse
+    fun `GIVEN that request fails WHEN downloading THEN file is not created`() =
+        runTest(dispatcher) {
+            val wallpaper = generateWallpaper()
+            val portraitRequest = wallpaper.generateRequest("portrait")
+            val landscapeRequest = wallpaper.generateRequest("landscape")
+            every { mockPortraitResponse.status } returns 400
+            every { mockLandscapeResponse.status } returns 400
+            every { mockClient.fetch(portraitRequest) } returns mockPortraitResponse
+            every { mockClient.fetch(landscapeRequest) } returns mockLandscapeResponse
 
-        downloader.downloadWallpaper(wallpaper)
+            downloader.downloadWallpaper(wallpaper)
 
-        val expectedPortraitFile = File(tempFolder.root, "wallpapers/${wallpaper.name}/portrait.png")
-        val expectedLandscapeFile = File(tempFolder.root, "wallpapers/${wallpaper.name}/landscape.png")
-        assertFalse(expectedPortraitFile.exists())
-        assertFalse(expectedLandscapeFile.exists())
-    }
+            val expectedPortraitFile = File(tempFolder.root, "wallpapers/${wallpaper.name}/portrait.png")
+            val expectedLandscapeFile = File(tempFolder.root, "wallpapers/${wallpaper.name}/landscape.png")
+            assertFalse(expectedPortraitFile.exists())
+            assertFalse(expectedLandscapeFile.exists())
+        }
 
-    private fun generateWallpaper(name: String = "name") = Wallpaper(
-        name = name,
-        collection = wallpaperCollection,
-        textColor = null,
-        cardColorLight = null,
-        cardColorDark = null,
-        thumbnailFileState = Wallpaper.ImageFileState.Unavailable,
-        assetsFileState = Wallpaper.ImageFileState.Unavailable,
-    )
+    @Test
+    fun `GIVEN that copying the file fails WHEN downloading THEN file is not created`() =
+        runTest(dispatcher) {
+            val wallpaper = generateWallpaper()
+            val portraitRequest = wallpaper.generateRequest("portrait")
+            val landscapeRequest = wallpaper.generateRequest("landscape")
+            every { mockPortraitResponse.status } returns 200
+            every { mockLandscapeResponse.status } returns 200
+            every { mockPortraitResponse.body } throws IllegalStateException()
+            every { mockClient.fetch(portraitRequest) } throws IllegalStateException()
+            every { mockClient.fetch(landscapeRequest) } returns mockLandscapeResponse
 
-    private fun Wallpaper.generateRequest(type: String) = Request(
-        url = "$remoteHost/${collection.name}/$name/$type.png",
-        method = Request.Method.GET,
-        conservative = true,
-    )
+            downloader.downloadWallpaper(wallpaper)
+
+            val expectedPortraitFile = File(tempFolder.root, "wallpapers/${wallpaper.name}/portrait.png")
+            val expectedLandscapeFile = File(tempFolder.root, "wallpapers/${wallpaper.name}/landscape.png")
+            assertFalse(expectedPortraitFile.exists())
+            assertFalse(expectedLandscapeFile.exists())
+        }
+
+    private fun generateWallpaper(name: String = "name") =
+        Wallpaper(
+            name = name,
+            collection = wallpaperCollection,
+            textColor = null,
+            cardColorLight = null,
+            cardColorDark = null,
+            thumbnailFileState = Wallpaper.ImageFileState.Unavailable,
+            assetsFileState = Wallpaper.ImageFileState.Unavailable,
+        )
+
+    private fun Wallpaper.generateRequest(type: String) =
+        Request(
+            url = "$remoteHost/${collection.name}/$name/$type.png",
+            method = Request.Method.GET,
+            conservative = true,
+        )
 }

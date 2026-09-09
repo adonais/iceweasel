@@ -116,10 +116,7 @@ bool DoTrialInlining(JSContext* cx, BaselineFrame* frame) {
 
 TrialInliner::TrialInliner(JSContext* cx, HandleScript script,
                            ICScript* icScript)
-    : cx_(cx),
-      script_(script),
-      icScript_(icScript),
-      lock_(cx->zone(), icScript->markingLock()) {}
+    : cx_(cx), script_(script), icScript_(icScript) {}
 
 void TrialInliner::cloneSharedPrefix(ICCacheIRStub* stub,
                                      const uint8_t* endOfPrefix,
@@ -137,16 +134,19 @@ bool TrialInliner::replaceICStub(ICEntry& entry, ICFallbackStub* fallback,
   MOZ_ASSERT(fallback->trialInliningState() == TrialInliningState::Candidate);
   writer.setTrialInliningState(TrialInliningState::Inlined);
 
-  fallback->discardStubs(cx()->zone(), &entry, lock_);
-
-  // Note: AttachBaselineCacheIRStub never throws an exception.
+  // Note: AttachBaselineCacheIRStubLocked never throws an exception.
+  MaybeMarkingLock lock;
   ICAttachResult result = AttachBaselineCacheIRStubLocked(
-      cx(), writer, kind, script_, icScript_, fallback, "TrialInline", lock_);
+      cx(), writer, kind, script_, icScript_, fallback,
+      DiscardExistingStubs::Yes, "TrialInline", lock);
   if (result == ICAttachResult::Attached) {
     MOZ_ASSERT(fallback->trialInliningState() == TrialInliningState::Inlined);
     return true;
   }
 
+  if (!lock.isSome()) {
+    lock.emplace(cx()->zone(), icScript_->markingLock());
+  }
   MOZ_ASSERT(fallback->trialInliningState() == TrialInliningState::Candidate);
   icScript_->removeInlinedChild(fallback->pcOffset());
 
@@ -217,6 +217,14 @@ Maybe<InlinableOpData> FindInlinableOpData(ICCacheIRStub* stub,
   return mozilla::Nothing();
 }
 
+// We currently only inline bound functions with no bound arguments or
+// new.target.
+// TODO (bug 2066335): Support bound functions with up to MaxInlineBoundArgs
+// arguments.
+static bool CanInlineBoundCall(uint32_t numBoundArgs, CallFlags flags) {
+  return numBoundArgs == 0 && !flags.isConstructing();
+}
+
 Maybe<InlinableCallData> FindInlinableCallData(ICCacheIRStub* stub) {
   Maybe<InlinableCallData> data;
 
@@ -273,6 +281,7 @@ Maybe<InlinableCallData> FindInlinableCallData(ICCacheIRStub* stub) {
           MOZ_ASSERT(data.isNothing());
           data.emplace();
           data->endOfSharedPrefix = opStart;
+          data->calleeOperand = args.calleeId;
         }
         break;
       }
@@ -286,6 +295,46 @@ Maybe<InlinableCallData> FindInlinableCallData(ICCacheIRStub* stub) {
           MOZ_ASSERT(data.isNothing());
           data.emplace();
           data->endOfSharedPrefix = opStart;
+          data->calleeOperand = args.calleeId;
+          uintptr_t rawICScript =
+              stubInfo->getStubRawWord(stubData, args.icScriptOffset);
+          data->icScript = reinterpret_cast<ICScript*>(rawICScript);
+        }
+        break;
+      }
+      case CacheOp::CallBoundScriptedFunction: {
+        auto args = reader.argsForCallBoundScriptedFunction();
+        flags = args.flags;
+
+        if (args.targetId == calleeGuardOperand) {
+          MOZ_ASSERT(args.argcId.id() == 0);
+          MOZ_ASSERT(data.isNothing());
+          if (!CanInlineBoundCall(args.numBoundArgs, args.flags)) {
+            return mozilla::Nothing();
+          }
+          data.emplace();
+          data->endOfSharedPrefix = opStart;
+          data->isBound = true;
+          data->calleeOperand = args.calleeId;
+          data->boundTargetOperand = args.targetId;
+          data->numBoundArgs = args.numBoundArgs;
+        }
+        break;
+      }
+      case CacheOp::CallInlinedBoundFunction: {
+        auto args = reader.argsForCallInlinedBoundFunction();
+        flags = args.flags;
+
+        if (args.targetId == calleeGuardOperand) {
+          MOZ_ASSERT(args.argcId.id() == 0);
+          MOZ_ASSERT(data.isNothing());
+          MOZ_ASSERT(CanInlineBoundCall(args.numBoundArgs, args.flags));
+          data.emplace();
+          data->endOfSharedPrefix = opStart;
+          data->isBound = true;
+          data->calleeOperand = args.calleeId;
+          data->boundTargetOperand = args.targetId;
+          data->numBoundArgs = args.numBoundArgs;
           uintptr_t rawICScript =
               stubInfo->getStubRawWord(stubData, args.icScriptOffset);
           data->icScript = reinterpret_cast<ICScript*>(rawICScript);
@@ -309,7 +358,6 @@ Maybe<InlinableCallData> FindInlinableCallData(ICCacheIRStub* stub) {
         flags.getArgFormat() != CallFlags::FunCall) {
       return mozilla::Nothing();
     }
-    data->calleeOperand = calleeGuardOperand;
     data->callFlags = flags;
     data->target = targetScript;
   }
@@ -615,7 +663,7 @@ bool TrialInliner::canInline(JSContext* cx, JSScript* script,
     // uninlineable or can't be Ion compiled. Do bytecode analysis now.
     TempAllocator temp(&cx->tempLifoAlloc());
     BytecodeAnalysis analysis(temp, script);
-    if (!analysis.init(temp)) {
+    if (!analysis.init()) {
       JitSpew(JitSpew_WarpTrialInlining, "SKIP: OOM in bytecode analysis");
       cx->recoverFromOutOfMemory();
       return false;
@@ -798,7 +846,8 @@ ICScript* TrialInliner::createInlinedICScript(JSScript* targetScript,
   MOZ_ASSERT(result->numICEntries() == targetScript->numICEntries());
 
   if (targetScript->needsFunctionEnvironmentObjects()) {
-    result->ensureEnvAllocSite(root->owningScript(), lock_);
+    gc::AutoMarkingLock lock(cx()->zone(), icScript_->markingLock());
+    result->ensureEnvAllocSite(root->owningScript(), lock);
   }
 
   root->addToTotalBytecodeSize(targetScript->length());
@@ -857,9 +906,15 @@ bool TrialInliner::maybeInlineCall(ICEntry& entry, ICFallbackStub* fallback,
   Int32OperandId argcId(writer.setInputOperandId(0));
   cloneSharedPrefix(stub, data->endOfSharedPrefix, writer);
 
-  writer.callInlinedFunction(data->calleeOperand, argcId, newICScript,
-                             data->callFlags,
-                             ClampFixedArgc(loc.getCallArgc()));
+  if (data->isBound) {
+    writer.callInlinedBoundFunction(
+        data->calleeOperand, data->boundTargetOperand, argcId, data->callFlags,
+        newICScript, data->numBoundArgs);
+  } else {
+    writer.callInlinedFunction(data->calleeOperand, argcId, newICScript,
+                               data->callFlags,
+                               ClampFixedArgc(loc.getCallArgc()));
+  }
 
   return replaceICStub(entry, fallback, writer, CacheKind::Call);
 }
@@ -963,7 +1018,7 @@ bool TrialInliner::tryInlining() {
     ICEntry& entry = icScript_->icEntry(icIndex);
     ICFallbackStub* fallback = icScript_->fallbackStub(icIndex);
 
-    if (!TryFoldingStubsLocked(cx(), fallback, script_, icScript_, lock_)) {
+    if (!TryFoldingStubs(cx(), fallback, script_, icScript_)) {
       return false;
     }
 

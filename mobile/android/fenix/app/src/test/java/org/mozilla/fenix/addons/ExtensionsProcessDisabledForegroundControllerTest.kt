@@ -36,14 +36,15 @@ class ExtensionsProcessDisabledForegroundControllerTest {
             val browserStore = BrowserStore()
             val dialog: AlertDialog = mockk(relaxed = true)
             val builder: MaterialAlertDialogBuilder = mockk(relaxed = true)
-            val controller = ExtensionsProcessDisabledForegroundController(
-                context = testContext,
-                appStore = AppStore(AppState(isForeground = true)),
-                browserStore = browserStore,
-                builder = builder,
-                appName = "TestApp",
-                dispatcher = dispatcher,
-            )
+            val controller =
+                ExtensionsProcessDisabledForegroundController(
+                    context = testContext,
+                    appStore = AppStore(AppState(isForeground = true)),
+                    browserStore = browserStore,
+                    builder = builder,
+                    appName = "TestApp",
+                    dispatcher = dispatcher,
+                )
             val buttonsContainerCaptor = slot<View>()
 
             controller.start()
@@ -76,14 +77,15 @@ class ExtensionsProcessDisabledForegroundControllerTest {
             val browserStore = BrowserStore()
             val dialog: AlertDialog = mockk(relaxed = true)
             val builder: MaterialAlertDialogBuilder = mockk(relaxed = true)
-            val controller = ExtensionsProcessDisabledForegroundController(
-                context = testContext,
-                appStore = AppStore(AppState(isForeground = true)),
-                browserStore = browserStore,
-                builder = builder,
-                appName = "TestApp",
-                dispatcher = dispatcher,
-            )
+            val controller =
+                ExtensionsProcessDisabledForegroundController(
+                    context = testContext,
+                    appStore = AppStore(AppState(isForeground = true)),
+                    browserStore = browserStore,
+                    builder = builder,
+                    appName = "TestApp",
+                    dispatcher = dispatcher,
+                )
             val buttonsContainerCaptor = slot<View>()
 
             controller.start()
@@ -116,14 +118,15 @@ class ExtensionsProcessDisabledForegroundControllerTest {
             val browserStore = BrowserStore()
             val dialog: AlertDialog = mockk(relaxed = true)
             val builder: MaterialAlertDialogBuilder = mockk(relaxed = true)
-            val controller = ExtensionsProcessDisabledForegroundController(
-                context = testContext,
-                appStore = AppStore(AppState(isForeground = true)),
-                browserStore = browserStore,
-                builder = builder,
-                appName = "TestApp",
-                dispatcher = dispatcher,
-            )
+            val controller =
+                ExtensionsProcessDisabledForegroundController(
+                    context = testContext,
+                    appStore = AppStore(AppState(isForeground = true)),
+                    browserStore = browserStore,
+                    builder = builder,
+                    appName = "TestApp",
+                    dispatcher = dispatcher,
+                )
             val buttonsContainerCaptor = slot<View>()
 
             controller.start()

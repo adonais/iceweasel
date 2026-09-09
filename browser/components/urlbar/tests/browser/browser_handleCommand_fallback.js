@@ -54,11 +54,11 @@ add_task(async function () {
     return new Promise(resolve => {
       sandbox
         .stub(gURLBar.controller, "loadURL")
-        .callsFake(({ url, where }) => {
+        .callsFake(({ loadRequest, where }) => {
           sandbox.restore();
           // The remaining options are optional and apply only to some cases, so
           // we could not use deepEqual with them.
-          resolve([url, where]);
+          resolve([loadRequest, where]);
           return {};
         });
     });
@@ -116,13 +116,15 @@ add_task(async function no_heuristic_test() {
 
   async function promiseLoadURL() {
     return new Promise(resolve => {
-      sinon.stub(gURLBar.controller, "loadURL").callsFake(({ url, where }) => {
-        gURLBar.controller.loadURL.restore();
-        // The remaining options are optional and apply only to some cases, so
-        // we could not use deepEqual with them.
-        resolve([url, where]);
-        return {};
-      });
+      sinon
+        .stub(gURLBar.controller, "loadURL")
+        .callsFake(({ loadRequest, where }) => {
+          gURLBar.controller.loadURL.restore();
+          // The remaining options are optional and apply only to some cases, so
+          // we could not use deepEqual with them.
+          resolve([loadRequest, where]);
+          return {};
+        });
     });
   }
 
@@ -138,10 +140,10 @@ add_task(async function no_heuristic_test() {
     let promise = promiseLoadURL();
     gURLBar.value = value;
     EventUtils.synthesizeKey("KEY_Enter");
-    // The loaded url should always be a valid url, so this should never throw.
+    // The fallback always fixes up to a valid url, so this should never throw.
     // Awaiting it also lets the message path round-trip the fallback before we
     // check the stub below.
-    new URL((await promise)[0]);
+    new URL((await promise)[0].urlLoad.url);
     Assert.ok(stub.called, "invoked getHeuristicResult");
   }
 });

@@ -135,9 +135,7 @@ import org.mozilla.fenix.trackingprotection.TrackersBlockedFeature
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.getSnackbarTimeout
 
-/**
- * The fullscreen fragment for displaying the tabs management UI.
- */
+/** The fullscreen fragment for displaying the tabs management UI. */
 @Suppress("TooManyFunctions", "LargeClass")
 class TabManagementFragment : Fragment() {
 
@@ -150,8 +148,7 @@ class TabManagementFragment : Fragment() {
     internal var verificationResultLauncher: ActivityResultLauncher<Intent> =
         registerForVerification(onVerified = ::openPrivateTabsPage)
 
-    @VisibleForTesting
-    internal lateinit var tabsTrayStore: TabsTrayStore
+    @VisibleForTesting internal lateinit var tabsTrayStore: TabsTrayStore
 
     private val inactiveTabsBinding = ViewBoundFeatureWrapper<InactiveTabsBinding>()
     private val pbmLockStatusBinding = ViewBoundFeatureWrapper<PbmLockStatusBinding>()
@@ -174,7 +171,7 @@ class TabManagementFragment : Fragment() {
                         sourceId = sourceKey,
                         destinationId = targetKey,
                         placeAfter = placeAfter,
-                    ),
+                    )
                 )
             }
 
@@ -183,14 +180,12 @@ class TabManagementFragment : Fragment() {
                     TabGroupAction.DragAndDropInitiated(
                         sourceId = sourceKey,
                         destinationId = targetKey,
-                    ),
+                    )
                 )
             }
 
             override fun onDragCancel() {
-                tabsTrayStore.dispatch(
-                    TabsTrayAction.TabDragCancel,
-                )
+                tabsTrayStore.dispatch(TabsTrayAction.TabDragCancel)
             }
 
             override fun onDragStart(sourceKey: String, preserveSelectMode: Boolean) {
@@ -198,7 +193,7 @@ class TabManagementFragment : Fragment() {
                     TabsTrayAction.TabDragStart(
                         sourceId = sourceKey,
                         preserveSelectMode = preserveSelectMode,
-                    ),
+                    )
                 )
             }
         }
@@ -207,16 +202,17 @@ class TabManagementFragment : Fragment() {
         super.onCreate(savedInstanceState)
         recordBreadcrumb("TabManagementFragment onCreate")
 
-        enablePbmPinLauncher = registerForActivityResult(
-            onSuccess = {
-                PrivateBrowsingLocked.authSuccess.record()
-                PrivateBrowsingLocked.featureEnabled.record()
-                requireComponents.settings.privateBrowsingModeLocked = true
-            },
-            onFailure = {
-                PrivateBrowsingLocked.authFailure.record()
-            },
-        )
+        enablePbmPinLauncher =
+            registerForActivityResult(
+                onSuccess = {
+                    PrivateBrowsingLocked.authSuccess.record()
+                    PrivateBrowsingLocked.featureEnabled.record()
+                    requireComponents.settings.privateBrowsingModeLocked = true
+                },
+                onFailure = {
+                    PrivateBrowsingLocked.authFailure.record()
+                },
+            )
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -228,35 +224,37 @@ class TabManagementFragment : Fragment() {
     ): View {
         tabsTrayStore = setupStore()
 
-        tabManagerController = DefaultTabManagerController(
-            accountManager = requireComponents.backgroundServices.accountManager,
-            context = requireContext(),
-            appStore = requireComponents.appStore,
-            tabsTrayStore = tabsTrayStore,
-            browserStore = requireComponents.core.store,
-            settings = requireComponents.settings,
-            browsingModeManager = (activity as HomeActivity).browsingModeManager,
-            navController = findNavController(),
-            navigateToHomeAndDeleteSession = ::navigateToHomeAndDeleteSession,
-            profiler = requireComponents.core.engine.profiler,
-            tabsUseCases = requireComponents.useCases.tabsUseCases,
-            fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
-            shareUseCases = requireComponents.useCases.shareUseCases,
-            closeSyncedTabsUseCases = requireComponents.useCases.closeSyncedTabsUseCases,
-            addBookmarkUseCase = requireComponents.useCases.bookmarksUseCases.addBookmark,
-            collectionStorage = requireComponents.core.tabCollectionStorage,
-            showUndoSnackbarForTab = ::showUndoSnackbarForTab,
-            showUndoSnackbarForInactiveTab = ::showUndoSnackbarForInactiveTab,
-            showUndoSnackbarForSyncedTab = ::showUndoSnackbarForSyncedTab,
-            showCancelledDownloadWarning = ::showCancelledDownloadWarning,
-            showBookmarkSnackbar = ::showBookmarkSnackbar,
-            showCollectionSnackbar = ::showCollectionSnackbar,
-        )
+        tabManagerController =
+            DefaultTabManagerController(
+                accountManager = requireComponents.backgroundServices.accountManager,
+                context = requireContext(),
+                appStore = requireComponents.appStore,
+                tabsTrayStore = tabsTrayStore,
+                browserStore = requireComponents.core.store,
+                settings = requireComponents.settings,
+                browsingModeManager = (activity as HomeActivity).browsingModeManager,
+                navController = findNavController(),
+                navigateToHomeAndDeleteSession = ::navigateToHomeAndDeleteSession,
+                profiler = requireComponents.core.engine.profiler,
+                tabsUseCases = requireComponents.useCases.tabsUseCases,
+                fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
+                shareUseCases = requireComponents.useCases.shareUseCases,
+                closeSyncedTabsUseCases = requireComponents.useCases.closeSyncedTabsUseCases,
+                addBookmarkUseCase = requireComponents.useCases.bookmarksUseCases.addBookmark,
+                collectionStorage = requireComponents.core.tabCollectionStorage,
+                showUndoSnackbarForTab = ::showUndoSnackbarForTab,
+                showUndoSnackbarForInactiveTab = ::showUndoSnackbarForInactiveTab,
+                showUndoSnackbarForSyncedTab = ::showUndoSnackbarForSyncedTab,
+                showCancelledDownloadWarning = ::showCancelledDownloadWarning,
+                showBookmarkSnackbar = ::showBookmarkSnackbar,
+                showCollectionSnackbar = ::showCollectionSnackbar,
+            )
 
-        tabManagerCfrController = TabManagerCfrController(
-            settings = requireComponents.settings,
-            tabsTrayStore = tabsTrayStore,
-        )
+        tabManagerCfrController =
+            TabManagerCfrController(
+                settings = requireComponents.settings,
+                tabsTrayStore = tabsTrayStore,
+            )
 
         tabManagerInteractor = DefaultTabManagerInteractor(controller = tabManagerController)
 
@@ -267,10 +265,11 @@ class TabManagementFragment : Fragment() {
             val state by tabsTrayStore.stateFlow.collectAsState()
             val appState by requireComponents.appStore.stateFlow.collectAsState()
             snackbarHostState = remember { SnackbarHostState() }
-            val trackersBlockedCount = when (showPrivacyReport) {
-                true -> appState.blockedTrackersState.trackersBlockedCount
-                false -> null
-            }
+            val trackersBlockedCount =
+                when (showPrivacyReport) {
+                    true -> appState.blockedTrackersState.trackersBlockedCount
+                    false -> null
+                }
 
             BackHandler {
                 when {
@@ -336,17 +335,18 @@ class TabManagementFragment : Fragment() {
                     val window = activity?.window
                     window?.setStatusBarTheme(statusBarColor.toArgb())
                     window?.setNavigationBarTheme(navigationBarColor.toArgb())
-                    onDispose { }
+                    onDispose {}
                 }
 
                 AnimatedVisibility(
                     enter = fadeIn(animationSpec = tween(durationMillis = animationDurationMs)),
                     exit = fadeOut(animationSpec = tween(durationMillis = animationDurationMs)),
                     visibleState = tabTrayVisibilityState,
-                    modifier = Modifier.thenConditional(
-                        Modifier.drawBehind(onDraw = { drawRect(color = transitionColor) }),
-                        { !tabTrayVisibilityState.targetState },
-                    ),
+                    modifier =
+                        Modifier.thenConditional(
+                            Modifier.drawBehind(onDraw = { drawRect(color = transitionColor) }),
+                            { !tabTrayVisibilityState.targetState },
+                        ),
                 ) {
                     NavDisplay(
                         backStack = state.backStack,
@@ -355,276 +355,282 @@ class TabManagementFragment : Fragment() {
                         popTransitionSpec = popTransitionSpec(),
                         predictivePopTransitionSpec = defaultPredictivePopTransitionSpec(),
                         sceneStrategies = sceneStrategy,
-                        entryProvider = entryProvider {
-                            entry<TabManagerNavDestination.Root> {
-                                val tabGroupDotColors = tabGroupDotColors()
-                                TabsTray(
-                                    state = state,
-                                    snackbarHostState = snackbarHostState,
-                                    onAction = tabsTrayStore::dispatch,
-                                    onTabPageClick = { page ->
-                                        onTabPageClick(
-                                            tabsTrayInteractor = tabManagerInteractor,
-                                            page = page,
-                                        )
-                                    },
-                                    onTabClose = { tab ->
-                                        tabManagerInteractor.onTabClosed(tab, TAB_MANAGER_FEATURE_NAME)
-                                    },
-                                    onItemClick = {
-                                        // Either start the transition animation and delay the click handling
-                                        // until it is complete, or directly proceed.
-                                        when (it) {
-                                            is TabsTrayItem.Tab -> handleTabClick(it)
-
-                                            is TabsTrayItem.TabGroup -> {
-                                                tabsTrayStore.dispatch(TabGroupAction.TabGroupClicked(group = it))
-                                            }
-                                        }
-                                    },
-                                    onItemLongClick = { item ->
-                                        tabsTrayStore.dispatch(
-                                            TabsTrayAction.TabItemLongClicked(
-                                                item,
-                                            ),
-                                        )
-                                    },
-                                    onInactiveTabsHeaderClick =
-                                        tabManagerInteractor::onInactiveTabsHeaderClicked,
-                                    onDeleteAllInactiveTabsClick =
-                                        tabManagerInteractor::onDeleteAllInactiveTabsClicked,
-                                    onInactiveTabsAutoCloseDialogShown = {
-                                        tabsTrayStore.dispatch(TabsTrayAction.TabAutoCloseDialogShown)
-                                    },
-                                    onInactiveTabAutoCloseDialogCloseButtonClick =
-                                        tabManagerInteractor::onAutoCloseDialogCloseButtonClicked,
-                                    onEnableInactiveTabAutoCloseClick = {
-                                        tabManagerInteractor.onEnableAutoCloseClicked()
-                                        showInactiveTabsAutoCloseConfirmationSnackbar()
-                                    },
-                                    onInactiveTabClick = tabManagerInteractor::onInactiveTabClicked,
-                                    onInactiveTabClose = tabManagerInteractor::onInactiveTabClosed,
-                                    onSyncedTabClick = tabManagerInteractor::onSyncedTabClicked,
-                                    onSyncedTabClose = tabManagerInteractor::onSyncedTabClosed,
-                                    onSignInClick = tabManagerInteractor::onSignInClicked,
-                                    onSaveToCollectionClick =
-                                        tabManagerInteractor::onAddSelectedTabsToCollectionClicked,
-                                    onShareSelectedTabsClick = tabManagerInteractor::onShareSelectedTabs,
-                                    onTabSettingsClick = tabManagerController::onTabSettingsClicked,
-                                    onRecentlyClosedClick = tabManagerController::onOpenRecentlyClosedClicked,
-                                    onAccountSettingsClick = tabManagerController::onAccountSettingsClicked,
-                                    onDeleteAllTabsClick = {
-                                        if (tabsTrayStore.state.selectedPage == Page.NormalTabs) {
-                                            tabsTrayStore.dispatch(TabsTrayAction.CloseAllNormalTabs)
-                                        } else if (tabsTrayStore.state.selectedPage == Page.PrivateTabs) {
-                                            tabsTrayStore.dispatch(TabsTrayAction.CloseAllPrivateTabs)
-                                        }
-
-                                        tabManagerController.onCloseAllTabsClicked(
-                                            private = tabsTrayStore.state.selectedPage == Page.PrivateTabs,
-                                        )
-                                    },
-                                    onDeleteSelectedTabsClick =
-                                        tabManagerInteractor::onDeleteSelectedTabsClicked,
-                                    onBookmarkSelectedTabsClick =
-                                        tabManagerInteractor::onBookmarkSelectedTabsClicked,
-                                    onForceSelectedTabsAsInactiveClick =
-                                        tabManagerInteractor::onForceSelectedTabsAsInactiveClicked,
-                                    onTabsTrayPbmLockedClick = ::onTabsTrayPbmLockedClick,
-                                    onTabsTrayPbmLockedDismiss = {
-                                        requireComponents.settings.shouldShowLockPbmBanner = false
-                                        PrivateBrowsingLocked.bannerNegativeClicked.record()
-                                    },
-                                    onTabAutoCloseBannerViewOptionsClick = {
-                                        tabManagerCfrController.onTabAutoCloseBannerDismiss()
-                                        tabManagerController.onTabSettingsClicked()
-                                    },
-                                    onTabAutoCloseBannerDismiss = tabManagerCfrController::onTabAutoCloseBannerDismiss,
-                                    onTabAutoCloseBannerShown = {},
-                                    tabInteractionHandler = tabInteractionHandler,
-                                    onInactiveTabsCFRShown = {
-                                        TabsTray.inactiveTabsCfrVisible.record(NoExtras())
-                                    },
-                                    onInactiveTabsCFRClick = {
-                                        tabManagerCfrController.onInactiveTabsCfrClick()
-                                        tabManagerController.onTabSettingsClicked()
-                                    },
-                                    onInactiveTabsCFRDismiss = tabManagerCfrController::onInactiveTabsCfrDismiss,
-                                    onTabGroupOnboardingDismiss = {
-                                        tabsTrayStore.dispatch(TabGroupAction.OnboardingDismissed)
-                                    },
-                                    onTabGroupOnboardingShown = {
-                                        tabsTrayStore.dispatch(TabGroupAction.OnboardingShown)
-                                    },
-                                    onOpenNewNormalTabClicked = tabManagerInteractor::onNormalTabsFabClicked,
-                                    onOpenNewPrivateTabClicked = tabManagerInteractor::onPrivateTabsFabClicked,
-                                    onSyncedTabsFabClicked = tabManagerInteractor::onSyncedTabsFabClicked,
-                                    onUnlockPbmClick = {
-                                        verifyUser(fallbackVerification = verificationResultLauncher)
-                                    },
-                                    onShareTabGroupClick = { group ->
-                                        shareTabGroup(group, tabGroupDotColors.getValue(group.theme))
-                                    },
-                                    trackersBlockedCount = trackersBlockedCount,
-                                    onPrivacyReportTapped = tabManagerController::onPrivacyReportTapped,
-                                )
-                            }
-
-                            entry<TabManagerNavDestination.TabSearch> {
-                                TabSearchScreen(
-                                    state = state.tabSearchState,
-                                    onAction = tabsTrayStore::dispatch,
-                                )
-                            }
-
-                            entry<TabManagerNavDestination.ExpandedTabGroup>(
-                                metadata = { destination ->
-                                    BottomSheetSceneStrategy.bottomSheet(
-                                        handleContentDescription = resources.getString(
-                                            R.string.tab_group_sheet_dismiss_description,
-                                        ),
-                                        showBetaLabel = true,
-                                        fullyExpandOnFirstOpen = destination.group.shouldFullyExpandOnFirstOpen(
-                                            windowSize = windowSize,
-                                        ),
-                                    )
-                                },
-                            ) { args ->
-                                val expandedGroup by tabsTrayStore.observeTabGroup(tabGroup = args.group)
-                                    .collectAsState(initial = args.group)
-                                val expandedGroupDotColor = expandedGroup.theme.primary.toArgb()
-
-                                val expandedGroupActions = ExpandedTabGroupActions(
-                                    onItemClick = {
-                                        when (it) {
-                                            is TabsTrayItem.Tab -> handleTabClick(it)
-
-                                            else -> {}
-                                        }
-                                    },
-                                    onTabClose = { tab ->
-                                        tabsTrayStore.dispatch(
-                                            TabGroupAction.TabClosed(tab = tab, group = expandedGroup),
-                                        )
-                                    },
-                                    onDeleteTabGroupClick = {
-                                        tabsTrayStore.dispatch(TabGroupAction.DeleteClicked(expandedGroup))
-                                    },
-                                    onEditTabGroupClick = {
-                                        tabsTrayStore.dispatch(
-                                            action = TabGroupAction.EditTabGroupClicked(group = expandedGroup),
-                                        )
-                                    },
-                                    onCloseTabGroupClick = {
-                                        tabsTrayStore.dispatch(
-                                            action = TabGroupAction.CloseTabGroupClicked(group = expandedGroup),
-                                        )
-                                    },
-                                    onAddNewTabClick = if (tabsTrayStore.state.config.homepageAsNewTabEnabled) {
-                                        {
-                                            val newTabId = requireComponents.useCases.fenixBrowserUseCases
-                                                .addNewHomepageTab(private = false)
-                                            tabsTrayStore.dispatch(
-                                                TabGroupAction.TabAddedToGroup(
-                                                    tabId = newTabId,
-                                                    groupId = expandedGroup.id,
-                                                ),
+                        entryProvider =
+                            entryProvider {
+                                entry<TabManagerNavDestination.Root> {
+                                    val tabGroupDotColors = tabGroupDotColors()
+                                    TabsTray(
+                                        state = state,
+                                        snackbarHostState = snackbarHostState,
+                                        onAction = tabsTrayStore::dispatch,
+                                        onTabPageClick = { page ->
+                                            onTabPageClick(
+                                                tabsTrayInteractor = tabManagerInteractor,
+                                                page = page,
                                             )
-                                            tabManagerController.handleNavigateToHome()
-                                        }
-                                    } else {
-                                        null
-                                    },
-                                    onShareTabGroupClick = {
-                                        shareTabGroup(expandedGroup, expandedGroupDotColor)
-                                    },
-                                )
+                                        },
+                                        onTabClose = { tab ->
+                                            tabManagerInteractor.onTabClosed(tab, TAB_MANAGER_FEATURE_NAME)
+                                        },
+                                        onItemClick = {
+                                            // Either start the transition animation and delay the click handling
+                                            // until it is complete, or directly proceed.
+                                            when (it) {
+                                                is TabsTrayItem.Tab -> handleTabClick(it)
 
-                                ExpandedTabGroup(
-                                    group = expandedGroup,
-                                    actions = expandedGroupActions,
-                                    displayTabsInGrid = state.config.displayTabsInGrid,
-                                    tabInteractionHandler = tabInteractionHandler,
-                                )
-                            }
+                                                is TabsTrayItem.TabGroup -> {
+                                                    tabsTrayStore.dispatch(TabGroupAction.TabGroupClicked(group = it))
+                                                }
+                                            }
+                                        },
+                                        onItemLongClick = { item ->
+                                            tabsTrayStore.dispatch(TabsTrayAction.TabItemLongClicked(item))
+                                        },
+                                        onInactiveTabsHeaderClick = tabManagerInteractor::onInactiveTabsHeaderClicked,
+                                        onDeleteAllInactiveTabsClick =
+                                            tabManagerInteractor::onDeleteAllInactiveTabsClicked,
+                                        onInactiveTabsAutoCloseDialogShown = {
+                                            tabsTrayStore.dispatch(TabsTrayAction.TabAutoCloseDialogShown)
+                                        },
+                                        onInactiveTabAutoCloseDialogCloseButtonClick =
+                                            tabManagerInteractor::onAutoCloseDialogCloseButtonClicked,
+                                        onEnableInactiveTabAutoCloseClick = {
+                                            tabManagerInteractor.onEnableAutoCloseClicked()
+                                            showInactiveTabsAutoCloseConfirmationSnackbar()
+                                        },
+                                        onInactiveTabClick = tabManagerInteractor::onInactiveTabClicked,
+                                        onInactiveTabClose = tabManagerInteractor::onInactiveTabClosed,
+                                        onSyncedTabClick = tabManagerInteractor::onSyncedTabClicked,
+                                        onSyncedTabClose = tabManagerInteractor::onSyncedTabClosed,
+                                        onSignInClick = tabManagerInteractor::onSignInClicked,
+                                        onSaveToCollectionClick =
+                                            tabManagerInteractor::onAddSelectedTabsToCollectionClicked,
+                                        onShareSelectedTabsClick = tabManagerInteractor::onShareSelectedTabs,
+                                        onTabSettingsClick = tabManagerController::onTabSettingsClicked,
+                                        onRecentlyClosedClick = tabManagerController::onOpenRecentlyClosedClicked,
+                                        onAccountSettingsClick = tabManagerController::onAccountSettingsClicked,
+                                        onDeleteAllTabsClick = {
+                                            if (tabsTrayStore.state.selectedPage == Page.NormalTabs) {
+                                                tabsTrayStore.dispatch(TabsTrayAction.CloseAllNormalTabs)
+                                            } else if (tabsTrayStore.state.selectedPage == Page.PrivateTabs) {
+                                                tabsTrayStore.dispatch(TabsTrayAction.CloseAllPrivateTabs)
+                                            }
 
-                            entry<TabManagerNavDestination.DeleteTabGroupConfirmationDialog>(
-                                metadata = DialogSceneStrategy.dialog(),
-                            ) { args ->
-                                DeleteTabGroupConfirmationDialog(
-                                    onConfirmDelete = {
-                                        tabsTrayStore.dispatch(TabGroupAction.DeleteConfirmed(args.group))
-                                    },
-                                    onCancel = {
-                                        tabsTrayStore.dispatch(TabsTrayAction.NavigateBackInvoked)
-                                    },
-                                )
-                            }
-
-                            entry<TabManagerNavDestination.EditTabGroup>(
-                                metadata = BottomSheetSceneStrategy.bottomSheet(
-                                    skipPartiallyExpanded = true,
-                                    handleContentDescription = stringResource(
-                                        id = R.string.edit_tab_group_bottom_sheet_grabber_content_description,
-                                    ),
-                                    showBetaLabel = true,
-                                ),
-                            ) {
-                                val formState = state.tabGroupState.formState
-                                requireNotNull(formState) {
-                                    "Form state must not be null when navigating to the edit sheet"
+                                            tabManagerController.onCloseAllTabsClicked(
+                                                private = tabsTrayStore.state.selectedPage == Page.PrivateTabs
+                                            )
+                                        },
+                                        onDeleteSelectedTabsClick = tabManagerInteractor::onDeleteSelectedTabsClicked,
+                                        onBookmarkSelectedTabsClick =
+                                            tabManagerInteractor::onBookmarkSelectedTabsClicked,
+                                        onForceSelectedTabsAsInactiveClick =
+                                            tabManagerInteractor::onForceSelectedTabsAsInactiveClicked,
+                                        onTabsTrayPbmLockedClick = ::onTabsTrayPbmLockedClick,
+                                        onTabsTrayPbmLockedDismiss = {
+                                            requireComponents.settings.shouldShowLockPbmBanner = false
+                                            PrivateBrowsingLocked.bannerNegativeClicked.record()
+                                        },
+                                        onTabAutoCloseBannerViewOptionsClick = {
+                                            tabManagerCfrController.onTabAutoCloseBannerDismiss()
+                                            tabManagerController.onTabSettingsClicked()
+                                        },
+                                        onTabAutoCloseBannerDismiss =
+                                            tabManagerCfrController::onTabAutoCloseBannerDismiss,
+                                        onTabAutoCloseBannerShown = {},
+                                        tabInteractionHandler = tabInteractionHandler,
+                                        onInactiveTabsCFRShown = {
+                                            TabsTray.inactiveTabsCfrVisible.record(NoExtras())
+                                        },
+                                        onInactiveTabsCFRClick = {
+                                            tabManagerCfrController.onInactiveTabsCfrClick()
+                                            tabManagerController.onTabSettingsClicked()
+                                        },
+                                        onInactiveTabsCFRDismiss = tabManagerCfrController::onInactiveTabsCfrDismiss,
+                                        onTabGroupOnboardingDismiss = {
+                                            tabsTrayStore.dispatch(TabGroupAction.OnboardingDismissed)
+                                        },
+                                        onTabGroupOnboardingShown = {
+                                            tabsTrayStore.dispatch(TabGroupAction.OnboardingShown)
+                                        },
+                                        onOpenNewNormalTabClicked = tabManagerInteractor::onNormalTabsFabClicked,
+                                        onOpenNewPrivateTabClicked = tabManagerInteractor::onPrivateTabsFabClicked,
+                                        onSyncedTabsFabClicked = tabManagerInteractor::onSyncedTabsFabClicked,
+                                        onUnlockPbmClick = {
+                                            verifyUser(fallbackVerification = verificationResultLauncher)
+                                        },
+                                        onShareTabGroupClick = { group ->
+                                            shareTabGroup(group, tabGroupDotColors.getValue(group.theme))
+                                        },
+                                        trackersBlockedCount = trackersBlockedCount,
+                                        onPrivacyReportTapped = tabManagerController::onPrivacyReportTapped,
+                                    )
                                 }
 
-                                EditTabGroup(
-                                    formState = formState,
-                                    onTabGroupNameChange = { newName ->
-                                        tabsTrayStore.dispatch(TabGroupAction.NameChanged(newName))
-                                    },
-                                    onTabGroupThemeChange = { newTheme ->
-                                        tabsTrayStore.dispatch(TabGroupAction.ThemeChanged(newTheme))
-                                    },
-                                    onConfirmSave = {
-                                        tabsTrayStore.dispatch(TabGroupAction.SaveClicked)
-                                    },
-                                )
-                            }
+                                entry<TabManagerNavDestination.TabSearch> {
+                                    TabSearchScreen(
+                                        state = state.tabSearchState,
+                                        onAction = tabsTrayStore::dispatch,
+                                    )
+                                }
 
-                            entry<TabManagerNavDestination.AddToTabGroup>(
-                                metadata = BottomSheetSceneStrategy.bottomSheet(
-                                    handleContentDescription = stringResource(
-                                        id = R.string.add_to_tab_group_bottom_sheet_grabber_content_description,
-                                    ),
-                                    showBetaLabel = true,
-                                ),
-                            ) {
-                                AddToTabGroup(
-                                    tabGroups = tabsTrayStore.state.tabGroupState.groups,
-                                    onAddToNewTabGroup = {
-                                        tabsTrayStore.dispatch(TabGroupAction.AddToNewTabGroup)
-                                    },
-                                    onAddToExistingTabGroup = { group ->
-                                        tabsTrayStore.dispatch(
-                                            TabGroupAction.SelectedTabsAddedToGroup(groupId = group.id),
+                                entry<TabManagerNavDestination.ExpandedTabGroup>(
+                                    metadata = { destination ->
+                                        BottomSheetSceneStrategy.bottomSheet(
+                                            handleContentDescription =
+                                                resources.getString(R.string.tab_group_sheet_dismiss_description),
+                                            showBetaLabel = true,
+                                            fullyExpandOnFirstOpen =
+                                                destination.group.shouldFullyExpandOnFirstOpen(windowSize = windowSize),
                                         )
-                                    },
-                                )
-                            }
+                                    }
+                                ) { args ->
+                                    val expandedGroup by
+                                        tabsTrayStore
+                                            .observeTabGroup(tabGroup = args.group)
+                                            .collectAsState(initial = args.group)
+                                    val expandedGroupDotColor = expandedGroup.theme.primary.toArgb()
 
-                            entry<TabManagerNavDestination.CloseTabAndDeleteGroupConfirmationDialog>(
-                                metadata = DialogSceneStrategy.dialog(),
-                            ) { args ->
-                                CloseLastTabAndDeleteTabGroupConfirmationDialog(
-                                    onConfirmDelete = {
-                                        tabsTrayStore.dispatch(
-                                            TabGroupAction.CloseTabAndDeleteGroupConfirmed(args.group),
+                                    val expandedGroupActions =
+                                        ExpandedTabGroupActions(
+                                            onItemClick = {
+                                                when (it) {
+                                                    is TabsTrayItem.Tab -> handleTabClick(it)
+
+                                                    else -> {}
+                                                }
+                                            },
+                                            onTabClose = { tab ->
+                                                tabsTrayStore.dispatch(
+                                                    TabGroupAction.TabClosed(tab = tab, group = expandedGroup)
+                                                )
+                                            },
+                                            onDeleteTabGroupClick = {
+                                                tabsTrayStore.dispatch(TabGroupAction.DeleteClicked(expandedGroup))
+                                            },
+                                            onEditTabGroupClick = {
+                                                tabsTrayStore.dispatch(
+                                                    action = TabGroupAction.EditTabGroupClicked(group = expandedGroup)
+                                                )
+                                            },
+                                            onCloseTabGroupClick = {
+                                                tabsTrayStore.dispatch(
+                                                    action = TabGroupAction.CloseTabGroupClicked(group = expandedGroup)
+                                                )
+                                            },
+                                            onAddNewTabClick =
+                                                if (tabsTrayStore.state.config.homepageAsNewTabEnabled) {
+                                                    {
+                                                        val newTabId =
+                                                            requireComponents.useCases.fenixBrowserUseCases
+                                                                .addNewHomepageTab(private = false)
+                                                        tabsTrayStore.dispatch(
+                                                            TabGroupAction.TabAddedToGroup(
+                                                                tabId = newTabId,
+                                                                groupId = expandedGroup.id,
+                                                            )
+                                                        )
+                                                        tabManagerController.handleNavigateToHome()
+                                                    }
+                                                } else {
+                                                    null
+                                                },
+                                            onShareTabGroupClick = {
+                                                shareTabGroup(expandedGroup, expandedGroupDotColor)
+                                            },
                                         )
-                                    },
-                                    onCancel = {
-                                        tabsTrayStore.dispatch(TabsTrayAction.NavigateBackInvoked)
-                                    },
-                                )
-                            }
-                        },
+
+                                    ExpandedTabGroup(
+                                        group = expandedGroup,
+                                        actions = expandedGroupActions,
+                                        displayTabsInGrid = state.config.displayTabsInGrid,
+                                        tabInteractionHandler = tabInteractionHandler,
+                                    )
+                                }
+
+                                entry<TabManagerNavDestination.DeleteTabGroupConfirmationDialog>(
+                                    metadata = DialogSceneStrategy.dialog()
+                                ) { args ->
+                                    DeleteTabGroupConfirmationDialog(
+                                        onConfirmDelete = {
+                                            tabsTrayStore.dispatch(TabGroupAction.DeleteConfirmed(args.group))
+                                        },
+                                        onCancel = {
+                                            tabsTrayStore.dispatch(TabsTrayAction.NavigateBackInvoked)
+                                        },
+                                    )
+                                }
+
+                                entry<TabManagerNavDestination.EditTabGroup>(
+                                    metadata =
+                                        BottomSheetSceneStrategy.bottomSheet(
+                                            skipPartiallyExpanded = true,
+                                            handleContentDescription =
+                                                stringResource(
+                                                    id =
+                                                        R.string.edit_tab_group_bottom_sheet_grabber_content_description
+                                                ),
+                                            showBetaLabel = true,
+                                        )
+                                ) {
+                                    val formState = state.tabGroupState.formState
+                                    requireNotNull(formState) {
+                                        "Form state must not be null when navigating to the edit sheet"
+                                    }
+
+                                    EditTabGroup(
+                                        formState = formState,
+                                        onTabGroupNameChange = { newName ->
+                                            tabsTrayStore.dispatch(TabGroupAction.NameChanged(newName))
+                                        },
+                                        onTabGroupThemeChange = { newTheme ->
+                                            tabsTrayStore.dispatch(TabGroupAction.ThemeChanged(newTheme))
+                                        },
+                                        onConfirmSave = {
+                                            tabsTrayStore.dispatch(TabGroupAction.SaveClicked)
+                                        },
+                                    )
+                                }
+
+                                entry<TabManagerNavDestination.AddToTabGroup>(
+                                    metadata =
+                                        BottomSheetSceneStrategy.bottomSheet(
+                                            handleContentDescription =
+                                                stringResource(
+                                                    id =
+                                                        R.string
+                                                            .add_to_tab_group_bottom_sheet_grabber_content_description
+                                                ),
+                                            showBetaLabel = true,
+                                        )
+                                ) {
+                                    AddToTabGroup(
+                                        tabGroups = tabsTrayStore.state.tabGroupState.groups,
+                                        onAddToNewTabGroup = {
+                                            tabsTrayStore.dispatch(TabGroupAction.AddToNewTabGroup)
+                                        },
+                                        onAddToExistingTabGroup = { group ->
+                                            tabsTrayStore.dispatch(
+                                                TabGroupAction.SelectedTabsAddedToGroup(groupId = group.id)
+                                            )
+                                        },
+                                    )
+                                }
+
+                                entry<TabManagerNavDestination.CloseTabAndDeleteGroupConfirmationDialog>(
+                                    metadata = DialogSceneStrategy.dialog()
+                                ) { args ->
+                                    CloseLastTabAndDeleteTabGroupConfirmationDialog(
+                                        onConfirmDelete = {
+                                            tabsTrayStore.dispatch(
+                                                TabGroupAction.CloseTabAndDeleteGroupConfirmed(args.group)
+                                            )
+                                        },
+                                        onCancel = {
+                                            tabsTrayStore.dispatch(TabsTrayAction.NavigateBackInvoked)
+                                        },
+                                    )
+                                }
+                            },
                     )
                 }
             }
@@ -635,40 +641,47 @@ class TabManagementFragment : Fragment() {
         val args by navArgs<TabManagementFragmentArgs>()
         val settings = requireComponents.settings
 
-        args.accessPoint.takeIf { it != AccessPoint.None }?.let {
-            TabsTray.accessPoint[it.name.lowercase()].add()
-        }
+        args.accessPoint
+            .takeIf { it != AccessPoint.None }
+            ?.let {
+                TabsTray.accessPoint[it.name.lowercase()].add()
+            }
 
         return storeProvider.get { restoredState ->
             TabsTrayStore(
-                initialState = restoredState?.copy(
-                    config = restoredState.config.copy(
-                        displayTabsInGrid = settings.gridTabView,
-                        homepageAsNewTabEnabled = settings.enableHomepageAsNewTab,
-                    ),
-                ) ?: createInitialState(args, settings),
-                middlewares = listOf(
-                    TabsTrayTelemetryMiddleware(requireComponents.nimbus.events),
-                    TabSearchMiddleware(),
-                    TabSearchNavigationMiddleware(onSearchResultClicked = ::performTabClick),
-                    TabStorageMiddleware(
-                        inactiveTabsEnabled = requireComponents.settings.inactiveTabsAreEnabled,
-                        tabGroupsEnabled = requireComponents.settings.tabGroupsEnabled,
-                        tabDataFlow = requireComponents.core.store.stateFlow.map { TabData(it) },
-                        tabGroupRepository = requireComponents.core.tabGroupRepository,
-                        removeTabsUseCase = requireComponents.useCases.tabsUseCases.removeTabs,
-                        moveTabsUseCase = requireComponents.useCases.tabsUseCases.moveTabs,
-                        fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
-                        mainScope = lifecycleScope,
-                    ),
-                    TabManagerUiStateStorageMiddleware(
-                        uiStateRepository = DefaultTabManagerUiStateRepository(
-                            context = requireContext().applicationContext,
-                            stateFlowScope = lifecycleScope,
+                initialState =
+                    restoredState?.copy(
+                        config =
+                            restoredState.config.copy(
+                                displayTabsInGrid = settings.gridTabView,
+                                homepageAsNewTabEnabled = settings.enableHomepageAsNewTab,
+                                tabGroupsEnabled = settings.tabGroupsEnabled,
+                            )
+                    ) ?: createInitialState(args, settings),
+                middlewares =
+                    listOf(
+                        TabsTrayTelemetryMiddleware(requireComponents.nimbus.events),
+                        TabSearchMiddleware(),
+                        TabSearchNavigationMiddleware(onSearchResultClicked = ::performTabClick),
+                        TabStorageMiddleware(
+                            inactiveTabsEnabled = requireComponents.settings.inactiveTabsAreEnabled,
+                            tabGroupsEnabled = requireComponents.settings.tabGroupsEnabled,
+                            tabDataFlow = requireComponents.core.store.stateFlow.map { TabData(it) },
+                            tabGroupRepository = requireComponents.core.tabGroupRepository,
+                            removeTabsUseCase = requireComponents.useCases.tabsUseCases.removeTabs,
+                            moveTabsUseCase = requireComponents.useCases.tabsUseCases.moveTabs,
+                            fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
+                            mainScope = lifecycleScope,
                         ),
-                        scope = lifecycleScope,
+                        TabManagerUiStateStorageMiddleware(
+                            uiStateRepository =
+                                DefaultTabManagerUiStateRepository(
+                                    context = requireContext().applicationContext,
+                                    stateFlowScope = lifecycleScope,
+                                ),
+                            scope = lifecycleScope,
+                        ),
                     ),
-                ),
             )
         }
     }
@@ -683,45 +696,50 @@ class TabManagementFragment : Fragment() {
         return TabsTrayState(
             selectedPage = args.page,
             mode = if (args.enterMultiselect) TabsTrayState.Mode.Select(emptySet()) else TabsTrayState.Mode.Normal,
-            inactiveTabs = TabsTrayState.InactiveTabsState(
-                isExpanded = appState.inactiveTabsExpanded,
-                showCFR = settings.shouldShowInactiveTabsOnboardingPopup &&
-                    settings.canShowCfr && settings.cfrPopupsEnabled,
-                showAutoCloseDialog = settings.shouldShowInactiveTabsAutoCloseDialog(
-                    coreState.actualInactiveTabs(settings).size,
+            inactiveTabs =
+                TabsTrayState.InactiveTabsState(
+                    isExpanded = appState.inactiveTabsExpanded,
+                    showCFR =
+                        settings.shouldShowInactiveTabsOnboardingPopup &&
+                            settings.canShowCfr &&
+                            settings.cfrPopupsEnabled,
+                    showAutoCloseDialog =
+                        settings.shouldShowInactiveTabsAutoCloseDialog(coreState.actualInactiveTabs(settings).size),
                 ),
-            ),
-            privateBrowsing = TabsTrayState.PrivateBrowsingState(
-                isLocked = appState.isPrivateScreenLocked,
-                showLockBanner = shouldShowLockPbmBanner(
-                    isPrivateMode = appState.mode.isPrivate,
-                    hasPrivateTabs = coreState.privateTabs.isNotEmpty(),
-                    biometricAvailable = BiometricManager.from(requireContext()).isDeviceLockCapable(),
-                    privateLockEnabled = settings.privateBrowsingModeLocked,
-                    shouldShowBanner = shouldShowBanner(settings),
+            privateBrowsing =
+                TabsTrayState.PrivateBrowsingState(
+                    isLocked = appState.isPrivateScreenLocked,
+                    showLockBanner =
+                        shouldShowLockPbmBanner(
+                            isPrivateMode = appState.mode.isPrivate,
+                            hasPrivateTabs = coreState.privateTabs.isNotEmpty(),
+                            biometricAvailable = BiometricManager.from(requireContext()).isDeviceLockCapable(),
+                            privateLockEnabled = settings.privateBrowsingModeLocked,
+                            shouldShowBanner = shouldShowBanner(settings),
+                        ),
                 ),
-            ),
             sync = TabsTrayState.SyncState(isSignedIn = settings.signedInFxaAccount),
-            config = TabsTrayState.TabsTrayConfig(
-                tabGroupsEnabled = settings.tabGroupsEnabled,
-                tabGroupsDragAndDropEnabled = settings.tabGroupsDragAndDropEnabled,
-                tabGroupsLiveReorderEnabled = settings.tabGroupsLiveReorderEnabled,
-                tabGroupsOnboardingEnabled = settings.tabGroupsOnboardingEnabled,
-                homepageAsNewTabEnabled = settings.enableHomepageAsNewTab,
-                displayTabsInGrid = settings.gridTabView,
-                isInDebugMode = Config.channel.isDebug || requireComponents.settings.showSecretDebugMenuThisSession,
-                showTabAutoCloseBanner = settings.shouldShowAutoCloseTabsBanner &&
-                    settings.canShowCfr && settings.cfrPopupsEnabled,
-                collectionsEnabled = settings.collections,
-            ),
+            config =
+                TabsTrayState.TabsTrayConfig(
+                    tabGroupsEnabled = settings.tabGroupsEnabled,
+                    tabGroupsDragAndDropEnabled = settings.tabGroupsDragAndDropEnabled,
+                    tabGroupsLiveReorderEnabled = settings.tabGroupsLiveReorderEnabled,
+                    tabGroupsOnboardingEnabled = settings.tabGroupsOnboardingEnabled,
+                    homepageAsNewTabEnabled = settings.enableHomepageAsNewTab,
+                    displayTabsInGrid = settings.gridTabView,
+                    isInDebugMode = Config.channel.isDebug || requireComponents.settings.showSecretDebugMenuThisSession,
+                    showTabAutoCloseBanner =
+                        settings.shouldShowAutoCloseTabsBanner && settings.canShowCfr && settings.cfrPopupsEnabled,
+                    collectionsEnabled = settings.collections,
+                ),
         )
     }
 
     /**
      * @param tab: TabsTrayItem
      *
-     * This method performs the tab click handling.  Separate from
-     * onTabClick() in that an animation may play prior to handling the user action.
+     * This method performs the tab click handling. Separate from onTabClick() in that an animation may play prior to
+     * handling the user action.
      */
     private fun performTabClick(tab: TabsTrayItem.Tab) {
         tabManagerCfrController.maybeMarkTabSwipeCfrReady(tab)
@@ -739,15 +757,18 @@ class TabManagementFragment : Fragment() {
         val context = requireContext()
 
         viewLifecycleOwner.lifecycleScope.launch {
-            val thumbnailUri = withContext(Dispatchers.IO) {
-                runCatching {
-                    CacheHelper().saveBitmapToCache(
-                        context = context,
-                        bitmap = createTabGroupDotBitmap(dotColor),
-                        name = "tab_group_share_thumbnail_$dotColor",
-                    )
-                }.getOrNull()
-            }
+            val thumbnailUri =
+                withContext(Dispatchers.IO) {
+                    runCatching {
+                        CacheHelper()
+                            .saveBitmapToCache(
+                                context = context,
+                                bitmap = createTabGroupDotBitmap(dotColor),
+                                name = "tab_group_share_thumbnail_$dotColor",
+                            )
+                    }
+                        .getOrNull()
+                }
 
             if (thumbnailUri == null) {
                 recordBreadcrumb("Failed to build tab group share thumbnail")
@@ -757,17 +778,16 @@ class TabManagementFragment : Fragment() {
         }
     }
 
-    private fun createTabGroupDotBitmap(
-        @ColorInt color: Int,
-    ): Bitmap {
+    private fun createTabGroupDotBitmap(@ColorInt color: Int): Bitmap {
         val bitmap = createBitmap(TAB_GROUP_SHARE_DOT_SIZE_PX, TAB_GROUP_SHARE_DOT_SIZE_PX)
         val radius = TAB_GROUP_SHARE_DOT_SIZE_PX / 2f
-        Canvas(bitmap).drawCircle(
-            radius,
-            radius,
-            radius,
-            Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color },
-        )
+        Canvas(bitmap)
+            .drawCircle(
+                radius,
+                radius,
+                radius,
+                Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color },
+            )
         return bitmap
     }
 
@@ -801,54 +821,59 @@ class TabManagementFragment : Fragment() {
         TabsTray.opened.record(NoExtras())
 
         inactiveTabsBinding.set(
-            feature = InactiveTabsBinding(
-                tabsTrayStore = tabsTrayStore,
-                appStore = requireComponents.appStore,
-            ),
+            feature =
+                InactiveTabsBinding(
+                    tabsTrayStore = tabsTrayStore,
+                    appStore = requireComponents.appStore,
+                ),
             owner = this,
             view = view,
         )
         pbmLockStatusBinding.set(
-            feature = PbmLockStatusBinding(
-                tabsTrayStore = tabsTrayStore,
-                appStore = requireComponents.appStore,
-            ),
+            feature =
+                PbmLockStatusBinding(
+                    tabsTrayStore = tabsTrayStore,
+                    appStore = requireComponents.appStore,
+                ),
             owner = this,
             view = view,
         )
 
         secureTabManagerBinding.set(
-            feature = SecureTabManagerBinding(
-                store = tabsTrayStore,
-                settings = requireComponents.settings,
-                window = activity?.window,
-            ),
+            feature =
+                SecureTabManagerBinding(
+                    store = tabsTrayStore,
+                    settings = requireComponents.settings,
+                    window = activity?.window,
+                ),
             owner = this,
             view = view,
         )
 
         syncedTabsIntegration.set(
-            feature = SyncedTabsIntegration(
-                store = tabsTrayStore,
-                context = requireContext(),
-                navController = findNavController(),
-                storage = requireComponents.backgroundServices.syncedTabsStorage,
-                commands = requireComponents.backgroundServices.syncedTabsCommands,
-                accountManager = requireComponents.backgroundServices.accountManager,
-                lifecycleOwner = this,
-            ),
+            feature =
+                SyncedTabsIntegration(
+                    store = tabsTrayStore,
+                    context = requireContext(),
+                    navController = findNavController(),
+                    storage = requireComponents.backgroundServices.syncedTabsStorage,
+                    commands = requireComponents.backgroundServices.syncedTabsCommands,
+                    accountManager = requireComponents.backgroundServices.accountManager,
+                    lifecycleOwner = this,
+                ),
             owner = this,
             view = view,
         )
 
         if (requireComponents.settings.showPrivacyReportInTabManager) {
             trackersBlockedFeature.set(
-                feature = TrackersBlockedFeature(
-                    browserStore = requireComponents.core.store,
-                    appStore = requireComponents.appStore,
-                    currentSessionId = requireComponents.core.store.state.selectedTabId,
-                    trackingProtectionUseCases = requireComponents.useCases.trackingProtectionUseCases,
-                ),
+                feature =
+                    TrackersBlockedFeature(
+                        browserStore = requireComponents.core.store,
+                        appStore = requireComponents.appStore,
+                        currentSessionId = requireComponents.core.store.state.selectedTabId,
+                        trackingProtectionUseCases = requireComponents.useCases.trackingProtectionUseCases,
+                    ),
                 owner = this,
                 view = view,
             )
@@ -875,25 +900,29 @@ class TabManagementFragment : Fragment() {
     private fun showCancelledDownloadWarning(downloadCount: Int, tabId: String?, source: String?) {
         recordBreadcrumb("DownloadCancelDialogFragment show")
 
-        val dialog = DownloadCancelDialogFragment.newInstance(
-            downloadCount = downloadCount,
-            tabId = tabId,
-            source = source,
-            promptStyling = DownloadCancelDialogFragment.PromptStyling(
-                gravity = Gravity.BOTTOM,
-                shouldWidthMatchParent = true,
-                positiveButtonBackgroundColor = ThemeManager.resolveAttribute(
-                    R.attr.accent,
-                    requireContext(),
-                ),
-                positiveButtonTextColor = ThemeManager.resolveAttribute(
-                    R.attr.textOnColorPrimary,
-                    requireContext(),
-                ),
-                positiveButtonRadius = pixelSizeFor(R.dimen.tab_corner_radius).toFloat(),
-            ),
-            onPositiveButtonClicked = ::onCancelDownloadWarningAccepted,
-        )
+        val dialog =
+            DownloadCancelDialogFragment.newInstance(
+                downloadCount = downloadCount,
+                tabId = tabId,
+                source = source,
+                promptStyling =
+                    DownloadCancelDialogFragment.PromptStyling(
+                        gravity = Gravity.BOTTOM,
+                        shouldWidthMatchParent = true,
+                        positiveButtonBackgroundColor =
+                            ThemeManager.resolveAttribute(
+                                R.attr.accent,
+                                requireContext(),
+                            ),
+                        positiveButtonTextColor =
+                            ThemeManager.resolveAttribute(
+                                R.attr.textOnColorPrimary,
+                                requireContext(),
+                            ),
+                        positiveButtonRadius = pixelSizeFor(R.dimen.tab_corner_radius).toFloat(),
+                    ),
+                onPositiveButtonClicked = ::onCancelDownloadWarningAccepted,
+            )
         dialog.show(parentFragmentManager, DOWNLOAD_CANCEL_DIALOG_FRAGMENT_TAG)
     }
 
@@ -961,9 +990,7 @@ class TabManagementFragment : Fragment() {
         navControllerProvider: NavControllerProvider = DefaultNavControllerProvider(),
     ) {
         homeViewModel.sessionToDelete = sessionId
-        navControllerProvider
-            .getNavController(this)
-            .navigate(TabManagementFragmentDirections.actionGlobalHome())
+        navControllerProvider.getNavController(this).navigate(TabManagementFragmentDirections.actionGlobalHome())
     }
 
     /**
@@ -972,9 +999,7 @@ class TabManagementFragment : Fragment() {
      * @param navController [NavController] used to perform the navigation action.
      */
     @VisibleForTesting
-    internal fun dismissTabManager(
-        navController: NavController = findNavController(),
-    ) {
+    internal fun dismissTabManager(navController: NavController = findNavController()) {
         // This should always be the last thing we do because nothing (e.g. telemetry)
         // is guaranteed after that.
         recordBreadcrumb("TabManagementFragment dismissTabManager")
@@ -988,20 +1013,19 @@ class TabManagementFragment : Fragment() {
      */
     @VisibleForTesting
     internal fun recordBreadcrumb(message: String) {
-        context?.components?.analytics?.crashReporter?.recordCrashBreadcrumb(
-            Breadcrumb(message = message),
-        )
+        context?.components?.analytics?.crashReporter?.recordCrashBreadcrumb(Breadcrumb(message = message))
     }
 
     private fun showCollectionSnackbar(
         tabSize: Int,
         isNewCollection: Boolean = false,
     ) {
-        val messageResId = when {
-            isNewCollection -> R.string.create_collection_tabs_saved_new_collection_2
-            tabSize == 1 -> R.string.create_collection_tab_saved_2
-            else -> return // Don't show snackbar for multiple tabs
-        }
+        val messageResId =
+            when {
+                isNewCollection -> R.string.create_collection_tabs_saved_new_collection_2
+                tabSize == 1 -> R.string.create_collection_tab_saved_2
+                else -> return // Don't show snackbar for multiple tabs
+            }
         lifecycleScope.launch {
             snackbarHostState.displaySnackbar(
                 message = getString(messageResId),
@@ -1015,32 +1039,32 @@ class TabManagementFragment : Fragment() {
         parentFolderTitle: String?,
     ) {
         val displayFolderTitle = parentFolderTitle ?: getString(R.string.library_bookmarks)
-        val displayResId = when {
-            tabSize > 1 -> {
-                R.string.snackbar_message_bookmarks_saved_in_2
-            }
+        val displayResId =
+            when {
+                tabSize > 1 -> {
+                    R.string.snackbar_message_bookmarks_saved_in_2
+                }
 
-            else -> {
-                R.string.bookmark_saved_in_folder_snackbar
+                else -> {
+                    R.string.bookmark_saved_in_folder_snackbar
+                }
             }
-        }
         lifecycleScope.launch {
             snackbarHostState.displaySnackbar(
                 message = getString(displayResId, displayFolderTitle),
                 actionLabel = getString(R.string.create_collection_view),
                 timeout = requireComponents.settings.getSnackbarTimeout(hasAction = true),
                 onActionPerformed = {
-                    findNavController().navigate(
-                        TabManagementFragmentDirections.actionGlobalBookmarkFragment(BookmarkRoot.Mobile.id),
-                    )
+                    findNavController()
+                        .navigate(TabManagementFragmentDirections.actionGlobalBookmarkFragment(BookmarkRoot.Mobile.id))
                 },
             )
         }
     }
 
     private fun findPreviousDialogFragment(): DownloadCancelDialogFragment? {
-        return parentFragmentManager
-            .findFragmentByTag(DOWNLOAD_CANCEL_DIALOG_FRAGMENT_TAG) as? DownloadCancelDialogFragment
+        return parentFragmentManager.findFragmentByTag(DOWNLOAD_CANCEL_DIALOG_FRAGMENT_TAG)
+            as? DownloadCancelDialogFragment
     }
 
     private fun showInactiveTabsAutoCloseConfirmationSnackbar() {
@@ -1052,16 +1076,14 @@ class TabManagementFragment : Fragment() {
         }
     }
 
-    /**
-     * This can only turn the feature ON and should not handle turning the feature OFF.
-     */
+    /** This can only turn the feature ON and should not handle turning the feature OFF. */
     private fun onTabsTrayPbmLockedClick(
-        navControllerProvider: NavControllerProvider = DefaultNavControllerProvider(),
+        navControllerProvider: NavControllerProvider = DefaultNavControllerProvider()
     ) {
-        val isAuthenticatorAvailable =
-            BiometricManager.from(requireContext()).isAuthenticatorAvailable()
+        val isAuthenticatorAvailable = BiometricManager.from(requireContext()).isAuthenticatorAvailable()
         if (!isAuthenticatorAvailable) {
-            navControllerProvider.getNavController(this)
+            navControllerProvider
+                .getNavController(this)
                 .navigate(TabManagementFragmentDirections.actionGlobalPrivateBrowsingFragment())
         } else {
             DefaultBiometricUtils.bindBiometricsCredentialsPromptOrShowWarning(
@@ -1103,10 +1125,9 @@ class TabManagementFragment : Fragment() {
     /**
      * @param selectedPage: The currently selected [TabsTray] [Page]
      * @param mode: The current [TabsTrayState] operating mode
-     * @param tabState: The selected [TabsTrayItem.Tab]
-     * The TabsTray transition animation should be performed if enabled in settings,
-     * if the selected tab is on the current active tab page,
-     * and the current TabsTray mode is the default (normal) mode (e.g., not a special select mode).
+     * @param tabState: The selected [TabsTrayItem.Tab] The TabsTray transition animation should be performed if enabled
+     *   in settings, if the selected tab is on the current active tab page, and the current TabsTray mode is the
+     *   default (normal) mode (e.g., not a special select mode).
      */
     internal fun shouldPerformTransitionAnimation(
         selectedPage: Page,
@@ -1122,8 +1143,8 @@ class TabManagementFragment : Fragment() {
      * @param selectedPage: The selected [TabsTray] [Page]
      * @param tabState: The selected [TabsTrayItem.Tab]
      *
-     * Returns true if the selected page is private and the tab is private, or
-     * the selected page is normal and the tab is normal.  Returns false otherwise.
+     * Returns true if the selected page is private and the tab is private, or the selected page is normal and the tab
+     * is normal. Returns false otherwise.
      */
     private fun tabMatchesPage(selectedPage: Page, tabState: TabsTrayItem.Tab?): Boolean {
         return (selectedPage == Page.NormalTabs && tabState?.private == false) ||
@@ -1140,8 +1161,8 @@ class TabManagementFragment : Fragment() {
      * - The user has not already enabled the private browsing lock
      * - The user has not already dismissed or acknowledged the Pbm banner from tabs tray
      *
-     * We only want to show the banner when the feature is available,
-     * applicable, and relevant to the current user context.
+     * We only want to show the banner when the feature is available, applicable, and relevant to the current user
+     * context.
      */
     @VisibleForTesting
     internal fun shouldShowLockPbmBanner(
@@ -1161,9 +1182,7 @@ class TabManagementFragment : Fragment() {
     }
 }
 
-/**
- * Resolves every [TabGroupTheme]'s primary color to an ARGB [Int].
- */
+/** Resolves every [TabGroupTheme]'s primary color to an ARGB [Int]. */
 @Composable
 private fun tabGroupDotColors(): Map<TabGroupTheme, Int> {
     val colors = mutableMapOf<TabGroupTheme, Int>()

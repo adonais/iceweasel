@@ -10,39 +10,38 @@ import mozilla.components.concept.engine.manifest.WebAppManifest.ExternalApplica
 /**
  * The web app manifest provides information about an application (such as its name, author, icon, and description).
  *
- * Web app manifests are part of a collection of web technologies called progressive web apps, which are websites
- * that can be installed to a device’s homescreen without an app store, along with other capabilities like working
- * offline and receiving push notifications.
+ * Web app manifests are part of a collection of web technologies called progressive web apps, which are websites that
+ * can be installed to a device’s homescreen without an app store, along with other capabilities like working offline
+ * and receiving push notifications.
  *
- * https://developer.mozilla.org/en-US/docs/Web/Manifest
- * https://www.w3.org/TR/appmanifest/
+ * https://developer.mozilla.org/en-US/docs/Web/Manifest https://www.w3.org/TR/appmanifest/
  * https://developers.google.com/web/fundamentals/web-app-manifest/
  *
  * @property name Provides a human-readable name for the site when displayed to the user. For example, among a list of
- * other applications or as a label for an icon.
+ *   other applications or as a label for an icon.
  * @property shortName Provides a short human-readable name for the application. This is intended for when there is
- * insufficient space to display the full name of the web application, like device homescreens.
+ *   insufficient space to display the full name of the web application, like device homescreens.
  * @property startUrl The URL that loads when a user launches the application (e.g. when added to home screen),
- * typically the index. Note that this has to be a relative URL, relative to the manifest url.
+ *   typically the index. Note that this has to be a relative URL, relative to the manifest url.
  * @property display Defines the developers’ preferred display mode for the website.
- * @property backgroundColor Defines the expected “background color” for the website. This value repeats what is
- * already available in the site’s CSS, but can be used by browsers to draw the background color of a shortcut when
- * the manifest is available before the stylesheet has loaded. This creates a smooth transition between launching the
- * web application and loading the site's content.
+ * @property backgroundColor Defines the expected “background color” for the website. This value repeats what is already
+ *   available in the site’s CSS, but can be used by browsers to draw the background color of a shortcut when the
+ *   manifest is available before the stylesheet has loaded. This creates a smooth transition between launching the web
+ *   application and loading the site's content.
  * @property description Provides a general description of what the pinned website does.
  * @property icons Specifies a list of image files that can serve as application icons, depending on context. For
- * example, they can be used to represent the web application amongst a list of other applications, or to integrate the
- * web application with an OS's task switcher and/or system preferences.
+ *   example, they can be used to represent the web application amongst a list of other applications, or to integrate
+ *   the web application with an OS's task switcher and/or system preferences.
  * @property dir Specifies the primary text direction for the name, short_name, and description members. Together with
- * the lang member, it helps the correct display of right-to-left languages.
+ *   the lang member, it helps the correct display of right-to-left languages.
  * @property lang Specifies the primary language for the values in the name and short_name members. This value is a
- * string containing a single language tag (e.g. en-US).
+ *   string containing a single language tag (e.g. en-US).
  * @property orientation Defines the default orientation for all the website's top level browsing contexts.
  * @property scope Defines the navigation scope of this website's context. This restricts what web pages can be viewed
- * while the manifest is applied. If the user navigates outside the scope, it returns to a normal web page inside a
- * browser tab/window.
+ *   while the manifest is applied. If the user navigates outside the scope, it returns to a normal web page inside a
+ *   browser tab/window.
  * @property themeColor Defines the default theme color for an application. This sometimes affects how the OS displays
- * the site (e.g., on Android's task switcher, the theme color surrounds the site).
+ *   the site (e.g., on Android's task switcher, the theme color surrounds the site).
  * @property relatedApplications List of native applications related to the web app.
  * @property preferRelatedApplications If true, related applications should be preferred over the web app.
  */
@@ -63,19 +62,15 @@ data class WebAppManifest(
     val preferRelatedApplications: Boolean = false,
     val shareTarget: ShareTarget? = null,
 ) {
-    /**
-     * Defines the developers’ preferred display mode for the website.
-     */
+    /** Defines the developers’ preferred display mode for the website. */
     enum class DisplayMode {
-        /**
-         * All of the available display area is used and no user agent chrome is shown.
-         */
+        /** All of the available display area is used and no user agent chrome is shown. */
         FULLSCREEN,
 
         /**
          * The application will look and feel like a standalone application. This can include the application having a
-         * different window, its own icon in the application launcher, etc. In this mode, the user agent will exclude
-         * UI elements for controlling navigation, but can include other UI elements such as a status bar.
+         * different window, its own icon in the application launcher, etc. In this mode, the user agent will exclude UI
+         * elements for controlling navigation, but can include other UI elements such as a status bar.
          */
         STANDALONE,
 
@@ -98,9 +93,9 @@ data class WebAppManifest(
      * @property src The path to the image file. If src is a relative URL, the base URL will be the URL of the manifest.
      * @property sizes A list of image dimensions.
      * @property type A hint as to the media type of the image. The purpose of this member is to allow a user agent to
-     * quickly ignore images of media types it does not support.
+     *   quickly ignore images of media types it does not support.
      * @property purpose Defines the purposes of the image, for example that the image is intended to serve some special
-     * purpose in the context of the host OS (i.e., for better integration).
+     *   purpose in the context of the host OS (i.e., for better integration).
      */
     data class Icon(
         val src: String,
@@ -110,8 +105,8 @@ data class WebAppManifest(
     ) {
         enum class Purpose {
             /**
-             * A user agent can present this icon where space constraints and/or color requirements differ from those
-             * of the application icon.
+             * A user agent can present this icon where space constraints and/or color requirements differ from those of
+             * the application icon.
              */
             MONOCHROME,
 
@@ -123,16 +118,12 @@ data class WebAppManifest(
              */
             MASKABLE,
 
-            /**
-             * The user agent is free to display the icon in any context (this is the default value).
-             */
+            /** The user agent is free to display the icon in any context (this is the default value). */
             ANY,
         }
     }
 
-    /**
-     * Defines the default orientation for all the website's top level browsing contexts.
-     */
+    /** Defines the default orientation for all the website's top level browsing contexts. */
     enum class Orientation {
         ANY,
         NATURAL,
@@ -149,14 +140,10 @@ data class WebAppManifest(
      * member, it helps the correct display of right-to-left languages.
      */
     enum class TextDirection {
-        /**
-         * Left-to-right (LTR).
-         */
+        /** Left-to-right (LTR). */
         LTR,
 
-        /**
-         * Right-to-left (RTL).
-         */
+        /** Right-to-left (RTL). */
         RTL,
 
         /**
@@ -184,8 +171,8 @@ data class WebAppManifest(
     ) {
 
         /**
-         * Represents a set of cryptographic fingerprints used for verifying the application.
-         * The syntax and semantics of [type] and [value] are platform-defined.
+         * Represents a set of cryptographic fingerprints used for verifying the application. The syntax and semantics
+         * of [type] and [value] are platform-defined.
          */
         data class Fingerprint(
             val type: String,
@@ -194,8 +181,8 @@ data class WebAppManifest(
     }
 
     /**
-     * Used to define how the web app receives share data.
-     * If present, a share target should be created so that other Android apps can share to this web app.
+     * Used to define how the web app receives share data. If present, a share target should be created so that other
+     * Android apps can share to this web app.
      *
      * @property action URL to open on share
      * @property method Method to use with [action]. Either "GET" or "POST".
@@ -235,16 +222,13 @@ data class WebAppManifest(
             val accept: List<String>,
         )
 
-        /**
-         * Valid HTTP methods for [ShareTarget.method].
-         */
+        /** Valid HTTP methods for [ShareTarget.method]. */
         enum class RequestMethod {
-            GET, POST
+            GET,
+            POST,
         }
 
-        /**
-         * Valid encoding MIME types for [ShareTarget.encType].
-         */
+        /** Valid encoding MIME types for [ShareTarget.encType]. */
         enum class EncodingType(val type: String) {
             URL_ENCODED("application/x-www-form-urlencoded"),
             MULTIPART("multipart/form-data"),

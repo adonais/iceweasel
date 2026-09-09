@@ -33,9 +33,8 @@ class SVGLineElement final : public SVGLineElementBase {
   void GetMarkPoints(nsTArray<SVGMark>* aMarks) override;
   void GetAsSimplePath(SimplePath* aSimplePath) override;
   already_AddRefed<Path> BuildPath(PathBuilder* aBuilder) override;
-  bool GetGeometryBounds(
-      Rect* aBounds, const StrokeOptions& aStrokeOptions,
-      const Matrix& aToBoundsSpace,
+  Maybe<Rect> GetGeometryBounds(
+      const StrokeOptions& aStrokeOptions, const Matrix& aToBoundsSpace,
       const Matrix* aToNonScalingStrokeSpace = nullptr) override;
 
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;

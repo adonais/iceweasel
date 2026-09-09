@@ -1011,7 +1011,10 @@ export const FocusTimer = ({
             type="ghost"
             data-l10n-id="newtab-widget-timer-menu-button"
           />
-          <panel-list id="focus-timer-context-menu">
+          <panel-list
+            className="panel-list-no-icons"
+            id="focus-timer-context-menu"
+          >
             <panel-item
               data-l10n-id={
                 showSystemNotifications

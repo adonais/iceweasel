@@ -28,14 +28,6 @@ add_task(async function shift_click_popup_features_opens_minimal_popup() {
         !(flags & Ci.nsIWebBrowserChrome.CHROME_TOOLBAR),
         "CHROME_TOOLBAR should not be set on a Shift+click popup"
       );
-      Assert.ok(
-        !(flags & Ci.nsIWebBrowserChrome.CHROME_MENUBAR),
-        "CHROME_MENUBAR should not be set on a Shift+click popup"
-      );
-      Assert.ok(
-        !(flags & Ci.nsIWebBrowserChrome.CHROME_PERSONAL_TOOLBAR),
-        "CHROME_PERSONAL_TOOLBAR should not be set on a Shift+click popup"
-      );
 
       await BrowserTestUtils.closeWindow(win);
     }

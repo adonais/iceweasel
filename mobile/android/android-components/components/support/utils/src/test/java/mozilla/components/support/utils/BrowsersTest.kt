@@ -10,6 +10,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.ResolveInfo
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.robolectric.DefaultBrowserUtils
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.Browsers.Companion.SAMPLE_BROWSER_HTTP_URL
@@ -21,9 +22,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
-import kotlin.test.assertNotNull
 
-@Suppress("DEPRECATION") // Deprecation will be handled in https://github.com/mozilla-mobile/android-components/issues/11832
+@Suppress(
+    "DEPRECATION"
+) // Deprecation will be handled in https://github.com/mozilla-mobile/android-components/issues/11832
 @RunWith(AndroidJUnit4::class)
 class BrowsersTest {
 
@@ -42,9 +44,7 @@ class BrowsersTest {
 
     @Test
     fun `with firefox as default browser`() {
-        pretendBrowsersAreInstalled(
-            defaultBrowser = Browsers.KnownBrowser.FIREFOX.packageName,
-        )
+        pretendBrowsersAreInstalled(defaultBrowser = Browsers.KnownBrowser.FIREFOX.packageName)
 
         val browsers = Browsers.all(testContext)
 
@@ -67,14 +67,15 @@ class BrowsersTest {
     @Test
     fun `with multiple browsers installed`() {
         pretendBrowsersAreInstalled(
-            browsers = listOf(
-                Browsers.KnownBrowser.FIREFOX_NIGHTLY.packageName,
-                Browsers.KnownBrowser.FIREFOX.packageName,
-                Browsers.KnownBrowser.CHROME.packageName,
-                Browsers.KnownBrowser.SAMSUNG_INTERNET.packageName,
-                Browsers.KnownBrowser.DUCKDUCKGO.packageName,
-                Browsers.KnownBrowser.REFERENCE_BROWSER.packageName,
-            ),
+            browsers =
+                listOf(
+                    Browsers.KnownBrowser.FIREFOX_NIGHTLY.packageName,
+                    Browsers.KnownBrowser.FIREFOX.packageName,
+                    Browsers.KnownBrowser.CHROME.packageName,
+                    Browsers.KnownBrowser.SAMSUNG_INTERNET.packageName,
+                    Browsers.KnownBrowser.DUCKDUCKGO.packageName,
+                    Browsers.KnownBrowser.REFERENCE_BROWSER.packageName,
+                ),
             defaultBrowser = Browsers.KnownBrowser.REFERENCE_BROWSER.packageName,
         )
 
@@ -195,11 +196,12 @@ class BrowsersTest {
     @Test
     fun `With unknown browsers`() {
         pretendBrowsersAreInstalled(
-            browsers = listOf(
-                "org.example.random",
-                "org.example.a.browser",
-                Browsers.KnownBrowser.REFERENCE_BROWSER.packageName,
-            ),
+            browsers =
+                listOf(
+                    "org.example.random",
+                    "org.example.a.browser",
+                    Browsers.KnownBrowser.REFERENCE_BROWSER.packageName,
+                ),
             defaultBrowser = "org.example.unknown.browser",
         )
 
@@ -221,10 +223,11 @@ class BrowsersTest {
     @Test
     fun `With default browser that is not exported`() {
         pretendBrowsersAreInstalled(
-            browsers = listOf(
-                Browsers.KnownBrowser.FIREFOX_NIGHTLY.packageName,
-                Browsers.KnownBrowser.FIREFOX.packageName,
-            ),
+            browsers =
+                listOf(
+                    Browsers.KnownBrowser.FIREFOX_NIGHTLY.packageName,
+                    Browsers.KnownBrowser.FIREFOX.packageName,
+                )
         )
 
         pretendBrowsersAreInstalled(
@@ -248,17 +251,14 @@ class BrowsersTest {
 
     @Test
     fun `With some browsers not exported`() {
-        pretendBrowsersAreInstalled(
-            browsers = listOf(
-                Browsers.KnownBrowser.FIREFOX.packageName,
-            ),
-        )
+        pretendBrowsersAreInstalled(browsers = listOf(Browsers.KnownBrowser.FIREFOX.packageName))
 
         pretendBrowsersAreInstalled(
-            browsers = listOf(
-                "org.example.area51.browser",
-                Browsers.KnownBrowser.CHROME.packageName,
-            ),
+            browsers =
+                listOf(
+                    "org.example.area51.browser",
+                    Browsers.KnownBrowser.CHROME.packageName,
+                ),
             browsersExported = false,
         )
 
@@ -286,9 +286,7 @@ class BrowsersTest {
 
     @Test
     fun `forUrl() with firefox as default browser`() {
-        pretendBrowsersAreInstalled(
-            defaultBrowser = Browsers.KnownBrowser.FIREFOX.packageName,
-        )
+        pretendBrowsersAreInstalled(defaultBrowser = Browsers.KnownBrowser.FIREFOX.packageName)
 
         val browsers = Browsers.forUrl(testContext, SAMPLE_BROWSER_HTTP_URL)
 
@@ -309,9 +307,7 @@ class BrowsersTest {
 
     @Test
     fun `forUrl() with wrong non-uri`() {
-        pretendBrowsersAreInstalled(
-            defaultBrowser = Browsers.KnownBrowser.FIREFOX.packageName,
-        )
+        pretendBrowsersAreInstalled(defaultBrowser = Browsers.KnownBrowser.FIREFOX.packageName)
 
         val browsers = Browsers.forUrl(testContext, "not-a-uri")
 

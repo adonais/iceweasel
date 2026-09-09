@@ -36,17 +36,19 @@ class GleanDebugToolsMiddleware(
                 gleanDebugToolsStorage.setLogPings(store.state.logPingsToConsoleEnabled)
             }
             is GleanDebugToolsAction.OpenDebugView -> {
-                val debugViewLink = getDebugViewLink(
-                    debugViewTag = store.state.debugViewTag,
-                    useDebugViewTag = action.useDebugViewTag,
-                )
+                val debugViewLink =
+                    getDebugViewLink(
+                        debugViewTag = store.state.debugViewTag,
+                        useDebugViewTag = action.useDebugViewTag,
+                    )
                 openDebugView(debugViewLink)
             }
             is GleanDebugToolsAction.CopyDebugViewLink -> {
-                val debugViewLink = getDebugViewLink(
-                    debugViewTag = store.state.debugViewTag,
-                    useDebugViewTag = action.useDebugViewTag,
-                )
+                val debugViewLink =
+                    getDebugViewLink(
+                        debugViewTag = store.state.debugViewTag,
+                        useDebugViewTag = action.useDebugViewTag,
+                    )
                 clipboardHandler.text = debugViewLink
             }
             is GleanDebugToolsAction.DebugViewTagChanged -> {

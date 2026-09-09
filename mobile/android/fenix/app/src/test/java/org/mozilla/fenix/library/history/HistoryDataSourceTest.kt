@@ -10,118 +10,129 @@ import org.junit.Test
 import org.mozilla.fenix.components.history.HistoryDB
 
 class HistoryDataSourceTest {
-    private val testCases = listOf(
-        listOf<Int>() to listOf(),
-        listOf(1) to listOf(
-            TestHistory.Regular("http://www.mozilla.com"),
-        ),
-        listOf(1, 2) to listOf(
-            TestHistory.Regular("http://www.mozilla.com"),
-            TestHistory.Regular("http://www.mozilla.com/2"),
-        ),
-        listOf(1, 2) to listOf(
-            TestHistory.Metadata("http://www.mozilla.com"),
-            TestHistory.Regular("http://www.mozilla.com/2"),
-        ),
-        listOf(1, 2, 3) to listOf(
-            TestHistory.Metadata("http://www.mozilla.com"),
-            TestHistory.Regular("http://www.mozilla.com/2"),
-            TestHistory.Metadata("http://www.mozilla.com"),
-        ),
-        listOf(1, 2, 3, 4, 5) to listOf(
-            TestHistory.Metadata("http://www.mozilla.com"),
-            TestHistory.Regular("http://www.mozilla.com/2"),
-            TestHistory.Metadata("http://www.mozilla.com"),
-            TestHistory.Regular("http://www.mozilla.com/3"),
-            TestHistory.Regular("http://www.mozilla.com/2"),
-        ),
-        listOf(1, 2, 3) to listOf(
-            TestHistory.Metadata("http://www.mozilla.com"),
-            TestHistory.Regular("http://www.mozilla.com/2"),
-            TestHistory.Group("firefox", items = listOf()),
-        ),
-        listOf(1, 2, 3) to listOf(
-            TestHistory.Metadata("http://www.mozilla.com"),
-            TestHistory.Regular("http://www.mozilla.com/2"),
-            TestHistory.Group(
-                "firefox",
-                items = listOf(
-                    "http://www.firefox.com",
+    private val testCases =
+        listOf(
+            listOf<Int>() to listOf(),
+            listOf(1) to listOf(TestHistory.Regular("http://www.mozilla.com")),
+            listOf(1, 2) to
+                listOf(
+                    TestHistory.Regular("http://www.mozilla.com"),
+                    TestHistory.Regular("http://www.mozilla.com/2"),
                 ),
-            ),
-        ),
-        listOf(1, 2, 7) to listOf(
-            TestHistory.Metadata("http://www.mozilla.com"),
-            TestHistory.Regular("http://www.mozilla.com/2"),
-            TestHistory.Group(
-                "firefox",
-                items = listOf(
-                    "http://www.firefox.com",
-                    "http://www.firefox.com/2",
-                    "http://www.firefox.com/3",
-                    "http://www.firefox.com/4",
-                    "http://www.firefox.com/5",
+            listOf(1, 2) to
+                listOf(
+                    TestHistory.Metadata("http://www.mozilla.com"),
+                    TestHistory.Regular("http://www.mozilla.com/2"),
                 ),
-            ),
-        ),
-        listOf(5, 6, 7) to listOf(
-            TestHistory.Group(
-                "firefox",
-                items = listOf(
-                    "http://www.firefox.com",
-                    "http://www.firefox.com/2",
-                    "http://www.firefox.com/3",
-                    "http://www.firefox.com/4",
-                    "http://www.firefox.com/5",
+            listOf(1, 2, 3) to
+                listOf(
+                    TestHistory.Metadata("http://www.mozilla.com"),
+                    TestHistory.Regular("http://www.mozilla.com/2"),
+                    TestHistory.Metadata("http://www.mozilla.com"),
                 ),
-            ),
-            TestHistory.Metadata("http://www.mozilla.com"),
-            TestHistory.Regular("http://www.mozilla.com/2"),
-        ),
-        listOf(1, 6, 7) to listOf(
-            TestHistory.Metadata("http://www.mozilla.com"),
-            TestHistory.Group(
-                "firefox",
-                items = listOf(
-                    "http://www.firefox.com",
-                    "http://www.firefox.com/2",
-                    "http://www.firefox.com/3",
-                    "http://www.firefox.com/4",
-                    "http://www.firefox.com/5",
+            listOf(1, 2, 3, 4, 5) to
+                listOf(
+                    TestHistory.Metadata("http://www.mozilla.com"),
+                    TestHistory.Regular("http://www.mozilla.com/2"),
+                    TestHistory.Metadata("http://www.mozilla.com"),
+                    TestHistory.Regular("http://www.mozilla.com/3"),
+                    TestHistory.Regular("http://www.mozilla.com/2"),
                 ),
-            ),
-            TestHistory.Regular("http://www.mozilla.com/2"),
-        ),
-        listOf(1, 6, 8, 9) to listOf(
-            TestHistory.Metadata("http://www.mozilla.com"),
-            TestHistory.Group(
-                "firefox",
-                items = listOf(
-                    "http://www.firefox.com",
-                    "http://www.firefox.com/2",
-                    "http://www.firefox.com/3",
-                    "http://www.firefox.com/4",
-                    "http://www.firefox.com/5",
+            listOf(1, 2, 3) to
+                listOf(
+                    TestHistory.Metadata("http://www.mozilla.com"),
+                    TestHistory.Regular("http://www.mozilla.com/2"),
+                    TestHistory.Group("firefox", items = listOf()),
                 ),
-            ),
-            TestHistory.Group(
-                "mdn",
-                items = listOf(
-                    "https://developer.mozilla.org/en-US/1",
-                    "https://developer.mozilla.org/en-US/2",
+            listOf(1, 2, 3) to
+                listOf(
+                    TestHistory.Metadata("http://www.mozilla.com"),
+                    TestHistory.Regular("http://www.mozilla.com/2"),
+                    TestHistory.Group(
+                        "firefox",
+                        items = listOf("http://www.firefox.com"),
+                    ),
                 ),
-            ),
-            TestHistory.Regular("http://www.mozilla.com/2"),
-        ),
-        listOf(1) to listOf(
-            TestHistory.Group(
-                "mozilla",
-                items = listOf(
-                    "http://www.mozilla.com",
+            listOf(1, 2, 7) to
+                listOf(
+                    TestHistory.Metadata("http://www.mozilla.com"),
+                    TestHistory.Regular("http://www.mozilla.com/2"),
+                    TestHistory.Group(
+                        "firefox",
+                        items =
+                            listOf(
+                                "http://www.firefox.com",
+                                "http://www.firefox.com/2",
+                                "http://www.firefox.com/3",
+                                "http://www.firefox.com/4",
+                                "http://www.firefox.com/5",
+                            ),
+                    ),
                 ),
-            ),
-        ),
-    )
+            listOf(5, 6, 7) to
+                listOf(
+                    TestHistory.Group(
+                        "firefox",
+                        items =
+                            listOf(
+                                "http://www.firefox.com",
+                                "http://www.firefox.com/2",
+                                "http://www.firefox.com/3",
+                                "http://www.firefox.com/4",
+                                "http://www.firefox.com/5",
+                            ),
+                    ),
+                    TestHistory.Metadata("http://www.mozilla.com"),
+                    TestHistory.Regular("http://www.mozilla.com/2"),
+                ),
+            listOf(1, 6, 7) to
+                listOf(
+                    TestHistory.Metadata("http://www.mozilla.com"),
+                    TestHistory.Group(
+                        "firefox",
+                        items =
+                            listOf(
+                                "http://www.firefox.com",
+                                "http://www.firefox.com/2",
+                                "http://www.firefox.com/3",
+                                "http://www.firefox.com/4",
+                                "http://www.firefox.com/5",
+                            ),
+                    ),
+                    TestHistory.Regular("http://www.mozilla.com/2"),
+                ),
+            listOf(1, 6, 8, 9) to
+                listOf(
+                    TestHistory.Metadata("http://www.mozilla.com"),
+                    TestHistory.Group(
+                        "firefox",
+                        items =
+                            listOf(
+                                "http://www.firefox.com",
+                                "http://www.firefox.com/2",
+                                "http://www.firefox.com/3",
+                                "http://www.firefox.com/4",
+                                "http://www.firefox.com/5",
+                            ),
+                    ),
+                    TestHistory.Group(
+                        "mdn",
+                        items =
+                            listOf(
+                                "https://developer.mozilla.org/en-US/1",
+                                "https://developer.mozilla.org/en-US/2",
+                            ),
+                    ),
+                    TestHistory.Regular("http://www.mozilla.com/2"),
+                ),
+            listOf(1) to
+                listOf(
+                    TestHistory.Group(
+                        "mozilla",
+                        items = listOf("http://www.mozilla.com"),
+                    )
+                ),
+        )
 
     @Test
     fun `assign positions basics - initial offset`() {
@@ -160,7 +171,9 @@ class HistoryDataSourceTest {
 
     private sealed class TestHistory {
         data class Regular(val url: String) : TestHistory()
+
         data class Metadata(val url: String) : TestHistory()
+
         data class Group(val title: String, val items: List<String>) : TestHistory()
     }
 
@@ -189,15 +202,16 @@ class HistoryDataSourceTest {
                     HistoryDB.Group(
                         title = it.title,
                         visitedAt = 0,
-                        items = it.items.map { item ->
-                            HistoryDB.Metadata(
-                                title = item,
-                                url = item,
-                                visitedAt = 0,
-                                totalViewTime = 0,
-                                historyMetadataKey = HistoryMetadataKey(url = item),
-                            )
-                        },
+                        items =
+                            it.items.map { item ->
+                                HistoryDB.Metadata(
+                                    title = item,
+                                    url = item,
+                                    visitedAt = 0,
+                                    totalViewTime = 0,
+                                    historyMetadataKey = HistoryMetadataKey(url = item),
+                                )
+                            },
                     )
                 }
             }

@@ -2,13 +2,13 @@
 
 # FC_EncryptFinal
 
-## [Name](#name)
+## Name
 
 :::{container}
 FC_EncryptFinal - finish a multi-part encryption operation.
 :::
 
-## [Syntax](#syntax)
+## Syntax
 
 :::{container}
 
@@ -22,7 +22,7 @@ CK_RV FC_EncryptFinal(
 
 :::
 
-## [Parameters](#parameters)
+## Parameters
 
 :::{container}
 `hSession`
@@ -39,7 +39,7 @@ CK_RV FC_EncryptFinal(
   be stored.
 :::
 
-## [Description](#description)
+## Description
 
 :::{container}
 `FC_EncryptFinal` returns the last block of data of a multi-part encryption operation.
@@ -47,14 +47,14 @@ CK_RV FC_EncryptFinal(
 A user must log into the token (to assume the NSS User role) before calling `FC_EncryptFinal`.
 :::
 
-## [Return value](#return_value)
+## Return value
 
-## [Examples](#examples)
+## Examples
 
-## [See also](#see_also)
+## See also
 
 :::{container}
 
-- {ref}`mozilla_projects_nss_reference_fc_encryptinit`,
+- {ref}`mozilla-projects-nss-reference-fc-encryptinit`,
   [NSC_EncryptFinal](/en-US/NSC_EncryptFinal)
 :::

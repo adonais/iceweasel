@@ -8,11 +8,11 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.PrivateBrowsingLockAction
 import org.mozilla.fenix.components.appstate.AppState
 
-/**
- * [AppStore] reducer of [PrivateBrowsingLockAction]s.
- */
+/** [AppStore] reducer of [PrivateBrowsingLockAction]s. */
 internal object PrivateBrowsingLockReducer {
-    fun reduce(state: AppState, action: PrivateBrowsingLockAction): AppState = when (action) {
-        is PrivateBrowsingLockAction.UpdatePrivateBrowsingLock -> state.copy(isPrivateScreenLocked = action.isLocked)
-    }
+    fun reduce(state: AppState, action: PrivateBrowsingLockAction): AppState =
+        when (action) {
+            is PrivateBrowsingLockAction.UpdatePrivateBrowsingLock ->
+                state.copy(isPrivateScreenLocked = action.isLocked)
+        }
 }

@@ -26,13 +26,9 @@ import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 
-/**
- * A fragment to show the details of an add-on.
- */
+/** A fragment to show the details of an add-on. */
 class AddonDetailsFragment :
-    Fragment(R.layout.fragment_add_on_details),
-    AddonDetailsInteractor,
-    SystemInsetsPaddedFragment {
+    Fragment(R.layout.fragment_add_on_details), AddonDetailsInteractor, SystemInsetsPaddedFragment {
 
     private val updateAttemptStorage by lazy { UpdateAttemptStorage(requireContext()) }
     private val args by navArgs<AddonDetailsFragmentArgs>()
@@ -60,9 +56,10 @@ class AddonDetailsFragment :
 
     override fun showUpdaterDialog(addon: Addon) {
         viewLifecycleOwner.lifecycleScope.launch(Main) {
-            val updateAttempt = withContext(IO) {
-                updateAttemptStorage.findUpdateAttemptBy(addon.id)
-            }
+            val updateAttempt =
+                withContext(IO) {
+                    updateAttemptStorage.findUpdateAttemptBy(addon.id)
+                }
             updateAttempt?.showInformationDialog(requireContext())
         }
     }

@@ -23,8 +23,8 @@ class DefaultTopSitesView(
                     topSites
                 } else {
                     topSites.sort()
-                },
-            ),
+                }
+            )
         )
     }
 }

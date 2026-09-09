@@ -6,13 +6,13 @@ Subject: Bug 1800942 - Add DCHECKs to
 Differential Revision: https://phabricator.services.mozilla.com/D166536
 Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/c5df7f40392464ffc63f44a53ddcaab2091741e0
 ---
- modules/video_coding/timing/timestamp_extrapolator.cc | 1 +
+ video/timing/timestamp_extrapolator.cc | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/modules/video_coding/timing/timestamp_extrapolator.cc b/modules/video_coding/timing/timestamp_extrapolator.cc
-index c930dd3e17..9a86499ec4 100644
---- a/modules/video_coding/timing/timestamp_extrapolator.cc
-+++ b/modules/video_coding/timing/timestamp_extrapolator.cc
+diff --git a/video/timing/timestamp_extrapolator.cc b/video/timing/timestamp_extrapolator.cc
+index 77eb9d6e13..e6e8dd3d8d 100644
+--- a/video/timing/timestamp_extrapolator.cc
++++ b/video/timing/timestamp_extrapolator.cc
 @@ -265,6 +265,7 @@ void TimestampExtrapolator::Update(Timestamp now, uint32_t ts90khz) {
  std::optional<Timestamp> TimestampExtrapolator::ExtrapolateLocalTime(
      uint32_t timestamp90khz) const {

@@ -500,9 +500,7 @@ struct ComponentSortIndex {
   ComponentSortIndex(ComponentSort sort, uint32_t index)
       : sort(sort), index(index) {}
 
-  bool operator==(const ComponentSortIndex& other) const {
-    return sort == other.sort && index == other.index;
-  }
+  bool operator==(const ComponentSortIndex& other) const = default;
 };
 
 struct ComponentSortIndexHasher {
@@ -659,10 +657,7 @@ class ComponentItem {
     return ComponentSortIndex(sort(), itemIndex());
   }
 
-  bool operator==(const ComponentItem& other) const {
-    return whatAndWhere_ == other.whatAndWhere_ &&
-           itemIndex_ == other.itemIndex_;
-  }
+  bool operator==(const ComponentItem& other) const = default;
 };
 
 // TODO(wasm-cm): Add static asserts for MaxComponents and

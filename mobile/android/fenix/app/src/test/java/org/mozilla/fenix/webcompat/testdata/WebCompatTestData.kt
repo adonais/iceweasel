@@ -9,7 +9,8 @@ import org.json.JSONObject
 
 object WebCompatTestData {
 
-    val basicDataJson = """
+    val basicDataJson =
+        """
         {
           "antitracking": {
             "blockList": {
@@ -191,7 +192,8 @@ object WebCompatTestData {
             }
           }
         }
-    """.trimIndent()
+        """
+            .trimIndent()
 
     /**
      * Creates a pre-fabbed JSONObject which we use in multiple places in the tests.

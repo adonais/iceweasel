@@ -134,6 +134,9 @@ add_setup(async function () {
       // onorous and creates issues with existing tests without improving test
       // coverage, so disable it herein.
       ["browser.taskbarTabs.enabled", false],
+      // The tab stops these tests walk are otherwise channel-dependent. The
+      // skipping variant is covered by testTabStopsSkippingSearchButton.
+      ["browser.urlbar.searchModeSwitcher.skipTabStop", false],
     ],
   });
   resetToolbarWithoutDevEditionButtons();
@@ -257,6 +260,48 @@ async function doTestTabStopsPageLoaded(aPageActionsVisible) {
 add_task(async function testTabStopsPageLoaded() {
   await doTestTabStopsPageLoaded(false);
   await doTestTabStopsPageLoaded(true);
+});
+
+// Test tab stops with the search button declining to be one.
+add_task(async function testTabStopsSkippingSearchButton() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.searchModeSwitcher.skipTabStop", true]],
+  });
+  const searchButton = "#urlbar-container .searchmode-switcher";
+
+  AddHomeBesideReload();
+  await withNewBlankTab(async function () {
+    startFromUrlBar();
+    await expectFocusAfterKey("Shift+Tab", searchButton, true);
+    await expectFocusAfterKey("Tab", gURLBar.inputField);
+    await expectFocusAfterKey("Shift+Tab", searchButton, true);
+    if (sidebarRevampEnabled) {
+      await expectFocusAfterKey("Shift+Tab", "sidebar-button");
+      await expectFocusAfterKey("ArrowRight", "home-button");
+    } else {
+      await expectFocusAfterKey("Shift+Tab", "home-button");
+    }
+    await expectFocusAfterKey("Tab", gURLBar.inputField);
+  });
+  RemoveHomeButton();
+
+  await BrowserTestUtils.withNewTab("https://example.com", async function () {
+    await waitUntilReloadEnabled();
+    startFromUrlBar();
+    await expectFocusAfterKey("Shift+Tab", searchButton, true);
+    if (sidebarRevampEnabled) {
+      await expectFocusAfterKey("Shift+Tab", "sidebar-button");
+      await expectFocusAfterKey("ArrowRight", "reload-button");
+    } else {
+      await expectFocusAfterKey("Shift+Tab", "reload-button");
+    }
+    // The first site information button takes the tab stop the search button
+    // declined.
+    await expectFocusAfterKey("Tab", "trust-icon-container");
+    await expectFocusAfterKey("Tab", gURLBar.inputField);
+  });
+
+  await SpecialPowers.popPrefEnv();
 });
 
 // Test tab stops with a notification anchor visible.

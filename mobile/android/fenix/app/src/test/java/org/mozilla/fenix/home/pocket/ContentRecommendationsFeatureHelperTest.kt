@@ -5,6 +5,7 @@
 package org.mozilla.fenix.home.pocket
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.Locale
 import mozilla.components.support.locale.LocaleManager
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.After
@@ -13,7 +14,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
 class ContentRecommendationsFeatureHelperTest {

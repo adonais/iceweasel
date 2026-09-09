@@ -20,14 +20,16 @@ class NimbusTest {
     private val context: Context
         get() = ApplicationProvider.getApplicationContext()
 
-    private val appInfo = NimbusAppInfo(
-        appName = "NimbusUnitTest",
-        channel = "test",
-    )
+    private val appInfo =
+        NimbusAppInfo(
+            appName = "NimbusUnitTest",
+            channel = "test",
+        )
 
     @Test
     fun `Nimbus disabled and enabled can have observers registered on it`() {
-        val enabled: NimbusApi = Nimbus(context, appInfo, listOf(), null, delegate = NimbusDelegate.default(), recordedContext = null)
+        val enabled: NimbusApi =
+            Nimbus(context, appInfo, listOf(), null, delegate = NimbusDelegate.default(), recordedContext = null)
         val disabled: NimbusApi = NimbusDisabled(context)
 
         val observer = object : NimbusInterface.Observer {}

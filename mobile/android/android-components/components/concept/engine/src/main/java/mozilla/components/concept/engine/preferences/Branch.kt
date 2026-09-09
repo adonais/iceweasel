@@ -4,19 +4,15 @@
 
 package mozilla.components.concept.engine.preferences
 
-/**
- * Represents the preference branch.
- */
+/** Represents the preference branch. */
 enum class Branch {
 
-    /**
-     * The user branch is for preferences that do not change the default and are stored for the user.
-     */
+    /** The user branch is for preferences that do not change the default and are stored for the user. */
     USER,
 
     /**
-     * The default branch will adjust the default for the preference. Default preferences are a sensible
-     * choice for users or functionality to revert back to.
+     * The default branch will adjust the default for the preference. Default preferences are a sensible choice for
+     * users or functionality to revert back to.
      *
      * Note: Changing a default value does not necessarily change the active value of the preference.
      */

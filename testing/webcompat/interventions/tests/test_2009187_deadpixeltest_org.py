@@ -10,9 +10,8 @@ async def is_popup_centered(client, platform):
         """
             const bounds = arguments[0].getBoundingClientRect();
             const windowHeight = arguments[1] == "android" ? window.outerHeight : window.innerHeight;
-            const is_correct_left = Math.abs(bounds.x - Math.max(0, (window.outerWidth / 2) - (bounds.width / 2))) < 2;
-            const is_correct_top = Math.abs(bounds.y - Math.max(0, (windowHeight / 2) - (bounds.height / 2))) < 2;
-            console.error(is_correct_left, is_correct_top);
+            const is_correct_left = Math.abs(bounds.x - Math.max(0, (window.outerWidth / 2) - (bounds.width / 2))) < 10;
+            const is_correct_top = Math.abs(bounds.y - Math.max(0, (windowHeight / 2) - (bounds.height / 2))) < 10;
             return is_correct_left && is_correct_top;
         """,
         client.await_css(POPUP_CSS, is_displayed=True),

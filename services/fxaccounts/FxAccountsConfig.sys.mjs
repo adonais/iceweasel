@@ -51,28 +51,24 @@ const CONFIG_PREFS = [
   "identity.fxaccounts.remote.pairing.uri",
   "identity.sync.tokenserver.uri",
 ];
-const SYNC_PARAM = "sync";
-
 export var FxAccountsConfig = {
-  async promiseEmailURI(email, entrypoint, extraParams = {}) {
+  async promiseEmailURI(email, service, entrypoint, extraParams = {}) {
     return this._buildURL("", {
-      includeAuthParams: true,
+      service,
       extraParams: {
         entrypoint,
         email,
-        service: SYNC_PARAM,
         ...extraParams,
       },
     });
   },
 
-  async promiseConnectAccountURI(entrypoint, extraParams = {}) {
+  async promiseConnectAccountURI(service, entrypoint, extraParams = {}) {
     return this._buildURL("", {
-      includeAuthParams: true,
+      service,
       extraParams: {
         entrypoint,
         action: "email",
-        service: SYNC_PARAM,
         ...extraParams,
       },
     });
@@ -99,21 +95,18 @@ export var FxAccountsConfig = {
     });
   },
 
-  async promiseConnectDeviceURI(entrypoint, extraParams = {}) {
+  async promiseConnectDeviceURI(service, entrypoint, extraParams = {}) {
     return this._buildURL("connect_another_device", {
-      extraParams: { entrypoint, service: SYNC_PARAM, ...extraParams },
+      extraParams: { entrypoint, service, ...extraParams },
       addAccountIdentifiers: true,
     });
   },
 
   async promiseSetPasswordURI(entrypoint, extraParams = {}) {
-    const authParams = await this._getAuthParams();
+    // being forced to set a password implies service=sync.
     return this._buildURL("post_verify/third_party_auth/set_password", {
-      extraParams: {
-        entrypoint,
-        ...authParams,
-        ...extraParams,
-      },
+      service: "sync",
+      extraParams: { entrypoint, ...extraParams },
       addAccountIdentifiers: true,
     });
   },
@@ -145,16 +138,18 @@ export var FxAccountsConfig = {
 
   /**
    * @param path should be parsable by the URL constructor first parameter.
+   * @param {string} [options.service] The service being requested; actual services and scopes delivered are in the oauth response.
+   *                                   This is required when building a URL which also starts an oauth flow.
+   *                                   Not required for generic URLs such as changing your avatar etc.
    * @param {bool} [options.includeDefaultParams] If true include the default search params.
-   * @param {bool} [options.includeAuthParams] If true include the auth params.
-   * @param {[key: string]: string} [options.extraParams] Additionnal search params.
+   * @param {[key: string]: string} [options.extraParams] Additionnal params, typically for telemetry.
    * @param {bool} [options.addAccountIdentifiers] if true we add the current logged-in user uid and email to the search params.
    */
   async _buildURL(
     path,
     {
+      service,
       includeDefaultParams = true,
-      includeAuthParams = false,
       extraParams = {},
       addAccountIdentifiers = false,
     }
@@ -162,7 +157,7 @@ export var FxAccountsConfig = {
     await this.ensureConfigured();
     const url = new URL(path, lazy.ROOT_URL);
     this.ensureHTTPS(url.protocol);
-    const authParams = includeAuthParams ? await this._getAuthParams() : {};
+    const authParams = service ? await this._getAuthParams(service) : {};
     const params = {
       ...(includeDefaultParams ? this.defaultParams : null),
       ...extraParams,
@@ -360,8 +355,8 @@ export var FxAccountsConfig = {
     return lazy.fxAccounts.getSignedInUser();
   },
 
-  async _getAuthParams() {
-    let params = {};
+  async _getAuthParams(service) {
+    let params = { service };
     const scopes = [SCOPE_APP_SYNC, SCOPE_PROFILE];
     Object.assign(
       params,

@@ -1,0 +1,248 @@
+<!-- Any copyright is dedicated to the Public Domain.
+   - http://creativecommons.org/publicdomain/zero/1.0/ -->
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Bug 1585978 repro: SetupAction padding double-decrement on commit failure</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<script class="testbody" type="text/javascript">
+// Reproduces the padding double-decrement bug (bug 1585978) by injecting a
+// filesystem-level fault that prevents SetupAction's padding-file commit from
+// completing — no C++ changes needed.
+//
+// Technique: after creating an orphaned cache with a padded (opaque) response,
+// we place an empty DIRECTORY at the ".padding-tmp" path inside the cache
+// storage directory. When SetupAction calls UpdateDirectoryPaddingFile →
+// DirectoryPaddingWrite, NS_NewLocalFileOutputStream fails because the target
+// is a directory, not a regular file (EISDIR). This causes
+// MaybeUpdatePaddingFile to error out before the commit hook is called, so the
+// SQLite transaction is never committed and the orphaned entries remain in the
+// database.
+//
+// With the buggy code, DecreaseUsageForDirectoryMetadata fires in the
+// orphan-cleanup loop (before MaybeUpdatePaddingFile), prematurely subtracting
+// the padding from the QuotaManager's in-memory usage — even though the
+// commit never happened and the entries are still in the DB.
+//
+// With the fix, the decrement is deferred to the commit callback, which is
+// never reached because the padding write fails first. So the in-memory usage
+// correctly retains the orphan padding.
+//
+// NOTE: This is a very specific glass-box test that may not be generally useful
+// now that the bug is fixed. If this test ends up being brittle or you are
+// making changes that make this test seem obsolete, it is OK to just remove the
+// test rather than trying to update it or fix it.
+// In particular, be aware that it reproduced the issue using a slightly
+// different mechanism: creating a directory in place of the padding file to
+// make the deletion function fail, while in the original bug the failures comes
+// from file corruption or disk full errors.
+
+function setupTestIframe() {
+  return new Promise(function(resolve) {
+    var iframe = document.createElement("iframe");
+    iframe.src = "empty.html";
+    iframe.onload = function() {
+      window.caches = iframe.contentWindow.caches;
+      resolve();
+    };
+    document.body.appendChild(iframe);
+  });
+}
+
+function clearStorage() {
+  return new Promise(function(resolve) {
+    var qms = SpecialPowers.Services.qms;
+    var principal = SpecialPowers.wrap(document).nodePrincipal;
+    var request = qms.clearStoragesForPrincipal(principal);
+    var cb = SpecialPowers.wrapCallback(resolve);
+    request.callback = cb;
+  });
+}
+
+function resetStorage() {
+  return new Promise(function(resolve) {
+    var qms = SpecialPowers.Services.qms;
+    var principal = SpecialPowers.wrap(document).nodePrincipal;
+    var request = qms.resetStoragesForPrincipal(principal);
+    var cb = SpecialPowers.wrapCallback(resolve);
+    request.callback = cb;
+  });
+}
+
+function storageUsage() {
+  return new Promise(function(resolve) {
+    var qms = SpecialPowers.Services.qms;
+    var principal = SpecialPowers.wrap(document).nodePrincipal;
+    var cb = SpecialPowers.wrapCallback(function(request) {
+      resolve(request.result.usage);
+    });
+    qms.getUsageForPrincipal(principal, cb);
+  });
+}
+
+function cachedStorageUsage() {
+  return new Promise(function(resolve) {
+    var qms = SpecialPowers.Services.qms;
+    var principal = SpecialPowers.wrap(document).nodePrincipal;
+    var cb = SpecialPowers.wrapCallback(function(request) {
+      resolve(request.result);
+    });
+    var request = qms.getCachedUsageForPrincipal(principal);
+    request.callback = cb;
+  });
+}
+
+function fetchOpaqueResponse(url) {
+  return fetch(url, { mode: "no-cors" });
+}
+
+function gc() {
+  return new Promise(function(resolve) {
+    SpecialPowers.exactGC(resolve);
+  });
+}
+
+function createPaddingTmpDirectory() {
+  var origin = window.location.origin
+    .replace("://", "+++")
+    .replace(/:/g, "+");
+  return SpecialPowers.spawnChrome([origin], function(originDir) {
+    const dir = Services.dirsvc.get("ProfD", Ci.nsIFile);
+    dir.append("storage");
+    dir.append("default");
+    dir.append(originDir);
+    dir.append("cache");
+    dir.append(".padding-tmp");
+    if (dir.exists()) {
+      dir.remove(false);
+    }
+    dir.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
+    return dir.exists() && dir.isDirectory();
+  });
+}
+
+SimpleTest.waitForExplicitFinish();
+SpecialPowers.pushPrefEnv({
+  "set": [["dom.caches.enabled", true],
+          ["dom.caches.testing.enabled", true],
+          ["dom.quotaManager.testing", true]],
+}, function() { runTest(); });
+
+async function runTest() {
+  if (SpecialPowers.Services.prefs.getBoolPref(
+      "browser.privatebrowsing.autostart", false)) {
+    ok(true, "Skipping in private-browsing mode — storage paths differ");
+    await SimpleTest.finish();
+    return;
+  }
+
+  const name = "toBeOrphanedWithPadding";
+  const cors_base = "https://example.com/tests/dom/cache/test/mochitest/";
+  const url = "test_cache_add.js";
+
+  await setupTestIframe();
+
+  info("Stage 0: clean slate.");
+  await clearStorage();
+  is(0, await storageUsage(), "disk usage should be zero to start");
+
+  info("Stage 1: dummy population to allocate base sqlite pages/directory " +
+       "structure, mirroring test_cache_orphaned_cache.html's technique.");
+  let dummyCache = await caches.open(name);
+  await dummyCache.add(url);
+  await caches.delete(name);
+  dummyCache = null;
+  await gc();
+  await caches.has(name);
+
+  await resetStorage();
+  let initialUsage = await storageUsage();
+  info("initialUsage=" + initialUsage);
+
+  info("Stage 2: put a padded (opaque) response, then orphan the whole " +
+       "cache by deleting it from CacheStorage while `cache` is still held.");
+  let cache = await caches.open(name);
+  let opaqueResponse = await fetchOpaqueResponse(cors_base + url);
+  await cache.put(cors_base + url, opaqueResponse);
+
+  let deleted = await caches.delete(name);
+  ok(deleted, "cache should report deleted from CacheStorage's perspective");
+
+  info("Stage 3: reset while still orphaned and confirm the padded data " +
+       "is still really on disk. Prevent GC of cache ref by reading from it.");
+  let keys = await cache.keys();
+  info("cache.keys() returned " + keys.length + " entries (keeps ref alive)");
+  await resetStorage();
+  let fullUsage = await storageUsage();
+  info("fullUsage=" + fullUsage);
+  ok(fullUsage > initialUsage,
+     "disk usage should have grown from the orphaned padded cache");
+
+  info("Stage 4: verify marker file exists (orphan must trigger SetupAction).");
+  let originDir = window.location.origin
+    .replace("://", "+++")
+    .replace(/:/g, "+");
+  let markerExists = await SpecialPowers.spawnChrome(
+    [originDir],
+    function(od) {
+      const dir = Services.dirsvc.get("ProfD", Ci.nsIFile);
+      dir.append("storage");
+      dir.append("default");
+      dir.append(od);
+      dir.append("cache");
+      dir.append("context_open.marker");
+      return dir.exists();
+    });
+  info("markerExists=" + markerExists);
+
+  ok(markerExists, "marker file must exist — orphan should persist across " +
+     "resetStorage() because the cache ref is still alive");
+  if (!markerExists) {
+    await SimpleTest.finish();
+    return;
+  }
+
+  info("Stage 5: inject filesystem fault: place a .padding-tmp DIRECTORY so " +
+       "DirectoryPaddingWrite fails with EISDIR.");
+  let dirCreated = await createPaddingTmpDirectory();
+  ok(dirCreated, ".padding-tmp directory should exist and be a directory");
+
+  info("Stage 6: trigger re-init — SetupAction runs, finds orphans, " +
+       "cleans up body files, but fails at the padding-file write. " +
+       "The commit hook is never called.");
+  await caches.has(name);
+
+  info("Stage 7: check in-memory usage WITHOUT resetStorage() — " +
+       "resetStorage would reload from disk and mask the corruption.");
+  let afterFirstMemUsage = await cachedStorageUsage();
+  info("afterFirstMemUsage=" + afterFirstMemUsage);
+
+  // With the fix, only body-file deletions reduce usage (via QuotaObject).
+  // The padding is still included because the commit callback (which runs
+  // DecreaseUsageForDirectoryMetadata) was never reached.
+  //
+  // With the bug, the loop eagerly called DecreaseUsageForDirectoryMetadata
+  // before MaybeUpdatePaddingFile, so the padding was subtracted too:
+  //   buggy:  afterFirstMemUsage ≈ initialUsage  (body + padding removed)
+  //   fixed:  afterFirstMemUsage ≈ initialUsage + padding  (only body removed)
+  //
+  // Since padding dominates fullUsage - initialUsage (opaque response padding
+  // is randomized and typically large), afterFirstMemUsage should be closer
+  // to fullUsage than to initialUsage if the padding was correctly retained.
+  let midpoint = (fullUsage + initialUsage) / 2;
+  ok(afterFirstMemUsage > midpoint,
+     "in-memory usage (" + afterFirstMemUsage + ") should be above midpoint " +
+     "(" + midpoint + ") between initial (" + initialUsage + ") and full (" +
+     fullUsage + ") — if below, padding was prematurely subtracted");
+
+  info("SUMMARY initial=" + initialUsage + " full=" + fullUsage +
+       " afterFirstMem=" + afterFirstMemUsage);
+
+  await SimpleTest.finish();
+}
+</script>
+</body>
+</html>

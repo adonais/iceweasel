@@ -8,8 +8,8 @@ import androidx.fragment.app.Fragment
 import mozilla.components.feature.pwa.ext.getWebAppManifest
 
 /**
- * Activity that holds the [BrowserFragment] that is launched within an external app,
- * such as custom tabs and progressive web apps.
+ * Activity that holds the [BrowserFragment] that is launched within an external app, such as custom tabs and
+ * progressive web apps.
  */
 class ExternalAppBrowserActivity : BrowserActivity() {
 

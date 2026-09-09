@@ -28,35 +28,34 @@ import mozilla.components.feature.prompts.ext.Truncation
 
 internal const val KEY_ICON = "KEY_ICON"
 
-/**
- * [ A Federated Credential Management dialog for showing a privacy policy.
- */
+/** [ A Federated Credential Management dialog for showing a privacy policy. */
 internal class PrivacyPolicyDialogFragment : AbstractPromptTextDialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val builder = MaterialAlertDialogBuilder(requireContext())
-            .setTitle(title)
-            .setCancelable(true)
-            .setPositiveButton(R.string.mozac_feature_prompts_identity_credentials_continue) { _, _ ->
-                onConfirmAction(true)
-            }
-            .setNegativeButton(R.string.mozac_feature_prompts_identity_credentials_cancel) { _, _ ->
-                onConfirmAction(false)
-            }
+        val builder =
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(title)
+                .setCancelable(true)
+                .setPositiveButton(R.string.mozac_feature_prompts_identity_credentials_continue) { _, _ ->
+                    onConfirmAction(true)
+                }
+                .setNegativeButton(R.string.mozac_feature_prompts_identity_credentials_cancel) { _, _ ->
+                    onConfirmAction(false)
+                }
 
-        return setMessage(builder)
-            .create()
+        return setMessage(builder).create()
     }
 
     internal fun setMessage(builder: MaterialAlertDialogBuilder): MaterialAlertDialogBuilder {
         val inflater = LayoutInflater.from(requireContext())
         val view = inflater.inflate(R.layout.mozac_feature_prompt_simple_text, null)
         val textView = view.findViewById<TextView>(R.id.labelView)
-        val truncatedMessage = if (message.length > Truncation.MAX_MESSAGE_LENGTH) {
-            message.substring(0, Truncation.MAX_MESSAGE_LENGTH) + "…"
-        } else {
-            message
-        }
+        val truncatedMessage =
+            if (message.length > Truncation.MAX_MESSAGE_LENGTH) {
+                message.substring(0, Truncation.MAX_MESSAGE_LENGTH) + "…"
+            } else {
+                message
+            }
         val text = HtmlCompat.fromHtml(truncatedMessage, HtmlCompat.FROM_HTML_MODE_COMPACT)
 
         val spannableStringBuilder = SpannableStringBuilder(text)
@@ -83,14 +82,15 @@ internal class PrivacyPolicyDialogFragment : AbstractPromptTextDialogFragment() 
         val start = spannableStringBuilder.getSpanStart(link)
         val end = spannableStringBuilder.getSpanEnd(link)
         val flags = spannableStringBuilder.getSpanFlags(link)
-        val clickable: ClickableSpan = object : ClickableSpan() {
-            override fun onClick(view: View) {
-                view.setOnClickListener {
-                    dismiss()
-                    feature?.onOpenLink(link.url)
+        val clickable: ClickableSpan =
+            object : ClickableSpan() {
+                override fun onClick(view: View) {
+                    view.setOnClickListener {
+                        dismiss()
+                        feature?.onOpenLink(link.url)
+                    }
                 }
             }
-        }
         spannableStringBuilder.setSpan(clickable, start, end, flags)
         spannableStringBuilder.removeSpan(link)
     }
@@ -102,10 +102,11 @@ internal class PrivacyPolicyDialogFragment : AbstractPromptTextDialogFragment() 
     companion object {
         /**
          * A builder method for creating a [PrivacyPolicyDialogFragment]
+         *
          * @param sessionId to create the dialog.
          * @param promptRequestUID identifier of the [PromptRequest] for which this dialog is shown.
-         * @param shouldDismissOnLoad whether or not the dialog should automatically be dismissed
-         * when a new page is loaded.
+         * @param shouldDismissOnLoad whether or not the dialog should automatically be dismissed when a new page is
+         *   loaded.
          * @param title the title of the dialog.
          * @param message the message of the dialog.
          * @param icon an icon of the provider.

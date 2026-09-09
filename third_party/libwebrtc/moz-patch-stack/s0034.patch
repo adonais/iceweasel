@@ -19,10 +19,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/58f47eacaf10d12e2
  10 files changed, 24 insertions(+), 24 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index 439689b3b1..5b685445c3 100644
+index 39d4066e21..b997730202 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -449,12 +449,12 @@ config("common_config") {
+@@ -457,12 +457,12 @@ config("common_config") {
      }
    }
  
@@ -37,7 +37,7 @@ index 439689b3b1..5b685445c3 100644
      defines += [ "WEBRTC_ARCH_ARM" ]
      if (arm_version >= 7) {
        defines += [ "WEBRTC_ARCH_ARM_V7" ]
-@@ -464,7 +464,7 @@ config("common_config") {
+@@ -472,7 +472,7 @@ config("common_config") {
      }
    }
  
@@ -171,7 +171,7 @@ index ac862c65a8..e66ed2796e 100644
    } else {
      sources += [ "spl_sqrt_floor.c" ]
 diff --git a/modules/audio_processing/aec3/BUILD.gn b/modules/audio_processing/aec3/BUILD.gn
-index 669c410077..97a7c7eefa 100644
+index cb6f6e4a4e..540af562a2 100644
 --- a/modules/audio_processing/aec3/BUILD.gn
 +++ b/modules/audio_processing/aec3/BUILD.gn
 @@ -125,7 +125,7 @@ rtc_library("aec3") {
@@ -202,7 +202,7 @@ index 669c410077..97a7c7eefa 100644
      configs += [ "..:apm_debug_dump" ]
      sources = [
 diff --git a/modules/audio_processing/agc/BUILD.gn b/modules/audio_processing/agc/BUILD.gn
-index d84073a77b..3407eeff7c 100644
+index c697c5d7c4..59b933ff6c 100644
 --- a/modules/audio_processing/agc/BUILD.gn
 +++ b/modules/audio_processing/agc/BUILD.gn
 @@ -77,7 +77,7 @@ rtc_library("legacy_agc") {
@@ -215,7 +215,7 @@ index d84073a77b..3407eeff7c 100644
        suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
        cflags = [ "-mfpu=neon" ]
 diff --git a/modules/audio_processing/agc2/rnn_vad/BUILD.gn b/modules/audio_processing/agc2/rnn_vad/BUILD.gn
-index 5465a0e26c..7bc30c90fc 100644
+index 2eaafdeb6a..ff042a17f4 100644
 --- a/modules/audio_processing/agc2/rnn_vad/BUILD.gn
 +++ b/modules/audio_processing/agc2/rnn_vad/BUILD.gn
 @@ -18,7 +18,7 @@ rtc_library("rnn_vad") {
@@ -228,7 +228,7 @@ index 5465a0e26c..7bc30c90fc 100644
      cflags = [ "-mfpu=neon" ]
    }
 diff --git a/modules/audio_processing/ns/BUILD.gn b/modules/audio_processing/ns/BUILD.gn
-index 6324ed2bb7..55b7da56a5 100644
+index 3b8c3960d5..d0b66cd592 100644
 --- a/modules/audio_processing/ns/BUILD.gn
 +++ b/modules/audio_processing/ns/BUILD.gn
 @@ -43,7 +43,7 @@ rtc_static_library("ns") {
@@ -241,7 +241,7 @@ index 6324ed2bb7..55b7da56a5 100644
      cflags = [ "-mfpu=neon" ]
    }
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index f742b70627..d080624941 100644
+index 703fbe17c0..aae100e4a2 100644
 --- a/modules/desktop_capture/BUILD.gn
 +++ b/modules/desktop_capture/BUILD.gn
 @@ -10,7 +10,7 @@ import("//build/config/linux/gtk/gtk.gni")
@@ -254,7 +254,7 @@ index f742b70627..d080624941 100644
  config("x11_config") {
    if (rtc_use_x11_extensions) {
 diff --git a/webrtc.gni b/webrtc.gni
-index 34b2c0e4d6..79f4ce93d0 100644
+index 130a25742c..000a6c66d1 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -160,7 +160,7 @@ declare_args() {

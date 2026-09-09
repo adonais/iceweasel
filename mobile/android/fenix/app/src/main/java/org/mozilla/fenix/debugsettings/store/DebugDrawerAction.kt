@@ -5,119 +5,77 @@
 package org.mozilla.fenix.debugsettings.store
 
 import mozilla.components.lib.state.Action
-import org.mozilla.fenix.debugsettings.autofill.AutofillTools
-import org.mozilla.fenix.debugsettings.gleandebugtools.ui.GleanDebugToolsScreen
-import org.mozilla.fenix.debugsettings.ui.DebugDrawerHome
 import org.mozilla.fenix.debugsettings.addresses.AddressesTools as AddressesScreen
+import org.mozilla.fenix.debugsettings.autofill.AutofillTools
 import org.mozilla.fenix.debugsettings.cfrs.CfrTools as CfrToolsScreen
 import org.mozilla.fenix.debugsettings.distributions.DistributionTools as DistributionScreen
+import org.mozilla.fenix.debugsettings.gleandebugtools.ui.GleanDebugToolsScreen
 import org.mozilla.fenix.debugsettings.logins.LoginsTools as LoginsScreen
 import org.mozilla.fenix.debugsettings.region.RegionTools as RegionScreen
 import org.mozilla.fenix.debugsettings.tabs.TabTools as TabToolsScreen
+import org.mozilla.fenix.debugsettings.ui.DebugDrawerHome
 
-/**
- * [Action] implementation related to [DebugDrawerStore].
- */
+/** [Action] implementation related to [DebugDrawerStore]. */
 sealed class DebugDrawerAction : Action {
 
-    /**
-     * [DebugDrawerAction] fired when the overlay is displayed.
-     */
+    /** [DebugDrawerAction] fired when the overlay is displayed. */
     object ViewAppeared : DebugDrawerAction()
 
-    /**
-     * [DebugDrawerAction] fired when the user opens the drawer.
-     */
+    /** [DebugDrawerAction] fired when the user opens the drawer. */
     object DrawerOpened : DebugDrawerAction()
 
-    /**
-     * [DebugDrawerAction] fired when the user closes the drawer.
-     */
+    /** [DebugDrawerAction] fired when the user closes the drawer. */
     object DrawerClosed : DebugDrawerAction()
 
-    /**
-     * [DebugDrawerAction] fired when a navigation event occurs for a specific destination.
-     */
+    /** [DebugDrawerAction] fired when a navigation event occurs for a specific destination. */
     sealed class NavigateTo : DebugDrawerAction() {
 
-        /**
-         * [NavigateTo] action fired when the debug drawer needs to navigate to [DebugDrawerHome].
-         */
+        /** [NavigateTo] action fired when the debug drawer needs to navigate to [DebugDrawerHome]. */
         object Home : NavigateTo()
 
-        /**
-         * [NavigateTo] action fired when the debug drawer needs to navigate to [TabToolsScreen].
-         */
+        /** [NavigateTo] action fired when the debug drawer needs to navigate to [TabToolsScreen]. */
         object TabTools : NavigateTo()
 
-        /**
-         * [NavigateTo] action fired when the debug drawer needs to navigate to [LoginsScreen].
-         */
+        /** [NavigateTo] action fired when the debug drawer needs to navigate to [LoginsScreen]. */
         object Logins : NavigateTo()
 
-        /**
-         * [NavigateTo] action fired when the debug drawer needs to navigate to [AddressesScreen].
-         */
+        /** [NavigateTo] action fired when the debug drawer needs to navigate to [AddressesScreen]. */
         data object Addresses : NavigateTo()
 
-        /**
-         * [NavigateTo] action fired when the debug drawer needs to navigate to [CreditCardsTools].
-         */
+        /** [NavigateTo] action fired when the debug drawer needs to navigate to [CreditCardsTools]. */
         data object CreditCards : NavigateTo()
 
-        /**
-         * [NavigateTo] action fired when the debug drawer needs to navigate to [AutofillTools].
-         */
+        /** [NavigateTo] action fired when the debug drawer needs to navigate to [AutofillTools]. */
         object Autofill : NavigateTo()
 
-        /**
-         * [NavigateTo] action fired when the debug drawer needs to navigate to [CfrToolsScreen].
-         */
+        /** [NavigateTo] action fired when the debug drawer needs to navigate to [CfrToolsScreen]. */
         object CfrTools : NavigateTo()
 
-        /**
-         * [NavigateTo] action fired when the debug drawer needs to navigate to [GleanDebugToolsScreen].
-         */
+        /** [NavigateTo] action fired when the debug drawer needs to navigate to [GleanDebugToolsScreen]. */
         object GleanDebugTools : NavigateTo()
 
-        /**
-         * [NavigateTo] action fired when the debug drawer needs to navigate to [RegionScreen].
-         */
+        /** [NavigateTo] action fired when the debug drawer needs to navigate to [RegionScreen]. */
         object RegionDebugTools : NavigateTo()
 
-        /**
-         * [NavigateTo] action fired when the debug drawer needs to navigate to [AddonsDebugToolsScreen].
-         */
+        /** [NavigateTo] action fired when the debug drawer needs to navigate to [AddonsDebugToolsScreen]. */
         object AddonsDebugTools : NavigateTo()
 
-        /**
-         * [NavigateTo] action fired when the debug drawer needs to navigate to [CrashTools].
-         */
+        /** [NavigateTo] action fired when the debug drawer needs to navigate to [CrashTools]. */
         object CrashDebugTools : NavigateTo()
 
-        /**
-         * [NavigateTo] action fired when the debug drawer needs to navigate to [IntegrityTools].
-         */
+        /** [NavigateTo] action fired when the debug drawer needs to navigate to [IntegrityTools]. */
         object IntegrityDebugTools : NavigateTo()
 
-        /**
-         * [NavigateTo] action fired when the debug drawer needs to navigate to [TabGroupTools].
-         */
+        /** [NavigateTo] action fired when the debug drawer needs to navigate to [TabGroupTools]. */
         object TabGroupDebugTools : NavigateTo()
 
-        /**
-         * [NavigateTo] action fired when the debug drawer needs to navigate to [TabProcessTools].
-         */
+        /** [NavigateTo] action fired when the debug drawer needs to navigate to [TabProcessTools]. */
         object TabProcessTools : NavigateTo()
 
-        /**
-         * [NavigateTo] action fired when the debug drawer needs to navigate to [DistributionScreen].
-         */
+        /** [NavigateTo] action fired when the debug drawer needs to navigate to [DistributionScreen]. */
         object DistributionTools : NavigateTo()
     }
 
-    /**
-     * [DebugDrawerAction] fired when a back navigation event occurs.
-     */
+    /** [DebugDrawerAction] fired when a back navigation event occurs. */
     object OnBackPressed : DebugDrawerAction()
 }

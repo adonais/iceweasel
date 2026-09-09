@@ -6,6 +6,7 @@ package mozilla.components.browser.session.storage
 
 import android.content.Context
 import android.util.AtomicFile
+import java.io.File
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSessionState
 import mozilla.components.concept.engine.EngineSessionStateStorage
@@ -13,11 +14,9 @@ import mozilla.components.support.ktx.java.io.truncateDirectory
 import mozilla.components.support.ktx.util.readAndDeserialize
 import mozilla.components.support.ktx.util.streamJSON
 import org.json.JSONObject
-import java.io.File
 
 /**
- * Implementation of [EngineSessionStateStorage] that reads/writes [EngineSessionState] as JSON
- * files onto disk.
+ * Implementation of [EngineSessionStateStorage] that reads/writes [EngineSessionState] as JSON files onto disk.
  *
  * This is used by components that need to persist [EngineSessionState] instances separately from
  * [RecoverableBrowserState].
@@ -38,9 +37,10 @@ class FileEngineSessionStateStorage(
     }
 
     override suspend fun read(uuid: String): EngineSessionState? {
-        val jsonObject = getStateFile(uuid).readAndDeserialize { json ->
-            JSONObject(json)
-        }
+        val jsonObject =
+            getStateFile(uuid).readAndDeserialize { json ->
+                JSONObject(json)
+            }
         return jsonObject?.let { engine.createSessionState(it) }
     }
 

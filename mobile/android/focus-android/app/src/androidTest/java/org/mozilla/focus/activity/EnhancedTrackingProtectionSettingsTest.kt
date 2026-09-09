@@ -27,13 +27,12 @@ import org.mozilla.focus.testAnnotations.SmokeTest
 class EnhancedTrackingProtectionSettingsTest {
     private val featureSettingsHelper = FeatureSettingsHelper()
 
-    @get:Rule(order = 0)
-    val focusTestRule: FocusTestRule = FocusTestRule()
+    @get:Rule(order = 0) val focusTestRule: FocusTestRule = FocusTestRule()
 
-    private val webServerRule get() = focusTestRule.mockWebServerRule
+    private val webServerRule
+        get() = focusTestRule.mockWebServerRule
 
-    @get:Rule
-    val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
+    @get:Rule val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
 
     @Before
     fun setUp() {
@@ -49,15 +48,15 @@ class EnhancedTrackingProtectionSettingsTest {
     @SmokeTest
     @Test
     fun trackingProtectionTogglesListTest() {
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openPrivacySettingsMenu {
-            verifyBlockAdTrackersEnabled(true)
-            verifyBlockAnalyticTrackersEnabled(true)
-            verifyBlockSocialTrackersEnabled(true)
-            verifyBlockOtherTrackersEnabled(false)
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openPrivacySettingsMenu {
+                verifyBlockAdTrackersEnabled(true)
+                verifyBlockAnalyticTrackersEnabled(true)
+                verifyBlockSocialTrackersEnabled(true)
+                verifyBlockOtherTrackersEnabled(false)
+            }
     }
 
     // Some workarounds are temp needed, because of https://bugzilla.mozilla.org/show_bug.cgi?id=1794130:
@@ -70,19 +69,20 @@ class EnhancedTrackingProtectionSettingsTest {
         val genericPage = webServerRule.server.genericAsset
         val trackingPage = webServerRule.server.getEnhancedTrackingProtectionAsset("adsTrackers")
 
-        searchScreen {
-        }.loadPage(genericPage.url) {
-            // loading a generic page to allow GV to fully load on first run
-            verifyPageContent(genericPage.content)
-        }.openMainMenu {
-        }.openSettings {
-            exitToBrowser()
-            pressBack()
-        }
-        searchScreen {
-        }.loadPage(trackingPage.url) {
-            verifyTrackingProtectionAlert("ads trackers blocked")
-        }
+        searchScreen {}
+            .loadPage(genericPage.url) {
+                // loading a generic page to allow GV to fully load on first run
+                verifyPageContent(genericPage.content)
+            }
+            .openMainMenu {}
+            .openSettings {
+                exitToBrowser()
+                pressBack()
+            }
+        searchScreen {}
+            .loadPage(trackingPage.url) {
+                verifyTrackingProtectionAlert("ads trackers blocked")
+            }
     }
 
     @SmokeTest
@@ -91,24 +91,24 @@ class EnhancedTrackingProtectionSettingsTest {
         val genericPage = webServerRule.server.genericAsset
         val trackingPage = webServerRule.server.getEnhancedTrackingProtectionAsset("adsTrackers")
 
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openPrivacySettingsMenu {
-            clickAdTrackersBlockSwitch()
-            verifyBlockAdTrackersEnabled(false)
-            exitToTop()
-        }
-        searchScreen {
-        }.loadPage(genericPage.url) {
-            // loading a generic page to allow GV to fully load on first run
-            verifyPageContent(genericPage.content)
-            pressBack()
-        }
-        searchScreen {
-        }.loadPage(trackingPage.url) {
-            verifyPageContent("ads trackers not blocked")
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openPrivacySettingsMenu {
+                clickAdTrackersBlockSwitch()
+                verifyBlockAdTrackersEnabled(false)
+                exitToTop()
+            }
+        searchScreen {}
+            .loadPage(genericPage.url) {
+                // loading a generic page to allow GV to fully load on first run
+                verifyPageContent(genericPage.content)
+                pressBack()
+            }
+        searchScreen {}
+            .loadPage(trackingPage.url) {
+                verifyPageContent("ads trackers not blocked")
+            }
     }
 
     // Some workarounds are temp needed, because of https://bugzilla.mozilla.org/show_bug.cgi?id=1794130:
@@ -121,19 +121,20 @@ class EnhancedTrackingProtectionSettingsTest {
         val genericPage = webServerRule.server.genericAsset
         val trackingPage = webServerRule.server.getEnhancedTrackingProtectionAsset("analyticsTrackers")
 
-        searchScreen {
-        }.loadPage(genericPage.url) {
-            // loading a generic page to allow GV to fully load on first run
-            verifyPageContent(genericPage.content)
-        }.openMainMenu {
-        }.openSettings {
-            exitToBrowser()
-            pressBack()
-        }
-        searchScreen {
-        }.loadPage(trackingPage.url) {
-            verifyTrackingProtectionAlert("analytics trackers blocked")
-        }
+        searchScreen {}
+            .loadPage(genericPage.url) {
+                // loading a generic page to allow GV to fully load on first run
+                verifyPageContent(genericPage.content)
+            }
+            .openMainMenu {}
+            .openSettings {
+                exitToBrowser()
+                pressBack()
+            }
+        searchScreen {}
+            .loadPage(trackingPage.url) {
+                verifyTrackingProtectionAlert("analytics trackers blocked")
+            }
     }
 
     @SmokeTest
@@ -142,24 +143,24 @@ class EnhancedTrackingProtectionSettingsTest {
         val genericPage = webServerRule.server.genericAsset
         val trackingPage = webServerRule.server.getEnhancedTrackingProtectionAsset("analyticsTrackers")
 
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openPrivacySettingsMenu {
-            clickAnalyticsTrackersBlockSwitch()
-            verifyBlockAnalyticTrackersEnabled(false)
-            exitToTop()
-        }
-        searchScreen {
-        }.loadPage(genericPage.url) {
-            // loading a generic page to allow GV to fully load on first run
-            verifyPageContent(genericPage.content)
-            pressBack()
-        }
-        searchScreen {
-        }.loadPage(trackingPage.url) {
-            verifyPageContent("analytics trackers not blocked")
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openPrivacySettingsMenu {
+                clickAnalyticsTrackersBlockSwitch()
+                verifyBlockAnalyticTrackersEnabled(false)
+                exitToTop()
+            }
+        searchScreen {}
+            .loadPage(genericPage.url) {
+                // loading a generic page to allow GV to fully load on first run
+                verifyPageContent(genericPage.content)
+                pressBack()
+            }
+        searchScreen {}
+            .loadPage(trackingPage.url) {
+                verifyPageContent("analytics trackers not blocked")
+            }
     }
 
     // Some workarounds are temp needed, because of https://bugzilla.mozilla.org/show_bug.cgi?id=1794130:
@@ -172,19 +173,20 @@ class EnhancedTrackingProtectionSettingsTest {
         val genericPage = webServerRule.server.genericAsset
         val trackingPage = webServerRule.server.getEnhancedTrackingProtectionAsset("socialTrackers")
 
-        searchScreen {
-        }.loadPage(genericPage.url) {
-            // loading a generic page to allow GV to fully load on first run
-            verifyPageContent(genericPage.content)
-        }.openMainMenu {
-        }.openSettings {
-            exitToBrowser()
-            pressBack()
-        }
-        searchScreen {
-        }.loadPage(trackingPage.url) {
-            verifyTrackingProtectionAlert("social trackers blocked")
-        }
+        searchScreen {}
+            .loadPage(genericPage.url) {
+                // loading a generic page to allow GV to fully load on first run
+                verifyPageContent(genericPage.content)
+            }
+            .openMainMenu {}
+            .openSettings {
+                exitToBrowser()
+                pressBack()
+            }
+        searchScreen {}
+            .loadPage(trackingPage.url) {
+                verifyTrackingProtectionAlert("social trackers blocked")
+            }
     }
 
     @SmokeTest
@@ -193,24 +195,24 @@ class EnhancedTrackingProtectionSettingsTest {
         val genericPage = webServerRule.server.genericAsset
         val trackingPage = webServerRule.server.getEnhancedTrackingProtectionAsset("socialTrackers")
 
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openPrivacySettingsMenu {
-            clickSocialTrackersBlockSwitch()
-            verifyBlockSocialTrackersEnabled(false)
-            exitToTop()
-        }
-        searchScreen {
-        }.loadPage(genericPage.url) {
-            // loading a generic page to allow GV to fully load on first run
-            verifyPageContent(genericPage.content)
-            pressBack()
-        }
-        searchScreen {
-        }.loadPage(trackingPage.url) {
-            verifyPageContent("social trackers not blocked")
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openPrivacySettingsMenu {
+                clickSocialTrackersBlockSwitch()
+                verifyBlockSocialTrackersEnabled(false)
+                exitToTop()
+            }
+        searchScreen {}
+            .loadPage(genericPage.url) {
+                // loading a generic page to allow GV to fully load on first run
+                verifyPageContent(genericPage.content)
+                pressBack()
+            }
+        searchScreen {}
+            .loadPage(trackingPage.url) {
+                verifyPageContent("social trackers not blocked")
+            }
     }
 
     @SmokeTest
@@ -219,16 +221,16 @@ class EnhancedTrackingProtectionSettingsTest {
         val genericPage = webServerRule.server.genericAsset
         val trackingPage = webServerRule.server.getEnhancedTrackingProtectionAsset("otherTrackers")
 
-        searchScreen {
-        }.loadPage(genericPage.url) {
-            // loading a generic page to allow GV to fully load on first run
-            verifyPageContent(genericPage.content)
-            pressBack()
-        }
-        searchScreen {
-        }.loadPage(trackingPage.url) {
-            verifyPageContent("other content trackers not blocked")
-        }
+        searchScreen {}
+            .loadPage(genericPage.url) {
+                // loading a generic page to allow GV to fully load on first run
+                verifyPageContent(genericPage.content)
+                pressBack()
+            }
+        searchScreen {}
+            .loadPage(trackingPage.url) {
+                verifyPageContent("other content trackers not blocked")
+            }
     }
 
     // Some workarounds are temp needed, because of https://bugzilla.mozilla.org/show_bug.cgi?id=1794130:
@@ -241,24 +243,24 @@ class EnhancedTrackingProtectionSettingsTest {
         val genericPage = webServerRule.server.genericAsset
         val trackingPage = webServerRule.server.getEnhancedTrackingProtectionAsset("otherTrackers")
 
-        searchScreen {
-        }.loadPage(genericPage.url) {
-            // loading a generic page to allow GV to fully load on first run
-            verifyPageContent(genericPage.content)
-            pressBack()
-        }
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openPrivacySettingsMenu {
-            clickOtherContentTrackersBlockSwitch()
-            verifyBlockOtherTrackersEnabled(true)
-            exitToTop()
-        }
-        searchScreen {
-        }.loadPage(trackingPage.url) {
-            verifyTrackingProtectionAlert("other content trackers blocked")
-        }
+        searchScreen {}
+            .loadPage(genericPage.url) {
+                // loading a generic page to allow GV to fully load on first run
+                verifyPageContent(genericPage.content)
+                pressBack()
+            }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openPrivacySettingsMenu {
+                clickOtherContentTrackersBlockSwitch()
+                verifyBlockOtherTrackersEnabled(true)
+                exitToTop()
+            }
+        searchScreen {}
+            .loadPage(trackingPage.url) {
+                verifyTrackingProtectionAlert("other content trackers blocked")
+            }
     }
 
     @SmokeTest
@@ -267,21 +269,24 @@ class EnhancedTrackingProtectionSettingsTest {
         val genericPage = webServerRule.server.genericAsset
         val trackingPage = webServerRule.server.getEnhancedTrackingProtectionAsset("otherTrackers")
 
-        searchScreen {
-        }.loadPage(genericPage.url) {
-            verifyPageContent(genericPage.content)
-        }.openSearchBar {
-        }.loadPage(trackingPage.url) {
-            verifyPageContent(trackingPage.content)
-        }.openSiteSecurityInfoSheet {
-        }.clickTrackingProtectionSwitch {
-            progressBar.waitUntilGone(waitingTime)
-        }.openMainMenu {
-        }.openSettings {
-        }.openPrivacySettingsMenu {
-            openExceptionsList()
-            verifyExceptionURL(webServerRule.server.hostName)
-        }
+        searchScreen {}
+            .loadPage(genericPage.url) {
+                verifyPageContent(genericPage.content)
+            }
+            .openSearchBar {}
+            .loadPage(trackingPage.url) {
+                verifyPageContent(trackingPage.content)
+            }
+            .openSiteSecurityInfoSheet {}
+            .clickTrackingProtectionSwitch {
+                progressBar.waitUntilGone(waitingTime)
+            }
+            .openMainMenu {}
+            .openSettings {}
+            .openPrivacySettingsMenu {
+                openExceptionsList()
+                verifyExceptionURL(webServerRule.server.hostName)
+            }
     }
 
     @SmokeTest
@@ -290,27 +295,30 @@ class EnhancedTrackingProtectionSettingsTest {
         val genericPage = webServerRule.server.genericAsset
         val trackingPage = webServerRule.server.getEnhancedTrackingProtectionAsset("otherTrackers")
 
-        searchScreen {
-        }.loadPage(genericPage.url) {
-            verifyPageContent(genericPage.content)
-        }.openSearchBar {
-        }.loadPage(trackingPage.url) {
-            verifyPageContent(trackingPage.content)
-        }.openSiteSecurityInfoSheet {
-        }.clickTrackingProtectionSwitch {
-            progressBar.waitUntilGone(waitingTime)
-        }.openMainMenu {
-        }.openSettings {
-        }.openPrivacySettingsMenu {
-            openExceptionsList()
-            removeException()
-            verifyExceptionsListDisabled()
-            exitToBrowser()
-        }
-        browserScreen {
-        }.openSiteSecurityInfoSheet {
-            verifyTrackingProtectionIsEnabled(true)
-        }
+        searchScreen {}
+            .loadPage(genericPage.url) {
+                verifyPageContent(genericPage.content)
+            }
+            .openSearchBar {}
+            .loadPage(trackingPage.url) {
+                verifyPageContent(trackingPage.content)
+            }
+            .openSiteSecurityInfoSheet {}
+            .clickTrackingProtectionSwitch {
+                progressBar.waitUntilGone(waitingTime)
+            }
+            .openMainMenu {}
+            .openSettings {}
+            .openPrivacySettingsMenu {
+                openExceptionsList()
+                removeException()
+                verifyExceptionsListDisabled()
+                exitToBrowser()
+            }
+        browserScreen {}
+            .openSiteSecurityInfoSheet {
+                verifyTrackingProtectionIsEnabled(true)
+            }
     }
 
     @SmokeTest
@@ -319,26 +327,29 @@ class EnhancedTrackingProtectionSettingsTest {
         val genericPage = webServerRule.server.genericAsset
         val trackingPage = webServerRule.server.getEnhancedTrackingProtectionAsset("otherTrackers")
 
-        searchScreen {
-        }.loadPage(genericPage.url) {
-            verifyPageContent(genericPage.content)
-        }.openSearchBar {
-        }.loadPage(trackingPage.url) {
-            verifyPageContent(trackingPage.content)
-        }.openSiteSecurityInfoSheet {
-        }.clickTrackingProtectionSwitch {
-            progressBar.waitUntilGone(waitingTime)
-        }.openMainMenu {
-        }.openSettings {
-        }.openPrivacySettingsMenu {
-            openExceptionsList()
-            removeAllExceptions()
-            verifyExceptionsListDisabled()
-            exitToBrowser()
-        }
-        browserScreen {
-        }.openSiteSecurityInfoSheet {
-            verifyTrackingProtectionIsEnabled(true)
-        }
+        searchScreen {}
+            .loadPage(genericPage.url) {
+                verifyPageContent(genericPage.content)
+            }
+            .openSearchBar {}
+            .loadPage(trackingPage.url) {
+                verifyPageContent(trackingPage.content)
+            }
+            .openSiteSecurityInfoSheet {}
+            .clickTrackingProtectionSwitch {
+                progressBar.waitUntilGone(waitingTime)
+            }
+            .openMainMenu {}
+            .openSettings {}
+            .openPrivacySettingsMenu {
+                openExceptionsList()
+                removeAllExceptions()
+                verifyExceptionsListDisabled()
+                exitToBrowser()
+            }
+        browserScreen {}
+            .openSiteSecurityInfoSheet {
+                verifyTrackingProtectionIsEnabled(true)
+            }
     }
 }

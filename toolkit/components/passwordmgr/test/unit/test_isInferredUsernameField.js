@@ -158,6 +158,13 @@ const TESTCASES = [
     subtests: attributeTestData,
   },
   {
+    description: "Test aria-label attribute",
+    update: (doc, v) => {
+      doc.querySelector("input").setAttribute("aria-label", v);
+    },
+    subtests: attributeTestData,
+  },
+  {
     description: "Test the first label",
     update: (doc, v) => {
       doc.getElementById("l1").textContent = v;

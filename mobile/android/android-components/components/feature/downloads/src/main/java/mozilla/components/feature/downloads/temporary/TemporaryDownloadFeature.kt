@@ -8,6 +8,13 @@ import android.content.Context
 import android.webkit.MimeTypeMap
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.VisibleForTesting.Companion.PROTECTED
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.InputStream
+import java.net.URLConnection
+import kotlin.math.absoluteValue
+import kotlin.random.Random
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -25,35 +32,24 @@ import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlin.ifNullOrEmpty
 import mozilla.components.support.ktx.kotlin.sanitizeURL
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
-import java.io.InputStream
-import java.net.URLConnection
-import kotlin.math.absoluteValue
-import kotlin.random.Random
 
-/**
- * Default mime type for base64 images data URLs not containing the media type.
- */
-@VisibleForTesting
-internal const val DEFAULT_IMAGE_EXTENSION = "jpg"
+/** Default mime type for base64 images data URLs not containing the media type. */
+@VisibleForTesting internal const val DEFAULT_IMAGE_EXTENSION = "jpg"
 
 /**
  * Subdirectory of Context.getCacheDir() where the resources to be shared are stored.
  *
  * Location must be kept in sync with the paths our FileProvider can share from.
  */
-@VisibleForTesting
-internal var cacheDirName = "mozac_share_cache"
+@VisibleForTesting internal var cacheDirName = "mozac_share_cache"
 
 /**
  * Base class for downloading resources from the internet and storing them in a temporary cache.
  *
- *  @property context Android context used for various platform interactions.
- *  @property httpClient Client used for downloading internet resources.
- *  @property ioDispatcher Coroutine dispatcher used for IO operations like the download operation
- *  and cleanup of old cached files. Defaults to IO.
+ * @property context Android context used for various platform interactions.
+ * @property httpClient Client used for downloading internet resources.
+ * @property ioDispatcher Coroutine dispatcher used for IO operations like the download operation and cleanup of old
+ *   cached files. Defaults to IO.
  */
 abstract class TemporaryDownloadFeature(
     private val context: Context,
@@ -70,15 +66,14 @@ abstract class TemporaryDownloadFeature(
      */
     protected val operationTimeoutMs: Long = 20 * 1000L
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
-    var scope: CoroutineScope? = null
+    @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED) var scope: CoroutineScope? = null
 
     override fun stop() {
         scope?.cancel()
     }
 
     init {
-        CoroutineScope(ioDispatcher).launch {
+        CoroutineScope(ioDispatcher).launch(coroutineExceptionHandler("Cache cleanup")) {
             cleanupCache()
         }
     }
@@ -86,16 +81,18 @@ abstract class TemporaryDownloadFeature(
     @VisibleForTesting(otherwise = PROTECTED)
     internal suspend fun download(internetResource: ShareResourceState.InternetResource): File {
         return withContext(ioDispatcher) {
-            val request = Request(
-                internetResource.url.sanitizeURL(),
-                private = internetResource.private,
-                referrerUrl = internetResource.referrerUrl,
-            )
-            val response = if (internetResource.response == null) {
-                httpClient.fetch(request)
-            } else {
-                requireNotNull(internetResource.response)
-            }
+            val request =
+                Request(
+                    internetResource.url.sanitizeURL(),
+                    private = internetResource.private,
+                    referrerUrl = internetResource.referrerUrl,
+                )
+            val response =
+                if (internetResource.response == null) {
+                    httpClient.fetch(request)
+                } else {
+                    requireNotNull(internetResource.response)
+                }
 
             if (response.status != Response.SUCCESS) {
                 response.close()
@@ -115,15 +112,12 @@ abstract class TemporaryDownloadFeature(
     }
 
     @VisibleForTesting
-    internal fun getFilename(fileExtension: String) =
-        Random.nextInt().absoluteValue.toString() + fileExtension
+    internal fun getFilename(fileExtension: String) = Random.nextInt().absoluteValue.toString() + fileExtension
 
     @VisibleForTesting
-    internal fun getTempFile(fileExtension: String) =
-        File(getMediaShareCacheDirectory(), getFilename(fileExtension))
+    internal fun getTempFile(fileExtension: String) = File(getMediaShareCacheDirectory(), getFilename(fileExtension))
 
-    @VisibleForTesting
-    internal fun getCacheDirectory() = File(context.cacheDir, cacheDirName)
+    @VisibleForTesting internal fun getCacheDirectory() = File(context.cacheDir, cacheDirName)
 
     @VisibleForTesting
     internal fun getFileExtension(responseHeaders: Headers, responseStream: InputStream): String {
@@ -144,25 +138,36 @@ abstract class TemporaryDownloadFeature(
     @VisibleForTesting
     internal fun cleanupCache() {
         logger.debug("Deleting previous cache of shared files")
-        val success = getCacheDirectory().listFiles()?.all { it.deleteRecursively() } ?: true
-        if (!success) {
+        // Every entry is attempted; one that cannot be deleted must not strand the rest.
+        val failures = getCacheDirectory().listFiles()?.count { !it.deleteCacheEntry() } ?: 0
+        if (failures > 0) {
             logger.debug("Cleanup incomplete: some files were locked or could not be removed.")
         }
     }
 
-    protected fun coroutineExceptionHandler(action: String) =
-        CoroutineExceptionHandler { _, throwable ->
-            when (throwable) {
-                is InterruptedException -> {
-                    logger.warn("$action failed: operation timeout reached")
-                }
+    // Sibling features share this directory. deleteRecursively() asserts on an entry another
+    // cleanup removed mid-walk instead of reporting a failure.
+    private fun File.deleteCacheEntry() =
+        try {
+            deleteRecursively()
+        } catch (_: AssertionError) {
+            !exists()
+        }
 
-                is IOException,
-                is RuntimeException,
-                is NullPointerException,
-                -> {
-                    logger.warn("$action failed: $throwable")
-                }
+    protected fun coroutineExceptionHandler(action: String) = CoroutineExceptionHandler { _, throwable ->
+        when (throwable) {
+            is InterruptedException -> {
+                logger.warn("$action failed: operation timeout reached")
+            }
+
+            is IOException,
+            is RuntimeException -> {
+                logger.warn("$action failed: $throwable")
+            }
+
+            else -> {
+                logger.warn("$action failed unexpectedly: $throwable")
             }
         }
+    }
 }

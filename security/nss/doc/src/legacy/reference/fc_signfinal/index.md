@@ -2,13 +2,13 @@
 
 # FC_SignFinal
 
-## [Name](#name)
+## Name
 
 :::{container}
 FC_SignFinal - finish a multi-part signing operation.
 :::
 
-## [Syntax](#syntax)
+## Syntax
 
 :::{container}
 
@@ -22,7 +22,7 @@ CK_RV FC_SignFinal(
 
 :::
 
-## [Parameters](#parameters)
+## Parameters
 
 :::{container}
 `hSession`
@@ -38,7 +38,7 @@ CK_RV FC_SignFinal(
 : [in, out] pointer to location containing the maximum buffer size.
 :::
 
-## [Description](#description)
+## Description
 
 :::{container}
 `FC_SignFinal` finishes a multi-part signing operation by returning the complete signature and
@@ -48,13 +48,13 @@ and `FC_SignFinal` may be called again with `pSignature` set to retrieve the sig
 A user must log into the token (to assume the NSS User role) before calling `FC_SignFinal`.
 :::
 
-## [Return value](#return_value)
+## Return value
 
-## [Examples](#examples)
+## Examples
 
-## [See also](#see_also)
+## See also
 
 :::{container}
 
-- {ref}`mozilla_projects_nss_reference_fc_signupdate`, [NSC_SignFinal](/en-US/NSC_SignFinal)
+- {ref}`mozilla-projects-nss-reference-fc-signupdate`, [NSC_SignFinal](/en-US/NSC_SignFinal)
 :::

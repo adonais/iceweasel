@@ -14,11 +14,10 @@ import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * Use cases for handling the Mozilla Ads Client API click and impression callbacks.
- * The use cases performs a request for the provided click or impression callback URL.
+ * Use cases for handling the Mozilla Ads Client API click and impression callbacks. The use cases performs a request
+ * for the provided click or impression callback URL.
  *
- * @param adsClientProvider [MozAdsClientProvider] used to get an instance of [MozAdsClient] for
- * making HTTP API calls.
+ * @param adsClientProvider [MozAdsClientProvider] used to get an instance of [MozAdsClient] for making HTTP API calls.
  * @param crashReporter [CrashReporter] used for recording caught exceptions.
  */
 class MozAdsUseCases(
@@ -53,17 +52,16 @@ class MozAdsUseCases(
     private suspend fun recordInteraction(
         failMessage: String,
         block: () -> Unit,
-    ): Boolean = withContext(backgroundDispatcher) {
-        try {
-            block()
-            true
-        } catch (e: MozAdsClientApiException) {
-            logger.error(message = failMessage)
-            crashReporter.recordCrashBreadcrumb(
-                Breadcrumb(message = failMessage),
-            )
-            crashReporter.submitCaughtException(e)
-            false
+    ): Boolean =
+        withContext(backgroundDispatcher) {
+            try {
+                block()
+                true
+            } catch (e: MozAdsClientApiException) {
+                logger.error(message = failMessage)
+                crashReporter.recordCrashBreadcrumb(Breadcrumb(message = failMessage))
+                crashReporter.submitCaughtException(e)
+                false
+            }
         }
-    }
 }

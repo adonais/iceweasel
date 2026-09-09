@@ -12,20 +12,19 @@ import android.os.SystemClock
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
-import org.junit.rules.ExternalResource
-import org.mozilla.focus.helpers.TestHelper.executeShellCommandBlocking
 import java.util.Date
 import kotlin.random.Random
+import org.junit.rules.ExternalResource
+import org.mozilla.focus.helpers.TestHelper.executeShellCommandBlocking
 
 private const val MOCK_PROVIDER_NAME = LocationManager.GPS_PROVIDER
 
 /**
- * Rule that sets up a mock location provider that can inject location samples
- * straight to the device that the test is running on.
+ * Rule that sets up a mock location provider that can inject location samples straight to the device that the test is
+ * running on.
  *
  * Credit to the mapbox team
  * https://github.com/mapbox/mapbox-navigation-android/blob/87fab7ea1152b29533ee121eaf6c05bc202adf02/libtesting-ui/src/main/java/com/mapbox/navigation/testing/ui/MockLocationUpdatesRule.kt
- *
  */
 class MockLocationUpdatesRule : ExternalResource() {
     private val instrumentation = getInstrumentation()
@@ -42,9 +41,7 @@ class MockLocationUpdatesRule : ExternalResource() {
          * Will not be turned back off due to limitations on knowing its initial state.
          */
         instrumentation.uiAutomation.executeShellCommandBlocking(
-            "appops set " +
-                appContext.packageName +
-                " android:mock_location allow",
+            "appops set " + appContext.packageName + " android:mock_location allow"
         )
 
         // To mock locations we need a location provider, so we generate and set it here.

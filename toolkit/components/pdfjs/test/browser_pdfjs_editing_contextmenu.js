@@ -3,6 +3,14 @@
 
 const RELATIVE_DIR = "toolkit/components/pdfjs/test/";
 const TESTROOT = "http://example.com/browser/" + RELATIVE_DIR;
+// Avoid mixed-content blocking when HTTPS-First upgrades the top-level page.
+const HTTPS_TESTROOT = "https://example.com/browser/" + RELATIVE_DIR;
+const TARGET_URL = HTTPS_TESTROOT + "file_pdfjs_target.html";
+const NESTED_IFRAME_URL = HTTPS_TESTROOT + "file_pdfjs_nested_iframe.html";
+const IFRAME_PARENT_URL = TESTROOT + "file_pdfjs_iframe.html";
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
 
 // This is a modified version from browser_contextmenuFillLogins.js.
 async function openContextMenuAt(browser, x, y) {
@@ -55,9 +63,8 @@ function getContextMenuItems(browser, box) {
 
       await openContextMenuAt(browser, x + width / 2, y + height / 2);
       const results = new Map();
-      const doc = browser.ownerDocument;
       for (const menuitem of menuitems) {
-        const item = doc.getElementById(menuitem);
+        const item = document.getElementById(menuitem);
         results.set(menuitem, item || null);
       }
 
@@ -89,14 +96,11 @@ async function getContextMenuItemsOn(browser, selector) {
 
 /**
  * Hide the context menu.
- *
- * @param {object} browser
  */
-async function hideContextMenu(browser) {
+async function hideContextMenu() {
   await new Promise(resolve =>
     setTimeout(async () => {
-      const doc = browser.ownerDocument;
-      const contextMenu = doc.getElementById("contentAreaContextMenu");
+      const contextMenu = document.getElementById("contentAreaContextMenu");
 
       const popupHiddenPromise = BrowserTestUtils.waitForEvent(
         contextMenu,
@@ -158,7 +162,7 @@ async function waitAndCheckEmptyContextMenu(browser) {
     [...menuitems.values()].every(elmt => elmt.hidden),
     "No visible pdf menuitem"
   );
-  await hideContextMenu(browser);
+  await hideContextMenu();
 }
 
 // Text copy, paste, undo, redo, delete and select all in using the context
@@ -478,4 +482,195 @@ add_task(async function test_comment_selection() {
       await waitForPdfJSClose(browser);
     }
   );
+});
+
+add_task(async function test_editing_contextmenu_in_bfcache() {
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: TARGET_URL },
+    async function (browser) {
+      const browsingContext = browser.browsingContext;
+      await getContextMenuItemsOn(browser, "#target");
+
+      const pdfJsContextMenu = gContextMenu.pdfjsContextMenu;
+      const windowGlobal = gContextMenu.actor.manager;
+      is(
+        windowGlobal,
+        browsingContext.currentWindowGlobal,
+        "The context menu belongs to the initial page"
+      );
+      await hideContextMenu();
+      const sendSpy = sinon.spy(
+        windowGlobal.getActor("PdfJs"),
+        "sendAsyncMessage"
+      );
+
+      try {
+        const nextURL = `${TARGET_URL}?next`;
+        const loaded = BrowserTestUtils.browserLoaded(browser, false, nextURL);
+        await BrowserTestUtils.startLoadingURIString(browser, nextURL);
+        await loaded;
+
+        ok(windowGlobal.isInBFCache, "The context menu page is in the BFCache");
+        ok(!windowGlobal.isActiveInTab, "The cached page isn't visible");
+
+        pdfJsContextMenu.cmd("context-pdfjs-undo");
+        pdfJsContextMenu.cmd("context-pdfjs-copy");
+        is(sendSpy.callCount, 0, "No command was sent to the cached page");
+      } finally {
+        sendSpy.restore();
+      }
+    }
+  );
+});
+
+// Drop commands after an ancestor frame navigates.
+add_task(async function test_editing_contextmenu_in_stale_frame() {
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: NESTED_IFRAME_URL },
+    async function (browser) {
+      const middleFrame = browser.browsingContext.children[0];
+      const innerFrame = middleFrame.children[0];
+      await getContextMenuItemsOn(innerFrame, "#target");
+
+      const pdfJsContextMenu = gContextMenu.pdfjsContextMenu;
+      const windowGlobal = gContextMenu.actor.manager;
+      is(
+        windowGlobal,
+        innerFrame.currentWindowGlobal,
+        "The context menu belongs to the innermost frame"
+      );
+      await hideContextMenu();
+      const sendSpy = sinon.spy(
+        windowGlobal.getActor("PdfJs"),
+        "sendAsyncMessage"
+      );
+
+      try {
+        const loaded = BrowserTestUtils.browserLoaded(
+          browser,
+          true,
+          TARGET_URL
+        );
+        await SpecialPowers.spawn(middleFrame, [TARGET_URL], url => {
+          content.location = url;
+        });
+        await loaded;
+
+        ok(
+          windowGlobal.isCurrentGlobal,
+          "The stale frame is still the current global of its own context"
+        );
+        ok(!windowGlobal.isActiveInTab, "The stale frame isn't visible");
+
+        pdfJsContextMenu.cmd("context-pdfjs-undo");
+        pdfJsContextMenu.cmd("context-pdfjs-copy");
+        is(sendSpy.callCount, 0, "No command was sent to the stale frame");
+      } finally {
+        sendSpy.restore();
+      }
+
+      // Reset focus after the frame navigation.
+      await SpecialPowers.spawn(browser, [], () => content.focus());
+    }
+  );
+});
+
+add_task(async function test_editing_contextmenu_in_iframe() {
+  makePDFJSHandler();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["pdfjs.annotationEditorMode", 0]],
+  });
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: IFRAME_PARENT_URL },
+    async function (browser) {
+      SpecialPowers.clipboardCopyString("");
+
+      const iframe = browser.browsingContext.children[0];
+      await waitForPdfJSLayers(iframe, [
+        [
+          "annotationEditorLayer",
+          "annotationLayer",
+          "textLayer",
+          "canvasWrapper",
+        ],
+      ]);
+
+      const spanBox = await getSpanBox(iframe, "and found references");
+
+      await enableEditor(iframe, "FreeText", 1);
+      await addFreeText(iframe, "hello", spanBox);
+      await escape(iframe);
+
+      info("Wait for the editor to be unselected");
+      await TestUtils.waitForCondition(
+        async () => (await countElements(iframe, ".selectedEditor")) === 0
+      );
+
+      let menuitems = await getContextMenuItems(iframe, spanBox);
+      assertMenuitems(menuitems, [
+        "context-pdfjs-undo",
+        "context-pdfjs-select-all",
+      ]);
+
+      await clickOnItem(iframe, menuitems, "context-pdfjs-undo");
+      await TestUtils.waitForCondition(
+        async () => (await countElements(iframe, ".freeTextEditor")) !== 2
+      );
+      Assert.equal(
+        await countElements(iframe, ".freeTextEditor"),
+        1,
+        "The FreeText editor must have been removed"
+      );
+
+      menuitems = await getContextMenuItems(iframe, spanBox);
+      assertMenuitems(menuitems, [
+        "context-pdfjs-redo",
+        "context-pdfjs-select-all",
+      ]);
+
+      await clickOnItem(iframe, menuitems, "context-pdfjs-redo");
+      await TestUtils.waitForCondition(
+        async () => (await countElements(iframe, ".freeTextEditor")) !== 1
+      );
+      Assert.equal(
+        await countElements(iframe, ".freeTextEditor"),
+        2,
+        "The FreeText editor must have been added back"
+      );
+
+      await clickOn(iframe, "#pdfjs_internal_editor_0");
+      menuitems = await getContextMenuItemsOn(
+        iframe,
+        "#pdfjs_internal_editor_0"
+      );
+      await clickOnItem(iframe, menuitems, "context-pdfjs-cut");
+
+      await TestUtils.waitForCondition(
+        async () => (await countElements(iframe, ".freeTextEditor")) !== 2
+      );
+      Assert.equal(
+        await countElements(iframe, ".freeTextEditor"),
+        1,
+        "The FreeText editor must have been cut"
+      );
+
+      menuitems = await getContextMenuItems(iframe, spanBox);
+      await clickOnItem(iframe, menuitems, "context-pdfjs-paste");
+
+      await TestUtils.waitForCondition(
+        async () => (await countElements(iframe, ".freeTextEditor")) !== 1
+      );
+      Assert.equal(
+        await countElements(iframe, ".freeTextEditor"),
+        2,
+        "The FreeText editor must have been pasted"
+      );
+
+      await waitForPdfJSClose(iframe);
+    }
+  );
+
+  await SpecialPowers.popPrefEnv();
 });

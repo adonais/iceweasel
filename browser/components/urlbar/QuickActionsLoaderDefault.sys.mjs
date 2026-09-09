@@ -32,8 +32,9 @@ let openUrlFun = url => (_queryContext, controller) =>
   openUrl(url, controller.browserWindow);
 let openUrl = (url, window) => {
   if (url.startsWith("about:")) {
-    window.switchToTabHavingURI(Services.io.newURI(url), true, {
-      ignoreFragment: "whenComparing",
+    let uri = Services.io.newURI(url);
+    window.switchToTabHavingURI(uri, true, {
+      ignoreFragment: uri.hasRef ? "whenComparingAndReplace" : "whenComparing",
     });
   } else {
     window.gBrowser.addTab(url, {
@@ -291,7 +292,7 @@ const DEFAULT_ACTIONS = {
   },
   translate: {
     l10nCommands: ["quickactions-cmd-translate"],
-    icon: "chrome://browser/skin/translations.svg",
+    icon: "chrome://browser/skin/translations-companion.svg",
     label: "quickactions-translate",
     isUnsupported: () => {
       return !(

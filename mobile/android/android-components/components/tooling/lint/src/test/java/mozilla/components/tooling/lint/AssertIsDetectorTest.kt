@@ -18,15 +18,17 @@ class AssertIsDetectorTest : LintDetectorTest() {
 
     override fun getIssues(): List<Issue> = listOf(AssertIsDetector.ISSUE_USE_ASSERT_IS)
 
-    private val junitAssertStub = TestFiles.java(
-        """
+    private val junitAssertStub =
+        TestFiles.java(
+                """
         package org.junit;
         public class Assert {
             public static void assertTrue(boolean condition) {}
             public static void assertTrue(String message, boolean condition) {}
         }
-        """,
-    ).indented()
+        """
+            )
+            .indented()
 
     @Test
     fun `assertTrue with is check reports warning`() {
@@ -34,7 +36,7 @@ class AssertIsDetectorTest : LintDetectorTest() {
             .files(
                 junitAssertStub,
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     import org.junit.Assert.assertTrue
 
@@ -44,8 +46,9 @@ class AssertIsDetectorTest : LintDetectorTest() {
                             assertTrue(result is ArrayList)
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectWarningCount(1)
@@ -56,7 +59,8 @@ class AssertIsDetectorTest : LintDetectorTest() {
                 @@ -7 +7 @@
                 -        assertTrue(result is ArrayList)
                 +        kotlin.test.assertIs<ArrayList>(result)
-                """.trimIndent(),
+                """
+                    .trimIndent()
             )
     }
 
@@ -66,7 +70,7 @@ class AssertIsDetectorTest : LintDetectorTest() {
             .files(
                 junitAssertStub,
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     import org.junit.Assert
 
@@ -76,8 +80,9 @@ class AssertIsDetectorTest : LintDetectorTest() {
                             Assert.assertTrue("should be array list", result is ArrayList)
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectWarningCount(1)
@@ -88,7 +93,8 @@ class AssertIsDetectorTest : LintDetectorTest() {
                 @@ -7 +7 @@
                 -        Assert.assertTrue("should be array list", result is ArrayList)
                 +        kotlin.test.assertIs<ArrayList>(result, "should be array list")
-                """.trimIndent(),
+                """
+                    .trimIndent()
             )
     }
 
@@ -99,7 +105,7 @@ class AssertIsDetectorTest : LintDetectorTest() {
                 // lint won't resolve source stubs declared in kotlin.* packages, so the
                 // kotlin.test-style assertTrue(value, message) is stubbed in the test package.
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     fun assertTrue(actual: Boolean, message: String? = null) {}
 
@@ -109,8 +115,9 @@ class AssertIsDetectorTest : LintDetectorTest() {
                             assertTrue(result is ArrayList, "should be array list")
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented()
             )
             .run()
             .expectWarningCount(1)
@@ -121,7 +128,8 @@ class AssertIsDetectorTest : LintDetectorTest() {
                 @@ -7 +7 @@
                 -        assertTrue(result is ArrayList, "should be array list")
                 +        kotlin.test.assertIs<ArrayList>(result, "should be array list")
-                """.trimIndent(),
+                """
+                    .trimIndent()
             )
     }
 
@@ -131,7 +139,7 @@ class AssertIsDetectorTest : LintDetectorTest() {
             .files(
                 junitAssertStub,
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     import org.junit.Assert.assertTrue
 
@@ -140,8 +148,9 @@ class AssertIsDetectorTest : LintDetectorTest() {
                             assertTrue(listOf("1") is ArrayList)
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectWarningCount(1)
@@ -152,7 +161,8 @@ class AssertIsDetectorTest : LintDetectorTest() {
                 @@ -6 +6 @@
                 -        assertTrue(listOf("1") is ArrayList)
                 +        kotlin.test.assertIs<ArrayList>(listOf("1"))
-                """.trimIndent(),
+                """
+                    .trimIndent()
             )
     }
 
@@ -162,7 +172,7 @@ class AssertIsDetectorTest : LintDetectorTest() {
             .files(
                 junitAssertStub,
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     import org.junit.Assert.assertTrue
 
@@ -171,8 +181,9 @@ class AssertIsDetectorTest : LintDetectorTest() {
                             assertTrue(true)
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectClean()
@@ -184,7 +195,7 @@ class AssertIsDetectorTest : LintDetectorTest() {
             .files(
                 junitAssertStub,
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     import org.junit.Assert.assertTrue
 
@@ -193,8 +204,9 @@ class AssertIsDetectorTest : LintDetectorTest() {
                             assertTrue(listOf("1").size == 1)
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectClean()

@@ -15,17 +15,16 @@ import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.lib.crash.ui.AbstractCrashListFragment
 import org.mozilla.focus.ext.components
 
-/**
- * Fragment showing list of past crashes.
- */
+/** Fragment showing list of past crashes. */
 class CrashListFragment : AbstractCrashListFragment() {
     override val reporter: CrashReporter by lazy { requireContext().components.crashReporter }
 
     override fun onCrashServiceSelected(url: String) {
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = url.toUri()
-            `package` = requireContext().packageName
-        }
+        val intent =
+            Intent(Intent.ACTION_VIEW).apply {
+                data = url.toUri()
+                `package` = requireContext().packageName
+            }
         startActivity(intent)
         requireActivity().finish()
     }

@@ -8,7 +8,10 @@
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import {
+  UrlbarProvider,
+  UrlbarUtils,
+} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -224,7 +227,8 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
                   // Don't suggest switching to the current tab.
                   continue;
                 }
-                payload.userContextId = userContextId;
+                payload.userContext =
+                  UrlbarUtils.getUserContextData(userContextId);
                 let result = new lazy.UrlbarResult({
                   type: lazy.UrlbarShared.RESULT_TYPE.TAB_SWITCH,
                   source: lazy.UrlbarShared.RESULT_SOURCE.TABS,

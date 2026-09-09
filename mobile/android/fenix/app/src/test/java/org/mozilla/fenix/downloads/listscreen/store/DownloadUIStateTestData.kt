@@ -15,15 +15,16 @@ fun fileItem(
     contentType: String? = "image/png",
     status: FileItem.Status = FileItem.Status.Completed,
     timeCategory: TimeCategory = TimeCategory.LAST_30_DAYS,
-) = FileItem(
-    id = id,
-    url = url,
-    fileName = fileName,
-    filePath = filePath,
-    description = description,
-    displayedShortUrl = displayedShortUrl,
-    directoryPath = directoryPath,
-    contentType = contentType,
-    status = status,
-    timeCategory = timeCategory,
-)
+) =
+    FileItem(
+        id = id,
+        url = url,
+        fileName = fileName,
+        filePath = filePath,
+        description = description,
+        displayedShortUrl = displayedShortUrl,
+        directoryPath = directoryPath,
+        contentType = contentType,
+        status = status,
+        timeCategory = timeCategory,
+    )

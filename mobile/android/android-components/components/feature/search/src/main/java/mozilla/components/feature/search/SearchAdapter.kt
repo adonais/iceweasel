@@ -4,18 +4,12 @@
 
 package mozilla.components.feature.search
 
-/**
- * May be implemented by client code in order to allow a component to start searches.
- */
+/** May be implemented by client code in order to allow a component to start searches. */
 interface SearchAdapter {
 
-    /**
-     * Called by the component to indicate that the user should be shown a search.
-     */
+    /** Called by the component to indicate that the user should be shown a search. */
     fun sendSearch(isPrivate: Boolean, text: String)
 
-    /**
-     * Called by the component to check whether or not the currently selected session is private.
-     */
+    /** Called by the component to check whether or not the currently selected session is private. */
     fun isPrivateSession(): Boolean
 }

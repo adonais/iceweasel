@@ -11,14 +11,14 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.withStyledAttributes
 import mozilla.components.support.ktx.android.view.putCompoundDrawablesRelativeWithIntrinsicBounds
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.focus.R
 import org.mozilla.focus.databinding.SwitchWithDescriptionBinding
-import mozilla.components.ui.icons.R as iconsR
 
-/**
- * A custom view that displays a switch with a title and a description.
- */
-class SwitchWithDescription @JvmOverloads constructor(
+/** A custom view that displays a switch with a title and a description. */
+class SwitchWithDescription
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
@@ -27,22 +27,23 @@ class SwitchWithDescription @JvmOverloads constructor(
     internal var binding: SwitchWithDescriptionBinding
 
     init {
-        val view =
-            LayoutInflater.from(context).inflate(R.layout.switch_with_description, this, true)
+        val view = LayoutInflater.from(context).inflate(R.layout.switch_with_description, this, true)
         binding = SwitchWithDescriptionBinding.bind(view)
 
         context.withStyledAttributes(attrs, R.styleable.SwitchWithDescription, defStyleAttr, 0) {
-            val icon = getResourceId(
-                R.styleable.SwitchWithDescription_switchIcon,
-                iconsR.drawable.mozac_ic_shield_24,
-            )
-
-            val switchTitle = resources.getString(
+            val icon =
                 getResourceId(
-                    R.styleable.SwitchWithDescription_switchTitle,
-                    R.string.enhanced_tracking_protection,
-                ),
-            )
+                    R.styleable.SwitchWithDescription_switchIcon,
+                    iconsR.drawable.mozac_ic_shield_24,
+                )
+
+            val switchTitle =
+                resources.getString(
+                    getResourceId(
+                        R.styleable.SwitchWithDescription_switchTitle,
+                        R.string.enhanced_tracking_protection,
+                    )
+                )
             updateIcon(icon = icon, iconContentDescription = switchTitle)
             updateTitle(switchTitle)
 
@@ -51,8 +52,8 @@ class SwitchWithDescription @JvmOverloads constructor(
                     getResourceId(
                         R.styleable.SwitchWithDescription_switchDescription,
                         R.string.enhanced_tracking_protection_state_on,
-                    ),
-                ),
+                    )
+                )
             )
         }
     }
@@ -67,9 +68,7 @@ class SwitchWithDescription @JvmOverloads constructor(
 
     internal fun updateIcon(icon: Int, iconContentDescription: String) {
         with(binding.switchWidget) {
-            putCompoundDrawablesRelativeWithIntrinsicBounds(
-                start = AppCompatResources.getDrawable(context, icon),
-            )
+            putCompoundDrawablesRelativeWithIntrinsicBounds(start = AppCompatResources.getDrawable(context, icon))
             contentDescription = iconContentDescription
         }
     }

@@ -9,6 +9,7 @@ import android.graphics.Bitmap
 import android.util.DisplayMetrics
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.ui.AddonDialogFragment
 import mozilla.components.feature.addons.ui.KEY_ICON
@@ -23,7 +24,6 @@ import org.mockito.Mockito
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class AddonDialogFragmentTest {

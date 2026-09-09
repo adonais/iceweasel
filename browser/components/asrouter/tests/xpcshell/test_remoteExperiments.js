@@ -1,15 +1,15 @@
 /* Any copyright is dedicated to the Public Domain.
    http://creativecommons.org/publicdomain/zero/1.0/ */
 
-const { CFRMessageProvider } = ChromeUtils.importESModule(
-  "resource:///modules/asrouter/CFRMessageProvider.sys.mjs"
+const { PanelTestProvider } = ChromeUtils.importESModule(
+  "resource:///modules/asrouter/PanelTestProvider.sys.mjs"
 );
 
 add_task(async function test_multiMessageTreatment() {
   const { experimentValidator } = await makeValidators();
   // Use the entire list of messages as if it was a single treatment branch's
   // feature value.
-  let messages = await CFRMessageProvider.getMessages();
+  let messages = await PanelTestProvider.getMessages();
   let featureValue = { template: "multi", messages };
   assertValidates(
     experimentValidator,
@@ -27,7 +27,7 @@ add_task(async function test_multiMessageTreatment() {
   // Add an invalid message to the list and make sure it fails validation.
   messages.push({
     id: "INVALID_MESSAGE",
-    template: "cfr_doorhanger",
+    template: "infobar",
   });
   const result = experimentValidator.validate(featureValue);
   Assert.ok(

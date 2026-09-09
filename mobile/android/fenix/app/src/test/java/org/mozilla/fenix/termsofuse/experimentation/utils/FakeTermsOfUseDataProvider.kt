@@ -4,9 +4,7 @@
 
 package org.mozilla.fenix.termsofuse.experimentation.utils
 
-/**
- * Fake implementation of [TermsOfUseDataProvider] for tests.
- */
+/** Fake implementation of [TermsOfUseDataProvider] for tests. */
 class FakeTermsOfUseDataProvider(
     override val useStrictTrackingProtection: Boolean = false,
     override val shouldEnableGlobalPrivacyControl: Boolean = false,
@@ -18,5 +16,6 @@ class FakeTermsOfUseDataProvider(
     override val showStoriesFeature: Boolean = true,
 ) : TermsOfUseDataProvider {
     override fun isIncreasedDohProtectionEnabled() = isIncreasedDohProtectionEnabled
+
     override fun enabledHttpsOnlyMode() = enabledHttpsOnlyMode
 }

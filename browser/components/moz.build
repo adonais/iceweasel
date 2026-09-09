@@ -61,6 +61,7 @@ DIRS += [
     "protocolhandler",
     "qrcode",
     "referrals",
+    "remotecontrol",
     "reportbrokensite",
     "resistfingerprinting",
     "screenshots",
@@ -88,8 +89,11 @@ if CONFIG["MOZ_SELECTABLE_PROFILES"]:
     DIRS += ["profiles"]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
-    DIRS += ["touchbar"]
+    DIRS += ["defaultlaunchonlogin", "touchbar"]
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
+    DIRS += [
+        "defaultlaunchonlogin",
+    ]
     if CONFIG["MOZ_BRANDING_DIRECTORY"] != "browser/branding/iceweasel":
         DIRS += ["installerprefs"]
 
@@ -102,6 +106,9 @@ XPIDL_MODULE = "browsercompsbase"
 XPCOM_MANIFESTS += [
     "components.conf",
 ]
+
+if CONFIG["MOZ_DEFAULT_BROWSER_AGENT"] and CONFIG["OS_ARCH"] == "WINNT":
+    DEFINES["MOZ_DEFAULT_BROWSER_AGENT"] = CONFIG["MOZ_DEFAULT_BROWSER_AGENT"]
 
 EXTRA_PP_COMPONENTS += [
     "BrowserComponents.manifest",

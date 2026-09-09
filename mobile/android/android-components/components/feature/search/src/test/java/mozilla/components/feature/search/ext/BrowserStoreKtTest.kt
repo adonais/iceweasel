@@ -4,6 +4,9 @@
 
 package mozilla.components.feature.search.ext
 
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.action.SearchAction
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.BrowserState
@@ -14,29 +17,29 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-import kotlin.test.assertNotNull
 
 class BrowserStoreKtTest {
     @Test
     fun `waitForDefaultSearchEngine - with state already loaded`() {
-        val store = BrowserStore(
-            BrowserState(
-                search = SearchState(
-                    regionSearchEngines = listOf(
-                        SearchEngine(
-                            id = "google",
-                            name = "Google",
-                            icon = mock(),
-                            type = SearchEngine.Type.BUNDLED,
-                        ),
-                    ),
-                    userSelectedSearchEngineId = "google",
-                    complete = true,
-                ),
-            ),
-        )
+        val store =
+            BrowserStore(
+                BrowserState(
+                    search =
+                        SearchState(
+                            regionSearchEngines =
+                                listOf(
+                                    SearchEngine(
+                                        id = "google",
+                                        name = "Google",
+                                        icon = mock(),
+                                        type = SearchEngine.Type.BUNDLED,
+                                    )
+                                ),
+                            userSelectedSearchEngineId = "google",
+                            complete = true,
+                        )
+                )
+            )
 
         val latch = CountDownLatch(1)
 
@@ -63,14 +66,15 @@ class BrowserStoreKtTest {
 
         store.dispatch(
             SearchAction.SetSearchEnginesAction(
-                regionSearchEngines = listOf(
-                    SearchEngine(
-                        id = "google",
-                        name = "Google",
-                        icon = mock(),
-                        type = SearchEngine.Type.BUNDLED,
+                regionSearchEngines =
+                    listOf(
+                        SearchEngine(
+                            id = "google",
+                            name = "Google",
+                            icon = mock(),
+                            type = SearchEngine.Type.BUNDLED,
+                        )
                     ),
-                ),
                 userSelectedSearchEngineId = null,
                 userSelectedSearchEngineName = null,
                 userSelectedPrivateSearchEngineId = null,
@@ -83,7 +87,7 @@ class BrowserStoreKtTest {
                 additionalSearchEngines = emptyList(),
                 regionSearchEnginesOrder = listOf("google"),
                 searchEnginesConfigurationId = 1,
-            ),
+            )
         )
 
         assertTrue(latch.await(10, TimeUnit.SECONDS))
@@ -115,7 +119,7 @@ class BrowserStoreKtTest {
                 additionalSearchEngines = emptyList(),
                 regionSearchEnginesOrder = listOf("google"),
                 searchEnginesConfigurationId = 12,
-            ),
+            )
         )
 
         assertTrue(latch.await(10, TimeUnit.SECONDS))

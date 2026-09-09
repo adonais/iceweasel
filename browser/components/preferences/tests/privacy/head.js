@@ -127,11 +127,3 @@ const RESET_PROBLEMATIC_TEST_STATUSES = [
   ],
   ["browser.preferences.config_warning.warningProcessSandbox.dismissed", true],
 ];
-
-/**
- * Select the given history mode via dropdown in the privacy pane.
- *
- * @param {Window} win - The preferences window which contains the
- * dropdown.
- * @param {string} value - The history mode to select.
- */

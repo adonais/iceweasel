@@ -28,7 +28,7 @@ class LexerTest {
                     Token.Type.LITERAL,
                     "\"foo\"",
                     "foo",
-                ),
+                )
             ),
         )
     }
@@ -39,9 +39,7 @@ class LexerTest {
 
         assertExpressionYieldsTokens(
             expression,
-            listOf(
-                Token(Token.Type.LITERAL, "'foo'", "foo"),
-            ),
+            listOf(Token(Token.Type.LITERAL, "'foo'", "foo")),
         )
     }
 
@@ -82,7 +80,7 @@ class LexerTest {
                     Token.Type.LITERAL,
                     "\"f\\\"oo\"",
                     "f\"oo",
-                ),
+                )
             ),
         )
     }
@@ -98,7 +96,7 @@ class LexerTest {
                     Token.Type.LITERAL,
                     "'f\\'oo'",
                     "f'oo",
-                ),
+                )
             ),
         )
     }
@@ -114,7 +112,7 @@ class LexerTest {
                     Token.Type.IDENTIFIER,
                     "alpha12345",
                     "alpha12345",
-                ),
+                )
             ),
         )
     }
@@ -125,9 +123,7 @@ class LexerTest {
 
         assertExpressionYieldsTokens(
             expression,
-            listOf(
-                Token(Token.Type.LITERAL, "true", true),
-            ),
+            listOf(Token(Token.Type.LITERAL, "true", true)),
         )
     }
 
@@ -137,9 +133,7 @@ class LexerTest {
 
         assertExpressionYieldsTokens(
             expression,
-            listOf(
-                Token(Token.Type.LITERAL, "false", false),
-            ),
+            listOf(Token(Token.Type.LITERAL, "false", false)),
         )
     }
 
@@ -363,19 +357,21 @@ class LexerTest {
                     Token.Type.IDENTIFIER,
                     "inString",
                     "inString",
-                ),
+                )
             ),
         )
     }
 
     @Test
     fun `should handle a complex mix of comments in single, multiline and value contexts`() {
-        val expression = """
+        val expression =
+            """
             6+x -  -17.55*y #end comment
             <= !foo.bar["baz\"foz"] # with space
             && b=="not a #comment" # is a comment
             # comment # 2nd comment
-        """.trimIndent()
+            """
+                .trimIndent()
 
         assertExpressionYieldsTokens(
             expression,

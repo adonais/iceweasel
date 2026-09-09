@@ -4,9 +4,7 @@
 
 package mozilla.components.feature.search.icons
 
-/**
- * Data class representing Search Config Icons from Remote Settings.
- */
+/** Data class representing Search Config Icons from Remote Settings. */
 data class SearchConfigIconsModel(
     val schema: Long,
     val imageSize: Int,
@@ -15,9 +13,7 @@ data class SearchConfigIconsModel(
     val filterExpression: String,
 )
 
-/**
- * Data class representing an Attachment from Remote Settings.
- */
+/** Data class representing an Attachment from Remote Settings. */
 data class AttachmentModel(
     val filename: String,
     val mimetype: String,

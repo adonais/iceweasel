@@ -17,6 +17,9 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.findViewTreeSavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.test.assertNotNull
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.compose.cfr.CFRPopup.PopupAlignment
@@ -34,30 +37,29 @@ import org.mockito.Mockito.spy
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import kotlin.coroutines.ContinuationInterceptor
-import kotlin.test.assertNotNull
-import kotlin.time.Duration.Companion.milliseconds
 
 @RunWith(AndroidJUnit4::class)
 class CFRPopupFullscreenLayoutTest {
 
     @Test
     fun `GIVEN not attached to window WHEN the popup is shown THEN setup lifecycle owners`() {
-        val anchor = View(testContext).apply {
-            setViewTreeLifecycleOwner(mock())
-            this.setViewTreeSavedStateRegistryOwner(mock())
-        }
+        val anchor =
+            View(testContext).apply {
+                setViewTreeLifecycleOwner(mock())
+                this.setViewTreeSavedStateRegistryOwner(mock())
+            }
 
-        val popupView = spy(
-            CFRPopupFullscreenLayout(
-                anchor = anchor,
-                properties = mock(),
-                onDismiss = mock(),
-                title = { },
-                text = { },
-                action = { },
-            ),
-        )
+        val popupView =
+            spy(
+                CFRPopupFullscreenLayout(
+                    anchor = anchor,
+                    properties = mock(),
+                    onDismiss = mock(),
+                    title = {},
+                    text = {},
+                    action = {},
+                )
+            )
         `when`(popupView.isAttachedToWindow).thenReturn(false)
         popupView.show()
 
@@ -75,20 +77,22 @@ class CFRPopupFullscreenLayoutTest {
 
     @Test
     fun `GIVEN already attached to window WHEN the popup is shown THEN do nothing`() {
-        val anchor = View(testContext).apply {
-            setViewTreeLifecycleOwner(mock())
-            this.setViewTreeSavedStateRegistryOwner(mock())
-        }
+        val anchor =
+            View(testContext).apply {
+                setViewTreeLifecycleOwner(mock())
+                this.setViewTreeSavedStateRegistryOwner(mock())
+            }
 
-        val popupView = spy(
-            CFRPopupFullscreenLayout(
-                anchor = anchor,
-                properties = mock(),
-                onDismiss = mock(),
-                text = { },
-                action = { },
-            ),
-        )
+        val popupView =
+            spy(
+                CFRPopupFullscreenLayout(
+                    anchor = anchor,
+                    properties = mock(),
+                    onDismiss = mock(),
+                    text = {},
+                    action = {},
+                )
+            )
         `when`(popupView.isAttachedToWindow).thenReturn(true)
         popupView.show()
 
@@ -99,13 +103,14 @@ class CFRPopupFullscreenLayoutTest {
     @Test
     fun `GIVEN is attached to window WHEN the popup is dismissed THEN cleanup lifecycle owners and detach from window`() {
         val context = spy(testContext)
-        val anchor = View(context).apply {
-            setViewTreeLifecycleOwner(mock())
-            this.setViewTreeSavedStateRegistryOwner(mock())
-        }
+        val anchor =
+            View(context).apply {
+                setViewTreeLifecycleOwner(mock())
+                this.setViewTreeSavedStateRegistryOwner(mock())
+            }
         val windowManager = spy(context.getSystemService(Context.WINDOW_SERVICE) as WindowManager)
         doReturn(windowManager).`when`(context).getSystemService(Context.WINDOW_SERVICE)
-        val popupView = spy(CFRPopupFullscreenLayout(anchor, mock(), mock(), { }, { }))
+        val popupView = spy(CFRPopupFullscreenLayout(anchor, mock(), mock(), {}, {}))
         `when`(popupView.isAttachedToWindow).thenReturn(false)
         popupView.show()
         assertNotNull(popupView.findViewTreeLifecycleOwner())
@@ -121,13 +126,14 @@ class CFRPopupFullscreenLayoutTest {
     @Test
     fun `GIVEN not attached to window WHEN the popup is dismissed THEN does nothing`() {
         val context = spy(testContext)
-        val anchor = View(context).apply {
-            setViewTreeLifecycleOwner(mock())
-            this.setViewTreeSavedStateRegistryOwner(mock())
-        }
+        val anchor =
+            View(context).apply {
+                setViewTreeLifecycleOwner(mock())
+                this.setViewTreeSavedStateRegistryOwner(mock())
+            }
         val windowManager = spy(context.getSystemService(Context.WINDOW_SERVICE) as WindowManager)
         doReturn(windowManager).`when`(context).getSystemService(Context.WINDOW_SERVICE)
-        val popupView = spy(CFRPopupFullscreenLayout(anchor, mock(), mock(), { }, { }))
+        val popupView = spy(CFRPopupFullscreenLayout(anchor, mock(), mock(), {}, {}))
         `when`(popupView.isAttachedToWindow).thenReturn(false)
         popupView.show()
         assertNotNull(popupView.findViewTreeLifecycleOwner())
@@ -143,13 +149,14 @@ class CFRPopupFullscreenLayoutTest {
     @Test
     fun `GIVEN a popup WHEN adding it to window THEN use translucent layout params`() {
         val context = spy(testContext)
-        val anchor = View(context).apply {
-            setViewTreeLifecycleOwner(mock())
-            this.setViewTreeSavedStateRegistryOwner(mock())
-        }
+        val anchor =
+            View(context).apply {
+                setViewTreeLifecycleOwner(mock())
+                this.setViewTreeSavedStateRegistryOwner(mock())
+            }
         val windowManager = spy(context.getSystemService(Context.WINDOW_SERVICE))
         doReturn(windowManager).`when`(context).getSystemService(Context.WINDOW_SERVICE)
-        val popupView = CFRPopupFullscreenLayout(anchor, mock(), mock(), { }, { })
+        val popupView = CFRPopupFullscreenLayout(anchor, mock(), mock(), {}, {})
         val layoutParamsCaptor = argumentCaptor<LayoutParams>()
 
         popupView.show()
@@ -169,7 +176,7 @@ class CFRPopupFullscreenLayoutTest {
     @Test
     fun `WHEN creating layout params THEN get fullscreen translucent layout params`() {
         val anchor = View(testContext)
-        val popupView = CFRPopupFullscreenLayout(anchor, mock(), mock(), { }, { })
+        val popupView = CFRPopupFullscreenLayout(anchor, mock(), mock(), {}, {})
 
         val result = popupView.createLayoutParams()
 
@@ -187,19 +194,21 @@ class CFRPopupFullscreenLayoutTest {
     @Test
     fun `GIVEN LTR and INDICATOR_CENTERED_IN_ANCHOR WHEN computing popup bounds THEN return the right X coordinates`() {
         val anchor = View(testContext)
-        val properties = CFRPopupProperties(
-            popupWidth = 200.dp,
-            popupAlignment = PopupAlignment.INDICATOR_CENTERED_IN_ANCHOR,
-            indicatorArrowStartOffset = 0.dp,
-        )
-        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), { }, { })
+        val properties =
+            CFRPopupProperties(
+                popupWidth = 200.dp,
+                popupAlignment = PopupAlignment.INDICATOR_CENTERED_IN_ANCHOR,
+                indicatorArrowStartOffset = 0.dp,
+            )
+        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), {}, {})
 
-        val result = popupView.computePopupHorizontalBounds(
-            anchorMiddleXCoord = Pixels(200),
-            arrowIndicatorWidth = Pixels(20),
-            screenWidth = Pixels(1000),
-            layoutDirection = View.LAYOUT_DIRECTION_LTR,
-        )
+        val result =
+            popupView.computePopupHorizontalBounds(
+                anchorMiddleXCoord = Pixels(200),
+                arrowIndicatorWidth = Pixels(20),
+                screenWidth = Pixels(1000),
+                layoutDirection = View.LAYOUT_DIRECTION_LTR,
+            )
 
         assertEquals(190, result.startCoord.value)
         assertEquals(400, result.endCoord.value)
@@ -208,19 +217,21 @@ class CFRPopupFullscreenLayoutTest {
     @Test
     fun `GIVEN LTR and INDICATOR_CENTERED_IN_ANCHOR WHEN computing popup bounds THEN account for the provided indicator offset`() {
         val anchor = View(testContext)
-        val properties = CFRPopupProperties(
-            popupWidth = 200.dp,
-            popupAlignment = PopupAlignment.INDICATOR_CENTERED_IN_ANCHOR,
-            indicatorArrowStartOffset = 50.dp,
-        )
-        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), { }, { })
+        val properties =
+            CFRPopupProperties(
+                popupWidth = 200.dp,
+                popupAlignment = PopupAlignment.INDICATOR_CENTERED_IN_ANCHOR,
+                indicatorArrowStartOffset = 50.dp,
+            )
+        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), {}, {})
 
-        val result = popupView.computePopupHorizontalBounds(
-            anchorMiddleXCoord = Pixels(200),
-            arrowIndicatorWidth = Pixels(20),
-            screenWidth = Pixels(1000),
-            layoutDirection = View.LAYOUT_DIRECTION_LTR,
-        )
+        val result =
+            popupView.computePopupHorizontalBounds(
+                anchorMiddleXCoord = Pixels(200),
+                arrowIndicatorWidth = Pixels(20),
+                screenWidth = Pixels(1000),
+                layoutDirection = View.LAYOUT_DIRECTION_LTR,
+            )
 
         // The popup should be translated to the start to ensure the offset to the indicator is respected.
         assertEquals(140, result.startCoord.value)
@@ -230,19 +241,21 @@ class CFRPopupFullscreenLayoutTest {
     @Test
     fun `GIVEN LTR and INDICATOR_CENTERED_IN_ANCHOR WHEN computing popup bounds and the popup doesn't fit THEN return the right X coordinates`() {
         val anchor = View(testContext)
-        val properties = CFRPopupProperties(
-            popupWidth = 900.dp,
-            popupAlignment = PopupAlignment.INDICATOR_CENTERED_IN_ANCHOR,
-            indicatorArrowStartOffset = 0.dp,
-        )
-        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), { }, { })
+        val properties =
+            CFRPopupProperties(
+                popupWidth = 900.dp,
+                popupAlignment = PopupAlignment.INDICATOR_CENTERED_IN_ANCHOR,
+                indicatorArrowStartOffset = 0.dp,
+            )
+        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), {}, {})
 
-        val result = popupView.computePopupHorizontalBounds(
-            anchorMiddleXCoord = Pixels(200),
-            arrowIndicatorWidth = Pixels(20),
-            screenWidth = Pixels(1000),
-            layoutDirection = View.LAYOUT_DIRECTION_LTR,
-        )
+        val result =
+            popupView.computePopupHorizontalBounds(
+                anchorMiddleXCoord = Pixels(200),
+                arrowIndicatorWidth = Pixels(20),
+                screenWidth = Pixels(1000),
+                layoutDirection = View.LAYOUT_DIRECTION_LTR,
+            )
 
         // The popup should be translated to the start to ensure it fits the screen.
         assertEquals(90, result.startCoord.value)
@@ -252,19 +265,21 @@ class CFRPopupFullscreenLayoutTest {
     @Test
     fun `GIVEN RTL and INDICATOR_CENTERED_IN_ANCHOR WHEN computing popup bounds THEN return the right X coordinates`() {
         val anchor = View(testContext)
-        val properties = CFRPopupProperties(
-            popupWidth = 200.dp,
-            popupAlignment = PopupAlignment.INDICATOR_CENTERED_IN_ANCHOR,
-            indicatorArrowStartOffset = 0.dp,
-        )
-        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), { }, { })
+        val properties =
+            CFRPopupProperties(
+                popupWidth = 200.dp,
+                popupAlignment = PopupAlignment.INDICATOR_CENTERED_IN_ANCHOR,
+                indicatorArrowStartOffset = 0.dp,
+            )
+        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), {}, {})
 
-        val result = popupView.computePopupHorizontalBounds(
-            anchorMiddleXCoord = Pixels(800),
-            arrowIndicatorWidth = Pixels(20),
-            screenWidth = Pixels(1000),
-            layoutDirection = View.LAYOUT_DIRECTION_RTL,
-        )
+        val result =
+            popupView.computePopupHorizontalBounds(
+                anchorMiddleXCoord = Pixels(800),
+                arrowIndicatorWidth = Pixels(20),
+                screenWidth = Pixels(1000),
+                layoutDirection = View.LAYOUT_DIRECTION_RTL,
+            )
 
         assertEquals(810, result.startCoord.value)
         assertEquals(600, result.endCoord.value)
@@ -273,19 +288,21 @@ class CFRPopupFullscreenLayoutTest {
     @Test
     fun `GIVEN RTL and INDICATOR_CENTERED_IN_ANCHOR WHEN computing popup bounds THEN account for the provided indicator offset`() {
         val anchor = View(testContext)
-        val properties = CFRPopupProperties(
-            popupWidth = 200.dp,
-            popupAlignment = PopupAlignment.INDICATOR_CENTERED_IN_ANCHOR,
-            indicatorArrowStartOffset = 50.dp,
-        )
-        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), { }, { })
+        val properties =
+            CFRPopupProperties(
+                popupWidth = 200.dp,
+                popupAlignment = PopupAlignment.INDICATOR_CENTERED_IN_ANCHOR,
+                indicatorArrowStartOffset = 50.dp,
+            )
+        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), {}, {})
 
-        val result = popupView.computePopupHorizontalBounds(
-            anchorMiddleXCoord = Pixels(800),
-            arrowIndicatorWidth = Pixels(20),
-            screenWidth = Pixels(1000),
-            layoutDirection = View.LAYOUT_DIRECTION_RTL,
-        )
+        val result =
+            popupView.computePopupHorizontalBounds(
+                anchorMiddleXCoord = Pixels(800),
+                arrowIndicatorWidth = Pixels(20),
+                screenWidth = Pixels(1000),
+                layoutDirection = View.LAYOUT_DIRECTION_RTL,
+            )
 
         // The popup should be translated to the start to ensure the offset to the indicator is respected.
         assertEquals(860, result.startCoord.value)
@@ -295,19 +312,21 @@ class CFRPopupFullscreenLayoutTest {
     @Test
     fun `GIVEN RTL and INDICATOR_CENTERED_IN_ANCHOR WHEN computing popup bounds and the popup doesn't fit THEN return the right X coordinates`() {
         val anchor = View(testContext)
-        val properties = CFRPopupProperties(
-            popupWidth = 900.dp,
-            popupAlignment = PopupAlignment.INDICATOR_CENTERED_IN_ANCHOR,
-            indicatorArrowStartOffset = 0.dp,
-        )
-        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), { }, { })
+        val properties =
+            CFRPopupProperties(
+                popupWidth = 900.dp,
+                popupAlignment = PopupAlignment.INDICATOR_CENTERED_IN_ANCHOR,
+                indicatorArrowStartOffset = 0.dp,
+            )
+        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), {}, {})
 
-        val result = popupView.computePopupHorizontalBounds(
-            anchorMiddleXCoord = Pixels(800),
-            arrowIndicatorWidth = Pixels(20),
-            screenWidth = Pixels(1000),
-            layoutDirection = View.LAYOUT_DIRECTION_RTL,
-        )
+        val result =
+            popupView.computePopupHorizontalBounds(
+                anchorMiddleXCoord = Pixels(800),
+                arrowIndicatorWidth = Pixels(20),
+                screenWidth = Pixels(1000),
+                layoutDirection = View.LAYOUT_DIRECTION_RTL,
+            )
 
         // The popup should be translated to the start to ensure it fits the screen.
         assertEquals(910, result.startCoord.value)
@@ -319,19 +338,21 @@ class CFRPopupFullscreenLayoutTest {
         val anchor = spy(View(testContext))
         doReturn(400).`when`(anchor).width
         doReturn(200f).`when`(anchor).x
-        val properties = CFRPopupProperties(
-            popupWidth = 300.dp,
-            popupAlignment = PopupAlignment.BODY_TO_ANCHOR_START,
-            indicatorArrowStartOffset = 0.dp,
-        )
-        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), { }, { })
+        val properties =
+            CFRPopupProperties(
+                popupWidth = 300.dp,
+                popupAlignment = PopupAlignment.BODY_TO_ANCHOR_START,
+                indicatorArrowStartOffset = 0.dp,
+            )
+        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), {}, {})
 
-        val result = popupView.computePopupHorizontalBounds(
-            anchorMiddleXCoord = Pixels(300),
-            arrowIndicatorWidth = Pixels(20),
-            screenWidth = Pixels(1000),
-            layoutDirection = View.LAYOUT_DIRECTION_LTR,
-        )
+        val result =
+            popupView.computePopupHorizontalBounds(
+                anchorMiddleXCoord = Pixels(300),
+                arrowIndicatorWidth = Pixels(20),
+                screenWidth = Pixels(1000),
+                layoutDirection = View.LAYOUT_DIRECTION_LTR,
+            )
 
         assertEquals(200, result.startCoord.value)
         assertEquals(510, result.endCoord.value)
@@ -342,19 +363,21 @@ class CFRPopupFullscreenLayoutTest {
         val anchor = spy(View(testContext))
         doReturn(400).`when`(anchor).width
         doReturn(200f).`when`(anchor).x
-        val properties = CFRPopupProperties(
-            popupWidth = 300.dp,
-            popupAlignment = PopupAlignment.BODY_TO_ANCHOR_START,
-            indicatorArrowStartOffset = 50.dp,
-        )
-        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), { }, { })
+        val properties =
+            CFRPopupProperties(
+                popupWidth = 300.dp,
+                popupAlignment = PopupAlignment.BODY_TO_ANCHOR_START,
+                indicatorArrowStartOffset = 50.dp,
+            )
+        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), {}, {})
 
-        val result = popupView.computePopupHorizontalBounds(
-            anchorMiddleXCoord = Pixels(300),
-            arrowIndicatorWidth = Pixels(20),
-            screenWidth = Pixels(1000),
-            layoutDirection = View.LAYOUT_DIRECTION_LTR,
-        )
+        val result =
+            popupView.computePopupHorizontalBounds(
+                anchorMiddleXCoord = Pixels(300),
+                arrowIndicatorWidth = Pixels(20),
+                screenWidth = Pixels(1000),
+                layoutDirection = View.LAYOUT_DIRECTION_LTR,
+            )
 
         assertEquals(200, result.startCoord.value)
         assertEquals(510, result.endCoord.value)
@@ -365,19 +388,21 @@ class CFRPopupFullscreenLayoutTest {
         val anchor = spy(View(testContext))
         doReturn(400).`when`(anchor).width
         doReturn(200f).`when`(anchor).x
-        val properties = CFRPopupProperties(
-            popupWidth = 200.dp,
-            popupAlignment = PopupAlignment.BODY_TO_ANCHOR_START,
-            indicatorArrowStartOffset = 0.dp,
-        )
-        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), { }, { })
+        val properties =
+            CFRPopupProperties(
+                popupWidth = 200.dp,
+                popupAlignment = PopupAlignment.BODY_TO_ANCHOR_START,
+                indicatorArrowStartOffset = 0.dp,
+            )
+        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), {}, {})
 
-        val result = popupView.computePopupHorizontalBounds(
-            anchorMiddleXCoord = Pixels(300),
-            arrowIndicatorWidth = Pixels(20),
-            screenWidth = Pixels(1000),
-            layoutDirection = View.LAYOUT_DIRECTION_RTL,
-        )
+        val result =
+            popupView.computePopupHorizontalBounds(
+                anchorMiddleXCoord = Pixels(300),
+                arrowIndicatorWidth = Pixels(20),
+                screenWidth = Pixels(1000),
+                layoutDirection = View.LAYOUT_DIRECTION_RTL,
+            )
 
         assertEquals(600, result.startCoord.value)
         assertEquals(390, result.endCoord.value)
@@ -388,19 +413,21 @@ class CFRPopupFullscreenLayoutTest {
         val anchor = spy(View(testContext))
         doReturn(400).`when`(anchor).width
         doReturn(200f).`when`(anchor).x
-        val properties = CFRPopupProperties(
-            popupWidth = 200.dp,
-            popupAlignment = PopupAlignment.BODY_TO_ANCHOR_START,
-            indicatorArrowStartOffset = 50.dp,
-        )
-        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), { }, { })
+        val properties =
+            CFRPopupProperties(
+                popupWidth = 200.dp,
+                popupAlignment = PopupAlignment.BODY_TO_ANCHOR_START,
+                indicatorArrowStartOffset = 50.dp,
+            )
+        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), {}, {})
 
-        val result = popupView.computePopupHorizontalBounds(
-            anchorMiddleXCoord = Pixels(300),
-            arrowIndicatorWidth = Pixels(20),
-            screenWidth = Pixels(1000),
-            layoutDirection = View.LAYOUT_DIRECTION_RTL,
-        )
+        val result =
+            popupView.computePopupHorizontalBounds(
+                anchorMiddleXCoord = Pixels(300),
+                arrowIndicatorWidth = Pixels(20),
+                screenWidth = Pixels(1000),
+                layoutDirection = View.LAYOUT_DIRECTION_RTL,
+            )
 
         assertEquals(600, result.startCoord.value)
         assertEquals(390, result.endCoord.value)
@@ -411,19 +438,21 @@ class CFRPopupFullscreenLayoutTest {
         val anchor = spy(View(testContext))
         doReturn(600).`when`(anchor).width
         doReturn(200f).`when`(anchor).x
-        val properties = CFRPopupProperties(
-            popupWidth = 400.dp,
-            popupAlignment = PopupAlignment.BODY_TO_ANCHOR_CENTER,
-            indicatorArrowStartOffset = 0.dp,
-        )
-        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), { }, { })
+        val properties =
+            CFRPopupProperties(
+                popupWidth = 400.dp,
+                popupAlignment = PopupAlignment.BODY_TO_ANCHOR_CENTER,
+                indicatorArrowStartOffset = 0.dp,
+            )
+        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), {}, {})
 
-        val result = popupView.computePopupHorizontalBounds(
-            anchorMiddleXCoord = Pixels(400),
-            arrowIndicatorWidth = Pixels(20),
-            screenWidth = Pixels(1000),
-            layoutDirection = View.LAYOUT_DIRECTION_LTR,
-        )
+        val result =
+            popupView.computePopupHorizontalBounds(
+                anchorMiddleXCoord = Pixels(400),
+                arrowIndicatorWidth = Pixels(20),
+                screenWidth = Pixels(1000),
+                layoutDirection = View.LAYOUT_DIRECTION_LTR,
+            )
 
         assertEquals(300, result.startCoord.value)
         assertEquals(710, result.endCoord.value)
@@ -434,19 +463,21 @@ class CFRPopupFullscreenLayoutTest {
         val anchor = spy(View(testContext))
         doReturn(600).`when`(anchor).width
         doReturn(200f).`when`(anchor).x
-        val properties = CFRPopupProperties(
-            popupWidth = 400.dp,
-            popupAlignment = PopupAlignment.BODY_TO_ANCHOR_CENTER,
-            indicatorArrowStartOffset = 50.dp,
-        )
-        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), { }, { })
+        val properties =
+            CFRPopupProperties(
+                popupWidth = 400.dp,
+                popupAlignment = PopupAlignment.BODY_TO_ANCHOR_CENTER,
+                indicatorArrowStartOffset = 50.dp,
+            )
+        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), {}, {})
 
-        val result = popupView.computePopupHorizontalBounds(
-            anchorMiddleXCoord = Pixels(400),
-            arrowIndicatorWidth = Pixels(20),
-            screenWidth = Pixels(1000),
-            layoutDirection = View.LAYOUT_DIRECTION_LTR,
-        )
+        val result =
+            popupView.computePopupHorizontalBounds(
+                anchorMiddleXCoord = Pixels(400),
+                arrowIndicatorWidth = Pixels(20),
+                screenWidth = Pixels(1000),
+                layoutDirection = View.LAYOUT_DIRECTION_LTR,
+            )
 
         assertEquals(300, result.startCoord.value)
         assertEquals(710, result.endCoord.value)
@@ -457,19 +488,21 @@ class CFRPopupFullscreenLayoutTest {
         val anchor = spy(View(testContext))
         doReturn(600).`when`(anchor).width
         doReturn(200f).`when`(anchor).x
-        val properties = CFRPopupProperties(
-            popupWidth = 400.dp,
-            popupAlignment = PopupAlignment.BODY_TO_ANCHOR_CENTER,
-            indicatorArrowStartOffset = 0.dp,
-        )
-        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), { }, { })
+        val properties =
+            CFRPopupProperties(
+                popupWidth = 400.dp,
+                popupAlignment = PopupAlignment.BODY_TO_ANCHOR_CENTER,
+                indicatorArrowStartOffset = 0.dp,
+            )
+        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), {}, {})
 
-        val result = popupView.computePopupHorizontalBounds(
-            anchorMiddleXCoord = Pixels(300),
-            arrowIndicatorWidth = Pixels(20),
-            screenWidth = Pixels(1000),
-            layoutDirection = View.LAYOUT_DIRECTION_RTL,
-        )
+        val result =
+            popupView.computePopupHorizontalBounds(
+                anchorMiddleXCoord = Pixels(300),
+                arrowIndicatorWidth = Pixels(20),
+                screenWidth = Pixels(1000),
+                layoutDirection = View.LAYOUT_DIRECTION_RTL,
+            )
 
         assertEquals(700, result.startCoord.value)
         assertEquals(290, result.endCoord.value)
@@ -480,19 +513,21 @@ class CFRPopupFullscreenLayoutTest {
         val anchor = spy(View(testContext))
         doReturn(600).`when`(anchor).width
         doReturn(200f).`when`(anchor).x
-        val properties = CFRPopupProperties(
-            popupWidth = 400.dp,
-            popupAlignment = PopupAlignment.BODY_TO_ANCHOR_CENTER,
-            indicatorArrowStartOffset = 50.dp,
-        )
-        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), { }, { })
+        val properties =
+            CFRPopupProperties(
+                popupWidth = 400.dp,
+                popupAlignment = PopupAlignment.BODY_TO_ANCHOR_CENTER,
+                indicatorArrowStartOffset = 50.dp,
+            )
+        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), {}, {})
 
-        val result = popupView.computePopupHorizontalBounds(
-            anchorMiddleXCoord = Pixels(300),
-            arrowIndicatorWidth = Pixels(20),
-            screenWidth = Pixels(1000),
-            layoutDirection = View.LAYOUT_DIRECTION_RTL,
-        )
+        val result =
+            popupView.computePopupHorizontalBounds(
+                anchorMiddleXCoord = Pixels(300),
+                arrowIndicatorWidth = Pixels(20),
+                screenWidth = Pixels(1000),
+                layoutDirection = View.LAYOUT_DIRECTION_RTL,
+            )
 
         assertEquals(700, result.startCoord.value)
         assertEquals(290, result.endCoord.value)
@@ -503,18 +538,20 @@ class CFRPopupFullscreenLayoutTest {
         val anchor = spy(View(testContext))
         doReturn(400).`when`(anchor).width
         doReturn(200f).`when`(anchor).x
-        val properties = CFRPopupProperties(
-            popupWidth = 500.dp,
-            popupAlignment = PopupAlignment.BODY_CENTERED_IN_SCREEN,
-        )
-        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), { }, { })
+        val properties =
+            CFRPopupProperties(
+                popupWidth = 500.dp,
+                popupAlignment = PopupAlignment.BODY_CENTERED_IN_SCREEN,
+            )
+        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), {}, {})
 
-        val result = popupView.computePopupHorizontalBounds(
-            anchorMiddleXCoord = Pixels(400),
-            arrowIndicatorWidth = Pixels(20),
-            screenWidth = Pixels(500),
-            layoutDirection = View.LAYOUT_DIRECTION_LTR,
-        )
+        val result =
+            popupView.computePopupHorizontalBounds(
+                anchorMiddleXCoord = Pixels(400),
+                arrowIndicatorWidth = Pixels(20),
+                screenWidth = Pixels(500),
+                layoutDirection = View.LAYOUT_DIRECTION_LTR,
+            )
 
         assertEquals(16, result.startCoord.value)
         // The screen width minus the viewport margin
@@ -524,19 +561,21 @@ class CFRPopupFullscreenLayoutTest {
     @Test
     fun `GIVEN LTR direction and popup fits inside the viewport WHEN computing popup bounds for CENTERED_IN_SCREEN alignment THEN the horizontal bounds are calculated for BODY_TO_ANCHOR_CENTER alignment`() {
         val anchor = View(testContext)
-        val properties = CFRPopupProperties(
-            popupWidth = 400.dp,
-            popupAlignment = PopupAlignment.BODY_CENTERED_IN_SCREEN,
-            indicatorArrowStartOffset = 0.dp,
-        )
-        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), { }, { })
+        val properties =
+            CFRPopupProperties(
+                popupWidth = 400.dp,
+                popupAlignment = PopupAlignment.BODY_CENTERED_IN_SCREEN,
+                indicatorArrowStartOffset = 0.dp,
+            )
+        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), {}, {})
 
-        val result = popupView.computePopupHorizontalBounds(
-            anchorMiddleXCoord = Pixels(200),
-            arrowIndicatorWidth = Pixels(20),
-            screenWidth = Pixels(1000),
-            layoutDirection = View.LAYOUT_DIRECTION_LTR,
-        )
+        val result =
+            popupView.computePopupHorizontalBounds(
+                anchorMiddleXCoord = Pixels(200),
+                arrowIndicatorWidth = Pixels(20),
+                screenWidth = Pixels(1000),
+                layoutDirection = View.LAYOUT_DIRECTION_LTR,
+            )
 
         assertEquals(190, result.startCoord.value)
         assertEquals(600, result.endCoord.value)
@@ -547,18 +586,20 @@ class CFRPopupFullscreenLayoutTest {
         val anchor = spy(View(testContext))
         doReturn(400).`when`(anchor).width
         doReturn(200f).`when`(anchor).x
-        val properties = CFRPopupProperties(
-            popupWidth = 500.dp,
-            popupAlignment = PopupAlignment.BODY_CENTERED_IN_SCREEN,
-        )
-        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), { }, { })
+        val properties =
+            CFRPopupProperties(
+                popupWidth = 500.dp,
+                popupAlignment = PopupAlignment.BODY_CENTERED_IN_SCREEN,
+            )
+        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), {}, {})
 
-        val result = popupView.computePopupHorizontalBounds(
-            anchorMiddleXCoord = Pixels(400),
-            arrowIndicatorWidth = Pixels(20),
-            screenWidth = Pixels(500),
-            layoutDirection = View.LAYOUT_DIRECTION_RTL,
-        )
+        val result =
+            popupView.computePopupHorizontalBounds(
+                anchorMiddleXCoord = Pixels(400),
+                arrowIndicatorWidth = Pixels(20),
+                screenWidth = Pixels(500),
+                layoutDirection = View.LAYOUT_DIRECTION_RTL,
+            )
 
         // The screen width minus the viewport margin
         assertEquals(484, result.startCoord.value)
@@ -568,54 +609,59 @@ class CFRPopupFullscreenLayoutTest {
     @Test
     fun `GIVEN RTL direction and popup fits inside the viewport WHEN computing popup bounds for CENTERED_IN_SCREEN alignment THEN the horizontal bounds are calculated for BODY_TO_ANCHOR_CENTER alignment`() {
         val anchor = View(testContext)
-        val properties = CFRPopupProperties(
-            popupWidth = 400.dp,
-            popupAlignment = PopupAlignment.BODY_CENTERED_IN_SCREEN,
-            indicatorArrowStartOffset = 0.dp,
-        )
-        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), { }, { })
+        val properties =
+            CFRPopupProperties(
+                popupWidth = 400.dp,
+                popupAlignment = PopupAlignment.BODY_CENTERED_IN_SCREEN,
+                indicatorArrowStartOffset = 0.dp,
+            )
+        val popupView = CFRPopupFullscreenLayout(anchor, properties, mock(), {}, {})
 
-        val result = popupView.computePopupHorizontalBounds(
-            anchorMiddleXCoord = Pixels(700),
-            arrowIndicatorWidth = Pixels(20),
-            screenWidth = Pixels(1000),
-            layoutDirection = View.LAYOUT_DIRECTION_RTL,
-        )
+        val result =
+            popupView.computePopupHorizontalBounds(
+                anchorMiddleXCoord = Pixels(700),
+                arrowIndicatorWidth = Pixels(20),
+                screenWidth = Pixels(1000),
+                layoutDirection = View.LAYOUT_DIRECTION_RTL,
+            )
 
         assertEquals(710, result.startCoord.value)
         assertEquals(300, result.endCoord.value)
     }
 
     @Test
-    fun `GIVEN there is a CFR Popup showing WHEN the orientation of the device changes THEN the CFR will be dismissed and shown again after a delay`() = runTest {
-        val context = spy(testContext)
-        val anchor = View(context).apply {
-            setViewTreeLifecycleOwner(mock())
-            this.setViewTreeSavedStateRegistryOwner(mock())
+    fun `GIVEN there is a CFR Popup showing WHEN the orientation of the device changes THEN the CFR will be dismissed and shown again after a delay`() =
+        runTest {
+            val context = spy(testContext)
+            val anchor =
+                View(context).apply {
+                    setViewTreeLifecycleOwner(mock())
+                    this.setViewTreeSavedStateRegistryOwner(mock())
+                }
+            val popupView =
+                spy(
+                    CFRPopupFullscreenLayout(
+                        anchor,
+                        mock(),
+                        mock(),
+                        {},
+                        {},
+                        mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+                    )
+                )
+            `when`(popupView.isAttachedToWindow).thenReturn(false)
+            popupView.show()
+            testScheduler.advanceUntilIdle()
+
+            `when`(popupView.isAttachedToWindow).thenReturn(true)
+            testContext.resources.configuration.orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            popupView.orientationChangeListener.onDisplayChanged(1)
+
+            testScheduler.advanceTimeBy((SHOW_AFTER_SCREEN_ORIENTATION_CHANGE_DELAY).milliseconds)
+            verify(popupView, times(1)).dismiss()
+            verify(popupView, times(1)).show()
+            // Test that show() is called the second time after exactly the expected delay.
+            testScheduler.advanceTimeBy(1.milliseconds)
+            verify(popupView, times(2)).show()
         }
-        val popupView = spy(
-            CFRPopupFullscreenLayout(
-                anchor,
-                mock(),
-                mock(),
-                { },
-                { },
-                mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-            ),
-        )
-        `when`(popupView.isAttachedToWindow).thenReturn(false)
-        popupView.show()
-        testScheduler.advanceUntilIdle()
-
-        `when`(popupView.isAttachedToWindow).thenReturn(true)
-        testContext.resources.configuration.orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        popupView.orientationChangeListener.onDisplayChanged(1)
-
-        testScheduler.advanceTimeBy((SHOW_AFTER_SCREEN_ORIENTATION_CHANGE_DELAY).milliseconds)
-        verify(popupView, times(1)).dismiss()
-        verify(popupView, times(1)).show()
-        // Test that show() is called the second time after exactly the expected delay.
-        testScheduler.advanceTimeBy(1.milliseconds)
-        verify(popupView, times(2)).show()
-    }
 }

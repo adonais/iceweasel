@@ -207,11 +207,31 @@ class BackgroundTaskLaunchRunnable : public Runnable {
   nsCOMPtr<nsICommandLine> mCmdLine;
 };
 
+// Remove any invoker arguments added to the command. This can happen when using
+// API's like LaunchFullTrustProcess (for MSIX).
+// Note: this was found empirically through testing, and is not documented by
+// microsoft
+static void RemoveInvokerArguments(nsICommandLine* aCmdLine) {
+  int32_t idx;
+
+  // The shell adds `/InvokerPRAID: <praid>` when launching through
+  // LaunchFullTrustProcess
+  nsresult rv = aCmdLine->FindFlag(u"InvokerPRAID"_ns, false, &idx);
+  NS_ENSURE_SUCCESS_VOID(rv);
+  if (idx < 0) {
+    return;
+  }
+
+  NS_ENSURE_SUCCESS_VOID(aCmdLine->RemoveArguments(idx, idx + 2));
+}
+
 nsresult BackgroundTasks::RunBackgroundTask(nsICommandLine* aCmdLine) {
   Maybe<nsCString> task = GetBackgroundTasks();
   if (task.isNothing()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
+
+  RemoveInvokerArguments(aCmdLine);
 
   nsCOMPtr<nsIBackgroundTasksManager> manager =
       do_GetService("@mozilla.org/backgroundtasksmanager;1");

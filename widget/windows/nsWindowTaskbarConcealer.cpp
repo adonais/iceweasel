@@ -335,7 +335,7 @@ void TaskbarConcealerImpl::MarkAsHidingTaskbar(HWND aWnd, bool aMark) {
   //
   // [0] https://web.archive.org/web/20211223073250/https://docs.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-itaskbarlist2-markfullscreenwindow
 
-  const char* const sMark = aMark ? "true" : "false";
+  const char* const sMark = aMark ? "false" : "true";
 
   bool const useNonRudeHWND = !!(mMarkingMethod & MarkingMethod::NonRudeHwnd);
   bool const usePrepareFullScreen =
@@ -344,9 +344,25 @@ void TaskbarConcealerImpl::MarkAsHidingTaskbar(HWND aWnd, bool aMark) {
   // at least one must be set
   MOZ_ASSERT(useNonRudeHWND || usePrepareFullScreen);
 
-  if (useNonRudeHWND) {
+  // `PrepareFullScreen()` is known to sometimes fail to clear a misdetection,
+  // no matter how many times it is called (bug 1949079 comment 15, bug
+  // 2064534). "NonRudeHWND" is consulted whenever Windows performs a
+  // fullscreen check rather than being a one-shot signal, so set it as well
+  // to cover those cases.
+  //
+  // Only do so once the window is actually on screen. Per the third bullet
+  // point above, a window that had this property before it was shown may
+  // never afterwards be treatable as fullscreen -- which is what bug 1965699
+  // (fullscreen video failing to conceal the taskbar) appeared to be. Marking
+  // a window as hiding the taskbar still removes the property outright, so
+  // going fullscreen clears it either way.
+  bool forceUseNonRudeHWND =
+      !aMark && ::IsWindowVisible(aWnd) &&
+      StaticPrefs::widget_windows_fullscreen_set_nonrudehwnd();
+  if (useNonRudeHWND || forceUseNonRudeHWND) {
     MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
-            ("Setting %p[L\"NonRudeHWND\"] to %s", aWnd, sMark));
+            ("Setting %p[L\"NonRudeHWND\"] to %s (forceUseNonRudeHWND is %d)",
+             aWnd, sMark, forceUseNonRudeHWND ? 1 : 0));
 
     // (setting the property to `FALSE` is not known to be functionally distinct
     // from removing it)
@@ -427,6 +443,8 @@ void nsWindow::TaskbarConcealer::OnWindowMaximized(nsWindow* aWin,
   // If we're not using a custom nonclient area, then it's obvious to Windows
   // that we're not trying to be fullscreen, so the bug won't occur.
   if (!aWin->mCustomNonClient) {
+    MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
+            ("... skipped: HWND %p has no custom non-client area", aWin->mWnd));
     return;
   }
 
@@ -438,6 +456,20 @@ void nsWindow::TaskbarConcealer::OnWindowMaximized(nsWindow* aWin,
   // testing confirms that it sometimes does. See bug 1949079.
   //
   (TaskbarConcealerImpl{}).MarkAsHidingTaskbar(aWin->mWnd, false);
+}
+
+void nsWindow::TaskbarConcealer::OnWindowShown(nsWindow* aWin) {
+  const nsSizeMode sizeMode = aWin->mFrameState->GetSizeMode();
+
+  MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
+          ("==> OnWindowShown() for HWND %p: sizeMode %d, customNonClient %d",
+           aWin->mWnd, int(sizeMode), int(aWin->mCustomNonClient)));
+
+  if (sizeMode != nsSizeMode_Maximized) {
+    return;
+  }
+
+  OnWindowMaximized(aWin, /* aForce = */ true);
 }
 
 void nsWindow::TaskbarConcealer::OnFullscreenChanged(nsWindow* aWin,

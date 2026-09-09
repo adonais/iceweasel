@@ -2,13 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/HTMLEditor.h"
+#include "HTMLEditor.h"
 
 #include "EditorEventListener.h"
 #include "HTMLEditUtils.h"
+
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/Element.h"
-#include "nsAString.h"
+
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
 #include "nsError.h"
@@ -72,9 +73,12 @@ nsresult HTMLEditor::ShowInlineTableEditingUIInternal(Element& aCellElement) {
     // check too.
     // If buttons are just created again for same element, we hit the former
     // check.
+
+    // <a> won't create a UA shadow, so, CreateAnonymousElement()
+    // won't run script actually. (That asserts in these method calls.)
     ManualNACPtr addColumnBeforeButton = CreateAnonymousElement(
         nsGkAtoms::a, *rootElement, u"mozTableAddColumnBefore"_ns, false);
-    if (NS_WARN_IF(!addColumnBeforeButton)) {
+    if (NS_WARN_IF(!addColumnBeforeButton)) [[unlikely]] {
       NS_WARNING(
           "HTMLEditor::CreateAnonymousElement(nsGkAtoms::a, "
           "mozTableAddColumnBefore) failed");
@@ -88,7 +92,7 @@ nsresult HTMLEditor::ShowInlineTableEditingUIInternal(Element& aCellElement) {
 
     ManualNACPtr removeColumnButton = CreateAnonymousElement(
         nsGkAtoms::a, *rootElement, u"mozTableRemoveColumn"_ns, false);
-    if (!removeColumnButton) {
+    if (!removeColumnButton) [[unlikely]] {
       NS_WARNING(
           "HTMLEditor::CreateAnonymousElement(nsGkAtoms::a, "
           "mozTableRemoveColumn) failed");
@@ -102,7 +106,7 @@ nsresult HTMLEditor::ShowInlineTableEditingUIInternal(Element& aCellElement) {
 
     ManualNACPtr addColumnAfterButton = CreateAnonymousElement(
         nsGkAtoms::a, *rootElement, u"mozTableAddColumnAfter"_ns, false);
-    if (!addColumnAfterButton) {
+    if (!addColumnAfterButton) [[unlikely]] {
       NS_WARNING(
           "HTMLEditor::CreateAnonymousElement(nsGkAtoms::a, "
           "mozTableAddColumnAfter) failed");
@@ -116,7 +120,7 @@ nsresult HTMLEditor::ShowInlineTableEditingUIInternal(Element& aCellElement) {
 
     ManualNACPtr addRowBeforeButton = CreateAnonymousElement(
         nsGkAtoms::a, *rootElement, u"mozTableAddRowBefore"_ns, false);
-    if (!addRowBeforeButton) {
+    if (!addRowBeforeButton) [[unlikely]] {
       NS_WARNING(
           "HTMLEditor::CreateAnonymousElement(nsGkAtoms::a, "
           "mozTableAddRowBefore) failed");
@@ -130,7 +134,7 @@ nsresult HTMLEditor::ShowInlineTableEditingUIInternal(Element& aCellElement) {
 
     ManualNACPtr removeRowButton = CreateAnonymousElement(
         nsGkAtoms::a, *rootElement, u"mozTableRemoveRow"_ns, false);
-    if (!removeRowButton) {
+    if (!removeRowButton) [[unlikely]] {
       NS_WARNING(
           "HTMLEditor::CreateAnonymousElement(nsGkAtoms::a, "
           "mozTableRemoveRow) failed");
@@ -144,7 +148,7 @@ nsresult HTMLEditor::ShowInlineTableEditingUIInternal(Element& aCellElement) {
 
     ManualNACPtr addRowAfterButton = CreateAnonymousElement(
         nsGkAtoms::a, *rootElement, u"mozTableAddRowAfter"_ns, false);
-    if (!addRowAfterButton) {
+    if (!addRowAfterButton) [[unlikely]] {
       NS_WARNING(
           "HTMLEditor::CreateAnonymousElement(nsGkAtoms::a, "
           "mozTableAddRowAfter) failed");

@@ -26,13 +26,11 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.secure
 
-/**
- * Allows handling of biometric authentication workflows.
- */
+/** Allows handling of biometric authentication workflows. */
 interface BiometricUtils {
     /**
-     * Prompts the biometric authentication before navigating to new fragment or displays warning
-     * dialog if the feature is not available
+     * Prompts the biometric authentication before navigating to new fragment or displays warning dialog if the feature
+     * is not available
      *
      * @param titleRes Resource ID for the prompt's title message.
      * @param view The UI view used to display dialogs or prompts.
@@ -49,9 +47,7 @@ interface BiometricUtils {
     )
 }
 
-/**
- * Default implementation of [BiometricUtils].
- */
+/** Default implementation of [BiometricUtils]. */
 object DefaultBiometricUtils : BiometricUtils {
     @Suppress("Deprecation")
     override fun bindBiometricsCredentialsPromptOrShowWarning(
@@ -61,46 +57,52 @@ object DefaultBiometricUtils : BiometricUtils {
         onAuthSuccess: () -> Unit,
         onAuthFailure: () -> Unit,
     ) {
-        val (fragment, context) = Result.runCatching {
-            view.findFragment() as Fragment to view.context
-        }.getOrElse { return }
+        val (fragment, context) =
+            Result.runCatching {
+                    view.findFragment() as Fragment to view.context
+                }
+                .getOrElse {
+                    return
+                }
 
-        val biometricPromptFeature = ViewBoundFeatureWrapper(
-            owner = fragment.viewLifecycleOwner,
-            view = view,
-            feature = BiometricPromptFeature(
-                context = context,
-                fragment = fragment,
-                onAuthSuccess = {
-                    fragment.runIfFragmentIsAttached {
-                        fragment.lifecycleScope.launch(Dispatchers.Main) {
-                            onAuthSuccess()
-                        }
-                    }
-                },
-                onAuthFailure = {
-                    fragment.runIfFragmentIsAttached {
-                        fragment.lifecycleScope.launch(Dispatchers.Main) {
-                            onAuthFailure()
-                        }
-                    }
-                },
-            ),
-        )
+        val biometricPromptFeature =
+            ViewBoundFeatureWrapper(
+                owner = fragment.viewLifecycleOwner,
+                view = view,
+                feature =
+                    BiometricPromptFeature(
+                        context = context,
+                        fragment = fragment,
+                        onAuthSuccess = {
+                            fragment.runIfFragmentIsAttached {
+                                fragment.lifecycleScope.launch(Dispatchers.Main) {
+                                    onAuthSuccess()
+                                }
+                            }
+                        },
+                        onAuthFailure = {
+                            fragment.runIfFragmentIsAttached {
+                                fragment.lifecycleScope.launch(Dispatchers.Main) {
+                                    onAuthFailure()
+                                }
+                            }
+                        },
+                    ),
+            )
         // Use the BiometricPrompt first
         if (BiometricPromptFeature.canUseFeature(BiometricManager.from(context))) {
-            biometricPromptFeature.get()
-                ?.requestAuthentication(context.resources.getString(titleRes))
+            biometricPromptFeature.get()?.requestAuthentication(context.resources.getString(titleRes))
             return
         }
 
         // Fallback to prompting for password with the KeyguardManager
         val manager = context.getSystemService<KeyguardManager>()
         if (manager?.isKeyguardSecure == true) {
-            val confirmDeviceCredentialIntent = manager.createConfirmDeviceCredentialIntent(
-                context.resources.getString(R.string.logins_biometric_prompt_message_pin),
-                context.resources.getString(titleRes),
-            )
+            val confirmDeviceCredentialIntent =
+                manager.createConfirmDeviceCredentialIntent(
+                    context.resources.getString(R.string.logins_biometric_prompt_message_pin),
+                    context.resources.getString(titleRes),
+                )
             onShowPinVerification(confirmDeviceCredentialIntent)
         } else {
             // Warn that the device has not been secured
@@ -119,26 +121,26 @@ private fun showPinDialogWarning(
     activity: FragmentActivity,
     onIgnorePinWarning: () -> Unit,
 ) {
-    MaterialAlertDialogBuilder(activity).apply {
-        setTitle(context.resources.getString(R.string.logins_warning_dialog_title_2))
-        setMessage(
-            context.resources.getString(R.string.logins_warning_dialog_message_2),
-        )
+    MaterialAlertDialogBuilder(activity)
+        .apply {
+            setTitle(context.resources.getString(R.string.logins_warning_dialog_title_2))
+            setMessage(context.resources.getString(R.string.logins_warning_dialog_message_2))
 
-        setNegativeButton(
-            context.resources.getString(R.string.logins_warning_dialog_later),
-        ) { _: DialogInterface, _ ->
-            onIgnorePinWarning()
-        }
+            setNegativeButton(context.resources.getString(R.string.logins_warning_dialog_later)) { _: DialogInterface, _
+                ->
+                onIgnorePinWarning()
+            }
 
-        setPositiveButton(
-            context.resources.getString(R.string.logins_warning_dialog_set_up_now),
-        ) { it: DialogInterface, _ ->
-            it.dismiss()
-            val intent = Intent(Settings.ACTION_SECURITY_SETTINGS)
-            context.startActivity(intent)
+            setPositiveButton(context.resources.getString(R.string.logins_warning_dialog_set_up_now)) {
+                it: DialogInterface,
+                _ ->
+                it.dismiss()
+                val intent = Intent(Settings.ACTION_SECURITY_SETTINGS)
+                context.startActivity(intent)
+            }
+            create().withCenterAlignedButtons()
         }
-        create().withCenterAlignedButtons()
-    }.show().secure(activity)
+        .show()
+        .secure(activity)
     activity.components.settings.incrementSecureWarningCount()
 }

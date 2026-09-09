@@ -6,9 +6,7 @@ package mozilla.components.feature.app.links
 
 import java.util.Locale
 
-/**
- * Utility class whether scheme is allowed or denied.
- */
+/** Utility class whether scheme is allowed or denied. */
 class AlwaysDeniedSchemes(private val schemes: Set<String>) {
     /**
      * Whether or not we should deny given URI scheme by dangerous etc.
@@ -17,6 +15,6 @@ class AlwaysDeniedSchemes(private val schemes: Set<String>) {
      * @return `true` If scheme should be denied
      */
     fun shouldDeny(scheme: String?): Boolean {
-         return schemes.contains(scheme?.lowercase(Locale.ROOT))
+        return schemes.contains(scheme?.lowercase(Locale.ROOT))
     }
 }

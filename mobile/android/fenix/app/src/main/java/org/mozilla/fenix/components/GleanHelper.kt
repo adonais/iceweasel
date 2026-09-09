@@ -23,33 +23,35 @@ import org.mozilla.fenix.nimbus.FxNimbus
 /**
  * Helper function to initialize Glean.
  *
- * [applicationContext] the application context required for glean initialization.
- * [logger] the logger to send logs about initializing Glean.
- * [isTelemetryUploadEnabled] indicate if telemetry should be enabled to be uploaded.
- * [client] an instance of [Client] used to upload metrics.
+ * [applicationContext] the application context required for glean initialization. [logger] the logger to send logs
+ * about initializing Glean. [isTelemetryUploadEnabled] indicate if telemetry should be enabled to be uploaded. [client]
+ * an instance of [Client] used to upload metrics.
  */
 fun initializeGlean(applicationContext: Context, logger: Logger, isTelemetryUploadEnabled: Boolean, client: Client) {
     logger.debug("Initializing Glean (uploadEnabled=$isTelemetryUploadEnabled})")
 
     // for performance reasons, this is only available in Nightly or Debug builds
-    val customEndpoint = if (Config.channel.isNightlyOrDebug) {
-        // for testing, if custom glean server url is set in the secret menu, use it to initialize Glean
-        getCustomGleanServerUrlIfAvailable(applicationContext)
-    } else {
-        null
-    }
+    val customEndpoint =
+        if (Config.channel.isNightlyOrDebug) {
+            // for testing, if custom glean server url is set in the secret menu, use it to initialize Glean
+            getCustomGleanServerUrlIfAvailable(applicationContext)
+        } else {
+            null
+        }
 
-    val configuration = Configuration(
-        channel = BuildConfig.BUILD_TYPE,
-        httpClient = ConceptFetchHttpUploader(
-            lazy(LazyThreadSafetyMode.NONE) { client },
-            supportsOhttp = true,
-        ),
-        enableEventTimestamps = FxNimbus.features.glean.value().enableEventTimestamps,
-        delayPingLifetimeIo = FxNimbus.features.glean.value().delayPingLifetimeIo,
-        pingLifetimeThreshold = FxNimbus.features.glean.value().pingLifetimeThreshold,
-        pingLifetimeMaxTime = FxNimbus.features.glean.value().pingLifetimeMaxTime,
-    )
+    val configuration =
+        Configuration(
+            channel = BuildConfig.BUILD_TYPE,
+            httpClient =
+                ConceptFetchHttpUploader(
+                    lazy(LazyThreadSafetyMode.NONE) { client },
+                    supportsOhttp = true,
+                ),
+            enableEventTimestamps = FxNimbus.features.glean.value().enableEventTimestamps,
+            delayPingLifetimeIo = FxNimbus.features.glean.value().delayPingLifetimeIo,
+            pingLifetimeThreshold = FxNimbus.features.glean.value().pingLifetimeThreshold,
+            pingLifetimeMaxTime = FxNimbus.features.glean.value().pingLifetimeMaxTime,
+        )
 
     // Since Glean v63.0.0, custom pings need to be registered prior to Glean init
     // in order to ensure they are enabled and able to collect data.

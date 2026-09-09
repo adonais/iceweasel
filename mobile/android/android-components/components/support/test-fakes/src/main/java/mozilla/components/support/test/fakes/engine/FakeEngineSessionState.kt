@@ -7,12 +7,8 @@ package mozilla.components.support.test.fakes.engine
 import android.util.JsonWriter
 import mozilla.components.concept.engine.EngineSessionState
 
-/**
- * A fake [EngineSessionState] that can be used with [FakeEngine] in tests.
- */
-class FakeEngineSessionState(
-    val value: String,
-) : EngineSessionState {
+/** A fake [EngineSessionState] that can be used with [FakeEngine] in tests. */
+class FakeEngineSessionState(val value: String) : EngineSessionState {
     override fun writeTo(writer: JsonWriter) {
         writer.beginObject()
 

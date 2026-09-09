@@ -7,21 +7,15 @@ package mozilla.components.feature.addons.update
 import androidx.annotation.VisibleForTesting
 import mozilla.components.feature.addons.AddonManager
 
-/**
- * Provides global access to the dependencies needed for updating add-ons.
- */
+/** Provides global access to the dependencies needed for updating add-ons. */
 object GlobalAddonDependencyProvider {
-    @VisibleForTesting
-    internal var addonManager: AddonManager? = null
+    @VisibleForTesting internal var addonManager: AddonManager? = null
 
-    @VisibleForTesting
-    internal var updater: AddonUpdater? = null
+    @VisibleForTesting internal var updater: AddonUpdater? = null
 
     internal var onCrash: ((Throwable) -> Unit)? = null
 
-    /**
-     * Initializes the AddonManager, AddonUpdater and an optional onCrash lambda function.
-     */
+    /** Initializes the AddonManager, AddonUpdater and an optional onCrash lambda function. */
     fun initialize(manager: AddonManager, updater: AddonUpdater, onCrash: ((Throwable) -> Unit)? = null) {
         this.addonManager = manager
         this.updater = updater

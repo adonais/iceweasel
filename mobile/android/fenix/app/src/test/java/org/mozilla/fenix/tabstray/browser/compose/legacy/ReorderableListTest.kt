@@ -13,14 +13,14 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import org.junit.Test
 import org.mozilla.fenix.tabstray.browser.compose.ListReorderState
 import org.mozilla.fenix.tabstray.controller.NoOpTabInteractionHandler
 import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class ReorderableListTest {
     private val testDispatcher = StandardTestDispatcher()
@@ -31,25 +31,27 @@ class ReorderableListTest {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
         val dragItemOffset = 10
         val targetItemOffset = 30
-        val reorderState = fakeListReorderState(
-            mockListState(
-                mockItems = listOf(
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns dragItemOffset
-                    },
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 2
-                        every { size } returns 10
-                        every { offset } returns targetItemOffset
-                    },
+        val reorderState =
+            fakeListReorderState(
+                mockListState(
+                    mockItems =
+                        listOf(
+                            mockk<LazyListItemInfo> {
+                                every { key } returns "key1"
+                                every { index } returns 1
+                                every { size } returns 10
+                                every { offset } returns dragItemOffset
+                            },
+                            mockk<LazyListItemInfo> {
+                                every { key } returns "key2"
+                                every { index } returns 2
+                                every { size } returns 10
+                                every { offset } returns targetItemOffset
+                            },
+                        )
                 ),
-            ),
-            handler = handler,
-        )
+                handler = handler,
+            )
 
         reorderState.onTouchSlopPassed(offset = dragItemOffset.toFloat(), shouldLongPress = true)
         reorderState.onDrag(offset = 20f) // 20 down
@@ -62,25 +64,27 @@ class ReorderableListTest {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
         val dragItemOffset = 30
         val targetItemOffset = 10
-        val reorderState = fakeListReorderState(
-            mockListState(
-                mockItems = listOf(
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns dragItemOffset
-                    },
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 2
-                        every { size } returns 10
-                        every { offset } returns targetItemOffset
-                    },
+        val reorderState =
+            fakeListReorderState(
+                mockListState(
+                    mockItems =
+                        listOf(
+                            mockk<LazyListItemInfo> {
+                                every { key } returns "key1"
+                                every { index } returns 1
+                                every { size } returns 10
+                                every { offset } returns dragItemOffset
+                            },
+                            mockk<LazyListItemInfo> {
+                                every { key } returns "key2"
+                                every { index } returns 2
+                                every { size } returns 10
+                                every { offset } returns targetItemOffset
+                            },
+                        )
                 ),
-            ),
-            handler = handler,
-        )
+                handler = handler,
+            )
 
         reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), true)
         reorderState.onDrag(offset = -20f) // 20 up
@@ -132,9 +136,10 @@ class ReorderableListTest {
             touchSlop = 0f,
             ignoredItems = emptyList(),
             onLongPress = { _ -> },
-            hapticFeedback = mockk<HapticFeedback> {
-                every { performHapticFeedback(any()) } just Runs
-            },
+            hapticFeedback =
+                mockk<HapticFeedback> {
+                    every { performHapticFeedback(any()) } just Runs
+                },
             onMove = { initialTab, newTab ->
                 handler.onMove(
                     sourceKey = initialTab.key as String,

@@ -15,11 +15,12 @@ class TabSessionStateTest {
     fun `GIVEN reader mode is active WHEN get url extension property is fetched THEN return the active url`() {
         val readerUrl = "moz-extension://1234"
         val activeUrl = "https://mozilla.org"
-        val readerTab = createTab(
-            url = readerUrl,
-            readerState = ReaderState(active = true, activeUrl = activeUrl),
-            title = "Mozilla",
-        )
+        val readerTab =
+            createTab(
+                url = readerUrl,
+                readerState = ReaderState(active = true, activeUrl = activeUrl),
+                title = "Mozilla",
+            )
 
         assertEquals(activeUrl, readerTab.getUrl())
     }

@@ -43,8 +43,11 @@ class SharedPreferencesCacheTest {
         assertEquals(TestType("hi", 177), cache.getCached())
 
         // Corrupt the cache...
-        testContext.getSharedPreferences("testName", Context.MODE_PRIVATE).edit()
-            .putString("testKey", "garbage").commit()
+        testContext
+            .getSharedPreferences("testName", Context.MODE_PRIVATE)
+            .edit()
+            .putString("testKey", "garbage")
+            .commit()
 
         // Should handle bad data as 'no cached values'.
         assertNull(cache.getCached())

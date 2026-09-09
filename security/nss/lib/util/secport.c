@@ -360,7 +360,7 @@ PORT_ArenaAlloc(PLArenaPool *arena, size_t size)
                 PORT_Assert(0);
                 return NULL;
             } /* tid != null */
-#endif        /* THREADMARK */
+#endif /* THREADMARK */
             PL_ARENA_ALLOCATE(p, arena, size);
             PR_Unlock(pool->lock);
         } else {

@@ -545,9 +545,9 @@ void CodeGenerator::visitPowHalfD(LPowHalfD* ins) {
     // Adding 0 converts any -0 to 0.
     masm.zeroDouble(scratch);
     masm.addDouble(input, scratch);
-    masm.vsqrtsd(scratch, output, output);
+    masm.sqrtDouble(scratch, output);
   } else {
-    masm.vsqrtsd(input, output, output);
+    masm.sqrtDouble(input, output);
   }
 
   masm.bind(&done);

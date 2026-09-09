@@ -27,6 +27,7 @@
 
 // We expose a singleton from this module. Some tests may import the
 // constructor via the system global.
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { FormAutofill } from "resource://autofill/FormAutofill.sys.mjs";
 import { FormAutofillUtils } from "resource://gre/modules/shared/FormAutofillUtils.sys.mjs";
 import { AutofillDataTypes } from "resource://gre/modules/shared/AutofillDataTypes.sys.mjs";
@@ -46,6 +47,23 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PassportRecord: "resource://gre/modules/shared/PassportRecord.sys.mjs",
   FirefoxRelay: "resource://gre/modules/FirefoxRelay.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
+});
+
+// TODO Bug 2064859 - refactor this out as external provider
+ChromeUtils.defineLazyGetter(lazy, "SmartFormFillAutocomplete", () => {
+  if (AppConstants.MOZ_BUILD_APP != "browser") {
+    return undefined;
+  }
+
+  try {
+    return ChromeUtils.importESModule(
+      // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+      "moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillAutocomplete.sys.mjs"
+    ).SmartFormFillAutocomplete;
+  } catch (error) {
+    console.error(`Unable to load SmartFormFillAutocomplete.sys.mjs: ${error}`);
+  }
+  return undefined;
 });
 
 ChromeUtils.defineLazyGetter(lazy, "log", () =>
@@ -1068,7 +1086,7 @@ export class FormAutofillParent extends JSWindowActorParent {
    *         `allFieldNames` is an array containing all the matched field name found in this section.
    */
   async searchAutoCompleteEntries(searchString, options) {
-    const { fieldName, elementId, scenarioName } = options;
+    const { fieldName, elementId, inputType, scenarioName } = options;
 
     const section = this.getSectionByElementId(elementId);
     if (!section.isValidSection() || !section.isEnabled()) {
@@ -1086,19 +1104,30 @@ export class FormAutofillParent extends JSWindowActorParent {
       hasInput: !!searchString?.length,
     });
 
+    const smartFormFillPromise =
+      lazy.SmartFormFillAutocomplete?.autocompleteItemsAsync({
+        browsingContext: this.browsingContext,
+        searchString,
+        inputType,
+        focusElementId: elementId,
+      }) ?? [];
+
     // Retrieve information for the autocomplete entry
     const recordsPromise = this.getRecords({
       searchString,
       fieldName,
     });
 
-    const [records, externalEntries] = await Promise.all([
+    const [records, relayEntries, smartFormFillEntries] = await Promise.all([
       recordsPromise,
       relayPromise,
+      smartFormFillPromise,
     ]);
+    const externalEntries = [...relayEntries, ...smartFormFillEntries];
 
     // Sort addresses by timeLastUsed for showing the lastest used address at top.
     records.sort((a, b) => b.timeLastUsed - a.timeLastUsed);
+
     return { records, externalEntries, allFieldNames: section.allFieldNames };
   }
 

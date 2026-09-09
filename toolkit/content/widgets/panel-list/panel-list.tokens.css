@@ -7,21 +7,18 @@
 
 @layer tokens-foundation, tokens-browser-theme, tokens-foundation-brand, tokens-foundation-nova, tokens-browser-theme-nova, tokens-foundation-brand-nova, tokens-prefers-contrast, tokens-prefers-contrast-nova, tokens-forced-colors, tokens-forced-colors-nova;
 
-@layer tokens-foundation {
-  :root,
-  :host {
+:root,
+:host {
+  @layer tokens-foundation {
     --panel-list-background-color: var(--background-color-box);
     --panel-list-border-color: var(--border-color-deemphasized);
     --panel-list-border-radius: var(--panel-border-radius);
     --panel-list-box-shadow: var(--popup-box-shadow);
     --panel-list-text-color: var(--text-color);
   }
-}
 
-@media -moz-pref("browser.nova.enabled") {
-  @layer tokens-foundation-nova {
-    :root,
-    :host {
+  @media -moz-pref("browser.nova.enabled") {
+    @layer tokens-foundation-nova {
       --panel-list-border-color: var(--panel-border-color);
       --panel-list-box-shadow: var(--panel-box-shadow);
     }

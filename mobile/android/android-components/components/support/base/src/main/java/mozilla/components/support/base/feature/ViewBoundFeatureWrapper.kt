@@ -13,8 +13,8 @@ import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 
 /**
- * Wrapper for [LifecycleAwareFeature] instances that keep a strong references to a [View]. This wrapper is helpful
- * when the lifetime of the [View] may be shorter than the [Lifecycle] and you need to keep a reference to the
+ * Wrapper for [LifecycleAwareFeature] instances that keep a strong references to a [View]. This wrapper is helpful when
+ * the lifetime of the [View] may be shorter than the [Lifecycle] and you need to keep a reference to the
  * [LifecycleAwareFeature] that may outlive the [View].
  *
  * [ViewBoundFeatureWrapper] takes care of stopping [LifecycleAwareFeature] and clearing references once the bound
@@ -28,7 +28,6 @@ import androidx.lifecycle.LifecycleOwner
  * [LifecycleAwareFeature] and (off-screen) [View] instances existing in memory.
  *
  * Example integration:
- *
  * ```
  * class MyFragment : Fragment {
  *     val myFeature = ViewBoundFeatureWrapper<MyFeature>()
@@ -64,22 +63,20 @@ class ViewBoundFeatureWrapper<T : LifecycleAwareFeature>() {
 
     private var isFeatureStarted: Boolean = false
 
-    /**
-     * Convenient constructor for creating a wrapper instance and calling [set] immediately.
-     */
+    /** Convenient constructor for creating a wrapper instance and calling [set] immediately. */
     constructor(feature: T, owner: LifecycleOwner, view: View) : this() {
         set(feature, owner, view)
     }
 
     /**
-     * Sets the [LifecycleAwareFeature] reference and binds it to the [Lifecycle] of the [LifecycleObserver] as well
-     * as the [View].
+     * Sets the [LifecycleAwareFeature] reference and binds it to the [Lifecycle] of the [LifecycleObserver] as well as
+     * the [View].
      *
      * The wrapper will take care of subscribing to the [Lifecycle] and forwarding start/stop events to the
      * [LifecycleAwareFeature].
      *
-     * Once the [View] gets detached the [LifecycleAwareFeature] will be stopped and the wrapper will clear all
-     * internal references.
+     * Once the [View] gets detached the [LifecycleAwareFeature] will be stopped and the wrapper will clear all internal
+     * references.
      */
     @Synchronized
     fun set(feature: T, owner: LifecycleOwner, view: View) {
@@ -91,32 +88,27 @@ class ViewBoundFeatureWrapper<T : LifecycleAwareFeature>() {
         this.owner = owner
         this.view = view
 
-        viewBinding = ViewBinding(this).also {
-            view.addOnAttachStateChangeListener(it)
-        }
+        viewBinding =
+            ViewBinding(this).also {
+                view.addOnAttachStateChangeListener(it)
+            }
 
-        lifecycleBinding = LifecycleBinding(this).also {
-            owner.lifecycle.addObserver(it)
-        }
+        lifecycleBinding =
+            LifecycleBinding(this).also {
+                owner.lifecycle.addObserver(it)
+            }
     }
 
-    /**
-     * Returns the wrapped [LifecycleAwareFeature] or null if the [View] was detached and the reference was cleared.
-     */
-    @Synchronized
-    fun get(): T? = feature
+    /** Returns the wrapped [LifecycleAwareFeature] or null if the [View] was detached and the reference was cleared. */
+    @Synchronized fun get(): T? = feature
 
-    /**
-     * Runs the given [block] if this wrapper still has a reference to the [LifecycleAwareFeature].
-     */
+    /** Runs the given [block] if this wrapper still has a reference to the [LifecycleAwareFeature]. */
     @Synchronized
     fun withFeature(block: (T) -> Unit) {
         feature?.let(block)
     }
 
-    /**
-     * Stops the feature and clears all internal references and observers.
-     */
+    /** Stops the feature and clears all internal references and observers. */
     @Synchronized
     fun clear() {
         // Stop feature and clear reference
@@ -139,9 +131,8 @@ class ViewBoundFeatureWrapper<T : LifecycleAwareFeature>() {
     }
 
     /**
-     * Convenience method for invoking [UserInteractionHandler.onBackPressed] on a wrapped
-     * [LifecycleAwareFeature] that implements [UserInteractionHandler]. Returns false if
-     * the [LifecycleAwareFeature] was cleared already.
+     * Convenience method for invoking [UserInteractionHandler.onBackPressed] on a wrapped [LifecycleAwareFeature] that
+     * implements [UserInteractionHandler]. Returns false if the [LifecycleAwareFeature] was cleared already.
      */
     @Synchronized
     fun onBackPressed(): Boolean {
@@ -149,7 +140,7 @@ class ViewBoundFeatureWrapper<T : LifecycleAwareFeature>() {
 
         if (feature !is UserInteractionHandler) {
             throw IllegalAccessError(
-                "Feature does not implement ${UserInteractionHandler::class.java.simpleName} interface",
+                "Feature does not implement ${UserInteractionHandler::class.java.simpleName} interface"
             )
         }
 
@@ -157,9 +148,8 @@ class ViewBoundFeatureWrapper<T : LifecycleAwareFeature>() {
     }
 
     /**
-     * Convenience method for invoking [UserInteractionHandler.onForwardPressed] on a wrapped
-     * [LifecycleAwareFeature] that implements [UserInteractionHandler]. Returns false if
-     * the [LifecycleAwareFeature] was cleared already.
+     * Convenience method for invoking [UserInteractionHandler.onForwardPressed] on a wrapped [LifecycleAwareFeature]
+     * that implements [UserInteractionHandler]. Returns false if the [LifecycleAwareFeature] was cleared already.
      */
     @Synchronized
     fun onForwardPressed(): Boolean {
@@ -167,7 +157,7 @@ class ViewBoundFeatureWrapper<T : LifecycleAwareFeature>() {
 
         if (feature !is UserInteractionHandler) {
             throw IllegalAccessError(
-                "Feature does not implement ${UserInteractionHandler::class.java.simpleName} interface",
+                "Feature does not implement ${UserInteractionHandler::class.java.simpleName} interface"
             )
         }
 
@@ -175,9 +165,8 @@ class ViewBoundFeatureWrapper<T : LifecycleAwareFeature>() {
     }
 
     /**
-     * Convenience method for invoking [ActivityResultHandler.onActivityResult] on a wrapped
-     * [LifecycleAwareFeature] that implements [ActivityResultHandler]. Returns false if
-     * the [LifecycleAwareFeature] was cleared already.
+     * Convenience method for invoking [ActivityResultHandler.onActivityResult] on a wrapped [LifecycleAwareFeature]
+     * that implements [ActivityResultHandler]. Returns false if the [LifecycleAwareFeature] was cleared already.
      */
     @Synchronized
     fun onActivityResult(requestCode: Int, data: Intent?, resultCode: Int): Boolean {
@@ -185,7 +174,7 @@ class ViewBoundFeatureWrapper<T : LifecycleAwareFeature>() {
 
         if (feature !is ActivityResultHandler) {
             throw IllegalAccessError(
-                "Feature does not implement ${ActivityResultHandler::class.java.simpleName} interface",
+                "Feature does not implement ${ActivityResultHandler::class.java.simpleName} interface"
             )
         }
 
@@ -210,9 +199,8 @@ class ViewBoundFeatureWrapper<T : LifecycleAwareFeature>() {
  * detached.
  */
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-internal class ViewBinding<T : LifecycleAwareFeature>(
-    private val wrapper: ViewBoundFeatureWrapper<T>,
-) : View.OnAttachStateChangeListener {
+internal class ViewBinding<T : LifecycleAwareFeature>(private val wrapper: ViewBoundFeatureWrapper<T>) :
+    View.OnAttachStateChangeListener {
     override fun onViewDetachedFromWindow(v: View) {
         wrapper.clear()
     }
@@ -221,13 +209,12 @@ internal class ViewBinding<T : LifecycleAwareFeature>(
 }
 
 /**
- * [LifecycleObserver] implementation to forward start/stop events to the [ViewBoundFeatureWrapper]. Additionally
- * this implementation will call [ViewBoundFeatureWrapper.clear] in case the [Lifecycle] gets destroyed.
+ * [LifecycleObserver] implementation to forward start/stop events to the [ViewBoundFeatureWrapper]. Additionally this
+ * implementation will call [ViewBoundFeatureWrapper.clear] in case the [Lifecycle] gets destroyed.
  */
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-internal class LifecycleBinding<T : LifecycleAwareFeature>(
-    private val wrapper: ViewBoundFeatureWrapper<T>,
-) : DefaultLifecycleObserver {
+internal class LifecycleBinding<T : LifecycleAwareFeature>(private val wrapper: ViewBoundFeatureWrapper<T>) :
+    DefaultLifecycleObserver {
     override fun onStart(owner: LifecycleOwner) {
         wrapper.start()
     }

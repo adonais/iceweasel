@@ -31,6 +31,16 @@ function run_test() {
 }
 
 function afterFlush() {
+  // Check first that the entry really reached the disk. If it had fallen back
+  // to memory-only -- which is what happens when the cache is used before the
+  // encryption key is loaded -- there would be nothing on disk to scan and the
+  // marker assertion below would pass for the wrong reason.
+  Assert.greater(
+    diskCacheEntryFileCount(),
+    0,
+    "the entry must have been written to disk, not kept memory-only"
+  );
+
   Assert.ok(
     !cacheDirContainsMarker(MARKER),
     "encrypted cache must not contain the plaintext marker on disk"
@@ -55,6 +65,25 @@ function makeFlushObserver(callback) {
       executeSoon(callback);
     },
   };
+}
+
+function diskCacheEntryFileCount() {
+  let dir = getDiskCacheDirectory();
+  if (!dir.exists()) {
+    return 0;
+  }
+  dir.append("entries");
+  if (!dir.exists()) {
+    return 0;
+  }
+  let count = 0;
+  let entries = dir.directoryEntries;
+  while (entries.hasMoreElements()) {
+    if (entries.nextFile.fileSize > 0) {
+      count++;
+    }
+  }
+  return count;
 }
 
 function cacheDirContainsMarker(marker) {

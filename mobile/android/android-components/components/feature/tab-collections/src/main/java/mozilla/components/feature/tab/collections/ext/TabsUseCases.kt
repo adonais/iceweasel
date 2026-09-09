@@ -4,16 +4,16 @@
 
 package mozilla.components.feature.tab.collections.ext
 
+import java.io.File
 import mozilla.components.browser.state.action.LastAccessAction
 import mozilla.components.concept.engine.Engine
 import mozilla.components.feature.tab.collections.Tab
 import mozilla.components.feature.tab.collections.TabCollection
 import mozilla.components.feature.tabs.TabsUseCases
-import java.io.File
 
 /**
- * Restores the given [Tab] from a [TabCollection]. Will invoke [onTabRestored] on successful restore
- * and [onFailure] otherwise.
+ * Restores the given [Tab] from a [TabCollection]. Will invoke [onTabRestored] on successful restore and [onFailure]
+ * otherwise.
  *
  * Will update the last accessed property of the tab if [updateLastAccess] is true.
  */
@@ -25,11 +25,12 @@ operator fun TabsUseCases.RestoreUseCase.invoke(
     onTabRestored: (String) -> Unit,
     onFailure: () -> Unit,
 ) {
-    val item = tab.restore(
-        filesDir = filesDir,
-        engine = engine,
-        restoreSessionId = false,
-    )
+    val item =
+        tab.restore(
+            filesDir = filesDir,
+            engine = engine,
+            restoreSessionId = false,
+        )
 
     if (item == null) {
         // We were unable to restore the tab. Let the app know so that it can workaround that
@@ -48,8 +49,8 @@ operator fun TabsUseCases.RestoreUseCase.invoke(
 /**
  * Restores the given [TabCollection].
  *
- * Will invoke [onFailure] if restoring a single [Tab] of the collection failed. The URL of the
- * tab will be passed to [onFailure].
+ * Will invoke [onFailure] if restoring a single [Tab] of the collection failed. The URL of the tab will be passed to
+ * [onFailure].
  *
  * Will update the last accessed property of the tab if [updateLastAccess] is true.
  */
@@ -60,14 +61,15 @@ operator fun TabsUseCases.RestoreUseCase.invoke(
     updateLastAccess: Boolean = true,
     onFailure: (String) -> Unit,
 ) {
-    val tabs = collection.tabs.reversed().mapNotNull { tab ->
-        val recoverableTab = tab.restore(filesDir, engine, restoreSessionId = false)
-        if (recoverableTab == null) {
-            // We were unable to restore the tab. Let the app know so that it can workaround that
-            onFailure(tab.url)
+    val tabs =
+        collection.tabs.reversed().mapNotNull { tab ->
+            val recoverableTab = tab.restore(filesDir, engine, restoreSessionId = false)
+            if (recoverableTab == null) {
+                // We were unable to restore the tab. Let the app know so that it can workaround that
+                onFailure(tab.url)
+            }
+            recoverableTab
         }
-        recoverableTab
-    }
 
     if (tabs.isEmpty()) {
         return

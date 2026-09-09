@@ -21,17 +21,13 @@ import org.mozilla.fenix.perf.lazyMonitored
 
 private const val FIVE_SECONDS_MILLIS = 5000L
 
-/**
- * Component group for all functionality related to performance.
- */
+/** Component group for all functionality related to performance. */
 class PerformanceComponent {
     val visualCompletenessQueue by lazyMonitored { RunWhenReadyQueue() }
     val coldStartupDurationTelemetry by lazyMonitored { ColdStartupDurationTelemetry() }
 }
 
-/**
- * A middleware for marking visual completeness when displaying the home screen during app startup.
- */
+/** A middleware for marking visual completeness when displaying the home screen during app startup. */
 class AppVisualCompletenessMiddleware(
     private val queue: RunWhenReadyQueue,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default),
@@ -55,12 +51,9 @@ class AppVisualCompletenessMiddleware(
     }
 }
 
-/**
- * A middleware for marking visual completeness when displaying the browser screen during app startup.
- */
-class BrowserVisualCompletenessMiddleware(
-    private val queue: RunWhenReadyQueue,
-) : Middleware<BrowserState, BrowserAction> {
+/** A middleware for marking visual completeness when displaying the browser screen during app startup. */
+class BrowserVisualCompletenessMiddleware(private val queue: RunWhenReadyQueue) :
+    Middleware<BrowserState, BrowserAction> {
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,

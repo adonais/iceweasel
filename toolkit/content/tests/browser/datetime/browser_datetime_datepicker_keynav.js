@@ -79,9 +79,11 @@ add_task(async function test_datepicker_keyboard_nav() {
     () => {
       return monthYearEl.textContent == DATE_FORMAT(new Date(prevMonth));
     },
-    `Should change to November 2016, instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to November 2016, instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
 
   Assert.ok(
@@ -145,9 +147,11 @@ add_task(async function test_datepicker_keyboard_nav() {
     () => {
       return selectedDayEl.textContent === "16";
     },
-    `Should change to the 16th, instead got ${
-      helper.getElement(DAY_SELECTED).textContent
-    }`
+    {
+      msg: `Should change to the 16th, instead got ${
+        helper.getElement(DAY_SELECTED).textContent
+      }`,
+    }
   );
 
   Assert.ok(

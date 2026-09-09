@@ -31,11 +31,12 @@ class SyncedTabsCommandsFlushScheduler(
 ) {
     /** Schedules a flush. */
     fun requestFlush() {
-        WorkManager.getInstance(context).enqueueUniqueWork(
-            SyncedTabsCommandsFlushWorker.WORK_TAG,
-            ExistingWorkPolicy.REPLACE,
-            createFlushWorkRequest(),
-        )
+        WorkManager.getInstance(context)
+            .enqueueUniqueWork(
+                SyncedTabsCommandsFlushWorker.WORK_TAG,
+                ExistingWorkPolicy.REPLACE,
+                createFlushWorkRequest(),
+            )
     }
 
     /** Cancels a previously-scheduled flush. */
@@ -44,17 +45,22 @@ class SyncedTabsCommandsFlushScheduler(
     }
 
     internal fun createFlushWorkRequest(): OneTimeWorkRequest {
-        val constraints = Constraints.Builder().apply {
-            setRequiredNetworkType(NetworkType.CONNECTED)
-        }.build()
+        val constraints =
+            Constraints.Builder()
+                .apply {
+                    setRequiredNetworkType(NetworkType.CONNECTED)
+                }
+                .build()
 
-        return OneTimeWorkRequestBuilder<SyncedTabsCommandsFlushWorker>().apply {
-            if (flushDelay > Duration.ZERO) {
-                setInitialDelay(flushDelay.inWholeMilliseconds, TimeUnit.MILLISECONDS)
+        return OneTimeWorkRequestBuilder<SyncedTabsCommandsFlushWorker>()
+            .apply {
+                if (flushDelay > Duration.ZERO) {
+                    setInitialDelay(flushDelay.inWholeMilliseconds, TimeUnit.MILLISECONDS)
+                }
+                setConstraints(constraints)
+                setBackoffCriteria(BackoffPolicy.EXPONENTIAL, retryDelay.inWholeMilliseconds, TimeUnit.MILLISECONDS)
+                addTag(SyncedTabsCommandsFlushWorker.WORK_TAG)
             }
-            setConstraints(constraints)
-            setBackoffCriteria(BackoffPolicy.EXPONENTIAL, retryDelay.inWholeMilliseconds, TimeUnit.MILLISECONDS)
-            addTag(SyncedTabsCommandsFlushWorker.WORK_TAG)
-        }.build()
+            .build()
     }
 }

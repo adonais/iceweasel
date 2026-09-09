@@ -28,36 +28,52 @@ import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.click
 import org.mozilla.fenix.helpers.isEnabled
 
-/**
- * Implementation of Robot Pattern for the settings PrivateBrowsing sub menu.
- */
-
+/** Implementation of Robot Pattern for the settings PrivateBrowsing sub menu. */
 class SettingsSubMenuPrivateBrowsingRobot {
 
     fun verifyOpenLinksInPrivateTab() {
-        Log.i(TAG, "verifyOpenLinksInPrivateTab: Trying to verify that the \"Open links in a private tab\" option is visible")
-        openLinksInPrivateTabSwitch()
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        Log.i(
+            TAG,
+            "verifyOpenLinksInPrivateTab: Trying to verify that the \"Open links in a private tab\" option is visible",
+        )
+        openLinksInPrivateTabSwitch().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyOpenLinksInPrivateTab: Verified that the \"Open links in a private tab\" option is visible")
     }
 
     fun verifyAddPrivateBrowsingShortcutButton() {
-        Log.i(TAG, "verifyAddPrivateBrowsingShortcutButton: Waiting for $waitingTime ms until finding the \"Add private browsing shortcut\" button")
+        Log.i(
+            TAG,
+            "verifyAddPrivateBrowsingShortcutButton: Waiting for $waitingTime ms until finding the \"Add private browsing shortcut\" button",
+        )
         mDevice.wait(
             Until.findObject(text("Add private browsing shortcut")),
             waitingTime,
         )
-        Log.i(TAG, "verifyAddPrivateBrowsingShortcutButton: Waited for $waitingTime ms until the \"Add private browsing shortcut\" button was found")
-        Log.i(TAG, "verifyAddPrivateBrowsingShortcutButton: Trying to verify that the \"Add private browsing shortcut\" button is visible")
-        addPrivateBrowsingShortcutButton()
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
-        Log.i(TAG, "verifyAddPrivateBrowsingShortcutButton: Verified that the \"Add private browsing shortcut\" button is visible")
+        Log.i(
+            TAG,
+            "verifyAddPrivateBrowsingShortcutButton: Waited for $waitingTime ms until the \"Add private browsing shortcut\" button was found",
+        )
+        Log.i(
+            TAG,
+            "verifyAddPrivateBrowsingShortcutButton: Trying to verify that the \"Add private browsing shortcut\" button is visible",
+        )
+        addPrivateBrowsingShortcutButton().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        Log.i(
+            TAG,
+            "verifyAddPrivateBrowsingShortcutButton: Verified that the \"Add private browsing shortcut\" button is visible",
+        )
     }
 
     fun verifyOpenLinksInPrivateTabEnabled() {
-        Log.i(TAG, "verifyOpenLinksInPrivateTabEnabled: Trying to verify that the \"Open links in a private tab\" toggle is enabled")
+        Log.i(
+            TAG,
+            "verifyOpenLinksInPrivateTabEnabled: Trying to verify that the \"Open links in a private tab\" toggle is enabled",
+        )
         openLinksInPrivateTabSwitch().check(matches(isEnabled(true)))
-        Log.i(TAG, "verifyOpenLinksInPrivateTabEnabled: Verified that the \"Open links in a private tab\" toggle is enabled")
+        Log.i(
+            TAG,
+            "verifyOpenLinksInPrivateTabEnabled: Verified that the \"Open links in a private tab\" toggle is enabled",
+        )
     }
 
     fun verifyOpenLinksInPrivateTabOff() {
@@ -65,23 +81,37 @@ class SettingsSubMenuPrivateBrowsingRobot {
             checkedItemWithResId("android:id/switchWidget", isChecked = true),
             exists = false,
         )
-        Log.i(TAG, "verifyOpenLinksInPrivateTabOff: Trying to verify that the \"Open links in a private tab\" toggle is visible")
-        openLinksInPrivateTabSwitch()
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
-        Log.i(TAG, "verifyOpenLinksInPrivateTabOff: Verified that the \"Open links in a private tab\" toggle is visible")
+        Log.i(
+            TAG,
+            "verifyOpenLinksInPrivateTabOff: Trying to verify that the \"Open links in a private tab\" toggle is visible",
+        )
+        openLinksInPrivateTabSwitch().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        Log.i(
+            TAG,
+            "verifyOpenLinksInPrivateTabOff: Verified that the \"Open links in a private tab\" toggle is visible",
+        )
     }
 
     fun verifyPrivateBrowsingShortcutIcon() {
-        Log.i(TAG, "verifyPrivateBrowsingShortcutIcon: Waiting for $waitingTime ms until finding the \"Private $appName\" shortcut icon")
+        Log.i(
+            TAG,
+            "verifyPrivateBrowsingShortcutIcon: Waiting for $waitingTime ms until finding the \"Private $appName\" shortcut icon",
+        )
         mDevice.wait(Until.findObject(text("Private $appName")), waitingTime)
-        Log.i(TAG, "verifyPrivateBrowsingShortcutIcon: Waited for $waitingTime ms until the \"Private $appName\" shortcut icon was found")
+        Log.i(
+            TAG,
+            "verifyPrivateBrowsingShortcutIcon: Waited for $waitingTime ms until the \"Private $appName\" shortcut icon was found",
+        )
         Log.i(TAG, "verifyPrivateBrowsingShortcutIcon: Trying to verify the \"Private $appName\" shortcut icon")
         assertTrue("\"Private $appName\" shortcut icon wasn't verified", mDevice.hasObject(text("Private $appName")))
         Log.i(TAG, "verifyPrivateBrowsingShortcutIcon: Verified the \"Private $appName\" shortcut icon")
     }
 
     fun clickPrivateModeScreenshotsSwitch() {
-        Log.i(TAG, "clickPrivateModeScreenshotsSwitch: Trying to click the \"Allow screenshots in private browsing\" toggle")
+        Log.i(
+            TAG,
+            "clickPrivateModeScreenshotsSwitch: Trying to click the \"Allow screenshots in private browsing\" toggle",
+        )
         screenshotsInPrivateModeSwitch().click()
         Log.i(TAG, "clickPrivateModeScreenshotsSwitch: Clicked the \"Allow screenshots in private browsing\" toggle")
     }
@@ -93,12 +123,18 @@ class SettingsSubMenuPrivateBrowsingRobot {
     }
 
     fun cancelPrivateShortcutAddition() {
-        Log.i(TAG, "cancelPrivateShortcutAddition: Waiting for $waitingTime ms until finding the \"Add private browsing shortcut\" button")
+        Log.i(
+            TAG,
+            "cancelPrivateShortcutAddition: Waiting for $waitingTime ms until finding the \"Add private browsing shortcut\" button",
+        )
         mDevice.wait(
             Until.findObject(text("Add private browsing shortcut")),
             waitingTime,
         )
-        Log.i(TAG, "cancelPrivateShortcutAddition: Waited for $waitingTime ms until the \"Add private browsing shortcut\" button was found")
+        Log.i(
+            TAG,
+            "cancelPrivateShortcutAddition: Waited for $waitingTime ms until the \"Add private browsing shortcut\" button was found",
+        )
         Log.i(TAG, "cancelPrivateShortcutAddition: Trying to click the \"Add private browsing shortcut\" button")
         addPrivateBrowsingShortcutButton().click()
         Log.i(TAG, "cancelPrivateShortcutAddition: Clicked the \"Add private browsing shortcut\" button")
@@ -111,12 +147,18 @@ class SettingsSubMenuPrivateBrowsingRobot {
     }
 
     fun addPrivateShortcutToHomescreen() {
-        Log.i(TAG, "addPrivateShortcutToHomescreen: Waiting for $waitingTime ms until finding the \"Add private browsing shortcut\" button")
+        Log.i(
+            TAG,
+            "addPrivateShortcutToHomescreen: Waiting for $waitingTime ms until finding the \"Add private browsing shortcut\" button",
+        )
         mDevice.wait(
             Until.findObject(text("Add private browsing shortcut")),
             waitingTime,
         )
-        Log.i(TAG, "addPrivateShortcutToHomescreen: Waited for $waitingTime ms until the \"Add private browsing shortcut\" button was found")
+        Log.i(
+            TAG,
+            "addPrivateShortcutToHomescreen: Waited for $waitingTime ms until the \"Add private browsing shortcut\" button was found",
+        )
         Log.i(TAG, "addPrivateShortcutToHomescreen: Trying to click the \"Add private browsing shortcut\" button")
         addPrivateBrowsingShortcutButton().click()
         Log.i(TAG, "addPrivateShortcutToHomescreen: Clicked the \"Add private browsing shortcut\" button")
@@ -133,7 +175,10 @@ class SettingsSubMenuPrivateBrowsingRobot {
             return SettingsRobot.Transition()
         }
 
-        fun openPrivateBrowsingShortcut(composeTestRule: ComposeTestRule, interact: SearchRobot.() -> Unit): SearchRobot.Transition {
+        fun openPrivateBrowsingShortcut(
+            composeTestRule: ComposeTestRule,
+            interact: SearchRobot.() -> Unit,
+        ): SearchRobot.Transition {
             Log.i(TAG, "openPrivateBrowsingShortcut: Trying to click the \"Private $appName\" shortcut icon")
             privateBrowsingShortcutIcon().click()
             Log.i(TAG, "openPrivateBrowsingShortcut: Clicked the \"Private $appName\" shortcut icon")
@@ -144,20 +189,14 @@ class SettingsSubMenuPrivateBrowsingRobot {
     }
 }
 
-private fun openLinksInPrivateTabSwitch() =
-    onView(withText("Open links in a private tab"))
+private fun openLinksInPrivateTabSwitch() = onView(withText("Open links in a private tab"))
 
-private fun screenshotsInPrivateModeSwitch() =
-    onView(withText("Allow screenshots in private browsing"))
+private fun screenshotsInPrivateModeSwitch() = onView(withText("Allow screenshots in private browsing"))
 
 private fun addPrivateBrowsingShortcutButton() = onView(withText("Add private browsing shortcut"))
 
 private fun goBackButton() = onView(withContentDescription("Navigate up"))
 
-private fun addAutomaticallyButton() =
-    mDevice.findObject(UiSelector().textStartsWith("add automatically"))
-
-private fun cancelShortcutAdditionButton() =
-    mDevice.findObject(UiSelector().textContains("CANCEL"))
+private fun cancelShortcutAdditionButton() = mDevice.findObject(UiSelector().textContains("CANCEL"))
 
 private fun privateBrowsingShortcutIcon() = mDevice.findObject(text("Private $appName"))

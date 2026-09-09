@@ -7,6 +7,8 @@ package mozilla.components.concept.engine.manifest
 import android.graphics.Color
 import android.graphics.Color.rgb
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.file.loadResourceAsString
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -14,8 +16,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class WebAppManifestParserTest {
@@ -339,12 +339,13 @@ class WebAppManifestParserTest {
                     title = "title",
                     text = "body",
                     url = "uri",
-                    files = listOf(
-                        WebAppManifest.ShareTarget.Files(
-                            name = "file",
-                            accept = listOf("image/*"),
+                    files =
+                        listOf(
+                            WebAppManifest.ShareTarget.Files(
+                                name = "file",
+                                accept = listOf("image/*"),
+                            )
                         ),
-                    ),
                 ),
                 params,
             )
@@ -368,12 +369,13 @@ class WebAppManifestParserTest {
             assertEquals(WebAppManifest.ShareTarget.EncodingType.URL_ENCODED, encType)
             assertEquals(
                 WebAppManifest.ShareTarget.Params(
-                    files = listOf(
-                        WebAppManifest.ShareTarget.Files(
-                            name = "file",
-                            accept = listOf("image/*"),
-                        ),
-                    ),
+                    files =
+                        listOf(
+                            WebAppManifest.ShareTarget.Files(
+                                name = "file",
+                                accept = listOf("image/*"),
+                            )
+                        )
                 ),
                 params,
             )
@@ -406,14 +408,15 @@ class WebAppManifestParserTest {
 
     @Test
     fun `Ignore missing share target action`() {
-        val json = loadManifest("minimal.json").apply {
-            put(
-                "share_target",
-                JSONObject().apply {
-                    put("method", "POST")
-                },
-            )
-        }
+        val json =
+            loadManifest("minimal.json").apply {
+                put(
+                    "share_target",
+                    JSONObject().apply {
+                        put("method", "POST")
+                    },
+                )
+            }
         val result = WebAppManifestParser().parse(json)
 
         assertIs<WebAppManifestParser.Result.Success>(result)
@@ -422,15 +425,16 @@ class WebAppManifestParserTest {
 
     @Test
     fun `Ignore invalid share target method`() {
-        val json = loadManifest("minimal.json").apply {
-            put(
-                "share_target",
-                JSONObject().apply {
-                    put("action", "https://mozilla.com/target")
-                    put("method", "PATCH")
-                },
-            )
-        }
+        val json =
+            loadManifest("minimal.json").apply {
+                put(
+                    "share_target",
+                    JSONObject().apply {
+                        put("action", "https://mozilla.com/target")
+                        put("method", "PATCH")
+                    },
+                )
+            }
         val result = WebAppManifestParser().parse(json)
 
         assertIs<WebAppManifestParser.Result.Success>(result)
@@ -439,15 +443,16 @@ class WebAppManifestParserTest {
 
     @Test
     fun `Ignore invalid share target encoding type`() {
-        val json = loadManifest("minimal.json").apply {
-            put(
-                "share_target",
-                JSONObject().apply {
-                    put("action", "https://mozilla.com/target")
-                    put("enctype", "text/plain")
-                },
-            )
-        }
+        val json =
+            loadManifest("minimal.json").apply {
+                put(
+                    "share_target",
+                    JSONObject().apply {
+                        put("action", "https://mozilla.com/target")
+                        put("enctype", "text/plain")
+                    },
+                )
+            }
         val result = WebAppManifestParser().parse(json)
 
         assertIs<WebAppManifestParser.Result.Success>(result)
@@ -456,16 +461,17 @@ class WebAppManifestParserTest {
 
     @Test
     fun `Ignore invalid share target method and encoding type combo`() {
-        val json = loadManifest("minimal.json").apply {
-            put(
-                "share_target",
-                JSONObject().apply {
-                    put("action", "https://mozilla.com/target")
-                    put("method", "GET")
-                    put("enctype", "multipart/form-data")
-                },
-            )
-        }
+        val json =
+            loadManifest("minimal.json").apply {
+                put(
+                    "share_target",
+                    JSONObject().apply {
+                        put("action", "https://mozilla.com/target")
+                        put("method", "GET")
+                        put("enctype", "multipart/form-data")
+                    },
+                )
+            }
         val result = WebAppManifestParser().parse(json)
 
         assertIs<WebAppManifestParser.Result.Success>(result)
@@ -595,9 +601,7 @@ class WebAppManifestParserTest {
         )
     }
 
-    private fun loadManifestAsString(fileName: String): String =
-        loadResourceAsString("/manifests/$fileName")
+    private fun loadManifestAsString(fileName: String): String = loadResourceAsString("/manifests/$fileName")
 
-    private fun loadManifest(fileName: String): JSONObject =
-        JSONObject(loadManifestAsString(fileName))
+    private fun loadManifest(fileName: String): JSONObject = JSONObject(loadManifestAsString(fileName))
 }

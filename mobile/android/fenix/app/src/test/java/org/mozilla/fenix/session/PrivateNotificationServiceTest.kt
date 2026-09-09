@@ -9,6 +9,7 @@ import android.content.Intent
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
@@ -28,7 +29,6 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ServiceController
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class PrivateNotificationServiceTest {
@@ -37,18 +37,17 @@ class PrivateNotificationServiceTest {
 
     @Before
     fun setup() {
-        controller = Robolectric.buildService(
-            PrivateNotificationService::class.java,
-            Intent(ACTION_ERASE),
-        )
+        controller =
+            Robolectric.buildService(
+                PrivateNotificationService::class.java,
+                Intent(ACTION_ERASE),
+            )
     }
 
     @Test
     fun `service opens home activity in private mode if app is in private mode`() {
         val selectedPrivateTab = createTab("https://mozilla.org", private = true)
-        val store = BrowserStore(
-            BrowserState(tabs = listOf(selectedPrivateTab), selectedTabId = selectedPrivateTab.id),
-        )
+        val store = BrowserStore(BrowserState(tabs = listOf(selectedPrivateTab), selectedTabId = selectedPrivateTab.id))
 
         every { testContext.components.core.store } returns store
         every { testContext.components.useCases.tabsUseCases } returns TabsUseCases(store)
@@ -67,9 +66,7 @@ class PrivateNotificationServiceTest {
     @Test
     fun `WHEN homepage as a new tab is enabled AND app is in private mode THEN erasing private tabs reopens a private homepage tab and opens the home activity in private mode`() {
         val selectedPrivateTab = createTab("https://mozilla.org", private = true)
-        val store = BrowserStore(
-            BrowserState(tabs = listOf(selectedPrivateTab), selectedTabId = selectedPrivateTab.id),
-        )
+        val store = BrowserStore(BrowserState(tabs = listOf(selectedPrivateTab), selectedTabId = selectedPrivateTab.id))
         val fenixBrowserUseCases = mockk<FenixBrowserUseCases>(relaxed = true)
 
         every { testContext.components.core.store } returns store
@@ -92,9 +89,7 @@ class PrivateNotificationServiceTest {
     @Test
     fun `WHEN homepage as a new tab is enabled AND app is in normal mode THEN erasing private tabs does not reopen a homepage tab or open an activity`() {
         val selectedTab = createTab("https://mozilla.org", private = false)
-        val store = BrowserStore(
-            BrowserState(tabs = listOf(selectedTab), selectedTabId = selectedTab.id),
-        )
+        val store = BrowserStore(BrowserState(tabs = listOf(selectedTab), selectedTabId = selectedTab.id))
         val fenixBrowserUseCases = mockk<FenixBrowserUseCases>(relaxed = true)
 
         every { testContext.components.core.store } returns store
@@ -112,9 +107,7 @@ class PrivateNotificationServiceTest {
     @Test
     fun `service starts no activity if app is in normal mode`() {
         val selectedPrivateTab = createTab("https://mozilla.org", private = false)
-        val store = BrowserStore(
-            BrowserState(tabs = listOf(selectedPrivateTab), selectedTabId = selectedPrivateTab.id),
-        )
+        val store = BrowserStore(BrowserState(tabs = listOf(selectedPrivateTab), selectedTabId = selectedPrivateTab.id))
 
         every { testContext.components.core.store } returns store
         every { testContext.components.useCases.tabsUseCases } returns TabsUseCases(store)

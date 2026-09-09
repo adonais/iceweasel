@@ -26,6 +26,11 @@ support-files = [
   "FullscreenFrame.sys.mjs",
 ]
 
+["browser_fullscreen_autohide_toolbox_height.js"]
+skip-if = [
+  "os == 'mac'", # Fullscreen autohide is disabled on macOS, bug 1702563
+]
+
 ["browser_fullscreen_context_menu.js"]
 skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 2034023, see also bug 1853186
@@ -78,7 +83,6 @@ skip-if = [
 
 ["browser_fullscreen_tab_preview.js"]
 skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && debug && nova", # Bug 2057832
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && opt", # Bug 1949995
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1949995
 ]

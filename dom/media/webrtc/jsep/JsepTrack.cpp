@@ -104,11 +104,11 @@ std::vector<uint32_t> JsepTrack::GetRtxSsrcs() const {
 }
 
 void JsepTrack::PopulateCodecs(
-    const std::vector<UniquePtr<JsepCodecDescription>>& prototype,
+    const nsTArray<UniquePtr<JsepCodecDescription>>& aPreferredCodecs,
     bool aUsePreferredCodecsOrder) {
   mPrototypeCodecs.clear();
   mUsePreferredCodecsOrder = aUsePreferredCodecsOrder;
-  for (const auto& prototypeCodec : prototype) {
+  for (const auto& prototypeCodec : aPreferredCodecs) {
     if (prototypeCodec->Type() == mType) {
       mPrototypeCodecs.emplace_back(prototypeCodec->Clone());
       mPrototypeCodecs.back()->mDirection = mDirection;

@@ -41,18 +41,18 @@ class SearchWidgetProviderTest {
 
     @Test
     fun `GIVEN search widget provider WHEN createTextSearchIntent is called THEN an PendingIntent should be return`() {
-        val textSearchIntent = Intent(testContext, IntentReceiverActivity::class.java)
-            .apply {
+        val textSearchIntent =
+            Intent(testContext, IntentReceiverActivity::class.java).apply {
                 this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 this.putExtra(IntentReceiverActivity.SEARCH_WIDGET_EXTRA, true)
             }
-        val dummyPendingIntent = PendingIntent.getActivity(
-            testContext,
-            SearchWidgetProvider.REQUEST_CODE_NEW_TAB,
-            textSearchIntent,
-            PendingIntent.FLAG_IMMUTABLE or
-                PendingIntent.FLAG_UPDATE_CURRENT,
-        )
+        val dummyPendingIntent =
+            PendingIntent.getActivity(
+                testContext,
+                SearchWidgetProvider.REQUEST_CODE_NEW_TAB,
+                textSearchIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
 
         assertEquals(searchWidgetProvider.createTextSearchIntent(testContext), dummyPendingIntent)
     }

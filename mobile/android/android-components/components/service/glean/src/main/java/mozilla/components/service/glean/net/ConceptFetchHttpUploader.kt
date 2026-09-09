@@ -6,6 +6,8 @@ package mozilla.components.service.glean.net
 
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.VisibleForTesting.Companion.PRIVATE
+import java.io.IOException
+import java.util.concurrent.TimeUnit
 import mozilla.components.concept.fetch.Client
 import mozilla.components.concept.fetch.Header
 import mozilla.components.concept.fetch.Request
@@ -16,18 +18,15 @@ import mozilla.telemetry.glean.net.HeadersList
 import mozilla.telemetry.glean.net.HttpStatus
 import mozilla.telemetry.glean.net.Incapable
 import mozilla.telemetry.glean.net.PingUploadRequest
+import mozilla.telemetry.glean.net.PingUploader as CorePingUploader
 import mozilla.telemetry.glean.net.RecoverableFailure
 import mozilla.telemetry.glean.net.UploadResult
-import java.io.IOException
-import java.util.concurrent.TimeUnit
-import mozilla.telemetry.glean.net.PingUploader as CorePingUploader
 
 typealias PingUploader = CorePingUploader
 
 /**
- * A simple ping Uploader, which implements a "send once" policy, never
- * storing or attempting to send the ping again. This uses Android Component's
- * `concept-fetch`.
+ * A simple ping Uploader, which implements a "send once" policy, never storing or attempting to send the ping again.
+ * This uses Android Component's `concept-fetch`.
  *
  * @param usePrivateRequest Sets the [Request.private] flag in all requests using this uploader.
  */
@@ -61,12 +60,10 @@ class ConceptFetchHttpUploader(
      *
      * @param url the URL path to upload the data to
      * @param data the serialized text data to send
-     * @param headers a [HeadersList] containing String to String [Pair] with
-     *        the first entry being the header name and the second its value.
-     *
-     * @return true if the ping was correctly dealt with (sent successfully
-     *         or faced an unrecoverable error), false if there was a recoverable
-     *         error callers can deal with.
+     * @param headers a [HeadersList] containing String to String [Pair] with the first entry being the header name and
+     *   the second its value.
+     * @return true if the ping was correctly dealt with (sent successfully or faced an unrecoverable error), false if
+     *   there was a recoverable error callers can deal with.
      */
     override fun upload(request: CapablePingUploadRequest): UploadResult {
         val req: PingUploadRequest? = request.capable { capabilities: List<String> ->

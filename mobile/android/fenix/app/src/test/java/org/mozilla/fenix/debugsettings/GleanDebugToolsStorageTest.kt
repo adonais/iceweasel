@@ -22,8 +22,7 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class GleanDebugToolsStorageTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private lateinit var settings: Settings
 
@@ -38,10 +37,11 @@ class GleanDebugToolsStorageTest {
     // (TAG_DEBUG_VIEW_EXTRA_KEY = --es debugViewTag, PERSIST_DEBUG_VIEW_TAG_EXTRA = --ez persistDebugViewTag)
     @Test
     fun `GIVEN a debug tag and the persist flag WHEN persistDebugViewTagIfRequested THEN the tag is saved`() {
-        val intent = Intent().apply {
-            putExtra(GleanDebugActivity.TAG_DEBUG_VIEW_EXTRA_KEY, "my-tag")
-            putExtra(DefaultGleanDebugToolsStorage.PERSIST_DEBUG_VIEW_TAG_EXTRA, true)
-        }
+        val intent =
+            Intent().apply {
+                putExtra(GleanDebugActivity.TAG_DEBUG_VIEW_EXTRA_KEY, "my-tag")
+                putExtra(DefaultGleanDebugToolsStorage.PERSIST_DEBUG_VIEW_TAG_EXTRA, true)
+            }
 
         DefaultGleanDebugToolsStorage.persistDebugViewTagIfRequested(intent, settings)
 
@@ -51,9 +51,10 @@ class GleanDebugToolsStorageTest {
     @Test
     fun `GIVEN a debug tag but no persist flag WHEN persistDebugViewTagIfRequested THEN the persisted tag is cleared`() {
         settings.gleanDebugViewTag = "previously-persisted"
-        val intent = Intent().apply {
-            putExtra(GleanDebugActivity.TAG_DEBUG_VIEW_EXTRA_KEY, "new-session-tag")
-        }
+        val intent =
+            Intent().apply {
+                putExtra(GleanDebugActivity.TAG_DEBUG_VIEW_EXTRA_KEY, "new-session-tag")
+            }
 
         DefaultGleanDebugToolsStorage.persistDebugViewTagIfRequested(intent, settings)
 
@@ -82,9 +83,10 @@ class GleanDebugToolsStorageTest {
     @Test
     fun `GIVEN the persist flag but no debug tag WHEN persistDebugViewTagIfRequested THEN the persisted tag is unchanged`() {
         settings.gleanDebugViewTag = "previously-persisted"
-        val intent = Intent().apply {
-            putExtra(DefaultGleanDebugToolsStorage.PERSIST_DEBUG_VIEW_TAG_EXTRA, true)
-        }
+        val intent =
+            Intent().apply {
+                putExtra(DefaultGleanDebugToolsStorage.PERSIST_DEBUG_VIEW_TAG_EXTRA, true)
+            }
 
         DefaultGleanDebugToolsStorage.persistDebugViewTagIfRequested(intent, settings)
 
@@ -94,10 +96,11 @@ class GleanDebugToolsStorageTest {
     @Test
     fun `GIVEN the persist flag but an empty debug tag WHEN persistDebugViewTagIfRequested THEN the persisted tag is unchanged`() {
         settings.gleanDebugViewTag = "previously-persisted"
-        val intent = Intent().apply {
-            putExtra(GleanDebugActivity.TAG_DEBUG_VIEW_EXTRA_KEY, "")
-            putExtra(DefaultGleanDebugToolsStorage.PERSIST_DEBUG_VIEW_TAG_EXTRA, true)
-        }
+        val intent =
+            Intent().apply {
+                putExtra(GleanDebugActivity.TAG_DEBUG_VIEW_EXTRA_KEY, "")
+                putExtra(DefaultGleanDebugToolsStorage.PERSIST_DEBUG_VIEW_TAG_EXTRA, true)
+            }
 
         DefaultGleanDebugToolsStorage.persistDebugViewTagIfRequested(intent, settings)
 

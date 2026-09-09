@@ -8,14 +8,13 @@ import mozilla.components.support.license.LibrariesListFragment
 import org.mozilla.focus.R
 import org.mozilla.focus.ext.showToolbar
 
-/**
- * Displays the list of software licenses used within the app and it's full license content.
- */
+/** Displays the list of software licenses used within the app and it's full license content. */
 class AboutLibrariesFragment : LibrariesListFragment() {
-    override val licenseData = LicenseData(
-        licenses = R.raw.third_party_licenses,
-        metadata = R.raw.third_party_license_metadata,
-    )
+    override val licenseData =
+        LicenseData(
+            licenses = R.raw.third_party_licenses,
+            metadata = R.raw.third_party_license_metadata,
+        )
 
     override fun onResume() {
         super.onResume()

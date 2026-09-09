@@ -89,9 +89,43 @@ webspec-index refs 'HTML#navigate' --direction incoming
 webspec-index refs 'HTML#navigate' --direction outgoing
 webspec-index refs 'HTML#navigate'
 webspec-index refs 'Window.navigation' --limit 5
+webspec-index refs 'HTML#event-navigateerror' --direction incoming --kind step -l 50
 ```
 
 Shows which sections reference this one (incoming), which sections this one references (outgoing), or both (default). Target can be exact (`SPEC#anchor` or full URL) or shorthand (`Interface.member`) resolved heuristically against currently indexed sections. Use `--limit` to cap results when using shorthand queries.
+
+Each reference carries the call site it was found at: the step number of the referencing algorithm, that step's verbatim text, and any enclosing guard steps. `--kind` filters by where the reference occurs:
+
+- `step` — inside a numbered algorithm step, i.e. an actual call
+- `note` — inside a note or example, including one nested in a step
+- `idl` — inside a WebIDL block
+- `prose` — ordinary prose
+
+Roughly 60% of references are not calls, so `--kind step` is the difference between "who invokes this" and "who mentions this". `refs 'HTML#event-navigateerror' --direction incoming` returns 11 sections; with `--kind step` it returns the one algorithm that actually fires the event.
+
+### Trace the call chain between two sections
+
+```bash
+webspec-index trace 'HTML#dom-location-assign' 'HTML#event-navigateerror' --max-depth 9 --format markdown
+webspec-index trace 'HTML#navigate' 'DOM#concept-tree' --kind any -l 5
+webspec-index trace 'HTML#dom-location-assign' 'HTML#event-navigateerror' --detail compact
+```
+
+Enumerates routes through the reference graph from one section to another. Both endpoints must be exact (`SPEC#anchor` or full URL). Defaults to `--kind step`, so only call edges are traversed.
+
+Each hop reports the calling section, its step number, the verbatim step text, enclosing guard steps, and a link to the call site itself rather than the callee's definition. Markdown output is therefore a ready-made trace.
+
+`--detail` picks how much of each hop to show. `verbose` (default) carries step text, guards and the call-site link. `edges` reduces each hop to `SPEC#anchor` plus its step number — roughly a third the size, and every token is an identifier you can feed back into `query` or `refs`. `compact` gives one linked line per hop, collapsing an edge's repeated call sites onto it, so an algorithm calling another twelve times reads as one line with twelve links rather than twelve near-identical routes.
+
+Reduced levels are for comparing route shapes, not for judging them: the guards they drop are what decide whether a route is taken.
+
+Use this instead of walking `refs` by hand. It is exhaustive within `--max-depth`, and the result distinguishes a search that finished from one cut short by the trace or node budget — so zero traces with `truncated: false` is evidence that no route exists, not merely that none was found.
+
+Read `Search was truncated` before trusting the result — raise `-l` or narrow the endpoints if it appears.
+
+Specs a route passes through are indexed on demand: when an edge points into a spec with no indexed data, `trace` fetches it and searches again, reporting `indexing N spec(s) the route touches` on stderr. First run of a cross-spec trace therefore takes a few seconds; later runs do not.
+
+Real chains are longer than they look; `location.assign()` to `navigateerror` is seven hops, so a low `--max-depth` reports zero traces that look like a genuine answer.
 
 ### WHATWG PR previews
 

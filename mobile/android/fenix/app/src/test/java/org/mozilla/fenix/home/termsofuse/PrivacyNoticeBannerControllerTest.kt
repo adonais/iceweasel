@@ -14,9 +14,7 @@ class PrivacyNoticeBannerControllerTest {
 
     private val store: PrivacyNoticeBannerStore = mockk(relaxed = true)
 
-    private val subject = DefaultPrivacyNoticeBannerController(
-        privacyNoticeBannerStore = store,
-    )
+    private val subject = DefaultPrivacyNoticeBannerController(privacyNoticeBannerStore = store)
 
     @Test
     fun `WHEN onBannerCloseClicked is called THEN the OnCloseClicked action is dispatched`() {

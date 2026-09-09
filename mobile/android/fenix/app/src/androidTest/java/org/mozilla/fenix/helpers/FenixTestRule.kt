@@ -16,8 +16,8 @@ import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
 /**
- * A composite JUnit [TestRule] that bundles the standard Fenix test prerequisites:
- * notification permission grant, environment setup, and mock web server lifecycle.
+ * A composite JUnit [TestRule] that bundles the standard Fenix test prerequisites: notification permission grant,
+ * environment setup, and mock web server lifecycle.
  *
  * Declare it as the outermost rule in each test class:
  * ```
@@ -30,18 +30,21 @@ class FenixTestRule(private val grantNotifications: Boolean = true) : TestRule {
     val testSetupRule = TestSetupRule()
     val mockWebServerRule = MockWebServerRule()
 
-    val mockWebServer: MockWebServer get() = mockWebServerRule.server
-    val browserStore: BrowserStore get() = testSetupRule.browserStore
+    val mockWebServer: MockWebServer
+        get() = mockWebServerRule.server
+
+    val browserStore: BrowserStore
+        get() = testSetupRule.browserStore
 
     override fun apply(base: Statement, description: Description): Statement {
-        val permissionRule = if (grantNotifications && Build.VERSION.SDK_INT >= 33) {
-            GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS)
-        } else {
-            GrantPermissionRule.grant()
-        }
+        val permissionRule =
+            if (grantNotifications && Build.VERSION.SDK_INT >= 33) {
+                GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                GrantPermissionRule.grant()
+            }
 
-        return RuleChain
-            .outerRule(permissionRule)
+        return RuleChain.outerRule(permissionRule)
             .around(testSetupRule)
             .around(mockWebServerRule)
             .apply(base, description)

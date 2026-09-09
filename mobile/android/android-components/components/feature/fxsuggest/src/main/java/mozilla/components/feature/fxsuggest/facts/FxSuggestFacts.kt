@@ -10,13 +10,9 @@ import mozilla.components.support.base.facts.Action
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.collect
 
-/**
- * Facts emitted for telemetry related to the Firefox Suggest feature.
- */
+/** Facts emitted for telemetry related to the Firefox Suggest feature. */
 class FxSuggestFacts {
-    /**
-     * Specific types of telemetry items.
-     */
+    /** Specific types of telemetry items. */
     object Items {
         const val AMP_SUGGESTION_CLICKED = "amp_suggestion_clicked"
         const val AMP_SUGGESTION_IMPRESSED = "amp_suggestion_impressed"
@@ -25,9 +21,7 @@ class FxSuggestFacts {
         const val SUGGESTION_QUERY_COUNT = "suggestion_query_count"
     }
 
-    /**
-     * Keys used in the metadata map.
-     */
+    /** Keys used in the metadata map. */
     object MetadataKeys {
         const val INTERACTION_INFO = "interaction_info"
         const val POSITION = "position"
@@ -44,12 +38,13 @@ private fun emitFxSuggestFact(
     metadata: Map<String, Any>? = null,
 ) {
     Fact(
-        Component.FEATURE_FXSUGGEST,
-        action,
-        item,
-        value,
-        metadata,
-    ).collect()
+            Component.FEATURE_FXSUGGEST,
+            action,
+            item,
+            value,
+            metadata,
+        )
+        .collect()
 }
 
 internal fun emitSuggestionClickedFact(
@@ -63,11 +58,12 @@ internal fun emitSuggestionClickedFact(
             is FxSuggestInteractionInfo.Amp -> FxSuggestFacts.Items.AMP_SUGGESTION_CLICKED
             is FxSuggestInteractionInfo.Wikipedia -> FxSuggestFacts.Items.WIKIPEDIA_SUGGESTION_CLICKED
         },
-        metadata = mapOf(
-            FxSuggestFacts.MetadataKeys.INTERACTION_INFO to interactionInfo,
-            FxSuggestFacts.MetadataKeys.POSITION to positionInAwesomeBar,
-            FxSuggestFacts.MetadataKeys.CLIENT_COUNTRY to clientCountry,
-        ),
+        metadata =
+            mapOf(
+                FxSuggestFacts.MetadataKeys.INTERACTION_INFO to interactionInfo,
+                FxSuggestFacts.MetadataKeys.POSITION to positionInAwesomeBar,
+                FxSuggestFacts.MetadataKeys.CLIENT_COUNTRY to clientCountry,
+            ),
     )
 }
 
@@ -84,24 +80,21 @@ internal fun emitSuggestionImpressedFact(
             is FxSuggestInteractionInfo.Amp -> FxSuggestFacts.Items.AMP_SUGGESTION_IMPRESSED
             is FxSuggestInteractionInfo.Wikipedia -> FxSuggestFacts.Items.WIKIPEDIA_SUGGESTION_IMPRESSED
         },
-        metadata = mapOf(
-            FxSuggestFacts.MetadataKeys.INTERACTION_INFO to interactionInfo,
-            FxSuggestFacts.MetadataKeys.POSITION to positionInAwesomeBar,
-            FxSuggestFacts.MetadataKeys.IS_CLICKED to isClicked,
-            FxSuggestFacts.MetadataKeys.ENGAGEMENT_ABANDONED to engagementAbandoned,
-            FxSuggestFacts.MetadataKeys.CLIENT_COUNTRY to clientCountry,
-        ),
+        metadata =
+            mapOf(
+                FxSuggestFacts.MetadataKeys.INTERACTION_INFO to interactionInfo,
+                FxSuggestFacts.MetadataKeys.POSITION to positionInAwesomeBar,
+                FxSuggestFacts.MetadataKeys.IS_CLICKED to isClicked,
+                FxSuggestFacts.MetadataKeys.ENGAGEMENT_ABANDONED to engagementAbandoned,
+                FxSuggestFacts.MetadataKeys.CLIENT_COUNTRY to clientCountry,
+            ),
     )
 }
 
-internal fun emitSuggestionQueryCountFact(
-    queryCount: Int,
-) {
+internal fun emitSuggestionQueryCountFact(queryCount: Int) {
     emitFxSuggestFact(
         action = Action.INTERACTION,
         item = FxSuggestFacts.Items.SUGGESTION_QUERY_COUNT,
-        metadata = mapOf(
-            "query_count" to queryCount.toLong(),
-        ),
+        metadata = mapOf("query_count" to queryCount.toLong()),
     )
 }

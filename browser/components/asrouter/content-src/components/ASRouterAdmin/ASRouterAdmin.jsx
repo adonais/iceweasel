@@ -1494,6 +1494,9 @@ export class ASRouterAdminInner extends React.PureComponent {
               messageImpressions={this.state.messageImpressions}
               groupImpressions={this.state.groupImpressions}
               screenImpressions={this.state.screenImpressions}
+              multiProfileMessageImpressions={
+                this.state.multiProfileMessageImpressions
+              }
             />
           </React.Fragment>
         );

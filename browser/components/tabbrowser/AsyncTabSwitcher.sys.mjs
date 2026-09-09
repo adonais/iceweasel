@@ -789,7 +789,7 @@ export class AsyncTabSwitcher {
       return;
     }
 
-    this.logState(`onLayersReady(${tab._tPos}, ${browser.isRemoteBrowser})`);
+    this.logState(`onLayersReady(${tab.index}, ${browser.isRemoteBrowser})`);
     this.assert(
       this.getTabState(tab) == this.STATE_LOADING ||
         this.getTabState(tab) == this.STATE_LOADED
@@ -821,7 +821,7 @@ export class AsyncTabSwitcher {
     if (!tab) {
       return;
     }
-    this.logState(`onLayersCleared(${tab._tPos})`);
+    this.logState(`onLayersCleared(${tab.index})`);
     this.assert(
       this.getTabState(tab) == this.STATE_UNLOADING ||
         this.getTabState(tab) == this.STATE_UNLOADED
@@ -834,7 +834,7 @@ export class AsyncTabSwitcher {
   // so we need to simulate it.
   onRemotenessChange(tab) {
     this.logState(
-      `onRemotenessChange(${tab._tPos}, ${tab.linkedBrowser.isRemoteBrowser})`
+      `onRemotenessChange(${tab.index}, ${tab.linkedBrowser.isRemoteBrowser})`
     );
     if (!tab.linkedBrowser.isRemoteBrowser) {
       if (this.getTabState(tab) == this.STATE_LOADING) {
@@ -1122,7 +1122,7 @@ export class AsyncTabSwitcher {
           this.onLoadTimeout();
           break;
         case "tabRemoved":
-          this.onTabRemovedImpl(event.tab);
+          this.onTabRemovedImpl();
           break;
         case "MozLayerTreeReady": {
           let browser = event.originalTarget;
@@ -1230,7 +1230,7 @@ export class AsyncTabSwitcher {
 
   tinfo(tab) {
     if (tab) {
-      return tab._tPos + "(" + tab.linkedBrowser.currentURI.spec + ")";
+      return tab.index + "(" + tab.linkedBrowser.currentURI.spec + ")";
     }
     return "null";
   }

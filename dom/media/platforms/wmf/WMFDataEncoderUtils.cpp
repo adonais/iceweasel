@@ -32,18 +32,32 @@ GUID CodecToSubtype(CodecType aCodec) {
   }
 }
 
-static bool CanUseWMFHwEncoder(CodecType aCodec) {
+bool IsFrameSizeSupportedForNV12Input(const gfx::IntSize& aSize) {
+  return aSize.width % 2 == 0;
+}
+
+static bool IsNotRealtimeOrHwRequired(const EncoderConfig& aConfig) {
+  // Some hardware encoders have poor realtime performance, as measured by the
+  // latency between frames. If the config is not realtime, or hardware is
+  // required, hardware is allowed. See bug 2049606.
+  return aConfig.mUsage != Usage::Realtime ||
+         aConfig.mHardwarePreference == HardwarePreference::RequireHardware;
+}
+
+static bool CanUseWMFHwEncoder(const EncoderConfig& aConfig) {
   if (!gfx::gfxVars::IsInitialized() || !XRE_IsGPUProcess()) {
     return false;
   }
 
-  switch (aCodec) {
+  switch (aConfig.mCodec) {
     case CodecType::H264:
       return gfx::gfxVars::UseH264HwEncode();
     case CodecType::VP8:
-      return gfx::gfxVars::UseVP8HwEncode();
+      return IsNotRealtimeOrHwRequired(aConfig) &&
+             gfx::gfxVars::UseVP8HwEncode();
     case CodecType::VP9:
-      return gfx::gfxVars::UseVP9HwEncode();
+      return IsNotRealtimeOrHwRequired(aConfig) &&
+             gfx::gfxVars::UseVP9HwEncode();
     default:
       return false;
   }
@@ -58,7 +72,7 @@ EncodeSupportSet CanCreateWMFEncoder(const EncoderConfig& aConfig) {
     // Try HW encoder if allowed by graphics and not disallowed by
     // the caller.
     if (aConfig.mHardwarePreference != HardwarePreference::RequireSoftware) {
-      if (CanUseWMFHwEncoder(aConfig.mCodec)) {
+      if (CanUseWMFHwEncoder(aConfig)) {
         auto hwEnc =
             MakeRefPtr<MFTEncoder>(MFTEncoder::HWPreference::HardwareOnly);
         if (SUCCEEDED(hwEnc->Create(CodecToSubtype(aConfig.mCodec),

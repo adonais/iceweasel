@@ -7,9 +7,9 @@
 
 @import url("chrome://global/skin/design-system/tokens-shared.css");
 
-@layer tokens-foundation-brand {
-  :root,
-  :host(.anonymous-content-host) {
+:root,
+:host(.anonymous-content-host) {
+  @layer tokens-foundation-brand {
     /** background-color **/
     --background-color-box-info: light-dark(var(--color-gray-20), var(--color-gray-80));
     --background-color-canvas: light-dark(var(--color-white), var(--color-gray-90));
@@ -46,14 +46,9 @@
     --text-color: light-dark(var(--color-gray-100), var(--color-gray-0));
     --text-color-accent-primary-selected: light-dark(var(--color-white), var(--color-gray-100));
   }
-}
 
-/* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-@layer tokens-prefers-contrast {
-  @media (prefers-contrast) {
-    :root,
-    :host(.anonymous-content-host) {
+  @layer tokens-prefers-contrast {
+    @media (prefers-contrast) {
       /** button **/
       --button-text-color-ghost: var(--button-text-color);
       --button-text-color-ghost-disabled: var(--button-text-color-disabled);
@@ -61,14 +56,9 @@
       --button-text-color-toolbar-disabled: var(--button-text-color-disabled);
     }
   }
-}
 
-/* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-@layer tokens-forced-colors {
-  @media (forced-colors) {
-    :root,
-    :host(.anonymous-content-host) {
+  @layer tokens-forced-colors {
+    @media (forced-colors) {
       /** button **/
       --button-background-color-ghost: ButtonFace;
       --button-background-color-ghost-disabled: var(--button-background-color-disabled);
@@ -80,12 +70,9 @@
       --button-text-color-toolbar-disabled: var(--button-text-color-disabled);
     }
   }
-}
 
-@media -moz-pref("browser.nova.enabled") {
-  @layer tokens-foundation-brand-nova {
-    :root,
-    :host(.anonymous-content-host) {
+  @media -moz-pref("browser.nova.enabled") {
+    @layer tokens-foundation-brand-nova {
       /** text-color **/
       --text-color-accent-primary-selected: light-dark(var(--color-white), var(--color-gray-55));
     }

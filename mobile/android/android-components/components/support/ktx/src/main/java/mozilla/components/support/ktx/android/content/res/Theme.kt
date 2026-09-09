@@ -12,13 +12,10 @@ import androidx.annotation.AttrRes
 /**
  * Resolves the resource ID corresponding to the given attribute.
  *
- * @sample
- * context.theme.resolveAttribute(R.attr.textColor) == R.color.light_text_color
+ * @sample context.theme.resolveAttribute(R.attr.textColor) == R.color.light_text_color
  */
 @AnyRes
-fun Resources.Theme.resolveAttribute(
-    @AttrRes attribute: Int,
-): Int {
+fun Resources.Theme.resolveAttribute(@AttrRes attribute: Int): Int {
     val outValue = TypedValue()
     resolveAttribute(attribute, outValue, true)
     return outValue.resourceId

@@ -38,24 +38,17 @@ import org.mozilla.fenix.theme.Theme
  * @param backgroundColor The view background color.
  */
 @Composable
-fun MicrosurveyCompleted(
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
-) {
+fun MicrosurveyCompleted(backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest) {
     Card(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         shape = MaterialTheme.shapes.small,
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        modifier = Modifier
-            .wrapContentHeight()
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier = Modifier.wrapContentHeight().fillMaxWidth().padding(horizontal = 16.dp),
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceEvenly,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
         ) {
             Spacer(modifier = Modifier.height(50.dp))
 
@@ -79,9 +72,7 @@ fun MicrosurveyCompleted(
 
 @FlexibleWindowPreview
 @Composable
-private fun MicrosurveyCompletedPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun MicrosurveyCompletedPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         MicrosurveyCompleted()
     }

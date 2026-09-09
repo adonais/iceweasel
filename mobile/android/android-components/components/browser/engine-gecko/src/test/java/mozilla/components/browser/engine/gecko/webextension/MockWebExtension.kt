@@ -74,7 +74,11 @@ fun mockNativeWebExtensionMetaData(
     ReflectionUtils.setField(metadata, "optionalDataCollectionPermissions", optionalDataCollectionPermissions)
     ReflectionUtils.setField(metadata, "grantedOptionalPermissions", grantedOptionalPermissions)
     ReflectionUtils.setField(metadata, "grantedOptionalOrigins", grantedOptionalOrigins)
-    ReflectionUtils.setField(metadata, "grantedOptionalDataCollectionPermissions", grantedOptionalDataCollectionPermissions)
+    ReflectionUtils.setField(
+        metadata,
+        "grantedOptionalDataCollectionPermissions",
+        grantedOptionalDataCollectionPermissions,
+    )
     ReflectionUtils.setField(metadata, "name", name)
     ReflectionUtils.setField(metadata, "description", description)
     ReflectionUtils.setField(metadata, "version", version)
@@ -112,9 +116,7 @@ fun mockCreateTabDetails(
     return createTabDetails
 }
 
-fun mockUpdateTabDetails(
-    active: Boolean,
-): WebExtension.UpdateTabDetails {
+fun mockUpdateTabDetails(active: Boolean): WebExtension.UpdateTabDetails {
     val updateTabDetails: WebExtension.UpdateTabDetails = mock()
     ReflectionUtils.setField(updateTabDetails, "active", active)
     return updateTabDetails

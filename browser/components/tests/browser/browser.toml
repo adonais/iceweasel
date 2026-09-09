@@ -6,6 +6,8 @@ support-files = [
 
 ["browser_browserGlue_client_association_ping.js"]
 
+["browser_browserGlue_fxa_client_info_ping.js"]
+
 ["browser_browserGlue_os_auth.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",

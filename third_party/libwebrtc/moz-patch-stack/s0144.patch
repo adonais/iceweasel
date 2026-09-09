@@ -1,0 +1,38 @@
+From: Jan Grulich <jgrulich@redhat.com>
+Date: Wed, 5 Aug 2026 13:39:00 +0000
+Subject: Bug 2054625 - WebRTC backport: Video capture: validate PipeWire
+ camera frame size to prevent OOB read r=pehrsons
+
+Check spa_chunk::size is not larger than mmap'ed buffer, which would
+lead to an out-of-bounds read when the frame is copied. Validate that
+chunk offset + size does not exceed maxsize before processing.
+
+This is a simple backport of an WebRTC upstream change.
+
+Upstream commit: 612430e8266881eaff478b0000cacc90fb71c918
+
+Differential Revision: https://phabricator.services.mozilla.com/D316000
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/104591ff24beecaf118826e216e5a0dee17f98a2
+---
+ modules/video_capture/linux/video_capture_pipewire.cc | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/modules/video_capture/linux/video_capture_pipewire.cc b/modules/video_capture/linux/video_capture_pipewire.cc
+index c83867e2a2..e8ef843b8e 100644
+--- a/modules/video_capture/linux/video_capture_pipewire.cc
++++ b/modules/video_capture/linux/video_capture_pipewire.cc
+@@ -477,6 +477,14 @@ void VideoCaptureModulePipeWire::ProcessBuffers() {
+       continue;
+     }
+ 
++    if (static_cast<uint64_t>(spaBuffer->datas[0].chunk->offset) +
++            spaBuffer->datas[0].chunk->size >
++        spaBuffer->datas[0].maxsize) {
++      RTC_LOG(LS_ERROR) << "Dropping frame with invalid size";
++      pw_stream_queue_buffer(stream_, buffer);
++      continue;
++    }
++
+     if (spaBuffer->datas[0].type == SPA_DATA_DmaBuf ||
+         spaBuffer->datas[0].type == SPA_DATA_MemFd) {
+       ScopedBuf frame;

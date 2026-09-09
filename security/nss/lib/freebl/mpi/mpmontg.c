@@ -765,7 +765,7 @@ mpi_to_weave(const mp_int *bignums,
  * These functions return 0xffffffff if the output is true, and 0 otherwise.
  */
 #define CONST_TIME_MSB(x) (0L - ((x) >> (8 * sizeof(x) - 1)))
-#define CONST_TIME_EQ_Z(x) CONST_TIME_MSB(~(x) & ((x)-1))
+#define CONST_TIME_EQ_Z(x) CONST_TIME_MSB(~(x) & ((x) - 1))
 #define CONST_TIME_EQ(a, b) CONST_TIME_EQ_Z((a) ^ (b))
 
 /* Reverse the operation above for one mp_int.
@@ -825,7 +825,7 @@ weave_to_mpi(mp_int *a,              /* out, result */
     ptmp = pa1; \
     pa1 = pa2;  \
     pa2 = ptmp
-#define MP_ALIGN(x, y) ((((ptrdiff_t)(x)) + ((y)-1)) & (((ptrdiff_t)0) - (y)))
+#define MP_ALIGN(x, y) ((((ptrdiff_t)(x)) + ((y) - 1)) & (((ptrdiff_t)0) - (y)))
 
 /* Do modular exponentiation using integer multiply code. */
 mp_err

@@ -155,7 +155,6 @@ tasks:
                 PERFHERDER_EXTRA_OPTIONS: android-geckoview-fat-aar-nightly
                 MOZ_ARTIFACT_TASK: {task-reference: '<armeabi-v7a>'}
         run:
-            clone-with: hg
             actions: [get-secrets, build, multi-l10n]
             config:
                 - builds/releng_base_android_64_builds.py
@@ -193,7 +192,6 @@ tasks:
                 PERFHERDER_EXTRA_OPTIONS: android-geckoview-fat-aar-nightly-lite
                 MOZ_ARTIFACT_TASK: {task-reference: '<armeabi-v7a>'}
         run:
-            clone-with: hg
             actions: [get-secrets, build, multi-l10n]
             config:
                 - builds/releng_base_android_64_builds.py
@@ -225,7 +223,6 @@ tasks:
                 USE_ARTIFACT: '1'
                 MOZ_ARTIFACT_TASK: {task-reference: '<armeabi-v7a>'}
         run:
-            clone-with: hg
             actions: [get-secrets, build]
             config: ["builds/releng_base_android_64_builds.py"]
             custom-build-variant-cfg: arm

@@ -37,9 +37,7 @@ class IPProtectionMenuBindingTest {
     @Test
     fun `GIVEN proxy is active WHEN binding starts THEN dispatch Enabled status`() = runTest {
         var result: IPProtectionMenuState? = null
-        val ipProtectionStore = IPProtectionStore(
-            initialState = IPProtectionState(proxyStatus = Authorized.Active),
-        )
+        val ipProtectionStore = IPProtectionStore(initialState = IPProtectionState(proxyStatus = Authorized.Active))
 
         startBinding(ipProtectionStore) { result = it }
 
@@ -60,8 +58,8 @@ class IPProtectionMenuBindingTest {
                 StateInfo(
                     serviceState = ServiceState.Ready,
                     proxyState = StateInfo.PROXY_STATE_ACTIVE,
-                ),
-            ),
+                )
+            )
         )
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -70,32 +68,31 @@ class IPProtectionMenuBindingTest {
 
     @Test
     fun `WHEN proxy status maps to menu status THEN all statuses are mapped correctly`() = runTest {
-        val cases = listOf(
-            StateInfo(serviceState = ServiceState.Uninitialized) to IPProtectionMenuStatus.Disabled,
-            StateInfo(
-                serviceState = ServiceState.Ready,
-                proxyState = StateInfo.PROXY_STATE_READY,
-            ) to IPProtectionMenuStatus.Disabled,
-            StateInfo(
-                serviceState = ServiceState.Ready,
-                proxyState = StateInfo.PROXY_STATE_ACTIVATING,
-            ) to IPProtectionMenuStatus.Activating,
-            StateInfo(
-                serviceState = ServiceState.Ready,
-                proxyState = StateInfo.PROXY_STATE_ACTIVE,
-            ) to IPProtectionMenuStatus.Enabled,
-            StateInfo(
-                serviceState = ServiceState.Ready,
-                proxyState = StateInfo.PROXY_STATE_PAUSED,
-            ) to IPProtectionMenuStatus.DataLimitReached,
-            StateInfo(
-                serviceState = ServiceState.Ready,
-                proxyState = StateInfo.PROXY_STATE_ERROR,
-            ) to IPProtectionMenuStatus.ConnectionError,
-            StateInfo(
-                serviceState = ServiceState.Unauthenticated,
-            ) to IPProtectionMenuStatus.AuthRequired,
-        )
+        val cases =
+            listOf(
+                StateInfo(serviceState = ServiceState.Uninitialized) to IPProtectionMenuStatus.Disabled,
+                StateInfo(
+                    serviceState = ServiceState.Ready,
+                    proxyState = StateInfo.PROXY_STATE_READY,
+                ) to IPProtectionMenuStatus.Disabled,
+                StateInfo(
+                    serviceState = ServiceState.Ready,
+                    proxyState = StateInfo.PROXY_STATE_ACTIVATING,
+                ) to IPProtectionMenuStatus.Activating,
+                StateInfo(
+                    serviceState = ServiceState.Ready,
+                    proxyState = StateInfo.PROXY_STATE_ACTIVE,
+                ) to IPProtectionMenuStatus.Enabled,
+                StateInfo(
+                    serviceState = ServiceState.Ready,
+                    proxyState = StateInfo.PROXY_STATE_PAUSED,
+                ) to IPProtectionMenuStatus.DataLimitReached,
+                StateInfo(
+                    serviceState = ServiceState.Ready,
+                    proxyState = StateInfo.PROXY_STATE_ERROR,
+                ) to IPProtectionMenuStatus.ConnectionError,
+                StateInfo(serviceState = ServiceState.Unauthenticated) to IPProtectionMenuStatus.AuthRequired,
+            )
 
         for ((stateInfo, expectedStatus) in cases) {
             var result: IPProtectionMenuState? = null
@@ -117,12 +114,14 @@ class IPProtectionMenuBindingTest {
     @Test
     fun `GIVEN dataMaxBytes is set WHEN binding starts THEN dispatch correct dataLimitGb`() = runTest {
         var result: IPProtectionMenuState? = null
-        val ipProtectionStore = IPProtectionStore(
-            initialState = IPProtectionState(
-                proxyStatus = Authorized.Active,
-                maxDataBytes = (5 * BYTES_PER_GB).toLong(),
-            ),
-        )
+        val ipProtectionStore =
+            IPProtectionStore(
+                initialState =
+                    IPProtectionState(
+                        proxyStatus = Authorized.Active,
+                        maxDataBytes = (5 * BYTES_PER_GB).toLong(),
+                    )
+            )
 
         startBinding(ipProtectionStore) { result = it }
 
@@ -132,9 +131,8 @@ class IPProtectionMenuBindingTest {
     @Test
     fun `GIVEN dataMaxBytes is unavailable WHEN binding starts THEN dispatch dataLimitGb as -1`() = runTest {
         var result: IPProtectionMenuState? = null
-        val ipProtectionStore = IPProtectionStore(
-            initialState = IPProtectionState(proxyStatus = Authorized.Active, maxDataBytes = -1L),
-        )
+        val ipProtectionStore =
+            IPProtectionStore(initialState = IPProtectionState(proxyStatus = Authorized.Active, maxDataBytes = -1L))
 
         startBinding(ipProtectionStore) { result = it }
 
@@ -145,11 +143,12 @@ class IPProtectionMenuBindingTest {
         ipProtectionStore: IPProtectionStore,
         onUpdate: (IPProtectionMenuState) -> Unit,
     ) {
-        val binding = IPProtectionMenuBinding(
-            ipProtectionStore = ipProtectionStore,
-            onIPProtectionStatusUpdate = onUpdate,
-            mainDispatcher = testDispatcher,
-        )
+        val binding =
+            IPProtectionMenuBinding(
+                ipProtectionStore = ipProtectionStore,
+                onIPProtectionStatusUpdate = onUpdate,
+                mainDispatcher = testDispatcher,
+            )
         binding.start()
         testDispatcher.scheduler.advanceUntilIdle()
     }

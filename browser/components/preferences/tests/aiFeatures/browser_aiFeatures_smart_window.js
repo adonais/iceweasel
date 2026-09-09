@@ -5,6 +5,10 @@
 
 requestLongerTimeout(2);
 
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
+
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -122,6 +126,30 @@ describe("settings AI Controls - Smart Window", () => {
       );
       await SpecialPowers.popPrefEnv();
     });
+  });
+
+  it("launches Smart Window with the settings trigger from the activate link", async () => {
+    const launchStub = sinon.stub(AIWindow, "launchWindow").resolves(true);
+
+    try {
+      await withPrefsPane("ai", async doc => {
+        const activateLink = doc.getElementById("activateSmartWindowLink");
+        synthesizeClick(activateLink);
+
+        await TestUtils.waitForCondition(
+          () => launchStub.callCount > 0,
+          "Wait for launchWindow to be called"
+        );
+
+        Assert.deepEqual(
+          launchStub.firstCall.args.slice(1),
+          [true, "settings"],
+          "launchWindow opens a new window with the settings trigger"
+        );
+      });
+    } finally {
+      launchStub.restore();
+    }
   });
 
   it("shows correct options based on consent state", async () => {

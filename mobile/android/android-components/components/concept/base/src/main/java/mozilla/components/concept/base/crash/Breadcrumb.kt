@@ -5,95 +5,59 @@
 package mozilla.components.concept.base.crash
 
 import android.os.Parcelable
-import kotlinx.parcelize.Parcelize
-import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import kotlinx.parcelize.Parcelize
+import org.json.JSONObject
 
-/**
- * Represents a single crash breadcrumb.
- */
+/** Represents a single crash breadcrumb. */
 @Parcelize
 data class Breadcrumb(
-    /**
-     * Message of the crash breadcrumb.
-     */
+    /** Message of the crash breadcrumb. */
     val message: String = "",
-    /**
-     * Data related to the crash breadcrumb.
-     */
+    /** Data related to the crash breadcrumb. */
     val data: Map<String, String> = emptyMap(),
-    /**
-     * Category of the crash breadcrumb.
-     */
+    /** Category of the crash breadcrumb. */
     val category: String = "",
-    /**
-     * Level of the crash breadcrumb.
-     */
+    /** Level of the crash breadcrumb. */
     val level: Level = Level.DEBUG,
-    /**
-     * Type of the crash breadcrumb.
-     */
+    /** Type of the crash breadcrumb. */
     val type: Type = Type.DEFAULT,
-    /**
-     * Date of the crash breadcrumb.
-     */
+    /** Date of the crash breadcrumb. */
     val date: Date = Date(),
 ) : Parcelable, Comparable<Breadcrumb> {
-    /**
-     * Crash breadcrumb priority level.
-     */
+    /** Crash breadcrumb priority level. */
     enum class Level(val value: String) {
-        /**
-         * DEBUG level.
-         */
+        /** DEBUG level. */
         DEBUG("Debug"),
 
-        /**
-         * INFO level.
-         */
+        /** INFO level. */
         INFO("Info"),
 
-        /**
-         * WARNING level.
-         */
+        /** WARNING level. */
         WARNING("Warning"),
 
-        /**
-         * ERROR level.
-         */
+        /** ERROR level. */
         ERROR("Error"),
 
-        /**
-         * CRITICAL level.
-         */
+        /** CRITICAL level. */
         CRITICAL("Critical"),
     }
 
-    /**
-     * Crash breadcrumb type.
-     */
+    /** Crash breadcrumb type. */
     enum class Type(val value: String) {
-        /**
-         * DEFAULT type.
-         */
+        /** DEFAULT type. */
         DEFAULT("Default"),
 
-        /**
-         * HTTP type.
-         */
+        /** HTTP type. */
         HTTP("Http"),
 
-        /**
-         * NAVIGATION type.
-         */
+        /** NAVIGATION type. */
         NAVIGATION("Navigation"),
 
-        /**
-         * USER type.
-         */
+        /** USER type. */
         USER("User"),
     }
 

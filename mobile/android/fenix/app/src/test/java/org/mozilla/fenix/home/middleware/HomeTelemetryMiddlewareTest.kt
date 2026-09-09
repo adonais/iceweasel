@@ -5,6 +5,7 @@
 package org.mozilla.fenix.home.middleware
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.service.pocket.PocketStory
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
@@ -25,13 +26,11 @@ import org.mozilla.fenix.home.pocket.PocketImpression
 import org.mozilla.fenix.home.pocket.controller.StoriesImpressionSource
 import org.mozilla.fenix.home.topsites.AddShortcutEntryPoint
 import org.mozilla.fenix.home.topsites.AddShortcutSource
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class HomeTelemetryMiddlewareTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     @Test
     fun `WHEN a recommendation is clicked THEN record the click telemetry`() {
@@ -42,35 +41,36 @@ class HomeTelemetryMiddlewareTest {
         assertNull(HomeContentArticle.click.testGetValue())
 
         var pingReceived = false
-        val job = Pings.home.testBeforeNextSubmit {
-            assertNotNull(HomeContentArticle.click.testGetValue())
+        val job =
+            Pings.home.testBeforeNextSubmit {
+                assertNotNull(HomeContentArticle.click.testGetValue())
 
-            val snapshot = HomeContentArticle.click.testGetValue()!!
-            assertEquals(1, snapshot.size)
+                val snapshot = HomeContentArticle.click.testGetValue()!!
+                assertEquals(1, snapshot.size)
 
-            val extraValues = snapshot.first().extra!!
-            assertEquals(recommendation.corpusItemId, extraValues["corpus_item_id"])
-            assertEquals(
-                recommendation.scheduledCorpusItemId,
-                extraValues["scheduled_corpus_item_id"],
-            )
-            assertEquals(recommendation.tileId.toString(), extraValues["tile_id"])
-            assertEquals(recommendation.recommendedAt.toString(), extraValues["recommended_at"])
-            assertEquals(recommendation.receivedRank.toString(), extraValues["received_rank"])
-            assertEquals(recommendation.topic, extraValues["topic"])
-            assertEquals(position.toString(), extraValues["position"])
-            assertEquals("false", extraValues["is_sponsored"])
-            assertEquals(StoriesImpressionSource.HOMEPAGE.sourceName, extraValues["source"])
+                val extraValues = snapshot.first().extra!!
+                assertEquals(recommendation.corpusItemId, extraValues["corpus_item_id"])
+                assertEquals(
+                    recommendation.scheduledCorpusItemId,
+                    extraValues["scheduled_corpus_item_id"],
+                )
+                assertEquals(recommendation.tileId.toString(), extraValues["tile_id"])
+                assertEquals(recommendation.recommendedAt.toString(), extraValues["recommended_at"])
+                assertEquals(recommendation.receivedRank.toString(), extraValues["received_rank"])
+                assertEquals(recommendation.topic, extraValues["topic"])
+                assertEquals(position.toString(), extraValues["position"])
+                assertEquals("false", extraValues["is_sponsored"])
+                assertEquals(StoriesImpressionSource.HOMEPAGE.sourceName, extraValues["source"])
 
-            pingReceived = true
-        }
+                pingReceived = true
+            }
 
         store.dispatch(
             ContentRecommendationsAction.ContentRecommendationClicked(
                 recommendation = recommendation,
                 position = position,
                 source = StoriesImpressionSource.HOMEPAGE,
-            ),
+            )
         )
 
         job.join()
@@ -86,22 +86,23 @@ class HomeTelemetryMiddlewareTest {
         assertNull(HomeContentArticle.click.testGetValue())
 
         var pingReceived = false
-        val job = Pings.home.testBeforeNextSubmit {
-            assertNotNull(HomeContentArticle.click.testGetValue())
+        val job =
+            Pings.home.testBeforeNextSubmit {
+                assertNotNull(HomeContentArticle.click.testGetValue())
 
-            val snapshot = HomeContentArticle.click.testGetValue()!!
-            assertEquals(1, snapshot.size)
-            assertEquals("stories_screen", snapshot.first().extra!!["source"])
+                val snapshot = HomeContentArticle.click.testGetValue()!!
+                assertEquals(1, snapshot.size)
+                assertEquals("stories_screen", snapshot.first().extra!!["source"])
 
-            pingReceived = true
-        }
+                pingReceived = true
+            }
 
         store.dispatch(
             ContentRecommendationsAction.ContentRecommendationClicked(
                 recommendation = recommendation,
                 position = position,
                 source = StoriesImpressionSource.STORIES_SCREEN,
-            ),
+            )
         )
 
         job.join()
@@ -111,8 +112,8 @@ class HomeTelemetryMiddlewareTest {
     @Test
     fun `WHEN a list of recommendations are shown THEN record the impression telemetry`() {
         val store = createStore()
-        val impressions = TestUtils.getFakeContentRecommendations(limit = 3)
-            .mapIndexed { index, contentRecommendation ->
+        val impressions =
+            TestUtils.getFakeContentRecommendations(limit = 3).mapIndexed { index, contentRecommendation ->
                 PocketImpression(
                     story = contentRecommendation,
                     position = index,
@@ -122,37 +123,38 @@ class HomeTelemetryMiddlewareTest {
         assertNull(HomeContentArticle.impression.testGetValue())
 
         var pingReceived = false
-        val job = Pings.home.testBeforeNextSubmit {
-            assertNotNull(HomeContentArticle.impression.testGetValue())
+        val job =
+            Pings.home.testBeforeNextSubmit {
+                assertNotNull(HomeContentArticle.impression.testGetValue())
 
-            val snapshot = HomeContentArticle.impression.testGetValue()!!
-            assertEquals(3, snapshot.size)
+                val snapshot = HomeContentArticle.impression.testGetValue()!!
+                assertEquals(3, snapshot.size)
 
-            for ((story, position) in impressions) {
-                val recommendation = story as PocketStory.ContentRecommendation
-                val extraValues = snapshot[position].extra!!
-                assertEquals(recommendation.corpusItemId, extraValues["corpus_item_id"])
-                assertEquals(
-                    recommendation.scheduledCorpusItemId,
-                    extraValues["scheduled_corpus_item_id"],
-                )
-                assertEquals(recommendation.tileId.toString(), extraValues["tile_id"])
-                assertEquals(recommendation.recommendedAt.toString(), extraValues["recommended_at"])
-                assertEquals(recommendation.receivedRank.toString(), extraValues["received_rank"])
-                assertEquals(recommendation.topic, extraValues["topic"])
-                assertEquals(position.toString(), extraValues["position"])
-                assertEquals("false", extraValues["is_sponsored"])
-                assertEquals("homepage", extraValues["source"])
+                for ((story, position) in impressions) {
+                    val recommendation = story as PocketStory.ContentRecommendation
+                    val extraValues = snapshot[position].extra!!
+                    assertEquals(recommendation.corpusItemId, extraValues["corpus_item_id"])
+                    assertEquals(
+                        recommendation.scheduledCorpusItemId,
+                        extraValues["scheduled_corpus_item_id"],
+                    )
+                    assertEquals(recommendation.tileId.toString(), extraValues["tile_id"])
+                    assertEquals(recommendation.recommendedAt.toString(), extraValues["recommended_at"])
+                    assertEquals(recommendation.receivedRank.toString(), extraValues["received_rank"])
+                    assertEquals(recommendation.topic, extraValues["topic"])
+                    assertEquals(position.toString(), extraValues["position"])
+                    assertEquals("false", extraValues["is_sponsored"])
+                    assertEquals("homepage", extraValues["source"])
+                }
+
+                pingReceived = true
             }
-
-            pingReceived = true
-        }
 
         store.dispatch(
             ContentRecommendationsAction.PocketStoriesShown(
                 impressions = impressions,
                 source = StoriesImpressionSource.HOMEPAGE,
-            ),
+            )
         )
 
         job.join()
@@ -162,8 +164,8 @@ class HomeTelemetryMiddlewareTest {
     @Test
     fun `WHEN a list of recommendations are shown on the stories screen THEN record the impression telemetry with the stories screen source`() {
         val store = createStore()
-        val impressions = TestUtils.getFakeContentRecommendations(limit = 3)
-            .mapIndexed { index, contentRecommendation ->
+        val impressions =
+            TestUtils.getFakeContentRecommendations(limit = 3).mapIndexed { index, contentRecommendation ->
                 PocketImpression(
                     story = contentRecommendation,
                     position = index,
@@ -173,23 +175,24 @@ class HomeTelemetryMiddlewareTest {
         assertNull(HomeContentArticle.impression.testGetValue())
 
         var pingReceived = false
-        val job = Pings.home.testBeforeNextSubmit {
-            assertNotNull(HomeContentArticle.impression.testGetValue())
+        val job =
+            Pings.home.testBeforeNextSubmit {
+                assertNotNull(HomeContentArticle.impression.testGetValue())
 
-            val snapshot = HomeContentArticle.impression.testGetValue()!!
-            assertEquals(3, snapshot.size)
-            snapshot.forEach {
-                assertEquals("stories_screen", it.extra!!["source"])
+                val snapshot = HomeContentArticle.impression.testGetValue()!!
+                assertEquals(3, snapshot.size)
+                snapshot.forEach {
+                    assertEquals("stories_screen", it.extra!!["source"])
+                }
+
+                pingReceived = true
             }
-
-            pingReceived = true
-        }
 
         store.dispatch(
             ContentRecommendationsAction.PocketStoriesShown(
                 impressions = impressions,
                 source = StoriesImpressionSource.STORIES_SCREEN,
-            ),
+            )
         )
 
         job.join()
@@ -206,7 +209,7 @@ class HomeTelemetryMiddlewareTest {
             ShortcutAction.ShortcutAdded(
                 source = AddShortcutSource.POPULAR,
                 entryPoint = AddShortcutEntryPoint.SHORTCUTS_LIBRARY,
-            ),
+            )
         )
 
         val event = TopSites.add.testGetValue()!!
@@ -235,11 +238,7 @@ class HomeTelemetryMiddlewareTest {
 
         assertNull(TopSites.addSheetShown.testGetValue())
 
-        store.dispatch(
-            ShortcutAction.AddShortcutSheetShown(
-                entryPoint = AddShortcutEntryPoint.HOMEPAGE,
-            ),
-        )
+        store.dispatch(ShortcutAction.AddShortcutSheetShown(entryPoint = AddShortcutEntryPoint.HOMEPAGE))
 
         val event = TopSites.addSheetShown.testGetValue()!!
         assertEquals(1, event.size)
@@ -259,9 +258,5 @@ class HomeTelemetryMiddlewareTest {
         assertNull(event.single().extra)
     }
 
-    private fun createStore() = AppStore(
-        middlewares = listOf(
-            HomeTelemetryMiddleware(),
-        ),
-    )
+    private fun createStore() = AppStore(middlewares = listOf(HomeTelemetryMiddleware()))
 }

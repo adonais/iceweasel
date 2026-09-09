@@ -8,16 +8,16 @@ import android.content.Context
 import android.widget.NumberPicker
 import android.widget.ScrollView
 import androidx.annotation.VisibleForTesting
+import java.util.Calendar
 import mozilla.components.feature.prompts.R
 import mozilla.components.feature.prompts.ext.month
 import mozilla.components.feature.prompts.ext.now
 import mozilla.components.feature.prompts.ext.year
-import java.util.Calendar
 
-/**
- * UI widget that allows to select a month and a year.
- */
-internal class MonthAndYearPicker @JvmOverloads constructor(
+/** UI widget that allows to select a month and a year. */
+internal class MonthAndYearPicker
+@JvmOverloads
+constructor(
     context: Context,
     private val selectedDate: Calendar = now(),
     private val maxDate: Calendar = getDefaultMaxDate(),
@@ -25,11 +25,9 @@ internal class MonthAndYearPicker @JvmOverloads constructor(
     internal var dateSetListener: OnDateSetListener? = null,
 ) : ScrollView(context), NumberPicker.OnValueChangeListener {
 
-    @VisibleForTesting
-    internal val monthView: NumberPicker
+    @VisibleForTesting internal val monthView: NumberPicker
 
-    @VisibleForTesting
-    internal val yearView: NumberPicker
+    @VisibleForTesting internal val yearView: NumberPicker
     private val monthsLabels: Array<out String>
 
     init {
@@ -80,6 +78,7 @@ internal class MonthAndYearPicker @JvmOverloads constructor(
     }
 
     private fun Int.isMinYear() = minDate.year == this
+
     private fun Int.isMaxYear() = maxDate.year == this
 
     private fun iniMonthView() {
@@ -153,11 +152,9 @@ internal class MonthAndYearPicker @JvmOverloads constructor(
         private const val SPEED_MONTH_SPINNER = 200L
         private const val SPEED_YEAR_SPINNER = 100L
 
-        @VisibleForTesting
-        internal const val DEFAULT_MAX_YEAR = 9999
+        @VisibleForTesting internal const val DEFAULT_MAX_YEAR = 9999
 
-        @VisibleForTesting
-        internal const val DEFAULT_MIN_YEAR = 1
+        @VisibleForTesting internal const val DEFAULT_MIN_YEAR = 1
 
         internal fun getDefaultMinDate(): Calendar {
             return now().apply {

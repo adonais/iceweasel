@@ -20,15 +20,7 @@ import androidx.core.net.toUri
 fun String.redactPartialUri(lastSegmentToTake: Int = 20, shortForm: String = "redacted..."): String {
     val uri = this.toUri()
     val end = shortForm + uri.lastPathSegment?.takeLast(lastSegmentToTake)
-    val path = uri
-        .pathSegments
-        .take(uri.pathSegments.size - 1)
-        .joinToString("/")
+    val path = uri.pathSegments.take(uri.pathSegments.size - 1).joinToString("/")
 
-    return uri
-        .buildUpon()
-        .path(path)
-        .appendPath(end)
-        .build()
-        .toString()
+    return uri.buildUpon().path(path).appendPath(end).build().toString()
 }

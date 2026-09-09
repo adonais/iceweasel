@@ -14,11 +14,12 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class SessionStateKtTest {
-    private val demoManifest = WebAppManifest(
-        name = "Demo",
-        startUrl = "https://mozilla.com",
-        display = WebAppManifest.DisplayMode.STANDALONE,
-    )
+    private val demoManifest =
+        WebAppManifest(
+            name = "Demo",
+            startUrl = "https://mozilla.com",
+            display = WebAppManifest.DisplayMode.STANDALONE,
+        )
     private val demoIcon = WebAppManifest.Icon(src = "https://mozilla.com/example.png")
 
     @Test
@@ -29,120 +30,111 @@ class SessionStateKtTest {
 
     @Test
     fun `web app must have manifest to be installable`() {
-        val noManifestSession = createTestSession(
-            secure = true,
-            manifest = null,
-        )
+        val noManifestSession =
+            createTestSession(
+                secure = true,
+                manifest = null,
+            )
         assertNull(noManifestSession.installableManifest())
     }
 
     @Test
     fun `web app must have an icon to be installable`() {
-        val noIconSession = createTestSession(
-            secure = true,
-            manifest = demoManifest,
-        )
+        val noIconSession =
+            createTestSession(
+                secure = true,
+                manifest = demoManifest,
+            )
         assertNull(noIconSession.installableManifest())
 
-        val noSizeIconSession = createTestSession(
-            secure = true,
-            manifest = demoManifest.copy(icons = listOf(demoIcon)),
-        )
+        val noSizeIconSession =
+            createTestSession(
+                secure = true,
+                manifest = demoManifest.copy(icons = listOf(demoIcon)),
+            )
         assertNull(noSizeIconSession.installableManifest())
 
-        val onlyBadgeIconSession = createTestSession(
-            secure = true,
-            manifest = demoManifest.copy(
-                icons = listOf(
-                    demoIcon.copy(
-                        sizes = listOf(Size(512, 512)),
-                        purpose = setOf(WebAppManifest.Icon.Purpose.MONOCHROME),
+        val onlyBadgeIconSession =
+            createTestSession(
+                secure = true,
+                manifest =
+                    demoManifest.copy(
+                        icons =
+                            listOf(
+                                demoIcon.copy(
+                                    sizes = listOf(Size(512, 512)),
+                                    purpose = setOf(WebAppManifest.Icon.Purpose.MONOCHROME),
+                                )
+                            )
                     ),
-                ),
-            ),
-        )
+            )
         assertNull(onlyBadgeIconSession.installableManifest())
     }
 
     @Test
     fun `web app must have 192x192 icons to be installable`() {
-        val smallIconSession = createTestSession(
-            secure = true,
-            manifest = demoManifest.copy(
-                icons = listOf(
-                    demoIcon.copy(sizes = listOf(Size(32, 32))),
-                ),
-            ),
-        )
+        val smallIconSession =
+            createTestSession(
+                secure = true,
+                manifest = demoManifest.copy(icons = listOf(demoIcon.copy(sizes = listOf(Size(32, 32))))),
+            )
         assertNull(smallIconSession.installableManifest())
 
-        val weirdSizeSession = createTestSession(
-            secure = true,
-            manifest = demoManifest.copy(
-                icons = listOf(
-                    demoIcon.copy(sizes = listOf(Size(50, 200))),
-                ),
-            ),
-        )
+        val weirdSizeSession =
+            createTestSession(
+                secure = true,
+                manifest = demoManifest.copy(icons = listOf(demoIcon.copy(sizes = listOf(Size(50, 200))))),
+            )
         assertNull(weirdSizeSession.installableManifest())
 
-        val largeIconSession = createTestSession(
-            secure = true,
-            manifest = demoManifest.copy(
-                icons = listOf(
-                    demoIcon.copy(sizes = listOf(Size(192, 192))),
-                ),
-            ),
-        )
+        val largeIconSession =
+            createTestSession(
+                secure = true,
+                manifest = demoManifest.copy(icons = listOf(demoIcon.copy(sizes = listOf(Size(192, 192))))),
+            )
         assertEquals(
-            demoManifest.copy(
-                icons = listOf(
-                    demoIcon.copy(sizes = listOf(Size(192, 192))),
-                ),
-            ),
+            demoManifest.copy(icons = listOf(demoIcon.copy(sizes = listOf(Size(192, 192))))),
             largeIconSession.installableManifest(),
         )
 
-        val multiSizeIconSession = createTestSession(
-            secure = true,
-            manifest = demoManifest.copy(
-                icons = listOf(
-                    demoIcon.copy(sizes = listOf(Size(16, 16), Size(512, 512))),
-                ),
-            ),
-        )
+        val multiSizeIconSession =
+            createTestSession(
+                secure = true,
+                manifest =
+                    demoManifest.copy(icons = listOf(demoIcon.copy(sizes = listOf(Size(16, 16), Size(512, 512))))),
+            )
         assertEquals(
-            demoManifest.copy(
-                icons = listOf(
-                    demoIcon.copy(sizes = listOf(Size(16, 16), Size(512, 512))),
-                ),
-            ),
+            demoManifest.copy(icons = listOf(demoIcon.copy(sizes = listOf(Size(16, 16), Size(512, 512))))),
             multiSizeIconSession.installableManifest(),
         )
 
-        val multiIconSession = createTestSession(
-            secure = true,
-            manifest = demoManifest.copy(
-                icons = listOf(
-                    demoIcon.copy(sizes = listOf(Size(191, 193))),
-                    demoIcon.copy(sizes = listOf(Size(512, 512))),
-                    demoIcon.copy(
-                        sizes = listOf(Size(192, 192)),
-                        purpose = setOf(WebAppManifest.Icon.Purpose.MONOCHROME),
+        val multiIconSession =
+            createTestSession(
+                secure = true,
+                manifest =
+                    demoManifest.copy(
+                        icons =
+                            listOf(
+                                demoIcon.copy(sizes = listOf(Size(191, 193))),
+                                demoIcon.copy(sizes = listOf(Size(512, 512))),
+                                demoIcon.copy(
+                                    sizes = listOf(Size(192, 192)),
+                                    purpose = setOf(WebAppManifest.Icon.Purpose.MONOCHROME),
+                                ),
+                            )
                     ),
-                ),
-            ),
-        )
+            )
         assertEquals(
             demoManifest.copy(
-                icons = listOf(
-                    demoIcon.copy(sizes = listOf(Size(191, 193))),
-                    demoIcon.copy(sizes = listOf(Size(512, 512))),
-                    demoIcon.copy(
-                        sizes = listOf(Size(192, 192)),
-                        purpose = setOf(WebAppManifest.Icon.Purpose.MONOCHROME),
-                    ),
-                ),
+                icons =
+                    listOf(
+                        demoIcon.copy(sizes = listOf(Size(191, 193))),
+                        demoIcon.copy(sizes = listOf(Size(512, 512))),
+                        demoIcon.copy(
+                            sizes = listOf(Size(192, 192)),
+                            purpose = setOf(WebAppManifest.Icon.Purpose.MONOCHROME),
+                        ),
+                    )
             ),
             multiIconSession.installableManifest(),
         )
@@ -153,17 +145,19 @@ private fun createTestSession(
     secure: Boolean,
     manifest: WebAppManifest? = null,
 ): SessionState {
-    val protocol = if (secure) {
-        "https"
-    } else {
-        "http"
-    }
+    val protocol =
+        if (secure) {
+            "https"
+        } else {
+            "http"
+        }
     val tab = createTab("$protocol://www.mozilla.org")
 
     return tab.copy(
-        content = tab.content.copy(
-            securityInfo = SecurityInfo.from(secure),
-            webAppManifest = manifest,
-        ),
+        content =
+            tab.content.copy(
+                securityInfo = SecurityInfo.from(secure),
+                webAppManifest = manifest,
+            )
     )
 }

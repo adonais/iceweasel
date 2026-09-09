@@ -6,12 +6,11 @@ package mozilla.components.concept.engine.permission
 
 import androidx.paging.DataSource
 
-/**
- * Represents a storage to store [SitePermissions].
- */
+/** Represents a storage to store [SitePermissions]. */
 interface SitePermissionsStorage {
     /**
      * Persists the [sitePermissions] provided as a parameter.
+     *
      * @param sitePermissions the [sitePermissions] to be stored.
      * @param request the [PermissionRequest] to be stored, default to null.
      * @param private indicates if the [SitePermissions] belongs to a private session.
@@ -20,17 +19,17 @@ interface SitePermissionsStorage {
 
     /**
      * Saves the permission temporarily until the user navigates away.
+     *
      * @param request The requested permission to be save temporarily.
      */
     fun saveTemporary(request: PermissionRequest? = null) = Unit
 
-    /**
-     * Clears any temporary permissions.
-     */
+    /** Clears any temporary permissions. */
     fun clearTemporaryPermissions() = Unit
 
     /**
      * Replaces an existing SitePermissions with the values of [sitePermissions] provided as a parameter.
+     *
      * @param sitePermissions the sitePermissions to be updated.
      * @param private indicates if the [SitePermissions] belongs to a private session.
      */
@@ -38,6 +37,7 @@ interface SitePermissionsStorage {
 
     /**
      * Finds all SitePermissions that match the [origin].
+     *
      * @param origin the site to be used as filter in the search.
      * @param private indicates if the [origin] belongs to a private session.
      */
@@ -49,19 +49,16 @@ interface SitePermissionsStorage {
 
     /**
      * Deletes all sitePermissions that match the sitePermissions provided as a parameter.
+     *
      * @param sitePermissions the sitePermissions to be deleted from the storage.
      * @param private indicates if the [SitePermissions] belongs to a private session.
      */
     suspend fun remove(sitePermissions: SitePermissions, private: Boolean)
 
-    /**
-     * Deletes all sitePermissions sitePermissions.
-     */
+    /** Deletes all sitePermissions sitePermissions. */
     suspend fun removeAll()
 
-    /**
-     * Returns all sitePermissions in the store.
-     */
+    /** Returns all sitePermissions in the store. */
     suspend fun all(): List<SitePermissions>
 
     /**
@@ -76,8 +73,16 @@ interface SitePermissionsStorage {
     suspend fun getSitePermissionsPaged(): DataSource.Factory<Int, SitePermissions>
 
     enum class Permission {
-        MICROPHONE, BLUETOOTH, CAMERA, LOCAL_STORAGE, NOTIFICATION, LOCATION, AUTOPLAY_AUDIBLE,
-        AUTOPLAY_INAUDIBLE, MEDIA_KEY_SYSTEM_ACCESS, STORAGE_ACCESS,
+        MICROPHONE,
+        BLUETOOTH,
+        CAMERA,
+        LOCAL_STORAGE,
+        NOTIFICATION,
+        LOCATION,
+        AUTOPLAY_AUDIBLE,
+        AUTOPLAY_INAUDIBLE,
+        MEDIA_KEY_SYSTEM_ACCESS,
+        STORAGE_ACCESS,
         LOCAL_DEVICE_ACCESS,
         LOCAL_NETWORK_ACCESS,
     }

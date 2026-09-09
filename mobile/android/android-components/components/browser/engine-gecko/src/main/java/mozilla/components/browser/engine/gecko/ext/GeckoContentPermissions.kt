@@ -10,16 +10,15 @@ import org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission.V
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate.PERMISSION_TRACKING
 
 /**
- * Indicates if this Gecko permission is a tracking protection permission and it is excluded
- * from the tracking protection policies.
+ * Indicates if this Gecko permission is a tracking protection permission and it is excluded from the tracking
+ * protection policies.
  */
 val ContentPermission.isExcludedForTrackingProtection: Boolean
-    get() = this.permission == PERMISSION_TRACKING &&
-        value == VALUE_ALLOW
+    get() = this.permission == PERMISSION_TRACKING && value == VALUE_ALLOW
 
 /**
- * Provides the tracking protection permission for the given [GeckoEngineSession].
- * This is available after every onLocationChange call.
+ * Provides the tracking protection permission for the given [GeckoEngineSession]. This is available after every
+ * onLocationChange call.
  */
 val GeckoEngineSession.geckoTrackingProtectionPermission: ContentPermission?
     get() = this.geckoPermissions.find { it.permission == PERMISSION_TRACKING }

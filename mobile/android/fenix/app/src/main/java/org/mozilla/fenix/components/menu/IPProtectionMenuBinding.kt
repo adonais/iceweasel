@@ -45,20 +45,22 @@ class IPProtectionMenuBinding(
             }
     }
 
-    private fun IPProtectionState.toMenuState() = IPProtectionMenuState(
-        status = this.toMenuStatus(),
-        dataLimitGb = if (maxDataBytes > 0) maxDataGb.toInt() else -1,
-    )
+    private fun IPProtectionState.toMenuState() =
+        IPProtectionMenuState(
+            status = this.toMenuStatus(),
+            dataLimitGb = if (maxDataBytes > 0) maxDataGb.toInt() else -1,
+        )
 
-    private fun IPProtectionState.toMenuStatus() = when {
-        serviceStatus == ServiceState.Unauthenticated -> IPProtectionMenuStatus.AuthRequired
-        proxyStatus is Uninitialized || proxyStatus is Authorized.Idle -> IPProtectionMenuStatus.Disabled
-        proxyStatus is Authorized.Activating -> IPProtectionMenuStatus.Activating
-        proxyStatus is Authorized.Active -> IPProtectionMenuStatus.Enabled
-        proxyStatus is Authorized.DataLimitReached -> IPProtectionMenuStatus.DataLimitReached
-        proxyStatus is Authorized.ConnectionError -> IPProtectionMenuStatus.ConnectionError
-        accountState.status == AccountStatus.NeedsAuthentication ||
-            accountState.status == AccountStatus.NeedsAuthorization -> IPProtectionMenuStatus.AuthRequired
-        else -> IPProtectionMenuStatus.Disabled
-    }
+    private fun IPProtectionState.toMenuStatus() =
+        when {
+            serviceStatus == ServiceState.Unauthenticated -> IPProtectionMenuStatus.AuthRequired
+            proxyStatus is Uninitialized || proxyStatus is Authorized.Idle -> IPProtectionMenuStatus.Disabled
+            proxyStatus is Authorized.Activating -> IPProtectionMenuStatus.Activating
+            proxyStatus is Authorized.Active -> IPProtectionMenuStatus.Enabled
+            proxyStatus is Authorized.DataLimitReached -> IPProtectionMenuStatus.DataLimitReached
+            proxyStatus is Authorized.ConnectionError -> IPProtectionMenuStatus.ConnectionError
+            accountState.status == AccountStatus.NeedsAuthentication ||
+                accountState.status == AccountStatus.NeedsAuthorization -> IPProtectionMenuStatus.AuthRequired
+            else -> IPProtectionMenuStatus.Disabled
+        }
 }

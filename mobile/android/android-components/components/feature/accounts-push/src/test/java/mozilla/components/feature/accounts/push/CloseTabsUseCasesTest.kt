@@ -24,10 +24,11 @@ class CloseTabsUseCasesTest {
     }
 
     @Test
-    fun `GIVEN an operation to close a tab on another device WHEN the operation is undone THEN the command to close the tab is removed from the queue`() = runTest {
-        val closeOperation = useCases.close("123", "http://example.com")
-        closeOperation.undo()
+    fun `GIVEN an operation to close a tab on another device WHEN the operation is undone THEN the command to close the tab is removed from the queue`() =
+        runTest {
+            val closeOperation = useCases.close("123", "http://example.com")
+            closeOperation.undo()
 
-        verify(commands).remove(eq("123"), any())
-    }
+            verify(commands).remove(eq("123"), any())
+        }
 }

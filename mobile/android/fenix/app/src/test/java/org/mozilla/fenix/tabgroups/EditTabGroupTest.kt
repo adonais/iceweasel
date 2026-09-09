@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.tabgroups
 
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -16,6 +20,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,13 +34,10 @@ import org.mozilla.fenix.tabstray.redux.state.TabGroupFormState
 import org.mozilla.fenix.tabstray.redux.state.initializeTabGroupForm
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class EditTabGroupTest {
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun `WHEN a color is clicked THEN the color is emitted`() {
@@ -43,13 +46,11 @@ class EditTabGroupTest {
             ComposableUnderTest(
                 onColorClick = {
                     selectedColor = it
-                },
+                }
             )
         }
 
-        composeTestRule
-            .onNodeWithTag("$BOTTOM_SHEET_COLOR_LIST.${TabGroupTheme.Green}")
-            .performClick()
+        composeTestRule.onNodeWithTag("$BOTTOM_SHEET_COLOR_LIST.${TabGroupTheme.Green}").performClick()
 
         composeTestRule.runOnIdle {
             assertEquals(expected = TabGroupTheme.Green, actual = selectedColor)
@@ -63,9 +64,7 @@ class EditTabGroupTest {
         }
 
         TabGroupTheme.entries.forEach { entry ->
-            composeTestRule
-                .onNodeWithTag("$BOTTOM_SHEET_COLOR_LIST.${entry.name}")
-                .assertIsDisplayed()
+            composeTestRule.onNodeWithTag("$BOTTOM_SHEET_COLOR_LIST.${entry.name}").assertIsDisplayed()
         }
     }
 
@@ -93,13 +92,14 @@ class EditTabGroupTest {
 
     @Test
     fun `WHEN group is created GIVEN blank name and edited state THEN name is not overridden with default`() {
-        val initialState = TabGroupFormState(
-            tabGroupId = "123",
-            name = "",
-            nextTabGroupNumber = 1,
-            theme = TabGroupTheme.Yellow,
-            edited = true,
-        )
+        val initialState =
+            TabGroupFormState(
+                tabGroupId = "123",
+                name = "",
+                nextTabGroupNumber = 1,
+                theme = TabGroupTheme.Yellow,
+                edited = true,
+            )
 
         composeTestRule.setContent {
             ComposableUnderTest(initialState = initialState)
@@ -110,13 +110,14 @@ class EditTabGroupTest {
 
     @Test
     fun `WHEN group is created GIVEN non-blank name and edited state THEN name is not overridden with default`() {
-        val initialState = TabGroupFormState(
-            tabGroupId = "123",
-            name = "Test Group",
-            nextTabGroupNumber = 1,
-            theme = TabGroupTheme.Yellow,
-            edited = true,
-        )
+        val initialState =
+            TabGroupFormState(
+                tabGroupId = "123",
+                name = "Test Group",
+                nextTabGroupNumber = 1,
+                theme = TabGroupTheme.Yellow,
+                edited = true,
+            )
 
         composeTestRule.setContent {
             ComposableUnderTest(initialState = initialState)
@@ -127,13 +128,14 @@ class EditTabGroupTest {
 
     @Test
     fun `WHEN group is created GIVEN non-blank name and unedited state THEN name is not overridden with default`() {
-        val initialState = TabGroupFormState(
-            tabGroupId = "123",
-            name = "Test Group",
-            nextTabGroupNumber = 1,
-            theme = TabGroupTheme.Yellow,
-            edited = false,
-        )
+        val initialState =
+            TabGroupFormState(
+                tabGroupId = "123",
+                name = "Test Group",
+                nextTabGroupNumber = 1,
+                theme = TabGroupTheme.Yellow,
+                edited = false,
+            )
 
         composeTestRule.setContent {
             ComposableUnderTest(initialState = initialState)
@@ -148,18 +150,17 @@ class EditTabGroupTest {
 
         composeTestRule.setContent {
             ComposableUnderTest(
-                initialState = TabGroupFormState(
-                    tabGroupId = null,
-                    name = "",
-                    nextTabGroupNumber = 1,
-                    edited = false,
-                ),
+                initialState =
+                    TabGroupFormState(
+                        tabGroupId = null,
+                        name = "",
+                        nextTabGroupNumber = 1,
+                        edited = false,
+                    )
             )
         }
 
-        composeTestRule
-            .onNodeWithText(expectedName)
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithText(expectedName).assertIsDisplayed()
     }
 
     @Test
@@ -172,9 +173,7 @@ class EditTabGroupTest {
             ComposableUnderTest(initialState = initialState)
         }
 
-        composeTestRule
-            .onNodeWithText(expectedName)
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithText(expectedName).assertIsDisplayed()
     }
 
     @Test
@@ -187,21 +186,20 @@ class EditTabGroupTest {
             ComposableUnderTest(initialState = initialState)
         }
 
-        composeTestRule
-            .onNodeWithText("Edit group")
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithText("Edit group").assertIsDisplayed()
     }
 
     @Test
     fun `WHEN group name is changed GIVEN name length exceeds MAX_TAB_GROUP_NAME_LENGTH THEN name is truncated`() {
         val initialName = "Test Group"
-        val initialState = TabGroupFormState(
-            tabGroupId = "123",
-            name = initialName,
-            nextTabGroupNumber = 1,
-            theme = TabGroupTheme.Yellow,
-            edited = true,
-        )
+        val initialState =
+            TabGroupFormState(
+                tabGroupId = "123",
+                name = initialName,
+                nextTabGroupNumber = 1,
+                theme = TabGroupTheme.Yellow,
+                edited = true,
+            )
         composeTestRule.setContent {
             ComposableUnderTest(initialState = initialState)
         }
@@ -231,9 +229,7 @@ class EditTabGroupTest {
         var wasSaveEmitted = false
 
         composeTestRule.setContent {
-            ComposableUnderTest(
-                onSaveClick = { wasSaveEmitted = true },
-            )
+            ComposableUnderTest(onSaveClick = { wasSaveEmitted = true })
         }
 
         composeTestRule.onNodeWithTag(EDIT_BOTTOM_SHEET_SAVE).performClick()

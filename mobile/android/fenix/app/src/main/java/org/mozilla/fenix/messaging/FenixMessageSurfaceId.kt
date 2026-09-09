@@ -4,27 +4,17 @@
 
 package org.mozilla.fenix.messaging
 
-/**
- * The identity of a message surface for Fenix
- */
+/** The identity of a message surface for Fenix */
 object FenixMessageSurfaceId {
-    /**
-     * A local notification in the background, like a push notification.
-     */
+    /** A local notification in the background, like a push notification. */
     const val NOTIFICATION = "notification"
 
-    /**
-     * A banner in the homescreen.
-     */
+    /** A banner in the homescreen. */
     const val HOMESCREEN = "homescreen"
 
-    /**
-     * A survey dialog that is intended to be disruptive.
-     */
+    /** A survey dialog that is intended to be disruptive. */
     const val SURVEY = "survey"
 
-    /**
-     * A microsurvey UI for a specific feature.
-     */
+    /** A microsurvey UI for a specific feature. */
     const val MICROSURVEY = "microsurvey"
 }

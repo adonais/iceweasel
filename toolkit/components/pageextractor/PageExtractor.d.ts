@@ -26,6 +26,10 @@ export type GetTextOptions = Partial<{
   _forceRemoveBoilerplate: boolean;
   // The URL of the page being extracted. Used to apply custom extraction strategies for specific sites.
   sourceUrl: string;
+  // Return plain prose instead of the default markdown-annotated text. Anchors
+  // keep their text but lose their target, and whitespace within a block
+  // collapses to single spaces. Paragraph breaks between blocks are preserved.
+  useSimpleText: boolean;
 }>;
 
 export type CanvasSnapshot = {
@@ -66,6 +70,10 @@ export type PageMetadata = {
   language: string;
   // whether the page is likely readable by reader mode
   isReaderable: boolean;
+  // whether the page declares that its content is gated, e.g. behind a paywall
+  // or a registration wall. Derived from the schema.org `isAccessibleForFree`
+  // markup, so this is only ever true for pages that annotate themselves.
+  isGated: boolean;
 };
 
 /**

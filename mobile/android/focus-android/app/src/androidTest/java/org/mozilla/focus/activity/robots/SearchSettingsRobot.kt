@@ -44,9 +44,7 @@ class SearchSettingsRobot {
 
     fun selectSearchEngine(engineName: String) {
         searchEngineList.waitForExists(waitingTime)
-        searchEngineList
-            .getChild(UiSelector().text(engineName))
-            .click()
+        searchEngineList.getChild(UiSelector().text(engineName)).click()
     }
 
     fun clickSearchSuggestionsSwitch() {
@@ -114,37 +112,23 @@ private val searchEngineSubMenu =
     UiScrollable(UiSelector().resourceId("$packageName:id/recycler_view"))
         .getChild(UiSelector().text(getStringResource(R.string.preference_search_engine_label)))
 
-private val searchEngineDefaultOption =
-    mDevice.findObject(UiSelector().textContains("Google"))
+private val searchEngineDefaultOption = mDevice.findObject(UiSelector().textContains("Google"))
 
-private val searchEngineList = UiScrollable(
-    UiSelector()
-        .resourceId("$packageName:id/search_engine_group").enabled(true),
-)
+private val searchEngineList =
+    UiScrollable(UiSelector().resourceId("$packageName:id/search_engine_group").enabled(true))
 
 private val searchSuggestionsHeading: UiObject =
-    mDevice.findObject(
-        UiSelector()
-            .textContains(getStringResource(R.string.preference_show_search_suggestions)),
-    )
+    mDevice.findObject(UiSelector().textContains(getStringResource(R.string.preference_show_search_suggestions)))
 
 private val searchSuggestionDescription: UiObject =
     mDevice.findObject(
-        UiSelector()
-            .textContains(getStringResource(R.string.preference_show_search_suggestions_summary)),
+        UiSelector().textContains(getStringResource(R.string.preference_show_search_suggestions_summary))
     )
 
 private val searchSuggestionLearnMoreLink: UiObject =
-    mDevice.findObject(
-        UiSelector()
-            .resourceId("$packageName:id/link"),
-    )
+    mDevice.findObject(UiSelector().resourceId("$packageName:id/link"))
 
-private val searchSuggestionsSwitch: UiObject =
-    mDevice.findObject(
-        UiSelector()
-            .resourceId("android:id/switch_widget"),
-    )
+private val searchSuggestionsSwitch: UiObject = mDevice.findObject(UiSelector().resourceId("android:id/switch_widget"))
 
 private val urlAutocompleteSubMenu =
     UiScrollable(UiSelector().resourceId("$packageName:id/recycler_view"))
@@ -155,10 +139,7 @@ private val urlAutocompleteSubMenu =
         )
 
 private val urlAutocompleteDefaultOption =
-    mDevice.findObject(
-        UiSelector()
-            .textContains(getStringResource(R.string.preference_state_on)),
-    )
+    mDevice.findObject(UiSelector().textContains(getStringResource(R.string.preference_state_on)))
 
 private val manageSitesSubMenu = onView(withText(R.string.preference_autocomplete_subitem_manage_sites))
 

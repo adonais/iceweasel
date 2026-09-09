@@ -24,15 +24,18 @@ class WebExtensionMiddlewareTest {
     fun `marks engine session as active when selected`() {
         val middleware = WebExtensionMiddleware()
 
-        val store = BrowserStore(
-            initialState = BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "1"),
-                    createTab("https://www.firefox.com", id = "2"),
-                ),
-            ),
-            middleware = listOf(middleware),
-        )
+        val store =
+            BrowserStore(
+                initialState =
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab("https://www.mozilla.org", id = "1"),
+                                createTab("https://www.firefox.com", id = "2"),
+                            )
+                    ),
+                middleware = listOf(middleware),
+            )
 
         val engineSession1: EngineSession = mock()
         val engineSession2: EngineSession = mock()
@@ -58,16 +61,19 @@ class WebExtensionMiddlewareTest {
     fun `marks selected engine session as active when linked`() {
         val middleware = WebExtensionMiddleware()
 
-        val store = BrowserStore(
-            initialState = BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "1"),
-                    createTab("https://www.firefox.com", id = "2"),
-                ),
-                selectedTabId = "1",
-            ),
-            middleware = listOf(middleware),
-        )
+        val store =
+            BrowserStore(
+                initialState =
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab("https://www.mozilla.org", id = "1"),
+                                createTab("https://www.firefox.com", id = "2"),
+                            ),
+                        selectedTabId = "1",
+                    ),
+                middleware = listOf(middleware),
+            )
 
         val engineSession1: EngineSession = mock()
         val engineSession2: EngineSession = mock()
@@ -85,15 +91,15 @@ class WebExtensionMiddlewareTest {
     fun `marks selected engine session as inactive when unlinked`() {
         val middleware = WebExtensionMiddleware()
 
-        val store = BrowserStore(
-            initialState = BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "1"),
-                ),
-                selectedTabId = "1",
-            ),
-            middleware = listOf(middleware),
-        )
+        val store =
+            BrowserStore(
+                initialState =
+                    BrowserState(
+                        tabs = listOf(createTab("https://www.mozilla.org", id = "1")),
+                        selectedTabId = "1",
+                    ),
+                middleware = listOf(middleware),
+            )
 
         val engineSession1: EngineSession = mock()
         store.dispatch(EngineAction.LinkEngineSessionAction("1", engineSession1))
@@ -108,15 +114,18 @@ class WebExtensionMiddlewareTest {
     fun `marks new selected engine session as active when previous one is removed`() {
         val middleware = WebExtensionMiddleware()
 
-        val store = BrowserStore(
-            initialState = BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "1"),
-                    createTab("https://www.firefox.com", id = "2"),
-                ),
-            ),
-            middleware = listOf(middleware),
-        )
+        val store =
+            BrowserStore(
+                initialState =
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab("https://www.mozilla.org", id = "1"),
+                                createTab("https://www.firefox.com", id = "2"),
+                            )
+                    ),
+                middleware = listOf(middleware),
+            )
 
         val engineSession1: EngineSession = mock()
         val engineSession2: EngineSession = mock()

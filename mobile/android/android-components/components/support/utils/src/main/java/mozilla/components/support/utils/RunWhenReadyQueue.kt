@@ -4,19 +4,16 @@
 
 package mozilla.components.support.utils
 
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * A queue that acts as a gate, either executing tasks right away if the queue is marked as "ready",
- * i.e. gate is open, or queues them to be executed whenever the queue is marked as ready in the
- * future, i.e. gate becomes open.
+ * A queue that acts as a gate, either executing tasks right away if the queue is marked as "ready", i.e. gate is open,
+ * or queues them to be executed whenever the queue is marked as ready in the future, i.e. gate becomes open.
  */
-class RunWhenReadyQueue(
-    private val scope: CoroutineScope = MainScope(),
-) {
+class RunWhenReadyQueue(private val scope: CoroutineScope = MainScope()) {
 
     private val tasks = mutableListOf<() -> Unit>()
     private val isReady = AtomicBoolean(false)
@@ -44,8 +41,8 @@ class RunWhenReadyQueue(
     }
 
     /**
-     * Mark queue as ready. Pending tasks will execute, and all tasks passed to [runIfReadyOrQueue]
-     * after this point will be executed immediately.
+     * Mark queue as ready. Pending tasks will execute, and all tasks passed to [runIfReadyOrQueue] after this point
+     * will be executed immediately.
      */
     fun ready() {
         // Make sure that calls to `ready` are idempotent.

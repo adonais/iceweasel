@@ -26,22 +26,15 @@ class EngineMiddlewareTest {
         val engine: Engine = mock()
         Mockito.doReturn(session).`when`(engine).createSession(false, null)
 
-        val store = BrowserStore(
-            initialState = BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "mozilla"),
-                ),
-            ),
-            middleware = EngineMiddleware.create(engine, this),
-        )
+        val store =
+            BrowserStore(
+                initialState = BrowserState(tabs = listOf(createTab("https://www.mozilla.org", id = "mozilla"))),
+                middleware = EngineMiddleware.create(engine, this),
+            )
 
-        store.dispatch(
-            EngineAction.CreateEngineSessionAction("mozilla"),
-        )
+        store.dispatch(EngineAction.CreateEngineSessionAction("mozilla"))
 
-        store.dispatch(
-            EngineAction.CreateEngineSessionAction("mozilla"),
-        )
+        store.dispatch(EngineAction.CreateEngineSessionAction("mozilla"))
 
         testScheduler.advanceUntilIdle()
 
@@ -50,19 +43,18 @@ class EngineMiddlewareTest {
 
     @Test
     fun `TrimMemoryMiddleware will be added by default`() {
-        val list = EngineMiddleware.create(
-            engine = mock(),
-        )
+        val list = EngineMiddleware.create(engine = mock())
 
         assertTrue(list.any { it is TrimMemoryMiddleware })
     }
 
     @Test
     fun `TrimMemoryMiddleware will not be added if trimMemoryAutomatically is set to false`() {
-        val list = EngineMiddleware.create(
-            engine = mock(),
-            trimMemoryAutomatically = false,
-        )
+        val list =
+            EngineMiddleware.create(
+                engine = mock(),
+                trimMemoryAutomatically = false,
+            )
 
         assertTrue(list.none { it is TrimMemoryMiddleware })
     }

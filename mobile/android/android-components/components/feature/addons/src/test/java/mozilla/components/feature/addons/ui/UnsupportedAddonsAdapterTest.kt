@@ -33,13 +33,14 @@ class UnsupportedAddonsAdapterTest {
         val addonTwo = Addon("id2")
         val unsupportedAddons = listOf(addonOne, addonTwo)
 
-        val adapter = spy(
-            UnsupportedAddonsAdapter(
-                addonManager,
-                unsupportedAddonsAdapterDelegate,
-                unsupportedAddons,
-            ),
-        )
+        val adapter =
+            spy(
+                UnsupportedAddonsAdapter(
+                    addonManager,
+                    unsupportedAddonsAdapterDelegate,
+                    unsupportedAddons,
+                )
+            )
 
         adapter.removeUninstalledAddon(addonOne)
         verify(unsupportedAddonsAdapterDelegate, times(1)).onUninstallSuccess()
@@ -59,33 +60,37 @@ class UnsupportedAddonsAdapterTest {
     @Test
     fun `uninstalling action disables all remove buttons`() {
         val removeButtonOne = ImageButton(testContext)
-        val unsupportedViewHolderOne = UnsupportedAddonsAdapter.UnsupportedAddonViewHolder(
-            view = mock(),
-            iconView = mock(),
-            titleView = mock(),
-            removeButton = removeButtonOne,
-        )
+        val unsupportedViewHolderOne =
+            UnsupportedAddonsAdapter.UnsupportedAddonViewHolder(
+                view = mock(),
+                iconView = mock(),
+                titleView = mock(),
+                removeButton = removeButtonOne,
+            )
         val removeButtonTwo = ImageButton(testContext)
-        val unsupportedViewHolderTwo = UnsupportedAddonsAdapter.UnsupportedAddonViewHolder(
-            view = mock(),
-            iconView = mock(),
-            titleView = mock(),
-            removeButton = removeButtonTwo,
-        )
+        val unsupportedViewHolderTwo =
+            UnsupportedAddonsAdapter.UnsupportedAddonViewHolder(
+                view = mock(),
+                iconView = mock(),
+                titleView = mock(),
+                removeButton = removeButtonTwo,
+            )
         val addonManager: AddonManager = mock()
         val addonOne = Addon("id1")
         val addonTwo = Addon("id2")
-        val unsupportedAddons = mapOf(
-            unsupportedViewHolderOne to addonOne,
-            unsupportedViewHolderTwo to addonTwo,
-        )
-        val adapter = spy(
-            UnsupportedAddonsAdapter(
-                addonManager,
-                mock(),
-                unsupportedAddons.values.toList(),
-            ),
-        )
+        val unsupportedAddons =
+            mapOf(
+                unsupportedViewHolderOne to addonOne,
+                unsupportedViewHolderTwo to addonTwo,
+            )
+        val adapter =
+            spy(
+                UnsupportedAddonsAdapter(
+                    addonManager,
+                    mock(),
+                    unsupportedAddons.values.toList(),
+                )
+            )
 
         // mock the adapter.notifyDataSetChanged() behavior
         whenever(adapter.notifyDataSetChanged()).thenAnswer {

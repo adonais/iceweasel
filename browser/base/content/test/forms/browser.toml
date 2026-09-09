@@ -15,6 +15,8 @@ skip-if = [
 
 ["browser_selectpopup_checked.js"]
 
+["browser_selectpopup_color_scheme.js"]
+
 ["browser_selectpopup_colors.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1329991 - test fails intermittently on Linux builds
@@ -34,6 +36,8 @@ skip-if = [
 ["browser_selectpopup_minFontSize.js"]
 
 ["browser_selectpopup_navigation.js"]
+
+["browser_selectpopup_option_in_div.js"]
 
 ["browser_selectpopup_searchfocus.js"]
 fail-if = [

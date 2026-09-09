@@ -4,23 +4,19 @@
 
 package org.mozilla.fenix.webcompat
 
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.support.base.log.logger.Logger
 import org.json.JSONObject
 import org.mozilla.fenix.webcompat.store.WebCompatReporterState
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
-/**
- * Interface for sending a broken site report via Glean.
- */
+/** Interface for sending a broken site report via Glean. */
 interface GleanBrokenSiteReportSender {
 
-    /**
-     * Send a broken site report via Glean.
-     */
+    /** Send a broken site report via Glean. */
     suspend fun sendGleanBrokenSiteReport(
         details: JSONObject?,
         description: String?,
@@ -31,12 +27,8 @@ interface GleanBrokenSiteReportSender {
     )
 }
 
-/**
- * The default implementation of [GleanBrokenSiteReportSender].
- */
-class DefaultGleanBrokenSiteReportSender(
-    private val browserStore: BrowserStore,
-) : GleanBrokenSiteReportSender {
+/** The default implementation of [GleanBrokenSiteReportSender]. */
+class DefaultGleanBrokenSiteReportSender(private val browserStore: BrowserStore) : GleanBrokenSiteReportSender {
 
     private val logger = Logger("DefaultGleanBrokenSiteReportSender")
 
@@ -48,8 +40,7 @@ class DefaultGleanBrokenSiteReportSender(
         sendTabSpecificInfo: Boolean,
         sendBlockedUrls: Boolean,
     ) {
-        val session = browserStore.state.selectedTab?.engineState?.engineSession
-            ?: return
+        val session = browserStore.state.selectedTab?.engineState?.engineSession ?: return
 
         return suspendCancellableCoroutine { continuation ->
             session.sendGleanBrokenSiteReport(

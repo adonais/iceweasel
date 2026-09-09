@@ -16,17 +16,15 @@ import mozilla.components.lib.integrity.googleplay.IntegrityConsumer
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * [IPProtectionAuthProvider] that wires Google Play Integrity (GPI) warm-up and token
- * retrieval into the IP protection handler.
+ * [IPProtectionAuthProvider] that wires Google Play Integrity (GPI) warm-up and token retrieval into the IP protection
+ * handler.
  *
  * N.B: This is intentionally kept separate from [mozilla.components.feature.ipprotection.IPProtectionFeature] so GPI
  * support can be composed in without affecting the default behavior.
  *
  * @param integrityClient the [GooglePlayIntegrityClient] to supply GPI tokens to the proxy service.
  */
-class IPProtectionGpiProvider(
-    private val integrityClient: GooglePlayIntegrityClient,
-) : IPProtectionAuthProvider {
+class IPProtectionGpiProvider(private val integrityClient: GooglePlayIntegrityClient) : IPProtectionAuthProvider {
     private val logger = Logger("IPP:Gpi")
 
     override fun configure(handler: IPProtectionHandler, scope: CoroutineScope) {
@@ -41,13 +39,16 @@ class IPProtectionGpiProvider(
 
                 override fun getToken(onComplete: (String?) -> Unit) {
                     scope.launch {
-                        val token = ipProtectionIntegrityClient.request()
-                            .onFailure { logger.error("GPI token request failed", it) }
-                            .getOrNull()?.value
+                        val token =
+                            ipProtectionIntegrityClient
+                                .request()
+                                .onFailure { logger.error("GPI token request failed", it) }
+                                .getOrNull()
+                                ?.value
                         onComplete(token)
                     }
                 }
-            },
+            }
         )
     }
 }

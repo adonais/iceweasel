@@ -12,16 +12,12 @@ import androidx.recyclerview.widget.ListAdapter
 import org.mozilla.fenix.share.ShareToAppsInteractor
 import org.mozilla.fenix.share.viewholders.AppViewHolder
 
-/**
- * Adapter for a list of apps that can be shared to.
- */
-class AppShareAdapter(
-    private val interactor: ShareToAppsInteractor,
-) : ListAdapter<AppShareOption, AppViewHolder>(DiffCallback) {
+/** Adapter for a list of apps that can be shared to. */
+class AppShareAdapter(private val interactor: ShareToAppsInteractor) :
+    ListAdapter<AppShareOption, AppViewHolder>(DiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(AppViewHolder.LAYOUT_ID, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(AppViewHolder.LAYOUT_ID, parent, false)
 
         return AppViewHolder(view, interactor)
     }
@@ -34,8 +30,7 @@ class AppShareAdapter(
         override fun areItemsTheSame(oldItem: AppShareOption, newItem: AppShareOption) =
             oldItem.activityName == newItem.activityName
 
-        override fun areContentsTheSame(oldItem: AppShareOption, newItem: AppShareOption) =
-            oldItem == newItem
+        override fun areContentsTheSame(oldItem: AppShareOption, newItem: AppShareOption) = oldItem == newItem
     }
 }
 

@@ -32,19 +32,19 @@ internal const val FRAGMENT_TAG = "mozac_feature_contextmenu_dialog"
 /**
  * Feature for displaying a context menu after long-pressing web content.
  *
- * This feature will subscribe to the currently selected tab and display a context menu based on
- * the [HitResult] in its `ContentState`. Once the context menu is closed or the user selects an
- * item from the context menu the related [HitResult] will be consumed.
+ * This feature will subscribe to the currently selected tab and display a context menu based on the [HitResult] in its
+ * `ContentState`. Once the context menu is closed or the user selects an item from the context menu the related
+ * [HitResult] will be consumed.
  *
  * @property fragmentManager The [FragmentManager] to be used when displaying a context menu (fragment).
  * @property store The [BrowserStore] this feature should subscribe to.
  * @property candidates A list of [ContextMenuCandidate] objects. For every observed [HitResult] this feature will query
- * all candidates ([ContextMenuCandidate.showFor]) in order to determine which candidates want to show up in the context
- * menu. If a context menu item was selected by the user the feature will invoke the [ContextMenuCandidate.action]
- * method of the related candidate.
+ *   all candidates ([ContextMenuCandidate.showFor]) in order to determine which candidates want to show up in the
+ *   context menu. If a context menu item was selected by the user the feature will invoke the
+ *   [ContextMenuCandidate.action] method of the related candidate.
  * @property engineView The [EngineView]] this feature component should show context menus for.
  * @param tabId Optional id of a tab. Instead of showing context menus for the currently selected tab this feature will
- * show only context menus for this tab if an id is provided.
+ *   show only context menus for this tab if an id is provided.
  * @param mainDispatcher The [CoroutineDispatcher] used for observing the [BrowserStore].
  * @param additionalNote which it will be attached to the bottom of context menu but for a specific [HitResult]
  * @param shouldHide Whether the context menu should be hidden.
@@ -62,27 +62,25 @@ class ContextMenuFeature(
 ) : LifecycleAwareFeature {
     private var scope: CoroutineScope? = null
 
-    /**
-     * Start observing the selected session and when needed show a context menu.
-     */
+    /** Start observing the selected session and when needed show a context menu. */
     override fun start() {
-        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.map { state -> state.findTabOrCustomTabOrSelectedTab(tabId) }
-                .distinctUntilChangedBy { it?.content?.hitResult }
-                .collect { state ->
-                    val hitResult = state?.content?.hitResult
-                    if (hitResult != null) {
-                        showContextMenu(state, hitResult)
-                    } else {
-                        hideContextMenu()
+        scope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .map { state -> state.findTabOrCustomTabOrSelectedTab(tabId) }
+                    .distinctUntilChangedBy { it?.content?.hitResult }
+                    .collect { state ->
+                        val hitResult = state?.content?.hitResult
+                        if (hitResult != null) {
+                            showContextMenu(state, hitResult)
+                        } else {
+                            hideContextMenu()
+                        }
                     }
-                }
-        }
+            }
     }
 
-    /**
-     * Stop observing the selected session and do not show any context menus anymore.
-     */
+    /** Stop observing the selected session and do not show any context menus anymore. */
     override fun stop() {
         scope?.cancel()
         if (shouldHide()) {
@@ -99,13 +97,14 @@ class ContextMenuFeature(
             return
         }
 
-        val (ids, labels) = candidates
-            .filter { candidate -> candidate.showFor(tab, hitResult) }
-            .fold(Pair(mutableListOf<String>(), mutableListOf<String>())) { items, candidate ->
-                items.first.add(candidate.id)
-                items.second.add(candidate.label)
-                items
-            }
+        val (ids, labels) =
+            candidates
+                .filter { candidate -> candidate.showFor(tab, hitResult) }
+                .fold(Pair(mutableListOf<String>(), mutableListOf<String>())) { items, candidate ->
+                    items.first.add(candidate.id)
+                    items.second.add(candidate.label)
+                    items
+                }
 
         // We have no context menu items to show for this HitResult. Let's consume it to remove it from the Session.
         if (ids.isEmpty()) {
@@ -125,9 +124,7 @@ class ContextMenuFeature(
     internal fun hideContextMenu() {
         emitCancelMenuFact()
         fragmentManager.findFragmentByTag(FRAGMENT_TAG)?.let { fragment ->
-            fragmentManager.beginTransaction()
-                .remove(fragment)
-                .commitAllowingStateLoss()
+            fragmentManager.beginTransaction().remove(fragment).commitAllowingStateLoss()
         }
     }
 

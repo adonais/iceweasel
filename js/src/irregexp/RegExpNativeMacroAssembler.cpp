@@ -183,8 +183,7 @@ void SMRegExpMacroAssembler::CheckCharacterAfterAndImpl(uint32_t c,
                        LabelOrBacktrack(on_cond));
   } else {
     Assembler::Condition cond = is_not ? Assembler::NotEqual : Assembler::Equal;
-    masm_.move32(Imm32(mask), temp0_);
-    masm_.and32(current_character_, temp0_);
+    masm_.and32(Imm32(mask), current_character_, temp0_);
     masm_.branch32(cond, temp0_, Imm32(c), LabelOrBacktrack(on_cond));
   }
 }
@@ -359,8 +358,7 @@ void SMRegExpMacroAssembler::CheckBitInTable(Handle<ByteArray> table,
 
   masm_.movePtr(ImmPtr(rawTable->data()), temp0_);
 
-  masm_.move32(Imm32(kTableMask), temp1_);
-  masm_.and32(current_character_, temp1_);
+  masm_.and32(Imm32(kTableMask), current_character_, temp1_);
 
   masm_.load8ZeroExtend(BaseIndex(temp0_, temp1_, js::jit::TimesOne), temp0_);
   masm_.branchTest32(Assembler::NonZero, temp0_, temp0_,

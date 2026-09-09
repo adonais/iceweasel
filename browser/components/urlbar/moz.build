@@ -14,11 +14,14 @@ MOZ_SRC_FILES += [
     "ActionsProviderContextualSearch.sys.mjs",
     "ActionsProviderQuickActions.sys.mjs",
     "ActionsProviderTabGroups.sys.mjs",
+    "actors/UrlbarChild.sys.mjs",
+    "actors/UrlbarParent.sys.mjs",
     "MerinoClient.sys.mjs",
     "QuickActionsLoaderDefault.sys.mjs",
     "QuickSuggest.sys.mjs",
     "SmartbarMentionsPanelSearch.sys.mjs",
     "UrlbarMuxerStandard.sys.mjs",
+    "UrlbarNewTabComponentRegistrant.sys.mjs",
     "UrlbarParentController.sys.mjs",
     "UrlbarPrefs.sys.mjs",
     "UrlbarProviderAboutPages.sys.mjs",
@@ -84,6 +87,8 @@ MOZ_SRC_FILES += [
 ]
 
 TESTING_JS_MODULES += [
+    "tests/NewtabSearchbarContentTestUtils.sys.mjs",
+    "tests/NewtabSearchbarTestUtils.sys.mjs",
     "tests/quicksuggest/GeolocationTestUtils.sys.mjs",
     "tests/quicksuggest/MerinoTestUtils.sys.mjs",
     "tests/quicksuggest/QuickSuggestTestUtils.sys.mjs",
@@ -97,6 +102,7 @@ BROWSER_CHROME_MANIFESTS += [
     "tests/browser-editing/browser-proton.toml",
     "tests/browser-engagementTelemetry/browser-nova.toml",
     "tests/browser-engagementTelemetry/browser-proton.toml",
+    "tests/browser-newtab/browser.toml",
     "tests/browser-quickactions/browser-nova.toml",
     "tests/browser-quickactions/browser-proton.toml",
     "tests/browser-results/browser-nova.toml",

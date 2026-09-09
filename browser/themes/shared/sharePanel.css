@@ -5,13 +5,29 @@
 #share-button > .urlbar-icon {
   list-style-image: url("chrome://browser/content/sharing/share-alt.svg");
 
+  /* Match the share icons more closely to the OS share icon */
   @media (-moz-platform: macos) {
     list-style-image: url("chrome://browser/skin/share.svg");
   }
 }
 
+#share-panel {
+  font: caption;
+}
+
+#share-panel-mainView {
+  width: 20em;
+}
+
+/* Grow to fit the device list, up to twice the main view's width.
+   "!important" is necessary to override the inline max-width PanelMultiView
+   sets on subviews. */
+#share-panel-deviceView {
+  max-width: 40em !important;
+}
+
 #share-panel-copy-link {
-  list-style-image: url("chrome://global/skin/icons/link.svg");
+  list-style-image: url("chrome://browser/content/sharing/copy-link.svg");
 }
 
 #share-panel-screenshot {
@@ -19,17 +35,30 @@
 }
 
 #share-panel-qr-code {
-  list-style-image: url("chrome://browser/skin/qrcode.svg");
+  list-style-image: url("chrome://browser/content/sharing/qr-code.svg");
 }
 
 #share-panel-send-to-device {
-  list-style-image: url("chrome://browser/skin/send-tab.svg");
+  list-style-image: url("chrome://browser/skin/device-phone.svg");
+}
+
+#share-panel-connect-device {
+  list-style-image: url("chrome://global/skin/icons/plus.svg");
+}
+
+#share-panel-device-help {
+  list-style-image: url("chrome://global/skin/icons/help.svg");
 }
 
 #share-panel-mail {
-  list-style-image: url("chrome://browser/skin/mail.svg");
+  list-style-image: url("chrome://browser/content/sharing/mail.svg");
 }
 
 #share-panel-os-share {
-  list-style-image: url("chrome://browser/skin/share.svg");
+  list-style-image: url("chrome://browser/content/sharing/share-alt.svg");
+
+  /* Match the share icons more closely to the OS share icon */
+  @media (-moz-platform: macos) {
+    list-style-image: url("chrome://browser/skin/share.svg");
+  }
 }

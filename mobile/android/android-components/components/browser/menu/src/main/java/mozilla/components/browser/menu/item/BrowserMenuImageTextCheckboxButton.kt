@@ -27,8 +27,8 @@ import mozilla.components.support.ktx.android.util.dpToPx
  * @param primaryStateIconResource ID of a drawable resource for checkbox drawable in primary state.
  * @param secondaryStateIconResource ID of a drawable resource for checkbox drawable in secondary state.
  * @param isCollapsingMenuLimit Whether this menu item can serve as the limit of a collapsing menu.
- * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards
- * depending on the menu position).
+ * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards depending on the menu
+ *   position).
  * @param iconTintColorResource Optional ID of color resource to tint the checkbox drawable.
  * @param primaryLabel The visible label of the checkbox in primary state.
  * @param secondaryLabel The visible label of this menu item in secondary state.
@@ -52,17 +52,19 @@ class BrowserMenuImageTextCheckboxButton(
     override val isSticky: Boolean = false,
     val isInPrimaryState: () -> Boolean = { true },
     private val onCheckedChangedListener: (Boolean) -> Unit,
-) : BrowserMenuImageText(
-    label,
-    imageResource,
-    iconTintColorResource,
-    textColorResource,
-    enabled,
-    isCollapsingMenuLimit,
-    isSticky,
-    labelListener,
-) {
+) :
+    BrowserMenuImageText(
+        label,
+        imageResource,
+        iconTintColorResource,
+        textColorResource,
+        enabled,
+        isCollapsingMenuLimit,
+        isSticky,
+        labelListener,
+    ) {
     override var visible: () -> Boolean = { true }
+
     override fun getLayoutResource(): Int = R.layout.mozac_browser_menu_item_image_text_checkbox_button
 
     override fun bind(menu: BrowserMenu, view: View) {
@@ -79,11 +81,12 @@ class BrowserMenuImageTextCheckboxButton(
     private fun bindCheckbox(menu: BrowserMenu, button: AppCompatCheckBox) {
         val buttonText = if (isInPrimaryState()) primaryLabel else secondaryLabel
         val tintColor = ContextCompat.getColor(button.context, tintColorResource)
-        val buttonDrawableIcon = if (isInPrimaryState()) {
-            AppCompatResources.getDrawable(button.context, primaryStateIconResource)
-        } else {
-            AppCompatResources.getDrawable(button.context, secondaryStateIconResource)
-        }
+        val buttonDrawableIcon =
+            if (isInPrimaryState()) {
+                AppCompatResources.getDrawable(button.context, primaryStateIconResource)
+            } else {
+                AppCompatResources.getDrawable(button.context, secondaryStateIconResource)
+            }
         buttonDrawableIcon?.setTint(tintColor)
         val displayMetrics = button.context.resources.displayMetrics
 

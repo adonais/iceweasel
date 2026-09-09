@@ -5,44 +5,13 @@
 #ifndef wasm_WasmSummarizeInsn_h
 #define wasm_WasmSummarizeInsn_h
 
+#include "mozilla/Assertions.h"
+
+#include "jit/MacroAssembler.h"
 #include "wasm/WasmCodegenTypes.h"  // TrapMachineInsn
 
 namespace js {
 namespace wasm {
-
-// A virtual base class that provides instruction bytes for
-// SummarizeTrapInstruction to examine.  The object is conceptually
-// regarded as "pointing" at the first byte of the instruction.
-class InstructionBytes {
- public:
-  // Get the byte at `offset` from the first byte of the instruction
-  virtual uint8_t get(size_t offset) const = 0;
-  // Convenience function.  Check whether the first byte of the instruction
-  // would be 32-bit aligned.  In case of doubt, return `true`.
-  virtual bool isU32aligned() const = 0;
-  // Convenience function.  Fetch a U32, little-endianly.
-  uint32_t getU32LittleEndian(size_t offset) const {
-    MOZ_ASSERT((offset & 3) == 0);
-    uint32_t word = 0;
-    for (uint32_t i = 0; i < 4; i++) {
-      word = (word << 8) | uint32_t(get(offset + (3 - i)));
-    }
-    return word;
-  }
-};
-
-// A child of the above, that pulls bytes out of arbitrary memory.
-class InstructionBytesAbsolute : public InstructionBytes {
-  const uint8_t* insn_;
-
- public:
-  explicit InstructionBytesAbsolute(const uint8_t* insn) : insn_(insn) {}
-  bool isU32aligned() const override { return (uintptr_t(insn_) & 3) == 0; }
-  uint8_t get(size_t offset) const override {
-    MOZ_ASSERT(offset < 16);
-    return insn_[offset];
-  }
-};
 
 // SummarizeResult holds the result of a call to SummarizeTrapInstruction.
 // If the instruction has been identified and its length computed,
@@ -95,12 +64,12 @@ class SummarizeResult {
 // created by wasm-baseline or -Ion.  So it doesn't need to handle the whole
 // complexity of the machine's instruction set.  It only needs to handle the
 // subset used by the trappable instructions we actually generate.
-
-// The main entry point.
-SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn);
-
-// Convenience function that calls the above.
 SummarizeResult SummarizeTrapInstruction(const uint8_t* insn);
+
+// And here's a variant that reads from an assembler buffer, at the given
+// offset.
+SummarizeResult SummarizeTrapInstruction(const jit::MacroAssembler& masm,
+                                         uint32_t offset);
 
 }  // namespace wasm
 }  // namespace js

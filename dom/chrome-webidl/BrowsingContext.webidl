@@ -328,6 +328,9 @@ BrowsingContext includes LoadContextMixin;
 
 [Exposed=Window, ChromeOnly]
 interface CanonicalBrowsingContext : BrowsingContext {
+  // Whether enterprise policy has disabled service workers for the top-level site.
+  readonly attribute boolean serviceWorkersDisabledByPolicy;
+
   // Top-level only download folder override for WebDriver BiDi's.
   [SetterThrows] attribute DOMString downloadFolderOverride;
 

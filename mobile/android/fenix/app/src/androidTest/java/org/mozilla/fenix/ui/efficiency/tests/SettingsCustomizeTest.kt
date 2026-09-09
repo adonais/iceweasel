@@ -36,17 +36,20 @@ class SettingsCustomizeTest : BaseTest() {
     @SmokeTest
     @Test
     fun verifyTheChangeAppIconButtonTest() {
-        on.settingsCustomize.navigateToPage()
+        on.settingsCustomize
+            .navigateToPage()
             .mozVerifyElementHasSiblingWithText(
                 selector = SettingsCustomizeSelectors.SELECT_APP_ICON_TITLE,
                 siblingText = SettingsCustomizeSelectors.APP_ICON_DEFAULT.value,
             )
-        on.settingsAppIcon.navigateToPage()
+        on.settingsAppIcon
+            .navigateToPage()
             .clickAppIconOption(SettingsAppIconSelectors.DARK_ICON)
             .mozVerifyElementsByGroup("changeIconDialog")
         on.settingsAppIcon.clickChangeIconButton()
         on.settingsAppIcon.restartApp()
-        on.settingsCustomize.navigateToPage()
+        on.settingsCustomize
+            .navigateToPage()
             .mozVerifyElementHasSiblingWithText(
                 selector = SettingsCustomizeSelectors.SELECT_APP_ICON_TITLE,
                 siblingText = SettingsAppIconSelectors.DARK_ICON.value,
@@ -57,7 +60,8 @@ class SettingsCustomizeTest : BaseTest() {
     @SmokeTest
     @Test
     fun verifyTheAppIconSelectionPageTest() {
-        on.settingsAppIcon.navigateToPage()
+        on.settingsAppIcon
+            .navigateToPage()
             .mozVerifyElementsByGroup("appIconItems")
             .mozVerifyElementsByGroup("appIconGradientsItems")
     }
@@ -66,7 +70,8 @@ class SettingsCustomizeTest : BaseTest() {
     @SmokeTest
     @Test
     fun verifyTheDefaultAppIconSettingTest() {
-        on.settingsCustomize.navigateToPage()
+        on.settingsCustomize
+            .navigateToPage()
             .mozVerifyElementHasSiblingWithText(
                 selector = SettingsCustomizeSelectors.SELECT_APP_ICON_TITLE,
                 siblingText = SettingsCustomizeSelectors.APP_ICON_DEFAULT.value,

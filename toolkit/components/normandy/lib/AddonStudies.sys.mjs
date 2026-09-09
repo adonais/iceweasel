@@ -45,8 +45,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
-  BranchedAddonStudyAction:
-    "resource://normandy/actions/BranchedAddonStudyAction.sys.mjs",
   CleanupManager: "resource://normandy/lib/CleanupManager.sys.mjs",
   IndexedDB: "resource://gre/modules/IndexedDB.sys.mjs",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
@@ -209,28 +207,6 @@ export var AddonStudies = {
       }
 
       await Promise.all(writePromises);
-    },
-
-    async migration02RemoveOldAddonStudyAction() {
-      const studies = await AddonStudies.getAllActive({
-        branched: AddonStudies.FILTER_NOT_BRANCHED,
-      });
-      if (!studies.length) {
-        return;
-      }
-      const action = new lazy.BranchedAddonStudyAction();
-      for (const study of studies) {
-        try {
-          await action.unenroll(
-            study.recipeId,
-            "migration-removing-unbranched-action"
-          );
-        } catch (e) {
-          log.error(
-            `Stopping add-on study ${study.slug} during migration failed: ${e}`
-          );
-        }
-      }
     },
   },
 

@@ -8,18 +8,11 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-/**
- * Internal entity representing a collection of tabs.
- */
+/** Internal entity representing a collection of tabs. */
 @Entity(tableName = "tab_collections")
 internal data class TabCollectionEntity(
-    @PrimaryKey(autoGenerate = true)
-    @ColumnInfo(name = "id")
-    var id: Long? = null,
-    @ColumnInfo(name = "title")
-    var title: String,
-    @ColumnInfo(name = "updated_at")
-    var updatedAt: Long = System.currentTimeMillis(),
-    @ColumnInfo(name = "created_at")
-    var createdAt: Long = System.currentTimeMillis(),
+    @PrimaryKey(autoGenerate = true) @ColumnInfo(name = "id") var id: Long? = null,
+    @ColumnInfo(name = "title") var title: String,
+    @ColumnInfo(name = "updated_at") var updatedAt: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "created_at") var createdAt: Long = System.currentTimeMillis(),
 )

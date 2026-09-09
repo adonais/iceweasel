@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.ui.efficiency.tests
 
 import org.junit.Test
@@ -10,7 +14,8 @@ import org.mozilla.fenix.ui.efficiency.selectors.TabDrawerSelectors
 
 class CrashReportingTest : BaseTest() {
 
-    private val mockWebServer get() = fenixTestRule.mockWebServer
+    private val mockWebServer
+        get() = fenixTestRule.mockWebServer
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1681928
     @SmokeTest
@@ -19,23 +24,21 @@ class CrashReportingTest : BaseTest() {
         val firstWebPage = mockWebServer.getGenericAsset(1)
         val secondWebPage = mockWebServer.getGenericAsset(2)
 
-        on.browserPage.navigateToPage(firstWebPage.url.toString())
-            .verifyUrl(firstWebPage.url.toString())
-        on.tabDrawer.navigateToPage()
-            .mozClick(TabDrawerSelectors.FAB)
+        on.browserPage.navigateToPage(firstWebPage.url.toString()).verifyUrl(firstWebPage.url.toString())
+        on.tabDrawer.navigateToPage().mozClick(TabDrawerSelectors.FAB)
         on.searchBar
             .mozEnterText(secondWebPage.url.toString(), SearchBarSelectors.TOOLBAR_IN_EDIT_MODE)
             .mozPressEnter(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE)
-        on.browserPage.navigateToPage()
-            .verifyUrl(secondWebPage.url.toString())
-        on.browserPage.navigateToPage("about:crashcontent", forceNavigation = true)
+        on.browserPage.navigateToPage().verifyUrl(secondWebPage.url.toString())
+        on.browserPage
+            .navigateToPage("about:crashcontent", forceNavigation = true)
             .mozVerifyElementsByGroup("tabCrashReporter")
-        on.tabDrawer.navigateToPage()
+        on.tabDrawer
+            .navigateToPage()
             .mozVerify(TabDrawerSelectors.TAB_ITEM_WITH_TITLE(firstWebPage.title))
             .mozVerify(TabDrawerSelectors.TAB_ITEM_WITH_TITLE(secondWebPage.title))
         on.browserPage.navigateToPage()
         on.home.navigateToPage()
-        on.mainMenu.navigateToPage()
-            .mozVerify(MainMenuSelectors.SETTINGS_BUTTON)
+        on.mainMenu.navigateToPage().mozVerify(MainMenuSelectors.SETTINGS_BUTTON)
     }
 }

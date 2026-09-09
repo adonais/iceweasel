@@ -68,7 +68,7 @@ class TabEventTracker {
     is(browser.currentURI.spec, tabUrl, `${description} - tab's currentURI`);
 
     // Tabs without titles default to URLs without scheme, according to the
-    // logic of tabbrowser.js's setTabTitle/_setTabLabel.
+    // logic of Tabbrowser.sys.mjs's setTabTitle/#setTabLabel.
     // TODO bug 1695512: lazy tabs deviate from that expectation, so the title
     // is the full URL instead of the URL with the scheme stripped.
     let tabTitle = tabUrl;

@@ -72,35 +72,38 @@ class DefaultFenixSettingsIndexerTest {
     }
 
     @Test
-    fun `GIVEN a query containing spaces WHEN filtering matching settings THEN results match trimmed query`() = runTest {
-        indexer.indexAllSettings()
+    fun `GIVEN a query containing spaces WHEN filtering matching settings THEN results match trimmed query`() =
+        runTest {
+            indexer.indexAllSettings()
 
-        val trimmedResults = indexer.getSettingsWithQuery("theme")
-        val spacedResults = indexer.getSettingsWithQuery(" theme ")
+            val trimmedResults = indexer.getSettingsWithQuery("theme")
+            val spacedResults = indexer.getSettingsWithQuery(" theme ")
 
-        assertEquals(trimmedResults, spacedResults)
-    }
+            assertEquals(trimmedResults, spacedResults)
+        }
 
     @Test
-    fun `GIVEN a query containing different cases WHEN filtering matching settings THEN filtering is case-insensitive`() = runTest {
-        indexer.indexAllSettings()
+    fun `GIVEN a query containing different cases WHEN filtering matching settings THEN filtering is case-insensitive`() =
+        runTest {
+            indexer.indexAllSettings()
 
-        val lowerResults = indexer.getSettingsWithQuery("theme")
-        val upperResults = indexer.getSettingsWithQuery("THEME")
-        val mixedResults = indexer.getSettingsWithQuery("ThEmE")
+            val lowerResults = indexer.getSettingsWithQuery("theme")
+            val upperResults = indexer.getSettingsWithQuery("THEME")
+            val mixedResults = indexer.getSettingsWithQuery("ThEmE")
 
-        assertEquals(lowerResults, upperResults)
-        assertEquals(lowerResults, mixedResults)
-    }
+            assertEquals(lowerResults, upperResults)
+            assertEquals(lowerResults, mixedResults)
+        }
 
     @Test
     fun `GIVEN a preference key is excluded WHEN indexing THEN that item is absent from results`() = runTest {
         val privacyReportKey = context.getString(R.string.pref_key_privacy_report)
         val privacyReportTitle = context.getString(R.string.customize_toggle_privacy_report)
-        val excludingIndexer = DefaultFenixSettingsIndexer(
-            context = context,
-            excludedPreferenceKeys = { setOf(privacyReportKey) },
-        )
+        val excludingIndexer =
+            DefaultFenixSettingsIndexer(
+                context = context,
+                excludedPreferenceKeys = { setOf(privacyReportKey) },
+            )
 
         excludingIndexer.indexAllSettings()
 

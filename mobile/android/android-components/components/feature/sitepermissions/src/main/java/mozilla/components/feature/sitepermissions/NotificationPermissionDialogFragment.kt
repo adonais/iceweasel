@@ -18,12 +18,10 @@ import mozilla.components.compose.base.theme.acornLightColorScheme
 import mozilla.components.ui.icons.R as iconsR
 
 /**
- * A dialog to be displayed to explain to the user why notification access is required.
- * It is intended to be shown when the application has already obtained site-level permission but also
- * needs the corresponding system-level permission.
+ * A dialog to be displayed to explain to the user why notification access is required. It is intended to be shown when
+ * the application has already obtained site-level permission but also needs the corresponding system-level permission.
  */
-class NotificationPermissionDialogFragment(val positiveButtonAction: () -> Unit) :
-    DialogFragment() {
+class NotificationPermissionDialogFragment(val positiveButtonAction: () -> Unit) : DialogFragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -40,8 +38,7 @@ class NotificationPermissionDialogFragment(val positiveButtonAction: () -> Unit)
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
 
                 setContent {
-                    val colors =
-                        if (isSystemInDarkTheme()) acornDarkColorScheme() else acornLightColorScheme()
+                    val colors = if (isSystemInDarkTheme()) acornDarkColorScheme() else acornLightColorScheme()
 
                     AcornTheme(colorScheme = colors) {
                         PermissionDialog(
@@ -60,13 +57,9 @@ class NotificationPermissionDialogFragment(val positiveButtonAction: () -> Unit)
         }
     }
 
-    /**
-     * Static functionality of [NotificationPermissionDialogFragment].
-     */
+    /** Static functionality of [NotificationPermissionDialogFragment]. */
     companion object {
-        /**
-         * A builder method for creating a [NotificationPermissionDialogFragment]
-         */
+        /** A builder method for creating a [NotificationPermissionDialogFragment] */
         fun newInstance(
             dialogTitleString: String,
             dialogMessageString: String,

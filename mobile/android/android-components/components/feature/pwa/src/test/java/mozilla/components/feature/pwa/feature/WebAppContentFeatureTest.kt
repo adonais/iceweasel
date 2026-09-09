@@ -24,30 +24,33 @@ class WebAppContentFeatureTest {
         val engineSession = mock<EngineSession>()
         val engineState = EngineState(engineSession = engineSession)
 
-        val tab = CustomTabSessionState(
-            id = customTabId,
-            content = ContentState("https://mozilla.org"),
-            config = CustomTabConfig(),
-            engineState = engineState,
-        )
+        val tab =
+            CustomTabSessionState(
+                id = customTabId,
+                content = ContentState("https://mozilla.org"),
+                config = CustomTabConfig(),
+                engineState = engineState,
+            )
 
         val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val manifest = mockManifest(WebAppManifest.DisplayMode.FULLSCREEN)
 
-        val feature = WebAppContentFeature(
-            store,
-            tabId = tab.id,
-            manifest = manifest,
-        )
+        val feature =
+            WebAppContentFeature(
+                store,
+                tabId = tab.id,
+                manifest = manifest,
+            )
         feature.onCreate(mock())
 
         verify(engineSession).setDisplayMode(WebAppManifest.DisplayMode.FULLSCREEN)
     }
 
-    private fun mockManifest(display: WebAppManifest.DisplayMode) = WebAppManifest(
-        name = "Mock",
-        startUrl = "https://mozilla.org",
-        scope = "https://mozilla.org",
-        display = display,
-    )
+    private fun mockManifest(display: WebAppManifest.DisplayMode) =
+        WebAppManifest(
+            name = "Mock",
+            startUrl = "https://mozilla.org",
+            scope = "https://mozilla.org",
+            display = display,
+        )
 }

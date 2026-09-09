@@ -61,14 +61,11 @@ security.ui.protections:
       attribute which defaults to 'direct' or will be the value that a
       referring website addds to the url. This also indicates if the vpn
       banner has been seen.
-      This event was generated to correspond to the Legacy Telemetry event
-      security.ui.protections.show#vpn_banner.
     bugs: *security_ui_protections_show_bugs
     data_reviews: *security_ui_protections_show_data_reviews
     notification_emails: *security_ui_protections_show_emails
     expires: never
     extra_keys: *security_ui_protections_show_extra
-    telemetry_mirror: SecurityUiProtections_Show_VpnBanner
 
   close_protection_report:
     type: event
@@ -262,40 +259,31 @@ security.ui.protections:
     type: event
     description: >
       User interaction by click events on the protection report.
-      This event was generated to correspond to the Legacy Telemetry event
-      security.ui.protections.click#vpn_banner_link.
     bugs: *security_ui_protections_click_bugs
     data_reviews: *security_ui_protections_click_data_reviews
     notification_emails: *security_ui_protections_click_emails
     expires: never
     extra_keys: *security_ui_protections_click_extra
-    telemetry_mirror: SecurityUiProtections_Click_VpnBannerLink
 
   click_vpn_banner_close:
     type: event
     description: >
       User interaction by click events on the protection report.
-      This event was generated to correspond to the Legacy Telemetry event
-      security.ui.protections.click#vpn_banner_close.
     bugs: *security_ui_protections_click_bugs
     data_reviews: *security_ui_protections_click_data_reviews
     notification_emails: *security_ui_protections_click_emails
     expires: never
     extra_keys: *security_ui_protections_click_extra
-    telemetry_mirror: SecurityUiProtections_Click_VpnBannerClose
 
   click_vpn_card_link:
     type: event
     description: >
       User interaction by click events on the protection report.
-      This event was generated to correspond to the Legacy Telemetry event
-      security.ui.protections.click#vpn_card_link.
     bugs: *security_ui_protections_click_bugs
     data_reviews: *security_ui_protections_click_data_reviews
     notification_emails: *security_ui_protections_click_emails
     expires: never
     extra_keys: *security_ui_protections_click_extra
-    telemetry_mirror: SecurityUiProtections_Click_VpnCardLink
 
   click_vpn_app_link_android:
     type: event

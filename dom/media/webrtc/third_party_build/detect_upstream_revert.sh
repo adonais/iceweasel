@@ -70,6 +70,26 @@ if [ "x$CONFIRM_SHA" == "x" ]; then
   exit
 fi
 
+# Verify that "This reverts commit" sha actually exists.  The need for
+# doing this seems silly: occasionally someone's local commit appears
+# to be used in the commit message, and then the sha doesn't exist in the
+# official git repo.
+INVALID_UPSTREAM_MSG=$"
+Treating $MOZ_LIBWEBRTC_NEXT_BASE as a normal commit, despite finding a potential
+reverting commit upstream, because the sha listed in the upstream commit
+message as being reverted does not exist in our clone of the libwebrtc
+git repo. This seems to occasionally happen when a committer mistakenly
+references a local commit sha (or a commit sha from a non-public branch)
+from their repo when creating the reverting commit message.  The missing
+upstream libwebrtc sha is:
+    $CONFIRM_SHA
+"
+VALIDATED_SHA=`git -C $MOZ_LIBWEBRTC_SRC rev-parse -q --verify "$CONFIRM_SHA^{commit}" || true`
+if [ "x$VALIDATED_SHA" == "x" ]; then
+  echo "$INVALID_UPSTREAM_MSG"
+  exit
+fi
+
 # convert to short sha
 CONFIRM_SHA=`cd $MOZ_LIBWEBRTC_SRC ; \
 git show --format='%h' --no-patch $CONFIRM_SHA`

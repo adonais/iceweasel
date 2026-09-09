@@ -13,7 +13,6 @@ KyberParams sftk_kyber_PK11ParamToInternal(CK_ML_KEM_PARAMETER_SET_TYPE pk11Para
 size_t sftk_kyber_pubKeyLen(KyberParams params);
 SECItem* sftk_kyber_AllocPubKeyItem(KyberParams params, SECItem* pubkey);
 SECItem* sftk_kyber_AllocPrivKeyItem(KyberParams params, SECItem* privkey);
-SECItem* sftk_kyber_AllocCiphertextItem(KyberParams params, SECItem* ciphertext);
 
 CK_RV NSC_Encapsulate(CK_SESSION_HANDLE hSession,
                       CK_MECHANISM_PTR pMechanism,

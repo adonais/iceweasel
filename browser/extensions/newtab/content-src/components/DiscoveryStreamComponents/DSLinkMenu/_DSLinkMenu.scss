@@ -1,22 +1,16 @@
 .ds-card {
-  @include context-menu-button;
-
-  .context-menu {
+  // The "..." menu trigger is a native moz-button (type="icon ghost"
+  // size="small"), which renders its own icon and hover/focus styling. Position
+  // it in the card corner and keep it hidden (scaled down) until the card is
+  // hovered/focused/active.
+  .context-menu-button {
+    position: absolute;
+    inset-inline-end: calc(var(--space-medium) * -1);
+    inset-block-start: calc(var(--space-medium) * -1);
     opacity: 0;
-  }
-
-  &.active {
-    .context-menu {
-      opacity: 1;
-    }
-  }
-
-  &.last-item {
-    @include context-menu-open-left;
-
-    .context-menu {
-      opacity: 1;
-    }
+    transform: scale(0.25);
+    transition-duration: 150ms;
+    transition-property: transform, opacity;
   }
 
   &:is(:hover, :focus, .active) {

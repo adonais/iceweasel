@@ -63,10 +63,14 @@ def getDoc():
             raise LookupError("Firefox root doesn't have RELATION_EMBEDS")
         break
     doc = embeds.getTarget(0)
-    child = doc[0]
-    if child.get_attributes().get("id") == "default-iframe-id":
-        # This is an iframe or remoteIframe test.
-        doc = child[0]
+    try:
+        child = doc[0]
+    except IndexError:
+        pass  # No child.
+    else:
+        if child.get_attributes().get("id") == "default-iframe-id":
+            # This is an iframe or remoteIframe test.
+            doc = child[0]
     return doc
 
 

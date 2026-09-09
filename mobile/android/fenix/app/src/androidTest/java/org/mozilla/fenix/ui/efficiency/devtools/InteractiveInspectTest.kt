@@ -6,13 +6,13 @@ package org.mozilla.fenix.ui.efficiency.devtools
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.File
+import kotlin.test.Test
 import org.junit.Assume.assumeFalse
 import org.junit.runner.RunWith
 import org.mozilla.fenix.helpers.AppAndSystemHelper.isTestLab
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.helpers.ScreenDump
-import java.io.File
-import kotlin.test.Test
 
 // DEV ONLY. Selector-discovery helpers around ScreenDump.dumpAll().
 // The TAE flank config scans this whole package, so both methods gate on assumeFalse(isTestLab()) —
@@ -23,7 +23,8 @@ class InteractiveInspectTest : BaseTest() {
 
     // START HERE. Navigate somewhere, dump ONCE, done — use this to confirm the whole pipeline works.
     // Run: ./mach gradle fenix:connectedDebugAndroidTest \
-    //   -Pandroid.testInstrumentationRunnerArguments.class=org.mozilla.fenix.ui.efficiency.devtools.InteractiveInspectTest#dumpOnce
+    //
+    // -Pandroid.testInstrumentationRunnerArguments.class=org.mozilla.fenix.ui.efficiency.devtools.InteractiveInspectTest#dumpOnce
     // Then: adb logcat -d -s EffScreenDump:I     (prints element count + the run-as commands to retrieve the files)
     @Test
     fun dumpOnce() {

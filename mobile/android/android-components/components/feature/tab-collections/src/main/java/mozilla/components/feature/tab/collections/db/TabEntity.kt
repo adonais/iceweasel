@@ -12,37 +12,27 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.io.File
 
-/**
- * Internal entity representing a tab that is part of a collection.
- */
+/** Internal entity representing a tab that is part of a collection. */
 @Entity(
     tableName = "tabs",
-    foreignKeys = [
-        ForeignKey(
-            entity = TabCollectionEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["tab_collection_id"],
-            onDelete = ForeignKey.CASCADE,
-        ),
-    ],
-    indices = [
-        Index(value = ["tab_collection_id"]),
-    ],
+    foreignKeys =
+        [
+            ForeignKey(
+                entity = TabCollectionEntity::class,
+                parentColumns = ["id"],
+                childColumns = ["tab_collection_id"],
+                onDelete = ForeignKey.CASCADE,
+            )
+        ],
+    indices = [Index(value = ["tab_collection_id"])],
 )
 internal data class TabEntity(
-    @PrimaryKey(autoGenerate = true)
-    @ColumnInfo(name = "id")
-    var id: Long? = null,
-    @ColumnInfo(name = "title")
-    var title: String,
-    @ColumnInfo(name = "url")
-    var url: String,
-    @ColumnInfo(name = "stat_file")
-    var stateFile: String,
-    @ColumnInfo(name = "tab_collection_id")
-    var tabCollectionId: Long,
-    @ColumnInfo(name = "created_at")
-    var createdAt: Long,
+    @PrimaryKey(autoGenerate = true) @ColumnInfo(name = "id") var id: Long? = null,
+    @ColumnInfo(name = "title") var title: String,
+    @ColumnInfo(name = "url") var url: String,
+    @ColumnInfo(name = "stat_file") var stateFile: String,
+    @ColumnInfo(name = "tab_collection_id") var tabCollectionId: Long,
+    @ColumnInfo(name = "created_at") var createdAt: Long,
 ) {
     internal fun getStateFile(filesDir: File): AtomicFile {
         return AtomicFile(File(getStateDirectory(filesDir), stateFile))

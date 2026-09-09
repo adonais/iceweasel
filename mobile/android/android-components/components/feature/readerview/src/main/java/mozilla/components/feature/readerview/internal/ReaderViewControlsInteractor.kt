@@ -18,6 +18,7 @@ import mozilla.components.feature.readerview.view.ReaderViewControlsView
 internal class ReaderViewControlsInteractor(
     private val view: ReaderViewControlsView,
     private val config: ReaderViewConfig,
+    private val onListenClicked: () -> Unit,
 ) : ReaderViewControlsView.Listener {
     fun start() {
         view.listener = this
@@ -47,5 +48,9 @@ internal class ReaderViewControlsInteractor(
 
     override fun onColorSchemeChanged(scheme: ColorScheme) {
         config.colorScheme = scheme
+    }
+
+    override fun onListenClicked() {
+        onListenClicked.invoke()
     }
 }

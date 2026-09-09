@@ -11,6 +11,7 @@ import androidx.core.view.isVisible
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import com.google.android.material.materialswitch.MaterialSwitch
+import io.mockk.CapturingSlot
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.every
@@ -26,6 +27,7 @@ import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.webextension.EnableSource
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.AddonManager
+import mozilla.components.feature.addons.R as addonsR
 import mozilla.components.feature.search.SearchUseCases
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.tabs.TabsUseCases
@@ -46,7 +48,6 @@ import org.mozilla.fenix.databinding.FragmentInstalledAddOnDetailsBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.settings.SupportUtils
 import org.robolectric.RobolectricTestRunner
-import mozilla.components.feature.addons.R as addonsR
 
 @RunWith(RobolectricTestRunner::class)
 class InstalledAddonDetailsFragmentTest {
@@ -66,10 +67,11 @@ class InstalledAddonDetailsFragmentTest {
         loadUrlUseCase = mockk(relaxed = true)
         searchUseCases = mockk(relaxed = true)
         homepageTitle = testContext.getString(R.string.tab_tray_homepage_tab)
-        profiler = mockk(relaxed = true) {
-            every { getProfilerTime() } returns PROFILER_START_TIME
-            every { isProfilerActive() } returns true
-        }
+        profiler =
+            mockk(relaxed = true) {
+                every { getProfilerTime() } returns PROFILER_START_TIME
+                every { isProfilerActive() } returns true
+            }
     }
 
     @Test
@@ -182,6 +184,136 @@ class InstalledAddonDetailsFragmentTest {
     }
 
     @Test
+    fun `GIVEN enabling fails WHEN tapping retry on the snackbar THEN the enable is attempted again`() {
+        val addon = mockAddon()
+        every { addon.isEnabled() } returns false
+        every { addon.isSupported() } returns true
+        every { addon.isDisabledAsUnsupported() } returns false
+        setUpFragmentForAddon(addon)
+        every {
+            addonManager.enableAddon(addon, EnableSource.USER, any(), any())
+        } answers { lastArg<(Throwable) -> Unit>().invoke(RuntimeException("boom")) }
+        val onRetry = captureSnackbarRetry()
+
+        fragment.toggleAddon(
+            switch = mockk(relaxed = true),
+            privateBrowsingSwitch = mockk(relaxed = true),
+            isChecked = true,
+        )
+
+        verify(exactly = 1) { addonManager.enableAddon(addon, EnableSource.USER, any(), any()) }
+        verify { fragment.showAddonFailureSnackbar(any(), any()) }
+
+        onRetry.captured.invoke()
+
+        verify(exactly = 2) { addonManager.enableAddon(addon, EnableSource.USER, any(), any()) }
+    }
+
+    @Test
+    fun `GIVEN enabling fails WHEN the addon is enabled again before tapping retry THEN the enable is not attempted again`() {
+        val addon = mockAddon()
+        every { addon.isEnabled() } returns false
+        every { addon.isSupported() } returns true
+        every { addon.isDisabledAsUnsupported() } returns false
+        setUpFragmentForAddon(addon)
+        every {
+            addonManager.enableAddon(addon, EnableSource.USER, any(), any())
+        } answers { lastArg<(Throwable) -> Unit>().invoke(RuntimeException("boom")) }
+        val onRetry = captureSnackbarRetry()
+
+        fragment.toggleAddon(
+            switch = mockk(relaxed = true),
+            privateBrowsingSwitch = mockk(relaxed = true),
+            isChecked = true,
+        )
+
+        verify(exactly = 1) { addonManager.enableAddon(addon, EnableSource.USER, any(), any()) }
+
+        every { addon.isEnabled() } returns true
+
+        onRetry.captured.invoke()
+
+        verify(exactly = 1) { addonManager.enableAddon(addon, EnableSource.USER, any(), any()) }
+    }
+
+    @Test
+    fun `GIVEN disabling fails WHEN tapping retry on the snackbar THEN the disable is attempted again`() {
+        val addon = mockAddon()
+        every { addon.isEnabled() } returns true
+        setUpFragmentForAddon(addon)
+        every {
+            addonManager.disableAddon(addon, any(), any(), any())
+        } answers { lastArg<(Throwable) -> Unit>().invoke(RuntimeException("boom")) }
+        val onRetry = captureSnackbarRetry()
+
+        fragment.toggleAddon(
+            switch = mockk(relaxed = true),
+            privateBrowsingSwitch = mockk(relaxed = true),
+            isChecked = false,
+        )
+
+        verify(exactly = 1) { addonManager.disableAddon(addon, any(), any(), any()) }
+        verify { fragment.showAddonFailureSnackbar(any(), any()) }
+
+        onRetry.captured.invoke()
+
+        verify(exactly = 2) { addonManager.disableAddon(addon, any(), any(), any()) }
+    }
+
+    @Test
+    fun `GIVEN an add-on with a settings page WHEN disabling it fails THEN the settings stay visible`() {
+        val addon = mockAddon()
+        every { addon.isEnabled() } returns true
+        setUpFragmentForAddon(addon)
+        every {
+            addonManager.disableAddon(addon, any(), any(), any())
+        } answers { lastArg<(Throwable) -> Unit>().invoke(RuntimeException("boom")) }
+        captureSnackbarRetry()
+
+        fragment.toggleAddon(
+            switch = mockk(relaxed = true),
+            privateBrowsingSwitch = mockk(relaxed = true),
+            isChecked = false,
+        )
+
+        assertTrue(fragment.binding.settings.isVisible)
+    }
+
+    @Test
+    fun `GIVEN uninstalling fails WHEN tapping retry on the snackbar THEN the uninstall is attempted again`() {
+        val addon = mockAddon()
+        setUpFragmentForAddon(addon)
+        every {
+            addonManager.uninstallAddon(addon, any(), any())
+        } answers { lastArg<(String, Throwable) -> Unit>().invoke("some-addon-id", RuntimeException("boom")) }
+        val onRetry = captureSnackbarRetry()
+        fragment.bindRemoveButton()
+
+        fragment.binding.removeAddOn.performClick()
+
+        verify(exactly = 1) { addonManager.uninstallAddon(addon, any(), any()) }
+        verify { fragment.showAddonFailureSnackbar(any(), any()) }
+
+        onRetry.captured.invoke()
+
+        verify(exactly = 2) { addonManager.uninstallAddon(addon, any(), any()) }
+    }
+
+    @Test
+    fun `GIVEN the fragment is detached WHEN tapping retry on the snackbar THEN the retry action is not run`() {
+        var retried = false
+        val guardedRetry = fragment.retryIfFragmentIsAttached { retried = true }
+
+        every { fragment.context } returns null
+        guardedRetry.invoke()
+        assertFalse(retried)
+
+        every { fragment.context } returns testContext
+        guardedRetry.invoke()
+        assertTrue(retried)
+    }
+
+    @Test
     fun `GIVEN an add-on WHEN clicking the report button THEN a new tab is open`() {
         val addon = mockAddon()
         every { fragment.addon } returns addon
@@ -197,16 +329,17 @@ class InstalledAddonDetailsFragmentTest {
                 LayoutInflater.from(testContext),
                 mockk(relaxed = true),
                 false,
-            ),
+            )
         )
         val navController = mockk<NavController>(relaxed = true)
         Navigation.setViewNavController(fragment.binding.root, navController)
 
         val appStore = mockk<AppStore>()
         val appState = mockk<AppState>()
-        every { appState.mode } returns mockk(relaxed = true) {
-            every { isPrivate } returns false // or true
-        }
+        every { appState.mode } returns
+            mockk(relaxed = true) {
+                every { isPrivate } returns false // or true
+            }
 
         every { appStore.state } returns appState
         every { testContext.components.appStore } returns appStore
@@ -222,9 +355,7 @@ class InstalledAddonDetailsFragmentTest {
             )
         }
         verify {
-            navController.navigate(
-                InstalledAddonDetailsFragmentDirections.actionGlobalBrowser(null),
-            )
+            navController.navigate(InstalledAddonDetailsFragmentDirections.actionGlobalBrowser(null))
         }
     }
 
@@ -245,7 +376,7 @@ class InstalledAddonDetailsFragmentTest {
                 LayoutInflater.from(testContext),
                 mockk(relaxed = true),
                 false,
-            ),
+            )
         )
         val navController = mockk<NavController>(relaxed = true)
         Navigation.setViewNavController(fragment.binding.root, navController)
@@ -261,9 +392,7 @@ class InstalledAddonDetailsFragmentTest {
             )
         }
         verify {
-            navController.navigate(
-                InstalledAddonDetailsFragmentDirections.actionGlobalBrowser(null),
-            )
+            navController.navigate(InstalledAddonDetailsFragmentDirections.actionGlobalBrowser(null))
         }
     }
 
@@ -282,7 +411,7 @@ class InstalledAddonDetailsFragmentTest {
                 LayoutInflater.from(testContext),
                 mockk(relaxed = true),
                 false,
-            ),
+            )
         )
         val navController = mockk<NavController>(relaxed = true)
         Navigation.setViewNavController(fragment.binding.root, navController)
@@ -290,8 +419,8 @@ class InstalledAddonDetailsFragmentTest {
         // Click the settings button.
         fragment.binding.settings.performClick()
 
-        val expectedDirections = InstalledAddonDetailsFragmentDirections
-            .actionInstalledAddonFragmentToAddonInternalSettingsFragment(
+        val expectedDirections =
+            InstalledAddonDetailsFragmentDirections.actionInstalledAddonFragmentToAddonInternalSettingsFragment(
                 webExtensionName = "some-name",
                 optionsPageUrl = "some-addon-options-page-url",
                 webExtensionId = "some-addon-id",
@@ -319,59 +448,61 @@ class InstalledAddonDetailsFragmentTest {
     }
 
     @Test
-    fun `GIVEN a not found addon WHEN binding THEN show an error message`() = runTest(testDispatcher) {
-        val addon = mockAddon()
+    fun `GIVEN a not found addon WHEN binding THEN show an error message`() =
+        runTest(testDispatcher) {
+            val addon = mockAddon()
 
-        coEvery { addonManager.getAddonByID(any()) } returns null
-        every { fragment.activity } returns mockk<HomeActivity>(relaxed = true)
-        every { addon.isInstalled() } returns true
-        every { fragment.provideAddonManager() } returns addonManager
-        every { fragment.addon } returns addon
-        every { fragment.context } returns testContext
-        every { fragment.bindUI() } just Runs
-        every { fragment.showUnableToQueryAddonsMessage() } just Runs
-        every { testContext.components.analytics.crashReporter } returns mockk(relaxed = true)
+            coEvery { addonManager.getAddonByID(any()) } returns null
+            every { fragment.activity } returns mockk<HomeActivity>(relaxed = true)
+            every { addon.isInstalled() } returns true
+            every { fragment.provideAddonManager() } returns addonManager
+            every { fragment.addon } returns addon
+            every { fragment.context } returns testContext
+            every { fragment.bindUI() } just Runs
+            every { fragment.showUnableToQueryAddonsMessage() } just Runs
+            every { testContext.components.analytics.crashReporter } returns mockk(relaxed = true)
 
-        fragment._binding =
-            FragmentInstalledAddOnDetailsBinding.inflate(
-                LayoutInflater.from(testContext),
-                mockk(relaxed = true),
-                false,
-            )
+            fragment._binding =
+                FragmentInstalledAddOnDetailsBinding.inflate(
+                    LayoutInflater.from(testContext),
+                    mockk(relaxed = true),
+                    false,
+                )
 
-        fragment.bindAddon(testDispatcher, testDispatcher)
-        testDispatcher.scheduler.advanceUntilIdle()
+            fragment.bindAddon(testDispatcher, testDispatcher)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify { fragment.showUnableToQueryAddonsMessage() }
-        verify(exactly = 0) { fragment.bindUI() }
-    }
+            verify { fragment.showUnableToQueryAddonsMessage() }
+            verify(exactly = 0) { fragment.bindUI() }
+        }
 
     @Test
-    fun `GIVEN an addon WHEN binding THEN bind the UI`() = runTest(testDispatcher) {
-        val addon = mockAddon()
+    fun `GIVEN an addon WHEN binding THEN bind the UI`() =
+        runTest(testDispatcher) {
+            val addon = mockAddon()
 
-        coEvery { addonManager.getAddonByID(any()) } returns addon
-        every { fragment.activity } returns mockk<HomeActivity>(relaxed = true)
-        every { addon.isInstalled() } returns true
-        every { fragment.provideAddonManager() } returns addonManager
-        every { fragment.addon } returns addon
-        every { fragment.context } returns testContext
-        every { fragment.bindUI() } just Runs
-        every { fragment.showUnableToQueryAddonsMessage() } just Runs
+            coEvery { addonManager.getAddonByID(any()) } returns addon
+            every { fragment.activity } returns mockk<HomeActivity>(relaxed = true)
+            every { addon.isInstalled() } returns true
+            every { fragment.provideAddonManager() } returns addonManager
+            every { fragment.addon } returns addon
+            every { fragment.context } returns testContext
+            every { fragment.bindUI() } just Runs
+            every { fragment.showUnableToQueryAddonsMessage() } just Runs
 
-        fragment._binding =
-            FragmentInstalledAddOnDetailsBinding.inflate(
-                LayoutInflater.from(testContext),
-                mockk(relaxed = true),
-                false,
-            )
+            fragment._binding =
+                FragmentInstalledAddOnDetailsBinding.inflate(
+                    LayoutInflater.from(testContext),
+                    mockk(relaxed = true),
+                    false,
+                )
 
-        fragment.bindAddon(testDispatcher, testDispatcher)
-        testDispatcher.scheduler.advanceUntilIdle()
+            fragment.bindAddon(testDispatcher, testDispatcher)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify { fragment.bindUI() }
-        verify(exactly = 0) { fragment.showUnableToQueryAddonsMessage() }
-    }
+            verify { fragment.bindUI() }
+            verify(exactly = 0) { fragment.showUnableToQueryAddonsMessage() }
+        }
 
     @Test
     fun `GIVEN a hard blocked add-on WHEN binding THEN an error message is shown`() {
@@ -382,34 +513,34 @@ class InstalledAddonDetailsFragmentTest {
 
         // We create the `binding` instance and bind the UI here because `onCreateView()` checks a late init variable
         // and we cannot easily mock it to skip the check.
-        val binding = FragmentInstalledAddOnDetailsBinding.inflate(
-            LayoutInflater.from(testContext),
-            mockk(relaxed = true),
-            false,
-        )
+        val binding =
+            FragmentInstalledAddOnDetailsBinding.inflate(
+                LayoutInflater.from(testContext),
+                mockk(relaxed = true),
+                false,
+            )
         fragment.setBindingAndBindUI(binding)
         val navController = mockk<NavController>(relaxed = true)
         Navigation.setViewNavController(binding.root, navController)
 
         val appStore = AppStore(initialState = AppState(mode = BrowsingMode.Normal))
-        val useCases = FenixBrowserUseCases(
-            appStore = appStore,
-            tabsUseCases = tabsUseCases,
-            loadUrlUseCase = loadUrlUseCase,
-            searchUseCases = searchUseCases,
-            homepageTitle = homepageTitle,
-            profiler = profiler,
-        )
+        val useCases =
+            FenixBrowserUseCases(
+                appStore = appStore,
+                tabsUseCases = tabsUseCases,
+                loadUrlUseCase = loadUrlUseCase,
+                searchUseCases = searchUseCases,
+                homepageTitle = homepageTitle,
+                profiler = profiler,
+            )
         every { testContext.components.useCases.fenixBrowserUseCases } returns useCases
 
-        val warningView =
-            binding.root.findViewById<View>(addonsR.id.add_on_messagebar_warning)
+        val warningView = binding.root.findViewById<View>(addonsR.id.add_on_messagebar_warning)
         assertFalse(warningView.isVisible)
         val errorView = binding.root.findViewById<View>(addonsR.id.add_on_messagebar_error)
         assertTrue(errorView.isVisible)
 
-        errorView.findViewById<TextView>(addonsR.id.add_on_messagebar_error_learn_more_link)
-            .performClick()
+        errorView.findViewById<TextView>(addonsR.id.add_on_messagebar_error_learn_more_link).performClick()
 
         verify { navController.navigate(R.id.browserFragment) }
         val url = "${BuildConfig.AMO_BASE_URL}/android/blocked-addon/some-addon-id/1.2.3/"
@@ -434,34 +565,34 @@ class InstalledAddonDetailsFragmentTest {
 
         // We create the `binding` instance and bind the UI here because `onCreateView()` checks a late init variable
         // and we cannot easily mock it to skip the check.
-        val binding = FragmentInstalledAddOnDetailsBinding.inflate(
-            LayoutInflater.from(testContext),
-            mockk(relaxed = true),
-            false,
-        )
+        val binding =
+            FragmentInstalledAddOnDetailsBinding.inflate(
+                LayoutInflater.from(testContext),
+                mockk(relaxed = true),
+                false,
+            )
         fragment.setBindingAndBindUI(binding)
         val navController = mockk<NavController>(relaxed = true)
         Navigation.setViewNavController(binding.root, navController)
 
         val appStore = AppStore(initialState = AppState(mode = BrowsingMode.Normal))
-        val useCases = FenixBrowserUseCases(
-            appStore = appStore,
-            tabsUseCases = tabsUseCases,
-            loadUrlUseCase = loadUrlUseCase,
-            searchUseCases = searchUseCases,
-            homepageTitle = homepageTitle,
-            profiler = profiler,
-        )
+        val useCases =
+            FenixBrowserUseCases(
+                appStore = appStore,
+                tabsUseCases = tabsUseCases,
+                loadUrlUseCase = loadUrlUseCase,
+                searchUseCases = searchUseCases,
+                homepageTitle = homepageTitle,
+                profiler = profiler,
+            )
         every { testContext.components.useCases.fenixBrowserUseCases } returns useCases
 
-        val warningView =
-            binding.root.findViewById<View>(addonsR.id.add_on_messagebar_warning)
+        val warningView = binding.root.findViewById<View>(addonsR.id.add_on_messagebar_warning)
         assertFalse(warningView.isVisible)
         val errorView = binding.root.findViewById<View>(addonsR.id.add_on_messagebar_error)
         assertTrue(errorView.isVisible)
 
-        errorView.findViewById<TextView>(addonsR.id.add_on_messagebar_error_learn_more_link)
-            .performClick()
+        errorView.findViewById<TextView>(addonsR.id.add_on_messagebar_error_learn_more_link).performClick()
 
         verify { navController.navigate(R.id.browserFragment) }
 
@@ -487,24 +618,26 @@ class InstalledAddonDetailsFragmentTest {
 
         // We create the `binding` instance and bind the UI here because `onCreateView()` checks a late init variable
         // and we cannot easily mock it to skip the check.
-        val binding = FragmentInstalledAddOnDetailsBinding.inflate(
-            LayoutInflater.from(testContext),
-            mockk(relaxed = true),
-            false,
-        )
+        val binding =
+            FragmentInstalledAddOnDetailsBinding.inflate(
+                LayoutInflater.from(testContext),
+                mockk(relaxed = true),
+                false,
+            )
         fragment.setBindingAndBindUI(binding)
         val navController = mockk<NavController>(relaxed = true)
         Navigation.setViewNavController(binding.root, navController)
 
         val appStore = AppStore(initialState = AppState(mode = BrowsingMode.Normal))
-        val useCases = FenixBrowserUseCases(
-            appStore = appStore,
-            tabsUseCases = tabsUseCases,
-            loadUrlUseCase = loadUrlUseCase,
-            searchUseCases = searchUseCases,
-            homepageTitle = homepageTitle,
-            profiler = profiler,
-        )
+        val useCases =
+            FenixBrowserUseCases(
+                appStore = appStore,
+                tabsUseCases = tabsUseCases,
+                loadUrlUseCase = loadUrlUseCase,
+                searchUseCases = searchUseCases,
+                homepageTitle = homepageTitle,
+                profiler = profiler,
+            )
         every { testContext.components.useCases.fenixBrowserUseCases } returns useCases
 
         val warningView = binding.root.findViewById<View>(addonsR.id.add_on_messagebar_warning)
@@ -512,8 +645,7 @@ class InstalledAddonDetailsFragmentTest {
         val errorView = binding.root.findViewById<View>(addonsR.id.add_on_messagebar_error)
         assertFalse(errorView.isVisible)
 
-        warningView.findViewById<TextView>(addonsR.id.add_on_messagebar_warning_learn_more_link)
-            .performClick()
+        warningView.findViewById<TextView>(addonsR.id.add_on_messagebar_warning_learn_more_link).performClick()
 
         verify { navController.navigate(R.id.browserFragment) }
         val url = "${BuildConfig.AMO_BASE_URL}/android/blocked-addon/some-addon-id/1.2.3/"
@@ -549,6 +681,25 @@ class InstalledAddonDetailsFragmentTest {
 
         return addon
     }
+
+    private fun setUpFragmentForAddon(addon: Addon) {
+        every { fragment.addon } returns addon
+        every { fragment.context } returns testContext
+        every { fragment.provideAddonManager() } returns addonManager
+        fragment._binding =
+            FragmentInstalledAddOnDetailsBinding.inflate(
+                LayoutInflater.from(testContext),
+                mockk(relaxed = true),
+                false,
+            )
+    }
+
+    private fun captureSnackbarRetry(): CapturingSlot<() -> Unit> {
+        val onRetry = slot<() -> Unit>()
+        every { fragment.showAddonFailureSnackbar(any(), capture(onRetry)) } just Runs
+        return onRetry
+    }
+
     companion object {
         private const val PROFILER_START_TIME = Double.MAX_VALUE
     }

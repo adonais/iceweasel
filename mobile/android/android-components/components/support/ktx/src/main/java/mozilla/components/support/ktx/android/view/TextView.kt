@@ -10,12 +10,11 @@ import android.graphics.drawable.Drawable
 import android.widget.TextView
 
 /**
- * Sets the [Drawable]s (if any) to appear to the start of, above, to the end of,
- * and below the text. Use `null` if you do not want a Drawable there.
- * The Drawables must already have had [Drawable.setBounds] called.
+ * Sets the [Drawable]s (if any) to appear to the start of, above, to the end of, and below the text. Use `null` if you
+ * do not want a Drawable there. The Drawables must already have had [Drawable.setBounds] called.
  *
- * Calling this method will overwrite any Drawables previously set using
- * [TextView.setCompoundDrawables] or related methods.
+ * Calling this method will overwrite any Drawables previously set using [TextView.setCompoundDrawables] or related
+ * methods.
  */
 inline fun TextView.putCompoundDrawablesRelative(
     start: Drawable? = null,
@@ -25,13 +24,11 @@ inline fun TextView.putCompoundDrawablesRelative(
 ) = setCompoundDrawablesRelative(start, top, end, bottom)
 
 /**
+ * Sets the [Drawable]s (if any) to appear to the start of, above, to the end of, and below the text. Use `null` if you
+ * do not want a Drawable there. The Drawables' bounds will be set to their intrinsic bounds.
  *
- * Sets the [Drawable]s (if any) to appear to the start of, above, to the end of,
- * and below the text. Use `null` if you do not want a Drawable there.
- * The Drawables' bounds will be set to their intrinsic bounds.
- *
- * Calling this method will overwrite any Drawables previously set using
- * [TextView.setCompoundDrawables] or related methods.
+ * Calling this method will overwrite any Drawables previously set using [TextView.setCompoundDrawables] or related
+ * methods.
  */
 inline fun TextView.putCompoundDrawablesRelativeWithIntrinsicBounds(
     start: Drawable? = null,

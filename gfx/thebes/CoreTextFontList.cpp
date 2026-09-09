@@ -11,6 +11,7 @@
 #include "gfxMacFont.h"
 #include "gfxUserFontSet.h"
 #include "harfbuzz/hb.h"
+#include "mozilla/FileUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerLabels.h"
@@ -240,7 +241,7 @@ static CFStringRef CreateCFStringForString(const nsACString& aSrc) {
 
 nsresult CTFontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
   // attempt this once, if errors occur leave a blank cmap
-  if (mCharacterMap || mShmemCharacterMap) {
+  if (HasCharacterMap()) {
     return NS_OK;
   }
 
@@ -347,15 +348,14 @@ nsresult CTFontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
     } else {
       charmap = pfl->FindCharMap(charmap);
     }
-    mHasCmapTable = true;
   } else {
     // if error occurred, initialize to null cmap
     charmap = new gfxCharacterMap(0);
-    mHasCmapTable = false;
   }
   if (setCharMap) {
     // Temporarily retain charmap, until the shared version is
     // ready for use.
+    AutoWriteLock lock(mLock);
     if (mCharacterMap.compareExchange(nullptr, charmap.get())) {
       charmap.get()->AddRef();
     }
@@ -363,7 +363,7 @@ nsresult CTFontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
 
   LOG_FONTLIST(("(fontlist-cmap) name: %s, size: %zu hash: %8.8x%s\n",
                 mName.get(), charmap->SizeOfIncludingThis(moz_malloc_size_of),
-                charmap->mHash, mCharacterMap == charmap ? " new" : ""));
+                charmap->mHash, GetCharacterMapRaw() == charmap ? " new" : ""));
   if (LOG_CMAPDATA_ENABLED()) {
     char prefix[256];
     SprintfLiteral(prefix, "(cmapdata) name: %.220s", mName.get());
@@ -392,7 +392,7 @@ gfxFont* CTFontEntry::CreateFontInstance(const gfxFontStyle* aFontStyle) {
   return new gfxMacFont(unscaledFont, this, aFontStyle);
 }
 
-bool CTFontEntry::HasVariations() {
+bool CTFontEntry::HasVariationsInternal() {
   if (!mHasVariationsInitialized) {
     mHasVariationsInitialized = true;
     mHasVariations = gfxPlatform::HasVariationFontSupport() &&
@@ -402,7 +402,7 @@ bool CTFontEntry::HasVariations() {
   return mHasVariations;
 }
 
-void CTFontEntry::GetVariationAxes(
+void CTFontEntry::GetVariationAxesInternal(
     nsTArray<gfxFontVariationAxis>& aVariationAxes) {
   // We could do this by creating a CTFont and calling CTFontCopyVariationAxes,
   // but it is expensive to instantiate a CTFont for every face just to set up
@@ -411,7 +411,7 @@ void CTFontEntry::GetVariationAxes(
   gfxFontUtils::GetVariationData(this, &aVariationAxes, nullptr);
 }
 
-void CTFontEntry::GetVariationInstances(
+void CTFontEntry::GetVariationInstancesInternal(
     nsTArray<gfxFontVariationInstance>& aInstances) {
   // Core Text doesn't offer API for this, so we use gfxFontUtils to read the
   // font tables directly.
@@ -484,6 +484,74 @@ gfxFontEntry* CTFontEntry::Clone() const {
   return fe;
 }
 
+#if MOZ_FONTATIONS
+void CTFontEntry::InitSkrifaFontFace() {
+  // See if we can get a path to the font file.
+  AutoCFTypeRef<CFStringRef> psname(CreateCFStringForString(mName));
+  if (!psname) {
+    return;
+  }
+  AutoCFTypeRef<CGFontRef> fontRef(CGFontCreateWithFontName(psname));
+  if (!fontRef) {
+    return;
+  }
+  AutoCFTypeRef<CTFontRef> ctFont(
+      CTFontCreateWithGraphicsFont(fontRef, 0.0, nullptr, nullptr));
+  if (!ctFont) {
+    return;
+  }
+  AutoCFTypeRef<CFURLRef> url(
+      CFURLRef(CTFontCopyAttribute(ctFont, kCTFontURLAttribute)));
+  if (!url) {
+    return;
+  }
+  AutoCFTypeRef<CFStringRef> path(
+      CFURLCopyFileSystemPath(url, kCFURLPOSIXPathStyle));
+  if (!path) {
+    return;
+  }
+
+  // Attempt to mmap the font file as a read-only buffer.
+  uint32_t bufferSize = CFStringGetLength(path) * 4;
+  nsAutoCStringN<1024> buffer;
+  buffer.SetLength(bufferSize);
+  if (!CFStringGetCString(path, buffer.BeginWriting(), bufferSize,
+                          kCFStringEncodingUTF8)) {
+    return;
+  }
+  AutoFDClose fd(PR_Open(buffer.get(), PR_RDONLY, 0));
+  MemoryMappedFile file = MemoryMappedFile::Open(fd.get());
+  if (!file.IsValid()) {
+    return;
+  }
+
+  // Instantiate a Skrifa font, if the file is a single font face.
+  const uint8_t* data = static_cast<const uint8_t*>(file.Data());
+  const size_t size = file.Size();
+  if (auto* skf = skrifa_font_new(data, size)) {
+    SetSkrifaFont(skf, std::move(file));
+    return;
+  }
+
+  // Try to find a face that matches this entry's name, treating data as a
+  // collection.
+  uint32_t index = 0;
+  while (SkrifaFontRef* skf = skrifa_font_new_from_index(data, size, index++)) {
+    // Loop as long as we can create fonts for successive indexes until finding
+    // the right face.
+    nsAutoCString psname;
+    if (skrifa_font_get_preferred_name(skf, gfxFontUtils::NAME_ID_POSTSCRIPT,
+                                       &psname)) {
+      if (psname == mName) {
+        SetSkrifaFont(skf, std::move(file));
+        return;
+      }
+    }
+    skrifa_font_delete(skf);
+  }
+}
+#endif
+
 CGFontRef CTFontEntry::GetFontRef() {
   {
     AutoReadLock lock(mLock);
@@ -549,7 +617,7 @@ class FontTableRec {
 #endif
 }
 
-hb_blob_t* CTFontEntry::GetFontTable(uint32_t aTag) {
+hb_blob_t* CTFontEntry::GetFontTableInternal(uint32_t aTag) {
   mLock.ReadLock();
   AutoCFTypeRef<CGFontRef> fontRef(CreateOrCopyFontRef());
   mLock.ReadUnlock();
@@ -572,7 +640,7 @@ hb_blob_t* CTFontEntry::GetFontTable(uint32_t aTag) {
   return nullptr;
 }
 
-bool CTFontEntry::HasFontTable(uint32_t aTableTag) {
+bool CTFontEntry::HasFontTableInternal(uint32_t aTableTag) {
   {
     // If we've already initialized mAvailableTables, we can return without
     // needing to take an exclusive lock.

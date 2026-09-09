@@ -471,6 +471,21 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, public JS::JobQueue {
   void LeaveSyncOperation() { --mSyncOperations; }
   bool IsInSyncOperation() const { return mSyncOperations > 0; }
 
+  // Track how many globals on this context's thread currently have a
+  // WebTaskSchedulingState, so that getHostDefinedData can skip
+  // walking the script settings stack in the common case where nothing has one.
+  void NoteWebTaskSchedulingStateAdded() { ++mWebTaskSchedulingStateCount; }
+  void NoteWebTaskSchedulingStateRemoved() {
+    MOZ_DIAGNOSTIC_ASSERT(mWebTaskSchedulingStateCount > 0,
+                          "unbalanced WebTaskSchedulingState notification");
+    if (mWebTaskSchedulingStateCount > 0) {
+      --mWebTaskSchedulingStateCount;
+    }
+  }
+  bool MayHaveWebTaskSchedulingState() const {
+    return mWebTaskSchedulingStateCount != 0;
+  }
+
   bool CheckRecursionDepth(uint32_t aCurrentDepth, bool aForce = false);
 
   MOZ_CAN_RUN_SCRIPT
@@ -587,6 +602,8 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, public JS::JobQueue {
   uint32_t mMicroTaskLevel;
 
   uint32_t mSyncOperations;
+
+  uint32_t mWebTaskSchedulingStateCount = 0;
 
   RefPtr<SuppressedMicroTaskList> mSuppressedMicroTaskList;
 

@@ -13,11 +13,13 @@ import org.mozilla.fenix.helpers.Constants
 import org.mozilla.fenix.helpers.TestAssetHelper.loremIpsumAsset
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.selectors.DownloadsSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.NotificationSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.ShareOverlaySelectors
 
 class DownloadTest : BaseTest() {
 
-    private val mockWebServer get() = fenixTestRule.mockWebServer
+    private val mockWebServer
+        get() = fenixTestRule.mockWebServer
 
     // Required for the download prompt: without it the Download button's click is treated as prompt
     // abuse and silently dropped -- the button resolves and the click reports success, but the dialog
@@ -46,8 +48,7 @@ class DownloadTest : BaseTest() {
         // SAVE_AS_PDF_LABEL, not SAVE_AS_PDF_BUTTON: the latter is UIAUTOMATOR_WITH_RES_ID with the
         // value "Save as PDF", so it resolves to the res-id "<pkg>:id/Save as PDF" and can never match.
         // It has no other callers. SAVE_AS_PDF_LABEL matches on text, like the legacy robot did.
-        on.shareOverlay.navigateToPage()
-            .mozClick(ShareOverlaySelectors.SAVE_AS_PDF_LABEL)
+        on.shareOverlay.navigateToPage().mozClick(ShareOverlaySelectors.SAVE_AS_PDF_LABEL)
         on.downloads
             .mozVerifyElementsByGroup("downloadDialog")
             .mozClick(DownloadsSelectors.DOWNLOAD_DIALOG_CONFIRM_BUTTON)
@@ -57,5 +58,42 @@ class DownloadTest : BaseTest() {
         // Parity gap: legacy verifyDownloadPrompt also asserted the prompt named the file ("Lorem") and
         // that the Cancel button was displayed. The downloadDialog group covers the dialog title and the
         // Download button only; there is no filename or cancel-button selector yet.
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/451563
+    @SmokeTest
+    @Test
+    fun pauseResumeCancelDownloadTest() {
+        // Unlike the other download tests, this one keeps the remote testapp page and its 3GB.zip
+        // instead of the local mockWebServer assets. Pause/resume/cancel need a download that stays in
+        // progress, and every local asset is a few KB and completes instantly. The download is only
+        // started and then cancelled -- never completed -- so the remote page's slow completion, which
+        // pushed the other download tests onto mockWebServer, is not a factor here.
+        val downloadTestPage = "https://storage.googleapis.com/mobile_test_assets/test_app/downloads.html"
+        val downloadFile = "3GB.zip"
+
+        on.browserPage
+            .navigateToPage(downloadTestPage)
+            .clickDownloadLink(downloadFile, downloadTestPage)
+            .verifyDownloadPrompt()
+            .clickDownloadPromptConfirmButton()
+            .verifyDownloadInProgressSnackbar()
+            .waitUntilDownloadSnackbarGone()
+
+        // clickNotificationActionButton(PAUSE) tolerates the Pause button already being gone: over the
+        // real network the 3GB download stalls and Fenix auto-pauses it before the shade opens, so the
+        // download can already be paused when we arrive. Either way the paused state is asserted next,
+        // then the download is resumed and cancelled.
+        on.notification
+            .openNotificationTray()
+            .expandNotification(downloadFile)
+            .clickNotificationActionButton(NotificationSelectors.DOWNLOAD_NOTIFICATION_PAUSE_BUTTON)
+            .verifyNotificationExists(NotificationSelectors.DOWNLOAD_PAUSED_NOTIFICATION)
+            .clickNotificationActionButton(NotificationSelectors.DOWNLOAD_NOTIFICATION_RESUME_BUTTON)
+            .clickNotificationActionButton(NotificationSelectors.DOWNLOAD_NOTIFICATION_CANCEL_BUTTON)
+            .verifyNotificationDoesNotExist(NotificationSelectors.SYSTEM_NOTIFICATION(downloadFile))
+            .closeNotificationTray()
+
+        on.downloads.navigateToPage().mozVerifyElementsByGroup("emptyDownloads")
     }
 }

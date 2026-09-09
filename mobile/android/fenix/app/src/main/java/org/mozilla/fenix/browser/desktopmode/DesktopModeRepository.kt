@@ -19,14 +19,10 @@ private const val DESKTOP_BROWSING_KEY = "desktop_browsing_key_2"
 
 private val desktopBrowsingEnabledKey = booleanPreferencesKey(DESKTOP_BROWSING_KEY)
 
-/**
- * Cache for accessing any settings related to the desktop mode feature.
- */
+/** Cache for accessing any settings related to the desktop mode feature. */
 interface DesktopModeRepository {
 
-    /**
-     * Whether browsing is in desktop mode by default for any newly opened tabs.
-     */
+    /** Whether browsing is in desktop mode by default for any newly opened tabs. */
     suspend fun getDesktopBrowsingEnabled(): Boolean
 
     /**
@@ -54,16 +50,18 @@ class DefaultDesktopModeRepository(
     }
 
     override suspend fun getDesktopBrowsingEnabled(): Boolean =
-        dataStore.data.map { preferences ->
-            preferences[desktopBrowsingEnabledKey] ?: defaultDesktopMode
-        }.first()
+        dataStore.data
+            .map { preferences ->
+                preferences[desktopBrowsingEnabledKey] ?: defaultDesktopMode
+            }
+            .first()
 
     override suspend fun setDesktopBrowsingEnabled(enabled: Boolean): Boolean {
         var preferenceWriteSucceeded = true
         dataStore.editOrCatch(
             onError = {
                 preferenceWriteSucceeded = false
-            },
+            }
         ) { preferences ->
             preferences[desktopBrowsingEnabledKey] = enabled
         }

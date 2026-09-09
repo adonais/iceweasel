@@ -1065,6 +1065,11 @@ export class DevToolsStartup {
     // --jsdebugger $binaryPath is an helper alias to set MOZ_BROWSER_TOOLBOX_BINARY=$binaryPath
     // See comment within BrowserToolboxLauncher.
     // Setting it as an environment variable helps it being reused if we restart the browser via CmdOrCtrl+R
+    if (binaryPath && AppConstants.MOZILLA_OFFICIAL) {
+      throw new Error(
+        "Custom binary path for the browser toolbox passed via --jsdebugger only works for local build without MOZILLA_OFFICIAL build flag\n"
+      );
+    }
     Services.env.set("MOZ_BROWSER_TOOLBOX_BINARY", binaryPath);
 
     const browserToolboxLauncherConfig = {};

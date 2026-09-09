@@ -4,35 +4,26 @@
 
 package mozilla.components.concept.storage
 
-/**
- * Storage that allows to stop and clean in progress operations.
- */
+/** Storage that allows to stop and clean in progress operations. */
 interface Cancellable {
-    /**
-     * Cleans up all background work and operations queue.
-     */
+    /** Cleans up all background work and operations queue. */
     fun cleanup() {
         // no-op
     }
 
-    /**
-     * Cleans up all pending write operations.
-     */
+    /** Cleans up all pending write operations. */
     fun cancelWrites() {
         // no-op
     }
 
-    /**
-     * Cleans up all pending read operations.
-     */
+    /** Cleans up all pending read operations. */
     fun cancelReads() {
         // no-op
     }
 
     /**
-     * Cleans up pending read operations in preparation for a new query.
-     * This is useful when the same storage is shared between multiple functionalities and will
-     * allow preventing overlapped cancel requests.
+     * Cleans up pending read operations in preparation for a new query. This is useful when the same storage is shared
+     * between multiple functionalities and will allow preventing overlapped cancel requests.
      *
      * @param nextQuery Next query to cancel reads for.
      */

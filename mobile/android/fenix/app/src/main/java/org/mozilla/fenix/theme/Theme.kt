@@ -4,9 +4,7 @@
 
 package org.mozilla.fenix.theme
 
-/**
- * Enum class representing the current [Theme] that is displayed.
- */
+/** Enum class representing the current [Theme] that is displayed. */
 enum class Theme {
     Light,
     Dark,

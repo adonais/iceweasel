@@ -119,6 +119,8 @@ namespace jit {
   _(CheckClassHeritageOperation, js::CheckClassHeritageOperation)              \
   _(CheckOverRecursed, js::jit::CheckOverRecursed)                             \
   _(CheckOverRecursedBaseline, js::jit::CheckOverRecursedBaseline)             \
+  _(CheckOverRecursedResumingGenerator,                                        \
+    js::jit::CheckOverRecursedResumingGenerator)                               \
   _(CheckPrivateFieldOperation, js::CheckPrivateFieldOperation)                \
   _(CheckProxyGetByValueResult, js::jit::CheckProxyGetByValueResult)           \
   _(ClassBodyLexicalEnvironmentObjectCreateWithoutEnclosing,                   \
@@ -194,7 +196,6 @@ namespace jit {
   _(FunctionBindSpecializedBaseline,                                           \
     js::BoundFunctionObject::functionBindSpecializedBaseline)                  \
   VMFUNCTION_FUZZILLI_LIST(_)                                                  \
-  _(GeneratorThrowOrReturn, js::jit::GeneratorThrowOrReturn)                   \
   _(GetAndClearException, js::GetAndClearException)                            \
   _(GetElemMaybeCached, js::jit::GetElemMaybeCached)                           \
   _(GetFirstDollarIndexRaw, js::GetFirstDollarIndexRaw)                        \

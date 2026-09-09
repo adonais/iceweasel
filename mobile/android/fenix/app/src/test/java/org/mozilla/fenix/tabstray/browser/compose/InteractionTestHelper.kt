@@ -27,11 +27,12 @@ fun fakeListActiveState(key: String = "key"): InteractionState.List.Active {
 }
 
 fun fakeDraggedGridItemOffset(): GridItemOffset {
-    val draggedItem = InteractionState.Grid.Active(
-        index = 0,
-        key = "key",
-        initialOffset = Offset.Zero,
-    )
+    val draggedItem =
+        InteractionState.Grid.Active(
+            index = 0,
+            key = "key",
+            initialOffset = Offset.Zero,
+        )
     return GridItemOffset(
         draggedItem = draggedItem,
         draggingItemOffset = Offset.Zero,
@@ -40,11 +41,12 @@ fun fakeDraggedGridItemOffset(): GridItemOffset {
 }
 
 fun fakeDraggedListItemOffset(): ListItemOffset {
-    val draggedItem = InteractionState.List.Active(
-        index = 0,
-        key = "key",
-        initialOffset = 0f,
-    )
+    val draggedItem =
+        InteractionState.List.Active(
+            index = 0,
+            key = "key",
+            initialOffset = 0f,
+        )
     return ListItemOffset(
         draggedItem = draggedItem,
         draggingItemOffset = 0f,

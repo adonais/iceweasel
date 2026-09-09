@@ -24,10 +24,11 @@ class NotificationHandlerServiceTest {
     @Test
     fun `onHandleIntent - reacts to the allow action`() {
         val addonId = "addon_id"
-        val allowIntent = Intent(testContext, NotificationHandlerService::class.java).apply {
-            action = DefaultAddonUpdater.NOTIFICATION_ACTION_ALLOW
-            putExtra(DefaultAddonUpdater.NOTIFICATION_EXTRA_ADDON_ID, addonId)
-        }
+        val allowIntent =
+            Intent(testContext, NotificationHandlerService::class.java).apply {
+                action = DefaultAddonUpdater.NOTIFICATION_ACTION_ALLOW
+                putExtra(DefaultAddonUpdater.NOTIFICATION_EXTRA_ADDON_ID, addonId)
+            }
 
         val handler = spy(NotificationHandlerService())
         val updater = mock<AddonUpdater>()
@@ -49,10 +50,11 @@ class NotificationHandlerServiceTest {
     @Test
     fun `onHandleIntent - reacts to the deny action`() {
         val addonId = "addon_id"
-        val allowIntent = Intent(testContext, NotificationHandlerService::class.java).apply {
-            action = DefaultAddonUpdater.NOTIFICATION_ACTION_DENY
-            putExtra(DefaultAddonUpdater.NOTIFICATION_EXTRA_ADDON_ID, addonId)
-        }
+        val allowIntent =
+            Intent(testContext, NotificationHandlerService::class.java).apply {
+                action = DefaultAddonUpdater.NOTIFICATION_ACTION_DENY
+                putExtra(DefaultAddonUpdater.NOTIFICATION_EXTRA_ADDON_ID, addonId)
+            }
 
         val handler = spy(NotificationHandlerService())
         val updater = mock<AddonUpdater>()

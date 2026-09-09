@@ -14,29 +14,28 @@ import mozilla.components.browser.state.search.SearchEngine
  * @property regionSearchEngines The list of bundled [SearchEngine]s for the "home" region of the user.
  * @property customSearchEngines The list of custom [SearchEngine]s, added by the user.
  * @property applicationSearchEngines The list of optional [SearchEngine]s, added by application.
- * @property additionalSearchEngines Additional [SearchEngine]s that the application decided to load
- * and that the user explicitly added to their list of search engines.
- * @property additionalAvailableSearchEngines Additional [SearchEngine]s that the application decided
- * to load and that are available for the user to be added to their list of search engines.
+ * @property additionalSearchEngines Additional [SearchEngine]s that the application decided to load and that the user
+ *   explicitly added to their list of search engines.
+ * @property additionalAvailableSearchEngines Additional [SearchEngine]s that the application decided to load and that
+ *   are available for the user to be added to their list of search engines.
  * @property hiddenSearchEngines The list of bundled [SearchEngine]s the user has explicitly hidden.
- * @property disabledSearchEngineIds The list of [SearchEngine]s ids the user has explicitly disabled
- * from being shown in the quick search list.
- * @property userSelectedSearchEngineId The ID of the default [SearchEngine] selected by the user. Or
- * `null` if the user hasn't made an explicit choice.
- * @property userSelectedSearchEngineName The name of the default [SearchEngine] selected by the user.
- * Or `null` if the user hasn't made an explicit choice.
- * @property userSelectedPrivateSearchEngineId The ID of the default [SearchEngine] selected by the
- * user for private browsing. Or `null` if the user hasn't made an explicit choice.
- * @property userSelectedPrivateSearchEngineName The name of the default [SearchEngine] selected by
- * the user for private browsing. Or `null` if the user hasn't made an explicit choice.
- * @property regionDefaultSearchEngineId The ID of the default [SearchEngine] of the "home" region
- * of the user.
- * @property regionSearchEnginesOrder Ordered list of [SearchEngine] IDs in the preferred order for
- * this region. Can be used when [regionSearchEngines] needs to be reordered.
+ * @property disabledSearchEngineIds The list of [SearchEngine]s ids the user has explicitly disabled from being shown
+ *   in the quick search list.
+ * @property userSelectedSearchEngineId The ID of the default [SearchEngine] selected by the user. Or `null` if the user
+ *   hasn't made an explicit choice.
+ * @property userSelectedSearchEngineName The name of the default [SearchEngine] selected by the user. Or `null` if the
+ *   user hasn't made an explicit choice.
+ * @property userSelectedPrivateSearchEngineId The ID of the default [SearchEngine] selected by the user for private
+ *   browsing. Or `null` if the user hasn't made an explicit choice.
+ * @property userSelectedPrivateSearchEngineName The name of the default [SearchEngine] selected by the user for private
+ *   browsing. Or `null` if the user hasn't made an explicit choice.
+ * @property regionDefaultSearchEngineId The ID of the default [SearchEngine] of the "home" region of the user.
+ * @property regionSearchEnginesOrder Ordered list of [SearchEngine] IDs in the preferred order for this region. Can be
+ *   used when [regionSearchEngines] needs to be reordered.
  * @property searchEnvironmentId Unique identifier of the current search environment.
  * @property isNewSearchConfigurationAvailable Whether a new search engines configuration is available.
- * @property complete Flag that indicates whether loading the list of search engines has completed.
- * This can be used for waiting for specific values (e.g. the default search engine) to be available.
+ * @property complete Flag that indicates whether loading the list of search engines has completed. This can be used for
+ *   waiting for specific values (e.g. the default search engine) to be available.
  */
 data class SearchState(
     val region: RegionState? = null,
@@ -58,40 +57,46 @@ data class SearchState(
     val complete: Boolean = false,
 )
 
-/**
- * The list of search engines to be used for searches (bundled and custom search engines).
- */
+/** The list of search engines to be used for searches (bundled and custom search engines). */
 val SearchState.searchEngines: List<SearchEngine>
     get() = (regionSearchEngines + additionalSearchEngines + customSearchEngines + applicationSearchEngines)
 
-/**
- * The list of search engines that are available for the user to be added to their list of search
- * engines.
- */
+/** The list of search engines that are available for the user to be added to their list of search engines. */
 val SearchState.availableSearchEngines: List<SearchEngine>
     get() = (hiddenSearchEngines + additionalAvailableSearchEngines)
 
 /**
- * The primary search engine to be used by default for searches. This will either be the user
- * selected search engine, if the user has made an explicit choice, or the default search engine for
- * the user's region.
+ * The primary search engine to be used by default for searches. This will either be the user selected search engine, if
+ * the user has made an explicit choice, or the default search engine for the user's region.
  */
 val SearchState.selectedOrDefaultSearchEngine: SearchEngine?
     get() {
         // Does the user have a default search engine id set and is it in the list of available search engines?
         if (userSelectedSearchEngineId != null) {
-            searchEngines.find { engine -> userSelectedSearchEngineId == engine.id }?.let { return it }
+            searchEngines
+                .find { engine -> userSelectedSearchEngineId == engine.id }
+                ?.let {
+                    return it
+                }
         }
 
         // Did we save a default search engine name for this user and can we find it in the list of
         // available search engines?
         if (userSelectedSearchEngineName != null) {
-            searchEngines.find { engine -> userSelectedSearchEngineName == engine.name }?.let { return it }
+            searchEngines
+                .find { engine -> userSelectedSearchEngineName == engine.name }
+                ?.let {
+                    return it
+                }
         }
 
         // Do we have a default search engine for the region of the user and is it available?
         if (regionDefaultSearchEngineId != null) {
-            searchEngines.find { engine -> regionDefaultSearchEngineId == engine.id }?.let { return it }
+            searchEngines
+                .find { engine -> regionDefaultSearchEngineId == engine.id }
+                ?.let {
+                    return it
+                }
         }
 
         // Fallback: Use the first search engine in the list
@@ -104,24 +109,30 @@ val SearchState.selectedOrDefaultSearchEngine: SearchEngine?
     }
 
 /**
- * The search engine to be used by default for private browsing. If the user has explicitly selected
- * a private search engine, that will be used. Otherwise, falls back to [selectedOrDefaultSearchEngine].
+ * The search engine to be used by default for private browsing. If the user has explicitly selected a private search
+ * engine, that will be used. Otherwise, falls back to [selectedOrDefaultSearchEngine].
  */
 val SearchState.selectedOrDefaultPrivateSearchEngine: SearchEngine?
     get() {
         if (userSelectedPrivateSearchEngineId != null) {
-            searchEngines.find { engine -> userSelectedPrivateSearchEngineId == engine.id }?.let { return it }
+            searchEngines
+                .find { engine -> userSelectedPrivateSearchEngineId == engine.id }
+                ?.let {
+                    return it
+                }
         }
 
         if (userSelectedPrivateSearchEngineName != null) {
-            searchEngines.find { engine -> userSelectedPrivateSearchEngineName == engine.name }?.let { return it }
+            searchEngines
+                .find { engine -> userSelectedPrivateSearchEngineName == engine.name }
+                ?.let {
+                    return it
+                }
         }
 
         return selectedOrDefaultSearchEngine
     }
 
-/**
- * Convenience function that returns the appropriate default search engine based on browsing mode.
- */
+/** Convenience function that returns the appropriate default search engine based on browsing mode. */
 fun SearchState.selectedOrDefaultSearchEngine(private: Boolean): SearchEngine? =
     if (private) selectedOrDefaultPrivateSearchEngine else selectedOrDefaultSearchEngine

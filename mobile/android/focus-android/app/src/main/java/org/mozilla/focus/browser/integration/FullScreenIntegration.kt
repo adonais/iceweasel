@@ -17,6 +17,7 @@ import mozilla.components.feature.session.FullScreenFeature
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
+import mozilla.components.support.ktx.android.content.isEdgeToEdgeDisabled
 import mozilla.components.support.ktx.android.view.enterImmersiveMode
 import mozilla.components.support.ktx.android.view.exitImmersiveMode
 import org.mozilla.focus.R
@@ -25,9 +26,7 @@ import org.mozilla.focus.ext.enableDynamicBehavior
 import org.mozilla.focus.ext.hide
 import org.mozilla.focus.ext.showAsFixed
 
-/**
- * Integration for the full-screen feature, managing immersive mode and toolbar visibility.
- */
+/** Integration for the full-screen feature, managing immersive mode and toolbar visibility. */
 @Suppress("LongParameterList")
 class FullScreenIntegration(
     val activity: Activity,
@@ -39,13 +38,14 @@ class FullScreenIntegration(
     private val isAccessibilityEnabled: () -> Boolean,
 ) : LifecycleAwareFeature, UserInteractionHandler {
     @VisibleForTesting
-    internal var feature = FullScreenFeature(
-        store,
-        sessionUseCases,
-        tabId,
-        ::viewportFitChanged,
-        ::fullScreenChanged,
-    )
+    internal var feature =
+        FullScreenFeature(
+            store,
+            sessionUseCases,
+            tabId,
+            ::viewportFitChanged,
+            ::fullScreenChanged,
+        )
 
     override fun start() {
         feature.start()
@@ -90,24 +90,22 @@ class FullScreenIntegration(
 
     @VisibleForTesting
     internal fun viewportFitChanged(viewportFit: Int) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            activity.window.attributes.layoutInDisplayCutoutMode = viewportFit
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && activity.isEdgeToEdgeDisabled()) {
+            activity.window.attributes = activity.window.attributes.apply { layoutInDisplayCutoutMode = viewportFit }
         }
     }
 
     /**
-     * Hide system bars. They can be revealed temporarily with system gestures, such as swiping from
-     * the top of the screen. These transient system bars will overlay app’s content, may have some
-     * degree of transparency, and will automatically hide after a short timeout.
+     * Hide system bars. They can be revealed temporarily with system gestures, such as swiping from the top of the
+     * screen. These transient system bars will overlay app’s content, may have some degree of transparency, and will
+     * automatically hide after a short timeout.
      */
     @VisibleForTesting
     internal fun switchToImmersiveMode() {
         activity.enterImmersiveMode()
     }
 
-    /**
-     * Show the system bars again.
-     */
+    /** Show the system bars again. */
     fun exitImmersiveMode() {
         activity.exitImmersiveMode()
     }

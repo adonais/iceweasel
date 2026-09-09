@@ -12,8 +12,8 @@ package mozilla.components.concept.engine.pageextraction
 sealed class PageExtractionError(override val cause: Throwable?) : Throwable(cause = cause) {
 
     /**
-     * An error that occurs when the result of the page extraction is null.
-     * There should not be a case where a null result is received
+     * An error that occurs when the result of the page extraction is null. There should not be a case where a null
+     * result is received
      */
     class UnexpectedNull : PageExtractionError(cause = null)
 
@@ -25,8 +25,8 @@ sealed class PageExtractionError(override val cause: Throwable?) : Throwable(cau
     class UnknownError(override val cause: Throwable?) : PageExtractionError(cause)
 
     /**
-     * An error returned when the result is not as expected. This happens when we receive a result,
-     * but the expected identifier is missing.
+     * An error returned when the result is not as expected. This happens when we receive a result, but the expected
+     * identifier is missing.
      */
     class MalformedResult : PageExtractionError(cause = null)
 }

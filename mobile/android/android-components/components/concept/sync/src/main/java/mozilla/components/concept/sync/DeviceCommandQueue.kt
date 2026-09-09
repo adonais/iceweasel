@@ -6,9 +6,7 @@ package mozilla.components.concept.sync
 
 import mozilla.components.support.base.observer.Observable
 
-/**
- * A queue that holds pending device commands until they're ready to be sent.
- */
+/** A queue that holds pending device commands until they're ready to be sent. */
 interface DeviceCommandQueue<in T : DeviceCommandQueue.Type> : Observable<DeviceCommandQueue.Observer> {
     /**
      * Adds a pending command to the queue.
@@ -30,9 +28,8 @@ interface DeviceCommandQueue<in T : DeviceCommandQueue.Type> : Observable<Device
     suspend fun flush(): FlushResult
 
     /**
-     * The type of the commands held in the queue. This is a marker
-     * superinterface implemented by [DeviceCommandOutgoing] commands that
-     * support queueing.
+     * The type of the commands held in the queue. This is a marker superinterface implemented by
+     * [DeviceCommandOutgoing] commands that support queueing.
      */
     interface Type {
         /** A marker interface for a queueable remote tabs command. */

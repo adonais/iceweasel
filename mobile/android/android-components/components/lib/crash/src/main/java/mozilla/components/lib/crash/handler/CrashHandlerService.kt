@@ -21,9 +21,7 @@ import mozilla.components.support.base.ids.SharedIdsHelper
 
 private const val NOTIFICATION_TAG = "mozac.lib.crash.handlecrash"
 
-/**
- * Service receiving native code crashes (from GeckoView).
- */
+/** Service receiving native code crashes (from GeckoView). */
 class CrashHandlerService : Service() {
     private val crashReporter: CrashReporter by lazy { CrashReporter.requireInstance }
 
@@ -48,15 +46,14 @@ class CrashHandlerService : Service() {
         scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
     ) {
         val channel = CrashNotification.ensureChannelExists(this)
-        val notification = NotificationCompat.Builder(this, channel)
-            .setContentTitle(
-                getString(R.string.mozac_lib_gathering_crash_data_in_progress),
-            )
-            .setSmallIcon(R.drawable.mozac_lib_crash_notification)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setCategory(NotificationCompat.CATEGORY_ERROR)
-            .setAutoCancel(true)
-            .build()
+        val notification =
+            NotificationCompat.Builder(this, channel)
+                .setContentTitle(getString(R.string.mozac_lib_gathering_crash_data_in_progress))
+                .setSmallIcon(R.drawable.mozac_lib_crash_notification)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setCategory(NotificationCompat.CATEGORY_ERROR)
+                .setAutoCancel(true)
+                .build()
 
         val notificationId = SharedIdsHelper.getIdForTag(this, NOTIFICATION_TAG)
         startForeground(notificationId, notification)

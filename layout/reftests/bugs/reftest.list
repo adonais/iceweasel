@@ -385,18 +385,17 @@ fuzzy-if(Android&&isDebugBuild,0-229,0-45) == 315920-13b.html 315920-13-ref.html
 == 315920-15.html 315920-15-ref.html
 == 315920-16.html 315920-16-ref.html
 fuzzy-if(Android,0-2,0-18) == 315920-17.html 315920-17-ref.html
-pref(layout.css.moz-broken.content.enabled,true) == 315920-18a.html 315920-18-ref.html
-pref(layout.css.moz-broken.content.enabled,true) == 315920-18b.html 315920-18-ref.html
-pref(layout.css.moz-broken.content.enabled,true) == 315920-18c.html 315920-18-ref.html
-pref(layout.css.moz-broken.content.enabled,true) == 315920-18d.html 315920-18-ref.html
-pref(layout.css.moz-broken.content.enabled,true) == 315920-18e.html 315920-18-ref.html
-pref(layout.css.moz-broken.content.enabled,true) == 315920-18f.html 315920-18-ref.html
-pref(layout.css.moz-broken.content.enabled,true) == 315920-18g.html 315920-18-ref.html
-pref(layout.css.moz-broken.content.enabled,true) == 315920-18h.html 315920-18-ref.html
-pref(layout.css.moz-broken.content.enabled,true) == 315920-18i.html 315920-18-ref.html
-pref(layout.css.moz-broken.content.enabled,true) == 315920-19.html 315920-19-ref.html
-pref(layout.css.moz-broken.content.enabled,true) fuzzy(0-1,0-1) == 315920-20.svg 315920-20-ref.svg
-pref(layout.css.moz-broken.content.enabled,true) == 315920-21.svg 315920-21-ref.svg
+# Chrome failed loads trigger a parent process crash on android.
+skip-if(Android) == chrome://reftest/content/bugs/315920-18a.html chrome://reftest/content/bugs/315920-18-ref.html
+skip-if(Android) == chrome://reftest/content/bugs/315920-18b.html chrome://reftest/content/bugs/315920-18-ref.html
+skip-if(Android) == chrome://reftest/content/bugs/315920-18c.html chrome://reftest/content/bugs/315920-18-ref.html
+skip-if(Android) == chrome://reftest/content/bugs/315920-18e.html chrome://reftest/content/bugs/315920-18-ref.html
+skip-if(Android) == chrome://reftest/content/bugs/315920-18f.html chrome://reftest/content/bugs/315920-18-ref.html
+skip-if(Android) == chrome://reftest/content/bugs/315920-18h.html chrome://reftest/content/bugs/315920-18-ref.html
+skip-if(Android) == chrome://reftest/content/bugs/315920-18i.html chrome://reftest/content/bugs/315920-18-ref.html
+skip-if(Android) == chrome://reftest/content/bugs/315920-19.html chrome://reftest/content/bugs/315920-19-ref.html
+skip-if(Android) fuzzy(0-1,0-1) == chrome://reftest/content/bugs/315920-20.svg chrome://reftest/content/bugs/315920-20-ref.svg
+skip-if(Android) == chrome://reftest/content/bugs/315920-21.svg chrome://reftest/content/bugs/315920-21-ref.svg
 == 315920-22.html 315920-22-ref.html
 == 315920-23.html 315920-23-ref.html
 == 315920-24.html 315920-24-ref.html
@@ -1127,10 +1126,10 @@ random == 445004-1.html 445004-1-ref.html # bug 472268
 == 445142-1c.html 445142-1-ref.html
 == 445142-2a.html 445142-2-ref.html
 == 445142-2b.html 445142-2-ref.html
-skip-if(winWidget&&isCoverageBuild) fails == 446100-1a.html about:blank
-fuzzy-if(winWidget,177-178,127-127) fails == 446100-1b.html about:blank
-fuzzy-if(winWidget,171-172,192-192) fails-if(!winWidget) == 446100-1c.html about:blank
-fails == 446100-1d.html about:blank
+fails-if(!useDrawSnapshot) == 446100-1a.html about:blank
+fails-if(!useDrawSnapshot) == 446100-1b.html about:blank
+fails-if(!useDrawSnapshot) == 446100-1c.html about:blank
+fails-if(!useDrawSnapshot) == 446100-1d.html about:blank
 fails-if(!useDrawSnapshot) == 446100-1e.html about:blank
 == 446100-1f.html about:blank
 fails-if(!useDrawSnapshot) == 446100-1g.html about:blank
@@ -1153,9 +1152,9 @@ fuzzy(0-4,0-361) == 449519-1.html 449519-1-ref.html
 == 455280-1.xhtml 455280-1-ref.xhtml
 fails-if(Android) == 455826-1.html 455826-1-ref.html
 == chrome://reftest/content/bugs/456147.xhtml 456147-ref.html
-fuzzy(24-110,110-800) == 456219-1a.html 456219-1-ref.html # bug 1128229
-fuzzy(24-110,107-3800) == 456219-1b.html 456219-1-ref.html # bug 1128229
-fuzzy(24-110,107-3800) == 456219-1c.html 456219-1-ref.html # bug 1128229
+fuzzy(0-110,0-800) == 456219-1a.html 456219-1-ref.html # bug 1128229
+fuzzy(0-110,0-3800) == 456219-1b.html 456219-1-ref.html # bug 1128229
+fuzzy(0-110,0-3800) == 456219-1c.html 456219-1-ref.html # bug 1128229
 fuzzy(0-10,0-8) == 456219-2.html 456219-2-ref.html
 == 456330-1.gif 456330-1-ref.png
 == 456484-1.html 456484-1-ref.html
@@ -2137,7 +2136,7 @@ fuzzy-if(winWidget||cocoaWidget,0-1,0-4400) == 1814047.html 1814047-ref.html
 == 1818412-1.html 1818412-1-ref.html
 == 1827009-1.html 1827009-1-ref.html
 pref(layout.testing.overlay-scrollbars.always-visible,true) pref(ui.useOverlayScrollbars,1) == 1827337-1.html 1827337-1-ref.html
-pref(layout.testing.overlay-scrollbars.always-visible,true) pref(ui.useOverlayScrollbars,1) fuzzy-if(winWidget,0-21,0-134) fuzzy-if(cocoaWidget,0-2,0-12) == 1828879-1.html 1828879-1-ref.html
+pref(layout.testing.overlay-scrollbars.always-visible,true) pref(ui.useOverlayScrollbars,1) fuzzy-if(winWidget,0-21,0-134) fuzzy-if(cocoaWidget,0-2,0-12) fuzzy-if(Android,0-32,0-4) == 1828879-1.html 1828879-1-ref.html
 skip-if(!cocoaWidget) != 1834316-1.html 1834316-1-notref.html
 skip-if(!cocoaWidget) test-pref(layout.css.font-visibility,1) ref-pref(layout.css.font-visibility,3) == 1835271-1.html 1835271-1-ref.html
 skip-if(!cocoaWidget) != 1836024-1.html 1836024-1-notref.html

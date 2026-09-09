@@ -35,6 +35,7 @@
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmContext.h"
 #include "wasm/WasmFrameIter.h"
+#include "wasm/WasmInstance.h"
 #include "wasm/WasmJS.h"
 #include "wasm/WasmStubs.h"
 
@@ -68,8 +69,7 @@ namespace js::wasm {
 // Integration in WasmPI.h.
 //
 // Implemented: `cont.new`, `resume` (with `on` suspend handlers), `suspend`.
-// Not implemented: `switch`, `cont.bind`, `resume_throw`, `resume_throw_ref`,
-// cont types with parameters, cont types with results.
+// Not implemented: `switch`, `cont.bind`, `resume_throw`, `resume_throw_ref`.
 //
 // ## Overview
 //
@@ -325,6 +325,46 @@ namespace js::wasm {
 // This stub is generic for any function type and adapts between the resume ABI
 // and the call_ref ABI by loading the params from the stack slots and calling
 // the initial funcref.
+//
+// ## Frame Areas for Params and Results
+//
+// Values are passed across a stack switch through fixed-size blocks of
+// FP-relative stack slots reserved in the frame of the function performing the
+// switch. Each SwitchTarget has a `paramsArea` pointer that is made to point at
+// one of these regions, so the code on the other side of the switch knows where
+// to read or write the transferred values.
+//
+// There are four such regions: three in the resumer's frame and one in the
+// suspender's frame.
+//
+// Resumer's frame:
+//
+//   resumeParamsArea: the args passed to `resume`, used as the destination for
+//     a fresh (never-resumed) continuation. EmitPrepareResume points
+//     initialResumeTarget.paramsArea here and the resumer writes the args here
+//     before the switch; on the first resume the typed base-frame stub loads
+//     them into ABI registers before calling the funcref. When resuming a
+//     suspended continuation instead, EmitPrepareResume directs the args straight
+//     into the suspender's suspendResultsArea (see below), so this area is
+//     unused in that case.
+//
+//   contResultsArea: the continuation's return values. EmitResume points
+//     handlers.returnTarget.paramsArea here; the base-frame stub writes the
+//     values here when the continuation returns normally; the resumer reads them
+//     back in the fallthrough block.
+//
+//   handlersResultArea: one slice per handler, each holding the cont ref and the
+//     tag's params. EmitResume points each handler[i].target.paramsArea at its
+//     slice; the suspender writes them and the resumer reads them back in the
+//     handler block.
+//
+// Suspender's frame:
+//
+//   suspendResultsArea: the tag's results, delivered when the suspended
+//     continuation is resumed again. EmitSuspend advertises this area's address
+//     in the resume SwitchTarget's paramsArea, so the next resumer's
+//     EmitPrepareResume writes the tag results straight into it. The suspender then
+//     reads them FP-relative from here with no intermediate copy.
 //
 // ## GC Tracing and Barriers
 //
@@ -892,10 +932,25 @@ void ContStackAllocator::ensureInitialized() {
   // Compute the size used for stacks in this allocator.
   stackSize_.compute();
 
-  // Compute the capacity in each arena.
-  arenaCapacity_ =
-      uint32_t(std::clamp(size_t(JS::Prefs::wasm_cont_stack_arena_capacity()),
-                          size_t(1), size_t(ContStackArena::MaxCapacity)));
+  // The virtual memory we're allowed to map for stacks. Every arena needs guard
+  // pages around each of its stacks, and each guard page splits the arena's
+  // mapping into more kernel mappings, so an unbounded number of arenas
+  // exhausts the process' mapping count well before its address space.
+  size_t maxVmem = JS::Prefs::wasm_cont_stack_max_vmem();
+
+  // How many stacks fit within the cap. We always allow one so that a tiny cap
+  // doesn't disable the feature entirely.
+  size_t maxStacks = std::max<size_t>(maxVmem / stackSize_.totalSize, 1);
+
+  // Compute the capacity in each arena, shrinking it if a whole arena wouldn't
+  // fit within the cap.
+  size_t capacity = JS::Prefs::wasm_cont_stack_arena_capacity();
+  capacity = std::min(capacity, maxStacks);
+  capacity = std::clamp<size_t>(capacity, 1, ContStackArena::MaxCapacity);
+  arenaCapacity_ = uint32_t(capacity);
+
+  // Compute how many arenas we can map within the cap.
+  maxArenas_ = std::max<size_t>(maxVmem / arenaSize(), 1);
 
   initialized_ = true;
 }
@@ -942,7 +997,17 @@ ContStackArena* ContStackAllocator::findOrAddArenaForAllocate(JSContext* cx) {
     }
   }
 
-  return addArena(cx);
+  if (arenas_.length() >= maxArenas_) {
+    ReportTrapError(cx, JSMSG_WASM_CONT_IMP_LIMIT);
+    return nullptr;
+  }
+
+  ContStackArena* arena = addArena(cx);
+  if (!arena) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+  return arena;
 }
 
 ContStackArena* ContStackAllocator::findArenaForAddress(
@@ -966,11 +1031,9 @@ UniqueContStack ContStackAllocator::allocate(JSContext* cx,
                                              const Code* creatorCode) {
   ensureInitialized();
 
+  // Adding an arena may fail due to an OOM or the virtual memory cap.
   ContStackArena* arena = findOrAddArenaForAllocate(cx);
-
-  // Adding an arena may fail due to an OOM.
   if (!arena) {
-    ReportOutOfMemory(cx);
     return nullptr;
   }
 
@@ -1353,6 +1416,8 @@ void EmitFindHandler(MacroAssembler& masm, Register instance, Register tag,
 // SP the resume target should restore.
 //
 // Clobbers scratch; preserves all other input registers.
+// Build a SwitchTarget at -(switchTargetFramePushed) relative to FramePointer.
+// Callers must store paramsArea into the resulting SwitchTarget themselves.
 static void EmitBuildSwitchTarget(MacroAssembler& masm,
                                   uint32_t switchTargetFramePushed,
                                   uint32_t returnFramePushed, Register instance,
@@ -1429,7 +1494,8 @@ void EmitSuspend(jit::MacroAssembler& masm, jit::Register instance,
                  jit::Register scratch1, jit::Register scratch2,
                  jit::Register scratch3, const CallSiteDesc& callSiteDesc,
                  jit::CodeOffset* suspendCodeOffset,
-                 uint32_t* suspendFramePushed) {
+                 uint32_t* suspendFramePushed,
+                 uint32_t suspendResultsAreaBase) {
   // Load cx->currentStack into scratch1.
   masm.loadPtr(Address(instance, wasm::Instance::offsetOfCx()), scratch1);
   masm.loadPtr(Address(scratch1, JSContext::offsetOfWasm() +
@@ -1490,9 +1556,28 @@ void EmitSuspend(jit::MacroAssembler& masm, jit::Register instance,
       Address(scratch1, wasm::ContStack::offsetOfStackTarget()), scratch4);
   // Move the resume address to scratch3
   masm.mov(&resumeLabel, scratch3);
+
   // Build the resume switch target
   EmitBuildSwitchTarget(masm, switchTargetFramePushed, *suspendFramePushed,
-                        instance, scratch4, scratch3, scratch1);
+                        instance, scratch4, scratch3, scratch2);
+
+  // Compute the suspendResultsArea address and store it into the SwitchTarget's
+  // paramsArea, so the next resumer writes the tag results straight into it. We
+  // store nullptr when there are no tag results, so an unexpected result write
+  // traps instead of silently clobbering the frame. scratch1 is free here (was
+  // currentStack, no longer needed).
+  if (suspendResultsAreaBase) {
+    masm.computeEffectiveAddress(
+        Address(FramePointer, -static_cast<int32_t>(suspendResultsAreaBase)),
+        scratch1);
+  } else {
+    masm.movePtr(ImmWord(0), scratch1);
+  }
+  masm.storePtr(
+      scratch1,
+      Address(FramePointer, -static_cast<int32_t>(switchTargetFramePushed) +
+                                static_cast<int32_t>(
+                                    offsetof(wasm::SwitchTarget, paramsArea))));
 
   // Go to the target handler.
   masm.computeEffectiveAddress(
@@ -1506,6 +1591,9 @@ void EmitSuspend(jit::MacroAssembler& masm, jit::Register instance,
   masm.addCodeLabel(resumeLabel);
   masm.append(callSiteDesc, *resumeLabel.target());
 
+  // The resumer wrote the tag results straight into suspendResultsArea before
+  // switching back, so there is nothing to copy here: the suspender reads them
+  // FP-relative from suspendResultsArea directly.
   masm.freeStack(sizeof(wasm::SwitchTarget));
 }
 
@@ -1541,6 +1629,44 @@ static void EmitCheckContIsResumable(MacroAssembler& masm, Register cont,
 
   // Assert the resume base has no handlers.
   masm.assertPtrZero(Address(scratch1, wasm::ContStack::offsetOfHandlers()));
+}
+
+void EmitPrepareResume(MacroAssembler& masm, Register cont,
+                       uint32_t resumeParamsAreaBase, Register output,
+                       Register scratch1, Register scratch2, Label* fail) {
+  // scratch1 = resume base (ContStack*); traps if the cont is not resumable.
+  EmitCheckContIsResumable(masm, cont, scratch1, fail);
+
+  // scratch2 = resumeBase.resumeTarget.
+  masm.loadPtr(Address(scratch1, wasm::ContStack::offsetOfResumeTarget()),
+               scratch2);
+
+  // output = &resumeBase.initialResumeTarget.
+  masm.computeEffectiveAddress(
+      Address(scratch1, wasm::ContStack::offsetOfInitialResumeTarget()),
+      output);
+
+  Label reResume;
+  Label done;
+  masm.branchPtr(Assembler::NotEqual, scratch2, output, &reResume);
+
+  // Initial resume: the suspender has not advertised a destination, so point
+  // the resume target's paramsArea at the resumer's own resumeParamsArea (the
+  // base frame stub reads it from there) and return that address.
+  masm.computeEffectiveAddress(
+      Address(FramePointer, -static_cast<int32_t>(resumeParamsAreaBase)),
+      output);
+  masm.storePtr(output,
+                Address(scratch2, offsetof(wasm::SwitchTarget, paramsArea)));
+  masm.jump(&done);
+
+  // Re-resume: the params go straight into the destination the suspender
+  // advertised (its suspendResultsArea), with no intermediate copy.
+  masm.bind(&reResume);
+  masm.loadPtr(Address(scratch2, offsetof(wasm::SwitchTarget, paramsArea)),
+               output);
+
+  masm.bind(&done);
 }
 
 // Reserves stack space for a Handlers struct and initializes its self pointer.
@@ -1636,8 +1762,8 @@ static void EmitPushHandlers(MacroAssembler& masm, size_t sizeOfHandlers,
 // Stores the tag object, the back-reference to the containing Handlers, and
 // a SwitchTarget pointing at handlerLabel.
 //
-// If handlersParamsArea is valid, also stores the pointer to this handler's
-// slice of the results area.
+// Also stores the pointer to this handler's slice of the results area, which
+// always holds at least the continuation for this handler.
 //
 // Clobbers scratch2, scratch3; preserves instance, handlersParamsArea, and
 // stackTarget.
@@ -1645,7 +1771,7 @@ static void EmitInitializeHandler(
     MacroAssembler& masm, uint32_t handlersFramePushed,
     uint32_t handlerFramePushed, uint32_t returnFramePushed,
     HandlerJitOffsets& handler, CodeLabel* handlerLabel, Register instance,
-    Register handlersParamsArea, Register stackTarget, Register scratch2,
+    uint32_t handlersParamsAreaBase, Register stackTarget, Register scratch2,
     Register scratch3) {
   // Load tag and store it
   size_t tagObjectOffset = wasm::Instance::offsetInData(
@@ -1675,17 +1801,23 @@ static void EmitInitializeHandler(
       masm, handlerFramePushed - offsetof(wasm::Handler, target),
       returnFramePushed, instance, stackTarget, scratch2, scratch3);
 
-  if (handlersParamsArea != Register::Invalid()) {
-    masm.movePtr(handlersParamsArea, scratch2);
-    masm.addPtr(Imm32(handler.resultsAreaOffset), scratch2);
-    masm.storePtr(
-        scratch2,
-        Address(FramePointer,
-                -static_cast<int32_t>(handlerFramePushed) +
-                    static_cast<int32_t>(offsetof(wasm::Handler, target)) +
-                    static_cast<int32_t>(
-                        offsetof(wasm::SwitchTarget, paramsArea))));
-  }
+  // Store the handler's paramsArea. The handlers params area always contains at
+  // least the continuation for this handler (stored ahead of any tag params),
+  // so handlersParamsAreaBase is never zero here. scratch2 (resumePC) is free
+  // after EmitBuildSwitchTarget.
+  MOZ_ASSERT(handlersParamsAreaBase != 0);
+  masm.computeEffectiveAddress(
+      Address(FramePointer,
+              -static_cast<int32_t>(handlersParamsAreaBase) +
+                  static_cast<int32_t>(handler.resultsAreaOffset)),
+      scratch2);
+  masm.storePtr(
+      scratch2,
+      Address(
+          FramePointer,
+          -static_cast<int32_t>(handlerFramePushed) +
+              static_cast<int32_t>(offsetof(wasm::Handler, target)) +
+              static_cast<int32_t>(offsetof(wasm::SwitchTarget, paramsArea))));
 }
 
 // Transfers ownership of the ContStack from cont to the Handlers struct on the
@@ -1826,13 +1958,13 @@ static void EmitCallContUnwind(MacroAssembler& masm, Register instance,
 //     sp += sizeof(Handlers)
 //
 void EmitResume(MacroAssembler& masm, Register instance, Register cont,
-                Register handlersParamsArea, Register scratch1,
-                Register scratch2, Register scratch3, Label* fail,
+                uint32_t handlersParamsAreaBase, Register scratch1,
+                Register scratch2, Register scratch3,
                 mozilla::Span<HandlerJitOffsets> handlerOffsets,
                 mozilla::Span<jit::Label*> handlerLabels,
                 const wasm::CallSiteDesc& callSiteDesc,
-                jit::CodeOffset* resumeCodeOffset,
-                uint32_t* resumeFramePushed) {
+                jit::CodeOffset* resumeCodeOffset, uint32_t* resumeFramePushed,
+                uint32_t contResultsAreaBase) {
   MOZ_ASSERT(handlerOffsets.size() == handlerLabels.size());
   size_t numHandlers = handlerOffsets.size();
   size_t sizeOfHandlers = wasm::Handlers::sizeOf(numHandlers);
@@ -1846,7 +1978,8 @@ void EmitResume(MacroAssembler& masm, Register instance, Register cont,
     return;
   }
 
-  EmitCheckContIsResumable(masm, cont, scratch1, fail);
+  // The continuation was already validated as resumable by EmitPrepareResume,
+  // which runs before every resume.
   EmitPushHandlers(masm, sizeOfHandlers, instance, scratch1, scratch2, scratch3,
                    &handlersFramePushed);
   // scratch1 has currentStack's stack target.
@@ -1856,6 +1989,22 @@ void EmitResume(MacroAssembler& masm, Register instance, Register cont,
   EmitBuildSwitchTarget(
       masm, handlersFramePushed - offsetof(wasm::Handlers, returnTarget),
       handlersFramePushed, instance, scratch1, scratch2, scratch3);
+  // Store contResultsArea into the return target's paramsArea so the typed base
+  // frame stub can write cont results there. When there are no cont results we
+  // store nullptr, so an unexpected result write traps instead of silently
+  // clobbering the frame.
+  if (contResultsAreaBase) {
+    masm.computeEffectiveAddress(
+        Address(FramePointer, -static_cast<int32_t>(contResultsAreaBase)),
+        scratch3);
+  } else {
+    masm.movePtr(ImmWord(0), scratch3);
+  }
+  masm.storePtr(scratch3,
+                Address(FramePointer,
+                        -(int32_t)(handlersFramePushed -
+                                   offsetof(wasm::Handlers, returnTarget)) +
+                            (int32_t)offsetof(wasm::SwitchTarget, paramsArea)));
   // scratch1 still has currentStack's stack target.
 
   masm.store32(
@@ -1868,14 +2017,20 @@ void EmitResume(MacroAssembler& masm, Register instance, Register cont,
     uint32_t returnFramePushed = handlersFramePushed - sizeOfHandlers;
     EmitInitializeHandler(masm, handlersFramePushed, handlerFramePushed,
                           returnFramePushed, handlerOffsets[i],
-                          &handlerCodeLabels[i], instance, handlersParamsArea,
-                          scratch1, scratch2, scratch3);
+                          &handlerCodeLabels[i], instance,
+                          handlersParamsAreaBase, scratch1, scratch2, scratch3);
   }
   // All scratches are free here.
 
   // Transfer ownership of the resume base from cont, link it to the Handlers
   // frame, and get the SwitchTarget to jump to. cont is dead after this.
+  // After EmitActivateResumeBase, scratch2 holds the resumeTarget
+  // (SwitchTarget*).
   EmitActivateResumeBase(masm, instance, cont, scratch1, scratch2, scratch3);
+
+  // The resume params were already written straight into the resume target's
+  // paramsArea by EmitPrepareResume (which also advertised the destination), so
+  // there is nothing to set up here.
 
   // Perform the stack switch, using cont as a scratch now that it's dead.
   EmitSwitchStack(masm, scratch2, scratch1, scratch3, cont);

@@ -5,6 +5,7 @@
 package mozilla.components.service.merino.weather
 
 import androidx.annotation.WorkerThread
+import java.net.URLEncoder
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import mozilla.components.concept.base.crash.Breadcrumb
@@ -14,10 +15,8 @@ import mozilla.components.concept.fetch.MutableHeaders
 import mozilla.components.concept.fetch.Request
 import mozilla.components.support.base.ext.fetchBodyOrNull
 import mozilla.components.support.base.log.logger.Logger
-import java.net.URLEncoder
 
-internal const val WEATHER_ENDPOINT_URL =
-    "https://merino.services.mozilla.com/api/v1/weather/hourly-forecasts"
+internal const val WEATHER_ENDPOINT_URL = "https://merino.services.mozilla.com/api/v1/weather/hourly-forecasts"
 internal const val ACCEPT_LANGUAGE_HEADER = "Accept-Language"
 
 /**
@@ -42,11 +41,9 @@ class MerinoWeatherProvider(
     /**
      * Fetches the hourly weather forecasts from [endPointUrl].
      *
-     * When no location parameters are provided, the Merino service infers the location from the
-     * caller's IP address.
+     * When no location parameters are provided, the Merino service infers the location from the caller's IP address.
      *
-     * @param region Optional comma separated string of subdivision codes to provide for the
-     * weather forecast request.
+     * @param region Optional comma separated string of subdivision codes to provide for the weather forecast request.
      * @param country Optional ISO 3166-2 country code to provide for the weather forecast request.
      * @param city Optional city name to provide for the weather forecast request.
      * @param acceptLanguage Optional value for the `Accept-Language` request header.
@@ -58,11 +55,12 @@ class MerinoWeatherProvider(
         city: String? = null,
         acceptLanguage: String? = null,
     ): List<MerinoWeatherForecast> {
-        val request = Request(
-            url = buildUrl(country, region, city),
-            headers = acceptLanguage?.let { MutableHeaders(ACCEPT_LANGUAGE_HEADER to it) },
-            conservative = true,
-        )
+        val request =
+            Request(
+                url = buildUrl(country, region, city),
+                headers = acceptLanguage?.let { MutableHeaders(ACCEPT_LANGUAGE_HEADER to it) },
+                conservative = true,
+            )
 
         return client.fetchBodyOrNull(request = request, logger = logger)?.let { response ->
             try {
@@ -70,9 +68,7 @@ class MerinoWeatherProvider(
             } catch (e: SerializationException) {
                 val message = "MerinoWeatherProvider - Failed to deserialize weather forecast"
                 logger.error(message = message, throwable = e)
-                crashReporter?.recordCrashBreadcrumb(
-                    Breadcrumb(message = message),
-                )
+                crashReporter?.recordCrashBreadcrumb(Breadcrumb(message = message))
                 crashReporter?.submitCaughtException(e)
 
                 emptyList()
@@ -81,11 +77,12 @@ class MerinoWeatherProvider(
     }
 
     private fun buildUrl(country: String?, region: String?, city: String?): String {
-        val params = listOfNotNull(
-            country?.let { "country=${it.encode()}" },
-            region?.let { "region=${it.encode()}" },
-            city?.let { "city=${it.encode()}" },
-        )
+        val params =
+            listOfNotNull(
+                country?.let { "country=${it.encode()}" },
+                region?.let { "region=${it.encode()}" },
+                city?.let { "city=${it.encode()}" },
+            )
 
         return if (params.isEmpty()) {
             endPointUrl

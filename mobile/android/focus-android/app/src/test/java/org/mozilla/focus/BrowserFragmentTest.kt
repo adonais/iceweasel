@@ -9,6 +9,7 @@ import android.graphics.Bitmap
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.flow.flowOf
 import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.CustomTabConfig
@@ -29,7 +30,6 @@ import org.mozilla.focus.browser.BrowserCoordinatorLayout
 import org.mozilla.focus.databinding.FragmentBrowserBinding
 import org.mozilla.focus.fragment.BrowserFragment
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class BrowserFragmentTest {
@@ -38,26 +38,27 @@ class BrowserFragmentTest {
         val layoutInflater = LayoutInflater.from(testContext)
 
         // Intercept the inflation process
-        layoutInflater.factory2 = object : LayoutInflater.Factory2 {
-            override fun onCreateView(
-                parent: View?,
-                name: String,
-                context: Context,
-                attrs: AttributeSet,
-            ): View? {
-                // Inflate a DummyEngineView when trying to inflate an EngineView
-                if (name == EngineView::class.java.name) {
-                    return DummyEngineView(testContext)
+        layoutInflater.factory2 =
+            object : LayoutInflater.Factory2 {
+                override fun onCreateView(
+                    parent: View?,
+                    name: String,
+                    context: Context,
+                    attrs: AttributeSet,
+                ): View? {
+                    // Inflate a DummyEngineView when trying to inflate an EngineView
+                    if (name == EngineView::class.java.name) {
+                        return DummyEngineView(testContext)
+                    }
+
+                    // For other types of views, let the system handle it
+                    return null
                 }
 
-                // For other types of views, let the system handle it
-                return null
+                override fun onCreateView(name: String, context: Context, attrs: AttributeSet): View? {
+                    return onCreateView(null, name, context, attrs)
+                }
             }
-
-            override fun onCreateView(name: String, context: Context, attrs: AttributeSet): View? {
-                return onCreateView(null, name, context, attrs)
-            }
-        }
 
         val binding = FragmentBrowserBinding.inflate(LayoutInflater.from(testContext))
         val engineView: EngineView = binding.engineView
@@ -65,9 +66,7 @@ class BrowserFragmentTest {
         assertNotNull(engineView)
 
         // Get the layout parent of the EngineView
-        val engineViewParent = spy(
-            (engineView as View).parent as BrowserCoordinatorLayout,
-        )
+        val engineViewParent = spy((engineView as View).parent as BrowserCoordinatorLayout)
 
         assertNotNull(engineViewParent)
 
@@ -86,26 +85,21 @@ class BrowserFragmentTest {
             when (it) {
                 ExternalAppType.CUSTOM_TAB,
                 ExternalAppType.PROGRESSIVE_WEB_APP,
-                ExternalAppType.TRUSTED_WEB_ACTIVITY,
-                -> assertFalse(BrowserFragment().isOnboardingTab(sessionState))
+                ExternalAppType.TRUSTED_WEB_ACTIVITY -> assertFalse(BrowserFragment().isOnboardingTab(sessionState))
 
-                ExternalAppType.ONBOARDING_CUSTOM_TAB ->
-                    assertTrue(
-                        BrowserFragment().isOnboardingTab(sessionState),
-                    )
+                ExternalAppType.ONBOARDING_CUSTOM_TAB -> assertTrue(BrowserFragment().isOnboardingTab(sessionState))
             }
         }
     }
 
-    private fun testCustomTabSessionState(externalAppType: ExternalAppType) = CustomTabSessionState(
-        content = ContentState(""),
-        config = CustomTabConfig(externalAppType = externalAppType),
-    )
+    private fun testCustomTabSessionState(externalAppType: ExternalAppType) =
+        CustomTabSessionState(
+            content = ContentState(""),
+            config = CustomTabConfig(externalAppType = externalAppType),
+        )
 }
 
-/**
- * Dummy implementation of the EngineView interface.
- */
+/** Dummy implementation of the EngineView interface. */
 class DummyEngineView(context: Context) : View(context), EngineView {
     init {
         id = R.id.engineView

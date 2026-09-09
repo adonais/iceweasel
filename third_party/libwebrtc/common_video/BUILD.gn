@@ -97,6 +97,10 @@ rtc_library("common_video") {
       "../rtc_base/containers:flat_map",
     ]
   }
+
+  if (!is_ios) {
+    defines = [ "HAVE_LIBYUV_JPEG" ]
+  }
 }
 
 rtc_source_set("frame_counts") {

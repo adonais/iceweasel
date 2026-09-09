@@ -20,7 +20,6 @@ summary:
         product: source
         job-name: source-wpt-metadata-summary
     run:
-        clone-with: hg
         using: mach
         mach: wpt-metadata-summary --out-dir=/builds/worker/artifacts
     worker:

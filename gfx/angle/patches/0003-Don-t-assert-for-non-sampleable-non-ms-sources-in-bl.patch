@@ -1,4 +1,4 @@
-From 620bd161dae49507402e0ce7e35b00800e6f0673 Mon Sep 17 00:00:00 2001
+From 9db51803fc7581e0fa1f78b324454bf6bf7e7381 Mon Sep 17 00:00:00 2001
 From: Jeff Gilbert <jdashg@gmail.com>
 Date: Thu, 11 Feb 2021 17:34:00 -0800
 Subject: [PATCH] Don't assert for non-sampleable non-ms sources in
@@ -13,10 +13,10 @@ Firefox bug: https://bugzilla.mozilla.org/show_bug.cgi?id=1692355
  1 file changed, 49 insertions(+), 46 deletions(-)
 
 diff --git a/src/libANGLE/renderer/d3d/d3d11/Renderer11.cpp b/src/libANGLE/renderer/d3d/d3d11/Renderer11.cpp
-index a24fbc52f7..f021160da3 100644
+index 427c219..563ee94 100644
 --- a/src/libANGLE/renderer/d3d/d3d11/Renderer11.cpp
 +++ b/src/libANGLE/renderer/d3d/d3d11/Renderer11.cpp
-@@ -3723,50 +3723,6 @@ angle::Result Renderer11::blitRenderbufferRect(const gl::Context *context,
+@@ -3623,50 +3623,6 @@ angle::Result Renderer11::blitRenderbufferRect(const gl::Context *context,
      RenderTarget11 *readRenderTarget11 = GetAs<RenderTarget11>(readRenderTarget);
      ASSERT(readRenderTarget11);
  
@@ -67,7 +67,7 @@ index a24fbc52f7..f021160da3 100644
      const gl::Extents readSize(readRenderTarget->getWidth(), readRenderTarget->getHeight(), 1);
      const gl::Extents drawSize(drawRenderTarget->getWidth(), drawRenderTarget->getHeight(), 1);
  
-@@ -3882,11 +3838,58 @@ angle::Result Renderer11::blitRenderbufferRect(const gl::Context *context,
+@@ -3782,11 +3738,58 @@ angle::Result Renderer11::blitRenderbufferRect(const gl::Context *context,
      bool partialDSBlit =
          (nativeFormat.depthBits > 0 && depthBlit) != (nativeFormat.stencilBits > 0 && stencilBlit);
  
@@ -129,5 +129,5 @@ index a24fbc52f7..f021160da3 100644
          UINT dstX = drawRect.x;
          UINT dstY = drawRect.y;
 -- 
-2.54.0
+2.43.0
 

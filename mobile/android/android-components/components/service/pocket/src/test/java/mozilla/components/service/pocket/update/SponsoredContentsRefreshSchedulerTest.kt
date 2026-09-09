@@ -12,6 +12,7 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequest
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit
 import mozilla.components.lib.fetch.httpurlconnection.HttpURLConnectionClient
 import mozilla.components.service.pocket.PocketStoriesConfig
 import mozilla.components.service.pocket.update.DeleteUserWorker.Companion.DELETE_USER_WORK_TAG
@@ -29,7 +30,6 @@ import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class SponsoredContentsRefreshSchedulerTest {
@@ -37,14 +37,16 @@ class SponsoredContentsRefreshSchedulerTest {
     @Test
     fun `WHEN periodic refresh work is started THEN work is queued`() {
         val client: HttpURLConnectionClient = mock()
-        val scheduler = spy(
-            SponsoredContentsRefreshScheduler(
-                config = PocketStoriesConfig(
-                    client = client,
-                    sponsoredStoriesRefreshFrequency = Frequency(1, TimeUnit.HOURS),
-                ),
-            ),
-        )
+        val scheduler =
+            spy(
+                SponsoredContentsRefreshScheduler(
+                    config =
+                        PocketStoriesConfig(
+                            client = client,
+                            sponsoredStoriesRefreshFrequency = Frequency(1, TimeUnit.HOURS),
+                        )
+                )
+            )
         val workManager = mock<WorkManager>()
         val worker = mock<PeriodicWorkRequest>()
         doReturn(workManager).`when`(scheduler).getWorkManager(any())
@@ -52,11 +54,12 @@ class SponsoredContentsRefreshSchedulerTest {
 
         scheduler.startPeriodicRefreshes(testContext)
 
-        verify(workManager).enqueueUniquePeriodicWork(
-            REFRESH_WORK_TAG,
-            ExistingPeriodicWorkPolicy.KEEP,
-            worker,
-        )
+        verify(workManager)
+            .enqueueUniquePeriodicWork(
+                REFRESH_WORK_TAG,
+                ExistingPeriodicWorkPolicy.KEEP,
+                worker,
+            )
     }
 
     @Test
@@ -75,9 +78,7 @@ class SponsoredContentsRefreshSchedulerTest {
     fun `WHEN periodic refresh work request is created THEN ensure the work request has the correct constraints configured`() {
         val scheduler = spy(SponsoredContentsRefreshScheduler(mock()))
 
-        val result = scheduler.createPeriodicRefreshWorkRequest(
-            frequency = Frequency(1, TimeUnit.HOURS),
-        )
+        val result = scheduler.createPeriodicRefreshWorkRequest(frequency = Frequency(1, TimeUnit.HOURS))
 
         verify(scheduler).getWorkerConstraints()
         assertTrue(result.workSpec.intervalDuration == TimeUnit.HOURS.toMillis(1))
@@ -93,14 +94,16 @@ class SponsoredContentsRefreshSchedulerTest {
     @Test
     fun `WHEN delete user work is scheduled THEN work is queued`() {
         val client: HttpURLConnectionClient = mock()
-        val scheduler = spy(
-            SponsoredContentsRefreshScheduler(
-                config = PocketStoriesConfig(
-                    client = client,
-                    sponsoredStoriesRefreshFrequency = Frequency(1, TimeUnit.HOURS),
-                ),
-            ),
-        )
+        val scheduler =
+            spy(
+                SponsoredContentsRefreshScheduler(
+                    config =
+                        PocketStoriesConfig(
+                            client = client,
+                            sponsoredStoriesRefreshFrequency = Frequency(1, TimeUnit.HOURS),
+                        )
+                )
+            )
         val workManager = mock<WorkManager>()
         val worker = mock<OneTimeWorkRequest>()
         doReturn(workManager).`when`(scheduler).getWorkManager(any())
@@ -108,11 +111,12 @@ class SponsoredContentsRefreshSchedulerTest {
 
         scheduler.scheduleUserDeletion(testContext)
 
-        verify(workManager).enqueueUniqueWork(
-            DELETE_USER_WORK_TAG,
-            ExistingWorkPolicy.KEEP,
-            worker,
-        )
+        verify(workManager)
+            .enqueueUniqueWork(
+                DELETE_USER_WORK_TAG,
+                ExistingWorkPolicy.KEEP,
+                worker,
+            )
     }
 
     @Test

@@ -48,11 +48,11 @@ void DummyPrSocket::Reset() {
   write_error_ = 0;
 }
 
-void DummyPrSocket::PacketReceived(const DataBuffer &packet) {
+void DummyPrSocket::PacketReceived(const DataBuffer& packet) {
   input_.push(Packet(packet));
 }
 
-int32_t DummyPrSocket::Read(PRFileDesc *f, void *data, int32_t len) {
+int32_t DummyPrSocket::Read(PRFileDesc* f, void* data, int32_t len) {
   PR_ASSERT(variant_ == ssl_variant_stream);
   if (variant_ != ssl_variant_stream) {
     PR_SetError(PR_INVALID_METHOD_ERROR, 0);
@@ -71,10 +71,10 @@ int32_t DummyPrSocket::Read(PRFileDesc *f, void *data, int32_t len) {
     return -1;
   }
 
-  auto &front = input_.front();
+  auto& front = input_.front();
   size_t to_read =
       std::min(static_cast<size_t>(len), front.len() - front.offset());
-  memcpy(data, static_cast<const void *>(front.data() + front.offset()),
+  memcpy(data, static_cast<const void*>(front.data() + front.offset()),
          to_read);
   front.Advance(to_read);
 
@@ -85,7 +85,7 @@ int32_t DummyPrSocket::Read(PRFileDesc *f, void *data, int32_t len) {
   return static_cast<int32_t>(to_read);
 }
 
-int32_t DummyPrSocket::Recv(PRFileDesc *f, void *buf, int32_t buflen,
+int32_t DummyPrSocket::Recv(PRFileDesc* f, void* buf, int32_t buflen,
                             int32_t flags, PRIntervalTime to) {
   PR_ASSERT(flags == 0);
   if (flags != 0) {
@@ -108,7 +108,7 @@ int32_t DummyPrSocket::Recv(PRFileDesc *f, void *buf, int32_t buflen,
     return -1;
   }
 
-  auto &front = input_.front();
+  auto& front = input_.front();
   if (static_cast<size_t>(buflen) < front.len()) {
     PR_SetError(PR_BUFFER_OVERFLOW_ERROR, 0);
     return -1;
@@ -121,7 +121,7 @@ int32_t DummyPrSocket::Recv(PRFileDesc *f, void *buf, int32_t buflen,
   return static_cast<int32_t>(count);
 }
 
-int32_t DummyPrSocket::Write(PRFileDesc *f, const void *buf, int32_t length) {
+int32_t DummyPrSocket::Write(PRFileDesc* f, const void* buf, int32_t length) {
   if (write_error_) {
     PR_SetError(write_error_, 0);
     return -1;
@@ -133,7 +133,7 @@ int32_t DummyPrSocket::Write(PRFileDesc *f, const void *buf, int32_t length) {
     return -1;
   }
 
-  DataBuffer packet(static_cast<const uint8_t *>(buf),
+  DataBuffer packet(static_cast<const uint8_t*>(buf),
                     static_cast<size_t>(length));
   DataBuffer filtered;
   PacketFilter::Action action = PacketFilter::KEEP;
@@ -158,9 +158,9 @@ int32_t DummyPrSocket::Write(PRFileDesc *f, const void *buf, int32_t length) {
   return static_cast<int32_t>(packet.len());
 }
 
-Poller *Poller::instance;
+Poller* Poller::instance;
 
-Poller *Poller::Instance() {
+Poller* Poller::Instance() {
   if (!instance) instance = new Poller();
 
   return instance;
@@ -171,8 +171,8 @@ void Poller::Shutdown() {
   instance = nullptr;
 }
 
-void Poller::Wait(Event event, std::shared_ptr<DummyPrSocket> &adapter,
-                  PollTarget *target, PollCallback cb) {
+void Poller::Wait(Event event, std::shared_ptr<DummyPrSocket>& adapter,
+                  PollTarget* target, PollCallback cb) {
   assert(event < TIMER_EVENT);
   if (event >= TIMER_EVENT) return;
 
@@ -189,13 +189,13 @@ void Poller::Wait(Event event, std::shared_ptr<DummyPrSocket> &adapter,
   waiters_[adapter] = std::move(waiter);
 }
 
-void Poller::Cancel(Event event, std::shared_ptr<DummyPrSocket> &adapter) {
+void Poller::Cancel(Event event, std::shared_ptr<DummyPrSocket>& adapter) {
   auto it = waiters_.find(adapter);
   if (it == waiters_.end()) {
     return;
   }
 
-  auto &waiter = it->second;
+  auto& waiter = it->second;
   waiter->targets_[event] = nullptr;
   waiter->callbacks_[event] = nullptr;
 
@@ -207,8 +207,8 @@ void Poller::Cancel(Event event, std::shared_ptr<DummyPrSocket> &adapter) {
   waiters_.erase(adapter);
 }
 
-void Poller::SetTimer(uint32_t timer_ms, PollTarget *target, PollCallback cb,
-                      std::shared_ptr<Timer> *timer) {
+void Poller::SetTimer(uint32_t timer_ms, PollTarget* target, PollCallback cb,
+                      std::shared_ptr<Timer>* timer) {
   auto t = std::make_shared<Timer>(PR_Now() + timer_ms * 1000, target, cb);
   timers_.push(t);
   if (timer) *timer = t;
@@ -236,12 +236,12 @@ bool Poller::Poll() {
   }
 
   for (auto it = waiters_.begin(); it != waiters_.end(); ++it) {
-    auto &waiter = it->second;
+    auto& waiter = it->second;
 
     if (waiter->callbacks_[READABLE_EVENT]) {
       if (waiter->io_->readable()) {
         PollCallback callback = waiter->callbacks_[READABLE_EVENT];
-        PollTarget *target = waiter->targets_[READABLE_EVENT];
+        PollTarget* target = waiter->targets_[READABLE_EVENT];
         waiter->callbacks_[READABLE_EVENT] = nullptr;
         waiter->targets_[READABLE_EVENT] = nullptr;
         callback(target, READABLE_EVENT);

@@ -47,16 +47,16 @@ internal fun BlockContent.RenderRecursively(indentation: Int) {
 private fun BlockContent.BlockQuote.RenderBlockQuote(indentation: Int) {
     val colors = LocalRichTextColors.current
     Column(
-        modifier = Modifier
-            .drawBehind {
-                drawLine(
-                    color = colors.blockQuoteIndicator,
-                    start = Offset.Zero,
-                    end = Offset(x = 0f, y = size.height),
-                    strokeWidth = BLOCK_QUOTE_INDICATOR_WIDTH.value,
-                )
-            }
-            .padding(start = INDENTATION_PADDING),
+        modifier =
+            Modifier.drawBehind {
+                    drawLine(
+                        color = colors.blockQuoteIndicator,
+                        start = Offset.Zero,
+                        end = Offset(x = 0f, y = size.height),
+                        strokeWidth = BLOCK_QUOTE_INDICATOR_WIDTH.value,
+                    )
+                }
+                .padding(start = INDENTATION_PADDING)
     ) {
         content.forEach { block ->
             block.RenderRecursively(indentation = indentation + 1)
@@ -69,10 +69,11 @@ private fun BlockContent.Paragraph.RenderParagraphBlock() {
     val typography = LocalRichTextTypography.current
     val mergedStyle = typography.body
     Text(
-        text = this.content.asAnnotatedString(
-            linkStyle = typography.link.toSpanStyle(),
-            codeStyle = typography.code.toSpanStyle(),
-        ),
+        text =
+            this.content.asAnnotatedString(
+                linkStyle = typography.link.toSpanStyle(),
+                codeStyle = typography.code.toSpanStyle(),
+            ),
         style = mergedStyle,
     )
 }
@@ -80,18 +81,15 @@ private fun BlockContent.Paragraph.RenderParagraphBlock() {
 @Composable
 private fun BlockContent.ListBlock.RenderListBlock(indentation: Int) {
     val typography = LocalRichTextTypography.current
-    val linkStyle = typography.link
-        .merge(color = LocalRichTextColors.current.linkColor)
-        .toSpanStyle()
-    val codeStyle = typography.code.merge(
-        color = LocalRichTextColors.current.onInlineCodeBackground,
-        background = LocalRichTextColors.current.inlineCodeBackground,
-    ).toSpanStyle()
-    Column(
-        modifier = Modifier
-            .padding(start = INDENTATION_PADDING)
-            .semantics(mergeDescendants = true) {},
-    ) {
+    val linkStyle = typography.link.merge(color = LocalRichTextColors.current.linkColor).toSpanStyle()
+    val codeStyle =
+        typography.code
+            .merge(
+                color = LocalRichTextColors.current.onInlineCodeBackground,
+                background = LocalRichTextColors.current.inlineCodeBackground,
+            )
+            .toSpanStyle()
+    Column(modifier = Modifier.padding(start = INDENTATION_PADDING).semantics(mergeDescendants = true) {}) {
         items.forEachIndexed { index, item ->
             item.content.forEach { listItemContent ->
                 if (listItemContent is BlockContent.Paragraph) {
@@ -107,7 +105,7 @@ private fun BlockContent.ListBlock.RenderListBlock(indentation: Int) {
                                 listItemContent.content.asAnnotatedString(
                                     linkStyle = linkStyle,
                                     codeStyle = codeStyle,
-                                ),
+                                )
                             )
                         }
                     }
@@ -123,19 +121,21 @@ private fun BlockContent.ListBlock.RenderListBlock(indentation: Int) {
 @Composable
 private fun BlockContent.Heading.RenderHeadingBlock() {
     val typography = LocalRichTextTypography.current
-    val style = when (level) {
-        HeadingLevel.H1 -> typography.h1
-        HeadingLevel.H2 -> typography.h2
-        HeadingLevel.H3 -> typography.h3
-        HeadingLevel.H4 -> typography.h4
-        HeadingLevel.H5 -> typography.h5
-        else -> typography.h6
-    }
+    val style =
+        when (level) {
+            HeadingLevel.H1 -> typography.h1
+            HeadingLevel.H2 -> typography.h2
+            HeadingLevel.H3 -> typography.h3
+            HeadingLevel.H4 -> typography.h4
+            HeadingLevel.H5 -> typography.h5
+            else -> typography.h6
+        }
     Text(
-        text = this.content.asAnnotatedString(
-            linkStyle = typography.link.merge(style).toSpanStyle(),
-            codeStyle = typography.code.merge(style).toSpanStyle(),
-        ),
+        text =
+            this.content.asAnnotatedString(
+                linkStyle = typography.link.merge(style).toSpanStyle(),
+                codeStyle = typography.code.merge(style).toSpanStyle(),
+            ),
         style = style,
     )
 }

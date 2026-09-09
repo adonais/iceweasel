@@ -27,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import java.util.UUID
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.state.BrowserState
@@ -38,18 +39,17 @@ import mozilla.components.concept.storage.LoginEntry
 import mozilla.components.concept.storage.LoginsStorage
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.ktx.kotlin.tryGetHostFromUrl
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.debugsettings.ui.DebugDrawer
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import java.util.UUID
-import mozilla.components.ui.icons.R as iconsR
 
 /**
- * Logins UI for [DebugDrawer] that displays existing logins for the current domain and allows
- * deleting logins or adding new fake logins.
+ * Logins UI for [DebugDrawer] that displays existing logins for the current domain and allows deleting logins or adding
+ * new fake logins.
  *
  * @param browserStore [BrowserStore] used to access the selected tab.
  * @param loginsStorage [LoginsStorage] used to access logins.
@@ -80,14 +80,15 @@ fun LoginsTools(
             onAddFakeLogin = {
                 origin?.let {
                     scope.launch {
-                        existingLogins += loginsStorage.add(
-                            LoginEntry(
-                                username = "fake_username${existingLogins.size + 1}",
-                                password = "fake_password${existingLogins.size + 1}",
-                                origin = "https://$origin",
-                                formActionOrigin = "https://$origin",
-                            ),
-                        )
+                        existingLogins +=
+                            loginsStorage.add(
+                                LoginEntry(
+                                    username = "fake_username${existingLogins.size + 1}",
+                                    password = "fake_password${existingLogins.size + 1}",
+                                    origin = "https://$origin",
+                                    formActionOrigin = "https://$origin",
+                                )
+                            )
                     }
                 }
             },
@@ -118,10 +119,11 @@ private fun LoginsContent(
         )
 
         Text(
-            text = stringResource(
-                R.string.debug_drawer_logins_current_domain_label,
-                origin ?: "",
-            ),
+            text =
+                stringResource(
+                    R.string.debug_drawer_logins_current_domain_label,
+                    origin ?: "",
+                ),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
@@ -139,10 +141,11 @@ private fun LoginsContent(
                     label = login.username,
                     onIconClick = { onDeleteLogin(login) },
                     iconPainter = painterResource(iconsR.drawable.mozac_ic_delete_24),
-                    iconDescription = stringResource(
-                        R.string.debug_drawer_logins_delete_login_button_content_description,
-                        login.username,
-                    ),
+                    iconDescription =
+                        stringResource(
+                            R.string.debug_drawer_logins_delete_login_button_content_description,
+                            login.username,
+                        ),
                 )
             }
         }
@@ -151,25 +154,37 @@ private fun LoginsContent(
 
 internal class FakeLoginsStorage : LoginsStorage {
     private val loginsByGuid = mutableMapOf<String, LoginEntry>()
+
     override suspend fun wipeLocal() = Unit
+
     override suspend fun delete(guid: String): Boolean = loginsByGuid.remove(guid) != null
+
     override suspend fun get(guid: String): Login? = null
+
     override suspend fun touch(guid: String) = Unit
+
     override suspend fun list(): List<Login> = listOf()
+
     override suspend fun count(): Long {
         return list().size.toLong()
     }
+
     override suspend fun findLoginToUpdate(entry: LoginEntry): Login? = null
+
     override suspend fun add(entry: LoginEntry): Login {
         val guid = UUID.randomUUID().toString()
         loginsByGuid[guid] = entry
         return entry.toLogin(guid)
     }
+
     override suspend fun addMany(entries: List<LoginEntry>): List<Result<Login>> {
         return entries.map { Result.success(add(it)) }
     }
+
     override suspend fun update(guid: String, entry: LoginEntry) = entry.toLogin(guid)
+
     override suspend fun addOrUpdate(entry: LoginEntry) = entry.toLogin("guid")
+
     override suspend fun getByBaseDomain(origin: String) = loginsByGuid.map { (guid, login) ->
         Login(
             guid = guid,
@@ -178,34 +193,35 @@ internal class FakeLoginsStorage : LoginsStorage {
             password = login.password,
         )
     }
+
     override fun close() = Unit
 
-    private fun LoginEntry.toLogin(guid: String) = Login(
-        guid = guid,
-        username = username,
-        password = password,
-        origin = origin,
-        formActionOrigin = formActionOrigin,
-        httpRealm = httpRealm,
-        usernameField = usernameField,
-        passwordField = passwordField,
-    )
+    private fun LoginEntry.toLogin(guid: String) =
+        Login(
+            guid = guid,
+            username = username,
+            password = password,
+            origin = origin,
+            formActionOrigin = formActionOrigin,
+            httpRealm = httpRealm,
+            usernameField = usernameField,
+            passwordField = passwordField,
+        )
 }
 
 @Preview
 @Composable
-private fun LoginsScreenPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun LoginsScreenPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         val selectedTab = createTab("https://example.com")
         LoginsTools(
-            browserStore = BrowserStore(
-                BrowserState(
-                    selectedTabId = selectedTab.id,
-                    tabs = listOf(selectedTab),
+            browserStore =
+                BrowserStore(
+                    BrowserState(
+                        selectedTabId = selectedTab.id,
+                        tabs = listOf(selectedTab),
+                    )
                 ),
-            ),
             loginsStorage = FakeLoginsStorage(),
         )
     }

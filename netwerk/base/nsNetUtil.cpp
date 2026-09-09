@@ -27,7 +27,9 @@
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
+#include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/dom/nsHTTPSOnlyUtils.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
@@ -4152,7 +4154,8 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
   }
   nsAutoCString scheme;
   aURI->GetScheme(scheme);
-  if (!scheme.EqualsLiteral("chrome") && !scheme.EqualsLiteral("resource")) {
+  if (!scheme.EqualsLiteral("chrome") && !scheme.EqualsLiteral("resource") &&
+      !scheme.EqualsLiteral("moz-src")) {
     return;
   }
   nsAutoCString host;
@@ -4208,6 +4211,12 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
       StringBeginsWith(spec, "resource://android/assets/web_extensions/"_ns)) {
     return;
   }
+
+  // browser/ is not built for GeckoView, so toolkit code that references it
+  // can never resolve these here.
+  if (StringBeginsWith(spec, "moz-src:///browser/"_ns)) {
+    return;
+  }
 #endif
 
   // DTD files from gre may not exist when requested by tests.
@@ -4219,13 +4228,6 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
   // command line, which is then looked up in both app-specific and toolkit-wide
   // locations.
   if (spec.Find("backgroundtasks") != kNotFound) {
-    return;
-  }
-
-  // SessionStoreFunctions.sys.mjs may be missing at runtime in xpcshell tests:
-  // https://bugzilla.mozilla.org/show_bug.cgi?id=2018078#c3
-  if (spec.EqualsLiteral(
-          "resource:///modules/sessionstore/SessionStoreFunctions.sys.mjs")) {
     return;
   }
 
@@ -4276,6 +4278,31 @@ nsresult AddExtraHeaders(nsIHttpChannel* aHttpChannel,
     NS_ENSURE_SUCCESS(rv, rv);
   }
   return NS_OK;
+}
+
+nsILoadInfo::IPAddressSpace GetParentIPAddressSpace(nsILoadInfo* aLoadInfo) {
+  MOZ_ASSERT(aLoadInfo);
+
+  RefPtr<mozilla::dom::BrowsingContext> bc;
+  aLoadInfo->GetBrowsingContext(getter_AddRefs(bc));
+  if (bc) {
+    return bc->GetCurrentIPAddressSpace();
+  }
+
+  // Loads that are not tied to a browsing context (worker requests, and
+  // notification icon loads which have no requesting node) read the address
+  // space from the policy container propagated from the parent document.
+  nsCOMPtr<nsIPolicyContainer> policyContainer =
+      aLoadInfo->GetPolicyContainer();
+  if (policyContainer) {
+    nsILoadInfo::IPAddressSpace addressSpace =
+        PolicyContainer::Cast(policyContainer)->GetIPAddressSpace();
+    if (addressSpace != nsILoadInfo::Unknown) {
+      return addressSpace;
+    }
+  }
+
+  return aLoadInfo->GetParentIpAddressSpace();
 }
 
 bool IsLocalHostAccess(

@@ -85,7 +85,7 @@ async function waitforLoadURL() {
   let sandbox = sinon.createSandbox();
   let loadedUrl = await new Promise(resolve =>
     sandbox.stub(gURLBar.controller, "loadURL").callsFake(options => {
-      resolve(options.url);
+      resolve(options.loadRequest.urlLoad.url);
       return {};
     })
   );

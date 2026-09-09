@@ -7,9 +7,9 @@ package org.mozilla.fenix.bookmarks.importer
 /**
  * Fenix equivalent of [mozilla.components.feature.importer.ImporterEvent]
  *
- * This is needed because we are sending the result from [org.mozilla.fenix.bookmarks.ImportBookmarksDialogFragment]
- * to [org.mozilla.fenix.bookmarks.BookmarkFragment] through bundles, and we need a simplified result object that
- * is easily serializable and deserializable.
+ * This is needed because we are sending the result from [org.mozilla.fenix.bookmarks.ImportBookmarksDialogFragment] to
+ * [org.mozilla.fenix.bookmarks.BookmarkFragment] through bundles, and we need a simplified result object that is easily
+ * serializable and deserializable.
  *
  * Main difference here is [FenixImporterEvent.Failure] which maps
  * [mozilla.components.concept.bookmarks.file.BookmarksImporterError] into a simple enum of possible error states

@@ -15,8 +15,7 @@ import mozilla.components.feature.autofill.R
 /**
  * Preference showing a switch to enable this app as the preferred autofill service of the user.
  *
- * When getting enabled this preference will launch Android's system setting for selecting an
- * autofill service.
+ * When getting enabled this preference will launch Android's system setting for selecting an autofill service.
  */
 class AutofillPreference(
     context: Context,
@@ -49,10 +48,7 @@ class AutofillPreference(
         }
     }
 
-    /**
-     * Updates the preference (on/off) based on whether this app is set as the user's autofill
-     * service.
-     */
+    /** Updates the preference (on/off) based on whether this app is set as the user's autofill service. */
     fun update() {
         switchView?.isChecked = useCases.isEnabled(context)
     }

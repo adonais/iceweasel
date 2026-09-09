@@ -14,8 +14,8 @@ import org.mozilla.fenix.nimbus.view.NimbusExperimentItem.Experiment
 import org.mozilla.fenix.nimbus.view.NimbusExperimentItem.Header
 
 /**
- * Separates the experiment list into an "active" and "inactive" items based on enrollment for
- * rendering with [org.mozilla.fenix.nimbus.view.NimbusExperiments].
+ * Separates the experiment list into an "active" and "inactive" items based on enrollment for rendering with
+ * [org.mozilla.fenix.nimbus.view.NimbusExperiments].
  */
 internal fun NimbusApi.partitionedExperimentLists(): List<NimbusExperimentItem> {
     val availableExperiments = getAvailableExperiments()
@@ -43,9 +43,8 @@ internal fun NimbusApi.partitionedExperimentLists(): List<NimbusExperimentItem> 
 }
 
 /**
- * Separates the experiment list into an "active" and "inactive" items based on enrollment for
- * rendering with [org.mozilla.fenix.nimbus.view.NimbusExperiments] using
- * the [kotlinx.coroutines.Dispatchers.IO] dispatcher.
+ * Separates the experiment list into an "active" and "inactive" items based on enrollment for rendering with
+ * [org.mozilla.fenix.nimbus.view.NimbusExperiments] using the [kotlinx.coroutines.Dispatchers.IO] dispatcher.
  */
 suspend fun NimbusApi.fetchPartitionedExperimentListsAsync(): List<NimbusExperimentItem> =
     withContext(IO) { partitionedExperimentLists() }

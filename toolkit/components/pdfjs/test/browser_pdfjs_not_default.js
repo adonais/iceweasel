@@ -11,16 +11,16 @@ add_task(async function test_pdfjs_not_default() {
     dirFileObj.path
   );
 
-  // If we don't have the Pdfjs actor loaded, this will throw
-  await getPdfjsActor();
+  // If we don't have the PdfJs actor loaded, this will throw
+  await getPdfJsActor();
 
   changeMimeHandler(oldAction[0], oldAction[1]);
 
   await waitForPdfJSClose(tab.linkedBrowser, /* closeTab = */ true);
 });
 
-function getPdfjsActor() {
+function getPdfJsActor() {
   let win = Services.wm.getMostRecentWindow("navigator:browser");
   let selectedBrowser = win.gBrowser.selectedBrowser;
-  return selectedBrowser.browsingContext.currentWindowGlobal.getActor("Pdfjs");
+  return selectedBrowser.browsingContext.currentWindowGlobal.getActor("PdfJs");
 }

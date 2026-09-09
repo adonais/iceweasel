@@ -10,8 +10,7 @@ import androidx.test.espresso.IdlingResource.ResourceCallback
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetBehavior.BottomSheetCallback
 
-class BottomSheetBehaviorStateIdlingResource(behavior: BottomSheetBehavior<*>) :
-    BottomSheetCallback(), IdlingResource {
+class BottomSheetBehaviorStateIdlingResource(behavior: BottomSheetBehavior<*>) : BottomSheetCallback(), IdlingResource {
 
     private var isIdle: Boolean
     private var callback: ResourceCallback? = null

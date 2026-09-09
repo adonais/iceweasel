@@ -16,8 +16,8 @@ import kotlin.math.sin
 /**
  * A [ShaderBrush] that renders a linear gradient at a specified angle.
  *
- * @param colorStops The list [ColorStop]s that make up the gradient containing the color stop
- * position in percentage represented as a float and the color.
+ * @param colorStops The list [ColorStop]s that make up the gradient containing the color stop position in percentage
+ *   represented as a float and the color.
  * @param angleInDegrees Angle of the gradient axis.
  */
 class LinearGradientBrush(

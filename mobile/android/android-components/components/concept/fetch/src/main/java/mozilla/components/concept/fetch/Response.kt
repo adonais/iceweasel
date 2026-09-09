@@ -4,14 +4,14 @@
 
 package mozilla.components.concept.fetch
 
-import mozilla.components.concept.fetch.Response.Body
-import mozilla.components.concept.fetch.Response.Companion.CLIENT_ERROR_STATUS_RANGE
-import mozilla.components.concept.fetch.Response.Companion.SUCCESS_STATUS_RANGE
 import java.io.BufferedReader
 import java.io.Closeable
 import java.io.IOException
 import java.io.InputStream
 import java.nio.charset.Charset
+import mozilla.components.concept.fetch.Response.Body
+import mozilla.components.concept.fetch.Response.Companion.CLIENT_ERROR_STATUS_RANGE
+import mozilla.components.concept.fetch.Response.Companion.SUCCESS_STATUS_RANGE
 
 /**
  * The [Response] data class represents a response to a [Request] send by a [Client].
@@ -22,7 +22,6 @@ import java.nio.charset.Charset
  * A [Response] may hold references to other resources (e.g. streams). Therefore it's important to always close the
  * [Response] object or its [Body]. This can be done by either consuming the content of the [Body] with one of the
  * available methods or by using Kotlin's extension methods for using [Closeable] implementations (like `use()`):
- *
  * ```Kotlin
  * val response = ...
  * response.use {
@@ -36,9 +35,7 @@ data class Response(
     val headers: Headers,
     val body: Body,
 ) : Closeable {
-    /**
-     * Closes this [Response] and its [Body] and releases any system resources associated with it.
-     */
+    /** Closes this [Response] and its [Body] and releases any system resources associated with it. */
     override fun close() {
         body.close()
     }
@@ -49,10 +46,9 @@ data class Response(
      * **The response body can be consumed only once.**.
      *
      * @param stream the input stream from which the response body can be read.
-     * @param contentType optional content-type as provided in the response
-     * header. If specified, an attempt will be made to look up the charset
-     * which will be used for decoding the body. If not specified, or if the
-     * charset can't be found, UTF-8 will be used for decoding.
+     * @param contentType optional content-type as provided in the response header. If specified, an attempt will be
+     *   made to look up the charset which will be used for decoding the body. If not specified, or if the charset can't
+     *   be found, UTF-8 will be used for decoding.
      */
     open class Body(
         private val stream: InputStream,
@@ -60,20 +56,21 @@ data class Response(
     ) : Closeable, AutoCloseable {
 
         @Suppress("TooGenericExceptionCaught")
-        private val charset = contentType?.let {
-            val charset = it.substringAfter("charset=", "UTF-8")
-            try {
-                Charset.forName(charset)
-            } catch (e: Exception) {
-                Charsets.UTF_8
-            }
-        } ?: Charsets.UTF_8
+        private val charset =
+            contentType?.let {
+                val charset = it.substringAfter("charset=", "UTF-8")
+                try {
+                    Charset.forName(charset)
+                } catch (e: Exception) {
+                    Charsets.UTF_8
+                }
+            } ?: Charsets.UTF_8
 
         /**
          * Creates a usable stream from this body.
          *
-         * Executes the given [block] function with the stream as parameter and then closes it down correctly
-         * whether an exception is thrown or not.
+         * Executes the given [block] function with the stream as parameter and then closes it down correctly whether an
+         * exception is thrown or not.
          */
         fun <R> useStream(block: (InputStream) -> R): R = use {
             block(stream)
@@ -85,11 +82,10 @@ data class Response(
          * Executes the given [block] function with the buffered reader as parameter and then closes it down correctly
          * whether an exception is thrown or not.
          *
-         * @param charset the optional charset to use when decoding the body. If not specified,
-         * the charset provided in the response content-type header will be used. If the header
-         * is missing or the charset is not supported, UTF-8 will be used.
+         * @param charset the optional charset to use when decoding the body. If not specified, the charset provided in
+         *   the response content-type header will be used. If the header is missing or the charset is not supported,
+         *   UTF-8 will be used.
          * @param block a function to consume the buffered reader.
-         *
          */
         fun <R> useBufferedReader(charset: Charset? = null, block: (BufferedReader) -> R): R = use {
             block(stream.bufferedReader(charset ?: this.charset))
@@ -100,9 +96,9 @@ data class Response(
          *
          * Takes care of closing the body down correctly whether an exception is thrown or not.
          *
-         * @param charset the optional charset to use when decoding the body. If not specified,
-         * the charset provided in the response content-type header will be used. If the header
-         * is missing or the charset not supported, UTF-8 will be used.
+         * @param charset the optional charset to use when decoding the body. If not specified, the charset provided in
+         *   the response content-type header will be used. If the header is missing or the charset not supported, UTF-8
+         *   will be used.
          */
         fun string(charset: Charset? = null): String = use {
             // We don't use a BufferedReader because it'd unnecessarily allocate more memory: if the
@@ -120,9 +116,7 @@ data class Response(
             stream.reader(charset ?: this.charset).readText()
         }
 
-        /**
-         * Closes this [Body] and releases any system resources associated with it.
-         */
+        /** Closes this [Body] and releases any system resources associated with it. */
         override fun close() {
             try {
                 stream.close()
@@ -132,9 +126,7 @@ data class Response(
         }
 
         companion object {
-            /**
-             * Creates an empty response body.
-             */
+            /** Creates an empty response body. */
             fun empty() = Body("".byteInputStream())
         }
     }
@@ -147,14 +139,10 @@ data class Response(
     }
 }
 
-/**
- * Returns true if the response was successful (status in the range 200-299) or false otherwise.
- */
+/** Returns true if the response was successful (status in the range 200-299) or false otherwise. */
 val Response.isSuccess: Boolean
     get() = status in SUCCESS_STATUS_RANGE
 
-/**
- * Returns true if the response was a client error (status in the range 400-499) or false otherwise.
- */
+/** Returns true if the response was a client error (status in the range 400-499) or false otherwise. */
 val Response.isClientError: Boolean
     get() = status in CLIENT_ERROR_STATUS_RANGE

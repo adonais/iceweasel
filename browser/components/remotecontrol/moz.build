@@ -1,0 +1,14 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+MOZ_SRC_FILES += [
+    "RemoteControlBanner.sys.mjs",
+    "RemoteControlServers.sys.mjs",
+]
+
+if CONFIG["NIGHTLY_BUILD"]:
+    MOZ_SRC_FILES += ["RemoteControlPanel.sys.mjs"]
+
+with Files("**"):
+    BUG_COMPONENT = ("Remote Protocol", "Agent")

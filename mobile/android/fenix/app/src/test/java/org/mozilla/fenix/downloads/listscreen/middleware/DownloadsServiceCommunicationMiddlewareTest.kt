@@ -24,17 +24,17 @@ class DownloadsServiceCommunicationMiddlewareTest {
     fun setup() {
         broadcastSender = FakeBroadcastSender()
         val middleware = DownloadsServiceCommunicationMiddleware(broadcastSender)
-        store = DownloadUIStore(
-            initialState = DownloadUIState.INITIAL,
-            middleware = listOf(
-                middleware,
-            ),
-        )
+        store =
+            DownloadUIStore(
+                initialState = DownloadUIState.INITIAL,
+                middleware = listOf(middleware),
+            )
     }
 
     private class FakeBroadcastSender : BroadcastSender {
         var downloadId: String? = null
         var action: String? = null
+
         override fun sendBroadcast(downloadId: String, action: String) {
             this.downloadId = downloadId
             this.action = action
@@ -43,18 +43,14 @@ class DownloadsServiceCommunicationMiddlewareTest {
 
     @Test
     fun `WHEN the user pauses a download THEN the corresponding broadcastIntent will be sent`() {
-        store.dispatch(
-            action = DownloadUIAction.PauseDownload(downloadId = "id"),
-        )
+        store.dispatch(action = DownloadUIAction.PauseDownload(downloadId = "id"))
         assertEquals("id", broadcastSender.downloadId)
         assertEquals(AbstractFetchDownloadService.ACTION_PAUSE, broadcastSender.action)
     }
 
     @Test
     fun `WHEN the user resumes a download THEN the corresponding broadcastIntent will be sent`() {
-        store.dispatch(
-            action = DownloadUIAction.ResumeDownload(downloadId = "id"),
-        )
+        store.dispatch(action = DownloadUIAction.ResumeDownload(downloadId = "id"))
         assertEquals("id", broadcastSender.downloadId)
         assertEquals(AbstractFetchDownloadService.ACTION_RESUME, broadcastSender.action)
     }

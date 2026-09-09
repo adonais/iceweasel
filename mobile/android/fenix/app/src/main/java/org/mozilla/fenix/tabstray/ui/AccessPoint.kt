@@ -4,9 +4,7 @@
 
 package org.mozilla.fenix.tabstray.ui
 
-/**
- * Value class representing the access point from which the Tab Manager was opened.
- */
+/** Value class representing the access point from which the Tab Manager was opened. */
 enum class AccessPoint {
     None,
     HomeRecentSyncedTab,

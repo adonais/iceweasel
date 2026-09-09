@@ -27,19 +27,14 @@ import mozilla.components.support.webextensions.WebExtensionPopupObserver
 import org.mozilla.samples.browser.addons.WebExtensionActionPopupActivity
 import org.mozilla.samples.browser.ext.components
 
-/**
- * Activity that holds the [BrowserFragment].
- */
+/** Activity that holds the [BrowserFragment]. */
 open class BrowserActivity : LocaleAwareAppCompatActivity(), ComponentCallbacks2 {
     private val webExtensionPopupObserver by lazy {
         WebExtensionPopupObserver(components.store, ::openPopup)
     }
 
-    /**
-     * Returns a new instance of [BrowserFragment] to display.
-     */
-    open fun createBrowserFragment(sessionId: String?): Fragment =
-        BrowserFragment.create(sessionId)
+    /** Returns a new instance of [BrowserFragment] to display. */
+    open fun createBrowserFragment(sessionId: String?): Fragment = BrowserFragment.create(sessionId)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,12 +76,17 @@ open class BrowserActivity : LocaleAwareAppCompatActivity(), ComponentCallbacks2
 
     override fun onCreateView(parent: View?, name: String, context: Context, attrs: AttributeSet): View? =
         when (name) {
-            EngineView::class.java.name -> components.engine.createView(context, attrs).apply {
-                selectionActionDelegate = DefaultSelectionActionDelegate(
-                    store = components.store,
-                    context = context,
-                )
-            }.asView()
+            EngineView::class.java.name ->
+                components.engine
+                    .createView(context, attrs)
+                    .apply {
+                        selectionActionDelegate =
+                            DefaultSelectionActionDelegate(
+                                store = components.store,
+                                context = context,
+                            )
+                    }
+                    .asView()
             else -> super.onCreateView(parent, name, context, attrs)
         }
 

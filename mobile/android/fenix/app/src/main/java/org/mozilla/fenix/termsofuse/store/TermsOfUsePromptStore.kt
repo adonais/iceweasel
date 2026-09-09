@@ -9,19 +9,13 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
 
-/**
- * [State] for the terms of use prompt.
- */
+/** [State] for the terms of use prompt. */
 data object TermsOfUsePromptState : State
 
-/**
- * [Action] related to [TermsOfUsePromptStore].
- */
+/** [Action] related to [TermsOfUsePromptStore]. */
 sealed interface TermsOfUsePromptAction : Action {
 
-    /**
-     * Triggered when the prompt is created.
-     */
+    /** Triggered when the prompt is created. */
     data object OnPromptCreated : TermsOfUsePromptAction
 
     /**
@@ -67,27 +61,23 @@ sealed interface TermsOfUsePromptAction : Action {
     data class OnTermsOfUseClicked(val surface: Surface) : TermsOfUsePromptAction
 
     /**
-     * Triggered when the user closes the prompt by swiping, hitting back, or tapping the
-     * background scrim.
+     * Triggered when the user closes the prompt by swiping, hitting back, or tapping the background scrim.
      *
      * @property surface The [Surface] that the prompt was displayed on.
      */
     data class OnPromptManuallyDismissed(val surface: Surface) : TermsOfUsePromptAction
 
-    /**
-     * Triggered when the prompt is dismissed for any reason.
-     */
+    /** Triggered when the prompt is dismissed for any reason. */
     data object OnPromptDismissed : TermsOfUsePromptAction
 }
 
-/**
- * A [Store] that holds the [TermsOfUsePromptState].
- */
+/** A [Store] that holds the [TermsOfUsePromptState]. */
 class TermsOfUsePromptStore(
     initialState: TermsOfUsePromptState = TermsOfUsePromptState,
     middleware: List<Middleware<TermsOfUsePromptState, TermsOfUsePromptAction>>,
-) : Store<TermsOfUsePromptState, TermsOfUsePromptAction>(
-    initialState = initialState,
-    reducer = { _, _ -> TermsOfUsePromptState },
-    middleware = middleware,
-)
+) :
+    Store<TermsOfUsePromptState, TermsOfUsePromptAction>(
+        initialState = initialState,
+        reducer = { _, _ -> TermsOfUsePromptState },
+        middleware = middleware,
+    )

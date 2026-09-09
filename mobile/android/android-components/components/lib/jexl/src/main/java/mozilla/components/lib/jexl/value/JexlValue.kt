@@ -6,23 +6,22 @@ package mozilla.components.lib.jexl.value
 
 import mozilla.components.lib.jexl.evaluator.EvaluatorException
 
-/**
- * A JEXL value type.
- */
+/** A JEXL value type. */
 sealed class JexlValue {
     abstract val value: Any
 
     abstract operator fun plus(other: JexlValue): JexlValue
+
     abstract operator fun times(other: JexlValue): JexlValue
+
     abstract operator fun div(other: JexlValue): JexlValue
+
     abstract operator fun compareTo(other: JexlValue): Int
 
     abstract fun toBoolean(): Boolean
 }
 
-/**
- * JEXL Integer type.
- */
+/** JEXL Integer type. */
 class JexlInteger(override val value: Int) : JexlValue() {
     override fun div(other: JexlValue): JexlValue {
         return when (other) {
@@ -74,9 +73,7 @@ class JexlInteger(override val value: Int) : JexlValue() {
     override fun hashCode() = value.hashCode()
 }
 
-/**
- * JEXL Double type.
- */
+/** JEXL Double type. */
 class JexlDouble(override val value: Double) : JexlValue() {
     override fun div(other: JexlValue): JexlValue {
         return when (other) {
@@ -130,9 +127,7 @@ class JexlDouble(override val value: Double) : JexlValue() {
     override fun hashCode() = value.hashCode()
 }
 
-/**
- * JEXL Boolean type.
- */
+/** JEXL Boolean type. */
 class JexlBoolean(override val value: Boolean) : JexlValue() {
     override fun div(other: JexlValue): JexlValue {
         throw EvaluatorException("Can't divide boolean")
@@ -172,9 +167,7 @@ class JexlBoolean(override val value: Boolean) : JexlValue() {
     override fun hashCode() = value.hashCode()
 }
 
-/**
- * JEXL String type.
- */
+/** JEXL String type. */
 class JexlString(override val value: String) : JexlValue() {
     override fun div(other: JexlValue): JexlValue {
         throw EvaluatorException("Can't divide string")
@@ -215,12 +208,8 @@ class JexlString(override val value: String) : JexlValue() {
     }
 }
 
-/**
- * JEXL Array type.
- */
-class JexlArray(
-    override val value: List<JexlValue>,
-) : JexlValue() {
+/** JEXL Array type. */
+class JexlArray(override val value: List<JexlValue>) : JexlValue() {
     constructor(vararg elements: JexlValue) : this(elements.toList())
 
     override fun div(other: JexlValue): JexlValue = throw EvaluatorException("Can't divide array")
@@ -240,12 +229,8 @@ class JexlArray(
     override fun hashCode(): Int = value.hashCode()
 }
 
-/**
- * JEXL Object type.
- */
-class JexlObject(
-    override val value: Map<String, JexlValue>,
-) : JexlValue() {
+/** JEXL Object type. */
+class JexlObject(override val value: Map<String, JexlValue>) : JexlValue() {
     constructor(vararg pairs: Pair<String, JexlValue>) : this(pairs.toMap())
 
     override fun div(other: JexlValue): JexlValue {
@@ -281,9 +266,7 @@ class JexlObject(
     }
 }
 
-/**
- * JEXL undefined type.
- */
+/** JEXL undefined type. */
 class JexlUndefined : JexlValue() {
     override val value = Any()
 

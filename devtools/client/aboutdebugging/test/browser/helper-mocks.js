@@ -247,34 +247,13 @@ async function createLocalClientWrapper() {
   // First, instantiate a DevToolsServer, the same way it is being done when running
   // firefox --start-debugger-server
   const {
-    useDistinctSystemPrincipalLoader,
-    releaseDistinctSystemPrincipalLoader,
-  } = ChromeUtils.importESModule(
-    "resource://devtools/shared/loader/DistinctSystemPrincipalLoader.sys.mjs"
-  );
-  const requester = {};
-  const serverLoader = useDistinctSystemPrincipalLoader(requester);
-  registerCleanupFunction(() => {
-    releaseDistinctSystemPrincipalLoader(requester);
-  });
-  const { DevToolsServer } = serverLoader.require(
-    "resource://devtools/server/devtools-server.js"
-  );
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
-  DevToolsServer.allowChromeProcess = true;
+    CommandsFactory,
+  } = require("resource://devtools/shared/commands/commands-factory.js");
+  const client = await CommandsFactory.spawnClientToDebugSystemPrincipal();
 
-  // Then spawn a DevToolsClient connected to this new DevToolsServer
-  const {
-    DevToolsClient,
-  } = require("resource://devtools/client/devtools-client.js");
   const {
     ClientWrapper,
   } = require("resource://devtools/client/aboutdebugging/src/modules/client-wrapper.js");
-
-  const client = new DevToolsClient(DevToolsServer.connectPipe());
-
-  await client.connect();
   return new ClientWrapper(client);
 }
 /* exported createLocalClientWrapper */

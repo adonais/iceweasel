@@ -1944,8 +1944,11 @@ void KeymapWrapper::InitKeyEvent(
   aKeyEvent.mCodeNameIndex = ComputeDOMCodeNameIndex(aGdkKeyEvent);
   MOZ_ASSERT(aKeyEvent.mCodeNameIndex != CODE_NAME_INDEX_USE_STRING);
   aKeyEvent.mKeyNameIndex =
-      aIsProcessedByIME ? KEY_NAME_INDEX_Process
-                        : keymapWrapper->ComputeDOMKeyNameIndex(aGdkKeyEvent);
+      aIsProcessedByIME
+          ? KEY_NAME_INDEX_Process
+          : (!aCommitCharReceivedByIMContext.IsVoid()
+                 ? KEY_NAME_INDEX_USE_STRING
+                 : KeymapWrapper::ComputeDOMKeyNameIndex(aGdkKeyEvent));
   if (aKeyEvent.mKeyNameIndex == KEY_NAME_INDEX_USE_STRING) {
     if (aCommitCharReceivedByIMContext.IsVoid()) {
       uint32_t charCode = GetCharCodeOrUnmodifiedCharCodeFor(aGdkKeyEvent);

@@ -17,32 +17,30 @@ private const val DELIMITER = ":"
 /**
  * The default implementation of [DownloadLocationFormatter].
  *
- * This class transforms technical file identifiers into user-friendly strings for the UI.
- * It handles several storage scenarios:
+ * This class transforms technical file identifiers into user-friendly strings for the UI. It handles several storage
+ * scenarios:
  *
- * 1. **Standard File Paths**: Formats local paths (e.g., `/storage/emulated/0/Download`)
- *    using the `~` shorthand (e.g., `~/Download`).
+ * 1. **Standard File Paths**: Formats local paths (e.g., `/storage/emulated/0/Download`) using the `~` shorthand (e.g.,
+ *    `~/Download`).
  *
- * 2. **External Storage (SAF)**: Resolves Storage Access Framework URIs for local
- *    storage and SD cards into clean, readable paths.
+ * 2. **External Storage (SAF)**: Resolves Storage Access Framework URIs for local storage and SD cards into clean,
+ *    readable paths.
  *
  * 3. **Cloud Providers (Nextcloud, Drive, etc.)**:
- *    - Attempts to extract the specific folder name selected by the user.
- *    - Detects cases where providers return generic identifiers like "/" or "1".
- *    - Falls back to a branded provider name (e.g., `~/Nextcloud`) when a specific
- *      folder name is unavailable or non-descriptive.
+ *     - Attempts to extract the specific folder name selected by the user.
+ *     - Detects cases where providers return generic identifiers like "/" or "1".
+ *     - Falls back to a branded provider name (e.g., `~/Nextcloud`) when a specific folder name is unavailable or
+ *       non-descriptive.
  *
- * @param fileUtils A utility wrapper for interacting with Android's file system and
- * content provider APIs.
+ * @param fileUtils A utility wrapper for interacting with Android's file system and content provider APIs.
  */
-class DefaultDownloadLocationFormatter(
-    private val fileUtils: AndroidFileUtils,
-) : DownloadLocationFormatter {
+class DefaultDownloadLocationFormatter(private val fileUtils: AndroidFileUtils) : DownloadLocationFormatter {
     override fun getFriendlyPath(uriString: String): String {
         val uri = uriString.toUri()
 
         return when (uri.scheme) {
-            null, ContentResolver.SCHEME_FILE -> formatFilePath(uri)
+            null,
+            ContentResolver.SCHEME_FILE -> formatFilePath(uri)
             ContentResolver.SCHEME_CONTENT -> formatContentUri(uri)
             else -> uriString
         }
@@ -65,11 +63,12 @@ class DefaultDownloadLocationFormatter(
 
         val providerName = getProviderName(uri)
 
-        val finalName = if (providerName.isNullOrBlank()) {
-            descriptiveName ?: ""
-        } else {
-            descriptiveName?.let { "$providerName/$it" } ?: providerName
-        }
+        val finalName =
+            if (providerName.isNullOrBlank()) {
+                descriptiveName ?: ""
+            } else {
+                descriptiveName?.let { "$providerName/$it" } ?: providerName
+            }
 
         return if (finalName.isBlank()) "/" else "/$finalName"
     }

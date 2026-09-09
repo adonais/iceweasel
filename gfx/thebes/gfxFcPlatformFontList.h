@@ -73,8 +73,7 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
  public:
   // used for system fonts with explicit patterns
   explicit gfxFontconfigFontEntry(const nsACString& aFaceName,
-                                  FcPattern* aFontPattern,
-                                  bool aIgnoreFcCharmap);
+                                  FcPattern* aFontPattern);
 
   // used for data fonts where the fontentry takes ownership
   // of the font data and the FT_Face
@@ -95,21 +94,13 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
   FcPattern* GetPattern() { return mFontPattern; }
 
   nsresult ReadCMAP(FontInfoData* aFontInfoData = nullptr) override;
-  bool TestCharacterMap(uint32_t aCh) override;
 
   mozilla::gfx::SharedFTFace* GetFTFace();
   FTUserFontData* GetUserFontData() override;
 
   FT_MM_Var* GetMMVar() override;
 
-  bool HasVariations() override;
-  void GetVariationAxes(nsTArray<gfxFontVariationAxis>& aAxes) override;
-  void GetVariationInstances(
-      nsTArray<gfxFontVariationInstance>& aInstances) override;
-
-  bool HasFontTable(uint32_t aTableTag) override;
   nsresult CopyFontTable(uint32_t aTableTag, nsTArray<uint8_t>&) override;
-  hb_blob_t* GetFontTable(uint32_t aTableTag) override;
   FontTableCache* GetFontTableCache(bool aCreate) override {
     return mFontTableCache;
   };
@@ -121,6 +112,14 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
 
   gfxFont* CreateFontInstance(const gfxFontStyle* aFontStyle) override;
 
+  bool HasVariationsInternal() override;
+  void GetVariationAxesInternal(nsTArray<gfxFontVariationAxis>& aAxes) override;
+  void GetVariationInstancesInternal(
+      nsTArray<gfxFontVariationInstance>& aInstances) override;
+
+  bool HasFontTableInternal(uint32_t aTableTag) override;
+  hb_blob_t* GetFontTableInternal(uint32_t aTableTag) override;
+
   void GetUserFontFeatures(FcPattern* aPattern);
 
   // pattern for a single face of a family
@@ -128,8 +127,6 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
 
 #ifdef MOZ_FONTATIONS
   void InitSkrifaFont(FcPattern* aPattern);
-  mozilla::Atomic<mozilla::gfx::SkrifaFontRef*> mSkrifaFontFace;
-  mozilla::MemoryMappedFile mSkrifaFontFile;
 #endif
 
   // FTFace - initialized when needed. Once mFTFaceInitialized is true,
@@ -146,13 +143,6 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
   // Font table cache, created only if we fail to create a hb_face_t that wraps
   // the complete font data.
   mozilla::Atomic<FontTableCache*> mFontTableCache;
-
-  // Whether TestCharacterMap should check the actual cmap rather than asking
-  // fontconfig about character coverage.
-  // We do this for app-bundled (rather than system) fonts, as they may
-  // include color glyphs that fontconfig would overlook, and for fonts
-  // loaded via @font-face.
-  bool mIgnoreFcCharmap;
 
   // Whether the face supports variations. For system-installed fonts, we
   // query fontconfig for this (so they will only work if fontconfig is

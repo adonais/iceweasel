@@ -4,7 +4,7 @@
 
 /**
  * @import { SearchEngine } from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs";
- * @import { UrlbarInput } from "moz-src:///browser/components/urlbar/content/UrlbarInput.mjs";
+ * @import { UrlbarInputBase } from "moz-src:///browser/components/urlbar/content/UrlbarInputBase.mjs";
  */
 
 const lazy = {};
@@ -135,8 +135,8 @@ class _OpenSearchManager {
    */
   updateOpenSearchBadge(win) {
     let engines = this.getInstallableEngines(win.gBrowser.selectedBrowser);
-    for (let urlbar of /** @type {NodeListOf<UrlbarInput>} */ (
-      win.document.querySelectorAll("moz-urlbar")
+    for (let urlbar of /** @type {NodeListOf<UrlbarInputBase>} */ (
+      win.document.querySelectorAll(".urlbar")
     )) {
       if (!urlbar.controller) {
         // This means it is not initialized and happens

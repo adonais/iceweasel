@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -23,9 +23,7 @@ import org.mozilla.geckoview.GeckoRuntimeSettings
 class IsolatedProcessTest : BaseSessionTest() {
     private val uiAutomation = InstrumentationRegistry.getInstrumentation().uiAutomation
 
-    /**
-     * Structure to hold ps command data.
-     */
+    /** Structure to hold ps command data. */
     data class Process(val user: String, val pid: String)
 
     /**
@@ -34,9 +32,7 @@ class IsolatedProcessTest : BaseSessionTest() {
      * Key is process name.
      */
     fun getTestRunnerProcesses(): Map<String, Process> {
-        val shellCommand = uiAutomation.executeShellCommand(
-            "ps -A -o USER,PID,NAME",
-        )
+        val shellCommand = uiAutomation.executeShellCommand("ps -A -o USER,PID,NAME")
         val result = mutableMapOf<String, Process>()
         ParcelFileDescriptor.AutoCloseInputStream(shellCommand).use { inputStream ->
             inputStream.bufferedReader(Charsets.UTF_8).lines().forEach { line ->

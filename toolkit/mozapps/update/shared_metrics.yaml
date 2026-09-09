@@ -38,7 +38,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_BITSHRESULT
     send_in_pings:
       - background-update
       - metrics
@@ -63,7 +62,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_MOVE_RESULT
     send_in_pings:
       - background-update
       - metrics
@@ -86,7 +84,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_NO_WINDOW_AUTO_RESTARTS
     send_in_pings:
       - background-update
       - metrics
@@ -111,7 +108,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_SUPPRESS_PROMPTS
     send_in_pings:
       - background-update
       - metrics
@@ -135,7 +131,6 @@ update:
       - bytesized@mozilla.com
       - telemetry-client-dev@thunderbird.net
     expires: never
-    telemetry_mirror: UPDATE_VERSION_PIN
     send_in_pings:
       - background-update
       - metrics

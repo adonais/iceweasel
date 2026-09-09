@@ -45,9 +45,12 @@ function test_dimensions({ width, height }) {
         Assert.equal(rect.height, height, "Should have the requested height");
       }
 
-      Assert.equal(
-        win.document.documentElement.getAttribute("persist"),
-        "",
+      let chromeFlags = win.docShell.treeOwner
+        .QueryInterface(Ci.nsIInterfaceRequestor)
+        .getInterface(Ci.nsIAppWindow).chromeFlags;
+
+      Assert.ok(
+        !!(chromeFlags & Ci.nsIWebBrowserChrome.CHROME_NO_PERSISTENCE),
         "Should disable persistence"
       );
       await BrowserTestUtils.closeWindow(win);

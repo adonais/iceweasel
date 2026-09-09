@@ -56,7 +56,15 @@ struct BaseRectAbsolute {
   MOZ_ALWAYS_INLINE T& Right() { return right; }
   MOZ_ALWAYS_INLINE T& Top() { return top; }
   MOZ_ALWAYS_INLINE T& Bottom() { return bottom; }
-  T Area() const { return Width() * Height(); }
+  // For integer coordinates, widen to 64-bit before multiplying so the area of
+  // a large rect does not overflow. Floating-point coordinates are unchanged.
+  auto Area() const {
+    if constexpr (std::is_integral_v<T>) {
+      return int64_t(Width()) * int64_t(Height());
+    } else {
+      return Width() * Height();
+    }
+  }
 
   void Inflate(T aD) { Inflate(aD, aD); }
   void Inflate(T aDx, T aDy) {

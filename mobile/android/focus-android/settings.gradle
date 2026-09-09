@@ -38,7 +38,7 @@ ext.topsrcdir = rootProject.projectDir.absolutePath.minus("mobile/android/focus-
 
 apply from: file('../shared-settings.gradle')
 
-if (gradle.ext.mozconfig.substs.MOZ_APPSERVICES_IN_TREE) {
+if (gradle.ext.mozconfig.substs.MOZ_APPSERVICES_IN_TREE && gradle.ext.mozconfig.substs.DOWNLOAD_ALL_GRADLE_DEPENDENCIES) {
     apply from: file("${topsrcdir}/third_party/application-services/settings.gradle")
 }
 

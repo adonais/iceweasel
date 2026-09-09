@@ -35,8 +35,7 @@ class PreviewThemeProvider : PreviewParameterProvider<Theme> {
 /**
  * A wrapper used for Compose previews that pairs a value with a [Theme].
  *
- * Each instance represents a single preview permutation of [value]
- * rendered using the given [theme].
+ * Each instance represents a single preview permutation of [value] rendered using the given [theme].
  *
  * @property theme The theme variant to apply for the preview.
  * @property value The underlying value being previewed.
@@ -49,15 +48,13 @@ data class ThemedValue<T>(
 /**
  * Base [PreviewParameterProvider] for generating themed preview permutations.
  *
- * Subclasses supply a sequence of base values, which are combined with every
- * entry in [Theme.entries] to produce a [ThemedValue] for each
- * value–theme combination.
+ * Subclasses supply a sequence of base values, which are combined with every entry in [Theme.entries] to produce a
+ * [ThemedValue] for each value–theme combination.
  *
- * This allows Compose previews to be rendered across all supported themes
- * without duplicating preview composables or provider logic.
+ * This allows Compose previews to be rendered across all supported themes without duplicating preview composables or
+ * provider logic.
  *
  * Typical usage:
- *
  * ```
  * class MyPreviewProvider : ThemedValueProvider<MyUiState>(
  *     sequenceOf(
@@ -82,8 +79,8 @@ data class ThemedValue<T>(
  * ```
  *
  * @param baseValues The base values to be wrapped with each available theme.
- * @param getDisplayName An optional function to provide a display name based either on the value
- *        or its index in [baseValues].
+ * @param getDisplayName An optional function to provide a display name based either on the value or its index in
+ *   [baseValues].
  */
 abstract class ThemedValueProvider<T>(
     baseValues: Sequence<T>,
@@ -91,9 +88,9 @@ abstract class ThemedValueProvider<T>(
 ) : PreviewParameterProvider<ThemedValue<T>> {
 
     /**
-     * @see [org.mozilla.fenix.theme.ThemedValueProvider]
      * @param baseValues The base values to be wrapped with each available theme.
      * @param displayNames An optional list of display names for [baseValues].
+     * @see [org.mozilla.fenix.theme.ThemedValueProvider]
      */
     constructor(
         baseValues: Sequence<T>,
@@ -103,23 +100,23 @@ abstract class ThemedValueProvider<T>(
         { index, _ -> displayNames.getOrNull(index) },
     )
 
-    override val values: Sequence<ThemedValue<T>> =
-        baseValues.flatMap { value ->
-            Theme.entries.map { theme ->
-                ThemedValue(
-                    theme,
-                    value,
-                )
-            }
+    override val values: Sequence<ThemedValue<T>> = baseValues.flatMap { value ->
+        Theme.entries.map { theme ->
+            ThemedValue(
+                theme,
+                value,
+            )
         }
+    }
 
-    private val displayNames = values
-        .mapIndexed { index, (theme, value) ->
-            val valueIndex = index / Theme.entries.size
-            val valueDisplayName = getDisplayName(valueIndex, value) ?: "$valueIndex"
-            "$valueDisplayName (${theme.name})"
-        }
-        .toList()
+    private val displayNames =
+        values
+            .mapIndexed { index, (theme, value) ->
+                val valueIndex = index / Theme.entries.size
+                val valueDisplayName = getDisplayName(valueIndex, value) ?: "$valueIndex"
+                "$valueDisplayName (${theme.name})"
+            }
+            .toList()
 
     override fun getDisplayName(index: Int): String {
         return displayNames[index]

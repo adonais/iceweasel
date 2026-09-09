@@ -14,16 +14,15 @@ import org.mozilla.geckoview.ExperimentalGeckoViewApi
 import org.mozilla.geckoview.GeckoResult
 
 /**
- * Wrapper around the static methods of [AIFeaturesController.RuntimeAIFeatures] to allow
- * the implementation to be swapped out in tests.
+ * Wrapper around the static methods of [AIFeaturesController.RuntimeAIFeatures] to allow the implementation to be
+ * swapped out in tests.
  */
 interface GeckoAIFeaturesAccessor : AIFeaturesRuntime
 
 /**
  * Default implementation of [GeckoAIFeaturesAccessor].
  *
- * This class directly relays calls to the static methods of
- * [AIFeaturesController.RuntimeAIFeatures] in GeckoView.
+ * This class directly relays calls to the static methods of [AIFeaturesController.RuntimeAIFeatures] in GeckoView.
  */
 @OptIn(ExperimentalGeckoViewApi::class)
 internal class DefaultGeckoAIFeaturesAccessor : GeckoAIFeaturesAccessor {
@@ -98,7 +97,7 @@ internal class DefaultGeckoAIFeaturesAccessor : GeckoAIFeaturesAccessor {
                             isAllowed = feature.isAllowed,
                             isBlocked = feature.isBlocked,
                         )
-                    },
+                    }
                 )
             },
             onError = onError,

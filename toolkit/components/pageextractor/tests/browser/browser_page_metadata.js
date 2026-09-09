@@ -353,3 +353,188 @@ add_task(async function test_page_metadata_reader_mode_is_readerable_true() {
 
   return cleanup();
 });
+
+// isGated
+
+add_task(async function test_page_metadata_is_gated_no_json_ld() {
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
+    <p>A page with no structured data.</p>
+  `;
+
+  const { isGated } = await getPageExtractor().getPageMetadata();
+
+  ok(!isGated, "A page without JSON-LD is not gated.");
+
+  return cleanup();
+});
+
+add_task(async function test_page_metadata_is_gated() {
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        "isAccessibleForFree": false
+      }
+    </script>
+  `;
+
+  const { isGated } = await getPageExtractor().getPageMetadata();
+
+  ok(isGated, "A boolean isAccessibleForFree of false marks the page gated.");
+
+  return cleanup();
+});
+
+add_task(async function test_page_metadata_is_gated_schema_org_url() {
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        "isAccessibleForFree": "https://schema.org/False"
+      }
+    </script>
+  `;
+
+  const { isGated } = await getPageExtractor().getPageMetadata();
+
+  ok(
+    isGated,
+    "An isAccessibleForFree of schema.org/False marks the page gated."
+  );
+
+  return cleanup();
+});
+
+add_task(async function test_page_metadata_is_not_gated_schema_org_url() {
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        "isAccessibleForFree": "https://schema.org/True"
+      }
+    </script>
+  `;
+
+  const { isGated } = await getPageExtractor().getPageMetadata();
+
+  ok(
+    !isGated,
+    "An isAccessibleForFree of schema.org/True does not mark the page gated."
+  );
+
+  return cleanup();
+});
+
+add_task(async function test_page_metadata_is_not_gated() {
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        "isAccessibleForFree": true
+      }
+    </script>
+  `;
+
+  const { isGated } = await getPageExtractor().getPageMetadata();
+
+  ok(!isGated, "A page that declares itself free is not gated.");
+
+  return cleanup();
+});
+
+add_task(async function test_page_metadata_is_gated_has_part() {
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        "hasPart": {
+          "@type": "WebPageElement",
+          "isAccessibleForFree": false,
+          "cssSelector": ".paywalled"
+        }
+      }
+    </script>
+  `;
+
+  const { isGated } = await getPageExtractor().getPageMetadata();
+
+  ok(isGated, "A gated hasPart entry marks the page gated.");
+
+  return cleanup();
+});
+
+add_task(async function test_page_metadata_is_gated_in_graph() {
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          { "@type": "WebSite" },
+          { "@type": "NewsArticle", "isAccessibleForFree": false }
+        ]
+      }
+    </script>
+  `;
+
+  const { isGated } = await getPageExtractor().getPageMetadata();
+
+  ok(isGated, "A gated item inside @graph marks the page gated.");
+
+  return cleanup();
+});
+
+add_task(async function test_page_metadata_is_gated_on_graph_wrapper() {
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "isAccessibleForFree": false,
+        "@graph": [{ "@type": "NewsArticle" }]
+      }
+    </script>
+  `;
+
+  const { isGated } = await getPageExtractor().getPageMetadata();
+
+  ok(
+    isGated,
+    "Gating declared on the wrapper alongside @graph marks the page gated."
+  );
+
+  return cleanup();
+});
+
+add_task(async function test_page_metadata_is_gated_multiple_scripts() {
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
+    <script type="application/ld+json">
+      { "@context": "https://schema.org", "@type": "Organization" }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        "isAccessibleForFree": false
+      }
+    </script>
+  `;
+
+  const { isGated } = await getPageExtractor().getPageMetadata();
+
+  ok(isGated, "Gating declared in any JSON-LD script marks the page gated.");
+
+  return cleanup();
+});

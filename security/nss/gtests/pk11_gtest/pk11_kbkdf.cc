@@ -18,7 +18,7 @@
 namespace nss_test {
 class Pkcs11KbkdfTest : public ::testing::Test {
  protected:
-  ScopedPK11SymKey ImportKey(CK_MECHANISM_TYPE mech, SECItem *key_item) {
+  ScopedPK11SymKey ImportKey(CK_MECHANISM_TYPE mech, SECItem* key_item) {
     ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
     if (!slot) {
       ADD_FAILURE() << "Can't get slot";
@@ -40,7 +40,7 @@ class Pkcs11KbkdfTest : public ::testing::Test {
     ScopedPK11SymKey p11Key = ImportKey(kdfParams->prfType, &keyItem);
 
     ASSERT_NE(kdfParams, nullptr);
-    SECItem paramsItem = {siBuffer, (unsigned char *)kdfParams,
+    SECItem paramsItem = {siBuffer, (unsigned char*)kdfParams,
                           sizeof(*kdfParams)};
 
     ScopedPK11SymKey result(PK11_Derive(p11Key.get(), kdfMech, &paramsItem,
@@ -51,7 +51,7 @@ class Pkcs11KbkdfTest : public ::testing::Test {
     ASSERT_EQ(PK11_ExtractKeyValue(result.get()), SECSuccess);
 
     /* We don't need to free this -- it is just a reference... */
-    SECItem *actualItem = PK11_GetKeyData(result.get());
+    SECItem* actualItem = PK11_GetKeyData(result.get());
     ASSERT_NE(actualItem, nullptr);
 
     SECItem expectedItem = {siBuffer, expectedKey, expectedKeyLen};
@@ -186,7 +186,7 @@ TEST_F(Pkcs11KbkdfTest, TestPRFs) {
     CK_SP800_108_KDF_PARAMS kdfParams = {
         prfType, sizeof(dataParams) / sizeof(*dataParams), dataParams, 1,
         &derivedKey};
-    SECItem paramsItem = {siBuffer, (unsigned char *)&kdfParams,
+    SECItem paramsItem = {siBuffer, (unsigned char*)&kdfParams,
                           sizeof(kdfParams)};
 
     ScopedPK11SymKey result(PK11_Derive(p11Key.get(), CKM_SP800_108_COUNTER_KDF,
@@ -203,7 +203,7 @@ TEST_F(Pkcs11KbkdfTest, TestPRFs) {
     CK_SP800_108_KDF_PARAMS kdfParams = {
         prfType, sizeof(dataParams) / sizeof(*dataParams), dataParams, 1,
         &derivedKey};
-    SECItem paramsItem = {siBuffer, (unsigned char *)&kdfParams,
+    SECItem paramsItem = {siBuffer, (unsigned char*)&kdfParams,
                           sizeof(kdfParams)};
 
     ScopedPK11SymKey result(PK11_Derive(p11Key.get(), CKM_SP800_108_COUNTER_KDF,

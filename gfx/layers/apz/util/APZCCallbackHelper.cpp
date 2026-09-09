@@ -881,12 +881,7 @@ void APZCCallbackHelper::NotifyMozMouseScrollEvent(
   if (!targetContent) {
     return;
   }
-  RefPtr<dom::Document> ownerDoc = targetContent->OwnerDoc();
-  if (!ownerDoc) {
-    return;
-  }
-
-  nsContentUtils::DispatchEventOnlyToChrome(ownerDoc, targetContent, aEvent,
+  nsContentUtils::DispatchEventOnlyToChrome(targetContent, aEvent,
                                             CanBubble::eYes, Cancelable::eYes);
 }
 

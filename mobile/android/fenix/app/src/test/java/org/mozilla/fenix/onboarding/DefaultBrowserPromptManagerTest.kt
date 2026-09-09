@@ -26,30 +26,33 @@ class DefaultBrowserPromptManagerTest {
 
     @Test
     fun `WHEN browser is already default THEN can not show the prompt`() {
-        val promptManager = DefaultBrowserPromptManager(
-            storage = buildStorage(isDefaultBrowser = true),
-            promptToSetAsDefaultBrowser = {},
-        )
+        val promptManager =
+            DefaultBrowserPromptManager(
+                storage = buildStorage(isDefaultBrowser = true),
+                promptToSetAsDefaultBrowser = {},
+            )
 
         assertFalse(promptManager.canShowPrompt())
     }
 
     @Test
     fun `WHEN prompt is already displayed THEN can not show it`() {
-        val promptManager = DefaultBrowserPromptManager(
-            storage = buildStorage(promptToSetAsDefaultBrowserDisplayedInOnboarding = true),
-            promptToSetAsDefaultBrowser = {},
-        )
+        val promptManager =
+            DefaultBrowserPromptManager(
+                storage = buildStorage(promptToSetAsDefaultBrowserDisplayedInOnboarding = true),
+                promptToSetAsDefaultBrowser = {},
+            )
 
         assertFalse(promptManager.canShowPrompt())
     }
 
     @Test
     fun `WHEN prompt is not supported THEN we can not show it`() {
-        val promptManager = DefaultBrowserPromptManager(
-            storage = buildStorage(isDefaultBrowserPromptSupported = false),
-            promptToSetAsDefaultBrowser = {},
-        )
+        val promptManager =
+            DefaultBrowserPromptManager(
+                storage = buildStorage(isDefaultBrowserPromptSupported = false),
+                promptToSetAsDefaultBrowser = {},
+            )
 
         assertFalse(promptManager.canShowPrompt())
     }
@@ -58,10 +61,11 @@ class DefaultBrowserPromptManagerTest {
     fun `WHEN default browser prompt feature flag is disabled THEN can not show the prompt`() {
         features.defaultBrowserPrompt.withCachedValue(DefaultBrowserPrompt(enabled = false))
 
-        val promptManager = DefaultBrowserPromptManager(
-            storage = buildStorage(),
-            promptToSetAsDefaultBrowser = {},
-        )
+        val promptManager =
+            DefaultBrowserPromptManager(
+                storage = buildStorage(),
+                promptToSetAsDefaultBrowser = {},
+            )
 
         assertFalse(promptManager.canShowPrompt())
     }
@@ -76,10 +80,11 @@ class DefaultBrowserPromptManagerTest {
     @Test
     fun `WHEN browser is already default AND card is the default browser card THEN the prompt is not shown`() {
         var promptToSetAsDefaultBrowserCalled = false
-        val promptManager = DefaultBrowserPromptManager(
-            storage = buildStorage(isDefaultBrowser = true),
-            promptToSetAsDefaultBrowser = { promptToSetAsDefaultBrowserCalled = true },
-        )
+        val promptManager =
+            DefaultBrowserPromptManager(
+                storage = buildStorage(isDefaultBrowser = true),
+                promptToSetAsDefaultBrowser = { promptToSetAsDefaultBrowserCalled = true },
+            )
 
         promptManager.maybePromptToSetAsDefaultBrowser(defaultBrowserPageUiData)
 
@@ -89,10 +94,11 @@ class DefaultBrowserPromptManagerTest {
     @Test
     fun `WHEN the prompt is shown THEN it is marked as displayed in onboarding`() {
         val storage = buildStorage()
-        val promptManager = DefaultBrowserPromptManager(
-            storage = storage,
-            promptToSetAsDefaultBrowser = {},
-        )
+        val promptManager =
+            DefaultBrowserPromptManager(
+                storage = storage,
+                promptToSetAsDefaultBrowser = {},
+            )
 
         promptManager.maybePromptToSetAsDefaultBrowser(defaultBrowserPageUiData)
 
@@ -101,10 +107,11 @@ class DefaultBrowserPromptManagerTest {
 
     private fun promptShownFor(currentCard: OnboardingPageUiData): Boolean {
         var promptToSetAsDefaultBrowserCalled = false
-        val promptManager = DefaultBrowserPromptManager(
-            storage = buildStorage(),
-            promptToSetAsDefaultBrowser = { promptToSetAsDefaultBrowserCalled = true },
-        )
+        val promptManager =
+            DefaultBrowserPromptManager(
+                storage = buildStorage(),
+                promptToSetAsDefaultBrowser = { promptToSetAsDefaultBrowserCalled = true },
+            )
 
         assertTrue(promptManager.canShowPrompt())
 
@@ -117,19 +124,22 @@ class DefaultBrowserPromptManagerTest {
         isDefaultBrowser: Boolean = false,
         isDefaultBrowserPromptSupported: Boolean = true,
         promptToSetAsDefaultBrowserDisplayedInOnboarding: Boolean = false,
-    ) = object : DefaultBrowserPromptStorage {
-        override val isDefaultBrowser: Boolean = isDefaultBrowser
-        override val isDefaultBrowserPromptSupported: Boolean = isDefaultBrowserPromptSupported
-        override var promptToSetAsDefaultBrowserDisplayedInOnboarding = promptToSetAsDefaultBrowserDisplayedInOnboarding
-    }
+    ) =
+        object : DefaultBrowserPromptStorage {
+            override val isDefaultBrowser: Boolean = isDefaultBrowser
+            override val isDefaultBrowserPromptSupported: Boolean = isDefaultBrowserPromptSupported
+            override var promptToSetAsDefaultBrowserDisplayedInOnboarding =
+                promptToSetAsDefaultBrowserDisplayedInOnboarding
+        }
 
     private fun enableDefaultBrowserPromptFeature() {
-        val enabledFeature = DefaultBrowserPrompt(
-            enabled = true,
-            daysBetweenPrompts = null,
-            maxPromptsShown = null,
-            coldStartsBetweenPrompts = null,
-        )
+        val enabledFeature =
+            DefaultBrowserPrompt(
+                enabled = true,
+                daysBetweenPrompts = null,
+                maxPromptsShown = null,
+                coldStartsBetweenPrompts = null,
+            )
         features.defaultBrowserPrompt.withCachedValue(enabledFeature)
     }
 }

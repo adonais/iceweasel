@@ -14,10 +14,7 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.utils.Settings
 
-/**
- * Process the [Intent] from [CrashReporter] through which the app is informed about
- * recoverable native crashes.
- */
+/** Process the [Intent] from [CrashReporter] through which the app is informed about recoverable native crashes. */
 class CrashReporterIntentProcessor(
     private val appStore: AppStore,
     private val isCrashIntent: (Intent) -> Boolean = { intent -> Crash.isCrashIntent(intent) },

@@ -8,6 +8,9 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.edit
+import java.io.File
+import java.util.concurrent.Executors
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -30,17 +33,14 @@ import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.observer.Observable
 import mozilla.components.support.base.observer.ObserverRegistry
 import mozilla.components.support.base.utils.NamedThreadFactory
-import java.io.File
-import java.util.concurrent.Executors
-import kotlin.coroutines.CoroutineContext
 
 typealias PushScope = String
+
 typealias AppServerKey = String
 
 /**
- * A implementation of a [PushProcessor] that should live as a singleton by being installed
- * in the Application's onCreate. It receives messages from a service and forwards them
- * to be decrypted and routed.
+ * A implementation of a [PushProcessor] that should live as a singleton by being installed in the Application's
+ * onCreate. It receives messages from a service and forwards them to be decrypted and routed.
  *
  * ```kotlin
  * class Application {
@@ -52,7 +52,6 @@ typealias AppServerKey = String
  * ```
  *
  * Observe for subscription information changes for each registered scope:
- *
  * ```kotlin
  * feature.register(object: AutoPushFeature.Observer {
  *     override fun onSubscriptionChanged(scope: PushScope) { }
@@ -62,7 +61,6 @@ typealias AppServerKey = String
  * ```
  *
  * You should also observe for push messages:
- *
  * ```kotlin
  * feature.register(object: AutoPushFeature.Observer {
  *     override fun onMessageReceived(scope: PushScope, message: ByteArray?) { }
@@ -75,15 +73,13 @@ typealias AppServerKey = String
  * @param coroutineContext An instance of [CoroutineContext] used for executing async push tasks.
  * @param crashReporter An optional instance of a [CrashReporting].
  */
-
 @Suppress("LargeClass")
 class AutoPushFeature(
     private val context: Context,
     private val service: PushService,
     val config: PushConfig,
-    coroutineContext: CoroutineContext = Executors.newSingleThreadExecutor(
-        NamedThreadFactory("AutoPushFeature"),
-    ).asCoroutineDispatcher(),
+    coroutineContext: CoroutineContext =
+        Executors.newSingleThreadExecutor(NamedThreadFactory("AutoPushFeature")).asCoroutineDispatcher(),
     private val crashReporter: CrashReporting? = null,
 ) : PushProcessor, Observable<AutoPushFeature.Observer> by ObserverRegistry() {
 
@@ -95,29 +91,29 @@ class AutoPushFeature(
 
     private val coroutineScope = CoroutineScope(coroutineContext) + SupervisorJob() + exceptionHandler { onError(it) }
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal var connection: PushManagerInterface? = null
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal var connection: PushManagerInterface? = null
 
     /**
-     * Starts the push feature and initialization work needed. Also starts the [PushService] to ensure new messages
-     * come through.
+     * Starts the push feature and initialization work needed. Also starts the [PushService] to ensure new messages come
+     * through.
      */
     override fun initialize() {
         // If we have a token, initialize the rust component on a different thread.
         coroutineScope.launch {
             if (connection == null) {
                 val databasePath = File(context.filesDir, DB_NAME).canonicalPath
-                connection = PushManager(
-                    PushConfiguration(
-                        serverHost = config.serverHost,
-                        httpProtocol = config.protocol.toRustHttpProtocol(),
-                        bridgeType = config.serviceType.toBridgeType(),
-                        senderId = config.senderId,
-                        databasePath = databasePath,
-                        // Default is one request in 24 hours
-                        verifyConnectionRateLimiter = null,
-                    ),
-                )
+                connection =
+                    PushManager(
+                        PushConfiguration(
+                            serverHost = config.serverHost,
+                            httpProtocol = config.protocol.toRustHttpProtocol(),
+                            bridgeType = config.serviceType.toBridgeType(),
+                            senderId = config.senderId,
+                            databasePath = databasePath,
+                            // Default is one request in 24 hours
+                            verifyConnectionRateLimiter = null,
+                        )
+                    )
             }
             prefToken?.let { token ->
                 logger.debug("Initializing rust component with the cached token.")
@@ -132,8 +128,8 @@ class AutoPushFeature(
     /**
      * Un-subscribes from all push message channels and stops periodic verifications.
      *
-     * We do not stop the push service in case there are other consumers are using it as well. The app should
-     * explicitly stop the service if desired.
+     * We do not stop the push service in case there are other consumers are using it as well. The app should explicitly
+     * stop the service if desired.
      *
      * This should only be done on an account logout or app data deletion.
      */
@@ -144,8 +140,8 @@ class AutoPushFeature(
     }
 
     /**
-     * New registration tokens are received and sent to the AutoPush server which also performs subscriptions for
-     * each push type and notifies the subscribers.
+     * New registration tokens are received and sent to the AutoPush server which also performs subscriptions for each
+     * push type and notifies the subscribers.
      */
     override fun onNewToken(newToken: String) {
         val currentConnection = connection
@@ -160,14 +156,10 @@ class AutoPushFeature(
         }
     }
 
-    /**
-     * New encrypted messages received from a supported push messaging service.
-     */
+    /** New encrypted messages received from a supported push messaging service. */
     override fun onMessageReceived(message: Map<String, String>) {
         withConnection {
-            val decryptResponse = it.decrypt(
-                payload = message,
-            )
+            val decryptResponse = it.decrypt(payload = message)
             logger.info("New push message decrypted.")
             notifyObservers { onMessageReceived(decryptResponse.scope, decryptResponse.result.toByteArray()) }
         }
@@ -222,7 +214,7 @@ class AutoPushFeature(
      * @param scope The subscription identifier which usually represents the website's URI.
      * @param appServerKey An optional key provided by the application server.
      * @param block The callback invoked when a subscription for the [scope] is found, otherwise null. Note: this will
-     * not execute on the calls thread.
+     *   not execute on the calls thread.
      */
     fun getSubscription(
         scope: String,
@@ -235,11 +227,10 @@ class AutoPushFeature(
     }
 
     /**
-     * Deletes the FCM registration token locally so that it forces the service to get a new one the
-     * next time hits it's messaging server.
-     * XXX - this is suspect - the only caller of this is FxA, and it calls it when the device
-     * record indicates the end-point is expired. If that's truly necessary, then it will mean
-     * push never recovers for non-FxA users. If that's not truly necessary, we should remove it!
+     * Deletes the FCM registration token locally so that it forces the service to get a new one the next time hits it's
+     * messaging server. XXX - this is suspect - the only caller of this is FxA, and it calls it when the device record
+     * indicates the end-point is expired. If that's truly necessary, then it will mean push never recovers for non-FxA
+     * users. If that's not truly necessary, we should remove it!
      */
     override fun renewRegistration() {
         logger.warn("Forcing FCM registration renewal by deleting our (cached) token.")
@@ -255,9 +246,7 @@ class AutoPushFeature(
         service.start(context)
     }
 
-    /**
-     * Verifies status (active, expired) of the push subscriptions and then notifies observers.
-     */
+    /** Verifies status (active, expired) of the push subscriptions and then notifies observers. */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun verifyActiveSubscriptions(forceVerify: Boolean = false) {
         withConnection {
@@ -286,26 +275,19 @@ class AutoPushFeature(
     private fun preferences(context: Context): SharedPreferences =
         context.getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE)
 
-    /**
-     * Observers that want to receive updates for new subscriptions and messages.
-     */
+    /** Observers that want to receive updates for new subscriptions and messages. */
     interface Observer {
 
-        /**
-         * A subscription for the scope is available.
-         */
+        /** A subscription for the scope is available. */
         fun onSubscriptionChanged(scope: PushScope) = Unit
 
-        /**
-         * A messaged has been received for the [scope].
-         */
+        /** A messaged has been received for the [scope]. */
         fun onMessageReceived(scope: PushScope, message: ByteArray?) = Unit
     }
 
     private fun exceptionHandler(onError: (PushError) -> Unit) = CoroutineExceptionHandler { _, e ->
         when (e) {
-            is UaidNotRecognizedException,
-            -> onError(PushError.Rust(e, e.message.orEmpty()))
+            is UaidNotRecognizedException -> onError(PushError.Rust(e, e.message.orEmpty()))
             else -> logger.warn("Internal error occurred in AutoPushFeature.", e)
         }
     }
@@ -334,24 +316,20 @@ class AutoPushFeature(
 }
 
 /**
- * Supported push services. This are currently limited to Firebase Cloud Messaging and
- * (previously) Amazon Device Messaging.
+ * Supported push services. This are currently limited to Firebase Cloud Messaging and (previously) Amazon Device
+ * Messaging.
  */
 enum class ServiceType {
-    FCM,
+    FCM
 }
 
-/**
- * Supported network protocols.
- */
+/** Supported network protocols. */
 enum class Protocol {
     HTTP,
     HTTPS,
 }
 
-/**
- * The subscription information from AutoPush that can be used to send push messages to other devices.
- */
+/** The subscription information from AutoPush that can be used to send push messages to other devices. */
 data class AutoPushSubscription(
     val scope: PushScope,
     val endpoint: String,
@@ -377,17 +355,14 @@ data class PushConfig(
     val disableRateLimit: Boolean = false,
 )
 
-/**
- * Helper function to get the corresponding support [BridgeType] from the support set.
- */
+/** Helper function to get the corresponding support [BridgeType] from the support set. */
 @VisibleForTesting
-internal fun ServiceType.toBridgeType() = when (this) {
-    ServiceType.FCM -> BridgeType.FCM
-}
+internal fun ServiceType.toBridgeType() =
+    when (this) {
+        ServiceType.FCM -> BridgeType.FCM
+    }
 
-/**
- * A helper to convert the internal data class.
- */
+/** A helper to convert the internal data class. */
 private fun Protocol.toRustHttpProtocol(): PushHttpProtocol {
     return when (this) {
         Protocol.HTTPS -> PushHttpProtocol.HTTPS
@@ -395,9 +370,7 @@ private fun Protocol.toRustHttpProtocol(): PushHttpProtocol {
     }
 }
 
-/**
- * A helper to convert the internal data class.
- */
+/** A helper to convert the internal data class. */
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 fun SubscriptionResponse.toPushSubscription(
     scope: String,

@@ -3,34 +3,22 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package mozilla.components.support.remotesettings
-/**
- * Enum class representing the Remote Settings server that the client should use.
- */
+/** Enum class representing the Remote Settings server that the client should use. */
 sealed class RemoteSettingsServer {
-    /**
-     * Object representing Production RemoteSettingsServer
-     */
+    /** Object representing Production RemoteSettingsServer */
     object Prod : RemoteSettingsServer()
 
-    /**
-     * Object representing Stage RemoteSettingsServer
-     */
+    /** Object representing Stage RemoteSettingsServer */
     object Stage : RemoteSettingsServer()
 
-    /**
-     * Object representing Dev RemoteSettingsServer with v2 route
-     */
+    /** Object representing Dev RemoteSettingsServer with v2 route */
     object Dev : RemoteSettingsServer()
 
-    /**
-     * Object representing Custom RemoteSettingsServer
-     */
+    /** Object representing Custom RemoteSettingsServer */
     data class Custom(val url: String) : RemoteSettingsServer()
 }
 
-/**
- * Convert [RemoteSettingsServer] into [mozilla.appservices.remotesettings.RemoteSettingsServer].
- */
+/** Convert [RemoteSettingsServer] into [mozilla.appservices.remotesettings.RemoteSettingsServer]. */
 fun RemoteSettingsServer.into(): mozilla.appservices.remotesettings.RemoteSettingsServer {
     return when (this) {
         RemoteSettingsServer.Dev -> mozilla.appservices.remotesettings.RemoteSettingsServer.Dev

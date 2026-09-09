@@ -9,6 +9,7 @@
  * - Top Sites render (capped at MAX_TOP_SITES) once starter prompts resolve, so
  *   the prompts row and Top Sites paint together instead of shifting.
  * - The browser.smartwindow.hideTopSites pref hides Top Sites live.
+ * - Turning Shortcuts off in the New Tab settings also hides them.
  * - Background (hidden) tabs reveal Top Sites without waiting on starters,
  *   which never load for a non-selected tab.
  * - The smartwindow-topsites component renders tiles, falls back through the
@@ -18,6 +19,8 @@
 "use strict";
 
 const HIDE_TOP_SITES_PREF = "browser.smartwindow.hideTopSites";
+const TOPSITES_FEED_ENABLED_PREF =
+  "browser.newtabpage.activity-stream.feeds.topsites";
 const MAX_TOP_SITES = 8;
 
 const SAMPLE_SITES = [
@@ -192,6 +195,40 @@ add_task(async function test_topsites_hidden_by_pref() {
     await TestUtils.waitForCondition(
       () => getTopSiteTiles(aiWindow).length === 0,
       "Top Sites should hide when the hide pref flips to true"
+    );
+    await SpecialPowers.popPrefEnv();
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+    sb.restore();
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+add_task(async function test_topsites_hidden_by_feed_pref() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [HIDE_TOP_SITES_PREF, false],
+      [TOPSITES_FEED_ENABLED_PREF, true],
+    ],
+  });
+  const sb = sinon.createSandbox();
+  sb.stub(AboutNewTab, "getTopSites").returns(SAMPLE_SITES);
+
+  const win = await openAIWindow();
+  try {
+    const aiWindow = await getResolvedAiWindow(win.gBrowser.selectedBrowser);
+    await TestUtils.waitForCondition(
+      () => getTopSiteTiles(aiWindow).length === SAMPLE_SITES.length,
+      "Top Sites should render while both prefs allow them"
+    );
+
+    // Turning Shortcuts off in the New Tab settings must clear the row.
+    await SpecialPowers.pushPrefEnv({
+      set: [[TOPSITES_FEED_ENABLED_PREF, false]],
+    });
+    await TestUtils.waitForCondition(
+      () => getTopSiteTiles(aiWindow).length === 0,
+      "Top Sites should hide when Shortcuts are disabled in New Tab settings"
     );
     await SpecialPowers.popPrefEnv();
   } finally {

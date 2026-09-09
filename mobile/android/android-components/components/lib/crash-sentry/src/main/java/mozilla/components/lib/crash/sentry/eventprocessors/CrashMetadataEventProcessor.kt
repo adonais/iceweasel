@@ -10,9 +10,9 @@ import io.sentry.SentryEvent
 import mozilla.components.lib.crash.Crash
 
 /**
- * This [EventProcessor] will retain a reference to the [Crash] that has been most recently reported,
- * allowing us to attach metadata from it to a [SentryEvent] as it is being processed. This allows us to,
- * for example, add runtime information from [Crash.runtimeTags].
+ * This [EventProcessor] will retain a reference to the [Crash] that has been most recently reported, allowing us to
+ * attach metadata from it to a [SentryEvent] as it is being processed. This allows us to, for example, add runtime
+ * information from [Crash.runtimeTags].
  */
 class CrashMetadataEventProcessor : EventProcessor {
     internal var crashToProcess: Crash? = null

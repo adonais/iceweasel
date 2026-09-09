@@ -2,6 +2,9 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
+    <ID>BracesOnIfStatements:FullDisplayToolbar.kt$else</ID>
+    <ID>BracesOnIfStatements:FullDisplayToolbar.kt$if</ID>
+    <ID>BracesOnIfStatements:ParentBrowserMenuItem.kt$ParentBrowserMenuItem$if</ID>
     <ID>ClassAcronymCasing:AMOAddonsProvider.kt$AMOAddonsProvider : AddonsProvider</ID>
     <ID>ClassAcronymCasing:BrowserToolbar.kt$BrowserToolbarCFR</ID>
     <ID>ClassAcronymCasing:BrowserToolbarAction.kt$BrowserDisplayToolbarAction$ToolbarCFRDismissed : BrowserDisplayToolbarAction</ID>
@@ -29,7 +32,6 @@
     <ID>ClassAcronymCasing:HttpURLConnectionClient.kt$HttpURLConnectionClient : Client</ID>
     <ID>ClassAcronymCasing:ICOIconDecoder.kt$ICOIconDecoder : ImageDecoder</ID>
     <ID>ClassAcronymCasing:ParsedStructure.kt$ParsedStructure$CREATOR : Creator</ID>
-    <ID>ClassAcronymCasing:PocketJSONParser.kt$PocketJSONParser</ID>
     <ID>ClassAcronymCasing:URLRenderer.kt$URLRenderer</ID>
     <ID>ClassAcronymCasing:URLStringUtils.kt$URLStringUtils</ID>
     <ID>ClassAcronymCasing:WebURLFinder.kt$WebURLFinder</ID>
@@ -86,8 +88,8 @@
     <ID>ForbiddenSuppress:Grammar.kt$Grammar$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:HighlightedDomainUrl.kt$@Suppress("LongMethod")</ID>
     <ID>ForbiddenSuppress:HttpIconLoader.kt$HttpIconLoader$@Suppress("CognitiveComplexMethod")</ID>
+    <ID>ForbiddenSuppress:IconDirectoryEntry.kt$@Suppress( "MagicNumber", "ReturnCount", "CognitiveComplexMethod", "NestedBlockDepth", "ComplexCondition", "CyclomaticComplexMethod", )</ID>
     <ID>ForbiddenSuppress:IconDirectoryEntry.kt$@Suppress("MagicNumber")</ID>
-    <ID>ForbiddenSuppress:IconDirectoryEntry.kt$@Suppress("MagicNumber", "ReturnCount", "CognitiveComplexMethod", "NestedBlockDepth", "ComplexCondition", "CyclomaticComplexMethod")</ID>
     <ID>ForbiddenSuppress:IconDirectoryEntry.kt$IconDirectoryEntry$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:IconResourceComparator.kt$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:ImageDecoder.kt$ImageDecoder.Companion.ImageMagicNumbers$@Suppress("MagicNumber")</ID>
@@ -166,10 +168,10 @@
     <ID>HardcodedPaddingUsage:ButtonsScreen.kt$(horizontal = 16.dp)</ID>
     <ID>HardcodedPaddingUsage:ButtonsScreen.kt$(vertical = 16.dp)</ID>
     <ID>HardcodedPaddingUsage:CFRBox.kt$(16.dp)</ID>
-    <ID>HardcodedPaddingUsage:CFRPopupContent.kt$( end = 6.dp, )</ID>
-    <ID>HardcodedPaddingUsage:CFRPopupContent.kt$( end = if (showDismissButton) 24.dp else 16.dp, // 8.dp extra padding to the "X" icon )</ID>
+    <ID>HardcodedPaddingUsage:CFRPopupContent.kt$( end = if (showDismissButton) 24.dp else 16.dp // 8.dp extra padding to the "X" icon )</ID>
     <ID>HardcodedPaddingUsage:CFRPopupContent.kt$( start = 16.dp, top = 16.dp + if (indicatorDirection == CFRPopup.IndicatorDirection.UP) { CFRPopup.DEFAULT_INDICATOR_HEIGHT.dp } else { 0.dp }, end = 16.dp, bottom = 16.dp + if (indicatorDirection == CFRPopup.IndicatorDirection.DOWN) { CFRPopup.DEFAULT_INDICATOR_HEIGHT.dp } else { 0.dp }, )</ID>
-    <ID>HardcodedPaddingUsage:CFRPopupContent.kt$( top = if (indicatorDirection == CFRPopup.IndicatorDirection.UP) 9.dp else 0.dp, )</ID>
+    <ID>HardcodedPaddingUsage:CFRPopupContent.kt$(end = 6.dp)</ID>
+    <ID>HardcodedPaddingUsage:CFRPopupContent.kt$(top = if (indicatorDirection == CFRPopup.IndicatorDirection.UP) 9.dp else 0.dp)</ID>
     <ID>HardcodedPaddingUsage:CheckmarkBadge.kt$(8.dp)</ID>
     <ID>HardcodedPaddingUsage:ColorsScreen.kt$(16.dp)</ID>
     <ID>HardcodedPaddingUsage:ColorsScreen.kt$(horizontal = 16.dp)</ID>
@@ -185,7 +187,6 @@
     <ID>HardcodedPaddingUsage:FlightSuggestion.kt$(end = 16.dp)</ID>
     <ID>HardcodedPaddingUsage:FlightSuggestion.kt$(horizontal = 8.dp)</ID>
     <ID>HardcodedPaddingUsage:FloatingActionButton.kt$(16.dp)</ID>
-    <ID>HardcodedPaddingUsage:FullDisplayToolbar.kt$( horizontal = when (isSmallWidthScreen) { true -&gt; NO_TOOLBAR_PADDING_DP.dp else -&gt; LARGE_TOOLBAR_PADDING_DP.dp }, )</ID>
     <ID>HardcodedPaddingUsage:FullDisplayToolbar.kt$( start = when (browserActionsStart.isEmpty()) { true -&gt; TOOLBAR_PADDING_DP.dp false -&gt; NO_TOOLBAR_PADDING_DP.dp }, top = TOOLBAR_PADDING_DP.dp, end = when (browserActionsEnd.isEmpty()) { true -&gt; TOOLBAR_PADDING_DP.dp false -&gt; NO_TOOLBAR_PADDING_DP.dp }, bottom = when (gravity) { Top -&gt; TOOLBAR_PADDING_DP Bottom -&gt; if (browserActionsEnd.isEmpty()) NO_TOOLBAR_PADDING_DP else TOOLBAR_PADDING_DP }.dp, )</ID>
     <ID>HardcodedPaddingUsage:FullDisplayToolbar.kt$( start = when (pageActionsStart.isEmpty()) { true -&gt; TOOLBAR_PADDING_DP.dp false -&gt; NO_TOOLBAR_PADDING_DP.dp }, top = NO_TOOLBAR_PADDING_DP.dp, end = when (pageActionsEnd.isEmpty()) { true -&gt; TOOLBAR_PADDING_DP.dp false -&gt; NO_TOOLBAR_PADDING_DP.dp }, bottom = NO_TOOLBAR_PADDING_DP.dp, )</ID>
     <ID>HardcodedPaddingUsage:IconButton.kt$(all = 16.dp)</ID>
@@ -239,6 +240,10 @@
     <ID>HardcodedPaddingUsage:TabCounterButton.kt$(16.dp)</ID>
     <ID>HardcodedPaddingUsage:TextField.kt$(8.dp)</ID>
     <ID>HardcodedPaddingUsage:TrailingIconScope.kt$(8.dp)</ID>
+    <ID>LongMethod:ExternalAppBrowserFragment.kt$ExternalAppBrowserFragment$override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View</ID>
+    <ID>LongMethod:SitePermissionsDialogFragment.kt$SitePermissionsDialogFragment$@SuppressLint("InflateParams") private fun createContainer(): View</ID>
+    <ID>LongMethod:SystemEngineSession.kt$SystemEngineSession$private fun initSettings(webView: WebView, s: WebSettings)</ID>
+    <ID>LongMethod:TabCounterView.kt$TabCounterView$private fun createBoxAnimatorSet(animatorSet: AnimatorSet)</ID>
     <ID>MaterialTextButtonUsage:CFRPopupLayout.kt$import androidx.compose.material3.TextButton</ID>
     <ID>MaterialTextButtonUsage:ImporterDialog.kt$import androidx.compose.material3.TextButton</ID>
     <ID>MaterialTextButtonUsage:PasswordsImporterDialog.kt$import androidx.compose.material3.TextButton</ID>
@@ -246,16 +251,17 @@
     <ID>MaterialTypographyUsage:AnimatedPillButton.kt$MaterialTheme.typography</ID>
     <ID>MaterialTypographyUsage:AnimationLayer.kt$MaterialTheme.typography</ID>
     <ID>MaterialTypographyUsage:BadgedIcon.kt$MaterialTheme.typography</ID>
-    <ID>MaterialTypographyUsage:CFRBox.kt$MaterialTheme.typography</ID>
     <ID>MaterialTypographyUsage:IPProtectionStateDebug.kt$MaterialTheme.typography</ID>
     <ID>MaterialTypographyUsage:ImporterDialog.kt$MaterialTheme.typography</ID>
     <ID>MaterialTypographyUsage:LoginPickerView.kt$MaterialTheme.typography</ID>
     <ID>MaterialTypographyUsage:PasswordGeneratorPrompt.kt$MaterialTheme.typography</ID>
-    <ID>MaterialTypographyUsage:SummarizeSettingsScreen.kt$MaterialTheme.typography</ID>
     <ID>MaterialTypographyUsage:Tab.kt$MaterialTheme.typography</ID>
-    <ID>MaxLineLength:ContextCompatDetector.kt$ContextCompatDetector.Companion$explanation = "Using this method can lead to crashes in older Android versions as newer features might not be available"</ID>
-    <ID>MaxLineLength:IconDirectoryEntry.kt$@Suppress("MagicNumber", "ReturnCount", "CognitiveComplexMethod", "NestedBlockDepth", "ComplexCondition", "CyclomaticComplexMethod")</ID>
-    <ID>MaxLineLength:StringLintXmlDetectorTest.kt$StringLintXmlDetectorTest$fun</ID>
+    <ID>MaxLineLength:AMOAddonsProvider.kt$AMOAddonsProvider$"$serverURL/$API_VERSION/accounts/account/$collectionUser/collections/$collectionName/addons/"</ID>
+    <ID>MaxLineLength:AddonUpdater.kt$AddonUpdaterWorker$"Error while trying to update extension $extensionId - status=${status.message}"</ID>
+    <ID>MaxLineLength:BrowserStore.kt$BrowserStore$"Use a real instance instead. To verify behavior, use CaptureActionsMiddleware to assert dispatched actions, "</ID>
+    <ID>MaxLineLength:ContextCompatDetector.kt$ContextCompatDetector.Companion$"Using this method can lead to crashes in older Android versions as newer features might not be available"</ID>
+    <ID>MaxLineLength:GeckoEngine.kt$GeckoEngine$*</ID>
+    <ID>MaxLineLength:VisibleForTestingDetector.kt$VisibleForTestingDetector.Companion$"Other packages such as org.jetbrains.annotations or com.google.common.annotations are not allowed."</ID>
     <ID>MayBeConst:ConstraintLayoutPerfDetector.kt$private val CUSTOM_VIEW_ISSUE_DESCRIPTION = "Caution regarding custom views extending `ConstraintLayout`"</ID>
     <ID>MayBeConst:ConstraintLayoutPerfDetector.kt$private val CUSTOM_VIEW_ISSUE_MESSAGE = "Custom views extending `ConstraintLayout` are less " + "efficient because they cannot share other `ConstraintLayout` defined in file."</ID>
     <ID>TooManyFunctions:Engine.kt$Engine : WebExtensionRuntimeTranslationsRuntimeBrowserPreferencesRuntimeAddressStructureRuntimeDataCleanable</ID>
@@ -283,7 +289,6 @@
     <ID>UndocumentedPublicClass:DiskIconLoader.kt$DiskIconLoader$LoaderDiskCache</ID>
     <ID>UndocumentedPublicClass:DiskIconPreparer.kt$DiskIconPreparer$PreparerDiskCache</ID>
     <ID>UndocumentedPublicClass:DiskIconProcessor.kt$DiskIconProcessor$ProcessorDiskCache</ID>
-    <ID>UndocumentedPublicClass:DomainAutoCompleteProvider.kt$DomainAutoCompleteProvider$AutocompleteSource</ID>
     <ID>UndocumentedPublicClass:DomainMatcher.kt$DomainMatch</ID>
     <ID>UndocumentedPublicClass:DownloadManager.kt$DownloadManager</ID>
     <ID>UndocumentedPublicClass:DownloadService.kt$DownloadService : AbstractFetchDownloadService</ID>
@@ -498,10 +503,6 @@
     <ID>UndocumentedPublicFunction:PermissionRequest.kt$PermissionRequest$fun containsVideoAndAudioSources()</ID>
     <ID>UndocumentedPublicFunction:PictureInPictureFeature.kt$PictureInPictureFeature$fun onHomePressed(): Boolean</ID>
     <ID>UndocumentedPublicFunction:Providers.kt$BaseDomainAutocompleteProvider$fun initialize(context: Context)</ID>
-    <ID>UndocumentedPublicFunction:ReaderViewControlsView.kt$ReaderViewControlsView.Listener$fun onColorSchemeChanged(scheme: ColorScheme)</ID>
-    <ID>UndocumentedPublicFunction:ReaderViewControlsView.kt$ReaderViewControlsView.Listener$fun onFontChanged(font: FontType)</ID>
-    <ID>UndocumentedPublicFunction:ReaderViewControlsView.kt$ReaderViewControlsView.Listener$fun onFontSizeDecreased(): Int</ID>
-    <ID>UndocumentedPublicFunction:ReaderViewControlsView.kt$ReaderViewControlsView.Listener$fun onFontSizeIncreased(): Int</ID>
     <ID>UndocumentedPublicFunction:ReversibleString.kt$ReversibleString$abstract fun charAt(position: Int): Char</ID>
     <ID>UndocumentedPublicFunction:ReversibleString.kt$ReversibleString$abstract fun substring(startIndex: Int): ReversibleString</ID>
     <ID>UndocumentedPublicFunction:ReversibleString.kt$fun String.reverse(): ReversibleString</ID>
@@ -530,7 +531,6 @@
     <ID>UndocumentedPublicFunction:String.kt$fun String.isEmail()</ID>
     <ID>UndocumentedPublicFunction:String.kt$fun String.isGeoLocation()</ID>
     <ID>UndocumentedPublicFunction:String.kt$fun String.isPhone()</ID>
-    <ID>UndocumentedPublicFunction:SyncAuthInfoCache.kt$SyncAuthInfoCache$fun expired(): Boolean</ID>
     <ID>UndocumentedPublicFunction:SystemEngineSession.kt$SystemEngineSession.WebSetting$operator fun getValue(thisRef: Any?, property: KProperty&lt;*&gt;): T</ID>
     <ID>UndocumentedPublicFunction:SystemEngineSession.kt$SystemEngineSession.WebSetting$operator fun setValue(thisRef: Any?, property: KProperty&lt;*&gt;, value: T)</ID>
     <ID>UndocumentedPublicFunction:SystemEngineSessionState.kt$SystemEngineSessionState.Companion$fun fromJSON(json: JSONObject): SystemEngineSessionState</ID>

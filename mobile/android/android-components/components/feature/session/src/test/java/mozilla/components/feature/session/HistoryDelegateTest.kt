@@ -56,10 +56,11 @@ class HistoryDelegateTest {
 
         val previewImageUrl = "https://test.com/og-image-url"
         delegate.onPreviewImageChange("http://www.mozilla.org", previewImageUrl)
-        verify(storage).recordObservation(
-            "http://www.mozilla.org",
-            PageObservation(previewImageUrl = previewImageUrl),
-        )
+        verify(storage)
+            .recordObservation(
+                "http://www.mozilla.org",
+                PageObservation(previewImageUrl = previewImageUrl),
+            )
     }
 
     @Test
@@ -112,10 +113,11 @@ class HistoryDelegateTest {
     @Test
     fun `hasVisitedSince returns false when only other hosts were visited`() = runTest {
         val storage = TestHistoryStorage()
-        storage.detailedVisits = listOf(
-            visit("https://www.firefox.com/"),
-            visit("https://notmozilla.org/"),
-        )
+        storage.detailedVisits =
+            listOf(
+                visit("https://www.firefox.com/"),
+                visit("https://notmozilla.org/"),
+            )
         val delegate = HistoryDelegate(lazy { storage })
 
         assertFalse(delegate.hasVisitedSince("mozilla.org", 1000L, 5000L))
@@ -149,14 +151,15 @@ class HistoryDelegateTest {
         assertEquals(null, storage.detailedVisitsStart)
     }
 
-    private fun visit(url: String) = VisitInfo(
-        url = url,
-        title = null,
-        visitTime = 0L,
-        visitType = VisitType.LINK,
-        previewImageUrl = null,
-        isRemote = false,
-    )
+    private fun visit(url: String) =
+        VisitInfo(
+            url = url,
+            title = null,
+            visitTime = 0L,
+            visitType = VisitType.LINK,
+            previewImageUrl = null,
+            isRemote = false,
+        )
 
     private class TestHistoryStorage : HistoryStorage, AutocompleteProvider {
         var getVisitedListCalled = false
@@ -197,7 +200,11 @@ class HistoryDelegateTest {
             return detailedVisits
         }
 
-        override suspend fun getVisitsPaginated(offset: Long, count: Long, excludeTypes: List<VisitType>): List<VisitInfo> {
+        override suspend fun getVisitsPaginated(
+            offset: Long,
+            count: Long,
+            excludeTypes: List<VisitType>,
+        ): List<VisitInfo> {
             fail()
             return emptyList()
         }

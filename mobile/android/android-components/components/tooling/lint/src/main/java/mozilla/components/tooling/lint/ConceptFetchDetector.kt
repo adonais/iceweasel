@@ -52,7 +52,8 @@ class ConceptFetchDetector : Detector(), SourceCodeScanner {
         val containingClass = method.containingClass ?: return
         val evaluator = context.evaluator
 
-        if (evaluator.extendsClass(
+        if (
+            evaluator.extendsClass(
                 containingClass,
                 CLIENT_CLS,
                 false,
@@ -100,13 +101,7 @@ class ConceptFetchDetector : Detector(), SourceCodeScanner {
             context.getCallLocation(node, includeReceiver = true, includeArguments = false),
             "Response created but not closed: did you forget to call `close()`?",
             if (CheckResultDetector.isExpressionValueUnused(node)) {
-                fix()
-                    .replace()
-                    .name("Call close()")
-                    .range(context.getLocation(node))
-                    .end()
-                    .with(".close()")
-                    .build()
+                fix().replace().name("Call close()").range(context.getLocation(node)).end().with(".close()").build()
             } else {
                 null
             },
@@ -134,16 +129,17 @@ class ConceptFetchDetector : Detector(), SourceCodeScanner {
         initialReferences: Collection<PsiVariable> = emptyList(),
     ) : DataFlowAnalyzer(initial, initialReferences) {
         var found = false
+
         override fun visitQualifiedReferenceExpression(node: UQualifiedReferenceExpression): Boolean {
-            val methodName: String? = with(node.selector as? UCallExpression) {
-                this?.methodName ?: this?.methodIdentifier?.name
-            }
+            val methodName: String? =
+                with(node.selector as? UCallExpression) {
+                    this?.methodName ?: this?.methodIdentifier?.name
+                }
 
             when (methodName) {
                 USE_STREAM,
                 USE_BUFFERED_READER,
-                STRING,
-                -> {
+                STRING -> {
                     if (node.receiver.getExpressionType()?.canonicalText == BODY_CLS) {
                         // We are using any of the `body` methods which are all closeable.
                         found = true
@@ -156,9 +152,8 @@ class ConceptFetchDetector : Detector(), SourceCodeScanner {
         }
     }
 
-    private class ResponseEscapedTracker(
-        initial: Collection<UElement>,
-    ) : EscapeCheckingDataFlowAnalyzer(initial, emptyList()) {
+    private class ResponseEscapedTracker(initial: Collection<UElement>) :
+        EscapeCheckingDataFlowAnalyzer(initial, emptyList()) {
         override fun returnsSelf(call: UCallExpression): Boolean {
             val type = call.receiver?.getExpressionType()?.canonicalText ?: return super.returnsSelf(call)
             return type == RESPONSE_CLS
@@ -187,8 +182,7 @@ class ConceptFetchDetector : Detector(), SourceCodeScanner {
                 // loosely match kotlin.io.use() signature and at the same time allow custom
                 // overloads for types not extending Closeable
                 if (call != null && call.valueArgumentCount == 1) {
-                    val argumentType =
-                        call.valueArguments.first().skipLabeledExpression().getExpressionType()
+                    val argumentType = call.valueArguments.first().skipLabeledExpression().getExpressionType()
                     if (argumentType != null && LambdaUtil.isFunctionalType(argumentType)) {
                         return true
                     }
@@ -202,8 +196,7 @@ class ConceptFetchDetector : Detector(), SourceCodeScanner {
                 if (targetName == RESPONSE_CLS) {
                     return true
                 }
-                val recycleClass =
-                    context.evaluator.findClass(RESPONSE_CLS) ?: return true
+                val recycleClass = context.evaluator.findClass(RESPONSE_CLS) ?: return true
                 return context.evaluator.extendsClass(recycleClass, targetName, false)
             } else {
                 // Unresolved method call -- assume it's okay
@@ -214,26 +207,30 @@ class ConceptFetchDetector : Detector(), SourceCodeScanner {
 
     companion object {
         @JvmField
-        val ISSUE_FETCH_RESPONSE_CLOSE = Issue.create(
-            id = "FetchResponseClose",
-            briefDescription = "Response stream fetched but not closed.",
-            explanation = """
-                A `Client.fetch` returns a `Response` that, on success, is consumed typically with
-                a `use` stream in Kotlin or a try-with-resources in Java. In the failure or manual
-                resource managed cases, we need to ensure that `Response.close` is always called.
+        val ISSUE_FETCH_RESPONSE_CLOSE =
+            Issue.create(
+                id = "FetchResponseClose",
+                briefDescription = "Response stream fetched but not closed.",
+                explanation =
+                    """
+                    A `Client.fetch` returns a `Response` that, on success, is consumed typically with
+                    a `use` stream in Kotlin or a try-with-resources in Java. In the failure or manual
+                    resource managed cases, we need to ensure that `Response.close` is always called.
 
-                Additionally, all methods on `Response.body` are AutoCloseable so using any of
-                those will release those resources after execution.
-            """.trimIndent(),
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            androidSpecific = true,
-            implementation = Implementation(
-                ConceptFetchDetector::class.java,
-                Scope.JAVA_FILE_SCOPE,
-            ),
-        )
+                    Additionally, all methods on `Response.body` are AutoCloseable so using any of
+                    those will release those resources after execution.
+                    """
+                        .trimIndent(),
+                category = Category.CORRECTNESS,
+                priority = 6,
+                severity = Severity.ERROR,
+                androidSpecific = true,
+                implementation =
+                    Implementation(
+                        ConceptFetchDetector::class.java,
+                        Scope.JAVA_FILE_SCOPE,
+                    ),
+            )
 
         // Target method names
         private const val CLOSE = "close"

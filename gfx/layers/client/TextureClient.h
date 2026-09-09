@@ -619,6 +619,13 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
   TextureData* GetInternalData() { return mData; }
   const TextureData* GetInternalData() const { return mData; }
 
+  /**
+   * Serializes the underlying TextureData into aDescriptor. Returns false if
+   * the TextureData has already been destroyed. Safe to call from any thread
+   * concurrently with Destroy().
+   */
+  bool ToSurfaceDescriptor(SurfaceDescriptor& aDescriptor);
+
   uint64_t GetSerial() const { return mSerial; }
   void GetSurfaceDescriptorRemoteDecoder(
       SurfaceDescriptorRemoteDecoder* aOutDesc);
@@ -717,16 +724,6 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
   friend class AtomicRefCountedWithFinalize<TextureClient>;
 
  protected:
-  /**
-   * Should only be called *once* per texture, in TextureClient::InitIPDLActor.
-   * Some texture implementations rely on the fact that the descriptor will be
-   * deserialized.
-   * Calling ToSurfaceDescriptor again after it has already returned true,
-   * or never constructing a TextureHost with aDescriptor may result in a memory
-   * leak (see TextureClientD3D9 for example).
-   */
-  bool ToSurfaceDescriptor(SurfaceDescriptor& aDescriptor);
-
   void LockActor() const;
   void UnlockActor() const;
 

@@ -16,8 +16,8 @@ import mozilla.components.lib.crash.CrashReporter
 /**
  * Records breadcrumbs when the fragment changes.
  *
- * Should be registered as a [LifecycleObserver] on an activity if telemetry is enabled.
- * It will automatically be removed when the lifecycle owner is destroyed.
+ * Should be registered as a [LifecycleObserver] on an activity if telemetry is enabled. It will automatically be
+ * removed when the lifecycle owner is destroyed.
  */
 class BreadcrumbsRecorder(
     private val crashReporter: CrashReporter,
@@ -33,9 +33,7 @@ class BreadcrumbsRecorder(
         navController.removeOnDestinationChangedListener(this)
     }
 
-    /**
-     * When the destination changes, record the new destination as a breadcrumb.
-     */
+    /** When the destination changes, record the new destination as a breadcrumb. */
     override fun onDestinationChanged(
         controller: NavController,
         destination: NavDestination,
@@ -46,7 +44,7 @@ class BreadcrumbsRecorder(
                 message = getBreadcrumbMessage(destination),
                 category = "DestinationChanged",
                 level = Breadcrumb.Level.INFO,
-            ),
+            )
         )
     }
 }

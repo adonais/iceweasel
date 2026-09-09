@@ -17,7 +17,7 @@ ChromeUtils.defineESModuleGetters(
   {
     BLOCK_WORDS_ENCODED: "chrome://global/content/ml/BlockWords.sys.mjs",
     ModelHub: "chrome://global/content/ml/ModelHub.sys.mjs",
-    MLEngine: "resource://gre/actors/MLEngineParent.sys.mjs",
+    MLEngine: "moz-src:///toolkit/components/ml/actors/MLEngineParent.sys.mjs",
     EngineProcess: "chrome://global/content/ml/EngineProcess.sys.mjs",
     RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
     TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",

@@ -15,8 +15,7 @@ import mozilla.components.service.fxrelay.eligibility.ServiceClientId
  */
 internal suspend fun OAuthAccount.relayClient(): AttachedClient? {
     val serviceIds = ServiceClientId.entries.map { it.id }.toSet()
-    return getAttachedClient()
-        .firstOrNull { client ->
-            serviceIds.contains(client.clientId)
-        }
+    return getAttachedClient().firstOrNull { client ->
+        serviceIds.contains(client.clientId)
+    }
 }

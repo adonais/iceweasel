@@ -6,9 +6,7 @@ package mozilla.components.feature.password.importer
 
 import mozilla.components.lib.state.State
 
-/**
- * State for the passwords importer feature.
- */
+/** State for the passwords importer feature. */
 sealed interface PasswordsImporterState : State {
     /** The passwords importer has not yet been triggered. */
     object Inert : PasswordsImporterState
@@ -27,9 +25,7 @@ sealed interface PasswordsImporterState : State {
     data class Finished(val result: PasswordsImporterResult) : PasswordsImporterState
 }
 
-/**
- * Represents the outcome of a completed import operation.
- */
+/** Represents the outcome of a completed import operation. */
 sealed interface PasswordsImporterResult {
     /**
      * The import succeeded.

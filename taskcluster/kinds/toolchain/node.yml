@@ -29,7 +29,6 @@ linux64-node-22:
         symbol: TL(node-22)
     worker-type: b-linux-docker-large-amd
     run:
-        clone-with: hg
         script: build-nodejs.sh
         toolchain-alias:
             - linux64-node
@@ -51,7 +50,6 @@ linux64-aarch64-node-22:
     treeherder:
         symbol: TLA64(node-22)
     run:
-        clone-with: hg
         toolchain-alias:
             - linux64-aarch64-node
     fetches:
@@ -62,7 +60,6 @@ macosx64-node-22:
     treeherder:
         symbol: TM(node-22)
     run:
-        clone-with: hg
         toolchain-alias:
             - macosx64-node
 
@@ -74,7 +71,6 @@ macosx64-aarch64-node-22:
     treeherder:
         symbol: TMA64(node-22)
     run:
-        clone-with: hg
         toolchain-alias:
             - macosx64-aarch64-node
     fetches:
@@ -85,7 +81,6 @@ win64-node-22:
     treeherder:
         symbol: TW64(node-22)
     run:
-        clone-with: hg
         toolchain-alias:
             - win64-node
     fetches:
@@ -106,7 +101,6 @@ win32-node-22:
     treeherder:
         symbol: TW32(node-22)
     run:
-        clone-with: hg
         toolchain-alias:
             - win32-node
     fetches:

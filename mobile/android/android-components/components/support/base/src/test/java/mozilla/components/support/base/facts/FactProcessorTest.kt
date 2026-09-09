@@ -23,11 +23,12 @@ class FactProcessorTest {
         val processor: FactProcessor = mock()
         processor.register()
 
-        val fact = Fact(
-            Component.SUPPORT_TEST,
-            Action.CLICK,
-            "test",
-        )
+        val fact =
+            Fact(
+                Component.SUPPORT_TEST,
+                Action.CLICK,
+                "test",
+            )
 
         fact.collect()
 

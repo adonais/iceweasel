@@ -1014,6 +1014,10 @@ PK11_ExtractPublicKey(PK11SlotInfo *slot, KeyType keyType, CK_OBJECT_HANDLE id)
             CK_NSS_KEM_PARAMETER_SET_TYPE *pPK11Params = kemParams->pValue;
             pubKey->u.kyber.params = seckey_GetKyberParamsByPkcs11ParamSet(
                 *pPK11Params);
+            if (pubKey->u.kyber.params == params_kyber_invalid) {
+                crv = CKR_OBJECT_HANDLE_INVALID;
+                break;
+            }
             crv = pk11_Attr2SecItem(arena, value, &pubKey->u.kyber.publicValue);
             break;
         case fortezzaKey:
@@ -1357,14 +1361,13 @@ pk11_loadPrivKeyWithFlags(PK11SlotInfo *slot, SECKEYPrivateKey *privKey,
         return NULL;
     }
 
-    /* try loading the public key */
+    /* try loading the public key. PK11_ImportPublicKey leaves the new object
+     * attached to pubKey, which is what lets SECKEY_DestroyPublicKey clean it
+     * up: it destroys a session object and skips a permanent one. Detaching it
+     * here would strand a session object on the slot with nothing left to
+     * destroy it. */
     if (pubKey) {
         PK11_ImportPublicKey(slot, pubKey, token);
-        if (pubKey->pkcs11Slot) {
-            PK11_FreeSlot(pubKey->pkcs11Slot);
-            pubKey->pkcs11Slot = NULL;
-            pubKey->pkcs11ID = CK_INVALID_HANDLE;
-        }
     }
 
     /* build new key structure */
@@ -2155,7 +2158,7 @@ SECKEY_SetPublicValue(SECKEYPrivateKey *privKey, const SECItem *publicValue)
                 PORT_SetError(SEC_ERROR_BAD_KEY);
                 break;
             }
-            pubKey.u.mldsa.paramSet = SECKEY_GetMLDSAPkcs11ParamSetByOidTag(paramSet);
+            pubKey.u.mldsa.paramSet = SECKEY_GetMLDSAOidTagByPkcs11ParamSet(paramSet);
             if (pubKey.u.mldsa.paramSet == SEC_OID_UNKNOWN) {
                 PORT_SetError(SEC_ERROR_BAD_KEY);
                 break;

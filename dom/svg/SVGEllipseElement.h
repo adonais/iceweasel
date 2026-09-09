@@ -35,9 +35,8 @@ class SVGEllipseElement final : public SVGEllipseElementBase {
   bool HasValidDimensions() const override;
 
   // SVGGeometryElement methods:
-  virtual bool GetGeometryBounds(
-      Rect* aBounds, const StrokeOptions& aStrokeOptions,
-      const Matrix& aToBoundsSpace,
+  Maybe<Rect> GetGeometryBounds(
+      const StrokeOptions& aStrokeOptions, const Matrix& aToBoundsSpace,
       const Matrix* aToNonScalingStrokeSpace = nullptr) override;
   already_AddRefed<Path> BuildPath(PathBuilder* aBuilder) override;
   bool IsClosedLoop() const override { return true; }

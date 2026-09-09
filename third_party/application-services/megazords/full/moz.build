@@ -13,7 +13,7 @@ UNIFIED_SOURCES += [
 megazord_rust_features = ["mozbuild-rustlib"]
 
 # This is the name of the .a file created.
-if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android" or CONFIG["MOZ_LIBMEGAZORD_ARTIFACTS"]:
     RustLibrary("megazord", features=megazord_rust_features)
 else:
     RustLibrary(
@@ -32,12 +32,12 @@ RUST_TESTS = [
     "rc_crypto",
 ]
 
-# These USE_LIBS are only for build ordering. Cargo does the actual linking
-# through the mozbuild crate.
-USE_LIBS += [
-    "mozglue",
-    "nss",
-]
+# On Android, libmegazord.so must use bionic's allocator rather than mozglue's
+# mozjemalloc. Depending on nss still builds mozglue before Cargo runs.
+if CONFIG["OS_TARGET"] != "Android":
+    USE_LIBS += ["mozglue"]
+
+USE_LIBS += ["nss"]
 
 if CONFIG["OS_TARGET"] == "Linux":
     USE_LIBS += [

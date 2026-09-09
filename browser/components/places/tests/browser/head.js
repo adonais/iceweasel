@@ -108,10 +108,16 @@ async function synthesizeClickOnSelectedTreeCell(aTree, aOptions) {
   aTree.view.selection.getRangeAt(0, min, max);
   let rowID = min.value;
   aTree.ensureRowIsVisible(rowID);
-  // Calculate the click coordinates.
-  var rect = aTree.getCoordsForCellItem(rowID, aTree.columns[0], "text");
-  var x = rect.x + rect.width / 2;
-  var y = rect.y + rect.height / 2;
+  // Calculate the click coordinates. getCoordsForCellItem returns the width the
+  // text would need rather than the space it actually gets, so for a cropped
+  // cell the rect can extend past the tree body (bug 1708159). Clamp it to the
+  // body's content box, which is what the rows are laid out in, or the midpoint
+  // we click lands outside the tree and hits an unrelated element.
+  let rect = aTree.getCoordsForCellItem(rowID, aTree.columns[0], "text");
+  let minX = aTree.body.clientLeft;
+  let maxX = minX + aTree.body.clientWidth;
+  let x = (Math.max(rect.x, minX) + Math.min(rect.x + rect.width, maxX)) / 2;
+  let y = rect.y + rect.height / 2;
   if (aTree.id == "bookmarks-view" || aTree.id == "historyTree") {
     // We are purposefully keeping the main <tree> element unlabeled, because in
     // this specific case, the on-screen label for either "Bookmarks" or
@@ -541,7 +547,7 @@ async function clickBookmarkStar(win = window) {
     menuList,
     { attributes: true },
     () => !!menuList.getAttribute("selectedGuid"),
-    "Should select the menu folder item"
+    { msg: "Should select the menu folder item" }
   );
 }
 

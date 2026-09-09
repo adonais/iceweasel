@@ -20,15 +20,15 @@ import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
 import org.mozilla.fenix.utils.Settings
 
 /**
- * Observes the current url from the [BrowserStore] and updates the [AppStore]
- * to show a notification in the main menu when an external app can be opened for the current url.
+ * Observes the current url from the [BrowserStore] and updates the [AppStore] to show a notification in the main menu
+ * when an external app can be opened for the current url.
  *
  * @param settings The settings to check if an external app was opened.
  * @param appLinksUseCases The use cases for handling app links.
  * @param appStore The application store for dispatching actions.
  * @param browserStore The browser store to observe state changes.
- * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur.
- *                       Defaults to [Dispatchers.Main].
+ * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur. Defaults to
+ *   [Dispatchers.Main].
  */
 class ExternalAppLinkStatusBinding(
     private val settings: Settings,
@@ -43,20 +43,16 @@ class ExternalAppLinkStatusBinding(
             .map { it.selectedTab?.content?.url }
             .distinctUntilChanged()
             .map { url ->
-                url != null && !settings.openInAppOpened &&
-                        appLinksUseCases.appLinkRedirect(url).hasExternalApp()
+                url != null && !settings.openInAppOpened && appLinksUseCases.appLinkRedirect(url).hasExternalApp()
             }
             .distinctUntilChanged()
             .collect { shouldShowNotification ->
-                val action = if (shouldShowNotification) {
-                    AppAction.MenuNotification.AddMenuNotification(
-                        SupportedMenuNotifications.OpenInApp,
-                    )
-                } else {
-                    AppAction.MenuNotification.RemoveMenuNotification(
-                        SupportedMenuNotifications.OpenInApp,
-                    )
-                }
+                val action =
+                    if (shouldShowNotification) {
+                        AppAction.MenuNotification.AddMenuNotification(SupportedMenuNotifications.OpenInApp)
+                    } else {
+                        AppAction.MenuNotification.RemoveMenuNotification(SupportedMenuNotifications.OpenInApp)
+                    }
                 appStore.dispatch(action)
             }
     }

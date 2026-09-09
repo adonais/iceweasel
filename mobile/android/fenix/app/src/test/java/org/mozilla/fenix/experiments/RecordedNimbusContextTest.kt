@@ -5,6 +5,7 @@
 package org.mozilla.fenix.experiments
 
 import android.os.Build
+import kotlin.test.assertNotNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -20,17 +21,15 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.experiments.nimbus.Nimbus
 import org.mozilla.experiments.nimbus.internal.validateEventQueries
+import org.mozilla.fenix.GleanMetrics.NimbusSystem as GleanNimbus
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
-import org.mozilla.fenix.GleanMetrics.NimbusSystem as GleanNimbus
 
 @RunWith(RobolectricTestRunner::class)
 class RecordedNimbusContextTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     @Test
     fun `GIVEN a nimbusApi object WHEN recorded context with eventQueries is supplied THEN the event queries must be valid`() {
@@ -40,11 +39,7 @@ class RecordedNimbusContextTest {
 
     @Test
     fun `GIVEN an instance of RecordedNimbusContext WHEN serialized to JSON THEN its JSON structure matches the expected value`() {
-        val recordedContext = RecordedNimbusContext.createForTest(
-            eventQueryValues = mapOf(
-                "TEST" to 1.0,
-            ),
-        )
+        val recordedContext = RecordedNimbusContext.createForTest(eventQueryValues = mapOf("TEST" to 1.0))
 
         // RecordedNimbusContext.toJson() returns
         // org.mozilla.experiments.nimbus.internal.JsonObject, which is a
@@ -86,16 +81,13 @@ class RecordedNimbusContextTest {
     @Test
     fun `GIVEN an instance of RecordedNimbusContext WHEN record called THEN the value recorded to Glean should match the expected value`() {
         var recordedValue: JsonElement? = null
-        val job = Nimbus.Pings.nimbusTargetingContext.testBeforeNextSubmit {
-            recordedValue = GleanNimbus.recordedNimbusContext.testGetValue("nimbus-targeting-context")
-        }
+        val job =
+            Nimbus.Pings.nimbusTargetingContext.testBeforeNextSubmit {
+                recordedValue = GleanNimbus.recordedNimbusContext.testGetValue("nimbus-targeting-context")
+            }
 
         val recordedContext = RecordedNimbusContext.createForTest()
-        recordedContext.setEventQueryValues(
-            mapOf(
-                DAYS_OPENED_IN_LAST_28 to 1.5,
-            ),
-        )
+        recordedContext.setEventQueryValues(mapOf(DAYS_OPENED_IN_LAST_28 to 1.5))
         recordedContext.record()
 
         Nimbus.Pings.nimbusTargetingContext.submit()
@@ -135,22 +127,15 @@ class RecordedNimbusContextTest {
     @Test
     fun `GIVEN an instance of RecordedNimbusContext WHEN eventQueries have been supplied THEN getEventQueries should return a JSON object with the eventQueries`() {
         val query = "'event'|eventSum('Years', 1, 0)"
-        val context = RecordedNimbusContext.createForTest(
-            eventQueries = mutableMapOf(
-                "TEST" to query,
-            ),
-        )
+        val context = RecordedNimbusContext.createForTest(eventQueries = mutableMapOf("TEST" to query))
 
         assertEquals(query, context.getEventQueries()["TEST"])
     }
 
     @Test
     fun `GIVEN an instance of RecordedNimbusContext WHEN eventQueries have been supplied THEN setEventQueryValues should set the values for the eventQueries`() {
-        val context = RecordedNimbusContext.createForTest(
-            eventQueries = mapOf(
-                "TEST" to "'event'|eventSum('Years', 1, 0)",
-            ),
-        )
+        val context =
+            RecordedNimbusContext.createForTest(eventQueries = mapOf("TEST" to "'event'|eventSum('Years', 1, 0)"))
 
         context.setEventQueryValues(mapOf("TEST" to 1.0))
 
@@ -159,12 +144,14 @@ class RecordedNimbusContextTest {
 
     @Test
     fun `WHEN addonIds has values THEN the json object should reflect those values`() {
-        val context = RecordedNimbusContext.createForTest(
-            addonIds = listOf(
-                "addon@example.com",
-                "d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d",
-            ),
-        )
+        val context =
+            RecordedNimbusContext.createForTest(
+                addonIds =
+                    listOf(
+                        "addon@example.com",
+                        "d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d",
+                    )
+            )
 
         assertEquals("addon@example.com", context.toJson().getJSONArray("addon_ids")[0])
         assertEquals("d10d0bf8-f5b5-c8b4-a8b2-2b9879e08c5d", context.toJson().getJSONArray("addon_ids")[1])

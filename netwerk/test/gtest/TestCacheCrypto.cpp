@@ -5,22 +5,25 @@
 #include <cstring>
 
 #include "CacheCrypto.h"
+#include "LockstoreService.h"
 #include "gtest/gtest.h"
-#include "mozilla/Preferences.h"
+#include "mozilla/SpinEventLoopUntil.h"
 #include "nsCOMPtr.h"
 #include "nsIX509CertDB.h"
 #include "nsServiceManagerUtils.h"
 #include "nsTArray.h"
+#include "nsThreadUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::net;
+using mozilla::security::lockstore::LockstoreService;
 
 namespace {
 
 // CacheCrypto needs NSS (PK11) and a loaded key. Getting the cert DB service
-// initializes NSS; InitForTesting() then loads or generates the key without
-// depending on the "once"-mirrored enabled pref. Returns the usable instance,
-// or null if setup failed.
+// initializes NSS; InitForTesting() then generates a throwaway key, depending
+// on neither the "once"-mirrored enabled pref nor the profile keystore.
+// Returns the usable instance, or null if setup failed.
 static already_AddRefed<CacheCrypto> InitCryptoForTest() {
   nsCOMPtr<nsIX509CertDB> certDB(do_GetService(NS_X509CERTDB_CONTRACTID));
   EXPECT_TRUE(certDB);
@@ -111,11 +114,10 @@ TEST(CacheCrypto, WrongKeyFails)
             crypto->EncryptBlock(0, reinterpret_cast<const uint8_t*>(msg), len,
                                  block.Elements()));
 
-  // Model a later session whose key pref is empty / different: clearing the key
-  // pref makes Init() generate a fresh (different) key. This covers both "the
-  // key pref is empty" and "the key does not match".
+  // Model a later session that came up with a different key: InitForTesting()
+  // generates a fresh one each time. This covers both "no key could be
+  // recovered" and "the key does not match".
   CacheCrypto::Shutdown();
-  Preferences::SetCString("browser.cache.disk.encryption.key", ""_ns);
   CacheCrypto::InitForTesting();
   RefPtr<CacheCrypto> crypto2 = CacheCrypto::GetInstanceOrNull();
   ASSERT_TRUE(crypto2);
@@ -155,3 +157,64 @@ TEST(CacheCrypto, FreshNoncePerEncryption)
 
   CacheCrypto::Shutdown();
 }
+
+// The LockstoreService gtests are skipped on Android because they hang on the
+// emulator (bug 1892964); skip this one for the same reason.
+#ifndef MOZ_WIDGET_ANDROID
+
+TEST(CacheCrypto, KeyIsRecoveredFromTheKeystore)
+{
+  // The point of the bug: the key survives a session because the keystore
+  // holds it, not because it was written to a pref. Two loads of the real
+  // keystore path must yield the same key, so a block encrypted by the first
+  // decrypts under the second.
+  nsCOMPtr<nsIX509CertDB> certDB(do_GetService(NS_X509CERTDB_CONTRACTID));
+  ASSERT_TRUE(certDB);
+
+  // Resolve on the main thread: that is what caches the service's profile
+  // path, and LoadFromKeystore() must not run here.
+  RefPtr<LockstoreService> lockstore = LockstoreService::GetSingleton();
+  ASSERT_TRUE(lockstore);
+
+  auto load = [&lockstore]() -> RefPtr<CacheCrypto> {
+    // `crypto` and `done` are handed between the two threads by the spin
+    // below, which only reads them after the background task has finished.
+    RefPtr<CacheCrypto> crypto;
+    bool done = false;
+    MOZ_ALWAYS_SUCCEEDS(NS_DispatchBackgroundTask(NS_NewRunnableFunction(
+        "TestCacheCrypto::Load", [&lockstore, &crypto, &done]() {
+          crypto = CacheCrypto::LoadFromKeystore(lockstore);
+          // Wake the spin from the main thread; see the same pattern in
+          // TestLockstoreService.cpp for why the completion has to be posted.
+          NS_DispatchToMainThread(NS_NewRunnableFunction(
+              "TestCacheCrypto::Load::Done", [&done] { done = true; }));
+        })));
+    MOZ_ALWAYS_TRUE(SpinEventLoopUntil("TestCacheCrypto::Load"_ns,
+                                       [&done]() { return done; }));
+    return crypto;
+  };
+
+  RefPtr<CacheCrypto> first = load();
+  ASSERT_TRUE(first);
+
+  const char* msg = "cache contents that must outlive the session";
+  const uint32_t len = strlen(msg);
+  nsTArray<uint8_t> block;
+  block.SetLength(len + CacheCrypto::kBlockOverhead);
+  ASSERT_EQ(NS_OK, first->EncryptBlock(0, reinterpret_cast<const uint8_t*>(msg),
+                                       len, block.Elements()));
+
+  // A second session: the DEK already exists, so this recovers it rather than
+  // minting a new one.
+  RefPtr<CacheCrypto> second = load();
+  ASSERT_TRUE(second);
+  ASSERT_NE(first.get(), second.get());
+
+  nsTArray<uint8_t> out;
+  out.SetLength(len);
+  EXPECT_EQ(NS_OK,
+            second->DecryptBlock(0, block.Elements(), len, out.Elements()));
+  EXPECT_EQ(0, memcmp(out.Elements(), msg, len));
+}
+
+#endif  // MOZ_WIDGET_ANDROID

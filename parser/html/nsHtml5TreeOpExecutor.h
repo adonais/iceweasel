@@ -118,7 +118,8 @@ class nsHtml5TreeOpExecutor final
   /**
    * Emits EOF.
    */
-  NS_IMETHOD DidBuildModel(bool aTerminated) override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD
+  DidBuildModel(bool aTerminated) override;
 
   /**
    * Forwards to nsContentSink
@@ -219,7 +220,8 @@ class nsHtml5TreeOpExecutor final
   bool IsInFlushLoop() { return mRunFlushLoopOnStack; }
 #endif
 
-  void RunScript(nsIContent* aScriptElement, bool aMayDocumentWriteOrBlock);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void RunScript(nsIContent* aScriptElement,
+                                             bool aMayDocumentWriteOrBlock);
 
   /**
    * Flush the operations from the tree operations from the argument

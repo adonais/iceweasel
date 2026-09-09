@@ -33,10 +33,11 @@ class OnDeviceDownloadStorageTest {
     private lateinit var database: DownloadsDatabase
 
     @get:Rule
-    val helper: MigrationTestHelper = MigrationTestHelper(
-        InstrumentationRegistry.getInstrumentation(),
-        DownloadsDatabase::class.java,
-    )
+    val helper: MigrationTestHelper =
+        MigrationTestHelper(
+            InstrumentationRegistry.getInstrumentation(),
+            DownloadsDatabase::class.java,
+        )
 
     @Before
     fun setUp() {
@@ -63,7 +64,7 @@ class OnDeviceDownloadStorageTest {
                     "downloads " +
                     "(id, url, file_name, content_type,content_length,status,destination_directory,created_at) " +
                     "VALUES " +
-                    "(1,'url','file_name','content_type',1,1,'destination_directory',1)",
+                    "(1,'url','file_name','content_type',1,1,'destination_directory',1)"
             )
         }
 
@@ -89,7 +90,7 @@ class OnDeviceDownloadStorageTest {
                     "downloads " +
                     "(id, url, file_name, content_type,content_length,status,destination_directory,created_at,is_private) " +
                     "VALUES " +
-                    "(1,'url','file_name','content_type',1,1,'destination_directory',1,1)",
+                    "(1,'url','file_name','content_type',1,1,'destination_directory',1,1)"
             )
 
             // A normal download
@@ -98,7 +99,7 @@ class OnDeviceDownloadStorageTest {
                     "downloads " +
                     "(id, url, file_name, content_type,content_length,status,destination_directory,created_at,is_private) " +
                     "VALUES " +
-                    "(2,'url','file_name','content_type',1,1,'destination_directory',1,0)",
+                    "(2,'url','file_name','content_type',1,1,'destination_directory',1,0)"
             )
         }
 
@@ -123,7 +124,7 @@ class OnDeviceDownloadStorageTest {
                     "downloads " +
                     "(id, url, file_name, content_type,content_length,status,destination_directory,created_at) " +
                     "VALUES " +
-                    "(1,'data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==','file_name','content_type',1,1,'destination_directory',1)",
+                    "(1,'data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==','file_name','content_type',1,1,'destination_directory',1)"
             )
             // A normal url download
             execSQL(
@@ -131,7 +132,7 @@ class OnDeviceDownloadStorageTest {
                     "downloads " +
                     "(id, url, file_name, content_type,content_length,status,destination_directory,created_at) " +
                     "VALUES " +
-                    "(2,'url','file_name','content_type',1,1,'destination_directory',1)",
+                    "(2,'url','file_name','content_type',1,1,'destination_directory',1)"
             )
         }
 
@@ -163,7 +164,7 @@ class OnDeviceDownloadStorageTest {
                     "downloads " +
                     "(id, url, file_name, content_type,content_length,status,destination_directory,created_at) " +
                     "VALUES " +
-                    "(1,'https://mozilla.com/somefile','file_name','content_type',1,1,'destination_directory',1)",
+                    "(1,'https://mozilla.com/somefile','file_name','content_type',1,1,'destination_directory',1)"
             )
 
             close()
@@ -186,8 +187,7 @@ class OnDeviceDownloadStorageTest {
     @Test
     fun migrate5to6() {
         val downloadDirName = Environment.DIRECTORY_DOWNLOADS
-        val publicDownloadsPath =
-            Environment.getExternalStoragePublicDirectory(downloadDirName).path
+        val publicDownloadsPath = Environment.getExternalStoragePublicDirectory(downloadDirName).path
 
         helper.createDatabase(MIGRATION_TEST_DB, 5).apply {
             query("SELECT * FROM downloads").use { cursor ->
@@ -201,13 +201,13 @@ class OnDeviceDownloadStorageTest {
             (id, url, file_name, content_type, content_length, status, destination_directory, created_at, etag)
             VALUES
             ('id_to_convert', 'https://firefox.com', 'app.apk', 'apk', 2048, 1, '$downloadDirName', 67890, 'etag')
-            """.trimIndent(),
+            """
+                    .trimIndent()
             )
             close()
         }
 
-        val dbVersion6 =
-            helper.runMigrationsAndValidate(MIGRATION_TEST_DB, 6, true, Migrations.migration_5_6)
+        val dbVersion6 = helper.runMigrationsAndValidate(MIGRATION_TEST_DB, 6, true, Migrations.migration_5_6)
 
         dbVersion6.query("SELECT * FROM downloads ORDER BY id ASC").use { cursor ->
             assertFalse(cursor.columnNames.contains("destination_directory"))
@@ -236,11 +236,12 @@ class OnDeviceDownloadStorageTest {
 
         val downloads = getDownloadsPagedList()
 
-        val expected = listOf(
-            download1.toDownloadEntity(),
-            download2.toDownloadEntity(),
-            download3.toDownloadEntity(),
-        )
+        val expected =
+            listOf(
+                download1.toDownloadEntity(),
+                download2.toDownloadEntity(),
+                download3.toDownloadEntity(),
+            )
         val actual = downloads.map { it.toDownloadEntity() }.sortedBy { it.createdAt }
         assertEquals(expected, actual)
     }
@@ -255,10 +256,11 @@ class OnDeviceDownloadStorageTest {
 
         val downloads = getDownloadsPagedList()
 
-        val expected = listOf(
-            download1.copy(url = "").toDownloadEntity(),
-            download2.toDownloadEntity(),
-        )
+        val expected =
+            listOf(
+                download1.copy(url = "").toDownloadEntity(),
+                download2.toDownloadEntity(),
+            )
         val actual = downloads.map { it.toDownloadEntity() }.sortedBy { it.createdAt }
         assertEquals(expected, actual)
     }
@@ -273,15 +275,15 @@ class OnDeviceDownloadStorageTest {
 
         val downloads = getDownloadsPagedList()
 
-        val expected = listOf(
-            download1.toDownloadEntity(),
-            download2.toDownloadEntity(),
-        )
+        val expected =
+            listOf(
+                download1.toDownloadEntity(),
+                download2.toDownloadEntity(),
+            )
         val actual = downloads.map { it.toDownloadEntity() }.sortedBy { it.createdAt }
         assertEquals(expected, actual)
 
-        val updatedDownload1 =
-            createMockDownload("1", "data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==")
+        val updatedDownload1 = createMockDownload("1", "data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==")
         val updatedDownload2 = createMockDownload("2", "updated_url2")
 
         storage.update(updatedDownload1)
@@ -289,10 +291,11 @@ class OnDeviceDownloadStorageTest {
 
         val updatedDownloads = getDownloadsPagedList()
 
-        val updatedExpected = listOf(
-            updatedDownload1.copy(url = "").toDownloadEntity(),
-            updatedDownload2.toDownloadEntity(),
-        )
+        val updatedExpected =
+            listOf(
+                updatedDownload1.copy(url = "").toDownloadEntity(),
+                updatedDownload2.toDownloadEntity(),
+            )
         val updatedActual = updatedDownloads.map { it.toDownloadEntity() }.sortedBy { it.createdAt }
         assertEquals(updatedExpected, updatedActual)
     }
@@ -311,9 +314,7 @@ class OnDeviceDownloadStorageTest {
 
         val downloads = getDownloadsPagedList()
 
-        val expected = listOf(
-            download2.toDownloadEntity(),
-        )
+        val expected = listOf(download2.toDownloadEntity())
         val actual = downloads.map { it.toDownloadEntity() }.sortedBy { it.createdAt }
         assertEquals(expected, actual)
     }
@@ -328,10 +329,11 @@ class OnDeviceDownloadStorageTest {
 
         val downloads = getDownloadsPagedList()
 
-        val expected = listOf(
-            download1.toDownloadEntity(),
-            download2.toDownloadEntity(),
-        )
+        val expected =
+            listOf(
+                download1.toDownloadEntity(),
+                download2.toDownloadEntity(),
+            )
         val actual = downloads.map { it.toDownloadEntity() }.sortedBy { it.createdAt }
         assertEquals(expected, actual)
     }
@@ -361,7 +363,8 @@ class OnDeviceDownloadStorageTest {
             url = url,
             contentType = "application/zip",
             contentLength = 5242880,
-            userAgent = "Mozilla/5.0 (Linux; Android 7.1.1) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Focus/8.0 Chrome/69.0.3497.100 Mobile Safari/537.36",
+            userAgent =
+                "Mozilla/5.0 (Linux; Android 7.1.1) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Focus/8.0 Chrome/69.0.3497.100 Mobile Safari/537.36",
         )
     }
 

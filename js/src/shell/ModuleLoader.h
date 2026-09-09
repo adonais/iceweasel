@@ -34,11 +34,6 @@ class ModuleLoader {
                                       HandleObject metaObject);
   static bool ImportMetaResolve(JSContext* cx, unsigned argc, Value* vp);
 
-  static bool DynamicImportDelayFulfilled(JSContext* cx, unsigned argc,
-                                          Value* vp);
-  static bool DynamicImportDelayRejected(JSContext* cx, unsigned argc,
-                                         Value* vp);
-
   bool loadAndExecute(JSContext* cx, HandleString path,
                       HandleObject moduleRequestArg, MutableHandleValue rval);
   bool loadAndExecute(JSContext* cx, HandleObject module,
@@ -46,6 +41,9 @@ class ModuleLoader {
   static bool LoadResolved(JSContext* cx, HandleValue hostDefined);
   static bool LoadRejected(JSContext* cx, HandleValue hostDefined,
                            HandleValue error);
+  static bool DynamicImportLoadResolved(JSContext* cx, HandleValue hostDefined);
+  static bool DynamicImportLoadRejected(JSContext* cx, HandleValue hostDefined,
+                                        HandleValue error);
   bool loadImportedModule(JSContext* cx, HandleScript referrer,
                           HandleObject moduleRequest, HandleValue payload);
   bool populateImportMeta(JSContext* cx, JS::HandleObject moduleRecord,
@@ -54,10 +52,8 @@ class ModuleLoader {
                          JS::Handle<JS::Value> referencingPrivate,
                          JS::Handle<JSString*> specifier,
                          JS::MutableHandle<JSString*> urlOut);
-  bool dynamicImport(JSContext* cx, HandleScript referrer,
-                     HandleObject moduleRequest, HandleValue payload);
-  bool doDynamicImport(JSContext* cx, HandleScript referrer,
-                       HandleObject moduleRequest, HandleValue payload);
+  JSObject* getOrLoadModule(JSContext* cx, HandleScript referrer,
+                            HandleObject moduleRequest);
   JSObject* loadAndParse(JSContext* cx, HandleString path,
                          HandleObject moduleRequestArg);
   JSObject* getOrCreateTest262ModuleSourceModule(JSContext* cx);

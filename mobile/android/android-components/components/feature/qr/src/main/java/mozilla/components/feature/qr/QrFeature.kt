@@ -22,22 +22,19 @@ typealias OnScanResult = (result: String) -> Unit
  * Feature implementation that provides QR scanning functionality via the [QrFragment].
  *
  * @property context a reference to the context.
- * @property fragmentManager a reference to a [FragmentManager], used to start
- * the [QrFragment].
- * @property onScanResult a callback invoked with the result of the QR scan.
- * The callback will always be invoked on the main thread.
- * @property onNeedToRequestPermissions a callback invoked when permissions
- * need to be requested before a QR scan can be performed. Once the request
- * is completed, [onPermissionsResult] needs to be invoked. This feature
- * will request [android.Manifest.permission.CAMERA].
- * @property scanMessage (Optional) String resource for an optional message
- * to be laid out below the QR scan viewfinder
+ * @property fragmentManager a reference to a [FragmentManager], used to start the [QrFragment].
+ * @property onScanResult a callback invoked with the result of the QR scan. The callback will always be invoked on the
+ *   main thread.
+ * @property onNeedToRequestPermissions a callback invoked when permissions need to be requested before a QR scan can be
+ *   performed. Once the request is completed, [onPermissionsResult] needs to be invoked. This feature will request
+ *   [android.Manifest.permission.CAMERA].
+ * @property scanMessage (Optional) String resource for an optional message to be laid out below the QR scan viewfinder
  */
 class QrFeature(
     private val context: Context,
     private val fragmentManager: FragmentManager,
-    private val onScanResult: OnScanResult = { },
-    override val onNeedToRequestPermissions: OnNeedToRequestPermissions = { },
+    private val onScanResult: OnScanResult = {},
+    override val onNeedToRequestPermissions: OnNeedToRequestPermissions = {},
     @param:StringRes private var scanMessage: Int? = null,
 ) : LifecycleAwareFeature, UserInteractionHandler, PermissionsFeature {
     private var containerViewId: Int = 0
@@ -50,14 +47,15 @@ class QrFeature(
         get() = qrFragment != null
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal val scanCompleteListener: QrFragment.OnScanCompleteListener = object : QrFragment.OnScanCompleteListener {
-        @MainThread
-        override fun onScanComplete(result: String) {
-            setScanCompleteListener(null)
-            removeQrFragment()
-            onScanResult(result)
+    internal val scanCompleteListener: QrFragment.OnScanCompleteListener =
+        object : QrFragment.OnScanCompleteListener {
+            @MainThread
+            override fun onScanComplete(result: String) {
+                setScanCompleteListener(null)
+                removeQrFragment()
+                onScanResult(result)
+            }
         }
-    }
 
     override fun start() {
         setScanCompleteListener(scanCompleteListener)
@@ -76,11 +74,9 @@ class QrFeature(
     /**
      * Starts the QR scanner fragment and listens for scan results.
      *
-     * @param containerViewId optional id of the container this fragment is to
-     * be placed in, defaults to [android.R.id.content].
-     *
-     * @return true if the scanner was started or false if permissions still
-     * need to be requested.
+     * @param containerViewId optional id of the container this fragment is to be placed in, defaults to
+     *   [android.R.id.content].
+     * @return true if the scanner was started or false if permissions still need to be requested.
      */
     fun scan(containerViewId: Int = android.R.id.content): Boolean {
         this.containerViewId = containerViewId
@@ -88,9 +84,15 @@ class QrFeature(
         return if (context.isPermissionGranted(CAMERA)) {
             when (isScanInProgress) {
                 true -> qrFragment?.startScanning()
-                false -> fragmentManager.beginTransaction()
-                    .add(containerViewId, QrFragment.newInstance(scanCompleteListener, scanMessage), QR_FRAGMENT_TAG)
-                    .commit()
+                false ->
+                    fragmentManager
+                        .beginTransaction()
+                        .add(
+                            containerViewId,
+                            QrFragment.newInstance(scanCompleteListener, scanMessage),
+                            QR_FRAGMENT_TAG,
+                        )
+                        .commit()
             }
             true
         } else {
@@ -100,8 +102,8 @@ class QrFeature(
     }
 
     /**
-     * Notifies the feature that the permission request was completed. If the
-     * requested permissions were granted it will open the QR scanner.
+     * Notifies the feature that the permission request was completed. If the requested permissions were granted it will
+     * open the QR scanner.
      */
     override fun onPermissionsResult(permissions: Array<String>, grantResults: IntArray) {
         if (context.isPermissionGranted(CAMERA)) {
@@ -128,9 +130,7 @@ class QrFeature(
         return false
     }
 
-    /**
-     * Set a callback for when a qr code has been successfully scanned and decoded.
-     */
+    /** Set a callback for when a qr code has been successfully scanned and decoded. */
     @VisibleForTesting
     internal fun setScanCompleteListener(listener: QrFragment.OnScanCompleteListener?) {
         (fragmentManager.findFragmentByTag(QR_FRAGMENT_TAG) as? QrFragment)?.let {

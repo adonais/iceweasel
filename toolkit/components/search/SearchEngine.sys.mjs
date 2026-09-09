@@ -141,64 +141,17 @@ export class QueryParameter {
 }
 
 /**
- * Perform OpenSearch parameter substitution on a parameter value.
- *
- * @see https://web.archive.org/web/20060203040832/http://opensearch.a9.com/spec/1.1/querysyntax/#core
- *
- * @param {string} paramValue
- *   The OpenSearch search parameters.
- * @param {string} searchTerms
- *   The user-provided search terms. This string will inserted into
- *   paramValue as the value of the searchTerms parameter.
- *   This value must already be escaped appropriately - it is inserted
- *   as-is.
- * @param {string} queryCharset
- *   The character set of the search engine to use for query encoding.
- * @returns {string}
- *   An updated parameter string.
+ * @typedef {object} SearchSubmissionData
+ * @property {nsIURI} uri
+ *   The full URI to use for the search query.
+ * @property {?nsIMIMEInputStream} postData
+ *   The post data to use when opening the search query (if any).
+ * @property {string} partnerCode
+ *   The partner code that is used within the search query. This should be
+ *   used when recording telemetry.
+ * @property {string} telemetryId
+ *   The telemetry id for recording in legacy telemetry.
  */
-function paramSubstitution(paramValue, searchTerms, queryCharset) {
-  const PARAM_REGEXP = /\{(\w+)(\??)\}/g;
-  return paramValue.replace(PARAM_REGEXP, function (match, name, optional) {
-    // {searchTerms} is by far the most common param so handle it first.
-    if (name == "searchTerms") {
-      return searchTerms;
-    }
-
-    // {inputEncoding} is the second most common param.
-    if (name == OS_PARAM_INPUT_ENCODING) {
-      return queryCharset;
-    }
-
-    // Handle languages for URL results.
-    if (name == PARAM_ACCEPT_LANGUAGES) {
-      return Services.locale.acceptLanguages.replace(/\s+/g, "");
-    }
-
-    // Handle the less common OpenSearch parameters we're confident about.
-    if (name == OS_PARAM_LANGUAGE) {
-      return Services.locale.requestedLocale || OS_PARAM_LANGUAGE_DEF;
-    }
-    if (name == OS_PARAM_OUTPUT_ENCODING) {
-      return OS_PARAM_OUTPUT_ENCODING_DEF;
-    }
-
-    // At this point, if a parameter is optional, just omit it.
-    if (optional) {
-      return "";
-    }
-
-    // Replace unsupported parameters that only have hardcoded default values.
-    for (let param of OS_UNSUPPORTED_PARAMS) {
-      if (name == param[0]) {
-        return param[1];
-      }
-    }
-
-    // Don't replace unknown non-optional parameters.
-    return match;
-  });
-}
 
 /**
  * EngineURL holds a query URL and all associated parameters.
@@ -246,6 +199,8 @@ export class EngineURL {
    * @param {string} [options.isNewUntil]
    *   Indicates the date until which the URL is considered new
    *   (format: YYYY-MM-DD).
+   * @param {Map<string, {partnerCode: ?string, telemetryId: ?string}>} [options.partnerCodeMap]
+   *   The partner code to use, if any.
    * @param {boolean} [options.excludePartnerCodeFromTelemetry]
    *   Whether the engine's partner code should be excluded from telemetry when
    *   this URL is visited.
@@ -267,6 +222,7 @@ export class EngineURL {
     method = "GET",
     displayName = "",
     isNewUntil = "",
+    partnerCodeMap = new Map(),
     excludePartnerCodeFromTelemetry = false,
     acceptedContentTypes = null,
   }) {
@@ -307,6 +263,7 @@ export class EngineURL {
     this.type = type.toLowerCase();
     this.displayName = displayName ?? "";
     this.isNewUntil = isNewUntil ?? "";
+    this.#partnerCodeMap = partnerCodeMap;
     this.excludePartnerCodeFromTelemetry = !!excludePartnerCodeFromTelemetry;
     this.acceptedContentTypes = acceptedContentTypes;
   }
@@ -373,10 +330,12 @@ export class EngineURL {
    *   The user's search terms.
    * @param {string} queryCharset
    *   The character set that is being used for the query.
-   * @returns {{uri: nsIURI, postData: ?nsIMIMEInputStream}}
+   * @param {string} sapSource
+   *   The source of the search request.
+   * @returns {SearchSubmissionData}
    *   The submission data containing the URL and post data for the URL.
    */
-  getSubmission(searchTerms, queryCharset) {
+  getSubmission(searchTerms, queryCharset, sapSource) {
     let escapedSearchTerms;
     try {
       escapedSearchTerms = Services.textToSubURI.ConvertAndEscape(
@@ -394,13 +353,18 @@ export class EngineURL {
     }
 
     let templateURI = new URL(this.template);
-    let paramString = this.#encodeParams(escapedSearchTerms, queryCharset);
+    let paramString = this.#encodeParams(
+      escapedSearchTerms,
+      queryCharset,
+      sapSource
+    );
 
     let postData = null;
-    let query = paramSubstitution(
+    let query = this.#paramSubstitution(
       templateURI.search,
       escapedSearchTerms,
-      queryCharset
+      queryCharset,
+      sapSource
     );
     if (this.method == "GET" && paramString) {
       // Query parameters may be specified in the template url AND in `this.params`.
@@ -431,20 +395,28 @@ export class EngineURL {
     // search terms are part of the file path or ref. We only use '+' if they
     // are part of a query parameter.
     let urlSearchTerms = escapedSearchTerms.replaceAll("+", "%20");
-    templateURI.pathname = paramSubstitution(
+    templateURI.pathname = this.#paramSubstitution(
       // The braces in filePath are percent-encoded, so we
       // decode them to ensure paramSubstitution finds them.
       decodeURIComponent(templateURI.pathname),
       urlSearchTerms,
-      queryCharset
+      queryCharset,
+      sapSource
     );
-    templateURI.hash = paramSubstitution(
+    templateURI.hash = this.#paramSubstitution(
       templateURI.hash,
       urlSearchTerms,
-      queryCharset
+      queryCharset,
+      sapSource
     );
 
-    return { uri: templateURI.URI, postData };
+    let telemetryData = this.#getPartnerCodeFromSap(sapSource);
+    return {
+      uri: templateURI.URI,
+      postData,
+      partnerCode: telemetryData?.partnerCode,
+      telemetryId: telemetryData?.telemetryId,
+    };
   }
 
   /**
@@ -466,23 +438,99 @@ export class EngineURL {
    *   The user's search terms escaped with the correct charset.
    * @param {string} queryCharset
    *   The character set that is being used for the query.
+   * @param {string} sapSource
+   *   The source of the search request.
    * @returns {string}
    *   Parameter string containing the search terms.
    */
-  #encodeParams(escapedSearchTerms, queryCharset) {
+  #encodeParams(escapedSearchTerms, queryCharset, sapSource) {
     let dataArray = [];
     for (let param of this.params) {
       // QueryPreferenceParameters might not have a preferenced saved, or a valid value.
       if (param.value != null) {
-        let value = paramSubstitution(
+        let value = this.#paramSubstitution(
           param.value,
           escapedSearchTerms,
-          queryCharset
+          queryCharset,
+          sapSource
         );
+        // Don't insert the partner code parameter if the value is empty.
+        // We do allow insertion of other parameters if they are empty as sometimes
+        // they may be required by the server.
+        if (param.value == "{partnerCode}" && value == "") {
+          continue;
+        }
         dataArray.push(param.name + "=" + value);
       }
     }
     return dataArray.join("&");
+  }
+
+  /**
+   * Perform OpenSearch parameter substitution on a parameter value.
+   *
+   * @see https://web.archive.org/web/20060203040832/http://opensearch.a9.com/spec/1.1/querysyntax/#core
+   *
+   * @param {string} paramValue
+   *   The OpenSearch search parameters.
+   * @param {string} searchTerms
+   *   The user-provided search terms. This string will be inserted into
+   *   paramValue as the value of the searchTerms parameter.
+   *   This value must already be escaped appropriately - it is inserted
+   *   as-is.
+   * @param {string} queryCharset
+   *   The character set of the search engine to use for query encoding.
+   * @param {string} sapSource
+   *   The source of the search request.
+   * @returns {string}
+   *   An updated parameter string.
+   */
+  #paramSubstitution(paramValue, searchTerms, queryCharset, sapSource) {
+    const PARAM_REGEXP = /\{(\w+)(\??)\}/g;
+    return paramValue.replace(PARAM_REGEXP, (match, name, optional) => {
+      // {searchTerms} is by far the most common param so handle it first.
+      if (name == "searchTerms") {
+        return searchTerms;
+      }
+
+      // {partnerCode} is also frequent.
+      if (name == "partnerCode") {
+        return this.#getPartnerCodeFromSap(sapSource).partnerCode;
+      }
+
+      // {inputEncoding} is probably the next most common param.
+      if (name == OS_PARAM_INPUT_ENCODING) {
+        return queryCharset;
+      }
+
+      // Handle languages for URL results.
+      if (name == PARAM_ACCEPT_LANGUAGES) {
+        return Services.locale.acceptLanguages.replace(/\s+/g, "");
+      }
+
+      // Handle the less common OpenSearch parameters we're confident about.
+      if (name == OS_PARAM_LANGUAGE) {
+        return Services.locale.requestedLocale || OS_PARAM_LANGUAGE_DEF;
+      }
+      if (name == OS_PARAM_OUTPUT_ENCODING) {
+        return OS_PARAM_OUTPUT_ENCODING_DEF;
+      }
+
+      // At this point, if a parameter is optional, just omit it.
+      if (optional) {
+        return "";
+      }
+
+      // Replace unsupported parameters that only have hardcoded default values.
+      for (let param of OS_UNSUPPORTED_PARAMS) {
+        if (name == param[0]) {
+          return param[1];
+        }
+      }
+
+      // Don't replace unknown non-optional parameters.
+      return match;
+    });
   }
 
   _hasRelation(rel) {
@@ -527,6 +575,22 @@ export class EngineURL {
 
     return json;
   }
+
+  /**
+   * Returns the partner code and telemetry id to use for the SAP.
+   *
+   * @param {string} sapSource
+   * @returns {{partnerCode: ?string, telemetryId: ?string}}
+   */
+  #getPartnerCodeFromSap(sapSource) {
+    if (this.#partnerCodeMap.has(sapSource)) {
+      return this.#partnerCodeMap.get(sapSource);
+    }
+    return this.#partnerCodeMap.get("default");
+  }
+
+  /** @type {Map<string, {partnerCode: ?string, telemetryId: ?string}>} */
+  #partnerCodeMap;
 }
 
 /**
@@ -941,8 +1005,14 @@ export class SearchEngine {
       }
     );
 
-    let existingSubmission = existingUrl.getSubmission("", this.queryCharset);
-    let newSubmission = newUrl.getSubmission("", this.queryCharset);
+    // These two calls should use the default source, so that we're comparing
+    // the same thing.
+    let existingSubmission = existingUrl.getSubmission(
+      "",
+      this.queryCharset,
+      "default"
+    );
+    let newSubmission = newUrl.getSubmission("", this.queryCharset, "default");
 
     return (
       existingSubmission.uri.equals(newSubmission.uri) &&
@@ -1344,11 +1414,13 @@ export class SearchEngine {
    * @param {Values<typeof lazy.SearchUtils.URL_TYPE>} [responseType]
    *   The MIME type that we'd like to receive in response
    *   to this submission.  If null, will default to "text/html".
-   * @returns {?{uri: nsIURI, postData: ?nsIMIMEInputStream}}
+   * @param {string} [sapSource]
+   *   The source of the search request.
+   * @returns {?SearchSubmissionData}
    *   The submission data. If no appropriate submission can be determined for
    *   the request type, this may be null.
    */
-  getSubmission(searchTerms, responseType) {
+  getSubmission(searchTerms, responseType, sapSource = "default") {
     // We can't use a default parameter as that doesn't work correctly with
     // the idl interfaces.
     if (!responseType) {
@@ -1378,7 +1450,7 @@ export class SearchEngine {
       }
     }
 
-    return url.getSubmission(searchTerms, this.queryCharset);
+    return url.getSubmission(searchTerms, this.queryCharset, sapSource);
   }
 
   /**
@@ -1391,7 +1463,9 @@ export class SearchEngine {
   get searchURLWithNoTerms() {
     return this.getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH).getSubmission(
       "",
-      this.queryCharset
+      this.queryCharset,
+      // Use the default source, as this is used for non submission checks.
+      "default"
     ).uri;
   }
 
@@ -1549,7 +1623,9 @@ export class SearchEngine {
   get searchForm() {
     let url = this.getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH_FORM);
     if (url) {
-      return url.getSubmission("", this.queryCharset).uri.spec;
+      // Using "default" should be fine here, since we won't typically apply
+      // partner codes to search forms.
+      return url.getSubmission("", this.queryCharset, "default").uri.spec;
     }
     return this.searchURLWithNoTerms.prePath;
   }
@@ -1658,7 +1734,9 @@ export class SearchEngine {
     if (this.supportsResponseType(lazy.SearchUtils.URL_TYPE.SUGGEST_JSON)) {
       let suggestURI = this.getSubmission(
         "dummy",
-        lazy.SearchUtils.URL_TYPE.SUGGEST_JSON
+        lazy.SearchUtils.URL_TYPE.SUGGEST_JSON,
+        // Doesn't matter what we use here - this is for pre-connection only.
+        "default"
       ).uri;
       if (suggestURI.prePath != searchURI.prePath) {
         try {

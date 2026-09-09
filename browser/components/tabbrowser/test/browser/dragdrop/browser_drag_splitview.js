@@ -377,7 +377,7 @@ add_task(
     let unpinnedNonSplitTabs = win2.gBrowser.tabs.filter(
       t => !t.pinned && !t.splitview
     );
-    +is(
+    is(
       unpinnedNonSplitTabs.length,
       2,
       "Default tab + adopted normal tab, both unpinned in win2"
@@ -468,6 +468,75 @@ add_task(async function test_drag_tab_group_label_with_splitview() {
   splitView2.close();
   await removeTabGroup(group);
   BrowserTestUtils.removeTab(tab5);
+});
+
+// Bug 2063789: ensure split views and their tabs do not get hidden when dragging
+// a collapsed tab group.
+add_task(async function test_drag_collapsed_tab_group_label_with_splitview() {
+  // [startingTab, [Group: tab1, (tab2 | tab3)], tab4]
+  const startingTab = gBrowser.tabs[0];
+  let [tab1, tab2, tab3, tab4] = await Promise.all(
+    Array.from({ length: 4 }).map((_, index) =>
+      addTab(`data:text/plain,tab${index + 1}`)
+    )
+  );
+
+  let splitView = gBrowser.addTabSplitView([tab2, tab3]);
+  let group = gBrowser.addTabGroup([tab1, splitView], { insertBefore: tab1 });
+
+  Assert.equal(
+    gBrowser.selectedTab,
+    startingTab,
+    "The starting tab is the selected tab"
+  );
+
+  Assert.deepEqual(
+    gBrowser.tabs,
+    [startingTab, tab1, tab2, tab3, tab4],
+    "confirm tabs' starting order"
+  );
+
+  Assert.ok(
+    gBrowser.tabs.every(t => !t.hidden),
+    "confirm no tabs are hidden"
+  );
+  Assert.ok(
+    gBrowser.splitViews.every(t => !t.hasAttribute("hidden")),
+    "confirm no splitview are hidden"
+  );
+
+  await TabGroupTestUtils.toggleCollapsed(group, true);
+
+  info("Drag and drop tab group containing splitview tabs");
+  let dragend = BrowserTestUtils.waitForEvent(group.labelElement, "dragend");
+  const labelRect = group.labelElement.getBoundingClientRect();
+  EventUtils.synthesizePlainDragAndDrop({
+    srcElement: group.labelElement,
+    srcX: Math.floor(labelRect.width / 2),
+    srcY: Math.floor(labelRect.height / 2),
+    destElement: tab4,
+  });
+  await dragend;
+
+  Assert.deepEqual(
+    gBrowser.tabs,
+    [startingTab, tab4, tab1, tab2, tab3],
+    "Group with split view moved after tab4"
+  );
+
+  Assert.ok(
+    gBrowser.tabs.every(t => !t.hidden),
+    "confirm no tabs are hidden"
+  );
+  Assert.ok(
+    gBrowser.splitViews.every(t => !t.hasAttribute("hidden")),
+    "confirm no splitview are hidden"
+  );
+
+  // cleanup
+  splitView.close();
+  await removeTabGroup(group);
+  BrowserTestUtils.removeTab(tab4);
 });
 
 add_task(

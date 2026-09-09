@@ -644,6 +644,7 @@ nsresult DNSPacket::DecodeInternal(
   LOG(("doh decode %s %d bytes\n", aHost.get(), aLen));
 
   aCname.Truncate();
+  mCnameIsHTTPSAlias = false;
 
   // Reset any type record accumulated by a previous decode of this packet.
   aTypeResult = mozilla::AsVariant(Nothing());
@@ -878,6 +879,7 @@ nsresult DNSPacket::DecodeInternal(
               return NS_ERROR_UNEXPECTED;
             }
             aCname = parsed.mSvcDomainName;
+            mCnameIsHTTPSAlias = true;
             // If aliasForm is present, Service form must be ignored.
             aTypeResult = mozilla::AsVariant(Nothing());
             ToLowerCase(aCname);

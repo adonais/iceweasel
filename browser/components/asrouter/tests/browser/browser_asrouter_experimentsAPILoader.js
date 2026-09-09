@@ -24,69 +24,18 @@ const MESSAGE_CONTENT = {
   id: "xman_test_message",
   groups: [],
   content: {
-    text: "This is a test CFR",
-    addon: {
-      id: "954390",
-      icon: "chrome://activity-stream/content/data/content/assets/cfr_fb_container.png",
-      title: "Facebook Container",
-      users: "1455872",
-      author: "Mozilla",
-      rating: "4.5",
-      amo_url: "https://addons.mozilla.org/firefox/addon/facebook-container/",
-    },
-    buttons: {
-      primary: {
-        label: {
-          string_id: "cfr-doorhanger-extension-ok-button",
-        },
+    type: "tab",
+    text: "Welcome to the experiment",
+    buttons: [
+      {
+        label: "Primary CTA",
+        primary: true,
+        accessKey: "P",
         action: {
-          data: {
-            url: "about:blank",
-          },
-          type: "INSTALL_ADDON_FROM_URL",
+          type: "CANCEL",
         },
       },
-      secondary: [
-        {
-          label: {
-            string_id: "cfr-doorhanger-extension-cancel-button",
-          },
-          action: {
-            type: "CANCEL",
-          },
-        },
-        {
-          label: {
-            string_id: "cfr-doorhanger-extension-never-show-recommendation",
-          },
-        },
-        {
-          label: {
-            string_id: "cfr-doorhanger-extension-manage-settings-button",
-          },
-          action: {
-            data: {
-              origin: "CFR",
-              category: "general-cfraddons",
-            },
-            type: "OPEN_PREFERENCES_PAGE",
-          },
-        },
-      ],
-    },
-    category: "cfrAddons",
-    layout: "short_message",
-    bucket_id: "CFR_M1",
-    info_icon: {
-      label: {
-        string_id: "cfr-doorhanger-extension-sumo-link",
-      },
-      sumo_path: "extensionrecommendations",
-    },
-    heading_text: "Welcome to the experiment",
-    notification_text: {
-      string_id: "cfr-doorhanger-extension-notification2",
-    },
+    ],
   },
   trigger: {
     id: "openURL",
@@ -102,7 +51,7 @@ const MESSAGE_CONTENT = {
       "messenger.com",
     ],
   },
-  template: "cfr_doorhanger",
+  template: "infobar",
   frequency: {
     lifetime: 3,
   },
@@ -154,6 +103,11 @@ async function setup(experiment) {
 }
 
 async function cleanup() {
+  const box = gBrowser.getNotificationBox(gBrowser.selectedBrowser);
+  const node = box.getNotificationWithValue(MESSAGE_CONTENT.id);
+  if (node) {
+    box.removeNotification(node);
+  }
   await client.db.clear();
   await secureClient.db.clear();
   await SpecialPowers.popPrefEnv();

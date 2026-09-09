@@ -17,10 +17,11 @@ class RelayStateTest {
 
     @Test
     fun `GIVEN user not logged in WHEN shouldCheckStatus is called THEN returns false`() {
-        val state = RelayState(
-            eligibilityState = Ineligible.FirefoxAccountNotLoggedIn,
-            lastEntitlementCheckMs = NO_ENTITLEMENT_CHECK_YET_MS,
-        )
+        val state =
+            RelayState(
+                eligibilityState = Ineligible.FirefoxAccountNotLoggedIn,
+                lastEntitlementCheckMs = NO_ENTITLEMENT_CHECK_YET_MS,
+            )
 
         val result = state.shouldCheckStatus()
 
@@ -29,10 +30,11 @@ class RelayStateTest {
 
     @Test
     fun `GIVEN logged in user never checked WHEN shouldCheckStatus is called THEN returns true`() {
-        val state = RelayState(
-            eligibilityState = Ineligible.NoRelay,
-            lastEntitlementCheckMs = NO_ENTITLEMENT_CHECK_YET_MS,
-        )
+        val state =
+            RelayState(
+                eligibilityState = Ineligible.NoRelay,
+                lastEntitlementCheckMs = NO_ENTITLEMENT_CHECK_YET_MS,
+            )
 
         val result = state.shouldCheckStatus()
 
@@ -42,10 +44,11 @@ class RelayStateTest {
     @Test
     fun `GIVEN logged in user with expired TTL WHEN shouldCheckStatus is called THEN returns true`() {
         val oldTimestamp = System.currentTimeMillis() - FETCH_TIMEOUT_MS - 1000L
-        val state = RelayState(
-            eligibilityState = Eligible.Premium,
-            lastEntitlementCheckMs = oldTimestamp,
-        )
+        val state =
+            RelayState(
+                eligibilityState = Eligible.Premium,
+                lastEntitlementCheckMs = oldTimestamp,
+            )
 
         val result = state.shouldCheckStatus()
 
@@ -55,10 +58,11 @@ class RelayStateTest {
     @Test
     fun `GIVEN logged in user with recent check WHEN shouldCheckStatus is called THEN returns false`() {
         val recentTimestamp = System.currentTimeMillis() - 1000L
-        val state = RelayState(
-            eligibilityState = Eligible.Free(totalMasksUsed = 5),
-            lastEntitlementCheckMs = recentTimestamp,
-        )
+        val state =
+            RelayState(
+                eligibilityState = Eligible.Free(totalMasksUsed = 5),
+                lastEntitlementCheckMs = recentTimestamp,
+            )
 
         val result = state.shouldCheckStatus()
 

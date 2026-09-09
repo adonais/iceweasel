@@ -39,6 +39,10 @@ async function createFakeAppDir() {
 add_task(async function setup() {
   // Init the profile.
   do_get_profile();
+  // Make sure TelemetryEnvironment initialization doesn't wait for
+  // browser-delayed-startup-finished indefinitely as part of waiting
+  // for Intl initialization promise to be resolved.
+  fakeIntlReady();
   await createFakeAppDir();
   // Make sure we don't generate unexpected pings due to pref changes.
   await setEmptyPrefWatchlist();

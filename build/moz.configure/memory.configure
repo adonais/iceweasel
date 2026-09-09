@@ -39,7 +39,7 @@ def check_redist(jemalloc, debug, win32_redist_dir):
 def replace_malloc_default(milestone, build_project):
     if build_project == "memory":
         return True
-    if milestone.is_early_beta_or_earlier and build_project != "js":
+    if milestone.is_nightly and build_project != "js":
         return True
 
 
@@ -88,7 +88,7 @@ def phc_default(build_project, milestone, target):
         (target.os == "GNU" and target.kernel == "Linux")
         or (target.kernel == "WINNT")
         or (target.os == "OSX")
-        or (target.os == "Android" and milestone.is_early_beta_or_earlier)
+        or (target.os == "Android" and milestone.is_nightly)
     )
 
 

@@ -18,9 +18,7 @@ class BehaviorCaseGeneratorTest : BaseTest() {
         // Touching `on` initializes PageContext/page objects in the normal test lifecycle.
         on
 
-        BehaviorCaseGenerator.logBehaviorCaseBoilerplate(
-            includeSkipped = true,
-        )
+        BehaviorCaseGenerator.logBehaviorCaseBoilerplate(includeSkipped = true)
     }
 
     @Test
@@ -34,36 +32,28 @@ class BehaviorCaseGeneratorTest : BaseTest() {
     fun logSmokeBehaviorMatrixSummary() {
         on
 
-        BehaviorCaseGenerator.logBehaviorMatrixSummary(
-            profile = BehaviorMatrixProfile.SMOKE,
-        )
+        BehaviorCaseGenerator.logBehaviorMatrixSummary(profile = BehaviorMatrixProfile.SMOKE)
     }
 
     @Test
     fun logBaseFlagsBehaviorMatrixSummary() {
         on
 
-        BehaviorCaseGenerator.logBehaviorMatrixSummary(
-            profile = BehaviorMatrixProfile.BASE_FLAGS,
-        )
+        BehaviorCaseGenerator.logBehaviorMatrixSummary(profile = BehaviorMatrixProfile.BASE_FLAGS)
     }
 
     @Test
     fun logPairwisePreviewBehaviorMatrixSummary() {
         on
 
-        BehaviorCaseGenerator.logBehaviorMatrixSummary(
-            profile = BehaviorMatrixProfile.PAIRWISE_PREVIEW,
-        )
+        BehaviorCaseGenerator.logBehaviorMatrixSummary(profile = BehaviorMatrixProfile.PAIRWISE_PREVIEW)
     }
 
     @Test
     fun logExhaustivePreviewBehaviorMatrixSummary() {
         on
 
-        BehaviorCaseGenerator.logBehaviorMatrixSummary(
-            profile = BehaviorMatrixProfile.EXHAUSTIVE_PREVIEW,
-        )
+        BehaviorCaseGenerator.logBehaviorMatrixSummary(profile = BehaviorMatrixProfile.EXHAUSTIVE_PREVIEW)
     }
 
     @Test

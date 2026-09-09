@@ -40,61 +40,67 @@ class HomeToolbarComposableTest {
     val dispatcher = StandardTestDispatcher()
 
     @Test
-    fun `GIVEN speech recognition is available WHEN should start to a voice search THEN start voice recognition and then search mode`() = runTest(dispatcher) {
-        val htc = buildHomeToolbarComposable(
-            directToSearchConfig = DirectToSearchConfig(
-                startVoiceSearch = true,
-                startSearch = true,
-                source = MetricsUtils.Source.DIGITAL_ASSISTANT,
-            ),
-            coroutineScope = this,
-        )
-        stubSpeechRecognition()
+    fun `GIVEN speech recognition is available WHEN should start to a voice search THEN start voice recognition and then search mode`() =
+        runTest(dispatcher) {
+            val htc =
+                buildHomeToolbarComposable(
+                    directToSearchConfig =
+                        DirectToSearchConfig(
+                            startVoiceSearch = true,
+                            startSearch = true,
+                            source = MetricsUtils.Source.DIGITAL_ASSISTANT,
+                        ),
+                    coroutineScope = this,
+                )
+            stubSpeechRecognition()
 
-        htc.build(false)
+            htc.build(false)
 
-        assertTrue(appStore.state.voiceSearchState.isRequestingVoiceInput)
-        assertFalse(appStore.state.searchState.isSearchActive)
+            assertTrue(appStore.state.voiceSearchState.isRequestingVoiceInput)
+            assertFalse(appStore.state.searchState.isSearchActive)
 
-        testScheduler.advanceTimeBy(EDIT_TOOLBAR_DELAY_AFTER_VOICE_REQUEST + 1)
-        assertTrue(appStore.state.searchState.isSearchActive)
-        assertNull(appStore.state.searchState.sourceTabId)
-        assertEquals(MetricsUtils.Source.DIGITAL_ASSISTANT, appStore.state.searchState.searchAccessPoint)
-    }
+            testScheduler.advanceTimeBy(EDIT_TOOLBAR_DELAY_AFTER_VOICE_REQUEST + 1)
+            assertTrue(appStore.state.searchState.isSearchActive)
+            assertNull(appStore.state.searchState.sourceTabId)
+            assertEquals(MetricsUtils.Source.DIGITAL_ASSISTANT, appStore.state.searchState.searchAccessPoint)
+        }
 
     @Test
-    fun `GIVEN speech recognition is not available WHEN should start to a voice search THEN enter search mode`() = runTest(dispatcher) {
-        val htc = buildHomeToolbarComposable(
-            directToSearchConfig = DirectToSearchConfig(
-                startVoiceSearch = true,
-                startSearch = true,
-                source = MetricsUtils.Source.DIGITAL_ASSISTANT,
-            ),
-        )
+    fun `GIVEN speech recognition is not available WHEN should start to a voice search THEN enter search mode`() =
+        runTest(dispatcher) {
+            val htc =
+                buildHomeToolbarComposable(
+                    directToSearchConfig =
+                        DirectToSearchConfig(
+                            startVoiceSearch = true,
+                            startSearch = true,
+                            source = MetricsUtils.Source.DIGITAL_ASSISTANT,
+                        )
+                )
 
-        htc.build(false)
+            htc.build(false)
 
-        assertFalse(appStore.state.voiceSearchState.isRequestingVoiceInput)
-        assertTrue(appStore.state.searchState.isSearchActive)
-        assertNull(appStore.state.searchState.sourceTabId)
-        assertEquals(MetricsUtils.Source.DIGITAL_ASSISTANT, appStore.state.searchState.searchAccessPoint)
-    }
+            assertFalse(appStore.state.voiceSearchState.isRequestingVoiceInput)
+            assertTrue(appStore.state.searchState.isSearchActive)
+            assertNull(appStore.state.searchState.sourceTabId)
+            assertEquals(MetricsUtils.Source.DIGITAL_ASSISTANT, appStore.state.searchState.searchAccessPoint)
+        }
 
     @Test
     fun `GIVEN a specific tab WHEN should start a typed search from it THEN enter search mode with tab's URL prefilled`() {
         val tab = createTab("https://test.com")
-        val browserStore = BrowserStore(
-            BrowserState(tabs = listOf(tab)),
-        )
-        val htc = buildHomeToolbarComposable(
-            directToSearchConfig = DirectToSearchConfig(
-                startVoiceSearch = false,
-                startSearch = true,
-                sessionId = tab.id,
-                source = MetricsUtils.Source.ACTION,
-            ),
-            browserStore = browserStore,
-        )
+        val browserStore = BrowserStore(BrowserState(tabs = listOf(tab)))
+        val htc =
+            buildHomeToolbarComposable(
+                directToSearchConfig =
+                    DirectToSearchConfig(
+                        startVoiceSearch = false,
+                        startSearch = true,
+                        sessionId = tab.id,
+                        source = MetricsUtils.Source.ACTION,
+                    ),
+                browserStore = browserStore,
+            )
 
         htc.build(false)
 
@@ -108,13 +114,15 @@ class HomeToolbarComposableTest {
 
     @Test
     fun `WHEN should start a new typed search THEN enter search mode`() {
-        val htc = buildHomeToolbarComposable(
-            directToSearchConfig = DirectToSearchConfig(
-                startVoiceSearch = false,
-                startSearch = true,
-                source = MetricsUtils.Source.WIDGET,
-            ),
-        )
+        val htc =
+            buildHomeToolbarComposable(
+                directToSearchConfig =
+                    DirectToSearchConfig(
+                        startVoiceSearch = false,
+                        startSearch = true,
+                        source = MetricsUtils.Source.WIDGET,
+                    )
+            )
 
         htc.build(false)
 
@@ -130,31 +138,33 @@ class HomeToolbarComposableTest {
         directToSearchConfig: DirectToSearchConfig,
         browserStore: BrowserStore = this.browserStore,
         coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main),
-    ) = HomeToolbarComposable(
-        context = testContext,
-        navController = mockk(),
-        toolbarStore = toolbarStore,
-        appStore = appStore,
-        browserStore = browserStore,
-        browsingModeManager = mockk(),
-        settings = mockk(relaxed = true),
-        directToSearchConfig = directToSearchConfig,
-        coroutineScope = coroutineScope,
-        tabStripContent = { },
-        searchSuggestionsContent = { },
-        navigationBarContent = { },
-    )
+    ) =
+        HomeToolbarComposable(
+            context = testContext,
+            navController = mockk(),
+            toolbarStore = toolbarStore,
+            appStore = appStore,
+            browserStore = browserStore,
+            browsingModeManager = mockk(),
+            settings = mockk(relaxed = true),
+            directToSearchConfig = directToSearchConfig,
+            coroutineScope = coroutineScope,
+            tabStripContent = {},
+            searchSuggestionsContent = {},
+            navigationBarContent = {},
+        )
 
     private fun stubSpeechRecognition() {
         val speechRecognitionIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
 
-        val info = ResolveInfo().apply {
-            activityInfo = ActivityInfo().apply {
-                packageName = "fake.voice.recognizer"
+        val info =
+            ResolveInfo().apply {
+                activityInfo =
+                    ActivityInfo().apply {
+                        packageName = "fake.voice.recognizer"
+                    }
             }
-        }
 
-        @Suppress("Deprecation")
-        ShadowPackageManager().addResolveInfoForIntent(speechRecognitionIntent, info)
+        @Suppress("Deprecation") ShadowPackageManager().addResolveInfoForIntent(speechRecognitionIntent, info)
     }
 }

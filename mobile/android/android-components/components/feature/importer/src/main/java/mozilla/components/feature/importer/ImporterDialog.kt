@@ -18,14 +18,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 
 /**
- * A loading dialog for an in-progress import flow. Displays a spinner with fixed title/description
- * while the importer is working, and a cancel action that invokes [onCancel].
+ * A loading dialog for an in-progress import flow. Displays a spinner with fixed title/description while the importer
+ * is working, and a cancel action that invokes [onCancel].
  *
- * When the dialog enters composition, [onImportStarted] is invoked exactly once to allow the
- * caller to begin the import operation.
+ * When the dialog enters composition, [onImportStarted] is invoked exactly once to allow the caller to begin the import
+ * operation.
  *
- * The caller is responsible for hiding this dialog by observing the importer state and only
- * composing it while the import is in progress.
+ * The caller is responsible for hiding this dialog by observing the importer state and only composing it while the
+ * import is in progress.
  */
 @Composable
 internal fun ImporterDialog(
@@ -37,11 +37,12 @@ internal fun ImporterDialog(
     }
 
     AlertDialog(
-        properties = DialogProperties(
-            dismissOnBackPress = false,
-            dismissOnClickOutside = false,
-        ),
-        onDismissRequest = { },
+        properties =
+            DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false,
+            ),
+        onDismissRequest = {},
         icon = {
             CircularProgressIndicator(modifier = Modifier.size(24.dp))
         },

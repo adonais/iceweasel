@@ -5,8 +5,7 @@
 use anyhow::{bail, Result};
 use crash_helper_common::{
     messages::{self},
-    ApplicationInfo, BreakpadString, GeckoChildId, IPCClientChannel, IPCConnector, ProcessHandle,
-    RawIPCConnector,
+    ApplicationInfo, BreakpadString, GeckoChildId, IPCClientChannel, IPCConnector, RawIPCConnector,
 };
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use minidump_writer::minidump_writer::{AuxvType, DirectAuxvDumpInfo};
@@ -23,7 +22,6 @@ use std::{
         atomic::{AtomicBool, Ordering},
         OnceLock,
     },
-    thread::JoinHandle,
 };
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::{
@@ -39,7 +37,6 @@ mod platform;
 
 pub struct CrashHelperClient {
     connector: IPCConnector,
-    spawner_thread: Option<JoinHandle<Result<ProcessHandle>>>,
     #[allow(unused)]
     pid: Pid,
 }
@@ -54,19 +51,6 @@ impl CrashHelperClient {
     fn register_child_process(&mut self, id: GeckoChildId) -> Result<IPCConnector> {
         let ipc_channel = IPCClientChannel::new()?;
         let (server_endpoint, client_endpoint) = ipc_channel.deconstruct();
-
-        if let Some(join_handle) = self.spawner_thread.take() {
-            let Ok(process_handle) = join_handle.join() else {
-                bail!("The spawner thread failed to execute");
-            };
-
-            let Ok(process_handle) = process_handle else {
-                bail!("The crash helper process failed to launch");
-            };
-
-            self.connector.set_process(process_handle);
-        }
-
         let message = messages::RegisterChildProcess::new(id, server_endpoint.into_ancillary());
         self.connector.send_message(message)?;
 

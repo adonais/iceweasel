@@ -4,29 +4,23 @@
 
 package mozilla.components.support.utils
 
-/**
- * Contains methods used to change the TimePickerDialog according to the step value.
- */
+/** Contains methods used to change the TimePickerDialog according to the step value. */
 object TimePicker {
 
     private const val SHOW_SECONDS_PICKER_THRESHOLD = 60f
     private const val SHOW_MILLISECONDS_PICKER_THRESHOLD = 1f
 
     /**
-     * Whether or not we should display the milliseconds picker
-     * based on the value of the step attribute
+     * Whether or not we should display the milliseconds picker based on the value of the step attribute
      *
      * @param step Value of the step attribute
      */
-    fun shouldShowMillisecondsPicker(step: Float?): Boolean =
-        step != null && step < SHOW_MILLISECONDS_PICKER_THRESHOLD
+    fun shouldShowMillisecondsPicker(step: Float?): Boolean = step != null && step < SHOW_MILLISECONDS_PICKER_THRESHOLD
 
     /**
-     * Whether or not we should display the seconds picker
-     * based on the value of the step attribute
+     * Whether or not we should display the seconds picker based on the value of the step attribute
      *
      * @param step Value of the step attribute
      */
-    fun shouldShowSecondsPicker(step: Float?): Boolean =
-        step != null && step < SHOW_SECONDS_PICKER_THRESHOLD
+    fun shouldShowSecondsPicker(step: Float?): Boolean = step != null && step < SHOW_SECONDS_PICKER_THRESHOLD
 }

@@ -6,6 +6,7 @@ package mozilla.components.browser.toolbar.display
 
 import androidx.core.view.isVisible
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.browser.toolbar.R
 import mozilla.components.concept.toolbar.Toolbar.Highlight.NONE
 import mozilla.components.concept.toolbar.Toolbar.Highlight.PERMISSIONS_CHANGED
@@ -18,7 +19,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class HighlightViewTest {
@@ -56,11 +56,7 @@ class HighlightViewTest {
     fun `setIcons will trigger an icon updated`() {
         val view = spy(HighlightView(testContext))
 
-        view.setIcon(
-            testContext.getDrawable(
-                TrackingProtectionIconView.DEFAULT_ICON_ON_NO_TRACKERS_BLOCKED,
-            )!!,
-        )
+        view.setIcon(testContext.getDrawable(TrackingProtectionIconView.DEFAULT_ICON_ON_NO_TRACKERS_BLOCKED)!!)
 
         verify(view).updateIcon()
     }

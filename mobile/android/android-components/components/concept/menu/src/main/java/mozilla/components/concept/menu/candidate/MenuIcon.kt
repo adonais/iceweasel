@@ -10,9 +10,7 @@ import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.appcompat.content.res.AppCompatResources
 
-/**
- * Menu option data classes to be shown alongside menu options
- */
+/** Menu option data classes to be shown alongside menu options */
 sealed class MenuIcon
 
 /**
@@ -87,9 +85,7 @@ data class TextMenuIcon(
     val textStyle: TextStyle = TextStyle(),
 ) : MenuIcon()
 
-/**
- * Interface shared by all [MenuIcon]s with drawables.
- */
+/** Interface shared by all [MenuIcon]s with drawables. */
 interface MenuIconWithDrawable {
     val drawable: Drawable?
 

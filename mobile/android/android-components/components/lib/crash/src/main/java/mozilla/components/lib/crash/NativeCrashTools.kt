@@ -6,27 +6,22 @@ package mozilla.components.lib.crash
 
 import android.content.Context
 import androidx.annotation.Keep
+import java.io.IOException
+import java.net.URL
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import mozilla.components.support.base.log.logger.Logger
-import java.io.IOException
-import java.net.URL
 
-/**
- * Invoke native crash tools.
- */
+/** Invoke native crash tools. */
 internal class NativeCrashTools {
     companion object {
         private val logger = Logger("crash/NativeCrashTools")
         private var loaded: Boolean = false
 
-        @Volatile
-        private var instance: NativeCrashTools? = null
+        @Volatile private var instance: NativeCrashTools? = null
 
-        /**
-         * Load the native crate tools. If the native library is not found, returns null.
-         */
+        /** Load the native crate tools. If the native library is not found, returns null. */
         fun load(
             context: Context,
             buildId: String?,
@@ -98,8 +93,8 @@ internal class NativeCrashTools {
     }
 
     /**
-     * Run the minidump analyzer. If an error occurs, it is logged but nothing else is done (because
-     * the minidump analyzer is best-effort to augment crash information).
+     * Run the minidump analyzer. If an error occurs, it is logged but nothing else is done (because the minidump
+     * analyzer is best-effort to augment crash information).
      */
     fun analyzeMinidump(minidumpPath: String, extrasPath: String, allThreads: Boolean) {
         nativeAnalyzeMinidump(minidumpPath, extrasPath, allThreads)?.let {
@@ -107,25 +102,17 @@ internal class NativeCrashTools {
         }
     }
 
-    /**
-     * Send a crash ping. If an error occurs, it is logged by the native code
-     * but nothing else is done.
-     */
+    /** Send a crash ping. If an error occurs, it is logged by the native code but nothing else is done. */
     fun sendCrashPing(extrasJson: String) {
         nativeSendPing(extrasJson)
     }
 
-    /**
-     * Set whether ping upload is enabled or not.
-     */
+    /** Set whether ping upload is enabled or not. */
     fun setPingCollectionEnabled(enabled: Boolean) {
         nativeSetPingCollectionEnabled(enabled)
     }
 
-    /**
-     * Test-only: get the metric values as a JSON string before the next crash
-     * ping is sent.
-     */
+    /** Test-only: get the metric values as a JSON string before the next crash ping is sent. */
     fun testMetricValuesBeforeNextSend(callback: JsonObject.() -> Unit) {
         nativeTestMetricValuesBeforeNextSend { metricsJson ->
             callback(Json.parseToJsonElement(metricsJson).jsonObject)
@@ -133,7 +120,10 @@ internal class NativeCrashTools {
     }
 
     private external fun nativeAnalyzeMinidump(minidumpPath: String, extrasPath: String, allThreads: Boolean): String?
+
     private external fun nativeSendPing(extrasJson: String)
+
     private external fun nativeSetPingCollectionEnabled(enabled: Boolean)
+
     private external fun nativeTestMetricValuesBeforeNextSend(callback: (metricsJson: String) -> Unit)
 }

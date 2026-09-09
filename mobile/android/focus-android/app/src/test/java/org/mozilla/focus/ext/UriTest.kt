@@ -19,7 +19,10 @@ class UriTest {
         assertTruncatedHost("example.org", "http://example.org")
         assertTruncatedHost("youtube.com", "https://www.youtube.com/watch?v=oHg5SJYRHA0")
         assertTruncatedHost("facebook.com", "https://www.facebook.com/Firefox/")
-        assertTruncatedHost("yahoo.com", "https://de.search.yahoo.com/search?p=mozilla&fr=yfp-t&fp=1&toggle=1&cop=mss&ei=UTF-8")
+        assertTruncatedHost(
+            "yahoo.com",
+            "https://de.search.yahoo.com/search?p=mozilla&fr=yfp-t&fp=1&toggle=1&cop=mss&ei=UTF-8",
+        )
         assertTruncatedHost("amazon.co.uk", "https://www.amazon.co.uk/Doctor-Who-10-Part-DVD/dp/B06XCMVY1H")
     }
 

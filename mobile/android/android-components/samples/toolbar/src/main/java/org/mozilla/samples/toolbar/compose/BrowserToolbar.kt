@@ -18,13 +18,12 @@ import mozilla.components.lib.state.ext.observeAsComposableState
 /**
  * A customizable toolbar for browsers.
  *
- * The toolbar can switch between two modes: display and edit. The display mode displays the current
- * URL and controls for navigation. In edit mode the current URL can be edited. Those two modes are
- * implemented by the [BrowserDisplayToolbar] and [BrowserEditToolbar] composables.
+ * The toolbar can switch between two modes: display and edit. The display mode displays the current URL and controls
+ * for navigation. In edit mode the current URL can be edited. Those two modes are implemented by the
+ * [BrowserDisplayToolbar] and [BrowserEditToolbar] composables.
  *
  * @param onTextEdit Invoked when the user edits the text in the toolbar in "edit" mode.
- * @param onTextCommit Invoked when the user has finished editing the URL and wants
- * to commit the entered text.
+ * @param onTextCommit Invoked when the user has finished editing the URL and wants to commit the entered text.
  */
 @Composable
 fun BrowserToolbar(
@@ -36,10 +35,11 @@ fun BrowserToolbar(
     val uiState by store.stateFlow.collectAsState()
     val progressBarConfig = store.observeAsComposableState { it.displayState.progressBarConfig }.value
 
-    val input = when (val editText = uiState.editState.query.current) {
-        "" -> url
-        else -> editText
-    }
+    val input =
+        when (val editText = uiState.editState.query.current) {
+            "" -> url
+            else -> editText
+        }
 
     if (uiState.isEditMode()) {
         BrowserEditToolbar(

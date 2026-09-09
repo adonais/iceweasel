@@ -135,6 +135,43 @@ add_task(async function test_monitor_command_rejects_non_watchable_page() {
   }
 });
 
+add_task(async function test_monitor_command_seeds_blank_url_in_full_page() {
+  await SpecialPowers.pushPrefEnv({ set: [[PREF_AGENT_ENABLED, true]] });
+  await MonitorAgent._resetForTesting();
+
+  try {
+    const { conversation, seeded, l10nMessages } = makeConversationStub();
+    const handled = AgentUI.tryHandleCommand({
+      command: "watch",
+      value: "/watch the price drops",
+      contextPageUrl: "about:firefoxview#history",
+      conversation,
+      isFullPage: true,
+    });
+    Assert.ok(handled, "The monitoring command is handled in full page mode");
+
+    const { properties } = await seeded;
+    Assert.equal(
+      properties.agent.url,
+      "",
+      "The watch card is seeded without a url in full page mode"
+    );
+    Assert.deepEqual(
+      properties.agent.watchUrls,
+      [],
+      "The watch card is seeded with no watch urls in full page mode"
+    );
+    Assert.deepEqual(
+      l10nMessages,
+      [],
+      "The page-not-watchable message is not shown in full page mode"
+    );
+  } finally {
+    await MonitorAgent._resetForTesting();
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
 add_task(async function test_create_monitor_localizes_schedule_summary() {
   await SpecialPowers.pushPrefEnv({ set: [[PREF_AGENT_ENABLED, true]] });
   await MonitorAgent._resetForTesting();

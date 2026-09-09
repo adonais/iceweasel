@@ -13,16 +13,13 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.library.history.HistoryView
 
-/**
- * A binding to map updates of history items that are binding deletion to the view.
- */
+/** A binding to map updates of history items that are binding deletion to the view. */
 class PendingDeletionBinding(
     appStore: AppStore,
     private val view: HistoryView,
     mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : AbstractBinding<AppState>(appStore, mainDispatcher) {
     override suspend fun onState(flow: Flow<AppState>) {
-        flow.distinctUntilChangedBy { it.pendingDeletionHistoryItems }
-            .collect { view.update(it) }
+        flow.distinctUntilChangedBy { it.pendingDeletionHistoryItems }.collect { view.update(it) }
     }
 }

@@ -16,14 +16,14 @@ Bug 1804288 - (fix-de7ae5755b) reimplement Bug 1748458 - Add TRACE_EVENTs for dr
 Differential Revision: https://phabricator.services.mozilla.com/D163960
 Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/8e9a326a99cd5eaa6e447ff57c01ad9d79a09744
 ---
- api/video/frame_buffer.cc               | 33 +++++++++++++++++++++++++
- video/receive_statistics_proxy.cc       | 11 +++++++++
+ api/video/frame_buffer.cc               | 34 +++++++++++++++++++++++++
+ video/receive_statistics_proxy.cc       | 11 ++++++++
  video/rtp_video_stream_receiver2.cc     |  4 +++
- video/video_stream_buffer_controller.cc |  7 ++++++
- 4 files changed, 55 insertions(+)
+ video/video_stream_buffer_controller.cc |  7 +++++
+ 4 files changed, 56 insertions(+)
 
 diff --git a/api/video/frame_buffer.cc b/api/video/frame_buffer.cc
-index 77834e7d1f..4c41c74ab7 100644
+index 754ce00da1..08371fbeda 100644
 --- a/api/video/frame_buffer.cc
 +++ b/api/video/frame_buffer.cc
 @@ -25,6 +25,7 @@
@@ -34,10 +34,11 @@ index 77834e7d1f..4c41c74ab7 100644
  
  namespace webrtc {
  namespace {
-@@ -77,7 +78,12 @@ FrameBuffer::FrameBuffer(int max_size,
-       decoded_frame_history_(max_decode_history) {}
+@@ -78,7 +79,13 @@ FrameBuffer::FrameBuffer(int max_size,
  
  bool FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
+   new_continuous_temporal_units_.clear();
++
 +  const uint32_t ssrc =
 +      frame->PacketInfos().empty() ? 0 : frame->PacketInfos()[0].ssrc();
    if (!ValidReferences(*frame)) {
@@ -47,7 +48,7 @@ index 77834e7d1f..4c41c74ab7 100644
      RTC_DLOG(LS_WARNING) << "Frame " << frame->Id()
                           << " has invalid references, dropping frame.";
      return false;
-@@ -87,23 +93,35 @@ bool FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
+@@ -88,23 +95,35 @@ bool FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
      if (legacy_frame_id_jump_behavior_ && frame->is_keyframe() &&
          AheadOf(frame->RtpTimestamp(),
                  *decoded_frame_history_.GetLastDecodedFrameTimestamp())) {
@@ -83,7 +84,7 @@ index 77834e7d1f..4c41c74ab7 100644
        return false;
      }
    }
-@@ -159,16 +177,31 @@ void FrameBuffer::DropNextDecodableTemporalUnit() {
+@@ -160,16 +179,31 @@ void FrameBuffer::DropNextDecodableTemporalUnit() {
  
  void FrameBuffer::UpdateDroppedFramesAndDiscardedPackets(FrameIterator begin_it,
                                                           FrameIterator end_it) {
@@ -166,7 +167,7 @@ index 05d8d9b7be..f4c5db5697 100644
  }
  
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index 75fc4fda46..ff730fa780 100644
+index f72a6bd187..6f19d538c0 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
 @@ -88,6 +88,7 @@
@@ -177,7 +178,7 @@ index 75fc4fda46..ff730fa780 100644
  #include "system_wrappers/include/ntp_time.h"
  #include "video/buffered_frame_decryptor.h"
  
-@@ -1378,6 +1379,9 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
+@@ -1384,6 +1385,9 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
                          packet_infos_.upper_bound(unwrapped_rtp_seq_num));
      uint32_t num_packets_cleared = packet_buffer_.ClearTo(unwrapped_rtp_seq_num);
      if (num_packets_cleared > 0) {
@@ -188,7 +189,7 @@ index 75fc4fda46..ff730fa780 100644
      }
      reference_finder_->ClearTo(seq_num, rtp_timestamp);
 diff --git a/video/video_stream_buffer_controller.cc b/video/video_stream_buffer_controller.cc
-index 3986cceaa7..bf03366136 100644
+index 21681890b9..cceb77b48d 100644
 --- a/video/video_stream_buffer_controller.cc
 +++ b/video/video_stream_buffer_controller.cc
 @@ -34,6 +34,7 @@
@@ -216,6 +217,6 @@ index 3986cceaa7..bf03366136 100644
 +      TRACE_EVENT2("webrtc",
 +                   "VideoStreamBufferController::InsertFrame Frame Complete",
 +                   "remote_ssrc", ssrc, "frame_id", frameId);
+       timing_->OnContinuousTemporalUnits(buffer_->NewContinuousTemporalUnits(),
+                                          clock_->CurrentTime());
        stats_proxy_->OnCompleteFrame(metadata.is_keyframe, metadata.size,
-                                     metadata.contentType);
-       MaybeScheduleFrameForRelease();

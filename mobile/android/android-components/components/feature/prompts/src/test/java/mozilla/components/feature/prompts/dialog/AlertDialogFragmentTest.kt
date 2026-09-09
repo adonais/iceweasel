@@ -8,6 +8,7 @@ import android.content.DialogInterface.BUTTON_POSITIVE
 import android.os.Looper.getMainLooper
 import android.widget.CheckBox
 import android.widget.TextView
+import androidx.appcompat.R as appcompatR
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -29,7 +30,6 @@ import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations.openMocks
 import org.robolectric.Shadows.shadowOf
-import androidx.appcompat.R as appcompatR
 
 @RunWith(AndroidJUnit4::class)
 class AlertDialogFragmentTest {
@@ -44,9 +44,7 @@ class AlertDialogFragmentTest {
 
     @Test
     fun `build dialog`() {
-        val fragment = spy(
-            AlertDialogFragment.newInstance("sessionId", "uid", true, "title", "message", true),
-        )
+        val fragment = spy(AlertDialogFragment.newInstance("sessionId", "uid", true, "title", "message", true))
 
         doReturn(appCompatContext).`when`(fragment).requireContext()
 
@@ -71,9 +69,7 @@ class AlertDialogFragmentTest {
 
     @Test
     fun `Alert with hasShownManyDialogs equals false should not have a checkbox`() {
-        val fragment = spy(
-            AlertDialogFragment.newInstance("sessionId", "uid", false, "title", "message", false),
-        )
+        val fragment = spy(AlertDialogFragment.newInstance("sessionId", "uid", false, "title", "message", false))
 
         doReturn(appCompatContext).`when`(fragment).requireContext()
 
@@ -90,9 +86,7 @@ class AlertDialogFragmentTest {
     fun `Clicking on positive button notifies the feature`() {
         val mockFeature: PromptFeature = mock()
 
-        val fragment = spy(
-            AlertDialogFragment.newInstance("sessionId", "uid", true, "title", "message", false),
-        )
+        val fragment = spy(AlertDialogFragment.newInstance("sessionId", "uid", true, "title", "message", false))
 
         fragment.feature = mockFeature
 
@@ -110,9 +104,7 @@ class AlertDialogFragmentTest {
 
     @Test
     fun `After checking no more dialogs checkbox feature onNoMoreDialogsChecked must be called`() {
-        val fragment = spy(
-            AlertDialogFragment.newInstance("sessionId", "uid", false, "title", "message", true),
-        )
+        val fragment = spy(AlertDialogFragment.newInstance("sessionId", "uid", false, "title", "message", true))
 
         fragment.feature = mockFeature
 
@@ -134,9 +126,7 @@ class AlertDialogFragmentTest {
 
     @Test
     fun `touching outside of the dialog must notify the feature onCancel`() {
-        val fragment = spy(
-            AlertDialogFragment.newInstance("sessionId", "uid", true, "title", "message", true),
-        )
+        val fragment = spy(AlertDialogFragment.newInstance("sessionId", "uid", true, "title", "message", true))
 
         fragment.feature = mockFeature
 

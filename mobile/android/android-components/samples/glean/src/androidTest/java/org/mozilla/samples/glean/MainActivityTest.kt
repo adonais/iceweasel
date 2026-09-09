@@ -8,26 +8,26 @@ import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.rules.ActivityScenarioRule
+import kotlin.test.assertNotNull
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
-import kotlin.test.assertNotNull
 import org.mozilla.samples.glean.GleanMetrics.Test as GleanTestMetrics
 
 class MainActivityTest {
-    @get:Rule
-    val activityRule: ActivityScenarioRule<MainActivity> = ActivityScenarioRule(MainActivity::class.java)
+    @get:Rule val activityRule: ActivityScenarioRule<MainActivity> = ActivityScenarioRule(MainActivity::class.java)
 
     @Test
     fun checkGleanClickData() {
         // We don't reset the storage in this test as the GleanTestRule does not
         // work nicely in instrumented test. Just check the current value, increment
         // by one and make it the expected value.
-        val expectedValue = if (GleanTestMetrics.counter.testGetValue() != null) {
-            GleanTestMetrics.counter.testGetValue()!! + 1
-        } else {
-            1
-        }
+        val expectedValue =
+            if (GleanTestMetrics.counter.testGetValue() != null) {
+                GleanTestMetrics.counter.testGetValue()!! + 1
+            } else {
+                1
+            }
 
         // Simulate a click on the button.
         onView(withId(R.id.buttonGenerateData)).perform(click())

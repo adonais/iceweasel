@@ -10,23 +10,18 @@ import org.mozilla.fenix.HomeActivity.Companion.PRIVATE_BROWSING_MODE
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.utils.Settings
 
-/**
- * Enum that represents whether or not private browsing is active.
- */
+/** Enum that represents whether or not private browsing is active. */
 enum class BrowsingMode {
-    Normal, Private;
+    Normal,
+    Private;
 
-    /**
-     * Returns true if the [BrowsingMode] is [Private]
-     */
-    val isPrivate get() = this == Private
+    /** Returns true if the [BrowsingMode] is [Private] */
+    val isPrivate
+        get() = this == Private
 
     companion object {
 
-        /**
-         * Convert a boolean into a [BrowsingMode].
-         * True corresponds to [Private] and false corresponds to [Normal].
-         */
+        /** Convert a boolean into a [BrowsingMode]. True corresponds to [Private] and false corresponds to [Normal]. */
         fun fromBoolean(isPrivate: Boolean) = if (isPrivate) Private else Normal
     }
 }
@@ -43,8 +38,8 @@ interface BrowsingModeManager {
 }
 
 /**
- * Default implementation of [BrowsingModeManager] that tracks the current [BrowsingMode],
- * persists it to [Settings], and synchronizes it with [AppStore].
+ * Default implementation of [BrowsingModeManager] that tracks the current [BrowsingMode], persists it to [Settings],
+ * and synchronizes it with [AppStore].
  *
  * @param intent The [Intent] that started the activity.
  * @param settings [Settings] used to persist the current browsing mode in storage.
@@ -70,9 +65,7 @@ class DefaultBrowsingModeManager(
         mode = getModeFromIntentOrLastKnown(intent)
     }
 
-    /**
-     * Returns the [BrowsingMode] set by the [intent] or the last known [BrowsingMode].
-     */
+    /** Returns the [BrowsingMode] set by the [intent] or the last known [BrowsingMode]. */
     private fun getModeFromIntentOrLastKnown(intent: Intent?): BrowsingMode {
         intent?.toSafeIntent()?.let {
             if (it.hasExtra(PRIVATE_BROWSING_MODE)) {

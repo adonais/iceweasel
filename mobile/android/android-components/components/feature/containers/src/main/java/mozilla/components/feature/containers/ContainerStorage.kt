@@ -16,19 +16,13 @@ import mozilla.components.feature.containers.db.ContainerDatabase
 import mozilla.components.feature.containers.db.ContainerEntity
 import mozilla.components.feature.containers.db.toContainerEntity
 
-/**
- * A storage implementation for organizing containers (contextual identities).
- */
+/** A storage implementation for organizing containers (contextual identities). */
 internal class ContainerStorage(context: Context) : ContainerMiddleware.Storage {
 
-    @VisibleForTesting
-    internal var database: Lazy<ContainerDatabase> =
-        lazy { ContainerDatabase.get(context) }
+    @VisibleForTesting internal var database: Lazy<ContainerDatabase> = lazy { ContainerDatabase.get(context) }
     val containerDao by lazy { database.value.containerDao() }
 
-    /**
-     * Adds a new [ContainerState].
-     */
+    /** Adds a new [ContainerState]. */
     override suspend fun addContainer(
         contextId: String,
         name: String,
@@ -41,31 +35,24 @@ internal class ContainerStorage(context: Context) : ContainerMiddleware.Storage 
                 name = name,
                 color = color,
                 icon = icon,
-            ),
+            )
         )
     }
 
-    /**
-     * Returns a [Flow] list of all the [ContainerState] instances.
-     */
+    /** Returns a [Flow] list of all the [ContainerState] instances. */
     override fun getContainers(): Flow<List<ContainerState>> {
         return containerDao.getContainers().map { list ->
             list.map { entity -> entity.toContainer() }
         }
     }
 
-    /**
-     * Returns all saved [ContainerState] instances as a [DataSource.Factory].
-     */
-    fun getContainersPaged(): DataSource.Factory<Int, ContainerState> = containerDao
-        .getContainersPaged()
-        .map { entity ->
+    /** Returns all saved [ContainerState] instances as a [DataSource.Factory]. */
+    fun getContainersPaged(): DataSource.Factory<Int, ContainerState> =
+        containerDao.getContainersPaged().map { entity ->
             entity.toContainer()
         }
 
-    /**
-     * Removes the given [ContainerState].
-     */
+    /** Removes the given [ContainerState]. */
     override suspend fun removeContainer(container: ContainerState) {
         containerDao.deleteContainer(container.toContainerEntity())
     }

@@ -55,12 +55,12 @@ tasks:
             toolchain:
                 - win64-geckodriver
         run:
-            clone-with: hg
             command: >-
                 python3.exe condprof/main.py
                 ${EXTRA_ARGS}
                 --geckodriver ${MOZ_FETCHES_DIR}/geckodriver.exe
                 --firefox ${MOZ_FETCHES_DIR}/firefox/firefox.exe
+                --force-new
                 --scenario ${SCENARIO}
                 ../../archive
         worker:
@@ -90,13 +90,13 @@ tasks:
             toolchain:
                 - linux64-geckodriver
         run:
-            clone-with: hg
             command: >-
                 python3 -m venv . &&
                 bin/python3 condprof/main.py
                 ${EXTRA_ARGS}
                 --geckodriver ${MOZ_FETCHES_DIR}/geckodriver
                 --firefox ${MOZ_FETCHES_DIR}/firefox/firefox-bin
+                --force-new
                 --scenario ${SCENARIO}
                 ../../archive
         worker:
@@ -128,13 +128,13 @@ tasks:
             toolchain:
                 - macosx64-geckodriver
         run:
-            clone-with: hg
             command: >-
                 python3 -m venv . &&
                 bin/python3 condprof/main.py
                 ${EXTRA_ARGS}
                 --geckodriver ${MOZ_FETCHES_DIR}/geckodriver
                 --firefox ${MOZ_FETCHES_DIR}/target.dmg
+                --force-new
                 --scenario ${SCENARIO}
                 ../../archive
         worker:

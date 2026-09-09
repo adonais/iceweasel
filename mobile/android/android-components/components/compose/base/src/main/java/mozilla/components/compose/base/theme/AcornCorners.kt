@@ -13,14 +13,12 @@ import androidx.compose.ui.unit.dp
  *
  * An example usage of these values would be to construct [RoundedCornerShape]s.
  *
- * @property none No corner radius (0dp). Use for edge to edge components such as app bars, tabs,
- * and toolbar, etc.
+ * @property none No corner radius (0dp). Use for edge to edge components such as app bars, tabs, and toolbar, etc.
  * @property extraSmall Extra small corner radius (4dp). Use for menus, snackbars, text fields, etc.
  * @property small Small corner radius (8dp).
  * @property medium Medium corner radius (12dp). Use for banners, CFRs, etc.
  * @property large Large corner radius (16dp). Use for cards, FABs, etc.
- * @property extraLarge Extra large corner radius (28dp). Use for larger components such as dialogs
- * or sheets, etc.
+ * @property extraLarge Extra large corner radius (28dp). Use for larger components such as dialogs or sheets, etc.
  * @property full Full corner radius (1000dp). Use for buttons, badges, chips, etc.
  */
 object AcornCorners {

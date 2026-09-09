@@ -79,6 +79,41 @@
         );
       });
 
+      add_task(async function testShowWhileOpenIsIgnored() {
+        let shown = BrowserTestUtils.waitForEvent(panelList, "shown");
+        anchorButton.focus();
+        synthesizeKey(" ", {});
+        await shown;
+
+        is(document.activeElement, panelItems[0], "The first item is focused");
+
+        // Stand in for a consumer that calls show() from its own handler for
+        // the key that is about to move through the list.
+        let reShow = e => panelList.show(e, panelItems[2]);
+        document.addEventListener("keydown", reShow, { capture: true });
+        try {
+          synthesizeKey("KEY_ArrowDown", {});
+        } finally {
+          document.removeEventListener("keydown", reShow, { capture: true });
+        }
+
+        is(
+          panelItems.indexOf(document.activeElement),
+          1,
+          "ArrowDown still moves to the second item"
+        );
+        is(
+          panelList.lastAnchorNode,
+          anchorButton,
+          "The anchor is unchanged by show() on an open list"
+        );
+        ok(panelList.open, "The list is still open");
+
+        let hidden = BrowserTestUtils.waitForEvent(panelList, "hidden");
+        synthesizeKey("Escape", {});
+        await hidden;
+      });
+
       add_task(async function testAriaAttributes() {
         is(panelList.getAttribute("role"), "menu", "The panel is a menu");
 

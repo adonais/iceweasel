@@ -21,8 +21,8 @@ import org.mozilla.focus.state.AppStore
 import org.mozilla.focus.topsites.DefaultTopSitesStorage
 
 /**
- * Observer that locks the app when it goes to the background or is paused,
- * based on biometric settings and screen contents.
+ * Observer that locks the app when it goes to the background or is paused, based on biometric settings and screen
+ * contents.
  *
  * @param context The application context.
  * @param browserStore The store that holds the browser state.
@@ -45,9 +45,7 @@ class LockObserver(
         recordTabCount()
     }
 
-    /**
-     * Records the count of private tabs when the app goes to the background.
-     */
+    /** Records the count of private tabs when the app goes to the background. */
     private fun recordTabCount() {
         val tabCount = browserStore.state.privateTabs.size.toLong()
         TabCount.appBackgrounded.accumulateSamples(listOf(tabCount))
@@ -80,10 +78,11 @@ class LockObserver(
                     return@launch
                 }
 
-                val topSitesList = context.components.topSitesStorage.getTopSites(
-                    totalSites = DefaultTopSitesStorage.TOP_SITES_MAX_LIMIT,
-                    frecencyConfig = null,
-                )
+                val topSitesList =
+                    context.components.topSitesStorage.getTopSites(
+                        totalSites = DefaultTopSitesStorage.TOP_SITES_MAX_LIMIT,
+                        frecencyConfig = null,
+                    )
 
                 if (topSitesList.isNotEmpty()) {
                     appStore.dispatch(AppAction.Lock())

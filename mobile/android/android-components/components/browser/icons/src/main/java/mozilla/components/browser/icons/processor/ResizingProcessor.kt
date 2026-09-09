@@ -8,17 +8,13 @@ import android.content.Context
 import android.graphics.Bitmap
 import androidx.annotation.VisibleForTesting
 import androidx.core.graphics.scale
+import kotlin.math.roundToInt
 import mozilla.components.browser.icons.Icon
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.support.images.DesiredSize
-import kotlin.math.roundToInt
 
-/**
- * [IconProcessor] implementation for resizing the loaded icon based on the target size.
- */
-class ResizingProcessor(
-    private val discardSmallIcons: Boolean = true,
-) : IconProcessor {
+/** [IconProcessor] implementation for resizing the loaded icon based on the target size. */
+class ResizingProcessor(private val discardSmallIcons: Boolean = true) : IconProcessor {
 
     override fun process(
         context: Context,
@@ -39,35 +35,35 @@ class ResizingProcessor(
         // The bitmap has exactly the size we are looking for.
         if (size == targetSize) return icon
 
-        val resizedBitmap = if (size > targetSize) {
-            resize(originalBitmap, targetSize)
-        } else {
-            // Our largest primary is smaller than the desired size. Upscale it (to a limit)!
-            // 'largestSize' now reflects the maximum size we can upscale to.
-            val largestSize = (size * maxScaleFactor).roundToInt()
-
-            if (largestSize > targetSize) {
-                // Perfect! WE can upscale and reach the needed size.
+        val resizedBitmap =
+            if (size > targetSize) {
                 resize(originalBitmap, targetSize)
             } else {
-                // We don't have enough information to make the target size look non-terrible.
-                // Best effort scale, unless we're told to throw away small icons.
-                if (discardSmallIcons) null else resize(originalBitmap, largestSize)
+                // Our largest primary is smaller than the desired size. Upscale it (to a limit)!
+                // 'largestSize' now reflects the maximum size we can upscale to.
+                val largestSize = (size * maxScaleFactor).roundToInt()
+
+                if (largestSize > targetSize) {
+                    // Perfect! WE can upscale and reach the needed size.
+                    resize(originalBitmap, targetSize)
+                } else {
+                    // We don't have enough information to make the target size look non-terrible.
+                    // Best effort scale, unless we're told to throw away small icons.
+                    if (discardSmallIcons) null else resize(originalBitmap, largestSize)
+                }
             }
-        }
 
         return resizedBitmap?.let { icon.copy(bitmap = it) }
     }
 
-    /**
-     * Create a new bitmap scaled from an existing bitmap.
-     */
+    /** Create a new bitmap scaled from an existing bitmap. */
     @VisibleForTesting
-    internal fun resize(bitmap: Bitmap, targetSize: Int) = try {
-        bitmap.scale(targetSize, targetSize, filter = true)
-    } catch (e: OutOfMemoryError) {
-        // There's not enough memory to create a resized copy of the bitmap in memory. Let's just
-        // use what we have.
-        bitmap
-    }
+    internal fun resize(bitmap: Bitmap, targetSize: Int) =
+        try {
+            bitmap.scale(targetSize, targetSize, filter = true)
+        } catch (e: OutOfMemoryError) {
+            // There's not enough memory to create a resized copy of the bitmap in memory. Let's just
+            // use what we have.
+            bitmap
+        }
 }

@@ -108,6 +108,9 @@ SOURCES += [
 
 if CONFIG["CC_TYPE"] in ("clang", "gcc"):
     SOURCES["/third_party/abseil-cpp/absl/strings/numbers.cc"].flags += ["-Wno-comma"]
+    SOURCES[
+        "/third_party/abseil-cpp/absl/strings/internal/str_format/float_conversion.cc"
+    ].flags += ["-Wno-unused-template"]
 
 # This copy of SafeSPrintf doesn't need to avoid the Chromium logging
 # dependency like the one in libxul does, but this way the behavior is

@@ -1,0 +1,22 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+<panelview id="remote-control-panel" class="PanelUI-subView" role="document">
+  <vbox id="remote-control-panel-container">
+    <hbox id="remote-control-panel-header">
+      <html:img id="remote-control-panel-icon" src="chrome://browser/skin/remote-control.svg" alt=""/>
+      <html:h1 id="remote-control-panel-title" data-l10n-id="remote-control-panel-heading"/>
+    </hbox>
+
+    <description class="remote-control-panel-description" data-l10n-id="remote-control-panel-summary"/>
+    <description class="remote-control-panel-description" data-l10n-id="remote-control-panel-warning"/>
+
+    <hbox id="remote-control-panel-status">
+      <html:img id="remote-control-panel-status-dot" src="chrome://browser/skin/notification-fill-12.svg" alt=""/>
+      <description id="remote-control-panel-status-text" aria-live="polite"/>
+    </hbox>
+
+    <button id="remote-control-panel-toggle-button" class="footer-button primary"/>
+  </vbox>
+</panelview>

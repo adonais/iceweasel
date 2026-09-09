@@ -40,11 +40,7 @@ internal fun MenuScaffold(
     Column(modifier = modifier) {
         header()
 
-        Row(
-            modifier = Modifier
-                .verticalScroll(rememberScrollState())
-                .fillMaxWidth(),
-        ) {
+        Row(modifier = Modifier.verticalScroll(rememberScrollState()).fillMaxWidth()) {
             Spacer(modifier = Modifier.height(8.dp))
         }
 
@@ -53,14 +49,14 @@ internal fun MenuScaffold(
         }
 
         Column(
-            modifier = Modifier
-                .verticalScroll(scrollState)
-                .padding(
-                    start = 16.dp,
-                    top = 12.dp,
-                    end = 16.dp,
-                    bottom = 32.dp,
-                ),
+            modifier =
+                Modifier.verticalScroll(scrollState)
+                    .padding(
+                        start = 16.dp,
+                        top = 12.dp,
+                        end = 16.dp,
+                        bottom = 32.dp,
+                    ),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             content()
@@ -92,9 +88,7 @@ internal fun MenuFrame(
             header()
 
             Column(
-                modifier = Modifier
-                    .verticalScroll(scrollState)
-                    .then(contentModifier),
+                modifier = Modifier.verticalScroll(scrollState).then(contentModifier),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 content()

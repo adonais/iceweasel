@@ -1,8 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.ui.efficiency.generation
 
-/**
- * Utilities for deterministically splitting generated test cases into manual shards.
- */
+/** Utilities for deterministically splitting generated test cases into manual shards. */
 object ShardUtils {
 
     /**
@@ -32,15 +34,14 @@ object ShardUtils {
     }
 
     /**
-     * Shared shell for the four domains' `XShardData.loadShard()` entrypoints: resolves the
-     * run-state override (falling back to the `testRunState` system property, then blank),
-     * delegates to [buildForShard] to build that domain's shard, and wraps each case for
-     * JUnit's `Parameterized` `data()` contract.
+     * Shared shell for the four domains' `XShardData.loadShard()` entrypoints: resolves the run-state override (falling
+     * back to the `testRunState` system property, then blank), delegates to [buildForShard] to build that domain's
+     * shard, and wraps each case for JUnit's `Parameterized` `data()` contract.
      *
-     * Extracted (P2b-3, 2026-07-17) — this wrapper was previously identical, copy-pasted logic
-     * in ReachabilityShardData, PairShardData, InteractionShardData, and
-     * BehaviorShardData. Domain-specific setup (e.g. Pairs' graph bootstrap) stays in the
-     * caller's [buildForShard] lambda rather than being forced into this shared shell.
+     * Extracted (P2b-3, 2026-07-17) — this wrapper was previously identical, copy-pasted logic in
+     * ReachabilityShardData, PairShardData, InteractionShardData, and BehaviorShardData. Domain-specific setup (e.g.
+     * Pairs' graph bootstrap) stays in the caller's [buildForShard] lambda rather than being forced into this shared
+     * shell.
      */
     fun <T> loadShard(
         shardIndex: Int,
@@ -48,9 +49,7 @@ object ShardUtils {
         runStateOverride: String? = null,
         buildForShard: (runState: String, shardIndex: Int, shardCount: Int) -> List<T>,
     ): List<Array<Any>> {
-        val runState = runStateOverride
-            ?: System.getProperty("testRunState")?.takeIf { it.isNotBlank() }
-            ?: ""
+        val runState = runStateOverride ?: System.getProperty("testRunState")?.takeIf { it.isNotBlank() } ?: ""
 
         return buildForShard(runState, shardIndex, shardCount).map { arrayOf(it as Any) }
     }

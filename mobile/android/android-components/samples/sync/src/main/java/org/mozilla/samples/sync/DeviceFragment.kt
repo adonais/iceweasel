@@ -15,8 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import mozilla.components.concept.sync.Device
 
 /**
- * A fragment representing a list of Items.
- * Activities containing this fragment MUST implement the
+ * A fragment representing a list of Items. Activities containing this fragment MUST implement the
  * [DeviceFragment.OnDeviceListInteractionListener] interface.
  */
 class DeviceFragment : Fragment() {
@@ -47,19 +46,14 @@ class DeviceFragment : Fragment() {
         adapter.onDeviceClickedListener = context
     }
 
-    /**
-     * Updates the list of devices.
-     */
+    /** Updates the list of devices. */
     fun updateDevices(devices: List<Device>) {
         adapter.submitList(devices)
     }
 
     /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     *
+     * This interface must be implemented by activities that contain this fragment to allow an interaction in this
+     * fragment to be communicated to the activity and potentially other fragments contained in that activity.
      *
      * See the Android Training lesson
      * [Communicating with Other Fragments](http://developer.android.com/training/basics/fragments/communicating.html)

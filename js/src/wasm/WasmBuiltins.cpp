@@ -407,7 +407,7 @@ constexpr SymbolicAddressSignature SASigArrayCopy = {
 #ifdef ENABLE_WASM_JSPI
 constexpr SymbolicAddressSignature SASigContNew = {
     SymbolicAddress::ContNew, _RoN, _FailOnNullPtr,
-    _ThrowReported,           2,    {_PTR, _RoN, _END}};
+    _ThrowReported,           3,    {_PTR, _RoN, _PTR, _END}};
 constexpr SymbolicAddressSignature SASigContNewEmpty = {
     SymbolicAddress::ContNewEmpty,
     _RoN,
@@ -1761,7 +1761,7 @@ void* wasm::AddressOf(SymbolicAddress imm, ABIFunctionType* abiType) {
       return FuncCast(Instance::arrayCopy, *abiType);
 #ifdef ENABLE_WASM_JSPI
     case SymbolicAddress::ContNew:
-      *abiType = Args_General2;
+      *abiType = Args_General3;
       MOZ_ASSERT(*abiType == ToABIType(SASigContNew));
       return FuncCast(Instance::contNew, *abiType);
     case SymbolicAddress::ContNewEmpty:

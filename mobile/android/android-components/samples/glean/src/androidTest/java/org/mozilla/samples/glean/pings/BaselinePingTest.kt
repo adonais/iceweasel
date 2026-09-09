@@ -9,6 +9,10 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
+import java.io.BufferedReader
+import java.io.ByteArrayInputStream
+import java.util.concurrent.TimeUnit
+import java.util.zip.GZIPInputStream
 import mockwebserver3.Dispatcher
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -22,10 +26,6 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.samples.glean.MainActivity
-import java.io.BufferedReader
-import java.io.ByteArrayInputStream
-import java.util.concurrent.TimeUnit
-import java.util.zip.GZIPInputStream
 
 /**
  * Decompress the GZIP returned by the glean-core layer.
@@ -38,9 +38,8 @@ fun decompressGZIP(data: ByteArray): String {
 }
 
 /**
- * Convenience method to get the body of a request as a String.
- * The UTF8 representation of the request body will be returned.
- * If the request body is gzipped, it will be decompressed first.
+ * Convenience method to get the body of a request as a String. The UTF8 representation of the request body will be
+ * returned. If the request body is gzipped, it will be decompressed first.
  *
  * @return a [String] containing the body of the request.
  */
@@ -56,11 +55,9 @@ fun RecordedRequest.getPlainBody(): String {
 class BaselinePingTest {
     private val server = createMockWebServer()
 
-    @get:Rule
-    val activityRule: ActivityScenarioRule<MainActivity> = ActivityScenarioRule(MainActivity::class.java)
+    @get:Rule val activityRule: ActivityScenarioRule<MainActivity> = ActivityScenarioRule(MainActivity::class.java)
 
-    @get:Rule
-    val gleanRule = GleanTestLocalServer(context, server.port)
+    @get:Rule val gleanRule = GleanTestLocalServer(context, server.port)
 
     @After
     fun tearDown() {
@@ -72,6 +69,7 @@ class BaselinePingTest {
 
     /**
      * Create a mock webserver that accepts all requests and replies with "OK".
+     *
      * @return a [MockWebServer] instance
      */
     private fun createMockWebServer(): MockWebServer {

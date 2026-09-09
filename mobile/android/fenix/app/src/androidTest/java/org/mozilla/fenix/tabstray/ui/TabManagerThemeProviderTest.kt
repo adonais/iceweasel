@@ -19,8 +19,7 @@ import org.mozilla.fenix.theme.Theme
 @RunWith(AndroidJUnit4::class)
 class TabManagerThemeProviderTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun whenOnPrivateTabsPageTabManagerThemeProviderReturnsPrivateTheme() {
@@ -36,9 +35,7 @@ class TabManagerThemeProviderTest {
         val tabManagerThemeProvider = TabManagerThemeProvider(selectedPage = Page.NormalTabs)
 
         composeTestRule.setContent {
-            DeviceConfigurationOverride(
-                DeviceConfigurationOverride.DarkMode(isDarkMode = false),
-            ) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.DarkMode(isDarkMode = false)) {
                 assertEquals(DefaultThemeProvider.provideTheme(), tabManagerThemeProvider.provideTheme())
                 assertEquals(Theme.Light, tabManagerThemeProvider.provideTheme())
             }
@@ -50,9 +47,7 @@ class TabManagerThemeProviderTest {
         val tabManagerThemeProvider = TabManagerThemeProvider(selectedPage = Page.NormalTabs)
 
         composeTestRule.setContent {
-            DeviceConfigurationOverride(
-                DeviceConfigurationOverride.DarkMode(isDarkMode = true),
-            ) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.DarkMode(isDarkMode = true)) {
                 assertEquals(DefaultThemeProvider.provideTheme(), tabManagerThemeProvider.provideTheme())
                 assertEquals(Theme.Dark, tabManagerThemeProvider.provideTheme())
             }
@@ -64,9 +59,7 @@ class TabManagerThemeProviderTest {
         val tabManagerThemeProvider = TabManagerThemeProvider(selectedPage = Page.SyncedTabs)
 
         composeTestRule.setContent {
-            DeviceConfigurationOverride(
-                DeviceConfigurationOverride.DarkMode(isDarkMode = false),
-            ) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.DarkMode(isDarkMode = false)) {
                 assertEquals(DefaultThemeProvider.provideTheme(), tabManagerThemeProvider.provideTheme())
                 assertEquals(Theme.Light, tabManagerThemeProvider.provideTheme())
             }
@@ -78,9 +71,7 @@ class TabManagerThemeProviderTest {
         val tabManagerThemeProvider = TabManagerThemeProvider(selectedPage = Page.SyncedTabs)
 
         composeTestRule.setContent {
-            DeviceConfigurationOverride(
-                DeviceConfigurationOverride.DarkMode(isDarkMode = true),
-            ) {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.DarkMode(isDarkMode = true)) {
                 assertEquals(DefaultThemeProvider.provideTheme(), tabManagerThemeProvider.provideTheme())
                 assertEquals(Theme.Dark, tabManagerThemeProvider.provideTheme())
             }

@@ -309,7 +309,8 @@ const stringify = json => JSON.stringify(json, null, 2);
 const ImpressionsSection = ({
   messageImpressions,
   groupImpressions,
-  screenImpressions
+  screenImpressions,
+  multiProfileMessageImpressions
 }) => {
   const handleSaveMessageImpressions = (0,react__WEBPACK_IMPORTED_MODULE_1__.useCallback)(newImpressions => {
     _asrouter_utils_mjs__WEBPACK_IMPORTED_MODULE_0__.ASRouterUtils.editState("messageImpressions", newImpressions);
@@ -319,6 +320,9 @@ const ImpressionsSection = ({
   }, []);
   const handleSaveScreenImpressions = (0,react__WEBPACK_IMPORTED_MODULE_1__.useCallback)(newImpressions => {
     _asrouter_utils_mjs__WEBPACK_IMPORTED_MODULE_0__.ASRouterUtils.editState("screenImpressions", newImpressions);
+  }, []);
+  const handleSaveProfileImpressions = (0,react__WEBPACK_IMPORTED_MODULE_1__.useCallback)(newImpressions => {
+    _asrouter_utils_mjs__WEBPACK_IMPORTED_MODULE_0__.ASRouterUtils.editState("multiProfileMessageImpressions", newImpressions);
   }, []);
   const handleResetMessageImpressions = (0,react__WEBPACK_IMPORTED_MODULE_1__.useCallback)(() => {
     _asrouter_utils_mjs__WEBPACK_IMPORTED_MODULE_0__.ASRouterUtils.sendMessage({
@@ -334,6 +338,9 @@ const ImpressionsSection = ({
     _asrouter_utils_mjs__WEBPACK_IMPORTED_MODULE_0__.ASRouterUtils.sendMessage({
       type: "RESET_SCREEN_IMPRESSIONS"
     });
+  }, []);
+  const handleResetProfileImpressions = (0,react__WEBPACK_IMPORTED_MODULE_1__.useCallback)(() => {
+    _asrouter_utils_mjs__WEBPACK_IMPORTED_MODULE_0__.ASRouterUtils.editState("multiProfileMessageImpressions", {});
   }, []);
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("div", {
     className: "impressions-section"
@@ -355,6 +362,12 @@ const ImpressionsSection = ({
     description: "Screen impressions are stored in an object, where each key is a screen ID and each value is the most recent timestamp that screen was shown. They are never cleaned up.",
     onSave: handleSaveScreenImpressions,
     onReset: handleResetScreenImpressions
+  }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement(ImpressionsItem, {
+    impressions: multiProfileMessageImpressions,
+    label: "Profile Impressions",
+    description: "Profile impressions are shared across all profiles in a profile group and are stored in an object, where each key is a message ID and each value is an array of timestamps. They are recorded for messages with a profileScope set.",
+    onSave: handleSaveProfileImpressions,
+    onReset: handleResetProfileImpressions
   }));
 };
 const ImpressionsItem = ({
@@ -1617,7 +1630,8 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
         return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement((react__WEBPACK_IMPORTED_MODULE_1___default().Fragment), null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("h2", null, "Impressions"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement(_ImpressionsSection__WEBPACK_IMPORTED_MODULE_5__.ImpressionsSection, {
           messageImpressions: this.state.messageImpressions,
           groupImpressions: this.state.groupImpressions,
-          screenImpressions: this.state.screenImpressions
+          screenImpressions: this.state.screenImpressions,
+          multiProfileMessageImpressions: this.state.multiProfileMessageImpressions
         }));
       case "errors":
         return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement((react__WEBPACK_IMPORTED_MODULE_1___default().Fragment), null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_1___default().createElement("h2", null, "ASRouter errors"), this.renderErrors());

@@ -5,15 +5,15 @@
 package mozilla.components.lib.fetch.httpurlconnection
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.net.HttpURLConnection
+import java.net.URL
+import kotlin.test.assertIs
 import mozilla.components.concept.fetch.Client
 import mozilla.components.concept.fetch.Request
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.net.HttpURLConnection
-import java.net.URL
-import kotlin.test.assertIs
 
 @RunWith(AndroidJUnit4::class)
 class HttpUrlConnectionFetchTestCases : mozilla.components.tooling.fetch.tests.FetchTestCases() {

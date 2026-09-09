@@ -10,7 +10,7 @@
   const lazy = {};
 
   ChromeUtils.defineESModuleGetters(lazy, {
-    AutoCompleteParent: "resource://gre/actors/AutoCompleteParent.sys.mjs",
+    AutoCompleteParent: "moz-src:///toolkit/actors/AutoCompleteParent.sys.mjs",
   });
 
   if (!customElements.get("autocomplete-row-item")) {
@@ -110,9 +110,15 @@
 
                 let item = event.target.closest("richlistbox,richlistitem");
 
-                // If we hit the richlistbox and not a richlistitem, we ignore
-                // the event.
+                // The pointer is over the richlistbox but not a row (the gap
+                // between rows), so clear pointer selection. Otherwise
+                // it stays selected while nothing is visually highlighted.
                 if (item.localName == "richlistbox") {
+                  if (this.richlistbox.hasAttribute("pointerselected")) {
+                    lazy.AutoCompleteParent.getCurrentActor()?.clearAutoCompletePreview();
+                    this.mousedOverIndex = -1;
+                    this._setSelectedIndex(-1, false, true);
+                  }
                   return;
                 }
 
@@ -535,6 +541,13 @@
                 }
               : null,
           };
+
+          row.type = parsedComment?.type ?? null;
+          row.sources = parsedComment?.sources ?? [];
+          row.sourcesLabel = parsedComment?.sourcesLabel ?? null;
+          row.loading = parsedComment?.loading ?? false;
+          row.loadingLabel = parsedComment?.loadingLabel ?? null;
+          row.emptySourcesLabel = parsedComment?.emptySourcesLabel ?? null;
         }
 
         item.setAttribute("dir", this.style.direction);

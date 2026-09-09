@@ -9,6 +9,7 @@ import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.TranslationsAction
 import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.createCustomTab
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.translate.Language
@@ -24,25 +25,65 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class TranslationsDialogMiddlewareTest {
-    private val browserStore = spyk(
-        BrowserStore(
-            BrowserState(
-                tabs = listOf(createTab("https://www.mozilla.org", id = "tab1")),
-                selectedTabId = "tab1",
-            ),
-        ),
-    )
+    private val browserStore =
+        spyk(
+            BrowserStore(
+                BrowserState(
+                    tabs = listOf(createTab("https://www.mozilla.org", id = "tab1")),
+                    selectedTabId = "tab1",
+                )
+            )
+        )
     private val settings = Settings(testContext)
     private val translationsDialogMiddleware =
         TranslationsDialogMiddleware(browserStore = browserStore, settings = settings)
 
     @Test
+    fun `GIVEN a custom tab WHEN fetching supported languages for translations THEN target the custom tab`() = runTest {
+        val customTabId = "custom-tab"
+        val store =
+            spyk(
+                BrowserStore(
+                    BrowserState(
+                        tabs = listOf(createTab("https://www.mozilla.org", id = "tab1")),
+                        selectedTabId = "tab1",
+                        customTabs = listOf(createCustomTab("https://example.com", id = customTabId)),
+                    )
+                )
+            )
+        val translationStore =
+            TranslationsDialogStore(
+                initialState = TranslationsDialogState(),
+                middlewares =
+                    listOf(
+                        TranslationsDialogMiddleware(
+                            browserStore = store,
+                            settings = settings,
+                            sessionId = customTabId,
+                        )
+                    ),
+            )
+
+        translationStore.dispatch(TranslationsDialogAction.FetchSupportedLanguages)
+
+        verify {
+            store.dispatch(
+                TranslationsAction.OperationRequestedAction(
+                    tabId = customTabId,
+                    operation = TranslationOperation.FETCH_SUPPORTED_LANGUAGES,
+                )
+            )
+        }
+    }
+
+    @Test
     fun `GIVEN translationState WHEN FetchSupportedLanguages action is called THEN call OperationRequestedAction from BrowserStore`() =
         runTest {
-            val translationStore = TranslationsDialogStore(
-                initialState = TranslationsDialogState(),
-                middlewares = listOf(translationsDialogMiddleware),
-            )
+            val translationStore =
+                TranslationsDialogStore(
+                    initialState = TranslationsDialogState(),
+                    middlewares = listOf(translationsDialogMiddleware),
+                )
             translationStore.dispatch(TranslationsDialogAction.FetchSupportedLanguages)
 
             verify {
@@ -50,7 +91,7 @@ class TranslationsDialogMiddlewareTest {
                     TranslationsAction.OperationRequestedAction(
                         tabId = "tab1",
                         operation = TranslationOperation.FETCH_SUPPORTED_LANGUAGES,
-                    ),
+                    )
                 )
             }
         }
@@ -58,13 +99,15 @@ class TranslationsDialogMiddlewareTest {
     @Test
     fun `GIVEN translationState WHEN TranslateAction from TranslationDialogStore is called THEN call TranslateAction from BrowserStore`() =
         runTest {
-            val translationStore = TranslationsDialogStore(
-                initialState = TranslationsDialogState(
-                    initialFrom = Language("en", "English"),
-                    initialTo = Language("fr", "France"),
-                ),
-                middlewares = listOf(translationsDialogMiddleware),
-            )
+            val translationStore =
+                TranslationsDialogStore(
+                    initialState =
+                        TranslationsDialogState(
+                            initialFrom = Language("en", "English"),
+                            initialTo = Language("fr", "France"),
+                        ),
+                    middlewares = listOf(translationsDialogMiddleware),
+                )
             translationStore.dispatch(TranslationsDialogAction.TranslateAction)
 
             verify {
@@ -74,7 +117,7 @@ class TranslationsDialogMiddlewareTest {
                         fromLanguage = "en",
                         toLanguage = "fr",
                         options = null,
-                    ),
+                    )
                 )
             }
         }
@@ -82,33 +125,31 @@ class TranslationsDialogMiddlewareTest {
     @Test
     fun `GIVEN translationState WHEN RestoreTranslation from TranslationDialogStore is called THEN call TranslateRestoreAction from BrowserStore`() =
         runTest {
-            val translationStore = TranslationsDialogStore(
-                initialState = TranslationsDialogState(),
-                middlewares = listOf(translationsDialogMiddleware),
-            )
+            val translationStore =
+                TranslationsDialogStore(
+                    initialState = TranslationsDialogState(),
+                    middlewares = listOf(translationsDialogMiddleware),
+                )
             translationStore.dispatch(TranslationsDialogAction.RestoreTranslation)
 
             verify {
-                browserStore.dispatch(
-                    TranslationsAction.TranslateRestoreAction(
-                        tabId = "tab1",
-                    ),
-                )
+                browserStore.dispatch(TranslationsAction.TranslateRestoreAction(tabId = "tab1"))
             }
         }
 
     @Test
     fun `GIVEN translationState WHEN FetchDownloadFileSizeAction from TranslationDialogStore is called THEN call FetchTranslationDownloadSizeAction from BrowserStore`() =
         runTest {
-            val translationStore = TranslationsDialogStore(
-                initialState = TranslationsDialogState(),
-                middlewares = listOf(translationsDialogMiddleware),
-            )
+            val translationStore =
+                TranslationsDialogStore(
+                    initialState = TranslationsDialogState(),
+                    middlewares = listOf(translationsDialogMiddleware),
+                )
             translationStore.dispatch(
                 TranslationsDialogAction.FetchDownloadFileSizeAction(
                     toLanguage = Language("en", "English"),
                     fromLanguage = Language("fr", "France"),
-                ),
+                )
             )
 
             verify {
@@ -117,7 +158,7 @@ class TranslationsDialogMiddlewareTest {
                         tabId = "tab1",
                         fromLanguage = Language("fr", "France"),
                         toLanguage = Language("en", "English"),
-                    ),
+                    )
                 )
             }
         }
@@ -125,10 +166,11 @@ class TranslationsDialogMiddlewareTest {
     @Test
     fun `GIVEN translationState WHEN FetchPageSettings from TranslationDialogStore is called THEN call FETCH_PAGE_SETTINGS from BrowserStore`() =
         runTest {
-            val translationStore = TranslationsDialogStore(
-                initialState = TranslationsDialogState(),
-                middlewares = listOf(translationsDialogMiddleware),
-            )
+            val translationStore =
+                TranslationsDialogStore(
+                    initialState = TranslationsDialogState(),
+                    middlewares = listOf(translationsDialogMiddleware),
+                )
             translationStore.dispatch(TranslationsDialogAction.FetchPageSettings)
 
             verify {
@@ -136,7 +178,7 @@ class TranslationsDialogMiddlewareTest {
                     TranslationsAction.OperationRequestedAction(
                         tabId = "tab1",
                         operation = TranslationOperation.FETCH_PAGE_SETTINGS,
-                    ),
+                    )
                 )
             }
         }
@@ -145,22 +187,21 @@ class TranslationsDialogMiddlewareTest {
     fun `GIVEN translationState WHEN UpdatePageSettingsValue with action type AlwaysOfferPopup from TranslationDialogStore is called THEN call UpdateGlobalOfferTranslateSettingAction from BrowserStore`() =
         runTest {
             assertTrue(settings.offerTranslation)
-            val translationStore = TranslationsDialogStore(
-                initialState = TranslationsDialogState(),
-                middlewares = listOf(translationsDialogMiddleware),
-            )
+            val translationStore =
+                TranslationsDialogStore(
+                    initialState = TranslationsDialogState(),
+                    middlewares = listOf(translationsDialogMiddleware),
+                )
             translationStore.dispatch(
                 TranslationsDialogAction.UpdatePageSettingsValue(
                     type = TranslationPageSettingsOption.AlwaysOfferPopup(),
                     checkValue = false,
-                ),
+                )
             )
 
             verify {
                 browserStore.dispatch(
-                    TranslationsAction.UpdateGlobalOfferTranslateSettingAction(
-                        offerTranslation = false,
-                    ),
+                    TranslationsAction.UpdateGlobalOfferTranslateSettingAction(offerTranslation = false)
                 )
             }
             assertFalse(settings.offerTranslation)
@@ -169,15 +210,16 @@ class TranslationsDialogMiddlewareTest {
     @Test
     fun `GIVEN translationState WHEN UpdatePageSettingsValue with action type AlwaysTranslateLanguage from TranslationDialogStore is called THEN call UpdatePageSettingAction from BrowserStore`() =
         runTest {
-            val translationStore = TranslationsDialogStore(
-                initialState = TranslationsDialogState(),
-                middlewares = listOf(translationsDialogMiddleware),
-            )
+            val translationStore =
+                TranslationsDialogStore(
+                    initialState = TranslationsDialogState(),
+                    middlewares = listOf(translationsDialogMiddleware),
+                )
             translationStore.dispatch(
                 TranslationsDialogAction.UpdatePageSettingsValue(
                     type = TranslationPageSettingsOption.AlwaysTranslateLanguage(),
                     checkValue = false,
-                ),
+                )
             )
 
             verify {
@@ -186,7 +228,7 @@ class TranslationsDialogMiddlewareTest {
                         tabId = "tab1",
                         operation = TranslationPageSettingOperation.UPDATE_ALWAYS_TRANSLATE_LANGUAGE,
                         setting = false,
-                    ),
+                    )
                 )
             }
         }
@@ -194,15 +236,16 @@ class TranslationsDialogMiddlewareTest {
     @Test
     fun `GIVEN translationState WHEN UpdatePageSettingsValue with action type NeverTranslateLanguage from TranslationDialogStore is called THEN call UpdatePageSettingAction from BrowserStore`() =
         runTest {
-            val translationStore = TranslationsDialogStore(
-                initialState = TranslationsDialogState(),
-                middlewares = listOf(translationsDialogMiddleware),
-            )
+            val translationStore =
+                TranslationsDialogStore(
+                    initialState = TranslationsDialogState(),
+                    middlewares = listOf(translationsDialogMiddleware),
+                )
             translationStore.dispatch(
                 TranslationsDialogAction.UpdatePageSettingsValue(
                     type = TranslationPageSettingsOption.NeverTranslateLanguage(),
                     checkValue = true,
-                ),
+                )
             )
 
             verify {
@@ -211,7 +254,7 @@ class TranslationsDialogMiddlewareTest {
                         tabId = "tab1",
                         operation = TranslationPageSettingOperation.UPDATE_NEVER_TRANSLATE_LANGUAGE,
                         setting = true,
-                    ),
+                    )
                 )
             }
         }
@@ -219,15 +262,16 @@ class TranslationsDialogMiddlewareTest {
     @Test
     fun `GIVEN translationState WHEN UpdatePageSettingsValue with action type NeverTranslateSite from TranslationDialogStore is called THEN call UpdatePageSettingAction from BrowserStore`() =
         runTest {
-            val translationStore = TranslationsDialogStore(
-                initialState = TranslationsDialogState(),
-                middlewares = listOf(translationsDialogMiddleware),
-            )
+            val translationStore =
+                TranslationsDialogStore(
+                    initialState = TranslationsDialogState(),
+                    middlewares = listOf(translationsDialogMiddleware),
+                )
             translationStore.dispatch(
                 TranslationsDialogAction.UpdatePageSettingsValue(
                     type = TranslationPageSettingsOption.NeverTranslateSite(),
                     checkValue = false,
-                ),
+                )
             )
 
             verify {
@@ -236,7 +280,7 @@ class TranslationsDialogMiddlewareTest {
                         tabId = "tab1",
                         operation = TranslationPageSettingOperation.UPDATE_NEVER_TRANSLATE_SITE,
                         setting = false,
-                    ),
+                    )
                 )
             }
         }

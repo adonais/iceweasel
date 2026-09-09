@@ -28,9 +28,7 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.theme.FirefoxTheme
 
-/**
- * A fragment dialog displays a delete or download language.
- */
+/** A fragment dialog displays a delete or download language. */
 class LanguageDialogPreferenceFragment : DialogFragment() {
     private val args by navArgs<LanguageDialogPreferenceFragmentArgs>()
     private val browserStore: BrowserStore by lazy { requireComponents.core.store }
@@ -47,9 +45,10 @@ class LanguageDialogPreferenceFragment : DialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        val view = ComposeView(requireContext()).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-        }
+        val view =
+            ComposeView(requireContext()).apply {
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            }
         when (args.modelState) {
             ModelState.NOT_DOWNLOADED -> setDownloadLanguageFileDialog(view)
             ModelState.DOWNLOAD_IN_PROGRESS -> {}
@@ -67,22 +66,17 @@ class LanguageDialogPreferenceFragment : DialogFragment() {
                 FirefoxTheme {
                     DeleteLanguageFileDialog(
                         language = args.languageDisplayName,
-                        isAllLanguagesItemType =
-                        args.itemType ==
-                            DownloadLanguageItemTypePreference.AllLanguages,
+                        isAllLanguagesItemType = args.itemType == DownloadLanguageItemTypePreference.AllLanguages,
                         fileSizeFormatter = requireComponents.core.fileSizeFormatter,
                         fileSize = args.modelSize,
                         onConfirmDelete = {
                             if (args.itemType == DownloadLanguageItemTypePreference.AllLanguages) {
-                                val options = ModelManagementOptions(
-                                    operation = ModelOperation.DELETE,
-                                    operationLevel = OperationLevel.ALL,
-                                )
-                                browserStore.dispatch(
-                                    TranslationsAction.ManageLanguageModelsAction(
-                                        options = options,
-                                    ),
-                                )
+                                val options =
+                                    ModelManagementOptions(
+                                        operation = ModelOperation.DELETE,
+                                        operationLevel = OperationLevel.ALL,
+                                    )
+                                browserStore.dispatch(TranslationsAction.ManageLanguageModelsAction(options = options))
                             } else {
                                 deleteOrDownloadModel(
                                     modelOperation = ModelOperation.DELETE,
@@ -107,31 +101,26 @@ class LanguageDialogPreferenceFragment : DialogFragment() {
                     var checkBoxEnabled by remember { mutableStateOf(false) }
 
                     DownloadLanguageFileDialog(
-                        downloadLanguageDialogType = if (args.itemType ==
-                            DownloadLanguageItemTypePreference.AllLanguages
-                        ) {
-                            DownloadLanguageFileDialogType.AllLanguages
-                        } else {
-                            DownloadLanguageFileDialogType.Default
-                        },
+                        downloadLanguageDialogType =
+                            if (args.itemType == DownloadLanguageItemTypePreference.AllLanguages) {
+                                DownloadLanguageFileDialogType.AllLanguages
+                            } else {
+                                DownloadLanguageFileDialogType.Default
+                            },
                         fileSizeFormatter = requireComponents.core.fileSizeFormatter,
                         fileSize = args.modelSize,
                         isCheckBoxEnabled = checkBoxEnabled,
                         onSavingModeStateChange = { checkBoxEnabled = it },
                         onConfirmDownload = {
-                            requireComponents.settings.ignoreTranslationsDataSaverWarning =
-                                checkBoxEnabled
+                            requireComponents.settings.ignoreTranslationsDataSaverWarning = checkBoxEnabled
 
                             if (args.itemType == DownloadLanguageItemTypePreference.AllLanguages) {
-                                val options = ModelManagementOptions(
-                                    operation = ModelOperation.DOWNLOAD,
-                                    operationLevel = OperationLevel.ALL,
-                                )
-                                browserStore.dispatch(
-                                    TranslationsAction.ManageLanguageModelsAction(
-                                        options = options,
-                                    ),
-                                )
+                                val options =
+                                    ModelManagementOptions(
+                                        operation = ModelOperation.DOWNLOAD,
+                                        operationLevel = OperationLevel.ALL,
+                                    )
+                                browserStore.dispatch(TranslationsAction.ManageLanguageModelsAction(options = options))
                             } else {
                                 deleteOrDownloadModel(
                                     modelOperation = ModelOperation.DOWNLOAD,
@@ -149,15 +138,12 @@ class LanguageDialogPreferenceFragment : DialogFragment() {
     }
 
     private fun deleteOrDownloadModel(modelOperation: ModelOperation, languageToManage: String?) {
-        val options = ModelManagementOptions(
-            languageToManage = languageToManage,
-            operation = modelOperation,
-            operationLevel = OperationLevel.LANGUAGE,
-        )
-        browserStore.dispatch(
-            TranslationsAction.ManageLanguageModelsAction(
-                options = options,
-            ),
-        )
+        val options =
+            ModelManagementOptions(
+                languageToManage = languageToManage,
+                operation = modelOperation,
+                operationLevel = OperationLevel.LANGUAGE,
+            )
+        browserStore.dispatch(TranslationsAction.ManageLanguageModelsAction(options = options))
     }
 }

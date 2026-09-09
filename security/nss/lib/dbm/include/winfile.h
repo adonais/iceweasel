@@ -48,7 +48,7 @@ struct dirent {              /* data from readdir() */
 };
 
 #if !defined(__BORLANDC__) && !defined(__GNUC__)
-#define S_ISDIR(s) ((s)&_S_IFDIR)
+#define S_ISDIR(s) ((s) & _S_IFDIR)
 #endif
 
 #else /* _WIN32 */
@@ -92,7 +92,7 @@ struct dirent {              /* data from readdir() */
 #endif
 };
 
-#define S_ISDIR(s) ((s)&_S_IFDIR)
+#define S_ISDIR(s) ((s) & _S_IFDIR)
 
 #endif /* 16-bit windows */
 

@@ -14,6 +14,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.webkit.WebViewDatabase
 import androidx.annotation.VisibleForTesting
+import kotlin.reflect.KProperty
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,19 +27,17 @@ import mozilla.components.concept.engine.history.HistoryTrackingDelegate
 import mozilla.components.concept.engine.request.RequestInterceptor
 import mozilla.components.concept.engine.translate.TranslationOptions
 import org.json.JSONObject
-import kotlin.reflect.KProperty
 
-internal val xRequestHeader = mapOf(
-    // For every request WebView sends a "X-requested-with" header with the package name of the
-    // application. We can't really prevent that but we can at least send an empty value.
-    // Unfortunately the additional headers will not be propagated to subsequent requests
-    // (e.g. redirects). See issue #696.
-    "X-Requested-With" to "",
-)
+internal val xRequestHeader =
+    mapOf(
+        // For every request WebView sends a "X-requested-with" header with the package name of the
+        // application. We can't really prevent that but we can at least send an empty value.
+        // Unfortunately the additional headers will not be propagated to subsequent requests
+        // (e.g. redirects). See issue #696.
+        "X-Requested-With" to ""
+    )
 
-/**
- * WebView-based EngineSession implementation.
- */
+/** WebView-based EngineSession implementation. */
 @Suppress("LargeClass", "TooManyFunctions")
 class SystemEngineSession(
     context: Context,
@@ -62,7 +61,8 @@ class SystemEngineSession(
 
     // This is public for FFTV which needs access to the WebView instance. We can mark it internal once
     // https://github.com/mozilla-mobile/android-components/issues/1616 is resolved.
-    @Volatile var webView: WebView = NestedWebView(context)
+    @Volatile
+    var webView: WebView = NestedWebView(context)
         set(value) {
             field = value
             initSettings()
@@ -72,10 +72,7 @@ class SystemEngineSession(
         initSettings()
     }
 
-    /**
-     * See [EngineSession.loadUrl]. Note that [LoadUrlFlags] are ignored in this engine
-     * implementation.
-     */
+    /** See [EngineSession.loadUrl]. Note that [LoadUrlFlags] are ignored in this engine implementation. */
     override fun loadUrl(
         url: String,
         parent: EngineSession?,
@@ -99,9 +96,7 @@ class SystemEngineSession(
         }
     }
 
-    /**
-     * See [EngineSession.loadData]
-     */
+    /** See [EngineSession.loadData] */
     override fun loadData(data: String, mimeType: String, encoding: String) {
         webView.loadData(data, mimeType, encoding)
         notifyObservers { onLoadData() }
@@ -115,24 +110,21 @@ class SystemEngineSession(
         throw UnsupportedOperationException("Print support is not available in this engine")
     }
 
-    /**
-     * See [EngineSession.stopLoading]
-     */
+    /** See [EngineSession.stopLoading] */
     override fun stopLoading() {
         webView.stopLoading()
     }
 
     /**
      * See [EngineSession.reload]
+     *
      * @param flags currently not supported in `SystemEngineSession`.
      */
     override fun reload(flags: LoadUrlFlags) {
         webView.reload()
     }
 
-    /**
-     * See [EngineSession.goBack]
-     */
+    /** See [EngineSession.goBack] */
     override fun goBack(userInteraction: Boolean) {
         webView.goBack()
         if (webView.canGoBack()) {
@@ -140,9 +132,7 @@ class SystemEngineSession(
         }
     }
 
-    /**
-     * See [EngineSession.goForward]
-     */
+    /** See [EngineSession.goForward] */
     override fun goForward(userInteraction: Boolean) {
         webView.goForward()
         if (webView.canGoForward()) {
@@ -150,18 +140,14 @@ class SystemEngineSession(
         }
     }
 
-    /**
-     * See [EngineSession.goToHistoryIndex]
-     */
+    /** See [EngineSession.goToHistoryIndex] */
     override fun goToHistoryIndex(index: Int) {
         val historyList = webView.copyBackForwardList()
         webView.goBackOrForward(index - historyList.currentIndex)
         notifyObservers { onGotoHistoryIndex() }
     }
 
-    /**
-     * See [EngineSession.restoreState]
-     */
+    /** See [EngineSession.restoreState] */
     override fun restoreState(state: EngineSessionState): Boolean {
         require(state is SystemEngineSessionState) {
             "Can only restore from SystemEngineSessionState"
@@ -174,9 +160,7 @@ class SystemEngineSession(
         throw UnsupportedOperationException("Engine session state flush is not available in this engine")
     }
 
-    /**
-     * See [EngineSession.updateTrackingProtection]
-     */
+    /** See [EngineSession.updateTrackingProtection] */
     override fun updateTrackingProtection(policy: TrackingProtectionPolicy) {
         // Make sure Url matcher is preloaded now that tracking protection is enabled
         CoroutineScope(Dispatchers.IO).launch {
@@ -196,9 +180,7 @@ class SystemEngineSession(
         notifyObservers { onTrackerBlockingEnabledChange(false) }
     }
 
-    /**
-     * See [EngineSession.close]
-     */
+    /** See [EngineSession.close] */
     override fun close() {
         super.close()
         // The WebView instance must remain useable for the duration of this session.
@@ -208,9 +190,7 @@ class SystemEngineSession(
         webView.destroy()
     }
 
-    /**
-     * See [EngineSession.clearData]
-     */
+    /** See [EngineSession.clearData] */
     @Suppress("TooGenericExceptionCaught")
     override fun clearData(data: BrowsingData, host: String?, onSuccess: () -> Unit, onError: (Throwable) -> Unit) {
         webView.apply {
@@ -240,43 +220,34 @@ class SystemEngineSession(
         }
     }
 
-    /**
-     * See [EngineSession.findAll]
-     */
+    /** See [EngineSession.findAll] */
     override fun findAll(text: String) {
         notifyObservers { onFind(text) }
         webView.findAllAsync(text)
     }
 
-    /**
-     * See [EngineSession.findNext]
-     */
+    /** See [EngineSession.findNext] */
     override fun findNext(forward: Boolean) {
         webView.findNext(forward)
     }
 
-    /**
-     * See [EngineSession.clearFindMatches]
-     */
+    /** See [EngineSession.clearFindMatches] */
     override fun clearFindMatches() {
         webView.clearMatches()
     }
 
-    /**
-     * Clears the internal back/forward list.
-     */
+    /** Clears the internal back/forward list. */
     override fun purgeHistory() {
         webView.clearHistory()
     }
 
-    /**
-     * See [EngineSession.settings]
-     */
+    /** See [EngineSession.settings] */
     override val settings: Settings
         get() = internalSettings
 
     class WebSetting<T>(private val get: () -> T, private val set: (T) -> Unit) {
         operator fun getValue(thisRef: Any?, property: KProperty<*>): T = get()
+
         operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) = set(value)
     }
 
@@ -318,94 +289,110 @@ class SystemEngineSession(
     }
 
     private fun initSettings(webView: WebView, s: WebSettings) {
-        internalSettings = object : Settings() {
-            override var javascriptEnabled by WebSetting(s::getJavaScriptEnabled, s::setJavaScriptEnabled)
-            override var domStorageEnabled by WebSetting(s::getDomStorageEnabled, s::setDomStorageEnabled)
-            override var allowFileAccess by WebSetting(s::getAllowFileAccess, s::setAllowFileAccess)
-            override var allowContentAccess by WebSetting(s::getAllowContentAccess, s::setAllowContentAccess)
-            override var userAgentString by WebSetting(s::getUserAgentString, s::setUserAgentString)
-            override var displayZoomControls by WebSetting(s::getDisplayZoomControls, s::setDisplayZoomControls)
-            override var loadWithOverviewMode by WebSetting(s::getLoadWithOverviewMode, s::setLoadWithOverviewMode)
-            override var useWideViewPort: Boolean?
-                get() = this@SystemEngineSession.useWideViewPort
-                set(value) = setUseWideViewPort(s, value)
-            override var supportMultipleWindows by WebSetting(s::supportMultipleWindows, s::setSupportMultipleWindows)
+        internalSettings =
+            object : Settings() {
+                    override var javascriptEnabled by WebSetting(s::getJavaScriptEnabled, s::setJavaScriptEnabled)
+                    override var domStorageEnabled by WebSetting(s::getDomStorageEnabled, s::setDomStorageEnabled)
+                    override var allowFileAccess by WebSetting(s::getAllowFileAccess, s::setAllowFileAccess)
+                    override var allowContentAccess by WebSetting(s::getAllowContentAccess, s::setAllowContentAccess)
+                    override var userAgentString by WebSetting(s::getUserAgentString, s::setUserAgentString)
+                    override var displayZoomControls by WebSetting(s::getDisplayZoomControls, s::setDisplayZoomControls)
+                    override var loadWithOverviewMode by
+                        WebSetting(s::getLoadWithOverviewMode, s::setLoadWithOverviewMode)
+                    override var useWideViewPort: Boolean?
+                        get() = this@SystemEngineSession.useWideViewPort
+                        set(value) = setUseWideViewPort(s, value)
 
-            @Suppress("DEPRECATION")
-            // Deprecation will be handled in https://github.com/mozilla-mobile/android-components/issues/8513
-            override var allowFileAccessFromFileURLs by WebSetting(
-                s::getAllowFileAccessFromFileURLs,
-                s::setAllowFileAccessFromFileURLs,
-            )
+                    override var supportMultipleWindows by
+                        WebSetting(s::supportMultipleWindows, s::setSupportMultipleWindows)
 
-            @Suppress("DEPRECATION")
-            // Deprecation will be handled in https://github.com/mozilla-mobile/android-components/issues/8514
-            override var allowUniversalAccessFromFileURLs by WebSetting(
-                s::getAllowUniversalAccessFromFileURLs,
-                s::setAllowUniversalAccessFromFileURLs,
-            )
+                    @Suppress("DEPRECATION")
+                    // Deprecation will be handled in https://github.com/mozilla-mobile/android-components/issues/8513
+                    override var allowFileAccessFromFileURLs by
+                        WebSetting(
+                            s::getAllowFileAccessFromFileURLs,
+                            s::setAllowFileAccessFromFileURLs,
+                        )
 
-            override var mediaPlaybackRequiresUserGesture by WebSetting(
-                s::getMediaPlaybackRequiresUserGesture,
-                s::setMediaPlaybackRequiresUserGesture,
-            )
-            override var javaScriptCanOpenWindowsAutomatically by WebSetting(
-                s::getJavaScriptCanOpenWindowsAutomatically,
-                s::setJavaScriptCanOpenWindowsAutomatically,
-            )
+                    @Suppress("DEPRECATION")
+                    // Deprecation will be handled in https://github.com/mozilla-mobile/android-components/issues/8514
+                    override var allowUniversalAccessFromFileURLs by
+                        WebSetting(
+                            s::getAllowUniversalAccessFromFileURLs,
+                            s::setAllowUniversalAccessFromFileURLs,
+                        )
 
-            override var verticalScrollBarEnabled
-                get() = webView.isVerticalScrollBarEnabled
-                set(value) { webView.isVerticalScrollBarEnabled = value }
+                    override var mediaPlaybackRequiresUserGesture by
+                        WebSetting(
+                            s::getMediaPlaybackRequiresUserGesture,
+                            s::setMediaPlaybackRequiresUserGesture,
+                        )
+                    override var javaScriptCanOpenWindowsAutomatically by
+                        WebSetting(
+                            s::getJavaScriptCanOpenWindowsAutomatically,
+                            s::setJavaScriptCanOpenWindowsAutomatically,
+                        )
 
-            override var horizontalScrollBarEnabled
-                get() = webView.isHorizontalScrollBarEnabled
-                set(value) { webView.isHorizontalScrollBarEnabled = value }
+                    override var verticalScrollBarEnabled
+                        get() = webView.isVerticalScrollBarEnabled
+                        set(value) {
+                            webView.isVerticalScrollBarEnabled = value
+                        }
 
-            override var webFontsEnabled
-                get() = this@SystemEngineSession.webFontsEnabled
-                set(value) { this@SystemEngineSession.webFontsEnabled = value }
+                    override var horizontalScrollBarEnabled
+                        get() = webView.isHorizontalScrollBarEnabled
+                        set(value) {
+                            webView.isHorizontalScrollBarEnabled = value
+                        }
 
-            override var trackingProtectionPolicy: TrackingProtectionPolicy?
-                get() = this@SystemEngineSession.trackingProtectionPolicy
-                set(value) = value?.let { updateTrackingProtection(it) } ?: disableTrackingProtection()
+                    override var webFontsEnabled
+                        get() = this@SystemEngineSession.webFontsEnabled
+                        set(value) {
+                            this@SystemEngineSession.webFontsEnabled = value
+                        }
 
-            override var historyTrackingDelegate: HistoryTrackingDelegate?
-                get() = this@SystemEngineSession.historyTrackingDelegate
-                set(value) { this@SystemEngineSession.historyTrackingDelegate = value }
+                    override var trackingProtectionPolicy: TrackingProtectionPolicy?
+                        get() = this@SystemEngineSession.trackingProtectionPolicy
+                        set(value) = value?.let { updateTrackingProtection(it) } ?: disableTrackingProtection()
 
-            override var requestInterceptor: RequestInterceptor? = null
-        }.apply {
-            defaultSettings?.let {
-                javascriptEnabled = it.javascriptEnabled
-                domStorageEnabled = it.domStorageEnabled
-                webFontsEnabled = it.webFontsEnabled
-                displayZoomControls = it.displayZoomControls
-                loadWithOverviewMode = it.loadWithOverviewMode
-                useWideViewPort = it.useWideViewPort
-                trackingProtectionPolicy = it.trackingProtectionPolicy
-                historyTrackingDelegate = it.historyTrackingDelegate
-                requestInterceptor = it.requestInterceptor
-                mediaPlaybackRequiresUserGesture = it.mediaPlaybackRequiresUserGesture
-                javaScriptCanOpenWindowsAutomatically = it.javaScriptCanOpenWindowsAutomatically
-                allowFileAccess = it.allowFileAccess
-                allowContentAccess = it.allowContentAccess
-                allowUniversalAccessFromFileURLs = it.allowUniversalAccessFromFileURLs
-                allowFileAccessFromFileURLs = it.allowFileAccessFromFileURLs
-                verticalScrollBarEnabled = it.verticalScrollBarEnabled
-                horizontalScrollBarEnabled = it.horizontalScrollBarEnabled
-                userAgentString = it.userAgentString
-                supportMultipleWindows = it.supportMultipleWindows
-            }
-        }
+                    override var historyTrackingDelegate: HistoryTrackingDelegate?
+                        get() = this@SystemEngineSession.historyTrackingDelegate
+                        set(value) {
+                            this@SystemEngineSession.historyTrackingDelegate = value
+                        }
+
+                    override var requestInterceptor: RequestInterceptor? = null
+                }
+                .apply {
+                    defaultSettings?.let {
+                        javascriptEnabled = it.javascriptEnabled
+                        domStorageEnabled = it.domStorageEnabled
+                        webFontsEnabled = it.webFontsEnabled
+                        displayZoomControls = it.displayZoomControls
+                        loadWithOverviewMode = it.loadWithOverviewMode
+                        useWideViewPort = it.useWideViewPort
+                        trackingProtectionPolicy = it.trackingProtectionPolicy
+                        historyTrackingDelegate = it.historyTrackingDelegate
+                        requestInterceptor = it.requestInterceptor
+                        mediaPlaybackRequiresUserGesture = it.mediaPlaybackRequiresUserGesture
+                        javaScriptCanOpenWindowsAutomatically = it.javaScriptCanOpenWindowsAutomatically
+                        allowFileAccess = it.allowFileAccess
+                        allowContentAccess = it.allowContentAccess
+                        allowUniversalAccessFromFileURLs = it.allowUniversalAccessFromFileURLs
+                        allowFileAccessFromFileURLs = it.allowFileAccessFromFileURLs
+                        verticalScrollBarEnabled = it.verticalScrollBarEnabled
+                        horizontalScrollBarEnabled = it.horizontalScrollBarEnabled
+                        userAgentString = it.userAgentString
+                        supportMultipleWindows = it.supportMultipleWindows
+                    }
+                }
     }
 
     /**
      * See [EngineSession.toggleDesktopMode]
      *
-     * Precondition:
-     * If settings.useWideViewPort = true, then webSettings.useWideViewPort is always on
-     * If settings.useWideViewPort = false or null, then webSettings.useWideViewPort can be on/off
+     * Precondition: If settings.useWideViewPort = true, then webSettings.useWideViewPort is always on If
+     * settings.useWideViewPort = false or null, then webSettings.useWideViewPort can be on/off
      */
     override fun toggleDesktopMode(enable: Boolean, reload: Boolean) {
         val webSettings = webView.settings
@@ -419,9 +406,7 @@ class SystemEngineSession(
         }
     }
 
-    /**
-     * Checks for if PDF Viewer is used.
-     */
+    /** Checks for if PDF Viewer is used. */
     override fun checkForPdfViewer(
         onResult: (Boolean) -> Unit,
         onException: (Throwable) -> Unit,
@@ -429,9 +414,7 @@ class SystemEngineSession(
         throw UnsupportedOperationException("Checking for PDF viewer is not available in this engine")
     }
 
-    /**
-     * See [EngineSession.sendGleanBrokenSiteReport]
-     */
+    /** See [EngineSession.sendGleanBrokenSiteReport] */
     override fun sendGleanBrokenSiteReport(
         details: JSONObject?,
         description: String?,
@@ -445,9 +428,7 @@ class SystemEngineSession(
         throw UnsupportedOperationException("Sending broken site report via Glean is not available in this engine")
     }
 
-    /**
-     * See [EngineSession.getBrokenSiteReport]
-     */
+    /** See [EngineSession.getBrokenSiteReport] */
     override fun getBrokenSiteReport(
         onResult: (JSONObject) -> Unit,
         onException: (Throwable) -> Unit,
@@ -455,9 +436,7 @@ class SystemEngineSession(
         throw UnsupportedOperationException("Getting broken site report is not available in this engine")
     }
 
-    /**
-     * See [EngineSession.getWebCompatInfo]
-     */
+    /** See [EngineSession.getWebCompatInfo] */
     override fun getWebCompatInfo(
         onResult: (JSONObject) -> Unit,
         onException: (Throwable) -> Unit,
@@ -465,9 +444,7 @@ class SystemEngineSession(
         throw UnsupportedOperationException("Getting web compat info is not available in this engine")
     }
 
-    /**
-     * See [EngineSession.sendMoreWebCompatInfo]
-     */
+    /** See [EngineSession.sendMoreWebCompatInfo] */
     override fun sendMoreWebCompatInfo(
         info: JSONObject,
         onResult: () -> Unit,
@@ -476,9 +453,7 @@ class SystemEngineSession(
         throw UnsupportedOperationException("Sending more web compat info is not available in this engine")
     }
 
-    /**
-     * See [EngineSession.requestTranslate]
-     */
+    /** See [EngineSession.requestTranslate] */
     override fun requestTranslate(
         fromLanguage: String,
         toLanguage: String,
@@ -487,16 +462,12 @@ class SystemEngineSession(
         throw UnsupportedOperationException("Translate support is not available in this engine")
     }
 
-    /**
-     * See [EngineSession.requestTranslationRestore]
-     */
+    /** See [EngineSession.requestTranslationRestore] */
     override fun requestTranslationRestore() {
         throw UnsupportedOperationException("Translate restore support is not available in this engine")
     }
 
-    /**
-     * See [EngineSession.getNeverTranslateSiteSetting]
-     */
+    /** See [EngineSession.getNeverTranslateSiteSetting] */
     override fun getNeverTranslateSiteSetting(
         onResult: (Boolean) -> Unit,
         onException: (Throwable) -> Unit,
@@ -504,9 +475,7 @@ class SystemEngineSession(
         throw UnsupportedOperationException("Getting the site's translate setting is not available in this engine.")
     }
 
-    /**
-     * See [EngineSession.setNeverTranslateSiteSetting]
-     */
+    /** See [EngineSession.setNeverTranslateSiteSetting] */
     override fun setNeverTranslateSiteSetting(
         setting: Boolean,
         onResult: () -> Unit,
@@ -515,19 +484,13 @@ class SystemEngineSession(
         throw UnsupportedOperationException("Setting the site's translate setting is not available in this engine")
     }
 
-    /**
-     * See [EngineSession.exitFullScreenMode]
-     */
+    /** See [EngineSession.exitFullScreenMode] */
     override fun exitFullScreenMode() {
         fullScreenCallback?.onCustomViewHidden()
     }
 
-    /**
-     * See [EngineSession.processBackPressed]
-     */
-    override fun processBackPressed(
-        onResult: (Boolean) -> Unit,
-    ) {
+    /** See [EngineSession.processBackPressed] */
+    override fun processBackPressed(onResult: (Boolean) -> Unit) {
         onResult(false)
     }
 
@@ -544,9 +507,8 @@ class SystemEngineSession(
     internal fun webViewDatabase(context: Context) = WebViewDatabase.getInstance(context)
 
     /**
-     * Helper method to notify observers from other classes in this package. This is needed as
-     * almost everything is implemented by WebView and its listeners. There is no actual concept of
-     * a session when using WebView.
+     * Helper method to notify observers from other classes in this package. This is needed as almost everything is
+     * implemented by WebView and its listeners. There is no actual concept of a session when using WebView.
      */
     internal fun internalNotifyObservers(block: Observer.() -> Unit) {
         super.notifyObservers(block)

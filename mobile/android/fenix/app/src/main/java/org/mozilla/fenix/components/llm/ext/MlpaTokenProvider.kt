@@ -12,18 +12,17 @@ import mozilla.components.lib.llm.mlpa.MlpaTokenProvider
 import mozilla.components.lib.llm.mlpa.service.AuthorizationToken
 
 /**
- * Raised when there is no signed-in account to source an FxA access token from. Tagged as
- * [AuthenticationRequired] so consumers can prompt the user to sign in.
+ * Raised when there is no signed-in account to source an FxA access token from. Tagged as [AuthenticationRequired] so
+ * consumers can prompt the user to sign in.
  */
 internal class FxaNotSignedIn :
     Llm.Exception("No signed-in account available for an FxA access token"), AuthenticationRequired
 
 /**
- * Raised when an account is signed in but a fresh FxA access token could not be obtained. Tagged as
- * an [AuthFailure] so consumers surface it as an error rather than prompting the user to sign in.
+ * Raised when an account is signed in but a fresh FxA access token could not be obtained. Tagged as an [AuthFailure] so
+ * consumers surface it as an error rather than prompting the user to sign in.
  */
-internal class FxaTokenUnavailable :
-    Llm.Exception("Signed in but unable to obtain an FxA access token"), AuthFailure
+internal class FxaTokenUnavailable : Llm.Exception("Signed in but unable to obtain an FxA access token"), AuthFailure
 
 /** The outcome of attempting to source an FxA access token. */
 sealed interface FxaAccessToken {
@@ -46,10 +45,9 @@ fun interface FxaAccessTokenProvider {
 /**
  * Composes [tokenProviders] into one [MlpaTokenProvider].
  *
- * Providers are tried in order and the first token produced wins, so callers pass them
- * most-preferred first. If every provider fails, the failure surfaced is chosen by category via
- * [mostActionableFailure] rather than by position, so reordering or adding a provider can't
- * silently change which error the user ends up seeing.
+ * Providers are tried in order and the first token produced wins, so callers pass them most-preferred first. If every
+ * provider fails, the failure surfaced is chosen by category via [mostActionableFailure] rather than by position, so
+ * reordering or adding a provider can't silently change which error the user ends up seeing.
  *
  * @param tokenProviders the [MlpaTokenProvider]s to try, most-preferred first.
  * @return an [MlpaTokenProvider].
@@ -67,17 +65,19 @@ fun MlpaTokenProvider.Companion.choose(vararg tokenProviders: MlpaTokenProvider)
     }
 }
 
-private val FAILURE_PRECEDENCE = listOf<(Throwable) -> Boolean>(
-    { it is AuthenticationRequired },
-    { it is AuthFailure },
-    { it is AttestationFailure },
-)
+private val FAILURE_PRECEDENCE =
+    listOf<(Throwable) -> Boolean>(
+        { it is AuthenticationRequired },
+        { it is AuthFailure },
+        { it is AttestationFailure },
+    )
 
 private fun List<Throwable>.mostActionableFailure(): Throwable =
-    FAILURE_PRECEDENCE.firstNotNullOfOrNull { matchesCategory -> firstOrNull(matchesCategory) }
-        ?: last()
+    FAILURE_PRECEDENCE.firstNotNullOfOrNull { matchesCategory -> firstOrNull(matchesCategory) } ?: last()
 
-/** Implementation of [MlpaTokenProvider] that tries to fetch an fxa access token.
+/**
+ * Implementation of [MlpaTokenProvider] that tries to fetch an fxa access token.
+ *
  * @param tokenProvider the [FxaAccessTokenProvider] to source a token from.
  * @return an [MlpaTokenProvider].
  */

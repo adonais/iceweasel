@@ -60,25 +60,28 @@ internal fun ActionButton(
     onInteraction: (BrowserToolbarEvent) -> Unit,
     testTag: String? = null,
 ) {
-    val shouldReactToLongClicks = remember(onLongClick) {
-        onLongClick != null
-    }
+    val shouldReactToLongClicks =
+        remember(onLongClick) {
+            onLongClick != null
+        }
     var currentMenuState by remember { mutableStateOf(None) }
     val colors = MaterialTheme.colorScheme
-    val tint = remember(state, colors) {
-        when (state) {
-            State.ACTIVE -> colors.tertiary
-            State.DISABLED -> colors.onSurface.copy(alpha = 0.38f)
-            State.DEFAULT -> colors.onSurface
+    val tint =
+        remember(state, colors) {
+            when (state) {
+                State.ACTIVE -> colors.tertiary
+                State.DISABLED -> colors.onSurface.copy(alpha = 0.38f)
+                State.DEFAULT -> colors.onSurface
+            }
         }
-    }
 
-    val isEnabled = remember(state) {
-        when (state) {
-            State.DISABLED -> false
-            else -> true
+    val isEnabled =
+        remember(state) {
+            when (state) {
+                State.DISABLED -> false
+                else -> true
+            }
         }
-    }
 
     val handleInteraction: (BrowserToolbarInteraction) -> Unit = { interaction ->
         when (interaction) {
@@ -100,58 +103,62 @@ internal fun ActionButton(
     }
 
     when (shouldReactToLongClicks) {
-        true -> LongPressIconButton(
-            onClick = {
-                if (onClick != null) {
-                    handleInteraction(onClick)
-                }
-            },
-            onLongClick = {
-                if (onLongClick != null) {
-                    handleInteraction(onLongClick)
-                }
-            },
-            enabled = isEnabled,
-            contentDescription = contentDescription,
-            modifier = when (testTag) {
-                null -> Modifier
-                else -> Modifier.testTag(testTag)
-            },
-        ) {
-            ActionButtonIcon(icon, tint, highlighted)
+        true ->
+            LongPressIconButton(
+                onClick = {
+                    if (onClick != null) {
+                        handleInteraction(onClick)
+                    }
+                },
+                onLongClick = {
+                    if (onLongClick != null) {
+                        handleInteraction(onLongClick)
+                    }
+                },
+                enabled = isEnabled,
+                contentDescription = contentDescription,
+                modifier =
+                    when (testTag) {
+                        null -> Modifier
+                        else -> Modifier.testTag(testTag)
+                    },
+            ) {
+                ActionButtonIcon(icon, tint, highlighted)
 
-            ActionButtonMenu(
-                currentMenuState = currentMenuState,
-                wantedMenu = LongClick,
-                popupData = onLongClick,
-                onInteraction = onInteraction,
-                onDismissRequest = { currentMenuState = None },
-            )
-        }
+                ActionButtonMenu(
+                    currentMenuState = currentMenuState,
+                    wantedMenu = LongClick,
+                    popupData = onLongClick,
+                    onInteraction = onInteraction,
+                    onDismissRequest = { currentMenuState = None },
+                )
+            }
 
-        false -> IconButton(
-            onClick = {
-                if (onClick != null) {
-                    handleInteraction(onClick)
-                }
-            },
-            enabled = isEnabled,
-            contentDescription = contentDescription,
-            modifier = when (testTag) {
-                null -> Modifier
-                else -> Modifier.testTag(testTag)
-            },
-        ) {
-            ActionButtonIcon(icon, tint, highlighted)
+        false ->
+            IconButton(
+                onClick = {
+                    if (onClick != null) {
+                        handleInteraction(onClick)
+                    }
+                },
+                enabled = isEnabled,
+                contentDescription = contentDescription,
+                modifier =
+                    when (testTag) {
+                        null -> Modifier
+                        else -> Modifier.testTag(testTag)
+                    },
+            ) {
+                ActionButtonIcon(icon, tint, highlighted)
 
-            ActionButtonMenu(
-                currentMenuState = currentMenuState,
-                wantedMenu = CLick,
-                popupData = onClick,
-                onInteraction = onInteraction,
-                onDismissRequest = { currentMenuState = None },
-            )
-        }
+                ActionButtonMenu(
+                    currentMenuState = currentMenuState,
+                    wantedMenu = CLick,
+                    popupData = onClick,
+                    onInteraction = onInteraction,
+                    onDismissRequest = { currentMenuState = None },
+                )
+            }
     }
 }
 
@@ -185,9 +192,10 @@ private inline fun ActionButtonMenu(
                 CustomPlacementPopupVerticalContent {
                     it.toMenuItems().forEach { menuItem ->
                         menuItemComposable(menuItem) { event ->
-                            onDismissRequest()
-                            onInteraction(event)
-                        }.invoke()
+                                onDismissRequest()
+                                onInteraction(event)
+                            }
+                            .invoke()
                     }
                 }
             }
@@ -196,7 +204,9 @@ private inline fun ActionButtonMenu(
 }
 
 private enum class MenuState {
-    None, CLick, LongClick
+    None,
+    CLick,
+    LongClick,
 }
 
 @PreviewLightDark
@@ -206,20 +216,22 @@ private fun ActionButtonPreview() {
         Surface {
             Row {
                 ActionButton(
-                    icon = AppCompatResources.getDrawable(
-                        LocalContext.current,
-                        iconsR.drawable.mozac_ic_bookmark_24,
-                    )!!,
+                    icon =
+                        AppCompatResources.getDrawable(
+                            LocalContext.current,
+                            iconsR.drawable.mozac_ic_bookmark_24,
+                        )!!,
                     contentDescription = "Test",
                     onClick = object : BrowserToolbarEvent {},
                     onInteraction = {},
                 )
 
                 ActionButton(
-                    icon = AppCompatResources.getDrawable(
-                        LocalContext.current,
-                        iconsR.drawable.mozac_ic_bookmark_24,
-                    )!!,
+                    icon =
+                        AppCompatResources.getDrawable(
+                            LocalContext.current,
+                            iconsR.drawable.mozac_ic_bookmark_24,
+                        )!!,
                     contentDescription = "Test",
                     state = State.ACTIVE,
                     onClick = object : BrowserToolbarEvent {},
@@ -227,10 +239,11 @@ private fun ActionButtonPreview() {
                 )
 
                 ActionButton(
-                    icon = AppCompatResources.getDrawable(
-                        LocalContext.current,
-                        iconsR.drawable.mozac_ic_bookmark_24,
-                    )!!,
+                    icon =
+                        AppCompatResources.getDrawable(
+                            LocalContext.current,
+                            iconsR.drawable.mozac_ic_bookmark_24,
+                        )!!,
                     contentDescription = "Test",
                     state = State.DISABLED,
                     onClick = object : BrowserToolbarEvent {},
@@ -247,10 +260,11 @@ private fun HighlightedActionButtonPreview() {
     AcornTheme {
         Surface {
             ActionButton(
-                icon = AppCompatResources.getDrawable(
-                    LocalContext.current,
-                    iconsR.drawable.mozac_ic_ellipsis_vertical_24,
-                )!!,
+                icon =
+                    AppCompatResources.getDrawable(
+                        LocalContext.current,
+                        iconsR.drawable.mozac_ic_ellipsis_vertical_24,
+                    )!!,
                 contentDescription = "Test",
                 onClick = object : BrowserToolbarEvent {},
                 highlighted = true,

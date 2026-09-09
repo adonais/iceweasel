@@ -46,6 +46,12 @@ void a11y::PlatformInit() {
     sLocalizedStrings.InsertOrUpdate(u"stateRequired"_ns, localizedStr);
   }
 
+  // Preload the state mixed localized string.
+  rv = stringBundle->GetStringFromName("statePartiallyChecked", localizedStr);
+  if (NS_SUCCEEDED(rv)) {
+    sLocalizedStrings.InsertOrUpdate(u"statePartiallyChecked"_ns, localizedStr);
+  }
+
   // Preload heading level localized descriptions 1 thru 6.
   for (int32_t level = 1; level <= 6; level++) {
     nsAutoString token;
@@ -66,9 +72,14 @@ void a11y::PlatformInit() {
 #define ROLE(geckoRole, stringRole, ariaRole, atkRole, macRole, macSubrole, \
              msaaRole, ia2Role, androidClass, iosIsElement, uiaControlType, \
              nameRule)                                                      \
-  rv = stringBundle->GetStringFromName(stringRole, localizedStr);           \
-  if (NS_SUCCEEDED(rv)) {                                                   \
-    sLocalizedStrings.InsertOrUpdate(u##stringRole##_ns, localizedStr);     \
+  {                                                                         \
+    nsAutoString stringRoleToken(u##stringRole##_ns);                       \
+    stringRoleToken.StripWhitespace();                                      \
+    rv = stringBundle->GetStringFromName(                                   \
+        NS_ConvertUTF16toUTF8(stringRoleToken).get(), localizedStr);        \
+    if (NS_SUCCEEDED(rv)) {                                                 \
+      sLocalizedStrings.InsertOrUpdate(stringRoleToken, localizedStr);      \
+    }                                                                       \
   }
 
 #include "RoleMap.inc"

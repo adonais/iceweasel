@@ -6,8 +6,7 @@ package org.mozilla.fenix.settings.advanced
 
 import java.util.Locale
 
-class LocaleSettingsInteractor(private val controller: LocaleSettingsController) :
-    LocaleSettingsViewInteractor {
+class LocaleSettingsInteractor(private val controller: LocaleSettingsController) : LocaleSettingsViewInteractor {
 
     override fun onLocaleSelected(locale: Locale) {
         controller.handleLocaleSelected(locale)

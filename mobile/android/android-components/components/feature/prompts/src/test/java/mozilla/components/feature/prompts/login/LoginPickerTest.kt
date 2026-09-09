@@ -23,19 +23,18 @@ import org.junit.Test
 import org.mockito.Mockito.verify
 
 class LoginPickerTest {
-    val login =
-        Login(guid = "A", origin = "https://www.mozilla.org", username = "username", password = "password")
-    val login2 =
-        Login(guid = "B", origin = "https://www.mozilla.org", username = "username2", password = "password")
+    val login = Login(guid = "A", origin = "https://www.mozilla.org", username = "username", password = "password")
+    val login2 = Login(guid = "B", origin = "https://www.mozilla.org", username = "username2", password = "password")
 
     var onDismissWasCalled = false
     var confirmedLogin: Login? = null
-    private val request = PromptRequest.SelectLoginPrompt(
-        logins = listOf(login, login2),
-        generatedPassword = null,
-        onConfirm = { confirmedLogin = it },
-        onDismiss = { onDismissWasCalled = true },
-    )
+    private val request =
+        PromptRequest.SelectLoginPrompt(
+            logins = listOf(login, login2),
+            generatedPassword = null,
+            onConfirm = { confirmedLogin = it },
+            onDismiss = { onDismissWasCalled = true },
+        )
 
     var manageLoginsCalled = false
     private lateinit var store: BrowserStore
@@ -57,7 +56,13 @@ class LoginPickerTest {
     fun `LoginPicker shows the login select bar on a custom tab`() {
         val customTabContent: ContentState = mock()
         whenever(customTabContent.promptRequests).thenReturn(listOf(request))
-        val customTab = CustomTabSessionState(id = "custom-tab", content = customTabContent, trackingProtection = mock(), config = mock())
+        val customTab =
+            CustomTabSessionState(
+                id = "custom-tab",
+                content = customTabContent,
+                trackingProtection = mock(),
+                config = mock(),
+            )
 
         whenever(state.customTabs).thenReturn(listOf(customTab))
         loginPicker = LoginPicker(store, loginSelectBar, onManageLogins, customTab.id)
@@ -143,10 +148,11 @@ class LoginPickerTest {
 
     private fun prepareSelectedSession(request: PromptRequest? = null): TabSessionState {
         val promptRequest: PromptRequest = request ?: mock()
-        val content = ContentState(
-            url = "http://mozilla.org",
-            promptRequests = listOf(promptRequest),
-        )
+        val content =
+            ContentState(
+                url = "http://mozilla.org",
+                promptRequests = listOf(promptRequest),
+            )
 
         val selected = TabSessionState("browser-tab", content, mock(), mock())
         whenever(state.selectedTabId).thenReturn(selected.id)

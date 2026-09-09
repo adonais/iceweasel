@@ -9,13 +9,9 @@ import android.graphics.Bitmap
 import mozilla.components.browser.icons.Icon
 import mozilla.components.browser.icons.IconRequest
 
-/**
- * A loader that can load an icon from an [IconRequest.Resource].
- */
+/** A loader that can load an icon from an [IconRequest.Resource]. */
 interface IconLoader {
-    /**
-     * Tries to load the [IconRequest.Resource] for the given [IconRequest].
-     */
+    /** Tries to load the [IconRequest.Resource] for the given [IconRequest]. */
     fun load(context: Context, request: IconRequest, resource: IconRequest.Resource): Result
 
     sealed class Result {

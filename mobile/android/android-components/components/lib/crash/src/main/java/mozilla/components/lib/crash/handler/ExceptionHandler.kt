@@ -13,9 +13,7 @@ import mozilla.components.lib.crash.CrashReporter
 
 private const val TAG = "ExceptionHandler"
 
-/**
- * [Thread.UncaughtExceptionHandler] implementation that forwards crashes to the [CrashReporter] instance.
- */
+/** [Thread.UncaughtExceptionHandler] implementation that forwards crashes to the [CrashReporter] instance. */
 class ExceptionHandler(
     private val context: Context,
     private val crashReporter: CrashReporter,

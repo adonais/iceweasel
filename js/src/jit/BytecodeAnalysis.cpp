@@ -6,6 +6,8 @@
 
 #include "mozilla/PodOperations.h"
 
+#include <algorithm>
+
 #include "jit/JitSpewer.h"
 #include "jit/WarpBuilder.h"
 #include "vm/BytecodeIterator.h"
@@ -20,97 +22,10 @@
 using namespace js;
 using namespace js::jit;
 
-// While Warp can compile generators and async functions, it may not aways be
-// profitable to due to the incomplete support that we have (See bug 1681338 for
-// details)
-//
-// As an example, in Bug 1839078 the overhead of constantly OSR'ing back into a
-// Warp body eats any benefit that might have been obtained via warp.
-//
-// This class implements the heuristic that yield can only be allowed in a Warp
-// body under two circumstances:
-//
-// - There is an inner loop, which is presumed to do work that will provide
-//   enough  work to avoid pathological cases
-// - There is sufficient bytecode around the yield that we expect Warp
-//   compilation to drive enough benefit that we will still let yield occur.
-//
-// This is of course a heuristic, and can of course be defeated.
-class YieldAnalyzer {
-  struct LoopInfo {
-    bool hasInnerLoop = false;
-    bool sawYield = false;
-    size_t bytecodeOps = 0;
-  };
-
-  // The minimum amount of bytecode to allow in a yielding loop.
-  //
-  // This number is extremely arbitrary, and may be too low by an order of
-  // magnitude or more.
-  static const size_t BYTECODE_MINIUM = 40;
-
-  Vector<LoopInfo, 0, JitAllocPolicy> loopInfos;
-  bool allowIon = true;
-
- public:
-  explicit YieldAnalyzer(TempAllocator& alloc) : loopInfos(alloc) {}
-
-  [[nodiscard]] bool init() {
-    // a pretend outer loop for the function body.
-    return loopInfos.emplaceBack();
-  }
-
-  void analyzeBackedgeForIon() {
-    const LoopInfo& loopInfo = loopInfos.back();
-    if (loopInfo.sawYield) {
-      if (!loopInfo.hasInnerLoop && loopInfo.bytecodeOps < BYTECODE_MINIUM) {
-        allowIon = false;
-      }
-    }
-
-    loopInfos.popBack();
-  }
-
-  bool canIon() {
-    // Analyze the host function as if it were  a loop;
-    //
-    // This should help us avoid ion compiling a tiny function which just
-    // yields.
-    analyzeBackedgeForIon();
-
-    MOZ_ASSERT(loopInfos.empty());
-
-    return allowIon;
-  }
-
-  [[nodiscard]] bool handleBytecode(BytecodeLocation loc) {
-    LoopInfo& loopInfo = loopInfos.back();
-
-    loopInfo.bytecodeOps++;
-
-    if (loc.is(JSOp::LoopHead)) {
-      loopInfo.hasInnerLoop = true;
-
-      // Bail out here because the below two cases won't be hit.
-      return loopInfos.emplaceBack();
-    }
-
-    if (loc.is(JSOp::Yield) || loc.is(JSOp::FinalYieldRval)) {
-      loopInfo.sawYield = true;
-    }
-
-    if (loc.isBackedge()) {
-      analyzeBackedgeForIon();
-    }
-
-    return true;
-  }
-};
-
 BytecodeAnalysis::BytecodeAnalysis(TempAllocator& alloc, JSScript* script)
-    : script_(script), infos_(alloc) {}
+    : alloc_(alloc), script_(script), infos_(alloc) {}
 
-bool BytecodeAnalysis::init(TempAllocator& alloc) {
+bool BytecodeAnalysis::init() {
   if (!infos_.growByUninitialized(script_->length())) {
     return false;
   }
@@ -157,16 +72,25 @@ bool BytecodeAnalysis::init(TempAllocator& alloc) {
   bool normallyReachable = true;
   bool normallyReachableReturn = false;
 
-  YieldAnalyzer analyzer(alloc);
-  if (!analyzer.init()) {
+  // Add all catch/finally try notes to a Vector, then sort them by start
+  // offset. This lets us avoid quadratic behavior for JSOp::Try below.
+  Vector<TryNote, 8, JitAllocPolicy> catchTryNotes(alloc_);
+  if (!catchTryNotes.reserve(script_->trynotes().Length())) {
     return false;
   }
+  for (const TryNote& tn : script_->trynotes()) {
+    if (tn.kind() == TryNoteKind::Catch || tn.kind() == TryNoteKind::Finally) {
+      catchTryNotes.infallibleAppend(tn);
+    }
+  }
+  std::sort(
+      catchTryNotes.begin(), catchTryNotes.end(),
+      [](const TryNote& a, const TryNote& b) { return a.start < b.start; });
+
+  size_t tryNoteIndex = 0;
 
   for (const BytecodeLocation& it : AllBytecodesIterable(script_)) {
     JSOp op = it.getOp();
-    if (!analyzer.handleBytecode(it)) {
-      return false;
-    }
 
     uint32_t offset = it.bytecodeToOffset(script_);
 
@@ -225,17 +149,23 @@ bool BytecodeAnalysis::init(TempAllocator& alloc) {
       }
 
       case JSOp::Try: {
-        for (const TryNote& tn : script_->trynotes()) {
-          if (tn.start == offset + JSOpLength_Try &&
-              (tn.kind() == TryNoteKind::Catch ||
-               tn.kind() == TryNoteKind::Finally)) {
-            uint32_t catchOrFinallyOffset = tn.start + tn.length;
-            uint32_t targetDepth =
-                tn.kind() == TryNoteKind::Finally ? stackDepth + 3 : stackDepth;
-            BytecodeInfo& targetInfo = infos_[catchOrFinallyOffset];
-            targetInfo.init(targetDepth);
-            targetInfo.setJumpTarget(/* normallyReachable = */ false);
-          }
+        uint32_t targetOffset = offset + JSOpLength_Try;
+
+        while (tryNoteIndex < catchTryNotes.length() &&
+               catchTryNotes[tryNoteIndex].start < targetOffset) {
+          tryNoteIndex++;
+        }
+
+        while (tryNoteIndex < catchTryNotes.length() &&
+               catchTryNotes[tryNoteIndex].start == targetOffset) {
+          const TryNote& tn = catchTryNotes[tryNoteIndex];
+          uint32_t catchOrFinallyOffset = tn.start + tn.length;
+          uint32_t targetDepth =
+              tn.kind() == TryNoteKind::Finally ? stackDepth + 3 : stackDepth;
+          BytecodeInfo& targetInfo = infos_[catchOrFinallyOffset];
+          targetInfo.init(targetDepth);
+          targetInfo.setJumpTarget(/* normallyReachable = */ false);
+          tryNoteIndex++;
         }
         break;
       }
@@ -314,17 +244,6 @@ bool BytecodeAnalysis::init(TempAllocator& alloc) {
 
   if (!normallyReachableReturn) {
     disableInlining();
-  }
-
-  if (!analyzer.canIon()) {
-    if (!ionDisabled()) {
-      JitSpew(
-          JitSpew_IonAbort,
-          "Disabling Warp support for %s:%d:%d due to Yield being in a loop",
-          script_->filename(), script_->lineno(),
-          script_->column().oneOriginValue());
-      disableIon();
-    }
   }
 
   return true;

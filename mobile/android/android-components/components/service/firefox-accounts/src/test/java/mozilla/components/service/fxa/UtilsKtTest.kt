@@ -4,6 +4,7 @@
 
 package mozilla.components.service.fxa
 
+import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.sync.ServiceResult
 import mozilla.components.service.fxa.manager.FxaAccountManager
@@ -19,7 +20,6 @@ import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
-import kotlin.test.assertIs
 
 class UtilsKtTest {
     @Test
@@ -146,15 +146,12 @@ class UtilsKtTest {
         val accountManager: FxaAccountManager = mock()
         GlobalAccountManager.setInstance(accountManager)
 
-        assertTrue(
-            handleFxaExceptions(mock(), "test op") {
-            },
-        )
+        assertTrue(handleFxaExceptions(mock(), "test op") {})
 
         assertFalse(
             handleFxaExceptions(mock(), "test op") {
                 throw FxaUnspecifiedException("dunno")
-            },
+            }
         )
 
         verifyNoInteractions(accountManager)
@@ -162,7 +159,7 @@ class UtilsKtTest {
         assertFalse(
             handleFxaExceptions(mock(), "test op") {
                 throw FxaUnauthorizedException("401")
-            },
+            }
         )
 
         verify(accountManager).encounteredAuthError("test op")
@@ -172,7 +169,7 @@ class UtilsKtTest {
         assertFalse(
             handleFxaExceptions(mock(), "test op") {
                 throw FxaNetworkException("dunno")
-            },
+            }
         )
 
         verifyNoInteractions(accountManager)
@@ -375,8 +372,13 @@ class UtilsKtTest {
         }
     }
 
-    private class SucceedOn<S>(private val successOn: Int, private val succeedWith: S, private val failWith: S? = null) {
+    private class SucceedOn<S>(
+        private val successOn: Int,
+        private val succeedWith: S,
+        private val failWith: S? = null,
+    ) {
         var attempts = 0
+
         fun nullFailure(): S? {
             attempts += 1
             return when {
@@ -384,6 +386,7 @@ class UtilsKtTest {
                 else -> succeedWith!!
             }
         }
+
         fun reifiedFailure(): S = nullFailure()!!
     }
 }

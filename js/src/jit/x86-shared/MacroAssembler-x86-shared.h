@@ -404,10 +404,24 @@ class MacroAssemblerX86Shared : public Assembler {
   void zeroDouble(FloatRegister reg) { vxorpd(reg, reg, reg); }
   void zeroFloat32(FloatRegister reg) { vxorps(reg, reg, reg); }
   void convertFloat32ToDouble(FloatRegister src, FloatRegister dest) {
-    vcvtss2sd(src, dest, dest);
+    // If we have AVX, pass the source register as src0 to avoid a false
+    // dependency on the output register.
+    vcvtss2sd(src, HasAVX() ? src : dest, dest);
   }
   void convertDoubleToFloat32(FloatRegister src, FloatRegister dest) {
-    vcvtsd2ss(src, dest, dest);
+    vcvtsd2ss(src, HasAVX() ? src : dest, dest);
+  }
+
+  // ROUNDSD/ROUNDSS read src0 as their merge operand, so pass the source
+  // register as src0 (when we have AVX) to avoid a false dependency on the
+  // output register.
+  void roundDoubleWithMode(X86Encoding::RoundingMode mode, FloatRegister src,
+                           FloatRegister dest) {
+    vroundsd(mode, src, HasAVX() ? src : dest, dest);
+  }
+  void roundFloat32WithMode(X86Encoding::RoundingMode mode, FloatRegister src,
+                            FloatRegister dest) {
+    vroundss(mode, src, HasAVX() ? src : dest, dest);
   }
 
   void convertDoubleToFloat16(FloatRegister src, FloatRegister dest) {

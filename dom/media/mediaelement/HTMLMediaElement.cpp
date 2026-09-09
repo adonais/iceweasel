@@ -5668,7 +5668,7 @@ void HTMLMediaElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
         mDecoder->SetLooping(!!aValue);
       }
     } else if (aName == nsGkAtoms::controls && IsInComposedDoc()) {
-      NotifyUAWidgetSetupOrChange();
+      AddScriptRunnerToNotifyUAWidgetSetupOrChange();
       SetCuesDirty();
     } else if (aName == nsGkAtoms::muted) {
       // While the muted state is "default", the muted content attribute is a
@@ -5683,7 +5683,7 @@ void HTMLMediaElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
           SetMutedInternal(aValue ? (mMuted | MUTED_BY_CONTENT)
                                   : (mMuted & ~MUTED_BY_CONTENT));
           if (IsInComposedDoc()) {
-            NotifyUAWidgetSetupOrChange();
+            AddScriptRunnerToNotifyUAWidgetSetupOrChange();
           }
         }
       }
@@ -5724,7 +5724,7 @@ nsresult HTMLMediaElement::BindToTree(BindContext& aContext, nsINode& aParent) {
 
   if (IsInComposedDoc()) {
     // Construct Shadow Root so web content can be hidden in the DOM.
-    AttachAndSetUAShadowRoot();
+    AttachAndSetUAShadowRoot(NotifyUAWidget::Yes);
 
     // The preload action depends on the value of the autoplay attribute.
     // It's value may have changed, so update it.
@@ -5740,7 +5740,7 @@ void HTMLMediaElement::UnbindFromTree(UnbindContext& aContext) {
   mVisibilityState = Visibility::Untracked;
 
   if (IsInComposedDoc()) {
-    TeardownUAShadowRoot();
+    TeardownUAShadowRoot(NotifyUAWidget::Yes);
   }
 
   nsGenericHTMLElement::UnbindFromTree(aContext);
@@ -7285,8 +7285,8 @@ nsresult HTMLMediaElement::FireEvent(const nsAString& aName) {
   LOG_EVENT(LogLevel::Debug, ("{} Firing event {}", fmt::ptr(this),
                               NS_ConvertUTF16toUTF8(aName).get()));
 
-  return nsContentUtils::DispatchTrustedEvent(OwnerDoc(), this, aName,
-                                              CanBubble::eNo, Cancelable::eNo);
+  return nsContentUtils::DispatchTrustedEvent(this, aName, CanBubble::eNo,
+                                              Cancelable::eNo);
 }
 
 void HTMLMediaElement::QueueEvent(const nsAString& aName) {
@@ -8609,11 +8609,6 @@ void HTMLMediaElement::MarkAsTainted() {
   if (mDecoder) {
     mDecoder->SetSuspendTaint(true);
   }
-}
-
-bool HasDebuggerOrTabsPrivilege(JSContext* aCx, JSObject* aObj) {
-  return nsContentUtils::CallerHasPermission(aCx, nsGkAtoms::debugger) ||
-         nsContentUtils::CallerHasPermission(aCx, nsGkAtoms::tabs);
 }
 
 already_AddRefed<Promise> HTMLMediaElement::SetSinkId(const nsAString& aSinkId,

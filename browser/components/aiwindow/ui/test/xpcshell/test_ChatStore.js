@@ -4,6 +4,7 @@
 // TODO Bug 2050717 - break up this test file it's gotten too long
 
 do_get_profile();
+Services.fog.initializeFOG();
 
 const lazy = {};
 
@@ -152,6 +153,28 @@ add_atomic_task(async function test_ChatStorage_updateConversation() {
   }
 
   Assert.ok(success, errorMessage);
+});
+
+add_atomic_task(async function test_ChatStorage_coalescesDatabaseSizeRecords() {
+  const measure = gSandbox.spy(gChatStore, "getDatabaseSize");
+
+  for (let i = 0; i < 5; i++) {
+    await addBasicConvoTestData("1/1/2025", `conversation ${i}`);
+  }
+
+  Assert.equal(
+    measure.callCount,
+    0,
+    "writes should queue a measurement rather than taking one inline"
+  );
+
+  await gChatStore.recordDatabaseSizeNow();
+
+  Assert.equal(
+    measure.callCount,
+    1,
+    "five queued writes should collapse into a single measurement"
+  );
 });
 
 add_atomic_task(async function test_ChatStorage_findRecentConversations() {
@@ -640,6 +663,14 @@ add_atomic_task(async function test_ChatStorage_pruneDatabase() {
     0.55,
     "pruneDatabase() should not over-free past ~50%"
   );
+
+  // Pruning is the only path that shrinks the file, so it has to record the
+  // size itself rather than leaving the metric stale-high until the next write.
+  Assert.equal(
+    Glean.smartWindow.chatStorage.testGetValue(),
+    await gChatStore.getDatabaseSize(),
+    "pruneDatabase() should record the post-vacuum file size"
+  );
 });
 
 add_atomic_task(async function test_applyMigrations_notCalledOnInitialSetup() {
@@ -691,6 +722,66 @@ add_atomic_task(
     });
   }
 );
+
+const V12_INDEXES = [
+  "message_role_created_date_idx",
+  "message_parent_id_idx",
+  "message_revision_root_idx",
+];
+
+async function getIndexNames() {
+  // substr avoids a LIKE clause, which mozStorage rejects unless the pattern is
+  // a bound parameter.
+  const rows = await gChatStore.connection.execute(
+    `SELECT name FROM sqlite_master
+     WHERE type = 'index' AND substr(name, 1, 7) != 'sqlite_'
+     ORDER BY name`
+  );
+
+  return rows.map(row => row.getResultByName("name"));
+}
+
+add_atomic_task(async function test_v12_indexesExistOnFreshDatabase() {
+  // Trigger connection to db so file creates and migrations applied
+  await gChatStore.getDatabaseSize();
+
+  const indexes = await getIndexNames();
+
+  Assert.withSoftAssertions(function (soft) {
+    for (const name of V12_INDEXES) {
+      soft.ok(indexes.includes(name), `${name} exists on a fresh database`);
+    }
+    soft.ok(
+      !indexes.includes("message_ordinal_idx"),
+      "message_ordinal_idx is not created on a fresh database"
+    );
+  });
+});
+
+// A fresh database and a migrated one must end up with the same indexes,
+// otherwise query plans differ between new and upgraded profiles.
+add_atomic_task(async function test_v12_migrationMatchesFreshSchema() {
+  // Trigger connection to db so file creates and migrations applied
+  await gChatStore.getDatabaseSize();
+
+  const fresh = await getIndexNames();
+
+  // Put the schema back to its v11 shape.
+  for (const name of V12_INDEXES) {
+    await gChatStore.connection.execute(`DROP INDEX ${name}`);
+  }
+  await gChatStore.connection.execute(
+    "CREATE INDEX message_ordinal_idx ON message(ordinal)"
+  );
+
+  await gChatStore.applyMigrations(11);
+
+  Assert.deepEqual(
+    await getIndexNames(),
+    fresh,
+    "applyMigrations produces the same index set as a fresh database"
+  );
+});
 
 async function addChatHistoryTestData() {
   await addConvoWithSpecificTestData(

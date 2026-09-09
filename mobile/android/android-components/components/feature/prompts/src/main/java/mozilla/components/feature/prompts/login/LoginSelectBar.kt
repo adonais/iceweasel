@@ -19,16 +19,14 @@ import mozilla.components.feature.prompts.concept.ExpandablePrompt
 import mozilla.components.feature.prompts.concept.SelectablePromptView
 import mozilla.components.feature.prompts.concept.ToggleablePrompt
 
-/**
- * A customizable multiple login selection bar implementing [SelectablePromptView].
- */
-class LoginSelectBar @JvmOverloads constructor(
+/** A customizable multiple login selection bar implementing [SelectablePromptView]. */
+class LoginSelectBar
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
-) : AbstractComposeView(context, attrs, defStyleAttr),
-    AutocompletePrompt<Login>,
-    ExpandablePrompt {
+) : AbstractComposeView(context, attrs, defStyleAttr), AutocompletePrompt<Login>, ExpandablePrompt {
 
     private var logins by mutableStateOf(listOf<Login>())
     private var isExpanded by mutableStateOf(false)

@@ -18,6 +18,11 @@ support-files = [
 
 ["test_fission_autostart.py"]
 
+["test_relaunch_dock_overlap.py"]
+run-if = [
+  "os == 'mac'",
+]
+
 ["test_win32k_enrollment.py"]
 run-if = [
   "os == 'win'",

@@ -12,35 +12,30 @@ import androidx.test.espresso.ViewInteraction
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.BoundedMatcher
 import androidx.test.espresso.matcher.ViewMatchers
+import androidx.test.espresso.matcher.ViewMatchers.isChecked as espressoIsChecked
+import androidx.test.espresso.matcher.ViewMatchers.isEnabled as espressoIsEnabled
+import androidx.test.espresso.matcher.ViewMatchers.isSelected as espressoIsSelected
 import junit.framework.AssertionFailedError
 import org.hamcrest.CoreMatchers.not
 import org.hamcrest.Description
 import org.hamcrest.Matcher
 import org.hamcrest.TypeSafeMatcher
 import org.mozilla.fenix.helpers.matchers.BitmapDrawableMatcher
-import androidx.test.espresso.matcher.ViewMatchers.isChecked as espressoIsChecked
-import androidx.test.espresso.matcher.ViewMatchers.isEnabled as espressoIsEnabled
-import androidx.test.espresso.matcher.ViewMatchers.isSelected as espressoIsSelected
 
-/**
- * The [espressoIsEnabled] function that can also handle disabled state through the boolean argument.
- */
+/** The [espressoIsEnabled] function that can also handle disabled state through the boolean argument. */
 fun isEnabled(isEnabled: Boolean): Matcher<View> = maybeInvertMatcher(espressoIsEnabled(), isEnabled)
 
-/**
- * The [espressoIsChecked] function that can also handle unchecked state through the boolean argument.
- */
+/** The [espressoIsChecked] function that can also handle unchecked state through the boolean argument. */
 fun isChecked(isChecked: Boolean): Matcher<View> = maybeInvertMatcher(espressoIsChecked(), isChecked)
 
-/**
- * The [espressoIsSelected] function that can also handle not selected state through the boolean argument.
- */
+/** The [espressoIsSelected] function that can also handle not selected state through the boolean argument. */
 fun isSelected(isSelected: Boolean): Matcher<View> = maybeInvertMatcher(espressoIsSelected(), isSelected)
 
-private fun maybeInvertMatcher(matcher: Matcher<View>, useUnmodifiedMatcher: Boolean): Matcher<View> = when {
-    useUnmodifiedMatcher -> matcher
-    else -> not(matcher)
-}
+private fun maybeInvertMatcher(matcher: Matcher<View>, useUnmodifiedMatcher: Boolean): Matcher<View> =
+    when {
+        useUnmodifiedMatcher -> matcher
+        else -> not(matcher)
+    }
 
 fun withBitmapDrawable(bitmap: Bitmap, name: String): Matcher<View>? = BitmapDrawableMatcher(bitmap, name)
 
@@ -74,18 +69,17 @@ fun ViewInteraction.isVisibleForUser(): Boolean {
 }
 
 fun atPosition(position: Int, itemMatcher: Matcher<View?>): Matcher<View?>? {
-    return object : BoundedMatcher<View?, RecyclerView>(
-        RecyclerView::class.java,
-    ) {
+    return object : BoundedMatcher<View?, RecyclerView>(RecyclerView::class.java) {
         override fun describeTo(description: Description) {
             description.appendText("has item at position $position: ")
             itemMatcher.describeTo(description)
         }
 
         override fun matchesSafely(view: RecyclerView): Boolean {
-            val viewHolder = view.findViewHolderForAdapterPosition(position)
-                ?: // has no item on such position
-                return false
+            val viewHolder =
+                view.findViewHolderForAdapterPosition(position)
+                    ?: // has no item on such position
+                    return false
             return itemMatcher.matches(viewHolder.itemView)
         }
     }

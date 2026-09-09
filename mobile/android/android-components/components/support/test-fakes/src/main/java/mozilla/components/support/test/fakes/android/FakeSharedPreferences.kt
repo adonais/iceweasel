@@ -7,34 +7,40 @@ package mozilla.components.support.test.fakes.android
 import android.content.SharedPreferences
 
 /**
- * A simple [SharedPreferences] implementation backed by an in-memory map. Helpful in unit tests and
- * faster than launching all Robolectric bells and whistles.
+ * A simple [SharedPreferences] implementation backed by an in-memory map. Helpful in unit tests and faster than
+ * launching all Robolectric bells and whistles.
  */
 @Suppress("UNCHECKED_CAST")
-class FakeSharedPreferences(
-    internal val values: MutableMap<String, Any> = mutableMapOf(),
-) : SharedPreferences {
+class FakeSharedPreferences(internal val values: MutableMap<String, Any> = mutableMapOf()) : SharedPreferences {
     override fun getAll(): Map<String, *> = values
+
     override fun getString(key: String, defValue: String?): String? = values[key]?.toString() ?: defValue
+
     override fun getStringSet(key: String, defValues: MutableSet<String>?): Set<String>? =
         values[key] as? Set<String> ?: defValues
+
     override fun getInt(key: String, defValue: Int): Int = values[key] as? Int ?: defValue
+
     override fun getLong(key: String, defValue: Long): Long = values[key] as? Long ?: defValue
+
     override fun getFloat(key: String, defValue: Float): Float = values[key] as? Float ?: defValue
+
     override fun getBoolean(key: String, defValue: Boolean): Boolean = values[key] as? Boolean ?: defValue
+
     override fun contains(key: String): Boolean = values.containsKey(key)
+
     override fun edit(): SharedPreferences.Editor = FakeEditor(this)
+
     override fun registerOnSharedPreferenceChangeListener(
-        listener: SharedPreferences.OnSharedPreferenceChangeListener,
+        listener: SharedPreferences.OnSharedPreferenceChangeListener
     ) = throw NotImplementedError()
+
     override fun unregisterOnSharedPreferenceChangeListener(
-        listener: SharedPreferences.OnSharedPreferenceChangeListener,
+        listener: SharedPreferences.OnSharedPreferenceChangeListener
     ) = throw NotImplementedError()
 }
 
-internal class FakeEditor(
-    private val preferences: FakeSharedPreferences,
-) : SharedPreferences.Editor {
+internal class FakeEditor(private val preferences: FakeSharedPreferences) : SharedPreferences.Editor {
     override fun putString(key: String, value: String?): SharedPreferences.Editor {
         if (value == null) {
             remove(key)

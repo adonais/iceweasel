@@ -11,9 +11,7 @@ import mozilla.components.lib.crash.ui.AbstractCrashListFragment
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 
-/**
- * Fragment showing the list of past crashes.
- */
+/** Fragment showing the list of past crashes. */
 class CrashListFragment : AbstractCrashListFragment(), SystemInsetsPaddedFragment {
     override val reporter: CrashReporter by lazy { requireContext().components.analytics.crashReporter }
 

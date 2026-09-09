@@ -423,7 +423,7 @@ class TabTracker extends TabTrackerBase {
       let nativeTab = adoptedTab;
       let adoptedBy = adoptingTab;
       let oldWindowId = windowTracker.getId(nativeTab.documentGlobal);
-      let oldPosition = nativeTab._tPos;
+      let oldPosition = nativeTab.index;
       this.emit("tab-detached", {
         nativeTab,
         adoptedBy,
@@ -435,7 +435,7 @@ class TabTracker extends TabTrackerBase {
     if (this.has("tab-attached")) {
       let nativeTab = adoptingTab;
       let newWindowId = windowTracker.getId(nativeTab.documentGlobal);
-      let newPosition = nativeTab._tPos;
+      let newPosition = nativeTab.index;
       this.emit("tab-attached", {
         nativeTab,
         tabId,
@@ -846,7 +846,7 @@ class Tab extends TabBase {
   }
 
   get index() {
-    return this.nativeTab._tPos;
+    return this.nativeTab.index;
   }
 
   get mutedInfo() {
@@ -1093,14 +1093,34 @@ class Window extends WindowBase {
     })();
 
     const initialState = window.windowState;
-    if (expectedState == initialState) {
+    // window.fullScreen is checked too, so that we still have work to do below
+    // when DOM and widget disagree on the fullscreen state (bug 2066805).
+    if (
+      expectedState == initialState &&
+      window.fullScreen == (expectedState == window.STATE_FULLSCREEN)
+    ) {
       return;
     }
+
+    // On Linux, sizemode changes are asynchronous. Some of them might not even
+    // happen if the window manager doesn't want to, so wait for a bit instead of
+    // forever for a change that might not ever happen.
+    const noWindowManagerTimeout = 2000;
 
     // We check for window.fullScreen here to make sure to exit fullscreen even
     // if DOM and widget disagree on what the state is. This is a speculative
     // fix for bug 1780876, ideally it should not be needed.
+    let onResize;
+    let promiseExitFullscreenResize;
     if (initialState == window.STATE_FULLSCREEN || window.fullScreen) {
+      // Widgets report the sizemode change before resizing the window back to
+      // its pre-fullscreen size, so the resize needs to be waited for
+      // separately, otherwise we would report the fullscreen size as the size
+      // of the no longer fullscreen window.
+      promiseExitFullscreenResize = new Promise(resolve => {
+        onResize = resolve;
+        window.addEventListener("resize", onResize);
+      });
       window.fullScreen = false;
     }
 
@@ -1127,17 +1147,14 @@ class Window extends WindowBase {
         break;
 
       default:
+        window.removeEventListener("resize", onResize);
         throw new Error(`Unexpected window state: ${state}`);
     }
 
+    let onSizeModeChange;
+    let promiseExpectedSizeMode;
     if (window.windowState != expectedState) {
-      // On Linux, sizemode changes are asynchronous. Some of them might not
-      // even happen if the window manager doesn't want to, so wait for a bit
-      // instead of forever for a sizemode change that might not ever happen.
-      const noWindowManagerTimeout = 2000;
-
-      let onSizeModeChange;
-      const promiseExpectedSizeMode = new Promise(resolve => {
+      promiseExpectedSizeMode = new Promise(resolve => {
         onSizeModeChange = function () {
           if (window.windowState == expectedState) {
             resolve();
@@ -1145,13 +1162,18 @@ class Window extends WindowBase {
         };
         window.addEventListener("sizemodechange", onSizeModeChange);
       });
+    }
 
+    if (promiseExpectedSizeMode || promiseExitFullscreenResize) {
+      // Both waits share a single timeout, so that a window manager that never
+      // reports either change delays us once rather than twice.
       await Promise.any([
-        promiseExpectedSizeMode,
+        Promise.all([promiseExpectedSizeMode, promiseExitFullscreenResize]),
         new Promise(resolve => setTimeout(resolve, noWindowManagerTimeout)),
       ]);
 
       window.removeEventListener("sizemodechange", onSizeModeChange);
+      window.removeEventListener("resize", onResize);
     }
   }
 

@@ -40,8 +40,7 @@ private val activityClass = HomeActivity::class.java
 @RunWith(AndroidJUnit4::class)
 class StartupTypeTelemetryTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private val testDispatcher = StandardTestDispatcher()
 
@@ -68,41 +67,42 @@ class StartupTypeTelemetryTest {
     }
 
     @Test
-    fun `GIVEN all possible path and state combinations WHEN record telemetry THEN the labels are incremented the appropriate number of times`() = runTest(testDispatcher) {
-        val allPossibleInputArgs = StartupState.entries.crossProduct(
-            StartupPath.entries,
-        ) { state, path ->
-            Pair(state, path)
+    fun `GIVEN all possible path and state combinations WHEN record telemetry THEN the labels are incremented the appropriate number of times`() =
+        runTest(testDispatcher) {
+            val allPossibleInputArgs =
+                StartupState.entries.crossProduct(StartupPath.entries) { state, path ->
+                    Pair(state, path)
+                }
+
+            allPossibleInputArgs.forEach { (state, path) ->
+                every { stateProvider.getStartupStateForStartedActivity(activityClass) } returns state
+                every { pathProvider.startupPathForActivity } returns path
+
+                telemetry.record(testDispatcher)
+                testDispatcher.scheduler.advanceUntilIdle()
+            }
+
+            validTelemetryLabels.forEach { label ->
+                // Path == NOT_SET gets bucketed with Path == UNKNOWN so we'll increment twice for those.
+                val expected = if (label.endsWith("unknown")) 2 else 1
+                assertEquals("label: $label", expected, PerfStartup.startupType[label].testGetValue())
+            }
+
+            // All invalid labels go to a single bucket: let's verify it has no value.
+            assertNull(PerfStartup.startupType["__other__"].testGetValue())
         }
 
-        allPossibleInputArgs.forEach { (state, path) ->
-            every { stateProvider.getStartupStateForStartedActivity(activityClass) } returns state
-            every { pathProvider.startupPathForActivity } returns path
+    @Test
+    fun `WHEN record is called THEN telemetry is recorded with the appropriate label`() =
+        runTest(testDispatcher) {
+            every { stateProvider.getStartupStateForStartedActivity(activityClass) } returns StartupState.COLD
+            every { pathProvider.startupPathForActivity } returns StartupPath.MAIN
 
             telemetry.record(testDispatcher)
             testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(1, PerfStartup.startupType["cold_main"].testGetValue())
         }
-
-        validTelemetryLabels.forEach { label ->
-            // Path == NOT_SET gets bucketed with Path == UNKNOWN so we'll increment twice for those.
-            val expected = if (label.endsWith("unknown")) 2 else 1
-            assertEquals("label: $label", expected, PerfStartup.startupType[label].testGetValue())
-        }
-
-        // All invalid labels go to a single bucket: let's verify it has no value.
-        assertNull(PerfStartup.startupType["__other__"].testGetValue())
-    }
-
-    @Test
-    fun `WHEN record is called THEN telemetry is recorded with the appropriate label`() = runTest(testDispatcher) {
-        every { stateProvider.getStartupStateForStartedActivity(activityClass) } returns StartupState.COLD
-        every { pathProvider.startupPathForActivity } returns StartupPath.MAIN
-
-        telemetry.record(testDispatcher)
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertEquals(1, PerfStartup.startupType["cold_main"].testGetValue())
-    }
 
     @Test
     fun `GIVEN the activity is launched WHEN onResume is called THEN we record the telemetry`() {

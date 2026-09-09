@@ -439,33 +439,29 @@ fn test_report_error_stylesheet() {
     error_reporter.assert_messages_contain(&[
         (
             8,
-            18,
+            9,
             "Unsupported property declaration: 'display: invalid;'",
         ),
-        (
-            9,
-            27,
-            "Unsupported property declaration: 'background-image:",
-        ), // FIXME: column should be around 56
-        (10, 17, "Unsupported property declaration: 'invalid: true;'"),
-        (12, 28, "Invalid media rule"),
-        (13, 30, "Unsupported @font-face descriptor declaration"),
+        (9, 9, "Unsupported property declaration: 'background-image:"),
+        (10, 9, "Unsupported property declaration: 'invalid: true;'"),
+        (12, 11, "Invalid media rule"),
+        (13, 18, "Unsupported @font-face descriptor declaration"),
         // When @counter-style is supported, this should be replaced with two errors
-        (14, 19, "Invalid rule: '@counter-style "),
+        (14, 5, "Invalid rule: '@counter-style "),
         // When @font-feature-values is supported, this should be replaced with two errors
-        (15, 25, "Invalid rule: '@font-feature-values "),
-        (16, 13, "Invalid rule: '@invalid'"),
-        (17, 29, "Invalid rule: '@invalid'"),
-        (18, 34, "Invalid rule: '@supports "),
-        (19, 26, "Invalid keyframe rule: 'from invalid '"),
+        (15, 5, "Invalid rule: '@font-feature-values "),
+        (16, 5, "Invalid rule: '@invalid'"),
+        (17, 21, "Invalid rule: '@invalid'"),
+        (18, 5, "Invalid rule: '@supports "),
+        (19, 22, "Invalid keyframe rule: 'from invalid '"),
         (
             19,
-            52,
+            43,
             "Unsupported keyframe property declaration: 'margin: 0 invalid 0;'",
         ),
         (
             20,
-            29,
+            17,
             "Unsupported @viewport descriptor declaration: 'width: 320px invalid auto;'",
         ),
     ]);
@@ -501,7 +497,7 @@ fn test_no_report_unrecognized_vendor_properties() {
 
     error_reporter.assert_messages_contain(&[(
         4,
-        31,
+        9,
         "Unsupported property declaration: '-moz-background-color: red;'",
     )]);
 }

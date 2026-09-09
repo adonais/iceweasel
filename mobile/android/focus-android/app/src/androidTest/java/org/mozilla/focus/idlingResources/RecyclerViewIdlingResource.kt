@@ -5,7 +5,8 @@ package org.mozilla.focus.idlingResources
 
 import androidx.test.espresso.IdlingResource
 
-class RecyclerViewIdlingResource constructor(
+class RecyclerViewIdlingResource
+constructor(
     private val recycler: androidx.recyclerview.widget.RecyclerView,
     private val minItemCount: Int = 0,
 ) : IdlingResource {

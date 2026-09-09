@@ -66,12 +66,14 @@ class SerialManagerParent final : public PSerialManagerParent {
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
   mozilla::ipc::IPCResult RecvRequestPort(
-      nsTArray<IPCSerialPortFilter>&& aFilters, bool aAutoselect,
+      nsTArray<IPCSerialPortFilter>&& aFilters,
+      nsTArray<nsString>&& aAllowedBluetoothServiceClassIds, bool aAutoselect,
       RequestPortResolver&& aResolver);
 
   mozilla::ipc::IPCResult RecvSimulateDeviceConnection(
       const nsString& aDeviceId, const nsString& aDevicePath,
       uint16_t aVendorId, uint16_t aProductId,
+      const nsString& aBluetoothServiceClassId,
       SimulateDeviceConnectionResolver&& aResolver);
 
   mozilla::ipc::IPCResult RecvSimulateDeviceDisconnection(

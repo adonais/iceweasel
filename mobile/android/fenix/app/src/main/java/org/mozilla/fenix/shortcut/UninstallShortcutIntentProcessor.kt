@@ -11,9 +11,7 @@ import mozilla.components.feature.intent.processing.IntentProcessor
 import mozilla.components.support.utils.SafeIntent
 import org.mozilla.fenix.HomeActivity
 
-/**
- * Intent processor that will handle intents for the uninstall survey shortcut.
- */
+/** Intent processor that will handle intents for the uninstall survey shortcut. */
 class UninstallShortcutIntentProcessor : IntentProcessor {
 
     /**

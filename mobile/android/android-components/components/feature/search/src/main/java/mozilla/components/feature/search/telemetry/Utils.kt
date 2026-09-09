@@ -33,12 +33,8 @@ internal fun getTrackKey(
 
     if (provider.codeParamName.isNotEmpty()) {
         code = cleanUri.getQueryParameter(provider.codeParamName.lowercase())
-        if (code.isNullOrEmpty() &&
-            provider.telemetryId == "baidu" &&
-            cleanUri.toString().contains("from=")
-        ) {
-            code = cleanUri.toString().substringAfter("from=", "")
-                .substringBefore("/", "")
+        if (code.isNullOrEmpty() && provider.telemetryId == "baidu" && cleanUri.toString().contains("from=")) {
+            code = cleanUri.toString().substringAfter("from=", "").substringBefore("/", "")
         }
         if (code != null) {
             // The code is only included if it matches one of the specific ones.
@@ -86,9 +82,11 @@ private fun getTrackKeyFromCookies(
         if (followOnCookie.extraCodeParamName != "") {
             val eCode = uri.getQueryParameter(followOnCookie.extraCodeParamName.lowercase())
 
-            if (eCode == null || !followOnCookie.extraCodePrefixes.any { prefix ->
-                    eCode.startsWith(prefix)
-                }
+            if (
+                eCode == null ||
+                    !followOnCookie.extraCodePrefixes.any { prefix ->
+                        eCode.startsWith(prefix)
+                    }
             ) {
                 return@forEach
             }
@@ -103,16 +101,19 @@ private fun getTrackKeyFromCookies(
             }
             // Cookie values may take the form of "foo=bar&baz=1".
             // Get the value of the follow-on cookie parameter or continue searching in the next cookie
-            val followOnParamName = cookie.getString("value")
-                .split("&")
-                .map { it.split("=") }
-                .firstOrNull { it[0] == followOnCookie.codeParamName }
-                ?.get(1)
-                ?: continue
+            val followOnParamName =
+                cookie
+                    .getString("value")
+                    .split("&")
+                    .map { it.split("=") }
+                    .firstOrNull { it[0] == followOnCookie.codeParamName }
+                    ?.get(1) ?: continue
 
-            provider.taggedCodes.firstOrNull { it == followOnParamName }?.let {
-                return TrackKeyInfo(provider.telemetryId, SEARCH_TYPE_SAP_FOLLOW_ON, it)
-            }
+            provider.taggedCodes
+                .firstOrNull { it == followOnParamName }
+                ?.let {
+                    return TrackKeyInfo(provider.telemetryId, SEARCH_TYPE_SAP_FOLLOW_ON, it)
+                }
         }
     }
     return null
@@ -123,11 +124,12 @@ private fun hasValidCode(code: String?, provider: SearchProviderModel): Boolean 
 
 @VisibleForTesting
 internal fun Uri.lowercaseQueryParameterKeys(): Uri {
-    val newQueryParameters = queryParameterNames.flatMap { key ->
-        getQueryParameters(key).map { value -> "${key.lowercase()}=$value" }
-    }.joinToString("&")
+    val newQueryParameters =
+        queryParameterNames
+            .flatMap { key ->
+                getQueryParameters(key).map { value -> "${key.lowercase()}=$value" }
+            }
+            .joinToString("&")
 
-    return this@lowercaseQueryParameterKeys.buildUpon()
-        .encodedQuery(newQueryParameters)
-        .build()
+    return this@lowercaseQueryParameterKeys.buildUpon().encodedQuery(newQueryParameters).build()
 }

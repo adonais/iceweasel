@@ -45,7 +45,6 @@ tasks:
         dependencies:
             build-signing: build-signing-linux64-shippable/opt
         run:
-            clone-with: hg
             using: run-task
             cwd: "{checkout}"
         extra-config:
@@ -65,7 +64,6 @@ tasks:
         dependencies:
             build-signing: build-signing-linux64-aarch64-shippable/opt
         run:
-            clone-with: hg
             using: run-task
             cwd: "{checkout}"
         extra-config:
@@ -85,7 +83,6 @@ tasks:
         dependencies:
             repackage: repackage-macosx64-shippable/opt
         run:
-            clone-with: hg
             using: mach
         extra-config:
             upstream_kind: repackage
@@ -106,7 +103,6 @@ tasks:
         dependencies:
             repackage-signing: repackage-signing-win32-shippable/opt
         run:
-            clone-with: hg
             using: mach
         extra-config:
             upstream_kind: repackage-signing
@@ -123,7 +119,6 @@ tasks:
         dependencies:
             repackage-signing: repackage-signing-win64-shippable/opt
         run:
-            clone-with: hg
             using: mach
         extra-config:
             upstream_kind: repackage-signing
@@ -140,7 +135,6 @@ tasks:
         dependencies:
             repackage-signing: repackage-signing-win64-aarch64-shippable/opt
         run:
-            clone-with: hg
             using: mach
         extra-config:
             upstream_kind: repackage-signing

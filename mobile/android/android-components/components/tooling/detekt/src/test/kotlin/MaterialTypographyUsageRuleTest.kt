@@ -12,17 +12,17 @@ import org.junit.Test
 
 class MaterialTypographyUsageRuleTest {
 
-    private val fenixConfig = TestConfig(
-        "appTypographyName" to "org.mozilla.fenix.theme.FirefoxTheme.typography",
-    )
+    private val fenixConfig = TestConfig("appTypographyName" to "org.mozilla.fenix.theme.FirefoxTheme.typography")
 
     @Test
     fun `GIVEN no appTypographyName is configured WHEN MaterialTheme typography is accessed THEN it is flagged with a generic message`() {
-        val code = """
+        val code =
+            """
             package com.example
             import androidx.compose.material3.MaterialTheme
             val typography = MaterialTheme.typography
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = MaterialTypographyUsageRule().lint(code)
 
@@ -35,30 +35,33 @@ class MaterialTypographyUsageRuleTest {
 
     @Test
     fun `GIVEN appTypographyName is configured WHEN MaterialTheme typography is accessed THEN the message mentions the appTypographyName to use`() {
-        val code = """
+        val code =
+            """
             package org.mozilla.fenix.compose
             import androidx.compose.material3.MaterialTheme
             val typography = MaterialTheme.typography
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = MaterialTypographyUsageRule(fenixConfig).lint(code)
 
         assertEquals(1, findings.size)
         assertEquals(
-            "Use org.mozilla.fenix.theme.FirefoxTheme.typography " +
-                "instead of MaterialTheme.typography.",
+            "Use org.mozilla.fenix.theme.FirefoxTheme.typography " + "instead of MaterialTheme.typography.",
             findings.first().message,
         )
     }
 
     @Test
     fun `WHEN MaterialTheme typography with a property is accessed THEN it is flagged`() {
-        val code = """
+        val code =
+            """
             package org.mozilla.fenix.compose
             import androidx.compose.material3.MaterialTheme
             val typography = MaterialTheme.typography.bodyLarge
             val color = MaterialTheme.colorScheme.primary
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = MaterialTypographyUsageRule(fenixConfig).lint(code)
 
@@ -67,10 +70,12 @@ class MaterialTypographyUsageRuleTest {
 
     @Test
     fun `WHEN the fully qualified MaterialTheme typography is accessed THEN it is flagged`() {
-        val code = """
+        val code =
+            """
             package org.mozilla.fenix.compose
             val typography = androidx.compose.material3.MaterialTheme.typography
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = MaterialTypographyUsageRule(fenixConfig).lint(code)
 
@@ -79,10 +84,12 @@ class MaterialTypographyUsageRuleTest {
 
     @Test
     fun `WHEN MaterialTheme typography appears in an import directive THEN it is flagged`() {
-        val code = """
+        val code =
+            """
             package org.mozilla.fenix.compose
             import androidx.compose.material3.MaterialTheme.typography
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = MaterialTypographyUsageRule(fenixConfig).lint(code)
 
@@ -91,11 +98,13 @@ class MaterialTypographyUsageRuleTest {
 
     @Test
     fun `GIVEN appTypographyName is configured WHEN the configured app typography is accessed THEN it is not flagged`() {
-        val code = """
+        val code =
+            """
             package org.mozilla.fenix.compose
             import org.mozilla.fenix.theme.FirefoxTheme
             val typography = FirefoxTheme.typography.body1
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = MaterialTypographyUsageRule(fenixConfig).lint(code)
 
@@ -104,12 +113,14 @@ class MaterialTypographyUsageRuleTest {
 
     @Test
     fun `WHEN MaterialTheme typography is accessed multiple times THEN each usage is flagged`() {
-        val code = """
+        val code =
+            """
             package org.mozilla.fenix.compose
             import androidx.compose.material3.MaterialTheme
             val bodyLarge = MaterialTheme.typography.bodyLarge
             val titleLarge = MaterialTheme.typography.titleLarge
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = MaterialTypographyUsageRule(fenixConfig).lint(code)
 

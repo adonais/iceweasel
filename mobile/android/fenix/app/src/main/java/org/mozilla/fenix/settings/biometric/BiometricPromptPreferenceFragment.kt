@@ -19,10 +19,7 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.registerForActivityResult
 import org.mozilla.fenix.settings.requirePreference
 
-/**
- * Helper for creating and implementing the [BiometricPromptFeature]. Currently used
- * for logins and credit cards.
- */
+/** Helper for creating and implementing the [BiometricPromptFeature]. Currently used for logins and credit cards. */
 abstract class BiometricPromptPreferenceFragment : PreferenceFragmentCompat() {
 
     private val biometricPromptFeature = ViewBoundFeatureWrapper<BiometricPromptFeature>()
@@ -36,20 +33,15 @@ abstract class BiometricPromptPreferenceFragment : PreferenceFragmentCompat() {
         }
     }
 
-    /**
-     * Gets the string to be used for [BiometricPromptFeature.requestAuthentication] prompting to
-     * unlock the device.
-     */
+    /** Gets the string to be used for [BiometricPromptFeature.requestAuthentication] prompting to unlock the device. */
     abstract fun unlockMessage(): String
 
-    /**
-     * Navigate when authentication is successful.
-     */
+    /** Navigate when authentication is successful. */
     abstract fun navigateOnSuccess()
 
     /**
-     * Shows a dialog warning to set up a pin/password when the device is not secured. This is
-     * only used when BiometricPrompt is unavailable on the device.
+     * Shows a dialog warning to set up a pin/password when the device is not secured. This is only used when
+     * BiometricPrompt is unavailable on the device.
      */
     abstract fun showPinDialogWarning(context: Context)
 
@@ -66,11 +58,10 @@ abstract class BiometricPromptPreferenceFragment : PreferenceFragmentCompat() {
     }
 
     /**
-     * Creates a prompt to verify the device's pin/password and start activity based on the result.
-     * This is only used when BiometricPrompt is unavailable on the device.
+     * Creates a prompt to verify the device's pin/password and start activity based on the result. This is only used
+     * when BiometricPrompt is unavailable on the device.
      */
-    @Suppress("Deprecation")
-    abstract fun showPinVerification(manager: KeyguardManager)
+    @Suppress("Deprecation") abstract fun showPinVerification(manager: KeyguardManager)
 
     /**
      * Sets the biometric prompt feature.
@@ -80,14 +71,15 @@ abstract class BiometricPromptPreferenceFragment : PreferenceFragmentCompat() {
      */
     fun setBiometricPrompt(view: View, prefList: List<Int>) {
         biometricPromptFeature.set(
-            feature = BiometricPromptFeature(
-                context = requireContext(),
-                fragment = this,
-                onAuthFailure = {
-                    togglePrefsEnabled(prefList, true)
-                },
-                onAuthSuccess = ::navigateOnSuccess,
-            ),
+            feature =
+                BiometricPromptFeature(
+                    context = requireContext(),
+                    fragment = this,
+                    onAuthFailure = {
+                        togglePrefsEnabled(prefList, true)
+                    },
+                    onAuthSuccess = ::navigateOnSuccess,
+                ),
             owner = this,
             view = view,
         )

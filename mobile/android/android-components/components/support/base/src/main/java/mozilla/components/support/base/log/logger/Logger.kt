@@ -12,45 +12,32 @@ import mozilla.components.support.base.log.Log
  *
  * @param tag The tag to be used for log messages send via this logger.
  */
-class Logger(
-    private val tag: String? = null,
-) {
-    /**
-     * Send a DEBUG log message.
-     */
+class Logger(private val tag: String? = null) {
+    /** Send a DEBUG log message. */
     fun debug(message: String, throwable: Throwable? = null) {
         Log.log(Log.Priority.DEBUG, tag = tag, message = message, throwable = throwable)
     }
 
-    /**
-     * Send a INFO log message.
-     */
+    /** Send a INFO log message. */
     fun info(message: String, throwable: Throwable? = null) {
         Log.log(Log.Priority.INFO, tag = tag, message = message, throwable = throwable)
     }
 
-    /**
-     * Send a WARN log message.
-     */
+    /** Send a WARN log message. */
     fun warn(message: String, throwable: Throwable? = null) {
         Log.log(Log.Priority.WARN, tag = tag, message = message, throwable = throwable)
     }
 
-    /**
-     * Send a ERROR log message.
-     */
+    /** Send a ERROR log message. */
     fun error(message: String, throwable: Throwable? = null) {
         Log.log(Log.Priority.ERROR, tag = tag, message = message, throwable = throwable)
     }
 
     /**
-     * Measure the time it takes to execute the provided block and print a log message before and
-     * after executing the block.
+     * Measure the time it takes to execute the provided block and print a log message before and after executing the
+     * block.
      *
-     * Example log message:
-     *   ⇢ doSomething()
-     *   [..]
-     *   ⇠ doSomething() [12ms]
+     * Example log message: ⇢ doSomething() [..] ⇠ doSomething() [12ms]
      */
     fun measure(message: String, block: () -> Unit) {
         debug("⇢ $message")
@@ -68,34 +55,23 @@ class Logger(
     companion object {
         private val DEFAULT = Logger()
 
-        /**
-         * Send a DEBUG log message.
-         */
+        /** Send a DEBUG log message. */
         fun debug(message: String, throwable: Throwable? = null) = DEFAULT.debug(message, throwable)
 
-        /**
-         * Send a INFO log message.
-         */
+        /** Send a INFO log message. */
         fun info(message: String, throwable: Throwable? = null) = DEFAULT.info(message, throwable)
 
-        /**
-         * Send a WARN log message.
-         */
+        /** Send a WARN log message. */
         fun warn(message: String, throwable: Throwable? = null) = DEFAULT.warn(message, throwable)
 
-        /**
-         * Send a ERROR log message.
-         */
+        /** Send a ERROR log message. */
         fun error(message: String, throwable: Throwable? = null) = DEFAULT.error(message, throwable)
 
         /**
-         * Measure the time it takes to execute the provided block and print a log message before and
-         * after executing the block.
+         * Measure the time it takes to execute the provided block and print a log message before and after executing
+         * the block.
          *
-         * Example log message:
-         *   ⇢ doSomething()
-         *   [..]
-         *   ⇠ doSomething() [12ms]
+         * Example log message: ⇢ doSomething() [..] ⇠ doSomething() [12ms]
          */
         fun measure(message: String, block: () -> Unit) {
             return DEFAULT.measure(message, block)

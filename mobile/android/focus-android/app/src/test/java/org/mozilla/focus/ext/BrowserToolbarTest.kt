@@ -6,6 +6,7 @@ package org.mozilla.focus.ext
 
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.isVisible
+import kotlin.test.assertIs
 import mozilla.components.browser.engine.gecko.GeckoEngineView
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.support.test.robolectric.testContext
@@ -20,7 +21,6 @@ import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.mozilla.focus.R
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertIs
 
 @RunWith(RobolectricTestRunner::class)
 internal class BrowserToolbarTest {
@@ -42,7 +42,9 @@ internal class BrowserToolbarTest {
 
         toolbar.enableDynamicBehavior(testContext, engineView)
 
-        assertIs<EngineViewScrollingGesturesBehavior>((toolbar.layoutParams as? CoordinatorLayout.LayoutParams)?.behavior)
+        assertIs<EngineViewScrollingGesturesBehavior>(
+            (toolbar.layoutParams as? CoordinatorLayout.LayoutParams)?.behavior
+        )
         assertIs<EngineViewClippingBehavior>((engineView.layoutParams as? CoordinatorLayout.LayoutParams)?.behavior)
         assertEquals(0, (engineView.layoutParams as? CoordinatorLayout.LayoutParams)?.topMargin)
         verify(engineView).setDynamicToolbarMaxHeight(toolbarHeight)

@@ -384,6 +384,75 @@ add_task(async function test_tab_group_confirmation_renders() {
         parent?.classList.contains("chat-bubble-assistant"),
         "Confirmation should be inside assistant message bubble"
       );
+
+      const footer = chatContent.shadowRoot.querySelector(
+        "assistant-message-footer"
+      );
+      await footer.updateComplete;
+      Assert.ok(
+        footer.shadowRoot.querySelector("moz-button.retry-button"),
+        "Retry button should still show for a non-resume-activity tab group confirmation"
+      );
+    });
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+    restoreSignIn();
+    await restore();
+  }
+});
+
+/**
+ * Test that the footer retry button is hidden for a resume-activity
+ * conversation's generated response, since retrying it would lose its
+ * bespoke system prompt/context.
+ */
+add_task(async function test_retry_hidden_for_resume_activity_response() {
+  const restoreSignIn = skipSignIn();
+  const { restore } = await stubEngineNetworkBoundaries({
+    serverOptions: { streamChunks: ["Here's where you left off."] },
+  });
+  const win = await openAIWindow();
+
+  try {
+    const browser = win.gBrowser.selectedBrowser;
+    const aichatBrowser = await getAichatBrowser(browser);
+
+    await setupConversationWithToolUI(aichatBrowser, {
+      userMessage: "Pick up your research",
+      assistantMessage: "Here's where you left off.",
+      messageId: "msg-resume",
+      toolUIData: {
+        toolCallId: "resume-activity-memory-1",
+        uiType: "tab-group-confirmation",
+        isResumeActivity: true,
+        properties: {
+          actionType: "open_tabs",
+          tabGroupLabel: "Your research",
+          tabs: [
+            {
+              url: "https://example.com",
+              title: "Example Site",
+              iconSrc: "page-icon:https://example.com",
+              checked: false,
+            },
+          ],
+        },
+      },
+    });
+
+    await SpecialPowers.spawn(aichatBrowser, [], async () => {
+      const chatContent = content.document.querySelector("ai-chat-content");
+
+      const footer = await ContentTaskUtils.waitForCondition(
+        () => chatContent.shadowRoot.querySelector("assistant-message-footer"),
+        "Wait for assistant-message-footer to render"
+      );
+      await footer.updateComplete;
+
+      Assert.ok(
+        !footer.shadowRoot.querySelector("moz-button.retry-button"),
+        "Retry button should be hidden for a resume-activity response"
+      );
     });
   } finally {
     await BrowserTestUtils.closeWindow(win);

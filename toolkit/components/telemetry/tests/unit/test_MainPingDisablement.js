@@ -21,6 +21,10 @@ add_setup(async function () {
   // FOG needs a profile directory
   do_get_profile();
   Services.fog.initializeFOG();
+  // Make sure TelemetryEnvironment initialization doesn't wait for
+  // browser-delayed-startup-finished indefinitely as part of waiting
+  // for Intl initialization promise to be resolved.
+  fakeIntlReady();
 
   // Make sure we don't generate unexpected pings due to pref changes.
   await setEmptyPrefWatchlist();

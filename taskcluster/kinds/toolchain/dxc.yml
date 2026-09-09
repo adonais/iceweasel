@@ -31,7 +31,6 @@ win64-dxc:
     treeherder:
         symbol: TW64(dxc)
     run:
-        clone-with: hg
         arguments:
             - "x86_64"
         toolchain-artifact: public/build/dxc-x86_64-pc-windows-msvc.tar.zst
@@ -42,7 +41,6 @@ win64-aarch64-dxc:
     treeherder:
         symbol: TWA64(dxc)
     run:
-        clone-with: hg
         arguments:
             - "aarch64"
         toolchain-artifact: public/build/dxc-aarch64-pc-windows-msvc.tar.zst

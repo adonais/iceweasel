@@ -280,7 +280,7 @@ void SocketProcessChild::CleanUp() {
 }
 
 mozilla::ipc::IPCResult SocketProcessChild::RecvInit(
-    const SocketPorcessInitAttributes& aAttributes) {
+    const SocketProcessInitAttributes& aAttributes) {
   (void)RecvSetOffline(aAttributes.mOffline());
   (void)RecvSetConnectivity(aAttributes.mConnectivity());
   if (aAttributes.mInitSandbox()) {
@@ -505,7 +505,8 @@ mozilla::ipc::IPCResult SocketProcessChild::RecvPDNSRequestConstructor(
     const nsACString& aTrrServer, const int32_t& aPort, const uint16_t& aType,
     const OriginAttributes& aOriginAttributes,
     const nsIDNSService::DNSFlags& aFlags) {
-  RefPtr<DNSRequestChild> actor = static_cast<DNSRequestChild*>(aActor);
+  RefPtr<DNSRequestChild> actor =
+      mozilla::ipc::ActorCast<DNSRequestChild>(aActor);
   RefPtr<DNSRequestHandler> handler =
       actor->GetDNSRequest()->AsDNSRequestHandler();
   handler->DoAsyncResolve(aHost, aTrrServer, aPort, aType, aOriginAttributes,
@@ -555,7 +556,7 @@ already_AddRefed<PTRRServiceChild> SocketProcessChild::AllocPTRRServiceChild(
 mozilla::ipc::IPCResult SocketProcessChild::RecvPTRRServiceConstructor(
     PTRRServiceChild* aActor, const bool& aCaptiveIsPassed,
     const bool& aParentalControlEnabled, nsTArray<nsCString>&& aDNSSuffixList) {
-  static_cast<TRRServiceChild*>(aActor)->Init(
+  mozilla::ipc::ActorCast<TRRServiceChild>(aActor)->Init(
       aCaptiveIsPassed, aParentalControlEnabled, std::move(aDNSSuffixList));
   return IPC_OK();
 }
@@ -774,15 +775,15 @@ mozilla::ipc::IPCResult SocketProcessChild::RecvFlushFOGData(
 }
 
 mozilla::ipc::IPCResult SocketProcessChild::RecvLoadSSLTokensCache(
-    ByteBuf&& aBuf) {
-  SSLTokensCache::DeserializeFromIPCAsync(std::move(aBuf),
+    nsTArray<SSLTokensCacheRecordInfo>&& aRecords) {
+  SSLTokensCache::DeserializeFromIPCAsync(std::move(aRecords),
                                           /* aRestored */ true);
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult SocketProcessChild::RecvFlushSSLTokensCache(
     FlushSSLTokensCacheResolver&& aResolver) {
-  aResolver(mozilla::ipc::ByteBufFrom(SSLTokensCache::SerializeForIPC()));
+  aResolver(SSLTokensCache::SerializeForIPC());
   return IPC_OK();
 }
 

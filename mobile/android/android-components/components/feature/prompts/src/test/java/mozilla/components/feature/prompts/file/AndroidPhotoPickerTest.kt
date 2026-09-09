@@ -15,6 +15,8 @@ import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import mozilla.components.feature.prompts.PromptFeature
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.whenever
@@ -28,8 +30,6 @@ import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.robolectric.annotation.Config
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class AndroidPhotoPickerTest {
@@ -52,18 +52,20 @@ class AndroidPhotoPickerTest {
 
         packageManager = mock()
         whenever(
-            packageManager.resolveActivity(
-                any(Intent::class.java),
-                anyInt(),
-            ),
-        ).thenReturn(null)
+                packageManager.resolveActivity(
+                    any(Intent::class.java),
+                    anyInt(),
+                )
+            )
+            .thenReturn(null)
 
         whenever(
-            fragment.registerForActivityResult(
-                any<ActivityResultContracts.PickVisualMedia>(),
-                any(),
-            ),
-        ).thenReturn(mock())
+                fragment.registerForActivityResult(
+                    any<ActivityResultContracts.PickVisualMedia>(),
+                    any(),
+                )
+            )
+            .thenReturn(mock())
 
         whenever(context.packageManager).thenReturn(packageManager)
         androidPhotoPicker = AndroidPhotoPicker(context, singleMediaPicker, multipleMediaPicker)
@@ -88,10 +90,11 @@ class AndroidPhotoPickerTest {
         val contractCaptor = argumentCaptor<ActivityResultContract<Intent, ActivityResult>>()
         val callbackCaptor = argumentCaptor<ActivityResultCallback<ActivityResult>>()
 
-        verify(fragment).registerForActivityResult(
-            contractCaptor.capture(),
-            callbackCaptor.capture(),
-        )
+        verify(fragment)
+            .registerForActivityResult(
+                contractCaptor.capture(),
+                callbackCaptor.capture(),
+            )
 
         assertIs<ActivityResultContracts.PickVisualMedia>(contractCaptor.value)
         assertNotNull(callbackCaptor.value)
@@ -104,10 +107,11 @@ class AndroidPhotoPickerTest {
         val contractCaptor = argumentCaptor<ActivityResultContract<Intent, ActivityResult>>()
         val callbackCaptor = argumentCaptor<ActivityResultCallback<ActivityResult>>()
 
-        verify(fragment).registerForActivityResult(
-            contractCaptor.capture(),
-            callbackCaptor.capture(),
-        )
+        verify(fragment)
+            .registerForActivityResult(
+                contractCaptor.capture(),
+                callbackCaptor.capture(),
+            )
 
         assertIs<ActivityResultContracts.PickMultipleVisualMedia>(contractCaptor.value)
         assertNotNull(callbackCaptor.value)
@@ -115,20 +119,22 @@ class AndroidPhotoPickerTest {
 
     @Test
     fun `singleMediaPicker returns a valid ActivityResultLauncher`() {
-        val launcher = AndroidPhotoPicker.singleMediaPicker(
-            { fragment },
-            { promptFeature },
-        )
+        val launcher =
+            AndroidPhotoPicker.singleMediaPicker(
+                { fragment },
+                { promptFeature },
+            )
 
         assertNotNull(launcher)
     }
 
     @Test
     fun `multipleMediaPicker returns a valid ActivityResultLauncher`() {
-        val launcher = AndroidPhotoPicker.multipleMediaPicker(
-            { fragment },
-            { promptFeature },
-        )
+        val launcher =
+            AndroidPhotoPicker.multipleMediaPicker(
+                { fragment },
+                { promptFeature },
+            )
 
         assertNotNull(launcher)
     }

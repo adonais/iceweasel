@@ -230,7 +230,9 @@ add_task(async function test_smartbar_context_menu_paste_and_go_submits() {
     () => smartbar.value === ""
   );
   Assert.ok(
-    loadURL.calledWith(sinon.match({ url: PASTE_URL })),
+    loadURL.calledWith(
+      sinon.match({ loadRequest: { urlLoad: { url: PASTE_URL } } })
+    ),
     "Paste and Go loads the pasted URL"
   );
 

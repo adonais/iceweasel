@@ -15,18 +15,17 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.Favicon
 import org.mozilla.fenix.compose.list.FaviconListItem
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 private val FaviconShape = RoundedCornerShape(2.dp)
 
 /**
- * Basic tab list item used to display a Tab with its title, URL, and [Favicon] with an optional
- * close icon button at the end.
- * Use [TabListTabItem] for displaying a Tab with a thumbnail.
+ * Basic tab list item used to display a Tab with its title, URL, and [Favicon] with an optional close icon button at
+ * the end. Use [TabListTabItem] for displaying a Tab with a thumbnail.
  *
  * @param title The title of the tab.
  * @param url The url of the tab.
@@ -56,11 +55,12 @@ internal fun BasicTabListItem(
         description = url,
         faviconPainter = faviconPainter,
         onClick = onClick,
-        iconPainter = if (showCloseButton) {
-            painterResource(iconsR.drawable.mozac_ic_cross_24)
-        } else {
-            null
-        },
+        iconPainter =
+            if (showCloseButton) {
+                painterResource(iconsR.drawable.mozac_ic_cross_24)
+            } else {
+                null
+            },
         iconDescription = stringResource(R.string.tab_manager_close_tabs),
         onIconClick = onCloseButtonClick,
     )

@@ -295,7 +295,7 @@ add_task(async function test_buildProposals_cachesLabelsBySourceTabs() {
 });
 
 add_task(function test_tabInfo_resolvesFaviconAndTitle() {
-  const cached = AutoTabGroupingSuggestions._tabInfo(
+  const cached = AutoTabGroupingSuggestions.toTabInfo(
     makeTab({ url: "https://example.com/kids-bikes", label: "Kids Bikes" })
   );
   Assert.equal(
@@ -306,7 +306,7 @@ add_task(function test_tabInfo_resolvesFaviconAndTitle() {
   Assert.equal(cached.title, "Kids Bikes", "The tab label is the title");
 
   Assert.equal(
-    AutoTabGroupingSuggestions._tabInfo(
+    AutoTabGroupingSuggestions.toTabInfo(
       makeTab({ iconUrl: "https://example.com/favicon.ico" })
     ).iconUrl,
     "page-icon:https://example.com/",
@@ -314,7 +314,7 @@ add_task(function test_tabInfo_resolvesFaviconAndTitle() {
   );
 
   Assert.equal(
-    AutoTabGroupingSuggestions._tabInfo(
+    AutoTabGroupingSuggestions.toTabInfo(
       makeTab({ iconUrl: "data:image/png;base64,AAAA" })
     ).iconUrl,
     "data:image/png;base64,AAAA",
@@ -322,13 +322,13 @@ add_task(function test_tabInfo_resolvesFaviconAndTitle() {
   );
 
   Assert.equal(
-    AutoTabGroupingSuggestions._tabInfo(makeTab({ url: null })).iconUrl,
+    AutoTabGroupingSuggestions.toTabInfo(makeTab({ url: null })).iconUrl,
     "chrome://global/skin/icons/defaultFavicon.svg",
     "A tab with no URI falls back to the default favicon"
   );
 
   Assert.equal(
-    AutoTabGroupingSuggestions._tabInfo(
+    AutoTabGroupingSuggestions.toTabInfo(
       makeTab({ url: "https://example.com/", label: "" })
     ).title,
     "example.com",

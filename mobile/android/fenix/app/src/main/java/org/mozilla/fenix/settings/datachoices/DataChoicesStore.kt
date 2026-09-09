@@ -12,8 +12,9 @@ internal class DataChoicesStore(
     initialState: DataChoicesState,
     reducer: Reducer<DataChoicesState, DataChoicesAction> = ::dataChoicesReducer,
     middleware: List<Middleware<DataChoicesState, DataChoicesAction>> = listOf(),
-) : Store<DataChoicesState, DataChoicesAction>(
-    initialState = initialState,
-    reducer = reducer,
-    middleware = middleware,
-)
+) :
+    Store<DataChoicesState, DataChoicesAction>(
+        initialState = initialState,
+        reducer = reducer,
+        middleware = middleware,
+    )

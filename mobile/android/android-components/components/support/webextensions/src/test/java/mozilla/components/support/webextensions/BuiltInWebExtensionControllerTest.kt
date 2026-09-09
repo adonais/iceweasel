@@ -44,12 +44,13 @@ class BuiltInWebExtensionControllerTest {
 
         val onSuccess = argumentCaptor<((WebExtension) -> Unit)>()
         val onError = argumentCaptor<((Throwable) -> Unit)>()
-        verify(engine, times(1)).installBuiltInWebExtension(
-            eq(extensionId),
-            eq(extensionUrl),
-            onSuccess.capture(),
-            onError.capture(),
-        )
+        verify(engine, times(1))
+            .installBuiltInWebExtension(
+                eq(extensionId),
+                eq(extensionUrl),
+                onSuccess.capture(),
+                onError.capture(),
+            )
         assertFalse(BuiltInWebExtensionController.installedBuiltInExtensions.containsKey(extensionId))
 
         onSuccess.value.invoke(mock())
@@ -58,12 +59,13 @@ class BuiltInWebExtensionControllerTest {
         assertTrue(BuiltInWebExtensionController.installedBuiltInExtensions.containsKey(extensionId))
 
         controller.install(engine)
-        verify(engine, times(1)).installBuiltInWebExtension(
-            eq(extensionId),
-            eq(extensionUrl),
-            onSuccess.capture(),
-            onError.capture(),
-        )
+        verify(engine, times(1))
+            .installBuiltInWebExtension(
+                eq(extensionId),
+                eq(extensionUrl),
+                onSuccess.capture(),
+                onError.capture(),
+            )
 
         onError.value.invoke(mock())
         assertTrue(onErrorInvoked)
@@ -81,12 +83,13 @@ class BuiltInWebExtensionControllerTest {
 
         val onSuccess = argumentCaptor<((WebExtension) -> Unit)>()
         val onError = argumentCaptor<((Throwable) -> Unit)>()
-        verify(engine, never()).installBuiltInWebExtension(
-            eq(extensionId),
-            eq(extensionUrl),
-            onSuccess.capture(),
-            onError.capture(),
-        )
+        verify(engine, never())
+            .installBuiltInWebExtension(
+                eq(extensionId),
+                eq(extensionUrl),
+                onSuccess.capture(),
+                onError.capture(),
+            )
         assertTrue(onSuccessInvoked)
         assertFalse(onErrorInvoked)
     }
@@ -111,12 +114,13 @@ class BuiltInWebExtensionControllerTest {
 
         val onSuccess = argumentCaptor<((WebExtension) -> Unit)>()
         val onError = argumentCaptor<((Throwable) -> Unit)>()
-        verify(engine, times(1)).installBuiltInWebExtension(
-            eq(extensionId),
-            eq(extensionUrl),
-            onSuccess.capture(),
-            onError.capture(),
-        )
+        verify(engine, times(1))
+            .installBuiltInWebExtension(
+                eq(extensionId),
+                eq(extensionUrl),
+                onSuccess.capture(),
+                onError.capture(),
+            )
 
         val session: EngineSession = mock()
         val messageHandler: MessageHandler = mock()
@@ -168,12 +172,13 @@ class BuiltInWebExtensionControllerTest {
 
         val onSuccess = argumentCaptor<((WebExtension) -> Unit)>()
         val onError = argumentCaptor<((Throwable) -> Unit)>()
-        verify(engine, times(1)).installBuiltInWebExtension(
-            eq(extensionId),
-            eq(extensionUrl),
-            onSuccess.capture(),
-            onError.capture(),
-        )
+        verify(engine, times(1))
+            .installBuiltInWebExtension(
+                eq(extensionId),
+                eq(extensionUrl),
+                onSuccess.capture(),
+                onError.capture(),
+            )
 
         val messageHandler: MessageHandler = mock()
         controller.registerBackgroundMessageHandler(messageHandler)

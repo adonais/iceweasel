@@ -10,6 +10,7 @@
 
 #include "libyuv/row.h"
 
+#include <assert.h>
 #include <string.h>  // For memset.
 
 #include "libyuv/basic_types.h"
@@ -27,7 +28,7 @@ extern "C" {
 // by the source type (e.g. ARGB) and the mask (last parameter), or by examining
 // the source code for how much the source pointers are advanced.
 
-// Subsampled source needs to be increase by 1 of not even.
+// Subsampled source needs to be increase by 1 if not even.
 #define SS(width, shift) (((width) + (1 << (shift)) - 1) >> (shift))
 
 // Any 4 planes to 1
@@ -36,7 +37,10 @@ extern "C" {
                const uint8_t* v_buf, const uint8_t* a_buf, uint8_t* dst_ptr, \
                int width) {                                                  \
     SIMD_ALIGNED(uint8_t vin[64 * 4]);                                       \
+    static_assert(MASK + 1 <= sizeof(vin) / 4, "vin buffer too small");      \
     SIMD_ALIGNED(uint8_t vout[64]);                                          \
+    static_assert(SS(MASK + 1, DUVSHIFT) * BPP <= sizeof(vout),              \
+                  "vout buffer too small");                                  \
     memset(vin, 0, sizeof(vin)); /* for msan */                              \
     int r = width & MASK;                                                    \
     int n = width & ~MASK;                                                   \
@@ -70,7 +74,10 @@ ANY41(MergeARGBRow_Any_NEON, MergeARGBRow_NEON, 0, 0, 4, 15)
                const uint8_t* v_buf, const uint8_t* a_buf, uint8_t* dst_ptr, \
                const struct YuvConstants* yuvconstants, int width) {         \
     SIMD_ALIGNED(uint8_t vin[64 * 4]);                                       \
+    static_assert(MASK + 1 <= sizeof(vin) / 4, "vin buffer too small");      \
     SIMD_ALIGNED(uint8_t vout[64]);                                          \
+    static_assert(SS(MASK + 1, DUVSHIFT) * BPP <= sizeof(vout),              \
+                  "vout buffer too small");                                  \
     memset(vin, 0, sizeof(vin)); /* for msan */                              \
     int r = width & MASK;                                                    \
     int n = width & ~MASK;                                                   \
@@ -123,7 +130,11 @@ ANY41C(I422AlphaToARGBRow_Any_LASX, I422AlphaToARGBRow_LASX, 1, 0, 4, 15)
                uint8_t* dst_ptr, const struct YuvConstants* yuvconstants,      \
                int width) {                                                    \
     SIMD_ALIGNED(T vin[16 * 4]);                                               \
+    static_assert((MASK + 1) * SBPP <= sizeof(vin) / 4,                        \
+                  "vin buffer too small");                                     \
     SIMD_ALIGNED(uint8_t vout[64]);                                            \
+    static_assert(SS(MASK + 1, DUVSHIFT) * BPP <= sizeof(vout),                \
+                  "vout buffer too small");                                    \
     memset(vin, 0, sizeof(vin)); /* for YUY2 and msan */                       \
     int r = width & MASK;                                                      \
     int n = width & ~MASK;                                                     \
@@ -207,24 +218,27 @@ ANY41CT(I410AlphaToARGBRow_Any_AVX2,
 #undef ANY41CT
 
 // Any 4 planes to 1 plane with parameter
-#define ANY41PT(NAMEANY, ANY_SIMD, STYPE, SBPP, DTYPE, BPP, MASK)          \
-  void NAMEANY(const STYPE* r_buf, const STYPE* g_buf, const STYPE* b_buf, \
-               const STYPE* a_buf, DTYPE* dst_ptr, int depth, int width) { \
-    SIMD_ALIGNED(STYPE vin[16 * 4]);                                       \
-    SIMD_ALIGNED(DTYPE vout[64]);                                          \
-    memset(vin, 0, sizeof(vin)); /* for msan */                            \
-    int r = width & MASK;                                                  \
-    int n = width & ~MASK;                                                 \
-    if (n > 0) {                                                           \
-      ANY_SIMD(r_buf, g_buf, b_buf, a_buf, dst_ptr, depth, n);             \
-    }                                                                      \
-    ptrdiff_t np = n;                                                      \
-    memcpy(vin, r_buf + np, r * SBPP);                                     \
-    memcpy(vin + 16, g_buf + np, r * SBPP);                                \
-    memcpy(vin + 32, b_buf + np, r * SBPP);                                \
-    memcpy(vin + 48, a_buf + np, r * SBPP);                                \
-    ANY_SIMD(vin, vin + 16, vin + 32, vin + 48, vout, depth, MASK + 1);    \
-    memcpy((uint8_t*)dst_ptr + np * BPP, vout, r * BPP);                   \
+#define ANY41PT(NAMEANY, ANY_SIMD, STYPE, SBPP, DTYPE, BPP, MASK)             \
+  void NAMEANY(const STYPE* r_buf, const STYPE* g_buf, const STYPE* b_buf,    \
+               const STYPE* a_buf, DTYPE* dst_ptr, int depth, int width) {    \
+    SIMD_ALIGNED(STYPE vin[16 * 4]);                                          \
+    static_assert((MASK + 1) * SBPP <= sizeof(vin) / 4,                       \
+                  "vin buffer too small");                                    \
+    SIMD_ALIGNED(DTYPE vout[64]);                                             \
+    static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
+    memset(vin, 0, sizeof(vin)); /* for msan */                               \
+    int r = width & MASK;                                                     \
+    int n = width & ~MASK;                                                    \
+    if (n > 0) {                                                              \
+      ANY_SIMD(r_buf, g_buf, b_buf, a_buf, dst_ptr, depth, n);                \
+    }                                                                         \
+    ptrdiff_t np = n;                                                         \
+    memcpy(vin, r_buf + np, r * SBPP);                                        \
+    memcpy(vin + 16, g_buf + np, r * SBPP);                                   \
+    memcpy(vin + 32, b_buf + np, r * SBPP);                                   \
+    memcpy(vin + 48, a_buf + np, r * SBPP);                                   \
+    ANY_SIMD(vin, vin + 16, vin + 32, vin + 48, vout, depth, MASK + 1);       \
+    memcpy((uint8_t*)dst_ptr + np * BPP, vout, r * BPP);                      \
   }
 
 #ifdef HAS_MERGEAR64ROW_AVX2
@@ -262,7 +276,10 @@ ANY41PT(MergeARGB16To8Row_Any_NEON,
   void NAMEANY(const uint8_t* y_buf, const uint8_t* u_buf,                 \
                const uint8_t* v_buf, uint8_t* dst_ptr, int width) {        \
     SIMD_ALIGNED(uint8_t vin[64 * 3]);                                     \
+    static_assert(MASK + 1 <= sizeof(vin) / 3, "vin buffer too small");    \
     SIMD_ALIGNED(uint8_t vout[64]);                                        \
+    static_assert(SS(MASK + 1, DUVSHIFT) * BPP <= sizeof(vout),            \
+                  "vout buffer too small");                                \
     memset(vin, 0, sizeof(vin)); /* for YUY2 and msan */                   \
     int r = width & MASK;                                                  \
     int n = width & ~MASK;                                                 \
@@ -335,7 +352,10 @@ ANY31(BlendPlaneRow_Any_SSSE3, BlendPlaneRow_SSSE3, 0, 0, 1, 7)
                const uint8_t* v_buf, uint8_t* dst_ptr,                     \
                const struct YuvConstants* yuvconstants, int width) {       \
     SIMD_ALIGNED(uint8_t vin[128 * 3]);                                    \
+    static_assert(MASK + 1 <= sizeof(vin) / 3, "vin buffer too small");    \
     SIMD_ALIGNED(uint8_t vout[128]);                                       \
+    static_assert(SS(MASK + 1, DUVSHIFT) * BPP <= sizeof(vout),            \
+                  "vout buffer too small");                                \
     memset(vin, 0, sizeof(vin)); /* for YUY2 and msan */                   \
     int r = width & MASK;                                                  \
     int n = width & ~MASK;                                                 \
@@ -378,6 +398,9 @@ ANY31C(I422ToAR30Row_Any_SSSE3, I422ToAR30Row_SSSE3, 1, 0, 4, 7)
 #ifdef HAS_I422TOAR30ROW_AVX2
 ANY31C(I422ToAR30Row_Any_AVX2, I422ToAR30Row_AVX2, 1, 0, 4, 15)
 #endif
+#ifdef HAS_I422TOAR30ROW_AVX512BW
+ANY31C(I422ToAR30Row_Any_AVX512BW, I422ToAR30Row_AVX512BW, 1, 0, 4, 31)
+#endif
 #ifdef HAS_I444TOARGBROW_SSSE3
 ANY31C(I444ToARGBRow_Any_SSSE3, I444ToARGBRow_SSSE3, 0, 0, 4, 7)
 #endif
@@ -385,13 +408,10 @@ ANY31C(I444ToARGBRow_Any_SSSE3, I444ToARGBRow_SSSE3, 0, 0, 4, 7)
 ANY31C(I444ToRGB24Row_Any_SSSE3, I444ToRGB24Row_SSSE3, 0, 0, 3, 15)
 #endif
 #ifdef HAS_I422TORGB24ROW_AVX2
-ANY31C(I422ToRGB24Row_Any_AVX2, I422ToRGB24Row_AVX2, 1, 0, 3, 31)
+ANY31C(I422ToRGB24Row_Any_AVX2, I422ToRGB24Row_AVX2, 1, 0, 3, 15)
 #endif
 #ifdef HAS_I422TORGB24ROW_AVX512VBMI
 ANY31C(I422ToRGB24Row_Any_AVX512VBMI, I422ToRGB24Row_AVX512VBMI, 1, 0, 3, 31)
-#endif
-#ifdef HAS_I422TORGB24ROW_AVX512BW
-ANY31C(I422ToRGB24Row_Any_AVX512BW, I422ToRGB24Row_AVX512BW, 1, 0, 3, 31)
 #endif
 #ifdef HAS_I422TOARGBROW_AVX2
 ANY31C(I422ToARGBRow_Any_AVX2, I422ToARGBRow_AVX2, 1, 0, 4, 15)
@@ -460,7 +480,11 @@ ANY31C(I444ToARGBRow_Any_LSX, I444ToARGBRow_LSX, 0, 0, 4, 15)
                uint8_t* dst_ptr, const struct YuvConstants* yuvconstants,  \
                int width) {                                                \
     SIMD_ALIGNED(T vin[16 * 3]);                                           \
+    static_assert((MASK + 1) * SBPP <= sizeof(vin) / 3,                    \
+                  "vin buffer too small");                                 \
     SIMD_ALIGNED(uint8_t vout[64]);                                        \
+    static_assert(SS(MASK + 1, DUVSHIFT) * BPP <= sizeof(vout),            \
+                  "vout buffer too small");                                \
     memset(vin, 0, sizeof(vin)); /* for YUY2 and msan */                   \
     int r = width & MASK;                                                  \
     int n = width & ~MASK;                                                 \
@@ -532,23 +556,26 @@ ANY31CT(I212ToAR30Row_Any_NEON, I212ToAR30Row_NEON, 1, 0, uint16_t, 2, 4, 7)
 #undef ANY31CT
 
 // Any 3 planes to 1 plane with parameter
-#define ANY31PT(NAMEANY, ANY_SIMD, STYPE, SBPP, DTYPE, BPP, MASK)          \
-  void NAMEANY(const STYPE* r_buf, const STYPE* g_buf, const STYPE* b_buf, \
-               DTYPE* dst_ptr, int depth, int width) {                     \
-    SIMD_ALIGNED(STYPE vin[16 * 3]);                                       \
-    SIMD_ALIGNED(DTYPE vout[64]);                                          \
-    memset(vin, 0, sizeof(vin)); /* for YUY2 and msan */                   \
-    int r = width & MASK;                                                  \
-    int n = width & ~MASK;                                                 \
-    if (n > 0) {                                                           \
-      ANY_SIMD(r_buf, g_buf, b_buf, dst_ptr, depth, n);                    \
-    }                                                                      \
-    ptrdiff_t np = n;                                                      \
-    memcpy(vin, r_buf + np, r * SBPP);                                     \
-    memcpy(vin + 16, g_buf + np, r * SBPP);                                \
-    memcpy(vin + 32, b_buf + np, r * SBPP);                                \
-    ANY_SIMD(vin, vin + 16, vin + 32, vout, depth, MASK + 1);              \
-    memcpy((uint8_t*)dst_ptr + np * BPP, vout, r * BPP);                   \
+#define ANY31PT(NAMEANY, ANY_SIMD, STYPE, SBPP, DTYPE, BPP, MASK)             \
+  void NAMEANY(const STYPE* r_buf, const STYPE* g_buf, const STYPE* b_buf,    \
+               DTYPE* dst_ptr, int depth, int width) {                        \
+    SIMD_ALIGNED(STYPE vin[16 * 3]);                                          \
+    static_assert((MASK + 1) * SBPP <= sizeof(vin) / 3,                       \
+                  "vin buffer too small");                                    \
+    SIMD_ALIGNED(DTYPE vout[64]);                                             \
+    static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
+    memset(vin, 0, sizeof(vin)); /* for YUY2 and msan */                      \
+    int r = width & MASK;                                                     \
+    int n = width & ~MASK;                                                    \
+    if (n > 0) {                                                              \
+      ANY_SIMD(r_buf, g_buf, b_buf, dst_ptr, depth, n);                       \
+    }                                                                         \
+    ptrdiff_t np = n;                                                         \
+    memcpy(vin, r_buf + np, r * SBPP);                                        \
+    memcpy(vin + 16, g_buf + np, r * SBPP);                                   \
+    memcpy(vin + 32, b_buf + np, r * SBPP);                                   \
+    ANY_SIMD(vin, vin + 16, vin + 32, vout, depth, MASK + 1);                 \
+    memcpy((uint8_t*)dst_ptr + np * BPP, vout, r * BPP);                      \
   }
 
 #ifdef HAS_MERGEXR30ROW_AVX2
@@ -601,7 +628,12 @@ ANY31PT(MergeXRGB16To8Row_Any_NEON,
   void NAMEANY(const uint8_t* y_buf, const uint8_t* uv_buf, uint8_t* dst_ptr, \
                int width) {                                                   \
     SIMD_ALIGNED(uint8_t vin[128 * 2]);                                       \
+    static_assert((MASK + 1) * SBPP <= sizeof(vin) / 2,                       \
+                  "vin buffer too small");                                    \
+    static_assert(SS(MASK + 1, UVSHIFT) * SBPP2 <= sizeof(vin) / 2,           \
+                  "vin buffer too small");                                    \
     SIMD_ALIGNED(uint8_t vout[128]);                                          \
+    static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
     memset(vin, 0, sizeof(vin)); /* for msan */                               \
     int r = width & MASK;                                                     \
     int n = width & ~MASK;                                                    \
@@ -721,8 +753,8 @@ ANY21(SobelXYRow_Any_LSX, SobelXYRow_LSX, 0, 1, 1, 4, 15)
 #define ANY21S(NAMEANY, ANY_SIMD, SBPP, BPP, MASK)                        \
   void NAMEANY(const uint8_t* src_yuy2, int stride_yuy2, uint8_t* dst_uv, \
                int width) {                                               \
-    SIMD_ALIGNED(uint8_t vin[32 * 2]);                                    \
-    SIMD_ALIGNED(uint8_t vout[32]);                                       \
+    SIMD_ALIGNED(uint8_t vin[(MASK + 1) * SBPP * 2]);                     \
+    SIMD_ALIGNED(uint8_t vout[(MASK + 1) * BPP]);                         \
     memset(vin, 0, sizeof(vin)); /* for msan */                           \
     int awidth = (width + 1) / 2;                                         \
     int r = awidth & MASK;                                                \
@@ -732,8 +764,9 @@ ANY21(SobelXYRow_Any_LSX, SobelXYRow_LSX, 0, 1, 1, 4, 15)
     }                                                                     \
     ptrdiff_t np = n;                                                     \
     memcpy(vin, src_yuy2 + np * SBPP, r * SBPP);                          \
-    memcpy(vin + 32, src_yuy2 + stride_yuy2 + np * SBPP, r * SBPP);       \
-    ANY_SIMD(vin, 32, vout, MASK + 1);                                    \
+    memcpy(vin + (MASK + 1) * SBPP, src_yuy2 + stride_yuy2 + np * SBPP,   \
+           r * SBPP);                                                     \
+    ANY_SIMD(vin, (MASK + 1) * SBPP, vout, MASK + 1);                     \
     memcpy(dst_uv + np * BPP, vout, r * BPP);                             \
   }
 
@@ -752,7 +785,12 @@ ANY21S(YUY2ToNVUVRow_Any_AVX2, YUY2ToNVUVRow_AVX2, 4, 2, 15)
   void NAMEANY(const uint8_t* y_buf, const uint8_t* uv_buf, uint8_t* dst_ptr, \
                const struct YuvConstants* yuvconstants, int width) {          \
     SIMD_ALIGNED(uint8_t vin[128 * 2]);                                       \
+    static_assert((MASK + 1) * SBPP <= sizeof(vin) / 2,                       \
+                  "vin buffer too small");                                    \
+    static_assert(SS(MASK + 1, UVSHIFT) * SBPP2 <= sizeof(vin) / 2,           \
+                  "vin buffer too small");                                    \
     SIMD_ALIGNED(uint8_t vout[128]);                                          \
+    static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
     memset(vin, 0, sizeof(vin)); /* for msan */                               \
     int r = width & MASK;                                                     \
     int n = width & ~MASK;                                                    \
@@ -837,8 +875,12 @@ ANY21C(NV12ToRGB565Row_Any_LASX, NV12ToRGB565Row_LASX, 1, 1, 2, 2, 15)
 #define ANY21CT(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, T, SBPP, BPP, MASK)      \
   void NAMEANY(const T* y_buf, const T* uv_buf, uint8_t* dst_ptr,              \
                const struct YuvConstants* yuvconstants, int width) {           \
-    SIMD_ALIGNED(T vin[16 * 2]);                                               \
+    SIMD_ALIGNED(T vin[32 * 2]);                                               \
+    static_assert(SS(MASK + 1, UVSHIFT) * SBPP * 2 <= sizeof(vin) / 2,         \
+                  "vin buffer too small");                                     \
     SIMD_ALIGNED(uint8_t vout[64]);                                            \
+    static_assert(SS(MASK + 1, DUVSHIFT) * BPP <= sizeof(vout),                \
+                  "vout buffer too small");                                    \
     memset(vin, 0, sizeof(vin)); /* for msan */                                \
     int r = width & MASK;                                                      \
     int n = width & ~MASK;                                                     \
@@ -847,8 +889,8 @@ ANY21C(NV12ToRGB565Row_Any_LASX, NV12ToRGB565Row_LASX, 1, 1, 2, 2, 15)
     }                                                                          \
     ptrdiff_t np = n;                                                          \
     memcpy(vin, y_buf + np, r * SBPP);                                         \
-    memcpy(vin + 16, uv_buf + 2 * (np >> UVSHIFT), SS(r, UVSHIFT) * SBPP * 2); \
-    ANY_SIMD(vin, vin + 16, vout, yuvconstants, MASK + 1);                     \
+    memcpy(vin + 32, uv_buf + 2 * (np >> UVSHIFT), SS(r, UVSHIFT) * SBPP * 2); \
+    ANY_SIMD(vin, vin + 32, vout, yuvconstants, MASK + 1);                     \
     memcpy(dst_ptr + (np >> DUVSHIFT) * BPP, vout, SS(r, DUVSHIFT) * BPP);     \
   }
 
@@ -896,7 +938,11 @@ ANY21CT(P410ToARGBRow_Any_NEON, P410ToARGBRow_NEON, 0, 0, uint16_t, 2, 4, 7)
   void NAMEANY(const T* src_u, const T* src_v, T* dst_uv, int depth, \
                int width) {                                          \
     SIMD_ALIGNED(T vin[16 * 2]);                                     \
+    static_assert((MASK + 1) * BPP <= sizeof(vin) / 2,               \
+                  "vin buffer too small");                           \
     SIMD_ALIGNED(T vout[16]);                                        \
+    static_assert((MASK + 1) * BPP * 2 <= sizeof(vout),              \
+                  "vout buffer too small");                          \
     memset(vin, 0, sizeof(vin)); /* for msan */                      \
     int r = width & MASK;                                            \
     int n = width & ~MASK;                                           \
@@ -920,20 +966,23 @@ ANY21PT(MergeUVRow_16_Any_NEON, MergeUVRow_16_NEON, uint16_t, 2, 7)
 #undef ANY21CT
 
 // Any 1 to 1.
-#define ANY11(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, BPP, MASK)                \
-  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_ptr, int width) {     \
-    SIMD_ALIGNED(uint8_t vin[256]);                                       \
-    SIMD_ALIGNED(uint8_t vout[256]);                                      \
-    memset(vin, 0, sizeof(vin)); /* for YUY2 and msan */                  \
-    int r = width & MASK;                                                 \
-    int n = width & ~MASK;                                                \
-    if (n > 0) {                                                          \
-      ANY_SIMD(src_ptr, dst_ptr, n);                                      \
-    }                                                                     \
-    ptrdiff_t np = n;                                                     \
-    memcpy(vin, src_ptr + (np >> UVSHIFT) * SBPP, SS(r, UVSHIFT) * SBPP); \
-    ANY_SIMD(vin, vout, MASK + 1);                                        \
-    memcpy(dst_ptr + np * BPP, vout, r * BPP);                            \
+#define ANY11(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, BPP, MASK)                    \
+  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_ptr, int width) {         \
+    SIMD_ALIGNED(uint8_t vin[256]);                                           \
+    static_assert(SS(MASK + 1, UVSHIFT) * SBPP <= sizeof(vin),                \
+                  "vin buffer too small");                                    \
+    SIMD_ALIGNED(uint8_t vout[256]);                                          \
+    static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
+    memset(vin, 0, sizeof(vin)); /* for YUY2 and msan */                      \
+    int r = width & MASK;                                                     \
+    int n = width & ~MASK;                                                    \
+    if (n > 0) {                                                              \
+      ANY_SIMD(src_ptr, dst_ptr, n);                                          \
+    }                                                                         \
+    ptrdiff_t np = n;                                                         \
+    memcpy(vin, src_ptr + (np >> UVSHIFT) * SBPP, SS(r, UVSHIFT) * SBPP);     \
+    ANY_SIMD(vin, vout, MASK + 1);                                            \
+    memcpy(dst_ptr + np * BPP, vout, r * BPP);                                \
   }
 
 #ifdef HAS_COPYROW_AVX512BW
@@ -1057,191 +1106,18 @@ ANY11(RAWToRGB24Row_Any_NEON, RAWToRGB24Row_NEON, 0, 3, 3, 7)
 #if defined(HAS_RAWTORGB24ROW_LSX)
 ANY11(RAWToRGB24Row_Any_LSX, RAWToRGB24Row_LSX, 0, 3, 3, 15)
 #endif
-#ifdef HAS_ARGBTOYROW_AVX2
-ANY11(ARGBToYRow_Any_AVX2, ARGBToYRow_AVX2, 0, 4, 1, 31)
-#endif
-#ifdef HAS_ABGRTOYROW_AVX2
-ANY11(ABGRToYRow_Any_AVX2, ABGRToYRow_AVX2, 0, 4, 1, 31)
-#endif
-#ifdef HAS_ARGBTOYJROW_AVX2
-ANY11(ARGBToYJRow_Any_AVX2, ARGBToYJRow_AVX2, 0, 4, 1, 31)
-#endif
-#ifdef HAS_ABGRTOYJROW_AVX2
-ANY11(ABGRToYJRow_Any_AVX2, ABGRToYJRow_AVX2, 0, 4, 1, 31)
-#endif
-#ifdef HAS_RGBATOYJROW_AVX2
-ANY11(RGBAToYJRow_Any_AVX2, RGBAToYJRow_AVX2, 0, 4, 1, 31)
-#endif
+
 #ifdef HAS_UYVYTOYROW_AVX2
 ANY11(UYVYToYRow_Any_AVX2, UYVYToYRow_AVX2, 0, 2, 1, 31)
 #endif
 #ifdef HAS_YUY2TOYROW_AVX2
 ANY11(YUY2ToYRow_Any_AVX2, YUY2ToYRow_AVX2, 1, 4, 1, 31)
 #endif
-#ifdef HAS_ARGBTOYROW_SSSE3
-ANY11(ARGBToYRow_Any_SSSE3, ARGBToYRow_SSSE3, 0, 4, 1, 15)
-#endif
-#ifdef HAS_ARGBTOYROW_AVX512BW
-ANY11(ARGBToYRow_Any_AVX512BW, ARGBToYRow_AVX512BW, 0, 4, 1, 63)
-#endif
-#ifdef HAS_BGRATOYROW_SSSE3
-ANY11(BGRAToYRow_Any_SSSE3, BGRAToYRow_SSSE3, 0, 4, 1, 15)
-ANY11(ABGRToYRow_Any_SSSE3, ABGRToYRow_SSSE3, 0, 4, 1, 15)
-ANY11(RGBAToYRow_Any_SSSE3, RGBAToYRow_SSSE3, 0, 4, 1, 15)
-#endif
-#ifdef HAS_ARGBTOYROW_AVX512BW
-ANY11(BGRAToYRow_Any_AVX512BW, BGRAToYRow_AVX512BW, 0, 4, 1, 63)
-#endif
-#ifdef HAS_ARGBTOYROW_AVX2
-ANY11(BGRAToYRow_Any_AVX2, BGRAToYRow_AVX2, 0, 4, 1, 31)
-#endif
-#ifdef HAS_ARGBTOYROW_AVX512BW
-ANY11(RGBAToYRow_Any_AVX512BW, RGBAToYRow_AVX512BW, 0, 4, 1, 63)
-#endif
-#ifdef HAS_ARGBTOYROW_AVX2
-ANY11(RGBAToYRow_Any_AVX2, RGBAToYRow_AVX2, 0, 4, 1, 31)
-#endif
-#ifdef HAS_ARGBTOYROW_AVX512BW
-ANY11(ABGRToYRow_Any_AVX512BW, ABGRToYRow_AVX512BW, 0, 4, 1, 63)
-#endif
 #ifdef HAS_YUY2TOYROW_SSE2
 ANY11(YUY2ToYRow_Any_SSE2, YUY2ToYRow_SSE2, 1, 4, 1, 15)
 ANY11(UYVYToYRow_Any_SSE2, UYVYToYRow_SSE2, 1, 4, 1, 15)
 #endif
-#ifdef HAS_ARGBTOYJROW_SSSE3
-ANY11(ARGBToYJRow_Any_SSSE3, ARGBToYJRow_SSSE3, 0, 4, 1, 15)
-#endif
-#ifdef HAS_ARGBTOYROW_AVX512BW
-ANY11(ARGBToYJRow_Any_AVX512BW, ARGBToYJRow_AVX512BW, 0, 4, 1, 63)
-#endif
-#ifdef HAS_ABGRTOYJROW_SSSE3
-ANY11(ABGRToYJRow_Any_SSSE3, ABGRToYJRow_SSSE3, 0, 4, 1, 15)
-#endif
-#ifdef HAS_ARGBTOYROW_AVX512BW
-ANY11(ABGRToYJRow_Any_AVX512BW, ABGRToYJRow_AVX512BW, 0, 4, 1, 63)
-#endif
-#ifdef HAS_RGBATOYJROW_SSSE3
-ANY11(RGBAToYJRow_Any_SSSE3, RGBAToYJRow_SSSE3, 0, 4, 1, 15)
-#endif
-#ifdef HAS_ARGBTOYROW_AVX512BW
-ANY11(RGBAToYJRow_Any_AVX512BW, RGBAToYJRow_AVX512BW, 0, 4, 1, 63)
-#endif
-#ifdef HAS_ARGBTOYROW_NEON
-ANY11(ARGBToYRow_Any_NEON, ARGBToYRow_NEON, 0, 4, 1, 15)
-#endif
-#ifdef HAS_ARGBTOYROW_NEON_DOTPROD
-ANY11(ARGBToYRow_Any_NEON_DotProd, ARGBToYRow_NEON_DotProd, 0, 4, 1, 15)
-#endif
-#ifdef HAS_ARGBTOYROW_LSX
-ANY11(ARGBToYRow_Any_LSX, ARGBToYRow_LSX, 0, 4, 1, 15)
-#endif
-#ifdef HAS_ARGBTOYROW_LASX
-ANY11(ARGBToYRow_Any_LASX, ARGBToYRow_LASX, 0, 4, 1, 31)
-#endif
-#ifdef HAS_ARGBTOYJROW_NEON
-ANY11(ARGBToYJRow_Any_NEON, ARGBToYJRow_NEON, 0, 4, 1, 15)
-#endif
-#ifdef HAS_ARGBTOYJROW_NEON_DOTPROD
-ANY11(ARGBToYJRow_Any_NEON_DotProd, ARGBToYJRow_NEON_DotProd, 0, 4, 1, 15)
-#endif
-#ifdef HAS_ABGRTOYJROW_NEON
-ANY11(ABGRToYJRow_Any_NEON, ABGRToYJRow_NEON, 0, 4, 1, 15)
-#endif
-#ifdef HAS_ABGRTOYJROW_NEON_DOTPROD
-ANY11(ABGRToYJRow_Any_NEON_DotProd, ABGRToYJRow_NEON_DotProd, 0, 4, 1, 15)
-#endif
-#ifdef HAS_RGBATOYJROW_NEON
-ANY11(RGBAToYJRow_Any_NEON, RGBAToYJRow_NEON, 0, 4, 1, 15)
-#endif
-#ifdef HAS_RGBATOYJROW_NEON_DOTPROD
-ANY11(RGBAToYJRow_Any_NEON_DotProd, RGBAToYJRow_NEON_DotProd, 0, 4, 1, 15)
-#endif
-#ifdef HAS_ARGBTOYJROW_LSX
-ANY11(ARGBToYJRow_Any_LSX, ARGBToYJRow_LSX, 0, 4, 1, 15)
-#endif
-#ifdef HAS_RGBATOYJROW_LSX
-ANY11(RGBAToYJRow_Any_LSX, RGBAToYJRow_LSX, 0, 4, 1, 15)
-#endif
-#ifdef HAS_ABGRTOYJROW_LSX
-ANY11(ABGRToYJRow_Any_LSX, ABGRToYJRow_LSX, 0, 4, 1, 15)
-#endif
-#ifdef HAS_RGBATOYJROW_LASX
-ANY11(RGBAToYJRow_Any_LASX, RGBAToYJRow_LASX, 0, 4, 1, 31)
-#endif
-#ifdef HAS_ARGBTOYJROW_LASX
-ANY11(ARGBToYJRow_Any_LASX, ARGBToYJRow_LASX, 0, 4, 1, 31)
-#endif
-#ifdef HAS_ABGRTOYJROW_LASX
-ANY11(ABGRToYJRow_Any_LASX, ABGRToYJRow_LASX, 0, 4, 1, 31)
-#endif
-#ifdef HAS_BGRATOYROW_NEON
-ANY11(BGRAToYRow_Any_NEON, BGRAToYRow_NEON, 0, 4, 1, 15)
-#endif
-#ifdef HAS_BGRATOYROW_NEON_DOTPROD
-ANY11(BGRAToYRow_Any_NEON_DotProd, BGRAToYRow_NEON_DotProd, 0, 4, 1, 15)
-#endif
-#ifdef HAS_BGRATOYROW_LSX
-ANY11(BGRAToYRow_Any_LSX, BGRAToYRow_LSX, 0, 4, 1, 15)
-#endif
-#ifdef HAS_BGRATOYROW_LASX
-ANY11(BGRAToYRow_Any_LASX, BGRAToYRow_LASX, 0, 4, 1, 31)
-#endif
-#ifdef HAS_ABGRTOYROW_NEON
-ANY11(ABGRToYRow_Any_NEON, ABGRToYRow_NEON, 0, 4, 1, 15)
-#endif
-#ifdef HAS_ABGRTOYROW_NEON_DOTPROD
-ANY11(ABGRToYRow_Any_NEON_DotProd, ABGRToYRow_NEON_DotProd, 0, 4, 1, 15)
-#endif
-#ifdef HAS_ABGRTOYROW_LSX
-ANY11(ABGRToYRow_Any_LSX, ABGRToYRow_LSX, 0, 4, 1, 15)
-#endif
-#ifdef HAS_ABGRTOYROW_LASX
-ANY11(ABGRToYRow_Any_LASX, ABGRToYRow_LASX, 0, 4, 1, 31)
-#endif
-#ifdef HAS_RGBATOYROW_NEON
-ANY11(RGBAToYRow_Any_NEON, RGBAToYRow_NEON, 0, 4, 1, 15)
-#endif
-#ifdef HAS_RGBATOYROW_NEON_DOTPROD
-ANY11(RGBAToYRow_Any_NEON_DotProd, RGBAToYRow_NEON_DotProd, 0, 4, 1, 15)
-#endif
-#ifdef HAS_RGBATOYROW_LSX
-ANY11(RGBAToYRow_Any_LSX, RGBAToYRow_LSX, 0, 4, 1, 15)
-#endif
-#ifdef HAS_RGBATOYROW_LASX
-ANY11(RGBAToYRow_Any_LASX, RGBAToYRow_LASX, 0, 4, 1, 31)
-#endif
-#ifdef HAS_RGB24TOYROW_NEON
-#endif
-#ifdef HAS_RGB24TOYJROW_AVX2
-#endif
-#ifdef HAS_RGB24TOYJROW_SSSE3
-#endif
-#ifdef HAS_RGB24TOYJROW_NEON
-#endif
-#ifdef HAS_RGB24TOYROW_LSX
-#endif
-#ifdef HAS_RGB24TOYJROW_LSX
-#endif
-#ifdef HAS_RGB24TOYJROW_LASX
-#endif
-#ifdef HAS_RGB24TOYROW_LASX
-#endif
-#ifdef HAS_RAWTOYROW_NEON
-#endif
-#ifdef HAS_RAWTOYJROW_AVX2
-#endif
-#ifdef HAS_RAWTOYJROW_SSSE3
-#endif
-#ifdef HAS_RAWTOYJROW_NEON
-#endif
-#ifdef HAS_RAWTOYROW_LSX
-#endif
-#ifdef HAS_RAWTOYROW_LASX
-#endif
-#ifdef HAS_RAWTOYJROW_LSX
-#endif
-#ifdef HAS_RAWTOYJROW_LASX
-#endif
+
 #ifdef HAS_RGB565TOYROW_NEON
 ANY11(RGB565ToYRow_Any_NEON, RGB565ToYRow_NEON, 0, 2, 1, 15)
 #endif
@@ -1385,22 +1261,25 @@ ANY11(ARGBExtractAlphaRow_Any_LSX, ARGBExtractAlphaRow_LSX, 0, 4, 1, 15)
 #undef ANY11
 
 // Any 1 to 1 blended.  Destination is read, modify, write.
-#define ANY11B(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, BPP, MASK)               \
-  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_ptr, int width) {     \
-    SIMD_ALIGNED(uint8_t vin[64]);                                        \
-    SIMD_ALIGNED(uint8_t vout[64]);                                       \
-    memset(vin, 0, sizeof(vin));   /* for msan */                         \
-    memset(vout, 0, sizeof(vout)); /* for msan */                         \
-    int r = width & MASK;                                                 \
-    int n = width & ~MASK;                                                \
-    if (n > 0) {                                                          \
-      ANY_SIMD(src_ptr, dst_ptr, n);                                      \
-    }                                                                     \
-    ptrdiff_t np = n;                                                     \
-    memcpy(vin, src_ptr + (np >> UVSHIFT) * SBPP, SS(r, UVSHIFT) * SBPP); \
-    memcpy(vout, dst_ptr + np * BPP, r * BPP);                            \
-    ANY_SIMD(vin, vout, MASK + 1);                                        \
-    memcpy(dst_ptr + np * BPP, vout, r * BPP);                            \
+#define ANY11B(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, BPP, MASK)                   \
+  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_ptr, int width) {         \
+    SIMD_ALIGNED(uint8_t vin[64]);                                            \
+    static_assert(SS(MASK + 1, UVSHIFT) * SBPP <= sizeof(vin),                \
+                  "vin buffer too small");                                    \
+    SIMD_ALIGNED(uint8_t vout[64]);                                           \
+    static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
+    memset(vin, 0, sizeof(vin));   /* for msan */                             \
+    memset(vout, 0, sizeof(vout)); /* for msan */                             \
+    int r = width & MASK;                                                     \
+    int n = width & ~MASK;                                                    \
+    if (n > 0) {                                                              \
+      ANY_SIMD(src_ptr, dst_ptr, n);                                          \
+    }                                                                         \
+    ptrdiff_t np = n;                                                         \
+    memcpy(vin, src_ptr + (np >> UVSHIFT) * SBPP, SS(r, UVSHIFT) * SBPP);     \
+    memcpy(vout, dst_ptr + np * BPP, r * BPP);                                \
+    ANY_SIMD(vin, vout, MASK + 1);                                            \
+    memcpy(dst_ptr + np * BPP, vout, r * BPP);                                \
   }
 
 #ifdef HAS_ARGBCOPYALPHAROW_AVX2
@@ -1593,20 +1472,22 @@ ANY11T(AB64ToARGBRow_Any_NEON, AB64ToARGBRow_NEON, 8, 4, uint16_t, uint8_t, 7)
 #undef ANY11T
 
 // Any 1 to 1 with parameter and shorts.  BPP measures in shorts.
-#define ANY11C(NAMEANY, ANY_SIMD, SBPP, BPP, STYPE, DTYPE, MASK)             \
-  void NAMEANY(const STYPE* src_ptr, DTYPE* dst_ptr, int scale, int width) { \
-    SIMD_ALIGNED(STYPE vin[64]);                                             \
-    SIMD_ALIGNED(DTYPE vout[64]);                                            \
-    memset(vin, 0, sizeof(vin)); /* for msan */                              \
-    int r = width & MASK;                                                    \
-    int n = width & ~MASK;                                                   \
-    if (n > 0) {                                                             \
-      ANY_SIMD(src_ptr, dst_ptr, scale, n);                                  \
-    }                                                                        \
-    ptrdiff_t np = n;                                                        \
-    memcpy(vin, src_ptr + np, r * SBPP);                                     \
-    ANY_SIMD(vin, vout, scale, MASK + 1);                                    \
-    memcpy(dst_ptr + np, vout, r * BPP);                                     \
+#define ANY11C(NAMEANY, ANY_SIMD, SBPP, BPP, STYPE, DTYPE, MASK)              \
+  void NAMEANY(const STYPE* src_ptr, DTYPE* dst_ptr, int scale, int width) {  \
+    SIMD_ALIGNED(STYPE vin[64]);                                              \
+    static_assert((MASK + 1) * SBPP <= sizeof(vin), "vin buffer too small");  \
+    SIMD_ALIGNED(DTYPE vout[64]);                                             \
+    static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
+    memset(vin, 0, sizeof(vin)); /* for msan */                               \
+    int r = width & MASK;                                                     \
+    int n = width & ~MASK;                                                    \
+    if (n > 0) {                                                              \
+      ANY_SIMD(src_ptr, dst_ptr, scale, n);                                   \
+    }                                                                         \
+    ptrdiff_t np = n;                                                         \
+    memcpy(vin, src_ptr + np, r * SBPP);                                      \
+    ANY_SIMD(vin, vout, scale, MASK + 1);                                     \
+    memcpy(dst_ptr + np, vout, r * BPP);                                      \
   }
 
 #ifdef HAS_CONVERT16TO8ROW_SSSE3
@@ -1699,21 +1580,23 @@ ANY11C(DivideRow_16_Any_NEON, DivideRow_16_NEON, 2, 2, uint16_t, uint16_t, 15)
 #undef ANY11C
 
 // Any 1 to 1 with parameter and shorts.  BPP measures in shorts.
-#define ANY11SB(NAMEANY, ANY_SIMD, SBPP, BPP, STYPE, DTYPE, MASK)         \
-  void NAMEANY(const STYPE* src_ptr, DTYPE* dst_ptr, int scale, int bias, \
-               int width) {                                               \
-    SIMD_ALIGNED(STYPE vin[64]);                                          \
-    SIMD_ALIGNED(DTYPE vout[64]);                                         \
-    memset(vin, 0, sizeof(vin)); /* for msan */                           \
-    int r = width & MASK;                                                 \
-    int n = width & ~MASK;                                                \
-    if (n > 0) {                                                          \
-      ANY_SIMD(src_ptr, dst_ptr, scale, bias, n);                         \
-    }                                                                     \
-    ptrdiff_t np = n;                                                     \
-    memcpy(vin, src_ptr + np, r * SBPP);                                  \
-    ANY_SIMD(vin, vout, scale, bias, MASK + 1);                           \
-    memcpy(dst_ptr + np, vout, r * BPP);                                  \
+#define ANY11SB(NAMEANY, ANY_SIMD, SBPP, BPP, STYPE, DTYPE, MASK)             \
+  void NAMEANY(const STYPE* src_ptr, DTYPE* dst_ptr, int scale, int bias,     \
+               int width) {                                                   \
+    SIMD_ALIGNED(STYPE vin[64]);                                              \
+    static_assert((MASK + 1) * SBPP <= sizeof(vin), "vin buffer too small");  \
+    SIMD_ALIGNED(DTYPE vout[64]);                                             \
+    static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
+    memset(vin, 0, sizeof(vin)); /* for msan */                               \
+    int r = width & MASK;                                                     \
+    int n = width & ~MASK;                                                    \
+    if (n > 0) {                                                              \
+      ANY_SIMD(src_ptr, dst_ptr, scale, bias, n);                             \
+    }                                                                         \
+    ptrdiff_t np = n;                                                         \
+    memcpy(vin, src_ptr + np, r * SBPP);                                      \
+    ANY_SIMD(vin, vout, scale, bias, MASK + 1);                               \
+    memcpy(dst_ptr + np, vout, r * BPP);                                      \
   }
 
 #ifdef HAS_CONVERT8TO8ROW_NEON
@@ -1737,20 +1620,22 @@ ANY11SB(Convert8To8Row_Any_AVX2,
 #undef ANY11B
 
 // Any 1 to 1 with parameter and shorts to byte.  BPP measures in shorts.
-#define ANY11P16(NAMEANY, ANY_SIMD, ST, T, SBPP, BPP, MASK)             \
-  void NAMEANY(const ST* src_ptr, T* dst_ptr, float param, int width) { \
-    SIMD_ALIGNED(ST vin[32]);                                           \
-    SIMD_ALIGNED(T vout[32]);                                           \
-    memset(vin, 0, sizeof(vin)); /* for msan */                         \
-    int r = width & MASK;                                               \
-    int n = width & ~MASK;                                              \
-    if (n > 0) {                                                        \
-      ANY_SIMD(src_ptr, dst_ptr, param, n);                             \
-    }                                                                   \
-    ptrdiff_t np = n;                                                   \
-    memcpy(vin, src_ptr + np, r * SBPP);                                \
-    ANY_SIMD(vin, vout, param, MASK + 1);                               \
-    memcpy(dst_ptr + np, vout, r * BPP);                                \
+#define ANY11P16(NAMEANY, ANY_SIMD, ST, T, SBPP, BPP, MASK)                   \
+  void NAMEANY(const ST* src_ptr, T* dst_ptr, float param, int width) {       \
+    SIMD_ALIGNED(ST vin[32]);                                                 \
+    static_assert((MASK + 1) * SBPP <= sizeof(vin), "vin buffer too small");  \
+    SIMD_ALIGNED(T vout[32]);                                                 \
+    static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
+    memset(vin, 0, sizeof(vin)); /* for msan */                               \
+    int r = width & MASK;                                                     \
+    int n = width & ~MASK;                                                    \
+    if (n > 0) {                                                              \
+      ANY_SIMD(src_ptr, dst_ptr, param, n);                                   \
+    }                                                                         \
+    ptrdiff_t np = n;                                                         \
+    memcpy(vin, src_ptr + np, r * SBPP);                                      \
+    ANY_SIMD(vin, vout, param, MASK + 1);                                     \
+    memcpy(dst_ptr + np, vout, r * BPP);                                      \
   }
 
 #ifdef HAS_HALFFLOATROW_AVX2
@@ -1778,21 +1663,24 @@ ANY11P16(HalfFloatRow_Any_LSX, HalfFloatRow_LSX, uint16_t, uint16_t, 2, 2, 31)
 #undef ANY11P16
 
 // Any 1 to 1 with yuvconstants
-#define ANY11C(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, BPP, MASK)               \
-  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_ptr,                  \
-               const struct YuvConstants* yuvconstants, int width) {      \
-    SIMD_ALIGNED(uint8_t vin[256]);                                       \
-    SIMD_ALIGNED(uint8_t vout[256]);                                      \
-    memset(vin, 0, sizeof(vin)); /* for YUY2 and msan */                  \
-    int r = width & MASK;                                                 \
-    int n = width & ~MASK;                                                \
-    if (n > 0) {                                                          \
-      ANY_SIMD(src_ptr, dst_ptr, yuvconstants, n);                        \
-    }                                                                     \
-    ptrdiff_t np = n;                                                     \
-    memcpy(vin, src_ptr + (np >> UVSHIFT) * SBPP, SS(r, UVSHIFT) * SBPP); \
-    ANY_SIMD(vin, vout, yuvconstants, MASK + 1);                          \
-    memcpy(dst_ptr + np * BPP, vout, r * BPP);                            \
+#define ANY11C(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, BPP, MASK)                   \
+  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_ptr,                      \
+               const struct YuvConstants* yuvconstants, int width) {          \
+    SIMD_ALIGNED(uint8_t vin[256]);                                           \
+    static_assert(SS(MASK + 1, UVSHIFT) * SBPP <= sizeof(vin),                \
+                  "vin buffer too small");                                    \
+    SIMD_ALIGNED(uint8_t vout[256]);                                          \
+    static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
+    memset(vin, 0, sizeof(vin)); /* for YUY2 and msan */                      \
+    int r = width & MASK;                                                     \
+    int n = width & ~MASK;                                                    \
+    if (n > 0) {                                                              \
+      ANY_SIMD(src_ptr, dst_ptr, yuvconstants, n);                            \
+    }                                                                         \
+    ptrdiff_t np = n;                                                         \
+    memcpy(vin, src_ptr + (np >> UVSHIFT) * SBPP, SS(r, UVSHIFT) * SBPP);     \
+    ANY_SIMD(vin, vout, yuvconstants, MASK + 1);                              \
+    memcpy(dst_ptr + np * BPP, vout, r * BPP);                                \
   }
 
 #if defined(HAS_YUY2TOARGBROW_SSSE3)
@@ -1818,7 +1706,11 @@ ANY11C(UYVYToARGBRow_Any_LSX, UYVYToARGBRow_LSX, 1, 4, 4, 7)
   void NAMEANY(TD* dst_ptr, const TS* src_ptr, ptrdiff_t src_stride, \
                int width, int source_y_fraction) {                   \
     SIMD_ALIGNED(TS vin[64 * 2]);                                    \
+    static_assert((MASK + 1) * SBPP * sizeof(TS) <= sizeof(vin) / 2, \
+                  "vin buffer too small");                           \
     SIMD_ALIGNED(TD vout[64]);                                       \
+    static_assert((MASK + 1) * BPP * sizeof(TD) <= sizeof(vout),     \
+                  "vout buffer too small");                          \
     memset(vin, 0, sizeof(vin)); /* for msan */                      \
     int r = width & MASK;                                            \
     int n = width & ~MASK;                                           \
@@ -1865,64 +1757,99 @@ ANY11I(InterpolateRow_16_Any_AVX2,
 #endif
 #undef ANY11I
 
-// Any 1 to 1 interpolate with scale param
-#define ANY11IS(NAMEANY, ANY_SIMD, TD, TS, SBPP, BPP, MASK)                \
-  void NAMEANY(TD* dst_ptr, const TS* src_ptr, ptrdiff_t src_stride,       \
-               int scale, int width, int source_y_fraction) {              \
-    SIMD_ALIGNED(TS vin[64 * 2]);                                          \
-    SIMD_ALIGNED(TD vout[64]);                                             \
-    memset(vin, 0, sizeof(vin)); /* for msan */                            \
-    int r = width & MASK;                                                  \
-    int n = width & ~MASK;                                                 \
-    if (n > 0) {                                                           \
-      ANY_SIMD(dst_ptr, src_ptr, src_stride, scale, n, source_y_fraction); \
-    }                                                                      \
-    ptrdiff_t np = n;                                                      \
-    memcpy(vin, src_ptr + np * SBPP, r * SBPP * sizeof(TS));               \
-    if (source_y_fraction) {                                               \
-      memcpy(vin + 64, src_ptr + src_stride + np * SBPP,                   \
-             r * SBPP * sizeof(TS));                                       \
-    }                                                                      \
-    ANY_SIMD(vout, vin, 64, scale, MASK + 1, source_y_fraction);           \
-    memcpy(dst_ptr + np * BPP, vout, r * BPP * sizeof(TD));                \
+// Any 1 to 1 half row with scale param
+#define ANY11HS(NAMEANY, ANY_SIMD, TS, TD, MASK)                               \
+  void NAMEANY(const TS* src_ptr, ptrdiff_t src_stride, TD* dst_ptr,           \
+               int scale, int width) {                                         \
+    SIMD_ALIGNED(TS vin[64 * 2]);                                              \
+    static_assert((MASK + 1) * sizeof(TS) <= sizeof(vin) / 2,                  \
+                  "vin buffer too small");                                     \
+    SIMD_ALIGNED(TD vout[64]);                                                 \
+    static_assert((MASK + 1) * sizeof(TD) <= sizeof(vout),                     \
+                  "vout buffer too small");                                    \
+    memset(vin, 0, sizeof(vin)); /* for msan */                                \
+    int r = width & MASK;                                                      \
+    int n = width & ~MASK;                                                     \
+    if (n > 0) {                                                               \
+      ANY_SIMD(src_ptr, src_stride, dst_ptr, scale, n);                        \
+    }                                                                          \
+    ptrdiff_t np = n;                                                          \
+    memcpy(vin, src_ptr + np, r * sizeof(TS));                                 \
+    memcpy(vin + 64, src_ptr + src_stride + np, r * sizeof(TS));               \
+    ANY_SIMD(vin, 64, vout, scale, MASK + 1);                                  \
+    memcpy(dst_ptr + np, vout, r * sizeof(TD));                                \
   }
 
-#ifdef HAS_INTERPOLATEROW_16TO8_NEON
-ANY11IS(InterpolateRow_16To8_Any_NEON,
-        InterpolateRow_16To8_NEON,
-        uint8_t,
-        uint16_t,
-        1,
-        1,
-        7)
+#ifdef HAS_HALFROW_16TO8_SSSE3
+ANY11HS(HalfRow_16To8_Any_SSSE3, HalfRow_16To8_SSSE3, uint16_t, uint8_t, 15)
 #endif
-#ifdef HAS_INTERPOLATEROW_16TO8_AVX2
-ANY11IS(InterpolateRow_16To8_Any_AVX2,
-        InterpolateRow_16To8_AVX2,
-        uint8_t,
-        uint16_t,
-        1,
-        1,
-        31)
+#ifdef HAS_HALFROW_16TO8_AVX2
+ANY11HS(HalfRow_16To8_Any_AVX2, HalfRow_16To8_AVX2, uint16_t, uint8_t, 31)
+#endif
+#ifdef HAS_HALFROW_16TO8_AVX512BW
+ANY11HS(HalfRow_16To8_Any_AVX512BW, HalfRow_16To8_AVX512BW, uint16_t, uint8_t, 63)
+#endif
+#ifdef HAS_HALFROW_16TO8_NEON
+ANY11HS(HalfRow_16To8_Any_NEON, HalfRow_16To8_NEON, uint16_t, uint8_t, 15)
 #endif
 
-#undef ANY11IS
+#undef ANY11HS
+
+// Any 2 to 1 half-width row with scale param
+#define ANY11HWS(NAMEANY, ANY_SIMD, TS, TD, MASK)                              \
+  void NAMEANY(const TS* src_ptr, ptrdiff_t src_stride, TD* dst_ptr,           \
+               int scale, int width) {                                         \
+    SIMD_ALIGNED(TS vin[128 * 2]);                                             \
+    static_assert((MASK + 1) * 2 * sizeof(TS) <= sizeof(vin),                  \
+                  "vin buffer too small");                                     \
+    SIMD_ALIGNED(TD vout[64]);                                                 \
+    static_assert((MASK + 1) * sizeof(TD) <= sizeof(vout),                     \
+                  "vout buffer too small");                                    \
+    memset(vin, 0, sizeof(vin)); /* for msan */                                \
+    int r = width & MASK;                                                      \
+    int n = width & ~MASK;                                                     \
+    if (n > 0) {                                                               \
+      ANY_SIMD(src_ptr, src_stride, dst_ptr, scale, n);                        \
+    }                                                                          \
+    ptrdiff_t np = n;                                                          \
+    memcpy(vin, src_ptr + np * 2, r * 2 * sizeof(TS));                         \
+    memcpy(vin + 128, src_ptr + src_stride + np * 2, r * 2 * sizeof(TS));      \
+    ANY_SIMD(vin, 128, vout, scale, MASK + 1);                                 \
+    memcpy(dst_ptr + np, vout, r * sizeof(TD));                                \
+  }
+
+#ifdef HAS_HALFWIDTHROW_16TO8_SSSE3
+ANY11HWS(HalfWidthRow_16To8_Any_SSSE3, HalfWidthRow_16To8_SSSE3, uint16_t, uint8_t, 7)
+#endif
+#ifdef HAS_HALFWIDTHROW_16TO8_AVX2
+ANY11HWS(HalfWidthRow_16To8_Any_AVX2, HalfWidthRow_16To8_AVX2, uint16_t, uint8_t, 15)
+#endif
+#ifdef HAS_HALFWIDTHROW_16TO8_AVX512BW
+ANY11HWS(HalfWidthRow_16To8_Any_AVX512BW, HalfWidthRow_16To8_AVX512BW, uint16_t, uint8_t, 31)
+#endif
+#ifdef HAS_HALFWIDTHROW_16TO8_NEON
+ANY11HWS(HalfWidthRow_16To8_Any_NEON, HalfWidthRow_16To8_NEON, uint16_t, uint8_t, 7)
+#endif
+
+#undef ANY11HWS
 
 // Any 1 to 1 mirror.
-#define ANY11M(NAMEANY, ANY_SIMD, BPP, MASK)                          \
-  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_ptr, int width) { \
-    SIMD_ALIGNED(uint8_t vin[128]);                                   \
-    SIMD_ALIGNED(uint8_t vout[128]);                                  \
-    memset(vin, 0, sizeof(vin)); /* for msan */                       \
-    int r = width & MASK;                                             \
-    int n = width & ~MASK;                                            \
-    if (n > 0) {                                                      \
-      ANY_SIMD(src_ptr + r * BPP, dst_ptr, n);                        \
-    }                                                                 \
-    ptrdiff_t np = n;                                                 \
-    memcpy(vin, src_ptr, r * BPP);                                    \
-    ANY_SIMD(vin, vout, MASK + 1);                                    \
-    memcpy(dst_ptr + np * BPP, vout + (MASK + 1 - r) * BPP, r * BPP); \
+#define ANY11M(NAMEANY, ANY_SIMD, BPP, MASK)                                  \
+  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_ptr, int width) {         \
+    SIMD_ALIGNED(uint8_t vin[128]);                                           \
+    static_assert((MASK + 1) * BPP <= sizeof(vin), "vin buffer too small");   \
+    SIMD_ALIGNED(uint8_t vout[128]);                                          \
+    static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
+    memset(vin, 0, sizeof(vin)); /* for msan */                               \
+    int r = width & MASK;                                                     \
+    int n = width & ~MASK;                                                    \
+    if (n > 0) {                                                              \
+      ANY_SIMD(src_ptr + r * BPP, dst_ptr, n);                                \
+    }                                                                         \
+    ptrdiff_t np = n;                                                         \
+    memcpy(vin, src_ptr, r * BPP);                                            \
+    ANY_SIMD(vin, vout, MASK + 1);                                            \
+    memcpy(dst_ptr + np * BPP, vout + (MASK + 1 - r) * BPP, r * BPP);         \
   }
 
 #ifdef HAS_MIRRORROW_AVX512BW
@@ -1979,17 +1906,18 @@ ANY11M(RGB24MirrorRow_Any_NEON, RGB24MirrorRow_NEON, 3, 15)
 #undef ANY11M
 
 // Any 1 plane. (memset)
-#define ANY1(NAMEANY, ANY_SIMD, T, BPP, MASK)        \
-  void NAMEANY(uint8_t* dst_ptr, T v32, int width) { \
-    SIMD_ALIGNED(uint8_t vout[64]);                  \
-    int r = width & MASK;                            \
-    int n = width & ~MASK;                           \
-    if (n > 0) {                                     \
-      ANY_SIMD(dst_ptr, v32, n);                     \
-    }                                                \
-    ptrdiff_t np = n;                                \
-    ANY_SIMD(vout, v32, MASK + 1);                   \
-    memcpy(dst_ptr + np * BPP, vout, r * BPP);       \
+#define ANY1(NAMEANY, ANY_SIMD, T, BPP, MASK)                                 \
+  void NAMEANY(uint8_t* dst_ptr, T v32, int width) {                          \
+    SIMD_ALIGNED(uint8_t vout[64]);                                           \
+    static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
+    int r = width & MASK;                                                     \
+    int n = width & ~MASK;                                                    \
+    if (n > 0) {                                                              \
+      ANY_SIMD(dst_ptr, v32, n);                                              \
+    }                                                                         \
+    ptrdiff_t np = n;                                                         \
+    ANY_SIMD(vout, v32, MASK + 1);                                            \
+    memcpy(dst_ptr + np * BPP, vout, r * BPP);                                \
   }
 
 #ifdef HAS_SETROW_X86
@@ -2014,7 +1942,11 @@ ANY1(ARGBSetRow_Any_LSX, ARGBSetRow_LSX, uint32_t, 4, 3)
   void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_u, uint8_t* dst_v,  \
                int width) {                                             \
     SIMD_ALIGNED(uint8_t vin[256]);                                     \
+    static_assert(SS(MASK + 1, UVSHIFT) * BPP <= sizeof(vin),           \
+                  "vin buffer too small");                              \
     SIMD_ALIGNED(uint8_t vout[256 * 2]);                                \
+    static_assert(SS(MASK + 1, DUVSHIFT) <= sizeof(vout) / 2,           \
+                  "vout buffer too small");                             \
     memset(vin, 0, sizeof(vin)); /* for msan */                         \
     int r = width & MASK;                                               \
     int n = width & ~MASK;                                              \
@@ -2043,24 +1975,6 @@ ANY12(SplitUVRow_Any_NEON, SplitUVRow_NEON, 0, 2, 0, 15)
 #ifdef HAS_SPLITUVROW_LSX
 ANY12(SplitUVRow_Any_LSX, SplitUVRow_LSX, 0, 2, 0, 31)
 #endif
-#ifdef HAS_ARGBTOUV444ROW_SSSE3
-ANY12(ARGBToUV444Row_Any_SSSE3, ARGBToUV444Row_SSSE3, 0, 4, 0, 15)
-#endif
-#ifdef HAS_ARGBTOUVJ444ROW_SSSE3
-ANY12(ARGBToUVJ444Row_Any_SSSE3, ARGBToUVJ444Row_SSSE3, 0, 4, 0, 15)
-#endif
-#ifdef HAS_ARGBTOUV444ROW_AVX2
-ANY12(ARGBToUV444Row_Any_AVX2, ARGBToUV444Row_AVX2, 0, 4, 0, 31)
-#endif
-#ifdef HAS_ARGBTOUV444ROW_AVX512BW
-ANY12(ARGBToUV444Row_Any_AVX512BW, ARGBToUV444Row_AVX512BW, 0, 4, 0, 63)
-#endif
-#ifdef HAS_ARGBTOUVJ444ROW_AVX2
-ANY12(ARGBToUVJ444Row_Any_AVX2, ARGBToUVJ444Row_AVX2, 0, 4, 0, 31)
-#endif
-#ifdef HAS_ARGBTOUVJ444ROW_AVX512BW
-ANY12(ARGBToUVJ444Row_Any_AVX512BW, ARGBToUVJ444Row_AVX512BW, 0, 4, 0, 63)
-#endif
 #ifdef HAS_YUY2TOUV422ROW_AVX2
 ANY12(YUY2ToUV422Row_Any_AVX2, YUY2ToUV422Row_AVX2, 1, 4, 1, 31)
 ANY12(UYVYToUV422Row_Any_AVX2, UYVYToUV422Row_AVX2, 1, 4, 1, 31)
@@ -2070,22 +1984,14 @@ ANY12(YUY2ToUV422Row_Any_SSE2, YUY2ToUV422Row_SSE2, 1, 4, 1, 15)
 ANY12(UYVYToUV422Row_Any_SSE2, UYVYToUV422Row_SSE2, 1, 4, 1, 15)
 #endif
 #ifdef HAS_YUY2TOUV422ROW_NEON
-ANY12(ARGBToUV444Row_Any_NEON, ARGBToUV444Row_NEON, 0, 4, 0, 7)
-ANY12(ARGBToUVJ444Row_Any_NEON, ARGBToUVJ444Row_NEON, 0, 4, 0, 7)
 ANY12(YUY2ToUV422Row_Any_NEON, YUY2ToUV422Row_NEON, 1, 4, 1, 15)
 ANY12(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON, 1, 4, 1, 15)
 #endif
-#ifdef HAS_ARGBTOUV444ROW_NEON_I8MM
-ANY12(ARGBToUV444Row_Any_NEON_I8MM, ARGBToUV444Row_NEON_I8MM, 0, 4, 0, 7)
-ANY12(ARGBToUVJ444Row_Any_NEON_I8MM, ARGBToUVJ444Row_NEON_I8MM, 0, 4, 0, 7)
-#endif
 #ifdef HAS_YUY2TOUV422ROW_LSX
-ANY12(ARGBToUV444Row_Any_LSX, ARGBToUV444Row_LSX, 0, 4, 0, 15)
 ANY12(YUY2ToUV422Row_Any_LSX, YUY2ToUV422Row_LSX, 1, 4, 1, 15)
 ANY12(UYVYToUV422Row_Any_LSX, UYVYToUV422Row_LSX, 1, 4, 1, 15)
 #endif
 #ifdef HAS_YUY2TOUV422ROW_LASX
-ANY12(ARGBToUV444Row_Any_LASX, ARGBToUV444Row_LASX, 0, 4, 0, 31)
 ANY12(YUY2ToUV422Row_Any_LASX, YUY2ToUV422Row_LASX, 1, 4, 1, 31)
 ANY12(UYVYToUV422Row_Any_LASX, UYVYToUV422Row_LASX, 1, 4, 1, 31)
 #endif
@@ -2095,7 +2001,11 @@ ANY12(UYVYToUV422Row_Any_LASX, UYVYToUV422Row_LASX, 1, 4, 1, 31)
 #define ANY12PT(NAMEANY, ANY_SIMD, T, BPP, MASK)                            \
   void NAMEANY(const T* src_uv, T* dst_u, T* dst_v, int depth, int width) { \
     SIMD_ALIGNED(T vin[16 * 2]);                                            \
+    static_assert((MASK + 1) * BPP * 2 <= sizeof(vin),                      \
+                  "vin buffer too small");                                  \
     SIMD_ALIGNED(T vout[16 * 2]);                                           \
+    static_assert((MASK + 1) * BPP <= sizeof(vout) / 2,                     \
+                  "vout buffer too small");                                 \
     memset(vin, 0, sizeof(vin)); /* for msan */                             \
     int r = width & MASK;                                                   \
     int n = width & ~MASK;                                                  \
@@ -2120,23 +2030,23 @@ ANY12PT(SplitUVRow_16_Any_NEON, SplitUVRow_16_NEON, uint16_t, 2, 7)
 #undef ANY21CT
 
 // Any 1 to 3.  Outputs RGB planes.
-#define ANY13(NAMEANY, ANY_SIMD, BPP, MASK)                            \
-  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_r, uint8_t* dst_g, \
-               uint8_t* dst_b, int width) {                            \
-    SIMD_ALIGNED(uint8_t vin[16 * 3]);                                 \
-    SIMD_ALIGNED(uint8_t vout[16 * 3]);                                \
-    memset(vin, 0, sizeof(vin)); /* for msan */                        \
-    int r = width & MASK;                                              \
-    int n = width & ~MASK;                                             \
-    if (n > 0) {                                                       \
-      ANY_SIMD(src_ptr, dst_r, dst_g, dst_b, n);                       \
-    }                                                                  \
-    ptrdiff_t np = n;                                                  \
-    memcpy(vin, src_ptr + np * BPP, r * BPP);                          \
-    ANY_SIMD(vin, vout, vout + 16, vout + 32, MASK + 1);               \
-    memcpy(dst_r + np, vout, r);                                       \
-    memcpy(dst_g + np, vout + 16, r);                                  \
-    memcpy(dst_b + np, vout + 32, r);                                  \
+#define ANY13(NAMEANY, ANY_SIMD, BPP, MASK)                                \
+  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_r, uint8_t* dst_g,     \
+               uint8_t* dst_b, int width) {                                \
+    SIMD_ALIGNED(uint8_t vin[(MASK + 1) * BPP]);                           \
+    SIMD_ALIGNED(uint8_t vout[(MASK + 1) * 3]);                            \
+    memset(vin, 0, sizeof(vin)); /* for msan */                            \
+    int r = width & MASK;                                                  \
+    int n = width & ~MASK;                                                 \
+    if (n > 0) {                                                           \
+      ANY_SIMD(src_ptr, dst_r, dst_g, dst_b, n);                           \
+    }                                                                      \
+    ptrdiff_t np = n;                                                      \
+    memcpy(vin, src_ptr + np * BPP, r * BPP);                              \
+    ANY_SIMD(vin, vout, vout + MASK + 1, vout + (MASK + 1) * 2, MASK + 1); \
+    memcpy(dst_r + np, vout, r);                                           \
+    memcpy(dst_g + np, vout + MASK + 1, r);                                \
+    memcpy(dst_b + np, vout + (MASK + 1) * 2, r);                          \
   }
 
 #ifdef HAS_SPLITRGBROW_SSSE3
@@ -2165,24 +2075,26 @@ ANY13(SplitXRGBRow_Any_NEON, SplitXRGBRow_NEON, 4, 15)
 #endif
 
 // Any 1 to 4.  Outputs ARGB planes.
-#define ANY14(NAMEANY, ANY_SIMD, BPP, MASK)                            \
-  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_r, uint8_t* dst_g, \
-               uint8_t* dst_b, uint8_t* dst_a, int width) {            \
-    SIMD_ALIGNED(uint8_t vin[16 * 4]);                                 \
-    SIMD_ALIGNED(uint8_t vout[16 * 4]);                                \
-    memset(vin, 0, sizeof(vin)); /* for msan */                        \
-    int r = width & MASK;                                              \
-    int n = width & ~MASK;                                             \
-    if (n > 0) {                                                       \
-      ANY_SIMD(src_ptr, dst_r, dst_g, dst_b, dst_a, n);                \
-    }                                                                  \
-    ptrdiff_t np = n;                                                  \
-    memcpy(vin, src_ptr + np * BPP, r * BPP);                          \
-    ANY_SIMD(vin, vout, vout + 16, vout + 32, vout + 48, MASK + 1);    \
-    memcpy(dst_r + np, vout, r);                                       \
-    memcpy(dst_g + np, vout + 16, r);                                  \
-    memcpy(dst_b + np, vout + 32, r);                                  \
-    memcpy(dst_a + np, vout + 48, r);                                  \
+#define ANY14(NAMEANY, ANY_SIMD, BPP, MASK)                                 \
+  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_r, uint8_t* dst_g,      \
+               uint8_t* dst_b, uint8_t* dst_a, int width) {                 \
+    SIMD_ALIGNED(uint8_t vin[16 * 4]);                                      \
+    static_assert((MASK + 1) * BPP <= sizeof(vin), "vin buffer too small"); \
+    SIMD_ALIGNED(uint8_t vout[16 * 4]);                                     \
+    static_assert(MASK + 1 <= sizeof(vout) / 4, "vout buffer too small");   \
+    memset(vin, 0, sizeof(vin)); /* for msan */                             \
+    int r = width & MASK;                                                   \
+    int n = width & ~MASK;                                                  \
+    if (n > 0) {                                                            \
+      ANY_SIMD(src_ptr, dst_r, dst_g, dst_b, dst_a, n);                     \
+    }                                                                       \
+    ptrdiff_t np = n;                                                       \
+    memcpy(vin, src_ptr + np * BPP, r * BPP);                               \
+    ANY_SIMD(vin, vout, vout + 16, vout + 32, vout + 48, MASK + 1);         \
+    memcpy(dst_r + np, vout, r);                                            \
+    memcpy(dst_g + np, vout + 16, r);                                       \
+    memcpy(dst_b + np, vout + 32, r);                                       \
+    memcpy(dst_a + np, vout + 48, r);                                       \
   }
 
 #ifdef HAS_SPLITARGBROW_SSE2
@@ -2204,7 +2116,11 @@ ANY14(SplitARGBRow_Any_NEON, SplitARGBRow_NEON, 4, 15)
   void NAMEANY(const uint8_t* src_ptr, int src_stride, uint8_t* dst_u,       \
                uint8_t* dst_v, int width) {                                  \
     SIMD_ALIGNED(uint8_t vin[256 * 2]);                                      \
+    static_assert(SS(MASK + 1, UVSHIFT) * BPP <= sizeof(vin) / 2,            \
+                  "vin buffer too small");                                   \
     SIMD_ALIGNED(uint8_t vout[256 * 2]);                                     \
+    static_assert(SS(MASK + 1, 1) <= sizeof(vout) / 2,                       \
+                  "vout buffer too small");                                  \
     memset(vin, 0, sizeof(vin));   /* for msan */                            \
     memset(vout, 0, sizeof(vout)); /* for msan */                            \
     int r = width & MASK;                                                    \
@@ -2227,28 +2143,35 @@ ANY14(SplitARGBRow_Any_NEON, SplitARGBRow_NEON, 4, 15)
     memcpy(dst_v + (np >> 1), vout + 256, SS(r, 1));                         \
   }
 
-#define ANY12M(NAMEANY, ANY_SIMD, BPP, MASK)                           \
-  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_u, uint8_t* dst_v, \
-               int width, const struct ArgbConstants* c) {             \
-    SIMD_ALIGNED(uint8_t vin[256]);                                    \
-    SIMD_ALIGNED(uint8_t vout[256 * 2]);                               \
-    memset(vin, 0, sizeof(vin)); /* for msan */                        \
-    int r = width & MASK;                                              \
-    int n = width & ~MASK;                                             \
-    if (n > 0) {                                                       \
-      ANY_SIMD(src_ptr, dst_u, dst_v, n, c);                           \
-    }                                                                  \
-    memcpy(vin, src_ptr + (ptrdiff_t)n * BPP, (ptrdiff_t)r * BPP);     \
-    ANY_SIMD(vin, vout, vout + 256, MASK + 1, c);                      \
-    memcpy(dst_u + (ptrdiff_t)n, vout, (ptrdiff_t)r);                  \
-    memcpy(dst_v + (ptrdiff_t)n, vout + 256, (ptrdiff_t)r);            \
+#define ANY12M(NAMEANY, ANY_SIMD, BPP, MASK)                                \
+  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_u, uint8_t* dst_v,      \
+               int width, const struct ArgbConstants* c) {                  \
+    SIMD_ALIGNED(uint8_t vin[256]);                                         \
+    static_assert((MASK + 1) * BPP <= sizeof(vin), "vin buffer too small"); \
+    SIMD_ALIGNED(uint8_t vout[256 * 2]);                                    \
+    static_assert(MASK + 1 <= sizeof(vout) / 2, "vout buffer too small");   \
+    memset(vin, 0, sizeof(vin)); /* for msan */                             \
+    int r = width & MASK;                                                   \
+    int n = width & ~MASK;                                                  \
+    if (n > 0) {                                                            \
+      ANY_SIMD(src_ptr, dst_u, dst_v, n, c);                                \
+    }                                                                       \
+    ptrdiff_t np = n;                                                       \
+    memcpy(vin, src_ptr + np * BPP, r * BPP);                               \
+    ANY_SIMD(vin, vout, vout + 256, MASK + 1, c);                           \
+    memcpy(dst_u + np, vout, r);                                            \
+    memcpy(dst_v + np, vout + 256, r);                                      \
   }
 
 #define ANY12MS(NAMEANY, ANY_SIMD, UVSHIFT, BPP, MASK)                       \
   void NAMEANY(const uint8_t* src_ptr, int src_stride, uint8_t* dst_u,       \
                uint8_t* dst_v, int width, const struct ArgbConstants* c) {   \
     SIMD_ALIGNED(uint8_t vin[256 * 2]);                                      \
+    static_assert(SS(MASK + 1, UVSHIFT) * BPP <= sizeof(vin) / 2,            \
+                  "vin buffer too small");                                   \
     SIMD_ALIGNED(uint8_t vout[256 * 2]);                                     \
+    static_assert(SS(MASK + 1, 1) <= sizeof(vout) / 2,                       \
+                  "vout buffer too small");                                  \
     memset(vin, 0, sizeof(vin));   /* for msan */                            \
     memset(vout, 0, sizeof(vout)); /* for msan */                            \
     int r = width & MASK;                                                    \
@@ -2309,39 +2232,64 @@ ANY12MS(RGBToUVMatrixRow_Any_AVX512BW, RGBToUVMatrixRow_AVX512BW, 0, 3, 63)
 #ifdef HAS_ARGBTOUVMATRIXROW_SSSE3
 ANY12MS(ARGBToUVMatrixRow_Any_SSSE3, ARGBToUVMatrixRow_SSSE3, 0, 4, 7)
 #endif
+#ifdef HAS_RGBTOUVMATRIXROW_SSSE3
+ANY12MS(RGBToUVMatrixRow_Any_SSSE3, RGBToUVMatrixRow_SSSE3, 0, 3, 7)
+#endif
 #ifdef HAS_ARGBTOUV444MATRIXROW_AVX2
 ANY12M(ARGBToUV444MatrixRow_Any_AVX2, ARGBToUV444MatrixRow_AVX2, 4, 31)
+#endif
+#ifdef HAS_RGBTOUV444MATRIXROW_AVX2
+ANY12M(RGBToUV444MatrixRow_Any_AVX2, RGBToUV444MatrixRow_AVX2, 3, 31)
 #endif
 #ifdef HAS_ARGBTOUV444MATRIXROW_AVX512BW
 ANY12M(ARGBToUV444MatrixRow_Any_AVX512BW, ARGBToUV444MatrixRow_AVX512BW, 4, 63)
 #endif
+#ifdef HAS_RGBTOUV444MATRIXROW_AVX512BW
+ANY12M(RGBToUV444MatrixRow_Any_AVX512BW, RGBToUV444MatrixRow_AVX512BW, 3, 63)
+#endif
 #ifdef HAS_ARGBTOUV444MATRIXROW_SSSE3
 ANY12M(ARGBToUV444MatrixRow_Any_SSSE3, ARGBToUV444MatrixRow_SSSE3, 4, 15)
+#endif
+#ifdef HAS_RGBTOUV444MATRIXROW_SSSE3
+ANY12M(RGBToUV444MatrixRow_Any_SSSE3, RGBToUV444MatrixRow_SSSE3, 3, 15)
 #endif
 #ifdef HAS_ARGBTOUV444MATRIXROW_NEON
 ANY12M(ARGBToUV444MatrixRow_Any_NEON, ARGBToUV444MatrixRow_NEON, 4, 7)
 #endif
+#ifdef HAS_RGBTOUV444MATRIXROW_NEON
+ANY12M(RGBToUV444MatrixRow_Any_NEON, RGBToUV444MatrixRow_NEON, 3, 7)
+#endif
+#ifdef HAS_ARGBTOUV444MATRIXROW_NEON_I8MM
+ANY12M(ARGBToUV444MatrixRow_Any_NEON_I8MM,
+       ARGBToUV444MatrixRow_NEON_I8MM,
+       4,
+       7)
+#endif
 
-#define ANY11MC(NAMEANY, ANY_SIMD, BPP, MASK)                       \
-  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_ptr, int width, \
-               const struct ArgbConstants* c) {                     \
-    SIMD_ALIGNED(uint8_t vin[256]);                                 \
-    SIMD_ALIGNED(uint8_t vout[256]);                                \
-    memset(vin, 0, sizeof(vin)); /* for msan */                     \
-    int r = width & MASK;                                           \
-    int n = width & ~MASK;                                          \
-    if (n > 0) {                                                    \
-      ANY_SIMD(src_ptr, dst_ptr, n, c);                             \
-    }                                                               \
-    memcpy(vin, src_ptr + (ptrdiff_t)n * BPP, (ptrdiff_t)r * BPP);  \
-    ANY_SIMD(vin, vout, MASK + 1, c);                               \
-    memcpy(dst_ptr + (ptrdiff_t)n, vout, (ptrdiff_t)r);             \
+#define ANY11MC(NAMEANY, ANY_SIMD, BPP, MASK)                               \
+  void NAMEANY(const uint8_t* src_ptr, uint8_t* dst_ptr, int width,         \
+               const struct ArgbConstants* c) {                             \
+    SIMD_ALIGNED(uint8_t vin[256]);                                         \
+    static_assert((MASK + 1) * BPP <= sizeof(vin), "vin buffer too small"); \
+    SIMD_ALIGNED(uint8_t vout[256]);                                        \
+    static_assert(MASK + 1 <= sizeof(vout), "vout buffer too small");       \
+    memset(vin, 0, sizeof(vin)); /* for msan */                             \
+    int r = width & MASK;                                                   \
+    int n = width & ~MASK;                                                  \
+    if (n > 0) {                                                            \
+      ANY_SIMD(src_ptr, dst_ptr, n, c);                                     \
+    }                                                                       \
+    ptrdiff_t np = n;                                                       \
+    memcpy(vin, src_ptr + np * BPP, r * BPP);                               \
+    ANY_SIMD(vin, vout, MASK + 1, c);                                       \
+    memcpy(dst_ptr + np, vout, r);                                          \
   }
 
-#ifdef HAS_ARGBTOYROW_SSSE3
+#ifdef HAS_ARGBTOYMATRIXROW_SSSE3
 ANY11MC(ARGBToYMatrixRow_Any_SSSE3, ARGBToYMatrixRow_SSSE3, 4, 15)
+ANY11MC(RGBToYMatrixRow_Any_SSSE3, RGBToYMatrixRow_SSSE3, 3, 15)
 #endif
-#ifdef HAS_ARGBTOYROW_AVX2
+#ifdef HAS_ARGBTOYMATRIXROW_AVX2
 ANY11MC(ARGBToYMatrixRow_Any_AVX2, ARGBToYMatrixRow_AVX2, 4, 31)
 ANY11MC(RGBToYMatrixRow_Any_AVX2, RGBToYMatrixRow_AVX2, 3, 31)
 ANY11MC(RGB565ToYMatrixRow_Any_AVX2, RGB565ToYMatrixRow_AVX2, 2, 31)
@@ -2352,14 +2300,18 @@ ANY11MC(ARGB1555ToYMatrixRow_Any_AVX2, ARGB1555ToYMatrixRow_AVX2, 2, 31)
 ANY11MC(ARGB4444ToYMatrixRow_Any_AVX2, ARGB4444ToYMatrixRow_AVX2, 2, 31)
 #endif
 #endif
-#ifdef HAS_ARGBTOYROW_AVX512BW
+#ifdef HAS_ARGBTOYMATRIXROW_AVX512BW
 ANY11MC(ARGBToYMatrixRow_Any_AVX512BW, ARGBToYMatrixRow_AVX512BW, 4, 63)
+#endif
+#ifdef HAS_RGBTOYMATRIXROW_AVX512BW
+ANY11MC(RGBToYMatrixRow_Any_AVX512BW, RGBToYMatrixRow_AVX512BW, 3, 63)
 #endif
 #ifdef HAS_ARGBTOYMATRIXROW_NEON
 ANY11MC(ARGBToYMatrixRow_Any_NEON, ARGBToYMatrixRow_NEON, 4, 15)
 #endif
 #ifdef HAS_ARGBTOYMATRIXROW_NEON_DOTPROD
 ANY11MC(ARGBToYMatrixRow_Any_NEON_DotProd, ARGBToYMatrixRow_NEON_DotProd, 4, 15)
+ANY11MC(RGBToYMatrixRow_Any_NEON_DotProd, RGBToYMatrixRow_NEON_DotProd, 3, 15)
 #endif
 #ifdef HAS_RGBTOYMATRIXROW_NEON
 ANY11MC(RGBToYMatrixRow_Any_NEON, RGBToYMatrixRow_NEON, 3, 15)
@@ -2384,42 +2336,6 @@ ANY11MC(ARGBToYMatrixRow_Any_RVV, ARGBToYMatrixRow_RVV, 4, 15)
 #endif
 #undef ANY11MC
 
-#ifdef HAS_ARGBTOUVROW_AVX2
-ANY12S(ARGBToUVRow_Any_AVX2, ARGBToUVRow_AVX2, 0, 4, 31)
-#endif
-#ifdef HAS_ARGBTOUVROW_AVX512BW
-ANY12S(ARGBToUVRow_Any_AVX512BW, ARGBToUVRow_AVX512BW, 0, 4, 63)
-#endif
-#ifdef HAS_ABGRTOUVROW_AVX2
-ANY12S(ABGRToUVRow_Any_AVX2, ABGRToUVRow_AVX2, 0, 4, 31)
-#endif
-#ifdef HAS_ABGRTOUVROW_AVX512BW
-ANY12S(ABGRToUVRow_Any_AVX512BW, ABGRToUVRow_AVX512BW, 0, 4, 63)
-#endif
-#ifdef HAS_ARGBTOUVJROW_AVX2
-ANY12S(ARGBToUVJRow_Any_AVX2, ARGBToUVJRow_AVX2, 0, 4, 31)
-#endif
-#ifdef HAS_ARGBTOUVJROW_AVX512BW
-ANY12S(ARGBToUVJRow_Any_AVX512BW, ARGBToUVJRow_AVX512BW, 0, 4, 63)
-#endif
-#ifdef HAS_ABGRTOUVJROW_AVX2
-ANY12S(ABGRToUVJRow_Any_AVX2, ABGRToUVJRow_AVX2, 0, 4, 31)
-#endif
-#ifdef HAS_ABGRTOUVJROW_AVX512BW
-ANY12S(ABGRToUVJRow_Any_AVX512BW, ABGRToUVJRow_AVX512BW, 0, 4, 63)
-#endif
-#ifdef HAS_ARGBTOUVJROW_SSSE3
-ANY12S(ARGBToUVJRow_Any_SSSE3, ARGBToUVJRow_SSSE3, 0, 4, 15)
-#endif
-#ifdef HAS_ABGRTOUVJROW_SSSE3
-ANY12S(ABGRToUVJRow_Any_SSSE3, ABGRToUVJRow_SSSE3, 0, 4, 15)
-#endif
-#ifdef HAS_ARGBTOUVROW_SSSE3
-ANY12S(ARGBToUVRow_Any_SSSE3, ARGBToUVRow_SSSE3, 0, 4, 15)
-ANY12S(BGRAToUVRow_Any_SSSE3, BGRAToUVRow_SSSE3, 0, 4, 15)
-ANY12S(ABGRToUVRow_Any_SSSE3, ABGRToUVRow_SSSE3, 0, 4, 15)
-ANY12S(RGBAToUVRow_Any_SSSE3, RGBAToUVRow_SSSE3, 0, 4, 15)
-#endif
 #ifdef HAS_YUY2TOUVROW_AVX2
 ANY12S(YUY2ToUVRow_Any_AVX2, YUY2ToUVRow_AVX2, 1, 4, 31)
 ANY12S(UYVYToUVRow_Any_AVX2, UYVYToUVRow_AVX2, 1, 4, 31)
@@ -2428,104 +2344,9 @@ ANY12S(UYVYToUVRow_Any_AVX2, UYVYToUVRow_AVX2, 1, 4, 31)
 ANY12S(YUY2ToUVRow_Any_SSE2, YUY2ToUVRow_SSE2, 1, 4, 15)
 ANY12S(UYVYToUVRow_Any_SSE2, UYVYToUVRow_SSE2, 1, 4, 15)
 #endif
-#ifdef HAS_ARGBTOUVROW_NEON
-ANY12S(ARGBToUVRow_Any_NEON, ARGBToUVRow_NEON, 0, 4, 15)
-#endif
-#ifdef HAS_ARGBTOUVROW_NEON_I8MM
-ANY12S(ARGBToUVRow_Any_NEON_I8MM, ARGBToUVRow_NEON_I8MM, 0, 4, 15)
-#endif
-#ifdef HAS_ARGBTOUVROW_SVE2
-ANY12S(ARGBToUVRow_Any_SVE2, ARGBToUVRow_SVE2, 0, 4, 1)
-#endif
-#ifdef HAS_ARGBTOUVROW_SME
-ANY12S(ARGBToUVRow_Any_SME, ARGBToUVRow_SME, 0, 4, 1)
-#endif
-#ifdef HAS_ARGBTOUVROW_LSX
-ANY12S(ARGBToUVRow_Any_LSX, ARGBToUVRow_LSX, 0, 4, 15)
-#endif
-#ifdef HAS_ARGBTOUVROW_LASX
-ANY12S(ARGBToUVRow_Any_LASX, ARGBToUVRow_LASX, 0, 4, 31)
-#endif
-#ifdef HAS_ARGBTOUVJROW_NEON
-ANY12S(ARGBToUVJRow_Any_NEON, ARGBToUVJRow_NEON, 0, 4, 15)
-#endif
-#ifdef HAS_ARGBTOUVJROW_NEON_I8MM
-ANY12S(ARGBToUVJRow_Any_NEON_I8MM, ARGBToUVJRow_NEON_I8MM, 0, 4, 15)
-#endif
-#ifdef HAS_ARGBTOUVJROW_SVE2
-ANY12S(ARGBToUVJRow_Any_SVE2, ARGBToUVJRow_SVE2, 0, 4, 1)
-#endif
-#ifdef HAS_ARGBTOUVJROW_SME
-ANY12S(ARGBToUVJRow_Any_SME, ARGBToUVJRow_SME, 0, 4, 1)
-#endif
-#ifdef HAS_ABGRTOUVJROW_NEON
-ANY12S(ABGRToUVJRow_Any_NEON, ABGRToUVJRow_NEON, 0, 4, 15)
-#endif
-#ifdef HAS_ABGRTOUVJROW_NEON_I8MM
-ANY12S(ABGRToUVJRow_Any_NEON_I8MM, ABGRToUVJRow_NEON_I8MM, 0, 4, 15)
-#endif
-#ifdef HAS_ABGRTOUVJROW_SVE2
-ANY12S(ABGRToUVJRow_Any_SVE2, ABGRToUVJRow_SVE2, 0, 4, 1)
-#endif
-#ifdef HAS_ABGRTOUVJROW_SME
-ANY12S(ABGRToUVJRow_Any_SME, ABGRToUVJRow_SME, 0, 4, 1)
-#endif
-#ifdef HAS_ARGBTOUVJROW_LSX
-ANY12S(ARGBToUVJRow_Any_LSX, ARGBToUVJRow_LSX, 0, 4, 15)
-#endif
-#ifdef HAS_ARGBTOUVJROW_LASX
-ANY12S(ARGBToUVJRow_Any_LASX, ARGBToUVJRow_LASX, 0, 4, 31)
-#endif
-#ifdef HAS_BGRATOUVROW_NEON
-ANY12S(BGRAToUVRow_Any_NEON, BGRAToUVRow_NEON, 0, 4, 15)
-#endif
-#ifdef HAS_BGRATOUVROW_NEON_I8MM
-ANY12S(BGRAToUVRow_Any_NEON_I8MM, BGRAToUVRow_NEON_I8MM, 0, 4, 15)
-#endif
-#ifdef HAS_BGRATOUVROW_SVE2
-ANY12S(BGRAToUVRow_Any_SVE2, BGRAToUVRow_SVE2, 0, 4, 1)
-#endif
-#ifdef HAS_BGRATOUVROW_SME
-ANY12S(BGRAToUVRow_Any_SME, BGRAToUVRow_SME, 0, 4, 1)
-#endif
-#ifdef HAS_BGRATOUVROW_LSX
-ANY12S(BGRAToUVRow_Any_LSX, BGRAToUVRow_LSX, 0, 4, 15)
-#endif
-#ifdef HAS_ABGRTOUVROW_NEON
-ANY12S(ABGRToUVRow_Any_NEON, ABGRToUVRow_NEON, 0, 4, 15)
-#endif
-#ifdef HAS_ABGRTOUVROW_NEON_I8MM
-ANY12S(ABGRToUVRow_Any_NEON_I8MM, ABGRToUVRow_NEON_I8MM, 0, 4, 15)
-#endif
-#ifdef HAS_ABGRTOUVROW_SVE2
-ANY12S(ABGRToUVRow_Any_SVE2, ABGRToUVRow_SVE2, 0, 4, 1)
-#endif
-#ifdef HAS_ABGRTOUVROW_SME
-ANY12S(ABGRToUVRow_Any_SME, ABGRToUVRow_SME, 0, 4, 1)
-#endif
-#ifdef HAS_ABGRTOUVROW_LSX
-ANY12S(ABGRToUVRow_Any_LSX, ABGRToUVRow_LSX, 0, 4, 15)
-#endif
-#ifdef HAS_RGBATOUVROW_NEON
-ANY12S(RGBAToUVRow_Any_NEON, RGBAToUVRow_NEON, 0, 4, 15)
-#endif
-#ifdef HAS_RGBATOUVROW_NEON_I8MM
-ANY12S(RGBAToUVRow_Any_NEON_I8MM, RGBAToUVRow_NEON_I8MM, 0, 4, 15)
-#endif
-#ifdef HAS_RGBATOUVROW_SVE2
-ANY12S(RGBAToUVRow_Any_SVE2, RGBAToUVRow_SVE2, 0, 4, 1)
-#endif
-#ifdef HAS_RGBATOUVROW_SME
-ANY12S(RGBAToUVRow_Any_SME, RGBAToUVRow_SME, 0, 4, 1)
-#endif
-#ifdef HAS_RGBATOUVROW_LSX
-ANY12S(RGBAToUVRow_Any_LSX, RGBAToUVRow_LSX, 0, 4, 15)
-#endif
+
 #ifdef HAS_RGB24TOUVROW_NEON
 ANY12S(RGB24ToUVRow_Any_NEON, RGB24ToUVRow_NEON, 0, 3, 15)
-#endif
-#ifdef HAS_RGB24TOUVJROW_NEON
-ANY12S(RGB24ToUVJRow_Any_NEON, RGB24ToUVJRow_NEON, 0, 3, 15)
 #endif
 #ifdef HAS_RGB24TOUVROW_LSX
 ANY12S(RGB24ToUVRow_Any_LSX, RGB24ToUVRow_LSX, 0, 3, 15)
@@ -2535,9 +2356,6 @@ ANY12S(RGB24ToUVRow_Any_LASX, RGB24ToUVRow_LASX, 0, 3, 31)
 #endif
 #ifdef HAS_RAWTOUVROW_NEON
 ANY12S(RAWToUVRow_Any_NEON, RAWToUVRow_NEON, 0, 3, 15)
-#endif
-#ifdef HAS_RAWTOUVJROW_NEON
-ANY12S(RAWToUVJRow_Any_NEON, RAWToUVJRow_NEON, 0, 3, 15)
 #endif
 #ifdef HAS_RAWTOUVROW_LSX
 ANY12S(RAWToUVRow_Any_LSX, RAWToUVRow_LSX, 0, 3, 15)
@@ -2592,7 +2410,11 @@ ANY12S(UYVYToUVRow_Any_LASX, UYVYToUVRow_LASX, 1, 4, 31)
   void NAMEANY(const uint8_t* src_ptr, int src_stride, uint8_t* dst_vu,      \
                int width) {                                                  \
     SIMD_ALIGNED(uint8_t vin[128 * 2]);                                      \
+    static_assert(SS(MASK + 1, UVSHIFT) * BPP <= sizeof(vin) / 2,            \
+                  "vin buffer too small");                                   \
     SIMD_ALIGNED(uint8_t vout[128]);                                         \
+    static_assert(SS(MASK + 1, 1) * 2 <= sizeof(vout),                       \
+                  "vout buffer too small");                                  \
     memset(vin, 0, sizeof(vin)); /* for msan */                              \
     int r = width & MASK;                                                    \
     int n = width & ~MASK;                                                   \
@@ -2625,20 +2447,22 @@ ANY11S(AYUVToVURow_Any_SVE2, AYUVToVURow_SVE2, 0, 4, 1)
 #endif
 #undef ANY11S
 
-#define ANYDETILE(NAMEANY, ANY_SIMD, T, BPP, MASK)                           \
-  void NAMEANY(const T* src, ptrdiff_t src_tile_stride, T* dst, int width) { \
-    SIMD_ALIGNED(T vin[16]);                                                 \
-    SIMD_ALIGNED(T vout[16]);                                                \
-    memset(vin, 0, sizeof(vin)); /* for msan */                              \
-    int r = width & MASK;                                                    \
-    int n = width & ~MASK;                                                   \
-    if (n > 0) {                                                             \
-      ANY_SIMD(src, src_tile_stride, dst, n);                                \
-    }                                                                        \
-    ptrdiff_t np = n;                                                        \
-    memcpy(vin, src + (np / 16) * src_tile_stride, r * BPP);                 \
-    ANY_SIMD(vin, src_tile_stride, vout, MASK + 1);                          \
-    memcpy(dst + np, vout, r * BPP);                                         \
+#define ANYDETILE(NAMEANY, ANY_SIMD, T, BPP, MASK)                            \
+  void NAMEANY(const T* src, ptrdiff_t src_tile_stride, T* dst, int width) {  \
+    SIMD_ALIGNED(T vin[16]);                                                  \
+    static_assert((MASK + 1) * BPP <= sizeof(vin), "vin buffer too small");   \
+    SIMD_ALIGNED(T vout[16]);                                                 \
+    static_assert((MASK + 1) * BPP <= sizeof(vout), "vout buffer too small"); \
+    memset(vin, 0, sizeof(vin)); /* for msan */                               \
+    int r = width & MASK;                                                     \
+    int n = width & ~MASK;                                                    \
+    if (n > 0) {                                                              \
+      ANY_SIMD(src, src_tile_stride, dst, n);                                 \
+    }                                                                         \
+    ptrdiff_t np = n;                                                         \
+    memcpy(vin, src + (np / 16) * src_tile_stride, r * BPP);                  \
+    ANY_SIMD(vin, src_tile_stride, vout, MASK + 1);                           \
+    memcpy(dst + np, vout, r * BPP);                                          \
   }
 
 #ifdef HAS_DETILEROW_NEON
@@ -2658,22 +2482,25 @@ ANYDETILE(DetileRow_16_Any_AVX, DetileRow_16_AVX, uint16_t, 2, 15)
 #endif
 
 // DetileSplitUVRow width is in bytes
-#define ANYDETILESPLITUV(NAMEANY, ANY_SIMD, MASK)                \
-  void NAMEANY(const uint8_t* src_uv, ptrdiff_t src_tile_stride, \
-               uint8_t* dst_u, uint8_t* dst_v, int width) {      \
-    SIMD_ALIGNED(uint8_t vin[16]);                               \
-    SIMD_ALIGNED(uint8_t vout[8 * 2]);                           \
-    memset(vin, 0, sizeof(vin)); /* for msan */                  \
-    int r = width & MASK;                                        \
-    int n = width & ~MASK;                                       \
-    if (n > 0) {                                                 \
-      ANY_SIMD(src_uv, src_tile_stride, dst_u, dst_v, n);        \
-    }                                                            \
-    ptrdiff_t np = n;                                            \
-    memcpy(vin, src_uv + (np / 16) * src_tile_stride, r);        \
-    ANY_SIMD(vin, src_tile_stride, vout, vout + 8, r);           \
-    memcpy(dst_u + np / 2, vout, (r + 1) / 2);                   \
-    memcpy(dst_v + np / 2, vout + 8, (r + 1) / 2);               \
+#define ANYDETILESPLITUV(NAMEANY, ANY_SIMD, MASK)                   \
+  void NAMEANY(const uint8_t* src_uv, ptrdiff_t src_tile_stride,    \
+               uint8_t* dst_u, uint8_t* dst_v, int width) {         \
+    SIMD_ALIGNED(uint8_t vin[16]);                                  \
+    static_assert(MASK + 1 <= sizeof(vin), "vin buffer too small"); \
+    SIMD_ALIGNED(uint8_t vout[8 * 2]);                              \
+    static_assert((MASK + 1) / 2 <= sizeof(vout) / 2,               \
+                  "vout buffer too small");                         \
+    memset(vin, 0, sizeof(vin)); /* for msan */                     \
+    int r = width & MASK;                                           \
+    int n = width & ~MASK;                                          \
+    if (n > 0) {                                                    \
+      ANY_SIMD(src_uv, src_tile_stride, dst_u, dst_v, n);           \
+    }                                                               \
+    ptrdiff_t np = n;                                               \
+    memcpy(vin, src_uv + (np / 16) * src_tile_stride, r);           \
+    ANY_SIMD(vin, src_tile_stride, vout, vout + 8, r);              \
+    memcpy(dst_u + np / 2, vout, (r + 1) / 2);                      \
+    memcpy(dst_v + np / 2, vout + 8, (r + 1) / 2);                  \
   }
 
 #ifdef HAS_DETILESPLITUVROW_NEON
@@ -2688,7 +2515,9 @@ ANYDETILESPLITUV(DetileSplitUVRow_Any_SSSE3, DetileSplitUVRow_SSSE3, 15)
                const uint8_t* src_uv, ptrdiff_t src_uv_tile_stride,            \
                uint8_t* dst_yuy2, int width) {                                 \
     SIMD_ALIGNED(uint8_t vin[16 * 2]);                                         \
+    static_assert(MASK + 1 <= sizeof(vin) / 2, "vin buffer too small");        \
     SIMD_ALIGNED(uint8_t vout[16 * 2]);                                        \
+    static_assert(2 * (MASK + 1) <= sizeof(vout), "vout buffer too small");    \
     memset(vin, 0, sizeof(vin)); /* for msan */                                \
     int r = width & MASK;                                                      \
     int n = width & ~MASK;                                                     \

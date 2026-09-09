@@ -51,8 +51,7 @@ class StartupTypeTelemetryTest {
     private var pathProvider: StartupPathProvider = mock()
     private var lifecycleOwner: LifecycleOwner = mock()
 
-    @get:Rule
-    val gleanTestRule = GleanTestRule(testContext)
+    @get:Rule val gleanTestRule = GleanTestRule(testContext)
 
     @Before
     fun setUp() {
@@ -72,32 +71,32 @@ class StartupTypeTelemetryTest {
     }
 
     @Test
-    fun `GIVEN all possible path and state combinations WHEN record telemetry THEN the labels are incremented the appropriate number of times`() = runTest {
-        doReturn(this).`when`(telemetry).getScope(any())
+    fun `GIVEN all possible path and state combinations WHEN record telemetry THEN the labels are incremented the appropriate number of times`() =
+        runTest {
+            doReturn(this).`when`(telemetry).getScope(any())
 
-        val allPossibleInputArgs = StartupState.entries.crossProduct(
-            StartupPath.entries,
-        ) { state, path ->
-            Pair(state, path)
+            val allPossibleInputArgs =
+                StartupState.entries.crossProduct(StartupPath.entries) { state, path ->
+                    Pair(state, path)
+                }
+
+            allPossibleInputArgs.forEach { (state, path) ->
+                doReturn(state).`when`(stateProvider).getStartupStateForStartedActivity(activityClass)
+                doReturn(path).`when`(pathProvider).startupPathForActivity
+
+                telemetry.recordStartupTelemetry(lifecycleOwner, StandardTestDispatcher(this.testScheduler))
+                testScheduler.advanceUntilIdle()
+            }
+
+            validTelemetryLabels.forEach { label ->
+                // Path == NOT_SET gets bucketed with Path == UNKNOWN so we'll increment twice for those.
+                val expected = if (label.endsWith("unknown")) 2 else 1
+                assertEquals("label: $label", expected, PerfStartup.startupType[label].testGetValue())
+            }
+
+            // All invalid labels go to a single bucket: let's verify it has no value.
+            assertNull(PerfStartup.startupType["__other__"].testGetValue())
         }
-
-        allPossibleInputArgs.forEach { (state, path) ->
-            doReturn(state).`when`(stateProvider).getStartupStateForStartedActivity(activityClass)
-            doReturn(path).`when`(pathProvider).startupPathForActivity
-
-            telemetry.recordStartupTelemetry(lifecycleOwner, StandardTestDispatcher(this.testScheduler))
-            testScheduler.advanceUntilIdle()
-        }
-
-        validTelemetryLabels.forEach { label ->
-            // Path == NOT_SET gets bucketed with Path == UNKNOWN so we'll increment twice for those.
-            val expected = if (label.endsWith("unknown")) 2 else 1
-            assertEquals("label: $label", expected, PerfStartup.startupType[label].testGetValue())
-        }
-
-        // All invalid labels go to a single bucket: let's verify it has no value.
-        assertNull(PerfStartup.startupType["__other__"].testGetValue())
-    }
 
     @Test
     fun `WHEN record is called THEN telemetry is recorded with the appropriate label`() = runTest {
@@ -138,22 +137,23 @@ class StartupTypeTelemetryTest {
     }
 
     @Test
-    fun `GIVEN the activity is launched WHEN the activity is stopped and resumed THEN record is called again`() = runTest {
-        doReturn(this).`when`(telemetry).getScope(any())
+    fun `GIVEN the activity is launched WHEN the activity is stopped and resumed THEN record is called again`() =
+        runTest {
+            doReturn(this).`when`(telemetry).getScope(any())
 
-        // This part of the test duplicates another test but it's needed to initialize the state of this test.
-        launchApp()
-        this.testScheduler.advanceUntilIdle() // Ensure coroutine from initial onResume completes
-        verify(telemetry).recordStartupTelemetry(any(), any())
+            // This part of the test duplicates another test but it's needed to initialize the state of this test.
+            launchApp()
+            this.testScheduler.advanceUntilIdle() // Ensure coroutine from initial onResume completes
+            verify(telemetry).recordStartupTelemetry(any(), any())
 
-        callbacks.onPause(mock())
-        callbacks.onStop(mock()) // This resets hasRecordedOnce
-        callbacks.onStart(mock())
-        callbacks.onResume(mock()) // This onResume will record again
-        this.testScheduler.advanceUntilIdle() // Ensure coroutine from second onResume completes
+            callbacks.onPause(mock())
+            callbacks.onStop(mock()) // This resets hasRecordedOnce
+            callbacks.onStart(mock())
+            callbacks.onResume(mock()) // This onResume will record again
+            this.testScheduler.advanceUntilIdle() // Ensure coroutine from second onResume completes
 
-        verify(telemetry, times(2)).recordStartupTelemetry(any(), any())
-    }
+            verify(telemetry, times(2)).recordStartupTelemetry(any(), any())
+        }
 
     private fun launchApp() {
         // What these return isn't important.

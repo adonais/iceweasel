@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.ui
 
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -16,30 +17,25 @@ import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.TestHelper
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.homeScreen
-import org.mozilla.fenix.ui.robots.navigationToolbar
-import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
-/**
- *  Tests for verifying the Firefox suggest search fragment
- *
- */
-
+/** Tests for verifying the Firefox suggest search fragment */
 class FirefoxSuggestTest {
-    @get:Rule(order = 0)
-    val fenixTestRule: FenixTestRule = FenixTestRule()
+    @get:Rule(order = 0) val fenixTestRule: FenixTestRule = FenixTestRule()
 
     @get:Rule(order = 1)
-    val composeTestRule = AndroidComposeTestRuleV2(
-        HomeActivityTestRule(
-            skipOnboarding = true,
-            isPocketEnabled = false,
-            isRecentTabsFeatureEnabled = false,
-            isWallpaperOnboardingEnabled = false,
-        ),
-    ) { it.activity }
+    val composeTestRule =
+        AndroidComposeTestRuleV2(
+            HomeActivityTestRule(
+                skipOnboarding = true,
+                isPocketEnabled = false,
+                isRecentTabsFeatureEnabled = false,
+                isWallpaperOnboardingEnabled = false,
+            )
+        ) {
+            it.activity
+        }
 
-    @get:Rule(order = 2)
-    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
+    @get:Rule(order = 2) val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     private val sponsoredKeyWords: Map<String, List<String>> =
         mapOf(
@@ -53,22 +49,26 @@ class FirefoxSuggestTest {
                     "Nike.com - Official Site",
                     "nike.com/?cp=16423867261_search_318370984us128${getSponsoredFxSuggestPlaceHolder()}&mfadid=adm",
                 ),
-            "Houzz" to listOf(
-                "Houzz.com - Official Site",
-                "houzz.com/products?m_refid=us-dsp-mpl-admp-219577_15416306_kwd-353208810&adcid=319104989us1287${getSponsoredFxSuggestPlaceHolder()}&utm_source=admarketplace&utm_medium=cpc&utm_campaign=Privacy&utm_term=houzz&utm_content=319104989&mfadid=adm",
-            ),
-            "Spanx" to listOf(
-                "SPANX® -  Official Site",
-                "spanx.com/?utm_source=admarketplace&utm_medium=cpc&utm_campaign=privacy&utm_content=319093361us1202${getSponsoredFxSuggestPlaceHolder()}&mfadid=adm",
-            ),
-            "Bloom" to listOf(
-                "Bloomingdales.com - Official Site",
-                "bloomingdales.com/?cm_mmc=Admarketplace-_-Privacy-_-Privacy-_-privacy%20instant%20suggest-_-319093353us1228${getSponsoredFxSuggestPlaceHolder()}-_-kclickid__kenshoo_clickid_&mfadid=adm",
-            ),
-            "Groupon" to listOf(
-                "groupon.com - Discover & Save!",
-                "groupon.com/?utm_source=google&utm_medium=cpc&utm_campaign=us_dt_sea_ggl_txt_smp_sr_cbp_ch1_nbr_k*groupon_m*broad_d*ADMRKT_319093357us1279${getSponsoredFxSuggestPlaceHolder()}&mfadid=adm",
-            ),
+            "Houzz" to
+                listOf(
+                    "Houzz.com - Official Site",
+                    "houzz.com/products?m_refid=us-dsp-mpl-admp-219577_15416306_kwd-353208810&adcid=319104989us1287${getSponsoredFxSuggestPlaceHolder()}&utm_source=admarketplace&utm_medium=cpc&utm_campaign=Privacy&utm_term=houzz&utm_content=319104989&mfadid=adm",
+                ),
+            "Spanx" to
+                listOf(
+                    "SPANX® -  Official Site",
+                    "spanx.com/?utm_source=admarketplace&utm_medium=cpc&utm_campaign=privacy&utm_content=319093361us1202${getSponsoredFxSuggestPlaceHolder()}&mfadid=adm",
+                ),
+            "Bloom" to
+                listOf(
+                    "Bloomingdales.com - Official Site",
+                    "bloomingdales.com/?cm_mmc=Admarketplace-_-Privacy-_-Privacy-_-privacy%20instant%20suggest-_-319093353us1228${getSponsoredFxSuggestPlaceHolder()}-_-kclickid__kenshoo_clickid_&mfadid=adm",
+                ),
+            "Groupon" to
+                listOf(
+                    "groupon.com - Discover & Save!",
+                    "groupon.com/?utm_source=google&utm_medium=cpc&utm_campaign=us_dt_sea_ggl_txt_smp_sr_cbp_ch1_nbr_k*groupon_m*broad_d*ADMRKT_319093357us1279${getSponsoredFxSuggestPlaceHolder()}&mfadid=adm",
+                ),
         )
 
     private val sponsoredKeyWord = sponsoredKeyWords.keys.random()
@@ -85,22 +85,26 @@ class FirefoxSuggestTest {
                     "Wikipedia - Apple Inc.",
                     "wikipedia.org/wiki/Apple_Inc",
                 ),
-            "Africa" to listOf(
-                "Wikipedia - African Union",
-                "wikipedia.org/wiki/African_Union",
-            ),
-            "Ultimate" to listOf(
-                "Wikipedia - Ultimate Fighting Championship",
-                "wikipedia.org/wiki/Ultimate_Fighting_Championship",
-            ),
-            "Youtube" to listOf(
-                "Wikipedia - YouTube",
-                "wikipedia.org/wiki/YouTube",
-            ),
-            "Fifa" to listOf(
-                "Wikipedia - FIFA World Cup",
-                "en.m.wikipedia.org/wiki/FIFA_World_Cup",
-            ),
+            "Africa" to
+                listOf(
+                    "Wikipedia - African Union",
+                    "wikipedia.org/wiki/African_Union",
+                ),
+            "Ultimate" to
+                listOf(
+                    "Wikipedia - Ultimate Fighting Championship",
+                    "wikipedia.org/wiki/Ultimate_Fighting_Championship",
+                ),
+            "Youtube" to
+                listOf(
+                    "Wikipedia - YouTube",
+                    "wikipedia.org/wiki/YouTube",
+                ),
+            "Fifa" to
+                listOf(
+                    "Wikipedia - FIFA World Cup",
+                    "en.m.wikipedia.org/wiki/FIFA_World_Cup",
+                ),
         )
 
     private val nonSponsoredKeyWord = nonSponsoredKeyWords.keys.random()
@@ -112,18 +116,19 @@ class FirefoxSuggestTest {
     @Test
     fun verifyFirefoxSuggestSponsoredSearchResultsTest() {
         runWithCondition(TestHelper.appContext.components.settings.enableFxSuggest) {
-            homeScreen(composeTestRule) {
-            }.openSearch {
-                typeSearch(searchTerm = sponsoredKeyWord)
-                verifySponsoredSuggestionsResults(
-                    searchSuggestions = arrayOf(
-                        "Firefox Suggest",
-                        sponsoredKeyWords.getValue(sponsoredKeyWord)[0],
-                        "Sponsored",
-                    ),
-                    searchTerm = sponsoredKeyWord,
-                )
-            }
+            homeScreen(composeTestRule) {}
+                .openSearch {
+                    typeSearch(searchTerm = sponsoredKeyWord)
+                    verifySponsoredSuggestionsResults(
+                        searchSuggestions =
+                            arrayOf(
+                                "Firefox Suggest",
+                                sponsoredKeyWords.getValue(sponsoredKeyWord)[0],
+                                "Sponsored",
+                            ),
+                        searchTerm = sponsoredKeyWord,
+                    )
+                }
         }
     }
 
@@ -133,18 +138,19 @@ class FirefoxSuggestTest {
     @Test
     fun verifyFirefoxSuggestSponsoredSearchResultsWithPartialKeywordTest() {
         runWithCondition(TestHelper.appContext.components.settings.enableFxSuggest) {
-            homeScreen(composeTestRule) {
-            }.openSearch {
-                typeSearch(searchTerm = sponsoredKeyWord.dropLast(1))
-                verifySponsoredSuggestionsResults(
-                    searchSuggestions = arrayOf(
-                        "Firefox Suggest",
-                        sponsoredKeyWords.getValue(sponsoredKeyWord)[0],
-                        "Sponsored",
-                    ),
-                    searchTerm = sponsoredKeyWord.dropLast(1),
-                )
-            }
+            homeScreen(composeTestRule) {}
+                .openSearch {
+                    typeSearch(searchTerm = sponsoredKeyWord.dropLast(1))
+                    verifySponsoredSuggestionsResults(
+                        searchSuggestions =
+                            arrayOf(
+                                "Firefox Suggest",
+                                sponsoredKeyWords.getValue(sponsoredKeyWord)[0],
+                                "Sponsored",
+                            ),
+                        searchTerm = sponsoredKeyWord.dropLast(1),
+                    )
+                }
         }
     }
 
@@ -154,21 +160,23 @@ class FirefoxSuggestTest {
     @Test
     fun openFirefoxSuggestSponsoredSearchResultsTest() {
         runWithCondition(TestHelper.appContext.components.settings.enableFxSuggest) {
-            homeScreen(composeTestRule) {
-            }.openSearch {
-                typeSearch(searchTerm = sponsoredKeyWord)
-                verifySponsoredSuggestionsResults(
-                    searchSuggestions = arrayOf(
-                        "Firefox Suggest",
-                        sponsoredKeyWords.getValue(sponsoredKeyWord)[0],
-                        "Sponsored",
-                    ),
-                    searchTerm = sponsoredKeyWord,
-                )
-            }.clickSearchSuggestion(sponsoredKeyWords.getValue(sponsoredKeyWord)[0]) {
-                verifyUrl(sponsoredKeyWords.getValue(sponsoredKeyWord)[1])
-                verifyTabCounter("1")
-            }
+            homeScreen(composeTestRule) {}
+                .openSearch {
+                    typeSearch(searchTerm = sponsoredKeyWord)
+                    verifySponsoredSuggestionsResults(
+                        searchSuggestions =
+                            arrayOf(
+                                "Firefox Suggest",
+                                sponsoredKeyWords.getValue(sponsoredKeyWord)[0],
+                                "Sponsored",
+                            ),
+                        searchTerm = sponsoredKeyWord,
+                    )
+                }
+                .clickSearchSuggestion(sponsoredKeyWords.getValue(sponsoredKeyWord)[0]) {
+                    verifyUrl(sponsoredKeyWords.getValue(sponsoredKeyWord)[1])
+                    verifyTabCounter("1")
+                }
         }
     }
 
@@ -178,21 +186,22 @@ class FirefoxSuggestTest {
     @Test
     fun verifyFirefoxSuggestSponsoredSearchResultsWithEditedKeywordTest() {
         runWithCondition(TestHelper.appContext.components.settings.enableFxSuggest) {
-            homeScreen(composeTestRule) {
-            }.openSearch {
-                typeSearch(searchTerm = sponsoredKeyWord)
-                deleteSearchKeywordCharacters(numberOfDeletionSteps = 1)
-                verifySponsoredSuggestionsResults(
-                    searchSuggestions = arrayOf(
-                        "Firefox Suggest",
-                        sponsoredKeyWords.getValue(sponsoredKeyWord)[0],
-                        "Sponsored",
-                    ),
-                    searchTerm = sponsoredKeyWord,
-                    shouldEditKeyword = true,
-                    numberOfDeletionSteps = 1,
-                )
-            }
+            homeScreen(composeTestRule) {}
+                .openSearch {
+                    typeSearch(searchTerm = sponsoredKeyWord)
+                    deleteSearchKeywordCharacters(numberOfDeletionSteps = 1)
+                    verifySponsoredSuggestionsResults(
+                        searchSuggestions =
+                            arrayOf(
+                                "Firefox Suggest",
+                                sponsoredKeyWords.getValue(sponsoredKeyWord)[0],
+                                "Sponsored",
+                            ),
+                        searchTerm = sponsoredKeyWord,
+                        shouldEditKeyword = true,
+                        numberOfDeletionSteps = 1,
+                    )
+                }
         }
     }
 
@@ -203,22 +212,19 @@ class FirefoxSuggestTest {
     @Test
     fun verifyFirefoxSuggestNonSponsoredSearchResultsTest() {
         runWithCondition(TestHelper.appContext.components.settings.enableFxSuggest) {
-            homeScreen(composeTestRule) {
-            }.openSearch {
-                typeSearch(searchTerm = nonSponsoredKeyWord)
-                verifySponsoredSuggestionsResults(
-                    searchSuggestions = arrayOf(
-                        "Firefox Suggest",
-                        nonSponsoredKeyWords.getValue(nonSponsoredKeyWord)[0],
-                    ),
-                    searchTerm = nonSponsoredKeyWord,
-                )
-                verifySuggestionsAreNotDisplayed(
-                    searchSuggestions = arrayOf(
-                        "Sponsored",
-                    ),
-                )
-            }
+            homeScreen(composeTestRule) {}
+                .openSearch {
+                    typeSearch(searchTerm = nonSponsoredKeyWord)
+                    verifySponsoredSuggestionsResults(
+                        searchSuggestions =
+                            arrayOf(
+                                "Firefox Suggest",
+                                nonSponsoredKeyWords.getValue(nonSponsoredKeyWord)[0],
+                            ),
+                        searchTerm = nonSponsoredKeyWord,
+                    )
+                    verifySuggestionsAreNotDisplayed(searchSuggestions = arrayOf("Sponsored"))
+                }
         }
     }
 
@@ -228,17 +234,18 @@ class FirefoxSuggestTest {
     @Test
     fun verifyFirefoxSuggestNonSponsoredSearchResultsWithPartialKeywordTest() {
         runWithCondition(TestHelper.appContext.components.settings.enableFxSuggest) {
-            homeScreen(composeTestRule) {
-            }.openSearch {
-                typeSearch(searchTerm = nonSponsoredKeyWord.dropLast(1))
-                verifySponsoredSuggestionsResults(
-                    searchSuggestions = arrayOf(
-                        "Firefox Suggest",
-                        nonSponsoredKeyWords.getValue(nonSponsoredKeyWord)[0],
-                    ),
-                    searchTerm = nonSponsoredKeyWord.dropLast(1),
-                )
-            }
+            homeScreen(composeTestRule) {}
+                .openSearch {
+                    typeSearch(searchTerm = nonSponsoredKeyWord.dropLast(1))
+                    verifySponsoredSuggestionsResults(
+                        searchSuggestions =
+                            arrayOf(
+                                "Firefox Suggest",
+                                nonSponsoredKeyWords.getValue(nonSponsoredKeyWord)[0],
+                            ),
+                        searchTerm = nonSponsoredKeyWord.dropLast(1),
+                    )
+                }
         }
     }
 
@@ -248,20 +255,22 @@ class FirefoxSuggestTest {
     @Test
     fun openFirefoxSuggestNonSponsoredSearchResultsTest() {
         runWithCondition(TestHelper.appContext.components.settings.enableFxSuggest) {
-            homeScreen(composeTestRule) {
-            }.openSearch {
-                typeSearch(searchTerm = nonSponsoredKeyWord)
-                verifySponsoredSuggestionsResults(
-                    searchSuggestions = arrayOf(
-                        "Firefox Suggest",
-                        nonSponsoredKeyWords.getValue(nonSponsoredKeyWord)[0],
-                    ),
-                    searchTerm = nonSponsoredKeyWord,
-                )
-            }.clickSearchSuggestion(nonSponsoredKeyWords.getValue(nonSponsoredKeyWord)[0]) {
-                waitForPageToLoad()
-                verifyUrl(nonSponsoredKeyWords.getValue(nonSponsoredKeyWord)[1])
-            }
+            homeScreen(composeTestRule) {}
+                .openSearch {
+                    typeSearch(searchTerm = nonSponsoredKeyWord)
+                    verifySponsoredSuggestionsResults(
+                        searchSuggestions =
+                            arrayOf(
+                                "Firefox Suggest",
+                                nonSponsoredKeyWords.getValue(nonSponsoredKeyWord)[0],
+                            ),
+                        searchTerm = nonSponsoredKeyWord,
+                    )
+                }
+                .clickSearchSuggestion(nonSponsoredKeyWords.getValue(nonSponsoredKeyWord)[0]) {
+                    waitForPageToLoad()
+                    verifyUrl(nonSponsoredKeyWords.getValue(nonSponsoredKeyWord)[1])
+                }
         }
     }
 }

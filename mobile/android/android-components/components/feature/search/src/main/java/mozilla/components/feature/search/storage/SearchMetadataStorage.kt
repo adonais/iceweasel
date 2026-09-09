@@ -19,9 +19,7 @@ private const val PREFERENCE_KEY_HIDDEN_SEARCH_ENGINES = "hidden_search_engines"
 private const val PREFERENCE_KEY_ADDITIONAL_SEARCH_ENGINES = "additional_search_engines"
 private const val PREFERENCE_KEY_DISABLED_SEARCH_ENGINE_ID = "preference_key_disabled_search_engine_id"
 
-/**
- * Storage for saving additional search related metadata.
- */
+/** Storage for saving additional search related metadata. */
 internal class SearchMetadataStorage(
     context: Context,
     private val disabledByDefaultSearchEngineIds: Set<String> = emptySet(),
@@ -33,12 +31,11 @@ internal class SearchMetadataStorage(
     },
 ) : SearchMiddleware.MetadataStorage {
     /**
-     * Gets the ID (and optinally name) of the default search engine the user has picked. Returns
-     * `null` if the user has not made a choice.
+     * Gets the ID (and optinally name) of the default search engine the user has picked. Returns `null` if the user has
+     * not made a choice.
      */
     override suspend fun getUserSelectedSearchEngine(): SearchMiddleware.MetadataStorage.UserChoice? {
-        val id = preferences.value.getString(PREFERENCE_KEY_USER_SELECTED_SEARCH_ENGINE_ID, null)
-            ?: return null
+        val id = preferences.value.getString(PREFERENCE_KEY_USER_SELECTED_SEARCH_ENGINE_ID, null) ?: return null
 
         return SearchMiddleware.MetadataStorage.UserChoice(
             id,
@@ -46,9 +43,7 @@ internal class SearchMetadataStorage(
         )
     }
 
-    /**
-     * Sets the ID (and optionally name) of the default search engine the user has picked.
-     */
+    /** Sets the ID (and optionally name) of the default search engine the user has picked. */
     override suspend fun setUserSelectedSearchEngine(id: String, name: String?) {
         preferences.value.edit {
             putString(PREFERENCE_KEY_USER_SELECTED_SEARCH_ENGINE_ID, id)
@@ -57,8 +52,7 @@ internal class SearchMetadataStorage(
     }
 
     override suspend fun getUserSelectedPrivateSearchEngine(): SearchMiddleware.MetadataStorage.UserChoice? {
-        val id = preferences.value.getString(PREFERENCE_KEY_USER_SELECTED_PRIVATE_SEARCH_ENGINE_ID, null)
-            ?: return null
+        val id = preferences.value.getString(PREFERENCE_KEY_USER_SELECTED_PRIVATE_SEARCH_ENGINE_ID, null) ?: return null
 
         return SearchMiddleware.MetadataStorage.UserChoice(
             id,
@@ -80,29 +74,20 @@ internal class SearchMetadataStorage(
         }
     }
 
-    /**
-     * Sets the list of IDs of hidden search engines.
-     */
+    /** Sets the list of IDs of hidden search engines. */
     override suspend fun setHiddenSearchEngines(ids: List<String>) {
         preferences.value.edit { putStringSet(PREFERENCE_KEY_HIDDEN_SEARCH_ENGINES, ids.toSet()) }
     }
 
-    /**
-     * Gets the list of IDs of hidden search engines.
-     */
+    /** Gets the list of IDs of hidden search engines. */
     override suspend fun getHiddenSearchEngines(): List<String> {
-        return preferences.value
-            .getStringSet(PREFERENCE_KEY_HIDDEN_SEARCH_ENGINES, emptySet())
-            ?.toList() ?: emptyList()
+        return preferences.value.getStringSet(PREFERENCE_KEY_HIDDEN_SEARCH_ENGINES, emptySet())?.toList() ?: emptyList()
     }
 
-    /**
-     * Gets the list of IDs of additional search engines that the user explicitly added.
-     */
+    /** Gets the list of IDs of additional search engines that the user explicitly added. */
     override suspend fun getAdditionalSearchEngines(): List<String> {
-        return preferences.value
-            .getStringSet(PREFERENCE_KEY_ADDITIONAL_SEARCH_ENGINES, emptySet())
-            ?.toList() ?: emptyList()
+        return preferences.value.getStringSet(PREFERENCE_KEY_ADDITIONAL_SEARCH_ENGINES, emptySet())?.toList()
+            ?: emptyList()
     }
 
     override suspend fun getDisabledSearchEngineIds(): List<String> {
@@ -115,9 +100,7 @@ internal class SearchMetadataStorage(
         preferences.value.edit { putStringSet(PREFERENCE_KEY_DISABLED_SEARCH_ENGINE_ID, ids.toSet()) }
     }
 
-    /**
-     * Sets the list of IDs of additional search engines that the user explicitly added.
-     */
+    /** Sets the list of IDs of additional search engines that the user explicitly added. */
     override suspend fun setAdditionalSearchEngines(ids: List<String>) {
         preferences.value.edit { putStringSet(PREFERENCE_KEY_ADDITIONAL_SEARCH_ENGINES, ids.toSet()) }
     }

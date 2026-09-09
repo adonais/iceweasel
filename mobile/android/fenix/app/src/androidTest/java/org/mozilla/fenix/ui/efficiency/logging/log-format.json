@@ -1,0 +1,95 @@
+{
+  "_comment": [
+    "The contract between this harness and everything that reads its output.",
+    "",
+    "Consumers: effpretty (renders the console stream), efftriage (diagnoses failures from the",
+    "structured stream), effverify (grades runs), and mission-control (dispatch, history, impact).",
+    "None of them are in this repository, and none of them can fail this repository's CI --- so a",
+    "rewording here is invisible until someone notices their tooling has quietly stopped working.",
+    "",
+    "That is not hypothetical. On 2026-08-21 a refactor reworded eight of efftriage's thirteen",
+    "matchers at once and nothing failed: tests green, runs green, triage silently explaining",
+    "nothing. One rule had already died the same way on 2026-08-13.",
+    "",
+    "So this file is the contract. Nothing in THIS repository asserts the code still matches it --- the contract tests live in testops-tools (tae-conversion/tests/harness_contract_tests.py) and only run when somebody runs that",
+    "suite, so a break lands green here and goes red later. Moving them in needs a gradle config change. Until then: if you change the harness's output, change this file in",
+    "the same commit and tell the consumers.",
+    "pass."
+  ],
+
+  "version": 1,
+
+  "console": {
+    "_comment": "The human stream, on logcat tag 'Eff'. effpretty parses `^(\\s*)\\[([A-Z]+)\\](.*)$`, so the tag, the glyph and four-space-per-level indentation are all load-bearing.",
+    "tag": "Eff",
+    "indent_per_level": "4 spaces",
+    "levels": {
+      "STEP": "★",
+      "CMD": "➤",
+      "LOC": "🔎",
+      "SEL": "→",
+      "OK": "✔",
+      "ERR": "✖",
+      "SKIP": "⊘",
+      "INFO": "•"
+    }
+  },
+
+  "structured": {
+    "_comment": "The machine stream, one JSON object per line on logcat tag 'EffJson'. Demuxed by `effpretty --events` into run-events.jsonl.",
+    "tag": "EffJson",
+    "record_types": {
+      "testStart": ["testId"],
+      "testEnd": ["testId", "status"],
+      "stepEnd": ["type", "outcome", "elapsedMs"],
+      "dump": ["dump", "layer"],
+      "dumpNode": ["dump", "layer"],
+      "state": ["phase", "testId"],
+      "cleanup": ["phase", "testId", "failed"]
+    },
+    "_state_comment": "state: one sample of the app's own stores, written by StateProbe. `phase` is arrival|start|end --- arrival is taken outside every cleanup rule and is the only one that shows what the device inherited, start is taken after the harness has cleared what it clears, end is taken when the test finishes. and consumers pair by testId and diff --- the harness deliberately does not compute the diff itself. The remaining keys are counts (tabs, tabsPrivate, history, bookmarks, logins, addresses, creditCards, topSites, downloads) plus launcherIcon, which is a name. A value that is a string beginning 'unreadable:' could not be sampled; treat it as absent rather than as a change.",
+    "_cleanup_comment": "cleanup: emitted by AppDataCleaner once per phase. `phase` is before|after and `failed` is a comma-separated list of the clears that errored, empty when all succeeded. A failed clear and a genuine state leak otherwise look identical --- both present as a later test starting with state it did not create --- so this is what distinguishes them.",
+    "scope_types": ["STEP", "CMD", "LOC"],
+    "outcomes": ["OK", "FAIL", "SKIP"],
+    "test_statuses": ["PASS", "FAIL", "SKIP"],
+    "dump_layers": ["compose", "uiautomator"],
+
+    "failure_vocabulary": {
+      "_comment": "core/VerbHost.kt, object Failure. Triage rules match these VALUES rather than the prose beside them, which is the entire point: a value cannot be reworded by accident.",
+      "values": [
+        "not_found",
+        "wrong_state",
+        "action_failed",
+        "still_present",
+        "appeared",
+        "never_settled",
+        "collection_unsatisfied",
+        "unsupported_strategy",
+        "condition_timeout",
+        "not_arrived",
+        "no_path"
+      ]
+    },
+
+    "optional_fields": {
+      "_comment": "Not on every record, but consumers rely on them where present.",
+      "verb": "the verb that produced the record, e.g. click, verify, navigate",
+      "selector": "the selector's human description",
+      "strategy": "SelectorStrategy name",
+      "value": "what the selector searched for --- efftriage T20 matches this against dump nodes",
+      "expectation": "what was asked of the element, e.g. 'is selected'",
+      "cause": "stack trace of whatever threw",
+      "dump": "label of the screen dump taken for this failure, pairing it with the dumpNode records",
+      "page": "page name, on navigate and arrival records",
+      "attempts": "how many times a driveUntil-style verb tried"
+    }
+  },
+
+  "screen_dump": {
+    "_comment": "helpers/ScreenDump.kt. efftriage greps the markers; the structured dumpNode records carry the same nodes as fields.",
+    "tag": "EffScreenDump",
+    "begin": "EFF_SCREEN_DUMP:BEGIN",
+    "end": "EFF_SCREEN_DUMP:END",
+    "max_structured_nodes": 250
+  }
+}

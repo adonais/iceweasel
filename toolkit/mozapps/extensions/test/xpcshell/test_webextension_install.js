@@ -1,4 +1,3 @@
-AddonTestUtils.overrideCertDB();
 AddonTestUtils.usePrivilegedSignatures = id => id.startsWith("privileged-");
 
 // Some tests in this test file can't run on android build because

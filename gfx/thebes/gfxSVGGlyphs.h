@@ -40,12 +40,13 @@ class gfxSVGGlyphsDocument final : public nsAPostRefreshObserver {
   typedef mozilla::dom::Element Element;
 
  public:
-  gfxSVGGlyphsDocument(const uint8_t* aBuffer, uint32_t aBufLen,
-                       gfxSVGGlyphs* aSVGGlyphs);
+  MOZ_CAN_RUN_SCRIPT gfxSVGGlyphsDocument(const uint8_t* aBuffer,
+                                          uint32_t aBufLen,
+                                          gfxSVGGlyphs* aSVGGlyphs);
 
   Element* GetGlyphElement(uint32_t aGlyphId);
 
-  ~gfxSVGGlyphsDocument();
+  MOZ_CAN_RUN_SCRIPT ~gfxSVGGlyphsDocument();
 
   void DidRefresh() override;
 
@@ -54,7 +55,7 @@ class gfxSVGGlyphsDocument final : public nsAPostRefreshObserver {
  private:
   nsresult ParseDocument(const uint8_t* aBuffer, uint32_t aBufLen);
 
-  nsresult SetupPresentation();
+  MOZ_CAN_RUN_SCRIPT nsresult SetupPresentation();
 
   void FindGlyphElements(Element* aElement);
 

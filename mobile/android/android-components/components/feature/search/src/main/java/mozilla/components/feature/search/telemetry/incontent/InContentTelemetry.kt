@@ -24,27 +24,24 @@ import org.json.JSONObject
  * Implemented as a browser extension based on the WebExtension API:
  * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions
  */
-class InContentTelemetry(
-    mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
-) : BaseSearchTelemetry(mainDispatcher) {
+class InContentTelemetry(mainDispatcher: CoroutineDispatcher = Dispatchers.Main) : BaseSearchTelemetry(mainDispatcher) {
 
     override suspend fun install(
         engine: Engine,
         store: BrowserStore,
         providerList: List<SearchProviderModel>,
     ) {
-        val info = ExtensionInfo(
-            id = SEARCH_EXTENSION_ID,
-            resourceUrl = SEARCH_EXTENSION_RESOURCE_URL,
-            messageId = SEARCH_MESSAGE_ID,
-        )
+        val info =
+            ExtensionInfo(
+                id = SEARCH_EXTENSION_ID,
+                resourceUrl = SEARCH_EXTENSION_RESOURCE_URL,
+                messageId = SEARCH_MESSAGE_ID,
+            )
         installWebExtension(engine, store, info)
         setProviderList(providerList)
     }
 
-    /**
-     * Processes a message containing search-related information.
-     */
+    /** Processes a message containing search-related information. */
     override fun processMessage(message: JSONObject) {
         val cookies = message.getJSONArray(SEARCH_MESSAGE_LIST_KEY).toList<JSONObject>()
         trackPartnerUrlTypeMetric(message.getString(SEARCH_MESSAGE_SESSION_URL_KEY), cookies)
@@ -67,24 +64,19 @@ class InContentTelemetry(
 
     companion object {
         /**
-         * [Fact] property indicating that the user did a search, be it a new one
-         * or continuing from an existing search.
+         * [Fact] property indicating that the user did a search, be it a new one or continuing from an existing search.
          */
         const val IN_CONTENT_SEARCH = "in content search"
 
-        @VisibleForTesting
-        internal const val SEARCH_EXTENSION_ID = "cookies@mozac.org"
+        @VisibleForTesting internal const val SEARCH_EXTENSION_ID = "cookies@mozac.org"
 
         @VisibleForTesting
         internal const val SEARCH_EXTENSION_RESOURCE_URL = "resource://android/assets/extensions/search/"
 
-        @VisibleForTesting
-        internal const val SEARCH_MESSAGE_SESSION_URL_KEY = "url"
+        @VisibleForTesting internal const val SEARCH_MESSAGE_SESSION_URL_KEY = "url"
 
-        @VisibleForTesting
-        internal const val SEARCH_MESSAGE_LIST_KEY = "cookies"
+        @VisibleForTesting internal const val SEARCH_MESSAGE_LIST_KEY = "cookies"
 
-        @VisibleForTesting
-        internal const val SEARCH_MESSAGE_ID = "MozacBrowserSearchMessage"
+        @VisibleForTesting internal const val SEARCH_MESSAGE_ID = "MozacBrowserSearchMessage"
     }
 }

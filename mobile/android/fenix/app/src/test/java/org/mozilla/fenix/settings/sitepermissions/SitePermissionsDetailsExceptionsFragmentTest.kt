@@ -31,11 +31,9 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class SitePermissionsDetailsExceptionsFragmentTest {
-    @RelaxedMockK
-    private lateinit var settings: Settings
+    @RelaxedMockK private lateinit var settings: Settings
 
-    @RelaxedMockK
-    private lateinit var permissions: SitePermissions
+    @RelaxedMockK private lateinit var permissions: SitePermissions
 
     private lateinit var fragment: SitePermissionsDetailsExceptionsFragment
     private lateinit var context: Context
@@ -48,11 +46,10 @@ class SitePermissionsDetailsExceptionsFragmentTest {
             createAddedTestFragmentWithActivity<SitePermissionsDetailsExceptionsFragment, AppCompatActivity>(
                 fragmentFactory = {
                     SitePermissionsDetailsExceptionsFragment().apply {
-                        arguments = SitePermissionsDetailsExceptionsFragmentArgs(
-                            sitePermissions = permissions,
-                        ).toBundle()
+                        arguments =
+                            SitePermissionsDetailsExceptionsFragmentArgs(sitePermissions = permissions).toBundle()
                     }
-                },
+                }
             )
         fragment = spyk(realFragment)
 
@@ -93,15 +90,11 @@ class SitePermissionsDetailsExceptionsFragmentTest {
 
         assertFalse(
             "Expected Local Network Access preference to be invisible",
-            fragment.requirePreference<Preference>(
-                PhoneFeature.LOCAL_NETWORK_ACCESS.getPreferenceId(),
-            ).isVisible,
+            fragment.requirePreference<Preference>(PhoneFeature.LOCAL_NETWORK_ACCESS.getPreferenceId()).isVisible,
         )
         assertFalse(
             "Expected Local Device Access preference to be invisible",
-            fragment.requirePreference<Preference>(
-                PhoneFeature.LOCAL_DEVICE_ACCESS.getPreferenceId(),
-            ).isVisible,
+            fragment.requirePreference<Preference>(PhoneFeature.LOCAL_DEVICE_ACCESS.getPreferenceId()).isVisible,
         )
     }
 
@@ -113,15 +106,11 @@ class SitePermissionsDetailsExceptionsFragmentTest {
 
         assertTrue(
             "Expected Local Network Access preference to be visible",
-            fragment.requirePreference<Preference>(
-                PhoneFeature.LOCAL_NETWORK_ACCESS.getPreferenceId(),
-            ).isVisible,
+            fragment.requirePreference<Preference>(PhoneFeature.LOCAL_NETWORK_ACCESS.getPreferenceId()).isVisible,
         )
         assertTrue(
             "Expected Local Device Access preference to be visible",
-            fragment.requirePreference<Preference>(
-                PhoneFeature.LOCAL_DEVICE_ACCESS.getPreferenceId(),
-            ).isVisible,
+            fragment.requirePreference<Preference>(PhoneFeature.LOCAL_DEVICE_ACCESS.getPreferenceId()).isVisible,
         )
     }
 

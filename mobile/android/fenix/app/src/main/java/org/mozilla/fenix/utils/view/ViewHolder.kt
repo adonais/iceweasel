@@ -8,9 +8,7 @@ import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 
 /**
- * A base class for all recycler view holders supporting Android Extensions-style view access.
- * This allows views to be used without an `itemView.<id>` prefix, and additionally caches them.
+ * A base class for all recycler view holders supporting Android Extensions-style view access. This allows views to be
+ * used without an `itemView.<id>` prefix, and additionally caches them.
  */
-abstract class ViewHolder(
-    val containerView: View,
-) : RecyclerView.ViewHolder(containerView)
+abstract class ViewHolder(val containerView: View) : RecyclerView.ViewHolder(containerView)

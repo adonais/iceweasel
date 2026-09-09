@@ -21,229 +21,267 @@ import mozilla.components.support.ktx.kotlin.isSameOriginAs
 
 @Suppress("LargeClass")
 internal object ContentStateReducer {
-    /**
-     * [ContentAction] Reducer function for modifying a specific [ContentState] of a [SessionState].
-     */
+    /** [ContentAction] Reducer function for modifying a specific [ContentState] of a [SessionState]. */
     @Suppress("LongMethod", "ThrowsCount", "CognitiveComplexMethod")
     fun reduce(state: BrowserState, action: ContentAction): BrowserState {
         return when (action) {
-            is ContentAction.RemoveIconAction -> updateContentState(state, action.sessionId) {
-                it.copy(icon = null)
-            }
-            is ContentAction.UpdateUrlAction -> updateContentState(state, action.sessionId) {
-                it.copy(
-                    url = action.url,
-                    icon = if (!isHostEquals(it.url, action.url)) {
-                        null
-                    } else {
-                        it.icon
-                    },
-                    title = if (!isUrlSame(it.url, action.url)) {
-                        ""
-                    } else {
-                        it.title
-                    },
-                    previewImageUrl = if (!isUrlSame(it.url, action.url)) {
-                        null
-                    } else {
-                        it.previewImageUrl
-                    },
-                    webAppManifest = if (!isInScope(it.webAppManifest, action.url)) {
-                        null
-                    } else {
-                        it.webAppManifest
-                    },
-                    permissionRequestsList = if (!it.url.isSameOriginAs(action.url)) {
-                        emptyList()
-                    } else {
-                        it.permissionRequestsList
-                    },
-                    searchTerms = if (action.hasUserGesture) {
-                        ""
-                    } else {
-                        it.searchTerms
-                    },
-                )
-            }
-            is ContentAction.UpdateProgressAction -> updateContentState(state, action.sessionId) {
-                it.copy(progress = action.progress)
-            }
-            is ContentAction.UpdateTitleAction -> updateContentState(state, action.sessionId) {
-                it.copy(title = action.title)
-            }
-            is ContentAction.UpdatePreviewImageAction -> updateContentState(state, action.sessionId) {
-                it.copy(previewImageUrl = action.previewImageUrl)
-            }
-            is ContentAction.UpdateLoadingStateAction -> updateContentState(state, action.sessionId) {
-                it.copy(loading = action.loading)
-            }
-            is ContentAction.UpdateRefreshCanceledStateAction -> updateContentState(state, action.sessionId) {
-                it.copy(refreshCanceled = action.refreshCanceled)
-            }
-            is ContentAction.UpdateSearchTermsAction -> updateContentState(state, action.sessionId) {
-                it.copy(searchTerms = action.searchTerms)
-            }
-            is ContentAction.UpdateIsSearchAction -> updateContentState(state, action.sessionId) {
-                it.copy(isSearch = action.isSearch)
-            }
-            is ContentAction.UpdateSecurityInfoAction -> updateContentState(state, action.sessionId) {
-                it.copy(securityInfo = action.securityInfo)
-            }
-            is ContentAction.UpdateIconAction -> updateContentState(state, action.sessionId) {
-                if (action.pageUrl == it.url) {
-                    // Only update the icon of the state if we are still on this page. The user may
-                    // have navigated away by the time the icon is loaded.
-                    it.copy(icon = action.icon)
-                } else {
-                    it
+            is ContentAction.RemoveIconAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(icon = null)
                 }
-            }
+            is ContentAction.UpdateUrlAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(
+                        url = action.url,
+                        icon =
+                            if (!isHostEquals(it.url, action.url)) {
+                                null
+                            } else {
+                                it.icon
+                            },
+                        title =
+                            if (!isUrlSame(it.url, action.url)) {
+                                ""
+                            } else {
+                                it.title
+                            },
+                        previewImageUrl =
+                            if (!isUrlSame(it.url, action.url)) {
+                                null
+                            } else {
+                                it.previewImageUrl
+                            },
+                        webAppManifest =
+                            if (!isInScope(it.webAppManifest, action.url)) {
+                                null
+                            } else {
+                                it.webAppManifest
+                            },
+                        permissionRequestsList =
+                            if (!it.url.isSameOriginAs(action.url)) {
+                                emptyList()
+                            } else {
+                                it.permissionRequestsList
+                            },
+                        searchTerms =
+                            if (action.hasUserGesture) {
+                                ""
+                            } else {
+                                it.searchTerms
+                            },
+                    )
+                }
+            is ContentAction.UpdateProgressAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(progress = action.progress)
+                }
+            is ContentAction.UpdateTitleAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(title = action.title)
+                }
+            is ContentAction.UpdatePreviewImageAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(previewImageUrl = action.previewImageUrl)
+                }
+            is ContentAction.UpdateLoadingStateAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(loading = action.loading)
+                }
+            is ContentAction.UpdateRefreshCanceledStateAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(refreshCanceled = action.refreshCanceled)
+                }
+            is ContentAction.UpdateSearchTermsAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(searchTerms = action.searchTerms)
+                }
+            is ContentAction.UpdateIsSearchAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(isSearch = action.isSearch)
+                }
+            is ContentAction.UpdateSecurityInfoAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(securityInfo = action.securityInfo)
+                }
+            is ContentAction.UpdateIconAction ->
+                updateContentState(state, action.sessionId) {
+                    if (action.pageUrl == it.url) {
+                        // Only update the icon of the state if we are still on this page. The user may
+                        // have navigated away by the time the icon is loaded.
+                        it.copy(icon = action.icon)
+                    } else {
+                        it
+                    }
+                }
             is ContentAction.UpdateThumbnailAction -> {
                 throw IllegalStateException("You need to add ThumbnailsMiddleware to your BrowserStore. ($action)")
             }
-            is ContentAction.UpdateDownloadAction -> updateContentState(state, action.sessionId) {
-                it.copy(download = action.download.copy(sessionId = action.sessionId))
-            }
+            is ContentAction.UpdateDownloadAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(download = action.download.copy(sessionId = action.sessionId))
+                }
             is ContentAction.ConsumeDownloadAction -> consumeDownload(state, action.sessionId, action.downloadId)
             is ContentAction.CancelDownloadAction -> consumeDownload(state, action.sessionId, action.downloadId)
 
-            is ContentAction.UpdateHitResultAction -> updateContentState(state, action.sessionId) {
-                it.copy(hitResult = action.hitResult)
-            }
-            is ContentAction.ConsumeHitResultAction -> updateContentState(state, action.sessionId) {
-                it.copy(hitResult = null)
-            }
-            is ContentAction.UpdatePromptRequestAction -> updateContentState(state, action.sessionId) {
-                it.copy(promptRequests = it.promptRequests + action.promptRequest)
-            }
-            is ContentAction.ConsumePromptRequestAction -> updateContentState(state, action.sessionId) {
-                it.copy(promptRequests = it.promptRequests - action.promptRequest)
-            }
-            is ContentAction.ReplacePromptRequestAction -> updateContentState(
-                state,
-                action.sessionId,
-            ) { contentState ->
-                val updated = contentState.promptRequests
-                    .filter { it.uid != action.previousPromptUid }
-                    .plus(action.promptRequest)
-                contentState.copy(promptRequests = updated)
-            }
-            is ContentAction.AddFindResultAction -> updateContentState(state, action.sessionId) {
-                it.copy(findResults = it.findResults + action.findResult)
-            }
-            is ContentAction.ClearFindResultsAction -> updateContentState(state, action.sessionId) {
-                it.copy(findResults = emptyList())
-            }
-            is ContentAction.UpdateWindowRequestAction -> updateContentState(state, action.sessionId) {
-                it.copy(windowRequest = action.windowRequest)
-            }
-            is ContentAction.ConsumeWindowRequestAction -> updateContentState(state, action.sessionId) {
-                it.copy(windowRequest = null)
-            }
-            is ContentAction.UpdateSearchRequestAction -> updateContentState(state, action.sessionId) {
-                it.copy(searchRequest = action.searchRequest)
-            }
-            is ContentAction.ConsumeSearchRequestAction -> updateContentState(state, action.sessionId) {
-                it.copy(searchRequest = null)
-            }
-            is ContentAction.FullScreenChangedAction -> updateContentState(state, action.sessionId) {
-                it.copy(fullScreen = action.fullScreenEnabled)
-            }
-            is ContentAction.PictureInPictureChangedAction -> updateContentState(state, action.sessionId) {
-                it.copy(pictureInPictureEnabled = action.pipEnabled)
-            }
-            is ContentAction.ViewportFitChangedAction -> updateContentState(state, action.sessionId) {
-                it.copy(layoutInDisplayCutoutMode = action.layoutInDisplayCutoutMode)
-            }
-            is ContentAction.UpdateBackNavigationStateAction -> updateContentState(state, action.sessionId) {
-                it.copy(canGoBack = action.canGoBack)
-            }
-            is ContentAction.UpdateForwardNavigationStateAction -> updateContentState(state, action.sessionId) {
-                it.copy(canGoForward = action.canGoForward)
-            }
-            is ContentAction.UpdateWebAppManifestAction -> updateContentState(state, action.sessionId) {
-                it.copy(webAppManifest = action.webAppManifest)
-            }
-            is ContentAction.RemoveWebAppManifestAction -> updateContentState(state, action.sessionId) {
-                it.copy(webAppManifest = null)
-            }
-            is ContentAction.UpdateFirstContentfulPaintStateAction -> updateContentState(state, action.sessionId) {
-                it.copy(firstContentfulPaint = action.firstContentfulPaint)
-            }
-            is ContentAction.UpdateHistoryStateAction -> updateContentState(state, action.sessionId) {
-                it.copy(history = HistoryState(action.historyList, action.currentIndex))
-            }
-            is ContentAction.UpdatePermissionsRequest -> updateContentState(
-                state,
-                action.sessionId,
-            ) {
-                if (!it.permissionRequestsList.containsPermission(action.permissionRequest)) {
-                    it.copy(
-                        permissionRequestsList = it.permissionRequestsList + action.permissionRequest,
-                    )
-                } else {
-                    it.permissionRequestsList.mergePermissions(action.permissionRequest)
-                    it
+            is ContentAction.UpdateHitResultAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(hitResult = action.hitResult)
                 }
-            }
-            is ContentAction.ConsumePermissionsRequest -> updateContentState(
-                state,
-                action.sessionId,
-            ) {
-                if (it.permissionRequestsList.containsPermission(action.permissionRequest)) {
-                    it.copy(
-                        permissionRequestsList = it.permissionRequestsList - action.permissionRequest,
-                    )
-                } else {
-                    it
+            is ContentAction.ConsumeHitResultAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(hitResult = null)
                 }
-            }
-            is ContentAction.UpdateAppPermissionsRequest -> updateContentState(
-                state,
-                action.sessionId,
-            ) {
-                if (!it.appPermissionRequestsList.containsPermission(action.appPermissionRequest)) {
-                    it.copy(
-                        appPermissionRequestsList = it.appPermissionRequestsList + action.appPermissionRequest,
-                    )
-                } else {
-                    it.appPermissionRequestsList.mergePermissions(action.appPermissionRequest)
-                    it
+            is ContentAction.UpdatePromptRequestAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(promptRequests = it.promptRequests + action.promptRequest)
                 }
-            }
-            is ContentAction.ConsumeAppPermissionsRequest -> updateContentState(
-                state,
-                action.sessionId,
-            ) {
-                if (it.appPermissionRequestsList.containsPermission(action.appPermissionRequest)) {
-                    it.copy(
-                        appPermissionRequestsList = it.appPermissionRequestsList - action.appPermissionRequest,
-                    )
-                } else {
-                    it
+            is ContentAction.ConsumePromptRequestAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(promptRequests = it.promptRequests - action.promptRequest)
                 }
-            }
-            is ContentAction.ClearPermissionRequests -> updateContentState(
-                state,
-                action.sessionId,
-            ) {
-                it.copy(permissionRequestsList = emptyList())
-            }
-            is ContentAction.ClearAppPermissionRequests -> updateContentState(
-                state,
-                action.sessionId,
-            ) {
-                it.copy(appPermissionRequestsList = emptyList())
-            }
-            is ContentAction.UpdateLoadRequestAction -> updateContentState(state, action.sessionId) {
-                it.copy(loadRequest = action.loadRequest)
-            }
-            is ContentAction.SetRecordingDevices -> updateContentState(state, action.sessionId) {
-                it.copy(recordingDevices = action.devices)
-            }
-            is ContentAction.UpdateTabDesktopMode -> updateContentState(state, action.sessionId) {
-                it.copy(desktopMode = action.enabled)
-            }
+            is ContentAction.ReplacePromptRequestAction ->
+                updateContentState(
+                    state,
+                    action.sessionId,
+                ) { contentState ->
+                    val updated =
+                        contentState.promptRequests
+                            .filter { it.uid != action.previousPromptUid }
+                            .plus(action.promptRequest)
+                    contentState.copy(promptRequests = updated)
+                }
+            is ContentAction.AddFindResultAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(findResults = it.findResults + action.findResult)
+                }
+            is ContentAction.ClearFindResultsAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(findResults = emptyList())
+                }
+            is ContentAction.UpdateWindowRequestAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(windowRequest = action.windowRequest)
+                }
+            is ContentAction.ConsumeWindowRequestAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(windowRequest = null)
+                }
+            is ContentAction.UpdateSearchRequestAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(searchRequest = action.searchRequest)
+                }
+            is ContentAction.ConsumeSearchRequestAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(searchRequest = null)
+                }
+            is ContentAction.FullScreenChangedAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(fullScreen = action.fullScreenEnabled)
+                }
+            is ContentAction.PictureInPictureChangedAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(pictureInPictureEnabled = action.pipEnabled)
+                }
+            is ContentAction.ViewportFitChangedAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(layoutInDisplayCutoutMode = action.layoutInDisplayCutoutMode)
+                }
+            is ContentAction.UpdateBackNavigationStateAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(canGoBack = action.canGoBack)
+                }
+            is ContentAction.UpdateForwardNavigationStateAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(canGoForward = action.canGoForward)
+                }
+            is ContentAction.UpdateWebAppManifestAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(webAppManifest = action.webAppManifest)
+                }
+            is ContentAction.RemoveWebAppManifestAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(webAppManifest = null)
+                }
+            is ContentAction.UpdateFirstContentfulPaintStateAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(firstContentfulPaint = action.firstContentfulPaint)
+                }
+            is ContentAction.UpdateHistoryStateAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(history = HistoryState(action.historyList, action.currentIndex))
+                }
+            is ContentAction.UpdatePermissionsRequest ->
+                updateContentState(
+                    state,
+                    action.sessionId,
+                ) {
+                    if (!it.permissionRequestsList.containsPermission(action.permissionRequest)) {
+                        it.copy(permissionRequestsList = it.permissionRequestsList + action.permissionRequest)
+                    } else {
+                        it.permissionRequestsList.mergePermissions(action.permissionRequest)
+                        it
+                    }
+                }
+            is ContentAction.ConsumePermissionsRequest ->
+                updateContentState(
+                    state,
+                    action.sessionId,
+                ) {
+                    if (it.permissionRequestsList.containsPermission(action.permissionRequest)) {
+                        it.copy(permissionRequestsList = it.permissionRequestsList - action.permissionRequest)
+                    } else {
+                        it
+                    }
+                }
+            is ContentAction.UpdateAppPermissionsRequest ->
+                updateContentState(
+                    state,
+                    action.sessionId,
+                ) {
+                    if (!it.appPermissionRequestsList.containsPermission(action.appPermissionRequest)) {
+                        it.copy(appPermissionRequestsList = it.appPermissionRequestsList + action.appPermissionRequest)
+                    } else {
+                        it.appPermissionRequestsList.mergePermissions(action.appPermissionRequest)
+                        it
+                    }
+                }
+            is ContentAction.ConsumeAppPermissionsRequest ->
+                updateContentState(
+                    state,
+                    action.sessionId,
+                ) {
+                    if (it.appPermissionRequestsList.containsPermission(action.appPermissionRequest)) {
+                        it.copy(appPermissionRequestsList = it.appPermissionRequestsList - action.appPermissionRequest)
+                    } else {
+                        it
+                    }
+                }
+            is ContentAction.ClearPermissionRequests ->
+                updateContentState(
+                    state,
+                    action.sessionId,
+                ) {
+                    it.copy(permissionRequestsList = emptyList())
+                }
+            is ContentAction.ClearAppPermissionRequests ->
+                updateContentState(
+                    state,
+                    action.sessionId,
+                ) {
+                    it.copy(appPermissionRequestsList = emptyList())
+                }
+            is ContentAction.UpdateLoadRequestAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(loadRequest = action.loadRequest)
+                }
+            is ContentAction.SetRecordingDevices ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(recordingDevices = action.devices)
+                }
+            is ContentAction.UpdateTabDesktopMode ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(desktopMode = action.enabled)
+                }
             is UpdatePermissionHighlightsStateAction.NotificationChangedAction -> {
                 updatePermissionHighlightsState(state, action.tabId) {
                     it.copy(notificationChanged = action.value)
@@ -308,21 +346,24 @@ internal object ContentStateReducer {
                 updatePermissionHighlightsState(state, action.tabId) { PermissionHighlightsState() }
             }
 
-            is ContentAction.UpdateAppIntentAction -> updateContentState(state, action.sessionId) {
-                it.copy(appIntent = action.appIntent)
-            }
-            is ContentAction.ConsumeAppIntentAction -> updateContentState(state, action.sessionId) {
-                it.copy(appIntent = null)
-            }
-            is ContentAction.UpdateExpandedToolbarStateAction -> updateContentState(state, action.sessionId) {
-                it.copy(showToolbarAsExpanded = action.expanded)
-            }
-            is ContentAction.UpdateHasFormDataAction -> updateContentState(state, action.tabId) {
-                it.copy(hasFormData = action.containsFormData)
-            }
+            is ContentAction.UpdateAppIntentAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(appIntent = action.appIntent)
+                }
+            is ContentAction.ConsumeAppIntentAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(appIntent = null)
+                }
+            is ContentAction.UpdateExpandedToolbarStateAction ->
+                updateContentState(state, action.sessionId) {
+                    it.copy(showToolbarAsExpanded = action.expanded)
+                }
+            is ContentAction.UpdateHasFormDataAction ->
+                updateContentState(state, action.tabId) {
+                    it.copy(hasFormData = action.containsFormData)
+                }
             is ContentAction.UpdatePriorityToDefaultAfterTimeoutAction,
-            is ContentAction.CheckForFormDataExceptionAction,
-            -> {
+            is ContentAction.CheckForFormDataExceptionAction -> {
                 throw IllegalStateException("You need to add SessionPrioritizationMiddleware. ($action)")
             }
             is ContentAction.EnteredPdfViewer -> {

@@ -284,7 +284,7 @@ class ProgramExecutableMtl : public ProgramExecutableImpl
     // Scratch data:
     // Legalized buffers and their offsets. For example, uniform buffer's offset=1 is not a valid
     // offset, it will be converted to legal offset and the result is stored in this array.
-    std::vector<std::pair<mtl::BufferRef, uint32_t>> mLegalizedOffsetedUniformBuffers;
+    std::vector<mtl::BufferSlice> mLegalizedOffsetedUniformBuffers;
     // Stores the render stages usage of each uniform buffer. Only used if the buffers are encoded
     // into an argument buffer.
     std::vector<uint32_t> mArgumentBufferRenderStageUsages;
@@ -292,6 +292,10 @@ class ProgramExecutableMtl : public ProgramExecutableImpl
     uint32_t mShadowCompareModes[mtl::kMaxShaderSamplers];
 
     gl::ShaderMap<std::unique_ptr<mtl::BufferPool>> mDefaultUniformBufferPools;
+
+    // A unique ID to identify this program executable across its lifetime. It's guaranteed that
+    // there is no duplicated ID ever even if the program is deleted.
+    Serial mProgramSerialId;
 };
 
 angle::Result CreateMslShaderLib(mtl::Context *context,

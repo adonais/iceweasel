@@ -16,9 +16,9 @@ import org.mozilla.fenix.ui.efficiency.selectors.OnboardingSelectors
  * The first-run Onboarding flow.
  *
  * Only reachable when the app launches with onboarding enabled — declare the test class as
- * BaseTest(skipOnboarding = false). The AppEntry -> OnboardingPage edge has no steps because the
- * flow is already on screen at launch; navigateToPage() confirms arrival via the `requiredForPage`
- * selector group (the Terms of Use card title).
+ * BaseTest(LaunchConfig(skipOnboarding = false). The AppEntry -> OnboardingPage edge has no steps because the flow is
+ * already on screen at launch; navigateToPage() confirms arrival via the `requiredForPage` selector group (the Terms of
+ * Use card title).
  */
 class OnboardingPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
 

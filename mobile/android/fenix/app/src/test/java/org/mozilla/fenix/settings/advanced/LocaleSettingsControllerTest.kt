@@ -13,6 +13,7 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyAll
+import java.util.Locale
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.SearchAction
 import mozilla.components.browser.state.state.BrowserState
@@ -24,7 +25,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
-import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
 class LocaleSettingsControllerTest {
@@ -42,14 +42,15 @@ class LocaleSettingsControllerTest {
 
     @Before
     fun setup() {
-        controller = spyk(
-            DefaultLocaleSettingsController(
-                activity,
-                localeSettingsStore,
-                browserStore,
-                localeUseCases,
-            ),
-        )
+        controller =
+            spyk(
+                DefaultLocaleSettingsController(
+                    activity,
+                    localeSettingsStore,
+                    browserStore,
+                    localeUseCases,
+                )
+            )
 
         every { localeUseCases.notifyLocaleChanged(any()) } just Runs
     }

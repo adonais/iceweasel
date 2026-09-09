@@ -20,7 +20,8 @@ Additionally, here are some etiquette tips to help when reaching out:
   - Most issues with setup have been experienced before, so there's a good possibility that your question has already been answered recently.
 
 We make changes to Firefox by writing patches, testing them and pushing them into "the tree", the
-term we use for all the code in Mozilla-Central. Let's get started.
+term we use for all the code in the
+[firefox repository](https://github.com/mozilla-firefox/firefox). Let's get started.
 
 Please see the {ref}`Firefox Contributors Quick Reference <firefox-contributors-quick-reference>` for simple check list.
 
@@ -35,14 +36,14 @@ commented that they're looking at fixing the issue.
 
 Once you have found something to work on, go ahead and comment! Let
 the bug submitter, reviewer, and component owner know that you'd like
-to work on the bug. You might receive some extra information, perhaps
-also made the assignee.
+to work on the bug. You might receive some extra information, and be
+made the assignee.
 
 (good-first-bug-guide)=
 
 ### Find a bug we've identified as a good fit for new contributors
 
-With millions bugs filed in Bugzilla, it can be hard to know
+With millions of bugs filed in Bugzilla, it can be hard to know
 where to start, so we've created these bug categories to make getting
 involved a little easier:
 
@@ -50,7 +51,7 @@ involved a little easier:
   finding bugs that are mentored, some are good first bugs, some are
   slightly harder. Your mentor will help guide you with the bug fix and
   through the submission and landing process.
-- [Good First Bugs](https://mzl.la/2yBg3zB)
+- [Good First Bugs](https://bugzilla.mozilla.org/buglist.cgi?keywords=good-first-bug&resolution=---)
   \- are the best way to take your first steps into the Mozilla
   ecosystem. They're all about small changes, sometimes as little as a
   few lines, but they're a great way to learn about setting up your
@@ -91,45 +92,17 @@ We leave this in your hands. Here are some further resources to help:
 ## Getting your code reviewed
 
 Once you fix the bug, you can advance to having your code reviewed.
-
 Mozilla uses
 [Phabricator](https://moz-conduit.readthedocs.io/en/latest/phabricator-user.html)
 for code review.
 
-Who is the right person to ask for a review?
-
-- If you have a mentored bug: ask your mentor. They will help, or can
-  easily find out. It might be them!
-- Run `git blame` on the file and look for the people who have touched
-  the functions you're working on. They too are good candidates.
-  Running `git log` and looking for regular reviewers might be a
-  solution too.
-- The bug itself may contain a clear indication of the best person to
-  ask for a review
-- Are there related bugs on similar topics? The reviewer in those bugs
-  might be another good choice
-- We have a {ref}`list of modules <governance>`, which lists peers and
-  owners for the module. Some of these will be good reviewers. In a
-  worst case scenario, set the module owner as the reviewer, asking
-  them in the comments to pick someone more suitable
-
-Please select only one reviewer.
+If you have a mentored bug, ask your mentor first: they will review the
+patch, or can easily find out who should. Otherwise, see
+{ref}`Getting reviews` for how to pick a reviewer or a review group, the
+`r=` commit message syntax, and what to do when a review is not
+happening.
 
 ### Following up and responding
-
-Once you've asked for a review, a reviewer will often respond within a
-day or two, reviewing the patch, or saying when they will be able to
-review it, perhaps due to a backlog. If you don't hear back within this
-time, naturally reach out to them: add a comment to the bug saying
-'review ping?', check the "Need more information from" box, and add the
-reviewer's name. If they don't respond within a day or two, you can ask
-for help on Matrix in the
-[#introduction:mozilla.org](https://riot.im/app/#/room/#introduction:mozilla.org)
-or
-[#developers:mozilla.org](https://chat.mozilla.org/#/room/#developers:mozilla.org)
-channels.
-
-Don't hesitate to contact your mentor as well if this isn't moving.
 
 For most new contributors, and even for long-time Mozillians, the first
 review of your patch will be "Requested Changes" (or an "r-" in
@@ -142,9 +115,10 @@ This is an important process, so don't be discouraged! With our
 long-lived codebase, and hundreds of millions of users, the care and
 attention helping contributors bring good patches is the cornerstone of
 the Mozilla project. Make any changes your reviewer seeks; if you're
-unsure how, be sure to ask! Push your new patch up to Phabricator again and
-ask for a further review from the same reviewer. If they accept your
-changes, this means your patch can be landed into the tree!
+unsure how, be sure to ask!
+
+See {ref}`addressing-review-comments` for how to update and resubmit
+your patch.
 
 ## Getting code into Firefox
 
@@ -163,22 +137,15 @@ For more details, see {ref}`push-a-change`
 Thank you. You've fixed your very first bug, and the Open Web is
 stronger for it. But don't stop now.
 
-Go back to step 3, as there is plenty more to do. Your mentor might
-suggest a new bug for you to work on, or
-{ref}`find one that interests you <good-first-bug-guide>`
-Now that you've got your
-first bug fixed you should request level 1 access to the repository to
-push to the try server and get automated feedback about your changes on
-multiple platforms. After fixing a nontrivial number of bugs you should
-request level 3 access so you can land your own code after it has been
-reviewed.
+There is plenty more to do. Your mentor might suggest a new bug for you
+to work on, or you can
+{ref}`find one that interests you <good-first-bug-guide>`.
+
+As you fix more bugs, you can request more access to Mozilla
+infrastructure so you can push to try and eventually land your own code.
+See {ref}`Levelling up`.
 
 ## More information
-
-We're in the process of improving information on this page for newcomers
-to the project. We'll be integrating some information from these pages
-soon, but until then you may find them interesting in their current
-form:
 
 - [A beginner's guide to SpiderMonkey, Mozilla's Javascript
   engine](https://wiki.mozilla.org/JavaScript:New_to_SpiderMonkey)

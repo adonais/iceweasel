@@ -22,14 +22,14 @@ interface CollectionCreationInteractor {
     fun onBackPressed(fromStep: SaveCollectionStep)
 
     /**
-     * Called when a user hits 'Select All' from the 'Select Tabs' step. This affects which tabs
-     * have been 'selected' to be saved into a collection.
+     * Called when a user hits 'Select All' from the 'Select Tabs' step. This affects which tabs have been 'selected' to
+     * be saved into a collection.
      */
     fun selectAllTapped()
 
     /**
-     * Called when a user hits 'Deselect All' from the 'Select Tabs' step. This affects which tabs
-     * have been 'selected' to be saved into a collection.
+     * Called when a user hits 'Deselect All' from the 'Select Tabs' step. This affects which tabs have been 'selected'
+     * to be saved into a collection.
      */
     fun deselectAllTapped()
 
@@ -42,9 +42,7 @@ interface CollectionCreationInteractor {
 
     fun selectCollection(collection: TabCollection, tabs: List<Tab>)
 
-    /**
-     * Called when the user decides to save tabs to the currently selected session.
-     */
+    /** Called when the user decides to save tabs to the currently selected session. */
     fun saveTabsToCollection(tabs: List<Tab>)
 
     fun addNewCollection()
@@ -54,12 +52,9 @@ interface CollectionCreationInteractor {
     fun removeTabFromSelection(tab: Tab)
 }
 
-/**
- * Forwards all method calls to their equivalents in [CollectionCreationController].
- */
-class DefaultCollectionCreationInteractor(
-    private val controller: CollectionCreationController,
-) : CollectionCreationInteractor {
+/** Forwards all method calls to their equivalents in [CollectionCreationController]. */
+class DefaultCollectionCreationInteractor(private val controller: CollectionCreationController) :
+    CollectionCreationInteractor {
     override fun onNewCollectionNameSaved(tabs: List<Tab>, name: String) {
         controller.saveCollectionName(tabs, name)
     }

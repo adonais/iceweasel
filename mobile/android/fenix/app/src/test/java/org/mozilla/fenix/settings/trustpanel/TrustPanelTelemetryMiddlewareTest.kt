@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.settings.trustpanel
 
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -13,28 +14,22 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.GleanMetrics.TrustPanel
 import org.mozilla.fenix.helpers.FenixGleanTestRule
+import org.mozilla.fenix.settings.trustpanel.middleware.TRUST_PANEL_TELEMETRY_SOURCE
 import org.mozilla.fenix.settings.trustpanel.middleware.TrustPanelTelemetryMiddleware
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelAction
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelState
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelStore
-import org.mozilla.fenix.trackingprotection.ProtectionsDashboardFragment
 import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class TrustPanelTelemetryMiddlewareTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     @Test
     fun `GIVEN tracking protection is enabled WHEN toggle tracking protection action is dispatched THEN record tracking protection exception added telemetry`() {
-        val store = createStore(
-            trustPanelState = TrustPanelState(
-                isTrackingProtectionEnabled = true,
-            ),
-        )
+        val store = createStore(trustPanelState = TrustPanelState(isTrackingProtectionEnabled = true))
         assertNull(TrackingProtection.exceptionAdded.testGetValue())
 
         store.dispatch(TrustPanelAction.ToggleTrackingProtection)
@@ -44,11 +39,7 @@ class TrustPanelTelemetryMiddlewareTest {
 
     @Test
     fun `GIVEN tracking protection is disabled WHEN toggle tracking protection action is dispatched THEN do not record tracking protection exception added telemetry`() {
-        val store = createStore(
-            trustPanelState = TrustPanelState(
-                isTrackingProtectionEnabled = false,
-            ),
-        )
+        val store = createStore(trustPanelState = TrustPanelState(isTrackingProtectionEnabled = false))
         assertNull(TrackingProtection.exceptionAdded.testGetValue())
 
         store.dispatch(TrustPanelAction.ToggleTrackingProtection)
@@ -58,11 +49,7 @@ class TrustPanelTelemetryMiddlewareTest {
 
     @Test
     fun `WHEN security certificate action is dispatched THEN record security certificate telemetry`() {
-        val store = createStore(
-            trustPanelState = TrustPanelState(
-                isTrackingProtectionEnabled = false,
-            ),
-        )
+        val store = createStore(trustPanelState = TrustPanelState(isTrackingProtectionEnabled = false))
         assertNull(TrustPanel.securityCertificate.testGetValue())
 
         store.dispatch(TrustPanelAction.Navigate.SecurityCertificate)
@@ -71,12 +58,8 @@ class TrustPanelTelemetryMiddlewareTest {
     }
 
     @Test
-    fun `WHEN trackers protection dashboard action is dispatched THEN record privacy report tapped telemetry with the trust panel source`() {
-        val store = createStore(
-            trustPanelState = TrustPanelState(
-                isTrackingProtectionEnabled = false,
-            ),
-        )
+    fun `WHEN trackers protection dashboard action is dispatched THEN record privacy report shown telemetry with the trust panel source`() {
+        val store = createStore(trustPanelState = TrustPanelState(isTrackingProtectionEnabled = false))
         assertNull(TrackingProtection.privacyReportTapped.testGetValue())
 
         store.dispatch(TrustPanelAction.Navigate.TrackersProtectionDashboard)
@@ -85,7 +68,7 @@ class TrustPanelTelemetryMiddlewareTest {
         assertNotNull(events)
         assertEquals(1, events.size)
         assertEquals(
-            ProtectionsDashboardFragment.SOURCE_TRUST_PANEL,
+            TRUST_PANEL_TELEMETRY_SOURCE,
             events.single().extra?.get("source"),
         )
     }
@@ -115,21 +98,14 @@ class TrustPanelTelemetryMiddlewareTest {
         val store = createStore()
         assertNull(TrackingProtection.etpTrackerList.testGetValue())
 
-        store.dispatch(
-            TrustPanelAction.UpdateDetailedTrackerCategory(
-                TrackingProtectionCategory.SOCIAL_MEDIA_TRACKERS,
-            ),
-        )
+        store.dispatch(TrustPanelAction.UpdateDetailedTrackerCategory(TrackingProtectionCategory.SOCIAL_MEDIA_TRACKERS))
 
         assertNotNull(TrackingProtection.etpTrackerList.testGetValue())
     }
 
-    private fun createStore(
-        trustPanelState: TrustPanelState = TrustPanelState(),
-    ) = TrustPanelStore(
-        initialState = trustPanelState,
-        middleware = listOf(
-            TrustPanelTelemetryMiddleware(),
-        ),
-    )
+    private fun createStore(trustPanelState: TrustPanelState = TrustPanelState()) =
+        TrustPanelStore(
+            initialState = trustPanelState,
+            middleware = listOf(TrustPanelTelemetryMiddleware()),
+        )
 }

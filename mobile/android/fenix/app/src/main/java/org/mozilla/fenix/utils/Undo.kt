@@ -7,6 +7,7 @@ package org.mozilla.fenix.utils
 import android.content.Context
 import android.view.View
 import androidx.compose.material3.SnackbarHostState
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -16,11 +17,10 @@ import mozilla.components.compose.base.snackbar.displaySnackbar
 import org.mozilla.fenix.compose.core.Action
 import org.mozilla.fenix.compose.snackbar.Snackbar
 import org.mozilla.fenix.compose.snackbar.SnackbarState
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Get the recommended time an "undo" action should be available until it can automatically be
- * dismissed. The delay may be different based on the accessibility settings of the device.
+ * Get the recommended time an "undo" action should be available until it can automatically be dismissed. The delay may
+ * be different based on the accessibility settings of the device.
  *
  * @return The undo delay as a [Long] in milliseconds.
  */
@@ -33,8 +33,8 @@ fun Settings.getUndoDelay(): Long {
 }
 
 /**
- * Get the recommended [SnackbarTimeout] a Snackbar should be displayed for.
- * The timeout may be different based on the accessibility settings of the device.
+ * Get the recommended [SnackbarTimeout] a Snackbar should be displayed for. The timeout may be different based on the
+ * accessibility settings of the device.
  *
  * @return The undo delay as a [SnackbarTimeout].
  */
@@ -49,8 +49,8 @@ fun Settings.getSnackbarTimeout(hasAction: Boolean = false): SnackbarTimeout {
 }
 
 /**
- * Runs [operation] after giving user time (see [Settings.getUndoDelay]) to cancel it.
- * In case of cancellation, [onCancel] is executed.
+ * Runs [operation] after giving user time (see [Settings.getUndoDelay]) to cancel it. In case of cancellation,
+ * [onCancel] is executed.
  *
  * Execution of suspend blocks happens on [Dispatchers.Main].
  *
@@ -79,31 +79,33 @@ fun CoroutineScope.allowUndo(
 
     @Suppress("ComplexCondition")
     fun showUndoSnackbar() {
-        val snackbar = Snackbar
-            .make(
-                snackBarParentView = view,
-                snackbarState = SnackbarState(
-                    message = message,
-                    duration = SnackbarState.Duration.Preset.Indefinite,
-                    action = Action(
-                        label = undoActionTitle,
-                        onClick = {
-                            requestedUndo.set(true)
-                            launch {
-                                onCancel.invoke()
-                            }
-                        },
-                    ),
-                    onDismiss = {
-                        launch {
-                            if (!requestedUndo.get()) {
-                                operation.invoke(view.context)
-                            }
-                        }
-                    },
-                ),
-            )
-            .setAnchorView(anchorView)
+        val snackbar =
+            Snackbar.make(
+                    snackBarParentView = view,
+                    snackbarState =
+                        SnackbarState(
+                            message = message,
+                            duration = SnackbarState.Duration.Preset.Indefinite,
+                            action =
+                                Action(
+                                    label = undoActionTitle,
+                                    onClick = {
+                                        requestedUndo.set(true)
+                                        launch {
+                                            onCancel.invoke()
+                                        }
+                                    },
+                                ),
+                            onDismiss = {
+                                launch {
+                                    if (!requestedUndo.get()) {
+                                        operation.invoke(view.context)
+                                    }
+                                }
+                            },
+                        ),
+                )
+                .setAnchorView(anchorView)
 
         elevation?.also {
             snackbar.view.elevation = it

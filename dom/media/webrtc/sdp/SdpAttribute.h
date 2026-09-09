@@ -340,17 +340,17 @@ class SdpExtmapAttributeList : public SdpAttribute {
     uint16_t entry;
     SdpDirectionAttribute::Direction direction;
     bool direction_specified;
-    std::string extensionname;
-    std::string extensionattributes;
+    nsCString extensionname;
+    nsCString extensionattributes;
   };
 
   void PushEntry(const uint16_t entry,
                  const SdpDirectionAttribute::Direction direction,
                  const bool direction_specified,
-                 const std::string& extensionname,
-                 const std::string& extensionattributes = "") {
-    Extmap value = {entry, direction, direction_specified, extensionname,
-                    extensionattributes};
+                 const nsACString& extensionname,
+                 const nsACString& extensionattributes = ""_ns) {
+    Extmap value = {entry, direction, direction_specified,
+                    nsCString(extensionname), nsCString(extensionattributes)};
     mExtmaps.push_back(std::move(value));
   }
 

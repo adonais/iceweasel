@@ -145,10 +145,6 @@
       min-width: 24px;
     }
 
-    #lists-switcher-panel panel-item::part(button) {
-      padding-inline-start: var(--space-xxlarge);
-    }
-
     .lists-title {
       color: var(--lists-text-color);
       display: block;

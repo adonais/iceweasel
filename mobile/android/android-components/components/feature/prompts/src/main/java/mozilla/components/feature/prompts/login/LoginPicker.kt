@@ -17,15 +17,13 @@ import mozilla.components.feature.prompts.facts.emitLoginAutofillShownFact
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * The [LoginPicker] displays a list of possible logins in a [SelectablePromptView] for a site after
- * receiving a [PromptRequest.SelectLoginPrompt] when a user clicks into a login field and we have
- * matching logins. It allows the user to select which one of these logins they would like to fill,
- * or select an option to manage their logins.
+ * The [LoginPicker] displays a list of possible logins in a [SelectablePromptView] for a site after receiving a
+ * [PromptRequest.SelectLoginPrompt] when a user clicks into a login field and we have matching logins. It allows the
+ * user to select which one of these logins they would like to fill, or select an option to manage their logins.
  *
  * @property store The [BrowserStore] this feature should subscribe to.
  * @property loginSelectBar The [AutocompletePrompt] view into which the select login "prompt" will be inflated.
- * @property manageLoginsCallback A callback invoked when a user selects "manage logins" from the
- * select login prompt.
+ * @property manageLoginsCallback A callback invoked when a user selects "manage logins" from the select login prompt.
  * @property sessionId This is the id of the session which requested the prompt.
  */
 internal class LoginPicker(

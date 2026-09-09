@@ -15,11 +15,18 @@
 #include "nsDirectoryServiceUtils.h"
 #include "nsNetUtil.h"
 #include "nsServiceManagerUtils.h"
+#include "MainThreadUtils.h"
 #include "mozilla/BasePrincipal.h"
 
 namespace mozilla {
 
 NS_IMPL_ISUPPORTS(AlertNotification, nsIAlertNotification)
+
+AlertNotification::AlertNotification() {
+  MOZ_ASSERT(NS_IsMainThread());
+  static uint64_t sCountId = 0;
+  mCountId = ++sCountId;
+}
 
 NS_IMETHODIMP
 AlertNotification::Init(const nsAString& aName, const nsAString& aImageURL,
@@ -138,6 +145,12 @@ NS_IMETHODIMP
 AlertNotification::SetActions(
     const nsTArray<RefPtr<nsIAlertAction>>& aActions) {
   mActions = aActions.Clone();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+AlertNotification::GetCountId(uint64_t* aCountId) {
+  *aCountId = mCountId;
   return NS_OK;
 }
 

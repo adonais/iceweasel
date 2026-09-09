@@ -6,6 +6,11 @@ package mozilla.components.browser.engine.gecko.fetch
 
 import android.content.Context
 import androidx.annotation.VisibleForTesting
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.nio.ByteBuffer
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import mozilla.components.concept.fetch.Client
 import mozilla.components.concept.fetch.Headers
 import mozilla.components.concept.fetch.MutableHeaders
@@ -21,15 +26,8 @@ import org.mozilla.geckoview.WebRequest.CACHE_MODE_DEFAULT
 import org.mozilla.geckoview.WebRequest.CACHE_MODE_RELOAD
 import org.mozilla.geckoview.WebRequestError
 import org.mozilla.geckoview.WebResponse
-import java.io.IOException
-import java.net.SocketTimeoutException
-import java.nio.ByteBuffer
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
 
-/**
- * GeckoView ([GeckoWebExecutor]) based implementation of [Client].
- */
+/** GeckoView ([GeckoWebExecutor]) based implementation of [Client]. */
 class GeckoViewFetchClient(
     context: Context,
     runtime: GeckoRuntime = GeckoRuntime.getDefault(context),
@@ -85,14 +83,15 @@ class GeckoViewFetchClient(
     }
 }
 
-private fun Request.toWebRequest(): WebRequest = WebRequest.Builder(url)
-    .method(method.name)
-    .addHeadersFrom(this)
-    .addBodyFrom(this)
-    .referrer(referrerUrl)
-    .cacheMode(if (useCaches) CACHE_MODE_DEFAULT else CACHE_MODE_RELOAD)
-    .beConservative(conservative)
-    .build()
+private fun Request.toWebRequest(): WebRequest =
+    WebRequest.Builder(url)
+        .method(method.name)
+        .addHeadersFrom(this)
+        .addBodyFrom(this)
+        .referrer(referrerUrl)
+        .cacheMode(if (useCaches) CACHE_MODE_DEFAULT else CACHE_MODE_RELOAD)
+        .beConservative(conservative)
+        .build()
 
 private fun WebRequest.Builder.addHeadersFrom(request: Request): WebRequest.Builder {
     request.headers?.forEach { header ->

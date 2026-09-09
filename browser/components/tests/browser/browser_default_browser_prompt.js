@@ -53,15 +53,18 @@ let testSetDefaultSpotlight = {
     ],
   },
 };
-function AssertHistogram(histogram, name, expect = 1) {
-  TelemetryTestUtils.assertHistogram(
-    histogram,
-    TELEMETRY_NAMES.indexOf(name),
-    expect
+function AssertSetDefaultResult(name, expect = 1) {
+  const distribution = Glean.browser.setDefaultResult.testGetValue();
+  Assert.equal(
+    (distribution?.values ?? {})[TELEMETRY_NAMES.indexOf(name)] ?? 0,
+    expect,
+    `Should have recorded ${name}`
   );
-}
-function getHistogram() {
-  return TelemetryTestUtils.getAndClearHistogram("BROWSER_SET_DEFAULT_RESULT");
+  Assert.equal(
+    distribution?.count ?? 0,
+    expect,
+    `Should have recorded nothing but ${name}`
+  );
 }
 
 add_task(async function proton_shows_prompt() {
@@ -85,7 +88,7 @@ add_task(async function proton_shows_prompt() {
 });
 
 add_task(async function not_now() {
-  const histogram = getHistogram();
+  Services.fog.testResetFOG();
   await showAndWaitForModal(win => {
     win.document.querySelector("dialog").getButton("cancel").click();
   });
@@ -95,11 +98,11 @@ add_task(async function not_now() {
     true,
     "Canceling keeps pref true"
   );
-  AssertHistogram(histogram, "cancel");
+  AssertSetDefaultResult("cancel");
 });
 
 add_task(async function stop_asking() {
-  const histogram = getHistogram();
+  Services.fog.testResetFOG();
 
   await showAndWaitForModal(win => {
     const dialog = win.document.querySelector("dialog");
@@ -112,12 +115,12 @@ add_task(async function stop_asking() {
     false,
     "Canceling with checkbox checked clears the pref"
   );
-  AssertHistogram(histogram, "cancel check");
+  AssertSetDefaultResult("cancel check");
 });
 
 add_task(async function primary_default() {
   const mock = mockShell({ isPinned: true, isPinnedToStartMenu: true });
-  const histogram = getHistogram();
+  Services.fog.testResetFOG();
 
   await showAndWaitForModal(win => {
     win.document.querySelector("dialog").getButton("accept").click();
@@ -138,12 +141,12 @@ add_task(async function primary_default() {
     0,
     "Primary button doesn't pin if already pinned"
   );
-  AssertHistogram(histogram, "accept");
+  AssertSetDefaultResult("accept");
 });
 
 add_task(async function primary_pin() {
   const mock = mockShell({ canPin: true });
-  const histogram = getHistogram();
+  Services.fog.testResetFOG();
 
   await showAndWaitForModal(win => {
     win.document.querySelector("dialog").getButton("accept").click();
@@ -168,7 +171,7 @@ add_task(async function primary_pin() {
       );
     }
   }
-  AssertHistogram(histogram, "accept");
+  AssertSetDefaultResult("accept");
 });
 
 add_task(async function showDefaultPrompt() {
@@ -328,7 +331,7 @@ add_task(async function spotlightStoresImpressionTimestamp() {
 });
 
 add_task(async function spotlightRecordsTelemetryOnAccept() {
-  const histogram = getHistogram();
+  Services.fog.testResetFOG();
   let sandbox = sinon.createSandbox();
   const mock = mockShell({ isDefault: true });
 
@@ -360,7 +363,7 @@ add_task(async function spotlightRecordsTelemetryOnAccept() {
   await BROWSER_GLUE._maybeShowDefaultBrowserPrompt();
 
   // isNowDefault=true, shouldCheckDefaultBrowser=true → resultEnum = 0*2+1 = 1 → "accept"
-  AssertHistogram(histogram, "accept");
+  AssertSetDefaultResult("accept");
 
   await doExperimentCleanup();
   await sandbox.restore();
@@ -369,7 +372,7 @@ add_task(async function spotlightRecordsTelemetryOnAccept() {
 });
 
 add_task(async function spotlightRecordsTelemetryWhenNotDefault() {
-  const histogram = getHistogram();
+  Services.fog.testResetFOG();
   let sandbox = sinon.createSandbox();
 
   const mock = mockShell({ isDefault: false });
@@ -400,7 +403,7 @@ add_task(async function spotlightRecordsTelemetryWhenNotDefault() {
   await BROWSER_GLUE._maybeShowDefaultBrowserPrompt();
 
   // isNowDefault=false, shouldCheckDefaultBrowser=true → resultEnum = 1*2+1 = 3 → "cancel"
-  AssertHistogram(histogram, "cancel");
+  AssertSetDefaultResult("cancel");
 
   await doExperimentCleanup();
   await sandbox.restore();
@@ -409,7 +412,7 @@ add_task(async function spotlightRecordsTelemetryWhenNotDefault() {
 });
 
 add_task(async function spotlightNotShownDoesNotRecordTelemetry() {
-  const histogram = getHistogram();
+  Services.fog.testResetFOG();
   let sandbox = sinon.createSandbox();
   mockShell();
 
@@ -435,9 +438,9 @@ add_task(async function spotlightNotShownDoesNotRecordTelemetry() {
 
   await BROWSER_GLUE._maybeShowDefaultBrowserPrompt();
 
-  Assert.deepEqual(
-    histogram.snapshot().values ?? {},
-    {},
+  Assert.equal(
+    Glean.browser.setDefaultResult.testGetValue(),
+    null,
     "No telemetry recorded when spotlight is not shown"
   );
   Assert.equal(

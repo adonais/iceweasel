@@ -27,6 +27,8 @@ const AUTOFILL_CREDITCARDS_HIDE_UI_PREF =
 const FORM_AUTOFILL_SUPPORT_RTL_PREF = "extensions.formautofill.supportRTL";
 const AUTOFILL_CREDITCARDS_AUTOCOMPLETE_OFF_PREF =
   "extensions.formautofill.creditCards.ignoreAutocompleteOff";
+const ENABLED_AUTOFILL_CREDITCARDS_CVV_PREF =
+  "extensions.formautofill.creditCards.cvv.enabled";
 const AUTOFILL_ADDRESSES_AUTOCOMPLETE_OFF_PREF =
   "extensions.formautofill.addresses.ignoreAutocompleteOff";
 const ENABLED_AUTOFILL_CAPTURE_ON_FORM_REMOVAL_PREF =
@@ -53,6 +55,7 @@ export const FormAutofill = {
   ENABLED_AUTOFILL_CAPTURE_ON_PAGE_NAVIGATION_PREF,
   ENABLED_AUTOFILL_SAME_ORIGIN_WITH_TOP,
   ENABLED_AUTOFILL_CREDITCARDS_PREF,
+  ENABLED_AUTOFILL_CREDITCARDS_CVV_PREF,
   ENABLED_AUTOFILL_DETECT_DYNAMIC_FORM_CHANGES_PREF,
   AUTOFILL_CREDITCARDS_OS_AUTH_LOCKED_PREF,
   AUTOFILL_CREDITCARDS_AUTOCOMPLETE_OFF_PREF,
@@ -236,6 +239,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofill,
   "isAutofillCreditCardsHideUI",
   AUTOFILL_CREDITCARDS_HIDE_UI_PREF
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  FormAutofill,
+  "isAutofillCreditCardCVVEnabled",
+  ENABLED_AUTOFILL_CREDITCARDS_CVV_PREF,
+  false
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofill,

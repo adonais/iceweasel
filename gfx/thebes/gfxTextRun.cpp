@@ -2585,6 +2585,9 @@ static Script ResolveScriptForLang(const nsAtom* aLanguage, Script aDefault) {
       : public MruCache<const nsAtom*, std::pair<const nsAtom*, Script>,
                         LangScriptCache> {
    public:
+    static bool IsEmpty(const std::pair<const nsAtom*, Script>& aValue) {
+      return !aValue.first;
+    }
     static HashNumber Hash(const nsAtom* const& aKey) { return aKey->hash(); }
     static bool Match(const nsAtom* const& aKey,
                       const std::pair<const nsAtom*, Script>& aValue) {

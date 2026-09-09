@@ -15,9 +15,7 @@ import androidx.core.view.WindowInsetsCompat.Type.systemBars
 import mozilla.components.support.locale.LocaleAwareAppCompatActivity
 import org.mozilla.focus.fragment.BrowserFragment
 
-/**
- * Base [LocaleAwareAppCompatActivity] that handles adapting the UI to edge to edge display.
- */
+/** Base [LocaleAwareAppCompatActivity] that handles adapting the UI to edge to edge display. */
 open class EdgeToEdgeActivity : LocaleAwareAppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,8 +40,7 @@ open class EdgeToEdgeActivity : LocaleAwareAppCompatActivity() {
         val persistentInsetsTypes = systemBars() or displayCutout()
 
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
-            val isInImmersiveMode =
-                window.attributes.flags and WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS != 0
+            val isInImmersiveMode = window.attributes.flags and WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS != 0
             if (isInImmersiveMode) {
                 // remove padding in immersive mode
                 view.setPadding(0, 0, 0, 0)

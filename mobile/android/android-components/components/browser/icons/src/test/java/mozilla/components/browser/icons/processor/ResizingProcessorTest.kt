@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.util.DisplayMetrics
+import kotlin.test.assertNotNull
 import mozilla.components.browser.icons.Icon
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.support.images.DesiredSize
@@ -24,7 +25,6 @@ import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import kotlin.test.assertNotNull
 
 class ResizingProcessorTest {
     private lateinit var processor: ResizingProcessor

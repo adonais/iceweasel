@@ -102,10 +102,10 @@ typedef struct HashTableStruct {
 #define CKM_SHA1 CKM_SHA_1
 #define CKM_SHA1_HMAC CKM_SHA_1_HMAC
 #define CKK_SHA1_HMAC CKK_SHA_1_HMAC
-#define MKHASH(name, mech)                                   \
-    {                                                        \
-        name, CKM_##mech, CKM_##mech##_HMAC,                 \
-            CKK_##mech##_HMAC, HASH_Alg##mech, mech##_LENGTH \
+#define MKHASH(name, mech)                               \
+    {                                                    \
+        name, CKM_##mech, CKM_##mech##_HMAC,             \
+        CKK_##mech##_HMAC, HASH_Alg##mech, mech##_LENGTH \
     }
 static HashTable hashTable[] = {
     MKHASH("sha-1", SHA1), MKHASH("sha1", SHA1), MKHASH("sha224", SHA224),

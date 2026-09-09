@@ -11,6 +11,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.browser.menu.BrowserMenu
 import mozilla.components.browser.menu.BrowserMenuBuilder
 import mozilla.components.browser.menu.item.SimpleBrowserMenuItem
@@ -27,6 +28,7 @@ import mozilla.components.support.test.any
 import mozilla.components.support.test.eq
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
+import mozilla.components.ui.icons.R as iconsR
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -41,18 +43,17 @@ import org.mockito.Mockito.never
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import kotlin.test.assertNotNull
-import mozilla.components.ui.icons.R as iconsR
 
 @RunWith(AndroidJUnit4::class)
 class DisplayToolbarTest {
     private fun createDisplayToolbar(): Pair<BrowserToolbar, DisplayToolbar> {
         val toolbar: BrowserToolbar = mock()
-        val displayToolbar = DisplayToolbar(
-            testContext,
-            toolbar,
-            View.inflate(testContext, R.layout.mozac_browser_toolbar_displaytoolbar, null),
-        )
+        val displayToolbar =
+            DisplayToolbar(
+                testContext,
+                toolbar,
+                View.inflate(testContext, R.layout.mozac_browser_toolbar_displaytoolbar, null),
+            )
         return Pair(toolbar, displayToolbar)
     }
 
@@ -99,9 +100,7 @@ class DisplayToolbarTest {
 
         assertNull(displayToolbar.views.trackingProtectionIndicator.colorFilter)
 
-        displayToolbar.colors = displayToolbar.colors.copy(
-            trackingProtection = Color.BLUE,
-        )
+        displayToolbar.colors = displayToolbar.colors.copy(trackingProtection = Color.BLUE)
 
         assertNotNull(displayToolbar.views.trackingProtectionIndicator.colorFilter)
         assertNotNull(displayToolbar.views.trackingProtectionIndicator.trackingProtectionTint)
@@ -129,10 +128,11 @@ class DisplayToolbarTest {
         assertTrue(trackingView.visibility == View.GONE)
         assertTrue(separatorView.visibility == View.GONE)
 
-        displayToolbar.indicators = listOf(
-            DisplayToolbar.Indicators.SECURITY,
-            DisplayToolbar.Indicators.TRACKING_PROTECTION,
-        )
+        displayToolbar.indicators =
+            listOf(
+                DisplayToolbar.Indicators.SECURITY,
+                DisplayToolbar.Indicators.TRACKING_PROTECTION,
+            )
         displayToolbar.url = "https://www.mozilla.org"
         displayToolbar.displayIndicatorSeparator = true
         displayToolbar.setTrackingProtectionState(SiteTrackingProtection.ON_NO_TRACKERS_BLOCKED)
@@ -161,18 +161,16 @@ class DisplayToolbarTest {
         val oldTrackingProtectionIcon = displayToolbar.views.trackingProtectionIndicator.drawable
         assertNotNull(oldTrackingProtectionIcon)
 
-        val drawable1 =
-            testContext.getDrawable(TrackingProtectionIconView.DEFAULT_ICON_ON_NO_TRACKERS_BLOCKED)!!
-        val drawable2 =
-            testContext.getDrawable(TrackingProtectionIconView.DEFAULT_ICON_ON_TRACKERS_BLOCKED)!!
-        val drawable3 =
-            testContext.getDrawable(TrackingProtectionIconView.DEFAULT_ICON_OFF_FOR_A_SITE)!!
+        val drawable1 = testContext.getDrawable(TrackingProtectionIconView.DEFAULT_ICON_ON_NO_TRACKERS_BLOCKED)!!
+        val drawable2 = testContext.getDrawable(TrackingProtectionIconView.DEFAULT_ICON_ON_TRACKERS_BLOCKED)!!
+        val drawable3 = testContext.getDrawable(TrackingProtectionIconView.DEFAULT_ICON_OFF_FOR_A_SITE)!!
 
-        displayToolbar.icons = displayToolbar.icons.copy(
-            trackingProtectionTrackersBlocked = drawable1,
-            trackingProtectionNothingBlocked = drawable2,
-            trackingProtectionException = drawable3,
-        )
+        displayToolbar.icons =
+            displayToolbar.icons.copy(
+                trackingProtectionTrackersBlocked = drawable1,
+                trackingProtectionNothingBlocked = drawable2,
+                trackingProtectionException = drawable3,
+            )
 
         assertNotEquals(
             oldTrackingProtectionIcon,
@@ -204,9 +202,7 @@ class DisplayToolbarTest {
         val drawable1 = testContext.getDrawable(HighlightView.DEFAULT_ICON)!!
 
         displayToolbar.indicators = listOf(DisplayToolbar.Indicators.HIGHLIGHT)
-        displayToolbar.icons = displayToolbar.icons.copy(
-            highlight = drawable1,
-        )
+        displayToolbar.icons = displayToolbar.icons.copy(highlight = drawable1)
 
         assertNotEquals(
             oldPermissionIcon,
@@ -303,9 +299,10 @@ class DisplayToolbarTest {
     fun `clicking browser action view triggers listener of action`() {
         var callbackExecuted = false
 
-        val action = BrowserToolbar.Button(mock(), "Button") {
-            callbackExecuted = true
-        }
+        val action =
+            BrowserToolbar.Button(mock(), "Button") {
+                callbackExecuted = true
+            }
 
         val (_, displayToolbar) = createDisplayToolbar()
         displayToolbar.addBrowserAction(action)
@@ -391,9 +388,10 @@ class DisplayToolbarTest {
     fun `clicking a page action view will execute the listener of the action`() {
         var listenerExecuted = false
 
-        val action = BrowserToolbar.Button(mock(), "Reload") {
-            listenerExecuted = true
-        }
+        val action =
+            BrowserToolbar.Button(mock(), "Reload") {
+                listenerExecuted = true
+            }
 
         val (_, displayToolbar) = createDisplayToolbar()
         displayToolbar.addPageAction(action)
@@ -426,9 +424,10 @@ class DisplayToolbarTest {
         val (_, displayToolbar) = createDisplayToolbar()
 
         var listenerExecuted = false
-        val action = BrowserToolbar.Button(mock(), "Back") {
-            listenerExecuted = true
-        }
+        val action =
+            BrowserToolbar.Button(mock(), "Back") {
+                listenerExecuted = true
+            }
 
         displayToolbar.addNavigationAction(action)
 
@@ -447,11 +446,14 @@ class DisplayToolbarTest {
 
         var shouldActionBeDisplayed = true
 
-        val action = BrowserToolbar.Button(
-            mock(),
-            "Back",
-            visible = { shouldActionBeDisplayed },
-        ) { /* Do nothing */ }
+        val action =
+            BrowserToolbar.Button(
+                mock(),
+                "Back",
+                visible = { shouldActionBeDisplayed },
+            ) {
+                /* Do nothing */
+            }
 
         displayToolbar.addNavigationAction(action)
 
@@ -494,11 +496,12 @@ class DisplayToolbarTest {
         val (_, displayToolbar) = createDisplayToolbar()
 
         val visibleAction = BrowserToolbar.Button(mock(), "Reload") {}
-        val invisibleAction = BrowserToolbar.Button(
-            mock(),
-            "Reader Mode",
-            visible = { false },
-        ) {}
+        val invisibleAction =
+            BrowserToolbar.Button(
+                mock(),
+                "Reader Mode",
+                visible = { false },
+            ) {}
 
         displayToolbar.addPageAction(visibleAction)
         displayToolbar.addPageAction(invisibleAction)
@@ -514,11 +517,12 @@ class DisplayToolbarTest {
         val (_, displayToolbar) = createDisplayToolbar()
 
         val visibleAction = BrowserToolbar.Button(mock(), "Tabs") {}
-        val invisibleAction = BrowserToolbar.Button(
-            mock(),
-            "Settings",
-            visible = { false },
-        ) {}
+        val invisibleAction =
+            BrowserToolbar.Button(
+                mock(),
+                "Settings",
+                visible = { false },
+            ) {}
 
         displayToolbar.addBrowserAction(visibleAction)
         displayToolbar.addBrowserAction(invisibleAction)
@@ -534,11 +538,12 @@ class DisplayToolbarTest {
         val (_, displayToolbar) = createDisplayToolbar()
 
         val visibleAction = BrowserToolbar.Button(mock(), "Forward") {}
-        val invisibleAction = BrowserToolbar.Button(
-            mock(),
-            "Back",
-            visible = { false },
-        ) {}
+        val invisibleAction =
+            BrowserToolbar.Button(
+                mock(),
+                "Back",
+                visible = { false },
+            ) {}
 
         displayToolbar.addNavigationAction(visibleAction)
         displayToolbar.addNavigationAction(invisibleAction)
@@ -559,7 +564,7 @@ class DisplayToolbarTest {
             ContextCompat.getDrawable(
                 testContext,
                 iconsR.drawable.mozac_ic_lock_slash_multicolor_24,
-            ),
+            )
         )
 
         assertNotNull(displayToolbar.views.background.drawable)
@@ -573,10 +578,11 @@ class DisplayToolbarTest {
     fun `setUrlBackgroundMargins sets the correct margins`() {
         val (_, displayToolbar) = createDisplayToolbar()
 
-        val margins = DisplayToolbar.DisplayMargins(
-            goneStartMargin = 16,
-            goneEndMargin = 8,
-        )
+        val margins =
+            DisplayToolbar.DisplayMargins(
+                goneStartMargin = 16,
+                goneEndMargin = 8,
+            )
         displayToolbar.setUrlBackgroundMargins(margins)
 
         val layoutParams = displayToolbar.views.background.layoutParams as? ConstraintLayout.LayoutParams
@@ -673,10 +679,11 @@ class DisplayToolbarTest {
 
         assertNull(displayToolbar.views.siteInfoIndicator.colorFilter)
 
-        displayToolbar.colors = displayToolbar.colors.copy(
-            siteInfoIconSecure = Color.BLUE,
-            siteInfoIconInsecure = Color.BLUE,
-        )
+        displayToolbar.colors =
+            displayToolbar.colors.copy(
+                siteInfoIconSecure = Color.BLUE,
+                siteInfoIconInsecure = Color.BLUE,
+            )
 
         assertNotNull(displayToolbar.views.siteInfoIndicator.colorFilter)
     }
@@ -687,10 +694,11 @@ class DisplayToolbarTest {
 
         assertNull(displayToolbar.views.siteInfoIndicator.colorFilter)
 
-        displayToolbar.colors = displayToolbar.colors.copy(
-            siteInfoIconSecure = Color.TRANSPARENT,
-            siteInfoIconInsecure = Color.TRANSPARENT,
-        )
+        displayToolbar.colors =
+            displayToolbar.colors.copy(
+                siteInfoIconSecure = Color.TRANSPARENT,
+                siteInfoIconInsecure = Color.TRANSPARENT,
+            )
 
         assertNull(displayToolbar.views.siteInfoIndicator.colorFilter)
     }
@@ -701,13 +709,14 @@ class DisplayToolbarTest {
             val (_, displayToolbar) = createDisplayToolbar()
             val menuView = displayToolbar.views.menu
 
-            val menuBuilder = BrowserMenuBuilder(
-                listOf(SimpleBrowserMenuItem("Mozilla")),
-                mapOf(
-                    "customTab" to true,
-                    "test" to "23",
-                ),
-            )
+            val menuBuilder =
+                BrowserMenuBuilder(
+                    listOf(SimpleBrowserMenuItem("Mozilla")),
+                    mapOf(
+                        "customTab" to true,
+                        "test" to "23",
+                    ),
+                )
             displayToolbar.menuBuilder = menuBuilder
 
             assertEquals(0, facts.size)
@@ -754,7 +763,7 @@ class DisplayToolbarTest {
 
         listenerInvoked = false
 
-        displayToolbar.setOnSiteInfoClickedListener { }
+        displayToolbar.setOnSiteInfoClickedListener {}
 
         assertNotNull(displayToolbar.views.siteInfoIndicator.background)
 
@@ -789,7 +798,7 @@ class DisplayToolbarTest {
                 override fun onDismiss() {
                     wasDismissed = true
                 }
-            },
+            }
         )
         menuView.menuBuilder = BrowserMenuBuilder(emptyList())
         menuView.impl.performClick()

@@ -14,13 +14,9 @@ data class ReaderModeStatus(
     val isAvailable: Boolean,
     val isActive: Boolean,
 ) {
-    /**
-     * Static configuration and properties of [ReaderModeStatus].
-     */
+    /** Static configuration and properties of [ReaderModeStatus]. */
     companion object {
-        /**
-         * [ReaderModeStatus] for when reader mode is not available for the current page.
-         */
+        /** [ReaderModeStatus] for when reader mode is not available for the current page. */
         val UNKNOWN = ReaderModeStatus(false, false)
     }
 }

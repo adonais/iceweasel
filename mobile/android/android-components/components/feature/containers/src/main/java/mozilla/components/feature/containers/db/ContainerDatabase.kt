@@ -13,29 +13,30 @@ import androidx.room.TypeConverters
 import mozilla.components.browser.state.state.ContainerState.Color
 import mozilla.components.browser.state.state.ContainerState.Icon
 
-/**
- * Internal database for storing containers (contextual identities).
- */
+/** Internal database for storing containers (contextual identities). */
 @Database(entities = [ContainerEntity::class], version = 1)
 @TypeConverters(Converter::class)
 internal abstract class ContainerDatabase : RoomDatabase() {
     abstract fun containerDao(): ContainerDao
 
     companion object {
-        @Volatile
-        private var instance: ContainerDatabase? = null
+        @Volatile private var instance: ContainerDatabase? = null
 
         @Synchronized
         fun get(context: Context): ContainerDatabase {
-            instance?.let { return it }
+            instance?.let {
+                return it
+            }
 
             return Room.databaseBuilder(
-                context,
-                ContainerDatabase::class.java,
-                "containers",
-            ).build().also {
-                instance = it
-            }
+                    context,
+                    ContainerDatabase::class.java,
+                    "containers",
+                )
+                .build()
+                .also {
+                    instance = it
+                }
         }
     }
 }

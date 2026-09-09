@@ -20,29 +20,30 @@ import mozilla.components.support.base.feature.LifecycleAwareFeature
  * Feature implementation that opens popups for web extensions browser actions.
  *
  * @property store the application's [BrowserStore].
- * @property onOpenPopup a callback invoked when the application should open a
- * popup. This is a lambda accepting the [WebExtensionState] of the extension
- * that wants to open a popup.
+ * @property onOpenPopup a callback invoked when the application should open a popup. This is a lambda accepting the
+ *   [WebExtensionState] of the extension that wants to open a popup.
  */
 class WebExtensionPopupObserver(
     private val store: BrowserStore,
-    private val onOpenPopup: (WebExtensionState) -> Unit = { },
+    private val onOpenPopup: (WebExtensionState) -> Unit = {},
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : LifecycleAwareFeature {
     private var popupScope: CoroutineScope? = null
 
     override fun start() {
-        popupScope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.distinctUntilChangedBy { it.extensions }
-                .map { it.extensions.filterValues { extension -> extension.popupSession != null } }
-                .distinctUntilChanged()
-                .collect { extensionStates ->
-                    if (extensionStates.values.isNotEmpty()) {
-                        // We currently limit to one active popup session at a time
-                        onOpenPopup(extensionStates.values.first())
+        popupScope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .distinctUntilChangedBy { it.extensions }
+                    .map { it.extensions.filterValues { extension -> extension.popupSession != null } }
+                    .distinctUntilChanged()
+                    .collect { extensionStates ->
+                        if (extensionStates.values.isNotEmpty()) {
+                            // We currently limit to one active popup session at a time
+                            onOpenPopup(extensionStates.values.first())
+                        }
                     }
-                }
-        }
+            }
     }
 
     override fun stop() {

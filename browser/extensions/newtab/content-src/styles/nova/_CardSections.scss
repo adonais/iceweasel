@@ -256,9 +256,15 @@
     .col-3-large { @include nova-section-card-large; }
   }
 
-  @include at-content-cols(16) {
+  @include at-content-cols-range(16, 20) {
     .col-4-small { @include nova-section-card-small; }
     .col-4-medium { @include nova-section-card-medium; }
     .col-4-large { @include nova-section-card-large; }
+  }
+
+  @include at-content-cols(20) {
+    .col-5-small { @include nova-section-card-small; }
+    .col-5-medium { @include nova-section-card-medium; }
+    .col-5-large { @include nova-section-card-large; }
   }
 }

@@ -27,7 +27,8 @@ Last updated: 2026-07-22.
   can also trigger A1.
 - **Cause:** a presence primitive threw instead of degrading to `false`.
 - **Check:** `mozVerifyElement` and every presence probe used by `mozIsOnPageNow`/`mozWaitForPageToLoad`
-  are wrapped try/catch → return `false`, never throw. Any NEW verb built on `resolve()` must keep this.
+  are wrapped try/catch → return `false`, never throw. `ElementState.probe` is where that now lives, and
+  any new trait added there must keep it.
 
 ### A3. Compose merged-vs-unmerged tree trap (regressed twice)
 
@@ -35,26 +36,31 @@ Last updated: 2026-07-22.
   navigating via that label fail at once (e.g. all Bookmarks tests via the "Bookmarks" menu item).
 - **Cause:** querying the wrong Compose semantics tree. Many labels exist only in the UNMERGED tree;
   `onNodeWithText(value)` defaults to merged and returns nothing. Both regressions were this.
-- **Check:** when migrating a verb onto `resolve()`, PRESERVE each strategy's proven primary tree exactly
+- **Check:** when touching the resolution layer, PRESERVE each strategy's proven primary tree exactly
   (text = unmerged; tag/content-desc = merged) and add the other tree only as fallback. `resolve()` now
   tries both and picks the _displayed_ match — keep that behavior.
 
 ### A4. Any shared-resolution change touches all ~185 tests
 
-- **Symptom:** a small tweak to `resolve()`/`mozGetElement` breaks a large, uniform swath of tests.
+- **Symptom:** a small tweak in `core/` — `Resolvers`, `Verbs`, `UiActions` — breaks a large, uniform
+  swath of tests.
 - **Cause:** every verb funnels through shared resolution.
 - **Check:** full efficiency-suite run before trusting ANY shared-resolution change. Reading the shape of
   the failure tells you the class: a systematic selector break fails hundreds _uniformly_; flakiness is
   _scattered_ across unrelated pages. Don't re-tune shared resolution on an unconfirmed hypothesis.
 
-### A5. `BaseTest.isRetryable()` is too broad (MTE-5729)
+### A5. `BaseTest` does not retry (bug 2065120)
 
-- **Symptom:** a genuinely failing test shows "0 failed" because the 1 retry passed, or a real bug is
-  masked as flakiness.
-- **Cause:** `isRetryable()` retries `AssertionError`/`RuntimeException`/`NullPointerException` — nearly
-  everything.
-- **Check:** when diagnosing, remember 1 retry can turn a real red into green. Tightening the retry scope
-  is tracked as MTE-5729.
+- **What changed:** `BaseTest` used to re-run a failed test once, retrying on nearly any throwable. That
+  could turn an intermittent real failure green. The retry was removed.
+- **Why nothing replaces it:** every test already runs in its own process with package data cleared
+  (`ANDROIDX_TEST_ORCHESTRATOR` + `clearPackageData`, `app/build.gradle`), and Firebase re-runs a failing
+  test once (`num-flaky-test-attempts` in the TAE flank configs) in a fresh process, reporting it as flaky
+  rather than green. An in-process retry was the one thing that escaped that isolation — the second attempt
+  inherited whatever the first left behind.
+- **Check:** a local failure is now just a failure. Re-run the class yourself to judge flakiness; do not
+  expect the harness to absorb it. The legacy suite's shared `RetryTestRule(3)` still retries and still has
+  the masking problem.
 
 ### A6. Page-arrival timeouts are the most common failure shape
 
@@ -72,7 +78,7 @@ Last updated: 2026-07-22.
 - **Cause:** a `HorizontalPager` (e.g. onboarding cards) composes adjacent pages at once, so shared button
   text ("Not now"/"Continue") matches multiple nodes.
 - **Check:** for text shared across simultaneously-composed nodes, use a per-instance `testTag`, or rely
-  on `resolve()`'s displayed-match pick. Prefer stable handles over shared text.
+  on `Resolvers.displayed()`'s pick of the on-screen match. Prefer stable handles over shared text.
 
 ### A8. An overridable config hook whose resolved value isn't actually used
 
@@ -120,7 +126,7 @@ Last updated: 2026-07-22.
 
 ### B3. A selector `value` must not be blank
 
-- **Why:** `resolve()` returns `null` for a blank value. Parameterized selectors with a default `""` used
+- **Why:** resolution returns `null` for a blank value. Parameterized selectors with a default `""` used
   for group registration can silently resolve to nothing when accidentally called without an argument.
 - **Check:** don't conflate group registration with matching via a blank-valued call; a selector used to
   match must always receive a real value.
@@ -141,11 +147,16 @@ Last updated: 2026-07-22.
   always via `getStringResource(...)`). Derive the handle from the app UI source, not from how a legacy
   robot happened to match.
 
-### B6. New verbs go through `resolve()` and keep the guarantees above
+### B6. A new verb is one expression over a `core/` primitive
 
-- **Check:** a new interaction/verification verb resolves via `resolve()` (not a fresh `when(strategy)`
-  block), preserves per-strategy tree semantics (A3), never throws from a presence check (A2), and is
-  validated with a full-suite run (A4).
+- **Check:** the verb is a single expression over `require` / `requireAbsent` / `requireAll` /
+  `driveUntil` / `requireState` / `reportAround` / `groupPresent`. If it needs a block, the primitive
+  you want is missing — add the primitive.
+- **Check:** no `when (element)` over the backend types and no fresh `when (strategy)` block.
+  `UiActions`, `Gestures`, `ElementState` and `Relations` each hold one copy; a behaviour added inside
+  a verb is silently missing from every other verb.
+- **Check:** per-strategy tree semantics preserved (A3), a presence check still never throws (A2),
+  and validated with a full-suite run (A4).
 
 ### B7. Nav entry/arrival selectors must cover EVERY runtime state (2026-07-23, bit us twice)
 

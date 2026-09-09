@@ -23,8 +23,6 @@ interface SyncedTabsController {
      */
     fun refreshSyncedTabs()
 
-    /**
-     * Requests for the account on the [FxaAccountManager] to perform a sync.
-     */
+    /** Requests for the account on the [FxaAccountManager] to perform a sync. */
     fun syncAccount()
 }

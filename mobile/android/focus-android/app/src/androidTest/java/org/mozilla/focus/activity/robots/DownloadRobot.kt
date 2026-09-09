@@ -6,14 +6,11 @@ package org.mozilla.focus.activity.robots
 import androidx.test.uiautomator.UiObject
 import androidx.test.uiautomator.UiSelector
 import org.junit.Assert.assertTrue
-import org.mozilla.focus.R
-import org.mozilla.focus.helpers.TestHelper.getStringResource
 import org.mozilla.focus.helpers.TestHelper.mDevice
 import org.mozilla.focus.helpers.TestHelper.packageName
 import org.mozilla.focus.helpers.TestHelper.waitingTime
 import org.mozilla.focus.helpers.TestHelper.waitingTimeShort
 import org.mozilla.focus.idlingResources.SessionLoadedIdlingResource
-import mozilla.components.feature.downloads.R as downloadsR
 
 class DownloadRobot {
     fun verifyDownloadDialog(fileName: String) {
@@ -44,10 +41,7 @@ class DownloadRobot {
     }
 
     fun verifyDownloadConfirmationMessage(fileName: String) {
-        val snackBar = mDevice.findObject(
-            UiSelector()
-                .resourceId("$packageName:id/snackbar_text"),
-        )
+        val snackBar = mDevice.findObject(UiSelector().resourceId("$packageName:id/snackbar_text"))
         snackBar.waitForExists(waitingTimeShort)
         assertTrue(
             snackBar.text,
@@ -69,29 +63,12 @@ fun downloadRobot(interact: DownloadRobot.() -> Unit): DownloadRobot.Transition 
     return DownloadRobot.Transition()
 }
 
-val downloadIconAsset: UiObject = mDevice.findObject(
-    UiSelector()
-        .resourceId("download"),
-)
+val downloadIconAsset: UiObject = mDevice.findObject(UiSelector().resourceId("download"))
 
-private val downloadDialogTitle = mDevice.findObject(
-    UiSelector()
-        .resourceId("$packageName:id/title"),
-)
+private val downloadDialogTitle = mDevice.findObject(UiSelector().resourceId("$packageName:id/title"))
 
-private val downloadFileName = mDevice.findObject(
-    UiSelector()
-        .resourceId("$packageName:id/filename"),
-)
+private val downloadFileName = mDevice.findObject(UiSelector().resourceId("$packageName:id/filename"))
 
-private val downloadCancelBtn = mDevice.findObject(
-    UiSelector()
-        .resourceId("$packageName:id/close_button"),
-)
+private val downloadCancelBtn = mDevice.findObject(UiSelector().resourceId("$packageName:id/close_button"))
 
-private val downloadBtn = mDevice.findObject(
-    UiSelector()
-        .resourceId("$packageName:id/download_button"),
-)
-
-private val downloadNotificationText = getStringResource(downloadsR.string.mozac_feature_downloads_completed_notification_text2)
+private val downloadBtn = mDevice.findObject(UiSelector().resourceId("$packageName:id/download_button"))

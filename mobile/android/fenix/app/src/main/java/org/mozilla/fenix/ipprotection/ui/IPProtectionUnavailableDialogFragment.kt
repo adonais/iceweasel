@@ -55,11 +55,12 @@ class IPProtectionUnavailableDialogFragment : AppCompatDialogFragment() {
                     requireComponents.ipProtection.store.dispatch(IPProtectionAction.Toggle)
                 },
                 onOpenTabsTrayClicked = {
-                    findNavController().navigate(
-                        IPProtectionUnavailableDialogFragmentDirections.actionGlobalTabManagementFragment(
-                            page = if (isPrivateMode) Page.PrivateTabs else Page.NormalTabs,
-                        ),
-                    )
+                    findNavController()
+                        .navigate(
+                            IPProtectionUnavailableDialogFragmentDirections.actionGlobalTabManagementFragment(
+                                page = if (isPrivateMode) Page.PrivateTabs else Page.NormalTabs
+                            )
+                        )
                 },
             )
         }

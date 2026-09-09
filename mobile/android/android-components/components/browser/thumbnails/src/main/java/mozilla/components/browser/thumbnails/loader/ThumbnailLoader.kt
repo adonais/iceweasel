@@ -7,6 +7,7 @@ package mozilla.components.browser.thumbnails.loader
 import android.graphics.drawable.Drawable
 import android.widget.ImageView
 import androidx.annotation.MainThread
+import java.lang.ref.WeakReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -18,11 +19,8 @@ import mozilla.components.browser.thumbnails.storage.ThumbnailStorage
 import mozilla.components.concept.base.images.ImageLoadRequest
 import mozilla.components.concept.base.images.ImageLoader
 import mozilla.components.support.images.CancelOnDetach
-import java.lang.ref.WeakReference
 
-/**
- * An implementation of [ImageLoader] for loading thumbnails into a [ImageView].
- */
+/** An implementation of [ImageLoader] for loading thumbnails into a [ImageView]. */
 class ThumbnailLoader(
     private val storage: ThumbnailStorage,
     mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
@@ -56,9 +54,10 @@ class ThumbnailLoader(
         val deferredThumbnail = storage.loadThumbnail(request)
 
         view.get()?.setTag(R.id.mozac_browser_thumbnails_tag_job, deferredThumbnail)
-        val onAttachStateChangeListener = CancelOnDetach(deferredThumbnail).also {
-            view.get()?.addOnAttachStateChangeListener(it)
-        }
+        val onAttachStateChangeListener =
+            CancelOnDetach(deferredThumbnail).also {
+                view.get()?.addOnAttachStateChangeListener(it)
+            }
 
         try {
             val thumbnail = deferredThumbnail.await()

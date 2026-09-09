@@ -9,13 +9,9 @@ import mozilla.components.support.base.facts.Action
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.collect
 
-/**
- * Facts emitted for telemetry related to the Autofill prompt feature for credit cards.
- */
+/** Facts emitted for telemetry related to the Autofill prompt feature for credit cards. */
 class CreditCardAutofillDialogFacts {
-    /**
-     * Specific types of telemetry items.
-     */
+    /** Specific types of telemetry items. */
     object Items {
         const val AUTOFILL_CREDIT_CARD_FORM_DETECTED = "autofill_credit_card_form_detected"
         const val AUTOFILL_CREDIT_CARD_SUCCESS = "autofill_credit_card_success"
@@ -35,12 +31,13 @@ private fun emitCreditCardAutofillDialogFact(
     metadata: Map<String, Any>? = null,
 ) {
     Fact(
-        Component.FEATURE_PROMPTS,
-        action,
-        item,
-        value,
-        metadata,
-    ).collect()
+            Component.FEATURE_PROMPTS,
+            action,
+            item,
+            value,
+            metadata,
+        )
+        .collect()
 }
 
 internal fun emitSuccessfulCreditCardAutofillFormDetectedFact() {

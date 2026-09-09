@@ -8,31 +8,23 @@ import org.mozilla.fenix.components.appstate.AppAction.IPProtectionSnackbarActio
 import org.mozilla.fenix.components.appstate.AppAction.SnackbarAction
 import org.mozilla.fenix.components.appstate.AppState
 
-/**
- * A [SnackbarAction] reducer that updates [AppState.snackbarState].
- */
+/** A [SnackbarAction] reducer that updates [AppState.snackbarState]. */
 internal object SnackbarStateReducer {
-    fun reduce(state: AppState, action: SnackbarAction): AppState = when (action) {
-        is SnackbarAction.SnackbarDismissed -> state.copy(
-            snackbarState = SnackbarState.Dismiss(state.snackbarState),
-        )
+    fun reduce(state: AppState, action: SnackbarAction): AppState =
+        when (action) {
+            is SnackbarAction.SnackbarDismissed ->
+                state.copy(snackbarState = SnackbarState.Dismiss(state.snackbarState))
 
-        is SnackbarAction.ShowSnackbar -> state.copy(
-            snackbarState = SnackbarState.ShowSnackbar(action.title, action.duration),
-        )
+            is SnackbarAction.ShowSnackbar ->
+                state.copy(snackbarState = SnackbarState.ShowSnackbar(action.title, action.duration))
 
-        is SnackbarAction.SnackbarShown,
-        is SnackbarAction.Reset,
-        -> state.copy(
-            snackbarState = SnackbarState.None(state.snackbarState),
-        )
+            is SnackbarAction.SnackbarShown,
+            is SnackbarAction.Reset -> state.copy(snackbarState = SnackbarState.None(state.snackbarState))
 
-        is IPProtectionSnackbarAction.ConnectionError -> state.copy(
-            snackbarState = SnackbarState.IPProtectionConnectionError(action.title),
-        )
+            is IPProtectionSnackbarAction.ShowSnackbar ->
+                state.copy(snackbarState = SnackbarState.IPProtectionShowSnackbar(action.title))
 
-        is IPProtectionSnackbarAction.DataLimitReached -> state.copy(
-            snackbarState = SnackbarState.IPProtectionDataLimitReached(action.title),
-        )
-    }
+            is IPProtectionSnackbarAction.DataLimitReached ->
+                state.copy(snackbarState = SnackbarState.IPProtectionDataLimitReached(action.title))
+        }
 }

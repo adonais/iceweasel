@@ -5,29 +5,14 @@
 
 // DevToolsClient tests
 
-const {
-  DevToolsServer,
-} = require("resource://devtools/server/devtools-server.js");
-const {
-  DevToolsClient,
-} = require("resource://devtools/client/devtools-client.js");
-
 add_task(async function () {
   await testCloseLoops();
   await fakeTransportShutdown();
 });
 
-function createClient() {
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
-  const client = new DevToolsClient(DevToolsServer.connectPipe());
-  return client;
-}
-
 // Ensure that closing the client while it is closing doesn't loop
 async function testCloseLoops() {
-  const client = createClient();
-  await client.connect();
+  const client = await createLocalClientForTests();
 
   await new Promise(resolve => {
     let called = false;
@@ -51,8 +36,7 @@ async function testCloseLoops() {
 // Check that, if we fake a transport shutdown (like if a device is unplugged)
 // the client is automatically closed, and we can still call client.close.
 async function fakeTransportShutdown() {
-  const client = createClient();
-  await client.connect();
+  const client = await createLocalClientForTests();
 
   await new Promise(resolve => {
     const onClosed = async function () {

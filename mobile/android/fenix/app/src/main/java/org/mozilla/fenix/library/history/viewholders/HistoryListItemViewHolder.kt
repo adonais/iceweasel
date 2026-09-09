@@ -9,7 +9,9 @@ import android.view.View
 import androidx.annotation.LayoutRes
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.R as materialR
 import mozilla.components.support.ktx.android.content.getColorFromAttr
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.HistoryListItemBinding
 import org.mozilla.fenix.ext.components
@@ -21,8 +23,6 @@ import org.mozilla.fenix.library.history.HistoryFragmentState
 import org.mozilla.fenix.library.history.HistoryFragmentStore
 import org.mozilla.fenix.library.history.HistoryItemTimeGroup
 import org.mozilla.fenix.selection.SelectionHolder
-import com.google.android.material.R as materialR
-import mozilla.components.ui.icons.R as iconsR
 
 class HistoryListItemViewHolder(
     view: View,
@@ -60,8 +60,8 @@ class HistoryListItemViewHolder(
      * @param showTopContent enables the Recent tab button.
      * @param mode switches between editing and regular modes.
      * @param isPendingDeletion hides the item unless an undo snackbar action is evoked.
-     * @param groupPendingDeletionCount allows to properly display the number of items inside a
-     * history group, taking into account pending removal of items inside.
+     * @param groupPendingDeletionCount allows to properly display the number of items inside a history group, taking
+     *   into account pending removal of items inside.
      */
     fun bind(
         item: History,
@@ -75,19 +75,21 @@ class HistoryListItemViewHolder(
 
         binding.historyLayout.titleView.text = item.title
 
-        binding.historyLayout.urlView.text = when (item) {
-            is History.Regular -> item.url
-            is History.Metadata -> item.url
-            is History.Group -> {
-                val numChildren = item.items.size - groupPendingDeletionCount
-                val stringId = if (numChildren == 1) {
-                    R.string.history_search_group_site_1
-                } else {
-                    R.string.history_search_group_sites_1
+        binding.historyLayout.urlView.text =
+            when (item) {
+                is History.Regular -> item.url
+                is History.Metadata -> item.url
+                is History.Group -> {
+                    val numChildren = item.items.size - groupPendingDeletionCount
+                    val stringId =
+                        if (numChildren == 1) {
+                            R.string.history_search_group_site_1
+                        } else {
+                            R.string.history_search_group_sites_1
+                        }
+                    String.format(itemView.context.getString(stringId), numChildren)
                 }
-                String.format(itemView.context.getString(stringId), numChildren)
             }
-        }
 
         toggleTopContent(showTopContent, mode === HistoryFragmentState.Mode.Normal)
 
@@ -107,17 +109,13 @@ class HistoryListItemViewHolder(
 
         binding.historyLayout.changeSelected(item in selectionHolder.selectedItems)
 
-        if (item is History.Regular &&
-            (this.item as? History.Regular)?.url != item.url
-        ) {
+        if (item is History.Regular && (this.item as? History.Regular)?.url != item.url) {
             binding.historyLayout.iconView.imageTintList = null
             binding.historyLayout.loadFavicon(item.url)
         } else if (item is History.Group) {
             binding.historyLayout.iconView.apply {
                 setImageResource(iconsR.drawable.mozac_ic_tab_tray_24)
-                imageTintList = ColorStateList.valueOf(
-                    context.getColorFromAttr(materialR.attr.colorOnSurface),
-                )
+                imageTintList = ColorStateList.valueOf(context.getColorFromAttr(materialR.attr.colorOnSurface))
             }
         }
 
@@ -149,16 +147,17 @@ class HistoryListItemViewHolder(
 
         if (showTopContent) {
             val numRecentTabs = itemView.context.components.core.store.state.closedTabs.size
-            binding.recentlyClosedNavEmpty.recentlyClosedTabsDescription.text = String.format(
-                itemView.context.getString(
-                    if (numRecentTabs == 1) {
-                        R.string.recently_closed_tab
-                    } else {
-                        R.string.recently_closed_tabs
-                    },
-                ),
-                numRecentTabs,
-            )
+            binding.recentlyClosedNavEmpty.recentlyClosedTabsDescription.text =
+                String.format(
+                    itemView.context.getString(
+                        if (numRecentTabs == 1) {
+                            R.string.recently_closed_tab
+                        } else {
+                            R.string.recently_closed_tabs
+                        }
+                    ),
+                    numRecentTabs,
+                )
             binding.recentlyClosedNavEmpty.recentlyClosedNav.run {
                 if (isNormalMode) {
                     isEnabled = true
@@ -174,7 +173,6 @@ class HistoryListItemViewHolder(
     companion object {
         const val DISABLED_BUTTON_ALPHA = 0.7f
 
-        @LayoutRes
-        val LAYOUT_ID = R.layout.history_list_item
+        @LayoutRes val LAYOUT_ID = R.layout.history_list_item
     }
 }

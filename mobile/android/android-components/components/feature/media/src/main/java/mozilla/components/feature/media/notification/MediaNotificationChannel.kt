@@ -20,15 +20,15 @@ internal object MediaNotificationChannel {
      * Returns the channel id to be used for media notifications.
      */
     fun ensureChannelExists(context: Context): String {
-        val notificationManager: NotificationManager = context.getSystemService(
-            Context.NOTIFICATION_SERVICE,
-        ) as NotificationManager
+        val notificationManager: NotificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val channel = NotificationChannel(
-            NOTIFICATION_CHANNEL_ID,
-            context.getString(R.string.mozac_feature_media_notification_channel),
-            NotificationManager.IMPORTANCE_LOW,
-        )
+        val channel =
+            NotificationChannel(
+                NOTIFICATION_CHANNEL_ID,
+                context.getString(R.string.mozac_feature_media_notification_channel),
+                NotificationManager.IMPORTANCE_LOW,
+            )
         channel.setShowBadge(false)
         channel.lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
 

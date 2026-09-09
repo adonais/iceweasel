@@ -23,11 +23,14 @@ const SIGN_IN_HEADER_L10N_ID = isNovaEnabled
   ? "firefoxview-syncedtabs-signin-header-3"
   : "firefoxview-syncedtabs-signin-header-2";
 const DISCONNECTED_DESCRIPTION_L10N_ID = isNovaEnabled
-  ? "firefoxview-tabpickup-generic-sync-error-description-2"
+  ? "firefoxview-syncedtabs-synctabs-description-2"
   : "firefoxview-tabpickup-sync-disconnected-description";
 const DISCONNECTED_HEADER_L10N_ID = isNovaEnabled
-  ? "firefoxview-tabpickup-sync-error-header-2"
+  ? "firefoxview-syncedtabs-synctabs-header-2"
   : "firefoxview-tabpickup-sync-disconnected-header";
+const DISCONNECTED_BUTTON_L10N_ID = isNovaEnabled
+  ? "firefoxview-tabpickup-synctabs-primarybutton-2"
+  : "firefoxview-tabpickup-sync-disconnected-primarybutton";
 const PASSWORD_LOCKED_DESCRIPTION_L10N_ID = isNovaEnabled
   ? "firefoxview-tabpickup-password-locked-description-2"
   : "firefoxview-tabpickup-password-locked-description";
@@ -98,10 +101,7 @@ add_task(async function test_network_offline() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(
-      () => syncedTabsComponent.fullyUpdated,
-      "The synced tabs component to be fully updated"
-    );
+    await syncedTabsComponent.updateComplete;
     await BrowserTestUtils.waitForMutationCondition(
       syncedTabsComponent.emptyState,
       { attributeFilter: ["headerlabel"] },
@@ -110,13 +110,13 @@ add_task(async function test_network_offline() {
         OFFLINE_HEADER_L10N_ID
     );
 
+    const setupStateChanged = TestUtils.topicObserved(
+      "firefox-view.setupstate.changed"
+    );
     syncedTabsComponent.emptyState
       .querySelector("moz-button[data-action='network-offline']")
       .buttonEl.click();
-
-    await TestUtils.waitForCondition(
-      () => TabsSetupFlowManager.tryToClearError.calledOnce
-    );
+    await setupStateChanged;
 
     ok(
       TabsSetupFlowManager.tryToClearError.calledOnce,
@@ -150,10 +150,7 @@ add_task(async function test_sync_error() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(
-      () => syncedTabsComponent.fullyUpdated,
-      "Waiting for the synced tabs component to be fully updated"
-    );
+    await syncedTabsComponent.updateComplete;
     await BrowserTestUtils.waitForMutationCondition(
       syncedTabsComponent.emptyState,
       { attributeFilter: ["headerlabel"] },
@@ -200,10 +197,7 @@ add_task(async function test_sync_admin_disabled() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(
-      () => syncedTabsComponent.fullyUpdated,
-      "The synced tabs component has finished updating."
-    );
+    await syncedTabsComponent.updateComplete;
     await BrowserTestUtils.waitForMutationCondition(
       syncedTabsComponent.emptyState,
       { attributeFilter: ["headerlabel"] },
@@ -262,10 +256,7 @@ add_task(async function test_sync_error_signed_out() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(
-      () => syncedTabsComponent.fullyUpdated,
-      "The synced tabs component has finished updating."
-    );
+    await syncedTabsComponent.updateComplete;
     await BrowserTestUtils.waitForMutationCondition(
       syncedTabsComponent.emptyState.shadowRoot,
       { childList: true, subtree: true },
@@ -301,10 +292,7 @@ add_task(async function test_sync_disconnected_error() {
       "view-syncedtabs:not([slot=syncedtabs])"
     );
     info("Waiting for the synced tabs error step to be visible");
-    await TestUtils.waitForCondition(
-      () => syncedTabsComponent.fullyUpdated,
-      "The synced tabs component has finished updating."
-    );
+    await syncedTabsComponent.updateComplete;
     await BrowserTestUtils.waitForMutationCondition(
       syncedTabsComponent.emptyState.shadowRoot,
       { childList: true, subtree: true },
@@ -325,11 +313,16 @@ add_task(async function test_sync_disconnected_error() {
 
     let preferencesTabPromise = BrowserTestUtils.waitForNewTab(
       browser.getTabBrowser(),
-      "about:preferences#sync",
+      "about:preferences?action=choose-what-to-sync#sync",
       true
     );
     let emptyStateButton = syncedTabsComponent.emptyState.querySelector(
       "moz-button[data-action='sync-disconnected']"
+    );
+    Assert.equal(
+      document.l10n.getAttributes(emptyStateButton).id,
+      DISCONNECTED_BUTTON_L10N_ID,
+      "Call-to-action button has correct text when sync's been disconnected."
     );
     EventUtils.synthesizeMouseAtCenter(emptyStateButton.buttonEl, {}, content);
     let preferencesTab = await preferencesTabPromise;
@@ -355,10 +348,7 @@ add_task(async function test_password_change_disconnect_error() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(
-      () => syncedTabsComponent.fullyUpdated,
-      "The synced tabs component has finished updating."
-    );
+    await syncedTabsComponent.updateComplete;
     await BrowserTestUtils.waitForMutationCondition(
       syncedTabsComponent.emptyState.shadowRoot,
       { childList: true, subtree: true },
@@ -391,10 +381,7 @@ add_task(async function test_multiple_errors() {
     let syncedTabsComponent = document.querySelector(
       "view-syncedtabs:not([slot=syncedtabs])"
     );
-    await TestUtils.waitForCondition(
-      () => syncedTabsComponent.fullyUpdated,
-      "The synced tabs component has finished updating."
-    );
+    await syncedTabsComponent.updateComplete;
     info("Waiting for the primary password error message to be shown");
     await BrowserTestUtils.waitForMutationCondition(
       syncedTabsComponent.emptyState.shadowRoot,
@@ -426,10 +413,7 @@ add_task(async function test_multiple_errors() {
     Services.obs.notifyObservers(null, UIState.ON_UPDATE);
 
     info("Waiting for the sync error message to be shown");
-    await TestUtils.waitForCondition(
-      () => syncedTabsComponent.fullyUpdated,
-      "The synced tabs component has finished updating."
-    );
+    await syncedTabsComponent.updateComplete;
     await BrowserTestUtils.waitForMutationCondition(
       syncedTabsComponent.emptyState,
       { attributeFilter: ["headerlabel"] },

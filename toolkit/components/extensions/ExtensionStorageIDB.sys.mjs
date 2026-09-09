@@ -533,7 +533,7 @@ export class ExtensionStorageLocalIDB extends IndexedDB {
     } catch (err) {
       // Error names expected to be raised on known corrupted storage
       // issues that storage.local.clear method may be hitting.
-      const KNOWN_CORRUPTED_ERROR_NAMES = ["UnknownError"];
+      const KNOWN_CORRUPTED_ERROR_NAMES = ["UnknownError", "NotReadableError"];
       const errorName = ErrorsTelemetry.getErrorName(err);
       if (
         lazy.disabledAutoResetOnCorrupted ||

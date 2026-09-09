@@ -39,7 +39,7 @@ class SitePermissionsFactsTest {
                     AppCamera("test", "test"),
                     ContentCrossOriginStorageAccess("test", "test"),
                     AppCamera("test2", "test2"),
-                ),
+                )
             )
 
             assertEquals(1, facts.size)
@@ -71,7 +71,7 @@ class SitePermissionsFactsTest {
                     ContentAudioCapture("test", "test"),
                     ContentVideoCapture("test", "test"),
                     ContentVideoCapture("test2", "test2"),
-                ),
+                )
             )
 
             assertEquals(1, facts.size)
@@ -103,7 +103,7 @@ class SitePermissionsFactsTest {
                     ContentAudioCapture("test", "test"),
                     ContentVideoCapture("test", "test"),
                     ContentAudioCapture("test2", "test2"),
-                ),
+                )
             )
 
             assertEquals(1, facts.size)

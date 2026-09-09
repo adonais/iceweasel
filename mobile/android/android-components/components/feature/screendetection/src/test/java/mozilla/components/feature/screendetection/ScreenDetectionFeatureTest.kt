@@ -39,14 +39,16 @@ class ScreenDetectionFeatureTest {
         `when`(sdkVersionHelperMock.isScreenRecordingDetectionSupported()).thenReturn(true)
         `when`(sdkVersionHelperMock.isScreenCaptureDetectionSupported()).thenReturn(true)
 
-        val manager = spy(
-            ScreenDetectionFeature(
-                activity,
-                detectionMode = DetectionMode.SCREEN_RECORDING,
-            ).apply {
-                screenDetectionSdkVersionHelper = sdkVersionHelperMock
-            },
-        )
+        val manager =
+            spy(
+                ScreenDetectionFeature(
+                        activity,
+                        detectionMode = DetectionMode.SCREEN_RECORDING,
+                    )
+                    .apply {
+                        screenDetectionSdkVersionHelper = sdkVersionHelperMock
+                    }
+            )
 
         manager.onStart(lifecycleOwner)
 
@@ -62,14 +64,16 @@ class ScreenDetectionFeatureTest {
         `when`(sdkVersionHelperMock.isScreenRecordingDetectionSupported()).thenReturn(true)
         `when`(sdkVersionHelperMock.isScreenCaptureDetectionSupported()).thenReturn(true)
 
-        val manager = spy(
-            ScreenDetectionFeature(
-                activity,
-                detectionMode = DetectionMode.SCREEN_CAPTURE,
-            ).apply {
-                screenDetectionSdkVersionHelper = sdkVersionHelperMock
-            },
-        )
+        val manager =
+            spy(
+                ScreenDetectionFeature(
+                        activity,
+                        detectionMode = DetectionMode.SCREEN_CAPTURE,
+                    )
+                    .apply {
+                        screenDetectionSdkVersionHelper = sdkVersionHelperMock
+                    }
+            )
 
         manager.onStart(lifecycleOwner)
 
@@ -85,14 +89,16 @@ class ScreenDetectionFeatureTest {
         `when`(sdkVersionHelperMock.isScreenRecordingDetectionSupported()).thenReturn(true)
         `when`(sdkVersionHelperMock.isScreenCaptureDetectionSupported()).thenReturn(true)
 
-        val manager = spy(
-            ScreenDetectionFeature(
-                activity,
-                detectionMode = DetectionMode.ALL,
-            ).apply {
-                screenDetectionSdkVersionHelper = sdkVersionHelperMock
-            },
-        )
+        val manager =
+            spy(
+                ScreenDetectionFeature(
+                        activity,
+                        detectionMode = DetectionMode.ALL,
+                    )
+                    .apply {
+                        screenDetectionSdkVersionHelper = sdkVersionHelperMock
+                    }
+            )
 
         manager.onStart(lifecycleOwner)
 
@@ -106,14 +112,16 @@ class ScreenDetectionFeatureTest {
     fun `should not add callbacks if screen capture detection is not supported`() {
         `when`(sdkVersionHelperMock.isScreenCaptureDetectionSupported()).thenReturn(false)
 
-        val manager = spy(
-            ScreenDetectionFeature(
-                activity,
-                detectionMode = DetectionMode.ALL,
-            ).apply {
-                screenDetectionSdkVersionHelper = sdkVersionHelperMock
-            },
-        )
+        val manager =
+            spy(
+                ScreenDetectionFeature(
+                        activity,
+                        detectionMode = DetectionMode.ALL,
+                    )
+                    .apply {
+                        screenDetectionSdkVersionHelper = sdkVersionHelperMock
+                    }
+            )
 
         manager.onCreate(lifecycleOwner)
 
@@ -128,14 +136,16 @@ class ScreenDetectionFeatureTest {
     fun `should not remove callbacks if screen capture detection is not supported`() {
         `when`(sdkVersionHelperMock.isScreenCaptureDetectionSupported()).thenReturn(false)
 
-        val manager = spy(
-            ScreenDetectionFeature(
-                activity,
-                detectionMode = DetectionMode.ALL,
-            ).apply {
-                screenDetectionSdkVersionHelper = sdkVersionHelperMock
-            },
-        )
+        val manager =
+            spy(
+                ScreenDetectionFeature(
+                        activity,
+                        detectionMode = DetectionMode.ALL,
+                    )
+                    .apply {
+                        screenDetectionSdkVersionHelper = sdkVersionHelperMock
+                    }
+            )
 
         manager.onStop(lifecycleOwner)
 
@@ -148,14 +158,16 @@ class ScreenDetectionFeatureTest {
         `when`(sdkVersionHelperMock.isScreenRecordingDetectionSupported()).thenReturn(true)
         `when`(sdkVersionHelperMock.isScreenCaptureDetectionSupported()).thenReturn(true)
 
-        val manager = spy(
-            ScreenDetectionFeature(
-                activity,
-                detectionMode = DetectionMode.SCREEN_RECORDING,
-            ).apply {
-                screenDetectionSdkVersionHelper = sdkVersionHelperMock
-            },
-        )
+        val manager =
+            spy(
+                ScreenDetectionFeature(
+                        activity,
+                        detectionMode = DetectionMode.SCREEN_RECORDING,
+                    )
+                    .apply {
+                        screenDetectionSdkVersionHelper = sdkVersionHelperMock
+                    }
+            )
 
         manager.onStop(lifecycleOwner)
 

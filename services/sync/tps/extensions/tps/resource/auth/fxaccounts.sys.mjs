@@ -421,10 +421,14 @@ export var Authentication = {
     try {
       await FxAccountsConfig.ensureConfigured();
 
-      const oauthUrl = await FxAccountsConfig.promiseConnectAccountURI("tps", {
-        scope:
-          "profile https://identity.mozilla.com/apps/oldsync https://identity.mozilla.com/tokens/session",
-      });
+      const oauthUrl = await FxAccountsConfig.promiseConnectAccountURI(
+        "sync",
+        "tps",
+        {
+          scope:
+            "profile https://identity.mozilla.com/apps/oldsync https://identity.mozilla.com/tokens/session",
+        }
+      );
       Logger.logInfo("Starting OAuth sign-in at: " + oauthUrl);
 
       await this._automateOAuthFlow(

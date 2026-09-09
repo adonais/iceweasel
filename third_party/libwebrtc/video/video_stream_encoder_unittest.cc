@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <functional>
 #include <limits>
 #include <memory>
@@ -72,6 +73,7 @@
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
 #include "api/video/video_stream_encoder_settings.h"
+#include "api/video/video_timing.h"
 #include "api/video_codecs/scalability_mode.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_codec.h"
@@ -1790,6 +1792,86 @@ TEST_F(VideoStreamEncoderTest, EncodeOneFrame) {
   video_source_.IncomingCapturedFrame(CreateFrame(1, &frame_destroyed_event));
   WaitForEncodedFrame(1);
   EXPECT_TRUE(frame_destroyed_event.Wait(kDefaultTimeout));
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, SimulcastIndexNotOverriddenBySpatialIndexZero) {
+  NiceMock<MockVideoEncoder> video_encoder;
+  test::VideoEncoderProxyFactory encoder_factory(&video_encoder);
+  video_send_config_.encoder_settings.encoder_factory = &encoder_factory;
+
+  ON_CALL(video_encoder, GetEncoderInfo)
+      .WillByDefault(testing::Return(VideoEncoder::EncoderInfo()));
+
+  EncodedImageCallback* callback = nullptr;
+  ON_CALL(video_encoder, RegisterEncodeCompleteCallback)
+      .WillByDefault([&](EncodedImageCallback* cb) {
+        callback = cb;
+        return WEBRTC_VIDEO_CODEC_OK;
+      });
+
+  ON_CALL(video_encoder, Encode)
+      .WillByDefault(
+          [&](const VideoFrame& frame, const std::vector<VideoFrameType>*) {
+            EXPECT_TRUE(callback != nullptr);
+            if (callback) {
+              // Send simulcast stream 0
+              {
+                EncodedImage encoded_image;
+                encoded_image.SetRtpTimestamp(frame.rtp_timestamp());
+                // Explicitly set both simulcast and spatial index.
+                encoded_image.SetSimulcastIndex(0);
+                encoded_image.SetSpatialIndex(0);
+                auto buffer = EncodedImageBuffer::Create(100);
+                memset(buffer->data(), 0, 100);
+                encoded_image.SetEncodedData(buffer);
+                CodecSpecificInfo codec_specific;
+                codec_specific.codecType = kVideoCodecVP8;
+                callback->OnEncodedImage(encoded_image, &codec_specific);
+              }
+              // Send simulcast stream 1
+              {
+                EncodedImage encoded_image;
+                encoded_image.SetRtpTimestamp(frame.rtp_timestamp());
+                // Explicitly set both simulcast and spatial index.
+                encoded_image.SetSimulcastIndex(1);
+                encoded_image.SetSpatialIndex(0);
+                auto buffer = EncodedImageBuffer::Create(100);
+                memset(buffer->data(), 0, 100);
+                encoded_image.SetEncodedData(buffer);
+                CodecSpecificInfo codec_specific;
+                codec_specific.codecType = kVideoCodecVP8;
+                callback->OnEncodedImage(encoded_image, &codec_specific);
+              }
+            }
+            return WEBRTC_VIDEO_CODEC_OK;
+          });
+
+  // Configure the encoder for 2-stream simulcast.
+  ResetEncoder("VP8", /*num_streams=*/2, /*num_temporal_layers=*/1,
+               /*num_spatial_layers=*/1, /*screenshare=*/false);
+  video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
+      kSimulcastTargetBitrate, kSimulcastTargetBitrate, 0, 0, 0);
+
+  // Since we have 2 streams, the sink expects to receive frames for both
+  // streams.
+  sink_.SetNumExpectedLayers(2);
+
+  // Incoming frame starts encoding, which creates frame metadata in
+  // FrameEncodeMetadataWriter for BOTH streams (index 0 and 1).
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(1, codec_width_, codec_height_));
+
+  // Wait for the encoded frame. This waits until both layers (streams) are
+  // received.
+  EXPECT_TRUE(WaitForFrame(kDefaultTimeout));
+
+  // Verifies that the last image received (which is for stream 1) has valid
+  // timing flags.
+  const EncodedImage& last_image = sink_.GetLastEncodedImage();
+  EXPECT_EQ(last_image.SimulcastIndex().value_or(0), 1);
+  EXPECT_NE(last_image.timing_.flags, VideoSendTiming::kInvalid);
+
   video_stream_encoder_->Stop();
 }
 
@@ -6800,55 +6882,6 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(static_cast<uint32_t>(kLimits270p->min_bitrate_bps),
             fake_encoder_.config().spatialLayers[0].minBitrate * 1000);
   EXPECT_EQ(static_cast<uint32_t>(kLimits270p->max_bitrate_bps),
-            fake_encoder_.config().spatialLayers[0].maxBitrate * 1000);
-
-  video_stream_encoder_->Stop();
-}
-
-TEST_F(VideoStreamEncoderTest, DefaultMaxAndMinBitratesNotUsedIfDisabled) {
-  auto field_trials =
-      SetFieldTrial("WebRTC-DefaultBitrateLimitsKillSwitch", "Enabled");
-  VideoEncoderConfig video_encoder_config;
-  test::FillEncoderConfiguration(PayloadStringToCodecType("VP9"), 1,
-                                 &video_encoder_config);
-  VideoCodecVP9 vp9_settings = VideoEncoder::GetDefaultVp9Settings();
-  vp9_settings.numberOfSpatialLayers = 3;
-  // Since only one layer is active - automatic resize should be enabled.
-  vp9_settings.automaticResizeOn = true;
-  video_encoder_config.encoder_specific_settings =
-      make_ref_counted<VideoEncoderConfig::Vp9EncoderSpecificSettings>(
-          vp9_settings);
-  video_encoder_config.max_bitrate_bps = kSimulcastTargetBitrate.bps();
-  video_encoder_config.content_type =
-      VideoEncoderConfig::ContentType::kRealtimeVideo;
-  // Simulcast layers are used to indicate which spatial layers are active.
-  video_encoder_config.simulcast_layers.resize(3);
-  video_encoder_config.simulcast_layers[0].active = false;
-  video_encoder_config.simulcast_layers[1].active = true;
-  video_encoder_config.simulcast_layers[2].active = false;
-
-  // Reset encoder for field trials to take effect.
-  ConfigureEncoder(video_encoder_config.Copy(),
-                   VideoStreamEncoder::BitrateAllocationCallbackType::
-                       kVideoBitrateAllocationWhenScreenSharing,
-                   /* num_cores= */ 1, &field_trials);
-
-  video_stream_encoder_->ConfigureEncoder(video_encoder_config.Copy(),
-                                          kMaxPayloadLength);
-
-  // The default bitrate limits for 360p should not be used.
-  const std::optional<VideoEncoder::ResolutionBitrateLimits> kLimits360p =
-      EncoderInfoSettings::GetDefaultSinglecastBitrateLimitsForResolution(
-          kVideoCodecVP9, 640 * 360);
-  video_source_.IncomingCapturedFrame(CreateFrame(1, 1280, 720));
-  video_stream_encoder_->WaitUntilTaskQueueIsIdle();
-  EXPECT_EQ(fake_encoder_.config().numberOfSimulcastStreams, 1);
-  EXPECT_EQ(fake_encoder_.config().codecType, kVideoCodecVP9);
-  EXPECT_EQ(fake_encoder_.config().VP9().numberOfSpatialLayers, 2);
-  EXPECT_TRUE(fake_encoder_.config().spatialLayers[0].active);
-  EXPECT_EQ(640, fake_encoder_.config().spatialLayers[0].width);
-  EXPECT_EQ(360, fake_encoder_.config().spatialLayers[0].height);
-  EXPECT_NE(static_cast<uint32_t>(kLimits360p->max_bitrate_bps),
             fake_encoder_.config().spatialLayers[0].maxBitrate * 1000);
 
   video_stream_encoder_->Stop();

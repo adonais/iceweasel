@@ -34,11 +34,12 @@ class IntentReceiverActivity : Activity() {
 
             val processor = intentProcessors.firstOrNull { it.process(intent) }
 
-            val activityClass = if (processor in components.externalAppIntentProcessors) {
-                ExternalAppBrowserActivity::class
-            } else {
-                BrowserActivity::class
-            }
+            val activityClass =
+                if (processor in components.externalAppIntentProcessors) {
+                    ExternalAppBrowserActivity::class
+                } else {
+                    BrowserActivity::class
+                }
 
             intent.setClassName(applicationContext, activityClass.java.name)
 

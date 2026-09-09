@@ -535,6 +535,8 @@ class TrapSitesForKind {
   // We subtract one so that this check is not idempotent on 32-bit systems.
   static constexpr size_t MAX_LENGTH = UINT32_MAX - 1;
 
+  uint32_t getPCoffset(uint32_t index) const { return pcOffsets_[index]; }
+
   uint32_t length() const {
     size_t result = pcOffsets_.length();
     // Enforced by dynamic checks in mutation functions.
@@ -710,6 +712,8 @@ class TrapSites {
  public:
   explicit TrapSites() = default;
 
+  const TrapSitesForKind& get(Trap trap) const { return array_[trap]; }
+
   bool empty() const {
     for (Trap trap : mozilla::MakeEnumeratedRange(Trap::Limit)) {
       if (!array_[trap].empty()) {
@@ -760,6 +764,8 @@ class TrapSites {
       array_[trap].shrinkStorageToFit();
     }
   }
+
+  size_t length(Trap trap) const { return array_[trap].length(); }
 
   [[nodiscard]]
   bool lookup(uint32_t trapInstructionOffset,

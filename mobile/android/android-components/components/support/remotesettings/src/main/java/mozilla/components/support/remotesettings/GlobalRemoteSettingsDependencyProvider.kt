@@ -4,9 +4,7 @@
 
 package mozilla.components.support.remotesettings
 
-/**
- * Provides global access to the Remote Settings dependencies needed for sync worker maintenance.
- */
+/** Provides global access to the Remote Settings dependencies needed for sync worker maintenance. */
 object GlobalRemoteSettingsDependencyProvider {
 
     private var remoteSettingsService: RemoteSettingsService? = null
@@ -14,10 +12,9 @@ object GlobalRemoteSettingsDependencyProvider {
     private var onRemoteCollectionsUpdated: (List<String>) -> Unit = {}
 
     /**
-     * Initializes the [RemoteSettingsService] for running any maintenance tasks for Remote Settings.
-     * This method should be called in the client application's onCreate method and before
-     * [RemoteSettingsService.remoteSettingsService] in order to run the worker while the app is not
-     * running.
+     * Initializes the [RemoteSettingsService] for running any maintenance tasks for Remote Settings. This method should
+     * be called in the client application's onCreate method and before [RemoteSettingsService.remoteSettingsService] in
+     * order to run the worker while the app is not running.
      *
      * @param remoteSettingsService [RemoteSettingsService] to use for syncing new data.
      * @param onRemoteCollectionsUpdated Optional callback for the collections which have been updated.
@@ -30,17 +27,13 @@ object GlobalRemoteSettingsDependencyProvider {
         this.onRemoteCollectionsUpdated = onRemoteCollectionsUpdated
     }
 
-    /**
-     * Provides the [RemoteSettingsService] globally when needed for maintenance sync work.
-     */
+    /** Provides the [RemoteSettingsService] globally when needed for maintenance sync work. */
     fun requireRemoteSettingsService(): RemoteSettingsService {
         return requireNotNull(remoteSettingsService) {
             "GlobalRemoteSettingsDependencyProvider.initialize must be called before accessing the Remote Settings"
         }
     }
 
-    /**
-     * Provides the callback for what collections have been updated.
-     */
+    /** Provides the callback for what collections have been updated. */
     fun requireRemoteCollectionsUpdatedCallback() = onRemoteCollectionsUpdated
 }

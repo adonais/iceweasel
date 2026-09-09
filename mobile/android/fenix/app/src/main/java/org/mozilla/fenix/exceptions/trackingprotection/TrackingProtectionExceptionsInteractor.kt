@@ -10,9 +10,7 @@ import org.mozilla.fenix.exceptions.ExceptionsInteractor
 import org.mozilla.fenix.settings.SupportUtils
 
 interface TrackingProtectionExceptionsInteractor : ExceptionsInteractor<TrackingProtectionException> {
-    /**
-     * Called whenever learn more about tracking protection is tapped
-     */
+    /** Called whenever learn more about tracking protection is tapped */
     fun onLearnMore()
 }
 
@@ -23,9 +21,7 @@ class DefaultTrackingProtectionExceptionsInteractor(
 ) : TrackingProtectionExceptionsInteractor {
 
     override fun onLearnMore() {
-        val url = SupportUtils.getGenericSumoURLForTopic(
-            SupportUtils.SumoTopic.TRACKING_PROTECTION,
-        )
+        val url = SupportUtils.getGenericSumoURLForTopic(SupportUtils.SumoTopic.TRACKING_PROTECTION)
         openLearnMorePage(url)
     }
 
@@ -42,9 +38,7 @@ class DefaultTrackingProtectionExceptionsInteractor(
 
     fun reloadExceptions() {
         trackingProtectionUseCases.fetchExceptions { resultList ->
-            exceptionsStore.dispatch(
-                ExceptionsFragmentAction.Change(resultList),
-            )
+            exceptionsStore.dispatch(ExceptionsFragmentAction.Change(resultList))
         }
     }
 }

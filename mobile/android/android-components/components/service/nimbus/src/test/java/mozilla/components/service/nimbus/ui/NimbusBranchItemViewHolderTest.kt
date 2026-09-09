@@ -20,10 +20,11 @@ import org.mozilla.experiments.nimbus.Branch
 @RunWith(AndroidJUnit4::class)
 class NimbusBranchItemViewHolderTest {
 
-    private val branch = Branch(
-        slug = "control",
-        ratio = 1,
-    )
+    private val branch =
+        Branch(
+            slug = "control",
+            ratio = 1,
+        )
     private lateinit var nimbusBranchesDelegate: NimbusBranchesAdapterDelegate
     private lateinit var selectedIconView: ImageView
     private lateinit var titleView: TextView
@@ -40,13 +41,14 @@ class NimbusBranchItemViewHolderTest {
     @Test
     fun `GIVEN a branch WHEN bind is called THEN title and summary text is set`() {
         val view = View(testContext)
-        val holder = NimbusBranchItemViewHolder(
-            view,
-            nimbusBranchesDelegate,
-            selectedIconView,
-            titleView,
-            summaryView,
-        )
+        val holder =
+            NimbusBranchItemViewHolder(
+                view,
+                nimbusBranchesDelegate,
+                selectedIconView,
+                titleView,
+                summaryView,
+            )
 
         holder.bind(branch, "")
 

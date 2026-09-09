@@ -9,10 +9,10 @@ import android.util.AttributeSet
 import androidx.preference.Preference
 import org.mozilla.focus.R
 
-/**
- * A custom preference for Mozilla-related settings.
- */
-class MozillaPreference @JvmOverloads constructor(
+/** A custom preference for Mozilla-related settings. */
+class MozillaPreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet?,
     defStyleAttr: Int = 0,

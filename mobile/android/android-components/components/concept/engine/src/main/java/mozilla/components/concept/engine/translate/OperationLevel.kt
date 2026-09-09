@@ -4,30 +4,21 @@
 
 package mozilla.components.concept.engine.translate
 
-/**
- * The level or scope of a model operation.
- */
+/** The level or scope of a model operation. */
 enum class OperationLevel(val operationLevel: String) {
-    /**
-     * Complete the operation for a given language.
-     */
+    /** Complete the operation for a given language. */
     LANGUAGE("language"),
 
     /**
-     * Complete the operation on cache elements.
-     * (Elements that do not fully make a downloaded language package or [LanguageModel].)
+     * Complete the operation on cache elements. (Elements that do not fully make a downloaded language package or
+     * [LanguageModel].)
      */
     CACHE("cache"),
 
-    /**
-     * Complete the operation all models.
-     */
-    ALL("all"),
-    ;
+    /** Complete the operation all models. */
+    ALL("all");
 
-    /**
-     * The operation level will use the string literal on the engine.
-     */
+    /** The operation level will use the string literal on the engine. */
     override fun toString(): String {
         return operationLevel
     }

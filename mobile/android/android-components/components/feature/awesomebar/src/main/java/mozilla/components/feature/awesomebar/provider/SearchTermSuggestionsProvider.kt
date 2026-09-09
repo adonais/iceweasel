@@ -6,6 +6,7 @@ package mozilla.components.feature.awesomebar.provider
 
 import android.graphics.Bitmap
 import androidx.annotation.IntRange
+import java.util.UUID
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.search.SearchEngine
@@ -16,39 +17,32 @@ import mozilla.components.concept.storage.HistoryMetadata
 import mozilla.components.feature.awesomebar.facts.emitSearchTermSuggestionClickedFact
 import mozilla.components.feature.search.SearchUseCases.SearchUseCase
 import mozilla.components.feature.search.ext.buildSearchUrl
-import java.util.UUID
 
-/**
- * Return 2 search term suggestions by default. Same as on desktop.
- */
+/** Return 2 search term suggestions by default. Same as on desktop. */
 private const val DEFAULT_SUGGESTION_LIMIT = 2
 
 /**
- * A too big limit but which help ensure the SearchSuggestionProvider' suggestions which should be placed
- * below the ones from this provider will appear correctly.
+ * A too big limit but which help ensure the SearchSuggestionProvider' suggestions which should be placed below the ones
+ * from this provider will appear correctly.
  */
 const val SEARCH_TERMS_MAXIMUM_ALLOWED_SUGGESTIONS_LIMIT: Int = 1000
 
-/**
- * Error message if clients are requesting for a too big number of suggestions.
- */
+/** Error message if clients are requesting for a too big number of suggestions. */
 private const val MAXIMUM_ALLOWED_SUGGESTIONS_LIMIT_REACHED =
     "Cannot show more than $SEARCH_TERMS_MAXIMUM_ALLOWED_SUGGESTIONS_LIMIT suggestions."
 
 /**
- * A [AwesomeBar.SuggestionProvider] implementation that will show past searches done with the
- * specified [searchEngine] allowing to easily redo a search or continue with a lightly modified search.
+ * A [AwesomeBar.SuggestionProvider] implementation that will show past searches done with the specified [searchEngine]
+ * allowing to easily redo a search or continue with a lightly modified search.
  *
- * @param historyStorage an instance of the [PlacesHistoryStorage] used
- * to query matching metadata records.
+ * @param historyStorage an instance of the [PlacesHistoryStorage] used to query matching metadata records.
  * @param searchUseCase the use case invoked to do a new search with the suggested search term.
  * @param searchEngine the current search engine used for speculative connects with the first result.
- * @param maxNumberOfSuggestions optional parameter to specify the maximum number of returned suggestions.
- * Defaults to `2`.
- * @param icon optional [Bitmap] to he shown as the suggestions header.
- * Defaults to `null` in which case the [searchEngine]'s icon will be used.
- * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the
- * highest scored suggestion URL.
+ * @param maxNumberOfSuggestions optional parameter to specify the maximum number of returned suggestions. Defaults to
+ *   `2`.
+ * @param icon optional [Bitmap] to he shown as the suggestions header. Defaults to `null` in which case the
+ *   [searchEngine]'s icon will be used.
+ * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the highest scored suggestion URL.
  * @param showEditSuggestion optional parameter to specify if the suggestion should show the edit button.
  * @param suggestionsHeader optional parameter to specify if the suggestion should have a header
  */
@@ -81,16 +75,18 @@ class SearchTermSuggestionsProvider(
         }
 
         historyStorage.cancelReads(text)
-        val suggestions = withContext(this.coroutineContext) {
-            historyStorage.getHistoryMetadataSince(Long.MIN_VALUE)
-                .asSequence()
-                .filter { it.totalViewTime > 0 }
-                .filter { it.key.searchTerm?.startsWith(text) ?: false }
-                .distinctBy { it.key.searchTerm }
-                .sortedByDescending { it.createdAt }
-                .take(maxNumberOfSuggestions)
-                .toList()
-        }
+        val suggestions =
+            withContext(this.coroutineContext) {
+                historyStorage
+                    .getHistoryMetadataSince(Long.MIN_VALUE)
+                    .asSequence()
+                    .filter { it.totalViewTime > 0 }
+                    .filter { it.key.searchTerm?.startsWith(text) ?: false }
+                    .distinctBy { it.key.searchTerm }
+                    .sortedByDescending { it.createdAt }
+                    .take(maxNumberOfSuggestions)
+                    .toList()
+            }
 
         searchEngine?.let {
             suggestions.firstOrNull()?.key?.searchTerm?.let { searchTerm ->

@@ -208,7 +208,7 @@ void nsSynthVoiceRegistry::RecvInitialVoicesAndState(
   MOZ_ASSERT(gSynthVoiceRegistry);
 
   for (uint32_t i = 0; i < aVoices.Length(); ++i) {
-    RemoteVoice voice = aVoices[i];
+    const RemoteVoice& voice = aVoices[i];
     gSynthVoiceRegistry->AddVoiceImpl(nullptr, voice.voiceURI(), voice.name(),
                                       voice.lang(), voice.localService(),
                                       voice.queued());

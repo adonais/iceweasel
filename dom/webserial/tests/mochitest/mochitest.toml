@@ -26,6 +26,8 @@ prefs = [
 
 ["test_serial_api.html"]
 
+["test_serial_bluetooth_allowlist.html"]
+
 ["test_serial_buffer_size.html"]
 
 ["test_serial_errors.html"]

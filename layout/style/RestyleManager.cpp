@@ -2114,6 +2114,22 @@ void RestyleManager::AnimationsWithDestroyedFrame::Put(
   mContents.AppendElement(std::make_pair(target->AsElement(), pseudoType));
 }
 
+/**
+ * Returns true if the element is the root of its own display:none subtree,
+ * rather than being hidden by an ancestor. Descendants of a display:none
+ * element are not styled, so they have no style data here.
+ */
+static bool IsDisplayNoneRoot(const Element* aElement,
+                              const PseudoStyleRequest& aPseudoRequest) {
+  MOZ_ASSERT(aElement);
+  // TODO(Bug 2061595): support pseudo-element cases.
+  if (!aPseudoRequest.IsNotPseudo() ||
+      !StaticPrefs::layout_css_display_animations_enabled()) {
+    return false;
+  }
+  return aElement->HasServoData() && Servo_Element_IsDisplayNone(aElement);
+}
+
 void RestyleManager::AnimationsWithDestroyedFrame::
     StopAnimationsForElementsWithoutFrames() {
   nsPresContext* context = mRestyleManager->PresContext();
@@ -2144,8 +2160,12 @@ void RestyleManager::AnimationsWithDestroyedFrame::
       continue;
     }
 
-    animationManager->StopAnimationsForElement(element, request);
-    transitionManager->StopAnimationsForElement(element, request);
+    // An element animating its own display to none should keep its animation
+    // running.
+    if (!IsDisplayNoneRoot(element, request)) {
+      animationManager->StopAnimationsForElement(element, request);
+      transitionManager->StopAnimationsForElement(element, request);
+    }
 
     // All other animations should keep running but not running on the
     // *compositor* at this point.

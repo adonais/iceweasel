@@ -20,6 +20,20 @@
   display: flex;
   align-items: center;
   gap: var(--space-small);
+  justify-content: space-between;
+}
+
+.monitor-card-head-left {
+  display: flex;
+  gap: var(--space-small);
+  flex: 1;
+  min-width: 0;
+}
+
+.monitor-card-head-right {
+  display: flex;
+  gap: var(--space-small);
+  align-items: center;
 }
 
 .spacer {
@@ -42,6 +56,7 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
+  contain: inline-size;
 }
 
 .monitor-card-name {
@@ -433,16 +448,6 @@ hr.rule {
   flex-wrap: wrap;
   gap: var(--space-small);
   margin-top: var(--space-small);
-}
-
-.url-chip {
-  display: inline-block;
-  padding: var(--space-small) var(--space-medium);
-  background: color-mix(in srgb, var(--background-color-information) 30%, transparent);
-  border: 1px solid var(--border-color-deemphasized);
-  border-radius: var(--border-radius-medium);
-  font-size: var(--font-size-small);
-  white-space: nowrap;
 }
 
 .condition-badge {

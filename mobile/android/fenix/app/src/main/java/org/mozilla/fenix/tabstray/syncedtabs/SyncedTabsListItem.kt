@@ -6,9 +6,7 @@ package org.mozilla.fenix.tabstray.syncedtabs
 
 import mozilla.components.browser.storage.sync.Tab as SyncTab
 
-/**
- * The various types of list items that can be found in a [SyncedTabsList].
- */
+/** The various types of list items that can be found in a [SyncedTabsList]. */
 sealed class SyncedTabsListItem {
 
     /**
@@ -45,8 +43,7 @@ sealed class SyncedTabsListItem {
             /**
              * An action button to close the [Tab] on the synced device.
              *
-             * @property deviceId The ID of the device on which the [Tab] is
-             * currently open.
+             * @property deviceId The ID of the device on which the [Tab] is currently open.
              */
             data class Close(val deviceId: String) : Action()
 

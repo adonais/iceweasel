@@ -6,6 +6,8 @@ package mozilla.components.feature.addons.menu
 
 import android.graphics.Color
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.engine.webextension.Action
 import mozilla.components.concept.menu.candidate.AsyncDrawableMenuIcon
@@ -18,34 +20,35 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class WebExtensionActionMenuCandidateTest {
 
-    private val baseAction = Action(
-        title = "action",
-        enabled = false,
-        loadIcon = null,
-        badgeText = "",
-        badgeTextColor = 0,
-        badgeBackgroundColor = 0,
-        onClick = {},
-    )
+    private val baseAction =
+        Action(
+            title = "action",
+            enabled = false,
+            loadIcon = null,
+            badgeText = "",
+            badgeTextColor = 0,
+            badgeBackgroundColor = 0,
+            onClick = {},
+        )
 
     @Test
     fun `create menu candidate from null action`() {
         val onClick = {}
-        val candidate = Action(
-            title = null,
-            enabled = null,
-            loadIcon = null,
-            badgeText = null,
-            badgeTextColor = null,
-            badgeBackgroundColor = null,
-            onClick = onClick,
-        ).createMenuCandidate(testContext)
+        val candidate =
+            Action(
+                    title = null,
+                    enabled = null,
+                    loadIcon = null,
+                    badgeText = null,
+                    badgeTextColor = null,
+                    badgeBackgroundColor = null,
+                    onClick = onClick,
+                )
+                .createMenuCandidate(testContext)
 
         assertEquals("", candidate.text)
         assertFalse(candidate.containerStyle.isEnabled)
@@ -57,9 +60,7 @@ class WebExtensionActionMenuCandidateTest {
 
     @Test
     fun `create menu candidate with text and no badge`() {
-        val candidate = baseAction
-            .copy(badgeText = null)
-            .createMenuCandidate(testContext)
+        val candidate = baseAction.copy(badgeText = null).createMenuCandidate(testContext)
 
         assertEquals("action", candidate.text)
         assertFalse(candidate.containerStyle.isEnabled)
@@ -70,14 +71,15 @@ class WebExtensionActionMenuCandidateTest {
 
     @Test
     fun `create menu candidate with badge`() {
-        val candidate = baseAction
-            .copy(
-                badgeText = "10",
-                badgeTextColor = Color.DKGRAY,
-                badgeBackgroundColor = Color.YELLOW,
-                enabled = true,
-            )
-            .createMenuCandidate(testContext)
+        val candidate =
+            baseAction
+                .copy(
+                    badgeText = "10",
+                    badgeTextColor = Color.DKGRAY,
+                    badgeBackgroundColor = Color.YELLOW,
+                    enabled = true,
+                )
+                .createMenuCandidate(testContext)
 
         assertEquals("action", candidate.text)
         assertTrue(candidate.containerStyle.isEnabled)
@@ -98,15 +100,16 @@ class WebExtensionActionMenuCandidateTest {
     @Test
     fun `create menu candidate with icon`() = runTest {
         var calledWith: Int = -1
-        val candidate = baseAction
-            .copy(
-                badgeText = null,
-                loadIcon = { height ->
-                    calledWith = height
-                    null
-                },
-            )
-            .createMenuCandidate(testContext)
+        val candidate =
+            baseAction
+                .copy(
+                    badgeText = null,
+                    loadIcon = { height ->
+                        calledWith = height
+                        null
+                    },
+                )
+                .createMenuCandidate(testContext)
 
         assertEquals("action", candidate.text)
         assertFalse(candidate.containerStyle.isEnabled)

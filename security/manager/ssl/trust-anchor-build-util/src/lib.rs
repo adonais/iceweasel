@@ -14,7 +14,7 @@ pub struct TrustAnchor {
     pub bytes: Vec<u8>,
     pub subject: Vec<u8>,
     pub subject_start: u16,
-    pub subject_len: u8,
+    pub subject_len: u16,
 }
 
 impl PartialOrd for TrustAnchor {
@@ -38,7 +38,7 @@ impl TrustAnchor {
         let subject_len = subject
             .len()
             .try_into()
-            .expect("subject length hopefully fits in u8");
+            .expect("subject length hopefully fits in u16");
         TrustAnchor {
             bytes,
             subject,

@@ -11,16 +11,14 @@ import mozilla.components.feature.importer.ImporterState.Finished
 import mozilla.components.feature.importer.ImporterState.Loading
 import mozilla.components.feature.importer.ImporterState.SelectingFile
 
-/**
- * Reduces the given [action] into a new [ImporterState].
- */
-fun importerReducer(action: ImporterAction): ImporterState = when (action) {
-    ImporterAction.ViewAppeared -> SelectingFile
-    is ImporterAction.FileSelected -> Loading
-    ImporterAction.ImportStarted -> Loading
-    is ImporterAction.ImportFinished -> Finished(Success(action.bookmarksImported))
-    is ImporterAction.ImportFailed -> Finished(Failure(action.error))
-    ImporterAction.FileSelectionCanceled,
-    ImporterAction.ImportCancelled,
-    -> Finished(Canceled)
-}
+/** Reduces the given [action] into a new [ImporterState]. */
+fun importerReducer(action: ImporterAction): ImporterState =
+    when (action) {
+        ImporterAction.ViewAppeared -> SelectingFile
+        is ImporterAction.FileSelected -> Loading
+        ImporterAction.ImportStarted -> Loading
+        is ImporterAction.ImportFinished -> Finished(Success(action.bookmarksImported))
+        is ImporterAction.ImportFailed -> Finished(Failure(action.error))
+        ImporterAction.FileSelectionCanceled,
+        ImporterAction.ImportCancelled -> Finished(Canceled)
+    }

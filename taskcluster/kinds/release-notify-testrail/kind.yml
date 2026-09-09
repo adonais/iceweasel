@@ -61,7 +61,6 @@ tasks:
         treeherder:
             platform: focus-android-all/opt
         run:
-            clone-with: hg
             pre-commands:
                 # get-secrets is called from '..' directory so we need to cd into any directory to make it work
                 - ["cd", "mobile/android/focus-android"]
@@ -81,7 +80,6 @@ tasks:
             platform: fenix-android-all/opt
         description: Create Testrail Milestone for Fenix
         run:
-            clone-with: hg
             pre-commands:
                 # get-secrets is called from '..' directory so we need to cd into any directory to make it work
                 - ["cd", "mobile/android/fenix"]

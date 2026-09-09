@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -15,7 +15,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class LocaleTest : BaseSessionTest() {
 
-    @Test fun setLocale() {
+    @Test
+    fun setLocale() {
         sessionRule.runtime.settings.setLocales(arrayOf("en-GB"))
         assertThat(
             "Requested locale is found",
@@ -24,7 +25,8 @@ class LocaleTest : BaseSessionTest() {
         )
     }
 
-    @Test fun duplicateLocales() {
+    @Test
+    fun duplicateLocales() {
         sessionRule.runtime.settings.setLocales(arrayOf("en-gb", "en-US", "en-gb", "en-fr", "en-us", "en-FR"))
         assertThat(
             "Locales have no duplicates",
@@ -33,7 +35,8 @@ class LocaleTest : BaseSessionTest() {
         )
     }
 
-    @Test fun lowerCaseToUpperCaseLocales() {
+    @Test
+    fun lowerCaseToUpperCaseLocales() {
         sessionRule.runtime.settings.setLocales(arrayOf("en-gb", "en-us", "en-fr"))
         assertThat(
             "Locales are formatted properly",
@@ -50,7 +53,11 @@ class LocaleTest : BaseSessionTest() {
         val intlAcceptLanguage = "intl.accept_languages"
         val prefValue = (sessionRule.getPrefs(intlAcceptLanguage)[0] as String).split(",")
         for (value in prefValue) {
-            assertThat("Accept-Language format should be language or language-region", value.filter { it == '-' }.count(), lessThanOrEqualTo(1))
+            assertThat(
+                "Accept-Language format should be language or language-region",
+                value.filter { it == '-' }.count(),
+                lessThanOrEqualTo(1),
+            )
         }
     }
 }

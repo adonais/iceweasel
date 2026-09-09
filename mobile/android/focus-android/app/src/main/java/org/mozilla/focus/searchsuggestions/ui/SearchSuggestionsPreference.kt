@@ -10,9 +10,7 @@ import org.mozilla.focus.R
 import org.mozilla.focus.settings.LearnMoreSwitchPreference
 import org.mozilla.focus.utils.SupportUtils
 
-/**
- * Switch preference for enabling/disabling autocompletion for default domains that ship with the app.
- */
+/** Switch preference for enabling/disabling autocompletion for default domains that ship with the app. */
 class SearchSuggestionsPreference(
     context: Context,
     attrs: AttributeSet?,

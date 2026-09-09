@@ -34,10 +34,11 @@ class ToolbarPopupWindowTest {
         assertEquals("http://firefox.com", ToolbarPopupWindow.getUrlForClipboard(store))
 
         // Reader Tab
-        val readerTab = createTab(
-            url = "moz-extension://1234",
-            readerState = ReaderState(active = true, activeUrl = "https://blog.mozilla.org/123"),
-        )
+        val readerTab =
+            createTab(
+                url = "moz-extension://1234",
+                readerState = ReaderState(active = true, activeUrl = "https://blog.mozilla.org/123"),
+            )
         store = BrowserStore(BrowserState(tabs = listOf(readerTab), selectedTabId = readerTab.id))
         assertEquals("https://blog.mozilla.org/123", ToolbarPopupWindow.getUrlForClipboard(store))
     }

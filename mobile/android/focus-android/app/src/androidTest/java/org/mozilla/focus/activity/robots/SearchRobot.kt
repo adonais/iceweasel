@@ -76,9 +76,7 @@ class SearchRobot {
     fun clearSearchBar() = clearSearchButton.click()
 
     fun verifySearchSuggestionsContain(title: String) {
-        assertTrue(
-            suggestionsList.getChild(UiSelector().textContains(title)).waitForExists(waitingTime),
-        )
+        assertTrue(suggestionsList.getChild(UiSelector().textContains(title)).waitForExists(waitingTime))
     }
 
     class Transition {
@@ -95,12 +93,9 @@ class SearchRobot {
             pressEnterKey()
 
             runWithIdleRes(sessionLoadedIdlingResource) {
+                assertTrue(BrowserRobot().progressBar.waitUntilGone(waitingTime))
                 assertTrue(
-                    BrowserRobot().progressBar.waitUntilGone(waitingTime),
-                )
-                assertTrue(
-                    geckoEngineView.waitForExists(waitingTime) ||
-                        trackingProtectionDialog.waitForExists(waitingTime),
+                    geckoEngineView.waitForExists(waitingTime) || trackingProtectionDialog.waitForExists(waitingTime)
                 )
             }
 
@@ -136,30 +131,18 @@ fun searchScreen(interact: SearchRobot.() -> Unit): SearchRobot.Transition {
 private val searchBar =
     mDevice.findObject(UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_edit_url_view"))
 
-private val toolbar =
-    mDevice.findObject(UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_url_view"))
+private val toolbar = mDevice.findObject(UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_url_view"))
 
-private val searchSuggestionsTitle = mDevice.findObject(
-    UiSelector()
-        .resourceId("$packageName:id/enable_search_suggestions_title")
-        .enabled(true),
-)
+private val searchSuggestionsTitle =
+    mDevice.findObject(UiSelector().resourceId("$packageName:id/enable_search_suggestions_title").enabled(true))
 
-private val searchSuggestionsButtonYes = mDevice.findObject(
-    UiSelector()
-        .resourceId("$packageName:id/enable_search_suggestions_button")
-        .enabled(true),
-)
+private val searchSuggestionsButtonYes =
+    mDevice.findObject(UiSelector().resourceId("$packageName:id/enable_search_suggestions_button").enabled(true))
 
-private val searchSuggestionsButtonNo = mDevice.findObject(
-    UiSelector()
-        .resourceId("$packageName:id/disable_search_suggestions_button")
-        .enabled(true),
-)
+private val searchSuggestionsButtonNo =
+    mDevice.findObject(UiSelector().resourceId("$packageName:id/disable_search_suggestions_button").enabled(true))
 
-private val suggestionsList = mDevice.findObject(
-    UiSelector()
-        .resourceId("$packageName:id/search_suggestions_view"),
-)
+private val suggestionsList = mDevice.findObject(UiSelector().resourceId("$packageName:id/search_suggestions_view"))
 
-private val clearSearchButton = mDevice.findObject(UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_clear_view"))
+private val clearSearchButton =
+    mDevice.findObject(UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_clear_view"))

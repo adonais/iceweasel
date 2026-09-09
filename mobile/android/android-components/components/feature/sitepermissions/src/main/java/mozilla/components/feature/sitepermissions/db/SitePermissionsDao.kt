@@ -11,17 +11,13 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
 
-/**
- * Internal dao for accessing and modifying sitePermissions in the database.
- */
+/** Internal dao for accessing and modifying sitePermissions in the database. */
 @Dao
 internal interface SitePermissionsDao {
 
-    @Insert
-    fun insert(entity: SitePermissionsEntity): Long
+    @Insert fun insert(entity: SitePermissionsEntity): Long
 
-    @Update
-    fun update(entity: SitePermissionsEntity)
+    @Update fun update(entity: SitePermissionsEntity)
 
     @Query("SELECT * FROM site_permissions ORDER BY saved_at DESC")
     fun getSitePermissions(): List<SitePermissionsEntity>
@@ -29,11 +25,9 @@ internal interface SitePermissionsDao {
     @Query("SELECT * FROM site_permissions where origin =:origin LIMIT 1")
     fun getSitePermissionsBy(origin: String): SitePermissionsEntity?
 
-    @Delete
-    fun deleteSitePermissions(entity: SitePermissionsEntity)
+    @Delete fun deleteSitePermissions(entity: SitePermissionsEntity)
 
-    @Query("DELETE FROM site_permissions")
-    fun deleteAllSitePermissions()
+    @Query("DELETE FROM site_permissions") fun deleteAllSitePermissions()
 
     @Query("SELECT * FROM site_permissions ORDER BY saved_at DESC")
     fun getSitePermissionsPaged(): DataSource.Factory<Int, SitePermissionsEntity>

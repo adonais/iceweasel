@@ -46,6 +46,7 @@ const Template = ({
   description,
   supportPage,
   accessKey,
+  title,
   hasSlottedDescription,
 }) => html`
   <moz-textarea
@@ -58,6 +59,7 @@ const Template = ({
     data-l10n-id=${l10nId}
     support-page=${ifDefined(supportPage || null)}
     accesskey=${ifDefined(accessKey || null)}
+    title=${ifDefined(title || null)}
   >
     ${hasSlottedDescription
       ? html`<div slot="description">${description}</div>`
@@ -76,6 +78,7 @@ Default.args = {
   l10nId: "moz-textarea-label",
   supportPage: "",
   accessKey: "",
+  title: "",
   hasSlottedDescription: false,
 };
 

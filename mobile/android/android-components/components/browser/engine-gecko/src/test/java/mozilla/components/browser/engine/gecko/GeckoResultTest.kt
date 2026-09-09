@@ -7,6 +7,7 @@ package mozilla.components.browser.engine.gecko
 import android.os.Handler
 import android.os.Looper
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import mozilla.components.support.test.mock
@@ -18,7 +19,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.geckoview.GeckoResult
 import org.robolectric.Shadows.shadowOf
-import kotlin.test.assertIs
 
 @RunWith(AndroidJUnit4::class)
 class GeckoResultTest {
@@ -39,8 +39,7 @@ class GeckoResultTest {
 
     @Test(expected = IllegalStateException::class)
     fun awaitWithException() = runTest {
-        val geckoResult =
-            GeckoResult.fromException<Unit>(IllegalStateException()).withHandler(mainHandler)
+        val geckoResult = GeckoResult.fromException<Unit>(IllegalStateException()).withHandler(mainHandler)
         val deferred = async { geckoResult.await() }
         testScheduler.runCurrent()
 
@@ -56,10 +55,13 @@ class GeckoResultTest {
 
         shadowOf(Looper.getMainLooper()).idle()
 
-        val chain = result.then<Int> {
-            assertEquals(42, it)
-            GeckoResult.fromValue(null)
-        }.withHandler(mainHandler)
+        val chain =
+            result
+                .then<Int> {
+                    assertEquals(42, it)
+                    GeckoResult.fromValue(null)
+                }
+                .withHandler(mainHandler)
 
         val deferred = async { chain.await() }
 
@@ -73,16 +75,19 @@ class GeckoResultTest {
     fun fromException() = runTest {
         val result = launchGeckoResult { throw IllegalStateException() }
 
-        val chain = result.then<Unit>(
-            {
-                assertTrue("Invalid branch", false)
-                GeckoResult.fromValue(null)
-            },
-            {
-                assertIs<IllegalStateException>(it)
-                GeckoResult.fromValue(null)
-            },
-        ).withHandler(mainHandler)
+        val chain =
+            result
+                .then<Unit>(
+                    {
+                        assertTrue("Invalid branch", false)
+                        GeckoResult.fromValue(null)
+                    },
+                    {
+                        assertIs<IllegalStateException>(it)
+                        GeckoResult.fromValue(null)
+                    },
+                )
+                .withHandler(mainHandler)
 
         val deferred = async { chain.await() }
 
@@ -129,10 +134,8 @@ class GeckoResultTest {
 
         val mainHandler = Handler(Looper.getMainLooper())
 
-        whenever(geckoResult.cancel()).thenReturn(
-            GeckoResult.fromException<Boolean>(IllegalStateException())
-                .withHandler(mainHandler),
-        )
+        whenever(geckoResult.cancel())
+            .thenReturn(GeckoResult.fromException<Boolean>(IllegalStateException()).withHandler(mainHandler))
 
         val deferred = async { op.cancel().await() }
 

@@ -10,15 +10,11 @@ import android.text.TextUtils
 import java.io.IOException
 import java.util.Locale
 
-/**
- * Contains functionality to access domain lists shipped as part of this
- * module's assets.
- */
+/** Contains functionality to access domain lists shipped as part of this module's assets. */
 object Domains {
 
     /**
-     * Loads the domains applicable to the app's locale, plus the domains
-     * in the 'global' list.
+     * Loads the domains applicable to the app's locale, plus the domains in the 'global' list.
      *
      * @param context the application context
      * @return list of domains
@@ -32,9 +28,7 @@ object Domains {
         val availableLists = getAvailableDomainLists(context)
 
         // First initialize the country specific lists following the default locale order
-        countries
-            .filter { availableLists.contains(it) }
-            .forEach { loadDomainsForLanguage(context, domains, it) }
+        countries.filter { availableLists.contains(it) }.forEach { loadDomainsForLanguage(context, domains, it) }
 
         // And then add domains from the global list
         loadDomainsForLanguage(context, domains, "global")
@@ -45,22 +39,24 @@ object Domains {
     private fun getAvailableDomainLists(context: Context): Set<String> {
         val availableDomains = LinkedHashSet<String>()
         val assetManager = context.assets
-        val domains = try {
-            assetManager.list("domains") ?: emptyArray<String>()
-        } catch (e: IOException) {
-            emptyArray<String>()
-        }
+        val domains =
+            try {
+                assetManager.list("domains") ?: emptyArray<String>()
+            } catch (e: IOException) {
+                emptyArray<String>()
+            }
         availableDomains.addAll(domains)
         return availableDomains
     }
 
     private fun loadDomainsForLanguage(context: Context, domains: MutableSet<String>, country: String) {
         val assetManager = context.assets
-        val languageDomains = try {
-            assetManager.open("domains/$country").bufferedReader().readLines()
-        } catch (e: IOException) {
-            emptyList<String>()
-        }
+        val languageDomains =
+            try {
+                assetManager.open("domains/$country").bufferedReader().readLines()
+            } catch (e: IOException) {
+                emptyList<String>()
+            }
         domains.addAll(languageDomains)
     }
 

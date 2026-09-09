@@ -9,9 +9,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-/**
- * Internal database for storing data for the Tab Group feature.
- **/
+/** Internal database for storing data for the Tab Group feature. */
 @Database(
     entities = [StoredTabGroup::class, TabGroupAssignment::class],
     version = 2,
@@ -21,12 +19,11 @@ internal abstract class TabGroupDatabase : RoomDatabase() {
     abstract val tabGroupOperationsDao: TabGroupOperationsDao
 
     companion object {
-        val MIGRATION_1_2 = object : Migration(1, 2) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
-                    "UPDATE $TAB_GROUP_TABLE_NAME SET theme = 'Purple' WHERE theme = 'Violet'",
-                )
+        val MIGRATION_1_2 =
+            object : Migration(1, 2) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("UPDATE $TAB_GROUP_TABLE_NAME SET theme = 'Purple' WHERE theme = 'Violet'")
+                }
             }
-        }
     }
 }

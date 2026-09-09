@@ -87,9 +87,12 @@ ChromeUtils.defineESModuleGetters(this, {
   SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   SelectableProfileService:
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
-  SessionStartup: "resource:///modules/sessionstore/SessionStartup.sys.mjs",
-  SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
-  SessionWindowUI: "resource:///modules/sessionstore/SessionWindowUI.sys.mjs",
+  SessionStartup:
+    "moz-src:///browser/components/sessionstore/SessionStartup.sys.mjs",
+  SessionStore:
+    "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
+  SessionWindowUI:
+    "moz-src:///browser/components/sessionstore/SessionWindowUI.sys.mjs",
   SharingUtils: "moz-src:///browser/components/sharing/SharingUtils.sys.mjs",
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
   SiteDataManager: "resource:///modules/SiteDataManager.sys.mjs",
@@ -471,7 +474,11 @@ ChromeUtils.defineLazyGetter(this, "PopupNotifications", () => {
       anchorElement?.dispatchEvent(
         new CustomEvent("PopupNotificationsBeforeAnchor", { bubbles: true })
       );
-      if (anchorElement?.checkVisibility()) {
+      if (
+        anchorElement?.checkVisibility(
+          PopupNotifications.CHECK_VISIBILITY_OPTIONS
+        )
+      ) {
         return anchorElement;
       }
       let fallback = [
@@ -480,7 +487,11 @@ ChromeUtils.defineLazyGetter(this, "PopupNotifications", () => {
         document.getElementById("identity-icon"),
         document.getElementById("remote-control-icon"),
       ];
-      return fallback.find(element => element?.checkVisibility()) ?? null;
+      return (
+        fallback.find(element =>
+          element?.checkVisibility(PopupNotifications.CHECK_VISIBILITY_OPTIONS)
+        ) ?? null
+      );
     };
 
     return new PopupNotifications(
@@ -536,7 +547,7 @@ ChromeUtils.defineLazyGetter(this, "Win7Features", () => {
 
 ChromeUtils.defineLazyGetter(this, "gRestoreLastSessionObserver", () => {
   let { RestoreLastSessionObserver } = ChromeUtils.importESModule(
-    "resource:///modules/sessionstore/SessionWindowUI.sys.mjs"
+    "moz-src:///browser/components/sessionstore/SessionWindowUI.sys.mjs"
   );
   return new RestoreLastSessionObserver(window);
 });
@@ -1533,6 +1544,7 @@ function CreateContainerTabMenu(event) {
   createUserContextMenu(event, {
     useAccessKeys: false,
     showDefaultTab: true,
+    containerSource: "new_tab_button",
   });
 }
 
@@ -1701,11 +1713,7 @@ function toOpenWindowByType(inType, uri, features) {
   } else if (features) {
     window.open(uri, "_blank", features);
   } else {
-    window.open(
-      uri,
-      "_blank",
-      "chrome,extrachrome,menubar,resizable,scrollbars,status,toolbar"
-    );
+    window.open(uri, "_blank", "chrome,resizable,toolbar");
   }
 }
 /**
@@ -1915,6 +1923,9 @@ let gFileMenu = {
 function openNewUserContextTab(event) {
   openTrustedLinkIn(BROWSER_NEW_TAB_URL, "tab", {
     userContextId: parseInt(event.target.getAttribute("data-usercontextid")),
+    eventDetail: {
+      containerSource: event.target.dataset.containerEntrypoint,
+    },
   });
 }
 
@@ -2111,6 +2122,7 @@ var XULBrowserWindow = {
         aWebProgress.isTopLevel
       ) {
         this.busyUI = true;
+        StatusPanel.update();
 
         // Show the "scanning" shield at load start (the URI lets a same-site
         // nav keep the icon). Skip unless the trust panel is already loaded, to
@@ -4702,6 +4714,10 @@ TabDialogBox.prototype.QueryInterface = ChromeUtils.generateQI([
   "nsISupportsWeakReference",
 ]);
 
+// A class declaration is a lexical binding, not a window property, so callers
+// outside this window's scripts can't reach it without this.
+window.TabDialogBox = TabDialogBox;
+
 // Handle window-modal prompts that we want to display with the same style as
 // tab-modal prompts.
 var gDialogBox = {
@@ -4769,9 +4785,9 @@ var gDialogBox = {
     window.focus();
 
     try {
-      // Prevent moz-urlbars from showing on top of modal
-      for (let mozUrlbar of document.querySelectorAll("moz-urlbar")) {
-        mozUrlbar.incrementBreakoutBlockerCount();
+      // Prevent urlbars from showing on top of modal
+      for (let urlbar of document.querySelectorAll(".urlbar")) {
+        urlbar.incrementBreakoutBlockerCount();
       }
     } catch (ex) {
       console.error(ex);
@@ -4800,9 +4816,9 @@ var gDialogBox = {
       this._updateMenuAndCommandState(true /* to enable */);
       this._dialog = null;
       UpdatePopupNotificationsVisibility();
-      // Restore moz-urlbar breakout if needed
-      for (let mozUrlbar of document.querySelectorAll("moz-urlbar")) {
-        mozUrlbar.decrementBreakoutBlockerCount();
+      // Restore urlbar breakout if needed
+      for (let urlbar of document.querySelectorAll(".urlbar")) {
+        urlbar.decrementBreakoutBlockerCount();
       }
     }
     if (this._queued.length) {

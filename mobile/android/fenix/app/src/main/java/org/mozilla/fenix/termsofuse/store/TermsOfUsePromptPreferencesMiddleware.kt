@@ -12,17 +12,15 @@ import mozilla.components.lib.state.Store
  *
  * @param repository the repository for the terms of use prompt
  */
-class TermsOfUsePromptPreferencesMiddleware(
-    private val repository: TermsOfUsePromptRepository,
-) : Middleware<TermsOfUsePromptState, TermsOfUsePromptAction> {
+class TermsOfUsePromptPreferencesMiddleware(private val repository: TermsOfUsePromptRepository) :
+    Middleware<TermsOfUsePromptState, TermsOfUsePromptAction> {
     override fun invoke(
         store: Store<TermsOfUsePromptState, TermsOfUsePromptAction>,
         next: (TermsOfUsePromptAction) -> Unit,
         action: TermsOfUsePromptAction,
     ) {
         when (action) {
-            is TermsOfUsePromptAction.OnAcceptClicked ->
-                repository.updateHasAcceptedTermsOfUsePreference()
+            is TermsOfUsePromptAction.OnAcceptClicked -> repository.updateHasAcceptedTermsOfUsePreference()
 
             is TermsOfUsePromptAction.OnRemindMeLaterClicked -> {
                 repository.updateHasPostponedAcceptingTermsOfUsePreference()
@@ -47,9 +45,7 @@ class TermsOfUsePromptPreferencesMiddleware(
             // no-ops
             is TermsOfUsePromptAction.OnLearnMoreClicked,
             is TermsOfUsePromptAction.OnPrivacyNoticeClicked,
-            is TermsOfUsePromptAction.OnTermsOfUseClicked,
-                -> {
-            }
+            is TermsOfUsePromptAction.OnTermsOfUseClicked -> {}
         }
 
         next(action)

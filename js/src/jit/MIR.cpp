@@ -6444,6 +6444,8 @@ JSObject* MObjectState::templateObjectOf(MDefinition* obj) {
     return obj->toNewCallObject()->templateObject();
   } else if (obj->isNewIterator()) {
     return obj->toNewIterator()->templateObject();
+  } else if (obj->isNewBoundFunction()) {
+    return obj->toNewBoundFunction()->templateObj();
   }
 
   MOZ_CRASH("unreachable");
@@ -7464,6 +7466,7 @@ MDefinition* MGuardIsNotArrayBufferMaybeShared::foldsTo(TempAllocator& alloc) {
     case KnownClass::Array:
     case KnownClass::Function:
     case KnownClass::RegExp:
+    case KnownClass::Date:
     case KnownClass::ArrayIterator:
     case KnownClass::StringIterator:
     case KnownClass::RegExpStringIterator: {

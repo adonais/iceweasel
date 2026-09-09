@@ -158,6 +158,9 @@ with Files(".vscode/**"):
 with Files(".zed/**"):
     BUG_COMPONENT = ("Developer Infrastructure", "Developer Environment Integration")
 
+with Files(".idea/**"):
+    BUG_COMPONENT = ("Firefox for Android", "Tooling")
+
 with Files(".ycm_extra_conf.py"):
     BUG_COMPONENT = ("Developer Infrastructure", "Developer Environment Integration")
 
@@ -349,6 +352,10 @@ SPHINX_TREES["mots"] = "docs/mots"
 SPHINX_TREES["update-infrastructure"] = "docs/update-infrastructure"
 
 SPHINX_TREES["content-security"] = "docs/content-security"
+
+# Wired up here rather than in security/rlbox/moz.build, which is only
+# traversed when MOZ_USING_WASM_SANDBOXING and COMPILE_ENVIRONMENT are set.
+SPHINX_TREES["rlbox"] = "security/rlbox/docs"
 
 SPHINX_TREES["jsloader"] = "docs/jsloader"
 

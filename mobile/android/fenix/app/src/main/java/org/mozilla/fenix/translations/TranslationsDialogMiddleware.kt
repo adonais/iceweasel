@@ -5,7 +5,7 @@
 package org.mozilla.fenix.translations
 
 import mozilla.components.browser.state.action.TranslationsAction
-import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.selector.findTabOrCustomTabOrSelectedTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.translate.TranslationOperation
 import mozilla.components.concept.engine.translate.TranslationPageSettingOperation
@@ -13,12 +13,11 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import org.mozilla.fenix.utils.Settings
 
-/**
- * [Middleware] implementation for updating [BrowserStore] based on translation actions.
- */
+/** [Middleware] implementation for updating [BrowserStore] based on translation actions. */
 class TranslationsDialogMiddleware(
     private val browserStore: BrowserStore,
     private val settings: Settings,
+    private val sessionId: String? = null,
 ) : Middleware<TranslationsDialogState, TranslationsDialogAction> {
 
     @Suppress("LongMethod", "CyclomaticComplexMethod")
@@ -27,20 +26,21 @@ class TranslationsDialogMiddleware(
         next: (TranslationsDialogAction) -> Unit,
         action: TranslationsDialogAction,
     ) {
-        val sessionId = browserStore.state.selectedTab?.id ?: return
+        val targetSessionId = browserStore.state.findTabOrCustomTabOrSelectedTab(sessionId)?.id ?: return
 
         when (action) {
             is TranslationsDialogAction.InitTranslationsDialog -> {
                 // If the languages are missing, we should attempt to fetch the supported languages.
                 // This will also ensure the missing languages dialog error state, if fetching fails.
-                if (browserStore.state.translationEngine.supportedLanguages?.fromLanguages == null ||
-                    browserStore.state.translationEngine.supportedLanguages?.toLanguages == null
+                if (
+                    browserStore.state.translationEngine.supportedLanguages?.fromLanguages == null ||
+                        browserStore.state.translationEngine.supportedLanguages?.toLanguages == null
                 ) {
                     browserStore.dispatch(
                         TranslationsAction.OperationRequestedAction(
-                            tabId = sessionId,
+                            tabId = targetSessionId,
                             operation = TranslationOperation.FETCH_SUPPORTED_LANGUAGES,
-                        ),
+                        )
                     )
                 }
             }
@@ -48,50 +48,51 @@ class TranslationsDialogMiddleware(
             is TranslationsDialogAction.FetchDownloadFileSizeAction -> {
                 browserStore.dispatch(
                     TranslationsAction.FetchTranslationDownloadSizeAction(
-                        tabId = sessionId,
+                        tabId = targetSessionId,
                         fromLanguage = action.fromLanguage,
                         toLanguage = action.toLanguage,
-                    ),
+                    )
                 )
             }
 
             is TranslationsDialogAction.FetchSupportedLanguages -> {
                 browserStore.dispatch(
                     TranslationsAction.OperationRequestedAction(
-                        tabId = sessionId,
+                        tabId = targetSessionId,
                         operation = TranslationOperation.FETCH_SUPPORTED_LANGUAGES,
-                    ),
+                    )
                 )
             }
 
             is TranslationsDialogAction.FetchPageSettings -> {
                 browserStore.dispatch(
                     TranslationsAction.OperationRequestedAction(
-                        tabId = sessionId,
+                        tabId = targetSessionId,
                         operation = TranslationOperation.FETCH_PAGE_SETTINGS,
-                    ),
+                    )
                 )
             }
 
             is TranslationsDialogAction.TranslateAction -> {
-                store.state.initialFrom?.code?.let { fromLanguage ->
-                    store.state.initialTo?.code?.let { toLanguage ->
-                        TranslationsAction.TranslateAction(
-                            tabId = sessionId,
-                            fromLanguage = fromLanguage,
-                            toLanguage = toLanguage,
-                            options = null,
-                        )
+                store.state.initialFrom
+                    ?.code
+                    ?.let { fromLanguage ->
+                        store.state.initialTo?.code?.let { toLanguage ->
+                            TranslationsAction.TranslateAction(
+                                tabId = targetSessionId,
+                                fromLanguage = fromLanguage,
+                                toLanguage = toLanguage,
+                                options = null,
+                            )
+                        }
                     }
-                }?.let {
-                    browserStore.dispatch(
-                        it,
-                    )
-                }
+                    ?.let {
+                        browserStore.dispatch(it)
+                    }
             }
 
             is TranslationsDialogAction.RestoreTranslation -> {
-                browserStore.dispatch(TranslationsAction.TranslateRestoreAction(sessionId))
+                browserStore.dispatch(TranslationsAction.TranslateRestoreAction(targetSessionId))
             }
 
             is TranslationsDialogAction.UpdatePageSettingsValue -> {
@@ -100,37 +101,40 @@ class TranslationsDialogMiddleware(
                         // Ensures the translations engine has the correct value
                         browserStore.dispatch(
                             TranslationsAction.UpdateGlobalOfferTranslateSettingAction(
-                                offerTranslation = action.checkValue,
-                            ),
+                                offerTranslation = action.checkValue
+                            )
                         )
 
                         // Used to ensure setting persistence after a shutdown
                         settings.offerTranslation = action.checkValue
                     }
 
-                    is TranslationPageSettingsOption.AlwaysTranslateLanguage -> browserStore.dispatch(
-                        TranslationsAction.UpdatePageSettingAction(
-                            tabId = sessionId,
-                            operation = TranslationPageSettingOperation.UPDATE_ALWAYS_TRANSLATE_LANGUAGE,
-                            setting = action.checkValue,
-                        ),
-                    )
+                    is TranslationPageSettingsOption.AlwaysTranslateLanguage ->
+                        browserStore.dispatch(
+                            TranslationsAction.UpdatePageSettingAction(
+                                tabId = targetSessionId,
+                                operation = TranslationPageSettingOperation.UPDATE_ALWAYS_TRANSLATE_LANGUAGE,
+                                setting = action.checkValue,
+                            )
+                        )
 
-                    is TranslationPageSettingsOption.NeverTranslateLanguage -> browserStore.dispatch(
-                        TranslationsAction.UpdatePageSettingAction(
-                            tabId = sessionId,
-                            operation = TranslationPageSettingOperation.UPDATE_NEVER_TRANSLATE_LANGUAGE,
-                            setting = action.checkValue,
-                        ),
-                    )
+                    is TranslationPageSettingsOption.NeverTranslateLanguage ->
+                        browserStore.dispatch(
+                            TranslationsAction.UpdatePageSettingAction(
+                                tabId = targetSessionId,
+                                operation = TranslationPageSettingOperation.UPDATE_NEVER_TRANSLATE_LANGUAGE,
+                                setting = action.checkValue,
+                            )
+                        )
 
-                    is TranslationPageSettingsOption.NeverTranslateSite -> browserStore.dispatch(
-                        TranslationsAction.UpdatePageSettingAction(
-                            tabId = sessionId,
-                            operation = TranslationPageSettingOperation.UPDATE_NEVER_TRANSLATE_SITE,
-                            setting = action.checkValue,
-                        ),
-                    )
+                    is TranslationPageSettingsOption.NeverTranslateSite ->
+                        browserStore.dispatch(
+                            TranslationsAction.UpdatePageSettingAction(
+                                tabId = targetSessionId,
+                                operation = TranslationPageSettingOperation.UPDATE_NEVER_TRANSLATE_SITE,
+                                setting = action.checkValue,
+                            )
+                        )
                 }
             }
 

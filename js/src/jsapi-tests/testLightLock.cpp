@@ -29,7 +29,7 @@ class MOZ_RAII AutoLockLightLock {
 BEGIN_TEST(testLightLock_basic) {
   JSRuntime* rt = cx->runtime();
 
-  LightLock lock;
+  LightLock lock(js::mutexid::TestMutex);
   CHECK(!lock.isLocked());
   lock.lock(rt);
   CHECK(lock.isLocked());
@@ -52,7 +52,7 @@ BEGIN_TEST(testLightLock_withThread) {
   using LogVector = Vector<int32_t, 3, SystemAllocPolicy>;
   LogVector log;
 
-  LightLock lock;
+  LightLock lock(js::mutexid::TestMutex);
   lock.lock(rt);
 
   Thread thread;
@@ -87,6 +87,8 @@ struct SharedData {
   uint64_t randomSeed[2][2];
   bool lockedBy[2] = {false, false};
   int64_t count = 0;
+
+  SharedData() : lock(js::mutexid::TestMutex) {}
 };
 
 static void LightLockStressThread(JSRuntime* rt, size_t thisThreadIndex,

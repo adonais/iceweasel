@@ -12,9 +12,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import mozilla.components.browser.menu.view.StickyItemsAdapter
 
-/**
- * Adapter implementation used by the browser menu to display menu items in a RecyclerView.
- */
+/** Adapter implementation used by the browser menu to display menu items in a RecyclerView. */
 internal class BrowserMenuAdapter(
     context: Context,
     items: List<BrowserMenuItem>,

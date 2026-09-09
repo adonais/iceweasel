@@ -5,13 +5,11 @@
 package mozilla.components.feature.addons.ui
 
 /**
- * Provides methods for handling the success and error callbacks from uninstalling an add-on in the
- * list of unsupported add-on items.
+ * Provides methods for handling the success and error callbacks from uninstalling an add-on in the list of unsupported
+ * add-on items.
  */
 interface UnsupportedAddonsAdapterDelegate {
-    /**
-     * Callback invoked if the addon was uninstalled successfully.
-     */
+    /** Callback invoked if the addon was uninstalled successfully. */
     fun onUninstallSuccess() = Unit
 
     /**

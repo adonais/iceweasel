@@ -4,12 +4,8 @@
 
 package org.mozilla.fenix.home.search
 
-/**
- * Homepage actions related to search.
- */
+/** Homepage actions related to search. */
 interface HomeSearchInteractor {
-    /**
-     * Indicate the home content was focused while a browser search is in progress.
-     */
+    /** Indicate the home content was focused while a browser search is in progress. */
     fun onHomeContentFocusedWhileSearchIsActive()
 }

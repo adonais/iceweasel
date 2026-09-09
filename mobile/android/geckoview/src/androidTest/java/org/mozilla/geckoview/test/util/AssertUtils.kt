@@ -1,15 +1,15 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test.util
 
 import android.graphics.Bitmap
 import android.util.Base64
 import android.util.Log
-import org.junit.Assert.assertEquals
 import java.io.ByteArrayOutputStream
 import kotlin.math.min
 import kotlin.test.assertNotNull
+import org.junit.Assert.assertEquals
 
 object AssertUtils {
     private val lineLength = 1024

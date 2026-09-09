@@ -18,35 +18,30 @@ import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiSelector
+import java.util.concurrent.TimeUnit
+import mozilla.components.browser.toolbar.R as toolbarR
+import mozilla.components.feature.tabs.R as tabsR
 import mozilla.components.support.android.test.rules.WebserverRule
 import org.junit.Assert.assertTrue
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
-import java.util.concurrent.TimeUnit
-import mozilla.components.browser.toolbar.R as toolbarR
-import mozilla.components.feature.tabs.R as tabsR
 
 private const val INITIAL_WAIT_SECONDS = 5L
 private const val WAIT_FOR_WEB_CONTENT_SECONDS = 15L
 
-/**
- * A collection of "smoke tests" to verify that the basic browsing functionality is working.
- */
-
+/** A collection of "smoke tests" to verify that the basic browsing functionality is working. */
 @LargeTest
 class SmokeTests {
     @get:Rule
     val activityRule: ActivityScenarioRule<BrowserActivity> = ActivityScenarioRule(BrowserActivity::class.java)
 
-    @get:Rule
-    val webserverRule: WebserverRule = WebserverRule()
+    @get:Rule val webserverRule: WebserverRule = WebserverRule()
 
     /**
-     * This test loads a website from a local webserver by typing into the URL bar. After that it verifies that the
-     * web content is visible.
+     * This test loads a website from a local webserver by typing into the URL bar. After that it verifies that the web
+     * content is visible.
      */
-
     @Test
     fun loadWebsiteTest() {
         waitForIdle()
@@ -96,26 +91,21 @@ private fun waitForIdle() {
 }
 
 private fun navigateToTabsTray() {
-    onView(withContentDescription(tabsR.string.mozac_feature_tabs_toolbar_tabs_button))
-        .perform(click())
+    onView(withContentDescription(tabsR.string.mozac_feature_tabs_toolbar_tabs_button)).perform(click())
 }
 
 private fun openNewTabInTabsTray() {
-    onView(withId(R.id.newTab))
-        .perform(click())
+    onView(withId(R.id.newTab)).perform(click())
 }
 
 private fun enterUrl(url: String) {
-    onView(withId(toolbarR.id.mozac_browser_toolbar_url_view))
-        .perform(click())
+    onView(withId(toolbarR.id.mozac_browser_toolbar_url_view)).perform(click())
 
-    onView(withId(toolbarR.id.mozac_browser_toolbar_edit_url_view))
-        .perform(replaceText(url), pressImeActionButton())
+    onView(withId(toolbarR.id.mozac_browser_toolbar_edit_url_view)).perform(replaceText(url), pressImeActionButton())
 }
 
 private fun verifyUrlInToolbar(url: String) {
-    onView(withId(toolbarR.id.mozac_browser_toolbar_url_view))
-        .check(matches(withText(url)))
+    onView(withId(toolbarR.id.mozac_browser_toolbar_url_view)).check(matches(withText(url)))
 }
 
 private fun verifyWebsiteContent(text: String) {
@@ -124,12 +114,5 @@ private fun verifyWebsiteContent(text: String) {
 
     val waitingTime: Long = TimeUnit.SECONDS.toMillis(WAIT_FOR_WEB_CONTENT_SECONDS)
 
-    assertTrue(
-        device
-            .findObject(
-                UiSelector()
-                    .textContains(text),
-            )
-            .waitForExists(waitingTime),
-    )
+    assertTrue(device.findObject(UiSelector().textContains(text)).waitForExists(waitingTime))
 }

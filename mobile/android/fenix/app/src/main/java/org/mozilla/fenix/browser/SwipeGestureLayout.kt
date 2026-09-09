@@ -11,15 +11,13 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.widget.FrameLayout
 
-/**
- * Interface that allows intercepting and handling swipe gestures received in a [SwipeGestureLayout].
- */
+/** Interface that allows intercepting and handling swipe gestures received in a [SwipeGestureLayout]. */
 interface SwipeGestureListener {
 
     /**
-     * Called when the [SwipeGestureLayout] detects the start of a swipe gesture. The listener
-     * should return true if it wants to handle the swipe gesture. If the listener returns false
-     * it will not receive any callbacks for future events that the swipe produces.
+     * Called when the [SwipeGestureLayout] detects the start of a swipe gesture. The listener should return true if it
+     * wants to handle the swipe gesture. If the listener returns false it will not receive any callbacks for future
+     * events that the swipe produces.
      *
      * @param start the initial point where the gesture started
      * @param next the next point in the gesture
@@ -46,59 +44,60 @@ interface SwipeGestureListener {
 /**
  * A [FrameLayout] that allows listeners to intercept and handle swipe events.
  *
- * Listeners are called in the order they are added and the first listener to intercept a swipe event
- * is the only listener that will receive events for the duration of that swipe.
+ * Listeners are called in the order they are added and the first listener to intercept a swipe event is the only
+ * listener that will receive events for the duration of that swipe.
  */
-class SwipeGestureLayout @JvmOverloads constructor(
+class SwipeGestureLayout
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
-    /**
-     * Controls whether the swiping functionality is active or not.
-     */
+    /** Controls whether the swiping functionality is active or not. */
     var isSwipeEnabled = true
 
-    private val gestureListener = object : GestureDetector.SimpleOnGestureListener() {
-        override fun onDown(e: MotionEvent): Boolean {
-            return true
-        }
+    private val gestureListener =
+        object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDown(e: MotionEvent): Boolean {
+                return true
+            }
 
-        override fun onScroll(
-            e1: MotionEvent?,
-            e2: MotionEvent,
-            distanceX: Float,
-            distanceY: Float,
-        ): Boolean {
-            val start = e1?.let { event -> PointF(event.rawX, event.rawY) } ?: return false
-            val next = e2.let { event -> PointF(event.rawX, event.rawY) }
+            override fun onScroll(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                distanceX: Float,
+                distanceY: Float,
+            ): Boolean {
+                val start = e1?.let { event -> PointF(event.rawX, event.rawY) } ?: return false
+                val next = e2.let { event -> PointF(event.rawX, event.rawY) }
 
-            if (activeListener == null && !handledInitialScroll) {
-                activeListener = listeners.firstOrNull { listener ->
-                    listener.onSwipeStarted(start, next)
+                if (activeListener == null && !handledInitialScroll) {
+                    activeListener = listeners.firstOrNull { listener ->
+                        listener.onSwipeStarted(start, next)
+                    }
+                    handledInitialScroll = true
                 }
-                handledInitialScroll = true
+                activeListener?.onSwipeUpdate(distanceX, distanceY)
+                return activeListener != null
             }
-            activeListener?.onSwipeUpdate(distanceX, distanceY)
-            return activeListener != null
-        }
 
-        override fun onFling(
-            e1: MotionEvent?,
-            e2: MotionEvent,
-            velocityX: Float,
-            velocityY: Float,
-        ): Boolean {
-            activeListener?.onSwipeFinished(velocityX, velocityY)
-            return if (activeListener != null) {
-                activeListener = null
-                true
-            } else {
-                false
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float,
+            ): Boolean {
+                activeListener?.onSwipeFinished(velocityX, velocityY)
+                return if (activeListener != null) {
+                    activeListener = null
+                    true
+                } else {
+                    false
+                }
             }
         }
-    }
 
     private val gestureDetector = GestureDetector(context, gestureListener)
 
@@ -127,7 +126,8 @@ class SwipeGestureLayout @JvmOverloads constructor(
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         return when (event.actionMasked) {
-            MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {
+            MotionEvent.ACTION_CANCEL,
+            MotionEvent.ACTION_UP -> {
                 gestureDetector.onTouchEvent(event)
                 // If the active listener is not null here, then we haven't detected a fling
                 // so notify the listener that the swipe was finished with 0 velocity

@@ -4,9 +4,9 @@
 
 package mozilla.components.compose.base.utils
 
+import java.util.Locale
 import org.junit.Assert
 import org.junit.Test
-import java.util.Locale
 
 class IntTest {
 

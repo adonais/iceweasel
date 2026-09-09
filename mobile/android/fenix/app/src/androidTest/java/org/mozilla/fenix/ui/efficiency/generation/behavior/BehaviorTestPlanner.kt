@@ -18,9 +18,8 @@ object BehaviorTestPlanner {
         val pageRefsByProperty = PageCatalog.discoverPages().associateBy { it.propertyName }
 
         return buildList {
-            capabilitiesByFeatureEntity.keys
-                .sortedWith(compareBy({ it.first }, { it.second }))
-                .forEach { (feature, entity) ->
+                capabilitiesByFeatureEntity.keys.sortedWith(compareBy({ it.first }, { it.second })).forEach {
+                    (feature, entity) ->
                     templates.forEach { template ->
                         contexts.forEach { context ->
                             add(
@@ -32,12 +31,13 @@ object BehaviorTestPlanner {
                                     selectorTemplates = selectorTemplates,
                                     pageRefsByProperty = pageRefsByProperty,
                                     context = context,
-                                ),
+                                )
                             )
                         }
                     }
                 }
-        }.sortedWith(compareBy({ it.feature }, { it.entity }, { it.templateId }, { it.context.toString() }))
+            }
+            .sortedWith(compareBy({ it.feature }, { it.entity }, { it.templateId }, { it.context.toString() }))
     }
 
     private fun buildPlan(
@@ -51,13 +51,14 @@ object BehaviorTestPlanner {
     ): BehaviorCasePlan {
         val missing = mutableListOf<String>()
 
-        val selectedCapabilities = template.requiredOperations.mapNotNull { operation ->
-            val match = capabilities.firstOrNull { it.operation == operation }
-            if (match == null) {
-                missing += "capability:$feature.$entity.$operation"
+        val selectedCapabilities =
+            template.requiredOperations.mapNotNull { operation ->
+                val match = capabilities.firstOrNull { it.operation == operation }
+                if (match == null) {
+                    missing += "capability:$feature.$entity.$operation"
+                }
+                match
             }
-            match
-        }
 
         selectedCapabilities.forEach { capability ->
             if (pageRefsByProperty[capability.pagePropertyName] == null) {
@@ -66,9 +67,7 @@ object BehaviorTestPlanner {
         }
 
         val assertionTemplate = selectorTemplates.firstOrNull {
-            it.feature == feature &&
-                it.entity == entity &&
-                it.target == template.assertionTarget
+            it.feature == feature && it.entity == entity && it.target == template.assertionTarget
         }
 
         if (assertionTemplate == null) {
@@ -82,12 +81,13 @@ object BehaviorTestPlanner {
             assertionTemplate?.let { addAll(it.requiredDataKeys) }
         }
 
-        val data = BehaviorDataCatalog.buildData(
-            feature = feature,
-            entity = entity,
-            templateId = template.id,
-            requiredKeys = requiredDataKeys,
-        )
+        val data =
+            BehaviorDataCatalog.buildData(
+                feature = feature,
+                entity = entity,
+                templateId = template.id,
+                requiredKeys = requiredDataKeys,
+            )
 
         val pageSequence = buildList {
             selectedCapabilities.forEach { add(it.pagePropertyName.toPageName()) }
@@ -133,7 +133,8 @@ object BehaviorTestPlanner {
         val transitions = mutableListOf<String>()
         transitions += "AppEntry -> ${pageSequence.first()}"
 
-        pageSequence.zipWithNext()
+        pageSequence
+            .zipWithNext()
             .filter { (from, to) -> from != to }
             .forEach { (from, to) -> transitions += "$from -> $to" }
 

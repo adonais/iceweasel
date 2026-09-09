@@ -48,6 +48,7 @@ export class GeckoViewPageExtractor extends GeckoViewModule {
                   wordCount: result.wordCount,
                   language: result.language,
                   isReaderable: result.isReaderable,
+                  isGated: result.isGated,
                 });
               },
               error =>

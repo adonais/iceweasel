@@ -1,4 +1,5 @@
 [margin]
+flags = "SCROLL_LINKED_EFFECTIVE"
 sub_properties = ["margin-top", "margin-right", "margin-bottom", "margin-left"]
 spec = "https://drafts.csswg.org/css-box/#propdef-margin"
 rule_types_allowed = ["style", "keyframe", "page", "scope", "page", "position-try"]
@@ -241,15 +242,15 @@ spec = "https://drafts.fxtf.org/motion-1/#offset-shorthand"
 
 [-webkit-perspective]
 sub_properties = ["perspective"]
-derive_serialize = true
 flags = "IS_LEGACY_SHORTHAND"
 spec = "https://github.com/whatwg/compat/issues/100"
+derive_serialize = true
 
 [-webkit-transform]
 sub_properties = ["transform"]
-derive_serialize = true
 flags = "IS_LEGACY_SHORTHAND"
 spec = "https://github.com/whatwg/compat/issues/100"
+derive_serialize = true
 
 [background]
 sub_properties = [
@@ -387,6 +388,7 @@ sub_properties = ["list-style-position", "list-style-image", "list-style-type"]
 spec = "https://drafts.csswg.org/css-lists/#propdef-list-style"
 
 [background-position]
+flags = "SCROLL_LINKED_EFFECTIVE"
 sub_properties = ["background-position-x", "background-position-y"]
 spec = "https://drafts.csswg.org/css-backgrounds-4/#the-background-position"
 
@@ -560,3 +562,11 @@ engine = "gecko"
 flags = "IS_LEGACY_SHORTHAND ALLOWS_DISABLED_SUBPROPERTIES"
 sub_properties = ["line-clamp"]
 spec = "https://drafts.csswg.org/css-overflow-4/#webkit-line-clamp"
+
+[-moz-appearance]
+engine = "gecko"
+gecko_pref = "layout.css.moz-appearance.enabled"
+flags = "IS_LEGACY_SHORTHAND"
+sub_properties = ["appearance"]
+spec = "Legacy version of https://drafts.csswg.org/css-ui-4/#propdef-appearance"
+derive_serialize = true

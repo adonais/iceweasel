@@ -23,12 +23,14 @@ class ProjectLicenseRuleTest {
 
     @Test
     fun testInvalidLicense() {
-        val file = """
+        val file =
+            """
             |/* This Source Code Form is subject to the terms of the Mozilla Public License.
             | * You can obtain one at http://mozilla.org/MPL/2.0/. */
             |
             $fileContent
-        """.trimMargin()
+        """
+                .trimMargin()
         val findings = ProjectLicenseRule().lint(file)
 
         assertEquals(1, findings.size)
@@ -40,24 +42,28 @@ class ProjectLicenseRuleTest {
 
     @Test
     fun testValidLicense() {
-        val file = """
+        val file =
+            """
             |/* This Source Code Form is subject to the terms of the Mozilla Public
             | * License, v. 2.0. If a copy of the MPL was not distributed with this
             | * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
             |
             $fileContent
-        """.trimMargin()
+        """
+                .trimMargin()
         val findings = ProjectLicenseRule().lint(file)
 
         assertEquals(0, findings.size)
     }
 }
 
-private val fileContent = """
+private val fileContent =
+    """
     |package my.package
     |
     |/** My awesome class */
     |class MyClass () {
     |    fun foo () {}
     |}
-""".trimMargin()
+    """
+        .trimMargin()

@@ -30,23 +30,17 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.LinkText
 import mozilla.components.compose.base.LinkTextState
 import mozilla.components.lib.state.Store
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.SwitchListItem
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 @Composable
-internal fun EmailMasksSettingsScreen(
-    store: Store<EmailMasksState, EmailMasksAction>,
-) {
+internal fun EmailMasksSettingsScreen(store: Store<EmailMasksState, EmailMasksAction>) {
     val state by store.stateFlow.collectAsState()
 
     Surface {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-        ) {
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             EmailMasksSummary(
                 isChecked = state.isSuggestMasksEnabled,
                 onEmailMaskPreferenceToggled = { enabled ->
@@ -64,7 +58,7 @@ internal fun EmailMasksSettingsScreen(
             ManageEmailMasksRow(
                 onManageClicked = {
                     store.dispatch(EmailMasksUserAction.ManageClicked)
-                },
+                }
             )
         }
     }
@@ -96,15 +90,13 @@ private fun EmailMasksSummary(
 }
 
 @Composable
-private fun ManageEmailMasksRow(
-    onManageClicked: () -> Unit,
-) {
+private fun ManageEmailMasksRow(onManageClicked: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .clickable(role = Role.Button) { onManageClicked() }
-            .padding(horizontal = FirefoxTheme.layout.space.dynamic200),
+        modifier =
+            Modifier.fillMaxWidth()
+                .height(48.dp)
+                .clickable(role = Role.Button) { onManageClicked() }
+                .padding(horizontal = FirefoxTheme.layout.space.dynamic200),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -124,19 +116,20 @@ private fun LearnMoreLink(
     onLearnMoreClicked: () -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = { onLearnMoreClicked() })
-            .padding(horizontal = FirefoxTheme.layout.space.dynamic200),
+        modifier =
+            Modifier.fillMaxWidth()
+                .clickable(onClick = { onLearnMoreClicked() })
+                .padding(horizontal = FirefoxTheme.layout.space.dynamic200),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val learnMoreState = LinkTextState(
-            text = learnMoreText,
-            url = "",
-            onClick = {
-                onLearnMoreClicked()
-            },
-        )
+        val learnMoreState =
+            LinkTextState(
+                text = learnMoreText,
+                url = "",
+                onClick = {
+                    onLearnMoreClicked()
+                },
+            )
         LinkText(
             text = learnMoreText,
             linkTextStates = listOf(learnMoreState),
@@ -151,10 +144,11 @@ private fun LearnMoreLink(
 private fun EmailMasksSettingsScreenPreview() {
     FirefoxTheme {
         EmailMasksSettingsScreen(
-            store = Store(
-                initialState = EmailMasksState(),
-                reducer = { state, _ -> state },
-            ),
+            store =
+                Store(
+                    initialState = EmailMasksState(),
+                    reducer = { state, _ -> state },
+                )
         )
     }
 }

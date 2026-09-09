@@ -614,6 +614,17 @@ VideoReceiveStreamInterface::Stats VideoReceiveStream2::GetStats() const {
     stats.sender_reports_reports_count = rtcp_sr_stats->reports_count;
   }
 
+  // Non-sender RTT (RRTR/DLRR) for recvonly endpoints, reported via
+  // RTCRemoteOutboundRtpStreamStats round-trip-time fields.
+  std::optional<RtpRtcpInterface::NonSenderRttStats> non_sender_rtt_stats =
+      rtp_video_stream_receiver_.GetNonSenderRttStats();
+  if (non_sender_rtt_stats) {
+    stats.round_trip_time = non_sender_rtt_stats->round_trip_time;
+    stats.round_trip_time_measurements =
+        non_sender_rtt_stats->round_trip_time_measurements;
+    stats.total_round_trip_time = non_sender_rtt_stats->total_round_trip_time;
+  }
+
   // Mozilla modification: VideoReceiveStream2 and friends do not surface RTCP
   // stats at all, and even on the most recent libwebrtc code there does not
   // seem to be any support for these stats right now. So, we hack this in.

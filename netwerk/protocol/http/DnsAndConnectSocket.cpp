@@ -729,7 +729,8 @@ nsresult DnsAndConnectSocket::SetupConn(bool isPrimary, nsresult status) {
         // idle queue.
         if (connTCP && NS_SUCCEEDED(ent->RemoveIdleConnection(connTCP))) {
           RefPtr<nsAHttpTransaction> trans;
-          if (mTransaction->IsNullTransaction() && !mDispatchedMTransaction) {
+          if (mTransaction && mTransaction->IsNullTransaction() &&
+              !mDispatchedMTransaction) {
             mDispatchedMTransaction = true;
             trans = mTransaction;
           } else {

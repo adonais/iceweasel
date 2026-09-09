@@ -16,30 +16,26 @@ import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatDialogFragment
 import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.graphics.drawable.toDrawable
+import com.google.android.material.R as materialR
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import mozilla.components.concept.base.crash.Breadcrumb
 import org.mozilla.fenix.ext.components
-import com.google.android.material.R as materialR
 
-/**
- * Base [AppCompatDialogFragment] that adds behaviour to create a top or bottom dialog.
- */
+/** Base [AppCompatDialogFragment] that adds behaviour to create a top or bottom dialog. */
 abstract class FenixDialogFragment : AppCompatDialogFragment() {
-    /**
-     * Indicates the position of the dialog top or bottom.
-     */
+    /** Indicates the position of the dialog top or bottom. */
     abstract val gravity: Int
 
-    /**
-     * The layout id that will be render on the dialog.
-     */
+    /** The layout id that will be render on the dialog. */
     abstract val layoutId: Int
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        context?.components?.analytics?.crashReporter?.recordCrashBreadcrumb(
-            Breadcrumb("FenixDialogFragment onCreateDialog Gravity $gravity"),
-        )
+        context
+            ?.components
+            ?.analytics
+            ?.crashReporter
+            ?.recordCrashBreadcrumb(Breadcrumb("FenixDialogFragment onCreateDialog Gravity $gravity"))
         return if (gravity == Gravity.BOTTOM) {
             BottomSheetDialog(requireContext(), this.theme).apply {
                 setOnShowListener {
@@ -72,14 +68,16 @@ abstract class FenixDialogFragment : AppCompatDialogFragment() {
     }
 
     fun inflateRootView(container: ViewGroup? = null): View {
-        val contextThemeWrapper = ContextThemeWrapper(
-            requireContext(),
-            requireActivity().theme,
-        )
-        return LayoutInflater.from(contextThemeWrapper).inflate(
-            layoutId,
-            container,
-            false,
-        )
+        val contextThemeWrapper =
+            ContextThemeWrapper(
+                requireContext(),
+                requireActivity().theme,
+            )
+        return LayoutInflater.from(contextThemeWrapper)
+            .inflate(
+                layoutId,
+                container,
+                false,
+            )
     }
 }

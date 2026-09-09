@@ -15,8 +15,8 @@ import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.utils.Settings
 
 /**
- * When the search widget is tapped and the user has been onboarded, Fenix should open directly to search.
- * Tapping the private browsing mode launcher icon should also open to search.
+ * When the search widget is tapped and the user has been onboarded, Fenix should open directly to search. Tapping the
+ * private browsing mode launcher icon should also open to search.
  */
 class StartSearchIntentProcessor(private val userHasBeenOnboarded: () -> Boolean) : HomeIntentProcessor {
 
@@ -27,29 +27,30 @@ class StartSearchIntentProcessor(private val userHasBeenOnboarded: () -> Boolean
 
         val event = intent.extras?.getString(HomeActivity.OPEN_TO_SEARCH)
         return if (event != null) {
-            val source = when (event) {
-                SEARCH_WIDGET -> {
-                    SearchWidget.newTabButton.record(NoExtras())
-                    MetricsUtils.Source.WIDGET
+            val source =
+                when (event) {
+                    SEARCH_WIDGET -> {
+                        SearchWidget.newTabButton.record(NoExtras())
+                        MetricsUtils.Source.WIDGET
+                    }
+                    STATIC_SHORTCUT_NEW_TAB,
+                    STATIC_SHORTCUT_NEW_PRIVATE_TAB,
+                    PRIVATE_BROWSING_PINNED_SHORTCUT -> {
+                        MetricsUtils.Source.SHORTCUT
+                    }
+                    else -> null
                 }
-                STATIC_SHORTCUT_NEW_TAB,
-                STATIC_SHORTCUT_NEW_PRIVATE_TAB,
-                PRIVATE_BROWSING_PINNED_SHORTCUT,
-                -> {
-                    MetricsUtils.Source.SHORTCUT
-                }
-                else -> null
-            }
 
             out.removeExtra(HomeActivity.OPEN_TO_SEARCH)
 
             source?.let {
                 navController.nav(
                     id = null,
-                    directions = NavGraphDirections.actionGlobalHome(
-                        focusOnAddressBar = true,
-                        searchAccessPoint = it,
-                    ),
+                    directions =
+                        NavGraphDirections.actionGlobalHome(
+                            focusOnAddressBar = true,
+                            searchAccessPoint = it,
+                        ),
                 )
             }
 

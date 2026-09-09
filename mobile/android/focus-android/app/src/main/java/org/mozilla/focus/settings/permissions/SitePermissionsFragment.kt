@@ -16,17 +16,13 @@ import org.mozilla.focus.settings.permissions.permissionoptions.SitePermission
 import org.mozilla.focus.settings.permissions.permissionoptions.SitePermissionOptionsStorage
 import org.mozilla.focus.state.AppAction
 
-/**
- * Settings fragment for managing site permissions.
- */
+/** Settings fragment for managing site permissions. */
 class SitePermissionsFragment : BaseSettingsFragment() {
 
-    @VisibleForTesting
-    internal lateinit var storage: SitePermissionOptionsStorage
+    @VisibleForTesting internal lateinit var storage: SitePermissionOptionsStorage
 
     @VisibleForTesting
-    internal fun getPreference(sitePermissionID: Int): Preference =
-        requirePreference(sitePermissionID)
+    internal fun getPreference(sitePermissionID: Int): Preference = requirePreference(sitePermissionID)
 
     override fun onStart() {
         super.onStart()

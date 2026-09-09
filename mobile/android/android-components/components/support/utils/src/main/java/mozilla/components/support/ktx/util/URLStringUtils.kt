@@ -14,9 +14,9 @@ object URLStringUtils {
     /**
      * Determine whether a string is a URL.
      *
-     * This method performs a lenient check to determine whether a string is a URL. Anything that
-     * contains a :, ://, or . and has no internal spaces is potentially a URL. If you need a
-     * stricter check, consider using isURLLikeStrict().
+     * This method performs a lenient check to determine whether a string is a URL. Anything that contains a :, ://, or
+     * . and has no internal spaces is potentially a URL. If you need a stricter check, consider using
+     * isURLLikeStrict().
      */
     fun isURLLike(string: String) = isURLLenient.matcher(string).matches()
 
@@ -27,9 +27,7 @@ object URLStringUtils {
      */
     fun isSearchTerm(string: String) = !isURLLike(string)
 
-    /**
-     * Normalizes a URL String.
-     */
+    /** Normalizes a URL String. */
     fun toNormalizedURL(string: String): String {
         val trimmedInput = string.trim()
         var uri = trimmedInput.toUri()
@@ -81,8 +79,7 @@ object URLStringUtils {
         )
     }
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal const val UNICODE_CHARACTER_CLASS: Int = 0x100
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal const val UNICODE_CHARACTER_CLASS: Int = 0x100
 
     // To run tests on a non-Android device (like a computer), Pattern.compile
     // requires a flag to enable unicode support. Set a value like flags here with a local
@@ -91,16 +88,15 @@ object URLStringUtils {
     // because, again, Android REs are always unicode compliant.
     // NB: The value has to go through an intermediate variable; otherwise, the linter will
     // complain that this value is not one of the predefined enums that are allowed.
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal var flags = 0
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal var flags = 0
 
     private const val HTTP = "http://"
     private const val HTTPS = "https://"
     private const val WWW = "www."
 
     /**
-     * Generates a shorter version of the provided URL for display purposes by stripping it of
-     * https/http and/or WWW prefixes and/or trailing slash when applicable.
+     * Generates a shorter version of the provided URL for display purposes by stripping it of https/http and/or WWW
+     * prefixes and/or trailing slash when applicable.
      */
     fun toDisplayUrl(originalUrl: CharSequence): CharSequence =
         maybeStripTrailingSlash(maybeStripUrlProtocol(originalUrl))
@@ -120,16 +116,12 @@ object URLStringUtils {
         return url.trimEnd('/')
     }
 
-    /**
-     * Determines whether a string is http or https URL
-     */
+    /** Determines whether a string is http or https URL */
     fun isHttpOrHttps(url: String): Boolean {
         return !TextUtils.isEmpty(url) && (url.startsWith("http:") || url.startsWith("https:"))
     }
 
-    /**
-     * Determine whether a string is a valid search query URL.
-     */
+    /** Determine whether a string is a valid search query URL. */
     fun isValidSearchQueryUrl(url: String): Boolean {
         var trimmedUrl = url.trim()
         if (!trimmedUrl.matches("^.+?://.+?".toRegex())) {
@@ -141,8 +133,6 @@ object URLStringUtils {
         return isNetworkUrl && containsToken
     }
 
-    /**
-     * Determines whether a string is a valid host.
-     */
+    /** Determines whether a string is a valid host. */
     fun isValidHost(host: String): Boolean = host.isNotBlank() && Patterns.WEB_URL.matcher(host).matches()
 }

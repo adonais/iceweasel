@@ -12,6 +12,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import java.lang.ref.WeakReference
 import mozilla.components.feature.top.sites.presenter.DefaultTopSitesPresenter
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
@@ -27,11 +28,8 @@ import org.mozilla.fenix.home.topsites.store.ShortcutsState
 import org.mozilla.fenix.home.topsites.store.ShortcutsStore
 import org.mozilla.fenix.home.topsites.ui.ShortcutsScreen
 import org.mozilla.fenix.theme.FirefoxTheme
-import java.lang.ref.WeakReference
 
-/**
- * A [Fragment] displaying the shortcuts screen.
- */
+/** A [Fragment] displaying the shortcuts screen. */
 class ShortcutsFragment : Fragment(), SystemInsetsPaddedFragment {
 
     private val topSitesBinding = ViewBoundFeatureWrapper<TopSitesBinding>()
@@ -39,60 +37,63 @@ class ShortcutsFragment : Fragment(), SystemInsetsPaddedFragment {
     private lateinit var interactor: TopSiteInteractor
     private lateinit var controller: TopSiteController
 
-    private val shortcutsStore by fragmentStore(
-        initialState = ShortcutsState.INITIAL,
-    ) {
-        ShortcutsStore(
-            initialState = it,
-            middleware = listOf(
-                ShortcutsMiddleware(
-                    appStore = requireComponents.appStore,
-                    topSitesUseCases = requireComponents.useCases.topSitesUseCase,
-                    merinoManifestProvider = requireComponents.core.merinoManifestProvider,
-                    settings = requireComponents.settings,
-                    scope = viewLifecycleOwner.lifecycleScope,
-                ),
-            ),
-        )
-    }
+    private val shortcutsStore by
+        fragmentStore(initialState = ShortcutsState.INITIAL) {
+            ShortcutsStore(
+                initialState = it,
+                middleware =
+                    listOf(
+                        ShortcutsMiddleware(
+                            appStore = requireComponents.appStore,
+                            topSitesUseCases = requireComponents.useCases.topSitesUseCase,
+                            merinoManifestProvider = requireComponents.core.merinoManifestProvider,
+                            settings = requireComponents.settings,
+                            scope = viewLifecycleOwner.lifecycleScope,
+                        )
+                    ),
+            )
+        }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        controller = DefaultTopSiteController(
-            activityRef = WeakReference(requireActivity()),
-            store = requireComponents.core.store,
-            appStore = requireComponents.appStore,
-            navControllerRef = WeakReference(findNavController()),
-            settings = requireComponents.settings,
-            addTabUseCase = requireComponents.useCases.tabsUseCases.addTab,
-            selectTabUseCase = requireComponents.useCases.tabsUseCases.selectTab,
-            fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
-            topSitesUseCases = requireComponents.useCases.topSitesUseCase,
-            mozAdsUseCases = requireComponents.useCases.mozAdsUseCases,
-            viewLifecycleScope = viewLifecycleOwner.lifecycleScope,
-            source = TopSitesSource.SHORTCUTS_LIBRARY,
-        )
+        controller =
+            DefaultTopSiteController(
+                activityRef = WeakReference(requireActivity()),
+                store = requireComponents.core.store,
+                appStore = requireComponents.appStore,
+                navControllerRef = WeakReference(findNavController()),
+                settings = requireComponents.settings,
+                addTabUseCase = requireComponents.useCases.tabsUseCases.addTab,
+                selectTabUseCase = requireComponents.useCases.tabsUseCases.selectTab,
+                fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
+                topSitesUseCases = requireComponents.useCases.topSitesUseCase,
+                mozAdsUseCases = requireComponents.useCases.mozAdsUseCases,
+                viewLifecycleScope = viewLifecycleOwner.lifecycleScope,
+                source = TopSitesSource.SHORTCUTS_LIBRARY,
+            )
 
-        interactor = DefaultTopSiteInteractor(
-            controller = controller,
-        )
+        interactor = DefaultTopSiteInteractor(controller = controller)
 
         topSitesBinding.set(
-            feature = TopSitesBinding(
-                browserStore = requireComponents.core.store,
-                presenter = DefaultTopSitesPresenter(
-                    view = DefaultTopSitesView(
-                        appStore = requireComponents.appStore,
-                        settings = requireComponents.settings,
-                    ),
-                    storage = requireComponents.core.topSitesStorage,
-                    config = getTopSitesConfig(
-                        settings = requireComponents.settings,
-                        store = requireComponents.core.store,
-                    ),
+            feature =
+                TopSitesBinding(
+                    browserStore = requireComponents.core.store,
+                    presenter =
+                        DefaultTopSitesPresenter(
+                            view =
+                                DefaultTopSitesView(
+                                    appStore = requireComponents.appStore,
+                                    settings = requireComponents.settings,
+                                ),
+                            storage = requireComponents.core.topSitesStorage,
+                            config =
+                                getTopSitesConfig(
+                                    settings = requireComponents.settings,
+                                    store = requireComponents.core.store,
+                                ),
+                        ),
                 ),
-            ),
             owner = viewLifecycleOwner,
             view = view,
         )

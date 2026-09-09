@@ -8,11 +8,11 @@ import com.google.android.play.core.integrity.StandardIntegrityManager
 import com.google.android.play.core.integrity.StandardIntegrityManager.PrepareIntegrityTokenRequest
 import com.google.android.play.core.integrity.StandardIntegrityManager.StandardIntegrityTokenProvider
 import com.google.android.play.core.integrity.StandardIntegrityManager.StandardIntegrityTokenRequest
+import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 import mozilla.components.concept.integrity.IntegrityToken
 import mozilla.components.lib.integrity.googleplay.RequestHashProvider
 import mozilla.components.lib.integrity.googleplay.TokenProvider
-import kotlin.coroutines.resume
 
 private val StandardIntegrityTokenProvider.tokenProvider
     get() = TokenProvider { requestHashProvider ->
@@ -21,9 +21,8 @@ private val StandardIntegrityTokenProvider.tokenProvider
 
 internal suspend fun StandardIntegrityTokenProvider.request(requestHashProvider: RequestHashProvider) =
     suspendCancellableCoroutine { continuation ->
-        val tokenRequest = StandardIntegrityTokenRequest.builder()
-            .setRequestHash(requestHashProvider.generateHash())
-            .build()
+        val tokenRequest =
+            StandardIntegrityTokenRequest.builder().setRequestHash(requestHashProvider.generateHash()).build()
 
         request(tokenRequest)
             .addOnSuccessListener { continuation.resume(Result.success(IntegrityToken(it.token()))) }
@@ -35,9 +34,7 @@ internal suspend fun StandardIntegrityTokenProvider.request(requestHashProvider:
 
 internal suspend fun StandardIntegrityManager.prepare(cloudProjectNumber: Long) =
     suspendCancellableCoroutine { continuation ->
-        val tokenRequest = PrepareIntegrityTokenRequest.builder()
-            .setCloudProjectNumber(cloudProjectNumber)
-            .build()
+        val tokenRequest = PrepareIntegrityTokenRequest.builder().setCloudProjectNumber(cloudProjectNumber).build()
         prepareIntegrityToken(tokenRequest)
             .addOnSuccessListener { continuation.resume(Result.success(it.tokenProvider)) }
             .addOnFailureListener { continuation.resume(Result.failure(it)) }

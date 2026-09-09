@@ -54,6 +54,48 @@ const MULTI_SELECT_ICON_STYLES = [
   "boxShadow",
 ];
 
+/**
+ * A note shown beneath a multi select item while that item is unchecked, used
+ * to explain what the user gives up by leaving it unchecked.
+ *
+ * The live region wrapper is always rendered, even when the notice is hidden,
+ * so that assistive technology announces the notice when it later appears.
+ *
+ * The notice is laid out as a full-width row beneath its item, so it is not
+ * compatible with `multiSelectItemDesign: "picker"`, whose items are
+ * pill-shaped chips.
+ *
+ * @param {object} notice the item's `uncheckedNotice` config
+ * @param {boolean} isShown whether the notice content should be rendered
+ */
+const UncheckedNotice = ({ notice, isShown }) => {
+  const { title, subtitle, iconURL } = notice;
+  return (
+    <div className="multi-select-notice-region" role="status">
+      {isShown ? (
+        <div className="multi-select-notice">
+          <div
+            className="multi-select-notice-icon"
+            style={iconURL ? { backgroundImage: `url("${iconURL}")` } : null}
+          />
+          <div className="multi-select-notice-content">
+            {title ? (
+              <Localized text={title}>
+                <p className="multi-select-notice-title" />
+              </Localized>
+            ) : null}
+            {subtitle ? (
+              <Localized text={subtitle}>
+                <p className="multi-select-notice-subtitle" />
+              </Localized>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
 export const MultiSelect = ({
   content,
   screenMultiSelects,
@@ -186,52 +228,69 @@ export const MultiSelect = ({
           style,
           pickerEmoji,
           pickerEmojiBackgroundColor,
-        }) => (
-          <div
-            key={id + label}
-            className="checkbox-container multi-select-item"
-            style={MultiStageUtils.getValidStyle(style, MULTI_SELECT_STYLES)}
-            tabIndex={isPicker ? "0" : null}
-            onClick={isPicker ? handleCheckboxContainerInteraction : null}
-            onKeyDown={isPicker ? handleCheckboxContainerInteraction : null}
-            role={isPicker ? "checkbox" : null}
-            aria-checked={isPicker ? activeMultiSelect?.includes(id) : null}
-          >
-            <input
-              type={type} // checkbox or radio
-              id={id}
-              value={id}
-              name={group}
-              checked={activeMultiSelect?.includes(id)}
-              style={MultiStageUtils.getValidStyle(
-                icon?.style,
-                MULTI_SELECT_ICON_STYLES
-              )}
-              onChange={handleChange}
-              ref={el => (refs.current[id] = el)}
-              aria-describedby={description ? `${id}-description` : null}
-              aria-labelledby={description ? `${id}-label` : null}
-              tabIndex={isPicker ? "-1" : "0"}
-            />
-            {isPicker && (
-              <PickerIcon
-                emoji={pickerEmoji}
-                bgColor={pickerEmojiBackgroundColor}
-                isChecked={activeMultiSelect?.includes(id)}
+          uncheckedNotice,
+        }) => {
+          const checkboxContainer = (
+            <div
+              key={id + label}
+              className="checkbox-container multi-select-item"
+              style={MultiStageUtils.getValidStyle(style, MULTI_SELECT_STYLES)}
+              tabIndex={isPicker ? "0" : null}
+              onClick={isPicker ? handleCheckboxContainerInteraction : null}
+              onKeyDown={isPicker ? handleCheckboxContainerInteraction : null}
+              role={isPicker ? "checkbox" : null}
+              aria-checked={isPicker ? activeMultiSelect?.includes(id) : null}
+            >
+              <input
+                type={type} // checkbox or radio
+                id={id}
+                value={id}
+                name={group}
+                checked={activeMultiSelect?.includes(id)}
+                style={MultiStageUtils.getValidStyle(
+                  icon?.style,
+                  MULTI_SELECT_ICON_STYLES
+                )}
+                onChange={handleChange}
+                ref={el => (refs.current[id] = el)}
+                aria-describedby={description ? `${id}-description` : null}
+                aria-labelledby={description ? `${id}-label` : null}
+                tabIndex={isPicker ? "-1" : "0"}
               />
-            )}
-            {label ? (
-              <Localized text={label}>
-                <label id={`${id}-label`} htmlFor={id}></label>
-              </Localized>
-            ) : null}
-            {description ? (
-              <Localized text={description}>
-                <p id={`${id}-description`}></p>
-              </Localized>
-            ) : null}
-          </div>
-        )
+              {isPicker && (
+                <PickerIcon
+                  emoji={pickerEmoji}
+                  bgColor={pickerEmojiBackgroundColor}
+                  isChecked={activeMultiSelect?.includes(id)}
+                />
+              )}
+              {label ? (
+                <Localized text={label}>
+                  <label id={`${id}-label`} htmlFor={id}></label>
+                </Localized>
+              ) : null}
+              {description ? (
+                <Localized text={description}>
+                  <p id={`${id}-description`}></p>
+                </Localized>
+              ) : null}
+            </div>
+          );
+
+          if (!uncheckedNotice) {
+            return checkboxContainer;
+          }
+
+          return (
+            <div className="multi-select-item-group" key={id + label}>
+              {checkboxContainer}
+              <UncheckedNotice
+                notice={uncheckedNotice}
+                isShown={!activeMultiSelect?.includes(id)}
+              />
+            </div>
+          );
+        }
       )}
       {content.tiles.footer ? (
         <Localized

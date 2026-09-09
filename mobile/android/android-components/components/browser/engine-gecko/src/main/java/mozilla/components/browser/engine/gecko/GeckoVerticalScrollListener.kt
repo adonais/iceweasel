@@ -30,32 +30,24 @@ import org.mozilla.geckoview.GeckoSession.CompositorScrollDelegate
 import org.mozilla.geckoview.GeckoSession.ScrollPositionUpdate
 
 /**
- * Delegate for observing scroll related updates from a given [GeckoSession]
- * and exposing this data through [scrollYPosition] and [scrollYDeltas] flows.
+ * Delegate for observing scroll related updates from a given [GeckoSession] and exposing this data through
+ * [scrollYPosition] and [scrollYDeltas] flows.
  */
 @OptIn(ExperimentalCoroutinesApi::class) // for flatMapLatest
-internal class GeckoVerticalScrollListener(
-    private val dispatcher: CoroutineDispatcher = Dispatchers.Main,
-) {
+internal class GeckoVerticalScrollListener(private val dispatcher: CoroutineDispatcher = Dispatchers.Main) {
     private var updatesScope: CoroutineScope? = null
     private val currentGeckoSession = MutableStateFlow<GeckoSession?>(null)
 
     private val _scrollYPosition = MutableStateFlow(0f)
     private val _scrollYDeltas = MutableStateFlow(0f)
 
-    /**
-     * Running flow of the current scroll position in pixels.
-     */
+    /** Running flow of the current scroll position in pixels. */
     val scrollYPosition: StateFlow<Float> = _scrollYPosition.asStateFlow()
 
-    /**
-     * Running flow of scroll deltas in pixels.
-     */
+    /** Running flow of scroll deltas in pixels. */
     val scrollYDeltas: StateFlow<Float> = _scrollYDeltas.asStateFlow()
 
-    /**
-     * Start observing [geckoSession] for scroll related updates.
-     */
+    /** Start observing [geckoSession] for scroll related updates. */
     fun observe(geckoSession: GeckoSession) {
         if (updatesScope?.isActive != true) {
             updatesScope = CoroutineScope(dispatcher)
@@ -64,9 +56,7 @@ internal class GeckoVerticalScrollListener(
         currentGeckoSession.value = geckoSession
     }
 
-    /**
-     * Stops observing the current session and resets the data flows to 0f.
-     */
+    /** Stops observing the current session and resets the data flows to 0f. */
     fun release() {
         currentGeckoSession.value = null
         updatesScope?.cancel()
@@ -79,21 +69,19 @@ internal class GeckoVerticalScrollListener(
         val scope = updatesScope ?: return
 
         // Single source of truth for the scroll position in the current session.
-        val sharedPositionFlow: SharedFlow<ScrollPositionUpdate> = currentGeckoSession
-            .filterNotNull()
-            .flatMapLatest { session ->
-                callbackFlow {
-                    val delegate = CompositorScrollDelegate { trySend(it) }
-                    session.compositorScrollDelegate = delegate
-                    awaitClose { session.compositorScrollDelegate = null }
+        val sharedPositionFlow: SharedFlow<ScrollPositionUpdate> =
+            currentGeckoSession
+                .filterNotNull()
+                .flatMapLatest { session ->
+                    callbackFlow {
+                        val delegate = CompositorScrollDelegate { trySend(it) }
+                        session.compositorScrollDelegate = delegate
+                        awaitClose { session.compositorScrollDelegate = null }
+                    }
                 }
-            }
-            .shareIn(scope, SharingStarted.Eagerly)
+                .shareIn(scope, SharingStarted.Eagerly)
 
-        sharedPositionFlow
-            .map { it.scrollY * it.zoom }
-            .onEach { _scrollYPosition.value = it }
-            .launchIn(scope)
+        sharedPositionFlow.map { it.scrollY * it.zoom }.onEach { _scrollYPosition.value = it }.launchIn(scope)
 
         sharedPositionFlow
             .windowed(2, 1)
@@ -113,9 +101,8 @@ internal class GeckoVerticalScrollListener(
     }
 }
 
-private class CompositorScrollDelegate(
-    private val scrollUpdatesCallback: (ScrollPositionUpdate) -> Unit,
-) : CompositorScrollDelegate {
+private class CompositorScrollDelegate(private val scrollUpdatesCallback: (ScrollPositionUpdate) -> Unit) :
+    CompositorScrollDelegate {
     override fun onScrollChanged(session: GeckoSession, update: ScrollPositionUpdate) {
         scrollUpdatesCallback(update)
     }

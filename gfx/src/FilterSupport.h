@@ -159,9 +159,7 @@ struct EmptyAttributes {
 struct BlendAttributes {
   SVGFEBlendMode mBlendMode;
 
-  bool operator==(const BlendAttributes& aOther) const {
-    return mBlendMode == aOther.mBlendMode;
-  }
+  bool operator==(const BlendAttributes& aOther) const = default;
 };
 
 struct MorphologyAttributes {
@@ -188,17 +186,13 @@ struct TileAttributes {
 struct OpacityAttributes {
   float mOpacity;
 
-  bool operator==(const OpacityAttributes& aOther) const {
-    return mOpacity == aOther.mOpacity;
-  }
+  bool operator==(const OpacityAttributes& aOther) const = default;
 };
 
 struct OffsetAttributes {
   IntPoint mValue;
 
-  bool operator==(const OffsetAttributes& aOther) const {
-    return mValue == aOther.mValue;
-  }
+  bool operator==(const OffsetAttributes& aOther) const = default;
 };
 
 struct DisplacementMapAttributes {
@@ -206,10 +200,7 @@ struct DisplacementMapAttributes {
   SVGChannel mXChannel;
   SVGChannel mYChannel;
 
-  bool operator==(const DisplacementMapAttributes& aOther) const {
-    return mScale == aOther.mScale && mXChannel == aOther.mXChannel &&
-           mYChannel == aOther.mYChannel;
-  }
+  bool operator==(const DisplacementMapAttributes& aOther) const = default;
 };
 
 struct TurbulenceAttributes {
@@ -412,10 +403,7 @@ class ColorModel {
       : mColorSpace(aColorSpace), mAlphaModel(aAlphaModel) {}
   ColorModel()
       : mColorSpace(ColorSpace::SRGB), mAlphaModel(AlphaModel::Premultiplied) {}
-  bool operator==(const ColorModel& aOther) const {
-    return mColorSpace == aOther.mColorSpace &&
-           mAlphaModel == aOther.mAlphaModel;
-  }
+  bool operator==(const ColorModel& aOther) const = default;
 
   // Used to index FilterCachedColorModels::mFilterForColorModel.
   uint8_t ToIndex() const {

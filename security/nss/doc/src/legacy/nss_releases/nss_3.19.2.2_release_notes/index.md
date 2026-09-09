@@ -2,18 +2,18 @@
 
 # NSS 3.19.2.2 release notes
 
-## [Introduction](#introduction)
+## Introduction
 
 :::{container}
 Network Security Services (NSS) 3.19.2.2 is a security patch release for NSS 3.19.2. The bug
 fixes in NSS 3.19.2.2 are described in the "Security Fixes" section below.
 
 (Current users of NSS 3.19.3 or NSS 3.19.4 are advised to update to
-{ref}`mozilla_projects_nss_nss_3_20_2_release_notes`,
-{ref}`mozilla_projects_nss_nss_3_21_release_notes`, or a later release.)
+{ref}`mozilla-projects-nss-nss-3-20-2-release-notes`,
+{ref}`mozilla-projects-nss-nss-3-21-release-notes`, or a later release.)
 :::
 
-## [Distribution Information](#distribution_information)
+## Distribution Information
 
 :::{container}
 The HG tag is NSS_3_19_2_2_RTM. NSS 3.19.2.2 requires NSPR 4.10.10 or newer.
@@ -26,7 +26,7 @@ NSS 3.19.2.2 source distributions are available on ftp.mozilla.org for secure HT
 
 (security-fixes-in-nss-3-19-2-2)=
 
-## [Security Fixes in NSS 3.19.2.2](#security_fixes_in_nss_3.19.2.2)
+## Security Fixes in NSS 3.19.2.2
 
 :::{container}
 
@@ -38,15 +38,15 @@ NSS 3.19.2.2 source distributions are available on ftp.mozilla.org for secure HT
 
 (new-in-nss-3-19-2-2)=
 
-## [New in NSS 3.19.2.2](#new_in_nss_3.19.2.2)
+## New in NSS 3.19.2.2
 
-### [New Functionality](#new_functionality)
+### New Functionality
 
 :::{container}
 No new functionality is introduced in this release.
 :::
 
-## [Acknowledgements](#acknowledgements)
+## Acknowledgements
 
 :::{container}
 The NSS development team would like to thank Karthikeyan Bhargavan from
@@ -54,7 +54,7 @@ The NSS development team would like to thank Karthikeyan Bhargavan from
 1158489](https://bugzilla.mozilla.org/show_bug.cgi?id=1158489).
 :::
 
-## [Compatibility](#compatibility)
+## Compatibility
 
 :::{container}
 NSS 3.19.2.2 shared libraries are backward compatible with all older NSS 3.x shared libraries. A
@@ -64,7 +64,7 @@ to the functions listed in NSS Public Functions will remain compatible with futu
 the NSS shared libraries.
 :::
 
-## [Feedback](#feedback)
+## Feedback
 
 :::{container}
 Bugs discovered should be reported by filing a bug report with

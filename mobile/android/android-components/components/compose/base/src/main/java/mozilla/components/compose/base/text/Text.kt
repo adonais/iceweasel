@@ -10,10 +10,9 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.res.stringResource
 
 /**
- * A sealed Type so callers can take advantage of passing resource values without passing resource
- * or context to their mappers, making it easy for them. At the same time, allowing the ability to
- * have string which could be from another source or could be formatted in a feature specific way.
- * This is a base utility that would help all components.
+ * A sealed Type so callers can take advantage of passing resource values without passing resource or context to their
+ * mappers, making it easy for them. At the same time, allowing the ability to have string which could be from another
+ * source or could be formatted in a feature specific way. This is a base utility that would help all components.
  */
 sealed interface Text {
 
@@ -29,14 +28,10 @@ sealed interface Text {
      *
      * @property value The [Int] resource value.
      */
-    data class Resource(
-        @param:StringRes val value: Int,
-    ) : Text
+    data class Resource(@param:StringRes val value: Int) : Text
 }
 
-/**
- * Unpacks and returns the value of the text based on the type of [Text].
- */
+/** Unpacks and returns the value of the text based on the type of [Text]. */
 val Text.value: String
     @Composable
     @ReadOnlyComposable

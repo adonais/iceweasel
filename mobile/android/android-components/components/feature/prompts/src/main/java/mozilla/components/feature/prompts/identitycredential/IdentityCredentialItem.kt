@@ -33,7 +33,6 @@ import mozilla.components.feature.prompts.identitycredential.previews.DialogPrev
  * @param modifier The modifier to apply to this layout.
  * @param onClick Invoked when the item is clicked.
  * @param beforeItemContent An optional layout to display before the item.
- *
  */
 @Composable
 internal fun IdentityCredentialItem(
@@ -45,10 +44,7 @@ internal fun IdentityCredentialItem(
     beforeItemContent: (@Composable () -> Unit)? = null,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+        modifier = modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         beforeItemContent?.invoke()
@@ -56,23 +52,25 @@ internal fun IdentityCredentialItem(
         Column {
             Text(
                 text = title,
-                style = TextStyle(
-                    fontSize = 16.sp,
-                    lineHeight = 24.sp,
-                    color = colors.title,
-                    letterSpacing = 0.15.sp,
-                ),
+                style =
+                    TextStyle(
+                        fontSize = 16.sp,
+                        lineHeight = 24.sp,
+                        color = colors.title,
+                        letterSpacing = 0.15.sp,
+                    ),
                 maxLines = 1,
             )
 
             Text(
                 text = description,
-                style = TextStyle(
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp,
-                    color = colors.description,
-                    letterSpacing = 0.25.sp,
-                ),
+                style =
+                    TextStyle(
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp,
+                        color = colors.description,
+                        letterSpacing = 0.25.sp,
+                    ),
                 maxLines = 1,
             )
         }

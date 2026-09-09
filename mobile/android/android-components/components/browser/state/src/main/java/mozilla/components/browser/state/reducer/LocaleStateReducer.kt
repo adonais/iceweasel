@@ -9,9 +9,7 @@ import mozilla.components.browser.state.state.BrowserState
 
 internal object LocaleStateReducer {
 
-    /**
-     * [LocaleAction] Reducer function for modifying [BrowserState.locale].
-     */
+    /** [LocaleAction] Reducer function for modifying [BrowserState.locale]. */
     fun reduce(state: BrowserState, action: LocaleAction): BrowserState {
         return when (action) {
             is LocaleAction.UpdateLocaleAction -> state.copy(locale = action.locale)

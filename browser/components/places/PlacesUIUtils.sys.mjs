@@ -915,7 +915,11 @@ export var PlacesUIUtils = {
     aNode,
     aWhere,
     aWindow,
-    { aPrivate = false, userContextId = undefined } = {}
+    {
+      aPrivate = false,
+      userContextId = undefined,
+      eventDetail = undefined,
+    } = {}
   ) {
     if (
       aNode &&
@@ -954,6 +958,7 @@ export var PlacesUIUtils = {
         allowInheritPrincipal: isJavaScriptURL,
         private: aPrivate,
         userContextId,
+        eventDetail,
         resolveOnContentBrowserCreated,
       });
       if (aWindow.updateTelemetry) {
@@ -1485,21 +1490,28 @@ export var PlacesUIUtils = {
     }
   },
 
-  createContainerTabMenu(event) {
+  createContainerTabMenu(event, source = "places_context_menu") {
     let window = event.target.documentGlobal;
-    return window.createUserContextMenu(event, { isContextMenu: true });
+    return window.createUserContextMenu(event, {
+      isContextMenu: true,
+      containerSource: source,
+    });
   },
 
-  openInContainerTab(event) {
+  openInContainerTab(event, source = "places_context_menu") {
     PlacesUIUtils.lastContextMenuCommand = "placesCmd_open:newcontainertab";
     let userContextId = parseInt(
       event.target.getAttribute("data-usercontextid")
     );
     let triggerNode = this.lastContextMenuTriggerNode;
     let isManaged = !!triggerNode?.closest("#managed-bookmarks");
+    let eventDetail = { containerSource: source };
     if (isManaged) {
       let window = triggerNode.documentGlobal;
-      window.openTrustedLinkIn(triggerNode.link, "tab", { userContextId });
+      window.openTrustedLinkIn(triggerNode.link, "tab", {
+        userContextId,
+        eventDetail,
+      });
       return;
     }
     let view = this.getViewForNode(triggerNode);
@@ -1509,6 +1521,7 @@ export var PlacesUIUtils = {
       view?.ownerWindow || triggerNode.documentGlobal.top,
       {
         userContextId,
+        eventDetail,
       }
     );
   },

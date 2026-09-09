@@ -9,12 +9,12 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import android.os.Build
+import android.provider.Settings as AndroidSettings
 import androidx.core.content.ContextCompat
 import mozilla.components.support.utils.ext.registerReceiverCompat
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.onboarding.FenixOnboarding
-import android.provider.Settings as AndroidSettings
 
 /**
  * Processes launch intents that indicate the app is being started under automation (performance tests, WebDriver /

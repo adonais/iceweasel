@@ -4,33 +4,16 @@
 
 import json
 import os
-import re
 import sys
-import time
-import urllib.request
 from collections import defaultdict
 
 import mozpack.path as mozpath
 from mach.decorators import Command, CommandArgument, SubCommand
 from mozpack.files import FileFinder
 
+from mozbuild.frontend import reviewers
+
 TOPSRCDIR = os.path.abspath(os.path.join(__file__, "../../../../../"))
-
-# Herald rules as scraped from Phabricator by the reviewer-selector tool. We use
-# them to replicate the reviewers Herald would automatically add for a set of
-# files. This dump is a bootstrapping measure: its format and freshness are not
-# guaranteed, and this should eventually move to querying the reviewer-selector
-# tool (or mots) directly rather than parsing the dump.
-HERALD_RULES_URL = (
-    "https://raw.githubusercontent.com/mozilla-conduit/reviewer-selector/"
-    "main/herald_rules.json"
-)
-# Re-download the cached copy once it gets older than this.
-HERALD_RULES_MAX_AGE = 24 * 60 * 60
-
-# Number of recent commits to inspect when falling back to version control
-# history to find past reviewers for a file.
-RECENT_REVIEWERS_COMMIT_LIMIT = 100
 
 
 class InvalidPathException(Exception):
@@ -301,7 +284,9 @@ def _get_files_info(command_context, paths, rev=None):
 
     # Normalize to relative from topsrcdir.
     relpaths = []
-    finder = FileFinder(command_context.topsrcdir, find_dotfiles=True, ignore=[".hg"])
+    finder = FileFinder(
+        command_context.topsrcdir, find_dotfiles=True, ignore=[".hg", ".git"]
+    )
     for path in paths:
         for p, _ in finder.find(path):
             a = mozpath.abspath(p)
@@ -362,204 +347,6 @@ def file_info_schedules(command_context, paths):
     print(", ".join(schedules))
 
 
-def _load_herald_rules(offline=False):
-    """Return the parsed herald_rules.json, fetching and caching it as needed.
-
-    The file is cached under the mozbuild state directory and re-downloaded once
-    the cached copy gets older than HERALD_RULES_MAX_AGE. When offline (or the
-    download fails) any cached copy is used regardless of age; if none exists,
-    None is returned.
-    """
-    from mach.util import get_state_dir
-
-    cache_path = os.path.join(get_state_dir(), "herald_rules.json")
-
-    fresh = False
-    if os.path.exists(cache_path):
-        age = time.time() - os.path.getmtime(cache_path)
-        fresh = age < HERALD_RULES_MAX_AGE
-
-    if not offline and not fresh:
-        try:
-            with urllib.request.urlopen(HERALD_RULES_URL, timeout=30) as fh:
-                data = fh.read()
-            rules = json.loads(data)
-            with open(cache_path, "wb") as fh:
-                fh.write(data)
-            return rules
-        except Exception as e:
-            print(
-                f"(could not update herald rules cache from {HERALD_RULES_URL}: "
-                f"{e}; using cached copy if available)",
-                file=sys.stderr,
-            )
-
-    if not os.path.exists(cache_path):
-        return None
-
-    with open(cache_path) as fh:
-        return json.load(fh)
-
-
-def _herald_reviewers_for_files(rules_data, relpaths):
-    """Return the reviewers Herald would auto-add for the given files.
-
-    Returns (groups, individuals), each a dict mapping a reviewer target to
-    whether it is added as a blocking reviewer by at least one matching rule.
-    Only the file-based conditions of a rule are evaluated; conditions that
-    depend on revision context (author, reviewers already on the revision,
-    status, etc.) are ignored, since we only have a set of files to work from.
-    """
-    # Phabricator presents affected files with a leading slash, which is how the
-    # rules' regexps and substrings are written, so match against that form.
-    candidates = ["/" + p for p in relpaths]
-
-    def condition_matches(condition, candidates):
-        op = condition["operator"]
-        value = condition["value"]
-        if op in ("matches-regexp", "does-not-match-regexp"):
-            try:
-                matched = any(re.search(value, p) for p in candidates)
-            except re.error:
-                # A rule we can't evaluate shouldn't match.
-                return False
-            return matched if op == "matches-regexp" else not matched
-        if op == "contains":
-            return any(value in p for p in candidates)
-        if op == "does-not-contain":
-            return all(value not in p for p in candidates)
-        # Unknown file operator: don't match on a condition we don't understand.
-        return False
-
-    groups = {}
-    individuals = {}
-    for rule in rules_data.get("rules", []):
-        if rule.get("status") != "active":
-            continue
-
-        file_conditions = [
-            c
-            for c in rule.get("conditions", [])
-            if c["type"] == "differential-affected-files"
-        ]
-        # Require at least one positive condition that actually matches a file.
-        # Rules whose only file condition is negative (e.g. does-not-contain
-        # "third_party"), or that have none at all, rely on non-file conditions
-        # we don't evaluate to scope themselves, so they would otherwise fire
-        # for essentially any path.
-        positive = [
-            c
-            for c in file_conditions
-            if c["operator"] in ("matches-regexp", "contains")
-        ]
-        if not positive:
-            continue
-        if not all(condition_matches(c, candidates) for c in file_conditions):
-            continue
-
-        for action in rule.get("actions", []):
-            if action["type"] != "add-reviewers":
-                continue
-            for reviewer in action["reviewers"]:
-                target = reviewer["target"]
-                blocking = reviewer.get("blocking", False)
-                bucket = groups if reviewer.get("is_group") else individuals
-                bucket[target] = bucket.get(target, False) or blocking
-
-    return groups, individuals
-
-
-def _reviewers_to_json(reviewers):
-    """Serialize a {name: blocking} reviewer dict to a sorted list of dicts."""
-    return [
-        {"name": name, "blocking": blocking}
-        for name, blocking in sorted(reviewers.items())
-    ]
-
-
-# Matches the "r=..." part of a commit message subject, capturing the
-# comma-separated list of reviewers. A reviewer is a name made of word
-# characters and hyphens, optionally prefixed with "#" (a group) and/or suffixed
-# with "!" (blocking), e.g. "r=foo,#bar-reviewers,baz!".
-_REVIEWER_RE = re.compile(r"\br=(#?[\w-]+!?(?:,#?[\w-]+!?)*)")
-
-
-def _parse_reviewers_from_subjects(subjects):
-    """Tally reviewers from a list of commit message subjects.
-
-    Returns (individuals, groups), each an ordered list of (name, count) tuples
-    sorted by descending count. Groups are distinguished by their "#" prefix,
-    which is Phabricator's marker for a reviewer group.
-    """
-    individuals = defaultdict(int)
-    groups = defaultdict(int)
-    for line in subjects:
-        match = _REVIEWER_RE.search(line)
-        if not match:
-            continue
-        for entry in match.group(1).split(","):
-            name = entry.rstrip("!")  # Drop the "!" blocking marker.
-            if name.startswith("#"):
-                groups[name[1:]] += 1
-            else:
-                individuals[name] += 1
-
-    def ranked(counter):
-        return sorted(counter.items(), key=lambda kv: (-kv[1], kv[0]))
-
-    return ranked(individuals), ranked(groups)
-
-
-def _recent_commit_subjects(repo, relpaths):
-    """Return the subjects of recent commits touching the given files.
-
-    Works across the supported version control systems. A jj checkout uses a git
-    backing store, so its history is read through the git backend.
-    """
-    limit = RECENT_REVIEWERS_COMMIT_LIMIT
-    paths = list(relpaths)
-    if repo.name == "hg":
-        out = repo._run(
-            "log",
-            "-l",
-            str(limit),
-            "-T",
-            "{desc|firstline}\n",
-            "--",
-            *paths,
-        )
-    else:
-        # git, and jj (through its git backing store).
-        git = repo._git if repo.name == "jj" else repo
-        out = git._run(
-            "log",
-            "-n",
-            str(limit),
-            "--no-merges",
-            "--format=%s",
-            "--",
-            *paths,
-        )
-    return out.splitlines()
-
-
-def _recent_reviewers_for_files(command_context, relpaths):
-    """Tally reviewers from recent commits touching the given files.
-
-    Reviewers are parsed from the "r=" trailers of recent commit message
-    subjects. Returns (individuals, groups) as produced by
-    _parse_reviewers_from_subjects.
-    """
-    try:
-        repo = command_context.repository
-        subjects = _recent_commit_subjects(repo, relpaths)
-    except Exception as e:
-        print(f"(could not read version control history: {e})", file=sys.stderr)
-        return [], []
-
-    return _parse_reviewers_from_subjects(subjects)
-
-
 @SubCommand(
     "file-info",
     "reviewers",
@@ -584,9 +371,11 @@ def file_info_reviewers(command_context, paths, rev=None, fmt=None, offline=Fals
 
     The reviewers that Phabricator's Herald rules would automatically add for
     the files (from the reviewer-selector tool's herald_rules.json) are
-    suggested first. When no rule matches, this falls back to the individuals
-    and groups that reviewed recent patches touching the files, parsed from
-    "r=" trailers in the version control history.
+    suggested first, followed by the reviewer groups of the modules owning the
+    files according to the in-tree mots database. When neither has anything to
+    say, this falls back to the individuals and groups that reviewed recent
+    patches touching the files, parsed from "r=" trailers in the version control
+    history.
     """
     try:
         files_info = _get_files_info(command_context, paths, rev=rev)
@@ -599,11 +388,11 @@ def file_info_reviewers(command_context, paths, rev=None, fmt=None, offline=Fals
         print("(no matching files)", file=sys.stderr)
         return 1
 
-    rules_data = _load_herald_rules(offline=offline)
+    rules_data = reviewers.load_herald_rules(offline=offline)
 
     herald_groups, herald_individuals = {}, {}
     if rules_data:
-        herald_groups, herald_individuals = _herald_reviewers_for_files(
+        herald_groups, herald_individuals = reviewers.herald_reviewers_for_files(
             rules_data, relpaths
         )
     else:
@@ -612,23 +401,33 @@ def file_info_reviewers(command_context, paths, rev=None, fmt=None, offline=Fals
             file=sys.stderr,
         )
 
-    # Parsing the version control history only to find a reviewer that Herald
-    # would have added anyway is wasteful, and on a rarely-touched file the walk
-    # is slow (the VCS has to traverse all of history to find the commit limit).
-    # So fall back to it only when no reviewer was found from the herald rules.
+    mots_config = reviewers.load_mots_config(command_context.topsrcdir)
+    mots_groups = (
+        reviewers.mots_groups_for_files(mots_config, relpaths) if mots_config else {}
+    )
+
+    # Parsing the version control history only to find a reviewer that Herald or
+    # mots already gave us is wasteful, and on a rarely-touched file the walk is
+    # slow (the VCS has to traverse all of history to find the commit limit). So
+    # fall back to it only when the other sources came up empty.
     have_herald = herald_groups or herald_individuals
     recent_individuals, recent_groups = [], []
-    if not have_herald:
-        recent_individuals, recent_groups = _recent_reviewers_for_files(
+    if not have_herald and not mots_groups:
+        recent_individuals, recent_groups = reviewers.recent_reviewers_for_files(
             command_context, relpaths
         )
 
     if fmt == "json":
         data = {"files": relpaths}
         if have_herald:
-            data["herald_groups"] = _reviewers_to_json(herald_groups)
-            data["herald_individuals"] = _reviewers_to_json(herald_individuals)
-        else:
+            data["herald_groups"] = reviewers.reviewers_to_json(herald_groups)
+            data["herald_individuals"] = reviewers.reviewers_to_json(herald_individuals)
+        if mots_groups:
+            data["mots_groups"] = [
+                {"name": group, "modules": modules}
+                for group, modules in mots_groups.items()
+            ]
+        if not have_herald and not mots_groups:
             data["recent_groups"] = [
                 {"name": name, "count": count} for name, count in recent_groups
             ]
@@ -645,9 +444,17 @@ def file_info_reviewers(command_context, paths, rev=None, fmt=None, offline=Fals
             print(f"  #{group}{' (blocking)' if blocking else ''}")
         for name, blocking in sorted(herald_individuals.items()):
             print(f"  {name}{' (blocking)' if blocking else ''}")
+    else:
+        print("No Herald reviewers matched.")
+
+    if mots_groups:
+        print("\nModule reviewer groups (from mots.yaml):")
+        for group, modules in mots_groups.items():
+            print(f"  #{group} ({', '.join(modules)})")
+
+    if have_herald or mots_groups:
         return
 
-    print("No Herald reviewers matched.")
     print("\nRecent reviewers (from version control history):")
     if recent_individuals or recent_groups:
         for name, count in recent_groups:
@@ -682,7 +489,7 @@ def file_info_reviewer_groups(command_context, fmt=None, offline=False):
     into herald_rules.json. The list is the source of truth for valid group
     names when choosing a reviewer (e.g. "#firefox-build-system-reviewers").
     """
-    rules_data = _load_herald_rules(offline=offline)
+    rules_data = reviewers.load_herald_rules(offline=offline)
     if not rules_data:
         print("(herald rules unavailable)", file=sys.stderr)
         return 1

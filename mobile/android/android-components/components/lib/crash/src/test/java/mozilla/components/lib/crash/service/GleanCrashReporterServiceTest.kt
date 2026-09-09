@@ -8,6 +8,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.testing.WorkManagerTestInitHelper
+import java.io.File
 import mozilla.components.lib.crash.Crash
 import mozilla.components.lib.crash.GleanMetrics.CrashMetrics
 import mozilla.components.support.test.whenever
@@ -21,7 +22,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.spy
-import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class GleanCrashReporterServiceTest {
@@ -51,51 +51,57 @@ class GleanCrashReporterServiceTest {
 
     @Test
     fun `GleanCrashReporterService records all crash types`() {
-        val crashTypes = hashMapOf(
-            GleanCrashReporterService.MAIN_PROCESS_NATIVE_CODE_CRASH_KEY to Crash.NativeCodeCrash(
-                0,
-                "",
-                "",
-                Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
-                processType = "main",
-                breadcrumbs = arrayListOf(),
-                remoteType = null,
-            ),
-            GleanCrashReporterService.FOREGROUND_CHILD_PROCESS_NATIVE_CODE_CRASH_KEY to Crash.NativeCodeCrash(
-                0,
-                "",
-                "",
-                Crash.NativeCodeCrash.PROCESS_VISIBILITY_FOREGROUND_CHILD,
-                processType = "content",
-                breadcrumbs = arrayListOf(),
-                remoteType = "web",
-            ),
-            GleanCrashReporterService.BACKGROUND_CHILD_PROCESS_NATIVE_CODE_CRASH_KEY to Crash.NativeCodeCrash(
-                0,
-                "",
-                "",
-                Crash.NativeCodeCrash.PROCESS_VISIBILITY_BACKGROUND_CHILD,
-                processType = "utility",
-                breadcrumbs = arrayListOf(),
-                remoteType = null,
-            ),
-            GleanCrashReporterService.UNCAUGHT_EXCEPTION_KEY to Crash.UncaughtExceptionCrash(
-                0,
-                RuntimeException("Test"),
-                arrayListOf(),
-            ),
-            GleanCrashReporterService.CAUGHT_EXCEPTION_KEY to RuntimeException("Test"),
-        )
+        val crashTypes =
+            hashMapOf(
+                GleanCrashReporterService.MAIN_PROCESS_NATIVE_CODE_CRASH_KEY to
+                    Crash.NativeCodeCrash(
+                        0,
+                        "",
+                        "",
+                        Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
+                        processType = "main",
+                        breadcrumbs = arrayListOf(),
+                        remoteType = null,
+                    ),
+                GleanCrashReporterService.FOREGROUND_CHILD_PROCESS_NATIVE_CODE_CRASH_KEY to
+                    Crash.NativeCodeCrash(
+                        0,
+                        "",
+                        "",
+                        Crash.NativeCodeCrash.PROCESS_VISIBILITY_FOREGROUND_CHILD,
+                        processType = "content",
+                        breadcrumbs = arrayListOf(),
+                        remoteType = "web",
+                    ),
+                GleanCrashReporterService.BACKGROUND_CHILD_PROCESS_NATIVE_CODE_CRASH_KEY to
+                    Crash.NativeCodeCrash(
+                        0,
+                        "",
+                        "",
+                        Crash.NativeCodeCrash.PROCESS_VISIBILITY_BACKGROUND_CHILD,
+                        processType = "utility",
+                        breadcrumbs = arrayListOf(),
+                        remoteType = null,
+                    ),
+                GleanCrashReporterService.UNCAUGHT_EXCEPTION_KEY to
+                    Crash.UncaughtExceptionCrash(
+                        0,
+                        RuntimeException("Test"),
+                        arrayListOf(),
+                    ),
+                GleanCrashReporterService.CAUGHT_EXCEPTION_KEY to RuntimeException("Test"),
+            )
 
         for ((type, crash) in crashTypes) {
             // Because of how Glean is implemented, it can potentially persist information between
             // tests or even between test classes, so we compensate by capturing the initial value
             // to compare to.
-            val initialValue = try {
-                CrashMetrics.crashCount[type].testGetValue()!!
-            } catch (e: NullPointerException) {
-                0
-            }
+            val initialValue =
+                try {
+                    CrashMetrics.crashCount[type].testGetValue()!!
+                } catch (e: NullPointerException) {
+                    0
+                }
 
             run {
                 val service = spy(GleanCrashReporterService(context))
@@ -132,72 +138,81 @@ class GleanCrashReporterServiceTest {
 
     @Test
     fun `GleanCrashReporterService correctly handles multiple crashes in a single file`() {
-        val initialExceptionValue = try {
-            CrashMetrics.crashCount[GleanCrashReporterService.UNCAUGHT_EXCEPTION_KEY].testGetValue()!!
-        } catch (e: NullPointerException) {
-            0
-        }
-        val initialMainProcessNativeCrashValue = try {
-            CrashMetrics.crashCount[GleanCrashReporterService.MAIN_PROCESS_NATIVE_CODE_CRASH_KEY].testGetValue()!!
-        } catch (e: NullPointerException) {
-            0
-        }
+        val initialExceptionValue =
+            try {
+                CrashMetrics.crashCount[GleanCrashReporterService.UNCAUGHT_EXCEPTION_KEY].testGetValue()!!
+            } catch (e: NullPointerException) {
+                0
+            }
+        val initialMainProcessNativeCrashValue =
+            try {
+                CrashMetrics.crashCount[GleanCrashReporterService.MAIN_PROCESS_NATIVE_CODE_CRASH_KEY].testGetValue()!!
+            } catch (e: NullPointerException) {
+                0
+            }
 
-        val initialForegroundChildProcessNativeCrashValue = try {
-            CrashMetrics.crashCount[GleanCrashReporterService.FOREGROUND_CHILD_PROCESS_NATIVE_CODE_CRASH_KEY].testGetValue()!!
-        } catch (e: NullPointerException) {
-            0
-        }
+        val initialForegroundChildProcessNativeCrashValue =
+            try {
+                CrashMetrics.crashCount[GleanCrashReporterService.FOREGROUND_CHILD_PROCESS_NATIVE_CODE_CRASH_KEY]
+                    .testGetValue()!!
+            } catch (e: NullPointerException) {
+                0
+            }
 
-        val initialBackgroundChildProcessNativeCrashValue = try {
-            CrashMetrics.crashCount[GleanCrashReporterService.BACKGROUND_CHILD_PROCESS_NATIVE_CODE_CRASH_KEY].testGetValue()!!
-        } catch (e: NullPointerException) {
-            0
-        }
+        val initialBackgroundChildProcessNativeCrashValue =
+            try {
+                CrashMetrics.crashCount[GleanCrashReporterService.BACKGROUND_CHILD_PROCESS_NATIVE_CODE_CRASH_KEY]
+                    .testGetValue()!!
+            } catch (e: NullPointerException) {
+                0
+            }
 
         run {
             val service = spy(GleanCrashReporterService(context))
 
             assertFalse("No previous persisted crashes must exist", service.file.exists())
 
-            val uncaughtExceptionCrash =
-                Crash.UncaughtExceptionCrash(0, RuntimeException("Test"), arrayListOf())
-            val mainProcessNativeCodeCrash = Crash.NativeCodeCrash(
-                0,
-                "",
-                "",
-                Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
-                processType = "main",
-                breadcrumbs = arrayListOf(),
-                remoteType = null,
-            )
-            val foregroundChildProcessNativeCodeCrash = Crash.NativeCodeCrash(
-                0,
-                "",
-                "",
-                Crash.NativeCodeCrash.PROCESS_VISIBILITY_FOREGROUND_CHILD,
-                processType = "content",
-                breadcrumbs = arrayListOf(),
-                remoteType = "web",
-            )
-            val backgroundChildProcessNativeCodeCrash = Crash.NativeCodeCrash(
-                0,
-                "",
-                "",
-                Crash.NativeCodeCrash.PROCESS_VISIBILITY_BACKGROUND_CHILD,
-                processType = "utility",
-                breadcrumbs = arrayListOf(),
-                remoteType = null,
-            )
-            val extensionProcessNativeCodeCrash = Crash.NativeCodeCrash(
-                0,
-                "",
-                "",
-                Crash.NativeCodeCrash.PROCESS_VISIBILITY_BACKGROUND_CHILD,
-                processType = "content",
-                breadcrumbs = arrayListOf(),
-                remoteType = "extension",
-            )
+            val uncaughtExceptionCrash = Crash.UncaughtExceptionCrash(0, RuntimeException("Test"), arrayListOf())
+            val mainProcessNativeCodeCrash =
+                Crash.NativeCodeCrash(
+                    0,
+                    "",
+                    "",
+                    Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
+                    processType = "main",
+                    breadcrumbs = arrayListOf(),
+                    remoteType = null,
+                )
+            val foregroundChildProcessNativeCodeCrash =
+                Crash.NativeCodeCrash(
+                    0,
+                    "",
+                    "",
+                    Crash.NativeCodeCrash.PROCESS_VISIBILITY_FOREGROUND_CHILD,
+                    processType = "content",
+                    breadcrumbs = arrayListOf(),
+                    remoteType = "web",
+                )
+            val backgroundChildProcessNativeCodeCrash =
+                Crash.NativeCodeCrash(
+                    0,
+                    "",
+                    "",
+                    Crash.NativeCodeCrash.PROCESS_VISIBILITY_BACKGROUND_CHILD,
+                    processType = "utility",
+                    breadcrumbs = arrayListOf(),
+                    remoteType = null,
+                )
+            val extensionProcessNativeCodeCrash =
+                Crash.NativeCodeCrash(
+                    0,
+                    "",
+                    "",
+                    Crash.NativeCodeCrash.PROCESS_VISIBILITY_BACKGROUND_CHILD,
+                    processType = "content",
+                    breadcrumbs = arrayListOf(),
+                    remoteType = "extension",
+                )
 
             // Record some crashes
             service.record(uncaughtExceptionCrash)
@@ -252,30 +267,33 @@ class GleanCrashReporterServiceTest {
             assertEquals(
                 "Glean must record correct value",
                 2,
-                CrashMetrics.crashCount[GleanCrashReporterService.UNCAUGHT_EXCEPTION_KEY].testGetValue()!! - initialExceptionValue,
+                CrashMetrics.crashCount[GleanCrashReporterService.UNCAUGHT_EXCEPTION_KEY].testGetValue()!! -
+                    initialExceptionValue,
             )
             assertEquals(
                 "Glean must record correct value",
                 1,
-                CrashMetrics.crashCount[GleanCrashReporterService.MAIN_PROCESS_NATIVE_CODE_CRASH_KEY].testGetValue()!! - initialMainProcessNativeCrashValue,
+                CrashMetrics.crashCount[GleanCrashReporterService.MAIN_PROCESS_NATIVE_CODE_CRASH_KEY].testGetValue()!! -
+                    initialMainProcessNativeCrashValue,
             )
             assertEquals(
                 "Glean must record correct value",
                 1,
-                CrashMetrics.crashCount[GleanCrashReporterService.FOREGROUND_CHILD_PROCESS_NATIVE_CODE_CRASH_KEY].testGetValue()!! - initialForegroundChildProcessNativeCrashValue,
+                CrashMetrics.crashCount[GleanCrashReporterService.FOREGROUND_CHILD_PROCESS_NATIVE_CODE_CRASH_KEY]
+                    .testGetValue()!! - initialForegroundChildProcessNativeCrashValue,
             )
             assertEquals(
                 "Glean must record correct value",
                 2,
-                CrashMetrics.crashCount[GleanCrashReporterService.BACKGROUND_CHILD_PROCESS_NATIVE_CODE_CRASH_KEY].testGetValue()!! - initialBackgroundChildProcessNativeCrashValue,
+                CrashMetrics.crashCount[GleanCrashReporterService.BACKGROUND_CHILD_PROCESS_NATIVE_CODE_CRASH_KEY]
+                    .testGetValue()!! - initialBackgroundChildProcessNativeCrashValue,
             )
         }
     }
 
     @Test
     fun `GleanCrashReporterService does not crash if it can't write to it's file`() {
-        val file =
-            spy(File(context.applicationInfo.dataDir, GleanCrashReporterService.CRASH_FILE_NAME))
+        val file = spy(File(context.applicationInfo.dataDir, GleanCrashReporterService.CRASH_FILE_NAME))
         whenever(file.canWrite()).thenReturn(false)
         val service = spy(GleanCrashReporterService(context, file))
 
@@ -294,22 +312,24 @@ class GleanCrashReporterServiceTest {
         // Because of how Glean is implemented, it can potentially persist information between
         // tests or even between test classes, so we compensate by capturing the initial value
         // to compare to.
-        val initialValue = try {
-            CrashMetrics.crashCount[GleanCrashReporterService.UNCAUGHT_EXCEPTION_KEY].testGetValue()!!
-        } catch (e: NullPointerException) {
-            0
-        }
+        val initialValue =
+            try {
+                CrashMetrics.crashCount[GleanCrashReporterService.UNCAUGHT_EXCEPTION_KEY].testGetValue()!!
+            } catch (e: NullPointerException) {
+                0
+            }
 
         run {
             val service = spy(GleanCrashReporterService(context))
 
             assertFalse("No previous persisted crashes must exist", service.file.exists())
 
-            val crash = Crash.UncaughtExceptionCrash(
-                0,
-                RuntimeException("Test"),
-                arrayListOf(),
-            )
+            val crash =
+                Crash.UncaughtExceptionCrash(
+                    0,
+                    RuntimeException("Test"),
+                    arrayListOf(),
+                )
             service.record(crash)
 
             assertTrue("Persistence file must exist", service.file.exists())
@@ -332,7 +352,8 @@ class GleanCrashReporterServiceTest {
             assertEquals(
                 "Glean must record correct value",
                 1,
-                CrashMetrics.crashCount[GleanCrashReporterService.UNCAUGHT_EXCEPTION_KEY].testGetValue()!! - initialValue,
+                CrashMetrics.crashCount[GleanCrashReporterService.UNCAUGHT_EXCEPTION_KEY].testGetValue()!! -
+                    initialValue,
             )
         }
     }

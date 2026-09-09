@@ -8,9 +8,7 @@ import android.content.Context
 import android.widget.Toast
 import org.mozilla.focus.R
 
-/**
- * Triggers the "secret" debug menu when logoView is tapped 5 times.
- */
+/** Triggers the "secret" debug menu when logoView is tapped 5 times. */
 class SecretSettingsUnlocker(
     private val context: Context,
     private val onLogoClicked: () -> Unit,
@@ -19,16 +17,12 @@ class SecretSettingsUnlocker(
     private var secretSettingsClicks = 0
     private var lastDebugMenuToast: Toast? = null
 
-    /**
-     * Reset the [secretSettingsClicks] counter.
-     */
+    /** Reset the [secretSettingsClicks] counter. */
     fun resetCounter() {
         secretSettingsClicks = 0
     }
 
-    /**
-     * Increments the secret settings tap counter.
-     */
+    /** Increments the secret settings tap counter. */
     fun increment() {
         // Because the user will mostly likely tap the logo in rapid succession,
         // we ensure only 1 toast is shown at any given time.
@@ -37,20 +31,22 @@ class SecretSettingsUnlocker(
         when (secretSettingsClicks) {
             in 2 until SECRET_DEBUG_MENU_CLICKS -> {
                 val clicksLeft = SECRET_DEBUG_MENU_CLICKS - secretSettingsClicks
-                val toast = Toast.makeText(
-                    context,
-                    context.getString(R.string.about_debug_menu_toast_progress, clicksLeft),
-                    Toast.LENGTH_SHORT,
-                )
+                val toast =
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.about_debug_menu_toast_progress, clicksLeft),
+                        Toast.LENGTH_SHORT,
+                    )
                 toast.show()
                 lastDebugMenuToast = toast
             }
             SECRET_DEBUG_MENU_CLICKS -> {
                 Toast.makeText(
-                    context,
-                    R.string.about_debug_menu_toast_done,
-                    Toast.LENGTH_LONG,
-                ).show()
+                        context,
+                        R.string.about_debug_menu_toast_done,
+                        Toast.LENGTH_LONG,
+                    )
+                    .show()
                 onLogoClicked()
             }
         }

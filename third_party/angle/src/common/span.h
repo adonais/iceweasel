@@ -16,7 +16,11 @@
 
 #include <algorithm>
 #include <array>
+#include <functional>
 #include <iterator>
+#include <memory>
+#include <new>
+#include <optional>
 #include <type_traits>
 #include <utility>
 
@@ -245,6 +249,60 @@ class Span
         return !std::equal(begin(), end(), other.begin(), other.end());
     }
 
+    // Performs a deep copy of the elements referenced by `other` to those
+    // referenced by `this`. The spans must be the same size.
+    // (Not in `std::`; inspired by Rust's `slice::copy_from_slice()`.)
+    template <typename U,
+              size_t M,
+              typename R,
+              typename V = T,
+              typename   = std::enable_if_t<
+                    !std::is_const<V>::value && std::is_convertible<U *, const T *>::value &&
+                    (Extent == dynamic_extent || M == dynamic_extent || M == Extent)>>
+    void copy_from(const Span<U, M, R> &other) const
+    {
+        CHECK(size() == other.size());
+        if (std::less_equal<const void *>{}(data(), other.data()))
+        {
+            std::copy(other.begin(), other.end(), begin());
+        }
+        else
+        {
+            std::copy_backward(other.begin(), other.end(), end());
+        }
+    }
+
+    template <typename Container,
+              typename V = T,
+              typename   = internal::EnableIfSpanCompatibleContainer<Container, V>,
+              typename   = std::enable_if_t<!std::is_const<V>::value>>
+    void copy_from(const Container &container) const
+    {
+        copy_from(Span<const T, Extent>(container));
+    }
+
+    template <size_t N>
+    constexpr std::optional<Span<T, N>> to_fixed_extent() const
+    {
+        return (size() == N)
+                   ? std::optional<Span<T, N>>(ANGLE_UNSAFE_BUFFERS(Span<T, N>(data(), N)))
+                   : std::nullopt;
+    }
+
+    template <size_t Offset,
+              typename = std::enable_if_t<(Extent == dynamic_extent || Offset <= Extent)>>
+    constexpr auto split_at() const
+    {
+        CHECK(Offset <= size());
+        return std::make_pair(first<Offset>(), subspan<Offset>());
+    }
+
+    constexpr auto split_at(size_t offset) const
+    {
+        CHECK(offset <= size());
+        return std::make_pair(first(offset), subspan(offset));
+    }
+
     // [span.sub], span subviews
     template <size_t Count>
     constexpr Span<T, Count> first() const
@@ -307,7 +365,7 @@ class Span
     constexpr bool empty() const noexcept { return size_ == 0; }
 
     // [span.elem], span element access
-    T &operator[](size_t index) const noexcept
+    constexpr T &operator[](size_t index) const noexcept
     {
         CHECK(index < size_);
         return ANGLE_UNSAFE_BUFFERS(static_cast<T *>(data_)[index]);
@@ -457,6 +515,35 @@ template <typename T>
 constexpr Span<uint8_t> as_writable_byte_span(T &&arg)
 {
     return as_writable_bytes(Span(arg));
+}
+
+template <typename ElementType, typename ByteType, size_t Extent, typename InternalPtr>
+    requires(std::same_as<std::remove_cv_t<ByteType>, uint8_t> &&
+             std::is_trivially_copyable_v<ElementType> &&
+             (!std::is_const_v<ByteType> || std::is_const_v<ElementType>) &&
+             (Extent == dynamic_extent || Extent % sizeof(ElementType) == 0))
+[[nodiscard]] constexpr auto reinterpret_span(Span<ByteType, Extent, InternalPtr> span)
+{
+    CHECK(reinterpret_cast<uintptr_t>(span.data()) % alignof(ElementType) == 0u);
+    if constexpr (Extent == dynamic_extent)
+    {
+        CHECK(span.size_bytes() % sizeof(ElementType) == 0u);
+    }
+    ElementType *ptr = std::launder(reinterpret_cast<ElementType *>(span.data()));
+    if constexpr (Extent == dynamic_extent)
+    {
+        // SAFETY: We checked for proper alignment, size, strict aliasing rules, and
+        // started the lifetime of the array.
+        return ANGLE_UNSAFE_BUFFERS(
+            Span<ElementType, dynamic_extent>(ptr, span.size_bytes() / sizeof(ElementType)));
+    }
+    else
+    {
+        // SAFETY: We checked for proper alignment, size, strict aliasing rules, and
+        // started the lifetime of the array.
+        constexpr size_t NewCount = Extent / sizeof(ElementType);
+        return ANGLE_UNSAFE_BUFFERS(Span<ElementType, NewCount>(ptr, NewCount));
+    }
 }
 
 }  // namespace angle

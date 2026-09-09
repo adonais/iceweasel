@@ -18,12 +18,17 @@ sealed class AutoplayValue(
     open val sitePermission: SitePermissions?,
 ) {
     override fun toString() = label
+
     abstract fun isSelected(): Boolean
+
     abstract fun createSitePermissionsFromCustomRules(origin: String, settings: Settings): SitePermissions
+
     abstract fun updateSitePermissions(sitePermissions: SitePermissions): SitePermissions
+
     abstract val isEnabled: Boolean
 
-    val isVisible: Boolean get() = isSelected()
+    val isVisible: Boolean
+        get() = isSelected()
 
     data class AllowAll(
         override val label: String,
@@ -31,26 +36,31 @@ sealed class AutoplayValue(
         override val sitePermission: SitePermissions?,
     ) : AutoplayValue(label, rules, sitePermission) {
         override val isEnabled: Boolean = true
+
         override fun toString() = super.toString()
+
         override fun isSelected(): Boolean {
-            val actions = if (sitePermission !== null) {
-                listOf(
-                    sitePermission.autoplayAudible,
-                    sitePermission.autoplayInaudible,
-                )
-            } else {
-                listOf(rules.autoplayAudible.toAutoplayStatus(), rules.autoplayInaudible.toAutoplayStatus())
-            }
+            val actions =
+                if (sitePermission !== null) {
+                    listOf(
+                        sitePermission.autoplayAudible,
+                        sitePermission.autoplayInaudible,
+                    )
+                } else {
+                    listOf(rules.autoplayAudible.toAutoplayStatus(), rules.autoplayInaudible.toAutoplayStatus())
+                }
 
             return actions.all { it == AutoplayStatus.ALLOWED }
         }
 
         override fun createSitePermissionsFromCustomRules(origin: String, settings: Settings): SitePermissions {
             val rules = settings.getSitePermissionsCustomSettingsRules()
-            return rules.copy(
-                autoplayAudible = AutoplayAction.ALLOWED,
-                autoplayInaudible = AutoplayAction.ALLOWED,
-            ).toSitePermissions(origin)
+            return rules
+                .copy(
+                    autoplayAudible = AutoplayAction.ALLOWED,
+                    autoplayInaudible = AutoplayAction.ALLOWED,
+                )
+                .toSitePermissions(origin)
         }
 
         override fun updateSitePermissions(sitePermissions: SitePermissions): SitePermissions {
@@ -67,25 +77,31 @@ sealed class AutoplayValue(
         override val sitePermission: SitePermissions?,
     ) : AutoplayValue(label, rules, sitePermission) {
         override val isEnabled: Boolean = false
+
         override fun toString() = super.toString()
+
         override fun isSelected(): Boolean {
-            val actions = if (sitePermission !== null) {
-                listOf(
-                    sitePermission.autoplayAudible,
-                    sitePermission.autoplayInaudible,
-                )
-            } else {
-                listOf(rules.autoplayAudible.toAutoplayStatus(), rules.autoplayInaudible.toAutoplayStatus())
-            }
+            val actions =
+                if (sitePermission !== null) {
+                    listOf(
+                        sitePermission.autoplayAudible,
+                        sitePermission.autoplayInaudible,
+                    )
+                } else {
+                    listOf(rules.autoplayAudible.toAutoplayStatus(), rules.autoplayInaudible.toAutoplayStatus())
+                }
 
             return actions.all { it == AutoplayStatus.BLOCKED }
         }
+
         override fun createSitePermissionsFromCustomRules(origin: String, settings: Settings): SitePermissions {
             val rules = settings.getSitePermissionsCustomSettingsRules()
-            return rules.copy(
-                autoplayAudible = AutoplayAction.BLOCKED,
-                autoplayInaudible = AutoplayAction.BLOCKED,
-            ).toSitePermissions(origin)
+            return rules
+                .copy(
+                    autoplayAudible = AutoplayAction.BLOCKED,
+                    autoplayInaudible = AutoplayAction.BLOCKED,
+                )
+                .toSitePermissions(origin)
         }
 
         override fun updateSitePermissions(sitePermissions: SitePermissions): SitePermissions {
@@ -102,20 +118,24 @@ sealed class AutoplayValue(
         override val sitePermission: SitePermissions?,
     ) : AutoplayValue(label, rules, sitePermission) {
         override val isEnabled: Boolean = false
+
         override fun toString() = super.toString()
+
         override fun isSelected(): Boolean {
-            val (audible, inaudible) = if (sitePermission !== null) {
-                sitePermission.autoplayAudible to sitePermission.autoplayInaudible
-            } else {
-                rules.autoplayAudible.toAutoplayStatus() to rules.autoplayInaudible.toAutoplayStatus()
-            }
+            val (audible, inaudible) =
+                if (sitePermission !== null) {
+                    sitePermission.autoplayAudible to sitePermission.autoplayInaudible
+                } else {
+                    rules.autoplayAudible.toAutoplayStatus() to rules.autoplayInaudible.toAutoplayStatus()
+                }
 
             return audible == AutoplayStatus.BLOCKED && inaudible == AutoplayStatus.ALLOWED
         }
 
         override fun createSitePermissionsFromCustomRules(origin: String, settings: Settings): SitePermissions {
             val rules = settings.getSitePermissionsCustomSettingsRules()
-            return rules.copy(autoplayAudible = AutoplayAction.BLOCKED, autoplayInaudible = AutoplayAction.ALLOWED)
+            return rules
+                .copy(autoplayAudible = AutoplayAction.BLOCKED, autoplayInaudible = AutoplayAction.ALLOWED)
                 .toSitePermissions(origin)
         }
 

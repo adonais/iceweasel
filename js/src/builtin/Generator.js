@@ -87,8 +87,7 @@ function GeneratorReturn(val) {
   }
 
   try {
-    var rval = { value: val, done: true };
-    return resumeGenerator(this, rval, "return");
+    return resumeGenerator(this, val, "return");
   } catch (e) {
     GeneratorSetClosed(this);
     throw e;

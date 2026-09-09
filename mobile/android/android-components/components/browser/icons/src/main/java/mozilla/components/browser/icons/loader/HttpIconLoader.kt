@@ -9,6 +9,9 @@ import android.os.SystemClock
 import android.util.LruCache
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.util.concurrent.TimeUnit
 import mozilla.components.browser.icons.Icon
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.concept.fetch.Client
@@ -19,17 +22,12 @@ import mozilla.components.concept.fetch.isSuccess
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.net.isHttpOrHttps
 import mozilla.components.support.ktx.kotlin.sanitizeURL
-import java.io.ByteArrayOutputStream
-import java.io.IOException
-import java.util.concurrent.TimeUnit
 
 private const val CONNECT_TIMEOUT = 2L // Seconds
 private const val READ_TIMEOUT = 10L // Seconds
 private const val MAX_DOWNLOAD_BYTES = 1048576 // 1MB
 
-/**
- * [IconLoader] implementation that will try to download the icon for resources that point to an http(s) URL.
- */
+/** [IconLoader] implementation that will try to download the icon for resources that point to an http(s) URL. */
 open class HttpIconLoader(
     private val httpClient: Client,
     private val memoryInfoProvider: MemoryInfoProvider,
@@ -49,20 +47,22 @@ open class HttpIconLoader(
     }
 
     protected fun internalLoad(request: IconRequest, resource: IconRequest.Resource): IconLoader.Result {
-        val downloadRequest = Request(
-            url = resource.url.sanitizeURL(),
-            method = Request.Method.GET,
-            cookiePolicy = if (request.isPrivate) {
-                Request.CookiePolicy.OMIT
-            } else {
-                Request.CookiePolicy.INCLUDE
-            },
-            connectTimeout = Pair(CONNECT_TIMEOUT, TimeUnit.SECONDS),
-            readTimeout = Pair(READ_TIMEOUT, TimeUnit.SECONDS),
-            redirect = Request.Redirect.FOLLOW,
-            useCaches = true,
-            private = request.isPrivate,
-        )
+        val downloadRequest =
+            Request(
+                url = resource.url.sanitizeURL(),
+                method = Request.Method.GET,
+                cookiePolicy =
+                    if (request.isPrivate) {
+                        Request.CookiePolicy.OMIT
+                    } else {
+                        Request.CookiePolicy.INCLUDE
+                    },
+                connectTimeout = Pair(CONNECT_TIMEOUT, TimeUnit.SECONDS),
+                readTimeout = Pair(READ_TIMEOUT, TimeUnit.SECONDS),
+                redirect = Request.Redirect.FOLLOW,
+                useCaches = true,
+                private = request.isPrivate,
+            )
 
         return try {
             val response = httpClient.fetch(downloadRequest)
@@ -127,16 +127,12 @@ private const val FAILURE_RETRY_MILLISECONDS = 1000 * 60 * 30 // 30 Minutes
 internal class FailureCache {
     private val cache = LruCache<String, Long>(MAX_FAILURE_URLS)
 
-    /**
-     * Remembers this [url] after loading from it has failed.
-     */
+    /** Remembers this [url] after loading from it has failed. */
     fun rememberFailure(url: String) {
         cache.put(url, now())
     }
 
-    /**
-     * Has loading from this [url] failed previously and recently?
-     */
+    /** Has loading from this [url] failed previously and recently? */
     fun hasFailedRecently(url: String) =
         cache.get(url)?.let { failedAt ->
             if (failedAt + FAILURE_RETRY_MILLISECONDS < now()) {
@@ -147,6 +143,5 @@ internal class FailureCache {
             }
         } ?: false
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal fun now() = SystemClock.elapsedRealtime()
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal fun now() = SystemClock.elapsedRealtime()
 }

@@ -60,28 +60,6 @@ index 08494b9bf5..0dfcc0f63a 100644
      set_property(TARGET ${KWSYS_NAMESPACE}TestsCxx PROPERTY CXX_CLANG_TIDY "")
 EOF
 
-# Work around https://github.com/llvm/llvm-project/issues/134237
-# Should be removable once we update to clang 21.
-patch -p1 <<'EOF'
-diff --git a/Modules/CMakeFindBinUtils.cmake b/Modules/CMakeFindBinUtils.cmake
-index 91543a6853..ea9627a0de 100644
---- a/Modules/CMakeFindBinUtils.cmake
-+++ b/Modules/CMakeFindBinUtils.cmake
-@@ -87,9 +87,9 @@ if(("x${CMAKE_${_CMAKE_PROCESSING_LANGUAGE}_SIMULATE_ID}" STREQUAL "xMSVC" AND
-   if("x${CMAKE_${_CMAKE_PROCESSING_LANGUAGE}_COMPILER_ID}" MATCHES "^x(Clang|LLVMFlang)$")
-     set(_CMAKE_NM_NAMES "llvm-nm" "nm")
-     list(PREPEND _CMAKE_AR_NAMES "llvm-lib")
--    if("${CMAKE_${_CMAKE_PROCESSING_LANGUAGE}_COMPILER_VERSION}" VERSION_GREATER_EQUAL 14.0.2)
--      list(PREPEND _CMAKE_MT_NAMES "llvm-mt")
--    endif()
-+    # if("${CMAKE_${_CMAKE_PROCESSING_LANGUAGE}_COMPILER_VERSION}" VERSION_GREATER_EQUAL 14.0.2)
-+    #   list(PREPEND _CMAKE_MT_NAMES "llvm-mt")
-+    # endif()
-     list(PREPEND _CMAKE_LINKER_NAMES "lld-link")
-     list(APPEND _CMAKE_TOOL_VARS NM)
-   elseif("x${CMAKE_${_CMAKE_PROCESSING_LANGUAGE}_COMPILER_ID}" STREQUAL "xIntel")
-EOF
-
 export PATH="$MOZ_FETCHES_DIR/clang/bin:$PATH"
 
 cmake \

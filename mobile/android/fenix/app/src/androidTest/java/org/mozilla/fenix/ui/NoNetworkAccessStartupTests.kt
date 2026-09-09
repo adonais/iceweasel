@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.ui
 
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 import androidx.core.net.toUri
 import androidx.test.filters.SdkSuppress
 import org.junit.Ignore
@@ -16,22 +17,16 @@ import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
-import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
-/**
- * Tests to verify some main UI flows with Network connection off
- *
- */
-
+/** Tests to verify some main UI flows with Network connection off */
 class NoNetworkAccessStartupTests {
-    @get:Rule(order = 0)
-    val fenixTestRule: FenixTestRule = FenixTestRule()
+    @get:Rule(order = 0) val fenixTestRule: FenixTestRule = FenixTestRule()
 
     @get:Rule(order = 1)
     val composeTestRule =
-        AndroidComposeTestRuleV2(
-            HomeActivityTestRule.withDefaultSettingsOverrides(launchActivity = false),
-        ) { it.activity }
+        AndroidComposeTestRuleV2(HomeActivityTestRule.withDefaultSettingsOverrides(launchActivity = false)) {
+            it.activity
+        }
 
     // Test running on beta/release builds in CI:
     // caution when making changes to it, so they don't block the builds
@@ -58,15 +53,14 @@ class NoNetworkAccessStartupTests {
 
         composeTestRule.activityRule.launchActivity(null)
 
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser(url.toUri()) {}
+        navigationToolbar(composeTestRule) {}.enterURLAndEnterToBrowser(url.toUri()) {}
 
         setNetworkEnabled(false)
 
-        browserScreen(composeTestRule) {
-        }.goToHomescreen {
-            verifyHomeScreen()
-        }
+        browserScreen(composeTestRule) {}
+            .goToHomescreen {
+                verifyHomeScreen()
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2240723
@@ -77,14 +71,11 @@ class NoNetworkAccessStartupTests {
 
         composeTestRule.activityRule.launchActivity(null)
 
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser(url.toUri()) {}
+        navigationToolbar(composeTestRule) {}.enterURLAndEnterToBrowser(url.toUri()) {}
 
         setNetworkEnabled(false)
 
-        browserScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickRefreshButton { }
+        browserScreen(composeTestRule) {}.openThreeDotMenu {}.clickRefreshButton {}
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2240721
@@ -97,14 +88,14 @@ class NoNetworkAccessStartupTests {
 
         composeTestRule.activityRule.launchActivity(null)
 
-        homeScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openTurnOnSyncMenu(composeTestRule) {
-            tapOnUseEmailToSignIn()
-            browserScreen(composeTestRule) {
-                verifyUrl("firefox.com")
+        homeScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openTurnOnSyncMenu(composeTestRule) {
+                tapOnUseEmailToSignIn()
+                browserScreen(composeTestRule) {
+                    verifyUrl("firefox.com")
+                }
             }
-        }
     }
 }

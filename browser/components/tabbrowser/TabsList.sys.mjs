@@ -115,6 +115,19 @@ class TabsListBase {
     return this.tabToElement.values();
   }
 
+  /**
+   * Tabs lists can be nested in the DOM, e.g. the list of hidden tabs playing
+   * audio sits inside the main tabs list in the All Tabs menu. Bubbling events
+   * from a nested list must only be handled by the list that owns the row.
+   *
+   * @param {Event} event
+   * @returns {boolean}
+   */
+  #ownsEvent(event) {
+    let row = event.target.closest("toolbaritem");
+    return !row || row.parentNode == this.containerNode;
+  }
+
   handleEvent(event) {
     switch (event.type) {
       case "TabAttrModified":
@@ -141,13 +154,13 @@ class TabsListBase {
         }
         break;
       case "command":
-        this.#handleCommand(event);
+        this.#ownsEvent(event) && this.#handleCommand(event);
         break;
       case "dragstart":
-        this._onDragStart(event);
+        this.#ownsEvent(event) && this._onDragStart(event);
         break;
       case "dragover":
-        this._onDragOver(event);
+        this.#ownsEvent(event) && this._onDragOver(event);
         break;
       case "dragleave":
         this._onDragLeave(event);
@@ -156,10 +169,10 @@ class TabsListBase {
         this._onDragEnd(event);
         break;
       case "drop":
-        this._onDrop(event);
+        this.#ownsEvent(event) && this._onDrop(event);
         break;
       case "click":
-        this._onClick(event);
+        this.#ownsEvent(event) && this._onClick(event);
         break;
     }
   }

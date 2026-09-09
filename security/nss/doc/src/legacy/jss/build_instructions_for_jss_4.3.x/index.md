@@ -4,7 +4,7 @@
 
 (build-instructions-for-jss-4-3-x-1)=
 
-## [Build Instructions for JSS 4.3.x](#build_instructions_for_jss_4.3.x)
+## Build Instructions for JSS 4.3.x
 
 :::{container}
 Newsgroup: [mozilla.dev.tech.crypto](news://news.mozilla.org/mozilla.dev.tech.crypto)
@@ -12,7 +12,7 @@ Newsgroup: [mozilla.dev.tech.crypto](news://news.mozilla.org/mozilla.dev.tech.cr
 Before building JSS, you need to set up your system as follows:
 
 1. Build NSPR/NSS by following the
-   {ref}`mozilla_projects_nss_reference_building_and_installing_nss_build_instructions`,
+   {ref}`mozilla-projects-nss-reference-building-and-installing-nss-build-instructions`,
 2. To check that NSS built correctly, run `all.sh` (in `mozilla/security/nss/tests`) and
    examine the results (in
    `mozilla/test_results/security/`*computername*.#`/results.html`.

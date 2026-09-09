@@ -30,6 +30,7 @@
 #include "mozilla/dom/ContentList.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/FetchPriority.h"
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/ImageTextBinding.h"
@@ -1362,8 +1363,9 @@ already_AddRefed<Promise> nsImageLoadingContent::RecognizeCurrentImageText(
             for (const auto& quad : textRecognitionResult.quads()) {
               NotNull<ImageText*> imageText = imageTexts.AppendElement();
 
-              // Note: These points are not actually CSSPixels, but a DOMQuad is
-              // a conveniently similar structure that can store these values.
+              // Note: These points are not actually CSSPixels, but a
+              // DOMQuad is a conveniently similar structure that can store
+              // these values.
               CSSPoint points[4];
               points[0] = CSSPoint(quad.points()[0].x, quad.points()[0].y);
               points[1] = CSSPoint(quad.points()[1].x, quad.points()[1].y);

@@ -55,7 +55,7 @@
 
 // Additional number of milliseconds to wait until we decide to exit
 // forcefully.
-#define ADDITIONAL_WAIT_BEFORE_CRASH_MS 3000
+#define ADDITIONAL_WAIT_BEFORE_CRASH_MS 10000
 
 #define HEARTBEAT_INTERVAL_MS 100
 

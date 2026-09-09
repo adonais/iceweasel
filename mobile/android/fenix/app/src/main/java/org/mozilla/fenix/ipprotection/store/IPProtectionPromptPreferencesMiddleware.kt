@@ -12,9 +12,8 @@ import mozilla.components.lib.state.Store
  *
  * @param repository the repository for the IP Protection prompt
  */
-class IPProtectionPromptPreferencesMiddleware(
-    private val repository: IPProtectionPromptRepository,
-) : Middleware<IPProtectionPromptState, IPProtectionPromptAction> {
+class IPProtectionPromptPreferencesMiddleware(private val repository: IPProtectionPromptRepository) :
+    Middleware<IPProtectionPromptState, IPProtectionPromptAction> {
     override fun invoke(
         store: Store<IPProtectionPromptState, IPProtectionPromptAction>,
         next: (IPProtectionPromptAction) -> Unit,
@@ -33,15 +32,12 @@ class IPProtectionPromptPreferencesMiddleware(
 
             is IPProtectionPromptAction.OnGetStartedClicked,
             is IPProtectionPromptAction.OnNotNowClicked,
-            is IPProtectionPromptAction.OnPromptManuallyDismissed,
-                -> {
+            is IPProtectionPromptAction.OnPromptManuallyDismissed -> {
                 repository.hasShownPrompt = true
             }
             // no-ops
             is IPProtectionPromptAction.OnImpression,
-            is IPProtectionPromptAction.OnBrowseWithExtraProtectionClicked,
-                -> {
-            }
+            is IPProtectionPromptAction.OnBrowseWithExtraProtectionClicked -> {}
         }
 
         next(action)

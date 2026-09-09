@@ -8,23 +8,63 @@ import {
 } from "chrome://global/content/ml/EngineProcess.sys.mjs";
 
 import { FormAutofillUtils } from "resource://gre/modules/shared/FormAutofillUtils.sys.mjs";
-import { MLEngineParent } from "resource://gre/actors/MLEngineParent.sys.mjs";
+import { MLEngineParent } from "moz-src:///toolkit/components/ml/actors/MLEngineParent.sys.mjs";
 
-const ENGINE_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
+// Every engine's `timeoutMS` comes from
+// `extensions.formautofill.useml.timeoutMS` and is applied in `#ensureEngines`,
+// so it is read fresh on each engine creation rather than baked in here.
+
+// Default classifier: a single `text-classification` model that maps a field's
+// context string straight to a field type.
+const FORM_AUTOFILL_FEATURE_ID = "formfill-classification";
+const ML_TASKNAME = "text-classification";
+
+const FormFill_Config = {
+  taskName: ML_TASKNAME,
+  featureId: FORM_AUTOFILL_FEATURE_ID,
+  engineId: FEATURES[FORM_AUTOFILL_FEATURE_ID].engineId,
+  backend: "best-onnx",
+  modelId: "mozilla/tinybert-address-autofill",
+  numThreads: 2,
+};
 
 // Dimension of a single pooled field embedding produced by the encoder.
 const EMBEDDING_DIM = 384;
 
+// Opt-in classifier, gated on `extensions.formautofill.useml.twoHead`. It is
+// deployed as two engines. The ENCODER is a stock `feature-extraction` model
+// that turns each field's tokens into a single pooled embedding. The HEAD is a
+// tiny ONNX model that scores the windowed embeddings (a field's own embedding
+// plus its two neighbors) into a field type.
+
+// Encoder engine: stock feature-extraction, one pooled vector per field.
+const FormFill_Encoder_Config = {
+  taskName: "feature-extraction",
+  featureId: "formfill-encoder",
+  engineId: FEATURES["formfill-encoder"].engineId,
+  backend: "best-onnx",
+  numThreads: 2,
+};
+
+// Head engine: custom `moz-formfill-head` pipeline, scores windowed features.
+const FormFill_Head_Config = {
+  taskName: "moz-formfill-head",
+  featureId: "formfill-head",
+  engineId: FEATURES["formfill-head"].engineId,
+  backend: "best-onnx",
+  numThreads: 2,
+};
+
 /**
- * Split a legacy form-autofill context string into the current, previous, and
- * next field strings.
+ * Split a form-autofill context string into the current, previous, and next
+ * field strings.
  *
  * Tokens prefixed with `bb` belong to the previous field and have the prefix
  * removed. Tokens prefixed with `aa` belong to the next field and have the
  * prefix removed. All remaining tokens belong to the current field.
  *
- * @param {string} mlData Legacy context string containing tokens from the
- *   current field plus neighboring fields.
+ * @param {string} mlData Context string containing tokens from the current
+ *   field plus neighboring fields.
  * @returns {[string, string, string]} A tuple containing the current, previous,
  *   and next field strings, in that order.
  */
@@ -47,110 +87,145 @@ function splitContext(mlData) {
   return [cur.join(" "), prev.join(" "), next.join(" ")];
 }
 
-// The field-type classifier is deployed as two engines. The ENCODER is a
-// stock `feature-extraction` model that turns each field's tokens into a
-// single pooled embedding. The HEAD is a tiny ONNX model that scores the
-//  windowed embeddings (a field's own embedding plus its two
-// neighbors) into a field type.
-
-// Encoder engine: stock feature-extraction, one pooled vector per field.
-const FormFill_Encoder_Config = {
-  timeoutMS: ENGINE_TIMEOUT_MS,
-  taskName: "feature-extraction",
-  featureId: "formfill-encoder",
-  engineId: FEATURES["formfill-encoder"].engineId,
-  backend: "best-onnx",
-  numThreads: 2,
-};
-
-// Head engine: custom `moz-formfill-head` pipeline, scores windowed features.
-const FormFill_Head_Config = {
-  timeoutMS: ENGINE_TIMEOUT_MS,
-  taskName: "moz-formfill-head",
-  featureId: "formfill-head",
-  engineId: FEATURES["formfill-head"].engineId,
-  backend: "best-onnx",
-  numThreads: 2,
-};
-
 export class FormAutofillML {
-  #encoderEngine;
-  #headEngine;
+  // featureId -> engine, covering whichever classifier is active.
+  #engines = new Map();
 
-  // "<encoderRevision>/<headRevision>" -- the two models are versioned
-  // independently, so telemetry reports both.
   static #modelVersion = "";
 
   static getModelVersion() {
     return this.#modelVersion;
   }
 
+  async detectFields(fieldDetails) {
+    if (FormAutofillUtils.enableMLAutofillTwoHead) {
+      await this.#detectFieldsTwoHead(fieldDetails);
+      return;
+    }
+    await this.#detectFieldsSingle(fieldDetails);
+  }
+
   /**
-   * Lazily create both the encoder and head engines.
+   * Lazily create the engines described by `configs`, which are (re)created
+   * when missing or closed.
    *
-   * Egines are (re)created when missing or closed.
+   * On the very first use the models likely haven't been downloaded, so we kick
+   * off every download but do not block autofill or run inference this time.
    *
-   * On the very first use the models likely haven't been
-   * downloaded, so we kick off both downloads but do not block autofill or run
-   * inference this time.
-   *
-   * @returns {Promise<boolean>} True when both engines are ready to run.
+   * @param {object[]} configs One engine configuration per engine needed.
+   * @returns {Promise<object[]|null>} The ready engines, in the same order as
+   *   `configs`, or null when inference should be skipped this time.
    */
-  async #ensureEngines() {
-    const encoderReady =
-      this.#encoderEngine && this.#encoderEngine.engineStatus != "closed";
-    const headReady =
-      this.#headEngine && this.#headEngine.engineStatus != "closed";
-    if (encoderReady && headReady) {
-      return true;
+  async #ensureEngines(configs) {
+    const cached = configs.map(config => this.#engines.get(config.featureId));
+    if (
+      cached.every(
+        engine => engine && !["closed", "error"].includes(engine.engineStatus)
+      )
+    ) {
+      return cached;
     }
 
-    try {
-      const initEncoderPromise = createEngine(FormFill_Encoder_Config);
-      const initHeadPromise = createEngine(FormFill_Head_Config);
+    const remember = engines =>
+      configs.forEach((config, i) =>
+        this.#engines.set(config.featureId, engines[i])
+      );
 
-      // If the ML engines have never been used before, they likely haven't
-      // been downloaded, so initialize both but don't try to get the result.
+    try {
+      // Read the timeout per creation so a Nimbus rollout that changes it takes
+      // effect without a restart. -1 keeps the engine alive indefinitely.
+      const timeoutMS = FormAutofillUtils.mlEngineTimeoutMS;
+      const initPromises = configs.map(config =>
+        createEngine({ ...config, timeoutMS })
+      );
+
+      // If the ML engines have never been used before, they likely haven't been
+      // downloaded, so initialize them but don't try to get the result.
       if (!FormAutofillUtils.isMLUsedAlready) {
-        Promise.all([initEncoderPromise, initHeadPromise])
-          .then(([encoderEngine, headEngine]) => {
-            this.#encoderEngine = encoderEngine;
-            this.#headEngine = headEngine;
+        Promise.all(initPromises)
+          .then(engines => {
+            remember(engines);
             FormAutofillUtils.setMLUsedAlready();
           })
           .catch(() => {});
-        return false;
+        return null;
       }
 
-      [this.#encoderEngine, this.#headEngine] = await Promise.all([
-        initEncoderPromise,
-        initHeadPromise,
-      ]);
+      remember(await Promise.all(initPromises));
     } catch (ex) {
-      return false;
+      return null;
     }
 
-    const [encoderDetails, headDetails] = await Promise.all([
-      MLEngineParent.getInferenceOptions(
-        FormFill_Encoder_Config.featureId,
-        FormFill_Encoder_Config.taskName
-      ),
-      MLEngineParent.getInferenceOptions(
-        FormFill_Head_Config.featureId,
-        FormFill_Head_Config.taskName
-      ),
-    ]);
-    FormAutofillML.#modelVersion = `${encoderDetails.modelRevision ?? ""}/${
-      headDetails.modelRevision ?? ""
-    }`;
+    const details = await Promise.all(
+      configs.map(config =>
+        MLEngineParent.getInferenceOptions(config.featureId, config.taskName)
+      )
+    );
+    // Models are versioned independently, so telemetry reports every revision.
+    // A single-model classifier therefore reports just its own revision.
+    FormAutofillML.#modelVersion = details
+      .map(detail => detail.modelRevision ?? "")
+      .join("/");
 
-    return true;
+    return configs.map(config => this.#engines.get(config.featureId));
   }
 
-  async detectFields(fieldDetails) {
-    if (!(await this.#ensureEngines())) {
+  /**
+   * Apply the model's predictions to `fields`, positionally.
+   *
+   * Fields already labeled by the heuristics keep their assignment; the ML model
+   * only fills in the ones still missing a fieldName.
+   *
+   * @param {object[]} fields The field details that were classified.
+   * @param {object[]} results One `{ label }` per entry in `fields`.
+   */
+  #applyResults(fields, results) {
+    for (let r = 0; r < results.length; r++) {
+      const fd = fields[r];
+      if (fd.fieldName) {
+        continue;
+      }
+
+      const fieldName = results[r].label;
+      if (fieldName && fieldName != "other") {
+        fd.fieldName = fieldName;
+      }
+
+      fd.reason = "ml";
+    }
+  }
+
+  async #detectFieldsSingle(fieldDetails) {
+    const engines = await this.#ensureEngines([FormFill_Config]);
+    if (!engines) {
       return;
     }
+
+    // Only fields that have tokens and don't already have a field name assigned
+    // need identifying. One input string per field, classified in one batch.
+    const mlFields = fieldDetails.filter(fd => !fd.fieldName && fd.mlData);
+
+    if (!mlFields.length) {
+      return; // No fields to identify.
+    }
+
+    const results = await engines[0].run({
+      args: [mlFields.map(fd => fd.mlData)],
+      options: { pooling: "mean", normalize: true },
+    });
+
+    this.#applyResults(mlFields, results);
+  }
+
+  async #detectFieldsTwoHead(fieldDetails) {
+    const engines = await this.#ensureEngines([
+      FormFill_Encoder_Config,
+      FormFill_Head_Config,
+    ]);
+    if (!engines) {
+      return;
+    }
+    const [encoderEngine, headEngine] = engines;
 
     // Consider every field that has ML tokens. We still only assign a fieldName
     // to fields that don't already have one (see the result loop below), but the
@@ -162,13 +237,13 @@ export class FormAutofillML {
       return; // No fields to identify.
     }
 
-    // Triple-encoder Approach 3, step 1: split each field's mlData into its three
-    // sections (current / previous / next) using the baked aa/bb context, and
-    // encode them. Encoding is done ONCE per unique section string -- a field's
-    // previous/next section is just a neighbor field's own tokens (or "" at a
-    // form boundary), so the set of distinct strings is small and every field's
-    // three embeddings are looked up from it by value. This keeps encoding cheap
-    // while using the authoritative aa/bb adjacency rather than field ordering.
+    // Step 1: split each field's mlData into its three sections (current /
+    // previous / next) using the baked aa/bb context, and encode them. Encoding
+    // is done ONCE per unique section string -- a field's previous/next section
+    // is just a neighbor field's own tokens (or "" at a form boundary), so the
+    // set of distinct strings is small and every field's three embeddings are
+    // looked up from it by value. This keeps encoding cheap while using the
+    // authoritative aa/bb adjacency rather than field ordering.
     //
     // Two details must match training (dotraining.py `_encode`) exactly:
     //   - Pooling is a raw attention-masked mean with NO L2 normalization
@@ -178,7 +253,7 @@ export class FormAutofillML {
     //     vector), so the difference features become `cur - emptyEmb`.
     const sections = mlFields.map(fd => splitContext(fd.mlData));
     const uniqueStrings = [...new Set([""].concat(...sections))];
-    let embeddings = await this.#encoderEngine.run({
+    let embeddings = await encoderEngine.run({
       args: [uniqueStrings],
       options: { pooling: "mean", normalize: false },
     });
@@ -212,26 +287,10 @@ export class FormAutofillML {
 
     // Step 3: run the fusion head ONCE for all fields. Custom pipeline
     // functions return `{ output, metrics }`, so the per-field results (shaped
-    // like the previous text-classification output: `{ label, score }`) live
-    // under `.output`.
-    const scores = await this.#headEngine.run({ args: [rows] });
-    const results = scores?.output ?? scores;
+    // like the text-classification output: `{ label, score }`) live under
+    // `.output`.
+    const scores = await headEngine.run({ args: [rows] });
 
-    for (let r = 0; r < results.length; r++) {
-      const fd = mlFields[r];
-
-      // Fields already labeled by the heuristics keep their assignment; the ML
-      // model only fills in the ones still missing a fieldName.
-      if (fd.fieldName) {
-        continue;
-      }
-
-      const fieldName = results[r].label;
-      if (fieldName && fieldName != "other") {
-        fd.fieldName = fieldName;
-      }
-
-      fd.reason = "ml";
-    }
+    this.#applyResults(mlFields, scores?.output ?? scores);
   }
 }

@@ -38,12 +38,13 @@ class DefaultCfrPreferencesRepositoryTest {
 
     @Test
     fun `WHEN the repository is initialized THEN the initial state of the preferences should be emitted`() = runTest {
-        val cfrPreferencesRepository = DefaultCfrPreferencesRepository(
-            context = testContext,
-            settings = testContext.components.settings,
-            lifecycleOwner = mockk(relaxed = true),
-            coroutineScope = this,
-        )
+        val cfrPreferencesRepository =
+            DefaultCfrPreferencesRepository(
+                context = testContext,
+                settings = testContext.components.settings,
+                lifecycleOwner = mockk(relaxed = true),
+                coroutineScope = this,
+            )
 
         settings.preferences.edit {
             cfrKeys.forEach {
@@ -59,18 +60,19 @@ class DefaultCfrPreferencesRepositoryTest {
         assertTrue(
             actual.all {
                 it.value
-            },
+            }
         )
     }
 
     @Test
     fun `WHEN a change is made to the preference values THEN the repository emits the change`() = runTest {
-        val cfrPreferencesRepository = DefaultCfrPreferencesRepository(
-            context = testContext,
-            settings = testContext.components.settings,
-            lifecycleOwner = mockk(relaxed = true),
-            coroutineScope = this,
-        )
+        val cfrPreferencesRepository =
+            DefaultCfrPreferencesRepository(
+                context = testContext,
+                settings = testContext.components.settings,
+                lifecycleOwner = mockk(relaxed = true),
+                coroutineScope = this,
+            )
 
         CfrPreferencesRepository.CfrPreference.entries.forEach {
             val preferenceKey = testContext.getString(it.preferenceKey)
@@ -87,12 +89,13 @@ class DefaultCfrPreferencesRepositoryTest {
 
     @Test
     fun `WHEN the repository resets the last CFR shown time THEN timestamp preference is set to 0`() = runTest {
-        val cfrPreferencesRepository = DefaultCfrPreferencesRepository(
-            context = testContext,
-            settings = testContext.components.settings,
-            lifecycleOwner = mockk(relaxed = true),
-            coroutineScope = this,
-        )
+        val cfrPreferencesRepository =
+            DefaultCfrPreferencesRepository(
+                context = testContext,
+                settings = testContext.components.settings,
+                lifecycleOwner = mockk(relaxed = true),
+                coroutineScope = this,
+            )
 
         val resetValue = 0L
         settings.lastCfrShownTimeInMillis = 100

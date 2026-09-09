@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.ui.efficiency.generation
 
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
@@ -33,8 +37,8 @@ object NavigationTestPlanner {
                 ReachabilityCase(
                     propertyName = pageRef.propertyName,
                     page = pageRef.getter,
-                    launch = NavigationRegistry.launchConfigFor(pageRef.propertyName.toDisplayLabel())
-                        ?: LaunchConfig(),
+                    launch =
+                        NavigationRegistry.launchConfigFor(pageRef.propertyName.toDisplayLabel()) ?: LaunchConfig(),
                 )
             }
             .sortedBy { it.propertyName }
@@ -43,9 +47,8 @@ object NavigationTestPlanner {
     fun buildNavigationPairCases(): List<NavigationPairCasePlan> {
         val reachabilityCases = buildReachabilityCases()
 
-        val casesByPageName = reachabilityCases
-            .filter { it.launch == LaunchConfig() }
-            .associateBy { it.propertyName.toDisplayLabel() }
+        val casesByPageName =
+            reachabilityCases.filter { it.launch == LaunchConfig() }.associateBy { it.propertyName.toDisplayLabel() }
         val sortedPageNames = casesByPageName.keys.sorted()
 
         return buildList {
@@ -70,7 +73,7 @@ object NavigationTestPlanner {
                             firstPage = firstCase.page,
                             secondPage = secondCase.page,
                             distinctPathCount = paths.size,
-                        ),
+                        )
                     )
                 }
             }

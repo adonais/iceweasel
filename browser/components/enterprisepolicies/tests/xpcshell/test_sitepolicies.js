@@ -380,3 +380,105 @@ add_task(async function test_httpsOnlyPolicy() {
   assertHttpState("http://example.net/", true);
   assertHttpState("http://example.com/", false);
 });
+
+function assertServiceWorkerState(url, isAllowed) {
+  let uri = Services.io.newURI(url);
+  let siteUri = Services.io.newURI(
+    Services.scriptSecurityManager.createContentPrincipal(uri, {})
+      .siteOriginNoSuffix
+  );
+
+  Assert.equal(
+    Services.policies.isAllowedForURI("serviceworkers", siteUri),
+    isAllowed,
+    `Policy service should return the expected service worker state for ${url} (site: ${siteUri})`
+  );
+}
+
+add_task(async function test_disableServiceWorkersPolicy() {
+  // Empty policies allow service workers everywhere.
+  await setupPolicyEngineWithJson({
+    policies: {
+      SitePolicies: [],
+    },
+  });
+
+  assertServiceWorkerState("https://example.net/", true);
+  assertServiceWorkerState("https://example.org/", true);
+  assertServiceWorkerState("https://example.com/", true);
+
+  // Simple match case.
+  await setupPolicyEngineWithJson({
+    policies: {
+      SitePolicies: [
+        {
+          Match: ["*.example.com"],
+          Policies: {
+            DisableServiceWorkers: true,
+          },
+        },
+      ],
+    },
+  });
+
+  assertServiceWorkerState("https://example.net/", true);
+  assertServiceWorkerState("https://example.org/", true);
+  assertServiceWorkerState("https://example.com/", false);
+  assertServiceWorkerState("https://sub.example.com/", false);
+
+  // No match implies all sites, with Exceptions acting as an allowlist.
+  await setupPolicyEngineWithJson({
+    policies: {
+      SitePolicies: [
+        {
+          Exceptions: ["*.example.com"],
+          Policies: {
+            DisableServiceWorkers: true,
+          },
+        },
+      ],
+    },
+  });
+
+  assertServiceWorkerState("https://example.net/", false);
+  assertServiceWorkerState("https://example.com/", true);
+
+  // DisableServiceWorkers: false explicitly allows.
+  await setupPolicyEngineWithJson({
+    policies: {
+      SitePolicies: [
+        {
+          Policies: {
+            DisableServiceWorkers: false,
+          },
+        },
+      ],
+    },
+  });
+
+  assertServiceWorkerState("https://example.net/", true);
+  assertServiceWorkerState("https://example.com/", true);
+
+  // DisableServiceWorkers coexists with DisableJit and HttpsOnly in same entry.
+  await setupPolicyEngineWithJson({
+    policies: {
+      SitePolicies: [
+        {
+          Match: ["*.example.com"],
+          Policies: {
+            DisableJit: true,
+            HttpsOnly: true,
+            DisableServiceWorkers: true,
+          },
+        },
+      ],
+    },
+  });
+
+  assertServiceWorkerState("https://example.net/", true);
+  assertServiceWorkerState("https://example.com/", false);
+  assertJitState("https://example.net/", true);
+  assertJitState("https://example.com/", false);
+  assertHttpState("http://example.net/", true);
+  assertHttpState("http://example.com/", false);
+});

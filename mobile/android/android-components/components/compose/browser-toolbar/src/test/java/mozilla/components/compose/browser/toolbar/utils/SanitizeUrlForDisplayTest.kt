@@ -11,10 +11,11 @@ import org.junit.Test
 class SanitizeUrlForDisplayTest {
     @Test
     fun `GIVEN surrounding whitespace WHEN sanitizing THEN trim it`() {
-        val (sanitizedUrl, adjustedDomainIndexRange) = sanitizeUrlForDisplay(
-            url = "\n\t  example.com \r\n",
-            registrableDomainIndexRange = null,
-        )
+        val (sanitizedUrl, adjustedDomainIndexRange) =
+            sanitizeUrlForDisplay(
+                url = "\n\t  example.com \r\n",
+                registrableDomainIndexRange = null,
+            )
 
         assertEquals("example.com", sanitizedUrl)
         assertNull(adjustedDomainIndexRange)
@@ -22,10 +23,11 @@ class SanitizeUrlForDisplayTest {
 
     @Test
     fun `GIVEN internal non-space whitespace WHEN sanitizing THEN remove it`() {
-        val (sanitizedUrl, adjustedDomainIndexRange) = sanitizeUrlForDisplay(
-            url = "\tquery  with\nline\rbreaks ",
-            registrableDomainIndexRange = null,
-        )
+        val (sanitizedUrl, adjustedDomainIndexRange) =
+            sanitizeUrlForDisplay(
+                url = "\tquery  with\nline\rbreaks ",
+                registrableDomainIndexRange = null,
+            )
 
         assertEquals("query  withlinebreaks", sanitizedUrl)
         assertNull(adjustedDomainIndexRange)
@@ -37,10 +39,11 @@ class SanitizeUrlForDisplayTest {
         val domainStart = url.indexOf("exa")
         val domainEnd = url.indexOf("/path")
 
-        val (sanitizedUrl, adjustedDomainIndexRange) = sanitizeUrlForDisplay(
-            url = url,
-            registrableDomainIndexRange = domainStart to domainEnd,
-        )
+        val (sanitizedUrl, adjustedDomainIndexRange) =
+            sanitizeUrlForDisplay(
+                url = url,
+                registrableDomainIndexRange = domainStart to domainEnd,
+            )
 
         val expectedUrl = "https://www.example.com/path"
         val expectedDomainStart = expectedUrl.indexOf("example.com")
@@ -53,10 +56,11 @@ class SanitizeUrlForDisplayTest {
 
     @Test
     fun `GIVEN only whitespace WHEN sanitizing THEN return an empty URL and no domain range`() {
-        val (sanitizedUrl, adjustedDomainIndexRange) = sanitizeUrlForDisplay(
-            url = " \n\t\r",
-            registrableDomainIndexRange = 0 to 4,
-        )
+        val (sanitizedUrl, adjustedDomainIndexRange) =
+            sanitizeUrlForDisplay(
+                url = " \n\t\r",
+                registrableDomainIndexRange = 0 to 4,
+            )
 
         assertEquals("", sanitizedUrl)
         assertNull(adjustedDomainIndexRange)

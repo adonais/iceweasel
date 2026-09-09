@@ -27,8 +27,8 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
- * Dialog fragment for stopping profiling sessions. The dialog uses the [ProfilerViewModel]
- * to manage the state of the profiler.
+ * Dialog fragment for stopping profiling sessions. The dialog uses the [ProfilerViewModel] to manage the state of the
+ * profiler.
  */
 class ProfilerStopDialogFragment : DialogFragment() {
 
@@ -55,13 +55,12 @@ class ProfilerStopDialogFragment : DialogFragment() {
         val uiState by viewModel.uiState.collectAsState()
         val context = LocalContext.current
 
-        val toastMessage: String? = when (val state = uiState) {
-            is ProfilerUiState.ShowToast ->
-                stringResource(state.messageResId) + state.extra
-            is ProfilerUiState.Error ->
-                stringResource(state.messageResId) + state.errorDetails
-            else -> null
-        }
+        val toastMessage: String? =
+            when (val state = uiState) {
+                is ProfilerUiState.ShowToast -> stringResource(state.messageResId) + state.extra
+                is ProfilerUiState.Error -> stringResource(state.messageResId) + state.errorDetails
+                else -> null
+            }
 
         LaunchedEffect(uiState) {
             when (uiState) {
@@ -85,10 +84,11 @@ class ProfilerStopDialogFragment : DialogFragment() {
                 if (uiState !is ProfilerUiState.Gathering && uiState !is ProfilerUiState.Stopping) {
                     this@ProfilerStopDialogFragment.dismiss()
                 }
-            },
+            }
         ) {
             when (uiState) {
-                is ProfilerUiState.Idle, is ProfilerUiState.Running -> {
+                is ProfilerUiState.Idle,
+                is ProfilerUiState.Running -> {
                     UrlWarningCard(
                         onStopAndSave = { viewModel.stopProfilerAndSave() },
                         onStopWithoutSaving = { viewModel.stopProfilerWithoutSaving() },

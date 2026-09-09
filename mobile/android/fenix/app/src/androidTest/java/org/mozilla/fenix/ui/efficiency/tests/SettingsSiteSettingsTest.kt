@@ -16,7 +16,9 @@ class SettingsSiteSettingsTest : BaseTest() {
         on.settingsSiteSettings.navigateToPage()
     }
 
-    @Ignore("Covered by verifyNavigationReachability[1: SettingsSiteSettingsExceptionsPage (TBD) — Navigation Reachability]")
+    @Ignore(
+        "Covered by verifyNavigationReachability[1: SettingsSiteSettingsExceptionsPage (TBD) — Navigation Reachability]"
+    )
     @Test
     fun verifySiteSettingsExceptionsSectionTest() {
         on.settingsSiteSettingsExceptions.navigateToPage()

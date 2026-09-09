@@ -236,14 +236,15 @@ nsIFrame* SVGGeometryFrame::GetFrameForPoint(const gfxPoint& aPoint) {
     Point point = ToPoint(aPoint);
     SVGContentUtils::AutoStrokeOptions stroke;
     SVGContentUtils::GetStrokeOptions(&stroke, content, Style(), nullptr);
-    gfxMatrix userToOuterSVG;
-    if (SVGUtils::GetNonScalingStrokeTransform(this, &userToOuterSVG)) {
+    if (Maybe<gfxMatrix> userToOuterSVG =
+            SVGUtils::GetNonScalingStrokeTransform(this)) {
       // We need to transform the path back into the appropriate ancestor
       // coordinate system in order for non-scaled stroke to be correct.
       // Naturally we also need to transform the point into the same
       // coordinate system in order to hit-test against the path.
-      point = ToMatrix(userToOuterSVG).TransformPoint(point);
-      Path::TransformAndSetFillRule(path, ToMatrix(userToOuterSVG), fillRule);
+      Matrix m = ToMatrix(*userToOuterSVG);
+      point = m.TransformPoint(point);
+      Path::TransformAndSetFillRule(path, m, fillRule);
     }
     isHit = path->StrokeContainsPoint(stroke, point, {});
   }
@@ -395,8 +396,10 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
       !(StyleSVGReset()->HasNonScalingStroke() &&
         aFlags.contains(SVGBBoxFlag::AvoidCycleIfNonScalingStroke));
 
+  Maybe<gfxMatrix> userToOuterSVG;
   SVGContentUtils::AutoStrokeOptions strokeOptions;
   if (getStroke) {
+    userToOuterSVG = SVGUtils::GetNonScalingStrokeTransform(this);
     SVGContentUtils::GetStrokeOptions(
         &strokeOptions, element, Style(), nullptr,
         SVGContentUtils::StrokeOptionFlag::IgnoreStrokeDashing);
@@ -406,71 +409,28 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
     strokeOptions.mLineWidth = 0.f;
   }
 
-  Rect simpleBounds;
-  bool gotSimpleBounds = false;
-  gfxMatrix userToOuterSVG;
-  if (getStroke &&
-      SVGUtils::GetNonScalingStrokeTransform(this, &userToOuterSVG)) {
-    Matrix moz2dUserToOuterSVG = ToMatrix(userToOuterSVG);
-    if (moz2dUserToOuterSVG.IsSingular()) {
-      return bbox;
-    }
-    gotSimpleBounds = element->GetGeometryBounds(
-        &simpleBounds, strokeOptions, aToBBoxUserspace, &moz2dUserToOuterSVG);
+  Maybe<Rect> simpleBounds;
+  if (getStroke && userToOuterSVG) {
+    Matrix m = ToMatrix(*userToOuterSVG);
+    simpleBounds =
+        element->GetGeometryBounds(strokeOptions, aToBBoxUserspace, &m);
   } else if (getFill || getStroke) {
-    gotSimpleBounds = element->GetGeometryBounds(&simpleBounds, strokeOptions,
-                                                 aToBBoxUserspace);
+    simpleBounds = element->GetGeometryBounds(strokeOptions, aToBBoxUserspace);
   }
 
-  if (gotSimpleBounds) {
-    bbox = simpleBounds;
+  if (simpleBounds) {
+    bbox = *simpleBounds;
   } else {
-    RefPtr<Path> pathInUserSpace;
-    const FillRule fillRule = SVGUtils::ToFillRule(
-        HasAnyStateBits(NS_STATE_SVG_CLIPPATH_CHILD) ? StyleSVG()->mClipRule
-                                                     : StyleSVG()->mFillRule);
-    if (getFill || getStroke) {
-      // Get the bounds using a Moz2D Path object (more expensive):
-      RefPtr<DrawTarget> tmpDT;
-      tmpDT = gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
-
-      pathInUserSpace = element->GetOrBuildPath(tmpDT, fillRule);
-      if (!pathInUserSpace) {
-        return bbox;
-      }
-    }
-    // Transforming the path into bbox space copies the whole path, so do it
-    // lazily: when both fill and stroke bounds are requested, the stroke
-    // bounds below are computed from pathInUserSpace and the transformed
-    // copy is only needed on the rare empty-stroke fallback.
-    auto getBoundsInBBoxSpace = [&]() -> Maybe<Rect> {
-      RefPtr<Path> pathInBBoxSpace;
-      if (aToBBoxUserspace.IsIdentity()) {
-        pathInBBoxSpace = pathInUserSpace;
-      } else {
-        RefPtr<PathBuilder> builder = pathInUserSpace->TransformedCopyToBuilder(
-            aToBBoxUserspace, fillRule);
-        pathInBBoxSpace = builder->Finish();
-        if (!pathInBBoxSpace) {
-          return Nothing();
-        }
-      }
-      Rect rect = pathInBBoxSpace->GetBounds();
-      return rect.IsFinite() ? Some(rect) : Nothing();
-    };
-
-    // Account for fill:
     if (getFill && !getStroke) {
-      Maybe<Rect> pathBBoxExtents = getBoundsInBBoxSpace();
+      Maybe<Rect> pathBBoxExtents = element->GetBounds(aToBBoxUserspace);
       if (!pathBBoxExtents) {
         // This can happen in the case that we only have a move-to command in
         // the path commands, in which case we know nothing gets rendered.
         return bbox;
       }
-      bbox = pathBBoxExtents.value();
+      bbox = *pathBBoxExtents;
     }
 
-    // Account for stroke:
     if (getStroke) {
       // Be careful when replacing the following logic to get the fill and
       // stroke extents independently.
@@ -484,46 +444,39 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
       // # If the stroke is very thin, cairo won't paint any stroke, and so the
       //   stroke bounds that it will return will be empty.
 
-      Rect strokeBBoxExtents;
+      Maybe<Rect> strokeBBoxExtents;
       if (StaticPrefs::svg_Moz2D_strokeBounds_enabled()) {
-        gfxMatrix userToOuterSVG;
-        if (SVGUtils::GetNonScalingStrokeTransform(this, &userToOuterSVG)) {
-          Matrix outerSVGToUser = ToMatrix(userToOuterSVG);
-          outerSVGToUser.Invert();
-          Matrix outerSVGToBBox = aToBBoxUserspace * outerSVGToUser;
-          RefPtr<PathBuilder> builder =
-              pathInUserSpace->TransformedCopyToBuilder(
-                  ToMatrix(userToOuterSVG));
-          RefPtr<Path> pathInOuterSVGSpace = builder->Finish();
-          if (!pathInOuterSVGSpace) {
-            return bbox;
-          }
-          strokeBBoxExtents = pathInOuterSVGSpace->GetStrokedBounds(
-              strokeOptions, outerSVGToBBox);
+        if (userToOuterSVG) {
+          Matrix m = ToMatrix(*userToOuterSVG);
+          Matrix outerSVGToBBox = aToBBoxUserspace * m.Inverse();
+          strokeBBoxExtents =
+              element->GetStrokedBounds(strokeOptions, m, outerSVGToBBox);
         } else {
-          strokeBBoxExtents = pathInUserSpace->GetStrokedBounds(
-              strokeOptions, aToBBoxUserspace);
+          strokeBBoxExtents = element->GetStrokedBounds(strokeOptions, Matrix(),
+                                                        aToBBoxUserspace);
         }
-        if (strokeBBoxExtents.IsEmpty() && getFill) {
-          Maybe<Rect> pathBBoxExtents = getBoundsInBBoxSpace();
-          if (!pathBBoxExtents) {
+        if (!strokeBBoxExtents) {
+          return bbox;
+        }
+        if (strokeBBoxExtents->IsEmpty() && getFill) {
+          strokeBBoxExtents = element->GetBounds(aToBBoxUserspace);
+          if (!strokeBBoxExtents) {
             return bbox;
           }
-          strokeBBoxExtents = pathBBoxExtents.value();
         }
       } else {
-        Maybe<Rect> pathBBoxExtents = getBoundsInBBoxSpace();
+        Maybe<Rect> pathBBoxExtents = element->GetBounds(aToBBoxUserspace);
         if (!pathBBoxExtents) {
           return bbox;
         }
-        strokeBBoxExtents = ToRect(SVGUtils::PathExtentsToMaxStrokeExtents(
-            ThebesRect(pathBBoxExtents.value()), this,
-            ThebesMatrix(aToBBoxUserspace)));
+        strokeBBoxExtents = Some(ToRect(SVGUtils::PathExtentsToMaxStrokeExtents(
+            ThebesRect(*pathBBoxExtents), this,
+            ThebesMatrix(aToBBoxUserspace))));
+        if (!strokeBBoxExtents->IsFinite()) {
+          return bbox;
+        }
       }
-      if (!strokeBBoxExtents.IsFinite()) {
-        return bbox;
-      }
-      bbox.UnionEdges(strokeBBoxExtents);
+      bbox.UnionEdges(*strokeBBoxExtents);
     }
   }
 
@@ -640,8 +593,8 @@ void SVGGeometryFrame::Render(gfxContext* aContext,
   if (aRenderComponents.contains(RenderFlag::Stroke) &&
       SVGUtils::HasStroke(this, contextPaint)) {
     // Account for vector-effect:non-scaling-stroke:
-    gfxMatrix userToOuterSVG;
-    if (SVGUtils::GetNonScalingStrokeTransform(this, &userToOuterSVG)) {
+    if (Maybe<gfxMatrix> userToOuterSVG =
+            SVGUtils::GetNonScalingStrokeTransform(this)) {
       // A simple Rect can't be transformed with rotate/skew, so let's switch
       // to using a real path:
       if (!path) {
@@ -654,10 +607,8 @@ void SVGGeometryFrame::Render(gfxContext* aContext,
       // We need to transform the path back into the appropriate ancestor
       // coordinate system, and paint it it that coordinate system, in order
       // for non-scaled stroke to paint correctly.
-      gfxMatrix outerSVGToUser = userToOuterSVG;
-      outerSVGToUser.Invert();
-      aContext->Multiply(outerSVGToUser);
-      Path::TransformAndSetFillRule(path, ToMatrix(userToOuterSVG), fillRule);
+      aContext->Multiply(userToOuterSVG->Inverse());
+      Path::TransformAndSetFillRule(path, ToMatrix(*userToOuterSVG), fillRule);
     }
     GeneralPattern strokePattern;
     SVGUtils::MakeStrokePatternFor(this, aContext, &strokePattern, aImgParams,
@@ -835,8 +786,8 @@ void SVGGeometryFrame::PaintMarkers(gfxContext& aContext,
 float SVGGeometryFrame::GetStrokeWidthForMarkers() {
   float strokeWidth = SVGUtils::GetStrokeWidth(
       this, SVGContextPaint::GetContextPaint(GetContent()));
-  gfxMatrix userToOuterSVG;
-  if (SVGUtils::GetNonScalingStrokeTransform(this, &userToOuterSVG)) {
+  if (Maybe<gfxMatrix> userToOuterSVG =
+          SVGUtils::GetNonScalingStrokeTransform(this)) {
     // We're not interested in any translation here so we can treat this as
     // Singular Value Decomposition (SVD) of a 2 x 2 matrix. That would give us
     // sx and sy values as the X and Y scales. The value we want is the XY
@@ -848,11 +799,10 @@ float SVGGeometryFrame::GetStrokeWidthForMarkers() {
     //
     // Note that this may need adjusting to support 3D transforms properly.
 
-    strokeWidth /= float(sqrt(userToOuterSVG._11 * userToOuterSVG._11 +
-                              userToOuterSVG._12 * userToOuterSVG._12 +
-                              userToOuterSVG._21 * userToOuterSVG._21 +
-                              userToOuterSVG._22 * userToOuterSVG._22) /
-                         M_SQRT2);
+    const gfxMatrix& m = *userToOuterSVG;
+    strokeWidth /= float(
+        sqrt(m._11 * m._11 + m._12 * m._12 + m._21 * m._21 + m._22 * m._22) /
+        M_SQRT2);
   }
   return strokeWidth;
 }

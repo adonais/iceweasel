@@ -31,13 +31,14 @@ class SimpleBrowserMenuHighlightableItemTest {
     @Test
     fun `GIVEN a simple item, WHEN we try to inflate it in the menu, THEN the item should be inflated`() {
         var onClickWasPress = false
-        val item = SimpleBrowserMenuHighlightableItem(
-            "label",
-            textColorResource = android.R.color.black,
-            backgroundTint = Color.RED,
-        ) {
-            onClickWasPress = true
-        }
+        val item =
+            SimpleBrowserMenuHighlightableItem(
+                "label",
+                textColorResource = android.R.color.black,
+                backgroundTint = Color.RED,
+            ) {
+                onClickWasPress = true
+            }
 
         val view = inflate(item)
         view.performClick()
@@ -48,12 +49,13 @@ class SimpleBrowserMenuHighlightableItemTest {
     @Test
     fun `GIVEN a simple item, WHEN we inflate it, THEN it should be visible by default`() {
         val listener = {}
-        val item = SimpleBrowserMenuHighlightableItem(
-            label = "label",
-            textColorResource = android.R.color.black,
-            backgroundTint = Color.RED,
-            listener = listener,
-        )
+        val item =
+            SimpleBrowserMenuHighlightableItem(
+                label = "label",
+                textColorResource = android.R.color.black,
+                backgroundTint = Color.RED,
+                listener = listener,
+            )
 
         assertTrue(item.visible())
     }
@@ -62,13 +64,14 @@ class SimpleBrowserMenuHighlightableItemTest {
     fun `GIVEN a simple item, WHEN clicking bound view, THEN callback is invoked and the menu dismissed`() {
         var callbackInvoked = false
 
-        val item = SimpleBrowserMenuHighlightableItem(
-            label = "label",
-            textColorResource = android.R.color.black,
-            backgroundTint = Color.RED,
-        ) {
-            callbackInvoked = true
-        }
+        val item =
+            SimpleBrowserMenuHighlightableItem(
+                label = "label",
+                textColorResource = android.R.color.black,
+                backgroundTint = Color.RED,
+            ) {
+                callbackInvoked = true
+            }
 
         val menu = mock(BrowserMenu::class.java)
         val view = TextView(testContext)
@@ -84,14 +87,15 @@ class SimpleBrowserMenuHighlightableItemTest {
     @Test
     fun `GIVEN a simple item, WHEN we inflate it, THEN it should have the right properties`() {
         val listener = {}
-        val item = SimpleBrowserMenuHighlightableItem(
-            label = "label",
-            textSize = 10f,
-            textColorResource = android.R.color.black,
-            backgroundTint = Color.RED,
-            isHighlighted = { false },
-            listener = listener,
-        )
+        val item =
+            SimpleBrowserMenuHighlightableItem(
+                label = "label",
+                textSize = 10f,
+                textColorResource = android.R.color.black,
+                backgroundTint = Color.RED,
+                isHighlighted = { false },
+                listener = listener,
+            )
 
         var view = inflate(item)
         var textView = view.findViewById<TextView>(R.id.simple_text)
@@ -100,14 +104,15 @@ class SimpleBrowserMenuHighlightableItemTest {
         assertEquals(textView.textSize, 10f)
         assertEquals(textView.currentTextColor, testContext.getColor(android.R.color.black))
 
-        val highlightedItem = SimpleBrowserMenuHighlightableItem(
-            label = "label",
-            textSize = 10f,
-            textColorResource = android.R.color.black,
-            backgroundTint = Color.RED,
-            isHighlighted = { true },
-            listener = listener,
-        )
+        val highlightedItem =
+            SimpleBrowserMenuHighlightableItem(
+                label = "label",
+                textSize = 10f,
+                textColorResource = android.R.color.black,
+                backgroundTint = Color.RED,
+                isHighlighted = { true },
+                listener = listener,
+            )
 
         view = inflate(highlightedItem)
         textView = view.findViewById(R.id.simple_text)
@@ -122,20 +127,19 @@ class SimpleBrowserMenuHighlightableItemTest {
     fun `GIVEN a simple item, WHEN it converts to candidate, THEN it should have the correct properties`() {
         val listener = {}
         val shouldHighlight = false
-        val item = SimpleBrowserMenuHighlightableItem(
-            label = "label",
-            textColorResource = android.R.color.black,
-            backgroundTint = Color.RED,
-            isHighlighted = { shouldHighlight },
-            listener = listener,
-        )
+        val item =
+            SimpleBrowserMenuHighlightableItem(
+                label = "label",
+                textColorResource = android.R.color.black,
+                backgroundTint = Color.RED,
+                isHighlighted = { shouldHighlight },
+                listener = listener,
+            )
 
         assertEquals(
             TextMenuCandidate(
                 "label",
-                textStyle = TextStyle(
-                    color = ContextCompat.getColor(testContext, android.R.color.black),
-                ),
+                textStyle = TextStyle(color = ContextCompat.getColor(testContext, android.R.color.black)),
                 containerStyle = ContainerStyle(true),
                 onClick = listener,
             ),

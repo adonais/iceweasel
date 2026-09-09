@@ -6,6 +6,7 @@ package org.mozilla.fenix.components.menu
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.TabSessionState
@@ -26,7 +27,6 @@ import org.mozilla.fenix.components.menu.store.SummarizationMenuState
 import org.mozilla.fenix.components.menu.store.WebExtensionMenuItem
 import org.mozilla.fenix.components.menu.store.copyWithBrowserMenuState
 import org.mozilla.fenix.components.menu.store.copyWithExtensionMenuState
-import kotlin.test.assertNotNull
 
 class MenuStoreTest {
 
@@ -41,10 +41,11 @@ class MenuStoreTest {
             next(action)
         }
 
-        val store = MenuStore(
-            initialState = MenuState(),
-            middleware = listOf(testMiddleware),
-        )
+        val store =
+            MenuStore(
+                initialState = MenuState(),
+                middleware = listOf(testMiddleware),
+            )
 
         assertTrue(initActionObserved)
         assertNull(store.state.browserMenuState)
@@ -52,76 +53,61 @@ class MenuStoreTest {
 
     @Test
     fun `WHEN the selected tab is an internet URL THEN the WebCompat reporter should be enabled`() {
-        val selectedTab = TabSessionState(
-            id = "tabId1",
-            content = ContentState(
-                url = "www.mozilla.com",
-            ),
-        )
-        val state = MenuState(
-            browserMenuState = BrowserMenuState(
-                selectedTab = selectedTab,
-            ),
-        )
+        val selectedTab =
+            TabSessionState(
+                id = "tabId1",
+                content = ContentState(url = "www.mozilla.com"),
+            )
+        val state = MenuState(browserMenuState = BrowserMenuState(selectedTab = selectedTab))
 
         assertTrue(state.isWebCompatEnabled)
     }
 
     @Test
     fun `WHEN the selected tab is a content URL THEN the WebCompat reporter should be disabled`() {
-        val selectedTab = TabSessionState(
-            id = "tabId1",
-            content = ContentState(
-                url = "content://pdf.pdf",
-            ),
-        )
-        val state = MenuState(
-            browserMenuState = BrowserMenuState(
-                selectedTab = selectedTab,
-            ),
-        )
+        val selectedTab =
+            TabSessionState(
+                id = "tabId1",
+                content = ContentState(url = "content://pdf.pdf"),
+            )
+        val state = MenuState(browserMenuState = BrowserMenuState(selectedTab = selectedTab))
 
         assertFalse(state.isWebCompatEnabled)
     }
 
     @Test
     fun `WHEN the selected tab is an about URL THEN the WebCompat reporter should be disabled`() {
-        val selectedTab = TabSessionState(
-            id = "tabId1",
-            content = ContentState(
-                url = "about:about",
-            ),
-        )
-        val state = MenuState(
-            browserMenuState = BrowserMenuState(
-                selectedTab = selectedTab,
-            ),
-        )
+        val selectedTab =
+            TabSessionState(
+                id = "tabId1",
+                content = ContentState(url = "about:about"),
+            )
+        val state = MenuState(browserMenuState = BrowserMenuState(selectedTab = selectedTab))
 
         assertFalse(state.isWebCompatEnabled)
     }
 
     @Test
     fun `GIVEN a browser menu state update WHEN copying the browser menu state THEN return the updated browser menu state`() {
-        val selectedTab = TabSessionState(
-            id = "tabId1",
-            content = ContentState(
-                url = "www.mozilla.com",
-            ),
-        )
-        val firefoxTab = TabSessionState(
-            id = "tabId2",
-            content = ContentState(
-                url = "www.firefox.com",
-            ),
-        )
-        val state = MenuState(
-            browserMenuState = BrowserMenuState(
-                selectedTab = selectedTab,
-                bookmarkState = BookmarkState(),
-                isPinned = false,
-            ),
-        )
+        val selectedTab =
+            TabSessionState(
+                id = "tabId1",
+                content = ContentState(url = "www.mozilla.com"),
+            )
+        val firefoxTab =
+            TabSessionState(
+                id = "tabId2",
+                content = ContentState(url = "www.firefox.com"),
+            )
+        val state =
+            MenuState(
+                browserMenuState =
+                    BrowserMenuState(
+                        selectedTab = selectedTab,
+                        bookmarkState = BookmarkState(),
+                        isPinned = false,
+                    )
+            )
 
         assertEquals(selectedTab, state.browserMenuState!!.selectedTab)
         assertNull(state.browserMenuState.bookmarkState.guid)
@@ -165,17 +151,18 @@ class MenuStoreTest {
 
     @Test
     fun `WHEN add bookmark action is dispatched THEN state is not updated`() = runTest {
-        val initialState = MenuState(
-            browserMenuState = BrowserMenuState(
-                selectedTab = TabSessionState(
-                    id = "tabId",
-                    content = ContentState(
-                        url = "www.google.com",
-                    ),
-                ),
-                bookmarkState = BookmarkState(),
-            ),
-        )
+        val initialState =
+            MenuState(
+                browserMenuState =
+                    BrowserMenuState(
+                        selectedTab =
+                            TabSessionState(
+                                id = "tabId",
+                                content = ContentState(url = "www.google.com"),
+                            ),
+                        bookmarkState = BookmarkState(),
+                    )
+            )
         val store = MenuStore(initialState = initialState)
 
         store.dispatch(MenuAction.AddBookmark)
@@ -185,27 +172,29 @@ class MenuStoreTest {
 
     @Test
     fun `WHEN update bookmark state action is dispatched THEN bookmark state is updated`() = runTest {
-        val initialState = MenuState(
-            browserMenuState = BrowserMenuState(
-                selectedTab = TabSessionState(
-                    id = "tabId",
-                    content = ContentState(
-                        url = "www.google.com",
-                    ),
-                ),
-                bookmarkState = BookmarkState(),
-            ),
-        )
+        val initialState =
+            MenuState(
+                browserMenuState =
+                    BrowserMenuState(
+                        selectedTab =
+                            TabSessionState(
+                                id = "tabId",
+                                content = ContentState(url = "www.google.com"),
+                            ),
+                        bookmarkState = BookmarkState(),
+                    )
+            )
         val store = MenuStore(initialState = initialState)
 
         assertNotNull(store.state.browserMenuState)
         assertNull(store.state.browserMenuState!!.bookmarkState.guid)
         assertFalse(store.state.browserMenuState!!.bookmarkState.isBookmarked)
 
-        val newBookmarkState = BookmarkState(
-            guid = "id1",
-            isBookmarked = true,
-        )
+        val newBookmarkState =
+            BookmarkState(
+                guid = "id1",
+                isBookmarked = true,
+            )
         store.dispatch(MenuAction.UpdateBookmarkState(bookmarkState = newBookmarkState))
 
         assertEquals(newBookmarkState, store.state.browserMenuState!!.bookmarkState)
@@ -213,17 +202,18 @@ class MenuStoreTest {
 
     @Test
     fun `WHEN add shortcut action is dispatched THEN state is not updated`() = runTest {
-        val initialState = MenuState(
-            browserMenuState = BrowserMenuState(
-                selectedTab = TabSessionState(
-                    id = "tabId",
-                    content = ContentState(
-                        url = "www.google.com",
-                    ),
-                ),
-                isPinned = false,
-            ),
-        )
+        val initialState =
+            MenuState(
+                browserMenuState =
+                    BrowserMenuState(
+                        selectedTab =
+                            TabSessionState(
+                                id = "tabId",
+                                content = ContentState(url = "www.google.com"),
+                            ),
+                        isPinned = false,
+                    )
+            )
         val store = MenuStore(initialState = initialState)
 
         store.dispatch(MenuAction.AddShortcut)
@@ -233,17 +223,18 @@ class MenuStoreTest {
 
     @Test
     fun `WHEN remove shortcut action is dispatched THEN state is not updated`() = runTest {
-        val initialState = MenuState(
-            browserMenuState = BrowserMenuState(
-                selectedTab = TabSessionState(
-                    id = "tabId",
-                    content = ContentState(
-                        url = "www.google.com",
-                    ),
-                ),
-                isPinned = false,
-            ),
-        )
+        val initialState =
+            MenuState(
+                browserMenuState =
+                    BrowserMenuState(
+                        selectedTab =
+                            TabSessionState(
+                                id = "tabId",
+                                content = ContentState(url = "www.google.com"),
+                            ),
+                        isPinned = false,
+                    )
+            )
         val store = MenuStore(initialState = initialState)
 
         store.dispatch(MenuAction.RemoveShortcut)
@@ -253,17 +244,18 @@ class MenuStoreTest {
 
     @Test
     fun `WHEN update shortcut state action is dispatched THEN pinned state is updated`() = runTest {
-        val initialState = MenuState(
-            browserMenuState = BrowserMenuState(
-                selectedTab = TabSessionState(
-                    id = "tabId",
-                    content = ContentState(
-                        url = "www.google.com",
-                    ),
-                ),
-                isPinned = false,
-            ),
-        )
+        val initialState =
+            MenuState(
+                browserMenuState =
+                    BrowserMenuState(
+                        selectedTab =
+                            TabSessionState(
+                                id = "tabId",
+                                content = ContentState(url = "www.google.com"),
+                            ),
+                        isPinned = false,
+                    )
+            )
         val store = MenuStore(initialState = initialState)
 
         assertNotNull(store.state.browserMenuState)
@@ -317,67 +309,72 @@ class MenuStoreTest {
     }
 
     @Test
-    fun `WHEN addon installation is in progress action is dispatched THEN extension state is updated`() =
-        runTest {
-            val addon = Addon(id = "ext1")
-            val store = MenuStore(initialState = MenuState())
+    fun `WHEN addon installation is in progress action is dispatched THEN extension state is updated`() = runTest {
+        val addon = Addon(id = "ext1")
+        val store = MenuStore(initialState = MenuState())
 
-            store.dispatch(MenuAction.UpdateInstallAddonInProgress(addon))
+        store.dispatch(MenuAction.UpdateInstallAddonInProgress(addon))
 
-            assertEquals(addon, store.state.extensionMenuState.addonInstallationInProgress)
-        }
+        assertEquals(addon, store.state.extensionMenuState.addonInstallationInProgress)
+    }
 
     @Test
-    fun `WHEN addon installation with success action is dispatched THEN extension state is updated`() =
-        runTest {
-            val addon = Addon(id = "ext1")
-            val addonTwo = Addon(id = "ext2")
-            val store = MenuStore(
-                initialState = MenuState(
-                    extensionMenuState = ExtensionMenuState(
-                        recommendedAddons = listOf(
-                            addon,
-                            addonTwo,
-                        ),
-                    ),
-                ),
+    fun `WHEN addon installation with success action is dispatched THEN extension state is updated`() = runTest {
+        val addon = Addon(id = "ext1")
+        val addonTwo = Addon(id = "ext2")
+        val store =
+            MenuStore(
+                initialState =
+                    MenuState(
+                        extensionMenuState =
+                            ExtensionMenuState(
+                                recommendedAddons =
+                                    listOf(
+                                        addon,
+                                        addonTwo,
+                                    )
+                            )
+                    )
             )
 
-            store.dispatch(MenuAction.InstallAddonSuccess(addon))
+        store.dispatch(MenuAction.InstallAddonSuccess(addon))
 
-            assertEquals(null, store.state.extensionMenuState.addonInstallationInProgress)
-            assertEquals(1, store.state.extensionMenuState.recommendedAddons.size)
-            assertEquals(1, store.state.extensionMenuState.availableAddons.size)
-        }
+        assertEquals(null, store.state.extensionMenuState.addonInstallationInProgress)
+        assertEquals(1, store.state.extensionMenuState.recommendedAddons.size)
+        assertEquals(1, store.state.extensionMenuState.availableAddons.size)
+    }
 
     @Test
-    fun `WHEN addon installation failed action is dispatched THEN extension state is updated`() =
-        runTest {
-            val addon = Addon(id = "ext1")
-            val addonTwo = Addon(id = "ext2")
-            val store = MenuStore(
-                initialState = MenuState(
-                    extensionMenuState = ExtensionMenuState(
-                        recommendedAddons = listOf(
-                            addon,
-                            addonTwo,
-                        ),
-                    ),
-                ),
+    fun `WHEN addon installation failed action is dispatched THEN extension state is updated`() = runTest {
+        val addon = Addon(id = "ext1")
+        val addonTwo = Addon(id = "ext2")
+        val store =
+            MenuStore(
+                initialState =
+                    MenuState(
+                        extensionMenuState =
+                            ExtensionMenuState(
+                                recommendedAddons =
+                                    listOf(
+                                        addon,
+                                        addonTwo,
+                                    )
+                            )
+                    )
             )
 
-            store.dispatch(MenuAction.InstallAddonFailed(addon))
+        store.dispatch(MenuAction.InstallAddonFailed(addon))
 
-            assertEquals(null, store.state.extensionMenuState.addonInstallationInProgress)
-            assertEquals(2, store.state.extensionMenuState.recommendedAddons.size)
-        }
+        assertEquals(null, store.state.extensionMenuState.addonInstallationInProgress)
+        assertEquals(2, store.state.extensionMenuState.recommendedAddons.size)
+    }
 
     @Test
-    fun `WHEN update browser web extension menu items is dispatched THEN extension state is updated`() =
-        runTest {
-            val initialState = MenuState()
-            val store = MenuStore(initialState = initialState)
-            val webExtensionMenuItemList = listOf(
+    fun `WHEN update browser web extension menu items is dispatched THEN extension state is updated`() = runTest {
+        val initialState = MenuState()
+        val store = MenuStore(initialState = initialState)
+        val webExtensionMenuItemList =
+            listOf(
                 WebExtensionMenuItem(
                     id = "id",
                     label = "label",
@@ -386,28 +383,28 @@ class MenuStoreTest {
                     badgeText = "1",
                     badgeTextColor = Color.White.toArgb(),
                     badgeBackgroundColor = Color.Gray.toArgb(),
-                    onClick = {
-                    },
-                ),
+                    onClick = {},
+                )
             )
-            store.dispatch(MenuAction.UpdateWebExtensionBrowserMenuItems(webExtensionMenuItemList))
+        store.dispatch(MenuAction.UpdateWebExtensionBrowserMenuItems(webExtensionMenuItemList))
 
-            assertEquals(
-                store.state.extensionMenuState.browserWebExtensionMenuItem,
-                webExtensionMenuItemList,
-            )
-        }
+        assertEquals(
+            store.state.extensionMenuState.browserWebExtensionMenuItem,
+            webExtensionMenuItemList,
+        )
+    }
 
     @Test
     fun `WHEN initialize summarizer state action is received, THEN the summarize page state is updated`() = runTest {
         val initialState = MenuState()
         val store = MenuStore(initialState = initialState)
 
-        val newState = SummarizationMenuState.Default.copy(
-            visible = true,
-            highlighted = true,
-            showNewFeatureBadge = true,
-        )
+        val newState =
+            SummarizationMenuState.Default.copy(
+                visible = true,
+                highlighted = true,
+                showNewFeatureBadge = true,
+            )
         store.dispatch(MenuAction.InitializeSummarizationMenuState(newState))
 
         assertEquals(
@@ -420,9 +417,7 @@ class MenuStoreTest {
     @Test
     fun `GIVEN more menu is expanded, WHEN the OnMoreMenuClicked action is received, THEN the menu is not expanded`() =
         runTest {
-            val initialState = MenuState(
-                isMoreMenuExpanded = true,
-            )
+            val initialState = MenuState(isMoreMenuExpanded = true)
             val store = MenuStore(initialState = initialState)
 
             store.dispatch(MenuAction.OnMoreMenuClicked)
@@ -436,9 +431,7 @@ class MenuStoreTest {
     @Test
     fun `GIVEN more menu is not expanded, WHEN the OnMoreMenuClicked action is received, THEN the menu is expanded`() =
         runTest {
-            val initialState = MenuState(
-                isMoreMenuExpanded = false,
-            )
+            val initialState = MenuState(isMoreMenuExpanded = false)
             val store = MenuStore(initialState = initialState)
 
             store.dispatch(MenuAction.OnMoreMenuClicked)

@@ -21,11 +21,16 @@
  * in place for that class */
 typedef enum {
     SFTKFIPSNone = 0,
-    SFTKFIPSDH,   /* allow only specific primes */
-    SFTKFIPSECC,  /* not just keys but specific curves */
-    SFTKFIPSAEAD, /* single shot AEAD functions not allowed in FIPS mode */
-    SFTKFIPSRSAPSS,
-    SFTKFIPSTlsKeyCheck
+    SFTKFIPSDH,           /* allow only specific primes */
+    SFTKFIPSECC,          /* not just keys but specific curves */
+    SFTKFIPSAEAD,         /* single shot AEAD functions not allowed in FIPS mode */
+    SFTKFIPSRSAPSS,       /* make sure salt isn't too big */
+    SFTKFIPSPBKDF2,       /* handle pbkdf2 FIPS restrictions */
+    SFTKFIPSTlsKeyCheck,  /* check the output of TLS prf functions */
+    SFTKFIPSChkHash,      /* make sure the base hash of KDF functions is FIPS */
+    SFTKFIPSChkHashTls,   /* make sure the base hash of TLS KDF functions is FIPS */
+    SFTKFIPSChkHashSp800, /* make sure the base hash of SP-800-108 KDF functions is FIPS */
+    SFTKFIPSRSAOAEP,      /* make sure that both hashes use the same FIPS compliant algorithm */
 } SFTKFIPSSpecialClass;
 
 typedef struct SFTKFIPSAlgorithmListStr SFTKFIPSAlgorithmList;
@@ -34,6 +39,7 @@ struct SFTKFIPSAlgorithmListStr {
     CK_MECHANISM_INFO info;
     CK_ULONG step;
     SFTKFIPSSpecialClass special;
+    size_t offset;
 };
 /* this file should be supplied by the vendor and include all the
  * algorithms which have Algorithm certs and have been reviewed by
@@ -42,6 +48,10 @@ struct SFTKFIPSAlgorithmListStr {
  * return PR_FALSE
  */
 #include "fips_algorithms.h"
+
+#ifndef SFTKFIPS_PBKDF2_MIN_PW_LEN /* allow fips_algorithms.h to override */
+#define SFTKFIPS_PBKDF2_MIN_PW_LEN 8
+#endif
 #define NSS_HAS_FIPS_INDICATORS 1
 #endif
 
@@ -1646,6 +1656,13 @@ static const CK_ATTRIBUTE_TYPE mldsaPubKeyAttrs[] = {
 };
 static const CK_ULONG mldsaPubKeyAttrsCount = PR_ARRAY_SIZE(mldsaPubKeyAttrs);
 
+/* the vendor ML-KEM key types carry CKA_NSS_PARAMETER_SET rather than
+ * CKA_PARAMETER_SET; list both and let the missing one be skipped */
+static const CK_ATTRIBUTE_TYPE mlkemPubKeyAttrs[] = {
+    CKA_PARAMETER_SET, CKA_NSS_PARAMETER_SET, CKA_VALUE
+};
+static const CK_ULONG mlkemPubKeyAttrsCount = PR_ARRAY_SIZE(mlkemPubKeyAttrs);
+
 static const CK_ATTRIBUTE_TYPE commonPrivKeyAttrs[] = {
     CKA_DECRYPT, CKA_SIGN, CKA_SIGN_RECOVER, CKA_UNWRAP, CKA_SUBJECT,
     CKA_SENSITIVE, CKA_EXTRACTABLE, CKA_NSS_DB, CKA_PUBLIC_KEY_INFO
@@ -1681,6 +1698,11 @@ static const CK_ATTRIBUTE_TYPE mldsaPrivKeyAttrs[] = {
     CKA_PARAMETER_SET, CKA_VALUE, CKA_SEED
 };
 static const CK_ULONG mldsaPrivKeyAttrsCount = PR_ARRAY_SIZE(mldsaPrivKeyAttrs);
+
+static const CK_ATTRIBUTE_TYPE mlkemPrivKeyAttrs[] = {
+    CKA_PARAMETER_SET, CKA_NSS_PARAMETER_SET, CKA_VALUE, CKA_SEED
+};
+static const CK_ULONG mlkemPrivKeyAttrsCount = PR_ARRAY_SIZE(mlkemPrivKeyAttrs);
 
 static const CK_ATTRIBUTE_TYPE certAttrs[] = {
     CKA_CERTIFICATE_TYPE, CKA_VALUE, CKA_SUBJECT, CKA_ISSUER, CKA_SERIAL_NUMBER
@@ -1795,6 +1817,14 @@ stfk_CopyTokenPrivateKey(SFTKObject *destObject, SFTKTokenObject *src_to)
             crv = stfk_CopyTokenAttributes(destObject, src_to, mldsaPrivKeyAttrs,
                                            mldsaPrivKeyAttrsCount);
             break;
+#ifndef NSS_DISABLE_KYBER
+        case CKK_NSS_KYBER:
+#endif
+        case CKK_NSS_ML_KEM:
+        case CKK_ML_KEM:
+            crv = stfk_CopyTokenAttributes(destObject, src_to, mlkemPrivKeyAttrs,
+                                           mlkemPrivKeyAttrsCount);
+            break;
         case CKK_DH:
             crv = stfk_CopyTokenAttributes(destObject, src_to, dhPrivKeyAttrs,
                                            dhPrivKeyAttrsCount);
@@ -1858,6 +1888,14 @@ stfk_CopyTokenPublicKey(SFTKObject *destObject, SFTKTokenObject *src_to)
         case CKK_ML_DSA:
             crv = stfk_CopyTokenAttributes(destObject, src_to, mldsaPubKeyAttrs,
                                            mldsaPubKeyAttrsCount);
+            break;
+#ifndef NSS_DISABLE_KYBER
+        case CKK_NSS_KYBER:
+#endif
+        case CKK_NSS_ML_KEM:
+        case CKK_ML_KEM:
+            crv = stfk_CopyTokenAttributes(destObject, src_to, mlkemPubKeyAttrs,
+                                           mlkemPubKeyAttrsCount);
             break;
         case CKK_DH:
             crv = stfk_CopyTokenAttributes(destObject, src_to, dhPubKeyAttrs,
@@ -2253,12 +2291,15 @@ sftk_ClearSession(SFTKSession *session)
     PR_DestroyLock(session->objectLock);
     if (session->enc_context) {
         sftk_FreeContext(session->enc_context);
+        session->enc_context = NULL;
     }
     if (session->hash_context) {
         sftk_FreeContext(session->hash_context);
+        session->hash_context = NULL;
     }
     if (session->search) {
         sftk_FreeSearch(session->search);
+        session->search = NULL;
     }
 }
 
@@ -2749,6 +2790,28 @@ sftk_checkKeyLength(CK_ULONG keyLength, CK_ULONG min,
     return PR_TRUE;
 }
 
+PRBool
+sftk_checkFIPSHash(CK_MECHANISM_TYPE hash, PRBool allowSmall, PRBool allowCMAC)
+{
+    switch (hash) {
+        case CKM_AES_CMAC:
+            return allowCMAC;
+        case CKM_SHA_1:
+        case CKM_SHA_1_HMAC:
+        case CKM_SHA224:
+        case CKM_SHA224_HMAC:
+            return allowSmall;
+        case CKM_SHA256:
+        case CKM_SHA256_HMAC:
+        case CKM_SHA384:
+        case CKM_SHA384_HMAC:
+        case CKM_SHA512:
+        case CKM_SHA512_HMAC:
+            return PR_TRUE;
+    }
+    return PR_FALSE;
+}
+
 /*
  * handle specialized FIPS semantics that are too complicated to
  * handle with just a table. NOTE: this means any additional semantics
@@ -2758,6 +2821,8 @@ sftk_handleSpecial(SFTKSlot *slot, CK_MECHANISM *mech,
                    SFTKFIPSAlgorithmList *mechInfo, SFTKObject *source,
                    CK_ULONG keyLength, CK_ULONG targetKeyLength)
 {
+    PRBool allowSmall = PR_FALSE;
+    PRBool allowCMAC = PR_FALSE;
     switch (mechInfo->special) {
         case SFTKFIPSDH: {
             SECItem dhPrime;
@@ -2827,8 +2892,70 @@ sftk_handleSpecial(SFTKSlot *slot, CK_MECHANISM *mech,
             }
             return PR_TRUE;
         }
+        case SFTKFIPSPBKDF2: {
+            /* from NIST SP 800-132
+             * PBKDF2 must have the following addition restrictions
+             * (independent of keysize).
+             *    1. iteration count must be at least 1000.
+             *    2. salt must be at least 128 bits (16 bytes).
+             *    3. password must match the length specified in the SP
+             */
+            CK_PKCS5_PBKD2_PARAMS2 *pbkdf2 = (CK_PKCS5_PBKD2_PARAMS2 *)
+                                                 mech->pParameter;
+            if (mech->ulParameterLen != sizeof(*pbkdf2)) {
+                return PR_FALSE;
+            }
+            if (pbkdf2 == NULL) {
+                return PR_FALSE;
+            }
+            if (pbkdf2->iterations < 1000) {
+                return PR_FALSE;
+            }
+            if (pbkdf2->ulSaltSourceDataLen < 16) {
+                return PR_FALSE;
+            }
+            if (pbkdf2->ulPasswordLen < SFTKFIPS_PBKDF2_MIN_PW_LEN) {
+                return PR_FALSE;
+            }
+            return PR_TRUE;
+        }
+        /* check the hash mechanisms to make sure they themselves are FIPS */
+        case SFTKFIPSChkHashSp800:
+            allowCMAC = PR_TRUE;
+            /* fallthrough... will pick up allowSmall as well */
+        case SFTKFIPSChkHash:
+            allowSmall = PR_TRUE;
+            /* fallthrough */
+        case SFTKFIPSChkHashTls:
+            if (mech->ulParameterLen < mechInfo->offset + sizeof(CK_ULONG)) {
+                return PR_FALSE;
+            }
+            return sftk_checkFIPSHash(*(CK_MECHANISM_TYPE *)(((char *)mech->pParameter) + mechInfo->offset),
+                                      allowSmall, allowCMAC);
         case SFTKFIPSTlsKeyCheck:
+            if (mech->mechanism != CKM_NSS_TLS_KEY_AND_MAC_DERIVE_SHA256) {
+                /* unless the mechnism has a built-in hash, check the hash */
+                if (mech->ulParameterLen < mechInfo->offset + sizeof(CK_ULONG)) {
+                    return PR_FALSE;
+                }
+                if (!sftk_checkFIPSHash(*(CK_MECHANISM_TYPE *)(((char *)mech->pParameter) + mechInfo->offset),
+                                        PR_FALSE, PR_FALSE)) {
+                    return PR_FALSE;
+                }
+            }
             return sftk_checkKeyLength(targetKeyLength, 112, 512, 1);
+        case SFTKFIPSRSAOAEP: {
+            CK_RSA_PKCS_OAEP_PARAMS *rsaoaep = (CK_RSA_PKCS_OAEP_PARAMS *)
+                                                   mech->pParameter;
+
+            HASH_HashType hash_msg = sftk_GetHashTypeFromMechanism(rsaoaep->hashAlg);
+            HASH_HashType hash_pad = sftk_GetHashTypeFromMechanism(rsaoaep->mgf);
+            /* message hash and mask generation function must be the same */
+            if (hash_pad != hash_msg)
+                return PR_FALSE;
+
+            return sftk_checkFIPSHash(rsaoaep->hashAlg, PR_FALSE, PR_FALSE);
+        }
         default:
             break;
     }

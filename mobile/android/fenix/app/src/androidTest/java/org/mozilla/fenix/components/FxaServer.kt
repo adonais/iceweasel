@@ -8,10 +8,7 @@ import android.content.Context
 import mozilla.appservices.fxaclient.FxaConfig
 import mozilla.appservices.fxaclient.FxaServer
 
-/**
- * Utility to configure Firefox Account stage servers.
- */
-
+/** Utility to configure Firefox Account stage servers. */
 object FxaServer {
     private const val CLIENT_ID = "a2270f727f45f648"
     private const val REDIRECT_URL = "urn:ietf:wg:oauth:2.0:oob:oauth-redirect-webchannel"

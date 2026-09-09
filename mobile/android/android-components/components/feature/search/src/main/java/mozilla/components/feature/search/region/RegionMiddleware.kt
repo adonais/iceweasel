@@ -21,20 +21,15 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import mozilla.components.service.location.LocationService
 
-/**
- * [Middleware] implementation for updating the [RegionState] using the provided [LocationService].
- */
+/** [Middleware] implementation for updating the [RegionState] using the provided [LocationService]. */
 class RegionMiddleware(
     context: Context,
     locationService: LocationService,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : Middleware<BrowserState, BrowserAction> {
-    @VisibleForTesting
-    internal var regionManager = RegionManager(context, locationService, dispatcher = ioDispatcher)
+    @VisibleForTesting internal var regionManager = RegionManager(context, locationService, dispatcher = ioDispatcher)
 
-    @VisibleForTesting
-    @Volatile
-    internal var updateJob: Job? = null
+    @VisibleForTesting @Volatile internal var updateJob: Job? = null
 
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,
@@ -56,22 +51,23 @@ class RegionMiddleware(
     private fun determineRegion(
         store: Store<BrowserState, BrowserAction>,
         newDistributionId: String? = null,
-    ) = GlobalScope.launch(ioDispatcher) {
-        // Get the region state from the RegionManager. If there's none then dispatch the default
-        // region to be used.
-        val distributionId = newDistributionId ?: store.state.distributionId
-        val region = regionManager.region()
-        if (region != null) {
-            store.dispatch(SearchAction.SetRegionAction(region, distributionId))
-        } else {
-            store.dispatch(SearchAction.SetRegionAction(RegionState.Default, distributionId))
-        }
+    ) =
+        GlobalScope.launch(ioDispatcher) {
+            // Get the region state from the RegionManager. If there's none then dispatch the default
+            // region to be used.
+            val distributionId = newDistributionId ?: store.state.distributionId
+            val region = regionManager.region()
+            if (region != null) {
+                store.dispatch(SearchAction.SetRegionAction(region, distributionId))
+            } else {
+                store.dispatch(SearchAction.SetRegionAction(RegionState.Default, distributionId))
+            }
 
-        // Ask the RegionManager to perform an update. If the "home" region changed then it will
-        // return a new RegionState.
-        val update = regionManager.update()
-        if (update != null) {
-            store.dispatch(SearchAction.SetRegionAction(update, distributionId))
+            // Ask the RegionManager to perform an update. If the "home" region changed then it will
+            // return a new RegionState.
+            val update = regionManager.update()
+            if (update != null) {
+                store.dispatch(SearchAction.SetRegionAction(update, distributionId))
+            }
         }
-    }
 }

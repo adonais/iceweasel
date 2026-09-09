@@ -29,68 +29,63 @@ import org.mozilla.focus.state.AppStore
 class BrowserMenuControllerTest {
     private lateinit var browserMenuController: BrowserMenuController
 
-    @Mock
-    private lateinit var sessionUseCases: SessionUseCases
+    @Mock private lateinit var sessionUseCases: SessionUseCases
 
-    @Mock
-    private lateinit var appStore: AppStore
+    @Mock private lateinit var appStore: AppStore
 
-    @Mock
-    private lateinit var topSitesUseCases: TopSitesUseCases
+    @Mock private lateinit var topSitesUseCases: TopSitesUseCases
 
     private val currentTabId: String = "1"
     private val selectedTab = createTab("https://www.mozilla.org", id = "1")
     private val shareCallback: () -> Unit = {}
 
-    @Mock
-    private lateinit var requestDesktopCallback: (isChecked: Boolean) -> Unit
+    @Mock private lateinit var requestDesktopCallback: (isChecked: Boolean) -> Unit
 
-    @Mock
-    private lateinit var addToHomeScreenCallback: () -> Unit
+    @Mock private lateinit var addToHomeScreenCallback: () -> Unit
 
-    @Mock
-    private lateinit var showFindInPageCallback: () -> Unit
+    @Mock private lateinit var showFindInPageCallback: () -> Unit
 
-    @Mock
-    private lateinit var openInCallback: () -> Unit
+    @Mock private lateinit var openInCallback: () -> Unit
 
     // NB: we should avoid mocking lambdas..
-    @Mock
-    private lateinit var openInBrowser: () -> Unit
+    @Mock private lateinit var openInBrowser: () -> Unit
 
-    @Mock
-    private lateinit var showShortcutAddedSnackBar: () -> Unit
+    @Mock private lateinit var showShortcutAddedSnackBar: () -> Unit
 
     @Before
     fun setup() {
-        val store = BrowserStore(
-            initialState = BrowserState(
-                tabs = listOf(selectedTab),
-                selectedTabId = selectedTab.id,
-            ),
-        )
+        val store =
+            BrowserStore(
+                initialState =
+                    BrowserState(
+                        tabs = listOf(selectedTab),
+                        selectedTabId = selectedTab.id,
+                    )
+            )
 
         MockitoAnnotations.openMocks(this)
 
-        browserMenuController = spy(
-            BrowserMenuController(
-                sessionUseCases = sessionUseCases,
-                appStore = appStore,
-                store = store,
-                topSitesUseCases = topSitesUseCases,
-                currentTabId = currentTabId,
-                callbacks = BrowserMenuCallbacks(
-                    shareCallback = shareCallback,
-                    requestDesktopCallback = requestDesktopCallback,
-                    addToHomeScreenCallback = addToHomeScreenCallback,
-                    showFindInPageCallback = showFindInPageCallback,
-                    openInCallback = openInCallback,
-                    openInBrowser = openInBrowser,
-                    showShortcutAddedSnackBar = showShortcutAddedSnackBar,
-                ),
-                coroutineScope = TestScope(StandardTestDispatcher()),
-            ),
-        )
+        browserMenuController =
+            spy(
+                BrowserMenuController(
+                    sessionUseCases = sessionUseCases,
+                    appStore = appStore,
+                    store = store,
+                    topSitesUseCases = topSitesUseCases,
+                    currentTabId = currentTabId,
+                    callbacks =
+                        BrowserMenuCallbacks(
+                            shareCallback = shareCallback,
+                            requestDesktopCallback = requestDesktopCallback,
+                            addToHomeScreenCallback = addToHomeScreenCallback,
+                            showFindInPageCallback = showFindInPageCallback,
+                            openInCallback = openInCallback,
+                            openInBrowser = openInBrowser,
+                            showShortcutAddedSnackBar = showShortcutAddedSnackBar,
+                        ),
+                    coroutineScope = TestScope(StandardTestDispatcher()),
+                )
+            )
 
         doNothing().`when`(browserMenuController).recordBrowserMenuTelemetry(any())
         doNothing().`when`(browserMenuController).addToShortcuts()

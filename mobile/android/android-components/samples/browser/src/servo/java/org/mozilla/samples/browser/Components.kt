@@ -7,9 +7,7 @@ import android.content.Context
 import mozilla.components.browser.engine.servo.ServoEngine
 import mozilla.components.concept.engine.Engine
 
-/**
- * Helper class for lazily instantiating components needed by the application.
- */
+/** Helper class for lazily instantiating components needed by the application. */
 class Components(applicationContext: Context) : DefaultComponents(applicationContext) {
     override val engine: Engine by lazy {
         ServoEngine()

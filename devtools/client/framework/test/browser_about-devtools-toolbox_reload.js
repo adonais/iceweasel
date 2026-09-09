@@ -8,7 +8,8 @@
  * client instance.
  */
 add_task(async function () {
-  const devToolsClient = await createLocalClient();
+  const devToolsClient =
+    await CommandsFactory.spawnClientToDebugSystemPrincipal();
 
   info(
     "Preload a local DevToolsClient as this-firefox in the remoteClientManager"
@@ -62,19 +63,3 @@ add_task(async function () {
   await devToolsClient.close();
   await removeTab(targetTab);
 });
-
-async function createLocalClient() {
-  const {
-    DevToolsClient,
-  } = require("resource://devtools/client/devtools-client.js");
-  const {
-    DevToolsServer,
-  } = require("resource://devtools/server/devtools-server.js");
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
-  DevToolsServer.allowChromeProcess = true;
-
-  const devToolsClient = new DevToolsClient(DevToolsServer.connectPipe());
-  await devToolsClient.connect();
-  return devToolsClient;
-}

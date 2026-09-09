@@ -169,10 +169,10 @@ function makeNovaWidgetState(widgets, extraPrefs = {}) {
       system: "widgets.system.weather.enabled",
       size: "widgets.weather.size",
     },
-    sportsWidget: {
-      enabled: "widgets.sportsWidget.enabled",
-      system: "widgets.system.sportsWidget.enabled",
-      size: "widgets.sportsWidget.size",
+    stocks: {
+      enabled: "widgets.stocks.enabled",
+      system: "widgets.system.stocks.enabled",
+      size: "widgets.stocks.size",
     },
     clocks: {
       enabled: "widgets.clocks.enabled",
@@ -234,7 +234,7 @@ describe("<Widgets> overflow detection", () => {
     const state = makeNovaWidgetState([
       ["lists", "medium"],
       ["focusTimer", "medium"],
-      ["sportsWidget", "medium"],
+      ["stocks", "medium"],
     ]);
     const { container } = renderWidgets(state);
     const section = getSectionContainer(container);
@@ -246,7 +246,7 @@ describe("<Widgets> overflow detection", () => {
 
   it("overflow detection is size-agnostic", () => {
     const state = makeNovaWidgetState([
-      ["sportsWidget", "medium"],
+      ["stocks", "medium"],
       ["clocks", "medium"],
       ["lists", "medium"],
       ["focusTimer", "medium"],
@@ -263,7 +263,7 @@ describe("<Widgets> overflow detection", () => {
       ["lists", "large"],
       ["focusTimer", "medium"],
       ["weather", "medium"],
-      ["sportsWidget", "medium"],
+      ["stocks", "medium"],
     ]);
     const { container } = renderWidgets(state);
     const section = getSectionContainer(container);
@@ -271,6 +271,28 @@ describe("<Widgets> overflow detection", () => {
     // Sizes don't affect the count.
     expect(section.hasAttribute("data-overflow-3")).toBe(true);
     expect(section.hasAttribute("data-overflow-4")).toBe(false);
+  });
+});
+
+// Bug 2063657: the sports widget is retired; removed in bug 2063656.
+describe("<Widgets> retired sports widget", () => {
+  it("never renders, whatever the prefs and trainhopConfig say", () => {
+    const state = makeNovaWidgetState([["lists", "medium"]], {
+      "widgets.sportsWidget.enabled": true,
+      "widgets.system.sportsWidget.enabled": true,
+      "widgets.sportsWidget.size": "medium",
+      trainhopConfig: {
+        widgets: { sportsWidgetEnabled: true },
+        widgetsSettings: { sportsWidgetVisible: true },
+      },
+    });
+    const { container } = renderWidgets(state);
+    expect(
+      container.querySelector('[data-widget-id="lists"]')
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-widget-id="sportsWidget"]')
+    ).not.toBeInTheDocument();
   });
 });
 
@@ -711,5 +733,59 @@ describe("<Widgets> maximize toggle size sync", () => {
         }),
       })
     );
+  });
+});
+
+describe("<Widgets> header controls", () => {
+  // Everything isSideBySideActive gates on beyond the widget prefs
+  // makeNovaWidgetState already sets.
+  const SIDE_BY_SIDE = {
+    "pageLayouts.variant": "side-by-side-content-lead",
+    "feeds.section.topstories": true,
+    "feeds.system.topstories": true,
+    "widgets.system.enabled": true,
+  };
+  // An addable widget left off, so allWidgetsAdded is false and the tile is not
+  // suppressed for that unrelated reason.
+  const ONE_WIDGET_UNADDED = {
+    "widgets.system.clocks.enabled": true,
+    "widgets.clocks.enabled": false,
+  };
+
+  it("renders only the placeholder tile in the default full-width layout", () => {
+    const { container } = renderWidgets(
+      makeNovaWidgetState([["lists", "medium"]], ONE_WIDGET_UNADDED)
+    );
+
+    expect(container.querySelector(".widgets-add-button")).toBeInTheDocument();
+    expect(container.querySelector("#add-widgets-button")).toBeNull();
+  });
+
+  // Two controls sharing the "Add widget" accessible name in one region.
+  it("renders only the header button when side-by-side is active", () => {
+    const { container } = renderWidgets(
+      makeNovaWidgetState([["lists", "medium"]], {
+        ...ONE_WIDGET_UNADDED,
+        ...SIDE_BY_SIDE,
+      })
+    );
+
+    expect(container.querySelector("#add-widgets-button")).toBeInTheDocument();
+    expect(container.querySelector(".widgets-add-button")).toBeNull();
+  });
+
+  // Bug 2063604: the row toggle and the per-widget submenu are separate gates.
+  it("keeps per-widget size options while hiding the row toggle in side-by-side", () => {
+    const { container } = renderWidgets(
+      makeNovaWidgetState([["lists", "medium"]], {
+        ...SIDE_BY_SIDE,
+        "widgets.system.maximized": true,
+      })
+    );
+
+    expect(container.querySelector("#toggle-widgets-size-button")).toBeNull();
+    expect(
+      container.querySelector('[data-l10n-id="newtab-widget-menu-change-size"]')
+    ).toBeInTheDocument();
   });
 });

@@ -9,10 +9,7 @@ import io.sentry.Hint
 import io.sentry.SentryEvent
 import mozilla.components.concept.base.crash.RustCrashReport as RustCrashReport
 
-/**
- * A [EventProcessor] implementation that cleans up exceptions for
- * crashes coming from our Rust libraries.
- */
+/** A [EventProcessor] implementation that cleans up exceptions for crashes coming from our Rust libraries. */
 class RustCrashEventProcessor : EventProcessor {
     override fun process(event: SentryEvent, hint: Hint): SentryEvent {
         val throwable = event.throwable

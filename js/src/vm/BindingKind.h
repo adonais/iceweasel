@@ -85,13 +85,9 @@ class BindingLocation {
     return BindingLocation(Kind::NamedLambdaCallee, UINT32_MAX);
   }
 
-  bool operator==(const BindingLocation& other) const {
-    return kind_ == other.kind_ && slot_ == other.slot_;
-  }
+  bool operator==(const BindingLocation& other) const = default;
 
-  bool operator!=(const BindingLocation& other) const {
-    return !operator==(other);
-  }
+  bool operator!=(const BindingLocation& other) const = default;
 
   Kind kind() const { return kind_; }
 

@@ -70,8 +70,7 @@ class AcornPaddingRuleTest {
 
     @Test
     fun `WHEN raw padding is applied with top and bottom parameters THEN each usage is flagged`() {
-        val spacer =
-            "Spacer(modifier = Modifier.padding(top = 5.dp, bottom = 10.dp, start = 20.dp, end = 25.dp))"
+        val spacer = "Spacer(modifier = Modifier.padding(top = 5.dp, bottom = 10.dp, start = 20.dp, end = 25.dp))"
         val code = fileContent(spacer)
 
         val findings = AcornPaddingRule().lint(code)
@@ -97,8 +96,7 @@ class AcornPaddingRuleTest {
 
     @Test
     fun `WHEN PaddingValues is constructed with raw Dp values THEN usage is flagged`() {
-        val spacer =
-            "Spacer(modifier = Modifier.padding(PaddingValues(4.dp)))"
+        val spacer = "Spacer(modifier = Modifier.padding(PaddingValues(4.dp)))"
         val code = fileContent(spacer)
 
         val findings = AcornPaddingRule().lint(code)
@@ -112,8 +110,7 @@ class AcornPaddingRuleTest {
 
     @Test
     fun `WHEN PaddingValues is constructed with raw Dp values in all parameter THEN usage is flagged`() {
-        val spacer =
-            "Spacer(modifier = Modifier.padding(PaddingValues(all = 4.dp))"
+        val spacer = "Spacer(modifier = Modifier.padding(PaddingValues(all = 4.dp))"
         val code = fileContent(spacer)
 
         val findings = AcornPaddingRule().lint(code)
@@ -127,8 +124,7 @@ class AcornPaddingRuleTest {
 
     @Test
     fun `WHEN PaddingValues is constructed with horizontal or vertical parameters THEN each usage is flagged`() {
-        val spacer =
-            "Spacer(modifier = Modifier.padding(PaddingValues(horizontal = 4.dp, vertical = 10.dp))"
+        val spacer = "Spacer(modifier = Modifier.padding(PaddingValues(horizontal = 4.dp, vertical = 10.dp))"
         val code = fileContent(spacer)
 
         val findings = AcornPaddingRule().lint(code)
@@ -232,7 +228,8 @@ class AcornPaddingRuleTest {
     }
 }
 
-private fun fileContent(injectedComposableString: String) = """
+private fun fileContent(injectedComposableString: String) =
+    """
     |package my.package
     |
     |/** My awesome class */
@@ -247,4 +244,5 @@ private fun fileContent(injectedComposableString: String) = """
     |               }
     |      }
     |}
-""".trimMargin()
+"""
+        .trimMargin()

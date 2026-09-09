@@ -37,13 +37,14 @@ class AutofillFragmentStoreTest {
     }
 
     @Test
-    fun `GIVEN a list of addresses WHEN update addresses action is dispatched THEN addresses state is updated`() = runTest {
-        assertTrue(store.state.isLoading)
+    fun `GIVEN a list of addresses WHEN update addresses action is dispatched THEN addresses state is updated`() =
+        runTest {
+            assertTrue(store.state.isLoading)
 
-        val addresses: List<Address> = listOf(mockk(), mockk())
-        store.dispatch(AutofillAction.UpdateAddresses(addresses))
+            val addresses: List<Address> = listOf(mockk(), mockk())
+            store.dispatch(AutofillAction.UpdateAddresses(addresses))
 
-        assertEquals(addresses, store.state.addresses)
-        assertFalse(store.state.isLoading)
-    }
+            assertEquals(addresses, store.state.addresses)
+            assertFalse(store.state.isLoading)
+        }
 }

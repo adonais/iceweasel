@@ -409,7 +409,7 @@ inline already_AddRefed<DataSourceSurface> ApplyBlending_SIMD(
 }
 
 template <typename i32x4_t, typename i16x8_t, typename u8x16_t>
-static already_AddRefed<DataSourceSurface> ApplyBlending_SIMD(
+already_AddRefed<DataSourceSurface> ApplyBlending_SIMD(
     DataSourceSurface* aInput1, DataSourceSurface* aInput2,
     BlendMode aBlendMode) {
   switch (aBlendMode) {
@@ -431,7 +431,7 @@ static already_AddRefed<DataSourceSurface> ApplyBlending_SIMD(
 }
 
 template <MorphologyOperator Operator, typename u8x16_t>
-static u8x16_t Morph8(u8x16_t a, u8x16_t b) {
+u8x16_t Morph8(u8x16_t a, u8x16_t b) {
   return Operator == MORPHOLOGY_OPERATOR_ERODE ? simd::Min8(a, b)
                                                : simd::Max8(a, b);
 }
@@ -513,9 +513,10 @@ inline void ApplyMorphologyHorizontal_SIMD(
 // Set every pixel to the per-component minimum or maximum of the pixels around
 // it that are up to aRadius pixels away from it (vertically).
 template <MorphologyOperator op, typename i16x8_t, typename u8x16_t>
-static void ApplyMorphologyVertical_SIMD(
-    const uint8_t* aSourceData, int32_t aSourceStride, uint8_t* aDestData,
-    int32_t aDestStride, const IntRect& aDestRect, int32_t aRadius) {
+void ApplyMorphologyVertical_SIMD(const uint8_t* aSourceData,
+                                  int32_t aSourceStride, uint8_t* aDestData,
+                                  int32_t aDestStride, const IntRect& aDestRect,
+                                  int32_t aRadius) {
   static_assert(
       op == MORPHOLOGY_OPERATOR_ERODE || op == MORPHOLOGY_OPERATOR_DILATE,
       "unexpected morphology operator");
@@ -881,10 +882,10 @@ static void ApplyComposition_SIMD(DataSourceSurface* aSource,
 }
 
 template <typename u8x16_t>
-static void SeparateColorChannels_SIMD(
-    const IntSize& size, const uint8_t* sourceData, int32_t sourceStride,
-    uint8_t* channel0Data, uint8_t* channel1Data, uint8_t* channel2Data,
-    uint8_t* channel3Data, int32_t channelStride) {
+void SeparateColorChannels_SIMD(const IntSize& size, const uint8_t* sourceData,
+                                int32_t sourceStride, uint8_t* channel0Data,
+                                uint8_t* channel1Data, uint8_t* channel2Data,
+                                uint8_t* channel3Data, int32_t channelStride) {
   for (int32_t y = 0; y < size.height; y++) {
     for (int32_t x = 0; x < size.width; x += 16) {
       // Process 16 pixels at a time.
@@ -952,10 +953,12 @@ static void SeparateColorChannels_SIMD(
 }
 
 template <typename u8x16_t>
-static void CombineColorChannels_SIMD(
-    const IntSize& size, int32_t resultStride, uint8_t* resultData,
-    int32_t channelStride, uint8_t* channel0Data, const uint8_t* channel1Data,
-    const uint8_t* channel2Data, const uint8_t* channel3Data) {
+void CombineColorChannels_SIMD(const IntSize& size, int32_t resultStride,
+                               uint8_t* resultData, int32_t channelStride,
+                               uint8_t* channel0Data,
+                               const uint8_t* channel1Data,
+                               const uint8_t* channel2Data,
+                               const uint8_t* channel3Data) {
   for (int32_t y = 0; y < size.height; y++) {
     for (int32_t x = 0; x < size.width; x += 16) {
       // Process 16 pixels at a time.
@@ -1004,11 +1007,10 @@ static void CombineColorChannels_SIMD(
 }
 
 template <typename u16x8_t, typename u8x16_t>
-static void DoOpacityCalculation_SIMD(const IntSize& aSize,
-                                      uint8_t* aTargetData,
-                                      int32_t aTargetStride,
-                                      const uint8_t* aSourceData,
-                                      int32_t aSourceStride, Float aOpacity) {
+void DoOpacityCalculation_SIMD(const IntSize& aSize, uint8_t* aTargetData,
+                               int32_t aTargetStride,
+                               const uint8_t* aSourceData,
+                               int32_t aSourceStride, Float aOpacity) {
   uint8_t alphaValue = uint8_t(roundf(255.f * aOpacity));
   u16x8_t alphaValues =
       simd::FromU16<u16x8_t>(alphaValue, alphaValue, alphaValue, alphaValue,

@@ -11,14 +11,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-/**
- * Tests for the [AndroidSrcXmlDetector] custom lint check.
- */
+/** Tests for the [AndroidSrcXmlDetector] custom lint check. */
 @RunWith(JUnit4::class)
 class AndroidSrcXmlDetectorTest : LintDetectorTest() {
 
-    override fun getIssues(): MutableList<Issue> =
-        mutableListOf(AndroidSrcXmlDetector.ISSUE_XML_SRC_USAGE)
+    override fun getIssues(): MutableList<Issue> = mutableListOf(AndroidSrcXmlDetector.ISSUE_XML_SRC_USAGE)
 
     override fun getDetector(): Detector = AndroidSrcXmlDetector()
 
@@ -34,8 +31,9 @@ class AndroidSrcXmlDetectorTest : LintDetectorTest() {
     android:layout_height="wrap_content"
     />
 """,
-                ),
-            ).allowMissingSdk(true)
+                )
+            )
+            .allowMissingSdk(true)
             .run()
             .expectClean()
     }
@@ -53,8 +51,9 @@ class AndroidSrcXmlDetectorTest : LintDetectorTest() {
     android:src="@drawable/ic_close"
     />
 """,
-                ),
-            ).allowMissingSdk(true)
+                )
+            )
+            .allowMissingSdk(true)
             .run()
             .expect(
                 """
@@ -62,7 +61,7 @@ res/layout/layout.xml:5: Error: Using android:src to define resource instead of 
     android:src="@drawable/ic_close"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 1 errors, 0 warnings
-            """,
+            """
             )
     }
 }

@@ -6,70 +6,10 @@ STANDALONE_MAKEFILE := 1
 
 include $(topsrcdir)/config/rules.mk
 
-MOZ_PKG_REMOVALS = $(srcdir)/removed-files.in
-
-MOZ_PKG_MANIFEST = $(srcdir)/package-manifest.in
-MOZ_PKG_DUPEFLAGS = -f $(srcdir)/allowed-dupes.mn
-
 DEFINES += -DPKG_LOCALE_MANIFEST=$(topobjdir)/mobile/android/installer/locale-manifest.in
-MOZ_CHROME_LOCALE_ENTRIES=@BINPATH@/chrome/
 
-MOZ_PKG_FATAL_WARNINGS = 1
-
-# When packaging an artifact build not all xpt files expected by the
-# packager will be present.
-ifdef MOZ_ARTIFACT_BUILDS
-MOZ_PKG_FATAL_WARNINGS =
-endif
-
-# Toolchain gradle-dependencies tasks use --disable-compile-environment and
-# bin/lib*.so files are missing.
-ifndef COMPILE_ENVIRONMENT
-MOZ_PKG_FATAL_WARNINGS =
-endif
-
-DEFINES += \
-  -DMOZ_APP_NAME=$(MOZ_APP_NAME) \
-  -DPREF_DIR=$(PREF_DIR) \
-  -DJAREXT= \
-  -DMOZ_CHILD_PROCESS_NAME=$(MOZ_CHILD_PROCESS_NAME) \
-  -DANDROID_CPU_ARCH=$(ANDROID_CPU_ARCH) \
-  $(NULL)
-
-ifdef MOZ_DEBUG
-DEFINES += -DMOZ_DEBUG=1
-endif
-
-ifdef MOZ_ANDROID_EXCLUDE_FONTS
-DEFINES += -DMOZ_ANDROID_EXCLUDE_FONTS=1
-endif
-
-ifdef MOZ_PREF_EXTENSIONS
-DEFINES += -DMOZ_PREF_EXTENSIONS=1
-endif
-
-ifdef MOZ_ARTIFACT_BUILDS
-DEFINES += -DMOZ_ARTIFACT_BUILDS=1
-endif
-
-MOZ_PKG_DIR = geckoview
-
-ifdef MOZ_ANDROID_FAT_AAR_ARCHITECTURES
-DEFINES += -DMOZ_ANDROID_FAT_AAR_ARCHITECTURES=1
-endif
+DEFINES += $(PACKAGE_MANIFEST_DEFINES)
 
 include $(topsrcdir)/toolkit/mozapps/installer/packager.mk
 
 BINPATH = $(MOZ_PKG_BINPATH)
-ifeq (Darwin,$(OS_TARGET))
-DEFINES += -DAPPNAME=$(MOZ_MACBUNDLE_NAME)
-endif
-DEFINES += -DBINPATH=$(BINPATH)
-
-ifdef MOZ_CLANG_RT_ASAN_LIB_PATH
-DEFINES += -DMOZ_CLANG_RT_ASAN_LIB=$(notdir $(MOZ_CLANG_RT_ASAN_LIB_PATH))
-endif
-
-ifdef MOZ_APPSERVICES_IN_TREE
-DEFINES += -DMOZ_APPSERVICES_IN_TREE=1
-endif

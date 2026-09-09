@@ -5,13 +5,11 @@
 package mozilla.components.lib.dataprotect
 
 import android.os.Build
+import android.security.KeyStoreException as AndroidKeyStoreException
 import android.security.KeyStoreException
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import androidx.annotation.RequiresApi
-import mozilla.components.concept.base.crash.Breadcrumb
-import mozilla.components.concept.base.crash.CrashReporting
-import mozilla.components.support.base.log.logger.Logger
 import java.security.GeneralSecurityException
 import java.security.InvalidKeyException
 import java.security.Key
@@ -21,7 +19,9 @@ import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
-import android.security.KeyStoreException as AndroidKeyStoreException
+import mozilla.components.concept.base.crash.Breadcrumb
+import mozilla.components.concept.base.crash.CrashReporting
+import mozilla.components.support.base.log.logger.Logger
 
 private const val KEYSTORE_TYPE = "AndroidKeyStore"
 private const val ENCRYPTED_VERSION = 0x02
@@ -42,20 +42,12 @@ internal const val CIPHER_NONCE_LEN = 12
 // Apps not targeting API 37+: limit is 200,000 keys → error code ERROR_INCORRECT_USAGE.
 private const val KEY_LIMIT_NON_TARGETING_API37 = 200_000
 
-/**
- * Wraps the critical functions around a Java KeyStore to better facilitate testing
- * and instrumenting.
- *
- */
-open class KeyStoreWrapper(
-    private val crashReporting: CrashReporting? = null,
-) {
+/** Wraps the critical functions around a Java KeyStore to better facilitate testing and instrumenting. */
+open class KeyStoreWrapper(private val crashReporting: CrashReporting? = null) {
     private var keystore: KeyStore? = null
     private val logger = Logger("KeyStoreWrapper")
 
-    /**
-     * Retrieves the underlying KeyStore, loading it if necessary.
-     */
+    /** Retrieves the underlying KeyStore, loading it if necessary. */
     fun getKeyStore(): KeyStore {
         var ks = keystore
         if (ks == null) {
@@ -71,43 +63,44 @@ open class KeyStoreWrapper(
      *
      * This method queries for a SecretKey with the given label and no passphrase.
      *
-     * Subclasses override this method if additional properties are needed
-     * to retrieve the key.
+     * Subclasses override this method if additional properties are needed to retrieve the key.
      *
      * @param label The label to query
      * @return The key for the given label, or `null` if not present
      * @throws InvalidKeyException If there is a Key but it is not a SecretKey
      * @throws NoSuchAlgorithmException If the recovery algorithm is not supported
      */
-    open fun getKeyFor(label: String): Key? = try {
-        loadKeyStore().getKey(label, null)
-    } catch (e: UnrecoverableKeyException) {
-        logger.error("Failed to get key", e)
-        null
-    }
+    open fun getKeyFor(label: String): Key? =
+        try {
+            loadKeyStore().getKey(label, null)
+        } catch (e: UnrecoverableKeyException) {
+            logger.error("Failed to get key", e)
+            null
+        }
 
     /**
      * Creates a SecretKey for the given label.
      *
-     * This method generates a SecretKey pre-bound to the `AndroidKeyStore` and configured
-     * with the strongest "algorithm/blockmode/padding" (and key size) available.
+     * This method generates a SecretKey pre-bound to the `AndroidKeyStore` and configured with the strongest
+     * "algorithm/blockmode/padding" (and key size) available.
      *
-     * Subclasses override this method to properly associate the generated key with
-     * the given label in the underlying KeyStore.
+     * Subclasses override this method to properly associate the generated key with the given label in the underlying
+     * KeyStore.
      *
      * @param label The label to associate with the created key
      * @return The newly-generated key for `label`
      * @throws NoSuchAlgorithmException If the cipher algorithm is not supported
      */
     open fun makeKeyFor(label: String): SecretKey {
-        val spec = KeyGenParameterSpec.Builder(
-            label,
-            KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
-        )
-            .setKeySize(CIPHER_KEY_LEN)
-            .setBlockModes(CIPHER_MOD)
-            .setEncryptionPaddings(CIPHER_PAD)
-            .build()
+        val spec =
+            KeyGenParameterSpec.Builder(
+                    label,
+                    KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
+                )
+                .setKeySize(CIPHER_KEY_LEN)
+                .setBlockModes(CIPHER_MOD)
+                .setEncryptionPaddings(CIPHER_PAD)
+                .build()
         val gen = KeyGenerator.getInstance(CIPHER_ALG, KEYSTORE_TYPE)
         gen.init(spec)
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
@@ -124,21 +117,21 @@ open class KeyStoreWrapper(
         } catch (e: AndroidKeyStoreException) {
             val keyCount = runCatching { getKeyStore().size() }.getOrNull()
             val context = mapOf("keyCount" to "$keyCount", "errorCode" to "${e.numericErrorCode}")
-            val message = when (e.numericErrorCode) {
-                AndroidKeyStoreException.ERROR_TOO_MANY_KEYS ->
-                    "Android Keystore key limit exceeded (current key count: $keyCount)"
-
-                AndroidKeyStoreException.ERROR_INCORRECT_USAGE ->
-                    if (keyCount != null && keyCount >= KEY_LIMIT_NON_TARGETING_API37) {
+            val message =
+                when (e.numericErrorCode) {
+                    AndroidKeyStoreException.ERROR_TOO_MANY_KEYS ->
                         "Android Keystore key limit exceeded (current key count: $keyCount)"
-                    } else {
-                        "Android Keystore key generation failed with ERROR_INCORRECT_USAGE " +
-                            "(current key count: $keyCount)"
-                    }
 
-                else ->
-                    "Android Keystore key generation failed (error code: ${e.numericErrorCode})"
-            }
+                    AndroidKeyStoreException.ERROR_INCORRECT_USAGE ->
+                        if (keyCount != null && keyCount >= KEY_LIMIT_NON_TARGETING_API37) {
+                            "Android Keystore key limit exceeded (current key count: $keyCount)"
+                        } else {
+                            "Android Keystore key generation failed with ERROR_INCORRECT_USAGE " +
+                                "(current key count: $keyCount)"
+                        }
+
+                    else -> "Android Keystore key generation failed (error code: ${e.numericErrorCode})"
+                }
             logger.error(message, e)
             crashReporting?.recordCrashBreadcrumb(
                 Breadcrumb(
@@ -146,7 +139,7 @@ open class KeyStoreWrapper(
                     data = context,
                     category = "KeyStoreWrapper",
                     level = Breadcrumb.Level.ERROR,
-                ),
+                )
             )
             throw e
         }
@@ -194,8 +187,7 @@ open class KeyStoreWrapper(
  * @property label The label the cryptographic key is identified as
  * @constructor Creates a new instance around a key identified by the given label
  *
- * Unless `manual` is `true`, the key is created if not already present in the
- * platform's key storage.
+ * Unless `manual` is `true`, the key is created if not already present in the platform's key storage.
  */
 open class Keystore(
     val label: String,
@@ -209,13 +201,11 @@ open class Keystore(
         }
     }
 
-    private fun getKey(): SecretKey? =
-        wrapper.getKeyFor(label) as? SecretKey?
+    private fun getKey(): SecretKey? = wrapper.getKeyFor(label) as? SecretKey?
 
     /**
-     * Determines if the managed key is available for use.  Consumers can use this to
-     * determine if the key was somehow lost and should treat any previously-protected
-     * data as invalid.
+     * Determines if the managed key is available for use. Consumers can use this to determine if the key was somehow
+     * lost and should treat any previously-protected data as invalid.
      *
      * @return `true` if the managed key exists and ready for use.
      */
@@ -224,8 +214,7 @@ open class Keystore(
     /**
      * Generates the managed key if it does not already exist.
      *
-     * @return `true` if a new key was generated; `false` if the key already exists and can
-     * be used.
+     * @return `true` if a new key was generated; `false` if the key already exists and can be used.
      * @throws GeneralSecurityException If the key could not be created
      */
     @Throws(GeneralSecurityException::class)
@@ -244,10 +233,10 @@ open class Keystore(
     }
 
     /**
-     *  Deletes the managed key.
+     * Deletes the managed key.
      *
-     *  **NOTE:** Once this method returns, any data protected with the (formerly) managed
-     *  key cannot be decrypted and therefore is inaccessble.
+     * **NOTE:** Once this method returns, any data protected with the (formerly) managed key cannot be decrypted and
+     * therefore is inaccessble.
      */
     fun deleteKey() {
         val key = wrapper.getKeyFor(label)
@@ -259,9 +248,8 @@ open class Keystore(
     /**
      * Encrypts data using the managed key.
      *
-     * The output of this method includes the input factors (i.e., initialization vector),
-     * ciphertext, and authentication tag as a single byte string; this output can be passed
-     * directly to [decryptBytes].
+     * The output of this method includes the input factors (i.e., initialization vector), ciphertext, and
+     * authentication tag as a single byte string; this output can be passed directly to [decryptBytes].
      *
      * @param plain The "plaintext" data to encrypt
      * @return The encrypted data to be stored
@@ -287,9 +275,8 @@ open class Keystore(
     /**
      * Decrypts data using the managed key.
      *
-     * The input of this method is expected to include input factors (i.e., initialization
-     * vector), ciphertext, and authentication tag as a single byte string; it is the direct
-     * output from [encryptBytes].
+     * The input of this method is expected to include input factors (i.e., initialization vector), ciphertext, and
+     * authentication tag as a single byte string; it is the direct output from [encryptBytes].
      *
      * @param encrypted The encrypted data to decrypt
      * @return The decrypted "plaintext" data
@@ -316,12 +303,11 @@ open class Keystore(
     /**
      * Create a cipher initialized for encrypting data with the managed key.
      *
-     * This "low-level" method is useful when a cryptographic context is needed to integrate with
-     * other APIs, such as the `FingerprintManager`.
+     * This "low-level" method is useful when a cryptographic context is needed to integrate with other APIs, such as
+     * the `FingerprintManager`.
      *
-     * **NOTE:** The caller is responsible for associating certain encryption factors, such as
-     * the initialization vector and/or additional authentication data (AAD), with the resulting
-     * ciphertext or decryption will fail.
+     * **NOTE:** The caller is responsible for associating certain encryption factors, such as the initialization vector
+     * and/or additional authentication data (AAD), with the resulting ciphertext or decryption will fail.
      *
      * @return The [Cipher], initialized and ready to encrypt data with.
      * @throws GeneralSecurityException If the Cipher could not be created and initialized
@@ -338,12 +324,11 @@ open class Keystore(
     /**
      * Create a cipher initialized for decrypting data with the managed key.
      *
-     * This "low-level" method is useful when a cryptographic context is needed to integrate with
-     * other APIs, such as the `FingerprintManager`.
+     * This "low-level" method is useful when a cryptographic context is needed to integrate with other APIs, such as
+     * the `FingerprintManager`.
      *
-     * **NOTE:** The caller is responsible for associating certain encryption factors, such as
-     * the initialization vector and/or additional authentication data (AAD), with the stored
-     * ciphertext or decryption will fail.
+     * **NOTE:** The caller is responsible for associating certain encryption factors, such as the initialization vector
+     * and/or additional authentication data (AAD), with the stored ciphertext or decryption will fail.
      *
      * @param iv The initialization vector/nonce to decrypt with
      * @return The [Cipher], initialized and ready to decrypt data with.

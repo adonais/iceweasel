@@ -19,8 +19,9 @@ class AppIconStore(
     initialState: AppIconState,
     reducer: Reducer<AppIconState, AppIconAction> = ::appIconReducer,
     middleware: List<Middleware<AppIconState, AppIconAction>> = listOf(),
-) : Store<AppIconState, AppIconAction>(
-    initialState = initialState,
-    reducer = reducer,
-    middleware = middleware,
-)
+) :
+    Store<AppIconState, AppIconAction>(
+        initialState = initialState,
+        reducer = reducer,
+        middleware = middleware,
+    )

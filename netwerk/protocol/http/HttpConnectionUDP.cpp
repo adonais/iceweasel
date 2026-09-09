@@ -30,6 +30,7 @@
 #include "nsINetAddr.h"
 #include "nsISocketProvider.h"
 #include "nsNetAddr.h"
+#include "nsSocketTransportService2.h"
 #include "nsStringStream.h"
 #include "nsThreadUtils.h"
 
@@ -480,7 +481,7 @@ nsresult HttpConnectionUDP::Activate(nsAHttpTransaction* trans, uint32_t caps,
             event.forget(), nsIRunnablePriority::PRIORITY_MEDIUMHIGH);
       }
 
-      NS_DispatchToCurrentThread(event);
+      DispatchToCurrent(event.forget());
     }
     return NS_OK;
   }
@@ -975,7 +976,7 @@ nsresult HttpConnectionUDP::ResumeSend() {
                                       nsIRunnablePriority::PRIORITY_MEDIUMHIGH);
   }
 
-  NS_DispatchToCurrentThread(event);
+  DispatchToCurrent(event.forget());
   return NS_OK;
 }
 
@@ -986,7 +987,7 @@ void HttpConnectionUDP::ForceSendIO(nsITimer* aTimer, void* aClosure) {
   HttpConnectionUDP* self = static_cast<HttpConnectionUDP*>(aClosure);
   MOZ_ASSERT(aTimer == self->mForceSendTimer);
   self->mForceSendTimer = nullptr;
-  NS_DispatchToCurrentThread(new HttpConnectionUDPForceIO(self, false));
+  DispatchToCurrent(do_AddRef(new HttpConnectionUDPForceIO(self, false)));
 }
 
 nsresult HttpConnectionUDP::MaybeForceSendIO() {
@@ -1014,7 +1015,7 @@ nsresult HttpConnectionUDP::ForceRecv() {
   LOG(("HttpConnectionUDP::ForceRecv [this=%p]\n", this));
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-  return NS_DispatchToCurrentThread(new HttpConnectionUDPForceIO(this, true));
+  return DispatchToCurrent(do_AddRef(new HttpConnectionUDPForceIO(this, true)));
 }
 
 // trigger an asynchronous write

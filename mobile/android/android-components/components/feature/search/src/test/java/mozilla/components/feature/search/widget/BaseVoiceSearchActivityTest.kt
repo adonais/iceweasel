@@ -95,12 +95,14 @@ class BaseVoiceSearchActivityTest {
     @Test
     fun `save previous intent to instance state`() {
         allowVoiceIntentToResolveActivity()
-        val previousIntent = Intent().apply {
-            putExtra(SPEECH_PROCESSING, true)
-        }
-        val savedInstanceState = Bundle().apply {
-            putParcelable(PREVIOUS_INTENT, previousIntent)
-        }
+        val previousIntent =
+            Intent().apply {
+                putExtra(SPEECH_PROCESSING, true)
+            }
+        val savedInstanceState =
+            Bundle().apply {
+                putParcelable(PREVIOUS_INTENT, previousIntent)
+            }
         val outState = Bundle()
 
         controller.create(savedInstanceState)
@@ -113,9 +115,10 @@ class BaseVoiceSearchActivityTest {
     fun `process intent with speech processing in previous intent set to true`() {
         allowVoiceIntentToResolveActivity()
         val savedInstanceState = Bundle()
-        val previousIntent = Intent().apply {
-            putExtra(SPEECH_PROCESSING, true)
-        }
+        val previousIntent =
+            Intent().apply {
+                putExtra(SPEECH_PROCESSING, true)
+            }
         savedInstanceState.putParcelable(PREVIOUS_INTENT, previousIntent)
 
         controller.create(savedInstanceState)

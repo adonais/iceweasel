@@ -29,7 +29,9 @@ import org.mockito.Mockito.verify
 @RunWith(AndroidJUnit4::class)
 class BrowserMenuCategoryTest {
     private lateinit var menuCategory: BrowserMenuCategory
-    private val context: Context get() = ApplicationProvider.getApplicationContext()
+    private val context: Context
+        get() = ApplicationProvider.getApplicationContext()
+
     private val label = "test"
 
     @Before
@@ -116,10 +118,11 @@ class BrowserMenuCategoryTest {
         assertEquals(
             DecorativeTextMenuCandidate(
                 label,
-                textStyle = TextStyle(
-                    textStyle = Typeface.BOLD,
-                    textAlignment = View.TEXT_ALIGNMENT_VIEW_START,
-                ),
+                textStyle =
+                    TextStyle(
+                        textStyle = Typeface.BOLD,
+                        textAlignment = View.TEXT_ALIGNMENT_VIEW_START,
+                    ),
             ),
             BrowserMenuCategory(label).asCandidate(context),
         )
@@ -127,11 +130,12 @@ class BrowserMenuCategoryTest {
         assertEquals(
             DecorativeTextMenuCandidate(
                 label,
-                textStyle = TextStyle(
-                    size = 12f,
-                    textStyle = Typeface.BOLD,
-                    textAlignment = View.TEXT_ALIGNMENT_VIEW_START,
-                ),
+                textStyle =
+                    TextStyle(
+                        size = 12f,
+                        textStyle = Typeface.BOLD,
+                        textAlignment = View.TEXT_ALIGNMENT_VIEW_START,
+                    ),
             ),
             BrowserMenuCategory(label, 12f).asCandidate(context),
         )
@@ -139,25 +143,28 @@ class BrowserMenuCategoryTest {
         assertEquals(
             DecorativeTextMenuCandidate(
                 label,
-                textStyle = TextStyle(
-                    color = ContextCompat.getColor(context, android.R.color.holo_red_dark),
-                    textStyle = Typeface.BOLD,
-                    textAlignment = View.TEXT_ALIGNMENT_VIEW_START,
-                ),
+                textStyle =
+                    TextStyle(
+                        color = ContextCompat.getColor(context, android.R.color.holo_red_dark),
+                        textStyle = Typeface.BOLD,
+                        textAlignment = View.TEXT_ALIGNMENT_VIEW_START,
+                    ),
             ),
             BrowserMenuCategory(
-                label,
-                textColorResource = android.R.color.holo_red_dark,
-            ).asCandidate(context),
+                    label,
+                    textColorResource = android.R.color.holo_red_dark,
+                )
+                .asCandidate(context),
         )
 
         assertEquals(
             DecorativeTextMenuCandidate(
                 label,
-                textStyle = TextStyle(
-                    textStyle = Typeface.ITALIC,
-                    textAlignment = View.TEXT_ALIGNMENT_VIEW_START,
-                ),
+                textStyle =
+                    TextStyle(
+                        textStyle = Typeface.ITALIC,
+                        textAlignment = View.TEXT_ALIGNMENT_VIEW_START,
+                    ),
             ),
             BrowserMenuCategory(label, textStyle = Typeface.ITALIC).asCandidate(context),
         )
@@ -165,10 +172,11 @@ class BrowserMenuCategoryTest {
         assertEquals(
             DecorativeTextMenuCandidate(
                 label,
-                textStyle = TextStyle(
-                    textStyle = Typeface.BOLD,
-                    textAlignment = View.TEXT_ALIGNMENT_VIEW_END,
-                ),
+                textStyle =
+                    TextStyle(
+                        textStyle = Typeface.BOLD,
+                        textAlignment = View.TEXT_ALIGNMENT_VIEW_END,
+                    ),
             ),
             BrowserMenuCategory(label, textAlignment = View.TEXT_ALIGNMENT_VIEW_END).asCandidate(context),
         )

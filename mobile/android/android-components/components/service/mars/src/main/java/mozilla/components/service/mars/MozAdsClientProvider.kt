@@ -12,9 +12,7 @@ import mozilla.appservices.adsclient.MozAdsClient
 import mozilla.appservices.adsclient.MozAdsClientBuilder
 import mozilla.appservices.adsclient.MozAdsEnvironment
 
-/**
- * Provides access to the Mozilla Ads Client.
- */
+/** Provides access to the Mozilla Ads Client. */
 object MozAdsClientProvider {
 
     private const val ADS_CLIENT_MAX_CACHE_AGE = 1800L // 30 minutes
@@ -23,31 +21,29 @@ object MozAdsClientProvider {
     private var client: MozAdsClient? = null
 
     internal val requireInstance: MozAdsClient
-        get() = client ?: throw IllegalStateException(
-            "MozAdsClientProvider.client is not set. " +
-                "Need to call MozAdsClientProvider.initialize().",
-        )
+        get() =
+            client
+                ?: throw IllegalStateException(
+                    "MozAdsClientProvider.client is not set. " + "Need to call MozAdsClientProvider.initialize()."
+                )
 
-    /**
-     * Initializes the [MozAdsClient] instance.
-     */
+    /** Initializes the [MozAdsClient] instance. */
     fun initialize(context: Context) {
-        this.client = MozAdsClientBuilder()
-            .environment(MozAdsEnvironment.PROD)
-            .cacheConfig(
-                MozAdsCacheConfig(
-                    dbPath = context.getDatabasePath(DB_NAME).absolutePath,
-                    defaultCacheTtlSeconds = ADS_CLIENT_MAX_CACHE_AGE.toULong(),
-                    maxSizeMib = null,
-                ),
-            )
-            .telemetry(AdsClientTelemetry())
-            .build()
+        this.client =
+            MozAdsClientBuilder()
+                .environment(MozAdsEnvironment.PROD)
+                .cacheConfig(
+                    MozAdsCacheConfig(
+                        dbPath = context.getDatabasePath(DB_NAME).absolutePath,
+                        defaultCacheTtlSeconds = ADS_CLIENT_MAX_CACHE_AGE.toULong(),
+                        maxSizeMib = null,
+                    )
+                )
+                .telemetry(AdsClientTelemetry())
+                .build()
     }
 
-    /**
-     * Resets the [MozAdsClient] instance.
-     */
+    /** Resets the [MozAdsClient] instance. */
     @VisibleForTesting
     internal fun reset() {
         this.client = null

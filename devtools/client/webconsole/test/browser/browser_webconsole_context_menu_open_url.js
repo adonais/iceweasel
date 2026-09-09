@@ -55,8 +55,8 @@ add_task(async function () {
   let newTab = await onTabLoaded;
   ok(newTab, "The expected tab was opened.");
   is(
-    newTab._tPos,
-    currentTab._tPos + 1,
+    newTab.index,
+    currentTab.index + 1,
     "The new tab was opened in the position to the right of the current tab"
   );
   is(gBrowser.selectedTab, currentTab, "The tab was opened in the background");

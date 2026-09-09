@@ -40,10 +40,7 @@ fun CheckmarkBadge(
     colors: CheckmarkBadgeColors = CheckmarkBadgeColors.default(),
 ) {
     Box(
-        modifier = modifier
-            .size(CheckmarkBadgeSize)
-            .clip(CircleShape)
-            .background(colors.containerColor),
+        modifier = modifier.size(CheckmarkBadgeSize).clip(CircleShape).background(colors.containerColor),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
@@ -67,18 +64,17 @@ data class CheckmarkBadgeColors(
 
     companion object {
 
-        /**
-         * Default colors for [CheckmarkBadge].
-         */
+        /** Default colors for [CheckmarkBadge]. */
         @ReadOnlyComposable
         @Composable
         fun default(
             containerColor: Color = MaterialTheme.colorScheme.primary,
             checkmarkColor: Color = MaterialTheme.colorScheme.onPrimary,
-        ) = CheckmarkBadgeColors(
-            containerColor = containerColor,
-            checkmarkColor = checkmarkColor,
-        )
+        ) =
+            CheckmarkBadgeColors(
+                containerColor = containerColor,
+                checkmarkColor = checkmarkColor,
+            )
     }
 }
 

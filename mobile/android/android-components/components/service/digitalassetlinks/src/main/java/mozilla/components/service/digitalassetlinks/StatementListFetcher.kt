@@ -4,13 +4,9 @@
 
 package mozilla.components.service.digitalassetlinks
 
-/**
- * Lists all statements made by a given source.
- */
+/** Lists all statements made by a given source. */
 interface StatementListFetcher {
 
-    /**
-     * Retrieves a list of all statements from a given [source].
-     */
+    /** Retrieves a list of all statements from a given [source]. */
     fun listStatements(source: AssetDescriptor.Web): Sequence<Statement>
 }

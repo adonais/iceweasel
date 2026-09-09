@@ -23,90 +23,98 @@ class BrowserMenuPositioningTest {
 
     @Test
     fun `GIVEN a menu that fitsDown WHEN inferMenuPositioningData is called THEN the menu can be shown with preferred orientation anchored to the top and shown as a dropdown`() {
-        val (view, anchor) = setupTest(
-            viewHeight = 70,
-            anchorLayoutParams = ViewGroup.LayoutParams(20, 40),
-            screenHeight = 100,
-        )
+        val (view, anchor) =
+            setupTest(
+                viewHeight = 70,
+                anchorLayoutParams = ViewGroup.LayoutParams(20, 40),
+                screenHeight = 100,
+            )
 
         val result = inferMenuPositioningData(view, anchor, MenuPositioningData())
 
         Assert.assertTrue(canUsePreferredOrientation(result))
         Assert.assertFalse(neitherOrientationFits(result))
 
-        val expected = MenuPositioningData(
-            BrowserMenuPlacement.AnchoredToTop.Dropdown(anchor), // orientation DOWN and fitsDown
-            askedOrientation = BrowserMenu.Orientation.DOWN, // default
-            fitsUp = false, // availableHeightToTop(0) is smaller than containerHeight(70)
-            fitsDown = true, // availableHeightToBottom(100) is bigger than containerHeight(70)
-            availableHeightToTop = 0,
-            availableHeightToBottom = 100, // mocked by us above
-            containerViewHeight = 70, // mocked by us above
-        )
+        val expected =
+            MenuPositioningData(
+                BrowserMenuPlacement.AnchoredToTop.Dropdown(anchor), // orientation DOWN and fitsDown
+                askedOrientation = BrowserMenu.Orientation.DOWN, // default
+                fitsUp = false, // availableHeightToTop(0) is smaller than containerHeight(70)
+                fitsDown = true, // availableHeightToBottom(100) is bigger than containerHeight(70)
+                availableHeightToTop = 0,
+                availableHeightToBottom = 100, // mocked by us above
+                containerViewHeight = 70, // mocked by us above
+            )
         Assert.assertEquals(expected, result)
     }
 
     @Test
     fun `GIVEN asked orientation is UP and a menu that only fitsDown WHEN inferMenuPositioningData is called THEN the menu cannot be shown with preferred orientation but anchored to the top and shown as a dropdown`() {
-        val (view, anchor) = setupTest(
-            viewHeight = 70,
-            anchorLayoutParams = ViewGroup.LayoutParams(20, 40),
-            screenHeight = 100,
-        )
+        val (view, anchor) =
+            setupTest(
+                viewHeight = 70,
+                anchorLayoutParams = ViewGroup.LayoutParams(20, 40),
+                screenHeight = 100,
+            )
 
-        val result = inferMenuPositioningData(
-            view,
-            anchor,
-            MenuPositioningData(askedOrientation = BrowserMenu.Orientation.UP),
-        )
+        val result =
+            inferMenuPositioningData(
+                view,
+                anchor,
+                MenuPositioningData(askedOrientation = BrowserMenu.Orientation.UP),
+            )
 
         Assert.assertFalse(canUsePreferredOrientation(result))
         Assert.assertFalse(neitherOrientationFits(result))
 
-        val expected = MenuPositioningData(
-            BrowserMenuPlacement.AnchoredToTop.Dropdown(anchor), // orientation DOWN and fitsDown
-            askedOrientation = BrowserMenu.Orientation.UP, // requested
-            fitsUp = false, // availableHeightToTop(0) is smaller than containerHeight(70)
-            fitsDown = true, // availableHeightToBottom(100) is bigger than containerHeight(70)
-            availableHeightToTop = 0,
-            availableHeightToBottom = 100, // mocked by us above
-            containerViewHeight = 70, // mocked by us above
-        )
+        val expected =
+            MenuPositioningData(
+                BrowserMenuPlacement.AnchoredToTop.Dropdown(anchor), // orientation DOWN and fitsDown
+                askedOrientation = BrowserMenu.Orientation.UP, // requested
+                fitsUp = false, // availableHeightToTop(0) is smaller than containerHeight(70)
+                fitsDown = true, // availableHeightToBottom(100) is bigger than containerHeight(70)
+                availableHeightToTop = 0,
+                availableHeightToBottom = 100, // mocked by us above
+                containerViewHeight = 70, // mocked by us above
+            )
         Assert.assertEquals(expected, result)
     }
 
     @Test
     fun `GIVEN a menu that does not fit down or up with more space available below the anchor WHEN inferMenuPositioningData is called the menu can be shown anchored to the top and placed at a specific location`() {
-        val (view, anchor) = setupTest(
-            viewHeight = 60,
-            anchorLayoutParams = ViewGroup.LayoutParams(20, 40),
-            screenHeight = 50,
-        )
+        val (view, anchor) =
+            setupTest(
+                viewHeight = 60,
+                anchorLayoutParams = ViewGroup.LayoutParams(20, 40),
+                screenHeight = 50,
+            )
 
         val result = inferMenuPositioningData(view, anchor, MenuPositioningData())
 
         Assert.assertFalse(canUsePreferredOrientation(result))
         Assert.assertTrue(neitherOrientationFits(result))
 
-        val expected = MenuPositioningData(
-            BrowserMenuPlacement.AnchoredToTop.ManualAnchoring(anchor), // orientation DOWN and fitsDown
-            askedOrientation = BrowserMenu.Orientation.DOWN, // default
-            fitsUp = false, // availableHeightToTop(0) is smaller than containerHeight(70)
-            fitsDown = false, // availableHeightToBottom(50) is smaller than containerHeight(70)
-            availableHeightToTop = 0,
-            availableHeightToBottom = 50, // mocked by us above
-            containerViewHeight = 60, // mocked by us above
-        )
+        val expected =
+            MenuPositioningData(
+                BrowserMenuPlacement.AnchoredToTop.ManualAnchoring(anchor), // orientation DOWN and fitsDown
+                askedOrientation = BrowserMenu.Orientation.DOWN, // default
+                fitsUp = false, // availableHeightToTop(0) is smaller than containerHeight(70)
+                fitsDown = false, // availableHeightToBottom(50) is smaller than containerHeight(70)
+                availableHeightToTop = 0,
+                availableHeightToBottom = 50, // mocked by us above
+                containerViewHeight = 60, // mocked by us above
+            )
         Assert.assertEquals(expected, result)
     }
 
     @Test
     fun `GIVEN a menu that does not fit down or up with more space available above the anchor WHEN inferMenuPositioningData is called THEN the menu can be shown anchored to the bottom and placed at a specific location`() {
-        val (view, anchor) = setupTest(
-            viewHeight = 70,
-            anchorLayoutParams = ViewGroup.LayoutParams(20, 40),
-            screenHeight = 100,
-        )
+        val (view, anchor) =
+            setupTest(
+                viewHeight = 70,
+                anchorLayoutParams = ViewGroup.LayoutParams(20, 40),
+                screenHeight = 100,
+            )
 
         // mock anchor position
         whenever(anchor.getLocationOnScreen(IntArray(2))).thenAnswer { invocation ->
@@ -122,15 +130,16 @@ class BrowserMenuPositioningTest {
         Assert.assertFalse(canUsePreferredOrientation(result))
         Assert.assertTrue(neitherOrientationFits(result))
 
-        val expected = MenuPositioningData(
-            BrowserMenuPlacement.AnchoredToBottom.ManualAnchoring(anchor), // orientation UP and fitsUp
-            askedOrientation = BrowserMenu.Orientation.DOWN, // default
-            fitsUp = false, // availableHeightToTop(60) is smaller than containerHeight(70)
-            fitsDown = false, // availableHeightToBottom(40) is smaller than containerHeight(70)
-            availableHeightToTop = 60, // mocked by us above
-            availableHeightToBottom = 40,
-            containerViewHeight = 70, // mocked by us above
-        )
+        val expected =
+            MenuPositioningData(
+                BrowserMenuPlacement.AnchoredToBottom.ManualAnchoring(anchor), // orientation UP and fitsUp
+                askedOrientation = BrowserMenu.Orientation.DOWN, // default
+                fitsUp = false, // availableHeightToTop(60) is smaller than containerHeight(70)
+                fitsDown = false, // availableHeightToBottom(40) is smaller than containerHeight(70)
+                availableHeightToTop = 60, // mocked by us above
+                availableHeightToBottom = 40,
+                containerViewHeight = 70, // mocked by us above
+            )
 
         Assert.assertEquals(expected, result)
     }
@@ -153,24 +162,26 @@ class BrowserMenuPositioningTest {
             result.inferredMenuPlacement,
         )
 
-        data = MenuPositioningData(
-            fitsUp = false,
-            fitsDown = false,
-            availableHeightToTop = 1,
-            availableHeightToBottom = 2,
-        )
+        data =
+            MenuPositioningData(
+                fitsUp = false,
+                fitsDown = false,
+                availableHeightToTop = 1,
+                availableHeightToBottom = 2,
+            )
         result = inferMenuPosition(view, data)
         Assert.assertEquals(
             BrowserMenuPlacement.AnchoredToTop.ManualAnchoring(view),
             result.inferredMenuPlacement,
         )
 
-        data = MenuPositioningData(
-            fitsUp = false,
-            fitsDown = false,
-            availableHeightToTop = 1,
-            availableHeightToBottom = 0,
-        )
+        data =
+            MenuPositioningData(
+                fitsUp = false,
+                fitsDown = false,
+                availableHeightToTop = 1,
+                availableHeightToBottom = 0,
+            )
         result = inferMenuPosition(view, data)
         Assert.assertEquals(
             BrowserMenuPlacement.AnchoredToBottom.ManualAnchoring(view),

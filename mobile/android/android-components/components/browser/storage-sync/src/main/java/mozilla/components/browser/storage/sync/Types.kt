@@ -33,42 +33,41 @@ import mozilla.components.concept.storage.bookmarks.InsertableBookmarkTreeRoot
 // We have type definitions at the concept level, and "external" types defined within Places.
 // In practice these two types are largely the same, and this file is the conversion point.
 
-/**
- * Conversion from a generic [FrecencyThresholdOption] into its richer comrade within the 'places' lib.
- */
-internal fun FrecencyThresholdOption.into() = when (this) {
-    FrecencyThresholdOption.NONE -> mozilla.appservices.places.uniffi.FrecencyThresholdOption.NONE
-    FrecencyThresholdOption.SKIP_ONE_TIME_PAGES ->
-        mozilla.appservices.places.uniffi.FrecencyThresholdOption.SKIP_ONE_TIME_PAGES
-}
+/** Conversion from a generic [FrecencyThresholdOption] into its richer comrade within the 'places' lib. */
+internal fun FrecencyThresholdOption.into() =
+    when (this) {
+        FrecencyThresholdOption.NONE -> mozilla.appservices.places.uniffi.FrecencyThresholdOption.NONE
+        FrecencyThresholdOption.SKIP_ONE_TIME_PAGES ->
+            mozilla.appservices.places.uniffi.FrecencyThresholdOption.SKIP_ONE_TIME_PAGES
+    }
 
-/**
- * Conversion from a generic [VisitType] into its richer comrade within the 'places' lib.
- */
-internal fun VisitType.into() = when (this) {
-    VisitType.LINK -> mozilla.appservices.places.uniffi.VisitType.LINK
-    VisitType.RELOAD -> mozilla.appservices.places.uniffi.VisitType.RELOAD
-    VisitType.TYPED -> mozilla.appservices.places.uniffi.VisitType.TYPED
-    VisitType.BOOKMARK -> mozilla.appservices.places.uniffi.VisitType.BOOKMARK
-    VisitType.EMBED -> mozilla.appservices.places.uniffi.VisitType.EMBED
-    VisitType.REDIRECT_PERMANENT -> mozilla.appservices.places.uniffi.VisitType.REDIRECT_PERMANENT
-    VisitType.REDIRECT_TEMPORARY -> mozilla.appservices.places.uniffi.VisitType.REDIRECT_TEMPORARY
-    VisitType.DOWNLOAD -> mozilla.appservices.places.uniffi.VisitType.DOWNLOAD
-    VisitType.FRAMED_LINK -> mozilla.appservices.places.uniffi.VisitType.FRAMED_LINK
-}
+/** Conversion from a generic [VisitType] into its richer comrade within the 'places' lib. */
+internal fun VisitType.into() =
+    when (this) {
+        VisitType.LINK -> mozilla.appservices.places.uniffi.VisitType.LINK
+        VisitType.RELOAD -> mozilla.appservices.places.uniffi.VisitType.RELOAD
+        VisitType.TYPED -> mozilla.appservices.places.uniffi.VisitType.TYPED
+        VisitType.BOOKMARK -> mozilla.appservices.places.uniffi.VisitType.BOOKMARK
+        VisitType.EMBED -> mozilla.appservices.places.uniffi.VisitType.EMBED
+        VisitType.REDIRECT_PERMANENT -> mozilla.appservices.places.uniffi.VisitType.REDIRECT_PERMANENT
+        VisitType.REDIRECT_TEMPORARY -> mozilla.appservices.places.uniffi.VisitType.REDIRECT_TEMPORARY
+        VisitType.DOWNLOAD -> mozilla.appservices.places.uniffi.VisitType.DOWNLOAD
+        VisitType.FRAMED_LINK -> mozilla.appservices.places.uniffi.VisitType.FRAMED_LINK
+    }
 
-internal fun mozilla.appservices.places.uniffi.VisitType.into() = when (this) {
-    mozilla.appservices.places.uniffi.VisitType.UPDATE_PLACE -> VisitType.LINK
-    mozilla.appservices.places.uniffi.VisitType.LINK -> VisitType.LINK
-    mozilla.appservices.places.uniffi.VisitType.RELOAD -> VisitType.RELOAD
-    mozilla.appservices.places.uniffi.VisitType.TYPED -> VisitType.TYPED
-    mozilla.appservices.places.uniffi.VisitType.BOOKMARK -> VisitType.BOOKMARK
-    mozilla.appservices.places.uniffi.VisitType.EMBED -> VisitType.EMBED
-    mozilla.appservices.places.uniffi.VisitType.REDIRECT_PERMANENT -> VisitType.REDIRECT_PERMANENT
-    mozilla.appservices.places.uniffi.VisitType.REDIRECT_TEMPORARY -> VisitType.REDIRECT_TEMPORARY
-    mozilla.appservices.places.uniffi.VisitType.DOWNLOAD -> VisitType.DOWNLOAD
-    mozilla.appservices.places.uniffi.VisitType.FRAMED_LINK -> VisitType.FRAMED_LINK
-}
+internal fun mozilla.appservices.places.uniffi.VisitType.into() =
+    when (this) {
+        mozilla.appservices.places.uniffi.VisitType.UPDATE_PLACE -> VisitType.LINK
+        mozilla.appservices.places.uniffi.VisitType.LINK -> VisitType.LINK
+        mozilla.appservices.places.uniffi.VisitType.RELOAD -> VisitType.RELOAD
+        mozilla.appservices.places.uniffi.VisitType.TYPED -> VisitType.TYPED
+        mozilla.appservices.places.uniffi.VisitType.BOOKMARK -> VisitType.BOOKMARK
+        mozilla.appservices.places.uniffi.VisitType.EMBED -> VisitType.EMBED
+        mozilla.appservices.places.uniffi.VisitType.REDIRECT_PERMANENT -> VisitType.REDIRECT_PERMANENT
+        mozilla.appservices.places.uniffi.VisitType.REDIRECT_TEMPORARY -> VisitType.REDIRECT_TEMPORARY
+        mozilla.appservices.places.uniffi.VisitType.DOWNLOAD -> VisitType.DOWNLOAD
+        mozilla.appservices.places.uniffi.VisitType.FRAMED_LINK -> VisitType.FRAMED_LINK
+    }
 
 internal fun HistoryVisitInfo.into(): VisitInfo {
     return VisitInfo(
@@ -143,8 +142,18 @@ internal fun HistoryMetadataKey.into(): mozilla.appservices.places.HistoryMetada
 internal fun mozilla.appservices.places.HistoryMetadataKey.into(): HistoryMetadataKey {
     return HistoryMetadataKey(
         url = this.url,
-        referrerUrl = if (this.referrerUrl.isNullOrEmpty()) { null } else { this.referrerUrl },
-        searchTerm = if (this.searchTerm.isNullOrEmpty()) { null } else { this.searchTerm },
+        referrerUrl =
+            if (this.referrerUrl.isNullOrEmpty()) {
+                null
+            } else {
+                this.referrerUrl
+            },
+        searchTerm =
+            if (this.searchTerm.isNullOrEmpty()) {
+                null
+            } else {
+                this.searchTerm
+            },
     )
 }
 
@@ -218,7 +227,7 @@ internal fun HistoryMetadata.into(): mozilla.appservices.places.uniffi.HistoryMe
 }
 
 internal fun HistoryMetadataObservation.into(
-    key: HistoryMetadataKey,
+    key: HistoryMetadataKey
 ): mozilla.appservices.places.uniffi.HistoryMetadataObservation {
     return when (this) {
         is HistoryMetadataObservation.ViewTimeObservation -> {
@@ -240,60 +249,62 @@ internal fun HistoryMetadataObservation.into(
     }
 }
 
-internal fun HistoryMetadataObservation.options() = when (this) {
-    is HistoryMetadataObservation.ViewTimeObservation -> {
-        // Don't record view time observations if the page has been
-        // removed from history (bug 1869369).
-        NoteHistoryMetadataObservationOptions(
-            ifPageMissing = HistoryMetadataPageMissingBehavior.IGNORE_OBSERVATION,
-        )
+internal fun HistoryMetadataObservation.options() =
+    when (this) {
+        is HistoryMetadataObservation.ViewTimeObservation -> {
+            // Don't record view time observations if the page has been
+            // removed from history (bug 1869369).
+            NoteHistoryMetadataObservationOptions(ifPageMissing = HistoryMetadataPageMissingBehavior.IGNORE_OBSERVATION)
+        }
+        is HistoryMetadataObservation.DocumentTypeObservation -> {
+            // ...But record document type observations, because these might be
+            // recorded on first load, before a page has been added to history
+            // (bug 1927543, comment 1).
+            NoteHistoryMetadataObservationOptions(ifPageMissing = HistoryMetadataPageMissingBehavior.INSERT_PAGE)
+        }
     }
-    is HistoryMetadataObservation.DocumentTypeObservation -> {
-        // ...But record document type observations, because these might be
-        // recorded on first load, before a page has been added to history
-        // (bug 1927543, comment 1).
-        NoteHistoryMetadataObservationOptions(
-            ifPageMissing = HistoryMetadataPageMissingBehavior.INSERT_PAGE,
-        )
-    }
-}
 
 internal fun InsertableBookmarkTreeRoot.toPlacesItem() = rootFolder.toPlacesItem(parentGuid)
-internal val InsertableBookmarkTreeNode.bookmarkPosition get() = position?.let {
-    BookmarkPosition.Specific(it)
-} ?: BookmarkPosition.Append
-internal fun InsertableBookmarkTreeNode.Folder.toPlacesItem(parentGuid: String = "") = InsertableBookmarkItem.Folder(
-    InsertableBookmarkFolder(
-        parentGuid = parentGuid,
-        position = bookmarkPosition,
-        dateAdded = dateAddedTimestamp,
-        lastModified = lastModifiedTimestamp,
-        title = title,
-        children = children.map { it.toPlacesItem() },
-    ),
-)
 
-internal fun InsertableBookmarkTreeNode.Item.toPlacesItem(parentGuid: String = "") = InsertableBookmarkItem.Bookmark(
-    InsertableBookmark(
-        parentGuid = parentGuid,
-        position = bookmarkPosition,
-        dateAdded = dateAddedTimestamp,
-        lastModified = lastModifiedTimestamp,
-        url = url,
-        title = title,
-    ),
-)
+internal val InsertableBookmarkTreeNode.bookmarkPosition
+    get() =
+        position?.let {
+            BookmarkPosition.Specific(it)
+        } ?: BookmarkPosition.Append
 
-internal fun InsertableBookmarkTreeNode.Separator.toPlacesItem(
-    parentGuid: String = "",
-) = InsertableBookmarkItem.Separator(
-    InsertableBookmarkSeparator(
-        parentGuid = parentGuid,
-        position = bookmarkPosition,
-        dateAdded = 0L,
-        lastModified = 0L,
-    ),
-)
+internal fun InsertableBookmarkTreeNode.Folder.toPlacesItem(parentGuid: String = "") =
+    InsertableBookmarkItem.Folder(
+        InsertableBookmarkFolder(
+            parentGuid = parentGuid,
+            position = bookmarkPosition,
+            dateAdded = dateAddedTimestamp,
+            lastModified = lastModifiedTimestamp,
+            title = title,
+            children = children.map { it.toPlacesItem() },
+        )
+    )
+
+internal fun InsertableBookmarkTreeNode.Item.toPlacesItem(parentGuid: String = "") =
+    InsertableBookmarkItem.Bookmark(
+        InsertableBookmark(
+            parentGuid = parentGuid,
+            position = bookmarkPosition,
+            dateAdded = dateAddedTimestamp,
+            lastModified = lastModifiedTimestamp,
+            url = url,
+            title = title,
+        )
+    )
+
+internal fun InsertableBookmarkTreeNode.Separator.toPlacesItem(parentGuid: String = "") =
+    InsertableBookmarkItem.Separator(
+        InsertableBookmarkSeparator(
+            parentGuid = parentGuid,
+            position = bookmarkPosition,
+            dateAdded = 0L,
+            lastModified = 0L,
+        )
+    )
 
 internal fun InsertableBookmarkTreeNode.toPlacesItem(parentGuid: String = ""): InsertableBookmarkItem {
     return when (this) {

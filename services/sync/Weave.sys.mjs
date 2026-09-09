@@ -7,7 +7,6 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   CLIENT_NOT_CONFIGURED: "resource://services-sync/constants.sys.mjs",
-  FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -144,47 +143,5 @@ WeaveService.prototype = {
       !!lazy.syncUsername &&
       Services.prefs.getBoolPref("identity.fxaccounts.enabled")
     );
-  },
-};
-
-export function AboutWeaveLog() {}
-AboutWeaveLog.prototype = {
-  classID: Components.ID("{d28f8a0b-95da-48f4-b712-caf37097be41}"),
-
-  QueryInterface: ChromeUtils.generateQI([
-    "nsIAboutModule",
-    "nsISupportsWeakReference",
-  ]),
-
-  getURIFlags() {
-    return 0;
-  },
-
-  newChannel(aURI, aLoadInfo) {
-    let dir = lazy.FileUtils.getDir("ProfD", ["weave", "logs"]);
-    try {
-      dir.create(Ci.nsIFile.DIRECTORY_TYPE, lazy.FileUtils.PERMS_DIRECTORY);
-    } catch (ex) {
-      if (ex.result != Cr.NS_ERROR_FILE_ALREADY_EXISTS) {
-        throw ex;
-      }
-      // Ignore the exception due to a directory that already exists.
-    }
-    let uri = Services.io.newFileURI(dir);
-    let channel = Services.io.newChannelFromURIWithLoadInfo(uri, aLoadInfo);
-
-    channel.originalURI = aURI;
-
-    // Ensure that the about page has the same privileges as a regular directory
-    // view. That way links to files can be opened. make sure we use the correct
-    // origin attributes when creating the principal for accessing the
-    // about:sync-log data.
-    let principal = Services.scriptSecurityManager.createContentPrincipal(
-      uri,
-      aLoadInfo.originAttributes
-    );
-
-    channel.owner = principal;
-    return channel;
   },
 };

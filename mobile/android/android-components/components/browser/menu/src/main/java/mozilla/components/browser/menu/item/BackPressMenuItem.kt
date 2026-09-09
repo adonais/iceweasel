@@ -23,18 +23,13 @@ import mozilla.components.concept.menu.candidate.TextMenuCandidate
 class BackPressMenuItem(
     val contentDescription: String,
     label: String,
-    @DrawableRes
-    imageResource: Int,
-    @ColorRes
-    iconTintColorResource: Int = NO_ID,
-    @ColorRes
-    textColorResource: Int = NO_ID,
+    @DrawableRes imageResource: Int,
+    @ColorRes iconTintColorResource: Int = NO_ID,
+    @ColorRes textColorResource: Int = NO_ID,
     private var backPressListener: () -> Unit = {},
 ) : BrowserMenuImageText(label, imageResource, iconTintColorResource, textColorResource) {
 
-    /**
-     * Binds the view according to its super, but use [backPressListener] for on view clicks.
-     */
+    /** Binds the view according to its super, but use [backPressListener] for on view clicks. */
     override fun bind(menu: BrowserMenu, view: View) {
         super.bind(menu, view)
 
@@ -42,18 +37,17 @@ class BackPressMenuItem(
             backPressListener.invoke()
             menu.dismiss()
         }
-        view.accessibilityDelegate = object : AccessibilityDelegate() {
-            override fun onInitializeAccessibilityNodeInfo(host: View, info: AccessibilityNodeInfo) {
-                super.onInitializeAccessibilityNodeInfo(host, info)
-                info.className = Button::class.java.name
+        view.accessibilityDelegate =
+            object : AccessibilityDelegate() {
+                override fun onInitializeAccessibilityNodeInfo(host: View, info: AccessibilityNodeInfo) {
+                    super.onInitializeAccessibilityNodeInfo(host, info)
+                    info.className = Button::class.java.name
+                }
             }
-        }
         view.contentDescription = contentDescription
     }
 
-    /**
-     * Sets and replaces the existing [backPressListener] for the back press item.
-     */
+    /** Sets and replaces the existing [backPressListener] for the back press item. */
     fun setListener(onClickListener: () -> Unit) {
         backPressListener = onClickListener
     }

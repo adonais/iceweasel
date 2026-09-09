@@ -5,10 +5,6 @@
       "issue": "firefox-blocked-completely",
       "matches": ["*://411.ca/"]
     },
-    "1800241": {
-      "issue": "broken-layout",
-      "matches": ["*://*.mms.telekom.de/*"]
-    },
     "1944355": {
       "issue": "firefox-blocked-completely",
       "matches": ["*://ubank.com.au/*"]

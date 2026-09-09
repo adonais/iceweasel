@@ -28,33 +28,31 @@ internal fun TranslationsAnimation(
             if (initialState && !targetState) {
                 // Entering the settings area from the main translation area
                 enterSubmenu(
-                    duration = DURATION_MS_TRANSLATIONS,
-                    delay = DELAY_MS_TRANSLATIONS,
-                ).togetherWith(
-                    exitMenu(duration = DURATION_MS_TRANSLATIONS),
-                ) using SizeTransform { initialSize, targetSize ->
-                    contentGrowth(
-                        initialSize = initialSize,
-                        targetSize = targetSize,
-                        duration = DURATION_MS_TRANSLATIONS,
-                    )
-                }
-            } else {
-                // Entering the main translations area from the settings area
-                (
-                    enterMenu(
                         duration = DURATION_MS_TRANSLATIONS,
                         delay = DELAY_MS_TRANSLATIONS,
                     )
-                    ).togetherWith(
-                    exitSubmenu(duration = DURATION_MS_TRANSLATIONS),
-                ) using SizeTransform { initialSize, targetSize ->
-                    contentGrowth(
-                        initialSize = initialSize,
-                        targetSize = targetSize,
+                    .togetherWith(exitMenu(duration = DURATION_MS_TRANSLATIONS)) using
+                    SizeTransform { initialSize, targetSize ->
+                        contentGrowth(
+                            initialSize = initialSize,
+                            targetSize = targetSize,
+                            duration = DURATION_MS_TRANSLATIONS,
+                        )
+                    }
+            } else {
+                // Entering the main translations area from the settings area
+                (enterMenu(
                         duration = DURATION_MS_TRANSLATIONS,
-                    )
-                }
+                        delay = DELAY_MS_TRANSLATIONS,
+                    ))
+                    .togetherWith(exitSubmenu(duration = DURATION_MS_TRANSLATIONS)) using
+                    SizeTransform { initialSize, targetSize ->
+                        contentGrowth(
+                            initialSize = initialSize,
+                            targetSize = targetSize,
+                            duration = DURATION_MS_TRANSLATIONS,
+                        )
+                    }
             }
         },
         label = "TranslationsAnimation",

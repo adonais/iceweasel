@@ -107,7 +107,7 @@ async function getMessageValidators(skipValidation) {
       { common: true }
     ),
     infobar: await getValidator(
-      "./content-src/templates/CFR/templates/InfoBar.schema.json",
+      "./content-src/templates/InfoBar/InfoBar.schema.json",
       { common: true }
     ),
     pb_newtab: await getValidator(

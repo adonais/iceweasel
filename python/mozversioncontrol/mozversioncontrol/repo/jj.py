@@ -23,6 +23,7 @@ from mozversioncontrol.errors import (
     CannotDeleteFromRootOfRepositoryException,
     MissingVCSExtension,
     MissingVCSInfo,
+    StaleWorkspaceError,
 )
 from mozversioncontrol.repo.base import Repository
 from mozversioncontrol.repo.git import GitRepository
@@ -46,7 +47,15 @@ class JujutsuRepository(Repository):
         super().__init__(path, tool=jj)
         self._git = GitRepository(path, git=git)
 
-        git_dir = self._run("git", "root")
+        try:
+            git_dir = self._run("git", "root", stderr=subprocess.PIPE)
+        except subprocess.CalledProcessError as e:
+            stderr = e.stderr or ""
+            if "working copy is stale" in stderr.lower():
+                raise StaleWorkspaceError(stderr.rstrip()) from e
+            print(stderr, end="", file=sys.stderr)
+            raise
+
         if not git_dir:
             raise MissingVCSInfo("cannot find `jj git root`")
 

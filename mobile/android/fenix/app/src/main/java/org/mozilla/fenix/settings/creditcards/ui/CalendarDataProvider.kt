@@ -8,9 +8,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
-/**
- * Provider for calendar data used in the credit card editor
- */
+/** Provider for calendar data used in the credit card editor */
 interface CalendarDataProvider {
 
     /**
@@ -42,7 +40,7 @@ interface CalendarDataProvider {
  * @param dateFormat The [SimpleDateFormat] to use for formatting the dates.
  */
 class DefaultCalendarDataProvider(
-    private val dateFormat: SimpleDateFormat = SimpleDateFormat("MMMM (MM)", Locale.getDefault()),
+    private val dateFormat: SimpleDateFormat = SimpleDateFormat("MMMM (MM)", Locale.getDefault())
 ) : CalendarDataProvider {
 
     override fun months(): List<String> {
@@ -73,12 +71,8 @@ class DefaultCalendarDataProvider(
     }
 }
 
-/**
- * Number of months in a year (0-indexed).
- */
+/** Number of months in a year (0-indexed). */
 private const val NUMBER_OF_MONTHS = 11
 
-/**
- * Number of years to show in the credit card expiry year field.
- */
+/** Number of years to show in the credit card expiry year field. */
 private const val NUMBER_OF_YEARS_TO_SHOW = 10

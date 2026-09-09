@@ -44,9 +44,11 @@ USAGE EXAMPLES
 from __future__ import annotations
 
 import argparse
+import atexit
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 
@@ -86,6 +88,9 @@ LEVEL_STYLE = {
     "LOC": ("purple", False),
     "OK": ("green", False),
     "ERR": ("vermillion", True),
+    # A skipped scope is an outcome, not an absence: an optional element that was not there, or one
+    # that vanished mid-verb. Unstyled it read as ordinary output.
+    "SKIP": ("orange", False),
     "WARN": ("orange", True),
     "INFO": ("gray", False),
     "SHOT": ("sky", False),
@@ -96,6 +101,7 @@ LEVEL_STYLE = {
 # Structured stream is on "Eff"; "System.out" kept for logs from before the consolidation.
 LOGCAT_TAGS = [
     "Eff:I",
+    "EffJson:I",
     "TestRunner:I",
     "System.out:I",
     "EffScreenDump:I",
@@ -167,7 +173,7 @@ def strip_ansi(s: str) -> str:
 
 
 def parse(line: str):
-    """Return (kind, tag, payload). kind in {structured, testrunner, androidruntime, other}."""
+    """Return (kind, tag, payload). kind in {structured, events, testrunner, androidruntime, other}."""
     line = strip_ansi(line.rstrip("\n"))
     m = LOGCAT_RE.match(line)
     if m:
@@ -183,6 +189,8 @@ def parse(line: str):
     # older logs captured before the logging-consolidation change.
     if tag in ("Eff", "System.out", None) and STRUCT_RE.match(payload):
         return "structured", tag, payload
+    if tag == "EffJson":
+        return "events", tag, payload
     if tag == "TestRunner":
         return "testrunner", tag, payload
     if tag == "AndroidRuntime":
@@ -264,8 +272,17 @@ def plain(line: str) -> str | None:
     return payload
 
 
-def process(lines, painter: Painter, color_scope: str, out_f) -> None:
+def process(lines, painter: Painter, color_scope: str, out_f, events_f=None) -> None:
     for raw in lines:
+        kind, _tag, payload = parse(raw)
+        if kind == "events":
+            # Structured records go to the sidecar only. They describe the same events as the
+            # [CMD]/[LOC] lines beside them, so rendering them would bury the narrative.
+            if events_f is not None:
+                events_f.write(payload.strip() + "\n")
+                events_f.flush()
+            continue
+
         colored = render(raw, painter, color_scope)
         if colored is not None:
             print(colored, flush=True)
@@ -292,6 +309,34 @@ def find_adb() -> str | None:
     return None
 
 
+# Every `adb logcat` this process starts. Tracked at module level rather than relying on the
+# generator's `finally`, because the generator is not the thing that gets killed.
+#
+# effloop backgrounds `effpretty capture` and SIGTERMs it when the run ends. Python's default SIGTERM
+# handling terminates the interpreter WITHOUT unwinding generators, so the cleanup below never ran and
+# the adb child was left attached to the device --- once per loop iteration, accumulating silently.
+#
+# A stray reader is not free: logd serves it every line and applies backpressure to the app writing
+# them. Two of them were found attached after a day's work, and reaping them was measurable.
+_CHILDREN: list = []
+
+
+def _reap_children(*_args):
+    for proc in _CHILDREN:
+        if proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+    _CHILDREN.clear()
+
+
+def _reap_and_exit(signum, _frame):
+    _reap_children()
+    sys.exit(128 + signum)
+
+
 def capture_lines(mode: str):
     """Yield logcat lines from a connected device. mode: live | watch | dump."""
     adb = find_adb()
@@ -309,16 +354,12 @@ def capture_lines(mode: str):
     proc = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, text=True, bufsize=1, errors="replace"
     )
+    _CHILDREN.append(proc)
     try:
         assert proc.stdout is not None
         yield from proc.stdout
     finally:
-        if proc.poll() is None:
-            proc.terminate()
-            try:
-                proc.wait(timeout=3)
-            except subprocess.TimeoutExpired:
-                proc.kill()
+        _reap_children()
 
 
 # --- CLI ------------------------------------------------------------------------
@@ -336,6 +377,12 @@ def add_common(sp):
         default="tag",
         help="'tag' (default) colors the level tag, keeps message high-contrast; "
         "'line' colors the whole line.",
+    )
+    sp.add_argument(
+        "--events",
+        metavar="PATH",
+        help="write the structured EffJson records to PATH, one JSON object per line. This is what "
+        "efftriage reads: matching fields cannot break the way matching rendered prose does.",
     )
     sp.add_argument("--no-color", action="store_true", help="disable terminal color.")
     sp.add_argument(
@@ -375,6 +422,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    atexit.register(_reap_children)
+    for sig in (signal.SIGTERM, signal.SIGHUP):
+        signal.signal(sig, _reap_and_exit)
+
     argv = sys.argv[1:]
     # Default to `view` when no subcommand is given (e.g. `effpretty run.txt` or piped stdin).
     if not argv or (argv[0] not in ("view", "capture", "-h", "--help")):
@@ -390,6 +441,11 @@ def main() -> int:
     painter = Painter(color_mode(sys.stdout, forced))
 
     out_f = open(args.out, "w", encoding="utf-8") if args.out else None
+    events_f = (
+        open(args.events, "w", encoding="utf-8")
+        if getattr(args, "events", None)
+        else None
+    )
     close_src = None
     try:
         if args.cmd == "capture":
@@ -399,12 +455,13 @@ def main() -> int:
             lines = close_src
         else:
             lines = sys.stdin
-        process(lines, painter, args.color_scope, out_f)
+        process(lines, painter, args.color_scope, out_f, events_f)
     except (BrokenPipeError, KeyboardInterrupt):
         pass
     finally:
-        if out_f is not None:
-            out_f.close()
+        for f in (out_f, events_f):
+            if f is not None:
+                f.close()
         if close_src is not None:
             close_src.close()
     return 0

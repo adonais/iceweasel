@@ -6,7 +6,5 @@ package org.mozilla.fenix.components
 
 import androidx.core.content.FileProvider
 
-/**
- * FileProvider used to share images with Google Lens.
- */
+/** FileProvider used to share images with Google Lens. */
 class LensFileProvider : FileProvider()

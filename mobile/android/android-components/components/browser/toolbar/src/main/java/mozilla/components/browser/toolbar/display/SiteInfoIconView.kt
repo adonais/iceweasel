@@ -11,11 +11,10 @@ import androidx.appcompat.widget.AppCompatImageView
 import mozilla.components.browser.toolbar.R
 import mozilla.components.concept.toolbar.Toolbar.SiteInfo
 
-/**
- * Internal widget to display the different icons of site info, relies on the
- * [SiteInfo] state of each page.
- */
-internal class SiteInfoIconView @JvmOverloads constructor(
+/** Internal widget to display the different icons of site info, relies on the [SiteInfo] state of each page. */
+internal class SiteInfoIconView
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
@@ -42,7 +41,8 @@ internal class SiteInfoIconView @JvmOverloads constructor(
                 View.mergeDrawableStates(drawableState, intArrayOf(R.attr.state_local_pdf))
                 drawableState
             }
-            SiteInfo.INSECURE, null -> super.onCreateDrawableState(extraSpace)
+            SiteInfo.INSECURE,
+            null -> super.onCreateDrawableState(extraSpace)
             SiteInfo.SECURE -> {
                 val drawableState = super.onCreateDrawableState(extraSpace + 1)
                 View.mergeDrawableStates(drawableState, intArrayOf(R.attr.state_site_secure))

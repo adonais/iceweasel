@@ -10,8 +10,8 @@ import mozilla.components.browser.icons.IconRequest
 import mozilla.components.support.images.DesiredSize
 
 /**
- * An [IconProcessor] implementation receives the [Icon] with the [IconRequest] and [IconRequest.Resource] after
- * the icon was loaded. The [IconProcessor] has the option to rewrite a loaded [Icon] and return a new instance.
+ * An [IconProcessor] implementation receives the [Icon] with the [IconRequest] and [IconRequest.Resource] after the
+ * icon was loaded. The [IconProcessor] has the option to rewrite a loaded [Icon] and return a new instance.
  */
 interface IconProcessor {
     fun process(

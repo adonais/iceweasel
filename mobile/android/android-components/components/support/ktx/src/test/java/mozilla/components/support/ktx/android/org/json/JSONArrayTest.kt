@@ -20,19 +20,18 @@ class JSONArrayTest {
 
     @Before
     fun setUp() {
-        testData2Elements = JSONArray().apply {
-            put(JSONObject("""{"a": 1}"""))
-            put(JSONObject("""{"b": 2}"""))
-        }
+        testData2Elements =
+            JSONArray().apply {
+                put(JSONObject("""{"a": 1}"""))
+                put(JSONObject("""{"b": 2}"""))
+            }
     }
 
     @Test
     fun itCanBeIterated() {
         val array = JSONArray("[1, 2, 3]")
 
-        val sum = array.asSequence()
-            .map { it as Int }
-            .sum()
+        val sum = array.asSequence().map { it as Int }.sum()
 
         assertEquals(6, sum)
     }
@@ -77,9 +76,10 @@ class JSONArrayTest {
 
     @Test
     fun `WHEN mapNotNull transform throws a JSONException THEN that item is ignored`() {
-        val actual = testData2Elements.mapNotNull(JSONArray::getJSONObject) {
-            it.get("b") // key not found for first item: throws an exception.
-        }
+        val actual =
+            testData2Elements.mapNotNull(JSONArray::getJSONObject) {
+                it.get("b") // key not found for first item: throws an exception.
+            }
         assertEquals(1, actual.size)
         assertEquals(2, actual[0])
     }
@@ -109,11 +109,12 @@ class JSONArrayTest {
 
     @Test
     fun `WHEN mapNotNull on an array of JSONObject THEN nulls are removed and data is mapped`() {
-        val expected = listOf(
-            "a" to 1,
-            "b" to 2,
-            "c" to 3,
-        )
+        val expected =
+            listOf(
+                "a" to 1,
+                "b" to 2,
+                "c" to 3,
+            )
 
         // Convert expected to input: [JSONObject("a" to 1), null, JSONObject("b" to 2), null, ...]
         val input = JSONArray()
@@ -123,14 +124,15 @@ class JSONArrayTest {
             input.put(null)
         }
 
-        val actual = input.mapNotNull(JSONArray::getJSONObject) {
-            val keys = it.keys().asSequence().toList()
-            assertEquals(it.toString(), 1, keys.size)
+        val actual =
+            input.mapNotNull(JSONArray::getJSONObject) {
+                val keys = it.keys().asSequence().toList()
+                assertEquals(it.toString(), 1, keys.size)
 
-            val key = keys.first()
-            val value = it.get(key) as Int
-            Pair(key, value)
-        }
+                val key = keys.first()
+                val value = it.get(key) as Int
+                Pair(key, value)
+            }
 
         assertEquals(expected, actual)
     }

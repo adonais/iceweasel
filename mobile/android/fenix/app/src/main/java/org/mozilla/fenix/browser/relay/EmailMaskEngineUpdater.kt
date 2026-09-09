@@ -31,12 +31,14 @@ class EmailMaskEngineUpdater(
 
     @OptIn(ExperimentalCoroutinesApi::class) // mapLatest
     override suspend fun onState(flow: Flow<RelayState>) {
-        flow.mapLatest { it.eligibilityState }
+        flow
+            .mapLatest { it.eligibilityState }
             .collect { state ->
-                val mode = when (state) {
-                    is Eligible -> Engine.FirefoxRelayMode.ENABLED
-                    is Ineligible -> Engine.FirefoxRelayMode.DISABLED
-                }
+                val mode =
+                    when (state) {
+                        is Eligible -> Engine.FirefoxRelayMode.ENABLED
+                        is Ineligible -> Engine.FirefoxRelayMode.DISABLED
+                    }
                 engine.settings.firefoxRelay = mode
             }
     }

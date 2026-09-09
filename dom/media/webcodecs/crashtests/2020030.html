@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<head>
+<title>Bug 2020030</title>
+</head>
+<body>
+<script>
+async function boom() {
+  const canvas = document.createElement("canvas");
+
+  try {
+    const encoder = new VideoEncoder({ output: () => {}, error: () => {} });
+    encoder.configure({ codec: "av01.0.08M.10", width: 64, height: 55572 });
+
+    for (let f = 0; f < 5; f++) {
+      const frame = new VideoFrame(canvas, { timestamp: f * 33333 });
+      encoder.encode(frame);
+      frame.close();
+    }
+    await encoder.flush().catch(() => {});
+  } catch (e) {}
+
+  document.documentElement.removeAttribute("class");
+}
+
+boom();
+</script>
+</body>
+</html>

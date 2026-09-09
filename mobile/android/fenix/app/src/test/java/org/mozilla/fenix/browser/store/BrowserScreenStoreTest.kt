@@ -30,11 +30,8 @@ class BrowserScreenStoreTest {
         assertTrue(store.state.cancelPrivateDownloadsAccepted)
     }
 
-    private fun buildStore(
-        cancelPrivateDownloadsAccepted: Boolean = false,
-    ) = BrowserScreenStore(
-        initialState = BrowserScreenState(
-            cancelPrivateDownloadsAccepted = cancelPrivateDownloadsAccepted,
-        ),
-    )
+    private fun buildStore(cancelPrivateDownloadsAccepted: Boolean = false) =
+        BrowserScreenStore(
+            initialState = BrowserScreenState(cancelPrivateDownloadsAccepted = cancelPrivateDownloadsAccepted)
+        )
 }

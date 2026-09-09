@@ -388,6 +388,16 @@ class SocketListener extends EventEmitter {
     if (this.discoverable && !Number(this.portOrPath)) {
       throw new Error("Discovery only supported for TCP sockets.");
     }
+    // Browser toolbox and about:devtools-toolbox should show a user friendly message,
+    // but also do a last safe check just before opening the port for listening.
+    if (
+      !Services.prefs.getBoolPref("devtools.debugger.remote-enabled", false)
+    ) {
+      const message =
+        "Opening a TCP port listening for DevTools is only allowed when 'devtools.debugger.remote-enabled' is set to true";
+      console.error(message);
+      throw new Error(message);
+    }
   }
 
   /**

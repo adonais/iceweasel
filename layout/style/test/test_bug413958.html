@@ -41,16 +41,18 @@ var tests = [
     s.color = "black";
   },
 ];
+// Errors point at the start of the offending declaration / rule, rather than
+// at the exact token that failed to parse.
 var results = [
   [ { errorMessage: /Unknown property \u2018nosuchprop\u2019/,
-      lineNumber: 1, columnNumber: 16, cssSelectors: "#s1" },
+      lineNumber: 1, columnNumber: 5, cssSelectors: "#s1" },
     { errorMessage: /Unknown property \u2018nosuchprop\u2019/,
-      lineNumber: 2, columnNumber: 16, cssSelectors: "#s2" },
+      lineNumber: 2, columnNumber: 5, cssSelectors: "#s2" },
     { errorMessage: /Ruleset ignored due to bad selector/,
-      lineNumber: 2, columnNumber: 41, cssSelectors: "" } ],
-  [ { errorMessage: /parsing value for \u2018width\u2019/,
-      lineNumber: 1, columnNumber: 7, cssSelectors: "" } ],
-  [ { errorMessage: /parsing value for \u2018width\u2019/,
+      lineNumber: 2, columnNumber: 34, cssSelectors: "" } ],
+  [ { errorMessage: /parsing value for \u2018width:200;\u2019/,
+      lineNumber: 1, columnNumber: 1, cssSelectors: "" } ],
+  [ { errorMessage: /parsing value for \u2018width: 200\u2019/,
       lineNumber: 1, columnNumber: 1, cssSelectors: "" } ],
 ];
 var curTest = -1;

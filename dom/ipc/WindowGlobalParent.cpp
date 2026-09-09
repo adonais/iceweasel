@@ -6,6 +6,14 @@
 
 #include <algorithm>
 
+#ifdef ACCESSIBILITY
+#  include "mozilla/a11y/DocAccessibleParent.h"
+#  include "mozilla/a11y/Platform.h"
+#  include "nsAccessibilityService.h"
+#  if defined(XP_WIN)
+#    include "mozilla/a11y/nsWinUtils.h"
+#  endif
+#endif
 #include "MMPrinter.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/AsyncEventDispatcher.h"
@@ -643,6 +651,18 @@ IPCResult WindowGlobalParent::RecvDestroy() {
   if (CanSend()) {
     RefPtr<BrowserParent> browserParent = GetBrowserParent();
     if (!browserParent || !browserParent->IsDestroyed()) {
+#ifdef ACCESSIBILITY
+      // Destroy the accessibility actor (if any) before we start tearing down
+      // this instance so that accessibility can still access information such
+      // as the owner element. For example, this allows us to gracefully fire
+      // accessibility events notifying of the destruction.
+      if (auto* docAcc = a11y::DocAccessibleParent::GetFrom(this)) {
+#  if defined(ANDROID)
+        MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
+#  endif
+        docAcc->Destroy();
+      }
+#endif
       (void)Send__delete__(this);
     }
   }
@@ -1868,10 +1888,6 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
 
   if (GetBrowsingContext()->IsTopContent() &&
       !mDocumentPrincipal->SchemeIs("about")) {
-    // Record the page load
-    uint32_t pageLoaded = 1;
-    glean::mixed_content::unblock_counter.AccumulateSingleSample(pageLoaded);
-
     // Record the mixed content status of the docshell in Telemetry
     enum {
       NO_MIXED_CONTENT = 0,  // There is no Mixed Content on the page
@@ -2248,6 +2264,151 @@ already_AddRefed<PDigitalCredentialParent>
 WindowGlobalParent::AllocPDigitalCredentialParent() {
   return MakeAndAddRef<DigitalCredentialParent>();
 }
+
+#ifdef ACCESSIBILITY
+already_AddRefed<a11y::PDocAccessibleParent>
+WindowGlobalParent::AllocPDocAccessibleParent(const uint64_t&, const bool&) {
+  return a11y::DocAccessibleParent::New();
+}
+
+mozilla::ipc::IPCResult WindowGlobalParent::RecvPDocAccessibleConstructor(
+    a11y::PDocAccessibleParent* aDoc, const uint64_t& aParentID,
+    const bool& aIsPrintDoc) {
+#  if defined(ANDROID)
+  MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
+#  endif
+  if (ManagedPDocAccessibleParent().Count() > 1) {
+    return IPC_FAIL(
+        this, "Attempt to construct second PDocAccessible for a PWindowGlobal");
+  }
+  auto doc = static_cast<a11y::DocAccessibleParent*>(aDoc);
+  doc->SetIsPrintDoc(aIsPrintDoc);
+  auto allow = doc->ShouldAllowConstruction();
+  if (allow == a11y::DocAccessibleParent::AllowConstruction::Disallow) {
+    return IPC_FAIL(
+        this,
+        "Attempt to construct PDocAccessible when accessibility not in use");
+  } else if (allow ==
+             a11y::DocAccessibleParent::AllowConstruction::AllowButIgnore) {
+    doc->MarkAsShutdown();
+    return IPC_OK();
+  }
+
+  if (GetBrowsingContext()->IsDiscarded()) {
+    // This document is about to die, so ignore it. This is particularly
+    // important on Android because we must never have more than one active top
+    // level DocAccessible at the same time there.
+    doc->MarkAsShutdown();
+    return IPC_OK();
+  }
+
+  RefPtr<WindowGlobalParent> embedderWgp =
+      GetBrowsingContext()->GetEmbedderWindowGlobal();
+  if (NS_WARN_IF(!IsTop() && !embedderWgp)) {
+    // This is an iframe, but it doesn't have a valid embedder WindowGlobal.
+    // This can happen if the parent BrowsingContext navigated somewhere else
+    // while the embedded document was loading. This isn't an error, but it does
+    // mean this embedded document is about to die and its content process just
+    // hasn't caught up yet. Just ignore this document.
+    doc->MarkAsShutdown();
+    return IPC_OK();
+  }
+
+  if (!IsProcessRoot()) {
+    // Iframe document rendered in the same process as its embedder.
+    // A document should never directly be the parent of another document.
+    // There should always be an outer doc accessible child of the outer
+    // document containing the child.
+    MOZ_ASSERT(aParentID);
+    if (!aParentID) {
+      return IPC_FAIL(this, "No parent specified for same-process iframe");
+    }
+
+    MOZ_ASSERT(embedderWgp);
+    auto* parentDoc = a11y::DocAccessibleParent::GetFrom(
+        embedderWgp, /* aAllowShutdown */ true);
+    if (!parentDoc) {
+      return IPC_FAIL(this,
+                      "Same-process embedder's PDocAccessible doesn't exist");
+    }
+    if (parentDoc->IsShutdown()) {
+      // This can happen if parentDoc is an OOP iframe, but its embedder has
+      // been destroyed. (DocAccessibleParent::Destroy destroys any child
+      // documents.) The OOP iframe (and anything it embeds) will die soon
+      // anyway, so mark this document as shutdown and ignore it.
+      doc->MarkAsShutdown();
+      return IPC_OK();
+    }
+
+    mozilla::ipc::IPCResult added = parentDoc->AddChildDoc(doc, aParentID);
+    if (!added) {
+      return added;
+    }
+
+#  ifdef XP_WIN
+    if (a11y::nsWinUtils::IsWindowEmulationStarted()) {
+      doc->SetEmulatedWindowHandle(parentDoc->GetEmulatedWindowHandle());
+    }
+#  endif
+
+    return IPC_OK();
+  }
+
+  // This document is at the top level in its content process. That means it
+  // makes no sense to get an id for an accessible that is its parent.
+  MOZ_ASSERT(!aParentID);
+  if (aParentID) {
+    return IPC_FAIL(
+        this, "Doc at top level of its process shouldn't have a remote parent");
+  }
+  // Sometimes, we can get a new top level DocAccessibleParent before the
+  // previous WindowGlobalParent (and its own top level DocAccessibleParent)
+  // gets destroyed. The previous one will die pretty shortly anyway, so just
+  // destroy its DocAccessibleParent now. We do this because some platforms
+  // (e.g. Android) require that there is only ever a single platform wrapper
+  // for a top level document at a time.
+  for (dom::WindowContext* wc : GetBrowsingContext()->GetWindowContexts()) {
+    if (wc == this) {
+      continue;
+    }
+    WindowGlobalParent* otherWgp = wc->Canonical();
+    if (auto* otherDoc = a11y::DocAccessibleParent::GetFrom(otherWgp)) {
+      MOZ_ASSERT(otherDoc->IsTopLevelInContentProcess());
+      otherDoc->Destroy();
+    }
+  }
+
+  if (BrowserBridgeParent* bridge =
+          GetBrowserParent()->GetBrowserBridgeParent()) {
+    // Iframe document rendered in a different process to its embedder.
+    doc->SetTopLevelInContentProcess();
+    if (!doc->IsPrintDoc()) {
+      a11y::ProxyCreated(doc);
+    }
+    // It's possible the embedder accessible hasn't been set yet; e.g.
+    // a hidden iframe. In that case, embedderDoc will be null and this will
+    // be handled when the embedder is set.
+    if (a11y::DocAccessibleParent* embedderDoc =
+            bridge->GetEmbedderAccessibleDoc()) {
+      mozilla::ipc::IPCResult added = embedderDoc->AddChildDoc(bridge);
+      if (!added) {
+        return added;
+      }
+    }
+    return IPC_OK();
+  }
+
+  MOZ_ASSERT(IsTop());
+  doc->SetTopLevel();
+  a11y::DocManager::RemoteDocAdded(doc);
+#  ifdef XP_WIN
+  if (!aIsPrintDoc) {
+    doc->MaybeInitWindowEmulation();
+  }
+#  endif
+  return IPC_OK();
+}
+#endif  // ACCESSIBILITY
 
 already_AddRefed<PPrefetchRecordParent>
 WindowGlobalParent::AllocPPrefetchRecordParent(

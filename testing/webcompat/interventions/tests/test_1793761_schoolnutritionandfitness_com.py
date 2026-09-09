@@ -1,7 +1,7 @@
 import pytest
 
 URL = "https://www.schoolnutritionandfitness.com/webmenus2/#/view?id=6331c49ce96f1e9c468b45be&siteCode=1641"
-VPN_TEXT = "403 Forbidden"
+VPN_TEXT = "you have been blocked"
 POPUP_CLOSE_CSS = ".modal-dialog button"
 ELEM_CSS = "react-app td > div"
 HEIGHT_CUTOFF = 10

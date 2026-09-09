@@ -33,14 +33,14 @@ for f in "${patches[@]}"; do
     git apply "$f"
 done
 
-# Libcrux
-
+# Libcrux (ML-KEM + ML-DSA combined C extraction)
+#
+# The vendored tree under lib/freebl/libcrux/ is kept byte-identical to upstream
+# combined_extraction/c (it is excluded from clang-format via
+# lib/freebl/libcrux/.clang-format), so it is diffed directly against upstream
+# below with no reformatting. See lib/freebl/libcrux/README.md.
 git clone -q "https://github.com/cryspen/libcrux" ${LIBCRUX}
-git -C ${LIBCRUX} checkout -q 5a1d172a1bcff83bb401bfa718d08a2dc8c77e4e
-
-cd ${LIBCRUX}
-cp ${VCS_PATH}/nss/.clang-format .
-find libcrux-ml-kem/extracts/c/generated -type f -name '*.[ch]' -exec clang-format -i {} \+
+git -C ${LIBCRUX} checkout -q 87eda899b207aa8fecbdf7a6ecfa5f70a9b2c68c
 
 # Karamel
 git clone -q "https://github.com/FStarLang/karamel" ${KARAMEL}
@@ -61,7 +61,7 @@ find include krmllib -type f -name '*.[ch]' -exec clang-format -i {} \+
 files=($(find ${VCS_PATH}/nss/lib/freebl/verified/internal -type f -name '*.[ch]'))
 for f in "${files[@]}"; do
     file_name=$(basename "$f")
-    hacl_file=($(find ${HACL_STAR}/dist/mozilla/internal/ ${LIBCRUX}/libcrux-ml-kem/extracts/c/generated/internal -type f -name $file_name))
+    hacl_file=($(find ${HACL_STAR}/dist/mozilla/internal/ -type f -name $file_name))
     if [ $file_name == "Hacl_Ed25519.h" \
         -o $file_name == "Hacl_Ed25519_PrecompTable.h" ]
     then
@@ -73,7 +73,7 @@ done
 files=($(find ${VCS_PATH}/nss/lib/freebl/verified/ -type f -name '*.[ch]' -not -path "*/freebl/verified/internal/*" -not -path "*/freebl/verified/config.h" -not -path "*/freebl/verified/libcrux*"))
 for f in "${files[@]}"; do
     file_name=$(basename "$f")
-    hacl_file=($(find ${HACL_STAR}/dist/mozilla/ ${KARAMEL}/include/ ${KARAMEL}/krmllib/dist/minimal/  ${LIBCRUX}/libcrux-ml-kem/extracts/c/generated/ -type f -name $file_name -not -path "*/hacl-star/dist/mozilla/internal/*"  -not -path "*/libcrux-ml-kem/extracts/c/generated/internal/*"))
+    hacl_file=($(find ${HACL_STAR}/dist/mozilla/ ${KARAMEL}/include/ ${KARAMEL}/krmllib/dist/minimal/ -type f -name $file_name -not -path "*/hacl-star/dist/mozilla/internal/*"))
     if [ $file_name == "Hacl_P384.c"  \
         -o $file_name == "Hacl_P384.h" \
         -o $file_name == "Hacl_P521.c" \
@@ -115,6 +115,16 @@ for f in "${files[@]}"; do
         -a $file_name != "Hacl_Ed25519.c" ]
     then
         continue
-    fi  
+    fi
     diff -u $hacl_file $f
+done
+
+# Libcrux combined extraction: the vendored tree mirrors the layout of upstream
+# combined_extraction/c (root, internal/, karamel/), so diff each vendored file
+# against its counterpart by relative path. These are kept byte-identical to
+# upstream (not clang-formatted), so no reformatting is applied here.
+files=($(find ${VCS_PATH}/nss/lib/freebl/libcrux -type f -name '*.[ch]'))
+for f in "${files[@]}"; do
+    rel=${f#${VCS_PATH}/nss/lib/freebl/libcrux/}
+    diff -u ${LIBCRUX}/combined_extraction/c/${rel} $f
 done

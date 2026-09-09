@@ -15,8 +15,8 @@ object ReachabilityPlanLogger {
     private const val TAG = "NavigationPlanner"
 
     /**
-     * Builds the reachability plan report without emitting it anywhere, so a future consumer
-     * (a debug UI, an export, etc.) can reuse the same computation [logReachabilityPlan] uses.
+     * Builds the reachability plan report without emitting it anywhere, so a future consumer (a debug UI, an export,
+     * etc.) can reuse the same computation [logReachabilityPlan] uses.
      */
     fun buildReachabilityPlanReport(context: PageContext): DevToolReport {
         val cases = NavigationTestPlanner.buildReachabilityCases()

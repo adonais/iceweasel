@@ -448,39 +448,9 @@ bool DisposalEmitter::emitEnd(EmitterScope& es) {
     return false;
   }
 
-  if (bce_->sc->isSuspendableContext() &&
-      bce_->sc->asSuspendableContext()->isGenerator()) {
-    // [stack] ... THROWING RESOURCES INDEX EXC2 EXC
-
-    // Generator closure is implemented by throwing a magic value
-    // thus when we have a throw completion we must check whether
-    // the pending exception is a generator closing exception and overwrite
-    // it with the normal exception here or else we will end up exposing
-    // the magic value to user program.
-    if (!bce_->emit1(JSOp::IsGenClosing)) {
-      // [stack] ... THROWING RESOURCES INDEX EXC2 EXC GEN-CLOSING
-      return false;
-    }
-
-    if (!bce_->emit1(JSOp::Not)) {
-      // [stack] ... THROWING RESOURCES INDEX EXC2 EXC !GEN-CLOSING
-      return false;
-    }
-
-    if (!bce_->emitPickN(5)) {
-      // [stack] ... RESOURCES INDEX EXC2 EXC (!GEN-CLOSING) THROWING
-      return false;
-    }
-
-    if (!bce_->emit1(JSOp::BitAnd)) {
-      // [stack] ... RESOURCES INDEX EXC2 EXC (!GEN-CLOSING & THROWING)
-      return false;
-    }
-  } else {
-    if (!bce_->emitPickN(4)) {
-      // [stack] ... RESOURCES INDEX EXC2 EXC THROWING
-      return false;
-    }
+  if (!bce_->emitPickN(4)) {
+    // [stack] ... RESOURCES INDEX EXC2 EXC THROWING
+    return false;
   }
 
   // [stack] NEEDS-AWAIT? HAS-AWAITED? RESOURCES INDEX EXC2 EXC THROWING
@@ -1145,36 +1115,6 @@ bool UsingEmitter::emitEnd() {
   if (!emitDisposeResourcesForEnvironment(*es)) {
     // [stack] EXC-OR-RESUME STACK THROWING RVAL? DISPOSAL-EXC DISPOSAL-THROWING
     return false;
-  }
-
-  if (bce_->sc->isSuspendableContext() &&
-      bce_->sc->asSuspendableContext()->isGenerator()) {
-    // [stack] ... DISP-EXC DISP-THROWING
-
-    if (!bce_->emit1(JSOp::Swap)) {
-      // [stack] ... DISP-THROWING DISP-EXC
-      return false;
-    }
-
-    if (!bce_->emit1(JSOp::IsGenClosing)) {
-      // [stack] ... DISP-THROWING DISP-EXC GEN-CLOSING
-      return false;
-    }
-
-    if (!bce_->emit1(JSOp::Not)) {
-      // [stack] ... DISP-THROWING DISP-EXC !GEN-CLOSING
-      return false;
-    }
-
-    if (!bce_->emitPickN(2)) {
-      // [stack] ... DISP-EXC !GEN-CLOSING DISP-THROWING
-      return false;
-    }
-
-    if (!bce_->emit1(JSOp::BitAnd)) {
-      // [stack] ... DISP-EXC (DISP-THROWING & !GEN-CLOSING)
-      return false;
-    }
   }
 
   if (!emitThrowIfException()) {

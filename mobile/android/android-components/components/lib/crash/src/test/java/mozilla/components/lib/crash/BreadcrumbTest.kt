@@ -5,6 +5,9 @@
 package mozilla.components.lib.crash
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.lang.Thread.sleep
+import java.util.Date
+import kotlin.test.assertNotNull
 import kotlinx.serialization.json.Json
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.lib.crash.db.toBreadcrumb
@@ -16,9 +19,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.spy
-import java.lang.Thread.sleep
-import java.util.Date
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class BreadcrumbTest {
@@ -36,13 +36,15 @@ class BreadcrumbTest {
         val testLevel = Breadcrumb.Level.CRITICAL
         val testType = Breadcrumb.Type.USER
 
-        val reporter = spy(
-            CrashReporter(
-                context = testContext,
-                services = listOf(mock()),
-                shouldPrompt = CrashReporter.Prompt.NEVER,
-            ).install(testContext),
-        )
+        val reporter =
+            spy(
+                CrashReporter(
+                        context = testContext,
+                        services = listOf(mock()),
+                        shouldPrompt = CrashReporter.Prompt.NEVER,
+                    )
+                    .install(testContext)
+            )
 
         reporter.recordCrashBreadcrumb(
             Breadcrumb(
@@ -51,7 +53,7 @@ class BreadcrumbTest {
                 testCategory,
                 testLevel,
                 testType,
-            ),
+            )
         )
 
         reporter.crashBreadcrumbsCopy().elementAt(0).let {
@@ -72,13 +74,15 @@ class BreadcrumbTest {
         val testLevel = Breadcrumb.Level.CRITICAL
         val testType = Breadcrumb.Type.USER
 
-        val reporter = spy(
-            CrashReporter(
-                context = testContext,
-                services = listOf(mock()),
-                shouldPrompt = CrashReporter.Prompt.NEVER,
-            ).install(testContext),
-        )
+        val reporter =
+            spy(
+                CrashReporter(
+                        context = testContext,
+                        services = listOf(mock()),
+                        shouldPrompt = CrashReporter.Prompt.NEVER,
+                    )
+                    .install(testContext)
+            )
 
         reporter.recordCrashBreadcrumb(
             Breadcrumb(
@@ -87,7 +91,7 @@ class BreadcrumbTest {
                 testCategory,
                 testLevel,
                 testType,
-            ),
+            )
         )
         assertEquals(reporter.crashBreadcrumbsCopy().size, 1)
 
@@ -98,7 +102,7 @@ class BreadcrumbTest {
                 testCategory,
                 testLevel,
                 testType,
-            ),
+            )
         )
         assertEquals(reporter.crashBreadcrumbsCopy().size, 2)
 
@@ -109,7 +113,7 @@ class BreadcrumbTest {
                 testCategory,
                 testLevel,
                 testType,
-            ),
+            )
         )
         assertEquals(reporter.crashBreadcrumbsCopy().size, 3)
     }
@@ -122,13 +126,15 @@ class BreadcrumbTest {
         val testLevel = Breadcrumb.Level.CRITICAL
         val testType = Breadcrumb.Type.USER
 
-        val reporter = spy(
-            CrashReporter(
-                context = testContext,
-                services = listOf(mock()),
-                shouldPrompt = CrashReporter.Prompt.NEVER,
-            ).install(testContext),
-        )
+        val reporter =
+            spy(
+                CrashReporter(
+                        context = testContext,
+                        services = listOf(mock()),
+                        shouldPrompt = CrashReporter.Prompt.NEVER,
+                    )
+                    .install(testContext)
+            )
 
         val beginDate = Date()
         sleep(100) // make sure time elapsed
@@ -139,7 +145,7 @@ class BreadcrumbTest {
                 testCategory,
                 testLevel,
                 testType,
-            ),
+            )
         )
         sleep(100) // make sure time elapsed
         val afterDate = Date()
@@ -158,7 +164,7 @@ class BreadcrumbTest {
                 testLevel,
                 testType,
                 date,
-            ),
+            )
         )
 
         reporter.crashBreadcrumbsCopy().elementAt(1).let {
@@ -174,18 +180,20 @@ class BreadcrumbTest {
         val testLevel = Breadcrumb.Level.CRITICAL
         val testType = Breadcrumb.Type.USER
         val testDate = Date(0)
-        val testString = "{\"timestamp\":\"1970-01-01T00:00:00\",\"message\":\"test_Message\"," +
-            "\"category\":\"testing_category\",\"level\":\"Critical\",\"type\":\"User\"," +
-            "\"data\":{\"1\":\"one\",\"2\":\"two\"}}"
+        val testString =
+            "{\"timestamp\":\"1970-01-01T00:00:00\",\"message\":\"test_Message\"," +
+                "\"category\":\"testing_category\",\"level\":\"Critical\",\"type\":\"User\"," +
+                "\"data\":{\"1\":\"one\",\"2\":\"two\"}}"
 
-        val breadcrumb = Breadcrumb(
-            testMessage,
-            testData,
-            testCategory,
-            testLevel,
-            testType,
-            testDate,
-        )
+        val breadcrumb =
+            Breadcrumb(
+                testMessage,
+                testData,
+                testCategory,
+                testLevel,
+                testType,
+                testDate,
+            )
 
         assertEquals(Json.encodeToString(breadcrumb.toBreadcrumb()), testString)
     }

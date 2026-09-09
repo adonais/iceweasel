@@ -18,8 +18,7 @@ import org.mozilla.fenix.tabgroups.UngroupTabGroupConfirmationDialog
 @RunWith(AndroidJUnit4::class)
 class UngroupTabGroupConfirmationDialogTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun confirmUngroupDialogClicked_dontAskAgainFalseTest() {
@@ -32,12 +31,11 @@ class UngroupTabGroupConfirmationDialogTest {
                     onConfirmInvoked = true
                     dontAskAgainResult = dontAskAgain
                 },
-                onCancel = { },
+                onCancel = {},
             )
         }
 
-        composeTestRule.onNodeWithTag(TabGroupsTestTag.UNGROUP_DIALOG_CONFIRM_BUTTON)
-            .performClick()
+        composeTestRule.onNodeWithTag(TabGroupsTestTag.UNGROUP_DIALOG_CONFIRM_BUTTON).performClick()
 
         Assert.assertTrue(onConfirmInvoked)
         Assert.assertFalse(dontAskAgainResult)
@@ -54,15 +52,13 @@ class UngroupTabGroupConfirmationDialogTest {
                     onConfirmInvoked = true
                     dontAskAgainResult = dontAskAgain
                 },
-                onCancel = { },
+                onCancel = {},
             )
         }
 
-        composeTestRule.onNodeWithTag(TabGroupsTestTag.UNGROUP_DIALOG_DONT_ASK_AGAIN_CHECKBOX)
-            .performClick()
+        composeTestRule.onNodeWithTag(TabGroupsTestTag.UNGROUP_DIALOG_DONT_ASK_AGAIN_CHECKBOX).performClick()
 
-        composeTestRule.onNodeWithTag(TabGroupsTestTag.UNGROUP_DIALOG_CONFIRM_BUTTON)
-            .performClick()
+        composeTestRule.onNodeWithTag(TabGroupsTestTag.UNGROUP_DIALOG_CONFIRM_BUTTON).performClick()
 
         Assert.assertTrue(onConfirmInvoked)
         Assert.assertTrue(dontAskAgainResult)
@@ -74,13 +70,12 @@ class UngroupTabGroupConfirmationDialogTest {
 
         composeTestRule.setContent {
             UngroupTabGroupConfirmationDialog(
-                onConfirmUngroup = { },
+                onConfirmUngroup = {},
                 onCancel = { onCancelInvoked = true },
             )
         }
 
-        composeTestRule.onNodeWithTag(TabGroupsTestTag.UNGROUP_DIALOG_CANCEL_BUTTON)
-            .performClick()
+        composeTestRule.onNodeWithTag(TabGroupsTestTag.UNGROUP_DIALOG_CANCEL_BUTTON).performClick()
 
         Assert.assertTrue(onCancelInvoked)
     }

@@ -19,6 +19,7 @@
 #    include <sanitizer/msan_interface.h>
 #endif  // defined(ANGLE_WITH_MSAN)
 
+#include <array>
 #include <climits>
 #include <cstdarg>
 #include <cstddef>
@@ -34,9 +35,9 @@
 namespace angle
 {
 
-#if defined(ANGLE_ENABLE_D3D9) || defined(ANGLE_ENABLE_D3D11)
+#if defined(ANGLE_ENABLE_D3D11)
 using Microsoft::WRL::ComPtr;
-#endif  // defined(ANGLE_ENABLE_D3D9) || defined(ANGLE_ENABLE_D3D11)
+#endif  // defined(ANGLE_ENABLE_D3D11)
 
 // Forward declaration. Implementation in system_utils.h
 using ThreadId = std::thread::id;
@@ -96,9 +97,7 @@ struct PerfMonitorTriplet
 
 #define ANGLE_VK_PERF_COUNTERS_X(FN)               \
     FN(commandQueueSubmitCallsTotal)               \
-    FN(commandQueueSubmitCallsPerFrame)            \
     FN(vkQueueSubmitCallsTotal)                    \
-    FN(vkQueueSubmitCallsPerFrame)                 \
     FN(commandQueueWaitSemaphoresTotal)            \
     FN(renderPasses)                               \
     FN(writeDescriptorSets)                        \
@@ -139,7 +138,6 @@ struct PerfMonitorTriplet
     FN(monolithicPipelineCreation)                 \
     FN(descriptorSetAllocations)                   \
     FN(descriptorSetCacheTotalSize)                \
-    FN(descriptorSetCacheKeySizeBytes)             \
     FN(uniformsAndXfbDescriptorSetCacheHits)       \
     FN(uniformsAndXfbDescriptorSetCacheMisses)     \
     FN(uniformsAndXfbDescriptorSetCacheTotalSize)  \
@@ -161,7 +159,6 @@ struct PerfMonitorTriplet
     FN(vertexArraySyncStateCalls)                  \
     FN(allocateNewBufferBlockCalls)                \
     FN(bufferSuballocationCalls)                   \
-    FN(dynamicBufferAllocations)                   \
     FN(framebufferCacheSize)                       \
     FN(pendingSubmissionGarbageObjects)            \
     FN(graphicsDriverUniformsUpdated)
@@ -179,6 +176,12 @@ struct VulkanPerfCounters
 
 template <typename T, size_t N>
 constexpr inline size_t ArraySize(T (&)[N])
+{
+    return N;
+}
+
+template <typename T, size_t N>
+constexpr inline size_t ArraySize(const std::array<T, N> &)
 {
     return N;
 }
@@ -293,8 +296,6 @@ inline bool IsMaskFlagSet(T mask, T flag)
     return (mask & flag) == flag;
 }
 
-const char *MakeStaticString(const std::string &str);
-
 std::string ArrayString(unsigned int i);
 
 // Indices are stored in vectors with the outermost index in the back. In the output of the function
@@ -337,6 +338,10 @@ inline bool IsLittleEndian()
 #    define snprintf _snprintf
 #endif
 
+// Standard 64-bit type enums (for internal use)
+#define GL_INT64 0x140E           // Same as GL_INT64_ARB
+#define GL_UNSIGNED_INT64 0x140F  // Same as GL_UNSIGNED_INT64_ARB
+
 // Note: when adding internal formats, update IsAngleInternalFormat() so they aren't accidentally
 // accessible by the application.
 #define GL_A1RGB5_ANGLEX 0x6AC5
@@ -344,8 +349,6 @@ inline bool IsLittleEndian()
 #define GL_BGR565_ANGLEX 0x6ABB
 #define GL_BGRA4_ANGLEX 0x6ABC
 #define GL_BGR5_A1_ANGLEX 0x6ABD
-#define GL_INT_64_ANGLEX 0x6ABE
-#define GL_UINT_64_ANGLEX 0x6ABF
 #define GL_BGRA8_SRGB_ANGLEX 0x6AC0
 #define GL_BGR10_A2_ANGLEX 0x6AF9
 #define GL_BGRX8_SRGB_ANGLEX 0x6AFC

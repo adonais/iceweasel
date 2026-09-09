@@ -45,13 +45,13 @@ class NotificationManagerCompatTest {
         val testChannel = "test-channel"
         val notificationChannelCompat =
             NotificationChannelCompat.Builder(
-                testChannel,
-                NotificationManagerCompat.IMPORTANCE_DEFAULT,
-            ).build()
+                    testChannel,
+                    NotificationManagerCompat.IMPORTANCE_DEFAULT,
+                )
+                .build()
 
         whenever(tested.areNotificationsEnabled()).thenReturn(true)
-        whenever(tested.getNotificationChannelCompat(testChannel))
-            .thenReturn(notificationChannelCompat)
+        whenever(tested.getNotificationChannelCompat(testChannel)).thenReturn(notificationChannelCompat)
 
         assertTrue(tested.isNotificationChannelEnabled(testChannel))
     }
@@ -61,13 +61,13 @@ class NotificationManagerCompatTest {
         val testChannel = "test-channel"
         val notificationChannelCompat =
             NotificationChannelCompat.Builder(
-                testChannel,
-                NotificationManagerCompat.IMPORTANCE_NONE,
-            ).build()
+                    testChannel,
+                    NotificationManagerCompat.IMPORTANCE_NONE,
+                )
+                .build()
 
         whenever(tested.areNotificationsEnabled()).thenReturn(true)
-        whenever(tested.getNotificationChannelCompat(testChannel))
-            .thenReturn(notificationChannelCompat)
+        whenever(tested.getNotificationChannelCompat(testChannel)).thenReturn(notificationChannelCompat)
 
         assertFalse(tested.isNotificationChannelEnabled(testChannel))
     }
@@ -77,12 +77,12 @@ class NotificationManagerCompatTest {
         val testChannel = "test-channel"
         val notificationChannelCompat =
             NotificationChannelCompat.Builder(
-                testChannel,
-                NotificationManagerCompat.IMPORTANCE_DEFAULT,
-            ).build()
+                    testChannel,
+                    NotificationManagerCompat.IMPORTANCE_DEFAULT,
+                )
+                .build()
 
-        whenever(tested.getNotificationChannelCompat(testChannel))
-            .thenReturn(notificationChannelCompat)
+        whenever(tested.getNotificationChannelCompat(testChannel)).thenReturn(notificationChannelCompat)
         whenever(tested.areNotificationsEnabled()).thenReturn(false)
 
         assertFalse(tested.isNotificationChannelEnabled(testChannel))

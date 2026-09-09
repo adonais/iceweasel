@@ -73,9 +73,9 @@ const uint32_t WEBAUDIO_BLOCK_SIZE_BITS = 7;
 const uint32_t WEBAUDIO_BLOCK_SIZE = 1 << WEBAUDIO_BLOCK_SIZE_BITS;
 
 template <typename SrcT, typename DestT>
-static void InterleaveAndConvertBuffer(const SrcT* const* aSourceChannels,
-                                       uint32_t aLength, float aVolume,
-                                       uint32_t aChannelCount, DestT* aOutput) {
+void InterleaveAndConvertBuffer(const SrcT* const* aSourceChannels,
+                                uint32_t aLength, float aVolume,
+                                uint32_t aChannelCount, DestT* aOutput) {
   for (size_t channel = 0; channel < aChannelCount; ++channel) {
     DestT* output = aOutput + channel;
     if (aSourceChannels[channel]) {
@@ -95,9 +95,8 @@ static void InterleaveAndConvertBuffer(const SrcT* const* aSourceChannels,
 }
 
 template <typename SrcT, typename DestT>
-static void DeinterleaveAndConvertBuffer(const SrcT* aSourceBuffer,
-                                         uint32_t aFrames, uint32_t aChannels,
-                                         DestT** aOutput) {
+void DeinterleaveAndConvertBuffer(const SrcT* aSourceBuffer, uint32_t aFrames,
+                                  uint32_t aChannels, DestT** aOutput) {
   for (size_t i = 0; i < aChannels; i++) {
     size_t interleavedIndex = i;
     for (size_t j = 0; j < aFrames; j++) {

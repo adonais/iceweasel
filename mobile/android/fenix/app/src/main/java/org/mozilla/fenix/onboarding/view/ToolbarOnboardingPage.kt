@@ -50,11 +50,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.FilledButton
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.ScrollIndicator
 import org.mozilla.fenix.onboarding.store.OnboardingStore
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 private val TOOLBAR_IMAGE_HEIGHT = 150.dp
 
@@ -79,10 +79,11 @@ fun ToolbarOnboardingPage(
     ) {
         val verticalPadding = if (pageState.isSmallDevice) 0.dp else FirefoxTheme.layout.space.static300
         Column(
-            modifier = Modifier.padding(
-                horizontal = FirefoxTheme.layout.space.static200,
-                vertical = verticalPadding,
-            ),
+            modifier =
+                Modifier.padding(
+                    horizontal = FirefoxTheme.layout.space.static200,
+                    vertical = verticalPadding,
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (pageState.isSmallDevice) {
@@ -91,22 +92,16 @@ fun ToolbarOnboardingPage(
                 Spacer(modifier = Modifier.weight(TITLE_TOP_SPACER_WEIGHT))
             }
 
-            Box(
-                modifier = Modifier
-                    .weight(CONTENT_WEIGHT)
-                    .fillMaxWidth(),
-            ) {
+            Box(modifier = Modifier.weight(CONTENT_WEIGHT).fillMaxWidth()) {
                 val scrollState = rememberScrollState()
 
-                CompositionLocalProvider(
-                    LocalOverscrollFactory provides null,
-                ) {
+                CompositionLocalProvider(LocalOverscrollFactory provides null) {
                     val startPadding = 20.dp
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(scrollState)
-                            .padding(start = startPadding, end = FirefoxTheme.layout.space.static400),
+                        modifier =
+                            Modifier.fillMaxSize()
+                                .verticalScroll(scrollState)
+                                .padding(start = startPadding, end = FirefoxTheme.layout.space.static400),
                         verticalArrangement = Arrangement.spacedBy(36.dp),
                     ) {
                         Text(
@@ -139,9 +134,8 @@ fun ToolbarOnboardingPage(
 
             FilledButton(
                 text = pageState.primaryButton.text,
-                modifier = Modifier
-                    .width(width = FirefoxTheme.layout.size.maxWidth.small)
-                    .semantics {
+                modifier =
+                    Modifier.width(width = FirefoxTheme.layout.size.maxWidth.small).semantics {
                         testTag = pageState.title + "onboarding_card.positive_button"
                     },
                 onClick = pageState.primaryButton.onClick,
@@ -169,11 +163,12 @@ private fun ToolbarPositionOptions(
                     option = option,
                     isSelected = option.toolbarType == state.toolbarOptionSelected,
                     onClick = { onToolbarSelectionClicked(option.toolbarType) },
-                    contentAlignment = if (index == 0) {
-                        Alignment.CenterEnd
-                    } else {
-                        Alignment.CenterStart
-                    },
+                    contentAlignment =
+                        if (index == 0) {
+                            Alignment.CenterEnd
+                        } else {
+                            Alignment.CenterStart
+                        },
                 )
             }
         }
@@ -193,12 +188,13 @@ private fun ToolbarPositionOption(
         contentAlignment = contentAlignment,
     ) {
         Column(
-            modifier = Modifier.clickable(
-                role = Role.Button,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null, // Prevents onClick press/ripple animation
-                onClick = onClick,
-            ),
+            modifier =
+                Modifier.clickable(
+                    role = Role.Button,
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null, // Prevents onClick press/ripple animation
+                    onClick = onClick,
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(Modifier.height(8.dp))
@@ -247,33 +243,28 @@ private fun ToolbarOptionType.imageRes(isSelected: Boolean): Int =
 private fun SelectedCheckmark(selected: Boolean = false) {
     if (selected) {
         Box(
-            modifier = Modifier
-                .size(24.dp)
-                .padding(1.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.tertiary),
+            modifier =
+                Modifier.size(24.dp).padding(1.dp).clip(CircleShape).background(MaterialTheme.colorScheme.tertiary),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 painter = painterResource(id = iconsR.drawable.mozac_ic_checkmark_24),
                 contentDescription = null, // Decorative only.
                 tint = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier
-                    .size(24.dp)
-                    .padding(2.dp),
+                modifier = Modifier.size(24.dp).padding(2.dp),
             )
         }
     } else {
         Box(
-            modifier = Modifier
-                .size(24.dp)
-                .border(
-                    width = 3.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                    shape = CircleShape,
-                ),
+            modifier =
+                Modifier.size(24.dp)
+                    .border(
+                        width = 3.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                        shape = CircleShape,
+                    ),
             contentAlignment = Alignment.Center,
-        ) { }
+        ) {}
     }
 }
 
@@ -283,30 +274,31 @@ private fun OnboardingPagePreview() {
     FirefoxTheme {
         ToolbarOnboardingPage(
             onboardingStore = OnboardingStore(),
-            pageState = OnboardingPageState(
-                imageRes = R.drawable.ic_onboarding_customize_toolbar,
-                title = stringResource(id = R.string.nova_onboarding_toolbar_selection_title),
-                description = "", // Unused
-                primaryButton = Action(
-                    text = stringResource(
-                        id = R.string.nova_onboarding_continue_button,
-                    ),
-                    onClick = {},
+            pageState =
+                OnboardingPageState(
+                    imageRes = R.drawable.ic_onboarding_customize_toolbar,
+                    title = stringResource(id = R.string.nova_onboarding_toolbar_selection_title),
+                    description = "", // Unused
+                    primaryButton =
+                        Action(
+                            text = stringResource(id = R.string.nova_onboarding_continue_button),
+                            onClick = {},
+                        ),
+                    toolbarOptions =
+                        listOf(
+                            ToolbarOption(
+                                toolbarType = ToolbarOptionType.TOOLBAR_TOP,
+                                imageRes = R.drawable.ic_onboarding_top_toolbar,
+                                label = stringResource(R.string.nova_onboarding_toolbar_selection_top_label),
+                            ),
+                            ToolbarOption(
+                                toolbarType = ToolbarOptionType.TOOLBAR_BOTTOM,
+                                imageRes = R.drawable.ic_onboarding_bottom_toolbar,
+                                label = stringResource(R.string.nova_onboarding_toolbar_selection_bottom_label),
+                            ),
+                        ),
+                    onRecordImpressionEvent = {},
                 ),
-                toolbarOptions = listOf(
-                    ToolbarOption(
-                        toolbarType = ToolbarOptionType.TOOLBAR_TOP,
-                        imageRes = R.drawable.ic_onboarding_top_toolbar,
-                        label = stringResource(R.string.nova_onboarding_toolbar_selection_top_label),
-                    ),
-                    ToolbarOption(
-                        toolbarType = ToolbarOptionType.TOOLBAR_BOTTOM,
-                        imageRes = R.drawable.ic_onboarding_bottom_toolbar,
-                        label = stringResource(R.string.nova_onboarding_toolbar_selection_bottom_label),
-                    ),
-                ),
-                onRecordImpressionEvent = {},
-            ),
             onToolbarSelectionClicked = {},
         )
     }
@@ -327,30 +319,31 @@ private fun SpanishOnboardingPagePreview() {
     FirefoxTheme {
         ToolbarOnboardingPage(
             onboardingStore = OnboardingStore(),
-            pageState = OnboardingPageState(
-                imageRes = R.drawable.ic_onboarding_customize_toolbar,
-                title = stringResource(id = R.string.nova_onboarding_toolbar_selection_title),
-                description = "", // Unused
-                primaryButton = Action(
-                    text = stringResource(
-                        id = R.string.nova_onboarding_continue_button,
-                    ),
-                    onClick = {},
+            pageState =
+                OnboardingPageState(
+                    imageRes = R.drawable.ic_onboarding_customize_toolbar,
+                    title = stringResource(id = R.string.nova_onboarding_toolbar_selection_title),
+                    description = "", // Unused
+                    primaryButton =
+                        Action(
+                            text = stringResource(id = R.string.nova_onboarding_continue_button),
+                            onClick = {},
+                        ),
+                    toolbarOptions =
+                        listOf(
+                            ToolbarOption(
+                                toolbarType = ToolbarOptionType.TOOLBAR_TOP,
+                                imageRes = R.drawable.ic_onboarding_top_toolbar,
+                                label = stringResource(R.string.nova_onboarding_toolbar_selection_top_label),
+                            ),
+                            ToolbarOption(
+                                toolbarType = ToolbarOptionType.TOOLBAR_BOTTOM,
+                                imageRes = R.drawable.ic_onboarding_bottom_toolbar,
+                                label = stringResource(R.string.nova_onboarding_toolbar_selection_bottom_label),
+                            ),
+                        ),
+                    onRecordImpressionEvent = {},
                 ),
-                toolbarOptions = listOf(
-                    ToolbarOption(
-                        toolbarType = ToolbarOptionType.TOOLBAR_TOP,
-                        imageRes = R.drawable.ic_onboarding_top_toolbar,
-                        label = stringResource(R.string.nova_onboarding_toolbar_selection_top_label),
-                    ),
-                    ToolbarOption(
-                        toolbarType = ToolbarOptionType.TOOLBAR_BOTTOM,
-                        imageRes = R.drawable.ic_onboarding_bottom_toolbar,
-                        label = stringResource(R.string.nova_onboarding_toolbar_selection_bottom_label),
-                    ),
-                ),
-                onRecordImpressionEvent = {},
-            ),
             onToolbarSelectionClicked = {},
         )
     }

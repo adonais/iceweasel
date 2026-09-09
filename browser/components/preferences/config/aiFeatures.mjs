@@ -781,7 +781,7 @@ Preferences.addSetting({
   onUserClick(e) {
     e.preventDefault();
     const browser = window.browsingContext.embedderElement;
-    lazy.AIWindow.launchWindow(browser, true);
+    lazy.AIWindow.launchWindow(browser, true, "settings");
   },
 });
 

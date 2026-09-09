@@ -32,9 +32,7 @@ import org.mozilla.fenix.components.share.ShareSheetChooserAction
 import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.ShareUseCases
 
-/**
- * Provides the context menu candidates for [BrowserFragment] when native share sheet is enabled.
- */
+/** Provides the context menu candidates for [BrowserFragment] when native share sheet is enabled. */
 object NativeShareSheetContextMenuCandidate {
 
     /**
@@ -51,66 +49,69 @@ object NativeShareSheetContextMenuCandidate {
         snackbarDelegate: SnackbarDelegate = DefaultSnackbarDelegate(),
         downloadsLocation: () -> String,
         navigateToShareFragment: (currentTab: SessionState, hitTabUrl: String) -> Unit,
-    ): List<ContextMenuCandidate> = listOf(
-        createOpenInNewTabCandidate(
-            context,
-            tabsUseCases,
-            snackBarParentView,
-            snackbarDelegate,
-        ),
-        createOpenInPrivateTabCandidate(
-            context,
-            tabsUseCases,
-            snackBarParentView,
-            snackbarDelegate,
-        ),
-        createCopyLinkCandidate(context, snackBarParentView, snackbarDelegate),
-        createCopyLinkTextCandidate(context, snackBarParentView, snackbarDelegate),
-        createDownloadLinkCandidate(context, contextMenuUseCases, downloadsLocation),
-        createShareLinkCandidate(
-            context = context,
-            shareUseCases = shareUseCases,
-            shareItems = getShareItems,
-            navigateToShareFragment = navigateToShareFragment,
-        ),
-        createShareImageCandidate(context, contextMenuUseCases),
-        createOpenImageInNewTabCandidate(
-            context,
-            tabsUseCases,
-            snackBarParentView,
-            snackbarDelegate,
-        ),
-        createCopyImageCandidate(
-            context,
-            contextMenuUseCases,
-        ),
-        createSaveImageCandidate(context, contextMenuUseCases, downloadsLocation),
-        createSaveVideoAudioCandidate(context, contextMenuUseCases, downloadsLocation),
-        createCopyImageLocationCandidate(context, snackBarParentView, snackbarDelegate),
-        createAddContactCandidate(context),
-        createShareEmailAddressCandidate(context),
-        createCopyEmailAddressCandidate(context, snackBarParentView, snackbarDelegate),
-    )
+    ): List<ContextMenuCandidate> =
+        listOf(
+            createOpenInNewTabCandidate(
+                context,
+                tabsUseCases,
+                snackBarParentView,
+                snackbarDelegate,
+            ),
+            createOpenInPrivateTabCandidate(
+                context,
+                tabsUseCases,
+                snackBarParentView,
+                snackbarDelegate,
+            ),
+            createCopyLinkCandidate(context, snackBarParentView, snackbarDelegate),
+            createCopyLinkTextCandidate(context, snackBarParentView, snackbarDelegate),
+            createDownloadLinkCandidate(context, contextMenuUseCases, downloadsLocation),
+            createShareLinkCandidate(
+                context = context,
+                shareUseCases = shareUseCases,
+                shareItems = getShareItems,
+                navigateToShareFragment = navigateToShareFragment,
+            ),
+            createShareImageCandidate(context, contextMenuUseCases),
+            createOpenImageInNewTabCandidate(
+                context,
+                tabsUseCases,
+                snackBarParentView,
+                snackbarDelegate,
+            ),
+            createCopyImageCandidate(
+                context,
+                contextMenuUseCases,
+            ),
+            createSaveImageCandidate(context, contextMenuUseCases, downloadsLocation),
+            createSaveVideoAudioCandidate(context, contextMenuUseCases, downloadsLocation),
+            createCopyImageLocationCandidate(context, snackBarParentView, snackbarDelegate),
+            createAddContactCandidate(context),
+            createShareEmailAddressCandidate(context),
+            createCopyEmailAddressCandidate(context, snackBarParentView, snackbarDelegate),
+        )
 
     private fun createShareLinkCandidate(
         context: Context,
         shareUseCases: ShareUseCases,
         shareItems: (hitTab: String) -> List<ShareData>,
         navigateToShareFragment: (currentTab: SessionState, hitTabUrl: String) -> Unit,
-    ) = createShareLinkCandidate(
-        context = context,
-        action = { currentTab, hitTab ->
-            val url = hitTab.getUrl()
-            shareUseCases.shareItems(
-                items = shareItems(url),
-                source = ShareSource.CONTEXT_MENU_LINK,
-                subject = null,
-                chooserActions = listOf(
-                    ShareSheetChooserAction.SEND_TO_DEVICES,
-                    ShareSheetChooserAction.QR_CODE,
-                ),
-                navigateToShareFragment = { navigateToShareFragment(currentTab, url) },
-            )
-        },
-    )
+    ) =
+        createShareLinkCandidate(
+            context = context,
+            action = { currentTab, hitTab ->
+                val url = hitTab.getUrl()
+                shareUseCases.shareItems(
+                    items = shareItems(url),
+                    source = ShareSource.CONTEXT_MENU_LINK,
+                    subject = null,
+                    chooserActions =
+                        listOf(
+                            ShareSheetChooserAction.SEND_TO_DEVICES,
+                            ShareSheetChooserAction.QR_CODE,
+                        ),
+                    navigateToShareFragment = { navigateToShareFragment(currentTab, url) },
+                )
+            },
+        )
 }

@@ -11,8 +11,8 @@ origin:
 
   url: https://chromium.googlesource.com/angle/angle
 
-  release: 9fa37b5e144119f3dd266e6e066a528a1bfac22c (Fri Jun 05 00:03:24 2026).
-  revision: 9fa37b5e144119f3dd266e6e066a528a1bfac22c
+  release: 464fd3e879d6bb72fe8210b3e58b59836f711951 (Wed Aug 05 16:04:50 2026).
+  revision: 464fd3e879d6bb72fe8210b3e58b59836f711951
 
   license: BSD-3-Clause
 
@@ -43,22 +43,3 @@ vendoring:
         - '{tmpextractdir}'
         - '{vendor_dir}'
       cwd: '{topsrcdir}'
-
-    # Ensure the libEGL and libGLESv2 targets get built for macOS but *not* for
-    # iOS. This is required because gn_processor.py does not distinguish between
-    # macOS and iOS configurations, so will attempt to build the same targets
-    # for both.
-    #
-    # This is a kludge that relies on the fact that the top-level moz.build file
-    # simply adds the required targets for each platform to DIRS, which in our
-    # case means translator-specific targets universally and libEGL and
-    # libGLESv2-specific targets within conditional blocks.
-    #
-    # We therefore replace the iOS-inclusive conditions in the top-level
-    # generated moz.build file with macOS-specific ones. A better solution would
-    # be for gn_processor.py to generate separate configurations for iOS and
-    # macOS. See bug 2047963.
-    - action: replace-in-file
-      file: '{vendor_dir}/moz.build'
-      pattern: 'CONFIG["OS_TARGET"] == "Darwin"'
-      with: 'CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa"'

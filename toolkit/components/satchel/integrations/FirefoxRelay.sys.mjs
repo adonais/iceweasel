@@ -865,9 +865,9 @@ class RelayOffered {
         // Open tab to sign up for FxA and Relay
         const fxaUrl =
           await lazy.fxAccounts.constructor.config.promiseConnectAccountURI(
+            "relay",
             "relay_integration",
             {
-              service: "relay",
               utm_source: "relay-integration",
               utm_medium: "firefox-desktop",
             }

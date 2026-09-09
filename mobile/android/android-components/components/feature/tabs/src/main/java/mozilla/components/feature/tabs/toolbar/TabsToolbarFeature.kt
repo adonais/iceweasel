@@ -13,9 +13,8 @@ import mozilla.components.ui.tabcounter.TabCounterMenu
 /**
  * Feature implementation for connecting a tabs tray implementation with a toolbar implementation.
  *
- * @param countBasedOnSelectedTabType if true the count is based on the selected tab i.e. if a
- * private tab is selected private tabs will be counter, otherwise normal tabs. If false, all
- * tabs will be counted.
+ * @param countBasedOnSelectedTabType if true the count is based on the selected tab i.e. if a private tab is selected
+ *   private tabs will be counter, otherwise normal tabs. If false, all tabs will be counted.
  */
 // TODO Refactor or remove this feature: https://github.com/mozilla-mobile/android-components/issues/9129
 class TabsToolbarFeature(
@@ -32,13 +31,14 @@ class TabsToolbarFeature(
             // this feature is not used for Custom Tabs
             if (sessionId != null && store.state.findCustomTab(sessionId) != null) return@run
 
-            val tabsAction = TabCounterToolbarButton(
-                lifecycleOwner = lifecycleOwner,
-                showTabs = showTabs,
-                store = store,
-                menu = tabCounterMenu,
-                countBasedOnSelectedTabType = countBasedOnSelectedTabType,
-            )
+            val tabsAction =
+                TabCounterToolbarButton(
+                    lifecycleOwner = lifecycleOwner,
+                    showTabs = showTabs,
+                    store = store,
+                    menu = tabCounterMenu,
+                    countBasedOnSelectedTabType = countBasedOnSelectedTabType,
+                )
             toolbar.addBrowserAction(tabsAction)
         }
     }

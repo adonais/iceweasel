@@ -14,19 +14,16 @@ import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 
 /**
- * Observes the [BrowserStore] state for when the extensions process spawning has been disabled and
- * the user should be prompted. This requires running in both the foreground and background.
+ * Observes the [BrowserStore] state for when the extensions process spawning has been disabled and the user should be
+ * prompted. This requires running in both the foreground and background.
  *
  * @property store the application's [BrowserStore].
- * @property shouldCancelOnStop If false, this observer will run indefinitely to be able to react
- * to state changes when the app is either in the foreground or in the background.
- * Please note to not have any references to Activity or its context in an observer where this
- * is false. Defaults to true.
- * @property dispatcher The [CoroutineDispatcher] on which the observation flow will be collected.
- * Defaults to [Dispatchers.Main].
- * @property onShowExtensionsProcessDisabledPrompt a callback invoked when the application should
- * open a prompt.
-
+ * @property shouldCancelOnStop If false, this observer will run indefinitely to be able to react to state changes when
+ *   the app is either in the foreground or in the background. Please note to not have any references to Activity or its
+ *   context in an observer where this is false. Defaults to true.
+ * @property dispatcher The [CoroutineDispatcher] on which the observation flow will be collected. Defaults to
+ *   [Dispatchers.Main].
+ * @property onShowExtensionsProcessDisabledPrompt a callback invoked when the application should open a prompt.
  */
 open class ExtensionsProcessDisabledPromptObserver(
     private val store: BrowserStore,
@@ -38,14 +35,16 @@ open class ExtensionsProcessDisabledPromptObserver(
 
     override fun start() {
         if (scope == null) {
-            scope = store.flowScoped(dispatcher = dispatcher) { flow ->
-                flow.distinctUntilChangedBy { it.showExtensionsProcessDisabledPrompt }
-                    .collect { state ->
-                        if (state.showExtensionsProcessDisabledPrompt) {
-                            onShowExtensionsProcessDisabledPrompt()
+            scope =
+                store.flowScoped(dispatcher = dispatcher) { flow ->
+                    flow
+                        .distinctUntilChangedBy { it.showExtensionsProcessDisabledPrompt }
+                        .collect { state ->
+                            if (state.showExtensionsProcessDisabledPrompt) {
+                                onShowExtensionsProcessDisabledPrompt()
+                            }
                         }
-                    }
-            }
+                }
         }
     }
 

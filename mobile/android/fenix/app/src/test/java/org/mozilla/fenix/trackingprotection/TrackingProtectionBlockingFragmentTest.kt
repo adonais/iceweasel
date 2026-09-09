@@ -69,14 +69,15 @@ class TrackingProtectionBlockingFragmentTest {
 
     @Test
     fun `GIVEN custom mode WHEN all blocking settings are true THEN all categories are visible`() {
-        val mockSettings = mockk<Settings> {
-            every { blockFingerprintersInCustomTrackingProtection } returns true
-            every { blockCryptominersInCustomTrackingProtection } returns true
-            every { blockCookiesInCustomTrackingProtection } returns true
-            every { blockTrackingContentInCustomTrackingProtection } returns true
-            every { blockRedirectTrackersInCustomTrackingProtection } returns true
-            every { blockSuspectedFingerprintersInCustomTrackingProtection } returns true
-        }
+        val mockSettings =
+            mockk<Settings> {
+                every { blockFingerprintersInCustomTrackingProtection } returns true
+                every { blockCryptominersInCustomTrackingProtection } returns true
+                every { blockCookiesInCustomTrackingProtection } returns true
+                every { blockTrackingContentInCustomTrackingProtection } returns true
+                every { blockRedirectTrackersInCustomTrackingProtection } returns true
+                every { blockSuspectedFingerprintersInCustomTrackingProtection } returns true
+            }
         val fragment = createFragment(mockSettings, CUSTOM)
 
         with(fragment.binding) {
@@ -91,14 +92,15 @@ class TrackingProtectionBlockingFragmentTest {
 
     @Test
     fun `GIVEN custom mode WHEN all blocking settings are false THEN all categories are hidden`() {
-        val mockSettings = mockk<Settings> {
-            every { blockFingerprintersInCustomTrackingProtection } returns false
-            every { blockCryptominersInCustomTrackingProtection } returns false
-            every { blockCookiesInCustomTrackingProtection } returns false
-            every { blockTrackingContentInCustomTrackingProtection } returns false
-            every { blockRedirectTrackersInCustomTrackingProtection } returns false
-            every { blockSuspectedFingerprintersInCustomTrackingProtection } returns false
-        }
+        val mockSettings =
+            mockk<Settings> {
+                every { blockFingerprintersInCustomTrackingProtection } returns false
+                every { blockCryptominersInCustomTrackingProtection } returns false
+                every { blockCookiesInCustomTrackingProtection } returns false
+                every { blockTrackingContentInCustomTrackingProtection } returns false
+                every { blockRedirectTrackersInCustomTrackingProtection } returns false
+                every { blockSuspectedFingerprintersInCustomTrackingProtection } returns false
+            }
         val fragment = createFragment(mockSettings, CUSTOM)
 
         with(fragment.binding) {
@@ -118,22 +120,16 @@ class TrackingProtectionBlockingFragmentTest {
         // Create and attach the fragment ourself instead of using "createAddedTestFragment"
         // to prevent having "onResume -> showToolbar" called.
 
-        val activity = Robolectric.buildActivity(FragmentActivity::class.java)
-            .create()
-            .start()
-            .get()
+        val activity = Robolectric.buildActivity(FragmentActivity::class.java).create().start().get()
 
-        val fragment = TrackingProtectionBlockingFragment().apply {
-            arguments = TrackingProtectionBlockingFragmentArgs(
-                protectionMode = protectionMode,
-            ).toBundle()
-            // Set the provider to return our mock settings for this test instance
-            settingsProvider = { mockedSettings }
-        }
+        val fragment =
+            TrackingProtectionBlockingFragment().apply {
+                arguments = TrackingProtectionBlockingFragmentArgs(protectionMode = protectionMode).toBundle()
+                // Set the provider to return our mock settings for this test instance
+                settingsProvider = { mockedSettings }
+            }
 
-        activity.supportFragmentManager.beginTransaction()
-            .add(fragment, "test")
-            .commitNow()
+        activity.supportFragmentManager.beginTransaction().add(fragment, "test").commitNow()
 
         return fragment
     }

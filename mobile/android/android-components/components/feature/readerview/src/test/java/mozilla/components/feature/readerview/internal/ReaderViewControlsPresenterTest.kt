@@ -21,14 +21,15 @@ class ReaderViewControlsPresenterTest {
         val config: ReaderViewConfig = mock()
         val view = mock<ReaderViewControlsView>()
         val presenter = ReaderViewControlsPresenter(view, config)
+        val isListenToPageFlagEnabled = false
 
         whenever(config.colorScheme).thenReturn(mock())
         whenever(config.fontSize).thenReturn(5)
         whenever(config.fontType).thenReturn(mock())
 
-        presenter.show()
+        presenter.show(isListenToPageFlagEnabled)
 
-        verify(view).tryInflate()
+        verify(view).tryInflate(isListenToPageFlagEnabled)
         verify(view).setColorScheme(any())
         verify(view).setFontSize(5)
         verify(view).setFont(any())

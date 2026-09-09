@@ -21,6 +21,7 @@ import android.widget.RadioButton
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.navArgs
+import com.google.android.material.R as materialR
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action.ALLOWED
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action.BLOCKED
@@ -38,23 +39,21 @@ import org.mozilla.fenix.settings.PhoneFeature.AUTOPLAY_INAUDIBLE
 import org.mozilla.fenix.settings.setStartCheckedIndicator
 import org.mozilla.fenix.theme.ThemeManager
 import org.mozilla.fenix.utils.Settings
-import com.google.android.material.R as materialR
 
 const val AUTOPLAY_BLOCK_ALL = 0
 const val AUTOPLAY_BLOCK_AUDIBLE = 1
 const val AUTOPLAY_ALLOW_ON_WIFI = 2
 const val AUTOPLAY_ALLOW_ALL = 3
 
-/**
- * Possible values for autoplay setting changed extra key.
- */
+/** Possible values for autoplay setting changed extra key. */
 enum class AutoplaySettingMetricsExtraKey {
-    BLOCK_CELLULAR, BLOCK_AUDIO, BLOCK_ALL, ALLOW_ALL
+    BLOCK_CELLULAR,
+    BLOCK_AUDIO,
+    BLOCK_ALL,
+    ALLOW_ALL,
 }
 
-/**
- * Settings screen allowing users to manage the browser phone permission.
- */
+/** Settings screen allowing users to manage the browser phone permission. */
 @SuppressWarnings("TooManyFunctions")
 class SitePermissionsManagePhoneFeatureFragment : Fragment(), SystemInsetsPaddedFragment {
 
@@ -62,7 +61,8 @@ class SitePermissionsManagePhoneFeatureFragment : Fragment(), SystemInsetsPadded
     private val settings by lazy { requireComponents.settings }
     private lateinit var blockedByAndroidView: View
     private var _binding: FragmentManageSitePermissionsFeaturePhoneBinding? = null
-    private val binding get() = _binding!!
+    private val binding
+        get() = _binding!!
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -101,10 +101,11 @@ class SitePermissionsManagePhoneFeatureFragment : Fragment(), SystemInsetsPadded
                 restoreState(AUTOPLAY_ALLOW_ALL)
                 visibility = View.VISIBLE
             } else {
-                text = getCombinedLabel(
-                    getString(R.string.preference_option_phone_feature_ask_to_allow),
-                    getString(R.string.phone_feature_recommended),
-                )
+                text =
+                    getCombinedLabel(
+                        getString(R.string.preference_option_phone_feature_ask_to_allow),
+                        getString(R.string.phone_feature_recommended),
+                    )
                 setOnClickListener {
                     saveActionInSettings(SitePermissionsRules.Action.ASK_TO_ALLOW)
                 }
@@ -117,10 +118,11 @@ class SitePermissionsManagePhoneFeatureFragment : Fragment(), SystemInsetsPadded
     private fun initSecondRadio() {
         with(binding.blockRadio) {
             if (args.phoneFeature == AUTOPLAY_AUDIBLE) {
-                text = getCombinedLabel(
-                    getString(R.string.preference_option_autoplay_allowed_wifi_only2),
-                    getString(R.string.preference_option_autoplay_allowed_wifi_subtext),
-                )
+                text =
+                    getCombinedLabel(
+                        getString(R.string.preference_option_autoplay_allowed_wifi_only2),
+                        getString(R.string.preference_option_autoplay_allowed_wifi_subtext),
+                    )
                 setOnClickListener {
                     saveActionInSettings(AUTOPLAY_ALLOW_ON_WIFI)
                 }
@@ -139,10 +141,11 @@ class SitePermissionsManagePhoneFeatureFragment : Fragment(), SystemInsetsPadded
         with(binding.thirdRadio) {
             if (args.phoneFeature == AUTOPLAY_AUDIBLE) {
                 visibility = View.VISIBLE
-                text = getCombinedLabel(
-                    getString(R.string.preference_option_autoplay_block_audio2),
-                    getString(R.string.phone_feature_recommended),
-                )
+                text =
+                    getCombinedLabel(
+                        getString(R.string.preference_option_autoplay_block_audio2),
+                        getString(R.string.phone_feature_recommended),
+                    )
                 setOnClickListener {
                     saveActionInSettings(AUTOPLAY_BLOCK_AUDIBLE)
                 }
@@ -197,27 +200,28 @@ class SitePermissionsManagePhoneFeatureFragment : Fragment(), SystemInsetsPadded
     /**
      * Saves the user selected autoplay setting.
      *
-     * See [Settings.setAutoplayUserSetting] kdoc for an explanation of why this cannot follow the
-     * same code path as other permissions.
+     * See [Settings.setAutoplayUserSetting] kdoc for an explanation of why this cannot follow the same code path as
+     * other permissions.
      */
     private fun saveActionInSettings(autoplaySetting: Int) {
         settings.setAutoplayUserSetting(autoplaySetting)
 
-        val (audible, inaudible) = when (autoplaySetting) {
-            AUTOPLAY_ALLOW_ALL -> {
-                ALLOWED to ALLOWED
+        val (audible, inaudible) =
+            when (autoplaySetting) {
+                AUTOPLAY_ALLOW_ALL -> {
+                    ALLOWED to ALLOWED
+                }
+                AUTOPLAY_ALLOW_ON_WIFI -> {
+                    BLOCKED to BLOCKED
+                }
+                AUTOPLAY_BLOCK_AUDIBLE -> {
+                    BLOCKED to ALLOWED
+                }
+                AUTOPLAY_BLOCK_ALL -> {
+                    BLOCKED to BLOCKED
+                }
+                else -> return
             }
-            AUTOPLAY_ALLOW_ON_WIFI -> {
-                BLOCKED to BLOCKED
-            }
-            AUTOPLAY_BLOCK_AUDIBLE -> {
-                BLOCKED to ALLOWED
-            }
-            AUTOPLAY_BLOCK_ALL -> {
-                BLOCKED to BLOCKED
-            }
-            else -> return
-        }
 
         autoplaySetting.toAutoplayMetricsExtraKey()?.let { extraKey ->
             Autoplay.settingChanged.record(Autoplay.SettingChangedExtra(extraKey))
@@ -247,16 +251,15 @@ class SitePermissionsManagePhoneFeatureFragment : Fragment(), SystemInsetsPadded
         startActivity(intent)
     }
 
-    /**
-     * Returns a [CharSequence] that arranges and styles [mainText], a line break, and then [subText]
-     */
+    /** Returns a [CharSequence] that arranges and styles [mainText], a line break, and then [subText] */
     private fun getCombinedLabel(mainText: CharSequence, subText: CharSequence): CharSequence {
         val subTextSize = pixelSizeFor(R.dimen.phone_feature_label_recommended_text_size)
         val recommendedSpannable = SpannableString(subText)
-        val subTextColor = ContextCompat.getColor(
-            requireContext(),
-            ThemeManager.resolveAttribute(materialR.attr.colorOnSurfaceVariant, requireContext()),
-        )
+        val subTextColor =
+            ContextCompat.getColor(
+                requireContext(),
+                ThemeManager.resolveAttribute(materialR.attr.colorOnSurfaceVariant, requireContext()),
+            )
 
         recommendedSpannable.setSpan(
             ForegroundColorSpan(subTextColor),
@@ -280,9 +283,7 @@ class SitePermissionsManagePhoneFeatureFragment : Fragment(), SystemInsetsPadded
         }
     }
 
-    /**
-     * Returns a [AutoplaySettingMetricsExtraKey] from an AUTOPLAY setting value.
-     */
+    /** Returns a [AutoplaySettingMetricsExtraKey] from an AUTOPLAY setting value. */
     private fun Int.toAutoplayMetricsExtraKey(): String? {
         return when (this) {
             AUTOPLAY_BLOCK_ALL -> AutoplaySettingMetricsExtraKey.BLOCK_ALL.name.lowercase()

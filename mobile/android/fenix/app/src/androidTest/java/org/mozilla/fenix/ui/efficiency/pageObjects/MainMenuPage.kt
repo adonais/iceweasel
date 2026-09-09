@@ -24,17 +24,13 @@ class MainMenuPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRul
         NavigationRegistry.register(
             from = "HomePage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
-            ),
+            steps = listOf(NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON)),
         )
 
         NavigationRegistry.register(
             from = "BrowserPage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(BrowserPageSelectors.MAIN_MENU_BUTTON),
-            ),
+            steps = listOf(NavigationStep.Click(BrowserPageSelectors.MAIN_MENU_BUTTON)),
         )
 
         NavigationRegistry.register(
@@ -49,10 +45,10 @@ class MainMenuPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRul
     }
 
     /**
-     * Installs the first recommended extension shown in the expanded Extensions submenu and returns
-     * its name. The submenu must already be expanded (click [MainMenuSelectors.EXTENSIONS_BUTTON_UIAUTOMATOR])
-     * before calling. Which extension AMO recommends is server-driven, so the name is discovered at
-     * runtime and threaded back to the caller for the later removal step.
+     * Installs the first recommended extension shown in the expanded Extensions submenu and returns its name. The
+     * submenu must already be expanded (click [MainMenuSelectors.EXTENSIONS_BUTTON_UIAUTOMATOR]) before calling. Which
+     * extension AMO recommends is server-driven, so the name is discovered at runtime and threaded back to the caller
+     * for the later removal step.
      */
     fun installFirstRecommendedExtension(): String {
         val addonTitle = getRecommendedExtensionTitle(composeRule)

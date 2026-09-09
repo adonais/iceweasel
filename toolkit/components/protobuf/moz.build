@@ -19,6 +19,7 @@ EXPORTS.google.protobuf += [
     'src/google/protobuf/arena_cleanup.h',
     'src/google/protobuf/arenastring.h',
     'src/google/protobuf/arenaz_sampler.h',
+    'src/google/protobuf/class_data.h',
     'src/google/protobuf/endian.h',
     'src/google/protobuf/explicitly_constructed.h',
     'src/google/protobuf/extension_set.h',
@@ -35,6 +36,7 @@ EXPORTS.google.protobuf += [
     'src/google/protobuf/internal_visibility.h',
     'src/google/protobuf/map.h',
     'src/google/protobuf/message_lite.h',
+    'src/google/protobuf/message_traits.h',
     'src/google/protobuf/metadata_lite.h',
     'src/google/protobuf/micro_string.h',
     'src/google/protobuf/os_macros_restore.inc',
@@ -51,6 +53,8 @@ EXPORTS.google.protobuf += [
     'src/google/protobuf/serial_arena.h',
     'src/google/protobuf/string_block.h',
     'src/google/protobuf/thread_safe_arena.h',
+    'src/google/protobuf/type_id.h',
+    'src/google/protobuf/unknown_field_set.h',
     'src/google/protobuf/varint_shuffle.h',
     'src/google/protobuf/wire_format_lite.h',
     # utf8_range headers land in google/protobuf/ so that the bare
@@ -104,6 +108,8 @@ SOURCES += [
     'src/google/protobuf/repeated_field.cc', # port_def conflicts
     'src/google/protobuf/repeated_ptr_field.cc', # port_def conflicts
     'src/google/protobuf/stubs/common.cc', # port_def conflicts
+    'src/google/protobuf/type_id.cc',
+    'src/google/protobuf/unknown_field_set_lite.cc',
     'src/google/protobuf/wire_format_lite.cc', # port_def conflicts
     'third_party/utf8_range/utf8_range.c',
 ]

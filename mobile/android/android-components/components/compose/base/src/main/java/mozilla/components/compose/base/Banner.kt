@@ -43,33 +43,29 @@ import mozilla.components.compose.base.theme.surfaceDimVariant
 import mozilla.components.ui.icons.R as iconsR
 
 /**
- * A banner component that displays text-based content, including an optional title
- * and optional positive/negative action buttons.
+ * A banner component that displays text-based content, including an optional title and optional positive/negative
+ * action buttons.
  *
- * This overload is intended for simple use cases where the banner content consists
- * only of strings rather than full composable slots. It provides a lightweight API
- * for common notification, error, or confirmation patterns.
+ * This overload is intended for simple use cases where the banner content consists only of strings rather than full
+ * composable slots. It provides a lightweight API for common notification, error, or confirmation patterns.
  *
- * Only the provided elements are shown. If a title is omitted, only the message
- * is displayed. Action buttons are shown only if their corresponding text values
- * (and optionally their click callbacks) are provided.
+ * Only the provided elements are shown. If a title is omitted, only the message is displayed. Action buttons are shown
+ * only if their corresponding text values (and optionally their click callbacks) are provided.
  *
  * @param messageText The main message text displayed in the banner. This is required.
  * @param modifier The [Modifier] to be applied to the banner container.
- * @param titleText Title displayed above the message. Use this for short,
- * attention-grabbing headings.
- * @param colors Defines the color styling for the banner, including background
- * and content color. Defaults to [BannerColors.bannerColors].
+ * @param titleText Title displayed above the message. Use this for short, attention-grabbing headings.
+ * @param colors Defines the color styling for the banner, including background and content color. Defaults to
+ *   [BannerColors.bannerColors].
  * @param border [BorderStroke] drawn around the banner container.
  * @param closeButtonContentDescription The content description for the close button.
- * @param positiveButtonText Label for a positive/confirm action button
- * (e.g., “OK”, “Retry”, “Allow”). If `null`, the button is not shown.
- * @param negativeButtonText Label for a negative/cancel action button
- * (e.g., “Dismiss”, “Cancel”). If `null`, the button is not shown.
+ * @param positiveButtonText Label for a positive/confirm action button (e.g., “OK”, “Retry”, “Allow”). If `null`, the
+ *   button is not shown.
+ * @param negativeButtonText Label for a negative/cancel action button (e.g., “Dismiss”, “Cancel”). If `null`, the
+ *   button is not shown.
  * @param positiveOnClick Callback invoked when the positive button is clicked.
  * @param negativeOnClick Callback invoked when the negative button is clicked.
- * @param onCloseButtonClick Callback invoked when the banner’s close button
- * is clicked.
+ * @param onCloseButtonClick Callback invoked when the banner’s close button is clicked.
  */
 @Composable
 fun Banner(
@@ -78,9 +74,8 @@ fun Banner(
     titleText: String? = null,
     colors: BannerColors = BannerColors.bannerColors(),
     border: BorderStroke? = null,
-    closeButtonContentDescription: String = stringResource(
-        R.string.mozac_compose_base_close_button_content_description,
-    ),
+    closeButtonContentDescription: String =
+        stringResource(R.string.mozac_compose_base_close_button_content_description),
     positiveButtonText: String? = null,
     negativeButtonText: String? = null,
     positiveOnClick: () -> Unit = {},
@@ -91,9 +86,7 @@ fun Banner(
         modifier = modifier,
         titleText = titleText,
         message = {
-            Text(
-                text = messageText,
-            )
+            Text(text = messageText)
         },
         positiveButtonText = positiveButtonText,
         negativeButtonText = negativeButtonText,
@@ -107,31 +100,28 @@ fun Banner(
 }
 
 /**
- * A banner component that displays an optional title and action buttons, with a flexible
- * composable slot for the message area.
+ * A banner component that displays an optional title and action buttons, with a flexible composable slot for the
+ * message area.
  *
- * This overload is designed for cases where you want a simple text-based title and button
- * labels, but need additional flexibility for the message—such as rendering annotated text,
- * inline styles, clickable spans, or other custom composables.
+ * This overload is designed for cases where you want a simple text-based title and button labels, but need additional
+ * flexibility for the message—such as rendering annotated text, inline styles, clickable spans, or other custom
+ * composables.
  *
- * Only provided elements will be shown. If the title is omitted, only the message content
- * is displayed. Each action button appears only when its text (and optionally its click
- * handler) is supplied.
+ * Only provided elements will be shown. If the title is omitted, only the message content is displayed. Each action
+ * button appears only when its text (and optionally its click handler) is supplied.
  *
  * @param modifier The [Modifier] to be applied to the banner container.
- * @param titleText Title displayed above the message. Use this for short,
- * high-level headings or contextual labels.
- * @param message Composable slot representing the main message content.
- * Allows rich text, annotated strings, or any custom layout needed.
- * If `null`, only the title (if provided) and buttons are shown.
- * @param colors Defines the color styling for the banner, including background and
- * content color. Defaults to [BannerColors.bannerColors].
+ * @param titleText Title displayed above the message. Use this for short, high-level headings or contextual labels.
+ * @param message Composable slot representing the main message content. Allows rich text, annotated strings, or any
+ *   custom layout needed. If `null`, only the title (if provided) and buttons are shown.
+ * @param colors Defines the color styling for the banner, including background and content color. Defaults to
+ *   [BannerColors.bannerColors].
  * @param border [BorderStroke] drawn around the banner container.
  * @param closeButtonContentDescription The content description for the close button.
- * @param positiveButtonText Label for the positive/confirm action button
- * (e.g., “OK”, “Allow”). The button is only shown if this text is non-null.
- * @param negativeButtonText Label for the negative/cancel action button
- * (e.g., “Dismiss”, “Cancel”). The button is only shown if this text is non-null.
+ * @param positiveButtonText Label for the positive/confirm action button (e.g., “OK”, “Allow”). The button is only
+ *   shown if this text is non-null.
+ * @param negativeButtonText Label for the negative/cancel action button (e.g., “Dismiss”, “Cancel”). The button is only
+ *   shown if this text is non-null.
  * @param positiveOnClick Callback invoked when the positive button is clicked.
  * @param negativeOnClick Callback invoked when the negative button is clicked.
  * @param onCloseButtonClick Callback invoked when the banner’s close button is clicked.
@@ -143,37 +133,36 @@ fun Banner(
     message: (@Composable () -> Unit)? = null,
     colors: BannerColors = BannerColors.bannerColors(),
     border: BorderStroke? = null,
-    closeButtonContentDescription: String = stringResource(
-        R.string.mozac_compose_base_close_button_content_description,
-    ),
+    closeButtonContentDescription: String =
+        stringResource(R.string.mozac_compose_base_close_button_content_description),
     positiveButtonText: String? = null,
     negativeButtonText: String? = null,
     positiveOnClick: () -> Unit = {},
     negativeOnClick: () -> Unit = {},
     onCloseButtonClick: () -> Unit = {},
 ) {
-    val titleSlot = if (!titleText.isNullOrBlank()) {
-        @Composable {
-            Text(
-                text = titleText,
-            )
+    val titleSlot =
+        if (!titleText.isNullOrBlank()) {
+            @Composable {
+                Text(text = titleText)
+            }
+        } else {
+            null
         }
-    } else {
-        null
-    }
 
-    val actionsSlot = if (!positiveButtonText.isNullOrBlank() || !negativeButtonText.isNullOrBlank()) {
-        @Composable {
-            BannerActions(
-                positiveButtonText = positiveButtonText,
-                negativeButtonText = negativeButtonText,
-                positiveOnClick = positiveOnClick,
-                negativeOnClick = negativeOnClick,
-            )
+    val actionsSlot =
+        if (!positiveButtonText.isNullOrBlank() || !negativeButtonText.isNullOrBlank()) {
+            @Composable {
+                BannerActions(
+                    positiveButtonText = positiveButtonText,
+                    negativeButtonText = negativeButtonText,
+                    positiveOnClick = positiveOnClick,
+                    negativeOnClick = negativeOnClick,
+                )
+            }
+        } else {
+            null
         }
-    } else {
-        null
-    }
 
     Banner(
         modifier = modifier,
@@ -195,9 +184,7 @@ private fun BannerActions(
     negativeOnClick: () -> Unit = {},
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = AcornTheme.layout.size.static100),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = AcornTheme.layout.size.static100),
         horizontalArrangement = Arrangement.End,
     ) {
         if (!negativeButtonText.isNullOrBlank()) {
@@ -223,20 +210,18 @@ private fun BannerActions(
 /**
  * A flexible banner component that displays an optional title, message, and action area.
  *
- * This composable provides a structured layout commonly used for inline notifications,
- * warnings, promotions, or informational messages. Each section (title, message, actions)
- * is optional and will only be shown if provided.
+ * This composable provides a structured layout commonly used for inline notifications, warnings, promotions, or
+ * informational messages. Each section (title, message, actions) is optional and will only be shown if provided.
  *
  * @param modifier The [Modifier] to be applied to the banner container.
- * @param title Composable slot displayed at the top of the banner.
- * Use this for short, prominent text such as a heading.
- * @param message Composable slot displayed below the title.
- * Intended for descriptive or supporting content.
- * @param actions Composable slot displayed at the bottom or end of the banner.
- * Commonly used for buttons (e.g., “Learn More”, “Retry”, “Dismiss”).
+ * @param title Composable slot displayed at the top of the banner. Use this for short, prominent text such as a
+ *   heading.
+ * @param message Composable slot displayed below the title. Intended for descriptive or supporting content.
+ * @param actions Composable slot displayed at the bottom or end of the banner. Commonly used for buttons (e.g., “Learn
+ *   More”, “Retry”, “Dismiss”).
  * @param border [BorderStroke] for drawing a border around the banner.
- * @param colors Defines the visual color properties for the banner, such as background
- * and content color. Defaults to [BannerColors.bannerColors].
+ * @param colors Defines the visual color properties for the banner, such as background and content color. Defaults to
+ *   [BannerColors.bannerColors].
  * @param closeButtonContentDescription The content description for the close button.
  * @param onCloseButtonClick Callback invoked when the banner’s close button is clicked.
  */
@@ -248,9 +233,8 @@ fun Banner(
     actions: (@Composable () -> Unit)? = null,
     border: BorderStroke? = null,
     colors: BannerColors = BannerColors.bannerColors(),
-    closeButtonContentDescription: String = stringResource(
-        R.string.mozac_compose_base_close_button_content_description,
-    ),
+    closeButtonContentDescription: String =
+        stringResource(R.string.mozac_compose_base_close_button_content_description),
     onCloseButtonClick: () -> Unit = {},
 ) {
     Card(
@@ -259,29 +243,11 @@ fun Banner(
         border = border,
         colors = CardDefaults.cardColors(containerColor = colors.backgroundColor),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    bottom = AcornTheme.layout.size.static100,
-                ),
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        start = AcornTheme.layout.size.static200,
-                    ),
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(top = AcornTheme.layout.size.static150)
-                        .weight(1f),
-                ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(bottom = AcornTheme.layout.size.static100)) {
+            Row(modifier = Modifier.fillMaxWidth().padding(start = AcornTheme.layout.size.static200)) {
+                Column(modifier = Modifier.padding(top = AcornTheme.layout.size.static150).weight(1f)) {
                     CompositionLocalProvider(
-                        LocalTextStyle provides AcornTheme.typography.headline8.copy(
-                            color = colors.titleTextColor,
-                        ),
+                        LocalTextStyle provides AcornTheme.typography.headline8.copy(color = colors.titleTextColor)
                     ) {
                         title?.invoke()
                     }
@@ -291,9 +257,7 @@ fun Banner(
                     }
 
                     CompositionLocalProvider(
-                        LocalTextStyle provides AcornTheme.typography.body2.copy(
-                            color = colors.messageTextColor,
-                        ),
+                        LocalTextStyle provides AcornTheme.typography.body2.copy(color = colors.messageTextColor)
                     ) {
                         message?.invoke()
                     }
@@ -311,9 +275,7 @@ fun Banner(
             }
 
             CompositionLocalProvider(
-                LocalTextStyle provides AcornTheme.typography.button.copy(
-                    color = colors.buttonTextColor,
-                ),
+                LocalTextStyle provides AcornTheme.typography.button.copy(color = colors.buttonTextColor)
             ) {
                 actions?.invoke()
             }
@@ -335,9 +297,7 @@ private fun BannerIconButton(
     onCloseButtonClick: () -> Unit,
 ) {
     IconButton(
-        modifier = Modifier
-            .size(44.dp)
-            .padding(2.dp),
+        modifier = Modifier.size(44.dp).padding(2.dp),
         contentDescription = contentDescription,
         onClick = onCloseButtonClick,
     ) {
@@ -368,9 +328,7 @@ data class BannerColors(
 ) {
     companion object {
 
-        /**
-         * Builder function used to construct an instance of [BannerColors].
-         */
+        /** Builder function used to construct an instance of [BannerColors]. */
         @Composable
         fun bannerColors(
             backgroundColor: Color = MaterialTheme.colorScheme.surfaceDimVariant,
@@ -432,10 +390,11 @@ private fun BannerWithSlottedMessagePreview() {
                         append("You must accept the ")
 
                         withStyle(
-                            style = SpanStyle(
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.W500,
-                            ),
+                            style =
+                                SpanStyle(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.W500,
+                                )
                         ) {
                             append("Terms of Use")
                         }
@@ -443,16 +402,17 @@ private fun BannerWithSlottedMessagePreview() {
                         append(" and the ")
 
                         withStyle(
-                            style = SpanStyle(
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.W500,
-                            ),
+                            style =
+                                SpanStyle(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.W500,
+                                )
                         ) {
                             append("Privacy Notice")
                         }
 
                         append(" to continue.")
-                    },
+                    }
                 )
             },
             titleText = "Title",
@@ -477,10 +437,11 @@ private fun BannerWithSlottedMessagePrivatePreview() {
                         append("You must accept the ")
 
                         withStyle(
-                            style = SpanStyle(
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.W500,
-                            ),
+                            style =
+                                SpanStyle(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.W500,
+                                )
                         ) {
                             append("Terms of Use")
                         }
@@ -488,16 +449,17 @@ private fun BannerWithSlottedMessagePrivatePreview() {
                         append(" and the ")
 
                         withStyle(
-                            style = SpanStyle(
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.W500,
-                            ),
+                            style =
+                                SpanStyle(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.W500,
+                                )
                         ) {
                             append("Privacy Notice")
                         }
 
                         append(" to continue.")
-                    },
+                    }
                 )
             },
             titleText = "Title",

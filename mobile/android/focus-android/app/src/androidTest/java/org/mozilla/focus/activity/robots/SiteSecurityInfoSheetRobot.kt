@@ -60,16 +60,15 @@ class SiteSecurityInfoSheetRobot {
 
 private val site_security_info = mDevice.findObject(UiSelector().resourceId("$packageName:id/security_info"))
 
-private val site_identity_title =
-    mDevice.findObject(UiSelector().resourceId("$packageName:id/site_title"))
+private val site_identity_title = mDevice.findObject(UiSelector().resourceId("$packageName:id/site_title"))
 
-private val site_identity_Icon =
-    mDevice.findObject(UiSelector().resourceId("$packageName:id/site_favicon"))
+private val site_identity_Icon = mDevice.findObject(UiSelector().resourceId("$packageName:id/site_favicon"))
 
 private val trackingProtectionSwitch =
     onView(
-        allOf(
-            withId(R.id.switch_widget),
-            hasSibling(withText("Enhanced Tracking Protection")),
-        ),
-    ).inRoot(isDialog())
+            allOf(
+                withId(R.id.switch_widget),
+                hasSibling(withText("Enhanced Tracking Protection")),
+            )
+        )
+        .inRoot(isDialog())

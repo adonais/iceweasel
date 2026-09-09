@@ -11,12 +11,9 @@ import androidx.recyclerview.widget.ListAdapter
 import mozilla.components.concept.storage.Login
 import mozilla.components.feature.autofill.R
 
-/**
- * Adapter for showing a list of logins.
- */
-internal class LoginsAdapter(
-    private val onLoginSelected: (Login) -> Unit,
-) : ListAdapter<Login, LoginViewHolder>(LoginsDiffCallback) {
+/** Adapter for showing a list of logins. */
+internal class LoginsAdapter(private val onLoginSelected: (Login) -> Unit) :
+    ListAdapter<Login, LoginViewHolder>(LoginsDiffCallback) {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LoginViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         val view = inflater.inflate(R.layout.mozac_feature_autofill_login, parent, false)
@@ -29,11 +26,11 @@ internal class LoginsAdapter(
     }
 
     internal object LoginsDiffCallback : DiffUtil.ItemCallback<Login>() {
-        override fun areItemsTheSame(oldItem: Login, newItem: Login) =
-            oldItem.guid == newItem.guid
+        override fun areItemsTheSame(oldItem: Login, newItem: Login) = oldItem.guid == newItem.guid
 
         override fun areContentsTheSame(oldItem: Login, newItem: Login) =
-            oldItem.username == newItem.username && oldItem.password == newItem.password &&
+            oldItem.username == newItem.username &&
+                oldItem.password == newItem.password &&
                 oldItem.origin == newItem.origin
     }
 }

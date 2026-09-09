@@ -8,6 +8,7 @@ import android.Manifest
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import kotlin.test.assertNotNull
 import mozilla.components.concept.engine.permission.SitePermissions
 import mozilla.components.concept.engine.permission.SitePermissions.Status
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action
@@ -19,7 +20,6 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.R
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class PhoneFeatureTest {
@@ -77,11 +77,23 @@ class PhoneFeatureTest {
         assertEquals(R.string.pref_key_phone_feature_location, PhoneFeature.LOCATION.getPreferenceId())
         assertEquals(R.string.pref_key_phone_feature_microphone, PhoneFeature.MICROPHONE.getPreferenceId())
         assertEquals(R.string.pref_key_phone_feature_notification, PhoneFeature.NOTIFICATION.getPreferenceId())
-        assertEquals(R.string.pref_key_browser_feature_autoplay_audible_v2, PhoneFeature.AUTOPLAY_AUDIBLE.getPreferenceId())
-        assertEquals(R.string.pref_key_browser_feature_autoplay_inaudible_v2, PhoneFeature.AUTOPLAY_INAUDIBLE.getPreferenceId())
+        assertEquals(
+            R.string.pref_key_browser_feature_autoplay_audible_v2,
+            PhoneFeature.AUTOPLAY_AUDIBLE.getPreferenceId(),
+        )
+        assertEquals(
+            R.string.pref_key_browser_feature_autoplay_inaudible_v2,
+            PhoneFeature.AUTOPLAY_INAUDIBLE.getPreferenceId(),
+        )
         assertEquals(R.string.pref_key_browser_feature_autoplay_v2, PhoneFeature.AUTOPLAY.getPreferenceId())
-        assertEquals(R.string.pref_key_browser_feature_local_device_access, PhoneFeature.LOCAL_DEVICE_ACCESS.getPreferenceId())
-        assertEquals(R.string.pref_key_browser_feature_local_network_access, PhoneFeature.LOCAL_NETWORK_ACCESS.getPreferenceId())
+        assertEquals(
+            R.string.pref_key_browser_feature_local_device_access,
+            PhoneFeature.LOCAL_DEVICE_ACCESS.getPreferenceId(),
+        )
+        assertEquals(
+            R.string.pref_key_browser_feature_local_network_access,
+            PhoneFeature.LOCAL_NETWORK_ACCESS.getPreferenceId(),
+        )
     }
 
     @Test

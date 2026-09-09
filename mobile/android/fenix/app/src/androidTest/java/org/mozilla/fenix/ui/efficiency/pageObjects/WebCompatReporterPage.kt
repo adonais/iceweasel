@@ -14,7 +14,8 @@ import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.WebCompatReporterSelectors
 
-class WebCompatReporterPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
+class WebCompatReporterPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) :
+    BasePage(composeRule) {
     override val pageName = "WebCompatReporterPage"
 
     init {
@@ -25,11 +26,12 @@ class WebCompatReporterPage(composeRule: AndroidComposeTestRule<HomeActivityInte
         NavigationRegistry.register(
             from = "BrowserPage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(BrowserPageSelectors.MAIN_MENU_BUTTON),
-                NavigationStep.Click(MainMenuSelectors.MORE_BUTTON),
-                NavigationStep.Click(MainMenuSelectors.REPORT_BROKEN_SITE_BUTTON),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.Click(BrowserPageSelectors.MAIN_MENU_BUTTON),
+                    NavigationStep.Click(MainMenuSelectors.MORE_BUTTON),
+                    NavigationStep.Click(MainMenuSelectors.REPORT_BROKEN_SITE_BUTTON),
+                ),
         )
     }
 

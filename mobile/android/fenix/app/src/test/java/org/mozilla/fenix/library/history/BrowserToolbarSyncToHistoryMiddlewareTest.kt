@@ -21,13 +21,15 @@ import org.robolectric.RobolectricTestRunner
 class BrowserToolbarSyncToHistoryMiddlewareTest {
     @Test
     fun `GIVEN in the process of searching in history WHEN the toolbar exits search mode THEN the search is dismissed`() {
-        val historyStore: HistoryFragmentStore = mockk(relaxed = true) {
-            every { state.isSearching } returns true
-        }
-        val toolbarStore = BrowserToolbarStore(
-            initialState = BrowserToolbarState(mode = Mode.EDIT),
-            middleware = listOf(BrowserToolbarSyncToHistoryMiddleware(historyStore)),
-        )
+        val historyStore: HistoryFragmentStore =
+            mockk(relaxed = true) {
+                every { state.isSearching } returns true
+            }
+        val toolbarStore =
+            BrowserToolbarStore(
+                initialState = BrowserToolbarState(mode = Mode.EDIT),
+                middleware = listOf(BrowserToolbarSyncToHistoryMiddleware(historyStore)),
+            )
 
         toolbarStore.dispatch(ExitEditMode)
 
@@ -36,13 +38,15 @@ class BrowserToolbarSyncToHistoryMiddlewareTest {
 
     @Test
     fun `GIVEN not in the process of searching in history WHEN the toolbar exits search mode THEN the search mode is not changed`() {
-        val historyStore: HistoryFragmentStore = mockk(relaxed = true) {
-            every { state.isSearching } returns false
-        }
-        val toolbarStore = BrowserToolbarStore(
-            initialState = BrowserToolbarState(mode = Mode.EDIT),
-            middleware = listOf(BrowserToolbarSyncToHistoryMiddleware(historyStore)),
-        )
+        val historyStore: HistoryFragmentStore =
+            mockk(relaxed = true) {
+                every { state.isSearching } returns false
+            }
+        val toolbarStore =
+            BrowserToolbarStore(
+                initialState = BrowserToolbarState(mode = Mode.EDIT),
+                middleware = listOf(BrowserToolbarSyncToHistoryMiddleware(historyStore)),
+            )
 
         toolbarStore.dispatch(ExitEditMode)
 
@@ -51,13 +55,15 @@ class BrowserToolbarSyncToHistoryMiddlewareTest {
 
     @Test
     fun `GIVEN not in the process of searching in history WHEN the toolbar enters search mode THEN the search mode is not changed`() {
-        val historyStore: HistoryFragmentStore = mockk(relaxed = true) {
-            every { state.isSearching } returns false
-        }
-        val toolbarStore = BrowserToolbarStore(
-            initialState = BrowserToolbarState(mode = Mode.EDIT),
-            middleware = listOf(BrowserToolbarSyncToHistoryMiddleware(historyStore)),
-        )
+        val historyStore: HistoryFragmentStore =
+            mockk(relaxed = true) {
+                every { state.isSearching } returns false
+            }
+        val toolbarStore =
+            BrowserToolbarStore(
+                initialState = BrowserToolbarState(mode = Mode.EDIT),
+                middleware = listOf(BrowserToolbarSyncToHistoryMiddleware(historyStore)),
+            )
 
         toolbarStore.dispatch(EnterEditMode(false))
 

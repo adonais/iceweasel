@@ -235,3 +235,7 @@ dictionary HTMLMediaElementDebugInfo {
   EMEDebugInfo EMEInfo = {};
   MediaDecoderDebugInfo decoder = {};
 };
+
+dictionary EncoderDebugInfo {
+  DOMString encoderName = "";
+};

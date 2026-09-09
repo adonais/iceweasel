@@ -5,6 +5,7 @@
 #include "keyhi.h"
 #include "pkcs11t.h"
 #include "secoid.h"
+#include "eccutil.h"
 #include "secitem.h"
 #include "secder.h"
 #include "base64.h"
@@ -766,6 +767,7 @@ seckey_GetKyberParamsByPkcs11ParamSet(CK_ML_KEM_PARAMETER_SET_TYPE paramSet)
 #endif
         case CKP_ML_KEM_512:
             return params_ml_kem512;
+        case CKP_NSS_ML_KEM_768:
         case CKP_ML_KEM_768:
             return params_ml_kem768;
         case CKP_ML_KEM_1024:
@@ -803,6 +805,7 @@ seckey_GetMLKEMOidTagByPkcs11ParamSet(CK_ML_KEM_PARAMETER_SET_TYPE paramSet)
     switch (paramSet) {
         case CKP_ML_KEM_512:
             return SEC_OID_ML_KEM_512;
+        case CKP_NSS_ML_KEM_768:
         case CKP_ML_KEM_768:
             return SEC_OID_ML_KEM_768;
         case CKP_ML_KEM_1024:
@@ -1862,6 +1865,8 @@ SECKEY_ConvertToPublicKey(SECKEYPrivateKey *privk)
     SECStatus rv;
     CK_OBJECT_HANDLE pubKeyHandle;
     SECItem decodedPoint;
+    SECItem *point;
+    unsigned int fieldLen;
 
     /*
      * First try to look up the cert.
@@ -1960,15 +1965,22 @@ SECKEY_ConvertToPublicKey(SECKEYPrivateKey *privk)
                 if (rv != SECSuccess)
                     break;
             }
-            /* ec.publicValue should be decoded, PKCS #11 defines CKA_EC_POINT
-             * as encoded, but it's not always. try do decoded it and if it
-             * succeeds store the decoded value */
-            rv = SEC_QuickDERDecodeItem(arena, &decodedPoint,
-                                        SEC_ASN1_GET(SEC_OctetStringTemplate), &pubk->u.ec.publicValue);
-            if (rv == SECSuccess) {
-                /* both values are in the public key arena, so it's safe to
-                 * overwrite  the old value */
-                pubk->u.ec.publicValue = decodedPoint;
+            /* ec.publicValue should be a bare SEC#1 encoding. PKCS #11 defines
+             * CKA_EC_POINT with a DER octet string wrapper. Some earlier NSS
+             * versions stored bare points, so we need to handle both cases. */
+            fieldLen = (SECKEY_ECParamsToKeySize(&pubk->u.ec.DEREncodedParams) +
+                        7) /
+                       8;
+            point = &pubk->u.ec.publicValue;
+            if (!ECPoint_IsBare(point, fieldLen) && point->len != 0 &&
+                point->data[0] == SEC_ASN1_OCTET_STRING) {
+                rv = SEC_QuickDERDecodeItem(arena, &decodedPoint,
+                                            SEC_ASN1_GET(SEC_OctetStringTemplate), point);
+                if (rv == SECSuccess) {
+                    /* both values are in the public key arena, so it's safe to
+                     * overwrite  the old value */
+                    *point = decodedPoint;
+                }
             }
 
             pubk->u.ec.encoding = ECPoint_Undefined;

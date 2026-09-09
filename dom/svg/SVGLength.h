@@ -44,9 +44,7 @@ class SVGLength {
   // Coordinate direction for ObjectSpace/UserSpace.
   enum class Axis : uint8_t { X, Y, XY };
 
-  bool operator==(const SVGLength& rhs) const {
-    return mValue == rhs.mValue && mUnit == rhs.mUnit;
-  }
+  bool operator==(const SVGLength& rhs) const = default;
 
   void GetValueAsString(nsAString& aValue) const;
 

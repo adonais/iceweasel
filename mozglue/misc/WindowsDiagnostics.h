@@ -77,11 +77,9 @@ struct WinErrorState {
     };
   }
 
-  bool operator==(WinErrorState const& that) const {
-    return this->error == that.error && this->ntStatus == that.ntStatus;
-  }
+  bool operator==(WinErrorState const& that) const = default;
 
-  bool operator!=(WinErrorState const& that) const { return !operator==(that); }
+  bool operator!=(WinErrorState const& that) const = default;
 };
 
 #if defined(_M_AMD64)

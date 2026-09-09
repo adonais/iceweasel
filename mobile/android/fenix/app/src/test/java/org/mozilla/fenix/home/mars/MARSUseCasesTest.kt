@@ -9,6 +9,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.io.IOException
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.fetch.Client
@@ -20,7 +21,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.io.IOException
 
 class MARSUseCasesTest {
 
@@ -35,64 +35,71 @@ class MARSUseCasesTest {
     }
 
     @Test
-    fun `WHEN sending a click or impression callback THEN ensure the correct request parameters are used`() = runTest(testDispatcher) {
-        val url = "https://firefox.com/click"
+    fun `WHEN sending a click or impression callback THEN ensure the correct request parameters are used`() =
+        runTest(testDispatcher) {
+            val url = "https://firefox.com/click"
 
-        assertRequestParams(
-            client = client,
-            makeRequest = {
-                useCases.recordInteraction(url)
-            },
-            assertParams = { request ->
-                assertEquals(url, request.url)
-                assertEquals(Request.Method.GET, request.method)
-                assertTrue(request.conservative)
-            },
-        )
-    }
-
-    @Test
-    fun `WHEN sending a click or impression callback and the client throws an IOException THEN false is returned`() = runTest(testDispatcher) {
-        val url = "https://firefox.com/click"
-        coEvery { client.fetch(any()) } throws IOException()
-        assertFalse(useCases.recordInteraction(url))
-    }
-
-    @Test
-    fun `WHEN sending a click or impression callback and the response is null THEN false is returned`() = runTest(testDispatcher) {
-        val url = "https://firefox.com/click"
-        val emptyResponse = mockk<Response>(relaxed = true)
-        coEvery { client.fetch(any()) } returns emptyResponse
-
-        assertFalse(useCases.recordInteraction(url))
-    }
-
-    @Test
-    fun `WHEN sending a click or impression callback and the response is a failure THEN false is returned`() = runTest(testDispatcher) {
-        val url = "https://firefox.com/click"
-        val errorResponse = mockk<Response>(relaxUnitFun = true).also {
-            every { it.status } returns 404
+            assertRequestParams(
+                client = client,
+                makeRequest = {
+                    useCases.recordInteraction(url)
+                },
+                assertParams = { request ->
+                    assertEquals(url, request.url)
+                    assertEquals(Request.Method.GET, request.method)
+                    assertTrue(request.conservative)
+                },
+            )
         }
 
-        coEvery { client.fetch(any()) } returns errorResponse
-
-        assertFalse(useCases.recordInteraction(url))
-        verify(exactly = 1) { errorResponse.close() }
-    }
-
     @Test
-    fun `WHEN sending a click or impression callback and the response is success THEN true is returned`() = runTest(testDispatcher) {
-        val url = "https://firefox.com/click"
-        val successResponse = mockk<Response>(relaxUnitFun = true).also {
-            every { it.status } returns 200
-            every { it.body } returns Response.Body.empty()
+    fun `WHEN sending a click or impression callback and the client throws an IOException THEN false is returned`() =
+        runTest(testDispatcher) {
+            val url = "https://firefox.com/click"
+            coEvery { client.fetch(any()) } throws IOException()
+            assertFalse(useCases.recordInteraction(url))
         }
 
-        coEvery { client.fetch(any()) } returns successResponse
+    @Test
+    fun `WHEN sending a click or impression callback and the response is null THEN false is returned`() =
+        runTest(testDispatcher) {
+            val url = "https://firefox.com/click"
+            val emptyResponse = mockk<Response>(relaxed = true)
+            coEvery { client.fetch(any()) } returns emptyResponse
 
-        assertTrue(useCases.recordInteraction(url))
-        verify(exactly = 1) { successResponse.close() }
-    }
+            assertFalse(useCases.recordInteraction(url))
+        }
+
+    @Test
+    fun `WHEN sending a click or impression callback and the response is a failure THEN false is returned`() =
+        runTest(testDispatcher) {
+            val url = "https://firefox.com/click"
+            val errorResponse =
+                mockk<Response>(relaxUnitFun = true).also {
+                    every { it.status } returns 404
+                }
+
+            coEvery { client.fetch(any()) } returns errorResponse
+
+            assertFalse(useCases.recordInteraction(url))
+            verify(exactly = 1) { errorResponse.close() }
+        }
+
+    @Test
+    fun `WHEN sending a click or impression callback and the response is success THEN true is returned`() =
+        runTest(testDispatcher) {
+            val url = "https://firefox.com/click"
+            val successResponse =
+                mockk<Response>(relaxUnitFun = true).also {
+                    every { it.status } returns 200
+                    every { it.body } returns Response.Body.empty()
+                }
+
+            coEvery { client.fetch(any()) } returns successResponse
+
+            assertTrue(useCases.recordInteraction(url))
+            verify(exactly = 1) { successResponse.close() }
+        }
 }
 
 private suspend fun assertRequestParams(
@@ -100,11 +107,12 @@ private suspend fun assertRequestParams(
     makeRequest: suspend () -> Unit,
     assertParams: (Request) -> Unit,
 ) {
-    coEvery { client.fetch(any()) } answers {
-        val request = it.invocation.args[0] as Request
-        assertParams(request)
-        Response("https://mozilla.org", 200, MutableHeaders(), Response.Body("".byteInputStream()))
-    }
+    coEvery { client.fetch(any()) } answers
+        {
+            val request = it.invocation.args[0] as Request
+            assertParams(request)
+            Response("https://mozilla.org", 200, MutableHeaders(), Response.Body("".byteInputStream()))
+        }
 
     makeRequest()
 

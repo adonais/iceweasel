@@ -9,27 +9,29 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.perf.ProcessExitRecord
 import org.mozilla.fenix.theme.FirefoxTheme
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
 class TabProcessToolsTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     private val today = dateFormat.format(Date())
-    private val yesterday = Calendar.getInstance().apply {
-        add(Calendar.DAY_OF_YEAR, -1)
-    }.let { dateFormat.format(it.time) }
+    private val yesterday =
+        Calendar.getInstance()
+            .apply {
+                add(Calendar.DAY_OF_YEAR, -1)
+            }
+            .let { dateFormat.format(it.time) }
 
     @Test
     fun emptyStateIsShownWhenNoProcessExitsExist() {
@@ -44,14 +46,15 @@ class TabProcessToolsTest {
 
     @Test
     fun exitRecordFieldsAreDisplayedWhenProcessExitsExist() {
-        val exit = ProcessExitRecord(
-            date = "$today 08:30:00",
-            reason = "crash_native",
-            processType = "content",
-            importance = "cached",
-            pssInMb = 245,
-            rssInMb = 312,
-        )
+        val exit =
+            ProcessExitRecord(
+                date = "$today 08:30:00",
+                reason = "crash_native",
+                processType = "content",
+                importance = "cached",
+                pssInMb = 245,
+                rssInMb = 312,
+            )
 
         composeTestRule.setContent {
             FirefoxTheme {
@@ -69,32 +72,33 @@ class TabProcessToolsTest {
 
     @Test
     fun sectionHeadersAreShownForTodayYesterdayAndOlderDates() {
-        val exits = listOf(
-            ProcessExitRecord(
-                date = "$today 09:00:00",
-                reason = "crash_native",
-                processType = "content",
-                importance = "cached",
-                pssInMb = 245,
-                rssInMb = 312,
-            ),
-            ProcessExitRecord(
-                date = "$yesterday 21:15:42",
-                reason = "low_memory",
-                processType = "parent",
-                importance = "foreground",
-                pssInMb = 180,
-                rssInMb = 220,
-            ),
-            ProcessExitRecord(
-                date = "2024-01-01 14:00:00",
-                reason = "anr",
-                processType = "content",
-                importance = "cached",
-                pssInMb = 300,
-                rssInMb = 400,
-            ),
-        )
+        val exits =
+            listOf(
+                ProcessExitRecord(
+                    date = "$today 09:00:00",
+                    reason = "crash_native",
+                    processType = "content",
+                    importance = "cached",
+                    pssInMb = 245,
+                    rssInMb = 312,
+                ),
+                ProcessExitRecord(
+                    date = "$yesterday 21:15:42",
+                    reason = "low_memory",
+                    processType = "parent",
+                    importance = "foreground",
+                    pssInMb = 180,
+                    rssInMb = 220,
+                ),
+                ProcessExitRecord(
+                    date = "2024-01-01 14:00:00",
+                    reason = "anr",
+                    processType = "content",
+                    importance = "cached",
+                    pssInMb = 300,
+                    rssInMb = 400,
+                ),
+            )
 
         composeTestRule.setContent {
             FirefoxTheme {
@@ -109,24 +113,25 @@ class TabProcessToolsTest {
 
     @Test
     fun filterButtonShowsAllTypesByDefault() {
-        val exits = listOf(
-            ProcessExitRecord(
-                date = "$today 09:00:00",
-                reason = "crash_native",
-                processType = "content",
-                importance = "cached",
-                pssInMb = 245,
-                rssInMb = 312,
-            ),
-            ProcessExitRecord(
-                date = "$today 08:00:00",
-                reason = "signaled",
-                processType = "gpu",
-                importance = "foreground_service",
-                pssInMb = 100,
-                rssInMb = 120,
-            ),
-        )
+        val exits =
+            listOf(
+                ProcessExitRecord(
+                    date = "$today 09:00:00",
+                    reason = "crash_native",
+                    processType = "content",
+                    importance = "cached",
+                    pssInMb = 245,
+                    rssInMb = 312,
+                ),
+                ProcessExitRecord(
+                    date = "$today 08:00:00",
+                    reason = "signaled",
+                    processType = "gpu",
+                    importance = "foreground_service",
+                    pssInMb = 100,
+                    rssInMb = 120,
+                ),
+            )
 
         composeTestRule.setContent {
             FirefoxTheme {
@@ -139,24 +144,25 @@ class TabProcessToolsTest {
 
     @Test
     fun filterDropdownShowsAvailableTypesWhenOpened() {
-        val exits = listOf(
-            ProcessExitRecord(
-                date = "$today 09:00:00",
-                reason = "crash_native",
-                processType = "content",
-                importance = "cached",
-                pssInMb = 245,
-                rssInMb = 312,
-            ),
-            ProcessExitRecord(
-                date = "$today 08:00:00",
-                reason = "signaled",
-                processType = "gpu",
-                importance = "foreground_service",
-                pssInMb = 100,
-                rssInMb = 120,
-            ),
-        )
+        val exits =
+            listOf(
+                ProcessExitRecord(
+                    date = "$today 09:00:00",
+                    reason = "crash_native",
+                    processType = "content",
+                    importance = "cached",
+                    pssInMb = 245,
+                    rssInMb = 312,
+                ),
+                ProcessExitRecord(
+                    date = "$today 08:00:00",
+                    reason = "signaled",
+                    processType = "gpu",
+                    importance = "foreground_service",
+                    pssInMb = 100,
+                    rssInMb = 120,
+                ),
+            )
 
         composeTestRule.setContent {
             FirefoxTheme {
@@ -172,24 +178,25 @@ class TabProcessToolsTest {
 
     @Test
     fun exitsForDeselectedTypeAreHiddenFromList() {
-        val exits = listOf(
-            ProcessExitRecord(
-                date = "$today 09:00:00",
-                reason = "crash_native",
-                processType = "content",
-                importance = "cached",
-                pssInMb = 245,
-                rssInMb = 312,
-            ),
-            ProcessExitRecord(
-                date = "$today 08:00:00",
-                reason = "signaled",
-                processType = "gpu",
-                importance = "foreground_service",
-                pssInMb = 100,
-                rssInMb = 120,
-            ),
-        )
+        val exits =
+            listOf(
+                ProcessExitRecord(
+                    date = "$today 09:00:00",
+                    reason = "crash_native",
+                    processType = "content",
+                    importance = "cached",
+                    pssInMb = 245,
+                    rssInMb = 312,
+                ),
+                ProcessExitRecord(
+                    date = "$today 08:00:00",
+                    reason = "signaled",
+                    processType = "gpu",
+                    importance = "foreground_service",
+                    pssInMb = 100,
+                    rssInMb = 120,
+                ),
+            )
 
         composeTestRule.setContent {
             FirefoxTheme {
@@ -206,24 +213,25 @@ class TabProcessToolsTest {
 
     @Test
     fun reselectedTypeExitsAreRestoredInList() {
-        val exits = listOf(
-            ProcessExitRecord(
-                date = "$today 09:00:00",
-                reason = "crash_native",
-                processType = "content",
-                importance = "cached",
-                pssInMb = 245,
-                rssInMb = 312,
-            ),
-            ProcessExitRecord(
-                date = "$today 08:00:00",
-                reason = "signaled",
-                processType = "gpu",
-                importance = "foreground_service",
-                pssInMb = 100,
-                rssInMb = 120,
-            ),
-        )
+        val exits =
+            listOf(
+                ProcessExitRecord(
+                    date = "$today 09:00:00",
+                    reason = "crash_native",
+                    processType = "content",
+                    importance = "cached",
+                    pssInMb = 245,
+                    rssInMb = 312,
+                ),
+                ProcessExitRecord(
+                    date = "$today 08:00:00",
+                    reason = "signaled",
+                    processType = "gpu",
+                    importance = "foreground_service",
+                    pssInMb = 100,
+                    rssInMb = 120,
+                ),
+            )
 
         composeTestRule.setContent {
             FirefoxTheme {
@@ -243,16 +251,17 @@ class TabProcessToolsTest {
 
     @Test
     fun filterButtonShowsNoTypesWhenAllTypesDeselected() {
-        val exits = listOf(
-            ProcessExitRecord(
-                date = "$today 09:00:00",
-                reason = "crash_native",
-                processType = "content",
-                importance = "cached",
-                pssInMb = 245,
-                rssInMb = 312,
-            ),
-        )
+        val exits =
+            listOf(
+                ProcessExitRecord(
+                    date = "$today 09:00:00",
+                    reason = "crash_native",
+                    processType = "content",
+                    importance = "cached",
+                    pssInMb = 245,
+                    rssInMb = 312,
+                )
+            )
 
         composeTestRule.setContent {
             FirefoxTheme {
@@ -268,16 +277,17 @@ class TabProcessToolsTest {
 
     @Test
     fun emptyStateIsShownWhenAllTypesDeselected() {
-        val exits = listOf(
-            ProcessExitRecord(
-                date = "$today 09:00:00",
-                reason = "crash_native",
-                processType = "content",
-                importance = "cached",
-                pssInMb = 245,
-                rssInMb = 312,
-            ),
-        )
+        val exits =
+            listOf(
+                ProcessExitRecord(
+                    date = "$today 09:00:00",
+                    reason = "crash_native",
+                    processType = "content",
+                    importance = "cached",
+                    pssInMb = 245,
+                    rssInMb = 312,
+                )
+            )
 
         composeTestRule.setContent {
             FirefoxTheme {

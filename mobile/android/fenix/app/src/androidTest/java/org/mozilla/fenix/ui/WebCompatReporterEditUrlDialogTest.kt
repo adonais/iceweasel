@@ -19,8 +19,7 @@ import org.mozilla.fenix.webcompat.ui.EditUrlConfirmationDialog
 @RunWith(AndroidJUnit4::class)
 class WebCompatReporterEditUrlDialogTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun saveButtonClickedTest() {

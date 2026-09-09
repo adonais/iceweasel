@@ -563,7 +563,7 @@ void SVGUseElement::LookupHref() {
     return;
   }
 
-  Element* treeToWatch = mOriginal ? mOriginal.get() : this;
+  const RefPtr<Element> treeToWatch = mOriginal ? mOriginal.get() : this;
   if (nsContentUtils::IsLocalRefURL(href)) {
     mReferencedElementTracker.ResetToLocalFragmentID(*treeToWatch, href);
     return;
@@ -583,7 +583,7 @@ void SVGUseElement::LookupHref() {
     return;
   }
 
-  nsIReferrerInfo* referrer =
+  const nsCOMPtr<nsIReferrerInfo> referrer =
       OwnerDoc()->ReferrerInfoForInternalCSSAndSVGResources();
   mReferencedElementTracker.ResetToURIWithFragmentID(*treeToWatch, targetURI,
                                                      referrer);

@@ -6,12 +6,10 @@ package org.mozilla.fenix.trackingprotection
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import org.mozilla.fenix.R
 import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.fenix.R
 
-/**
- * The categories of Tracking Protection to display.
- */
+/** The categories of Tracking Protection to display. */
 enum class TrackingProtectionCategory(
     @param:StringRes val title: Int,
     @param:StringRes val description: Int,

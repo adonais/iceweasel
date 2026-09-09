@@ -20,25 +20,27 @@ import androidx.annotation.VisibleForTesting
 import androidx.annotation.VisibleForTesting.Companion.PRIVATE
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.datepicker.CalendarConstraints
+import com.google.android.material.datepicker.CompositeDateValidator
 import com.google.android.material.datepicker.DateValidatorPointBackward
 import com.google.android.material.datepicker.DateValidatorPointForward
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
+import java.util.Calendar
+import java.util.Date
 import mozilla.components.feature.prompts.R
 import mozilla.components.feature.prompts.ext.hour
 import mozilla.components.feature.prompts.ext.millisecond
 import mozilla.components.feature.prompts.ext.minute
 import mozilla.components.feature.prompts.ext.second
 import mozilla.components.feature.prompts.ext.toCalendar
+import mozilla.components.feature.prompts.ext.toLocalDayStartAsUtcMillis
 import mozilla.components.feature.prompts.widget.MonthAndYearPicker
 import mozilla.components.feature.prompts.widget.TimePrecisionPicker
 import mozilla.components.support.utils.TimePicker.shouldShowSecondsPicker
 import mozilla.components.support.utils.ext.getSerializableCompat
 import mozilla.components.ui.widgets.withCenterAlignedButtons
-import java.util.Calendar
-import java.util.Date
 
 private const val KEY_INITIAL_DATE = "KEY_INITIAL_DATE"
 private const val KEY_MIN_DATE = "KEY_MIN_DATE"
@@ -80,7 +82,8 @@ internal class TimePickerDialogFragment :
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return when (selectionType) {
-            SELECTION_TYPE_DATE, SELECTION_TYPE_DATE_AND_TIME -> {
+            SELECTION_TYPE_DATE,
+            SELECTION_TYPE_DATE_AND_TIME -> {
                 createMaterialDatePickerDialog(isDateTimePicker = selectionType == SELECTION_TYPE_DATE_AND_TIME)
                 Dialog(requireContext())
             }
@@ -115,21 +118,21 @@ internal class TimePickerDialogFragment :
         val is24Hour = DateFormat.is24HourFormat(requireContext())
         val timeFormat = if (is24Hour) TimeFormat.CLOCK_24H else TimeFormat.CLOCK_12H
 
-        val timePicker = MaterialTimePicker.Builder()
-            .setTimeFormat(timeFormat)
-            .setHour(calendar.hour)
-            .setMinute(calendar.minute)
-            .setTitleText(R.string.mozac_feature_prompts_set_time)
-            .build()
+        val timePicker =
+            MaterialTimePicker.Builder()
+                .setTimeFormat(timeFormat)
+                .setHour(calendar.hour)
+                .setMinute(calendar.minute)
+                .setTitleText(R.string.mozac_feature_prompts_set_time)
+                .build()
 
         timePicker.addOnPositiveButtonClickListener {
-            val finalCalendar = (
-                dateSelection?.let {
+            val finalCalendar =
+                (dateSelection?.let {
                     Calendar.getInstance().apply {
                         timeInMillis = it - TimeZone.getDefault().getOffset(it)
                     }
-                } ?: selectedDate.toCalendar()
-                )
+                } ?: selectedDate.toCalendar())
 
             finalCalendar.set(Calendar.HOUR_OF_DAY, timePicker.hour)
             finalCalendar.set(Calendar.MINUTE, timePicker.minute)
@@ -151,19 +154,29 @@ internal class TimePickerDialogFragment :
         timePicker.show(parentFragmentManager, timePicker.toString())
     }
 
-    private fun createMaterialDatePickerDialog(isDateTimePicker: Boolean = false) {
-        val constraintsBuilder = CalendarConstraints.Builder().apply {
-            minimumDate?.let { setValidator(DateValidatorPointForward.from(it.time)) }
-            maximumDate?.let { setValidator(DateValidatorPointBackward.before(it.time)) }
+    @VisibleForTesting
+    internal fun buildCalendarConstraints(): CalendarConstraints {
+        val validators = buildList {
+            minimumDate?.let { add(DateValidatorPointForward.from(it.toLocalDayStartAsUtcMillis())) }
+            maximumDate?.let { add(DateValidatorPointBackward.before(it.toLocalDayStartAsUtcMillis())) }
         }
+        val builder = CalendarConstraints.Builder()
+        if (validators.isNotEmpty()) {
+            builder.setValidator(CompositeDateValidator.allOf(validators))
+        }
+        return builder.build()
+    }
+
+    private fun createMaterialDatePickerDialog(isDateTimePicker: Boolean = false) {
         val initialUtcTime = initialDate.time + TimeZone.getDefault().getOffset(initialDate.time)
 
-        val datePicker = MaterialDatePicker.Builder.datePicker()
-            .setSelection(initialUtcTime)
-            .setPositiveButtonText(R.string.mozac_feature_prompts_set_date)
-            .setNegativeButtonText(R.string.mozac_feature_prompts_cancel)
-            .setCalendarConstraints(constraintsBuilder.build())
-            .build()
+        val datePicker =
+            MaterialDatePicker.Builder.datePicker()
+                .setSelection(initialUtcTime)
+                .setPositiveButtonText(R.string.mozac_feature_prompts_set_date)
+                .setNegativeButtonText(R.string.mozac_feature_prompts_cancel)
+                .setCalendarConstraints(buildCalendarConstraints())
+                .build()
 
         datePicker.addOnPositiveButtonClickListener { selection ->
             if (isDateTimePicker) {
@@ -197,11 +210,12 @@ internal class TimePickerDialogFragment :
     }
 
     private fun buildDialogWithView(view: View, titleResId: Int? = null): AlertDialog {
-        val builder = MaterialAlertDialogBuilder(requireContext())
-            .setView(view)
-            .setPositiveButton(R.string.mozac_feature_prompts_set_date, this)
-            .setNegativeButton(R.string.mozac_feature_prompts_cancel, this)
-            .setNeutralButton(R.string.mozac_feature_prompts_clear, this)
+        val builder =
+            MaterialAlertDialogBuilder(requireContext())
+                .setView(view)
+                .setPositiveButton(R.string.mozac_feature_prompts_set_date, this)
+                .setNegativeButton(R.string.mozac_feature_prompts_cancel, this)
+                .setNeutralButton(R.string.mozac_feature_prompts_clear, this)
 
         titleResId?.let { builder.setTitle(it) }
 
@@ -219,14 +233,15 @@ internal class TimePickerDialogFragment :
     }
 
     fun createTimeStepPickerDialog(stepValue: Float): AlertDialog {
-        val view = TimePrecisionPicker(
-            context = requireContext(),
-            selectedTime = initialDate.toCalendar(),
-            maxTime = maximumDate?.toCalendar() ?: TimePrecisionPicker.getDefaultMaxTime(),
-            minTime = minimumDate?.toCalendar() ?: TimePrecisionPicker.getDefaultMinTime(),
-            stepValue = stepValue,
-            timeSetListener = this,
-        )
+        val view =
+            TimePrecisionPicker(
+                context = requireContext(),
+                selectedTime = initialDate.toCalendar(),
+                maxTime = maximumDate?.toCalendar() ?: TimePrecisionPicker.getDefaultMaxTime(),
+                minTime = minimumDate?.toCalendar() ?: TimePrecisionPicker.getDefaultMinTime(),
+                stepValue = stepValue,
+                timeSetListener = this,
+            )
         return buildDialogWithView(view, titleResId = R.string.mozac_feature_prompts_set_time)
     }
 
@@ -283,19 +298,19 @@ internal class TimePickerDialogFragment :
     companion object {
         /**
          * A builder method for creating a [TimePickerDialogFragment]
+         *
          * @param sessionId to create the dialog.
          * @param promptRequestUID identifier of the [PromptRequest] for which this dialog is shown.
-         * @param shouldDismissOnLoad whether or not the dialog should automatically be dismissed
-         * when a new page is loaded.
+         * @param shouldDismissOnLoad whether or not the dialog should automatically be dismissed when a new page is
+         *   loaded.
          * @param title of the dialog.
          * @param initialDate date that will be selected by default.
          * @param minDate the minimumDate date that will be allowed to be selected.
          * @param maxDate the maximumDate date that will be allowed to be selected.
          * @param selectionType indicate which type of time should be selected, valid values are
-         * ([TimePickerDialogFragment.SELECTION_TYPE_DATE], [TimePickerDialogFragment.SELECTION_TYPE_DATE_AND_TIME],
-         * and [TimePickerDialogFragment.SELECTION_TYPE_TIME])
+         *   ([TimePickerDialogFragment.SELECTION_TYPE_DATE], [TimePickerDialogFragment.SELECTION_TYPE_DATE_AND_TIME],
+         *   and [TimePickerDialogFragment.SELECTION_TYPE_TIME])
          * @param stepValue value of time jumped whenever the time is incremented/decremented.
-         *
          * @return a new instance of [TimePickerDialogFragment]
          */
         fun newInstance(

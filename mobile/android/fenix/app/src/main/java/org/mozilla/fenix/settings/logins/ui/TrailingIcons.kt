@@ -24,13 +24,14 @@ import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.text.value
 import mozilla.components.compose.base.textfield.TextField
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * An eye trailing icon for a [TextField] that contains a password.
+ *
  * @param isPasswordVisible true when the password is revealed.
  * @param contentDescription the content description.
  * @param onTrailingIconClick invoked when pressing the eye icon
@@ -46,11 +47,12 @@ fun EyePasswordIconButton(
         contentDescription = contentDescription?.value,
     ) {
         Icon(
-            painter = if (!isPasswordVisible) {
-                painterResource(id = iconsR.drawable.mozac_ic_eye_24)
-            } else {
-                painterResource(id = iconsR.drawable.mozac_ic_eye_slash_24)
-            },
+            painter =
+                if (!isPasswordVisible) {
+                    painterResource(id = iconsR.drawable.mozac_ic_eye_24)
+                } else {
+                    painterResource(id = iconsR.drawable.mozac_ic_eye_slash_24)
+                },
             contentDescription = null,
         )
     }
@@ -58,9 +60,7 @@ fun EyePasswordIconButton(
 
 @Preview
 @Composable
-private fun EyePasswordIconButtonPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun EyePasswordIconButtonPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     var isPasswordVisible by remember { mutableStateOf(false) }
 
     FirefoxTheme(theme) {
@@ -71,9 +71,7 @@ private fun EyePasswordIconButtonPreview(
                 isEnabled = true,
                 placeholder = "",
                 errorText = "",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
                 label = "",
                 trailingIcon = {
                     EyePasswordIconButton(
@@ -81,11 +79,12 @@ private fun EyePasswordIconButtonPreview(
                         onTrailingIconClick = { isPasswordVisible = !isPasswordVisible },
                     )
                 },
-                visualTransformation = if (isPasswordVisible) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
+                visualTransformation =
+                    if (isPasswordVisible) {
+                        VisualTransformation.None
+                    } else {
+                        PasswordVisualTransformation()
+                    },
             )
         }
     }

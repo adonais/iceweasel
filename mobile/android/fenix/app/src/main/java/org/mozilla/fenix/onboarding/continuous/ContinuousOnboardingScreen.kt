@@ -39,11 +39,11 @@ import androidx.compose.ui.window.DialogProperties
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.OutlinedButton
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.onboarding.view.Action
 import org.mozilla.fenix.onboarding.view.OnboardingPageState
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 val maxCardWidth = 360.dp
 
@@ -64,16 +64,15 @@ fun ContinuousOnboardingScreen(
         onDismissRequest = {
             // Intentionally unused. The dialog can only be dismissed via the close button or page actions.
         },
-        properties = DialogProperties(
-            dismissOnBackPress = false,
-            dismissOnClickOutside = false,
-            usePlatformDefaultWidth = true,
-        ),
+        properties =
+            DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = true,
+            ),
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .systemBarsPadding(),
+            modifier = Modifier.fillMaxWidth().systemBarsPadding(),
             contentAlignment = Alignment.Center,
         ) {
             CardContent(
@@ -110,9 +109,7 @@ private fun CardContent(
             )
 
             Box(
-                modifier = Modifier
-                    .height(150.dp)
-                    .fillMaxWidth(),
+                modifier = Modifier.height(150.dp).fillMaxWidth(),
                 contentAlignment = Alignment.Center,
             ) {
                 Image(
@@ -130,12 +127,8 @@ private fun CardContent(
     }
 
     Card(
-        modifier = Modifier
-            .widthIn(max = maxCardWidth)
-            .fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceBright,
-        ),
+        modifier = Modifier.widthIn(max = maxCardWidth).fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceBright),
     ) {
         IconButton(
             onClick = {
@@ -154,10 +147,7 @@ private fun CardContent(
         }
 
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier = Modifier.fillMaxWidth().padding(16.dp).verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Content()
@@ -196,28 +186,29 @@ private fun CardContent(
 private fun ContinuousOnboardingScreenNotificationPreview() {
     FirefoxTheme {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .systemBarsPadding(),
+            modifier = Modifier.fillMaxWidth().systemBarsPadding(),
             contentAlignment = Alignment.Center,
         ) {
             CardContent(
-                pageState = OnboardingPageState(
-                    imageRes = R.drawable.nova_onboarding_notifications,
-                    title = stringResource(R.string.nova_onboarding_notifications_title),
-                    description = stringResource(R.string.nova_onboarding_notifications_subtitle),
-                    primaryButton = Action(
-                        text = stringResource(R.string.nova_onboarding_notifications_button),
-                        onClick = { },
+                pageState =
+                    OnboardingPageState(
+                        imageRes = R.drawable.nova_onboarding_notifications,
+                        title = stringResource(R.string.nova_onboarding_notifications_title),
+                        description = stringResource(R.string.nova_onboarding_notifications_subtitle),
+                        primaryButton =
+                            Action(
+                                text = stringResource(R.string.nova_onboarding_notifications_button),
+                                onClick = {},
+                            ),
+                        secondaryButton =
+                            Action(
+                                text = stringResource(R.string.nova_onboarding_negative_button),
+                                onClick = {},
+                            ),
+                        onRecordImpressionEvent = {},
                     ),
-                    secondaryButton = Action(
-                        text = stringResource(R.string.nova_onboarding_negative_button),
-                        onClick = { },
-                    ),
-                    onRecordImpressionEvent = { },
-                ),
-                onCloseButtonClicked = { },
-                removeDialogView = { },
+                onCloseButtonClicked = {},
+                removeDialogView = {},
             )
         }
     }
@@ -228,28 +219,29 @@ private fun ContinuousOnboardingScreenNotificationPreview() {
 private fun ContinuousOnboardingScreenSyncPreview() {
     FirefoxTheme {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .systemBarsPadding(),
+            modifier = Modifier.fillMaxWidth().systemBarsPadding(),
             contentAlignment = Alignment.Center,
         ) {
             CardContent(
-                pageState = OnboardingPageState(
-                    imageRes = R.drawable.nova_onboarding_sync,
-                    title = stringResource(R.string.nova_onboarding_sync_title),
-                    description = stringResource(R.string.nova_onboarding_sync_subtitle),
-                    primaryButton = Action(
-                        text = stringResource(R.string.nova_onboarding_sync_button),
-                        onClick = { },
+                pageState =
+                    OnboardingPageState(
+                        imageRes = R.drawable.nova_onboarding_sync,
+                        title = stringResource(R.string.nova_onboarding_sync_title),
+                        description = stringResource(R.string.nova_onboarding_sync_subtitle),
+                        primaryButton =
+                            Action(
+                                text = stringResource(R.string.nova_onboarding_sync_button),
+                                onClick = {},
+                            ),
+                        secondaryButton =
+                            Action(
+                                text = stringResource(R.string.nova_onboarding_continue_button),
+                                onClick = {},
+                            ),
+                        onRecordImpressionEvent = {},
                     ),
-                    secondaryButton = Action(
-                        text = stringResource(R.string.nova_onboarding_continue_button),
-                        onClick = { },
-                    ),
-                    onRecordImpressionEvent = { },
-                ),
-                onCloseButtonClicked = { },
-                removeDialogView = { },
+                onCloseButtonClicked = {},
+                removeDialogView = {},
             )
         }
     }

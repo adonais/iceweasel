@@ -12,7 +12,7 @@ UNIFIED_SOURCES += [
 
 # This name confusion is a reflection of the 2 megazord parts. It should be
 # fixed after we land in m-c.
-if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android" or CONFIG["MOZ_LIBMEGAZORD_ARTIFACTS"]:
     SharedLibrary("megazord-so")
 else:
     SharedLibrary("megazord-so", output_category="uniffi-target")
@@ -36,3 +36,11 @@ elif CONFIG["OS_TARGET"] == "WINNT":
         "ws2_32",
         "winmm",
     ]
+
+# rpath so libmegazord's co-located NSS and sqlite deps resolve at load time
+# (e.g. JVM unit tests loading it from the extracted libsForTests directory).
+# Windows has no rpath and relies on the loader search path instead.
+if CONFIG["OS_TARGET"] == "Linux":
+    LDFLAGS += ["-Wl,-rpath=$ORIGIN"]
+elif CONFIG["OS_TARGET"] == "Darwin":
+    LDFLAGS += ["-Wl,-rpath,@loader_path"]

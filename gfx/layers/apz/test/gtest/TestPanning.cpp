@@ -341,7 +341,7 @@ TEST_F(APZCPanningTesterMock, HoldGesture_ActiveWheelListener) {
   UpdateHitTestingTree();
 
   RefPtr<TestAsyncPanZoomController> apzc = ApzcOf(root);
-  ScrollableLayerGuid::ViewID scrollId = ScrollableLayerGuid::START_SCROLL_ID;
+  ViewID scrollId = START_SCROLL_ID;
   ScreenIntPoint panPoint(50, 80);
 
   // Simulate an active wheel listener by having the MockHitTester
@@ -411,7 +411,7 @@ TEST_F(APZCPanningTesterMock, HoldGesture_PreventDefaultAfterLongHold) {
   UpdateHitTestingTree();
 
   RefPtr<TestAsyncPanZoomController> apzc = ApzcOf(root);
-  ScrollableLayerGuid::ViewID scrollId = ScrollableLayerGuid::START_SCROLL_ID;
+  ViewID scrollId = START_SCROLL_ID;
   ScreenIntPoint panPoint(50, 80);
 
   // Simulate an active wheel listener by having the MockHitTester
@@ -482,9 +482,8 @@ TEST_F(APZCPanningTesterMock, HoldGesture_SubframeTargeting) {
       LayerIntRect(0, 0, 100, 100),
   };
   CreateScrollData(treeShape, layerVisibleRect);
-  SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
-                            CSSRect(0, 0, 100, 100));
-  SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID + 1,
+  SetScrollableFrameMetrics(root, START_SCROLL_ID, CSSRect(0, 0, 100, 100));
+  SetScrollableFrameMetrics(layers[1], START_SCROLL_ID + 1,
                             CSSRect(0, 0, 100, 200));
   SetScrollHandoff(layers[1], root);
   ScopedLayerTreeRegistration registration(LayersId{0}, mcc);
@@ -500,8 +499,7 @@ TEST_F(APZCPanningTesterMock, HoldGesture_SubframeTargeting) {
       OverscrollBehaviorInfo::FromStyleConstants(
           StyleOverscrollBehavior::None, StyleOverscrollBehavior::None));
 
-  ScrollableLayerGuid::ViewID subframeScrollId =
-      ScrollableLayerGuid::START_SCROLL_ID + 1;
+  ViewID subframeScrollId = START_SCROLL_ID + 1;
   ScreenIntPoint panPoint(50, 50);
 
   // Send a MAYSTART. Note that this has zero delta, and causes its input

@@ -174,14 +174,6 @@ void DebugAPI::onNewWasmInstance(JSContext* cx,
 }
 
 /* static */
-bool DebugAPI::onNewPromise(JSContext* cx, Handle<PromiseObject*> promise) {
-  if (MOZ_UNLIKELY(cx->realm()->isDebuggee())) {
-    return slowPathOnNewPromise(cx, promise);
-  }
-  return true;
-}
-
-/* static */
 void DebugAPI::traceGeneratorFrame(JSTracer* tracer,
                                    AbstractGeneratorObject* generator) {
   if (MOZ_UNLIKELY(generator->realm()->isDebuggee())) {

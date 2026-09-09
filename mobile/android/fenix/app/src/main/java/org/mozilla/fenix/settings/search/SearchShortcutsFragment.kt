@@ -19,10 +19,7 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.theme.FirefoxTheme
 
-/**
- * A [Fragment] that allows user to select what search engine shortcuts will be visible in the quick
- * search menu.
- */
+/** A [Fragment] that allows user to select what search engine shortcuts will be visible in the quick search menu. */
 class SearchShortcutsFragment : Fragment(), SystemInsetsPaddedFragment {
 
     override fun onCreateView(
@@ -38,7 +35,10 @@ class SearchShortcutsFragment : Fragment(), SystemInsetsPaddedFragment {
                     navigateToSaveEngineFragment(it)
                 },
                 onCheckboxClicked = { engine, isEnabled ->
-                    requireContext().components.useCases.searchUseCases
+                    requireContext()
+                        .components
+                        .useCases
+                        .searchUseCases
                         .updateDisabledSearchEngineIds(
                             engine.id,
                             isEnabled,
@@ -55,8 +55,8 @@ class SearchShortcutsFragment : Fragment(), SystemInsetsPaddedFragment {
     }
 
     private fun navigateToSaveEngineFragment(engine: SearchEngine? = null) {
-        val directions = SearchShortcutsFragmentDirections
-            .actionSearchShortcutsFragmentToSaveSearchEngineFragment(engine?.id)
+        val directions =
+            SearchShortcutsFragmentDirections.actionSearchShortcutsFragmentToSaveSearchEngineFragment(engine?.id)
 
         findNavController().navigate(directions)
     }

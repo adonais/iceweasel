@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.ui.efficiency.devtools
 
 import android.util.Log
@@ -9,9 +13,7 @@ import org.mozilla.fenix.ui.efficiency.generation.interaction.InteractionCaseFac
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 
 @RunWith(Parameterized::class)
-class InteractionGeneratedCasePrintTest(
-    private val case: InteractionCase,
-) : BaseTest() {
+class InteractionGeneratedCasePrintTest(private val case: InteractionCase) : BaseTest() {
 
     companion object {
         private const val TAG = "InteractionCasePrint"
@@ -19,13 +21,9 @@ class InteractionGeneratedCasePrintTest(
         @JvmStatic
         @Parameterized.Parameters(name = "{index}: {0}")
         fun data(): List<Array<Any>> {
-            val runState = System.getProperty("testRunState")
-                ?.takeIf { it.isNotBlank() }
-                ?: ""
+            val runState = System.getProperty("testRunState")?.takeIf { it.isNotBlank() } ?: ""
 
-            return InteractionCaseFactory
-                .buildInteractionCases(runState = runState)
-                .map { arrayOf(it as Any) }
+            return InteractionCaseFactory.buildInteractionCases(runState = runState).map { arrayOf(it as Any) }
         }
     }
 

@@ -240,6 +240,13 @@ void gfxPlatformGtk::InitPlatformHardwareVideoConfig() {
                             FeatureStatus::Unavailable, "Requires EGL",
                             "FEATURE_FAILURE_REQUIRES_EGL"_ns);
   }
+  if (!gfxVars::UseDMABuf()) {
+    featureDec.ForceDisable(FeatureStatus::Unavailable, "Requires DMABUF",
+                            "FEATURE_FAILURE_REQUIRES_DMABUF"_ns);
+    gfxConfig::ForceDisable(Feature::HARDWARE_VIDEO_ENCODING,
+                            FeatureStatus::Unavailable, "Requires DMABUF",
+                            "FEATURE_FAILURE_REQUIRES_DMABUF"_ns);
+  }
 
   if (!featureDec.IsEnabled()) {
     return;

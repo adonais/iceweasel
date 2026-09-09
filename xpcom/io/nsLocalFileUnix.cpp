@@ -70,6 +70,7 @@ static nsresult MacErrorMapper(OSErr inErr);
 
 #include "nsNativeCharsetUtils.h"
 #include "nsTraceRefcnt.h"
+#include "nsXULAppAPI.h"
 
 /**
  *  we need these for statfs()
@@ -101,6 +102,23 @@ extern "C" int statvfs(const char*, struct statvfs*);
 #elif defined(HAVE_STATFS)
 #  define STATFS statfs
 #  define F_BSIZE f_bsize
+#endif
+
+// Check for fast file copy functions:
+//
+#if defined(XP_DARWIN)
+// For macOS and iOS, use copyfile:
+// https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man3/copyfile.3.html
+#  include <copyfile.h>
+#elif defined(XP_LINUX)
+// Fox Linux, use sendfile.
+// It's faster than the previous naive implementation we had because it avoids
+// memory copies between the kernel and the userspace.
+// Note copy_file_range could be used instead, but requires glibc >= 2.27 (our
+// minimal requirement is glibc 2.17 currently). It provides similar performance
+// to sendfile on ext4 filesystems, but should provide better performance on
+// filesystems with reflink (Btrfs, XFS).
+#  include <sys/sendfile.h>
 #endif
 
 using namespace mozilla;
@@ -992,6 +1010,91 @@ nsresult nsLocalFile::CopyDirectoryTo(nsIFile* aNewParent) {
   return NS_OK;
 }
 
+namespace {
+// A simple file copy function, to be used when no native fast functions are
+// available, or if calling such functions failed.
+nsresult CopyToFallback(PRFileDesc* oldFD, PRFileDesc* newFD) {
+  char buf[BUFSIZ];
+  int32_t bytesRead;
+  // DONE: Does PR_Read() return bytesRead < 0 for error?
+  // Yes., The errors from PR_Read are not so common and
+  // the value may not have correspondence in NS_ERROR_*, but
+  // we do catch it still, immediately after while() loop.
+  while ((bytesRead = PR_Read(oldFD, buf, BUFSIZ)) > 0) {
+    // PR_Write promises never to do a short write
+    int32_t bytesWritten = PR_Write(newFD, buf, bytesRead);
+    if (bytesWritten < 0) {
+      return NSRESULT_FOR_ERRNO();
+    }
+    NS_ASSERTION(bytesWritten == bytesRead, "short PR_Write?");
+  }
+
+  // TODO/FIXME: If CIFS (and NFS?) may force read/write to return EINTR,
+  // we are better off to prepare for retrying. But we need confirmation if
+  // EINTR is returned.
+
+  // Record error if PR_Read() failed.
+  // Must be done before any other I/O which may reset errno.
+  if (bytesRead < 0) {
+    return NSRESULT_FOR_ERRNO();
+  }
+  return NS_OK;
+}
+
+#ifdef XP_DARWIN
+nsresult CopyFastDarwin(int aSrcFd, int aDstFd) {
+  return fcopyfile(aSrcFd, aDstFd, nullptr, COPYFILE_DATA) == 0
+             ? NS_OK
+             : NSRESULT_FOR_ERRNO();
+}
+#endif  // XP_DARWIN
+
+#ifdef XP_LINUX
+nsresult CopyFastLinux(int aSrcFd, int aDstFd) {
+  // sendfile() does not return 0 once the input is fully drained: a further
+  // call instead fails with EINVAL. So track the number of bytes written.
+  struct stat srcStat;
+  if (fstat(aSrcFd, &srcStat) != 0) return NSRESULT_FOR_ERRNO();
+  off_t remaining = srcStat.st_size;
+  while (remaining > 0) {
+    ssize_t n = sendfile(aDstFd, aSrcFd, nullptr, SSIZE_MAX);
+    if (n > 0) {
+      remaining -= n;
+    } else if (!(n < 0 && errno == EINTR)) {
+      return NSRESULT_FOR_ERRNO();
+    }
+  }
+  return NS_OK;
+}
+#endif  // XP_LINUX
+
+// Native, fast implementation of file copy.
+// Returns NS_OK in case of success, an NS_ERROR otherwise, which could indicate
+// that either there is no native fast copy implementation for this platform,
+// or, if there is one, that it failed.
+nsresult CopyToFast(int aSrcFd, int aDstFd) {
+  nsresult result = NS_ERROR_FAILURE;
+#if defined(XP_LINUX) || defined(XP_DARWIN)
+  // Only attempt in the parent process. Content-process sandboxes prohibit
+  // these calls and crash rather than returning an error:
+  // - Linux: sendfile is not in the seccomp-bpf allowlist; an unrecognised
+  //   syscall triggers SIGSYS (security/sandbox/linux/SandboxFilter.cpp,
+  //   InvalidSyscall).
+  // - macOS: fcopyfile is not allowed by Seatbelt; violations abort the
+  //   process (security/sandbox/mac/SandboxPolicyContent.h).
+  if (XRE_IsParentProcess()) [[likely]] {
+#  if defined(XP_LINUX)
+    result = CopyFastLinux(aSrcFd, aDstFd);
+#  elif defined(XP_DARWIN)
+    result = CopyFastDarwin(aSrcFd, aDstFd);
+#  endif
+  }
+#endif
+  return result;
+}
+
+}  // namespace
+
 NS_IMETHODIMP
 nsLocalFile::CopyToNative(nsIFile* aNewParent, const nsACString& aNewName) {
   nsresult rv;
@@ -1101,59 +1204,32 @@ nsLocalFile::CopyToNative(nsIFile* aNewParent, const nsACString& aNewName) {
       return rv;
     }
 
-#ifdef DEBUG_blizzard
-    int32_t totalRead = 0;
-    int32_t totalWritten = 0;
-#endif
-    char buf[BUFSIZ];
-    int32_t bytesRead;
-
-    // record PR_Write() error for better error message later.
-    nsresult saved_write_error = NS_OK;
-    nsresult saved_read_error = NS_OK;
+    // record PR_Write()/copy and close errors for better error message later.
+    nsresult saved_copy_error = NS_OK;
     nsresult saved_read_close_error = NS_OK;
     nsresult saved_write_close_error = NS_OK;
 
-    // DONE: Does PR_Read() return bytesRead < 0 for error?
-    // Yes., The errors from PR_Read are not so common and
-    // the value may not have correspondence in NS_ERROR_*, but
-    // we do catch it still, immediately after while() loop.
-    // We can differentiate errors pf PR_Read and PR_Write by
-    // looking at saved_write_error value. If PR_Write error occurs (and not
-    // PR_Read() error), save_write_error is not NS_OK.
-
-    while ((bytesRead = PR_Read(oldFD, buf, BUFSIZ)) > 0) {
-#ifdef DEBUG_blizzard
-      totalRead += bytesRead;
-#endif
-
-      // PR_Write promises never to do a short write
-      int32_t bytesWritten = PR_Write(newFD, buf, bytesRead);
-      if (bytesWritten < 0) {
-        saved_write_error = NSRESULT_FOR_ERRNO();
-        bytesRead = -1;
-        break;
+    // If possible, use fast, native functions, instead of naive read/write
+    // implementation.
+    // This prevents unncessary copies from kernel memory to user memory.
+    // Keep the old implementation as a fallback in case the operation fails.
+    int srcFd = PR_FileDesc2NativeHandle(oldFD);
+    int dstFd = PR_FileDesc2NativeHandle(newFD);
+    saved_copy_error = CopyToFast(srcFd, dstFd);
+    // If CopyToFast failed (because it is not implemented on this platform, or
+    // because an error happened) use the naive copy file function as a fallback
+    if (NS_FAILED(saved_copy_error)) {
+      // Seek both fds back to the start and truncate the dest in case of a
+      // partial write, then fall through to the read/write loop.
+      PR_Seek64(oldFD, 0, PR_SEEK_SET);
+      if (ftruncate(dstFd, 0) == 0) {
+        PR_Seek64(newFD, 0, PR_SEEK_SET);
+        saved_copy_error = CopyToFallback(oldFD, newFD);
+      } else {
+        // Truncate failed: give up
+        saved_copy_error = NSRESULT_FOR_ERRNO();
       }
-      NS_ASSERTION(bytesWritten == bytesRead, "short PR_Write?");
-
-#ifdef DEBUG_blizzard
-      totalWritten += bytesWritten;
-#endif
     }
-
-    // TODO/FIXME: If CIFS (and NFS?) may force read/write to return EINTR,
-    // we are better off to prepare for retrying. But we need confirmation if
-    // EINTR is returned.
-
-    // Record error if PR_Read() failed.
-    // Must be done before any other I/O which may reset errno.
-    if (bytesRead < 0 && saved_write_error == NS_OK) {
-      saved_read_error = NSRESULT_FOR_ERRNO();
-    }
-
-#ifdef DEBUG_blizzard
-    printf("read %d bytes, wrote %d bytes\n", totalRead, totalWritten);
-#endif
 
     // DONE: Errors of close can occur.  Read man page of
     // close(2);
@@ -1190,18 +1266,9 @@ nsLocalFile::CopyToNative(nsIFile* aNewParent, const nsACString& aNewName) {
 
     // Let us report the failure to write and read.
     // check for write/read error after cleaning up
-    if (bytesRead < 0) {
-      if (saved_write_error != NS_OK) {
-        return saved_write_error;
-      }
-      if (saved_read_error != NS_OK) {
-        return saved_read_error;
-      }
-#if DEBUG
-      MOZ_ASSERT(0);
-#endif
+    if (saved_copy_error != NS_OK) {
+      return saved_copy_error;
     }
-
     if (saved_write_close_error != NS_OK) {
       return saved_write_close_error;
     }

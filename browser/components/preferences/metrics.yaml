@@ -30,7 +30,6 @@ privacy.ui.fpp.click:
       checked:
         description: The checked state of the fingerprinting protection checkbox
         type: boolean
-    telemetry_mirror: PrivacyUiFpp_Click_Checkbox
   menu:
     type: event
     description: >
@@ -50,7 +49,6 @@ privacy.ui.fpp.click:
       value:
         description: The value of the clicked menu item of the menulist.
         type: string
-    telemetry_mirror: PrivacyUiFpp_Click_Menu
 
 network.proxy.settings:
   proxy_type_preference:

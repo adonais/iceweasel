@@ -12,28 +12,16 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.home.HomeFragment
-import org.mozilla.fenix.home.HomeFragmentDirections
 import org.mozilla.fenix.home.recenttabs.RecentTab
 import org.mozilla.fenix.home.recenttabs.interactor.RecentTabInteractor
 
-/**
- * An interface that handles the view manipulation of the recent tabs in the Home screen.
- */
+/** An interface that handles the view manipulation of the recent tabs in the Home screen. */
 interface RecentTabController {
 
-    /**
-     * @see [RecentTabInteractor.onRecentTabClicked]
-     */
+    /** @see [RecentTabInteractor.onRecentTabClicked] */
     fun handleRecentTabClicked(tabId: String)
 
-    /**
-     * @see [RecentTabInteractor.onRecentTabShowAllClicked]
-     */
-    fun handleRecentTabShowAllClicked()
-
-    /**
-     * @see [RecentTabInteractor.onRemoveRecentTab]
-     */
+    /** @see [RecentTabInteractor.onRemoveRecentTab] */
     fun handleRecentTabRemoved(tab: RecentTab.Tab)
 }
 
@@ -55,11 +43,6 @@ class DefaultRecentTabsController(
 
         selectTabUseCase.invoke(tabId)
         navController.navigate(R.id.browserFragment)
-    }
-
-    override fun handleRecentTabShowAllClicked() {
-        RecentTabs.showAllClicked.record(NoExtras())
-        navController.navigate(HomeFragmentDirections.actionGlobalTabManagementFragment())
     }
 
     override fun handleRecentTabRemoved(tab: RecentTab.Tab) {

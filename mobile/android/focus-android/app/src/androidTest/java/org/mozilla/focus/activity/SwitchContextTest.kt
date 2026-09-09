@@ -8,6 +8,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
+import kotlin.test.assertNotNull
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -24,20 +25,18 @@ import org.mozilla.focus.helpers.TestHelper.mDevice
 import org.mozilla.focus.helpers.TestHelper.pressHomeKey
 import org.mozilla.focus.helpers.TestHelper.waitingTime
 import org.mozilla.focus.testAnnotations.SmokeTest
-import kotlin.test.assertNotNull
 
 // This test switches out of Focus and opens it from the private browsing notification
 @RunWith(AndroidJUnit4ClassRunner::class)
 class SwitchContextTest {
     private val featureSettingsHelper = FeatureSettingsHelper()
 
-    @get:Rule(order = 0)
-    val focusTestRule: FocusTestRule = FocusTestRule()
+    @get:Rule(order = 0) val focusTestRule: FocusTestRule = FocusTestRule()
 
-    private val webServerRule get() = focusTestRule.mockWebServerRule
+    private val webServerRule
+        get() = focusTestRule.mockWebServerRule
 
-    @get:Rule
-    val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
+    @get:Rule val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
 
     @Before
     fun setUp() {
@@ -58,10 +57,10 @@ class SwitchContextTest {
     fun notificationOpenButtonTest() {
         val testPage = webServerRule.server.genericAsset
 
-        searchScreen {
-        }.loadPage(testPage.url) {
-            verifyPageContent(testPage.content)
-        }
+        searchScreen {}
+            .loadPage(testPage.url) {
+                verifyPageContent(testPage.content)
+            }
         // Send app to background
         pressHomeKey()
         // Pull down system bar and select Open
@@ -69,9 +68,10 @@ class SwitchContextTest {
         notificationTray {
             verifySystemNotificationExists("Erase browsing history?")
             expandEraseBrowsingNotification()
-        }.clickNotificationOpenButton {
-            verifyBrowserView()
         }
+            .clickNotificationOpenButton {
+                verifyBrowserView()
+            }
     }
 
     @SmokeTest
@@ -80,20 +80,14 @@ class SwitchContextTest {
         // Initialize UiDevice instance
         val appLaunchTimeoutMillis = 5000
         val settingsPackage = "com.android.settings"
-        val settingsApp = mDevice.findObject(
-            UiSelector()
-                .packageName(settingsPackage)
-                .enabled(true),
-        )
+        val settingsApp = mDevice.findObject(UiSelector().packageName(settingsPackage).enabled(true))
         val launcherPackage = mDevice.launcherPackageName
         val context = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
-        val intent = context.packageManager
-            .getLaunchIntentForPackage(settingsPackage)
+        val intent = context.packageManager.getLaunchIntentForPackage(settingsPackage)
         val testPage = webServerRule.server.genericAsset
 
         // Open a webpage
-        searchScreen {
-        }.loadPage(testPage.url) { }
+        searchScreen {}.loadPage(testPage.url) {}
 
         // Switch out of Focus, open settings app
         pressHomeKey()
@@ -115,8 +109,9 @@ class SwitchContextTest {
         notificationTray {
             verifySystemNotificationExists("Erase browsing history?")
             expandEraseBrowsingNotification()
-        }.clickNotificationOpenButton {
-            verifyBrowserView()
         }
+            .clickNotificationOpenButton {
+                verifyBrowserView()
+            }
     }
 }

@@ -129,8 +129,11 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
       inset-block-start: calc(var(--space-xsmall) + var(--space-large));
     }
 
-    button,
-    .context-menu {
+    // The "..." trigger and its menu are now a moz-button and panel-list. Re-enable
+    // pointer events for both (the overlay above sets pointer-events: none), or
+    // the menu items can't be hovered/clicked and clicks fall through to the card.
+    moz-button,
+    panel-list {
       pointer-events: auto;
     }
 
@@ -229,17 +232,6 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
     color: var(--newtab-text-primary-color);
     padding: var(--space-small);
     margin: var(--space-small);
-    font-size: var(--font-size-small);
-  }
-
-  .ds-card-daily-brief-topic {
-    position: absolute;
-    inset-block-end: var(--space-xsmall);
-    inset-inline-start: var(--space-xsmall);
-    background: var(--background-color-canvas);
-    border-radius: var(--border-radius-small);
-    color: var(--newtab-text-primary-color);
-    padding: var(--space-xsmall);
     font-size: var(--font-size-small);
   }
 

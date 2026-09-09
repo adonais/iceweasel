@@ -28,7 +28,7 @@ extern const mp_digit mp_gf2m_sqr_tb[16];
         mp_gf2m_sqr_tb[(w) >> 20 & 0xF] << 8 | mp_gf2m_sqr_tb[(w) >> 16 & 0xF]
 #define gf2m_SQR0(w)                                                               \
     mp_gf2m_sqr_tb[(w) >> 12 & 0xF] << 24 | mp_gf2m_sqr_tb[(w) >> 8 & 0xF] << 16 | \
-        mp_gf2m_sqr_tb[(w) >> 4 & 0xF] << 8 | mp_gf2m_sqr_tb[(w)&0xF]
+        mp_gf2m_sqr_tb[(w) >> 4 & 0xF] << 8 | mp_gf2m_sqr_tb[(w) & 0xF]
 #else
 #define gf2m_SQR1(w)                                                                    \
     mp_gf2m_sqr_tb[(w) >> 60 & 0xF] << 56 | mp_gf2m_sqr_tb[(w) >> 56 & 0xF] << 48 |     \
@@ -39,7 +39,7 @@ extern const mp_digit mp_gf2m_sqr_tb[16];
     mp_gf2m_sqr_tb[(w) >> 28 & 0xF] << 56 | mp_gf2m_sqr_tb[(w) >> 24 & 0xF] << 48 |     \
         mp_gf2m_sqr_tb[(w) >> 20 & 0xF] << 40 | mp_gf2m_sqr_tb[(w) >> 16 & 0xF] << 32 | \
         mp_gf2m_sqr_tb[(w) >> 12 & 0xF] << 24 | mp_gf2m_sqr_tb[(w) >> 8 & 0xF] << 16 |  \
-        mp_gf2m_sqr_tb[(w) >> 4 & 0xF] << 8 | mp_gf2m_sqr_tb[(w)&0xF]
+        mp_gf2m_sqr_tb[(w) >> 4 & 0xF] << 8 | mp_gf2m_sqr_tb[(w) & 0xF]
 #endif
 
 /* Multiply two binary polynomials mp_digits a, b.

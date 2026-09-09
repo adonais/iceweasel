@@ -21,9 +21,7 @@ import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBannerInteractor
 import org.mozilla.fenix.home.toolbar.ToolbarInteractor
 import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
 
-/**
- * Homepage interactor for interactions with the homepage UI.
- */
+/** Homepage interactor for interactions with the homepage UI. */
 interface HomepageInteractor :
     CollectionInteractor,
     TopSiteInteractor,

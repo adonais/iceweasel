@@ -19,11 +19,12 @@ internal class DohSettingsStore(
     initialState: DohSettingsState = DohSettingsState(),
     reducer: Reducer<DohSettingsState, DohSettingsAction> = ::dohSettingsReducer,
     middleware: List<Middleware<DohSettingsState, DohSettingsAction>> = listOf(),
-) : Store<DohSettingsState, DohSettingsAction>(
-    initialState = initialState,
-    reducer = reducer,
-    middleware = middleware,
-) {
+) :
+    Store<DohSettingsState, DohSettingsAction>(
+        initialState = initialState,
+        reducer = reducer,
+        middleware = middleware,
+    ) {
     init {
         dispatch(Init)
     }

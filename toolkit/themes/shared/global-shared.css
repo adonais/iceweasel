@@ -78,7 +78,6 @@ h3 {
 @media -moz-pref("widget.macos.native-popovers") and (-moz-platform: macos) {
   panel:not([nonnative]) {
     background-color: transparent;
-    --panel-background: transparent;
     --panel-box-shadow: none;
     --panel-border-color: transparent;
     --panel-box-shadow-margin: 0px;
@@ -117,17 +116,6 @@ h3 {
  * override it with a plain `!important`. */
 :where([hidden]) {
   display: none !important;
-}
-
-/* Rules for 'hiding' portions of the chrome for special
-   kinds of windows with toolbars (not just browser windows) */
-:root[chromehidden~="menubar"] .chromeclass-menubar,
-:root[chromehidden~="directories"] .chromeclass-directories,
-:root[chromehidden~="extrachrome"] .chromeclass-extrachrome,
-:root[chromehidden~="location"] .chromeclass-location,
-:root[chromehidden~="location"][chromehidden~="toolbar"] .chromeclass-toolbar,
-:root[chromehidden~="toolbar"] .chromeclass-toolbar-additional {
-  display: none;
 }
 
 /* General styles */

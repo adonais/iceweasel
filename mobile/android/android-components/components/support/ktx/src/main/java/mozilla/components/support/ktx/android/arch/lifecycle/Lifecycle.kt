@@ -7,7 +7,5 @@ package mozilla.components.support.ktx.android.arch.lifecycle
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 
-/**
- * Calls [Lifecycle.addObserver] for a variable list of [LifecycleObserver]s.
- */
+/** Calls [Lifecycle.addObserver] for a variable list of [LifecycleObserver]s. */
 fun Lifecycle.addObservers(vararg observers: LifecycleObserver) = observers.forEach { addObserver(it) }

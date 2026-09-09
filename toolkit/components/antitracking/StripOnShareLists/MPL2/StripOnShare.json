@@ -73,6 +73,9 @@
       "crid",
       "dib",
       "dib_tag",
+      "eac_id",
+      "eac_link",
+      "eac_selected",
       "hsa_cr_id",
       "ipRedirectFrom",
       "ipRedirectOriginalURL",
@@ -125,11 +128,20 @@
       "www.amazon.com.tr",
       "www.amazon.sa",
       "www.amazon.ae",
+      "www.amazon.se",
+      "www.amazon.ie",
+      "www.amazon.co.za",
       "www.audible.com",
       "www.audible.co.uk",
       "www.audible.de",
       "www.audible.fr",
-      "www.audible.it"
+      "www.audible.it",
+      "www.audible.ca",
+      "www.audible.com.au",
+      "www.audible.co.jp",
+      "www.audible.in",
+      "www.audible.es",
+      "www.audible.com.br"
     ]
   },
   "handelsblatt": {
@@ -171,24 +183,12 @@
   "wikimedia": {
     "queryParams": ["wprov"],
     "origins": [
-      "en.wikipedia.org",
-      "ja.wikipedia.org",
-      "de.wikipedia.org",
-      "ru.wikipedia.org",
-      "es.wikipedia.org",
-      "fr.wikipedia.org",
-      "zh.wikipedia.org",
-      "it.wikipedia.org",
-      "fa.wikipedia.org",
-      "pt.wikipedia.org",
-      "www.mediawiki.org",
       "w.wiki",
       "www.wikidata.org",
       "test.wikidata.org",
-      "www.wikifunctions.org",
-      "meta.wikimedia.org",
-      "commons.wikimedia.org"
-    ]
+      "www.wikifunctions.org"
+    ],
+    "schemelessSites": ["wikipedia.org", "wikimedia.org", "mediawiki.org"]
   },
   "bilibili": {
     "queryParams": [
@@ -202,5 +202,9 @@
   "humblebundle": {
     "queryParams": ["hmb_source", "hmb_medium", "hmb_campaign"],
     "origins": ["www.humblebundle.com"]
+  },
+  "linkedin": {
+    "queryParams": ["rcm"],
+    "origins": ["www.linkedin.com"]
   }
 }

@@ -14,10 +14,11 @@ import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.concept.awesomebar.AwesomeBar.GroupedSuggestion
 
 /**
- * This wrapper wraps the `AwesomeBar()` composable and exposes it as a `View` and `concept-awesomebar`
- * implementation.
+ * This wrapper wraps the `AwesomeBar()` composable and exposes it as a `View` and `concept-awesomebar` implementation.
  */
-class AwesomeBarWrapper @JvmOverloads constructor(
+class AwesomeBarWrapper
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,

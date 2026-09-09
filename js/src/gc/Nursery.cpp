@@ -4,6 +4,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/DebugOnly.h"
+#include "mozilla/glue/Debug.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/TimeStamp.h"
@@ -285,7 +286,7 @@ js::Nursery::Nursery(GCRuntime* gc)
 }
 
 static void PrintAndExit(const char* message) {
-  fprintf(stderr, "%s", message);
+  printf_stderr("%s", message);
   exit(0);
 }
 
@@ -1500,13 +1501,12 @@ void js::Nursery::sendTelemetry(JS::GCReason reason, TimeDuration totalTime,
 void js::Nursery::printDeduplicationData(js::StringStats& prev,
                                          js::StringStats& curr) {
   if (curr.deduplicatedStrings > prev.deduplicatedStrings) {
-    fprintf(stderr,
-            "pid %zu: deduplicated %" PRIi64 " strings, %" PRIu64
-            " chars, %" PRIu64 " malloc bytes\n",
-            size_t(getpid()),
-            curr.deduplicatedStrings - prev.deduplicatedStrings,
-            curr.deduplicatedChars - prev.deduplicatedChars,
-            curr.deduplicatedBytes - prev.deduplicatedBytes);
+    printf_stderr("pid %zu: deduplicated %" PRIi64 " strings, %" PRIu64
+                  " chars, %" PRIu64 " malloc bytes\n",
+                  size_t(getpid()),
+                  curr.deduplicatedStrings - prev.deduplicatedStrings,
+                  curr.deduplicatedChars - prev.deduplicatedChars,
+                  curr.deduplicatedBytes - prev.deduplicatedBytes);
   }
 }
 
@@ -1778,14 +1778,14 @@ size_t js::Nursery::doPretenuring(JSRuntime* rt, JS::GCReason reason,
   stats().setStat(gcstats::STAT_BIGINTS_PROMOTED, numBigIntsPromoted);
 
   if (reportPretenuring() && zonesWhereStringsDisabled) {
-    fprintf(stderr,
-            "Pretenuring disabled nursery string allocation in %zu zones\n",
-            zonesWhereStringsDisabled);
+    printf_stderr(
+        "Pretenuring disabled nursery string allocation in %zu zones\n",
+        zonesWhereStringsDisabled);
   }
   if (reportPretenuring() && zonesWhereBigIntsDisabled) {
-    fprintf(stderr,
-            "Pretenuring disabled nursery big int allocation in %zu zones\n",
-            zonesWhereBigIntsDisabled);
+    printf_stderr(
+        "Pretenuring disabled nursery big int allocation in %zu zones\n",
+        zonesWhereBigIntsDisabled);
   }
 
   return sitesPretenured;

@@ -19,13 +19,14 @@ import org.junit.runner.RunWith
 class CustomSearchEngineStorageTest {
     @Test
     fun `saveSearchEngine successfully saves`() = runTest {
-        val searchEngine = SearchEngine(
-            id = "id1",
-            name = "example",
-            icon = mock(),
-            type = SearchEngine.Type.CUSTOM,
-            resultUrls = listOf("https://www.example.com/search"),
-        )
+        val searchEngine =
+            SearchEngine(
+                id = "id1",
+                name = "example",
+                icon = mock(),
+                type = SearchEngine.Type.CUSTOM,
+                resultUrls = listOf("https://www.example.com/search"),
+            )
 
         val storage = CustomSearchEngineStorage(testContext, coroutineContext)
         assertTrue(storage.saveSearchEngine(searchEngine))
@@ -34,13 +35,14 @@ class CustomSearchEngineStorageTest {
 
     @Test
     fun `loadSearchEngine successfully loads after saving`() = runTest {
-        val searchEngine = SearchEngine(
-            id = "id1",
-            name = "example",
-            icon = mock(),
-            type = SearchEngine.Type.CUSTOM,
-            resultUrls = listOf("https://www.example.com/search"),
-        )
+        val searchEngine =
+            SearchEngine(
+                id = "id1",
+                name = "example",
+                icon = mock(),
+                type = SearchEngine.Type.CUSTOM,
+                resultUrls = listOf("https://www.example.com/search"),
+            )
 
         val storage = CustomSearchEngineStorage(testContext, coroutineContext)
         assertTrue(storage.saveSearchEngine(searchEngine))
@@ -55,20 +57,22 @@ class CustomSearchEngineStorageTest {
     @Test
     @Ignore("https://github.com/mozilla-mobile/android-components/issues/8124")
     fun `loadSearchEngineList successfully loads after saving`() = runTest {
-        val searchEngine = SearchEngine(
-            id = "id1",
-            name = "example",
-            icon = mock(),
-            type = SearchEngine.Type.CUSTOM,
-            resultUrls = listOf("https://www.example.com/search"),
-        )
-        val searchEngineTwo = SearchEngine(
-            id = "id2",
-            name = "searchTwo",
-            icon = mock(),
-            type = SearchEngine.Type.CUSTOM,
-            resultUrls = listOf("https://www.searchtwo.com/search"),
-        )
+        val searchEngine =
+            SearchEngine(
+                id = "id1",
+                name = "example",
+                icon = mock(),
+                type = SearchEngine.Type.CUSTOM,
+                resultUrls = listOf("https://www.example.com/search"),
+            )
+        val searchEngineTwo =
+            SearchEngine(
+                id = "id2",
+                name = "searchTwo",
+                icon = mock(),
+                type = SearchEngine.Type.CUSTOM,
+                resultUrls = listOf("https://www.searchtwo.com/search"),
+            )
 
         val storage = CustomSearchEngineStorage(testContext, coroutineContext)
         assertTrue(storage.saveSearchEngine(searchEngine))
@@ -88,13 +92,14 @@ class CustomSearchEngineStorageTest {
 
     @Test
     fun `removeSearchEngine successfully deletes`() = runTest {
-        val searchEngine = SearchEngine(
-            id = "id1",
-            name = "example",
-            icon = mock(),
-            type = SearchEngine.Type.CUSTOM,
-            resultUrls = listOf("https://www.example.com/search"),
-        )
+        val searchEngine =
+            SearchEngine(
+                id = "id1",
+                name = "example",
+                icon = mock(),
+                type = SearchEngine.Type.CUSTOM,
+                resultUrls = listOf("https://www.example.com/search"),
+            )
 
         val storage = CustomSearchEngineStorage(testContext, coroutineContext)
         assertTrue(storage.saveSearchEngine(searchEngine))

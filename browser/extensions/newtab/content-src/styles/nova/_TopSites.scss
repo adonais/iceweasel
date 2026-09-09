@@ -51,7 +51,10 @@
 // triggers it: macOS freezes :hover on the dragged tile, and we can't block it
 // with pointer-events because the placeholder is the drop target.
 // @nova-cleanup(remove-conditional): Nova gets rid of outer hover background
-.nova-enabled .top-sites-list:not(.dnd-active) .top-site-outer:is(.active, :has(.top-site-inner:is(:hover, :focus-within))) {
+// Reveal on keyboard focus, not any :focus-within. A pointer click can leave
+// focus on the menu button, and :focus-within would then keep the tile expanded
+// once the pointer leaves.
+.nova-enabled .top-sites-list:not(.dnd-active) .top-site-outer:is(.active, :has(.top-site-inner:hover), :has(.top-site-inner :focus-visible)) {
   background: none;
 
   .tile {
@@ -280,7 +283,7 @@
     background-color: var(--button-background-color);
   }
 
-  .nova-enabled .top-site-outer:is(.active, :has(.top-site-inner:is(:hover, :focus-within))) .tile {
+  .nova-enabled .top-site-outer:is(.active, :has(.top-site-inner:hover), :has(.top-site-inner :focus-visible)) .tile {
     background-color: var(--button-background-color-hover);
   }
 

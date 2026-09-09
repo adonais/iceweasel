@@ -91,8 +91,8 @@ class HTMLTrackElement final : public nsGenericHTMLElement {
                             bool aNotify) override;
 
   void DispatchTrackRunnable(const nsString& aEventName);
-  void DispatchTrustedEvent(const nsAString& aName);
-  void DispatchTestEvent(const nsAString& aName);
+  MOZ_CAN_RUN_SCRIPT void DispatchTrustedEvent(const nsAString& aName);
+  MOZ_CAN_RUN_SCRIPT void DispatchTestEvent(const nsAString& aName);
 
   void CancelChannelAndListener(bool aCheckRFP);
 

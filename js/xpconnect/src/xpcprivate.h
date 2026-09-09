@@ -157,13 +157,6 @@ class Exception;
 }  // namespace mozilla
 
 /***************************************************************************/
-// data declarations...
-extern const char XPC_EXCEPTION_CONTRACTID[];
-extern const char XPC_CONSOLE_CONTRACTID[];
-extern const char XPC_SCRIPT_ERROR_CONTRACTID[];
-extern const char XPC_XPCONNECT_CONTRACTID[];
-
-/***************************************************************************/
 // Helper function.
 
 namespace xpc {
@@ -1152,6 +1145,10 @@ class XPCNativeSet final {
   static void DestroyInstance(XPCNativeSet* inst);
 
  private:
+  // The number of interfaces a set can hold is bounded by the width of
+  // mInterfaceCount.
+  static constexpr size_t kMaxInterfaceCount = UINT16_MAX;
+
   uint16_t mInterfaceCount;
   // Always last - object sized for array.
   // These are strong references.
@@ -2261,6 +2258,7 @@ class MOZ_STACK_CLASS SandboxOptions : public OptionsBase {
         wantExportHelpers(false),
         isWebExtensionContentScript(false),
         proto(cx),
+        associatedWindow(cx),
         sameZoneAs(cx),
         forceSecureContext(false),
         freshCompartment(false),
@@ -2281,6 +2279,7 @@ class MOZ_STACK_CLASS SandboxOptions : public OptionsBase {
   bool wantExportHelpers;
   bool isWebExtensionContentScript;
   JS::RootedObject proto;
+  JS::RootedObject associatedWindow;
   mozilla::Maybe<nsString> sandboxContentSecurityPolicy;
   nsCString sandboxName;
   JS::RootedObject sameZoneAs;

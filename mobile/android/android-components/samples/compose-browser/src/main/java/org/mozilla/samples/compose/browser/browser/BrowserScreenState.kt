@@ -13,7 +13,4 @@ import mozilla.components.lib.state.State
  *
  * @property showTabs Whether or not to show the tabs tray.
  */
-@Parcelize
-data class BrowserScreenState(
-    val showTabs: Boolean = false,
-) : State, Parcelable
+@Parcelize data class BrowserScreenState(val showTabs: Boolean = false) : State, Parcelable

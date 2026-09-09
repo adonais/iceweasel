@@ -16,15 +16,14 @@ use crate::context::QuirksMode;
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::typed_om::NumericBaseType;
+use crate::values::computed;
 use crate::values::specified::calc::PercentageContext;
 use crate::values::specified::number::parse_number_with_clamping_mode;
-use crate::values::{computed, serialize_atom_identifier, AtomString};
-use crate::{Atom, Namespace, Prefix};
+use crate::{Namespace, Prefix};
 use cssparser::{Parser, Token};
 use rustc_hash::FxHashMap;
-use std::fmt::{self, Write};
 use style_traits::values::specified::AllowedNumericType;
-use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
+use style_traits::{ParseError, StyleParseErrorKind};
 
 pub use self::align::{ContentDistribution, ItemPlacement, JustifyItems, SelfAlignment};
 pub use self::angle::{AllowUnitlessZeroAngle, Angle, NoCalcAngle};
@@ -90,10 +89,10 @@ pub use self::page::{PageName, PageOrientation, PageSize, PageSizeOrientation, P
 pub use self::param::LinkParameters;
 pub use self::percentage::{NoCalcPercentage, NonNegativePercentage, Percentage};
 pub use self::position::{
-    AnchorFunction, AnchorName, AnchorNameIdent, AspectRatio, GridAutoFlow, GridTemplateAreas,
-    Inset, MasonryAutoFlow, MasonryItemOrder, MasonryPlacement, Position, PositionAnchor,
-    PositionAnchorKeyword, PositionArea, PositionAreaKeyword, PositionComponent, PositionOrAuto,
-    PositionTryFallbacks, PositionTryOrder, PositionVisibility, ScopedName, ZIndex,
+    AnchorFunction, AnchorName, AnchorNameIdent, AspectRatio, FlexWrap, GridAutoFlow,
+    GridTemplateAreas, Inset, MasonryAutoFlow, MasonryItemOrder, MasonryPlacement, Position,
+    PositionAnchor, PositionAnchorKeyword, PositionArea, PositionAreaKeyword, PositionComponent,
+    PositionOrAuto, PositionTryFallbacks, PositionTryOrder, PositionVisibility, ScopedName, ZIndex,
 };
 pub use self::ratio::Ratio;
 pub use self::rect::NonNegativeLengthOrNumberRect;
@@ -177,11 +176,11 @@ pub enum AngleOrPercentage {
 }
 
 impl AngleOrPercentage {
-    fn parse_internal<'i, 't>(
+    fn parse_internal(
         context: &ParserContext,
-        input: &mut Parser<'i, 't>,
+        input: &mut Parser,
         allow_unitless_zero: AllowUnitlessZeroAngle,
-    ) -> Result<Self, ParseError<'i>> {
+    ) -> Result<Self, ParseError> {
         if let Ok(per) = input.try_parse(|i| Percentage::parse(context, i)) {
             return Ok(AngleOrPercentage::Percentage(per));
         }
@@ -191,19 +190,16 @@ impl AngleOrPercentage {
 
     /// Allow unitless angles, used for conic-gradients as specified by the spec.
     /// https://drafts.csswg.org/css-images-4/#valdef-conic-gradient-angle
-    pub fn parse_with_unitless<'i, 't>(
+    pub fn parse_with_unitless(
         context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
+        input: &mut Parser,
+    ) -> Result<Self, ParseError> {
         AngleOrPercentage::parse_internal(context, input, AllowUnitlessZeroAngle::Yes)
     }
 }
 
 impl Parse for AngleOrPercentage {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
+    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         AngleOrPercentage::parse_internal(context, input, AllowUnitlessZeroAngle::No)
     }
 }
@@ -222,11 +218,11 @@ pub enum NumberOrPercentage {
 }
 
 impl NumberOrPercentage {
-    fn parse_with_clamping_mode<'i, 't>(
+    fn parse_with_clamping_mode(
         context: &ParserContext,
-        input: &mut Parser<'i, 't>,
+        input: &mut Parser,
         type_: AllowedNumericType,
-    ) -> Result<Self, ParseError<'i>> {
+    ) -> Result<Self, ParseError> {
         if let Ok(per) =
             input.try_parse(|i| Percentage::parse_with_clamping_mode(context, i, type_))
         {
@@ -243,10 +239,10 @@ impl NumberOrPercentage {
     }
 
     /// Parse a non-negative number or percentage.
-    pub fn parse_non_negative<'i, 't>(
+    pub fn parse_non_negative(
         context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
+        input: &mut Parser,
+    ) -> Result<Self, ParseError> {
         Self::parse_with_clamping_mode(context, input, AllowedNumericType::NonNegative)
     }
 
@@ -297,10 +293,7 @@ impl NumberOrPercentage {
 }
 
 impl Parse for NumberOrPercentage {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
+    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         Self::parse_with_clamping_mode(context, input, AllowedNumericType::All)
     }
 }
@@ -323,10 +316,7 @@ impl NonNegativeNumberOrPercentage {
 }
 
 impl Parse for NonNegativeNumberOrPercentage {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
+    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         Ok(NonNegative(NumberOrPercentage::parse_non_negative(
             context, input,
         )?))
@@ -341,10 +331,7 @@ impl Parse for Opacity {
     /// Opacity accepts <number> | <percentage>, so we parse it as NumberOrPercentage,
     /// and then convert into an Number if it's a non-calc Percentage.
     /// https://drafts.csswg.org/css-color-4/#serializing-opacity-values
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
+    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         Ok(Opacity(
             NumberOrPercentage::parse(context, input)?.into_simplified_number(),
         ))
@@ -397,28 +384,25 @@ pub type GridTemplateComponent = GenericGridTemplateComponent<LengthPercentage, 
 pub type ClipRect = generics::GenericClipRect<LengthOrAuto>;
 
 impl Parse for ClipRect {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
+    fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         Self::parse_quirky(context, input, AllowQuirks::No)
     }
 }
 
 impl ClipRect {
     /// Parses a rect(<top>, <left>, <bottom>, <right>), allowing quirks.
-    fn parse_quirky<'i, 't>(
+    fn parse_quirky(
         context: &ParserContext,
-        input: &mut Parser<'i, 't>,
+        input: &mut Parser,
         allow_quirks: AllowQuirks,
-    ) -> Result<Self, ParseError<'i>> {
+    ) -> Result<Self, ParseError> {
         input.expect_function_matching("rect")?;
 
-        fn parse_argument<'i, 't>(
+        fn parse_argument(
             context: &ParserContext,
-            input: &mut Parser<'i, 't>,
+            input: &mut Parser,
             allow_quirks: AllowQuirks,
-        ) -> Result<LengthOrAuto, ParseError<'i>> {
+        ) -> Result<LengthOrAuto, ParseError> {
             LengthOrAuto::parse_quirky(context, input, allow_quirks)
         }
 
@@ -455,11 +439,11 @@ pub type ClipRectOrAuto = generics::GenericClipRectOrAuto<ClipRect>;
 
 impl ClipRectOrAuto {
     /// Parses a ClipRect or Auto, allowing quirks.
-    pub fn parse_quirky<'i, 't>(
+    pub fn parse_quirky(
         context: &ParserContext,
-        input: &mut Parser<'i, 't>,
+        input: &mut Parser,
         allow_quirks: AllowQuirks,
-    ) -> Result<Self, ParseError<'i>> {
+    ) -> Result<Self, ParseError> {
         if let Ok(v) = input.try_parse(|i| ClipRect::parse_quirky(context, i, allow_quirks)) {
             return Ok(generics::GenericClipRectOrAuto::Rect(v));
         }
@@ -502,16 +486,15 @@ pub enum ParsedNamespace {
 impl ParsedNamespace {
     /// Parse a namespace prefix and resolve it to the correct
     /// namespace URI.
-    pub fn parse<'i, 't>(
+    pub fn parse(
         namespaces: &FxHashMap<Prefix, Namespace>,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
+        input: &mut Parser,
+    ) -> Result<Self, ParseError> {
         // We don't need to keep the prefix because different
         // prefixes can resolve to the same id. Additionally,
         // we also don't need it for serialization as substitution
         // functions serialize from the direct css declaration.
-        parse_namespace(namespaces, input, /*allow_non_registered*/ true)
-            .map(|(_prefix, namespace)| namespace)
+        parse_namespace(namespaces, input).map(|(_prefix, namespace)| namespace)
     }
 }
 
@@ -521,146 +504,28 @@ impl Default for ParsedNamespace {
     }
 }
 
-/// An attr(...) rule
-///
-/// `[namespace? `|`]? ident`
-#[derive(
-    Clone,
-    Debug,
-    Eq,
-    MallocSizeOf,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[css(function)]
-#[repr(C)]
-pub struct Attr {
-    /// Optional namespace prefix.
-    pub namespace_prefix: Prefix,
-    /// Optional namespace URL.
-    pub namespace_url: Namespace,
-    /// Attribute name
-    pub attribute: Atom,
-    /// Fallback value
-    pub fallback: AtomString,
-}
-
-impl Parse for Attr {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Attr, ParseError<'i>> {
-        input.expect_function_matching("attr")?;
-        input.parse_nested_block(|i| Attr::parse_function(context, i))
-    }
-}
-
 /// Try to parse a namespace and return it if parsed, or none if there was not one present
-pub fn parse_namespace<'i, 't>(
+pub fn parse_namespace(
     namespaces: &FxHashMap<Prefix, Namespace>,
-    input: &mut Parser<'i, 't>,
-    // TODO: Once general attr is enabled, we should remove this flag
-    allow_non_registered: bool,
-) -> Result<(Prefix, ParsedNamespace), ParseError<'i>> {
+    input: &mut Parser,
+) -> Result<(Prefix, ParsedNamespace), ParseError> {
     let ns_prefix = match input.next()? {
         Token::Ident(ref prefix) => Some(Prefix::from(prefix.as_ref())),
         Token::Delim('|') => None,
-        _ => return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError)),
+        _ => return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError)),
     };
 
     if ns_prefix.is_some() && !matches!(*input.next_including_whitespace()?, Token::Delim('|')) {
-        return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+        return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
     }
 
     if let Some(prefix) = ns_prefix {
         let ns = match namespaces.get(&prefix).cloned() {
             Some(ns) => ParsedNamespace::Known(ns),
-            None => {
-                if allow_non_registered {
-                    ParsedNamespace::Unknown
-                } else {
-                    return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
-                }
-            },
+            None => ParsedNamespace::Unknown,
         };
         Ok((prefix, ns))
     } else {
         Ok((Prefix::default(), ParsedNamespace::default()))
-    }
-}
-
-impl Attr {
-    /// Parse contents of attr() assuming we have already parsed `attr` and are
-    /// within a parse_nested_block()
-    pub fn parse_function<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Attr, ParseError<'i>> {
-        // Syntax is `[namespace? '|']? ident [',' fallback]?`
-        let namespace = input
-            .try_parse(|input| {
-                parse_namespace(
-                    &context.namespaces.prefixes,
-                    input,
-                    /*allow_non_registered*/ false,
-                )
-            })
-            .ok();
-        let namespace_is_some = namespace.is_some();
-        let (namespace_prefix, namespace_url) = namespace.unwrap_or_default();
-        let ParsedNamespace::Known(namespace_url) = namespace_url else {
-            unreachable!("Non-registered url not allowed (see parse namespace flag).")
-        };
-
-        // If there is a namespace, ensure no whitespace following '|'
-        let attribute = Atom::from(if namespace_is_some {
-            let location = input.current_source_location();
-            match *input.next_including_whitespace()? {
-                Token::Ident(ref ident) => ident.as_ref(),
-                ref t => return Err(location.new_unexpected_token_error(t.clone())),
-            }
-        } else {
-            input.expect_ident()?.as_ref()
-        });
-
-        // Fallback will always be a string value for now as we do not support
-        // attr() types yet.
-        let fallback = input
-            .try_parse(|input| -> Result<AtomString, ParseError<'i>> {
-                input.expect_comma()?;
-                Ok(input.expect_string()?.as_ref().into())
-            })
-            .unwrap_or_default();
-
-        Ok(Attr {
-            namespace_prefix,
-            namespace_url,
-            attribute,
-            fallback,
-        })
-    }
-}
-
-impl ToCss for Attr {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        dest.write_str("attr(")?;
-        if !self.namespace_prefix.is_empty() {
-            serialize_atom_identifier(&self.namespace_prefix, dest)?;
-            dest.write_char('|')?;
-        }
-        serialize_atom_identifier(&self.attribute, dest)?;
-
-        if !self.fallback.is_empty() {
-            dest.write_str(", ")?;
-            self.fallback.to_css(dest)?;
-        }
-
-        dest.write_char(')')
     }
 }

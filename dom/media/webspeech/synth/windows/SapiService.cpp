@@ -35,7 +35,7 @@ class SapiCallback final : public nsISpeechTaskCallback {
     mStartingTime = TimeStamp::Now();
   }
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(SapiCallback, nsISpeechTaskCallback)
 
   NS_DECL_NSISPEECHTASKCALLBACK
@@ -83,7 +83,7 @@ SapiCallback::OnPause() {
     return NS_ERROR_FAILURE;
   }
   if (!mTask) {
-    // When calling pause() on child porcess, it may not receive end event
+    // When calling pause() on child process, it may not receive end event
     // from chrome process yet.
     return NS_ERROR_FAILURE;
   }
@@ -97,7 +97,7 @@ SapiCallback::OnResume() {
     return NS_ERROR_FAILURE;
   }
   if (!mTask) {
-    // When calling resume() on child porcess, it may not receive end event
+    // When calling resume() on child process, it may not receive end event
     // from chrome process yet.
     return NS_ERROR_FAILURE;
   }

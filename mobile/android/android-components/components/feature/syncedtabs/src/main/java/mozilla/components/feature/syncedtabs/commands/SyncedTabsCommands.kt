@@ -13,8 +13,7 @@ import mozilla.components.service.fxa.SendCommandException
 import mozilla.components.service.fxa.manager.FxaAccountManager
 
 /**
- * A queue that connects a [RemoteTabsCommandQueue] to an [FxaAccountManager]
- * for sending synced tabs device commands.
+ * A queue that connects a [RemoteTabsCommandQueue] to an [FxaAccountManager] for sending synced tabs device commands.
  *
  * @param accountManager The account manager.
  * @param tabsStorage Persistent storage for the queued commands.
@@ -22,28 +21,28 @@ import mozilla.components.service.fxa.manager.FxaAccountManager
 class SyncedTabsCommands(
     accountManager: FxaAccountManager,
     tabsStorage: RemoteTabsStorage,
-) : DeviceCommandQueue<DeviceCommandQueue.Type.RemoteTabs> by RemoteTabsCommandQueue(
-    storage = tabsStorage,
-    closeTabsCommandSender = CloseTabsCommandSender(accountManager),
-)
+) :
+    DeviceCommandQueue<DeviceCommandQueue.Type.RemoteTabs> by RemoteTabsCommandQueue(
+        storage = tabsStorage,
+        closeTabsCommandSender = CloseTabsCommandSender(accountManager),
+    )
 
-internal class CloseTabsCommandSender(
-    val accountManager: FxaAccountManager,
-) : RemoteTabsCommandQueue.CommandSender<DeviceCommandOutgoing.CloseTab, RemoteTabsCommandQueue.SendCloseTabsResult> {
+internal class CloseTabsCommandSender(val accountManager: FxaAccountManager) :
+    RemoteTabsCommandQueue.CommandSender<DeviceCommandOutgoing.CloseTab, RemoteTabsCommandQueue.SendCloseTabsResult> {
     override suspend fun send(
         deviceId: String,
         command: DeviceCommandOutgoing.CloseTab,
     ): RemoteTabsCommandQueue.SendCloseTabsResult {
-        val constellation = accountManager
-            .authenticatedAccount()
-            ?.deviceConstellation()
-            ?: return RemoteTabsCommandQueue.SendCloseTabsResult.NoAccount
+        val constellation =
+            accountManager.authenticatedAccount()?.deviceConstellation()
+                ?: return RemoteTabsCommandQueue.SendCloseTabsResult.NoAccount
 
-        val targetDevice = constellation.state()?.let { state ->
-            state.otherDevices.firstOrNull {
-                it.id == deviceId && it.capabilities.contains(DeviceCapability.CLOSE_TABS)
-            }
-        } ?: return RemoteTabsCommandQueue.SendCloseTabsResult.NoDevice
+        val targetDevice =
+            constellation.state()?.let { state ->
+                state.otherDevices.firstOrNull {
+                    it.id == deviceId && it.capabilities.contains(DeviceCapability.CLOSE_TABS)
+                }
+            } ?: return RemoteTabsCommandQueue.SendCloseTabsResult.NoDevice
 
         return try {
             if (constellation.sendCommandToDevice(targetDevice.id, command)) {

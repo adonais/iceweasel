@@ -11,6 +11,7 @@ import mozilla.appservices.remotesettings.RemoteSettingsClient
 import mozilla.appservices.remotesettings.RemoteSettingsService
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine
+import mozilla.components.support.remotesettings.RemoteSettingsService as MozillaRemoteSettingsService
 import mozilla.components.support.test.any
 import mozilla.components.support.test.eq
 import mozilla.components.support.test.mock
@@ -24,7 +25,6 @@ import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import mozilla.components.support.remotesettings.RemoteSettingsService as MozillaRemoteSettingsService
 
 @RunWith(AndroidJUnit4::class)
 class BaseSearchTelemetryTest {
@@ -32,74 +32,77 @@ class BaseSearchTelemetryTest {
     private lateinit var baseTelemetry: BaseSearchTelemetry
     private lateinit var handler: BaseSearchTelemetry.SearchTelemetryMessageHandler
 
-    @Mock
-    private lateinit var mockRepo: SerpTelemetryRepository
+    @Mock private lateinit var mockRepo: SerpTelemetryRepository
 
     private val mockReadJson: () -> JSONObject = mock()
     private val testDispatcher = StandardTestDispatcher()
 
-    private fun createMockProviderList(): List<SearchProviderModel> = listOf(
-        SearchProviderModel(
-            schema = 1698656464939,
-            taggedCodes = listOf("monline_7_dg"),
-            telemetryId = "baidu",
-            organicCodes = emptyList(),
-            codeParamName = "tn",
-            queryParamNames = listOf("wd"),
-            searchPageRegexp = "^https://(?:m|www)\\\\.baidu\\\\.com/(?:s|baidu)",
-            followOnParamNames = listOf("oq"),
-            extraAdServersRegexps = listOf("^https?://www\\\\.baidu\\\\.com/baidu\\\\.php?"),
-            expectedOrganicCodes = emptyList(),
-        ),
-    )
+    private fun createMockProviderList(): List<SearchProviderModel> =
+        listOf(
+            SearchProviderModel(
+                schema = 1698656464939,
+                taggedCodes = listOf("monline_7_dg"),
+                telemetryId = "baidu",
+                organicCodes = emptyList(),
+                codeParamName = "tn",
+                queryParamNames = listOf("wd"),
+                searchPageRegexp = "^https://(?:m|www)\\\\.baidu\\\\.com/(?:s|baidu)",
+                followOnParamNames = listOf("oq"),
+                extraAdServersRegexps = listOf("^https?://www\\\\.baidu\\\\.com/baidu\\\\.php?"),
+                expectedOrganicCodes = emptyList(),
+            )
+        )
 
-    private val rawJson = """
-        {
-  "data": [
-    {
-      "schema": 1698656464939,
-      "taggedCodes": [
-        "monline_7_dg"
-      ],
-      "telemetryId": "baidu",
-      "organicCodes": [],
-      "codeParamName": "tn",
-      "queryParamNames": [
-        "wd"
-      ],
-      "searchPageRegexp": "^https://(?:m|www)\\\\.baidu\\\\.com/(?:s|baidu)",
-      "followOnParamNames": [
-        "oq"
-      ],
-      "extraAdServersRegexps": [
-        "^https?://www\\\\.baidu\\\\.com/baidu\\\\.php?"
-      ],
-      "id": "19c434a3-d173-4871-9743-290ac92a3f6a",
-      "last_modified": 1698666532326,
-      "expectedOrganicCodes": [],
-      "followOnCookies": []
-    }],
-  "timestamp": 16
-}
-    """.trimIndent()
+    private val rawJson =
+        """
+                {
+          "data": [
+            {
+              "schema": 1698656464939,
+              "taggedCodes": [
+                "monline_7_dg"
+              ],
+              "telemetryId": "baidu",
+              "organicCodes": [],
+              "codeParamName": "tn",
+              "queryParamNames": [
+                "wd"
+              ],
+              "searchPageRegexp": "^https://(?:m|www)\\\\.baidu\\\\.com/(?:s|baidu)",
+              "followOnParamNames": [
+                "oq"
+              ],
+              "extraAdServersRegexps": [
+                "^https?://www\\\\.baidu\\\\.com/baidu\\\\.php?"
+              ],
+              "id": "19c434a3-d173-4871-9743-290ac92a3f6a",
+              "last_modified": 1698666532326,
+              "expectedOrganicCodes": [],
+              "followOnCookies": []
+            }],
+          "timestamp": 16
+        }
+        """
+            .trimIndent()
 
     @Before
     fun setup() {
-        baseTelemetry = spy(
-            object : BaseSearchTelemetry(testDispatcher) {
-                override suspend fun install(
-                    engine: Engine,
-                    store: BrowserStore,
-                    providerList: List<SearchProviderModel>,
-                ) {
-                    // mock, do nothing
-                }
+        baseTelemetry =
+            spy(
+                object : BaseSearchTelemetry(testDispatcher) {
+                    override suspend fun install(
+                        engine: Engine,
+                        store: BrowserStore,
+                        providerList: List<SearchProviderModel>,
+                    ) {
+                        // mock, do nothing
+                    }
 
-                override fun processMessage(message: JSONObject) {
-                    // mock, do nothing
+                    override fun processMessage(message: JSONObject) {
+                        // mock, do nothing
+                    }
                 }
-            },
-        )
+            )
         handler = baseTelemetry.SearchTelemetryMessageHandler()
 
         // mocking underlying remote-settings service
@@ -109,13 +112,14 @@ class BaseSearchTelemetryTest {
         `when`(mockMozillaService.remoteSettingsService).thenReturn(mockRemoteSettingsService)
         `when`(mockRemoteSettingsService.makeClient("test")).thenReturn(mockRemoteSettingsClient)
 
-        mockRepo = spy(
-            SerpTelemetryRepository(
-                readJson = mockReadJson,
-                collectionName = "test",
-                remoteSettingsService = mockMozillaService,
-            ),
-        )
+        mockRepo =
+            spy(
+                SerpTelemetryRepository(
+                    readJson = mockReadJson,
+                    collectionName = "test",
+                    remoteSettingsService = mockMozillaService,
+                )
+            )
     }
 
     @Test
@@ -129,12 +133,13 @@ class BaseSearchTelemetryTest {
 
         baseTelemetry.installWebExtension(engine, store, extensionInfo)
 
-        verify(engine).installBuiltInWebExtension(
-            id = eq(id),
-            url = eq(resourceUrl),
-            onSuccess = any(),
-            onError = any(),
-        )
+        verify(engine)
+            .installBuiltInWebExtension(
+                id = eq(id),
+                url = eq(resourceUrl),
+                onSuccess = any(),
+                onError = any(),
+            )
     }
 
     @Test
@@ -167,12 +172,11 @@ class BaseSearchTelemetryTest {
             val localResponse = JSONObject(rawJson)
 
             doAnswer {
-                localResponse
-            }.`when`(mockReadJson)()
+                    localResponse
+                }
+                .`when`(mockReadJson)()
 
-            `when`(mockRepo.parseLocalPreinstalledData(localResponse)).thenReturn(
-                createMockProviderList(),
-            )
+            `when`(mockRepo.parseLocalPreinstalledData(localResponse)).thenReturn(createMockProviderList())
             baseTelemetry.setProviderList(mockRepo.updateProviderList())
 
             assertEquals(baseTelemetry.providerList.toString(), createMockProviderList().toString())
@@ -183,8 +187,9 @@ class BaseSearchTelemetryTest {
         runBlocking {
             val localResponse = JSONObject(rawJson)
             doAnswer {
-                localResponse
-            }.`when`(mockReadJson)()
+                    localResponse
+                }
+                .`when`(mockReadJson)()
 
             baseTelemetry.setProviderList(mockRepo.updateProviderList())
 

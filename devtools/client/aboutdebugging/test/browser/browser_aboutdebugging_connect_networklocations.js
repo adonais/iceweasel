@@ -28,6 +28,7 @@ add_task(async function () {
   await waitUntil(() =>
     document.querySelector(".qa-connect-page__network-form__error-message")
   );
+  assertErrorMessageIsAnnounced(document);
 
   info("Wait until the new network location is visible in the list");
   addNetworkLocation(TEST_NETWORK_LOCATION, document);
@@ -56,6 +57,7 @@ add_task(async function () {
   await waitUntil(() =>
     document.querySelector(".qa-connect-page__network-form__error-message")
   );
+  assertErrorMessageIsAnnounced(document);
 
   info("Wait until the new network location is removed from the list");
   removeNetworkLocation(TEST_NETWORK_LOCATION, document);
@@ -80,6 +82,7 @@ add_task(async function testClosedErrorDisplayedAgain() {
   await waitUntil(() =>
     document.querySelector(".qa-connect-page__network-form__error-message")
   );
+  assertErrorMessageIsAnnounced(document);
 
   info("Dismiss the error message with the close button");
   const closeButton = document.querySelector(
@@ -96,6 +99,8 @@ add_task(async function testClosedErrorDisplayedAgain() {
   await waitUntil(() =>
     document.querySelector(".qa-connect-page__network-form__error-message")
   );
+  assertErrorMessageIsAnnounced(document);
+
   ok(
     document.querySelector(".qa-connect-page__network-form__error-message"),
     "The error message is displayed again after being dismissed"
@@ -103,6 +108,26 @@ add_task(async function testClosedErrorDisplayedAgain() {
 
   await removeTab(tab);
 });
+
+function assertErrorMessageIsAnnounced(document) {
+  info("Check that the error message is exposed to screen readers");
+  const networkLocationInput = document.querySelector(".qa-network-form-input");
+  is(
+    document.activeElement,
+    networkLocationInput,
+    "The host input is focused so the error message gets announced"
+  );
+
+  const errorId = networkLocationInput.getAttribute("aria-describedby");
+  ok(errorId, "The host input has an aria-describedby attribute");
+
+  const errorMessage = document.getElementById(errorId);
+  ok(errorMessage, "aria-describedby points to an existing error message");
+  ok(
+    errorMessage.closest(".qa-connect-page__network-form__error-message"),
+    "aria-describedby points to the error message element"
+  );
+}
 
 function addNetworkLocation(location, document) {
   info("Setting a value in the network form input");

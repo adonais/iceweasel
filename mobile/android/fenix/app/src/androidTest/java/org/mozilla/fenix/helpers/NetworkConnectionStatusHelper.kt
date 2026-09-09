@@ -20,8 +20,7 @@ object NetworkConnectionStatusHelper {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     // Get the ConnectivityManager system service to manage network connections
-    val connectivityManager =
-        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
     // Get a list of all networks currently available
     val allNetworks = connectivityManager.allNetworks
@@ -82,15 +81,21 @@ object NetworkConnectionStatusHelper {
 
         return if (activeNetworkCapabilities != null) {
             // Determine the type of active network connection
-            val connectionType = when {
-                activeNetworkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "WiFi"
-                activeNetworkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "Cellular"
-                else -> "Unknown"
-            }
+            val connectionType =
+                when {
+                    activeNetworkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "WiFi"
+                    activeNetworkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "Cellular"
+                    else -> "Unknown"
+                }
 
             // Check if the active network is connected to WiFi or Cellular
-            val isConnected = activeNetworkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) || activeNetworkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
-            Log.i(TAG, "checkActiveNetworkState: Active network is ${if (isConnected) "connected" else "not connected"} ($connectionType)")
+            val isConnected =
+                activeNetworkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                    activeNetworkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+            Log.i(
+                TAG,
+                "checkActiveNetworkState: Active network is ${if (isConnected) "connected" else "not connected"} ($connectionType)",
+            )
             // Return true if the enabled parameter matches the connection state
             enabled == isConnected
         } else {
@@ -124,8 +129,7 @@ object NetworkConnectionStatusHelper {
         // getSignalStrength() added only in API Level 28
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             // Get the TelephonyManager system service to access cellular network information
-            val telephonyManager =
-                context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+            val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
             // Get the current signal strength object which contains signal strength information
             val signalStrength = telephonyManager.signalStrength
 

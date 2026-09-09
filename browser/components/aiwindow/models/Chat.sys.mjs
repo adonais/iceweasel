@@ -18,10 +18,9 @@ import {
   GET_USER_MEMORIES,
   GET_NAVIGATION_INFO,
   MANAGE_TABS,
-  WORLD_CUP_MATCHES,
-  WORLD_CUP_LIVE,
-  WORLD_CUP_TOOLS,
-  WORLD_CUP_PREF,
+  AITAB_PREF,
+  AITAB_TOOLS,
+  GENERATE_AITAB,
   ADD_MEMORY,
   SEARCH_THE_WEB,
   SEARCH_THE_WEB_FAST_PREF,
@@ -136,9 +135,8 @@ export async function executeToolByName(
  * fetchWithHistory's cyclomatic complexity.
  */
 const FEATURE_GATED_HANDLERS = new Map([
-  [WORLD_CUP_MATCHES, toolFns.worldCupMatches],
-  [WORLD_CUP_LIVE, toolFns.worldCupLive],
   [SEARCH_THE_WEB, runSearchTheWeb],
+  [GENERATE_AITAB, toolFns.createAITab],
 ]);
 
 /**
@@ -153,22 +151,25 @@ const TOOLS_WITH_PENDING_ACTION_LOG = new Set([SEARCH_THE_WEB]);
  * model is never offered tools the build is not configured to support, and
  * swaps in pref-selected variants of a tool's config.
  *
+ * Treats `tools` as read-only: it only ever drops or substitutes whole entries,
+ * so every operation here must be non-mutating (`filter`/`map`/`toSorted`, never
+ * `splice`/`sort`/index assignment). Callers pass the shared `toolsConfig`
+ * constant, and when no gate applies it is returned by identity.
+ *
  * @param {object[]} tools
  * @returns {object[]}
  */
 function filterFeatureGatedTools(tools) {
   let filtered = tools;
-  if (!Services.prefs.getBoolPref(WORLD_CUP_PREF, false)) {
-    filtered = filtered.filter(t => !WORLD_CUP_TOOLS.has(t.function?.name));
-  }
   // The two search_the_web paths return different shapes, so the description
   // and parameters the model sees have to match the path that will run.
   if (Services.prefs.getBoolPref(SEARCH_THE_WEB_FAST_PREF, false)) {
     filtered = filtered.map(t =>
-      t.function?.name === SEARCH_THE_WEB
-        ? structuredClone(SEARCH_THE_WEB_TOOL_CONFIG_FAST)
-        : t
+      t.function?.name === SEARCH_THE_WEB ? SEARCH_THE_WEB_TOOL_CONFIG_FAST : t
     );
+  }
+  if (!Services.prefs.getBoolPref(AITAB_PREF, false)) {
+    filtered = filtered.filter(t => !AITAB_TOOLS.has(t.function?.name));
   }
   return filtered;
 }
@@ -297,8 +298,17 @@ Object.assign(Chat, {
    * @param {BrowsingContext} options.browsingContext - Omitted for tests only.
    * @param {"fullpage" | "sidebar" | "urlbar"} options.mode - See the MODE in ai-window.mjs
    * @param {AbortSignal} [options.signal]
+   * @param {Promise<string|null>} [options.fxAccountTokenPromise] - A token
+   *   fetch the caller already started, so a cold or expired token resolves
+   *   alongside prompt construction rather than after it. Omit to fetch here.
    */
-  async fetchWithHistory({ conversation, browsingContext, mode, signal }) {
+  async fetchWithHistory({
+    conversation,
+    browsingContext,
+    mode,
+    signal,
+    fxAccountTokenPromise,
+  }) {
     if (!browsingContext && !Cu.isInAutomation) {
       const err = new Error(
         "The browsingContext must exist for fetchWithHistory unless we're in automation."
@@ -306,7 +316,8 @@ Object.assign(Chat, {
       err.clientReason = "missingBrowsingContext";
       throw err;
     }
-    const fxAccountToken = await openAIEngine.getFxAccountToken();
+    const fxAccountToken = await (fxAccountTokenPromise ??
+      openAIEngine.getFxAccountToken());
     if (!fxAccountToken) {
       console.error("fetchWithHistory Account Token null or undefined");
       const fxaError = new Error("FxA token unavailable");
@@ -322,7 +333,7 @@ Object.assign(Chat, {
      * comment above tool execution for further details.
      */
     const isVerbatimQuery = currentTurn === 0;
-    let chatToolsConfig = filterFeatureGatedTools(structuredClone(toolsConfig));
+    const chatToolsConfig = filterFeatureGatedTools(toolsConfig);
 
     let fullResponseText = "";
 

@@ -20,8 +20,7 @@ data class TrackingProtectionEvent(
 ) {
     companion object {
         /**
-         * All blocked trackers types.
-         * To be kept in sync with the `nsITrackingDBService` constants from
+         * All blocked trackers types. To be kept in sync with the `nsITrackingDBService` constants from
          * https://searchfox.org/firefox-main/rev/8352bcb6d75d53f3e2190221b71190e47afa0bfc/toolkit/components/antitracking/nsITrackingDBService.idl#57-64
          */
         @Retention(AnnotationRetention.SOURCE)
@@ -37,45 +36,32 @@ data class TrackingProtectionEvent(
         )
         annotation class BlockedEventType
 
-        /**
-         * Generic cookies.
-         */
+        /** Generic cookies. */
         const val OTHER_COOKIES_BLOCKED = 0
 
-        /**
-         * Generic tracking scripts.
-         */
+        /** Generic tracking scripts. */
         const val TRACKERS = 1
 
-        /**
-         * Generic tracking cookies.
-         */
+        /** Generic tracking cookies. */
         const val TRACKING_COOKIES = 2
 
-        /**
-         * Cryptocurrency miners.
-         */
+        /** Cryptocurrency miners. */
         const val CRYPTOMINERS = 3
 
-        /**
-         * Fingerprinting trackers.
-         */
+        /** Fingerprinting trackers. */
         const val FINGERPRINTERS = 4
 
-        /**
-         * Social trackers from the social-track-digest256 list.
-         */
+        /** Social trackers from the social-track-digest256 list. */
         const val SOCIAL = 5
 
-        /**
-         * Scripts potentially aiding in fingerprinting.
-         */
+        /** Scripts potentially aiding in fingerprinting. */
         const val SUSPICIOUS_FINGERPRINTERS = 6
 
         /**
          * Redirect-based trackers.
          *
-         * [Bounce tracking mitigations](https://developer.mozilla.org/en-US/docs/Web/Privacy/Guides/Bounce_tracking_mitigations)
+         * [Bounce tracking
+         * mitigations](https://developer.mozilla.org/en-US/docs/Web/Privacy/Guides/Bounce_tracking_mitigations)
          */
         const val BOUNCETRACKERS = 7
     }

@@ -2,14 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { html } from "chrome://global/content/vendor/lit.all.mjs";
+import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
 // eslint-disable-next-line import/no-unassigned-import
-import "chrome://global/content/elements/moz-input-text.mjs";
-// eslint-disable-next-line import/no-unassigned-import
-import "chrome://global/content/elements/moz-input-url.mjs";
+import "chrome://browser/content/aiwindow/components/agent-monitor-item.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/monitors-display.mjs";
 // eslint-disable-next-line import/no-unassigned-import
@@ -42,32 +40,8 @@ const MONITOR_ACTIONS = {
   REQUEST_UPDATE_MONITOR: "RequestUpdateMonitor",
   REQUEST_RUN_MONITOR: "RequestRunMonitor",
   REQUEST_PAUSE_MONITOR: "RequestPauseMonitor",
+  REQUEST_OPEN_URL: "RequestOpenUrl",
 };
-
-const SCHEDULE_ICON = "chrome://browser/skin/calendar-24.svg";
-const TIME_ICON = "chrome://browser/skin/history-20.svg";
-
-// Time options in 30-minute increments matching agent-monitor-item
-const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
-  const hour24 = Math.floor(i / 2);
-  const minute = i % 2 ? 30 : 0;
-
-  // Create a date object with the specific time for localization
-  const timeDate = new Date();
-  timeDate.setHours(hour24, minute, 0, 0);
-
-  // Use toLocaleTimeString for locale-appropriate formatting
-  const label = timeDate.toLocaleTimeString(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-
-  return {
-    value: `${String(hour24).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
-    label,
-  };
-});
 
 const WEEKDAYS = [
   { value: 0, ftlId: "ai-tasks-alert-weekday-sunday" },
@@ -82,37 +56,25 @@ const WEEKDAYS = [
 /**
  * AI Tasks component for displaying and managing tasks.
  *
- * @property {Array} tasks - Array of task items to display
- * @property {string} title - Title for the tasks section
+ * The create form and the monitor cards are both `agent-monitor-item`, shared
+ * with the chat. This component only owns the actor plumbing: it turns the
+ * card's bubbling events into actor requests and reloads the list.
+ *
+ * @property {Array} monitors - Monitors loaded from the MonitorAgent
+ * @property {boolean} dialogOpen - Whether the create dialog is open
  */
 export class AITasks extends MozLitElement {
   static properties = {
-    monitorName: { type: String },
-    alertDescription: { type: String },
-    pageUrls: { type: Array },
-    pageUrlErrors: { type: Array },
-    checkFrequency: { type: String },
-    scheduleTime: { type: String },
-    scheduleWeekday: { type: Number },
     monitors: { type: Array },
-    pendingUrl: { type: String },
-    pendingUrlError: { type: String },
+    dialogOpen: { type: Boolean, state: true },
   };
 
   constructor() {
     super();
-    this.monitorName = "";
-    this.alertDescription = "";
-    this.pageUrls = [];
-    this.pageUrlErrors = [];
     // Use default constants initially, will be updated from actor
     this._constants = { ...DEFAULT_CONSTANTS };
-    this.checkFrequency = this._constants.SCHEDULE_TYPES.DAILY;
-    this.scheduleTime = "09:00";
-    this.scheduleWeekday = 1; // Monday
     this.monitors = [];
-    this.pendingUrl = "";
-    this.pendingUrlError = "";
+    this.dialogOpen = false;
   }
 
   // ===== Lifecycle Methods =====
@@ -132,9 +94,12 @@ export class AITasks extends MozLitElement {
     this.boundHandleMonitorDelete = this.handleMonitorDelete.bind(this);
     this.boundHandleMonitorPause = this.handleMonitorPause.bind(this);
     this.boundHandleMonitorCheckNow = this.handleMonitorCheckNow.bind(this);
+    this.boundHandleMonitorOpen = this.handleMonitorOpen.bind(this);
     this.boundHandleMonitorSubmit = this.handleMonitorSubmit.bind(this);
+    this.boundHandleMonitorCancel = this.handleMonitorCancel.bind(this);
 
-    // Listen for events bubbling up from monitors-display > agent-monitor-item
+    // Listen for events bubbling up from the create dialog and from
+    // monitors-display > agent-monitor-item
     this.addEventListener(
       "agent-monitor-item:delete",
       this.boundHandleMonitorDelete
@@ -150,6 +115,14 @@ export class AITasks extends MozLitElement {
     this.addEventListener(
       "agent-monitor-item:submit",
       this.boundHandleMonitorSubmit
+    );
+    this.addEventListener(
+      "AIChatContent:OpenLink",
+      this.boundHandleMonitorOpen
+    );
+    this.addEventListener(
+      "agent-monitor-item:cancel",
+      this.boundHandleMonitorCancel
     );
   }
 
@@ -167,8 +140,6 @@ export class AITasks extends MozLitElement {
       if (result?.success && result.constants) {
         // Store constants on the instance to avoid shared mutable state
         this._constants = Object.freeze(result.constants);
-        // Update default frequency with the loaded constant
-        this.checkFrequency = this._constants.SCHEDULE_TYPES.DAILY;
         // _constants is not a reactive property, so request a render to
         // reflect the actor-provided values (e.g. region support).
         this.requestUpdate();
@@ -240,21 +211,17 @@ export class AITasks extends MozLitElement {
       "agent-monitor-item:submit",
       this.boundHandleMonitorSubmit
     );
+    this.removeEventListener(
+      "AIChatContent:OpenLink",
+      this.boundHandleMonitorOpen
+    );
+    this.removeEventListener(
+      "agent-monitor-item:cancel",
+      this.boundHandleMonitorCancel
+    );
   }
 
   // ===== Getters =====
-
-  /**
-   * Checks if the form has all required valid data to submit.
-   *
-   * @returns {boolean} True if form is valid, false otherwise
-   */
-  get isFormValid() {
-    const hasDescription = this.alertDescription?.trim().length > 0;
-    const hasValidUrl = Boolean(this.pageUrls.length);
-    const hasNoPendingError = !this.pendingUrlError;
-    return hasDescription && hasValidUrl && hasNoPendingError;
-  }
 
   /**
    * Checks if the maximum number of monitors has been reached.
@@ -281,27 +248,15 @@ export class AITasks extends MozLitElement {
   // ===== Dialog Management =====
 
   openDialog() {
+    // The card is only rendered while the dialog is open so every open starts
+    // from a blank form.
+    this.dialogOpen = true;
     this.#dialog?.showModal();
   }
 
   closeDialog() {
-    this.resetForm();
+    this.dialogOpen = false;
     this.#dialog?.close();
-  }
-
-  /**
-   * Resets all form fields to their initial state.
-   */
-  resetForm() {
-    this.monitorName = "";
-    this.alertDescription = "";
-    this.pageUrls = [];
-    this.pageUrlErrors = [];
-    this.checkFrequency = this._constants.SCHEDULE_TYPES.DAILY;
-    this.scheduleTime = "09:00";
-    this.scheduleWeekday = 1;
-    this.pendingUrl = "";
-    this.pendingUrlError = "";
   }
 
   // ===== Monitor Management =====
@@ -376,25 +331,88 @@ export class AITasks extends MozLitElement {
   }
 
   /**
+   * Handles the open event from a watched page chip in agent-monitor-item.
+   *
+   * @param {CustomEvent} event - Event containing the page url
+   */
+  async handleMonitorOpen(event) {
+    event.stopPropagation();
+
+    const { url } = event.detail;
+    try {
+      const result = await this.#dispatchMonitorAction(
+        MONITOR_ACTIONS.REQUEST_OPEN_URL,
+        { url }
+      );
+      if (!result?.success) {
+        console.error("Failed to open monitor URL:", result?.error);
+      }
+    } catch (error) {
+      console.error("Failed to open monitor URL:", error);
+    }
+  }
+
+  /**
    * Handles submit/update event from agent-monitor-item edit mode.
+   * Handles the submit event from agent-monitor-item. The create dialog and the
+   * edit form of an existing card share the event, so the mode picks the action.
    *
    * @param {CustomEvent} event - Event containing monitor data
    */
-  async handleMonitorSubmit(event) {
-    const { id, monitorName, condition, watchUrls, schedule } = event.detail;
-    try {
-      // Convert schedule format from agent-monitor-item to MonitorAgent format
-      const monitorSchedule = schedule
-        ? {
-            type: schedule.frequency,
-            hour: parseInt(schedule.time.split(":")[0], 10),
-            minute: parseInt(schedule.time.split(":")[1], 10),
-            ...(schedule.weekday != null && {
-              weekday: parseInt(schedule.weekday, 10),
-            }),
-          }
-        : null;
+  handleMonitorSubmit(event) {
+    if (event.detail?.mode === "create") {
+      return this.createMonitor(event.detail);
+    }
+    return this.updateMonitor(event.detail);
+  }
 
+  /**
+   * Closes the create dialog when its card is cancelled.
+   */
+  handleMonitorCancel() {
+    this.closeDialog();
+  }
+
+  /**
+   * Creates a monitor from the create card's form data.
+   *
+   * @param {object} detail - Submit event detail from agent-monitor-item
+   */
+  async createMonitor(detail) {
+    const { monitorName, condition, watchUrls, schedule } = detail;
+    try {
+      const result = await this.#dispatchMonitorAction(
+        MONITOR_ACTIONS.REQUEST_CREATE_MONITOR,
+        {
+          prompt: condition,
+          watchUrls,
+          pageTitle: monitorName,
+          schedule: this.#toMonitorSchedule(schedule),
+          source: "about_page",
+        }
+      );
+
+      if (!result?.success) {
+        console.error("Failed to create monitor:", result?.error);
+        return;
+      }
+    } catch (error) {
+      console.error("Failed to create monitor:", error);
+      return;
+    }
+
+    this.closeDialog();
+    await this.loadMonitors();
+  }
+
+  /**
+   * Applies an edit made in an existing monitor's card.
+   *
+   * @param {object} detail - Submit event detail from agent-monitor-item
+   */
+  async updateMonitor(detail) {
+    const { id, monitorName, condition, watchUrls, schedule } = detail;
+    try {
       const result = await this.#dispatchMonitorAction(
         MONITOR_ACTIONS.REQUEST_UPDATE_MONITOR,
         {
@@ -403,7 +421,7 @@ export class AITasks extends MozLitElement {
             title: monitorName,
             monitorPrompt: condition,
             watchUrls,
-            schedule: monitorSchedule,
+            schedule: this.#toMonitorSchedule(schedule),
           },
         }
       );
@@ -415,6 +433,35 @@ export class AITasks extends MozLitElement {
     } catch (error) {
       console.error("Failed to update monitor:", error);
     }
+  }
+
+  /**
+   * Converts a schedule from the agent-monitor-item shape to the one the
+   * MonitorAgent stores.
+   *
+   * @param {?object} schedule - { frequency, time: "HH:MM", weekday }
+   * @returns {object|null} Schedule configuration object or null if not scheduled
+   */
+  #toMonitorSchedule(schedule) {
+    const isScheduledFrequency = [
+      this._constants.SCHEDULE_TYPES.DAILY,
+      this._constants.SCHEDULE_TYPES.WEEKLY,
+    ].includes(schedule?.frequency);
+
+    if (!isScheduledFrequency || !schedule.time) {
+      return null;
+    }
+
+    const [hour, minute] = schedule.time.split(":").map(Number);
+
+    return {
+      type: schedule.frequency,
+      ...(schedule.frequency === this._constants.SCHEDULE_TYPES.WEEKLY && {
+        weekday: Number(schedule.weekday),
+      }),
+      hour,
+      minute,
+    };
   }
 
   /**
@@ -436,226 +483,6 @@ export class AITasks extends MozLitElement {
     }
   }
 
-  /**
-   * Handles the form submission to create a new monitor.
-   * Validates form, configures schedule data, and creates the monitor.
-   */
-  async handleConfirm() {
-    try {
-      if (!this.isFormValid) {
-        return;
-      }
-
-      const schedule = this.configureScheduleData();
-
-      const result = await this.#dispatchMonitorAction(
-        MONITOR_ACTIONS.REQUEST_CREATE_MONITOR,
-        {
-          prompt: this.alertDescription,
-          watchUrls: this.pageUrls,
-          pageTitle: this.monitorName,
-          schedule,
-          source: "about_page",
-        }
-      );
-
-      if (!result?.success) {
-        console.error("Failed to create monitor:", result?.error);
-        return;
-      }
-    } catch (error) {
-      console.error("Failed to create monitor:", error);
-      return;
-    }
-
-    this.closeDialog();
-    await this.loadMonitors();
-  }
-
-  /**
-   * Configures the schedule data object based on selected frequency and time.
-   *
-   * @returns {object|null} Schedule configuration object or null if not scheduled
-   */
-  configureScheduleData() {
-    const isScheduledFrequency = [
-      this._constants.SCHEDULE_TYPES.DAILY,
-      this._constants.SCHEDULE_TYPES.WEEKLY,
-    ].includes(this.checkFrequency);
-
-    if (!isScheduledFrequency || !this.scheduleTime) {
-      return null;
-    }
-
-    const [hour, minute] = this.scheduleTime.split(":").map(Number);
-
-    return {
-      type: this.checkFrequency,
-      ...(this.checkFrequency === this._constants.SCHEDULE_TYPES.WEEKLY && {
-        weekday: this.scheduleWeekday,
-      }),
-      hour,
-      minute,
-    };
-  }
-
-  // ===== URL Management =====
-
-  /**
-   * Validates a URL string to ensure it's a valid HTTP/HTTPS URL.
-   * Note: Empty strings are considered invalid URLs but return no error message
-   * since the UI handles empty input separately.
-   *
-   * @param {string} url - The URL to validate
-   * @returns {Promise<{valid: boolean, error: string}>} Validation result
-   * TODO: Move this validation logic to a shared utility, will need in another component as well.
-   */
-  async validateUrl(url) {
-    const value = url.trim();
-
-    if (!value) {
-      // Empty input is invalid but no error message needed
-      // Callers handle empty strings separately
-      return { valid: false, error: "" };
-    }
-
-    try {
-      const { protocol } = new URL(value);
-
-      if (protocol !== "http:" && protocol !== "https:") {
-        const error = await document.l10n.formatValue(
-          "ai-tasks-alert-error-http-only"
-        );
-        return {
-          valid: false,
-          error,
-        };
-      }
-
-      return { valid: true, error: "" };
-    } catch {
-      const error = await document.l10n.formatValue(
-        "ai-tasks-alert-error-invalid-url"
-      );
-      return {
-        valid: false,
-        error,
-      };
-    }
-  }
-
-  /**
-   * Validates the pending URL input and sets error message if invalid.
-   */
-  async validatePendingUrl() {
-    const url = this.pendingUrl.trim();
-    if (url) {
-      const validation = await this.validateUrl(url);
-      this.pendingUrlError = validation.error;
-    } else {
-      this.pendingUrlError = "";
-    }
-  }
-
-  /**
-   * Adds a URL to the pageUrls array after validation.
-   * Handles various validation scenarios including duplicates and max limit.
-   */
-  async addUrl() {
-    const url = this.pendingUrl.trim();
-    if (!url) {
-      return;
-    }
-
-    const validation = await this.validateUrl(url);
-    if (!validation.valid) {
-      this.pendingUrlError = validation.error;
-      return;
-    }
-
-    if (this.pageUrls.includes(url)) {
-      this.pendingUrlError = await document.l10n.formatValue(
-        "ai-tasks-alert-error-duplicate-url"
-      );
-      return;
-    }
-
-    if (this.pageUrls.length >= this._constants.TOTAL_NUM_URLS_IN_MONITOR) {
-      this.pendingUrlError = await document.l10n.formatValue(
-        "ai-tasks-alert-error-max-urls",
-        { maxUrls: this._constants.TOTAL_NUM_URLS_IN_MONITOR }
-      );
-      return;
-    }
-
-    this.pageUrls = [...this.pageUrls, url];
-    this.pendingUrl = "";
-    this.pendingUrlError = "";
-  }
-
-  /**
-   * Removes a URL from the pageUrls array.
-   *
-   * @param {string} url - The URL to remove
-   */
-  removeUrl(url) {
-    this.pageUrls = this.pageUrls.filter(u => u !== url);
-  }
-
-  /**
-   * Extracts and returns the hostname from a URL for display purposes.
-   *
-   * @param {string} url - The full URL
-   * @returns {string} The hostname or the original URL if parsing fails
-   */
-  displayUrl(url) {
-    try {
-      return new URL(url).hostname;
-    } catch {
-      return url;
-    }
-  }
-
-  // ===== Form Input Handlers =====
-
-  handleMonitorNameInput(e) {
-    this.monitorName = e.target.value;
-  }
-
-  handleAlertInput(e) {
-    this.alertDescription = e.target.value;
-  }
-
-  handlePendingUrlInput(e) {
-    this.pendingUrl = e.target.value;
-    this.validatePendingUrl();
-  }
-
-  /**
-   * Handles Enter key press in the URL input field to add the URL.
-   *
-   * @param {KeyboardEvent} e - The keyboard event
-   */
-  handlePendingUrlKeydown(e) {
-    if (e.key !== "Enter") {
-      return;
-    }
-    e.preventDefault();
-    this.addUrl();
-  }
-
-  handleFrequencyChange(e) {
-    this.checkFrequency = e.target.value;
-  }
-
-  handleTimeChange(e) {
-    this.scheduleTime = e.target.value;
-  }
-
-  handleWeekdayChange(e) {
-    this.scheduleWeekday = Number(e.target.value);
-  }
-
   render() {
     return html`
       <link
@@ -663,214 +490,18 @@ export class AITasks extends MozLitElement {
         href="chrome://browser/content/aiwindow/components/ai-tasks.css"
       />
 
-      <dialog class="modal-wrapper">
-        <div class="modal-container">
-          <div class="modal-header">
-            <h2
-              class="modal-title"
-              data-l10n-id="ai-tasks-alert-modal-title"
-            ></h2>
-
-            <moz-button
-              size="small"
-              type="icon ghost"
-              iconSrc="chrome://global/skin/icons/close.svg"
-              @click=${() => this.closeDialog()}
-            ></moz-button>
-          </div>
-
-          <div class="modal-content">
-            <div class="form-row">
-              <moz-input-text
-                class="form-input"
-                data-l10n-id="ai-tasks-alert-name"
-                data-l10n-attrs="label"
-                @input=${e => this.handleMonitorNameInput(e)}
-                .value=${this.monitorName}
-                maxlength="100"
-              ></moz-input-text>
-            </div>
-
-            <div class="form-row">
-              <moz-textarea
-                class="form-textarea"
-                data-l10n-id="ai-tasks-alert-alert"
-                data-l10n-attrs="placeholder,label,description"
-                @input=${e => this.handleAlertInput(e)}
-                .value=${this.alertDescription}
-              ></moz-textarea>
-            </div>
-
-            <div class="form-row">
-              <div class="pages-container">
-                <div class="page-input-row">
-                  <moz-input-url
-                    class="form-input ${this.pendingUrlError ? "error" : ""}"
-                    data-l10n-id="ai-tasks-alert-pages"
-                    data-l10n-attrs="placeholder,label"
-                    data-l10n-args=${JSON.stringify({
-                      maxPages: this._constants.TOTAL_NUM_URLS_IN_MONITOR,
-                    })}
-                    @input=${e => this.handlePendingUrlInput(e)}
-                    @keydown=${e => this.handlePendingUrlKeydown(e)}
-                    @blur=${() => this.validatePendingUrl()}
-                    .value=${this.pendingUrl}
-                    maxlength="2048"
-                  ></moz-input-url>
-                  <moz-button
-                    size="small"
-                    type="icon ghost"
-                    class="add-page-btn"
-                    iconSrc="chrome://global/skin/icons/plus.svg"
-                    ?disabled=${this.pageUrls.length >=
-                    this._constants.TOTAL_NUM_URLS_IN_MONITOR}
-                    @click=${() => this.addUrl()}
-                    data-l10n-id="ai-tasks-alert-add-url"
-                    data-l10n-attrs="aria-label"
-                  ></moz-button>
-                </div>
-                ${this.pendingUrlError
-                  ? html`<div class="error-message">
-                      ${this.pendingUrlError}
-                    </div>`
-                  : ""}
-                ${this.pageUrls.length
-                  ? html`
-                      <div class="page-pills-row">
-                        ${this.pageUrls.map(
-                          url => html`
-                            <span class="page-pill">
-                              <span class="page-pill-url"
-                                >${this.displayUrl(url)}</span
-                              >
-                              <button
-                                type="button"
-                                class="page-pill-remove"
-                                data-l10n-id="ai-tasks-alert-remove-page-label"
-                                data-l10n-attrs="aria-label,title"
-                                @click=${() => this.removeUrl(url)}
-                              ></button>
-                            </span>
-                          `
-                        )}
-                      </div>
-                    `
-                  : ""}
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="schedule-container">
-                <div class="form-section-half">
-                  <label
-                    class="form-label"
-                    data-l10n-id="ai-tasks-alert-check-label"
-                  ></label>
-                  <moz-select
-                    class="form-select"
-                    .value=${this.checkFrequency}
-                    @change=${e => this.handleFrequencyChange(e)}
-                  >
-                    <moz-option
-                      value=${this._constants.SCHEDULE_TYPES.DAILY}
-                      data-l10n-id="ai-tasks-alert-schedule-daily"
-                      iconsrc=${SCHEDULE_ICON}
-                    ></moz-option>
-                    <moz-option
-                      value=${this._constants.SCHEDULE_TYPES.WEEKLY}
-                      data-l10n-id="ai-tasks-alert-schedule-weekly"
-                      iconsrc=${SCHEDULE_ICON}
-                    ></moz-option>
-                  </moz-select>
-                </div>
-
-                ${this.checkFrequency === this._constants.SCHEDULE_TYPES.DAILY
-                  ? html`
-                      <div class="form-section-half">
-                        <label
-                          class="form-label"
-                          data-l10n-id="ai-tasks-alert-time-label"
-                        ></label>
-                        <moz-select
-                          class="form-select"
-                          .value=${this.scheduleTime}
-                          @change=${e => this.handleTimeChange(e)}
-                        >
-                          ${TIME_OPTIONS.map(
-                            opt =>
-                              html`<moz-option
-                                value=${opt.value}
-                                label=${opt.label}
-                                iconsrc=${TIME_ICON}
-                              ></moz-option>`
-                          )}
-                        </moz-select>
-                      </div>
-                    `
-                  : ""}
-                ${this.checkFrequency === this._constants.SCHEDULE_TYPES.WEEKLY
-                  ? html`
-                      <div class="form-section-half">
-                        <label
-                          class="form-label"
-                          data-l10n-id="ai-tasks-alert-day-label"
-                        ></label>
-                        <moz-select
-                          class="form-select"
-                          value=${this.scheduleWeekday}
-                          @change=${e => this.handleWeekdayChange(e)}
-                        >
-                          ${WEEKDAYS.map(
-                            day => html`
-                              <moz-option
-                                value=${day.value}
-                                data-l10n-id=${day.ftlId}
-                                iconsrc=${SCHEDULE_ICON}
-                              ></moz-option>
-                            `
-                          )}
-                        </moz-select>
-                      </div>
-                      <div class="form-section-half">
-                        <label
-                          class="form-label"
-                          data-l10n-id="ai-tasks-alert-time-label"
-                        ></label>
-                        <moz-select
-                          class="form-select"
-                          .value=${this.scheduleTime}
-                          @change=${e => this.handleTimeChange(e)}
-                        >
-                          ${TIME_OPTIONS.map(
-                            opt =>
-                              html`<moz-option
-                                value=${opt.value}
-                                label=${opt.label}
-                                iconsrc=${TIME_ICON}
-                              ></moz-option>`
-                          )}
-                        </moz-select>
-                      </div>
-                    `
-                  : ""}
-              </div>
-            </div>
-          </div>
-
-          <div class="dialog-actions">
-            <moz-button
-              type="default"
-              data-l10n-id="ai-tasks-alert-cancel-button"
-              @click=${() => this.closeDialog()}
-            ></moz-button>
-            <moz-button
-              type="primary"
-              data-l10n-id="ai-tasks-alert-create-button"
-              ?disabled=${!this.isFormValid}
-              @click=${() => this.handleConfirm()}
-            ></moz-button>
-          </div>
-        </div>
+      <dialog
+        class="modal-wrapper"
+        @close=${() => {
+          this.dialogOpen = false;
+        }}
+      >
+        ${this.dialogOpen
+          ? html`<agent-monitor-item
+              mode="create"
+              .maxWatchUrls=${this._constants.TOTAL_NUM_URLS_IN_MONITOR}
+            ></agent-monitor-item>`
+          : nothing}
       </dialog>
 
       ${!this.isMonitorRegionSupported

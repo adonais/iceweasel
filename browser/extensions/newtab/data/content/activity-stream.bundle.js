@@ -111,6 +111,8 @@ for (const type of [
   "BLOCK_URL",
   "BOOKMARK_URL",
   "CARD_SECTION_IMPRESSION",
+  "CAROUSEL_NAVIGATE",
+  "CAROUSEL_TOGGLE_AUTOPLAY",
   "CLEAR_PREF",
   "CLICK_SECTION_LEARN_MORE",
   "COPY_DOWNLOAD_LINK",
@@ -245,6 +247,7 @@ for (const type of [
   "SHOW_TOAST_MESSAGE",
   "SKIPPED_SIGNIN",
   "SOV_UPDATED",
+  "SPACES_USER_EVENT",
   "SUBMIT_EMAIL",
   "SUBMIT_SIGNIN",
   "SYSTEM_TICK",
@@ -325,6 +328,8 @@ for (const type of [
   "WIDGETS_PRIVACY_CTA",
   "WIDGETS_PRIVACY_MARK_CELEBRATED",
   "WIDGETS_PRIVACY_UPDATE",
+  "WIDGETS_PRIVACY_VISIBLE",
+  "WIDGETS_RECENT_SEARCHES_UPDATE",
   "WIDGETS_SPORTS_CHANGE_FOLLOWED_ONLY",
   "WIDGETS_SPORTS_CHANGE_LIVE_INDEX",
   "WIDGETS_SPORTS_CHANGE_MATCHES_TAB",
@@ -347,7 +352,12 @@ for (const type of [
   "WIDGETS_SPORTS_WATCH_LIVE_REQUEST",
   "WIDGETS_SPORTS_WATCH_LIVE_SET",
   "WIDGETS_SPORTS_WIDGET_SET",
+  "WIDGETS_STOCKS_SEARCH_CLEAR",
+  "WIDGETS_STOCKS_SEARCH_REQUEST",
+  "WIDGETS_STOCKS_SEARCH_RESPONSE",
+  "WIDGETS_STOCKS_SEARCH_STARTED",
   "WIDGETS_STOCKS_UPDATE",
+  "WIDGETS_STOCKS_WATCHLIST_UPDATE",
   "WIDGETS_TIMER_END",
   "WIDGETS_TIMER_PAUSE",
   "WIDGETS_TIMER_PLAY",
@@ -691,6 +701,8 @@ const actionUtils = {
  *                        (only applies when the user has not explicitly set sizePref)
  *   trainhopSidebarKey — key in trainhopConfig.widgets.* for the hasSidebar override;
  *                        null means the sidebar placement is not overridable via trainhop
+ *   requiresHistory    — when true, the widget is hidden entirely on profiles that
+ *                        record no history (see isWidgetDataUnavailable)
  *
  * SIZE PRIORITY
  * sizePref defaults to "" (empty string) in PREFS_CONFIG. An empty value
@@ -717,6 +729,12 @@ const actionUtils = {
  * 5. If it has a sidebar variant, set hasSidebar: true and add its component
  *    to WIDGET_SIDEBAR_COMPONENTS in WidgetsComponentRegistry.jsx.
  *
+ * RETIRING A WIDGET
+ * Set retired: true on its entry. Turn its feed off separately in
+ * lib/ActivityStream.sys.mjs — feeds read their own prefs, not the registry.
+ * Keep the entry until the code goes: unguarded WIDGET_REGISTRY.find() call
+ * sites throw on a missing entry.
+ *
  * ADDING A NEW PER-WIDGET DIMENSION (e.g. "scale")
  * 1. Add scalePref and trainhopScaleKey fields to each registry entry.
  * 2. Export a resolveWidgetScale(widget, prefs) helper following the same
@@ -734,9 +752,9 @@ const actionUtils = {
  * To expose an extra pref-gated widget feature in that panel (e.g. an internal
  * feature that defaults off but QA/devs want to flip, such as
  * widgets.pictureOfTheDay.setAsWallpaper.enabled or
- * widgets.sportsWidget.live.enabled), add an entry to the hand-maintained
+ * widgets.privacy.showVpnMessages), add an entry to the hand-maintained
  * WIDGET_EXTRA_FEATURES map in DiscoveryStreamAdmin.jsx keyed by widget id:
- *   sportsWidget: [{ pref: "widgets.sportsWidget.live.enabled", label: "Live scores" }]
+ *   privacy: [{ pref: "widgets.privacy.showVpnMessages", label: "VPN messages" }]
  * Each entry becomes a boolean toggle nested under that widget's row. This map is
  * intentionally kept in the devtools component, not the registry, so shipping code
  * carries no dependency on dev-only feature lists.
@@ -790,6 +808,7 @@ const PREF_WIDGETS_SYSTEM_CROSSWORD_ENABLED =
   "widgets.system.crossword.enabled";
 const PREF_WIDGETS_STOCKS_ENABLED = "widgets.stocks.enabled";
 const PREF_STOCKS_SIZE = "widgets.stocks.size";
+const PREF_STOCKS_WATCHLIST = "widgets.stocks.watchlist";
 const PREF_WIDGETS_SYSTEM_STOCKS_ENABLED =
   "widgets.system.stocks.enabled";
 const PREF_CROSSWORD_ENDPOINT = "widgets.crossword.endpoint";
@@ -798,6 +817,11 @@ const PREF_WIDGETS_PICTURE_OF_THE_DAY_ENABLED =
 const PREF_PICTURE_OF_THE_DAY_SIZE = "widgets.pictureOfTheDay.size";
 const PREF_WIDGETS_SYSTEM_PICTURE_OF_THE_DAY_ENABLED =
   "widgets.system.pictureOfTheDay.enabled";
+const PREF_WIDGETS_RECENT_SEARCHES_ENABLED =
+  "widgets.recentSearches.enabled";
+const PREF_RECENT_SEARCHES_SIZE = "widgets.recentSearches.size";
+const PREF_WIDGETS_SYSTEM_RECENT_SEARCHES_ENABLED =
+  "widgets.system.recentSearches.enabled";
 
 /**
  * @typedef {object} WidgetRegistryEntry
@@ -815,6 +839,7 @@ const PREF_WIDGETS_SYSTEM_PICTURE_OF_THE_DAY_ENABLED =
  * @property {string|null} trainhopSidebarKey - Key in trainhopConfig.widgets.* for the hasSidebar override.
  * @property {string} widgetsSettingsVisibleKey - Key in trainhopConfig.widgetsSettings.* that additively reveals this widget's toggle in the settings UIs (does not enable the widget).
  * @property {string} widgetsSettingsEnabledKey - Key in trainhopConfig.widgetsSettings.* that overrides this widget's default enabled value (written to the pref default branch; an explicit user toggle still wins).
+ * @property {boolean} [retired] - When true the widget never renders and gets no settings or devtools toggle, whatever its prefs and trainhopConfig say.
  * @property {string|null} [trainhopNamespace] - When set, the widget ships its whole config in one dedicated object at trainhopConfig.<namespace>. Its `enabled` overrides the default value of enabledPref on the default branch (user toggle still wins, like widgetsSettings.*Enabled); `visible` reveals the widget (isWidgetAddable) without writing a pref; `size` is read by resolveWidgetSize. Picture of the Day, Crossword and Privacy use this today.
  */
 
@@ -852,6 +877,8 @@ const WIDGET_REGISTRY = [
     trainhopSidebarKey: null,
     widgetsSettingsVisibleKey: "sportsWidgetVisible",
     widgetsSettingsEnabledKey: "sportsWidgetEnabled",
+    // Bug 2063657: retired; entry deleted in bug 2063656.
+    retired: true,
   },
   {
     id: "clocks",
@@ -933,6 +960,7 @@ const WIDGET_REGISTRY = [
     widgetsSettingsVisibleKey: "privacyVisible",
     widgetsSettingsEnabledKey: "privacyEnabled",
     trainhopNamespace: "widgetPrivacy",
+    requiresHistory: true,
   },
   {
     id: "crossword",
@@ -966,6 +994,22 @@ const WIDGET_REGISTRY = [
     trainhopSidebarKey: null,
     widgetsSettingsVisibleKey: "stocksVisible",
     widgetsSettingsEnabledKey: "stocksEnabled",
+  },
+  {
+    id: "recentSearches",
+    telemetryName: "recent_searches",
+    order: 9,
+    enabledPref: PREF_WIDGETS_RECENT_SEARCHES_ENABLED,
+    sizePref: PREF_RECENT_SEARCHES_SIZE,
+    defaultSize: "medium",
+    validSizes: ["medium", "large"],
+    hasSidebar: false,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_RECENT_SEARCHES_ENABLED,
+    trainhopEnabledKey: "recentSearchesEnabled",
+    trainhopSizeKey: "recentSearchesSize",
+    trainhopSidebarKey: null,
+    widgetsSettingsVisibleKey: "recentSearchesVisible",
+    widgetsSettingsEnabledKey: "recentSearchesEnabled",
   },
 ];
 
@@ -1009,17 +1053,37 @@ function resolveWidgetOrder(prefs) {
 }
 
 /**
+ * Returns true if the widget needs history and this profile records none, so it
+ * could only ever render an empty state (Bug 2063207). An absent
+ * `recordsHistory` counts as available, so a missing PrefsFeed broadcast cannot
+ * hide a working widget.
+ *
+ * @param {object} widget - a WIDGET_REGISTRY entry
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+function isWidgetDataUnavailable(widget, prefs) {
+  return Boolean(widget.requiresHistory && prefs.recordsHistory === false);
+}
+
+/**
  * Returns true if the widget is available to the user, based on the
  * system pref, the trainhopConfig.widgets addable key, or a
  * widgetsSettings.*Visible override (revealing a toggle also makes the widget
  * addable so the toggle is functional). Does not consider whether the user has
  * turned the widget on, or whether the widgets container is enabled.
  *
+ * A retired widget is never addable, and neither is one whose data source the
+ * profile has turned off (see isWidgetDataUnavailable).
+ *
  * @param {object} widget - a WIDGET_REGISTRY entry
  * @param {object} prefs - current pref values from the Redux store
  * @returns {boolean}
  */
 function isWidgetAddable(widget, prefs) {
+  if (widget.retired || isWidgetDataUnavailable(widget, prefs)) {
+    return false;
+  }
   return Boolean(
     (widget.trainhopNamespace &&
       prefs.trainhopConfig?.[widget.trainhopNamespace]?.visible) ||
@@ -1037,11 +1101,17 @@ function isWidgetAddable(widget, prefs) {
  * does NOT enable the widget — enablement is the widget's own enabled pref,
  * whose default can be overridden via widgetsSettings.*Enabled.
  *
+ * A retired widget gets no toggle, and neither does one with no data source;
+ * both checked here too, to beat widgetsConfig.
+ *
  * @param {object} widget - a WIDGET_REGISTRY entry
  * @param {object} prefs - current pref values from the Redux store
  * @returns {boolean}
  */
 function isWidgetToggleVisible(widget, prefs) {
+  if (widget.retired || isWidgetDataUnavailable(widget, prefs)) {
+    return false;
+  }
   return Boolean(
     isWidgetAddable(widget, prefs) ||
     prefs.widgetsConfig?.[widget.trainhopEnabledKey]
@@ -1126,6 +1196,35 @@ function resolveWidgetHasSidebar(widget, prefs) {
     }
   }
   return widget.hasSidebar;
+}
+
+/**
+ * Returns true if at least one enabled widget renders in the content area rather
+ * than the inline-end sidebar. Weather is the only widget that can move to the
+ * sidebar, and only at its small size.
+ *
+ * Layout code needs this rather than isWidgetsContainerVisible, which is true
+ * even when the user has hidden every widget.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @param {boolean} [widgetsEnabled] - the master toggle, passed explicitly when
+ *   the spaces experiment is overriding it
+ * @returns {boolean}
+ */
+function hasContentAreaWidgets(
+  prefs,
+  widgetsEnabled = prefs["widgets.enabled"]
+) {
+  const weatherWidget = WIDGET_REGISTRY.find(w => w.id === "weather");
+  const weatherGoesToSidebar =
+    resolveWidgetHasSidebar(weatherWidget, prefs) &&
+    resolveWidgetSize(weatherWidget, prefs) === "small";
+
+  return WIDGET_REGISTRY.some(
+    w =>
+      isWidgetEnabled(w, prefs, widgetsEnabled) &&
+      !(w.id === "weather" && weatherGoesToSidebar)
+  );
 }
 
 /**
@@ -1333,6 +1432,261 @@ function getHideAllTargets(prefs, widgetEnabledMap) {
   }));
 }
 
+;// CONCATENATED MODULE: ./common/PageLayoutVariants.mjs
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+/**
+ * Newtab page layout variants. "Page layout" is the arrangement of the whole
+ * newtab page, not a DiscoveryStream layout (see SectionsLayoutFeed and
+ * selectLayoutRender, which are unrelated).
+ *
+ * The pref holds the layout's name rather than a set of feature booleans, so a
+ * new layout is a new value here instead of a new pref, class prefix and metric.
+ * The value is what newtab.page_layout_variant reports.
+ */
+const PAGE_LAYOUT_VARIANTS = {
+  NOVA_FULL_WIDTH: "nova-full-width",
+  SIDE_BY_SIDE_CONTENT_LEAD: "side-by-side-content-lead",
+  SIDE_BY_SIDE_WIDGETS_LEAD: "side-by-side-widgets-lead",
+  SIDE_BY_SIDE_CONTENT_LEAD_FIVE: "side-by-side-content-lead-five",
+  SIDE_BY_SIDE_WIDGETS_LEAD_FIVE: "side-by-side-widgets-lead-five",
+  SPACES_BUTTONS_TOP: "spaces-buttons-top",
+  SPACES_BUTTONS_BOTTOM: "spaces-buttons-bottom",
+};
+
+const DEFAULT_PAGE_LAYOUT_VARIANT = PAGE_LAYOUT_VARIANTS.NOVA_FULL_WIDTH;
+
+/**
+ * Band classes per side-by-side variant, keyed by variant name.
+ *
+ * Two orthogonal classes rather than the variant name itself, because CSS
+ * matches classes per token: `.side-by-side-content-lead` would not match an
+ * element classed `side-by-side-content-lead-five`, so every rule would need a
+ * duplicate selector. The lead class carries the column order and every
+ * side-by-side rule keys off it, so a variant and its -five counterpart share
+ * one; side-by-side-five is what unlocks the fourth content card.
+ *
+ * "lead" is inline-start, so these stay correct in RTL.
+ */
+const SIDE_BY_SIDE_CLASSES = {
+  [PAGE_LAYOUT_VARIANTS.SIDE_BY_SIDE_CONTENT_LEAD]: [
+    "side-by-side-content-lead",
+  ],
+  [PAGE_LAYOUT_VARIANTS.SIDE_BY_SIDE_WIDGETS_LEAD]: [
+    "side-by-side-widgets-lead",
+  ],
+  [PAGE_LAYOUT_VARIANTS.SIDE_BY_SIDE_CONTENT_LEAD_FIVE]: [
+    "side-by-side-content-lead",
+    "side-by-side-five",
+  ],
+  [PAGE_LAYOUT_VARIANTS.SIDE_BY_SIDE_WIDGETS_LEAD_FIVE]: [
+    "side-by-side-widgets-lead",
+    "side-by-side-five",
+  ],
+};
+
+const SIDE_BY_SIDE_PAGE_LAYOUTS = Object.keys(SIDE_BY_SIDE_CLASSES);
+
+const PREF_PAGE_LAYOUT_VARIANT = "pageLayouts.variant";
+
+/**
+ * Returns the assigned page layout variant, whether or not it can currently
+ * render. This is the value telemetry reports.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {string}
+ */
+function resolvePageLayoutVariant(prefs) {
+  const trainhop = prefs?.trainhopConfig?.pageLayouts?.variant;
+  if (typeof trainhop === "string" && trainhop) {
+    return trainhop;
+  }
+  return prefs?.[PREF_PAGE_LAYOUT_VARIANT] || DEFAULT_PAGE_LAYOUT_VARIANT;
+}
+
+/**
+ * Returns the classes the content band needs for the assigned variant, or an
+ * empty array outside the experiment.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {string[]}
+ */
+function sideBySideBandClasses(prefs) {
+  return SIDE_BY_SIDE_CLASSES[resolvePageLayoutVariant(prefs)] ?? [];
+}
+
+/**
+ * Returns true if a side-by-side variant is assigned, whether or not the page
+ * can lay it out. The section panels key off this rather than isSideBySideActive,
+ * so a lone section still gets its panel while in the experiment.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+function isSideBySideAssigned(prefs) {
+  return SIDE_BY_SIDE_PAGE_LAYOUTS.includes(resolvePageLayoutVariant(prefs));
+}
+
+/**
+ * Returns true if a side-by-side variant is assigned and the page has both
+ * things to put side by side. Without stories, or without a content-area widget,
+ * the band falls back to its full-width single column.
+ *
+ * Use this rather than testing the variant directly, so the widgets gate stays
+ * consistent with the rest of the page.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+function isSideBySideActive(prefs) {
+  return Boolean(
+    SIDE_BY_SIDE_PAGE_LAYOUTS.includes(resolvePageLayoutVariant(prefs)) &&
+    prefs?.["feeds.section.topstories"] &&
+    prefs?.["feeds.system.topstories"] &&
+    isWidgetsContainerVisible(prefs) &&
+    hasContentAreaWidgets(prefs)
+  );
+}
+
+// Orthogonal classes, for the same reason side-by-side uses them.
+const SPACES_CLASSES = {
+  [PAGE_LAYOUT_VARIANTS.SPACES_BUTTONS_TOP]: ["spaces", "spaces-buttons-top"],
+  [PAGE_LAYOUT_VARIANTS.SPACES_BUTTONS_BOTTOM]: [
+    "spaces",
+    "spaces-buttons-bottom",
+  ],
+};
+
+const SPACES_PAGE_LAYOUTS = Object.keys(SPACES_CLASSES);
+
+// Tablist order. Stories leads so an unaware user lands where they expect.
+const SPACE_IDS = {
+  STORIES: "stories",
+  WIDGETS: "widgets",
+  // Backed by feeds.section.highlights, despite the name.
+  ACTIVITY: "activity",
+};
+
+// Every space, in tablist order. The experiment turns a space on unless
+// optOutPref says the user switched it off while enrolled; PrefsFeed mirrors
+// !userPref into it on change, so enrollment itself leaves it alone. userPref
+// is never written. feedGated means userPref also starts a feed, so PrefsFeed
+// has to write its default too.
+const SPACE_CONFIG = {
+  [SPACE_IDS.STORIES]: {
+    trainhopKey: "stories",
+    userPref: "feeds.section.topstories",
+    optOutPref: "spaces.storiesOptOut",
+  },
+  [SPACE_IDS.WIDGETS]: {
+    trainhopKey: "widgets",
+    userPref: "widgets.enabled",
+    optOutPref: "spaces.widgetsOptOut",
+  },
+  [SPACE_IDS.ACTIVITY]: {
+    trainhopKey: "highlights",
+    userPref: "feeds.section.highlights",
+    optOutPref: "spaces.activityOptOut",
+    feedGated: true,
+  },
+};
+
+/**
+ * Band classes for the assigned variant, empty outside the experiment.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {string[]}
+ */
+function spacesBandClasses(prefs) {
+  return SPACES_CLASSES[resolvePageLayoutVariant(prefs)] ?? [];
+}
+
+/**
+ * Whether a spaces variant is assigned, populated or not.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+function isSpacesAssigned(prefs) {
+  return SPACES_PAGE_LAYOUTS.includes(resolvePageLayoutVariant(prefs));
+}
+
+/**
+ * Whether the experiment is currently forcing this space on, which it does for
+ * a profile that had it switched off. Only ever true while enrolled, and never
+ * a reason to ignore a choice made since.
+ *
+ * OR this with the pref a caller already reads, rather than replacing it:
+ * `prefs[PREF_X] || isSpaceOverridden(...)` keeps the user's value visible at
+ * the call site. Callers that read one of these prefs need it, or the space
+ * renders empty and its customize-menu toggle contradicts the page.
+ *
+ * @param {string} id - a SPACE_IDS value
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+function isSpaceOverridden(id, prefs) {
+  const { trainhopKey, optOutPref } = SPACE_CONFIG[id];
+  return Boolean(
+    isSpacesAssigned(prefs) &&
+    prefs?.trainhopConfig?.[trainhopKey]?.enabled &&
+    !prefs?.[optOutPref]
+  );
+}
+
+function isSpaceEnabled(id, prefs) {
+  return (
+    Boolean(prefs?.[SPACE_CONFIG[id].userPref]) || isSpaceOverridden(id, prefs)
+  );
+}
+
+/**
+ * Ids of the spaces that have content, in tablist order. Being enabled is not
+ * enough for two of them, and no override crosses that floor -- an empty space
+ * is worse than a missing one.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {string[]}
+ */
+function resolvePopulatedSpaces(prefs = {}) {
+  return Object.values(SPACE_IDS).filter(id => {
+    if (!isSpaceEnabled(id, prefs)) {
+      return false;
+    }
+    if (id === SPACE_IDS.STORIES) {
+      // Region and locale decide whether stories exist at all.
+      return Boolean(prefs["feeds.system.topstories"]);
+    }
+    if (id === SPACE_IDS.WIDGETS) {
+      // Ignoring the master toggle, which isSpaceEnabled already covered: is
+      // any widget on that renders in the content area? Weather moves to the
+      // sidebar at its small size, so a weather-only profile has nothing here.
+      return hasContentAreaWidgets(prefs, true);
+    }
+    return true;
+  });
+}
+
+/**
+ * Whether spaces is assigned and has somewhere to navigate to. Below two spaces
+ * the band falls back to stacking its sections.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+function isSpacesActive(prefs) {
+  return Boolean(
+    // Every spaces style is scoped under .nova-enabled.
+    prefs?.["nova.enabled"] &&
+    isSpacesAssigned(prefs) &&
+    resolvePopulatedSpaces(prefs).length > 1
+  );
+}
+
 ;// CONCATENATED MODULE: external "ReactRedux"
 const external_ReactRedux_namespaceObject = window["ReactRedux"];
 ;// CONCATENATED MODULE: external "React"
@@ -1349,10 +1703,10 @@ function _extends() { return _extends = Object.assign ? Object.assign.bind() : f
 
 
 
+
 // Pref Constants
 const PREF_AD_SIZE_MEDIUM_RECTANGLE = "newtabAdSize.mediumRectangle";
 const PREF_AD_SIZE_BILLBOARD = "newtabAdSize.billboard";
-const PREF_AD_SIZE_LEADERBOARD = "newtabAdSize.leaderboard";
 const PREF_SECTIONS_ENABLED = "discoverystream.sections.enabled";
 const PREF_SPOC_PLACEMENTS = "discoverystream.placements.spocs";
 const PREF_SPOC_COUNTS = "discoverystream.placements.spocs.counts";
@@ -1385,14 +1739,40 @@ const WIDGET_EXTRA_FEATURES = {
   privacy: [{
     pref: "widgets.privacy.showVpnMessages",
     label: "VPN messages"
-  }],
-  sportsWidget: [{
-    pref: "widgets.sportsWidget.live.enabled",
-    label: "Live scores"
-  }, {
-    pref: "widgets.sportsWidget.celebrations.enabled",
-    label: "Celebrations"
   }]
+};
+
+// Devtools-only copy, so not localized. A variant with no entry falls back to its
+// raw pref value and renders no description.
+const PAGE_LAYOUTS_INFO = {
+  [PAGE_LAYOUT_VARIANTS.NOVA_FULL_WIDTH]: {
+    label: "Nova",
+    description: "Today's layout. Widgets sit in a row above the stories, and both run " + "the full width of the screen."
+  },
+  [PAGE_LAYOUT_VARIANTS.SIDE_BY_SIDE_CONTENT_LEAD]: {
+    label: "Side-by-side (Content lead)",
+    description: "Stories on the left, widgets stacked in one narrow column on the " + "right. Stories get up to three cards across."
+  },
+  [PAGE_LAYOUT_VARIANTS.SIDE_BY_SIDE_WIDGETS_LEAD]: {
+    label: "Side-by-side (Widgets lead)",
+    description: "Widgets stacked in one narrow column on the left, stories on the " + "right. Stories get up to three cards across."
+  },
+  [PAGE_LAYOUT_VARIANTS.SIDE_BY_SIDE_CONTENT_LEAD_FIVE]: {
+    label: "Side-by-side (Content lead, five columns)",
+    description: "Same as Content lead, but stories get a fourth card across on wide " + "screens."
+  },
+  [PAGE_LAYOUT_VARIANTS.SIDE_BY_SIDE_WIDGETS_LEAD_FIVE]: {
+    label: "Side-by-side (Widgets lead, five columns)",
+    description: "Same as Widgets lead, but stories get a fourth card across on wide " + "screens."
+  },
+  [PAGE_LAYOUT_VARIANTS.SPACES_BUTTONS_BOTTOM]: {
+    label: "Spaces (Buttons at the bottom)",
+    description: "Stories, widgets and Highlights each get their own panel, navigated " + "with a segmented control below the content and arrows at either edge."
+  },
+  [PAGE_LAYOUT_VARIANTS.SPACES_BUTTONS_TOP]: {
+    label: "Spaces (Buttons at the top)",
+    description: "Same as above, with the segmented control above the content."
+  }
 };
 const Row = props => /*#__PURE__*/external_React_default().createElement("tr", _extends({
   className: "message-item"
@@ -1472,6 +1852,8 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     this.handleWidgetsToggleAll = this.handleWidgetsToggleAll.bind(this);
     this.handleResetWidgetInteractions = this.handleResetWidgetInteractions.bind(this);
     this.handleResetWidgetsToDefaults = this.handleResetWidgetsToDefaults.bind(this);
+    this.handlePageLayoutChange = this.handlePageLayoutChange.bind(this);
+    this.handleResetPageLayout = this.handleResetPageLayout.bind(this);
     this.toggleIABBanners = this.toggleIABBanners.bind(this);
     this.handleAllizomToggle = this.handleAllizomToggle.bind(this);
     this.sendConversionEvent = this.sendConversionEvent.bind(this);
@@ -1640,10 +2022,6 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
         // Update boolean pref for billboard ad size
         this.props.dispatch(actionCreators.SetPref(PREF_AD_SIZE_BILLBOARD, pressed));
         break;
-      case "newtab_leaderboard":
-        // Update boolean pref for billboard ad size
-        this.props.dispatch(actionCreators.SetPref(PREF_AD_SIZE_LEADERBOARD, pressed));
-        break;
       case "newtab_rectangle":
         // Update boolean pref for mediumRectangle (MREC) ad size
         this.props.dispatch(actionCreators.SetPref(PREF_AD_SIZE_MEDIUM_RECTANGLE, pressed));
@@ -1659,7 +2037,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       const counts = this.props.otherPrefs[PREF_SPOC_COUNTS]?.split(",").map(item => item.trim()).filter(item => item) || [];
 
       // Confirm that the IAB type will have a count value of "1"
-      const supportIABAdTypes = ["newtab_leaderboard", "newtab_rectangle", "newtab_billboard"];
+      const supportIABAdTypes = ["newtab_rectangle", "newtab_billboard"];
       let countValue;
       if (supportIABAdTypes.includes(id)) {
         countValue = "1"; // Default count value for all IAB ad types
@@ -1701,14 +2079,15 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       if (PREF_AD_SIZE_BILLBOARD && placements.includes("newtab_billboard")) {
         this.props.dispatch(actionCreators.SetPref(PREF_CONTEXTUAL_BANNER_PLACEMENTS, "newtab_billboard"));
         this.props.dispatch(actionCreators.SetPref(PREF_CONTEXTUAL_BANNER_COUNTS, "1"));
-      } else if (PREF_AD_SIZE_LEADERBOARD && placements.includes("newtab_leaderboard")) {
-        this.props.dispatch(actionCreators.SetPref(PREF_CONTEXTUAL_BANNER_PLACEMENTS, "newtab_leaderboard"));
-        this.props.dispatch(actionCreators.SetPref(PREF_CONTEXTUAL_BANNER_COUNTS, "1"));
       } else {
         this.props.dispatch(actionCreators.SetPref(PREF_CONTEXTUAL_BANNER_PLACEMENTS, ""));
         this.props.dispatch(actionCreators.SetPref(PREF_CONTEXTUAL_BANNER_COUNTS, ""));
       }
     }
+
+    // The layout is cached, so the new placements only take effect once the
+    // cache is rebuilt.
+    this.refreshCache();
   }
   handleSectionsToggle(e) {
     const {
@@ -1755,6 +2134,78 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
   }
   handleResetWidgetsToDefaults() {
     this.clearPrefs(Object.keys(this.props.otherPrefs).filter(prefName => prefName.startsWith("widgets.")));
+  }
+  handlePageLayoutChange(e) {
+    this.props.dispatch(actionCreators.SetPref(PREF_PAGE_LAYOUT_VARIANT, e.target.value));
+  }
+  handleResetPageLayout() {
+    this.clearPrefs([PREF_PAGE_LAYOUT_VARIANT]);
+  }
+
+  // Names the first isSideBySideActive gate that fails, so a variant falling back to
+  // one column says why. Callers check the variant is side-by-side first.
+  pageLayoutInactiveReason() {
+    const prefs = this.props.otherPrefs;
+    if (!prefs["feeds.section.topstories"]) {
+      return "stories are turned off (feeds.section.topstories)";
+    }
+    if (!prefs["feeds.system.topstories"]) {
+      return "stories are turned off (feeds.system.topstories)";
+    }
+    if (!isWidgetsContainerVisible(prefs)) {
+      return "widgets are turned off (widgets.system.enabled)";
+    }
+    if (!hasContentAreaWidgets(prefs)) {
+      return "no widgets are showing to sit beside the stories";
+    }
+    return null;
+  }
+
+  // Same idea for spaces, which needs two places to navigate between. Without
+  // this an assigned-but-inactive spaces variant is indistinguishable from
+  // today's page, since spaces adds no visible frame of its own when it falls
+  // back. Callers check the variant is spaces first.
+  spacesInactiveReason() {
+    const populated = resolvePopulatedSpaces(this.props.otherPrefs);
+    if (populated.length > 1) {
+      return null;
+    }
+    return populated.length ? `only the ${populated[0]} space has content, so there is nowhere to navigate to` : "no space has content";
+  }
+  renderLayouts() {
+    const prefs = this.props.otherPrefs;
+    // The pref, not the effective value: what the radio sets and reset clears.
+    const prefVariant = prefs[PREF_PAGE_LAYOUT_VARIANT] || DEFAULT_PAGE_LAYOUT_VARIANT;
+    const effectiveVariant = resolvePageLayoutVariant(prefs);
+    const trainhopOverride = effectiveVariant !== prefVariant;
+    const inactiveReason = isSideBySideAssigned(prefs) && this.pageLayoutInactiveReason() || isSpacesAssigned(prefs) && this.spacesInactiveReason();
+    return /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
+      className: "layout-variants"
+    }, Object.values(PAGE_LAYOUT_VARIANTS).map(variant => /*#__PURE__*/external_React_default().createElement("label", {
+      key: variant,
+      className: "layout-variant"
+    }, /*#__PURE__*/external_React_default().createElement("input", {
+      type: "radio",
+      name: "page-layout-variant",
+      value: variant,
+      checked: prefVariant === variant,
+      onChange: this.handlePageLayoutChange
+    }), /*#__PURE__*/external_React_default().createElement("span", {
+      className: "layout-variant-text"
+    }, /*#__PURE__*/external_React_default().createElement("span", {
+      className: "layout-variant-name"
+    }, PAGE_LAYOUTS_INFO[variant]?.label ?? variant, variant === DEFAULT_PAGE_LAYOUT_VARIANT ? " (default)" : "", /*#__PURE__*/external_React_default().createElement("code", {
+      className: "layout-variant-value"
+    }, variant)), PAGE_LAYOUTS_INFO[variant]?.description && /*#__PURE__*/external_React_default().createElement("span", {
+      className: "layout-variant-description"
+    }, PAGE_LAYOUTS_INFO[variant].description))))), /*#__PURE__*/external_React_default().createElement("moz-button", {
+      disabled: prefVariant === DEFAULT_PAGE_LAYOUT_VARIANT ? true : null,
+      onClick: this.handleResetPageLayout
+    }, "Reset layout"), trainhopOverride && /*#__PURE__*/external_React_default().createElement("p", {
+      className: "layout-status layout-status-warning"
+    }, "A train-hop experiment is forcing ", /*#__PURE__*/external_React_default().createElement("code", null, effectiveVariant), ", so picking a layout here does nothing. See Train Hop above."), inactiveReason && /*#__PURE__*/external_React_default().createElement("p", {
+      className: "layout-status"
+    }, "Showing as one column instead of side-by-side because", " ", inactiveReason, "."));
   }
   sendConversionEvent() {
     const detail = {
@@ -2113,11 +2564,9 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     // Prefs for IAB Banners
     const mediumRectangleEnabled = this.props.otherPrefs[PREF_AD_SIZE_MEDIUM_RECTANGLE];
     const billboardsEnabled = this.props.otherPrefs[PREF_AD_SIZE_BILLBOARD];
-    const leaderboardEnabled = this.props.otherPrefs[PREF_AD_SIZE_LEADERBOARD];
     const spocPlacements = this.props.otherPrefs[PREF_SPOC_PLACEMENTS];
     const mediumRectangleEnabledPressed = mediumRectangleEnabled && spocPlacements.includes("newtab_rectangle");
     const billboardPressed = billboardsEnabled && spocPlacements.includes("newtab_billboard");
-    const leaderboardPressed = leaderboardEnabled && spocPlacements.includes("newtab_leaderboard");
     const widgetsSystemEnabled = this.props.otherPrefs[PREF_WIDGETS_SYSTEM_ENABLED];
     return /*#__PURE__*/external_React_default().createElement("div", null, /*#__PURE__*/external_React_default().createElement("div", {
       className: "admin-button-row"
@@ -2146,14 +2595,9 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       className: "details-section"
     }, /*#__PURE__*/external_React_default().createElement("summary", null, "Train Hop"), this.renderTrainhop()), /*#__PURE__*/external_React_default().createElement("details", {
       className: "details-section"
+    }, /*#__PURE__*/external_React_default().createElement("summary", null, "Page Layouts (experimental)"), this.renderLayouts()), /*#__PURE__*/external_React_default().createElement("details", {
+      className: "details-section"
     }, /*#__PURE__*/external_React_default().createElement("summary", null, "IAB Banner Ad Sizes"), /*#__PURE__*/external_React_default().createElement("div", {
-      className: "toggle-wrapper"
-    }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
-      id: "newtab_leaderboard",
-      pressed: leaderboardPressed || null,
-      ontoggle: this.toggleIABBanners,
-      label: "Enable IAB Leaderboard"
-    })), /*#__PURE__*/external_React_default().createElement("div", {
       className: "toggle-wrapper"
     }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
       id: "newtab_billboard",
@@ -2185,7 +2629,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     }, "Reset interaction"), /*#__PURE__*/external_React_default().createElement("moz-button", {
       type: "destructive",
       onClick: this.handleResetWidgetsToDefaults
-    }, "Reset to defaults")), /*#__PURE__*/external_React_default().createElement("hr", null), WIDGET_REGISTRY.map(widget => /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, {
+    }, "Reset to defaults")), /*#__PURE__*/external_React_default().createElement("hr", null), WIDGET_REGISTRY.filter(w => !w.retired).map(widget => /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, {
       key: widget.id
     }, /*#__PURE__*/external_React_default().createElement("div", {
       className: "toggle-wrapper"
@@ -2676,164 +3120,6 @@ DSImage.defaultProps = {
   // Added to support unit tests
   sizes: []
 };
-;// CONCATENATED MODULE: ./content-src/components/ContextMenu/ContextMenu.jsx
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-
-
-class ContextMenu extends (external_React_default()).PureComponent {
-  constructor(props) {
-    super(props);
-    this.hideContext = this.hideContext.bind(this);
-    this.onShow = this.onShow.bind(this);
-    this.onClick = this.onClick.bind(this);
-  }
-  hideContext() {
-    this.props.onUpdate(false);
-  }
-  onShow() {
-    if (this.props.onShow) {
-      this.props.onShow();
-    }
-  }
-  componentDidMount() {
-    this.onShow();
-    setTimeout(() => {
-      globalThis.addEventListener("click", this.hideContext);
-    }, 0);
-  }
-  componentWillUnmount() {
-    globalThis.removeEventListener("click", this.hideContext);
-  }
-  onClick(event) {
-    // Eat all clicks on the context menu so they don't bubble up to window.
-    // This prevents the context menu from closing when clicking disabled items
-    // or the separators.
-    event.stopPropagation();
-  }
-  render() {
-    // Disabling focus on the menu span allows the first tab to focus on the first menu item instead of the wrapper.
-    return (
-      /*#__PURE__*/
-      // eslint-disable-next-line jsx-a11y/interactive-supports-focus
-      external_React_default().createElement("span", {
-        className: "context-menu"
-      }, /*#__PURE__*/external_React_default().createElement("ul", {
-        role: "menu",
-        onClick: this.onClick,
-        onKeyDown: this.onClick,
-        className: "context-menu-list"
-      }, this.props.options.map((option, i) => option.type === "separator" ? /*#__PURE__*/external_React_default().createElement("li", {
-        key: i,
-        className: "separator",
-        role: "separator"
-      }) : option.type !== "empty" && /*#__PURE__*/external_React_default().createElement(ContextMenuItem, {
-        key: i,
-        option: option,
-        hideContext: this.hideContext,
-        keyboardAccess: this.props.keyboardAccess
-      }))))
-    );
-  }
-}
-class _ContextMenuItem extends (external_React_default()).PureComponent {
-  constructor(props) {
-    super(props);
-    this.onClick = this.onClick.bind(this);
-    this.onKeyDown = this.onKeyDown.bind(this);
-    this.onKeyUp = this.onKeyUp.bind(this);
-    this.focusFirst = this.focusFirst.bind(this);
-  }
-  onClick(event) {
-    this.props.hideContext();
-    this.props.option.onClick(event);
-  }
-
-  // Focus the first menu item if the menu was accessed via the keyboard.
-  focusFirst(button) {
-    if (this.props.keyboardAccess && button) {
-      button.focus();
-    }
-  }
-
-  // This selects the correct node based on the key pressed
-  focusSibling(target, key) {
-    const {
-      parentNode
-    } = target;
-    const closestSiblingSelector = key === "ArrowUp" ? "previousSibling" : "nextSibling";
-    if (!parentNode[closestSiblingSelector]) {
-      return;
-    }
-    if (parentNode[closestSiblingSelector].firstElementChild) {
-      parentNode[closestSiblingSelector].firstElementChild.focus();
-    } else {
-      parentNode[closestSiblingSelector][closestSiblingSelector].firstElementChild.focus();
-    }
-  }
-  onKeyDown(event) {
-    const {
-      option
-    } = this.props;
-    switch (event.key) {
-      case "Tab":
-        // tab goes down in context menu, shift + tab goes up in context menu
-        // if we're on the last item, one more tab will close the context menu
-        // similarly, if we're on the first item, one more shift + tab will close it
-        if (event.shiftKey && option.first || !event.shiftKey && option.last) {
-          this.props.hideContext();
-        }
-        break;
-      case "ArrowUp":
-      case "ArrowDown":
-        event.preventDefault();
-        this.focusSibling(event.target, event.key);
-        break;
-      case "Enter":
-      case " ":
-        event.preventDefault();
-        this.props.hideContext();
-        option.onClick();
-        break;
-      case "Escape":
-        this.props.hideContext();
-        break;
-    }
-  }
-
-  // Prevents the default behavior of spacebar
-  // scrolling the page & auto-triggering buttons.
-  onKeyUp(event) {
-    if (event.key === " ") {
-      event.preventDefault();
-    }
-  }
-  render() {
-    const {
-      option
-    } = this.props;
-    const className = [option.disabled ? "disabled" : ""].join(" ");
-    return /*#__PURE__*/external_React_default().createElement("li", {
-      role: "presentation",
-      className: "context-menu-item"
-    }, /*#__PURE__*/external_React_default().createElement("button", {
-      role: "menuitem",
-      className: className,
-      onClick: this.onClick,
-      onKeyDown: this.onKeyDown,
-      onKeyUp: this.onKeyUp,
-      ref: option.first ? this.focusFirst : null,
-      "aria-haspopup": option.ariaHasPopup || null
-    }, /*#__PURE__*/external_React_default().createElement("span", {
-      "data-l10n-id": option.string_id || option.id
-    })));
-  }
-}
-const ContextMenuItem = (0,external_ReactRedux_namespaceObject.connect)(state => ({
-  Prefs: state.Prefs
-}))(_ContextMenuItem);
 ;// CONCATENATED MODULE: ./content-src/lib/link-menu-options.mjs
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -2917,7 +3203,6 @@ const LinkMenuOptions = {
         event_source: "CONTEXT_MENU",
         topic: site.topic,
         tile_id: site.tile_id,
-        recommendation_id: site.recommendation_id,
         scheduled_corpus_item_id: site.scheduled_corpus_item_id,
         corpus_item_id: site.corpus_item_id,
         received_rank: site.received_rank,
@@ -2957,7 +3242,6 @@ const LinkMenuOptions = {
         pocket_id: site.pocket_id,
         tile_id: site.tile_id,
         ...(site.block_key ? { block_key: site.block_key } : {}),
-        recommendation_id: site.recommendation_id,
         scheduled_corpus_item_id: site.scheduled_corpus_item_id,
         corpus_item_id: site.corpus_item_id,
         received_rank: site.received_rank,
@@ -3315,7 +3599,7 @@ const LinkMenuOptions = {
         data: {
           card_type: site.card_type,
           position: site.position,
-          reporting_url: site.shim.report,
+          reporting_url: site.shim?.report,
           url: site.url,
         },
       }),
@@ -3342,65 +3626,76 @@ const LinkMenuOptions = {
   },
 };
 
-;// CONCATENATED MODULE: ./content-src/components/LinkMenu/LinkMenu.jsx
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+const DEFAULT_SITE_MENU_OPTIONS = [
+  "CheckPinTopSite",
+  "EditTopSite",
+  "AddTopSite",
+  "Separator",
+  "OpenInNewWindow",
+  "OpenInPrivateWindow",
+  "Separator",
+  "BlockUrl",
+];
 
+/**
+ * Turns a list of option keys (e.g. "CheckPinTopSite") into concrete
+ * LinkMenuOptions entries with onClick handlers wired up to dispatch/
+ * telemetry. Shared by any menu renderer (ContextMenu- or panel-list-based)
+ * that needs the same option-building behavior.
+ */
+function getLinkMenuOptions(props) {
+  const {
+    site,
+    index,
+    source,
+    isPrivateBrowsingEnabled,
+    siteInfo,
+    platform,
+    privacyInfoUrl,
+    dispatch,
+    options,
+    shouldSendImpressionStats,
+    userEvent = actionCreators.UserEvent,
+  } = props;
 
+  // Handle special case of default site
+  const propOptions =
+    site.isDefault && !site.searchTopSite && !site.sponsored_position
+      ? DEFAULT_SITE_MENU_OPTIONS
+      : options;
 
-
-
-
-const DEFAULT_SITE_MENU_OPTIONS = ["CheckPinTopSite", "EditTopSite", "AddTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl"];
-class _LinkMenu extends (external_React_default()).PureComponent {
-  getOptions() {
-    const {
-      props
-    } = this;
-    const {
-      site,
-      index,
-      source,
-      isPrivateBrowsingEnabled,
-      siteInfo,
-      platform,
-      privacyInfoUrl,
-      dispatch,
-      options,
-      shouldSendImpressionStats,
-      userEvent = actionCreators.UserEvent
-    } = props;
-
-    // Handle special case of default site
-    const propOptions = site.isDefault && !site.searchTopSite && !site.sponsored_position ? DEFAULT_SITE_MENU_OPTIONS : options;
-    const linkMenuOptions = propOptions.map(o => LinkMenuOptions[o](site, index, source, isPrivateBrowsingEnabled, siteInfo, platform, privacyInfoUrl)).map(option => {
+  const linkMenuOptions = propOptions
+    .map(o =>
+      LinkMenuOptions[o](
+        site,
+        index,
+        source,
+        isPrivateBrowsingEnabled,
+        siteInfo,
+        platform,
+        privacyInfoUrl
+      )
+    )
+    .map(option => {
       const {
         action,
         impression,
         toast,
         id,
         type,
-        userEvent: eventName
+        userEvent: eventName,
       } = option;
       if (!type && id) {
         option.onClick = (event = {}) => {
-          const {
-            ctrlKey,
-            metaKey,
-            shiftKey,
-            button
-          } = event;
+          const { ctrlKey, metaKey, shiftKey, button } = event;
           // Only send along event info if there's something non-default to send
           if (ctrlKey || metaKey || shiftKey || button === 1) {
-            action.data = Object.assign({
-              event: {
-                ctrlKey,
-                metaKey,
-                shiftKey,
-                button
-              }
-            }, action.data);
+            action.data = Object.assign(
+              {
+                event: { ctrlKey, metaKey, shiftKey, button },
+              },
+              action.data
+            );
           }
           dispatch(action);
           if (toast) {
@@ -3417,44 +3712,42 @@ class _LinkMenu extends (external_React_default()).PureComponent {
                 format,
                 is_section_followed,
                 received_rank,
-                recommendation_id,
                 recommended_at,
                 scheduled_corpus_item_id,
                 section_position,
                 section,
                 selected_topics,
                 tile_id,
-                topic
+                topic,
               } = action.data;
+
               value = {
                 card_type,
                 corpus_item_id,
                 event_source,
                 format,
                 received_rank,
-                recommendation_id,
                 recommended_at,
                 scheduled_corpus_item_id,
-                ...(section ? {
-                  is_section_followed,
-                  section_position,
-                  section
-                } : {}),
+                ...(section
+                  ? { is_section_followed, section_position, section }
+                  : {}),
                 selected_topics: selected_topics ? selected_topics : "",
                 tile_id,
-                topic
+                topic,
               };
             } else {
-              value = {
-                card_type: site.flight_id ? "spoc" : "organic"
-              };
+              value = { card_type: site.flight_id ? "spoc" : "organic" };
             }
-            const userEventData = Object.assign({
-              event: eventName,
-              source,
-              action_position: index,
-              value
-            }, siteInfo);
+            const userEventData = Object.assign(
+              {
+                event: eventName,
+                source,
+                action_position: index,
+                value,
+              },
+              siteInfo
+            );
             dispatch(userEvent(userEventData));
             if (impression && shouldSendImpressionStats) {
               dispatch(impression);
@@ -3465,99 +3758,115 @@ class _LinkMenu extends (external_React_default()).PureComponent {
       return option;
     });
 
-    // This is for accessibility to support making each item tabbable.
-    // We want to know which item is the first and which item
-    // is the last, so we can close the context menu accordingly.
-    linkMenuOptions[0].first = true;
-    linkMenuOptions[linkMenuOptions.length - 1].last = true;
-    return linkMenuOptions;
-  }
-  render() {
-    return /*#__PURE__*/external_React_default().createElement(ContextMenu, {
-      onUpdate: this.props.onUpdate,
-      onShow: this.props.onShow,
-      options: this.getOptions(),
-      keyboardAccess: this.props.keyboardAccess
-    });
-  }
+  // This is for accessibility to support making each item tabbable.
+  // We want to know which item is the first and which item
+  // is the last, so we can close the context menu accordingly.
+  linkMenuOptions[0].first = true;
+  linkMenuOptions[linkMenuOptions.length - 1].last = true;
+  return linkMenuOptions;
 }
-const getState = state => ({
-  isPrivateBrowsingEnabled: state.Prefs.values.isPrivateBrowsingEnabled,
-  platform: state.Prefs.values.platform,
-  privacyInfoUrl: state.Prefs.values["privacyInfo.url"]
-});
-const LinkMenu = (0,external_ReactRedux_namespaceObject.connect)(getState)(_LinkMenu);
-;// CONCATENATED MODULE: ./content-src/components/ContextMenu/ContextMenuButton.jsx
+
+;// CONCATENATED MODULE: ./content-src/components/LinkMenu/PanelListItems.jsx
+function PanelListItems_extends() { return PanelListItems_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, PanelListItems_extends.apply(null, arguments); }
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 
-class ContextMenuButton extends (external_React_default()).PureComponent {
-  constructor(props) {
-    super(props);
-    this.state = {
-      showContextMenu: false,
-      contextMenuKeyboard: false
-    };
-    this.onClick = this.onClick.bind(this);
-    this.onKeyDown = this.onKeyDown.bind(this);
-    this.onUpdate = this.onUpdate.bind(this);
+
+/**
+ * Renders the <panel-item>/<hr> children shared by the panel-list-based
+ * context menus. Callers own the wrapping <panel-list> element and its
+ * open/close lifecycle (this only renders items).
+ *
+ * @param options Built LinkMenuOptions entries (see getLinkMenuOptions).
+ */
+function PanelListItems({
+  options
+}) {
+  return options.map((option, i) => option.type === "separator" ? /*#__PURE__*/external_React_default().createElement("hr", {
+    key: i
+  }) : option.type !== "empty" && /*#__PURE__*/external_React_default().createElement("panel-item", PanelListItems_extends({
+    key: i,
+    onClick: option.onClick,
+    "aria-haspopup": option.ariaHasPopup
+  }, option.disabled ? {
+    disabled: true
+  } : {}), /*#__PURE__*/external_React_default().createElement("span", {
+    "data-l10n-id": option.string_id || option.id
+  })));
+}
+;// CONCATENATED MODULE: ./content-src/lib/panel-list-utils.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+
+/**
+ * Subscribe to a panel-list's open/close lifecycle.
+ *
+ * @param {Element|null|undefined} panelList
+ *   The <panel-list> element (e.g. a ref's `.current`). A nullish value is a
+ *   no-op, so callers don't need their own guard.
+ * @param {object} handlers
+ * @param {function} [handlers.onShown]  Called when the panel-list opens.
+ * @param {function} [handlers.onHidden] Called when the panel-list closes.
+ * @returns {function} Cleanup that removes the listeners.
+ */
+function subscribePanelListToggle(panelList, {
+  onShown,
+  onHidden
+} = {}) {
+  if (!panelList) {
+    return () => {};
   }
-  openContextMenu(isKeyBoard) {
-    if (this.props.onUpdate) {
-      this.props.onUpdate(true);
+  const handleShown = () => onShown?.();
+  const handleHidden = () => onHidden?.();
+  panelList.addEventListener("shown", handleShown);
+  panelList.addEventListener("hidden", handleHidden);
+  return () => {
+    panelList.removeEventListener("shown", handleShown);
+    panelList.removeEventListener("hidden", handleHidden);
+  };
+}
+
+/**
+ * A reusable hook that wraps subscribePanelListToggle. Returns whether the
+ * paired panel-list is currently open, and optionally runs onShown/onHidden side
+ * effects on the events themselves (not on mount). Handlers may change identity
+ * between renders without re-subscribing.
+ *
+ * @param {React.RefObject} panelListRef Ref to the <panel-list> element.
+ * @param {object} [handlers]
+ * @param {function} [handlers.onShown]
+ * @param {function} [handlers.onHidden]
+ * @returns {boolean} Whether the panel-list is open.
+ */
+function usePanelListIsOpen(panelListRef, {
+  onShown,
+  onHidden
+} = {}) {
+  const [isOpen, setIsOpen] = (0,external_React_namespaceObject.useState)(false);
+  const handlersRef = (0,external_React_namespaceObject.useRef)({
+    onShown,
+    onHidden
+  });
+  handlersRef.current = {
+    onShown,
+    onHidden
+  };
+  (0,external_React_namespaceObject.useEffect)(() => subscribePanelListToggle(panelListRef.current, {
+    onShown: () => {
+      setIsOpen(true);
+      handlersRef.current.onShown?.();
+    },
+    onHidden: () => {
+      setIsOpen(false);
+      handlersRef.current.onHidden?.();
     }
-    this.setState({
-      showContextMenu: true,
-      contextMenuKeyboard: isKeyBoard
-    });
-  }
-  onClick(event) {
-    event.preventDefault();
-    this.openContextMenu(false, event);
-  }
-  onKeyDown(event) {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      this.openContextMenu(true, event);
-    }
-  }
-  onUpdate(showContextMenu) {
-    if (this.props.onUpdate) {
-      this.props.onUpdate(showContextMenu);
-    }
-    this.setState({
-      showContextMenu
-    });
-  }
-  render() {
-    const {
-      tooltipArgs,
-      tooltip,
-      children,
-      refFunction
-    } = this.props;
-    const {
-      showContextMenu,
-      contextMenuKeyboard
-    } = this.state;
-    return /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("button", {
-      "aria-haspopup": "menu",
-      "aria-expanded": showContextMenu,
-      "data-l10n-id": tooltip,
-      "data-l10n-args": tooltipArgs ? JSON.stringify(tooltipArgs) : null,
-      className: "context-menu-button icon",
-      onKeyDown: this.onKeyDown,
-      onClick: this.onClick,
-      ref: refFunction,
-      tabIndex: this.props.tabIndex || 0,
-      onFocus: this.props.onFocus
-    }), showContextMenu ? /*#__PURE__*/external_React_default().cloneElement(children, {
-      keyboardAccess: contextMenuKeyboard,
-      onUpdate: this.onUpdate
-    }) : null);
-  }
+  }), [panelListRef]);
+  return isOpen;
 }
 ;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/DSLinkMenu/DSLinkMenu.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
@@ -3569,7 +3878,32 @@ class ContextMenuButton extends (external_React_default()).PureComponent {
 
 
 
+
 class _DSLinkMenu extends (external_React_default()).PureComponent {
+  constructor(props) {
+    super(props);
+    this.panelListRef = /*#__PURE__*/external_React_default().createRef();
+    this.onMenuShown = this.onMenuShown.bind(this);
+    this.onMenuHidden = this.onMenuHidden.bind(this);
+  }
+  componentDidMount() {
+    // The panel-list is persistent (paired to its moz-button via menuId).
+    // Mirror its open/close into the card's active state via its shown/hidden
+    // events (replacing the ContextMenuButton onUpdate / LinkMenu onShow calls).
+    this.teardownMenuEvents = subscribePanelListToggle(this.panelListRef.current, {
+      onShown: this.onMenuShown,
+      onHidden: this.onMenuHidden
+    });
+  }
+  componentWillUnmount() {
+    this.teardownMenuEvents?.();
+  }
+  onMenuShown() {
+    this.props.onMenuShow?.();
+  }
+  onMenuHidden() {
+    this.props.onMenuUpdate?.(false);
+  }
   render() {
     const {
       index,
@@ -3587,20 +3921,14 @@ class _DSLinkMenu extends (external_React_default()).PureComponent {
     }
     const type = this.props.type || "DISCOVERY_STREAM";
     const title = this.props.title || this.props.source;
-    return /*#__PURE__*/external_React_default().createElement("div", {
-      className: "context-menu-position-container"
-    }, /*#__PURE__*/external_React_default().createElement(ContextMenuButton, {
-      tooltip: "newtab-menu-content-tooltip",
-      tooltipArgs: {
-        title
-      },
-      onUpdate: this.props.onMenuUpdate,
-      tabIndex: this.props.tabIndex
-    }, /*#__PURE__*/external_React_default().createElement(LinkMenu, {
-      dispatch: dispatch,
-      index: index,
+    const menuId = `ds-card-context-menu-${this.props.id ?? index}`;
+    const options = getLinkMenuOptions({
+      dispatch,
+      index,
       source: type.toUpperCase(),
-      onShow: this.props.onMenuShow,
+      isPrivateBrowsingEnabled: this.props.isPrivateBrowsingEnabled,
+      platform: this.props.platform,
+      privacyInfoUrl: this.props.privacyInfoUrl,
       options: TOP_STORIES_CONTEXT_MENU_OPTIONS,
       shouldSendImpressionStats: true,
       userEvent: actionCreators.DiscoveryStreamUserEvent,
@@ -3616,7 +3944,6 @@ class _DSLinkMenu extends (external_React_default()).PureComponent {
         bookmarkGuid: this.props.bookmarkGuid,
         flight_id: this.props.flightId,
         tile_id: this.props.tile_id,
-        recommendation_id: this.props.recommendation_id,
         corpus_item_id: this.props.corpus_item_id,
         scheduled_corpus_item_id: this.props.scheduled_corpus_item_id,
         recommended_at: this.props.recommended_at,
@@ -3632,11 +3959,34 @@ class _DSLinkMenu extends (external_React_default()).PureComponent {
           is_section_followed: this.props.is_section_followed
         } : {})
       }
+    });
+    return /*#__PURE__*/external_React_default().createElement("div", {
+      className: "context-menu-position-container"
+    }, /*#__PURE__*/external_React_default().createElement("moz-button", {
+      class: "context-menu-button",
+      type: "icon ghost",
+      size: "small",
+      iconsrc: "chrome://global/skin/icons/more.svg",
+      "data-l10n-id": "newtab-menu-content-tooltip",
+      "data-l10n-args": JSON.stringify({
+        title
+      }),
+      menuId: menuId,
+      tabindex: this.props.tabIndex
+    }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+      className: "panel-list-no-icons",
+      id: menuId,
+      ref: this.panelListRef
+    }, /*#__PURE__*/external_React_default().createElement(PanelListItems, {
+      options: options
     })));
   }
 }
 const DSLinkMenu = (0,external_ReactRedux_namespaceObject.connect)(state => ({
-  Prefs: state.Prefs
+  Prefs: state.Prefs,
+  isPrivateBrowsingEnabled: state.Prefs.values.isPrivateBrowsingEnabled,
+  platform: state.Prefs.values.platform,
+  privacyInfoUrl: state.Prefs.values["privacyInfo.url"]
 }))(_DSLinkMenu);
 ;// CONCATENATED MODULE: ./content-src/lib/utils.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
@@ -4087,7 +4437,6 @@ class ImpressionStats_ImpressionStats extends (external_React_default()).PureCom
           ...(link.shim ? {
             shim: link.shim
           } : {}),
-          recommendation_id: link.recommendation_id,
           corpus_item_id: link.corpus_item_id,
           scheduled_corpus_item_id: link.scheduled_corpus_item_id,
           recommended_at: link.recommended_at,
@@ -4189,7 +4538,8 @@ class ImpressionStats_ImpressionStats extends (external_React_default()).PureCom
     this._handleIntersect = entries => {
       if (entries.some(entry => entry.isIntersecting && entry.intersectionRatio >= INTERSECTION_RATIO)) {
         this._dispatchImpressionStats();
-        this.impressionObserver.unobserve(this.impressionRef.current);
+        this._hasReported = true;
+        this._teardownImpressionObserver();
       }
     };
     const options = {
@@ -4199,17 +4549,37 @@ class ImpressionStats_ImpressionStats extends (external_React_default()).PureCom
     this.impressionObserver.observe(this.impressionRef.current);
   }
   componentDidMount() {
-    if (this.props.rows.length) {
+    if (this.props.rows.length && this.props.isActive) {
       this.setImpressionObserverOrAddListener();
     }
   }
-  componentWillUnmount() {
-    if (this._handleIntersect && this.impressionObserver) {
+  _teardownImpressionObserver() {
+    if (this.impressionObserver) {
       this.impressionObserver.unobserve(this.impressionRef.current);
+      this.impressionObserver = null;
     }
     if (this._onVisibilityChange) {
       this.props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
+      this._onVisibilityChange = null;
     }
+  }
+
+  // A carousel stacks its slides, so a hidden slide still intersects and would
+  // report an impression while invisible. A slide only observes while it is
+  // the visible one, and never observes again once it has reported, so a card
+  // that cycles back around isn't counted twice.
+  componentDidUpdate(prevProps) {
+    if (this._hasReported || this.props.isActive === prevProps.isActive) {
+      return;
+    }
+    if (this.props.isActive && this.props.rows.length) {
+      this.setImpressionObserverOrAddListener();
+    } else if (!this.props.isActive) {
+      this._teardownImpressionObserver();
+    }
+  }
+  componentWillUnmount() {
+    this._teardownImpressionObserver();
   }
   render() {
     return /*#__PURE__*/external_React_default().createElement("div", {
@@ -4222,7 +4592,9 @@ ImpressionStats_ImpressionStats.defaultProps = {
   IntersectionObserver: globalThis.IntersectionObserver,
   document: globalThis.document,
   rows: [],
-  source: ""
+  source: "",
+  // Only a carousel slide passes this as false, and only while hidden.
+  isActive: true
 };
 ;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/SafeAnchor/SafeAnchor.jsx
 function SafeAnchor_extends() { return SafeAnchor_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, SafeAnchor_extends.apply(null, arguments); }
@@ -4821,7 +5193,6 @@ class _DSCard extends (external_React_default()).PureComponent {
         value: {
           event_source: "card",
           card_type: this.props.flightId ? "spoc" : "organic",
-          recommendation_id: this.props.recommendation_id,
           tile_id: this.props.id,
           ...(this.props.shim && this.props.shim.click ? {
             shim: this.props.shim.click
@@ -4860,7 +5231,6 @@ class _DSCard extends (external_React_default()).PureComponent {
             shim: this.props.shim.click
           } : {}),
           type: this.props.flightId ? "spoc" : "organic",
-          recommendation_id: this.props.recommendation_id,
           topic: this.props.topic,
           selected_topics: this.props.selectedTopics,
           ...(this.props.format ? {
@@ -5015,7 +5385,10 @@ class _DSCard extends (external_React_default()).PureComponent {
     const {
       sectionsCardImageSizes
     } = this.props;
-    const columns = ["1", "2", "3", "4"];
+
+    // Derived from the layout's breakpoints rather than a fixed list, so a
+    // 5-column layout renders a 5th variant.
+    const columns = Object.keys(sectionsCardImageSizes);
     return /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, columns.map(column => {
       const size = sectionsCardImageSizes[column];
       const sizes = [this.getSectionImageSize(column, size)];
@@ -5131,10 +5504,8 @@ class _DSCard extends (external_React_default()).PureComponent {
       onFocus: this.props.onFocus
     }, /*#__PURE__*/external_React_default().createElement("div", {
       className: "img-wrapper"
-    }, images, this.props.isDailyBrief && this.props.topic && /*#__PURE__*/external_React_default().createElement("span", {
-      className: "ds-card-daily-brief-topic",
-      "data-l10n-id": `newtab-topic-label-${this.props.topic}`
-    })), /*#__PURE__*/external_React_default().createElement(ImpressionStats_ImpressionStats, {
+    }, images), /*#__PURE__*/external_React_default().createElement(ImpressionStats_ImpressionStats, {
+      isActive: this.props.isActive !== false,
       flightId: this.props.flightId,
       rows: [{
         id: this.props.id,
@@ -5142,7 +5513,6 @@ class _DSCard extends (external_React_default()).PureComponent {
         ...(this.props.shim && this.props.shim.impression ? {
           shim: this.props.shim.impression
         } : {}),
-        recommendation_id: this.props.recommendation_id,
         corpus_item_id: this.props.corpus_item_id,
         scheduled_corpus_item_id: this.props.scheduled_corpus_item_id,
         recommended_at: this.props.recommended_at,
@@ -5209,7 +5579,6 @@ class _DSCard extends (external_React_default()).PureComponent {
       onMenuUpdate: this.onMenuUpdate,
       onMenuShow: this.onMenuShow,
       isRecentSave: isRecentSave,
-      recommendation_id: this.props.recommendation_id,
       tile_id: this.props.id,
       block_key: this.props.id,
       corpus_item_id: this.props.corpus_item_id,
@@ -5455,6 +5824,9 @@ const TopicsWidget = (0,external_ReactRedux_namespaceObject.connect)(state => ({
 
 
 
+
+
+
 /**
  * A context menu for IAB banners (e.g. billboard, leaderboard).
  *
@@ -5481,74 +5853,27 @@ function AdBannerContextMenu({
   novaEnabled
 }) {
   const ADBANNER_CONTEXT_MENU_OPTIONS = ["BlockAdUrl", ...(showAdReporting ? ["ReportAd"] : []), "ManageSponsoredContent", "OurSponsorsAndYourPrivacy"];
-  const [showContextMenu, setShowContextMenu] = (0,external_React_namespaceObject.useState)(false);
-  const [contextMenuClassNames, setContextMenuClassNames] = (0,external_React_namespaceObject.useState)("ads-context-menu");
-
-  // The keyboard access parameter is passed down to LinkMenu component
-  // that uses it to focus on the first context menu option for accessibility.
-  const [isKeyboardAccess, setIsKeyboardAccess] = (0,external_React_namespaceObject.useState)(false);
-
-  /**
-   * Toggles the style fix for context menu hover/active styles.
-   * This allows us to have unobtrusive, transparent button background by default,
-   * yet flip it over to semi-transparent grey when the menu is visible.
-   *
-   * @param contextMenuOpen
-   */
-  const toggleContextMenuStyleSwitch = contextMenuOpen => {
-    if (contextMenuOpen) {
-      setContextMenuClassNames("ads-context-menu context-menu-open");
-    } else {
-      setContextMenuClassNames("ads-context-menu");
-    }
-  };
-
-  /**
-   * Toggles the context menu to open or close. Sets state depending on whether
-   * the context menu is accessed by mouse or keyboard.
-   *
-   * @param isKeyBoard
-   */
-  const toggleContextMenu = isKeyBoard => {
-    toggleContextMenuStyleSwitch(!showContextMenu);
-    toggleActive(!showContextMenu);
-    setShowContextMenu(!showContextMenu);
-    setIsKeyboardAccess(isKeyBoard);
-  };
-  const onClick = e => {
-    e.preventDefault();
-    toggleContextMenu(false);
-  };
-  const onKeyDown = e => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      toggleContextMenu(true);
-    }
-  };
-  const onUpdate = () => {
-    toggleContextMenuStyleSwitch(!showContextMenu);
-    toggleActive(!showContextMenu);
-    setShowContextMenu(!showContextMenu);
-  };
-  return /*#__PURE__*/external_React_default().createElement("div", {
-    className: "ads-context-menu-wrapper"
-  }, /*#__PURE__*/external_React_default().createElement("div", {
-    className: contextMenuClassNames
-  }, /*#__PURE__*/external_React_default().createElement("moz-button", {
-    type: novaEnabled ? "icon ghost" : "icon",
-    size: novaEnabled ? "small" : "default",
-    "data-l10n-id": "newtab-menu-content-tooltip",
-    "data-l10n-args": JSON.stringify({
-      title: spoc.title || spoc.sponsor || spoc.alt_text
-    }),
-    iconsrc: "chrome://global/skin/icons/more.svg",
-    "aria-expanded": showContextMenu ? "true" : "false",
-    onClick: onClick,
-    onKeyDown: onKeyDown
-  }), showContextMenu && /*#__PURE__*/external_React_default().createElement(LinkMenu, {
-    onUpdate: onUpdate,
-    dispatch: dispatch,
-    keyboardAccess: isKeyboardAccess,
+  const {
+    isPrivateBrowsingEnabled,
+    platform,
+    privacyInfoUrl
+  } = (0,external_ReactRedux_namespaceObject.useSelector)(state => ({
+    isPrivateBrowsingEnabled: state.Prefs.values.isPrivateBrowsingEnabled,
+    platform: state.Prefs.values.platform,
+    privacyInfoUrl: state.Prefs.values["privacyInfo.url"]
+  }));
+  const panelListRef = (0,external_React_namespaceObject.useRef)(null);
+  const contextMenuOpen = usePanelListIsOpen(panelListRef, {
+    onShown: () => toggleActive(true),
+    onHidden: () => toggleActive(false)
+  });
+  const contextMenuClassNames = `ads-context-menu${contextMenuOpen ? " context-menu-open" : ""}`;
+  const menuId = `ad-banner-context-menu-${position}`;
+  const options = getLinkMenuOptions({
+    dispatch,
+    isPrivateBrowsingEnabled,
+    platform,
+    privacyInfoUrl,
     options: ADBANNER_CONTEXT_MENU_OPTIONS,
     shouldSendImpressionStats: true,
     userEvent: actionCreators.DiscoveryStreamUserEvent,
@@ -5565,7 +5890,7 @@ function AdBannerContextMenu({
       position,
       sponsor: spoc.sponsor,
       title: spoc.title,
-      url: spoc.url || spoc.shim.url,
+      url: spoc.url || spoc.shim?.url,
       personalization_models: spoc.personalization_models,
       priority: spoc.priority,
       score: spoc.score,
@@ -5573,8 +5898,28 @@ function AdBannerContextMenu({
       shim: spoc.shim
     },
     index: position,
-    source: type.toUpperCase()
-  })));
+    source: type?.toUpperCase()
+  });
+  return /*#__PURE__*/external_React_default().createElement("div", {
+    className: "ads-context-menu-wrapper"
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: contextMenuClassNames
+  }, /*#__PURE__*/external_React_default().createElement("moz-button", {
+    type: novaEnabled ? "icon ghost" : "icon",
+    size: novaEnabled ? "small" : "default",
+    "data-l10n-id": "newtab-menu-content-tooltip",
+    "data-l10n-args": JSON.stringify({
+      title: spoc.title || spoc.sponsor || spoc.alt_text
+    }),
+    iconsrc: "chrome://global/skin/icons/more.svg",
+    menuId: menuId
+  }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+    className: "panel-list-no-icons",
+    id: menuId,
+    ref: panelListRef
+  }, /*#__PURE__*/external_React_default().createElement(PanelListItems, {
+    options: options
+  }))));
 }
 ;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/PromoCard/PromoCard.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
@@ -5996,7 +6341,6 @@ class _CardGrid extends (external_React_default()).PureComponent {
           bookmarkGuid: rec.bookmarkGuid,
           ctaButtonSponsors: ctaButtonSponsors,
           ctaButtonVariant: ctaButtonVariant,
-          recommendation_id: rec.recommendation_id,
           mayHaveSectionsCards: mayHaveSectionsCards,
           corpus_item_id: rec.corpus_item_id,
           scheduled_corpus_item_id: rec.scheduled_corpus_item_id,
@@ -6607,6 +6951,264 @@ const ReportContent = spocs => {
     className: "submit-report-btn"
   }))));
 };
+;// CONCATENATED MODULE: ./content-src/components/ContextMenu/ContextMenuButton.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+class ContextMenuButton extends (external_React_default()).PureComponent {
+  constructor(props) {
+    super(props);
+    this.state = {
+      showContextMenu: false,
+      contextMenuKeyboard: false
+    };
+    this.onClick = this.onClick.bind(this);
+    this.onKeyDown = this.onKeyDown.bind(this);
+    this.onUpdate = this.onUpdate.bind(this);
+  }
+  openContextMenu(isKeyBoard) {
+    if (this.props.onUpdate) {
+      this.props.onUpdate(true);
+    }
+    this.setState({
+      showContextMenu: true,
+      contextMenuKeyboard: isKeyBoard
+    });
+  }
+  onClick(event) {
+    event.preventDefault();
+    this.openContextMenu(false, event);
+  }
+  onKeyDown(event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      this.openContextMenu(true, event);
+    }
+  }
+  onUpdate(showContextMenu) {
+    if (this.props.onUpdate) {
+      this.props.onUpdate(showContextMenu);
+    }
+    this.setState({
+      showContextMenu
+    });
+  }
+  render() {
+    const {
+      tooltipArgs,
+      tooltip,
+      children,
+      refFunction
+    } = this.props;
+    const {
+      showContextMenu,
+      contextMenuKeyboard
+    } = this.state;
+    return /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("button", {
+      "aria-haspopup": "menu",
+      "aria-expanded": showContextMenu,
+      "data-l10n-id": tooltip,
+      "data-l10n-args": tooltipArgs ? JSON.stringify(tooltipArgs) : null,
+      className: "context-menu-button icon",
+      onKeyDown: this.onKeyDown,
+      onClick: this.onClick,
+      ref: refFunction,
+      tabIndex: this.props.tabIndex || 0,
+      onFocus: this.props.onFocus
+    }), showContextMenu ? /*#__PURE__*/external_React_default().cloneElement(children, {
+      keyboardAccess: contextMenuKeyboard,
+      onUpdate: this.onUpdate
+    }) : null);
+  }
+}
+;// CONCATENATED MODULE: ./content-src/components/ContextMenu/ContextMenu.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+class ContextMenu extends (external_React_default()).PureComponent {
+  constructor(props) {
+    super(props);
+    this.hideContext = this.hideContext.bind(this);
+    this.onShow = this.onShow.bind(this);
+    this.onClick = this.onClick.bind(this);
+  }
+  hideContext() {
+    this.props.onUpdate(false);
+  }
+  onShow() {
+    if (this.props.onShow) {
+      this.props.onShow();
+    }
+  }
+  componentDidMount() {
+    this.onShow();
+    setTimeout(() => {
+      globalThis.addEventListener("click", this.hideContext);
+    }, 0);
+  }
+  componentWillUnmount() {
+    globalThis.removeEventListener("click", this.hideContext);
+  }
+  onClick(event) {
+    // Eat all clicks on the context menu so they don't bubble up to window.
+    // This prevents the context menu from closing when clicking disabled items
+    // or the separators.
+    event.stopPropagation();
+  }
+  render() {
+    // Disabling focus on the menu span allows the first tab to focus on the first menu item instead of the wrapper.
+    return (
+      /*#__PURE__*/
+      // eslint-disable-next-line jsx-a11y/interactive-supports-focus
+      external_React_default().createElement("span", {
+        className: "context-menu"
+      }, /*#__PURE__*/external_React_default().createElement("ul", {
+        role: "menu",
+        onClick: this.onClick,
+        onKeyDown: this.onClick,
+        className: "context-menu-list"
+      }, this.props.options.map((option, i) => option.type === "separator" ? /*#__PURE__*/external_React_default().createElement("li", {
+        key: i,
+        className: "separator",
+        role: "separator"
+      }) : option.type !== "empty" && /*#__PURE__*/external_React_default().createElement(ContextMenuItem, {
+        key: i,
+        option: option,
+        hideContext: this.hideContext,
+        keyboardAccess: this.props.keyboardAccess
+      }))))
+    );
+  }
+}
+class _ContextMenuItem extends (external_React_default()).PureComponent {
+  constructor(props) {
+    super(props);
+    this.onClick = this.onClick.bind(this);
+    this.onKeyDown = this.onKeyDown.bind(this);
+    this.onKeyUp = this.onKeyUp.bind(this);
+    this.focusFirst = this.focusFirst.bind(this);
+  }
+  onClick(event) {
+    this.props.hideContext();
+    this.props.option.onClick(event);
+  }
+
+  // Focus the first menu item if the menu was accessed via the keyboard.
+  focusFirst(button) {
+    if (this.props.keyboardAccess && button) {
+      button.focus();
+    }
+  }
+
+  // This selects the correct node based on the key pressed
+  focusSibling(target, key) {
+    const {
+      parentNode
+    } = target;
+    const closestSiblingSelector = key === "ArrowUp" ? "previousSibling" : "nextSibling";
+    if (!parentNode[closestSiblingSelector]) {
+      return;
+    }
+    if (parentNode[closestSiblingSelector].firstElementChild) {
+      parentNode[closestSiblingSelector].firstElementChild.focus();
+    } else {
+      parentNode[closestSiblingSelector][closestSiblingSelector].firstElementChild.focus();
+    }
+  }
+  onKeyDown(event) {
+    const {
+      option
+    } = this.props;
+    switch (event.key) {
+      case "Tab":
+        // tab goes down in context menu, shift + tab goes up in context menu
+        // if we're on the last item, one more tab will close the context menu
+        // similarly, if we're on the first item, one more shift + tab will close it
+        if (event.shiftKey && option.first || !event.shiftKey && option.last) {
+          this.props.hideContext();
+        }
+        break;
+      case "ArrowUp":
+      case "ArrowDown":
+        event.preventDefault();
+        this.focusSibling(event.target, event.key);
+        break;
+      case "Enter":
+      case " ":
+        event.preventDefault();
+        this.props.hideContext();
+        option.onClick();
+        break;
+      case "Escape":
+        this.props.hideContext();
+        break;
+    }
+  }
+
+  // Prevents the default behavior of spacebar
+  // scrolling the page & auto-triggering buttons.
+  onKeyUp(event) {
+    if (event.key === " ") {
+      event.preventDefault();
+    }
+  }
+  render() {
+    const {
+      option
+    } = this.props;
+    const className = [option.disabled ? "disabled" : ""].join(" ");
+    return /*#__PURE__*/external_React_default().createElement("li", {
+      role: "presentation",
+      className: "context-menu-item"
+    }, /*#__PURE__*/external_React_default().createElement("button", {
+      role: "menuitem",
+      className: className,
+      onClick: this.onClick,
+      onKeyDown: this.onKeyDown,
+      onKeyUp: this.onKeyUp,
+      ref: option.first ? this.focusFirst : null,
+      "aria-haspopup": option.ariaHasPopup || null
+    }, /*#__PURE__*/external_React_default().createElement("span", {
+      "data-l10n-id": option.string_id || option.id
+    })));
+  }
+}
+const ContextMenuItem = (0,external_ReactRedux_namespaceObject.connect)(state => ({
+  Prefs: state.Prefs
+}))(_ContextMenuItem);
+;// CONCATENATED MODULE: ./content-src/components/LinkMenu/LinkMenu.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+class _LinkMenu extends (external_React_default()).PureComponent {
+  getOptions() {
+    return getLinkMenuOptions(this.props);
+  }
+  render() {
+    return /*#__PURE__*/external_React_default().createElement(ContextMenu, {
+      onUpdate: this.props.onUpdate,
+      onShow: this.props.onShow,
+      options: this.getOptions(),
+      keyboardAccess: this.props.keyboardAccess
+    });
+  }
+}
+const getState = state => ({
+  isPrivateBrowsingEnabled: state.Prefs.values.isPrivateBrowsingEnabled,
+  platform: state.Prefs.values.platform,
+  privacyInfoUrl: state.Prefs.values["privacyInfo.url"]
+});
+const LinkMenu = (0,external_ReactRedux_namespaceObject.connect)(getState)(_LinkMenu);
 ;// CONCATENATED MODULE: ./content-src/lib/screenshot-utils.mjs
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -7596,7 +8198,7 @@ const INITIAL_STATE = {
   },
   Prefs: {
     initialized: false,
-    values: { featureConfig: {} },
+    values: { featureConfig: {}, lockedPrefs: [] },
   },
   Dialog: {
     visible: false,
@@ -7731,6 +8333,12 @@ const INITIAL_STATE = {
     tickers: [],
     lastUpdated: null,
     error: false,
+    watchlistTickers: [],
+    watchlistReconciledSymbols: [],
+    searchResults: [],
+    searchStatus: "idle",
+    activeRequestId: null,
+    submittedQuery: "",
   },
   PictureOfTheDay: {
     initialized: false,
@@ -7823,6 +8431,10 @@ const INITIAL_STATE = {
     // "sites where we blocked something"; see PrivacyFeed).
     sitesToday: 0,
     lastUpdated: null,
+    // True when the user has turned off every Enhanced Tracking Protection
+    // blocking option, so nothing is being counted (Bug 2063525). The widget
+    // shows a warning card instead of the readout.
+    etpOff: false,
     // Secondary-message decision chosen by PrivacyFeed's selector
     // (Bug 2050954). variant: empty | blank | streak | tip. `category` is the
     // message family (CATEGORY) so the UI can tell a celebration from an
@@ -7841,6 +8453,11 @@ const INITIAL_STATE = {
     // { awardedAt, fromCount, toCount }, plus `forcedTier` when the debug
     // pref made it; `awardedAt` doubles as its id.
     celebration: null,
+  },
+  RecentSearches: {
+    initialized: false,
+    // Recent search strings, newest first.
+    searches: [],
   },
 };
 
@@ -8807,6 +9424,19 @@ function PrivacyWidget(prevState = INITIAL_STATE.PrivacyWidget, action) {
   }
 }
 
+function RecentSearches(prevState = INITIAL_STATE.RecentSearches, action) {
+  switch (action.type) {
+    case actionTypes.WIDGETS_RECENT_SEARCHES_UPDATE:
+      return {
+        ...prevState,
+        ...action.data,
+        initialized: true,
+      };
+    default:
+      return prevState;
+  }
+}
+
 function Ads(prevState = INITIAL_STATE.Ads, action) {
   switch (action.type) {
     case actionTypes.ADS_INIT:
@@ -8916,6 +9546,37 @@ function Stocks(prevState = INITIAL_STATE.Stocks, action) {
         tickers: action.data.tickers,
         lastUpdated: action.data.lastUpdated,
         error: action.data.error ?? false,
+      };
+    case actionTypes.WIDGETS_STOCKS_WATCHLIST_UPDATE:
+      return {
+        ...prevState,
+        watchlistTickers: action.data.watchlistTickers,
+        watchlistReconciledSymbols: action.data.reconciledSymbols,
+      };
+    case actionTypes.WIDGETS_STOCKS_SEARCH_STARTED:
+      return {
+        ...prevState,
+        searchStatus: "loading",
+        searchResults: [],
+        activeRequestId: action.data.requestId,
+        submittedQuery: action.data.query,
+      };
+    case actionTypes.WIDGETS_STOCKS_SEARCH_RESPONSE:
+      if (action.data.requestId !== prevState.activeRequestId) {
+        return prevState;
+      }
+      return {
+        ...prevState,
+        searchStatus: action.data.status,
+        searchResults: action.data.values || [],
+      };
+    case actionTypes.WIDGETS_STOCKS_SEARCH_CLEAR:
+      return {
+        ...prevState,
+        searchStatus: "idle",
+        searchResults: [],
+        activeRequestId: null,
+        submittedQuery: "",
       };
     default:
       return prevState;
@@ -9080,6 +9741,7 @@ const reducers = {
   SportsWidget,
   PrivacyWidget,
   PictureOfTheDay,
+  RecentSearches,
 };
 
 ;// CONCATENATED MODULE: ./content-src/components/TopSites/TopSiteFormInput.jsx
@@ -9898,6 +10560,7 @@ function TopSite_extends() { return TopSite_extends = Object.assign ? Object.ass
 
 
 
+
 const NEWTAB_SOURCE = "newtab";
 
 // Tilt so the lifted drag ghost reads as "picked up" (counter-clockwise).
@@ -9917,7 +10580,7 @@ function createDragGhost(e, el) {
   const clone = el.cloneNode(true);
   clone.classList.add("drag-ghost", "active");
   // Drop any open context menu from the clone so only the tile is lifted.
-  clone.querySelector(".context-menu")?.remove();
+  clone.querySelector("panel-list")?.remove();
   // Size the ghost to the hover/expanded tile (--col-width, per Figma), falling
   // back to the resting size where that token isn't defined.
   clone.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:var(--col-width, ${restingSize}px);height:var(--col-width, ${restingSize}px);margin:0;pointer-events:none;transform:rotate(${DRAG_GHOST_ROTATION_DEG}deg)`;
@@ -10283,6 +10946,89 @@ class TopSite extends (external_React_default()).PureComponent {
     };
     this.onLinkClick = this.onLinkClick.bind(this);
     this.onMenuUpdate = this.onMenuUpdate.bind(this);
+    this.panelListRef = /*#__PURE__*/external_React_default().createRef();
+    this.menuButtonRef = /*#__PURE__*/external_React_default().createRef();
+    this.onMenuShown = this.onMenuShown.bind(this);
+    this.onMenuHidden = this.onMenuHidden.bind(this);
+    this.onMenuButtonMouseDown = this.onMenuButtonMouseDown.bind(this);
+    this.onMenuButtonClick = this.onMenuButtonClick.bind(this);
+    this.onMenuButtonKeyDown = this.onMenuButtonKeyDown.bind(this);
+  }
+  componentDidMount() {
+    // The panel-list is persistent, so mirror its open/close state into the
+    // tile's active flag via panel-list's shown/hidden events (replacing
+    // ContextMenuButton's onUpdate callback).
+    this.teardownMenuEvents = subscribePanelListToggle(this.panelListRef.current, {
+      onShown: this.onMenuShown,
+      onHidden: this.onMenuHidden
+    });
+
+    // Register the trigger as the panel-list's popover invoker. panel-list is a
+    // popover="auto", so without this the platform treats a click on the
+    // trigger as a click outside the popover and light-dismisses it on
+    // pointerup, right after our mousedown opened it. The invoker relationship
+    // is what exempts it (see nsINode::GetTopmostClickedPopover). moz-button
+    // does the same thing in its MenuController. Our click handler calls
+    // preventDefault, which cancels the invoker's own default toggle, so the
+    // menu is not toggled twice.
+    if (this.menuButtonRef.current && this.panelListRef.current) {
+      this.menuButtonRef.current.popoverTargetElement = this.panelListRef.current;
+    }
+  }
+  componentWillUnmount() {
+    this.teardownMenuEvents?.();
+  }
+  onMenuShown() {
+    this.onMenuUpdate(true);
+  }
+  onMenuHidden() {
+    this.onMenuUpdate(false);
+  }
+
+  /**
+   * Opens the menu on mousedown rather than click. panel-list hides itself on
+   * any document mousedown landing outside the panel, so toggling on click
+   * would close it on mousedown and immediately reopen it on click, leaving the
+   * menu stuck open. Toggling here runs before that document listener, and
+   * panel-list's hide() then records this event so the listener ignores it.
+   *
+   * @param {MouseEvent} event
+   */
+  onMenuButtonMouseDown(event) {
+    if (event.button !== 0) {
+      return;
+    }
+    this.panelListRef.current?.toggle(event, event.currentTarget);
+  }
+
+  /**
+   * Activations that produce no mousedown still arrive as a click: a
+   * programmatic .click() and a keyboard-generated click both carry detail 0.
+   * Real mouse clicks (detail >= 1) were already handled on mousedown and must
+   * not toggle a second time here. This mirrors moz-button's MenuController.
+   *
+   * @param {MouseEvent} event
+   */
+  onMenuButtonClick(event) {
+    event.preventDefault();
+    if (!event.detail) {
+      this.panelListRef.current?.toggle(event, event.currentTarget);
+    }
+  }
+
+  /**
+   * Keyboard activation. The event is handed to panel-list so it can tell this
+   * apart from a pointer open, which is what makes it focus the first item and
+   * return focus to the trigger on close. preventDefault stops the browser
+   * synthesizing a click, which would toggle the menu straight back closed.
+   *
+   * @param {KeyboardEvent} event
+   */
+  onMenuButtonKeyDown(event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      this.panelListRef.current?.toggle(event, event.currentTarget);
+    }
   }
 
   /**
@@ -10459,6 +11205,19 @@ class TopSite extends (external_React_default()).PureComponent {
     } else {
       menuOptions = TOP_SITES_CONTEXT_MENU_OPTIONS;
     }
+    const menuId = `topsite-context-menu-${props.index}`;
+    const options = getLinkMenuOptions({
+      dispatch: props.dispatch,
+      index: props.index,
+      source: TOP_SITES_SOURCE,
+      isPrivateBrowsingEnabled: props.isPrivateBrowsingEnabled,
+      platform: props.platform,
+      privacyInfoUrl: props.privacyInfoUrl,
+      options: menuOptions,
+      site: link,
+      shouldSendImpressionStats: link.type === SPOC_TYPE,
+      siteInfo: this._getTelemetryInfo()
+    });
     return /*#__PURE__*/external_React_default().createElement(TopSiteLink, TopSite_extends({}, props, {
       onClick: this.onLinkClick,
       onDragEvent: this.props.onDragEvent,
@@ -10467,23 +11226,26 @@ class TopSite extends (external_React_default()).PureComponent {
       setPref: this.props.setPref,
       tabIndex: this.props.tabIndex,
       onFocus: this.props.onFocus
-    }), /*#__PURE__*/external_React_default().createElement("div", null, /*#__PURE__*/external_React_default().createElement(ContextMenuButton, {
-      tooltip: "newtab-menu-content-tooltip",
-      tooltipArgs: {
+    }), /*#__PURE__*/external_React_default().createElement("div", null, /*#__PURE__*/external_React_default().createElement("button", {
+      className: "context-menu-button icon",
+      "aria-haspopup": "menu",
+      "aria-expanded": isContextMenuOpen,
+      "data-l10n-id": "newtab-menu-content-tooltip",
+      "data-l10n-args": JSON.stringify({
         title
-      },
-      onUpdate: this.onMenuUpdate,
+      }),
       tabIndex: this.props.tabIndex,
-      onFocus: this.props.onFocus
-    }, /*#__PURE__*/external_React_default().createElement(LinkMenu, {
-      dispatch: props.dispatch,
-      index: props.index,
-      onUpdate: this.onMenuUpdate,
-      options: menuOptions,
-      site: link,
-      shouldSendImpressionStats: link.type === SPOC_TYPE,
-      siteInfo: this._getTelemetryInfo(),
-      source: TOP_SITES_SOURCE
+      ref: this.menuButtonRef,
+      onFocus: this.props.onFocus,
+      onMouseDown: this.onMenuButtonMouseDown,
+      onClick: this.onMenuButtonClick,
+      onKeyDown: this.onMenuButtonKeyDown
+    }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+      className: "panel-list-no-icons",
+      id: menuId,
+      ref: this.panelListRef
+    }, /*#__PURE__*/external_React_default().createElement(PanelListItems, {
+      options: options
     }))));
   }
 }
@@ -10696,7 +11458,12 @@ class _TopSiteList extends (external_React_default()).PureComponent {
       // Zero-pin drops on the list (single synthetic target, no per-tile
       // handlers). The reorder+append path keeps per-tile handlers and adds a
       // list-level append target, so it passes listProps without this flag.
-      dropsOnList: !!this.props.dropsOnList
+      dropsOnList: !!this.props.dropsOnList,
+      // Prefs needed by getLinkMenuOptions (previously supplied by LinkMenu's
+      // own connect()). TopSite now builds the options itself for panel-list.
+      isPrivateBrowsingEnabled: this.props.Prefs.values.isPrivateBrowsingEnabled,
+      platform: this.props.Prefs.values.platform,
+      privacyInfoUrl: this.props.Prefs.values["privacyInfo.url"]
     };
     const {
       decorations
@@ -12408,6 +13175,8 @@ class SectionTitle extends (external_React_default()).PureComponent {
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+
+
 const selectLayoutRender = ({ state = {}, prefs = {} }) => {
   const { layout, feeds, spocs } = state;
   let spocIndexPlacementMap = {};
@@ -12487,7 +13256,9 @@ const selectLayoutRender = ({ state = {}, prefs = {} }) => {
 
   // Filter sections is Recommended Stories are turned off
   const pocketEnabled =
-    prefs["feeds.section.topstories"] && prefs["feeds.system.topstories"];
+    (prefs["feeds.section.topstories"] ||
+      isSpaceOverridden(SPACE_IDS.STORIES, prefs)) &&
+    prefs["feeds.system.topstories"];
   if (!pocketEnabled) {
     filterArray.push(
       // Bug 1980459 - Do not remove Widgets if DS is disabled
@@ -12582,8 +13353,7 @@ const selectLayoutRender = ({ state = {}, prefs = {} }) => {
 
     result.forEach(section => {
       const { sectionKey } = section;
-      const sectionRecs = sectionsMap[sectionKey] || [];
-      section.data = sectionRecs.filter(rec => !rec.isHeadline);
+      section.data = sectionsMap[sectionKey] || [];
     });
 
     return result;
@@ -12657,15 +13427,25 @@ const selectLayoutRender = ({ state = {}, prefs = {} }) => {
                     // We can then move it from there via breakpoints.
                     .find(item => item.columnCount === 1);
 
+                // A carousel fills one tile with several recommendations, so each
+                // tile after it reads from an index offset by the number of slides.
+                const carouselTile = smallestBreakpointLayout.tiles.find(
+                  tile => tile.carousel
+                );
+                const carouselSlideCount =
+                  prefs.trainhopConfig?.carousel?.slideCount ??
+                  prefs["discoverystream.carousel.slideCount"];
+                // The carousel's own tile accounts for one of those slides.
+                const carouselExtra = carouselTile ? carouselSlideCount - 1 : 0;
+
                 smallestBreakpointLayout.tiles.forEach(tile => {
                   if (tile.hasAd && section.allowAds !== false) {
-                    const widgetsBeforeThisPosition =
-                      smallestBreakpointLayout.tiles.filter(
-                        t => t.allowsWidget && t.position < tile.position
-                      ).length;
-                    const adjustedPosition =
-                      tile.position - widgetsBeforeThisPosition;
-                    sectionsSpocsPositions.push({ index: adjustedPosition });
+                    const isAfterCarousel =
+                      carouselTile && tile.position > carouselTile.position;
+                    sectionsSpocsPositions.push({
+                      index:
+                        tile.position + (isAfterCarousel ? carouselExtra : 0),
+                    });
                   }
                 });
                 return {
@@ -12834,6 +13614,9 @@ function shouldShowASRouterNewTabMessage(
 
 
 
+
+
+
 /**
  * A context menu for blocking, following and unfollowing sections.
  *
@@ -12844,7 +13627,6 @@ function SectionContextMenu({
   type = "DISCOVERY_STREAM",
   buttonType = "icon",
   title,
-  source,
   index,
   dispatch,
   sectionKey,
@@ -12860,30 +13642,19 @@ function SectionContextMenu({
   SECTIONS_CONTEXT_MENU_OPTIONS.push("SectionBlock");
   SECTIONS_CONTEXT_MENU_OPTIONS.push("Separator");
   SECTIONS_CONTEXT_MENU_OPTIONS.push("SectionLearnMore");
-  const [showContextMenu, setShowContextMenu] = (0,external_React_namespaceObject.useState)(false);
-  const onClick = e => {
-    e.preventDefault();
-    setShowContextMenu(!showContextMenu);
-  };
-  const onUpdate = () => {
-    setShowContextMenu(!showContextMenu);
-  };
-  return /*#__PURE__*/external_React_default().createElement("div", {
-    className: `section-context-menu${showContextMenu ? " context-menu-open" : ""}`
-  }, /*#__PURE__*/external_React_default().createElement("moz-button", {
-    type: buttonType,
-    size: "default",
-    iconsrc: "chrome://global/skin/icons/more.svg",
-    title: title || source,
-    "aria-expanded": showContextMenu,
-    onClick: onClick
-  }), showContextMenu && /*#__PURE__*/external_React_default().createElement(LinkMenu, {
-    onUpdate: onUpdate,
-    dispatch: dispatch,
-    index: index,
+  const panelListRef = (0,external_React_namespaceObject.useRef)(null);
+  const contextMenuOpen = usePanelListIsOpen(panelListRef);
+  const menuId = `section-context-menu-${sectionKey ?? index}`;
+  const options = getLinkMenuOptions({
+    dispatch,
+    index,
     source: type.toUpperCase(),
     options: SECTIONS_CONTEXT_MENU_OPTIONS,
     shouldSendImpressionStats: true,
+    // Section menu telemetry has always gone through the getLinkMenuOptions
+    // ac.UserEvent default, unlike the card/ad menus which use
+    // ac.DiscoveryStreamUserEvent. Keep ac.UserEvent to preserve that behavior.
+    userEvent: actionCreators.UserEvent,
     site: {
       sectionPersonalization,
       sectionKey,
@@ -12891,7 +13662,26 @@ function SectionContextMenu({
       title,
       learnMoreUrl
     }
-  }));
+  });
+  const tooltipL10nId = title ? "newtab-menu-content-tooltip" : "newtab-menu-section-tooltip";
+  return /*#__PURE__*/external_React_default().createElement("div", {
+    className: `section-context-menu${contextMenuOpen ? " context-menu-open" : ""}`
+  }, /*#__PURE__*/external_React_default().createElement("moz-button", {
+    type: buttonType,
+    size: "default",
+    iconsrc: "chrome://global/skin/icons/more.svg",
+    "data-l10n-id": tooltipL10nId,
+    "data-l10n-args": title ? JSON.stringify({
+      title
+    }) : null,
+    menuId: menuId
+  }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+    className: "panel-list-no-icons",
+    id: menuId,
+    ref: panelListRef
+  }, /*#__PURE__*/external_React_default().createElement(PanelListItems, {
+    options: options
+  })));
 }
 ;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/SectionFollowButton/SectionFollowButton.jsx
 function SectionFollowButton_extends() { return SectionFollowButton_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, SectionFollowButton_extends.apply(null, arguments); }
@@ -13270,6 +14060,196 @@ function InterestPicker_InterestPicker({
   })));
 }
 
+;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/CardCarousel/CardCarousel.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+
+
+const PREF_CAROUSEL_PAUSED = "discoverystream.carousel.paused";
+const AUTOPLAY_DELAY_MS = 5000;
+
+// Whether focus arrived by keyboard rather than by a click. Walks to the
+// innermost focused element, since :focus-visible doesn't match shadow hosts.
+function focusArrivedFromKeyboard() {
+  let element = document.activeElement;
+  while (element?.shadowRoot?.activeElement) {
+    element = element.shadowRoot.activeElement;
+  }
+  return !!element?.matches(":focus-visible");
+}
+
+/**
+ * An auto-rotating carousel of recommended stories.
+ *
+ * @param {object} props
+ * @param {object[]} props.recs Recommendations to show.
+ * @param {string} props.labelledBy ID of the element naming the carousel.
+ * @param {string} props.sectionClassNames Grid placement classes from the section layout.
+ * @param {string} props.section Key of the section the carousel sits in.
+ * @param {number} props.sectionPosition Position of that section on the page.
+ * @param {Function} props.renderCard Builds a card: (rec, { isActive }) => element.
+ * @param {Function} props.dispatch Redux dispatch.
+ */
+function CardCarousel({
+  recs,
+  labelledBy,
+  sectionClassNames = "",
+  section,
+  sectionPosition,
+  renderCard,
+  dispatch
+}) {
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const containerRef = (0,external_React_namespaceObject.useRef)(null);
+  const rotationControlRef = (0,external_React_namespaceObject.useRef)(null);
+  const [slideIndex, setSlideIndex] = (0,external_React_namespaceObject.useState)(0);
+  const [isHovered, setIsHovered] = (0,external_React_namespaceObject.useState)(false);
+  // Per the ARIA carousel pattern, keyboard focus on the carousel pauses
+  // rotation until focus leaves again. The rotation control itself is exempt.
+  const [keyboardFocusWithin, setKeyboardFocusWithin] = (0,external_React_namespaceObject.useState)(false);
+  const [menuOpen, setMenuOpen] = (0,external_React_namespaceObject.useState)(false);
+  const [documentHidden, setDocumentHidden] = (0,external_React_namespaceObject.useState)(document.hidden);
+  // Reduced motion starts the carousel with rotation paused, but the user can
+  // manually press play. Not persisted: the carousel should be paused again
+  // on the next new tab.
+  const [userStartedRotation, setUserStartedRotation] = (0,external_React_namespaceObject.useState)(false);
+  const motionQuery = (0,external_React_namespaceObject.useMemo)(() => window.matchMedia("(prefers-reduced-motion: reduce)"), []);
+  const slideCount = recs.length;
+  // Fewer recommendations can arrive than the current index points at.
+  const activeIndex = Math.min(slideIndex, Math.max(slideCount - 1, 0));
+  const pausedByPref = !!prefs[PREF_CAROUSEL_PAUSED];
+  const paused = pausedByPref || motionQuery.matches && !userStartedRotation;
+  const isPlaying = slideCount > 1 && !paused && !isHovered && !keyboardFocusWithin && !menuOpen && !documentHidden;
+
+  // Re-armed on every slide change, so manual navigation also resets the delay.
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!isPlaying) {
+      return undefined;
+    }
+    const timer = setTimeout(() => setSlideIndex((activeIndex + 1) % slideCount), AUTOPLAY_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [isPlaying, activeIndex, slideCount]);
+
+  // Hold rotation while a card's context menu is open: the menu extends past
+  // the carousel, so moving the pointer into it would end the hover pause.
+  // DSCard signals this with a class, hence the observer.
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const el = containerRef.current;
+    if (!el) {
+      return undefined;
+    }
+    const observer = new MutationObserver(() => setMenuOpen(!!el.querySelector(".ds-card.active")));
+    observer.observe(el, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class"]
+    });
+    return () => observer.disconnect();
+  }, []);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const onVisibilityChange = () => setDocumentHidden(document.hidden);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
+  const goToSlide = (nextIndex, direction) => {
+    setSlideIndex(nextIndex);
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.CAROUSEL_NAVIGATE,
+      data: {
+        direction,
+        slide_index: nextIndex,
+        section,
+        section_position: sectionPosition
+      }
+    }));
+  };
+  const goToPrevious = () => goToSlide((activeIndex - 1 + slideCount) % slideCount, "previous");
+  const goToNext = () => goToSlide((activeIndex + 1) % slideCount, "next");
+  const toggleRotation = () => {
+    const nextPaused = !paused;
+    setUserStartedRotation(!nextPaused);
+    dispatch(actionCreators.SetPref(PREF_CAROUSEL_PAUSED, nextPaused));
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.CAROUSEL_TOGGLE_AUTOPLAY,
+      data: {
+        paused: nextPaused,
+        section,
+        section_position: sectionPosition
+      }
+    }));
+  };
+  if (!slideCount) {
+    return null;
+  }
+  return /*#__PURE__*/external_React_default().createElement("div", {
+    className: `ds-carousel ${sectionClassNames}`,
+    ref: containerRef,
+    role: "group",
+    "aria-labelledby": labelledBy
+    // mouseover/mouseout rather than enter/leave: they bubble, so hovering
+    // the rotation control can be told apart from hovering a card. As with
+    // keyboard focus, the control is exempt from pausing.
+    ,
+    onMouseOver: event => setIsHovered(!rotationControlRef.current?.contains(event.target)),
+    onMouseOut: event => {
+      if (!event.currentTarget.contains(event.relatedTarget)) {
+        setIsHovered(false);
+      }
+    },
+    onFocusCapture: event => setKeyboardFocusWithin(focusArrivedFromKeyboard() && !rotationControlRef.current?.contains(event.target)),
+    onBlurCapture: event => {
+      if (!event.currentTarget.contains(event.relatedTarget)) {
+        setKeyboardFocusWithin(false);
+      }
+    }
+  }, slideCount > 1 && /*#__PURE__*/external_React_default().createElement("moz-button", {
+    ref: rotationControlRef,
+    size: "small",
+    className: "ds-carousel-rotation-control",
+    iconSrc: `chrome://global/skin/media/${paused ? "play" : "pause"}-fill.svg`,
+    "data-l10n-id": paused ? "newtab-carousel-play" : "newtab-carousel-pause",
+    onClick: toggleRotation
+  }), slideCount > 1 && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("moz-button", {
+    type: "primary",
+    className: "ds-carousel-nav ds-carousel-previous",
+    iconSrc: "chrome://global/skin/icons/arrow-left.svg",
+    "data-l10n-id": "newtab-carousel-previous",
+    onClick: goToPrevious
+  }), /*#__PURE__*/external_React_default().createElement("moz-button", {
+    type: "primary",
+    className: "ds-carousel-nav ds-carousel-next",
+    iconSrc: "chrome://global/skin/icons/arrow-right.svg",
+    "data-l10n-id": "newtab-carousel-next",
+    onClick: goToNext
+  })), /*#__PURE__*/external_React_default().createElement("div", {
+    className: "ds-carousel-slides"
+  }, recs.map((rec, index) => {
+    const isActive = index === activeIndex;
+    return /*#__PURE__*/external_React_default().createElement("div", {
+      key: index,
+      className: `ds-carousel-slide${isActive ? " is-active" : ""}`,
+      role: "group",
+      "data-l10n-id": "newtab-carousel-slide",
+      "data-l10n-args": JSON.stringify({
+        index: index + 1,
+        total: slideCount
+      }),
+      "aria-hidden": !isActive,
+      inert: !isActive
+    }, renderCard(rec, {
+      isActive
+    }));
+  })), slideCount > 1 && /*#__PURE__*/external_React_default().createElement("div", {
+    className: "ds-carousel-stepper",
+    "aria-hidden": "true"
+  }, recs.map((rec, index) => /*#__PURE__*/external_React_default().createElement("span", {
+    key: index,
+    className: `ds-carousel-dot${index === activeIndex ? " is-active" : ""}`
+  }))));
+}
 ;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/PersonalizedCard/PersonalizedCard.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -13610,180 +14590,6 @@ function MessageWrapper({
   }));
 }
 
-;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/BriefingCard/BriefingCard.jsx
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-
-
-
-
-
-
-const TIMESTAMP_DISPLAY_DURATION = 15 * 60 * 1000;
-
-/**
- * The BriefingCard component displays "In The Know" headlines.
- * It is the first card in the "Your Briefing" section.
- */
-const BriefingCard = ({
-  sectionClassNames = "",
-  headlines = [],
-  lastUpdated,
-  selectedTopics,
-  isFollowed
-}) => {
-  const [showTimestamp, setShowTimestamp] = (0,external_React_namespaceObject.useState)(false);
-  const [timeAgo, setTimeAgo] = (0,external_React_namespaceObject.useState)("");
-  const [isDismissed, setIsDismissed] = (0,external_React_namespaceObject.useState)(false);
-  const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
-  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
-  // @nova-cleanup(remove-pref): Remove novaEnabled, always use moz-button size="small"
-  const novaEnabled = prefs["nova.enabled"];
-  const handleDismiss = () => {
-    setIsDismissed(true);
-    const tilesWithFormat = headlines.map(headline => ({
-      ...headline,
-      format: "daily-briefing",
-      guid: headline.id,
-      tile_id: headline.id,
-      ...(headline.section ? {
-        section: headline.section,
-        section_position: 0,
-        is_section_followed: isFollowed
-      } : {})
-    }));
-    const menuOption = LinkMenuOptions.BlockUrls(tilesWithFormat, 0, "DAILY_BRIEFING");
-    dispatch(menuOption.action);
-    if (menuOption.impression) {
-      dispatch(menuOption.impression);
-    }
-  };
-  (0,external_React_namespaceObject.useEffect)(() => {
-    if (!lastUpdated) {
-      setShowTimestamp(false);
-      return undefined;
-    }
-    const updateTimestamp = () => {
-      const now = Date.now();
-      const timeSinceUpdate = now - lastUpdated;
-
-      // Only show a timestamp for the first 15 minutes after feed refresh.
-      // This avoids showing an outdated timestamp for a cached version of the feed.
-      if (now - lastUpdated < TIMESTAMP_DISPLAY_DURATION) {
-        setShowTimestamp(true);
-        const minutes = Math.ceil(timeSinceUpdate / 60000);
-        setTimeAgo(minutes);
-      } else {
-        setShowTimestamp(false);
-      }
-    };
-    updateTimestamp();
-    const interval = setInterval(updateTimestamp, 60000);
-    return () => clearInterval(interval);
-  }, [lastUpdated]);
-  if (isDismissed || headlines.length === 0) {
-    return null;
-  }
-  const onLinkClick = headline => {
-    const userEvent = {
-      event: "CLICK",
-      source: "DAILY_BRIEFING",
-      action_position: headline.pos,
-      value: {
-        event_source: "CARD_GRID",
-        card_type: "organic",
-        recommendation_id: headline.recommendation_id,
-        tile_id: headline.id,
-        corpus_item_id: headline.corpus_item_id,
-        scheduled_corpus_item_id: headline.scheduled_corpus_item_id,
-        recommended_at: headline.recommended_at,
-        received_rank: headline.received_rank,
-        features: headline.features,
-        selected_topics: selectedTopics,
-        format: "daily-briefing",
-        ...(headline.section ? {
-          section: headline.section,
-          section_position: 0,
-          is_section_followed: isFollowed,
-          layout_name: "daily-briefing"
-        } : {})
-      }
-    };
-    dispatch(actionCreators.DiscoveryStreamUserEvent(userEvent));
-  };
-  return /*#__PURE__*/external_React_default().createElement("section", {
-    className: `briefing-card ${sectionClassNames}`,
-    "aria-labelledby": "briefing-card-title"
-  }, /*#__PURE__*/external_React_default().createElement("moz-button", {
-    className: "briefing-card-context-menu-button",
-    iconSrc: "chrome://global/skin/icons/more.svg",
-    menuId: "briefing-card-menu",
-    type: "ghost",
-    size: novaEnabled ? "small" : "default"
-  }), /*#__PURE__*/external_React_default().createElement("panel-list", {
-    id: "briefing-card-menu"
-  }, /*#__PURE__*/external_React_default().createElement("panel-item", {
-    "data-l10n-id": "newtab-daily-briefing-card-menu-dismiss",
-    onClick: handleDismiss
-  })), /*#__PURE__*/external_React_default().createElement("div", {
-    className: "briefing-card-header"
-  }, /*#__PURE__*/external_React_default().createElement("h3", {
-    id: "briefing-card-title",
-    className: "briefing-card-title",
-    "data-l10n-id": "newtab-daily-briefing-card-title"
-  }), showTimestamp && /*#__PURE__*/external_React_default().createElement("span", {
-    className: "briefing-card-timestamp",
-    "data-l10n-id": "newtab-daily-briefing-card-timestamp",
-    "data-l10n-args": JSON.stringify({
-      minutes: timeAgo
-    })
-  })), /*#__PURE__*/external_React_default().createElement("hr", null), /*#__PURE__*/external_React_default().createElement("ol", {
-    className: "briefing-card-headlines"
-  }, headlines.map(headline => /*#__PURE__*/external_React_default().createElement("li", {
-    key: headline.id,
-    className: "briefing-card-headline"
-  }, /*#__PURE__*/external_React_default().createElement(SafeAnchor, {
-    url: headline.url,
-    dispatch: dispatch,
-    onLinkClick: () => onLinkClick(headline),
-    className: "briefing-card-headline-link",
-    title: headline.title
-  }, /*#__PURE__*/external_React_default().createElement("div", {
-    className: "briefing-card-headline-title"
-  }, headline.title), /*#__PURE__*/external_React_default().createElement("div", {
-    className: "briefing-card-headline-footer"
-  }, headline.icon_src && /*#__PURE__*/external_React_default().createElement("img", {
-    src: headline.icon_src,
-    alt: "",
-    className: "briefing-card-headline-icon"
-  }), /*#__PURE__*/external_React_default().createElement("span", {
-    className: "briefing-card-headline-source"
-  }, headline.publisher)))))), /*#__PURE__*/external_React_default().createElement(ImpressionStats_ImpressionStats, {
-    rows: headlines.map(headline => ({
-      id: headline.id,
-      pos: headline.pos,
-      recommendation_id: headline.recommendation_id,
-      corpus_item_id: headline.corpus_item_id,
-      scheduled_corpus_item_id: headline.scheduled_corpus_item_id,
-      recommended_at: headline.recommended_at,
-      received_rank: headline.received_rank,
-      features: headline.features,
-      format: "daily-briefing",
-      ...(headline.section ? {
-        section: headline.section,
-        // Daily Briefing is a single section, section_position is always 0.
-        section_position: 0,
-        is_section_followed: isFollowed,
-        sectionLayoutName: "daily-briefing"
-      } : {})
-    })),
-    dispatch: dispatch,
-    source: "DAILY_BRIEFING"
-  }));
-};
-
 ;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/CardSections/CardSections.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -13810,7 +14616,6 @@ const BriefingCard = ({
 // Prefs
 const CardSections_PREF_SECTIONS_CARDS_ENABLED = "discoverystream.sections.cards.enabled";
 const PREF_SECTIONS_PERSONALIZATION_ENABLED = "discoverystream.sections.personalization.enabled";
-const CardSections_PREF_TOPICS_ENABLED = "discoverystream.topicLabels.enabled";
 const CardSections_PREF_TOPICS_SELECTED = "discoverystream.topicSelection.selectedTopics";
 const CardSections_PREF_TOPICS_AVAILABLE = "discoverystream.topicSelection.topics";
 const PREF_INTEREST_PICKER_ENABLED = "discoverystream.sections.interestPicker.enabled";
@@ -13820,14 +14625,11 @@ const CardSections_PREF_BILLBOARD_POSITION = "newtabAdSize.billboard.position";
 const CardSections_PREF_LEADERBOARD_ENABLED = "newtabAdSize.leaderboard";
 const CardSections_PREF_LEADERBOARD_POSITION = "newtabAdSize.leaderboard.position";
 const PREF_INFERRED_PERSONALIZATION_USER = "discoverystream.sections.personalization.inferred.user.enabled";
-const PREF_DAILY_BRIEF_SECTIONID = "discoverystream.dailyBrief.sectionId";
-const PREF_DAILY_BRIEF_ENABLED = "discoverystream.dailyBrief.enabled";
 const CardSections_PREF_SPOCS_STARTUPCACHE_ENABLED = "discoverystream.spocs.startupCache.enabled";
+const PREF_CAROUSEL_ENABLED = "discoverystream.carousel.enabled";
+const PREF_CAROUSEL_SLIDE_COUNT = "discoverystream.carousel.slideCount";
 // @nova-cleanup(remove-pref): Remove PREF_NOVA_ENABLED
 const CardSections_PREF_NOVA_ENABLED = "nova.enabled";
-
-// Feed URL
-const CURATED_RECOMMENDATIONS_FEED_URL = "https://merino.services.mozilla.com/api/v1/curated-recommendations";
 
 // Divides evenly by 2, 3, and 4 to avoid orphan cards in any column layout.
 const DEFAULT_MAX_TILES = 12;
@@ -13891,12 +14693,15 @@ function getLayoutData(responsiveLayouts, index) {
     classNames: [],
     imageSizes: {},
     cardPositions: {},
-    allowsWidget: false
+    isCarousel: false
   };
   responsiveLayouts.forEach(layout => {
     const orphanTiles = getOrphanTileIndexes(layout.tiles, layout.columnCount);
     layout.tiles.forEach((tile, tileIndex) => {
       if (tile.position === index) {
+        if (tile.carousel) {
+          layoutData.isCarousel = true;
+        }
         if (orphanTiles.has(tileIndex)) {
           layoutData.classNames.push(`col-${layout.columnCount}-hidden`);
         }
@@ -13904,9 +14709,6 @@ function getLayoutData(responsiveLayouts, index) {
         layoutData.classNames.push(`col-${layout.columnCount}-position-${tileIndex}`);
         layoutData.imageSizes[layout.columnCount] = tile.size;
         layoutData.cardPositions[layout.columnCount] = tileIndex;
-        if (tile.allowsWidget) {
-          layoutData.allowsWidget = true;
-        }
 
         // The API tells us whether the tile should show the excerpt or not.
         // Apply extra styles accordingly.
@@ -13928,6 +14730,12 @@ function getLayoutData(responsiveLayouts, index) {
 // function to determine amount of tiles shown per section per viewport
 function getMaxTiles(responsiveLayouts) {
   return responsiveLayouts.flatMap(responsiveLayout => responsiveLayout).reduce((max, t) => Math.max(max, t.tiles.length), 0) || DEFAULT_MAX_TILES;
+}
+
+// How many stories the section consumes. This is more than the tile
+// count when a section contains a carousel.
+function getMaxRecs(responsiveLayouts, slideCount) {
+  return responsiveLayouts.reduce((max, layout) => Math.max(max, layout.tiles.reduce((total, tile) => total + (tile.carousel ? slideCount : 1), 0)), 0) || DEFAULT_MAX_TILES;
 }
 
 /**
@@ -13960,8 +14768,7 @@ function CardSection({
     messageData
   } = Messages;
   const {
-    sectionPersonalization,
-    feeds
+    sectionPersonalization
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.DiscoveryStream);
   const {
     isForStartupCache
@@ -13996,30 +14803,30 @@ function CardSection({
       }
       const targetPosition = navigateToPrevious ? currentPosition - 1 : currentPosition + 1;
 
-      // Find card with target position
-      const parentEl = currentCardEl.parentElement;
-      if (parentEl) {
-        const targetSelector = `article.ds-card.${activeColumnLayout}-position-${targetPosition}`;
-        const targetCardEl = parentEl.querySelector(targetSelector);
-        if (targetCardEl) {
-          const link = targetCardEl.querySelector("a.ds-card-link");
-          if (link) {
-            link.focus();
-          }
+      // Find card with target position. Searching from the grid rather than the
+      // card's parent lets a card nested in a carousel reach the rest of the row.
+      const positionClass = `${activeColumnLayout}-position-${targetPosition}`;
+      const targetSelector = `:scope > article.ds-card.${positionClass}`;
+      const carouselSelector = `:scope > .ds-carousel.${positionClass} .ds-carousel-slide.is-active article.ds-card`;
+      const targetCardEl = e.currentTarget.querySelector(targetSelector) || e.currentTarget.querySelector(carouselSelector);
+      if (targetCardEl) {
+        const link = targetCardEl.querySelector("a.ds-card-link");
+        if (link) {
+          link.focus();
         }
       }
     }
   };
-  const showTopics = prefs[CardSections_PREF_TOPICS_ENABLED];
   const mayHaveSectionsCards = prefs[CardSections_PREF_SECTIONS_CARDS_ENABLED];
   const selectedTopics = prefs[CardSections_PREF_TOPICS_SELECTED];
   const availableTopics = prefs[CardSections_PREF_TOPICS_AVAILABLE];
   const spocsStartupCacheEnabled = prefs[CardSections_PREF_SPOCS_STARTUPCACHE_ENABLED];
-  const dailyBriefEnabled = prefs.trainhopConfig?.dailyBriefing?.enabled || prefs[PREF_DAILY_BRIEF_ENABLED];
-  const dailyBriefSectionId = prefs.trainhopConfig?.dailyBriefing?.sectionId || prefs[PREF_DAILY_BRIEF_SECTIONID];
   const mayHaveSectionsPersonalization = prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
   // @nova-cleanup(remove-conditional): Remove novaEnabled, always use Nova layout
   const novaEnabled = prefs[CardSections_PREF_NOVA_ENABLED];
+  // @nova-cleanup(remove-conditional): Drop the novaEnabled check
+  const carouselEnabled = (prefs.trainhopConfig?.carousel?.enabled || prefs[PREF_CAROUSEL_ENABLED]) && novaEnabled;
+  const carouselSlideCount = prefs.trainhopConfig?.carousel?.slideCount ?? prefs[PREF_CAROUSEL_SLIDE_COUNT];
   const {
     sectionKey,
     title,
@@ -14030,6 +14837,8 @@ function CardSection({
     responsiveLayouts,
     name: layoutName
   } = section.layout;
+  // A carousel takes its accessible name from the section heading.
+  const sectionTitleId = `section-title-${sectionKey}`;
   const following = sectionPersonalization[sectionKey]?.isFollowed;
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
     dispatch(actionCreators.AlsoToMain({
@@ -14111,38 +14920,84 @@ function CardSection({
     }, "ActivityStream:Content"));
   }, [dispatch, sectionPersonalization, sectionKey, sectionPosition, title]);
   let maxTile = DEFAULT_MAX_TILES;
+  let maxRecs = DEFAULT_MAX_TILES;
   if (!spocsLoading) {
     maxTile = getMaxTiles(responsiveLayouts);
+    maxRecs = getMaxRecs(responsiveLayouts, carouselSlideCount);
   }
-  const shouldShowBriefingCard = sectionKey === dailyBriefSectionId && dailyBriefEnabled;
-  const getBriefingData = () => {
-    const EMPTY_BRIEFING = {
-      headlines: [],
-      lastUpdated: null
-    };
-    if (!shouldShowBriefingCard) {
-      return EMPTY_BRIEFING;
-    }
-    const sections = feeds?.data[CURATED_RECOMMENDATIONS_FEED_URL];
-    if (!sections) {
-      return EMPTY_BRIEFING;
-    }
-    const headlines = sections.data.recommendations.filter(rec => rec.section === dailyBriefSectionId && rec.isHeadline);
-    return {
-      headlines,
-      lastUpdated: sections.lastUpdated
-    };
-  };
-  const {
-    headlines: briefingHeadlines,
-    lastUpdated: briefingLastUpdated
-  } = getBriefingData();
-  const hasBriefingHeadlines = briefingHeadlines.length === 3;
-  const displaySections = section.data.slice(0, maxTile);
+  const displaySections = section.data.slice(0, maxRecs);
   const isSectionEmpty = !displaySections?.length;
-  const shouldShowLabels = sectionKey === dailyBriefSectionId && showTopics;
   if (isSectionEmpty) {
     return null;
+  }
+  function renderDSCard({
+    rec,
+    key,
+    classNames,
+    imageSizes,
+    tabIndex,
+    onFocus,
+    isActive
+  }) {
+    return /*#__PURE__*/external_React_default().createElement(DSCard, {
+      key: key,
+      pos: rec.pos,
+      flightId: rec.flight_id,
+      image_src: rec.image_src,
+      raw_image_src: rec.raw_image_src,
+      icon_src: rec.icon_src,
+      word_count: rec.word_count,
+      time_to_read: rec.time_to_read,
+      title: rec.title,
+      topic: rec.topic,
+      features: rec.features,
+      excerpt: rec.excerpt,
+      url: rec.url,
+      id: rec.id,
+      shim: rec.shim,
+      type: type,
+      context: rec.context,
+      sponsor: rec.sponsor,
+      sponsored_by_override: rec.sponsored_by_override,
+      dispatch: dispatch,
+      source: rec.domain,
+      publisher: rec.publisher,
+      pocket_id: rec.pocket_id,
+      context_type: rec.context_type,
+      bookmarkGuid: rec.bookmarkGuid,
+      corpus_item_id: rec.corpus_item_id,
+      scheduled_corpus_item_id: rec.scheduled_corpus_item_id,
+      recommended_at: rec.recommended_at,
+      received_rank: rec.received_rank,
+      format: rec.format,
+      alt_text: rec.alt_text,
+      mayHaveSectionsCards: mayHaveSectionsCards,
+      selectedTopics: selectedTopics,
+      availableTopics: availableTopics,
+      ctaButtonSponsors: ctaButtonSponsors,
+      ctaButtonVariant: ctaButtonVariant,
+      sectionsClassNames: classNames.join(" "),
+      sectionsCardImageSizes: imageSizes,
+      section: sectionKey,
+      sectionPosition: sectionPosition,
+      sectionFollowed: following,
+      sectionLayoutName: layoutName,
+      isTimeSensitive: rec.isTimeSensitive,
+      tabIndex: tabIndex,
+      onFocus: onFocus,
+      attribution: rec.attribution,
+      isActive: isActive
+    });
+  }
+
+  // Render a placeholder card when:
+  // 1. No recommendation is available.
+  // 2. The item is flagged as a placeholder.
+  // 3. Spocs are loading for with spocs startup cache disabled.
+  // Shared so a carousel slide and a grid card agree on what counts as
+  // renderable.
+  function needsPlaceholder(rec) {
+    return !rec || rec.placeholder || spocsLoading || rec.flight_id && !spocsStartupCacheEnabled && isForStartupCache.DiscoveryStream;
   }
   function buildCards() {
     const cards = [];
@@ -14156,32 +15011,47 @@ function CardSection({
         imageSizes,
         cardPositions
       } = layoutData;
-      const shouldRenderWidget = shouldShowBriefingCard && layoutData.allowsWidget && hasBriefingHeadlines;
-      if (shouldRenderWidget) {
-        cards.push(/*#__PURE__*/external_React_default().createElement(BriefingCard, {
-          key: "briefing-card",
-          sectionClassNames: classNames.join(" "),
-          headlines: briefingHeadlines,
-          lastUpdated: briefingLastUpdated,
-          selectedTopics: selectedTopics,
-          isFollowed: following
-        }));
-        continue;
-      }
       if (dataIndex >= displaySections.length) {
         break;
+      }
+      if (layoutData.isCarousel && carouselEnabled) {
+        const slice = displaySections.slice(dataIndex, dataIndex + carouselSlideCount);
+        // Consume the whole slice, including anything filtered out below, so
+        // the tiles after the carousel don't re-show one it already took.
+        dataIndex += slice.length;
+        const carouselRecs = slice.filter(rec => !needsPlaceholder(rec));
+        if (!carouselRecs.length) {
+          cards.push(/*#__PURE__*/external_React_default().createElement(PlaceholderDSCard, {
+            key: `carousel-placeholder-${position}`
+          }));
+          continue;
+        }
+        cards.push(/*#__PURE__*/external_React_default().createElement(CardCarousel, {
+          key: `carousel-${position}`,
+          recs: carouselRecs,
+          labelledBy: sectionTitleId,
+          sectionClassNames: classNames.join(" "),
+          section: sectionKey,
+          sectionPosition: sectionPosition,
+          dispatch: dispatch,
+          renderCard: (rec, {
+            isActive
+          }) => renderDSCard({
+            rec,
+            key: `dscard-${rec.id}`,
+            classNames,
+            imageSizes,
+            isActive
+          })
+        }));
+        continue;
       }
       const rec = displaySections[dataIndex];
       const currentIndex = dataIndex;
       const mappedFocusPosition = cardPositions[activeColumnCount];
       // Fall back to card order when this layout does not define a mapped position.
       const activeFocusPosition = Number.isInteger(mappedFocusPosition) ? mappedFocusPosition : currentIndex;
-
-      // Render a placeholder card when:
-      // 1. No recommendation is available.
-      // 2. The item is flagged as a placeholder.
-      // 3. Spocs are loading for with spocs startup cache disabled.
-      const isPlaceholder = !rec || rec.placeholder || spocsLoading || rec.flight_id && !spocsStartupCacheEnabled && isForStartupCache.DiscoveryStream;
+      const isPlaceholder = needsPlaceholder(rec);
       if (isPlaceholder) {
         cards.push(/*#__PURE__*/external_React_default().createElement(PlaceholderDSCard, {
           key: `dscard-${currentIndex}`
@@ -14211,56 +15081,13 @@ function CardSection({
         imageSizes,
         activeFocusPosition
       } = card;
-      return /*#__PURE__*/external_React_default().createElement(DSCard, {
+      return renderDSCard({
+        rec,
         key: card.key,
-        pos: rec.pos,
-        flightId: rec.flight_id,
-        image_src: rec.image_src,
-        raw_image_src: rec.raw_image_src,
-        icon_src: rec.icon_src,
-        word_count: rec.word_count,
-        time_to_read: rec.time_to_read,
-        title: rec.title,
-        topic: rec.topic,
-        features: rec.features,
-        excerpt: rec.excerpt,
-        url: rec.url,
-        id: rec.id,
-        shim: rec.shim,
-        type: type,
-        context: rec.context,
-        sponsor: rec.sponsor,
-        sponsored_by_override: rec.sponsored_by_override,
-        dispatch: dispatch,
-        source: rec.domain,
-        publisher: rec.publisher,
-        pocket_id: rec.pocket_id,
-        context_type: rec.context_type,
-        bookmarkGuid: rec.bookmarkGuid,
-        recommendation_id: rec.recommendation_id,
-        corpus_item_id: rec.corpus_item_id,
-        scheduled_corpus_item_id: rec.scheduled_corpus_item_id,
-        recommended_at: rec.recommended_at,
-        received_rank: rec.received_rank,
-        format: rec.format,
-        alt_text: rec.alt_text,
-        mayHaveSectionsCards: mayHaveSectionsCards,
-        showTopics: shouldShowLabels,
-        selectedTopics: selectedTopics,
-        availableTopics: availableTopics,
-        ctaButtonSponsors: ctaButtonSponsors,
-        ctaButtonVariant: ctaButtonVariant,
-        sectionsClassNames: classNames.join(" "),
-        sectionsCardImageSizes: imageSizes,
-        section: sectionKey,
-        sectionPosition: sectionPosition,
-        sectionFollowed: following,
-        sectionLayoutName: layoutName,
-        isTimeSensitive: rec.isTimeSensitive,
+        classNames,
+        imageSizes,
         tabIndex: activeFocusPosition === activeRovingIndex ? 0 : -1,
-        onFocus: () => onCardFocus(activeFocusPosition),
-        attribution: rec.attribution,
-        isDailyBrief: shouldShowBriefingCard
+        onFocus: () => onCardFocus(activeFocusPosition)
       });
     });
   }
@@ -14319,7 +15146,8 @@ function CardSection({
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "section-title-wrapper"
   }, /*#__PURE__*/external_React_default().createElement("h2", {
-    className: "section-title"
+    className: "section-title",
+    id: sectionTitleId
   }, title), mayHaveSectionsPersonalization && novaEnabled && followable !== false && /*#__PURE__*/external_React_default().createElement(SectionFollowButton, {
     following: following,
     onFollowClick: onFollowClick,
@@ -16076,6 +16904,7 @@ function Lists({
     menuId: "lists-panel",
     type: "ghost"
   }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+    className: "panel-list-no-icons",
     id: "lists-panel"
   }, /*#__PURE__*/external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-widget-lists-menu-edit",
@@ -16271,6 +17100,7 @@ function ListItem({
     menuId: `panel-task-${task.id}`,
     type: "ghost"
   }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+    className: "panel-list-no-icons",
     id: `panel-task-${task.id}`
   }, !isCompleted && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, task.isUrl && /*#__PURE__*/external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-widget-lists-input-menu-open-link",
@@ -17277,6 +18107,7 @@ const FocusTimer = ({
     type: "ghost",
     "data-l10n-id": "newtab-widget-timer-menu-button"
   }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+    className: "panel-list-no-icons",
     id: "focus-timer-context-menu"
   }, /*#__PURE__*/external_React_default().createElement("panel-item", {
     "data-l10n-id": showSystemNotifications ? "newtab-widget-timer-menu-notifications" : "newtab-widget-timer-menu-notifications-on",
@@ -17928,6 +18759,7 @@ function WeatherForecast({
       type: "ghost",
       size: `${isSmallSize ? "small" : "default"}`
     }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+      className: "panel-list-no-icons",
       id: "weather-forecast-context-menu"
     }, prefs["weather.locationSearchEnabled"] && /*#__PURE__*/external_React_default().createElement("panel-item", {
       "data-l10n-id": "newtab-weather-menu-change-location",
@@ -18325,6 +19157,7 @@ function Weather_Weather({
       type: "ghost",
       size: "small"
     }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+      className: "panel-list-no-icons",
       id: "weather-widget-context-menu"
     }, !showOptInState && (prefs["weather.temperatureUnits"] === "f" ? /*#__PURE__*/external_React_default().createElement("panel-item", {
       "data-l10n-id": "newtab-weather-menu-change-temperature-units-celsius",
@@ -21085,6 +21918,7 @@ function SportsWidget_SportsWidget({
     menuId: "sports-context-menu",
     type: "ghost"
   }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+    className: "panel-list-no-icons",
     id: "sports-context-menu"
   }, /*#__PURE__*/external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-sports-widget-menu-follow-teams",
@@ -21742,10 +22576,664 @@ function SportsWidgetKeyDates({
   }));
 }
 
+;// CONCATENATED MODULE: ./content-src/components/Widgets/Clocks/ClockCityRegistry.mjs
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+// Curated World Clock cities: source of truth for each city's `id`,
+// `fallbackName`, `timeZone`, `iataCode`, `aliases`. `id` is `<iso2>-<slug>`
+// (collision-safe) and is persisted as a clock's `cityId`.
+const CLOCK_CITIES = [
+  {
+    id: "us-new-york",
+    fallbackName: "New York",
+    timeZone: "America/New_York",
+    iataCode: "NYC",
+  },
+  {
+    id: "us-los-angeles",
+    fallbackName: "Los Angeles",
+    timeZone: "America/Los_Angeles",
+    iataCode: "LAX",
+  },
+  {
+    id: "us-chicago",
+    fallbackName: "Chicago",
+    timeZone: "America/Chicago",
+    iataCode: "CHI",
+  },
+  {
+    id: "us-san-francisco",
+    fallbackName: "San Francisco",
+    timeZone: "America/Los_Angeles",
+    iataCode: "SFO",
+  },
+  {
+    id: "us-san-diego",
+    fallbackName: "San Diego",
+    timeZone: "America/Los_Angeles",
+    iataCode: "SAN",
+  },
+  {
+    id: "us-dallas",
+    fallbackName: "Dallas",
+    timeZone: "America/Chicago",
+    iataCode: "DFW",
+  },
+  {
+    id: "us-houston",
+    fallbackName: "Houston",
+    timeZone: "America/Chicago",
+    iataCode: "HOU",
+  },
+  {
+    id: "us-philadelphia",
+    fallbackName: "Philadelphia",
+    timeZone: "America/New_York",
+    iataCode: "PHL",
+  },
+  {
+    id: "us-atlanta",
+    fallbackName: "Atlanta",
+    timeZone: "America/New_York",
+    iataCode: "ATL",
+  },
+  {
+    id: "us-washington-dc",
+    fallbackName: "Washington, D.C.",
+    timeZone: "America/New_York",
+    iataCode: "WAS",
+  },
+  {
+    id: "us-boston",
+    fallbackName: "Boston",
+    timeZone: "America/New_York",
+    iataCode: "BOS",
+  },
+  {
+    id: "us-miami",
+    fallbackName: "Miami",
+    timeZone: "America/New_York",
+    iataCode: "MIA",
+  },
+  {
+    id: "us-seattle",
+    fallbackName: "Seattle",
+    timeZone: "America/Los_Angeles",
+    iataCode: "SEA",
+  },
+  {
+    id: "us-denver",
+    fallbackName: "Denver",
+    timeZone: "America/Denver",
+    iataCode: "DEN",
+  },
+  {
+    id: "us-honolulu",
+    fallbackName: "Honolulu",
+    timeZone: "Pacific/Honolulu",
+    iataCode: "HNL",
+  },
+  {
+    id: "us-anchorage",
+    fallbackName: "Anchorage",
+    timeZone: "America/Anchorage",
+    iataCode: "ANC",
+  },
+  {
+    id: "de-berlin",
+    fallbackName: "Berlin",
+    timeZone: "Europe/Berlin",
+    iataCode: "BER",
+  },
+  {
+    id: "de-munich",
+    fallbackName: "Munich",
+    timeZone: "Europe/Berlin",
+    iataCode: "MUC",
+  },
+  {
+    id: "de-frankfurt",
+    fallbackName: "Frankfurt",
+    timeZone: "Europe/Berlin",
+    iataCode: "FRA",
+  },
+  {
+    id: "de-hamburg",
+    fallbackName: "Hamburg",
+    timeZone: "Europe/Berlin",
+    iataCode: "HAM",
+  },
+  {
+    id: "fr-paris",
+    fallbackName: "Paris",
+    timeZone: "Europe/Paris",
+    iataCode: "PAR",
+  },
+  {
+    id: "fr-lyon",
+    fallbackName: "Lyon",
+    timeZone: "Europe/Paris",
+    iataCode: "LYS",
+  },
+  {
+    id: "fr-marseille",
+    fallbackName: "Marseille",
+    timeZone: "Europe/Paris",
+    iataCode: "MRS",
+  },
+  {
+    id: "fr-toulouse",
+    fallbackName: "Toulouse",
+    timeZone: "Europe/Paris",
+    iataCode: "TLS",
+  },
+  {
+    id: "in-kolkata",
+    fallbackName: "Kolkata",
+    timeZone: "Asia/Kolkata",
+    iataCode: "CCU",
+    aliases: ["calcutta"],
+  },
+  {
+    id: "in-mumbai",
+    fallbackName: "Mumbai",
+    timeZone: "Asia/Kolkata",
+    iataCode: "BOM",
+    aliases: ["bombay"],
+  },
+  {
+    id: "in-delhi",
+    fallbackName: "Delhi",
+    timeZone: "Asia/Kolkata",
+    iataCode: "DEL",
+  },
+  {
+    id: "in-bangalore",
+    fallbackName: "Bangalore",
+    timeZone: "Asia/Kolkata",
+    iataCode: "BLR",
+    aliases: ["bengaluru"],
+  },
+  {
+    id: "cn-shanghai",
+    fallbackName: "Shanghai",
+    timeZone: "Asia/Shanghai",
+    iataCode: "SHA",
+  },
+  {
+    id: "cn-beijing",
+    fallbackName: "Beijing",
+    timeZone: "Asia/Shanghai",
+    iataCode: "BJS",
+    aliases: ["peking"],
+  },
+  {
+    id: "cn-shenzhen",
+    fallbackName: "Shenzhen",
+    timeZone: "Asia/Shanghai",
+    iataCode: "SZX",
+  },
+  {
+    id: "br-sao-paulo",
+    fallbackName: "São Paulo",
+    timeZone: "America/Sao_Paulo",
+    iataCode: "SAO",
+  },
+  {
+    id: "br-rio-de-janeiro",
+    fallbackName: "Rio de Janeiro",
+    timeZone: "America/Sao_Paulo",
+    iataCode: "RIO",
+  },
+  {
+    id: "br-brasilia",
+    fallbackName: "Brasília",
+    timeZone: "America/Sao_Paulo",
+    iataCode: "BSB",
+  },
+  {
+    id: "id-jakarta",
+    fallbackName: "Jakarta",
+    timeZone: "Asia/Jakarta",
+    iataCode: "JKT",
+  },
+  {
+    id: "id-surabaya",
+    fallbackName: "Surabaya",
+    timeZone: "Asia/Jakarta",
+    iataCode: "SUB",
+  },
+  {
+    id: "id-makassar",
+    fallbackName: "Makassar",
+    timeZone: "Asia/Makassar",
+    iataCode: "UPG",
+  },
+  {
+    id: "ca-toronto",
+    fallbackName: "Toronto",
+    timeZone: "America/Toronto",
+    iataCode: "YTO",
+  },
+  {
+    id: "ca-montreal",
+    fallbackName: "Montreal",
+    timeZone: "America/Toronto",
+    iataCode: "YMQ",
+  },
+  {
+    id: "ca-vancouver",
+    fallbackName: "Vancouver",
+    timeZone: "America/Vancouver",
+    iataCode: "YVR",
+  },
+  {
+    id: "au-sydney",
+    fallbackName: "Sydney",
+    timeZone: "Australia/Sydney",
+    iataCode: "SYD",
+  },
+  {
+    id: "au-perth",
+    fallbackName: "Perth",
+    timeZone: "Australia/Perth",
+    iataCode: "PER",
+  },
+  {
+    id: "au-adelaide",
+    fallbackName: "Adelaide",
+    timeZone: "Australia/Adelaide",
+    iataCode: "ADL",
+  },
+  {
+    id: "pl-warsaw",
+    fallbackName: "Warsaw",
+    timeZone: "Europe/Warsaw",
+    iataCode: "WAW",
+  },
+  {
+    id: "pl-krakow",
+    fallbackName: "Kraków",
+    timeZone: "Europe/Warsaw",
+    iataCode: "KRK",
+  },
+  {
+    id: "jp-tokyo",
+    fallbackName: "Tokyo",
+    timeZone: "Asia/Tokyo",
+    iataCode: "TYO",
+  },
+  {
+    id: "jp-osaka",
+    fallbackName: "Osaka",
+    timeZone: "Asia/Tokyo",
+    iataCode: "OSA",
+  },
+  {
+    id: "mx-mexico-city",
+    fallbackName: "Mexico City",
+    timeZone: "America/Mexico_City",
+    iataCode: "MEX",
+  },
+  {
+    id: "mx-guadalajara",
+    fallbackName: "Guadalajara",
+    timeZone: "America/Mexico_City",
+    iataCode: "GDL",
+  },
+  {
+    id: "it-rome",
+    fallbackName: "Rome",
+    timeZone: "Europe/Rome",
+    iataCode: "ROM",
+  },
+  {
+    id: "it-milan",
+    fallbackName: "Milan",
+    timeZone: "Europe/Rome",
+    iataCode: "MIL",
+  },
+  {
+    id: "ru-moscow",
+    fallbackName: "Moscow",
+    timeZone: "Europe/Moscow",
+    iataCode: "MOW",
+  },
+  {
+    id: "ru-saint-petersburg",
+    fallbackName: "Saint Petersburg",
+    timeZone: "Europe/Moscow",
+    iataCode: "LED",
+  },
+  {
+    id: "gb-london",
+    fallbackName: "London",
+    timeZone: "Europe/London",
+    iataCode: "LON",
+  },
+  {
+    id: "gb-birmingham",
+    fallbackName: "Birmingham",
+    timeZone: "Europe/London",
+    iataCode: "BHX",
+  },
+  {
+    id: "es-madrid",
+    fallbackName: "Madrid",
+    timeZone: "Europe/Madrid",
+    iataCode: "MAD",
+  },
+  {
+    id: "es-barcelona",
+    fallbackName: "Barcelona",
+    timeZone: "Europe/Madrid",
+    iataCode: "BCN",
+  },
+  {
+    id: "nl-amsterdam",
+    fallbackName: "Amsterdam",
+    timeZone: "Europe/Amsterdam",
+    iataCode: "AMS",
+  },
+  {
+    id: "ch-zurich",
+    fallbackName: "Zurich",
+    timeZone: "Europe/Zurich",
+    iataCode: "ZRH",
+  },
+  {
+    id: "at-vienna",
+    fallbackName: "Vienna",
+    timeZone: "Europe/Vienna",
+    iataCode: "VIE",
+  },
+  {
+    id: "cz-prague",
+    fallbackName: "Prague",
+    timeZone: "Europe/Prague",
+    iataCode: "PRG",
+  },
+  {
+    id: "ar-buenos-aires",
+    fallbackName: "Buenos Aires",
+    timeZone: "America/Argentina/Buenos_Aires",
+    iataCode: "BUE",
+  },
+  {
+    id: "gr-athens",
+    fallbackName: "Athens",
+    timeZone: "Europe/Athens",
+    iataCode: "ATH",
+  },
+  {
+    id: "hu-budapest",
+    fallbackName: "Budapest",
+    timeZone: "Europe/Budapest",
+    iataCode: "BUD",
+  },
+  {
+    id: "be-brussels",
+    fallbackName: "Brussels",
+    timeZone: "Europe/Brussels",
+    iataCode: "BRU",
+  },
+  {
+    id: "ua-kyiv",
+    fallbackName: "Kyiv",
+    timeZone: "Europe/Kyiv",
+    iataCode: "IEV",
+    aliases: ["kiev"],
+  },
+  {
+    id: "fi-helsinki",
+    fallbackName: "Helsinki",
+    timeZone: "Europe/Helsinki",
+    iataCode: "HEL",
+  },
+  {
+    id: "co-bogota",
+    fallbackName: "Bogotá",
+    timeZone: "America/Bogota",
+    iataCode: "BOG",
+  },
+  {
+    id: "ph-manila",
+    fallbackName: "Manila",
+    timeZone: "Asia/Manila",
+    iataCode: "MNL",
+  },
+  {
+    id: "tr-istanbul",
+    fallbackName: "Istanbul",
+    timeZone: "Europe/Istanbul",
+    iataCode: "IST",
+  },
+  {
+    id: "my-kuala-lumpur",
+    fallbackName: "Kuala Lumpur",
+    timeZone: "Asia/Kuala_Lumpur",
+    iataCode: "KUL",
+  },
+  {
+    id: "eg-cairo",
+    fallbackName: "Cairo",
+    timeZone: "Africa/Cairo",
+    iataCode: "CAI",
+  },
+  {
+    id: "se-stockholm",
+    fallbackName: "Stockholm",
+    timeZone: "Europe/Stockholm",
+    iataCode: "STO",
+  },
+  {
+    id: "ro-bucharest",
+    fallbackName: "Bucharest",
+    timeZone: "Europe/Bucharest",
+    iataCode: "BUH",
+  },
+  {
+    id: "th-bangkok",
+    fallbackName: "Bangkok",
+    timeZone: "Asia/Bangkok",
+    iataCode: "BKK",
+  },
+  {
+    id: "ng-lagos",
+    fallbackName: "Lagos",
+    timeZone: "Africa/Lagos",
+    iataCode: "LOS",
+  },
+  {
+    id: "tw-taipei",
+    fallbackName: "Taipei",
+    timeZone: "Asia/Taipei",
+    iataCode: "TPE",
+  },
+  {
+    id: "za-johannesburg",
+    fallbackName: "Johannesburg",
+    timeZone: "Africa/Johannesburg",
+    iataCode: "JNB",
+  },
+  {
+    id: "cl-santiago",
+    fallbackName: "Santiago",
+    timeZone: "America/Santiago",
+    iataCode: "SCL",
+  },
+  {
+    id: "pk-karachi",
+    fallbackName: "Karachi",
+    timeZone: "Asia/Karachi",
+    iataCode: "KHI",
+  },
+  {
+    id: "bg-sofia",
+    fallbackName: "Sofia",
+    timeZone: "Europe/Sofia",
+    iataCode: "SOF",
+  },
+  {
+    id: "sg-singapore",
+    fallbackName: "Singapore",
+    timeZone: "Asia/Singapore",
+    iataCode: "SIN",
+  },
+  {
+    id: "hk-hong-kong",
+    fallbackName: "Hong Kong",
+    timeZone: "Asia/Hong_Kong",
+    iataCode: "HKG",
+  },
+  {
+    id: "sa-riyadh",
+    fallbackName: "Riyadh",
+    timeZone: "Asia/Riyadh",
+    iataCode: "RUH",
+  },
+  {
+    id: "dk-copenhagen",
+    fallbackName: "Copenhagen",
+    timeZone: "Europe/Copenhagen",
+    iataCode: "CPH",
+  },
+  {
+    id: "pe-lima",
+    fallbackName: "Lima",
+    timeZone: "America/Lima",
+    iataCode: "LIM",
+  },
+  {
+    id: "ke-nairobi",
+    fallbackName: "Nairobi",
+    timeZone: "Africa/Nairobi",
+    iataCode: "NBO",
+  },
+  {
+    id: "nz-auckland",
+    fallbackName: "Auckland",
+    timeZone: "Pacific/Auckland",
+    iataCode: "AKL",
+  },
+  {
+    id: "kr-seoul",
+    fallbackName: "Seoul",
+    timeZone: "Asia/Seoul",
+    iataCode: "SEL",
+  },
+  {
+    id: "lt-vilnius",
+    fallbackName: "Vilnius",
+    timeZone: "Europe/Vilnius",
+    iataCode: "VNO",
+  },
+  {
+    id: "ie-dublin",
+    fallbackName: "Dublin",
+    timeZone: "Europe/Dublin",
+    iataCode: "DUB",
+  },
+  {
+    id: "ae-dubai",
+    fallbackName: "Dubai",
+    timeZone: "Asia/Dubai",
+    iataCode: "DXB",
+  },
+  {
+    id: "lv-riga",
+    fallbackName: "Riga",
+    timeZone: "Europe/Riga",
+    iataCode: "RIX",
+  },
+  {
+    id: "pt-lisbon",
+    fallbackName: "Lisbon",
+    timeZone: "Europe/Lisbon",
+    iataCode: "LIS",
+  },
+  {
+    id: "ir-tehran",
+    fallbackName: "Tehran",
+    timeZone: "Asia/Tehran",
+    iataCode: "THR",
+  },
+  {
+    id: "bd-dhaka",
+    fallbackName: "Dhaka",
+    timeZone: "Asia/Dhaka",
+    iataCode: "DAC",
+  },
+  {
+    id: "ec-guayaquil",
+    fallbackName: "Guayaquil",
+    timeZone: "America/Guayaquil",
+    iataCode: "GYE",
+  },
+  {
+    id: "vn-ho-chi-minh-city",
+    fallbackName: "Ho Chi Minh City",
+    timeZone: "Asia/Ho_Chi_Minh",
+    iataCode: "SGN",
+    aliases: ["saigon", "ho chi minh"],
+  },
+  {
+    id: "np-kathmandu",
+    fallbackName: "Kathmandu",
+    timeZone: "Asia/Kathmandu",
+    iataCode: "KTM",
+  },
+  {
+    id: "mm-yangon",
+    fallbackName: "Yangon",
+    timeZone: "Asia/Yangon",
+    iataCode: "RGN",
+    aliases: ["rangoon"],
+  },
+];
+
+// id -> entry, for O(1) lookup from a persisted clock's cityId.
+const CLOCK_CITY_BY_ID = new Map(
+  CLOCK_CITIES.map(entry => [entry.id, entry])
+);
+
+// en-US fallbackName -> entry, so clocks persisted by display name (legacy or
+// pre-localization) still resolve the correct IATA code.
+const CLOCK_CITY_BY_NAME = new Map(
+  CLOCK_CITIES.map(entry => [entry.fallbackName, entry])
+);
+
+// IATA codes for common NON-curated cities the OS reports from base IANA zones
+// (Tel Aviv, Detroit, ...), plus legacy spellings (Kiev/Calcutta/Saigon) that
+// older tzdata still emits. Curated cities carry their code on CLOCK_CITIES;
+// getCityAbbreviation falls back to the first three letters for anything else.
+const BASE_ZONE_IATA_CODES = {
+  Beirut: "BEY",
+  Brisbane: "BNE",
+  Calcutta: "CCU",
+  Colombo: "CMB",
+  Detroit: "DTW",
+  Geneva: "GVA",
+  Halifax: "YHZ",
+  "Ho Chi Minh": "SGN",
+  Jerusalem: "JRS",
+  Kiev: "IEV",
+  Phoenix: "PHX",
+  Saigon: "SGN",
+  "Tel Aviv": "TLV",
+};
+
+// Fluent message id for a curated city's localized display name.
+const clockCityFluentId = id => `newtab-clock-city-${id}`;
+
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/Clocks/ClocksHelpers.mjs
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
 
 // Fixed-order palette; each name needs a matching `.clocks-chip-<name>` in
 // _Clocks.scss and drives isValidPaletteName's allow-list.
@@ -21786,67 +23274,6 @@ const FIXED_DEFAULT_ZONES = [
   "America/Los_Angeles",
 ];
 const MAX_CLOCK_COUNT = 4;
-
-// IATA city codes for cities where the code differs from slice(0,3).
-// Cities whose code matches that slice (e.g. Sydney -> SYD, Berlin ->
-// BER) are omitted; getCityAbbreviation falls back to the slice.
-// Both legacy and canonical spellings (Kiev/Kyiv, Calcutta/Kolkata,
-// Saigon/Ho Chi Minh) are present — the user's OS may report either,
-// depending on its tzdata version.
-const CITY_IATA_CODES = {
-  // North America
-  Detroit: "DTW",
-  Halifax: "YHZ",
-  Honolulu: "HNL",
-  "Los Angeles": "LAX",
-  "New York": "NYC",
-  Phoenix: "PHX",
-  "San Francisco": "SFO",
-  Toronto: "YTO",
-  Vancouver: "YVR",
-  // South America
-  Santiago: "SCL",
-  // Europe
-  Copenhagen: "CPH",
-  Geneva: "GVA",
-  Kiev: "IEV",
-  Kyiv: "IEV",
-  Moscow: "MOW",
-  Prague: "PRG",
-  Warsaw: "WAW",
-  Zurich: "ZRH",
-  // Asia
-  Bangkok: "BKK",
-  Beijing: "BJS",
-  Beirut: "BEY",
-  Calcutta: "CCU",
-  Kolkata: "CCU",
-  Colombo: "CMB",
-  Dhaka: "DAC",
-  Dubai: "DXB",
-  "Ho Chi Minh": "SGN",
-  "Hong Kong": "HKG",
-  Jakarta: "JKT",
-  Jerusalem: "JRS",
-  Karachi: "KHI",
-  "Kuala Lumpur": "KUL",
-  Manila: "MNL",
-  Riyadh: "RUH",
-  Saigon: "SGN",
-  Seoul: "SEL",
-  Taipei: "TPE",
-  Tehran: "THR",
-  "Tel Aviv": "TLV",
-  Tokyo: "TYO",
-  // Africa
-  Johannesburg: "JNB",
-  Lagos: "LOS",
-  Nairobi: "NBO",
-  // Australia & Pacific
-  Adelaide: "ADL",
-  Auckland: "AKL",
-  Brisbane: "BNE",
-};
 
 function is12HourLocale(locale) {
   try {
@@ -21986,8 +23413,16 @@ const normalizeClockZone = clock => {
     typeof normalizedClock.city === "string" && normalizedClock.city.trim()
       ? normalizedClock.city.trim()
       : undefined;
+  // Only a cityId still in the registry survives; a stale or hand-edited one
+  // is dropped so the clock falls back to its stored city or zone name.
+  const cityId =
+    typeof normalizedClock.cityId === "string" &&
+    CLOCK_CITY_BY_ID.has(normalizedClock.cityId.trim())
+      ? normalizedClock.cityId.trim()
+      : undefined;
   return {
     timeZone: normalizedClock.timeZone,
+    ...(cityId !== undefined && { cityId }),
     ...(city !== undefined && { city }),
     label,
     labelColor,
@@ -22034,9 +23469,14 @@ function getCityFromTimeZone(tz) {
  * color start null and are filled in later only if the user adds a
  * nickname.
  */
-const buildClockZone = timeZone => ({
+const buildClockZone = (
   timeZone,
-  city: getCityFromTimeZone(timeZone),
+  city = getCityFromTimeZone(timeZone),
+  cityId = null
+) => ({
+  timeZone,
+  city,
+  ...(cityId ? { cityId } : {}),
   label: null,
   labelColor: null,
 });
@@ -22051,59 +23491,133 @@ const backfillClockLabelColors = clockZones =>
       : clock
   );
 
-const getClockFormDerivedState = ({
-  canAddClock,
-  clockSearchQuery,
-  clockSelectedTimeZone,
-  isEditingClock,
-  localizedTimeZoneMap,
-  supportedTimeZones,
-}) => {
-  let resolvedClockTimeZone = "";
-  const query = clockSearchQuery.trim().toLowerCase();
-  const getLocalized = timeZone =>
-    (localizedTimeZoneMap?.get(timeZone) ?? "").toLowerCase();
+// The same zone is spelled differently across tzdata vintages (Asia/Kolkata
+// vs Asia/Calcutta); resolve both sides to whichever id this platform uses.
+const canonicalZoneCache = new Map();
+const canonicalTimeZone = timeZone => {
+  if (!timeZone) {
+    return "";
+  }
+  if (!canonicalZoneCache.has(timeZone)) {
+    let canonical = timeZone;
+    try {
+      canonical = new Intl.DateTimeFormat(undefined, {
+        timeZone,
+      }).resolvedOptions().timeZone;
+    } catch (e) {
+      // Not a zone this platform knows; match on the id as given.
+    }
+    canonicalZoneCache.set(timeZone, canonical);
+  }
+  return canonicalZoneCache.get(timeZone);
+};
 
-  if (clockSelectedTimeZone && isValidTimeZone(clockSelectedTimeZone)) {
-    resolvedClockTimeZone = clockSelectedTimeZone;
-  } else if (query) {
-    const idOrCityMatch = supportedTimeZones.find(timeZone => {
-      const city = getCityFromTimeZone(timeZone).toLowerCase();
-      return timeZone.toLowerCase() === query || city === query;
-    });
-    if (idOrCityMatch) {
-      resolvedClockTimeZone = idOrCityMatch;
-    } else {
-      // Localized zone names can be shared by multiple IANA zones.
-      const localizedMatches = supportedTimeZones.filter(
-        timeZone => getLocalized(timeZone) === query
+// Either spelling of an abbreviated prefix should find the other.
+const PREFIX_EXPANSIONS = [
+  [/\bst\s/g, "saint "],
+  [/\bft\s/g, "fort "],
+  [/\bmt\s/g, "mount "],
+];
+
+/**
+ * Folds accents, case and punctuation so matching ignores how a name is
+ * written: "Washington, D.C." and "washington dc" normalize alike, as do
+ * "America/Los_Angeles" and "los angeles". `+` and `:` survive for offsets.
+ */
+const normalizeCityQuery = value => {
+  const folded = (value ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    // Dropped rather than spaced, so "D.C." folds to "dc" and not "d c".
+    .replace(/['\u2019.]/g, "")
+    .replace(/[^\p{L}\p{N}+:]+/gu, " ")
+    .trim();
+  return PREFIX_EXPANSIONS.reduce(
+    (text, [pattern, expanded]) => text.replace(pattern, expanded),
+    folded
+  );
+};
+
+const MAX_CLOCK_RESULTS = 8;
+// Below this, a query is too short for substring matches to be meaningful:
+// "a" would otherwise return eight arbitrary cities.
+const MIN_SUBSTRING_QUERY = 3;
+
+// How well a key matched, best first; results sort on this.
+const MATCH_EXACT = 0;
+const MATCH_PREFIX = 1;
+const MATCH_SUBSTRING = 2;
+const MATCH_FUZZY = 3;
+const MATCH_NONE = 4;
+
+// Typo budget scales with length so short queries can't fuzzy-match everything.
+const maxTypos = query => {
+  if (query.length <= 3) {
+    return 0;
+  }
+  if (query.length <= 6) {
+    return 1;
+  }
+  return 2;
+};
+
+/**
+ * Optimal string alignment distance (Levenshtein plus adjacent transposition),
+ * answering only "within `max`?" so it can bail out a row at a time.
+ */
+const isWithinEditDistance = (a, b, max) => {
+  if (Math.abs(a.length - b.length) > max) {
+    return false;
+  }
+  let twoRowsBack = [];
+  let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const current = [i];
+    let rowBest = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      let value = Math.min(
+        previous[j] + 1,
+        current[j - 1] + 1,
+        previous[j - 1] + cost
       );
-      if (localizedMatches.length === 1) {
-        [resolvedClockTimeZone] = localizedMatches;
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        value = Math.min(value, twoRowsBack[j - 2] + 1);
+      }
+      current[j] = value;
+      rowBest = Math.min(rowBest, value);
+    }
+    if (rowBest > max) {
+      return false;
+    }
+    twoRowsBack = previous;
+    previous = current;
+  }
+  return previous[b.length] <= max;
+};
+
+const matchScore = (searchKeys, query, { allowSubstring, allowFuzzy }) => {
+  let best = MATCH_NONE;
+  for (const key of searchKeys) {
+    if (key === query) {
+      return MATCH_EXACT;
+    }
+    if (key.startsWith(query)) {
+      best = Math.min(best, MATCH_PREFIX);
+    } else if (allowSubstring && key.includes(query)) {
+      best = Math.min(best, MATCH_SUBSTRING);
+    }
+  }
+  const budget = maxTypos(query);
+  if (best === MATCH_NONE && allowFuzzy && budget) {
+    for (const key of searchKeys) {
+      if (isWithinEditDistance(key, query, budget)) {
+        return MATCH_FUZZY;
       }
     }
   }
-
-  const filteredTimeZones = query
-    ? supportedTimeZones
-        .filter(timeZone => {
-          const city = getCityFromTimeZone(timeZone).toLowerCase();
-          return (
-            timeZone.toLowerCase().includes(query) ||
-            city.includes(query) ||
-            getLocalized(timeZone).includes(query)
-          );
-        })
-        .slice(0, 8)
-    : [];
-
-  return {
-    canAddSelectedClock:
-      (isEditingClock || canAddClock) && !!resolvedClockTimeZone,
-    filteredTimeZones,
-    resolvedClockTimeZone,
-    showLocationDropdown: !!(query && !clockSelectedTimeZone),
-  };
+  return best;
 };
 
 const buildNextClockZones = (clockZones, editingClockIndex, zone) =>
@@ -22117,18 +23631,37 @@ const removeClockZoneAtIndex = (clockZones, indexToRemove) =>
   clockZones.filter((_, index) => index !== indexToRemove);
 
 /**
- * IATA code for known cities, else first 3 non-whitespace chars upcased.
- * Stripping whitespace avoids trailing space on multi-word names.
+ * Compact code for a clock. A curated clock's `cityId` gives a locale-proof
+ * code from the registry; otherwise fall back to the code for the display
+ * name (curated by fallbackName, then base-zone/legacy), else the first three
+ * non-whitespace characters upcased.
  */
-function getCityAbbreviation(cityName) {
+function getCityAbbreviation(cityName, cityId) {
+  const byId = cityId && CLOCK_CITY_BY_ID.get(cityId);
+  if (byId) {
+    return byId.iataCode;
+  }
   if (!cityName) {
     return "";
   }
-  if (CITY_IATA_CODES[cityName]) {
-    return CITY_IATA_CODES[cityName];
+  const byName = CLOCK_CITY_BY_NAME.get(cityName);
+  if (byName) {
+    return byName.iataCode;
+  }
+  if (BASE_ZONE_IATA_CODES[cityName]) {
+    return BASE_ZONE_IATA_CODES[cityName];
   }
   return cityName.replace(/\s/g, "").slice(0, 3).toUpperCase();
 }
+
+// Display name for a saved clock: curated clocks resolve the current localized
+// name from cityId (so they follow a locale switch); custom clocks use the
+// stored city, falling back to the zone-derived name.
+const getClockCityDisplay = (clock, curatedNames = null) =>
+  curatedNames?.[clock.cityId] ||
+  clock.city ||
+  CLOCK_CITY_BY_ID.get(clock.cityId)?.fallbackName ||
+  getCityFromTimeZone(clock.timeZone);
 
 /**
  * Returns the short name for a time zone at a given moment, like "CET"
@@ -22150,6 +23683,314 @@ function getTimeZoneAbbreviation(tz, locale, date = new Date()) {
     return tz;
   }
 }
+
+/**
+ * Current UTC offset of a zone as a compact label, e.g. "UTC+5:30",
+ * "UTC-8", or "UTC". DST-dependent, so pass the same `date` you display.
+ */
+const getTimeZoneOffsetLabel = (timeZone, date = new Date()) => {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      timeZoneName: "longOffset",
+    }).formatToParts(date);
+    const raw = parts.find(p => p.type === "timeZoneName")?.value ?? "";
+    const match = raw.match(/GMT([+-])(\d{2}):(\d{2})/);
+    if (!match) {
+      return "UTC";
+    }
+    const [, sign, hours, minutes] = match;
+    const h = String(parseInt(hours, 10));
+    return `UTC${sign}${h}${minutes === "00" ? "" : `:${minutes}`}`;
+  } catch (e) {
+    return "";
+  }
+};
+
+// Readable label for the custom-add zone picker, e.g. "Los Angeles · UTC-7".
+const formatCustomZoneLabel = (timeZone, date = new Date()) =>
+  `${getCityFromTimeZone(timeZone)} · ${getTimeZoneOffsetLabel(timeZone, date)}`;
+
+// Offset variants so "utc+5:30", "gmt+5:30", "+5:30", "+05:30", and "5:30"
+// all match a zone at UTC+5:30.
+const offsetSearchKeys = offsetLabel => {
+  const match = offsetLabel.match(/UTC([+-])(\d{1,2})(?::(\d{2}))?/);
+  if (!match) {
+    return ["utc"];
+  }
+  const [, sign, hours, minutes] = match;
+  const hh = hours.padStart(2, "0");
+  const min = minutes ? `:${minutes}` : "";
+  const minPad = minutes ? `:${minutes}` : ":00";
+  return [
+    `utc${sign}${hours}${min}`,
+    `utc${sign}${hh}${minPad}`,
+    `gmt${sign}${hours}${min}`,
+    `${sign}${hours}${min}`,
+    `${sign}${hh}${minPad}`,
+    `${hours}${min}`,
+  ];
+};
+
+const dedupeKeys = keys => [...new Set(keys.filter(Boolean))];
+
+// Localized country name per ISO 3166-1 alpha-2 code, "" where unavailable.
+const buildRegionNameLookup = locale => {
+  let displayNames = null;
+  try {
+    displayNames = new Intl.DisplayNames(locale, { type: "region" });
+  } catch (e) {
+    return () => "";
+  }
+  return code => {
+    try {
+      return displayNames.of(code) || "";
+    } catch (e) {
+      return "";
+    }
+  };
+};
+
+// Curated keys per canonical zone, so "mumbai" finds Asia/Calcutta in the zone
+// picker. Localized names are not folded in; those belong to the city entries.
+let curatedKeysByZone = null;
+const getCuratedKeysByZone = () => {
+  if (!curatedKeysByZone) {
+    curatedKeysByZone = new Map();
+    for (const entry of CLOCK_CITIES) {
+      const zone = canonicalTimeZone(entry.timeZone);
+      curatedKeysByZone.set(zone, [
+        ...(curatedKeysByZone.get(zone) ?? []),
+        normalizeCityQuery(entry.fallbackName),
+        ...(entry.aliases ?? []).map(normalizeCityQuery),
+      ]);
+    }
+  }
+  return curatedKeysByZone;
+};
+
+const buildZoneEntries = (
+  supportedTimeZones,
+  localizedTimeZoneMap,
+  locale,
+  date
+) => {
+  const curatedKeys = getCuratedKeysByZone();
+  return supportedTimeZones.map(timeZone => {
+    const zone = canonicalTimeZone(timeZone);
+    const city = getCityFromTimeZone(timeZone);
+    const zoneName =
+      localizedTimeZoneMap?.get(timeZone) ||
+      getLocalizedTimeZoneName(timeZone, locale);
+    const offsetLabel = getTimeZoneOffsetLabel(timeZone, date);
+    return {
+      kind: "zone",
+      cityId: null,
+      timeZone,
+      zone,
+      city,
+      zoneName,
+      offsetLabel,
+      searchKeys: dedupeKeys([
+        normalizeCityQuery(timeZone),
+        normalizeCityQuery(city),
+        normalizeCityQuery(zoneName),
+        normalizeCityQuery(getTimeZoneAbbreviation(timeZone, locale, date)),
+        ...offsetSearchKeys(offsetLabel).map(normalizeCityQuery),
+        ...(curatedKeys.get(zone) ?? []),
+      ]),
+    };
+  });
+};
+
+/**
+ * One index behind both clock searches, so the add form and the custom-zone
+ * picker match identically. Curated entries (`kind: "city"`) match their
+ * en-US and localized names, aliases and country; zone entries
+ * (`kind: "zone"`) match the IANA id, exemplar city, localized zone name,
+ * abbreviation, UTC offset, and any curated name sharing that zone.
+ */
+const buildClockSearchIndex = ({
+  supportedTimeZones = [],
+  localizedTimeZoneMap = null,
+  curatedCities = CLOCK_CITIES,
+  curatedNames = null,
+  locale = undefined,
+  date = new Date(),
+} = {}) => {
+  const regionNameOf = buildRegionNameLookup(locale);
+  const zoneEntries = buildZoneEntries(
+    supportedTimeZones,
+    localizedTimeZoneMap,
+    locale,
+    date
+  );
+  // Curated cities show the same zone name as the zone they sit in.
+  const zoneNameByZone = new Map(
+    zoneEntries.map(entry => [entry.zone, entry.zoneName])
+  );
+
+  const cityEntries = curatedCities.map(entry => {
+    const zone = canonicalTimeZone(entry.timeZone);
+    const city = curatedNames?.[entry.id] || entry.fallbackName;
+    return {
+      kind: "city",
+      cityId: entry.id,
+      timeZone: entry.timeZone,
+      zone,
+      city,
+      zoneName:
+        zoneNameByZone.get(zone) ||
+        getLocalizedTimeZoneName(entry.timeZone, locale),
+      searchKeys: dedupeKeys([
+        normalizeCityQuery(entry.fallbackName),
+        normalizeCityQuery(city),
+        ...(entry.aliases ?? []).map(normalizeCityQuery),
+        // `id` is `<iso2>-<slug>`, so the country comes free.
+        normalizeCityQuery(regionNameOf(entry.id.slice(0, 2).toUpperCase())),
+      ]),
+    };
+  });
+
+  return [...cityEntries, ...zoneEntries];
+};
+
+/**
+ * Ranks the index against a query, best first, each entry carrying its
+ * `score`. Exact and prefix always count; substring needs a query of at
+ * least MIN_SUBSTRING_QUERY, and a typo-tolerant pass runs only when nothing
+ * else matched. Pass `kinds` to restrict to curated cities or zones.
+ */
+const filterClockSearchIndex = (
+  index,
+  query,
+  { limit = MAX_CLOCK_RESULTS, kinds = null } = {}
+) => {
+  const normalized = normalizeCityQuery(query);
+  if (!normalized) {
+    return [];
+  }
+  const pool = kinds
+    ? index.filter(entry => kinds.includes(entry.kind))
+    : index;
+  const allowSubstring = normalized.length >= MIN_SUBSTRING_QUERY;
+  const rank = allowFuzzy =>
+    pool
+      .map(entry => ({
+        entry,
+        score: matchScore(entry.searchKeys, normalized, {
+          allowSubstring,
+          allowFuzzy,
+        }),
+      }))
+      .filter(({ score }) => score < MATCH_NONE);
+
+  let scored = rank(false);
+  if (!scored.length) {
+    scored = rank(true);
+  }
+
+  // A zone row a matched curated city already stands for is a duplicate
+  // ("Kolkata" and "Calcutta" are one place), so drop it.
+  const citiesMatchedZones = new Set(
+    scored
+      .filter(({ entry }) => entry.kind === "city")
+      .map(({ entry }) => entry.zone)
+  );
+  return scored
+    .filter(
+      ({ entry }) =>
+        entry.kind !== "zone" || !citiesMatchedZones.has(entry.zone)
+    )
+    .sort((a, b) => a.score - b.score)
+    .slice(0, limit)
+    .map(({ entry, score }) => ({ ...entry, score }));
+};
+
+/**
+ * Zone-only results for the custom-add picker, where the user names the city
+ * themselves and only needs to land on a zone.
+ */
+const filterCustomZoneResults = (
+  index,
+  query,
+  limit = MAX_CLOCK_RESULTS
+) =>
+  filterClockSearchIndex(index, query, { limit, kinds: ["zone"] }).map(
+    ({ timeZone, city, zoneName, offsetLabel }) => ({
+      timeZone,
+      city,
+      zoneName,
+      offsetLabel,
+    })
+  );
+
+const getClockFormDerivedState = ({
+  canAddClock,
+  clockSearchQuery,
+  clockSelectedTimeZone,
+  clockSelectedCity,
+  clockSelectedCityId,
+  isEditingClock,
+  searchIndex = [],
+}) => {
+  const query = normalizeCityQuery(clockSearchQuery);
+  const matches = filterClockSearchIndex(searchIndex, clockSearchQuery);
+  const hasExactMatch = matches.some(({ score }) => score === MATCH_EXACT);
+  const filteredResults = matches.map(entry => ({
+    timeZone: entry.timeZone,
+    city: entry.city,
+    ...(entry.zoneName ? { zoneName: entry.zoneName } : {}),
+    ...(entry.cityId ? { cityId: entry.cityId } : {}),
+  }));
+
+  let resolvedClockTimeZone = "";
+  let resolvedClockCity = "";
+  let resolvedClockCityId = "";
+  if (clockSelectedTimeZone && isValidTimeZone(clockSelectedTimeZone)) {
+    resolvedClockTimeZone = clockSelectedTimeZone;
+    resolvedClockCity =
+      clockSelectedCity || getCityFromTimeZone(clockSelectedTimeZone);
+    resolvedClockCityId = clockSelectedCityId || "";
+  } else if (query) {
+    const zoneEntries = searchIndex.filter(entry => entry.kind === "zone");
+    const exactCity = filteredResults.find(
+      result => normalizeCityQuery(result.city) === query
+    );
+    const exactId = zoneEntries.find(
+      entry => normalizeCityQuery(entry.timeZone) === query
+    );
+    if (exactCity) {
+      resolvedClockTimeZone = exactCity.timeZone;
+      resolvedClockCity = exactCity.city;
+      resolvedClockCityId = exactCity.cityId || "";
+    } else if (exactId) {
+      resolvedClockTimeZone = exactId.timeZone;
+      resolvedClockCity = exactId.city;
+    } else {
+      // A localized zone name that uniquely identifies one zone resolves too.
+      const localizedMatches = zoneEntries.filter(
+        entry => normalizeCityQuery(entry.zoneName) === query
+      );
+      if (localizedMatches.length === 1) {
+        const [only] = localizedMatches;
+        resolvedClockTimeZone = only.timeZone;
+        resolvedClockCity = only.city;
+      }
+    }
+  }
+
+  return {
+    canAddSelectedClock:
+      (isEditingClock || canAddClock) && !!resolvedClockTimeZone,
+    filteredResults,
+    resolvedClockTimeZone,
+    resolvedClockCity,
+    resolvedClockCityId,
+    hasExactMatch,
+    showLocationDropdown: !!(query && !clockSelectedTimeZone),
+  };
+};
 
 /**
  * Formats Date as a local datetime string (YYYY-MM-DDTHH:mm) in the given
@@ -22205,6 +24046,52 @@ const buildClocksRowAriaLabel = (city, tzLabel, timeDisplay, label) => {
   return parts.join(", ");
 };
 
+;// CONCATENATED MODULE: ./content-src/components/Widgets/Clocks/useCuratedCityNames.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+
+
+// Resolves curated cities' localized names into a { cityId: name } map. Pass
+// `cityIds` for just those (e.g. the shown clocks), or omit for all (search).
+// Empty until resolved.
+const useCuratedCityNames = (cityIds = null) => {
+  const [names, setNames] = (0,external_React_namespaceObject.useState)({});
+  // Stable dependency: re-resolve when the requested set changes, not when a
+  // fresh array with the same ids is passed on each render.
+  const idsKey = cityIds ? [...cityIds].sort().join(",") : "*";
+  (0,external_React_namespaceObject.useEffect)(() => {
+    // null/omitted resolves the full list (search); an explicit array resolves
+    // exactly those ids (an empty array resolves nothing).
+    const ids = cityIds === null ? CLOCK_CITIES.map(city => city.id) : cityIds;
+    if (!ids.length) {
+      return undefined;
+    }
+    let cancelled = false;
+    document.l10n.formatValues(ids.map(id => ({
+      id: clockCityFluentId(id)
+    }))).then(values => {
+      if (cancelled) {
+        return;
+      }
+      const resolved = {};
+      ids.forEach((id, index) => {
+        if (values[index]) {
+          resolved[id] = values[index];
+        }
+      });
+      setNames(resolved);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // idsKey captures the meaningful change; cityIds identity is intentional.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idsKey]);
+  return names;
+};
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/Clocks/AddClockForm.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -22212,7 +24099,10 @@ const buildClocksRowAriaLabel = (city, tzLabel, timeDisplay, label) => {
 
 
 
+
+
 const MAX_NICKNAME_LENGTH = 11;
+const MAX_CITY_LENGTH = 32;
 
 /**
  * Add/edit form for a single clock. Owns its own form state — the parent
@@ -22237,32 +24127,75 @@ function AddClockForm({
   onSave,
   onCancel
 }) {
-  const localizedTimeZoneMap = (0,external_React_namespaceObject.useMemo)(() => buildLocalizedTimeZoneMap(supportedTimeZones, locale), [supportedTimeZones, locale]);
+  // Localized display name per curated city id; {} until resolved.
+  const curatedNames = useCuratedCityNames();
   const [searchQuery, setSearchQuery] = (0,external_React_namespaceObject.useState)(initialClock ? initialClock.city || getCityFromTimeZone(initialClock.timeZone) : "");
   const [selectedTimeZone, setSelectedTimeZone] = (0,external_React_namespaceObject.useState)(initialClock?.timeZone || "");
+  const [selectedCity, setSelectedCity] = (0,external_React_namespaceObject.useState)(initialClock?.city || "");
+  const [selectedCityId, setSelectedCityId] = (0,external_React_namespaceObject.useState)(initialClock?.cityId || "");
   const [nickname, setNickname] = (0,external_React_namespaceObject.useState)(initialClock?.label || "");
+  const [customMode, setCustomMode] = (0,external_React_namespaceObject.useState)(false);
+  const [customCity, setCustomCity] = (0,external_React_namespaceObject.useState)("");
+  const [customZone, setCustomZone] = (0,external_React_namespaceObject.useState)("");
+  const [customZoneQuery, setCustomZoneQuery] = (0,external_React_namespaceObject.useState)("");
   const searchInputRef = (0,external_React_namespaceObject.useRef)(null);
+  const customCityRef = (0,external_React_namespaceObject.useRef)(null);
+
+  // One index for both searches, rebuilt only when the zones or localized
+  // names change — not on every keystroke.
+  const searchIndex = (0,external_React_namespaceObject.useMemo)(() => buildClockSearchIndex({
+    supportedTimeZones,
+    curatedCities: CLOCK_CITIES,
+    curatedNames,
+    locale
+  }), [supportedTimeZones, curatedNames, locale]);
   const {
     canAddSelectedClock,
-    filteredTimeZones,
+    filteredResults,
     resolvedClockTimeZone,
+    resolvedClockCity,
+    resolvedClockCityId,
+    hasExactMatch,
     showLocationDropdown
   } = (0,external_React_namespaceObject.useMemo)(() => getClockFormDerivedState({
     canAddClock,
     clockSearchQuery: searchQuery,
     clockSelectedTimeZone: selectedTimeZone,
+    clockSelectedCity: selectedCity,
+    clockSelectedCityId: selectedCityId,
     isEditingClock: isEditing,
-    localizedTimeZoneMap,
-    supportedTimeZones
-  }), [canAddClock, searchQuery, selectedTimeZone, isEditing, localizedTimeZoneMap, supportedTimeZones]);
+    searchIndex
+  }), [canAddClock, searchQuery, selectedTimeZone, selectedCity, selectedCityId, isEditing, searchIndex]);
 
-  // moz-input-search renders its inner input asynchronously, so focusing
-  // the custom element host immediately can throw before inputEl exists.
+  // The custom flow names the city by hand, so it only picks a zone.
+  const customZoneResults = (0,external_React_namespaceObject.useMemo)(() => customMode ? filterCustomZoneResults(searchIndex, customZoneQuery) : [], [customMode, searchIndex, customZoneQuery]);
+  // A picked zone wins; otherwise let a typed canonical IANA id resolve.
+  const effectiveCustomZone = customZone || (isValidTimeZone(customZoneQuery.trim()) ? customZoneQuery.trim() : "");
+  const showCustomZoneDropdown = !!customZoneQuery.trim() && !customZone;
+
+  // When editing a curated clock the persisted city may be in a stale locale;
+  // adopt the current localized name once it resolves, unless the user typed.
+  const initialCityId = initialClock?.cityId;
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const localized = initialCityId && curatedNames[initialCityId];
+    if (!localized) {
+      return;
+    }
+    const persisted = initialClock.city || "";
+    setSearchQuery(prev => prev === persisted ? localized : prev);
+    setSelectedCity(prev => prev === persisted ? localized : prev);
+  }, [curatedNames, initialCityId, initialClock]);
+
+  // Keep keyboard/AT focus on the active field when the form opens and when
+  // switching between city search and the custom-add view, so focus is never
+  // lost on a view change. moz-* inputs render their inner input async, so
+  // wait for inputEl, then fall back to focusing the host element.
   (0,external_React_namespaceObject.useEffect)(() => {
     let frameId = 0;
     let remainingFrames = 5;
     const focusWhenReady = () => {
-      const input = searchInputRef.current?.inputEl;
+      const host = customMode ? customCityRef.current : searchInputRef.current;
+      const input = host?.inputEl;
       if (input) {
         input.focus();
         return;
@@ -22270,14 +24203,18 @@ function AddClockForm({
       if (remainingFrames > 0) {
         remainingFrames -= 1;
         frameId = requestAnimationFrame(focusWhenReady);
+      } else if (typeof host?.focus === "function") {
+        host.focus();
       }
     };
     frameId = requestAnimationFrame(focusWhenReady);
     return () => cancelAnimationFrame(frameId);
-  }, []);
-  const handleSelectLocation = (0,external_React_namespaceObject.useCallback)(timeZone => {
-    setSearchQuery(getCityFromTimeZone(timeZone));
+  }, [customMode]);
+  const handleSelectLocation = (0,external_React_namespaceObject.useCallback)((timeZone, city, cityId = "") => {
+    setSearchQuery(city);
     setSelectedTimeZone(timeZone);
+    setSelectedCity(city);
+    setSelectedCityId(cityId);
   }, []);
   const handleNicknameInput = (0,external_React_namespaceObject.useCallback)(e => {
     setNickname(e.target.value.slice(0, MAX_NICKNAME_LENGTH));
@@ -22288,30 +24225,78 @@ function AddClockForm({
     }
     const trimmed = nickname.trim();
     const label = trimmed ? trimmed.slice(0, MAX_NICKNAME_LENGTH) : null;
-    // Preserve existing labelColor when editing the same zone so an
-    // unchanged labeled clock keeps its color across edits.
+    // Same zone can now mean a different city (Los Angeles -> San Francisco),
+    // so always apply the resolved city/cityId while keeping the color. Only
+    // keep the existing cityId when the resolved city is unchanged; otherwise
+    // an inherited cityId would mislabel the new city.
+    const {
+      cityId: previousCityId,
+      ...editedClock
+    } = initialClock ?? {};
+    const editedCityId = resolvedClockCityId || (resolvedClockCity === initialClock?.city ? previousCityId : "");
     const baseZone = initialClock && initialClock.timeZone === resolvedClockTimeZone ? {
-      ...initialClock
-    } : buildClockZone(resolvedClockTimeZone);
+      ...editedClock,
+      city: resolvedClockCity,
+      ...(editedCityId ? {
+        cityId: editedCityId
+      } : {})
+    } : buildClockZone(resolvedClockTimeZone, resolvedClockCity, resolvedClockCityId);
     onSave({
       ...baseZone,
       label,
       labelColor: label ? baseZone.labelColor || getRandomLabelColor() : null
     });
-  }, [canAddSelectedClock, nickname, initialClock, resolvedClockTimeZone, onSave]);
+  }, [canAddSelectedClock, nickname, initialClock, resolvedClockTimeZone, resolvedClockCity, resolvedClockCityId, onSave]);
+  const enterCustomMode = (0,external_React_namespaceObject.useCallback)(() => {
+    const localZone = getDefaultTimeZones()[0] || "";
+    setCustomMode(true);
+    setCustomCity(searchQuery.trim().slice(0, MAX_CITY_LENGTH));
+    setCustomZone(localZone);
+    setCustomZoneQuery(localZone ? formatCustomZoneLabel(localZone) : "");
+  }, [searchQuery]);
+  const handleZoneInput = (0,external_React_namespaceObject.useCallback)(value => {
+    setCustomZoneQuery(value);
+    setCustomZone("");
+  }, []);
+  const handleZoneSelect = (0,external_React_namespaceObject.useCallback)((timeZone, label) => {
+    setCustomZoneQuery(label);
+    setCustomZone(timeZone);
+  }, []);
+  const canAddCustom = (isEditing || canAddClock) && !!customCity.trim() && isValidTimeZone(effectiveCustomZone);
+  const handleCustomSubmit = (0,external_React_namespaceObject.useCallback)(() => {
+    if (!canAddCustom) {
+      return;
+    }
+    const trimmed = nickname.trim();
+    const label = trimmed ? trimmed.slice(0, MAX_NICKNAME_LENGTH) : null;
+    const base = buildClockZone(effectiveCustomZone, customCity.trim());
+    onSave({
+      ...base,
+      label,
+      labelColor: label ? initialClock?.labelColor || getRandomLabelColor() : null
+    });
+  }, [canAddCustom, effectiveCustomZone, customCity, nickname, initialClock, onSave]);
   return /*#__PURE__*/external_React_default().createElement("form", {
     className: "clocks-panel clocks-add-form",
     "data-l10n-id": isEditing ? "newtab-clock-widget-edit-clock-form" : "newtab-clock-widget-add-clock-form",
     onSubmit: e => {
       e.preventDefault();
-      handleSubmit();
+      if (customMode) {
+        handleCustomSubmit();
+      } else {
+        handleSubmit();
+      }
     },
     onKeyDown: e => {
       if (e.key === "Escape") {
         onCancel();
       } else if (e.key === "Enter" && !e.target.closest(".clocks-search-result") && !e.target.closest("moz-button, button")) {
         e.preventDefault();
-        handleSubmit();
+        if (customMode) {
+          handleCustomSubmit();
+        } else {
+          handleSubmit();
+        }
       }
     },
     onBlur: e => {
@@ -22319,15 +24304,74 @@ function AddClockForm({
         onCancel();
       }
     }
-  }, /*#__PURE__*/external_React_default().createElement("div", {
+  }, customMode ? /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("moz-input-text", {
+    className: "clocks-custom-city-input",
+    "data-l10n-id": "newtab-clock-widget-custom-city-input",
+    id: "clocks-custom-city-input",
+    dir: "auto",
+    ref: customCityRef,
+    value: customCity,
+    onInput: e => setCustomCity(e.target.value.slice(0, MAX_CITY_LENGTH))
+  }), /*#__PURE__*/external_React_default().createElement("div", {
     className: "clocks-location-wrapper"
   }, /*#__PURE__*/external_React_default().createElement("moz-input-search", {
-    role: "combobox",
-    "aria-haspopup": "listbox",
-    "aria-expanded": showLocationDropdown,
-    "aria-controls": "clocks-search-results",
-    "aria-activedescendant": showLocationDropdown && selectedTimeZone && filteredTimeZones.includes(selectedTimeZone) ? `clocks-result-${filteredTimeZones.indexOf(selectedTimeZone)}` : undefined,
-    "aria-autocomplete": "list",
+    className: "clocks-custom-timezone-input",
+    "data-l10n-id": "newtab-clock-widget-custom-timezone-input",
+    id: "clocks-custom-timezone-input",
+    value: customZoneQuery,
+    onInput: e => handleZoneInput(e.target.value)
+  }), showCustomZoneDropdown && /*#__PURE__*/external_React_default().createElement("div", {
+    id: "clocks-custom-zone-results",
+    className: "clocks-search-results",
+    role: "listbox",
+    "data-l10n-id": "newtab-clock-widget-custom-zone-results"
+  }, customZoneResults.map((result, index) => {
+    const label = `${result.city} · ${result.offsetLabel}`;
+    return /*#__PURE__*/external_React_default().createElement("div", {
+      id: `clocks-custom-zone-result-${index}`,
+      className: "clocks-search-result",
+      key: result.timeZone,
+      onClick: () => handleZoneSelect(result.timeZone, label),
+      onKeyDown: e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleZoneSelect(result.timeZone, label);
+        }
+      },
+      role: "option",
+      "aria-selected": result.timeZone === customZone,
+      tabIndex: 0
+    }, /*#__PURE__*/external_React_default().createElement("span", {
+      className: "clocks-search-result-city",
+      dir: "auto"
+    }, result.city), /*#__PURE__*/external_React_default().createElement("span", {
+      className: "clocks-search-result-timezone",
+      dir: "auto"
+    }, `${result.offsetLabel} · ${result.timeZone}`));
+  }), !customZoneResults.length && /*#__PURE__*/external_React_default().createElement("div", {
+    className: "clocks-search-no-results",
+    role: "status",
+    "data-l10n-id": "newtab-clock-widget-custom-zone-no-results"
+  }))), /*#__PURE__*/external_React_default().createElement("moz-input-text", {
+    className: "clocks-nickname-input",
+    "data-l10n-id": "newtab-clock-widget-input-nickname",
+    id: "clocks-custom-nickname-input",
+    value: nickname,
+    onInput: handleNicknameInput
+  }), /*#__PURE__*/external_React_default().createElement("moz-button-group", {
+    className: "clocks-add-actions"
+  }, /*#__PURE__*/external_React_default().createElement("moz-button", {
+    "data-l10n-id": "newtab-clock-widget-custom-back",
+    onClick: () => setCustomMode(false)
+  }), /*#__PURE__*/external_React_default().createElement("moz-button", {
+    className: "clocks-form-submit",
+    "data-l10n-id": "newtab-clock-widget-button-add-clock",
+    disabled: !canAddCustom,
+    onClick: handleCustomSubmit,
+    type: "primary"
+  }))) : /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "clocks-location-wrapper"
+  }, /*#__PURE__*/external_React_default().createElement("moz-input-search", {
     className: "clocks-search-location-input",
     "data-l10n-id": "newtab-clock-widget-search-location-input",
     id: "clocks-location-input",
@@ -22336,36 +24380,51 @@ function AddClockForm({
     onInput: e => {
       setSearchQuery(e.target.value);
       setSelectedTimeZone("");
+      setSelectedCity("");
+      setSelectedCityId("");
     }
   }), showLocationDropdown && /*#__PURE__*/external_React_default().createElement("div", {
     id: "clocks-search-results",
     className: "clocks-search-results",
     role: "listbox",
     "data-l10n-id": "newtab-clock-widget-search-results"
-  }, filteredTimeZones.length ? filteredTimeZones.map((timeZone, index) => /*#__PURE__*/external_React_default().createElement("div", {
+  }, filteredResults.map((result, index) => /*#__PURE__*/external_React_default().createElement("div", {
     id: `clocks-result-${index}`,
     className: "clocks-search-result",
-    key: timeZone,
-    onClick: () => handleSelectLocation(timeZone),
+    key: `${result.timeZone}-${result.city}`,
+    onClick: () => handleSelectLocation(result.timeZone, result.city, result.cityId),
     onKeyDown: e => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        handleSelectLocation(timeZone);
+        handleSelectLocation(result.timeZone, result.city, result.cityId);
       }
     },
     role: "option",
-    "aria-selected": timeZone === selectedTimeZone,
+    "aria-selected": result.timeZone === selectedTimeZone && result.city === selectedCity,
     tabIndex: 0
   }, /*#__PURE__*/external_React_default().createElement("span", {
-    className: "clocks-search-result-city"
-  }, getCityFromTimeZone(timeZone)), /*#__PURE__*/external_React_default().createElement("span", {
-    className: "clocks-search-result-timezone"
-  }, localizedTimeZoneMap?.get(timeZone) || timeZone))) : /*#__PURE__*/external_React_default().createElement("div", {
-    className: "clocks-search-no-results",
+    className: "clocks-search-result-city",
+    dir: "auto"
+  }, result.city), /*#__PURE__*/external_React_default().createElement("span", {
+    className: "clocks-search-result-timezone",
+    dir: "auto"
+  }, result.zoneName || result.timeZone))), !hasExactMatch && /*#__PURE__*/external_React_default().createElement("div", {
+    id: "clocks-add-custom-option",
+    className: "clocks-search-result clocks-add-custom",
     role: "option",
-    "aria-disabled": "true",
     "aria-selected": "false",
-    "data-l10n-id": "newtab-clock-widget-search-no-results"
+    tabIndex: 0,
+    onClick: enterCustomMode,
+    onKeyDown: e => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        enterCustomMode();
+      }
+    },
+    "data-l10n-id": "newtab-clock-widget-add-custom",
+    "data-l10n-args": JSON.stringify({
+      city: searchQuery.trim()
+    })
   }))), /*#__PURE__*/external_React_default().createElement("moz-input-text", {
     className: "clocks-nickname-input",
     "data-l10n-id": "newtab-clock-widget-input-nickname",
@@ -22383,7 +24442,7 @@ function AddClockForm({
     disabled: !canAddSelectedClock,
     onClick: handleSubmit,
     type: "primary"
-  })));
+  }))));
 }
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/Clocks/ClocksRow.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
@@ -22397,7 +24456,8 @@ function AddClockForm({
  * Single row for the Clocks widget; parent pre-computes per-row flags.
  *
  * @param {object} props
- * @param {{timeZone: string, city?: string, label: string|null, labelColor: string|null}} props.clock
+ * @param {{timeZone: string, city?: string, cityId?: string, label: string|null, labelColor: string|null}} props.clock
+ * @param {{[key: string]: string}} [props.curatedNames] cityId to localized name.
  * @param {string} [props.locale]
  * @param {Date|null} props.now Null before the first tick.
  * @param {Function|null} [props.onEdit]
@@ -22410,6 +24470,7 @@ function AddClockForm({
  */
 function ClocksRow({
   clock,
+  curatedNames,
   locale,
   now,
   onEdit,
@@ -22420,8 +24481,8 @@ function ClocksRow({
   showInlineActions,
   use12HourFormat
 }) {
-  const city = clock.city || getCityFromTimeZone(clock.timeZone);
-  const cityDisplay = shouldAbbreviate ? getCityAbbreviation(city) : city;
+  const city = getClockCityDisplay(clock, curatedNames);
+  const cityDisplay = shouldAbbreviate ? getCityAbbreviation(city, clock.cityId) : city;
   // Pass `now` so the TZ label and time resolve from the same instant;
   // otherwise they can disagree across a DST boundary.
   const tzLabel = getTimeZoneAbbreviation(clock.timeZone, locale, now ?? undefined);
@@ -22446,14 +24507,18 @@ function ClocksRow({
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "clocks-label"
   }, /*#__PURE__*/external_React_default().createElement("span", {
-    className: "clocks-city"
+    className: "clocks-city",
+    dir: "auto"
   }, cityDisplay), /*#__PURE__*/external_React_default().createElement("span", {
-    className: "clocks-timezone"
+    className: "clocks-timezone",
+    dir: "auto"
   }, tzLabel)), showLabel && !!clock.label && /*#__PURE__*/external_React_default().createElement("span", {
-    className: chipClassName
+    className: chipClassName,
+    dir: "auto"
   }, clock.label)), /*#__PURE__*/external_React_default().createElement("time", {
     className: "clocks-time",
     "aria-hidden": "true",
+    dir: "auto",
     dateTime: now ? formatDateTimeAttr(now, clock.timeZone) : undefined
   }, timeDisplay), showInlineActions && /*#__PURE__*/external_React_default().createElement("div", {
     className: "clocks-row-actions"
@@ -22482,6 +24547,7 @@ function ClocksRow({
 
 function EditClocksPanel({
   clockZones,
+  curatedNames,
   canAddClock,
   onShowAddClock,
   onEditClock,
@@ -22540,7 +24606,7 @@ function EditClocksPanel({
   })), /*#__PURE__*/external_React_default().createElement("ul", {
     className: "clocks-edit-list"
   }, clockZones.map((clock, i) => {
-    const city = clock.city || getCityFromTimeZone(clock.timeZone);
+    const city = getClockCityDisplay(clock, curatedNames);
     return /*#__PURE__*/external_React_default().createElement("li", {
       className: "clocks-edit-item",
       key: `${clock.timeZone}-${i}`,
@@ -22555,7 +24621,8 @@ function EditClocksPanel({
     }, /*#__PURE__*/external_React_default().createElement("div", {
       className: "clocks-edit-top-row"
     }, /*#__PURE__*/external_React_default().createElement("span", {
-      className: "clocks-edit-city"
+      className: "clocks-edit-city",
+      dir: "auto"
     }, city), /*#__PURE__*/external_React_default().createElement("div", {
       className: "clocks-edit-item-actions"
     }, /*#__PURE__*/external_React_default().createElement("moz-button", {
@@ -22586,6 +24653,7 @@ function EditClocksPanel({
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 
 
 
@@ -22769,6 +24837,10 @@ function Clocks({
   }, [clockZones, dispatch]);
   const canAddClock = clockZones.length < MAX_CLOCK_COUNT;
   const supportedTimeZones = (0,external_React_namespaceObject.useMemo)(() => getSupportedTimeZones(), []);
+
+  // Localized names for the shown clocks only (<= MAX_CLOCK_COUNT); the add
+  // form resolves the full curated list on demand when it opens.
+  const curatedNames = useCuratedCityNames(clockZones.map(clock => clock.cityId).filter(Boolean));
   const resetAddClockForm = (0,external_React_namespaceObject.useCallback)(() => {
     setEditingClockIndex(null);
   }, []);
@@ -22887,6 +24959,7 @@ function Clocks({
     size: "small",
     ref: contextMenuButtonRef
   }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+    className: "panel-list-no-icons",
     ref: contextMenuRef,
     id: "clocks-widget-context-menu"
   }, /*#__PURE__*/external_React_default().createElement("panel-item", {
@@ -22925,6 +24998,7 @@ function Clocks({
     onCancel: handleCloseClockForm
   }), isEditingClocks && /*#__PURE__*/external_React_default().createElement(EditClocksPanel, {
     clockZones: clockZones,
+    curatedNames: curatedNames,
     canAddClock: canAddClock,
     onShowAddClock: () => handleShowAddClock(CLOCK_WIDGET_SOURCE.MANAGE),
     onEditClock: index => handleShowEditClockForm(index, CLOCK_WIDGET_SOURCE.MANAGE),
@@ -22942,6 +25016,7 @@ function Clocks({
     return /*#__PURE__*/external_React_default().createElement(ClocksRow, {
       key: `${c.timeZone}-${i}`,
       clock: c,
+      curatedNames: curatedNames,
       locale: locale,
       now: now,
       onEdit: showInlineActions ? () => handleShowEditClockForm(i) : null,
@@ -23084,11 +25159,23 @@ const Privacy_USER_ACTION_TYPES = {
 };
 
 // action_value for the trackers-blocked impression: whether the widget was
-// shown with any tracking activity blocked today.
+// shown with any tracking activity blocked today. ETP_OFF is its own value
+// rather than folding into NONE, so "protection is off" stays distinguishable
+// from "protection is on and nothing has been blocked yet" (Bug 2063525).
 const TRACKERS_BLOCKED_VALUE = {
   BLOCKED: "blocked",
-  NONE: "none"
+  NONE: "none",
+  ETP_OFF: "etp_off"
 };
+
+// Kept out of the component: a nested ternary at the call site is disallowed,
+// and the branch is easier to read named.
+function trackersBlockedValue(isEtpOff, trackersToday) {
+  if (isEtpOff) {
+    return TRACKERS_BLOCKED_VALUE.ETP_OFF;
+  }
+  return trackersToday > 0 ? TRACKERS_BLOCKED_VALUE.BLOCKED : TRACKERS_BLOCKED_VALUE.NONE;
+}
 
 // Per design: the brief sparkle rides ordinary +10 count-ups and the smaller
 // earned moments; the longer, denser one is reserved for the count milestones
@@ -23107,8 +25194,16 @@ const CELEBRATION_TIERS = {
 // Count-up duration. Slower than the 750ms prototype so the number is
 // readable while it climbs.
 const COUNT_UP_DURATION_MS = 1100;
+
+// How much of the widget must be in view to count as seen. Matches
+// useWidgetTelemetry's impression threshold.
+const ON_SCREEN_THRESHOLD = 0.3;
 const PRIVACY_ENTRY = WIDGET_REGISTRY.find(w => w.id === "privacy");
 const ICON_BASE_URL = "chrome://newtab/content/data/content/assets/";
+
+// Deep link to the Enhanced Tracking Protection section of the privacy pane.
+const ETP_SETTINGS_CATEGORY = "privacy-trackingprotection";
+const ETP_SETTINGS_URL = `about:preferences#${ETP_SETTINGS_CATEGORY}`;
 
 // Icon key (from the message decision / PrivacyMessages.sys.mjs) -> asset.
 const ICON_ASSETS = {
@@ -23117,7 +25212,8 @@ const ICON_ASSETS = {
   planet: "widget-privacy-planet.svg",
   bolt: "widget-privacy-bolt.svg",
   star: "widget-privacy-star.svg",
-  kit: "widget-privacy-kit.svg"
+  kit: "widget-privacy-kit.svg",
+  etpOff: "widget-privacy-etp-off.svg"
 };
 
 // The kit head-tilt loops on its own (CSS animation inside the SVG), so it is
@@ -23194,9 +25290,8 @@ function Privacy({
   });
   const trackersToday = privacyData?.trackersToday ?? 0;
   const sitesToday = privacyData?.sitesToday ?? 0;
-  // Gate the metric UI on a real feed update. Before the first broadcast — or
-  // when it's skipped (e.g. the backward-compat guard in PrivacyFeed on older
-  // platforms) — show no metric state rather than a misleading empty/zero one.
+  // Gate the metric UI on a real feed update: before the first broadcast, show
+  // no metric state rather than a misleading empty/zero one.
   const initialized = privacyData?.initialized ?? false;
 
   // Message decision chosen by PrivacyFeed's selector (Bug 2050954).
@@ -23207,7 +25302,8 @@ function Privacy({
     icon,
     countArg,
     cta,
-    countCeiling
+    countCeiling,
+    etpOff
   } = privacyData ?? {};
   const isLarge = widgetSize === "large";
 
@@ -23233,6 +25329,32 @@ function Privacy({
   // before the user could see it. Hold until the tab is actually shown.
   const isPageVisible = usePageVisible();
 
+  // Track the article element via state so the effect below re-runs whenever
+  // React mounts a new node. celebrationRef is a stable useRef and can't drive
+  // re-runs on its own.
+  const [rootEl, setRootEl] = (0,external_React_namespaceObject.useState)(null);
+
+  // This tab's count was read while it was preloaded, so ask for a fresh one
+  // once the widget is on screen. PrivacyFeed decides how often to re-read.
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!rootEl || !isPageVisible) {
+      return undefined;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      // Ratio, not isIntersecting: that is true for any sliver on screen, and
+      // stays true on the way back out past the threshold.
+      if (entry.intersectionRatio >= ON_SCREEN_THRESHOLD) {
+        dispatch(actionCreators.OnlyToMain({
+          type: actionTypes.WIDGETS_PRIVACY_VISIBLE
+        }));
+      }
+    }, {
+      threshold: ON_SCREEN_THRESHOLD
+    });
+    observer.observe(rootEl);
+    return () => observer.disconnect();
+  }, [dispatch, isPageVisible, rootEl]);
+
   // Normally show the real count, only ceiling the readout at "{cap}+"
   // (default 999) so it stays a tidy few characters. On the daily-cap render
   // the selector sets countCeiling (100), so that one load shows "100+"; the
@@ -23248,16 +25370,27 @@ function Privacy({
   // Same readout without the animation, for the screen-reader copy.
   const stableCount = formatCount(trackersToday);
 
-  // trackersToday === 0 is the sole trigger for the empty layout. It must not
-  // also key off `variant === "empty"`: a SYSTEM_TICK refreshes the count
-  // without touching `variant`, so a tab opened at zero would stay empty even
-  // after its count climbs, until the next tab re-runs the selector.
+  // The user turned off every blocking option in about:preferences#privacy, so
+  // nothing is being counted (Bug 2063525). This outranks every layout below:
+  // the warning card replaces the readout, the empty state and any message.
+  const isEtpOff = etpOff === true;
+  // trackersToday === 0 is the sole trigger for the empty layout, so the widget
+  // agrees with about:protections: any blocked activity there shows a count
+  // here. sitesToday is only a Places history proxy, so it can read 0 while the
+  // count stands — that drops its own line below rather than blanking the count
+  // (Bug 2063207). It must not also key off `variant === "empty"`: a SYSTEM_TICK
+  // refreshes the count without touching `variant`, so a tab opened at zero
+  // would stay empty even after its count climbs, until the next tab re-runs
+  // the selector.
   const isEmptyState = trackersToday === 0;
+  // The count block and its secondary message only render when neither the
+  // ETP-off card nor the empty state has taken the body.
+  const showCount = !isEtpOff && !isEmptyState;
   // Streak and tip both use the count + divider + message layout; "blank"
   // shows the count only (plus a CTA).
-  const isStreak = !isEmptyState && variant === "streak";
-  const isTip = !isEmptyState && variant === "tip";
-  const isBlank = !isEmptyState && variant === "blank";
+  const isStreak = showCount && variant === "streak";
+  const isTip = showCount && variant === "tip";
+  const isBlank = showCount && variant === "blank";
   const hasMessage = (isStreak || isTip) && messageId;
   // Telemetry id for a CTA click. The blank state has no messageId, so give it
   // a stable, distinguishable id — otherwise its clicks report null and the
@@ -23309,7 +25442,13 @@ function Privacy({
     const awardedAt = celebration?.awardedAt ?? null;
     const isNewAward = awardedAt && playedCelebrationRef.current !== awardedAt;
     const isNewMoment = isEarnedMoment && playedMomentRef.current !== messageId;
-    if (!isNewAward && !isNewMoment) {
+
+    // The empty and ETP-off layouts render no count, so celebrating would burn
+    // the one-shot award on an animation nobody sees.
+    if (isEtpOff || isEmptyState || !isNewAward && !isNewMoment) {
+      if (!awardedAt) {
+        release();
+      }
       return;
     }
 
@@ -23348,7 +25487,7 @@ function Privacy({
       // award — so drop any hold taken while the tab was hidden.
       release();
     }
-  }, [celebration, celebrationTier, countUp, dispatch, hold, isEarnedMoment, isMajorMoment, isPageVisible, messageId, release, showRing, triggerCelebration]);
+  }, [celebration, celebrationTier, countUp, dispatch, hold, isEarnedMoment, isEmptyState, isEtpOff, isMajorMoment, isPageVisible, messageId, release, showRing, triggerCelebration]);
 
   // Drop the snapshot with the animation, so the next run can't paint a frame
   // of the previous one's tier.
@@ -23372,10 +25511,10 @@ function Privacy({
     impressionsLoggedRef.current = true;
     // A separate impression per view reporting whether the widget was shown
     // with any tracking activity blocked today. The state rides action_value
-    // ("blocked" vs "none"). No count is recorded.
+    // ("blocked", "none", or "etp_off"). No count is recorded.
     recordUserAction(Privacy_USER_ACTION_TYPES.TRACKERS_BLOCKED_IMPRESSION, {
       source: "widget",
-      value: trackersToday > 0 ? TRACKERS_BLOCKED_VALUE.BLOCKED : TRACKERS_BLOCKED_VALUE.NONE
+      value: trackersBlockedValue(isEtpOff, trackersToday)
     });
     // Impression of the secondary message, keyed by ctaMessageId (blank ->
     // "newtab-privacy-blank"). Gated on !isEmptyState: the selector sets
@@ -23383,13 +25522,15 @@ function Privacy({
     // ctaMessageId check would log a spurious impression for a state that shows
     // no message/CTA. The blank state still logs, keeping its URL-valued CTA
     // click attributable by joining to this impression on newtab_visit_id.
-    if (!isEmptyState && ctaMessageId) {
+    // The ETP-off card is gated for the same reason: it replaces the message,
+    // but a decision from before the toggle is still sitting in state.
+    if (!isEtpOff && !isEmptyState && ctaMessageId) {
       recordUserAction(Privacy_USER_ACTION_TYPES.MESSAGE_IMPRESSION, {
         source: "message",
         value: ctaMessageId
       });
     }
-  }, [hasBeenSeen, variant, trackersToday, isEmptyState, ctaMessageId, recordUserAction]);
+  }, [hasBeenSeen, variant, trackersToday, isEmptyState, isEtpOff, ctaMessageId, recordUserAction]);
   function handlePrivacyHide() {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
@@ -23477,6 +25618,28 @@ function Privacy({
     });
   }
 
+  // The ETP-off card sends the user where protection can be turned back on in about:preferences#privacy's Enhanced Tracking Protection section.
+  function handleOpenEtpSettings(event) {
+    event.preventDefault();
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_PRIVACY_CTA,
+        data: {
+          action: {
+            type: "OPEN_PREFERENCES_PAGE",
+            data: {
+              category: ETP_SETTINGS_CATEGORY
+            }
+          }
+        }
+      }));
+      recordUserAction(Privacy_USER_ACTION_TYPES.TRACKING_MESSAGE_CLICK, {
+        source: "widget",
+        value: ETP_SETTINGS_URL
+      });
+    });
+  }
+
   // The message resolves via its Fluent `messageId` (Bug 2048389); `countArg`
   // feeds the plural/variable l10n args.
   const messageEl = className => /*#__PURE__*/external_React_default().createElement("p", {
@@ -23505,10 +25668,12 @@ function Privacy({
     type: "primary"
   }) : null;
   return /*#__PURE__*/external_React_default().createElement("article", {
-    className: `privacy widget col-4 ${widgetSize}-widget${initialized && isEmptyState ? " is-empty" : ""}${initialized && isTip ? " has-tip-msg" : ""}${initialized && isStreak ? " has-streak" : ""}${isCelebrating && activeCelebration.isMajor ? " is-major-celebration" : ""}`,
+    "data-l10n-id": "newtab-privacy-widget-label",
+    className: `privacy widget col-4 ${widgetSize}-widget${initialized && isEtpOff ? " is-etp-off" : ""}${initialized && !isEtpOff && isEmptyState ? " is-empty" : ""}${initialized && isTip ? " has-tip-msg" : ""}${initialized && isStreak ? " has-streak" : ""}${isCelebrating && activeCelebration.isMajor ? " is-major-celebration" : ""}`,
     ref: el => {
       impressionRef(el);
       celebrationRef.current = el;
+      setRootEl(el);
     }
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "privacy-title-wrapper"
@@ -23520,6 +25685,7 @@ function Privacy({
     menuId: "privacy-context-menu",
     type: "ghost"
   }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+    className: "panel-list-no-icons",
     id: "privacy-context-menu"
   }, widgetsMayBeMaximized && /*#__PURE__*/external_React_default().createElement("panel-item", {
     submenu: "privacy-size-submenu"
@@ -23546,7 +25712,19 @@ function Privacy({
     onClick: handleLearnMore
   })))), /*#__PURE__*/external_React_default().createElement("div", {
     className: "privacy-body"
-  }, initialized && (isEmptyState ? /*#__PURE__*/external_React_default().createElement("div", {
+  }, initialized && isEtpOff && /*#__PURE__*/external_React_default().createElement("div", {
+    className: "privacy-etp-off"
+  }, privacyImage("etpOff"), /*#__PURE__*/external_React_default().createElement("a", {
+    className: "privacy-etp-off-details",
+    href: ETP_SETTINGS_URL,
+    onClick: handleOpenEtpSettings
+  }, /*#__PURE__*/external_React_default().createElement("p", {
+    className: "privacy-etp-off-bold",
+    "data-l10n-id": "newtab-privacy-etp-off-faster-browsing"
+  }), /*#__PURE__*/external_React_default().createElement("p", {
+    className: "privacy-etp-off-message",
+    "data-l10n-id": "newtab-privacy-etp-off-turn-on-tracking"
+  }))), initialized && !isEtpOff && (isEmptyState ? /*#__PURE__*/external_React_default().createElement("div", {
     className: "privacy-empty"
   }, privacyImage("shield"), /*#__PURE__*/external_React_default().createElement("a", {
     className: "privacy-empty-details",
@@ -23579,7 +25757,7 @@ function Privacy({
     "data-l10n-args": JSON.stringify({
       count: trackersToday
     })
-  }), /*#__PURE__*/external_React_default().createElement("span", {
+  }), sitesToday > 0 && /*#__PURE__*/external_React_default().createElement("span", {
     className: "privacy-count-sites",
     "data-l10n-id": "newtab-privacy-across-sites",
     "data-l10n-args": JSON.stringify({
@@ -23931,6 +26109,7 @@ function Crossword({
     menuId: "crossword-context-menu",
     type: "ghost"
   }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+    className: "panel-list-no-icons",
     id: "crossword-context-menu"
   }, MENU_ACTION_ITEMS.filter(item => !(puzzleCompleted && item.hideWhenCompleted)).map(item => /*#__PURE__*/external_React_default().createElement("panel-item", {
     key: item.key,
@@ -23974,6 +26153,73 @@ function Crossword({
     ,
     sandbox: "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
   })));
+}
+
+;// CONCATENATED MODULE: ./common/StocksWatchlist.mjs
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+const MAX_STOCKS_WATCHLIST = 10;
+
+function normalize(symbol) {
+  return String(symbol ?? "")
+    .trim()
+    .toUpperCase();
+}
+
+/**
+ * Parse the widgets.stocks.watchlist pref (a comma-separated list of ticker
+ * symbols) into a clean array: trimmed, upper-cased, empties dropped, duplicates
+ * removed keeping first occurrence, capped at MAX_STOCKS_WATCHLIST.
+ *
+ * @param {string} pref
+ * @returns {string[]}
+ */
+function parseWatchlist(pref) {
+  const out = [];
+  const seen = new Set();
+  for (const raw of String(pref ?? "").split(",")) {
+    const symbol = normalize(raw);
+    if (!symbol || seen.has(symbol)) {
+      continue;
+    }
+    seen.add(symbol);
+    out.push(symbol);
+    if (out.length >= MAX_STOCKS_WATCHLIST) {
+      break;
+    }
+  }
+  return out;
+}
+
+function serializeWatchlist(symbols) {
+  return symbols.join(",");
+}
+
+/**
+ * Return a new array with the symbol appended, or the same array unchanged when
+ * the symbol is empty, already present, or the list is at the cap.
+ *
+ * @param {string[]} symbols
+ * @param {string} symbol
+ * @returns {string[]}
+ */
+function addToWatchlist(symbols, symbol) {
+  const next = normalize(symbol);
+  if (
+    !next ||
+    symbols.includes(next) ||
+    symbols.length >= MAX_STOCKS_WATCHLIST
+  ) {
+    return symbols;
+  }
+  return [...symbols, next];
+}
+
+function removeFromWatchlist(symbols, symbol) {
+  const target = normalize(symbol);
+  return symbols.filter(s => s !== target);
 }
 
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/Stocks/StockTicker.jsx
@@ -24048,7 +26294,11 @@ function StockTicker({
   name: stockName,
   ticker,
   price,
-  changePercent
+  changePercent,
+  watchlistState,
+  onWatchlistToggle,
+  disabled,
+  variant
 }) {
   const direction = getDirection(changePercent);
   const locale = typeof navigator !== "undefined" ? navigator.language : undefined;
@@ -24065,8 +26315,28 @@ function StockTicker({
   const changeText = /*#__PURE__*/external_React_default().createElement("span", {
     className: `stock-ticker-change stock-ticker-change--${direction}`
   }, displayChange);
+  // Large-only watchlist control, driven by watchlistState: an add/remove button, or a
+  // non-interactive "added" checkmark on Markets rows.
+  const isActionable = watchlistState === "add" || watchlistState === "remove";
+  const showActionButton = size === "large" && isActionable && typeof onWatchlistToggle === "function";
+  const showAddedIndicator = size === "large" && watchlistState === "added";
+  const actionIcon = watchlistState === "remove" ? "chrome://global/skin/icons/minus.svg" : "chrome://global/skin/icons/plus.svg";
+
+  // Show the checkmark briefly after an add so the user sees the confirmation; afterwards
+  // it appears on hover like the other rows.
+  const [confirming, setConfirming] = (0,external_React_namespaceObject.useState)(false);
+  const confirmTimer = (0,external_React_namespaceObject.useRef)(null);
+  (0,external_React_namespaceObject.useEffect)(() => () => clearTimeout(confirmTimer.current), []);
+  const handleToggle = () => {
+    onWatchlistToggle(ticker, stockName || ticker);
+    if (watchlistState === "add") {
+      setConfirming(true);
+      clearTimeout(confirmTimer.current);
+      confirmTimer.current = setTimeout(() => setConfirming(false), 2000);
+    }
+  };
   return /*#__PURE__*/external_React_default().createElement("li", {
-    className: `stock-ticker stock-ticker--${size}`,
+    className: `stock-ticker stock-ticker--${size}${variant === "search" ? " stock-ticker--result" : ""}`,
     "aria-hidden": loading ? "true" : undefined
   }, !loading && /*#__PURE__*/external_React_default().createElement("span", {
     className: "stock-ticker-sr",
@@ -24083,7 +26353,7 @@ function StockTicker({
   }), /*#__PURE__*/external_React_default().createElement("span", {
     className: "stock-ticker-label",
     "aria-hidden": "true"
-  }, size === "large" ? /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("span", {
+  }, size === "large" && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("span", {
     className: "stock-ticker-line"
   }, /*#__PURE__*/external_React_default().createElement("span", {
     className: "stock-ticker-name"
@@ -24097,7 +26367,7 @@ function StockTicker({
     className: "stock-ticker-dot"
   }), /*#__PURE__*/external_React_default().createElement("span", {
     className: "stock-ticker-price"
-  }, displayPrice))) : /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("span", {
+  }, displayPrice))), size === "medium" && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("span", {
     className: "stock-ticker-line"
   }, /*#__PURE__*/external_React_default().createElement("span", {
     className: "stock-ticker-symbol"
@@ -24105,9 +26375,256 @@ function StockTicker({
     className: "stock-ticker-dot"
   }), /*#__PURE__*/external_React_default().createElement("span", {
     className: "stock-ticker-price"
-  }, displayPrice)), changeText)));
+  }, displayPrice)), changeText), size === "small" && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, changeText, /*#__PURE__*/external_React_default().createElement("span", {
+    className: "stock-ticker-price"
+  }, displayPrice))), showActionButton && /*#__PURE__*/external_React_default().createElement("moz-button", {
+    className: "stock-ticker-action",
+    type: "icon",
+    size: "small",
+    iconSrc: actionIcon,
+    disabled: disabled || undefined,
+    "data-l10n-id": watchlistState === "remove" ? "newtab-stocks-remove-from-watchlist" : "newtab-stocks-add-to-watchlist",
+    "data-l10n-args": JSON.stringify({
+      name: stockName || ticker
+    }),
+    onClick: handleToggle
+  }), showAddedIndicator && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("span", {
+    className: "stock-ticker-sr stock-ticker-in-watchlist",
+    "data-l10n-id": "newtab-stocks-in-watchlist",
+    "data-l10n-args": JSON.stringify({
+      name: stockName || ticker
+    })
+  }), /*#__PURE__*/external_React_default().createElement("span", {
+    className: `stock-ticker-added${confirming ? " stock-ticker-added--confirming" : ""}`,
+    "aria-hidden": "true"
+  })));
 }
 
+;// CONCATENATED MODULE: ./content-src/components/Widgets/Stocks/StockSearch.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+
+
+const RESULTS_ID = "stocks-search-results";
+
+// The message for each non-success state.
+const STATUS_MESSAGE_L10N_ID = {
+  loading: "newtab-stocks-search-loading",
+  empty: "newtab-stocks-search-no-results",
+  error: "newtab-stocks-search-error"
+};
+
+/**
+ * The ticker search panel: search for a symbol and add a result to the
+ * watchlist. The parent owns the search status and results.
+ *
+ * @param {object} props
+ * @param {string} props.searchStatus Current state: "idle", "loading", "success", "empty", or "error".
+ * @param {object[]} props.searchResults Tickers returned by a successful search.
+ * @param {string[]} props.savedSymbols The user's watchlist, to mark added rows.
+ * @param {boolean} props.atWatchlistLimit Whether the watchlist is full.
+ * @param {function(string): void} props.onSubmit Called with a non-empty search query.
+ * @param {function(string, string): void} props.onAdd Called with a result's ticker symbol and display name.
+ * @param {function(): void} props.onClose Called when the user closes the panel.
+ */
+function StockSearch({
+  searchStatus,
+  searchResults,
+  savedSymbols,
+  atWatchlistLimit,
+  onSubmit,
+  onAdd,
+  onClose
+}) {
+  const [value, setValue] = (0,external_React_namespaceObject.useState)("");
+  const [submittedQuery, setSubmittedQuery] = (0,external_React_namespaceObject.useState)("");
+  const inputRef = (0,external_React_namespaceObject.useRef)(null);
+
+  // moz-input-search creates its inner input asynchronously, so wait for it over
+  // a few frames before focusing.
+  (0,external_React_namespaceObject.useEffect)(() => {
+    let frameId = 0;
+    let remainingFrames = 5;
+    const focusWhenReady = () => {
+      const input = inputRef.current?.inputEl;
+      if (input) {
+        input.focus();
+        return;
+      }
+      if (remainingFrames > 0) {
+        remainingFrames -= 1;
+        frameId = requestAnimationFrame(focusWhenReady);
+      }
+    };
+    frameId = requestAnimationFrame(focusWhenReady);
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+  const savedSet = new Set(savedSymbols);
+  // When the watchlist is full, explain why results cannot be added rather than
+  // showing nothing.
+  const statusMessageId = atWatchlistLimit && searchStatus === "success" ? "newtab-stocks-watchlist-full" : STATUS_MESSAGE_L10N_ID[searchStatus];
+  // Only the watchlist-full and no-results messages take a variable.
+  let statusMessageArgs = null;
+  if (statusMessageId === "newtab-stocks-watchlist-full") {
+    statusMessageArgs = {
+      limit: MAX_STOCKS_WATCHLIST
+    };
+  } else if (statusMessageId === "newtab-stocks-search-no-results") {
+    statusMessageArgs = {
+      query: submittedQuery
+    };
+  }
+  return /*#__PURE__*/external_React_default().createElement("div", {
+    className: "stocks-search",
+    onKeyDown: e => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    }
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "stocks-search-header"
+  }, /*#__PURE__*/external_React_default().createElement("moz-button", {
+    className: "stocks-search-back",
+    type: "icon ghost",
+    size: "small",
+    iconSrc: "chrome://global/skin/icons/arrow-left.svg",
+    "data-l10n-id": "newtab-stocks-search-back-button",
+    onClick: onClose
+  }), /*#__PURE__*/external_React_default().createElement("form", {
+    className: "stocks-search-form",
+    onSubmit: e => e.preventDefault(),
+    onKeyDown: e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const query = value.trim();
+        if (query) {
+          setSubmittedQuery(query);
+          onSubmit(query);
+        }
+      }
+    }
+  }, /*#__PURE__*/external_React_default().createElement("moz-input-search", {
+    ref: inputRef,
+    className: "stocks-search-input",
+    "data-l10n-id": "newtab-stocks-search-input",
+    "aria-controls": RESULTS_ID,
+    value: value,
+    onInput: e => setValue(e.target.value)
+  }))), /*#__PURE__*/external_React_default().createElement("ul", {
+    id: RESULTS_ID,
+    className: "stocks-search-results",
+    "data-l10n-id": "newtab-stocks-search-results",
+    "aria-busy": searchStatus === "loading"
+  }, searchStatus === "success" && searchResults.map(t => {
+    const saved = savedSet.has(normalize(t.ticker));
+    return /*#__PURE__*/external_React_default().createElement(StockTicker, {
+      key: t.ticker,
+      size: "large",
+      variant: "search",
+      name: t.name,
+      ticker: t.ticker,
+      price: t.last_price,
+      changePercent: t.todays_change_perc,
+      watchlistState: saved ? "added" : "add",
+      disabled: !saved && atWatchlistLimit,
+      onWatchlistToggle: onAdd
+    });
+  })), /*#__PURE__*/external_React_default().createElement("p", {
+    className: "stocks-search-message",
+    role: "status",
+    "aria-live": "polite"
+  }, statusMessageId && /*#__PURE__*/external_React_default().createElement("span", {
+    "data-l10n-id": statusMessageId,
+    "data-l10n-args": statusMessageArgs ? JSON.stringify(statusMessageArgs) : undefined
+  })));
+}
+;// CONCATENATED MODULE: ./content-src/components/Widgets/Stocks/useStockSearch.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+
+
+// Monotonic across every Stocks instance so a widget that unmounts and remounts
+// never reuses a request id that an earlier, still-running request could answer.
+let searchRequestSeq = 0;
+
+/**
+ * Owns the ticker-search panel lifecycle: whether it is open, sending a search,
+ * and returning focus when it closes. The watchlist mutation on add stays in the
+ * parent; this hook only opens, closes, and submits.
+ *
+ * @param {object} options
+ * @param {Function} options.dispatch The store's dispatch.
+ * @param {Function} options.recordUserAction Telemetry recorder from useWidgetTelemetry.
+ * @param {object} options.menuButtonRef Ref to the widget menu button, refocused on close.
+ * @returns {{ active: boolean, open: () => void, close: () => void, submit: (query: string) => void }}
+ */
+function useStockSearch({
+  dispatch,
+  recordUserAction,
+  menuButtonRef
+}) {
+  const [active, setActive] = (0,external_React_namespaceObject.useState)(false);
+  const wasActiveRef = (0,external_React_namespaceObject.useRef)(false);
+
+  // Once search closes, return focus to the widget menu button.
+  (0,external_React_namespaceObject.useLayoutEffect)(() => {
+    if (active) {
+      wasActiveRef.current = true;
+    } else if (wasActiveRef.current) {
+      wasActiveRef.current = false;
+      menuButtonRef.current?.focus();
+    }
+  }, [active, menuButtonRef]);
+  const openPanel = (0,external_React_namespaceObject.useCallback)(() => {
+    // Start clean so results from a previous search never flash on reopen.
+    dispatch({
+      type: actionTypes.WIDGETS_STOCKS_SEARCH_CLEAR
+    });
+    setActive(true);
+  }, [dispatch]);
+  const closePanel = (0,external_React_namespaceObject.useCallback)(() => {
+    setActive(false);
+    dispatch({
+      type: actionTypes.WIDGETS_STOCKS_SEARCH_CLEAR
+    });
+  }, [dispatch]);
+  const submit = (0,external_React_namespaceObject.useCallback)(query => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      return;
+    }
+    const requestId = String(++searchRequestSeq);
+    dispatch({
+      type: actionTypes.WIDGETS_STOCKS_SEARCH_STARTED,
+      data: {
+        requestId,
+        query: trimmed
+      }
+    });
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.WIDGETS_STOCKS_SEARCH_REQUEST,
+      data: {
+        requestId,
+        query: trimmed
+      }
+    }));
+    recordUserAction("search_submit", {
+      source: "search"
+    });
+  }, [dispatch, recordUserAction]);
+  return {
+    active,
+    open: openPanel,
+    close: closePanel,
+    submit
+  };
+}
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/Stocks/StocksError.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -24166,8 +26683,25 @@ function StocksError({
 
 
 
+
+
+
 const STOCKS_ENTRY = WIDGET_REGISTRY.find(w => w.id === "stocks");
 const STOCKS_PLACEHOLDER_COUNT = 4;
+// One shared empty array. When the Stocks state lacks these fields (an older
+// build that predates them), the fallback below reuses this instead of a new []
+// each render, so the derived lists don't recompute needlessly.
+const EMPTY_ARRAY = [];
+
+// The two lists the dropdown switches between: "markets" (the default ETFs)
+// and "watchlist" (the user's picks). Each id maps to its menu/button label.
+const STOCKS_LISTS = [{
+  id: "markets",
+  l10nId: "newtab-stocks-list-markets"
+}, {
+  id: "watchlist",
+  l10nId: "newtab-stocks-list-watchlist"
+}];
 function Stocks_Stocks({
   dispatch,
   handleUserInteraction,
@@ -24177,8 +26711,14 @@ function Stocks_Stocks({
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const {
     tickers,
-    error
+    error,
+    lastUpdated,
+    watchlistTickers = EMPTY_ARRAY,
+    watchlistReconciledSymbols = EMPTY_ARRAY,
+    searchStatus = "idle",
+    searchResults = EMPTY_ARRAY
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Stocks);
+  const watchlistPref = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values[PREF_STOCKS_WATCHLIST]);
 
   // Resolve size through the registry helper, not the pref, so trainhop and the
   // default can apply.
@@ -24201,6 +26741,192 @@ function Stocks_Stocks({
   // Any user action flips widgets.stocks.interaction (idempotent, one-way),
   // matching the other widgets. Hiding the widget is not an interaction.
   const handleInteraction = (0,external_React_namespaceObject.useCallback)(() => handleUserInteraction("stocks"), [handleUserInteraction]);
+
+  // SET_PREF is OnlyToMain, so the pref only updates after a round-trip. Keep the list
+  // locally so the UI updates immediately and rapid adds build on each other, then
+  // reconcile when the pref broadcast arrives.
+  const [savedSymbols, setSavedSymbols] = (0,external_React_namespaceObject.useState)(() => parseWatchlist(watchlistPref));
+  const pendingWriteRef = (0,external_React_namespaceObject.useRef)(null);
+  const [announcement, setAnnouncement] = (0,external_React_namespaceObject.useState)(null);
+  // Index of the removed Watchlist row whose neighbour should receive focus next.
+  const focusRemoveIndexRef = (0,external_React_namespaceObject.useRef)(null);
+  // Index of the added Markets row whose next add button should receive focus.
+  const focusAddIndexRef = (0,external_React_namespaceObject.useRef)(null);
+  const watchlistRef = (0,external_React_namespaceObject.useRef)(null);
+  const marketsRef = (0,external_React_namespaceObject.useRef)(null);
+  const menuButtonRef = (0,external_React_namespaceObject.useRef)(null);
+  const {
+    active: searchActive,
+    open: openSearch,
+    close: closeSearch,
+    submit: submitSearch
+  } = useStockSearch({
+    dispatch,
+    recordUserAction,
+    menuButtonRef
+  });
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const parsed = parseWatchlist(watchlistPref ?? "");
+    const serialized = serializeWatchlist(parsed);
+    if (pendingWriteRef.current === null) {
+      // Adopt an external change or the first-load value. Compare canonical forms so a
+      // non-canonical pref (padded or lower-case) doesn't set state on every render.
+      if (serializeWatchlist(savedSymbols) !== serialized) {
+        setSavedSymbols(parsed);
+      }
+    } else if (serialized === pendingWriteRef.current) {
+      pendingWriteRef.current = null;
+    }
+    // A broadcast that is neither our pending write nor an external change is an
+    // out-of-date acknowledgement; leave the local list as-is.
+  }, [savedSymbols, watchlistPref]);
+  const writeWatchlist = (0,external_React_namespaceObject.useCallback)(nextSymbols => {
+    const serialized = serializeWatchlist(nextSymbols);
+    setSavedSymbols(nextSymbols);
+    pendingWriteRef.current = serialized;
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.SET_PREF,
+      data: {
+        name: PREF_STOCKS_WATCHLIST,
+        value: serialized
+      }
+    }));
+  }, [dispatch]);
+
+  // Merge default and watchlist rows by normalized ticker so a saved symbol
+  // resolves from either set. Defaults go last so their fresher data wins a
+  // symbol that appears in both.
+  const bySymbol = (0,external_React_namespaceObject.useMemo)(() => new Map([...watchlistTickers, ...tickers].map(t => [normalize(t.ticker), t])), [tickers, watchlistTickers]);
+  const matchedRows = (0,external_React_namespaceObject.useMemo)(() => savedSymbols.map(s => bySymbol.get(s)).filter(Boolean), [savedSymbols, bySymbol]);
+  // The watchlist is ready for the current pref only once the feed has
+  // reconciled exactly the saved symbols; before that a newly added symbol is
+  // still pending, not missing.
+  const watchlistReady = (0,external_React_namespaceObject.useMemo)(() => {
+    if (savedSymbols.length !== watchlistReconciledSymbols.length) {
+      return false;
+    }
+    const reconciled = new Set(watchlistReconciledSymbols);
+    return savedSymbols.every(s => reconciled.has(s));
+  }, [savedSymbols, watchlistReconciledSymbols]);
+  // While the watchlist is loading, show a loading row for each saved symbol
+  // that hasn't resolved yet, or a few loading rows if none have resolved.
+  const watchlistPendingCount = (0,external_React_namespaceObject.useMemo)(() => {
+    if (watchlistReady) {
+      return 0;
+    }
+    return matchedRows.length ? Math.max(savedSymbols.length - matchedRows.length, 0) : Math.min(savedSymbols.length, STOCKS_PLACEHOLDER_COUNT);
+  }, [watchlistReady, matchedRows.length, savedSymbols.length]);
+  const mediumWatchlistRows = matchedRows.slice(0, STOCKS_PLACEHOLDER_COUNT);
+  const mediumWatchlistPendingCount = watchlistReady ? 0 : Math.max(Math.min(STOCKS_PLACEHOLDER_COUNT, savedSymbols.length) - mediumWatchlistRows.length, 0);
+  const handleToggleWatchlist = (0,external_React_namespaceObject.useCallback)((symbol, tickerName) => {
+    const normalized = normalize(symbol);
+    const isSaved = savedSymbols.includes(normalized);
+    const next = isSaved ? removeFromWatchlist(savedSymbols, normalized) : addToWatchlist(savedSymbols, normalized);
+    if (next === savedSymbols) {
+      return;
+    }
+    if (isSaved) {
+      focusRemoveIndexRef.current = matchedRows.findIndex(t => normalize(t.ticker) === normalized);
+    } else {
+      // The added row flips to "added" and its add button unmounts, so record its
+      // position among the addable rows to move focus to the next add button.
+      focusAddIndexRef.current = tickers.filter(t => !savedSymbols.includes(normalize(t.ticker))).findIndex(t => normalize(t.ticker) === normalized);
+    }
+    writeWatchlist(next);
+    recordUserAction(isSaved ? "remove_ticker" : "add_ticker", {
+      source: "row"
+    });
+    setAnnouncement({
+      id: isSaved ? "newtab-stocks-removed-from-watchlist" : "newtab-stocks-added-to-watchlist",
+      args: {
+        name: tickerName
+      }
+    });
+    handleInteraction();
+  }, [savedSymbols, matchedRows, tickers, writeWatchlist, recordUserAction, handleInteraction]);
+
+  // Switching lists counts as an interaction; reselecting the current list does not.
+  const [selectedList, setSelectedList] = (0,external_React_namespaceObject.useState)(() => savedSymbols.length ? "watchlist" : "markets");
+  const handleSelectList = (0,external_React_namespaceObject.useCallback)(list => {
+    if (list === selectedList) {
+      return;
+    }
+    setSelectedList(list);
+    recordUserAction("change_list", {
+      source: "widget",
+      value: list
+    });
+    handleInteraction();
+  }, [selectedList, recordUserAction, handleInteraction]);
+  const selectedListL10nId = STOCKS_LISTS.find(l => l.id === selectedList).l10nId;
+  // How many saved symbols the dropdown counts: all of them while the watchlist
+  // is loading, then only the ones that resolved once it has loaded.
+  const savedInFeed = watchlistReady ? matchedRows.length : savedSymbols.length;
+  const atWatchlistLimit = savedSymbols.length >= MAX_STOCKS_WATCHLIST;
+  const showDropdown = widgetSize !== "small" && savedInFeed > 0;
+  const activeList = showDropdown && selectedList === "watchlist" ? "watchlist" : "markets";
+
+  // Small size shows a single ticker.
+  const chosenSymbol = savedSymbols.length ? savedSymbols[0] : tickers[0]?.ticker ?? null;
+  const chosenRow = chosenSymbol ? bySymbol.get(normalize(chosenSymbol)) : null;
+  // Keep the saved symbol visible while data is loading or unavailable.
+  const headerSymbol = chosenRow?.ticker ?? chosenSymbol;
+  const hasLoadedSnapshot = lastUpdated !== null;
+  // Small size shows one ticker. If it is a saved symbol, treat it as an error
+  // only after the watchlist finished loading with no data for it (before that it
+  // is still loading); if it is a default ticker, use the default feed's check.
+  const chosenIsSaved = !!savedSymbols.length;
+  const smallError = widgetSize === "small" && (chosenIsSaved ? watchlistReady && !chosenRow : !tickers.length && hasLoadedSnapshot || !!chosenSymbol && !!tickers.length && !chosenRow);
+  // Suppress the default error only when a resolved watchlist row is on screen,
+  // so the watchlist still shows even if the default feed failed.
+  const watchlistRowShown = widgetSize === "small" && chosenIsSaved && !!chosenRow || widgetSize !== "small" && activeList === "watchlist" && !!matchedRows.length;
+  // Show the error box from one place so switching error states doesn't report it
+  // to telemetry twice.
+  const showAnyError = showError && !watchlistRowShown || smallError;
+
+  // Return to Markets when there's nothing to show (the watchlist emptied, or
+  // none of its symbols resolved) so the next add starts there with the
+  // confirmation animation. A size change with a non-empty watchlist keeps the
+  // selection.
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!savedInFeed && selectedList !== "markets") {
+      setSelectedList("markets");
+    }
+  }, [savedInFeed, selectedList]);
+
+  // After a removal re-renders the Watchlist, move focus to a neighbouring remove button,
+  // or to the widget menu button if the list collapsed back to Markets.
+  (0,external_React_namespaceObject.useLayoutEffect)(() => {
+    const index = focusRemoveIndexRef.current;
+    if (index === null) {
+      return;
+    }
+    focusRemoveIndexRef.current = null;
+    const buttons = watchlistRef.current?.querySelectorAll(".stock-ticker-action") ?? [];
+    const target = index >= 0 && buttons.length ? buttons[Math.min(index, buttons.length - 1)] : null;
+    if (target) {
+      target.focus();
+    } else {
+      menuButtonRef.current?.focus();
+    }
+  }, [matchedRows]);
+
+  // After an add re-renders Markets, move focus to the next add button, or to the widget
+  // menu button if none remain (e.g., the watchlist just reached its limit).
+  (0,external_React_namespaceObject.useLayoutEffect)(() => {
+    const index = focusAddIndexRef.current;
+    if (index === null) {
+      return;
+    }
+    focusAddIndexRef.current = null;
+    const buttons = marketsRef.current?.querySelectorAll(".stock-ticker-action:not([disabled])") ?? [];
+    const target = index >= 0 && buttons.length ? buttons[Math.min(index, buttons.length - 1)] : null;
+    if (target) {
+      target.focus();
+    } else {
+      menuButtonRef.current?.focus();
+    }
+  }, [savedSymbols]);
   const handleChangeSize = (0,external_React_namespaceObject.useCallback)(size => {
     (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.OnlyToMain({
@@ -24218,15 +26944,33 @@ function Stocks_Stocks({
       handleInteraction();
     });
   }, [dispatch, recordUserAction, handleInteraction]);
-
-  // Placeholder: a real ticker search will replace this telemetry-only stub in
-  // a follow-up.
   function handleSearchTickers() {
     recordUserAction("search_tickers", {
       source: "context_menu"
     });
+    openSearch();
     handleInteraction();
   }
+  const handleAddFromSearch = (0,external_React_namespaceObject.useCallback)((symbol, tickerName) => {
+    const next = addToWatchlist(savedSymbols, symbol);
+    if (next !== savedSymbols) {
+      writeWatchlist(next);
+      recordUserAction("add_ticker", {
+        source: "search"
+      });
+      setAnnouncement({
+        id: "newtab-stocks-added-to-watchlist",
+        args: {
+          name: tickerName
+        }
+      });
+      // Show the Watchlist so the added ticker appears in the list. Closing
+      // search drops the widget back to its original size.
+      setSelectedList("watchlist");
+      handleInteraction();
+    }
+    closeSearch();
+  }, [savedSymbols, writeWatchlist, recordUserAction, handleInteraction, closeSearch]);
 
   // The shared footer opens the support link; here we only record the click.
   function handleLearnMore() {
@@ -24235,22 +26979,98 @@ function Stocks_Stocks({
     });
     handleInteraction();
   }
+  function renderWatchlist() {
+    if (widgetSize === "medium") {
+      return /*#__PURE__*/external_React_default().createElement("ul", {
+        "aria-busy": !watchlistReady,
+        className: `stocks-grid${!mediumWatchlistRows.length && !watchlistReady ? " stocks-grid--loading" : ""}`
+      }, mediumWatchlistRows.map(t => /*#__PURE__*/external_React_default().createElement(StockTicker, {
+        key: t.ticker,
+        name: t.name,
+        ticker: t.ticker,
+        price: t.last_price,
+        changePercent: t.todays_change_perc
+      })), Array.from({
+        length: mediumWatchlistPendingCount
+      }).map((_, i) => /*#__PURE__*/external_React_default().createElement(StockTicker, {
+        key: `pending-${i}`,
+        loading: true
+      })));
+    }
+    return /*#__PURE__*/external_React_default().createElement("ul", {
+      ref: watchlistRef,
+      "aria-busy": !watchlistReady,
+      className: `stocks-list stocks-list--watchlist${!matchedRows.length && !watchlistReady ? " stocks-list--loading" : ""}`
+    }, matchedRows.map(t => /*#__PURE__*/external_React_default().createElement(StockTicker, {
+      key: t.ticker,
+      size: "large",
+      name: t.name,
+      ticker: t.ticker,
+      price: t.last_price,
+      changePercent: t.todays_change_perc,
+      watchlistState: "remove",
+      onWatchlistToggle: handleToggleWatchlist
+    })), Array.from({
+      length: watchlistPendingCount
+    }).map((_, i) => /*#__PURE__*/external_React_default().createElement(StockTicker, {
+      key: `pending-${i}`,
+      size: "large",
+      loading: true
+    })));
+  }
   return /*#__PURE__*/external_React_default().createElement("article", {
-    className: `stocks widget col-4 ${widgetSize}-widget`,
-    ref: impressionRef
-  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: `stocks widget col-4 ${searchActive ? "large" : widgetSize}-widget`,
+    ref: impressionRef,
+    "aria-labelledby": "stocks-widget-label"
+  }, searchActive ? /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("h2", {
+    id: "stocks-widget-label",
+    className: "stocks-heading sr-only",
+    "data-l10n-id": "newtab-stocks-widget-title"
+  }), /*#__PURE__*/external_React_default().createElement(StockSearch, {
+    searchStatus: searchStatus,
+    searchResults: searchResults,
+    savedSymbols: savedSymbols,
+    atWatchlistLimit: atWatchlistLimit,
+    onSubmit: submitSearch,
+    onAdd: handleAddFromSearch,
+    onClose: closeSearch
+  })) : /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
     className: "stocks-title-wrapper"
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "stocks-badge-title-wrapper"
-  }, !hasInteracted && !!tickers.length && /*#__PURE__*/external_React_default().createElement("moz-badge", {
+  }, widgetSize !== "small" && !hasInteracted && !!tickers.length && /*#__PURE__*/external_React_default().createElement("moz-badge", {
     className: "stocks-new-badge",
     "data-l10n-id": "newtab-widget-lists-label-new"
-  }), /*#__PURE__*/external_React_default().createElement("span", {
-    className: "stocks-title",
+  }), /*#__PURE__*/external_React_default().createElement("h2", {
+    id: "stocks-widget-label",
+    className: `stocks-heading${showDropdown || widgetSize === "small" && chosenSymbol ? " sr-only" : ""}`,
     "data-l10n-id": "newtab-stocks-widget-title"
-  })), /*#__PURE__*/external_React_default().createElement("div", {
+  }), widgetSize === "small" && chosenSymbol && /*#__PURE__*/external_React_default().createElement("span", {
+    className: "stocks-small-symbol"
+  }, headerSymbol), showDropdown && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("moz-button", {
+    className: "stocks-list-button",
+    type: "ghost",
+    size: "small",
+    iconSrc: "chrome://global/skin/icons/arrow-down-12.svg",
+    iconPosition: "end",
+    menuId: "stocks-list-menu",
+    "data-l10n-id": selectedListL10nId
+  }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+    id: "stocks-list-menu"
+  }, STOCKS_LISTS.map(({
+    id,
+    l10nId
+  }) => /*#__PURE__*/external_React_default().createElement("panel-item", {
+    key: id,
+    type: "checkbox",
+    checked: selectedList === id || undefined,
+    onClick: () => handleSelectList(id),
+    "data-list": id,
+    "data-l10n-id": l10nId
+  }))))), /*#__PURE__*/external_React_default().createElement("div", {
     className: "stocks-context-menu-wrapper"
   }, /*#__PURE__*/external_React_default().createElement("moz-button", {
+    ref: menuButtonRef,
     className: "stocks-context-menu-button",
     iconSrc: "chrome://global/skin/icons/more.svg",
     menuId: "stocks-context-menu",
@@ -24258,9 +27078,10 @@ function Stocks_Stocks({
     size: "small",
     "data-l10n-id": "newtab-stocks-widget-menu-button"
   }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+    className: "panel-list-no-icons",
     id: "stocks-context-menu"
   }, /*#__PURE__*/external_React_default().createElement("panel-item", {
-    "data-l10n-id": "newtab-stocks-menu-search",
+    "data-l10n-id": "newtab-stocks-menu-search-stocks",
     onClick: handleSearchTickers
   }), /*#__PURE__*/external_React_default().createElement(WidgetMenuFooter, {
     dispatch: dispatch,
@@ -24273,15 +27094,26 @@ function Stocks_Stocks({
     onLearnMore: handleLearnMore,
     sizeSubmenu: widgetsMayBeMaximized ? /*#__PURE__*/external_React_default().createElement(SizeSubmenu, {
       submenuId: "stocks-size-submenu",
-      sizes: ["medium", "large"],
+      sizes: STOCKS_ENTRY.validSizes,
       checkedSize: widgetSize,
       onChangeSize: handleChangeSize
     }) : null
   })))), /*#__PURE__*/external_React_default().createElement("div", {
     className: "stocks-body"
-  }, showError && /*#__PURE__*/external_React_default().createElement(StocksError, {
+  }, showAnyError && /*#__PURE__*/external_React_default().createElement(StocksError, {
     recordError: recordError
-  }), !showError && widgetSize === "medium" && /*#__PURE__*/external_React_default().createElement("ul", {
+  }), !showAnyError && widgetSize === "small" && /*#__PURE__*/external_React_default().createElement("ul", {
+    className: `stocks-list stocks-list--small${chosenRow ? "" : " stocks-list--loading"}`
+  }, chosenRow ? /*#__PURE__*/external_React_default().createElement(StockTicker, {
+    size: "small",
+    name: chosenRow.name,
+    ticker: chosenRow.ticker,
+    price: chosenRow.last_price,
+    changePercent: chosenRow.todays_change_perc
+  }) : /*#__PURE__*/external_React_default().createElement(StockTicker, {
+    size: "small",
+    loading: true
+  })), !showAnyError && widgetSize !== "small" && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, activeList === "markets" && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, widgetSize === "medium" && /*#__PURE__*/external_React_default().createElement("ul", {
     className: `stocks-grid${tickers.length ? "" : " stocks-grid--loading"}`
   }, tickers.length ? tickers.map(t => /*#__PURE__*/external_React_default().createElement(StockTicker, {
     key: t.ticker,
@@ -24294,7 +27126,8 @@ function Stocks_Stocks({
   }).map((_, i) => /*#__PURE__*/external_React_default().createElement(StockTicker, {
     key: i,
     loading: true
-  }))), !showError && widgetSize === "large" && /*#__PURE__*/external_React_default().createElement("ul", {
+  }))), widgetSize === "large" && /*#__PURE__*/external_React_default().createElement("ul", {
+    ref: marketsRef,
     className: `stocks-list${tickers.length ? "" : " stocks-list--loading"}`
   }, tickers.length ? tickers.map(t => /*#__PURE__*/external_React_default().createElement(StockTicker, {
     key: t.ticker,
@@ -24302,14 +27135,22 @@ function Stocks_Stocks({
     name: t.name,
     ticker: t.ticker,
     price: t.last_price,
-    changePercent: t.todays_change_perc
+    changePercent: t.todays_change_perc,
+    watchlistState: savedSymbols.includes(normalize(t.ticker)) ? "added" : "add",
+    disabled: atWatchlistLimit,
+    onWatchlistToggle: handleToggleWatchlist
   })) : Array.from({
     length: STOCKS_PLACEHOLDER_COUNT
   }).map((_, i) => /*#__PURE__*/external_React_default().createElement(StockTicker, {
     key: i,
     size: "large",
     loading: true
-  })))));
+  })))), activeList === "watchlist" && renderWatchlist()))), /*#__PURE__*/external_React_default().createElement("span", {
+    className: "stocks-sr-status sr-only",
+    role: "status",
+    "data-l10n-id": announcement?.id,
+    "data-l10n-args": announcement ? JSON.stringify(announcement.args) : undefined
+  }));
 }
 
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/PictureOfTheDay/PictureOfTheDay.jsx
@@ -24658,6 +27499,7 @@ const PictureOfTheDay_PictureOfTheDay = ({
     menuId: "picture-of-the-day-context-menu",
     type: "ghost"
   }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+    className: "panel-list-no-icons",
     id: "picture-of-the-day-context-menu"
   }, /*#__PURE__*/external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-picture-menu-manage-wallpaper",
@@ -24720,10 +27562,141 @@ const PictureOfTheDay_PictureOfTheDay = ({
   })));
 };
 
+;// CONCATENATED MODULE: ./content-src/components/Widgets/RecentSearches/RecentSearches.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+// eslint-disable-next-line no-unused-vars
+
+
+
+
+
+
+
+const RecentSearches_USER_ACTION_TYPES = {
+  CHANGE_SIZE: "change_size",
+  LEARN_MORE: "learn_more"
+};
+const RECENT_SEARCHES_ENTRY = WIDGET_REGISTRY.find(w => w.id === "recentSearches");
+
+/**
+ * Recent Searches widget.
+ *
+ * @param {object} props
+ * @param {Function} props.dispatch - Redux dispatch.
+ * @param {Function} props.handleUserInteraction - Marks the widget as
+ *   interacted with, which removes the "New" badge.
+ * @param {boolean} props.widgetsMayBeMaximized - Whether the current layout
+ *   allows resizing, which gates the Change size submenu.
+ * @param {object} props.widgetEnabledMap - Map of widget id to whether it is
+ *   currently active, used by the Move submenu.
+ */
+function RecentSearches_RecentSearches({
+  dispatch,
+  handleUserInteraction,
+  widgetsMayBeMaximized,
+  widgetEnabledMap
+}) {
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const {
+    searches
+  } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.RecentSearches);
+  const widgetSize = resolveWidgetSize(RECENT_SEARCHES_ENTRY, prefs);
+
+  // Show the "New" badge until the user first interacts with the widget.
+  const hasInteracted = prefs["widgets.recentSearches.interaction"];
+  const {
+    impressionRef,
+    recordUserAction
+  } = useWidgetTelemetry({
+    dispatch,
+    widget: RECENT_SEARCHES_ENTRY,
+    widgetSize
+  });
+  const handleInteraction = (0,external_React_namespaceObject.useCallback)(() => handleUserInteraction("recentSearches"), [handleUserInteraction]);
+  const handleChangeSize = (0,external_React_namespaceObject.useCallback)(size => {
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.SET_PREF,
+        data: {
+          name: RECENT_SEARCHES_ENTRY.sizePref,
+          value: size
+        }
+      }));
+      // `value` is action_value; `size` overrides the reported widget_size,
+      // which would otherwise still be the pre-change size.
+      recordUserAction(RecentSearches_USER_ACTION_TYPES.CHANGE_SIZE, {
+        source: "context_menu",
+        value: size,
+        size
+      });
+      handleInteraction();
+    });
+  }, [dispatch, recordUserAction, handleInteraction]);
+
+  // The shared footer opens the support link; here we only record the click.
+  function handleLearnMore() {
+    recordUserAction(RecentSearches_USER_ACTION_TYPES.LEARN_MORE, {
+      source: "context_menu"
+    });
+    handleInteraction();
+  }
+  return /*#__PURE__*/external_React_default().createElement("article", {
+    className: `recent-searches widget col-4 ${widgetSize}-widget`,
+    ref: impressionRef,
+    "aria-labelledby": "recent-searches-widget-label"
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "recent-searches-title-wrapper"
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "recent-searches-badge-title-wrapper"
+  }, !hasInteracted && /*#__PURE__*/external_React_default().createElement("moz-badge", {
+    className: "recent-searches-new-badge",
+    "data-l10n-id": "newtab-widget-lists-label-new"
+  }), /*#__PURE__*/external_React_default().createElement("h2", {
+    id: "recent-searches-widget-label",
+    className: "recent-searches-title",
+    "data-l10n-id": "newtab-recent-searches-widget-title"
+  })), /*#__PURE__*/external_React_default().createElement("div", {
+    className: "recent-searches-context-menu-wrapper"
+  }, /*#__PURE__*/external_React_default().createElement("moz-button", {
+    className: "recent-searches-context-menu-button",
+    iconSrc: "chrome://global/skin/icons/more.svg",
+    menuId: "recent-searches-context-menu",
+    type: "icon ghost",
+    size: "small",
+    "data-l10n-id": "newtab-recent-searches-widget-menu-button"
+  }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+    className: "panel-list-no-icons",
+    id: "recent-searches-context-menu"
+  }, /*#__PURE__*/external_React_default().createElement(WidgetMenuFooter, {
+    dispatch: dispatch,
+    widgetId: RECENT_SEARCHES_ENTRY.id,
+    widgetEnabledMap: widgetEnabledMap,
+    widgetName: RECENT_SEARCHES_ENTRY.telemetryName,
+    enabledPref: RECENT_SEARCHES_ENTRY.enabledPref,
+    widgetSize: widgetSize,
+    learnMoreL10nId: "newtab-recent-searches-menu-learn-more",
+    onLearnMore: handleLearnMore,
+    showDivider: false,
+    sizeSubmenu: widgetsMayBeMaximized ? /*#__PURE__*/external_React_default().createElement(SizeSubmenu, {
+      submenuId: "recent-searches-size-submenu",
+      sizes: RECENT_SEARCHES_ENTRY.validSizes,
+      checkedSize: widgetSize,
+      onChangeSize: handleChangeSize
+    }) : null
+  })))), /*#__PURE__*/external_React_default().createElement("div", {
+    className: "recent-searches-body",
+    "data-search-count": searches.length
+  }));
+}
+
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/WidgetsComponentRegistry.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 
 
 
@@ -24771,7 +27744,8 @@ const WIDGET_ROW_COMPONENTS = {
   privacy: Privacy,
   crossword: Crossword,
   stocks: Stocks_Stocks,
-  pictureOfTheDay: PictureOfTheDay_PictureOfTheDay
+  pictureOfTheDay: PictureOfTheDay_PictureOfTheDay,
+  recentSearches: RecentSearches_RecentSearches
 };
 const WIDGET_SIDEBAR_COMPONENTS = {
   weather: WeatherSidebarWidget
@@ -25191,13 +28165,13 @@ function Widgets_extends() { return Widgets_extends = Object.assign ? Object.ass
 
 
 
+
 const CONTAINER_ACTION_TYPES = {
   HIDE_ALL: "hide_all",
   CHANGE_SIZE_ALL: "change_size_all",
   CHANGE_ROW_VISIBILITY: "change_row_visibility",
   FEEDBACK: "feedback"
 };
-const PREF_WIDGETS_ENABLED = "widgets.enabled";
 const Widgets_PREF_NOVA_ENABLED = "nova.enabled";
 const PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED = "widgets.system.weatherForecast.enabled";
 const PREF_WIDGETS_MAXIMIZED = "widgets.maximized";
@@ -25277,14 +28251,27 @@ function Widgets() {
   } = (0,external_React_namespaceObject.useContext)(BaseContext);
   const novaEnabled = prefs[Widgets_PREF_NOVA_ENABLED];
   const isMaximized = prefs[PREF_WIDGETS_MAXIMIZED];
-  const rowExpanded = !!prefs[PREF_WIDGETS_ROW_EXPANDED];
+  const spacesActive = isSpacesActive(prefs);
+  // A space is a full page of its own, so there is nothing to be conservative
+  // about: widgets always show expanded and the row toggle is hidden.
+  const rowExpanded = spacesActive || !!prefs[PREF_WIDGETS_ROW_EXPANDED];
   const nimbusMaximizedTrainhopEnabled = prefs.trainhopConfig?.widgets?.maximized;
   const feedbackEnabled = prefs.trainhopConfig?.widgets?.feedbackEnabled || prefs[PREF_WIDGETS_FEEDBACK_ENABLED];
   const hideAllToastEnabled = prefs.trainhopConfig?.widgets?.hideAllToastEnabled || prefs[PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED];
   const feedbackUrl = prefs.trainhopConfig?.widgets?.feedbackUrl ?? WIDGETS_FEEDBACK_URL;
-  const showWidgetsSizeToggle = nimbusMaximizedTrainhopEnabled || prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED];
-  const widgetsMayBeMaximized = showWidgetsSizeToggle;
-  const widgetsEnabled = prefs[PREF_WIDGETS_ENABLED];
+  const sideBySideActive = isSideBySideActive(prefs);
+  // Side-by-side and spaces both put an add button in the section header where
+  // the row size toggle would otherwise sit.
+  const addButtonInHeader = sideBySideActive || spacesActive;
+  const widgetsMayBeMaximized = nimbusMaximizedTrainhopEnabled || prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED];
+  // The row toggle resizes every widget at once, which a one-card-wide column has
+  // no room for; that slot gets an add button instead. Per-widget "Change size"
+  // still applies -- size is a row span, so medium and large are both one card wide.
+  const showWidgetsSizeToggle = !addButtonInHeader && widgetsMayBeMaximized;
+
+  // The experiment can show the Widgets space to someone who had the master
+  // toggle off, and the panel must not then be empty.
+  const widgetsEnabled = prefs["widgets.enabled"] || isSpaceOverridden(SPACE_IDS.WIDGETS, prefs);
 
   // Bug 2034542: these per-widget lookups and all the derived consts below
   // (listsEnabled, timerEnabled, weatherBase, weatherEnabled, weatherSize,
@@ -25332,7 +28319,8 @@ function Widgets() {
     privacy: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "privacy"), prefs, widgetsEnabled),
     crossword: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "crossword"), prefs, widgetsEnabled),
     stocks: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "stocks"), prefs, widgetsEnabled),
-    pictureOfTheDay: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "pictureOfTheDay"), prefs, widgetsEnabled)
+    pictureOfTheDay: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "pictureOfTheDay"), prefs, widgetsEnabled),
+    recentSearches: isWidgetEnabled(WIDGET_REGISTRY.find(w => w.id === "recentSearches"), prefs, widgetsEnabled)
   };
   const widgetOrder = resolveWidgetOrder(prefs);
   const {
@@ -25614,6 +28602,12 @@ function Widgets() {
       iconsrc: "chrome://global/skin/icons/arrow-down.svg",
       onClick: handleToggleMaximizeClick,
       onKeyDown: handleToggleMaximizeKeyDown
+    }) : null, addButtonInHeader ? /*#__PURE__*/external_React_default().createElement("moz-button", {
+      id: "add-widgets-button",
+      size: "small",
+      "data-l10n-id": "newtab-widget-add-widgets-button",
+      iconsrc: "chrome://global/skin/icons/plus.svg",
+      onClick: handleManageWidgetsClick
     }) : null);
   }
   function renderWidgetsActions() {
@@ -25628,6 +28622,7 @@ function Widgets() {
         type: "ghost",
         size: "default"
       }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+        className: "panel-list-no-icons",
         id: "widgets-header-context-panel"
       }, /*#__PURE__*/external_React_default().createElement("panel-item", {
         "data-l10n-id": "newtab-widget-section-menu-hide-all",
@@ -25665,7 +28660,7 @@ function Widgets() {
   // CSS container queries on the widgets section decide whether the toggle
   // button is shown — see _Widgets.scss. The collapsed row holds one widget
   // per card-column slot regardless of size, so for each card-column count
-  // (1–4) anything past the first N positions overflows. This keeps mediums
+  // (1–5) anything past the first N positions overflows. This keeps mediums
   // to a single (shorter) row rather than stacking them two-deep to fill a
   // large-height band. The matching `data-overflow-N` attribute is read by
   // the @container rules in CSS.
@@ -25694,13 +28689,15 @@ function Widgets() {
     1: hiddenIndicesAt(1),
     2: hiddenIndicesAt(2),
     3: hiddenIndicesAt(3),
-    4: hiddenIndicesAt(4)
+    4: hiddenIndicesAt(4),
+    5: hiddenIndicesAt(5)
   };
   const overflowAttrs = {
     "data-overflow-1": overflowsAt(1) ? "" : undefined,
     "data-overflow-2": overflowsAt(2) ? "" : undefined,
     "data-overflow-3": overflowsAt(3) ? "" : undefined,
-    "data-overflow-4": overflowsAt(4) ? "" : undefined
+    "data-overflow-4": overflowsAt(4) ? "" : undefined,
+    "data-overflow-5": overflowsAt(5) ? "" : undefined
   };
   const isCollapsed = novaEnabled && !rowExpanded;
   return /*#__PURE__*/external_React_default().createElement("div", {
@@ -25743,7 +28740,8 @@ function Widgets() {
         "data-hidden-1": hiddenAtCols[1].has(renderIdx) ? "" : undefined,
         "data-hidden-2": hiddenAtCols[2].has(renderIdx) ? "" : undefined,
         "data-hidden-3": hiddenAtCols[3].has(renderIdx) ? "" : undefined,
-        "data-hidden-4": hiddenAtCols[4].has(renderIdx) ? "" : undefined
+        "data-hidden-4": hiddenAtCols[4].has(renderIdx) ? "" : undefined,
+        "data-hidden-5": hiddenAtCols[5].has(renderIdx) ? "" : undefined
       };
       const wrapperClassName = [size && `${size}-widget`, "widget-draggable", draggedId === id && "is-dragging"].filter(Boolean).join(" ");
       const dragProps = {
@@ -25800,7 +28798,7 @@ function Widgets() {
       isMaximized,
       widgetsMayBeMaximized
     })));
-  }), novaEnabled && !allWidgetsAdded && /*#__PURE__*/external_React_default().createElement("button", {
+  }), novaEnabled && !sideBySideActive && !allWidgetsAdded && /*#__PURE__*/external_React_default().createElement("button", {
     type: "button",
     className: `widgets-add-button col-4 ${addButtonSize}-widget`,
     style: {
@@ -25811,7 +28809,7 @@ function Widgets() {
     tabIndex: -1
   }, /*#__PURE__*/external_React_default().createElement("span", {
     className: "widgets-add-button-icon"
-  }))), novaEnabled && /*#__PURE__*/external_React_default().createElement("moz-button", {
+  }))), novaEnabled && !spacesActive && /*#__PURE__*/external_React_default().createElement("moz-button", {
     className: "widgets-row-toggle",
     type: "muted",
     size: "small",
@@ -25833,6 +28831,219 @@ function Widgets() {
   })));
 }
 
+;// CONCATENATED MODULE: ./content-src/components/Spaces/Spaces.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+// Tab label and icon per space. The section inside keeps its own heading.
+const SPACE_META = {
+  [SPACE_IDS.STORIES]: {
+    l10nId: "newtab-spaces-tab-stories",
+    iconsrc: "chrome://global/skin/icons/newsfeed.svg"
+  },
+  [SPACE_IDS.WIDGETS]: {
+    l10nId: "newtab-spaces-tab-widgets",
+    iconsrc: "chrome://browser/skin/topsites.svg"
+  },
+  [SPACE_IDS.ACTIVITY]: {
+    l10nId: "newtab-spaces-tab-activity",
+    iconsrc: "chrome://browser/skin/history.svg"
+  }
+};
+
+// Trackpad momentum keeps firing after the fingers lift, so a gesture is locked
+// until the wheel goes quiet. Otherwise one flick skips several spaces.
+const SWIPE_THRESHOLD_PX = 50;
+const SWIPE_END_MS = 200;
+
+// Computed direction, not the dir attribute: about:newtab carries none on
+// <html>, so the attribute can read empty in an RTL build. Only called from
+// event handlers -- the startup cache renders without a window, so this cannot
+// run during render.
+function isRtl() {
+  return getComputedStyle(document.documentElement).direction === "rtl";
+}
+
+/**
+ * Navigable panels for the content band.
+ *
+ * Every space stays mounted and the track clips the inactive ones. Impression
+ * observers are viewport-relative, so a clipped space never reports as seen;
+ * unmounting instead would re-fire impressions on every return.
+ *
+ * @param {object} props
+ * @param {Array<{id: string, content: React.ReactNode}>} props.spaces - populated
+ *   spaces, in tablist order
+ * @param {Function} props.dispatch - Redux dispatch, for switch telemetry
+ */
+function Spaces({
+  spaces,
+  dispatch
+}) {
+  // By id, not index: turning a space off shifts the indices after it.
+  const [activeId, setActiveId] = (0,external_React_namespaceObject.useState)(spaces[0]?.id);
+  // Falls back to the leftmost space when the active one is turned off.
+  const activeIndex = Math.max(spaces.findIndex(space => space.id === activeId), 0);
+  // Hydration is itself a change of translate, so animate from the second render.
+  const [animate, setAnimate] = (0,external_React_namespaceObject.useState)(false);
+  const tablistRef = (0,external_React_namespaceObject.useRef)(null);
+  // Keyboard switches move focus to the new tab; pointer clicks do not.
+  const focusActiveTab = (0,external_React_namespaceObject.useRef)(false);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    setAnimate(true);
+  }, []);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (focusActiveTab.current) {
+      focusActiveTab.current = false;
+      tablistRef.current?.querySelector('[role="tab"][aria-selected="true"]')?.focus();
+    }
+  }, [activeIndex]);
+  const switchTo = (0,external_React_namespaceObject.useCallback)((index, method) => {
+    if (index === activeIndex || index < 0 || index >= spaces.length) {
+      return;
+    }
+    setActiveId(spaces[index].id);
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.SPACES_USER_EVENT,
+      data: {
+        space: spaces[index].id,
+        previous_space: spaces[activeIndex].id,
+        method
+      }
+    }));
+  }, [activeIndex, spaces, dispatch]);
+  const onTabKeyDown = (0,external_React_namespaceObject.useCallback)(event => {
+    const offsets = {
+      ArrowLeft: -1,
+      ArrowRight: 1
+    };
+    let next;
+    if (event.key in offsets) {
+      // The tablist is horizontal, so ArrowRight means the next tab visually.
+      next = activeIndex + offsets[event.key] * (isRtl() ? -1 : 1);
+    } else if (event.key === "Home") {
+      next = 0;
+    } else if (event.key === "End") {
+      next = spaces.length - 1;
+    } else {
+      return;
+    }
+    if (next >= 0 && next < spaces.length) {
+      event.preventDefault();
+      focusActiveTab.current = true;
+      switchTo(next, "keyboard");
+    }
+  }, [activeIndex, spaces.length, switchTo]);
+
+  // Trackpads report horizontal scroll as deltaX.
+  const wheelTotal = (0,external_React_namespaceObject.useRef)(0);
+  const wheelSpent = (0,external_React_namespaceObject.useRef)(false);
+  const wheelTimer = (0,external_React_namespaceObject.useRef)(null);
+  (0,external_React_namespaceObject.useEffect)(() => () => clearTimeout(wheelTimer.current), []);
+  const onWheel = (0,external_React_namespaceObject.useCallback)(event => {
+    // With shift held Gecko reports the scroll as deltaY and ignores deltaX
+    // (mousewheel.with_shift.action = 4), so the axes swap.
+    const across = event.shiftKey ? event.deltaY : event.deltaX;
+    const along = event.shiftKey ? event.deltaX : event.deltaY;
+    if (Math.abs(across) <= Math.abs(along)) {
+      return;
+    }
+    clearTimeout(wheelTimer.current);
+    wheelTimer.current = setTimeout(() => {
+      wheelTotal.current = 0;
+      wheelSpent.current = false;
+    }, SWIPE_END_MS);
+    if (wheelSpent.current) {
+      return;
+    }
+    wheelTotal.current += across;
+    if (Math.abs(wheelTotal.current) >= SWIPE_THRESHOLD_PX) {
+      wheelSpent.current = true;
+      // Scrolling right moves the content left, i.e. towards the next space.
+      switchTo(activeIndex + Math.sign(wheelTotal.current) * (isRtl() ? -1 : 1), "swipe");
+    }
+  }, [activeIndex, switchTo]);
+
+  // Touch: compare where the finger lifted against where it landed.
+  const touchStart = (0,external_React_namespaceObject.useRef)(null);
+  const onTouchStart = (0,external_React_namespaceObject.useCallback)(event => {
+    const [touch] = event.touches;
+    touchStart.current = touch ? {
+      x: touch.clientX,
+      y: touch.clientY
+    } : null;
+  }, []);
+  const onTouchEnd = (0,external_React_namespaceObject.useCallback)(event => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    const [touch] = event.changedTouches;
+    if (!start || !touch) {
+      return;
+    }
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX || Math.abs(deltaX) <= Math.abs(deltaY)) {
+      return;
+    }
+    // Dragging left pulls the next space into view.
+    switchTo(activeIndex - Math.sign(deltaX) * (isRtl() ? -1 : 1), "swipe");
+  }, [activeIndex, switchTo]);
+  return /*#__PURE__*/external_React_default().createElement("div", {
+    className: "spaces-container",
+    onWheel: onWheel,
+    onTouchStart: onTouchStart,
+    onTouchEnd: onTouchEnd
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "spaces-frame"
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "spaces-tablist-slot"
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "spaces-tablist",
+    role: "tablist",
+    ref: tablistRef,
+    onKeyDown: onTabKeyDown
+  }, spaces.map((space, index) => {
+    const isActive = index === activeIndex;
+    return /*#__PURE__*/external_React_default().createElement("button", {
+      key: space.id,
+      id: `spaces-tab-${space.id}`,
+      className: `spaces-tab${isActive ? " active" : ""}`,
+      role: "tab",
+      type: "button",
+      "aria-selected": isActive,
+      "aria-controls": `spaces-panel-${space.id}`,
+      tabIndex: isActive ? 0 : -1,
+      onClick: () => switchTo(index, "tab")
+    }, /*#__PURE__*/external_React_default().createElement("img", {
+      className: "spaces-tab-icon",
+      src: SPACE_META[space.id].iconsrc,
+      alt: ""
+    }), /*#__PURE__*/external_React_default().createElement("span", {
+      "data-l10n-id": SPACE_META[space.id].l10nId
+    }));
+  }))), /*#__PURE__*/external_React_default().createElement("div", {
+    className: `spaces-track${animate ? " animate" : ""}`
+  }, spaces.map((space, index) => {
+    const isActive = index === activeIndex;
+    return /*#__PURE__*/external_React_default().createElement("div", {
+      key: space.id,
+      id: `spaces-panel-${space.id}`,
+      className: `space${isActive ? " active" : ""}`,
+      style: {
+        "--space-offset": index - activeIndex
+      },
+      role: "tabpanel",
+      "aria-labelledby": `spaces-tab-${space.id}`,
+      "aria-hidden": isActive ? undefined : "true",
+      inert: !isActive
+    }, space.content);
+  }))));
+}
 ;// CONCATENATED MODULE: ./content-src/components/ExternalComponentWrapper/ExternalComponentWrapper.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -26044,6 +29255,8 @@ function ExternalComponentWrapper({
 
 
 // eslint-disable-next-line no-shadow
+
+
 
 
 
@@ -26281,6 +29494,9 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       }
     };
     const privacyLinkComponent = extractComponent("PrivacyLink");
+    // renderLayout always returns a div, so gate on the same condition
+    // Highlights.jsx uses or the side-by-side panel frames an empty box.
+    const hasHighlights = Boolean(this.props.Sections?.find(s => s.id === "highlights")?.enabled);
     let learnMore = {
       link: {
         href: message.header.link_url,
@@ -26292,31 +29508,21 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
     const {
       DiscoveryStream
     } = this.props;
-    return /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, (reportAdsEnabled && spocsEnabled || sectionsEnabled) && /*#__PURE__*/external_React_default().createElement(ReportContent, {
-      spocs: DiscoveryStream.spocs
-    }), topSites && this.renderLayout([{
-      width: 12,
-      components: [topSites],
-      sectionType: "topsites"
-    }]), !novaEnabled && shouldShowASRouterNewTabMessage(this.props.Messages, "ASRouterNewTabMessage", ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_WIDGETS) && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
-      dispatch: this.props.dispatch
-    }, /*#__PURE__*/external_React_default().createElement(ExternalComponentWrapper, {
-      type: "ASROUTER_NEWTAB_MESSAGE",
-      messageData: this.props.Messages.messageData,
-      className: "asrouter-newtab-message-wrapper"
-    }))), widgets && this.renderLayout([{
+
+    // Widgets, the content feed and Highlights are already three separate boxes
+    // in this band, so spaces navigates between those rather than introducing a
+    // new grouping. Declared here so the flat band and Spaces can each place
+    // them.
+    const widgetsGroup = widgets && this.renderLayout([{
       width: 12,
       components: [{
         type: "Widgets"
       }],
       sectionType: "widgets"
-    }]), !novaEnabled && shouldShowASRouterNewTabMessage(this.props.Messages, "ASRouterNewTabMessage", ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_CONTENT_FEED) && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
-      dispatch: this.props.dispatch
-    }, /*#__PURE__*/external_React_default().createElement(ExternalComponentWrapper, {
-      type: "ASROUTER_NEWTAB_MESSAGE",
-      messageData: this.props.Messages.messageData,
-      className: "asrouter-newtab-message-wrapper"
-    }))), this.props.aboveContentFeed, !!layoutRender.length && /*#__PURE__*/external_React_default().createElement(CollapsibleSection, {
+    }]);
+    const contentGroup = /*#__PURE__*/external_React_default().createElement("div", {
+      className: `layout-content-column${layoutRender.length ? " has-feed" : ""}`
+    }, this.props.aboveContentFeed, !!layoutRender.length && /*#__PURE__*/external_React_default().createElement(CollapsibleSection, {
       className: "ds-layout",
       collapsed: topStories.pref.collapsed,
       dispatch: this.props.dispatch,
@@ -26330,15 +29536,58 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       mayHaveTopicsSelection: topicSelectionEnabled,
       sectionsEnabled: sectionsEnabled,
       eventSource: "CARDGRID"
-    }, this.renderLayout(layoutRender)), this.renderLayout([{
+    }, this.renderLayout(layoutRender)), privacyLinkComponent && this.renderLayout([{
+      width: 12,
+      components: [privacyLinkComponent]
+    }]));
+    const highlightsGroup = hasHighlights && /*#__PURE__*/external_React_default().createElement("div", {
+      className: "layout-highlights-column"
+    }, this.renderLayout([{
       width: 12,
       components: [{
         type: "Highlights"
       }]
-    }]), privacyLinkComponent && this.renderLayout([{
-      width: 12,
-      components: [privacyLinkComponent]
     }]));
+
+    // Guarded so the ordinary layout does no spaces work at all: isSpacesActive
+    // reads prefs only. resolvePopulatedSpaces then decides which spaces exist
+    // and their tablist order, so the tabs follow the prefs rather than whatever
+    // the feeds have delivered so far.
+    let spaceEntries = [];
+    if (isSpacesActive(this.props.Prefs.values)) {
+      const spaceContent = {
+        [SPACE_IDS.STORIES]: contentGroup,
+        [SPACE_IDS.WIDGETS]: widgetsGroup,
+        [SPACE_IDS.ACTIVITY]: highlightsGroup
+      };
+      spaceEntries = resolvePopulatedSpaces(this.props.Prefs.values).map(id => ({
+        id,
+        content: spaceContent[id]
+      })).filter(space => space.content);
+    }
+    const spacesActive = spaceEntries.length > 1;
+    return /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, (reportAdsEnabled && spocsEnabled || sectionsEnabled) && /*#__PURE__*/external_React_default().createElement(ReportContent, {
+      spocs: DiscoveryStream.spocs
+    }), topSites && this.renderLayout([{
+      width: 12,
+      components: [topSites],
+      sectionType: "topsites"
+    }]), !novaEnabled && shouldShowASRouterNewTabMessage(this.props.Messages, "ASRouterNewTabMessage", ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_WIDGETS) && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
+      dispatch: this.props.dispatch
+    }, /*#__PURE__*/external_React_default().createElement(ExternalComponentWrapper, {
+      type: "ASROUTER_NEWTAB_MESSAGE",
+      messageData: this.props.Messages.messageData,
+      className: "asrouter-newtab-message-wrapper"
+    }))), spacesActive ? /*#__PURE__*/external_React_default().createElement(Spaces, {
+      spaces: spaceEntries,
+      dispatch: this.props.dispatch
+    }) : /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, widgetsGroup, !novaEnabled && shouldShowASRouterNewTabMessage(this.props.Messages, "ASRouterNewTabMessage", ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_CONTENT_FEED) && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
+      dispatch: this.props.dispatch
+    }, /*#__PURE__*/external_React_default().createElement(ExternalComponentWrapper, {
+      type: "ASROUTER_NEWTAB_MESSAGE",
+      messageData: this.props.Messages.messageData,
+      className: "asrouter-newtab-message-wrapper"
+    }))), contentGroup, highlightsGroup));
   }
   renderLayout(layoutRender) {
     const styles = [];
@@ -26868,6 +30117,24 @@ function WallpaperCategories_extends() { return WallpaperCategories_extends = Ob
 const PREF_WALLPAPER_UPLOADED_PREVIOUSLY = "newtabWallpapers.customWallpaper.uploadedPreviously";
 const PREF_WALLPAPER_UPLOAD_MAX_FILE_SIZE = "newtabWallpapers.customWallpaper.fileSize";
 const PREF_WALLPAPER_UPLOAD_MAX_FILE_SIZE_ENABLED = "newtabWallpapers.customWallpaper.fileSize.enabled";
+const PREF_WALLPAPER_VISIBILITY_GROUPS = "newtabWallpapers.visibilityGroups";
+
+// The dedicated trainhopConfig.wallpapers object wins over the pref, so a group
+// can be activated without a release. The pref is never read at call sites.
+function resolveWallpaperVisibilityGroups(prefs) {
+  // A trainhop payload is raw JSON from a Nimbus recipe, so a malformed value
+  // must fall back to the pref rather than throw while rendering the picker.
+  const trainhop = prefs.trainhopConfig?.wallpapers?.visibilityGroups;
+  if (trainhop !== undefined && typeof trainhop !== "string") {
+    console.warn(`trainhopConfig.wallpapers.visibilityGroups is ${JSON.stringify(trainhop)}; expected a string. Ignoring it.`);
+  }
+  const csv = typeof trainhop === "string" && trainhop || prefs[PREF_WALLPAPER_VISIBILITY_GROUPS] || "";
+  return csv.split(",").map(group => group.trim()).filter(Boolean);
+}
+
+// Remote Settings records may omit either field. A missing `visible` means
+// visible; a missing `visibility_group` means ungated.
+const isWallpaperOffered = (wallpaper, activeGroups) => wallpaper.visible !== false && (!wallpaper.visibility_group || activeGroups.includes(wallpaper.visibility_group));
 
 // Returns a function will not be continuously triggered when called. The
 // function will be triggered if called again after `wait` milliseconds.
@@ -27305,11 +30572,12 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     }
     // Enable custom color select if pref'ed on
     let showColorPicker = prefs["newtabWallpapers.customColor.enabled"];
-    let filteredWallpapers = wallpaperList.filter(wallpaper => wallpaper.category === activeCategory);
+    const activeGroups = resolveWallpaperVisibilityGroups(prefs);
+    let filteredWallpapers = wallpaperList.filter(wallpaper => wallpaper.category === activeCategory && isWallpaperOffered(wallpaper, activeGroups));
     const wallpaperUploadMaxFileSize = this.props.Prefs.values[PREF_WALLPAPER_UPLOAD_MAX_FILE_SIZE];
     function reduceColorsToFitCustomColorInput(arr) {
       // Reduce the amount of custom colors to make space for the custom color picker
-      while (arr.length % 3 !== 2) {
+      while (arr.length && arr.length % 3 !== 2) {
         arr.pop();
       }
       return arr;
@@ -27391,7 +30659,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       }, /*#__PURE__*/external_React_default().createElement("fieldset", {
         className: "category-list"
       }, categories.map((category, index) => {
-        const filteredList = wallpaperList.filter(wallpaper => wallpaper.category === category);
+        const filteredList = wallpaperList.filter(wallpaper => wallpaper.category === category && isWallpaperOffered(wallpaper, activeGroups));
         const sortedList = this.sortWallpapersByOrder(filteredList);
         const activeWallpaperObj = activeWallpaper && sortedList.find(wp => wp.title === activeWallpaper);
         // Detect custom solid color
@@ -27577,6 +30845,7 @@ function WidgetsManagementPanel({
   mayHaveCrosswordWidget,
   mayHaveStocksWidget,
   mayHavePictureOfTheDayWidget,
+  mayHaveRecentSearchesWidget,
   setPref
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
@@ -27637,6 +30906,9 @@ function WidgetsManagementPanel({
         case "WIDGET_PICTURE_OF_THE_DAY":
           widgetName = "picture_of_the_day";
           break;
+        case "WIDGET_RECENT_SEARCHES":
+          widgetName = "recent_searches";
+          break;
       }
       if (widgetName) {
         const widget = WIDGET_REGISTRY.find(w => w.telemetryName === widgetName);
@@ -27665,7 +30937,8 @@ function WidgetsManagementPanel({
     privacyEnabled,
     crosswordEnabled,
     stocksEnabled,
-    pictureOfTheDayEnabled
+    pictureOfTheDayEnabled,
+    recentSearchesEnabled
   } = enabledWidgets;
   const isRTL = typeof document !== "undefined" && document.dir === "rtl";
   const arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
@@ -27789,6 +31062,16 @@ function WidgetsManagementPanel({
     "data-preference": "widgets.pictureOfTheDay.enabled",
     "data-event-source": "WIDGET_PICTURE_OF_THE_DAY",
     "data-l10n-id": "newtab-custom-widget-picture-toggle"
+  })), mayHaveRecentSearchesWidget && /*#__PURE__*/external_React_default().createElement("div", {
+    id: "recent-searches-widget-section",
+    className: "section"
+  }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
+    id: "recent-searches-toggle",
+    pressed: recentSearchesEnabled || null,
+    ontoggle: onToggleWidget,
+    "data-preference": "widgets.recentSearches.enabled",
+    "data-event-source": "WIDGET_RECENT_SEARCHES",
+    "data-l10n-id": "newtab-custom-widget-recent-searches-toggle"
   })))))));
 }
 
@@ -27806,6 +31089,7 @@ function ContentSection_extends() { return ContentSection_extends = Object.assig
 
 // @nova-cleanup(move-directory): Update import path after WidgetsManagementPanel moves to components/CustomizeMenu/
 
+const PREF_INFERRED_PERSONALIZATION = "discoverystream.sections.personalization.inferred.user.enabled";
 
 // `theme-picker` is imported lazily, so it may still be an undefined custom element
 // when React renders it. In that state React sets props as attributes, and the lit
@@ -27862,6 +31146,9 @@ class ContentSection extends (external_React_default()).PureComponent {
           break;
         case "WIDGET_STOCKS":
           widgetName = "stocks";
+          break;
+        case "WIDGET_RECENT_SEARCHES":
+          widgetName = "recent_searches";
           break;
         case "WIDGET_PICTURE_OF_THE_DAY":
           widgetName = "picture_of_the_day";
@@ -27972,6 +31259,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       mayHaveCrosswordWidget,
       mayHaveStocksWidget,
       mayHavePictureOfTheDayWidget,
+      mayHaveRecentSearchesWidget,
       mayHaveWeatherForecast,
       openPreferences,
       wallpapersUserEnabled,
@@ -27991,7 +31279,8 @@ class ContentSection extends (external_React_default()).PureComponent {
       wallpapersEnabled,
       toggleWidgetsManagementPanel,
       showWidgetsManagementPanel,
-      widgetsEnabled
+      widgetsEnabled,
+      lockedPrefs = []
     } = this.props;
     const {
       topSitesEnabled,
@@ -28008,7 +31297,8 @@ class ContentSection extends (external_React_default()).PureComponent {
       privacyEnabled,
       crosswordEnabled,
       stocksEnabled,
-      pictureOfTheDayEnabled
+      pictureOfTheDayEnabled,
+      recentSearchesEnabled
     } = enabledWidgets;
 
     // @nova-cleanup(remove-conditional): Remove novaEnabled check and newtab-custom-stories-toggle, default to newtab-recommended-stories-toggle
@@ -28138,6 +31428,16 @@ class ContentSection extends (external_React_default()).PureComponent {
       "data-preference": "widgets.pictureOfTheDay.enabled",
       "data-event-source": "WIDGET_PICTURE_OF_THE_DAY",
       "data-l10n-id": "newtab-custom-widget-picture-toggle"
+    })), mayHaveRecentSearchesWidget && /*#__PURE__*/external_React_default().createElement("div", {
+      id: "recent-searches-widget-section",
+      className: "section"
+    }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
+      id: "recent-searches-toggle",
+      pressed: recentSearchesEnabled || null,
+      ontoggle: this.onPreferenceSelect,
+      "data-preference": "widgets.recentSearches.enabled",
+      "data-event-source": "WIDGET_RECENT_SEARCHES",
+      "data-l10n-id": "newtab-custom-widget-recent-searches-toggle"
     })))), /*#__PURE__*/external_React_default().createElement("div", {
       className: "settings-toggles"
     },
@@ -28239,6 +31539,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       mayHaveCrosswordWidget: mayHaveCrosswordWidget,
       mayHaveStocksWidget: mayHaveStocksWidget,
       mayHavePictureOfTheDayWidget: mayHavePictureOfTheDayWidget,
+      mayHaveRecentSearchesWidget: mayHaveRecentSearchesWidget,
       mayHaveWeatherForecast: mayHaveWeatherForecast,
       weatherDisplay: weatherDisplay,
       setPref: setPref,
@@ -28271,10 +31572,15 @@ class ContentSection extends (external_React_default()).PureComponent {
     }, mayHaveInferredPersonalization && /*#__PURE__*/external_React_default().createElement("moz-checkbox", {
       id: "inferred-personalization",
       className: "customize-menu-checkbox",
-      disabled: !pocketEnabled,
+      disabled: !pocketEnabled || lockedPrefs.includes(PREF_INFERRED_PERSONALIZATION)
+      // Renders its own `disabled`, so it opts out of
+      // CustomizeMenu's lock sweep and applies the lock
+      // itself.
+      ,
+      "data-lock-managed": "",
       checked: showInferredPersonalizationEnabled,
       onChange: this.onPreferenceSelect,
-      "data-preference": "discoverystream.sections.personalization.inferred.user.enabled",
+      "data-preference": PREF_INFERRED_PERSONALIZATION,
       "data-event-source": "INFERRED_PERSONALIZATION",
       "data-l10n-id": "newtab-custom-stories-personalized-checkbox"
     }), mayHaveTopicSections && /*#__PURE__*/external_React_default().createElement(SectionsMgmtPanel, {
@@ -28357,6 +31663,7 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
     this.personalizeButtonRef = /*#__PURE__*/external_React_default().createRef();
     this.dialogRef = /*#__PURE__*/external_React_default().createRef();
     this.closeButtonRef = /*#__PURE__*/external_React_default().createRef();
+    this._hadLockedPrefs = false;
     this.state = {
       subpanelOpen: false
     };
@@ -28370,6 +31677,7 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
     if (this.props.showing && this.props.Prefs.values.browserNovaEnabled) {
       loadThemePickerElements();
     }
+    this.disableLockedControls();
   }
   componentDidUpdate(prevProps) {
     if (this.props.showing && !prevProps.showing) {
@@ -28379,6 +31687,25 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       if (!this.dialogRef.current?.open) {
         this.dialogRef.current?.showModal();
       }
+    }
+    this.disableLockedControls();
+  }
+
+  /**
+   * Disables the controls whose pref an administrator has locked. Controls with
+   * a `disabled` condition of their own set `data-lock-managed` and apply the
+   * lock in their own render, so this stays the only writer of `disabled` for
+   * everything it touches.
+   */
+  disableLockedControls() {
+    const lockedPrefs = this.props.Prefs.values.lockedPrefs ?? [];
+    if (!lockedPrefs.length && !this._hadLockedPrefs) {
+      return;
+    }
+    this._hadLockedPrefs = !!lockedPrefs.length;
+    const controls = this.dialogRef.current?.querySelectorAll("[data-preference]:not([data-lock-managed])") ?? [];
+    for (const control of controls) {
+      control.disabled = lockedPrefs.includes(control.dataset.preference);
     }
   }
   onCancel(e) {
@@ -28416,7 +31743,8 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
     const novaEnabled = this.props.Prefs.values[CustomizeMenu_PREF_NOVA_ENABLED];
     // Browser-wide Nova gate for the theme picker (distinct from novaEnabled).
     const {
-      browserNovaEnabled
+      browserNovaEnabled,
+      lockedPrefs
     } = this.props.Prefs.values;
     return /*#__PURE__*/external_React_default().createElement("span", null, /*#__PURE__*/external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
       nodeRef: this.personalizeButtonRef,
@@ -28499,6 +31827,7 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       mayHaveCrosswordWidget: this.props.mayHaveCrosswordWidget,
       mayHaveStocksWidget: this.props.mayHaveStocksWidget,
       mayHavePictureOfTheDayWidget: this.props.mayHavePictureOfTheDayWidget,
+      mayHaveRecentSearchesWidget: this.props.mayHaveRecentSearchesWidget,
       dispatch: this.props.dispatch,
       onSubpanelToggle: this.onSubpanelToggle,
       toggleSectionsMgmtPanel: this.props.toggleSectionsMgmtPanel,
@@ -28509,7 +31838,8 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       showThemesPanel: this.props.showThemesPanel,
       toggleWidgetsManagementPanel: this.props.toggleWidgetsManagementPanel,
       showWidgetsManagementPanel: this.props.showWidgetsManagementPanel,
-      widgetsEnabled: this.props.widgetsEnabled
+      widgetsEnabled: this.props.widgetsEnabled,
+      lockedPrefs: lockedPrefs
     })))));
   }
 }
@@ -29098,6 +32428,7 @@ class _Weather extends (external_React_default()).PureComponent {
       "data-l10n-id": "newtab-menu-section-tooltip",
       className: "weatherButtonContextMenu"
     }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+      className: "panel-list-no-icons",
       id: "weather-context-menu",
       ref: this.setPanelRef
     }, isLocationSearchEnabled && /*#__PURE__*/external_React_default().createElement("panel-item", {
@@ -29271,13 +32602,13 @@ const Weather_Weather_Weather = (0,external_ReactRedux_namespaceObject.connect)(
 
 
 
-const WidgetsSidebar_PREF_WIDGETS_ENABLED = "widgets.enabled";
+const PREF_WIDGETS_ENABLED = "widgets.enabled";
 const WidgetsSidebar_PREF_NOVA_ENABLED = "nova.enabled";
 function WidgetsSidebar({
   dispatch
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
-  const widgetsEnabled = prefs[WidgetsSidebar_PREF_WIDGETS_ENABLED];
+  const widgetsEnabled = prefs[PREF_WIDGETS_ENABLED];
   const novaEnabled = prefs[WidgetsSidebar_PREF_NOVA_ENABLED];
 
   // Only one widget is supported here going forward: .sidebar-inline-end
@@ -29995,6 +33326,7 @@ function ActivationWindowMessage({
     content
   } = messageData;
   const hasButtons = content.primaryButton || content.secondaryButton;
+  const hasResponsiveImage = !!content.imageSrcResponsive || !!content.imageSrcDarkResponsive || !!content.imageSrcNarrow || !!content.imageSrcDarkNarrow;
   const onDismiss = (0,external_React_namespaceObject.useCallback)(() => {
     handleDismiss();
     handleBlock();
@@ -30022,7 +33354,7 @@ function ActivationWindowMessage({
     }
   }, [handleClick, handleDismiss, handleBlock, content]);
   return /*#__PURE__*/external_React_default().createElement("aside", {
-    className: hasButtons ? "activation-window-message" : "activation-window-message no-buttons"
+    className: ["activation-window-message", !hasButtons ? "no-buttons" : "", hasResponsiveImage ? "bleed-image" : ""].filter(Boolean).join(" ")
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "activation-window-message-dismiss"
   }, /*#__PURE__*/external_React_default().createElement("moz-button", {
@@ -30032,11 +33364,28 @@ function ActivationWindowMessage({
     "data-l10n-id": "newtab-activation-window-message-dismiss-button"
   })), /*#__PURE__*/external_React_default().createElement("div", {
     className: "activation-window-message-inner"
-  }, /*#__PURE__*/external_React_default().createElement("img", {
+  }, /*#__PURE__*/external_React_default().createElement("picture", {
+    className: "activation-window-message-image"
+  }, content.imageSrcDark && /*#__PURE__*/external_React_default().createElement("source", {
+    srcSet: content.imageSrcDark,
+    media: "(min-width: 1072px) and (prefers-color-scheme: dark)"
+  }), content.imageSrcDarkNarrow && /*#__PURE__*/external_React_default().createElement("source", {
+    srcSet: content.imageSrcDarkNarrow,
+    media: "(min-width: 866px) and (max-width: 1071.98px) and (prefers-color-scheme: dark)"
+  }), content.imageSrcDarkResponsive && /*#__PURE__*/external_React_default().createElement("source", {
+    srcSet: content.imageSrcDarkResponsive,
+    media: "(max-width: 865.98px) and (prefers-color-scheme: dark)"
+  }), content.imageSrcNarrow && /*#__PURE__*/external_React_default().createElement("source", {
+    srcSet: content.imageSrcNarrow,
+    media: "(min-width: 866px) and (max-width: 1071.98px)"
+  }), content.imageSrcResponsive && /*#__PURE__*/external_React_default().createElement("source", {
+    srcSet: content.imageSrcResponsive,
+    media: "(max-width: 865.98px)"
+  }), /*#__PURE__*/external_React_default().createElement("img", {
     src: content.imageSrc || "chrome://newtab/content/data/content/assets/kit-in-circle.svg",
     alt: "",
     role: "presentation"
-  }), /*#__PURE__*/external_React_default().createElement("div", null, content.heading && (typeof content.heading === "string" ? /*#__PURE__*/external_React_default().createElement("h2", null, content.heading) : /*#__PURE__*/external_React_default().createElement("h2", {
+  })), /*#__PURE__*/external_React_default().createElement("div", null, content.heading && (typeof content.heading === "string" ? /*#__PURE__*/external_React_default().createElement("h2", null, content.heading) : /*#__PURE__*/external_React_default().createElement("h2", {
     "data-l10n-id": content.heading.string_id
   })), content.message && (typeof content.message === "string" ? /*#__PURE__*/external_React_default().createElement("p", null, content.message) : /*#__PURE__*/external_React_default().createElement("p", {
     "data-l10n-id": content.message.string_id
@@ -30087,10 +33436,12 @@ function Base_extends() { return Base_extends = Object.assign ? Object.assign.bi
 
 
 
+
 const Base_VISIBLE = "visible";
 const Base_VISIBILITY_CHANGE_EVENT = "visibilitychange";
-// Minimum scroll distance in pixels to record a scroll telemetry event.
-const SCROLL_TELEMETRY_THRESHOLD = 50;
+// Scroll distances in pixels, in ascending order, that each record a scroll
+// telemetry event the first time they are passed in a session.
+const SCROLL_TELEMETRY_THRESHOLDS = [50, 100, 250];
 const PREF_INFERRED_PERSONALIZATION_SYSTEM = "discoverystream.sections.personalization.inferred.enabled";
 const Base_PREF_INFERRED_PERSONALIZATION_USER = "discoverystream.sections.personalization.inferred.user.enabled";
 // @nova-cleanup(remove-pref): Remove PREF_NOVA_ENABLED
@@ -30164,7 +33515,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     this.attachSearchSentinel = this.attachSearchSentinel.bind(this);
     this.onSearchSentinelIntersect = this.onSearchSentinelIntersect.bind(this);
     this.searchStickyObserver = null;
-    this._hasScrolledForSession = false;
+    this._nextScrollThreshold = 0;
     this.state = {
       fixedSearch: false,
       colorMode: "",
@@ -30436,10 +33787,15 @@ class BaseContent extends (external_React_default()).PureComponent {
     }
   }
   onWindowScroll() {
-    if (!this._hasScrolledForSession && __webpack_require__.g.scrollY > SCROLL_TELEMETRY_THRESHOLD) {
-      this._hasScrolledForSession = true;
+    // A single scroll can pass several thresholds at once, so report every
+    // threshold that hasn't been reported yet.
+    while (this._nextScrollThreshold < SCROLL_TELEMETRY_THRESHOLDS.length && __webpack_require__.g.scrollY > SCROLL_TELEMETRY_THRESHOLDS[this._nextScrollThreshold]) {
+      const threshold = SCROLL_TELEMETRY_THRESHOLDS[this._nextScrollThreshold++];
       this.props.dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.NEW_TAB_SCROLL
+        type: actionTypes.NEW_TAB_SCROLL,
+        data: {
+          threshold
+        }
       }));
     }
     if (this.props.Prefs.values[Base_PREF_NOVA_ENABLED]) {
@@ -30796,14 +34152,15 @@ class BaseContent extends (external_React_default()).PureComponent {
     const isDiscoveryStream = props.DiscoveryStream.config && props.DiscoveryStream.config.enabled;
     let filteredSections = props.Sections.filter(section => section.id !== "topstories");
     const topSitesEnabled = prefs["feeds.topsites"];
-    const pocketEnabled = prefs["feeds.section.topstories"] && prefs["feeds.system.topstories"];
+    const pocketEnabled = (prefs["feeds.section.topstories"] || isSpaceOverridden(SPACE_IDS.STORIES, prefs)) && prefs["feeds.system.topstories"];
     // @nova-cleanup(remove): pre-Nova; `filteredSections` is the legacy
     // Sections redux slice that no longer drives Nova layout. Nova uses
     // `noContentSectionsEnabled` (declared in the Nova branch below).
     const noSectionsEnabled = !topSitesEnabled && !pocketEnabled && filteredSections.filter(section => section.enabled).length === 0;
     const enabledSections = {
       topSitesEnabled,
-      pocketEnabled: prefs["feeds.section.topstories"],
+      // So the toggle does not read off while the Stories space is showing.
+      pocketEnabled: prefs["feeds.section.topstories"] || isSpaceOverridden(SPACE_IDS.STORIES, prefs),
       showInferredPersonalizationEnabled: prefs[Base_PREF_INFERRED_PERSONALIZATION_USER],
       topSitesRowsCount: prefs.topSitesRows,
       webNotificationsEnabled: prefs.showWebNotifications,
@@ -30831,6 +34188,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     const mayHaveCrosswordWidget = widgetVisibleById("crossword");
     const mayHaveStocksWidget = widgetVisibleById("stocks");
     const mayHavePictureOfTheDayWidget = widgetVisibleById("pictureOfTheDay");
+    const mayHaveRecentSearchesWidget = widgetVisibleById("recentSearches");
 
     // These prefs set the initial values on the Customize panel toggle switches
     const enabledWidgets = {
@@ -30843,6 +34201,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       crosswordEnabled: prefs["widgets.crossword.enabled"],
       stocksEnabled: prefs["widgets.stocks.enabled"],
       pictureOfTheDayEnabled: prefs["widgets.pictureOfTheDay.enabled"],
+      recentSearchesEnabled: prefs["widgets.recentSearches.enabled"],
       widgetsMaximized: prefs["widgets.maximized"],
       widgetsMayBeMaximized: prefs["widgets.system.maximized"]
     };
@@ -30886,6 +34245,11 @@ class BaseContent extends (external_React_default()).PureComponent {
       openWidgetsPanel: this.openWidgetsPanel
     };
 
+    // The experiment can turn the Widgets space on for a profile that had
+    // widgets off, and both the layout and the customize menu toggle have to
+    // agree with what is on the page.
+    const widgetsEnabled = prefs["widgets.enabled"] || isSpaceOverridden(SPACE_IDS.WIDGETS, prefs);
+
     // @nova-cleanup(remove-conditional): Remove this conditional and
     // always render the Nova layout below. The classic render() return
     // and all its supporting variables (featureClassName, outerClassName,
@@ -30897,16 +34261,31 @@ class BaseContent extends (external_React_default()).PureComponent {
       // anchors the inline-start sidebar. If the page has nothing on it
       // (no content sections, no search, no widgets), the Logo is
       // suppressed entirely via `isPageEmpty`.
-      const weatherWidget = WIDGET_REGISTRY.find(w => w.id === "weather");
-      const weatherGoesToSidebar = resolveWidgetHasSidebar(weatherWidget, prefs) && resolveWidgetSize(weatherWidget, prefs) === "small";
-      const widgetsEnabled = prefs["widgets.enabled"];
       const hasAnyEnabledWidget = WIDGET_REGISTRY.some(w => isWidgetEnabled(w, prefs, widgetsEnabled));
-      const hasContentWidgets = WIDGET_REGISTRY.some(w => isWidgetEnabled(w, prefs, widgetsEnabled) && !(w.id === "weather" && weatherGoesToSidebar));
+      const hasContentWidgets = hasContentAreaWidgets(prefs, widgetsEnabled);
       const highlightsEnabled = prefs["feeds.section.highlights"];
       const noContentSectionsEnabled = !topSitesEnabled && !pocketEnabled && !highlightsEnabled;
       const isPageEmpty = noContentSectionsEnabled && !prefs.showSearch && !hasAnyEnabledWidget;
       const hasManyTopSitesRows = topSitesEnabled && prefs.topSitesRows > 2;
-      const logoShouldBeCentered = !pocketEnabled && !hasContentWidgets && !hasManyTopSitesRows;
+      // Recent activity is then alone in the band, and the logo leaves the sidebar.
+      const noFeedOrContentWidgets = !pocketEnabled && !hasContentWidgets;
+      // Gated here rather than in CSS, so the stylesheet never has to infer
+      // whether widgets or stories exist. The lead class alone means the
+      // experiment is assigned, which is enough to frame a lone section; the
+      // two-column layout additionally needs both sections.
+      const bandClassName = ["content-full-width", ...sideBySideBandClasses(prefs), isSideBySideActive(prefs) && "side-by-side-active",
+      // Unlike side-by-side, an assigned-but-inactive spaces variant renders
+      // the ordinary band, so there is no Spaces container for these classes
+      // to describe.
+      ...(isSpacesActive(prefs) ? spacesBandClasses(prefs) : []), noFeedOrContentWidgets && "highlights-only"].filter(Boolean).join(" ");
+      const logoShouldBeCentered = noFeedOrContentWidgets && !hasManyTopSitesRows;
+      // The 5-column story grid is driven by the layout data alone: the content
+      // band only widens when every section has a columnCount: 5 entry. Sections
+      // share one subgrid track count, so a layout set where only some sections
+      // define 5 columns has to stay at 4 — widening it would leave the others
+      // with no tile for the active breakpoint, and nothing to render.
+      const sectionsWithLayouts = Object.values(props.DiscoveryStream.feeds?.data ?? {}).find(feed => feed?.data?.sections?.length)?.data?.sections;
+      const hasFiveColumnLayout = !!sectionsWithLayouts?.length && sectionsWithLayouts.every(section => section.layout?.responsiveLayouts?.some(layout => layout.columnCount === 5));
       // Rendered as a direct child of .container unless the logo is centered,
       // so position: sticky is bounded by .container (which spans the whole
       // page) rather than .content (which now ends above the content band).
@@ -30942,7 +34321,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       }, /*#__PURE__*/external_React_default().createElement("div", {
         className: `nova-outer-wrapper${this.state.fixedSearch ? " stuck-search" : ""}`
       }, /*#__PURE__*/external_React_default().createElement("div", {
-        className: `container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}`
+        className: `container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}${hasFiveColumnLayout ? " sections-5-col" : ""}`
       }, /*#__PURE__*/external_React_default().createElement("aside", {
         className: "sidebar-inline-start"
       }, !prefs.hideLogo && !logoShouldBeCentered && !isPageEmpty && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Logo, null))), /*#__PURE__*/external_React_default().createElement("aside", {
@@ -30971,8 +34350,8 @@ class BaseContent extends (external_React_default()).PureComponent {
         messageData: this.props.Messages.messageData,
         className: "asrouter-newtab-message-wrapper"
       }))), !pocketEnabled && multistageMessageFeed), contentFeed && /*#__PURE__*/external_React_default().createElement("div", {
-        className: "content-full-width"
-      }, contentFeed))), /*#__PURE__*/external_React_default().createElement(ConfirmDialog, null), /*#__PURE__*/external_React_default().createElement("menu", {
+        className: bandClassName
+      }, contentFeed), wallpapersEnabled && wallpapersUserEnabled && this.renderWallpaperAttribution())), /*#__PURE__*/external_React_default().createElement(ConfirmDialog, null), /*#__PURE__*/external_React_default().createElement("menu", {
         className: "personalizeButtonWrapper nova-enabled"
       }, /*#__PURE__*/external_React_default().createElement(CustomizeMenu, {
         onClose: this.closeCustomizationMenu,
@@ -30998,6 +34377,7 @@ class BaseContent extends (external_React_default()).PureComponent {
         mayHaveCrosswordWidget: mayHaveCrosswordWidget,
         mayHaveStocksWidget: mayHaveStocksWidget,
         mayHavePictureOfTheDayWidget: mayHavePictureOfTheDayWidget,
+        mayHaveRecentSearchesWidget: mayHaveRecentSearchesWidget,
         mayHaveWeatherForecast: prefs["widgets.system.weatherForecast.enabled"],
         weatherDisplay: prefs["weather.display"],
         showing: customizeMenuVisible,
@@ -31007,7 +34387,7 @@ class BaseContent extends (external_React_default()).PureComponent {
         toggleWidgetsManagementPanel: this.toggleWidgetsManagementPanel,
         toggleThemesPanel: this.toggleThemesPanel,
         showThemesPanel: this.state.showThemesPanel,
-        widgetsEnabled: prefs["widgets.enabled"],
+        widgetsEnabled: widgetsEnabled,
         dispatch: this.props.dispatch
       }), (shouldShowOMCHighlight(this.props.Messages, "CustomWallpaperHighlight") || shouldShowOMCHighlight(this.props.Messages, "WorldCupWallpaperHighlight") || shouldShowOMCHighlight(this.props.Messages, "WorldCupSemiFinalWallpaperHighlight")) && /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
         dispatch: this.props.dispatch
@@ -31095,6 +34475,7 @@ class BaseContent extends (external_React_default()).PureComponent {
       mayHaveCrosswordWidget: mayHaveCrosswordWidget,
       mayHaveStocksWidget: mayHaveStocksWidget,
       mayHavePictureOfTheDayWidget: mayHavePictureOfTheDayWidget,
+      mayHaveRecentSearchesWidget: mayHaveRecentSearchesWidget,
       mayHaveWeatherForecast: prefs["widgets.system.weatherForecast.enabled"],
       weatherDisplay: prefs["weather.display"],
       showing: customizeMenuVisible,

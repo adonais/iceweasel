@@ -25,9 +25,7 @@ class DownloadService : AbstractFetchDownloadService() {
     override val downloadEstimator: DownloadEstimator by lazy { components.downloadEstimator }
     override val packageNameProvider: PackageNameProvider by lazy { DefaultPackageNameProvider(applicationContext) }
     override val downloadFileUtils: DownloadFileUtils by lazy {
-        DefaultDownloadFileUtils(
-            context = applicationContext,
-        )
+        DefaultDownloadFileUtils(context = applicationContext)
     }
     override val downloadFileWriter: DownloadFileWriter by lazy {
         DefaultDownloadFileWriter(

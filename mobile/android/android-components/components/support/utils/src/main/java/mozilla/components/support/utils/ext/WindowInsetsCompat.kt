@@ -9,32 +9,18 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsCompat.Type.displayCutout
 import androidx.core.view.WindowInsetsCompat.Type.systemBars
 
-/**
- * Returns the top system window inset in pixels.
- */
-fun WindowInsetsCompat.top(): Int =
-    this.getInsetsIgnoringVisibility(systemBars() or displayCutout()).top
+/** Returns the top system window inset in pixels. */
+fun WindowInsetsCompat.top(): Int = this.getInsetsIgnoringVisibility(systemBars() or displayCutout()).top
 
-/**
- * Returns the right system window inset in pixels.
- */
-fun WindowInsetsCompat.right(): Int =
-    this.getInsetsIgnoringVisibility(systemBars() or displayCutout()).right
+/** Returns the right system window inset in pixels. */
+fun WindowInsetsCompat.right(): Int = this.getInsetsIgnoringVisibility(systemBars() or displayCutout()).right
 
-/**
- * Returns the left system window inset in pixels.
- */
-fun WindowInsetsCompat.left(): Int =
-    this.getInsetsIgnoringVisibility(systemBars() or displayCutout()).left
+/** Returns the left system window inset in pixels. */
+fun WindowInsetsCompat.left(): Int = this.getInsetsIgnoringVisibility(systemBars() or displayCutout()).left
 
-/**
- * Returns the bottom system window inset in pixels.
- */
-fun WindowInsetsCompat.bottom(): Int =
-    this.getInsetsIgnoringVisibility(systemBars() or displayCutout()).bottom
+/** Returns the bottom system window inset in pixels. */
+fun WindowInsetsCompat.bottom(): Int = this.getInsetsIgnoringVisibility(systemBars() or displayCutout()).bottom
 
-/**
- * Returns the mandatory system gesture insets.
- */
+/** Returns the mandatory system gesture insets. */
 fun WindowInsetsCompat.mandatorySystemGestureInsets(): Insets =
     this.getInsets(WindowInsetsCompat.Type.mandatorySystemGestures())

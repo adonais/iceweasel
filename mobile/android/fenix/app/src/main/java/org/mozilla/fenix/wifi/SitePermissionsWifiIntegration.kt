@@ -13,8 +13,8 @@ import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_ALLOW_ON_WIFI
 import org.mozilla.fenix.utils.Settings
 
 /**
- * Handles implementation details of only setting up a WIFI connectivity listener if the current
- * user settings require it.
+ * Handles implementation details of only setting up a WIFI connectivity listener if the current user settings require
+ * it.
  */
 class SitePermissionsWifiIntegration(
     private val settings: Settings,
@@ -22,8 +22,8 @@ class SitePermissionsWifiIntegration(
 ) : LifecycleAwareFeature {
 
     /**
-     * Adds listener for autoplay setting [AUTOPLAY_ALLOW_ON_WIFI]. Sets all autoplay to allowed when
-     * WIFI is connected, blocked otherwise.
+     * Adds listener for autoplay setting [AUTOPLAY_ALLOW_ON_WIFI]. Sets all autoplay to allowed when WIFI is connected,
+     * blocked otherwise.
      */
     @VisibleForTesting
     internal val wifiConnectedListener: ((Boolean) -> Unit) by lazy {

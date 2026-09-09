@@ -9,9 +9,7 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.lib.state.DelicateAction
 
 internal object DebugReducer {
-    /**
-     * [DebugAction] Reducer function for modifying internal state for debugging purposes only.
-     */
+    /** [DebugAction] Reducer function for modifying internal state for debugging purposes only. */
     @OptIn(DelicateAction::class)
     fun reduce(state: BrowserState, action: DebugAction): BrowserState {
         return when (action) {

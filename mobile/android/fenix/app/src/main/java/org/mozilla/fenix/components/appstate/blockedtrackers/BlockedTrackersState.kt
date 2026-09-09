@@ -11,8 +11,8 @@ import mozilla.components.feature.protection.dashboard.TrackersBlockedCategory
  *
  * @property trackersBlockedCount The total number of trackers blocked to display in the privacy report.
  * @property trackersBlockedThisWeek The total number of trackers blocked this week.
- * @property earliestTrackingDate The earliest date for which we have information about blocked trackers
- * as a Unix time stamp. May be `null` if this information is not available.
+ * @property earliestTrackingDate The earliest date for which we have information about blocked trackers as a Unix time
+ *   stamp. May be `null` if this information is not available.
  */
 data class BlockedTrackersState(
     val trackersBlockedCount: Int = 0,

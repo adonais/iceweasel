@@ -7,9 +7,9 @@
 
 @layer tokens-foundation, tokens-browser-theme, tokens-foundation-brand, tokens-foundation-nova, tokens-browser-theme-nova, tokens-foundation-brand-nova, tokens-prefers-contrast, tokens-prefers-contrast-nova, tokens-forced-colors, tokens-forced-colors-nova;
 
-@layer tokens-foundation {
-  :root,
-  :host {
+:root,
+:host {
+  @layer tokens-foundation {
     --visual-picker-item-border-color: var(--border-color-interactive);
     --visual-picker-item-border-radius: var(--border-radius-medium);
     --visual-picker-item-border-width: var(--border-width);

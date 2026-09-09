@@ -4,25 +4,26 @@
 
 package mozilla.components.concept.fetch
 
+import java.lang.IllegalArgumentException
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.expectException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.lang.IllegalArgumentException
-import kotlin.test.assertNotNull
 
 class HeadersTest {
     @Test
     fun `Creating Headers using constructor`() {
-        val headers = MutableHeaders(
-            "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Encoding" to "gzip, deflate",
-            "Accept-Language" to "en-US,en;q=0.9",
-            "Connection" to "keep-alive",
-            "Dnt" to "1",
-            "User-Agent" to "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:65.0) Gecko/20100101 Firefox/65.0",
-        )
+        val headers =
+            MutableHeaders(
+                "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Encoding" to "gzip, deflate",
+                "Accept-Language" to "en-US,en;q=0.9",
+                "Connection" to "keep-alive",
+                "Dnt" to "1",
+                "User-Agent" to "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:65.0) Gecko/20100101 Firefox/65.0",
+            )
 
         assertEquals(6, headers.size)
 
@@ -38,7 +39,10 @@ class HeadersTest {
         assertEquals("en-US,en;q=0.9", headers[2].value)
         assertEquals("keep-alive", headers[3].value)
         assertEquals("1", headers[4].value)
-        assertEquals("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:65.0) Gecko/20100101 Firefox/65.0", headers[5].value)
+        assertEquals(
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:65.0) Gecko/20100101 Firefox/65.0",
+            headers[5].value,
+        )
     }
 
     @Test
@@ -85,11 +89,12 @@ class HeadersTest {
 
     @Test
     fun `Overriding headers at index`() {
-        val headers = MutableHeaders().apply {
-            set("User-Agent", "Mozilla/5.0")
-            set("Connection", "keep-alive")
-            set("Accept-Encoding", "gzip")
-        }
+        val headers =
+            MutableHeaders().apply {
+                set("User-Agent", "Mozilla/5.0")
+                set("Connection", "keep-alive")
+                set("Accept-Encoding", "gzip")
+            }
 
         headers[2] = Header("Dnt", "0")
         headers[0] = Header("Accept-Language", "en-US,en;q=0.9")
@@ -107,11 +112,12 @@ class HeadersTest {
 
     @Test
     fun `Contains header with name`() {
-        val headers = MutableHeaders().apply {
-            set("User-Agent", "Mozilla/5.0")
-            set("Connection", "keep-alive")
-            set("Accept-Encoding", "gzip")
-        }
+        val headers =
+            MutableHeaders().apply {
+                set("User-Agent", "Mozilla/5.0")
+                set("Connection", "keep-alive")
+                set("Accept-Encoding", "gzip")
+            }
 
         assertTrue(headers.contains("User-Agent"))
         assertTrue(headers.contains("Connection"))
@@ -125,19 +131,15 @@ class HeadersTest {
     @Test
     fun `Throws if header name is empty`() {
         expectException<IllegalArgumentException> {
-            MutableHeaders(
-                "" to "Mozilla/5.0",
-            )
+            MutableHeaders("" to "Mozilla/5.0")
         }
 
         expectException<IllegalArgumentException> {
-            MutableHeaders()
-                .append("", "Mozilla/5.0")
+            MutableHeaders().append("", "Mozilla/5.0")
         }
 
         expectException<IllegalArgumentException> {
-            MutableHeaders()
-                .set("", "Mozilla/5.0")
+            MutableHeaders().set("", "Mozilla/5.0")
         }
 
         expectException<IllegalArgumentException> {
@@ -147,11 +149,12 @@ class HeadersTest {
 
     @Test
     fun `Iterator usage`() {
-        val headers = MutableHeaders().apply {
-            set("User-Agent", "Mozilla/5.0")
-            set("Connection", "keep-alive")
-            set("Accept-Encoding", "gzip")
-        }
+        val headers =
+            MutableHeaders().apply {
+                set("User-Agent", "Mozilla/5.0")
+                set("Connection", "keep-alive")
+                set("Accept-Encoding", "gzip")
+            }
 
         var i = 0
         headers.forEach { _ -> i++ }
@@ -163,14 +166,15 @@ class HeadersTest {
 
     @Test
     fun `Creating and modifying headers`() {
-        val headers = MutableHeaders(
-            "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Encoding" to "gzip, deflate",
-            "Accept-Language" to "en-US,en;q=0.9",
-            "Connection" to "keep-alive",
-            "Dnt" to "1",
-            "User-Agent" to "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:65.0) Gecko/20100101 Firefox/65.0",
-        )
+        val headers =
+            MutableHeaders(
+                "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Encoding" to "gzip, deflate",
+                "Accept-Language" to "en-US,en;q=0.9",
+                "Connection" to "keep-alive",
+                "Dnt" to "1",
+                "User-Agent" to "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:65.0) Gecko/20100101 Firefox/65.0",
+            )
 
         headers.set("Dnt", "0")
         headers.set("User-Agent", "Mozilla/6.0")
@@ -197,11 +201,12 @@ class HeadersTest {
 
     @Test
     fun `In operator`() {
-        val headers = MutableHeaders().apply {
-            set("User-Agent", "Mozilla/5.0")
-            set("Connection", "keep-alive")
-            set("Accept-Encoding", "gzip")
-        }
+        val headers =
+            MutableHeaders().apply {
+                set("User-Agent", "Mozilla/5.0")
+                set("Connection", "keep-alive")
+                set("Accept-Encoding", "gzip")
+            }
 
         assertTrue("User-Agent" in headers)
         assertTrue("Connection" in headers)
@@ -214,11 +219,12 @@ class HeadersTest {
 
     @Test
     fun `Get multiple headers by name`() {
-        val headers = MutableHeaders().apply {
-            append("Accept-Encoding", "gzip")
-            append("Accept-Encoding", "deflate")
-            append("Connection", "keep-alive")
-        }
+        val headers =
+            MutableHeaders().apply {
+                append("Accept-Encoding", "gzip")
+                append("Accept-Encoding", "deflate")
+                append("Connection", "keep-alive")
+            }
 
         val values = headers.getAll("Accept-Encoding")
         assertEquals(2, values.size)
@@ -228,11 +234,12 @@ class HeadersTest {
 
     @Test
     fun `Getting headers by name`() {
-        val headers = MutableHeaders().apply {
-            append("Accept-Encoding", "gzip")
-            append("Accept-Encoding", "deflate")
-            append("Connection", "keep-alive")
-        }
+        val headers =
+            MutableHeaders().apply {
+                append("Accept-Encoding", "gzip")
+                append("Accept-Encoding", "deflate")
+                append("Connection", "keep-alive")
+            }
 
         assertEquals("deflate", headers["Accept-Encoding"])
         assertEquals("keep-alive", headers["Connection"])

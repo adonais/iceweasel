@@ -59,10 +59,6 @@ class ForOfLoopControl : public LoopControl {
   //   }
   mozilla::Maybe<TryEmitter> tryCatch_;
 
-  // Used to track if any yields were emitted between calls to to
-  // emitBeginCodeNeedingIteratorClose and emitEndCodeNeedingIteratorClose.
-  uint32_t numYieldsAtBeginCodeNeedingIterClose_;
-
   SelfHostedIter selfHostedIter_;
 
   IteratorKind iterKind_;

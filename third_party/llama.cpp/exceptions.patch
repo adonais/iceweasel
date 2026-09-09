@@ -207,12 +207,12 @@ diff --git a/src/models/models.h b/src/models/models.h
 index 19a4d3c5eaf4..2ac8415a3639 100644
 --- a/src/models/models.h
 +++ b/src/models/models.h
-@@ -7,8 +7,6 @@
+@@ -6,6 +6,8 @@
+ 
  // note: almost all graphs require at least sqrtf, so include cmath globally
  #include <cmath>
++
++#include "moz-overrides.h"
  
--#include "moz-overrides.h"
--
  //
  // base classes
- //

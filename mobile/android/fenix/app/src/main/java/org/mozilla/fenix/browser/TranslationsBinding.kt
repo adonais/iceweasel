@@ -32,18 +32,18 @@ import org.mozilla.fenix.translations.TranslationDialogBottomSheet
 import org.mozilla.fenix.translations.TranslationsFlowState
 
 /**
- * A binding for observing [TranslationsState] changes
- * from the [BrowserStore] and updating the translations action button.
+ * A binding for observing [TranslationsState] changes from the [BrowserStore] and updating the translations action
+ * button.
  *
  * @param browserStore [BrowserStore] observed for any changes related to [TranslationsState].
  * @param browserScreenStore [BrowserScreenStore] integrating all browsing features.
  * @param appStore [AppStore] integrating all application wide features.
  * @param navController [NavController] used for navigation.
  * @param onTranslationStatusUpdate Invoked when the translation status of the current page is updated.
- * @param onShowTranslationsDialog Invoked when [TranslationDialogBottomSheet]
- * should be automatically shown to the user.
- * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur.
- *                       Defaults to [Dispatchers.Main].
+ * @param onShowTranslationsDialog Invoked when [TranslationDialogBottomSheet] should be automatically shown to the
+ *   user.
+ * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur. Defaults to
+ *   [Dispatchers.Main].
  */
 class TranslationsBinding(
     private val browserStore: BrowserStore,
@@ -51,23 +51,27 @@ class TranslationsBinding(
     private val appStore: AppStore? = null,
     private val navController: NavController? = null,
     private val onTranslationStatusUpdate: (PageTranslationStatus) -> Unit = { _ -> },
-    private val onShowTranslationsDialog: () -> Unit = { },
+    private val onShowTranslationsDialog: () -> Unit = {},
     mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : AbstractBinding<BrowserState>(browserStore, mainDispatcher) {
 
     @Suppress("LongMethod", "CognitiveComplexMethod")
     override suspend fun onState(flow: Flow<BrowserState>) {
         // Browser level flows
-        val browserFlow = flow.mapNotNull { state -> state }
-            .distinctUntilChangedBy {
-                it.translationEngine
-            }
+        val browserFlow =
+            flow
+                .mapNotNull { state -> state }
+                .distinctUntilChangedBy {
+                    it.translationEngine
+                }
 
         // Session level flows
-        val sessionFlow = flow.mapNotNull { state -> state.selectedTab }
-            .distinctUntilChangedBy {
-                Pair(it.translationsState, it.readerState)
-            }
+        val sessionFlow =
+            flow
+                .mapNotNull { state -> state.selectedTab }
+                .distinctUntilChangedBy {
+                    Pair(it.translationsState, it.readerState)
+                }
 
         // Applying the flows together
         sessionFlow
@@ -80,10 +84,8 @@ class TranslationsBinding(
             .collect { state ->
                 // Browser Translations State Behavior (Global)
                 val browserTranslationsState = state.browserState.translationEngine
-                val translateFromLanguages =
-                    browserTranslationsState.supportedLanguages?.fromLanguages
-                val translateToLanguages =
-                    browserTranslationsState.supportedLanguages?.toLanguages
+                val translateFromLanguages = browserTranslationsState.supportedLanguages?.fromLanguages
+                val translateToLanguages = browserTranslationsState.supportedLanguages?.toLanguages
                 val isEngineSupported = browserTranslationsState.isEngineSupported
                 val isTranslationsEnabled = browserTranslationsState.isTranslationsEnabled
                 val isTranslationsActive = isEngineSupported == true && isTranslationsEnabled
@@ -97,18 +99,14 @@ class TranslationsBinding(
                             isTranslationPossible = false,
                             isTranslated = false,
                             isTranslateProcessing = false,
-                        ),
+                        )
                     )
-                // The already translated case
+                    // The already translated case
                 } else if (isTranslationsActive && sessionTranslationsState.isTranslated) {
                     val fromSelected =
-                        sessionTranslationsState.translationEngineState?.initialFromLanguage(
-                            translateFromLanguages,
-                        )
+                        sessionTranslationsState.translationEngineState?.initialFromLanguage(translateFromLanguages)
                     val toSelected =
-                        sessionTranslationsState.translationEngineState?.initialToLanguage(
-                            translateToLanguages,
-                        )
+                        sessionTranslationsState.translationEngineState?.initialToLanguage(translateToLanguages)
 
                     if (fromSelected != null && toSelected != null) {
                         onTranslationStateUpdated(
@@ -118,17 +116,17 @@ class TranslationsBinding(
                                 isTranslateProcessing = sessionTranslationsState.isTranslateProcessing,
                                 fromSelectedLanguage = fromSelected,
                                 toSelectedLanguage = toSelected,
-                            ),
+                            )
                         )
                     }
-                // A translation is processing or expected to process
+                    // A translation is processing or expected to process
                 } else if (isTranslationsActive && sessionTranslationsState.isExpectedTranslate) {
                     onTranslationStateUpdated(
                         PageTranslationStatus(
                             isTranslationPossible = true,
                             isTranslated = false,
                             isTranslateProcessing = sessionTranslationsState.isTranslateProcessing,
-                        ),
+                        )
                     )
                 } else {
                     onTranslationStateUpdated(
@@ -136,7 +134,7 @@ class TranslationsBinding(
                             isTranslationPossible = false,
                             isTranslated = false,
                             isTranslateProcessing = false,
-                        ),
+                        )
                     )
                 }
                 // A translation offer is expected
@@ -145,7 +143,7 @@ class TranslationsBinding(
                         TranslationsAction.TranslateOfferAction(
                             tabId = state.sessionState.id,
                             isOfferTranslate = false,
-                        ),
+                        )
                     )
                     offerToTranslateCurrentPage()
                 }
@@ -153,8 +151,8 @@ class TranslationsBinding(
                 // Trigger automatic popup to show errors
                 if (
                     isTranslationsActive &&
-                    sessionTranslationsState.isExpectedTranslate &&
-                    sessionTranslationsState.translationError != null
+                        sessionTranslationsState.isExpectedTranslate &&
+                        sessionTranslationsState.translationError != null
                 ) {
                     offerToTranslateCurrentPage()
                 }
@@ -163,8 +161,8 @@ class TranslationsBinding(
 
     private fun onTranslationStateUpdated(state: PageTranslationStatus) {
         val snackbarState = appStore?.state?.snackbarState
-        val previousSnackbar = (snackbarState as? SnackbarState.None)?.previous
-            ?: (snackbarState as? SnackbarState.Dismiss)?.previous
+        val previousSnackbar =
+            (snackbarState as? SnackbarState.None)?.previous ?: (snackbarState as? SnackbarState.Dismiss)?.previous
 
         if (previousSnackbar is SnackbarState.TranslationInProgress) {
             appStore?.dispatch(SnackbarAction.SnackbarDismissed)
@@ -174,21 +172,22 @@ class TranslationsBinding(
         browserScreenStore?.dispatch(PageTranslationStatusUpdated(state))
     }
 
-    private fun offerToTranslateCurrentPage() = when (appStore != null && navController != null) {
-        true -> {
-            recordTranslationStartTelemetry()
+    private fun offerToTranslateCurrentPage() =
+        when (appStore != null && navController != null) {
+            true -> {
+                recordTranslationStartTelemetry()
 
-            appStore.dispatch(SnackbarAction.SnackbarDismissed)
+                appStore.dispatch(SnackbarAction.SnackbarDismissed)
 
-            navController.navigateSafe(
-                R.id.browserFragment,
-                BrowserFragmentDirections.actionBrowserFragmentToTranslationsDialogFragment(),
-            )
+                navController.navigateSafe(
+                    R.id.browserFragment,
+                    BrowserFragmentDirections.actionBrowserFragmentToTranslationsDialogFragment(),
+                )
+            }
+            false -> {
+                onShowTranslationsDialog()
+            }
         }
-        false -> {
-            onShowTranslationsDialog()
-        }
-    }
 
     @VisibleForTesting
     internal fun recordTranslationStartTelemetry() {

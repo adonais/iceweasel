@@ -13,7 +13,6 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import mozilla.components.support.test.robolectric.testContext
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -38,11 +37,9 @@ class TabManagementFragmentTest {
     private lateinit var context: Context
     private lateinit var fragment: TabManagementFragment
 
-    @get:Rule
-    val mockkRule = MockkRetryTestRule()
+    @get:Rule val mockkRule = MockkRetryTestRule()
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     @Before
     fun setup() {
@@ -128,7 +125,7 @@ class TabManagementFragmentTest {
                 selectedPage = Page.NormalTabs,
                 mode = TabsTrayState.Mode.Normal,
                 tabState = fakeTab(isPrivate = false),
-            ),
+            )
         )
     }
 
@@ -142,7 +139,7 @@ class TabManagementFragmentTest {
                 selectedPage = Page.NormalTabs,
                 mode = TabsTrayState.Mode.Select(setOf(fakeTab(isPrivate = false))),
                 tabState = fakeTab(isPrivate = false),
-            ),
+            )
         )
     }
 
@@ -156,7 +153,7 @@ class TabManagementFragmentTest {
                 selectedPage = Page.NormalTabs,
                 mode = TabsTrayState.Mode.Normal,
                 tabState = fakeTab(isPrivate = false),
-            ),
+            )
         )
     }
 
@@ -170,7 +167,7 @@ class TabManagementFragmentTest {
                 selectedPage = Page.PrivateTabs,
                 mode = TabsTrayState.Mode.Normal,
                 tabState = fakeTab(isPrivate = true),
-            ),
+            )
         )
     }
 
@@ -184,7 +181,7 @@ class TabManagementFragmentTest {
                 selectedPage = Page.NormalTabs,
                 mode = TabsTrayState.Mode.Normal,
                 tabState = fakeTab(isPrivate = true),
-            ),
+            )
         )
     }
 
@@ -198,7 +195,7 @@ class TabManagementFragmentTest {
                 selectedPage = Page.PrivateTabs,
                 mode = TabsTrayState.Mode.Normal,
                 tabState = fakeTab(isPrivate = false),
-            ),
+            )
         )
     }
 
@@ -212,7 +209,7 @@ class TabManagementFragmentTest {
                 selectedPage = Page.SyncedTabs,
                 mode = TabsTrayState.Mode.Normal,
                 tabState = fakeTab(isPrivate = false),
-            ),
+            )
         )
     }
 
@@ -226,14 +223,15 @@ class TabManagementFragmentTest {
                 selectedPage = Page.SyncedTabs,
                 mode = TabsTrayState.Mode.Normal,
                 tabState = fakeTab(isPrivate = true),
-            ),
+            )
         )
     }
 
-    private fun fakeTab(isPrivate: Boolean) = createTab(
-        url = "www.mozilla.org",
-        private = isPrivate,
-    )
+    private fun fakeTab(isPrivate: Boolean) =
+        createTab(
+            url = "www.mozilla.org",
+            private = isPrivate,
+        )
 
     private fun testShouldShowLockPbmBanner(
         isPrivateMode: Boolean = true,

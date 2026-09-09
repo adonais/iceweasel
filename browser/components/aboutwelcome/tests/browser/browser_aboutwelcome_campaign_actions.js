@@ -43,7 +43,10 @@ add_task(async function test_unhandled_campaign_action() {
   const TEST_PROTON_JSON = JSON.stringify(TEST_PROTON_CONTENT);
 
   await setAboutWelcomePref(true);
-  await pushPrefs(["browser.aboutwelcome.screens", TEST_PROTON_JSON]);
+  await pushPrefs(
+    ["browser.aboutwelcome.screens", TEST_PROTON_JSON],
+    ["browser.shell.checkDefaultBrowser", true]
+  );
 
   AttributionCode._clearCache();
   const data = await AttributionCode.getAttrDataAsync();
@@ -90,7 +93,50 @@ add_task(async function test_unhandled_campaign_action() {
     await ASRouter.forceAttribution("");
     Services.prefs.clearUserPref(DID_HANDLE_CAMAPAIGN_ACTION_PREF);
     Services.prefs.clearUserPref("browser.aboutwelcome.screens");
-
-    sandbox.restore();
   });
+
+  sandbox.restore();
+});
+
+add_task(async function test_campaign_action_honors_default_browser_pref() {
+  const sandbox = sinon.createSandbox();
+  const handleActionStub = sandbox
+    .stub(SpecialMessageActions, "handleAction")
+    .resolves();
+
+  Services.prefs.clearUserPref(DID_HANDLE_CAMAPAIGN_ACTION_PREF);
+  await AttributionCode.deleteFileAsync();
+  await ASRouter.forceAttribution(TEST_ATTRIBUTION_DATA);
+
+  await setAboutWelcomePref(true);
+  await pushPrefs(
+    ["browser.aboutwelcome.screens", JSON.stringify(TEST_PROTON_CONTENT)],
+    ["browser.shell.checkDefaultBrowser", false]
+  );
+
+  AttributionCode._clearCache();
+  const data = await AttributionCode.getAttrDataAsync();
+
+  Assert.equal(
+    data.campaign,
+    "set_default_browser",
+    "Attribution campaign should be set"
+  );
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:welcome",
+    true
+  );
+
+  sinon.assert.notCalled(handleActionStub);
+
+  Assert.equal(
+    Services.prefs.getBoolPref(DID_HANDLE_CAMAPAIGN_ACTION_PREF, false),
+    false,
+    "Campaign action is left unhandled so it can run if the pref is restored"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  sandbox.restore();
 });

@@ -36,15 +36,13 @@ import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.click
 import org.mozilla.fenix.helpers.isChecked
 
-/**
- * Implementation of Robot Pattern for the settings Homepage sub menu.
- */
+/** Implementation of Robot Pattern for the settings Homepage sub menu. */
 class SettingsSubMenuHomepageRobot {
 
     fun verifyHomePageView(
         shortcutsSwitchEnabled: Boolean = true,
         sponsoredShortcutsCheckBox: Boolean = true,
-        jumpBackInSwitchEnabled: Boolean = true,
+        continueSwitchEnabled: Boolean = true,
         recentBookmarksSwitchEnabled: Boolean = true,
         recentlyVisitedSwitchEnabled: Boolean = true,
         pocketSwitchEnabled: Boolean = true,
@@ -62,9 +60,9 @@ class SettingsSubMenuHomepageRobot {
                             Matchers.allOf(
                                 withClassName(Matchers.endsWith("Switch")),
                                 isChecked(),
-                            ),
-                        ),
-                    ),
+                            )
+                        )
+                    )
                 )
             Log.i(TAG, "verifyHomePageView: Verified that the \"Shortcuts\" toggle is checked")
         } else {
@@ -76,9 +74,9 @@ class SettingsSubMenuHomepageRobot {
                             Matchers.allOf(
                                 withClassName(Matchers.endsWith("Switch")),
                                 isNotChecked(),
-                            ),
-                        ),
-                    ),
+                            )
+                        )
+                    )
                 )
             Log.i(TAG, "verifyHomePageView: Verified that the \"Shortcuts\" toggle is not checked")
         }
@@ -95,10 +93,10 @@ class SettingsSubMenuHomepageRobot {
                                 allOf(
                                     withClassName(CoreMatchers.endsWith("CheckBox")),
                                     isChecked(),
-                                ),
-                            ),
-                        ),
-                    ),
+                                )
+                            )
+                        )
+                    )
                 )
             Log.i(TAG, "verifyHomePageView: Verified that the \"Sponsored shortcuts\" check box is checked")
         } else {
@@ -111,44 +109,44 @@ class SettingsSubMenuHomepageRobot {
                                 allOf(
                                     withClassName(CoreMatchers.endsWith("CheckBox")),
                                     isNotChecked(),
-                                ),
-                            ),
-                        ),
-                    ),
+                                )
+                            )
+                        )
+                    )
                 )
             Log.i(TAG, "verifyHomePageView: Verified that the \"Sponsored shortcuts\" check box is not checked")
         }
-        Log.i(TAG, "verifyHomePageView: Trying to verify that the \"Jump back in\" option is visible")
-        jumpBackInButton().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
-        Log.i(TAG, "verifyHomePageView: Verified that the \"Jump back in\" option is visible")
-        if (jumpBackInSwitchEnabled) {
-            Log.i(TAG, "verifyHomePageView: Trying to verify that the \"Jump back in\" toggle is checked")
-            jumpBackInButton()
+        Log.i(TAG, "verifyHomePageView: Trying to verify that the \"Continue\" option is visible")
+        continueButton().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        Log.i(TAG, "verifyHomePageView: Verified that the \"Continue\" option is visible")
+        if (continueSwitchEnabled) {
+            Log.i(TAG, "verifyHomePageView: Trying to verify that the \"Continue\" toggle is checked")
+            continueButton()
                 .check(
                     matches(
                         TestHelper.hasCousin(
                             Matchers.allOf(
                                 withClassName(Matchers.endsWith("Switch")),
                                 isChecked(),
-                            ),
-                        ),
-                    ),
+                            )
+                        )
+                    )
                 )
-            Log.i(TAG, "verifyHomePageView: Verified that the \"Jump back in\" toggle is checked")
+            Log.i(TAG, "verifyHomePageView: Verified that the \"Continue\" toggle is checked")
         } else {
-            Log.i(TAG, "verifyHomePageView: Trying to verify that the \"Jump back in\" toggle is not checked")
-            jumpBackInButton()
+            Log.i(TAG, "verifyHomePageView: Trying to verify that the \"Continue\" toggle is not checked")
+            continueButton()
                 .check(
                     matches(
                         TestHelper.hasCousin(
                             Matchers.allOf(
                                 withClassName(Matchers.endsWith("Switch")),
                                 isNotChecked(),
-                            ),
-                        ),
-                    ),
+                            )
+                        )
+                    )
                 )
-            Log.i(TAG, "verifyHomePageView: Verified that the \"Jump back in\" toggle is not checked")
+            Log.i(TAG, "verifyHomePageView: Verified that the \"Continue\" toggle is not checked")
         }
         Log.i(TAG, "verifyHomePageView: Trying to verify that the \"Recent bookmarks\" option is visible")
         recentBookmarksButton().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
@@ -162,9 +160,9 @@ class SettingsSubMenuHomepageRobot {
                             Matchers.allOf(
                                 withClassName(Matchers.endsWith("Switch")),
                                 isChecked(),
-                            ),
-                        ),
-                    ),
+                            )
+                        )
+                    )
                 )
             Log.i(TAG, "verifyHomePageView: Verified that the \"Recent bookmarks\" toggle is checked")
         } else {
@@ -176,9 +174,9 @@ class SettingsSubMenuHomepageRobot {
                             Matchers.allOf(
                                 withClassName(Matchers.endsWith("Switch")),
                                 isNotChecked(),
-                            ),
-                        ),
-                    ),
+                            )
+                        )
+                    )
                 )
             Log.i(TAG, "verifyHomePageView: Verified that the \"Recent bookmarks\" toggle is not checked")
         }
@@ -194,9 +192,9 @@ class SettingsSubMenuHomepageRobot {
                             Matchers.allOf(
                                 withClassName(Matchers.endsWith("Switch")),
                                 isChecked(),
-                            ),
-                        ),
-                    ),
+                            )
+                        )
+                    )
                 )
             Log.i(TAG, "verifyHomePageView: Verified that the \"Recently visited\" toggle is checked")
         } else {
@@ -208,9 +206,9 @@ class SettingsSubMenuHomepageRobot {
                             Matchers.allOf(
                                 withClassName(Matchers.endsWith("Switch")),
                                 isNotChecked(),
-                            ),
-                        ),
-                    ),
+                            )
+                        )
+                    )
                 )
             Log.i(TAG, "verifyHomePageView: Verified that the \"Recently visited\" toggle is not checked")
         }
@@ -226,9 +224,9 @@ class SettingsSubMenuHomepageRobot {
                             Matchers.allOf(
                                 withClassName(Matchers.endsWith("Switch")),
                                 isChecked(),
-                            ),
-                        ),
-                    ),
+                            )
+                        )
+                    )
                 )
             Log.i(TAG, "verifyHomePageView: Verified that the \"Stories\" toggle is checked")
         } else {
@@ -240,9 +238,9 @@ class SettingsSubMenuHomepageRobot {
                             Matchers.allOf(
                                 withClassName(Matchers.endsWith("Switch")),
                                 isNotChecked(),
-                            ),
-                        ),
-                    ),
+                            )
+                        )
+                    )
                 )
             Log.i(TAG, "verifyHomePageView: Verified that the \"Stories\" toggle is not checked")
         }
@@ -259,10 +257,10 @@ class SettingsSubMenuHomepageRobot {
                                 allOf(
                                     withClassName(CoreMatchers.endsWith("CheckBox")),
                                     isChecked(),
-                                ),
-                            ),
-                        ),
-                    ),
+                                )
+                            )
+                        )
+                    )
                 )
             Log.i(TAG, "verifyHomePageView: Verified that the \"Sponsored stories\" check box is checked")
         } else {
@@ -275,10 +273,10 @@ class SettingsSubMenuHomepageRobot {
                                 allOf(
                                     withClassName(CoreMatchers.endsWith("CheckBox")),
                                     isNotChecked(),
-                                ),
-                            ),
-                        ),
-                    ),
+                                )
+                            )
+                        )
+                    )
                 )
             Log.i(TAG, "verifyHomePageView: Verified that the \"Sponsored stories\" check box is not checked")
         }
@@ -291,20 +289,33 @@ class SettingsSubMenuHomepageRobot {
         Log.i(TAG, "verifyHomePageView: Trying to verify that the \"Last tab\" option is visible")
         lastTabButton().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyHomePageView: Verified that the \"Last tab\" option is visible")
-        Log.i(TAG, "verifyHomePageView: Trying to verify that the \"Homepage after four hours of inactivity\" option is visible")
+        Log.i(
+            TAG,
+            "verifyHomePageView: Trying to verify that the \"Homepage after four hours of inactivity\" option is visible",
+        )
         homepageAfterFourHoursButton().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
-        Log.i(TAG, "verifyHomePageView: Verified that the \"Homepage after four hours of inactivity\" option is visible")
+        Log.i(
+            TAG,
+            "verifyHomePageView: Verified that the \"Homepage after four hours of inactivity\" option is visible",
+        )
     }
 
     fun verifySelectedOpeningScreenOption(openingScreenOption: String) {
-        Log.i(TAG, "verifySelectedOpeningScreenOption: Trying to verify that the \"Opening screen\" option $openingScreenOption is checked")
+        Log.i(
+            TAG,
+            "verifySelectedOpeningScreenOption: Trying to verify that the \"Opening screen\" option $openingScreenOption is checked",
+        )
         onView(
-            allOf(
-                withId(R.id.radio_button),
-                hasSibling(withText(openingScreenOption)),
-            ),
-        ).check(matches(isChecked(true)))
-        Log.i(TAG, "verifySelectedOpeningScreenOption: Verified that the \"Opening screen\" option $openingScreenOption is checked")
+                allOf(
+                    withId(R.id.radio_button),
+                    hasSibling(withText(openingScreenOption)),
+                )
+            )
+            .check(matches(isChecked(true)))
+        Log.i(
+            TAG,
+            "verifySelectedOpeningScreenOption: Verified that the \"Opening screen\" option $openingScreenOption is checked",
+        )
     }
 
     fun clickShortcutsButton() {
@@ -319,10 +330,10 @@ class SettingsSubMenuHomepageRobot {
         Log.i(TAG, "clickSponsoredShortcuts: Clicked the \"Sponsored shortcuts\" option")
     }
 
-    fun clickJumpBackInButton() {
-        Log.i(TAG, "clickJumpBackInButton: Trying to click the \"Jump back in\" option")
-        jumpBackInButton().click()
-        Log.i(TAG, "clickJumpBackInButton: Clicked the \"Jump back in\" option")
+    fun clickContinueButton() {
+        Log.i(TAG, "clickContinueButton: Trying to click the \"Continue\" option")
+        continueButton().click()
+        Log.i(TAG, "clickContinueButton: Clicked the \"Continue\" option")
     }
 
     fun clickRecentlyVisited() {
@@ -361,7 +372,10 @@ class SettingsSubMenuHomepageRobot {
 
     fun verifySponsoredShortcutsCheckBox(checked: Boolean) {
         if (checked) {
-            Log.i(TAG, "verifySponsoredShortcutsCheckBox: Trying to verify that the \"Sponsored shortcuts\" check box is checked")
+            Log.i(
+                TAG,
+                "verifySponsoredShortcutsCheckBox: Trying to verify that the \"Sponsored shortcuts\" check box is checked",
+            )
             sponsoredShortcutsButton()
                 .check(
                     matches(
@@ -370,14 +384,20 @@ class SettingsSubMenuHomepageRobot {
                                 allOf(
                                     withClassName(CoreMatchers.endsWith("CheckBox")),
                                     isChecked(),
-                                ),
-                            ),
-                        ),
-                    ),
+                                )
+                            )
+                        )
+                    )
                 )
-            Log.i(TAG, "verifySponsoredShortcutsCheckBox: Verified that the \"Sponsored shortcuts\" check box is checked")
+            Log.i(
+                TAG,
+                "verifySponsoredShortcutsCheckBox: Verified that the \"Sponsored shortcuts\" check box is checked",
+            )
         } else {
-            Log.i(TAG, "verifySponsoredShortcutsCheckBox: Trying to verify that the \"Sponsored shortcuts\" check box is not checked")
+            Log.i(
+                TAG,
+                "verifySponsoredShortcutsCheckBox: Trying to verify that the \"Sponsored shortcuts\" check box is not checked",
+            )
             sponsoredShortcutsButton()
                 .check(
                     matches(
@@ -386,12 +406,15 @@ class SettingsSubMenuHomepageRobot {
                                 allOf(
                                     withClassName(CoreMatchers.endsWith("CheckBox")),
                                     isNotChecked(),
-                                ),
-                            ),
-                        ),
-                    ),
+                                )
+                            )
+                        )
+                    )
                 )
-            Log.i(TAG, "verifySponsoredShortcutsCheckBox: Verified that the \"Sponsored shortcuts\" check box is not checked")
+            Log.i(
+                TAG,
+                "verifySponsoredShortcutsCheckBox: Verified that the \"Sponsored shortcuts\" check box is not checked",
+            )
         }
     }
 
@@ -406,67 +429,67 @@ class SettingsSubMenuHomepageRobot {
 
     fun verifyTheWallpapersSettingsPageHeader() {
         Log.i(TAG, "verifyTheWallpapersSettingsPageHeader: Trying to verify that the \"Wallpapers\" header is visible")
-        wallpapersPageHeader()
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        wallpapersPageHeader().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyTheWallpapersSettingsPageHeader: Verified that the \"Wallpapers\" header is visible")
         Log.i(TAG, "verifyTheWallpapersSettingsPageHeader: Trying to verify that the back button is visible")
-        wallpapersPageBackButton()
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        wallpapersPageBackButton().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyTheWallpapersSettingsPageHeader: Verified that the back button is visible")
     }
 
     fun verifyClassicFirefoxSection(composeTestRule: ComposeTestRule) {
-        Log.i(TAG, "verifyClassicFirefoxSection: Trying to verify that the \"Classic Firefox\" wallpaper collection is visible")
-        composeTestRule.classicFirefoxWallpaperSectionHeader()
-            .assertIsDisplayed()
+        Log.i(
+            TAG,
+            "verifyClassicFirefoxSection: Trying to verify that the \"Classic Firefox\" wallpaper collection is visible",
+        )
+        composeTestRule.classicFirefoxWallpaperSectionHeader().assertIsDisplayed()
         Log.i(TAG, "verifyClassicFirefoxSection: Verified that the \"Classic Firefox\" wallpaper collection is visible")
     }
 
     fun verifyEdgeToEdgeWallpaperIsDisplayed(composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyEdgeToEdgeWallpaperIsDisplayed: Trying to verify that edge-to-edge wallpaper is visible")
-        composeTestRule.edgeToEdgeWallpaper()
-            .assertIsDisplayed()
+        composeTestRule.edgeToEdgeWallpaper().assertIsDisplayed()
         Log.i(TAG, "verifyEdgeToEdgeWallpaperIsDisplayed: Verified that edge-to-edge wallpaper is visible")
     }
 
     fun verifyDefaultWallpaperIsDisplayed(composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyDefaultWallpaperIsDisplayed: Trying to verify that default wallpaper is visible")
-        composeTestRule.defaultWallpaper()
-            .assertIsDisplayed()
+        composeTestRule.defaultWallpaper().assertIsDisplayed()
         Log.i(TAG, "verifyDefaultWallpaperIsDisplayed: Verified that default wallpaper is visible")
     }
 
     fun verifyEdgeToEdgeWallpaperIsSelected(composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyEdgeToEdgeWallpaperIsSelected: Trying to verify that edge-to-edge wallpaper is selected")
-        composeTestRule.edgeToEdgeWallpaperSelected()
-            .assertExists()
+        composeTestRule.edgeToEdgeWallpaperSelected().assertExists()
         Log.i(TAG, "verifyEdgeToEdgeWallpaperIsSelected: Verified that edge-to-edge wallpaper is selected")
     }
 
     fun verifyDefaultWallpaperIsSelected(composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyDefaultWallpaperIsSelected: Trying to verify that default wallpaper is selected")
-        composeTestRule.defaultWallpaperSelected()
-            .assertExists()
+        composeTestRule.defaultWallpaperSelected().assertExists()
         Log.i(TAG, "verifyDefaultWallpaperIsSelected: Verified that default wallpaper is selected")
     }
 
     fun verifyEdgeToEdgeWallpaperIsNotSelected(composeTestRule: ComposeTestRule) {
-        Log.i(TAG, "verifyEdgeToEdgeWallpaperIsNotSelected: Trying to verify that edge-to-edge wallpaper is not selected")
-        composeTestRule.edgeToEdgeWallpaperSelected()
-            .assertDoesNotExist()
+        Log.i(
+            TAG,
+            "verifyEdgeToEdgeWallpaperIsNotSelected: Trying to verify that edge-to-edge wallpaper is not selected",
+        )
+        composeTestRule.edgeToEdgeWallpaperSelected().assertDoesNotExist()
         Log.i(TAG, "verifyEdgeToEdgeWallpaperIsNotSelected: Verified that edge-to-edge wallpaper is not selected")
     }
 
     fun verifyDefaultWallpaperIsNotSelected(composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyDefaultWallpaperIsNotSelected: Trying to verify that default wallpaper is not selected")
-        composeTestRule.defaultWallpaperSelected()
-            .assertDoesNotExist()
+        composeTestRule.defaultWallpaperSelected().assertDoesNotExist()
         Log.i(TAG, "verifyDefaultWallpaperIsNotSelected: Verified that default wallpaper is not selected")
     }
 
     class Transition {
 
-        fun goBackToHomeScreen(composeTestRule: ComposeTestRule, interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
+        fun goBackToHomeScreen(
+            composeTestRule: ComposeTestRule,
+            interact: HomeScreenRobot.() -> Unit,
+        ): HomeScreenRobot.Transition {
             Log.i(TAG, "goBackToHomeScreen: Trying to click the navigate up toolbar button")
             goBackButton().click()
             Log.i(TAG, "goBackToHomeScreen: Clicked the navigate up toolbar button")
@@ -486,8 +509,14 @@ class SettingsSubMenuHomepageRobot {
             return SettingsRobot.Transition()
         }
 
-        fun clickSnackBarViewButton(composeTestRule: ComposeTestRule, interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
-            Log.i(TAG, "clickSnackBarViewButton: Waiting for $waitingTimeShort ms for \"VIEW\" snackbar button to exist")
+        fun clickSnackBarViewButton(
+            composeTestRule: ComposeTestRule,
+            interact: HomeScreenRobot.() -> Unit,
+        ): HomeScreenRobot.Transition {
+            Log.i(
+                TAG,
+                "clickSnackBarViewButton: Waiting for $waitingTimeShort ms for \"VIEW\" snackbar button to exist",
+            )
             mDevice.findObject(UiSelector().text("VIEW")).waitForExists(waitingTimeShort)
             Log.i(TAG, "clickSnackBarViewButton: Waited for $waitingTimeShort ms for \"VIEW\" snackbar button to exist")
             Log.i(TAG, "clickSnackBarViewButton: Trying to click the \"VIEW\" snackbar button")
@@ -512,26 +541,19 @@ class SettingsSubMenuHomepageRobot {
     }
 }
 
-private fun shortcutsButton() =
-    onView(allOf(withText(R.string.top_sites_toggle_top_recent_sites_4)))
+private fun shortcutsButton() = onView(allOf(withText(R.string.top_sites_toggle_top_recent_sites_4)))
 
-private fun sponsoredShortcutsButton() =
-    onView(allOf(withText(R.string.customize_toggle_contile)))
+private fun sponsoredShortcutsButton() = onView(allOf(withText(R.string.customize_toggle_contile)))
 
-private fun jumpBackInButton() =
-    onView(allOf(withText(R.string.customize_toggle_jump_back_in)))
+private fun continueButton() = onView(allOf(withText(R.string.customize_toggle_continue)))
 
-private fun recentBookmarksButton() =
-    onView(allOf(withText(R.string.customize_toggle_bookmarks)))
+private fun recentBookmarksButton() = onView(allOf(withText(R.string.customize_toggle_bookmarks)))
 
-private fun recentlyVisitedButton() =
-    onView(allOf(withText(R.string.customize_toggle_recently_visited)))
+private fun recentlyVisitedButton() = onView(allOf(withText(R.string.customize_toggle_recently_visited)))
 
-private fun pocketButton() =
-    onView(allOf(withText(R.string.customize_toggle_pocket_3)))
+private fun pocketButton() = onView(allOf(withText(R.string.customize_toggle_pocket_3)))
 
-private fun sponsoredStoriesButton() =
-    onView(allOf(withText(R.string.customize_toggle_pocket_sponsored)))
+private fun sponsoredStoriesButton() = onView(allOf(withText(R.string.customize_toggle_pocket_sponsored)))
 
 private fun openingScreenHeading() = onView(withText(R.string.preferences_opening_screen))
 
@@ -541,7 +563,7 @@ private fun homepageButton() =
             withId(R.id.title),
             withText(R.string.opening_screen_homepage),
             hasSibling(withId(R.id.radio_button)),
-        ),
+        )
     )
 
 private fun lastTabButton() =
@@ -550,7 +572,7 @@ private fun lastTabButton() =
             withId(R.id.title),
             withText(R.string.opening_screen_last_tab),
             hasSibling(withId(R.id.radio_button)),
-        ),
+        )
     )
 
 private fun homepageAfterFourHoursButton() =
@@ -559,7 +581,7 @@ private fun homepageAfterFourHoursButton() =
             withId(R.id.title),
             withText(R.string.opening_screen_after_four_hours_of_inactivity),
             hasSibling(withId(R.id.radio_button)),
-        ),
+        )
     )
 
 private fun goBackButton() = onView(allOf(withContentDescription(R.string.action_bar_up_description)))

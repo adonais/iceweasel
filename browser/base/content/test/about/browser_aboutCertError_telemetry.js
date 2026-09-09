@@ -9,6 +9,16 @@ const BAD_CERT = "https://expired.example.com/";
 const BAD_STS_CERT =
   "https://badchain.include-subdomains.pinning.example.com:443";
 
+function gleanClickMetric(object) {
+  return Glean.securityUiCerterror[
+    "click" +
+      object
+        .split("_")
+        .map(word => word[0].toUpperCase() + word.slice(1))
+        .join("")
+  ];
+}
+
 async function checkTelemetryClickEvents(useFelt) {
   info("Loading a bad cert page and verifying telemetry click events arrive.");
   await SpecialPowers.pushPrefEnv({
@@ -71,6 +81,9 @@ async function checkTelemetryClickEvents(useFelt) {
     }
 
     for (let object of recordedObjects) {
+      await Services.fog.testFlushAllChildren();
+      Services.fog.testResetFOG();
+
       let tab = await openErrorPage(BAD_CERT, useFrame);
       let browser = tab.linkedBrowser;
 
@@ -161,26 +174,12 @@ async function checkTelemetryClickEvents(useFelt) {
         }
       );
 
-      let clickEvents = await TestUtils.waitForCondition(() => {
-        let events = Services.telemetry.snapshotEvents(
-          Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-          true
-        ).content;
-        if (events && events.length) {
-          events = events.filter(
-            e =>
-              e[1] == "security.ui.certerror" &&
-              e[2] == "click" &&
-              e[3] == object
-          );
-          if (
-            events.length == 1 &&
-            events[0][5].is_frame == useFrame.toString()
-          ) {
-            return events;
-          }
-        }
-        return null;
+      let clickEvents = await TestUtils.waitForCondition(async () => {
+        await Services.fog.testFlushAllChildren();
+        let events = gleanClickMetric(object)
+          .testGetValue()
+          ?.filter(e => e.extra.is_frame == useFrame.toString());
+        return events?.length == 1 ? events : null;
       }, "Has captured telemetry events.");
 
       is(

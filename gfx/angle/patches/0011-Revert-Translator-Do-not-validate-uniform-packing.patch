@@ -1,0 +1,108 @@
+From f8e5a69b1482f627bd85128665a34c7d6bfb54fb Mon Sep 17 00:00:00 2001
+From: Jamie Nicol <jnicol@mozilla.com>
+Date: Thu, 30 Apr 2026 09:43:22 +0100
+Subject: [PATCH] Revert "Translator: Do not validate uniform packing"
+
+This reverts commit ad96e4bb5071aa32dc4b5782ae710b3989f04664.
+
+Co-authored-by: Erich Gubler <erichdongubler@gmail.com>
+---
+ include/GLSLANG/ShaderLang.h         |  6 +++++
+ src/compiler/translator/Compiler.cpp | 37 ++++++++++++++++++++++++++++
+ src/libANGLE/Shader.cpp              |  1 +
+ 3 files changed, 44 insertions(+)
+
+diff --git a/include/GLSLANG/ShaderLang.h b/include/GLSLANG/ShaderLang.h
+index 7fe8ea6..408dfee 100644
+--- a/include/GLSLANG/ShaderLang.h
++++ b/include/GLSLANG/ShaderLang.h
+@@ -205,6 +205,12 @@ struct ShCompileOptions
+     // Whether SPV_EXT_demote_to_helper_invocation can be used.
+     uint64_t useDemoteToHelperInvocation : 1;
+ 
++    // Enforce the GLSL 1.017 Appendix A section 7 packing restrictions.  This flag only enforces
++    // (and can only enforce) the packing restrictions for uniform variables in both vertex and
++    // fragment shaders. ShCheckVariablesWithinPackingLimits() lets embedders enforce the packing
++    // restrictions for varying variables during program link time.
++    uint64_t enforcePackingRestrictions : 1;
++
+     // This flag ensures all indirect (expression-based) array indexing is clamped to the bounds of
+     // the array. This ensures, for example, that you cannot read off the end of a uniform, whether
+     // an array vec234, or mat234 type.
+diff --git a/src/compiler/translator/Compiler.cpp b/src/compiler/translator/Compiler.cpp
+index 4c04069..e0627ab 100644
+--- a/src/compiler/translator/Compiler.cpp
++++ b/src/compiler/translator/Compiler.cpp
+@@ -23,6 +23,7 @@
+ #include "compiler/translator/OutputTree.h"
+ #include "compiler/translator/ParseContext.h"
+ #include "compiler/translator/SizeClipCullDistance.h"
++#include "compiler/translator/VariablePacker.h"
+ #include "compiler/translator/ir/src/compile.h"
+ #include "compiler/translator/tree_ops/ClampFragDepth.h"
+ #include "compiler/translator/tree_ops/ClampIndirectIndices.h"
+@@ -332,6 +333,26 @@ size_t GetGlobalMaxTokenSize(ShShaderSpec spec)
+     }
+ }
+ 
++int GetMaxUniformVectorsForShaderType(GLenum shaderType, const ShBuiltInResources &resources)
++{
++    switch (shaderType)
++    {
++        case GL_VERTEX_SHADER:
++            return resources.MaxVertexUniformVectors;
++        case GL_FRAGMENT_SHADER:
++            return resources.MaxFragmentUniformVectors;
++
++        // TODO (jiawei.shao@intel.com): check if we need finer-grained component counting
++        case GL_COMPUTE_SHADER:
++            return resources.MaxComputeUniformComponents / 4;
++        case GL_GEOMETRY_SHADER_EXT:
++            return resources.MaxGeometryUniformComponents / 4;
++        default:
++            UNREACHABLE();
++            return -1;
++    }
++}
++
+ namespace
+ {
+ class [[nodiscard]] TScopedSymbolTableLevel
+@@ -1029,6 +1050,22 @@ bool TCompiler::checkAndSimplifyAST(TIntermBlock *root,
+         }
+     }
+ 
++    if (compileOptions.enforcePackingRestrictions)
++    {
++        int maxUniformVectors = GetMaxUniformVectorsForShaderType(mShaderType, mResources);
++        if (mShaderType == GL_VERTEX_SHADER && compileOptions.emulateClipOrigin)
++        {
++            --maxUniformVectors;
++        }
++        // Returns true if, after applying the packing rules in the GLSL ES 1.00.17 spec
++        // Appendix A, section 7, the shader does not use too many uniforms.
++        if (!CheckVariablesInPackingLimits(maxUniformVectors, mUniforms))
++        {
++            mDiagnostics.globalError("too many uniforms");
++            return false;
++        }
++    }
++
+     if (compileOptions.scalarizeVecAndMatConstructorArgs)
+     {
+         if (!ScalarizeVecAndMatConstructorArgs(this, root, &mSymbolTable))
+diff --git a/src/libANGLE/Shader.cpp b/src/libANGLE/Shader.cpp
+index 76c5b76..9d9bfd2 100644
+--- a/src/libANGLE/Shader.cpp
++++ b/src/libANGLE/Shader.cpp
+@@ -636,6 +636,7 @@ void Shader::compile(const Context *context, angle::JobResultExpectancy resultEx
+         options.initGLPosition             = true;
+         options.limitCallStackDepth        = true;
+         options.limitExpressionComplexity  = true;
++        options.enforcePackingRestrictions = true;
+         options.initSharedVariables        = true;
+         options.rejectWebglShadersWithLargeVariables    = true;
+         options.rejectWebglShadersWithUndefinedBehavior = true;
+-- 
+2.43.0
+

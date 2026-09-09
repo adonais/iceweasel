@@ -15,16 +15,13 @@ import mozilla.components.support.base.log.logger.Logger
  *
  * https://developer.android.com/guide/topics/media-apps/audio-focus
  *
- *
  * @param audioManager The audio manager handling audio focus.
  * @param store The browser store.
- * @param onTransientFocusLoss Callback invoked when the transient focus loss state changes.
- *   Called with `true` when a transient loss begins ([AudioManager.AUDIOFOCUS_LOSS_TRANSIENT] or
- *   [AudioManager.AUDIOFOCUS_REQUEST_DELAYED]), and with `false` when it ends
- *   ([AudioManager.AUDIOFOCUS_GAIN], [AudioManager.AUDIOFOCUS_LOSS], or [abandon]).
- *   The caller can use this to keep a mediaPlayback foreground service alive during transient
- *   interruptions so that WIU (While In Use) capabilities are retained and audio focus can be
- *   reclaimed when focus is returned.
+ * @param onTransientFocusLoss Callback invoked when the transient focus loss state changes. Called with `true` when a
+ *   transient loss begins ([AudioManager.AUDIOFOCUS_LOSS_TRANSIENT] or [AudioManager.AUDIOFOCUS_REQUEST_DELAYED]), and
+ *   with `false` when it ends ([AudioManager.AUDIOFOCUS_GAIN], [AudioManager.AUDIOFOCUS_LOSS], or [abandon]). The
+ *   caller can use this to keep a mediaPlayback foreground service alive during transient interruptions so that WIU
+ *   (While In Use) capabilities are retained and audio focus can be reclaimed when focus is returned.
  */
 internal class AudioFocus(
     audioManager: AudioManager,
@@ -125,9 +122,9 @@ internal class AudioFocus(
                 logger.debug("Unhandled focus change: $focusChange")
             }
 
-            // We do not handle any ducking related focus change here. On API 26+ the system should
-            // duck and restore the volume automatically
-            // https://github.com/mozilla-mobile/android-components/issues/3936
+        // We do not handle any ducking related focus change here. On API 26+ the system should
+        // duck and restore the volume automatically
+        // https://github.com/mozilla-mobile/android-components/issues/3936
         }
     }
 }

@@ -18,15 +18,13 @@ import androidx.lifecycle.LifecycleOwner
 import mozilla.components.browser.state.selector.findCustomTab
 import mozilla.components.browser.state.state.ExternalAppType
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.feature.pwa.R as pwaR
 import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.base.ids.SharedIdsHelper
 import mozilla.components.support.base.ids.cancel
 import org.mozilla.fenix.R
-import mozilla.components.feature.pwa.R as pwaR
 
-/**
- * Displays a "Powered by Firefox Preview" notification when a Trusted Web Activity is running.
- */
+/** Displays a "Powered by Firefox Preview" notification when a Trusted Web Activity is running. */
 class PoweredByNotification(
     private val applicationContext: Context,
     private val store: BrowserStore,
@@ -45,13 +43,10 @@ class PoweredByNotification(
     }
 
     override fun onPause(owner: LifecycleOwner) {
-        NotificationManagerCompat.from(applicationContext)
-            .cancel(applicationContext, NOTIFICATION_TAG)
+        NotificationManagerCompat.from(applicationContext).cancel(applicationContext, NOTIFICATION_TAG)
     }
 
-    /**
-     * Build the notification with site controls to be displayed while the web app is active.
-     */
+    /** Build the notification with site controls to be displayed while the web app is active. */
     private fun buildNotification(): Notification {
         val channelId = ensureChannelExists()
 
@@ -77,11 +72,12 @@ class PoweredByNotification(
     private fun ensureChannelExists(): String {
         val notificationManager: NotificationManager = applicationContext.getSystemService()!!
 
-        val channel = NotificationChannel(
-            NOTIFICATION_CHANNEL_ID,
-            applicationContext.getString(pwaR.string.mozac_feature_pwa_site_controls_notification_channel),
-            NotificationManager.IMPORTANCE_MIN,
-        )
+        val channel =
+            NotificationChannel(
+                NOTIFICATION_CHANNEL_ID,
+                applicationContext.getString(pwaR.string.mozac_feature_pwa_site_controls_notification_channel),
+                NotificationManager.IMPORTANCE_MIN,
+            )
 
         notificationManager.createNotificationChannel(channel)
 

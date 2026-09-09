@@ -6,9 +6,9 @@ package org.mozilla.fenix.settings.advanced
 
 import io.mockk.mockk
 import io.mockk.verify
+import java.util.Locale
 import org.junit.Before
 import org.junit.Test
-import java.util.Locale
 
 class LocaleSettingsInteractorTest {
 

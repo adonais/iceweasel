@@ -51,18 +51,20 @@ class SaveCollectionListAdapterTest {
     @Test
     fun `creates and binds viewholder`() {
         every { testContext.components.publicSuffixList } returns PublicSuffixList(testContext)
-        val collection = mockk<TabCollection> {
-            every { id } returns 0L
-            every { title } returns "Collection"
-            every { tabs } returns listOf(
-                mockk {
-                    every { url } returns "https://mozilla.org"
-                },
-                mockk {
-                    every { url } returns "https://firefox.com"
-                },
-            )
-        }
+        val collection =
+            mockk<TabCollection> {
+                every { id } returns 0L
+                every { title } returns "Collection"
+                every { tabs } returns
+                    listOf(
+                        mockk {
+                            every { url } returns "https://mozilla.org"
+                        },
+                        mockk {
+                            every { url } returns "https://firefox.com"
+                        },
+                    )
+            }
         adapter.submitList(listOf(collection))
 
         val holder = adapter.createViewHolder(parent, 0)

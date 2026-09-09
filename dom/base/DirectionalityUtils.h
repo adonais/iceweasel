@@ -60,14 +60,14 @@ void SetDirectionalityOnDescendants(mozilla::dom::Element* aElement,
 /**
  * Update flags on assigned node and auto directionality of the slot.
  */
-void SlotAssignedNodeAdded(dom::HTMLSlotElement* aSlot,
-                           nsIContent& aAssignedNode);
+void SlotAssignedNodeAddedForDir(dom::HTMLSlotElement* aSlot,
+                                 nsIContent& aAssignedNode);
 
 /**
  * Update flags on assigned node and auto directionality of the slot.
  */
-void SlotAssignedNodeRemoved(dom::HTMLSlotElement* aSlot,
-                             nsIContent& aUnassignedNode);
+void SlotAssignedNodeRemovedForDir(dom::HTMLSlotElement* aSlot,
+                                   nsIContent& aUnassignedNode);
 
 /**
  * After unsetting dir=auto on an element, walk its descendants in tree order,

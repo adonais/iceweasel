@@ -5,6 +5,7 @@
 package mozilla.components.feature.session
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.action.CustomTabListAction
 import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.action.TabListAction
@@ -37,7 +38,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class TrackingProtectionUseCasesTest {
@@ -56,18 +56,20 @@ class TrackingProtectionUseCasesTest {
 
         engineSession = mock()
 
-        store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    TabSessionState(
-                        id = "A",
-                        content = ContentState("https://www.mozilla.org"),
-                        engineState = EngineState(engineSession),
-                    ),
-                ),
-                selectedTabId = "A",
-            ),
-        )
+        store =
+            BrowserStore(
+                BrowserState(
+                    tabs =
+                        listOf(
+                            TabSessionState(
+                                id = "A",
+                                content = ContentState("https://www.mozilla.org"),
+                                engineState = EngineState(engineSession),
+                            )
+                        ),
+                    selectedTabId = "A",
+                )
+            )
 
         useCases = TrackingProtectionUseCases(store, engine)
     }
@@ -114,9 +116,7 @@ class TrackingProtectionUseCasesTest {
             onSuccessCalled = true
         }
 
-        store.dispatch(
-            EngineAction.UnlinkEngineSessionAction("A"),
-        )
+        store.dispatch(EngineAction.UnlinkEngineSessionAction("A"))
 
         whenever(engine.getTrackersLog(any(), any(), any())).then {
             onSuccess(emptyList())
@@ -147,9 +147,7 @@ class TrackingProtectionUseCasesTest {
 
     @Test
     fun `add exception with a null engine session will not call the store`() {
-        store.dispatch(
-            EngineAction.UnlinkEngineSessionAction("A"),
-        )
+        store.dispatch(EngineAction.UnlinkEngineSessionAction("A"))
 
         useCases.addException("A")
 
@@ -173,21 +171,26 @@ class TrackingProtectionUseCasesTest {
 
     @Test
     fun `remove a tracking protection exception`() {
-        val tab1 = createTab("https://www.mozilla.org")
-            .copy(trackingProtection = TrackingProtectionState(ignoredOnTrackingProtection = true))
+        val tab1 =
+            createTab("https://www.mozilla.org")
+                .copy(trackingProtection = TrackingProtectionState(ignoredOnTrackingProtection = true))
 
-        val tab2 = createTab("https://wiki.mozilla.org/")
-            .copy(trackingProtection = TrackingProtectionState(ignoredOnTrackingProtection = true))
+        val tab2 =
+            createTab("https://wiki.mozilla.org/")
+                .copy(trackingProtection = TrackingProtectionState(ignoredOnTrackingProtection = true))
 
-        val tab3 = createTab("https://www.mozilla.org/en-CA/")
-            .copy(trackingProtection = TrackingProtectionState(ignoredOnTrackingProtection = true))
+        val tab3 =
+            createTab("https://www.mozilla.org/en-CA/")
+                .copy(trackingProtection = TrackingProtectionState(ignoredOnTrackingProtection = true))
 
-        val customTab = createCustomTab("https://www.mozilla.org/en-CA/")
-            .copy(trackingProtection = TrackingProtectionState(ignoredOnTrackingProtection = true))
+        val customTab =
+            createCustomTab("https://www.mozilla.org/en-CA/")
+                .copy(trackingProtection = TrackingProtectionState(ignoredOnTrackingProtection = true))
 
-        val exception = object : TrackingProtectionException {
-            override val url: String = tab1.content.url
-        }
+        val exception =
+            object : TrackingProtectionException {
+                override val url: String = tab1.content.url
+            }
 
         store.dispatch(TabListAction.AddTabAction(tab1))
         store.dispatch(TabListAction.AddTabAction(tab2))
@@ -215,9 +218,7 @@ class TrackingProtectionUseCasesTest {
 
     @Test
     fun `remove exception with a null engine session will not call the store`() {
-        store.dispatch(
-            EngineAction.UnlinkEngineSessionAction("A"),
-        )
+        store.dispatch(EngineAction.UnlinkEngineSessionAction("A"))
 
         useCases.removeException("A")
 
@@ -243,9 +244,7 @@ class TrackingProtectionUseCasesTest {
     fun `contains exception with a null engine session will not call the store`() {
         var contains = true
 
-        store.dispatch(
-            EngineAction.UnlinkEngineSessionAction("A"),
-        )
+        store.dispatch(EngineAction.UnlinkEngineSessionAction("A"))
 
         useCases.containsException("A") {
             contains = it

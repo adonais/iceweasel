@@ -32,6 +32,15 @@ export class ThemePickerParent extends JSWindowActorParent {
 
       case "ThemePicker:UpdateNativeTheme":
         return this.updateNativeTheme(message.data);
+
+      case "ThemePicker:GetActiveTheme":
+        return this.getActiveThemeId();
+
+      case "ThemePicker:GetAppearance":
+        return this.getAppearance();
+
+      case "ThemePicker:GetNativeTheme":
+        return this.getNativeTheme();
     }
 
     return null;
@@ -43,11 +52,8 @@ export class ThemePickerParent extends JSWindowActorParent {
     }
 
     const themes = this.themesManager.getThemesInfo({ showInCompactLayout });
-    const activeThemeId = Services.prefs.getStringPref(
-      PREF_ACTIVE_THEME_ID,
-      "default-theme@mozilla.org"
-    );
-    const nativeTheme = Services.prefs.getBoolPref(PREF_NATIVE_THEME, false);
+    const { activeThemeId } = this.getActiveThemeId();
+    const { nativeTheme } = this.getNativeTheme();
     const appearance = this.getAppearanceFromPref();
     const showNativeThemeOption = AppConstants.platform === "linux";
     const deviceAppearance = Services.appinfo
@@ -67,13 +73,7 @@ export class ThemePickerParent extends JSWindowActorParent {
 
   async updateTheme({ themeId }) {
     await this.themesManager.updateThemeState(themeId, true);
-
-    const activeThemeId = Services.prefs.getStringPref(
-      PREF_ACTIVE_THEME_ID,
-      "default-theme@mozilla.org"
-    );
-
-    return { activeThemeId };
+    return this.getActiveThemeId();
   }
 
   async updateAppearance({ appearance }) {
@@ -86,17 +86,26 @@ export class ThemePickerParent extends JSWindowActorParent {
       );
     }
 
-    return {
-      appearance: this.getAppearanceFromPref(),
-    };
+    return this.getAppearance();
   }
 
   async updateNativeTheme({ nativeTheme }) {
     Services.prefs.setBoolPref(PREF_NATIVE_THEME, nativeTheme);
 
+    return this.getNativeTheme();
+  }
+
+  getActiveThemeId() {
     return {
-      nativeTheme: Services.prefs.getBoolPref(PREF_NATIVE_THEME, false),
+      activeThemeId: Services.prefs.getStringPref(
+        PREF_ACTIVE_THEME_ID,
+        "default-theme@mozilla.org"
+      ),
     };
+  }
+
+  getAppearance() {
+    return { appearance: this.getAppearanceFromPref() };
   }
 
   getAppearanceFromPref() {
@@ -112,5 +121,11 @@ export class ThemePickerParent extends JSWindowActorParent {
     }
 
     return "device";
+  }
+
+  getNativeTheme() {
+    return {
+      nativeTheme: Services.prefs.getBoolPref(PREF_NATIVE_THEME, false),
+    };
   }
 }

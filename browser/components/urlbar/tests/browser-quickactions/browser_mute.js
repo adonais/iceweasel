@@ -123,7 +123,7 @@ add_task(async function test_mute_not_visible_when_all_playing_tabs_muted() {
     gBrowser.tabContainer,
     { attributeFilter: ["muted"], subtree: true },
     () => audioTab1.muted && audioTab2.muted,
-    "Both tabs should be muted"
+    { msg: "Both tabs should be muted" }
   );
 
   info("Search for the mute action — should not appear");

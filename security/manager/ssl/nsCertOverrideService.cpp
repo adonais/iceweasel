@@ -6,6 +6,7 @@
 
 #include "NSSCertDBTrustDomain.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Components.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/TextUtils.h"
@@ -145,7 +146,7 @@ nsCertOverrideService::~nsCertOverrideService() = default;
 static nsCOMPtr<nsIAsyncShutdownClient> GetShutdownBarrier() {
   MOZ_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIAsyncShutdownService> svc =
-      mozilla::services::GetAsyncShutdownService();
+      mozilla::components::AsyncShutdown::Service();
   MOZ_RELEASE_ASSERT(svc);
 
   nsCOMPtr<nsIAsyncShutdownClient> barrier;

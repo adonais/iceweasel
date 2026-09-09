@@ -36,15 +36,16 @@ data class CreditCardEditorState(
 ) : State {
 
     companion object {
-        val Default = CreditCardEditorState(
-            guid = "",
-            cardNumber = "",
-            nameOnCard = "",
-            inEditMode = false,
-            expiryMonths = listOf(),
-            selectedExpiryMonthIndex = 0,
-            expiryYears = listOf(),
-            selectedExpiryYearIndex = 0,
-        )
+        val Default =
+            CreditCardEditorState(
+                guid = "",
+                cardNumber = "",
+                nameOnCard = "",
+                inEditMode = false,
+                expiryMonths = listOf(),
+                selectedExpiryMonthIndex = 0,
+                expiryYears = listOf(),
+                selectedExpiryYearIndex = 0,
+            )
     }
 }

@@ -45,9 +45,9 @@ class RemotePrintJobChild;
 [scriptable, builtinclass, uuid(48118355-e9a5-4452-ab18-59cc426fb817)]
 interface nsIDocumentViewer : nsISupports
 {
-  [noscript] void init(in nsIWidgetPtr aParentWidget,
-                       [const] in LayoutDeviceIntRectRef aBounds,
-                       in WindowGlobalChildPtr aWindowActor);
+  [noscript,can_run_script] void init(in nsIWidgetPtr aParentWidget,
+                                      [const] in LayoutDeviceIntRectRef aBounds,
+                                      in WindowGlobalChildPtr aWindowActor);
 
   attribute nsIDocShell container;
 
@@ -153,7 +153,7 @@ interface nsIDocumentViewer : nsISupports
   /**
    * Allows setting the document.
    */
-  [noscript,nostdcall] void setDocument(in Document aDocument);
+  [noscript,nostdcall,can_run_script] void setDocument(in Document aDocument);
 
   [noscript] void getBounds(in LayoutDeviceIntRectRef aBounds);
   [noscript] void setBounds([const] in LayoutDeviceIntRectRef aBounds);
@@ -180,6 +180,7 @@ interface nsIDocumentViewer : nsISupports
   /**
    * Attach the content viewer to its DOM window and docshell.
    */
+  [can_run_script]
   void open();
 
   /**
@@ -192,6 +193,7 @@ interface nsIDocumentViewer : nsISupports
    * Change the layout to view the document with page layout (like print preview), but
    * dynamic and editable (like Galley layout).
    */
+  [can_run_script]
   void setPageModeForTesting(in boolean aPageMode,
                              in nsIPrintSettings aPrintSettings);
 
@@ -223,8 +225,8 @@ interface nsIDocumentViewer : nsISupports
   // presContext can be null.
   [notxpcom,nostdcall] readonly attribute nsPresContextPtr presContext;
   // aDocument must not be null.
-  [noscript] void setDocumentInternal(in Document aDocument,
-                                      in boolean aForceReuseInnerWindow);
+  [noscript,can_run_script] void setDocumentInternal(in Document aDocument,
+                                                     in boolean aForceReuseInnerWindow);
   /**
    * Find the view to use as the container view for MakeWindow. Returns
    * null if this will be the root of a view manager hierarchy. In that

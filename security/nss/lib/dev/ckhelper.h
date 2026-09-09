@@ -46,7 +46,7 @@ NSS_EXTERN_DATA const NSSItem g_ck_class_privkey;
 
 #define NSS_CK_SET_ATTRIBUTE_VAR(pattr, kind, var) \
     (pattr)->type = kind;                          \
-    (pattr)->pValue = (CK_VOID_PTR)&var;           \
+    (pattr)->pValue = (CK_VOID_PTR) & var;         \
     (pattr)->ulValueLen = (CK_ULONG)sizeof(var);   \
     (pattr)++;
 

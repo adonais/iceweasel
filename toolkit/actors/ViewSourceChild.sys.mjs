@@ -5,7 +5,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  ViewSourcePageChild: "resource://gre/actors/ViewSourcePageChild.sys.mjs",
+  ViewSourcePageChild: "moz-src:///toolkit/actors/ViewSourcePageChild.sys.mjs",
 });
 
 export class ViewSourceChild extends JSWindowActorChild {

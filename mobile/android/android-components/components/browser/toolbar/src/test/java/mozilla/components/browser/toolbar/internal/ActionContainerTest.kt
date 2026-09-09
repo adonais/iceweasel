@@ -22,14 +22,15 @@ class ActionContainerTest {
 
     @Before
     fun setUp() {
-        browserAction = BrowserToolbar.Button(
-            imageDrawable = mock(),
-            contentDescription = "Test",
-            visible = { true },
-            autoHide = { true },
-            weight = { 2 },
-            listener = mock(),
-        )
+        browserAction =
+            BrowserToolbar.Button(
+                imageDrawable = mock(),
+                contentDescription = "Test",
+                visible = { true },
+                autoHide = { true },
+                weight = { 2 },
+                listener = mock(),
+            )
         actionContainer = ActionContainer(testContext)
     }
 
@@ -42,7 +43,7 @@ class ActionContainerTest {
                 visible = { true },
                 weight = { 1 },
                 listener = mock(),
-            ),
+            )
         )
         actionContainer.addAction(
             BrowserToolbar.Button(
@@ -51,7 +52,7 @@ class ActionContainerTest {
                 visible = { true },
                 weight = { 3 },
                 listener = mock(),
-            ),
+            )
         )
         val newAction =
             BrowserToolbar.Button(
@@ -84,13 +85,14 @@ class ActionContainerTest {
 
     @Test
     fun `WHEN invalidateAction is called THEN action visibility is reconsidered`() {
-        val browserToolbarAction = BrowserToolbar.Button(
-            imageDrawable = mock(),
-            contentDescription = "Translation",
-            visible = { false },
-            weight = { 2 },
-            listener = mock(),
-        )
+        val browserToolbarAction =
+            BrowserToolbar.Button(
+                imageDrawable = mock(),
+                contentDescription = "Translation",
+                visible = { false },
+                weight = { 2 },
+                listener = mock(),
+            )
         actionContainer.addAction(browserToolbarAction)
         actionContainer.invalidateActions()
 

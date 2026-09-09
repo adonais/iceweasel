@@ -4,6 +4,8 @@
 
 package mozilla.components.feature.autofill.handler
 
+import java.util.UUID
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.storage.Login
 import mozilla.components.concept.storage.LoginsStorage
@@ -31,8 +33,6 @@ import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
-import java.util.UUID
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 internal class FillRequestHandlerTest {
@@ -96,9 +96,7 @@ internal class FillRequestHandlerTest {
         createTestCase<LoginFillResponseBuilder>(
             filename = "fixtures/app_expensify.xml",
             packageName = "org.me.mobiexpensifyg",
-            logins = mapOf(
-                generateRandomLoginFor("expensify.com"),
-            ),
+            logins = mapOf(generateRandomLoginFor("expensify.com")),
             assertThat = { builder ->
                 // Unfortunately we are not able to link the app and the website yet.
                 assertNull(builder)
@@ -201,32 +199,34 @@ private fun <B : FillResponseBuilder> FillRequestHandlerTest.createTestCase(
     val verifier: CredentialAccessVerifier = mock()
     doReturn(canVerifyRelationship).`when`(verifier).hasCredentialRelationship(any(), any(), any())
 
-    val configuration = AutofillConfiguration(
-        storage = storage,
-        publicSuffixList = PublicSuffixList(testContext),
-        unlockActivity = AbstractAutofillUnlockActivity::class.java,
-        confirmActivity = AbstractAutofillConfirmActivity::class.java,
-        searchActivity = AbstractAutofillSearchActivity::class.java,
-        applicationName = "Test",
-        httpClient = mock(),
-        verifier = verifier,
-    )
+    val configuration =
+        AutofillConfiguration(
+            storage = storage,
+            publicSuffixList = PublicSuffixList(testContext),
+            unlockActivity = AbstractAutofillUnlockActivity::class.java,
+            confirmActivity = AbstractAutofillConfirmActivity::class.java,
+            searchActivity = AbstractAutofillSearchActivity::class.java,
+            applicationName = "Test",
+            httpClient = mock(),
+            verifier = verifier,
+        )
 
-    val handler = FillRequestHandler(
-        testContext,
-        configuration,
-    )
+    val handler =
+        FillRequestHandler(
+            testContext,
+            configuration,
+        )
 
     val builder = handler.handle(structure)
-    @Suppress("UNCHECKED_CAST")
-    assertThat(builder as? B)
+    @Suppress("UNCHECKED_CAST") assertThat(builder as? B)
 }
 
 private fun generateRandomLoginFor(origin: String): Pair<String, Login> {
-    return origin to Login(
-        guid = UUID.randomUUID().toString(),
-        origin = origin,
-        username = "user" + UUID.randomUUID().toString(),
-        password = "password" + UUID.randomUUID().toString(),
-    )
+    return origin to
+        Login(
+            guid = UUID.randomUUID().toString(),
+            origin = origin,
+            username = "user" + UUID.randomUUID().toString(),
+            password = "password" + UUID.randomUUID().toString(),
+        )
 }

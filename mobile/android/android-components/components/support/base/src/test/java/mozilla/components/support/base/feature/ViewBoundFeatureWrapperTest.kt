@@ -42,21 +42,23 @@ class ViewBoundFeatureWrapperTest {
     fun `onBackPressed is forwarded to feature`() {
         val feature = MockFeatureWithUserInteractionHandler(onBackPressed = true)
 
-        val wrapper = ViewBoundFeatureWrapper(
-            feature = feature,
-            owner = MockedLifecycleOwner(MockedLifecycle(Lifecycle.State.CREATED)),
-            view = mock(),
-        )
+        val wrapper =
+            ViewBoundFeatureWrapper(
+                feature = feature,
+                owner = MockedLifecycleOwner(MockedLifecycle(Lifecycle.State.CREATED)),
+                view = mock(),
+            )
 
         assertTrue(wrapper.onBackPressed())
         assertTrue(feature.onBackPressedInvoked)
 
         assertFalse(
             ViewBoundFeatureWrapper(
-                feature = MockFeatureWithUserInteractionHandler(onBackPressed = false),
-                owner = MockedLifecycleOwner(MockedLifecycle(Lifecycle.State.CREATED)),
-                view = mock(),
-            ).onBackPressed(),
+                    feature = MockFeatureWithUserInteractionHandler(onBackPressed = false),
+                    owner = MockedLifecycleOwner(MockedLifecycle(Lifecycle.State.CREATED)),
+                    view = mock(),
+                )
+                .onBackPressed()
         )
     }
 
@@ -70,21 +72,23 @@ class ViewBoundFeatureWrapperTest {
     fun `onForwardPressed is forwarded to feature`() {
         val feature = MockFeatureWithUserInteractionHandler(onForwardPressed = true)
 
-        val wrapper = ViewBoundFeatureWrapper(
-            feature = feature,
-            owner = MockedLifecycleOwner(MockedLifecycle(Lifecycle.State.CREATED)),
-            view = mock(),
-        )
+        val wrapper =
+            ViewBoundFeatureWrapper(
+                feature = feature,
+                owner = MockedLifecycleOwner(MockedLifecycle(Lifecycle.State.CREATED)),
+                view = mock(),
+            )
 
         assertTrue(wrapper.onForwardPressed())
         assertTrue(feature.onForwardPressedInvoked)
 
         assertFalse(
             ViewBoundFeatureWrapper(
-                feature = MockFeatureWithUserInteractionHandler(onForwardPressed = false),
-                owner = MockedLifecycleOwner(MockedLifecycle(Lifecycle.State.CREATED)),
-                view = mock(),
-            ).onForwardPressed(),
+                    feature = MockFeatureWithUserInteractionHandler(onForwardPressed = false),
+                    owner = MockedLifecycleOwner(MockedLifecycle(Lifecycle.State.CREATED)),
+                    view = mock(),
+                )
+                .onForwardPressed()
         )
     }
 
@@ -98,21 +102,23 @@ class ViewBoundFeatureWrapperTest {
     fun `onActivityResult is forwarded to feature`() {
         val feature = MockFeatureWithActivityResultHandler(onActivityResult = true)
 
-        val wrapper = ViewBoundFeatureWrapper(
-            feature = feature,
-            owner = MockedLifecycleOwner(MockedLifecycle(Lifecycle.State.CREATED)),
-            view = mock(),
-        )
+        val wrapper =
+            ViewBoundFeatureWrapper(
+                feature = feature,
+                owner = MockedLifecycleOwner(MockedLifecycle(Lifecycle.State.CREATED)),
+                view = mock(),
+            )
 
         assertTrue(wrapper.onActivityResult(1, null, RESULT_OK))
         assertTrue(feature.onActivityResultHandled)
 
         assertFalse(
             ViewBoundFeatureWrapper(
-                feature = MockFeatureWithActivityResultHandler(onActivityResult = false),
-                owner = MockedLifecycleOwner(MockedLifecycle(Lifecycle.State.CREATED)),
-                view = mock(),
-            ).onActivityResult(0, mock(), RESULT_OK),
+                    feature = MockFeatureWithActivityResultHandler(onActivityResult = false),
+                    owner = MockedLifecycleOwner(MockedLifecycle(Lifecycle.State.CREATED)),
+                    view = mock(),
+                )
+                .onActivityResult(0, mock(), RESULT_OK)
         )
     }
 
@@ -245,7 +251,7 @@ class ViewBoundFeatureWrapperTest {
 
                 assertFalse(blockExecuted)
                 true
-            },
+            }
         )
 
         assertTrue(
@@ -265,7 +271,7 @@ class ViewBoundFeatureWrapperTest {
 
                 assertTrue(blockExecuted)
                 true
-            },
+            }
         )
 
         assertTrue(
@@ -287,7 +293,7 @@ class ViewBoundFeatureWrapperTest {
 
                 assertFalse(blockExecuted)
                 true
-            },
+            }
         )
     }
 
@@ -369,11 +375,12 @@ class ViewBoundFeatureWrapperTest {
     fun `onBackPressed throws if feature does not implement BackHandler`() {
         val feature = MockFeature()
 
-        val wrapper = ViewBoundFeatureWrapper(
-            feature = feature,
-            owner = MockedLifecycleOwner(MockedLifecycle(Lifecycle.State.CREATED)),
-            view = mock(),
-        )
+        val wrapper =
+            ViewBoundFeatureWrapper(
+                feature = feature,
+                owner = MockedLifecycleOwner(MockedLifecycle(Lifecycle.State.CREATED)),
+                view = mock(),
+            )
 
         wrapper.onBackPressed()
     }
@@ -382,11 +389,12 @@ class ViewBoundFeatureWrapperTest {
     fun `onForwardPressed throws if feature does not implement ForwardHandler`() {
         val feature = MockFeature()
 
-        val wrapper = ViewBoundFeatureWrapper(
-            feature = feature,
-            owner = MockedLifecycleOwner(MockedLifecycle(Lifecycle.State.CREATED)),
-            view = mock(),
-        )
+        val wrapper =
+            ViewBoundFeatureWrapper(
+                feature = feature,
+                owner = MockedLifecycleOwner(MockedLifecycle(Lifecycle.State.CREATED)),
+                view = mock(),
+            )
 
         wrapper.onForwardPressed()
     }
@@ -494,9 +502,8 @@ private class MockFeatureWithUserInteractionHandler(
     }
 }
 
-private class MockFeatureWithActivityResultHandler(
-    private val onActivityResult: Boolean = false,
-) : MockFeature(), ActivityResultHandler {
+private class MockFeatureWithActivityResultHandler(private val onActivityResult: Boolean = false) :
+    MockFeature(), ActivityResultHandler {
     var onActivityResultHandled = false
         private set
 

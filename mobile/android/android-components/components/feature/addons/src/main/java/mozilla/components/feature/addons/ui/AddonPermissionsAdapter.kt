@@ -41,30 +41,25 @@ class AddonPermissionsAdapter(
         val permission = permissions[position]
         with(holder.textView) {
             text = permission
-            contentDescription = context.getString(
-                R.string.mozac_feature_addons_permissions_content_description_item,
-                permission,
-                position + 1,
-                permissions.size,
-            )
+            contentDescription =
+                context.getString(
+                    R.string.mozac_feature_addons_permissions_content_description_item,
+                    permission,
+                    position + 1,
+                    permissions.size,
+                )
             style?.maybeSetItemTextColor(this)
         }
     }
 
-    /**
-     * A view holder for displaying the permissions of an add-on.
-     */
+    /** A view holder for displaying the permissions of an add-on. */
     class PermissionViewHolder(
         val view: View,
         val textView: TextView,
     ) : RecyclerView.ViewHolder(view)
 
-    /**
-     * Allows to customize how permission items should look like.
-     */
-    data class Style(
-        @param:ColorRes val itemsTextColor: Int? = null,
-    ) {
+    /** Allows to customize how permission items should look like. */
+    data class Style(@param:ColorRes val itemsTextColor: Int? = null) {
         internal fun maybeSetItemTextColor(textView: TextView) {
             itemsTextColor?.let {
                 val color = ContextCompat.getColor(textView.context, it)

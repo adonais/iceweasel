@@ -1670,6 +1670,12 @@ export class PictureInPictureChild extends JSWindowActorChild {
   // A reference to current WebVTT track currently displayed on the content window
   _currentWebVTTTrack = null;
 
+  // The TextTrackList currently observed for track lifecycle changes.
+  #textTrackList = null;
+
+  // Avoid registering duplicate wrapper observers on later setupTextTracks calls.
+  #captionChangeListenerRegistered = false;
+
   // A weak reference to the PictureInPictureWindow (the one exposed to web content)
   #weakPictureInPictureWindow;
 
@@ -1716,40 +1722,70 @@ export class PictureInPictureChild extends JSWindowActorChild {
   }
 
   /**
-   * Sets up Picture-in-Picture to support displaying text tracks from WebVTT
-   * or if WebVTT isn't supported we will register the caption change mutation observer if
-   * the site wrapper exists.
-   *
-   * If the originating video supports WebVTT, try to read the
-   * active track and cues. Display any active cues on the pip window
-   * right away if applicable.
+   * Listens for changes to the originating video's TextTrackList, including
+   * tracks added or removed after Picture-in-Picture opens, and displays any
+   * active WebVTT cues. A site wrapper caption observer may coexist with these
+   * listeners, but active WebVTT cues take priority over wrapper captions in
+   * PictureInPictureChildVideoWrapper.updatePiPTextTracks().
    *
    * @param originatingVideo {Element|null}
    *  The <video> being displayed in Picture-in-Picture mode, or null if that <video> no longer exists.
    */
   setupTextTracks(originatingVideo) {
-    const isWebVTTSupported = !!originatingVideo.textTracks?.length;
+    const textTracks = originatingVideo.textTracks;
 
-    if (!isWebVTTSupported) {
-      this.setUpCaptionChangeListener(originatingVideo);
-      return;
+    if (this.#textTrackList !== textTracks) {
+      this.removeTextTrackListeners(this.#textTrackList);
+      this.#textTrackList = textTracks;
+      this.addTextTrackListeners(this.#textTrackList);
     }
 
-    // Verify active track for originating video
+    this.syncWebVTTTextTrack(originatingVideo);
+
+    if (!this._currentWebVTTTrack && !this.#captionChangeListenerRegistered) {
+      this.setUpCaptionChangeListener(originatingVideo);
+    }
+  }
+
+  addTextTrackListeners(textTrackList) {
+    textTrackList?.addEventListener("change", this);
+    textTrackList?.addEventListener("addtrack", this);
+    textTrackList?.addEventListener("removetrack", this);
+  }
+
+  removeTextTrackListeners(textTrackList) {
+    textTrackList?.removeEventListener("change", this);
+    textTrackList?.removeEventListener("addtrack", this);
+    textTrackList?.removeEventListener("removetrack", this);
+  }
+
+  /**
+   * Updates the active WebVTT track for the current TextTrackList state.
+   *
+   * @param originatingVideo {Element}
+   *  The <video> being displayed in Picture-in-Picture mode.
+   */
+  syncWebVTTTextTrack(originatingVideo) {
+    const previousWebVTTTrack = this._currentWebVTTTrack;
+    this._currentWebVTTTrack?.removeEventListener(
+      "cuechange",
+      this.onCueChange
+    );
+
     this.setActiveTextTrack(originatingVideo.textTracks);
 
-    if (!this._currentWebVTTTrack) {
-      // If WebVTT track is invalid, try using a video wrapper
-      this.setUpCaptionChangeListener(originatingVideo);
+    if (this._currentWebVTTTrack) {
+      this._currentWebVTTTrack.addEventListener("cuechange", this.onCueChange);
+      this.updateWebVTTTextTracksDisplay(this._currentWebVTTTrack.activeCues);
       return;
     }
 
-    // Listen for changes in tracks and active cues
-    originatingVideo.textTracks.addEventListener("change", this);
-    this._currentWebVTTTrack.addEventListener("cuechange", this.onCueChange);
-
-    const cues = this._currentWebVTTTrack.activeCues;
-    this.updateWebVTTTextTracksDisplay(cues);
+    if (previousWebVTTTrack) {
+      this.updateWebVTTTextTracksDisplay(null);
+      if (!this.#captionChangeListenerRegistered) {
+        this.setUpCaptionChangeListener(originatingVideo);
+      }
+    }
   }
 
   /**
@@ -1771,16 +1807,11 @@ export class PictureInPictureChild extends JSWindowActorChild {
    *  The <video> being displayed in Picture-in-Picture mode, or null if that <video> no longer exists.
    */
   removeTextTracks(originatingVideo) {
-    const isWebVTTSupported = !!originatingVideo.textTracks;
-
     this.removeCaptionChangeListener(originatingVideo);
 
-    if (!isWebVTTSupported) {
-      return;
-    }
-
     // No longer listen for changes to tracks and active cues
-    originatingVideo.textTracks.removeEventListener("change", this);
+    this.removeTextTrackListeners(this.#textTrackList);
+    this.#textTrackList = null;
     this._currentWebVTTTrack?.removeEventListener(
       "cuechange",
       this.onCueChange
@@ -2123,34 +2154,13 @@ export class PictureInPictureChild extends JSWindowActorChild {
         }
         break;
       }
-      case "change": {
-        // Clear currently stored track data (webvtt support) before reading
-        // a new track.
-        if (this._currentWebVTTTrack) {
-          this._currentWebVTTTrack.removeEventListener(
-            "cuechange",
-            this.onCueChange
-          );
-          this._currentWebVTTTrack = null;
+      case "change":
+      case "addtrack":
+      case "removetrack": {
+        const originatingVideo = this.getWeakVideo();
+        if (originatingVideo && event.target === this.#textTrackList) {
+          this.syncWebVTTTextTrack(originatingVideo);
         }
-
-        const tracks = event.target;
-        this.setActiveTextTrack(tracks);
-        const isCurrentTrackAvailable = this._currentWebVTTTrack;
-
-        // If tracks are disabled or invalid while change occurs,
-        // remove text tracks from the pip window and stop here.
-        if (!isCurrentTrackAvailable || !tracks.length) {
-          this.updateWebVTTTextTracksDisplay(null);
-          return;
-        }
-
-        this._currentWebVTTTrack.addEventListener(
-          "cuechange",
-          this.onCueChange
-        );
-        const cues = this._currentWebVTTTrack.activeCues;
-        this.updateWebVTTTextTracksDisplay(cues);
         break;
       }
       case "timeupdate":
@@ -2461,12 +2471,14 @@ export class PictureInPictureChild extends JSWindowActorChild {
   setUpCaptionChangeListener(originatingVideo) {
     if (this.videoWrapper) {
       this.videoWrapper.setCaptionContainerObserver(originatingVideo, this);
+      this.#captionChangeListenerRegistered = true;
     }
   }
 
   removeCaptionChangeListener(originatingVideo) {
     if (this.videoWrapper) {
       this.videoWrapper.removeCaptionContainerObserver(originatingVideo, this);
+      this.#captionChangeListenerRegistered = false;
     }
   }
 
@@ -2938,6 +2950,10 @@ export class PictureInPictureChild extends JSWindowActorChild {
     return this.#subtitlesEnabled;
   }
 
+  get hasActiveWebVTTTrack() {
+    return !!this._currentWebVTTTrack;
+  }
+
   set isSubtitlesEnabled(val) {
     if (val) {
       Glean.pictureinpicture.subtitlesShownSubtitles.record({
@@ -3121,6 +3137,10 @@ class PictureInPictureChildVideoWrapper {
    * be displayed as plain text.
    */
   updatePiPTextTracks(text, type) {
+    if (this.#PictureInPictureChild.hasActiveWebVTTTrack) {
+      return;
+    }
+
     if (!this.#PictureInPictureChild.isSubtitlesEnabled && text) {
       this.#PictureInPictureChild.isSubtitlesEnabled = true;
       this.#PictureInPictureChild.sendAsyncMessage(

@@ -2491,7 +2491,9 @@ struct Expect {
 nsresult Validate(mozIStorageConnection& aConn) {
   QM_TRY_INSPECT(const int32_t& schemaVersion,
                  GetEffectiveSchemaVersion(aConn));
-  QM_TRY(OkIf(schemaVersion == kLatestSchemaVersion), NS_ERROR_FAILURE);
+  QM_TRY(OkIf(schemaVersion == kLatestSchemaVersion),
+         schemaVersion > kLatestSchemaVersion ? NS_ERROR_DOM_NOT_SUPPORTED_ERR
+                                              : NS_ERROR_FILE_CORRUPTED);
 
 #ifdef DEBUG
   // This is the schema we expect the database at the latest version to
@@ -2684,7 +2686,7 @@ nsresult Migrate(nsIFile& aDBDir, mozIStorageConnection& aConn) {
 
   // Don't release assert this since people do sometimes share profiles
   // across schema versions.  Our check in Validate() will catch it.
-  MOZ_ASSERT(currentVersion == kLatestSchemaVersion);
+  MOZ_ASSERT(currentVersion >= kLatestSchemaVersion);
 
   nsresult rv = NS_OK;
   if (rewriteSchema) {

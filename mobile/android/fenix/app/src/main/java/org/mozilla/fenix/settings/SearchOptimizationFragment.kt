@@ -27,9 +27,7 @@ import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.SecretSettingsPrefDefaults
 
-/**
- * Settings related to the Search Optimization feature
- */
+/** Settings related to the Search Optimization feature */
 class SearchOptimizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,16 +35,18 @@ class SearchOptimizationFragment : PreferenceFragmentCompat(), SystemInsetsPadde
         savedInstanceState: Bundle?,
     ): ViewGroup {
         val context = inflater.context
-        val preferencesView = checkNotNull(super.onCreateView(inflater, container, savedInstanceState)) {
-            "PreferenceFragmentCompat returned null from onCreateView"
-        }
+        val preferencesView =
+            checkNotNull(super.onCreateView(inflater, container, savedInstanceState)) {
+                "PreferenceFragmentCompat returned null from onCreateView"
+            }
 
         return LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT,
-            )
+            layoutParams =
+                ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                )
 
             // View for the list of preferences.
             addView(
@@ -57,16 +57,12 @@ class SearchOptimizationFragment : PreferenceFragmentCompat(), SystemInsetsPadde
             // View for the bottom aligned reset button.
             addView(
                 ComposeView(context).apply {
-                    setViewCompositionStrategy(
-                        ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed,
-                    )
+                    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                     setContent {
                         FirefoxTheme {
                             FilledButton(
                                 text = stringResource(R.string.preferences_debug_settings_reset_defaults),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 24.dp),
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp),
                                 onClick = ::showResetConfirmationDialog,
                             )
                         }
@@ -108,26 +104,27 @@ class SearchOptimizationFragment : PreferenceFragmentCompat(), SystemInsetsPadde
 
         val settings = requireComponents.settings
         val isFeatureEnabled = settings.isSearchOptimizationEnabled
-        val childPreferences = listOf(
-            ChildPreferenceConfig(
-                preference = R.string.pref_key_search_optimization_stocks,
-                isChecked = settings.shouldShowSearchOptimizationStockCard,
-                onEnable = { settings.shouldShowSearchOptimizationStockCard = true },
-                onDisable = { settings.shouldShowSearchOptimizationStockCard = false },
-            ),
-            ChildPreferenceConfig(
-                preference = R.string.pref_key_search_optimization_sports,
-                isChecked = settings.shouldShowSearchOptimizationSportCard,
-                onEnable = { settings.shouldShowSearchOptimizationSportCard = true },
-                onDisable = { settings.shouldShowSearchOptimizationSportCard = false },
-            ),
-            ChildPreferenceConfig(
-                preference = R.string.pref_key_search_optimization_flights,
-                isChecked = settings.shouldShowSearchOptimizationFlightCard,
-                onEnable = { settings.shouldShowSearchOptimizationFlightCard = true },
-                onDisable = { settings.shouldShowSearchOptimizationFlightCard = false },
-            ),
-        )
+        val childPreferences =
+            listOf(
+                ChildPreferenceConfig(
+                    preference = R.string.pref_key_search_optimization_stocks,
+                    isChecked = settings.shouldShowSearchOptimizationStockCard,
+                    onEnable = { settings.shouldShowSearchOptimizationStockCard = true },
+                    onDisable = { settings.shouldShowSearchOptimizationStockCard = false },
+                ),
+                ChildPreferenceConfig(
+                    preference = R.string.pref_key_search_optimization_sports,
+                    isChecked = settings.shouldShowSearchOptimizationSportCard,
+                    onEnable = { settings.shouldShowSearchOptimizationSportCard = true },
+                    onDisable = { settings.shouldShowSearchOptimizationSportCard = false },
+                ),
+                ChildPreferenceConfig(
+                    preference = R.string.pref_key_search_optimization_flights,
+                    isChecked = settings.shouldShowSearchOptimizationFlightCard,
+                    onEnable = { settings.shouldShowSearchOptimizationFlightCard = true },
+                    onDisable = { settings.shouldShowSearchOptimizationFlightCard = false },
+                ),
+            )
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_search_optimization_feature).apply {
             isChecked = isFeatureEnabled
@@ -162,10 +159,11 @@ class SearchOptimizationFragment : PreferenceFragmentCompat(), SystemInsetsPadde
     ) {
         requirePreference<SwitchPreferenceCompat>(preference).apply {
             isEnabled = isFeatureEnabled
-            summary = when (isFeatureEnabled) {
-                true -> null
-                false -> getString(R.string.preferences_debug_settings_search_optimization_card_summary)
-            }
+            summary =
+                when (isFeatureEnabled) {
+                    true -> null
+                    false -> getString(R.string.preferences_debug_settings_search_optimization_card_summary)
+                }
             // The first option is selected by default when the feature is enabled
             if (index == 0 && isFeatureEnabled && !isChecked) {
                 isChecked = true
@@ -186,10 +184,11 @@ class SearchOptimizationFragment : PreferenceFragmentCompat(), SystemInsetsPadde
         requirePreference<SwitchPreferenceCompat>(preference).apply {
             isEnabled = isFeatureEnabled
             this.isChecked = isChecked
-            summary = when (isFeatureEnabled) {
-                true -> null
-                false -> getString(R.string.preferences_debug_settings_search_optimization_card_summary)
-            }
+            summary =
+                when (isFeatureEnabled) {
+                    true -> null
+                    false -> getString(R.string.preferences_debug_settings_search_optimization_card_summary)
+                }
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
     }

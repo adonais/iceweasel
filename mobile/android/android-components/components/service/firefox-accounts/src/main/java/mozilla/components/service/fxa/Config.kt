@@ -5,4 +5,5 @@
 package mozilla.components.service.fxa
 
 typealias ServerConfig = mozilla.appservices.fxaclient.FxaConfig
+
 typealias Server = mozilla.appservices.fxaclient.FxaServer

@@ -11,96 +11,96 @@ import org.junit.Test
 class BookmarksStateTest {
     @Test
     fun `WHEN screen is not loading and user is not searching and bookmarks exist THEN user can enter search`() {
-        val state = BookmarksState.default.copy(
-            bookmarkItems = listOf(
-                generateBookmark(1),
-            ),
-            isLoading = false,
-            searchState = null,
-        )
+        val state =
+            BookmarksState.default.copy(
+                bookmarkItems = listOf(generateBookmark(1)),
+                isLoading = false,
+                searchState = null,
+            )
 
         assertTrue(state.canEnterSearch)
     }
 
     @Test
     fun `WHEN screen is not loading and user is searching and bookmarks exist THEN user cannot enter search`() {
-        val state = BookmarksState.default.copy(
-            bookmarkItems = listOf(
-                generateBookmark(1),
-            ),
-            isLoading = false,
-            searchState = SearchState(),
-        )
+        val state =
+            BookmarksState.default.copy(
+                bookmarkItems = listOf(generateBookmark(1)),
+                isLoading = false,
+                searchState = SearchState(),
+            )
 
         assertFalse(state.canEnterSearch)
     }
 
     @Test
     fun `WHEN screen is loading and user is searching and bookmarks exist THEN user cannot enter search`() {
-        val state = BookmarksState.default.copy(
-            bookmarkItems = listOf(
-                generateBookmark(1),
-            ),
-            isLoading = true,
-            searchState = SearchState(),
-        )
+        val state =
+            BookmarksState.default.copy(
+                bookmarkItems = listOf(generateBookmark(1)),
+                isLoading = true,
+                searchState = SearchState(),
+            )
 
         assertFalse(state.canEnterSearch)
     }
 
     @Test
     fun `WHEN screen is loading and user is not searching and bookmarks exist THEN user cannot enter search`() {
-        val state = BookmarksState.default.copy(
-            bookmarkItems = listOf(
-                generateBookmark(1),
-            ),
-            isLoading = true,
-            searchState = null,
-        )
+        val state =
+            BookmarksState.default.copy(
+                bookmarkItems = listOf(generateBookmark(1)),
+                isLoading = true,
+                searchState = null,
+            )
 
         assertFalse(state.canEnterSearch)
     }
 
     @Test
     fun `WHEN screen is loading and user is not searching and bookmarks do not exist THEN user cannot enter search`() {
-        val state = BookmarksState.default.copy(
-            bookmarkItems = listOf(),
-            isLoading = true,
-            searchState = null,
-        )
+        val state =
+            BookmarksState.default.copy(
+                bookmarkItems = listOf(),
+                isLoading = true,
+                searchState = null,
+            )
 
         assertFalse(state.canEnterSearch)
     }
 
     @Test
     fun `WHEN screen is loading and user is searching and bookmarks do not exist THEN user cannot enter search`() {
-        val state = BookmarksState.default.copy(
-            bookmarkItems = listOf(),
-            isLoading = true,
-            searchState = SearchState(),
-        )
+        val state =
+            BookmarksState.default.copy(
+                bookmarkItems = listOf(),
+                isLoading = true,
+                searchState = SearchState(),
+            )
 
         assertFalse(state.canEnterSearch)
     }
 
     @Test
     fun `WHEN screen is not loading and user is searching and bookmarks do not exist THEN user cannot enter search`() {
-        val state = BookmarksState.default.copy(
-            bookmarkItems = listOf(),
-            isLoading = false,
-            searchState = SearchState(),
-        )
+        val state =
+            BookmarksState.default.copy(
+                bookmarkItems = listOf(),
+                isLoading = false,
+                searchState = SearchState(),
+            )
 
         assertFalse(state.canEnterSearch)
     }
 
     @Test
     fun `WHEN screen is not loading and user is not searching and bookmarks do not exist THEN user cannot enter search`() {
-        val state = BookmarksState.default.copy(
-            bookmarkItems = listOf(),
-            isLoading = false,
-            searchState = null,
-        )
+        val state =
+            BookmarksState.default.copy(
+                bookmarkItems = listOf(),
+                isLoading = false,
+                searchState = null,
+            )
 
         assertFalse(state.canEnterSearch)
     }

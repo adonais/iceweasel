@@ -18,11 +18,11 @@ class ShowSnackbarDetectorTest : LintDetectorTest() {
 
     override fun getDetector(): Detector = ShowSnackbarDetector()
 
-    override fun getIssues(): List<Issue> =
-        listOf(ShowSnackbarDetector.ISSUE_NO_DIRECT_SHOW_SNACKBAR)
+    override fun getIssues(): List<Issue> = listOf(ShowSnackbarDetector.ISSUE_NO_DIRECT_SHOW_SNACKBAR)
 
-    private val snackbarHostStateStub = TestFiles.kotlin(
-        """
+    private val snackbarHostStateStub =
+        TestFiles.kotlin(
+                """
         package androidx.compose.material3
 
         open class SnackbarHostState {
@@ -44,29 +44,35 @@ class ShowSnackbarDetectorTest : LintDetectorTest() {
             Dismissed,
             ActionPerformed
         }
-        """,
-    ).indented()
-
-    private val snackbarHostStateSubclassStub = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val snackbarHostStateSubclassStub =
+        TestFiles.kotlin(
+                """
         package com.example.subclass
 
         import androidx.compose.material3.SnackbarHostState
 
         class MySnackbarHostStateSubclass : SnackbarHostState()
-        """,
-    ).indented()
-
-    private val composableAnnotationStub = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val composableAnnotationStub =
+        TestFiles.kotlin(
+                """
         package androidx.compose.runtime
 
         annotation class Composable
-        """,
-    ).indented()
-
-    private val kotlinxCoroutinesStubs = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val kotlinxCoroutinesStubs =
+        TestFiles.kotlin(
+                """
         package kotlinx.coroutines
 
         import kotlin.coroutines.CoroutineContext
@@ -81,11 +87,13 @@ class ShowSnackbarDetectorTest : LintDetectorTest() {
         }
 
         interface Job
-        """,
-    ).indented()
-
-    private val displaySnackbarStub = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val displaySnackbarStub =
+        TestFiles.kotlin(
+                """
         package mozilla.components.compose.base.snackbar
 
         import androidx.compose.runtime.Composable
@@ -93,11 +101,13 @@ class ShowSnackbarDetectorTest : LintDetectorTest() {
 
         @Composable
         fun displaySnackbar(snackbarHostState: SnackbarHostState, message: String) {}
-        """,
-    ).indented()
-
-    private val directUsageSnackbar = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val directUsageSnackbar =
+        TestFiles.kotlin(
+                """
         package com.example
 
         import androidx.compose.material3.SnackbarHostState
@@ -111,11 +121,13 @@ class ShowSnackbarDetectorTest : LintDetectorTest() {
                 hostState.showSnackbar("Hello") // VIOLATION
             }
         }
-        """,
-    ).indented()
-
-    private val subclassUsageSnackbar = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val subclassUsageSnackbar =
+        TestFiles.kotlin(
+                """
         package com.example
 
         import com.example.subclass.MySnackbarHostStateSubclass
@@ -129,11 +141,13 @@ class ShowSnackbarDetectorTest : LintDetectorTest() {
                 hostStateSubclass.showSnackbar("Hello from subclass") // VIOLATION
             }
         }
-        """,
-    ).indented()
-
-    private val wrapperUsageSnackbar = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val wrapperUsageSnackbar =
+        TestFiles.kotlin(
+                """
         package com.example
 
         import androidx.compose.material3.SnackbarHostState
@@ -145,11 +159,13 @@ class ShowSnackbarDetectorTest : LintDetectorTest() {
             val hostState = SnackbarHostState()
             displaySnackbar(hostState, "Hello from wrapper") // CLEAN
         }
-        """,
-    ).indented()
-
-    private val otherShowSnackbarMethod = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val otherShowSnackbarMethod =
+        TestFiles.kotlin(
+                """
         package com.example
 
         class OtherSnackbar {
@@ -163,48 +179,63 @@ class ShowSnackbarDetectorTest : LintDetectorTest() {
         fun simplifiedTest(){
             YetAnotherSnackbar().showSnackbar("Different again") // CLEAN
         }
-        """,
-    ).indented()
+        """
+            )
+            .indented()
 
     @Test
     fun `GIVEN direct call to SnackbarHostState_showSnackbar THEN expect lint error`() {
-        lint().files(
+        lint()
+            .files(
                 snackbarHostStateStub,
                 composableAnnotationStub,
                 kotlinxCoroutinesStubs,
                 directUsageSnackbar,
-            ).run().expectErrorCount(1).expectContains(VIOLATION_MESSAGE)
+            )
+            .run()
+            .expectErrorCount(1)
+            .expectContains(VIOLATION_MESSAGE)
     }
 
     @Test
     fun `GIVEN direct call to showSnackbar on a subclass THEN expect lint error`() {
-        lint().files(
-            snackbarHostStateStub,
-            snackbarHostStateSubclassStub,
-            composableAnnotationStub,
-            kotlinxCoroutinesStubs,
-            subclassUsageSnackbar,
-        ).run().expectErrorCount(1).expectContains(VIOLATION_MESSAGE)
+        lint()
+            .files(
+                snackbarHostStateStub,
+                snackbarHostStateSubclassStub,
+                composableAnnotationStub,
+                kotlinxCoroutinesStubs,
+                subclassUsageSnackbar,
+            )
+            .run()
+            .expectErrorCount(1)
+            .expectContains(VIOLATION_MESSAGE)
     }
 
     @Test
     fun `GIVEN call to displaySnackbar wrapper THEN expect clean`() {
-        lint().files(
-            snackbarHostStateStub,
-            composableAnnotationStub,
-            displaySnackbarStub,
-            kotlinxCoroutinesStubs,
-            wrapperUsageSnackbar,
-        ).run().expectClean()
+        lint()
+            .files(
+                snackbarHostStateStub,
+                composableAnnotationStub,
+                displaySnackbarStub,
+                kotlinxCoroutinesStubs,
+                wrapperUsageSnackbar,
+            )
+            .run()
+            .expectClean()
     }
 
     @Test
     fun `GIVEN call to a different showSnackbar method THEN expect clean`() {
-        lint().files(
-            snackbarHostStateStub,
-            composableAnnotationStub,
-            kotlinxCoroutinesStubs,
-            otherShowSnackbarMethod,
-        ).run().expectClean()
+        lint()
+            .files(
+                snackbarHostStateStub,
+                composableAnnotationStub,
+                kotlinxCoroutinesStubs,
+                otherShowSnackbarMethod,
+            )
+            .run()
+            .expectClean()
     }
 }

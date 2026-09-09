@@ -8,9 +8,7 @@ import mozilla.components.feature.top.sites.TopSitesStorage
 import mozilla.components.feature.top.sites.view.TopSitesView
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 
-/**
- * A presenter that connects the [TopSitesView] with the [TopSitesStorage].
- */
+/** A presenter that connects the [TopSitesView] with the [TopSitesStorage]. */
 interface TopSitesPresenter : LifecycleAwareFeature {
     val view: TopSitesView
     val storage: TopSitesStorage

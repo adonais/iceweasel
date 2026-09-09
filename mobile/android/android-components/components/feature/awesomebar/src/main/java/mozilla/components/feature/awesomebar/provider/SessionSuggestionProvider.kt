@@ -8,6 +8,7 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
+import java.util.UUID
 import mozilla.components.browser.icons.BrowserIcons
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.browser.state.state.BrowserState
@@ -16,7 +17,6 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.feature.awesomebar.facts.emitOpenTabSuggestionClickedFact
 import mozilla.components.feature.tabs.TabsUseCases
-import java.util.UUID
 
 /**
  * A [AwesomeBar.SuggestionProvider] implementation that provides suggestions based on the sessions in the
@@ -51,29 +51,31 @@ class SessionSuggestionProvider(
         val suggestions = mutableListOf<AwesomeBar.Suggestion>()
         val searchWords = searchText.split(" ")
 
-        distinctTabs.filter { item ->
-            !item.content.private &&
-                searchWords.all { item.contains(it) } &&
-                resultsUriFilter?.invoke(item.content.url.toUri()) != false &&
-                shouldIncludeSelectedTab(state, item)
-        }.forEach { item ->
-            val iconRequest = icons?.loadIcon(IconRequest(url = item.content.url, waitOnNetworkLoad = false))
-            suggestions.add(
-                AwesomeBar.Suggestion(
-                    provider = this,
-                    id = item.id,
-                    title = item.content.title.ifBlank { item.content.url },
-                    description = switchToTabDescription,
-                    flags = setOf(AwesomeBar.Suggestion.Flag.OPEN_TAB),
-                    icon = iconRequest?.await()?.bitmap,
-                    indicatorIcon = indicatorIcon,
-                    onSuggestionClicked = {
-                        selectTabUseCase(item.id)
-                        emitOpenTabSuggestionClickedFact()
-                    },
-                ),
-            )
-        }
+        distinctTabs
+            .filter { item ->
+                !item.content.private &&
+                    searchWords.all { item.contains(it) } &&
+                    resultsUriFilter?.invoke(item.content.url.toUri()) != false &&
+                    shouldIncludeSelectedTab(state, item)
+            }
+            .forEach { item ->
+                val iconRequest = icons?.loadIcon(IconRequest(url = item.content.url, waitOnNetworkLoad = false))
+                suggestions.add(
+                    AwesomeBar.Suggestion(
+                        provider = this,
+                        id = item.id,
+                        title = item.content.title.ifBlank { item.content.url },
+                        description = switchToTabDescription,
+                        flags = setOf(AwesomeBar.Suggestion.Flag.OPEN_TAB),
+                        icon = iconRequest?.await()?.bitmap,
+                        indicatorIcon = indicatorIcon,
+                        onSuggestionClicked = {
+                            selectTabUseCase(item.id)
+                            emitOpenTabSuggestionClickedFact()
+                        },
+                    )
+                )
+            }
 
         return suggestions
     }

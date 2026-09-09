@@ -7,9 +7,7 @@ package mozilla.components.feature.share.adapter
 import mozilla.components.feature.share.RecentApp
 import mozilla.components.feature.share.db.RecentAppEntity
 
-internal class RecentAppAdapter(
-    internal val entity: RecentAppEntity,
-) : RecentApp {
+internal class RecentAppAdapter(internal val entity: RecentAppEntity) : RecentApp {
 
     override val activityName: String
         get() = entity.activityName

@@ -1160,6 +1160,12 @@ RtpVideoStreamReceiver2::GetSenderReportStats() const {
   return rtp_rtcp_->GetSenderReportStats();
 }
 
+std::optional<RtpRtcpInterface::NonSenderRttStats>
+RtpVideoStreamReceiver2::GetNonSenderRttStats() const {
+  RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
+  return rtp_rtcp_->GetNonSenderRttStats();
+}
+
 std::optional<VideoCodecType> RtpVideoStreamReceiver2::GetCodecFromPayloadType(
     uint8_t payload_type) const {
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);

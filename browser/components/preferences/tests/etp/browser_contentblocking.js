@@ -25,8 +25,6 @@ const PREF_TEST_NOTIFICATIONS =
   "browser.safebrowsing.test-notifications.enabled";
 const STRICT_PREF = "browser.contentblocking.features.strict";
 const PRIVACY_PAGE = "about:preferences#privacy";
-const ISOLATE_UI_PREF =
-  "browser.contentblocking.reject-and-isolate-cookies.preferences.ui.enabled";
 const FPI_PREF = "privacy.firstparty.isolate";
 const FPP_PREF = "privacy.fingerprintingProtection";
 const FPP_PBM_PREF = "privacy.fingerprintingProtection.pbmode";
@@ -90,7 +88,6 @@ add_task(async function testContentBlockingMainCategory() {
     [STP_PREF, false],
     [NCB_PREF, Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER],
     [NCBP_PREF, Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN],
-    [ISOLATE_UI_PREF, true],
     [FPI_PREF, false],
     [FPP_PREF, false],
     [FPP_PBM_PREF, true],
@@ -271,20 +268,6 @@ add_task(async function testContentBlockingMainCategory() {
     Services.prefs.getIntPref(NCBP_PREF),
     Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
     `${NCBP_PREF} has been set to ${Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN}`
-  );
-
-  gBrowser.removeCurrentTab();
-
-  // Ensure the isolate option only shows in the dropdown if the UI pref is set.
-  Services.prefs.setBoolPref(ISOLATE_UI_PREF, false);
-  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
-  doc = gBrowser.contentDocument;
-  cookieMenuTrackersPlusIsolate = doc.querySelector(
-    "#blockCookiesMenu menupopup > menuitem[value=isolate]"
-  );
-  ok(
-    cookieMenuTrackersPlusIsolate.hidden,
-    "Trackers plus isolate option is hidden from the dropdown if the ui pref is not set."
   );
 
   gBrowser.removeCurrentTab();

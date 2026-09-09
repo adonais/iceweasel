@@ -117,6 +117,12 @@ let AVAILABLE_PIP_OVERRIDES;
       "https://player.ceskatelevize.cz/*": {
         showHiddenTextTracks: true,
       },
+      "https://sport.ceskatelevize.cz/*": {
+        showHiddenTextTracks: true,
+      },
+      "https://www.ceskatelevize.cz/zive/*": {
+        showHiddenTextTracks: true,
+      },
     },
 
     cnbc: {

@@ -23,37 +23,33 @@ class DefaultCreditCardsManagementControllerTest {
 
     @Before
     fun setup() {
-        controller = spyk(
-            DefaultCreditCardsManagementController(
-                navController = navController,
-            ),
-        )
+        controller = spyk(DefaultCreditCardsManagementController(navController = navController))
     }
 
     @Test
     fun handleCreditCardClicked() {
-        val creditCard = CreditCard(
-            guid = "id",
-            billingName = "Banana Apple",
-            expiryMonth = 1,
-            encryptedCardNumber = CreditCardNumber.Encrypted("4111111111111110"),
-            cardNumberLast4 = "1110",
-            expiryYear = 2030,
-            cardType = CreditCardNetworkType.AMEX.cardName,
-            timeCreated = 1L,
-            timeLastUsed = 1L,
-            timeLastModified = 1L,
-            timesUsed = 1L,
-        )
+        val creditCard =
+            CreditCard(
+                guid = "id",
+                billingName = "Banana Apple",
+                expiryMonth = 1,
+                encryptedCardNumber = CreditCardNumber.Encrypted("4111111111111110"),
+                cardNumberLast4 = "1110",
+                expiryYear = 2030,
+                cardType = CreditCardNetworkType.AMEX.cardName,
+                timeCreated = 1L,
+                timeLastUsed = 1L,
+                timeLastModified = 1L,
+                timesUsed = 1L,
+            )
 
         controller.handleCreditCardClicked(creditCard)
 
         verify {
             navController.navigate(
-                CreditCardsManagementFragmentDirections
-                    .actionCreditCardsManagementFragmentToCreditCardEditorFragment(
-                        creditCard = creditCard,
-                    ),
+                CreditCardsManagementFragmentDirections.actionCreditCardsManagementFragmentToCreditCardEditorFragment(
+                    creditCard = creditCard
+                )
             )
         }
     }
@@ -64,7 +60,7 @@ class DefaultCreditCardsManagementControllerTest {
 
         verify {
             navController.navigate(
-                CreditCardsManagementFragmentDirections.actionCreditCardsManagementFragmentToCreditCardEditorFragment(),
+                CreditCardsManagementFragmentDirections.actionCreditCardsManagementFragmentToCreditCardEditorFragment()
             )
         }
     }

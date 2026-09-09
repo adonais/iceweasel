@@ -29,15 +29,16 @@ class SyncedTabsCommandsFlushWorkerTest {
     }
 
     @Test
-    fun `GIVEN a successfully flushed queue WHEN the worker runs THEN the work should complete successfully`() = runTest {
-        whenever(commands.flush()).thenReturn(DeviceCommandQueue.FlushResult.ok())
+    fun `GIVEN a successfully flushed queue WHEN the worker runs THEN the work should complete successfully`() =
+        runTest {
+            whenever(commands.flush()).thenReturn(DeviceCommandQueue.FlushResult.ok())
 
-        val worker = TestListenableWorkerBuilder<SyncedTabsCommandsFlushWorker>(testContext).build()
-        val workerResult = worker.startWork().await()
+            val worker = TestListenableWorkerBuilder<SyncedTabsCommandsFlushWorker>(testContext).build()
+            val workerResult = worker.startWork().await()
 
-        verify(commands).flush()
-        assertEquals(ListenableWorker.Result.success(), workerResult)
-    }
+            verify(commands).flush()
+            assertEquals(ListenableWorker.Result.success(), workerResult)
+        }
 
     @Test
     fun `GIVEN a queue that should be flushed again WHEN the worker runs THEN the work should be retried`() = runTest {

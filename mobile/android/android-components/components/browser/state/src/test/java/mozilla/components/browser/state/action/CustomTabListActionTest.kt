@@ -24,11 +24,12 @@ class CustomTabListActionTest {
         assertEquals(0, state.customTabs.size)
 
         val config = CustomTabConfig()
-        val customTab = createCustomTab(
-            "https://www.mozilla.org",
-            config = config,
-            source = SessionState.Source.Internal.CustomTab,
-        )
+        val customTab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                config = config,
+                source = SessionState.Source.Internal.CustomTab,
+            )
 
         state = BrowserStateReducer.reduce(state, CustomTabListAction.AddCustomTabAction(customTab))
 

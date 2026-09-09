@@ -8,119 +8,131 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import mozilla.components.feature.awesomebar.optimizedsuggestions.FlightData
 import mozilla.components.feature.awesomebar.optimizedsuggestions.FlightSuggestionStatus
 
-internal class FlightSuggestionDataProvider :
-    PreviewParameterProvider<FlightSuggestionPreviewModel> {
+internal class FlightSuggestionDataProvider : PreviewParameterProvider<FlightSuggestionPreviewModel> {
 
-    override val values = sequenceOf(
-        FlightSuggestionPreviewModel(
-            flightNumber = "AA123",
-            airlineName = "American Airlines",
-            flightStatus = FlightSuggestionStatus.IN_FLIGHT,
-            progress = 0.74f,
-            departureFlightData = FlightData(
-                airportCity = "Los Angeles",
-                airportCode = "LAX",
-                time = "1:05 PM",
-                date = "Jun 4",
+    override val values =
+        sequenceOf(
+            FlightSuggestionPreviewModel(
+                flightNumber = "AA123",
+                airlineName = "American Airlines",
+                flightStatus = FlightSuggestionStatus.IN_FLIGHT,
+                progress = 0.74f,
+                departureFlightData =
+                    FlightData(
+                        airportCity = "Los Angeles",
+                        airportCode = "LAX",
+                        time = "1:05 PM",
+                        date = "Jun 4",
+                    ),
+                arrivalFlightData =
+                    FlightData(
+                        airportCity = "New York",
+                        airportCode = "JFK",
+                        time = "6:18 PM",
+                        date = "Jun 4",
+                    ),
             ),
-            arrivalFlightData = FlightData(
-                airportCity = "New York",
-                airportCode = "JFK",
-                time = "6:18 PM",
-                date = "Jun 4",
+            FlightSuggestionPreviewModel(
+                flightNumber = "AA123",
+                airlineName = "American Airlines",
+                flightStatus = FlightSuggestionStatus.DELAYED,
+                progress = 0.43f,
+                departureFlightData =
+                    FlightData(
+                        airportCity = "Los Angeles",
+                        airportCode = "LAX",
+                        time = "1:05 PM",
+                        date = "Jun 4",
+                    ),
+                arrivalFlightData =
+                    FlightData(
+                        airportCity = "New York",
+                        airportCode = "JFK",
+                        time = "6:18 PM",
+                        date = "Jun 4",
+                    ),
             ),
-        ),
-        FlightSuggestionPreviewModel(
-            flightNumber = "AA123",
-            airlineName = "American Airlines",
-            flightStatus = FlightSuggestionStatus.DELAYED,
-            progress = 0.43f,
-            departureFlightData = FlightData(
-                airportCity = "Los Angeles",
-                airportCode = "LAX",
-                time = "1:05 PM",
-                date = "Jun 4",
+            FlightSuggestionPreviewModel(
+                flightNumber = "AA123",
+                airlineName = "American Airlines",
+                flightStatus = FlightSuggestionStatus.DELAYED,
+                progress = 0f,
+                departureFlightData =
+                    FlightData(
+                        airportCity = "Los Angeles",
+                        airportCode = "LAX",
+                        time = "1:05 PM",
+                        date = "Jun 4",
+                    ),
+                arrivalFlightData =
+                    FlightData(
+                        airportCity = "New York",
+                        airportCode = "JFK",
+                        time = "6:18 PM",
+                        date = "Jun 4",
+                    ),
             ),
-            arrivalFlightData = FlightData(
-                airportCity = "New York",
-                airportCode = "JFK",
-                time = "6:18 PM",
-                date = "Jun 4",
+            FlightSuggestionPreviewModel(
+                flightNumber = "AA123",
+                airlineName = "American Airlines",
+                flightStatus = FlightSuggestionStatus.CANCELLED,
+                progress = 1f,
+                departureFlightData =
+                    FlightData(
+                        airportCity = "Los Angeles",
+                        airportCode = "LAX",
+                        time = "1:05 PM",
+                        date = "Jun 4",
+                    ),
+                arrivalFlightData =
+                    FlightData(
+                        airportCity = "New York",
+                        airportCode = "JFK",
+                        time = "6:18 PM",
+                        date = "Jun 4",
+                    ),
             ),
-        ),
-        FlightSuggestionPreviewModel(
-            flightNumber = "AA123",
-            airlineName = "American Airlines",
-            flightStatus = FlightSuggestionStatus.DELAYED,
-            progress = 0f,
-            departureFlightData = FlightData(
-                airportCity = "Los Angeles",
-                airportCode = "LAX",
-                time = "1:05 PM",
-                date = "Jun 4",
+            FlightSuggestionPreviewModel(
+                flightNumber = "AA123",
+                airlineName = "American Airlines",
+                flightStatus = FlightSuggestionStatus.ON_TIME,
+                progress = 0f,
+                departureFlightData =
+                    FlightData(
+                        airportCity = "Los Angeles",
+                        airportCode = "LAX",
+                        time = "1:05 PM",
+                        date = "Jun 4",
+                    ),
+                arrivalFlightData =
+                    FlightData(
+                        airportCity = "New York",
+                        airportCode = "JFK",
+                        time = "6:18 PM",
+                        date = "Jun 4",
+                    ),
             ),
-            arrivalFlightData = FlightData(
-                airportCity = "New York",
-                airportCode = "JFK",
-                time = "6:18 PM",
-                date = "Jun 4",
+            FlightSuggestionPreviewModel(
+                flightNumber = "AA123",
+                airlineName = "American Airlines",
+                flightStatus = FlightSuggestionStatus.ARRIVED,
+                progress = 1f,
+                departureFlightData =
+                    FlightData(
+                        airportCity = "Los Angeles",
+                        airportCode = "LAX",
+                        time = "1:05 PM",
+                        date = "Jun 4",
+                    ),
+                arrivalFlightData =
+                    FlightData(
+                        airportCity = "New York",
+                        airportCode = "JFK",
+                        time = "6:18 PM",
+                        date = "Jun 4",
+                    ),
             ),
-        ),
-        FlightSuggestionPreviewModel(
-            flightNumber = "AA123",
-            airlineName = "American Airlines",
-            flightStatus = FlightSuggestionStatus.CANCELLED,
-            progress = 1f,
-            departureFlightData = FlightData(
-                airportCity = "Los Angeles",
-                airportCode = "LAX",
-                time = "1:05 PM",
-                date = "Jun 4",
-            ),
-            arrivalFlightData = FlightData(
-                airportCity = "New York",
-                airportCode = "JFK",
-                time = "6:18 PM",
-                date = "Jun 4",
-            ),
-        ),
-        FlightSuggestionPreviewModel(
-            flightNumber = "AA123",
-            airlineName = "American Airlines",
-            flightStatus = FlightSuggestionStatus.ON_TIME,
-            progress = 0f,
-            departureFlightData = FlightData(
-                airportCity = "Los Angeles",
-                airportCode = "LAX",
-                time = "1:05 PM",
-                date = "Jun 4",
-            ),
-            arrivalFlightData = FlightData(
-                airportCity = "New York",
-                airportCode = "JFK",
-                time = "6:18 PM",
-                date = "Jun 4",
-            ),
-        ),
-        FlightSuggestionPreviewModel(
-            flightNumber = "AA123",
-            airlineName = "American Airlines",
-            flightStatus = FlightSuggestionStatus.ARRIVED,
-            progress = 1f,
-            departureFlightData = FlightData(
-                airportCity = "Los Angeles",
-                airportCode = "LAX",
-                time = "1:05 PM",
-                date = "Jun 4",
-            ),
-            arrivalFlightData = FlightData(
-                airportCity = "New York",
-                airportCode = "JFK",
-                time = "6:18 PM",
-                date = "Jun 4",
-            ),
-        ),
-    )
+        )
 }
 
 internal data class FlightSuggestionPreviewModel(

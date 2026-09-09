@@ -11,6 +11,7 @@ import mozilla.components.browser.state.state.SessionState
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
 import mozilla.components.feature.customtabs.CustomTabIntentProcessor
 import mozilla.components.feature.intent.ext.getSessionId
+import mozilla.components.feature.intent.processing.IntentProcessor as ComponentsIntentProcessor
 import mozilla.components.feature.intent.processing.TabIntentProcessor
 import mozilla.components.feature.search.SearchUseCases
 import mozilla.components.feature.tabs.CustomTabsUseCases
@@ -19,12 +20,11 @@ import mozilla.components.support.utils.SafeIntent
 import org.mozilla.focus.activity.TextActionActivity
 import org.mozilla.focus.ext.components
 import org.mozilla.focus.shortcut.HomeScreen
-import mozilla.components.feature.intent.processing.IntentProcessor as ComponentsIntentProcessor
 
 /**
- * Focus-specific [mozilla.components.feature.intent.processing.IntentProcessor] implementation.
- * It uses [TabIntentProcessor] and [CustomTabIntentProcessor] internally to handle standard intents
- * and adds Focus-specific logic for home screen shortcuts and text selection.
+ * Focus-specific [mozilla.components.feature.intent.processing.IntentProcessor] implementation. It uses
+ * [TabIntentProcessor] and [CustomTabIntentProcessor] internally to handle standard intents and adds Focus-specific
+ * logic for home screen shortcuts and text selection.
  *
  * @param context The application context.
  * @param tabsUseCases Use cases for managing browser tabs.
@@ -38,35 +38,29 @@ class IntentProcessor(
     searchUseCases: SearchUseCases,
 ) : ComponentsIntentProcessor {
 
-    private val tabIntentProcessor = TabIntentProcessor(
-        tabsUseCases,
-        searchUseCases.newTabSearch,
-        isPrivate = true,
-    )
+    private val tabIntentProcessor =
+        TabIntentProcessor(
+            tabsUseCases,
+            searchUseCases.newTabSearch,
+            isPrivate = true,
+        )
 
-    private val customTabIntentProcessor = CustomTabIntentProcessor(
-        customTabsUseCases.add,
-        context.resources,
-        isPrivate = true,
-    )
+    private val customTabIntentProcessor =
+        CustomTabIntentProcessor(
+            customTabsUseCases.add,
+            context.resources,
+            isPrivate = true,
+        )
 
-    /**
-     * Represents the result of processing an intent.
-     */
+    /** Represents the result of processing an intent. */
     sealed class Result {
-        /**
-         * No action was taken.
-         */
+        /** No action was taken. */
         object None : Result()
 
-        /**
-         * A new standard tab was created.
-         */
+        /** A new standard tab was created. */
         object Tab : Result()
 
-        /**
-         * A new custom tab was created.
-         */
+        /** A new custom tab was created. */
         data class CustomTab(val id: String) : Result()
     }
 
@@ -100,12 +94,13 @@ class IntentProcessor(
         return when {
             safeIntent.hasExtra(HomeScreen.ADD_TO_HOMESCREEN_TAG) -> {
                 val requestDesktop = safeIntent.getBooleanExtra(HomeScreen.REQUEST_DESKTOP, false)
-                val tabId = tabsUseCases.addTab(
-                    safeIntent.dataString ?: "",
-                    source = SessionState.Source.Internal.HomeScreen,
-                    private = true,
-                    flags = LoadUrlFlags.external(),
-                )
+                val tabId =
+                    tabsUseCases.addTab(
+                        safeIntent.dataString ?: "",
+                        source = SessionState.Source.Internal.HomeScreen,
+                        private = true,
+                        flags = LoadUrlFlags.external(),
+                    )
                 if (requestDesktop) {
                     context.components.sessionUseCases.requestDesktopSite(true, tabId)
                 }

@@ -16,8 +16,8 @@ import mozilla.components.support.ktx.android.content.pixelSizeFor
 import org.mozilla.fenix.R
 
 /**
- * Displays a custom [MaterialAlertDialogBuilder] for an [EditTextPreference].
- * This provides a consistent look and feel for text input dialogs across different settings screens.
+ * Displays a custom [MaterialAlertDialogBuilder] for an [EditTextPreference]. This provides a consistent look and feel
+ * for text input dialogs across different settings screens.
  *
  * @param preference The [Preference] that was clicked.
  * @param onSuccess An optional lambda to execute custom actions after the value is successfully changed.
@@ -35,37 +35,42 @@ fun PreferenceFragmentCompat.showCustomEditTextPreferenceDialog(
 
     val textInputLayout = TextInputLayout(context).apply { isErrorEnabled = true }
 
-    val editText = TextInputEditText(context).apply {
-        setText(preference.text)
-        addTextChangedListener(
-            object : TextWatcher {
-                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-                    // No-op
+    val editText =
+        TextInputEditText(context).apply {
+            setText(preference.text)
+            addTextChangedListener(
+                object : TextWatcher {
+                    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                        // No-op
+                    }
+
+                    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                        textInputLayout.error = null
+                    }
+
+                    override fun afterTextChanged(s: Editable?) {
+                        // No-op
+                    }
                 }
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    textInputLayout.error = null
-                }
-                override fun afterTextChanged(s: Editable?) {
-                    // No-op
-                }
-            },
-        )
-    }
+            )
+        }
 
     textInputLayout.addView(editText)
 
-    val container = FrameLayout(context).apply {
-        val horizontalPadding = context.pixelSizeFor(R.dimen.dialog_edit_text_horizontal_padding)
-        setPadding(horizontalPadding, 0, horizontalPadding, 0)
-        addView(textInputLayout)
-    }
+    val container =
+        FrameLayout(context).apply {
+            val horizontalPadding = context.pixelSizeFor(R.dimen.dialog_edit_text_horizontal_padding)
+            setPadding(horizontalPadding, 0, horizontalPadding, 0)
+            addView(textInputLayout)
+        }
 
-    val dialog = MaterialAlertDialogBuilder(context)
-        .setTitle(preference.dialogTitle ?: preference.title)
-        .setView(container)
-        .setPositiveButton(android.R.string.ok, null)
-        .setNegativeButton(android.R.string.cancel, null)
-        .create()
+    val dialog =
+        MaterialAlertDialogBuilder(context)
+            .setTitle(preference.dialogTitle ?: preference.title)
+            .setView(container)
+            .setPositiveButton(android.R.string.ok, null)
+            .setNegativeButton(android.R.string.cancel, null)
+            .create()
 
     dialog.show()
 

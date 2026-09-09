@@ -9,13 +9,9 @@ import mozilla.components.support.base.facts.Action
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.collect
 
-/**
- * Facts emitted for telemetry related to the Autofill prompt feature for addresses.
- */
+/** Facts emitted for telemetry related to the Autofill prompt feature for addresses. */
 class AddressAutofillDialogFacts {
-    /**
-     * Specific types of telemetry items.
-     */
+    /** Specific types of telemetry items. */
     object Items {
         const val AUTOFILL_ADDRESS_FORM_DETECTED = "autofill_address_form_detected"
         const val AUTOFILL_ADDRESS_SUCCESS = "autofill_address_success"
@@ -23,6 +19,9 @@ class AddressAutofillDialogFacts {
         const val AUTOFILL_ADDRESS_PROMPT_EXPANDED = "autofill_address_prompt_expanded"
         const val AUTOFILL_ADDRESS_PROMPT_DISMISSED = "autofill_address_prompt_dismissed"
         const val AUTOFILL_ADDRESS_SAVE_PROMPT_SHOWN = "autofill_address_save_prompt_shown"
+        const val AUTOFILL_ADDRESS_SAVE_PROMPT_DISMISSED = "autofill_address_save_prompt_dismissed"
+        const val AUTOFILL_ADDRESS_CREATED = "autofill_address_created"
+        const val AUTOFILL_ADDRESS_UPDATED = "autofill_address_updated"
     }
 }
 
@@ -33,12 +32,13 @@ private fun emitAddressAutofillDialogFact(
     metadata: Map<String, Any>? = null,
 ) {
     Fact(
-        Component.FEATURE_PROMPTS,
-        action,
-        item,
-        value,
-        metadata,
-    ).collect()
+            Component.FEATURE_PROMPTS,
+            action,
+            item,
+            value,
+            metadata,
+        )
+        .collect()
 }
 
 internal fun emitSuccessfulAddressAutofillFormDetectedFact() {
@@ -80,5 +80,26 @@ internal fun emitAddressSaveShownFact() {
     emitAddressAutofillDialogFact(
         Action.INTERACTION,
         AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_SAVE_PROMPT_SHOWN,
+    )
+}
+
+internal fun emitAddressSaveDismissedFact() {
+    emitAddressAutofillDialogFact(
+        Action.INTERACTION,
+        AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_SAVE_PROMPT_DISMISSED,
+    )
+}
+
+internal fun emitAddressAutofillCreatedFact() {
+    emitAddressAutofillDialogFact(
+        Action.CONFIRM,
+        AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_CREATED,
+    )
+}
+
+internal fun emitAddressAutofillUpdatedFact() {
+    emitAddressAutofillDialogFact(
+        Action.CONFIRM,
+        AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_UPDATED,
     )
 }

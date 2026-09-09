@@ -16,13 +16,13 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import org.junit.Test
 import org.mozilla.fenix.tabstray.controller.NoOpTabInteractionHandler
 import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class ReorderableGridTest {
     private val testDispatcher = StandardTestDispatcher()
@@ -33,25 +33,27 @@ class ReorderableGridTest {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
         val dragItemOffset = IntOffset(10, 0)
         val targetItemOffset = IntOffset(30, 0)
-        val reorderState = fakeGridReorderState(
-            mockGridState(
-                mockItems = listOf(
-                    mockk<LazyGridItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns IntSize(10, 10)
-                        every { offset } returns dragItemOffset
-                    },
-                    mockk<LazyGridItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 1
-                        every { size } returns IntSize(10, 10)
-                        every { offset } returns targetItemOffset
-                    },
+        val reorderState =
+            fakeGridReorderState(
+                mockGridState(
+                    mockItems =
+                        listOf(
+                            mockk<LazyGridItemInfo> {
+                                every { key } returns "key1"
+                                every { index } returns 1
+                                every { size } returns IntSize(10, 10)
+                                every { offset } returns dragItemOffset
+                            },
+                            mockk<LazyGridItemInfo> {
+                                every { key } returns "key2"
+                                every { index } returns 1
+                                every { size } returns IntSize(10, 10)
+                                every { offset } returns targetItemOffset
+                            },
+                        )
                 ),
-            ),
-            handler = handler,
-        )
+                handler = handler,
+            )
 
         reorderState.onTouchSlopPassed(dragItemOffset.toOffset(), false)
         reorderState.onDrag(offset = Offset(20f, 0f), preserveSelectMode = false) // 20 to the right
@@ -64,25 +66,27 @@ class ReorderableGridTest {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
         val targetItemOffset = IntOffset(10, 0)
         val draggedItemOffset = IntOffset(30, 0)
-        val reorderState = fakeGridReorderState(
-            mockGridState(
-                mockItems = listOf(
-                    mockk<LazyGridItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns IntSize(10, 10)
-                        every { offset } returns targetItemOffset
-                    },
-                    mockk<LazyGridItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 1
-                        every { size } returns IntSize(10, 10)
-                        every { offset } returns draggedItemOffset
-                    },
+        val reorderState =
+            fakeGridReorderState(
+                mockGridState(
+                    mockItems =
+                        listOf(
+                            mockk<LazyGridItemInfo> {
+                                every { key } returns "key1"
+                                every { index } returns 1
+                                every { size } returns IntSize(10, 10)
+                                every { offset } returns targetItemOffset
+                            },
+                            mockk<LazyGridItemInfo> {
+                                every { key } returns "key2"
+                                every { index } returns 1
+                                every { size } returns IntSize(10, 10)
+                                every { offset } returns draggedItemOffset
+                            },
+                        )
                 ),
-            ),
-            handler = handler,
-        )
+                handler = handler,
+            )
 
         reorderState.onTouchSlopPassed(draggedItemOffset.toOffset(), false)
         reorderState.onDrag(offset = Offset(-20f, 0f), preserveSelectMode = false) // 20 to the left
@@ -107,25 +111,27 @@ class ReorderableGridTest {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
         val targetItemOffset = IntOffset(10, 0)
         val draggedItemOffset = IntOffset(30, 0)
-        val reorderState = fakeGridReorderState(
-            mockGridState(
-                mockItems = listOf(
-                    mockk<LazyGridItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns IntSize(10, 10)
-                        every { offset } returns targetItemOffset
-                    },
-                    mockk<LazyGridItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 2
-                        every { size } returns IntSize(10, 10)
-                        every { offset } returns draggedItemOffset
-                    },
+        val reorderState =
+            fakeGridReorderState(
+                mockGridState(
+                    mockItems =
+                        listOf(
+                            mockk<LazyGridItemInfo> {
+                                every { key } returns "key1"
+                                every { index } returns 1
+                                every { size } returns IntSize(10, 10)
+                                every { offset } returns targetItemOffset
+                            },
+                            mockk<LazyGridItemInfo> {
+                                every { key } returns "key2"
+                                every { index } returns 2
+                                every { size } returns IntSize(10, 10)
+                                every { offset } returns draggedItemOffset
+                            },
+                        )
                 ),
-            ),
-            handler = handler,
-        )
+                handler = handler,
+            )
 
         reorderState.onTouchSlopPassed(draggedItemOffset.toOffset(), false)
         reorderState.onDragInterrupted()
@@ -138,25 +144,27 @@ class ReorderableGridTest {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
         val targetItemOffset = IntOffset(10, 0)
         val draggedItemOffset = IntOffset(30, 0)
-        val reorderState = fakeGridReorderState(
-            mockGridState(
-                mockItems = listOf(
-                    mockk<LazyGridItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns IntSize(10, 10)
-                        every { offset } returns targetItemOffset
-                    },
-                    mockk<LazyGridItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 2
-                        every { size } returns IntSize(10, 10)
-                        every { offset } returns draggedItemOffset
-                    },
+        val reorderState =
+            fakeGridReorderState(
+                mockGridState(
+                    mockItems =
+                        listOf(
+                            mockk<LazyGridItemInfo> {
+                                every { key } returns "key1"
+                                every { index } returns 1
+                                every { size } returns IntSize(10, 10)
+                                every { offset } returns targetItemOffset
+                            },
+                            mockk<LazyGridItemInfo> {
+                                every { key } returns "key2"
+                                every { index } returns 2
+                                every { size } returns IntSize(10, 10)
+                                every { offset } returns draggedItemOffset
+                            },
+                        )
                 ),
-            ),
-            handler = handler,
-        )
+                handler = handler,
+            )
 
         reorderState.onTouchSlopPassed(draggedItemOffset.toOffset(), false)
         reorderState.onDrag(offset = Offset(20f, 0f), preserveSelectMode = false) // 20 to the right
@@ -170,25 +178,27 @@ class ReorderableGridTest {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
         val dragItemOffset = IntOffset(10, 0)
         val targetItemOffset = IntOffset(30, 0)
-        val reorderState = fakeGridReorderState(
-            mockGridState(
-                mockItems = listOf(
-                    mockk<LazyGridItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns IntSize(10, 10)
-                        every { offset } returns dragItemOffset
-                    },
-                    mockk<LazyGridItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 2
-                        every { size } returns IntSize(10, 10)
-                        every { offset } returns targetItemOffset
-                    },
+        val reorderState =
+            fakeGridReorderState(
+                mockGridState(
+                    mockItems =
+                        listOf(
+                            mockk<LazyGridItemInfo> {
+                                every { key } returns "key1"
+                                every { index } returns 1
+                                every { size } returns IntSize(10, 10)
+                                every { offset } returns dragItemOffset
+                            },
+                            mockk<LazyGridItemInfo> {
+                                every { key } returns "key2"
+                                every { index } returns 2
+                                every { size } returns IntSize(10, 10)
+                                every { offset } returns targetItemOffset
+                            },
+                        )
                 ),
-            ),
-            handler = handler,
-        )
+                handler = handler,
+            )
 
         reorderState.onTouchSlopPassed(dragItemOffset.toOffset(), true)
         reorderState.onDrag(offset = Offset(50f, 0f), preserveSelectMode = true) // 50 to the right
@@ -201,25 +211,27 @@ class ReorderableGridTest {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
         val dragItemOffset = IntOffset(10, 0)
         val targetItemOffset = IntOffset(30, 0)
-        val reorderState = fakeGridReorderState(
-            mockGridState(
-                mockItems = listOf(
-                    mockk<LazyGridItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns IntSize(10, 10)
-                        every { offset } returns dragItemOffset
-                    },
-                    mockk<LazyGridItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 2
-                        every { size } returns IntSize(10, 10)
-                        every { offset } returns targetItemOffset
-                    },
+        val reorderState =
+            fakeGridReorderState(
+                mockGridState(
+                    mockItems =
+                        listOf(
+                            mockk<LazyGridItemInfo> {
+                                every { key } returns "key1"
+                                every { index } returns 1
+                                every { size } returns IntSize(10, 10)
+                                every { offset } returns dragItemOffset
+                            },
+                            mockk<LazyGridItemInfo> {
+                                every { key } returns "key2"
+                                every { index } returns 2
+                                every { size } returns IntSize(10, 10)
+                                every { offset } returns targetItemOffset
+                            },
+                        )
                 ),
-            ),
-            handler = handler,
-        )
+                handler = handler,
+            )
 
         reorderState.onTouchSlopPassed(dragItemOffset.toOffset(), false)
         reorderState.onDrag(Offset(50f, 0f), preserveSelectMode = false) // 50 to the right
@@ -258,9 +270,10 @@ class ReorderableGridTest {
             touchSlop = 0f,
             ignoredItems = emptyList(),
             onLongPress = { _ -> },
-            hapticFeedback = mockk<HapticFeedback> {
-                every { performHapticFeedback(any()) } just Runs
-            },
+            hapticFeedback =
+                mockk<HapticFeedback> {
+                    every { performHapticFeedback(any()) } just Runs
+                },
             onMove = { initialTab, newTab ->
                 handler.onMove(
                     (initialTab.key as String),

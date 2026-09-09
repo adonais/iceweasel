@@ -417,6 +417,9 @@ class LookAndFeel {
 
   static bool IsDarkColor(nscolor);
 
+  static Maybe<ColorScheme> ExplicitColorSchemeForStyle(
+      const dom::Document&, const StyleColorSchemeFlags&);
+  static Maybe<ColorScheme> ExplicitColorSchemeForFrame(const nsIFrame*);
   static ColorScheme ColorSchemeForStyle(
       const dom::Document&, const StyleColorSchemeFlags&,
       ColorSchemeMode = ColorSchemeMode::Used);

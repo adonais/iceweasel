@@ -34,6 +34,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.IconButton
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.controller.NoOpTabInteractionHandler
@@ -47,10 +48,10 @@ import org.mozilla.fenix.tabstray.ui.tabitems.LOREM_IPSUM
 import org.mozilla.fenix.tabstray.ui.tabitems.TabGroupMenuButton
 import org.mozilla.fenix.tabstray.ui.tabpage.TabLayout
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Renders an expanded view of a user's tab group.
+ *
  * @param group [TabsTrayItem.TabGroup] item rendered by the card.
  * @param actions [ExpandedTabGroupActions] invoked in response to user interactions.
  * @param displayTabsInGrid Whether the group's tabs are displayed in a grid (vs a list).
@@ -65,12 +66,12 @@ fun ExpandedTabGroup(
     tabInteractionHandler: TabInteractionHandler,
 ) {
     Column(
-        modifier = Modifier
-            .testTag(TabsTrayTestTag.TAB_GROUP_BOTTOM_SHEET_ROOT)
-            .padding(
-                start = FirefoxTheme.layout.space.dynamic200,
-                end = FirefoxTheme.layout.space.dynamic200,
-            ),
+        modifier =
+            Modifier.testTag(TabsTrayTestTag.TAB_GROUP_BOTTOM_SHEET_ROOT)
+                .padding(
+                    start = FirefoxTheme.layout.space.dynamic200,
+                    end = FirefoxTheme.layout.space.dynamic200,
+                )
     ) {
         ViewTabGroupHeader(
             title = group.title,
@@ -93,11 +94,11 @@ fun ExpandedTabGroup(
             onTabClose = actions.onTabClose,
             onItemClick = actions.onItemClick,
             onItemLongClick = { item -> }, // Ignore long click
-            onEditTabGroupClick = { }, // Ignore tab group edits
-            onCloseTabGroupClick = { }, // Ignore tab group closes
-            onShareTabGroupClick = { }, // Ignore tab group shares
-            onDeleteTabGroupClick = { }, // Ignore tab group deletes
-            onTabGroupOnboardingDismiss = { }, // Ignore onboarding dismissals - onboarding is not shown in this layout
+            onEditTabGroupClick = {}, // Ignore tab group edits
+            onCloseTabGroupClick = {}, // Ignore tab group closes
+            onShareTabGroupClick = {}, // Ignore tab group shares
+            onDeleteTabGroupClick = {}, // Ignore tab group deletes
+            onTabGroupOnboardingDismiss = {}, // Ignore onboarding dismissals - onboarding is not shown in this layout
             contentPadding = PaddingValues(0.dp), // TabLayout should not have its own content padding inside this view
             listHorizontalPadding = 0.dp, // The list layout should not add its own horizontal padding inside this view
             focusEnabled = true, // Drag and drop is not possible in this view, so focus should never be suppressed
@@ -113,27 +114,27 @@ private fun ViewTabGroupHeader(
     actions: ExpandedTabGroupActions,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(
-                top = FirefoxTheme.layout.space.static150,
-                bottom = FirefoxTheme.layout.space.static200,
-            )
-            .wrapContentHeight(),
+        modifier =
+            Modifier.fillMaxWidth()
+                .padding(
+                    top = FirefoxTheme.layout.space.static150,
+                    bottom = FirefoxTheme.layout.space.static200,
+                )
+                .wrapContentHeight(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val headerContentDescription = pluralStringResource(
-            id = R.plurals.expanded_tab_group_header_description,
-            count = groupTabsSize,
-            title,
-            groupTabsSize,
-            groupTheme.contentLabel,
-        )
+        val headerContentDescription =
+            pluralStringResource(
+                id = R.plurals.expanded_tab_group_header_description,
+                count = groupTabsSize,
+                title,
+                groupTabsSize,
+                groupTheme.contentLabel,
+            )
 
         Row(
-            modifier = Modifier
-                .weight(1f)
-                .semantics(mergeDescendants = true) {
+            modifier =
+                Modifier.weight(1f).semantics(mergeDescendants = true) {
                     heading()
                     contentDescription = headerContentDescription
                 },
@@ -145,9 +146,7 @@ private fun ViewTabGroupHeader(
 
             Text(
                 text = title,
-                modifier = Modifier
-                    .weight(1f)
-                    .clearAndSetSemantics { },
+                modifier = Modifier.weight(1f).clearAndSetSemantics {},
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -155,18 +154,11 @@ private fun ViewTabGroupHeader(
             )
         }
 
-        Spacer(
-            modifier = Modifier.width(
-                FirefoxTheme.layout.space.static200 +
-                    FirefoxTheme.layout.space.static25,
-            ),
-        )
+        Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static200 + FirefoxTheme.layout.space.static25))
 
         val onAddNewTabClick = actions.onAddNewTabClick
         if (onAddNewTabClick != null) {
-            AddTabToGroupButton(
-                onClick = onAddNewTabClick,
-            )
+            AddTabToGroupButton(onClick = onAddNewTabClick)
 
             Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
         }
@@ -204,22 +196,22 @@ private fun AddTabToGroupButton(
 @FlexibleWindowLightDarkPreview
 @Composable
 private fun ExpandedTabGroupPreview(
-    @PreviewParameter(ExpandedTabGroupPreviewProvider::class)
-    previewState: ExpandedTabGroupPreviewState,
+    @PreviewParameter(ExpandedTabGroupPreviewProvider::class) previewState: ExpandedTabGroupPreviewState
 ) {
     FirefoxTheme {
         Surface {
             ExpandedTabGroup(
                 group = previewState.group,
-                actions = ExpandedTabGroupActions(
-                    onItemClick = {},
-                    onTabClose = {},
-                    onDeleteTabGroupClick = {},
-                    onEditTabGroupClick = {},
-                    onCloseTabGroupClick = {},
-                    onAddNewTabClick = {},
-                    onShareTabGroupClick = {},
-                ),
+                actions =
+                    ExpandedTabGroupActions(
+                        onItemClick = {},
+                        onTabClose = {},
+                        onDeleteTabGroupClick = {},
+                        onEditTabGroupClick = {},
+                        onCloseTabGroupClick = {},
+                        onAddNewTabClick = {},
+                        onShareTabGroupClick = {},
+                    ),
                 displayTabsInGrid = previewState.displayTabsInGrid,
                 tabInteractionHandler = NoOpTabInteractionHandler,
             )
@@ -227,16 +219,15 @@ private fun ExpandedTabGroupPreview(
     }
 }
 
-private fun generateFakeTabsList(
-    tabCount: Int = 10,
-): MutableList<TabsTrayItem.Tab> = MutableList(tabCount) { index ->
-    createTab(
-        id = "tab$index",
-        title = "Tab $index",
-        url = "www.mozilla.com",
-        private = false,
-    )
-}
+private fun generateFakeTabsList(tabCount: Int = 10): MutableList<TabsTrayItem.Tab> =
+    MutableList(tabCount) { index ->
+        createTab(
+            id = "tab$index",
+            title = "Tab $index",
+            url = "www.mozilla.com",
+            private = false,
+        )
+    }
 
 private data class ExpandedTabGroupPreviewState(
     val group: TabsTrayItem.TabGroup,
@@ -244,76 +235,83 @@ private data class ExpandedTabGroupPreviewState(
     val displayTabsInGrid: Boolean = true,
 )
 
-private class ExpandedTabGroupPreviewProvider :
-    PreviewParameterProvider<ExpandedTabGroupPreviewState> {
-    val data = listOf(
-        Pair(
-            "1 Tab",
-            ExpandedTabGroupPreviewState(
-                group = createTabGroup(
-                    title = "Tab Group",
-                    tabs = generateFakeTabsList(tabCount = 1),
+private class ExpandedTabGroupPreviewProvider : PreviewParameterProvider<ExpandedTabGroupPreviewState> {
+    val data =
+        listOf(
+            Pair(
+                "1 Tab",
+                ExpandedTabGroupPreviewState(
+                    group =
+                        createTabGroup(
+                            title = "Tab Group",
+                            tabs = generateFakeTabsList(tabCount = 1),
+                        )
                 ),
             ),
-        ),
-        Pair(
-            "2 Tabs",
-            ExpandedTabGroupPreviewState(
-                group = createTabGroup(
-                    title = "Tab Group",
-                    tabs = generateFakeTabsList(tabCount = 2),
+            Pair(
+                "2 Tabs",
+                ExpandedTabGroupPreviewState(
+                    group =
+                        createTabGroup(
+                            title = "Tab Group",
+                            tabs = generateFakeTabsList(tabCount = 2),
+                        )
                 ),
             ),
-        ),
-        Pair(
-            "3 Tabs",
-            ExpandedTabGroupPreviewState(
-                group = createTabGroup(
-                    title = "Tab Group",
-                    tabs = generateFakeTabsList(tabCount = 3),
+            Pair(
+                "3 Tabs",
+                ExpandedTabGroupPreviewState(
+                    group =
+                        createTabGroup(
+                            title = "Tab Group",
+                            tabs = generateFakeTabsList(tabCount = 3),
+                        )
                 ),
             ),
-        ),
-        Pair(
-            "4 Tabs",
-            ExpandedTabGroupPreviewState(
-                group = createTabGroup(
-                    title = "Tab Group",
-                    tabs = generateFakeTabsList(),
+            Pair(
+                "4 Tabs",
+                ExpandedTabGroupPreviewState(
+                    group =
+                        createTabGroup(
+                            title = "Tab Group",
+                            tabs = generateFakeTabsList(),
+                        )
                 ),
             ),
-        ),
-        Pair(
-            "Selected tab",
-            ExpandedTabGroupPreviewState(
-                group = createTabGroup(
-                    title = "Tab Group",
-                    tabs = generateFakeTabsList(),
+            Pair(
+                "Selected tab",
+                ExpandedTabGroupPreviewState(
+                    group =
+                        createTabGroup(
+                            title = "Tab Group",
+                            tabs = generateFakeTabsList(),
+                        ),
+                    selectedTabId = "tabid0",
                 ),
-                selectedTabId = "tabid0",
             ),
-        ),
-        Pair(
-            "Large title",
-            ExpandedTabGroupPreviewState(
-                group = createTabGroup(
-                    title = LOREM_IPSUM,
-                    tabs = generateFakeTabsList(),
+            Pair(
+                "Large title",
+                ExpandedTabGroupPreviewState(
+                    group =
+                        createTabGroup(
+                            title = LOREM_IPSUM,
+                            tabs = generateFakeTabsList(),
+                        ),
+                    selectedTabId = "tabid0",
                 ),
-                selectedTabId = "tabid0",
             ),
-        ),
-        Pair(
-            "List view",
-            ExpandedTabGroupPreviewState(
-                group = createTabGroup(
-                    title = "Tab Group",
-                    tabs = generateFakeTabsList(),
+            Pair(
+                "List view",
+                ExpandedTabGroupPreviewState(
+                    group =
+                        createTabGroup(
+                            title = "Tab Group",
+                            tabs = generateFakeTabsList(),
+                        ),
+                    displayTabsInGrid = false,
                 ),
-                displayTabsInGrid = false,
             ),
-        ),
-    )
+        )
     override val values: Sequence<ExpandedTabGroupPreviewState>
         get() = data.map { it.second }.asSequence()
 
@@ -330,8 +328,8 @@ private class ExpandedTabGroupPreviewProvider :
  * @property onDeleteTabGroupClick Invoked when the user clicks on delete tab group.
  * @property onEditTabGroupClick Invoked when the user clicks to edit the group.
  * @property onCloseTabGroupClick Invoked when the user clicks to close a tab group.
- * @property onAddNewTabClick Invoked when the user clicks to add a new tab to the group. When null,
- * the add-tab button is hidden.
+ * @property onAddNewTabClick Invoked when the user clicks to add a new tab to the group. When null, the add-tab button
+ *   is hidden.
  * @property onShareTabGroupClick Invoked when the user clicks to share the group.
  */
 data class ExpandedTabGroupActions(

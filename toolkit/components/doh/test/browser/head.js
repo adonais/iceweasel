@@ -82,6 +82,18 @@ async function setup() {
     await DoHController._uninit();
     await DoHConfigController._uninit();
   } catch (e) {}
+
+  // The shipped doh-config dump enables the rollout in the US, which is the
+  // region test profiles run in, so DoH may have already self-enabled and
+  // written doh-rollout prefs before the first test in the file runs. Keep
+  // FIRST_RUN_PREF, which DoHController.init() always sets and which gates
+  // the rollback that setup() waits for below.
+  for (let pref of Object.values(prefs)) {
+    if (pref != prefs.FIRST_RUN_PREF) {
+      Services.prefs.clearUserPref(pref);
+    }
+  }
+
   SpecialPowers.pushPrefEnv({
     set: [["security.notification_enable_delay", 0]],
   });

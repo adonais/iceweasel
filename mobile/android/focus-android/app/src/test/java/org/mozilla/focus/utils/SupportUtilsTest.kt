@@ -7,12 +7,12 @@ package org.mozilla.focus.utils
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
-import java.util.Locale
 
 class SupportUtilsTest {
 
@@ -49,8 +49,8 @@ class SupportUtilsTest {
     }
 
     /**
-     * This is a pretty boring tests - it exists primarily to verify that we're actually setting
-     * a langtag in the manfiesto URL.
+     * This is a pretty boring tests - it exists primarily to verify that we're actually setting a langtag in the
+     * manfiesto URL.
      */
     @Test
     @Throws(Exception::class)

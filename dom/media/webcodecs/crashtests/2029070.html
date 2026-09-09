@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<script>
+// LSB-first bit packer matching oggpack_write semantics.
+class BitPacker {
+  constructor() {
+    this.bytes = [];
+    this.cur = 0;
+    this.bit = 0;
+  }
+  write(val, bits) {
+    for (let i = 0; i < bits; i++) {
+      if (val & (1 << i)) this.cur |= (1 << this.bit);
+      if (++this.bit === 8) {
+        this.bytes.push(this.cur);
+        this.cur = 0;
+        this.bit = 0;
+      }
+    }
+  }
+  finish() {
+    if (this.bit > 0) this.bytes.push(this.cur);
+    return new Uint8Array(this.bytes);
+  }
+}
+
+function ilog(v) {
+  let r = 0;
+  while (v) { r++; v >>>= 1; }
+  return r;
+}
+
+const kIdHeader = new Uint8Array([
+  0x01, 0x76, 0x6f, 0x72, 0x62, 0x69, 0x73, 0x00, 0x00, 0x00, 0x00, 0x01,
+  0x80, 0xbb, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x66, 0x01
+]);
+const kCommentHeader = new Uint8Array([
+  0x03, 0x76, 0x6f, 0x72, 0x62, 0x69, 0x73, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x01
+]);
+
+// Build a Vorbis setup header with two codebooks:
+//   Codebook 0: minimal valid (dim=1, entries=2)
+//   Codebook 1: given dim/entries, ordered encoding, all entries used
+function buildSetupHeader(dim, entries) {
+  const p = new BitPacker();
+  const magic = "vorbis";
+  p.write(0x05, 8);
+  for (let i = 0; i < 6; i++) p.write(magic.charCodeAt(i), 8);
+
+  p.write(1, 8); // 2 codebooks
+
+  // Codebook 0: minimal valid
+  p.write(0x564342, 24);
+  p.write(1, 16);  p.write(2, 24);
+  p.write(0, 1);   p.write(0, 1);
+  p.write(0, 5);   p.write(0, 5);
+  p.write(1, 4);   p.write(0, 32); p.write(0, 32);
+  p.write(0, 4);   p.write(0, 1);
+  p.write(0, 1);   p.write(0, 1);
+
+  // Codebook 1: large entry count, ordered
+  const k = ilog(entries) - 1;
+  p.write(0x564342, 24);
+  p.write(dim, 16);
+  p.write(entries, 24);
+  p.write(1, 1);
+  p.write(k, 5);
+  p.write(entries, ilog(entries));
+  p.write(0, 4);
+
+  // Time, floor, residue, mapping, modes (minimal valid)
+  p.write(0, 6); p.write(0, 16);
+  p.write(0, 6); p.write(1, 16);
+  p.write(0, 5); p.write(0, 4); p.write(0, 4);
+  p.write(0, 6); p.write(0, 16);
+  p.write(0, 24); p.write(0, 24); p.write(0, 24);
+  p.write(0, 6); p.write(0, 8);
+  p.write(0, 3); p.write(0, 1);
+  p.write(0, 6); p.write(0, 16);
+  p.write(0, 1); p.write(0, 1);
+  p.write(0, 8); p.write(0, 8); p.write(0, 8);
+  p.write(0, 6); p.write(0, 1);
+  p.write(0, 16); p.write(0, 16); p.write(0, 8);
+  p.write(1, 1);
+  return p.finish();
+}
+
+function lace(n) {
+  const r = [];
+  while (n >= 255) { r.push(255); n -= 255; }
+  r.push(n);
+  return r;
+}
+
+function buildDescription(setupHeader) {
+  const l0 = lace(kIdHeader.length), l1 = lace(kCommentHeader.length);
+  const desc = new Uint8Array(
+    1 + l0.length + l1.length +
+    kIdHeader.length + kCommentHeader.length + setupHeader.length
+  );
+  let o = 0;
+  desc[o++] = 2;
+  for (const b of l0) desc[o++] = b;
+  for (const b of l1) desc[o++] = b;
+  desc.set(kIdHeader, o); o += kIdHeader.length;
+  desc.set(kCommentHeader, o); o += kCommentHeader.length;
+  desc.set(setupHeader, o);
+  return desc;
+}
+
+const cases = [
+  [0,  1 << 23],          // 8388608:  ov_ilog 0+24=24
+  [1,  (1 << 23) - 1],    // 8388607:  ov_ilog 1+23=24
+  [2,  (1 << 22) - 1],    // 4194303:  ov_ilog 2+22=24
+  [4,  (1 << 21) - 1],    // 2097151:  ov_ilog 3+21=24
+  [8,  (1 << 20) - 1],    // 1048575:  ov_ilog 4+20=24
+  [16, (1 << 19) - 1],    // 524287:   ov_ilog 5+19=24
+  [32, (1 << 18) - 1],    // 262143:   ov_ilog 6+18=24
+  [64, (1 << 17) - 1],    // 131071:   ov_ilog 7+17=24
+];
+
+let pending = cases.length;
+function done() {
+  if (--pending === 0) {
+    document.documentElement.removeAttribute("class");
+  }
+}
+
+for (const [dim, entries] of cases) {
+  const setup = buildSetupHeader(dim, entries);
+  const desc = buildDescription(setup);
+  const dec = new AudioDecoder({
+    output: f => f.close(),
+    error: () => done()
+  });
+  dec.configure({
+    codec: "vorbis",
+    sampleRate: 48000,
+    numberOfChannels: 1,
+    description: desc
+  });
+  dec.decode(new EncodedAudioChunk({
+    type: "key",
+    timestamp: 0,
+    data: new Uint8Array([0, 0, 0, 0])
+  }));
+  dec.flush().then(() => done(), () => done());
+}
+</script>
+</html>

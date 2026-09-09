@@ -29,6 +29,8 @@
 #include "mozilla/TimeStamp.h"
 
 #include "nsPrintfCString.h"
+#include "nsSystemInfo.h"
+#include "prsystem.h"
 #include "nsThreadUtils.h"
 #include "nsThread.h"
 #include "jsfriendapi.h"
@@ -40,6 +42,10 @@
 
 #ifdef MOZ_BACKGROUNDTASKS
 #  include "mozilla/BackgroundTasks.h"
+#endif
+
+#if defined(XP_LINUX) && !defined(ANDROID)
+#  include "mozilla/widget/LSBUtils.h"
 #endif
 
 #if defined(XP_WIN)
@@ -106,6 +112,7 @@
 #ifdef XP_WIN
 #  include <filesystem>
 #endif
+#include <fmt/format.h>
 #include <fstream>
 #include <optional>
 
@@ -1299,6 +1306,115 @@ static bool LaunchCrashHandlerService(const XP_CHAR* aProgramPath,
 
 #endif
 
+nsresult RecordPlatformAnnotations() {
+  if (!GetEnabled()) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  // CPU architecture values corresponding to `system_info.cpu_arch` values in
+  // https://github.com/rust-minidump/rust-minidump/blob/main/minidump-processor/json-schema.md,
+  // which is the format expected by Socorro.
+  MOZ_TRY(RecordAnnotationCString(Annotation::CPUArchitecture,
+#if defined(__i386__) || defined(_M_IX86)
+                                  "x86"
+#elif defined(__x86_64__) || defined(_M_X64)
+                                  "amd64"
+#elif defined(__powerpc__) || defined(__POWERPC__) || defined(__ppc__) || \
+    defined(__PPC__)
+                                  "ppc"
+#elif defined(__powerpc64__) || defined(__PPC64__) || defined(__ppc64__)
+                                  "ppc64"
+#elif defined(__sparc__) || defined(__sparc)
+                                  "sparc"
+#elif defined(__arm__)
+                                  "arm"
+#elif defined(__aarch64__) || defined(_M_ARM64)
+                                  "arm64"
+#else
+                                  "unknown"
+#endif
+                                  ));
+
+  // OS values corresponding to `system_info.os` values in
+  // https://github.com/rust-minidump/rust-minidump/blob/main/minidump-processor/json-schema.md,
+  // which is the format expected by Socorro.
+  MOZ_TRY(RecordAnnotationCString(Annotation::OS,
+#if defined(XP_WIN)
+                                  "Windows NT"
+#elif defined(XP_MACOSX)
+                                  "Mac OS X"
+#elif defined(ANDROID)
+                                  "Android"
+#elif defined(XP_IOS)
+                                  "iOS"
+#elif defined(XP_LINUX)
+                                  "Linux"
+#elif defined(XP_SOLARIS)
+                                  "Solaris"
+#else
+                                  "Unknown"
+#endif
+                                  ));
+
+  // These values are read straight from NSPR and LSBUtils rather than through
+  // @mozilla.org/system-info;1, so that recording them neither instantiates
+  // that service nor requires XPCOM to be initialized.
+#if !defined(ANDROID)
+  // nsSystemInfo reports the Android SDK version rather than the release here,
+  // and lib-crash records OSVersion for Android itself.
+  char sysRelease[SYS_INFO_BUFFER_LENGTH];
+  if (PR_GetSystemInfo(PR_SI_RELEASE, sysRelease, sizeof(sysRelease)) ==
+      PR_SUCCESS) {
+    nsAutoCString osVersion(sysRelease);
+    char sysBuild[SYS_INFO_BUFFER_LENGTH];
+    if (PR_GetSystemInfo(PR_SI_RELEASE_BUILD, sysBuild, sizeof(sysBuild)) ==
+        PR_SUCCESS) {
+      osVersion.Append(
+#  if defined(XP_WIN)
+          '.'
+#  else
+          ' '
+#  endif
+      );
+      osVersion.Append(sysBuild);
+    }
+    MOZ_TRY(RecordAnnotationNSCString(Annotation::OSVersion, osVersion));
+  }
+#endif
+
+#if defined(XP_LINUX) && !defined(ANDROID)
+  nsAutoCString dist, desc, release, codename;
+  if (widget::lsb::GetLSBRelease(dist, desc, release, codename)) {
+    MOZ_TRY(RecordAnnotationNSCString(Annotation::LinuxLSBDescription, desc));
+  }
+#endif
+
+  return NS_OK;
+}
+
+static nsresult RecordCPUInfoAnnotation() {
+  // Run in a background task so we don't block the main thread with
+  // CollectProcessInfo().
+  return NS_DispatchBackgroundTask(
+      NS_NewRunnableFunction("CPUInfoAnnotation", [] {
+        ProcessInfo procinfo = {};
+        if (NS_SUCCEEDED(CollectProcessInfo(procinfo))) {
+          nsCString cpuInfo(fmt::format("family {} model {} stepping {}",
+                                        procinfo.cpuFamily, procinfo.cpuModel,
+                                        procinfo.cpuStepping));
+          RecordAnnotationNSCString(Annotation::CPUInfo, std::move(cpuInfo));
+        }
+      }));
+}
+
+nsresult RecordXPCOMPlatformAnnotations() {
+  if (!GetEnabled()) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  return RecordCPUInfoAnnotation();
+}
+
 static void WriteAnnotations(AnnotationWriter& aWriter,
                              const AnnotationTable& aAnnotations) {
   for (auto key : MakeEnumeratedRange(Annotation::Count)) {
@@ -1313,6 +1429,9 @@ static void WriteSynthesizedAnnotations(AnnotationWriter& aWriter) {
   AnnotateMemoryStatus(aWriter);
 }
 
+// WARNING: This function is called from within the exception handler, and must
+// not do things that are unsafe from an exception handler (like allocating
+// memory).
 static void WriteAnnotationsForMainProcessCrash(PlatformWriter& pw,
                                                 const phc::AddrInfo* addrInfo,
                                                 time_t crashTime) {
@@ -1667,12 +1786,6 @@ static size_t BuildTempPath(char* aBuf, size_t aBufLen) {
 #else
 #  error "Implement this for your platform"
 #endif
-
-template <typename CharT, size_t N>
-static size_t BuildTempPath(CharT (&aBuf)[N]) {
-  static_assert(N >= XP_PATH_MAX, "char array length is too small");
-  return BuildTempPath(&aBuf[0], N);
-}
 
 template <typename PathStringT>
 static bool BuildTempPath(PathStringT& aResult) {
@@ -2524,7 +2637,7 @@ void MergeCrashAnnotations(AnnotationTable& aDst, const AnnotationTable& aSrc) {
   }
 }
 
-// Adds crash time, uptime and memory report annotations
+// Adds crash time, uptime, and last interaction duration annotations
 static void AddCommonAnnotations(AnnotationTable& aAnnotations) {
   const time_t crashTime = time(nullptr);
   nsAutoCString crashTimeStr;

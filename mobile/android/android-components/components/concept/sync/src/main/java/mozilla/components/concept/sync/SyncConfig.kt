@@ -17,8 +17,8 @@ data class PeriodicSyncConfig(
  * Configuration for sync.
  *
  * @property supportedEngines A set of supported sync engines.
- * @property periodicSyncConfig Optional configuration for running sync periodically.
- * Periodic sync is disabled if this is `null`.
+ * @property periodicSyncConfig Optional configuration for running sync periodically. Periodic sync is disabled if this
+ *   is `null`.
  */
 data class SyncConfig(
     val supportedEngines: Set<SyncEngine>,

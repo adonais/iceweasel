@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<!-- Any copyright is dedicated to the Public Domain.
+   - http://creativecommons.org/publicdomain/zero/1.0/ -->
+<html class="reftest-wait">
+<head>
+  <script>
+    function snapshot() {
+      document.documentElement.removeAttribute('class');
+    }
+  </script>
+</head>
+<!-- Renders a JPEG downscaled to a small size to exercise libjpeg-turbo IDCT
+     scaling (image.jpeg.dct-scaling.enabled). The query string is
+     "<image>,<size>". As in downscale-32px.html, the setTimeout gives the
+     high-quality (decode-time) downscaled image a chance to become ready
+     before we snapshot. -->
+<body style="margin: 0px" onload="setTimeout(snapshot, 50)">
+  <script>
+    var args = location.search.substring(1).split(',');
+    var image = document.createElement('img');
+    image.width = args[1];
+    image.height = args[1];
+    image.src = args[0];
+    document.body.appendChild(image);
+  </script>
+</body>
+</html>

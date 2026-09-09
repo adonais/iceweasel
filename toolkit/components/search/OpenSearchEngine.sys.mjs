@@ -135,7 +135,7 @@ export class OpenSearchEngine extends SearchEngine {
     let updateURL = this.getURLOfType(lazy.SearchUtils.URL_TYPE.OPENSEARCH);
     let updateURI =
       updateURL && updateURL._hasRelation("self")
-        ? updateURL.getSubmission("", this.queryCharset).uri
+        ? updateURL.getSubmission("", this.queryCharset, "default").uri
         : lazy.SearchUtils.makeURI(this._updateURL);
     return updateURI;
   }

@@ -1,0 +1,63 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Test for media load-error message redaction based on the final loaded resource</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<script class="testbody" type="text/javascript">
+const SECRET = "SsshSecret";
+const CROSS_ORIGIN = "example.org";
+
+add_task(async function crossOriginViaRedirectIsRedacted() {
+  const { message, code } = await loadError(
+    `redirect_media_error.sjs?redirect=${CROSS_ORIGIN}`);
+  is(code, MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED,
+     "the failure must reach the no-supported-source path");
+  is(message, "Failed to open media",
+     "same-origin src redirecting to a cross-origin resource must be redacted");
+  ok(!message.includes(SECRET),
+     "cross-origin reason phrase must not leak through a redirect");
+});
+
+add_task(async function crossOriginDirectIsRedacted() {
+  const { message, code } = await loadError(
+    // eslint-disable-next-line sdl/no-insecure-url
+    `http://${CROSS_ORIGIN}/tests/dom/media/test/redirect_media_error.sjs`);
+  is(code, MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED,
+     "the failure must reach the no-supported-source path");
+  is(message, "Failed to open media",
+     "direct cross-origin load must be redacted");
+  ok(!message.includes(SECRET),
+     "cross-origin reason phrase must not leak on a direct load");
+});
+
+add_task(async function sameOriginViaRedirectKeepsDetailedMessage() {
+  const { message } = await loadError("redirect_media_error.sjs?redirect=same");
+  is(message, `403: ${SECRET}`,
+     "same-origin src redirecting to a same-origin resource keeps the " +
+     "detailed status line");
+});
+
+add_task(async function sameOriginDirectKeepsDetailedMessage() {
+  const { message } = await loadError("redirect_media_error.sjs");
+  is(message, `403: ${SECRET}`,
+     "direct same-origin load keeps the detailed status line");
+});
+
+function loadError(src) {
+  return new Promise(resolve => {
+    const v = document.createElement("video");
+    v.addEventListener("error", () => {
+      const { message, code } = v.error;
+      v.remove();
+      resolve({ message, code });
+    }, { once: true });
+    document.body.appendChild(v);
+    v.src = src;
+  });
+}
+</script>
+</body>
+</html>

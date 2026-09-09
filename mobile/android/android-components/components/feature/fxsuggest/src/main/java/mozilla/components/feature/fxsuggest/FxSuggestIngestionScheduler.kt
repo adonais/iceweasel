@@ -11,13 +11,12 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequest
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.worker.Frequency
-import java.util.concurrent.TimeUnit
 
 /**
- * Schedules a periodic background task to incrementally download and persist new Firefox Suggest
- * search suggestions.
+ * Schedules a periodic background task to incrementally download and persist new Firefox Suggest search suggestions.
  *
  * @property context The Android application context.
  * @property frequency The optional interval period for the background task. Defaults to 1 day.
@@ -29,21 +28,19 @@ class FxSuggestIngestionScheduler(
     private val logger = Logger("FxSuggestIngestionScheduler")
 
     /**
-     * Schedules a periodic background task to ingest new suggestions. Does nothing if the task is
-     * already scheduled.
+     * Schedules a periodic background task to ingest new suggestions. Does nothing if the task is already scheduled.
      */
     fun startPeriodicIngestion() {
         logger.info("Scheduling periodic ingestion for new suggestions")
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            FxSuggestIngestionWorker.WORK_TAG,
-            ExistingPeriodicWorkPolicy.KEEP,
-            createPeriodicIngestionWorkerRequest(),
-        )
+        WorkManager.getInstance(context)
+            .enqueueUniquePeriodicWork(
+                FxSuggestIngestionWorker.WORK_TAG,
+                ExistingPeriodicWorkPolicy.KEEP,
+                createPeriodicIngestionWorkerRequest(),
+            )
     }
 
-    /**
-     * Cancels a scheduled background task to ingest new suggestions.
-     */
+    /** Cancels a scheduled background task to ingest new suggestions. */
     fun stopPeriodicIngestion() {
         logger.info("Canceling periodic ingestion for new suggestions")
         WorkManager.getInstance(context).cancelAllWorkByTag(FxSuggestIngestionWorker.WORK_TAG)
@@ -52,21 +49,24 @@ class FxSuggestIngestionScheduler(
     internal fun createPeriodicIngestionWorkerRequest(): PeriodicWorkRequest {
         val constraints = getWorkerConstrains()
         return PeriodicWorkRequestBuilder<FxSuggestIngestionWorker>(
-            this.frequency.repeatInterval,
-            this.frequency.repeatIntervalTimeUnit,
-        ).apply {
-            // Don't run the ingestion immediately, wait until the first repeat interval has passed.
-            // FenixApplication calls `runStartupIngestion` on startup to handle ingestion on first
-            // run and after updates.
-            setInitialDelay(frequency.repeatInterval, frequency.repeatIntervalTimeUnit)
-            setConstraints(constraints)
-            addTag(FxSuggestIngestionWorker.WORK_TAG)
-        }.build()
+                this.frequency.repeatInterval,
+                this.frequency.repeatIntervalTimeUnit,
+            )
+            .apply {
+                // Don't run the ingestion immediately, wait until the first repeat interval has passed.
+                // FenixApplication calls `runStartupIngestion` on startup to handle ingestion on first
+                // run and after updates.
+                setInitialDelay(frequency.repeatInterval, frequency.repeatIntervalTimeUnit)
+                setConstraints(constraints)
+                addTag(FxSuggestIngestionWorker.WORK_TAG)
+            }
+            .build()
     }
 
-    internal fun getWorkerConstrains() = Constraints.Builder()
-        .setRequiredNetworkType(NetworkType.UNMETERED)
-        .setRequiresBatteryNotLow(true)
-        .setRequiresStorageNotLow(true)
-        .build()
+    internal fun getWorkerConstrains() =
+        Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.UNMETERED)
+            .setRequiresBatteryNotLow(true)
+            .setRequiresStorageNotLow(true)
+            .build()
 }

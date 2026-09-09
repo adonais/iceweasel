@@ -23,14 +23,15 @@ class FirefoxLabsMetadataTest {
         enrolled: Boolean = false,
         requiresRestart: Boolean = false,
         feedbackUrl: String? = null,
-    ) = FirefoxLabsMetadata(
-        slug = slug,
-        titleStringId = titleStringId,
-        descriptionStringId = descriptionStringId,
-        feedbackUrl = feedbackUrl,
-        enrolled = enrolled,
-        requiresRestart = requiresRestart,
-    )
+    ) =
+        FirefoxLabsMetadata(
+            slug = slug,
+            titleStringId = titleStringId,
+            descriptionStringId = descriptionStringId,
+            feedbackUrl = feedbackUrl,
+            enrolled = enrolled,
+            requiresRestart = requiresRestart,
+        )
 
     private companion object {
         // Backed by static_strings.xml entries shared with the Nimbus read-path fixture.
@@ -40,14 +41,15 @@ class FirefoxLabsMetadataTest {
 
     @Test
     fun `WHEN both resource names resolve THEN a LabsItem is returned with the resolved strings`() {
-        val metadata = firefoxLabsMetadata(
-            slug = "lab-1",
-            titleStringId = RESOURCE_NAME_TITLE,
-            descriptionStringId = RESOURCE_NAME_DESCRIPTION,
-            enrolled = true,
-            requiresRestart = false,
-            feedbackUrl = "https://connect.mozilla.org/",
-        )
+        val metadata =
+            firefoxLabsMetadata(
+                slug = "lab-1",
+                titleStringId = RESOURCE_NAME_TITLE,
+                descriptionStringId = RESOURCE_NAME_DESCRIPTION,
+                enrolled = true,
+                requiresRestart = false,
+                feedbackUrl = "https://connect.mozilla.org/",
+            )
 
         val item = metadata.toLabsItem(context = testContext)
 
@@ -61,16 +63,18 @@ class FirefoxLabsMetadataTest {
 
     @Test
     fun `WHEN a Nimbus lab has an unknown resource name AND raw fallback is allowed THEN the raw name is surfaced`() {
-        val metadata = firefoxLabsMetadata(
-            slug = "broken-lab",
-            titleStringId = "this_resource_does_not_exist",
-            descriptionStringId = RESOURCE_NAME_DESCRIPTION,
-        )
+        val metadata =
+            firefoxLabsMetadata(
+                slug = "broken-lab",
+                titleStringId = "this_resource_does_not_exist",
+                descriptionStringId = RESOURCE_NAME_DESCRIPTION,
+            )
 
-        val item = metadata.toLabsItem(
-            context = testContext,
-            allowRawIdFallback = true,
-        )
+        val item =
+            metadata.toLabsItem(
+                context = testContext,
+                allowRawIdFallback = true,
+            )
 
         assertEquals("this_resource_does_not_exist", item?.title)
         assertEquals(testContext.getString(R.string.firefox_labs_test_lab_description), item?.description)
@@ -78,16 +82,18 @@ class FirefoxLabsMetadataTest {
 
     @Test
     fun `WHEN a Nimbus lab has an unknown resource name AND raw fallback is not allowed THEN the item is dropped`() {
-        val metadata = firefoxLabsMetadata(
-            slug = "broken-lab",
-            titleStringId = "this_resource_does_not_exist",
-            descriptionStringId = RESOURCE_NAME_DESCRIPTION,
-        )
+        val metadata =
+            firefoxLabsMetadata(
+                slug = "broken-lab",
+                titleStringId = "this_resource_does_not_exist",
+                descriptionStringId = RESOURCE_NAME_DESCRIPTION,
+            )
 
-        val item = metadata.toLabsItem(
-            context = testContext,
-            allowRawIdFallback = false,
-        )
+        val item =
+            metadata.toLabsItem(
+                context = testContext,
+                allowRawIdFallback = false,
+            )
 
         assertNull(item)
     }

@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -14,7 +14,8 @@ import org.mozilla.geckoview.GeckoSession
 @MediumTest
 class FinderTest : BaseSessionTest() {
 
-    @Test fun find() {
+    @Test
+    fun find() {
         mainSession.loadTestPath(LOREM_IPSUM_HTML_PATH)
         mainSession.waitForPageStop()
 
@@ -33,14 +34,15 @@ class FinderTest : BaseSessionTest() {
         assertThat("Flags should be correct", result.flags, equalTo(0))
 
         // Search again using new flags.
-        result = sessionRule.waitForResult(
-            mainSession.finder.find(
-                null,
-                GeckoSession.FINDER_FIND_BACKWARDS
-                    or GeckoSession.FINDER_FIND_MATCH_CASE
-                    or GeckoSession.FINDER_FIND_WHOLE_WORD,
-            ),
-        )
+        result =
+            sessionRule.waitForResult(
+                mainSession.finder.find(
+                    null,
+                    GeckoSession.FINDER_FIND_BACKWARDS or
+                        GeckoSession.FINDER_FIND_MATCH_CASE or
+                        GeckoSession.FINDER_FIND_WHOLE_WORD,
+                )
+            )
 
         assertThat("Should be found", result.found, equalTo(true))
         assertThat("Should have wrapped", result.wrapped, equalTo(true))
@@ -55,21 +57,22 @@ class FinderTest : BaseSessionTest() {
             "Flags should be correct",
             result.flags,
             equalTo(
-                GeckoSession.FINDER_FIND_BACKWARDS
-                    or GeckoSession.FINDER_FIND_MATCH_CASE
-                    or GeckoSession.FINDER_FIND_WHOLE_WORD,
+                GeckoSession.FINDER_FIND_BACKWARDS or
+                    GeckoSession.FINDER_FIND_MATCH_CASE or
+                    GeckoSession.FINDER_FIND_WHOLE_WORD
             ),
         )
 
         // And again using same flags.
-        result = sessionRule.waitForResult(
-            mainSession.finder.find(
-                null,
-                GeckoSession.FINDER_FIND_BACKWARDS
-                    or GeckoSession.FINDER_FIND_MATCH_CASE
-                    or GeckoSession.FINDER_FIND_WHOLE_WORD,
-            ),
-        )
+        result =
+            sessionRule.waitForResult(
+                mainSession.finder.find(
+                    null,
+                    GeckoSession.FINDER_FIND_BACKWARDS or
+                        GeckoSession.FINDER_FIND_MATCH_CASE or
+                        GeckoSession.FINDER_FIND_WHOLE_WORD,
+                )
+            )
 
         assertThat("Should be found", result.found, equalTo(true))
         assertThat("Should not have wrapped", result.wrapped, equalTo(false))
@@ -84,20 +87,20 @@ class FinderTest : BaseSessionTest() {
             "Flags should be correct",
             result.flags,
             equalTo(
-                GeckoSession.FINDER_FIND_BACKWARDS
-                    or GeckoSession.FINDER_FIND_MATCH_CASE
-                    or GeckoSession.FINDER_FIND_WHOLE_WORD,
+                GeckoSession.FINDER_FIND_BACKWARDS or
+                    GeckoSession.FINDER_FIND_MATCH_CASE or
+                    GeckoSession.FINDER_FIND_WHOLE_WORD
             ),
         )
 
         // And again but go forward.
-        result = sessionRule.waitForResult(
-            mainSession.finder.find(
-                null,
-                GeckoSession.FINDER_FIND_MATCH_CASE
-                    or GeckoSession.FINDER_FIND_WHOLE_WORD,
-            ),
-        )
+        result =
+            sessionRule.waitForResult(
+                mainSession.finder.find(
+                    null,
+                    GeckoSession.FINDER_FIND_MATCH_CASE or GeckoSession.FINDER_FIND_WHOLE_WORD,
+                )
+            )
 
         assertThat("Should be found", result.found, equalTo(true))
         assertThat("Should not have wrapped", result.wrapped, equalTo(false))
@@ -111,14 +114,12 @@ class FinderTest : BaseSessionTest() {
         assertThat(
             "Flags should be correct",
             result.flags,
-            equalTo(
-                GeckoSession.FINDER_FIND_MATCH_CASE
-                    or GeckoSession.FINDER_FIND_WHOLE_WORD,
-            ),
+            equalTo(GeckoSession.FINDER_FIND_MATCH_CASE or GeckoSession.FINDER_FIND_WHOLE_WORD),
         )
     }
 
-    @Test fun find_notFound() {
+    @Test
+    fun find_notFound() {
         mainSession.loadTestPath(LOREM_IPSUM_HTML_PATH)
         mainSession.waitForPageStop()
 
@@ -140,7 +141,8 @@ class FinderTest : BaseSessionTest() {
         assertThat("Should be found", result.found, equalTo(true))
     }
 
-    @Test fun find_matchCase() {
+    @Test
+    fun find_matchCase() {
         mainSession.loadTestPath(LOREM_IPSUM_HTML_PATH)
         mainSession.waitForPageStop()
 
@@ -148,12 +150,13 @@ class FinderTest : BaseSessionTest() {
 
         assertThat("Total count should be correct", result.total, equalTo(3))
 
-        result = sessionRule.waitForResult(
-            mainSession.finder.find(
-                null,
-                GeckoSession.FINDER_FIND_MATCH_CASE,
-            ),
-        )
+        result =
+            sessionRule.waitForResult(
+                mainSession.finder.find(
+                    null,
+                    GeckoSession.FINDER_FIND_MATCH_CASE,
+                )
+            )
 
         assertThat("Total count should be correct", result.total, equalTo(2))
         assertThat(
@@ -163,7 +166,8 @@ class FinderTest : BaseSessionTest() {
         )
     }
 
-    @Test fun find_wholeWord() {
+    @Test
+    fun find_wholeWord() {
         mainSession.loadTestPath(LOREM_IPSUM_HTML_PATH)
         mainSession.waitForPageStop()
 
@@ -171,12 +175,13 @@ class FinderTest : BaseSessionTest() {
 
         assertThat("Total count should be correct", result.total, equalTo(4))
 
-        result = sessionRule.waitForResult(
-            mainSession.finder.find(
-                null,
-                GeckoSession.FINDER_FIND_WHOLE_WORD,
-            ),
-        )
+        result =
+            sessionRule.waitForResult(
+                mainSession.finder.find(
+                    null,
+                    GeckoSession.FINDER_FIND_WHOLE_WORD,
+                )
+            )
 
         assertThat("Total count should be correct", result.total, equalTo(2))
         assertThat(
@@ -186,16 +191,18 @@ class FinderTest : BaseSessionTest() {
         )
     }
 
-    @Test fun find_linksOnly() {
+    @Test
+    fun find_linksOnly() {
         mainSession.loadTestPath(LOREM_IPSUM_HTML_PATH)
         mainSession.waitForPageStop()
 
-        val result = sessionRule.waitForResult(
-            mainSession.finder.find(
-                "nim",
-                GeckoSession.FINDER_FIND_LINKS_ONLY,
-            ),
-        )
+        val result =
+            sessionRule.waitForResult(
+                mainSession.finder.find(
+                    "nim",
+                    GeckoSession.FINDER_FIND_LINKS_ONLY,
+                )
+            )
 
         assertThat("Total count should be correct", result.total, equalTo(1))
         assertThat(
@@ -205,7 +212,8 @@ class FinderTest : BaseSessionTest() {
         )
     }
 
-    @Test fun clear() {
+    @Test
+    fun clear() {
         mainSession.loadTestPath(LOREM_IPSUM_HTML_PATH)
         mainSession.waitForPageStop()
 
@@ -228,7 +236,8 @@ class FinderTest : BaseSessionTest() {
         )
     }
 
-    @Test fun find_in_pdf() {
+    @Test
+    fun find_in_pdf() {
         mainSession.loadTestPath(TRACEMONKEY_PDF_PATH)
         mainSession.waitForPageStop()
 
@@ -247,14 +256,15 @@ class FinderTest : BaseSessionTest() {
         assertThat("Flags should be correct", result.flags, equalTo(0))
 
         // Search again using new flags.
-        result = sessionRule.waitForResult(
-            mainSession.finder.find(
-                null,
-                GeckoSession.FINDER_FIND_BACKWARDS
-                    or GeckoSession.FINDER_FIND_MATCH_CASE
-                    or GeckoSession.FINDER_FIND_WHOLE_WORD,
-            ),
-        )
+        result =
+            sessionRule.waitForResult(
+                mainSession.finder.find(
+                    null,
+                    GeckoSession.FINDER_FIND_BACKWARDS or
+                        GeckoSession.FINDER_FIND_MATCH_CASE or
+                        GeckoSession.FINDER_FIND_WHOLE_WORD,
+                )
+            )
 
         assertThat("Should be found", result.found, equalTo(true))
         assertThat("Should not have wrapped", result.wrapped, equalTo(false))
@@ -269,21 +279,22 @@ class FinderTest : BaseSessionTest() {
             "Flags should be correct",
             result.flags,
             equalTo(
-                GeckoSession.FINDER_FIND_BACKWARDS
-                    or GeckoSession.FINDER_FIND_MATCH_CASE
-                    or GeckoSession.FINDER_FIND_WHOLE_WORD,
+                GeckoSession.FINDER_FIND_BACKWARDS or
+                    GeckoSession.FINDER_FIND_MATCH_CASE or
+                    GeckoSession.FINDER_FIND_WHOLE_WORD
             ),
         )
 
         // And again using same flags.
-        result = sessionRule.waitForResult(
-            mainSession.finder.find(
-                null,
-                GeckoSession.FINDER_FIND_BACKWARDS
-                    or GeckoSession.FINDER_FIND_MATCH_CASE
-                    or GeckoSession.FINDER_FIND_WHOLE_WORD,
-            ),
-        )
+        result =
+            sessionRule.waitForResult(
+                mainSession.finder.find(
+                    null,
+                    GeckoSession.FINDER_FIND_BACKWARDS or
+                        GeckoSession.FINDER_FIND_MATCH_CASE or
+                        GeckoSession.FINDER_FIND_WHOLE_WORD,
+                )
+            )
 
         assertThat("Should be found", result.found, equalTo(true))
         assertThat("Should not have wrapped", result.wrapped, equalTo(false))
@@ -298,20 +309,20 @@ class FinderTest : BaseSessionTest() {
             "Flags should be correct",
             result.flags,
             equalTo(
-                GeckoSession.FINDER_FIND_BACKWARDS
-                    or GeckoSession.FINDER_FIND_MATCH_CASE
-                    or GeckoSession.FINDER_FIND_WHOLE_WORD,
+                GeckoSession.FINDER_FIND_BACKWARDS or
+                    GeckoSession.FINDER_FIND_MATCH_CASE or
+                    GeckoSession.FINDER_FIND_WHOLE_WORD
             ),
         )
 
         // And again but go forward.
-        result = sessionRule.waitForResult(
-            mainSession.finder.find(
-                null,
-                GeckoSession.FINDER_FIND_MATCH_CASE
-                    or GeckoSession.FINDER_FIND_WHOLE_WORD,
-            ),
-        )
+        result =
+            sessionRule.waitForResult(
+                mainSession.finder.find(
+                    null,
+                    GeckoSession.FINDER_FIND_MATCH_CASE or GeckoSession.FINDER_FIND_WHOLE_WORD,
+                )
+            )
 
         assertThat("Should be found", result.found, equalTo(true))
         assertThat("Should not have wrapped", result.wrapped, equalTo(false))
@@ -325,25 +336,23 @@ class FinderTest : BaseSessionTest() {
         assertThat(
             "Flags should be correct",
             result.flags,
-            equalTo(
-                GeckoSession.FINDER_FIND_MATCH_CASE
-                    or GeckoSession.FINDER_FIND_WHOLE_WORD,
-            ),
+            equalTo(GeckoSession.FINDER_FIND_MATCH_CASE or GeckoSession.FINDER_FIND_WHOLE_WORD),
         )
     }
 
-    @Test fun find_in_pdf_with_wrapped_result() {
+    @Test
+    fun find_in_pdf_with_wrapped_result() {
         mainSession.loadTestPath(TRACEMONKEY_PDF_PATH)
         mainSession.waitForPageStop()
 
         // Initial search.
-        var result = sessionRule.waitForResult(
-            mainSession.finder.find(
-                "SpiderMonkey",
-                GeckoSession.FINDER_FIND_MATCH_CASE
-                    or GeckoSession.FINDER_FIND_WHOLE_WORD,
-            ),
-        )
+        var result =
+            sessionRule.waitForResult(
+                mainSession.finder.find(
+                    "SpiderMonkey",
+                    GeckoSession.FINDER_FIND_MATCH_CASE or GeckoSession.FINDER_FIND_WHOLE_WORD,
+                )
+            )
 
         for (count in 1..4) {
             assertThat("Should be found", result.found, equalTo(true))
@@ -357,17 +366,18 @@ class FinderTest : BaseSessionTest() {
             )
 
             // And again.
-            result = sessionRule.waitForResult(
-                mainSession.finder.find(
-                    null,
-                    GeckoSession.FINDER_FIND_MATCH_CASE
-                        or GeckoSession.FINDER_FIND_WHOLE_WORD,
-                ),
-            )
+            result =
+                sessionRule.waitForResult(
+                    mainSession.finder.find(
+                        null,
+                        GeckoSession.FINDER_FIND_MATCH_CASE or GeckoSession.FINDER_FIND_WHOLE_WORD,
+                    )
+                )
         }
     }
 
-    @Test fun find_in_pdf_notFound() {
+    @Test
+    fun find_in_pdf_notFound() {
         mainSession.loadTestPath(TRACEMONKEY_PDF_PATH)
         mainSession.waitForPageStop()
 
@@ -389,7 +399,8 @@ class FinderTest : BaseSessionTest() {
         assertThat("Should be found", result.found, equalTo(true))
     }
 
-    @Test fun find_in_pdf_matchCase() {
+    @Test
+    fun find_in_pdf_matchCase() {
         mainSession.loadTestPath(TRACEMONKEY_PDF_PATH)
         mainSession.waitForPageStop()
 
@@ -397,12 +408,13 @@ class FinderTest : BaseSessionTest() {
 
         assertThat("Total count should be correct", result.total, equalTo(15))
 
-        result = sessionRule.waitForResult(
-            mainSession.finder.find(
-                null,
-                GeckoSession.FINDER_FIND_MATCH_CASE,
-            ),
-        )
+        result =
+            sessionRule.waitForResult(
+                mainSession.finder.find(
+                    null,
+                    GeckoSession.FINDER_FIND_MATCH_CASE,
+                )
+            )
 
         assertThat("Total count should be correct", result.total, equalTo(13))
         assertThat(
@@ -412,7 +424,8 @@ class FinderTest : BaseSessionTest() {
         )
     }
 
-    @Test fun find_in_pdf_wholeWord() {
+    @Test
+    fun find_in_pdf_wholeWord() {
         mainSession.loadTestPath(TRACEMONKEY_PDF_PATH)
         mainSession.waitForPageStop()
 
@@ -420,12 +433,13 @@ class FinderTest : BaseSessionTest() {
 
         assertThat("Total count should be correct", result.total, equalTo(5))
 
-        result = sessionRule.waitForResult(
-            mainSession.finder.find(
-                null,
-                GeckoSession.FINDER_FIND_WHOLE_WORD,
-            ),
-        )
+        result =
+            sessionRule.waitForResult(
+                mainSession.finder.find(
+                    null,
+                    GeckoSession.FINDER_FIND_WHOLE_WORD,
+                )
+            )
 
         assertThat("Total count should be correct", result.total, equalTo(1))
         assertThat(
@@ -435,7 +449,8 @@ class FinderTest : BaseSessionTest() {
         )
     }
 
-    @Test fun find_in_pdf_and_html() {
+    @Test
+    fun find_in_pdf_and_html() {
         for (i in 1..2) {
             mainSession.loadTestPath(TRACEMONKEY_PDF_PATH)
             mainSession.waitForPageStop()

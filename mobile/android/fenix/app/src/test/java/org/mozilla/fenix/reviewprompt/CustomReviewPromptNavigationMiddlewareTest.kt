@@ -5,13 +5,13 @@
 package org.mozilla.fenix.reviewprompt
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.Test
+import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.runner.RunWith
-import kotlin.test.Test
-import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class CustomReviewPromptNavigationMiddlewareTest {

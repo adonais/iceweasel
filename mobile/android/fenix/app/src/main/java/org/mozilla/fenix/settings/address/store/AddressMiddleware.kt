@@ -35,31 +35,36 @@ class AddressMiddleware(
     ) {
         next(action)
         when (action) {
-            is SaveTapped -> runAndNavigateBack {
-                store.state.guidToUpdate?.let {
-                    environment.updateAddress(it, store.state.address)
-                    Addresses.updated.add()
-                } ?: run {
-                    environment.createAddress(store.state.address)
-                    Addresses.saved.add()
+            is SaveTapped ->
+                runAndNavigateBack {
+                    store.state.guidToUpdate?.let {
+                        environment.updateAddress(it, store.state.address)
+                        Addresses.updated.add()
+                    }
+                        ?: run {
+                            environment.createAddress(store.state.address)
+                            Addresses.saved.add()
+                        }
                 }
-            }
-            is DeleteDialogAction.DeleteTapped -> runAndNavigateBack {
-                store.state.guidToUpdate?.also {
-                    environment.deleteAddress(it)
-                    Addresses.deleted.add()
+            is DeleteDialogAction.DeleteTapped ->
+                runAndNavigateBack {
+                    store.state.guidToUpdate?.also {
+                        environment.deleteAddress(it)
+                        Addresses.deleted.add()
+                    }
                 }
-            }
-            BackTapped, CancelTapped -> environment.navigateBack()
+            BackTapped,
+            CancelTapped -> environment.navigateBack()
             else -> {} // noop
         }
     }
 
-    private fun runAndNavigateBack(action: suspend () -> Unit) = scope.launch(ioDispatcher) {
-        action()
+    private fun runAndNavigateBack(action: suspend () -> Unit) =
+        scope.launch(ioDispatcher) {
+            action()
 
-        withContext(mainDispatcher) {
-            environment.navigateBack()
+            withContext(mainDispatcher) {
+                environment.navigateBack()
+            }
         }
-    }
 }

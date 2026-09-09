@@ -462,6 +462,8 @@ static const struct FREEBLVectorStr vector = {
     EC_DecompressPublicKey,
     /* End of version 3.032 */
 
+    MLDSA_DestroyContext,
+    /* End of version 3.033 */
 };
 
 const FREEBLVector*

@@ -16,7 +16,6 @@
 #include "mozStorageHelper.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Components.h"
-#include "mozilla/ErrorNames.h"
 #include "mozilla/FileUtils.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ScopeExit.h"
@@ -1016,10 +1015,6 @@ CookiePersistentStorage::OpenDBResult CookiePersistentStorage::TryInitDB(
         mCookieFile, mozIStorageService::CONNECTION_DEFAULT,
         getter_AddRefs(mSyncConn));
     if (NS_FAILED(rv)) {
-      const char* errorName = mozilla::GetStaticErrorName(rv);
-      glean::network_cookies::open_error
-          .Get(nsDependentCString(errorName ? errorName : "unknown"))
-          .Add(1);
       if (rv == NS_ERROR_FILE_NO_DEVICE_SPACE ||
           rv == NS_ERROR_FILE_ACCESS_DENIED) {
         return RESULT_FAILURE;

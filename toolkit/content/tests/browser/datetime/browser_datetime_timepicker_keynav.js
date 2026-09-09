@@ -105,9 +105,11 @@ add_task(async function test_time_spinner_keyboard() {
     () => {
       return spinnerHour.ariaValueNow == "0";
     },
-    `Should change to 0, instead got ${
-      helper.getElement(SPINNER_HOUR).ariaValueNow
-    }`
+    {
+      msg: `Should change to 0, instead got ${
+        helper.getElement(SPINNER_HOUR).ariaValueNow
+      }`,
+    }
   );
 
   Assert.equal(
@@ -145,9 +147,11 @@ add_task(async function test_time_spinner_keyboard() {
     () => {
       return spinnerMin.ariaValueNow == "2";
     },
-    `Should change to 2, instead got ${
-      helper.getElement(SPINNER_MIN).ariaValueNow
-    }`
+    {
+      msg: `Should change to 2, instead got ${
+        helper.getElement(SPINNER_MIN).ariaValueNow
+      }`,
+    }
   );
 
   Assert.equal(
@@ -185,9 +189,11 @@ add_task(async function test_time_spinner_keyboard() {
     () => {
       return spinnerTime.ariaValueNow == "12";
     },
-    `Should change to 12, instead got ${
-      helper.getElement(SPINNER_TIME).ariaValueNow
-    }`
+    {
+      msg: `Should change to 12, instead got ${
+        helper.getElement(SPINNER_TIME).ariaValueNow
+      }`,
+    }
   );
 
   // Wait for the hour spinner to update as well, since changing AM/PM affects it
@@ -197,9 +203,11 @@ add_task(async function test_time_spinner_keyboard() {
     () => {
       return spinnerHour.ariaValueNow == "12";
     },
-    `Hour should change to 12, instead got ${
-      helper.getElement(SPINNER_HOUR).ariaValueNow
-    }`
+    {
+      msg: `Hour should change to 12, instead got ${
+        helper.getElement(SPINNER_HOUR).ariaValueNow
+      }`,
+    }
   );
 
   Assert.equal(

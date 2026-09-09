@@ -1812,14 +1812,14 @@ class nsIWidget : public nsSupportsWeakReference {
    * @param aGuid identifies the scroll frame to be autoscrolled
    * @return true if APZ has been successfully notified
    */
-  virtual bool StartAsyncAutoscroll(const ScreenPoint& aAnchorLocation,
-                                    const ScrollableLayerGuid& aGuid);
+  bool StartAsyncAutoscroll(const ScreenPoint& aAnchorLocation,
+                            const ScrollableLayerGuid& aGuid);
 
   /**
    * Notify APZ to stop autoscrolling.
    * @param aGuid identifies the scroll frame which is being autoscrolled.
    */
-  virtual void StopAsyncAutoscroll(const ScrollableLayerGuid& aGuid);
+  void StopAsyncAutoscroll(const ScrollableLayerGuid& aGuid);
 
   virtual LayersId GetRootLayerTreeId();
 

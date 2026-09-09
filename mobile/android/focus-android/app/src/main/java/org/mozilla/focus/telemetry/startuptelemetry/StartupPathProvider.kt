@@ -14,21 +14,17 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 
 /**
- * This should be a member variable of [Activity] because its data is tied to the lifecycle of an
- * Activity. Call [attachOnActivityOnCreate] & [onIntentReceived] for this class to work correctly.
+ * This should be a member variable of [Activity] because its data is tied to the lifecycle of an Activity. Call
+ * [attachOnActivityOnCreate] & [onIntentReceived] for this class to work correctly.
  */
 class StartupPathProvider {
 
-    /**
-     * Possible paths why the application was started.
-     */
+    /** Possible paths why the application was started. */
     enum class StartupPath {
         MAIN,
         VIEW,
 
-        /**
-         * The start up path if we received an Intent but we're unable to categorize it into other buckets.
-         */
+        /** The start up path if we received an Intent but we're unable to categorize it into other buckets. */
         UNKNOWN,
 
         /**
@@ -40,17 +36,15 @@ class StartupPathProvider {
     }
 
     /**
-     * Returns the [StartupPath] for the currently started activity. This value will be set
-     * after an [Intent] is received that causes this activity to move into the STARTED state.
+     * Returns the [StartupPath] for the currently started activity. This value will be set after an [Intent] is
+     * received that causes this activity to move into the STARTED state.
      */
     var startupPathForActivity = StartupPath.NOT_SET
         private set
 
     private var wasResumedSinceStartedState = false
 
-    /**
-     * Attaches the startup path provider to the activity lifecycle and processes the initial [intent].
-     */
+    /** Attaches the startup path provider to the activity lifecycle and processes the initial [intent]. */
     fun attachOnActivityOnCreate(lifecycle: Lifecycle, intent: Intent?) {
         lifecycle.addObserver(StartupPathLifecycleObserver())
         onIntentReceived(intent)
@@ -63,15 +57,16 @@ class StartupPathProvider {
     // URL, it'll perform a MAIN action. However, it's fairly representative of what users *intended*
     // to do when opening the app and shouldn't change much because it's based on Android system-wide
     // conventions, so it's probably fine for our purposes.
-    private fun getStartupPathFromIntent(intent: Intent): StartupPath = when (intent.action) {
-        Intent.ACTION_MAIN -> StartupPath.MAIN
-        Intent.ACTION_VIEW -> StartupPath.VIEW
-        else -> StartupPath.UNKNOWN
-    }
+    private fun getStartupPathFromIntent(intent: Intent): StartupPath =
+        when (intent.action) {
+            Intent.ACTION_MAIN -> StartupPath.MAIN
+            Intent.ACTION_VIEW -> StartupPath.VIEW
+            else -> StartupPath.UNKNOWN
+        }
 
     /**
-     * Expected to be called when a new [Intent] is received by the [Activity]: i.e.
-     * [Activity.onCreate] and [Activity.onNewIntent].
+     * Expected to be called when a new [Intent] is received by the [Activity]: i.e. [Activity.onCreate] and
+     * [Activity.onNewIntent].
      */
     fun onIntentReceived(intent: Intent?) {
         // We want to set a path only if the intent causes the Activity to move into the STARTED state.
@@ -85,15 +80,10 @@ class StartupPathProvider {
         startupPathForActivity = getStartupPathFromIntent(intent)
     }
 
-    /**
-     * Returns the lifecycle observer for testing.
-     */
-    @VisibleForTesting(otherwise = NONE)
-    fun getTestCallbacks() = StartupPathLifecycleObserver()
+    /** Returns the lifecycle observer for testing. */
+    @VisibleForTesting(otherwise = NONE) fun getTestCallbacks() = StartupPathLifecycleObserver()
 
-    /**
-     * [DefaultLifecycleObserver] that updates the startup path based on activity lifecycle.
-     */
+    /** [DefaultLifecycleObserver] that updates the startup path based on activity lifecycle. */
     @VisibleForTesting(otherwise = PRIVATE)
     inner class StartupPathLifecycleObserver : DefaultLifecycleObserver {
         override fun onResume(owner: LifecycleOwner) {

@@ -12,13 +12,10 @@ import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
 /**
- * [TestRule] to work around mockk problem that causes intermittent failures
- * of tests with mocked lambdas. This rule will call `unmockAll` and retry
- * running the failing test until [maxTries] is reached.
+ * [TestRule] to work around mockk problem that causes intermittent failures of tests with mocked lambdas. This rule
+ * will call `unmockAll` and retry running the failing test until [maxTries] is reached.
  *
- * See:
- * https://github.com/mockk/mockk/issues/598
- * https://github.com/mozilla-mobile/fenix/issues/21952
+ * See: https://github.com/mockk/mockk/issues/598 https://github.com/mozilla-mobile/fenix/issues/21952
  * https://github.com/mozilla-mobile/fenix/issues/22240
  */
 class MockkRetryTestRule(val maxTries: Int = 3) : TestRule {
@@ -40,14 +37,14 @@ class MockkRetryTestRule(val maxTries: Int = 3) : TestRule {
                             // Work around intermittently failing tests with mocked lambdas
                             // on JDK 11: https://github.com/mockk/mockk/issues/598
                             is InstantiationError,
-                            is MockKException,
-                            -> {
+                            is MockKException -> {
                                 failure = throwable
-                                val message = if (i < maxTries - 1) {
-                                    "Retrying test \"${description.displayName}\""
-                                } else {
-                                    "Giving up on test \"${description.displayName}\" after $maxTries tries"
-                                }
+                                val message =
+                                    if (i < maxTries - 1) {
+                                        "Retrying test \"${description.displayName}\""
+                                    } else {
+                                        "Giving up on test \"${description.displayName}\" after $maxTries tries"
+                                    }
                                 logger.error(message, throwable)
                                 unmockkAll()
                             }

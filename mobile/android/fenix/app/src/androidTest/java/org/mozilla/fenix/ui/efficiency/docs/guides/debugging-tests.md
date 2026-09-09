@@ -9,6 +9,27 @@ Structured test logs emit on the dedicated `Eff` logcat tag (plain — no baked-
 `effpretty` (`view` a saved/downloaded artifact, or `capture` live from a device). You read a clean trace
 instead of thousands of lines of daemon/task noise. Build logs → pipe through `effbuild` for the same reason.
 
+## When you want fields instead of prose
+
+`effloop` writes `run-events.jsonl` beside `run-report.txt`: the same run as one JSON object per
+event. Reach for it when the question is quantitative or the prose is in your way.
+
+```bash
+# every failure in the run, with the reason it was classified that way
+jq -r 'select(.outcome=="FAIL") | "\(.failure)\t\(.verb)\t\(.selector // .page)"' run-events.jsonl
+
+# the slowest lookups, which is usually where a timeout is hiding
+jq -r 'select(.type=="LOC") | "\(.elapsedMs)\t\(.selector)"' run-events.jsonl | sort -rn | head
+
+# which test a step belonged to
+jq -r 'select(.type=="testStart" or .outcome=="FAIL") | .testId // .name' run-events.jsonl
+```
+
+`failure` is a fixed vocabulary, not a sentence: `not_found`, `wrong_state`, `action_failed`,
+`still_present`, `appeared`, `never_settled`, `collection_unsatisfied`, `unsupported_strategy`,
+`condition_timeout`, `not_arrived`, `no_path`. Match on it rather than on the message beside it --
+messages get reworded, and a rule that keyed on the old wording fails by matching nothing at all.
+
 ## The done-gate is `effverify`, not "green + 0 failed"
 
 "Green gradle, 0 failed" is NOT proof a test passed — an `@Ignore`'d / SKIPPED test also produces 0 failed.
@@ -28,8 +49,8 @@ A conversion is done only when the **named** test:
 - **Slow ≠ flaky (E1).** UIAutomator list rendering can take ~3s; `mozVerify` polls-until-present (logs
   "not found" retries, then finds it). If it passed on try #1 with retries _inside_ the poll, that's fine —
   not flaky.
-- **Retry can mask a real red (A5, MTE-5729).** `BaseTest.isRetryable()` is broad; one retry can turn a
-  genuine failure green. A test that only passes on a _test-level_ retry is flaky/failing, not done.
+- **No test-level retry (A5, bug 2065120).** `BaseTest` does not re-run a failed test; a red is a red.
+  Firebase still retries once, so a test that only passes on _its_ retry is flaky/failing, not done.
 - **Local-only opaque crash (A1/A2).** A test that should report a clean assertion instead dies with a
   StrictMode `penaltyDeath` crash locally (but passes on Firebase) = Espresso's failure-handler screenshot
   tripping StrictMode. `BaseTest` disables screenshot capture; presence probes are exception-safe (return

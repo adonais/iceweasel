@@ -21,33 +21,36 @@ class HistoryMetadataGroupFragmentStoreTest {
     private lateinit var state: HistoryMetadataGroupFragmentState
     private lateinit var store: HistoryMetadataGroupFragmentStore
 
-    private val mozillaHistoryMetadataItem = History.Metadata(
-        position = 1,
-        title = "Mozilla",
-        url = "mozilla.org",
-        visitedAt = 0,
-        historyTimeGroup = HistoryItemTimeGroup.timeGroupForTimestamp(0),
-        totalViewTime = 0,
-        historyMetadataKey = HistoryMetadataKey("http://www.mozilla.com", "mozilla", null),
-    )
-    private val firefoxHistoryMetadataItem = History.Metadata(
-        position = 1,
-        title = "Firefox",
-        url = "firefox.com",
-        visitedAt = 0,
-        historyTimeGroup = HistoryItemTimeGroup.timeGroupForTimestamp(0),
-        totalViewTime = 0,
-        historyMetadataKey = HistoryMetadataKey("http://www.firefox.com", "mozilla", null),
-    )
+    private val mozillaHistoryMetadataItem =
+        History.Metadata(
+            position = 1,
+            title = "Mozilla",
+            url = "mozilla.org",
+            visitedAt = 0,
+            historyTimeGroup = HistoryItemTimeGroup.timeGroupForTimestamp(0),
+            totalViewTime = 0,
+            historyMetadataKey = HistoryMetadataKey("http://www.mozilla.com", "mozilla", null),
+        )
+    private val firefoxHistoryMetadataItem =
+        History.Metadata(
+            position = 1,
+            title = "Firefox",
+            url = "firefox.com",
+            visitedAt = 0,
+            historyTimeGroup = HistoryItemTimeGroup.timeGroupForTimestamp(0),
+            totalViewTime = 0,
+            historyMetadataKey = HistoryMetadataKey("http://www.firefox.com", "mozilla", null),
+        )
     private val pendingDeletionItem = mozillaHistoryMetadataItem.toPendingDeletionHistory()
 
     @Before
     fun setup() {
-        state = HistoryMetadataGroupFragmentState(
-            items = emptyList(),
-            pendingDeletionItems = emptySet(),
-            isEmpty = true,
-        )
+        state =
+            HistoryMetadataGroupFragmentState(
+                items = emptyList(),
+                pendingDeletionItems = emptySet(),
+                isEmpty = true,
+            )
         store = HistoryMetadataGroupFragmentStore(state)
     }
 

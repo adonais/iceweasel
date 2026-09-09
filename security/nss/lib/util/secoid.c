@@ -672,8 +672,7 @@ CONST_OID mlKem1024[] = { KEMS, 3 };
 #ifndef SECOID_NO_STRINGS
 #define OD(oid, tag, desc, mech, ext) \
     {                                 \
-        OI(oid)                       \
-        , tag, desc, mech, ext        \
+        OI(oid), tag, desc, mech, ext \
     }
 #define ODE(tag, desc, mech, ext)                   \
     {                                               \
@@ -682,8 +681,7 @@ CONST_OID mlKem1024[] = { KEMS, 3 };
 #else
 #define OD(oid, tag, desc, mech, ext) \
     {                                 \
-        OI(oid)                       \
-        , tag, 0, mech, ext           \
+        OI(oid), tag, 0, mech, ext    \
     }
 #define ODE(tag, desc, mech, ext)                \
     {                                            \

@@ -7,19 +7,15 @@ package mozilla.components.concept.engine.autofill
 import kotlinx.coroutines.CompletableDeferred
 import mozilla.components.concept.engine.CancellableOperation
 
-/**
- * Error that is returned if we got a success value out of a [GeckoResult] that is null.
- */
+/** Error that is returned if we got a success value out of a [GeckoResult] that is null. */
 class UnexpectedNullError : IllegalStateException("Expected address structure, got null")
 
-/**
- * Runtime interface for address metadata
- */
+/** Runtime interface for address metadata */
 interface AddressStructureRuntime {
 
     /**
-     * Gets the supported address fields for a country. This is useful when constructing the
-     * address input or edit functionality.
+     * Gets the supported address fields for a country. This is useful when constructing the address input or edit
+     * functionality.
      *
      * @param countryCode Country code (2 letter variant) for the current country selection.
      * @param onSuccess Callback invoked when the address structure has been retreived.

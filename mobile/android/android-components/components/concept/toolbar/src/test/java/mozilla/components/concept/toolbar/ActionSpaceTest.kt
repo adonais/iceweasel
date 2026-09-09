@@ -27,10 +27,11 @@ class ActionSpaceTest {
         assertEquals(view.paddingRight, 0)
         assertEquals(view.paddingBottom, 0)
 
-        space = Toolbar.ActionSpace(
-            0,
-            padding = Padding(16, 20, 24, 28),
-        )
+        space =
+            Toolbar.ActionSpace(
+                0,
+                padding = Padding(16, 20, 24, 28),
+            )
 
         view = space.createView(linearLayout)
         assertEquals(view.paddingLeft, 16)

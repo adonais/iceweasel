@@ -938,12 +938,10 @@ void CodeGenerator::visitSignExtendInt64(LSignExtendInt64* lir) {
   Register64 output = ToOutRegister64(lir);
   switch (lir->mir()->mode()) {
     case MSignExtendInt64::Byte:
-      masm.move32To64SignExtend(input.reg, output);
-      masm.move8SignExtend(output.reg, output.reg);
+      masm.move8SignExtend(input.reg, output.reg);
       break;
     case MSignExtendInt64::Half:
-      masm.move32To64SignExtend(input.reg, output);
-      masm.move16SignExtend(output.reg, output.reg);
+      masm.move16SignExtend(input.reg, output.reg);
       break;
     case MSignExtendInt64::Word:
       masm.move32To64SignExtend(input.reg, output);
@@ -1734,14 +1732,47 @@ void CodeGenerator::visitBitOpI64(LBitOpI64* lir) {
   Register lhs = ToRegister64(lir->lhs()).reg;
   Register rhs;
   Register dest = ToOutRegister64(lir).reg;
+  const JSOp bitop = lir->bitop();
 
   UseScratchRegisterScope temps(masm);
   if (IsConstant(lir->rhs())) {
-    rhs = temps.Acquire();
+    const int64_t imm = ToInt64(lir->rhs());
+    const uint64_t uimm = mozilla::BitwiseCast<uint64_t>(imm);
 
-    // Small immediates can be handled without the load immediate instruction,
-    // but this optimisation isn't yet implemented.
-    masm.ma_li(rhs, ImmWord(ToInt64(lir->rhs())));
+    if (is_uintN(imm, 12)) {
+      // RHS can fit in the {OR,XOR,AND}I's immediate field.
+      switch (bitop) {
+        case JSOp::BitOr:
+          masm.as_ori(dest, lhs, imm);
+          break;
+        case JSOp::BitXor:
+          masm.as_xori(dest, lhs, imm);
+          break;
+        case JSOp::BitAnd:
+          masm.as_andi(dest, lhs, imm);
+          break;
+        default:
+          MOZ_CRASH("unexpected binary opcode");
+      }
+      return;
+    }
+
+    if (bitop == JSOp::BitAnd) {
+      // A contiguous run of 1s can be applied with `BSTRPICK.D; SLLI.D`.
+      MOZ_ASSERT(uimm != 0);
+      if (const auto maybeRange = GetContiguousMaskRange(uimm)) {
+        const auto [msb, lsb] = *maybeRange;
+        masm.as_bstrpick_d(dest, lhs, msb, lsb);
+        if (lsb != 0) {
+          masm.as_slli_d(dest, dest, lsb);
+        }
+        return;
+      }
+    }
+
+    // No shortcuts taken, so materialize the immediate in a register.
+    rhs = temps.Acquire();
+    masm.ma_li(rhs, ImmWord(imm));
   } else {
     rhs = ToRegister64(lir->rhs()).reg;
   }

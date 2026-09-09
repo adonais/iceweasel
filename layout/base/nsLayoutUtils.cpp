@@ -1396,6 +1396,21 @@ nsLayoutUtils::GetNearestScrollContainerFrameToScrollTowards(
             aSideBits)) {
       return scrollContainerFrame;
     }
+
+    // A frame fixed with respect to the viewport is a child of the viewport
+    // frame, so walking up from it would skip over the root scroll container
+    // frame. SCROLLABLE_FIXEDPOS_FINDS_ROOT exists for the same reason, but
+    // unlike it we keep walking when the root can't scroll toward aSideBits.
+    if (f->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
+        nsLayoutUtils::IsReallyFixedPos(f)) {
+      ScrollContainerFrame* rootScrollContainerFrame =
+          f->PresShell()->GetRootScrollContainerFrame();
+      if (rootScrollContainerFrame &&
+          rootScrollContainerFrame->SidesToScrollForUserInputEvents()
+              .Intersects(aSideBits)) {
+        return rootScrollContainerFrame;
+      }
+    }
   }
   return nullptr;
 }
@@ -2034,7 +2049,7 @@ bool nsLayoutUtils::ShouldSnapToGrid(const nsIFrame* aFrame,
 }
 
 Matrix4x4Flagged nsLayoutUtils::GetTransformToAncestor(
-    RelativeTo aFrame, RelativeTo aAncestor, uint32_t aFlags,
+    RelativeTo aFrame, RelativeTo aAncestor, TransformMatrixFlags aFlags,
     nsIFrame** aOutAncestor) {
   nsIFrame* parent;
   Matrix4x4Flagged ctm;
@@ -2051,7 +2066,8 @@ Matrix4x4Flagged nsLayoutUtils::GetTransformToAncestor(
     ctm.ProjectTo2D();
   }
   while (parent && parent != aAncestor.mFrame &&
-         (!(aFlags & nsIFrame::STOP_AT_STACKING_CONTEXT_AND_DISPLAY_PORT) ||
+         (!aFlags.contains(
+              TransformMatrixFlag::StopAtStackingContextAndDisplayPort) ||
           (!parent->IsStackingContext() &&
            !DisplayPortUtils::FrameHasDisplayPort(parent)))) {
     nsIFrame* cur = parent;
@@ -2272,16 +2288,15 @@ static Rect TransformGfxRectToAncestor(
     RelativeTo aFrame, const Rect& aRect, RelativeTo aAncestor,
     bool* aPreservesAxisAlignedRectangles = nullptr,
     Maybe<Matrix4x4Flagged>* aMatrixCache = nullptr,
-    bool aStopAtStackingContextAndDisplayPortAndOOFFrame = false,
-    nsIFrame** aOutAncestor = nullptr) {
+    TransformMatrixFlags aFlags = {}, nsIFrame** aOutAncestor = nullptr) {
   Rect result;
   Matrix4x4Flagged ctm;
   if (SVGTextFrame* text = GetContainingSVGTextFrame(aFrame.mFrame)) {
     result = text->TransformFrameRectFromTextChild(aRect, aFrame.mFrame);
 
-    result = TransformGfxRectToAncestor(
-        RelativeTo{text}, result, aAncestor, nullptr, aMatrixCache,
-        aStopAtStackingContextAndDisplayPortAndOOFFrame, aOutAncestor);
+    result =
+        TransformGfxRectToAncestor(RelativeTo{text}, result, aAncestor, nullptr,
+                                   aMatrixCache, aFlags, aOutAncestor);
     if (aPreservesAxisAlignedRectangles) {
       // TransformFrameRectFromTextChild could involve any kind of transform, we
       // could drill down into it to get an answer out of it but we don't yet.
@@ -2294,11 +2309,7 @@ static Rect TransformGfxRectToAncestor(
     ctm = aMatrixCache->value();
   } else {
     // Else, compute it
-    uint32_t flags = 0;
-    if (aStopAtStackingContextAndDisplayPortAndOOFFrame) {
-      flags |= nsIFrame::STOP_AT_STACKING_CONTEXT_AND_DISPLAY_PORT;
-    }
-    ctm = nsLayoutUtils::GetTransformToAncestor(aFrame, aAncestor, flags,
+    ctm = nsLayoutUtils::GetTransformToAncestor(aFrame, aAncestor, aFlags,
                                                 aOutAncestor);
     if (aMatrixCache) {
       // and put it in the cache, if provided
@@ -2507,19 +2518,19 @@ nsRect nsLayoutUtils::TransformFrameRectToAncestor(
     const nsIFrame* aFrame, const nsRect& aRect, RelativeTo aAncestor,
     bool* aPreservesAxisAlignedRectangles /* = nullptr */,
     Maybe<Matrix4x4Flagged>* aMatrixCache /* = nullptr */,
-    bool aStopAtStackingContextAndDisplayPortAndOOFFrame /* = false */,
+    TransformMatrixFlags aFlags /* = {} */,
     nsIFrame** aOutAncestor /* = nullptr */) {
   MOZ_ASSERT(IsAncestorFrameCrossDocInProcess(aAncestor.mFrame, aFrame),
              "Fix the caller");
+  MOZ_ASSERT(!aFlags.contains(TransformMatrixFlag::InCSSUnits),
+             "TransformMatrixFlag::InCSSUnits is not supported here!");
+
   float srcAppUnitsPerDevPixel = aFrame->PresContext()->AppUnitsPerDevPixel();
-  Rect result(NSAppUnitsToFloatPixels(aRect.x, srcAppUnitsPerDevPixel),
-              NSAppUnitsToFloatPixels(aRect.y, srcAppUnitsPerDevPixel),
-              NSAppUnitsToFloatPixels(aRect.width, srcAppUnitsPerDevPixel),
-              NSAppUnitsToFloatPixels(aRect.height, srcAppUnitsPerDevPixel));
-  result = TransformGfxRectToAncestor(
-      RelativeTo{aFrame}, result, aAncestor, aPreservesAxisAlignedRectangles,
-      aMatrixCache, aStopAtStackingContextAndDisplayPortAndOOFFrame,
-      aOutAncestor);
+  Rect result = LayoutDeviceRect::FromAppUnits(aRect, srcAppUnitsPerDevPixel)
+                    .ToUnknownRect();
+  result = TransformGfxRectToAncestor(RelativeTo{aFrame}, result, aAncestor,
+                                      aPreservesAxisAlignedRectangles,
+                                      aMatrixCache, aFlags, aOutAncestor);
 
   return ScaleThenRoundGfxRectToAppRect(
       result, aAncestor.mFrame->PresContext()->AppUnitsPerDevPixel());
@@ -6058,8 +6069,9 @@ struct SnappedImageDrawingParameters {
   // The default viewport size for SVG images, which we use unless a different
   // one has been explicitly specified. This is the same as |size| except that
   // it does not take into account any transformation on the gfxContext we're
-  // drawing to - for example, CSS transforms are not taken into account.
-  CSSIntSize svgViewportSize;
+  // drawing to - for example, CSS transforms are not taken into account, and
+  // it's not snapped.
+  CSSSize svgViewportSize;
   // Whether there's anything to draw at all.
   bool shouldDraw;
 
@@ -6069,7 +6081,7 @@ struct SnappedImageDrawingParameters {
   SnappedImageDrawingParameters(const gfxMatrix& aImageSpaceToDeviceSpace,
                                 const nsIntSize& aSize,
                                 const ImageRegion& aRegion,
-                                const CSSIntSize& aSVGViewportSize)
+                                const CSSSize& aSVGViewportSize)
       : imageSpaceToDeviceSpace(aImageSpaceToDeviceSpace),
         size(aSize),
         region(aRegion),
@@ -6187,20 +6199,8 @@ static SnappedImageDrawingParameters ComputeSnappedImageDrawingParameters(
       snappedDestSize, imgIContainer::FRAME_CURRENT, aSamplingFilter,
       aImageFlags);
 
-  nsIntSize svgViewportSize;
-  if (scaleFactors.xScale == 1.0 && scaleFactors.yScale == 1.0) {
-    // intImageSize is scaled by currentMatrix. But since there are no scale
-    // factors in currentMatrix, it is safe to assign intImageSize to
-    // svgViewportSize directly.
-    svgViewportSize = intImageSize;
-  } else {
-    // We should not take into account any transformation of currentMatrix
-    // when computing svg viewport size. Since currentMatrix contains scale
-    // factors, we need to recompute SVG viewport by unscaled devPixelDest.
-    svgViewportSize = aImage->OptimalImageSizeForDest(
-        devPixelDest.Size(), imgIContainer::FRAME_CURRENT, aSamplingFilter,
-        aImageFlags);
-  }
+  // The SVG viewport is the dest rect we're filling, not snapped.
+  const CSSSize svgViewportSize(devPixelDest.Width(), devPixelDest.Height());
 
   gfxSize imageSize(intImageSize.width, intImageSize.height);
 
@@ -6319,9 +6319,8 @@ static SnappedImageDrawingParameters ComputeSnappedImageDrawingParameters(
   ImageRegion region = ImageRegion::CreateWithSamplingRestriction(
       imageSpaceFill, subimage, extendMode);
 
-  return SnappedImageDrawingParameters(
-      transform, intImageSize, region,
-      CSSIntSize(svgViewportSize.width, svgViewportSize.height));
+  return SnappedImageDrawingParameters(transform, intImageSize, region,
+                                       svgViewportSize);
 }
 
 static ImgDrawResult DrawImageInternal(
@@ -6563,15 +6562,10 @@ IntSize nsLayoutUtils::ComputeImageContainerDrawingParameters(
   // Compute our SVG context parameters, if any. Don't replace the viewport
   // size if it was already set, prefer what the caller gave.
   SVGImageContext::MaybeStoreContextPaint(aSVGContext, aForFrame, aImage);
-  if ((scaleFactors.xScale != 1.0 || scaleFactors.yScale != 1.0) &&
-      aImage->GetType() == imgIContainer::TYPE_VECTOR &&
-      (!aSVGContext.GetViewportSize())) {
-    gfxSize gfxDestSize(aDestRect.Width(), aDestRect.Height());
-    IntSize viewportSize = aImage->OptimalImageSizeForDest(
-        gfxDestSize, imgIContainer::FRAME_CURRENT, samplingFilter, aFlags);
-
-    CSSIntSize cssViewportSize(viewportSize.width, viewportSize.height);
-    aSVGContext.SetViewportSize(Some(cssViewportSize));
+  if (aImage->GetType() == imgIContainer::TYPE_VECTOR &&
+      !aSVGContext.GetViewportSize()) {
+    aSVGContext.SetViewportSize(
+        Some(CSSSize(aDestRect.Width(), aDestRect.Height())));
   }
 
   const gfx::Matrix& itm = aSc.GetInheritedTransform();
@@ -6656,10 +6650,7 @@ ImgDrawResult nsLayoutUtils::DrawBackgroundImage(
   AUTO_PROFILER_LABEL("nsLayoutUtils::DrawBackgroundImage",
                       GRAPHICS_Rasterization);
 
-  CSSIntSize destCSSSize{nsPresContext::AppUnitsToIntCSSPixels(aDest.width),
-                         nsPresContext::AppUnitsToIntCSSPixels(aDest.height)};
-
-  SVGImageContext svgContext(Some(destCSSSize));
+  SVGImageContext svgContext(Some(CSSSize::FromAppUnits(aDest.Size())));
   SVGImageContext::MaybeStoreContextPaint(svgContext, aForFrame, aImage);
 
   /* Fast path when there is no need for image spacing */
@@ -9370,8 +9361,15 @@ CSSRect nsLayoutUtils::GetBoundingFrameRect(
 }
 
 /* static */
-bool nsLayoutUtils::IsTransformed(nsIFrame* aForFrame, nsIFrame* aTopFrame) {
-  for (nsIFrame* f = aForFrame; f != aTopFrame; f = f->GetParent()) {
+bool nsLayoutUtils::IsTransformed(const nsIFrame* aForFrame,
+                                  const nsIFrame* aTopFrame) {
+  MOZ_ASSERT(aForFrame);
+  MOZ_ASSERT(!aTopFrame || aForFrame == aTopFrame ||
+                 IsProperAncestorFrame(aTopFrame, aForFrame),
+             "aTopFrame should be either nullptr, same as aForFrame, or a "
+             "proper ancestor of aForFrame!");
+
+  for (const nsIFrame* f = aForFrame; f && f != aTopFrame; f = f->GetParent()) {
     if (f->IsTransformed()) {
       return true;
     }
@@ -10204,58 +10202,4 @@ CSSSize nsLayoutUtils::ExpandHeightForDynamicToolbar(
 nsSize nsLayoutUtils::ExpandHeightForDynamicToolbar(
     const nsPresContext* aPresContext, const nsSize& aSize) {
   return ExpandHeightForDynamicToolbarImpl(aPresContext, aSize);
-}
-
-auto nsLayoutUtils::GetCombinedFragmentRects(const nsIFrame* aFrame,
-                                             const nsIFrame* aContainingBlock)
-    -> CombinedFragments {
-  bool mustCheckCBFragment = false;
-  nsPoint offset{};
-  if (aContainingBlock) {
-    MOZ_ASSERT(nsLayoutUtils::IsProperAncestorFrame(aContainingBlock, aFrame));
-    mustCheckCBFragment = aContainingBlock->GetPrevContinuation() ||
-                          aContainingBlock->GetNextContinuation();
-    offset = aFrame->GetOffsetToIgnoringScrolling(aContainingBlock);
-  }
-  bool isPaginated = aFrame->PresContext()->IsPaginated();
-
-  // Lazy getter for aFrame's page-frame ancestor, if any.
-  Maybe<const nsIFrame*> maybePageFrame;
-  auto currPageFrame = [=, &maybePageFrame]() -> const nsIFrame* {
-    MOZ_ASSERT(isPaginated);
-    if (!maybePageFrame) {
-      maybePageFrame.emplace(nsLayoutUtils::GetPageFrame(aFrame));
-    }
-    return maybePageFrame.ref();
-  };
-
-  // A continuation is considered "on the same page" if the context is not
-  // paginated, or if it has the same page-frame ancestor.
-  auto onSamePage = [=](const nsIFrame* aContinuation) -> bool {
-    return !isPaginated ||
-           nsLayoutUtils::GetPageFrame(aContinuation) == currPageFrame();
-  };
-
-  auto inSameCBFragment = [&](const nsIFrame* aContinuation) {
-    return !mustCheckCBFragment || nsLayoutUtils::IsProperAncestorFrame(
-                                       aContainingBlock, aContinuation);
-  };
-
-  // Collect rects from our continuations (limited to those that are on the
-  // same page if the context is paginated).
-  nsRect rect = aFrame->GetRectRelativeToSelf();
-  const auto* next = aFrame->GetNextContinuation();
-  for (; next && onSamePage(next) && inSameCBFragment(next);
-       next = next->GetNextContinuation()) {
-    rect =
-        rect.Union(next->GetRectRelativeToSelf() + next->GetOffsetTo(aFrame));
-  }
-  const auto* prev = aFrame->GetPrevContinuation();
-  for (; prev && onSamePage(prev) && inSameCBFragment(prev);
-       prev = prev->GetPrevContinuation()) {
-    rect =
-        rect.Union(prev->GetRectRelativeToSelf() + prev->GetOffsetTo(aFrame));
-  }
-
-  return CombinedFragments{prev, next, rect + offset};
 }

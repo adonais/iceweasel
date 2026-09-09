@@ -1144,12 +1144,14 @@ receiving end. `AllocPMyManagedParent` constructs the managed actor, then
 diagram shows the construction of the `MyManaged` actor pair:
 
 ```{mermaid}
-:align: center
-:caption: A ``MyManaged`` actor pair being created by some ``Driver``
-          object.  Internal IPC objects in the parent and child processes
-          are combined for compactness.  Connected **par** blocks run
-          concurrently.  This shows that messages can be safely sent while
-          the parent is still being constructed.
+---
+align: center
+caption: >
+  A ``MyManaged`` actor pair being created by some ``Driver`` object.
+  Internal IPC objects in the parent and child processes are combined for
+  compactness.  Connected **par** blocks run concurrently.  This shows that
+  messages can be safely sent while the parent is still being constructed.
+---
 
 %%{init: {'sequence': {'boxMargin': 4, 'actorMargin': 10} }}%%
 sequenceDiagram
@@ -1182,9 +1184,12 @@ child process because that is the only side that can call it, as declared in
 the IPDL protocol file.
 
 ```{mermaid}
-:align: center
-:caption: A ``MyManaged`` actor pair being disconnected due to some
-          ``Driver`` object in the child process sending ``__delete__``.
+---
+align: center
+caption: >
+  A ``MyManaged`` actor pair being disconnected due to some ``Driver``
+  object in the child process sending ``__delete__``.
+---
 
 %%{init: {'sequence': {'boxMargin': 4, 'actorMargin': 10} }}%%
 sequenceDiagram
@@ -1208,10 +1213,12 @@ Finally, let's take a look at the behavior of an actor whose peer has been lost
 (e.g. due to a crashed process).
 
 ```{mermaid}
-:align: center
-:caption: A ``MyManaged`` actor pair being disconnected when its peer is
-          lost due to a fatal error.  Note that ``Recv__delete__`` is not
-          called.
+---
+align: center
+caption: >
+  A ``MyManaged`` actor pair being disconnected when its peer is lost due to
+  a fatal error.  Note that ``Recv__delete__`` is not called.
+---
 
 %%{init: {'sequence': {'boxMargin': 4, 'actorMargin': 10} }}%%
 sequenceDiagram
@@ -1505,11 +1512,14 @@ A hypothetical layout of `PBackground` threads, demonstrating some of the
 process-type limitations, is shown in the diagram below.
 
 ```{mermaid}
-:align: center
-:caption: Hypothetical ``PBackground`` thread setup.  Arrow direction
-          indicates child-to-parent ``PBackground``-managee relationships.
-          Parents always share a thread and may be connected to multiple
-          processes.  Child threads can be any thread, including main.
+---
+align: center
+caption: >
+  Hypothetical ``PBackground`` thread setup.  Arrow direction indicates
+  child-to-parent ``PBackground``-managee relationships.  Parents always
+  share a thread and may be connected to multiple processes.  Child threads
+  can be any thread, including main.
+---
 
 flowchart LR
     subgraph content #1

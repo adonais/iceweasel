@@ -655,7 +655,7 @@ void nsHttpConnectionMgr::ProcessPendingQForEntry(ConnectionEntry* aEntry) {
   aEntry->mPendingQProcessingScheduled = true;
 
   RefPtr<ConnectionEntry> entry = aEntry;
-  NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+  DispatchToCurrent(NS_NewRunnableFunction(
       "nsHttpConnectionMgr::ProcessPendingQForEntry",
       [self = RefPtr{this}, entry]() {
         entry->mPendingQProcessingScheduled = false;

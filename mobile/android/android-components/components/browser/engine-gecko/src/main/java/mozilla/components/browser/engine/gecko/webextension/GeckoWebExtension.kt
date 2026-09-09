@@ -28,10 +28,7 @@ import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.WebExtension as GeckoNativeWebExtension
 import org.mozilla.geckoview.WebExtension.Action as GeckoNativeWebExtensionAction
 
-/**
- * Gecko-based implementation of [WebExtension], wrapping the native web
- * extension object provided by GeckoView.
- */
+/** Gecko-based implementation of [WebExtension], wrapping the native web extension object provided by GeckoView. */
 class GeckoWebExtension(
     val nativeExtension: GeckoNativeWebExtension,
     val runtime: GeckoRuntime,
@@ -41,119 +38,112 @@ class GeckoWebExtension(
     private val logger = Logger("GeckoWebExtension")
 
     /**
-     * Uniquely identifies a port using its name and the session it
-     * was opened for. Ports connected from background scripts will
-     * have a null session.
+     * Uniquely identifies a port using its name and the session it was opened for. Ports connected from background
+     * scripts will have a null session.
      */
     data class PortId(val name: String, val session: EngineSession? = null)
 
-    /**
-     * See [WebExtension.registerBackgroundMessageHandler].
-     */
+    /** See [WebExtension.registerBackgroundMessageHandler]. */
     override fun registerBackgroundMessageHandler(name: String, messageHandler: MessageHandler) {
-        val portDelegate = object : GeckoNativeWebExtension.PortDelegate {
+        val portDelegate =
+            object : GeckoNativeWebExtension.PortDelegate {
 
-            override fun onPortMessage(message: Any, port: GeckoNativeWebExtension.Port) {
-                messageHandler.onPortMessage(message, GeckoPort(port))
-            }
+                override fun onPortMessage(message: Any, port: GeckoNativeWebExtension.Port) {
+                    messageHandler.onPortMessage(message, GeckoPort(port))
+                }
 
-            override fun onDisconnect(port: GeckoNativeWebExtension.Port) {
-                val connectedPort = connectedPorts[PortId(name)]
-                if (connectedPort != null && connectedPort.nativePort == port) {
-                    connectedPorts.remove(PortId(name))
-                    messageHandler.onPortDisconnected(GeckoPort(port))
+                override fun onDisconnect(port: GeckoNativeWebExtension.Port) {
+                    val connectedPort = connectedPorts[PortId(name)]
+                    if (connectedPort != null && connectedPort.nativePort == port) {
+                        connectedPorts.remove(PortId(name))
+                        messageHandler.onPortDisconnected(GeckoPort(port))
+                    }
                 }
             }
-        }
 
         connectedPorts[PortId(name)]?.nativePort?.setDelegate(portDelegate)
 
-        val messageDelegate = object : GeckoNativeWebExtension.MessageDelegate {
+        val messageDelegate =
+            object : GeckoNativeWebExtension.MessageDelegate {
 
-            override fun onConnect(port: GeckoNativeWebExtension.Port) {
-                port.setDelegate(portDelegate)
-                val geckoPort = GeckoPort(port)
-                connectedPorts[PortId(name)] = geckoPort
-                messageHandler.onPortConnected(geckoPort)
-            }
+                override fun onConnect(port: GeckoNativeWebExtension.Port) {
+                    port.setDelegate(portDelegate)
+                    val geckoPort = GeckoPort(port)
+                    connectedPorts[PortId(name)] = geckoPort
+                    messageHandler.onPortConnected(geckoPort)
+                }
 
-            override fun onMessage(
-                // We don't use the same delegate instance for multiple apps so we don't need to verify the name.
-                name: String,
-                message: Any,
-                sender: GeckoNativeWebExtension.MessageSender,
-            ): GeckoResult<Any>? {
-                val response = messageHandler.onMessage(message, null)
-                return response?.let { GeckoResult.fromValue(it) }
+                override fun onMessage(
+                    // We don't use the same delegate instance for multiple apps so we don't need to verify the name.
+                    name: String,
+                    message: Any,
+                    sender: GeckoNativeWebExtension.MessageSender,
+                ): GeckoResult<Any>? {
+                    val response = messageHandler.onMessage(message, null)
+                    return response?.let { GeckoResult.fromValue(it) }
+                }
             }
-        }
 
         nativeExtension.setMessageDelegate(messageDelegate, name)
     }
 
-    /**
-     * See [WebExtension.registerContentMessageHandler].
-     */
+    /** See [WebExtension.registerContentMessageHandler]. */
     override fun registerContentMessageHandler(session: EngineSession, name: String, messageHandler: MessageHandler) {
-        val portDelegate = object : GeckoNativeWebExtension.PortDelegate {
+        val portDelegate =
+            object : GeckoNativeWebExtension.PortDelegate {
 
-            override fun onPortMessage(message: Any, port: GeckoNativeWebExtension.Port) {
-                messageHandler.onPortMessage(message, GeckoPort(port, session))
-            }
+                override fun onPortMessage(message: Any, port: GeckoNativeWebExtension.Port) {
+                    messageHandler.onPortMessage(message, GeckoPort(port, session))
+                }
 
-            override fun onDisconnect(port: GeckoNativeWebExtension.Port) {
-                val connectedPort = connectedPorts[PortId(name, session)]
-                if (connectedPort != null && connectedPort.nativePort == port) {
-                    connectedPorts.remove(PortId(name, session))
-                    messageHandler.onPortDisconnected(connectedPort)
+                override fun onDisconnect(port: GeckoNativeWebExtension.Port) {
+                    val connectedPort = connectedPorts[PortId(name, session)]
+                    if (connectedPort != null && connectedPort.nativePort == port) {
+                        connectedPorts.remove(PortId(name, session))
+                        messageHandler.onPortDisconnected(connectedPort)
+                    }
                 }
             }
-        }
 
         connectedPorts[PortId(name, session)]?.nativePort?.setDelegate(portDelegate)
 
-        val messageDelegate = object : GeckoNativeWebExtension.MessageDelegate {
+        val messageDelegate =
+            object : GeckoNativeWebExtension.MessageDelegate {
 
-            override fun onConnect(port: GeckoNativeWebExtension.Port) {
-                port.setDelegate(portDelegate)
-                val geckoPort = GeckoPort(port, session)
-                connectedPorts[PortId(name, session)] = geckoPort
-                messageHandler.onPortConnected(geckoPort)
-            }
+                override fun onConnect(port: GeckoNativeWebExtension.Port) {
+                    port.setDelegate(portDelegate)
+                    val geckoPort = GeckoPort(port, session)
+                    connectedPorts[PortId(name, session)] = geckoPort
+                    messageHandler.onPortConnected(geckoPort)
+                }
 
-            override fun onMessage(
-                // We don't use the same delegate instance for multiple apps so we don't need to verify the name.
-                name: String,
-                message: Any,
-                sender: GeckoNativeWebExtension.MessageSender,
-            ): GeckoResult<Any>? {
-                val response = messageHandler.onMessage(message, session)
-                return response?.let { GeckoResult.fromValue(it) }
+                override fun onMessage(
+                    // We don't use the same delegate instance for multiple apps so we don't need to verify the name.
+                    name: String,
+                    message: Any,
+                    sender: GeckoNativeWebExtension.MessageSender,
+                ): GeckoResult<Any>? {
+                    val response = messageHandler.onMessage(message, session)
+                    return response?.let { GeckoResult.fromValue(it) }
+                }
             }
-        }
 
         val geckoSession = (session as GeckoEngineSession).geckoSession
         geckoSession.webExtensionController.setMessageDelegate(nativeExtension, messageDelegate, name)
     }
 
-    /**
-     * See [WebExtension.hasContentMessageHandler].
-     */
+    /** See [WebExtension.hasContentMessageHandler]. */
     override fun hasContentMessageHandler(session: EngineSession, name: String): Boolean {
         val geckoSession = (session as GeckoEngineSession).geckoSession
         return geckoSession.webExtensionController.getMessageDelegate(nativeExtension, name) != null
     }
 
-    /**
-     * See [WebExtension.getConnectedPort].
-     */
+    /** See [WebExtension.getConnectedPort]. */
     override fun getConnectedPort(name: String, session: EngineSession?): Port? {
         return connectedPorts[PortId(name, session)]
     }
 
-    /**
-     * See [WebExtension.disconnectPort].
-     */
+    /** See [WebExtension.disconnectPort]. */
     override fun disconnectPort(name: String, session: EngineSession?) {
         val portId = PortId(name, session)
         val port = connectedPorts[portId]
@@ -163,189 +153,181 @@ class GeckoWebExtension(
         }
     }
 
-    /**
-     * See [WebExtension.registerActionHandler].
-     */
+    /** See [WebExtension.registerActionHandler]. */
     override fun registerActionHandler(actionHandler: ActionHandler) {
         if (!supportActions) {
             logger.error(
                 "Attempt to register default action handler but browser and page " +
-                    "action support is turned off for this extension: $id",
+                    "action support is turned off for this extension: $id"
             )
             return
         }
 
-        val actionDelegate = object : GeckoNativeWebExtension.ActionDelegate {
+        val actionDelegate =
+            object : GeckoNativeWebExtension.ActionDelegate {
 
-            override fun onBrowserAction(
-                ext: GeckoNativeWebExtension,
-                // Session will always be null here for the global default delegate
-                session: GeckoSession?,
-                action: GeckoNativeWebExtensionAction,
-            ) {
-                actionHandler.onBrowserAction(this@GeckoWebExtension, null, action.convert())
-            }
+                override fun onBrowserAction(
+                    ext: GeckoNativeWebExtension,
+                    // Session will always be null here for the global default delegate
+                    session: GeckoSession?,
+                    action: GeckoNativeWebExtensionAction,
+                ) {
+                    actionHandler.onBrowserAction(this@GeckoWebExtension, null, action.convert())
+                }
 
-            override fun onPageAction(
-                ext: GeckoNativeWebExtension,
-                // Session will always be null here for the global default delegate
-                session: GeckoSession?,
-                action: GeckoNativeWebExtensionAction,
-            ) {
-                actionHandler.onPageAction(this@GeckoWebExtension, null, action.convert())
-            }
+                override fun onPageAction(
+                    ext: GeckoNativeWebExtension,
+                    // Session will always be null here for the global default delegate
+                    session: GeckoSession?,
+                    action: GeckoNativeWebExtensionAction,
+                ) {
+                    actionHandler.onPageAction(this@GeckoWebExtension, null, action.convert())
+                }
 
-            override fun onTogglePopup(
-                ext: GeckoNativeWebExtension,
-                action: GeckoNativeWebExtensionAction,
-            ): GeckoResult<GeckoSession>? {
-                val session = actionHandler.onToggleActionPopup(this@GeckoWebExtension, action.convert())
-                return session?.let { GeckoResult.fromValue((session as GeckoEngineSession).geckoSession) }
+                override fun onTogglePopup(
+                    ext: GeckoNativeWebExtension,
+                    action: GeckoNativeWebExtensionAction,
+                ): GeckoResult<GeckoSession>? {
+                    val session = actionHandler.onToggleActionPopup(this@GeckoWebExtension, action.convert())
+                    return session?.let { GeckoResult.fromValue((session as GeckoEngineSession).geckoSession) }
+                }
             }
-        }
 
         nativeExtension.setActionDelegate(actionDelegate)
     }
 
-    /**
-     * See [WebExtension.registerActionHandler].
-     */
+    /** See [WebExtension.registerActionHandler]. */
     override fun registerActionHandler(session: EngineSession, actionHandler: ActionHandler) {
         if (!supportActions) {
             logger.error(
                 "Attempt to register action handler on session but browser and page " +
-                    "action support is turned off for this extension: $id",
+                    "action support is turned off for this extension: $id"
             )
             return
         }
 
-        val actionDelegate = object : GeckoNativeWebExtension.ActionDelegate {
+        val actionDelegate =
+            object : GeckoNativeWebExtension.ActionDelegate {
 
-            override fun onBrowserAction(
-                ext: GeckoNativeWebExtension,
-                geckoSession: GeckoSession?,
-                action: GeckoNativeWebExtensionAction,
-            ) {
-                actionHandler.onBrowserAction(this@GeckoWebExtension, session, action.convert())
-            }
+                override fun onBrowserAction(
+                    ext: GeckoNativeWebExtension,
+                    geckoSession: GeckoSession?,
+                    action: GeckoNativeWebExtensionAction,
+                ) {
+                    actionHandler.onBrowserAction(this@GeckoWebExtension, session, action.convert())
+                }
 
-            override fun onPageAction(
-                ext: GeckoNativeWebExtension,
-                geckoSession: GeckoSession?,
-                action: GeckoNativeWebExtensionAction,
-            ) {
-                actionHandler.onPageAction(this@GeckoWebExtension, session, action.convert())
+                override fun onPageAction(
+                    ext: GeckoNativeWebExtension,
+                    geckoSession: GeckoSession?,
+                    action: GeckoNativeWebExtensionAction,
+                ) {
+                    actionHandler.onPageAction(this@GeckoWebExtension, session, action.convert())
+                }
             }
-        }
 
         val geckoSession = (session as GeckoEngineSession).geckoSession
         geckoSession.webExtensionController.setActionDelegate(nativeExtension, actionDelegate)
     }
 
-    /**
-     * See [WebExtension.hasActionHandler].
-     */
+    /** See [WebExtension.hasActionHandler]. */
     override fun hasActionHandler(session: EngineSession): Boolean {
         val geckoSession = (session as GeckoEngineSession).geckoSession
         return geckoSession.webExtensionController.getActionDelegate(nativeExtension) != null
     }
 
-    /**
-     * See [WebExtension.registerTabHandler].
-     */
+    /** See [WebExtension.registerTabHandler]. */
     override fun registerTabHandler(tabHandler: TabHandler, defaultSettings: Settings?) {
-        val tabDelegate = object : GeckoNativeWebExtension.TabDelegate {
+        val tabDelegate =
+            object : GeckoNativeWebExtension.TabDelegate {
 
-            override fun onNewTab(
-                ext: GeckoNativeWebExtension,
-                tabDetails: GeckoNativeWebExtension.CreateTabDetails,
-            ): GeckoResult<GeckoSession>? {
-                // TODO bug 1372178: extensions cannot set (non-)privateness.
-                val isPrivate = tabHandler.isInPrivateBrowsing()
-                if (isPrivate && !this@GeckoWebExtension.isAllowedInPrivateBrowsing()) {
-                    return null
+                override fun onNewTab(
+                    ext: GeckoNativeWebExtension,
+                    tabDetails: GeckoNativeWebExtension.CreateTabDetails,
+                ): GeckoResult<GeckoSession>? {
+                    // TODO bug 1372178: extensions cannot set (non-)privateness.
+                    val isPrivate = tabHandler.isInPrivateBrowsing()
+                    if (isPrivate && !this@GeckoWebExtension.isAllowedInPrivateBrowsing()) {
+                        return null
+                    }
+
+                    val geckoEngineSession =
+                        GeckoEngineSession(
+                            runtime = runtime,
+                            privateMode = isPrivate,
+                            defaultSettings = defaultSettings,
+                            openGeckoSession = false,
+                        )
+
+                    tabHandler.onNewTab(
+                        this@GeckoWebExtension,
+                        geckoEngineSession,
+                        tabDetails.active == true,
+                        tabDetails.url ?: "",
+                        isPrivate,
+                    )
+                    return GeckoResult.fromValue(geckoEngineSession.geckoSession)
                 }
 
-                val geckoEngineSession = GeckoEngineSession(
-                    runtime = runtime,
-                    privateMode = isPrivate,
-                    defaultSettings = defaultSettings,
-                    openGeckoSession = false,
-                )
-
-                tabHandler.onNewTab(
-                    this@GeckoWebExtension,
-                    geckoEngineSession,
-                    tabDetails.active == true,
-                    tabDetails.url ?: "",
-                    isPrivate,
-                )
-                return GeckoResult.fromValue(geckoEngineSession.geckoSession)
+                override fun onOpenOptionsPage(ext: GeckoNativeWebExtension) {
+                    tabHandler.onOpenOptionsPage(this@GeckoWebExtension)
+                }
             }
-
-            override fun onOpenOptionsPage(ext: GeckoNativeWebExtension) {
-                tabHandler.onOpenOptionsPage(this@GeckoWebExtension)
-            }
-        }
 
         nativeExtension.tabDelegate = tabDelegate
     }
 
-    /**
-     * See [WebExtension.registerTabHandler].
-     */
+    /** See [WebExtension.registerTabHandler]. */
     override fun registerTabHandler(session: EngineSession, tabHandler: TabHandler) {
-        val tabDelegate = object : GeckoNativeWebExtension.SessionTabDelegate {
+        val tabDelegate =
+            object : GeckoNativeWebExtension.SessionTabDelegate {
 
-            override fun onUpdateTab(
-                ext: GeckoNativeWebExtension,
-                geckoSession: GeckoSession,
-                tabDetails: GeckoNativeWebExtension.UpdateTabDetails,
-            ): GeckoResult<AllowOrDeny> {
-                return if (tabHandler.onUpdateTab(
-                        this@GeckoWebExtension,
-                        session,
-                        tabDetails.active == true,
-                        tabDetails.url,
-                    )
-                ) {
-                    GeckoResult.allow()
-                } else {
-                    GeckoResult.deny()
-                }
-            }
-
-            override fun onCloseTab(
-                ext: GeckoNativeWebExtension?,
-                geckoSession: GeckoSession,
-            ): GeckoResult<AllowOrDeny> {
-                return if (ext != null) {
-                    if (tabHandler.onCloseTab(this@GeckoWebExtension, session)) {
+                override fun onUpdateTab(
+                    ext: GeckoNativeWebExtension,
+                    geckoSession: GeckoSession,
+                    tabDetails: GeckoNativeWebExtension.UpdateTabDetails,
+                ): GeckoResult<AllowOrDeny> {
+                    return if (
+                        tabHandler.onUpdateTab(
+                            this@GeckoWebExtension,
+                            session,
+                            tabDetails.active == true,
+                            tabDetails.url,
+                        )
+                    ) {
                         GeckoResult.allow()
                     } else {
                         GeckoResult.deny()
                     }
-                } else {
-                    GeckoResult.deny()
+                }
+
+                override fun onCloseTab(
+                    ext: GeckoNativeWebExtension?,
+                    geckoSession: GeckoSession,
+                ): GeckoResult<AllowOrDeny> {
+                    return if (ext != null) {
+                        if (tabHandler.onCloseTab(this@GeckoWebExtension, session)) {
+                            GeckoResult.allow()
+                        } else {
+                            GeckoResult.deny()
+                        }
+                    } else {
+                        GeckoResult.deny()
+                    }
                 }
             }
-        }
 
         val geckoSession = (session as GeckoEngineSession).geckoSession
         geckoSession.webExtensionController.setTabDelegate(nativeExtension, tabDelegate)
     }
 
-    /**
-     * See [WebExtension.hasTabHandler].
-     */
+    /** See [WebExtension.hasTabHandler]. */
     override fun hasTabHandler(session: EngineSession): Boolean {
         val geckoSession = (session as GeckoEngineSession).geckoSession
         return geckoSession.webExtensionController.getTabDelegate(nativeExtension) != null
     }
 
-    /**
-     * See [WebExtension.getMetadata].
-     */
+    /** See [WebExtension.getMetadata]. */
     override fun getMetadata(): Metadata {
         return nativeExtension.metaData.let {
             Metadata(
@@ -402,23 +384,21 @@ class GeckoWebExtension(
 
     @VisibleForTesting
     internal fun getIcon(size: Int): GeckoResult<Bitmap?> {
-        return nativeExtension.metaData.icon.getBitmap(size).then(
-            { GeckoResult.fromValue(it) },
-            { GeckoResult.fromValue(null) },
-        )
+        return nativeExtension.metaData.icon
+            .getBitmap(size)
+            .then(
+                { GeckoResult.fromValue(it) },
+                { GeckoResult.fromValue(null) },
+            )
     }
 
-    /**
-     * Companion object for [GeckoWebExtension].
-     */
+    /** Companion object for [GeckoWebExtension]. */
     companion object {
         val DATA_COLLECTION_PERMISSIONS: List<String> = GeckoNativeWebExtension.DATA_COLLECTION_PERMISSIONS
     }
 }
 
-/**
- * Gecko-based implementation of [Port], wrapping the native port provided by GeckoView.
- */
+/** Gecko-based implementation of [Port], wrapping the native port provided by GeckoView. */
 class GeckoPort(
     internal val nativePort: GeckoNativeWebExtension.Port,
     engineSession: EngineSession? = null,
@@ -444,10 +424,13 @@ class GeckoPort(
 private fun GeckoNativeWebExtensionAction.convert(): Action {
     val loadIcon: (suspend (Int) -> Bitmap?)? = icon?.let {
         { size ->
-            icon?.getBitmap(size)?.then(
-                { GeckoResult.fromValue(it) },
-                { GeckoResult.fromValue(null) },
-            )?.await()
+            icon
+                ?.getBitmap(size)
+                ?.then(
+                    { GeckoResult.fromValue(it) },
+                    { GeckoResult.fromValue(null) },
+                )
+                ?.await()
         }
     }
 

@@ -30,14 +30,17 @@ internal class ImportBookmarksDialogFragment : DialogFragment() {
         savedInstanceState: Bundle?,
     ): View = content {
         BookmarkImporter(
-            importer = BookmarksFileImporter.htmlImporter(
-                context = requireContext(),
-                parentGuid = BookmarkRoot.Mobile.id,
-                parser = BookmarksFileParser.jsoupParser(
-                    rootFolderName = requireContext().getString(R.string.bookmark_import_destination_default_name),
+            importer =
+                BookmarksFileImporter.htmlImporter(
+                    context = requireContext(),
+                    parentGuid = BookmarkRoot.Mobile.id,
+                    parser =
+                        BookmarksFileParser.jsoupParser(
+                            rootFolderName =
+                                requireContext().getString(R.string.bookmark_import_destination_default_name)
+                        ),
+                    inserter = requireComponents.core.bookmarksStorage,
                 ),
-                inserter = requireComponents.core.bookmarksStorage,
-            ),
             onEventReceived = { event ->
                 parentFragmentManager.setFragmentResult(
                     REQUEST_KEY,
@@ -68,9 +71,7 @@ internal class ImportBookmarksDialogFragment : DialogFragment() {
         fun decodeResult(bundle: Bundle): FenixImporterEvent? =
             when (bundle.getString(KEY_RESULT)) {
                 RESULT_STARTED -> FenixImporterEvent.Started
-                RESULT_SUCCESS -> FenixImporterEvent.Success(
-                    importCount = bundle.getInt(KEY_SUCCESS_IMPORT_COUNT, 0),
-                )
+                RESULT_SUCCESS -> FenixImporterEvent.Success(importCount = bundle.getInt(KEY_SUCCESS_IMPORT_COUNT, 0))
 
                 RESULT_FAILURE -> {
                     val errorOrdinal = bundle.getInt(KEY_ERROR_TYPE, FenixBookmarkImporterError.UNKNOWN_ERROR.ordinal)
@@ -84,12 +85,13 @@ internal class ImportBookmarksDialogFragment : DialogFragment() {
 }
 
 private fun ImporterEvent.resultBundle(): Bundle {
-    val status = when (this) {
-        is ImporterEvent.Started -> ImportBookmarksDialogFragment.RESULT_STARTED
-        is ImporterEvent.Success -> ImportBookmarksDialogFragment.RESULT_SUCCESS
-        is ImporterEvent.Failure -> ImportBookmarksDialogFragment.RESULT_FAILURE
-        is ImporterEvent.Canceled -> ImportBookmarksDialogFragment.RESULT_CANCELLED
-    }
+    val status =
+        when (this) {
+            is ImporterEvent.Started -> ImportBookmarksDialogFragment.RESULT_STARTED
+            is ImporterEvent.Success -> ImportBookmarksDialogFragment.RESULT_SUCCESS
+            is ImporterEvent.Failure -> ImportBookmarksDialogFragment.RESULT_FAILURE
+            is ImporterEvent.Canceled -> ImportBookmarksDialogFragment.RESULT_CANCELLED
+        }
 
     val importCount = (this as? ImporterEvent.Success)?.importCount
     val error = (this as? ImporterEvent.Failure)?.error?.toFenixError()

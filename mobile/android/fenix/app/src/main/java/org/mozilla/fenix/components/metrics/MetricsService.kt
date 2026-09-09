@@ -5,14 +5,19 @@
 package org.mozilla.fenix.components.metrics
 
 enum class MetricServiceType {
-    Data, Marketing, UsageReporting
+    Data,
+    Marketing,
+    UsageReporting,
 }
 
 interface MetricsService {
     val type: MetricServiceType
 
     fun start()
+
     fun stop()
+
     fun track(event: Event)
+
     fun shouldTrack(event: Event): Boolean
 }

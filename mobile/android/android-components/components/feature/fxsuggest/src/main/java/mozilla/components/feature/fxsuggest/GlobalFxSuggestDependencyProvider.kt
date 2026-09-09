@@ -4,17 +4,14 @@
 
 package mozilla.components.feature.fxsuggest
 
-/**
- * Provides global access to the dependencies needed to access Firefox Suggest search suggestions.
- */
+/** Provides global access to the dependencies needed to access Firefox Suggest search suggestions. */
 object GlobalFxSuggestDependencyProvider {
     internal var storage: FxSuggestStorage? = null
 
     /**
      * Initializes this provider with a wrapped Suggest store.
      *
-     * Your application's [onCreate][android.app.Application.onCreate] method should call this
-     * method once.
+     * Your application's [onCreate][android.app.Application.onCreate] method should call this method once.
      *
      * @param storage The wrapped Suggest store.
      */

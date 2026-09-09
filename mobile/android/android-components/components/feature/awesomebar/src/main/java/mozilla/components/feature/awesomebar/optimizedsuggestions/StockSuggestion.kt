@@ -4,12 +4,12 @@
 
 package mozilla.components.feature.awesomebar.optimizedsuggestions
 
+import java.util.UUID
 import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion
 import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion.Flag
 import mozilla.components.concept.awesomebar.AwesomeBar.SuggestionItem
 import mozilla.components.concept.awesomebar.AwesomeBar.SuggestionProvider
-import java.util.UUID
 
 /**
  * [StockSuggestion] to be displayed by an [AwesomeBar] implementation for stock information.
@@ -43,9 +43,8 @@ data class StockSuggestion(
 /**
  * Domain model representing a single stock suggestion result.
  *
- * This model is independent of UI classes and is used as an intermediate
- * data representation before being mapped into an AwesomeBar-specific
- * suggestion type (e.g. [StockSuggestion]).
+ * This model is independent of UI classes and is used as an intermediate data representation before being mapped into
+ * an AwesomeBar-specific suggestion type (e.g. [StockSuggestion]).
  *
  * @property query The full query string that triggered this suggestion.
  * @property name The full display name of the stock or fund.
@@ -65,22 +64,14 @@ data class StockItem(
     val imageUrl: String?,
 )
 
-/**
- * Represents the change percent used by the Stocks Suggestion.
- */
+/** Represents the change percent used by the Stocks Suggestion. */
 sealed class ChangePercent(val value: String) {
-    /**
-     * Represents a positive percentage change.
-     */
+    /** Represents a positive percentage change. */
     class Positive(value: String) : ChangePercent(value)
 
-    /**
-     * Represents a negative percentage change.
-     */
+    /** Represents a negative percentage change. */
     class Negative(value: String) : ChangePercent(value)
 
-    /**
-     * Represents a neutral (zero) percentage change.
-     */
+    /** Represents a neutral (zero) percentage change. */
     object Neutral : ChangePercent(value = "0")
 }

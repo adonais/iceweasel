@@ -8,11 +8,8 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import org.mozilla.fenix.GleanMetrics.PrivacyNoticeBanner
 
-/**
- * [Middleware] to handle [PrivacyNoticeBannerAction]s telemetry recording.
- */
-class PrivacyNoticeBannerTelemetryMiddleware :
-    Middleware<PrivacyNoticeBannerState, PrivacyNoticeBannerAction> {
+/** [Middleware] to handle [PrivacyNoticeBannerAction]s telemetry recording. */
+class PrivacyNoticeBannerTelemetryMiddleware : Middleware<PrivacyNoticeBannerState, PrivacyNoticeBannerAction> {
 
     override fun invoke(
         store: Store<PrivacyNoticeBannerState, PrivacyNoticeBannerAction>,
@@ -38,9 +35,7 @@ class PrivacyNoticeBannerTelemetryMiddleware :
             }
 
             // no-ops
-            is PrivacyNoticeBannerAction.OnNavigatedAwayFromHome,
-                -> {
-            }
+            is PrivacyNoticeBannerAction.OnNavigatedAwayFromHome -> {}
         }
 
         next(action)

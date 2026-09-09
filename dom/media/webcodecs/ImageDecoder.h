@@ -107,7 +107,8 @@ class ImageDecoder final : public nsISupports,
   void Initialize(const GlobalObject& aGLobal, const ImageDecoderInit& aInit,
                   ErrorResult& aRv);
   void Close(const MediaResult& aResult);
-  void CloseWithoutRef(const MediaResult& aResult);
+  void CloseWithoutRef(const MediaResult& aResult,
+                       bool aCancelReadRequest = true);
 
   void QueueConfigureMessage(const Maybe<gfx::IntSize>& aOutputSize,
                              ColorSpaceConversion aColorSpaceConversion);

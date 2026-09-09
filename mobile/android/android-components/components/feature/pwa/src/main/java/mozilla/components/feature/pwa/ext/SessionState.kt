@@ -9,8 +9,8 @@ import mozilla.components.concept.engine.manifest.WebAppManifest
 import mozilla.components.concept.engine.manifest.WebAppManifest.DisplayMode.BROWSER
 
 /**
- * Checks if the current session represents an installable web app.
- * If so, return the web app manifest. Otherwise, return null.
+ * Checks if the current session represents an installable web app. If so, return the web app manifest. Otherwise,
+ * return null.
  *
  * Websites are installable if:
  * - The site is served over HTTPS

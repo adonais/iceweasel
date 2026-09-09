@@ -6,24 +6,22 @@ package org.mozilla.fenix.tabgroups.storage.data
 
 import org.mozilla.fenix.tabgroups.storage.database.StoredTabGroup
 
-/**
- * Converts the public [TabGroup] model so it can be saved to disk.
- */
-internal fun TabGroup.toStoredTabGroup(): StoredTabGroup = StoredTabGroup(
-    id = id,
-    title = title,
-    theme = theme,
-    closed = closed,
-    lastModified = lastModified,
-)
+/** Converts the public [TabGroup] model so it can be saved to disk. */
+internal fun TabGroup.toStoredTabGroup(): StoredTabGroup =
+    StoredTabGroup(
+        id = id,
+        title = title,
+        theme = theme,
+        closed = closed,
+        lastModified = lastModified,
+    )
 
-/**
- * Converts a [StoredTabGroup] so it can be emitted from the storage layer.
- */
-internal fun StoredTabGroup.toTabGroup(): TabGroup = TabGroup(
-    id = id,
-    title = title,
-    theme = theme,
-    closed = closed,
-    lastModified = lastModified,
-)
+/** Converts a [StoredTabGroup] so it can be emitted from the storage layer. */
+internal fun StoredTabGroup.toTabGroup(): TabGroup =
+    TabGroup(
+        id = id,
+        title = title,
+        theme = theme,
+        closed = closed,
+        lastModified = lastModified,
+    )

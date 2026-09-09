@@ -503,6 +503,10 @@ class BaselineInterpreter {
   // construction and environment initialization.
   uint32_t bailoutPrologueOffset_ = 0;
 
+  // Ion bailouts of a frame that is still mid-generator-resume enter at this
+  // address, which re-runs the generator resume prologue.
+  uint32_t bailoutResumePrologueOffset_ = 0;
+
   // The offsets for the toggledJump instructions for profiler instrumentation.
   uint32_t profilerEnterToggleOffset_ = 0;
   uint32_t profilerExitToggleOffset_ = 0;
@@ -542,7 +546,9 @@ class BaselineInterpreter {
 
   void init(JitCode* code, uint32_t interpretOpOffset,
             uint32_t interpretOpNoDebugTrapOffset,
-            uint32_t bailoutPrologueOffset, uint32_t profilerEnterToggleOffset,
+            uint32_t bailoutPrologueOffset,
+            uint32_t bailoutResumePrologueOffset,
+            uint32_t profilerEnterToggleOffset,
             uint32_t profilerExitToggleOffset, uint32_t debugTrapHandlerOffset,
             CodeOffsetVector&& debugInstrumentationOffsets,
             CodeOffsetVector&& debugTrapOffsets,
@@ -563,6 +569,9 @@ class BaselineInterpreter {
   }
   uint8_t* bailoutPrologueEntryAddr() const {
     return codeAtOffset(bailoutPrologueOffset_);
+  }
+  uint8_t* bailoutResumePrologueEntryAddr() const {
+    return codeAtOffset(bailoutResumePrologueOffset_);
   }
 
   uint8_t* retAddrForIC(JSOp op) const;

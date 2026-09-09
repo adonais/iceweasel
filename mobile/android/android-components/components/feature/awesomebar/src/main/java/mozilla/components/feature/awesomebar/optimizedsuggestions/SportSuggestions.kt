@@ -5,12 +5,12 @@
 package mozilla.components.feature.awesomebar.optimizedsuggestions
 
 import android.graphics.Bitmap
+import java.util.UUID
 import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion
 import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion.Flag
 import mozilla.components.concept.awesomebar.AwesomeBar.SuggestionItem
 import mozilla.components.concept.awesomebar.AwesomeBar.SuggestionProvider
-import java.util.UUID
 
 /**
  * [SportSuggestion] to be displayed by an [AwesomeBar] implementation for sport information.
@@ -45,33 +45,35 @@ data class SportSuggestion(
     override val flags: Set<Flag> = emptySet(),
 ) : SuggestionItem
 
-/**
- * Represents the sports status type used by the Sports Suggestion.
- */
-enum class SportSuggestionStatusType { PAST, LIVE, SCHEDULED, NONE }
+/** Represents the sports status type used by the Sports Suggestion. */
+enum class SportSuggestionStatusType {
+    PAST,
+    LIVE,
+    SCHEDULED,
+    NONE,
+}
 
-/**
- * Represents the sports category used by the Sports Suggestion.
- */
-enum class SportSuggestionCategory { BASEBALL, BASKETBALL, HOCKEY, SOCCER, FOOTBALL, GOLF, RACING, MISC }
+/** Represents the sports category used by the Sports Suggestion. */
+enum class SportSuggestionCategory {
+    BASEBALL,
+    BASKETBALL,
+    HOCKEY,
+    SOCCER,
+    FOOTBALL,
+    GOLF,
+    RACING,
+    MISC,
+}
 
-/**
- * Represents the sports date used by the Sports Suggestion.
- */
+/** Represents the sports date used by the Sports Suggestion. */
 sealed class SportSuggestionDate {
-    /**
-     * Represents a date either in the past or in the future, but not including tomorrow e.g. 28 Oct 2025.
-     */
+    /** Represents a date either in the past or in the future, but not including tomorrow e.g. 28 Oct 2025. */
     class General(val date: String) : SportSuggestionDate()
 
-    /**
-     * Represents today's date.
-     */
+    /** Represents today's date. */
     object Today : SportSuggestionDate()
 
-    /**
-     * Represents tomorrow's date.
-     */
+    /** Represents tomorrow's date. */
     class Tomorrow(val time: String) : SportSuggestionDate()
 }
 
@@ -88,64 +90,40 @@ data class SportSuggestionTeam(
     val icon: Bitmap?,
 )
 
-/**
- * Represents the various statuses a sport's game can have.
- */
+/** Represents the various statuses a sport's game can have. */
 sealed class SportSuggestionStatus {
-    /**
-     * Represents the game status when the game is scheduled to take place.
-     */
+    /** Represents the game status when the game is scheduled to take place. */
     data object Scheduled : SportSuggestionStatus()
 
-    /**
-     * Represents the game status when the game has been delayed.
-     */
+    /** Represents the game status when the game has been delayed. */
     data object Delayed : SportSuggestionStatus()
 
-    /**
-     * Represents the game status when the game has been postponed.
-     */
+    /** Represents the game status when the game has been postponed. */
     data object Postponed : SportSuggestionStatus()
 
-    /**
-     * Represents the game status when the game is currently in progress.
-     */
+    /** Represents the game status when the game is currently in progress. */
     data object InProgress : SportSuggestionStatus()
 
-    /**
-     * Represents the game status when the game has been suspended.
-     */
+    /** Represents the game status when the game has been suspended. */
     data object Suspended : SportSuggestionStatus()
 
-    /**
-     * Represents the game status when the game has been canceled.
-     */
+    /** Represents the game status when the game has been canceled. */
     data object Canceled : SportSuggestionStatus()
 
-    /**
-     * Represents the game status when the game has finished.
-     */
+    /** Represents the game status when the game has finished. */
     data object Final : SportSuggestionStatus()
 
-    /**
-     * Represents the game status when the game has been forfeited.
-     */
+    /** Represents the game status when the game has been forfeited. */
     data object Forfeit : SportSuggestionStatus()
 
-    /**
-     * Represents the game status when the status is not necessary.
-     */
+    /** Represents the game status when the status is not necessary. */
     data object NotNecessary : SportSuggestionStatus()
 
-    /**
-     * Represents the game status when the status is unknown.
-     */
+    /** Represents the game status when the status is unknown. */
     data object Unknown : SportSuggestionStatus()
 }
 
-/**
- * Represents the state of a sport suggestion.
- */
+/** Represents the state of a sport suggestion. */
 data class SportSuggestionState(
     val sport: String,
     val sportCategory: SportSuggestionCategory,
@@ -159,9 +137,8 @@ data class SportSuggestionState(
 /**
  * Domain model representing a single sport suggestion result.
  *
- * This model is independent of UI classes and is used as an intermediate
- * data representation before being mapped into an AwesomeBar-specific
- * suggestion type (e.g. [SportSuggestion]).
+ * This model is independent of UI classes and is used as an intermediate data representation before being mapped into
+ * an AwesomeBar-specific suggestion type (e.g. [SportSuggestion]).
  *
  * @property query The full query string that triggered this suggestion.
  * @property sport The sport name.
@@ -184,9 +161,7 @@ data class SportItem(
     val awayTeam: Team,
     val touched: String,
 ) {
-    /**
-     * Represents a team in a sport suggestion.
-     */
+    /** Represents a team in a sport suggestion. */
     data class Team(
         val key: String,
         val name: String,

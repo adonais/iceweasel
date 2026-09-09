@@ -8,23 +8,23 @@ import io.gitlab.arturbosch.detekt.api.Config
 import io.gitlab.arturbosch.detekt.api.RuleSet
 import io.gitlab.arturbosch.detekt.api.RuleSetProvider
 
-/**
- * Set of rules to enforce the Acorn design system.
- */
+/** Set of rules to enforce the Acorn design system. */
 class AcornRuleSetProvider : RuleSetProvider {
     override val ruleSetId: String
         get() = "acorn-detekt-rules"
 
-    override fun instance(config: Config): RuleSet = RuleSet(
-        id = ruleSetId,
-        rules = listOf(
-            AcornPaddingRule(config),
-            AcornThemeUsageRule(config),
-            MaterialButtonUsageRule(config),
-            MaterialOutlinedButtonUsageRule(config),
-            MaterialSwitchUsageRule(config),
-            MaterialTextButtonUsageRule(config),
-            MaterialTypographyUsageRule(config),
-        ),
-    )
+    override fun instance(config: Config): RuleSet =
+        RuleSet(
+            id = ruleSetId,
+            rules =
+                listOf(
+                    AcornPaddingRule(config),
+                    AcornThemeUsageRule(config),
+                    MaterialButtonUsageRule(config),
+                    MaterialOutlinedButtonUsageRule(config),
+                    MaterialSwitchUsageRule(config),
+                    MaterialTextButtonUsageRule(config),
+                    MaterialTypographyUsageRule(config),
+                ),
+        )
 }

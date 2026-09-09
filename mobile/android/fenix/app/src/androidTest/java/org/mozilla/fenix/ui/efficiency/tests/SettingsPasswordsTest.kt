@@ -12,7 +12,8 @@ import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 
 class SettingsPasswordsTest : BaseTest() {
 
-    private val mockWebServer get() = fenixTestRule.mockWebServer
+    private val mockWebServer
+        get() = fenixTestRule.mockWebServer
 
     @Ignore("Covered by verifyNavigationReachability[1: SettingsPasswordsPage (TBD) — Navigation Reachability]")
     @Test

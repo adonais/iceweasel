@@ -31,11 +31,14 @@ let extData = {
   },
 
   background: function () {
-    browser.contextMenus.create({
-      id: "clickme-page",
-      title: "Click me!",
-      contexts: ["all"],
-    });
+    browser.contextMenus.create(
+      {
+        id: "clickme-page",
+        title: "Click me!",
+        contexts: ["all"],
+      },
+      () => browser.test.sendMessage("menus-created")
+    );
   },
 };
 
@@ -80,6 +83,7 @@ add_setup(async function test_setup() {
 async function browseraction_popup_contextmenu_helper() {
   let extension = ExtensionTestUtils.loadExtension(extData);
   await extension.startup();
+  await extension.awaitMessage("menus-created");
 
   await clickBrowserAction(extension);
 
@@ -99,6 +103,7 @@ async function browseraction_popup_contextmenu_helper() {
 async function browseraction_popup_contextmenu_hidden_items_helper() {
   let extension = ExtensionTestUtils.loadExtension(extData);
   await extension.startup();
+  await extension.awaitMessage("menus-created");
 
   await clickBrowserAction(extension);
 
@@ -132,6 +137,7 @@ async function browseraction_popup_contextmenu_hidden_items_helper() {
 async function browseraction_popup_image_contextmenu_helper() {
   let extension = ExtensionTestUtils.loadExtension(extData);
   await extension.startup();
+  await extension.awaitMessage("menus-created");
 
   await clickBrowserAction(extension);
 

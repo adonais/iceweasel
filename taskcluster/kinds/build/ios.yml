@@ -50,7 +50,6 @@ ios/debug:
         platform: ios/debug
         symbol: B
     run:
-        clone-with: hg
         extra-config:
             mozconfig_platform: ios
         mozconfig-variant: debug
@@ -66,7 +65,6 @@ ios/opt:
         platform: ios/opt
         symbol: B
     run:
-        clone-with: hg
         extra-config:
             mozconfig_platform: ios
         mozconfig-variant: opt
@@ -87,7 +85,6 @@ ios-non-unified/plain:
             PERFHERDER_EXTRA_OPTIONS: non-unified
             MOZ_AUTOMATION_BUILD_SYMBOLS: '0'
     run:
-        clone-with: hg
         extra-config:
             mozconfig_platform: ios
             extra_mozconfig_content:
@@ -109,7 +106,6 @@ ios-sim/debug:
         env:
             PERFHERDER_EXTRA_OPTIONS: ios-sim
     run:
-        clone-with: hg
         extra-config:
             mozconfig_platform: ios-sim
         mozconfig-variant: debug
@@ -128,7 +124,6 @@ ios-sim/opt:
         env:
             PERFHERDER_EXTRA_OPTIONS: ios-sim
     run:
-        clone-with: hg
         extra-config:
             mozconfig_platform: ios-sim
         mozconfig-variant: opt

@@ -13,7 +13,11 @@
 
 use crate::units::{LayoutRect, LayoutSize, LayoutPoint, LayoutVector2D, RectExt};
 use crate::{ColorU, ExtendMode};
-use crate::key_types::{EdgeMask, GradientStopKey};
+use crate::interned_prims::{ConicGradient, LinearGradient, RadialGradient};
+use crate::key_types::{
+    ConicGradientParams, EdgeMask, GradientStopKey, NinePatchDescriptor,
+    RadialGradientParams,
+};
 use euclid::{vec2, size2};
 use euclid::approxeq::ApproxEq;
 
@@ -36,30 +40,28 @@ pub fn simplify_repeated_primitive(
     }
 }
 
-/// Snap a repeated primitive's tile size to the snapped prim-rect extent when
-/// it (fuzzily) matches the unsnapped extent, so the tile lands on the snapped
-/// pixel grid.
-pub fn process_repeat_size(
-    snapped_rect: &LayoutRect,
-    unsnapped_rect: &LayoutRect,
-    repeat_size: LayoutSize,
-) -> LayoutSize {
-    // FIXME(aosmond): The tile size is calculated based on several parameters
-    // during display list building. It may produce a slightly different result
-    // than the bounds due to floating point error accumulation, even though in
-    // theory they should be the same. We do a fuzzy check here to paper over
-    // that. It may make more sense to push the original parameters into scene
-    // building and let it do a saner calculation with more information (e.g.
-    // the snapped values).
+/// Make a tile that was meant to fill `prim_rect` on an axis fill it exactly.
+///
+/// Per-axis: a `repeat_size` extent within an epsilon of the prim rect's is
+/// replaced by the prim rect's, and anything further away is kept verbatim. A
+/// tile a hair short of the primitive would otherwise repeat, leaving a sliver
+/// of a second tile at the far edge.
+///
+/// FIXME(aosmond): The tile size is calculated from several parameters during
+/// display list building, and can come out slightly different from the bounds
+/// through accumulated floating point error even where the two are the same in
+/// theory. The fuzzy check papers over that; computing it exactly in the first
+/// place would be better than correcting it here.
+pub fn resolve_tile_size(prim_rect: &LayoutRect, repeat_size: LayoutSize) -> LayoutSize {
     const EPSILON: f32 = 0.001;
     LayoutSize::new(
-        if repeat_size.width.approx_eq_eps(&unsnapped_rect.width(), &EPSILON) {
-            snapped_rect.width()
+        if repeat_size.width.approx_eq_eps(&prim_rect.width(), &EPSILON) {
+            prim_rect.width()
         } else {
             repeat_size.width
         },
-        if repeat_size.height.approx_eq_eps(&unsnapped_rect.height(), &EPSILON) {
-            snapped_rect.height()
+        if repeat_size.height.approx_eq_eps(&prim_rect.height(), &EPSILON) {
+            prim_rect.height()
         } else {
             repeat_size.height
         },
@@ -99,6 +101,11 @@ pub fn compute_stretch_ratio(stretch_size: LayoutSize, prim_size: LayoutSize) ->
 /// Clip a (possibly tiled) gradient primitive to its local clip rect, returning
 /// the offset that must be applied to the gradient's start/center so the
 /// gradient stays aligned after the prim rect is shrunk.
+///
+/// If the gradient is not tiled then any content outside the clip cannot be
+/// shown, so applying the clip here reduces how much of the gradient gets
+/// rendered and cached. Done separately on each axis, since an axis can be
+/// tiled while the other is not.
 pub fn apply_gradient_local_clip(
     prim_rect: &mut LayoutRect,
     stretch_size: &LayoutSize,
@@ -141,6 +148,16 @@ pub fn apply_gradient_local_clip(
     offset
 }
 
+/// Perform a few optimizations to the gradient that are relevant to scene building.
+///
+/// Mutates `prim_rect`, `tile_size`, `start`, `end` to bake in the simplifications
+/// (repeated-tile collapse, equivalent-to-stretching on either axis, clip-induced
+/// offsets). Decomposition into per-segment quads is no longer done here -- the
+/// caller emits a single `LinearGradient` prim and prepare-time runs
+/// `decompose_axis_aligned_gradient` against the snapped prim_rect when the
+/// gradient is eligible. Doing the decomposition at frame-build keeps adjacent
+/// segments phase-aligned with the snapped outer prim, even when the frame-time
+/// snap pass nudges the outer rect.
 pub fn optimize_linear_gradient(
     prim_rect: &mut LayoutRect,
     tile_size: &mut LayoutSize,
@@ -362,4 +379,141 @@ pub fn optimize_radial_gradient(
 
     tile_spacing.width += l + r;
     tile_spacing.height += t + b;
+}
+
+/// Build the interned description of a linear gradient.
+///
+/// Moved verbatim from the scene builder's `create_linear_gradient_prim` so the
+/// display list builder can build the key at push time. `None` means the
+/// gradient cannot contribute to the scene and no primitive should be recorded.
+///
+/// `prim_rect` is the rect the gradient will be recorded with, i.e. already
+/// through `optimize_linear_gradient`. Note that the `simplify_repeated_primitive`
+/// call below deliberately discards its rect mutation and keeps only the
+/// `tile_spacing` one, and that `stretch_ratio` is resolved against `prim_rect`
+/// rather than the simplified rect - both as the scene builder had it.
+pub fn linear_gradient_prim(
+    prim_rect: LayoutRect,
+    start_point: LayoutPoint,
+    end_point: LayoutPoint,
+    stops: Vec<GradientStopKey>,
+    extend_mode: ExtendMode,
+    stretch_size: LayoutSize,
+    mut tile_spacing: LayoutSize,
+    nine_patch: Option<Box<NinePatchDescriptor>>,
+) -> Option<LinearGradient> {
+    let mut simplified_rect = prim_rect;
+    simplify_repeated_primitive(&stretch_size, &mut tile_spacing, &mut simplified_rect);
+
+    let mut is_entirely_transparent = true;
+    for stop in &stops {
+        if stop.color.a > 0 {
+            is_entirely_transparent = false;
+        }
+    }
+
+    // If all the stops have no alpha, then this
+    // gradient can't contribute to the scene.
+    if is_entirely_transparent {
+        return None;
+    }
+
+    // Try to ensure that if the gradient is specified in reverse, then so long as the stops
+    // are also supplied in reverse that the rendered result will be equivalent. To do this,
+    // a reference orientation for the gradient line must be chosen, somewhat arbitrarily, so
+    // just designate the reference orientation as start < end. Aligned gradient rendering
+    // manages to produce the same result regardless of orientation, so don't worry about
+    // reversing in that case.
+    let reverse_stops = start_point.x > end_point.x ||
+        (start_point.x == end_point.x && start_point.y > end_point.y);
+
+    // To get reftests exactly matching with reverse start/end
+    // points, it's necessary to reverse the gradient
+    // line in some cases.
+    let (sp, ep) = if reverse_stops {
+        (end_point, start_point)
+    } else {
+        (start_point, end_point)
+    };
+
+    let stretch_ratio = compute_stretch_ratio(stretch_size, prim_rect.size());
+
+    Some(LinearGradient {
+        extend_mode,
+        start_point: sp.into(),
+        end_point: ep.into(),
+        stretch_ratio: stretch_ratio.into(),
+        tile_spacing: tile_spacing.into(),
+        stops,
+        reverse_stops,
+        nine_patch,
+    })
+}
+
+/// Build the interned description of a conic gradient. Moved verbatim from the
+/// scene builder's `create_conic_gradient_prim`; see `linear_gradient_prim` for
+/// the two quirks this preserves.
+pub fn conic_gradient_prim(
+    prim_rect: LayoutRect,
+    center: LayoutPoint,
+    angle: f32,
+    start_offset: f32,
+    end_offset: f32,
+    stops: Vec<GradientStopKey>,
+    extend_mode: ExtendMode,
+    stretch_size: LayoutSize,
+    mut tile_spacing: LayoutSize,
+    nine_patch: Option<Box<NinePatchDescriptor>>,
+) -> ConicGradient {
+    let mut simplified_rect = prim_rect;
+    simplify_repeated_primitive(&stretch_size, &mut tile_spacing, &mut simplified_rect);
+
+    let stretch_ratio = compute_stretch_ratio(stretch_size, prim_rect.size());
+
+    ConicGradient {
+        extend_mode,
+        center: center.into(),
+        params: ConicGradientParams { angle, start_offset, end_offset },
+        stretch_ratio: stretch_ratio.into(),
+        tile_spacing: tile_spacing.into(),
+        nine_patch,
+        stops,
+    }
+}
+
+/// Build the interned description of a radial gradient. Moved verbatim from the
+/// scene builder's `create_radial_gradient_prim`; see `linear_gradient_prim` for
+/// the two quirks this preserves.
+pub fn radial_gradient_prim(
+    prim_rect: LayoutRect,
+    center: LayoutPoint,
+    start_radius: f32,
+    end_radius: f32,
+    ratio_xy: f32,
+    stops: Vec<GradientStopKey>,
+    extend_mode: ExtendMode,
+    stretch_size: LayoutSize,
+    mut tile_spacing: LayoutSize,
+    nine_patch: Option<Box<NinePatchDescriptor>>,
+) -> RadialGradient {
+    let mut simplified_rect = prim_rect;
+    simplify_repeated_primitive(&stretch_size, &mut tile_spacing, &mut simplified_rect);
+
+    let params = RadialGradientParams {
+        start_radius,
+        end_radius,
+        ratio_xy,
+    };
+
+    let stretch_ratio = compute_stretch_ratio(stretch_size, prim_rect.size());
+
+    RadialGradient {
+        extend_mode,
+        center: center.into(),
+        params,
+        stretch_ratio: stretch_ratio.into(),
+        tile_spacing: tile_spacing.into(),
+        nine_patch,
+        stops,
+    }
 }

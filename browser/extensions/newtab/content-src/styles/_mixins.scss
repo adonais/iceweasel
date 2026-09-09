@@ -119,6 +119,34 @@ $side-col-width-px: $col-width-px * 2;
   }
 }
 
+// Applies styles when the .content-full-width band has room for at least $cols
+// columns. Queries outer-grid, whose size the band matches, because the band is
+// itself the content-grid container and a container cannot query itself.
+// Usage: @include at-band-cols(12) { … }
+@mixin at-band-cols($cols) {
+  $min-width: calc(#{$cols} * #{$col-width-px} + #{$cols - 1} * #{$col-gap-px});
+
+  @container outer-grid (inline-size >= #{$min-width}) {
+    @content;
+  }
+}
+
+// Applies when the band can hold the side-by-side pair at $cards cards wide: a
+// widgets column, the seam (both panel bleeds plus a gutter), and $cards card
+// tracks. Querying the pair's real width matters -- the next whole col-span up is
+// up to a column coarser, which delays every card step by ~64px.
+//   pair = (4 + 4n) columns + (4n + 5) gaps
+// Usage: @include at-band-fits-pair(3) { … }
+@mixin at-band-fits-pair($cards) {
+  $cols: 4 + 4 * $cards;
+  $gaps: 4 * $cards + 5;
+  $min-width: calc(#{$cols} * #{$col-width-px} + #{$gaps} * #{$col-gap-px});
+
+  @container outer-grid (inline-size >= #{$min-width}) {
+    @content;
+  }
+}
+
 // Use for elements outside .content (e.g. in .sidebar-inline-start).
 // Queries the outer .container when it is wide enough to give the content
 // area room for at least $cols columns.
@@ -128,6 +156,30 @@ $side-col-width-px: $col-width-px * 2;
 
   @container outer-grid (inline-size >= #{$min-width}) {
     @content;
+  }
+}
+
+// Panel behind a side-by-side column. Bleeds outward on a ::before rather than
+// using padding, which would shrink the column's inner grid and shift every card
+// breakpoint.
+@mixin layout-panel {
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: calc(-1 * var(--space-medium));
+    z-index: -1;
+    border: var(--border-width) solid var(--card-border-color);
+    border-radius: var(--border-radius-large);
+  }
+
+  // Over a wallpaper an outline reads poorly, so fill instead. border-color
+  // rather than border keeps the box identical between the two.
+  :is(.lightWallpaper, .darkWallpaper) &::before {
+    border-color: transparent;
+    background-color: var(--newtab-layout-panel-background); // stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens
   }
 }
 

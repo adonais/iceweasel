@@ -12,7 +12,6 @@
 #include "compiler/translator/Name.h"
 #include "compiler/translator/Symbol.h"
 #include "compiler/translator/tree_util/IntermTraverse.h"
-#include "compiler/translator/tree_util/SpecializationConstant.h"
 #include "compiler/translator/util.h"
 
 namespace sh
@@ -134,6 +133,9 @@ class ValidateAST : public TIntermTraverser
     // For validateNoStatementsAfterBranch:
     bool mIsBranchVisitedInBlock        = false;
     bool mNoStatementsAfterBranchFailed = false;
+
+    // For validateNoCaseAtEndOfSwitchBlock:
+    bool mNoCaseAtEndOfSwitchBlockFailed = false;
 
     bool mVariableNamingFailed = false;
 };
@@ -711,13 +713,6 @@ bool ValidateAST::variableNeedsDeclaration(const TVariable *variable)
         return false;
     }
 
-    // Additionally, don't expect declaration for Vulkan specialization constants if not enabled.
-    // The declaration of these variables is deferred.
-    if (variable->getType().getQualifier() == EvqSpecConst)
-    {
-        return mOptions.validateSpecConstReferences;
-    }
-
     return true;
 }
 
@@ -912,6 +907,17 @@ bool ValidateAST::visitSwitch(Visit visit, TIntermSwitch *node)
     if (mOptions.validateExpressionTypes && visit == PreVisit)
     {
         validateExpressionTypeSwitch(node);
+    }
+
+    if (mOptions.validateNoCaseAtEndOfSwitchBlock && visit == PreVisit)
+    {
+        const TIntermSequence &statements = *node->getStatementList()->getSequence();
+        if (!statements.empty() && statements.back()->getAsCaseNode() != nullptr)
+        {
+            mDiagnostics->error(node->getLine(), "Found switch block that ends in a case statement",
+                                "<validateNoCaseAtEndOfSwitchBlock>");
+            mNoCaseAtEndOfSwitchBlockFailed = true;
+        }
     }
 
     return true;
@@ -1319,7 +1325,7 @@ bool ValidateAST::validateInternal()
            !mNullNodesFailed && !mQualifiersFailed && !mPrecisionFailed && !mStructUsageFailed &&
            !mExpressionTypesFailed && !mMultiDeclarationsFailed && !mNoSwizzleOfSwizzleFailed &&
            !mNoQualifiersOnConstructorsFailed && !mNoStatementsAfterBranchFailed &&
-           !mVariableNamingFailed;
+           !mNoCaseAtEndOfSwitchBlockFailed && !mVariableNamingFailed;
 }
 
 bool ValidateAST::isInDeclaration() const

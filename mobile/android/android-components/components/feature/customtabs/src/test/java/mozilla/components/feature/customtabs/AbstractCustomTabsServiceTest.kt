@@ -12,6 +12,7 @@ import android.support.customtabs.ICustomTabsService
 import androidx.browser.customtabs.CustomTabsService
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.engine.Engine
@@ -26,17 +27,18 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.verify
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class AbstractCustomTabsServiceTest {
 
     @Test
     fun customTabService() = runTest {
-        val customTabsService = object : MockCustomTabsService(this) {
-            override val customTabsServiceStore = CustomTabsServiceStore()
-            override fun getPackageManager(): PackageManager = mock()
-        }
+        val customTabsService =
+            object : MockCustomTabsService(this) {
+                override val customTabsServiceStore = CustomTabsServiceStore()
+
+                override fun getPackageManager(): PackageManager = mock()
+            }
 
         val customTabsServiceStub = customTabsService.onBind(mock())
         testScheduler.advanceUntilIdle()
@@ -63,7 +65,7 @@ class AbstractCustomTabsServiceTest {
                 0,
                 mock(),
                 mock(),
-            ),
+            )
         )
         assertTrue(
             stub.mayLaunchUrl(
@@ -71,7 +73,7 @@ class AbstractCustomTabsServiceTest {
                 mock(),
                 mock(),
                 emptyList<Bundle>(),
-            ),
+            )
         )
     }
 
@@ -79,13 +81,14 @@ class AbstractCustomTabsServiceTest {
     fun `Warmup will access engine instance`() = runTest {
         var engineAccessed = false
 
-        val customTabsService = object : MockCustomTabsService(this) {
-            override val engine: Engine
-                get() {
-                    engineAccessed = true
-                    return mock()
-                }
-        }
+        val customTabsService =
+            object : MockCustomTabsService(this) {
+                override val engine: Engine
+                    get() {
+                        engineAccessed = true
+                        return mock()
+                    }
+            }
 
         val stub = customTabsService.onBind(mock()) as ICustomTabsService.Stub
 
@@ -99,9 +102,10 @@ class AbstractCustomTabsServiceTest {
     fun `mayLaunchUrl opens a speculative connection for most likely URL`() = runTest {
         val engine: Engine = mock()
 
-        val customTabsService = object : MockCustomTabsService(this) {
-            override val engine: Engine = engine
-        }
+        val customTabsService =
+            object : MockCustomTabsService(this) {
+                override val engine: Engine = engine
+            }
 
         val stub = customTabsService.onBind(mock()) as ICustomTabsService.Stub
         testScheduler.advanceUntilIdle()
@@ -116,11 +120,12 @@ class AbstractCustomTabsServiceTest {
         val basic = MockCustomTabsService(this)
         assertNull(basic.verifier)
 
-        val both = object : MockCustomTabsService(this) {
-            override val relationChecker: RelationChecker = mock()
+        val both =
+            object : MockCustomTabsService(this) {
+                override val relationChecker: RelationChecker = mock()
 
-            override fun getPackageManager(): PackageManager = mock()
-        }
+                override fun getPackageManager(): PackageManager = mock()
+            }
         testScheduler.advanceUntilIdle()
 
         assertNotNull(both.verifier)

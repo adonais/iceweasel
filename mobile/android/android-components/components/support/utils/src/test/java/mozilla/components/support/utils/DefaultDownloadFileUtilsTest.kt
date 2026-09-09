@@ -15,7 +15,12 @@ import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.File
 import junit.framework.TestCase.assertTrue
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import mozilla.components.support.test.any
 import mozilla.components.support.test.eq
 import mozilla.components.support.test.mock
@@ -30,28 +35,22 @@ import org.mockito.Mockito.verify
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
-import java.io.File
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 
 @RunWith(AndroidJUnit4::class)
 @Config(shadows = [ShadowFileProvider::class])
 class DefaultDownloadFileUtilsTest {
-    @Rule
-    @JvmField
-    val folder = TemporaryFolder()
+    @Rule @JvmField val folder = TemporaryFolder()
 
     private val rootPath: String
         get() = folder.root.path
 
-    val defaultDownloadFileUtils: DefaultDownloadFileUtils = DefaultDownloadFileUtils(
-        context = testContext,
-        downloadLocation = {
-            rootPath
-        },
-    )
+    val defaultDownloadFileUtils: DefaultDownloadFileUtils =
+        DefaultDownloadFileUtils(
+            context = testContext,
+            downloadLocation = {
+                rootPath
+            },
+        )
 
     private fun assertContentDisposition(expected: String, contentDisposition: String) {
         assertEquals(
@@ -95,7 +94,8 @@ class DefaultDownloadFileUtilsTest {
             )
             assertContentDisposition(
                 "filename 的副本.jpg",
-                contentDisposition + ";filename=\"_.jpg\";" +
+                contentDisposition +
+                    ";filename=\"_.jpg\";" +
                     "filename*=UTF-8''filename%20%E7%9A%84%E5%89%AF%E6%9C%AC.jpg",
             )
             assertContentDisposition(
@@ -121,8 +121,14 @@ class DefaultDownloadFileUtilsTest {
 
             assertContentDisposition("success.html", "$contentDisposition; filename*=utf-8''success.html; foo")
             assertContentDisposition("success.html", "$contentDisposition; filename*=utf-8''success.html")
-            assertContentDisposition("Firefox v9.apk", "$contentDisposition; filename=\"Firefox v9.apk\"; filename*=utf-8''Firefox v9.apk")
-            assertContentDisposition("Firefox (v9).apk", "$contentDisposition; filename=\"Firefox (v9).apk\"; filename*=utf-8''Firefox%20%28v9%29.apk")
+            assertContentDisposition(
+                "Firefox v9.apk",
+                "$contentDisposition; filename=\"Firefox v9.apk\"; filename*=utf-8''Firefox v9.apk",
+            )
+            assertContentDisposition(
+                "Firefox (v9).apk",
+                "$contentDisposition; filename=\"Firefox (v9).apk\"; filename*=utf-8''Firefox%20%28v9%29.apk",
+            )
         }
     }
 
@@ -419,13 +425,15 @@ class DefaultDownloadFileUtilsTest {
     fun `Given a valid file When openFile is called Then it starts activity and returns true`() {
         val context = spy(testContext)
 
-        val defaultDownloadFileUtils = DefaultDownloadFileUtils(
-            context = context,
-            downloadLocation = { "/storage/emulated/0/Download" },
-        )
+        val defaultDownloadFileUtils =
+            DefaultDownloadFileUtils(
+                context = context,
+                downloadLocation = { "/storage/emulated/0/Download" },
+            )
         val fileUtils = spy(defaultDownloadFileUtils)
 
-        doReturn("content://downloads/public_downloads".toUri()).`when`(fileUtils)
+        doReturn("content://downloads/public_downloads".toUri())
+            .`when`(fileUtils)
             .findDownloadFileUri(
                 any(),
                 any(),
@@ -446,10 +454,11 @@ class DefaultDownloadFileUtilsTest {
         val directoryPath = "content://downloads"
         val contentType = "application/pdf"
         val uri = "content://path/to/file".toUri()
-        val defaultDownloadFileUtils = DefaultDownloadFileUtils(
-            context = testContext,
-            downloadLocation = { "/storage/emulated/0/Download" },
-        )
+        val defaultDownloadFileUtils =
+            DefaultDownloadFileUtils(
+                context = testContext,
+                downloadLocation = { "/storage/emulated/0/Download" },
+            )
         val fileUtils = spy(defaultDownloadFileUtils)
 
         doReturn(uri).`when`(fileUtils).findDownloadFileUri(fileName, directoryPath)
@@ -468,10 +477,11 @@ class DefaultDownloadFileUtilsTest {
     fun `Given file does NOT exist When createOpenFileIntent is called Then it returns fallback ACTION_VIEW_DOWNLOADS intent`() {
         val fileName = "missing.zip"
         val directoryPath = "/some/path"
-        val defaultDownloadFileUtils = DefaultDownloadFileUtils(
-            context = testContext,
-            downloadLocation = { "/storage/emulated/0/Download" },
-        )
+        val defaultDownloadFileUtils =
+            DefaultDownloadFileUtils(
+                context = testContext,
+                downloadLocation = { "/storage/emulated/0/Download" },
+            )
         val fileUtils = spy(defaultDownloadFileUtils)
 
         doReturn(null).`when`(fileUtils).findDownloadFileUri(fileName, directoryPath)
@@ -491,12 +501,13 @@ class DefaultDownloadFileUtilsTest {
         val directoryPath = "/storage/emulated/0/Download"
         val contentUri = "content://media/external_primary/downloads/42".toUri()
 
-        val fileUtils = spy(
-            DefaultDownloadFileUtils(
-                context = testContext,
-                downloadLocation = { directoryPath },
-            ),
-        )
+        val fileUtils =
+            spy(
+                DefaultDownloadFileUtils(
+                    context = testContext,
+                    downloadLocation = { directoryPath },
+                )
+            )
         doReturn(contentUri).`when`(fileUtils).findDownloadFileUri(fileName, directoryPath)
         doReturn("application/pdf").`when`(fileUtils).getSafeContentType(any(), any(), any())
 
@@ -508,18 +519,20 @@ class DefaultDownloadFileUtilsTest {
 
     @Test
     fun `Given file uri fallback When createOpenFileIntent is called Then it returns content uri from FileProvider`() {
-        val tempFile = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            "open-file-uri-fallback.pdf",
-        )
+        val tempFile =
+            File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                "open-file-uri-fallback.pdf",
+            )
         tempFile.writeText("test")
 
-        val fileUtils = spy(
-            DefaultDownloadFileUtils(
-                context = testContext,
-                downloadLocation = { tempFile.parent ?: "" },
-            ),
-        )
+        val fileUtils =
+            spy(
+                DefaultDownloadFileUtils(
+                    context = testContext,
+                    downloadLocation = { tempFile.parent ?: "" },
+                )
+            )
         val fileUri = Uri.fromFile(tempFile)
         doReturn(fileUri).`when`(fileUtils).findDownloadFileUri(tempFile.name, tempFile.parent ?: "")
 
@@ -539,10 +552,11 @@ class DefaultDownloadFileUtilsTest {
 
     @Test
     fun `Given fileName is null When createOpenFileIntent is called Then it returns fallback ACTION_VIEW_DOWNLOADS intent`() {
-        val defaultDownloadFileUtils = DefaultDownloadFileUtils(
-            context = testContext,
-            downloadLocation = { "/storage/emulated/0/Download" },
-        )
+        val defaultDownloadFileUtils =
+            DefaultDownloadFileUtils(
+                context = testContext,
+                downloadLocation = { "/storage/emulated/0/Download" },
+            )
         val fileUtils = spy(defaultDownloadFileUtils)
         val directoryPath = "/some/path"
 
@@ -641,44 +655,50 @@ class DefaultDownloadFileUtilsTest {
 
         val dummyCollectionUri = Uri.parse("content://media/external_primary/downloads")
 
-        doReturn(cursor).`when`(contentResolver).query(
-            eq(dummyCollectionUri),
-            any(),
-            any(),
-            any(),
-            any(),
-        )
+        doReturn(cursor)
+            .`when`(contentResolver)
+            .query(
+                eq(dummyCollectionUri),
+                any(),
+                any(),
+                any(),
+                any(),
+            )
         doReturn(false).`when`(cursor).moveToFirst()
 
-        val result = fileUtils.findDownloadFileUri(
-            fileName = fileName,
-            directoryPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path,
-        )
+        val result =
+            fileUtils.findDownloadFileUri(
+                fileName = fileName,
+                directoryPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path,
+            )
 
-        verify(contentResolver).query(
-            eq(dummyCollectionUri),
-            any(),
-            any(),
-            any(),
-            any(),
-        )
+        verify(contentResolver)
+            .query(
+                eq(dummyCollectionUri),
+                any(),
+                any(),
+                any(),
+                any(),
+            )
         assertNull(result)
     }
 
     @Test
     fun `Given default directory and no Downloads entry When findDownloadFileUri is called Then it returns file Uri`() {
-        val tempFile = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            "fallback-downloads.txt",
-        )
+        val tempFile =
+            File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                "fallback-downloads.txt",
+            )
         tempFile.writeText("test")
 
         val fileUtils = DefaultDownloadFileUtils(testContext) { "/default/path" }
 
-        val result = fileUtils.findDownloadFileUri(
-            fileName = tempFile.name,
-            directoryPath = tempFile.parent ?: "",
-        )
+        val result =
+            fileUtils.findDownloadFileUri(
+                fileName = tempFile.name,
+                directoryPath = tempFile.parent ?: "",
+            )
 
         assertEquals(Uri.fromFile(tempFile), result)
         tempFile.delete()
@@ -686,18 +706,20 @@ class DefaultDownloadFileUtilsTest {
 
     @Test
     fun `Given default directory and missing MediaStore entry When findDownloadFileUri is called Then it returns file Uri`() {
-        val tempFile = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            "fallback.pdf",
-        )
+        val tempFile =
+            File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                "fallback.pdf",
+            )
         tempFile.writeText("test")
 
         val fileUtils = DefaultDownloadFileUtils(testContext) { "/default/path" }
 
-        val result = fileUtils.findDownloadFileUri(
-            fileName = tempFile.name,
-            directoryPath = tempFile.parent ?: "",
-        )
+        val result =
+            fileUtils.findDownloadFileUri(
+                fileName = tempFile.name,
+                directoryPath = tempFile.parent ?: "",
+            )
 
         assertEquals(Uri.fromFile(tempFile), result)
         tempFile.delete()
@@ -706,19 +728,21 @@ class DefaultDownloadFileUtilsTest {
     @Test
     @Config(sdk = [28])
     fun `Given default directory and missing MediaStore entry When deleteMediaFile is called Then it falls back to File API`() {
-        val tempFile = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            "delete-fallback.pdf",
-        )
+        val tempFile =
+            File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                "delete-fallback.pdf",
+            )
         tempFile.writeText("test")
 
         val fileUtils = DefaultDownloadFileUtils(testContext) { "/default/path" }
 
-        val result = fileUtils.deleteMediaFile(
-            contentResolver = testContext.contentResolver,
-            fileName = tempFile.name,
-            directoryPath = tempFile.parent ?: "",
-        )
+        val result =
+            fileUtils.deleteMediaFile(
+                contentResolver = testContext.contentResolver,
+                fileName = tempFile.name,
+                directoryPath = tempFile.parent ?: "",
+            )
 
         assertTrue(result)
         assertTrue(!tempFile.exists())
@@ -731,10 +755,12 @@ class DefaultDownloadFileUtilsTest {
         val safPath = "content://com.android.externalstorage.documents/tree/primary"
         val expectedUri = "content://path/to/saf/file".toUri()
 
-        doReturn(expectedUri).`when`(fileUtils).findFileInSafDirectory(
-            safPath,
-            fileName,
-        )
+        doReturn(expectedUri)
+            .`when`(fileUtils)
+            .findFileInSafDirectory(
+                safPath,
+                fileName,
+            )
 
         fileUtils.findDownloadFileUri(fileName, safPath)
 
@@ -747,8 +773,7 @@ class DefaultDownloadFileUtilsTest {
         val fileName = "secret.file"
         val safPath = "content://locked/path"
 
-        doThrow(SecurityException("No permission"))
-            .`when`(fileUtils).findFileInSafDirectory(safPath, fileName)
+        doThrow(SecurityException("No permission")).`when`(fileUtils).findFileInSafDirectory(safPath, fileName)
 
         val result = fileUtils.findDownloadFileUri(fileName, safPath)
 
@@ -761,8 +786,7 @@ class DefaultDownloadFileUtilsTest {
         val fileName = "secret.file"
         val safPath = "content://locked/path"
 
-        doThrow(IllegalArgumentException("Invalid URI"))
-            .`when`(fileUtils).findFileInSafDirectory(safPath, fileName)
+        doThrow(IllegalArgumentException("Invalid URI")).`when`(fileUtils).findFileInSafDirectory(safPath, fileName)
 
         val result = fileUtils.findDownloadFileUri(fileName, safPath)
 
@@ -775,8 +799,7 @@ class DefaultDownloadFileUtilsTest {
         val fileName = "secret.file"
         val safPath = "content://locked/path"
 
-        doThrow(IllegalStateException("Illegal State"))
-            .`when`(fileUtils).findFileInSafDirectory(safPath, fileName)
+        doThrow(IllegalStateException("Illegal State")).`when`(fileUtils).findFileInSafDirectory(safPath, fileName)
 
         val result = fileUtils.findDownloadFileUri(fileName, safPath)
 
@@ -793,11 +816,12 @@ class DefaultDownloadFileUtilsTest {
         doReturn(contentUri).`when`(spyUtils).findDownloadFileUri(fileName, directoryPath)
         doThrow(IllegalStateException("Failed to delete")).`when`(spyUtils).deleteMediaStoreEntry(any(), any())
 
-        val result = spyUtils.deleteMediaFile(
-            contentResolver = testContext.contentResolver,
-            fileName = fileName,
-            directoryPath = directoryPath,
-        )
+        val result =
+            spyUtils.deleteMediaFile(
+                contentResolver = testContext.contentResolver,
+                fileName = fileName,
+                directoryPath = directoryPath,
+            )
 
         assertEquals(false, result)
     }
@@ -813,16 +837,18 @@ class DefaultDownloadFileUtilsTest {
 
         doReturn(contentTypeFromFile).`when`(mockContentResolver).getType(mockUri)
 
-        val downloadFileUtils = DefaultDownloadFileUtils(
-            context = spyContext,
-            downloadLocation = { "downloads" },
-        )
+        val downloadFileUtils =
+            DefaultDownloadFileUtils(
+                context = spyContext,
+                downloadLocation = { "downloads" },
+            )
 
-        val result = downloadFileUtils.getSafeContentType(
-            fileName = "test.pdf",
-            contentType = "text/plain",
-            uri = mockUri,
-        )
+        val result =
+            downloadFileUtils.getSafeContentType(
+                fileName = "test.pdf",
+                contentType = "text/plain",
+                uri = mockUri,
+            )
 
         assertEquals("application/pdf", result)
     }
@@ -835,27 +861,30 @@ class DefaultDownloadFileUtilsTest {
         val spyContext = spy(testContext)
         doReturn(contentResolver).`when`(spyContext).contentResolver
 
-        val downloadFileUtils = DefaultDownloadFileUtils(
-            context = spyContext,
-            downloadLocation = { "downloads" },
-        )
+        val downloadFileUtils =
+            DefaultDownloadFileUtils(
+                context = spyContext,
+                downloadLocation = { "downloads" },
+            )
 
         doReturn(null).`when`(contentResolver).getType(mockUri)
-        val result = downloadFileUtils.getSafeContentType(
-            fileName = "test.pdf",
-            contentType = "text/plain",
-            uri = mockUri,
-        )
+        val result =
+            downloadFileUtils.getSafeContentType(
+                fileName = "test.pdf",
+                contentType = "text/plain",
+                uri = mockUri,
+            )
         assertEquals("application/pdf", result)
     }
 
     @Test
     fun `getSafeContentType - WHEN none of the provided content types are available THEN return a generic content type`() {
         val spyContext = spy(testContext)
-        val downloadFileUtils = DefaultDownloadFileUtils(
-            context = spyContext,
-            downloadLocation = { "downloads" },
-        )
+        val downloadFileUtils =
+            DefaultDownloadFileUtils(
+                context = spyContext,
+                downloadLocation = { "downloads" },
+            )
         val contentResolver = mock<ContentResolver>()
         doReturn(contentResolver).`when`(spyContext).contentResolver
 
@@ -918,11 +947,12 @@ class DefaultDownloadFileUtilsTest {
 
         doThrow(SecurityException("Permission denied")).`when`(spyUtils).renameFile(any(), any(), any())
 
-        val result = try {
-            spyUtils.renameFile(rootPath, oldName, newName)
-        } catch (_: Exception) {
-            false
-        }
+        val result =
+            try {
+                spyUtils.renameFile(rootPath, oldName, newName)
+            } catch (_: Exception) {
+                false
+            }
 
         assertEquals(false, result)
     }
@@ -933,13 +963,12 @@ class DefaultDownloadFileUtilsTest {
         private fun assertUrl(expected: String, url: String) {
             assertEquals(
                 expected,
-                DefaultDownloadFileUtils(
-                    context = testContext,
-                ).guessFileName(
-                    contentDisposition = null,
-                    url = url,
-                    mimeType = null,
-                ),
+                DefaultDownloadFileUtils(context = testContext)
+                    .guessFileName(
+                        contentDisposition = null,
+                        url = url,
+                        mimeType = null,
+                    ),
             )
         }
     }

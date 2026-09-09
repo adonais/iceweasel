@@ -72,9 +72,15 @@ class CollectionRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     fun verifyTabsSelectedCounterText(numOfTabs: Int) {
-        Log.i(TAG, "verifyTabsSelectedCounterText: Waiting for $waitingTime ms for \"Select tabs to save\" prompt to be gone")
+        Log.i(
+            TAG,
+            "verifyTabsSelectedCounterText: Waiting for $waitingTime ms for \"Select tabs to save\" prompt to be gone",
+        )
         itemWithText("Select tabs to save").waitUntilGone(waitingTime)
-        Log.i(TAG, "verifyTabsSelectedCounterText: Waited for $waitingTime ms for \"Select tabs to save\" prompt to be gone")
+        Log.i(
+            TAG,
+            "verifyTabsSelectedCounterText: Waited for $waitingTime ms for \"Select tabs to save\" prompt to be gone",
+        )
 
         val tabsCounter = mDevice.findObject(UiSelector().resourceId("$packageName:id/bottom_bar_text"))
         Log.i(TAG, "verifyTabsSelectedCounterText: Trying to assert that number of tabs selected is: $numOfTabs")
@@ -113,10 +119,7 @@ class CollectionRobot(private val composeTestRule: ComposeTestRule) {
         } else {
             Log.i(TAG, "verifyTabSavedInCollection: Waiting for tab with title '$title' to be removed")
             composeTestRule.waitUntil(waitingTimeLong) {
-                composeTestRule
-                    .onAllNodesWithText(title)
-                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
-                    .isEmpty()
+                composeTestRule.onAllNodesWithText(title).fetchSemanticsNodes(atLeastOneRootRequired = false).isEmpty()
             }
             Log.i(TAG, "verifyTabSavedInCollection: Tab with title '$title' is no longer present")
 
@@ -171,8 +174,7 @@ class CollectionRobot(private val composeTestRule: ComposeTestRule) {
             Log.i(TAG, "verifyCollectionMenuIsVisible: Verified collection three dot button is displayed")
         } else {
             Log.i(TAG, "verifyCollectionMenuIsVisible: Trying to verify collection three dot button does not exist")
-            collectionThreeDotButton(composeTestRule)
-                .assertDoesNotExist()
+            collectionThreeDotButton(composeTestRule).assertDoesNotExist()
             Log.i(TAG, "verifyCollectionMenuIsVisible: Verified collection three dot button does not exist")
         }
     }
@@ -311,9 +313,15 @@ class CollectionRobot(private val composeTestRule: ComposeTestRule) {
             title: String,
             interact: BrowserRobot.() -> Unit,
         ): BrowserRobot.Transition {
-            Log.i(TAG, "selectExistingCollection: Waiting for $waitingTime ms for collection with title: $title to exist")
+            Log.i(
+                TAG,
+                "selectExistingCollection: Waiting for $waitingTime ms for collection with title: $title to exist",
+            )
             collectionTitle(title).waitForExists(waitingTime)
-            Log.i(TAG, "selectExistingCollection: Waited for $waitingTime ms for collection with title: $title to exist")
+            Log.i(
+                TAG,
+                "selectExistingCollection: Waited for $waitingTime ms for collection with title: $title to exist",
+            )
             Log.i(TAG, "selectExistingCollection: Trying to click collection with title: $title")
             collectionTitle(title).click()
             Log.i(TAG, "selectExistingCollection: Clicked collection with title: $title")
@@ -337,44 +345,31 @@ class CollectionRobot(private val composeTestRule: ComposeTestRule) {
     }
 }
 
-fun collectionRobot(composeTestRule: ComposeTestRule, interact: CollectionRobot.() -> Unit): CollectionRobot.Transition {
+fun collectionRobot(
+    composeTestRule: ComposeTestRule,
+    interact: CollectionRobot.() -> Unit,
+): CollectionRobot.Transition {
     CollectionRobot(composeTestRule).interact()
     return CollectionRobot.Transition(composeTestRule)
 }
 
 private fun collectionTitle(title: String) = itemWithText(title)
 
-private fun collectionThreeDotButton(rule: ComposeTestRule) =
-    rule.onNode(hasContentDescription("Collection menu"))
-
-private fun collectionListItem(title: String) = mDevice.findObject(UiSelector().text(title))
+private fun collectionThreeDotButton(rule: ComposeTestRule) = rule.onNode(hasContentDescription("Collection menu"))
 
 private fun removeTabFromCollectionButton(title: String) =
-    mDevice.findObject(
-        UiSelector().text(title),
-    ).getFromParent(
-        UiSelector()
-            .description("Remove tab from collection"),
-    )
+    mDevice.findObject(UiSelector().text(title)).getFromParent(UiSelector().description("Remove tab from collection"))
 
 // collection name text field, opened from tab drawer
-private fun collectionNameTextField() =
-    mDevice.findObject(
-        UiSelector().resourceId("$packageName:id/collection_name"),
-    )
+private fun collectionNameTextField() = mDevice.findObject(UiSelector().resourceId("$packageName:id/collection_name"))
 
 // collection name text field, when saving from the main menu option
-private fun mainMenuEditCollectionNameField() =
-    itemWithResId("$packageName:id/name_collection_edittext")
+private fun mainMenuEditCollectionNameField() = itemWithResId("$packageName:id/name_collection_edittext")
 
-private fun addNewCollectionButton() =
-    mDevice.findObject(UiSelector().text("Add new collection"))
+private fun addNewCollectionButton() = mDevice.findObject(UiSelector().text("Add new collection"))
 
-private fun backButton() =
-    mDevice.findObject(
-        UiSelector().resourceId("$packageName:id/back_button"),
-    )
-private fun addCollectionButtonPanel() =
-    itemWithResId("$packageName:id/buttonPanel")
+private fun backButton() = mDevice.findObject(UiSelector().resourceId("$packageName:id/back_button"))
+
+private fun addCollectionButtonPanel() = itemWithResId("$packageName:id/buttonPanel")
 
 private fun addCollectionOkButton() = onView(withId(android.R.id.button1)).inRoot(RootMatchers.isDialog())

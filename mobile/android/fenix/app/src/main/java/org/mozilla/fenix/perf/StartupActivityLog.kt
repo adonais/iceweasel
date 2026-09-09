@@ -20,13 +20,12 @@ import org.mozilla.fenix.android.DefaultActivityLifecycleCallbacks
 private val logger = Logger("StartupActivityLog")
 
 /**
- * A record of the [Activity] created, started, and stopped events as well as [Application]
- * foreground and background events. See [log] for the log. This class is expected to be
- * registered in [Application.onCreate] by calling [registerInAppOnCreate].
+ * A record of the [Activity] created, started, and stopped events as well as [Application] foreground and background
+ * events. See [log] for the log. This class is expected to be registered in [Application.onCreate] by calling
+ * [registerInAppOnCreate].
  *
- * To prevent this list from growing infinitely, we clear the list when the application is stopped.
- * This is acceptable from the current requirements: we never need to inspect more than the current
- * start up.
+ * To prevent this list from growing infinitely, we clear the list when the application is stopped. This is acceptable
+ * from the current requirements: we never need to inspect more than the current start up.
  */
 class StartupActivityLog {
 
@@ -93,15 +92,16 @@ class StartupActivityLog {
         }
     }
 
-    /**
-     * A log entry with its detailed information for the [StartupActivityLog].
-     */
+    /** A log entry with its detailed information for the [StartupActivityLog]. */
     sealed class LogEntry {
         object AppStarted : LogEntry()
+
         object AppStopped : LogEntry()
 
         data class ActivityCreated(val activityClass: Class<out Activity>) : LogEntry()
+
         data class ActivityStarted(val activityClass: Class<out Activity>) : LogEntry()
+
         data class ActivityStopped(val activityClass: Class<out Activity>) : LogEntry()
     }
 }

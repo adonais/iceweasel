@@ -29,7 +29,7 @@
 
     <androidx.preference.SwitchPreferenceCompat
         android:key="@string/pref_key_recent_tabs"
-        android:title="@string/customize_toggle_jump_back_in" />
+        android:title="@string/customize_toggle_continue" />
 
     <androidx.preference.SwitchPreferenceCompat
         android:key="@string/pref_key_customization_bookmarks"

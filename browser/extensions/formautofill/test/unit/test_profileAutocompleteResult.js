@@ -333,6 +333,36 @@ matchingProfiles = [
 
 allFieldNames = ["cc-name", "cc-number", "cc-exp-month", "cc-exp-year"];
 
+// The third profile has no security code and is expected to be filtered out
+// when a `cc-csc` field is focused.
+const cscMatchingProfiles = [
+  {
+    guid: "test-guid-1",
+    "cc-name": "Timothy Berners-Lee",
+    "cc-number": "************6785",
+    "cc-exp-month": 12,
+    "cc-exp-year": 2014,
+    "cc-type": "visa",
+    "cc-csc": "123",
+  },
+  {
+    guid: "test-guid-2",
+    "cc-name": "John Doe",
+    "cc-number": "************1234",
+    "cc-exp-month": 4,
+    "cc-exp-year": 2014,
+    "cc-type": "amex",
+    "cc-csc": "4567",
+  },
+  {
+    guid: "test-guid-3",
+    "cc-name": "No Security Code",
+    "cc-number": "************5678",
+    "cc-exp-month": 8,
+    "cc-exp-year": 2018,
+  },
+];
+
 let creditCardTestCases = [
   {
     description: "Focus on a `cc-name` field",
@@ -428,6 +458,94 @@ let creditCardTestCases = [
     },
   },
   {
+    // The security code is never displayed, so the entry is named after the
+    // field and the card number is shown as the secondary label. A form that
+    // only asks for the security code has no other credit card field to build a
+    // secondary label from, so the card number is the only thing keeping the
+    // entries distinguishable.
+    description: "Focus on a `cc-csc` field in a security-code-only form",
+    options: {},
+    matchingProfiles: cscMatchingProfiles,
+    allFieldNames: ["cc-csc"],
+    searchString: "",
+    fieldDetail: { fieldName: "cc-csc" },
+    expected: {
+      searchResult: Ci.nsIAutoCompleteResult.RESULT_SUCCESS,
+      defaultIndex: 0,
+      items: [
+        {
+          value: "",
+          style: "autofill",
+          label: "CVC",
+          comment: makeCreditCardComment({
+            primary: "CVC",
+            secondary: "••••6785",
+            ariaLabel: "Visa CVC ••••6785",
+            image: "chrome://formautofill/content/third-party/cc-logo-visa.svg",
+            profile: cscMatchingProfiles[0],
+          }),
+          image: "chrome://formautofill/content/third-party/cc-logo-visa.svg",
+        },
+        {
+          value: "",
+          style: "autofill",
+          label: "CVC",
+          comment: makeCreditCardComment({
+            primary: "CVC",
+            secondary: "••••1234",
+            ariaLabel: "American Express CVC ••••1234",
+            image: "chrome://formautofill/content/third-party/cc-logo-amex.png",
+            profile: cscMatchingProfiles[1],
+          }),
+          image: "chrome://formautofill/content/third-party/cc-logo-amex.png",
+        },
+      ],
+    },
+  },
+  {
+    // The security code entry is labelled the same way no matter what else the
+    // form asks for, so the card number wins over the other credit card fields
+    // that would normally supply the secondary label.
+    description: "Focus on a `cc-csc` field in a full credit card form",
+    options: {},
+    matchingProfiles: cscMatchingProfiles,
+    allFieldNames: [...allFieldNames, "cc-csc"],
+    searchString: "",
+    fieldDetail: { fieldName: "cc-csc" },
+    expected: {
+      searchResult: Ci.nsIAutoCompleteResult.RESULT_SUCCESS,
+      defaultIndex: 0,
+      items: [
+        {
+          value: "",
+          style: "autofill",
+          label: "CVC",
+          comment: makeCreditCardComment({
+            primary: "CVC",
+            secondary: "••••6785",
+            ariaLabel: "Visa CVC ••••6785",
+            image: "chrome://formautofill/content/third-party/cc-logo-visa.svg",
+            profile: cscMatchingProfiles[0],
+          }),
+          image: "chrome://formautofill/content/third-party/cc-logo-visa.svg",
+        },
+        {
+          value: "",
+          style: "autofill",
+          label: "CVC",
+          comment: makeCreditCardComment({
+            primary: "CVC",
+            secondary: "••••1234",
+            ariaLabel: "American Express CVC ••••1234",
+            image: "chrome://formautofill/content/third-party/cc-logo-amex.png",
+            profile: cscMatchingProfiles[1],
+          }),
+          image: "chrome://formautofill/content/third-party/cc-logo-amex.png",
+        },
+      ],
+    },
+  },
+  {
     description: "No matching profiles",
     options: {},
     matchingProfiles: [],
@@ -517,4 +635,104 @@ add_task(async function test_all_patterns() {
       }
     });
   });
+});
+
+function makeExternalEntry(style, label) {
+  return {
+    style,
+    value: "",
+    label,
+    image: "",
+    comment: JSON.stringify({ type: style }),
+  };
+}
+
+add_task(async function test_external_entries_order() {
+  const addressProfiles = [
+    { guid: "external-guid-1", organization: "Sesame Street" },
+    { guid: "external-guid-2", organization: "Mozilla" },
+  ];
+
+  function newResult(externalEntries) {
+    const result = new AddressResult(
+      "",
+      { fieldName: "organization" },
+      ["organization"],
+      addressProfiles,
+      {}
+    );
+    result.externalEntries.push(...externalEntries);
+    return result;
+  }
+
+  function stylesOf(result) {
+    return Array.from({ length: result.matchCount }, (_, index) =>
+      result.getStyleAt(index)
+    );
+  }
+
+  const smartFormFill = makeExternalEntry("smartFormFill", "Smart Form Fill");
+  const generic = makeExternalEntry("generic", "Use Firefox Relay");
+
+  info("An external entry sits between the profile rows and the footer");
+  let result = newResult([smartFormFill]);
+  Assert.deepEqual(stylesOf(result), [
+    "autofill",
+    "autofill",
+    "smartFormFill",
+    "action",
+  ]);
+  equal(result.getLabelAt(2), "Smart Form Fill");
+  equal(
+    result.getTypeOfIndex(3),
+    "manage",
+    "The footer is still recognized at its new index"
+  );
+
+  info("The footer stays last whatever the external entries are");
+  result = newResult([generic, smartFormFill]);
+  Assert.deepEqual(stylesOf(result), [
+    "autofill",
+    "autofill",
+    "generic",
+    "smartFormFill",
+    "action",
+  ]);
+  equal(result.matchCount, 5, "Reordering does not change the match count");
+  equal(
+    result.getTypeOfIndex(2),
+    "item",
+    "An external entry is not treated as the footer"
+  );
+
+  Assert.throws(() => result.getValueAt(5), /Index out of range\./);
+});
+
+add_task(async function test_insecure_credit_card_form_has_no_footer() {
+  const result = new CreditCardResult(
+    "",
+    { fieldName: "cc-name" },
+    ["cc-name"],
+    [{ guid: "insecure-guid-1", "cc-name": "John Doe" }],
+    { isSecure: false }
+  );
+  result.externalEntries.push(
+    makeExternalEntry("generic", "Use Firefox Relay")
+  );
+
+  equal(
+    result.matchCount,
+    2,
+    "No footer is added, so only the warning row and the external entry"
+  );
+  equal(
+    result.getTypeOfIndex(0),
+    "insecure",
+    "The warning row keeps its own type"
+  );
+  equal(
+    result.getLabelAt(1),
+    "Use Firefox Relay",
+    "The warning row stays ahead of the external entry"
+  );
 });

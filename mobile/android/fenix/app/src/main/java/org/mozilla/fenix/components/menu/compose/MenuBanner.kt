@@ -33,18 +33,17 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.IconButton
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A full-width banner shown in the menu prompting the user to set Firefox as their default browser.
  *
- * The entire banner (icon, illustration, and text) is clickable to launch the
- * system default-browser picker. An “X” icon at the end lets the user permanently dismiss the
- * banner.
+ * The entire banner (icon, illustration, and text) is clickable to launch the system default-browser picker. An “X”
+ * icon at the end lets the user permanently dismiss the banner.
  *
  * @param onDismiss Invoked when the user taps the dismiss icon (“X”).
  * @param onClick Invoked when the user taps anywhere else on the banner.
@@ -60,19 +59,13 @@ fun MenuBanner(
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
 
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        modifier = modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surfaceBright,
     ) {
         Box {
             Row {
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 24.dp, top = 12.dp, bottom = 10.dp),
-                ) {
+                Column(modifier = Modifier.weight(1f).padding(start = 24.dp, top = 12.dp, bottom = 10.dp)) {
                     Text(
                         text = stringResource(id = R.string.browser_menu_default_banner_title, appName),
                         style = FirefoxTheme.typography.body1,
@@ -95,29 +88,22 @@ fun MenuBanner(
                 Image(
                     painter = painterResource(id = R.drawable.firefox_as_default_banner_illustration),
                     contentDescription = null,
-                    modifier = Modifier
-                        .align(Alignment.Bottom)
-                        .padding(end = 16.dp)
-                        .graphicsLayer(
-                            scaleX = if (isRtl) 1f else -1f,
-                        ),
+                    modifier =
+                        Modifier.align(Alignment.Bottom)
+                            .padding(end = 16.dp)
+                            .graphicsLayer(scaleX = if (isRtl) 1f else -1f),
                 )
             }
 
             IconButton(
                 onClick = onDismiss,
                 contentDescription = stringResource(id = R.string.browser_menu_default_banner_dismiss_promotion),
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .size(48.dp)
-                    .semantics(mergeDescendants = true) {},
+                modifier = Modifier.align(Alignment.TopEnd).size(48.dp).semantics(mergeDescendants = true) {},
             ) {
                 Icon(
                     painter = painterResource(id = iconsR.drawable.mozac_ic_cross_20),
                     contentDescription = null,
-                    modifier = Modifier
-                        .padding(top = 8.dp, end = 12.dp)
-                        .align(Alignment.TopEnd),
+                    modifier = Modifier.padding(top = 8.dp, end = 12.dp).align(Alignment.TopEnd),
                     tint = MaterialTheme.colorScheme.secondary,
                 )
             }
@@ -127,16 +113,14 @@ fun MenuBanner(
 
 @Preview
 @Composable
-private fun MenuBannerPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun MenuBannerPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         MenuBanner(
             onDismiss = {},
             onClick = {},
-            modifier = Modifier
-                .background(color = MaterialTheme.colorScheme.surface)
-                .padding(all = FirefoxTheme.layout.space.static200),
+            modifier =
+                Modifier.background(color = MaterialTheme.colorScheme.surface)
+                    .padding(all = FirefoxTheme.layout.space.static200),
         )
     }
 }

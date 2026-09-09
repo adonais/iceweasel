@@ -33,6 +33,6 @@ info: |
 
 ---*/
 
-Object.seal(null);
+assert.sameValue(Object.seal(null), null);
 
 reportCompare(0, 0);

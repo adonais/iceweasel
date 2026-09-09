@@ -341,12 +341,9 @@ class NameLocation {
     return NameLocation(Kind::DynamicAnnexBVar, BindingKind::Var);
   }
 
-  bool operator==(const NameLocation& other) const {
-    return kind_ == other.kind_ && bindingKind_ == other.bindingKind_ &&
-           hops_ == other.hops_ && slot_ == other.slot_;
-  }
+  bool operator==(const NameLocation& other) const = default;
 
-  bool operator!=(const NameLocation& other) const { return !(*this == other); }
+  bool operator!=(const NameLocation& other) const = default;
 
   Kind kind() const { return kind_; }
 

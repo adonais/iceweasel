@@ -9,8 +9,8 @@ origin:
   description: Win32 APIs for WebAuthn
   url: https://github.com/microsoft/webauthn
 
-  release: 9108981ca80b3c6788fa598708dcf3cb10220ad7
-  revision: 9108981ca80b3c6788fa598708dcf3cb10220ad7
+  release: c3ed95fd7603441a0253c55c14e79239cb556a9f (2025-09-12T17:29:47Z).
+  revision: c3ed95fd7603441a0253c55c14e79239cb556a9f
 
   license: MIT
 
@@ -24,3 +24,6 @@ vendoring:
     - LICENSE
     - README.md
     - webauthn.h
+
+  patches:
+    - include-guard.patch

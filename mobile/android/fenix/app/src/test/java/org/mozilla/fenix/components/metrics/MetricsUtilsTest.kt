@@ -9,23 +9,24 @@ import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import io.mockk.every
 import io.mockk.mockk
+import java.io.IOException
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import java.io.IOException
 
 class MetricsUtilsTest {
 
     @Test
     fun `getAdvertisingID() returns null if the API throws`() {
-        val exceptions = listOf(
-            GooglePlayServicesNotAvailableException(1),
-            GooglePlayServicesRepairableException(0, "", mockk()),
-            IllegalStateException(),
-            IOException(),
-        )
+        val exceptions =
+            listOf(
+                GooglePlayServicesNotAvailableException(1),
+                GooglePlayServicesRepairableException(0, "", mockk()),
+                IllegalStateException(),
+                IOException(),
+            )
 
         exceptions.forEach {
             assertNull(MetricsUtils.getAdvertisingID { throw it })
@@ -71,10 +72,41 @@ class MetricsUtilsTest {
         // Check that the digest of the identifier matches with what we expect.
         // Please note that in the real world, Base64.encodeToString would encode
         // this to something much shorter, which we'd send with the ping.
-        val expectedDigestBytes = byteArrayOf(
-            52, -79, -84, 79, 101, 22, -82, -44, -44, -14, 21, 15, 48, 88, -94, -74,
-            -8, 25, -72, -120, -37, 108, 47, 16, 2, -37, 126, 41, 102, -92, 103, 24,
-        )
+        val expectedDigestBytes =
+            byteArrayOf(
+                52,
+                -79,
+                -84,
+                79,
+                101,
+                22,
+                -82,
+                -44,
+                -44,
+                -14,
+                21,
+                15,
+                48,
+                88,
+                -94,
+                -74,
+                -8,
+                25,
+                -72,
+                -120,
+                -37,
+                108,
+                47,
+                16,
+                2,
+                -37,
+                126,
+                41,
+                102,
+                -92,
+                103,
+                24,
+            )
 
         assertArrayEquals(expectedDigestBytes, shaDigest)
     }

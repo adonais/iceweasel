@@ -76,13 +76,13 @@ class SVGContextPaint : public RefCounted<SVGContextPaint> {
   SVGContextPaint(Maybe<nscolor> aFill, Maybe<float> aFillOpacity,
                   Maybe<nscolor> aStroke, Maybe<float> aStrokeOpacity) {
     if (aFill) {
-      mPaint[Tag::Fill].SetColor(aFill.value());
+      mPaint[Tag::Fill].SetColor(*aFill);
     }
-    mOpacity[Tag::Fill] = aFillOpacity ? aFillOpacity.value() : 1.0f;
+    mOpacity[Tag::Fill] = aFillOpacity.valueOr(1.0f);
     if (aStroke) {
-      mPaint[Tag::Stroke].SetColor(aStroke.value());
+      mPaint[Tag::Stroke].SetColor(*aStroke);
     }
-    mOpacity[Tag::Stroke] = aStrokeOpacity ? aStrokeOpacity.value() : 1.0f;
+    mOpacity[Tag::Stroke] = aStrokeOpacity.valueOr(1.0f);
   }
 
   bool operator==(const SVGContextPaint& aOther) const {

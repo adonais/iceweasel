@@ -10,7 +10,7 @@ add_task(async function () {
   let chromeWin = win.open(
     "chrome://browser/content/places/places.xhtml",
     "_blank",
-    "chrome,extrachrome,menubar,resizable,scrollbars,status,toolbar"
+    "chrome,resizable,toolbar"
   );
   await BrowserTestUtils.waitForEvent(chromeWin, "load");
   let obsPromise = TestUtils.topicObserved("last-pb-context-exited");

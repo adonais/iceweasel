@@ -18,19 +18,14 @@ import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.state.Screen
 import org.mozilla.focus.utils.AppConstants.isDevBuild
 
-/**
- * Fragment responsible for displaying and managing advanced settings.
- */
-class AdvancedSettingsFragment :
-    BaseSettingsFragment(),
-    SharedPreferences.OnSharedPreferenceChangeListener {
+/** Fragment responsible for displaying and managing advanced settings. */
+class AdvancedSettingsFragment : BaseSettingsFragment(), SharedPreferences.OnSharedPreferenceChangeListener {
 
     override fun onCreatePreferences(p0: Bundle?, p1: String?) {
         addPreferencesFromResource(R.xml.advanced_settings)
         findPreference<Preference>(getPreferenceKey(R.string.pref_key_secret_settings))?.isVisible =
             requireComponents.appStore.state.secretSettingsEnabled
-        findPreference<Preference>(getPreferenceKey(R.string.pref_key_leakcanary))?.isVisible =
-            isDevBuild
+        findPreference<Preference>(getPreferenceKey(R.string.pref_key_leakcanary))?.isVisible = isDevBuild
     }
 
     override fun onResume() {
@@ -49,17 +44,16 @@ class AdvancedSettingsFragment :
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String?) {
         when (key) {
             getString(R.string.pref_key_remote_debugging) -> {
-                requireComponents.engine.settings.remoteDebuggingEnabled =
-                    sharedPreferences.getBoolean(key, false)
+                requireComponents.engine.settings.remoteDebuggingEnabled = sharedPreferences.getBoolean(key, false)
 
                 AdvancedSettings.remoteDebugSettingChanged.record(
-                    AdvancedSettings.RemoteDebugSettingChangedExtra(sharedPreferences.all[key] as Boolean),
+                    AdvancedSettings.RemoteDebugSettingChangedExtra(sharedPreferences.all[key] as Boolean)
                 )
             }
 
             getString(R.string.pref_key_open_links_in_external_app) ->
                 AdvancedSettings.openLinksSettingChanged.record(
-                    AdvancedSettings.OpenLinksSettingChangedExtra(sharedPreferences.all[key] as Boolean),
+                    AdvancedSettings.OpenLinksSettingChangedExtra(sharedPreferences.all[key] as Boolean)
                 )
             getString(R.string.pref_key_leakcanary) -> {
                 context?.application?.updateLeakCanaryState(sharedPreferences.all[key] as Boolean)

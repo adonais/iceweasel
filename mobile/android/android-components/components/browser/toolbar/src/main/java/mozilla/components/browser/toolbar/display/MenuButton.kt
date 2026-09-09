@@ -17,9 +17,7 @@ import mozilla.components.concept.menu.MenuController
  *
  * @param impl The [mozilla.components.browser.menu.view.MenuButton]
  */
-internal class MenuButton(
-    @get:VisibleForTesting internal val impl: mozilla.components.browser.menu.view.MenuButton,
-) {
+internal class MenuButton(@get:VisibleForTesting internal val impl: mozilla.components.browser.menu.view.MenuButton) {
 
     init {
         impl.isVisible = false
@@ -28,14 +26,11 @@ internal class MenuButton(
                 override fun onShow() {
                     emitOpenMenuFact(impl.menuBuilder?.extras)
                 }
-            },
+            }
         )
     }
 
-    /**
-     * Reference to the [MenuController].
-     * If present, [menuBuilder] will be ignored.
-     */
+    /** Reference to the [MenuController]. If present, [menuBuilder] will be ignored. */
     var menuController: MenuController?
         get() = impl.menuController
         set(value) {
@@ -43,10 +38,7 @@ internal class MenuButton(
             impl.isVisible = shouldBeVisible()
         }
 
-    /**
-     * Legacy [BrowserMenuBuilder] reference.
-     * Used to build the menu.
-     */
+    /** Legacy [BrowserMenuBuilder] reference. Used to build the menu. */
     var menuBuilder: BrowserMenuBuilder?
         get() = impl.menuBuilder
         set(value) {
@@ -55,9 +47,8 @@ internal class MenuButton(
         }
 
     /**
-     * Declare that the menu items should be updated if needed.
-     * This should only be used once a [menuBuilder] is set.
-     * To update items in the [menuController], call [MenuController.submitList] directly.
+     * Declare that the menu items should be updated if needed. This should only be used once a [menuBuilder] is set. To
+     * update items in the [menuController], call [MenuController.submitList] directly.
      */
     fun invalidateMenu() {
         val menuController = menuController
@@ -86,17 +77,13 @@ internal class MenuButton(
         }
     }
 
-    /**
-     * Sets a lambda to be invoked when the menu is dismissed
-     */
+    /** Sets a lambda to be invoked when the menu is dismissed */
     @Suppress("Deprecation")
     fun setMenuDismissAction(onDismiss: () -> Unit) {
         impl.onDismiss = onDismiss
     }
 
-    fun setColorFilter(
-        @ColorInt color: Int,
-    ) = impl.setColorFilter(color)
+    fun setColorFilter(@ColorInt color: Int) = impl.setColorFilter(color)
 
     /**
      * Hides the menu button.
@@ -107,6 +94,5 @@ internal class MenuButton(
         impl.isVisible = !shouldBeHidden && shouldBeVisible()
     }
 
-    @VisibleForTesting
-    internal fun shouldBeVisible() = impl.menuBuilder != null || impl.menuController != null
+    @VisibleForTesting internal fun shouldBeVisible() = impl.menuBuilder != null || impl.menuController != null
 }

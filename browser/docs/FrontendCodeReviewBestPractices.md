@@ -21,7 +21,7 @@ The sections below outline some of the high level expectations when reviewing co
 A code review and automation will check if this patch:
 
 * applies cleanly to mozilla-central and can be built.
-* has a [good commit message](/contributing/contribution_quickref.md#commit-message) that describes the changes as well as the reason for them where that is not obvious.
+* has a {ref}`good commit message <commit-message>` that describes the changes as well as the reason for them where that is not obvious.
   * Adding a longer description in a commit message will be used as the summary in Phabricator.
 * fixes the issue at hand.
 * has automated test coverage where appropriate. [Exceptions to this are covered by using the test-exception-\* tags in Phabricator](https://firefox-source-docs.mozilla.org/testing/testing-policy/index.html#exceptions). Here are some common exceptions in frontend where \[new\] test coverage isn’t needed:

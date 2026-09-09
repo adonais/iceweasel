@@ -1029,6 +1029,58 @@ TEST(EncodeAPI, Vp8InvalidTemporalLayerPeriodicity) {
 
   EXPECT_EQ(vpx_codec_enc_init(&enc, iface, &cfg, 0), VPX_CODEC_INVALID_PARAM);
 }
+
+// Bug: 540945422.
+// Test resolution changes combined with noise sensitivity toggles.
+// If the resolution increases while noise sensitivity is disabled,
+// the denoiser allocation is skipped. If noise sensitivity is subsequently
+// enabled at the larger resolution, we must ensure the denoiser buffers
+// are properly reallocated to match the larger size to avoid OOB writes.
+TEST(EncodeAPI, Vp8DenoiserResolutionChange) {
+  vpx_codec_iface_t *const iface = vpx_codec_vp8_cx();
+  vpx_codec_enc_cfg_t cfg;
+  vpx_codec_ctx_t enc;
+  ASSERT_EQ(vpx_codec_enc_config_default(iface, &cfg, 0), VPX_CODEC_OK);
+
+  cfg.g_w = 640;
+  cfg.g_h = 480;
+  cfg.g_lag_in_frames = 0;
+
+  ASSERT_EQ(vpx_codec_enc_init(&enc, iface, &cfg, 0), VPX_CODEC_OK);
+
+  // Enable noise sensitivity to 1.
+  ASSERT_EQ(vpx_codec_control(&enc, VP8E_SET_NOISE_SENSITIVITY, 1),
+            VPX_CODEC_OK);
+
+  // Change to smaller resolution.
+  cfg.g_w = 320;
+  cfg.g_h = 240;
+  ASSERT_EQ(vpx_codec_enc_config_set(&enc, &cfg), VPX_CODEC_OK);
+
+  // Disable noise sensitivity so the next resolution increase skips
+  // denoiser reallocation.
+  ASSERT_EQ(vpx_codec_control(&enc, VP8E_SET_NOISE_SENSITIVITY, 0),
+            VPX_CODEC_OK);
+
+  // Change back to large resolution.
+  cfg.g_w = 640;
+  cfg.g_h = 480;
+  ASSERT_EQ(vpx_codec_enc_config_set(&enc, &cfg), VPX_CODEC_OK);
+
+  // Re-enable noise sensitivity.
+  ASSERT_EQ(vpx_codec_control(&enc, VP8E_SET_NOISE_SENSITIVITY, 1),
+            VPX_CODEC_OK);
+
+  // Encode a frame.
+  vpx_image_t *const image =
+      CreateImage(VPX_BITS_8, VPX_IMG_FMT_I420, cfg.g_w, cfg.g_h);
+  ASSERT_NE(image, nullptr);
+  ASSERT_EQ(vpx_codec_encode(&enc, image, 0, 1, 0, VPX_DL_REALTIME),
+            VPX_CODEC_OK);
+  vpx_img_free(image);
+
+  ASSERT_EQ(vpx_codec_destroy(&enc), VPX_CODEC_OK);
+}
 #endif  // CONFIG_VP8_ENCODER
 
 // Set up 2 spatial streams with 2 temporal layers per stream, and generate
@@ -3581,6 +3633,51 @@ TEST(EncodeAPI, SvcResolutionChangeAq3Cbr) {
   vpx_img_free(image);
 
   ASSERT_EQ(vpx_codec_destroy(&enc), VPX_CODEC_OK);
+}
+// Bug: 540943267.
+TEST(EncodeAPI, ResizeRealtimeSourceSadOverflow) {
+  vpx_codec_ctx_t codec;
+  vpx_codec_enc_cfg_t cfg;
+  vpx_image_t *image;
+
+  constexpr int kInitialWidth = 16;
+  constexpr int kInitialHeight = 16;
+  constexpr int kNewWidth = 4096;
+  constexpr int kNewHeight = 4096;
+
+  ASSERT_EQ(vpx_codec_enc_config_default(vpx_codec_vp9_cx(), &cfg, 0),
+            VPX_CODEC_OK);
+
+  cfg.g_w = kInitialWidth;
+  cfg.g_h = kInitialHeight;
+  cfg.g_threads = 1;
+  cfg.g_pass = VPX_RC_ONE_PASS;
+  cfg.g_lag_in_frames = 0;
+  ASSERT_EQ(vpx_codec_enc_init(&codec, vpx_codec_vp9_cx(), &cfg, 0),
+            VPX_CODEC_OK);
+  // Set speed 6 to enable use_source_sad allocation
+  ASSERT_EQ(vpx_codec_control(&codec, VP8E_SET_CPUUSED, 6), VPX_CODEC_OK);
+
+  image = CreateImage(VPX_BITS_8, VPX_IMG_FMT_I420, cfg.g_w, cfg.g_h);
+  ASSERT_NE(image, nullptr);
+  ASSERT_EQ(vpx_codec_encode(&codec, image, 0, 1, 0, VPX_DL_REALTIME),
+            VPX_CODEC_OK);
+
+  cfg.g_w = kNewWidth;
+  cfg.g_h = kNewHeight;
+  ASSERT_EQ(vpx_codec_enc_config_set(&codec, &cfg), VPX_CODEC_OK);
+
+  vpx_img_free(image);
+  image = CreateImage(VPX_BITS_8, VPX_IMG_FMT_I420, cfg.g_w, cfg.g_h);
+  ASSERT_NE(image, nullptr);
+
+  // Encode second frame. Without the fix, this will cause heap corruption
+  // which will trigger a crash during encode or on codec destroy.
+  ASSERT_EQ(vpx_codec_encode(&codec, image, 1, 1, 0, VPX_DL_REALTIME),
+            VPX_CODEC_OK);
+
+  vpx_img_free(image);
+  ASSERT_EQ(vpx_codec_destroy(&codec), VPX_CODEC_OK);
 }
 #endif  // CONFIG_VP9_ENCODER
 

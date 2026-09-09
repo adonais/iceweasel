@@ -16,9 +16,7 @@ import org.robolectric.shadows.ShadowRoleManager
 
 private const val SAMPLE_BROWSER_HTTP_URL = "http://www.mozilla.org/index.html"
 
-/**
- * Helper methods related to the default browser functionalities from `support.utils`.
- */
+/** Helper methods related to the default browser functionalities from `support.utils`. */
 object DefaultBrowserUtils {
 
     /**
@@ -28,26 +26,27 @@ object DefaultBrowserUtils {
      *
      * @param defaultBrowserPackageName the package name of the default browser to set.
      */
-    fun setAsDefaultBrowser(
-        defaultBrowserPackageName: String,
-    ) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        ShadowRoleManager.addRoleHolder(
-            RoleManager.ROLE_BROWSER,
-            defaultBrowserPackageName,
-            Process.myUserHandle(),
-        )
-    } else {
-        val intent = Intent(Intent.ACTION_VIEW, SAMPLE_BROWSER_HTTP_URL.toUri()).apply {
-            addCategory(Intent.CATEGORY_BROWSABLE)
-        }
+    fun setAsDefaultBrowser(defaultBrowserPackageName: String) =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ShadowRoleManager.addRoleHolder(
+                RoleManager.ROLE_BROWSER,
+                defaultBrowserPackageName,
+                Process.myUserHandle(),
+            )
+        } else {
+            val intent =
+                Intent(Intent.ACTION_VIEW, SAMPLE_BROWSER_HTTP_URL.toUri()).apply {
+                    addCategory(Intent.CATEGORY_BROWSABLE)
+                }
 
-        val info = ResolveInfo().apply {
-            activityInfo = ActivityInfo().apply {
-                packageName = defaultBrowserPackageName
-            }
-        }
+            val info =
+                ResolveInfo().apply {
+                    activityInfo =
+                        ActivityInfo().apply {
+                            packageName = defaultBrowserPackageName
+                        }
+                }
 
-        @Suppress("Deprecation")
-        ShadowPackageManager().addResolveInfoForIntent(intent, info)
-    }
+            @Suppress("Deprecation") ShadowPackageManager().addResolveInfoForIntent(intent, info)
+        }
 }

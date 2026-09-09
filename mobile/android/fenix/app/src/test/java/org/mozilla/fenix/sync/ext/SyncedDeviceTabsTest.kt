@@ -6,6 +6,7 @@ package org.mozilla.fenix.sync.ext
 
 import io.mockk.every
 import io.mockk.mockk
+import kotlin.test.assertIs
 import mozilla.components.browser.storage.sync.SyncedDeviceTabs
 import mozilla.components.browser.storage.sync.Tab
 import mozilla.components.browser.storage.sync.TabEntry
@@ -16,99 +17,113 @@ import org.junit.Test
 import org.mozilla.fenix.tabstray.ext.toComposeList
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListSupportedFeature
-import kotlin.test.assertIs
 
 class SyncedDeviceTabsTest {
-    private val noTabDevice = SyncedDeviceTabs(
-        device = mockk {
-            every { displayName } returns "Charcoal"
-            every { id } returns "123"
-            every { deviceType } returns DeviceType.DESKTOP
-            every { capabilities } returns emptyList()
-        },
-        tabs = emptyList(),
-    )
+    private val noTabDevice =
+        SyncedDeviceTabs(
+            device =
+                mockk {
+                    every { displayName } returns "Charcoal"
+                    every { id } returns "123"
+                    every { deviceType } returns DeviceType.DESKTOP
+                    every { capabilities } returns emptyList()
+                },
+            tabs = emptyList(),
+        )
 
-    private val oneTabDeviceWithoutCapabilities = SyncedDeviceTabs(
-        device = mockk {
-            every { displayName } returns "Charcoal"
-            every { id } returns "1234"
-            every { deviceType } returns DeviceType.DESKTOP
-            every { capabilities } returns emptyList()
-        },
-        tabs = listOf(
-            Tab(
-                history = listOf(
-                    TabEntry(
-                        title = "Mozilla",
-                        url = "https://mozilla.org",
-                        iconUrl = null,
-                    ),
+    private val oneTabDeviceWithoutCapabilities =
+        SyncedDeviceTabs(
+            device =
+                mockk {
+                    every { displayName } returns "Charcoal"
+                    every { id } returns "1234"
+                    every { deviceType } returns DeviceType.DESKTOP
+                    every { capabilities } returns emptyList()
+                },
+            tabs =
+                listOf(
+                    Tab(
+                        history =
+                            listOf(
+                                TabEntry(
+                                    title = "Mozilla",
+                                    url = "https://mozilla.org",
+                                    iconUrl = null,
+                                )
+                            ),
+                        active = 0,
+                        lastUsed = 0L,
+                        inactive = false,
+                    )
                 ),
-                active = 0,
-                lastUsed = 0L,
-                inactive = false,
-            ),
-        ),
-    )
+        )
 
-    private val oneTabDeviceWithCapabilities = SyncedDeviceTabs(
-        device = mockk {
-            every { displayName } returns "Sapphire"
-            every { id } returns "123456"
-            every { deviceType } returns DeviceType.MOBILE
-            every { capabilities } returns listOf(DeviceCapability.CLOSE_TABS)
-        },
-        tabs = listOf(
-            Tab(
-                history = listOf(
-                    TabEntry(
-                        title = "Thunderbird",
-                        url = "https://getthunderbird.org",
-                        iconUrl = null,
-                    ),
+    private val oneTabDeviceWithCapabilities =
+        SyncedDeviceTabs(
+            device =
+                mockk {
+                    every { displayName } returns "Sapphire"
+                    every { id } returns "123456"
+                    every { deviceType } returns DeviceType.MOBILE
+                    every { capabilities } returns listOf(DeviceCapability.CLOSE_TABS)
+                },
+            tabs =
+                listOf(
+                    Tab(
+                        history =
+                            listOf(
+                                TabEntry(
+                                    title = "Thunderbird",
+                                    url = "https://getthunderbird.org",
+                                    iconUrl = null,
+                                )
+                            ),
+                        active = 0,
+                        lastUsed = 0L,
+                        inactive = false,
+                    )
                 ),
-                active = 0,
-                lastUsed = 0L,
-                inactive = false,
-            ),
-        ),
-    )
+        )
 
-    private val twoTabDevice = SyncedDeviceTabs(
-        device = mockk {
-            every { displayName } returns "Emerald"
-            every { id } returns "12345"
-            every { deviceType } returns DeviceType.MOBILE
-            every { capabilities } returns emptyList()
-        },
-        tabs = listOf(
-            Tab(
-                history = listOf(
-                    TabEntry(
-                        title = "Mozilla",
-                        url = "https://mozilla.org",
-                        iconUrl = null,
+    private val twoTabDevice =
+        SyncedDeviceTabs(
+            device =
+                mockk {
+                    every { displayName } returns "Emerald"
+                    every { id } returns "12345"
+                    every { deviceType } returns DeviceType.MOBILE
+                    every { capabilities } returns emptyList()
+                },
+            tabs =
+                listOf(
+                    Tab(
+                        history =
+                            listOf(
+                                TabEntry(
+                                    title = "Mozilla",
+                                    url = "https://mozilla.org",
+                                    iconUrl = null,
+                                )
+                            ),
+                        active = 0,
+                        lastUsed = 0L,
+                        inactive = false,
+                    ),
+                    Tab(
+                        history =
+                            listOf(
+                                TabEntry(
+                                    title = "Firefox",
+                                    url = "https://firefox.com",
+                                    iconUrl = null,
+                                )
+                            ),
+                        active = 0,
+                        lastUsed = 0L,
+                        inactive = false,
                     ),
                 ),
-                active = 0,
-                lastUsed = 0L,
-                inactive = false,
-            ),
-            Tab(
-                history = listOf(
-                    TabEntry(
-                        title = "Firefox",
-                        url = "https://firefox.com",
-                        iconUrl = null,
-                    ),
-                ),
-                active = 0,
-                lastUsed = 0L,
-                inactive = false,
-            ),
-        ),
-    )
+        )
 
     @Test
     fun `GIVEN two synced devices WHEN the compose list is generated THEN two device section is returned`() {
@@ -117,7 +132,10 @@ class SyncedDeviceTabsTest {
 
         assertEquals(2, listData.count())
         assertIs<SyncedTabsListItem.DeviceSection>(listData[0])
-        assertEquals(oneTabDeviceWithoutCapabilities.tabs.size, (listData[0] as SyncedTabsListItem.DeviceSection).tabs.size)
+        assertEquals(
+            oneTabDeviceWithoutCapabilities.tabs.size,
+            (listData[0] as SyncedTabsListItem.DeviceSection).tabs.size,
+        )
         assertIs<SyncedTabsListItem.DeviceSection>(listData[1])
         assertEquals(twoTabDevice.tabs.size, (listData[1] as SyncedTabsListItem.DeviceSection).tabs.size)
     }
@@ -142,7 +160,10 @@ class SyncedDeviceTabsTest {
         assertEquals(listData.size, deviceSections.size)
 
         assertEquals(setOf(SyncedTabsListItem.Tab.Action.None), deviceSections[0].tabs.map { it.action }.toSet())
-        assertEquals(setOf(SyncedTabsListItem.Tab.Action.Close(deviceId = "123456")), deviceSections[1].tabs.map { it.action }.toSet())
+        assertEquals(
+            setOf(SyncedTabsListItem.Tab.Action.Close(deviceId = "123456")),
+            deviceSections[1].tabs.map { it.action }.toSet(),
+        )
     }
 
     @Test

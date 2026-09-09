@@ -4,52 +4,49 @@
 
 package org.mozilla.fenix.ui
 
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 import androidx.core.net.toUri
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.ui.robots.navigationToolbar
-import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 class AboutURITest {
 
-    @get:Rule(order = 0)
-    val fenixTestRule: FenixTestRule = FenixTestRule()
+    @get:Rule(order = 0) val fenixTestRule: FenixTestRule = FenixTestRule()
 
     @get:Rule(order = 1)
     val composeTestRule =
-        AndroidComposeTestRuleV2(
-            HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
-        ) { it.activity }
+        AndroidComposeTestRuleV2(HomeActivityIntentTestRule.withDefaultSettingsOverrides()) { it.activity }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2944327
     @Test
     fun verifyWebCompatPageIsLoadingTest() {
         val webCompatPage = "about:compat"
 
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser(webCompatPage.toUri()) {
-            verifyUrl(webCompatPage)
+        navigationToolbar(composeTestRule) {}
+            .enterURLAndEnterToBrowser(webCompatPage.toUri()) {
+                verifyUrl(webCompatPage)
 
-            // Verify and interact with the items from the "Interventions" section
-            verifyWebCompatPageItemExists("Interventions")
-            verifyWebCompatPageItemExists("More Information: Bug")
-            verifyWebCompatPageItemExists("Disable")
-            clickWebCompatPageItem("Disable")
-            verifyWebCompatPageItemExists("Enable")
-            clickWebCompatPageItem("Enable")
-            verifyWebCompatPageItemExists("Disable")
+                // Verify and interact with the items from the "Interventions" section
+                verifyWebCompatPageItemExists("Interventions")
+                verifyWebCompatPageItemExists("More Information: Bug")
+                verifyWebCompatPageItemExists("Disable")
+                clickWebCompatPageItem("Disable")
+                verifyWebCompatPageItemExists("Enable")
+                clickWebCompatPageItem("Enable")
+                verifyWebCompatPageItemExists("Disable")
 
-            // Verify and interact with the items from the "SmartBlock Fixes" section
-            clickWebCompatPageItem("SmartBlock Fixes")
-            verifyWebCompatPageItemExists("SmartBlock Fixes", isSmartBlockFixesItem = true)
-            verifyWebCompatPageItemExists("More Information: Bug", isSmartBlockFixesItem = true)
-            verifyWebCompatPageItemExists("Disable", isSmartBlockFixesItem = true)
-            clickWebCompatPageItem("Disable")
-            verifyWebCompatPageItemExists("Enable", isSmartBlockFixesItem = true)
-            clickWebCompatPageItem("Enable")
-            verifyWebCompatPageItemExists("Disable", isSmartBlockFixesItem = true)
-        }
+                // Verify and interact with the items from the "SmartBlock Fixes" section
+                clickWebCompatPageItem("SmartBlock Fixes")
+                verifyWebCompatPageItemExists("SmartBlock Fixes", isSmartBlockFixesItem = true)
+                verifyWebCompatPageItemExists("More Information: Bug", isSmartBlockFixesItem = true)
+                verifyWebCompatPageItemExists("Disable", isSmartBlockFixesItem = true)
+                clickWebCompatPageItem("Disable")
+                verifyWebCompatPageItemExists("Enable", isSmartBlockFixesItem = true)
+                clickWebCompatPageItem("Enable")
+                verifyWebCompatPageItemExists("Disable", isSmartBlockFixesItem = true)
+            }
     }
 }

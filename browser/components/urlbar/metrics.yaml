@@ -24,7 +24,8 @@ urlbar:
         description: >
           `sap` is the meaning of `search access point`. It records where the
           user started the search action from. The possible values are: `urlbar`
-          , `handoff`, `urlbar_newtab`, `urlbar_addonpage`, and `searchbar`.
+          , `handoff`, `urlbar_newtab`, `urlbar_addonpage`, `newtab_searchbar`,
+          and `searchbar`.
         type: string
       location:
         description: >
@@ -233,7 +234,8 @@ urlbar:
         description: >
           `sap` is the meaning of `search access point`. It records where the
           user started the search action from. The possible values are: `urlbar`
-          , `handoff`, `urlbar_newtab`, `urlbar_addonpage`, and `searchbar`.
+          , `handoff`, `urlbar_newtab`, `urlbar_addonpage`, `newtab_searchbar`,
+          and `searchbar`.
         type: string
       location:
         description: >
@@ -369,7 +371,8 @@ urlbar:
         description: >
           `sap` is the meaning of `search access point`. It records where the
           user started the search action from. The possible values are: `urlbar`
-          , `handoff`, `urlbar_newtab`, `urlbar_addonpage`, and `searchbar`.
+          , `handoff`, `urlbar_newtab`, `urlbar_addonpage`, `newtab_searchbar`,
+          and `searchbar`.
         type: string
       location:
         description: >
@@ -472,7 +475,8 @@ urlbar:
         description: >
           `sap` is the meaning of `search access point`. It records where the
           user started the search action from. The possible values are: `urlbar`
-          , `handoff`, `urlbar_newtab`, `urlbar_addonpage`, and `searchbar`.
+          , `handoff`, `urlbar_newtab`, `urlbar_addonpage`, `newtab_searchbar`,
+          and `searchbar`.
         type: string
       location:
         description: >
@@ -830,7 +834,7 @@ urlbar:
         description: >
           The search access point. It records where the exposure happened.
           The possible values are: `urlbar`, `handoff`, `urlbar_newtab`,
-          `urlbar_addonpage`, and `searchbar`.
+          `urlbar_addonpage`, `newtab_searchbar`, and `searchbar`.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1819766
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1918299
@@ -872,7 +876,7 @@ urlbar:
         description: >
           The search access point. It records where the exposure happened.
           The possible values are: `urlbar`, `handoff`, `urlbar_newtab`,
-          `urlbar_addonpage`, and `searchbar`.
+          `urlbar_addonpage`, `newtab_searchbar`, and `searchbar`.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1881875
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1915507

@@ -24,12 +24,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import mozilla.components.ui.colors.PhotonColors
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.focus.R
 import org.mozilla.focus.ui.theme.FocusTheme
 import org.mozilla.focus.ui.theme.focusDimensions
 import org.mozilla.focus.ui.theme.focusTypography
 import org.mozilla.focus.ui.theme.gradientBackground
-import mozilla.components.ui.icons.R as iconsR
 
 @Composable
 @Preview
@@ -41,6 +41,7 @@ private fun BiometricPromptContentPreview() {
 
 /**
  * Content of the biometric authentication prompt.
+ *
  * @param biometricErrorText Text for an authentication error
  * @param showBiometricPrompt callback for displaying the OS biometric authentication prompt
  */
@@ -49,10 +50,7 @@ fun BiometricPromptContent(biometricErrorText: String, showBiometricPrompt: () -
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
-            .gradientBackground(),
+        modifier = Modifier.fillMaxWidth().fillMaxHeight().gradientBackground(),
     ) {
         Image(
             painter = painterResource(R.drawable.wordmark2),
@@ -73,12 +71,9 @@ fun BiometricPromptContent(biometricErrorText: String, showBiometricPrompt: () -
 private fun ComponentShowBiometricPromptButton(showBiometricPrompt: () -> Unit) {
     Button(
         onClick = showBiometricPrompt,
-        colors = ButtonDefaults.textButtonColors(
-            containerColor = colorResource(R.color.biometric_show_button_background),
-        ),
-        modifier = Modifier
-            .padding(focusDimensions.paddingDefault)
-            .fillMaxWidth(),
+        colors =
+            ButtonDefaults.textButtonColors(containerColor = colorResource(R.color.biometric_show_button_background)),
+        modifier = Modifier.padding(focusDimensions.paddingDefault).fillMaxWidth(),
     ) {
         Icon(
             painter = painterResource(iconsR.drawable.mozac_ic_fingerprinter_24),

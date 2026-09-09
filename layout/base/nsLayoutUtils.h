@@ -910,25 +910,24 @@ class nsLayoutUtils {
       const nsIFrame* aFrame, const nsRect& aRect, const nsIFrame* aAncestor,
       bool* aPreservesAxisAlignedRectangles = nullptr,
       mozilla::Maybe<Matrix4x4Flagged>* aMatrixCache = nullptr,
-      bool aStopAtStackingContextAndDisplayPortAndOOFFrame = false,
+      mozilla::TransformMatrixFlags aFlags = {},
       nsIFrame** aOutAncestor = nullptr) {
-    return TransformFrameRectToAncestor(
-        aFrame, aRect, RelativeTo{aAncestor}, aPreservesAxisAlignedRectangles,
-        aMatrixCache, aStopAtStackingContextAndDisplayPortAndOOFFrame,
-        aOutAncestor);
+    return TransformFrameRectToAncestor(aFrame, aRect, RelativeTo{aAncestor},
+                                        aPreservesAxisAlignedRectangles,
+                                        aMatrixCache, aFlags, aOutAncestor);
   }
   static nsRect TransformFrameRectToAncestor(
       const nsIFrame* aFrame, const nsRect& aRect, RelativeTo aAncestor,
       bool* aPreservesAxisAlignedRectangles = nullptr,
       mozilla::Maybe<Matrix4x4Flagged>* aMatrixCache = nullptr,
-      bool aStopAtStackingContextAndDisplayPortAndOOFFrame = false,
+      mozilla::TransformMatrixFlags aFlags = {},
       nsIFrame** aOutAncestor = nullptr);
 
   /**
    * Gets the transform for aFrame relative to aAncestor. Pass null for
-   * aAncestor to go up to the root frame. Including nsIFrame::IN_CSS_UNITS
-   * flag in aFlags will return CSS pixels, by default it returns device
-   * pixels.
+   * aAncestor to go up to the root frame. Including
+   * TransformMatrixFlag::InCSSUnits in aFlags will return CSS pixels,
+   * by default it returns device pixels.
    * More info can be found in nsIFrame::GetTransformMatrix.
    *
    * Some notes on the possible combinations of |aFrame.mViewportType| and
@@ -964,7 +963,8 @@ class nsLayoutUtils {
    * ==========================================================================
    */
   static Matrix4x4Flagged GetTransformToAncestor(
-      RelativeTo aFrame, RelativeTo aAncestor, uint32_t aFlags = 0,
+      RelativeTo aFrame, RelativeTo aAncestor,
+      mozilla::TransformMatrixFlags aFlags = {},
       nsIFrame** aOutAncestor = nullptr);
 
   /**
@@ -3096,7 +3096,8 @@ class nsLayoutUtils {
    * root of the frame tree if |aTopFrame| is nullptr, and returns true if
    * a transformed frame is encountered.
    */
-  static bool IsTransformed(nsIFrame* aForFrame, nsIFrame* aTopFrame = nullptr);
+  static bool IsTransformed(const nsIFrame* aForFrame,
+                            const nsIFrame* aTopFrame = nullptr);
 
   /**
    * Walk up from aFrame to the cross-doc root, accumulating all the APZ
@@ -3274,27 +3275,6 @@ class nsLayoutUtils {
    * Note: Must only be called from the main thread.
    */
   static void RecomputeSmoothScrollDefault();
-
-  struct CombinedFragments {
-    // Previous continuation, if exists, that got skipped due to being on a
-    // different page, or a different containing block continuation.
-    const nsIFrame* mSkippedPrevContinuation = nullptr;
-    // Same as above, but next continuation.
-    const nsIFrame* mSkippedNextContinuation = nullptr;
-    // The overall frame rect formed by unioning the frame's fragment rects.
-    nsRect mRect;
-  };
-  /**
-   * Get the union of the rects of aFrame and its continuations (but not if the
-   * context is paginated and they're on a different page, as it doesn't make
-   * sense to "merge" their rects in that case).
-   *
-   * @param aFrame The target frame whose combined fragments are wanted.
-   * @param aContainingBlock If provided, union fragments only up to its
-   * fragmentation boundary.
-   */
-  static CombinedFragments GetCombinedFragmentRects(
-      const nsIFrame* aFrame, const nsIFrame* aContainingBlock = nullptr);
 
  private:
   /**

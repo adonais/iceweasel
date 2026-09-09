@@ -7,13 +7,8 @@ package mozilla.components.feature.fxsuggest.dto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/**
- * Top-level response payload from the Flight suggestion API.
- */
-@Serializable
-data class FlightAwarePayloadDto(
-    val values: List<FlightDto> = emptyList(),
-)
+/** Top-level response payload from the Flight suggestion API. */
+@Serializable data class FlightAwarePayloadDto(val values: List<FlightDto> = emptyList())
 
 /**
  * A single flight entry returned by the Flight's API.
@@ -46,7 +41,7 @@ data class FlightDto(
 )
 
 /**
- *  Information about the origin/destination airport.
+ * Information about the origin/destination airport.
  *
  * @property code The airport code of the place
  * @property city city name of the where the airport is located .
@@ -58,12 +53,12 @@ data class AirportDto(
 )
 
 /**
- * Scheduled departure/arrival information at the origin/destination airport.
- * All values are derived in the origin/destination airport’s local timezone.
+ * Scheduled departure/arrival information at the origin/destination airport. All values are derived in the
+ * origin/destination airport’s local timezone.
  *
  * @property scheduledTime The time the flight is/was scheduled for departure/arrival.
- * @property estimatedTime Estimated gate departure/arrival time in local airport time.
- * To be used when flight departure/arrival is delayed. Null when the flight is cancelled..
+ * @property estimatedTime Estimated gate departure/arrival time in local airport time. To be used when flight
+ *   departure/arrival is delayed. Null when the flight is cancelled..
  */
 @Serializable
 data class FlightTimeDto(
@@ -72,15 +67,14 @@ data class FlightTimeDto(
 )
 
 /**
- *  Information about the airline operating this flight.
+ * Information about the airline operating this flight.
  *
- * @property code IATA or ICAO airline code. (e.g., "AC" or “ACA”).
- * This would be null if unavailable.
+ * @property code IATA or ICAO airline code. (e.g., "AC" or “ACA”). This would be null if unavailable.
  * @property name Name of airline (e.g., "Air Canada"). This would be null if unavailable.
- * @property icon url for the airline logo. This would be null if unavailable.
- * Note: Currently Merino is not returning this value so, it would always be null.
+ * @property icon url for the airline logo. This would be null if unavailable. Note: Currently Merino is not returning
+ *   this value so, it would always be null.
  * @property color hex code for the airline main color. This would be null if unavailable
- * */
+ */
 @Serializable
 data class AirlineDto(
     val code: String? = null,

@@ -7,17 +7,16 @@ package org.mozilla.fenix.settings.labs.store
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 
-/**
- * The [Store] for holding the [LabsState] and applying [LabsAction]s.
- */
+/** The [Store] for holding the [LabsState] and applying [LabsAction]s. */
 class LabsStore(
     initialState: LabsState,
     middleware: List<Middleware<LabsState, LabsAction>> = listOf(),
-) : Store<LabsState, LabsAction>(
-    initialState = initialState,
-    reducer = ::reducer,
-    middleware = middleware,
-) {
+) :
+    Store<LabsState, LabsAction>(
+        initialState = initialState,
+        reducer = ::reducer,
+        middleware = middleware,
+    ) {
     init {
         dispatch(LabsAction.InitAction)
     }
@@ -31,45 +30,38 @@ private fun reducer(state: LabsState, action: LabsAction): LabsState {
         is LabsAction.ShareFeedbackClicked,
         is LabsAction.FetchFailed,
         is LabsAction.ToggleCompleted,
-        is LabsAction.RestoreDefaultsCompleted,
-            -> state
+        is LabsAction.RestoreDefaultsCompleted -> state
 
-        is LabsAction.UpdateLabsItems -> state.copy(
-            labsItems = action.items,
-        )
+        is LabsAction.UpdateLabsItems -> state.copy(labsItems = action.items)
 
-        is LabsAction.RemoveLabsItem -> state.copy(
-            labsItems = state.labsItems.filter { it.slug != action.slug },
-        )
+        is LabsAction.RemoveLabsItem -> state.copy(labsItems = state.labsItems.filter { it.slug != action.slug })
 
-        is LabsAction.RestoreDefaults -> state.copy(
-            labsItems = state.labsItems.map {
-                it.copy(enrolled = false)
-            },
-            dialogState = DialogState.Closed,
-        )
+        is LabsAction.RestoreDefaults ->
+            state.copy(
+                labsItems =
+                    state.labsItems.map {
+                        it.copy(enrolled = false)
+                    },
+                dialogState = DialogState.Closed,
+            )
 
-        is LabsAction.ToggleLabsItem -> state.copy(
-            labsItems = state.labsItems.map {
-                if (it.slug == action.item.slug) {
-                    it.copy(enrolled = !it.enrolled)
-                } else {
-                    it
-                }
-            },
-            dialogState = DialogState.Closed,
-        )
+        is LabsAction.ToggleLabsItem ->
+            state.copy(
+                labsItems =
+                    state.labsItems.map {
+                        if (it.slug == action.item.slug) {
+                            it.copy(enrolled = !it.enrolled)
+                        } else {
+                            it
+                        }
+                    },
+                dialogState = DialogState.Closed,
+            )
 
-        is LabsAction.ShowToggleLabsItemDialog -> state.copy(
-            dialogState = DialogState.ToggleLabsItem(action.item),
-        )
+        is LabsAction.ShowToggleLabsItemDialog -> state.copy(dialogState = DialogState.ToggleLabsItem(action.item))
 
-        is LabsAction.ShowRestoreDefaultsDialog -> state.copy(
-            dialogState = DialogState.RestoreDefaults,
-        )
+        is LabsAction.ShowRestoreDefaultsDialog -> state.copy(dialogState = DialogState.RestoreDefaults)
 
-        is LabsAction.CloseDialog -> state.copy(
-            dialogState = DialogState.Closed,
-        )
+        is LabsAction.CloseDialog -> state.copy(dialogState = DialogState.Closed)
     }
 }

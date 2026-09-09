@@ -14,14 +14,15 @@ internal object CustomTabsServiceStateReducer {
 
     private fun reduceTab(state: CustomTabState, action: CustomTabsAction): CustomTabState {
         return when (action) {
-            is SaveCreatorPackageNameAction ->
-                state.copy(creatorPackageName = action.packageName)
+            is SaveCreatorPackageNameAction -> state.copy(creatorPackageName = action.packageName)
             is ValidateRelationshipAction ->
                 state.copy(
-                    relationships = state.relationships + Pair(
-                        OriginRelationPair(action.origin, action.relation),
-                        action.status,
-                    ),
+                    relationships =
+                        state.relationships +
+                            Pair(
+                                OriginRelationPair(action.origin, action.relation),
+                                action.status,
+                            )
                 )
         }
     }

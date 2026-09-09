@@ -15,6 +15,12 @@
 
 namespace mozilla::dom {
 
+// Canonical UUID for the Bluetooth Serial Port Profile, used as the default
+// bluetoothServiceClassId for Bluetooth serial ports when a more specific
+// service class ID is not available from the platform.
+inline constexpr char16_t kBluetoothSerialPortProfileUUID[] =
+    u"00001101-0000-1000-8000-00805f9b34fb";
+
 class Promise;
 class SerialManagerChild;
 class SerialPort;
@@ -49,7 +55,8 @@ class Serial final : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   already_AddRefed<Promise> SimulateDeviceConnection(
       const nsAString& aDeviceId, const nsAString& aDevicePath,
-      uint16_t aVendorId, uint16_t aProductId, ErrorResult& aRv);
+      uint16_t aVendorId, uint16_t aProductId,
+      const nsAString& aBluetoothServiceClassId, ErrorResult& aRv);
 
   already_AddRefed<Promise> SimulateDeviceDisconnection(
       const nsAString& aDeviceId, ErrorResult& aRv);

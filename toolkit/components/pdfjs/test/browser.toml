@@ -41,14 +41,33 @@ support-files = [
   "file_pdfjs_signed_invalid.pdf",
 ]
 
+["browser_pdfjs_disabled_handle_internally.js"]
+
 ["browser_pdfjs_download_button.js"]
 
 ["browser_pdfjs_editing_contextmenu.js"]
+support-files = [
+  "file_pdfjs_iframe.html",
+  "file_pdfjs_middle_iframe.html",
+  "file_pdfjs_nested_iframe.html",
+  "file_pdfjs_target.html",
+]
 run-if = [
   "!headless", # the headless clipboard only recognizes unicode mime type
 ]
 
 ["browser_pdfjs_editing_telemetry.js"]
+
+["browser_pdfjs_embed_fallback.js"]
+support-files = [
+  "file_pdfjs_embed.html",
+  "file_pdfjs_embed_cross_site.html",
+  "file_pdfjs_embed_short.html",
+  "file_pdfjs_embed_referrer.html",
+  "file_pdfjs_embed_slow.html",
+  "file_pdfjs_referrer.sjs",
+  "file_pdfjs_slow.sjs",
+]
 
 ["browser_pdfjs_fill_login.js"]
 support-files = ["file_pdfjs_form.pdf"]
@@ -82,12 +101,6 @@ support-files = ["file_pdfjs_jp2_image.pdf"]
 
 ["browser_pdfjs_js.js"]
 support-files = ["file_pdfjs_js.pdf"]
-skip-if = [
-  "os == 'linux' && debug && standalone", # Bug 2028655
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && debug && nova", # Bug 2057889
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
-  "tsan",
-]
 
 ["browser_pdfjs_load_telemetry.js"]
 
@@ -95,7 +108,12 @@ skip-if = [
 
 ["browser_pdfjs_minimum_font_size.js"]
 
+["browser_pdfjs_multipart_response.js"]
+support-files = ["pdf_multipart.sjs"]
+
 ["browser_pdfjs_navigation.js"]
+
+["browser_pdfjs_no_browsing_context.js"]
 
 ["browser_pdfjs_nonpdf_filename.js"]
 support-files = ["file_pdf_download_link.html"]
@@ -118,6 +136,12 @@ support-files = ["file_pdfjs_numbered_pages.pdf"]
 ["browser_pdfjs_pages_contextmenu.js"]
 support-files = ["file_pdfjs_numbered_pages.pdf"]
 
+["browser_pdfjs_preloaded_worker.js"]
+support-files = [
+  "pdf_empty.sjs",
+  "pdf_truncated.sjs",
+]
+
 ["browser_pdfjs_print_enabled.js"]
 
 ["browser_pdfjs_properties.js"]
@@ -138,6 +162,7 @@ support-files = [
 support-files = [
   "!/toolkit/content/tests/browser/common/mockTransfer.js",
   "file_pdf_download_link.html",
+  "file_pdfjs_form.pdf",
 ]
 
 ["browser_pdfjs_savedialog.js"]
@@ -147,6 +172,12 @@ support-files = [
 ["browser_pdfjs_signature_storage.js"]
 
 ["browser_pdfjs_signature_telemetry.js"]
+
+["browser_pdfjs_slow_script.js"]
+support-files = [
+  "file_pdfjs_slow_script.html",
+  "file_pdfjs_slow_script.pdf",
+]
 
 ["browser_pdfjs_stamp_telemetry.js"]
 support-files = ["moz.png"]

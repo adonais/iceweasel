@@ -34,12 +34,13 @@ internal fun ByteArray.binarySearch(labels: List<ByteArray>, labelIndex: Int): S
 
         var expectDot = false
         while (true) {
-            val byte0 = if (expectDot) {
-                expectDot = false
-                '.'.code.toByte()
-            } else {
-                labels[currentLabelIndex][currentLabelByteIndex] and BITMASK
-            }
+            val byte0 =
+                if (expectDot) {
+                    expectDot = false
+                    '.'.code.toByte()
+                } else {
+                    labels[currentLabelIndex][currentLabelByteIndex] and BITMASK
+                }
 
             val byte1 = this[start + publicSuffixByteIndex] and BITMASK
 
@@ -97,9 +98,7 @@ internal fun ByteArray.binarySearch(labels: List<ByteArray>, labelIndex: Int): S
     return match
 }
 
-/**
- * Search for a '\n' that marks the start of a value. Don't go back past the start of the array.
- */
+/** Search for a '\n' that marks the start of a value. Don't go back past the start of the array. */
 private fun ByteArray.findStartOfLineFromIndex(start: Int): Int {
     var index = start
     while (index > -1 && this[index] != '\n'.code.toByte()) {
@@ -109,9 +108,7 @@ private fun ByteArray.findStartOfLineFromIndex(start: Int): Int {
     return index
 }
 
-/**
- * Search for a '\n' that marks the end of a value.
- */
+/** Search for a '\n' that marks the end of a value. */
 private fun ByteArray.findEndOfLineFromIndex(start: Int): Int {
     var end = 1
     while (this[start + end] != '\n'.code.toByte()) {

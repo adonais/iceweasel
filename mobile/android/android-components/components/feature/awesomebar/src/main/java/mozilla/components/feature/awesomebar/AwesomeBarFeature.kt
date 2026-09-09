@@ -48,28 +48,27 @@ class AwesomeBarFeature(
                 onEditComplete,
                 ::showAwesomeBar,
                 ::hideAwesomeBar,
-            ),
+            )
         )
 
         awesomeBar.setOnStopListener { toolbar.displayMode() }
         awesomeBar.setOnEditSuggestionListener(toolbar::setSearchTerms)
     }
 
-    /**
-     * Add a [AwesomeBar.SuggestionProvider] for "Open tabs" to the [AwesomeBar].
-     */
+    /** Add a [AwesomeBar.SuggestionProvider] for "Open tabs" to the [AwesomeBar]. */
     fun addSessionProvider(
         resources: Resources,
         store: BrowserStore,
         selectTabUseCase: TabsUseCases.SelectTabUseCase,
     ): AwesomeBarFeature {
-        val provider = SessionSuggestionProvider(
-            store,
-            selectTabUseCase,
-            icons,
-            indicatorIcon,
-            switchToTabDescription = resources.getString(R.string.switch_to_tab_description),
-        )
+        val provider =
+            SessionSuggestionProvider(
+                store,
+                selectTabUseCase,
+                icons,
+                indicatorIcon,
+                switchToTabDescription = resources.getString(R.string.switch_to_tab_description),
+            )
         awesomeBar.addProviders(provider)
         return this
     }
@@ -82,8 +81,8 @@ class AwesomeBarFeature(
      * @param fetchClient The HTTP client for requesting suggestions from the search engine.
      * @param limit The maximum number of suggestions that should be returned. It needs to be >= 1.
      * @param mode Whether to return a single search suggestion (with chips) or one suggestion per item.
-     * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the
-     * highest scored search suggestion URL.
+     * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the highest scored search
+     *   suggestion URL.
      * @param filterExactMatch If true filters out suggestions that exactly match the entered text.
      */
     fun addSearchProvider(
@@ -104,24 +103,23 @@ class AwesomeBarFeature(
                 mode,
                 engine,
                 filterExactMatch = filterExactMatch,
-            ),
+            )
         )
         return this
     }
 
     /**
-     * Adds a [AwesomeBar.SuggestionProvider] for search engine suggestions to the [AwesomeBar].
-     * If the default search engine is to be used for fetching search engine suggestions then
-     * this method is preferable over [addSearchProvider], as it will read the search engine from
-     * the provided [BrowserStore].
+     * Adds a [AwesomeBar.SuggestionProvider] for search engine suggestions to the [AwesomeBar]. If the default search
+     * engine is to be used for fetching search engine suggestions then this method is preferable over
+     * [addSearchProvider], as it will read the search engine from the provided [BrowserStore].
      *
      * @param store The [BrowserStore] to lookup search engines from.
      * @param searchUseCase The use case to invoke for searches.
      * @param fetchClient The HTTP client for requesting suggestions from the search engine.
      * @param limit The maximum number of suggestions that should be returned. It needs to be >= 1.
      * @param mode Whether to return a single search suggestion (with chips) or one suggestion per item.
-     * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the
-     * highest scored search suggestion URL.
+     * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the highest scored search
+     *   suggestion URL.
      * @param filterExactMatch If true filters out suggestions that exactly match the entered text.
      */
     fun addSearchProvider(
@@ -142,14 +140,14 @@ class AwesomeBarFeature(
                 mode,
                 engine,
                 filterExactMatch = filterExactMatch,
-            ),
+            )
         )
         return this
     }
 
     /**
-     * Adds an [AwesomeBar.SuggestionProvider] implementation that always returns a suggestion that
-     * mirrors the entered text and invokes a search with the given [SearchEngine] if clicked.
+     * Adds an [AwesomeBar.SuggestionProvider] implementation that always returns a suggestion that mirrors the entered
+     * text and invokes a search with the given [SearchEngine] if clicked.
      *
      * @param store The [BrowserStore] to read the default search engine from.
      * @param searchUseCase The use case to invoke for searches.
@@ -168,7 +166,7 @@ class AwesomeBarFeature(
                 searchUseCase,
                 icon,
                 showDescription,
-            ),
+            )
         )
         return this
     }
@@ -178,10 +176,10 @@ class AwesomeBarFeature(
      *
      * @param historyStorage an instance of the [HistoryStorage] used to query matching history.
      * @param loadUrlUseCase the use case invoked to load the url when the user clicks on the suggestion.
-     * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the
-     * highest scored suggestion URL.
-     * @param maxNumberOfSuggestions optional parameter to specify the maximum number of returned suggestions.
-     * Zero or a negative value here means the default number of history suggestions will be returned.
+     * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the highest scored suggestion
+     *   URL.
+     * @param maxNumberOfSuggestions optional parameter to specify the maximum number of returned suggestions. Zero or a
+     *   negative value here means the default number of history suggestions will be returned.
      */
     fun addHistoryProvider(
         historyStorage: HistoryStorage,
@@ -194,7 +192,7 @@ class AwesomeBarFeature(
                 HistoryStorageSuggestionProvider(historyStorage, loadUrlUseCase, icons, engine)
             } else {
                 HistoryStorageSuggestionProvider(historyStorage, loadUrlUseCase, icons, engine, maxNumberOfSuggestions)
-            },
+            }
         )
         return this
     }
@@ -203,10 +201,9 @@ class AwesomeBarFeature(
      * Add a [AwesomeBar.SuggestionProvider] for clipboard items to the [AwesomeBar].
      *
      * @param context the activity or application context, required to look up the clipboard manager.
-     * @param loadUrlUseCase the use case invoked to load the url when
-     * the user clicks on the suggestion.
-     * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the
-     * highest scored suggestion URL.
+     * @param loadUrlUseCase the use case invoked to load the url when the user clicks on the suggestion.
+     * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the highest scored suggestion
+     *   URL.
      */
     fun addClipboardProvider(
         context: Context,

@@ -6,9 +6,9 @@
 
 package org.mozilla.fenix.ui
 
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 import androidx.core.net.toUri
 import androidx.test.rule.ActivityTestRule
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.IntentReceiverActivity
@@ -23,7 +23,6 @@ import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.pdfFormAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
-import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
@@ -31,40 +30,38 @@ import org.mozilla.fenix.ui.robots.clickPageObject
 import org.mozilla.fenix.ui.robots.customTabScreen
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.notificationShade
-import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 class CustomTabsTest {
-    @get:Rule(order = 0)
-    val fenixTestRule: FenixTestRule = FenixTestRule()
+    @get:Rule(order = 0) val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    private val mockWebServer get() = fenixTestRule.mockWebServer
+    private val mockWebServer
+        get() = fenixTestRule.mockWebServer
 
     private val customMenuItem = "TestMenuItem"
     private val customTabActionButton = "CustomActionButton"
 
-    /* Updated externalLinks.html to v2.0,
-       changed the hypertext reference to mozilla-mobile.github.io/testapp/downloads for "External link"
-     */
-    private val externalLinksPWAPage = "https://mozilla-mobile.github.io/testapp/v2.0/externalLinks.html"
     private val loginPage = "https://mozilla-mobile.github.io/testapp/loginForm"
 
     @get:Rule(order = 1)
     val composeTestRule =
-        AndroidComposeTestRuleV2(
-            HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
-        ) { it.activity }
+        AndroidComposeTestRuleV2(HomeActivityIntentTestRule.withDefaultSettingsOverrides()) { it.activity }
 
     @get:Rule
-    val intentReceiverActivityTestRule = ActivityTestRule(
-        IntentReceiverActivity::class.java,
-        true,
-        false,
-    )
+    val intentReceiverActivityTestRule =
+        ActivityTestRule(
+            IntentReceiverActivity::class.java,
+            true,
+            false,
+        )
 
-    @get:Rule(order = 2)
-    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
+    @get:Rule(order = 2) val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/249659
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.CustomTabsTest#verifyLoginSaveInCustomTabTest"],
+        bug = 2063232,
+        since = "2026-08",
+    )
     @SmokeTest
     @Test
     fun verifyLoginSaveInCustomTabTest() {
@@ -72,7 +69,7 @@ class CustomTabsTest {
             createCustomTabIntent(
                 loginPage.toUri().toString(),
                 customMenuItem,
-            ),
+            )
         )
 
         customTabScreen(composeTestRule) {
@@ -87,15 +84,15 @@ class CustomTabsTest {
 
         openAppFromExternalLink(composeTestRule, loginPage)
 
-        browserScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openLoginsAndPasswordSubMenu {
-        }.openSavedLogins(composeTestRule) {
-            verifySecurityPromptForLogins()
-            tapSetupLater()
-            verifySavedLoginsSectionUsername("mozilla")
-        }
+        browserScreen(composeTestRule) {}
+            .openThreeDotMenu {}
+            .clickSettingsButton {}
+            .openLoginsAndPasswordSubMenu {}
+            .openSavedLogins(composeTestRule) {
+                verifySecurityPromptForLogins()
+                tapSetupLater()
+                verifySavedLoginsSectionUsername("mozilla")
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2334762
@@ -107,7 +104,7 @@ class CustomTabsTest {
             createCustomTabIntent(
                 customTabPage.url.toString(),
                 customMenuItem,
-            ),
+            )
         )
 
         customTabScreen(composeTestRule) {
@@ -117,13 +114,13 @@ class CustomTabsTest {
 
         openAppFromExternalLink(composeTestRule, customTabPage.url.toString())
 
-        browserScreen(composeTestRule) {
-        }.openSearch {
-            clickClearButton()
-            longClickToolbar()
-            clickPasteText()
-            verifyTypedToolbarText(customTabPage.url.toString(), exists = true)
-        }
+        browserScreen(composeTestRule) {}
+            .openSearch {
+                clickClearButton()
+                longClickToolbar()
+                clickPasteText()
+                verifyTypedToolbarText(customTabPage.url.toString(), exists = true)
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2334761
@@ -131,8 +128,9 @@ class CustomTabsTest {
         replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.CustomTabsTest#verifyDownloadInACustomTabTest"],
         bug = 2060346,
         since = "2026-08",
-        notes = "The replacement serves downloads.html from the local mockWebServer instead of " +
-            "storage.googleapis.com; same asset and link, no external network dependency.",
+        notes =
+            "The replacement serves downloads.html from the local mockWebServer instead of " +
+                "storage.googleapis.com; same asset and link, no external network dependency.",
     )
     @SmokeTest
     @Test
@@ -144,22 +142,23 @@ class CustomTabsTest {
             createCustomTabIntent(
                 customTabPage.toUri().toString(),
                 customMenuItem,
-            ),
+            )
         )
 
         customTabScreen(composeTestRule) {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
         }
 
-        browserScreen(composeTestRule) {
-        }.clickDownloadLink(downloadFile) {
-            verifyDownloadPrompt(composeTestRule, downloadFile)
-        }.clickDownload(composeTestRule) {
-            verifyDownloadCompleteSnackbar(fileName = "web_icon.png")
-            waitUntilDownloadSnackbarGone()
-        }
+        browserScreen(composeTestRule) {}
+            .clickDownloadLink(downloadFile) {
+                verifyDownloadPrompt(composeTestRule)
+            }
+            .clickDownload(composeTestRule) {
+                verifyDownloadCompleteSnackbar(fileName = "web_icon.png")
+                waitUntilDownloadSnackbarGone()
+            }
         mDevice.openNotification()
-            notificationShade {
+        notificationShade {
             verifySystemNotificationExists("Download completed")
         }
     }
@@ -181,14 +180,15 @@ class CustomTabsTest {
             createCustomTabIntent(
                 customTabPage.url.toString(),
                 customMenuItem,
-            ),
+            )
         )
 
         customTabScreen(composeTestRule) {
-            verifyCustomTabCloseButton()
-        }.openMainMenu {
-            verifyCustomTabsMainMenuItems(customMenuItem, true)
-        }
+                verifyCustomTabCloseButton()
+            }
+            .openMainMenu {
+                verifyCustomTabsMainMenuItems(customMenuItem, true)
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/249645
@@ -203,19 +203,16 @@ class CustomTabsTest {
     fun openCustomTabInFirefoxTest() {
         val customTabPage = mockWebServer.getGenericAsset(1)
 
-        intentReceiverActivityTestRule.launchActivity(
-            createCustomTabIntent(
-                customTabPage.url.toString(),
-            ),
-        )
+        intentReceiverActivityTestRule.launchActivity(createCustomTabIntent(customTabPage.url.toString()))
 
         customTabScreen(composeTestRule) {
-            verifyCustomTabCloseButton()
-        }.openMainMenu {
-        }.clickOpenInBrowserButtonFromRedesignedToolbar {
-            verifyPageContent(customTabPage.content)
-            verifyTabCounter("1")
-        }
+                verifyCustomTabCloseButton()
+            }
+            .openMainMenu {}
+            .clickOpenInBrowserButtonFromRedesignedToolbar {
+                verifyPageContent(customTabPage.content)
+                verifyTabCounter("1")
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/249643
@@ -227,7 +224,7 @@ class CustomTabsTest {
             createCustomTabIntent(
                 pageUrl = customTabPage.url.toString(),
                 customActionButtonDescription = customTabActionButton,
-            ),
+            )
         )
 
         customTabScreen(composeTestRule) {
@@ -250,11 +247,7 @@ class CustomTabsTest {
         val customTabPage = mockWebServer.getGenericAsset(3)
         val pdfFormResource = mockWebServer.pdfFormAsset
 
-        intentReceiverActivityTestRule.launchActivity(
-            createCustomTabIntent(
-                customTabPage.url.toString(),
-            ),
-        )
+        intentReceiverActivityTestRule.launchActivity(createCustomTabIntent(customTabPage.url.toString()))
 
         customTabScreen(composeTestRule) {
             clickPageObject(composeTestRule, itemWithText("PDF form file"))

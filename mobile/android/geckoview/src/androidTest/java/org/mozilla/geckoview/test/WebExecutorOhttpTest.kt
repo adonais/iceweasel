@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -24,9 +24,11 @@ class WebExecutorOhttpTest : BaseSessionTest() {
                 // Don't make external requests.
                 "network.ohttp.configURL" to "https://example.com",
                 "network.ohttp.relayURL" to "https://example.com",
-            ),
+            )
         )
 
-        GeckoWebExecutor(RuntimeCreator.getRuntime()).fetch(WebRequest.Builder("https://example.com").build(), GeckoWebExecutor.FETCH_FLAGS_OHTTP).poll(5 * 100)
+        GeckoWebExecutor(RuntimeCreator.getRuntime())
+            .fetch(WebRequest.Builder("https://example.com").build(), GeckoWebExecutor.FETCH_FLAGS_OHTTP)
+            .poll(5 * 100)
     }
 }

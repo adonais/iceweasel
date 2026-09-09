@@ -9,6 +9,8 @@ import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_DOCUMENT
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.ContextCompat
+import java.io.File
+import java.io.IOException
 import mozilla.components.browser.state.state.ColorSchemeParams
 import mozilla.components.browser.state.state.ColorSchemes
 import mozilla.components.browser.state.state.CustomTabConfig
@@ -29,12 +31,8 @@ import org.json.JSONException
 import org.json.JSONObject
 import org.mozilla.fenix.R
 import org.mozilla.fenix.perf.runBlockingIncrement
-import java.io.File
-import java.io.IOException
 
-/**
- * Legacy processor for Progressive Web App shortcut intents created by Fennec.
- */
+/** Legacy processor for Progressive Web App shortcut intents created by Fennec. */
 class FennecWebAppIntentProcessor(
     private val context: Context,
     private val useCases: CustomTabsUseCases,
@@ -42,17 +40,14 @@ class FennecWebAppIntentProcessor(
 ) : IntentProcessor {
     val logger = Logger("FennecWebAppIntentProcessor")
 
-    /**
-     * Returns true if this intent should launch a progressive web app created in Fennec.
-     */
-    private fun matches(intent: Intent) =
-        intent.toSafeIntent().action == ACTION_FENNEC_WEBAPP
+    /** Returns true if this intent should launch a progressive web app created in Fennec. */
+    private fun matches(intent: Intent) = intent.toSafeIntent().action == ACTION_FENNEC_WEBAPP
 
     /**
      * Processes the given [Intent] by creating a [Session] with a corresponding web app manifest.
      *
-     * A custom tab config is also set so a custom tab toolbar can be shown when the user leaves
-     * the scope defined in the manifest.
+     * A custom tab config is also set so a custom tab toolbar can be shown when the user leaves the scope defined in
+     * the manifest.
      */
     override fun process(intent: Intent): Boolean {
         val safeIntent = intent.toSafeIntent()
@@ -60,20 +55,21 @@ class FennecWebAppIntentProcessor(
 
         return if (!url.isNullOrEmpty() && matches(intent)) {
             val webAppManifest = runBlockingIncrement { loadManifest(safeIntent, url) }
-            val sessionId = if (webAppManifest != null) {
-                useCases.addWebApp(
-                    url = url,
-                    source = SessionState.Source.Internal.HomeScreen,
-                    webAppManifest = webAppManifest,
-                    customTabConfig = webAppManifest.toCustomTabConfig(),
-                )
-            } else {
-                useCases.add(
-                    url = url,
-                    source = SessionState.Source.Internal.HomeScreen,
-                    customTabConfig = createFallbackCustomTabConfig(),
-                )
-            }
+            val sessionId =
+                if (webAppManifest != null) {
+                    useCases.addWebApp(
+                        url = url,
+                        source = SessionState.Source.Internal.HomeScreen,
+                        webAppManifest = webAppManifest,
+                        customTabConfig = webAppManifest.toCustomTabConfig(),
+                    )
+                } else {
+                    useCases.add(
+                        url = url,
+                        source = SessionState.Source.Internal.HomeScreen,
+                        customTabConfig = createFallbackCustomTabConfig(),
+                    )
+                }
             intent.putSessionId(sessionId)
 
             if (webAppManifest != null) {
@@ -127,25 +123,24 @@ class FennecWebAppIntentProcessor(
         }
     }
 
-    /**
-     * Fennec manifests should be located in <filesDir>/mozilla/<profile>/manifests/
-     */
+    /** Fennec manifests should be located in <filesDir>/mozilla/<profile>/manifests/ */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun isUnderFennecManifestDirectory(file: File): Boolean {
         val manifestsDir = file.canonicalFile.parentFile
         // Check that manifest is in a folder named "manifests"
-        return manifestsDir != null && manifestsDir.name == "manifests" &&
+        return manifestsDir != null &&
+            manifestsDir.name == "manifests" &&
             // Check that the folder two levels up is named "mozilla"
             manifestsDir.parentFile?.parentFile?.canonicalPath == getMozillaDirectory().canonicalPath
     }
 
     private fun createFallbackCustomTabConfig(): CustomTabConfig {
         return CustomTabConfig(
-            colorSchemes = ColorSchemes(
-                defaultColorSchemeParams = ColorSchemeParams(
-                    toolbarColor = ContextCompat.getColor(context, R.color.fx_mobile_surface),
-                ),
-            ),
+            colorSchemes =
+                ColorSchemes(
+                    defaultColorSchemeParams =
+                        ColorSchemeParams(toolbarColor = ContextCompat.getColor(context, R.color.fx_mobile_surface))
+                )
         )
     }
 

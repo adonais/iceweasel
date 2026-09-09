@@ -15,4 +15,3 @@ toolkit.jar:
    content/global/printPreviewPagination.js         (content/printPreviewPagination.js)
    content/global/printUtils.js                     (content/printUtils.js)
    content/global/simplifyMode.css                  (content/simplifyMode.css)
-   content/global/toggle-group.css                  (content/toggle-group.css)

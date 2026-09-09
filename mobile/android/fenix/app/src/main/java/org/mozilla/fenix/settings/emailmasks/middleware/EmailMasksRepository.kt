@@ -6,9 +6,7 @@ package org.mozilla.fenix.settings.emailmasks.middleware
 
 import org.mozilla.fenix.utils.Settings
 
-/**
- * The repository for managing Email Masks preferences.
- */
+/** The repository for managing Email Masks preferences. */
 interface EmailMasksRepository {
     /**
      * Returns whether email mask suggestions are enabled.
@@ -17,9 +15,7 @@ interface EmailMasksRepository {
      */
     fun isSuggestionEnabled(): Boolean
 
-    /**
-     * Updates the state of the email mask suggestion toggle.
-     */
+    /** Updates the state of the email mask suggestion toggle. */
     fun setSuggestionEnabled(enabled: Boolean)
 
     /**
@@ -29,18 +25,12 @@ interface EmailMasksRepository {
      */
     fun shouldShowCfr(): Boolean
 
-    /**
-     * Dismisses the Email Mask Continuous Feature Recommendation (CFR) and ensures it won't be shown again.
-     */
+    /** Dismisses the Email Mask Continuous Feature Recommendation (CFR) and ensures it won't be shown again. */
     fun dismissCfr()
 }
 
-/**
- * The default implementation of [EmailMasksRepository].
- */
-class DefaultEmailMasksRepository(
-    private val settings: Settings,
-) : EmailMasksRepository {
+/** The default implementation of [EmailMasksRepository]. */
+class DefaultEmailMasksRepository(private val settings: Settings) : EmailMasksRepository {
 
     override fun isSuggestionEnabled(): Boolean = settings.isEmailMaskSuggestionEnabled
 

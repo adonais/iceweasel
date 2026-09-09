@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<head>
+<meta charset="utf-8">
+<script src="wav_utils.js"></script>
+<script>
+// Verify that multi-channel audio played with a non-unity playback rate
+// does not crash.
+let done = false;
+function finish() {
+  if (done) return;
+  done = true;
+  document.documentElement.removeAttribute("class");
+}
+
+window.addEventListener("load", () => {
+  const audio = document.createElement("audio");
+  document.body.appendChild(audio);
+  audio.src = URL.createObjectURL(new Blob([buildWav(24, 48000, 1)], { type: "audio/wav" }));
+  audio.preservesPitch = false;
+  audio.playbackRate = 2.0;
+  audio.loop = true;
+  audio.onerror = finish;
+  // Capturing the stream drives the audio through the MediaTrackGraph.
+  window.captured = audio.mozCaptureStream();
+
+  // currentTime only advances once frames have been consumed into the time
+  // stretcher, so reaching this threshold means the multi-channel filter ran.
+  audio.ontimeupdate = () => { if (audio.currentTime >= 0.5) finish(); };
+
+  audio.play().catch(finish);
+});
+</script>
+</head>
+<body></body>
+</html>

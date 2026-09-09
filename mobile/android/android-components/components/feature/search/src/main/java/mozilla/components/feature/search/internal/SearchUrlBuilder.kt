@@ -7,11 +7,11 @@ package mozilla.components.feature.search.internal
 import android.net.Uri
 import android.text.TextUtils
 import androidx.core.net.toUri
-import mozilla.components.browser.state.search.OS_SEARCH_ENGINE_TERMS_PARAM
-import mozilla.components.browser.state.search.SearchEngine
 import java.io.UnsupportedEncodingException
 import java.net.URLEncoder
 import java.util.Locale
+import mozilla.components.browser.state.search.OS_SEARCH_ENGINE_TERMS_PARAM
+import mozilla.components.browser.state.search.SearchEngine
 
 // We are using string concatenation here to avoid the Kotlin compiler interpreting this
 // as string templates. It is possible to escape the string accordingly. But this seems to
@@ -26,9 +26,7 @@ private const val OS_PARAM_LANGUAGE = "{" + "language" + "}"
 private const val OS_PARAM_OUTPUT_ENCODING = "{" + "outputEncoding" + "}"
 private const val OS_PARAM_OPTIONAL = "\\{" + "(?:\\w+:)?\\w+?" + "\\}"
 
-internal class SearchUrlBuilder(
-    private val searchEngine: SearchEngine,
-) {
+internal class SearchUrlBuilder(private val searchEngine: SearchEngine) {
     fun buildSearchUrl(searchTerms: String): String {
         // The parser should have put the best URL for this device at the beginning of the list.
         val template = searchEngine.resultUrls[0]
@@ -48,20 +46,20 @@ internal class SearchUrlBuilder(
     private fun buildUrl(template: String, searchTerms: String): String {
         val templateUri = Uri.decode(template)
         val inputEncoding = searchEngine.inputEncoding ?: "UTF-8"
-        val query = try {
-            // Although android.net.Uri.encode convert space (U+0x20) to "%20", java.net.URLEncoder convert it to "+".
-            URLEncoder.encode(searchTerms, inputEncoding).replace("+", "%20")
-        } catch (e: UnsupportedEncodingException) {
-            Uri.encode(searchTerms)
-        }
+        val query =
+            try {
+                // Although android.net.Uri.encode convert space (U+0x20) to "%20", java.net.URLEncoder convert it to
+                // "+".
+                URLEncoder.encode(searchTerms, inputEncoding).replace("+", "%20")
+            } catch (e: UnsupportedEncodingException) {
+                Uri.encode(searchTerms)
+            }
         val urlWithSubstitutions = paramSubstitution(templateUri, query, inputEncoding)
         return normalize(urlWithSubstitutions) // User-entered search engines may need normalization.
     }
 }
 
-/**
- * Formats template string with proper parameters. Modeled after ParamSubstitution in nsSearchService.js
- */
+/** Formats template string with proper parameters. Modeled after ParamSubstitution in nsSearchService.js */
 private fun paramSubstitution(template: String, query: String, inputEncoding: String): String {
     var result = template
     val locale = Locale.getDefault().toString()

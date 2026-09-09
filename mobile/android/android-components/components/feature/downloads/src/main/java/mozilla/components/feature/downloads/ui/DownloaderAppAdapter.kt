@@ -13,9 +13,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import mozilla.components.feature.downloads.R
 
-/**
- * An adapter for displaying the applications that can perform downloads.
- */
+/** An adapter for displaying the applications that can perform downloads. */
 class DownloaderAppAdapter(
     context: Context,
     private val apps: List<DownloaderApp>,
@@ -46,17 +44,13 @@ class DownloaderAppAdapter(
     }
 }
 
-/**
- * View holder for a [DownloaderApp] item.
- */
+/** View holder for a [DownloaderApp] item. */
 class DownloaderAppViewHolder(
     itemView: View,
     val nameLabel: TextView,
     val iconImage: ImageView,
 ) : RecyclerView.ViewHolder(itemView) {
-    /**
-     * Show a certain downloader application in the current View.
-     */
+    /** Show a certain downloader application in the current View. */
     fun bind(app: DownloaderApp, onAppSelected: ((DownloaderApp) -> Unit)) {
         itemView.app = app
         itemView.setOnClickListener {

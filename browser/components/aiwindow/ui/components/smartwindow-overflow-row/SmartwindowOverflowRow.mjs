@@ -17,6 +17,7 @@ export const SmartwindowOverflowRowMixin = BaseElement =>
     #resizeObserver = null;
     #lastWidth = null;
     #measureRaf = 0;
+    #widthChanged = true;
 
     constructor() {
       super();
@@ -129,6 +130,7 @@ export const SmartwindowOverflowRowMixin = BaseElement =>
           return;
         }
         this.#lastWidth = inlineSize;
+        this.#widthChanged = true;
         this.scheduleOverflowMeasure();
       });
       this.#resizeObserver.observe(this);
@@ -196,6 +198,11 @@ export const SmartwindowOverflowRowMixin = BaseElement =>
       ) {
         visibleCount--;
       }
+      // Only reveal more items when the row got wider.
+      if (visibleCount > this.visibleCount && !this.#widthChanged) {
+        return;
+      }
+      this.#widthChanged = false;
       this.#setVisibleCount(visibleCount);
     }
   };

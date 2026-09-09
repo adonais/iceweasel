@@ -12,6 +12,7 @@ import android.os.LocaleList
 import android.text.Html
 import android.text.style.StyleSpan
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.Locale
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.whenever
 import org.junit.Assert.assertEquals
@@ -19,7 +20,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.spy
-import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
 class ResourcesTest {

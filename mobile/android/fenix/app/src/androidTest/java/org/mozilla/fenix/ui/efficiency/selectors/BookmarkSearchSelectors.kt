@@ -11,22 +11,25 @@ import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
 object BookmarkSearchSelectors {
 
-    val SEARCH_BOX = Selector(
-        strategy = SelectorStrategy.COMPOSE_EDITABLE_BY_ANCESTOR_TAG,
-        value = ADDRESSBAR_SEARCH_BOX,
-        description = "Bookmark search box",
-        groups = listOf("requiredForPage"),
-    )
+    val SEARCH_BOX =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_EDITABLE_BY_ANCESTOR_TAG,
+            value = ADDRESSBAR_SEARCH_BOX,
+            description = "Bookmark search box",
+            groups = listOf("requiredForPage"),
+        )
 
-    val SEARCH_ITEM = Selector(
-        strategy = SelectorStrategy.COMPOSE_BY_TAG,
-        value = BOOKMARK_SEARCH_ITEM,
-        description = "Bookmark search item",
-        groups = listOf(),
-    )
+    val SEARCH_ITEM =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TAG,
+            value = BOOKMARK_SEARCH_ITEM,
+            description = "Bookmark search item",
+            groups = listOf(),
+        )
 
-    val all = listOf(
-        SEARCH_BOX,
-        SEARCH_ITEM,
-    )
+    val all =
+        listOf(
+            SEARCH_BOX,
+            SEARCH_ITEM,
+        )
 }

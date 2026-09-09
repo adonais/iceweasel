@@ -25,8 +25,7 @@ class LoggerTest {
         Log.addSink(sink)
     }
 
-    @After
-    fun tearDown() = Log.reset()
+    @After fun tearDown() = Log.reset()
 
     @Test
     fun `debug calls are forwarded to Log and sinks`() {
@@ -114,27 +113,31 @@ class LoggerTest {
         val errorException = RuntimeException()
         Logger.error("error message", errorException)
 
-        val debugLog = FakeLogSink.Entry(
-            priority = Log.Priority.DEBUG,
-            tag = null,
-            throwable = debugException,
-            message = "debug message",
-        )
-        val infoLog = debugLog.copy(
-            message = "info message",
-            throwable = infoException,
-            priority = Log.Priority.INFO,
-        )
-        val warnLog = debugLog.copy(
-            message = "warn message",
-            throwable = warnException,
-            priority = Log.Priority.WARN,
-        )
-        val errorLog = debugLog.copy(
-            message = "error message",
-            throwable = errorException,
-            priority = Log.Priority.ERROR,
-        )
+        val debugLog =
+            FakeLogSink.Entry(
+                priority = Log.Priority.DEBUG,
+                tag = null,
+                throwable = debugException,
+                message = "debug message",
+            )
+        val infoLog =
+            debugLog.copy(
+                message = "info message",
+                throwable = infoException,
+                priority = Log.Priority.INFO,
+            )
+        val warnLog =
+            debugLog.copy(
+                message = "warn message",
+                throwable = warnException,
+                priority = Log.Priority.WARN,
+            )
+        val errorLog =
+            debugLog.copy(
+                message = "error message",
+                throwable = errorException,
+                priority = Log.Priority.ERROR,
+            )
         val expectedLogs = listOf(debugLog, infoLog, warnLog, errorLog)
 
         assertEquals(expectedLogs, sink.logs)
@@ -144,12 +147,13 @@ class LoggerTest {
     fun `measure call logs two messages`() {
         Logger.measure("testing") { /* do nothing */ }
 
-        val firstLog = FakeLogSink.Entry(
-            priority = Log.Priority.DEBUG,
-            tag = null,
-            throwable = null,
-            message = "⇢ testing",
-        )
+        val firstLog =
+            FakeLogSink.Entry(
+                priority = Log.Priority.DEBUG,
+                tag = null,
+                throwable = null,
+                message = "⇢ testing",
+            )
         val secondLog = firstLog.copy(message = "⇠ testing [0ms]")
         val expectedLogs = listOf(firstLog, secondLog)
 
@@ -165,12 +169,13 @@ class LoggerTest {
             SystemClock.sleep(10)
         }
 
-        val firstLog = FakeLogSink.Entry(
-            priority = Log.Priority.DEBUG,
-            tag = "WithTag",
-            throwable = null,
-            message = "⇢ testing",
-        )
+        val firstLog =
+            FakeLogSink.Entry(
+                priority = Log.Priority.DEBUG,
+                tag = "WithTag",
+                throwable = null,
+                message = "⇢ testing",
+            )
         val secondLog = firstLog.copy(message = "⇠ testing [10ms]")
         val expectedLogs = listOf(firstLog, secondLog)
 

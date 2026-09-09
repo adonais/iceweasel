@@ -51,6 +51,19 @@ struct SelectionDetails {
     }
   }
 
+  friend auto format_as(const SelectionDetails& aDetails) {
+    return fmt::format(
+        "{{ mStart={}, mSelectionType={} }}",
+        aDetails.mStart == aDetails.mEnd
+            ? fmt::format("mEnd={}", aDetails.mStart)
+            : fmt::format("{}, mEnd={}", aDetails.mStart, aDetails.mEnd),
+        aDetails.mSelectionType);
+  }
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const SelectionDetails& aDetails) {
+    return aStream << format_as(aDetails);
+  }
+
   int32_t mStart;
   int32_t mEnd;
   mozilla::SelectionType mSelectionType;
@@ -1045,6 +1058,8 @@ class nsFrameSelection final {
       int16_t aReasons = nsISelectionListener::NO_REASON);
 
   [[nodiscard]] mozilla::PresShell* GetPresShell() const { return mPresShell; }
+
+  [[nodiscard]] nsISelectionController* GetSelectionController() const;
 
   void DisconnectFromPresShell();
   MOZ_CAN_RUN_SCRIPT nsresult ClearNormalSelection();

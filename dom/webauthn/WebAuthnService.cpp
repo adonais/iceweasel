@@ -19,6 +19,55 @@ already_AddRefed<nsIWebAuthnService> NewWebAuthnService() {
   return webauthnService.forget();
 }
 
+#if defined(XP_MACOSX)
+namespace {
+
+// True when the request wants the PRF extension and is likely to be
+// served by a security key rather than a platform authenticator. Used
+// only to decide whether to route around a macOS version that cannot
+// evaluate PRF for security keys; the cost of a false positive is a
+// slower path, of a false negative a silently missing PRF output.
+bool PrfRequestedForSecurityKey(nsIWebAuthnRegisterArgs* aArgs) {
+  bool prf = false;
+  if (NS_FAILED(aArgs->GetPrf(&prf)) || !prf) {
+    return false;
+  }
+  // An explicit "platform" request is one we must not redirect: authrs
+  // has no platform authenticator to offer.
+  nsAutoString attachment;
+  if (NS_SUCCEEDED(aArgs->GetAuthenticatorAttachment(attachment)) &&
+      attachment.EqualsLiteral(
+          MOZ_WEBAUTHN_AUTHENTICATOR_ATTACHMENT_PLATFORM)) {
+    return false;
+  }
+  return true;
+}
+
+bool PrfRequestedForSecurityKey(nsIWebAuthnSignArgs* aArgs) {
+  bool prf = false;
+  if (NS_FAILED(aArgs->GetPrf(&prf)) || !prf) {
+    return false;
+  }
+  // Mirrors the AppID heuristic below: a non-empty allow list with no
+  // "internal" or "hybrid" credential is a security-key request.
+  nsTArray<uint8_t> allowListTransports;
+  (void)aArgs->GetAllowListTransports(allowListTransports);
+  if (allowListTransports.IsEmpty()) {
+    return false;
+  }
+  uint8_t transportSet = 0;
+  for (const uint8_t& transport : allowListTransports) {
+    transportSet |= transport;
+  }
+  uint8_t passkeyTransportMask =
+      MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_ID_INTERNAL |
+      MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_ID_HYBRID;
+  return (transportSet & passkeyTransportMask) == 0;
+}
+
+}  // namespace
+#endif
+
 NS_IMPL_ISUPPORTS(WebAuthnService, nsIWebAuthnService)
 
 void WebAuthnService::ShowAttestationConsentPrompt(
@@ -73,6 +122,24 @@ WebAuthnService::MakeCredential(uint64_t aTransactionId,
       Some(TransactionState{.service = DefaultService(),
                             .transactionId = aTransactionId,
                             .parentRegisterPromise = Some(aPromise)});
+
+#if defined(XP_MACOSX)
+  if (__builtin_available(macos 26.4, *)) {
+    // This branch is intentionally empty; using `!__builtin_available(...)`
+    // results in a compiler warning.
+  } else {
+    // Below macOS 26.4 the security key API cannot evaluate the PRF
+    // extension -- `ASAuthorizationSecurityKeyPublicKeyCredentialRegistration`
+    // grew a `prf` property only then, and platform passkeys only got one
+    // in 15.0. A PRF request that the platform silently drops leaves the
+    // caller with a credential it cannot derive from, so route it to
+    // authenticator-rs instead. Only do this when the request is not
+    // asking for a platform authenticator, which we cannot serve.
+    if (PrfRequestedForSecurityKey(aArgs)) {
+      mActiveTransaction.ref().service = AuthrsService();
+    }
+  }
+#endif
 
   // We may need to show an attestation consent prompt before we return a
   // credential to WebAuthnTransactionParent, so we insert a new promise that
@@ -232,6 +299,18 @@ WebAuthnService::GetAssertion(uint64_t aTransactionId,
           (transportSet & passkeyTransportMask) == 0) {
         mActiveTransaction.ref().service = AuthrsService();
       }
+    }
+  }
+
+  if (__builtin_available(macos 26.4, *)) {
+    // This branch is intentionally empty; using `!__builtin_available(...)`
+    // results in a compiler warning.
+  } else {
+    // Same reasoning as in MakeCredential: below macOS 26.4 the security
+    // key API cannot evaluate PRF, and a dropped PRF request is worse
+    // than a slower one, so hand it to authenticator-rs.
+    if (PrfRequestedForSecurityKey(aArgs)) {
+      mActiveTransaction.ref().service = AuthrsService();
     }
   }
 #endif

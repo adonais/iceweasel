@@ -285,14 +285,10 @@ class ArenaCollection {
 
     {
       MutexAutoLock lock(mLock);
-      Tree& tree =
-#ifndef NON_RANDOM_ARENA_IDS
-          aArena->IsMainThreadOnly() ? mMainThreadArenas :
-#endif
-                                     mPrivateArenas;
 
-      MOZ_RELEASE_ASSERT(tree.Search(aArena->mId), "Arena not in tree");
-      tree.Remove(aArena);
+      MOZ_RELEASE_ASSERT(mPrivateArenas.Search(aArena->mId),
+                         "Arena not in tree");
+      mPrivateArenas.Remove(aArena);
       mNumOperationsDisposedArenas += aArena->Operations();
     }
     {
@@ -414,11 +410,7 @@ class ArenaCollection {
   };
 
   Iterator iter() MOZ_REQUIRES(mLock) {
-#ifdef NON_RANDOM_ARENA_IDS
     return Iterator(&mArenas, &mPrivateArenas);
-#else
-    return Iterator(&mArenas, &mPrivateArenas, &mMainThreadArenas);
-#endif
   }
 
   inline arena_t* GetDefault() { return mDefaultArena; }
@@ -536,9 +528,6 @@ class ArenaCollection {
  private:
   const static arena_id_t MAIN_THREAD_ARENA_BIT = 0x1;
 
-#ifndef NON_RANDOM_ARENA_IDS
-  arena_id_t MakeRandArenaId(bool aIsMainThreadOnly) const MOZ_REQUIRES(mLock);
-#endif
   static bool ArenaIdIsMainThreadOnly(arena_id_t aArenaId) {
     return aArenaId & MAIN_THREAD_ARENA_BIT;
   }
@@ -550,16 +539,10 @@ class ArenaCollection {
   Tree mArenas MOZ_GUARDED_BY(mLock);
   Tree mPrivateArenas MOZ_GUARDED_BY(mLock);
 
-#ifdef NON_RANDOM_ARENA_IDS
   // Arena ids are pseudo-obfuscated/deobfuscated based on these values randomly
   // initialized on first use.
   arena_id_t mArenaIdKey = 0;
   int8_t mArenaIdRotation = 0;
-#else
-  // Some mMainThreadArenas accesses to mMainThreadArenas can (and should) elude
-  // the lock, see GetById().
-  Tree mMainThreadArenas MOZ_GUARDED_BY(mLock);
-#endif
 
   // Set only rarely and then propagated on the same thread to all arenas via
   // UpdateMaxDirty(). But also read in ExtraCommitPages on arbitrary threads.
@@ -3122,7 +3105,6 @@ arena_t* ArenaCollection::CreateArena(bool aIsPrivate,
     return ret;
   }
 
-#ifdef NON_RANDOM_ARENA_IDS
   // For private arenas, slightly obfuscate the id by XORing a key generated
   // once, and rotate the bits by an amount also generated once.
   if (mArenaIdKey == 0) {
@@ -3138,48 +3120,7 @@ arena_t* ArenaCollection::CreateArena(bool aIsPrivate,
       (id >> mArenaIdRotation) | (id << (sizeof(void*) * 8 - mArenaIdRotation));
   mPrivateArenas.Insert(ret);
   return ret;
-#else
-  // For private arenas, generate a cryptographically-secure random id for the
-  // new arena. If an attacker manages to get control of the process, this
-  // should make it more difficult for them to "guess" the ID of a memory
-  // arena, stopping them from getting data they may want
-  Tree& tree = (ret->IsMainThreadOnly()) ? mMainThreadArenas : mPrivateArenas;
-  arena_id_t arena_id;
-  do {
-    arena_id = MakeRandArenaId(ret->IsMainThreadOnly());
-    // Keep looping until we ensure that the random number we just generated
-    // isn't already in use by another active arena
-  } while (tree.Search(arena_id));
-
-  ret->mId = arena_id;
-  tree.Insert(ret);
-  return ret;
-#endif
 }
-
-#ifndef NON_RANDOM_ARENA_IDS
-arena_id_t ArenaCollection::MakeRandArenaId(bool aIsMainThreadOnly) const {
-  uint64_t rand;
-  do {
-    mozilla::Maybe<uint64_t> maybeRandomId = mozilla::RandomUint64();
-    MOZ_RELEASE_ASSERT(maybeRandomId.isSome());
-
-    rand = maybeRandomId.value();
-
-    // Set or clear the least significant bit depending on if this is a
-    // main-thread-only arena.  We use this in GetById.
-    if (aIsMainThreadOnly) {
-      rand = rand | MAIN_THREAD_ARENA_BIT;
-    } else {
-      rand = rand & ~MAIN_THREAD_ARENA_BIT;
-    }
-
-    // Avoid 0 as an arena Id. We use 0 for disposed arenas.
-  } while (rand == 0);
-
-  return arena_id_t(rand);
-}
-#endif
 
 // End arena.
 // ***************************************************************************
@@ -4022,7 +3963,6 @@ inline arena_t* ArenaCollection::GetById(arena_id_t aArenaId, bool aIsPrivate) {
     return nullptr;
   }
 
-#ifdef NON_RANDOM_ARENA_IDS
   // This function is never called with aIsPrivate = false, let's make sure it
   // doesn't silently change while we're making that assumption below because
   // we can't resolve non-private arenas this way.
@@ -4034,32 +3974,6 @@ inline arena_t* ArenaCollection::GetById(arena_id_t aArenaId, bool aIsPrivate) {
   arena_id_t id = (aArenaId << mArenaIdRotation) |
                   (aArenaId >> (sizeof(void*) * 8 - mArenaIdRotation));
   arena_t* result = reinterpret_cast<arena_t*>(id ^ mArenaIdKey);
-#else
-  Tree* tree = nullptr;
-  if (aIsPrivate) {
-    if (ArenaIdIsMainThreadOnly(aArenaId)) {
-      // The main thread only arenas support lock free access, so it's desirable
-      // to do GetById without taking mLock either.
-      //
-      // Races can occur between writers and writers, or between writers and
-      // readers.  The only writer is the main thread and it will never race
-      // against itself so we can elude the lock when the main thread is
-      // reading.
-      MOZ_ASSERT(IsOnMainThread());
-      MOZ_PUSH_IGNORE_THREAD_SAFETY
-      arena_t* result = mMainThreadArenas.Search(aArenaId);
-      MOZ_POP_THREAD_SAFETY
-      MOZ_RELEASE_ASSERT(result);
-      return result;
-    }
-    tree = &mPrivateArenas;
-  } else {
-    tree = &mArenas;
-  }
-
-  MutexAutoLock lock(mLock);
-  arena_t* result = tree->Search(aArenaId);
-#endif
   MOZ_RELEASE_ASSERT(result);
   MOZ_DIAGNOSTIC_ASSERT(result->mMagic == ARENA_MAGIC);
   MOZ_RELEASE_ASSERT(result->mId == aArenaId);

@@ -19,20 +19,19 @@ import org.mozilla.fenix.helpers.Constants.TAG
 import shark.AndroidReferenceMatchers
 
 /**
- * Junit [TestRule] to detect memory leaks in the test suite. Adding this test rule to a test class
- * runs memory leak checks in all the tests in the class, unless it is annotated with [SkipLeaks]
+ * Junit [TestRule] to detect memory leaks in the test suite. Adding this test rule to a test class runs memory leak
+ * checks in all the tests in the class, unless it is annotated with [SkipLeaks]
  *
- * When the test suite uses the [ActivityScenarioRule], the order of applying
- * the [DetectMemoryLeaksRule] is important. The [ActivityScenarioRule] finishes the activity at the
- * end of each test, so, in order to detect memory leaks in the activity, this test rule has to be
- * applied after the activity scenario rule, so that it can detect leaks after the activity
- * has been destroyed.
+ * When the test suite uses the [ActivityScenarioRule], the order of applying the [DetectMemoryLeaksRule] is important.
+ * The [ActivityScenarioRule] finishes the activity at the end of each test, so, in order to detect memory leaks in the
+ * activity, this test rule has to be applied after the activity scenario rule, so that it can detect leaks after the
+ * activity has been destroyed.
  *
- * See [https://square.github.io/leakcanary/ui-tests/#test-rule-chains](https://square.github.io/leakcanary/ui-tests/#test-rule-chains)
+ * See
+ * [https://square.github.io/leakcanary/ui-tests/#test-rule-chains](https://square.github.io/leakcanary/ui-tests/#test-rule-chains)
  * for more.
  *
  * Sample usage:
- *
  * ```kotlin
  * class MyFeatureTest {
  *
@@ -56,12 +55,11 @@ import shark.AndroidReferenceMatchers
  * ```
  *
  * @param tag Tag used to identify the calling code
- * @param composeTestRule Optional lambda returning the [ComposeTestRule] used by the test class.
- *   When provided, [ComposeTestRule.waitForIdle] is called after the test completes to drain
- *   pending Compose coroutines before the heap dump, preventing false-positive leak reports.
- *   The rule must be declared at a lower [order][org.junit.Rule.order] value than this rule
- *   (i.e. [order][org.junit.Rule.order] = 0 for [composeTestRule], 1 for this rule) so that
- *   Compose is still active when [waitForIdle][ComposeTestRule.waitForIdle] is called.
+ * @param composeTestRule Optional lambda returning the [ComposeTestRule] used by the test class. When provided,
+ *   [ComposeTestRule.waitForIdle] is called after the test completes to drain pending Compose coroutines before the
+ *   heap dump, preventing false-positive leak reports. The rule must be declared at a lower
+ *   [order][org.junit.Rule.order] value than this rule (i.e. [order][org.junit.Rule.order] = 0 for [composeTestRule], 1
+ *   for this rule) so that Compose is still active when [waitForIdle][ComposeTestRule.waitForIdle] is called.
  */
 class DetectMemoryLeaksRule(
     private val tag: String = DetectMemoryLeaksRule::class.java.simpleName,
@@ -75,9 +73,10 @@ class DetectMemoryLeaksRule(
                 object : Statement() {
                     override fun evaluate() {
                         try {
-                            LeakCanary.config = LeakCanary.config.copy(
-                                referenceMatchers = AndroidReferenceMatchers.appDefaults + knownLeaks,
-                            )
+                            LeakCanary.config =
+                                LeakCanary.config.copy(
+                                    referenceMatchers = AndroidReferenceMatchers.appDefaults + knownLeaks
+                                )
                             base.evaluate()
                             // If a composeTestRule lambda was supplied, draining is required for
                             // the leak assertion to be reliable: pending compose coroutines retain
@@ -132,12 +131,13 @@ class DetectMemoryLeaksRule(
     }
 
     private fun hasDetectLeaksTestRunnerArg(): Boolean {
-        val args = try {
-            InstrumentationRegistry.getArguments()
-        } catch (exception: IllegalStateException) {
-            Log.e(TAG, "No instrumentation arguments registered", exception)
-            null
-        }
+        val args =
+            try {
+                InstrumentationRegistry.getArguments()
+            } catch (exception: IllegalStateException) {
+                Log.e(TAG, "No instrumentation arguments registered", exception)
+                null
+            }
 
         return args?.getString(ARG_DETECT_LEAKS, "false") == "true"
     }
@@ -145,8 +145,7 @@ class DetectMemoryLeaksRule(
     /**
      * Determines whether or not leak detection is enabled
      *
-     * @return true if the test is NOT annotated with @SkipLeaks AND
-     * "detect-leak" argument set to "true"
+     * @return true if the test is NOT annotated with @SkipLeaks AND "detect-leak" argument set to "true"
      */
     private fun leakDetectionEnabled(description: Description): Boolean {
         return hasDetectLeaksTestRunnerArg() && description.doesNotHaveSkipLeaksAnnotation()
@@ -163,10 +162,7 @@ class DetectMemoryLeaksRule(
     }
 
     private companion object {
-        /**
-         * Key identifying the test instrumentation runner argument to enable or disable
-         * memory leak detection.
-         */
+        /** Key identifying the test instrumentation runner argument to enable or disable memory leak detection. */
         const val ARG_DETECT_LEAKS = "detect-leaks"
     }
 }

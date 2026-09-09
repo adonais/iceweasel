@@ -100,6 +100,18 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   void SetPopover(const nsAString& aPopover, mozilla::ErrorResult& aError) {
     SetOrRemoveNullableStringAttr(nsGkAtoms::popover, aPopover, aError);
   }
+  void GetContainerTiming(mozilla::dom::DOMString& aValue) const {
+    GetHTMLAttr(nsGkAtoms::containertiming, aValue);
+  }
+  void SetContainerTiming(const nsAString& aValue) {
+    SetHTMLAttr(nsGkAtoms::containertiming, aValue);
+  }
+  bool ContainerTimingIgnore() const {
+    return GetBoolAttr(nsGkAtoms::containerTimingIgnore);
+  }
+  void SetContainerTimingIgnore(bool aValue) {
+    SetBoolAttr(nsGkAtoms::containerTimingIgnore, aValue);
+  }
 
   void GetHidden(mozilla::dom::Nullable<
                  mozilla::dom::OwningBooleanOrUnrestrictedDoubleOrString>&
@@ -948,20 +960,20 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   }
 
   /**
-   * Locates the EditorBase associated with this node.  In general this is
-   * equivalent to GetEditorInternal(), but for designmode or contenteditable,
-   * this may need to get an editor that's not actually on this element's
-   * associated TextControlFrame.  This is used by the spellchecking routines
-   * to get the editor affected by changing the spellcheck attribute on this
-   * node.
+   * Return an associated editor for this element.
+   * If this is an HTMLBodyElement and it's the primary one in the document,
+   * this returns HTMLEditor if the document is in the designMode or there is
+   * an element has `contenteditable`.
+   * If this is a TextControlElement, returns **extant** TextEditor.
+   * Otherwise, returns nullptr.
    */
-  virtual already_AddRefed<mozilla::EditorBase> GetAssociatedEditor();
+  mozilla::EditorBase* GetAssociatedExtantEditor() const;
 
   /**
    * Ensures all editors associated with a subtree are synced, for purposes of
    * spellchecking.
    */
-  static void SyncEditorsOnSubtree(nsIContent* content);
+  static void SyncSpellCheckerStateOfExtantEditorsOnSubtree(nsIContent&);
 
   [[nodiscard]] inline static bool IsEditableState(
       ContentEditableState aState) {
@@ -1052,7 +1064,9 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement {
    */
   virtual void FieldSetDisabledChanged(bool aNotify);
 
-  void FieldSetFirstLegendChanged(bool aNotify) { UpdateFieldSet(aNotify); }
+  void FieldSetFirstLegendChanged(bool aNotify) {
+    FieldSetDisabledChanged(aNotify);
+  }
 
   /**
    * This callback is called by a fieldset on all it's elements when it's being
@@ -1099,6 +1113,7 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement {
    * state to decide whether our disabled flag should be toggled.
    */
   virtual void UpdateDisabledState(bool aNotify);
+  bool IsDisabledByAncestorFieldSet() const;
   bool IsReadOnlyInternal() const final;
 
   virtual void SetFormInternal(mozilla::dom::HTMLFormElement* aForm,
@@ -1191,6 +1206,8 @@ class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement,
       already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo, FormControlType);
 
   NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsGenericHTMLFormControlElement,
+                                           nsGenericHTMLFormElement);
 
   NS_IMPL_FROMNODE_HELPER(nsGenericHTMLFormControlElement,
                           IsHTMLFormControlElement())
@@ -1251,7 +1268,7 @@ class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement,
   void SetFormAutofillState(const nsAString& aState);
 
   /** The form that contains this control */
-  mozilla::dom::HTMLFormElement* mForm;
+  RefPtr<mozilla::dom::HTMLFormElement> mForm;
 
   /* This is a pointer to our closest fieldset parent if any */
   mozilla::dom::HTMLFieldSetElement* mFieldSet;

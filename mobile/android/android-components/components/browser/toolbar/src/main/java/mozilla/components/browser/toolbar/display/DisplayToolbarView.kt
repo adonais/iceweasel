@@ -14,10 +14,12 @@ import androidx.core.graphics.withTranslation
 import mozilla.components.browser.toolbar.R
 
 /**
- * Custom ConstraintLayout for DisplayToolbar that allows us to draw ripple backgrounds on the toolbar
- * by setting a background to transparent.
+ * Custom ConstraintLayout for DisplayToolbar that allows us to draw ripple backgrounds on the toolbar by setting a
+ * background to transparent.
  */
-class DisplayToolbarView @JvmOverloads constructor(
+class DisplayToolbarView
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,

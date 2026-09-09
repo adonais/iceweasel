@@ -17,7 +17,9 @@ import org.mozilla.fenix.nimbus.FxNimbus
 
 const val SIMPLE_TOOLBAR_TYPE = "simple"
 
-internal class ToolbarSimpleShortcutPreference @JvmOverloads constructor(
+internal class ToolbarSimpleShortcutPreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : ToolbarShortcutPreference(context, attrs) {
@@ -26,16 +28,14 @@ internal class ToolbarSimpleShortcutPreference @JvmOverloads constructor(
     override val options: List<ShortcutOption>
         get() = simpleShortcutOptions.filterNot {
             (it.key == ShortcutType.SUMMARIZE && !isSummarizationAvailable) ||
-            (it.key == ShortcutType.TRANSLATE && !isTranslationsFeatureAvailable)
+                (it.key == ShortcutType.TRANSLATE && !isTranslationsFeatureAvailable)
         }
 
     // Summarization is unavailable in private browsing, so keep the option visible but disabled.
     override fun isOptionEnabled(option: ShortcutOption): Boolean =
         option.key != ShortcutType.SUMMARIZE || isBrowsingInNormalMode
 
-    /**
-     * Optional callback for when a new shortcut option is selected.
-     */
+    /** Optional callback for when a new shortcut option is selected. */
     var optionChangedListener: ((ShortcutOption?) -> Unit)? = null
 
     override fun readSelectedKey(): String = context.components.settings.toolbarSimpleShortcutKey

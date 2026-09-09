@@ -62,6 +62,18 @@ static CFDictionaryRef BuildEncoderSpec(const bool aHardwareNotAllowed,
                             &kCFTypeDictionaryValueCallBacks);
 }
 
+static CFDictionaryRef BuildFrameProps(const VideoData* aSample) {
+  if (!aSample->mKeyframe) {
+    return nullptr;
+  }
+  CFTypeRef keys[] = {kVTEncodeFrameOptionKey_ForceKeyFrame};
+  CFTypeRef values[] = {kCFBooleanTrue};
+  MOZ_ASSERT(std::size(keys) == std::size(values));
+  return CFDictionaryCreate(kCFAllocatorDefault, keys, values, std::size(keys),
+                            &kCFTypeDictionaryKeyCallBacks,
+                            &kCFTypeDictionaryValueCallBacks);
+}
+
 // Sentinel passed to VideoToolbox as the per-frame sourceFrameRefcon to mark a
 // frame submitted with a forced-keyframe request. It is delivered back in the
 // output callback (including when the frame is dropped), letting us report
@@ -940,7 +952,7 @@ void AppleVTEncoder::ProcessOutput(RefPtr<MediaRawData>&& aOutput,
         MOZ_ASSERT_UNREACHABLE("Unknown EncodeResult");
         break;
     }
-    MaybeResolveOrRejectEncodePromise();
+    MaybeResolveOrRejectEncodePromises();
     return;
   }
 
@@ -949,48 +961,36 @@ void AppleVTEncoder::ProcessOutput(RefPtr<MediaRawData>&& aOutput,
   if (!aOutput) {
     mError =
         MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, "No converted output"_ns);
-    MaybeResolveOrRejectEncodePromise();
+    MaybeResolveOrRejectEncodePromises();
     return;
   }
 
   mEncodedData.AppendElement(std::move(aOutput));
-  MaybeResolveOrRejectEncodePromise();
+  MaybeResolveOrRejectEncodePromises();
 }
 
 RefPtr<MediaDataEncoder::EncodePromise> AppleVTEncoder::Encode(
     const MediaData* aSample) {
   MOZ_ASSERT(aSample != nullptr);
 
-  RefPtr<const VideoData> sample(aSample->As<const VideoData>());
+  nsTArray<RefPtr<MediaData>> samples(1);
+  samples.AppendElement(const_cast<MediaData*>(aSample));
 
-  RefPtr<AppleVTEncoder> self = this;
-  return InvokeAsync(mTaskQueue, __func__, [self, this, sample] {
-    MOZ_ASSERT(mEncodePromise.IsEmpty(),
-               "Encode should not be called again before getting "
-               "results");
-    RefPtr<EncodePromise> p = mEncodePromise.Ensure(__func__);
-    ProcessEncode(sample);
-    return p;
-  });
+  return InvokeAsync(
+      mTaskQueue, __func__,
+      [self = RefPtr{this}, samples = std::move(samples)]() mutable {
+        return self->ProcessEncode(std::move(samples));
+      });
 }
 
-// TODO(Bug 1984936): For realtime mode, resolve the promise after
-// the first sample's result is available, then continue
-// processing remaining samples. This allows the caller to keep
-// submitting new samples while the encoder handles pending ones.
 RefPtr<MediaDataEncoder::EncodePromise> AppleVTEncoder::Encode(
     nsTArray<RefPtr<MediaData>>&& aSamples) {
   MOZ_ASSERT(!aSamples.IsEmpty());
 
-  RefPtr<AppleVTEncoder> self = this;
   return InvokeAsync(
-      mTaskQueue, __func__, [self, samples = std::move(aSamples)]() mutable {
-        MOZ_ASSERT(self->mEncodeBatchPromise.IsEmpty(),
-                   "Encode should not be called again before "
-                   "getting results");
-        RefPtr<EncodePromise> p = self->mEncodeBatchPromise.Ensure(__func__);
-        self->EncodeNextSample(std::move(samples), EncodedData());
-        return p;
+      mTaskQueue, __func__,
+      [self = RefPtr{this}, samples = std::move(aSamples)]() mutable {
+        return self->ProcessEncode(std::move(samples));
       });
 }
 
@@ -1001,53 +1001,73 @@ RefPtr<MediaDataEncoder::ReconfigurationPromise> AppleVTEncoder::Reconfigure(
                      aConfigurationChanges);
 }
 
-void AppleVTEncoder::ProcessEncode(const RefPtr<const VideoData>& aSample) {
-  LOGV("::ProcessEncode");
+RefPtr<MediaDataEncoder::EncodePromise> AppleVTEncoder::ProcessEncode(
+    nsTArray<RefPtr<MediaData>>&& aSamples) {
+  LOGV("::ProcessEncode {} samples", aSamples.Length());
   AssertOnTaskQueue();
   MOZ_ASSERT(mSession);
 
   if (NS_FAILED(mError)) {
     LOGE("Pending error: {}", mError.Description().get());
-    MaybeResolveOrRejectEncodePromise();
+    return EncodePromise::CreateAndReject(mError, __func__);
   }
 
-  AutoCVBufferRef<CVImageBufferRef> buffer(
-      CreateCVPixelBuffer(aSample->mImage));
-  if (!buffer) {
-    LOGE("Failed to allocate buffer");
-    mError =
-        MediaResult(NS_ERROR_OUT_OF_MEMORY, "failed to allocate buffer"_ns);
-    MaybeResolveOrRejectEncodePromise();
-    return;
+  if (!mDrainPromise.IsEmpty()) {
+    LOGE("Drain already pending");
+    return EncodePromise::CreateAndReject(
+        MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, "Drain already pending"_ns),
+        __func__);
   }
 
-  CFDictionaryRef frameProps = nullptr;
-  if (aSample->mKeyframe) {
-    CFTypeRef keys[] = {kVTEncodeFrameOptionKey_ForceKeyFrame};
-    CFTypeRef values[] = {kCFBooleanTrue};
-    MOZ_ASSERT(std::size(keys) == std::size(values));
-    frameProps = CFDictionaryCreate(
-        kCFAllocatorDefault, keys, values, std::size(keys),
-        &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
-  };
+  auto p = MakeRefPtr<EncodePromise::Private>(__func__);
+  mEncodePromises.push_back(p);
 
-  VTEncodeInfoFlags info;
-  OSStatus status = VTCompressionSessionEncodeFrame(
-      mSession, buffer,
-      CMTimeMake(aSample->mTime.ToMicroseconds(), USECS_PER_S),
-      CMTimeMake(aSample->mDuration.ToMicroseconds(), USECS_PER_S), frameProps,
-      aSample->mKeyframe ? kForcedKeyframeRefcon : nullptr, &info);
-  if (status != noErr) {
-    LOGE("VTCompressionSessionEncodeFrame error: {}", status);
-    mError = MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
-                         "VTCompressionSessionEncodeFrame error"_ns);
-    MaybeResolveOrRejectEncodePromise();
-    return;
+  MOZ_ASSERT(mEncodeState == EncodeState::NotEncoding);
+  mEncodeState = EncodeState::Encoding;
+
+  for (const auto& sample : aSamples) {
+    const auto* videoSample = sample->As<const VideoData>();
+    AutoCVBufferRef<CVImageBufferRef> buffer(
+        CreateCVPixelBuffer(videoSample->mImage));
+    if (!buffer) {
+      LOGE("Failed to allocate buffer");
+      mError =
+          MediaResult(NS_ERROR_OUT_OF_MEMORY, "failed to allocate buffer"_ns);
+      mEncodeState = EncodeState::NotEncoding;
+      MaybeResolveOrRejectEncodePromises();
+      return p;
+    }
+
+    AutoCFTypeRef<CFDictionaryRef> frameProps(BuildFrameProps(videoSample));
+    VTEncodeInfoFlags info;
+    OSStatus status = VTCompressionSessionEncodeFrame(
+        mSession, buffer,
+        CMTimeMake(videoSample->mTime.ToMicroseconds(), USECS_PER_S),
+        CMTimeMake(videoSample->mDuration.ToMicroseconds(), USECS_PER_S),
+        frameProps, videoSample->mKeyframe ? kForcedKeyframeRefcon : nullptr,
+        &info);
+    if (status != noErr) {
+      LOGE("VTCompressionSessionEncodeFrame error: {}", status);
+      mError = MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                           "VTCompressionSessionEncodeFrame error"_ns);
+      mEncodeState = EncodeState::NotEncoding;
+      MaybeResolveOrRejectEncodePromises();
+      return p;
+    }
+
+    if (NS_FAILED(mError.Code())) {
+      mEncodeState = EncodeState::NotEncoding;
+      MaybeResolveOrRejectEncodePromises();
+      return p;
+    }
   }
+
+  auto encodeState = mEncodeState;
+  mEncodeState = EncodeState::NotEncoding;
 
   if (mConfig.mUsage != Usage::Realtime) {
-    MaybeResolveOrRejectEncodePromise();
-    return;
+    MaybeResolveOrRejectEncodePromises();
+    return p;
   }
 
   // The latency between encoding a sample and receiving the
@@ -1058,7 +1078,13 @@ void AppleVTEncoder::ProcessEncode(const RefPtr<const VideoData>& aSample) {
   LOGV("Encoding in progress");
 
   // Workaround for real-time encoding in OS versions < 11.
-  ForceOutputIfNeeded();
+  if (!mTimer && !MaybeArmTimer()) {
+    MaybeResolveOrRejectEncodePromises(/* aResolveAll */ true);
+  }
+  if (encodeState == EncodeState::ResolveOrReject) {
+    MaybeResolveOrRejectEncodePromises();
+  }
+  return p;
 }
 
 RefPtr<MediaDataEncoder::ReconfigurationPromise>
@@ -1284,28 +1310,44 @@ RefPtr<MediaDataEncoder::EncodePromise> AppleVTEncoder::ProcessDrain() {
   AssertOnTaskQueue();
   MOZ_ASSERT(mSession);
 
+  if (!mDrainPromise.IsEmpty()) {
+    LOGE("Drain already pending");
+    return EncodePromise::CreateAndReject(
+        MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, "Drain already pending"_ns),
+        __func__);
+  }
+
+  // Resolve the pending encode promise if any. If an error occurred, we can
+  // still try to drain any completed frames for the caller.
+  MaybeResolveOrRejectEncodePromises(/* aResolveAll */ true);
+
   OSStatus status =
       VTCompressionSessionCompleteFrames(mSession, kCMTimeIndefinite);
   if (status != noErr) {
-    LOGE("VTCompressionSessionCompleteFrames error");
-    return EncodePromise::CreateAndReject(NS_ERROR_DOM_MEDIA_FATAL_ERR,
-                                          __func__);
+    LOGE("VTCompressionSessionCompleteFrames error {}", status);
+    mError = MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                         "VTCompressionSessionCompleteFrames failed"_ns);
+    return EncodePromise::CreateAndReject(mError, __func__);
   }
 
-  // Resolve the pending encode promise if any.
-  MaybeResolveOrRejectEncodePromise();
+  RefPtr<EncodePromise> p = mDrainPromise.Ensure(__func__);
 
   // VTCompressionSessionCompleteFrames() could have queued
   // multiple tasks with the new drained frames. Dispatch a task
   // after them to resolve the promise with those frames.
-  RefPtr<AppleVTEncoder> self = this;
-  return InvokeAsync(mTaskQueue, __func__, [self]() {
-    EncodedData pendingFrames(std::move(self->mEncodedData));
-    LOGV("Resolve drain promise with {} encoded outputs",
-         pendingFrames.Length());
-    self->mEncodedData = EncodedData();
-    return EncodePromise::CreateAndResolve(std::move(pendingFrames), __func__);
-  });
+  nsresult rv = mTaskQueue->Dispatch(
+      NS_NewRunnableFunction(__func__, [self = RefPtr{this}]() {
+        LOGV("Resolve drain promise with {} encoded outputs",
+             self->mEncodedData.Length());
+        self->mDrainPromise.ResolveIfExists(std::move(self->mEncodedData),
+                                            __func__);
+      }));
+
+  if (NS_FAILED(rv)) {
+    mDrainPromise.Reject(MediaResult(rv, "Drain failed to dispatch"_ns),
+                         __func__);
+  }
+  return p;
 }
 
 RefPtr<ShutdownPromise> AppleVTEncoder::Shutdown() {
@@ -1320,7 +1362,8 @@ RefPtr<ShutdownPromise> AppleVTEncoder::ProcessShutdown() {
 
   mIsHardwareAccelerated = false;
   mError = MediaResult(NS_ERROR_DOM_MEDIA_CANCELED, "Canceled in shutdown"_ns);
-  MaybeResolveOrRejectEncodePromise();
+  MaybeResolveOrRejectEncodePromises();
+  mDrainPromise.RejectIfExists(mError, __func__);
   mError = NS_OK;
 
   return ShutdownPromise::CreateAndResolve(true, __func__);
@@ -1337,10 +1380,27 @@ RefPtr<GenericPromise> AppleVTEncoder::SetBitrate(uint32_t aBitsPerSec) {
   });
 }
 
-void AppleVTEncoder::MaybeResolveOrRejectEncodePromise() {
+void AppleVTEncoder::MaybeResolveOrRejectEncodePromises(
+    bool aResolveAll /* = false */) {
   AssertOnTaskQueue();
 
-  if (mEncodePromise.IsEmpty()) {
+  if (mTimer) {
+    mTimer->Cancel();
+    mTimer = nullptr;
+  }
+
+  switch (mEncodeState) {
+    case EncodeState::NotEncoding:
+      break;
+    case EncodeState::Encoding:
+      LOGV("Encoding in progress, defer resolve or reject to after complete");
+      mEncodeState = EncodeState::ResolveOrReject;
+      return;
+    case EncodeState::ResolveOrReject:
+      return;
+  }
+
+  if (mEncodePromises.empty()) {
     LOGV(
         "No pending promise to resolve(pending outputs: {}) or "
         "reject(err: "
@@ -1349,24 +1409,40 @@ void AppleVTEncoder::MaybeResolveOrRejectEncodePromise() {
     return;
   }
 
-  if (mTimer) {
-    mTimer->Cancel();
-    mTimer = nullptr;
-  }
-
   if (NS_FAILED(mError.Code())) {
     LOGE("Rejecting encode promise with error: {}", mError.Description().get());
-    mEncodePromise.Reject(mError, __func__);
+    auto encodePromises = std::move(mEncodePromises);
+    mEncodePromises.clear();
+    for (auto& p : encodePromises) {
+      p->Reject(mError, __func__);
+    }
     return;
   }
 
-  LOGV("Resolving with {} encoded outputs", mEncodedData.Length());
-  mEncodePromise.Resolve(std::move(mEncodedData), __func__);
+  if (!aResolveAll) {
+    LOGV("Resolving with {} encoded outputs", mEncodedData.Length());
+    auto p = std::move(mEncodePromises.front());
+    mEncodePromises.pop_front();
+    p->Resolve(std::move(mEncodedData), __func__);
+    aResolveAll = !mEncodePromises.empty() && !MaybeArmTimer();
+  }
+
+  if (aResolveAll) {
+    LOGV("Resolving all promises, first with {} encoded outputs",
+         mEncodedData.Length());
+    auto encodePromises = std::move(mEncodePromises);
+    mEncodePromises.clear();
+
+    // Only the first promise gets the pending outputs, if any.
+    for (auto& p : encodePromises) {
+      p->Resolve(std::move(mEncodedData), __func__);
+    }
+  }
 }
 
-void AppleVTEncoder::ForceOutputIfNeeded() {
+bool AppleVTEncoder::MaybeArmTimer() {
   if (__builtin_available(macos 11.0, *)) {
-    return;
+    return true;
   }
 
   AssertOnTaskQueue();
@@ -1385,52 +1461,18 @@ void AppleVTEncoder::ForceOutputIfNeeded() {
         }
 
         LOGV("Resolving the pending promise");
-        self->MaybeResolveOrRejectEncodePromise();
+        self->MaybeResolveOrRejectEncodePromises();
       },
       TimeDuration::FromMilliseconds(50), nsITimer::TYPE_ONE_SHOT,
       "EncodingProgressChecker"_ns, mTaskQueue);
   if (r.isErr()) {
     LOGE(
         "Failed to set an encoding progress checker. Resolve the "
-        "pending "
-        "promise now");
-    MaybeResolveOrRejectEncodePromise();
-    return;
+        "pending promises now");
+    return false;
   }
   mTimer = r.unwrap();
-}
-
-void AppleVTEncoder::EncodeNextSample(
-    nsTArray<RefPtr<MediaData>>&& aInputs,
-    MediaDataEncoder::EncodedData&& aOutputs) {
-  AssertOnTaskQueue();
-  MOZ_ASSERT(!mEncodeBatchPromise.IsEmpty());
-  MOZ_ASSERT(!mEncodeBatchRequest.Exists());
-
-  if (aInputs.IsEmpty()) {
-    LOGV("All samples processed. Resolving the encode promise");
-    mEncodeBatchPromise.Resolve(std::move(aOutputs), __func__);
-    return;
-  }
-
-  LOGV("Processing next sample out of {} remaining", aInputs.Length());
-  Encode(aInputs[0])
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [self = RefPtr{this}, inputs = std::move(aInputs),
-           outputs = std::move(aOutputs)](
-              MediaDataEncoder::EncodedData&& aData) mutable {
-            self->mEncodeBatchRequest.Complete();
-            inputs.RemoveElementAt(0);
-            outputs.AppendElements(aData);
-            self->EncodeNextSample(std::move(inputs), std::move(outputs));
-          },
-          [self = RefPtr{this}](const MediaResult& aError) {
-            self->mEncodeBatchRequest.Complete();
-            LOGE("EncodeNextSample failed: {}", aError.Description().get());
-            self->mEncodeBatchPromise.Reject(aError, __func__);
-          })
-      ->Track(mEncodeBatchRequest);
+  return true;
 }
 
 #undef LOGE

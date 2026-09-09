@@ -147,8 +147,8 @@ void gfxFT2Utils::GetVariationInstances(
     }
     inst.mValues.SetCapacity(aMMVar->num_axis);
     for (unsigned j = 0; j < aMMVar->num_axis; j++) {
-      gfxFontVariationValue value;
-      value.mAxis = aMMVar->axis[j].tag;
+      gfxFontVariation value;
+      value.mTag = aMMVar->axis[j].tag;
       value.mValue = ns.coords[j] / 65536.0;
       inst.mValues.AppendElement(value);
     }

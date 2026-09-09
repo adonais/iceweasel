@@ -564,6 +564,15 @@ already_AddRefed<Promise> ScreenOrientation::LockInternal(
     return p.forget();
   }
 
+#  if defined(XP_WIN)
+  // The actual configurations supporting this on Windows are very few, so it
+  // makes sense to disable screen locking under RFP.
+  if (doc->ShouldResistFingerprinting(RFPTarget::ScreenOrientation)) {
+    p->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return p.forget();
+  }
+#  endif
+
   RefPtr<BrowsingContext> bc = docShell->GetBrowsingContext();
   bc = bc ? bc->Top() : nullptr;
   if (!bc) {
@@ -702,8 +711,11 @@ OrientationType ScreenOrientation::DeviceType(CallerType aCallerType) const {
     if (!bc) {
       return nsRFPService::GetDefaultOrientationType();
     }
-    CSSIntSize size = bc->TopInnerSizeSpoofedForRFP();
-    return nsRFPService::ViewportSizeToOrientationType(size.width, size.height);
+    if (bc->GetOrientationLock() == hal::ScreenOrientation::None) {
+      CSSIntSize size = bc->TopInnerSizeSpoofedForRFP();
+      return nsRFPService::ViewportSizeToOrientationType(size.width,
+                                                         size.height);
+    }
   }
   return mType;
 }
@@ -716,8 +728,10 @@ uint16_t ScreenOrientation::DeviceAngle(CallerType aCallerType) const {
     if (!bc) {
       return 0;
     }
-    CSSIntSize size = bc->TopInnerSizeSpoofedForRFP();
-    return nsRFPService::ViewportSizeToAngle(size.width, size.height);
+    if (bc->GetOrientationLock() == hal::ScreenOrientation::None) {
+      CSSIntSize size = bc->TopInnerSizeSpoofedForRFP();
+      return nsRFPService::ViewportSizeToAngle(size.width, size.height);
+    }
   }
   return mAngle;
 }
@@ -733,7 +747,8 @@ OrientationType ScreenOrientation::GetType(CallerType aCallerType,
 
   OrientationType orientation = bc->GetCurrentOrientationType();
   if (nsContentUtils::ShouldResistFingerprinting(
-          aCallerType, GetRelevantGlobal(), RFPTarget::ScreenOrientation)) {
+          aCallerType, GetRelevantGlobal(), RFPTarget::ScreenOrientation) &&
+      bc->GetOrientationLock() == hal::ScreenOrientation::None) {
     CSSIntSize size = bc->TopInnerSizeSpoofedForRFP();
     return nsRFPService::ViewportSizeToOrientationType(size.width, size.height);
   }
@@ -751,7 +766,8 @@ uint16_t ScreenOrientation::GetAngle(CallerType aCallerType,
 
   uint16_t angle = static_cast<uint16_t>(bc->GetCurrentOrientationAngle());
   if (nsContentUtils::ShouldResistFingerprinting(
-          aCallerType, GetRelevantGlobal(), RFPTarget::ScreenOrientation)) {
+          aCallerType, GetRelevantGlobal(), RFPTarget::ScreenOrientation) &&
+      bc->GetOrientationLock() == hal::ScreenOrientation::None) {
     CSSIntSize size = bc->TopInnerSizeSpoofedForRFP();
     return nsRFPService::ViewportSizeToAngle(size.width, size.height);
   }

@@ -4,16 +4,12 @@
 
 package org.mozilla.focus.autocomplete
 
-/**
- * Utility for formatting domain names for autocomplete.
- */
+/** Utility for formatting domain names for autocomplete. */
 object AutocompleteDomainFormatter {
     private const val HOST_INDEX = 3
     private val urlMatcher = Regex("""(https?://)?(www.)?(.+)?""")
 
-    /**
-     * Formats the given [url] into a domain name for autocomplete.
-     */
+    /** Formats the given [url] into a domain name for autocomplete. */
     fun format(url: String): String {
         val result = urlMatcher.find(url)
 

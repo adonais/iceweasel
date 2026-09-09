@@ -25,34 +25,37 @@ internal data class IconDirectoryEntry(
     val directoryIndex: Int,
 ) : Comparable<IconDirectoryEntry> {
 
-    override fun compareTo(other: IconDirectoryEntry): Int = when {
-        width > other.width -> 1
-        width < other.width -> -1
+    override fun compareTo(other: IconDirectoryEntry): Int =
+        when {
+            width > other.width -> 1
+            width < other.width -> -1
 
-        // Where both images exceed the max BPP, take the smaller of the two BPP values.
-        bitsPerPixel >= MAX_BITS_PER_PIXEL && other.bitsPerPixel >= MAX_BITS_PER_PIXEL &&
-            bitsPerPixel < other.bitsPerPixel -> 1
-        bitsPerPixel >= MAX_BITS_PER_PIXEL && other.bitsPerPixel >= MAX_BITS_PER_PIXEL &&
-            bitsPerPixel > other.bitsPerPixel -> -1
+            // Where both images exceed the max BPP, take the smaller of the two BPP values.
+            bitsPerPixel >= MAX_BITS_PER_PIXEL &&
+                other.bitsPerPixel >= MAX_BITS_PER_PIXEL &&
+                bitsPerPixel < other.bitsPerPixel -> 1
+            bitsPerPixel >= MAX_BITS_PER_PIXEL &&
+                other.bitsPerPixel >= MAX_BITS_PER_PIXEL &&
+                bitsPerPixel > other.bitsPerPixel -> -1
 
-        // Otherwise, take the larger of the BPP values.
-        bitsPerPixel > other.bitsPerPixel -> 1
-        bitsPerPixel < other.bitsPerPixel -> -1
+            // Otherwise, take the larger of the BPP values.
+            bitsPerPixel > other.bitsPerPixel -> 1
+            bitsPerPixel < other.bitsPerPixel -> -1
 
-        // Prefer large palettes.
-        paletteSize > other.paletteSize -> 1
-        paletteSize < other.paletteSize -> -1
+            // Prefer large palettes.
+            paletteSize > other.paletteSize -> 1
+            paletteSize < other.paletteSize -> -1
 
-        // Prefer smaller payloads.
-        payloadSize < other.payloadSize -> 1
-        payloadSize > other.payloadSize -> -1
+            // Prefer smaller payloads.
+            payloadSize < other.payloadSize -> 1
+            payloadSize > other.payloadSize -> -1
 
-        // If all else fails, prefer PNGs over BMPs. They tend to be smaller.
-        payloadIsPNG && !other.payloadIsPNG -> 1
-        !payloadIsPNG && other.payloadIsPNG -> -1
+            // If all else fails, prefer PNGs over BMPs. They tend to be smaller.
+            payloadIsPNG && !other.payloadIsPNG -> 1
+            !payloadIsPNG && other.payloadIsPNG -> -1
 
-        else -> 0
-    }
+            else -> 0
+        }
 
     @Suppress("MagicNumber")
     fun toBitmap(data: ByteArray): Bitmap? {
@@ -92,13 +95,12 @@ internal data class IconDirectoryEntry(
 /**
  * The format consists of a header specifying the number, n, of images, followed by the Icon Directory.
  *
- * The Icon Directory consists of n Icon Directory Entries, each 16 bytes in length, specifying, for
- * the corresponding image, the dimensions, colour information, payload size, and location in the file.
+ * The Icon Directory consists of n Icon Directory Entries, each 16 bytes in length, specifying, for the corresponding
+ * image, the dimensions, colour information, payload size, and location in the file.
  *
  * All numerical fields follow a little-endian byte ordering.
  *
  * Header format:
- *
  * ```
  *  0               1               2               3
  *  0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
@@ -110,7 +112,6 @@ internal data class IconDirectoryEntry(
  * ```
  *
  * The type field is expected to always be 1. CUR format images should not be used for Favicons.
- *
  *
  * Icon Directory Entry format:
  * ```
@@ -129,16 +130,23 @@ internal data class IconDirectoryEntry(
  *
  * Image dimensions of zero are to be interpreted as image dimensions of 256.
  *
- * The palette size field records the number of colours in the stored BMP, if a palette is used. Zero
- * if the payload is a PNG or no palette is in use.
+ * The palette size field records the number of colours in the stored BMP, if a palette is used. Zero if the payload is
+ * a PNG or no palette is in use.
  *
- * The number of colour planes is, usually, 0 (Not in use) or 1. Values greater than 1 are to be
- * interpreted not as a colour plane count, but as a multiplying factor on the bits per pixel field.
- * (Apparently 65535 was not deemed a sufficiently large maximum value of bits per pixel.)
+ * The number of colour planes is, usually, 0 (Not in use) or 1. Values greater than 1 are to be interpreted not as a
+ * colour plane count, but as a multiplying factor on the bits per pixel field. (Apparently 65535 was not deemed a
+ * sufficiently large maximum value of bits per pixel.)
  *
  * The Icon Directory consists of n-many Icon Directory Entries in sequence, with no gaps.
  */
-@Suppress("MagicNumber", "ReturnCount", "CognitiveComplexMethod", "NestedBlockDepth", "ComplexCondition", "CyclomaticComplexMethod")
+@Suppress(
+    "MagicNumber",
+    "ReturnCount",
+    "CognitiveComplexMethod",
+    "NestedBlockDepth",
+    "ComplexCondition",
+    "CyclomaticComplexMethod",
+)
 internal fun decodeDirectoryEntries(data: ByteArray, maxSize: Int): List<IconDirectoryEntry> {
     // Fail if we don't have enough space for the header.
     if (data.size < HEADER_LENGTH_BYTES) {
@@ -147,11 +155,7 @@ internal fun decodeDirectoryEntries(data: ByteArray, maxSize: Int): List<IconDir
 
     // Check that the reserved fields in the header are indeed zero, and that the type field
     // specifies ICO. If not, we've probably been given something that isn't really an ICO.
-    if (data[0] != ZERO_BYTE ||
-        data[1] != ZERO_BYTE ||
-        data[2] != 1.toByte() ||
-        data[3] != ZERO_BYTE
-    ) {
+    if (data[0] != ZERO_BYTE || data[1] != ZERO_BYTE || data[2] != 1.toByte() || data[3] != ZERO_BYTE) {
         return emptyList()
     }
 
@@ -250,24 +254,22 @@ internal fun createIconDirectoryEntry(
 
     // Verify that the entry points to a region that actually exists in the buffer, else bin it.
     var fieldPtr = entryOffset + 8
-    val entryLength = data[fieldPtr].toInt() and 0xFF or (
-        (data[fieldPtr + 1].toInt() and 0xFF) shl 8
-        ) or (
-        (data[fieldPtr + 2].toInt() and 0xFF) shl 16
-        ) or (
-        (data[fieldPtr + 3].toInt() and 0xFF) shl 24
-        )
+    val entryLength =
+        data[fieldPtr].toInt() and
+            0xFF or
+            ((data[fieldPtr + 1].toInt() and 0xFF) shl 8) or
+            ((data[fieldPtr + 2].toInt() and 0xFF) shl 16) or
+            ((data[fieldPtr + 3].toInt() and 0xFF) shl 24)
 
     // Advance to the offset field.
     fieldPtr += 4
 
-    val payloadOffset = data[fieldPtr].toInt() and 0xFF or (
-        (data[fieldPtr + 1].toInt() and 0xFF) shl 8
-        ) or (
-        (data[fieldPtr + 2].toInt() and 0xFF) shl 16
-        ) or (
-        (data[fieldPtr + 3].toInt() and 0xFF) shl 24
-        )
+    val payloadOffset =
+        data[fieldPtr].toInt() and
+            0xFF or
+            ((data[fieldPtr + 1].toInt() and 0xFF) shl 8) or
+            ((data[fieldPtr + 2].toInt() and 0xFF) shl 16) or
+            ((data[fieldPtr + 3].toInt() and 0xFF) shl 24)
 
     // Fail if the entry describes a region outside the buffer.
     if (payloadOffset < 0 || entryLength < 0 || payloadOffset + entryLength > data.size) {

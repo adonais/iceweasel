@@ -84,8 +84,8 @@ class ElementInternals final : public nsIFormControl,
   ValidityState* GetValidity(ErrorResult& aRv);
   void GetValidationMessage(nsAString& aValidationMessage,
                             ErrorResult& aRv) const;
-  bool CheckValidity(ErrorResult& aRv);
-  bool ReportValidity(ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT bool CheckValidity(ErrorResult&);
+  MOZ_CAN_RUN_SCRIPT bool ReportValidity(ErrorResult&);
   already_AddRefed<NodeList> GetLabels(ErrorResult& aRv) const;
   nsGenericHTMLElement* GetValidationAnchor(ErrorResult& aRv) const;
   CustomStateSet* States();

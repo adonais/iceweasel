@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -28,7 +28,10 @@ class DragAndDropTest : BaseSessionTest() {
         val p = Parcel.obtain()
         p.writeInt(action) // mAction
 
-        if (listOf(DragEvent.ACTION_DRAG_STARTED, DragEvent.ACTION_DRAG_LOCATION, DragEvent.ACTION_DROP).contains(action)) {
+        if (
+            listOf(DragEvent.ACTION_DRAG_STARTED, DragEvent.ACTION_DRAG_LOCATION, DragEvent.ACTION_DROP)
+                .contains(action)
+        ) {
             p.writeFloat(x) // mX
             p.writeFloat(y) // mY
         } else {
@@ -83,11 +86,13 @@ class DragAndDropTest : BaseSessionTest() {
         mainSession.loadTestPath(DND_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        val promise = mainSession.evaluatePromiseJS(
-            """
-            new Promise(r => document.querySelector('#drag').addEventListener('dragstart', r, { once: true }))
-            """.trimIndent(),
-        )
+        val promise =
+            mainSession.evaluatePromiseJS(
+                """
+                new Promise(r => document.querySelector('#drag').addEventListener('dragstart', r, { once: true }))
+                """
+                    .trimIndent()
+            )
         val downTime = SystemClock.uptimeMillis()
         mainSession.synthesizeMouse(downTime, MotionEvent.ACTION_DOWN, 50, 20, MotionEvent.BUTTON_PRIMARY)
         for (y in 30..50) {
@@ -105,15 +110,17 @@ class DragAndDropTest : BaseSessionTest() {
         mainSession.loadTestPath(DND_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        val promise = mainSession.evaluatePromiseJS(
-            """
-          new Promise(
-              r => document.querySelector('#drop').addEventListener(
-                       'drop',
-                       e => r(e.dataTransfer.getData('text/plain')),
-                       { once: true }))
-            """.trimIndent(),
-        )
+        val promise =
+            mainSession.evaluatePromiseJS(
+                """
+                new Promise(
+                    r => document.querySelector('#drop').addEventListener(
+                             'drop',
+                             e => r(e.dataTransfer.getData('text/plain')),
+                             { once: true }))
+                """
+                    .trimIndent()
+            )
 
         sendDragEvent(100.0F, 150.0F, 250.0F)
 
@@ -126,25 +133,29 @@ class DragAndDropTest : BaseSessionTest() {
         mainSession.loadTestPath(DND_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        val promiseDragOver = mainSession.evaluatePromiseJS(
-            """
-          new Promise(
-              r => document.querySelector('textarea').addEventListener(
-                       'dragover',
-                       e => r({ types: e.dataTransfer.types, data: e.dataTransfer.getData('text/plain') }),
-                       { once: true }))
-            """.trimIndent(),
-        )
+        val promiseDragOver =
+            mainSession.evaluatePromiseJS(
+                """
+                new Promise(
+                    r => document.querySelector('textarea').addEventListener(
+                             'dragover',
+                             e => r({ types: e.dataTransfer.types, data: e.dataTransfer.getData('text/plain') }),
+                             { once: true }))
+                """
+                    .trimIndent()
+            )
 
-        val promiseSetValue = mainSession.evaluatePromiseJS(
-            """
-          new Promise(
-              r => document.querySelector('textarea').addEventListener(
-                       'input',
-                       e => r(document.querySelector('textarea').value),
-                       { once: true }))
-            """.trimIndent(),
-        )
+        val promiseSetValue =
+            mainSession.evaluatePromiseJS(
+                """
+                new Promise(
+                    r => document.querySelector('textarea').addEventListener(
+                             'input',
+                             e => r(document.querySelector('textarea').value),
+                             { once: true }))
+                """
+                    .trimIndent()
+            )
 
         sendDragEvent(100.0F, 250.0F, 450.0F)
 
@@ -161,11 +172,13 @@ class DragAndDropTest : BaseSessionTest() {
         mainSession.loadTestPath(DND_XORIGIN_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        val promise = mainSession.evaluatePromiseJS(
-            """
-            new Promise(r => window.addEventListener('message', r, { once: true }))
-            """.trimIndent(),
-        )
+        val promise =
+            mainSession.evaluatePromiseJS(
+                """
+                new Promise(r => window.addEventListener('message', r, { once: true }))
+                """
+                    .trimIndent()
+            )
 
         val downTime = SystemClock.uptimeMillis()
         mainSession.synthesizeMouse(downTime, MotionEvent.ACTION_DOWN, 50, 70, MotionEvent.BUTTON_PRIMARY)

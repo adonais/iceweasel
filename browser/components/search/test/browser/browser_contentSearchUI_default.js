@@ -27,9 +27,13 @@ add_setup(async function () {
   addedEngine = await SearchService.getEngineByName(TEST_ENGINE_NAME);
 
   // Enable suggestions in this test. Otherwise, the string in the content
-  // search box changes.
+  // search box changes. The feature gate stays off because this file tests the
+  // handoff search bar, which the newtab <moz-urlbar> supersedes.
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.suggest.searches", true]],
+    set: [
+      ["browser.urlbar.suggest.searches", true],
+      ["browser.urlbar.newtab.featureGate", false],
+    ],
   });
 
   registerCleanupFunction(async () => {

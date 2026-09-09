@@ -9,8 +9,8 @@ Profile: https://profiler.firefox.com/public/3wwdpnhv2bqs9zvr4nk226c45vrqa646wk8
 ## Load the profile and get an overview
 
 ```
-profiler-cli load https://profiler.firefox.com/public/3wwdpnhv2bqs9zvr4nk226c45vrqa646wk8s8f0
-profiler-cli profile info
+profiler-cli load https://profiler.firefox.com/public/3wwdpnhv2bqs9zvr4nk226c45vrqa646wk8s8f0 --session aar-build
+profiler-cli profile info --session aar-build
 ```
 
 ```
@@ -34,8 +34,8 @@ One thread, zero CPU samples, zero CPU activity. This is a marker-only profile: 
 ## Find the top-level build phases
 
 ```
-profiler-cli thread select t-0
-profiler-cli thread markers --category Phases
+profiler-cli thread select t-0 --session aar-build
+profiler-cli thread markers --category Phases --session aar-build
 ```
 
 ```
@@ -52,11 +52,11 @@ By Category:
 15 phase markers span the full build, dominated by one 1023s outlier. The top five by duration:
 
 ```
-profiler-cli marker info m-16   # compile
-profiler-cli marker info m-17   # android-archive-geckoview
-profiler-cli marker info m-18   # export
-profiler-cli marker info m-19   # configure
-profiler-cli marker info m-20   # buildsymbols
+profiler-cli marker info m-16 --session aar-build   # compile
+profiler-cli marker info m-17 --session aar-build   # android-archive-geckoview
+profiler-cli marker info m-18 --session aar-build   # export
+profiler-cli marker info m-19 --session aar-build   # configure
+profiler-cli marker info m-20 --session aar-build   # buildsymbols
 ```
 
 ```
@@ -104,8 +104,8 @@ The remaining 10 phase markers are all under 10 seconds: android-stage-package (
 Zoom into the compile marker and survey what task categories appear inside it:
 
 ```
-profiler-cli zoom push m-16
-profiler-cli thread markers --category Tasks --min-duration 60000
+profiler-cli zoom push m-16 --session aar-build
+profiler-cli thread markers --category Tasks --min-duration 60000 --session aar-build
 ```
 
 ```
@@ -131,7 +131,7 @@ By Name:
 The instant taxonomy: Rust crate compilation and C++ objects are the two dominant task categories by count and individual duration. The single `Rust` marker at 839.5s is the `libgkrust.a` link step spanning almost the entire compile window.
 
 ```
-profiler-cli zoom pop
+profiler-cli zoom pop --session aar-build
 ```
 
 ---
@@ -139,7 +139,7 @@ profiler-cli zoom pop
 ## Rust library link steps
 
 ```
-profiler-cli thread markers --search Rust --min-duration 10000
+profiler-cli thread markers --search Rust --min-duration 10000 --session aar-build
 ```
 
 ```
@@ -153,11 +153,11 @@ By Name:
 The `Rust` markers are per-library (linking steps), and `RustCrate` markers are per-crate (compilation). Inspecting the top `Rust` markers:
 
 ```
-profiler-cli marker info m-81   # libgkrust.a
-profiler-cli marker info m-82   # libjsrust.a
-profiler-cli marker info m-83   # libminidump_analyzer_export.a
-profiler-cli marker info m-84   # libcrash_helper_server.a
-profiler-cli marker info m-85   # http3server
+profiler-cli marker info m-81 --session aar-build   # libgkrust.a
+profiler-cli marker info m-82 --session aar-build   # libjsrust.a
+profiler-cli marker info m-83 --session aar-build   # libminidump_analyzer_export.a
+profiler-cli marker info m-84 --session aar-build   # libcrash_helper_server.a
+profiler-cli marker info m-85 --session aar-build   # http3server
 ```
 
 ```
@@ -194,7 +194,7 @@ Marker m-85: Rust - Rust
 ## Individual Rust crate compilations
 
 ```
-profiler-cli thread markers --search RustCrate --min-duration 60000
+profiler-cli thread markers --search RustCrate --min-duration 60000 --session aar-build
 ```
 
 ```
@@ -204,14 +204,14 @@ By Name:
 ```
 
 ```
-profiler-cli marker info m-86   # gkrust
-profiler-cli marker info m-87   # firefox-on-glean
-profiler-cli marker info m-88   # webrender
-profiler-cli marker info m-89   # style
-profiler-cli marker info m-90   # swgl
-profiler-cli marker info m-140  # wgpu-core
-profiler-cli marker info m-141  # naga
-profiler-cli marker info m-142  # geckoservo
+profiler-cli marker info m-86 --session aar-build   # gkrust
+profiler-cli marker info m-87 --session aar-build   # firefox-on-glean
+profiler-cli marker info m-88 --session aar-build   # webrender
+profiler-cli marker info m-89 --session aar-build   # style
+profiler-cli marker info m-90 --session aar-build   # swgl
+profiler-cli marker info m-140 --session aar-build  # wgpu-core
+profiler-cli marker info m-141 --session aar-build  # naga
+profiler-cli marker info m-142 --session aar-build  # geckoservo
 ```
 
 ```
@@ -263,7 +263,7 @@ These crates run in parallel (their sum far exceeds the 839s wall time of `libgk
 ## C++ object files
 
 ```
-profiler-cli thread markers --search Object --min-duration 60000
+profiler-cli thread markers --search Object --min-duration 60000 --session aar-build
 ```
 
 ```
@@ -273,11 +273,11 @@ By Name:
 ```
 
 ```
-profiler-cli marker info m-41   # rlbox.wasm.o
-profiler-cli marker info m-42   # Unified_cpp_dom_canvas3.o
-profiler-cli marker info m-43   # UnifiedBindings27.o
-profiler-cli marker info m-44   # Unified_cpp_gfx_harfbuzz_src0.o
-profiler-cli marker info m-45   # Unified_cpp_dom_media2.o
+profiler-cli marker info m-41 --session aar-build   # rlbox.wasm.o
+profiler-cli marker info m-42 --session aar-build   # Unified_cpp_dom_canvas3.o
+profiler-cli marker info m-43 --session aar-build   # UnifiedBindings27.o
+profiler-cli marker info m-44 --session aar-build   # Unified_cpp_gfx_harfbuzz_src0.o
+profiler-cli marker info m-45 --session aar-build   # Unified_cpp_dom_media2.o
 ```
 
 ```
@@ -314,7 +314,7 @@ The largest C++ objects fall entirely within the libgkrust.a window (130s-970s) 
 ## android-archive-geckoview: Gradle packaging
 
 ```
-profiler-cli marker info m-56
+profiler-cli marker info m-56 --session aar-build
 ```
 
 ```
@@ -331,7 +331,7 @@ The `android-archive-geckoview` phase (95.9s) is almost entirely `geckoview:asse
 ## Wasted symbolication work
 
 ```
-profiler-cli thread markers --search dumpsymbols --min-duration 60000
+profiler-cli thread markers --search dumpsymbols --min-duration 60000 --session aar-build
 ```
 
 ```
@@ -341,7 +341,7 @@ By Name:
 ```
 
 ```
-profiler-cli marker info m-101
+profiler-cli marker info m-101 --session aar-build
 ```
 
 ```
@@ -358,5 +358,5 @@ Marker m-101: dumpsymbols - dumpsymbols
 ---
 
 ```
-profiler-cli stop
+profiler-cli stop --session aar-build
 ```

@@ -37,7 +37,8 @@ internal class ParserTest(val testCase: ParserTestCase) {
                         assertEquals(testCase.expectedDocument, result)
                     }
                 }
-            """.trimIndent(),
+            """
+                .trimIndent(),
             testCase.expectedDocument,
             actualDocument,
         )
@@ -45,8 +46,6 @@ internal class ParserTest(val testCase: ParserTestCase) {
 
     companion object {
 
-        @JvmStatic
-        @Parameterized.Parameters
-        fun testCases(): List<ParserTestCase> = ParserTestCases
+        @JvmStatic @Parameterized.Parameters fun testCases(): List<ParserTestCase> = ParserTestCases
     }
 }

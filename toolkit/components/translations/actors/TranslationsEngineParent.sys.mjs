@@ -19,6 +19,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * marshalling of the data such as the engine payload and port passing.
  */
 export class TranslationsEngineParent extends JSProcessActorParent {
+  /** @type {Map<number, PromiseWithResolvers<void>>} */
+  #engineIdleTimeoutWaitersForTests = new Map();
+
+  /** @type {number} */
+  #nextEngineIdleTimeoutRequestIdForTests = 0;
+
   /**
    * Keep track of the live actors by InnerWindowID.
    *
@@ -106,6 +112,13 @@ export class TranslationsEngineParent extends JSProcessActorParent {
         }
         return undefined;
       }
+      case "TranslationsEngine:EngineIdleTimeoutForTests": {
+        const waiter = this.#engineIdleTimeoutWaitersForTests.get(
+          data.requestId
+        );
+        waiter?.resolve();
+        return undefined;
+      }
       default: {
         return undefined;
       }
@@ -155,6 +168,45 @@ export class TranslationsEngineParent extends JSProcessActorParent {
   }
 
   /**
+   * Returns observable translations engine state for tests.
+   *
+   * @returns {Promise<{activeEngineCount: number, activePortCount: number}>}
+   */
+  getEngineStateForTests() {
+    return this.sendQuery("TranslationsEngine:GetEngineState");
+  }
+
+  /**
+   * Starts and waits for a cached engine's idle timer in an automated test.
+   *
+   * @param {LanguagePair} languagePair
+   * @param {number} timeoutMs
+   * @returns {Promise<void>}
+   */
+  async waitForEngineIdleTimeoutForTests(languagePair, timeoutMs) {
+    if (!Cu.isInAutomation || this.#isDestroyed) {
+      throw new Error("The translations engine idle timer is unavailable.");
+    }
+
+    const requestId = ++this.#nextEngineIdleTimeoutRequestIdForTests;
+    const waiter = Promise.withResolvers();
+    this.#engineIdleTimeoutWaitersForTests.set(requestId, waiter);
+
+    try {
+      await Promise.all([
+        this.sendQuery("TranslationsEngine:StartEngineIdleTimeoutForTests", {
+          languagePair,
+          timeoutMs,
+          requestId,
+        }),
+        waiter.promise,
+      ]);
+    } finally {
+      this.#engineIdleTimeoutWaitersForTests.delete(requestId);
+    }
+  }
+
+  /**
    * Manually shuts down the engines.
    *
    * After the engine has shut down, notify each associated TranslationsParent
@@ -180,5 +232,11 @@ export class TranslationsEngineParent extends JSProcessActorParent {
 
   didDestroy() {
     this.#isDestroyed = true;
+    for (const waiter of this.#engineIdleTimeoutWaitersForTests.values()) {
+      waiter.reject(
+        new Error("The translations engine process was destroyed.")
+      );
+    }
+    this.#engineIdleTimeoutWaitersForTests.clear();
   }
 }

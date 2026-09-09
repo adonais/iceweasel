@@ -19,8 +19,7 @@ class DefaultSyncControllerTest {
 
     private lateinit var syncController: DefaultSyncController
 
-    @RelaxedMockK
-    private lateinit var activity: HomeActivity
+    @RelaxedMockK private lateinit var activity: HomeActivity
 
     @Before
     fun setUp() {

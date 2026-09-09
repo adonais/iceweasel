@@ -439,7 +439,11 @@ class ExtractionContext {
 
       // Wrap as markdown link if block is inside an ancestor anchor.
       // Only format once per anchor to avoid duplicate links
-      if (this.#strategy.formatBlockAnchorsAsMarkdown && innerText) {
+      if (
+        !this.#options.useSimpleText &&
+        this.#strategy.formatBlockAnchorsAsMarkdown &&
+        innerText
+      ) {
         const ancestorAnchor = this.#getAncestorAnchor(element);
         const selector = this.#strategy.formatBlockAnchorSelector;
         if (
@@ -587,7 +591,7 @@ class ExtractionContext {
     // Use anchor.href which provides the resolved (absolute) URL.
     // Empty href resolves to the current document URL, which is valid.
     const href = anchor.href;
-    if (!href) {
+    if (this.#options.useSimpleText || !href) {
       return linkText;
     }
 
@@ -687,8 +691,12 @@ export function extractTextFromDOM(document, rootNode, options) {
 
   subdivideAndExtractText(rootNode, context);
 
+  const text = options.useSimpleText
+    ? collapseWhitespace(context.textContent).replaceAll("\n\n", "\n").trim()
+    : context.textContent.trim();
+
   return {
-    text: context.textContent.trim(),
+    text,
     links: context.links,
     canvases: context.canvases,
   };

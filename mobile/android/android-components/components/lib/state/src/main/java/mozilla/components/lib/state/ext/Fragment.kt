@@ -23,12 +23,11 @@ import mozilla.components.lib.state.Store
 import mozilla.components.support.ktx.android.view.toScope
 
 /**
- * Helper extension method for consuming [State] from a [Store] sequentially in order inside a
- * [Fragment]. The [block] function will get invoked for every [State] update.
+ * Helper extension method for consuming [State] from a [Store] sequentially in order inside a [Fragment]. The [block]
+ * function will get invoked for every [State] update.
  *
- * This helper will automatically stop observing the [Store] once the [View] of the [Fragment] gets
- * detached. The fragment's lifecycle will be used to determine when to resume/pause observing the
- * [Store].
+ * This helper will automatically stop observing the [Store] once the [View] of the [Fragment] gets detached. The
+ * fragment's lifecycle will be used to determine when to resume/pause observing the [Store].
  */
 @MainThread
 fun <S : State, A : Action> Fragment.consumeFrom(
@@ -72,20 +71,18 @@ fun <S : State, A : Action> Fragment.consumeFrom(
 }
 
 /**
- * Helper extension method for consuming [State] from a [Store] as a reactive [Flow],
- * specifically designed for use within a [Fragment]. This function ensures that state
- * observation and processing are lifecycle-aware with respect to the Fragment's view.
+ * Helper extension method for consuming [State] from a [Store] as a reactive [Flow], specifically designed for use
+ * within a [Fragment]. This function ensures that state observation and processing are lifecycle-aware with respect to
+ * the Fragment's view.
  *
- * This function **must be called** when the Fragment's view has been created (e.g., in
- * `onViewCreated()` or later methods like `onStart()`), as it requires the Fragment's `view`
- * to be non-null and uses `viewLifecycleOwner`.
+ * This function **must be called** when the Fragment's view has been created (e.g., in `onViewCreated()` or later
+ * methods like `onStart()`), as it requires the Fragment's `view` to be non-null and uses `viewLifecycleOwner`.
  *
  * @param from The [Store] instance from which to consume states.
- * @param owner The [LifecycleOwner] whose lifecycle dictates the activity of the base
- *   subscription to the `store`. Defaults to `this` Fragment instance.
- * @param block A `suspend` lambda that receives the fully prepared, lifecycle-aware,
- *   and filtered [Flow] of states. You are responsible for `collect`ing this [Flow]
- *   within the `block` to react to state updates (e.g., updating UI).
+ * @param owner The [LifecycleOwner] whose lifecycle dictates the activity of the base subscription to the `store`.
+ *   Defaults to `this` Fragment instance.
+ * @param block A `suspend` lambda that receives the fully prepared, lifecycle-aware, and filtered [Flow] of states. You
+ *   are responsible for `collect`ing this [Flow] within the `block` to react to state updates (e.g., updating UI).
  */
 @MainThread
 fun <S : State, A : Action> Fragment.consumeFlow(
@@ -100,10 +97,11 @@ fun <S : State, A : Action> Fragment.consumeFlow(
 
     val storeFlow = from.flow(owner)
 
-    val viewLifecycleAwareFlow = storeFlow.flowWithLifecycle(
-        lifecycle = currentViewLifecycleOwner.lifecycle,
-        minActiveState = Lifecycle.State.STARTED,
-    )
+    val viewLifecycleAwareFlow =
+        storeFlow.flowWithLifecycle(
+            lifecycle = currentViewLifecycleOwner.lifecycle,
+            minActiveState = Lifecycle.State.STARTED,
+        )
 
     val viewBoundScope = view.toScope(mainDispatcher = mainDispatcher)
 

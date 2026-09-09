@@ -654,7 +654,32 @@ tls13_MakeDcSpki(const SECKEYPublicKey *dcPub, SSLSignatureScheme dcCertVerifyAl
             }
             return SECKEY_CreateSubjectPublicKeyInfo(dcPub);
         }
-
+        case mldsaKey:
+            switch (dcPub->u.mldsa.paramSet) {
+                case SEC_OID_ML_DSA_44:
+                    if (ssl_sig_mldsa44 != dcCertVerifyAlg) {
+                        PORT_SetError(SSL_ERROR_INCORRECT_SIGNATURE_ALGORITHM);
+                        return NULL;
+                    }
+                    break;
+                case SEC_OID_ML_DSA_65:
+                    if (ssl_sig_mldsa65 != dcCertVerifyAlg) {
+                        PORT_SetError(SSL_ERROR_INCORRECT_SIGNATURE_ALGORITHM);
+                        return NULL;
+                    }
+                    break;
+                case SEC_OID_ML_DSA_87:
+                    if (ssl_sig_mldsa87 != dcCertVerifyAlg) {
+                        PORT_SetError(SSL_ERROR_INCORRECT_SIGNATURE_ALGORITHM);
+                        return NULL;
+                    }
+                    break;
+                default:
+                    PORT_SetError(SSL_ERROR_INCORRECT_SIGNATURE_ALGORITHM);
+                    return NULL;
+                    break;
+            }
+            return SECKEY_CreateSubjectPublicKeyInfo(dcPub);
         default:
             break;
     }

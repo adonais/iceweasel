@@ -62,10 +62,30 @@ static void GetVP8Metadata(int32_t aWidth, int32_t aHeight,
 
 const uint64_t FIXED_DURATION = 1000000;
 const uint32_t FIXED_FRAMESIZE = 500;
+// Opus frame durations are expressed in samples at 48kHz.
+const uint64_t OPUS_DURATION_BASE = 48000;
 
 class TestWebMWriter : public WebMWriter {
  public:
   TestWebMWriter() = default;
+
+  // Writes a single frame of dummy data of the given type, spanning
+  // [aTime, aTime + aDuration).
+  void AppendFrame(EncodedFrame::FrameType aFrameType,
+                   const media::TimeUnit& aTime,
+                   const media::TimeUnit& aDuration) {
+    const uint64_t durationBase = aFrameType == EncodedFrame::OPUS_AUDIO_FRAME
+                                      ? OPUS_DURATION_BASE
+                                      : static_cast<uint64_t>(PR_USEC_PER_SEC);
+    nsTArray<RefPtr<EncodedFrame>> encodedData;
+    auto frameData = MakeRefPtr<EncodedFrame::FrameData>();
+    // Create dummy frame data.
+    frameData->SetLength(FIXED_FRAMESIZE);
+    encodedData.AppendElement(MakeRefPtr<EncodedFrame>(
+        aTime, aDuration.ToTicksAtRate(durationBase), durationBase, aFrameType,
+        std::move(frameData)));
+    WriteEncodedTrack(encodedData, 0);
+  }
 
   // When we append an I-Frame into WebM muxer, the muxer will treat previous
   // data as "a cluster".
@@ -73,14 +93,8 @@ class TestWebMWriter : public WebMWriter {
   // previous cluster so that we can retrieve data by |GetContainerData|.
   void AppendDummyFrame(EncodedFrame::FrameType aFrameType,
                         uint64_t aDuration) {
-    nsTArray<RefPtr<EncodedFrame>> encodedVideoData;
-    auto frameData = MakeRefPtr<EncodedFrame::FrameData>();
-    // Create dummy frame data.
-    frameData->SetLength(FIXED_FRAMESIZE);
-    encodedVideoData.AppendElement(
-        MakeRefPtr<EncodedFrame>(mTimestamp, aDuration, PR_USEC_PER_SEC,
-                                 aFrameType, std::move(frameData)));
-    WriteEncodedTrack(encodedVideoData, 0);
+    AppendFrame(aFrameType, mTimestamp,
+                media::TimeUnit::FromMicroseconds(aDuration));
     mTimestamp += media::TimeUnit::FromMicroseconds(aDuration);
   }
 
@@ -351,6 +365,78 @@ TEST(WebMWriter, bug970774_aspect_ratio)
   }
 }
 
+static nsTArray<uint8_t> Flatten(const nsTArray<nsTArray<uint8_t>>& aBufs) {
+  nsTArray<uint8_t> data;
+  for (const auto& buf : aBufs) {
+    data.AppendElements(buf);
+  }
+  return data;
+}
+
+// Counts the Cluster elements in aData. Relies on the dummy frame payloads
+// written by TestWebMWriter being all-zeroes, so that the EBML ID cannot occur
+// inside block data.
+static size_t CountClusters(const nsTArray<uint8_t>& aData) {
+  static const uint8_t kClusterId[] = {0x1F, 0x43, 0xB6, 0x75};
+  size_t count = 0;
+  for (size_t i = 0; i + sizeof(kClusterId) <= aData.Length(); ++i) {
+    if (memcmp(aData.Elements() + i, kClusterId, sizeof(kClusterId)) == 0) {
+      ++count;
+    }
+  }
+  return count;
+}
+
+struct DemuxedPacket {
+  // NESTEGG_TRACK_VIDEO or NESTEGG_TRACK_AUDIO.
+  int mTrackType;
+  uint64_t mTimestampNs;
+};
+
+// The timestamp a demuxer reports for a frame written at aTime. The muxer's
+// timecode scale is 1ms, so sub-millisecond precision is lost.
+static uint64_t ExpectedTimestampNs(const media::TimeUnit& aTime) {
+  return static_cast<uint64_t>(aTime.ToMicroseconds() / PR_USEC_PER_MSEC) *
+         PR_NSEC_PER_MSEC;
+}
+
+// Demuxes aData with nestegg and returns its packets in file order. Adds a
+// test failure if aData is not a parsable WebM stream.
+static nsTArray<DemuxedPacket> DemuxWebM(const nsTArray<uint8_t>& aData) {
+  nsTArray<DemuxedPacket> packets;
+
+  WebMioData ioData;
+  ioData.offset = 0;
+  ioData.data.AppendElements(aData);
+
+  nestegg* context = nullptr;
+  nestegg_io io;
+  io.read = webm_read;
+  io.seek = webm_seek;
+  io.tell = webm_tell;
+  io.userdata = static_cast<void*>(&ioData);
+  if (nestegg_init(&context, io, nullptr, -1) != 0) {
+    ADD_FAILURE() << "nestegg_init failed";
+    return packets;
+  }
+
+  int rv;
+  nestegg_packet* packet = nullptr;
+  while ((rv = nestegg_read_packet(context, &packet)) > 0) {
+    unsigned int track = 0;
+    EXPECT_EQ(nestegg_packet_track(packet, &track), 0);
+    uint64_t tstamp = 0;
+    EXPECT_EQ(nestegg_packet_tstamp(packet, &tstamp), 0);
+    packets.AppendElement(
+        DemuxedPacket{nestegg_track_type(context, track), tstamp});
+    nestegg_free_packet(packet);
+  }
+  EXPECT_EQ(rv, 0) << "Demuxing must reach end of stream without error";
+
+  nestegg_destroy(context);
+  return packets;
+}
+
 /**
  * Test that we don't crash when writing two video frames that are too far apart
  * to fit in the same cluster (>32767ms).
@@ -380,4 +466,141 @@ TEST(WebMWriter, LongVideoGap)
   writer.GetContainerData(&encodedBuf, ContainerWriter::GET_HEADER);
   // metadata + 2 frames
   EXPECT_EQ(encodedBuf.Length(), 3U);
+}
+
+/**
+ * Test that clusters are flushed on an interval while a healthy video track is
+ * producing no keyframes, and that the video frame crossing the interval leads
+ * the new cluster.
+ */
+TEST(WebMWriter, ClustersFlushOnInterval)
+{
+  TestWebMWriter writer;
+  nsTArray<RefPtr<TrackMetadataBase>> meta;
+  GetOpusMetadata(1, 48000, meta);
+  GetVP8Metadata(320, 240, 320, 240, 48000, meta);
+  writer.SetMetadata(meta);
+
+  // 25fps video and 50 packets/s of audio, for 3s.
+  const auto videoDuration = media::TimeUnit::FromSeconds(0.04);
+  const auto audioDuration = media::TimeUnit::FromSeconds(0.02);
+  const auto totalDuration = media::TimeUnit::FromSeconds(3);
+
+  size_t numFrames = 0;
+  for (auto t = media::TimeUnit::Zero(); t < totalDuration;
+       t += videoDuration) {
+    writer.AppendFrame(
+        t.IsZero() ? EncodedFrame::VP8_I_FRAME : EncodedFrame::VP8_P_FRAME, t,
+        videoDuration);
+    ++numFrames;
+    for (auto u = t; u < t + videoDuration; u += audioDuration) {
+      writer.AppendFrame(EncodedFrame::OPUS_AUDIO_FRAME, u, audioDuration);
+      ++numFrames;
+    }
+  }
+
+  nsTArray<nsTArray<uint8_t>> encodedBuf;
+  writer.GetContainerData(&encodedBuf, ContainerWriter::GET_HEADER);
+  const nsTArray<uint8_t> data = Flatten(encodedBuf);
+
+  // The leading keyframe, then one cluster per interval at 1000ms and 2000ms.
+  EXPECT_EQ(CountClusters(data), 3U);
+  EXPECT_EQ(DemuxWebM(data).Length(), numFrames);
+}
+
+/**
+ * Test that a video track resuming after a stall that audio alone has been
+ * filling picks back up in the cluster it lands in, without disturbing the
+ * interval the audio established.
+ */
+TEST(WebMWriter, VideoResumingAfterStall)
+{
+  TestWebMWriter writer;
+  nsTArray<RefPtr<TrackMetadataBase>> meta;
+  GetOpusMetadata(1, 48000, meta);
+  GetVP8Metadata(320, 240, 320, 240, 48000, meta);
+  writer.SetMetadata(meta);
+
+  const auto audioDuration = media::TimeUnit::FromSeconds(0.02);
+  const auto stallEnd = media::TimeUnit::FromSeconds(3);
+  const auto totalDuration = media::TimeUnit::FromSeconds(4);
+
+  // A keyframe, a 3s video stall filled by audio alone, then video resumes.
+  // Frames are appended in the time order the muxer would produce them.
+  writer.AppendFrame(EncodedFrame::VP8_I_FRAME, media::TimeUnit::Zero(),
+                     stallEnd);
+  size_t numAudioBeforeResume = 0;
+  for (auto t = media::TimeUnit::Zero(); t < stallEnd; t += audioDuration) {
+    writer.AppendFrame(EncodedFrame::OPUS_AUDIO_FRAME, t, audioDuration);
+    ++numAudioBeforeResume;
+  }
+  writer.AppendFrame(EncodedFrame::VP8_P_FRAME, stallEnd, audioDuration);
+  size_t numAudioAfterResume = 0;
+  for (auto t = stallEnd; t < totalDuration; t += audioDuration) {
+    writer.AppendFrame(EncodedFrame::OPUS_AUDIO_FRAME, t, audioDuration);
+    ++numAudioAfterResume;
+  }
+
+  nsTArray<nsTArray<uint8_t>> encodedBuf;
+  writer.GetContainerData(&encodedBuf, ContainerWriter::GET_HEADER);
+  const nsTArray<uint8_t> data = Flatten(encodedBuf);
+
+  // Clusters at 0ms, 1000ms, 2000ms and 3000ms, the last of which is led by
+  // the resuming video frame.
+  EXPECT_EQ(CountClusters(data), 4U);
+
+  const nsTArray<DemuxedPacket> packets = DemuxWebM(data);
+  ASSERT_EQ(packets.Length(), numAudioBeforeResume + numAudioAfterResume + 2);
+  EXPECT_EQ(packets[0].mTrackType, NESTEGG_TRACK_VIDEO);
+  EXPECT_EQ(packets[numAudioBeforeResume + 1].mTrackType, NESTEGG_TRACK_VIDEO);
+  EXPECT_EQ(packets[numAudioBeforeResume + 1].mTimestampNs,
+            ExpectedTimestampNs(stallEnd));
+}
+
+/**
+ * Test that a video track that goes longer than a cluster can span (32767ms)
+ * without producing a keyframe doesn't block audio from being written. Once
+ * video stops producing frames, audio is on its own and falls back to flushing
+ * clusters on an interval. See bug 1830323.
+ */
+TEST(WebMWriter, AudioSpanningLongVideoKeyframeGap)
+{
+  TestWebMWriter writer;
+  nsTArray<RefPtr<TrackMetadataBase>> meta;
+  GetOpusMetadata(1, 48000, meta);
+  GetVP8Metadata(320, 240, 320, 240, 48000, meta);
+  writer.SetMetadata(meta);
+
+  const auto audioDuration = media::TimeUnit::FromSeconds(0.02);
+  const auto totalDuration = media::TimeUnit::FromSeconds(40);
+
+  // One video keyframe up front, then a stalled video track while audio keeps
+  // flowing.
+  writer.AppendFrame(EncodedFrame::VP8_I_FRAME, media::TimeUnit::Zero(),
+                     totalDuration);
+  nsTArray<media::TimeUnit> audioTimes;
+  for (auto t = media::TimeUnit::Zero(); t < totalDuration;
+       t += audioDuration) {
+    writer.AppendFrame(EncodedFrame::OPUS_AUDIO_FRAME, t, audioDuration);
+    audioTimes.AppendElement(t);
+  }
+
+  nsTArray<nsTArray<uint8_t>> encodedBuf;
+  writer.GetContainerData(&encodedBuf, ContainerWriter::GET_HEADER);
+  const nsTArray<uint8_t> data = Flatten(encodedBuf);
+
+  // The leading keyframe starts the first cluster, then audio is on its own
+  // and flushes a cluster every 1000ms up to and including 39000ms.
+  EXPECT_EQ(CountClusters(data), 40U);
+
+  const nsTArray<DemuxedPacket> packets = DemuxWebM(data);
+  ASSERT_EQ(packets.Length(), audioTimes.Length() + 1);
+  EXPECT_EQ(packets[0].mTrackType, NESTEGG_TRACK_VIDEO);
+  EXPECT_EQ(packets[0].mTimestampNs, 0U);
+  for (size_t i = 0; i < audioTimes.Length(); ++i) {
+    EXPECT_EQ(packets[i + 1].mTrackType, NESTEGG_TRACK_AUDIO)
+        << "Audio packet " << i;
+    EXPECT_EQ(packets[i + 1].mTimestampNs, ExpectedTimestampNs(audioTimes[i]))
+        << "Audio packet " << i;
+  }
 }

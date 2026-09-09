@@ -8,9 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-/**
- * Contains the default values used by the AwesomeBar.
- */
+/** Contains the default values used by the AwesomeBar. */
 object AwesomeBarDefaults {
     /**
      * Creates an [AwesomeBarColors] that represents the default colors used in an AwesomeBar.
@@ -28,11 +26,12 @@ object AwesomeBarDefaults {
         description: Color = MaterialTheme.colorScheme.onSurfaceVariant,
         autocompleteIcon: Color = MaterialTheme.colorScheme.onSurfaceVariant,
         groupTitle: Color = MaterialTheme.colorScheme.onSurfaceVariant,
-    ) = AwesomeBarColors(
-        background,
-        title,
-        description,
-        autocompleteIcon,
-        groupTitle,
-    )
+    ) =
+        AwesomeBarColors(
+            background,
+            title,
+            description,
+            autocompleteIcon,
+            groupTitle,
+        )
 }

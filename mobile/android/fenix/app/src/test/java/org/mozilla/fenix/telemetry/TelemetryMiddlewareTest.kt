@@ -13,6 +13,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.EngineAction
@@ -42,6 +43,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.Addons
+import org.mozilla.fenix.GleanMetrics.EngineTab as EngineMetrics
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.GleanMetrics.Translations
@@ -56,8 +58,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
-import kotlin.test.assertNotNull
-import org.mozilla.fenix.GleanMetrics.EngineTab as EngineMetrics
 
 @RunWith(RobolectricTestRunner::class)
 class TelemetryMiddlewareTest {
@@ -68,8 +68,7 @@ class TelemetryMiddlewareTest {
     private lateinit var telemetryMiddleware: TelemetryMiddleware
     private lateinit var tabsUseCases: TabsUseCases
 
-    @get:Rule
-    val gleanRule = FenixGleanTestRule(ApplicationProvider.getApplicationContext())
+    @get:Rule val gleanRule = FenixGleanTestRule(ApplicationProvider.getApplicationContext())
 
     private val clock = FakeClock()
     private val metrics = FakeMetricController()
@@ -78,11 +77,12 @@ class TelemetryMiddlewareTest {
     fun setUp() {
         Clock.delegate = clock
         settings = Settings(testContext)
-        telemetryMiddleware = TelemetryMiddleware(
-            context = testContext,
-            settings = settings,
-            metrics = metrics,
-        )
+        telemetryMiddleware =
+            TelemetryMiddleware(
+                context = testContext,
+                settings = settings,
+                metrics = metrics,
+            )
         val engine: Engine = mockk()
         every { engine.enableExtensionProcessSpawning() } just runs
         every { engine.disableExtensionProcessSpawning() } just runs
@@ -90,10 +90,11 @@ class TelemetryMiddlewareTest {
         every { engine.isTranslationsEngineSupported(any(), any()) } just runs
         every { engine.createSession(any(), any()) } returns mockk(relaxed = true)
 
-        store = BrowserStore(
-            middleware = listOf(telemetryMiddleware) + EngineMiddleware.create(engine),
-            initialState = BrowserState(),
-        )
+        store =
+            BrowserStore(
+                middleware = listOf(telemetryMiddleware) + EngineMiddleware.create(engine),
+                initialState = BrowserState(),
+            )
         appStore = AppStore()
         every { testContext.components.appStore } returns appStore
         tabsUseCases = TabsUseCases(store)
@@ -137,8 +138,8 @@ class TelemetryMiddlewareTest {
                 listOf(
                     createTab("https://mozilla.org"),
                     createTab("https://firefox.com"),
-                ),
-            ),
+                )
+            )
         )
 
         assertEquals(2, settings.openTabsCount)
@@ -155,8 +156,8 @@ class TelemetryMiddlewareTest {
                 listOf(
                     createTab(id = "1", url = "https://mozilla.org"),
                     createTab(id = "2", url = "https://firefox.com"),
-                ),
-            ),
+                )
+            )
         )
         assertEquals(2, settings.openTabsCount)
 
@@ -175,8 +176,8 @@ class TelemetryMiddlewareTest {
                 listOf(
                     createTab("https://mozilla.org"),
                     createTab("https://firefox.com"),
-                ),
-            ),
+                )
+            )
         )
         assertEquals(2, settings.openTabsCount)
 
@@ -198,8 +199,8 @@ class TelemetryMiddlewareTest {
                     createTab("https://mozilla.org"),
                     createTab("https://firefox.com"),
                     createTab("https://getpocket.com", private = true),
-                ),
-            ),
+                )
+            )
         )
         assertEquals(2, settings.openTabsCount)
         assertTrue(Metrics.hasOpenTabs.testGetValue()!!)
@@ -214,16 +215,17 @@ class TelemetryMiddlewareTest {
         assertEquals(0, settings.openTabsCount)
         assertNull(Metrics.hasOpenTabs.testGetValue())
 
-        val tabsToRestore = listOf(
-            RecoverableTab(null, TabState(url = "https://mozilla.org", id = "1")),
-            RecoverableTab(null, TabState(url = "https://firefox.com", id = "2")),
-        )
+        val tabsToRestore =
+            listOf(
+                RecoverableTab(null, TabState(url = "https://mozilla.org", id = "1")),
+                RecoverableTab(null, TabState(url = "https://firefox.com", id = "2")),
+            )
 
         store.dispatch(
             TabListAction.RestoreAction(
                 tabs = tabsToRestore,
                 restoreLocation = TabListAction.RestoreAction.RestoreLocation.BEGINNING,
-            ),
+            )
         )
         assertEquals(2, settings.openTabsCount)
 
@@ -231,34 +233,32 @@ class TelemetryMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN a normal page is loading WHEN loading is complete THEN we record a UriOpened event`() =
-        runTest {
-            val tab = createTab(id = "1", url = "https://mozilla.org")
-            assertNull(Events.normalAndPrivateUriCount.testGetValue())
+    fun `GIVEN a normal page is loading WHEN loading is complete THEN we record a UriOpened event`() = runTest {
+        val tab = createTab(id = "1", url = "https://mozilla.org")
+        assertNull(Events.normalAndPrivateUriCount.testGetValue())
 
-            store.dispatch(TabListAction.AddTabAction(tab))
-            store.dispatch(ContentAction.UpdateLoadingStateAction(tab.id, true))
-            assertNull(Events.normalAndPrivateUriCount.testGetValue())
+        store.dispatch(TabListAction.AddTabAction(tab))
+        store.dispatch(ContentAction.UpdateLoadingStateAction(tab.id, true))
+        assertNull(Events.normalAndPrivateUriCount.testGetValue())
 
-            store.dispatch(ContentAction.UpdateLoadingStateAction(tab.id, false))
-            val count = Events.normalAndPrivateUriCount.testGetValue()!!
-            assertEquals(1, count)
-        }
+        store.dispatch(ContentAction.UpdateLoadingStateAction(tab.id, false))
+        val count = Events.normalAndPrivateUriCount.testGetValue()!!
+        assertEquals(1, count)
+    }
 
     @Test
-    fun `GIVEN a private page is loading WHEN loading is complete THEN we record a UriOpened event`() =
-        runTest {
-            val tab = createTab(id = "1", url = "https://mozilla.org", private = true)
-            assertNull(Events.normalAndPrivateUriCount.testGetValue())
+    fun `GIVEN a private page is loading WHEN loading is complete THEN we record a UriOpened event`() = runTest {
+        val tab = createTab(id = "1", url = "https://mozilla.org", private = true)
+        assertNull(Events.normalAndPrivateUriCount.testGetValue())
 
-            store.dispatch(TabListAction.AddTabAction(tab))
-            store.dispatch(ContentAction.UpdateLoadingStateAction(tab.id, true))
-            assertNull(Events.normalAndPrivateUriCount.testGetValue())
+        store.dispatch(TabListAction.AddTabAction(tab))
+        store.dispatch(ContentAction.UpdateLoadingStateAction(tab.id, true))
+        assertNull(Events.normalAndPrivateUriCount.testGetValue())
 
-            store.dispatch(ContentAction.UpdateLoadingStateAction(tab.id, false))
-            val count = Events.normalAndPrivateUriCount.testGetValue()!!
-            assertEquals(1, count)
-        }
+        store.dispatch(ContentAction.UpdateLoadingStateAction(tab.id, false))
+        val count = Events.normalAndPrivateUriCount.testGetValue()!!
+        assertEquals(1, count)
+    }
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
@@ -281,14 +281,12 @@ class TelemetryMiddlewareTest {
                 ),
                 selectedTabId = "foreground",
                 restoreLocation = TabListAction.RestoreAction.RestoreLocation.BEGINNING,
-            ),
+            )
         )
 
         assertNull(EngineMetrics.tabKilled.testGetValue())
 
-        store.dispatch(
-            EngineAction.KillEngineSessionAction("background_pocket"),
-        )
+        store.dispatch(EngineAction.KillEngineSessionAction("background_pocket"))
 
         assertEquals(1, EngineMetrics.tabKilled.testGetValue()?.size)
         EngineMetrics.tabKilled.testGetValue()?.get(0)?.extra?.also {
@@ -297,13 +295,9 @@ class TelemetryMiddlewareTest {
             assertEquals("true", it["app_foreground"])
         }
 
-        appStore.dispatch(
-            AppAction.AppLifecycleAction.PauseAction,
-        )
+        appStore.dispatch(AppAction.AppLifecycleAction.PauseAction)
 
-        store.dispatch(
-            EngineAction.KillEngineSessionAction("foreground"),
-        )
+        store.dispatch(EngineAction.KillEngineSessionAction("foreground"))
 
         assertEquals(2, EngineMetrics.tabKilled.testGetValue()?.size)
         EngineMetrics.tabKilled.testGetValue()?.get(1)?.extra?.also {
@@ -314,56 +308,52 @@ class TelemetryMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN the request to check for form data WHEN it fails THEN telemetry is sent`() =
-        runTest {
-            assertNull(Events.formDataFailure.testGetValue())
+    fun `GIVEN the request to check for form data WHEN it fails THEN telemetry is sent`() = runTest {
+        assertNull(Events.formDataFailure.testGetValue())
 
-            store.dispatch(
-                ContentAction.CheckForFormDataExceptionAction(
-                    "1",
-                    RuntimeException("session form data request failed"),
-                ),
+        store.dispatch(
+            ContentAction.CheckForFormDataExceptionAction(
+                "1",
+                RuntimeException("session form data request failed"),
             )
+        )
 
-            // Wait for the main looper to process the re-thrown exception.
-            ShadowLooper.idleMainLooper()
+        // Wait for the main looper to process the re-thrown exception.
+        ShadowLooper.idleMainLooper()
 
-            assertNotNull(Events.formDataFailure.testGetValue())
-        }
+        assertNotNull(Events.formDataFailure.testGetValue())
+    }
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
-    fun `GIVEN an existing tab WHEN its process is killed and it reloads THEN telemetry is sent with content_process_kill reason`() = runTest {
-        val tabId = "test-tab-id"
+    fun `GIVEN an existing tab WHEN its process is killed and it reloads THEN telemetry is sent with content_process_kill reason`() =
+        runTest {
+            val tabId = "test-tab-id"
 
-        store.dispatch(
-            TabListAction.AddTabAction(
-                createTab(
-                    id = tabId,
-                    url = "https://firefox.com",
-                ),
-            ),
-        )
+            store.dispatch(
+                TabListAction.AddTabAction(
+                    createTab(
+                        id = tabId,
+                        url = "https://firefox.com",
+                    )
+                )
+            )
 
-        store.dispatch(
-            EngineAction.KillEngineSessionAction(tabId),
-        )
-        assertTrue(store.state.recentlyKilledTabs.contains(tabId))
+            store.dispatch(EngineAction.KillEngineSessionAction(tabId))
+            assertTrue(store.state.recentlyKilledTabs.contains(tabId))
 
-        store.dispatch(
-            EngineAction.CreateEngineSessionAction(tabId),
-        )
+            store.dispatch(EngineAction.CreateEngineSessionAction(tabId))
 
-        ShadowLooper.idleMainLooper()
+            ShadowLooper.idleMainLooper()
 
-        val recordedEvents = EngineMetrics.reloaded.testGetValue()
-        assertNotNull(recordedEvents)
-        assertEquals(1, recordedEvents.size)
-        assertEquals("-1", recordedEvents[0].extra?.get("duration_since_last_visible_seconds"))
-        assertEquals("content_process_kill", recordedEvents[0].extra?.get("reason"))
+            val recordedEvents = EngineMetrics.reloaded.testGetValue()
+            assertNotNull(recordedEvents)
+            assertEquals(1, recordedEvents.size)
+            assertEquals("-1", recordedEvents[0].extra?.get("duration_since_last_visible_seconds"))
+            assertEquals("content_process_kill", recordedEvents[0].extra?.get("reason"))
 
-        assertFalse(store.state.recentlyKilledTabs.contains(tabId))
-    }
+            assertFalse(store.state.recentlyKilledTabs.contains(tabId))
+        }
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
@@ -374,8 +364,8 @@ class TelemetryMiddlewareTest {
 
             store.dispatch(
                 TabListAction.AddTabAction(
-                    createTab(id = tabId, url = "https://firefox.com", lastVisibleAt = lastVisibleAt),
-                ),
+                    createTab(id = tabId, url = "https://firefox.com", lastVisibleAt = lastVisibleAt)
+                )
             )
 
             store.dispatch(EngineAction.KillEngineSessionAction(tabId))
@@ -397,9 +387,7 @@ class TelemetryMiddlewareTest {
             val tabId = "test-tab-id"
 
             store.dispatch(
-                TabListAction.AddTabAction(
-                    createTab(id = tabId, url = "https://firefox.com", lastVisibleAt = 0L),
-                ),
+                TabListAction.AddTabAction(createTab(id = tabId, url = "https://firefox.com", lastVisibleAt = 0L))
             )
 
             store.dispatch(EngineAction.KillEngineSessionAction(tabId))
@@ -426,13 +414,17 @@ class TelemetryMiddlewareTest {
 
             store.dispatch(
                 TabListAction.AddTabAction(
-                    createTab(id = switchedTabId, url = "https://mozilla.org", lastVisibleAt = switchedTabLastVisibleAt),
-                ),
+                    createTab(id = switchedTabId, url = "https://mozilla.org", lastVisibleAt = switchedTabLastVisibleAt)
+                )
             )
             store.dispatch(
                 TabListAction.AddTabAction(
-                    createTab(id = foregroundTabId, url = "https://firefox.com", lastVisibleAt = foregroundTabLastVisibleAt),
-                ),
+                    createTab(
+                        id = foregroundTabId,
+                        url = "https://firefox.com",
+                        lastVisibleAt = foregroundTabLastVisibleAt,
+                    )
+                )
             )
 
             store.dispatch(EngineAction.KillEngineSessionAction(switchedTabId))
@@ -464,28 +456,27 @@ class TelemetryMiddlewareTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
-    fun `GIVEN a tab restored from a previous session WHEN its engine session is created THEN telemetry is sent with app_session_restore reason`() = runTest {
-        val tabId = "test-tab-id"
+    fun `GIVEN a tab restored from a previous session WHEN its engine session is created THEN telemetry is sent with app_session_restore reason`() =
+        runTest {
+            val tabId = "test-tab-id"
 
-        store.dispatch(
-            TabListAction.RestoreAction(
-                tabs = listOf(RecoverableTab(null, TabState(url = "https://firefox.com", id = tabId))),
-                restoreLocation = TabListAction.RestoreAction.RestoreLocation.BEGINNING,
-            ),
-        )
-        store.dispatch(RestoreCompleteAction)
+            store.dispatch(
+                TabListAction.RestoreAction(
+                    tabs = listOf(RecoverableTab(null, TabState(url = "https://firefox.com", id = tabId))),
+                    restoreLocation = TabListAction.RestoreAction.RestoreLocation.BEGINNING,
+                )
+            )
+            store.dispatch(RestoreCompleteAction)
 
-        store.dispatch(
-            EngineAction.CreateEngineSessionAction(tabId),
-        )
+            store.dispatch(EngineAction.CreateEngineSessionAction(tabId))
 
-        ShadowLooper.idleMainLooper()
+            ShadowLooper.idleMainLooper()
 
-        val recordedEvents = EngineMetrics.reloaded.testGetValue()
-        assertNotNull(recordedEvents)
-        assertEquals(1, recordedEvents.size)
-        assertEquals("app_session_restore", recordedEvents[0].extra?.get("reason"))
-    }
+            val recordedEvents = EngineMetrics.reloaded.testGetValue()
+            assertNotNull(recordedEvents)
+            assertEquals(1, recordedEvents.size)
+            assertEquals("app_session_restore", recordedEvents[0].extra?.get("reason"))
+        }
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
@@ -501,7 +492,7 @@ class TelemetryMiddlewareTest {
             TabListAction.RestoreAction(
                 tabs = listOf(RecoverableTab(null, TabState(url = "https://firefox.com", id = tabId))),
                 restoreLocation = TabListAction.RestoreAction.RestoreLocation.BEGINNING,
-            ),
+            )
         )
         store.dispatch(RestoreCompleteAction)
         store.dispatch(EngineAction.CreateEngineSessionAction(tabId))
@@ -520,7 +511,7 @@ class TelemetryMiddlewareTest {
             TabListAction.RestoreAction(
                 tabs = listOf(RecoverableTab(null, TabState(url = "https://firefox.com", id = tabId))),
                 restoreLocation = TabListAction.RestoreAction.RestoreLocation.BEGINNING,
-            ),
+            )
         )
         store.dispatch(RestoreCompleteAction)
         store.dispatch(EngineAction.CreateEngineSessionAction(tabId))
@@ -535,9 +526,7 @@ class TelemetryMiddlewareTest {
     fun `GIVEN API below 30 WHEN a tab is killed THEN tab_killed metric is NOT recorded`() = runTest {
         val tabId = "test-tab-id"
 
-        store.dispatch(
-            TabListAction.AddTabAction(createTab(id = tabId, url = "https://firefox.com")),
-        )
+        store.dispatch(TabListAction.AddTabAction(createTab(id = tabId, url = "https://firefox.com")))
         store.dispatch(EngineAction.KillEngineSessionAction(tabId))
 
         ShadowLooper.idleMainLooper()
@@ -546,23 +535,18 @@ class TelemetryMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN a tab that was not recently killed WHEN it reloads THEN telemetry is NOT sent`() =
-        runTest {
-            val tabId = "test-tab-id"
+    fun `GIVEN a tab that was not recently killed WHEN it reloads THEN telemetry is NOT sent`() = runTest {
+        val tabId = "test-tab-id"
 
-            store.dispatch(
-                TabListAction.AddTabAction(createTab(id = tabId, url = "https://firefox.com")),
-            )
+        store.dispatch(TabListAction.AddTabAction(createTab(id = tabId, url = "https://firefox.com")))
 
-            store.dispatch(
-                EngineAction.CreateEngineSessionAction(tabId),
-            )
+        store.dispatch(EngineAction.CreateEngineSessionAction(tabId))
 
-            ShadowLooper.idleMainLooper()
+        ShadowLooper.idleMainLooper()
 
-            val recordedEvents = EngineMetrics.reloaded.testGetValue()
-            assertTrue(recordedEvents.isNullOrEmpty())
-        }
+        val recordedEvents = EngineMetrics.reloaded.testGetValue()
+        assertTrue(recordedEvents.isNullOrEmpty())
+    }
 
     @Test
     fun `GIVEN a tab that is killed multiple times WHEN checking recentlyKilledTabs THEN it only appears once`() =
@@ -576,16 +560,15 @@ class TelemetryMiddlewareTest {
         }
 
     @Test
-    fun `GIVEN more than 50 tabs are killed WHEN checking recentlyKilledTabs THEN it does not exceed 50`() =
-        runTest {
-            repeat(51) { i ->
-                val tab = createTab("https://www.mozilla.org")
-                store.dispatch(TabListAction.AddTabAction(tab))
-                store.dispatch(EngineAction.KillEngineSessionAction(tab.id))
-            }
-
-            assertEquals(50, store.state.recentlyKilledTabs.size)
+    fun `GIVEN more than 50 tabs are killed WHEN checking recentlyKilledTabs THEN it does not exceed 50`() = runTest {
+        repeat(51) { i ->
+            val tab = createTab("https://www.mozilla.org")
+            store.dispatch(TabListAction.AddTabAction(tab))
+            store.dispatch(EngineAction.KillEngineSessionAction(tab.id))
         }
+
+        assertEquals(50, store.state.recentlyKilledTabs.size)
+    }
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
@@ -602,8 +585,8 @@ class TelemetryMiddlewareTest {
                         createTab(
                             id = tabId,
                             url = "https://example.com/$i",
-                        ),
-                    ),
+                        )
+                    )
                 )
                 store.dispatch(EngineAction.KillEngineSessionAction(tabId))
             }
@@ -616,8 +599,8 @@ class TelemetryMiddlewareTest {
                     createTab(
                         id = newTabId,
                         url = "https://example.com/$newTabId",
-                    ),
-                ),
+                    )
+                )
             )
             store.dispatch(EngineAction.KillEngineSessionAction(newTabId))
             assertFalse(store.state.recentlyKilledTabs.contains(oldestTabId))
@@ -673,7 +656,7 @@ class TelemetryMiddlewareTest {
                 fromLanguage = "en",
                 toLanguage = "es",
                 options = null,
-            ),
+            )
         )
 
         val telemetry = Translations.translateRequested.testGetValue()?.firstOrNull()
@@ -690,7 +673,7 @@ class TelemetryMiddlewareTest {
             TranslationsAction.TranslateSuccessAction(
                 tabId = "1",
                 operation = TranslationOperation.FETCH_SUPPORTED_LANGUAGES,
-            ),
+            )
         )
         assertNull(Translations.translateSuccess.testGetValue())
 
@@ -699,7 +682,7 @@ class TelemetryMiddlewareTest {
             TranslationsAction.TranslateSuccessAction(
                 tabId = "1",
                 operation = TranslationOperation.TRANSLATE,
-            ),
+            )
         )
 
         val telemetry = Translations.translateSuccess.testGetValue()?.firstOrNull()
@@ -707,52 +690,47 @@ class TelemetryMiddlewareTest {
     }
 
     @Test
-    fun `WHEN TranslateExceptionAction for Translate operation is dispatched THEN update telemetry`() =
-        runTest {
-            assertNull(Translations.translateFailed.testGetValue())
+    fun `WHEN TranslateExceptionAction for Translate operation is dispatched THEN update telemetry`() = runTest {
+        assertNull(Translations.translateFailed.testGetValue())
 
-            // Shouldn't record other operations
-            store.dispatch(
-                TranslationsAction.TranslateExceptionAction(
-                    tabId = "1",
-                    operation = TranslationOperation.FETCH_SUPPORTED_LANGUAGES,
-                    translationError = TranslationError.UnknownError(IllegalStateException()),
-                ),
+        // Shouldn't record other operations
+        store.dispatch(
+            TranslationsAction.TranslateExceptionAction(
+                tabId = "1",
+                operation = TranslationOperation.FETCH_SUPPORTED_LANGUAGES,
+                translationError = TranslationError.UnknownError(IllegalStateException()),
             )
-            assertNull(Translations.translateFailed.testGetValue())
+        )
+        assertNull(Translations.translateFailed.testGetValue())
 
-            // Should record translate operations
-            store.dispatch(
-                TranslationsAction.TranslateExceptionAction(
-                    tabId = "1",
-                    operation = TranslationOperation.TRANSLATE,
-                    translationError = TranslationError.CouldNotTranslateError(null),
-                ),
+        // Should record translate operations
+        store.dispatch(
+            TranslationsAction.TranslateExceptionAction(
+                tabId = "1",
+                operation = TranslationOperation.TRANSLATE,
+                translationError = TranslationError.CouldNotTranslateError(null),
             )
+        )
 
-            val telemetry = Translations.translateFailed.testGetValue()?.firstOrNull()
-            assertEquals(
-                TranslationError.CouldNotTranslateError(cause = null).errorName,
-                telemetry?.extra?.get("error"),
-            )
-        }
+        val telemetry = Translations.translateFailed.testGetValue()?.firstOrNull()
+        assertEquals(
+            TranslationError.CouldNotTranslateError(cause = null).errorName,
+            telemetry?.extra?.get("error"),
+        )
+    }
 
     @Test
-    fun `WHEN SetEngineSupportedAction is dispatched AND unsupported THEN update telemetry`() =
-        runTest {
-            assertNull(Translations.engineUnsupported.testGetValue())
+    fun `WHEN SetEngineSupportedAction is dispatched AND unsupported THEN update telemetry`() = runTest {
+        assertNull(Translations.engineUnsupported.testGetValue())
 
-            store.dispatch(
-                TranslationsAction.SetEngineSupportedAction(
-                    isEngineSupported = false,
-                ),
-            )
+        store.dispatch(TranslationsAction.SetEngineSupportedAction(isEngineSupported = false))
 
-            assertNotNull(Translations.engineUnsupported.testGetValue())
-        }
+        assertNotNull(Translations.engineUnsupported.testGetValue())
+    }
 }
 
 internal class FakeClock : Clock.Delegate {
     var elapsedTime: Long = 0
+
     override fun elapsedRealtime(): Long = elapsedTime
 }

@@ -29,8 +29,8 @@ import mozilla.components.concept.menu.candidate.TypefaceStyle
  * @param textStyle: The style to apply to the text.
  * @param textAlignment The alignment of text
  * @param isCollapsingMenuLimit Whether this menu item can serve as the limit of a collapsing menu.
- * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards
- * depending on the menu position).
+ * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards depending on the menu
+ *   position).
  */
 class BrowserMenuCategory(
     internal val label: String,
@@ -66,14 +66,16 @@ class BrowserMenuCategory(
         }
     }
 
-    override fun asCandidate(context: Context) = DecorativeTextMenuCandidate(
-        label,
-        textStyle = TextStyle(
-            size = if (textSize == NO_ID.toFloat()) null else textSize,
-            color = if (textColorResource == NO_ID) null else getColor(context, textColorResource),
-            textStyle = textStyle,
-            textAlignment = textAlignment,
-        ),
-        containerStyle = ContainerStyle(isVisible = visible()),
-    )
+    override fun asCandidate(context: Context) =
+        DecorativeTextMenuCandidate(
+            label,
+            textStyle =
+                TextStyle(
+                    size = if (textSize == NO_ID.toFloat()) null else textSize,
+                    color = if (textColorResource == NO_ID) null else getColor(context, textColorResource),
+                    textStyle = textStyle,
+                    textAlignment = textAlignment,
+                ),
+            containerStyle = ContainerStyle(isVisible = visible()),
+        )
 }

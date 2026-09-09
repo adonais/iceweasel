@@ -160,10 +160,23 @@ enum ebml_type_enum {
   TYPE_BINARY
 };
 
+/* Read state of an element's storage.  EBML_READ_DEFAULT is established
+   before parsing for elements with a schema-declared default, so it does not
+   mean the element was present in the file.  EBML_READ_EMPTY marks an element
+   that was present with a zero length payload but whose default only the
+   accessor can supply: it counts as read, but holds no value. */
+enum ebml_read_state {
+  EBML_UNREAD = 0,
+  EBML_READ_VALUE,
+  EBML_READ_DEFAULT,
+  EBML_READ_EMPTY
+};
+
 #define LIMIT_STRING                (1 << 20)
 #define LIMIT_BINARY                (1 << 24)
 #define LIMIT_BLOCK                 (1 << 30)
 #define LIMIT_FRAME                 (1 << 28)
+#define LIMIT_TRACKS                1000U
 #define IO_BUFFER_SIZE              8192
 
 /* Field Flags */
@@ -171,6 +184,8 @@ enum ebml_type_enum {
 #define DESC_FLAG_MULTI             (1 << 0)
 #define DESC_FLAG_SUSPEND           (1 << 1)
 #define DESC_FLAG_OFFSET            (1 << 2)
+#define DESC_FLAG_HAS_DEFAULT       (1 << 3)
+#define DESC_FLAG_ACCESSOR_DEFAULT  (1 << 4)
 
 /* Block Header Flags */
 #define SIMPLE_BLOCK_FLAGS_KEYFRAME (1 << 7)
@@ -242,6 +257,7 @@ struct ebml_list_node {
 struct ebml_list {
   struct ebml_list_node * head;
   struct ebml_list_node * tail;
+  size_t count;
 };
 
 struct ebml_type {
@@ -253,7 +269,7 @@ struct ebml_type {
     struct ebml_binary b;
   } v;
   enum ebml_type_enum type;
-  int read;
+  enum ebml_read_state read;
 };
 
 /* EBML Definitions */
@@ -378,6 +394,11 @@ struct tracks {
   struct ebml_list track_entry;
 };
 
+struct track_number_index {
+  uint64_t number;
+  unsigned int index;
+};
+
 struct cue_track_positions {
   struct ebml_type track;
   struct ebml_type cluster_position;
@@ -435,7 +456,6 @@ struct frame {
   unsigned char * data;
   size_t length;
   struct frame_encryption * frame_encryption;
-  struct frame * next;
 };
 
 struct block_additional {
@@ -467,6 +487,8 @@ struct nestegg {
   struct ebml ebml;
   struct segment segment;
   int64_t segment_offset;
+  struct track_entry ** track_by_index;
+  struct track_number_index * track_by_number;
   unsigned int track_count;
   /* Last read cluster. */
   uint64_t cluster_timecode;
@@ -479,7 +501,8 @@ struct nestegg_packet {
   uint64_t timecode;
   uint64_t duration;
   int read_duration;
-  struct frame * frame;
+  struct frame ** frames;
+  unsigned int frame_count;
   struct block_additional * block_additional;
   int64_t discard_padding;
   int read_discard_padding;
@@ -499,32 +522,45 @@ struct ebml_element_desc {
   struct ebml_element_desc * children;
   size_t size;
   size_t data_offset;
+  /* Schema-declared default value, valid if DESC_FLAG_HAS_DEFAULT is set.
+     Stored as two scalars rather than a union to allow static
+     initialization in C89.  An element whose default can't be expressed
+     here instead carries DESC_FLAG_ACCESSOR_DEFAULT and is resolved by the
+     accessor. */
+  uint64_t default_uint;
+  double default_float;
 };
 
 #define E_FIELD(ID, TYPE, STRUCT, FIELD) \
-  { #ID, ID, TYPE, offsetof(STRUCT, FIELD), DESC_FLAG_NONE, NULL, 0, 0 }
+  { #ID, ID, TYPE, offsetof(STRUCT, FIELD), DESC_FLAG_NONE, NULL, 0, 0, 0, 0.0 }
+#define E_FIELD_DEFAULT_UINT(ID, STRUCT, FIELD, DEFAULT) \
+  { #ID, ID, TYPE_UINT, offsetof(STRUCT, FIELD), DESC_FLAG_HAS_DEFAULT, NULL, 0, 0, DEFAULT, 0.0 }
+#define E_FIELD_DEFAULT_FLOAT(ID, STRUCT, FIELD, DEFAULT) \
+  { #ID, ID, TYPE_FLOAT, offsetof(STRUCT, FIELD), DESC_FLAG_HAS_DEFAULT, NULL, 0, 0, 0, DEFAULT }
+#define E_FIELD_ACCESSOR_DEFAULT(ID, TYPE, STRUCT, FIELD) \
+  { #ID, ID, TYPE, offsetof(STRUCT, FIELD), DESC_FLAG_ACCESSOR_DEFAULT, NULL, 0, 0, 0, 0.0 }
 #define E_MASTER(ID, TYPE, STRUCT, FIELD) \
   { #ID, ID, TYPE, offsetof(STRUCT, FIELD), DESC_FLAG_MULTI, ne_ ## FIELD ## _elements, \
-      sizeof(struct FIELD), 0 }
+      sizeof(struct FIELD), 0, 0, 0.0 }
 #define E_SINGLE_MASTER_O(ID, TYPE, STRUCT, FIELD) \
   { #ID, ID, TYPE, offsetof(STRUCT, FIELD), DESC_FLAG_OFFSET, ne_ ## FIELD ## _elements, 0, \
-      offsetof(STRUCT, FIELD ## _offset) }
+      offsetof(STRUCT, FIELD ## _offset), 0, 0.0 }
 #define E_SINGLE_MASTER(ID, TYPE, STRUCT, FIELD) \
-  { #ID, ID, TYPE, offsetof(STRUCT, FIELD), DESC_FLAG_NONE, ne_ ## FIELD ## _elements, 0, 0 }
+  { #ID, ID, TYPE, offsetof(STRUCT, FIELD), DESC_FLAG_NONE, ne_ ## FIELD ## _elements, 0, 0, 0, 0.0 }
 #define E_SUSPEND(ID, TYPE) \
-  { #ID, ID, TYPE, 0, DESC_FLAG_SUSPEND, NULL, 0, 0 }
+  { #ID, ID, TYPE, 0, DESC_FLAG_SUSPEND, NULL, 0, 0, 0, 0.0 }
 #define E_LAST \
-  { NULL, 0, 0, 0, DESC_FLAG_NONE, NULL, 0, 0 }
+  { NULL, 0, 0, 0, DESC_FLAG_NONE, NULL, 0, 0, 0, 0.0 }
 
 /* EBML Element Lists */
 static struct ebml_element_desc ne_ebml_elements[] = {
-  E_FIELD(ID_EBML_VERSION, TYPE_UINT, struct ebml, ebml_version),
-  E_FIELD(ID_EBML_READ_VERSION, TYPE_UINT, struct ebml, ebml_read_version),
-  E_FIELD(ID_EBML_MAX_ID_LENGTH, TYPE_UINT, struct ebml, ebml_max_id_length),
-  E_FIELD(ID_EBML_MAX_SIZE_LENGTH, TYPE_UINT, struct ebml, ebml_max_size_length),
+  E_FIELD_DEFAULT_UINT(ID_EBML_VERSION, struct ebml, ebml_version, 1),
+  E_FIELD_DEFAULT_UINT(ID_EBML_READ_VERSION, struct ebml, ebml_read_version, 1),
+  E_FIELD_DEFAULT_UINT(ID_EBML_MAX_ID_LENGTH, struct ebml, ebml_max_id_length, 4),
+  E_FIELD_DEFAULT_UINT(ID_EBML_MAX_SIZE_LENGTH, struct ebml, ebml_max_size_length, 8),
   E_FIELD(ID_DOCTYPE, TYPE_STRING, struct ebml, doctype),
-  E_FIELD(ID_DOCTYPE_VERSION, TYPE_UINT, struct ebml, doctype_version),
-  E_FIELD(ID_DOCTYPE_READ_VERSION, TYPE_UINT, struct ebml, doctype_read_version),
+  E_FIELD_DEFAULT_UINT(ID_DOCTYPE_VERSION, struct ebml, doctype_version, 1),
+  E_FIELD_DEFAULT_UINT(ID_DOCTYPE_READ_VERSION, struct ebml, doctype_read_version, 1),
   E_LAST
 };
 
@@ -541,7 +577,7 @@ static struct ebml_element_desc ne_seek_head_elements[] = {
 };
 
 static struct ebml_element_desc ne_info_elements[] = {
-  E_FIELD(ID_TIMECODE_SCALE, TYPE_UINT, struct info, timecode_scale),
+  E_FIELD_DEFAULT_UINT(ID_TIMECODE_SCALE, struct info, timecode_scale, 1000000),
   E_FIELD(ID_DURATION, TYPE_FLOAT, struct info, duration),
   E_LAST
 };
@@ -561,10 +597,10 @@ static struct ebml_element_desc ne_mastering_metadata_elements[] = {
 };
 
 static struct ebml_element_desc ne_colour_elements[] = {
-  E_FIELD(ID_MATRIX_COEFFICIENTS, TYPE_UINT, struct colour, matrix_coefficients),
-  E_FIELD(ID_RANGE, TYPE_UINT, struct colour, range),
-  E_FIELD(ID_TRANSFER_CHARACTERISTICS, TYPE_UINT, struct colour, transfer_characteristics),
-  E_FIELD(ID_PRIMARIES, TYPE_UINT, struct colour, primaries),
+  E_FIELD_DEFAULT_UINT(ID_MATRIX_COEFFICIENTS, struct colour, matrix_coefficients, 2),
+  E_FIELD_DEFAULT_UINT(ID_RANGE, struct colour, range, 0),
+  E_FIELD_DEFAULT_UINT(ID_TRANSFER_CHARACTERISTICS, struct colour, transfer_characteristics, 2),
+  E_FIELD_DEFAULT_UINT(ID_PRIMARIES, struct colour, primaries, 2),
   E_FIELD(ID_MAX_CLL, TYPE_UINT, struct colour, max_cll),
   E_FIELD(ID_MAX_FALL, TYPE_UINT, struct colour, max_fall),
   E_SINGLE_MASTER(ID_MASTERING_METADATA, TYPE_MASTER, struct colour, mastering_metadata),
@@ -572,33 +608,33 @@ static struct ebml_element_desc ne_colour_elements[] = {
 };
 
 static struct ebml_element_desc ne_projection_elements[] = {
-  E_FIELD(ID_PROJECTION_TYPE, TYPE_UINT, struct projection, type),
-  E_FIELD(ID_PROJECTION_POSE_YAW, TYPE_FLOAT, struct projection, pose_yaw),
-  E_FIELD(ID_PROJECTION_POSE_PITCH, TYPE_FLOAT, struct projection, pose_pitch),
-  E_FIELD(ID_PROJECTION_POSE_ROLL, TYPE_FLOAT, struct projection, pose_roll),
+  E_FIELD_DEFAULT_UINT(ID_PROJECTION_TYPE, struct projection, type, 0),
+  E_FIELD_DEFAULT_FLOAT(ID_PROJECTION_POSE_YAW, struct projection, pose_yaw, 0.0),
+  E_FIELD_DEFAULT_FLOAT(ID_PROJECTION_POSE_PITCH, struct projection, pose_pitch, 0.0),
+  E_FIELD_DEFAULT_FLOAT(ID_PROJECTION_POSE_ROLL, struct projection, pose_roll, 0.0),
   E_LAST
 };
 
 static struct ebml_element_desc ne_video_elements[] = {
-  E_FIELD(ID_STEREO_MODE, TYPE_UINT, struct video, stereo_mode),
-  E_FIELD(ID_ALPHA_MODE, TYPE_UINT, struct video, alpha_mode),
+  E_FIELD_DEFAULT_UINT(ID_STEREO_MODE, struct video, stereo_mode, 0),
+  E_FIELD_DEFAULT_UINT(ID_ALPHA_MODE, struct video, alpha_mode, 0),
   E_FIELD(ID_PIXEL_WIDTH, TYPE_UINT, struct video, pixel_width),
   E_FIELD(ID_PIXEL_HEIGHT, TYPE_UINT, struct video, pixel_height),
-  E_FIELD(ID_PIXEL_CROP_BOTTOM, TYPE_UINT, struct video, pixel_crop_bottom),
-  E_FIELD(ID_PIXEL_CROP_TOP, TYPE_UINT, struct video, pixel_crop_top),
-  E_FIELD(ID_PIXEL_CROP_LEFT, TYPE_UINT, struct video, pixel_crop_left),
-  E_FIELD(ID_PIXEL_CROP_RIGHT, TYPE_UINT, struct video, pixel_crop_right),
-  E_FIELD(ID_DISPLAY_WIDTH, TYPE_UINT, struct video, display_width),
-  E_FIELD(ID_DISPLAY_HEIGHT, TYPE_UINT, struct video, display_height),
+  E_FIELD_DEFAULT_UINT(ID_PIXEL_CROP_BOTTOM, struct video, pixel_crop_bottom, 0),
+  E_FIELD_DEFAULT_UINT(ID_PIXEL_CROP_TOP, struct video, pixel_crop_top, 0),
+  E_FIELD_DEFAULT_UINT(ID_PIXEL_CROP_LEFT, struct video, pixel_crop_left, 0),
+  E_FIELD_DEFAULT_UINT(ID_PIXEL_CROP_RIGHT, struct video, pixel_crop_right, 0),
+  E_FIELD_ACCESSOR_DEFAULT(ID_DISPLAY_WIDTH, TYPE_UINT, struct video, display_width),
+  E_FIELD_ACCESSOR_DEFAULT(ID_DISPLAY_HEIGHT, TYPE_UINT, struct video, display_height),
   E_SINGLE_MASTER(ID_COLOUR, TYPE_MASTER, struct video, colour),
   E_SINGLE_MASTER(ID_PROJECTION, TYPE_MASTER, struct video, projection),
   E_LAST
 };
 
 static struct ebml_element_desc ne_audio_elements[] = {
-  E_FIELD(ID_SAMPLING_FREQUENCY, TYPE_FLOAT, struct audio, sampling_frequency),
-  E_FIELD(ID_CHANNELS, TYPE_UINT, struct audio, channels),
-  E_FIELD(ID_BIT_DEPTH, TYPE_UINT, struct audio, bit_depth),
+  E_FIELD_DEFAULT_FLOAT(ID_SAMPLING_FREQUENCY, struct audio, sampling_frequency, 8000.0),
+  E_FIELD_DEFAULT_UINT(ID_CHANNELS, struct audio, channels, 1),
+  E_FIELD_ACCESSOR_DEFAULT(ID_BIT_DEPTH, TYPE_UINT, struct audio, bit_depth),
   E_LAST
 };
 
@@ -608,14 +644,14 @@ static struct ebml_element_desc ne_content_enc_aes_settings_elements[] = {
 };
 
 static struct ebml_element_desc ne_content_encryption_elements[] = {
-  E_FIELD(ID_CONTENT_ENC_ALGO, TYPE_UINT, struct content_encryption, content_enc_algo),
+  E_FIELD_DEFAULT_UINT(ID_CONTENT_ENC_ALGO, struct content_encryption, content_enc_algo, 0),
   E_FIELD(ID_CONTENT_ENC_KEY_ID, TYPE_BINARY, struct content_encryption, content_enc_key_id),
   E_MASTER(ID_CONTENT_ENC_AES_SETTINGS, TYPE_MASTER, struct content_encryption, content_enc_aes_settings),
   E_LAST
 };
 
 static struct ebml_element_desc ne_content_encoding_elements[] = {
-  E_FIELD(ID_CONTENT_ENCODING_TYPE, TYPE_UINT, struct content_encoding, content_encoding_type),
+  E_FIELD_DEFAULT_UINT(ID_CONTENT_ENCODING_TYPE, struct content_encoding, content_encoding_type, 0),
   E_MASTER(ID_CONTENT_ENCRYPTION, TYPE_MASTER, struct content_encoding, content_encryption),
   E_LAST
 };
@@ -629,15 +665,15 @@ static struct ebml_element_desc ne_track_entry_elements[] = {
   E_FIELD(ID_TRACK_NUMBER, TYPE_UINT, struct track_entry, number),
   E_FIELD(ID_TRACK_UID, TYPE_UINT, struct track_entry, uid),
   E_FIELD(ID_TRACK_TYPE, TYPE_UINT, struct track_entry, type),
-  E_FIELD(ID_FLAG_ENABLED, TYPE_UINT, struct track_entry, flag_enabled),
-  E_FIELD(ID_FLAG_DEFAULT, TYPE_UINT, struct track_entry, flag_default),
-  E_FIELD(ID_FLAG_LACING, TYPE_UINT, struct track_entry, flag_lacing),
-  E_FIELD(ID_TRACK_TIMECODE_SCALE, TYPE_FLOAT, struct track_entry, track_timecode_scale),
+  E_FIELD_DEFAULT_UINT(ID_FLAG_ENABLED, struct track_entry, flag_enabled, 1),
+  E_FIELD_DEFAULT_UINT(ID_FLAG_DEFAULT, struct track_entry, flag_default, 1),
+  E_FIELD_DEFAULT_UINT(ID_FLAG_LACING, struct track_entry, flag_lacing, 1),
+  E_FIELD_DEFAULT_FLOAT(ID_TRACK_TIMECODE_SCALE, struct track_entry, track_timecode_scale, 1.0),
   E_FIELD(ID_LANGUAGE, TYPE_STRING, struct track_entry, language),
   E_FIELD(ID_CODEC_ID, TYPE_STRING, struct track_entry, codec_id),
   E_FIELD(ID_CODEC_PRIVATE, TYPE_BINARY, struct track_entry, codec_private),
-  E_FIELD(ID_CODEC_DELAY, TYPE_UINT, struct track_entry, codec_delay),
-  E_FIELD(ID_SEEK_PREROLL, TYPE_UINT, struct track_entry, seek_preroll),
+  E_FIELD_DEFAULT_UINT(ID_CODEC_DELAY, struct track_entry, codec_delay, 0),
+  E_FIELD_DEFAULT_UINT(ID_SEEK_PREROLL, struct track_entry, seek_preroll, 0),
   E_FIELD(ID_DEFAULT_DURATION, TYPE_UINT, struct track_entry, default_duration),
   E_SINGLE_MASTER(ID_VIDEO, TYPE_MASTER, struct track_entry, video),
   E_SINGLE_MASTER(ID_AUDIO, TYPE_MASTER, struct track_entry, audio),
@@ -684,6 +720,9 @@ static struct ebml_element_desc ne_top_level_elements[] = {
 };
 
 #undef E_FIELD
+#undef E_FIELD_DEFAULT_UINT
+#undef E_FIELD_DEFAULT_FLOAT
+#undef E_FIELD_ACCESSOR_DEFAULT
 #undef E_MASTER
 #undef E_SINGLE_MASTER_O
 #undef E_SINGLE_MASTER
@@ -1137,10 +1176,19 @@ ne_read_binary(nestegg * ctx, struct ebml_binary * val, uint64_t length)
   return ne_io_read(&ctx->io, val->data, length);
 }
 
+/* True if this element's storage holds a value to report: one read from the
+   file, or a schema-declared default.  An element which is absent or was read
+   empty holds nothing, and reads back as absent. */
+static int
+ne_type_is_set(struct ebml_type type)
+{
+  return type.read == EBML_READ_VALUE || type.read == EBML_READ_DEFAULT;
+}
+
 static int
 ne_get_uint(struct ebml_type type, uint64_t * value)
 {
-  if (!type.read)
+  if (!ne_type_is_set(type))
     return -1;
 
   assert(type.type == TYPE_UINT);
@@ -1153,7 +1201,7 @@ ne_get_uint(struct ebml_type type, uint64_t * value)
 static int
 ne_get_float(struct ebml_type type, double * value)
 {
-  if (!type.read)
+  if (!ne_type_is_set(type))
     return -1;
 
   assert(type.type == TYPE_FLOAT);
@@ -1166,7 +1214,7 @@ ne_get_float(struct ebml_type type, double * value)
 static int
 ne_get_string(struct ebml_type type, char ** value)
 {
-  if (!type.read)
+  if (!ne_type_is_set(type))
     return -1;
 
   assert(type.type == TYPE_STRING);
@@ -1179,7 +1227,7 @@ ne_get_string(struct ebml_type type, char ** value)
 static int
 ne_get_binary(struct ebml_type type, struct ebml_binary * value)
 {
-  if (!type.read)
+  if (!ne_type_is_set(type))
     return -1;
 
   assert(type.type == TYPE_BINARY);
@@ -1212,6 +1260,32 @@ ne_find_element(uint64_t id, struct ebml_element_desc * elements)
       return element;
 
   return NULL;
+}
+
+/* Initialize storage for elements with schema-declared default values
+   so that absent and (eventually) zero-length elements read back as their
+   default (RFC 8794 Section 11.1.6.8).  Multi instance master elements are
+   initialized as each instance is allocated in ne_read_master. */
+static void
+ne_init_defaults(struct ebml_element_desc * elements, void * data)
+{
+  struct ebml_element_desc * element;
+  struct ebml_type * storage;
+
+  for (element = elements; element->id; ++element) {
+    if (element->type == TYPE_MASTER) {
+      if (element->children && !(element->flags & DESC_FLAG_MULTI))
+        ne_init_defaults(element->children, (char *) data + element->offset);
+    } else if (element->flags & DESC_FLAG_HAS_DEFAULT) {
+      storage = (struct ebml_type *) ((char *) data + element->offset);
+      storage->type = element->type;
+      if (element->type == TYPE_UINT)
+        storage->v.u = element->default_uint;
+      else
+        storage->v.f = element->default_float;
+      storage->read = EBML_READ_DEFAULT;
+    }
+  }
 }
 
 static int
@@ -1329,6 +1403,12 @@ ne_read_master(nestegg * ctx, struct ebml_element_desc * desc)
 
   list = (struct ebml_list *) (ctx->ancestor->data + desc->offset);
 
+  if (desc->id == ID_TRACK_ENTRY && list->count >= LIMIT_TRACKS) {
+    ctx->log(ctx, NESTEGG_LOG_ERROR,
+             "TrackEntry count exceeds limit of %u", LIMIT_TRACKS);
+    return -1;
+  }
+
   node = ne_pool_alloc(sizeof(*node), ctx->alloc_pool);
   if (!node)
     return -1;
@@ -1336,6 +1416,7 @@ ne_read_master(nestegg * ctx, struct ebml_element_desc * desc)
   node->data = ne_pool_alloc(desc->size, ctx->alloc_pool);
   if (!node->data)
     return -1;
+  ne_init_defaults(desc->children, node->data);
 
   oldtail = list->tail;
   if (oldtail)
@@ -1343,6 +1424,7 @@ ne_read_master(nestegg * ctx, struct ebml_element_desc * desc)
   list->tail = node;
   if (!list->head)
     list->head = node;
+  list->count += 1;
 
   ctx->log(ctx, NESTEGG_LOG_DEBUG, " -> using data %p", node->data);
 
@@ -1373,7 +1455,7 @@ ne_read_simple(nestegg * ctx, struct ebml_element_desc * desc, size_t length)
 
   storage = (struct ebml_type *) (ctx->ancestor->data + desc->offset);
 
-  if (storage->read) {
+  if (storage->read == EBML_READ_VALUE || storage->read == EBML_READ_EMPTY) {
     ctx->log(ctx, NESTEGG_LOG_DEBUG, "element %llx (%s) already read, skipping %u",
              desc->id, desc->name, length);
     return ne_io_read_skip(&ctx->io, length);
@@ -1384,12 +1466,32 @@ ne_read_simple(nestegg * ctx, struct ebml_element_desc * desc, size_t length)
   ctx->log(ctx, NESTEGG_LOG_DEBUG, "element %llx (%s) -> %p (%u)",
            desc->id, desc->name, storage, desc->offset);
 
+  /* Elements whose default the descriptor can't express are resolved by the
+     accessor, so record a zero-length instance as read but valueless and let
+     the accessor treat it as absent.  RFC 8794 Section 6.1 defines the value
+     of an empty element only for elements with a declared default (the
+     default) and without one (zero); these have neither, and zero is outside
+     the range RFC 9559 permits for each of them. */
+  if (length == 0 && (desc->flags & DESC_FLAG_ACCESSOR_DEFAULT)) {
+    storage->read = EBML_READ_EMPTY;
+    return 1;
+  }
+
   switch (desc->type) {
   case TYPE_UINT:
-    r = ne_read_uint(&ctx->io, &storage->v.u, length);
+    /* A zero-length element keeps the value established at init: the
+       declared default (RFC 8794 section 6.1) or, for a field with no
+       default, zero (RFC 8794 section 7.x). */
+    if (length == 0)
+      r = 1;
+    else
+      r = ne_read_uint(&ctx->io, &storage->v.u, length);
     break;
   case TYPE_FLOAT:
-    r = ne_read_float(&ctx->io, &storage->v.f, length);
+    if (length == 0)
+      r = 1;
+    else
+      r = ne_read_float(&ctx->io, &storage->v.f, length);
     break;
   case TYPE_STRING:
     r = ne_read_string(ctx, &storage->v.s, length);
@@ -1405,7 +1507,7 @@ ne_read_simple(nestegg * ctx, struct ebml_element_desc * desc, size_t length)
   }
 
   if (r == 1)
-    storage->read = 1;
+    storage->read = EBML_READ_VALUE;
 
   return r;
 }
@@ -1463,10 +1565,12 @@ ne_parse(nestegg * ctx, struct ebml_element_desc * top_level, int64_t max_offset
 
       if (element->type == TYPE_MASTER) {
         if (element->flags & DESC_FLAG_MULTI) {
-          if (ne_read_master(ctx, element) < 0)
+          r = ne_read_master(ctx, element);
+          if (r < 0)
             break;
         } else {
-          if (ne_read_single_master(ctx, element) < 0)
+          r = ne_read_single_master(ctx, element);
+          if (r < 0)
             break;
         }
         continue;
@@ -1567,8 +1671,7 @@ ne_read_block_encryption(nestegg * ctx, struct track_entry const * entry,
   *encoding_type = 0;
   if (entry->content_encodings.content_encoding.head) {
     encoding = entry->content_encodings.content_encoding.head->data;
-    if (ne_get_uint(encoding->content_encoding_type, encoding_type) != 0)
-      return -1;
+    ne_get_uint(encoding->content_encoding_type, encoding_type);
 
     if (*encoding_type == NESTEGG_ENCODING_ENCRYPTION) {
       /* Metadata states content is encrypted */
@@ -1576,10 +1679,7 @@ ne_read_block_encryption(nestegg * ctx, struct track_entry const * entry,
         return -1;
 
       encryption = encoding->content_encryption.head->data;
-      if (ne_get_uint(encryption->content_enc_algo, encryption_algo) != 0) {
-        ctx->log(ctx, NESTEGG_LOG_ERROR, "No ContentEncAlgo element found");
-        return -1;
-      }
+      ne_get_uint(encryption->content_enc_algo, encryption_algo);
 
       if (*encryption_algo != CONTENT_ENC_ALGO_AES) {
         ctx->log(ctx, NESTEGG_LOG_ERROR, "Disallowed ContentEncAlgo used");
@@ -1707,37 +1807,104 @@ ne_get_timecode_scale(nestegg * ctx)
   uint64_t scale;
 
   if (ne_get_uint(ctx->segment.info.timecode_scale, &scale) != 0)
-    scale = 1000000;
+    return 0;
 
   return scale;
 }
 
 static int
+ne_compare_track_number_index(void const * a, void const * b)
+{
+  struct track_number_index const * ta = a;
+  struct track_number_index const * tb = b;
+
+  if (ta->number < tb->number)
+    return -1;
+  if (ta->number > tb->number)
+    return 1;
+  return 0;
+}
+
+static int
+ne_init_track_indexes(nestegg * ctx)
+{
+  struct ebml_list * tracks = &ctx->segment.tracks.track_entry;
+  struct ebml_list_node * node;
+  size_t i;
+
+  if (tracks->count == 0 || tracks->count > LIMIT_TRACKS)
+    return -1;
+
+  ctx->track_by_index =
+    ne_pool_alloc(tracks->count * sizeof(*ctx->track_by_index),
+                  ctx->alloc_pool);
+  if (!ctx->track_by_index)
+    return -1;
+
+  ctx->track_by_number =
+    ne_pool_alloc(tracks->count * sizeof(*ctx->track_by_number),
+                  ctx->alloc_pool);
+  if (!ctx->track_by_number)
+    return -1;
+
+  node = tracks->head;
+  for (i = 0; i < tracks->count; ++i) {
+    struct track_entry * entry;
+    uint64_t number;
+
+    if (!node || node->id != ID_TRACK_ENTRY)
+      return -1;
+
+    entry = node->data;
+    if (ne_get_uint(entry->number, &number) != 0 || number == 0)
+      return -1;
+
+    ctx->track_by_index[i] = entry;
+    ctx->track_by_number[i].number = number;
+    ctx->track_by_number[i].index = (unsigned int) i;
+    node = node->next;
+  }
+
+  if (node)
+    return -1;
+
+  qsort(ctx->track_by_number, tracks->count,
+        sizeof(*ctx->track_by_number), ne_compare_track_number_index);
+
+  for (i = 1; i < tracks->count; ++i) {
+    if (ctx->track_by_number[i - 1].number ==
+        ctx->track_by_number[i].number)
+      return -1;
+  }
+
+  ctx->track_count = (unsigned int) tracks->count;
+  return 0;
+}
+
+static int
 ne_map_track_number_to_index(nestegg * ctx,
-                             unsigned int track_number,
+                             uint64_t track_number,
                              unsigned int * track_index)
 {
-  struct ebml_list_node * node;
-  struct track_entry * t_entry;
-  uint64_t t_number = 0;
-
-  if (!track_index)
-    return -1;
-  *track_index = 0;
+  size_t start = 0;
+  size_t end = ctx->track_count;
 
   if (track_number == 0)
     return -1;
 
-  node = ctx->segment.tracks.track_entry.head;
-  while (node) {
-    assert(node->id == ID_TRACK_ENTRY);
-    t_entry = node->data;
-    if (ne_get_uint(t_entry->number, &t_number) != 0)
-      return -1;
-    if (t_number == track_number)
+  while (start < end) {
+    size_t middle = start + (end - start) / 2;
+    struct track_number_index const * entry = &ctx->track_by_number[middle];
+
+    if (track_number < entry->number) {
+      end = middle;
+    } else if (track_number > entry->number) {
+      start = middle + 1;
+    } else {
+      if (track_index)
+        *track_index = entry->index;
       return 0;
-    *track_index += 1;
-    node = node->next;
+    }
   }
 
   return -1;
@@ -1746,19 +1913,10 @@ ne_map_track_number_to_index(nestegg * ctx,
 static struct track_entry *
 ne_find_track_entry(nestegg * ctx, unsigned int track)
 {
-  struct ebml_list_node * node;
-  unsigned int tracks = 0;
+  if (track >= ctx->track_count)
+    return NULL;
 
-  node = ctx->segment.tracks.track_entry.head;
-  while (node) {
-    assert(node->id == ID_TRACK_ENTRY);
-    if (track == tracks)
-      return node->data;
-    tracks += 1;
-    node = node->next;
-  }
-
-  return NULL;
+  return ctx->track_by_index[track];
 }
 
 static struct frame *
@@ -1772,7 +1930,6 @@ ne_alloc_frame(void)
   f->data = NULL;
   f->length = 0;
   f->frame_encryption = NULL;
-  f->next = NULL;
 
   return f;
 }
@@ -1813,7 +1970,7 @@ ne_read_block(nestegg * ctx, uint64_t block_id, uint64_t block_size, nestegg_pac
   int r;
   int64_t timecode, abs_timecode;
   nestegg_packet * pkt;
-  struct frame * f, * last;
+  struct frame * f;
   struct track_entry * entry;
   uint64_t track_number, length, frame_sizes[256], cluster_tc, flags, frames, tc_scale, total,
            encoding_type, encryption_algo, encryption_mode;
@@ -1954,11 +2111,15 @@ ne_read_block(nestegg * ctx, uint64_t block_id, uint64_t block_size, nestegg_pac
   pkt->track = track;
   pkt->timecode = ne_saturate_mul_uint64((uint64_t) abs_timecode, tc_scale);
   pkt->keyframe = keyframe;
+  pkt->frames = ne_alloc((size_t) frames * sizeof(*pkt->frames));
+  if (!pkt->frames) {
+    nestegg_free_packet(pkt);
+    return -1;
+  }
 
   ctx->log(ctx, NESTEGG_LOG_DEBUG, "%sblock t %lld pts %f f %llx frames: %llu",
            block_id == ID_BLOCK ? "" : "simple", pkt->track, pkt->timecode / 1e9, flags, frames);
 
-  last = NULL;
   for (i = 0; i < frames; ++i) {
     if (frame_sizes[i] > LIMIT_FRAME) {
       nestegg_free_packet(pkt);
@@ -2055,11 +2216,7 @@ ne_read_block(nestegg * ctx, uint64_t block_id, uint64_t block_size, nestegg_pac
       return r;
     }
 
-    if (!last)
-      pkt->frame = f;
-    else
-      last->next = f;
-    last = f;
+    pkt->frames[pkt->frame_count++] = f;
   }
 
   *data = pkt;
@@ -2130,10 +2287,14 @@ ne_read_block_additions(nestegg * ctx, uint64_t block_size, struct block_additio
       }
 
       if (id == ID_BLOCK_ADD_ID) {
-        r = ne_read_uint(&ctx->io, &add_id, size);
-        if (r != 1) {
-          free(data);
-          return r;
+        /* A zero-length BlockAddID resolves to the default of 1 (RFC 9559
+           Section 5.1.3.5.2.3), which add_id already holds. */
+        if (size != 0) {
+          r = ne_read_uint(&ctx->io, &add_id, size);
+          if (r != 1) {
+            free(data);
+            return r;
+          }
         }
 
         if (add_id == 0) {
@@ -2241,11 +2402,11 @@ ne_find_seek_for_id(struct ebml_list_node * seek_head, uint64_t id)
 }
 
 static struct cue_track_positions *
-ne_find_cue_position_for_track(nestegg * ctx, struct ebml_list_node * node, unsigned int track)
+ne_find_cue_position_for_track_number(struct ebml_list_node * node,
+                                      uint64_t wanted_track_number)
 {
   struct cue_track_positions * pos = NULL;
   uint64_t track_number;
-  unsigned int t;
 
   while (node) {
     assert(node->id == ID_CUE_TRACK_POSITIONS);
@@ -2253,10 +2414,7 @@ ne_find_cue_position_for_track(nestegg * ctx, struct ebml_list_node * node, unsi
     if (ne_get_uint(pos->track, &track_number) != 0)
       return NULL;
 
-    if (ne_map_track_number_to_index(ctx, track_number, &t) != 0)
-      return NULL;
-
-    if (t == track)
+    if (track_number == wanted_track_number)
       return pos;
 
     node = node->next;
@@ -2266,7 +2424,9 @@ ne_find_cue_position_for_track(nestegg * ctx, struct ebml_list_node * node, unsi
 }
 
 static struct cue_point *
-ne_find_cue_point_for_tstamp(nestegg * ctx, struct ebml_list_node * cue_point, unsigned int track, uint64_t scale, uint64_t tstamp)
+ne_find_cue_point_for_tstamp(struct ebml_list_node * cue_point,
+                             uint64_t track_number, uint64_t scale,
+                             uint64_t tstamp)
 {
   uint64_t time;
   struct cue_point * c, * prev = NULL;
@@ -2281,7 +2441,8 @@ ne_find_cue_point_for_tstamp(nestegg * ctx, struct ebml_list_node * cue_point, u
     if (ne_get_uint(c->time, &time) == 0 && time * scale > tstamp)
       break;
 
-    if (ne_find_cue_position_for_track(ctx, c->cue_track_positions.head, track) != NULL)
+    if (ne_find_cue_position_for_track_number(c->cue_track_positions.head,
+                                               track_number) != NULL)
       prev = c;
 
     cue_point = cue_point->next;
@@ -2448,6 +2609,8 @@ ne_context_new(nestegg ** context, nestegg_io io, nestegg_log callback)
   if (!ctx->log)
     ctx->log = ne_null_log_callback;
 
+  ne_init_defaults(ne_top_level_elements, ctx);
+
   *context = ctx;
   return 0;
 }
@@ -2513,7 +2676,6 @@ nestegg_init(nestegg ** context, nestegg_io io, nestegg_log callback, int64_t ma
 {
   int r;
   uint64_t id, version, docversion;
-  struct ebml_list_node * track;
   char * doctype;
   nestegg * ctx;
 
@@ -2547,13 +2709,14 @@ nestegg_init(nestegg ** context, nestegg_io io, nestegg_log callback, int64_t ma
     return -1;
   }
 
-  if (ne_get_uint(ctx->ebml.ebml_read_version, &version) != 0)
-    version = 1;
-  if (version != 1) {
+  if (ne_get_uint(ctx->ebml.ebml_read_version, &version) != 0 ||
+      version != 1) {
     nestegg_destroy(ctx);
     return -1;
   }
 
+  /* DocType's declared default is "matroska"; string defaults are not
+     representable in the element descriptors, so apply it here. */
   if (ne_get_string(ctx->ebml.doctype, &doctype) != 0)
     doctype = DOCTYPE_MKV;
   if (!!strcmp(doctype, DOCTYPE_WEBM) && !!strcmp(doctype, DOCTYPE_MKV)) {
@@ -2561,9 +2724,8 @@ nestegg_init(nestegg ** context, nestegg_io io, nestegg_log callback, int64_t ma
     return -1;
   }
 
-  if (ne_get_uint(ctx->ebml.doctype_read_version, &docversion) != 0)
-    docversion = 1;
-  if (docversion < 1 || docversion > 2) {
+  if (ne_get_uint(ctx->ebml.doctype_read_version, &docversion) != 0 ||
+      docversion < 1 || docversion > 2) {
     nestegg_destroy(ctx);
     return -1;
   }
@@ -2573,12 +2735,9 @@ nestegg_init(nestegg ** context, nestegg_io io, nestegg_log callback, int64_t ma
     return -1;
   }
 
-  track = ctx->segment.tracks.track_entry.head;
-  ctx->track_count = 0;
-
-  while (track) {
-    ctx->track_count += 1;
-    track = track->next;
+  if (ne_init_track_indexes(ctx) != 0) {
+    nestegg_destroy(ctx);
+    return -1;
   }
 
   r = ne_ctx_save(ctx, &ctx->saved);
@@ -2651,7 +2810,6 @@ nestegg_get_cue_point(nestegg * ctx, unsigned int cluster_num, int64_t max_offse
   uint64_t seek_pos, track_number, tc_scale, time;
   struct ebml_list_node * cues_node = ctx->segment.cues.cue_point.head;
   struct ebml_list_node * cue_pos_node = NULL;
-  unsigned int track = 0, track_count = 0, track_index;
 
   if (!start_pos || !end_pos || !tstamp)
     return -1;
@@ -2669,8 +2827,6 @@ nestegg_get_cue_point(nestegg * ctx, unsigned int cluster_num, int64_t max_offse
       return -1;
   }
 
-  nestegg_track_count(ctx, &track_count);
-
   tc_scale = ne_get_timecode_scale(ctx);
   if (tc_scale == 0)
     return -1;
@@ -2682,29 +2838,25 @@ nestegg_get_cue_point(nestegg * ctx, unsigned int cluster_num, int64_t max_offse
     while (cue_pos_node) {
       assert(cue_pos_node->id == ID_CUE_TRACK_POSITIONS);
       pos = cue_pos_node->data;
-      for (track = 0; track < track_count; ++track) {
-        if (ne_get_uint(pos->track, &track_number) != 0)
-          return -1;
+      if (ne_get_uint(pos->track, &track_number) != 0)
+        return -1;
 
-        if (ne_map_track_number_to_index(ctx, track_number, &track_index) != 0)
-          return -1;
+      if (ne_map_track_number_to_index(ctx, track_number, NULL) != 0)
+        return -1;
 
-        if (track_index == track) {
-          if (ne_get_uint(pos->cluster_position, &seek_pos) != 0)
-            return -1;
-          if (cluster_count == cluster_num) {
-            *start_pos = ctx->segment_offset + seek_pos;
-            if (ne_get_uint(cue_point->time, &time) != 0)
-              return -1;
-            *tstamp = time * tc_scale;
-          } else if (cluster_count == cluster_num + 1) {
-            *end_pos = ctx->segment_offset + seek_pos - 1;
-            range_obtained = 1;
-            break;
-          }
-          cluster_count++;
-        }
+      if (ne_get_uint(pos->cluster_position, &seek_pos) != 0)
+        return -1;
+      if (cluster_count == cluster_num) {
+        *start_pos = ctx->segment_offset + seek_pos;
+        if (ne_get_uint(cue_point->time, &time) != 0)
+          return -1;
+        *tstamp = time * tc_scale;
+      } else if (cluster_count == cluster_num + 1) {
+        *end_pos = ctx->segment_offset + seek_pos - 1;
+        range_obtained = 1;
+        break;
       }
+      cluster_count++;
       cue_pos_node = cue_pos_node->next;
     }
     cues_node = cues_node->next;
@@ -2738,7 +2890,12 @@ nestegg_track_seek(nestegg * ctx, unsigned int track, uint64_t tstamp)
   int r;
   struct cue_point * cue_point;
   struct cue_track_positions * pos;
-  uint64_t seek_pos, tc_scale;
+  struct track_entry * entry;
+  uint64_t seek_pos, tc_scale, track_number;
+
+  entry = ne_find_track_entry(ctx, track);
+  if (!entry || ne_get_uint(entry->number, &track_number) != 0)
+    return -1;
 
   /* If there are no cues loaded, check for cues element in the seek head
      and load it. */
@@ -2752,12 +2909,13 @@ nestegg_track_seek(nestegg * ctx, unsigned int track, uint64_t tstamp)
   if (tc_scale == 0)
     return -1;
 
-  cue_point = ne_find_cue_point_for_tstamp(ctx, ctx->segment.cues.cue_point.head,
-                                           track, tc_scale, tstamp);
+  cue_point = ne_find_cue_point_for_tstamp(ctx->segment.cues.cue_point.head,
+                                           track_number, tc_scale, tstamp);
   if (!cue_point)
     return -1;
 
-  pos = ne_find_cue_position_for_track(ctx, cue_point->cue_track_positions.head, track);
+  pos = ne_find_cue_position_for_track_number(
+    cue_point->cue_track_positions.head, track_number);
   if (pos == NULL)
     return -1;
 
@@ -3001,15 +3159,13 @@ nestegg_track_video_params(nestegg * ctx, unsigned int track,
   if (nestegg_track_type(ctx, track) != NESTEGG_TRACK_VIDEO)
     return -1;
 
-  value = 0;
-  ne_get_uint(entry->video.stereo_mode, &value);
-  if (value <= NESTEGG_VIDEO_STEREO_TOP_BOTTOM ||
-      value == NESTEGG_VIDEO_STEREO_RIGHT_LEFT)
+  if (ne_get_uint(entry->video.stereo_mode, &value) == 0 &&
+      (value <= NESTEGG_VIDEO_STEREO_TOP_BOTTOM ||
+       value == NESTEGG_VIDEO_STEREO_RIGHT_LEFT))
     params->stereo_mode = value;
 
-  value = 0;
-  ne_get_uint(entry->video.alpha_mode, &value);
-  params->alpha_mode = value;
+  if (ne_get_uint(entry->video.alpha_mode, &value) == 0)
+    params->alpha_mode = value;
 
   if (ne_get_uint(entry->video.pixel_width, &value) != 0)
     return -1;
@@ -3019,22 +3175,24 @@ nestegg_track_video_params(nestegg * ctx, unsigned int track,
     return -1;
   params->height = value;
 
-  value = 0;
-  ne_get_uint(entry->video.pixel_crop_bottom, &value);
-  params->crop_bottom = value;
+  if (ne_get_uint(entry->video.pixel_crop_bottom, &value) == 0)
+    params->crop_bottom = value;
 
-  value = 0;
-  ne_get_uint(entry->video.pixel_crop_top, &value);
-  params->crop_top = value;
+  if (ne_get_uint(entry->video.pixel_crop_top, &value) == 0)
+    params->crop_top = value;
 
-  value = 0;
-  ne_get_uint(entry->video.pixel_crop_left, &value);
-  params->crop_left = value;
+  if (ne_get_uint(entry->video.pixel_crop_left, &value) == 0)
+    params->crop_left = value;
 
-  value = 0;
-  ne_get_uint(entry->video.pixel_crop_right, &value);
-  params->crop_right = value;
+  if (ne_get_uint(entry->video.pixel_crop_right, &value) == 0)
+    params->crop_right = value;
 
+  /* DisplayWidth and DisplayHeight default to PixelWidth and PixelHeight.  A
+     derived default is not representable in the element descriptors, which
+     mark these elements DESC_FLAG_ACCESSOR_DEFAULT so that an absent and a
+     zero-length instance both arrive here unread.  Note RFC 9559 derives the
+     default from the frame size left by the PixelCrop elements when
+     DisplayUnit is 0; nestegg reports the uncropped size. */
   value = params->width;
   ne_get_uint(entry->video.display_width, &value);
   params->display_width = value;
@@ -3043,21 +3201,17 @@ nestegg_track_video_params(nestegg * ctx, unsigned int track,
   ne_get_uint(entry->video.display_height, &value);
   params->display_height = value;
 
-  value = 2;
-  ne_get_uint(entry->video.colour.matrix_coefficients, &value);
-  params->matrix_coefficients = value;
+  if (ne_get_uint(entry->video.colour.matrix_coefficients, &value) == 0)
+    params->matrix_coefficients = value;
 
-  value = 0;
-  ne_get_uint(entry->video.colour.range, &value);
-  params->range = value;
+  if (ne_get_uint(entry->video.colour.range, &value) == 0)
+    params->range = value;
 
-  value = 2;
-  ne_get_uint(entry->video.colour.transfer_characteristics, &value);
-  params->transfer_characteristics = value;
+  if (ne_get_uint(entry->video.colour.transfer_characteristics, &value) == 0)
+    params->transfer_characteristics = value;
 
-  value = 2;
-  ne_get_uint(entry->video.colour.primaries, &value);
-  params->primaries = value;
+  if (ne_get_uint(entry->video.colour.primaries, &value) == 0)
+    params->primaries = value;
 
   value = 0;
   ne_get_uint(entry->video.colour.max_cll, &value);
@@ -3067,21 +3221,17 @@ nestegg_track_video_params(nestegg * ctx, unsigned int track,
   ne_get_uint(entry->video.colour.max_fall, &value);
   params->max_fall = value;
 
-  value = 0;
-  ne_get_uint(entry->video.projection.type, &value);
-  params->projection_type = value;
+  if (ne_get_uint(entry->video.projection.type, &value) == 0)
+    params->projection_type = value;
 
-  fvalue = 0;
-  ne_get_float(entry->video.projection.pose_yaw, &fvalue);
-  params->projection_pose_yaw = fvalue;
+  if (ne_get_float(entry->video.projection.pose_yaw, &fvalue) == 0)
+    params->projection_pose_yaw = fvalue;
 
-  fvalue = 0;
-  ne_get_float(entry->video.projection.pose_pitch, &fvalue);
-  params->projection_pose_pitch = fvalue;
+  if (ne_get_float(entry->video.projection.pose_pitch, &fvalue) == 0)
+    params->projection_pose_pitch = fvalue;
 
-  fvalue = 0;
-  ne_get_float(entry->video.projection.pose_roll, &fvalue);
-  params->projection_pose_roll = fvalue;
+  if (ne_get_float(entry->video.projection.pose_roll, &fvalue) == 0)
+    params->projection_pose_roll = fvalue;
 
   fvalue = strtod("NaN", NULL);
   ne_get_float(entry->video.colour.mastering_metadata.primary_r_chromacity_x, &fvalue);
@@ -3142,24 +3292,23 @@ nestegg_track_audio_params(nestegg * ctx, unsigned int track,
   if (nestegg_track_type(ctx, track) != NESTEGG_TRACK_AUDIO)
     return -1;
 
-  params->rate = 8000;
   ne_get_float(entry->audio.sampling_frequency, &params->rate);
 
-  value = 1;
-  ne_get_uint(entry->audio.channels, &value);
-  params->channels = value;
+  if (ne_get_uint(entry->audio.channels, &value) == 0)
+    params->channels = value;
 
+  /* BitDepth has no declared default; 16 is nestegg API policy.  The
+     descriptor marks it DESC_FLAG_ACCESSOR_DEFAULT so that a zero-length
+     BitDepth reads back as 16 too, rather than as an out-of-range 0. */
   value = 16;
   ne_get_uint(entry->audio.bit_depth, &value);
   params->depth = value;
 
-  value = 0;
-  ne_get_uint(entry->codec_delay, &value);
-  params->codec_delay = value;
+  if (ne_get_uint(entry->codec_delay, &value) == 0)
+    params->codec_delay = value;
 
-  value = 0;
-  ne_get_uint(entry->seek_preroll, &value);
-  params->seek_preroll = value;
+  if (ne_get_uint(entry->seek_preroll, &value) == 0)
+    params->seek_preroll = value;
 
   return 0;
 }
@@ -3611,14 +3760,11 @@ nestegg_read_last_packet(nestegg * context, unsigned int track,
 void
 nestegg_free_packet(nestegg_packet * pkt)
 {
-  struct frame * frame;
+  unsigned int i;
 
-  while (pkt->frame) {
-    frame = pkt->frame;
-    pkt->frame = frame->next;
-
-    ne_free_frame(frame);
-  }
+  for (i = 0; i < pkt->frame_count; ++i)
+    ne_free_frame(pkt->frames[i]);
+  free(pkt->frames);
 
   ne_free_block_additions(pkt->block_additional);
 
@@ -3682,15 +3828,7 @@ nestegg_packet_end_offset(nestegg_packet * pkt, int64_t * end_offset)
 int
 nestegg_packet_count(nestegg_packet * pkt, unsigned int * count)
 {
-  struct frame * f = pkt->frame;
-
-  *count = 0;
-
-  while (f) {
-    *count += 1;
-    f = f->next;
-  }
-
+  *count = pkt->frame_count;
   return 0;
 }
 
@@ -3698,23 +3836,18 @@ int
 nestegg_packet_data(nestegg_packet * pkt, unsigned int item,
                     unsigned char ** data, size_t * length)
 {
-  struct frame * f = pkt->frame;
-  unsigned int count = 0;
+  struct frame * f;
 
   *data = NULL;
   *length = 0;
 
-  while (f) {
-    if (count == item) {
-      *data = f->data;
-      *length = f->length;
-      return 0;
-    }
-    count += 1;
-    f = f->next;
-  }
+  if (item >= pkt->frame_count)
+    return -1;
 
-  return -1;
+  f = pkt->frames[item];
+  *data = f->data;
+  *length = f->length;
+  return 0;
 }
 
 int
@@ -3741,7 +3874,7 @@ nestegg_packet_additional_data(nestegg_packet * pkt, unsigned int id,
 int
 nestegg_packet_encryption(nestegg_packet * pkt)
 {
-  struct frame * f = pkt->frame;
+  struct frame * f = pkt->frames[0];
   unsigned char encrypted_bit;
   unsigned char partitioned_bit;
 
@@ -3749,7 +3882,7 @@ nestegg_packet_encryption(nestegg_packet * pkt)
     return NESTEGG_PACKET_HAS_SIGNAL_BYTE_FALSE;
 
   /* Should never have parsed blocks with both encryption and lacing */
-  assert(f->next == NULL);
+  assert(pkt->frame_count == 1);
 
   encrypted_bit = f->frame_encryption->signal_byte & ENCRYPTED_BIT_MASK;
   partitioned_bit = f->frame_encryption->signal_byte & PARTITIONED_BIT_MASK;
@@ -3766,7 +3899,7 @@ nestegg_packet_encryption(nestegg_packet * pkt)
 int
 nestegg_packet_iv(nestegg_packet * pkt, unsigned char const ** iv, size_t * length)
 {
-  struct frame * f = pkt->frame;
+  struct frame * f = pkt->frames[0];
   unsigned char encrypted_bit;
 
   *iv = NULL;
@@ -3775,7 +3908,7 @@ nestegg_packet_iv(nestegg_packet * pkt, unsigned char const ** iv, size_t * leng
     return -1;
 
   /* Should never have parsed blocks with both encryption and lacing */
-  assert(f->next == NULL);
+  assert(pkt->frame_count == 1);
 
   encrypted_bit = f->frame_encryption->signal_byte & ENCRYPTED_BIT_MASK;
 
@@ -3792,7 +3925,7 @@ nestegg_packet_offsets(nestegg_packet * pkt,
                        uint32_t const ** partition_offsets,
                        uint8_t * num_partitions)
 {
-  struct frame * f = pkt->frame;
+  struct frame * f = pkt->frames[0];
   unsigned char encrypted_bit;
   unsigned char partitioned_bit;
 
@@ -3803,7 +3936,7 @@ nestegg_packet_offsets(nestegg_packet * pkt,
     return -1;
 
   /* Should never have parsed blocks with both encryption and lacing */
-  assert(f->next == NULL);
+  assert(pkt->frame_count == 1);
 
   encrypted_bit = f->frame_encryption->signal_byte & ENCRYPTED_BIT_MASK;
   partitioned_bit = f->frame_encryption->signal_byte & PARTITIONED_BIT_MASK;

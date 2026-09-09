@@ -7,8 +7,8 @@ package mozilla.components.feature.tabs.tabstray
 import mozilla.components.browser.tabstray.TabsTray
 
 /**
- * An internal only data class that is used for collecting the values to observe in the [TabsTray].
- * Aggregate data type keeping a reference to the list of tabs and the selected tab id.
+ * An internal only data class that is used for collecting the values to observe in the [TabsTray]. Aggregate data type
+ * keeping a reference to the list of tabs and the selected tab id.
  *
  * @property list The list of tabs.
  * @property selectedTabId Id of the selected tab in the list of tabs (or null).

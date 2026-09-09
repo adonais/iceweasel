@@ -7,37 +7,36 @@ package org.mozilla.fenix.settings
 import android.content.Context
 import android.util.AttributeSet
 import androidx.annotation.VisibleForTesting
+import androidx.appcompat.R as appcompatR
 import androidx.appcompat.widget.AppCompatRadioButton
 import androidx.core.content.edit
 import androidx.core.content.withStyledAttributes
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
-import androidx.appcompat.R as appcompatR
 
 /**
  * [AppCompatRadioButton] backed by a boolean `SharedPreference`.
  *
- * Whenever this button is initialized it will attempt to set itself as checked with the
- * current value of `R.styleable.PreferenceBackedRadioButton_preferenceKey` defaulting to
- * `R.styleable.PreferenceBackedRadioButton_preferenceKeyDefaultValue` if there is no value set
- * for the indicated `SharedPreference`.
+ * Whenever this button is initialized it will attempt to set itself as checked with the current value of
+ * `R.styleable.PreferenceBackedRadioButton_preferenceKey` defaulting to
+ * `R.styleable.PreferenceBackedRadioButton_preferenceKeyDefaultValue` if there is no value set for the indicated
+ * `SharedPreference`.
  *
- * Whenever the radio button is enabled or disabled this will be persisted in a `SharedPreference`
- * with the name indicated in `R.styleable.PreferenceBackedRadioButton_preferenceKey` .
+ * Whenever the radio button is enabled or disabled this will be persisted in a `SharedPreference` with the name
+ * indicated in `R.styleable.PreferenceBackedRadioButton_preferenceKey` .
  */
-class PreferenceBackedRadioButton @JvmOverloads constructor(
+class PreferenceBackedRadioButton
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = appcompatR.attr.radioButtonStyle,
 ) : AppCompatRadioButton(context, attrs, defStyleAttr) {
-    @VisibleForTesting
-    internal var externalOnCheckedChangeListener: OnCheckedChangeListener? = null
+    @VisibleForTesting internal var externalOnCheckedChangeListener: OnCheckedChangeListener? = null
 
-    @VisibleForTesting
-    internal var backingPreferenceName: String? = null
+    @VisibleForTesting internal var backingPreferenceName: String? = null
 
-    @VisibleForTesting
-    internal var backingPreferenceDefaultValue: Boolean = false
+    @VisibleForTesting internal var backingPreferenceDefaultValue: Boolean = false
 
     private val internalOnCheckedChangeListener = OnCheckedChangeListener { buttonView, isChecked ->
         backingPreferenceName?.let {
@@ -50,10 +49,11 @@ class PreferenceBackedRadioButton @JvmOverloads constructor(
     init {
         context.withStyledAttributes(attrs, R.styleable.PreferenceBackedRadioButton, defStyleAttr, 0) {
             backingPreferenceName = this.getString(R.styleable.PreferenceBackedRadioButton_preferenceKey)
-            backingPreferenceDefaultValue = getBoolean(
-                R.styleable.PreferenceBackedRadioButton_preferenceKeyDefaultValue,
-                false,
-            )
+            backingPreferenceDefaultValue =
+                getBoolean(
+                    R.styleable.PreferenceBackedRadioButton_preferenceKeyDefaultValue,
+                    false,
+                )
         }
 
         isChecked =

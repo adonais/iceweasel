@@ -52,9 +52,10 @@ class BlocklistHandlerTest {
         val bookmarks = listOf(Bookmark(url = "test"))
         every { mockSettings.homescreenBlocklist } returns setOf()
 
-        val filtered = with(blocklistHandler) {
-            bookmarks.filteredByBlocklist()
-        }
+        val filtered =
+            with(blocklistHandler) {
+                bookmarks.filteredByBlocklist()
+            }
 
         assertEquals(bookmarks, filtered)
     }
@@ -65,9 +66,10 @@ class BlocklistHandlerTest {
         val bookmarks = listOf(Bookmark(url = blockedUrl))
         every { mockSettings.homescreenBlocklist } returns setOf(blockedUrl.stripAndHash())
 
-        val filtered = with(blocklistHandler) {
-            bookmarks.filteredByBlocklist()
-        }
+        val filtered =
+            with(blocklistHandler) {
+                bookmarks.filteredByBlocklist()
+            }
 
         assertEquals(listOf<String>(), filtered)
     }
@@ -77,9 +79,10 @@ class BlocklistHandlerTest {
         val recentHistory = listOf(RecentlyVisitedItem.RecentHistoryHighlight(url = "test", title = ""))
         every { mockSettings.homescreenBlocklist } returns setOf()
 
-        val filtered = with(blocklistHandler) {
-            recentHistory.filteredByBlocklist()
-        }
+        val filtered =
+            with(blocklistHandler) {
+                recentHistory.filteredByBlocklist()
+            }
 
         assertEquals(recentHistory, filtered)
     }
@@ -90,9 +93,10 @@ class BlocklistHandlerTest {
         val recentHistory = listOf(RecentlyVisitedItem.RecentHistoryHighlight(url = blockedUrl, title = ""))
         every { mockSettings.homescreenBlocklist } returns setOf(blockedUrl.stripAndHash())
 
-        val filtered = with(blocklistHandler) {
-            recentHistory.filteredByBlocklist()
-        }
+        val filtered =
+            with(blocklistHandler) {
+                recentHistory.filteredByBlocklist()
+            }
 
         assertEquals(listOf<String>(), filtered)
     }
@@ -106,9 +110,10 @@ class BlocklistHandlerTest {
         every { mockContent.url } returns "test"
         every { mockSettings.homescreenBlocklist } returns setOf()
 
-        val filtered = with(blocklistHandler) {
-            tabs.filteredByBlocklist()
-        }
+        val filtered =
+            with(blocklistHandler) {
+                tabs.filteredByBlocklist()
+            }
 
         assertEquals(tabs, filtered)
     }
@@ -123,9 +128,10 @@ class BlocklistHandlerTest {
         every { mockContent.url } returns blockedUrl
         every { mockSettings.homescreenBlocklist } returns setOf(blockedUrl.stripAndHash())
 
-        val filtered = with(blocklistHandler) {
-            tabs.filteredByBlocklist()
-        }
+        val filtered =
+            with(blocklistHandler) {
+                tabs.filteredByBlocklist()
+            }
 
         assertEquals(listOf<String>(), filtered)
     }
@@ -135,24 +141,26 @@ class BlocklistHandlerTest {
         val blockedUrl = "test.com/?query=value"
         val mockSessionState: TabSessionState = mockk()
         val mockContent: ContentState = mockk()
-        val tabs = RecentSyncedTabState.Success(
-            listOf(
-                RecentSyncedTab(
-                    "",
-                    DeviceType.DESKTOP,
-                    "title",
-                    blockedUrl,
-                    null,
-                ),
-            ),
-        )
+        val tabs =
+            RecentSyncedTabState.Success(
+                listOf(
+                    RecentSyncedTab(
+                        "",
+                        DeviceType.DESKTOP,
+                        "title",
+                        blockedUrl,
+                        null,
+                    )
+                )
+            )
         every { mockSessionState.content } returns mockContent
         every { mockContent.url } returns blockedUrl
         every { mockSettings.frecencyFilterQuery } returns "query=value"
 
-        val filtered = with(blocklistHandler) {
-            tabs.filterContile()
-        }
+        val filtered =
+            with(blocklistHandler) {
+                tabs.filterContile()
+            }
 
         assertEquals(RecentSyncedTabState.None, filtered)
     }
@@ -167,9 +175,10 @@ class BlocklistHandlerTest {
         every { mockContent.url } returns blockedUrl
         every { mockSettings.frecencyFilterQuery } returns "query=value"
 
-        val filtered = with(blocklistHandler) {
-            tabs.filterContile()
-        }
+        val filtered =
+            with(blocklistHandler) {
+                tabs.filterContile()
+            }
 
         assertEquals(listOf<String>(), filtered)
     }
@@ -184,9 +193,10 @@ class BlocklistHandlerTest {
         every { mockContent.url } returns blockedUrl
         every { mockSettings.frecencyFilterQuery } returns "query=value"
 
-        val filtered = with(blocklistHandler) {
-            tabs.filterContile()
-        }
+        val filtered =
+            with(blocklistHandler) {
+                tabs.filterContile()
+            }
 
         assertEquals(listOf<String>(), filtered)
     }

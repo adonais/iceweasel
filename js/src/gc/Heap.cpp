@@ -16,6 +16,8 @@
  *  - ChunkPool
  */
 
+#include "mozilla/glue/Debug.h"
+
 #include "gc/GCLock.h"
 #include "gc/Memory.h"
 #include "gc/Zone.h"
@@ -182,16 +184,16 @@ void Arena::checkLookupTables() {
 
 #ifdef DEBUG
 void js::gc::ArenaList::dump() {
-  fprintf(stderr, "ArenaList %p:\n", this);
+  printf_stderr("ArenaList %p:\n", this);
   for (auto arena = iter(); !arena.done(); arena.next()) {
-    fprintf(stderr, "  %p %zu", arena.get(), arena->countFreeCells());
+    printf_stderr("  %p %zu", arena.get(), arena->countFreeCells());
     if (arena->isEmpty()) {
-      fprintf(stderr, " (empty)");
+      printf_stderr(" (empty)");
     }
     if (arena->isFull()) {
-      fprintf(stderr, " (full)");
+      printf_stderr(" (full)");
     }
-    fprintf(stderr, "\n");
+    printf_stderr("\n");
   }
 }
 #endif

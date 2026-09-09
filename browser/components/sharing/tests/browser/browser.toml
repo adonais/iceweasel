@@ -27,9 +27,25 @@ support-files = [ "!/browser/components/places/tests/browser/head.js"]
 ["browser_testShareFolderEmpties.js"]
 support-files = [ "!/browser/components/places/tests/browser/head.js"]
 
+["browser_testSharePanelButtonVisibility.js"]
+
 ["browser_testSharePanelCopyLink.js"]
 
+["browser_testSharePanelMail.js"]
+
+["browser_testSharePanelQRCode.js"]
+
 ["browser_testSharePanelScreenshot.js"]
+
+["browser_testSharePanelSendToDevice.js"]
+support-files = ["!/browser/base/content/test/sync/head.js"]
+
+["browser_testSharePanelTelemetry.js"]
+
+["browser_testSharePanelWindowsShare.js"]
+run-if = [
+  "os == 'win'",
+]
 
 ["browser_testShareTabGroup.js"]
 

@@ -22,32 +22,28 @@ internal data class SensorSample(
 }
 
 /**
- * A fixed-size ring buffer of reusable [SensorSample] instances to avoid allocation on every sensor
- * event.
+ * A fixed-size ring buffer of reusable [SensorSample] instances to avoid allocation on every sensor event.
  *
  * @param capacity the number of [SensorSample] slots to pre-allocate.
  */
-internal class SampleBuffer(
-    capacity: Int,
-) {
+internal class SampleBuffer(capacity: Int) {
     private var samples = Array(capacity) { SensorSample() }
     private var index = 0
 
-    /**
-     * Returns the next slot in the ring buffer, populated with the given values.
-     */
+    /** Returns the next slot in the ring buffer, populated with the given values. */
     fun request(
         xAccel: Float,
         yAccel: Float,
         zAccel: Float,
         timestampNs: Long,
     ): SensorSample {
-        val requestedSample = samples[index].also {
-            it.xAccel = xAccel
-            it.yAccel = yAccel
-            it.zAccel = zAccel
-            it.timestampNs = timestampNs
-        }
+        val requestedSample =
+            samples[index].also {
+                it.xAccel = xAccel
+                it.yAccel = yAccel
+                it.zAccel = zAccel
+                it.timestampNs = timestampNs
+            }
 
         index = (index + 1) % samples.size
 

@@ -36,8 +36,10 @@ export const ContainerCreationPanel = {
    *
    * @param {Window} sourceWin
    *   The chrome window the request originated from.
+   * @param {string} [entrypoint]
+   *   The UI entry point the request came from.
    */
-  async open(sourceWin) {
+  async open(sourceWin, entrypoint = "unknown") {
     let source = sourceWin.top;
     let win = source.gBrowser
       ? source
@@ -53,6 +55,8 @@ export const ContainerCreationPanel = {
     if (panel.state == "open" || panel.state == "showing") {
       return;
     }
+
+    Glean.containers.addContainerClicked.record({ source: entrypoint });
 
     let body = doc.getElementById("containerCreation-panel-body");
     body.replaceChildren();

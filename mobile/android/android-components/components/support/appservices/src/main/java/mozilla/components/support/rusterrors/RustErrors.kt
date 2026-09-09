@@ -9,8 +9,8 @@ import mozilla.appservices.errorsupport.RustComponentsErrorTelemetry
 /**
  * Report a Rust component error
  *
- * This is used when the Kotlin code sees an error in Rust that Rust can't report itself, for
- * example a UniFFI InternalException.
+ * This is used when the Kotlin code sees an error in Rust that Rust can't report itself, for example a UniFFI
+ * InternalException.
  */
 fun reportRustError(typeName: String, exception: Throwable) {
     RustComponentsErrorTelemetry.submitErrorPing(typeName, exception.toString())

@@ -62,8 +62,7 @@ internal fun Filters(
     }
 
     LaunchedEffect(selectedContentTypeFilter) {
-        val selectedItemInfo =
-            listState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == selectedContentTypeFilter }
+        val selectedItemInfo = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == selectedContentTypeFilter }
 
         if (selectedItemInfo == null || listState.isItemPartiallyVisible(selectedItemInfo)) {
             listState.animateScrollToItem(contentTypeFilters.indexOf(selectedContentTypeFilter))

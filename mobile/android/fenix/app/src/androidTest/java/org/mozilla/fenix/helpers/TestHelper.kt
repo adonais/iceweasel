@@ -32,6 +32,7 @@ import androidx.test.uiautomator.UiObjectNotFoundException
 import androidx.test.uiautomator.UiScrollable
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
+import kotlin.test.assertNotNull
 import mozilla.components.support.ktx.android.content.appName
 import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.Matcher
@@ -50,7 +51,6 @@ import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeVeryShort
 import org.mozilla.fenix.helpers.ext.waitNotNull
-import kotlin.test.assertNotNull
 
 object TestHelper {
 
@@ -94,11 +94,12 @@ object TestHelper {
         )
         Log.i(TAG, "longTapSelectItem: Trying to long click item with $url")
         onView(
-            allOf(
-                withId(R.id.url),
-                withText(url.toString()),
-            ),
-        ).perform(longClick())
+                allOf(
+                    withId(R.id.url),
+                    withText(url.toString()),
+                )
+            )
+            .perform(longClick())
         Log.i(TAG, "longTapSelectItem: Long clicked item with $url")
     }
 
@@ -155,9 +156,7 @@ object TestHelper {
 
     fun waitUntilSnackbarGone() {
         Log.i(TAG, "waitUntilSnackbarGone: Waiting for $waitingTime ms until the snckabar is gone")
-        mDevice.findObject(
-            UiSelector().resourceId(SNACKBAR_TEST_TAG),
-        ).waitUntilGone(waitingTime)
+        mDevice.findObject(UiSelector().resourceId(SNACKBAR_TEST_TAG)).waitUntilGone(waitingTime)
         Log.i(TAG, "waitUntilSnackbarGone: Waited for $waitingTime ms until the snckabar was gone")
     }
 
@@ -173,18 +172,18 @@ object TestHelper {
     /**
      * Click the main three-dot menu button and wait for the menu's bottom sheet to appear.
      *
-     * If the click is swallowed (e.g. by an in-progress page navigation or compose
-     * animation) and the bottom sheet does not appear, drain pending idle work and
-     * re-issue the click once before failing.
+     * If the click is swallowed (e.g. by an in-progress page navigation or compose animation) and the bottom sheet does
+     * not appear, drain pending idle work and re-issue the click once before failing.
      */
     fun openMainMenuAndAwaitBottomSheet(composeTestRule: ComposeTestRule) {
         composeTestRule.waitForIdle()
         mDevice.waitForIdle()
         Log.i(TAG, "openMainMenuAndAwaitBottomSheet: Waiting for main menu button to exist")
-        val menuButton = mDevice.wait(
-            Until.findObject(By.desc(getStringResource(R.string.content_description_menu))),
-            waitingTimeLong,
-        ) ?: throw AssertionError("Main menu button not found after $waitingTimeLong ms")
+        val menuButton =
+            mDevice.wait(
+                Until.findObject(By.desc(getStringResource(R.string.content_description_menu))),
+                waitingTimeLong,
+            ) ?: throw AssertionError("Main menu button not found after $waitingTimeLong ms")
         Log.i(TAG, "openMainMenuAndAwaitBottomSheet: Trying to click main menu button")
         menuButton.click()
         Log.i(TAG, "openMainMenuAndAwaitBottomSheet: Clicked main menu button")
@@ -193,10 +192,11 @@ object TestHelper {
             composeTestRule.waitForIdle()
             mDevice.waitForIdle()
             if (!itemWithResId("$packageName:id/design_bottom_sheet").waitForExists(waitingTimeVeryShort)) {
-                val retryButton = mDevice.wait(
-                    Until.findObject(By.desc(getStringResource(R.string.content_description_menu))),
-                    waitingTime,
-                ) ?: throw AssertionError("Main menu button not found on retry")
+                val retryButton =
+                    mDevice.wait(
+                        Until.findObject(By.desc(getStringResource(R.string.content_description_menu))),
+                        waitingTime,
+                    ) ?: throw AssertionError("Main menu button not found on retry")
                 retryButton.click()
                 Log.i(TAG, "openMainMenuAndAwaitBottomSheet: Retried click on main menu button")
             }
@@ -206,8 +206,7 @@ object TestHelper {
 
     // exit from Menus to home screen or browser
     fun exitMenu() {
-        val menuToolbar =
-            mDevice.findObject(UiSelector().resourceId("$packageName:id/navigationToolbar"))
+        val menuToolbar = mDevice.findObject(UiSelector().resourceId("$packageName:id/navigationToolbar"))
         while (menuToolbar.waitForExists(waitingTimeShort)) {
             Log.i(TAG, "exitMenu: Trying to press the device back button to return to the app home/browser view")
             mDevice.pressBack()
@@ -225,13 +224,7 @@ object TestHelper {
     }
 
     fun hasCousin(matcher: Matcher<View>): Matcher<View> {
-        return withParent(
-            hasSibling(
-                withChild(
-                    matcher,
-                ),
-            ),
-        )
+        return withParent(hasSibling(withChild(matcher)))
     }
 
     fun verifyLightThemeApplied(expected: Boolean) {
@@ -247,9 +240,15 @@ object TestHelper {
     }
 
     fun waitForAppWindowToBeUpdated() {
-        Log.i(TAG, "waitForAppWindowToBeUpdated: Waiting for $waitingTimeVeryShort ms for $packageName window to be updated")
+        Log.i(
+            TAG,
+            "waitForAppWindowToBeUpdated: Waiting for $waitingTimeVeryShort ms for $packageName window to be updated",
+        )
         mDevice.waitForWindowUpdate(packageName, waitingTimeVeryShort)
-        Log.i(TAG, "waitForAppWindowToBeUpdated: Waited for $waitingTimeVeryShort ms for $packageName window to be updated")
+        Log.i(
+            TAG,
+            "waitForAppWindowToBeUpdated: Waited for $waitingTimeVeryShort ms for $packageName window to be updated",
+        )
     }
 
     fun setPortraitDisplayOrientation() {
@@ -280,12 +279,11 @@ object TestHelper {
 /**
  * Polls [node].assertIsDisplayed() until it succeeds or the timeout elapses.
  *
- * Use this after [performScrollToNode][androidx.compose.ui.test.performScrollToNode]
- * for lazy-list items: scrolling establishes the node's existence in the semantics tree,
- * but layout completion of its bounds can lag behind on slow Firebase shards. A plain
- * [waitForIdle][ComposeTestRule.waitForIdle] does not always drain that, and
- * [waitUntilAtLeastOneExists][androidx.compose.ui.test.waitUntilAtLeastOneExists] is a
- * no-op once existence has been established.
+ * Use this after [performScrollToNode][androidx.compose.ui.test.performScrollToNode] for lazy-list items: scrolling
+ * establishes the node's existence in the semantics tree, but layout completion of its bounds can lag behind on slow
+ * Firebase shards. A plain [waitForIdle][ComposeTestRule.waitForIdle] does not always drain that, and
+ * [waitUntilAtLeastOneExists][androidx.compose.ui.test.waitUntilAtLeastOneExists] is a no-op once existence has been
+ * established.
  */
 @OptIn(androidx.compose.ui.test.ExperimentalTestApi::class)
 fun ComposeTestRule.waitUntilDisplayed(

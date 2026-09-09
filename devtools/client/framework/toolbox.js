@@ -2527,19 +2527,12 @@ class Toolbox extends EventEmitter {
    *        page is going to navigate
    */
   updateToolboxButtonsVisibility({ fromWillNavigate = false } = {}) {
-    const inspectorFront = this.target.getCachedFront("inspector");
-
     let toggledHighlighters = false;
     for (const button of this.toolbarButtons) {
       button.isVisible = this.#commandIsVisible(button);
 
       // We want to hide highlighters when the toolbox button is disabled from the options panel
-      if (
-        inspectorFront &&
-        button.highlighterTypes &&
-        !button.isVisible &&
-        button.isChecked
-      ) {
+      if (button.highlighterTypes && !button.isVisible && button.isChecked) {
         button.onClick({});
         toggledHighlighters = true;
       }
@@ -4745,6 +4738,7 @@ class Toolbox extends EventEmitter {
 
     // Instead view the stylesheet in the debugger since the pref is enabled
     if (Services.prefs.getBoolPref(DEVTOOLS_STYLESHEETS_IN_DEBUGGER)) {
+      Glean.devtoolsDebuggerStylesheets.linksOpenedInDebuggerCount.add(1);
       return viewSource.viewSourceInDebugger(this, url, line, column, null);
     }
 
@@ -4774,6 +4768,7 @@ class Toolbox extends EventEmitter {
 
     // Instead view the stylesheet in the debugger since the pref is enabled
     if (Services.prefs.getBoolPref(DEVTOOLS_STYLESHEETS_IN_DEBUGGER)) {
+      Glean.devtoolsDebuggerStylesheets.linksOpenedInDebuggerCount.add(1);
       return viewSource.viewSourceInDebugger(
         this,
         stylesheetResource.href,

@@ -16,7 +16,7 @@ namespace nss_test {
 class SoftokenBuiltinsTest : public ::testing::Test {
  protected:
   SoftokenBuiltinsTest() : nss_db_dir_("SoftokenBuiltinsTest.d-") {}
-  SoftokenBuiltinsTest(const std::string &prefix) : nss_db_dir_(prefix) {}
+  SoftokenBuiltinsTest(const std::string& prefix) : nss_db_dir_(prefix) {}
 
   virtual void SetUp() {
     std::string nss_init_arg("sql:");
@@ -27,7 +27,7 @@ class SoftokenBuiltinsTest : public ::testing::Test {
 
   virtual void TearDown() {
     ASSERT_EQ(SECSuccess, NSS_Shutdown());
-    const std::string &nss_db_dir_path = nss_db_dir_.GetPath();
+    const std::string& nss_db_dir_path = nss_db_dir_.GetPath();
     ASSERT_EQ(0, unlink((nss_db_dir_path + "/cert9.db").c_str()));
     ASSERT_EQ(0, unlink((nss_db_dir_path + "/key4.db").c_str()));
     ASSERT_EQ(0, unlink((nss_db_dir_path + "/pkcs11.txt").c_str()));
@@ -48,11 +48,11 @@ class SoftokenBuiltinsTest : public ::testing::Test {
 // The next tests in this class are used to test the Distrust Fields.
 // More details about these fields in lib/ckfw/builtins/README.
 TEST_F(SoftokenBuiltinsTest, CheckNoDistrustFields) {
-  const char *kCertNickname =
+  const char* kCertNickname =
       "Builtin Object Token:Distrust Fields Test - no_distrust";
   LoadModule();
 
-  CERTCertDBHandle *cert_handle = CERT_GetDefaultCertDB();
+  CERTCertDBHandle* cert_handle = CERT_GetDefaultCertDB();
   ASSERT_TRUE(cert_handle);
   ScopedCERTCertificate cert(
       CERT_FindCertByNickname(cert_handle, kCertNickname));
@@ -84,18 +84,18 @@ TEST_F(SoftokenBuiltinsTest, CheckNoDistrustFields) {
 }
 
 TEST_F(SoftokenBuiltinsTest, CheckOkDistrustFields) {
-  const char *kCertNickname =
+  const char* kCertNickname =
       "Builtin Object Token:Distrust Fields Test - ok_distrust";
   LoadModule();
 
-  CERTCertDBHandle *cert_handle = CERT_GetDefaultCertDB();
+  CERTCertDBHandle* cert_handle = CERT_GetDefaultCertDB();
   ASSERT_TRUE(cert_handle);
   ScopedCERTCertificate cert(
       CERT_FindCertByNickname(cert_handle, kCertNickname));
   ASSERT_TRUE(cert);
 
-  const char *kExpectedDERValueServer = "200617000000Z";
-  const char *kExpectedDERValueEmail = "071014085320Z";
+  const char* kExpectedDERValueServer = "200617000000Z";
+  const char* kExpectedDERValueEmail = "071014085320Z";
   // When a valid timestamp is encoded, the result length is exactly 13.
   const unsigned int kDistrustFieldSize = 13;
 
@@ -131,11 +131,11 @@ TEST_F(SoftokenBuiltinsTest, CheckOkDistrustFields) {
 }
 
 TEST_F(SoftokenBuiltinsTest, CheckInvalidDistrustFields) {
-  const char *kCertNickname =
+  const char* kCertNickname =
       "Builtin Object Token:Distrust Fields Test - err_distrust";
   LoadModule();
 
-  CERTCertDBHandle *cert_handle = CERT_GetDefaultCertDB();
+  CERTCertDBHandle* cert_handle = CERT_GetDefaultCertDB();
   ASSERT_TRUE(cert_handle);
   ScopedCERTCertificate cert(
       CERT_FindCertByNickname(cert_handle, kCertNickname));

@@ -6,9 +6,7 @@ package org.mozilla.fenix.tabstray
 
 import mozilla.components.browser.storage.sync.Tab
 
-/**
- * Interactor for responding to any actions on synced tabs in the tabs tray.
- */
+/** Interactor for responding to any actions on synced tabs in the tabs tray. */
 interface SyncedTabsInteractor {
     /**
      * Invoked when the user clicks on a synced [Tab].
@@ -17,8 +15,6 @@ interface SyncedTabsInteractor {
      */
     fun onSyncedTabClicked(tab: Tab)
 
-    /**
-     * Invoked when the user closes a synced [Tab].
-     */
+    /** Invoked when the user closes a synced [Tab]. */
     fun onSyncedTabClosed(deviceId: String, tab: Tab)
 }

@@ -11,8 +11,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LogTest {
-    @After
-    fun tearDown() = Log.reset()
+    @After fun tearDown() = Log.reset()
 
     @Test
     fun `log call will be forwarded to sinks`() {

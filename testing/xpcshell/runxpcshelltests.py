@@ -32,6 +32,7 @@ import mozdebug
 import six
 from mozgeckoprofiler import (
     symbolicate_profile_json,
+    symbolicate_profiles,
     view_gecko_profile,
 )
 from mozserve import Http3Server, MozHttp2Server
@@ -2861,6 +2862,10 @@ def main():
         sys.exit(1)
 
     result = xpcsh.runTests(options)
+
+    if "MOZ_AUTOMATION" in os.environ:
+        symbolicate_profiles()
+
     if result == TBPL_RETRY:
         sys.exit(4)
 

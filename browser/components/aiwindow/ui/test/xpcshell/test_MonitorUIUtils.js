@@ -11,6 +11,14 @@ const { MonitorAgent } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/agents/MonitorAgent.sys.mjs"
 );
 
+const { PlacesUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/PlacesUtils.sys.mjs"
+);
+
+const { PlacesTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PlacesTestUtils.sys.mjs"
+);
+
 const originalDelete = MonitorAgent.deleteMonitor;
 
 /**
@@ -138,4 +146,44 @@ add_task(async function test_deleteMonitorWithConfirmation_return_shape() {
   Assert.ok("error" in result, "Error result should have error property");
 
   MonitorAgent.deleteMonitor = originalDelete;
+});
+
+/**
+ * resolveWatchUrlTitles returns page titles from Places.
+ */
+add_task(async function test_resolveWatchUrlTitles() {
+  do_get_profile();
+
+  const withTitle = "https://example.com/product";
+  const noTitle = "https://example.org/untitled";
+  await PlacesTestUtils.addVisits([{ uri: withTitle, title: "Great Product" }]);
+
+  try {
+    const titles = await MonitorUIUtils.resolveWatchUrlTitles([
+      withTitle,
+      noTitle,
+      "not a url",
+    ]);
+
+    Assert.equal(
+      titles[withTitle],
+      "Great Product",
+      "Resolves a page title from Places"
+    );
+    Assert.ok(!(noTitle in titles), "Omits URLs Places has no title for");
+    Assert.ok(!("not a url" in titles), "Ignores malformed URLs");
+  } finally {
+    await PlacesUtils.history.clear();
+  }
+});
+
+/**
+ * resolveWatchUrlTitles tolerates missing input.
+ */
+add_task(async function test_resolveWatchUrlTitles_empty() {
+  Assert.deepEqual(
+    await MonitorUIUtils.resolveWatchUrlTitles(),
+    {},
+    "Returns an empty map when given no URLs"
+  );
 });

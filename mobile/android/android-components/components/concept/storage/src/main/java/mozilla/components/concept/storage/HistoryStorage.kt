@@ -4,12 +4,11 @@
 
 package mozilla.components.concept.storage
 
-/**
- * An interface which defines read/write methods for history data.
- */
+/** An interface which defines read/write methods for history data. */
 interface HistoryStorage : Storage {
     /**
      * Records a visit to a page.
+     *
      * @param uri of the page which was visited.
      * @param visit Information about the visit; see [PageVisit].
      */
@@ -17,32 +16,33 @@ interface HistoryStorage : Storage {
 
     /**
      * Records an observation about a page.
+     *
      * @param uri of the page for which to record an observation.
      * @param observation a [PageObservation] which encapsulates meta data observed about the page.
      */
     suspend fun recordObservation(uri: String, observation: PageObservation)
 
-    /**
-     * @return True if provided [uri] can be added to the storage layer.
-     */
+    /** @return True if provided [uri] can be added to the storage layer. */
     fun canAddUri(uri: String): Boolean
 
     /**
      * Maps a list of page URIs to a list of booleans indicating if each URI was visited.
+     *
      * @param uris a list of page URIs about which "visited" information is being requested.
-     * @return A list of booleans indicating visited status of each
-     * corresponding page URI from [uris].
+     * @return A list of booleans indicating visited status of each corresponding page URI from [uris].
      */
     suspend fun getVisited(uris: List<String>): List<Boolean>
 
     /**
      * Retrieves a list of all visited pages.
+     *
      * @return A list of all visited page URIs.
      */
     suspend fun getVisited(): List<String>
 
     /**
      * Retrieves detailed information about all visits that occurred in the given time range.
+     *
      * @param start The (inclusive) start time to bound the query.
      * @param end The (inclusive) end time to bound the query.
      * @param excludeTypes List of visit types to exclude.
@@ -55,12 +55,11 @@ interface HistoryStorage : Storage {
     ): List<VisitInfo>
 
     /**
-     * Return a "page" of history results. Each page will have visits in descending order
-     * with respect to their visit timestamps. In the case of ties, their row id will
-     * be used.
+     * Return a "page" of history results. Each page will have visits in descending order with respect to their visit
+     * timestamps. In the case of ties, their row id will be used.
      *
-     * Note that you may get surprising results if the items in the database change
-     * while you are paging through records.
+     * Note that you may get surprising results if the items in the database change while you are paging through
+     * records.
      *
      * @param offset The offset where the page begins.
      * @param count The number of items to return in the page.
@@ -73,12 +72,11 @@ interface HistoryStorage : Storage {
     ): List<VisitInfo>
 
     /**
-     * Returns a list of the top frecent site infos limited by the given number of items and
-     * frecency threshold sorted by most to least frecent.
+     * Returns a list of the top frecent site infos limited by the given number of items and frecency threshold sorted
+     * by most to least frecent.
      *
      * @param numItems the number of top frecent sites to return in the list.
-     * @param frecencyThreshold frecency threshold option for filtering visited sites based on
-     * their frecency score.
+     * @param frecencyThreshold frecency threshold option for filtering visited sites based on their frecency score.
      * @return a list of the [TopFrecentSiteInfo], most frecent first.
      */
     suspend fun getTopFrecentSites(
@@ -88,24 +86,25 @@ interface HistoryStorage : Storage {
 
     /**
      * Retrieves suggestions matching the [query].
+     *
      * @param query A query by which to search the underlying store.
      * @return A List of [SearchResult] matching the query, in no particular order.
      */
     fun getSuggestions(query: String, limit: Int): List<SearchResult>
 
-    /**
-     * Remove all locally stored data.
-     */
+    /** Remove all locally stored data. */
     suspend fun deleteEverything()
 
     /**
      * Remove history visits in an inclusive range from [since] to now.
+     *
      * @param since A unix timestamp, milliseconds.
      */
     suspend fun deleteVisitsSince(since: Long)
 
     /**
      * Remove history visits in an inclusive range from [startTime] to [endTime].
+     *
      * @param startTime A unix timestamp, milliseconds.
      * @param endTime A unix timestamp, milliseconds.
      */
@@ -113,12 +112,14 @@ interface HistoryStorage : Storage {
 
     /**
      * Remove all history visits for a given [url].
+     *
      * @param url A page URL for which to remove visits.
      */
     suspend fun deleteVisitsFor(url: String)
 
     /**
      * Remove a specific visit for a given [url].
+     *
      * @param url A page URL for which to remove a visit.
      * @param timestamp A unix timestamp, milliseconds, of a visit to be removed.
      */
@@ -129,17 +130,15 @@ interface HistoryStorage : Storage {
  * Information to record about a visit.
  *
  * @property visitType The transition type for this visit. See [VisitType].
- * @property redirectSource Optional; if this visit is redirecting to another page,
- *  what kind of redirect is it? See [RedirectSource] for the options.
+ * @property redirectSource Optional; if this visit is redirecting to another page, what kind of redirect is it? See
+ *   [RedirectSource] for the options.
  */
 data class PageVisit(
     val visitType: VisitType,
     val redirectSource: RedirectSource? = null,
 )
 
-/**
- * A redirect source describes how a page redirected to another page.
- */
+/** A redirect source describes how a page redirected to another page. */
 enum class RedirectSource {
     // The page temporarily redirected to another page.
     TEMPORARY,
@@ -170,9 +169,7 @@ data class TopFrecentSiteInfo(
     val title: String?,
 )
 
-/**
- * Frecency threshold options for fetching top frecent sites.
- */
+/** Frecency threshold options for fetching top frecent sites. */
 enum class FrecencyThresholdOption {
     /** Returns all visited pages. */
     NONE,
@@ -200,9 +197,7 @@ data class VisitInfo(
     var isRemote: Boolean,
 )
 
-/**
- * Visit type constants as defined by Desktop Firefox.
- */
+/** Visit type constants as defined by Desktop Firefox. */
 enum class VisitType(val type: Int) {
 
     // User followed a link.
@@ -224,8 +219,8 @@ enum class VisitType(val type: Int) {
  *
  * @property id A permanent identifier which might be used for caching or at the UI layer.
  * @property url A URL of the page.
- * @property score An unbounded, nonlinear score (larger is more relevant) which is used to rank
- *  this [SearchResult] against others.
+ * @property score An unbounded, nonlinear score (larger is more relevant) which is used to rank this [SearchResult]
+ *   against others.
  * @property title An optional title of the page.
  */
 data class SearchResult(

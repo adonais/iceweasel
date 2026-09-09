@@ -62,10 +62,7 @@ private fun SwatchCell(swatch: ColorSwatch, modifier: Modifier = Modifier) {
 
     Box(
         contentAlignment = Alignment.Center,
-        modifier = modifier
-            .width(120.dp)
-            .background(swatch.color)
-            .padding(16.dp),
+        modifier = modifier.width(120.dp).background(swatch.color).padding(16.dp),
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
@@ -94,9 +91,7 @@ private fun ColorGroupSection(group: ColorGroup) {
     ) {
         Text(text = group.name, style = AcornTheme.typography.subtitle1)
 
-        FlowRow(
-            modifier = Modifier.clip(RoundedCornerShape(16.dp)),
-        ) {
+        FlowRow(modifier = Modifier.clip(RoundedCornerShape(16.dp))) {
             group.swatches.forEach { swatch ->
                 SwatchCell(swatch)
             }
@@ -104,9 +99,7 @@ private fun ColorGroupSection(group: ColorGroup) {
     }
 }
 
-/**
- * Displays the Nova color palette organized by color group.
- */
+/** Displays the Nova color palette organized by color group. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ColorsScreen(onNavigateUp: () -> Unit = {}) {
@@ -132,14 +125,14 @@ fun ColorsScreen(onNavigateUp: () -> Unit = {}) {
                 },
                 actions = { ThemeToggleButton() },
             )
-        },
+        }
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(vertical = 16.dp),
+            modifier =
+                Modifier.fillMaxSize()
+                    .padding(innerPadding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             novaColorGroups.forEachIndexed { index, group ->

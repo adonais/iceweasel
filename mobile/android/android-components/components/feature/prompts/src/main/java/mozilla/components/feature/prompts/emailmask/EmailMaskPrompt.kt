@@ -48,9 +48,7 @@ import mozilla.components.feature.prompts.R
 import mozilla.components.support.utils.ext.isLandscape
 import mozilla.components.ui.icons.R as iconsR
 
-/**
- * Offset to align the CFR indicator and the email chip.
- */
+/** Offset to align the CFR indicator and the email chip. */
 private val indicatorArrowStartOffset = 35.dp
 
 /**
@@ -101,20 +99,14 @@ fun EmailMaskPromptBar(
                     }
                 }
 
-                Surface(
-                    color = MaterialTheme.colorScheme.surface,
-                ) {
-                    Row(
-                        modifier = modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                    ) {
+                Surface(color = MaterialTheme.colorScheme.surface) {
+                    Row(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                         MaskEmailChip(
                             onClick = {
                                 isDismissed = true
                                 onCfrDismiss()
                                 onMaskEmailClicked()
-                            },
+                            }
                         )
                     }
                 }
@@ -123,9 +115,7 @@ fun EmailMaskPromptBar(
     }
 }
 
-/**
- * Don't show the CFR on landscape unless it's at least the size of a tablet.
- */
+/** Don't show the CFR on landscape unless it's at least the size of a tablet. */
 @Composable
 private fun isLandscapeNotTablet(): Boolean {
     val isLandscape = LocalContext.current.isLandscape()
@@ -149,25 +139,20 @@ private fun Cfr(onDismiss: () -> Unit, cfrText: String) {
                 style = AcornTheme.typography.headline8,
             )
         },
-        text = { },
-        action = { },
+        text = {},
+        action = {},
     )
 }
 
 @Composable
-private fun MaskEmailChip(
-    onClick: () -> Unit,
-) {
+private fun MaskEmailChip(onClick: () -> Unit) {
     Surface(
-        modifier = Modifier
-            .clickable(onClick = onClick)
-            .minimumInteractiveComponentSize(),
+        modifier = Modifier.clickable(onClick = onClick).minimumInteractiveComponentSize(),
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.primaryContainer,
     ) {
         Row(
-            modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -192,10 +177,11 @@ private fun EmailMaskPromptBarPreview() {
     AcornTheme {
         EmailMaskPromptBar(
             shouldShowCfr = true,
-            cfrText = stringResource(
-                R.string.mozac_feature_relay_email_masks_cfr,
-                stringResource(R.string.firefox_relay),
-            ),
+            cfrText =
+                stringResource(
+                    R.string.mozac_feature_relay_email_masks_cfr,
+                    stringResource(R.string.firefox_relay),
+                ),
             onCfrDismiss = {},
             onMaskEmailClicked = {},
         )

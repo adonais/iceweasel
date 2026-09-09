@@ -1,0 +1,34 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+html {
+  height: 100%;
+
+  body {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+
+    #fallbackContainer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-medium);
+      padding: var(--space-medium);
+      text-align: center;
+    }
+
+    #fallbackMessage {
+      margin: 0;
+    }
+
+    @media (height <= 8em) {
+      #fallbackContainer {
+        display: none;
+      }
+    }
+  }
+}

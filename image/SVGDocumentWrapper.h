@@ -7,6 +7,7 @@
 #ifndef mozilla_image_SVGDocumentWrapper_h
 #define mozilla_image_SVGDocumentWrapper_h
 
+#include "Units.h"
 #include "nsCOMPtr.h"
 #include "nsIDocumentViewer.h"
 #include "nsIObserver.h"
@@ -71,7 +72,7 @@ class SVGDocumentWrapper final : public nsIStreamListener,
    *
    * @param aViewportSize The new viewport dimensions.
    */
-  void UpdateViewportBounds(const nsIntSize& aViewportSize);
+  void UpdateViewportBounds(const CSSSize& aViewportSize);
 
   /**
    * If an SVG image's helper document has a pending notification for an
@@ -122,11 +123,11 @@ class SVGDocumentWrapper final : public nsIStreamListener,
  private:
   friend class AutoRestoreSVGState;
 
-  ~SVGDocumentWrapper();
+  MOZ_CAN_RUN_SCRIPT ~SVGDocumentWrapper();
 
   nsresult SetupViewer(nsIRequest* aRequest, nsIDocumentViewer** aViewer,
                        nsILoadGroup** aLoadGroup);
-  void DestroyViewer();
+  MOZ_CAN_RUN_SCRIPT void DestroyViewer();
   void RegisterForXPCOMShutdown();
   void UnregisterForXPCOMShutdown();
 

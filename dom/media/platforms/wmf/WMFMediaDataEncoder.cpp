@@ -76,8 +76,10 @@ RefPtr<ShutdownPromise> WMFMediaDataEncoder::Shutdown() {
                              "Canceled by WMFMediaDataEncoder::Shutdown");
 
         // Cancel encode in flight if any.
-        self->mEncodeRequest.DisconnectIfExists();
-        self->mEncodePromise.RejectIfExists(r, __func__);
+        auto pendingEncodes = std::move(self->mEncodePromises);
+        for (auto& i : pendingEncodes) {
+          i->Reject(r, __func__);
+        }
 
         // Cancel drain in flight if any.
         self->mDrainRequest.DisconnectIfExists();
@@ -220,12 +222,17 @@ RefPtr<EncodePromise> WMFMediaDataEncoder::ProcessEncode(
   AssertOnTaskQueue();
   MOZ_ASSERT(mEncoder);
   MOZ_ASSERT(aSample);
-  MOZ_ASSERT(mEncodePromise.IsEmpty());
-  MOZ_ASSERT(!mEncodeRequest.Exists());
 
   WMF_ENC_LOGD("ProcessEncode ts={} duration={}",
                aSample->mTime.ToString().get(),
                aSample->mDuration.ToString().get());
+
+  if (!mDrainPromise.IsEmpty()) {
+    WMF_ENC_LOGE("Cannot encode, already draining");
+    return EncodePromise::CreateAndReject(
+        MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, "Drain already requested"_ns),
+        __func__);
+  }
 
   RefPtr<IMFSample> nv12 = ConvertToNV12InputSample(std::move(aSample));
   if (!nv12) {
@@ -236,28 +243,30 @@ RefPtr<EncodePromise> WMFMediaDataEncoder::ProcessEncode(
         __func__);
   }
 
-  RefPtr<EncodePromise> p = mEncodePromise.Ensure(__func__);
+  auto p = MakeRefPtr<EncodePromise::Private>(__func__);
+  mEncodePromises.AppendElement(p);
 
   nsTArray<MFTEncoder::InputSample> inputs;
   inputs.AppendElement(MFTEncoder::InputSample{
       .mSample = nv12.forget(), .mKeyFrameRequested = aSample->mKeyframe});
   mEncoder->Encode(std::move(inputs))
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [self = RefPtr<WMFMediaDataEncoder>(this)](
-              MFTEncoder::EncodedData&& aOutput) {
-            self->mEncodeRequest.Complete();
-            self->mEncodePromise.Resolve(
-                self->ProcessOutputSamples(std::move(aOutput)), __func__);
-          },
-          [self =
-               RefPtr<WMFMediaDataEncoder>(this)](const MediaResult& aError) {
-            WMF_ENC_SLOGE("Encode failed: {}", aError.Description().get());
-            self->mEncodeRequest.Complete();
-            self->mEncodePromise.Reject(aError, __func__);
-          })
-      ->Track(mEncodeRequest);
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [self = RefPtr{this},
+              p](MFTEncoder::EncodePromise::ResolveOrRejectValue&& aValue) {
+               if (!self->mEncodePromises.RemoveElement(p)) {
+                 return;
+               }
 
+               if (aValue.IsResolve()) {
+                 p->Resolve(self->ProcessOutputSamples(
+                                std::move(aValue.ResolveValue())),
+                            __func__);
+               } else {
+                 const auto& error = aValue.RejectValue();
+                 WMF_ENC_SLOGE("Encode failed: {}", error.Description().get());
+                 p->Reject(error, __func__);
+               }
+             });
   return p;
 }
 
@@ -266,10 +275,15 @@ RefPtr<EncodePromise> WMFMediaDataEncoder::ProcessEncodeBatch(
   AssertOnTaskQueue();
   MOZ_ASSERT(mEncoder);
   MOZ_ASSERT(!aSamples.IsEmpty());
-  MOZ_ASSERT(mEncodePromise.IsEmpty());
-  MOZ_ASSERT(!mEncodeRequest.Exists());
 
   WMF_ENC_LOGD("ProcessEncodeBatch: num of samples={}", aSamples.Length());
+
+  if (!mDrainPromise.IsEmpty()) {
+    WMF_ENC_LOGE("Cannot encode, already draining");
+    return EncodePromise::CreateAndReject(
+        MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, "Drain already requested"_ns),
+        __func__);
+  }
 
   nsTArray<MFTEncoder::InputSample> inputs;
   for (auto& sample : aSamples) {
@@ -288,34 +302,42 @@ RefPtr<EncodePromise> WMFMediaDataEncoder::ProcessEncodeBatch(
         .mSample = std::move(nv12), .mKeyFrameRequested = sample->mKeyframe});
   }
 
-  RefPtr<EncodePromise> p = mEncodePromise.Ensure(__func__);
+  auto p = MakeRefPtr<EncodePromise::Private>(__func__);
+  mEncodePromises.AppendElement(p);
 
   mEncoder->Encode(std::move(inputs))
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [self = RefPtr<WMFMediaDataEncoder>(this)](
-              MFTEncoder::EncodedData&& aOutput) {
-            self->mEncodeRequest.Complete();
-            self->mEncodePromise.Resolve(
-                self->ProcessOutputSamples(std::move(aOutput)), __func__);
-          },
-          [self =
-               RefPtr<WMFMediaDataEncoder>(this)](const MediaResult& aError) {
-            WMF_ENC_SLOGE("Encode failed: {}", aError.Description().get());
-            self->mEncodeRequest.Complete();
-            self->mEncodePromise.Reject(aError, __func__);
-          })
-      ->Track(mEncodeRequest);
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [self = RefPtr{this},
+              p](MFTEncoder::EncodePromise::ResolveOrRejectValue&& aValue) {
+               if (!self->mEncodePromises.RemoveElement(p)) {
+                 return;
+               }
 
+               if (aValue.IsResolve()) {
+                 p->Resolve(self->ProcessOutputSamples(
+                                std::move(aValue.ResolveValue())),
+                            __func__);
+               } else {
+                 const auto& error = aValue.RejectValue();
+                 WMF_ENC_SLOGE("Encode failed: {}", error.Description().get());
+                 p->Reject(error, __func__);
+               }
+             });
   return p;
 }
 
 RefPtr<EncodePromise> WMFMediaDataEncoder::ProcessDrain() {
   AssertOnTaskQueue();
   MOZ_ASSERT(mEncoder);
-  MOZ_ASSERT(mDrainPromise.IsEmpty());
-  MOZ_ASSERT(!mDrainRequest.Exists());
 
+  if (!mDrainPromise.IsEmpty()) {
+    WMF_ENC_LOGE("Cannot drain, already draining");
+    return EncodePromise::CreateAndReject(
+        MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, "Drain already requested"_ns),
+        __func__);
+  }
+
+  MOZ_ASSERT(!mDrainRequest.Exists());
   WMF_ENC_LOGD("ProcessDrain");
 
   RefPtr<EncodePromise> p = mDrainPromise.Ensure(__func__);

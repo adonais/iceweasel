@@ -1472,6 +1472,8 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                             env=final_env,
                         )
 
+                    self.append_test_summary(dirs["abs_blob_upload_dir"])
+
                     if self.per_test_coverage:
                         self.add_per_test_coverage_report(
                             final_env, suite, per_test_args[-1]

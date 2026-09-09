@@ -108,10 +108,7 @@ struct FlacCodecSpecificData {
 };
 
 struct Mp3CodecSpecificData final {
-  bool operator==(const Mp3CodecSpecificData& rhs) const {
-    return mEncoderDelayFrames == rhs.mEncoderDelayFrames &&
-           mEncoderPaddingFrames == rhs.mEncoderPaddingFrames;
-  }
+  bool operator==(const Mp3CodecSpecificData& rhs) const = default;
 
   auto MutTiedFields() {
     return std::tie(mEncoderDelayFrames, mEncoderPaddingFrames);

@@ -8,6 +8,8 @@ import android.app.SearchManager
 import android.content.Intent
 import android.nfc.NfcAdapter.ACTION_NDEF_DISCOVERED
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.TestScope
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.TabListAction
@@ -44,8 +46,6 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.anyBoolean
 import org.mockito.Mockito.anyString
 import org.mockito.Mockito.doReturn
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class TabIntentProcessorTest {
@@ -65,11 +65,12 @@ class TabIntentProcessorTest {
 
     @Before
     fun setup() {
-        searchEngine = createSearchEngine(
-            name = "Test",
-            url = "https://localhost/?q={searchTerms}",
-            icon = mock(),
-        )
+        searchEngine =
+            createSearchEngine(
+                name = "Test",
+                url = "https://localhost/?q={searchTerms}",
+                icon = mock(),
+            )
 
         engine = mock()
         engineSession = mock()
@@ -77,15 +78,15 @@ class TabIntentProcessorTest {
 
         middleware = CaptureActionsMiddleware()
 
-        store = BrowserStore(
-            BrowserState(
-                search = SearchState(regionSearchEngines = listOf(searchEngine)),
-            ),
-            middleware = EngineMiddleware.create(
-                engine = mock(),
-                scope = scope,
-            ) + listOf(middleware),
-        )
+        store =
+            BrowserStore(
+                BrowserState(search = SearchState(regionSearchEngines = listOf(searchEngine))),
+                middleware =
+                    EngineMiddleware.create(
+                        engine = mock(),
+                        scope = scope,
+                    ) + listOf(middleware),
+            )
 
         sessionUseCases = SessionUseCases(store)
         tabsUseCases = TabsUseCases(store)
@@ -399,13 +400,15 @@ class TabIntentProcessorTest {
     fun `uses app link launch type from intent when the extra is present`() {
         val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
 
-        val intent = Intent().apply {
-            putExtra(EXTRA_APP_LINK_LAUNCH_TYPE, APP_LINK_LAUNCH_TYPE_COLD)
-        }
+        val intent =
+            Intent().apply {
+                putExtra(EXTRA_APP_LINK_LAUNCH_TYPE, APP_LINK_LAUNCH_TYPE_COLD)
+            }
         val safeIntent = SafeIntent(intent)
 
         val result = handler.computeLoadUrlFlags(safeIntent)
-        val expected = EngineSession.LoadUrlFlags.select(EngineSession.LoadUrlFlags.external().value, APP_LINK_LAUNCH_TYPE_COLD)
+        val expected =
+            EngineSession.LoadUrlFlags.select(EngineSession.LoadUrlFlags.external().value, APP_LINK_LAUNCH_TYPE_COLD)
 
         assertEquals(expected.value, result.value)
     }
@@ -414,13 +417,15 @@ class TabIntentProcessorTest {
     fun `uses the default unknown app link launch type when an invalid extra value is present`() {
         val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
 
-        val intent = Intent().apply {
-            putExtra(EXTRA_APP_LINK_LAUNCH_TYPE, "testString")
-        }
+        val intent =
+            Intent().apply {
+                putExtra(EXTRA_APP_LINK_LAUNCH_TYPE, "testString")
+            }
         val safeIntent = SafeIntent(intent)
 
         val result = handler.computeLoadUrlFlags(safeIntent)
-        val expected = EngineSession.LoadUrlFlags.select(EngineSession.LoadUrlFlags.external().value, APP_LINK_LAUNCH_TYPE_UNKNOWN)
+        val expected =
+            EngineSession.LoadUrlFlags.select(EngineSession.LoadUrlFlags.external().value, APP_LINK_LAUNCH_TYPE_UNKNOWN)
 
         assertEquals(expected.value, result.value)
     }
@@ -429,13 +434,15 @@ class TabIntentProcessorTest {
     fun `does not use the default when the extra is present but an invalid integer value`() {
         val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
 
-        val intent = Intent().apply {
-            putExtra(EXTRA_APP_LINK_LAUNCH_TYPE, -1)
-        }
+        val intent =
+            Intent().apply {
+                putExtra(EXTRA_APP_LINK_LAUNCH_TYPE, -1)
+            }
         val safeIntent = SafeIntent(intent)
 
         val result = handler.computeLoadUrlFlags(safeIntent)
-        val expected = EngineSession.LoadUrlFlags.select(EngineSession.LoadUrlFlags.external().value, APP_LINK_LAUNCH_TYPE_UNKNOWN)
+        val expected =
+            EngineSession.LoadUrlFlags.select(EngineSession.LoadUrlFlags.external().value, APP_LINK_LAUNCH_TYPE_UNKNOWN)
 
         // Invalid integer value might mean a new app link launch type that's not handled on GeckoView.
         // In that case, this test should fail to alarm for a non-mapped launch type value.
@@ -450,11 +457,13 @@ class TabIntentProcessorTest {
         whenever(intent.action).thenReturn(Intent.ACTION_VIEW)
         whenever(intent.dataString).thenReturn("http://mozilla.org")
         whenever(intent.hasExtra(EXTRA_APP_LINK_LAUNCH_TYPE)).thenReturn(true)
-        whenever(intent.getIntExtra(EXTRA_APP_LINK_LAUNCH_TYPE, APP_LINK_LAUNCH_TYPE_UNKNOWN)).thenReturn(APP_LINK_LAUNCH_TYPE_COLD)
+        whenever(intent.getIntExtra(EXTRA_APP_LINK_LAUNCH_TYPE, APP_LINK_LAUNCH_TYPE_UNKNOWN))
+            .thenReturn(APP_LINK_LAUNCH_TYPE_COLD)
 
         handler.process(intent)
 
-        val expected = EngineSession.LoadUrlFlags.select(EngineSession.LoadUrlFlags.external().value, APP_LINK_LAUNCH_TYPE_COLD)
+        val expected =
+            EngineSession.LoadUrlFlags.select(EngineSession.LoadUrlFlags.external().value, APP_LINK_LAUNCH_TYPE_COLD)
 
         assertEquals(expected.value, store.state.tabs[0].engineState.initialLoadFlags.value)
     }
@@ -515,10 +524,11 @@ class TabIntentProcessorTest {
 
     @Test
     fun `getHostForDnsWarmup returns DoH provider host when DoH is INCREASED`() {
-        val settings = DefaultSettings(
-            dohSettingsMode = Engine.DohSettingsMode.INCREASED,
-            dohProviderUrl = "https://cloudflare-dns.com/dns-query",
-        )
+        val settings =
+            DefaultSettings(
+                dohSettingsMode = Engine.DohSettingsMode.INCREASED,
+                dohProviderUrl = "https://cloudflare-dns.com/dns-query",
+            )
         whenever(engine.settings).thenReturn(settings)
         val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = engine)
 
@@ -529,10 +539,11 @@ class TabIntentProcessorTest {
 
     @Test
     fun `getHostForDnsWarmup returns DoH provider host when DoH is MAX`() {
-        val settings = DefaultSettings(
-            dohSettingsMode = Engine.DohSettingsMode.MAX,
-            dohProviderUrl = "https://dns.nextdns.io/abc123",
-        )
+        val settings =
+            DefaultSettings(
+                dohSettingsMode = Engine.DohSettingsMode.MAX,
+                dohProviderUrl = "https://dns.nextdns.io/abc123",
+            )
         whenever(engine.settings).thenReturn(settings)
         val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = engine)
 
@@ -543,10 +554,11 @@ class TabIntentProcessorTest {
 
     @Test
     fun `getHostForDnsWarmup returns null when DoH is enabled but provider URL is empty`() {
-        val settings = DefaultSettings(
-            dohSettingsMode = Engine.DohSettingsMode.INCREASED,
-            dohProviderUrl = "",
-        )
+        val settings =
+            DefaultSettings(
+                dohSettingsMode = Engine.DohSettingsMode.INCREASED,
+                dohProviderUrl = "",
+            )
         whenever(engine.settings).thenReturn(settings)
         val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = engine)
 
@@ -577,10 +589,11 @@ class TabIntentProcessorTest {
 
     @Test
     fun `getHostForDnsWarmup returns null for malformed DoH provider URL`() {
-        val settings = DefaultSettings(
-            dohSettingsMode = Engine.DohSettingsMode.INCREASED,
-            dohProviderUrl = "not a valid url",
-        )
+        val settings =
+            DefaultSettings(
+                dohSettingsMode = Engine.DohSettingsMode.INCREASED,
+                dohProviderUrl = "not a valid url",
+            )
         whenever(engine.settings).thenReturn(settings)
         val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = engine)
 

@@ -1630,9 +1630,22 @@ void nsLineLayout::ApplyBlockTextBoxTrim(PerSpanData* psd, WritingMode aLineWM,
   // how much to trim on each side.
   nscoord totalOver = *aBaselineBCoord - mBStartEdge;
   nscoord totalUnder = *aLineBSize - totalOver;
-  const StyleTextBoxEdge& textBoxEdge = blockFrame->StyleText()->mTextBoxEdge;
+
+  // The line should be trimmed to the specified font metric from the block's
+  // root inline box. Gecko doesn't construct an actual frame for the root
+  // inline box (which is generally unstyleable), so the metric normally comes
+  // from the block itself. However, a ::first-line declaration block *can*
+  // style the fragment of the root inline box that it contains and should be
+  // used to determine the trim metric.
+  nsIFrame* metricsFrame = blockFrame;
+  if (psd->mFirstFrame && psd->mFirstFrame->mFrame->Style()->GetPseudoType() ==
+                              PseudoStyleType::FirstLine) {
+    metricsFrame = psd->mFirstFrame->mFrame;
+  }
+
+  const StyleTextBoxEdge& textBoxEdge = metricsFrame->StyleText()->mTextBoxEdge;
   RefPtr<nsFontMetrics> fm =
-      nsLayoutUtils::GetInflatedFontMetricsForFrame(blockFrame);
+      nsLayoutUtils::GetInflatedFontMetricsForFrame(metricsFrame);
   const auto [trimmedOver, trimmedUnder] =
       ResolveTextBoxEdgeMetrics(textBoxEdge, fm);
 
@@ -2763,9 +2776,11 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
       // Identify the current total height above and below the baseline,
       // to be compared against the target text-box-edge metrics to determine
       // how much to trim on each side.
-      nscoord contentOver = spanFramePFD->mAscent;
-      nscoord contentUnder =
-          spanFramePFD->mBounds.BSize(lineWM) - spanFramePFD->mAscent;
+      nscoord contentOver =
+          spanFramePFD->mAscent - spanFramePFD->mBorderPadding.BStart(lineWM);
+      nscoord contentUnder = spanFramePFD->mBounds.BSize(lineWM) -
+                             spanFramePFD->mAscent -
+                             spanFramePFD->mBorderPadding.BEnd(lineWM);
       const StyleTextBoxEdge& textBoxEdge =
           spanFrame->StyleText()->mTextBoxEdge;
       RefPtr<nsFontMetrics> fm =

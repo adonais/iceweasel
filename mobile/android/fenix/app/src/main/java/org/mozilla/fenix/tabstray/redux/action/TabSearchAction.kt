@@ -7,10 +7,7 @@ package org.mozilla.fenix.tabstray.redux.action
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.state.TabSearchState
 
-/**
- * [TabsTrayAction]'s that represent user interactions and [TabSearchState] updates for the
- * Tab Search feature.
- */
+/** [TabsTrayAction]'s that represent user interactions and [TabSearchState] updates for the Tab Search feature. */
 sealed interface TabSearchAction : TabsTrayAction {
 
     /**
@@ -25,9 +22,7 @@ sealed interface TabSearchAction : TabsTrayAction {
      *
      * @property results The complete list of open tabs that match the current query.
      */
-    data class SearchResultsUpdated(
-        val results: List<TabsTrayItem>,
-    ) : TabSearchAction
+    data class SearchResultsUpdated(val results: List<TabsTrayItem>) : TabSearchAction
 
     /**
      * Fired when the user taps on a search result for an open tab.

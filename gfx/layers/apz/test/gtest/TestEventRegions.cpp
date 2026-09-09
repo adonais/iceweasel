@@ -20,11 +20,9 @@ class APZEventRegionsTester : public APZCTreeManagerTester {
         LayerIntRect(0, 100, 200, 100),  // bottom half
     };
     CreateScrollData(treeShape, layerVisibleRects);
-    SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID);
-    SetScrollableFrameMetrics(layers[1],
-                              ScrollableLayerGuid::START_SCROLL_ID + 1);
-    SetScrollableFrameMetrics(layers[2],
-                              ScrollableLayerGuid::START_SCROLL_ID + 2);
+    SetScrollableFrameMetrics(root, START_SCROLL_ID);
+    SetScrollableFrameMetrics(layers[1], START_SCROLL_ID + 1);
+    SetScrollableFrameMetrics(layers[2], START_SCROLL_ID + 2);
     SetScrollHandoff(layers[1], root);
     SetScrollHandoff(layers[2], root);
 
@@ -40,7 +38,7 @@ class APZEventRegionsTester : public APZCTreeManagerTester {
         LayerIntRect(0, 150, 100, 100),
     };
     CreateScrollData(treeShape, layerVisibleRects);
-    SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID);
+    SetScrollableFrameMetrics(root, START_SCROLL_ID);
 
     registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
     UpdateHitTestingTree();
@@ -70,10 +68,9 @@ class APZEventRegionsTester : public APZCTreeManagerTester {
     };
     CreateScrollData(treeShape, layerVisibleRects, layerTransforms);
 
-    SetScrollableFrameMetrics(layers[2], ScrollableLayerGuid::START_SCROLL_ID,
+    SetScrollableFrameMetrics(layers[2], START_SCROLL_ID,
                               CSSRect(0, 0, 10, 10));
-    SetScrollableFrameMetrics(layers[3],
-                              ScrollableLayerGuid::START_SCROLL_ID + 1,
+    SetScrollableFrameMetrics(layers[3], START_SCROLL_ID + 1,
                               CSSRect(0, 0, 100, 100));
     SetScrollHandoff(layers[3], layers[2]);
 
@@ -124,21 +121,21 @@ TEST_F(APZEventRegionsTesterMock, HitRegionImmediateResponse) {
 
   // Tap in the exposed hit regions of each of the layers once and ensure
   // the clicks are dispatched right away
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
+  QueueMockHitResult(START_SCROLL_ID + 1);
   Tap(manager, ScreenIntPoint(10, 10), tapDuration);
   mcc->RunThroughDelayedTasks();  // this runs the tap event
   check.Call("Tapped on left");
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 2);
+  QueueMockHitResult(START_SCROLL_ID + 2);
   Tap(manager, ScreenIntPoint(110, 110), tapDuration);
   mcc->RunThroughDelayedTasks();  // this runs the tap event
   check.Call("Tapped on bottom");
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
+  QueueMockHitResult(START_SCROLL_ID);
   Tap(manager, ScreenIntPoint(110, 10), tapDuration);
   mcc->RunThroughDelayedTasks();  // this runs the tap event
   check.Call("Tapped on root");
 
   // Now tap on the dispatch-to-content region where the layers overlap
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 2,
+  QueueMockHitResult(START_SCROLL_ID + 2,
                      {CompositorHitTestFlags::eVisibleToHitTest,
                       CompositorHitTestFlags::eIrregularArea});
   Tap(manager, ScreenIntPoint(10, 110), tapDuration);
@@ -148,7 +145,7 @@ TEST_F(APZEventRegionsTesterMock, HitRegionImmediateResponse) {
   check.Call("Tapped on bottom again");
 
   // Now let's do that again, but simulate a main-thread response
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 2,
+  QueueMockHitResult(START_SCROLL_ID + 2,
                      {CompositorHitTestFlags::eVisibleToHitTest,
                       CompositorHitTestFlags::eIrregularArea});
   APZEventResult result =
@@ -170,7 +167,7 @@ TEST_F(APZEventRegionsTesterMock, HitRegionAccumulatesChildren) {
   EXPECT_CALL(*mcc,
               HandleTap(TapType::eSingleTap, _, _, rootApzc->GetGuid(), _, _))
       .Times(1);
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
+  QueueMockHitResult(START_SCROLL_ID);
   Tap(manager, ScreenIntPoint(10, 160), TimeDuration::FromMilliseconds(100));
 }
 
@@ -181,7 +178,7 @@ TEST_F(APZEventRegionsTesterMock, Bug1117712) {
 
   // These touch events should hit the dispatch-to-content region of layers[3]
   // and so get queued with that APZC as the tentative target.
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1,
+  QueueMockHitResult(START_SCROLL_ID + 1,
                      {CompositorHitTestFlags::eVisibleToHitTest,
                       CompositorHitTestFlags::eIrregularArea});
   APZEventResult result = Tap(manager, ScreenIntPoint(55, 5),

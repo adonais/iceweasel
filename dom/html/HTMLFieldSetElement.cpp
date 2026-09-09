@@ -88,7 +88,8 @@ void HTMLFieldSetElement::GetType(nsAString& aType) const {
 bool HTMLFieldSetElement::MatchListedElements(Element* aElement,
                                               int32_t aNamespaceID,
                                               nsAtom* aAtom, void* aData) {
-  return nsIFormControl::FromNodeOrNull(aElement) != nullptr;
+  auto* control = nsIFormControl::FromNodeOrNull(aElement);
+  return control && !!control->GetFieldSet();
 }
 
 HTMLCollection* HTMLFieldSetElement::Elements() {
@@ -185,9 +186,13 @@ void HTMLFieldSetElement::AddElement(nsGenericHTMLFormElement* aElement) {
   // If the element is a form-associated custom element, adding element might be
   // caused by FACE upgrade which won't trigger mutation observer, so mark
   // mElements dirty manually here.
-  CustomElementData* data = aElement->GetCustomElementData();
-  if (data && data->IsFormAssociated() && mElements) {
-    mElements->SetDirty();
+  if (CustomElementData* data = aElement->GetCustomElementData();
+      data && data->IsFormAssociated()) {
+    for (auto* fs = this; fs; fs = fs->GetFieldSet()) {
+      if (fs->mElements) {
+        fs->mElements->SetDirty();
+      }
+    }
   }
 
   // We need to update the validity of the fieldset.

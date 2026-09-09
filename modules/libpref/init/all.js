@@ -471,17 +471,15 @@ pref("ui.textHighlightBackground", "#ef0fff");
 // Used with nsISelectionController::SELECTION_FIND
 pref("ui.textHighlightForeground", "#ffffff");
 
-// We want the ability to forcibly disable platform a11y, because
-// some non-a11y-related components attempt to bring it up.  See bug
-// 538530 for details about Windows; we have a pref here that allows it
-// to be disabled for performance and testing resons.
-// See bug 761589 for the crossplatform aspect.
-//
-// This pref is checked only once, and the browser needs a restart to
-// pick up any changes.
-//
-// Values are -1 always on. 1 always off, 0 is auto as some platform perform
-// further checks.
+// Forcibly enable or disable accessibility. This is useful for testing. Values:
+// 0: auto: enable accessibility if an accessibility client is detected.
+// 1: force disable: Disable accessibility, even if a client attempts to enable it.
+// -1: force enable: Enable accessibility, even if there is no client. On some
+// platforms (e.g. Android), accessibility events can't be fired to the platform
+// in this case because the platform doesn't allow it. However, the Gecko
+// accessibility code will still run.
+// Changes to this pref are picked up without a restart: setting it to 1
+// shuts accessibility down, and setting it to -1 starts it up.
 pref("accessibility.force_disabled", 0);
 
 pref("focusmanager.testmode", false);
@@ -3916,12 +3914,22 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
     pref("remote.experimental.enabled", false);
   #endif
 
-  // Allow Marionette and the Remote Agent to be started dynamically at runtime.
-  #if defined(NIGHTLY_BUILD)
-    pref("remote.experimental.dynamicstart.enabled", true);
-  #else
-    pref("remote.experimental.dynamicstart.enabled", false);
-  #endif
+  // Enable features related to starting Marionette / Remote Agent dynamically,
+  // built for AI Assistant integrations (e.g. Claude cowork). On Nightly,
+  // enabling this preference will enable the Remote Control panel. On other
+  // channels, there is no user facing entry point for now.
+  pref("remote.experimental.dynamicstart.enabled", false);
+
+  // Display a connection prompt when trying to create a session via dynamically
+  // started Marionette / Remote Agent servers.
+  pref("remote.experimental.dynamicstart.prompt.enabled", true);
+
+  // Display a banner while the servers are running after a dynamic start, and
+  // another one while an application is connected to them. Both banners are
+  // only relevant when the servers were started dynamically, so they are
+  // enabled on all channels.
+  pref("remote.experimental.dynamicstart.banner.enabled", true);
+  pref("remote.experimental.dynamicstart.connectionbanner.enabled", true);
 
   // Defines the verbosity of the internal logger.
   //
@@ -4071,11 +4079,22 @@ pref("extensions.formautofill.addresses.supported", "detect");
 #else
 pref("extensions.formautofill.useml", false);
 #endif
+
 // Set at runtime once we have asked the inference process whether the native
 // ONNX runtime is available. Until then we stay on the regex heuristics.
 pref("extensions.formautofill.useml.nativeOnnxAvailable", false);
+
+// Use the two-engine (encoder + fusion head) field classifier instead of the
+// single text-classification model. Controlled by the form-autofill-ml Nimbus
+// feature.
+pref("extensions.formautofill.useml.twoHead", true);
+// How long an idle ML autofill engine is kept alive, in milliseconds. -1 means
+// never time out. Controlled by the form-autofill-ml Nimbus feature.
+pref("extensions.formautofill.useml.timeoutMS", 120000);
+
 pref("extensions.formautofill.addresses.enabled", true);
 pref("extensions.formautofill.addresses.capture.enabled", true);
+
 #if defined(ANDROID)
   // On android we have custom logic to control this. Ideally we should use nimbus there as well.
   // https://github.com/mozilla-mobile/firefox-android/blob/d566743ea0f041ce27c1204da903de380f96b46e/fenix/app/src/main/java/org/mozilla/fenix/utils/Settings.kt#L1502-L1510
@@ -4090,6 +4109,10 @@ pref("extensions.formautofill.addresses.supportedCountries", "US,CA,GB,FR,DE,BR,
 pref("extensions.formautofill.creditCards.supported", "on");
 pref("extensions.formautofill.creditCards.enabled", true);
 pref("extensions.formautofill.creditCards.ignoreAutocompleteOff", true);
+
+// Temporary pref for the in-progress CVV/CSC autofill work. When true, the CVV
+// (cc-csc) field participates in autofill and autocomplete.
+pref("extensions.formautofill.creditCards.cvv.enabled", false);
 
 // Supported countries need to follow ISO 3166-1 to align with "browser.search.region"
 pref("extensions.formautofill.creditCards.supportedCountries", "US,CA,GB,FR,DE,IT,ES,AT,BE,PL");

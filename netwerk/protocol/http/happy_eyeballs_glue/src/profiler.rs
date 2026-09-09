@@ -63,6 +63,11 @@ struct DnsMarker {
     record_type: String,
     outcome: Outcome,
     response: String,
+    // Optimistic DNS: whether this query was a cache-bypassing revalidation of a
+    // stale answer, and whether the answer it received was served from a stale
+    // (past-TTL, grace-period) cache entry.
+    revalidation: bool,
+    stale: bool,
 }
 
 impl ProfilerMarker for DnsMarker {
@@ -77,6 +82,8 @@ impl ProfilerMarker for DnsMarker {
         schema.add_key_label_format("record_type", "Record Type", Format::UniqueString);
         schema.add_key_label_format("outcome", "Outcome", Format::UniqueString);
         schema.add_key_label_format("response", "Response", Format::SanitizedString);
+        schema.add_key_label_format("revalidation", "Revalidation", Format::String);
+        schema.add_key_label_format("stale", "Stale", Format::String);
         schema.add_key_label_format("flow", "Flow", Format::Flow);
         schema
     }
@@ -86,6 +93,8 @@ impl ProfilerMarker for DnsMarker {
         json_writer.unique_string_property("record_type", &self.record_type);
         json_writer.unique_string_property("outcome", self.outcome.as_str());
         json_writer.string_property("response", &self.response);
+        json_writer.bool_property("revalidation", self.revalidation);
+        json_writer.bool_property("stale", self.stale);
         json_writer.unique_string_property("flow", unsafe {
             std::str::from_utf8_unchecked(&self.flow.to_hex())
         });
@@ -176,6 +185,7 @@ impl ProfilerMarker for LifetimeMarker {
 struct DnsInfo {
     start: ProfilerTime,
     record_type: happy_eyeballs::DnsRecordType,
+    revalidation: bool,
 }
 
 struct ConnInfo {
@@ -277,6 +287,7 @@ impl Profiler {
         &mut self,
         id: happy_eyeballs::Id,
         record_type: happy_eyeballs::DnsRecordType,
+        allow_stale: bool,
     ) {
         if !gecko_profiler::is_active() {
             return;
@@ -286,6 +297,7 @@ impl Profiler {
             DnsInfo {
                 start: ProfilerTime::now(),
                 record_type,
+                revalidation: !allow_stale,
             },
         );
     }
@@ -294,6 +306,7 @@ impl Profiler {
         &mut self,
         id: happy_eyeballs::Id,
         addrs: &[impl std::fmt::Display],
+        stale: bool,
     ) {
         let Some(info) = self.dns_infos.remove(&id) else {
             return;
@@ -312,6 +325,8 @@ impl Profiler {
                 record_type: format!("{:?}", info.record_type),
                 outcome: Outcome::Success,
                 response: response.join(", "),
+                revalidation: info.revalidation,
+                stale,
             },
         );
     }
@@ -320,6 +335,7 @@ impl Profiler {
         &mut self,
         id: happy_eyeballs::Id,
         infos: &[happy_eyeballs::ServiceInfo],
+        stale: bool,
     ) {
         let Some(dns_info) = self.dns_infos.remove(&id) else {
             return;
@@ -367,6 +383,8 @@ impl Profiler {
                 record_type: format!("{:?}", dns_info.record_type),
                 outcome: Outcome::Success,
                 response: response.join("; "),
+                revalidation: dns_info.revalidation,
+                stale,
             },
         );
     }
@@ -448,6 +466,8 @@ impl Drop for Profiler {
                     record_type: format!("{:?}", info.record_type),
                     outcome: Outcome::Cancelled,
                     response: String::new(),
+                    revalidation: info.revalidation,
+                    stale: false,
                 },
             );
         }

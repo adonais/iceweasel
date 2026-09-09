@@ -31,7 +31,6 @@
 #include "mozilla/IceServerParser.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Sprintf.h"
-#include "mozilla/StaticPrefs_media.h"
 #include "mozilla/glean/DomMediaWebrtcMetrics.h"
 #include "mozilla/media/MediaUtils.h"
 #include "nsEffectiveTLDService.h"
@@ -350,6 +349,27 @@ bool IsPrivateBrowsing(nsPIDOMWindowInner* aWindow) {
   return loadContext && loadContext->UsePrivateBrowsing();
 }
 
+static void RecordCodecTelemetry(const JsepCodecPreferences& aPrefs) {
+  if (WebrtcVideoConduit::HasH264Hardware()) {
+    glean::webrtc::has_h264_hardware
+        .EnumGet(glean::webrtc::HasH264HardwareLabel::eTrue)
+        .Add();
+  }
+
+  glean::webrtc::software_h264_enabled
+      .EnumGet(static_cast<glean::webrtc::SoftwareH264EnabledLabel>(
+          aPrefs.SoftwareH264Enabled()))
+      .Add();
+  glean::webrtc::hardware_h264_enabled
+      .EnumGet(static_cast<glean::webrtc::HardwareH264EnabledLabel>(
+          aPrefs.HardwareH264Enabled()))
+      .Add();
+  glean::webrtc::h264_enabled
+      .EnumGet(
+          static_cast<glean::webrtc::H264EnabledLabel>(aPrefs.H264Enabled()))
+      .Add();
+}
+
 PeerConnectionImpl::PeerConnectionImpl(const GlobalObject* aGlobal)
     : mTimeCard(MOZ_LOG_TEST(logModuleInfo, LogLevel::Error) ? create_timecard()
                                                              : nullptr),
@@ -525,17 +545,20 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
     return res;
   }
 
-  std::vector<UniquePtr<JsepCodecDescription>> preferredCodecs;
-  SetupPreferredCodecs(preferredCodecs);
+  AutoTArray<UniquePtr<JsepCodecDescription>, 16> preferredCodecs;
+  EnumerateDefaultVideoCodecs(&preferredCodecs, mPrefs);
+  EnumerateDefaultAudioCodecs(&preferredCodecs, mPrefs);
   mJsepSession->SetDefaultCodecs(preferredCodecs);
+
+  RecordCodecTelemetry(mPrefs);
 
   // We use this to sort the list of codecs once everything is configured
   CompareCodecPriority comparator;
   // Sort by priority
   mJsepSession->SortCodecs(comparator);
 
-  std::vector<RtpExtensionHeader> preferredHeaders;
-  SetupPreferredRtpExtensions(preferredHeaders);
+  AutoTArray<RtpExtensionHeader, 16> preferredHeaders;
+  GetDefaultRtpExtensions(mPrefs, &preferredHeaders);
 
   for (const auto& header : preferredHeaders) {
     mJsepSession->AddRtpExtension(header.mMediaType, header.extensionname,
@@ -640,28 +663,6 @@ RefPtr<DtlsIdentity> PeerConnectionImpl::Identity() const {
   PC_AUTO_ENTER_API_CALL_NO_CHECK();
   MOZ_ASSERT(mCertificate);
   return mCertificate->CreateDtlsIdentity();
-}
-
-void RecordCodecTelemetry() {
-  const auto prefs = PeerConnectionImpl::GetDefaultCodecPreferences();
-  if (WebrtcVideoConduit::HasH264Hardware()) {
-    glean::webrtc::has_h264_hardware
-        .EnumGet(glean::webrtc::HasH264HardwareLabel::eTrue)
-        .Add();
-  }
-
-  glean::webrtc::software_h264_enabled
-      .EnumGet(static_cast<glean::webrtc::SoftwareH264EnabledLabel>(
-          prefs.SoftwareH264Enabled()))
-      .Add();
-  glean::webrtc::hardware_h264_enabled
-      .EnumGet(static_cast<glean::webrtc::HardwareH264EnabledLabel>(
-          prefs.HardwareH264Enabled()))
-      .Add();
-  glean::webrtc::h264_enabled
-      .EnumGet(
-          static_cast<glean::webrtc::H264EnabledLabel>(prefs.H264Enabled()))
-      .Add();
 }
 
 // Data channels won't work without a window, so in order for the C++ unit
@@ -949,6 +950,19 @@ already_AddRefed<RTCRtpTransceiver> PeerConnectionImpl::AddTransceiver(
 bool PeerConnectionImpl::CheckNegotiationNeeded() {
   MOZ_ASSERT(mSignalingState == RTCSignalingState::Stable);
   SyncToJsep();
+
+  // mDataConnection exists when a datachannel was created or an m-section for
+  // data was negotiated.
+  if (mDataConnection) {
+    Maybe<const JsepTransceiver> dcTransceiver =
+        mJsepSession->FindTransceiver([](const JsepTransceiver& aTransceiver) {
+          return aTransceiver.GetMediaType() == SdpMediaSection::kApplication;
+        });
+    if (!dcTransceiver || !dcTransceiver->IsNegotiated()) {
+      return true;
+    }
+  }
+
   return !mLocalIceCredentialsToReplace.empty() ||
          mJsepSession->CheckNegotiationNeeded();
 }
@@ -2114,73 +2128,64 @@ void PeerConnectionImpl::SendWarningToConsole(const nsCString& aWarning) {
                                             "WebRTC"_ns, mWindow->WindowID());
 }
 
-void PeerConnectionImpl::GetDefaultVideoCodecs(
-    std::vector<UniquePtr<JsepCodecDescription>>& aSupportedCodecs,
-    const OverrideRtxPreference aOverrideRtxPreference) {
-  nsTArray<UniquePtr<JsepCodecDescription>> codecs;
-  EnumerateDefaultVideoCodecs(codecs, aOverrideRtxPreference);
-  aSupportedCodecs.reserve(codecs.Length());
-  for (auto& codec : codecs) {
-    aSupportedCodecs.emplace_back(std::move(codec));
-  }
-}
-
-void PeerConnectionImpl::GetDefaultAudioCodecs(
-    std::vector<UniquePtr<JsepCodecDescription>>& aSupportedCodecs) {
-  nsTArray<UniquePtr<JsepCodecDescription>> codecs;
-  EnumerateDefaultAudioCodecs(codecs);
-  aSupportedCodecs.reserve(codecs.Length());
-  for (auto& codec : codecs) {
-    aSupportedCodecs.emplace_back(std::move(codec));
-  }
-}
-
 void PeerConnectionImpl::GetDefaultRtpExtensions(
-    std::vector<RtpExtensionHeader>& aRtpExtensions) {
-  RtpExtensionHeader audioLevel = {JsepMediaType::kAudio,
-                                   SdpDirectionAttribute::Direction::kSendrecv,
-                                   webrtc::RtpExtension::kAudioLevelUri};
-  aRtpExtensions.push_back(std::move(audioLevel));
+    const JsepCodecPreferences& aPrefs,
+    nsTArray<RtpExtensionHeader>* aRtpExtensions) {
+  MOZ_ASSERT(aRtpExtensions);
+  RtpExtensionHeader audioLevel = {
+      JsepMediaType::kAudio, SdpDirectionAttribute::Direction::kSendrecv,
+      nsLiteralCString(webrtc::RtpExtension::kAudioLevelUri)};
+  aRtpExtensions->AppendElement(std::move(audioLevel));
 
   RtpExtensionHeader csrcAudioLevels = {
       JsepMediaType::kAudio, SdpDirectionAttribute::Direction::kRecvonly,
-      webrtc::RtpExtension::kCsrcAudioLevelsUri};
-  aRtpExtensions.push_back(std::move(csrcAudioLevels));
+      nsLiteralCString(webrtc::RtpExtension::kCsrcAudioLevelsUri)};
+  aRtpExtensions->AppendElement(std::move(csrcAudioLevels));
 
   RtpExtensionHeader mid = {JsepMediaType::kAudioVideo,
                             SdpDirectionAttribute::Direction::kSendrecv,
-                            webrtc::RtpExtension::kMidUri};
-  aRtpExtensions.push_back(std::move(mid));
+                            nsLiteralCString(webrtc::RtpExtension::kMidUri)};
+  aRtpExtensions->AppendElement(std::move(mid));
 
-  RtpExtensionHeader absSendTime = {JsepMediaType::kVideo,
-                                    SdpDirectionAttribute::Direction::kSendrecv,
-                                    webrtc::RtpExtension::kAbsSendTimeUri};
-  aRtpExtensions.push_back(std::move(absSendTime));
+  RtpExtensionHeader absSendTime = {
+      JsepMediaType::kVideo, SdpDirectionAttribute::Direction::kSendrecv,
+      nsLiteralCString(webrtc::RtpExtension::kAbsSendTimeUri)};
+  aRtpExtensions->AppendElement(std::move(absSendTime));
 
   RtpExtensionHeader timestampOffset = {
       JsepMediaType::kVideo, SdpDirectionAttribute::Direction::kSendrecv,
-      webrtc::RtpExtension::kTimestampOffsetUri};
-  aRtpExtensions.push_back(std::move(timestampOffset));
+      nsLiteralCString(webrtc::RtpExtension::kTimestampOffsetUri)};
+  aRtpExtensions->AppendElement(std::move(timestampOffset));
 
   RtpExtensionHeader playoutDelay = {
       JsepMediaType::kVideo, SdpDirectionAttribute::Direction::kRecvonly,
-      webrtc::RtpExtension::kPlayoutDelayUri};
-  aRtpExtensions.push_back(std::move(playoutDelay));
+      nsLiteralCString(webrtc::RtpExtension::kPlayoutDelayUri)};
+  aRtpExtensions->AppendElement(std::move(playoutDelay));
 
-  RtpExtensionHeader transportSequenceNumber = {
-      GetDefaultCodecPreferences().UseAudioTransportCC()
-          ? JsepMediaType::kAudioVideo
-          : JsepMediaType::kVideo,
-      SdpDirectionAttribute::Direction::kSendrecv,
-      webrtc::RtpExtension::kTransportSequenceNumberUri};
-  aRtpExtensions.push_back(std::move(transportSequenceNumber));
+  JsepMediaType transportSequenceNumberMediaType = JsepMediaType::kNone;
+  if (aPrefs.UseAudioTransportCC() && aPrefs.UseTransportCC()) {
+    transportSequenceNumberMediaType = JsepMediaType::kAudioVideo;
+  } else if (aPrefs.UseAudioTransportCC()) {
+    transportSequenceNumberMediaType = JsepMediaType::kAudio;
+  } else if (aPrefs.UseTransportCC()) {
+    transportSequenceNumberMediaType = JsepMediaType::kVideo;
+  }
+  if (transportSequenceNumberMediaType != JsepMediaType::kNone) {
+    RtpExtensionHeader transportSequenceNumber = {
+        transportSequenceNumberMediaType,
+        SdpDirectionAttribute::Direction::kSendrecv,
+        nsLiteralCString(webrtc::RtpExtension::kTransportSequenceNumberUri)};
+    aRtpExtensions->AppendElement(std::move(transportSequenceNumber));
+  }
 }
 
+/* static */
 void PeerConnectionImpl::GetCapabilities(
     const nsAString& aKind, dom::Nullable<dom::RTCRtpCapabilities>& aResult,
     sdp::Direction aDirection) {
-  std::vector<UniquePtr<JsepCodecDescription>> codecs;
-  std::vector<RtpExtensionHeader> headers;
+  DefaultCodecPreferences prefs;
+  AutoTArray<UniquePtr<JsepCodecDescription>, 16> codecs;
+  AutoTArray<RtpExtensionHeader, 16> headers;
   auto mediaType = JsepMediaType::kNone;
 
   if (aKind.EqualsASCII("video")) {
@@ -2188,16 +2193,16 @@ void PeerConnectionImpl::GetCapabilities(
     // RTX is supported by default, so I am not sure if that was necessary.
     // When it has been explicitly disabled by pref, is there a point in
     // forcing it here?
-    GetDefaultVideoCodecs(codecs, OverrideRtxPreference::NoOverride);
+    EnumerateDefaultVideoCodecs(&codecs, prefs);
     mediaType = JsepMediaType::kVideo;
   } else if (aKind.EqualsASCII("audio")) {
-    GetDefaultAudioCodecs(codecs);
+    EnumerateDefaultAudioCodecs(&codecs, prefs);
     mediaType = JsepMediaType::kAudio;
   } else {
     return;
   }
 
-  GetDefaultRtpExtensions(headers);
+  GetDefaultRtpExtensions(prefs, &headers);
 
   bool haveAddedRtx = false;
 
@@ -2247,28 +2252,6 @@ void PeerConnectionImpl::GetCapabilities(
         mozalloc_handle_oom(0);
       }
     }
-  }
-}
-
-void PeerConnectionImpl::SetupPreferredCodecs(
-    std::vector<UniquePtr<JsepCodecDescription>>& aPreferredCodecs) {
-  GetDefaultVideoCodecs(aPreferredCodecs, OverrideRtxPreference::NoOverride);
-  GetDefaultAudioCodecs(aPreferredCodecs);
-}
-
-void PeerConnectionImpl::SetupPreferredRtpExtensions(
-    std::vector<RtpExtensionHeader>& aPreferredheaders) {
-  GetDefaultRtpExtensions(aPreferredheaders);
-
-  if (!Preferences::GetBool("media.navigator.video.use_transport_cc", false)) {
-    aPreferredheaders.erase(
-        std::remove_if(
-            aPreferredheaders.begin(), aPreferredheaders.end(),
-            [&](const RtpExtensionHeader& header) {
-              return header.extensionname ==
-                     webrtc::RtpExtension::kTransportSequenceNumberUri;
-            }),
-        aPreferredheaders.end());
   }
 }
 
@@ -2658,6 +2641,8 @@ nsresult PeerConnectionImpl::SetConfiguration(
     mTransportHandler->SetProxyConfig(std::move(*proxyConfig));
   }
 
+  mJsepSession->SetAlwaysNegotiateDataChannels(
+      aConfiguration.mAlwaysNegotiateDataChannels);
   // Store the configuration for about:webrtc
   StoreConfigurationForAboutWebrtc(aConfiguration);
 
@@ -4179,6 +4164,8 @@ void PeerConnectionImpl::StoreConfigurationForAboutWebrtc(
   mJsConfiguration.mBundlePolicy.Construct(aConfig.mBundlePolicy);
   mJsConfiguration.mPeerIdentityProvided = !aConfig.mPeerIdentity.IsEmpty();
   mJsConfiguration.mCertificatesProvided = !aConfig.mCertificates.Length();
+  mJsConfiguration.mAlwaysNegotiateDataChannels =
+      aConfig.mAlwaysNegotiateDataChannels;
 }
 
 dom::Sequence<dom::RTCSdpParsingErrorInternal>

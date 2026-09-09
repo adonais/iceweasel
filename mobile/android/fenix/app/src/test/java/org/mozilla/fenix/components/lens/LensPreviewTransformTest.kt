@@ -29,26 +29,28 @@ class LensPreviewTransformTest {
     @Test
     fun `GIVEN a portrait view already matching the buffer aspect WHEN forRotation is called THEN the matrix is identity`() {
         // The TextureView base fill alone maps the buffer onto the view, so nothing to correct.
-        val matrix = LensPreviewTransform.forRotation(
-            viewWidth = 1080,
-            viewHeight = 1920,
-            bufferSize = Size(1920, 1080),
-            rotation = Surface.ROTATION_0,
-            swapped = true,
-        )
+        val matrix =
+            LensPreviewTransform.forRotation(
+                viewWidth = 1080,
+                viewHeight = 1920,
+                bufferSize = Size(1920, 1080),
+                rotation = Surface.ROTATION_0,
+                swapped = true,
+            )
 
         assertTrue(matrix.isIdentity)
     }
 
     @Test
     fun `GIVEN a landscape view already matching the buffer aspect WHEN forRotation is called THEN the preview fills the view`() {
-        val matrix = LensPreviewTransform.forRotation(
-            viewWidth = 1920,
-            viewHeight = 1080,
-            bufferSize = Size(1920, 1080),
-            rotation = Surface.ROTATION_90,
-            swapped = false,
-        )
+        val matrix =
+            LensPreviewTransform.forRotation(
+                viewWidth = 1920,
+                viewHeight = 1080,
+                bufferSize = Size(1920, 1080),
+                rotation = Surface.ROTATION_90,
+                swapped = false,
+            )
 
         // Pure rotation: the view rect maps onto itself, so the preview covers the view exactly
         // with no letterbox bands and no distortion.
@@ -59,13 +61,14 @@ class LensPreviewTransformTest {
     fun `GIVEN an upright sensor in portrait WHEN forRotation is called THEN the buffer is not transposed`() {
         // areDimensionsSwapped is false for a SENSOR_ORIENTATION 0 device held upright, so the
         // buffer is already in display orientation and the view was sized landscape to match.
-        val matrix = LensPreviewTransform.forRotation(
-            viewWidth = 1920,
-            viewHeight = 1080,
-            bufferSize = Size(1920, 1080),
-            rotation = Surface.ROTATION_0,
-            swapped = false,
-        )
+        val matrix =
+            LensPreviewTransform.forRotation(
+                viewWidth = 1920,
+                viewHeight = 1080,
+                bufferSize = Size(1920, 1080),
+                rotation = Surface.ROTATION_0,
+                swapped = false,
+            )
 
         assertTrue(matrix.isIdentity)
     }
@@ -74,13 +77,14 @@ class LensPreviewTransformTest {
     fun `GIVEN an upright sensor in landscape WHEN forRotation is called THEN the preview fills the view`() {
         // Regression guard: this configuration used to transpose the buffer unconditionally,
         // shrinking the preview to a 1080x607 band inside the view.
-        val matrix = LensPreviewTransform.forRotation(
-            viewWidth = 1080,
-            viewHeight = 1920,
-            bufferSize = Size(1920, 1080),
-            rotation = Surface.ROTATION_90,
-            swapped = true,
-        )
+        val matrix =
+            LensPreviewTransform.forRotation(
+                viewWidth = 1080,
+                viewHeight = 1920,
+                bufferSize = Size(1920, 1080),
+                rotation = Surface.ROTATION_90,
+                swapped = true,
+            )
 
         assertEquals(RectF(0f, 0f, 1080f, 1920f), matrix.mapViewRect(1080, 1920))
     }
@@ -90,13 +94,14 @@ class LensPreviewTransformTest {
     @Test
     fun `GIVEN portrait rotation WHEN forRotation is called THEN matrix uses uniform letterbox scale`() {
         // Landscape camera buffer mapped into a portrait view that is taller than the buffer.
-        val matrix = LensPreviewTransform.forRotation(
-            viewWidth = 1080,
-            viewHeight = 2400,
-            bufferSize = Size(1920, 1080),
-            rotation = Surface.ROTATION_0,
-            swapped = true,
-        )
+        val matrix =
+            LensPreviewTransform.forRotation(
+                viewWidth = 1080,
+                viewHeight = 2400,
+                bufferSize = Size(1920, 1080),
+                rotation = Surface.ROTATION_0,
+                swapped = true,
+            )
 
         // The buffer fits inside the view (letterbox) with a single uniform net scale on both
         // axes, so the true aspect ratio is preserved. Effective scale = min(1.0, 1.25) = 1.0.
@@ -109,13 +114,14 @@ class LensPreviewTransformTest {
 
     @Test
     fun `GIVEN upside-down rotation WHEN forRotation is called THEN letterbox scale is negated by the 180 degree rotation`() {
-        val matrix = LensPreviewTransform.forRotation(
-            viewWidth = 1080,
-            viewHeight = 2400,
-            bufferSize = Size(1920, 1080),
-            rotation = Surface.ROTATION_180,
-            swapped = true,
-        )
+        val matrix =
+            LensPreviewTransform.forRotation(
+                viewWidth = 1080,
+                viewHeight = 2400,
+                bufferSize = Size(1920, 1080),
+                rotation = Surface.ROTATION_180,
+                swapped = true,
+            )
 
         // Same scale magnitudes as ROTATION_0, negated on both axes by the postRotate(180).
         val values = matrix.values()
@@ -125,13 +131,14 @@ class LensPreviewTransformTest {
 
     @Test
     fun `GIVEN landscape rotation WHEN forRotation is called THEN the preview is letterboxed inside the view`() {
-        val matrix = LensPreviewTransform.forRotation(
-            viewWidth = 2400,
-            viewHeight = 1080,
-            bufferSize = Size(1920, 1080),
-            rotation = Surface.ROTATION_90,
-            swapped = false,
-        )
+        val matrix =
+            LensPreviewTransform.forRotation(
+                viewWidth = 2400,
+                viewHeight = 1080,
+                bufferSize = Size(1920, 1080),
+                rotation = Surface.ROTATION_90,
+                swapped = false,
+            )
 
         // The 1.7778 buffer is fitted into a wider 2.22 view, leaving 240px bands either side.
         assertEquals(RectF(240f, 0f, 2160f, 1080f), matrix.mapViewRect(2400, 1080))
@@ -139,13 +146,14 @@ class LensPreviewTransformTest {
 
     @Test
     fun `GIVEN landscape rotation WHEN forRotation is called THEN the rotation direction is applied`() {
-        val matrix = LensPreviewTransform.forRotation(
-            viewWidth = 2400,
-            viewHeight = 1080,
-            bufferSize = Size(1920, 1080),
-            rotation = Surface.ROTATION_90,
-            swapped = false,
-        )
+        val matrix =
+            LensPreviewTransform.forRotation(
+                viewWidth = 2400,
+                viewHeight = 1080,
+                bufferSize = Size(1920, 1080),
+                rotation = Surface.ROTATION_90,
+                swapped = false,
+            )
 
         // setRectToRect(FILL) maps the view onto the centered, transposed buffer rect
         // (scale 0.45 x 1.7778), then the -90 rotation about the center moves those factors into
@@ -159,13 +167,14 @@ class LensPreviewTransformTest {
 
     @Test
     fun `GIVEN reverse landscape rotation WHEN forRotation is called THEN the skew terms mirror the landscape case`() {
-        val matrix = LensPreviewTransform.forRotation(
-            viewWidth = 2400,
-            viewHeight = 1080,
-            bufferSize = Size(1920, 1080),
-            rotation = Surface.ROTATION_270,
-            swapped = false,
-        )
+        val matrix =
+            LensPreviewTransform.forRotation(
+                viewWidth = 2400,
+                viewHeight = 1080,
+                bufferSize = Size(1920, 1080),
+                rotation = Surface.ROTATION_270,
+                swapped = false,
+            )
 
         // Same magnitudes as ROTATION_90 with the rotation applied in the opposite direction,
         // so both skew terms flip sign.
@@ -180,13 +189,14 @@ class LensPreviewTransformTest {
 
     @Test
     fun `GIVEN a view that has not been laid out WHEN forRotation is called THEN the matrix is identity`() {
-        val matrix = LensPreviewTransform.forRotation(
-            viewWidth = 0,
-            viewHeight = 0,
-            bufferSize = Size(1920, 1080),
-            rotation = Surface.ROTATION_0,
-            swapped = true,
-        )
+        val matrix =
+            LensPreviewTransform.forRotation(
+                viewWidth = 0,
+                viewHeight = 0,
+                bufferSize = Size(1920, 1080),
+                rotation = Surface.ROTATION_0,
+                swapped = true,
+            )
 
         assertTrue(matrix.isIdentity)
     }
@@ -215,12 +225,13 @@ class LensPreviewTransformTest {
 
     @Test
     fun `GIVEN dimensions are not swapped WHEN previewConstraints is called THEN view and display dimensions pass through`() {
-        val constraints = LensPreviewTransform.previewConstraints(
-            viewWidth = 1080,
-            viewHeight = 2400,
-            displaySize = Point(1080, 1000),
-            swapped = false,
-        )
+        val constraints =
+            LensPreviewTransform.previewConstraints(
+                viewWidth = 1080,
+                viewHeight = 2400,
+                displaySize = Point(1080, 1000),
+                swapped = false,
+            )
 
         assertEquals(1080, constraints.rotatedWidth)
         assertEquals(2400, constraints.rotatedHeight)
@@ -230,12 +241,13 @@ class LensPreviewTransformTest {
 
     @Test
     fun `GIVEN dimensions are swapped WHEN previewConstraints is called THEN view and display dimensions are transposed`() {
-        val constraints = LensPreviewTransform.previewConstraints(
-            viewWidth = 1080,
-            viewHeight = 2400,
-            displaySize = Point(1080, 1000),
-            swapped = true,
-        )
+        val constraints =
+            LensPreviewTransform.previewConstraints(
+                viewWidth = 1080,
+                viewHeight = 2400,
+                displaySize = Point(1080, 1000),
+                swapped = true,
+            )
 
         assertEquals(2400, constraints.rotatedWidth)
         assertEquals(1080, constraints.rotatedHeight)
@@ -245,12 +257,13 @@ class LensPreviewTransformTest {
 
     @Test
     fun `GIVEN a display larger than the preview maximums WHEN previewConstraints is called THEN the maximums are clamped`() {
-        val constraints = LensPreviewTransform.previewConstraints(
-            viewWidth = 1440,
-            viewHeight = 3200,
-            displaySize = Point(2400, 3200),
-            swapped = false,
-        )
+        val constraints =
+            LensPreviewTransform.previewConstraints(
+                viewWidth = 1440,
+                viewHeight = 3200,
+                displaySize = Point(2400, 3200),
+                swapped = false,
+            )
 
         assertEquals(1920, constraints.maxWidth)
         assertEquals(1080, constraints.maxHeight)

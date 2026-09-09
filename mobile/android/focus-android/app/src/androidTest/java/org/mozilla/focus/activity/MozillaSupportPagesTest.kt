@@ -21,11 +21,9 @@ import org.mozilla.focus.testAnnotations.SmokeTest
 class MozillaSupportPagesTest {
     private val featureSettingsHelper = FeatureSettingsHelper()
 
-    @get:Rule(order = 0)
-    val focusTestRule: FocusTestRule = FocusTestRule()
+    @get:Rule(order = 0) val focusTestRule: FocusTestRule = FocusTestRule()
 
-    @get:Rule
-    val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
+    @get:Rule val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
 
     @Before
     fun setUp() {
@@ -40,89 +38,90 @@ class MozillaSupportPagesTest {
     @SmokeTest
     @Test
     fun openMenuHelpPageTest() {
-        homeScreen {
-        }.openMainMenu {
-        }.clickHelpPageLink {
-            verifyPageURL("what-firefox-focus-android")
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .clickHelpPageLink {
+                verifyPageURL("what-firefox-focus-android")
+            }
     }
 
     @SmokeTest
     @Test
     fun openAboutPageTest() {
         // Go to settings "About" page
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openMozillaSettingsMenu {
-        }.openAboutPage {
-            verifyVersionNumbers()
-        }.openAboutPageLearnMoreLink {
-            verifyPageURL("www.mozilla.org/en-US/about/manifesto/")
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openMozillaSettingsMenu {}
+            .openAboutPage {
+                verifyVersionNumbers()
+            }
+            .openAboutPageLearnMoreLink {
+                verifyPageURL("www.mozilla.org/en-US/about/manifesto/")
+            }
     }
 
     @SmokeTest
     @Test
     fun openMozillaSettingsHelpLinkTest() {
         // Go to settings "About" page
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openMozillaSettingsMenu {
-        }.openHelpLink {
-            verifyPageURL("what-firefox-focus-android")
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openMozillaSettingsMenu {}
+            .openHelpLink {
+                verifyPageURL("what-firefox-focus-android")
+            }
     }
 
     @SmokeTest
     @Test
     fun openTermsOfUsePageTest() {
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openMozillaSettingsMenu {
-        }.openTermsOfUsePage {
-            verifyPageURL("/about/legal/terms/firefox-focus/")
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openMozillaSettingsMenu {}
+            .openTermsOfUsePage {
+                verifyPageURL("/about/legal/terms/firefox-focus/")
+            }
     }
 
     @SmokeTest
     @Test
     fun openLibrariesThatWeUse() {
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openMozillaSettingsMenu {
-        }.openLibrariesUsedPage {
-            if (!BuildConfig.DEBUG) {
-                verifyLibrariesUsedTitle()
-                verifyTheLibrariesListNotEmpty()
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openMozillaSettingsMenu {}
+            .openLibrariesUsedPage {
+                if (!BuildConfig.DEBUG) {
+                    verifyLibrariesUsedTitle()
+                    verifyTheLibrariesListNotEmpty()
+                }
             }
-        }
     }
 
     @SmokeTest
     @Test
     fun openAboutLicenses() {
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openMozillaSettingsMenu {
-        }.openLicenseInformation {
-            verifyPageURL("about:license")
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openMozillaSettingsMenu {}
+            .openLicenseInformation {
+                verifyPageURL("about:license")
+            }
     }
 
     @SmokeTest
     @Test
     fun openPrivacyNoticeTest() {
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openMozillaSettingsMenu {
-        }.openPrivacyNotice {
-            verifyPageURL("privacy/firefox-focus")
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openMozillaSettingsMenu {}
+            .openPrivacyNotice {
+                verifyPageURL("privacy/firefox-focus")
+            }
     }
 }

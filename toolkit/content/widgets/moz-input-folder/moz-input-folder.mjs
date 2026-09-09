@@ -23,6 +23,7 @@ window.MozXULElement?.insertFTLIfNeeded("toolkit/global/mozInputFolder.ftl");
  * @property {string} displayValue - The value of the input control if it's different from the component value.
  * @property {string} dialogTitle - Text to display as a file picker dialog title.
  * @property {object} folder - The file object that represents the selected folder.
+ * @property {string} title - The title attribute, mapped onto the inner input.
  */
 
 export default class MozInputFolder extends MozInputText {

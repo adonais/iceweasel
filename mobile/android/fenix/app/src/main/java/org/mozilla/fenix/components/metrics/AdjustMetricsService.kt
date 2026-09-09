@@ -49,8 +49,7 @@ class AdjustMetricsService(
 
     private val initMutex = Mutex()
 
-    @Volatile
-    private var initialized = false
+    @Volatile private var initialized = false
 
     override fun start() {
         logger.info("Started")
@@ -83,15 +82,13 @@ class AdjustMetricsService(
 
         CoroutineScope(dispatcher).launch {
             try {
-                val tokenName = when (event) {
-                    is Event.GrowthData -> event.tokenName
-                    is Event.FirstWeekPostInstall -> event.tokenName
-                }
+                val tokenName =
+                    when (event) {
+                        is Event.GrowthData -> event.tokenName
+                        is Event.FirstWeekPostInstall -> event.tokenName
+                    }
 
-                if (
-                    (event is Event.GrowthData || event is Event.FirstWeekPostInstall) &&
-                    storage.shouldTrack(event)
-                ) {
+                if ((event is Event.GrowthData || event is Event.FirstWeekPostInstall) && storage.shouldTrack(event)) {
                     ensureInitialized(application.components.settings)
                     adjustSdk.trackEvent(AdjustEvent(tokenName))
                     storage.updateSentState(event)
@@ -145,12 +142,13 @@ class AdjustMetricsService(
     ): AdjustConfig {
         System.setProperty(ADJUST_PREINSTALL_SYSTEM_PROPERTY_PATH, "/preload/etc/adjust.preinstall")
 
-        val config = AdjustConfig(
-            application,
-            token,
-            AdjustConfig.ENVIRONMENT_PRODUCTION,
-            true,
-        )
+        val config =
+            AdjustConfig(
+                application,
+                token,
+                AdjustConfig.ENVIRONMENT_PRODUCTION,
+                true,
+            )
         config.enablePreinstallTracking()
 
         val distributionIdManager = application.components.distributionIdManager
@@ -158,11 +156,9 @@ class AdjustMetricsService(
         // If we skipped the marketing consent screen, enable COPPA compliance to prevent
         // personal identifiers from being shared with Adjust.
         when (distributionIdManager.getDistributionAdjustStartupStrategy()) {
-            DistributionAdjustStartupStrategy.IMMEDIATE_WITH_COPPA ->
-                config.enableCoppaCompliance()
+            DistributionAdjustStartupStrategy.IMMEDIATE_WITH_COPPA -> config.enableCoppaCompliance()
 
-            DistributionAdjustStartupStrategy.IMMEDIATE_WITH_PLAY_STORE_KIDS ->
-                config.enablePlayStoreKidsCompliance()
+            DistributionAdjustStartupStrategy.IMMEDIATE_WITH_PLAY_STORE_KIDS -> config.enablePlayStoreKidsCompliance()
 
             else -> {}
         }
@@ -217,8 +213,7 @@ class AdjustMetricsService(
         }
     }
 
-    override fun shouldTrack(event: Event): Boolean =
-        event is Event.GrowthData || event is Event.FirstWeekPostInstall
+    override fun shouldTrack(event: Event): Boolean = event is Event.GrowthData || event is Event.FirstWeekPostInstall
 
     companion object {
         const val CONVERSION_EVENT_1 = 1
@@ -232,9 +227,7 @@ class AdjustMetricsService(
         const val CONVERSION_EVENT_9 = 9
         const val CONVERSION_EVENT_10 = 10
 
-        /**
-         * Records a glean event matching the Adjust conversion event, and sends the Adjust attribution ping.
-         */
+        /** Records a glean event matching the Adjust conversion event, and sends the Adjust attribution ping. */
         @VisibleForTesting
         internal fun sendGleanEventAndPing(
             event: Event,
@@ -264,9 +257,7 @@ class AdjustMetricsService(
             }
         }
 
-        /**
-         * Sets third party sharing settings based on distribution and attribution.
-         */
+        /** Sets third party sharing settings based on distribution and attribution. */
         @Suppress("LongParameterList")
         @VisibleForTesting
         internal fun applyThirdPartySharingSettings(
@@ -286,23 +277,16 @@ class AdjustMetricsService(
                     // Listed in priority order. Multiple flags can be true at once, so the order
                     // is load-bearing. Insert new partners at the position matching their priority.
                     when {
-                        isUserMetaAttributed ->
-                            controller.enableThirdPartySharingForPartner(META_PARTNER_ID)
-                        isUserTikTokAttributed ->
-                            controller.enableThirdPartySharingForPartner(TIKTOK_PARTNER_ID)
-                        isUserRedditAttributed ->
-                            controller.enableThirdPartySharingForPartner(REDDIT_PARTNER_ID)
-                        isUserXTwitterAttributed ->
-                            controller.enableThirdPartySharingForPartner(X_TWITTER_PARTNER_ID)
-                        isUserMolocoAttributed ->
-                            controller.enableThirdPartySharingForPartner(MOLOCO_PARTNER_ID)
-                        isUserRakutenAttributed ->
-                            controller.enableThirdPartySharingForPartner(DYNAMIC_CALLBACK_ID)
+                        isUserMetaAttributed -> controller.enableThirdPartySharingForPartner(META_PARTNER_ID)
+                        isUserTikTokAttributed -> controller.enableThirdPartySharingForPartner(TIKTOK_PARTNER_ID)
+                        isUserRedditAttributed -> controller.enableThirdPartySharingForPartner(REDDIT_PARTNER_ID)
+                        isUserXTwitterAttributed -> controller.enableThirdPartySharingForPartner(X_TWITTER_PARTNER_ID)
+                        isUserMolocoAttributed -> controller.enableThirdPartySharingForPartner(MOLOCO_PARTNER_ID)
+                        isUserRakutenAttributed -> controller.enableThirdPartySharingForPartner(DYNAMIC_CALLBACK_ID)
                         isUserSkyflagAttributed -> {
                             // no-op
                         }
-                        else ->
-                            controller.enableThirdPartySharingForPartner(GOOGLE_PARTNER_ID)
+                        else -> controller.enableThirdPartySharingForPartner(GOOGLE_PARTNER_ID)
                     }
                 }
 
@@ -314,18 +298,19 @@ class AdjustMetricsService(
                 DistributionIdManager.Distribution.DT_001,
                 DistributionIdManager.Distribution.DT_002,
                 DistributionIdManager.Distribution.DT_003,
-                DistributionIdManager.Distribution.XIAOMI_001,
-                    -> {
+                DistributionIdManager.Distribution.XIAOMI_001 -> {
                     controller.disableAllThirdPartySharing()
                 }
-                // Do not add an else branch here. All distributions should be handled deliberately.
+            // Do not add an else branch here. All distributions should be handled deliberately.
             }
         }
 
         @VisibleForTesting
         internal fun alreadyKnown(settings: Settings): Boolean {
-            return settings.adjustCampaignId.isNotEmpty() || settings.adjustNetwork.isNotEmpty() ||
-                settings.adjustCreative.isNotEmpty() || settings.adjustAdGroup.isNotEmpty()
+            return settings.adjustCampaignId.isNotEmpty() ||
+                settings.adjustNetwork.isNotEmpty() ||
+                settings.adjustCreative.isNotEmpty() ||
+                settings.adjustAdGroup.isNotEmpty()
         }
 
         private fun triggerPing() {

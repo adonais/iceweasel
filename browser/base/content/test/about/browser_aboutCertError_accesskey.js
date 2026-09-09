@@ -9,6 +9,9 @@ const DNS_NOT_FOUND = "https://nonexistent-domain-for-testing.invalid/";
 
 add_setup(async function () {
   await setSecurityCertErrorsFeltPrivacyToTrue();
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.netError.searchCTA.enabled", false]],
+  });
 });
 
 function getAccessKeyModifiers() {

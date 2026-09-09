@@ -39,22 +39,24 @@ class OnDeviceFilePickerTest {
     fun unsafeUrisWillNotBeSelected() {
         val promptContainer = PromptContainer.TestPromptContainer(context)
         val fileUploadsDirCleaner = FileUploadsDirCleaner { context.cacheDir }
-        val filePicker = FilePicker(
-            container = promptContainer,
-            fileUploadsDirCleaner = fileUploadsDirCleaner,
-            store = BrowserStore(),
-        ) { }
+        val filePicker =
+            FilePicker(
+                container = promptContainer,
+                fileUploadsDirCleaner = fileUploadsDirCleaner,
+                store = BrowserStore(),
+            ) {}
         var onDismissWasExecuted = false
         var onSingleFileSelectedWasExecuted = false
         var onMultipleFilesSelectedWasExecuted = false
 
-        val filePickerRequest = PromptRequest.File(
-            arrayOf(""),
-            isMultipleFilesSelection = true,
-            onDismiss = { onDismissWasExecuted = true },
-            onSingleFileSelected = { _, _ -> onSingleFileSelectedWasExecuted = true },
-            onMultipleFilesSelected = { _, _ -> onMultipleFilesSelectedWasExecuted = true },
-        )
+        val filePickerRequest =
+            PromptRequest.File(
+                arrayOf(""),
+                isMultipleFilesSelection = true,
+                onDismiss = { onDismissWasExecuted = true },
+                onSingleFileSelected = { _, _ -> onSingleFileSelectedWasExecuted = true },
+                onMultipleFilesSelected = { _, _ -> onMultipleFilesSelectedWasExecuted = true },
+            )
 
         val intent = Intent()
         intent.clipData = ClipData("", arrayOf(), ClipData.Item(badUri1))
@@ -69,22 +71,24 @@ class OnDeviceFilePickerTest {
     fun safeUrisWillBeSelected() {
         val promptContainer = PromptContainer.TestPromptContainer(context)
         val fileUploadsDirCleaner = FileUploadsDirCleaner { context.cacheDir }
-        val filePicker = FilePicker(
-            container = promptContainer,
-            fileUploadsDirCleaner = fileUploadsDirCleaner,
-            store = BrowserStore(),
-        ) { }
+        val filePicker =
+            FilePicker(
+                container = promptContainer,
+                fileUploadsDirCleaner = fileUploadsDirCleaner,
+                store = BrowserStore(),
+            ) {}
         var urisWereSelected = false
         var onDismissWasExecuted = false
         var onSingleFileSelectedWasExecuted = false
 
-        val filePickerRequest = PromptRequest.File(
-            arrayOf(""),
-            isMultipleFilesSelection = true,
-            onDismiss = { onDismissWasExecuted = true },
-            onSingleFileSelected = { _, _ -> onSingleFileSelectedWasExecuted = true },
-            onMultipleFilesSelected = { _, uris -> urisWereSelected = uris.isNotEmpty() },
-        )
+        val filePickerRequest =
+            PromptRequest.File(
+                arrayOf(""),
+                isMultipleFilesSelection = true,
+                onDismiss = { onDismissWasExecuted = true },
+                onSingleFileSelected = { _, _ -> onSingleFileSelectedWasExecuted = true },
+                onMultipleFilesSelected = { _, uris -> urisWereSelected = uris.isNotEmpty() },
+            )
 
         val intent = Intent()
         intent.clipData = ClipData("", arrayOf(), ClipData.Item(goodUri))
@@ -99,21 +103,23 @@ class OnDeviceFilePickerTest {
     fun unsafeUriWillNotBeSelected() {
         val promptContainer = PromptContainer.TestPromptContainer(context)
         val fileUploadsDirCleaner = FileUploadsDirCleaner { context.cacheDir }
-        val filePicker = FilePicker(
-            container = promptContainer,
-            fileUploadsDirCleaner = fileUploadsDirCleaner,
-            store = BrowserStore(),
-        ) { }
+        val filePicker =
+            FilePicker(
+                container = promptContainer,
+                fileUploadsDirCleaner = fileUploadsDirCleaner,
+                store = BrowserStore(),
+            ) {}
         var onDismissWasExecuted = false
         var onSingleFileSelectedWasExecuted = false
         var onMultipleFilesSelectedWasExecuted = false
 
-        val filePickerRequest = PromptRequest.File(
-            arrayOf(""),
-            onDismiss = { onDismissWasExecuted = true },
-            onSingleFileSelected = { _, _ -> onSingleFileSelectedWasExecuted = true },
-            onMultipleFilesSelected = { _, _ -> onMultipleFilesSelectedWasExecuted = true },
-        )
+        val filePickerRequest =
+            PromptRequest.File(
+                arrayOf(""),
+                onDismiss = { onDismissWasExecuted = true },
+                onSingleFileSelected = { _, _ -> onSingleFileSelectedWasExecuted = true },
+                onMultipleFilesSelected = { _, _ -> onMultipleFilesSelectedWasExecuted = true },
+            )
 
         val intent = Intent()
         intent.data = badUri1
@@ -128,21 +134,23 @@ class OnDeviceFilePickerTest {
     fun safeUriWillBeSelected() {
         val promptContainer = PromptContainer.TestPromptContainer(context)
         val fileUploadsDirCleaner = FileUploadsDirCleaner { context.cacheDir }
-        val filePicker = FilePicker(
-            container = promptContainer,
-            fileUploadsDirCleaner = fileUploadsDirCleaner,
-            store = BrowserStore(),
-        ) { }
+        val filePicker =
+            FilePicker(
+                container = promptContainer,
+                fileUploadsDirCleaner = fileUploadsDirCleaner,
+                store = BrowserStore(),
+            ) {}
         var onDismissWasExecuted = false
         var onSingleFileSelectedWasExecuted = false
         var onMultipleFilesSelectedWasExecuted = false
 
-        val filePickerRequest = PromptRequest.File(
-            arrayOf(""),
-            onDismiss = { onDismissWasExecuted = true },
-            onSingleFileSelected = { _, _ -> onSingleFileSelectedWasExecuted = true },
-            onMultipleFilesSelected = { _, _ -> onMultipleFilesSelectedWasExecuted = true },
-        )
+        val filePickerRequest =
+            PromptRequest.File(
+                arrayOf(""),
+                onDismiss = { onDismissWasExecuted = true },
+                onSingleFileSelected = { _, _ -> onSingleFileSelectedWasExecuted = true },
+                onMultipleFilesSelected = { _, _ -> onMultipleFilesSelectedWasExecuted = true },
+            )
 
         val intent = Intent()
         intent.data = goodUri

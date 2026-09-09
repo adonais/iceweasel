@@ -7,11 +7,13 @@ Templates provide a way of modifying the task definition of selected tasks.
 They are added to 'try_task_config.json' and processed by the transforms.
 """
 
+import calendar
 import json
 import os
 import pathlib
 import subprocess
 import sys
+import time
 from abc import ABCMeta, abstractmethod
 from argparse import SUPPRESS, Action
 from textwrap import dedent
@@ -66,6 +68,36 @@ class TargetTasksMethod(ParameterConfig):
     def get_parameters(self, target_tasks_method: str, **kwargs):
         if target_tasks_method:
             return {"target_tasks_method": target_tasks_method}
+
+
+class PushDate(ParameterConfig):
+    arguments = [
+        [
+            ["--pushdate"],
+            {
+                "default": None,
+                "help": "Override the build date (format: YYYYMMDDHHMMSS) used for this try push.",
+            },
+        ],
+    ]
+
+    def get_parameters(self, pushdate: str, **kwargs):
+        if pushdate is not None:
+            try:
+                build_date = int(
+                    calendar.timegm(time.strptime(pushdate, "%Y%m%d%H%M%S"))
+                )
+            except ValueError:
+                print(
+                    f"error: --pushdate must be in YYYYMMDDHHMMSS format, got: {pushdate}",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            return {
+                "build_date": build_date,
+                "moz_build_date": pushdate,
+                "pushdate": build_date,
+            }
 
 
 class TryConfig(ParameterConfig):
@@ -878,6 +910,7 @@ all_task_configs = {
     "gecko-profile": GeckoProfile,
     "new-test-config": NewConfig,
     "path": Path,
+    "pushdate": PushDate,
     "test-tag": Tag,
     "pernosco": Pernosco,
     "rebuild": Rebuild,

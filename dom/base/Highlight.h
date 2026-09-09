@@ -5,6 +5,8 @@
 #ifndef mozilla_dom_Highlight_h
 #define mozilla_dom_Highlight_h
 
+#include <fmt/format.h>
+
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/HighlightBinding.h"
@@ -35,6 +37,20 @@ class ShadowRoot;
  * to the `nsFrameSelection` and layout code.
  */
 struct HighlightSelectionData {
+  friend auto format_as(const HighlightSelectionData& aData) {
+    nsAutoCString highlightName;
+    if (aData.mHighlightName) {
+      highlightName = nsAtomCString(aData.mHighlightName);
+    }
+    return fmt::format("{{ mHighlightName=\"{}\", mHighlight={} }}",
+                       highlightName.get(),
+                       static_cast<void*>(aData.mHighlight.get()));
+  }
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const HighlightSelectionData& aData) {
+    return aStream << format_as(aData);
+  }
+
   RefPtr<nsAtom> mHighlightName;
   RefPtr<Highlight> mHighlight;
 };

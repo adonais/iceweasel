@@ -4,7 +4,5 @@
 
 package mozilla.components.concept.engine.utils
 
-/**
- * URL for the "about:home" page.
- */
+/** URL for the "about:home" page. */
 const val ABOUT_HOME_URL = "about:home"

@@ -16,18 +16,18 @@ import org.mozilla.geckoview.MediaSession as GeckoViewMediaSession
 private const val ARTWORK_RETRIEVE_TIMEOUT = 1000L
 private const val ARTWORK_IMAGE_SIZE = 48
 
-private fun String.toAudioSessionType(): MediaSession.AudioSessionType = when (this) {
-    "playback" -> MediaSession.AudioSessionType.PLAYBACK
-    "transient" -> MediaSession.AudioSessionType.TRANSIENT
-    "transient-solo" -> MediaSession.AudioSessionType.TRANSIENT_SOLO
-    "ambient" -> MediaSession.AudioSessionType.AMBIENT
-    "play-and-record" -> MediaSession.AudioSessionType.PLAY_AND_RECORD
-    else -> MediaSession.AudioSessionType.AUTO
-}
+private fun String.toAudioSessionType(): MediaSession.AudioSessionType =
+    when (this) {
+        "playback" -> MediaSession.AudioSessionType.PLAYBACK
+        "transient" -> MediaSession.AudioSessionType.TRANSIENT
+        "transient-solo" -> MediaSession.AudioSessionType.TRANSIENT_SOLO
+        "ambient" -> MediaSession.AudioSessionType.AMBIENT
+        "play-and-record" -> MediaSession.AudioSessionType.PLAY_AND_RECORD
+        else -> MediaSession.AudioSessionType.AUTO
+    }
 
-internal class GeckoMediaSessionDelegate(
-    private val engineSession: GeckoEngineSession,
-) : GeckoViewMediaSession.Delegate {
+internal class GeckoMediaSessionDelegate(private val engineSession: GeckoEngineSession) :
+    GeckoViewMediaSession.Delegate {
 
     override fun onActivated(geckoSession: GeckoSession, mediaSession: GeckoViewMediaSession) {
         engineSession.notifyObservers {
@@ -56,21 +56,22 @@ internal class GeckoMediaSessionDelegate(
         mediaSession: GeckoViewMediaSession,
         metaData: GeckoViewMediaSession.Metadata,
     ) {
-        val getArtwork: (suspend () -> Bitmap?)? = metaData.artwork?.let {
-            {
-                withTimeoutOrNull(ARTWORK_RETRIEVE_TIMEOUT) {
-                    it.getBitmap(ARTWORK_IMAGE_SIZE).then(
-                        { GeckoResult.fromValue(it) },
-                        { GeckoResult.fromValue(null) },
-                    ).await()
+        val getArtwork: (suspend () -> Bitmap?)? =
+            metaData.artwork?.let {
+                {
+                    withTimeoutOrNull(ARTWORK_RETRIEVE_TIMEOUT) {
+                        it.getBitmap(ARTWORK_IMAGE_SIZE)
+                            .then(
+                                { GeckoResult.fromValue(it) },
+                                { GeckoResult.fromValue(null) },
+                            )
+                            .await()
+                    }
                 }
             }
-        }
 
         engineSession.notifyObservers {
-            onMediaMetadataChanged(
-                MediaSession.Metadata(metaData.title, metaData.artist, metaData.album, getArtwork),
-            )
+            onMediaMetadataChanged(MediaSession.Metadata(metaData.title, metaData.artist, metaData.album, getArtwork))
         }
     }
 
@@ -113,7 +114,7 @@ internal class GeckoMediaSessionDelegate(
                     positionState.duration,
                     positionState.position,
                     positionState.playbackRate,
-                ),
+                )
             )
         }
     }
@@ -124,17 +125,16 @@ internal class GeckoMediaSessionDelegate(
         enabled: Boolean,
         elementMetaData: GeckoViewMediaSession.ElementMetadata?,
     ) {
-        val sessionElementMetaData =
-            elementMetaData?.let {
-                MediaSession.ElementMetadata(
-                    elementMetaData.source,
-                    elementMetaData.duration,
-                    elementMetaData.width,
-                    elementMetaData.height,
-                    elementMetaData.audioTrackCount,
-                    elementMetaData.videoTrackCount,
-                )
-            }
+        val sessionElementMetaData = elementMetaData?.let {
+            MediaSession.ElementMetadata(
+                elementMetaData.source,
+                elementMetaData.duration,
+                elementMetaData.width,
+                elementMetaData.height,
+                elementMetaData.audioTrackCount,
+                elementMetaData.videoTrackCount,
+            )
+        }
 
         engineSession.notifyObservers {
             onMediaFullscreenChanged(enabled, sessionElementMetaData)

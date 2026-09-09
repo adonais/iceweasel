@@ -4,6 +4,7 @@
 
 package mozilla.components.browser.state.action
 
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.reducer.BrowserStateReducer
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.state.BrowserState
@@ -14,26 +15,22 @@ import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import kotlin.test.assertNotNull
 
 class MediaSessionActionTest {
     @Test
     fun `ActivatedMediaSessionAction updates media session state`() {
-        var state = BrowserState(
-            tabs = listOf(
-                createTab("https://www.mozilla.org", id = "test-tab"),
-            ),
-        )
+        var state = BrowserState(tabs = listOf(createTab("https://www.mozilla.org", id = "test-tab")))
 
         val mediaSessionController: MediaSession.Controller = mock()
 
-        state = BrowserStateReducer.reduce(
-            state,
-            MediaSessionAction.ActivatedMediaSessionAction(
-                "test-tab",
-                mediaSessionController,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                MediaSessionAction.ActivatedMediaSessionAction(
+                    "test-tab",
+                    mediaSessionController,
+                ),
+            )
 
         val mediaSessionState: MediaSessionState? = state.findTab("test-tab")?.mediaSessionState
         assertNotNull(mediaSessionState)
@@ -42,28 +39,24 @@ class MediaSessionActionTest {
 
     @Test
     fun `DeactivatedMediaSessionAction updates media session state`() {
-        var state = BrowserState(
-            tabs = listOf(
-                createTab("https://www.mozilla.org", id = "test-tab"),
-            ),
-        )
+        var state = BrowserState(tabs = listOf(createTab("https://www.mozilla.org", id = "test-tab")))
 
         val mediaSessionController: MediaSession.Controller = mock()
 
-        state = BrowserStateReducer.reduce(
-            state,
-            MediaSessionAction.ActivatedMediaSessionAction(
-                "test-tab",
-                mediaSessionController,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                MediaSessionAction.ActivatedMediaSessionAction(
+                    "test-tab",
+                    mediaSessionController,
+                ),
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            MediaSessionAction.DeactivatedMediaSessionAction(
-                "test-tab",
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                MediaSessionAction.DeactivatedMediaSessionAction("test-tab"),
+            )
 
         val mediaSessionState: MediaSessionState? = state.findTab("test-tab")?.mediaSessionState
         assertNull(mediaSessionState)
@@ -71,30 +64,28 @@ class MediaSessionActionTest {
 
     @Test
     fun `UpdateMediaMetadataAction updates media session state`() {
-        var state = BrowserState(
-            tabs = listOf(
-                createTab("https://www.mozilla.org", id = "test-tab"),
-            ),
-        )
+        var state = BrowserState(tabs = listOf(createTab("https://www.mozilla.org", id = "test-tab")))
 
         val mediaSessionController: MediaSession.Controller = mock()
         val metadata: MediaSession.Metadata = mock()
 
-        state = BrowserStateReducer.reduce(
-            state,
-            MediaSessionAction.ActivatedMediaSessionAction(
-                "test-tab",
-                mediaSessionController,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                MediaSessionAction.ActivatedMediaSessionAction(
+                    "test-tab",
+                    mediaSessionController,
+                ),
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            MediaSessionAction.UpdateMediaMetadataAction(
-                "test-tab",
-                metadata,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                MediaSessionAction.UpdateMediaMetadataAction(
+                    "test-tab",
+                    metadata,
+                ),
+            )
 
         val mediaSessionState: MediaSessionState? = state.findTab("test-tab")?.mediaSessionState
         assertNotNull(mediaSessionState)
@@ -104,30 +95,28 @@ class MediaSessionActionTest {
 
     @Test
     fun `UpdateMediaPlaybackStateAction updates media session state`() {
-        var state = BrowserState(
-            tabs = listOf(
-                createTab("https://www.mozilla.org", id = "test-tab"),
-            ),
-        )
+        var state = BrowserState(tabs = listOf(createTab("https://www.mozilla.org", id = "test-tab")))
 
         val mediaSessionController: MediaSession.Controller = mock()
         val playbackState: MediaSession.PlaybackState = mock()
 
-        state = BrowserStateReducer.reduce(
-            state,
-            MediaSessionAction.ActivatedMediaSessionAction(
-                "test-tab",
-                mediaSessionController,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                MediaSessionAction.ActivatedMediaSessionAction(
+                    "test-tab",
+                    mediaSessionController,
+                ),
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            MediaSessionAction.UpdateMediaPlaybackStateAction(
-                "test-tab",
-                playbackState,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                MediaSessionAction.UpdateMediaPlaybackStateAction(
+                    "test-tab",
+                    playbackState,
+                ),
+            )
 
         val mediaSessionState: MediaSessionState? = state.findTab("test-tab")?.mediaSessionState
         assertNotNull(mediaSessionState)
@@ -137,30 +126,28 @@ class MediaSessionActionTest {
 
     @Test
     fun `UpdateMediaFeatureAction updates media session state`() {
-        var state = BrowserState(
-            tabs = listOf(
-                createTab("https://www.mozilla.org", id = "test-tab"),
-            ),
-        )
+        var state = BrowserState(tabs = listOf(createTab("https://www.mozilla.org", id = "test-tab")))
 
         val mediaSessionController: MediaSession.Controller = mock()
         val features: MediaSession.Feature = mock()
 
-        state = BrowserStateReducer.reduce(
-            state,
-            MediaSessionAction.ActivatedMediaSessionAction(
-                "test-tab",
-                mediaSessionController,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                MediaSessionAction.ActivatedMediaSessionAction(
+                    "test-tab",
+                    mediaSessionController,
+                ),
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            MediaSessionAction.UpdateMediaFeatureAction(
-                "test-tab",
-                features,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                MediaSessionAction.UpdateMediaFeatureAction(
+                    "test-tab",
+                    features,
+                ),
+            )
 
         val mediaSessionState: MediaSessionState? = state.findTab("test-tab")?.mediaSessionState
         assertNotNull(mediaSessionState)
@@ -170,30 +157,28 @@ class MediaSessionActionTest {
 
     @Test
     fun `UpdateMediaPositionStateAction updates media session state`() {
-        var state = BrowserState(
-            tabs = listOf(
-                createTab("https://www.mozilla.org", id = "test-tab"),
-            ),
-        )
+        var state = BrowserState(tabs = listOf(createTab("https://www.mozilla.org", id = "test-tab")))
 
         val mediaSessionController: MediaSession.Controller = mock()
         val positionState: MediaSession.PositionState = mock()
 
-        state = BrowserStateReducer.reduce(
-            state,
-            MediaSessionAction.ActivatedMediaSessionAction(
-                "test-tab",
-                mediaSessionController,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                MediaSessionAction.ActivatedMediaSessionAction(
+                    "test-tab",
+                    mediaSessionController,
+                ),
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            MediaSessionAction.UpdateMediaPositionStateAction(
-                "test-tab",
-                positionState,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                MediaSessionAction.UpdateMediaPositionStateAction(
+                    "test-tab",
+                    positionState,
+                ),
+            )
 
         val mediaSessionState: MediaSessionState? = state.findTab("test-tab")?.mediaSessionState
         assertNotNull(mediaSessionState)
@@ -203,29 +188,27 @@ class MediaSessionActionTest {
 
     @Test
     fun `UpdateMediaMutedAction updates media session state`() {
-        var state = BrowserState(
-            tabs = listOf(
-                createTab("https://www.mozilla.org", id = "test-tab"),
-            ),
-        )
+        var state = BrowserState(tabs = listOf(createTab("https://www.mozilla.org", id = "test-tab")))
 
         val mediaSessionController: MediaSession.Controller = mock()
 
-        state = BrowserStateReducer.reduce(
-            state,
-            MediaSessionAction.ActivatedMediaSessionAction(
-                "test-tab",
-                mediaSessionController,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                MediaSessionAction.ActivatedMediaSessionAction(
+                    "test-tab",
+                    mediaSessionController,
+                ),
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            MediaSessionAction.UpdateMediaMutedAction(
-                "test-tab",
-                true,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                MediaSessionAction.UpdateMediaMutedAction(
+                    "test-tab",
+                    true,
+                ),
+            )
 
         val mediaSessionState: MediaSessionState? = state.findTab("test-tab")?.mediaSessionState
         assertNotNull(mediaSessionState)
@@ -235,31 +218,29 @@ class MediaSessionActionTest {
 
     @Test
     fun `UpdateMediaFullscreenAction updates media session state`() {
-        var state = BrowserState(
-            tabs = listOf(
-                createTab("https://www.mozilla.org", id = "test-tab"),
-            ),
-        )
+        var state = BrowserState(tabs = listOf(createTab("https://www.mozilla.org", id = "test-tab")))
 
         val mediaSessionController: MediaSession.Controller = mock()
         val elementMetadata: MediaSession.ElementMetadata = mock()
 
-        state = BrowserStateReducer.reduce(
-            state,
-            MediaSessionAction.ActivatedMediaSessionAction(
-                "test-tab",
-                mediaSessionController,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                MediaSessionAction.ActivatedMediaSessionAction(
+                    "test-tab",
+                    mediaSessionController,
+                ),
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            MediaSessionAction.UpdateMediaFullscreenAction(
-                "test-tab",
-                true,
-                elementMetadata,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                MediaSessionAction.UpdateMediaFullscreenAction(
+                    "test-tab",
+                    true,
+                    elementMetadata,
+                ),
+            )
 
         val mediaSessionState: MediaSessionState? = state.findTab("test-tab")?.mediaSessionState
         assertNotNull(mediaSessionState)
@@ -270,33 +251,31 @@ class MediaSessionActionTest {
 
     @Test
     fun `updates are ignore if media session is not activated`() {
-        var state = BrowserState(
-            tabs = listOf(
-                createTab("https://www.mozilla.org", id = "test-tab"),
-            ),
-        )
+        var state = BrowserState(tabs = listOf(createTab("https://www.mozilla.org", id = "test-tab")))
 
         val elementMetadata: MediaSession.ElementMetadata = mock()
 
-        state = BrowserStateReducer.reduce(
-            state,
-            MediaSessionAction.UpdateMediaFullscreenAction(
-                "test-tab",
-                true,
-                elementMetadata,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                MediaSessionAction.UpdateMediaFullscreenAction(
+                    "test-tab",
+                    true,
+                    elementMetadata,
+                ),
+            )
 
         val mediaSessionState: MediaSessionState? = state.findTab("test-tab")?.mediaSessionState
         assertNull(mediaSessionState)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            MediaSessionAction.UpdateMediaMutedAction(
-                "test-tab",
-                true,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                MediaSessionAction.UpdateMediaMutedAction(
+                    "test-tab",
+                    true,
+                ),
+            )
         assertNull(mediaSessionState)
     }
 }

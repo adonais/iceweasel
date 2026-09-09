@@ -7,8 +7,6 @@ ChromeUtils.defineESModuleGetters(this, {
   Management: "resource://gre/modules/Extension.sys.mjs",
 });
 
-AddonTestUtils.init(this);
-AddonTestUtils.overrideCertDB();
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "42");
 
 add_setup(() => {

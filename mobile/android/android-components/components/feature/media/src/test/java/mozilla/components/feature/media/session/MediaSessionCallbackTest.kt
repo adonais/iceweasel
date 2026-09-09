@@ -62,11 +62,12 @@ class MediaSessionCallbackTest {
         controller: MediaSession.Controller,
         playbackState: MediaSession.PlaybackState,
     ): BrowserStore {
-        val tab = createTab(
-            url = "https://www.mozilla.org",
-            id = "test-tab",
-            mediaSessionState = MediaSessionState(controller, playbackState = playbackState),
-        )
+        val tab =
+            createTab(
+                url = "https://www.mozilla.org",
+                id = "test-tab",
+                mediaSessionState = MediaSessionState(controller, playbackState = playbackState),
+            )
         return BrowserStore(BrowserState(tabs = listOf(tab), selectedTabId = tab.id))
     }
 }

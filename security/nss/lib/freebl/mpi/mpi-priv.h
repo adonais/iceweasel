@@ -85,7 +85,7 @@ extern const float s_logv_2[];
 
 #define MP_MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MP_MAX(a, b) (((a) > (b)) ? (a) : (b))
-#define MP_HOWMANY(a, b) (((a) + (b)-1) / (b))
+#define MP_HOWMANY(a, b) (((a) + (b) - 1) / (b))
 #define MP_ROUNDUP(a, b) (MP_HOWMANY(a, b) * (b))
 
 /* }}} */
@@ -150,7 +150,7 @@ mp_err s_mp_invmod_even_m(const mp_int *a, const mp_int *m, mp_int *c);
 
 #ifdef NSS_USE_COMBA
 PR_STATIC_ASSERT(sizeof(mp_digit) == 8);
-#define IS_POWER_OF_2(a) ((a) && !((a) & ((a)-1)))
+#define IS_POWER_OF_2(a) ((a) && !((a) & ((a) - 1)))
 
 void s_mp_mul_comba_4(const mp_int *A, const mp_int *B, mp_int *C);
 void s_mp_mul_comba_8(const mp_int *A, const mp_int *B, mp_int *C);

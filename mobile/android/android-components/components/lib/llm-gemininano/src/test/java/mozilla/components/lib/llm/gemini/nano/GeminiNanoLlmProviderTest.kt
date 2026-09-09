@@ -6,6 +6,7 @@ package mozilla.components.lib.llm.gemini.nano
 
 import com.google.mlkit.genai.common.DownloadStatus
 import com.google.mlkit.genai.common.FeatureStatus
+import kotlin.test.assertIs
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -16,15 +17,15 @@ import mozilla.components.concept.llm.LocalLlmProvider.State
 import mozilla.components.lib.llm.gemini.nano.fakes.FakeGenerativeModel
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import kotlin.test.assertIs
 
 class GeminiNanoLlmProviderTest {
     @Test
     fun `provider goes into an unavailable state if model is unavailable`() = runTest {
-        val fakeModel = FakeGenerativeModel(
-            status = sequenceOf(FeatureStatus.UNAVAILABLE),
-            responseMap = mapOf(),
-        )
+        val fakeModel =
+            FakeGenerativeModel(
+                status = sequenceOf(FeatureStatus.UNAVAILABLE),
+                responseMap = mapOf(),
+            )
 
         val provider = GeminiNanoLlmProvider({ fakeModel })
         assertEquals(State.Idle, provider.state.value)
@@ -34,10 +35,11 @@ class GeminiNanoLlmProviderTest {
 
     @Test
     fun `provider goes into an ReadyToDownload state if model is available but not downloaded`() = runTest {
-        val fakeModel = FakeGenerativeModel(
-            status = sequenceOf(FeatureStatus.DOWNLOADABLE),
-            responseMap = mapOf(),
-        )
+        val fakeModel =
+            FakeGenerativeModel(
+                status = sequenceOf(FeatureStatus.DOWNLOADABLE),
+                responseMap = mapOf(),
+            )
 
         val provider = GeminiNanoLlmProvider({ fakeModel })
         assertEquals(State.Idle, provider.state.value)
@@ -47,10 +49,11 @@ class GeminiNanoLlmProviderTest {
 
     @Test
     fun `provider transitions into a ready state state if model is available and downloaded`() = runTest {
-        val fakeModel = FakeGenerativeModel(
-            status = sequenceOf(FeatureStatus.AVAILABLE),
-            responseMap = mapOf(),
-        )
+        val fakeModel =
+            FakeGenerativeModel(
+                status = sequenceOf(FeatureStatus.AVAILABLE),
+                responseMap = mapOf(),
+            )
 
         val provider = GeminiNanoLlmProvider({ fakeModel })
         assertEquals(State.Idle, provider.state.value)
@@ -60,10 +63,11 @@ class GeminiNanoLlmProviderTest {
 
     @Test
     fun `provider transitions into a downloading state state if model is downloading`() = runTest {
-        val fakeModel = FakeGenerativeModel(
-            status = sequenceOf(FeatureStatus.DOWNLOADING),
-            responseMap = mapOf(),
-        )
+        val fakeModel =
+            FakeGenerativeModel(
+                status = sequenceOf(FeatureStatus.DOWNLOADING),
+                responseMap = mapOf(),
+            )
 
         val provider = GeminiNanoLlmProvider({ fakeModel })
         assertEquals(State.Idle, provider.state.value)
@@ -74,16 +78,18 @@ class GeminiNanoLlmProviderTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `that we can download a model`() = runTest {
-        val fakeModel = FakeGenerativeModel(
-            downloadFlow = flowOf(
-                DownloadStatus.DownloadStarted(100L),
-                DownloadStatus.DownloadProgress(10),
-                DownloadStatus.DownloadProgress(90),
-                DownloadStatus.DownloadCompleted,
-            ),
-            status = sequenceOf(FeatureStatus.DOWNLOADABLE),
-            responseMap = mapOf(),
-        )
+        val fakeModel =
+            FakeGenerativeModel(
+                downloadFlow =
+                    flowOf(
+                        DownloadStatus.DownloadStarted(100L),
+                        DownloadStatus.DownloadProgress(10),
+                        DownloadStatus.DownloadProgress(90),
+                        DownloadStatus.DownloadCompleted,
+                    ),
+                status = sequenceOf(FeatureStatus.DOWNLOADABLE),
+                responseMap = mapOf(),
+            )
 
         val provider = GeminiNanoLlmProvider({ fakeModel })
 

@@ -10,10 +10,12 @@ import android.widget.TextView
 import androidx.core.view.isGone
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
-import org.mozilla.fenix.R
 import kotlin.properties.Delegates
+import org.mozilla.fenix.R
 
-class AccountAuthErrorPreference @JvmOverloads constructor(
+class AccountAuthErrorPreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     attributeSetId: Int = android.R.attr.preferenceStyle,

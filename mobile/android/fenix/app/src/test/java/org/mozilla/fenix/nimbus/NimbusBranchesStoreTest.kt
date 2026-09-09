@@ -25,27 +25,29 @@ class NimbusBranchesStoreTest {
     }
 
     @Test
-    fun `GIVEN a new branch and selected branch WHEN UpdateBranches action is dispatched THEN state is updated`() = runTest {
-        assertTrue(nimbusBranchesStore.state.isLoading)
+    fun `GIVEN a new branch and selected branch WHEN UpdateBranches action is dispatched THEN state is updated`() =
+        runTest {
+            assertTrue(nimbusBranchesStore.state.isLoading)
 
-        val branches: List<Branch> = listOf(mockk(), mockk())
-        val selectedBranch = "control"
+            val branches: List<Branch> = listOf(mockk(), mockk())
+            val selectedBranch = "control"
 
-        nimbusBranchesStore.dispatch(NimbusBranchesAction.UpdateBranches(branches, selectedBranch))
+            nimbusBranchesStore.dispatch(NimbusBranchesAction.UpdateBranches(branches, selectedBranch))
 
-        assertEquals(branches, nimbusBranchesStore.state.branches)
-        assertEquals(selectedBranch, nimbusBranchesStore.state.selectedBranch)
-        assertFalse(nimbusBranchesStore.state.isLoading)
-    }
+            assertEquals(branches, nimbusBranchesStore.state.branches)
+            assertEquals(selectedBranch, nimbusBranchesStore.state.selectedBranch)
+            assertFalse(nimbusBranchesStore.state.isLoading)
+        }
 
     @Test
-    fun `GIVEN a new selected branch WHEN UpdateSelectedBranch action is dispatched THEN selectedBranch state is updated`() = runTest {
-        assertEquals("", nimbusBranchesStore.state.selectedBranch)
+    fun `GIVEN a new selected branch WHEN UpdateSelectedBranch action is dispatched THEN selectedBranch state is updated`() =
+        runTest {
+            assertEquals("", nimbusBranchesStore.state.selectedBranch)
 
-        val selectedBranch = "control"
+            val selectedBranch = "control"
 
-        nimbusBranchesStore.dispatch(NimbusBranchesAction.UpdateSelectedBranch(selectedBranch))
+            nimbusBranchesStore.dispatch(NimbusBranchesAction.UpdateSelectedBranch(selectedBranch))
 
-        assertEquals(selectedBranch, nimbusBranchesStore.state.selectedBranch)
-    }
+            assertEquals(selectedBranch, nimbusBranchesStore.state.selectedBranch)
+        }
 }

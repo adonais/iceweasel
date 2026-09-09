@@ -82,4 +82,26 @@ interface nsIMacShellService : nsIShellService
    *         false on macOS older than 12.
    */
   boolean isDefaultHandlerAWebBrowserFor(in AString aFileExtensionOrProtocol);
+
+  /*
+   * Sets the current application as a Login Item
+   *
+   * @return True if the application was successfully set up to
+   *         launch on OS login.
+   */
+  boolean enableLaunchOnLogin();
+
+  /*
+   * Removes the current application from the list of Login Items
+   *
+   * @return True if the application was successfully removed.
+   */
+  boolean disableLaunchOnLogin();
+
+  /*
+   * Checks whether the current application is in the list of Login Items
+   *
+   * @return True if the application is a login item
+   */
+  boolean getLaunchOnLoginEnabled();
 };

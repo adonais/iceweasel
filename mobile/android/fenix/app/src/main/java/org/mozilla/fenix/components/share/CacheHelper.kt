@@ -11,9 +11,7 @@ import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileOutputStream
 
-/**
- * Helper class for caching bitmaps in the app's cache directory and retrieving their content URIs.
- */
+/** Helper class for caching bitmaps in the app's cache directory and retrieving their content URIs. */
 class CacheHelper {
 
     /**

@@ -7,13 +7,11 @@ package org.mozilla.fenix.settings.settingssearch
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
 import com.google.protobuf.InvalidProtocolBufferException
-import org.mozilla.fenix.settings.datastore.RecentSettingsSearches
 import java.io.InputStream
 import java.io.OutputStream
+import org.mozilla.fenix.settings.datastore.RecentSettingsSearches
 
-/**
- * DataStore serializer for Recent Settings Searches.
- */
+/** DataStore serializer for Recent Settings Searches. */
 object RecentSettingsSearchesSerializer : Serializer<RecentSettingsSearches> {
     override val defaultValue: RecentSettingsSearches = RecentSettingsSearches.getDefaultInstance()
 

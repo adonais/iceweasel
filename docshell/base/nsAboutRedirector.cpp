@@ -219,6 +219,8 @@ static const RedirEntry kRedirMap[] = {
 #  endif
          nsIAboutModule::ALLOW_SCRIPT},
 #endif
+    {"sync-log", "chrome://global/content/aboutSyncLog.html",
+     nsIAboutModule::ALLOW_SCRIPT},
     {"telemetry", "chrome://global/content/aboutTelemetry.xhtml",
      nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::IS_SECURE_CHROME_UI},
 #ifndef MOZ_WIDGET_ANDROID

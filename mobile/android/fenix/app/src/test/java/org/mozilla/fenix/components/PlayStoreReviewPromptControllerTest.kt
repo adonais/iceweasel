@@ -16,6 +16,11 @@ import com.google.android.gms.tasks.OnSuccessListener
 import com.google.android.gms.tasks.Task
 import com.google.android.play.core.review.ReviewInfo
 import com.google.android.play.core.review.ReviewManager
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.Executor
+import kotlin.test.assertIs
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import mozilla.components.support.test.assertUnused
@@ -35,45 +40,40 @@ import org.mozilla.fenix.components.ReviewPromptAttemptResult.NotDisplayed
 import org.mozilla.fenix.components.ReviewPromptAttemptResult.Unknown
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.robolectric.RobolectricTestRunner
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.concurrent.Executor
-import kotlin.test.assertIs
 
 @RunWith(RobolectricTestRunner::class)
 class PlayStoreReviewPromptControllerTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     @Test
-    fun `GIVEN activity is resumed WHEN tryPromptReview is called THEN launches review flow`() =
-        runTest {
-            val reviewManager = SuccessfulReviewManager(testContext)
-            val controller = PlayStoreReviewPromptController(
+    fun `GIVEN activity is resumed WHEN tryPromptReview is called THEN launches review flow`() = runTest {
+        val reviewManager = SuccessfulReviewManager(testContext)
+        val controller =
+            PlayStoreReviewPromptController(
                 manager = reviewManager,
                 numberOfAppLaunches = { 5 },
             )
-            launchActivity<ComponentActivity>().use { scenario ->
-                scenario.moveToState(Lifecycle.State.RESUMED)
-                scenario.onActivity { activity ->
-                    activity.lifecycleScope.launch {
-                        controller.tryPromptReview(activity)
+        launchActivity<ComponentActivity>().use { scenario ->
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            scenario.onActivity { activity ->
+                activity.lifecycleScope.launch {
+                    controller.tryPromptReview(activity)
 
-                        assertTrue(reviewManager.promptHasBeenRequested)
-                    }
+                    assertTrue(reviewManager.promptHasBeenRequested)
                 }
             }
         }
+    }
 
     @Test
     fun `GIVEN activity is destroyed WHEN tryPromptReview is called THEN doesn't launch review flow`() = runTest {
         val reviewManager = SuccessfulReviewManager(testContext)
-        val controller = PlayStoreReviewPromptController(
-            manager = reviewManager,
-            numberOfAppLaunches = { 5 },
-        )
+        val controller =
+            PlayStoreReviewPromptController(
+                manager = reviewManager,
+                numberOfAppLaunches = { 5 },
+            )
         launchActivity<ComponentActivity>().use { scenario ->
             scenario.moveToState(Lifecycle.State.RESUMED)
             scenario.onActivity { activity ->
@@ -90,10 +90,11 @@ class PlayStoreReviewPromptControllerTest {
 
     @Test
     fun `WHEN the reviews API fails THEN returns Error result`() = runTest {
-        val controller = PlayStoreReviewPromptController(
-            manager = FailingReviewManager(),
-            numberOfAppLaunches = { 5 },
-        )
+        val controller =
+            PlayStoreReviewPromptController(
+                manager = FailingReviewManager(),
+                numberOfAppLaunches = { 5 },
+            )
         launchActivity<ComponentActivity>().use { scenario ->
             scenario.onActivity { activity ->
                 activity.lifecycleScope.launch {
@@ -196,23 +197,29 @@ private class SuccessfulReviewManager(context: Context) : ReviewManager {
 
 private class FailingReviewManager : ReviewManager {
     override fun requestReviewFlow() = FailedTask<ReviewInfo>()
+
     override fun launchReviewFlow(activity: Activity, reviewInfo: ReviewInfo) = assertUnused()
 }
 
 private class SuccessfulTask<T>(private val result: T) : CompleteTask<T>() {
     override fun isSuccessful() = true
+
     override fun getResult() = result
+
     override fun <X : Throwable?> getResult(exceptionType: Class<X>) = result
+
     override fun getException() = null
 }
 
 private class FailedTask<T> : CompleteTask<T>() {
     override fun isSuccessful() = false
+
     override fun getException() = RuntimeException("Unexpected exception.")
 }
 
 private open class CompleteTask<T> : FakeGmsTask<T>() {
     override fun isComplete() = true
+
     override fun isCanceled() = false
 
     override fun addOnCompleteListener(activity: Activity, listener: OnCompleteListener<T>): Task<T> {
@@ -228,15 +235,26 @@ private class VoidTask : FakeGmsTask<Void?>()
 
 private open class FakeGmsTask<T> : Task<T>() {
     override fun isSuccessful(): Boolean = assertUnused()
+
     override fun isComplete(): Boolean = assertUnused()
+
     override fun isCanceled(): Boolean = assertUnused()
+
     override fun getResult(): T? = assertUnused()
+
     override fun <X : Throwable?> getResult(exceptionType: Class<X>): T? = assertUnused()
+
     override fun getException(): Exception? = assertUnused()
+
     override fun addOnSuccessListener(listener: OnSuccessListener<in T>): Task<T> = assertUnused()
+
     override fun addOnSuccessListener(executor: Executor, listener: OnSuccessListener<in T>): Task<T> = assertUnused()
+
     override fun addOnSuccessListener(activity: Activity, listener: OnSuccessListener<in T>): Task<T> = assertUnused()
+
     override fun addOnFailureListener(listener: OnFailureListener): Task<T> = assertUnused()
+
     override fun addOnFailureListener(executor: Executor, listener: OnFailureListener): Task<T> = assertUnused()
+
     override fun addOnFailureListener(activity: Activity, listener: OnFailureListener): Task<T> = assertUnused()
 }

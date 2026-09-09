@@ -30,130 +30,140 @@ class DefaultControllerTest {
     private val testDispatcher = StandardTestDispatcher()
 
     @Test
-    fun `update view only when no account available`() = runTest(testDispatcher) {
-        val controller = DefaultController(
-            storage,
-            accountManager,
-            view,
-            coroutineContext,
-            testDispatcher,
-        )
+    fun `update view only when no account available`() =
+        runTest(testDispatcher) {
+            val controller =
+                DefaultController(
+                    storage,
+                    accountManager,
+                    view,
+                    coroutineContext,
+                    testDispatcher,
+                )
 
-        controller.refreshSyncedTabs()
-        testDispatcher.scheduler.advanceUntilIdle()
+            controller.refreshSyncedTabs()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(view).stopLoading()
+            verify(view).stopLoading()
 
-        verifyNoMoreInteractions(view)
-    }
-
-    @Test
-    fun `notify if there are no other devices synced`() = runTest(testDispatcher) {
-        val controller = DefaultController(
-            storage,
-            accountManager,
-            view,
-            coroutineContext,
-            testDispatcher,
-        )
-
-        val account: OAuthAccount = mock()
-        val constellation: DeviceConstellation = mock()
-        val state: ConstellationState = mock()
-
-        `when`(accountManager.authenticatedAccount()).thenReturn(account)
-        `when`(account.deviceConstellation()).thenReturn(constellation)
-        `when`(constellation.state()).thenReturn(state)
-        `when`(state.otherDevices).thenReturn(emptyList())
-
-        `when`(storage.getSyncedDeviceTabs()).thenReturn(emptyList())
-
-        controller.refreshSyncedTabs()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        verify(view).onError(ErrorType.MULTIPLE_DEVICES_UNAVAILABLE)
-    }
+            verifyNoMoreInteractions(view)
+        }
 
     @Test
-    fun `notify if there are no tabs from other devices to sync`() = runTest(testDispatcher) {
-        val controller = DefaultController(
-            storage,
-            accountManager,
-            view,
-            coroutineContext,
-            testDispatcher,
-        )
-        val account: OAuthAccount = mock()
-        val constellation: DeviceConstellation = mock()
-        val state: ConstellationState = mock()
+    fun `notify if there are no other devices synced`() =
+        runTest(testDispatcher) {
+            val controller =
+                DefaultController(
+                    storage,
+                    accountManager,
+                    view,
+                    coroutineContext,
+                    testDispatcher,
+                )
 
-        `when`(accountManager.authenticatedAccount()).thenReturn(account)
-        `when`(account.deviceConstellation()).thenReturn(constellation)
-        `when`(constellation.state()).thenReturn(state)
-        `when`(state.otherDevices).thenReturn(listOf(mock()))
+            val account: OAuthAccount = mock()
+            val constellation: DeviceConstellation = mock()
+            val state: ConstellationState = mock()
 
-        `when`(storage.getSyncedDeviceTabs()).thenReturn(emptyList())
+            `when`(accountManager.authenticatedAccount()).thenReturn(account)
+            `when`(account.deviceConstellation()).thenReturn(constellation)
+            `when`(constellation.state()).thenReturn(state)
+            `when`(state.otherDevices).thenReturn(emptyList())
 
-        controller.refreshSyncedTabs()
-        testDispatcher.scheduler.advanceUntilIdle()
+            `when`(storage.getSyncedDeviceTabs()).thenReturn(emptyList())
 
-        verify(view, never()).onError(ErrorType.MULTIPLE_DEVICES_UNAVAILABLE)
-        verify(view).onError(ErrorType.NO_TABS_AVAILABLE)
-    }
+            controller.refreshSyncedTabs()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-    @Test
-    fun `display synced tabs`() = runTest(testDispatcher) {
-        val controller = DefaultController(
-            storage,
-            accountManager,
-            view,
-            coroutineContext,
-            testDispatcher,
-        )
-
-        val account: OAuthAccount = mock()
-        val constellation: DeviceConstellation = mock()
-        val state: ConstellationState = mock()
-        val syncedDeviceTabs = SyncedDeviceTabs(mock(), listOf(mock()))
-        val listOfSyncedDeviceTabs = listOf(syncedDeviceTabs)
-
-        `when`(accountManager.authenticatedAccount()).thenReturn(account)
-        `when`(account.deviceConstellation()).thenReturn(constellation)
-        `when`(constellation.state()).thenReturn(state)
-        `when`(state.otherDevices).thenReturn(listOf(mock()))
-
-        `when`(storage.getSyncedDeviceTabs()).thenReturn(listOfSyncedDeviceTabs)
-
-        controller.refreshSyncedTabs()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        verify(view, never()).onError(ErrorType.MULTIPLE_DEVICES_UNAVAILABLE)
-        verify(view, never()).onError(ErrorType.NO_TABS_AVAILABLE)
-        verify(view).displaySyncedTabs(listOfSyncedDeviceTabs)
-    }
+            verify(view).onError(ErrorType.MULTIPLE_DEVICES_UNAVAILABLE)
+        }
 
     @Test
-    fun `WHEN syncAccount is called THEN view is loading, devices are refreshed, and sync started`() = runTest(testDispatcher) {
-        val controller = DefaultController(
-            storage,
-            accountManager,
-            view,
-            coroutineContext,
-            testDispatcher,
-        )
+    fun `notify if there are no tabs from other devices to sync`() =
+        runTest(testDispatcher) {
+            val controller =
+                DefaultController(
+                    storage,
+                    accountManager,
+                    view,
+                    coroutineContext,
+                    testDispatcher,
+                )
+            val account: OAuthAccount = mock()
+            val constellation: DeviceConstellation = mock()
+            val state: ConstellationState = mock()
 
-        val account: OAuthAccount = mock()
-        val constellation: DeviceConstellation = mock()
+            `when`(accountManager.authenticatedAccount()).thenReturn(account)
+            `when`(account.deviceConstellation()).thenReturn(constellation)
+            `when`(constellation.state()).thenReturn(state)
+            `when`(state.otherDevices).thenReturn(listOf(mock()))
 
-        `when`(accountManager.authenticatedAccount()).thenReturn(account)
-        `when`(account.deviceConstellation()).thenReturn(constellation)
-        `when`(constellation.refreshDevices()).thenReturn(true)
+            `when`(storage.getSyncedDeviceTabs()).thenReturn(emptyList())
 
-        controller.syncAccount()
-        testDispatcher.scheduler.advanceUntilIdle()
+            controller.refreshSyncedTabs()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(view).startLoading()
-        verify(constellation).refreshDevices()
-        verify(accountManager).syncNow(SyncReason.User, true, listOf(SyncEngine.Tabs))
-    }
+            verify(view, never()).onError(ErrorType.MULTIPLE_DEVICES_UNAVAILABLE)
+            verify(view).onError(ErrorType.NO_TABS_AVAILABLE)
+        }
+
+    @Test
+    fun `display synced tabs`() =
+        runTest(testDispatcher) {
+            val controller =
+                DefaultController(
+                    storage,
+                    accountManager,
+                    view,
+                    coroutineContext,
+                    testDispatcher,
+                )
+
+            val account: OAuthAccount = mock()
+            val constellation: DeviceConstellation = mock()
+            val state: ConstellationState = mock()
+            val syncedDeviceTabs = SyncedDeviceTabs(mock(), listOf(mock()))
+            val listOfSyncedDeviceTabs = listOf(syncedDeviceTabs)
+
+            `when`(accountManager.authenticatedAccount()).thenReturn(account)
+            `when`(account.deviceConstellation()).thenReturn(constellation)
+            `when`(constellation.state()).thenReturn(state)
+            `when`(state.otherDevices).thenReturn(listOf(mock()))
+
+            `when`(storage.getSyncedDeviceTabs()).thenReturn(listOfSyncedDeviceTabs)
+
+            controller.refreshSyncedTabs()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(view, never()).onError(ErrorType.MULTIPLE_DEVICES_UNAVAILABLE)
+            verify(view, never()).onError(ErrorType.NO_TABS_AVAILABLE)
+            verify(view).displaySyncedTabs(listOfSyncedDeviceTabs)
+        }
+
+    @Test
+    fun `WHEN syncAccount is called THEN view is loading, devices are refreshed, and sync started`() =
+        runTest(testDispatcher) {
+            val controller =
+                DefaultController(
+                    storage,
+                    accountManager,
+                    view,
+                    coroutineContext,
+                    testDispatcher,
+                )
+
+            val account: OAuthAccount = mock()
+            val constellation: DeviceConstellation = mock()
+
+            `when`(accountManager.authenticatedAccount()).thenReturn(account)
+            `when`(account.deviceConstellation()).thenReturn(constellation)
+            `when`(constellation.refreshDevices()).thenReturn(true)
+
+            controller.syncAccount()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(view).startLoading()
+            verify(constellation).refreshDevices()
+            verify(accountManager).syncNow(SyncReason.User, true, listOf(SyncEngine.Tabs))
+        }
 }

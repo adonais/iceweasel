@@ -30,7 +30,7 @@ TEST_F(SecItemAllocTest, AllocItemHeapNullItem) {
 // AllocItem with an existing item: allocates only the data buffer.
 TEST_F(SecItemAllocTest, AllocItemHeapExistingItem) {
   SECItem item = {siBuffer, nullptr, 0};
-  SECItem *result = SECITEM_AllocItem(nullptr, &item, 8);
+  SECItem* result = SECITEM_AllocItem(nullptr, &item, 8);
   ASSERT_EQ(&item, result);
   EXPECT_EQ(8U, item.len);
   EXPECT_TRUE(item.data);
@@ -49,7 +49,7 @@ TEST_F(SecItemAllocTest, AllocItemZeroLen) {
 TEST_F(SecItemAllocTest, AllocItemArenaNullItem) {
   ScopedPLArenaPool arena(PORT_NewArena(4096));
   ASSERT_TRUE(arena);
-  SECItem *item = SECITEM_AllocItem(arena.get(), nullptr, 12);
+  SECItem* item = SECITEM_AllocItem(arena.get(), nullptr, 12);
   ASSERT_TRUE(item);
   EXPECT_EQ(12U, item->len);
   EXPECT_TRUE(item->data);
@@ -61,7 +61,7 @@ TEST_F(SecItemAllocTest, AllocItemArenaExistingItem) {
   ScopedPLArenaPool arena(PORT_NewArena(4096));
   ASSERT_TRUE(arena);
   SECItem item = {siBuffer, nullptr, 0};
-  SECItem *result = SECITEM_AllocItem(arena.get(), &item, 7);
+  SECItem* result = SECITEM_AllocItem(arena.get(), &item, 7);
   ASSERT_EQ(&item, result);
   EXPECT_EQ(7U, item.len);
   EXPECT_TRUE(item.data);
@@ -128,7 +128,7 @@ TEST_F(SecItemReallocTest, ReallocV2ShrinkArena) {
   ASSERT_TRUE(arena);
   SECItem item = {siBuffer, nullptr, 0};
   ASSERT_EQ(SECSuccess, SECITEM_ReallocItemV2(arena.get(), &item, 16));
-  unsigned char *orig_ptr = item.data;
+  unsigned char* orig_ptr = item.data;
   ASSERT_EQ(SECSuccess, SECITEM_ReallocItemV2(arena.get(), &item, 4));
   EXPECT_EQ(4U, item.len);
   EXPECT_EQ(orig_ptr, item.data);  // still the same block
@@ -166,7 +166,7 @@ TEST_F(SecItemReallocTest, ReallocV2ToZero) {
 TEST_F(SecItemReallocTest, ReallocV2SameSizeNoOp) {
   StackSECItem item;
   ASSERT_EQ(SECSuccess, SECITEM_ReallocItemV2(nullptr, &item, 8));
-  unsigned char *ptr = item.data;
+  unsigned char* ptr = item.data;
   ASSERT_EQ(SECSuccess, SECITEM_ReallocItemV2(nullptr, &item, 8));
   EXPECT_EQ(8U, item.len);
   EXPECT_EQ(ptr, item.data);
@@ -230,15 +230,15 @@ class SecItemCompareTest : public ::testing::Test {};
 
 TEST_F(SecItemCompareTest, CompareEqualItems) {
   const uint8_t data[] = {1, 2, 3};
-  SECItem a = {siBuffer, const_cast<uint8_t *>(data), sizeof(data)};
-  SECItem b = {siBuffer, const_cast<uint8_t *>(data), sizeof(data)};
+  SECItem a = {siBuffer, const_cast<uint8_t*>(data), sizeof(data)};
+  SECItem b = {siBuffer, const_cast<uint8_t*>(data), sizeof(data)};
   EXPECT_EQ(SECEqual, SECITEM_CompareItem(&a, &b));
 }
 
 // Same pointer: short-circuits to SECEqual without touching data.
 TEST_F(SecItemCompareTest, CompareSamePointer) {
   const uint8_t data[] = {1, 2, 3};
-  SECItem a = {siBuffer, const_cast<uint8_t *>(data), sizeof(data)};
+  SECItem a = {siBuffer, const_cast<uint8_t*>(data), sizeof(data)};
   EXPECT_EQ(SECEqual, SECITEM_CompareItem(&a, &a));
 }
 
@@ -250,29 +250,29 @@ TEST_F(SecItemCompareTest, CompareBothEmpty) {
 
 TEST_F(SecItemCompareTest, CompareNullItemA) {
   const uint8_t data[] = {1};
-  SECItem b = {siBuffer, const_cast<uint8_t *>(data), sizeof(data)};
+  SECItem b = {siBuffer, const_cast<uint8_t*>(data), sizeof(data)};
   EXPECT_EQ(SECLessThan, SECITEM_CompareItem(nullptr, &b));
 }
 
 TEST_F(SecItemCompareTest, CompareNullItemB) {
   const uint8_t data[] = {1};
-  SECItem a = {siBuffer, const_cast<uint8_t *>(data), sizeof(data)};
+  SECItem a = {siBuffer, const_cast<uint8_t*>(data), sizeof(data)};
   EXPECT_EQ(SECGreaterThan, SECITEM_CompareItem(&a, nullptr));
 }
 
 TEST_F(SecItemCompareTest, CompareLexLess) {
   const uint8_t d1[] = {1, 2, 3};
   const uint8_t d2[] = {1, 2, 4};
-  SECItem a = {siBuffer, const_cast<uint8_t *>(d1), sizeof(d1)};
-  SECItem b = {siBuffer, const_cast<uint8_t *>(d2), sizeof(d2)};
+  SECItem a = {siBuffer, const_cast<uint8_t*>(d1), sizeof(d1)};
+  SECItem b = {siBuffer, const_cast<uint8_t*>(d2), sizeof(d2)};
   EXPECT_EQ(SECLessThan, SECITEM_CompareItem(&a, &b));
 }
 
 TEST_F(SecItemCompareTest, CompareLexGreater) {
   const uint8_t d1[] = {1, 2, 4};
   const uint8_t d2[] = {1, 2, 3};
-  SECItem a = {siBuffer, const_cast<uint8_t *>(d1), sizeof(d1)};
-  SECItem b = {siBuffer, const_cast<uint8_t *>(d2), sizeof(d2)};
+  SECItem a = {siBuffer, const_cast<uint8_t*>(d1), sizeof(d1)};
+  SECItem b = {siBuffer, const_cast<uint8_t*>(d2), sizeof(d2)};
   EXPECT_EQ(SECGreaterThan, SECITEM_CompareItem(&a, &b));
 }
 
@@ -280,8 +280,8 @@ TEST_F(SecItemCompareTest, CompareLexGreater) {
 TEST_F(SecItemCompareTest, CompareSamePrefixShorter) {
   const uint8_t d1[] = {1, 2};
   const uint8_t d2[] = {1, 2, 3};
-  SECItem a = {siBuffer, const_cast<uint8_t *>(d1), sizeof(d1)};
-  SECItem b = {siBuffer, const_cast<uint8_t *>(d2), sizeof(d2)};
+  SECItem a = {siBuffer, const_cast<uint8_t*>(d1), sizeof(d1)};
+  SECItem b = {siBuffer, const_cast<uint8_t*>(d2), sizeof(d2)};
   EXPECT_EQ(SECLessThan, SECITEM_CompareItem(&a, &b));
 }
 
@@ -289,31 +289,31 @@ TEST_F(SecItemCompareTest, CompareSamePrefixShorter) {
 TEST_F(SecItemCompareTest, CompareSamePrefixLonger) {
   const uint8_t d1[] = {1, 2, 3};
   const uint8_t d2[] = {1, 2};
-  SECItem a = {siBuffer, const_cast<uint8_t *>(d1), sizeof(d1)};
-  SECItem b = {siBuffer, const_cast<uint8_t *>(d2), sizeof(d2)};
+  SECItem a = {siBuffer, const_cast<uint8_t*>(d1), sizeof(d1)};
+  SECItem b = {siBuffer, const_cast<uint8_t*>(d2), sizeof(d2)};
   EXPECT_EQ(SECGreaterThan, SECITEM_CompareItem(&a, &b));
 }
 
 TEST_F(SecItemCompareTest, ItemsAreEqualTrue) {
   const uint8_t data[] = {0xAB, 0xCD};
-  SECItem a = {siBuffer, const_cast<uint8_t *>(data), sizeof(data)};
-  SECItem b = {siBuffer, const_cast<uint8_t *>(data), sizeof(data)};
+  SECItem a = {siBuffer, const_cast<uint8_t*>(data), sizeof(data)};
+  SECItem b = {siBuffer, const_cast<uint8_t*>(data), sizeof(data)};
   EXPECT_EQ(PR_TRUE, SECITEM_ItemsAreEqual(&a, &b));
 }
 
 TEST_F(SecItemCompareTest, ItemsAreEqualDifferentLen) {
   const uint8_t d1[] = {1, 2, 3};
   const uint8_t d2[] = {1, 2};
-  SECItem a = {siBuffer, const_cast<uint8_t *>(d1), sizeof(d1)};
-  SECItem b = {siBuffer, const_cast<uint8_t *>(d2), sizeof(d2)};
+  SECItem a = {siBuffer, const_cast<uint8_t*>(d1), sizeof(d1)};
+  SECItem b = {siBuffer, const_cast<uint8_t*>(d2), sizeof(d2)};
   EXPECT_EQ(PR_FALSE, SECITEM_ItemsAreEqual(&a, &b));
 }
 
 TEST_F(SecItemCompareTest, ItemsAreEqualSameLenDiffData) {
   const uint8_t d1[] = {1, 2, 3};
   const uint8_t d2[] = {1, 2, 4};
-  SECItem a = {siBuffer, const_cast<uint8_t *>(d1), sizeof(d1)};
-  SECItem b = {siBuffer, const_cast<uint8_t *>(d2), sizeof(d2)};
+  SECItem a = {siBuffer, const_cast<uint8_t*>(d1), sizeof(d1)};
+  SECItem b = {siBuffer, const_cast<uint8_t*>(d2), sizeof(d2)};
   EXPECT_EQ(PR_FALSE, SECITEM_ItemsAreEqual(&a, &b));
 }
 
@@ -341,7 +341,7 @@ TEST_F(SecItemCompareTest, ItemsAreEqualBothNullDataNonzeroLen) {
 // Same nonzero len, one data pointer NULL: not equal.
 TEST_F(SecItemCompareTest, ItemsAreEqualOneNullDataNonzeroLen) {
   const uint8_t data[] = {1, 2, 3};
-  SECItem a = {siBuffer, const_cast<uint8_t *>(data), 3};
+  SECItem a = {siBuffer, const_cast<uint8_t*>(data), 3};
   SECItem b = {siBuffer, nullptr, 3};
   EXPECT_EQ(PR_FALSE, SECITEM_ItemsAreEqual(&a, &b));
 }
@@ -355,7 +355,7 @@ class SecItemCopyTest : public ::testing::Test {};
 // CopyItem: deep copy, original and copy are independent buffers.
 TEST_F(SecItemCopyTest, CopyItemHeap) {
   const uint8_t data[] = {0xDE, 0xAD, 0xBE, 0xEF};
-  SECItem from = {siBuffer, const_cast<uint8_t *>(data), sizeof(data)};
+  SECItem from = {siBuffer, const_cast<uint8_t*>(data), sizeof(data)};
   StackSECItem to;
   ASSERT_EQ(SECSuccess, SECITEM_CopyItem(nullptr, &to, &from));
   EXPECT_EQ(siBuffer, to.type);
@@ -368,7 +368,7 @@ TEST_F(SecItemCopyTest, CopyItemArena) {
   ScopedPLArenaPool arena(PORT_NewArena(4096));
   ASSERT_TRUE(arena);
   const uint8_t data[] = {0x01, 0x02};
-  SECItem from = {siBuffer, const_cast<uint8_t *>(data), sizeof(data)};
+  SECItem from = {siBuffer, const_cast<uint8_t*>(data), sizeof(data)};
   SECItem to = {siBuffer, nullptr, 0};
   ASSERT_EQ(SECSuccess, SECITEM_CopyItem(arena.get(), &to, &from));
   EXPECT_EQ(2U, to.len);
@@ -387,7 +387,7 @@ TEST_F(SecItemCopyTest, CopyItemZeroLen) {
 // data != NULL but len == 0: treated as empty, dest gets data=NULL, len=0.
 TEST_F(SecItemCopyTest, CopyItemNonNullDataZeroLen) {
   const uint8_t data[] = {0x01};
-  SECItem from = {siBuffer, const_cast<uint8_t *>(data), 0};
+  SECItem from = {siBuffer, const_cast<uint8_t*>(data), 0};
   StackSECItem to;
   ASSERT_EQ(SECSuccess, SECITEM_CopyItem(nullptr, &to, &from));
   EXPECT_EQ(0U, to.len);
@@ -406,7 +406,7 @@ TEST_F(SecItemCopyTest, CopyItemNullDataNonzeroLen) {
 // Non-siBuffer type is preserved in the copy.
 TEST_F(SecItemCopyTest, CopyItemTypePreserved) {
   const uint8_t data[] = {0x30};
-  SECItem from = {siDEROID, const_cast<uint8_t *>(data), sizeof(data)};
+  SECItem from = {siDEROID, const_cast<uint8_t*>(data), sizeof(data)};
   StackSECItem to;
   ASSERT_EQ(SECSuccess, SECITEM_CopyItem(nullptr, &to, &from));
   EXPECT_EQ(siDEROID, to.type);
@@ -424,7 +424,7 @@ TEST_F(SecItemCopyTest, CopyItemIndependence) {
 
 TEST_F(SecItemCopyTest, DupItemBasic) {
   const uint8_t data[] = {0xCA, 0xFE};
-  SECItem from = {siBuffer, const_cast<uint8_t *>(data), sizeof(data)};
+  SECItem from = {siBuffer, const_cast<uint8_t*>(data), sizeof(data)};
   ScopedSECItem dup(SECITEM_DupItem(&from));
   ASSERT_TRUE(dup);
   EXPECT_EQ(siBuffer, dup->type);
@@ -449,7 +449,7 @@ TEST_F(SecItemCopyTest, DupItemZeroLen) {
 
 TEST_F(SecItemCopyTest, DupItemTypePreserved) {
   const uint8_t data[] = {0x30};
-  SECItem from = {siDEROID, const_cast<uint8_t *>(data), sizeof(data)};
+  SECItem from = {siDEROID, const_cast<uint8_t*>(data), sizeof(data)};
   ScopedSECItem dup(SECITEM_DupItem(&from));
   ASSERT_TRUE(dup);
   EXPECT_EQ(siDEROID, dup->type);
@@ -469,8 +469,8 @@ TEST_F(SecItemCopyTest, ArenaDupItemWithArena) {
   ScopedPLArenaPool arena(PORT_NewArena(4096));
   ASSERT_TRUE(arena);
   const uint8_t data[] = {0x11, 0x22, 0x33};
-  SECItem from = {siBuffer, const_cast<uint8_t *>(data), sizeof(data)};
-  SECItem *dup = SECITEM_ArenaDupItem(arena.get(), &from);
+  SECItem from = {siBuffer, const_cast<uint8_t*>(data), sizeof(data)};
+  SECItem* dup = SECITEM_ArenaDupItem(arena.get(), &from);
   ASSERT_TRUE(dup);
   EXPECT_EQ(3U, dup->len);
   EXPECT_EQ(0, memcmp(dup->data, data, sizeof(data)));
@@ -480,7 +480,7 @@ TEST_F(SecItemCopyTest, ArenaDupItemWithArena) {
 // NULL arena: equivalent to DupItem.
 TEST_F(SecItemCopyTest, ArenaDupItemNullArena) {
   const uint8_t data[] = {0xAB};
-  SECItem from = {siBuffer, const_cast<uint8_t *>(data), sizeof(data)};
+  SECItem from = {siBuffer, const_cast<uint8_t*>(data), sizeof(data)};
   ScopedSECItem dup(SECITEM_ArenaDupItem(nullptr, &from));
   ASSERT_TRUE(dup);
   EXPECT_EQ(1U, dup->len);
@@ -502,7 +502,7 @@ class SecItemFreeTest : public ::testing::Test {};
 
 // freeit=PR_TRUE: frees both the data buffer and the struct itself.
 TEST_F(SecItemFreeTest, FreeItemFreeit) {
-  SECItem *item = SECITEM_AllocItem(nullptr, nullptr, 8);
+  SECItem* item = SECITEM_AllocItem(nullptr, nullptr, 8);
   ASSERT_TRUE(item);
   SECITEM_FreeItem(item, PR_TRUE);
   // item is now invalid; we just verify no crash occurred.
@@ -526,7 +526,7 @@ TEST_F(SecItemFreeTest, FreeItemNull) {
 // ZfreeItem: zeroes then frees the data buffer; freeit=PR_TRUE frees the
 // struct.
 TEST_F(SecItemFreeTest, ZfreeItemFreeit) {
-  SECItem *item = SECITEM_AllocItem(nullptr, nullptr, 8);
+  SECItem* item = SECITEM_AllocItem(nullptr, nullptr, 8);
   ASSERT_TRUE(item);
   memset(item->data, 0xAA, item->len);
   SECITEM_ZfreeItem(item, PR_TRUE);
@@ -557,7 +557,7 @@ class SecItemHashTest : public ::testing::Test {};
 // Same item hashed twice produces the same result.
 TEST_F(SecItemHashTest, HashConsistent) {
   const uint8_t data[] = {0x01, 0x02, 0x03, 0x04};
-  SECItem item = {siBuffer, const_cast<uint8_t *>(data), sizeof(data)};
+  SECItem item = {siBuffer, const_cast<uint8_t*>(data), sizeof(data)};
   EXPECT_EQ(SECITEM_Hash(&item), SECITEM_Hash(&item));
 }
 
@@ -565,8 +565,8 @@ TEST_F(SecItemHashTest, HashConsistent) {
 TEST_F(SecItemHashTest, HashDifferentItems) {
   const uint8_t d1[] = {0x01, 0x02, 0x03, 0x04};
   const uint8_t d2[] = {0x05, 0x06, 0x07, 0x08};
-  SECItem a = {siBuffer, const_cast<uint8_t *>(d1), sizeof(d1)};
-  SECItem b = {siBuffer, const_cast<uint8_t *>(d2), sizeof(d2)};
+  SECItem a = {siBuffer, const_cast<uint8_t*>(d1), sizeof(d1)};
+  SECItem b = {siBuffer, const_cast<uint8_t*>(d2), sizeof(d2)};
   EXPECT_NE(SECITEM_Hash(&a), SECITEM_Hash(&b));
 }
 
@@ -579,8 +579,8 @@ TEST_F(SecItemHashTest, HashEmpty) {
 // HashCompare delegates to ItemsAreEqual: returns non-zero for equal items.
 TEST_F(SecItemHashTest, HashCompareEqualItems) {
   const uint8_t data[] = {0xAB, 0xCD};
-  SECItem a = {siBuffer, const_cast<uint8_t *>(data), sizeof(data)};
-  SECItem b = {siBuffer, const_cast<uint8_t *>(data), sizeof(data)};
+  SECItem a = {siBuffer, const_cast<uint8_t*>(data), sizeof(data)};
+  SECItem b = {siBuffer, const_cast<uint8_t*>(data), sizeof(data)};
   EXPECT_NE(0, SECITEM_HashCompare(&a, &b));
 }
 
@@ -588,8 +588,8 @@ TEST_F(SecItemHashTest, HashCompareEqualItems) {
 TEST_F(SecItemHashTest, HashCompareUnequalItems) {
   const uint8_t d1[] = {0x01};
   const uint8_t d2[] = {0x02};
-  SECItem a = {siBuffer, const_cast<uint8_t *>(d1), sizeof(d1)};
-  SECItem b = {siBuffer, const_cast<uint8_t *>(d2), sizeof(d2)};
+  SECItem a = {siBuffer, const_cast<uint8_t*>(d1), sizeof(d1)};
+  SECItem b = {siBuffer, const_cast<uint8_t*>(d2), sizeof(d2)};
   EXPECT_EQ(0, SECITEM_HashCompare(&a, &b));
 }
 
@@ -603,7 +603,7 @@ class SecItemArrayTest : public ::testing::Test {};
 // AllocArray with NULL array: allocates the struct and a zero-filled items
 // array.
 TEST_F(SecItemArrayTest, AllocArrayHeapNullArray) {
-  SECItemArray *arr = SECITEM_AllocArray(nullptr, nullptr, 3);
+  SECItemArray* arr = SECITEM_AllocArray(nullptr, nullptr, 3);
   ASSERT_TRUE(arr);
   EXPECT_EQ(3U, arr->len);
   ASSERT_TRUE(arr->items);
@@ -617,7 +617,7 @@ TEST_F(SecItemArrayTest, AllocArrayHeapNullArray) {
 // AllocArray with existing array: allocates only the items buffer.
 TEST_F(SecItemArrayTest, AllocArrayHeapExistingArray) {
   SECItemArray arr = {nullptr, 0};
-  SECItemArray *result = SECITEM_AllocArray(nullptr, &arr, 2);
+  SECItemArray* result = SECITEM_AllocArray(nullptr, &arr, 2);
   ASSERT_EQ(&arr, result);
   EXPECT_EQ(2U, arr.len);
   ASSERT_TRUE(arr.items);
@@ -626,7 +626,7 @@ TEST_F(SecItemArrayTest, AllocArrayHeapExistingArray) {
 
 // len=0: items pointer is NULL.
 TEST_F(SecItemArrayTest, AllocArrayZeroLen) {
-  SECItemArray *arr = SECITEM_AllocArray(nullptr, nullptr, 0);
+  SECItemArray* arr = SECITEM_AllocArray(nullptr, nullptr, 0);
   ASSERT_TRUE(arr);
   EXPECT_EQ(0U, arr->len);
   EXPECT_FALSE(arr->items);
@@ -636,7 +636,7 @@ TEST_F(SecItemArrayTest, AllocArrayZeroLen) {
 TEST_F(SecItemArrayTest, AllocArrayArena) {
   ScopedPLArenaPool arena(PORT_NewArena(4096));
   ASSERT_TRUE(arena);
-  SECItemArray *arr = SECITEM_AllocArray(arena.get(), nullptr, 4);
+  SECItemArray* arr = SECITEM_AllocArray(arena.get(), nullptr, 4);
   ASSERT_TRUE(arr);
   EXPECT_EQ(4U, arr->len);
   EXPECT_TRUE(arr->items);
@@ -648,11 +648,11 @@ TEST_F(SecItemArrayTest, DupArrayBasic) {
   const uint8_t d0[] = {0x01, 0x02};
   const uint8_t d1[] = {0x03, 0x04, 0x05};
   SECItem items[2] = {
-      {siBuffer, const_cast<uint8_t *>(d0), sizeof(d0)},
-      {siBuffer, const_cast<uint8_t *>(d1), sizeof(d1)},
+      {siBuffer, const_cast<uint8_t*>(d0), sizeof(d0)},
+      {siBuffer, const_cast<uint8_t*>(d1), sizeof(d1)},
   };
   SECItemArray from = {items, 2};
-  SECItemArray *dup = SECITEM_DupArray(nullptr, &from);
+  SECItemArray* dup = SECITEM_DupArray(nullptr, &from);
   ASSERT_TRUE(dup);
   ASSERT_EQ(2U, dup->len);
   EXPECT_EQ(sizeof(d0), dup->items[0].len);
@@ -671,7 +671,7 @@ TEST_F(SecItemArrayTest, DupArrayNullFrom) {
 // Zero-length from: valid — returns an empty array.
 TEST_F(SecItemArrayTest, DupArrayEmptyFrom) {
   SECItemArray from = {nullptr, 0};
-  SECItemArray *dup = SECITEM_DupArray(nullptr, &from);
+  SECItemArray* dup = SECITEM_DupArray(nullptr, &from);
   ASSERT_TRUE(dup);
   EXPECT_EQ(0U, dup->len);
   SECITEM_FreeArray(dup, PR_TRUE);
@@ -684,11 +684,11 @@ TEST_F(SecItemArrayTest, DupArrayArena) {
   const uint8_t d0[] = {0x01, 0x02};
   const uint8_t d1[] = {0x03};
   SECItem items[2] = {
-      {siBuffer, const_cast<uint8_t *>(d0), sizeof(d0)},
-      {siBuffer, const_cast<uint8_t *>(d1), sizeof(d1)},
+      {siBuffer, const_cast<uint8_t*>(d0), sizeof(d0)},
+      {siBuffer, const_cast<uint8_t*>(d1), sizeof(d1)},
   };
   SECItemArray from = {items, 2};
-  SECItemArray *dup = SECITEM_DupArray(arena.get(), &from);
+  SECItemArray* dup = SECITEM_DupArray(arena.get(), &from);
   ASSERT_TRUE(dup);
   ASSERT_EQ(2U, dup->len);
   EXPECT_EQ(0, memcmp(dup->items[0].data, d0, sizeof(d0)));
@@ -707,7 +707,7 @@ TEST_F(SecItemArrayTest, DupArrayIndependence) {
   uint8_t data[] = {0xAA, 0xBB};
   SECItem items[1] = {{siBuffer, data, sizeof(data)}};
   SECItemArray from = {items, 1};
-  SECItemArray *dup = SECITEM_DupArray(nullptr, &from);
+  SECItemArray* dup = SECITEM_DupArray(nullptr, &from);
   ASSERT_TRUE(dup);
   data[0] = 0xFF;
   EXPECT_EQ(0xAA, dup->items[0].data[0]);
@@ -716,7 +716,7 @@ TEST_F(SecItemArrayTest, DupArrayIndependence) {
 
 // freeit=PR_TRUE: frees the struct as well as all item data.
 TEST_F(SecItemArrayTest, FreeArrayFreeit) {
-  SECItemArray *arr = SECITEM_AllocArray(nullptr, nullptr, 2);
+  SECItemArray* arr = SECITEM_AllocArray(nullptr, nullptr, 2);
   ASSERT_TRUE(arr);
   SECITEM_FreeArray(arr, PR_TRUE);
 }
@@ -738,9 +738,9 @@ TEST_F(SecItemArrayTest, FreeArrayNull) {
 
 // ZfreeArray: zeroes each item's data before freeing.
 TEST_F(SecItemArrayTest, ZfreeArrayFreeit) {
-  SECItemArray *arr = SECITEM_AllocArray(nullptr, nullptr, 2);
+  SECItemArray* arr = SECITEM_AllocArray(nullptr, nullptr, 2);
   ASSERT_TRUE(arr);
-  arr->items[0].data = static_cast<uint8_t *>(PORT_Alloc(4));
+  arr->items[0].data = static_cast<uint8_t*>(PORT_Alloc(4));
   ASSERT_TRUE(arr->items[0].data);
   memset(arr->items[0].data, 0xCC, 4);
   arr->items[0].len = 4;

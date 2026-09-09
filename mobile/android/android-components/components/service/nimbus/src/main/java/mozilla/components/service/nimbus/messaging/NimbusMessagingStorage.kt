@@ -9,35 +9,31 @@ import android.net.Uri
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.VisibleForTesting.Companion.PRIVATE
 import kotlinx.coroutines.runBlocking
+import mozilla.components.service.nimbus.GleanMetrics.Messaging as GleanMessaging
 import mozilla.components.support.base.log.logger.Logger
 import org.json.JSONObject
 import org.mozilla.experiments.nimbus.NimbusMessagingHelperInterface
 import org.mozilla.experiments.nimbus.NimbusMessagingInterface
 import org.mozilla.experiments.nimbus.internal.FeatureHolder
 import org.mozilla.experiments.nimbus.internal.NimbusException
-import mozilla.components.service.nimbus.GleanMetrics.Messaging as GleanMessaging
 
 /**
- * This ID must match the name given in the `messaging.fml.yaml` file, which
- * itself generates the classname for [mozilla.components.service.nimbus.messaging.FxNimbusMessaging].
+ * This ID must match the name given in the `messaging.fml.yaml` file, which itself generates the classname for
+ * [mozilla.components.service.nimbus.messaging.FxNimbusMessaging].
  *
  * If that ever changes, it should also change here.
  *
- * This constant is the id for the messaging feature (the Nimbus feature). We declare it here
- * so as to afford the best chance of it being changed if a rename operation is needed.
+ * This constant is the id for the messaging feature (the Nimbus feature). We declare it here so as to afford the best
+ * chance of it being changed if a rename operation is needed.
  *
  * It is used in the Studies view, to filter out any experiments which only use a messaging surface.
  */
 const val MESSAGING_FEATURE_ID = "messaging"
 
-/**
- * The maximum number of times to retry [NimbusMessagingInterface.createMessageHelper].
- */
+/** The maximum number of times to retry [NimbusMessagingInterface.createMessageHelper]. */
 private const val MAX_RETRY_ATTEMPTS = 5
 
-/**
- * Provides messages from [messagingFeature] and combine with the metadata store on [metadataStorage].
- */
+/** Provides messages from [messagingFeature] and combine with the metadata store on [metadataStorage]. */
 class NimbusMessagingStorage(
     private val context: Context,
     private val metadataStorage: MessageMetadataStorage,
@@ -50,11 +46,10 @@ class NimbusMessagingStorage(
     private val now: () -> Long = { System.currentTimeMillis() },
 ) {
     /**
-     * Contains all malformed messages where they key can be the value or a trigger of the message
-     * and the value is the message id.
+     * Contains all malformed messages where they key can be the value or a trigger of the message and the value is the
+     * message id.
      */
-    @VisibleForTesting
-    val malFormedMap = mutableMapOf<String, String>()
+    @VisibleForTesting val malFormedMap = mutableMapOf<String, String>()
     private val logger = Logger("MessagingStorage")
     private val customAttributes: JSONObject
         get() = attributeProvider?.getCustomAttributes(context) ?: JSONObject()
@@ -62,9 +57,8 @@ class NimbusMessagingStorage(
     /**
      * Attempts to create and return a Nimbus message helper for evaluating JEXL expressions.
      *
-     * ⚠️ This method calls [NimbusMessagingInterface.createMessageHelper], which may throw a
-     * [NimbusException]. To improve resilience against transient errors, it retries the operation
-     * up to [MAX_RETRY_ATTEMPTS].
+     * ⚠️ This method calls [NimbusMessagingInterface.createMessageHelper], which may throw a [NimbusException]. To
+     * improve resilience against transient errors, it retries the operation up to [MAX_RETRY_ATTEMPTS].
      *
      * The JEXL context is time-sensitive, so this should be created new for each set of evaluations.
      *
@@ -85,11 +79,8 @@ class NimbusMessagingStorage(
         throw IllegalStateException("The Nimbus createMessagingHelper function threw an exception")
     }
 
-    /**
-     * Returns the [Message] for the given [key] or returns null if none found.
-     */
-    suspend fun getMessage(key: String): Message? =
-        createMessage(messagingFeature.value(), key)
+    /** Returns the [Message] for the given [key] or returns null if none found. */
+    suspend fun getMessage(key: String): Message? = createMessage(messagingFeature.value(), key)
 
     private suspend fun createMessage(featureValue: Messaging, key: String): Message? {
         val message = createMessageOrNull(featureValue, key)
@@ -103,15 +94,15 @@ class NimbusMessagingStorage(
     private suspend fun createMessageOrNull(featureValue: Messaging, key: String): Message? {
         val message = featureValue.messages[key] ?: return null
 
-        val action = if (!message.isControl) {
-            if (message.text.isBlank()) {
-                return null
+        val action =
+            if (!message.isControl) {
+                if (message.text.isBlank()) {
+                    return null
+                }
+                sanitizeAction(message.action, featureValue.actions) ?: return null
+            } else {
+                "CONTROL_ACTION"
             }
-            sanitizeAction(message.action, featureValue.actions)
-                ?: return null
-        } else {
-            "CONTROL_ACTION"
-        }
 
         val triggerIfAll = sanitizeTriggers(message.triggerIfAll, featureValue.triggers) ?: return null
         val excludeIfAny = sanitizeTriggers(message.excludeIfAny, featureValue.triggers) ?: return null
@@ -141,11 +132,11 @@ class NimbusMessagingStorage(
      *
      * "Currently available" means all messages contained in the Nimbus SDK, validated and denormalized.
      *
-     * The messages have the JEXL triggers and actions that came from the Nimbus SDK, but these themselves
-     * are not validated at this time.
+     * The messages have the JEXL triggers and actions that came from the Nimbus SDK, but these themselves are not
+     * validated at this time.
      *
-     * The messages also have state attached, which manage how many times the messages has been shown,
-     * and if the user has interacted with it or not.
+     * The messages also have state attached, which manage how many times the messages has been shown, and if the user
+     * has interacted with it or not.
      *
      * The list of messages may also contain control messages which should not be shown to the user.
      *
@@ -157,7 +148,8 @@ class NimbusMessagingStorage(
         return nimbusMessages.keys
             .mapNotNull { key ->
                 createMessage(featureValue, key)
-            }.sortedByDescending {
+            }
+            .sortedByDescending {
                 it.style.priority
             }
     }
@@ -171,19 +163,18 @@ class NimbusMessagingStorage(
      * - whether or not the user has interacted with the message already.
      * - the message eligibility, via JEXL triggers.
      *
-     * If more than one message for this surface is eligible to be shown, then the
-     * first one to be encountered in [messages] list is returned.
+     * If more than one message for this surface is eligible to be shown, then the first one to be encountered in
+     * [messages] list is returned.
      */
     fun getNextMessage(surface: MessageSurfaceId, messages: List<Message>): Message? {
-        val availableMessages = messages
-            .filter {
-                it.surface == surface
-            }
-            .filter {
-                !it.isExpired &&
-                    !it.metadata.dismissed &&
-                    !it.metadata.pressed
-            }
+        val availableMessages =
+            messages
+                .filter {
+                    it.surface == surface
+                }
+                .filter {
+                    !it.isExpired && !it.metadata.dismissed && !it.metadata.pressed
+                }
         return createMessagingHelper().use {
             getNextMessage(
                 surface,
@@ -201,16 +192,17 @@ class NimbusMessagingStorage(
         excluded: Set<String>,
         helper: NimbusMessagingHelperInterface,
     ): Message? {
-        val message = availableMessages
-            .filter { !excluded.contains(it.id) }
-            .firstOrNull {
-                try {
-                    isMessageEligible(it, helper)
-                } catch (e: NimbusException) {
-                    reportMalformedMessage(it.id)
-                    false
-                }
-            } ?: return null
+        val message =
+            availableMessages
+                .filter { !excluded.contains(it.id) }
+                .firstOrNull {
+                    try {
+                        isMessageEligible(it, helper)
+                    } catch (e: NimbusException) {
+                        reportMalformedMessage(it.id)
+                        false
+                    }
+                } ?: return null
 
         // If this is an experimental message, but not a placebo, then just return the message.
         if (!message.data.isControl) {
@@ -243,8 +235,7 @@ class NimbusMessagingStorage(
     /**
      * Record the time and optional [bootIdentifier] of the display of the given message.
      *
-     * If the message is part of an experiment, then record an exposure event for that
-     * experiment.
+     * If the message is part of an experiment, then record an exposure event for that experiment.
      *
      * This is determined by the value in the [message.data.experiment] property.
      */
@@ -260,14 +251,13 @@ class NimbusMessagingStorage(
         }
 
         // Now update the display counts.
-        val updatedMetadata = message.metadata.copy(
-            displayCount = message.metadata.displayCount + 1,
-            lastTimeShown = now(),
-            latestBootIdentifier = bootIdentifier,
-        )
-        val nextMessage = message.copy(
-            metadata = updatedMetadata,
-        )
+        val updatedMetadata =
+            message.metadata.copy(
+                displayCount = message.metadata.displayCount + 1,
+                lastTimeShown = now(),
+                latestBootIdentifier = bootIdentifier,
+            )
+        val nextMessage = message.copy(metadata = updatedMetadata)
         updateMetadata(nextMessage.metadata)
         return nextMessage
     }
@@ -275,20 +265,17 @@ class NimbusMessagingStorage(
     /**
      * Returns a pair of uuid and valid action for the provided [message].
      *
-     * The message's action-params are appended as query parameters to the action URI,
-     * URI encoding the values as it goes.
+     * The message's action-params are appended as query parameters to the action URI, URI encoding the values as it
+     * goes.
      *
      * Uses Nimbus' targeting attributes to do basic string interpolation.
      *
-     * e.g.
-     * `https://example.com/{locale}/whats-new.html?version={app_version}`
+     * e.g. `https://example.com/{locale}/whats-new.html?version={app_version}`
      *
-     * If the string `{uuid}` is detected in the [message]'s action, then it is
-     * replaced with a random UUID. This is returned as the first value of the returned
-     * [Pair].
+     * If the string `{uuid}` is detected in the [message]'s action, then it is replaced with a random UUID. This is
+     * returned as the first value of the returned [Pair].
      *
-     * The fully resolved (with all substitutions) action is returned as the second value
-     * of the [Pair].
+     * The fully resolved (with all substitutions) action is returned as the second value of the [Pair].
      */
     internal fun generateUuidAndFormatMessage(message: Message): Pair<String?, String> =
         createMessagingHelper().use { helper ->
@@ -329,19 +316,16 @@ class NimbusMessagingStorage(
 
         // Before the first query parameter is a `?`, and subsequent ones are `&`.
         // The action may already have a query parameter.
-        var separator = if (action.contains('?')) {
-            '&'
-        } else {
-            '?'
-        }
+        var separator =
+            if (action.contains('?')) {
+                '&'
+            } else {
+                '?'
+            }
 
         for ((queryParamName, queryParamValue) in message.data.actionParams) {
             val v = formatWithUuid(queryParamValue)
-            sb
-                .append(separator)
-                .append(queryParamName)
-                .append('=')
-                .append(Uri.encode(v))
+            sb.append(separator).append(queryParamName).append('=').append(Uri.encode(v))
 
             separator = '&'
         }
@@ -349,9 +333,7 @@ class NimbusMessagingStorage(
         return uuid to sb.toString()
     }
 
-    /**
-     * Updated the provided [metadata] in the storage.
-     */
+    /** Updated the provided [metadata] in the storage. */
     suspend fun updateMetadata(metadata: Message.Metadata) {
         metadataStorage.updateMetadata(metadata)
     }
@@ -366,14 +348,13 @@ class NimbusMessagingStorage(
     internal fun sanitizeTriggers(
         unsafeTriggers: List<String>,
         nimbusTriggers: Map<String, String>,
-    ): List<String>? =
-        unsafeTriggers.map {
-            val safeTrigger = nimbusTriggers[it]
-            if (safeTrigger.isNullOrBlank() || safeTrigger.isEmpty()) {
-                return null
-            }
-            safeTrigger
+    ): List<String>? = unsafeTriggers.map {
+        val safeTrigger = nimbusTriggers[it]
+        if (safeTrigger.isNullOrBlank() || safeTrigger.isEmpty()) {
+            return null
         }
+        safeTrigger
+    }
 
     @VisibleForTesting
     internal fun sanitizeStyle(
@@ -384,9 +365,8 @@ class NimbusMessagingStorage(
     /**
      * Return true if the message passed as a parameter is eligible
      *
-     * Aimed to be used from tests only, but currently public because some tests inside Fenix need
-     * it. This should be set as internal when this bug is fixed:
-     * https://bugzilla.mozilla.org/show_bug.cgi?id=1823472
+     * Aimed to be used from tests only, but currently public because some tests inside Fenix need it. This should be
+     * set as internal when this bug is fixed: https://bugzilla.mozilla.org/show_bug.cgi?id=1823472
      */
     @VisibleForTesting
     fun isMessageEligible(
@@ -395,9 +375,10 @@ class NimbusMessagingStorage(
     ): Boolean {
         return message.triggerIfAll.all { condition ->
             evalJexl(message, helper, condition)
-        } && !message.excludeIfAny.any { condition ->
-            evalJexl(message, helper, condition)
-        }
+        } &&
+            !message.excludeIfAny.any { condition ->
+                evalJexl(message, helper, condition)
+            }
     }
 
     private fun evalJexl(
@@ -416,21 +397,14 @@ class NimbusMessagingStorage(
             throw NimbusException.EvaluationException(condition)
         }
 
-    @VisibleForTesting
-    internal fun getOnControlBehavior(): ControlMessageBehavior = messagingFeature.value().onControl
+    @VisibleForTesting internal fun getOnControlBehavior(): ControlMessageBehavior = messagingFeature.value().onControl
 
     private suspend fun addMetadata(id: String): Message.Metadata {
-        return metadataStorage.addMetadata(
-            Message.Metadata(
-                id = id,
-            ),
-        )
+        return metadataStorage.addMetadata(Message.Metadata(id = id))
     }
 }
 
-/**
- * A helper method to safely destroy the message helper after use.
- */
+/** A helper method to safely destroy the message helper after use. */
 fun <R> NimbusMessagingHelperInterface.use(block: (NimbusMessagingHelperInterface) -> R) =
     block(this).also {
         this.destroy()

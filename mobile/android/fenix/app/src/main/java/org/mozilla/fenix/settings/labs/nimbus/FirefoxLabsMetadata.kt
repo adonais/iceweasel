@@ -15,19 +15,18 @@ import org.mozilla.fenix.settings.labs.LabsItem
 private val logger = Logger("FirefoxLabsMetadata")
 
 /**
- * Converts a [FirefoxLabsMetadata] from Nimbus into a [LabsItem] by resolving its title and
- * description resource names.
+ * Converts a [FirefoxLabsMetadata] from Nimbus into a [LabsItem] by resolving its title and description resource names.
  *
  * @param context The [Context] used to resolve string resources.
  * @param allowRawIdFallback Determines how to handle missing resource names.
  *
- * If [allowRawIdFallback] is true, and no string is found for that resource name,
- * then the raw resource name will be set as the string itself (for debugging and QE identification purposes).
- * For example, if Nimbus delivers `firefox_labs_unknown_lab` and no string resource by that name exists,
- * the [LabsItem]'s title is rendered as the literal text `firefox_labs_unknown_lab`.
+ * If [allowRawIdFallback] is true, and no string is found for that resource name, then the raw resource name will be
+ * set as the string itself (for debugging and QE identification purposes). For example, if Nimbus delivers
+ * `firefox_labs_unknown_lab` and no string resource by that name exists, the [LabsItem]'s title is rendered as the
+ * literal text `firefox_labs_unknown_lab`.
  *
- * If [allowRawIdFallback] is false, and no string is found for that resource name, then the [LabsItem]
- * is returned as null and will not be rendered.
+ * If [allowRawIdFallback] is false, and no string is found for that resource name, then the [LabsItem] is returned as
+ * null and will not be rendered.
  */
 internal fun FirefoxLabsMetadata.toLabsItem(
     context: Context,
@@ -62,11 +61,12 @@ private fun getStringResource(
     allowRawIdFallback: Boolean,
 ): String? {
     return try {
-        val resourceId = context.resources.getIdentifier(
-            resourceName,
-            "string",
-            context.packageName,
-        )
+        val resourceId =
+            context.resources.getIdentifier(
+                resourceName,
+                "string",
+                context.packageName,
+            )
         if (resourceId == 0) {
             logger.warn("Could not resolve string resource for Lab '$slug': $resourceName")
             return if (allowRawIdFallback) resourceName else null

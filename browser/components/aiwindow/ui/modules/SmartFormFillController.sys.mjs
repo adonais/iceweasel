@@ -5,10 +5,14 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  clearTimeout: "resource://gre/modules/Timer.sys.mjs",
+  MAX_SELECTED_TABS:
+    "chrome://browser/content/aiwindow/modules/SmartFormFillConstants.mjs",
   getTabList: "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs",
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   MemoriesManager:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
+  setTimeout: "resource://gre/modules/Timer.sys.mjs",
   SmartFormFillModel:
     "moz-src:///browser/components/aiwindow/models/SmartFormFillModel.sys.mjs",
 });
@@ -26,6 +30,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 /** @typedef {import("moz-src:///browser/components/aiwindow/models/SmartFormFillModel.sys.mjs").TabData} TabData */
 /** @typedef {import("moz-src:///browser/components/aiwindow/models/SmartFormFillModel.sys.mjs").RelevantTab} RelevantTab */
 /** @typedef {import("moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillDocument.sys.mjs").FormData} FormData */
+/** @typedef {import("moz-src:///browser/components/aiwindow/ui/actors/SmartFormFillParent.sys.mjs").RequestObserver} RequestObserver */
 
 /**
  * @typedef {{
@@ -45,6 +50,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * @typedef {{
  *   candidates: Array<Candidate>,
  *   valuesByToken: Map<string, string>,
+ *   tokensByFieldId: Map<string, string>,
  * }} CandidateResult
  */
 
@@ -55,11 +61,32 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * }} InitializationResult
  */
 
+// Confidence levels the model can answer with, ordered so a threshold can be
+// read as "at least this level". A Map rather than an object so a value the
+// model made up cannot resolve to an inherited property: anything that is not
+// one of these ranks below all of them, so it is never filled.
+const CONFIDENCE_RANK = new Map([
+  ["low", 0],
+  ["medium", 1],
+  ["high", 2],
+]);
+
+// The lowest confidence a model's value must reach to be filled. Reported as
+// the threshold of the generation request, so both have to move together.
+const FILL_CONFIDENCE_THRESHOLD = "high";
+
+/**
+ * @typedef {{
+ *   id: string,
+ * }} SelectedTab
+ */
+
 // TODO: Adjust this based on evals for optimal amount
 const MAX_TABS = 30;
 
-// Max number of tabs for the LLM to select
-const MAX_SELECTED_TABS = 5;
+const REQUEST_RETRY_BASE_DELAY_MS = 1000;
+const REQUEST_RETRY_JITTER_MS = 250;
+const MAX_REQUEST_RETRIES = 3;
 
 /**
  * Smart Form Fill controller, orchestrates logic for SFF
@@ -73,11 +100,11 @@ export class SmartFormFillController {
   #pageInfo;
 
   /**
-   * Serializable form data.
+   * Serializable form data by stable form ID.
    *
-   * @type {Array<FormData> | null | undefined}
+   * @type {Map<string, FormData> | null}
    */
-  #formDataList;
+  #formDataById;
 
   /**
    * Model-facing tab data.
@@ -136,20 +163,25 @@ export class SmartFormFillController {
   #classifiedFieldsByFormId;
 
   /**
-   * Whether the controller has been destroyed.
+   * Tells the parent what the model was asked and what it answered. The token a
+   * dispatch callback returns is opaque here: it is handed back on the matching
+   * answer or failure so the parent can pair them.
    *
-   * @type {boolean}
+   * @type {RequestObserver}
    */
-  #destroyed;
+  #requestObserver;
 
   /**
    * Creates a controller for Smart Form Fill
    *
    * @param {PageInfo} pageInfo The page info for the tab
+   * @param {RequestObserver} observer Notified of the requests this controller
+   * dispatches
    */
-  constructor(pageInfo) {
+  constructor(pageInfo, observer) {
     this.#pageInfo = pageInfo;
-    this.#destroyed = false;
+    this.#formDataById = new Map();
+    this.#requestObserver = observer;
     this.#tabCounter = 0;
     this.#tabsById = new Map();
     this.#relevantTabsByFormId = new Map();
@@ -172,14 +204,131 @@ export class SmartFormFillController {
   }
 
   /**
+   * Whether an eligible context tab exists in addition to the form tab.
+   *
+   * @type {boolean}
+   */
+  get hasSourceTabs() {
+    return (this.#tabList?.length ?? 0) > 1;
+  }
+
+  /**
    * Gets TabData for a stable tab ID
    *
    * @param {string} tabId
    *
    * @returns {TabData | undefined}
    */
-  getRelevantTabData(tabId) {
+  getTabData(tabId) {
     return this.#tabsById.get(tabId);
+  }
+
+  /**
+   * Caches serialized data for a form without starting model work.
+   *
+   * @param {FormData} formData Form data to cache.
+   */
+  #setFormData(formData) {
+    this.#formDataById.set(formData.id, formData);
+  }
+
+  /**
+   * Requests and caches relevant tabs for one form.
+   *
+   * @param {FormData} formData Form for which tabs should be selected.
+   * @returns {Promise<RelevantTabsResponse>}
+   */
+  async findRelevantTabs(formData) {
+    this.#setFormData(formData);
+    this.#ensureTabData();
+
+    this.#abortRelevantTabsControllers.get(formData.id)?.abort();
+
+    const abortController = new AbortController();
+    this.#abortRelevantTabsControllers.set(formData.id, abortController);
+
+    try {
+      return await this.#requestWithRetries(
+        () => this.#findRelevantTabsForForm(formData, abortController.signal),
+        abortController.signal
+      );
+    } finally {
+      this.#removeAbortController(
+        this.#abortRelevantTabsControllers,
+        formData.id,
+        abortController
+      );
+    }
+  }
+
+  /**
+   * Requests and caches field classifications for one form.
+   *
+   * @param {FormData} formData Form whose fields should be classified.
+   * @returns {Promise<ClassificationResponse>}
+   */
+  async classifyFields(formData) {
+    this.#setFormData(formData);
+
+    this.#abortClassificationControllers.get(formData.id)?.abort();
+
+    const abortController = new AbortController();
+    this.#abortClassificationControllers.set(formData.id, abortController);
+
+    try {
+      return await this.#requestWithRetries(
+        () => this.#classifyFormFields(formData, abortController.signal),
+        abortController.signal
+      );
+    } finally {
+      this.#removeAbortController(
+        this.#abortClassificationControllers,
+        formData.id,
+        abortController
+      );
+    }
+  }
+
+  /**
+   * Invalidates relevant-tab metadata for one form.
+   *
+   * @param {string} formId Form whose metadata should be invalidated.
+   */
+  #invalidateRelevantTabs(formId) {
+    this.#abortRelevantTabsControllers.get(formId)?.abort();
+    this.#abortRelevantTabsControllers.delete(formId);
+    this.#relevantTabsByFormId.delete(formId);
+  }
+
+  /**
+   * Invalidates all model metadata for one form.
+   *
+   * @param {string} formId Form whose metadata should be invalidated.
+   */
+  invalidateForm(formId) {
+    this.#invalidateRelevantTabs(formId);
+    this.#abortClassificationControllers.get(formId)?.abort();
+    this.#abortClassificationControllers.delete(formId);
+    this.#classifiedFieldsByFormId.delete(formId);
+    this.#formDataById.delete(formId);
+  }
+
+  /**
+   * Invalidates metadata derived from the current open-tab collection.
+   */
+  invalidateTabs() {
+    this.#abortRequests(this.#abortRelevantTabsControllers);
+    this.#relevantTabsByFormId.clear();
+    this.#tabList = null;
+  }
+
+  /**
+   * Gets the current open-tab data.
+   *
+   * @returns {Array<TabData>}
+   */
+  getTabs() {
+    return this.#tabList?.map(tab => ({ ...tab })) ?? [];
   }
 
   /**
@@ -187,7 +336,7 @@ export class SmartFormFillController {
    *
    * @param {string} formId
    * @param {Set<string>} emptyFieldIds
-   * @param {Array<RelevantTab>} selectedTabs
+   * @param {Array<SelectedTab>} selectedTabs
    * @param {Map<string, string>} tabContentById
    * @param {string} pageText
    *
@@ -200,7 +349,7 @@ export class SmartFormFillController {
     tabContentById,
     pageText
   ) {
-    const formData = this.#formDataList.find(({ id }) => id === formId);
+    const formData = this.#formDataById.get(formId);
     if (!formData) {
       return null;
     }
@@ -215,6 +364,7 @@ export class SmartFormFillController {
     return this.#generateFormValues(
       formId,
       emptyFields,
+      formData.fields,
       selectedTabs,
       tabContentById,
       pageText
@@ -222,48 +372,14 @@ export class SmartFormFillController {
   }
 
   /**
-   * Updates the FormData list when the page detects form updates
-   *
-   * @param {Array<FormData>} formDataList
-   *
-   * @returns {Promise<InitializationResult>}
-   */
-  async updateFormData(formDataList) {
-    this.#abortRequests(
-      this.#abortRelevantTabsControllers,
-      this.#abortClassificationControllers
-    );
-
-    this.#formDataList = formDataList;
-
-    return this.#getFormMetadata();
-  }
-
-  /**
-   * Requests relevant tabs and field classifications.
-   *
-   * @returns {Promise<InitializationResult>}
-   */
-  async #getFormMetadata() {
-    const [tabs, fields] = await Promise.all([
-      Promise.allSettled(this.#getRelevantTabsForForms()),
-      Promise.allSettled(this.#getFormFieldClassifications()),
-    ]);
-
-    return {
-      relevantTabsCompleted: tabs.every(tab => tab.status === "fulfilled"),
-      classificationsCompleted: fields.every(
-        field => field.status === "fulfilled"
-      ),
-    };
-  }
-
-  /**
    * Generates values for one form.
    *
    * @param {string} id
-   * @param {Array<FieldData>} fields
-   * @param {Array<RelevantTab>} selectedTabs
+   * @param {Array<FieldData>} fields The fields to fill
+   * @param {Array<FieldData>} formFields Every field of the form, as it was
+   * when the fields to fill were picked. Read here rather than when the
+   * response lands so a form update cannot renumber the fields that were sent
+   * @param {Array<SelectedTab>} selectedTabs
    * @param {Map<string, string>} tabContentById
    * @param {string} pageText
    *
@@ -272,6 +388,7 @@ export class SmartFormFillController {
   async #generateFormValues(
     id,
     fields,
+    formFields,
     selectedTabs,
     tabContentById,
     pageText
@@ -307,36 +424,51 @@ export class SmartFormFillController {
 
     const context = { pageText, relevantTabs, memories };
 
+    // Null until the request is dispatched: a failure while gathering the
+    // candidates means no request was sent, so it gets no response event.
+    let flow = null;
+
     try {
-      const { candidates, valuesByToken } = await this.#getCandidates(fields);
+      const { candidates, valuesByToken, tokensByFieldId } =
+        await this.#getCandidates(fields);
       abortCtrl.signal.throwIfAborted();
 
-      const values = await lazy.SmartFormFillModel.generateFormValues(
-        {
-          task,
-          page,
-          fields: this.#getFieldDataForClassification(fields).map(field => {
-            const classification = classifications.get(field.id);
-            const { localGuess, localConfidence, ...fieldData } = field;
-            let classificationConfidence = "low";
-            if (localConfidence > 0.6) {
-              classificationConfidence = "high";
-            } else if (localConfidence > 0.3) {
-              classificationConfidence = "medium";
-            }
+      const request = {
+        task,
+        page,
+        fields: this.#getFieldDataForClassification(fields).map(field => {
+          const classification = classifications.get(field.id);
+          const { localGuess, localConfidence, ...fieldData } = field;
+          let classificationConfidence = "low";
+          if (localConfidence > 0.6) {
+            classificationConfidence = "high";
+          } else if (localConfidence > 0.3) {
+            classificationConfidence = "medium";
+          }
 
-            return {
-              ...fieldData,
-              type: classification?.type ?? localGuess ?? "unknown",
-              classificationConfidence:
-                classification?.confidence ?? classificationConfidence,
-            };
-          }),
-          candidates,
-          context,
+          return {
+            ...fieldData,
+            type: classification?.type ?? localGuess ?? "unknown",
+            classificationConfidence:
+              classification?.confidence ?? classificationConfidence,
+          };
+        }),
+        candidates,
+        context,
+      };
+
+      const values = await lazy.SmartFormFillModel.generateFormValues(request, {
+        signal: abortCtrl.signal,
+        // Every batch that sends reports, so only the first one opens the
+        // round: it is one round no matter how many batches it took.
+        onDispatch: modelInfo => {
+          flow ??= this.#requestObserver.onGenerateDispatched(id, request, {
+            valuesByToken,
+            modelInfo,
+            threshold: FILL_CONFIDENCE_THRESHOLD,
+          });
         },
-        { signal: abortCtrl.signal }
-      );
+      });
       abortCtrl.signal.throwIfAborted();
 
       const fillInstructions = this.#getFillInstructions(
@@ -345,10 +477,25 @@ export class SmartFormFillController {
         valuesByToken
       );
 
+      this.#requestObserver.onGenerateAnswered(flow, {
+        formId: id,
+        fieldsFilled: fillInstructions.length,
+        response: values,
+        fields,
+        formFields,
+        classifications,
+        tokensByFieldId,
+      });
+
       return {
         id,
         fields: fillInstructions,
       };
+    } catch (error) {
+      if (flow && !abortCtrl.signal.aborted) {
+        this.#requestObserver.onGenerateFailed(flow, error);
+      }
+      throw error;
     } finally {
       this.#removeAbortController(
         this.#abortValueGenerationControllers,
@@ -411,7 +558,8 @@ export class SmartFormFillController {
 
     for (const result of values.fields) {
       if (
-        result.confidence !== "high" ||
+        (CONFIDENCE_RANK.get(result.confidence) ?? -1) <
+          CONFIDENCE_RANK.get(FILL_CONFIDENCE_THRESHOLD) ||
         !fieldIds.has(result.id) ||
         resolvedFieldIds.has(result.id)
       ) {
@@ -452,6 +600,7 @@ export class SmartFormFillController {
   async #getCandidates(fields) {
     const candidates = [];
     const valuesByToken = new Map();
+    const tokensByFieldId = new Map();
     const typeCounts = new Map();
 
     for (const field of fields) {
@@ -472,9 +621,10 @@ export class SmartFormFillController {
 
       candidates.push({ token, type });
       valuesByToken.set(token, value);
+      tokensByFieldId.set(field.id, type);
     }
 
-    return { candidates, valuesByToken };
+    return { candidates, valuesByToken, tokensByFieldId };
   }
 
   /**
@@ -503,28 +653,6 @@ export class SmartFormFillController {
     } catch {
       return null;
     }
-  }
-
-  /**
-   * Initializes field classifications and relevant tabs.
-   *
-   * @param {Array<FormData>} formDataList
-   * @returns {Promise<InitializationResult>}
-   */
-  async initialize(formDataList) {
-    this.#formDataList = formDataList;
-    this.#tabList = this.#getTabData(lazy.getTabList(MAX_TABS));
-
-    const initialized = await this.#getFormMetadata();
-
-    if (this.#destroyed) {
-      return {
-        relevantTabsCompleted: false,
-        classificationsCompleted: false,
-      };
-    }
-
-    return initialized;
   }
 
   /**
@@ -561,7 +689,8 @@ export class SmartFormFillController {
    * Cancels requests and clears controller state.
    */
   destroy() {
-    this.#formDataList = null;
+    this.#formDataById.clear();
+    this.#formDataById = null;
     this.#tabCounter = 0;
     this.#tabList = null;
 
@@ -583,8 +712,77 @@ export class SmartFormFillController {
 
     this.#classifiedFieldsByFormId.clear();
     this.#classifiedFieldsByFormId = null;
+  }
 
-    this.#destroyed = true;
+  /**
+   * Initializes model-facing tab data when it is first needed.
+   */
+  #ensureTabData() {
+    if (this.#tabList) {
+      return;
+    }
+
+    this.#tabCounter = 0;
+    this.#tabsById.clear();
+    this.#tabList = this.#getTabData(lazy.getTabList(MAX_TABS));
+  }
+
+  /**
+   * Runs a model request with exponential-backoff retries.
+   *
+   * @template T
+   * @param {() => Promise<T>} request Request operation.
+   * @param {AbortSignal} signal Signal used to cancel retries.
+   *
+   * @returns {Promise<T>} The successful request result.
+   */
+  async #requestWithRetries(request, signal) {
+    for (let retryIndex = 0; retryIndex <= MAX_REQUEST_RETRIES; retryIndex++) {
+      try {
+        return await request();
+      } catch (error) {
+        signal.throwIfAborted();
+
+        if (
+          !lazy.SmartFormFillModel.isRetryableRequestError(error) ||
+          retryIndex === MAX_REQUEST_RETRIES
+        ) {
+          throw error;
+        }
+
+        await this.#waitBeforeRetry(retryIndex, signal);
+      }
+    }
+
+    throw new Error("Smart Form Fill request did not complete");
+  }
+
+  /**
+   * Waits before retrying a model request.
+   *
+   * @param {number} retryIndex Zero-based retry number.
+   * @param {AbortSignal} signal Signal used to cancel the delay.
+   *
+   * @returns {Promise<void>}
+   */
+  #waitBeforeRetry(retryIndex, signal) {
+    const delay =
+      REQUEST_RETRY_BASE_DELAY_MS * Math.pow(2, retryIndex) +
+      Math.floor(Math.random() * REQUEST_RETRY_JITTER_MS);
+
+    return new Promise((resolve, reject) => {
+      const onAbort = () => {
+        lazy.clearTimeout(timer);
+        reject(signal.reason);
+      };
+
+      const timer = lazy.setTimeout(() => {
+        signal.removeEventListener("abort", onAbort);
+        resolve();
+      }, delay);
+
+      signal.addEventListener("abort", onAbort, { once: true });
+    });
   }
 
   /**
@@ -610,83 +808,102 @@ export class SmartFormFillController {
         seen.add(id);
         return true;
       })
-      .slice(0, MAX_SELECTED_TABS);
+      .slice(0, lazy.MAX_SELECTED_TABS);
   }
 
   /**
-   * Starts relevant-tab requests for all forms.
+   * Requests relevant tabs for one form.
    *
-   * @returns {Array<Promise<RelevantTabsResponse>>}
+   * @param {FormData} formData Form for which tabs should be selected.
+   * @param {AbortSignal} signal Signal used to cancel the request.
+   *
+   * @returns {Promise<RelevantTabsResponse>}
    */
-  #getRelevantTabsForForms() {
-    const promises = [];
-    for (const { id, fields } of this.#formDataList) {
-      const abortCtrl = new AbortController();
-      this.#abortRelevantTabsControllers.set(id, abortCtrl);
+  async #findRelevantTabsForForm({ id, fields }, signal) {
+    const request = this.#getRelevantTabRequestBody(fields);
 
-      const promise = lazy.SmartFormFillModel.findRelevantTabs(
-        this.#getRelevantTabRequestBody(fields),
-        { signal: abortCtrl.signal }
-      )
-        .then(relevantTabCandidates => {
-          abortCtrl.signal.throwIfAborted();
+    // Null until the request is dispatched: a failure while resolving the model
+    // or the prompt means no request was sent, so it gets no events.
+    let flow = null;
 
-          const relevantTabs = {
-            selectedTabs: this.#getValidRelevantTabs(
-              relevantTabCandidates?.selectedTabs
-            ),
-          };
-          this.#relevantTabsByFormId.set(id, relevantTabs);
-
-          return relevantTabs;
-        })
-        .finally(() => {
-          this.#removeAbortController(
-            this.#abortRelevantTabsControllers,
-            id,
-            abortCtrl
-          );
+    try {
+      const relevantTabCandidates =
+        await lazy.SmartFormFillModel.findRelevantTabs(request, {
+          signal,
+          onDispatch: modelInfo => {
+            flow = this.#requestObserver.onRelevantTabsDispatched(
+              id,
+              request,
+              modelInfo
+            );
+          },
         });
 
-      promises.push(promise);
-    }
+      signal.throwIfAborted();
+      const relevantTabs = {
+        selectedTabs: this.#getValidRelevantTabs(
+          relevantTabCandidates?.selectedTabs
+        ),
+      };
 
-    return promises;
+      this.#relevantTabsByFormId.set(id, relevantTabs);
+      this.#requestObserver.onRelevantTabsAnswered(
+        flow,
+        relevantTabCandidates,
+        relevantTabs.selectedTabs.length
+      );
+
+      return relevantTabs;
+    } catch (error) {
+      if (flow && !signal.aborted) {
+        this.#requestObserver.onRelevantTabsFailed(flow, error);
+      }
+
+      throw error;
+    }
   }
 
   /**
-   * Starts field-classification requests for all forms.
+   * Classifies fields for one form.
    *
-   * @returns {Array<Promise<ClassificationResponse>>}
+   * @param {FormData} formData Form whose fields should be classified.
+   * @param {AbortSignal} signal Signal used to cancel the request.
+   * @returns {Promise<ClassificationResponse>}
    */
-  #getFormFieldClassifications() {
-    const promises = [];
-    for (const { id, fields } of this.#formDataList) {
-      const abortCtrl = new AbortController();
-      this.#abortClassificationControllers.set(id, abortCtrl);
+  async #classifyFormFields({ id, fields }, signal) {
+    const request = this.#getClassifyFieldsRequestBody(fields);
 
-      const promise = lazy.SmartFormFillModel.classifyFields(
-        this.#getClassifyFieldsRequestBody(fields),
-        { signal: abortCtrl.signal }
-      )
-        .then(classifiedFields => {
-          abortCtrl.signal.throwIfAborted();
-          this.#classifiedFieldsByFormId.set(id, classifiedFields);
+    // Null until the request is dispatched: a failure while resolving the model
+    // or the prompt means no request was sent, so it gets no events.
+    let flow = null;
 
-          return classifiedFields;
-        })
-        .finally(() => {
-          this.#removeAbortController(
-            this.#abortClassificationControllers,
-            id,
-            abortCtrl
-          );
-        });
+    try {
+      const classifiedFields = await lazy.SmartFormFillModel.classifyFields(
+        request,
+        {
+          signal,
+          onDispatch: modelInfo => {
+            flow = this.#requestObserver.onClassifyDispatched(
+              id,
+              request,
+              modelInfo
+            );
+          },
+        }
+      );
 
-      promises.push(promise);
+      signal.throwIfAborted();
+      this.#classifiedFieldsByFormId.set(id, classifiedFields);
+      this.#requestObserver.onClassifyAnswered(flow, classifiedFields);
+
+      return classifiedFields;
+    } catch (error) {
+      if (flow && !signal.aborted) {
+        this.#requestObserver.onClassifyFailed(flow, error);
+      }
+
+      throw error;
     }
-
-    return promises;
   }
 
   /**
@@ -737,8 +954,8 @@ export class SmartFormFillController {
     const task = "select_tabs";
     const page = this.#pageInfo;
     const tabs = this.#tabList;
-    const maxSelectedTabs = MAX_SELECTED_TABS;
     const classificationFields = this.#getFieldDataForClassification(fields);
+    const maxSelectedTabs = lazy.MAX_SELECTED_TABS;
 
     return {
       task,

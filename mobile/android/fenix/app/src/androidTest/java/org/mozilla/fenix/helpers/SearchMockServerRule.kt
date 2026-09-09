@@ -8,8 +8,7 @@ import mockwebserver3.MockWebServer
 import org.junit.rules.ExternalResource
 
 /**
- * A JUnit [ExternalResource] that manages the lifecycle of a [MockWebServer] instance backed
- * by a [SearchDispatcher].
+ * A JUnit [ExternalResource] that manages the lifecycle of a [MockWebServer] instance backed by a [SearchDispatcher].
  *
  * The server will be started before each test and closed after each test.
  */
@@ -19,10 +18,11 @@ class SearchMockServerRule : ExternalResource() {
         private set
 
     override fun before() {
-        server = MockWebServer().apply {
-            dispatcher = SearchDispatcher()
-            start()
-        }
+        server =
+            MockWebServer().apply {
+                dispatcher = SearchDispatcher()
+                start()
+            }
     }
 
     override fun after() {

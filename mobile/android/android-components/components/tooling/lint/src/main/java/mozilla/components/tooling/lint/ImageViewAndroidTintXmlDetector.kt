@@ -19,33 +19,30 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.XmlContext
 import org.w3c.dom.Element
 
-/**
- * A custom lint check that prohibits not using the app:tint for ImageViews
- */
+/** A custom lint check that prohibits not using the app:tint for ImageViews */
 class ImageViewAndroidTintXmlDetector : ResourceXmlDetector() {
     companion object {
         const val SCHEMA = "http://schemas.android.com/apk/res/android"
-        const val FULLY_QUALIFIED_APP_COMPAT_IMAGE_BUTTON =
-            "androidx.appcompat.widget.AppCompatImageButton"
-        const val FULLY_QUALIFIED_APP_COMPAT_VIEW_CLASS =
-            "androidx.appcompat.widget.AppCompatImageView"
+        const val FULLY_QUALIFIED_APP_COMPAT_IMAGE_BUTTON = "androidx.appcompat.widget.AppCompatImageButton"
+        const val FULLY_QUALIFIED_APP_COMPAT_VIEW_CLASS = "androidx.appcompat.widget.AppCompatImageView"
         const val APP_COMPAT_IMAGE_BUTTON = "AppCompatImageButton"
         const val APP_COMPAT_IMAGE_VIEW = "AppCompatImageView"
 
-        const val ERROR_MESSAGE =
-            "Using android:tint to tint ImageView instead of app:tint with AppCompatImageView"
+        const val ERROR_MESSAGE = "Using android:tint to tint ImageView instead of app:tint with AppCompatImageView"
 
-        val ISSUE_XML_SRC_USAGE = Issue.create(
-            id = "AndroidSrcXmlDetector",
-            briefDescription = "Prohibits using android:tint in ImageViews and ImageButtons",
-            explanation = "ImageView (and descendants) should be tinted using app:tint",
-            category = Category.CORRECTNESS,
-            severity = Severity.ERROR,
-            implementation = Implementation(
-                ImageViewAndroidTintXmlDetector::class.java,
-                Scope.RESOURCE_FILE_SCOPE,
-            ),
-        )
+        val ISSUE_XML_SRC_USAGE =
+            Issue.create(
+                id = "AndroidSrcXmlDetector",
+                briefDescription = "Prohibits using android:tint in ImageViews and ImageButtons",
+                explanation = "ImageView (and descendants) should be tinted using app:tint",
+                category = Category.CORRECTNESS,
+                severity = Severity.ERROR,
+                implementation =
+                    Implementation(
+                        ImageViewAndroidTintXmlDetector::class.java,
+                        Scope.RESOURCE_FILE_SCOPE,
+                    ),
+            )
     }
 
     override fun appliesTo(folderType: ResourceFolderType): Boolean {

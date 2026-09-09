@@ -256,8 +256,8 @@ AlternativeDataStreamListener::OnDataAvailable(nsIRequest* aRequest,
 }
 
 NS_IMETHODIMP
-AlternativeDataStreamListener::OnStopRequest(nsIRequest* aRequest,
-                                             nsresult aStatusCode) {
+AlternativeDataStreamListener::OnStopRequest(
+    nsIRequest* aRequest, nsresult aStatusCode) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   AssertIsOnMainThread();
 
   // Alternative data loading is going to finish, breaking the reference cycle
@@ -1054,7 +1054,7 @@ void FetchDriver::FailWithNetworkError(nsresult rv) {
 }
 
 NS_IMETHODIMP
-FetchDriver::OnStartRequest(nsIRequest* aRequest) {
+FetchDriver::OnStartRequest(nsIRequest* aRequest) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   FETCH_LOG(
       ("FetchDriver::OnStartRequest this=%p, request=%p", this, aRequest));
   AssertIsOnMainThread();
@@ -1533,7 +1533,8 @@ FetchDriver::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aInputStream,
 }
 
 NS_IMETHODIMP
-FetchDriver::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
+FetchDriver::OnStopRequest(nsIRequest* aRequest,
+                           nsresult aStatusCode) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   FETCH_LOG(("FetchDriver::OnStopRequest this=%p, request=%p", this, aRequest));
   AssertIsOnMainThread();
 

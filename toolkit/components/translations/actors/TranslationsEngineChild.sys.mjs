@@ -12,7 +12,11 @@ ChromeUtils.defineLazyGetter(lazy, "console", () => {
 });
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  getEngineStateForTests:
+    "chrome://global/content/translations/translations-engine.sys.mjs",
   handleActorMessage:
+    "chrome://global/content/translations/translations-engine.sys.mjs",
+  startEngineIdleTimeoutForTests:
     "chrome://global/content/translations/translations-engine.sys.mjs",
 });
 
@@ -93,6 +97,17 @@ export class TranslationsEngineChild extends JSProcessActorChild {
         return new Promise(resolve => {
           this.#resolveForceShutdown = resolve;
         });
+      }
+      case "TranslationsEngine:GetEngineState": {
+        return lazy.getEngineStateForTests();
+      }
+      case "TranslationsEngine:StartEngineIdleTimeoutForTests": {
+        const { languagePair, timeoutMs, requestId } = data;
+        return lazy.startEngineIdleTimeoutForTests(
+          languagePair,
+          timeoutMs,
+          requestId
+        );
       }
       default: {
         console.error("Unknown message received", name);
@@ -239,6 +254,21 @@ export class TranslationsEngineChild extends JSProcessActorChild {
     this.sendAsyncMessage("TranslationsEngine:ReportEngineStatus", {
       innerWindowId,
       status,
+    });
+  }
+
+  /**
+   * Reports that an engine's test-only idle timer expired.
+   *
+   * @param {number} requestId
+   */
+  TE_reportEngineIdleTimeoutForTests(requestId) {
+    if (!Cu.isInAutomation || this.#isDestroyed) {
+      return;
+    }
+
+    this.sendAsyncMessage("TranslationsEngine:EngineIdleTimeoutForTests", {
+      requestId,
     });
   }
 

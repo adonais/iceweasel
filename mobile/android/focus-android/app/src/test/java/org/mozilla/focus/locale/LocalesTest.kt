@@ -4,11 +4,11 @@
 
 package org.mozilla.focus.locale
 
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.mozilla.focus.locale.Locales.getLanguage
 import org.mozilla.focus.locale.Locales.getLanguageTag
-import java.util.Locale
 
 class LocalesTest {
     @Test

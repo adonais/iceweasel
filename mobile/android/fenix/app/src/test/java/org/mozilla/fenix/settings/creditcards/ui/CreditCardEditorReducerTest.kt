@@ -17,10 +17,11 @@ class CreditCardEditorReducerTest {
     fun `GIVEN a state, WHEN a CardNumberChanged action is received, then the card number is updated`() {
         val state = createState()
 
-        val result = creditCardEditorReducer(
-            state = state,
-            action = FieldChanged.CardNumberChanged("55554444"),
-        )
+        val result =
+            creditCardEditorReducer(
+                state = state,
+                action = FieldChanged.CardNumberChanged("55554444"),
+            )
 
         assertEquals(
             "Expected card number to be updated",
@@ -31,15 +32,17 @@ class CreditCardEditorReducerTest {
 
     @Test
     fun `GIVEN a state, WHEN a MonthSelected action is received, then the month is updated`() {
-        val state = createState(
-            expiryMonths = listOf("January", "February", "March"),
-            selectedExpiryMonthIndex = 1,
-        )
+        val state =
+            createState(
+                expiryMonths = listOf("January", "February", "March"),
+                selectedExpiryMonthIndex = 1,
+            )
 
-        val result = creditCardEditorReducer(
-            state = state,
-            action = FieldChanged.MonthSelected(index = 2),
-        )
+        val result =
+            creditCardEditorReducer(
+                state = state,
+                action = FieldChanged.MonthSelected(index = 2),
+            )
 
         assertEquals(
             "Expected month index is updated",
@@ -50,15 +53,17 @@ class CreditCardEditorReducerTest {
 
     @Test
     fun `GIVEN a state, WHEN a YearSelected action is received, then the year is updated`() {
-        val state = createState(
-            expiryYears = listOf("2025", "2026", "2027"),
-            selectedExpiryYearIndex = 0,
-        )
+        val state =
+            createState(
+                expiryYears = listOf("2025", "2026", "2027"),
+                selectedExpiryYearIndex = 0,
+            )
 
-        val result = creditCardEditorReducer(
-            state = state,
-            action = FieldChanged.YearSelected(index = 1),
-        )
+        val result =
+            creditCardEditorReducer(
+                state = state,
+                action = FieldChanged.YearSelected(index = 1),
+            )
 
         assertEquals(
             "Expected year index is updated",
@@ -71,10 +76,11 @@ class CreditCardEditorReducerTest {
     fun `GIVEN a state, WHEN a NameOnCardChanged action is received, then the name on card is updated`() {
         val state = createState(nameOnCard = "Jane Doe")
 
-        val result = creditCardEditorReducer(
-            state = state,
-            action = FieldChanged.NameOnCardChanged("Janey Doe"),
-        )
+        val result =
+            creditCardEditorReducer(
+                state = state,
+                action = FieldChanged.NameOnCardChanged("Janey Doe"),
+            )
 
         assertEquals(
             "Expected name on card to be updated",
@@ -87,10 +93,11 @@ class CreditCardEditorReducerTest {
     fun `GIVEN a state with name error, WHEN the name changes, then an error is cleared on the name field`() {
         val state = createState(nameOnCard = "", showNameOnCardError = true)
 
-        val result = creditCardEditorReducer(
-            state = state,
-            action = FieldChanged.NameOnCardChanged("Janey Doe"),
-        )
+        val result =
+            creditCardEditorReducer(
+                state = state,
+                action = FieldChanged.NameOnCardChanged("Janey Doe"),
+            )
 
         assertFalse(
             "Expected name on card error to be cleared",
@@ -102,10 +109,11 @@ class CreditCardEditorReducerTest {
     fun `GIVEN a state with card number error, WHEN the card number changes, then an error is cleared on the name field`() {
         val state = createState(cardNumber = "5555", showCardNumberError = true)
 
-        val result = creditCardEditorReducer(
-            state = state,
-            action = FieldChanged.CardNumberChanged("55554"),
-        )
+        val result =
+            creditCardEditorReducer(
+                state = state,
+                action = FieldChanged.CardNumberChanged("55554"),
+            )
 
         assertFalse(
             "Expected name on card error to be cleared",
@@ -117,10 +125,11 @@ class CreditCardEditorReducerTest {
     fun `GIVEN a state, WHEN a delete dialog cancel action is received, then the dialog is hidden`() {
         val state = createState(showDeleteDialog = true)
 
-        val result = creditCardEditorReducer(
-            state = state,
-            action = DeleteDialogAction.Cancel,
-        )
+        val result =
+            creditCardEditorReducer(
+                state = state,
+                action = DeleteDialogAction.Cancel,
+            )
 
         assertFalse(
             "Expected delete dialog to be hidden",
@@ -132,10 +141,11 @@ class CreditCardEditorReducerTest {
     fun `GIVEN a state, WHEN a delete dialog confirm action is received, then the dialog is hidden`() {
         val state = createState(showDeleteDialog = true)
 
-        val result = creditCardEditorReducer(
-            state = state,
-            action = DeleteDialogAction.Confirm,
-        )
+        val result =
+            creditCardEditorReducer(
+                state = state,
+                action = DeleteDialogAction.Confirm,
+            )
 
         assertFalse(
             "Expected delete dialog to be hidden",
@@ -147,10 +157,11 @@ class CreditCardEditorReducerTest {
     fun `GIVEN a state, WHEN a DeleteClicked action is received, then the dialog is shown`() {
         val state = createState(showDeleteDialog = false)
 
-        val result = creditCardEditorReducer(
-            state = state,
-            action = CreditCardEditorAction.DeleteClicked,
-        )
+        val result =
+            creditCardEditorReducer(
+                state = state,
+                action = CreditCardEditorAction.DeleteClicked,
+            )
 
         assertTrue(
             "Expected delete dialog to be shown",
@@ -162,10 +173,11 @@ class CreditCardEditorReducerTest {
     fun `GIVEN a state with invalid card number, WHEN save action is received, then the error is shown`() {
         val state = createState(cardNumber = "3333")
 
-        val result = creditCardEditorReducer(
-            state = state,
-            action = CreditCardEditorAction.Save,
-        )
+        val result =
+            creditCardEditorReducer(
+                state = state,
+                action = CreditCardEditorAction.Save,
+            )
 
         assertTrue(
             "Expected card number error to be shown",
@@ -177,10 +189,11 @@ class CreditCardEditorReducerTest {
     fun `GIVEN state with card number error, WHEN card number field is changed, then the error is cleared`() {
         val state = createState(showCardNumberError = true)
 
-        val result = creditCardEditorReducer(
-            state = state,
-            action = FieldChanged.CardNumberChanged(cardNumber = "5555"),
-        )
+        val result =
+            creditCardEditorReducer(
+                state = state,
+                action = FieldChanged.CardNumberChanged(cardNumber = "5555"),
+            )
 
         assertFalse(
             "Expected card number error to no longer be shown",
@@ -192,10 +205,11 @@ class CreditCardEditorReducerTest {
     fun `GIVEN state with empty name on card, WHEN a save action is received, then the error is shown`() {
         val state = createState(nameOnCard = "")
 
-        val result = creditCardEditorReducer(
-            state = state,
-            action = CreditCardEditorAction.Save,
-        )
+        val result =
+            creditCardEditorReducer(
+                state = state,
+                action = CreditCardEditorAction.Save,
+            )
 
         assertTrue(
             "Expected name on card error to be shown",
@@ -207,10 +221,11 @@ class CreditCardEditorReducerTest {
     fun `GIVEN a state with name on card error, WHEN the name field changes, then the error is cleared`() {
         val state = createState(showNameOnCardError = true)
 
-        val result = creditCardEditorReducer(
-            state = state,
-            action = FieldChanged.NameOnCardChanged(nameOnCard = "John"),
-        )
+        val result =
+            creditCardEditorReducer(
+                state = state,
+                action = FieldChanged.NameOnCardChanged(nameOnCard = "John"),
+            )
 
         assertFalse(
             "Expected name on card error to no longer be shown",
@@ -222,15 +237,17 @@ class CreditCardEditorReducerTest {
     fun `GIVEN a state, WHEN initialization is completed, then the state is updated accordingly`() {
         val oldState = createState()
 
-        val newState = createState(
-            nameOnCard = "New Name",
-            cardNumber = "1234556789900",
-        )
+        val newState =
+            createState(
+                nameOnCard = "New Name",
+                cardNumber = "1234556789900",
+            )
 
-        val result = creditCardEditorReducer(
-            state = oldState,
-            action = CreditCardEditorAction.Initialization.InitCompleted(state = newState),
-        )
+        val result =
+            creditCardEditorReducer(
+                state = oldState,
+                action = CreditCardEditorAction.Initialization.InitCompleted(state = newState),
+            )
 
         assertEquals(
             "Expected the state to be what was received in the action",

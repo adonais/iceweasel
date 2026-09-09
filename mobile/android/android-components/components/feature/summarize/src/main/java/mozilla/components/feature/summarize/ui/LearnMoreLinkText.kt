@@ -23,13 +23,14 @@ internal fun LearnMoreLinkText(
     val text = stringResource(R.string.mozac_summarize_learn_more_link)
     LinkText(
         text = text,
-        linkTextStates = listOf(
-            LinkTextState(
-                text = text,
-                url = "",
-                onClick = { onClick() },
+        linkTextStates =
+            listOf(
+                LinkTextState(
+                    text = text,
+                    url = "",
+                    onClick = { onClick() },
+                )
             ),
-        ),
         modifier = modifier,
         linkTextDecoration = TextDecoration.Underline,
     )

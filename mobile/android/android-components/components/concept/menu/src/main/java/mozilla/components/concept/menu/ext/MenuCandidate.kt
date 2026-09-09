@@ -18,42 +18,35 @@ import mozilla.components.concept.menu.candidate.NestedMenuCandidate
 import mozilla.components.concept.menu.candidate.RowMenuCandidate
 import mozilla.components.concept.menu.candidate.TextMenuCandidate
 
-private fun MenuIcon?.effect(): MenuIconEffect? =
-    if (this is DrawableMenuIcon) effect else null
+private fun MenuIcon?.effect(): MenuIconEffect? = if (this is DrawableMenuIcon) effect else null
 
-/**
- * Find the effects used by the menu.
- * Disabled and invisible menu items are not included.
- */
-fun List<MenuCandidate>.effects(): Sequence<MenuEffect> = this.asSequence()
-    .filter { option -> option.containerStyle.isVisible && option.containerStyle.isEnabled }
-    .flatMap { option ->
-        when (option) {
-            is TextMenuCandidate ->
-                sequenceOf(option.effect, option.start.effect(), option.end.effect()).filterNotNull()
-            is CompoundMenuCandidate ->
-                sequenceOf(option.effect, option.start.effect()).filterNotNull()
-            is NestedMenuCandidate ->
-                sequenceOf(option.effect, option.start.effect(), option.end.effect()).filterNotNull() +
-                    option.subMenuItems?.effects().orEmpty()
-            is RowMenuCandidate ->
-                option.items.asSequence()
-                    .filter { it.containerStyle.isVisible && it.containerStyle.isEnabled }
-                    .mapNotNull { it.icon.effect }
-            is DecorativeTextMenuCandidate, is DividerMenuCandidate -> emptySequence()
+/** Find the effects used by the menu. Disabled and invisible menu items are not included. */
+fun List<MenuCandidate>.effects(): Sequence<MenuEffect> =
+    this.asSequence()
+        .filter { option -> option.containerStyle.isVisible && option.containerStyle.isEnabled }
+        .flatMap { option ->
+            when (option) {
+                is TextMenuCandidate ->
+                    sequenceOf(option.effect, option.start.effect(), option.end.effect()).filterNotNull()
+                is CompoundMenuCandidate -> sequenceOf(option.effect, option.start.effect()).filterNotNull()
+                is NestedMenuCandidate ->
+                    sequenceOf(option.effect, option.start.effect(), option.end.effect()).filterNotNull() +
+                        option.subMenuItems?.effects().orEmpty()
+                is RowMenuCandidate ->
+                    option.items
+                        .asSequence()
+                        .filter { it.containerStyle.isVisible && it.containerStyle.isEnabled }
+                        .mapNotNull { it.icon.effect }
+                is DecorativeTextMenuCandidate,
+                is DividerMenuCandidate -> emptySequence()
+            }
         }
-    }
 
-/**
- * Find a [NestedMenuCandidate] in the list with a matching [id].
- */
-fun List<MenuCandidate>.findNestedMenuCandidate(id: Int): NestedMenuCandidate? = this.asSequence()
-    .mapNotNull { it as? NestedMenuCandidate }
-    .find { it.id == id }
+/** Find a [NestedMenuCandidate] in the list with a matching [id]. */
+fun List<MenuCandidate>.findNestedMenuCandidate(id: Int): NestedMenuCandidate? =
+    this.asSequence().mapNotNull { it as? NestedMenuCandidate }.find { it.id == id }
 
-/**
- * Select the highlight with the highest priority.
- */
+/** Select the highlight with the highest priority. */
 fun Sequence<MenuEffect>.max() = maxByOrNull {
     // Select the highlight with the highest priority
     when (it) {

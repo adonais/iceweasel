@@ -13,17 +13,16 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * These exercise the parts of the plugin that do not need the Android Gradle plugin on the
- * classpath. The per-variant tasks are registered from an `onVariants` callback, so covering those
- * needs a real `com.android.library` project.
+ * These exercise the parts of the plugin that do not need the Android Gradle plugin on the classpath. The per-variant
+ * tasks are registered from an `onVariants` callback, so covering those needs a real `com.android.library` project.
  */
 class ApiLintPluginTest {
-    private fun project(): Project = ProjectBuilder.builder().build().also {
-        it.pluginManager.apply(ApiLintPlugin::class.java)
-    }
+    private fun project(): Project =
+        ProjectBuilder.builder().build().also {
+            it.pluginManager.apply(ApiLintPlugin::class.java)
+        }
 
-    private fun extension(project: Project) =
-        project.extensions.getByType(ApiLintPluginExtension::class.java)
+    private fun extension(project: Project) = project.extensions.getByType(ApiLintPluginExtension::class.java)
 
     @Test
     fun `registers the apiLint extension`() {

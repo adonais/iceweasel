@@ -133,5 +133,13 @@ HTMLElement includes ElementCSSInlineStyle;
 HTMLElement includes TouchEventHandlers;
 HTMLElement includes OnErrorEventHandlerForNodes;
 
+// https://wicg.github.io/container-timing/#extensions-to-element
+partial interface HTMLElement {
+  [CEReactions, Pref="dom.enable_container_timing"]
+  attribute DOMString containerTiming;
+  [CEReactions, Pref="dom.enable_container_timing"]
+  attribute boolean containerTimingIgnore;
+};
+
 [Exposed=Window]
 interface HTMLUnknownElement : HTMLElement {};

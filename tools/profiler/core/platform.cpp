@@ -68,6 +68,7 @@
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/BaseAndGeckoProfilerDetail.h"
 #include "mozilla/BaseProfiler.h"
+#include "mozilla/ChromeProfilerCounter.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
@@ -893,10 +894,16 @@ class CorePS {
       aProfSize += registeredPage->SizeOfIncludingThis(aMallocSizeOf);
     }
 
+    aProfSize += sInstance->mChromeCounters.sizeOfExcludingThis(aMallocSizeOf);
+    for (auto& chromeCounter : sInstance->mChromeCounters) {
+      aProfSize += chromeCounter->SizeOfIncludingThis(aMallocSizeOf);
+    }
+
     // Measurement of the following things may be added later if DMD finds it
     // is worthwhile:
     // - CorePS::mRegisteredPages itself (its elements' children are
     // measured above)
+    // - CorePS::mCounters (non-owning pointers, measured by their owners)
 
 #if defined(USE_LUL_STACKWALK)
     if (lul::LUL* lulPtr = sInstance->mLul; lulPtr) {
@@ -912,17 +919,23 @@ class CorePS {
 
   PS_GET(Vector<RefPtr<PageInformation>>&, RegisteredPages)
 
-  static void AppendRegisteredPage(PSLockRef,
-                                   RefPtr<PageInformation>&& aRegisteredPage) {
+  // Takes the page fields rather than a PageInformation, so that the common
+  // case of re-registering an already-known page doesn't have to allocate one
+  // only to throw it away.
+  static void AppendRegisteredPage(PSLockRef, uint64_t aTabID,
+                                   uint64_t aInnerWindowID,
+                                   const nsCString& aUrl,
+                                   uint64_t aEmbedderInnerWindowID,
+                                   bool aIsPrivateBrowsing) {
     MOZ_ASSERT(sInstance);
-    struct RegisteredPageComparator {
-      PageInformation* aA;
-      bool operator()(PageInformation* aB) const { return aA->Equals(aB); }
-    };
 
+    // Inner window IDs are unique for each page, so they are enough to
+    // identify an already-registered page.
     auto foundPageIter = std::find_if(
         sInstance->mRegisteredPages.begin(), sInstance->mRegisteredPages.end(),
-        RegisteredPageComparator{aRegisteredPage.get()});
+        [aInnerWindowID](const RefPtr<PageInformation>& aPage) {
+          return aPage->InnerWindowID() == aInnerWindowID;
+        });
 
     if (foundPageIter != sInstance->mRegisteredPages.end()) {
       if ((*foundPageIter)->Url().EqualsLiteral("about:blank")) {
@@ -938,7 +951,9 @@ class CorePS {
     }
 
     MOZ_RELEASE_ASSERT(
-        sInstance->mRegisteredPages.append(std::move(aRegisteredPage)));
+        sInstance->mRegisteredPages.append(MakeRefPtr<PageInformation>(
+            aTabID, aInnerWindowID, aUrl, aEmbedderInnerWindowID,
+            aIsPrivateBrowsing)));
   }
 
   static void RemoveRegisteredPage(PSLockRef,
@@ -971,6 +986,34 @@ class CorePS {
                                 sInstance->mCounters.end(), aCounter);
       MOZ_RELEASE_ASSERT(counter != sInstance->mCounters.end());
       sInstance->mCounters.erase(counter);
+    }
+  }
+
+  static void AddChromeCounter(
+      PSLockRef, already_AddRefed<ChromeProfilerCounter> aCounter) {
+    MOZ_ASSERT(sInstance);
+    MOZ_RELEASE_ASSERT(
+        sInstance->mChromeCounters.append(RefPtr(std::move(aCounter))));
+  }
+
+  static already_AddRefed<ChromeProfilerCounter> ReleaseChromeCounter(
+      PSLockRef, ChromeProfilerCounter* aCounter) {
+    if (!sInstance) {
+      // This mirrors RemoveCounter assumption that sInstance may not exist.
+      return nullptr;
+    }
+    auto* it = std::find(sInstance->mChromeCounters.begin(),
+                         sInstance->mChromeCounters.end(), aCounter);
+    MOZ_RELEASE_ASSERT(it != sInstance->mChromeCounters.end());
+    RefPtr<ChromeProfilerCounter> owned = std::move(*it);
+    sInstance->mChromeCounters.erase(it);
+    return owned.forget();
+  }
+
+  static void ClearChromeCounters(PSLockRef) {
+    MOZ_ASSERT(sInstance);
+    for (RefPtr<ChromeProfilerCounter>& counter : sInstance->mChromeCounters) {
+      counter->Clear();
     }
   }
 
@@ -1054,6 +1097,14 @@ class CorePS {
 
   // Non-owning pointers to all active counters
   Vector<BaseProfilerCount*> mCounters;
+
+  // The profiler holds a strong reference here for each Chrome-originated
+  // counter while that counter is registered and being sampled. The profiler
+  // must own the counter itself, because the counter's JS wrapper can be
+  // garbage collected at any time. The profiler releases the reference when JS
+  // unregisters the counter, or moves it to mDeadCounters if a session is
+  // still active.
+  Vector<RefPtr<ChromeProfilerCounter>> mChromeCounters;
 
 #if defined(GECKO_PROFILER_ASYNC_POSIX_SIGNAL_CONTROL)
   // Background thread for communicating with async signal handlers
@@ -1414,6 +1465,11 @@ class ActivePS {
     size_t n = aMallocSizeOf(sInstance);
 
     n += sInstance->mProfileBuffer.SizeOfExcludingThis(aMallocSizeOf);
+
+    n += sInstance->mDeadCounters.sizeOfExcludingThis(aMallocSizeOf);
+    for (auto& deadCounter : sInstance->mDeadCounters) {
+      n += deadCounter->SizeOfIncludingThis(aMallocSizeOf);
+    }
 
     // Measurement of the following members may be added later if DMD finds it
     // is worthwhile:
@@ -1896,6 +1952,13 @@ class ActivePS {
   }
 #endif
 
+  static void AddDeadCounter(PSLockRef,
+                             already_AddRefed<ChromeProfilerCounter> aCounter) {
+    MOZ_ASSERT(sInstance);
+    MOZ_RELEASE_ASSERT(
+        sInstance->mDeadCounters.append(RefPtr(std::move(aCounter))));
+  }
+
  private:
   // The singleton instance.
   static ActivePS* sInstance;
@@ -1997,6 +2060,13 @@ class ActivePS {
 #if defined(MOZ_MEMORY) && defined(MOZ_PROFILER_MEMORY)
   UniquePtr<BaseProfilerCount> mMemoryCounter;
 #endif
+
+  // The profiler moves a counter here when JS unregisters it during an active
+  // session. The profiler cannot free the counter yet, because the profile
+  // buffer still holds raw pointers to it in recorded samples. The profiler
+  // releases these references when it destroys this ActivePS, after it has
+  // serialized the profile.
+  Vector<RefPtr<ChromeProfilerCounter>> mDeadCounters;
 };
 
 ActivePS* ActivePS::sInstance = nullptr;
@@ -3361,8 +3431,8 @@ static PreRecordedMetaInformation PreRecordMetaInformation(
 #if defined(GP_OS_windows)
       // On Windows, the http "oscpu" is capped at Windows 10, so we need to get
       // the real OS version directly.
-      OSVERSIONINFO ovi = {sizeof(OSVERSIONINFO)};
-    if (GetVersionEx(&ovi)) {
+      OSVERSIONINFOW ovi = {sizeof(OSVERSIONINFOW)};
+    if (GetVersionExW(&ovi)) {
       info.mHttpOscpu.AppendLiteral("Windows ");
       // The major version returned for Windows 11 is 10, but we can
       // identify it from the build number.
@@ -7028,6 +7098,10 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
   }
 #endif
 
+  // Reset Chrome-originated counters so each session's samples measure only the
+  // adds made during that session, not values carried over from earlier ones.
+  CorePS::ClearChromeCounters(aLock);
+
 #if defined(MOZ_MEMORY) && defined(MOZ_PROFILER_MEMORY)
   if (ActivePS::FeatureMemory(aLock)) {
     auto counter = mozilla::profiler::create_memory_counter();
@@ -7568,6 +7642,25 @@ void profiler_remove_sampled_counter(BaseProfilerCount* aCounter) {
   locked_profiler_remove_sampled_counter(lock, aCounter);
 }
 
+void profiler_add_sampled_chrome_counter(ChromeProfilerCounter* aCounter) {
+  PSAutoLock lock;
+  CorePS::AddChromeCounter(lock, do_AddRef(aCounter));
+  locked_profiler_add_sampled_counter(lock, aCounter);
+}
+
+void profiler_remove_sampled_chrome_counter(ChromeProfilerCounter* aCounter) {
+  PSAutoLock lock;
+  locked_profiler_remove_sampled_counter(lock, aCounter);
+  RefPtr<ChromeProfilerCounter> owned =
+      CorePS::ReleaseChromeCounter(lock, aCounter);
+  if (owned && ActivePS::Exists(lock)) {
+    // The profile buffer may still hold raw pointers to this counter in
+    // already-recorded samples. Keep it alive until the active session (and
+    // its buffer) is destroyed, after the profile has been serialized.
+    ActivePS::AddDeadCounter(lock, owned.forget());
+  }
+}
+
 void profiler_count_bandwidth_bytes(int64_t aCount) {
   NS_ASSERTION(profiler_feature_active(ProfilerFeature::Bandwidth),
                "Should not call profiler_count_bandwidth_bytes when the "
@@ -7686,9 +7779,8 @@ void profiler_register_page(uint64_t aTabID, uint64_t aInnerWindowID,
   // When a Browsing context is first loaded, the first url loaded in it will be
   // about:blank. Because of that, this call keeps the first non-about:blank
   // registration of window and discards the previous one.
-  RefPtr<PageInformation> pageInfo = new PageInformation(
-      aTabID, aInnerWindowID, aUrl, aEmbedderInnerWindowID, aIsPrivateBrowsing);
-  CorePS::AppendRegisteredPage(lock, std::move(pageInfo));
+  CorePS::AppendRegisteredPage(lock, aTabID, aInnerWindowID, aUrl,
+                               aEmbedderInnerWindowID, aIsPrivateBrowsing);
 
   // After appending the given page to CorePS, look for the expired
   // pages and remove them if there are any.
@@ -8008,7 +8100,7 @@ void profiler_mark_thread_awake() {
   LONG priority;
   static const auto get_thread_information_fn =
       reinterpret_cast<decltype(&::GetThreadInformation)>(::GetProcAddress(
-          ::GetModuleHandle(L"Kernel32.dll"), "GetThreadInformation"));
+          ::GetModuleHandleW(L"Kernel32.dll"), "GetThreadInformation"));
 
   if (!get_thread_information_fn ||
       !get_thread_information_fn(GetCurrentThread(), ThreadAbsoluteCpuPriority,
@@ -8018,7 +8110,7 @@ void profiler_mark_thread_awake() {
 
   static const auto nt_query_information_thread_fn =
       reinterpret_cast<decltype(&::NtQueryInformationThread)>(::GetProcAddress(
-          ::GetModuleHandle(L"ntdll.dll"), "NtQueryInformationThread"));
+          ::GetModuleHandleW(L"ntdll.dll"), "NtQueryInformationThread"));
 
   LONG currentPriority = 0;
   if (nt_query_information_thread_fn) {

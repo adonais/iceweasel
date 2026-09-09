@@ -120,17 +120,20 @@ class VerificationDelegateTest {
     companion object {
         var lastVerifiedPref: Pair<Long, Int>
             get() {
-                val stringResult = requireNotNull(
-                    preference(testContext).getString(
-                        PREF_LAST_VERIFIED,
-                        "{\"timestamp\": ${System.currentTimeMillis()}, \"totalCount\": 0}",
-                    ),
-                )
+                val stringResult =
+                    requireNotNull(
+                        preference(testContext)
+                            .getString(
+                                PREF_LAST_VERIFIED,
+                                "{\"timestamp\": ${System.currentTimeMillis()}, \"totalCount\": 0}",
+                            )
+                    )
                 val json = JSONObject(stringResult)
                 return Pair(json.getLong("timestamp"), json.getInt("totalCount"))
             }
             set(value) {
-                preference(testContext).edit()
+                preference(testContext)
+                    .edit()
                     .putString(PREF_LAST_VERIFIED, "{\"timestamp\": ${value.first}, \"totalCount\": ${value.second}}")
                     .apply()
             }

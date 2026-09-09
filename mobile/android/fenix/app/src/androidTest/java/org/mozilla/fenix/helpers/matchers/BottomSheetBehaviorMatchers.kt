@@ -9,8 +9,7 @@ import androidx.test.espresso.matcher.BoundedMatcher
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import org.hamcrest.Description
 
-class BottomSheetBehaviorStateMatcher(private val expectedState: Int) :
-    BoundedMatcher<View, View>(View::class.java) {
+class BottomSheetBehaviorStateMatcher(private val expectedState: Int) : BoundedMatcher<View, View>(View::class.java) {
 
     override fun describeTo(description: Description?) {
         description?.appendText("BottomSheetBehavior in state: \"$expectedState\"")
@@ -26,10 +25,7 @@ class BottomSheetBehaviorHalfExpandedMaxRatioMatcher(private val maxHalfExpanded
     BoundedMatcher<View, View>(View::class.java) {
 
     override fun describeTo(description: Description?) {
-        description?.appendText(
-            "BottomSheetBehavior with an at max halfExpandedRation: " +
-                "$maxHalfExpandedRatio",
-        )
+        description?.appendText("BottomSheetBehavior with an at max halfExpandedRation: " + "$maxHalfExpandedRatio")
     }
 
     override fun matchesSafely(item: View): Boolean {

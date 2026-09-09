@@ -71,6 +71,7 @@ class FontPaletteValueSet;
 }  // namespace mozilla
 using gfxFontVariation = mozilla::gfx::FontVariation;
 using gfxFontFeature = mozilla::gfx::FontFeature;
+struct gfxFontVariationAxis;
 
 enum nsCSSUnit : uint32_t;
 enum nsChangeHint : uint32_t;
@@ -191,8 +192,6 @@ struct StyleBox {
   }
 
   bool operator==(const StyleBox& aOther) const { return *(*this) == *aOther; }
-
-  bool operator!=(const StyleBox& aOther) const { return *(*this) != *aOther; }
 
  private:
   T* mRaw;

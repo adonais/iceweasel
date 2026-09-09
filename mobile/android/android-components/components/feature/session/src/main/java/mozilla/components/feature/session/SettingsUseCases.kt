@@ -22,17 +22,15 @@ class SettingsUseCases(
     store: BrowserStore,
 ) {
     /**
-     * Updates the tracking protection policy to the given policy value when invoked.
-     * All active sessions are automatically updated with the new policy.
+     * Updates the tracking protection policy to the given policy value when invoked. All active sessions are
+     * automatically updated with the new policy.
      */
-    class UpdateTrackingProtectionUseCase internal constructor(
+    class UpdateTrackingProtectionUseCase
+    internal constructor(
         private val engine: Engine,
         private val store: BrowserStore,
     ) {
-        /**
-         * Updates the tracking protection policy for all current and future [EngineSession]
-         * instances.
-         */
+        /** Updates the tracking protection policy for all current and future [EngineSession] instances. */
         operator fun invoke(policy: TrackingProtectionPolicy) {
             engine.settings.trackingProtectionPolicy = policy
 
@@ -50,7 +48,5 @@ class SettingsUseCases(
 }
 
 private fun BrowserState.forEachEngineSession(block: (EngineSession) -> Unit) {
-    (tabs + customTabs)
-        .mapNotNull { it.engineState.engineSession }
-        .map { block(it) }
+    (tabs + customTabs).mapNotNull { it.engineState.engineSession }.map { block(it) }
 }

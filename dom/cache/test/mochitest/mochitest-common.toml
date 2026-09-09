@@ -61,6 +61,8 @@ skip-if = [
 
 ["test_cache_orphaned_cache.html"]
 
+["test_cache_orphaned_padding_underflow.html"]
+
 ["test_cache_overwrite.html"]
 skip-if = [
   "http2",

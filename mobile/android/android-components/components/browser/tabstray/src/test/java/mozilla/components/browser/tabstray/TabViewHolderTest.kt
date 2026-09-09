@@ -18,15 +18,19 @@ class TabViewHolderTest : TestCase() {
 
     @Test
     fun `updateSelectedTabIndicator needs to have a provided implementation`() {
-        val simpleTabViewHolder = object : TabViewHolder(View(testContext)) {
-            override var tab: TabSessionState? = null
-            override fun bind(
-                tab: TabSessionState,
-                isSelected: Boolean,
-                styling: TabsTrayStyling,
-                delegate: TabsTray.Delegate,
-            ) { /* noop */ }
-        }
+        val simpleTabViewHolder =
+            object : TabViewHolder(View(testContext)) {
+                override var tab: TabSessionState? = null
+
+                override fun bind(
+                    tab: TabSessionState,
+                    isSelected: Boolean,
+                    styling: TabsTrayStyling,
+                    delegate: TabsTray.Delegate,
+                ) {
+                    /* noop */
+                }
+            }
 
         expectException<UnsupportedOperationException> {
             simpleTabViewHolder.updateSelectedTabIndicator(true)
@@ -35,16 +39,23 @@ class TabViewHolderTest : TestCase() {
 
     @Test
     fun `updateSelectedTabIndicator with a provided implementation just works`() {
-        val tabViewHolder = object : TabViewHolder(View(testContext)) {
-            override var tab: TabSessionState? = null
-            override fun bind(
-                tab: TabSessionState,
-                isSelected: Boolean,
-                styling: TabsTrayStyling,
-                delegate: TabsTray.Delegate,
-            ) { /* noop */ }
-            override fun updateSelectedTabIndicator(showAsSelected: Boolean) { /* noop */ }
-        }
+        val tabViewHolder =
+            object : TabViewHolder(View(testContext)) {
+                override var tab: TabSessionState? = null
+
+                override fun bind(
+                    tab: TabSessionState,
+                    isSelected: Boolean,
+                    styling: TabsTrayStyling,
+                    delegate: TabsTray.Delegate,
+                ) {
+                    /* noop */
+                }
+
+                override fun updateSelectedTabIndicator(showAsSelected: Boolean) {
+                    /* noop */
+                }
+            }
 
         // Simply test that this would not fail the test like it would happen above.
         tabViewHolder.updateSelectedTabIndicator(true)

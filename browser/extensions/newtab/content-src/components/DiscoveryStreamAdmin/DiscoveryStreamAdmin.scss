@@ -258,6 +258,52 @@
     }
   }
 
+  .layout-variants {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-small);
+    margin-block: var(--space-small);
+
+    // align-items: start so the radio lines up with the name rather than centring
+    // against the whole name + description block.
+    .layout-variant {
+      display: flex;
+      align-items: start;
+      gap: var(--space-small);
+    }
+
+    .layout-variant-text {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xxsmall);
+    }
+
+    .layout-variant-name {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-small);
+      flex-wrap: wrap;
+    }
+
+    .layout-variant-value {
+      color: var(--text-color-deemphasized);
+      font-size: var(--font-size-small);
+    }
+
+    .layout-variant-description {
+      color: var(--text-color-deemphasized);
+      font-size: var(--font-size-small);
+    }
+  }
+
+  .layout-status {
+    color: var(--text-color-deemphasized);
+
+    &.layout-status-warning {
+      color: var(--text-color-error);
+    }
+  }
+
   table {
     border-collapse: collapse;
     width: 100%;

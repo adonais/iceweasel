@@ -15,30 +15,23 @@ import androidx.lifecycle.LifecycleOwner
 
 /**
  * The "path" that this activity started in. See the
- * [Fenix perf glossary](https://wiki.mozilla.org/index.php?title=Performance/Fenix/Glossary)
- * for specific definitions.
+ * [Fenix perf glossary](https://wiki.mozilla.org/index.php?title=Performance/Fenix/Glossary) for specific definitions.
  */
 interface StartupPathProvider {
 
     /**
      * The path the application took to
-     * [Fenix perf glossary](https://wiki.mozilla.org/index.php?title=Performance/Fenix/Glossary)
-     * for specific definitions.
+     * [Fenix perf glossary](https://wiki.mozilla.org/index.php?title=Performance/Fenix/Glossary) for specific
+     * definitions.
      */
     enum class StartupPath {
-        /**
-         * The startup path for the Main app
-         */
+        /** The startup path for the Main app */
         MAIN,
 
-        /**
-         * The startup path if the user opens a link in the app
-         */
+        /** The startup path if the user opens a link in the app */
         VIEW,
 
-        /**
-         * The start up path if we received an Intent but we're unable to categorize it into other buckets.
-         */
+        /** The start up path if we received an Intent but we're unable to categorize it into other buckets. */
         UNKNOWN,
 
         /**
@@ -49,35 +42,28 @@ interface StartupPathProvider {
         NOT_SET,
     }
 
-    /**
-     * The determined StartupPath for the given activity
-     */
+    /** The determined StartupPath for the given activity */
     val startupPathForActivity: StartupPath
 
-    /**
-     * Function to attach the startup path provider to a lifecycle/activity
-     */
+    /** Function to attach the startup path provider to a lifecycle/activity */
     fun attachOnActivityOnCreate(lifecycle: Lifecycle, intent: Intent?)
 
-    /**
-     * Function to invoke when a new intent has been received by the activity
-     */
+    /** Function to invoke when a new intent has been received by the activity */
     fun onIntentReceived(intent: Intent?)
 }
 
 /**
  * The "path" that this activity started in. See the
- * [Fenix perf glossary](https://wiki.mozilla.org/index.php?title=Performance/Fenix/Glossary)
- * for specific definitions.
+ * [Fenix perf glossary](https://wiki.mozilla.org/index.php?title=Performance/Fenix/Glossary) for specific definitions.
  *
- * This should be a member variable of [Activity] because its data is tied to the lifecycle of an
- * Activity. Call [attachOnActivityOnCreate] & [onIntentReceived] for this class to work correctly.
+ * This should be a member variable of [Activity] because its data is tied to the lifecycle of an Activity. Call
+ * [attachOnActivityOnCreate] & [onIntentReceived] for this class to work correctly.
  */
 internal class DefaultStartupPathProvider : StartupPathProvider {
 
     /**
-     * Returns the [StartupPath] for the currently started activity. This value will be set
-     * after an [Intent] is received that causes this activity to move into the STARTED state.
+     * Returns the [StartupPath] for the currently started activity. This value will be set after an [Intent] is
+     * received that causes this activity to move into the STARTED state.
      */
     private var _startupPathForActivity = StartupPathProvider.StartupPath.NOT_SET
     override val startupPathForActivity: StartupPathProvider.StartupPath
@@ -97,15 +83,16 @@ internal class DefaultStartupPathProvider : StartupPathProvider {
     // URL, it'll perform a MAIN action. However, it's fairly representative of what users *intended*
     // to do when opening the app and shouldn't change much because it's based on Android system-wide
     // conventions, so it's probably fine for our purposes.
-    private fun getStartupPathFromIntent(intent: Intent): StartupPathProvider.StartupPath = when (intent.action) {
-        Intent.ACTION_MAIN -> StartupPathProvider.StartupPath.MAIN
-        Intent.ACTION_VIEW -> StartupPathProvider.StartupPath.VIEW
-        else -> StartupPathProvider.StartupPath.UNKNOWN
-    }
+    private fun getStartupPathFromIntent(intent: Intent): StartupPathProvider.StartupPath =
+        when (intent.action) {
+            Intent.ACTION_MAIN -> StartupPathProvider.StartupPath.MAIN
+            Intent.ACTION_VIEW -> StartupPathProvider.StartupPath.VIEW
+            else -> StartupPathProvider.StartupPath.UNKNOWN
+        }
 
     /**
-     * Expected to be called when a new [Intent] is received by the [Activity]: i.e.
-     * [Activity.onCreate] and [Activity.onNewIntent].
+     * Expected to be called when a new [Intent] is received by the [Activity]: i.e. [Activity.onCreate] and
+     * [Activity.onNewIntent].
      */
     override fun onIntentReceived(intent: Intent?) {
         // We want to set a path only if the intent causes the Activity to move into the STARTED state.
@@ -120,8 +107,7 @@ internal class DefaultStartupPathProvider : StartupPathProvider {
         }
     }
 
-    @VisibleForTesting(otherwise = NONE)
-    fun getTestCallbacks() = StartupPathLifecycleObserver()
+    @VisibleForTesting(otherwise = NONE) fun getTestCallbacks() = StartupPathLifecycleObserver()
 
     @VisibleForTesting(otherwise = PRIVATE)
     inner class StartupPathLifecycleObserver : DefaultLifecycleObserver {

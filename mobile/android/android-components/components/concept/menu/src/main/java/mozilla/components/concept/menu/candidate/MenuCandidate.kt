@@ -4,9 +4,7 @@
 
 package mozilla.components.concept.menu.candidate
 
-/**
- * Menu option data classes to be shown in the browser menu.
- */
+/** Menu option data classes to be shown in the browser menu. */
 sealed class MenuCandidate {
     abstract val containerStyle: ContainerStyle
 }
@@ -69,9 +67,7 @@ data class CompoundMenuCandidate(
     val onCheckedChange: (Boolean) -> Unit = {},
 ) : MenuCandidate() {
 
-    /**
-     * Compound button types to display with the compound menu option.
-     */
+    /** Compound button types to display with the compound menu option. */
     enum class ButtonType {
         CHECKBOX,
         SWITCH,
@@ -85,8 +81,7 @@ data class CompoundMenuCandidate(
  * @property text Text to display.
  * @property start Icon to display before the text.
  * @property end Icon to display after the text.
- * @property subMenuItems Nested menu items to display.
- * If null, this item will instead return to the root menu.
+ * @property subMenuItems Nested menu items to display. If null, this item will instead return to the root menu.
  * @property textStyle Styling to apply to the text.
  * @property containerStyle Styling to apply to the container.
  * @property effect Effects to apply to the option.
@@ -118,6 +113,4 @@ data class RowMenuCandidate(
  *
  * @property containerStyle Styling to apply to the divider.
  */
-data class DividerMenuCandidate(
-    override val containerStyle: ContainerStyle = ContainerStyle(),
-) : MenuCandidate()
+data class DividerMenuCandidate(override val containerStyle: ContainerStyle = ContainerStyle()) : MenuCandidate()

@@ -5,6 +5,10 @@
 package mozilla.components.lib.bookmarks.file
 
 import android.net.Uri
+import java.io.ByteArrayInputStream
+import java.io.IOException
+import kotlin.test.assertIs
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -22,10 +26,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import java.io.ByteArrayInputStream
-import java.io.IOException
-import kotlin.test.assertIs
-import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class) // advanceTimeBy
 @RunWith(RobolectricTestRunner::class)
@@ -53,9 +53,7 @@ class HtmlBookmarksFileImporterTest {
     @Test
     fun `importBookmarksFromUri passes parsed tree to inserter`() = runTest {
         var insertedTree: InsertableBookmarkTreeRoot? = null
-        val importer = createImporter(
-            inserter = fakeInserter { insertedTree = it },
-        )
+        val importer = createImporter(inserter = fakeInserter { insertedTree = it })
 
         importer.importBookmarksFromUri(testUri).getOrThrow()
 
@@ -64,9 +62,7 @@ class HtmlBookmarksFileImporterTest {
 
     @Test
     fun `importBookmarksFromUri returns file read error when uriOpener fails`() = runTest {
-        val importer = createImporter(
-            uriOpener = { Result.failure(IOException("cannot open")) },
-        )
+        val importer = createImporter(uriOpener = { Result.failure(IOException("cannot open")) })
 
         val result = importer.importBookmarksFromUri(testUri)
 
@@ -86,9 +82,8 @@ class HtmlBookmarksFileImporterTest {
 
     @Test
     fun `importBookmarksFromUri returns bookmarks insert error when inserter fails`() = runTest {
-        val importer = createImporter(
-            inserter = fakeInserter(result = Result.failure(RuntimeException("insert failed"))),
-        )
+        val importer =
+            createImporter(inserter = fakeInserter(result = Result.failure(RuntimeException("insert failed"))))
 
         val result = importer.importBookmarksFromUri(testUri)
 
@@ -97,33 +92,39 @@ class HtmlBookmarksFileImporterTest {
     }
 
     @Test
-    fun `importBookmarksFromUri does not swallow cancellation when the job is cancelled before the result`() =
-        runTest {
-            // Given that the parsing takes 10 seconds
-            val importer = createImporter(
-                uriOpener = UriOpener {
-                    Result.success(
-                        """
+    fun `importBookmarksFromUri does not swallow cancellation when the job is cancelled before the result`() = runTest {
+        // Given that the parsing takes 10 seconds
+        val importer =
+            createImporter(
+                uriOpener =
+                    UriOpener {
+                        Result.success(
+                            """
                             <!DOCTYPE NETSCAPE-Bookmark-file-1>
                             <HTML>
                             <DL><p>
                               <DT><A HREF="https://example.com" ADD_DATE="1000" LAST_MODIFIED="2000">Example</A>
                             </DL>
-                        """.trimIndent().byteInputStream(),
-                    )
-                },
-                parser = BookmarksFileParser {
-                    delay(10.seconds)
-                    Result.failure(Throwable("Unable to parse"))
-                },
-                inserter = BookmarkInserter {
-                    Result.failure(Throwable("Unable to insert"))
-                },
+                            """
+                                .trimIndent()
+                                .byteInputStream()
+                        )
+                    },
+                parser =
+                    BookmarksFileParser {
+                        delay(10.seconds)
+                        Result.failure(Throwable("Unable to parse"))
+                    },
+                inserter =
+                    BookmarkInserter {
+                        Result.failure(Throwable("Unable to insert"))
+                    },
             )
-            var caughtException: Throwable? = null
+        var caughtException: Throwable? = null
 
-            // When we import bookmarks
-            val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+        // When we import bookmarks
+        val job =
+            launch(UnconfinedTestDispatcher(testScheduler)) {
                 try {
                     importer.importBookmarksFromUri(testUri)
                 } catch (e: Throwable) {
@@ -131,14 +132,14 @@ class HtmlBookmarksFileImporterTest {
                 }
             }
 
-            // And the job is canceled 1 second into execution
-            advanceTimeBy(1.seconds)
-            job.cancel()
-            advanceUntilIdle()
+        // And the job is canceled 1 second into execution
+        advanceTimeBy(1.seconds)
+        job.cancel()
+        advanceUntilIdle()
 
-            // Then verify that expectedException is a cancellation exception
-            assertIs<CancellationException>(caughtException)
-        }
+        // Then verify that expectedException is a cancellation exception
+        assertIs<CancellationException>(caughtException)
+    }
 
     private fun fakeInserter(
         guid: String = "guid",
@@ -154,10 +155,11 @@ class HtmlBookmarksFileImporterTest {
         uriOpener: UriOpener = UriOpener { Result.success(ByteArrayInputStream(ByteArray(0))) },
         parser: BookmarksFileParser = BookmarksFileParser.fakeSuccess(folder = null),
         inserter: BookmarkInserter = fakeInserter(),
-    ) = HtmlBookmarksFileImporter(
-        parentGuid = parentGuid,
-        uriOpener = uriOpener,
-        parser = parser,
-        inserter = inserter,
-    )
+    ) =
+        HtmlBookmarksFileImporter(
+            parentGuid = parentGuid,
+            uriOpener = uriOpener,
+            parser = parser,
+            inserter = inserter,
+        )
 }

@@ -14,22 +14,22 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <utility>
 
 #include "api/field_trials_view.h"
 #include "api/sequence_checker.h"
-#include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "api/video/timing/video_jitter_timing_interface.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_timing.h"
 #include "modules/video_coding/timing/decode_time_percentile_filter.h"
-#include "modules/video_coding/timing/default_video_jitter_timing.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "system_wrappers/include/clock.h"
+#include "video/timing/default_video_jitter_timing.h"
 
 namespace webrtc {
 namespace {
@@ -138,25 +138,31 @@ void VCMTiming::SetMinimumDelay(TimeDelta minimum_delay) {
   }
 }
 
-void VCMTiming::OnDecodableTemporalUnit(uint32_t rtp_timestamp,
-                                        DataSize superframe_size,
-                                        Timestamp max_receive_time,
-                                        bool was_retransmitted) {
+void VCMTiming::OnContinuousTemporalUnits(
+    std::span<const uint32_t> rtp_timestamps,
+    Timestamp now) {
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
   std::optional<TimeDelta> minimum_delay =
-      video_jitter_timing_->OnDecodableTemporalUnit(
-          {.rtp_timestamp = rtp_timestamp,
-           .size = superframe_size,
-           .time = max_receive_time,
-           .was_retransmitted = was_retransmitted});
+      video_jitter_timing_->OnContinuousTemporalUnits(rtp_timestamps, now);
   if (minimum_delay.has_value()) {
     SetMinimumDelay(*minimum_delay);
   }
 }
 
-void VCMTiming::UpdateRtt(TimeDelta rtt) {
+void VCMTiming::OnDecodableTemporalUnit(
+    const VideoJitterTimingInterface::TemporalUnitInfo& info) {
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
-  video_jitter_timing_->OnNetworkUpdate({.rtt = rtt});
+  std::optional<TimeDelta> minimum_delay =
+      video_jitter_timing_->OnDecodableTemporalUnit(info);
+  if (minimum_delay.has_value()) {
+    SetMinimumDelay(*minimum_delay);
+  }
+}
+
+void VCMTiming::OnNetworkUpdate(
+    const VideoJitterTimingInterface::NetworkInfo& info) {
+  RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
+  video_jitter_timing_->OnNetworkUpdate(info);
 }
 
 void VCMTiming::UpdateCurrentDelay(Timestamp render_time,

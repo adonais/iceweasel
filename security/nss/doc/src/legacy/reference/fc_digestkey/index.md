@@ -2,13 +2,13 @@
 
 # FC_DigestKey
 
-## [Name](#name)
+## Name
 
 :::{container}
 FC_DigestKey - add the digest of a key to a multi-part digest operation.
 :::
 
-## [Syntax](#syntax)
+## Syntax
 
 :::{container}
 
@@ -21,7 +21,7 @@ CK_RV FC_DigestKey(
 
 :::
 
-## [Parameters](#parameters)
+## Parameters
 
 :::{container}
 `hSession`
@@ -33,24 +33,24 @@ CK_RV FC_DigestKey(
 : [in] handle of the key to be digested.
 :::
 
-## [Description](#description)
+## Description
 
 :::{container}
 `FC_DigestKey` continues a multi-part digest operation by digesting the value of a secret key.
 The digest for the entire message is returned by a call to
-{ref}`mozilla_projects_nss_reference_fc_digestfinal`.
+{ref}`mozilla-projects-nss-reference-fc-digestfinal`.
 
 A user must log into the token (to assume the NSS User role) before calling `FC_DigestKey`.
 :::
 
-## [Return value](#return_value)
+## Return value
 
-## [Examples](#examples)
+## Examples
 
-## [See also](#see_also)
+## See also
 
 :::{container}
 
-- {ref}`mozilla_projects_nss_reference_fc_digestinit`,
-  {ref}`mozilla_projects_nss_reference_fc_digestfinal`, [NSC_DigestKey](/en-US/NSC_DigestKey)
+- {ref}`mozilla-projects-nss-reference-fc-digestinit`,
+  {ref}`mozilla-projects-nss-reference-fc-digestfinal`, [NSC_DigestKey](/en-US/NSC_DigestKey)
 :::

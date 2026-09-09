@@ -7,8 +7,8 @@ package mozilla.components.concept.engine.translate
 /**
  * The operations that can be performed on a given language model.
  *
- * @property languageToManage The BCP 47 language code to manage the models for.
- * May be null when performing operations not at the "language" scope or level.
+ * @property languageToManage The BCP 47 language code to manage the models for. May be null when performing operations
+ *   not at the "language" scope or level.
  * @property operation The operation to perform.
  * @property operationLevel At what scope or level the operations should be performed at.
  */

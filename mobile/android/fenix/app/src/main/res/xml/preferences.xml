@@ -210,7 +210,6 @@
         <androidx.preference.Preference
             android:key="@string/pref_key_firefox_labs"
             app:iconSpaceReserved="false"
-            app:isPreferenceVisible="false"
             android:title="@string/firefox_labs_title" />
 
         <androidx.preference.SwitchPreferenceCompat

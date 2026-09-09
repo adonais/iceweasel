@@ -14,20 +14,18 @@ import org.mozilla.fenix.nimbus.RecordEventMode.CompleteSuccessfully
 import org.mozilla.fenix.nimbus.RecordEventMode.ThrowException
 
 enum class RecordEventMode {
-    CompleteSuccessfully, ThrowException, Cancel
+    CompleteSuccessfully,
+    ThrowException,
+    Cancel,
 }
 
-/**
- * A [NimbusEventStore] implementation for unit test. Allows asserting conditions on recorded events.
- */
+/** A [NimbusEventStore] implementation for unit test. Allows asserting conditions on recorded events. */
 class FakeNimbusEventStore : NimbusEventStore {
     var recordEventMode = CompleteSuccessfully
     private val recordedEvents = mutableListOf<String>()
     private val pastEvents = mutableListOf<PastEvent>()
 
-    /**
-     * @see [NimbusEventStore.recordEvent]
-     */
+    /** @see [NimbusEventStore.recordEvent] */
     override fun recordEvent(count: Long, eventId: String) {
         if (recordEventMode == CompleteSuccessfully) {
             repeat(count) {
@@ -47,49 +45,37 @@ class FakeNimbusEventStore : NimbusEventStore {
         }
     }
 
-    /**
-     * Asserts that recorded events are exactly equal to [events] (including order).
-     */
+    /** Asserts that recorded events are exactly equal to [events] (including order). */
     fun assertRecorded(vararg events: String) {
         assertEquals(events.asList(), recordedEvents)
     }
 
-    /**
-     * @see [NimbusEventStore.recordPastEvent]
-     */
+    /** @see [NimbusEventStore.recordPastEvent] */
     override fun recordPastEvent(count: Long, eventId: String, secondsAgo: Long) {
         repeat(count) {
             pastEvents += PastEvent(eventId, secondsAgo)
         }
     }
 
-    /**
-     * Asserts that there were no recorded past events.
-     */
+    /** Asserts that there were no recorded past events. */
     fun assertNoPastEvents() {
         assertTrue(pastEvents.isEmpty())
     }
 
-    /**
-     * Records that there was only a single recorded past event and it matches [eventId] and [secondsAgo].
-     */
+    /** Records that there was only a single recorded past event and it matches [eventId] and [secondsAgo]. */
     fun assertSinglePastEventEquals(eventId: String, secondsAgo: Long) {
         val event = pastEvents.single()
         assertEquals(eventId, event.eventId)
         assertEquals(secondsAgo, event.secondsAgo)
     }
 
-    /**
-     * Represents an event recorded with [recordPastEvent].
-     */
+    /** Represents an event recorded with [recordPastEvent]. */
     data class PastEvent(
         val eventId: String,
         val secondsAgo: Long,
     )
 
-    /**
-     * Like [kotlin.repeat], but accepts [Long].
-     */
+    /** Like [kotlin.repeat], but accepts [Long]. */
     private inline fun repeat(times: Long, action: (Long) -> Unit) {
         for (index in 0 until times) {
             action(index)

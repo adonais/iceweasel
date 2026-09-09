@@ -21,13 +21,12 @@ private const val MIUI_MULTI_LANG_HELPER_CLASS = "miui.util.font.MultiLangHelper
 private const val PLATFORM_PREFERENCE_CLASS = "androidx.preference.Preference"
 
 /**
- * A [StrictMode.OnThreadViolationListener] that recreates
- * [StrictMode.ThreadPolicy.Builder.penaltyDeath] but will ignore some violations. For example,
- * sometimes OEMs will add code that violates StrictMode so we can ignore them here instead of
- * cluttering up our code with resetAfter.
+ * A [StrictMode.OnThreadViolationListener] that recreates [StrictMode.ThreadPolicy.Builder.penaltyDeath] but will
+ * ignore some violations. For example, sometimes OEMs will add code that violates StrictMode so we can ignore them here
+ * instead of cluttering up our code with resetAfter.
  *
- * This class can only be used with Android P+ so we'd have to implement workarounds if the
- * violations we want to ignore affect older devices.
+ * This class can only be used with Android P+ so we'd have to implement workarounds if the violations we want to ignore
+ * affect older devices.
  */
 @RequiresApi(Build.VERSION_CODES.P)
 class ThreadPenaltyDeathWithIgnoresListener(
@@ -54,12 +53,12 @@ class ThreadPenaltyDeathWithIgnoresListener(
 
     private fun shouldViolationBeIgnored(violation: Violation): Boolean =
         isSamsungLgEdmStorageProviderStartupViolation(violation) ||
-                containsInstrumentedHooksClass(violation) ||
-                isSamsungIdsController(violation) ||
-                isXiaomiMultiLangHelperViolation(violation) ||
-                isFinishAttachApplication(violation) ||
-                containsInMemoryDexClassLoader(violation) ||
-                isInflatingPlatformPreference(violation)
+            containsInstrumentedHooksClass(violation) ||
+            isSamsungIdsController(violation) ||
+            isXiaomiMultiLangHelperViolation(violation) ||
+            isFinishAttachApplication(violation) ||
+            containsInMemoryDexClassLoader(violation) ||
+            isInflatingPlatformPreference(violation)
 
     private fun isSamsungIdsController(violation: Violation): Boolean {
         // See https://bugzilla.mozilla.org/show_bug.cgi?id=1806469
@@ -98,8 +97,7 @@ class ThreadPenaltyDeathWithIgnoresListener(
         // makes a Binder call that looks up settings from disk. This happens as we return
         // from our [Application.onCreate] method.
         return violation.stackTrace.any {
-            it.className == ACTIVITY_MANAGER_SERVICE_CLASS &&
-                    it.methodName == "finishAttachApplication"
+            it.className == ACTIVITY_MANAGER_SERVICE_CLASS && it.methodName == "finishAttachApplication"
         }
     }
 
@@ -121,7 +119,7 @@ class ThreadPenaltyDeathWithIgnoresListener(
 
     private fun isXiaomiMultiLangHelperViolation(violation: Violation): Boolean {
         return manufacturerChecker.isXiaomi() &&
-                violation.stackTrace.any { it.className == MIUI_MULTI_LANG_HELPER_CLASS }
+            violation.stackTrace.any { it.className == MIUI_MULTI_LANG_HELPER_CLASS }
     }
 
     private fun isInflatingPlatformPreference(violation: Violation): Boolean {

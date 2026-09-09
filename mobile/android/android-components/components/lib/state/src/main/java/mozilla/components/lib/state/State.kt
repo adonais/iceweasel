@@ -4,7 +4,5 @@
 
 package mozilla.components.lib.state
 
-/**
- * Generic interface for a [State] maintained by a [Store].
- */
+/** Generic interface for a [State] maintained by a [Store]. */
 interface State

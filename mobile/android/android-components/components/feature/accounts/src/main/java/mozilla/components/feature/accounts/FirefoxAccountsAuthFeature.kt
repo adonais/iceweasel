@@ -6,6 +6,7 @@ package mozilla.components.feature.accounts
 
 import android.content.Context
 import androidx.core.net.toUri
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -15,17 +16,16 @@ import mozilla.components.concept.sync.FxAEntryPoint
 import mozilla.components.service.fxa.FxaAuthData
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.toAuthType
-import kotlin.coroutines.CoroutineContext
 
 /**
- * Ties together an account manager with a session manager/tabs implementation, facilitating an
- * authentication flow.
+ * Ties together an account manager with a session manager/tabs implementation, facilitating an authentication flow.
+ *
  * @property accountManager [FxaAccountManager].
  * @property redirectUrl This is the url that will be reached at the final authentication state.
- * @property coroutineContext The context which will be used to execute network requests necessary
- * to initiate authentication. Note that [onBeginAuthentication] will be executed using this context.
- * @property onBeginAuthentication A lambda function that receives the authentication url.
- * Executed on [coroutineContext].
+ * @property coroutineContext The context which will be used to execute network requests necessary to initiate
+ *   authentication. Note that [onBeginAuthentication] will be executed using this context.
+ * @property onBeginAuthentication A lambda function that receives the authentication url. Executed on
+ *   [coroutineContext].
  */
 class FirefoxAccountsAuthFeature(
     private val accountManager: FxaAccountManager,
@@ -35,9 +35,9 @@ class FirefoxAccountsAuthFeature(
 ) {
     /**
      * Begins Email authentication, launching `onBeginAuthentication` if successful
+     *
      * @param context [Context] The application context
-     * @param entrypoint [FxAEntryPoint] The Firefox Accounts feature/entrypoint that is launching
-     * authentication
+     * @param entrypoint [FxAEntryPoint] The Firefox Accounts feature/entrypoint that is launching authentication
      * @param scopes [Set<String>] The oAuth scopes being requested
      */
     fun beginAuthentication(
@@ -52,11 +52,11 @@ class FirefoxAccountsAuthFeature(
 
     /**
      * Begins Pairing authentication, launching `onBeginAuthentication` if successful
+     *
      * @param context [Context] The application context
      * @param pairingUrl [String] The pairing URL retrieved from the QR scanner
      * @param entrypoint [FxAEntryPoint] The Firefox Accounts feature/entrypoint that is launching
-     * @param scopes [Set<String>] The oAuth scopes being requested
-     * authentication
+     * @param scopes [Set<String>] The oAuth scopes being requested authentication
      */
     fun beginPairingAuthentication(
         context: Context,
@@ -86,41 +86,42 @@ class FirefoxAccountsAuthFeature(
         }
     }
 
-    val interceptor = object : RequestInterceptor {
-        override fun onLoadRequest(
-            engineSession: EngineSession,
-            uri: String,
-            lastUri: String?,
-            hasUserGesture: Boolean,
-            isSameDomain: Boolean,
-            isRedirect: Boolean,
-            isDirectNavigation: Boolean,
-            isSubframeRequest: Boolean,
-        ): RequestInterceptor.InterceptionResponse? {
-            if (uri.startsWith(redirectUrl)) {
-                val parsedUri = uri.toUri()
-                val code = parsedUri.getQueryParameter("code")
+    val interceptor =
+        object : RequestInterceptor {
+            override fun onLoadRequest(
+                engineSession: EngineSession,
+                uri: String,
+                lastUri: String?,
+                hasUserGesture: Boolean,
+                isSameDomain: Boolean,
+                isRedirect: Boolean,
+                isDirectNavigation: Boolean,
+                isSubframeRequest: Boolean,
+            ): RequestInterceptor.InterceptionResponse? {
+                if (uri.startsWith(redirectUrl)) {
+                    val parsedUri = uri.toUri()
+                    val code = parsedUri.getQueryParameter("code")
 
-                if (code != null) {
-                    val authType = parsedUri.getQueryParameter("action").toAuthType()
-                    val state = parsedUri.getQueryParameter("state") as String
+                    if (code != null) {
+                        val authType = parsedUri.getQueryParameter("action").toAuthType()
+                        val state = parsedUri.getQueryParameter("state") as String
 
-                    // Notify the state machine about our success.
-                    CoroutineScope(Dispatchers.Main).launch {
-                        accountManager.finishAuthentication(
-                            FxaAuthData(
-                                authType = authType,
-                                code = code,
-                                state = state,
-                            ),
-                        )
+                        // Notify the state machine about our success.
+                        CoroutineScope(Dispatchers.Main).launch {
+                            accountManager.finishAuthentication(
+                                FxaAuthData(
+                                    authType = authType,
+                                    code = code,
+                                    state = state,
+                                )
+                            )
+                        }
+
+                        return RequestInterceptor.InterceptionResponse.Url(redirectUrl)
                     }
-
-                    return RequestInterceptor.InterceptionResponse.Url(redirectUrl)
                 }
-            }
 
-            return null
+                return null
+            }
         }
-    }
 }

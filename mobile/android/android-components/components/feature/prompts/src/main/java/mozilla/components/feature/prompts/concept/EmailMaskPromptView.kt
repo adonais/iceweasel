@@ -4,34 +4,22 @@
 
 package mozilla.components.feature.prompts.concept
 
-/**
- * A prompt for displaying an email mask.
- */
+/** A prompt for displaying an email mask. */
 interface EmailMaskPromptView : ToggleablePrompt {
 
-    /**
-     * Listener for user interactions with the prompt.
-     */
+    /** Listener for user interactions with the prompt. */
     var emailMaskPromptListener: Listener?
 
-    /**
-     * Interface to allow a class to listen to email mask event events.
-     */
+    /** Interface to allow a class to listen to email mask event events. */
     interface Listener {
 
-        /**
-         * Whether to show the email mask CFR.
-         */
+        /** Whether to show the email mask CFR. */
         fun shouldShowEmailMaskCfr(): Boolean
 
-        /**
-         * Called when the email mask CFR is dismissed.
-         */
+        /** Called when the email mask CFR is dismissed. */
         fun onEmailMaskCfrDismissed()
 
-        /**
-         * Called when a user clicks on the email mask prompt.
-         */
+        /** Called when a user clicks on the email mask prompt. */
         fun onEmailMaskPromptClick()
     }
 }

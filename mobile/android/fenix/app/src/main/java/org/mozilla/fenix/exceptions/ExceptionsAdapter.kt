@@ -17,56 +17,43 @@ import org.mozilla.fenix.exceptions.viewholders.ExceptionsHeaderViewHolder
 import org.mozilla.fenix.exceptions.viewholders.ExceptionsListItemViewHolder
 
 /**
- * Adapter for a list of sites that are exempted from saving logins or tracking protection,
- * along with controls to remove the exception.
+ * Adapter for a list of sites that are exempted from saving logins or tracking protection, along with controls to
+ * remove the exception.
  */
 abstract class ExceptionsAdapter<T : Any>(
     private val interactor: ExceptionsInteractor<T>,
     diffCallback: DiffUtil.ItemCallback<AdapterItem>,
 ) : ListAdapter<ExceptionsAdapter.AdapterItem, RecyclerView.ViewHolder>(diffCallback) {
 
-    /**
-     * Change the list of items that are displayed.
-     * Header and footer items are added to the list as well.
-     */
+    /** Change the list of items that are displayed. Header and footer items are added to the list as well. */
     fun updateData(exceptions: List<T>) {
-        val adapterItems: List<AdapterItem> = listOf(AdapterItem.Header) +
-            exceptions.map { wrapAdapterItem(it) } +
-            listOf(AdapterItem.DeleteButton)
+        val adapterItems: List<AdapterItem> =
+            listOf(AdapterItem.Header) + exceptions.map { wrapAdapterItem(it) } + listOf(AdapterItem.DeleteButton)
         submitList(adapterItems)
     }
 
-    /**
-     * Layout to use for the delete button.
-     */
-    @get:LayoutRes
-    abstract val deleteButtonLayoutId: Int
+    /** Layout to use for the delete button. */
+    @get:LayoutRes abstract val deleteButtonLayoutId: Int
 
-    /**
-     * String to use for the exceptions list header.
-     */
-    @get:StringRes
-    abstract val headerDescriptionResource: Int
+    /** String to use for the exceptions list header. */
+    @get:StringRes abstract val headerDescriptionResource: Int
 
-    /**
-     * Converts an item from [updateData] into an adapter item.
-     */
+    /** Converts an item from [updateData] into an adapter item. */
     abstract fun wrapAdapterItem(item: T): AdapterItem.Item<T>
 
-    final override fun getItemViewType(position: Int) = when (getItem(position)) {
-        AdapterItem.DeleteButton -> deleteButtonLayoutId
-        AdapterItem.Header -> ExceptionsHeaderViewHolder.LAYOUT_ID
-        is AdapterItem.Item<*> -> ExceptionsListItemViewHolder.LAYOUT_ID
-    }
+    final override fun getItemViewType(position: Int) =
+        when (getItem(position)) {
+            AdapterItem.DeleteButton -> deleteButtonLayoutId
+            AdapterItem.Header -> ExceptionsHeaderViewHolder.LAYOUT_ID
+            is AdapterItem.Item<*> -> ExceptionsListItemViewHolder.LAYOUT_ID
+        }
 
     final override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(viewType, parent, false)
 
         return when (viewType) {
-            deleteButtonLayoutId ->
-                ExceptionsDeleteButtonViewHolder(view, interactor)
-            ExceptionsHeaderViewHolder.LAYOUT_ID ->
-                ExceptionsHeaderViewHolder(view, headerDescriptionResource)
+            deleteButtonLayoutId -> ExceptionsDeleteButtonViewHolder(view, interactor)
+            ExceptionsHeaderViewHolder.LAYOUT_ID -> ExceptionsHeaderViewHolder(view, headerDescriptionResource)
             ExceptionsListItemViewHolder.LAYOUT_ID ->
                 ExceptionsListItemViewHolder(view as WidgetSiteItemView, interactor)
             else -> throw IllegalStateException()
@@ -82,16 +69,15 @@ abstract class ExceptionsAdapter<T : Any>(
         }
     }
 
-    /**
-     * Internal items for [ExceptionsAdapter]
-     */
+    /** Internal items for [ExceptionsAdapter] */
     sealed class AdapterItem {
         object DeleteButton : AdapterItem()
+
         object Header : AdapterItem()
 
         /**
-         * Represents an item to display in [ExceptionsAdapter].
-         * [T] should refer to the same value as in the [ExceptionsAdapter] and [ExceptionsInteractor].
+         * Represents an item to display in [ExceptionsAdapter]. [T] should refer to the same value as in the
+         * [ExceptionsAdapter] and [ExceptionsInteractor].
          */
         abstract class Item<T> : AdapterItem() {
             abstract val item: T

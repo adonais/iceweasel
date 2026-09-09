@@ -4,10 +4,10 @@
 
 package mozilla.components.lib.jexl
 
+import kotlin.reflect.KClass
 import org.junit.Assert.assertEquals
 import org.junit.Assert.fail
 import org.junit.Test
-import kotlin.reflect.KClass
 
 /**
  * Additional test cases that test various JEXL expressions to get a high test coverage for the lexer, parser and

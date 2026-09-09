@@ -16,6 +16,7 @@ import mozilla.components.browser.menu.BrowserMenu
 import mozilla.components.browser.menu.BrowserMenuHighlight
 import mozilla.components.browser.menu.R
 import mozilla.components.support.test.robolectric.testContext
+import mozilla.components.ui.colors.R as colorsR
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -24,20 +25,18 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 import org.robolectric.Shadows
-import mozilla.components.ui.colors.R as colorsR
 
 @RunWith(AndroidJUnit4::class)
 class BrowserMenuHighlightableSwitchTest {
 
     @Test
     fun `menu item uses correct layout`() {
-        val item = BrowserMenuHighlightableSwitch(
-            label = "label",
-            startImageResource = android.R.drawable.ic_menu_report_image,
-            highlight = BrowserMenuHighlight.LowPriority(
-                notificationTint = Color.RED,
-            ),
-        ) {}
+        val item =
+            BrowserMenuHighlightableSwitch(
+                label = "label",
+                startImageResource = android.R.drawable.ic_menu_report_image,
+                highlight = BrowserMenuHighlight.LowPriority(notificationTint = Color.RED),
+            ) {}
 
         assertEquals(R.layout.mozac_browser_menu_highlightable_switch, item.getLayoutResource())
     }
@@ -46,15 +45,14 @@ class BrowserMenuHighlightableSwitchTest {
     @Test
     fun `browser menu highlightable item should be inflated`() {
         var onClickWasPress = false
-        val item = BrowserMenuHighlightableSwitch(
-            label = "label",
-            startImageResource = android.R.drawable.ic_menu_report_image,
-            highlight = BrowserMenuHighlight.LowPriority(
-                notificationTint = Color.RED,
-            ),
-        ) {
-            onClickWasPress = true
-        }
+        val item =
+            BrowserMenuHighlightableSwitch(
+                label = "label",
+                startImageResource = android.R.drawable.ic_menu_report_image,
+                highlight = BrowserMenuHighlight.LowPriority(notificationTint = Color.RED),
+            ) {
+                onClickWasPress = true
+            }
 
         val view = inflate(item)
 
@@ -65,17 +63,19 @@ class BrowserMenuHighlightableSwitchTest {
     @Test
     fun `browser menu highlightable item should properly handle low priority highlighting`() {
         var shouldHighlight = false
-        val item = BrowserMenuHighlightableSwitch(
-            label = "label",
-            startImageResource = android.R.drawable.ic_menu_report_image,
-            iconTintColorResource = android.R.color.black,
-            textColorResource = android.R.color.black,
-            highlight = BrowserMenuHighlight.LowPriority(
-                notificationTint = colorsR.color.photonRed50,
-                label = "highlight",
-            ),
-            isHighlighted = { shouldHighlight },
-        ) {}
+        val item =
+            BrowserMenuHighlightableSwitch(
+                label = "label",
+                startImageResource = android.R.drawable.ic_menu_report_image,
+                iconTintColorResource = android.R.color.black,
+                textColorResource = android.R.color.black,
+                highlight =
+                    BrowserMenuHighlight.LowPriority(
+                        notificationTint = colorsR.color.photonRed50,
+                        label = "highlight",
+                    ),
+                isHighlighted = { shouldHighlight },
+            ) {}
 
         val view = inflate(item)
 
@@ -84,7 +84,10 @@ class BrowserMenuHighlightableSwitchTest {
         val startImageView = view.findViewById<AppCompatImageView>(R.id.image)
 
         // Highlight should not exist before set
-        assertEquals(android.R.drawable.ic_menu_report_image, Shadows.shadowOf(startImageView.drawable).createdFromResId)
+        assertEquals(
+            android.R.drawable.ic_menu_report_image,
+            Shadows.shadowOf(startImageView.drawable).createdFromResId,
+        )
         assertFalse(view.notificationDot.isVisible)
 
         shouldHighlight = true
@@ -97,13 +100,12 @@ class BrowserMenuHighlightableSwitchTest {
 
     @Test
     fun `browser menu highlightable item with with no iconTintColorResource must not have a tinted icon`() {
-        val item = BrowserMenuHighlightableSwitch(
-            "label",
-            startImageResource = android.R.drawable.ic_menu_report_image,
-            highlight = BrowserMenuHighlight.LowPriority(
-                notificationTint = Color.RED,
-            ),
-        ) {}
+        val item =
+            BrowserMenuHighlightableSwitch(
+                "label",
+                startImageResource = android.R.drawable.ic_menu_report_image,
+                highlight = BrowserMenuHighlight.LowPriority(notificationTint = Color.RED),
+            ) {}
 
         val view = inflate(item)
 
@@ -118,7 +120,12 @@ class BrowserMenuHighlightableSwitchTest {
         return view as ConstraintLayout
     }
 
-    private val ConstraintLayout.startImageView: ImageView get() = findViewById(R.id.image)
-    private val ConstraintLayout.notificationDot: ImageView get() = findViewById(R.id.notification_dot)
-    private val ConstraintLayout.switch: SwitchCompat get() = findViewById(R.id.switch_widget)
+    private val ConstraintLayout.startImageView: ImageView
+        get() = findViewById(R.id.image)
+
+    private val ConstraintLayout.notificationDot: ImageView
+        get() = findViewById(R.id.notification_dot)
+
+    private val ConstraintLayout.switch: SwitchCompat
+        get() = findViewById(R.id.switch_widget)
 }

@@ -5,13 +5,12 @@
 package mozilla.components.concept.engine.translate
 
 /**
- * The types of translation errors that can occur. Has features for determining telemetry error
- * names and determining if an error needs to be displayed.
+ * The types of translation errors that can occur. Has features for determining telemetry error names and determining if
+ * an error needs to be displayed.
  *
  * @param errorName The translation error name. The expected use is for telemetry.
- * @param displayError Signal to determine if we need to specifically display an error for
- * this given issue. (Some errors should only silently report telemetry or simply revert to the
- * prior UI state.)
+ * @param displayError Signal to determine if we need to specifically display an error for this given issue. (Some
+ *   errors should only silently report telemetry or simply revert to the prior UI state.)
  * @param cause The original throwable before it was converted into this error state.
  */
 sealed class TranslationError(
@@ -28,15 +27,10 @@ sealed class TranslationError(
     class UnknownError(override val cause: Throwable) :
         TranslationError(errorName = "unknown", displayError = false, cause = cause)
 
-    /**
-     * Default error for unexpected null value received on a non-null translations call.
-     */
-    class UnexpectedNull :
-        TranslationError(errorName = "unexpected-null", displayError = false, cause = null)
+    /** Default error for unexpected null value received on a non-null translations call. */
+    class UnexpectedNull : TranslationError(errorName = "unexpected-null", displayError = false, cause = null)
 
-    /**
-     * Default error when a translation session coordinator is not available.
-     */
+    /** Default error when a translation session coordinator is not available. */
     class MissingSessionCoordinator :
         TranslationError(errorName = "missing-session-coordinator", displayError = false, cause = null)
 
@@ -73,8 +67,7 @@ sealed class TranslationError(
         TranslationError(errorName = "could-not-restore", displayError = false, cause = cause)
 
     /**
-     * Could not determine the translation download size between a given "to" and "from" language
-     * translation pair.
+     * Could not determine the translation download size between a given "to" and "from" language translation pair.
      *
      * @param cause The original [Throwable] before it was converted into this error state.
      */
@@ -126,9 +119,9 @@ sealed class TranslationError(
         TranslationError(errorName = "language-not-supported", displayError = true, cause = cause)
 
     /**
-     * A non-specific issue occurred when trying to update the language model with the engine.
-     * Usually will have a [cause] of [ModelCouldNotRetrieveError], [ModelCouldNotDeleteError],
-     * [ModelCouldNotDownloadError], [ModelLanguageRequiredError], or [ModelDownloadRequiredError].
+     * A non-specific issue occurred when trying to update the language model with the engine. Usually will have a
+     * [cause] of [ModelCouldNotRetrieveError], [ModelCouldNotDeleteError], [ModelCouldNotDownloadError],
+     * [ModelLanguageRequiredError], or [ModelDownloadRequiredError].
      *
      * @param cause The original throwable before it was converted into this error state.
      */
@@ -196,8 +189,8 @@ sealed class TranslationError(
         TranslationError(errorName = "could-not-set-browser-enabled", displayError = false, cause = cause)
 
     /**
-     * The translations engine is likely deactivated by AI controls.
-     * See [mozilla.components.concept.engine.ai.AIFeaturesRuntime].
+     * The translations engine is likely deactivated by AI controls. See
+     * [mozilla.components.concept.engine.ai.AIFeaturesRuntime].
      *
      * @param cause The original throwable before it was converted into this error state.
      */

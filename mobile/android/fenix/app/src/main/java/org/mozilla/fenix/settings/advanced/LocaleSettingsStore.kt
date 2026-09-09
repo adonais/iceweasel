@@ -5,21 +5,21 @@
 package org.mozilla.fenix.settings.advanced
 
 import android.content.Context
+import java.util.Locale
 import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
 import mozilla.components.support.locale.LocaleManager
-import java.util.Locale
 
-class LocaleSettingsStore(
-    initialState: LocaleSettingsState,
-) : Store<LocaleSettingsState, LocaleSettingsAction>(
-    initialState,
-    ::localeSettingsStateReducer,
-)
+class LocaleSettingsStore(initialState: LocaleSettingsState) :
+    Store<LocaleSettingsState, LocaleSettingsAction>(
+        initialState,
+        ::localeSettingsStateReducer,
+    )
 
 /**
  * The state of the language selection page
+ *
  * @property localeList The full list of locales available
  * @property searchedLocaleList The list of locales starting with a search query
  * @property selectedLocale The current selected locale
@@ -40,16 +40,16 @@ fun createInitialLocaleSettingsState(context: Context): LocaleSettingsState {
     )
 }
 
-/**
- * Actions to dispatch through the `LocaleSettingsStore` to modify `LocaleSettingsState` through the reducer.
- */
+/** Actions to dispatch through the `LocaleSettingsStore` to modify `LocaleSettingsState` through the reducer. */
 sealed class LocaleSettingsAction : Action {
     data class Select(val selectedItem: Locale) : LocaleSettingsAction()
+
     data class Search(val query: String) : LocaleSettingsAction()
 }
 
 /**
  * Reduces the locale state from the current state and an action performed on it.
+ *
  * @param state the current locale state
  * @param action the action to perform
  * @return the new locale state
@@ -64,10 +64,11 @@ private fun localeSettingsStateReducer(
         }
         is LocaleSettingsAction.Search -> {
             val firstLocale = state.localeList.firstOrNull() ?: return state
-            val searchedItems = state.localeList.filter {
-                it.getDisplayLanguage(it).startsWith(action.query, ignoreCase = true) ||
-                    it.displayLanguage.startsWith(action.query, ignoreCase = true)
-            }
+            val searchedItems =
+                state.localeList.filter {
+                    it.getDisplayLanguage(it).startsWith(action.query, ignoreCase = true) ||
+                        it.displayLanguage.startsWith(action.query, ignoreCase = true)
+                }
             state.copy(searchedLocaleList = listOf(firstLocale) + searchedItems)
         }
     }

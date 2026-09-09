@@ -105,12 +105,12 @@
     <string name="preferences_debug_settings_universal_edge_to_edge_wallpapers" translatable="false">Enable universal edge-to-edge wallpapers</string>
     <!-- Label for hiding the Collections UI -->
     <string name="preferences_debug_settings_hide_collections_ui" translatable="false">Hide Collections UI</string>
-    <!-- Label for enabling Firefox Labs -->
-    <string name="preferences_debug_settings_firefox_labs" translatable="false">Enable Firefox Labs</string>
-    <!-- Label for enabling top sites pager layout -->
-    <string name="preferences_debug_settings_top_sites_pager" translatable="false">Enable Top Sites Pager</string>
+    <!-- Label for migrating Collections to Tab Groups -->
+    <string name="preferences_debug_settings_migrate_collections_to_tab_groups" translatable="false">Migrate Collections to Tab Groups</string>
     <!-- Label for enabling Add Shortcuts improvement -->
     <string name="preferences_debug_settings_add_shortcuts_improvement" translatable="false">Enable Add Shortcuts Improvement</string>
+    <!-- Label for showing more shortcuts -->
+    <string name="preferences_debug_settings_show_more_shortcuts" translatable="false">Show More Shortcuts</string>
     <!-- Label for enabling Merino Client -->
     <string name="preferences_debug_settings_merino_client" translatable="false">Enable Merino Client</string>
     <!-- Label for enabling Homepage Weather Widget -->
@@ -135,6 +135,12 @@
     <string name="preferences_debug_settings_microsurvey_feature" translatable="false">Enable Microsurvey Feature</string>
     <!-- Label for enabling shake to summarize -->
     <string name="preferences_key_enable_shake_to_summarize" translatable="false">Enable Shake to Summarize Feature Flag</string>
+    <!-- Label for enabling listen to page -->
+    <string name="preferences_key_enable_listen_to_page" translatable="false">Enable Listen to Page Feature Flag</string>
+    <!-- Label for enabling the weekly privacy notification -->
+    <string name="preferences_debug_settings_privacy_report_notification" translatable="false">Enable Weekly Privacy Notification Feature</string>
+    <!-- Label for forcing the weekly privacy report notification to show, with a fixed count of blocked trackers -->
+    <string name="preferences_debug_settings_force_weekly_privacy_report_notification" translatable="false">Force weekly privacy report notification trackers over threshold</string>
     <!-- Label for enabling remote search configuration -->
     <string name="preferences_debug_settings_remote_search_configuration" translatable="false">Enable Remote Search Configuration (requires restart)</string>
     <!-- Label for enabling Address Sync -->
@@ -173,7 +179,6 @@
     <string name="preferences_debug_settings_show_voice_search_in_display_toolbar" translatable="false">Show Voice Search in Display Toolbar</string>
 
     <!-- Label for toggling the Tab Groups feature -->
-    <string name="preferences_tab_groups_feature" translatable="false">Enable Tab Groups</string>
     <string name="preferences_tab_groups_drag_and_drop" translatable="false">Enable Tab Groups Drag and Drop</string>
     <string name="preferences_tab_groups_live_reorder" translatable="false">Enable Live Reorder for Drag and Drop</string>
     <string name="preferences_tab_groups_onboarding" translatable="false">Enable Tab Groups Onboarding</string>
@@ -261,6 +266,7 @@
     <string name="debug_drawer_distribution_tools_title">Distribution Tools</string>
     <string name="debug_drawer_distribution_id" translatable="false">Distribution ID</string>
     <string name="debug_drawer_play_referrer" translatable="false">Play install referrer</string>
+    <string name="debug_drawer_referral" translatable="false">Install referral</string>
     <string name="debug_drawer_run_query_provider_test" translatable="false">Run query provider test</string>
 
     <!-- Debug drawer "contextual feature recommendation" (CFR) tools -->
@@ -413,4 +419,7 @@
 
     <!--  Firefox brand name  -->
     <string name="app_name_firefox" tools:ignore="BrandUsage">Firefox</string>
+
+    <!--  Proper name for the Wrexham wallpaper section title. As it is a brand name we do not want it translated.-->
+    <string name="wallpaper_wrexham_title" translatable="false">Wrexham A.F.C.</string>
 </resources>

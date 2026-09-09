@@ -14,27 +14,26 @@ import mozilla.components.support.base.log.sink.TestModeLogSink
  * This class does not process any logging calls itself. Instead it forwards the calls to registered
  * <code>LogSink</code> implementations.
  *
- * This class only provides a low-level logging call. The <code>logger</code> sub packages contains
- * logger implementations that wrap <code>Log</code> and provide more convenient APIs.
+ * This class only provides a low-level logging call. The <code>logger</code> sub packages contains logger
+ * implementations that wrap <code>Log</code> and provide more convenient APIs.
  */
 object Log {
     /**
-     * Minimum log level that log calls need to have to be forwarded to registered sinks. Log calls
-     * with a lower log level will be ignored.
+     * Minimum log level that log calls need to have to be forwarded to registered sinks. Log calls with a lower log
+     * level will be ignored.
      */
     var logLevel: Priority = Priority.DEBUG
 
     private val testMode: Boolean = System.getProperty("logging.test-mode") == "true"
 
-    private val sinks = if (testMode) {
-        mutableListOf<LogSink>(TestModeLogSink())
-    } else {
-        mutableListOf()
-    }
+    private val sinks =
+        if (testMode) {
+            mutableListOf<LogSink>(TestModeLogSink())
+        } else {
+            mutableListOf()
+        }
 
-    /**
-     * Adds a sink that will receive log calls.
-     */
+    /** Adds a sink that will receive log calls. */
     fun addSink(sink: LogSink) {
         synchronized(sinks) {
             sinks.add(sink)
@@ -45,8 +44,8 @@ object Log {
      * Low-level logging call.
      *
      * @param priority The priority/type of this log message. By default DEBUG is used.
-     * @param tag Used to identify the source of a log message. It usually identifies the class
-     *            where the log call occurs.
+     * @param tag Used to identify the source of a log message. It usually identifies the class where the log call
+     *   occurs.
      * @param throwable An exception to log.
      * @param message A message to be logged.
      */
@@ -75,9 +74,7 @@ object Log {
         }
     }
 
-    /**
-     * Priority constants for logging calls.
-     */
+    /** Priority constants for logging calls. */
     enum class Priority(val value: Int) {
         // For simplicity the values mirror the Android log constants values:
         // https://android.googlesource.com/platform/frameworks/base/+/refs/heads/master/core/java/android/util/Log.java

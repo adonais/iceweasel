@@ -12,10 +12,9 @@ import java.util.Locale
 import java.util.regex.Pattern
 
 /**
- * Regular expressions used in this class are taken from Android's Patterns.java.
- * We brought them in to standardize URL matching across Android versions, instead of relying
- * on Android version-dependent built-ins that can vary across Android versions.
- * The original code can be found here:
+ * Regular expressions used in this class are taken from Android's Patterns.java. We brought them in to standardize URL
+ * matching across Android versions, instead of relying on Android version-dependent built-ins that can vary across
+ * Android versions. The original code can be found here:
  * http://androidxref.com/8.0.0_r4/xref/frameworks/base/core/java/android/util/Patterns.java
  */
 class WebURLFinder {
@@ -47,9 +46,7 @@ class WebURLFinder {
     /**
      * Return best Web URL.
      *
-     *
-     * "Best" means a Web URL with a scheme, and failing that, a Web URL without a
-     * scheme.
+     * "Best" means a Web URL with a scheme, and failing that, a Web URL without a scheme.
      *
      * @return a Web URL or `null`.
      */
@@ -90,8 +87,7 @@ class WebURLFinder {
             // because, again, Android REs are always unicode compliant.
             // NB: The value has to go through an intermediate variable; otherwise, the linter will
             // complain that this value is not one of the predefined enums that are allowed.
-            @Suppress("MagicNumber")
-            val unicodeCharacterClassFlag: Int = 0x100
+            @Suppress("MagicNumber") val unicodeCharacterClassFlag: Int = 0x100
             var regexFlags = unicodeCharacterClassFlag
             Pattern.compile(AUTOLINK_WEB_URL_PATTERN, regexFlags)
         }
@@ -106,14 +102,15 @@ class WebURLFinder {
          * @return True if the [String] is a valid web URL.
          */
         @SuppressWarnings("TooGenericExceptionCaught")
-        fun String.isValidWebURL() = try {
-            URI(this)
+        fun String.isValidWebURL() =
+            try {
+                URI(this)
 
-            val safeUri = lowercase(Locale.ROOT)
-            !safeUri.isInvalidUriScheme()
-        } catch (e: Exception) {
-            false
-        }
+                val safeUri = lowercase(Locale.ROOT)
+                !safeUri.isInvalidUriScheme()
+            } catch (e: Exception) {
+                false
+            }
 
         private fun String.isInvalidUriScheme() =
             URLUtil.isFileUrl(this) || URLUtil.isJavaScriptUrl(this) || URLUtil.isContentUrl(this)
@@ -135,10 +132,11 @@ class WebURLFinder {
         }
 
         private fun candidateWebURLs(string: String, explicitUnicode: Boolean = false): List<String> {
-            val matcher = when {
-                explicitUnicode -> autolinkWebUrlExplicitUnicode.matcher(string)
-                else -> autolinkWebUrl.matcher(string)
-            }
+            val matcher =
+                when {
+                    explicitUnicode -> autolinkWebUrlExplicitUnicode.matcher(string)
+                    else -> autolinkWebUrl.matcher(string)
+                }
 
             val matches = LinkedList<String>()
 

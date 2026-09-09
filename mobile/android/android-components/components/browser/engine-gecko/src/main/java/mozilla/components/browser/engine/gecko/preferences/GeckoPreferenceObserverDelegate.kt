@@ -14,9 +14,8 @@ import org.mozilla.geckoview.GeckoPreferenceController
  * @param delegate The [BrowserPrefObserverDelegate] to pass Gecko delegate messages on to.
  */
 @ExperimentalGeckoViewApi
-class GeckoPreferenceObserverDelegate(
-    internal val delegate: BrowserPrefObserverDelegate,
-) : GeckoPreferenceController.Observer.Delegate {
+class GeckoPreferenceObserverDelegate(internal val delegate: BrowserPrefObserverDelegate) :
+    GeckoPreferenceController.Observer.Delegate {
 
     /**
      * Called when a registered preference changes value.

@@ -21,6 +21,8 @@ endif
 
 export USE_ELF_HACK
 
+MOZ_PKG_DUPEFLAGS ?= $(addprefix -f ,$(MOZ_PKG_ALLOWED_DUPES))
+
 stage-package: multilocale.txt locale-manifest.in $(MOZ_PKG_MANIFEST)
 	NO_PKG_FILES="$(NO_PKG_FILES)" \
 	$(PYTHON3) $(MOZILLA_DIR)/toolkit/mozapps/installer/packager.py $(DEFINES) $(ACDEFINES) \
@@ -90,7 +92,7 @@ ifdef ENABLE_MOZSEARCH_PLUGIN
           $(PYTHON3) $(topsrcdir)/mach rust-analyzer-config -o $(topsrcdir)/rust-analyzer.json && \
           CARGO=$(MOZ_FETCHES_DIR)/rustc/bin/cargo \
           RUSTC=$(MOZ_FETCHES_DIR)/rustc/bin/rustc \
-          $(MOZ_FETCHES_DIR)/rustc/bin/rust-analyzer scip . --config-path $(topsrcdir)/rust-analyzer.json && \
+          $(MOZ_FETCHES_DIR)/rust-analyzer/bin/rust-analyzer scip . --config-path $(topsrcdir)/rust-analyzer.json && \
           zip -r5D '$(ABS_DIST)/$(PKG_PATH)$(MOZSEARCH_SCIP_INDEX_BASENAME).zip' \
           index.scip
 	rm $(topsrcdir)/rust-analyzer.json
@@ -126,6 +128,12 @@ ifeq (Darwin_cocoa, $(OS_ARCH)_$(MOZ_WIDGET_TOOLKIT))
 	$(call py_action,zip $(UPDATE_FRAMEWORK_ARTIFACTS_ARCHIVE_BASENAME).zip,--error-if-empty -C $(ABS_DIST)/update_framework_artifacts '$(ABS_DIST)/$(PKG_PATH)$(UPDATE_FRAMEWORK_ARTIFACTS_ARCHIVE_BASENAME).zip' '*.framework')
 endif # Darwin_cocoa
 endif # MOZ_ARTIFACT_BUILDS
+ifdef MOZ_APPSERVICES_IN_TREE
+ifdef MOZ_LIBMEGAZORD_ARTIFACTS
+	@echo 'Generating libmegazord.so artifacts archive ($(LIBMEGAZORD_SO_ARTIFACTS_ARCHIVE_BASENAME).zip)'
+	$(call py_action,package_libmegazord_artifacts $(LIBMEGAZORD_SO_ARTIFACTS_ARCHIVE_BASENAME).zip,--dist-bin '$(ABS_DIST)/bin' '$(ABS_DIST)/$(PKG_PATH)$(LIBMEGAZORD_SO_ARTIFACTS_ARCHIVE_BASENAME).zip')
+endif
+endif
 
 make-package-internal: prepare-package make-sourcestamp-file
 	@echo 'Compressing...'
@@ -145,7 +153,6 @@ ifdef MOZ_AUTOMATION
 	cp $(DEPTH)/mozinfo.json $(MOZ_MOZINFO_FILE)
 	$(PYTHON3) $(MOZILLA_DIR)/toolkit/mozapps/installer/informulate.py \
 		$(MOZ_BUILDINFO_FILE) $(MOZ_BUILDHUB_JSON) $(MOZ_BUILDID_INFO_TXT_FILE) \
-		$(MOZ_PKG_PLATFORM) \
 		$(if $(or $(filter-out mobile/android,$(MOZ_BUILD_APP)),$(MOZ_ANDROID_WITH_FENNEC)), \
 		--package=$(DIST)/$(PACKAGE) --installer=$(INSTALLER_PACKAGE), \
 		--no-download \

@@ -37,7 +37,7 @@
 
 use api::{AlphaType, BorderDetails, BorderDisplayItem, BuiltDisplayList, BuiltDisplayListIter, PrimitiveFlags, SnapshotInfo};
 use api::{ClipId, ColorF, CommonItemProperties, ComplexClipRegion, ComponentTransferFuncType, RasterSpace};
-use api::{DebugFlags, DisplayItem, DisplayItemRef, ExtendMode, ExternalScrollId, FilterData};
+use api::{DebugFlags, DisplayItem, DisplayItemRef, ExternalScrollId, FilterData};
 use api::{FilterOp, FontInstanceKey, FontSize, GlyphInstance, GlyphOptions, GlyphShadowMode, GradientStop};
 use api::{IdNamespace, IframeDisplayItem, ImageKey, ImageRendering, ItemRange, ColorDepth, QualitySettings};
 use api::{LineOrientation, LineStyle, NinePatchBorderSource, PipelineId, MixBlendMode, StackingContextFlags};
@@ -49,7 +49,9 @@ use api::{FilterOpGraphPictureBufferId, SVGFE_GRAPH_MAX};
 use api::channel::{unbounded_channel, Receiver, Sender};
 use api::units::*;
 use crate::image_tiling::simplify_repeated_primitive;
-use api::prim_geometry::{process_repeat_size, compute_stretch_ratio};
+use api::prim_geometry::{
+    conic_gradient_prim, linear_gradient_prim, radial_gradient_prim,
+};
 use crate::box_shadow::BLUR_SAMPLE_SCALE;
 use crate::clip::{ClipIntern, ClipItemKey, ClipItemKeyKind, ClipStore};
 use crate::clip::{ClipInternData, ClipNodeId, ClipLeafId};
@@ -75,9 +77,7 @@ use crate::prim_store::rectangle::RectanglePrim;
 use crate::prim_store::backdrop::{BackdropCapture, BackdropRender};
 use crate::prim_store::borders::ImageBorder;
 use crate::prim_store::gradient::{
-    GradientStopKey, LinearGradient, RadialGradient, RadialGradientParams, ConicGradient,
-    ConicGradientParams, optimize_radial_gradient, apply_gradient_local_clip,
-    optimize_linear_gradient,
+    GradientStopKey,
 };
 use crate::prim_store::image::{Image, StretchSizeKey, YuvImage};
 use crate::prim_store::line_dec::LineDecoration;
@@ -428,7 +428,10 @@ pub struct SceneBuilder<'a> {
     /// Stack of spatial node indices forming containing block for 3d contexts
     containing_block_stack: Vec<SpatialNodeIndex>,
 
-    /// Stack of requested raster spaces for stacking contexts
+    /// Raster space in effect, one entry per open stacking context. The
+    /// values arrive already resolved on the item (see
+    /// `StackingContext::raster_space`); this only remembers the innermost one
+    /// for `add_text`.
     raster_space_stack: Vec<RasterSpace>,
 
     /// Maintains state for any currently active shadows
@@ -1285,7 +1288,7 @@ impl<'a> SceneBuilder<'a> {
         &mut self,
         common: &CommonItemProperties,
         bounds: Option<LayoutRect>,
-    ) -> (LayoutPrimitiveInfo, LayoutRect, SpatialNodeIndex, ClipNodeId) {
+    ) -> (LayoutPrimitiveInfo, SpatialNodeIndex, ClipNodeId) {
         let spatial_node_index = self.get_space(common.spatial_id);
 
         // If no bounds rect is given, default to clip rect. The external
@@ -1295,8 +1298,6 @@ impl<'a> SceneBuilder<'a> {
         // `SpaceSnapper`).
         let clip_rect = common.clip_rect;
         let prim_rect = bounds.unwrap_or(clip_rect);
-        let unsnapped_rect = prim_rect;
-
 
         let clip_node_id = self.get_clip_node(
             common.clip_chain_id,
@@ -1314,14 +1315,14 @@ impl<'a> SceneBuilder<'a> {
             transformed_aa_edges: EdgeMask::all(),
         };
 
-        (layout, unsnapped_rect, spatial_node_index, clip_node_id)
+        (layout, spatial_node_index, clip_node_id)
     }
 
     fn process_common_properties_with_bounds(
         &mut self,
         common: &CommonItemProperties,
         bounds: LayoutRect,
-    ) -> (LayoutPrimitiveInfo, LayoutRect, SpatialNodeIndex, ClipNodeId) {
+    ) -> (LayoutPrimitiveInfo, SpatialNodeIndex, ClipNodeId) {
         self.process_common_properties(
             common,
             Some(bounds),
@@ -1344,7 +1345,7 @@ impl<'a> SceneBuilder<'a> {
                     return;
                 }
 
-                let (layout, _, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
+                let (layout, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     info.bounds,
                 );
@@ -1368,13 +1369,13 @@ impl<'a> SceneBuilder<'a> {
                     return;
                 }
 
-                let (layout, unsnapped_rect, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
+                let (layout, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     info.bounds,
                 );
 
                 let stretch_size = process_image_stretch_size(
-                    &unsnapped_rect,
+                    &layout.rect,
                     info.stretch_size,
                 );
 
@@ -1397,7 +1398,7 @@ impl<'a> SceneBuilder<'a> {
                     return;
                 }
 
-                let (layout, _, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
+                let (layout, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     info.bounds,
                 );
@@ -1426,7 +1427,7 @@ impl<'a> SceneBuilder<'a> {
                 // are subtle interactions between the primitive origin and the glyph offset
                 // which appear to be significant (presumably due to some sort of accumulated
                 // error throughout the layers). We should fix this at some point.
-                let (layout, _, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
+                let (layout, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     info.bounds,
                 );
@@ -1445,10 +1446,12 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::Rectangle(ref info) => {
                 tracy_rs::profile_scope!("rect");
 
-                let (layout, _, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
+                let (mut layout, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     info.bounds,
                 );
+
+                layout.transformed_aa_edges &= info.transformed_aa_edges;
 
                 self.add_primitive(
                     spatial_node_index,
@@ -1504,7 +1507,7 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::Line(ref info) => {
                 tracy_rs::profile_scope!("line");
 
-                let (layout, _, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
+                let (layout, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     info.area,
                 );
@@ -1522,195 +1525,93 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::Gradient(ref info) => {
                 tracy_rs::profile_scope!("gradient");
 
-                if !info.gradient.is_valid() {
-                    return;
-                }
-
-                let (mut layout, unsnapped_rect, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
+                let (layout, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     info.bounds,
                 );
 
-                let mut tile_size = process_repeat_size(
-                    &layout.rect,
-                    &unsnapped_rect,
+                if let Some(prim_key_kind) = linear_gradient_prim(
+                    layout.rect,
+                    info.gradient.start_point,
+                    info.gradient.end_point,
+                    read_gradient_stops(item.gradient_stops()),
+                    info.gradient.extend_mode,
                     info.tile_size,
-                );
-
-                let stops = read_gradient_stops(item.gradient_stops());
-                let mut start = info.gradient.start_point;
-                let mut end = info.gradient.end_point;
-                // Run the simplification + clip pass; the fast-path two-stop
-                // segment decomposition that used to run here now happens at
-                // prepare time so segments tile against the snapped prim_rect
-                // (see `decompose_axis_aligned_gradient`).
-                optimize_linear_gradient(
-                    &mut layout.rect,
-                    &mut tile_size,
                     info.tile_spacing,
-                    &layout.clip_rect,
-                    &mut start,
-                    &mut end,
-                );
-
-                if !tile_size.ceil().is_empty() {
-                    if let Some(prim_key_kind) = self.create_linear_gradient_prim(
+                    None,
+                ) {
+                    self.add_primitive(
+                        spatial_node_index,
+                        clip_node_id,
                         &layout,
-                        start,
-                        end,
-                        stops,
-                        info.gradient.extend_mode,
-                        tile_size,
-                        info.tile_spacing,
-                        None,
-                        EdgeMask::all(),
-                    ) {
-                        self.add_primitive(
-                            spatial_node_index,
-                            clip_node_id,
-                            &layout,
-                            prim_key_kind,
-                        );
-                    }
+                        prim_key_kind,
+                    );
                 }
             }
             DisplayItem::RadialGradient(ref info) => {
                 tracy_rs::profile_scope!("radial");
 
-                if !info.gradient.is_valid() {
-                    return;
-                }
-
-                let (mut layout, unsnapped_rect, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
+                let (mut layout, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     info.bounds,
                 );
 
-                let mut center = info.gradient.center;
+                layout.transformed_aa_edges &= info.transformed_aa_edges;
 
-                let stops = read_gradient_stops(item.gradient_stops());
-
-                let mut tile_size = process_repeat_size(
-                    &layout.rect,
-                    &unsnapped_rect,
-                    info.tile_size,
-                );
-
-                let mut prim_rect = layout.rect;
-                let mut tile_spacing = info.tile_spacing;
-                let mut aa_mask = EdgeMask::all();
-                optimize_radial_gradient(
-                    &mut prim_rect,
-                    &mut tile_size,
-                    &mut center,
-                    &mut tile_spacing,
-                    &mut aa_mask,
-                    &layout.clip_rect,
-                    info.gradient.radius,
-                    info.gradient.end_offset,
+                let prim_key_kind = radial_gradient_prim(
+                    layout.rect,
+                    info.gradient.center,
+                    info.gradient.start_offset * info.gradient.radius.width,
+                    info.gradient.end_offset * info.gradient.radius.width,
+                    info.gradient.radius.width / info.gradient.radius.height,
+                    read_gradient_stops(item.gradient_stops()),
                     info.gradient.extend_mode,
-                    &stops,
-                    &mut |solid_rect, color, aa_mask| {
-                        self.add_primitive(
-                            spatial_node_index,
-                            clip_node_id,
-                            &LayoutPrimitiveInfo {
-                                rect: *solid_rect,
-                                aligned_aa_edges: layout.aligned_aa_edges & aa_mask,
-                                transformed_aa_edges: layout.transformed_aa_edges & aa_mask,
-                                .. layout
-                            },
-                            RectanglePrim { color: PropertyBinding::Value(color) },
-                        );
-                    }
+                    info.tile_size,
+                    info.tile_spacing,
+                    None,
                 );
 
-                layout.aligned_aa_edges &= aa_mask;
-                layout.transformed_aa_edges &= aa_mask;
-
-                // TODO: create_radial_gradient_prim already calls
-                // this, but it leaves the info variable that is
-                // passed to add_primitive unmodified
-                // which can cause issues.
-                simplify_repeated_primitive(&tile_size, &mut tile_spacing, &mut prim_rect);
-
-                if !tile_size.ceil().is_empty() {
-                    layout.rect = prim_rect;
-                    let prim_key_kind = self.create_radial_gradient_prim(
-                        &layout,
-                        center,
-                        info.gradient.start_offset * info.gradient.radius.width,
-                        info.gradient.end_offset * info.gradient.radius.width,
-                        info.gradient.radius.width / info.gradient.radius.height,
-                        stops,
-                        info.gradient.extend_mode,
-                        tile_size,
-                        tile_spacing,
-                        None,
-                    );
-
-                    self.add_primitive(
-                        spatial_node_index,
-                        clip_node_id,
-                        &layout,
-                        prim_key_kind,
-                    );
-                }
+                self.add_primitive(
+                    spatial_node_index,
+                    clip_node_id,
+                    &layout,
+                    prim_key_kind,
+                );
             }
             DisplayItem::ConicGradient(ref info) => {
                 tracy_rs::profile_scope!("conic");
 
-                if !info.gradient.is_valid() {
-                    return;
-                }
-
-                let (mut layout, unsnapped_rect, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
+                let (layout, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     info.bounds,
                 );
 
-                let tile_size = process_repeat_size(
-                    &layout.rect,
-                    &unsnapped_rect,
+                let prim_key_kind = conic_gradient_prim(
+                    layout.rect,
+                    info.gradient.center,
+                    info.gradient.angle,
+                    info.gradient.start_offset,
+                    info.gradient.end_offset,
+                    read_gradient_stops(item.gradient_stops()),
+                    info.gradient.extend_mode,
                     info.tile_size,
+                    info.tile_spacing,
+                    None,
                 );
 
-                let offset = apply_gradient_local_clip(
-                    &mut layout.rect,
-                    &tile_size,
-                    &info.tile_spacing,
-                    &layout.clip_rect,
+                self.add_primitive(
+                    spatial_node_index,
+                    clip_node_id,
+                    &layout,
+                    prim_key_kind,
                 );
-                let center = info.gradient.center + offset;
-
-                if !tile_size.ceil().is_empty() {
-                    let prim_key_kind = self.create_conic_gradient_prim(
-                        &layout,
-                        center,
-                        info.gradient.angle,
-                        info.gradient.start_offset,
-                        info.gradient.end_offset,
-                        item.gradient_stops(),
-                        info.gradient.extend_mode,
-                        tile_size,
-                        info.tile_spacing,
-                        None,
-                    );
-
-                    self.add_primitive(
-                        spatial_node_index,
-                        clip_node_id,
-                        &layout,
-                        prim_key_kind,
-                    );
-                }
             }
             DisplayItem::BoxShadow(ref info) => {
                 tracy_rs::profile_scope!("box_shadow");
 
-                let (layout, _, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
+                let (layout, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
                     &info.common,
-                    info.box_bounds,
+                    info.bounds,
                 );
 
                 self.add_box_shadow(
@@ -1720,7 +1621,7 @@ impl<'a> SceneBuilder<'a> {
                     &info.offset,
                     info.color,
                     info.blur_radius,
-                    info.spread_radius,
+                    info.spread_amount,
                     info.border_radius,
                     info.shadow_radius,
                     info.clip_mode,
@@ -1737,7 +1638,7 @@ impl<'a> SceneBuilder<'a> {
                     }
                 }
 
-                let (layout, _, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
+                let (layout, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     info.bounds,
                 );
@@ -1805,7 +1706,7 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::BackdropFilter(ref info) => {
                 tracy_rs::profile_scope!("backdrop");
 
-                let (layout, _, spatial_node_index, clip_node_id) = self.process_common_properties(
+                let (layout, spatial_node_index, clip_node_id) = self.process_common_properties(
                     &info.common,
                     None,
                 );
@@ -2018,6 +1919,9 @@ impl<'a> SceneBuilder<'a> {
     }
 
     /// Push a new stacking context. Returns context that must be passed to pop_stacking_context().
+    ///
+    /// `raster_space` arrives already resolved against the enclosing stacking
+    /// contexts; see `StackingContext::raster_space`.
     fn push_stacking_context(
         &mut self,
         mut composite_ops: CompositeOps,
@@ -2025,7 +1929,7 @@ impl<'a> SceneBuilder<'a> {
         prim_flags: PrimitiveFlags,
         spatial_node_index: SpatialNodeIndex,
         clip_chain_id: Option<api::ClipChainId>,
-        requested_raster_space: RasterSpace,
+        raster_space: RasterSpace,
         flags: StackingContextFlags,
     ) -> StackingContextInfo {
         tracy_rs::profile_scope!("push_stacking_context");
@@ -2054,7 +1958,7 @@ impl<'a> SceneBuilder<'a> {
                 prim_flags,
                 spatial_node_index,
                 clip_chain_id,
-                requested_raster_space,
+                raster_space,
                 flags,
             );
             info.pop_stacking_context = true;
@@ -2076,17 +1980,7 @@ impl<'a> SceneBuilder<'a> {
             composite_ops.snapshot.is_some(),
         );
 
-        let new_space = match (self.raster_space_stack.last(), requested_raster_space) {
-            // If no parent space, just use the requested space
-            (None, _) => requested_raster_space,
-            // If screen, use the parent
-            (Some(parent_space), RasterSpace::Screen) => *parent_space,
-            // If currently screen, select the requested
-            (Some(RasterSpace::Screen), space) => space,
-            // If both local, take the maximum scale
-            (Some(RasterSpace::Local(parent_scale)), RasterSpace::Local(scale)) => RasterSpace::Local(parent_scale.max(scale)),
-        };
-        self.raster_space_stack.push(new_space);
+        self.raster_space_stack.push(raster_space);
 
         // Get the transform-style of the parent stacking context,
         // which determines if we *might* need to draw this on
@@ -2291,7 +2185,7 @@ impl<'a> SceneBuilder<'a> {
                 transform_style,
                 context_3d,
                 flags,
-                raster_space: new_space,
+                raster_space,
             });
         }
 
@@ -2532,6 +2426,7 @@ impl<'a> SceneBuilder<'a> {
             stacking_context.composite_ops.filters,
             stacking_context.composite_ops.filter_datas,
             false,
+            stacking_context.spatial_node_index,
         );
 
         // Same for mix-blend-mode, except we can skip if this primitive is the first in the parent
@@ -2888,8 +2783,8 @@ impl<'a> SceneBuilder<'a> {
                         );
                     }
                     NinePatchBorderSource::Gradient(gradient) => {
-                        let prim = match self.create_linear_gradient_prim(
-                            &info,
+                        let prim = match linear_gradient_prim(
+                            info.rect,
                             gradient.start_point,
                             gradient.end_point,
                             read_gradient_stops(gradient_stops),
@@ -2897,7 +2792,6 @@ impl<'a> SceneBuilder<'a> {
                             LayoutSize::new(border.height as f32, border.width as f32),
                             LayoutSize::zero(),
                             Some(Box::new(nine_patch)),
-                            EdgeMask::all(),
                         ) {
                             Some(prim) => prim,
                             None => return,
@@ -2911,8 +2805,8 @@ impl<'a> SceneBuilder<'a> {
                         );
                     }
                     NinePatchBorderSource::RadialGradient(gradient) => {
-                        let prim = self.create_radial_gradient_prim(
-                            &info,
+                        let prim = radial_gradient_prim(
+                            info.rect,
                             gradient.center,
                             gradient.start_offset * gradient.radius.width,
                             gradient.end_offset * gradient.radius.width,
@@ -2932,13 +2826,13 @@ impl<'a> SceneBuilder<'a> {
                         );
                     }
                     NinePatchBorderSource::ConicGradient(gradient) => {
-                        let prim = self.create_conic_gradient_prim(
-                            &info,
+                        let prim = conic_gradient_prim(
+                            info.rect,
                             gradient.center,
                             gradient.angle,
                             gradient.start_offset,
                             gradient.end_offset,
-                            gradient_stops,
+                            read_gradient_stops(gradient_stops),
                             gradient.extend_mode,
                             LayoutSize::new(border.height as f32, border.width as f32),
                             LayoutSize::zero(),
@@ -2963,138 +2857,6 @@ impl<'a> SceneBuilder<'a> {
                     clip_node_id,
                 );
             }
-        }
-    }
-
-    pub fn create_linear_gradient_prim(
-        &self,
-        info: &LayoutPrimitiveInfo,
-        start_point: LayoutPoint,
-        end_point: LayoutPoint,
-        stops: Vec<GradientStopKey>,
-        extend_mode: ExtendMode,
-        stretch_size: LayoutSize,
-        mut tile_spacing: LayoutSize,
-        nine_patch: Option<Box<NinePatchDescriptor>>,
-        edge_aa_mask: EdgeMask,
-    ) -> Option<LinearGradient> {
-        let mut prim_rect = info.rect;
-        simplify_repeated_primitive(&stretch_size, &mut tile_spacing, &mut prim_rect);
-
-        let mut is_entirely_transparent = true;
-        for stop in &stops {
-            if stop.color.a > 0 {
-                is_entirely_transparent = false;
-            }
-        }
-
-        // If all the stops have no alpha, then this
-        // gradient can't contribute to the scene.
-        if is_entirely_transparent {
-            return None;
-        }
-
-        // Try to ensure that if the gradient is specified in reverse, then so long as the stops
-        // are also supplied in reverse that the rendered result will be equivalent. To do this,
-        // a reference orientation for the gradient line must be chosen, somewhat arbitrarily, so
-        // just designate the reference orientation as start < end. Aligned gradient rendering
-        // manages to produce the same result regardless of orientation, so don't worry about
-        // reversing in that case.
-        let reverse_stops = start_point.x > end_point.x ||
-            (start_point.x == end_point.x && start_point.y > end_point.y);
-
-        // To get reftests exactly matching with reverse start/end
-        // points, it's necessary to reverse the gradient
-        // line in some cases.
-        let (sp, ep) = if reverse_stops {
-            (end_point, start_point)
-        } else {
-            (start_point, end_point)
-        };
-
-        let stretch_ratio = compute_stretch_ratio(stretch_size, info.rect.size());
-
-        Some(LinearGradient {
-            extend_mode,
-            start_point: sp.into(),
-            end_point: ep.into(),
-            stretch_ratio: stretch_ratio.into(),
-            tile_spacing: tile_spacing.into(),
-            stops,
-            reverse_stops,
-            nine_patch,
-            edge_aa_mask,
-        })
-    }
-
-    pub fn create_radial_gradient_prim(
-        &mut self,
-        info: &LayoutPrimitiveInfo,
-        center: LayoutPoint,
-        start_radius: f32,
-        end_radius: f32,
-        ratio_xy: f32,
-        stops: Vec<GradientStopKey>,
-        extend_mode: ExtendMode,
-        stretch_size: LayoutSize,
-        mut tile_spacing: LayoutSize,
-        nine_patch: Option<Box<NinePatchDescriptor>>,
-    ) -> RadialGradient {
-        let mut prim_rect = info.rect;
-        simplify_repeated_primitive(&stretch_size, &mut tile_spacing, &mut prim_rect);
-
-        let params = RadialGradientParams {
-            start_radius,
-            end_radius,
-            ratio_xy,
-        };
-
-        let stretch_ratio = compute_stretch_ratio(stretch_size, info.rect.size());
-
-        RadialGradient {
-            extend_mode,
-            center: center.into(),
-            params,
-            stretch_ratio: stretch_ratio.into(),
-            tile_spacing: tile_spacing.into(),
-            nine_patch,
-            stops,
-        }
-    }
-
-    pub fn create_conic_gradient_prim(
-        &mut self,
-        info: &LayoutPrimitiveInfo,
-        center: LayoutPoint,
-        angle: f32,
-        start_offset: f32,
-        end_offset: f32,
-        stops: ItemRange<GradientStop>,
-        extend_mode: ExtendMode,
-        stretch_size: LayoutSize,
-        mut tile_spacing: LayoutSize,
-        nine_patch: Option<Box<NinePatchDescriptor>>,
-    ) -> ConicGradient {
-        let mut prim_rect = info.rect;
-        simplify_repeated_primitive(&stretch_size, &mut tile_spacing, &mut prim_rect);
-
-        let stops = stops.iter().map(|stop| {
-            GradientStopKey {
-                offset: stop.offset,
-                color: stop.color.into(),
-            }
-        }).collect();
-
-        let stretch_ratio = compute_stretch_ratio(stretch_size, info.rect.size());
-
-        ConicGradient {
-            extend_mode,
-            center: center.into(),
-            params: ConicGradientParams { angle, start_offset, end_offset },
-            stretch_ratio: stretch_ratio.into(),
-            tile_spacing: tile_spacing.into(),
-            nine_patch,
-            stops,
         }
     }
 
@@ -3333,6 +3095,10 @@ impl<'a> SceneBuilder<'a> {
             filters,
             filter_datas,
             true,
+            // The filter subregions are authored in the filtered element's
+            // space; the backdrop graph is composited in backdrop-root space,
+            // so record the element node to resolve that offset at frame time.
+            spatial_node_index,
         );
 
         // If all the filters were no-ops (e.g. opacity(0)) then we don't get a picture here
@@ -3429,6 +3195,7 @@ impl<'a> SceneBuilder<'a> {
         mut filter_ops: Vec<Filter>,
         filter_datas: Vec<FilterData>,
         is_backdrop_filter: bool,
+        source_spatial_node_index: SpatialNodeIndex,
     ) -> PictureChainBuilder {
         // For each filter, create a new image with that composite mode.
         let mut current_filter_data_index = 0;
@@ -3905,6 +3672,7 @@ impl<'a> SceneBuilder<'a> {
 
             let composite_mode = PictureCompositeMode::SVGFEGraph(
                 filters,
+                source_spatial_node_index,
             );
 
             source = source.add_picture(
@@ -4219,13 +3987,12 @@ fn filter_datas_for_compositing(
 }
 
 /// Image-specific stretch-size discriminator. Decided per-axis: if the
-/// gecko-specified `repeat_size` matches the unsnapped prim rect on
-/// that axis (within an FP-noise epsilon), the axis is flagged
-/// `fills_*` and the effective extent is resolved against the snapped
-/// prim rect at frame-build. Otherwise the explicit per-axis value is
-/// stored verbatim. Per-axis (rather than all-or-nothing) preserves the
-/// old `process_repeat_size` behaviour where a width-matching tile with
-/// a non-matching height still picks up the snapped prim width.
+/// gecko-specified `repeat_size` matches the prim rect on that axis (within an
+/// FP-noise epsilon), the axis is flagged `fills_*` and the effective extent is
+/// resolved against the snapped prim rect at frame-build. Otherwise the explicit
+/// per-axis value is stored verbatim. Per-axis rather than all-or-nothing, which
+/// matches `resolve_tile_size`: there too a width-matching tile with a
+/// non-matching height picks up the prim width on the axis that matches.
 fn process_image_stretch_size(
     unsnapped_rect: &LayoutRect,
     repeat_size: LayoutSize,

@@ -7,126 +7,92 @@ package mozilla.components.lib.crash.db
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import kotlinx.serialization.json.Json
-import mozilla.components.lib.crash.Crash
-import mozilla.components.support.base.ext.getStacktraceAsString
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.NotSerializableException
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
+import kotlinx.serialization.json.Json
 import mozilla.components.concept.base.crash.Breadcrumb as CrashBreadcrumb
+import mozilla.components.lib.crash.Crash
+import mozilla.components.support.base.ext.getStacktraceAsString
 
 /**
- * [Throwable] that gets created when the Crash Reporter isn't able to restore the serialized
- * throwable in a CrashEntity.
+ * [Throwable] that gets created when the Crash Reporter isn't able to restore the serialized throwable in a
+ * CrashEntity.
  */
 data class CrashReporterUnableToRestoreException(override var message: String) : Exception()
 
-/**
- * Database entity modeling a crash that has happened.
- */
-@Entity(
-    tableName = "crashes",
-)
+/** Database entity modeling a crash that has happened. */
+@Entity(tableName = "crashes")
 internal data class CrashEntity(
     // shared fields- both uncaught exception and native crashes
-    /**
-     * Type of crash- either UNCAUGHT or NATIVE
-     */
-    @ColumnInfo(name = "crashType", defaultValue = "UNCAUGHT")
-    var crashType: CrashType,
-    /**
-     * Generated UUID for this crash.
-     */
-    @PrimaryKey
-    @ColumnInfo(name = "uuid")
-    var uuid: String,
-    /**
-     * Runtime tags that should be attached to any report associated with this crash.
-     */
-    @ColumnInfo(name = "runtime_tags", defaultValue = "{}")
-    var runtimeTags: Map<String, String>,
-    /**
-     * List of breadcrumbs to send with the crash report.
-     */
-    @ColumnInfo(name = "breadcrumbs", defaultValue = "null")
-    var breadcrumbs: List<String>? = emptyList(),
-    /**
-     * Timestamp (in milliseconds) of when the crash happened.
-     */
-    @ColumnInfo(name = "created_at")
-    var createdAt: Long,
+    /** Type of crash- either UNCAUGHT or NATIVE */
+    @ColumnInfo(name = "crashType", defaultValue = "UNCAUGHT") var crashType: CrashType,
+    /** Generated UUID for this crash. */
+    @PrimaryKey @ColumnInfo(name = "uuid") var uuid: String,
+    /** Runtime tags that should be attached to any report associated with this crash. */
+    @ColumnInfo(name = "runtime_tags", defaultValue = "{}") var runtimeTags: Map<String, String>,
+    /** List of breadcrumbs to send with the crash report. */
+    @ColumnInfo(name = "breadcrumbs", defaultValue = "null") var breadcrumbs: List<String>? = emptyList(),
+    /** Timestamp (in milliseconds) of when the crash happened. */
+    @ColumnInfo(name = "created_at") var createdAt: Long,
     // Uncaught exception crash fields
     /**
-     * The stacktrace of the crash (if this crash was caused by an exception/throwable): otherwise
-     * a string describing the type of crash.
+     * The stacktrace of the crash (if this crash was caused by an exception/throwable): otherwise a string describing
+     * the type of crash.
      */
-    @ColumnInfo(name = "stacktrace")
-    var stacktrace: String,
-    /**
-     * The serialized [Throwable] tht caused the crash.
-     */
-    @ColumnInfo(name = "throwable")
-    val throwableData: ByteArray?,
+    @ColumnInfo(name = "stacktrace") var stacktrace: String,
+    /** The serialized [Throwable] tht caused the crash. */
+    @ColumnInfo(name = "throwable") val throwableData: ByteArray?,
     // Native crash fields
+    /** Path to a Breakpad minidump file containing information about the crash. */
+    @ColumnInfo(name = "minidumpPath", defaultValue = "null") var minidumpPath: String?,
     /**
-     * Path to a Breakpad minidump file containing information about the crash.
+     * The type of process the crash occurred in. Affects whether or not the crash is fatal or whether the application
+     * can recover from it.
      */
-    @ColumnInfo(name = "minidumpPath", defaultValue = "null")
-    var minidumpPath: String?,
+    @ColumnInfo(name = "processVisibility", defaultValue = "null") var processVisibility: String?,
+    /** The process type name reported by the crashing process. */
+    @ColumnInfo(name = "processType", defaultValue = "null") var processType: String?,
     /**
-     * The type of process the crash occurred in. Affects whether or not the crash is fatal
-     * or whether the application can recover from it.
+     * Path to a file containing extra metadata about the crash. The file contains key-value pairs in the form
+     * `Key=Value`. Be aware, it may contain sensitive data such as the URI that was loaded at the time of the crash.
      */
-    @ColumnInfo(name = "processVisibility", defaultValue = "null")
-    var processVisibility: String?,
-    /**
-     * The process type name reported by the crashing process.
-     */
-    @ColumnInfo(name = "processType", defaultValue = "null")
-    var processType: String?,
-    /**
-     * Path to a file containing extra metadata about the crash. The file contains key-value pairs
-     * in the form `Key=Value`. Be aware, it may contain sensitive data such as the URI that was
-     * loaded at the time of the crash.
-     */
-    @ColumnInfo(name = "extrasPath", defaultValue = "null")
-    var extrasPath: String?,
-    /**
-     * The type of child process (when available).
-     */
-    @ColumnInfo(name = "remoteType", defaultValue = "null")
-    var remoteType: String?,
+    @ColumnInfo(name = "extrasPath", defaultValue = "null") var extrasPath: String?,
+    /** The type of child process (when available). */
+    @ColumnInfo(name = "remoteType", defaultValue = "null") var remoteType: String?,
 )
 
 internal fun CrashEntity.deserializeBreadcrumbs(): ArrayList<CrashBreadcrumb> =
     Result.runCatching {
-        breadcrumbs
-            ?.map { Json.decodeFromString<Breadcrumb>(it).toBreadcrumb() }
-            ?.let { ArrayList(it) } ?: arrayListOf()
-    }.getOrDefault(arrayListOf())
+            breadcrumbs?.map { Json.decodeFromString<Breadcrumb>(it).toBreadcrumb() }?.let { ArrayList(it) }
+                ?: arrayListOf()
+        }
+        .getOrDefault(arrayListOf())
 
 internal fun CrashEntity.toCrash(): Crash {
     return when (this.crashType) {
-        CrashType.NATIVE -> Crash.NativeCodeCrash(
-            timestamp = this.createdAt,
-            minidumpPath = this.minidumpPath,
-            extrasPath = this.extrasPath,
-            processVisibility = this.processVisibility,
-            processType = this.processType,
-            breadcrumbs = deserializeBreadcrumbs(),
-            remoteType = this.remoteType,
-            runtimeTags = this.runtimeTags,
-            uuid = this.uuid,
-        )
-        CrashType.UNCAUGHT -> Crash.UncaughtExceptionCrash(
-            timestamp = this.createdAt,
-            throwable = deserializeThrowable(),
-            breadcrumbs = deserializeBreadcrumbs(),
-            runtimeTags = runtimeTags,
-            uuid = this.uuid,
-        )
+        CrashType.NATIVE ->
+            Crash.NativeCodeCrash(
+                timestamp = this.createdAt,
+                minidumpPath = this.minidumpPath,
+                extrasPath = this.extrasPath,
+                processVisibility = this.processVisibility,
+                processType = this.processType,
+                breadcrumbs = deserializeBreadcrumbs(),
+                remoteType = this.remoteType,
+                runtimeTags = this.runtimeTags,
+                uuid = this.uuid,
+            )
+        CrashType.UNCAUGHT ->
+            Crash.UncaughtExceptionCrash(
+                timestamp = this.createdAt,
+                throwable = deserializeThrowable(),
+                breadcrumbs = deserializeBreadcrumbs(),
+                runtimeTags = runtimeTags,
+                uuid = this.uuid,
+            )
     }
 }
 
@@ -142,13 +108,17 @@ internal fun CrashEntity.restoreArchiveError(message: String): Throwable {
     // we will get ("androidx.recyclerview.widget.LinearLayoutManager.fill", "LinearLayoutManager.java", 49).
     val regex = Regex("""\s*at (.+)\((.+):(\d+)\)""")
 
-    val stackTraceElements = lines.drop(1).mapNotNull { line ->
-        val matchResult = regex.find(line.trim())
-        matchResult?.let {
-            val (className, fileName, lineNumber) = it.destructured
-            StackTraceElement(className, "", fileName, lineNumber.toInt())
-        }
-    }.toTypedArray()
+    val stackTraceElements =
+        lines
+            .drop(1)
+            .mapNotNull { line ->
+                val matchResult = regex.find(line.trim())
+                matchResult?.let {
+                    val (className, fileName, lineNumber) = it.destructured
+                    StackTraceElement(className, "", fileName, lineNumber.toInt())
+                }
+            }
+            .toTypedArray()
 
     throwable.stackTrace = stackTraceElements
 
@@ -187,9 +157,10 @@ internal fun Throwable.forceSerializable(): Throwable {
 
 private fun ByteArray.deserializeThrowable(): Throwable {
     val byteArrayInputStream = ByteArrayInputStream(this)
-    val throwable = ObjectInputStream(byteArrayInputStream).use { ois ->
-        ois.readObject()
-    }
+    val throwable =
+        ObjectInputStream(byteArrayInputStream).use { ois ->
+            ois.readObject()
+        }
     return throwable as Throwable
 }
 
@@ -236,5 +207,6 @@ private fun Crash.UncaughtExceptionCrash.toEntity(): CrashEntity =
     )
 
 internal enum class CrashType {
-    NATIVE, UNCAUGHT
+    NATIVE,
+    UNCAUGHT,
 }

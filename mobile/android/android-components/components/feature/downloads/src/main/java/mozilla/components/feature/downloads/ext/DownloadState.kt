@@ -5,6 +5,8 @@
 package mozilla.components.feature.downloads.ext
 
 import androidx.core.net.toUri
+import java.io.InputStream
+import java.net.URLConnection
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.concept.fetch.Headers
 import mozilla.components.concept.fetch.Headers.Names.CONTENT_DISPOSITION
@@ -15,8 +17,6 @@ import mozilla.components.feature.downloads.parseContentRange
 import mozilla.components.support.ktx.kotlin.sanitizeFileName
 import mozilla.components.support.utils.DownloadFileUtils
 import mozilla.components.support.utils.ext.decodeIfNeeded
-import java.io.InputStream
-import java.net.URLConnection
 
 internal fun DownloadState.isScheme(protocols: Iterable<String>): Boolean {
     val scheme = url.trim().toUri().scheme ?: return false
@@ -38,15 +38,16 @@ internal fun DownloadState.withResponse(
     val contentDisposition = headers[CONTENT_DISPOSITION]
     val contentType = resolveContentType(headers, stream)
 
-    val newFileName = if (fileName.isNullOrBlank()) {
-        downloadFileUtils.guessFileName(
-            contentDisposition = contentDisposition,
-            url = url,
-            mimeType = contentType,
-        )
-    } else {
-        fileName
-    }
+    val newFileName =
+        if (fileName.isNullOrBlank()) {
+            downloadFileUtils.guessFileName(
+                contentDisposition = contentDisposition,
+                url = url,
+                mimeType = contentType,
+            )
+        } else {
+            fileName
+        }
     return copy(
         fileName = newFileName?.decodeIfNeeded()?.sanitizeFileName(),
         contentType = contentType,
@@ -56,21 +57,16 @@ internal fun DownloadState.withResponse(
 }
 
 private fun DownloadState.resolveContentType(headers: Headers, stream: InputStream?): String? =
-    contentType
-        ?: stream?.let { URLConnection.guessContentTypeFromStream(it) }
-        ?: headers[CONTENT_TYPE]
+    contentType ?: stream?.let { URLConnection.guessContentTypeFromStream(it) } ?: headers[CONTENT_TYPE]
 
 private fun DownloadState.resolveContentLength(headers: Headers): Long? =
-    contentLength
-        ?: parseContentRange(headers)?.totalLength
-        ?: headers[CONTENT_LENGTH]?.toLongOrNull()
+    contentLength ?: parseContentRange(headers)?.totalLength ?: headers[CONTENT_LENGTH]?.toLongOrNull()
 
-internal fun DownloadState.getRealFilenameOrGuessed(
-    downloadFileUtils: DownloadFileUtils,
-): String {
-    return fileName ?: downloadFileUtils.guessFileName(
-        contentDisposition = null,
-        url = url,
-        mimeType = contentType,
-    )
+internal fun DownloadState.getRealFilenameOrGuessed(downloadFileUtils: DownloadFileUtils): String {
+    return fileName
+        ?: downloadFileUtils.guessFileName(
+            contentDisposition = null,
+            url = url,
+            mimeType = contentType,
+        )
 }

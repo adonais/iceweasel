@@ -3,6 +3,10 @@
 
 "use strict";
 
+// SpecialPowers.spawn injects ContentTaskUtils in the scope of the callback.
+// Eslint doesn't know about that.
+/* global ContentTaskUtils */
+
 // Importing these libraries from newtab is normally forbidden for code that
 // executes in the browser, but since these are just tests, it's fine.
 const { DiscoveryStreamFeed } = ChromeUtils.importESModule(
@@ -192,6 +196,103 @@ add_task(async function test_firefoxhome_preferences_set() {
     },
   });
   await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_firefoxhome_widgets_blocked() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      // Widget toggles only exist in the Settings Redesign UI.
+      ["browser.settings-redesign.enabled", true],
+      // Stand in for a rollout that has made these two widgets available.
+      ["browser.newtabpage.activity-stream.widgets.system.enabled", true],
+      ["browser.newtabpage.activity-stream.widgets.system.lists.enabled", true],
+      [
+        "browser.newtabpage.activity-stream.widgets.system.clocks.enabled",
+        true,
+      ],
+    ],
+  });
+
+  await setupPolicyEngineWithJson({
+    policies: {
+      FirefoxHome: {
+        Widgets: {
+          Blocked: ["lists"],
+        },
+      },
+    },
+  });
+
+  await BrowserTestUtils.withNewTab("about:preferences#home", async browser => {
+    let doc = browser.contentDocument;
+    let lists = await TestUtils.waitForCondition(() =>
+      doc.getElementById("setting-control-lists")
+    );
+    await lists.updateComplete;
+    ok(lists.disabled, "Blocked widget toggle is disabled");
+
+    let clocks = doc.getElementById("setting-control-clocks");
+    await clocks.updateComplete;
+    ok(!clocks.disabled, "Widget that was not blocked stays editable");
+  });
+
+  await setupPolicyEngineWithJson({
+    policies: {
+      FirefoxHome: {},
+    },
+  });
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_firefoxhome_customize_panel_locked() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      FirefoxHome: {
+        TopSites: false,
+        Locked: true,
+      },
+    },
+  });
+
+  let tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: "about:home",
+    waitForStateStop: true,
+  });
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    let customizeButton = await ContentTaskUtils.waitForCondition(
+      () =>
+        content.document.querySelector(
+          ".personalize-button, .open-customization-button"
+        ),
+      "Wait for the customize button to load on the newtab page"
+    );
+    customizeButton.click();
+
+    let dialog = await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector("dialog.customize-menu[open]"),
+      "Wait for the customize panel to open"
+    );
+
+    // `disabled` is a lit reactive property, not a WebIDL attribute, so it is
+    // not visible through the Xray wrapper.
+    ok(
+      dialog.querySelector("#shortcuts-toggle").wrappedJSObject.disabled,
+      "Shortcuts toggle should be disabled when feeds.topsites is locked"
+    );
+    ok(
+      !dialog.querySelector("#row-selector").wrappedJSObject.disabled,
+      "Row selector should stay enabled when its own pref is not locked"
+    );
+  });
+
+  BrowserTestUtils.removeTab(tab);
+  await setupPolicyEngineWithJson({
+    policies: {
+      FirefoxHome: {},
+    },
+  });
 });
 
 add_task(async function test_firefoxhome_support_firefox_sponsored_locked() {

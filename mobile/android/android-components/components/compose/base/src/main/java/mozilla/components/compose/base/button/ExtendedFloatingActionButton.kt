@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.FloatingActionButton as M3FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults as M3FloatingActionButtonDefaults
 import androidx.compose.material3.FloatingActionButtonElevation
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,30 +38,27 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.theme.AcornTheme
-import androidx.compose.material3.FloatingActionButton as M3FloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults as M3FloatingActionButtonDefaults
 import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Extended FAB
  *
- * A FAB with the ability to collapse and expand based on [expanded]. When [expanded] is updated,
- * the [label] and the size of the FAB will be animated.
+ * A FAB with the ability to collapse and expand based on [expanded]. When [expanded] is updated, the [label] and the
+ * size of the FAB will be animated.
  *
  * https://m3.material.io/components/extended-fab/overview
  * https://www.figma.com/design/MjufE1X5fvkxZ0YneX4kRd/Android-Library--2025-?node-id=63872-4518
  *
  * @param label The label displayed inside this FAB.
  * @param icon The icon displayed inside this FAB.
- * @param contentDescription The text used by accessibility services to describe what this FAB's icon
- * represents.
+ * @param contentDescription The text used by accessibility services to describe what this FAB's icon represents.
  * @param onClick Invoked when this FAB is clicked.
  * @param modifier the [Modifier] to be applied to this FAB.
- * @param expanded Controls the expansion state of this FAB. In an expanded state, the FAB will
- * show both the icon and text. In a collapsed state, the FAB will show only the icon.
+ * @param expanded Controls the expansion state of this FAB. In an expanded state, the FAB will show both the icon and
+ *   text. In a collapsed state, the FAB will show only the icon.
  * @param colors The [FloatingActionButtonColors] used to color this FAB.
- * @param elevation  [FloatingActionButtonElevation] used to resolve the elevation for this FAB in
- * different states. This controls the size of the shadow below the FAB.
+ * @param elevation [FloatingActionButtonElevation] used to resolve the elevation for this FAB in different states. This
+ *   controls the size of the shadow below the FAB.
  */
 @Composable
 fun ExtendedFloatingActionButton(
@@ -71,25 +70,26 @@ fun ExtendedFloatingActionButton(
     expanded: Boolean = true,
     colors: FloatingActionButtonColors = FloatingActionButtonDefaults.colorsPrimary(),
     elevation: FloatingActionButtonElevation = M3FloatingActionButtonDefaults.elevation(),
-) = ExtendedFloatingActionButton(
-    label = label,
-    onClick = onClick,
-    modifier = modifier,
-    expanded = expanded,
-    colors = colors,
-    elevation = elevation,
-) {
-    Icon(
-        painter = painterResource(id = icon),
-        contentDescription = contentDescription,
-    )
-}
+) =
+    ExtendedFloatingActionButton(
+        label = label,
+        onClick = onClick,
+        modifier = modifier,
+        expanded = expanded,
+        colors = colors,
+        elevation = elevation,
+    ) {
+        Icon(
+            painter = painterResource(id = icon),
+            contentDescription = contentDescription,
+        )
+    }
 
 /**
  * Extended FAB
  *
- * A FAB with the ability to collapse and expand based on [expanded]. When [expanded] is updated,
- * the [label] and the size of the FAB will be animated.
+ * A FAB with the ability to collapse and expand based on [expanded]. When [expanded] is updated, the [label] and the
+ * size of the FAB will be animated.
  *
  * https://m3.material.io/components/extended-fab/overview
  * https://www.figma.com/design/MjufE1X5fvkxZ0YneX4kRd/Android-Library--2025-?node-id=63872-4518
@@ -98,11 +98,11 @@ fun ExtendedFloatingActionButton(
  * @param icon The icon displayed inside this FAB.
  * @param onClick Invoked when this FAB is clicked.
  * @param modifier the [Modifier] to be applied to this FAB.
- * @param expanded Controls the expansion state of this FAB. In an expanded state, the FAB will
- * show both the icon and text. In a collapsed state, the FAB will show only the icon.
+ * @param expanded Controls the expansion state of this FAB. In an expanded state, the FAB will show both the icon and
+ *   text. In a collapsed state, the FAB will show only the icon.
  * @param colors The [FloatingActionButtonColors] used to color this FAB.
- * @param elevation  [FloatingActionButtonElevation] used to resolve the elevation for this FAB in
- * different states. This controls the size of the shadow below the FAB.
+ * @param elevation [FloatingActionButtonElevation] used to resolve the elevation for this FAB in different states. This
+ *   controls the size of the shadow below the FAB.
  */
 @Composable
 fun ExtendedFloatingActionButton(
@@ -122,9 +122,9 @@ fun ExtendedFloatingActionButton(
         elevation = elevation,
     ) {
         Row(
-            modifier = Modifier
-                .thenConditional(Modifier.sizeIn(minWidth = ExtendedFabMinimumWidth)) { expanded }
-                .padding(AcornTheme.layout.space.static200),
+            modifier =
+                Modifier.thenConditional(Modifier.sizeIn(minWidth = ExtendedFabMinimumWidth)) { expanded }
+                    .padding(AcornTheme.layout.space.static200),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = if (expanded) Arrangement.Start else Arrangement.Center,
         ) {
@@ -140,9 +140,7 @@ fun ExtendedFloatingActionButton(
 
                     Text(
                         text = label,
-                        modifier = Modifier
-                            .animateContentSize()
-                            .padding(end = AcornTheme.layout.space.static100),
+                        modifier = Modifier.animateContentSize().padding(end = AcornTheme.layout.space.static100),
                         style = AcornTheme.typography.button,
                         maxLines = 1,
                     )
@@ -196,17 +194,18 @@ private fun CustomExtendedFloatingActionButtonPreview() {
             contentDescription = "content description",
             onClick = { expanded = !expanded },
             expanded = expanded,
-            colors = FloatingActionButtonColors(
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary,
-            ),
+            colors =
+                FloatingActionButtonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary,
+                    contentColor = MaterialTheme.colorScheme.onSecondary,
+                ),
         )
     }
 }
 
 /**
- * This is lifted from [androidx.compose.material3.ExtendedFloatingActionButton].
- * In order to have the padding values customizable, we needed to reimplement the animation spec.
+ * This is lifted from [androidx.compose.material3.ExtendedFloatingActionButton]. In order to have the padding values
+ * customizable, we needed to reimplement the animation spec.
  *
  * The values were obtained from an internal Material palette of animation tokens, MotionTokens.
  */
@@ -220,7 +219,7 @@ private val ExtendedFabCollapseAnimation =
             tween(
                 durationMillis = 100,
                 easing = EasingLinearCubicBezier,
-            ),
+            )
     ) +
         shrinkHorizontally(
             animationSpec =
@@ -238,7 +237,7 @@ private val ExtendedFabExpandAnimation =
                 durationMillis = 200,
                 delayMillis = 100,
                 easing = EasingLinearCubicBezier,
-            ),
+            )
     ) +
         expandHorizontally(
             animationSpec =

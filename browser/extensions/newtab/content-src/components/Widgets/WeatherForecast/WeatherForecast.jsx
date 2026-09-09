@@ -365,7 +365,10 @@ function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
           type="ghost"
           size={`${isSmallSize ? "small" : "default"}`}
         />
-        <panel-list id="weather-forecast-context-menu">
+        <panel-list
+          className="panel-list-no-icons"
+          id="weather-forecast-context-menu"
+        >
           {prefs["weather.locationSearchEnabled"] && (
             <panel-item
               data-l10n-id="newtab-weather-menu-change-location"

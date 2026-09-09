@@ -18,17 +18,7 @@
 
 using namespace js;
 
-#ifdef DEBUG
-// Only one LightLock may be held by a thread at any time to prevent deadlock.
-MOZ_THREAD_LOCAL(bool) js::TlsLightLockHeld;
-#endif
-
-js::LightLockRuntime::LightLockRuntime() : mutex(mutexid::GCLightLock) {
-#ifdef DEBUG
-  TlsLightLockHeld.infallibleInit();
-  TlsLightLockHeld.set(false);
-#endif
-}
+js::LightLockRuntime::LightLockRuntime() : mutex(mutexid::GCLightLock) {}
 
 /* static */
 LightLockRuntime* js::LightLockRuntime::from(JSRuntime* runtime) {

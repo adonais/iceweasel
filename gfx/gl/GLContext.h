@@ -4036,10 +4036,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
       if (name < aOther.name) return true;
       return false;
     }
-    bool operator==(const NamedResource& aOther) const {
-      return origin == aOther.origin && name == aOther.name &&
-             originDeleted == aOther.originDeleted;
-    }
+    bool operator==(const NamedResource& aOther) const = default;
   };
 
   nsTArray<NamedResource> mTrackedPrograms;

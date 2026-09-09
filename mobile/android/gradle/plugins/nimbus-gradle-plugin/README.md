@@ -1,6 +1,7 @@
-This directory contains a Gradle plugin for that wraps Nimbus FML. It knows how to process feature manifest definitions and generate Kotlin bindings for the configured features.
+This directory contains a Gradle plugin that wraps Nimbus FML. It knows how to process feature manifest definitions and generate Kotlin bindings for the configured features.
 
-It has been forked into mozilla-firefox from the [A-S Repo](https://github.com/mozilla/application-services/tree/main/tools/nimbus-gradle-plugin)
+It was moved into mozilla-firefox from application-services, which removed its copy in
+[#7184](https://github.com/mozilla/application-services/pull/7184).
 
 This is mostly a thin wrapper around the actual code generator whose implementation lives in either:
 

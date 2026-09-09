@@ -16,13 +16,13 @@ import org.junit.runners.JUnit4
 class NoDispatchersSetMainDetectorTest : LintDetectorTest() {
 
     override fun getDetector(): Detector = NoDispatchersSetMainDetector()
-    override fun getIssues(): List<Issue> = listOf(
-        NoDispatchersSetMainDetector.Companion.ISSUE_NO_DISPATCHERS_SET_MAIN,
-    )
+
+    override fun getIssues(): List<Issue> = listOf(NoDispatchersSetMainDetector.Companion.ISSUE_NO_DISPATCHERS_SET_MAIN)
 
     // Stub for kotlinx.coroutines.Dispatchers to make the test code resolvable
-    private val dispatcherStub = TestFiles.kotlin(
-        """
+    private val dispatcherStub =
+        TestFiles.kotlin(
+                """
         package kotlinx.coroutines.test
 
         object Dispatchers {
@@ -33,11 +33,13 @@ class NoDispatchersSetMainDetectorTest : LintDetectorTest() {
             @JvmStatic
             val Main: Any get() = Any()
         }
-        """,
-    ).indented()
-
-    private val setMainUsage = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val setMainUsage =
+        TestFiles.kotlin(
+                """
         package com.example.test
 
         import kotlinx.coroutines.test.Dispatchers
@@ -47,11 +49,13 @@ class NoDispatchersSetMainDetectorTest : LintDetectorTest() {
                 Dispatchers.setMain(Dispatchers.Main) // VIOLATION
             }
         }
-        """,
-    ).indented()
-
-    private val resetMainUsage = TestFiles.kotlin(
         """
+            )
+            .indented()
+
+    private val resetMainUsage =
+        TestFiles.kotlin(
+                """
         package com.example.test
 
         import kotlinx.coroutines.test.Dispatchers
@@ -61,8 +65,9 @@ class NoDispatchersSetMainDetectorTest : LintDetectorTest() {
                 Dispatchers.resetMain(Dispatchers.Main) // VIOLATION
             }
         }
-        """,
-    ).indented()
+        """
+            )
+            .indented()
 
     @Test
     fun `GIVEN a test file, WHEN Dispatchers_setMain is called THEN expect lint error`() {
@@ -73,7 +78,8 @@ class NoDispatchersSetMainDetectorTest : LintDetectorTest() {
             .expectContains(
                 """
                 Avoid using 'Dispatchers.setMain' directly in tests. Inject dispatchers into your components instead to allow testing with a TestDispatcher.
-            """.trimIndent(),
+                """
+                    .trimIndent()
             )
     }
 
@@ -86,14 +92,16 @@ class NoDispatchersSetMainDetectorTest : LintDetectorTest() {
             .expectContains(
                 """
                 Avoid using 'Dispatchers.resetMain' directly in tests. Inject dispatchers into your components instead to allow testing with a TestDispatcher.
-            """.trimIndent(),
+                """
+                    .trimIndent()
             )
     }
 
     @Test
     fun `GIVEN a test file, WHEN Dispatchers setMain or resetMain are NOT called then expect no error`() {
-        val cleanUsage = TestFiles.kotlin(
-            """
+        val cleanUsage =
+            TestFiles.kotlin(
+                    """
             package com.example.test
 
             import kotlinx.coroutines.test.Dispatchers
@@ -103,12 +111,10 @@ class NoDispatchersSetMainDetectorTest : LintDetectorTest() {
                     val mainDispatcher = Dispatchers.Main // this is fine
                 }
             }
-            """,
-        ).indented()
+            """
+                )
+                .indented()
 
-        lint()
-            .files(dispatcherStub, cleanUsage)
-            .run()
-            .expectClean()
+        lint().files(dispatcherStub, cleanUsage).run().expectClean()
     }
 }

@@ -78,8 +78,10 @@ void DocumentPictureInPicture::OnPiPResized() {
 
   int x = innerWindow->GetScreenLeft(CallerType::System, IgnoreErrors());
   int y = innerWindow->GetScreenTop(CallerType::System, IgnoreErrors());
-  int width = static_cast<int>(innerWindow->GetInnerWidth(IgnoreErrors()));
-  int height = static_cast<int>(innerWindow->GetInnerHeight(IgnoreErrors()));
+  int width = static_cast<int>(std::round(
+      innerWindow->GetInnerWidth(dom::CallerType::System, IgnoreErrors())));
+  int height = static_cast<int>(std::round(
+      innerWindow->GetInnerHeight(dom::CallerType::System, IgnoreErrors())));
 
   mPreviousExtent = Some(CSSIntRect(x, y, width, height));
 

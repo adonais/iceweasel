@@ -14,21 +14,17 @@ import androidx.preference.PreferenceManager
 import com.google.android.gms.tasks.Task
 import com.google.android.play.core.review.ReviewInfo
 import com.google.android.play.core.review.ReviewManagerFactory
+import java.util.concurrent.TimeUnit
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.support.utils.DefaultDateTimeProvider
 import org.mozilla.focus.R
 import org.mozilla.focus.ext.components
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.utils.SupportUtils
-import java.util.concurrent.TimeUnit
 
-/**
- * Utility class for handling In-App Review.
- */
+/** Utility class for handling In-App Review. */
 object AppReviewUtils {
-    /**
-     * Number of app openings until In App Review is triggered.
-     */
+    /** Number of app openings until In App Review is triggered. */
     private const val APP_OPENINGS_REVIEW_TRIGGER = 3
     private val APP_REVIEW_TIME_TRIGGER = TimeUnit.DAYS.toMillis(90)
 
@@ -68,29 +64,24 @@ object AppReviewUtils {
      */
     fun addAppOpenings(context: Context) {
         val preferenceManage = PreferenceManager.getDefaultSharedPreferences(context)
-        val currentOpeningsNumber = preferenceManage.getInt(
-            context.getString(
-                R.string.pref_in_app_review_openings,
-            ),
-            0,
-        ) + 1
-        val appReviewStep = preferenceManage.getString(
-            context.getString(
-                R.string.pref_in_app_review_step,
-            ),
-            AppReviewStep.Pending.name,
-        )
+        val currentOpeningsNumber =
+            preferenceManage.getInt(
+                context.getString(R.string.pref_in_app_review_openings),
+                0,
+            ) + 1
+        val appReviewStep =
+            preferenceManage.getString(
+                context.getString(R.string.pref_in_app_review_step),
+                AppReviewStep.Pending.name,
+            )
 
-        preferenceManage
-            .edit {
-                putInt(
-                    context.getString(R.string.pref_in_app_review_openings),
-                    currentOpeningsNumber,
-                )
-            }
-        if (currentOpeningsNumber == APP_OPENINGS_REVIEW_TRIGGER &&
-            appReviewStep == AppReviewStep.Pending.name
-        ) {
+        preferenceManage.edit {
+            putInt(
+                context.getString(R.string.pref_in_app_review_openings),
+                currentOpeningsNumber,
+            )
+        }
+        if (currentOpeningsNumber == APP_OPENINGS_REVIEW_TRIGGER && appReviewStep == AppReviewStep.Pending.name) {
             setAppReviewStep(context, AppReviewStep.ReviewNeeded)
         }
     }
@@ -99,20 +90,22 @@ object AppReviewUtils {
         context: Context,
         currentTimeProvider: () -> Long = DefaultDateTimeProvider()::currentTimeMillis,
     ): Boolean {
-        val inAppReviewStep = PreferenceManager.getDefaultSharedPreferences(context).getString(
-            context.getString(R.string.pref_in_app_review_step),
-            AppReviewStep.Pending.name,
-        )
-        val lastReviewedTime = PreferenceManager.getDefaultSharedPreferences(context).getLong(
-            context.getString(R.string.pref_in_app_review_time),
-            0L,
-        )
+        val inAppReviewStep =
+            PreferenceManager.getDefaultSharedPreferences(context)
+                .getString(
+                    context.getString(R.string.pref_in_app_review_step),
+                    AppReviewStep.Pending.name,
+                )
+        val lastReviewedTime =
+            PreferenceManager.getDefaultSharedPreferences(context)
+                .getLong(
+                    context.getString(R.string.pref_in_app_review_time),
+                    0L,
+                )
 
-        return inAppReviewStep == AppReviewStep.ReviewNeeded.name || (
-            lastReviewedTime +
-                APP_REVIEW_TIME_TRIGGER <= currentTimeProvider() &&
-                inAppReviewStep == AppReviewStep.Reviewed.name
-            )
+        return inAppReviewStep == AppReviewStep.ReviewNeeded.name ||
+            (lastReviewedTime + APP_REVIEW_TIME_TRIGGER <= currentTimeProvider() &&
+                inAppReviewStep == AppReviewStep.Reviewed.name)
     }
 
     private fun openPlayStore(activity: Activity) {
@@ -121,17 +114,18 @@ object AppReviewUtils {
                 Intent(
                     Intent.ACTION_VIEW,
                     SupportUtils.RATE_APP_URL.toUri(),
-                ),
+                )
             )
         } catch (e: ActivityNotFoundException) {
             // Device without the play store installed.
             // Opening the play store website.
-            val tabId = activity.components.tabsUseCases.addTab(
-                url = SupportUtils.FOCUS_PLAY_STORE_URL,
-                source = SessionState.Source.Internal.NewTab,
-                selectTab = true,
-                private = true,
-            )
+            val tabId =
+                activity.components.tabsUseCases.addTab(
+                    url = SupportUtils.FOCUS_PLAY_STORE_URL,
+                    source = SessionState.Source.Internal.NewTab,
+                    selectTab = true,
+                    private = true,
+                )
             activity.components.appStore.dispatch(AppAction.OpenTab(tabId))
         }
     }
@@ -142,25 +136,23 @@ object AppReviewUtils {
     }
 
     private fun setAppReviewStep(context: Context, appReviewStep: AppReviewStep) {
-        PreferenceManager.getDefaultSharedPreferences(context)
-            .edit {
-                putString(
-                    context.getString(R.string.pref_in_app_review_step),
-                    appReviewStep.name,
-                )
-            }
+        PreferenceManager.getDefaultSharedPreferences(context).edit {
+            putString(
+                context.getString(R.string.pref_in_app_review_step),
+                appReviewStep.name,
+            )
+        }
     }
 
     private fun setLastReviewedTime(
         context: Context,
         currentTimeProvider: () -> Long = DefaultDateTimeProvider()::currentTimeMillis,
     ) {
-        PreferenceManager.getDefaultSharedPreferences(context)
-            .edit {
-                putLong(
-                    context.getString(R.string.pref_in_app_review_time),
-                    currentTimeProvider(),
-                )
-            }
+        PreferenceManager.getDefaultSharedPreferences(context).edit {
+            putLong(
+                context.getString(R.string.pref_in_app_review_time),
+                currentTimeProvider(),
+            )
+        }
     }
 }

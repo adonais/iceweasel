@@ -12,7 +12,7 @@ namespace net {
 
 // static
 bool ProxyConfigLookupChild::Create(
-    nsIURI* aURI, uint32_t aProxyResolveFlags,
+    nsIURI* aURI, uint32_t aProxyResolveFlags, bool aIsTRRServiceChannel,
     std::function<void(nsIProxyInfo*, nsresult)>&& aCallback) {
   SocketProcessChild* socketChild = SocketProcessChild::GetSingleton();
   if (!socketChild) {
@@ -21,8 +21,8 @@ bool ProxyConfigLookupChild::Create(
 
   RefPtr<ProxyConfigLookupChild> child =
       new ProxyConfigLookupChild(std::move(aCallback));
-  return socketChild->SendPProxyConfigLookupConstructor(child, aURI,
-                                                        aProxyResolveFlags);
+  return socketChild->SendPProxyConfigLookupConstructor(
+      child, aURI, aProxyResolveFlags, aIsTRRServiceChannel);
 }
 
 ProxyConfigLookupChild::ProxyConfigLookupChild(

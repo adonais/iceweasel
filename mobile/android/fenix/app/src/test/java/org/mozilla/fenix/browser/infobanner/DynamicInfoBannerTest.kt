@@ -8,46 +8,50 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
+import kotlin.test.assertIs
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.ext.components
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertIs
 
 @RunWith(RobolectricTestRunner::class)
 class DynamicInfoBannerTest {
     @Test
     fun `showBanner should set DynamicInfoBannerBehavior as behavior if scrollWithTopToolbar`() {
         every { testContext.components.settings } returns mockk(relaxed = true)
-        val banner = spyk(
-            DynamicInfoBanner(
-                testContext,
-                CoordinatorLayout(testContext),
-                true,
-                "",
-                "",
-            ),
-        )
+        val banner =
+            spyk(
+                DynamicInfoBanner(
+                    testContext,
+                    CoordinatorLayout(testContext),
+                    true,
+                    "",
+                    "",
+                )
+            )
 
         banner.showBanner()
 
-        assertIs<DynamicInfoBannerBehavior>((banner.binding.root.layoutParams as CoordinatorLayout.LayoutParams).behavior)
+        assertIs<DynamicInfoBannerBehavior>(
+            (banner.binding.root.layoutParams as CoordinatorLayout.LayoutParams).behavior
+        )
     }
 
     @Test
     fun `showBanner should not set a behavior if not scrollWithTopToolbar`() {
         every { testContext.components.settings } returns mockk(relaxed = true)
-        val banner = spyk(
-            DynamicInfoBanner(
-                testContext,
-                CoordinatorLayout(testContext),
-                false,
-                "",
-                "",
-            ),
-        )
+        val banner =
+            spyk(
+                DynamicInfoBanner(
+                    testContext,
+                    CoordinatorLayout(testContext),
+                    false,
+                    "",
+                    "",
+                )
+            )
 
         banner.showBanner()
 

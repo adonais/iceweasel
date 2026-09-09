@@ -41,16 +41,12 @@ export class ActionsProvider {
   }
 
   /**
-   * Pick an action.
-   *
-   * @param {UrlbarQueryContext} _queryContext The query context object.
-   * @param {UrlbarParentController} _controller The urlbar controller.
-   * @param {Element} _element The element that was selected.
-   * @abstract
+   * @param {UrlbarQueryContext} _queryContext
+   * @param {UrlbarParentController} _controller
+   * @param {ActionsResult} _action
+   * @param {object} _details
    */
-  pickAction(_queryContext, _controller, _element) {
-    throw new Error("Not implemented.");
-  }
+  onPick(_queryContext, _controller, _action, _details) {}
 }
 
 /**

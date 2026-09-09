@@ -266,6 +266,11 @@ add_task(async function test_source_urlbar_oneoffs_newtab() {
 });
 
 add_task(async function test_source_urlbar_handoff() {
+  // The handoff search bar this reports from is superseded by the newtab
+  // <moz-urlbar> when its feature gate is on.
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.newtab.featureGate", false]],
+  });
   let tab;
   await track_ad_click(
     "urlbar-handoff",
@@ -354,6 +359,7 @@ add_task(async function test_source_urlbar_handoff() {
       BrowserTestUtils.removeTab(tab);
     }
   );
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_source_searchbar() {

@@ -1,0 +1,175 @@
+diff --git a/src/llama-model.cpp b/src/llama-model.cpp
+--- a/src/llama-model.cpp
++++ b/src/llama-model.cpp
+@@ -15,8 +15,6 @@
+ #include "llama-memory-hybrid-iswa.h"
+ #include "llama-memory-recurrent.h"
+ 
+-#include "models/models.h"
+-
+ #include "ggml.h"
+ #include "ggml-cpp.h"
+ 
+@@ -35,6 +33,8 @@
+ #include <string>
+ #include <vector>
+ 
++#include "models/models.h"
++
+ static llama_model * llama_model_mapping(llm_arch arch, const llama_model_params & params) {
+     switch (arch) {
+         case LLM_ARCH_LLAMA:
+diff --git a/src/models/chameleon.cpp b/src/models/chameleon.cpp
+--- a/src/models/chameleon.cpp
++++ b/src/models/chameleon.cpp
+@@ -1,5 +1,5 @@
++#include <float.h>
+ #include "models.h"
+-#include <float.h>
+ 
+ void llama_model_chameleon::load_arch_hparams(llama_model_loader & ml) {
+     ml.get_key(LLM_KV_ATTENTION_LAYERNORM_RMS_EPS, hparams.f_norm_rms_eps);
+diff --git a/src/models/deepseek32.cpp b/src/models/deepseek32.cpp
+--- a/src/models/deepseek32.cpp
++++ b/src/models/deepseek32.cpp
+@@ -1,7 +1,6 @@
+-#include "models.h"
+-
+ #include "llama-kv-cache.h"
+ #include "llama-kv-cache-dsa.h"
++#include "models.h"
+ 
+ void llama_model_deepseek32::load_arch_hparams(llama_model_loader & ml) {
+     ml.get_key(LLM_KV_EXPERT_FEED_FORWARD_LENGTH,     hparams.n_ff_exp);
+diff --git a/src/models/delta-net-base.cpp b/src/models/delta-net-base.cpp
+--- a/src/models/delta-net-base.cpp
++++ b/src/models/delta-net-base.cpp
+@@ -1,7 +1,6 @@
+-#include "models.h"
+-
+ #include "llama-impl.h"
+ #include "llama-memory-recurrent.h"
++#include "models.h"
+ 
+ // utility to get one slice from the third dimension
+ // input dim:  [x, y, c, b]
+diff --git a/src/models/granite.cpp b/src/models/granite.cpp
+--- a/src/models/granite.cpp
++++ b/src/models/granite.cpp
+@@ -1,7 +1,6 @@
++#include <sstream>
+ #include "models.h"
+ 
+-#include <sstream>
+-
+ void llama_model_granite::load_arch_hparams(llama_model_loader & ml) {
+     ml.get_key(LLM_KV_ATTENTION_LAYERNORM_RMS_EPS, hparams.f_norm_rms_eps);
+     ml.get_key(LLM_KV_LOGIT_SCALE,                 hparams.f_logit_scale);
+diff --git a/src/models/kimi-linear.cpp b/src/models/kimi-linear.cpp
+--- a/src/models/kimi-linear.cpp
++++ b/src/models/kimi-linear.cpp
+@@ -1,5 +1,5 @@
++#include "llama-memory-recurrent.h"
+ #include "models.h"
+-#include "llama-memory-recurrent.h"
+ 
+ void llama_model_kimi_linear::load_arch_hparams(llama_model_loader & ml) {
+     ml.get_key(LLM_KV_ATTENTION_LAYERNORM_RMS_EPS, hparams.f_norm_rms_eps);
+diff --git a/src/models/lfm2.cpp b/src/models/lfm2.cpp
+--- a/src/models/lfm2.cpp
++++ b/src/models/lfm2.cpp
+@@ -1,6 +1,6 @@
+-#include "models.h"
+ #include "../llama-memory-hybrid-iswa.h"
+ #include "../llama-memory-hybrid.h"
++#include "models.h"
+ 
+ void llama_model_lfm2::load_arch_hparams(llama_model_loader & ml) {
+     ml.get_key(LLM_KV_SHORTCONV_L_CACHE,           hparams.n_shortconv_l_cache);
+diff --git a/src/models/lfm2moe.cpp b/src/models/lfm2moe.cpp
+--- a/src/models/lfm2moe.cpp
++++ b/src/models/lfm2moe.cpp
+@@ -1,6 +1,6 @@
+-#include "models.h"
+ #include "../llama-memory-hybrid-iswa.h"
+ #include "../llama-memory-hybrid.h"
++#include "models.h"
+ 
+ void llama_model_lfm2moe::load_arch_hparams(llama_model_loader & ml) {
+     ml.get_key(LLM_KV_SHORTCONV_L_CACHE,           hparams.n_shortconv_l_cache);
+diff --git a/src/models/mamba-base.cpp b/src/models/mamba-base.cpp
+--- a/src/models/mamba-base.cpp
++++ b/src/models/mamba-base.cpp
+@@ -1,7 +1,6 @@
++#include "llama-memory-recurrent.h"
+ #include "models.h"
+ 
+-#include "llama-memory-recurrent.h"
+-
+ llm_build_mamba_base::llm_build_mamba_base(const llm_graph_params & params) : llm_graph_context(params) {}
+ 
+ ggml_tensor * llm_build_mamba_base::build_mamba_layer(llm_graph_input_rs * inp,
+diff --git a/src/models/plamo2.cpp b/src/models/plamo2.cpp
+--- a/src/models/plamo2.cpp
++++ b/src/models/plamo2.cpp
+@@ -1,5 +1,5 @@
++#include "llama-memory-recurrent.h"
+ #include "models.h"
+-#include "llama-memory-recurrent.h"
+ 
+ void llama_model_plamo2::load_arch_hparams(llama_model_loader & ml) {
+     ml.get_key(LLM_KV_ATTENTION_LAYERNORM_RMS_EPS, hparams.f_norm_rms_eps);
+diff --git a/src/models/qwen35.cpp b/src/models/qwen35.cpp
+--- a/src/models/qwen35.cpp
++++ b/src/models/qwen35.cpp
+@@ -1,5 +1,5 @@
++#include "llama-memory-recurrent.h"
+ #include "models.h"
+-#include "llama-memory-recurrent.h"
+ 
+ void llama_model_qwen35::load_arch_hparams(llama_model_loader & ml) {
+     ml.get_key(LLM_KV_ATTENTION_LAYERNORM_RMS_EPS,       hparams.f_norm_rms_eps);
+diff --git a/src/models/qwen35moe.cpp b/src/models/qwen35moe.cpp
+--- a/src/models/qwen35moe.cpp
++++ b/src/models/qwen35moe.cpp
+@@ -1,5 +1,5 @@
++#include "llama-memory-recurrent.h"
+ #include "models.h"
+-#include "llama-memory-recurrent.h"
+ 
+ void llama_model_qwen35moe::load_arch_hparams(llama_model_loader & ml) {
+     ml.get_key(LLM_KV_EXPERT_FEED_FORWARD_LENGTH,        hparams.n_ff_exp, false);
+diff --git a/src/models/qwen3next.cpp b/src/models/qwen3next.cpp
+--- a/src/models/qwen3next.cpp
++++ b/src/models/qwen3next.cpp
+@@ -1,5 +1,5 @@
++#include "llama-memory-recurrent.h"
+ #include "models.h"
+-#include "llama-memory-recurrent.h"
+ 
+ void llama_model_qwen3next::load_arch_hparams(llama_model_loader & ml) {
+     ml.get_key(LLM_KV_EXPERT_FEED_FORWARD_LENGTH,        hparams.n_ff_exp, false);
+diff --git a/src/models/rwkv6-base.cpp b/src/models/rwkv6-base.cpp
+--- a/src/models/rwkv6-base.cpp
++++ b/src/models/rwkv6-base.cpp
+@@ -1,7 +1,6 @@
++#include "llama-memory-recurrent.h"
+ #include "models.h"
+ 
+-#include "llama-memory-recurrent.h"
+-
+ llm_build_rwkv6_base::llm_build_rwkv6_base(const llama_model & model, const llm_graph_params & params) :
+     llm_graph_context(params),
+     model(model) {}
+diff --git a/src/models/rwkv7-base.cpp b/src/models/rwkv7-base.cpp
+--- a/src/models/rwkv7-base.cpp
++++ b/src/models/rwkv7-base.cpp
+@@ -1,7 +1,6 @@
++#include "llama-memory-recurrent.h"
+ #include "models.h"
+ 
+-#include "llama-memory-recurrent.h"
+-
+ llm_build_rwkv7_base::llm_build_rwkv7_base(const llama_model & model, const llm_graph_params & params) :
+     llm_graph_context(params),
+     model(model) {}

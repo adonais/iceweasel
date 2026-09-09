@@ -180,9 +180,22 @@ void MacroAssembler::rshiftPtrArithmetic(Register shift, Register srcDest) {
 
 void MacroAssembler::lshift64(Imm32 imm, Register64 dest) { MOZ_CRASH(); }
 
+void MacroAssembler::lshift64(Imm32 imm, Register64 src, Register64 dest) {
+  MOZ_CRASH();
+}
+
 void MacroAssembler::rshift64(Imm32 imm, Register64 dest) { MOZ_CRASH(); }
 
+void MacroAssembler::rshift64(Imm32 imm, Register64 src, Register64 dest) {
+  MOZ_CRASH();
+}
+
 void MacroAssembler::rshift64Arithmetic(Imm32 imm, Register64 dest) {
+  MOZ_CRASH();
+}
+
+void MacroAssembler::rshift64Arithmetic(Imm32 imm, Register64 src,
+                                        Register64 dest) {
   MOZ_CRASH();
 }
 
@@ -272,6 +285,10 @@ void MacroAssembler::xor32(Imm32 imm, Register src, Register dest) {
 void MacroAssembler::xor32(Imm32 imm, const Address& dest) { MOZ_CRASH(); }
 
 void MacroAssembler::xor32(const Address& src, Register dest) { MOZ_CRASH(); }
+
+void MacroAssembler::nor32(Imm32 imm, Register src, Register dest) {
+  MOZ_CRASH();
+}
 
 void MacroAssembler::byteSwap16SignExtend(Register reg) { MOZ_CRASH(); }
 

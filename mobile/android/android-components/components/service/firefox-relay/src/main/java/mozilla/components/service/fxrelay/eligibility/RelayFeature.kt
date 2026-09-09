@@ -28,9 +28,7 @@ import mozilla.components.support.utils.DefaultDateTimeProvider
 
 internal const val FETCH_TIMEOUT_MS: Long = 10_000L
 
-/**
- * Feature for accessing Firefox Relay service.
- */
+/** Feature for accessing Firefox Relay service. */
 class RelayFeature(
     private val accountManager: FxaAccountManagerDelegate,
     private val store: RelayEligibilityStore,
@@ -64,10 +62,10 @@ class RelayFeature(
             fxRelay = fxRelayFactory(authenticatedAccount)
         }
 
-        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.ifAnyChanged { arrayOf(it.eligibilityState) }
-                .collect { state -> checkRelayStatus(state) }
-        }
+        scope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow.ifAnyChanged { arrayOf(it.eligibilityState) }.collect { state -> checkRelayStatus(state) }
+            }
     }
 
     override fun stop() {
@@ -104,7 +102,7 @@ class RelayFeature(
                 relayPlanTier = relayDetails?.relayPlanTier,
                 totalMasksUsed = relayDetails?.totalMasksUsed ?: 0,
                 lastCheckedMs = dateTimeProvider.currentTimeMillis(),
-            ),
+            )
         )
 
         if (fxRelay == null) {

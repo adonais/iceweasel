@@ -14,29 +14,28 @@ import io.gitlab.arturbosch.detekt.api.Severity
 import org.jetbrains.kotlin.psi.KtImportDirective
 
 /**
- * Lints against `AcornTheme` usage in apps that provide their own theme wrapper on top of
- * `AcornTheme`.
+ * Lints against `AcornTheme` usage in apps that provide their own theme wrapper on top of `AcornTheme`.
  *
- * [appThemeName] is an optional parameter provided to the detekt [config] that is used to
- * specify the full import namespace to use instead of the app-level theme wrapper when
- * constructing the reported message (e.g. org.mozilla.fenix.theme.FirefoxTheme).
+ * [appThemeName] is an optional parameter provided to the detekt [config] that is used to specify the full import
+ * namespace to use instead of the app-level theme wrapper when constructing the reported message (e.g.
+ * org.mozilla.fenix.theme.FirefoxTheme).
  */
 class AcornThemeUsageRule(config: Config = Config.empty) : Rule(config) {
     override val issue: Issue
-        get() = Issue(
-            id = "AcornThemeUsage",
-            severity = Severity.Maintainability,
-            description = "AcornTheme should not be used directly in apps that " +
-                "provide their own theme wrapper. Use the app-level theme instead.",
-            debt = Debt.FIVE_MINS,
-        )
+        get() =
+            Issue(
+                id = "AcornThemeUsage",
+                severity = Severity.Maintainability,
+                description =
+                    "AcornTheme should not be used directly in apps that " +
+                        "provide their own theme wrapper. Use the app-level theme instead.",
+                debt = Debt.FIVE_MINS,
+            )
 
     private val appThemeName: String
         get() = valueOrDefault(key = APP_THEME_NAME_KEY, default = "")
 
-    /**
-     * Report a code smell if [FORBIDDEN_IMPORT] is found in the imports.
-     */
+    /** Report a code smell if [FORBIDDEN_IMPORT] is found in the imports. */
     override fun visitImportDirective(importDirective: KtImportDirective) {
         super.visitImportDirective(importDirective)
 
@@ -49,7 +48,7 @@ class AcornThemeUsageRule(config: Config = Config.empty) : Rule(config) {
                     issue = issue,
                     entity = Entity.from(importDirective),
                     message = "Use $name instead of AcornTheme.",
-                ),
+                )
             )
         }
     }

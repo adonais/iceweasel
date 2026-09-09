@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -37,7 +37,6 @@ import org.mozilla.geckoview.TranslationsController.SessionTranslation.Translati
 import org.mozilla.geckoview.TranslationsController.TranslationsException
 import org.mozilla.geckoview.TranslationsController.TranslationsException.ERROR_COULD_NOT_TRANSLATE
 import org.mozilla.geckoview.TranslationsController.TranslationsException.ERROR_ENGINE_DEACTIVATED
-import org.mozilla.geckoview.TranslationsController.TranslationsException.ERROR_MODEL_COULD_NOT_DELETE
 import org.mozilla.geckoview.TranslationsController.TranslationsException.ERROR_MODEL_COULD_NOT_DOWNLOAD
 import org.mozilla.geckoview.TranslationsController.TranslationsException.ERROR_MODEL_DOWNLOAD_REQUIRED
 import org.mozilla.geckoview.TranslationsController.TranslationsException.ERROR_MODEL_LANGUAGE_REQUIRED
@@ -55,7 +54,7 @@ class TranslationsTest : BaseSessionTest() {
                 "intl.accept_languages" to "en",
                 "browser.translations.geckoview.enableAllTestMocks" to true,
                 "browser.translations.simulateUnsupportedEngine" to false,
-            ),
+            )
         )
     }
 
@@ -65,14 +64,15 @@ class TranslationsTest : BaseSessionTest() {
             mapOf(
                 "browser.translations.automaticallyPopup" to false,
                 "browser.translations.geckoview.enableAllTestMocks" to false,
-            ),
+            )
         )
     }
 
-    private var mockedExpectedLanguages: List<TranslationsController.Language> = listOf(
-        Language("en", "English"),
-        Language("es", "Spanish"),
-    )
+    private var mockedExpectedLanguages: List<TranslationsController.Language> =
+        listOf(
+            Language("en", "English"),
+            Language("es", "Spanish"),
+        )
 
     @Test
     fun onExpectedTranslateDelegateTest() {
@@ -80,31 +80,35 @@ class TranslationsTest : BaseSessionTest() {
         mainSession.waitForPageStop()
 
         val handled = GeckoResult<Void>()
-        sessionRule.delegateUntilTestEnd(object : Delegate {
-            @AssertCalled(count = 1)
-            override fun onExpectedTranslate(session: GeckoSession) {
-                handled.complete(null)
-            }
-        })
-        val expectedTranslateEvent = JSONObject(
-            """
-            {
-            "actor":{
-                "languageState":{
-                    "detectedLanguages": {
-                      "userLangTag": "en",
-                      "isDocLangTagSupported": true,
-                      "docLangTag": "es"
-                    },
-                    "requestedLanguagePair": null,
-                    "hasVisibleChange": false,
-                    "error": null,
-                    "isEngineReady": false
-                    }
+        sessionRule.delegateUntilTestEnd(
+            object : Delegate {
+                @AssertCalled(count = 1)
+                override fun onExpectedTranslate(session: GeckoSession) {
+                    handled.complete(null)
                 }
             }
-            """.trimIndent(),
         )
+        val expectedTranslateEvent =
+            JSONObject(
+                """
+                {
+                "actor":{
+                    "languageState":{
+                        "detectedLanguages": {
+                          "userLangTag": "en",
+                          "isDocLangTagSupported": true,
+                          "docLangTag": "es"
+                        },
+                        "requestedLanguagePair": null,
+                        "hasVisibleChange": false,
+                        "error": null,
+                        "isEngineReady": false
+                        }
+                    }
+                }
+                """
+                    .trimIndent()
+            )
         mainSession.triggerLanguageStateChange(expectedTranslateEvent)
         sessionRule.waitForResult(handled)
     }
@@ -115,12 +119,14 @@ class TranslationsTest : BaseSessionTest() {
         mainSession.waitForPageStop()
 
         val handled = GeckoResult<Void>()
-        sessionRule.delegateUntilTestEnd(object : Delegate {
-            @AssertCalled(count = 1)
-            override fun onOfferTranslate(session: GeckoSession) {
-                handled.complete(null)
+        sessionRule.delegateUntilTestEnd(
+            object : Delegate {
+                @AssertCalled(count = 1)
+                override fun onOfferTranslate(session: GeckoSession) {
+                    handled.complete(null)
+                }
             }
-        })
+        )
 
         mainSession.triggerTranslationsOffer()
         sessionRule.waitForResult(handled)
@@ -129,24 +135,26 @@ class TranslationsTest : BaseSessionTest() {
     @Test
     fun onTranslationStateChangeDelegateTest() {
         if (sessionRule.env.isAutomation) {
-            sessionRule.delegateDuringNextWait(object : Delegate {
-                @AssertCalled(count = 2)
-                override fun onTranslationStateChange(
-                    session: GeckoSession,
-                    translationState: TranslationState?,
-                ) {
+            sessionRule.delegateDuringNextWait(
+                object : Delegate {
+                    @AssertCalled(count = 2)
+                    override fun onTranslationStateChange(
+                        session: GeckoSession,
+                        translationState: TranslationState?,
+                    ) {}
                 }
-            })
+            )
         } else {
             // For use when running from Android Studio
-            sessionRule.delegateDuringNextWait(object : Delegate {
-                @AssertCalled(count = 3)
-                override fun onTranslationStateChange(
-                    session: GeckoSession,
-                    translationState: TranslationState?,
-                ) {
+            sessionRule.delegateDuringNextWait(
+                object : Delegate {
+                    @AssertCalled(count = 3)
+                    override fun onTranslationStateChange(
+                        session: GeckoSession,
+                        translationState: TranslationState?,
+                    ) {}
                 }
-            })
+            )
         }
         mainSession.loadTestPath(TRANSLATIONS_ES)
         mainSession.waitForPageStop()
@@ -160,26 +168,26 @@ class TranslationsTest : BaseSessionTest() {
             // ("en") suppresses the automatic offer. A page in a language that is
             // only present as a secondary entry ("es") should still be offered a
             // translation into the primary language.
-            sessionRule.setPrefsUntilTestEnd(
-                mapOf("intl.accept_languages" to "en, es"),
-            )
+            sessionRule.setPrefsUntilTestEnd(mapOf("intl.accept_languages" to "en, es"))
 
             val detected = GeckoResult<DetectedLanguages>()
             var completed = false
-            sessionRule.delegateUntilTestEnd(object : Delegate {
-                override fun onTranslationStateChange(
-                    session: GeckoSession,
-                    translationState: TranslationState?,
-                ) {
-                    val languages = translationState?.detectedLanguages
-                    // onTranslationStateChange fires multiple times; capture the
-                    // first state change that carries a detected document language.
-                    if (!completed && languages?.docLangTag != null) {
-                        completed = true
-                        detected.complete(languages)
+            sessionRule.delegateUntilTestEnd(
+                object : Delegate {
+                    override fun onTranslationStateChange(
+                        session: GeckoSession,
+                        translationState: TranslationState?,
+                    ) {
+                        val languages = translationState?.detectedLanguages
+                        // onTranslationStateChange fires multiple times; capture the
+                        // first state change that carries a detected document language.
+                        if (!completed && languages?.docLangTag != null) {
+                            completed = true
+                            detected.complete(languages)
+                        }
                     }
                 }
-            })
+            )
 
             mainSession.loadTestPath(TRANSLATIONS_ES)
             mainSession.waitForPageStop()
@@ -262,10 +270,7 @@ class TranslationsTest : BaseSessionTest() {
 
         // In Android Studio tests, it is checking for real models, so delete to ensure clear test framework.
         if (!sessionRule.env.isAutomation) {
-            val allDeleteAttempt = ModelManagementOptions.Builder()
-                .operation(DELETE)
-                .operationLevel(ALL)
-                .build()
+            val allDeleteAttempt = ModelManagementOptions.Builder().operation(DELETE).operationLevel(ALL).build()
             sessionRule.waitForResult(RuntimeTranslation.manageLanguageModel(allDeleteAttempt))
         }
 
@@ -286,11 +291,7 @@ class TranslationsTest : BaseSessionTest() {
 
     @Test
     fun testInvalidLanguageCode() {
-        sessionRule.setPrefsUntilTestEnd(
-            mapOf(
-                "browser.translations.geckoview.enableAllTestMocks" to false,
-            ),
-        )
+        sessionRule.setPrefsUntilTestEnd(mapOf("browser.translations.geckoview.enableAllTestMocks" to false))
         mainSession.loadTestPath(TRANSLATIONS_ES)
         mainSession.waitForPageStop()
 
@@ -345,38 +346,49 @@ class TranslationsTest : BaseSessionTest() {
     @Test
     fun translateTest() {
         var delegateCalled = 0
-        sessionRule.delegateUntilTestEnd(object : Delegate {
-            @AssertCalled(count = 4)
-            override fun onTranslationStateChange(
-                session: GeckoSession,
-                translationState: TranslationState?,
-            ) {
-                delegateCalled++
-                // Actor created
-                if (delegateCalled == 1) {
-                    assertTrue(
-                        "Translations correctly does not have a requested pair.",
-                        translationState?.requestedTranslationPair == null,
-                    )
-                }
+        sessionRule.delegateUntilTestEnd(
+            object : Delegate {
+                @AssertCalled(count = 4)
+                override fun onTranslationStateChange(
+                    session: GeckoSession,
+                    translationState: TranslationState?,
+                ) {
+                    delegateCalled++
+                    // Actor created
+                    if (delegateCalled == 1) {
+                        assertTrue(
+                            "Translations correctly does not have a requested pair.",
+                            translationState?.requestedTranslationPair == null,
+                        )
+                    }
 
-                // Page load
-                if (delegateCalled == 2) {
-                    // Nothing to check here.
-                }
+                    // Page load
+                    if (delegateCalled == 2) {
+                        // Nothing to check here.
+                    }
 
-                // Detection complete
-                if (delegateCalled == 3) {
-                    assertTrue("Translations correctly has detected a page language. ", translationState?.detectedLanguages?.docLangTag == "es")
-                }
+                    // Detection complete
+                    if (delegateCalled == 3) {
+                        assertTrue(
+                            "Translations correctly has detected a page language. ",
+                            translationState?.detectedLanguages?.docLangTag == "es",
+                        )
+                    }
 
-                // Translate
-                if (delegateCalled == 4) {
-                    assertTrue("Translations correctly has set a translation pair from language. ", translationState?.requestedTranslationPair?.fromLanguage == "es")
-                    assertTrue("Translations correctly has set a translation pair to language. ", translationState?.requestedTranslationPair?.toLanguage == "en")
+                    // Translate
+                    if (delegateCalled == 4) {
+                        assertTrue(
+                            "Translations correctly has set a translation pair from language. ",
+                            translationState?.requestedTranslationPair?.fromLanguage == "es",
+                        )
+                        assertTrue(
+                            "Translations correctly has set a translation pair to language. ",
+                            translationState?.requestedTranslationPair?.toLanguage == "en",
+                        )
+                    }
                 }
             }
-        })
+        )
         mainSession.loadTestPath(TRANSLATIONS_ES)
         mainSession.waitForPageStop()
         val translate = sessionRule.session.sessionTranslation!!.translate("es", "en", null)
@@ -474,20 +486,14 @@ class TranslationsTest : BaseSessionTest() {
 
     @Test
     fun testManageLanguageModel() {
-        val options = ModelManagementOptions.Builder()
-            .languageToManage("en")
-            .operation(DOWNLOAD)
-            .build()
+        val options = ModelManagementOptions.Builder().languageToManage("en").operation(DOWNLOAD).build()
 
         assertTrue(
             "ModelManagementOptions builder options work as expected.",
             options.language == "en" && options.operation == DOWNLOAD,
         )
 
-        val nonNormalizedOptions = ModelManagementOptions.Builder()
-            .languageToManage("EN")
-            .operation("DoWnLoAd")
-            .build()
+        val nonNormalizedOptions = ModelManagementOptions.Builder().languageToManage("EN").operation("DoWnLoAd").build()
 
         assertTrue(
             "ModelManagementOptions builder options work as expected on non-normalized options.",
@@ -577,8 +583,10 @@ class TranslationsTest : BaseSessionTest() {
         sessionRule.waitForResult(TranslationsController.RuntimeTranslation.setLanguageSettings("zh-Hans", NEVER))
 
         // Query corresponding prefs
-        val alwaysTranslate = (sessionRule.getPrefs("browser.translations.alwaysTranslateLanguages").get(0) as String).split(",")
-        val neverTranslate = (sessionRule.getPrefs("browser.translations.neverTranslateLanguages").get(0) as String).split(",")
+        val alwaysTranslate =
+            (sessionRule.getPrefs("browser.translations.alwaysTranslateLanguages").get(0) as String).split(",")
+        val neverTranslate =
+            (sessionRule.getPrefs("browser.translations.neverTranslateLanguages").get(0) as String).split(",")
 
         // Test setting
         assertTrue("BG was correctly set to ALWAYS", alwaysTranslate.contains("BG"))
@@ -593,14 +601,28 @@ class TranslationsTest : BaseSessionTest() {
         sessionRule.waitForResult(TranslationsController.RuntimeTranslation.setLanguageSettings("zh-Hans", OFFER))
 
         // Query corresponding prefs
-        val alwaysTranslateReset = (sessionRule.getPrefs("browser.translations.alwaysTranslateLanguages").get(0) as String).split(",")
-        val neverTranslateReset = (sessionRule.getPrefs("browser.translations.neverTranslateLanguages").get(0) as String).split(",")
+        val alwaysTranslateReset =
+            (sessionRule.getPrefs("browser.translations.alwaysTranslateLanguages").get(0) as String).split(",")
+        val neverTranslateReset =
+            (sessionRule.getPrefs("browser.translations.neverTranslateLanguages").get(0) as String).split(",")
 
         // Test offer reset
-        assertTrue("BG was correctly set back to OFFER", !alwaysTranslateReset.contains("bg") && !neverTranslateReset.contains("bg"))
-        assertTrue("FR was correctly set back to OFFER", !alwaysTranslateReset.contains("fr") && !neverTranslateReset.contains("fr"))
-        assertTrue("DE was correctly set back to OFFER", !alwaysTranslateReset.contains("de") && !neverTranslateReset.contains("de"))
-        assertTrue("zh-Hans was correctly set back to OFFER", !alwaysTranslateReset.contains("zh-Hans") && !neverTranslateReset.contains("zh-Hans"))
+        assertTrue(
+            "BG was correctly set back to OFFER",
+            !alwaysTranslateReset.contains("bg") && !neverTranslateReset.contains("bg"),
+        )
+        assertTrue(
+            "FR was correctly set back to OFFER",
+            !alwaysTranslateReset.contains("fr") && !neverTranslateReset.contains("fr"),
+        )
+        assertTrue(
+            "DE was correctly set back to OFFER",
+            !alwaysTranslateReset.contains("de") && !neverTranslateReset.contains("de"),
+        )
+        assertTrue(
+            "zh-Hans was correctly set back to OFFER",
+            !alwaysTranslateReset.contains("zh-Hans") && !neverTranslateReset.contains("zh-Hans"),
+        )
     }
 
     @Test
@@ -609,7 +631,8 @@ class TranslationsTest : BaseSessionTest() {
         val languageSettings: Map<String, String> =
             sessionRule.waitForResult(TranslationsController.RuntimeTranslation.getLanguageSettings())
 
-        val frLanguageSetting = sessionRule.waitForResult(TranslationsController.RuntimeTranslation.getLanguageSetting("fr"))
+        val frLanguageSetting =
+            sessionRule.waitForResult(TranslationsController.RuntimeTranslation.getLanguageSetting("fr"))
 
         if (sessionRule.env.isAutomation) {
             assertTrue("FR was correctly set to ALWAYS via full query.", languageSettings["fr"] == ALWAYS)
@@ -625,11 +648,20 @@ class TranslationsTest : BaseSessionTest() {
 
     @Test
     fun testOfferPopup() {
-        assertTrue("Translation offer popups are enabled, as expected.", sessionRule.runtime.settings.translationsOfferPopup)
+        assertTrue(
+            "Translation offer popups are enabled, as expected.",
+            sessionRule.runtime.settings.translationsOfferPopup,
+        )
         sessionRule.runtime.settings.translationsOfferPopup = false
-        assertTrue("Translation offer popups are disabled, as expected.", !sessionRule.runtime.settings.translationsOfferPopup)
+        assertTrue(
+            "Translation offer popups are disabled, as expected.",
+            !sessionRule.runtime.settings.translationsOfferPopup,
+        )
         val finalPrefCheck = (sessionRule.getPrefs("browser.translations.automaticallyPopup").get(0)) as Boolean
-        assertTrue("Translation offer popups are disabled, as expected and match test harness reported value.", finalPrefCheck == sessionRule.runtime.settings.translationsOfferPopup)
+        assertTrue(
+            "Translation offer popups are disabled, as expected and match test harness reported value.",
+            finalPrefCheck == sessionRule.runtime.settings.translationsOfferPopup,
+        )
     }
 
     @Test
@@ -637,11 +669,13 @@ class TranslationsTest : BaseSessionTest() {
         mainSession.loadTestPath(TRANSLATIONS_ES)
         mainSession.waitForPageStop()
 
-        var neverTranslateSetting = sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.neverTranslateSiteSetting)
+        var neverTranslateSetting =
+            sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.neverTranslateSiteSetting)
         assertTrue("Expect never translate to be false on a new page.", !neverTranslateSetting)
 
         sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.setNeverTranslateSiteSetting(true))
-        neverTranslateSetting = sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.neverTranslateSiteSetting)
+        neverTranslateSetting =
+            sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.neverTranslateSiteSetting)
         assertTrue("Expect never translate to be true after setting.", neverTranslateSetting)
 
         sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.setNeverTranslateSiteSetting(false))
@@ -664,7 +698,8 @@ class TranslationsTest : BaseSessionTest() {
 
         // Set site using Session API and confirm set
         sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.setNeverTranslateSiteSetting(true))
-        var sessionNeverTranslateSetting = sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.neverTranslateSiteSetting)
+        var sessionNeverTranslateSetting =
+            sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.neverTranslateSiteSetting)
         assertTrue("Expect never translate to be true after setting using session API.", sessionNeverTranslateSetting)
 
         // Get list again using Runtime API
@@ -672,11 +707,17 @@ class TranslationsTest : BaseSessionTest() {
         assertTrue("Expect there to be one site in the list after setting.", listOfSitesNeverToTranslate.size == 1)
 
         // Unset using Runtime API
-        sessionRule.waitForResult(RuntimeTranslation.setNeverTranslateSpecifiedSite(false, listOfSitesNeverToTranslate[0]))
+        sessionRule.waitForResult(
+            RuntimeTranslation.setNeverTranslateSpecifiedSite(false, listOfSitesNeverToTranslate[0])
+        )
 
         // Check unset again using Session API
-        sessionNeverTranslateSetting = sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.neverTranslateSiteSetting)
-        assertTrue("Expect never translate to be false after unsetting using runtime API.", !sessionNeverTranslateSetting)
+        sessionNeverTranslateSetting =
+            sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.neverTranslateSiteSetting)
+        assertTrue(
+            "Expect never translate to be false after unsetting using runtime API.",
+            !sessionNeverTranslateSetting,
+        )
     }
 
     @Test
@@ -685,10 +726,8 @@ class TranslationsTest : BaseSessionTest() {
         // Remote settings and translations behaves the same as production when ran from Android Studio.
         if (!sessionRule.env.isAutomation) {
             // Check that nothing has been set between test runs
-            val activeTranslationPrefs = (
-                sessionRule.getPrefs("browser.translations.alwaysTranslateLanguages")
-                    .get(0) as String
-                )
+            val activeTranslationPrefs =
+                (sessionRule.getPrefs("browser.translations.alwaysTranslateLanguages").get(0) as String)
             assertTrue(
                 "There should be no active preferences for always translate set. Preferences: $activeTranslationPrefs",
                 activeTranslationPrefs == "",
@@ -699,22 +738,27 @@ class TranslationsTest : BaseSessionTest() {
                 TranslationsController.RuntimeTranslation.setLanguageSettings(
                     "ES",
                     ALWAYS,
-                ),
+                )
             )
 
             var translateCompleted = GeckoResult<Void>()
-            sessionRule.delegateUntilTestEnd(object : Delegate {
-                @AssertCalled(count = 4)
-                override fun onTranslationStateChange(
-                    session: GeckoSession,
-                    translationState: TranslationState?,
-                ) {
-                    if (translationState?.isEngineReady == true) {
-                        assertTrue("Auto requested the from language as Spanish on the page.", translationState.requestedTranslationPair?.fromLanguage == "es")
-                        translateCompleted.complete(null)
+            sessionRule.delegateUntilTestEnd(
+                object : Delegate {
+                    @AssertCalled(count = 4)
+                    override fun onTranslationStateChange(
+                        session: GeckoSession,
+                        translationState: TranslationState?,
+                    ) {
+                        if (translationState?.isEngineReady == true) {
+                            assertTrue(
+                                "Auto requested the from language as Spanish on the page.",
+                                translationState.requestedTranslationPair?.fromLanguage == "es",
+                            )
+                            translateCompleted.complete(null)
+                        }
                     }
                 }
-            })
+            )
 
             mainSession.loadTestPath(TRANSLATIONS_ES)
             mainSession.waitForPageStop()
@@ -725,17 +769,14 @@ class TranslationsTest : BaseSessionTest() {
                 TranslationsController.RuntimeTranslation.setLanguageSettings(
                     "ES",
                     OFFER,
-                ),
+                )
             )
         }
     }
 
     @Test
     fun testManageLanguageModelErrors() {
-        val missingLanguage = ModelManagementOptions.Builder()
-            .operation(DOWNLOAD)
-            .operationLevel(LANGUAGE)
-            .build()
+        val missingLanguage = ModelManagementOptions.Builder().operation(DOWNLOAD).operationLevel(LANGUAGE).build()
         try {
             sessionRule.waitForResult(RuntimeTranslation.manageLanguageModel(missingLanguage))
             fail("Should not complete requests on an incompatible state.")
@@ -751,10 +792,7 @@ class TranslationsTest : BaseSessionTest() {
         // In the Android Studio test runner, these should be skipped because Remote Settings is
         // active. However, in CI, these will fail as expected because no download service is available.
         if (sessionRule.env.isAutomation) {
-            val allDownloadAttempt = ModelManagementOptions.Builder()
-                .operation(DOWNLOAD)
-                .operationLevel(ALL)
-                .build()
+            val allDownloadAttempt = ModelManagementOptions.Builder().operation(DOWNLOAD).operationLevel(ALL).build()
             try {
                 sessionRule.waitForResult(RuntimeTranslation.manageLanguageModel(allDownloadAttempt))
                 fail("Should not complete downloads in automation.")
@@ -767,18 +805,13 @@ class TranslationsTest : BaseSessionTest() {
                 )
             }
 
-            val allDeleteAttempt = ModelManagementOptions.Builder()
-                .operation(DELETE)
-                .operationLevel(ALL)
-                .build()
+            val allDeleteAttempt = ModelManagementOptions.Builder().operation(DELETE).operationLevel(ALL).build()
             // Deleting from an empty database is a no-op.
             sessionRule.waitForResult(RuntimeTranslation.manageLanguageModel(allDeleteAttempt))
             assertTrue("Delete from empty database succeeds gracefully.", true)
 
-            val malformedRequest = ModelManagementOptions.Builder()
-                .operation("not-a-function")
-                .operationLevel("not-an-operation")
-                .build()
+            val malformedRequest =
+                ModelManagementOptions.Builder().operation("not-a-function").operationLevel("not-an-operation").build()
             try {
                 sessionRule.waitForResult(RuntimeTranslation.manageLanguageModel(malformedRequest))
                 fail("Should not complete malformed requests in automation.")
@@ -791,10 +824,8 @@ class TranslationsTest : BaseSessionTest() {
                 )
             }
 
-            val malformedCacheDownloadingRequest = ModelManagementOptions.Builder()
-                .operation(DOWNLOAD)
-                .operationLevel(RuntimeTranslation.CACHE)
-                .build()
+            val malformedCacheDownloadingRequest =
+                ModelManagementOptions.Builder().operation(DOWNLOAD).operationLevel(RuntimeTranslation.CACHE).build()
             try {
                 sessionRule.waitForResult(RuntimeTranslation.manageLanguageModel(malformedCacheDownloadingRequest))
                 fail("Should not complete an invalid request.")
@@ -820,10 +851,8 @@ class TranslationsTest : BaseSessionTest() {
             sessionRule.waitForResult(translate)
 
             // Try to clear the download
-            val clearDownloadCache = ModelManagementOptions.Builder()
-                .operation(DELETE)
-                .operationLevel(RuntimeTranslation.CACHE)
-                .build()
+            val clearDownloadCache =
+                ModelManagementOptions.Builder().operation(DELETE).operationLevel(RuntimeTranslation.CACHE).build()
 
             sessionRule.waitForResult(RuntimeTranslation.manageLanguageModel(clearDownloadCache))
             assertTrue("Successfully translated and cleared the downloaded file", true)
@@ -837,64 +866,73 @@ class TranslationsTest : BaseSessionTest() {
 
         val handled = GeckoResult<Void>()
         var delegateCalled = 0
-        sessionRule.delegateUntilTestEnd(object : Delegate {
-            @AssertCalled(count = 2)
-            override fun onTranslationStateChange(
-                session: GeckoSession,
-                translationState: TranslationState?,
-            ) {
-                delegateCalled++
+        sessionRule.delegateUntilTestEnd(
+            object : Delegate {
+                @AssertCalled(count = 2)
+                override fun onTranslationStateChange(
+                    session: GeckoSession,
+                    translationState: TranslationState?,
+                ) {
+                    delegateCalled++
 
-                if (delegateCalled == 1) {
-                    assertFalse("Initially not visibly changed.", translationState!!.hasVisibleChange)
-                }
+                    if (delegateCalled == 1) {
+                        assertFalse("Initially not visibly changed.", translationState!!.hasVisibleChange)
+                    }
 
-                if (delegateCalled == 2) {
-                    assertTrue("After a translation, the DOM should be visibly changed.", translationState!!.hasVisibleChange)
-                    handled.complete(null)
-                }
-            }
-        })
-        val notTranslated = JSONObject(
-            """
-            {
-            "actor":{
-                "languageState":{
-                    "detectedLanguages": {
-                      "userLangTag": "en",
-                      "isDocLangTagSupported": true,
-                      "docLangTag": "es"
-                    },
-                    "requestedLanguagePair": null,
-                    "hasVisibleChange": false,
-                    "error": null,
-                    "isEngineReady": false
+                    if (delegateCalled == 2) {
+                        assertTrue(
+                            "After a translation, the DOM should be visibly changed.",
+                            translationState!!.hasVisibleChange,
+                        )
+                        handled.complete(null)
                     }
                 }
             }
-            """.trimIndent(),
         )
+        val notTranslated =
+            JSONObject(
+                """
+                {
+                "actor":{
+                    "languageState":{
+                        "detectedLanguages": {
+                          "userLangTag": "en",
+                          "isDocLangTagSupported": true,
+                          "docLangTag": "es"
+                        },
+                        "requestedLanguagePair": null,
+                        "hasVisibleChange": false,
+                        "error": null,
+                        "isEngineReady": false
+                        }
+                    }
+                }
+                """
+                    .trimIndent()
+            )
         mainSession.triggerLanguageStateChange(notTranslated)
 
-        val translated = JSONObject(
-            """
-            {
-            "actor":{
-                "languageState":{
-                    "detectedLanguages": {
-                      "userLangTag": "en",
-                      "isDocLangTagSupported": true,
-                      "docLangTag": "es"
-                    },
-                    "requestedLanguagePair": {"sourceLanguage" : "es" , "targetLanguage" : "en"},
-                    "hasVisibleChange": true,
-                    "error": null,
-                    "isEngineReady": true
+        val translated =
+            JSONObject(
+                """
+                {
+                "actor":{
+                    "languageState":{
+                        "detectedLanguages": {
+                          "userLangTag": "en",
+                          "isDocLangTagSupported": true,
+                          "docLangTag": "es"
+                        },
+                        "requestedLanguagePair": {"sourceLanguage" : "es" , "targetLanguage" : "en"},
+                        "hasVisibleChange": true,
+                        "error": null,
+                        "isEngineReady": true
+                        }
                     }
                 }
-            }
-            """.trimIndent(),
-        )
+                """
+                    .trimIndent()
+            )
         mainSession.triggerLanguageStateChange(translated)
         sessionRule.waitForResult(handled)
     }
@@ -906,9 +944,7 @@ class TranslationsTest : BaseSessionTest() {
         mainSession.waitForPageStop()
 
         try {
-            sessionRule.waitForResult(
-                sessionRule.session.sessionTranslation!!.translate("es", "en", null),
-            )
+            sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.translate("es", "en", null))
             fail("translate should not complete when the engine is deactivated.")
         } catch (e: RuntimeException) {
             // Wait call causes a runtime exception too.
@@ -920,9 +956,7 @@ class TranslationsTest : BaseSessionTest() {
         }
 
         try {
-            sessionRule.waitForResult(
-                sessionRule.session.sessionTranslation!!.restoreOriginalPage(),
-            )
+            sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.restoreOriginalPage())
             fail("restoreOriginalPage should not complete when the engine is deactivated.")
         } catch (e: RuntimeException) {
             // Wait call causes a runtime exception too.
@@ -934,9 +968,7 @@ class TranslationsTest : BaseSessionTest() {
         }
 
         try {
-            sessionRule.waitForResult(
-                sessionRule.session.sessionTranslation!!.neverTranslateSiteSetting,
-            )
+            sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.neverTranslateSiteSetting)
             fail("neverTranslateSiteSetting should not complete when the engine is deactivated.")
         } catch (e: RuntimeException) {
             // Wait call causes a runtime exception too.
@@ -948,9 +980,7 @@ class TranslationsTest : BaseSessionTest() {
         }
 
         try {
-            sessionRule.waitForResult(
-                sessionRule.session.sessionTranslation!!.setNeverTranslateSiteSetting(true),
-            )
+            sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.setNeverTranslateSiteSetting(true))
             fail("setNeverTranslateSiteSetting should not complete when the engine is deactivated.")
         } catch (e: RuntimeException) {
             // Wait call causes a runtime exception too.
@@ -970,72 +1000,77 @@ class TranslationsTest : BaseSessionTest() {
         mainSession.waitForPageStop()
 
         val handled = GeckoResult<Void>()
-        sessionRule.delegateUntilTestEnd(object : Delegate {
-            @AssertCalled(count = 1)
-            override fun onTranslationStateChange(
-                session: GeckoSession,
-                translationState: TranslationState?,
-            ) {
-                assertEquals(
-                    "userLangTag is as expected.",
-                    "en",
-                    translationState!!.detectedLanguages!!.userLangTag,
-                )
-                assertEquals(
-                    "isDocLangTagSupported is as expected.",
-                    true,
-                    translationState.detectedLanguages!!.isDocLangTagSupported,
-                )
-                assertEquals(
-                    "docLangTag is as expected.",
-                    "es",
-                    translationState.detectedLanguages!!.docLangTag,
-                )
-                // Full rename to match JS and Java names is bug 1943444, right now it deserializes to different Java names.
-                assertEquals(
-                    "sourceLanguage is as expected.",
-                    "es",
-                    translationState.requestedTranslationPair!!.fromLanguage,
-                )
-                assertEquals(
-                    "targetLanguage is as expected.",
-                    "en",
-                    translationState.requestedTranslationPair!!.toLanguage,
-                )
-                assertEquals(
-                    "hasVisibleChange is as expected.",
-                    true,
-                    translationState.hasVisibleChange,
-                )
-                assertNull("error is as expected.", translationState.error)
-                assertEquals(
-                    "isEngineReady is as expected.",
-                    true,
-                    translationState.isEngineReady,
-                )
-                handled.complete(null)
-            }
-        })
-
-        val translated = JSONObject(
-            """
-            {
-            "actor":{
-                "languageState":{
-                    "detectedLanguages": {
-                      "userLangTag": "en",
-                      "isDocLangTagSupported": true,
-                      "docLangTag": "es"
-                    },
-                    "requestedLanguagePair": {"sourceLanguage" : "es" , "targetLanguage" : "en"},
-                    "hasVisibleChange": true,
-                    "error": null,
-                    "isEngineReady": true
-                    }
+        sessionRule.delegateUntilTestEnd(
+            object : Delegate {
+                @AssertCalled(count = 1)
+                override fun onTranslationStateChange(
+                    session: GeckoSession,
+                    translationState: TranslationState?,
+                ) {
+                    assertEquals(
+                        "userLangTag is as expected.",
+                        "en",
+                        translationState!!.detectedLanguages!!.userLangTag,
+                    )
+                    assertEquals(
+                        "isDocLangTagSupported is as expected.",
+                        true,
+                        translationState.detectedLanguages!!.isDocLangTagSupported,
+                    )
+                    assertEquals(
+                        "docLangTag is as expected.",
+                        "es",
+                        translationState.detectedLanguages!!.docLangTag,
+                    )
+                    // Full rename to match JS and Java names is bug 1943444, right now it deserializes to different
+                    // Java names.
+                    assertEquals(
+                        "sourceLanguage is as expected.",
+                        "es",
+                        translationState.requestedTranslationPair!!.fromLanguage,
+                    )
+                    assertEquals(
+                        "targetLanguage is as expected.",
+                        "en",
+                        translationState.requestedTranslationPair!!.toLanguage,
+                    )
+                    assertEquals(
+                        "hasVisibleChange is as expected.",
+                        true,
+                        translationState.hasVisibleChange,
+                    )
+                    assertNull("error is as expected.", translationState.error)
+                    assertEquals(
+                        "isEngineReady is as expected.",
+                        true,
+                        translationState.isEngineReady,
+                    )
+                    handled.complete(null)
                 }
             }
-            """.trimIndent(),
         )
+
+        val translated =
+            JSONObject(
+                """
+                {
+                "actor":{
+                    "languageState":{
+                        "detectedLanguages": {
+                          "userLangTag": "en",
+                          "isDocLangTagSupported": true,
+                          "docLangTag": "es"
+                        },
+                        "requestedLanguagePair": {"sourceLanguage" : "es" , "targetLanguage" : "en"},
+                        "hasVisibleChange": true,
+                        "error": null,
+                        "isEngineReady": true
+                        }
+                    }
+                }
+                """
+                    .trimIndent()
+            )
         mainSession.triggerLanguageStateChange(translated)
         sessionRule.waitForResult(handled)
     }

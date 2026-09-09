@@ -11,15 +11,17 @@ import org.mozilla.fenix.FenixApplication
 import org.mozilla.fenix.helpers.Constants.TAG
 
 /**
- * An IdlingResource implementation that waits until the current session is not loading anymore.
- * Only after loading has completed further actions will be performed.
+ * An IdlingResource implementation that waits until the current session is not loading anymore. Only after loading has
+ * completed further actions will be performed.
  */
-
 class SessionLoadedIdlingResource : IdlingResource {
     private var resourceCallback: IdlingResource.ResourceCallback? = null
 
     override fun getName(): String {
-        Log.i(Constants.TAG, "SessionLoadedIdlingResource: Trying to return the the name of the resource: ${SessionLoadedIdlingResource::class.java.simpleName}")
+        Log.i(
+            Constants.TAG,
+            "SessionLoadedIdlingResource: Trying to return the the name of the resource: ${SessionLoadedIdlingResource::class.java.simpleName}",
+        )
         return SessionLoadedIdlingResource::class.java.simpleName
     }
 
@@ -49,6 +51,9 @@ class SessionLoadedIdlingResource : IdlingResource {
 
     override fun registerIdleTransitionCallback(callback: IdlingResource.ResourceCallback) {
         this.resourceCallback = callback
-        Log.i(TAG, "SessionLoadedIdlingResource: Notified asynchronously that the resource is transitioning from busy to idle")
+        Log.i(
+            TAG,
+            "SessionLoadedIdlingResource: Notified asynchronously that the resource is transitioning from busy to idle",
+        )
     }
 }

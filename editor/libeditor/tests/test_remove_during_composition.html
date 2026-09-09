@@ -1,0 +1,112 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that removing editable element while a composition is ongoing doesn't crash.</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/EventUtils.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<iframe srcdoc="<!DOCTYPE html><h1>Another document</h1>"></iframe>
+<div id="container">
+  <div contenteditable id="editor"></div>
+</div>
+<!-- Prevent the HTMLEditor from being destroyed even if #editor is removed. -->
+<div contenteditable></div>
+
+<script>
+const container = document.getElementById('container');
+const editor = document.getElementById('editor');
+const iframe = document.querySelector('iframe');
+let otherDocument;
+let {promise: waitForIFrameLoad, resolve: onIFrameLoad} = Promise.withResolvers();
+iframe.onload = onIFrameLoad;
+
+function reset() {
+  document.adoptNode(editor);
+  editor.replaceChildren();
+  container.replaceChildren(editor);
+}
+
+function compositionUpdate(newString) {
+  synthesizeCompositionChange({
+    composition: {
+      string: newString,
+      clauses: [
+        {length: newString.length, attr: COMPOSITION_ATTR_RAW_CLAUSE },
+      ]
+    },
+    caret: {
+      start: newString.length,
+      length: 0,
+    },
+    key: {
+      key: 'a',
+    }
+  });
+}
+
+function stringifyEvents(events) {
+  return events.map(e => JSON.stringify({type: e.type, data: e.data})).join();
+}
+
+let events = [];
+
+for (const type of ['compositionstart', 'compositionupdate', 'compositionend']) {
+  editor.addEventListener(type, e => events.push(e));
+}
+
+function addTest(testFunc, expectedEvents, description) {
+  add_task(async() => {
+    await SimpleTest.promiseFocus();
+    await waitForIFrameLoad;
+    otherDocument = iframe.contentDocument;
+    reset();
+    events = [];
+    await testFunc();
+    is(stringifyEvents(events), stringifyEvents(expectedEvents), description);
+  });
+}
+
+addTest(async () => {
+  editor.focus();
+  compositionUpdate('test');
+  editor.remove();
+}, [
+  {type: 'compositionstart', data: ''},
+  {type: 'compositionupdate', data: 'test'},
+  {type: 'compositionupdate', data: ''},
+  {type: 'compositionend', data: ''},
+], 'Removing editor element during a composition.');
+
+addTest(async () => {
+  editor.focus();
+  editor.addEventListener('compositionupdate', () => {
+    editor.remove();
+  }, {once: true});
+  compositionUpdate('test');
+}, [
+  {type: 'compositionstart', data: ''},
+  {type: 'compositionupdate', data: 'test'},
+  {type: 'compositionupdate', data: ''},
+  {type: 'compositionend', data: ''},
+], 'Removing editor element during compositionupdate handler.');
+
+addTest(async () => {
+  editor.focus();
+  editor.addEventListener('compositionupdate', () => {
+    otherDocument.adoptNode(editor);
+    otherDocument.body.append(editor);
+  }, {once: true});
+  compositionUpdate('test');
+}, [
+  {type: 'compositionstart', data: ''},
+  {type: 'compositionupdate', data: 'test'},
+  {type: 'compositionupdate', data: ''},
+  {type: 'compositionend', data: ''},
+], 'Adopting editor element into another document during compositionupdate handler.');
+
+</script>
+</body>
+</html>

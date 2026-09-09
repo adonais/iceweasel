@@ -2526,5 +2526,27 @@ INSTANTIATE_TEST_SUITE_P(
                                          TlsAgent::kServerEcdsa384),
                        ::testing::Values(ssl_auth_ecdsa),
                        ::testing::Values(ssl_sig_ecdsa_sha1)));
+// ML-DSA is only allowed to be used in TLS 1.3 or greater
+INSTANTIATE_TEST_SUITE_P(
+    SignatureSchemeMlDsa44Tls13, TlsSignatureSchemeConfiguration,
+    ::testing::Combine(TlsConnectTestBase::kTlsVariantsAll,
+                       TlsConnectTestBase::kTlsV13,
+                       ::testing::Values(TlsAgent::kServerMlDsa44),
+                       ::testing::Values(ssl_auth_mldsa44),
+                       ::testing::Values(ssl_sig_mldsa44)));
+INSTANTIATE_TEST_SUITE_P(
+    SignatureSchemeMlDsa65Tls13, TlsSignatureSchemeConfiguration,
+    ::testing::Combine(TlsConnectTestBase::kTlsVariantsAll,
+                       TlsConnectTestBase::kTlsV13,
+                       ::testing::Values(TlsAgent::kServerMlDsa65),
+                       ::testing::Values(ssl_auth_mldsa65),
+                       ::testing::Values(ssl_sig_mldsa65)));
+INSTANTIATE_TEST_SUITE_P(
+    SignatureSchemeMlDsa87Tls13, TlsSignatureSchemeConfiguration,
+    ::testing::Combine(TlsConnectTestBase::kTlsVariantsAll,
+                       TlsConnectTestBase::kTlsV13,
+                       ::testing::Values(TlsAgent::kServerMlDsa87),
+                       ::testing::Values(ssl_auth_mldsa87),
+                       ::testing::Values(ssl_sig_mldsa87)));
 
 }  // namespace nss_test

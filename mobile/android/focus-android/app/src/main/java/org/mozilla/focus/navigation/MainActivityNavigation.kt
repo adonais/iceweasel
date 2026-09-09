@@ -28,9 +28,8 @@ import org.mozilla.focus.state.Screen
 /**
  * A helper class that manages fragment-based navigation within [MainActivity].
  *
- * This class centralizes the logic for creating and switching between different fragments
- * (e.g., home screen, browser, settings, onboarding) using the [FragmentManager].
- * By encapsulating navigation, it simplifies management and testing.
+ * This class centralizes the logic for creating and switching between different fragments (e.g., home screen, browser,
+ * settings, onboarding) using the [FragmentManager]. By encapsulating navigation, it simplifies management and testing.
  *
  * @param supportFragmentManager The [FragmentManager] used to perform fragment transactions.
  * @param onboardingStorage Manages the state and progress of the user onboarding flow.
@@ -48,9 +47,7 @@ class MainActivityNavigation(
     private val onEraseAction: () -> Any,
 ) : AppNavigation {
 
-    /**
-     * Home screen.
-     */
+    /** Home screen. */
     override fun navigateToHome() {
         // The erase action should only be triggered when we are navigating away from an existing browser session.
         if (supportFragmentManager.findFragmentByTag(BrowserFragment.FRAGMENT_TAG) != null) {
@@ -71,9 +68,7 @@ class MainActivityNavigation(
         showStartBrowsingCfr()
     }
 
-    /**
-     * Show browser for tab with the given [tabId].
-     */
+    /** Show browser for tab with the given [tabId]. */
     override fun navigateToBrowser(tabId: String) {
         val currentFragment = supportFragmentManager.findFragmentById(R.id.container)
 
@@ -89,17 +84,13 @@ class MainActivityNavigation(
     }
 
     /**
-     * Opens the URL input fragment to allow editing the URL of the tab
-     * associated with the given [tabId].
+     * Opens the URL input fragment to allow editing the URL of the tab associated with the given [tabId].
      *
-     * If a URL input fragment is already open for this tab, this function
-     * does nothing.
+     * If a URL input fragment is already open for this tab, this function does nothing.
      *
      * @param tabId The ID of the tab whose URL is to be edited.
      */
-    override fun navigateToEditUrl(
-        tabId: String,
-    ) {
+    override fun navigateToEditUrl(tabId: String) {
         val existingFragment =
             supportFragmentManager.findFragmentByTag(UrlInputFragment.FRAGMENT_TAG) as? UrlInputFragment
 
@@ -114,9 +105,7 @@ class MainActivityNavigation(
         }
     }
 
-    /**
-     * Show onBoarding.
-     */
+    /** Show onBoarding. */
     override fun navigateToFirstRun() {
         FocusNimbus.features.onboarding.recordExposure()
 
@@ -130,16 +119,14 @@ class MainActivityNavigation(
     }
 
     /**
-     * Shows the second screen of the onboarding process.
-     * This function replaces the current fragment with [OnboardingSecondFragment].
+     * Shows the second screen of the onboarding process. This function replaces the current fragment with
+     * [OnboardingSecondFragment].
      */
     override fun navigateToOnboardingSecondScreen() {
         navigateTo<OnboardingSecondFragment>(tag = OnboardingSecondFragment.FRAGMENT_TAG)
     }
 
-    /**
-     * Show content of about:crashes
-     */
+    /** Show content of about:crashes */
     override fun showCrashList() {
         navigateTo<CrashListFragment>(
             tag = CrashListFragment.FRAGMENT_TAG,
@@ -150,8 +137,8 @@ class MainActivityNavigation(
     /**
      * Lock app.
      *
-     * @param bundle it is used for app navigation. If the user can unlock with success he should
-     * be redirected to a certain screen. It comes from the external intent.
+     * @param bundle it is used for app navigation. If the user can unlock with success he should be redirected to a
+     *   certain screen. It comes from the external intent.
      */
     override fun navigateToLockScreen(bundle: Bundle?) {
         if (isInPictureInPictureMode()) {
@@ -178,9 +165,8 @@ class MainActivityNavigation(
     /**
      * Navigates to the specified settings page.
      *
-     * This function determines which settings fragment to display based on the [page] parameter.
-     * It then replaces the current fragment with the new settings fragment, ensuring that
-     * the same fragment is not added multiple times.
+     * This function determines which settings fragment to display based on the [page] parameter. It then replaces the
+     * current fragment with the new settings fragment, ensuring that the same fragment is not added multiple times.
      *
      * @param page The specific settings page to navigate to, defined in [Screen.Settings.Page].
      */
@@ -191,11 +177,11 @@ class MainActivityNavigation(
     }
 
     /**
-     * Navigates to the site permission options screen.
-     * This function displays a fragment that allows users to configure specific permissions for a website.
+     * Navigates to the site permission options screen. This function displays a fragment that allows users to configure
+     * specific permissions for a website.
      *
-     * @param sitePermission The [SitePermission] object containing information about the site
-     * and its current permissions.
+     * @param sitePermission The [SitePermission] object containing information about the site and its current
+     *   permissions.
      */
     override fun navigateToSitePermissionOptions(sitePermission: SitePermission) {
         navigateTo<SitePermissionOptionsFragment>(
@@ -207,17 +193,15 @@ class MainActivityNavigation(
     /**
      * A generic navigator to replace the fragment in the main container.
      *
-     * This function handles the transaction to replace the currently displayed fragment
-     * with a new one. It prevents redundant transactions by checking if a fragment with the
-     * same tag is already the active one in the container.
+     * This function handles the transaction to replace the currently displayed fragment with a new one. It prevents
+     * redundant transactions by checking if a fragment with the same tag is already the active one in the container.
      *
      * @param fragmentClass The class of the fragment to instantiate and display.
      * @param tag A unique tag used to identify the fragment in the FragmentManager.
      * @param args An optional [Bundle] of arguments to pass to the new fragment.
-     * @param allowStateLoss If true, the transaction can be committed even after
-     *                       the activity's state has been saved.
-     * @param transactionSetup An optional lambda to apply custom configurations to the [FragmentTransaction],
-     *                         such as setting custom animations.
+     * @param allowStateLoss If true, the transaction can be committed even after the activity's state has been saved.
+     * @param transactionSetup An optional lambda to apply custom configurations to the [FragmentTransaction], such as
+     *   setting custom animations.
      */
     private fun <F : Fragment> navigateTo(
         fragmentClass: Class<F>,
@@ -237,9 +221,7 @@ class MainActivityNavigation(
         }
     }
 
-    /**
-     * A reified version of the generic navigator for cleaner call sites.
-     */
+    /** A reified version of the generic navigator for cleaner call sites. */
     private inline fun <reified F : Fragment> navigateTo(
         tag: String,
         args: Bundle? = null,
@@ -250,16 +232,15 @@ class MainActivityNavigation(
     /**
      * A wrapper for fragment transactions that sets common options.
      *
-     * This function simplifies committing fragment transactions by providing a centralized
-     * place to configure default behaviors, such as enabling reordering. It uses the
-     * `commit` extension function from `androidx.fragment.app` for safer and more
-     * concise transaction management.
+     * This function simplifies committing fragment transactions by providing a centralized place to configure default
+     * behaviors, such as enabling reordering. It uses the `commit` extension function from `androidx.fragment.app` for
+     * safer and more concise transaction management.
      *
-     * @param allowStateLoss Whether the transaction can be committed after the activity's
-     * state has been saved. Setting this to `true` can prevent crashes but may result
-     * in the loss of the fragment state if the activity is restored. Defaults to `false`.
-     * @param block A lambda with a [FragmentTransaction] receiver, containing the
-     * specific operations for this transaction (e.g., `replace`, `add`, `remove`).
+     * @param allowStateLoss Whether the transaction can be committed after the activity's state has been saved. Setting
+     *   this to `true` can prevent crashes but may result in the loss of the fragment state if the activity is
+     *   restored. Defaults to `false`.
+     * @param block A lambda with a [FragmentTransaction] receiver, containing the specific operations for this
+     *   transaction (e.g., `replace`, `add`, `remove`).
      */
     private fun commitFragmentTransaction(allowStateLoss: Boolean = false, block: FragmentTransaction.() -> Unit) {
         supportFragmentManager.commit(allowStateLoss) {

@@ -11,10 +11,7 @@ import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.protocol.Mechanism
 
-/**
- * A [EventProcessor] implementation that adds a [Machanism]
- * to [SentryLevel.FATAL] events.
- */
+/** A [EventProcessor] implementation that adds a [Machanism] to [SentryLevel.FATAL] events. */
 class AddMechanismEventProcessor : EventProcessor {
     override fun process(event: SentryEvent, hint: Hint): SentryEvent {
         if (event.level == SentryLevel.FATAL) {
@@ -24,10 +21,11 @@ class AddMechanismEventProcessor : EventProcessor {
             // to correctly signal to Sentry that this is an uncaught exception.
             // https://bugzilla.mozilla.org/show_bug.cgi?id=1835107
             event.exceptions?.firstOrNull()?.let { sentryException ->
-                sentryException.mechanism = Mechanism().apply {
-                    type = UNCAUGHT_EXCEPTION_TYPE
-                    isHandled = false
-                }
+                sentryException.mechanism =
+                    Mechanism().apply {
+                        type = UNCAUGHT_EXCEPTION_TYPE
+                        isHandled = false
+                    }
             }
         }
 

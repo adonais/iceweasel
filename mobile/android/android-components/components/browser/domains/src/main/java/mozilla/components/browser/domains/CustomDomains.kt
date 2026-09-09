@@ -8,9 +8,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 
-/**
- * Contains functionality to manage custom domains for auto-completion.
- */
+/** Contains functionality to manage custom domains for auto-completion. */
 object CustomDomains {
     private const val PREFERENCE_NAME = "custom_autocomplete"
     private const val KEY_DOMAINS = "custom_domains"
@@ -23,9 +21,7 @@ object CustomDomains {
      * @return list of custom domains
      */
     fun load(context: Context): List<String> =
-        preferences(context).getString(KEY_DOMAINS, "")!!
-            .split(SEPARATOR)
-            .filter { !it.isEmpty() }
+        preferences(context).getString(KEY_DOMAINS, "")!!.split(SEPARATOR).filter { !it.isEmpty() }
 
     /**
      * Saves the provided domains to preferences.

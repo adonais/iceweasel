@@ -1,6 +1,8 @@
 [DEFAULT]
 subsuite = "mozbuild"
 
+["test_bootstrap.py"]
+
 ["test_mozconfig.py"]
 
 ["test_android.py"]

@@ -29,10 +29,10 @@ namespace ipc {
 namespace endpoint_detail {
 
 template <class T>
-static auto ActorNeedsOtherPidHelper(int)
+auto ActorNeedsOtherPidHelper(int)
     -> decltype(std::declval<T>().OtherPid(), std::true_type{});
 template <class>
-static auto ActorNeedsOtherPidHelper(long) -> std::false_type;
+auto ActorNeedsOtherPidHelper(long) -> std::false_type;
 
 template <typename T>
 constexpr bool ActorNeedsOtherPid =

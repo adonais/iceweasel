@@ -20,10 +20,9 @@ import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
 
 /**
- *  Rule to retry flaky tests for a given number of times, catching some of the more common exceptions.
- *  The Rule doesn't clear the app state in between retries, so we are doing some cleanup here.
- *  The @Before and @After methods are not called between retries.
- *
+ * Rule to retry flaky tests for a given number of times, catching some of the more common exceptions. The Rule doesn't
+ * clear the app state in between retries, so we are doing some cleanup here. The @Before and @After methods are not
+ * called between retries.
  */
 class RetryTestRule(private val retryCount: Int = 3) : TestRule {
 
@@ -34,7 +33,10 @@ class RetryTestRule(private val retryCount: Int = 3) : TestRule {
 
                 for (attempt in 0 until retryCount) {
                     try {
-                        Log.i(TAG, "RetryTestRule: Started try #${attempt + 1}/$retryCount for ${description.className}.${description.methodName}.")
+                        Log.i(
+                            TAG,
+                            "RetryTestRule: Started try #${attempt + 1}/$retryCount for ${description.className}.${description.methodName}.",
+                        )
                         base.evaluate()
                         Log.i(TAG, "RetryTestRule: Success on try ${attempt + 1}")
                         return
@@ -81,44 +83,37 @@ class RetryTestRule(private val retryCount: Int = 3) : TestRule {
         }
     }
 
-    private fun Throwable.isRetryable(): Boolean = when (this) {
-        is AssertionError,
-        is AssertionFailedError,
-        is UiObjectNotFoundException,
-        is NoMatchingViewException,
-        is IdlingResourceTimeoutException,
-        is RuntimeException,
-        is NullPointerException,
-        is ComposeTimeoutException,
-        is IllegalStateException,
-             -> true // Added for Coroutine/Compose flakiness
-        else -> false
-    }
+    private fun Throwable.isRetryable(): Boolean =
+        when (this) {
+            is AssertionError,
+            is AssertionFailedError,
+            is UiObjectNotFoundException,
+            is NoMatchingViewException,
+            is IdlingResourceTimeoutException,
+            is RuntimeException,
+            is NullPointerException,
+            is ComposeTimeoutException,
+            is IllegalStateException -> true // Added for Coroutine/Compose flakiness
+            else -> false
+        }
 }
 
-    private inline fun statement(crossinline eval: () -> Unit): Statement {
-        return object : Statement() {
-            override fun evaluate() = eval()
-        }
-    }
-
+/**
+ * Represents a test case that supplies a Throwable to be thrown during a test.
+ *
+ * @property name A human-readable name for the test case. Used for display in test runner output and logs.
+ * @property supplier A lambda that returns a new instance of the Throwable to throw. It's evaluated during the test
+ *   execution.
+ */
+data class ThrowableCase(
+    // The display name used in parameterized test output (e.g., "NullPointerException")
+    val name: String,
+    // Function that supplies the Throwable to throw when invoked
+    val supplier: () -> Throwable,
+) {
     /**
-    * Represents a test case that supplies a Throwable to be thrown during a test.
-    *
-    * @property name A human-readable name for the test case.
-    *                Used for display in test runner output and logs.
-    * @property supplier A lambda that returns a new instance of the Throwable to throw.
-    *                    It's evaluated during the test execution.
-    */
-    data class ThrowableCase(
-        // The display name used in parameterized test output (e.g., "NullPointerException")
-        val name: String,
-        // Function that supplies the Throwable to throw when invoked
-        val supplier: () -> Throwable,
-        ) {
-    /**
-     * Overrides the default toString() so that the test runner displays the 'name'
-     * instead of a default data class string or lambda object ID.
+     * Overrides the default toString() so that the test runner displays the 'name' instead of a default data class
+     * string or lambda object ID.
      */
     override fun toString(): String = name
-    }
+}

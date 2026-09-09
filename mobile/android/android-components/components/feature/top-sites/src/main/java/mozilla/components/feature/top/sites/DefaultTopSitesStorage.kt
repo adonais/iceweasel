@@ -17,12 +17,12 @@ import mozilla.components.support.base.observer.ObserverRegistry
  * Default implementation of [TopSitesStorage].
  *
  * @param pinnedSitesStorage An instance of [PinnedSiteStorage], used for storing pinned sites.
- * @param historyStorage An instance of [PlacesHistoryStorage], used for retrieving top frecent
- * sites from history.
- * @param topSitesProvider An optional instance of [TopSitesProvider], used for retrieving
- * additional top sites from a provider. The returned top sites are added before pinned sites.
+ * @param historyStorage An instance of [PlacesHistoryStorage], used for retrieving top frecent sites from history.
+ * @param topSitesProvider An optional instance of [TopSitesProvider], used for retrieving additional top sites from a
+ *   provider. The returned top sites are added before pinned sites.
  */
-class DefaultTopSitesStorage private constructor(
+class DefaultTopSitesStorage
+private constructor(
     private val pinnedSitesStorage: PinnedSiteStorage,
     private val historyStorage: PlacesHistoryStorage,
     private val topSitesProvider: TopSitesProvider? = null,
@@ -38,12 +38,12 @@ class DefaultTopSitesStorage private constructor(
          * Creates a [DefaultTopSitesStorage] and optionally initializes it with a list of default top sites.
          *
          * @param pinnedSitesStorage An instance of [PinnedSiteStorage], used for storing pinned sites.
-         * @param historyStorage An instance of [PlacesHistoryStorage], used for retrieving top frecent
-         * sites from history.
-         * @param topSitesProvider An optional instance of [TopSitesProvider], used for retrieving
-         * additional top sites from a provider.
-         * @param defaultTopSites A list of [Pair]s (title to URL) representing the default top sites
-         * to be added to the storage if they do not already exist.
+         * @param historyStorage An instance of [PlacesHistoryStorage], used for retrieving top frecent sites from
+         *   history.
+         * @param topSitesProvider An optional instance of [TopSitesProvider], used for retrieving additional top sites
+         *   from a provider.
+         * @param defaultTopSites A list of [Pair]s (title to URL) representing the default top sites to be added to the
+         *   storage if they do not already exist.
          * @return A new instance of [DefaultTopSitesStorage].
          */
         suspend operator fun invoke(
@@ -52,11 +52,12 @@ class DefaultTopSitesStorage private constructor(
             topSitesProvider: TopSitesProvider? = null,
             defaultTopSites: List<Pair<String, String>>,
         ): DefaultTopSitesStorage {
-            val storage = DefaultTopSitesStorage(
-                pinnedSitesStorage,
-                historyStorage,
-                topSitesProvider,
-            )
+            val storage =
+                DefaultTopSitesStorage(
+                    pinnedSitesStorage,
+                    historyStorage,
+                    topSitesProvider,
+                )
             if (defaultTopSites.isNotEmpty()) {
                 pinnedSitesStorage.addAllPinnedSites(defaultTopSites, isDefault = true)
             }
@@ -67,10 +68,10 @@ class DefaultTopSitesStorage private constructor(
          * Creates a [DefaultTopSitesStorage].
          *
          * @param pinnedSitesStorage An instance of [PinnedSiteStorage], used for storing pinned sites.
-         * @param historyStorage An instance of [PlacesHistoryStorage], used for retrieving top frecent
-         * sites from history.
-         * @param topSitesProvider An optional instance of [TopSitesProvider], used for retrieving
-         * additional top sites from a provider.
+         * @param historyStorage An instance of [PlacesHistoryStorage], used for retrieving top frecent sites from
+         *   history.
+         * @param topSitesProvider An optional instance of [TopSitesProvider], used for retrieving additional top sites
+         *   from a provider.
          * @return A new instance of [DefaultTopSitesStorage].
          */
         operator fun invoke(
@@ -123,24 +124,26 @@ class DefaultTopSitesStorage private constructor(
         var providerTopSites = emptyList<TopSite>()
         var numSitesRequired = totalSites - pinnedSites.size
 
-        if (numSitesRequired > 0 &&
-            topSitesProvider != null &&
-            providerConfig != null &&
-            providerConfig.showProviderTopSites &&
-            pinnedSites.size < providerConfig.maxThreshold
+        if (
+            numSitesRequired > 0 &&
+                topSitesProvider != null &&
+                providerConfig != null &&
+                providerConfig.showProviderTopSites &&
+                pinnedSites.size < providerConfig.maxThreshold
         ) {
             try {
-                providerTopSites = topSitesProvider
-                    .getTopSites(allowCache = true)
-                    .filter { providerConfig.providerFilter?.invoke(it) ?: true }
-                    // The total amount of pinned and provider top sites that are returned in
-                    // `topSites` should not exceed the `providerConfig.maxThreshold`.
-                    // To maintain this constraint, first determine the amount of provider top
-                    // sites that can be taken from the available pool provider top sites, and
-                    // then ensure the number of provider top sites added does not exceed the
-                    // `limit`.
-                    .take(providerConfig.maxThreshold - pinnedSites.size)
-                    .take(providerConfig.limit)
+                providerTopSites =
+                    topSitesProvider
+                        .getTopSites(allowCache = true)
+                        .filter { providerConfig.providerFilter?.invoke(it) ?: true }
+                        // The total amount of pinned and provider top sites that are returned in
+                        // `topSites` should not exceed the `providerConfig.maxThreshold`.
+                        // To maintain this constraint, first determine the amount of provider top
+                        // sites that can be taken from the available pool provider top sites, and
+                        // then ensure the number of provider top sites added does not exceed the
+                        // `limit`.
+                        .take(providerConfig.maxThreshold - pinnedSites.size)
+                        .take(providerConfig.limit)
                 topSites.addAll(providerTopSites)
                 numSitesRequired -= providerTopSites.size
             } catch (e: Exception) {
@@ -153,15 +156,16 @@ class DefaultTopSitesStorage private constructor(
         if (frecencyConfig?.frecencyTresholdOption != null && numSitesRequired > 0) {
             // Get 'totalSites' sites for duplicate entries with
             // existing pinned sites
-            val frecentSites = historyStorage
-                .getTopFrecentSites(totalSites, frecencyConfig.frecencyTresholdOption)
-                .map { it.toTopSite() }
-                .filter {
-                    !pinnedSites.hasUrl(it.url) &&
-                        !providerTopSites.hasHost(it.url) &&
-                        frecencyConfig.frecencyFilter?.invoke(it) ?: true
-                }
-                .take(numSitesRequired)
+            val frecentSites =
+                historyStorage
+                    .getTopFrecentSites(totalSites, frecencyConfig.frecencyTresholdOption)
+                    .map { it.toTopSite() }
+                    .filter {
+                        !pinnedSites.hasUrl(it.url) &&
+                            !providerTopSites.hasHost(it.url) &&
+                            frecencyConfig.frecencyFilter?.invoke(it) ?: true
+                    }
+                    .take(numSitesRequired)
 
             topSites.addAll(frecentSites)
         }

@@ -27,11 +27,7 @@ class CrashReporterControllerTest {
     private val settings: Settings = mockk(relaxed = true)
     private val navController: NavController = mockk(relaxed = true)
     private val crash: NativeCodeCrash = mockk(relaxed = true)
-    private var appStore = AppStore(
-        AppState(
-            nonFatalCrashes = listOf(crash),
-        ),
-    )
+    private var appStore = AppStore(AppState(nonFatalCrashes = listOf(crash)))
     private var controller = CrashReporterController(sessionId, 2, components, settings, navController, appStore)
 
     @Test
@@ -82,7 +78,8 @@ class CrashReporterControllerTest {
             every { isCrashReportingEnabled } returns true
         }
         appStore = spyk(appStore)
-        controller = CrashReporterController(sessionId, 2, components, enabledCrashReporterSettings, navController, appStore)
+        controller =
+            CrashReporterController(sessionId, 2, components, enabledCrashReporterSettings, navController, appStore)
 
         controller.submitPendingNonFatalCrashesIfNecessary(false)?.joinBlocking()
 
@@ -96,7 +93,8 @@ class CrashReporterControllerTest {
             every { isCrashReportingEnabled } returns false
         }
         appStore = spyk(appStore)
-        controller = CrashReporterController(sessionId, 2, components, disabledCrashReporterSettings, navController, appStore)
+        controller =
+            CrashReporterController(sessionId, 2, components, disabledCrashReporterSettings, navController, appStore)
 
         controller.submitPendingNonFatalCrashesIfNecessary(true)?.joinBlocking()
 
@@ -110,7 +108,8 @@ class CrashReporterControllerTest {
             every { isCrashReportingEnabled } returns true
         }
         appStore = spyk(appStore)
-        controller = CrashReporterController(sessionId, 2, components, disabledCrashReporterSettings, navController, appStore)
+        controller =
+            CrashReporterController(sessionId, 2, components, disabledCrashReporterSettings, navController, appStore)
 
         controller.submitPendingNonFatalCrashesIfNecessary(true)!!.joinBlocking()
 

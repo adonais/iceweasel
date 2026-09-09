@@ -11,14 +11,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mozilla.components.feature.summarize.settings.SummarizationSettings
+import mozilla.components.lib.ai.controls.AIFeatureBlockStorage
 import mozilla.components.lib.shake.ShakeSensitivity
 
-/**
- * See [FenixSummarizationSettingsBinding].
- */
+/** See [FenixSummarizationSettingsBinding]. */
 interface SummarizationSettingsBinding {
     val isFeatureEnabled: StateFlow<Boolean>
     val isGestureEnabled: StateFlow<Boolean>
@@ -26,11 +26,12 @@ interface SummarizationSettingsBinding {
 }
 
 /**
- * Wrapper for the summarization settings managed by the module. This is a convenience class to bridge
- * suspending and non-suspending contents, to be hosted by a lifecycle observer.
+ * Wrapper for the summarization settings managed by the module. This is a convenience class to bridge suspending and
+ * non-suspending contents, to be hosted by a lifecycle observer.
  */
 class FenixSummarizationSettingsBinding(
     private val summarizationSettings: SummarizationSettings,
+    private val aiFeatureBlockStorage: AIFeatureBlockStorage,
 ) : DefaultLifecycleObserver, SummarizationSettingsBinding {
     private val _isFeatureEnabled = MutableStateFlow(false)
     override val isFeatureEnabled: StateFlow<Boolean> = _isFeatureEnabled
@@ -42,14 +43,18 @@ class FenixSummarizationSettingsBinding(
     override fun onCreate(owner: LifecycleOwner) {
         super.onCreate(owner)
         owner.lifecycle.coroutineScope.launch {
+            val isBlocked = aiFeatureBlockStorage.isBlocked.first()
             combine(
-                summarizationSettings.getFeatureEnabledUserStatus()
-                    .mapNotNull { it },
-                summarizationSettings.getGestureEnabledUserStatus(),
-                summarizationSettings.getShakeSensitivity(),
-            ) { featureEnabled, gestureEnabled, sensitivity ->
-                Triple(featureEnabled, gestureEnabled, sensitivity)
-            }
+                    summarizationSettings
+                        .getFeatureEnabledUserStatus()
+                        .map({
+                            it ?: !isBlocked
+                        }),
+                    summarizationSettings.getGestureEnabledUserStatus(),
+                    summarizationSettings.getShakeSensitivity(),
+                ) { featureEnabled, gestureEnabled, sensitivity ->
+                    Triple(featureEnabled, gestureEnabled, sensitivity)
+                }
                 .distinctUntilChanged()
                 .collect { (isFeatureEnabled, isGestureEnabled, sensitivity) ->
                     this@FenixSummarizationSettingsBinding._isFeatureEnabled.value = isFeatureEnabled

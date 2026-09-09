@@ -6,13 +6,13 @@ package mozilla.components.ui.widgets.behavior
 
 import android.view.View
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
 import mozilla.components.support.test.mock
 import mozilla.components.ui.widgets.behavior.DependencyGravity.Bottom
 import mozilla.components.ui.widgets.behavior.DependencyGravity.Top
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.verify
-import kotlin.test.assertIs
 
 @RunWith(AndroidJUnit4::class)
 class ViewYTranslatorTest {

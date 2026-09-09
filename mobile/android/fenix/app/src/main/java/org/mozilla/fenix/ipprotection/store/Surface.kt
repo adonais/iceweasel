@@ -4,14 +4,10 @@
 
 package org.mozilla.fenix.ipprotection.store
 
-/**
- * The 'surface' that the IP Protection bottom sheet was displayed on,
- * e.g. on the homepage or within the browser.
- */
+/** The 'surface' that the IP Protection bottom sheet was displayed on, e.g. on the homepage or within the browser. */
 enum class Surface {
     HOMEPAGE,
-    BROWSER,
-    ;
+    BROWSER;
 
     val metricLabel = name.lowercase()
 }

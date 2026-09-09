@@ -18,9 +18,7 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.theme.FirefoxTheme
 
-/**
- * A fragment displaying Automatic Translation Options screen.
- */
+/** A fragment displaying Automatic Translation Options screen. */
 class AutomaticTranslationOptionsPreferenceFragment : Fragment(), SystemInsetsPaddedFragment {
     private val args by navArgs<AutomaticTranslationOptionsPreferenceFragmentArgs>()
     private val browserStore: BrowserStore by lazy { requireComponents.core.store }
@@ -35,9 +33,12 @@ class AutomaticTranslationOptionsPreferenceFragment : Fragment(), SystemInsetsPa
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ) = content {
-        val languageSettings = browserStore.observeAsComposableState { state ->
-            state.translationEngine.languageSettings
-        }.value
+        val languageSettings =
+            browserStore
+                .observeAsComposableState { state ->
+                    state.translationEngine.languageSettings
+                }
+                .value
 
         val selectedLanguage = languageSettings?.get(args.selectedLanguageCode)
 
@@ -50,7 +51,7 @@ class AutomaticTranslationOptionsPreferenceFragment : Fragment(), SystemInsetsPa
                             TranslationsAction.UpdateLanguageSettingsAction(
                                 languageCode = args.selectedLanguageCode,
                                 setting = getLanguageSetting(it),
-                            ),
+                            )
                         )
                     },
                 )

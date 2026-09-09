@@ -655,13 +655,15 @@ waitForAllPaints(async () => {
 
     await waitForAnimationReadyToRestyle(animation);
 
-    let restyleCount;
-    restyleCount = await observeStyling(5);
+    let restyleCount = await observeStyling(5);
     is(restyleCount, 0,
        'Animations running on the main-thread which is in scrolled out ' +
        'elements should not update restyling');
 
-    parentElement.style.height = '100px';
+    parentElement.style.height = '150px';
+
+    await waitForFrame();
+
     restyleCount = await observeStyling(1);
 
     is(restyleCount, 1,
@@ -2028,14 +2030,20 @@ waitForAllPaints(async () => {
       set: [['layout.animation.prerender.partial', false]] });
     const div = addDiv(null, { style: 'width: 10000px; height: 10000px;' });
 
+    const FLUSH_LAYOUT = SpecialPowers.DOMWindowUtils.FLUSH_LAYOUT;
+    ok(SpecialPowers.DOMWindowUtils.needsFlush(FLUSH_LAYOUT),
+       'Flush is needed for the appended div');
+
+    // This prevents a throttled restyle to be posted by animate(), which
+    // causes needsFlush to return true unnecessarily.
+    // FIXME(emilio): Maybe DOMWindowUtils.needsFlush should ignore
+    // mNeedThrottledAnimationFlush...
+    div.getBoundingClientRect();
+
     const animation = div.animate([ { transform: 'rotate(360deg)', } ],
                                   { duration: 100 * MS_PER_SEC,
                                     // Set step-end to skip further restyles.
                                     easing: 'step-end' });
-
-    const FLUSH_LAYOUT = SpecialPowers.DOMWindowUtils.FLUSH_LAYOUT;
-    ok(SpecialPowers.DOMWindowUtils.needsFlush(FLUSH_LAYOUT),
-       'Flush is needed for the appended div');
 
     await waitForAnimationReadyToRestyle(animation);
 

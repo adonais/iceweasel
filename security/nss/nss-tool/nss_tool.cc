@@ -30,7 +30,7 @@ static const std::string kEncryptCommand = "encrypt";
 static const std::string kDecryptCommand = "decrypt";
 static const std::string kDigestCommand = "digest";
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   if (argc < 2) {
     Usage();
     return 1;

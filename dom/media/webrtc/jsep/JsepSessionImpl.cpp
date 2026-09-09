@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 
+#include <algorithm>
 #include <set>
 #include <string>
 #include <utility>
@@ -77,7 +78,7 @@ JsepSessionImpl::JsepSessionImpl(const JsepSessionImpl& aOrig)
       mSdpHelper(&mLastError),
       mParser(MakeUnique<HybridSdpParser>()) {
   for (const auto& codec : aOrig.mSupportedCodecs) {
-    mSupportedCodecs.emplace_back(codec->Clone());
+    mSupportedCodecs.EmplaceBack(codec->Clone());
   }
 }
 
@@ -209,7 +210,7 @@ nsresult JsepSessionImpl::AddDtlsFingerprint(
 }
 
 nsresult JsepSessionImpl::AddRtpExtension(
-    JsepMediaType mediaType, const std::string& extensionName,
+    JsepMediaType mediaType, const nsACString& extensionName,
     SdpDirectionAttribute::Direction direction) {
   mLastError.clear();
 
@@ -233,26 +234,27 @@ nsresult JsepSessionImpl::AddRtpExtension(
       mediaType,
       {freeEntry, direction,
        // do we want to specify direction?
-       direction != SdpDirectionAttribute::kSendrecv, extensionName, ""}};
+       direction != SdpDirectionAttribute::kSendrecv, nsCString(extensionName),
+       ""_ns}};
 
   mRtpExtensions.push_back(std::move(extMediaType));
   return NS_OK;
 }
 
 nsresult JsepSessionImpl::AddAudioRtpExtension(
-    const std::string& extensionName,
+    const nsACString& extensionName,
     SdpDirectionAttribute::Direction direction) {
   return AddRtpExtension(JsepMediaType::kAudio, extensionName, direction);
 }
 
 nsresult JsepSessionImpl::AddVideoRtpExtension(
-    const std::string& extensionName,
+    const nsACString& extensionName,
     SdpDirectionAttribute::Direction direction) {
   return AddRtpExtension(JsepMediaType::kVideo, extensionName, direction);
 }
 
 nsresult JsepSessionImpl::AddAudioVideoRtpExtension(
-    const std::string& extensionName,
+    const nsACString& extensionName,
     SdpDirectionAttribute::Direction direction) {
   return AddRtpExtension(JsepMediaType::kAudioVideo, extensionName, direction);
 }
@@ -406,6 +408,19 @@ JsepSession::Result JsepSessionImpl::CreateOffer(
   nsresult rv = CreateGenericSDP(&sdp);
   NS_ENSURE_SUCCESS(rv, dom::PCError::OperationError);
 
+  // Create a data "transceiver" if none exists yet.
+  if (mAlwaysNegotiateDataChannels) {
+    Maybe<JsepTransceiver> dcTransceiver =
+        FindTransceiver([](const JsepTransceiver& aTransceiver) {
+          return aTransceiver.GetMediaType() == SdpMediaSection::kApplication;
+        });
+
+    if (!dcTransceiver) {
+      AddTransceiver(
+          JsepTransceiver(SdpMediaSection::MediaType::kApplication, *mUuidGen));
+    }
+  }
+
   for (size_t level = 0;
        Maybe<JsepTransceiver> transceiver = GetTransceiverForLocal(level);
        ++level) {
@@ -477,20 +492,22 @@ std::vector<SdpExtmapAttributeList::Extmap> JsepSessionImpl::GetRtpExtensions(
       if (includes_send && StaticPrefs::media_peerconnection_video_use_dd() &&
           msection.GetAttributeList().HasAttribute(
               SdpAttribute::kSimulcastAttribute)) {
-        AddVideoRtpExtension(webrtc::RtpExtension::kDependencyDescriptorUri,
-                             SdpDirectionAttribute::kSendonly);
+        AddVideoRtpExtension(
+            nsLiteralCString(webrtc::RtpExtension::kDependencyDescriptorUri),
+            SdpDirectionAttribute::kSendonly);
       }
       if (msection.GetAttributeList().HasAttribute(
               SdpAttribute::kRidAttribute)) {
         // We need RID support
         // TODO: Would it be worth checking that the direction is sane?
-        AddVideoRtpExtension(webrtc::RtpExtension::kRidUri,
+        AddVideoRtpExtension(nsLiteralCString(webrtc::RtpExtension::kRidUri),
                              SdpDirectionAttribute::kSendonly);
 
         if (mRtxIsAllowed &&
             Preferences::GetBool("media.peerconnection.video.use_rtx", false)) {
-          AddVideoRtpExtension(webrtc::RtpExtension::kRepairedRidUri,
-                               SdpDirectionAttribute::kSendonly);
+          AddVideoRtpExtension(
+              nsLiteralCString(webrtc::RtpExtension::kRepairedRidUri),
+              SdpDirectionAttribute::kSendonly);
         }
       }
       break;
@@ -1638,6 +1655,18 @@ Maybe<JsepTransceiver> JsepSessionImpl::GetTransceiverForLocal(size_t level) {
 
   // There is no transceiver for |level| right now.
 
+  // The datachannel m-section comes before any m-section that has not been
+  // negotiated yet when the alwaysNegotiateDataChannels flag is set.
+  if (mAlwaysNegotiateDataChannels) {
+    for (auto& transceiver : mTransceivers) {
+      if (transceiver.GetMediaType() == SdpMediaSection::kApplication &&
+          transceiver.IsFreeToUse()) {
+        transceiver.SetLevel(level);
+        return Some(transceiver);
+      }
+    }
+  }
+
   // Look for an RTP transceiver (spec requires us to give the lower levels to
   // new RTP transceivers)
   for (auto& transceiver : mTransceivers) {
@@ -2286,11 +2315,11 @@ nsresult JsepSessionImpl::SetupIds() {
 }
 
 void JsepSessionImpl::SetDefaultCodecs(
-    const std::vector<UniquePtr<JsepCodecDescription>>& aPreferredCodecs) {
-  mSupportedCodecs.clear();
+    const nsTArray<UniquePtr<JsepCodecDescription>>& aPreferredCodecs) {
+  mSupportedCodecs.Clear();
 
   for (const auto& codec : aPreferredCodecs) {
-    mSupportedCodecs.emplace_back(codec->Clone());
+    mSupportedCodecs.EmplaceBack(codec->Clone());
   }
 }
 
@@ -2543,6 +2572,13 @@ bool JsepSessionImpl::CheckNegotiationNeeded() const {
       continue;
     }
 
+    if (transceiver.GetMediaType() == SdpMediaSection::kApplication) {
+      // Whether this needs negotiation depends on whether a datachannel was
+      // created, which JSEP does not know about. `alwaysNegotiateDataChannels`
+      // can also create a datachannel transceiver without a datachannel.
+      continue;
+    }
+
     if (transceiver.IsStopping()) {
       MOZ_MTLOG(ML_DEBUG, "[" << mName
                               << "]: Negotiation needed because of "
@@ -2569,10 +2605,6 @@ bool JsepSessionImpl::CheckNegotiationNeeded() const {
 
     if (!transceiver.HasLevel()) {
       MOZ_CRASH("Associated transceivers should always have a level.");
-      continue;
-    }
-
-    if (transceiver.GetMediaType() == SdpMediaSection::kApplication) {
       continue;
     }
 

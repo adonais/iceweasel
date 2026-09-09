@@ -19,6 +19,9 @@
  * In addition to linear navigation with tab and arrows, users can also type
  * the first (or first few) characters of a button's name to jump directly to
  * that button.
+ * Controls can opt out of all of this with keyNav="false", or keep arrow
+ * navigation but decline to be a tab stop's target with keyNav="skipTabStop",
+ * which is for controls that are reachable from an adjacent tab stop.
  */
 
 ToolbarKeyboardNavigator = {
@@ -36,9 +39,12 @@ ToolbarKeyboardNavigator = {
     if (aElem.getAttribute("keyNav") === "false") {
       return false;
     }
+    const XUL_NS =
+      "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+    const HTML_NS = "http://www.w3.org/1999/xhtml";
     return (
-      aElem.tagName == "toolbarbutton" ||
-      aElem.tagName == "html:moz-button" ||
+      (aElem.namespaceURI == XUL_NS && aElem.localName == "toolbarbutton") ||
+      (aElem.namespaceURI == HTML_NS && aElem.localName == "moz-button") ||
       aElem.getAttribute("role") == "button"
     );
   },
@@ -156,6 +162,11 @@ ToolbarKeyboardNavigator = {
   },
 
   _focusButton(aButton) {
+    if (aButton.hasAttribute("tabindex")) {
+      // The button manages its own tabindex.
+      aButton.focus();
+      return;
+    }
     // Toolbar buttons aren't focusable because if they were, clicking them
     // would focus them, which is undesirable. Therefore, we must make a
     // button focusable only when we want to focus it.
@@ -205,6 +216,9 @@ ToolbarKeyboardNavigator = {
 
     walker.currentNode = aEvent.target;
     let button = walker.nextNode();
+    while (button?.getAttribute("keyNav") == "skipTabStop") {
+      button = walker.nextNode();
+    }
     if (!button || !this._isButton(button)) {
       // If we think we're moving backward, and focus came from outside the
       // toolbox, we might actually have wrapped around. In this case, the

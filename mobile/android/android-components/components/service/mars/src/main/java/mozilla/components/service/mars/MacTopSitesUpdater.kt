@@ -11,19 +11,17 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit
 import mozilla.components.feature.top.sites.TopSitesProvider
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.worker.Frequency
-import java.util.concurrent.TimeUnit
 
 /**
  * Provides functionality to schedule updates of Mozilla Ads Client (MAC) top sites.
  *
  * @property context A reference to the application context.
- * @property provider An instance of [TopSitesProvider] which will fetch the top sites tile from
- * the provider.
- * @property frequency Optional [Frequency] that specifies how often the top site updates should
- * happen.
+ * @property provider An instance of [TopSitesProvider] which will fetch the top sites tile from the provider.
+ * @property frequency Optional [Frequency] that specifies how often the top site updates should happen.
  */
 class MacTopSitesUpdater(
     private val context: Context,
@@ -33,24 +31,21 @@ class MacTopSitesUpdater(
 
     private val logger = Logger("MacTopSitesUpdater")
 
-    /**
-     * Starts a work request in the background to periodically update the list of MAC top sites.
-     */
+    /** Starts a work request in the background to periodically update the list of MAC top sites. */
     fun startPeriodicWork() {
         MacTopSitesUseCases.initialize(provider)
 
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            PERIODIC_WORK_TAG,
-            ExistingPeriodicWorkPolicy.KEEP,
-            createPeriodicWorkRequest(),
-        )
+        WorkManager.getInstance(context)
+            .enqueueUniquePeriodicWork(
+                PERIODIC_WORK_TAG,
+                ExistingPeriodicWorkPolicy.KEEP,
+                createPeriodicWorkRequest(),
+            )
 
         logger.info("Started periodic work to update MAC top sites")
     }
 
-    /**
-     * Stops the work request to periodically update the list of MAC top sites.
-     */
+    /** Stops the work request to periodically update the list of MAC top sites. */
     fun stopPeriodicWork() {
         MacTopSitesUseCases.destroy()
 
@@ -62,18 +57,18 @@ class MacTopSitesUpdater(
     @VisibleForTesting
     internal fun createPeriodicWorkRequest() =
         PeriodicWorkRequestBuilder<MacTopSitesUpdaterWorker>(
-            repeatInterval = frequency.repeatInterval,
-            repeatIntervalTimeUnit = frequency.repeatIntervalTimeUnit,
-        ).apply {
-            setConstraints(getWorkerConstraints())
-            addTag(PERIODIC_WORK_TAG)
-        }.build()
+                repeatInterval = frequency.repeatInterval,
+                repeatIntervalTimeUnit = frequency.repeatIntervalTimeUnit,
+            )
+            .apply {
+                setConstraints(getWorkerConstraints())
+                addTag(PERIODIC_WORK_TAG)
+            }
+            .build()
 
     @VisibleForTesting
-    internal fun getWorkerConstraints() = Constraints.Builder()
-        .setRequiresStorageNotLow(true)
-        .setRequiredNetworkType(NetworkType.CONNECTED)
-        .build()
+    internal fun getWorkerConstraints() =
+        Constraints.Builder().setRequiresStorageNotLow(true).setRequiredNetworkType(NetworkType.CONNECTED).build()
 
     companion object {
         internal const val PERIODIC_WORK_TAG = "mozilla.components.service.mars.periodicWork"

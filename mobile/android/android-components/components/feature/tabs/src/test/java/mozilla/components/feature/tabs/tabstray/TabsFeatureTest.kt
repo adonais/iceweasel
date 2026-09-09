@@ -20,12 +20,15 @@ class TabsFeatureTest {
     fun `asserting getters`() {
         val store = BrowserStore()
         val presenter: TabsTrayPresenter = mock()
-        val tabsFeature = spy(
-            TabsFeature(
-                mock(),
-                store,
-            ) { true },
-        )
+        val tabsFeature =
+            spy(
+                TabsFeature(
+                    mock(),
+                    store,
+                ) {
+                    true
+                }
+            )
 
         assertNotEquals(tabsFeature.presenter, presenter)
 
@@ -38,12 +41,15 @@ class TabsFeatureTest {
     fun start() {
         val store = BrowserStore()
         val presenter: TabsTrayPresenter = mock()
-        val tabsFeature = spy(
-            TabsFeature(
-                mock(),
-                store,
-            ) { true },
-        )
+        val tabsFeature =
+            spy(
+                TabsFeature(
+                    mock(),
+                    store,
+                ) {
+                    true
+                }
+            )
 
         tabsFeature.presenter = presenter
 
@@ -56,12 +62,15 @@ class TabsFeatureTest {
     fun stop() {
         val store = BrowserStore()
         val presenter: TabsTrayPresenter = mock()
-        val tabsFeature = spy(
-            TabsFeature(
-                mock(),
-                store,
-            ) { true },
-        )
+        val tabsFeature =
+            spy(
+                TabsFeature(
+                    mock(),
+                    store,
+                ) {
+                    true
+                }
+            )
 
         tabsFeature.presenter = presenter
 
@@ -75,12 +84,15 @@ class TabsFeatureTest {
         val store = BrowserStore()
         val presenter: TabsTrayPresenter = mock()
         val tabsTray: TabsTray = mock()
-        val tabsFeature = spy(
-            TabsFeature(
-                tabsTray,
-                store,
-            ) { true },
-        )
+        val tabsFeature =
+            spy(
+                TabsFeature(
+                    tabsTray,
+                    store,
+                ) {
+                    true
+                }
+            )
 
         tabsFeature.presenter = presenter
 
@@ -89,20 +101,21 @@ class TabsFeatureTest {
         tabsFeature.filterTabs(filter)
 
         verify(presenter).tabsFilter = filter
-        verify(tabsTray).updateTabs(emptyList(), null, null)
+        verify(tabsTray).updateTabs(emptyList(), null)
     }
 
     @Test
     fun `filterTabs uses default filter if a new one is not provided`() {
         val store = BrowserStore()
         val filter: (TabSessionState) -> Boolean = { false }
-        val tabsFeature = spy(
-            TabsFeature(
-                mock(),
-                store,
-                defaultTabsFilter = filter,
-            ),
-        )
+        val tabsFeature =
+            spy(
+                TabsFeature(
+                    mock(),
+                    store,
+                    defaultTabsFilter = filter,
+                )
+            )
         val presenter: TabsTrayPresenter = mock()
 
         tabsFeature.presenter = presenter

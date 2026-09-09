@@ -58,10 +58,7 @@ struct PartialSharedSurfaceDesc {
   const layers::TextureType consumerType;
   const bool canRecycle;
 
-  bool operator==(const PartialSharedSurfaceDesc& rhs) const {
-    return gl == rhs.gl && type == rhs.type &&
-           consumerType == rhs.consumerType && canRecycle == rhs.canRecycle;
-  }
+  bool operator==(const PartialSharedSurfaceDesc& rhs) const = default;
 };
 struct SharedSurfaceDesc : public PartialSharedSurfaceDesc {
   gfx::IntSize size = {};

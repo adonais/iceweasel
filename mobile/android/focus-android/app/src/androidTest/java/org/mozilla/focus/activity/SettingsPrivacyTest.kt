@@ -28,17 +28,14 @@ import org.mozilla.focus.testAnnotations.SmokeTest
 class SettingsPrivacyTest {
     private val featureSettingsHelper = FeatureSettingsHelper()
 
-    @get:Rule(order = 0)
-    val focusTestRule: FocusTestRule = FocusTestRule()
+    @get:Rule(order = 0) val focusTestRule: FocusTestRule = FocusTestRule()
 
-    private val webServerRule get() = focusTestRule.mockWebServerRule
+    private val webServerRule
+        get() = focusTestRule.mockWebServerRule
 
-    @get:Rule
-    val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
+    @get:Rule val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
 
-    @Rule
-    @JvmField
-    val retryTestRule = RetryTestRule(3)
+    @Rule @JvmField val retryTestRule = RetryTestRule(3)
 
     @Before
     fun setUp() {
@@ -54,15 +51,15 @@ class SettingsPrivacyTest {
     @SmokeTest
     @Test
     fun verifyCookiesAndSiteDataItemsTest() {
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openPrivacySettingsMenu {
-            verifyCookiesAndSiteDataSection()
-            clickBlockCookies()
-            verifyBlockCookiesPrompt()
-            clickCancelBlockCookiesPrompt()
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openPrivacySettingsMenu {
+                verifyCookiesAndSiteDataSection()
+                clickBlockCookies()
+                verifyBlockCookiesPrompt()
+                clickCancelBlockCookiesPrompt()
+            }
     }
 
     @SmokeTest
@@ -71,24 +68,25 @@ class SettingsPrivacyTest {
         val sameSiteCookiesUrl = webServerRule.server.getStorageTestAsset("same-site-cookies.html").url
         val thirdPartyCookiesUrl = webServerRule.server.getStorageTestAsset("cross-site-cookies.html").url
 
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openPrivacySettingsMenu {
-            clickBlockCookies()
-            clickYesPleaseOption()
-            exitToTop()
-        }
-        searchScreen {
-        }.loadPage(sameSiteCookiesUrl) {
-            progressBar.waitUntilGone(waitingTime)
-            verifyCookiesEnabled("BLOCKED")
-        }.clearBrowsingData {
-        }.openSearchBar {
-        }.loadPage(thirdPartyCookiesUrl) {
-            progressBar.waitUntilGone(waitingTime)
-            verifyCookiesEnabled("BLOCKED")
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openPrivacySettingsMenu {
+                clickBlockCookies()
+                clickYesPleaseOption()
+                exitToTop()
+            }
+        searchScreen {}
+            .loadPage(sameSiteCookiesUrl) {
+                progressBar.waitUntilGone(waitingTime)
+                verifyCookiesEnabled("BLOCKED")
+            }
+            .clearBrowsingData {}
+            .openSearchBar {}
+            .loadPage(thirdPartyCookiesUrl) {
+                progressBar.waitUntilGone(waitingTime)
+                verifyCookiesEnabled("BLOCKED")
+            }
     }
 
     @SmokeTest
@@ -97,23 +95,25 @@ class SettingsPrivacyTest {
         val sameSiteCookiesUrl = webServerRule.server.getStorageTestAsset("same-site-cookies.html").url
         val thirdPartyCookiesURL = webServerRule.server.getStorageTestAsset("cross-site-cookies.html").url
 
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openPrivacySettingsMenu {
-            clickBlockCookies()
-            clickBlockThirdPartyCookiesOnly()
-        }.goBackToSettings {
-        }.goBackToHomeScreen {
-        }.loadPage(thirdPartyCookiesURL) {
-            progressBar.waitUntilGone(waitingTime)
-            verifyCookiesEnabled("BLOCKED")
-        }.clearBrowsingData {
-        }.openSearchBar {
-        }.loadPage(sameSiteCookiesUrl) {
-            progressBar.waitUntilGone(waitingTime)
-            verifyCookiesEnabled("UNRESTRICTED")
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openPrivacySettingsMenu {
+                clickBlockCookies()
+                clickBlockThirdPartyCookiesOnly()
+            }
+            .goBackToSettings {}
+            .goBackToHomeScreen {}
+            .loadPage(thirdPartyCookiesURL) {
+                progressBar.waitUntilGone(waitingTime)
+                verifyCookiesEnabled("BLOCKED")
+            }
+            .clearBrowsingData {}
+            .openSearchBar {}
+            .loadPage(sameSiteCookiesUrl) {
+                progressBar.waitUntilGone(waitingTime)
+                verifyCookiesEnabled("UNRESTRICTED")
+            }
     }
 
     @Ignore("Failing on Beta, see https://bugzilla.mozilla.org/show_bug.cgi?id=1906806")
@@ -122,21 +122,25 @@ class SettingsPrivacyTest {
         val sameSiteCookiesUrl = webServerRule.server.getStorageTestAsset("same-site-cookies.html").url
         val crossSiteCookiesURL = webServerRule.server.getStorageTestAsset("cross-site-cookies.html").url
 
-        searchScreen {
-        }.loadPage(crossSiteCookiesURL) {
-            progressBar.waitUntilGone(waitingTime)
-            if (mActivityTestRule.activity.components.engine.version.releaseChannel !== EngineReleaseChannel.NIGHTLY &&
-                mActivityTestRule.activity.components.engine.version.releaseChannel !== EngineReleaseChannel.UNKNOWN
-            ) {
-                verifyCookiesEnabled("PARTITIONED")
-            } else {
-                verifyCookiesEnabled("BLOCKED")
+        searchScreen {}
+            .loadPage(crossSiteCookiesURL) {
+                progressBar.waitUntilGone(waitingTime)
+                if (
+                    mActivityTestRule.activity.components.engine.version.releaseChannel !==
+                        EngineReleaseChannel.NIGHTLY &&
+                        mActivityTestRule.activity.components.engine.version.releaseChannel !==
+                            EngineReleaseChannel.UNKNOWN
+                ) {
+                    verifyCookiesEnabled("PARTITIONED")
+                } else {
+                    verifyCookiesEnabled("BLOCKED")
+                }
             }
-        }.clearBrowsingData {
-        }.openSearchBar {
-        }.loadPage(sameSiteCookiesUrl) {
-            progressBar.waitUntilGone(waitingTime)
-            verifyCookiesEnabled("UNRESTRICTED")
-        }
+            .clearBrowsingData {}
+            .openSearchBar {}
+            .loadPage(sameSiteCookiesUrl) {
+                progressBar.waitUntilGone(waitingTime)
+                verifyCookiesEnabled("UNRESTRICTED")
+            }
     }
 }

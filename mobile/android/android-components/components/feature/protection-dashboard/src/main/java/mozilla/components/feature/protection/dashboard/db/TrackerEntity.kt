@@ -8,13 +8,12 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * Entity representing daily tracker totals with one column per category.
- * Used for time-based queries (daily, weekly, monthly, yearly, all-time).
+ * Entity representing daily tracker totals with one column per category. Used for time-based queries (daily, weekly,
+ * monthly, yearly, all-time).
  */
 @Entity(tableName = "tracker_totals")
 internal data class TrackerTotalEntity(
-    @PrimaryKey
-    val date: Long,
+    @PrimaryKey val date: Long,
     val adCount: Int = 0,
     val analyticsCount: Int = 0,
     val socialCount: Int = 0,
@@ -27,13 +26,12 @@ internal data class TrackerTotalEntity(
 )
 
 /**
- * Entity representing all-time tracker totals per host with one column per category.
- * Used for per-site statistics and "top blocked sites" queries.
+ * Entity representing all-time tracker totals per host with one column per category. Used for per-site statistics and
+ * "top blocked sites" queries.
  */
 @Entity(tableName = "tracker_by_host")
 internal data class TrackerByHostEntity(
-    @PrimaryKey
-    val host: String,
+    @PrimaryKey val host: String,
     val adCount: Int = 0,
     val analyticsCount: Int = 0,
     val socialCount: Int = 0,

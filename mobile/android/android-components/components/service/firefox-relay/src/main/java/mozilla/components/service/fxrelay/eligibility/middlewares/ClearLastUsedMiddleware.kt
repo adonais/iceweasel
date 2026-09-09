@@ -11,8 +11,8 @@ import mozilla.components.service.fxrelay.eligibility.RelayEligibilityAction.Upd
 import mozilla.components.service.fxrelay.eligibility.RelayState
 
 /**
- * This middleware is useful for observers on the store that want to know the [RelayState.lastUsed] at the time
- * that it was used, before it is cleared away to avoid re-triggering the same observers twice.
+ * This middleware is useful for observers on the store that want to know the [RelayState.lastUsed] at the time that it
+ * was used, before it is cleared away to avoid re-triggering the same observers twice.
  */
 class ClearLastUsedMiddleware : Middleware<RelayState, RelayEligibilityAction> {
     override fun invoke(

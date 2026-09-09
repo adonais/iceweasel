@@ -17,8 +17,31 @@ using namespace mozilla::a11y;
 
 ApplicationAccessibleWrap::ApplicationAccessibleWrap() = default;
 
+// atk-bridge calls atk_get_root() exactly once when it registers with the
+// AT-SPI registry and caches the resulting AtkObject* for the lifetime of
+// the connection. If accessibility later shuts down and restarts within the
+// same process, a new AtkObject here would leave that cached pointer stale.
+// There is no supported way to make atk-bridge re-fetch it short of tearing
+// down and recreating its whole D-Bus connection (via
+// atk_bridge_adaptor_cleanup and atk_bridge_adaptor_init). Unfortunately, doing
+// that is unsafe and can cause a deadlock due to buggy libdbus behaviour; see
+// bug 2062852 comment 11. To work around this, unlike every other accessible,
+// the application root's AtkObject persists for the life of the process; only
+// the acc it wraps is detached and reattached as accessibility shuts down and
+// restarts.
+static AtkObject* sAppRootAtkObject = nullptr;
+
+void ApplicationAccessibleWrap::Shutdown() {
+  if (mAtkObject) {
+    MAI_ATK_OBJECT(mAtkObject)->Shutdown();
+    // Deliberately not unreffing sAppRootAtkObject; see comment above.
+    mAtkObject = nullptr;
+  }
+  ApplicationAccessible::Shutdown();
+}
+
 ApplicationAccessibleWrap::~ApplicationAccessibleWrap() {
-  AccessibleWrap::ShutdownAtkObject();
+  NS_ASSERTION(!mAtkObject, "Shutdown() was not called");
 }
 
 gboolean toplevel_event_watcher(GSignalInvocationHint* ihint,
@@ -77,13 +100,22 @@ void ApplicationAccessibleWrap::GetNativeInterface(void** aOutAccessible) {
   *aOutAccessible = nullptr;
 
   if (!mAtkObject) {
-    mAtkObject = reinterpret_cast<AtkObject*>(
-        g_object_new(MAI_TYPE_ATK_OBJECT, nullptr));
-    if (!mAtkObject) return;
+    if (sAppRootAtkObject) {
+      // Reattach the persistent root wrapper to this new instance instead of
+      // creating a second AtkObject for the application root. See the
+      // comment above sAppRootAtkObject's declaration.
+      mAtkObject = sAppRootAtkObject;
+      MAI_ATK_OBJECT(mAtkObject)->acc = static_cast<Accessible*>(this);
+    } else {
+      mAtkObject = reinterpret_cast<AtkObject*>(
+          g_object_new(MAI_TYPE_ATK_OBJECT, nullptr));
+      if (!mAtkObject) return;
 
-    atk_object_initialize(mAtkObject, static_cast<Accessible*>(this));
-    mAtkObject->role = ATK_ROLE_INVALID;
-    mAtkObject->layer = ATK_LAYER_INVALID;
+      atk_object_initialize(mAtkObject, static_cast<Accessible*>(this));
+      mAtkObject->role = ATK_ROLE_INVALID;
+      mAtkObject->layer = ATK_LAYER_INVALID;
+      sAppRootAtkObject = mAtkObject;
+    }
   }
 
   *aOutAccessible = mAtkObject;

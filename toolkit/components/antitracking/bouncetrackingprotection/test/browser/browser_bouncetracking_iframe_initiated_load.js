@@ -15,6 +15,11 @@ let bounceTrackingProtection = Cc[
   "@mozilla.org/bounce-tracking-protection;1"
 ].getService(Ci.nsIBounceTrackingProtection);
 
+registerCleanupFunction(() => {
+  // Clear the state after all the tasks.
+  bounceTrackingProtection.clearAll();
+});
+
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [

@@ -24,23 +24,24 @@ class ReaderActionTest {
     fun setUp() {
         tab = createTab("https://www.mozilla.org")
 
-        state = BrowserState(
-            tabs = listOf(tab),
-        )
+        state = BrowserState(tabs = listOf(tab))
     }
 
     private fun tabState(): TabSessionState = state.findTab(tab.id)!!
+
     private fun readerState() = tabState().readerState
 
     @Test
     fun `UpdateReaderableAction - Updates readerable flag of ReaderState`() {
         assertFalse(readerState().readerable)
 
-        state = BrowserStateReducer.reduce(state, ReaderAction.UpdateReaderableAction(tabId = tab.id, readerable = true))
+        state =
+            BrowserStateReducer.reduce(state, ReaderAction.UpdateReaderableAction(tabId = tab.id, readerable = true))
 
         assertTrue(readerState().readerable)
 
-        state = BrowserStateReducer.reduce(state, ReaderAction.UpdateReaderableAction(tabId = tab.id, readerable = false))
+        state =
+            BrowserStateReducer.reduce(state, ReaderAction.UpdateReaderableAction(tabId = tab.id, readerable = false))
 
         assertFalse(readerState().readerable)
     }
@@ -62,11 +63,19 @@ class ReaderActionTest {
     fun `UpdateReaderableCheckRequiredAction - Updates check required flag of ReaderState`() {
         assertFalse(readerState().active)
 
-        state = BrowserStateReducer.reduce(state, ReaderAction.UpdateReaderableCheckRequiredAction(tabId = tab.id, checkRequired = true))
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ReaderAction.UpdateReaderableCheckRequiredAction(tabId = tab.id, checkRequired = true),
+            )
 
         assertTrue(readerState().checkRequired)
 
-        state = BrowserStateReducer.reduce(state, ReaderAction.UpdateReaderableCheckRequiredAction(tabId = tab.id, checkRequired = false))
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ReaderAction.UpdateReaderableCheckRequiredAction(tabId = tab.id, checkRequired = false),
+            )
 
         assertFalse(readerState().checkRequired)
     }
@@ -75,11 +84,19 @@ class ReaderActionTest {
     fun `UpdateReaderConnectRequiredAction - Updates connect required flag of ReaderState`() {
         assertFalse(readerState().active)
 
-        state = BrowserStateReducer.reduce(state, ReaderAction.UpdateReaderConnectRequiredAction(tabId = tab.id, connectRequired = true))
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ReaderAction.UpdateReaderConnectRequiredAction(tabId = tab.id, connectRequired = true),
+            )
 
         assertTrue(readerState().connectRequired)
 
-        state = BrowserStateReducer.reduce(state, ReaderAction.UpdateReaderConnectRequiredAction(tabId = tab.id, connectRequired = false))
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ReaderAction.UpdateReaderConnectRequiredAction(tabId = tab.id, connectRequired = false),
+            )
 
         assertFalse(readerState().connectRequired)
     }
@@ -88,7 +105,11 @@ class ReaderActionTest {
     fun `UpdateReaderBaseUrlAction - Updates base url of ReaderState`() {
         assertNull(readerState().baseUrl)
 
-        state = BrowserStateReducer.reduce(state, ReaderAction.UpdateReaderBaseUrlAction(tabId = tab.id, baseUrl = "moz-extension://test"))
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ReaderAction.UpdateReaderBaseUrlAction(tabId = tab.id, baseUrl = "moz-extension://test"),
+            )
 
         assertEquals("moz-extension://test", readerState().baseUrl)
     }
@@ -97,7 +118,11 @@ class ReaderActionTest {
     fun `UpdateReaderActiveUrlAction - Updates active url of ReaderState`() {
         assertNull(readerState().activeUrl)
 
-        state = BrowserStateReducer.reduce(state, ReaderAction.UpdateReaderActiveUrlAction(tabId = tab.id, activeUrl = "https://mozilla.org"))
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ReaderAction.UpdateReaderActiveUrlAction(tabId = tab.id, activeUrl = "https://mozilla.org"),
+            )
 
         assertEquals("https://mozilla.org", readerState().activeUrl)
     }
@@ -110,7 +135,8 @@ class ReaderActionTest {
 
         assertTrue(readerState().active)
 
-        state = BrowserStateReducer.reduce(state, ReaderAction.UpdateReaderScrollYAction(tabId = tab.id, scrollY = 1234))
+        state =
+            BrowserStateReducer.reduce(state, ReaderAction.UpdateReaderScrollYAction(tabId = tab.id, scrollY = 1234))
 
         assertEquals(1234, readerState().scrollY)
     }
@@ -119,7 +145,8 @@ class ReaderActionTest {
     fun `UpdateReaderScrollYAction - Does not update scrollY of ReaderState when not active`() {
         assertFalse(readerState().active)
 
-        state = BrowserStateReducer.reduce(state, ReaderAction.UpdateReaderScrollYAction(tabId = tab.id, scrollY = 1234))
+        state =
+            BrowserStateReducer.reduce(state, ReaderAction.UpdateReaderScrollYAction(tabId = tab.id, scrollY = 1234))
 
         assertNull(readerState().scrollY)
     }
@@ -128,7 +155,11 @@ class ReaderActionTest {
     fun `ClearReaderActiveUrlAction - Clears active url of ReaderState`() {
         assertNull(readerState().activeUrl)
 
-        state = BrowserStateReducer.reduce(state, ReaderAction.UpdateReaderActiveUrlAction(tabId = tab.id, activeUrl = "https://mozilla.org"))
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                ReaderAction.UpdateReaderActiveUrlAction(tabId = tab.id, activeUrl = "https://mozilla.org"),
+            )
         assertEquals("https://mozilla.org", readerState().activeUrl)
 
         state = BrowserStateReducer.reduce(state, ReaderAction.ClearReaderActiveUrlAction(tabId = tab.id))

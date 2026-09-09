@@ -25,31 +25,21 @@ interface CollectionCreationController {
 
     fun renameCollection(collection: TabCollection, name: String)
 
-    /**
-     * See [CollectionCreationInteractor.onBackPressed]
-     */
+    /** See [CollectionCreationInteractor.onBackPressed] */
     fun backPressed(fromStep: SaveCollectionStep)
 
-    /**
-     * See [CollectionCreationInteractor.selectAllTapped]
-     */
+    /** See [CollectionCreationInteractor.selectAllTapped] */
     fun selectAllTabs()
 
-    /**
-     * See [CollectionCreationInteractor.deselectAllTapped]
-     */
+    /** See [CollectionCreationInteractor.deselectAllTapped] */
     fun deselectAllTabs()
 
-    /**
-     * See [CollectionCreationInteractor.close]
-     */
+    /** See [CollectionCreationInteractor.close] */
     fun close()
 
     fun selectCollection(collection: TabCollection, tabs: List<Tab>)
 
-    /**
-     * See [CollectionCreationInteractor.saveTabsToCollection]
-     */
+    /** See [CollectionCreationInteractor.saveTabsToCollection] */
     fun saveTabsToCollection(tabs: List<Tab>)
 
     fun addNewCollection()
@@ -95,7 +85,7 @@ class DefaultCollectionCreationController(
             Collections.SavedExtra(
                 browserStore.state.normalTabs.size.toString(),
                 sessionBundle.size.toString(),
-            ),
+            )
         )
     }
 
@@ -132,28 +122,28 @@ class DefaultCollectionCreationController(
         dismiss()
         val sessionBundle = tabs.toList().toTabSessionStateList(browserStore)
         scope.launch {
-            tabCollectionStorage
-                .addTabsToCollection(collection, sessionBundle)
+            tabCollectionStorage.addTabsToCollection(collection, sessionBundle)
         }
 
         Collections.tabsAdded.record(
             Collections.TabsAddedExtra(
                 browserStore.state.normalTabs.size.toString(),
                 sessionBundle.size.toString(),
-            ),
+            )
         )
     }
 
     override fun saveTabsToCollection(tabs: List<Tab>) {
         store.dispatch(
             CollectionCreationAction.StepChanged(
-                saveCollectionStep = if (store.state.tabCollections.isEmpty()) {
-                    SaveCollectionStep.NameCollection
-                } else {
-                    SaveCollectionStep.SelectCollection
-                },
+                saveCollectionStep =
+                    if (store.state.tabCollections.isEmpty()) {
+                        SaveCollectionStep.NameCollection
+                    } else {
+                        SaveCollectionStep.SelectCollection
+                    },
                 defaultCollectionNumber = store.state.tabCollections.getDefaultCollectionNumber(),
-            ),
+            )
         )
     }
 
@@ -162,7 +152,7 @@ class DefaultCollectionCreationController(
             CollectionCreationAction.StepChanged(
                 SaveCollectionStep.NameCollection,
                 store.state.tabCollections.getDefaultCollectionNumber(),
-            ),
+            )
         )
     }
 
@@ -180,24 +170,25 @@ class DefaultCollectionCreationController(
      * Name Collection -> Select Collection -> Select Tabs -> (dismiss fragment) <- Rename Collection
      */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    fun stepBack(
-        backFromStep: SaveCollectionStep,
-    ): SaveCollectionStep? {
+    fun stepBack(backFromStep: SaveCollectionStep): SaveCollectionStep? {
         val tabCollectionCount = store.state.tabCollections.size
         val tabCount = store.state.tabs.size
 
         return when (backFromStep) {
-            SaveCollectionStep.NameCollection -> if (tabCollectionCount > 0) {
-                SaveCollectionStep.SelectCollection
-            } else {
-                stepBack(SaveCollectionStep.SelectCollection)
-            }
-            SaveCollectionStep.SelectCollection -> if (tabCount > 1) {
-                SaveCollectionStep.SelectTabs
-            } else {
-                stepBack(SaveCollectionStep.SelectTabs)
-            }
-            SaveCollectionStep.SelectTabs, SaveCollectionStep.RenameCollection -> null
+            SaveCollectionStep.NameCollection ->
+                if (tabCollectionCount > 0) {
+                    SaveCollectionStep.SelectCollection
+                } else {
+                    stepBack(SaveCollectionStep.SelectCollection)
+                }
+            SaveCollectionStep.SelectCollection ->
+                if (tabCount > 1) {
+                    SaveCollectionStep.SelectTabs
+                } else {
+                    stepBack(SaveCollectionStep.SelectTabs)
+                }
+            SaveCollectionStep.SelectTabs,
+            SaveCollectionStep.RenameCollection -> null
         }
     }
 }

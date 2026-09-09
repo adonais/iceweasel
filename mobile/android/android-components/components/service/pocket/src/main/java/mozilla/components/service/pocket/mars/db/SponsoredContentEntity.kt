@@ -17,19 +17,17 @@ import mozilla.components.service.pocket.recommendations.db.ContentRecommendatio
  * @property impressionUrl URL to be called when the sponsored content is viewed (impression).
  * @property imageUrl The image URL of the sponsored content.
  * @property domain The domain of where the sponsored content is hosted.
- * @property excerpt  A short excerpt from the sponsored content.
+ * @property excerpt A short excerpt from the sponsored content.
  * @property sponsor The name of the sponsor.
  * @property blockKey The block key generated from encoding the advertiser name and ad placement.
- * @property flightCapCount Indicates how many times a sponsored content can be shown within a
- * [flightCapPeriod].
- * @property flightCapPeriod Indicates the period (number of seconds) in which at most
- * [flightCapCount] sponsored content can be shown.
+ * @property flightCapCount Indicates how many times a sponsored content can be shown within a [flightCapPeriod].
+ * @property flightCapPeriod Indicates the period (number of seconds) in which at most [flightCapCount] sponsored
+ *   content can be shown.
  * @property priority The priority of the sponsored content in the ranking.
  */
 @Entity(tableName = ContentRecommendationsDatabase.SPONSORED_CONTENT_TABLE)
 internal data class SponsoredContentEntity(
-    @PrimaryKey
-    val url: String,
+    @PrimaryKey val url: String,
     val title: String,
     val clickUrl: String,
     val impressionUrl: String,

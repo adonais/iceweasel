@@ -6,8 +6,9 @@ es5id: 15.2.3.14-1-2
 description: >
     Object.keys does not throw TypeError if type of first param is not
     Object (boolean)
+includes: [compareArray.js]
 ---*/
 
-Object.keys(true);
+assert.compareArray(Object.keys(true), []);
 
 reportCompare(0, 0);

@@ -10,6 +10,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.ContextCompat
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,24 +32,20 @@ import mozilla.components.support.base.android.DefaultPowerManagerInfoProvider
 import mozilla.components.support.base.android.StartForegroundService
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.DownloadFileUtils
-import kotlin.coroutines.CoroutineContext
 
 /**
- * [Middleware] implementation for managing downloads via the provided download service. Its
- * purpose is to react to global download state changes (e.g. of [BrowserState.downloads])
- * and notify the download service, as needed.
-*/
+ * [Middleware] implementation for managing downloads via the provided download service. Its purpose is to react to
+ * global download state changes (e.g. of [BrowserState.downloads]) and notify the download service, as needed.
+ */
 class DownloadMiddleware(
     private val applicationContext: Context,
     private val downloadServiceClass: Class<*>,
     private val deleteFileFromStorage: () -> Boolean,
     private val downloadFileUtils: DownloadFileUtils,
     coroutineContext: CoroutineContext = Dispatchers.IO,
-    @get:VisibleForTesting
-    internal val downloadStorage: DownloadStorage = DownloadStorage(applicationContext),
-    private val startForegroundService: StartForegroundService = StartForegroundService(
-        powerManagerInfoProvider = DefaultPowerManagerInfoProvider(applicationContext),
-    ),
+    @get:VisibleForTesting internal val downloadStorage: DownloadStorage = DownloadStorage(applicationContext),
+    private val startForegroundService: StartForegroundService =
+        StartForegroundService(powerManagerInfoProvider = DefaultPowerManagerInfoProvider(applicationContext)),
 ) : Middleware<BrowserState, BrowserAction> {
     private val logger = Logger("DownloadMiddleware")
 
@@ -70,8 +67,7 @@ class DownloadMiddleware(
                 if (!action.download.private && !saveDownload(store, action.download)) {
                     // The download was already added before, so we are ignoring this request.
                     logger.debug(
-                        "Ignored add action for ${action.download.id} " +
-                            "download already in store.downloads",
+                        "Ignored add action for ${action.download.id} " + "download already in store.downloads"
                     )
                     return
                 }
@@ -86,11 +82,9 @@ class DownloadMiddleware(
 
         when (action) {
             is TabListAction.RemoveAllTabsAction,
-            is TabListAction.RemoveAllPrivateTabsAction,
-            -> removePrivateNotifications(store)
+            is TabListAction.RemoveAllPrivateTabsAction -> removePrivateNotifications(store)
             is TabListAction.RemoveTabsAction,
-            is TabListAction.RemoveTabAction,
-            -> {
+            is TabListAction.RemoveTabAction -> {
                 val privateTabs = store.state.getNormalOrPrivateTabs(private = true)
                 if (privateTabs.isEmpty()) {
                     removePrivateNotifications(store)
@@ -131,20 +125,22 @@ class DownloadMiddleware(
     }
 
     private fun removeFileFromStorage(download: DownloadState) {
-        val fileExists = downloadFileUtils.fileExists(
-            directoryPath = download.directoryPath,
-            fileName = download.fileName,
-        )
+        val fileExists =
+            downloadFileUtils.fileExists(
+                directoryPath = download.directoryPath,
+                fileName = download.fileName,
+            )
         if (!fileExists) {
             logger.warn("File to delete not found: ${download.filePath}")
             return
         }
 
-        val deletedSuccessfully = downloadFileUtils.deleteMediaFile(
-            contentResolver = applicationContext.contentResolver,
-            directoryPath = download.directoryPath,
-            fileName = download.fileName,
-        )
+        val deletedSuccessfully =
+            downloadFileUtils.deleteMediaFile(
+                contentResolver = applicationContext.contentResolver,
+                directoryPath = download.directoryPath,
+                fileName = download.fileName,
+            )
 
         if (deletedSuccessfully) {
             logger.debug("Successfully deleted file: ${download.filePath}")
@@ -172,7 +168,8 @@ class DownloadMiddleware(
     }
 
     private fun removeDeletedDownloads(store: Store<BrowserState, BrowserAction>) = scope.launch {
-        downloadStorage.getDownloadsList()
+        downloadStorage
+            .getDownloadsList()
             .filter {
                 (it.status == COMPLETED || it.status == CANCELLED) &&
                     !downloadFileUtils.fileExists(
@@ -187,7 +184,8 @@ class DownloadMiddleware(
 
     private fun restoreDownloads(store: Store<BrowserState, BrowserAction>) = scope.launch {
         downloadStorage.getDownloadsList().forEach { download ->
-            if (!downloadFileUtils.fileExists(
+            if (
+                !downloadFileUtils.fileExists(
                     directoryPath = download.directoryPath,
                     fileName = download.fileName,
                 ) && download.status != DownloadState.Status.DOWNLOADING

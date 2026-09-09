@@ -19,37 +19,30 @@ object RustLog {
     /**
      * Enable the Rust log adapter.
      *
-     * After calling this, logs emitted by Rust code are forwarded to any
-     * LogSinks attached to [Log].
+     * After calling this, logs emitted by Rust code are forwarded to any LogSinks attached to [Log].
      */
     fun enable() {
         setLogger(ForwardOnLog())
     }
 
-    /**
-     * Disable the rust log adapter.
-     */
+    /** Disable the rust log adapter. */
     fun disable() {
         setLogger(null)
     }
 
     /**
-     * Set the maximum level of logs that will be forwarded to [Log]. By
-     * default, the max level is DEBUG.
+     * Set the maximum level of logs that will be forwarded to [Log]. By default, the max level is DEBUG.
      *
-     * This is somewhat redundant with [Log.logLevel] (and a stricter
-     * filter on Log.logLevel will take precedence here), however
-     * setting the max level here can improve performance a great deal,
-     * as it allows the Rust code to skip a great deal of work.
+     * This is somewhat redundant with [Log.logLevel] (and a stricter filter on Log.logLevel will take precedence here),
+     * however setting the max level here can improve performance a great deal, as it allows the Rust code to skip a
+     * great deal of work.
      *
-     * This includes a `includePII` flag, which allows enabling logs at
-     * the trace level. It is ignored if level is not [Log.Priority.DEBUG].
-     * These trace level logs* may contain the personal information of users
-     * but can be very helpful for tracking down bugs.
+     * This includes a `includePII` flag, which allows enabling logs at the trace level. It is ignored if level is not
+     * [Log.Priority.DEBUG]. These trace level logs* may contain the personal information of users but can be very
+     * helpful for tracking down bugs.
      *
      * @param level The maximum (inclusive) level to include logs at.
-     * @param includePII If `level` is [Log.Priority.DEBUG], allow
-     *     debug logs to contain PII.
+     * @param includePII If `level` is [Log.Priority.DEBUG], allow debug logs to contain PII.
      */
     fun setMaxLevel(priority: Log.Priority, includePII: Boolean = false) {
         setMaxLevel(priority.asLevel(includePII))

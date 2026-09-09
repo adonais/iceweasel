@@ -23,7 +23,8 @@
       "button_background_color_menu_hover": "color-mix(in srgb, {color.violet.60} 15%, transparent)",
       "additional_backgrounds_alignment": ["center"],
       "additional_backgrounds_tiling": ["no-repeat"],
-      "additional_backgrounds_size": ["cover"]
+      "additional_backgrounds_size": ["cover"],
+      "backgrounds_area": "top_toolbars"
     },
     "colors": {
       "button_background_active": "color-mix(in srgb, {color.violet-desaturated.60} 30%, transparent)",
@@ -71,7 +72,8 @@
       "button_background_color_menu_hover": "color-mix(in srgb, {color.violet.30} 24%, transparent)",
       "additional_backgrounds_alignment": ["center"],
       "additional_backgrounds_tiling": ["no-repeat"],
-      "additional_backgrounds_size": ["cover"]
+      "additional_backgrounds_size": ["cover"],
+      "backgrounds_area": "top_toolbars"
     },
     "colors": {
       "button_background_active": "color-mix(in srgb, {color.violet.30} 36%, transparent)",

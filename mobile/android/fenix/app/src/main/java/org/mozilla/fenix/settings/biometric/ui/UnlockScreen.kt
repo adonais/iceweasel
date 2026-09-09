@@ -52,9 +52,7 @@ internal fun UnlockScreen(
 ) {
     Surface {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 24.dp),
+            modifier = Modifier.fillMaxSize().padding(bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -89,9 +87,7 @@ private fun Header(title: String) {
 @Composable
 private fun Logo() {
     Row(
-        modifier = Modifier
-            .padding(32.dp)
-            .height(62.dp),
+        modifier = Modifier.padding(32.dp).height(62.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Image(
@@ -110,17 +106,16 @@ private fun Logo() {
 
 @Composable
 private fun Footer(onUnlockClicked: () -> Unit, onLeaveClicked: () -> Unit) {
-    val fillWidthFraction = if (LocalContext.current.isLargeWindow()) {
-        FILL_WIDTH_LARGE_WINDOW
-    } else {
-        FILL_WIDTH_DEFAULT
-    }
+    val fillWidthFraction =
+        if (LocalContext.current.isLargeWindow()) {
+            FILL_WIDTH_LARGE_WINDOW
+        } else {
+            FILL_WIDTH_DEFAULT
+        }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .padding(horizontal = 16.dp)
-            .fillMaxWidth(fillWidthFraction),
+        modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(fillWidthFraction),
     ) {
         FilledButton(
             text = stringResource(id = R.string.logins_biometric_unlock_button),
@@ -139,9 +134,7 @@ private fun Footer(onUnlockClicked: () -> Unit, onLeaveClicked: () -> Unit) {
 
 @FlexibleWindowPreview
 @Composable
-private fun UnlockLoginsScreenContent(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun UnlockLoginsScreenContent(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         UnlockScreen(
             title = "Unlock to view your secure feature",

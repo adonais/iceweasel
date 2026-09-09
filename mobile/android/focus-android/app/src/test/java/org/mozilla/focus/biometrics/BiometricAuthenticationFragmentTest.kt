@@ -33,20 +33,20 @@ class BiometricAuthenticationFragmentTest {
         doReturn(activity).`when`(fragment).requireActivity()
         doReturn(fragmentManger).`when`(activity).supportFragmentManager
         doReturn(fragmentTransaction).`when`(fragmentManger).beginTransaction()
-        biometricPromptAuth = spy(
-            BiometricPromptAuth(
-                testContext,
-                fragment,
-                object : AuthenticationDelegate {
-                    override fun onAuthError(errorText: String) {
-                    }
-                    override fun onAuthFailure() {
-                    }
-                    override fun onAuthSuccess() {
-                    }
-                },
-            ),
-        )
+        biometricPromptAuth =
+            spy(
+                BiometricPromptAuth(
+                    testContext,
+                    fragment,
+                    object : AuthenticationDelegate {
+                        override fun onAuthError(errorText: String) {}
+
+                        override fun onAuthFailure() {}
+
+                        override fun onAuthSuccess() {}
+                    },
+                )
+            )
     }
 
     @Test

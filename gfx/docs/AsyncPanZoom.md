@@ -929,3 +929,12 @@ debugging issues:
 [gtest documentation]: /gtest/index.md
 [mochitest documentation]: /testing/mochitest-plain/index.md
 [reftest documentation]: /layout/Reftest.md
+
+## Architecture Diagrams
+
+### APZCTreeManager and its IPC actors
+
+The diagram below shows which parts of the `APZTreeManager` data flow are handled by each process.
+
+```{image} APZCTreeManagerArchitecture.svg
+```

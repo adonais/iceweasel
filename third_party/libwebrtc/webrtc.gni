@@ -556,8 +556,11 @@ template("rtc_test") {
       ]
     }
 
-    # TODO: bugs.webrtc.org/467294026 - Support iOS too.
-    if (!defined(invoker.is_xctest) || !invoker.is_xctest) {
+    if (defined(invoker.is_xctest) && invoker.is_xctest) {
+      # XCTest bundles are launched by the XCTest harness and provide their own
+      # UIApplicationMain entry point.
+      deps += [ webrtc_root + "test:test_main_xctest" ]
+    } else {
       deps += [ webrtc_root + "test:test_main" ]
     }
 

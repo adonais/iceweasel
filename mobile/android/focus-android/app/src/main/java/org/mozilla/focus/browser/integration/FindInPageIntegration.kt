@@ -14,21 +14,20 @@ import mozilla.components.feature.findinpage.view.FindInPageBar
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 
-/**
- * Integration for the "Find in Page" feature.
- */
+/** Integration for the "Find in Page" feature. */
 class FindInPageIntegration(
     store: BrowserStore,
     private val findInPageView: FindInPageBar,
     private val browserToolbar: BrowserToolbar,
     engineView: EngineView,
 ) : LifecycleAwareFeature, UserInteractionHandler {
-    private val feature = FindInPageFeature(
-        store,
-        findInPageView,
-        engineView,
-        ::hide,
-    )
+    private val feature =
+        FindInPageFeature(
+            store,
+            findInPageView,
+            engineView,
+            ::hide,
+        )
 
     override fun start() {
         feature.start()
@@ -42,9 +41,7 @@ class FindInPageIntegration(
         return feature.onBackPressed()
     }
 
-    /**
-     * Shows the "Find in Page" bar and binds it to the given [sessionState].
-     */
+    /** Shows the "Find in Page" bar and binds it to the given [sessionState]. */
     fun show(sessionState: SessionState) {
         findInPageView.isVisible = true
         // Hiding the toolbar prevents Talkback from dictating its elements.
@@ -52,9 +49,7 @@ class FindInPageIntegration(
         feature.bind(sessionState)
     }
 
-    /**
-     * Hides the "Find in Page" bar.
-     */
+    /** Hides the "Find in Page" bar. */
     fun hide() {
         findInPageView.isVisible = false
         browserToolbar.isVisible = true

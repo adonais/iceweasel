@@ -22,10 +22,9 @@ import mozilla.components.concept.engine.webextension.Action
 import mozilla.components.concept.menu.MenuStyle
 import mozilla.components.lib.state.ext.flowScoped
 
-/**
- * A [BrowserMenu] capable of displaying browser and page actions from web extensions.
- */
-class WebExtensionBrowserMenu internal constructor(
+/** A [BrowserMenu] capable of displaying browser and page actions from web extensions. */
+class WebExtensionBrowserMenu
+internal constructor(
     adapter: BrowserMenuAdapter,
     private val store: BrowserStore,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
@@ -39,30 +38,33 @@ class WebExtensionBrowserMenu internal constructor(
         endOfMenuAlwaysVisible: Boolean,
         onDismiss: () -> Unit,
     ): PopupWindow {
-        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.distinctUntilChangedBy { it.selectedTab }
-                .collect { state ->
-                    getOrUpdateWebExtensionMenuItems(state, state.selectedTab)
-                    invalidate()
-                }
-        }
+        scope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .distinctUntilChangedBy { it.selectedTab }
+                    .collect { state ->
+                        getOrUpdateWebExtensionMenuItems(state, state.selectedTab)
+                        invalidate()
+                    }
+            }
 
         return super.show(
-            anchor,
-            orientation,
-            style,
-            endOfMenuAlwaysVisible,
-            onDismiss,
-        ).apply {
-            setOnDismissListener {
-                adapter.menu = null
-                currentPopup = null
-                scope?.cancel()
-                webExtensionBrowserActions.clear()
-                webExtensionPageActions.clear()
-                onDismiss()
+                anchor,
+                orientation,
+                style,
+                endOfMenuAlwaysVisible,
+                onDismiss,
+            )
+            .apply {
+                setOnDismissListener {
+                    adapter.menu = null
+                    currentPopup = null
+                    scope?.cancel()
+                    webExtensionBrowserActions.clear()
+                    webExtensionPageActions.clear()
+                    onDismiss()
+                }
             }
-        }
     }
 
     companion object {
@@ -75,7 +77,9 @@ class WebExtensionBrowserMenu internal constructor(
         ): List<WebExtensionBrowserMenuItem> {
             val menuItems = ArrayList<WebExtensionBrowserMenuItem>()
             val extensions = state.extensions.values.toList()
-            extensions.filter { it.enabled }.sortedBy { it.name }
+            extensions
+                .filter { it.enabled }
+                .sortedBy { it.name }
                 .forEach { extension ->
                     if (!extension.allowedInPrivateBrowsing && tab?.content?.private == true) {
                         return@forEach
@@ -120,18 +124,20 @@ class WebExtensionBrowserMenu internal constructor(
             val actionMap = if (isPageAction) webExtensionPageActions else webExtensionBrowserActions
 
             // Add the global browser/page action if it doesn't exist
-            val browserMenuItem = actionMap.getOrPut(extension.id) {
-                val listener = {
-                    emitOpenMenuItemFact(extension.id)
-                    globalAction.onClick()
+            val browserMenuItem =
+                actionMap.getOrPut(extension.id) {
+                    val listener = {
+                        emitOpenMenuItemFact(extension.id)
+                        globalAction.onClick()
+                    }
+                    val browserMenuItem =
+                        WebExtensionBrowserMenuItem(
+                            action = globalAction,
+                            listener = listener,
+                            id = extension.id,
+                        )
+                    browserMenuItem
                 }
-                val browserMenuItem = WebExtensionBrowserMenuItem(
-                    action = globalAction,
-                    listener = listener,
-                    id = extension.id,
-                )
-                browserMenuItem
-            }
 
             // Apply tab-specific override of browser/page action
             tabAction?.let {

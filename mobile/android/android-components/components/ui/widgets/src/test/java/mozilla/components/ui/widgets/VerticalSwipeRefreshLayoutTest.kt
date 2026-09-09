@@ -78,8 +78,7 @@ class VerticalSwipeRefreshLayoutTest {
     fun `onInterceptTouchEvent should abort pull to refresh and return false if zoom is in progress`() {
         swipeLayout = spy(swipeLayout)
         val downEvent = TestUtils.getMotionEvent(ACTION_DOWN, 0f, 0f)
-        val pointerDownEvent =
-            TestUtils.getMotionEvent(ACTION_POINTER_DOWN, 200f, 200f, previousEvent = downEvent)
+        val pointerDownEvent = TestUtils.getMotionEvent(ACTION_POINTER_DOWN, 200f, 200f, previousEvent = downEvent)
         swipeLayout.isEnabled = true
         swipeLayout.setOnChildScrollUpCallback { _, _ -> true }
 
@@ -94,10 +93,11 @@ class VerticalSwipeRefreshLayoutTest {
     @Test
     fun `onInterceptTouchEvent should cleanup if ACTION_CANCEL`() {
         swipeLayout = spy(swipeLayout)
-        val cancelEvent = TestUtils.getMotionEvent(
-            ACTION_CANCEL,
-            previousEvent = TestUtils.getMotionEvent(ACTION_DOWN),
-        )
+        val cancelEvent =
+            TestUtils.getMotionEvent(
+                ACTION_CANCEL,
+                previousEvent = TestUtils.getMotionEvent(ACTION_DOWN),
+            )
         swipeLayout.isEnabled = true
         swipeLayout.setOnChildScrollUpCallback { _, _ -> true }
 
@@ -110,10 +110,11 @@ class VerticalSwipeRefreshLayoutTest {
     @Test
     fun `onInterceptTouchEvent should cleanup if quick scale ended`() {
         swipeLayout = spy(swipeLayout)
-        val upEvent = TestUtils.getMotionEvent(
-            ACTION_CANCEL,
-            previousEvent = TestUtils.getMotionEvent(ACTION_DOWN),
-        )
+        val upEvent =
+            TestUtils.getMotionEvent(
+                ACTION_CANCEL,
+                previousEvent = TestUtils.getMotionEvent(ACTION_DOWN),
+            )
         swipeLayout.isEnabled = true
         swipeLayout.isQuickScaleInProgress = true
         swipeLayout.setOnChildScrollUpCallback { _, _ -> true }
@@ -130,10 +131,8 @@ class VerticalSwipeRefreshLayoutTest {
 
         swipeLayout = spy(swipeLayout)
         val firstDownEvent = TestUtils.getMotionEvent(ACTION_DOWN, eventTime = 100)
-        val upEvent =
-            TestUtils.getMotionEvent(ACTION_UP, eventTime = 200, previousEvent = firstDownEvent)
-        val newDownEvent =
-            TestUtils.getMotionEvent(ACTION_DOWN, eventTime = 500, previousEvent = upEvent)
+        val upEvent = TestUtils.getMotionEvent(ACTION_UP, eventTime = 200, previousEvent = firstDownEvent)
+        val newDownEvent = TestUtils.getMotionEvent(ACTION_DOWN, eventTime = 500, previousEvent = upEvent)
         val previousEvents = QuickScaleEvents(firstDownEvent, upEvent, null)
         swipeLayout.quickScaleEvents = previousEvents
         swipeLayout.isQuickScaleInProgress = false
@@ -150,13 +149,14 @@ class VerticalSwipeRefreshLayoutTest {
 
         swipeLayout = spy(swipeLayout)
         val downEvent = TestUtils.getMotionEvent(ACTION_DOWN, x = 0f, y = 0f, eventTime = 0)
-        val moveEvent = TestUtils.getMotionEvent(
-            ACTION_MOVE,
-            x = 1f,
-            y = 0f,
-            eventTime = 100,
-            previousEvent = downEvent,
-        )
+        val moveEvent =
+            TestUtils.getMotionEvent(
+                ACTION_MOVE,
+                x = 1f,
+                y = 0f,
+                eventTime = 100,
+                previousEvent = downEvent,
+            )
         swipeLayout.isEnabled = true
         swipeLayout.isQuickScaleInProgress = false
         swipeLayout.setOnChildScrollUpCallback { _, _ -> false }
@@ -174,13 +174,14 @@ class VerticalSwipeRefreshLayoutTest {
 
         swipeLayout = spy(swipeLayout)
         val downEvent = TestUtils.getMotionEvent(ACTION_DOWN, x = 0f, y = 0f, eventTime = 0)
-        val moveEvent = TestUtils.getMotionEvent(
-            ACTION_MOVE,
-            x = 0f,
-            y = 1f,
-            eventTime = 100,
-            previousEvent = downEvent,
-        )
+        val moveEvent =
+            TestUtils.getMotionEvent(
+                ACTION_MOVE,
+                x = 0f,
+                y = 1f,
+                eventTime = 100,
+                previousEvent = downEvent,
+            )
         swipeLayout.isEnabled = true
         swipeLayout.isQuickScaleInProgress = false
         swipeLayout.setOnChildScrollUpCallback { _, _ -> false }
@@ -202,11 +203,12 @@ class VerticalSwipeRefreshLayoutTest {
         swipeLayout.isEnabled = true
 
         assertFalse(swipeLayout.onStartNestedScroll(childView, targetView, scrollAxis))
-        verify(swipeLayout, times(0)).callSuperOnStartNestedScroll(
-            childView,
-            targetView,
-            scrollAxis,
-        )
+        verify(swipeLayout, times(0))
+            .callSuperOnStartNestedScroll(
+                childView,
+                targetView,
+                scrollAxis,
+            )
     }
 
     @Test
@@ -235,13 +237,13 @@ class VerticalSwipeRefreshLayoutTest {
     @Test
     fun `maybeAddDoubleTapEvent will add ACTION_UP as second event if there is already one event in sequence`() {
         val firstEvent = spy(TestUtils.getMotionEvent(ACTION_DOWN))
-        val secondEvent =
-            spy(TestUtils.getMotionEvent(ACTION_UP, eventTime = 133, previousEvent = firstEvent))
-        val expectedResult = Triple<MotionEvent?, MotionEvent?, MotionEvent?>(
-            firstEvent,
-            secondEvent,
-            null,
-        )
+        val secondEvent = spy(TestUtils.getMotionEvent(ACTION_UP, eventTime = 133, previousEvent = firstEvent))
+        val expectedResult =
+            Triple<MotionEvent?, MotionEvent?, MotionEvent?>(
+                firstEvent,
+                secondEvent,
+                null,
+            )
         swipeLayout.quickScaleEvents = QuickScaleEvents(firstEvent, null, null)
 
         swipeLayout.maybeAddDoubleTapEvent(secondEvent)
@@ -263,8 +265,7 @@ class VerticalSwipeRefreshLayoutTest {
     @Test
     fun `maybeAddDoubleTapEvent will not add ACTION_UP if there is not a first event already in sequence`() {
         val firstEvent = spy(TestUtils.getMotionEvent(ACTION_DOWN))
-        val secondEvent =
-            spy(TestUtils.getMotionEvent(ACTION_UP, eventTime = 133, previousEvent = firstEvent))
+        val secondEvent = spy(TestUtils.getMotionEvent(ACTION_UP, eventTime = 133, previousEvent = firstEvent))
         val expectedResult = QuickScaleEvents()
         swipeLayout.quickScaleEvents = expectedResult
 
@@ -314,10 +315,8 @@ class VerticalSwipeRefreshLayoutTest {
 
         swipeLayout = spy(swipeLayout)
         val firstDownEvent = TestUtils.getMotionEvent(ACTION_DOWN, eventTime = 100)
-        val upEvent =
-            TestUtils.getMotionEvent(ACTION_UP, eventTime = 200, previousEvent = firstDownEvent)
-        val newDownEvent =
-            TestUtils.getMotionEvent(ACTION_DOWN, eventTime = 501, previousEvent = upEvent)
+        val upEvent = TestUtils.getMotionEvent(ACTION_UP, eventTime = 200, previousEvent = firstDownEvent)
+        val newDownEvent = TestUtils.getMotionEvent(ACTION_DOWN, eventTime = 501, previousEvent = upEvent)
         val previousEvents = QuickScaleEvents(firstDownEvent, upEvent, null)
         swipeLayout.quickScaleEvents = previousEvents
 
@@ -336,10 +335,8 @@ class VerticalSwipeRefreshLayoutTest {
 
         swipeLayout = spy(swipeLayout)
         val firstDownEvent = TestUtils.getMotionEvent(ACTION_DOWN, eventTime = 100)
-        val upEvent =
-            TestUtils.getMotionEvent(ACTION_UP, eventTime = 200, previousEvent = firstDownEvent)
-        val newDownEvent =
-            TestUtils.getMotionEvent(ACTION_DOWN, eventTime = 500, previousEvent = upEvent)
+        val upEvent = TestUtils.getMotionEvent(ACTION_UP, eventTime = 200, previousEvent = firstDownEvent)
+        val newDownEvent = TestUtils.getMotionEvent(ACTION_DOWN, eventTime = 500, previousEvent = upEvent)
         val previousEvents = QuickScaleEvents(firstDownEvent, upEvent, null)
         swipeLayout.quickScaleEvents = previousEvents
 

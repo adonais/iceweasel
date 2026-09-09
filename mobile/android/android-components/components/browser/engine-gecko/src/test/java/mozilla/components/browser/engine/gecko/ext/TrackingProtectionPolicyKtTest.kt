@@ -37,13 +37,14 @@ class TrackingProtectionPolicyKtTest {
         assertEquals("", setting.queryParameterStrippingStripList[0])
 
         val policyWithSafeBrowsing =
-            TrackingProtectionPolicy.recommended().toContentBlockingSetting(
-                safeBrowsingPolicy = emptyArray(),
-                queryParameterStripping = true,
-                queryParameterStrippingPrivateBrowsing = true,
-                queryParameterStrippingAllowList = "AllowList",
-                queryParameterStrippingStripList = "StripList",
-            )
+            TrackingProtectionPolicy.recommended()
+                .toContentBlockingSetting(
+                    safeBrowsingPolicy = emptyArray(),
+                    queryParameterStripping = true,
+                    queryParameterStrippingPrivateBrowsing = true,
+                    queryParameterStrippingAllowList = "AllowList",
+                    queryParameterStrippingStripList = "StripList",
+                )
         assertEquals(0, policyWithSafeBrowsing.safeBrowsingCategories)
         assertTrue(policyWithSafeBrowsing.queryParameterStrippingEnabled)
         assertTrue(policyWithSafeBrowsing.queryParameterStrippingPrivateBrowsingEnabled)
@@ -61,15 +62,17 @@ class TrackingProtectionPolicyKtTest {
         assertEquals(300, defaultSetting.safeBrowsingRealTimeSimulationNegativeCacheTTLSec)
 
         // Verify safe browsing simulation custom values
-        val customSetting = TrackingProtectionPolicy.recommended().toContentBlockingSetting(
-            safeBrowsingGlobalCacheEnabled = true,
-            safeBrowsingRealTimeEnabled = true,
-            safeBrowsingRealTimeSimulationEnabled = true,
-            safeBrowsingRealTimeSimulationHitProbability = 50,
-            safeBrowsingRealTimeSimulationCacheTTLSec = 600,
-            safeBrowsingRealTimeSimulationNegativeCacheEnabled = true,
-            safeBrowsingRealTimeSimulationNegativeCacheTTLSec = 120,
-        )
+        val customSetting =
+            TrackingProtectionPolicy.recommended()
+                .toContentBlockingSetting(
+                    safeBrowsingGlobalCacheEnabled = true,
+                    safeBrowsingRealTimeEnabled = true,
+                    safeBrowsingRealTimeSimulationEnabled = true,
+                    safeBrowsingRealTimeSimulationHitProbability = 50,
+                    safeBrowsingRealTimeSimulationCacheTTLSec = 600,
+                    safeBrowsingRealTimeSimulationNegativeCacheEnabled = true,
+                    safeBrowsingRealTimeSimulationNegativeCacheTTLSec = 120,
+                )
         assertTrue(customSetting.safeBrowsingGlobalCacheEnabled)
         assertTrue(customSetting.safeBrowsingRealTimeEnabled)
         assertTrue(customSetting.safeBrowsingRealTimeSimulationEnabled)

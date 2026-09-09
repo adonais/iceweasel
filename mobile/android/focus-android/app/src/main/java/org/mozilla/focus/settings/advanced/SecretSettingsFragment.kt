@@ -8,6 +8,7 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.preference.Preference
 import androidx.preference.SwitchPreference
+import kotlin.system.exitProcess
 import org.mozilla.focus.R
 import org.mozilla.focus.ext.components
 import org.mozilla.focus.ext.getPreferenceKey
@@ -16,14 +17,9 @@ import org.mozilla.focus.ext.requirePreference
 import org.mozilla.focus.ext.settings
 import org.mozilla.focus.ext.showToolbar
 import org.mozilla.focus.settings.BaseSettingsFragment
-import kotlin.system.exitProcess
 
-/**
- * Settings fragment for secret/debug options.
- */
-class SecretSettingsFragment :
-    BaseSettingsFragment(),
-    SharedPreferences.OnSharedPreferenceChangeListener {
+/** Settings fragment for secret/debug options. */
+class SecretSettingsFragment : BaseSettingsFragment(), SharedPreferences.OnSharedPreferenceChangeListener {
 
     override fun onResume() {
         super.onResume()
@@ -48,16 +44,17 @@ class SecretSettingsFragment :
         requirePreference<SwitchPreference>(R.string.pref_key_use_remote_search_configuration).apply {
             isVisible = true
             isChecked = context.settings.useRemoteSearchConfiguration
-            onPreferenceChangeListener = object : SharedPreferenceUpdater() {
-                override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
-                    if (newValue as? Boolean == true) {
-                        context.components.remoteSettingsSyncScheduler.registerForSync()
-                    } else {
-                        context.components.remoteSettingsSyncScheduler.unregisterForSync()
+            onPreferenceChangeListener =
+                object : SharedPreferenceUpdater() {
+                    override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
+                        if (newValue as? Boolean == true) {
+                            context.components.remoteSettingsSyncScheduler.registerForSync()
+                        } else {
+                            context.components.remoteSettingsSyncScheduler.unregisterForSync()
+                        }
+                        return super.onPreferenceChange(preference, newValue)
                     }
-                    return super.onPreferenceChange(preference, newValue)
                 }
-            }
         }
     }
 
@@ -66,9 +63,8 @@ class SecretSettingsFragment :
             return
         }
 
-        findPreference<SwitchPreference>(
-            getPreferenceKey(R.string.pref_key_use_nimbus_preview),
-        )?.let { nimbusPreviewPref ->
+        findPreference<SwitchPreference>(getPreferenceKey(R.string.pref_key_use_nimbus_preview))?.let {
+            nimbusPreviewPref ->
             if (key == nimbusPreviewPref.key) {
                 requireComponents.settings.shouldUseNimbusPreview = nimbusPreviewPref.isChecked
                 quitTheApp()

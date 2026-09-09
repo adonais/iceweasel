@@ -27,9 +27,7 @@ import mozilla.components.feature.summarize.DownloadInProgressAction
 import mozilla.components.feature.summarize.R
 import mozilla.components.feature.summarize.SummarizationState
 
-/**
- * Composable to be rendering while downloading an on-device model.
- */
+/** Composable to be rendering while downloading an on-device model. */
 @Composable
 internal fun DownloadProgress(
     modifier: Modifier = Modifier,
@@ -81,9 +79,7 @@ private fun DownloadProgressContent(
             text = stringResource(R.string.mozac_summarize_download_progress_caption, bytesDownloaded, bytesToDownload),
             style = AcornTheme.typography.caption,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier
-                .align(Alignment.Start)
-                .padding(8.dp),
+            modifier = Modifier.align(Alignment.Start).padding(8.dp),
         )
 
         Spacer(Modifier.height(AcornTheme.layout.space.static300))
@@ -104,10 +100,11 @@ private fun PreviewDownloadProgress() = AcornTheme {
         val bytesToDownload = 12.13f
         val bytesDownloaded = 9.04f
         DownloadProgress(
-            downloadState = SummarizationState.Downloading(
-                bytesToDownload = bytesToDownload,
-                bytesDownloaded = bytesDownloaded,
-            ),
+            downloadState =
+                SummarizationState.Downloading(
+                    bytesToDownload = bytesToDownload,
+                    bytesDownloaded = bytesDownloaded,
+                )
         )
     }
 }

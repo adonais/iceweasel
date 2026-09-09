@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -37,15 +37,11 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class AutocompleteTest : BaseSessionTest() {
-	@org.junit.Before
+    @org.junit.Before
     fun setup() {
         // Ensure programmatic focus is allowed to open the autofill popup
         // for all tests in this class.
-        sessionRule.setPrefsUntilTestEnd(
-            mapOf(
-                "extensions.formautofill.skipProgrammaticCheckForTests" to true,
-            ),
-        )
+        sessionRule.setPrefsUntilTestEnd(mapOf("extensions.formautofill.skipProgrammaticCheckForTests" to true))
     }
 
     val acceptDelay: Long = 100
@@ -61,18 +57,25 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.waitForPageStop()
 
         val fetchHandled = GeckoResult<Void>()
-        sessionRule.delegateDuringNextWait(object : StorageDelegate {
-            override fun onAddressFetch(): GeckoResult<Array<Address>>? {
-                return null
-            }
-            override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>>? {
-                Handler(Looper.getMainLooper()).postDelayed({
-                    fetchHandled.complete(null)
-                }, acceptDelay)
+        sessionRule.delegateDuringNextWait(
+            object : StorageDelegate {
+                override fun onAddressFetch(): GeckoResult<Array<Address>>? {
+                    return null
+                }
 
-                return null
+                override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>>? {
+                    Handler(Looper.getMainLooper())
+                        .postDelayed(
+                            {
+                                fetchHandled.complete(null)
+                            },
+                            acceptDelay,
+                        )
+
+                    return null
+                }
             }
-        })
+        )
 
         mainSession.evaluateJS("document.querySelector('#name').focus()")
         sessionRule.waitForResult(fetchHandled)
@@ -80,8 +83,7 @@ class AutocompleteTest : BaseSessionTest() {
 
     @Test
     fun loginBuilderDefaultValue() {
-        val login = LoginEntry.Builder()
-            .build()
+        val login = LoginEntry.Builder().build()
 
         assertThat(
             "Guid should match",
@@ -123,23 +125,29 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "signon.testOnlyNotWaitForPaint" to true,
-            ),
+            )
         )
 
         val fetchHandled = GeckoResult<Void>()
 
-        sessionRule.delegateDuringNextWait(object : StorageDelegate {
-            @AssertCalled(count = 1)
-            override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
-                assertThat("Domain should match", domain, equalTo("localhost"))
+        sessionRule.delegateDuringNextWait(
+            object : StorageDelegate {
+                @AssertCalled(count = 1)
+                override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
+                    assertThat("Domain should match", domain, equalTo("localhost"))
 
-                Handler(Looper.getMainLooper()).postDelayed({
-                    fetchHandled.complete(null)
-                }, acceptDelay)
+                    Handler(Looper.getMainLooper())
+                        .postDelayed(
+                            {
+                                fetchHandled.complete(null)
+                            },
+                            acceptDelay,
+                        )
 
-                return null
+                    return null
+                }
             }
-        })
+        )
 
         mainSession.loadTestPath(FORMS3_HTML_PATH)
         sessionRule.waitForResult(fetchHandled)
@@ -152,16 +160,22 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.loadTestPath(CC_FORM_HTML_PATH)
         mainSession.waitForPageStop()
 
-        sessionRule.delegateDuringNextWait(object : StorageDelegate {
-            @AssertCalled(count = 1)
-            override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>>? {
-                Handler(Looper.getMainLooper()).postDelayed({
-                    fetchHandled.complete(null)
-                }, acceptDelay)
+        sessionRule.delegateDuringNextWait(
+            object : StorageDelegate {
+                @AssertCalled(count = 1)
+                override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>>? {
+                    Handler(Looper.getMainLooper())
+                        .postDelayed(
+                            {
+                                fetchHandled.complete(null)
+                            },
+                            acceptDelay,
+                        )
 
-                return null
+                    return null
+                }
             }
-        })
+        )
 
         mainSession.evaluateJS("document.querySelector('#name').focus()")
         sessionRule.waitForResult(fetchHandled)
@@ -169,8 +183,7 @@ class AutocompleteTest : BaseSessionTest() {
 
     @Test
     fun creditCardBuilderDefaultValue() {
-        val creditCard = CreditCard.Builder()
-            .build()
+        val creditCard = CreditCard.Builder().build()
 
         assertThat(
             "Guid should match",
@@ -218,84 +231,92 @@ class AutocompleteTest : BaseSessionTest() {
         val guid = arrayOf("test-guid1", "test-guid2")
         val expMonth = arrayOf("04", "08")
         val expYear = arrayOf("22", "23")
-        val savedCC = arrayOf(
-            CreditCard.Builder()
-                .guid(guid[0])
-                .name(name[0])
-                .number(number[0])
-                .expirationMonth(expMonth[0])
-                .expirationYear(expYear[0])
-                .build(),
-            CreditCard.Builder()
-                .guid(guid[1])
-                .name(name[1])
-                .number(number[1])
-                .expirationMonth(expMonth[1])
-                .expirationYear(expYear[1])
-                .build(),
-        )
+        val savedCC =
+            arrayOf(
+                CreditCard.Builder()
+                    .guid(guid[0])
+                    .name(name[0])
+                    .number(number[0])
+                    .expirationMonth(expMonth[0])
+                    .expirationYear(expYear[0])
+                    .build(),
+                CreditCard.Builder()
+                    .guid(guid[1])
+                    .name(name[1])
+                    .number(number[1])
+                    .expirationMonth(expMonth[1])
+                    .expirationYear(expYear[1])
+                    .build(),
+            )
 
         val selectHandled = GeckoResult<Void>()
 
         mainSession.loadTestPath(CC_FORM_HTML_PATH)
         mainSession.waitForPageStop()
 
-        sessionRule.delegateDuringNextWait(object : StorageDelegate {
-            @AssertCalled
-            override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>>? {
-                return GeckoResult.fromValue(savedCC)
-            }
-
-            @AssertCalled(false)
-            override fun onCreditCardSave(creditCard: CreditCard) {}
-        })
-
-        mainSession.delegateUntilTestEnd(object : PromptDelegate {
-            @AssertCalled(count = 1)
-            override fun onCreditCardSelect(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<CreditCardSelectOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                assertThat("Session should not be null", session, notNullValue())
-
-                assertThat(
-                    "There should be two options",
-                    prompt.options.size,
-                    equalTo(2),
-                )
-
-                for (i in 0..1) {
-                    val creditCard = prompt.options[i].value
-
-                    assertThat("Credit card should not be null", creditCard, notNullValue())
-                    assertThat(
-                        "Name should match",
-                        creditCard.name,
-                        equalTo(name[i]),
-                    )
-                    assertThat(
-                        "Number should match",
-                        creditCard.number,
-                        equalTo(number[i]),
-                    )
-                    assertThat(
-                        "Expiration month should match",
-                        creditCard.expirationMonth,
-                        equalTo(expMonth[i]),
-                    )
-                    assertThat(
-                        "Expiration year should match",
-                        creditCard.expirationYear,
-                        equalTo(expYear[i]),
-                    )
+        sessionRule.delegateDuringNextWait(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>>? {
+                    return GeckoResult.fromValue(savedCC)
                 }
-                Handler(Looper.getMainLooper()).postDelayed({
-                    selectHandled.complete(null)
-                }, acceptDelay)
 
-                return GeckoResult.fromValue(prompt.confirm(prompt.options[0]))
+                @AssertCalled(false) override fun onCreditCardSave(creditCard: CreditCard) {}
             }
-        })
+        )
+
+        mainSession.delegateUntilTestEnd(
+            object : PromptDelegate {
+                @AssertCalled(count = 1)
+                override fun onCreditCardSelect(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<CreditCardSelectOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    assertThat("Session should not be null", session, notNullValue())
+
+                    assertThat(
+                        "There should be two options",
+                        prompt.options.size,
+                        equalTo(2),
+                    )
+
+                    for (i in 0..1) {
+                        val creditCard = prompt.options[i].value
+
+                        assertThat("Credit card should not be null", creditCard, notNullValue())
+                        assertThat(
+                            "Name should match",
+                            creditCard.name,
+                            equalTo(name[i]),
+                        )
+                        assertThat(
+                            "Number should match",
+                            creditCard.number,
+                            equalTo(number[i]),
+                        )
+                        assertThat(
+                            "Expiration month should match",
+                            creditCard.expirationMonth,
+                            equalTo(expMonth[i]),
+                        )
+                        assertThat(
+                            "Expiration year should match",
+                            creditCard.expirationYear,
+                            equalTo(expYear[i]),
+                        )
+                    }
+                    Handler(Looper.getMainLooper())
+                        .postDelayed(
+                            {
+                                selectHandled.complete(null)
+                            },
+                            acceptDelay,
+                        )
+
+                    return GeckoResult.fromValue(prompt.confirm(prompt.options[0]))
+                }
+            }
+        )
 
         // Focus on the name input field.
         mainSession.evaluateJS("document.querySelector('#name').focus()")
@@ -325,8 +346,7 @@ class AutocompleteTest : BaseSessionTest() {
 
     @Test
     fun addressBuilderDefaultValue() {
-        val address = Address.Builder()
-            .build()
+        val address = Address.Builder().build()
 
         assertThat(
             "Guid should match",
@@ -400,64 +420,77 @@ class AutocompleteTest : BaseSessionTest() {
         val guid = arrayOf("test-guid1", "test-guid2", "test-guid3")
         val expMonth = arrayOf("04", "08", "12")
         val expYear = arrayOf("22", "23", "24")
-        val savedCC = arrayOf(
-            CreditCard.Builder()
-                .guid(guid[0])
-                .name(name[0])
-                .number(number[0])
-                .expirationMonth(expMonth[0])
-                .expirationYear(expYear[0])
-                .build(),
-            CreditCard.Builder()
-                .guid(guid[1])
-                .name(name[1])
-                .number(number[1])
-                .expirationMonth(expMonth[1])
-                .expirationYear(expYear[1])
-                .build(),
-            CreditCard.Builder()
-                .guid(guid[2])
-                .name(name[2])
-                .number(number[2])
-                .expirationMonth(expMonth[2])
-                .expirationYear(expYear[2])
-                .build(),
-        )
+        val savedCC =
+            arrayOf(
+                CreditCard.Builder()
+                    .guid(guid[0])
+                    .name(name[0])
+                    .number(number[0])
+                    .expirationMonth(expMonth[0])
+                    .expirationYear(expYear[0])
+                    .build(),
+                CreditCard.Builder()
+                    .guid(guid[1])
+                    .name(name[1])
+                    .number(number[1])
+                    .expirationMonth(expMonth[1])
+                    .expirationYear(expYear[1])
+                    .build(),
+                CreditCard.Builder()
+                    .guid(guid[2])
+                    .name(name[2])
+                    .number(number[2])
+                    .expirationMonth(expMonth[2])
+                    .expirationYear(expYear[2])
+                    .build(),
+            )
 
         mainSession.loadTestPath(CC_FORM_HTML_PATH)
         mainSession.waitForPageStop()
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled
-            override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>>? {
-                return GeckoResult.fromValue(savedCC)
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>>? {
+                    return GeckoResult.fromValue(savedCC)
+                }
             }
-        })
+        )
 
         val result = GeckoResult<PromptDelegate.PromptResponse>()
-        val promptInstanceDelegate = object : PromptDelegate.PromptInstanceDelegate {
-            override fun onPromptDismiss(prompt: PromptDelegate.BasePrompt) {
-                result.complete(prompt.dismiss())
+        val promptInstanceDelegate =
+            object : PromptDelegate.PromptInstanceDelegate {
+                override fun onPromptDismiss(prompt: PromptDelegate.BasePrompt) {
+                    result.complete(prompt.dismiss())
+                }
             }
-        }
 
         val promptHandled = GeckoResult<Void>()
-        mainSession.delegateUntilTestEnd(object : PromptDelegate {
-            @AssertCalled
-            override fun onCreditCardSelect(session: GeckoSession, prompt: AutocompleteRequest<CreditCardSelectOption>): GeckoResult<PromptDelegate.PromptResponse>? {
-                assertThat(
-                    "There should be three options",
-                    prompt.options.size,
-                    equalTo(3),
-                )
-                prompt.setDelegate(promptInstanceDelegate)
-                Handler(Looper.getMainLooper()).postDelayed({
-                    promptHandled.complete(null)
-                }, acceptDelay)
+        mainSession.delegateUntilTestEnd(
+            object : PromptDelegate {
+                @AssertCalled
+                override fun onCreditCardSelect(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<CreditCardSelectOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    assertThat(
+                        "There should be three options",
+                        prompt.options.size,
+                        equalTo(3),
+                    )
+                    prompt.setDelegate(promptInstanceDelegate)
+                    Handler(Looper.getMainLooper())
+                        .postDelayed(
+                            {
+                                promptHandled.complete(null)
+                            },
+                            acceptDelay,
+                        )
 
-                return GeckoResult()
+                    return GeckoResult()
+                }
             }
-        })
+        )
 
         mainSession.evaluateJS("document.querySelector('#name').focus()")
         sessionRule.waitForResult(promptHandled)
@@ -480,52 +513,62 @@ class AutocompleteTest : BaseSessionTest() {
         // selection prompt alive instead of dismissing and reopening it, which
         // would flicker. The delegate should therefore see a single
         // onCreditCardSelect and no dismissal while focus moves between fields.
-        val savedCC = arrayOf(
-            CreditCard.Builder()
-                .guid("test-guid1")
-                .name("Peter Parker")
-                .number("1234-1234-1234-1234")
-                .expirationMonth("04")
-                .expirationYear("22")
-                .build(),
-        )
+        val savedCC =
+            arrayOf(
+                CreditCard.Builder()
+                    .guid("test-guid1")
+                    .name("Peter Parker")
+                    .number("1234-1234-1234-1234")
+                    .expirationMonth("04")
+                    .expirationYear("22")
+                    .build()
+            )
 
         mainSession.loadTestPath(CC_FORM_HTML_PATH)
         mainSession.waitForPageStop()
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled
-            override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>>? {
-                return GeckoResult.fromValue(savedCC)
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>>? {
+                    return GeckoResult.fromValue(savedCC)
+                }
             }
-        })
+        )
 
         var promptDismissed = false
         val dismissed = GeckoResult<PromptDelegate.PromptResponse>()
-        val promptInstanceDelegate = object : PromptDelegate.PromptInstanceDelegate {
-            override fun onPromptDismiss(prompt: PromptDelegate.BasePrompt) {
-                promptDismissed = true
-                dismissed.complete(prompt.dismiss())
+        val promptInstanceDelegate =
+            object : PromptDelegate.PromptInstanceDelegate {
+                override fun onPromptDismiss(prompt: PromptDelegate.BasePrompt) {
+                    promptDismissed = true
+                    dismissed.complete(prompt.dismiss())
+                }
             }
-        }
 
         val promptOpened = GeckoResult<Void>()
-        mainSession.delegateUntilTestEnd(object : PromptDelegate {
-            // Coalescing means focusing the second field must not open a second
-            // prompt; a regression that dismisses + reopens calls this twice.
-            @AssertCalled(count = 1)
-            override fun onCreditCardSelect(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<CreditCardSelectOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                prompt.setDelegate(promptInstanceDelegate)
-                Handler(Looper.getMainLooper()).postDelayed({
-                    promptOpened.complete(null)
-                }, acceptDelay)
-                // Leave the prompt open; do not confirm.
-                return GeckoResult()
+        mainSession.delegateUntilTestEnd(
+            object : PromptDelegate {
+                // Coalescing means focusing the second field must not open a second
+                // prompt; a regression that dismisses + reopens calls this twice.
+                @AssertCalled(count = 1)
+                override fun onCreditCardSelect(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<CreditCardSelectOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    prompt.setDelegate(promptInstanceDelegate)
+                    Handler(Looper.getMainLooper())
+                        .postDelayed(
+                            {
+                                promptOpened.complete(null)
+                            },
+                            acceptDelay,
+                        )
+                    // Leave the prompt open; do not confirm.
+                    return GeckoResult()
+                }
             }
-        })
+        )
 
         // Open the prompt on the first credit card field.
         mainSession.evaluateJS("document.querySelector('#name').focus()")
@@ -537,9 +580,13 @@ class AutocompleteTest : BaseSessionTest() {
         // fire here regardless of timing.
         val settled = GeckoResult<Void>()
         mainSession.evaluateJS("document.querySelector('#number').focus()")
-        Handler(Looper.getMainLooper()).postDelayed({
-            settled.complete(null)
-        }, acceptDelay * 5)
+        Handler(Looper.getMainLooper())
+            .postDelayed(
+                {
+                    settled.complete(null)
+                },
+                acceptDelay * 5,
+            )
         sessionRule.waitForResult(settled)
 
         assertThat(
@@ -568,55 +615,65 @@ class AutocompleteTest : BaseSessionTest() {
 
         // As with credit cards, moving focus between two address fields should
         // keep the existing prompt rather than flickering.
-        val savedAddress = Address.Builder()
-            .guid("test-guid")
-            .name("Peter Parker")
-            .givenName("Peter")
-            .familyName("Parker")
-            .streetAddress("20 Ingram Street, Forest Hills Gardens, Queens")
-            .postalCode("11375")
-            .country("US")
-            .email("spiderman@newyork.com")
-            .tel("+1 180090021")
-            .organization("")
-            .build()
+        val savedAddress =
+            Address.Builder()
+                .guid("test-guid")
+                .name("Peter Parker")
+                .givenName("Peter")
+                .familyName("Parker")
+                .streetAddress("20 Ingram Street, Forest Hills Gardens, Queens")
+                .postalCode("11375")
+                .country("US")
+                .email("spiderman@newyork.com")
+                .tel("+1 180090021")
+                .organization("")
+                .build()
 
         mainSession.loadTestPath(ADDRESS_FORM_HTML_PATH)
         mainSession.waitForPageStop()
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled
-            override fun onAddressFetch(): GeckoResult<Array<Address>>? {
-                return GeckoResult.fromValue(arrayOf(savedAddress))
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onAddressFetch(): GeckoResult<Array<Address>>? {
+                    return GeckoResult.fromValue(arrayOf(savedAddress))
+                }
             }
-        })
+        )
 
         var promptDismissed = false
         val dismissed = GeckoResult<PromptDelegate.PromptResponse>()
-        val promptInstanceDelegate = object : PromptDelegate.PromptInstanceDelegate {
-            override fun onPromptDismiss(prompt: PromptDelegate.BasePrompt) {
-                promptDismissed = true
-                dismissed.complete(prompt.dismiss())
+        val promptInstanceDelegate =
+            object : PromptDelegate.PromptInstanceDelegate {
+                override fun onPromptDismiss(prompt: PromptDelegate.BasePrompt) {
+                    promptDismissed = true
+                    dismissed.complete(prompt.dismiss())
+                }
             }
-        }
 
         val promptOpened = GeckoResult<Void>()
-        mainSession.delegateUntilTestEnd(object : PromptDelegate {
-            // Coalescing means focusing the second field must not open a second
-            // prompt; a regression that dismisses + reopens calls this twice.
-            @AssertCalled(count = 1)
-            override fun onAddressSelect(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<AddressSelectOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                prompt.setDelegate(promptInstanceDelegate)
-                Handler(Looper.getMainLooper()).postDelayed({
-                    promptOpened.complete(null)
-                }, acceptDelay)
-                // Leave the prompt open; do not confirm.
-                return GeckoResult()
+        mainSession.delegateUntilTestEnd(
+            object : PromptDelegate {
+                // Coalescing means focusing the second field must not open a second
+                // prompt; a regression that dismisses + reopens calls this twice.
+                @AssertCalled(count = 1)
+                override fun onAddressSelect(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<AddressSelectOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    prompt.setDelegate(promptInstanceDelegate)
+                    Handler(Looper.getMainLooper())
+                        .postDelayed(
+                            {
+                                promptOpened.complete(null)
+                            },
+                            acceptDelay,
+                        )
+                    // Leave the prompt open; do not confirm.
+                    return GeckoResult()
+                }
             }
-        })
+        )
 
         // Open the prompt on the first address field.
         mainSession.evaluateJS("document.querySelector('#givenName').focus()")
@@ -628,9 +685,13 @@ class AutocompleteTest : BaseSessionTest() {
         // regardless of timing.
         val settled = GeckoResult<Void>()
         mainSession.evaluateJS("document.querySelector('#streetAddress').focus()")
-        Handler(Looper.getMainLooper()).postDelayed({
-            settled.complete(null)
-        }, acceptDelay * 5)
+        Handler(Looper.getMainLooper())
+            .postDelayed(
+                {
+                    settled.complete(null)
+                },
+                acceptDelay * 5,
+            )
         sessionRule.waitForResult(settled)
 
         assertThat(
@@ -650,16 +711,22 @@ class AutocompleteTest : BaseSessionTest() {
     fun fetchAddresses() {
         val fetchHandled = GeckoResult<Void>()
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled(count = 1)
-            override fun onAddressFetch(): GeckoResult<Array<Address>>? {
-                Handler(Looper.getMainLooper()).postDelayed({
-                    fetchHandled.complete(null)
-                }, acceptDelay)
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled(count = 1)
+                override fun onAddressFetch(): GeckoResult<Array<Address>>? {
+                    Handler(Looper.getMainLooper())
+                        .postDelayed(
+                            {
+                                fetchHandled.complete(null)
+                            },
+                            acceptDelay,
+                        )
 
-                return null
+                    return null
+                }
             }
-        })
+        )
 
         mainSession.loadTestPath(ADDRESS_FORM_HTML_PATH)
         mainSession.waitForPageStop()
@@ -679,102 +746,109 @@ class AutocompleteTest : BaseSessionTest() {
 
         val selectHandled = GeckoResult<Void>()
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled
-            override fun onAddressFetch(): GeckoResult<Array<Address>>? {
-                return GeckoResult.fromValue(savedAddresses)
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onAddressFetch(): GeckoResult<Array<Address>>? {
+                    return GeckoResult.fromValue(savedAddresses)
+                }
+
+                @AssertCalled(false) override fun onAddressSave(address: Address) {}
             }
+        )
 
-            @AssertCalled(false)
-            override fun onAddressSave(address: Address) {}
-        })
+        mainSession.delegateUntilTestEnd(
+            object : PromptDelegate {
+                @AssertCalled(count = 1)
+                override fun onAddressSelect(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<AddressSelectOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    assertThat("Session should not be null", session, notNullValue())
 
-        mainSession.delegateUntilTestEnd(object : PromptDelegate {
-            @AssertCalled(count = 1)
-            override fun onAddressSelect(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<AddressSelectOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                assertThat("Session should not be null", session, notNullValue())
+                    assertThat(
+                        "There should be one option",
+                        prompt.options.size,
+                        equalTo(savedAddresses.size),
+                    )
 
-                assertThat(
-                    "There should be one option",
-                    prompt.options.size,
-                    equalTo(savedAddresses.size),
-                )
+                    val addressOption = prompt.options.find { it.value.guid == selectedAddress.guid }
+                    val address = addressOption?.value
 
-                val addressOption = prompt.options.find { it.value.guid == selectedAddress.guid }
-                val address = addressOption?.value
+                    assertThat("Address should not be null", address, notNullValue())
+                    assertThat(
+                        "Guid should match",
+                        address?.guid,
+                        equalTo(selectedAddress.guid),
+                    )
+                    assertThat(
+                        "Name should match",
+                        address?.name,
+                        equalTo(selectedAddress.name),
+                    )
+                    assertThat(
+                        "Given name should match",
+                        address?.givenName,
+                        equalTo(selectedAddress.givenName),
+                    )
+                    assertThat(
+                        "Family name should match",
+                        address?.familyName,
+                        equalTo(selectedAddress.familyName),
+                    )
+                    assertThat(
+                        "Street address should match",
+                        address?.streetAddress,
+                        equalTo(selectedAddress.streetAddress),
+                    )
+                    assertThat(
+                        "Address level 1 should match",
+                        address?.addressLevel1,
+                        equalTo(selectedAddress.addressLevel1),
+                    )
+                    assertThat(
+                        "Address level 2 should match",
+                        address?.addressLevel2,
+                        equalTo(selectedAddress.addressLevel2),
+                    )
+                    assertThat(
+                        "Address level 3 should match",
+                        address?.addressLevel3,
+                        equalTo(selectedAddress.addressLevel3),
+                    )
+                    assertThat(
+                        "Postal code should match",
+                        address?.postalCode,
+                        equalTo(selectedAddress.postalCode),
+                    )
+                    assertThat(
+                        "Country should match",
+                        address?.country,
+                        equalTo(selectedAddress.country),
+                    )
+                    assertThat(
+                        "Tel should match",
+                        address?.tel,
+                        equalTo(selectedAddress.tel),
+                    )
+                    assertThat(
+                        "Email should match",
+                        address?.email,
+                        equalTo(selectedAddress.email),
+                    )
 
-                assertThat("Address should not be null", address, notNullValue())
-                assertThat(
-                    "Guid should match",
-                    address?.guid,
-                    equalTo(selectedAddress.guid),
-                )
-                assertThat(
-                    "Name should match",
-                    address?.name,
-                    equalTo(selectedAddress.name),
-                )
-                assertThat(
-                    "Given name should match",
-                    address?.givenName,
-                    equalTo(selectedAddress.givenName),
-                )
-                assertThat(
-                    "Family name should match",
-                    address?.familyName,
-                    equalTo(selectedAddress.familyName),
-                )
-                assertThat(
-                    "Street address should match",
-                    address?.streetAddress,
-                    equalTo(selectedAddress.streetAddress),
-                )
-                assertThat(
-                    "Address level 1 should match",
-                    address?.addressLevel1,
-                    equalTo(selectedAddress.addressLevel1),
-                )
-                assertThat(
-                    "Address level 2 should match",
-                    address?.addressLevel2,
-                    equalTo(selectedAddress.addressLevel2),
-                )
-                assertThat(
-                    "Address level 3 should match",
-                    address?.addressLevel3,
-                    equalTo(selectedAddress.addressLevel3),
-                )
-                assertThat(
-                    "Postal code should match",
-                    address?.postalCode,
-                    equalTo(selectedAddress.postalCode),
-                )
-                assertThat(
-                    "Country should match",
-                    address?.country,
-                    equalTo(selectedAddress.country),
-                )
-                assertThat(
-                    "Tel should match",
-                    address?.tel,
-                    equalTo(selectedAddress.tel),
-                )
-                assertThat(
-                    "Email should match",
-                    address?.email,
-                    equalTo(selectedAddress.email),
-                )
+                    Handler(Looper.getMainLooper())
+                        .postDelayed(
+                            {
+                                selectHandled.complete(null)
+                            },
+                            acceptDelay,
+                        )
 
-                Handler(Looper.getMainLooper()).postDelayed({
-                    selectHandled.complete(null)
-                }, acceptDelay)
-
-                return GeckoResult.fromValue(prompt.confirm(addressOption!!))
+                    return GeckoResult.fromValue(prompt.confirm(addressOption!!))
+                }
             }
-        })
+        )
 
         mainSession.loadTestPath(ADDRESS_FORM_HTML_PATH)
         mainSession.waitForPageStop()
@@ -837,18 +911,19 @@ class AutocompleteTest : BaseSessionTest() {
         val tel = "+1 180090021"
         val organization = ""
         val guid = "test-guid"
-        val savedAddress = Address.Builder()
-            .guid(guid)
-            .name(name)
-            .givenName(givenName)
-            .familyName(familyName)
-            .streetAddress(streetAddress)
-            .postalCode(postalCode)
-            .country(country)
-            .email(email)
-            .tel(tel)
-            .organization(organization)
-            .build()
+        val savedAddress =
+            Address.Builder()
+                .guid(guid)
+                .name(name)
+                .givenName(givenName)
+                .familyName(familyName)
+                .streetAddress(streetAddress)
+                .postalCode(postalCode)
+                .country(country)
+                .email(email)
+                .tel(tel)
+                .organization(organization)
+                .build()
         val savedAddresses = mutableListOf<Address>(savedAddress)
 
         checkAddressesForCorrectness(savedAddresses.toTypedArray(), savedAddress)
@@ -864,22 +939,20 @@ class AutocompleteTest : BaseSessionTest() {
         val tel = "+1 180090021"
         val organization = ""
         val guid = "test-guid"
-        val builder = Address.Builder()
-            .guid(guid)
-            .name(name)
-            .streetAddress(streetAddress)
-            .postalCode(postalCode)
-            .country(country)
-            .email(email)
-            .tel(tel)
-            .organization(organization)
+        val builder =
+            Address.Builder()
+                .guid(guid)
+                .name(name)
+                .streetAddress(streetAddress)
+                .postalCode(postalCode)
+                .country(country)
+                .email(email)
+                .tel(tel)
+                .organization(organization)
 
         val savedAddress = builder.build()
 
-        val expectedAddress = builder
-            .givenName("Peter")
-            .familyName("Parker")
-            .build()
+        val expectedAddress = builder.givenName("Peter").familyName("Parker").build()
 
         val savedAddresses = arrayOf(savedAddress)
 
@@ -898,33 +971,35 @@ class AutocompleteTest : BaseSessionTest() {
         val tels = arrayOf("+1 180090021", "+1 180055555")
         val organizations = arrayOf("", "")
         val guids = arrayOf("test-guid-1", "test-guid-2")
-        val selectedAddress = Address.Builder()
-            .guid(guids[1])
-            .name(names[1])
-            .givenName(givenNames[1])
-            .familyName(familyNames[1])
-            .streetAddress(streetAddresses[1])
-            .postalCode(postalCodes[1])
-            .country(countries[1])
-            .email(emails[1])
-            .tel(tels[1])
-            .organization(organizations[1])
-            .build()
-        val savedAddresses = mutableListOf<Address>(
+        val selectedAddress =
             Address.Builder()
-                .guid(guids[0])
-                .name(names[0])
-                .givenName(givenNames[0])
-                .familyName(familyNames[0])
-                .streetAddress(streetAddresses[0])
-                .postalCode(postalCodes[0])
-                .country(countries[0])
-                .email(emails[0])
-                .tel(tels[0])
-                .organization(organizations[0])
-                .build(),
-            selectedAddress,
-        )
+                .guid(guids[1])
+                .name(names[1])
+                .givenName(givenNames[1])
+                .familyName(familyNames[1])
+                .streetAddress(streetAddresses[1])
+                .postalCode(postalCodes[1])
+                .country(countries[1])
+                .email(emails[1])
+                .tel(tels[1])
+                .organization(organizations[1])
+                .build()
+        val savedAddresses =
+            mutableListOf<Address>(
+                Address.Builder()
+                    .guid(guids[0])
+                    .name(names[0])
+                    .givenName(givenNames[0])
+                    .familyName(familyNames[0])
+                    .streetAddress(streetAddresses[0])
+                    .postalCode(postalCodes[0])
+                    .country(countries[0])
+                    .email(emails[0])
+                    .tel(tels[0])
+                    .organization(organizations[0])
+                    .build(),
+                selectedAddress,
+            )
 
         checkAddressesForCorrectness(savedAddresses.toTypedArray(), selectedAddress)
     }
@@ -941,51 +1016,64 @@ class AutocompleteTest : BaseSessionTest() {
         val tel = "+1 180090021"
         val organization = ""
         val guid = "test-guid"
-        val savedAddress = Address.Builder()
-            .guid(guid)
-            .name(name)
-            .givenName(givenName)
-            .familyName(familyName)
-            .streetAddress(streetAddress)
-            .postalCode(postalCode)
-            .country(country)
-            .email(email)
-            .tel(tel)
-            .organization(organization)
-            .build()
+        val savedAddress =
+            Address.Builder()
+                .guid(guid)
+                .name(name)
+                .givenName(givenName)
+                .familyName(familyName)
+                .streetAddress(streetAddress)
+                .postalCode(postalCode)
+                .country(country)
+                .email(email)
+                .tel(tel)
+                .organization(organization)
+                .build()
         val savedAddresses = mutableListOf<Address>(savedAddress)
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled
-            override fun onAddressFetch(): GeckoResult<Array<Address>>? {
-                return GeckoResult.fromValue(savedAddresses.toTypedArray())
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onAddressFetch(): GeckoResult<Array<Address>>? {
+                    return GeckoResult.fromValue(savedAddresses.toTypedArray())
+                }
             }
-        })
+        )
 
         val result = GeckoResult<PromptDelegate.PromptResponse>()
-        val promptInstanceDelegate = object : PromptDelegate.PromptInstanceDelegate {
-            override fun onPromptDismiss(prompt: PromptDelegate.BasePrompt) {
-                result.complete(prompt.dismiss())
+        val promptInstanceDelegate =
+            object : PromptDelegate.PromptInstanceDelegate {
+                override fun onPromptDismiss(prompt: PromptDelegate.BasePrompt) {
+                    result.complete(prompt.dismiss())
+                }
             }
-        }
 
         val promptHandled = GeckoResult<Void>()
-        mainSession.delegateUntilTestEnd(object : PromptDelegate {
-            @AssertCalled
-            override fun onAddressSelect(session: GeckoSession, prompt: AutocompleteRequest<AddressSelectOption>): GeckoResult<PromptDelegate.PromptResponse>? {
-                assertThat(
-                    "There should be one option",
-                    prompt.options.size,
-                    equalTo(1),
-                )
-                prompt.setDelegate(promptInstanceDelegate)
-                Handler(Looper.getMainLooper()).postDelayed({
-                    promptHandled.complete(null)
-                }, acceptDelay)
+        mainSession.delegateUntilTestEnd(
+            object : PromptDelegate {
+                @AssertCalled
+                override fun onAddressSelect(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<AddressSelectOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    assertThat(
+                        "There should be one option",
+                        prompt.options.size,
+                        equalTo(1),
+                    )
+                    prompt.setDelegate(promptInstanceDelegate)
+                    Handler(Looper.getMainLooper())
+                        .postDelayed(
+                            {
+                                promptHandled.complete(null)
+                            },
+                            acceptDelay,
+                        )
 
-                return GeckoResult()
+                    return GeckoResult()
+                }
             }
-        })
+        )
 
         mainSession.loadTestPath(ADDRESS_FORM_HTML_PATH)
         mainSession.waitForPageStop()
@@ -1005,25 +1093,28 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
                 "signon.testOnlyNotWaitForPaint" to true,
-            ),
+            )
         )
 
-        sessionRule.delegateDuringNextWait(object : StorageDelegate {
-            @AssertCalled(count = 1)
-            override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
-                assertThat("Domain should match", domain, equalTo("localhost"))
+        sessionRule.delegateDuringNextWait(
+            object : StorageDelegate {
+                @AssertCalled(count = 1)
+                override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
+                    assertThat("Domain should match", domain, equalTo("localhost"))
 
-                return null
+                    return null
+                }
             }
-        })
+        )
 
         mainSession.loadTestPath(FORMS3_HTML_PATH)
         mainSession.waitForPageStop()
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled(count = 0)
-            override fun onLoginSave(login: LoginEntry) {}
-        })
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled(count = 0) override fun onLoginSave(login: LoginEntry) {}
+            }
+        )
 
         // Assign login credentials.
         mainSession.evaluateJS("document.querySelector('#user1').value = 'user1x'")
@@ -1032,32 +1123,34 @@ class AutocompleteTest : BaseSessionTest() {
         // Submit the form.
         mainSession.evaluateJS("document.querySelector('#form1').submit()")
 
-        sessionRule.waitUntilCalled(object : PromptDelegate {
-            @AssertCalled(count = 1)
-            override fun onLoginSave(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<LoginSaveOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                val option = prompt.options[0]
-                val login = option.value
+        sessionRule.waitUntilCalled(
+            object : PromptDelegate {
+                @AssertCalled(count = 1)
+                override fun onLoginSave(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<LoginSaveOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    val option = prompt.options[0]
+                    val login = option.value
 
-                assertThat("Session should not be null", session, notNullValue())
-                assertThat("Login should not be null", login, notNullValue())
-                assertThat(
-                    "Username should match",
-                    login.username,
-                    equalTo("user1x"),
-                )
+                    assertThat("Session should not be null", session, notNullValue())
+                    assertThat("Login should not be null", login, notNullValue())
+                    assertThat(
+                        "Username should match",
+                        login.username,
+                        equalTo("user1x"),
+                    )
 
-                assertThat(
-                    "Password should match",
-                    login.password,
-                    equalTo("pass1x"),
-                )
+                    assertThat(
+                        "Password should match",
+                        login.password,
+                        equalTo("pass1x"),
+                    )
 
-                return GeckoResult.fromValue(prompt.dismiss())
+                    return GeckoResult.fromValue(prompt.dismiss())
+                }
             }
-        })
+        )
     }
 
     @Test
@@ -1069,7 +1162,7 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
                 "signon.testOnlyNotWaitForPaint" to true,
-            ),
+            )
         )
 
         mainSession.loadTestPath(FORMS3_HTML_PATH)
@@ -1077,53 +1170,57 @@ class AutocompleteTest : BaseSessionTest() {
 
         val saveHandled = GeckoResult<Void>()
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled
-            override fun onLoginSave(login: LoginEntry) {
-                assertThat(
-                    "Username should match",
-                    login.username,
-                    equalTo("user1x"),
-                )
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onLoginSave(login: LoginEntry) {
+                    assertThat(
+                        "Username should match",
+                        login.username,
+                        equalTo("user1x"),
+                    )
 
-                assertThat(
-                    "Password should match",
-                    login.password,
-                    equalTo("pass1x"),
-                )
+                    assertThat(
+                        "Password should match",
+                        login.password,
+                        equalTo("pass1x"),
+                    )
 
-                saveHandled.complete(null)
+                    saveHandled.complete(null)
+                }
             }
-        })
+        )
 
-        sessionRule.delegateDuringNextWait(object : PromptDelegate {
-            @AssertCalled(count = 1)
-            override fun onLoginSave(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<LoginSaveOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                assertThat("Session should not be null", session, notNullValue())
+        sessionRule.delegateDuringNextWait(
+            object : PromptDelegate {
+                @AssertCalled(count = 1)
+                override fun onLoginSave(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<LoginSaveOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    assertThat("Session should not be null", session, notNullValue())
 
-                val option = prompt.options[0]
-                val login = option.value
+                    val option = prompt.options[0]
+                    val login = option.value
 
-                assertThat("Login should not be null", login, notNullValue())
+                    assertThat("Login should not be null", login, notNullValue())
 
-                assertThat(
-                    "Username should match",
-                    login.username,
-                    equalTo("user1x"),
-                )
+                    assertThat(
+                        "Username should match",
+                        login.username,
+                        equalTo("user1x"),
+                    )
 
-                assertThat(
-                    "Password should match",
-                    login.password,
-                    equalTo("pass1x"),
-                )
+                    assertThat(
+                        "Password should match",
+                        login.password,
+                        equalTo("pass1x"),
+                    )
 
-                return GeckoResult.fromValue(prompt.confirm(option))
+                    return GeckoResult.fromValue(prompt.confirm(option))
+                }
             }
-        })
+        )
 
         // Assign login credentials.
         mainSession.evaluateJS("document.querySelector('#user1').value = 'user1x'")
@@ -1144,7 +1241,7 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
                 "signon.testOnlyNotWaitForPaint" to true,
-            ),
+            )
         )
 
         mainSession.loadTestPath(FORMS3_HTML_PATH)
@@ -1152,61 +1249,66 @@ class AutocompleteTest : BaseSessionTest() {
 
         val saveHandled = GeckoResult<Void>()
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled
-            override fun onLoginSave(login: LoginEntry) {
-                assertThat(
-                    "Username should match",
-                    login.username,
-                    equalTo("user1x"),
-                )
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onLoginSave(login: LoginEntry) {
+                    assertThat(
+                        "Username should match",
+                        login.username,
+                        equalTo("user1x"),
+                    )
 
-                assertThat(
-                    "Password should match",
-                    login.password,
-                    equalTo("pass1xmod"),
-                )
+                    assertThat(
+                        "Password should match",
+                        login.password,
+                        equalTo("pass1xmod"),
+                    )
 
-                saveHandled.complete(null)
+                    saveHandled.complete(null)
+                }
             }
-        })
+        )
 
-        sessionRule.delegateDuringNextWait(object : PromptDelegate {
-            @AssertCalled(count = 1)
-            override fun onLoginSave(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<LoginSaveOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                assertThat("Session should not be null", session, notNullValue())
+        sessionRule.delegateDuringNextWait(
+            object : PromptDelegate {
+                @AssertCalled(count = 1)
+                override fun onLoginSave(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<LoginSaveOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    assertThat("Session should not be null", session, notNullValue())
 
-                val option = prompt.options[0]
-                val login = option.value
+                    val option = prompt.options[0]
+                    val login = option.value
 
-                assertThat("Login should not be null", login, notNullValue())
+                    assertThat("Login should not be null", login, notNullValue())
 
-                assertThat(
-                    "Username should match",
-                    login.username,
-                    equalTo("user1x"),
-                )
+                    assertThat(
+                        "Username should match",
+                        login.username,
+                        equalTo("user1x"),
+                    )
 
-                assertThat(
-                    "Password should match",
-                    login.password,
-                    equalTo("pass1x"),
-                )
+                    assertThat(
+                        "Password should match",
+                        login.password,
+                        equalTo("pass1x"),
+                    )
 
-                val modLogin = LoginEntry.Builder()
-                    .origin(login.origin)
-                    .formActionOrigin(login.origin)
-                    .httpRealm(login.httpRealm)
-                    .username(login.username)
-                    .password("pass1xmod")
-                    .build()
+                    val modLogin =
+                        LoginEntry.Builder()
+                            .origin(login.origin)
+                            .formActionOrigin(login.origin)
+                            .httpRealm(login.httpRealm)
+                            .username(login.username)
+                            .password("pass1xmod")
+                            .build()
 
-                return GeckoResult.fromValue(prompt.confirm(LoginSaveOption(modLogin)))
+                    return GeckoResult.fromValue(prompt.confirm(LoginSaveOption(modLogin)))
+                }
             }
-        })
+        )
 
         // Assign login credentials.
         mainSession.evaluateJS("document.querySelector('#user1').value = 'user1x'")
@@ -1227,7 +1329,7 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
                 "signon.testOnlyNotWaitForPaint" to true,
-            ),
+            )
         )
 
         val saveHandled = GeckoResult<Void>()
@@ -1239,80 +1341,85 @@ class AutocompleteTest : BaseSessionTest() {
         val guid = "test-guid"
         val savedLogins = mutableListOf<LoginEntry>()
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled
-            override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
-                assertThat("Domain should match", domain, equalTo("localhost"))
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
+                    assertThat("Domain should match", domain, equalTo("localhost"))
 
-                return GeckoResult.fromValue(savedLogins.toTypedArray())
-            }
+                    return GeckoResult.fromValue(savedLogins.toTypedArray())
+                }
 
-            @AssertCalled(count = 2)
-            override fun onLoginSave(login: LoginEntry) {
-                assertThat(
-                    "Username should match",
-                    login.username,
-                    equalTo(user1),
-                )
+                @AssertCalled(count = 2)
+                override fun onLoginSave(login: LoginEntry) {
+                    assertThat(
+                        "Username should match",
+                        login.username,
+                        equalTo(user1),
+                    )
 
-                assertThat(
-                    "Password should match",
-                    login.password,
-                    equalTo(forEachCall(pass1, pass2)),
-                )
+                    assertThat(
+                        "Password should match",
+                        login.password,
+                        equalTo(forEachCall(pass1, pass2)),
+                    )
 
-                assertThat(
-                    "GUID should match",
-                    login.guid,
-                    equalTo(forEachCall(null, guid)),
-                )
+                    assertThat(
+                        "GUID should match",
+                        login.guid,
+                        equalTo(forEachCall(null, guid)),
+                    )
 
-                val savedLogin = LoginEntry.Builder()
-                    .guid(guid)
-                    .origin(login.origin)
-                    .formActionOrigin(login.formActionOrigin)
-                    .username(login.username)
-                    .password(login.password)
-                    .build()
+                    val savedLogin =
+                        LoginEntry.Builder()
+                            .guid(guid)
+                            .origin(login.origin)
+                            .formActionOrigin(login.formActionOrigin)
+                            .username(login.username)
+                            .password(login.password)
+                            .build()
 
-                savedLogins.add(savedLogin)
+                    savedLogins.add(savedLogin)
 
-                if (sessionRule.currentCall.counter == 1) {
-                    saveHandled.complete(null)
-                } else if (sessionRule.currentCall.counter == 2) {
-                    saveHandled2.complete(null)
+                    if (sessionRule.currentCall.counter == 1) {
+                        saveHandled.complete(null)
+                    } else if (sessionRule.currentCall.counter == 2) {
+                        saveHandled2.complete(null)
+                    }
                 }
             }
-        })
+        )
 
-        sessionRule.delegateUntilTestEnd(object : PromptDelegate {
-            @AssertCalled(count = 2)
-            override fun onLoginSave(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<LoginSaveOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                assertThat("Session should not be null", session, notNullValue())
+        sessionRule.delegateUntilTestEnd(
+            object : PromptDelegate {
+                @AssertCalled(count = 2)
+                override fun onLoginSave(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<LoginSaveOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    assertThat("Session should not be null", session, notNullValue())
 
-                val option = prompt.options[0]
-                val login = option.value
+                    val option = prompt.options[0]
+                    val login = option.value
 
-                assertThat("Login should not be null", login, notNullValue())
+                    assertThat("Login should not be null", login, notNullValue())
 
-                assertThat(
-                    "Username should match",
-                    login.username,
-                    equalTo(user1),
-                )
+                    assertThat(
+                        "Username should match",
+                        login.username,
+                        equalTo(user1),
+                    )
 
-                assertThat(
-                    "Password should match",
-                    login.password,
-                    equalTo(forEachCall(pass1, pass2)),
-                )
+                    assertThat(
+                        "Password should match",
+                        login.password,
+                        equalTo(forEachCall(pass1, pass2)),
+                    )
 
-                return GeckoResult.fromValue(prompt.confirm(option))
+                    return GeckoResult.fromValue(prompt.confirm(option))
+                }
             }
-        })
+        )
 
         // Assign login credentials.
         mainSession.loadTestPath(FORMS3_HTML_PATH)
@@ -1345,54 +1452,66 @@ class AutocompleteTest : BaseSessionTest() {
 
         val saveHandled = GeckoResult<Void>()
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled
-            override fun onCreditCardSave(creditCard: CreditCard) {
-                assertThat("Credit card name should match", creditCard.name, equalTo(ccName))
-                assertThat("Credit card number should match", creditCard.number, equalTo(ccNumber))
-                assertThat("Credit card expiration month should match", creditCard.expirationMonth, equalTo(ccExpMonth))
-                assertThat("Credit card expiration year should match", creditCard.expirationYear, equalTo(ccExpYear))
-                saveHandled.complete(null)
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onCreditCardSave(creditCard: CreditCard) {
+                    assertThat("Credit card name should match", creditCard.name, equalTo(ccName))
+                    assertThat("Credit card number should match", creditCard.number, equalTo(ccNumber))
+                    assertThat(
+                        "Credit card expiration month should match",
+                        creditCard.expirationMonth,
+                        equalTo(ccExpMonth),
+                    )
+                    assertThat(
+                        "Credit card expiration year should match",
+                        creditCard.expirationYear,
+                        equalTo(ccExpYear),
+                    )
+                    saveHandled.complete(null)
+                }
             }
-        })
+        )
 
-        sessionRule.delegateDuringNextWait(object : PromptDelegate {
-            @AssertCalled
-            override fun onCreditCardSave(
-                session: GeckoSession,
-                request: AutocompleteRequest<CreditCardSaveOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse> {
-                assertThat("Session should not be null", session, notNullValue())
+        sessionRule.delegateDuringNextWait(
+            object : PromptDelegate {
+                @AssertCalled
+                override fun onCreditCardSave(
+                    session: GeckoSession,
+                    request: AutocompleteRequest<CreditCardSaveOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse> {
+                    assertThat("Session should not be null", session, notNullValue())
 
-                val option = request.options[0]
-                val cc = option.value
+                    val option = request.options[0]
+                    val cc = option.value
 
-                assertThat("Credit card should not be null", cc, notNullValue())
+                    assertThat("Credit card should not be null", cc, notNullValue())
 
-                assertThat(
-                    "Credit card name should match",
-                    cc.name,
-                    equalTo(ccName),
-                )
-                assertThat(
-                    "Credit card number should match",
-                    cc.number,
-                    equalTo(ccNumber),
-                )
-                assertThat(
-                    "Credit card expiration month should match",
-                    cc.expirationMonth,
-                    equalTo(ccExpMonth),
-                )
-                assertThat(
-                    "Credit card expiration year should match",
-                    cc.expirationYear,
-                    equalTo(ccExpYear),
-                )
+                    assertThat(
+                        "Credit card name should match",
+                        cc.name,
+                        equalTo(ccName),
+                    )
+                    assertThat(
+                        "Credit card number should match",
+                        cc.number,
+                        equalTo(ccNumber),
+                    )
+                    assertThat(
+                        "Credit card expiration month should match",
+                        cc.expirationMonth,
+                        equalTo(ccExpMonth),
+                    )
+                    assertThat(
+                        "Credit card expiration year should match",
+                        cc.expirationYear,
+                        equalTo(ccExpYear),
+                    )
 
-                return GeckoResult.fromValue(request.confirm(option))
+                    return GeckoResult.fromValue(request.confirm(option))
+                }
             }
-        })
+        )
 
         // Enter the card values
         mainSession.evaluateJS("document.querySelector('#name').value = '$ccName'")
@@ -1424,54 +1543,66 @@ class AutocompleteTest : BaseSessionTest() {
 
         val saveHandled = GeckoResult<Void>()
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled
-            override fun onCreditCardSave(creditCard: CreditCard) {
-                assertThat("Credit card name should match", creditCard.name, equalTo(ccName))
-                assertThat("Credit card number should match", creditCard.number, equalTo(ccNumber))
-                assertThat("Credit card expiration month should match", creditCard.expirationMonth, equalTo(ccExpMonth))
-                assertThat("Credit card expiration year should match", creditCard.expirationYear, equalTo(ccExpYear))
-                saveHandled.complete(null)
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onCreditCardSave(creditCard: CreditCard) {
+                    assertThat("Credit card name should match", creditCard.name, equalTo(ccName))
+                    assertThat("Credit card number should match", creditCard.number, equalTo(ccNumber))
+                    assertThat(
+                        "Credit card expiration month should match",
+                        creditCard.expirationMonth,
+                        equalTo(ccExpMonth),
+                    )
+                    assertThat(
+                        "Credit card expiration year should match",
+                        creditCard.expirationYear,
+                        equalTo(ccExpYear),
+                    )
+                    saveHandled.complete(null)
+                }
             }
-        })
+        )
 
-        sessionRule.delegateDuringNextWait(object : PromptDelegate {
-            @AssertCalled
-            override fun onCreditCardSave(
-                session: GeckoSession,
-                request: AutocompleteRequest<CreditCardSaveOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse> {
-                assertThat("Session should not be null", session, notNullValue())
+        sessionRule.delegateDuringNextWait(
+            object : PromptDelegate {
+                @AssertCalled
+                override fun onCreditCardSave(
+                    session: GeckoSession,
+                    request: AutocompleteRequest<CreditCardSaveOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse> {
+                    assertThat("Session should not be null", session, notNullValue())
 
-                val option = request.options[0]
-                val cc = option.value
+                    val option = request.options[0]
+                    val cc = option.value
 
-                assertThat("Credit card should not be null", cc, notNullValue())
+                    assertThat("Credit card should not be null", cc, notNullValue())
 
-                assertThat(
-                    "Credit card name should match",
-                    cc.name,
-                    equalTo(ccName),
-                )
-                assertThat(
-                    "Credit card number should match",
-                    cc.number,
-                    equalTo(ccNumber),
-                )
-                assertThat(
-                    "Credit card expiration month should match",
-                    cc.expirationMonth,
-                    equalTo(ccExpMonth),
-                )
-                assertThat(
-                    "Credit card expiration year should match",
-                    cc.expirationYear,
-                    equalTo(ccExpYear),
-                )
+                    assertThat(
+                        "Credit card name should match",
+                        cc.name,
+                        equalTo(ccName),
+                    )
+                    assertThat(
+                        "Credit card number should match",
+                        cc.number,
+                        equalTo(ccNumber),
+                    )
+                    assertThat(
+                        "Credit card expiration month should match",
+                        cc.expirationMonth,
+                        equalTo(ccExpMonth),
+                    )
+                    assertThat(
+                        "Credit card expiration year should match",
+                        cc.expirationYear,
+                        equalTo(ccExpYear),
+                    )
 
-                return GeckoResult.fromValue(request.confirm(option))
+                    return GeckoResult.fromValue(request.confirm(option))
+                }
             }
-        })
+        )
 
         // Enter the card values
         mainSession.evaluateJS("document.querySelector('#form2 #name').value = '$ccName'")
@@ -1497,17 +1628,20 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.loadTestPath(CC_FORM_HTML_PATH)
         mainSession.waitForPageStop()
 
-        sessionRule.delegateDuringNextWait(object : StorageDelegate {
-            @AssertCalled
-            override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>>? {
-                return null
+        sessionRule.delegateDuringNextWait(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>>? {
+                    return null
+                }
             }
-        })
+        )
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled(count = 0)
-            override fun onCreditCardSave(creditCard: CreditCard) {}
-        })
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled(count = 0) override fun onCreditCardSave(creditCard: CreditCard) {}
+            }
+        )
 
         // Enter the card values
         mainSession.evaluateJS("document.querySelector('#name').value = '$ccName'")
@@ -1522,43 +1656,45 @@ class AutocompleteTest : BaseSessionTest() {
         // Submit the form
         mainSession.evaluateJS("document.querySelector('form').requestSubmit()")
 
-        sessionRule.waitUntilCalled(object : PromptDelegate {
-            @AssertCalled
-            override fun onCreditCardSave(
-                session: GeckoSession,
-                request: AutocompleteRequest<CreditCardSaveOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse> {
-                assertThat("Session should not be null", session, notNullValue())
+        sessionRule.waitUntilCalled(
+            object : PromptDelegate {
+                @AssertCalled
+                override fun onCreditCardSave(
+                    session: GeckoSession,
+                    request: AutocompleteRequest<CreditCardSaveOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse> {
+                    assertThat("Session should not be null", session, notNullValue())
 
-                val option = request.options[0]
-                val cc = option.value
+                    val option = request.options[0]
+                    val cc = option.value
 
-                assertThat("Credit card should not be null", cc, notNullValue())
+                    assertThat("Credit card should not be null", cc, notNullValue())
 
-                assertThat(
-                    "Credit card name should match",
-                    cc.name,
-                    equalTo(ccName),
-                )
-                assertThat(
-                    "Credit card number should match",
-                    cc.number,
-                    equalTo(ccNumber),
-                )
-                assertThat(
-                    "Credit card expiration month should match",
-                    cc.expirationMonth,
-                    equalTo(ccExpMonth),
-                )
-                assertThat(
-                    "Credit card expiration year should match",
-                    cc.expirationYear,
-                    equalTo(ccExpYear),
-                )
+                    assertThat(
+                        "Credit card name should match",
+                        cc.name,
+                        equalTo(ccName),
+                    )
+                    assertThat(
+                        "Credit card number should match",
+                        cc.number,
+                        equalTo(ccNumber),
+                    )
+                    assertThat(
+                        "Credit card expiration month should match",
+                        cc.expirationMonth,
+                        equalTo(ccExpMonth),
+                    )
+                    assertThat(
+                        "Credit card expiration year should match",
+                        cc.expirationYear,
+                        equalTo(ccExpYear),
+                    )
 
-                return GeckoResult.fromValue(request.dismiss())
+                    return GeckoResult.fromValue(request.dismiss())
+                }
             }
-        })
+        )
     }
 
     @Test
@@ -1574,61 +1710,74 @@ class AutocompleteTest : BaseSessionTest() {
 
         val saveHandled = GeckoResult<Void>()
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled
-            override fun onCreditCardSave(creditCard: CreditCard) {
-                assertThat("Credit card name should match", creditCard.name, equalTo(ccName))
-                assertThat("Credit card number should match", creditCard.number, equalTo(ccNumber))
-                assertThat("Credit card expiration month should match", creditCard.expirationMonth, equalTo(ccExpMonth))
-                assertThat("Credit card expiration year should match", creditCard.expirationYear, equalTo(ccExpYearNew))
-                saveHandled.complete(null)
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onCreditCardSave(creditCard: CreditCard) {
+                    assertThat("Credit card name should match", creditCard.name, equalTo(ccName))
+                    assertThat("Credit card number should match", creditCard.number, equalTo(ccNumber))
+                    assertThat(
+                        "Credit card expiration month should match",
+                        creditCard.expirationMonth,
+                        equalTo(ccExpMonth),
+                    )
+                    assertThat(
+                        "Credit card expiration year should match",
+                        creditCard.expirationYear,
+                        equalTo(ccExpYearNew),
+                    )
+                    saveHandled.complete(null)
+                }
             }
-        })
+        )
 
-        sessionRule.delegateDuringNextWait(object : PromptDelegate {
-            @AssertCalled
-            override fun onCreditCardSave(
-                session: GeckoSession,
-                request: AutocompleteRequest<CreditCardSaveOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse> {
-                assertThat("Session should not be null", session, notNullValue())
+        sessionRule.delegateDuringNextWait(
+            object : PromptDelegate {
+                @AssertCalled
+                override fun onCreditCardSave(
+                    session: GeckoSession,
+                    request: AutocompleteRequest<CreditCardSaveOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse> {
+                    assertThat("Session should not be null", session, notNullValue())
 
-                val option = request.options[0]
-                val cc = option.value
+                    val option = request.options[0]
+                    val cc = option.value
 
-                assertThat("Credit card should not be null", cc, notNullValue())
+                    assertThat("Credit card should not be null", cc, notNullValue())
 
-                assertThat(
-                    "Credit card name should match",
-                    cc.name,
-                    equalTo(ccName),
-                )
-                assertThat(
-                    "Credit card number should match",
-                    cc.number,
-                    equalTo(ccNumber),
-                )
-                assertThat(
-                    "Credit card expiration month should match",
-                    cc.expirationMonth,
-                    equalTo(ccExpMonth),
-                )
-                assertThat(
-                    "Credit card expiration year should match",
-                    cc.expirationYear,
-                    equalTo(ccExpYear),
-                )
+                    assertThat(
+                        "Credit card name should match",
+                        cc.name,
+                        equalTo(ccName),
+                    )
+                    assertThat(
+                        "Credit card number should match",
+                        cc.number,
+                        equalTo(ccNumber),
+                    )
+                    assertThat(
+                        "Credit card expiration month should match",
+                        cc.expirationMonth,
+                        equalTo(ccExpMonth),
+                    )
+                    assertThat(
+                        "Credit card expiration year should match",
+                        cc.expirationYear,
+                        equalTo(ccExpYear),
+                    )
 
-                val modifiedCreditCard = CreditCard.Builder()
-                    .name(cc.name)
-                    .number(cc.number)
-                    .expirationMonth(cc.expirationMonth)
-                    .expirationYear(ccExpYearNew)
-                    .build()
+                    val modifiedCreditCard =
+                        CreditCard.Builder()
+                            .name(cc.name)
+                            .number(cc.number)
+                            .expirationMonth(cc.expirationMonth)
+                            .expirationYear(ccExpYearNew)
+                            .build()
 
-                return GeckoResult.fromValue(request.confirm(CreditCardSaveOption(modifiedCreditCard)))
+                    return GeckoResult.fromValue(request.confirm(CreditCardSaveOption(modifiedCreditCard)))
+                }
             }
-        })
+        )
 
         // Enter the card values
         mainSession.evaluateJS("document.querySelector('#name').value = '$ccName'")
@@ -1652,13 +1801,14 @@ class AutocompleteTest : BaseSessionTest() {
         val ccNumber = "5555444433331111"
         val ccExpMonth = "6"
         val ccExpYear = "2024"
-        val savedCreditCard = CreditCard.Builder()
-            .guid("test-guid-1")
-            .name(ccName)
-            .number(ccNumber)
-            .expirationMonth(ccExpMonth)
-            .expirationYear(ccExpYear)
-            .build()
+        val savedCreditCard =
+            CreditCard.Builder()
+                .guid("test-guid-1")
+                .name(ccName)
+                .number(ccNumber)
+                .expirationMonth(ccExpMonth)
+                .expirationYear(ccExpYear)
+                .build()
 
         val savedCreditCards = arrayOf(savedCreditCard)
 
@@ -1666,25 +1816,26 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.waitForPageStop()
 
         // Setup delegates for fetching data and handling prompts.
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate, PromptDelegate {
-            @AssertCalled
-            override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>> {
-                return GeckoResult.fromValue(savedCreditCards)
-            }
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate, PromptDelegate {
+                @AssertCalled
+                override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>> {
+                    return GeckoResult.fromValue(savedCreditCards)
+                }
 
-            // These should NOT be called because no information has changed.
-            @AssertCalled(count = 0)
-            override fun onCreditCardSave(creditCard: CreditCard) = Unit
+                // These should NOT be called because no information has changed.
+                @AssertCalled(count = 0) override fun onCreditCardSave(creditCard: CreditCard) = Unit
 
-            @AssertCalled(count = 0)
-            override fun onCreditCardSave(
-                session: GeckoSession,
-                request: AutocompleteRequest<CreditCardSaveOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse> {
-                // This block should not be reached. If it is, the test will fail.
-                return GeckoResult.fromValue(request.dismiss())
+                @AssertCalled(count = 0)
+                override fun onCreditCardSave(
+                    session: GeckoSession,
+                    request: AutocompleteRequest<CreditCardSaveOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse> {
+                    // This block should not be reached. If it is, the test will fail.
+                    return GeckoResult.fromValue(request.dismiss())
+                }
             }
-        })
+        )
 
         // Fill in the fields with the same saved data
         mainSession.evaluateJS("document.querySelector('#name').focus()")
@@ -1721,89 +1872,94 @@ class AutocompleteTest : BaseSessionTest() {
         val saveHandled1 = GeckoResult<Void>()
         val saveHandled2 = GeckoResult<Void>()
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled
-            override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>> {
-                return GeckoResult.fromValue(savedCreditCards.toTypedArray())
-            }
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>> {
+                    return GeckoResult.fromValue(savedCreditCards.toTypedArray())
+                }
 
-            @AssertCalled(count = 2)
-            override fun onCreditCardSave(creditCard: CreditCard) {
-                assertThat(
-                    "Credit card name should match",
-                    creditCard.name,
-                    equalTo(ccName),
-                )
-                assertThat(
-                    "Credit card number should match",
-                    creditCard.number,
-                    equalTo(forEachCall(ccNumber1, ccNumber2)),
-                )
-                assertThat(
-                    "Credit card expiration month should match",
-                    creditCard.expirationMonth,
-                    equalTo(forEachCall(ccExpMonth1, ccExpMonth2)),
-                )
-                assertThat(
-                    "Credit card expiration year should match",
-                    creditCard.expirationYear,
-                    equalTo(forEachCall(ccExpYear1, ccExpYear2)),
-                )
+                @AssertCalled(count = 2)
+                override fun onCreditCardSave(creditCard: CreditCard) {
+                    assertThat(
+                        "Credit card name should match",
+                        creditCard.name,
+                        equalTo(ccName),
+                    )
+                    assertThat(
+                        "Credit card number should match",
+                        creditCard.number,
+                        equalTo(forEachCall(ccNumber1, ccNumber2)),
+                    )
+                    assertThat(
+                        "Credit card expiration month should match",
+                        creditCard.expirationMonth,
+                        equalTo(forEachCall(ccExpMonth1, ccExpMonth2)),
+                    )
+                    assertThat(
+                        "Credit card expiration year should match",
+                        creditCard.expirationYear,
+                        equalTo(forEachCall(ccExpYear1, ccExpYear2)),
+                    )
 
-                val savedCC = CreditCard.Builder()
-                    .guid("test1")
-                    .name(creditCard.name)
-                    .number(creditCard.number)
-                    .expirationMonth(creditCard.expirationMonth)
-                    .expirationYear(creditCard.expirationYear)
-                    .build()
-                savedCreditCards.add(savedCC)
+                    val savedCC =
+                        CreditCard.Builder()
+                            .guid("test1")
+                            .name(creditCard.name)
+                            .number(creditCard.number)
+                            .expirationMonth(creditCard.expirationMonth)
+                            .expirationYear(creditCard.expirationYear)
+                            .build()
+                    savedCreditCards.add(savedCC)
 
-                if (sessionRule.currentCall.counter == 1) {
-                    saveHandled1.complete(null)
-                } else if (sessionRule.currentCall.counter == 2) {
-                    saveHandled2.complete(null)
+                    if (sessionRule.currentCall.counter == 1) {
+                        saveHandled1.complete(null)
+                    } else if (sessionRule.currentCall.counter == 2) {
+                        saveHandled2.complete(null)
+                    }
                 }
             }
-        })
+        )
 
-        sessionRule.delegateUntilTestEnd(object : PromptDelegate {
-            @AssertCalled(count = 2)
-            override fun onCreditCardSave(
-                session: GeckoSession,
-                request: AutocompleteRequest<CreditCardSaveOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse> {
-                assertThat("Session should not be null", session, notNullValue())
+        sessionRule.delegateUntilTestEnd(
+            object : PromptDelegate {
+                @AssertCalled(count = 2)
+                override fun onCreditCardSave(
+                    session: GeckoSession,
+                    request: AutocompleteRequest<CreditCardSaveOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse> {
+                    assertThat("Session should not be null", session, notNullValue())
 
-                val option = request.options[0]
-                val cc = option.value
+                    val option = request.options[0]
+                    val cc = option.value
 
-                assertThat("Credit card should not be null", cc, notNullValue())
+                    assertThat("Credit card should not be null", cc, notNullValue())
 
-                assertThat(
-                    "Credit card name should match",
-                    cc.name,
-                    equalTo(ccName),
-                )
-                assertThat(
-                    "Credit card number should match",
-                    cc.number,
-                    equalTo(forEachCall(ccNumber1, ccNumber2)),
-                )
-                assertThat(
-                    "Credit card expiration month should match",
-                    cc.expirationMonth,
-                    equalTo(forEachCall(ccExpMonth1, ccExpMonth2)),
-                )
-                assertThat(
-                    "Credit card expiration year should match",
-                    cc.expirationYear,
-                    equalTo(forEachCall(ccExpYear1, ccExpYear2)),
-                )
+                    assertThat(
+                        "Credit card name should match",
+                        cc.name,
+                        equalTo(ccName),
+                    )
+                    assertThat(
+                        "Credit card number should match",
+                        cc.number,
+                        equalTo(forEachCall(ccNumber1, ccNumber2)),
+                    )
+                    assertThat(
+                        "Credit card expiration month should match",
+                        cc.expirationMonth,
+                        equalTo(forEachCall(ccExpMonth1, ccExpMonth2)),
+                    )
+                    assertThat(
+                        "Credit card expiration year should match",
+                        cc.expirationYear,
+                        equalTo(forEachCall(ccExpYear1, ccExpYear2)),
+                    )
 
-                return GeckoResult.fromValue(request.confirm(option))
+                    return GeckoResult.fromValue(request.confirm(option))
+                }
             }
-        })
+        )
 
         // Enter the card values
         mainSession.evaluateJS("document.querySelector('#name').value = '$ccName'")
@@ -1846,7 +2002,7 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
                 "signon.testOnlyNotWaitForPaint" to true,
-            ),
+            )
         )
 
         val usedHandled = GeckoResult<Void>()
@@ -1855,76 +2011,82 @@ class AutocompleteTest : BaseSessionTest() {
         val pass1 = "pass1x"
         val guid = "test-guid"
         val origin = GeckoSessionTestRule.TEST_ENDPOINT
-        val savedLogin = LoginEntry.Builder()
-            .guid(guid)
-            .origin(origin)
-            .formActionOrigin(origin)
-            .username(user1)
-            .password(pass1)
-            .build()
+        val savedLogin =
+            LoginEntry.Builder()
+                .guid(guid)
+                .origin(origin)
+                .formActionOrigin(origin)
+                .username(user1)
+                .password(pass1)
+                .build()
         val savedLogins = mutableListOf<LoginEntry>(savedLogin)
 
         if (autofillEnabled) {
-            sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-                @AssertCalled
-                override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
-                    assertThat("Domain should match", domain, equalTo("localhost"))
+            sessionRule.delegateUntilTestEnd(
+                object : StorageDelegate {
+                    @AssertCalled
+                    override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
+                        assertThat("Domain should match", domain, equalTo("localhost"))
 
-                    return GeckoResult.fromValue(savedLogins.toTypedArray())
+                        return GeckoResult.fromValue(savedLogins.toTypedArray())
+                    }
+
+                    @AssertCalled(count = 1)
+                    override fun onLoginUsed(login: LoginEntry, usedFields: Int) {
+                        assertThat(
+                            "Used fields should match",
+                            usedFields,
+                            equalTo(UsedField.PASSWORD),
+                        )
+
+                        assertThat(
+                            "Username should match",
+                            login.username,
+                            equalTo(user1),
+                        )
+
+                        assertThat(
+                            "Password should match",
+                            login.password,
+                            equalTo(pass1),
+                        )
+
+                        assertThat(
+                            "GUID should match",
+                            login.guid,
+                            equalTo(guid),
+                        )
+
+                        usedHandled.complete(null)
+                    }
                 }
-
-                @AssertCalled(count = 1)
-                override fun onLoginUsed(login: LoginEntry, usedFields: Int) {
-                    assertThat(
-                        "Used fields should match",
-                        usedFields,
-                        equalTo(UsedField.PASSWORD),
-                    )
-
-                    assertThat(
-                        "Username should match",
-                        login.username,
-                        equalTo(user1),
-                    )
-
-                    assertThat(
-                        "Password should match",
-                        login.password,
-                        equalTo(pass1),
-                    )
-
-                    assertThat(
-                        "GUID should match",
-                        login.guid,
-                        equalTo(guid),
-                    )
-
-                    usedHandled.complete(null)
-                }
-            })
+            )
         } else {
-            sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-                @AssertCalled
-                override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
-                    assertThat("Domain should match", domain, equalTo("localhost"))
+            sessionRule.delegateUntilTestEnd(
+                object : StorageDelegate {
+                    @AssertCalled
+                    override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
+                        assertThat("Domain should match", domain, equalTo("localhost"))
 
-                    return GeckoResult.fromValue(savedLogins.toTypedArray())
+                        return GeckoResult.fromValue(savedLogins.toTypedArray())
+                    }
+
+                    @AssertCalled(false) override fun onLoginUsed(login: LoginEntry, usedFields: Int) {}
                 }
-
-                @AssertCalled(false)
-                override fun onLoginUsed(login: LoginEntry, usedFields: Int) {}
-            })
+            )
         }
 
-        sessionRule.delegateUntilTestEnd(object : PromptDelegate {
-            @AssertCalled(false)
-            override fun onLoginSave(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<LoginSaveOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                return null
+        sessionRule.delegateUntilTestEnd(
+            object : PromptDelegate {
+                @AssertCalled(false)
+                override fun onLoginSave(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<LoginSaveOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    return null
+                }
             }
-        })
+        )
 
         mainSession.loadTestPath(FORMS3_HTML_PATH)
         mainSession.waitForPageStop()
@@ -1957,55 +2119,55 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
                 "signon.testOnlyNotWaitForPaint" to true,
-            ),
+            )
         )
 
         val user1 = "user1x"
         val pass1 = "pass1x"
         val guid = "test-guid"
         val origin = GeckoSessionTestRule.TEST_ENDPOINT
-        val savedLogin = LoginEntry.Builder()
-            .guid(guid)
-            .origin(origin)
-            .formActionOrigin(origin)
-            .username(user1)
-            .password(pass1)
-            .build()
+        val savedLogin =
+            LoginEntry.Builder()
+                .guid(guid)
+                .origin(origin)
+                .formActionOrigin(origin)
+                .username(user1)
+                .password(pass1)
+                .build()
         val savedLogins = mutableListOf<LoginEntry>(savedLogin)
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled
-            override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
-                assertThat("Domain should match", domain, equalTo("localhost"))
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
+                    assertThat("Domain should match", domain, equalTo("localhost"))
 
-                return GeckoResult.fromValue(savedLogins.toTypedArray())
+                    return GeckoResult.fromValue(savedLogins.toTypedArray())
+                }
+
+                @AssertCalled(false) override fun onLoginUsed(login: LoginEntry, usedFields: Int) {}
             }
+        )
 
-            @AssertCalled(false)
-            override fun onLoginUsed(login: LoginEntry, usedFields: Int) {}
-        })
-
-        sessionRule.delegateUntilTestEnd(object : PromptDelegate {
-            @AssertCalled(false)
-            override fun onLoginSave(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<LoginSaveOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                return null
+        sessionRule.delegateUntilTestEnd(
+            object : PromptDelegate {
+                @AssertCalled(false)
+                override fun onLoginSave(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<LoginSaveOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    return null
+                }
             }
-        })
+        )
 
         mainSession.loadTestPath(FORMS3_HTML_PATH)
         mainSession.waitForPageStop()
         mainSession.evaluateJS("document.querySelector('#user1').focus()")
-        mainSession.evaluateJS(
-            "document.querySelector('#user1').value = '$user1'",
-        )
+        mainSession.evaluateJS("document.querySelector('#user1').value = '$user1'")
         mainSession.pressKey(KeyEvent.KEYCODE_TAB)
 
-        val pass = mainSession.evaluateJS(
-            "document.querySelector('#pass1').value",
-        ) as String
+        val pass = mainSession.evaluateJS("document.querySelector('#pass1').value") as String
 
         if (autofillEnabled) {
             assertThat(
@@ -2044,7 +2206,7 @@ class AutocompleteTest : BaseSessionTest() {
                 "dom.disable_open_during_load" to false,
                 "signon.userInputRequiredToCapture.enabled" to false,
                 "signon.testOnlyNotWaitForPaint" to true,
-            ),
+            )
         )
 
         // Test:
@@ -2078,122 +2240,127 @@ class AutocompleteTest : BaseSessionTest() {
         val selectHandled = GeckoResult<Void>()
         val usedHandled = GeckoResult<Void>()
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled
-            override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
-                assertThat("Domain should match", domain, equalTo("localhost"))
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
+                    assertThat("Domain should match", domain, equalTo("localhost"))
 
-                var logins = mutableListOf<LoginEntry>()
+                    var logins = mutableListOf<LoginEntry>()
 
-                if (savedLogins.size == 2) {
-                    logins = savedLogins
+                    if (savedLogins.size == 2) {
+                        logins = savedLogins
+                    }
+
+                    return GeckoResult.fromValue(logins.toTypedArray())
                 }
 
-                return GeckoResult.fromValue(logins.toTypedArray())
-            }
+                @AssertCalled(count = 2)
+                override fun onLoginSave(login: LoginEntry) {
+                    var username = ""
+                    var password = ""
+                    var handle = GeckoResult<Void>()
 
-            @AssertCalled(count = 2)
-            override fun onLoginSave(login: LoginEntry) {
-                var username = ""
-                var password = ""
-                var handle = GeckoResult<Void>()
+                    if (sessionRule.currentCall.counter == 1) {
+                        username = user1
+                        password = pass1
+                        handle = saveHandled1
+                    } else if (sessionRule.currentCall.counter == 2) {
+                        username = user2
+                        password = pass2
+                        handle = saveHandled2
+                    }
 
-                if (sessionRule.currentCall.counter == 1) {
-                    username = user1
-                    password = pass1
-                    handle = saveHandled1
-                } else if (sessionRule.currentCall.counter == 2) {
-                    username = user2
-                    password = pass2
-                    handle = saveHandled2
+                    val savedLogin =
+                        LoginEntry.Builder()
+                            .guid(login.username)
+                            .origin(login.origin)
+                            .formActionOrigin(login.formActionOrigin)
+                            .username(login.username)
+                            .password(login.password)
+                            .build()
+
+                    savedLogins.add(savedLogin)
+
+                    assertThat(
+                        "Username should match",
+                        login.username,
+                        equalTo(username),
+                    )
+
+                    assertThat(
+                        "Password should match",
+                        login.password,
+                        equalTo(password),
+                    )
+
+                    handle.complete(null)
                 }
 
-                val savedLogin = LoginEntry.Builder()
-                    .guid(login.username)
-                    .origin(login.origin)
-                    .formActionOrigin(login.formActionOrigin)
-                    .username(login.username)
-                    .password(login.password)
-                    .build()
+                @AssertCalled(count = 1)
+                override fun onLoginUsed(login: LoginEntry, usedFields: Int) {
+                    assertThat(
+                        "Used fields should match",
+                        usedFields,
+                        equalTo(UsedField.PASSWORD),
+                    )
 
-                savedLogins.add(savedLogin)
+                    assertThat(
+                        "Username should match",
+                        login.username,
+                        equalTo(user1),
+                    )
 
-                assertThat(
-                    "Username should match",
-                    login.username,
-                    equalTo(username),
-                )
+                    assertThat(
+                        "Password should match",
+                        login.password,
+                        equalTo(pass1),
+                    )
 
-                assertThat(
-                    "Password should match",
-                    login.password,
-                    equalTo(password),
-                )
+                    assertThat(
+                        "GUID should match",
+                        login.guid,
+                        equalTo(user1),
+                    )
 
-                handle.complete(null)
+                    usedHandled.complete(null)
+                }
             }
-
-            @AssertCalled(count = 1)
-            override fun onLoginUsed(login: LoginEntry, usedFields: Int) {
-                assertThat(
-                    "Used fields should match",
-                    usedFields,
-                    equalTo(UsedField.PASSWORD),
-                )
-
-                assertThat(
-                    "Username should match",
-                    login.username,
-                    equalTo(user1),
-                )
-
-                assertThat(
-                    "Password should match",
-                    login.password,
-                    equalTo(pass1),
-                )
-
-                assertThat(
-                    "GUID should match",
-                    login.guid,
-                    equalTo(user1),
-                )
-
-                usedHandled.complete(null)
-            }
-        })
+        )
 
         mainSession.loadTestPath(FORMS3_HTML_PATH)
         mainSession.waitForPageStop()
 
-        mainSession.delegateDuringNextWait(object : PromptDelegate {
-            @AssertCalled(count = 1)
-            override fun onLoginSave(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<LoginSaveOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                assertThat("Session should not be null", session, notNullValue())
+        mainSession.delegateDuringNextWait(
+            object : PromptDelegate {
+                @AssertCalled(count = 1)
+                override fun onLoginSave(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<LoginSaveOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    assertThat("Session should not be null", session, notNullValue())
 
-                val option = prompt.options[0]
-                val login = option.value
+                    val option = prompt.options[0]
+                    val login = option.value
 
-                assertThat("Login should not be null", login, notNullValue())
+                    assertThat("Login should not be null", login, notNullValue())
 
-                assertThat(
-                    "Username should match",
-                    login.username,
-                    equalTo(user1),
-                )
+                    assertThat(
+                        "Username should match",
+                        login.username,
+                        equalTo(user1),
+                    )
 
-                assertThat(
-                    "Password should match",
-                    login.password,
-                    equalTo(pass1),
-                )
+                    assertThat(
+                        "Password should match",
+                        login.password,
+                        equalTo(pass1),
+                    )
 
-                return GeckoResult.fromValue(prompt.confirm(option))
+                    return GeckoResult.fromValue(prompt.confirm(option))
+                }
             }
-        })
+        )
 
         // Assign login credentials.
         mainSession.evaluateJS("document.querySelector('#user1').value = '$user1'")
@@ -2208,34 +2375,36 @@ class AutocompleteTest : BaseSessionTest() {
         session2.loadTestPath(FORMS3_HTML_PATH)
         session2.waitForPageStop()
 
-        session2.delegateDuringNextWait(object : PromptDelegate {
-            @AssertCalled(count = 1)
-            override fun onLoginSave(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<LoginSaveOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                assertThat("Session should not be null", session, notNullValue())
+        session2.delegateDuringNextWait(
+            object : PromptDelegate {
+                @AssertCalled(count = 1)
+                override fun onLoginSave(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<LoginSaveOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    assertThat("Session should not be null", session, notNullValue())
 
-                val option = prompt.options[0]
-                val login = option.value
+                    val option = prompt.options[0]
+                    val login = option.value
 
-                assertThat("Login should not be null", login, notNullValue())
+                    assertThat("Login should not be null", login, notNullValue())
 
-                assertThat(
-                    "Username should match",
-                    login.username,
-                    equalTo(user2),
-                )
+                    assertThat(
+                        "Username should match",
+                        login.username,
+                        equalTo(user2),
+                    )
 
-                assertThat(
-                    "Password should match",
-                    login.password,
-                    equalTo(pass2),
-                )
+                    assertThat(
+                        "Password should match",
+                        login.password,
+                        equalTo(pass2),
+                    )
 
-                return GeckoResult.fromValue(prompt.confirm(option))
+                    return GeckoResult.fromValue(prompt.confirm(option))
+                }
             }
-        })
+        )
 
         // Assign alternative login credentials.
         session2.evaluateJS("document.querySelector('#user1').value = '$user2'")
@@ -2248,46 +2417,52 @@ class AutocompleteTest : BaseSessionTest() {
         // Reload for the last time.
         val session3 = sessionRule.createOpenSession()
 
-        session3.delegateUntilTestEnd(object : PromptDelegate {
-            @AssertCalled(count = 1)
-            override fun onLoginSelect(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<LoginSelectOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                assertThat("Session should not be null", session, notNullValue())
+        session3.delegateUntilTestEnd(
+            object : PromptDelegate {
+                @AssertCalled(count = 1)
+                override fun onLoginSelect(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<LoginSelectOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    assertThat("Session should not be null", session, notNullValue())
 
-                assertThat(
-                    "There should be two options",
-                    prompt.options.size,
-                    equalTo(2),
-                )
-
-                var usernames = arrayOf(user1, user2)
-                var passwords = arrayOf(pass1, pass2)
-
-                for (i in 0..1) {
-                    val login = prompt.options[i].value
-
-                    assertThat("Login should not be null", login, notNullValue())
                     assertThat(
-                        "Username should match",
-                        login.username,
-                        equalTo(usernames[i]),
+                        "There should be two options",
+                        prompt.options.size,
+                        equalTo(2),
                     )
-                    assertThat(
-                        "Password should match",
-                        login.password,
-                        equalTo(passwords[i]),
-                    )
+
+                    var usernames = arrayOf(user1, user2)
+                    var passwords = arrayOf(pass1, pass2)
+
+                    for (i in 0..1) {
+                        val login = prompt.options[i].value
+
+                        assertThat("Login should not be null", login, notNullValue())
+                        assertThat(
+                            "Username should match",
+                            login.username,
+                            equalTo(usernames[i]),
+                        )
+                        assertThat(
+                            "Password should match",
+                            login.password,
+                            equalTo(passwords[i]),
+                        )
+                    }
+
+                    Handler(Looper.getMainLooper())
+                        .postDelayed(
+                            {
+                                selectHandled.complete(null)
+                            },
+                            acceptDelay,
+                        )
+
+                    return GeckoResult.fromValue(prompt.confirm(prompt.options[0]))
                 }
-
-                Handler(Looper.getMainLooper()).postDelayed({
-                    selectHandled.complete(null)
-                }, acceptDelay)
-
-                return GeckoResult.fromValue(prompt.confirm(prompt.options[0]))
             }
-        })
+        )
 
         session3.loadTestPath(FORMS3_HTML_PATH)
         session3.waitForPageStop()
@@ -2323,7 +2498,7 @@ class AutocompleteTest : BaseSessionTest() {
                 "dom.disable_open_during_load" to false,
                 "signon.userInputRequiredToCapture.enabled" to false,
                 "signon.testOnlyNotWaitForPaint" to true,
-            ),
+            )
         )
 
         // Test:
@@ -2358,96 +2533,100 @@ class AutocompleteTest : BaseSessionTest() {
         val saveHandled2 = GeckoResult<Void>()
         val selectHandled = GeckoResult<Void>()
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled
-            override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
-                assertThat("Domain should match", domain, equalTo("localhost"))
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
+                    assertThat("Domain should match", domain, equalTo("localhost"))
 
-                var logins = mutableListOf<LoginEntry>()
+                    var logins = mutableListOf<LoginEntry>()
 
-                if (savedLogins.size == 2) {
-                    logins = savedLogins
+                    if (savedLogins.size == 2) {
+                        logins = savedLogins
+                    }
+
+                    return GeckoResult.fromValue(logins.toTypedArray())
                 }
 
-                return GeckoResult.fromValue(logins.toTypedArray())
-            }
+                @AssertCalled(count = 2)
+                override fun onLoginSave(login: LoginEntry) {
+                    var username = ""
+                    var password = ""
+                    var handle = GeckoResult<Void>()
 
-            @AssertCalled(count = 2)
-            override fun onLoginSave(login: LoginEntry) {
-                var username = ""
-                var password = ""
-                var handle = GeckoResult<Void>()
+                    if (sessionRule.currentCall.counter == 1) {
+                        username = user1
+                        password = pass1
+                        handle = saveHandled1
+                    } else if (sessionRule.currentCall.counter == 2) {
+                        username = user2
+                        password = pass2
+                        handle = saveHandled2
+                    }
 
-                if (sessionRule.currentCall.counter == 1) {
-                    username = user1
-                    password = pass1
-                    handle = saveHandled1
-                } else if (sessionRule.currentCall.counter == 2) {
-                    username = user2
-                    password = pass2
-                    handle = saveHandled2
+                    val savedLogin =
+                        LoginEntry.Builder()
+                            .guid(login.username)
+                            .origin(login.origin)
+                            .formActionOrigin(login.formActionOrigin)
+                            .username(login.username)
+                            .password(login.password)
+                            .build()
+
+                    savedLogins.add(savedLogin)
+
+                    assertThat(
+                        "Username should match",
+                        login.username,
+                        equalTo(username),
+                    )
+
+                    assertThat(
+                        "Password should match",
+                        login.password,
+                        equalTo(password),
+                    )
+
+                    handle.complete(null)
                 }
 
-                val savedLogin = LoginEntry.Builder()
-                    .guid(login.username)
-                    .origin(login.origin)
-                    .formActionOrigin(login.formActionOrigin)
-                    .username(login.username)
-                    .password(login.password)
-                    .build()
-
-                savedLogins.add(savedLogin)
-
-                assertThat(
-                    "Username should match",
-                    login.username,
-                    equalTo(username),
-                )
-
-                assertThat(
-                    "Password should match",
-                    login.password,
-                    equalTo(password),
-                )
-
-                handle.complete(null)
+                @AssertCalled(false) override fun onLoginUsed(login: LoginEntry, usedFields: Int) {}
             }
-
-            @AssertCalled(false)
-            override fun onLoginUsed(login: LoginEntry, usedFields: Int) {}
-        })
+        )
 
         mainSession.loadTestPath(FORMS3_HTML_PATH)
         mainSession.waitForPageStop()
 
-        mainSession.delegateDuringNextWait(object : PromptDelegate {
-            @AssertCalled(count = 1)
-            override fun onLoginSave(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<LoginSaveOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                assertThat("Session should not be null", session, notNullValue())
+        mainSession.delegateDuringNextWait(
+            object : PromptDelegate {
+                @AssertCalled(count = 1)
+                override fun onLoginSave(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<LoginSaveOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    assertThat("Session should not be null", session, notNullValue())
 
-                val option = prompt.options[0]
-                val login = option.value
+                    val option = prompt.options[0]
+                    val login = option.value
 
-                assertThat("Login should not be null", login, notNullValue())
+                    assertThat("Login should not be null", login, notNullValue())
 
-                assertThat(
-                    "Username should match",
-                    login.username,
-                    equalTo(user1),
-                )
+                    assertThat(
+                        "Username should match",
+                        login.username,
+                        equalTo(user1),
+                    )
 
-                assertThat(
-                    "Password should match",
-                    login.password,
-                    equalTo(pass1),
-                )
+                    assertThat(
+                        "Password should match",
+                        login.password,
+                        equalTo(pass1),
+                    )
 
-                return GeckoResult.fromValue(prompt.confirm(option))
+                    return GeckoResult.fromValue(prompt.confirm(option))
+                }
             }
-        })
+        )
 
         // Assign login credentials.
         mainSession.evaluateJS("document.querySelector('#user1').value = '$user1'")
@@ -2462,34 +2641,36 @@ class AutocompleteTest : BaseSessionTest() {
         session2.loadTestPath(FORMS3_HTML_PATH)
         session2.waitForPageStop()
 
-        session2.delegateDuringNextWait(object : PromptDelegate {
-            @AssertCalled(count = 1)
-            override fun onLoginSave(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<LoginSaveOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                assertThat("Session should not be null", session, notNullValue())
+        session2.delegateDuringNextWait(
+            object : PromptDelegate {
+                @AssertCalled(count = 1)
+                override fun onLoginSave(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<LoginSaveOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    assertThat("Session should not be null", session, notNullValue())
 
-                val option = prompt.options[0]
-                val login = option.value
+                    val option = prompt.options[0]
+                    val login = option.value
 
-                assertThat("Login should not be null", login, notNullValue())
+                    assertThat("Login should not be null", login, notNullValue())
 
-                assertThat(
-                    "Username should match",
-                    login.username,
-                    equalTo(user2),
-                )
+                    assertThat(
+                        "Username should match",
+                        login.username,
+                        equalTo(user2),
+                    )
 
-                assertThat(
-                    "Password should match",
-                    login.password,
-                    equalTo(pass2),
-                )
+                    assertThat(
+                        "Password should match",
+                        login.password,
+                        equalTo(pass2),
+                    )
 
-                return GeckoResult.fromValue(prompt.confirm(option))
+                    return GeckoResult.fromValue(prompt.confirm(option))
+                }
             }
-        })
+        )
 
         // Assign alternative login credentials.
         session2.evaluateJS("document.querySelector('#user1').value = '$user2'")
@@ -2502,56 +2683,63 @@ class AutocompleteTest : BaseSessionTest() {
         // Reload for the last time.
         val session3 = sessionRule.createOpenSession()
 
-        session3.delegateUntilTestEnd(object : PromptDelegate {
-            @AssertCalled(count = 1)
-            override fun onLoginSelect(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<LoginSelectOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                assertThat("Session should not be null", session, notNullValue())
+        session3.delegateUntilTestEnd(
+            object : PromptDelegate {
+                @AssertCalled(count = 1)
+                override fun onLoginSelect(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<LoginSelectOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    assertThat("Session should not be null", session, notNullValue())
 
-                assertThat(
-                    "There should be two options",
-                    prompt.options.size,
-                    equalTo(2),
-                )
-
-                var usernames = arrayOf(user1, user2)
-                var passwords = arrayOf(pass1, pass2)
-
-                for (i in 0..1) {
-                    val login = prompt.options[i].value
-
-                    assertThat("Login should not be null", login, notNullValue())
                     assertThat(
-                        "Username should match",
-                        login.username,
-                        equalTo(usernames[i]),
+                        "There should be two options",
+                        prompt.options.size,
+                        equalTo(2),
                     )
-                    assertThat(
-                        "Password should match",
-                        login.password,
-                        equalTo(passwords[i]),
-                    )
+
+                    var usernames = arrayOf(user1, user2)
+                    var passwords = arrayOf(pass1, pass2)
+
+                    for (i in 0..1) {
+                        val login = prompt.options[i].value
+
+                        assertThat("Login should not be null", login, notNullValue())
+                        assertThat(
+                            "Username should match",
+                            login.username,
+                            equalTo(usernames[i]),
+                        )
+                        assertThat(
+                            "Password should match",
+                            login.password,
+                            equalTo(passwords[i]),
+                        )
+                    }
+
+                    val login = prompt.options[0].value
+                    val modOption =
+                        LoginSelectOption(
+                            LoginEntry.Builder()
+                                .origin(login.origin)
+                                .formActionOrigin(login.formActionOrigin)
+                                .username(userMod)
+                                .password(passMod)
+                                .build()
+                        )
+
+                    Handler(Looper.getMainLooper())
+                        .postDelayed(
+                            {
+                                selectHandled.complete(null)
+                            },
+                            acceptDelay,
+                        )
+
+                    return GeckoResult.fromValue(prompt.confirm(modOption))
                 }
-
-                val login = prompt.options[0].value
-                val modOption = LoginSelectOption(
-                    LoginEntry.Builder()
-                        .origin(login.origin)
-                        .formActionOrigin(login.formActionOrigin)
-                        .username(userMod)
-                        .password(passMod)
-                        .build(),
-                )
-
-                Handler(Looper.getMainLooper()).postDelayed({
-                    selectHandled.complete(null)
-                }, acceptDelay)
-
-                return GeckoResult.fromValue(prompt.confirm(modOption))
             }
-        })
+        )
 
         session3.loadTestPath(FORMS3_HTML_PATH)
         session3.waitForPageStop()
@@ -2589,7 +2777,7 @@ class AutocompleteTest : BaseSessionTest() {
                 "dom.disable_open_during_load" to false,
                 "signon.userInputRequiredToCapture.enabled" to false,
                 "signon.testOnlyNotWaitForPaint" to true,
-            ),
+            )
         )
 
         // Test:
@@ -2611,131 +2799,138 @@ class AutocompleteTest : BaseSessionTest() {
 
         var onLoginSaveCount = 0
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled
-            override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
-                assertThat("Domain should match", domain, equalTo("localhost"))
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
+                    assertThat("Domain should match", domain, equalTo("localhost"))
 
-                return GeckoResult.fromValue(null)
-            }
+                    return GeckoResult.fromValue(null)
+                }
 
-            @AssertCalled(count = 2)
-            override fun onLoginSave(login: LoginEntry) {
-                onLoginSaveCount++
+                @AssertCalled(count = 2)
+                override fun onLoginSave(login: LoginEntry) {
+                    onLoginSaveCount++
 
-                assertThat(
-                    "Password should match",
-                    login.password,
-                    equalTo(genPass),
-                )
-
-                if (onLoginSaveCount == 1) {
                     assertThat(
-                        "Username should be empty",
-                        login.username,
-                        equalTo(""),
+                        "Password should match",
+                        login.password,
+                        equalTo(genPass),
                     )
-                    saveHandled1.complete(null)
-                } else if (onLoginSaveCount == 2) {
+
+                    if (onLoginSaveCount == 1) {
+                        assertThat(
+                            "Username should be empty",
+                            login.username,
+                            equalTo(""),
+                        )
+                        saveHandled1.complete(null)
+                    } else if (onLoginSaveCount == 2) {
+                        assertThat(
+                            "Username should match",
+                            login.username,
+                            equalTo(user1),
+                        )
+                        saveHandled2.complete(null)
+                    }
+                }
+
+                @AssertCalled(false) override fun onLoginUsed(login: LoginEntry, usedFields: Int) {}
+            }
+        )
+
+        mainSession.loadTestPath(FORMS4_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        mainSession.delegateUntilTestEnd(
+            object : PromptDelegate {
+                @AssertCalled
+                override fun onLoginSelect(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<LoginSelectOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    assertThat("Session should not be null", session, notNullValue())
+
+                    assertThat(
+                        "There should be one option",
+                        prompt.options.size,
+                        equalTo(1),
+                    )
+
+                    val option = prompt.options[0]
+                    val login = option.value
+
+                    assertThat(
+                        "Hint should match",
+                        option.hint,
+                        equalTo(SelectOption.Hint.GENERATED),
+                    )
+
+                    assertThat("Login should not be null", login, notNullValue())
+                    assertThat(
+                        "Password should not be empty",
+                        login.password,
+                        not(isEmptyOrNullString()),
+                    )
+
+                    genPass = login.password
+
+                    if (numSelects == 0) {
+                        Handler(Looper.getMainLooper())
+                            .postDelayed(
+                                {
+                                    selectHandled.complete(null)
+                                },
+                                acceptDelay,
+                            )
+                    }
+                    ++numSelects
+
+                    return GeckoResult.fromValue(prompt.confirm(option))
+                }
+
+                @AssertCalled(count = 1)
+                override fun onLoginSave(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<LoginSaveOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    assertThat("Session should not be null", session, notNullValue())
+
+                    val option = prompt.options[0]
+                    val login = option.value
+
+                    assertThat("Login should not be null", login, notNullValue())
+
                     assertThat(
                         "Username should match",
                         login.username,
                         equalTo(user1),
                     )
-                    saveHandled2.complete(null)
+
+                    // TODO: The flag is only set for login entry updates yet.
+                    /*
+                    assertThat(
+                        "Hint should match",
+                        option.hint,
+                        equalTo(LoginSaveOption.Hint.GENERATED))
+                     */
+
+                    assertThat(
+                        "Password should not be empty",
+                        login.password,
+                        not(isEmptyOrNullString()),
+                    )
+
+                    assertThat(
+                        "Password should match",
+                        login.password,
+                        equalTo(genPass),
+                    )
+
+                    return GeckoResult.fromValue(prompt.confirm(option))
                 }
             }
-
-            @AssertCalled(false)
-            override fun onLoginUsed(login: LoginEntry, usedFields: Int) {}
-        })
-
-        mainSession.loadTestPath(FORMS4_HTML_PATH)
-        mainSession.waitForPageStop()
-
-        mainSession.delegateUntilTestEnd(object : PromptDelegate {
-            @AssertCalled
-            override fun onLoginSelect(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<LoginSelectOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                assertThat("Session should not be null", session, notNullValue())
-
-                assertThat(
-                    "There should be one option",
-                    prompt.options.size,
-                    equalTo(1),
-                )
-
-                val option = prompt.options[0]
-                val login = option.value
-
-                assertThat(
-                    "Hint should match",
-                    option.hint,
-                    equalTo(SelectOption.Hint.GENERATED),
-                )
-
-                assertThat("Login should not be null", login, notNullValue())
-                assertThat(
-                    "Password should not be empty",
-                    login.password,
-                    not(isEmptyOrNullString()),
-                )
-
-                genPass = login.password
-
-                if (numSelects == 0) {
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        selectHandled.complete(null)
-                    }, acceptDelay)
-                }
-                ++numSelects
-
-                return GeckoResult.fromValue(prompt.confirm(option))
-            }
-
-            @AssertCalled(count = 1)
-            override fun onLoginSave(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<LoginSaveOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                assertThat("Session should not be null", session, notNullValue())
-
-                val option = prompt.options[0]
-                val login = option.value
-
-                assertThat("Login should not be null", login, notNullValue())
-
-                assertThat(
-                    "Username should match",
-                    login.username,
-                    equalTo(user1),
-                )
-
-                // TODO: The flag is only set for login entry updates yet.
-                /*
-                assertThat(
-                    "Hint should match",
-                    option.hint,
-                    equalTo(LoginSaveOption.Hint.GENERATED))
-                 */
-
-                assertThat(
-                    "Password should not be empty",
-                    login.password,
-                    not(isEmptyOrNullString()),
-                )
-
-                assertThat(
-                    "Password should match",
-                    login.password,
-                    equalTo(genPass),
-                )
-
-                return GeckoResult.fromValue(prompt.confirm(option))
-            }
-        })
+        )
 
         // Assign username and focus on password.
         mainSession.evaluateJS("document.querySelector('#user1').value = '$user1'")
@@ -2748,9 +2943,7 @@ class AutocompleteTest : BaseSessionTest() {
             equalTo(user1),
         )
 
-        val filledPass = mainSession.evaluateJS(
-            "document.querySelector('#pass1').value",
-        ) as String
+        val filledPass = mainSession.evaluateJS("document.querySelector('#pass1').value") as String
 
         assertThat(
             "Password should not be empty",
@@ -2764,9 +2957,7 @@ class AutocompleteTest : BaseSessionTest() {
             equalTo(genPass),
         )
 
-        val filledConfirmPass = mainSession.evaluateJS(
-            "document.querySelector('#passConfirm').value",
-        ) as String
+        val filledConfirmPass = mainSession.evaluateJS("document.querySelector('#passConfirm').value") as String
 
         assertThat(
             "Confirm password should match filled password",
@@ -2792,61 +2983,74 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
                 "signon.testOnlyNotWaitForPaint" to true,
-            ),
+            )
         )
 
         val user = arrayOf("user1x", "user2x")
         val pass = arrayOf("pass1x", "pass2x")
         val guid = arrayOf("test-guid1", "test-guid2")
         val origin = GeckoSessionTestRule.TEST_ENDPOINT
-        val savedLogins = arrayOf(
-            LoginEntry.Builder()
-                .guid(guid[0])
-                .origin(origin)
-                .formActionOrigin(origin)
-                .username(user[0])
-                .password(pass[0])
-                .build(),
-            LoginEntry.Builder()
-                .guid(guid[1])
-                .origin(origin)
-                .formActionOrigin(origin)
-                .username(user[1])
-                .password(pass[1])
-                .build(),
+        val savedLogins =
+            arrayOf(
+                LoginEntry.Builder()
+                    .guid(guid[0])
+                    .origin(origin)
+                    .formActionOrigin(origin)
+                    .username(user[0])
+                    .password(pass[0])
+                    .build(),
+                LoginEntry.Builder()
+                    .guid(guid[1])
+                    .origin(origin)
+                    .formActionOrigin(origin)
+                    .username(user[1])
+                    .password(pass[1])
+                    .build(),
+            )
+
+        sessionRule.delegateUntilTestEnd(
+            object : StorageDelegate {
+                @AssertCalled
+                override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
+                    return GeckoResult.fromValue(savedLogins)
+                }
+            }
         )
 
-        sessionRule.delegateUntilTestEnd(object : StorageDelegate {
-            @AssertCalled
-            override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
-                return GeckoResult.fromValue(savedLogins)
-            }
-        })
-
         val result = GeckoResult<PromptDelegate.PromptResponse>()
-        val promptInstanceDelegate = object : PromptDelegate.PromptInstanceDelegate {
-            override fun onPromptDismiss(prompt: PromptDelegate.BasePrompt) {
-                result.complete(prompt.dismiss())
+        val promptInstanceDelegate =
+            object : PromptDelegate.PromptInstanceDelegate {
+                override fun onPromptDismiss(prompt: PromptDelegate.BasePrompt) {
+                    result.complete(prompt.dismiss())
+                }
             }
-        }
 
         val promptHandled = GeckoResult<Void>()
-        mainSession.delegateUntilTestEnd(object : PromptDelegate {
-            @AssertCalled
-            override fun onLoginSelect(session: GeckoSession, prompt: AutocompleteRequest<LoginSelectOption>): GeckoResult<PromptDelegate.PromptResponse>? {
-                assertThat(
-                    "There should be two options",
-                    prompt.options.size,
-                    equalTo(2),
-                )
-                prompt.setDelegate(promptInstanceDelegate)
-                Handler(Looper.getMainLooper()).postDelayed({
-                    promptHandled.complete(null)
-                }, acceptDelay)
+        mainSession.delegateUntilTestEnd(
+            object : PromptDelegate {
+                @AssertCalled
+                override fun onLoginSelect(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<LoginSelectOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    assertThat(
+                        "There should be two options",
+                        prompt.options.size,
+                        equalTo(2),
+                    )
+                    prompt.setDelegate(promptInstanceDelegate)
+                    Handler(Looper.getMainLooper())
+                        .postDelayed(
+                            {
+                                promptHandled.complete(null)
+                            },
+                            acceptDelay,
+                        )
 
-                return GeckoResult()
+                    return GeckoResult()
+                }
             }
-        })
+        )
 
         mainSession.loadTestPath(FORMS3_HTML_PATH)
         mainSession.waitForPageStop()
@@ -2869,17 +3073,18 @@ class AutocompleteTest : BaseSessionTest() {
         }
 
         sessionRule.waitForResult(structureResult).let { fields ->
-            val expectedResult = listOf(
-                Pair("name", "autofill-address-name"),
-                Pair("organization", "autofill-address-organization"),
-                Pair("street-address", "autofill-address-street"),
-                Pair("address-level2", "autofill-address-city"),
-                Pair("address-level1", "autofill-address-state"),
-                Pair("postal-code", "autofill-address-zip"),
-                Pair("country", "autofill-address-country"),
-                Pair("tel", "autofill-address-tel"),
-                Pair("email", "autofill-address-email"),
-            )
+            val expectedResult =
+                listOf(
+                    Pair("name", "autofill-address-name"),
+                    Pair("organization", "autofill-address-organization"),
+                    Pair("street-address", "autofill-address-street"),
+                    Pair("address-level2", "autofill-address-city"),
+                    Pair("address-level1", "autofill-address-state"),
+                    Pair("postal-code", "autofill-address-zip"),
+                    Pair("country", "autofill-address-country"),
+                    Pair("tel", "autofill-address-tel"),
+                    Pair("email", "autofill-address-email"),
+                )
 
             expectedResult.forEachIndexed { index, pair ->
                 assertTrue(
@@ -2902,17 +3107,18 @@ class AutocompleteTest : BaseSessionTest() {
         }
 
         sessionRule.waitForResult(structureResult).let { fields ->
-            val expectedResult = listOf(
-                Pair("postal-code", "autofill-address-postal-code"),
-                Pair("address-level1", "autofill-address-prefecture"),
-                Pair("address-level2", "autofill-address-city"),
-                Pair("street-address", "autofill-address-street"),
-                Pair("organization", "autofill-address-organization"),
-                Pair("name", "autofill-address-name"),
-                Pair("country", "autofill-address-country"),
-                Pair("tel", "autofill-address-tel"),
-                Pair("email", "autofill-address-email"),
-            )
+            val expectedResult =
+                listOf(
+                    Pair("postal-code", "autofill-address-postal-code"),
+                    Pair("address-level1", "autofill-address-prefecture"),
+                    Pair("address-level2", "autofill-address-city"),
+                    Pair("street-address", "autofill-address-street"),
+                    Pair("organization", "autofill-address-organization"),
+                    Pair("name", "autofill-address-name"),
+                    Pair("country", "autofill-address-country"),
+                    Pair("tel", "autofill-address-tel"),
+                    Pair("email", "autofill-address-email"),
+                )
 
             expectedResult.forEachIndexed { index, pair ->
                 assertTrue(
@@ -2936,7 +3142,7 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.userInputRequiredToCapture.enabled" to false,
                 "signon.testOnlyNotWaitForPaint" to true,
                 "signon.firefoxRelay.feature" to "enabled",
-            ),
+            )
         )
 
         // Test:
@@ -2954,48 +3160,51 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.loadTestPath(FORMS4_HTML_PATH)
         mainSession.waitForPageStop()
 
-        mainSession.delegateUntilTestEnd(object : PromptDelegate {
-            @AssertCalled
-            override fun onLoginSelect(
-                session: GeckoSession,
-                prompt: AutocompleteRequest<LoginSelectOption>,
-            ): GeckoResult<PromptDelegate.PromptResponse>? {
-                assertThat("Session should not be null", session, notNullValue())
+        mainSession.delegateUntilTestEnd(
+            object : PromptDelegate {
+                @AssertCalled
+                override fun onLoginSelect(
+                    session: GeckoSession,
+                    prompt: AutocompleteRequest<LoginSelectOption>,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    assertThat("Session should not be null", session, notNullValue())
 
-                assertThat(
-                    "There should be one option",
-                    prompt.options.size,
-                    equalTo(1),
-                )
+                    assertThat(
+                        "There should be one option",
+                        prompt.options.size,
+                        equalTo(1),
+                    )
 
-                val option = prompt.options[0]
-                val login = option.value
+                    val option = prompt.options[0]
+                    val login = option.value
 
-                // GENERATE_RELAY_USERNAME option is only offered when users are signed in to their FxAccount.
-                // However, Gecko currently doesn't detect whether the FxAccount is signed in on mobile,
-                // so this option is always OFFER_RELAY_INTEGRATION.
-                assertThat(
-                    "Hint should match",
-                    option.hint,
-                    equalTo(SelectOption.Hint.FIREFOX_RELAY),
-                )
+                    // GENERATE_RELAY_USERNAME option is only offered when users are signed in to their FxAccount.
+                    // However, Gecko currently doesn't detect whether the FxAccount is signed in on mobile,
+                    // so this option is always OFFER_RELAY_INTEGRATION.
+                    assertThat(
+                        "Hint should match",
+                        option.hint,
+                        equalTo(SelectOption.Hint.FIREFOX_RELAY),
+                    )
 
-                // Change `hint` to FILL_LOGIN to instruct Gecko to fill the generated relay username.
-                val hint = SelectOption.Hint.FIREFOX_RELAY
-                val origin = GeckoSessionTestRule.TEST_ENDPOINT
-                val relayUsername = LoginEntry.Builder()
-                    .origin(origin)
-                    .formActionOrigin(origin)
-                    .username(genRelayUsername)
-                    .build()
+                    // Change `hint` to FILL_LOGIN to instruct Gecko to fill the generated relay username.
+                    val hint = SelectOption.Hint.FIREFOX_RELAY
+                    val origin = GeckoSessionTestRule.TEST_ENDPOINT
+                    val relayUsername =
+                        LoginEntry.Builder().origin(origin).formActionOrigin(origin).username(genRelayUsername).build()
 
-                Handler(Looper.getMainLooper()).postDelayed({
-                    selectHandled.complete(null)
-                }, acceptDelay)
+                    Handler(Looper.getMainLooper())
+                        .postDelayed(
+                            {
+                                selectHandled.complete(null)
+                            },
+                            acceptDelay,
+                        )
 
-                return GeckoResult.fromValue(prompt.confirm(LoginSelectOption(relayUsername, hint)))
+                    return GeckoResult.fromValue(prompt.confirm(LoginSelectOption(relayUsername, hint)))
+                }
             }
-        })
+        )
 
         // focus on username.
         mainSession.evaluateJS("document.querySelector('#user1').focus()")
@@ -3007,10 +3216,10 @@ class AutocompleteTest : BaseSessionTest() {
             equalTo(genRelayUsername),
         )
 
-         assertThat(
-             "Password should be empty",
-             mainSession.evaluateJS("document.querySelector('#pass1').value") as String,
-             equalTo(""),
-         )
+        assertThat(
+            "Password should be empty",
+            mainSession.evaluateJS("document.querySelector('#pass1').value") as String,
+            equalTo(""),
+        )
     }
 }

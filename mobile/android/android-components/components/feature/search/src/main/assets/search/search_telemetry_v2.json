@@ -1,32 +1,110 @@
 {
   "data": [
     {
-      "schema": 1779580811115,
-      "subframes": [
-        {
-          "regexp": "^https://www\\.startpage\\.com/sp/afs/ads"
-        }
-      ],
+      "schema": 1786612555420,
+      "subframes": [],
       "components": [
-        {
-          "type": "ad_subframe",
-          "topDown": true,
-          "included": {
-            "parent": {
-              "selector": "iframe[src^='https://www.startpage.com/sp/afs/ads']"
-            }
-          }
-        },
         {
           "type": "ad_carousel",
           "included": {
             "parent": {
-              "selector": ".pa-bg-carousel, .carousel-container"
+              "selector": ".adsMvCarousel"
+            },
+            "related": {
+              "selector": ".cr"
             },
             "children": [
               {
-                "selector": ".glider-slide",
+                "selector": ".pa_item",
                 "countChildren": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "ad_link",
+          "excluded": {
+            "parent": {
+              "selector": "aside"
+            }
+          },
+          "included": {
+            "parent": {
+              "selector": ".sb_adTA"
+            },
+            "children": [
+              {
+                "type": "ad_sitelink",
+                "selector": ".b_vlist2col"
+              }
+            ]
+          }
+        },
+        {
+          "type": "ad_sidebar",
+          "included": {
+            "parent": {
+              "selector": "aside"
+            },
+            "children": [
+              {
+                "selector": ".pa_item, .sb_adTA",
+                "countChildren": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "incontent_searchbox",
+          "topDown": true,
+          "included": {
+            "parent": {
+              "selector": "form#sb_form"
+            },
+            "related": {
+              "selector": "#sw_as"
+            },
+            "children": [
+              {
+                "selector": "input[name='q']"
+              }
+            ]
+          }
+        },
+        {
+          "type": "cookie_banner",
+          "topDown": true,
+          "included": {
+            "parent": {
+              "selector": "div#bnp_cookie_banner"
+            },
+            "children": [
+              {
+                "selector": "button#bnp_btn_accept",
+                "eventListeners": [
+                  {
+                    "action": "clicked_accept",
+                    "eventType": "click"
+                  }
+                ]
+              },
+              {
+                "selector": "button#bnp_btn_reject",
+                "eventListeners": [
+                  {
+                    "action": "clicked_reject",
+                    "eventType": "click"
+                  }
+                ]
+              },
+              {
+                "selector": "a#bnp_btn_preference",
+                "eventListeners": [
+                  {
+                    "action": "clicked_more_options",
+                    "eventType": "click"
+                  }
+                ]
               }
             ]
           }
@@ -36,40 +114,116 @@
           "default": true
         }
       ],
-      "taggedCodes": [
-        "startpage.apex.desktop",
-        "startpage.apex.ios",
-        "startpage.apex.android"
-      ],
-      "telemetryId": "startpage",
-      "organicCodes": [
-        "startpage.udog"
-      ],
-      "codeParamName": "segment",
-      "queryParamName": "query",
-      "alwaysMatchSERP": {
-        "child": true
+      "shoppingTab": {
+        "regexp": "^/shop?",
+        "selector": "#b-scopeListItem-shop a"
       },
-      "queryParamNames": [
-        "q",
-        "query"
+      "taggedCodes": [
+        "MOZ2",
+        "MOZ4",
+        "MOZ5",
+        "MOZA",
+        "MOZB",
+        "MOZD",
+        "MOZE",
+        "MOZI",
+        "MOZL",
+        "MOZM",
+        "MOZO",
+        "MOZR",
+        "MOZT",
+        "MOZW",
+        "MOZX",
+        "MZABT",
+        "MZCP",
+        "MZTOF",
+        "MZSL01",
+        "MZSL02",
+        "MZSL03"
       ],
-      "searchPageRegexp": "^https://www\\.startpage\\.com/sp/search",
-      "filter_expression": "env.version|versionCompare(\"152.0a1\")>=0",
+      "telemetryId": "bing",
+      "organicCodes": [],
+      "codeParamName": "pc",
+      "pageTypeParam": {
+        "keys": [],
+        "pageTypes": [
+          {
+            "name": "web",
+            "target": "default_tab",
+            "values": [],
+            "enabled": true,
+            "isDefault": true
+          }
+        ],
+        "enableSPAHandling": true
+      },
+      "queryParamName": "q",
+      "followOnCookies": [
+        {
+          "host": "www.bing.com",
+          "name": "_SS",
+          "codeParamName": "PC",
+          "extraCodePrefixes": [],
+          "extraCodeParamName": ""
+        },
+        {
+          "host": "www.bing.com",
+          "name": "SRCHS",
+          "codeParamName": "PC",
+          "extraCodePrefixes": [],
+          "extraCodeParamName": ""
+        },
+        {
+          "host": "cn.bing.com",
+          "name": "_SS",
+          "codeParamName": "PC",
+          "extraCodePrefixes": [],
+          "extraCodeParamName": ""
+        },
+        {
+          "host": "cn.bing.com",
+          "name": "SRCHS",
+          "codeParamName": "PC",
+          "extraCodePrefixes": [],
+          "extraCodeParamName": ""
+        }
+      ],
+      "queryParamNames": [
+        "q"
+      ],
+      "domainExtraction": {
+        "ads": [
+          {
+            "method": "textContent",
+            "selectors": "#b_results .b_ad .b_attribution cite, .adsMvCarousel cite, aside cite"
+          }
+        ],
+        "nonAds": [
+          {
+            "method": "textContent",
+            "selectors": "#b_results .b_algo .b_attribution cite"
+          }
+        ]
+      },
+      "searchPageRegexp": "^https://(?:cn|www)\\.bing\\.com/search",
+      "filter_expression": "env.version|versionCompare(\"153.0.4\")>=0",
+      "nonAdsLinkRegexps": [
+        "^https://(?:cn|www).bing.com/ck/a"
+      ],
       "searchPageMatches": [
-        "https://www.startpage.com/sp/search*"
+        "https://(?:cn|www).bing.com/search*"
       ],
       "impressionAttributes": [
         {
           "key": "is_shopping_page",
           "url": {
-            "regexp": "[?&]cat=shopping"
+            "regexp": "^/shop?"
           }
         },
         {
           "key": "shopping_tab_displayed",
           "element": {
-            "selector": "button[data-testid='Shopping']",
+            "selector": "#b-scopeListItem-shop a",
             "component": {
               "type": "shopping_tab",
               "countImpressions": true
@@ -79,19 +233,19 @@
         {
           "key": "has_ai_summary",
           "element": {
-            "selector": ".ai-summaries-qi"
+            "selector": "#b_wpt_container_ml,.gs_aidisc,#copans_container"
           }
         }
       ],
       "extraAdServersRegexps": [
-        "^https://syndicatedsearch\\.goog/",
-        "https://www\\.bing\\.com/aclick"
+        "^https://(?:cn|www)\\.bing\\.com/acli?c?k"
       ],
-      "id": "233cb5cb-0225-43d1-8ffb-205ef2d8b0ca",
-      "last_modified": 1779985790144
+      "requireTopLevelImpressionOrigin": true,
+      "id": "5915de28-f276-4b8f-8620-62abc46ecfd4",
+      "last_modified": 1786632246774
     },
     {
-      "schema": 1774280721627,
+      "schema": 1786611457004,
       "subframes": [],
       "components": [
         {
@@ -283,6 +437,7 @@
         ]
       },
       "searchPageRegexp": "^https://(?:cn|www)\\.bing\\.com/search",
+      "filter_expression": "env.version|versionCompare(\"153.0.4\")<0",
       "nonAdsLinkRegexps": [
         "^https://(?:cn|www).bing.com/ck/a"
       ],
@@ -317,7 +472,97 @@
         "^https://(?:cn|www)\\.bing\\.com/acli?c?k"
       ],
       "id": "e1eec461-f1f3-40de-b94b-3b670b78108c",
-      "last_modified": 1774283138114
+      "last_modified": 1786632246769
+    },
+    {
+      "schema": 1779580811115,
+      "subframes": [
+        {
+          "regexp": "^https://www\\.startpage\\.com/sp/afs/ads"
+        }
+      ],
+      "components": [
+        {
+          "type": "ad_subframe",
+          "topDown": true,
+          "included": {
+            "parent": {
+              "selector": "iframe[src^='https://www.startpage.com/sp/afs/ads']"
+            }
+          }
+        },
+        {
+          "type": "ad_carousel",
+          "included": {
+            "parent": {
+              "selector": ".pa-bg-carousel, .carousel-container"
+            },
+            "children": [
+              {
+                "selector": ".glider-slide",
+                "countChildren": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "ad_link",
+          "default": true
+        }
+      ],
+      "taggedCodes": [
+        "startpage.apex.desktop",
+        "startpage.apex.ios",
+        "startpage.apex.android"
+      ],
+      "telemetryId": "startpage",
+      "organicCodes": [
+        "startpage.udog"
+      ],
+      "codeParamName": "segment",
+      "queryParamName": "query",
+      "alwaysMatchSERP": {
+        "child": true
+      },
+      "queryParamNames": [
+        "q",
+        "query"
+      ],
+      "searchPageRegexp": "^https://www\\.startpage\\.com/sp/search",
+      "filter_expression": "env.version|versionCompare(\"152.0a1\")>=0",
+      "searchPageMatches": [
+        "https://www.startpage.com/sp/search*"
+      ],
+      "impressionAttributes": [
+        {
+          "key": "is_shopping_page",
+          "url": {
+            "regexp": "[?&]cat=shopping"
+          }
+        },
+        {
+          "key": "shopping_tab_displayed",
+          "element": {
+            "selector": "button[data-testid='Shopping']",
+            "component": {
+              "type": "shopping_tab",
+              "countImpressions": true
+            }
+          }
+        },
+        {
+          "key": "has_ai_summary",
+          "element": {
+            "selector": ".ai-summaries-qi"
+          }
+        }
+      ],
+      "extraAdServersRegexps": [
+        "^https://syndicatedsearch\\.goog/",
+        "https://www\\.bing\\.com/aclick"
+      ],
+      "id": "233cb5cb-0225-43d1-8ffb-205ef2d8b0ca",
+      "last_modified": 1779985790144
     },
     {
       "schema": 1773964810753,
@@ -1198,5 +1443,5 @@
       "last_modified": 1774283138101
     }
   ],
-  "timestamp": 1779985790144
+  "timestamp": 1786632246774
 }

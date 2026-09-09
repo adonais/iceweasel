@@ -6,6 +6,7 @@ package org.mozilla.fenix.ui
 
 import android.content.Intent
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 import mozilla.components.service.nimbus.messaging.FxNimbusMessaging
 import mozilla.components.service.nimbus.messaging.MessageData
 import mozilla.components.service.nimbus.messaging.Messaging
@@ -27,39 +28,39 @@ import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.nimbus.HomeScreenSection
 import org.mozilla.fenix.nimbus.Homescreen
 import org.mozilla.fenix.ui.robots.homeScreen
-import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 /**
- *  Tests for verifying basic functionality of the Nimbus Home Screen message
+ * Tests for verifying basic functionality of the Nimbus Home Screen message
  *
- *  Verifies a message can be displayed with all of the correct components
-**/
+ * Verifies a message can be displayed with all of the correct components
+ */
 class NimbusMessagingHomescreenTest {
     private var messageButtonLabel = "CLICK ME"
     private var messageText = "Some Nimbus Messaging text"
     private var messageTitle = "A Nimbus title"
 
-    @get:Rule(order = 0)
-    val fenixTestRule: FenixTestRule = FenixTestRule()
+    @get:Rule(order = 0) val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    @get:Rule(order = 1)
-    val retryTestRule = RetryTestRule(3)
+    @get:Rule(order = 1) val retryTestRule = RetryTestRule(3)
 
     @get:Rule(order = 2)
     val retryableComposeTestRule = RetryableComposeTestRule {
         AndroidComposeTestRuleV2(
-            HomeActivityIntentTestRule.withDefaultSettingsOverrides().withIntent(
-                Intent().apply {
-                    action = Intent.ACTION_VIEW
-                },
-            ),
-        ) { it.activity }
+            HomeActivityIntentTestRule.withDefaultSettingsOverrides()
+                .withIntent(
+                    Intent().apply {
+                        action = Intent.ACTION_VIEW
+                    }
+                )
+        ) {
+            it.activity
+        }
     }
 
-    private val composeTestRule get() = retryableComposeTestRule.current
+    private val composeTestRule
+        get() = retryableComposeTestRule.current
 
-    @get:Rule(order = 3)
-    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
+    @get:Rule(order = 3) val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     @OptIn(ExperimentalTestApi::class)
     @Before
@@ -68,25 +69,21 @@ class NimbusMessagingHomescreenTest {
         FxNimbusMessaging.features.messaging.withInitializer { _, _ ->
             // FML generated objects.
             Messaging(
-                messages = mapOf(
-                    "test-message" to MessageData(
-                        action = "TEST ACTION",
-                        style = "TEST STYLE",
-                        buttonLabel = Res.string(messageButtonLabel),
-                        text = Res.string(messageText),
-                        title = Res.string(messageTitle),
-                        triggerIfAll = listOf("ALWAYS"),
+                messages =
+                    mapOf(
+                        "test-message" to
+                            MessageData(
+                                action = "TEST ACTION",
+                                style = "TEST STYLE",
+                                buttonLabel = Res.string(messageButtonLabel),
+                                text = Res.string(messageText),
+                                title = Res.string(messageTitle),
+                                triggerIfAll = listOf("ALWAYS"),
+                            )
                     ),
-                ),
-                styles = mapOf(
-                    "TEST STYLE" to StyleData(),
-                ),
-                actions = mapOf(
-                    "TEST ACTION" to "https://example.com",
-                ),
-                triggers = mapOf(
-                    "ALWAYS" to "true",
-                ),
+                styles = mapOf("TEST STYLE" to StyleData()),
+                actions = mapOf("TEST ACTION" to "https://example.com"),
+                triggers = mapOf("ALWAYS" to "true"),
             )
         }
 
@@ -94,14 +91,15 @@ class NimbusMessagingHomescreenTest {
         FxNimbus.features.homescreen.withInitializer { _, _ ->
             // These are FML generated objects and enums
             Homescreen(
-                sectionsEnabled = mapOf(
-                    HomeScreenSection.JUMP_BACK_IN to false,
-                    HomeScreenSection.POCKET to false,
-                    HomeScreenSection.POCKET_SPONSORED_STORIES to false,
-                    HomeScreenSection.RECENT_EXPLORATIONS to false,
-                    HomeScreenSection.BOOKMARKS to false,
-                    HomeScreenSection.TOP_SITES to false,
-                ),
+                sectionsEnabled =
+                    mapOf(
+                        HomeScreenSection.JUMP_BACK_IN to false,
+                        HomeScreenSection.POCKET to false,
+                        HomeScreenSection.POCKET_SPONSORED_STORIES to false,
+                        HomeScreenSection.RECENT_EXPLORATIONS to false,
+                        HomeScreenSection.BOOKMARKS to false,
+                        HomeScreenSection.TOP_SITES to false,
+                    )
             )
         }
         // refresh message store
@@ -113,9 +111,7 @@ class NimbusMessagingHomescreenTest {
         composeTestRule.waitUntil(waitingTime) {
             application.components.appStore.state.messaging.messages.any { it.id == "test-message" }
         }
-        application.components.appStore.dispatch(
-            AppAction.MessagingAction.Evaluate(FenixMessageSurfaceId.HOMESCREEN),
-        )
+        application.components.appStore.dispatch(AppAction.MessagingAction.Evaluate(FenixMessageSurfaceId.HOMESCREEN))
     }
 
     @Test

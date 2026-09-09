@@ -10,14 +10,14 @@ import androidx.compose.runtime.Composable
 import mozilla.components.compose.base.text.Text
 
 /**
- * Model for [DropdownMenuItem]. This is a sealed type to represent the different types of menu
- * items that can be rendered in the dropdown menu.
+ * Model for [DropdownMenuItem]. This is a sealed type to represent the different types of menu items that can be
+ * rendered in the dropdown menu.
  */
 sealed interface MenuItem {
 
     /**
-     * [FixedItem]s are the ones that are pre-defined in the design system and have a fixed layout.
-     * These are the ones that are rendered with a specific layout and have a specific behavior.
+     * [FixedItem]s are the ones that are pre-defined in the design system and have a fixed layout. These are the ones
+     * that are rendered with a specific layout and have a specific behavior.
      *
      * @property text The text to be displayed in the menu item.
      * @property level The level of the menu item. This is used to determine the style of the menu.
@@ -25,7 +25,6 @@ sealed interface MenuItem {
      * @property supportingText The supporting text to be displayed below [text].
      * @property enabled Sets the enabled status for the item. By default, it is always set to true.
      * @property onClick The action to be performed when the menu item is clicked.
-     *
      */
     sealed class FixedItem(
         open val text: Text,
@@ -36,18 +35,12 @@ sealed interface MenuItem {
         open val enabled: Boolean = true,
     ) : MenuItem {
 
-        /**
-         * Type representing different levels of importance of a UI element.
-         */
+        /** Type representing different levels of importance of a UI element. */
         enum class Level {
-            /**
-             * Default level of importance.
-             */
+            /** Default level of importance. */
             Default,
 
-            /**
-             * Critical level of importance.
-             */
+            /** Critical level of importance. */
             Critical,
         }
     }
@@ -61,7 +54,6 @@ sealed interface MenuItem {
      * @property supportingText The supporting text to be displayed below [text].
      * @property enabled Sets the enabled status for the item. By default, it is always set to true.
      * @property onClick The action to be performed when the menu item is clicked.
-     *
      */
     data class TextItem(
         override val text: Text,
@@ -70,13 +62,14 @@ sealed interface MenuItem {
         override val supportingText: Text? = null,
         override val enabled: Boolean = true,
         override val onClick: () -> Unit,
-        ) : FixedItem(
-        text = text,
-        level = level,
-        testTag = testTag,
-        supportingText = supportingText,
-        enabled = enabled,
-        onClick = onClick,
+    ) :
+        FixedItem(
+            text = text,
+            level = level,
+            testTag = testTag,
+            supportingText = supportingText,
+            enabled = enabled,
+            onClick = onClick,
         )
 
     /**
@@ -98,14 +91,15 @@ sealed interface MenuItem {
         override val supportingText: Text? = null,
         override val enabled: Boolean = true,
         override val onClick: () -> Unit,
-        ) : FixedItem(
-        text = text,
-        level = level,
-        testTag = testTag,
-        supportingText = supportingText,
-        enabled = enabled,
-        onClick = onClick,
-    )
+    ) :
+        FixedItem(
+            text = text,
+            level = level,
+            testTag = testTag,
+            supportingText = supportingText,
+            enabled = enabled,
+            onClick = onClick,
+        )
 
     /**
      * [IconItem] is a [FixedItem] that represents a menu item with text and an icon.
@@ -126,28 +120,24 @@ sealed interface MenuItem {
         override val supportingText: Text? = null,
         override val enabled: Boolean = true,
         override val onClick: () -> Unit,
-        ) : FixedItem(
-        text = text,
-        level = level,
-        testTag = testTag,
-        supportingText = supportingText,
-        enabled = enabled,
-        onClick = onClick,
+    ) :
+        FixedItem(
+            text = text,
+            level = level,
+            testTag = testTag,
+            supportingText = supportingText,
+            enabled = enabled,
+            onClick = onClick,
         )
 
     /**
-     * [CustomMenuItem] can be used to render a custom content as a menu item. This should be used
-     * sparingly and only for cases where the design system does not have a pre-defined layout for
-     * the menu item.
+     * [CustomMenuItem] can be used to render a custom content as a menu item. This should be used sparingly and only
+     * for cases where the design system does not have a pre-defined layout for the menu item.
      *
      * @property content The content to be displayed in the menu item.
      */
-    data class CustomMenuItem(
-        val content: @Composable () -> Unit,
-    ) : MenuItem
+    data class CustomMenuItem(val content: @Composable () -> Unit) : MenuItem
 
-    /**
-     * [Divider] is a special item that represents a divider in the dropdown menu.
-     */
+    /** [Divider] is a special item that represents a divider in the dropdown menu. */
     data object Divider : MenuItem
 }

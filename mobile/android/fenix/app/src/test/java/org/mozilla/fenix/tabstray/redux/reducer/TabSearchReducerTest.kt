@@ -16,56 +16,62 @@ class TabSearchReducerTest {
 
     @Test
     fun `WHEN SearchQueryChanged THEN tab search query is updated`() {
-        val tabs = listOf(
-            TabsTrayItem.Tab(tab = createTab("https://example.com")),
-            TabsTrayItem.Tab(tab = createTab("https://mozilla.org")),
-        )
+        val tabs =
+            listOf(
+                TabsTrayItem.Tab(tab = createTab("https://example.com")),
+                TabsTrayItem.Tab(tab = createTab("https://mozilla.org")),
+            )
 
-        val initialState = TabsTrayState(
-            tabSearchState = TabSearchState(
-                query = "old query",
-                searchResults = tabs,
-            ),
-        )
+        val initialState =
+            TabsTrayState(
+                tabSearchState =
+                    TabSearchState(
+                        query = "old query",
+                        searchResults = tabs,
+                    )
+            )
 
-        val resultState = TabSearchActionReducer.reduce(
-            state = initialState,
-            action = TabSearchAction.SearchQueryChanged("new query"),
-        )
+        val resultState =
+            TabSearchActionReducer.reduce(
+                state = initialState,
+                action = TabSearchAction.SearchQueryChanged("new query"),
+            )
 
-        val expectedState = initialState.copy(
-            tabSearchState = initialState.tabSearchState.copy(
-                query = "new query",
-                searchResults = tabs,
-            ),
-        )
+        val expectedState =
+            initialState.copy(
+                tabSearchState =
+                    initialState.tabSearchState.copy(
+                        query = "new query",
+                        searchResults = tabs,
+                    )
+            )
 
         assertEquals(expectedState.tabSearchState.query, resultState.tabSearchState.query)
     }
 
     @Test
     fun `WHEN SearchResultsUpdated THEN query is cleared and results are updated`() {
-        val initialState = TabsTrayState(
-            tabSearchState = TabSearchState(
-                query = "mozilla",
-                searchResults = emptyList(),
-            ),
-        )
+        val initialState =
+            TabsTrayState(
+                tabSearchState =
+                    TabSearchState(
+                        query = "mozilla",
+                        searchResults = emptyList(),
+                    )
+            )
 
         val firstTab = TabsTrayItem.Tab(tab = createTab("https://mozilla.org"))
         val secondTab = TabsTrayItem.Tab(tab = createTab("https://developer.mozilla.org"))
         val results = listOf(firstTab, secondTab)
 
-        val resultState = TabSearchActionReducer.reduce(
-            state = initialState,
-            action = TabSearchAction.SearchResultsUpdated(results),
-        )
+        val resultState =
+            TabSearchActionReducer.reduce(
+                state = initialState,
+                action = TabSearchAction.SearchResultsUpdated(results),
+            )
 
-        val expectedState = initialState.copy(
-            tabSearchState = initialState.tabSearchState.copy(
-                searchResults = results,
-            ),
-        )
+        val expectedState =
+            initialState.copy(tabSearchState = initialState.tabSearchState.copy(searchResults = results))
 
         assertEquals(expectedState, resultState)
     }
@@ -76,19 +82,24 @@ class TabSearchReducerTest {
         val secondTab = TabsTrayItem.Tab(tab = createTab("https://developer.mozilla.org"))
         val results = listOf(firstTab, secondTab)
 
-        val initialState = TabsTrayState(
-            tabSearchState = TabSearchState(
-                query = "mozilla",
-                searchResults = results,
-            ),
-        )
+        val initialState =
+            TabsTrayState(
+                tabSearchState =
+                    TabSearchState(
+                        query = "mozilla",
+                        searchResults = results,
+                    )
+            )
 
         val emptyResults = emptyList<TabsTrayItem>()
 
-        val actualResults = TabSearchActionReducer.reduce(
-            state = initialState,
-            action = TabSearchAction.SearchResultsUpdated(emptyResults),
-        ).tabSearchState.searchResults
+        val actualResults =
+            TabSearchActionReducer.reduce(
+                    state = initialState,
+                    action = TabSearchAction.SearchResultsUpdated(emptyResults),
+                )
+                .tabSearchState
+                .searchResults
 
         assertEquals(emptyResults, actualResults)
     }
@@ -96,17 +107,20 @@ class TabSearchReducerTest {
     @Test
     fun `WHEN SearchResultClicked THEN state is unchanged`() {
         val tab = TabsTrayItem.Tab(tab = createTab("https://mozilla.org"))
-        val initialState = TabsTrayState(
-            tabSearchState = TabSearchState(
-                query = "mozilla",
-                searchResults = listOf(tab),
-            ),
-        )
+        val initialState =
+            TabsTrayState(
+                tabSearchState =
+                    TabSearchState(
+                        query = "mozilla",
+                        searchResults = listOf(tab),
+                    )
+            )
 
-        val resultState = TabSearchActionReducer.reduce(
-            state = initialState,
-            action = TabSearchAction.SearchResultClicked(tab),
-        )
+        val resultState =
+            TabSearchActionReducer.reduce(
+                state = initialState,
+                action = TabSearchAction.SearchResultClicked(tab),
+            )
 
         assertEquals(initialState, resultState)
     }

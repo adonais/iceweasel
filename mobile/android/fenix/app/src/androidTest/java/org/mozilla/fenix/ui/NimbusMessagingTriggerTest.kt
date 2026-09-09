@@ -8,7 +8,6 @@ import mozilla.components.service.nimbus.messaging.FxNimbusMessaging
 import mozilla.components.service.nimbus.messaging.Messaging
 import org.junit.Assert
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.experiments.nimbus.NimbusInterface
@@ -30,11 +29,9 @@ class NimbusMessagingTriggerTest {
     private lateinit var feature: Messaging
     private lateinit var nimbus: NimbusInterface
 
-    @get:Rule(order = 0)
-    val fenixTestRule: FenixTestRule = FenixTestRule()
+    @get:Rule(order = 0) val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    @get:Rule
-    val activityTestRule = HomeActivityIntentTestRule.withDefaultSettingsOverrides()
+    @get:Rule val activityTestRule = HomeActivityIntentTestRule.withDefaultSettingsOverrides()
 
     @Before
     fun setUp() {
@@ -65,12 +62,13 @@ class NimbusMessagingTriggerTest {
     fun testBadTriggersAreDetected() {
         val jexl = nimbus.createMessageHelper()
 
-        val triggers = mapOf(
-            "Syntax error" to "|'syntax error'|",
-            "Invalid identifier" to "invalid_identifier",
-            "Invalid transform" to "'string'|invalid_transform",
-            "Invalid interval" to "'string'|eventLastSeen('Invalid')",
-        )
+        val triggers =
+            mapOf(
+                "Syntax error" to "|'syntax error'|",
+                "Invalid identifier" to "invalid_identifier",
+                "Invalid transform" to "'string'|invalid_transform",
+                "Invalid interval" to "'string'|eventLastSeen('Invalid')",
+            )
 
         triggers.forEach { (key, expr) ->
             try {

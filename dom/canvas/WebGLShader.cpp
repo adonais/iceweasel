@@ -36,15 +36,6 @@ static void PrintLongString(const char* const begin, const size_t len) {
   printf_stderr("%s", chunkBegin);
 }
 
-template <size_t N>
-static bool SubstringStartsWith(const std::string& testStr, size_t offset,
-                                const char (&refStr)[N]) {
-  for (size_t i = 0; i < N - 1; i++) {
-    if (testStr[offset + i] != refStr[i]) return false;
-  }
-  return true;
-}
-
 static void GetCompilationStatusAndLog(gl::GLContext* gl, GLuint shader,
                                        bool* const out_success,
                                        std::string* const out_log) {

@@ -289,6 +289,7 @@ let JSWINDOWACTORS = {
         "SmartWindowTasks:RequestRunMonitor": { wantUntrusted: true },
         "SmartWindowTasks:RequestPauseMonitor": { wantUntrusted: true },
         "SmartWindowTasks:RequestConstants": { wantUntrusted: true },
+        "SmartWindowTasks:RequestOpenUrl": { wantUntrusted: true },
       },
     },
     allFrames: true,
@@ -710,12 +711,12 @@ let JSWINDOWACTORS = {
     safeForUntrustedWebProcess: true,
   },
 
-  Pdfjs: {
+  PdfJs: {
     parent: {
-      esModuleURI: "resource://pdf.js/PdfjsParent.sys.mjs",
+      esModuleURI: "resource://pdf.js/PdfJsParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://pdf.js/PdfjsChild.sys.mjs",
+      esModuleURI: "resource://pdf.js/PdfJsChild.sys.mjs",
     },
     allFrames: true,
     safeForUntrustedWebProcess: true,
@@ -996,14 +997,29 @@ let JSWINDOWACTORS = {
 
   Urlbar: {
     parent: {
-      esModuleURI: "resource:///actors/UrlbarParent.sys.mjs",
+      esModuleURI:
+        "moz-src:///browser/components/urlbar/actors/UrlbarParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource:///actors/UrlbarChild.sys.mjs",
+      esModuleURI:
+        "moz-src:///browser/components/urlbar/actors/UrlbarChild.sys.mjs",
+      events: {
+        // A content-realm `<moz-urlbar>` reads `window.UrlbarActorPort`
+        // synchronously as it connects, and can't create the actor itself, so
+        // the actor has to exist before page script runs.
+        DOMDocElementInserted: {},
+      },
     },
     includeChrome: true,
-    matches: ["chrome://browser/content/browser.xhtml"],
-    remoteTypes: ["parent"],
+    matches: [
+      "chrome://browser/content/browser.xhtml",
+      "about:home",
+      "about:newtab",
+    ],
+    // The actor must never load in a web content process: it exposes the
+    // urlbar's full result set and navigation surface, and it deliberately
+    // doesn't set `safeForUntrustedWebProcess`.
+    remoteTypes: ["parent", "privilegedabout"],
   },
 
   WebRTC: {

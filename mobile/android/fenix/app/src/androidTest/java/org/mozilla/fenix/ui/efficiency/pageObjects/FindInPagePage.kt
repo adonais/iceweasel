@@ -22,20 +22,22 @@ class FindInPagePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestR
         NavigationRegistry.register(
             from = "BrowserPage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON_UIAUTOMATOR),
-                NavigationStep.Click(MainMenuSelectors.FIND_IN_PAGE_BUTTON),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON_UIAUTOMATOR),
+                    NavigationStep.Click(MainMenuSelectors.FIND_IN_PAGE_BUTTON),
+                ),
         )
 
         // Open Find in page from a custom tab's own menu.
         NavigationRegistry.register(
             from = "CustomTabsPage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(CustomTabsSelectors.MAIN_MENU_BUTTON),
-                NavigationStep.Click(CustomTabsSelectors.MENU_FIND_IN_PAGE),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.Click(CustomTabsSelectors.MAIN_MENU_BUTTON),
+                    NavigationStep.Click(CustomTabsSelectors.MENU_FIND_IN_PAGE),
+                ),
         )
     }
 

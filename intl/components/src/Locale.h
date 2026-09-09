@@ -307,13 +307,9 @@ class MOZ_STACK_CLASS Locale final {
       return result;
     }
 
-    bool operator==(const SubtagIterator& aOther) const {
-      return mIter == aOther.mIter;
-    }
+    bool operator==(const SubtagIterator& aOther) const = default;
 
-    bool operator!=(const SubtagIterator& aOther) const {
-      return !(*this == aOther);
-    }
+    bool operator!=(const SubtagIterator& aOther) const = default;
 
     value_type operator*() const { return ToSpan(*mIter); }
   };

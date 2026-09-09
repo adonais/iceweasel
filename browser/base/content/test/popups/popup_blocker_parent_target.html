@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Nested page whose child targets "_parent"</title>
+  </head>
+  <body>
+    <script type="text/javascript">
+      const params = new URLSearchParams(location.search);
+
+      if (params.get("frame")) {
+        const frame = document.createElement("iframe");
+        frame.src = params.get("frame");
+        document.body.appendChild(frame);
+      }
+
+      if (params.get("open")) {
+        for (let i = 0; i < params.get("open"); i++) {
+          window.open("popup_blocker_b.html?" + i, "_parent", "noopener");
+        }
+        top.postMessage({ done: true }, "*");
+      }
+    </script>
+  </body>
+</html>

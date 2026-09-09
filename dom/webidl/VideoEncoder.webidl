@@ -35,6 +35,12 @@ interface VideoEncoder : EventTarget {
   static Promise<VideoEncoderSupport> isConfigSupported(VideoEncoderConfig config);
 };
 
+// Mozilla extensions.
+partial interface VideoEncoder {
+  [Func="MediaUtils::HasDebuggerOrTabsPrivilege", NewObject]
+  Promise<EncoderDebugInfo> mozRequestDebugInfo();
+};
+
 dictionary VideoEncoderInit {
   required EncodedVideoChunkOutputCallback output;
   required WebCodecsErrorCallback error;

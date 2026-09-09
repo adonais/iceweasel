@@ -19,9 +19,9 @@ import mozilla.components.feature.prompts.consumePromptFrom
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * Displays a [EmailMaskPromptBarView] for a site after receiving a [PromptRequest.EmailMaskPrompt]
- * when a user clicks into an email field on a registration form, they will see a suggestion for an email mask
- * that can be used for filling in the password field.
+ * Displays a [EmailMaskPromptBarView] for a site after receiving a [PromptRequest.EmailMaskPrompt] when a user clicks
+ * into an email field on a registration form, they will see a suggestion for an email mask that can be used for filling
+ * in the password field.
  *
  * @property browserStore The [BrowserStore] this feature should subscribe to.
  * @property emailMaskBar The view where the email mask prompt will be inflated.
@@ -37,7 +37,7 @@ internal class EmailMaskPromptViewListener(
     private val logger = Logger("EmailMaskPromptViewListener")
 
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main)
-    var onEmailMaskPromptClick: () -> Unit = { }
+    var onEmailMaskPromptClick: () -> Unit = {}
     var logins: List<Login>? = null
 
     init {
@@ -52,8 +52,8 @@ internal class EmailMaskPromptViewListener(
     /**
      * Dismisses the current email mask prompt.
      *
-     * @param promptRequest The specific prompt to dismiss. When provided, only that prompt is
-     * consumed, avoiding accidentally dismissing a concurrently added [PromptRequest.SelectLoginPrompt].
+     * @param promptRequest The specific prompt to dismiss. When provided, only that prompt is consumed, avoiding
+     *   accidentally dismissing a concurrently added [PromptRequest.SelectLoginPrompt].
      */
     @Suppress("TooGenericExceptionCaught")
     fun dismissCurrentEmailMaskPrompt(promptRequest: PromptRequest.SelectLoginPrompt? = null) {
@@ -61,9 +61,7 @@ internal class EmailMaskPromptViewListener(
             if (promptRequest != null) {
                 promptRequest.onDismiss()
                 sessionId?.let {
-                    browserStore.dispatch(
-                        ContentAction.ConsumePromptRequestAction(it, promptRequest),
-                    )
+                    browserStore.dispatch(ContentAction.ConsumePromptRequestAction(it, promptRequest))
                 }
                 emailMaskBar.hidePrompt()
                 return
@@ -87,21 +85,23 @@ internal class EmailMaskPromptViewListener(
     override fun onEmailMaskPromptClick() {
         scope.launch {
             // Explicitly switch to the IO thread here to avoid blocking the main thread and causing UI slowdowns.
-            val emailMask = withContext(Dispatchers.IO) {
-                val selectedTabUrl = browserStore.state.selectedTab?.content?.url
-                if (selectedTabUrl == null) {
-                    logger.error("Selected tab URL was null")
-                    null
-                } else {
-                    emailMaskDelegate.onEmailMaskClick(selectedTabUrl)
-                }
-            } ?: return@launch
+            val emailMask =
+                withContext(Dispatchers.IO) {
+                    val selectedTabUrl = browserStore.state.selectedTab?.content?.url
+                    if (selectedTabUrl == null) {
+                        logger.error("Selected tab URL was null")
+                        null
+                    } else {
+                        emailMaskDelegate.onEmailMaskClick(selectedTabUrl)
+                    }
+                } ?: return@launch
 
-            val emailMaskTemplateLogin = logins?.firstOrNull { it.hint == LoginHint.EMAIL_MASK }
-                ?: run {
-                    dismissCurrentEmailMaskPrompt()
-                    return@launch
-                }
+            val emailMaskTemplateLogin =
+                logins?.firstOrNull { it.hint == LoginHint.EMAIL_MASK }
+                    ?: run {
+                        dismissCurrentEmailMaskPrompt()
+                        return@launch
+                    }
 
             val emailMaskLogin = emailMaskTemplateLogin.copy(username = emailMask)
 

@@ -10,9 +10,7 @@ import org.mozilla.fenix.BuildConfig
 import org.mozilla.geckoview.BuildConfig.MOZ_APP_BUILDID
 import org.mozilla.geckoview.BuildConfig.MOZ_APP_VERSION
 
-/**
- * Includes the current release version with the crash so that it can be persisted.
- */
+/** Includes the current release version with the crash so that it can be persisted. */
 class ReleaseRuntimeTagProvider : RuntimeTagProvider {
     override fun invoke(): Map<String, String> {
         return mapOf(

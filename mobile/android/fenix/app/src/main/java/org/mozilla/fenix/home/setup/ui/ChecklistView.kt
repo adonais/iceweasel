@@ -27,11 +27,11 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
 import org.mozilla.fenix.home.sessioncontrol.SetupChecklistInteractor
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 private const val ROTATE_180 = 180F
 
@@ -49,15 +49,16 @@ fun ChecklistView(
     Column {
         checklistItems.forEachIndexed { index, item ->
             when (item) {
-                is ChecklistItem.Group -> GroupWithTasks(
-                    group = item,
-                    onChecklistItemClicked = { clickedTask ->
-                        interactor.onChecklistItemClicked(clickedTask)
-                    },
-                    // No divider for the last group, in case it is the last element
-                    // in the parent composable.
-                    addDivider = index != checklistItems.size - 1,
-                )
+                is ChecklistItem.Group ->
+                    GroupWithTasks(
+                        group = item,
+                        onChecklistItemClicked = { clickedTask ->
+                            interactor.onChecklistItemClicked(clickedTask)
+                        },
+                        // No divider for the last group, in case it is the last element
+                        // in the parent composable.
+                        addDivider = index != checklistItems.size - 1,
+                    )
 
                 is ChecklistItem.Task -> Task(item) { interactor.onChecklistItemClicked(item) }
             }
@@ -71,10 +72,7 @@ private fun Task(
     onChecklistItemClicked: (ChecklistItem) -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .clickable(onClick = { onChecklistItemClicked(task) }),
+        modifier = Modifier.fillMaxWidth().height(56.dp).clickable(onClick = { onChecklistItemClicked(task) }),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (task.isCompleted) {
@@ -89,9 +87,7 @@ private fun Task(
 
         Text(
             text = stringResource(task.title),
-            modifier = Modifier
-                .weight(1f)
-                .semantics { heading() },
+            modifier = Modifier.weight(1f).semantics { heading() },
             style = FirefoxTheme.typography.subtitle1,
         )
 
@@ -128,16 +124,11 @@ private fun Group(
     onChecklistItemClicked: (ChecklistItem) -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .clickable { onChecklistItemClicked(group) },
+        modifier = Modifier.fillMaxWidth().height(56.dp).clickable { onChecklistItemClicked(group) },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 16.dp),
+            modifier = Modifier.weight(1f).padding(start = 16.dp),
             horizontalAlignment = Alignment.Start,
         ) {
             Text(
@@ -156,9 +147,7 @@ private fun Group(
         Icon(
             painter = painterResource(id = iconsR.drawable.mozac_ic_chevron_down_24),
             contentDescription = "",
-            modifier = Modifier
-                .padding(16.dp)
-                .rotate(if (group.isExpanded) ROTATE_180 else 0f),
+            modifier = Modifier.padding(16.dp).rotate(if (group.isExpanded) ROTATE_180 else 0f),
         )
     }
 }
@@ -168,37 +157,46 @@ private fun Group(
 private fun TasksChecklistPreview() {
     FirefoxTheme {
         Surface {
-            val tasks = listOf(
-                ChecklistItem.Task(
-                    type = ChecklistItem.Task.Type.EXPLORE_EXTENSION,
-                    title = R.string.setup_checklist_task_explore_extensions,
-                    icon = iconsR.drawable.mozac_ic_extension_24,
-                    isCompleted = true,
-                ),
-                ChecklistItem.Task(
-                    type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
-                    title = R.string.setup_checklist_task_search_widget_2,
-                    icon = iconsR.drawable.mozac_ic_search_24,
-                    isCompleted = false,
-                ),
-            )
+            val tasks =
+                listOf(
+                    ChecklistItem.Task(
+                        type = ChecklistItem.Task.Type.EXPLORE_EXTENSION,
+                        title = R.string.setup_checklist_task_explore_extensions,
+                        icon = iconsR.drawable.mozac_ic_extension_24,
+                        isCompleted = true,
+                    ),
+                    ChecklistItem.Task(
+                        type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
+                        title = R.string.setup_checklist_task_search_widget_2,
+                        icon = iconsR.drawable.mozac_ic_search_24,
+                        isCompleted = false,
+                    ),
+                )
 
-            val group1 = ChecklistItem.Group(
-                title = R.string.setup_checklist_group_essentials,
-                tasks = tasks,
-                isExpanded = true,
-            )
-            val group2 = ChecklistItem.Group(
-                title = R.string.setup_checklist_group_customize,
-                tasks = tasks,
-                isExpanded = false,
-            )
+            val group1 =
+                ChecklistItem.Group(
+                    title = R.string.setup_checklist_group_essentials,
+                    tasks = tasks,
+                    isExpanded = true,
+                )
+            val group2 =
+                ChecklistItem.Group(
+                    title = R.string.setup_checklist_group_customize,
+                    tasks = tasks,
+                    isExpanded = false,
+                )
 
             ChecklistView(
-                interactor = object : SetupChecklistInteractor {
-                    override fun onChecklistItemClicked(item: ChecklistItem) { /* no op */ }
-                    override fun onRemoveChecklistButtonClicked() { /* no op */ }
-                },
+                interactor =
+                    object : SetupChecklistInteractor {
+                        override fun onChecklistItemClicked(item: ChecklistItem) {
+                            /* no op */
+                        }
+
+                        override fun onRemoveChecklistButtonClicked() {
+                            /* no op */
+                        }
+                    },
                 checklistItems = listOf(group1, group2),
             )
         }

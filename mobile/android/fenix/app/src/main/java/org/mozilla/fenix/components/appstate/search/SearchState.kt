@@ -12,8 +12,8 @@ import org.mozilla.fenix.components.metrics.MetricsUtils
  *
  * @property isSearchActive Whether or not a search is active.
  * @property selectedSearchEngine The search engine to use for in-progress searches.
- * @property sourceTabId The ID of the tab that triggered the search.
- * May be `null` if search was not started from a browser tab.
+ * @property sourceTabId The ID of the tab that triggered the search. May be `null` if search was not started from a
+ *   browser tab.
  * @property searchAccessPoint The source of the search.
  */
 data class SearchState(
@@ -22,19 +22,16 @@ data class SearchState(
     val sourceTabId: String?,
     val searchAccessPoint: MetricsUtils.Source,
 ) {
-    /**
-     * Static configuration of [SearchState].
-     */
+    /** Static configuration of [SearchState]. */
     companion object {
-        /**
-         * Empty [SearchState].
-         */
-        val EMPTY = SearchState(
-            isSearchActive = false,
-            selectedSearchEngine = null,
-            sourceTabId = null,
-            searchAccessPoint = MetricsUtils.Source.NONE,
-        )
+        /** Empty [SearchState]. */
+        val EMPTY =
+            SearchState(
+                isSearchActive = false,
+                selectedSearchEngine = null,
+                sourceTabId = null,
+                searchAccessPoint = MetricsUtils.Source.NONE,
+            )
     }
 }
 

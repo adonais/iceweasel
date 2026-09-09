@@ -79,8 +79,11 @@ class ImageDecoder::SelectTrackMessage final
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(ImageDecoder)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(ImageDecoder)
+  // Do not cancel mReadRequest here: cancellation synchronously invokes the
+  // page's UnderlyingSource.cancel() callback
   tmp->CloseWithoutRef(
-      MediaResult(NS_ERROR_DOM_ABORT_ERR, "Cycle-collected decoder"_ns));
+      MediaResult(NS_ERROR_DOM_ABORT_ERR, "Cycle-collected decoder"_ns),
+      /* aCancelReadRequest */ false);
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mParent)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mTracks)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReadRequest)
@@ -119,7 +122,9 @@ ImageDecoder::ImageDecoder(nsCOMPtr<nsIGlobalObject>&& aParent,
 ImageDecoder::~ImageDecoder() {
   MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug, "ImageDecoder {} ~ImageDecoder",
               fmt::ptr(this));
-  CloseWithoutRef(MediaResult(NS_ERROR_DOM_ABORT_ERR, "Destroyed decoder"_ns));
+  // Similar to CYCLE_COLLECTION_UNLINK_BEGIN above
+  CloseWithoutRef(MediaResult(NS_ERROR_DOM_ABORT_ERR, "Destroyed decoder"_ns),
+                  /* aCancelReadRequest */ false);
 }
 
 JSObject* ImageDecoder::WrapObject(JSContext* aCx,
@@ -1082,7 +1087,8 @@ void ImageDecoder::Close(const MediaResult& aResult) {
   CloseWithoutRef(aResult);
 }
 
-void ImageDecoder::CloseWithoutRef(const MediaResult& aResult) {
+void ImageDecoder::CloseWithoutRef(const MediaResult& aResult,
+                                   bool aCancelReadRequest) {
   if (mClosed) {
     return;
   }
@@ -1103,7 +1109,7 @@ void ImageDecoder::CloseWithoutRef(const MediaResult& aResult) {
   }
 
   if (mReadRequest) {
-    mReadRequest->Destroy(/* aCancel */ true);
+    mReadRequest->Destroy(aCancelReadRequest);
     mReadRequest = nullptr;
   }
 

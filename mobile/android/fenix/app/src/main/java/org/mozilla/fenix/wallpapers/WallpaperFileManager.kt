@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.wallpapers
 
+import java.io.File
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -11,14 +12,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.wallpapers.Wallpaper.Companion.getLocalPath
-import java.io.File
 
 /**
  * Manages various functions related to the locally-stored wallpaper assets.
  *
  * @param storageRootDirectory The top level app-local storage directory.
- * @param coroutineDispatcher Dispatcher used to execute suspending functions. Default parameter
- * should be likely be used except for when under test.
+ * @param coroutineDispatcher Dispatcher used to execute suspending functions. Default parameter should be likely be
+ *   used except for when under test.
  */
 class WallpaperFileManager(
     private val storageRootDirectory: File,
@@ -27,36 +27,35 @@ class WallpaperFileManager(
     private val wallpapersDirectory = File(storageRootDirectory, "wallpapers")
 
     /**
-     * Lookup all the files for a wallpaper name. This lookup will fail if there are not
-     * files for each of a portrait and landscape orientation as well as a thumbnail.
+     * Lookup all the files for a wallpaper name. This lookup will fail if there are not files for each of a portrait
+     * and landscape orientation as well as a thumbnail.
      *
      * @param settings The local cache.
      */
-    suspend fun lookupExpiredWallpaper(settings: Settings): Wallpaper? = withContext(coroutineDispatcher) {
-        val name = settings.currentWallpaperName
-        if (allAssetsExist(name)) {
-            Wallpaper(
-                name = name,
-                collection = Wallpaper.DefaultCollection,
-                textColor = settings.currentWallpaperTextColor,
-                cardColorLight = settings.currentWallpaperCardColorLight,
-                cardColorDark = settings.currentWallpaperCardColorDark,
-                thumbnailFileState = Wallpaper.ImageFileState.Downloaded,
-                assetsFileState = Wallpaper.ImageFileState.Downloaded,
-            )
-        } else {
-            null
+    suspend fun lookupExpiredWallpaper(settings: Settings): Wallpaper? =
+        withContext(coroutineDispatcher) {
+            val name = settings.currentWallpaperName
+            if (allAssetsExist(name)) {
+                Wallpaper(
+                    name = name,
+                    collection = Wallpaper.DefaultCollection,
+                    textColor = settings.currentWallpaperTextColor,
+                    cardColorLight = settings.currentWallpaperCardColorLight,
+                    cardColorDark = settings.currentWallpaperCardColorDark,
+                    thumbnailFileState = Wallpaper.ImageFileState.Downloaded,
+                    assetsFileState = Wallpaper.ImageFileState.Downloaded,
+                )
+            } else {
+                null
+            }
         }
-    }
 
     private fun allAssetsExist(name: String): Boolean =
         Wallpaper.ImageType.entries.toTypedArray().all { type ->
             File(storageRootDirectory, getLocalPath(name, type)).exists()
         }
 
-    /**
-     * Remove all wallpapers that are not the [currentWallpaper] or in [availableWallpapers].
-     */
+    /** Remove all wallpapers that are not the [currentWallpaper] or in [availableWallpapers]. */
     fun clean(currentWallpaper: Wallpaper, availableWallpapers: List<Wallpaper>) {
         CoroutineScope(coroutineDispatcher).launch {
             val wallpapersToKeep = (listOf(currentWallpaper) + availableWallpapers).map { it.name }
@@ -68,10 +67,9 @@ class WallpaperFileManager(
         }
     }
 
-    /**
-     * Checks whether all the assets for a wallpaper exist on the file system.
-     */
-    suspend fun wallpaperImagesExist(wallpaper: Wallpaper): Boolean = withContext(coroutineDispatcher) {
-        allAssetsExist(wallpaper.name)
-    }
+    /** Checks whether all the assets for a wallpaper exist on the file system. */
+    suspend fun wallpaperImagesExist(wallpaper: Wallpaper): Boolean =
+        withContext(coroutineDispatcher) {
+            allAssetsExist(wallpaper.name)
+        }
 }

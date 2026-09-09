@@ -9,13 +9,9 @@ import mozilla.components.support.base.facts.Action
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.collect
 
-/**
- * Facts emitted for telemetry related to [PwaFeature]
- */
+/** Facts emitted for telemetry related to [PwaFeature] */
 class ProgressiveWebAppFacts {
-    /**
-     * Items that specify which portion of the [PwaFeature] was interacted with
-     */
+    /** Items that specify which portion of the [PwaFeature] was interacted with */
     object Items {
         const val INSTALL_SHORTCUT = "install_shortcut"
         const val HOMESCREEN_ICON_TAP = "homescreen_icon_tap"
@@ -29,12 +25,13 @@ private fun emitPwaFact(
     metadata: Map<String, Any>? = null,
 ) {
     Fact(
-        Component.FEATURE_PWA,
-        action,
-        item,
-        value,
-        metadata,
-    ).collect()
+            Component.FEATURE_PWA,
+            action,
+            item,
+            value,
+            metadata,
+        )
+        .collect()
 }
 
 internal fun emitPwaInstallFact() =

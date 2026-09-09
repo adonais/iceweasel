@@ -378,33 +378,56 @@ function promiseMessage(
   });
 }
 
+// Listeners of promisePopupNotificationShown calls that are still waiting for
+// the panel to open, removed when the test file ends so that they can't outlive
+// it on a window that later test files reuse.
+let gPendingPopupshownListeners = new Set();
+registerCleanupFunction(() => {
+  for (let stopListening of gPendingPopupshownListeners) {
+    stopListening();
+  }
+});
+
 function promisePopupNotificationShown(aName, aAction, aWindow = window) {
   let startTime = ChromeUtils.now();
   return new Promise(resolve => {
-    aWindow.PopupNotifications.panel.addEventListener(
-      "popupshown",
-      function () {
-        ok(
-          !!aWindow.PopupNotifications.getNotification(aName),
-          aName + " notification shown"
-        );
-        ok(aWindow.PopupNotifications.isPanelOpen, "notification panel open");
-        ok(
-          !!aWindow.PopupNotifications.panel.firstElementChild,
-          "notification panel populated"
-        );
+    let panel = aWindow.PopupNotifications.panel;
+    function stopListening() {
+      panel.removeEventListener("popupshown", popupshown);
+      gPendingPopupshownListeners.delete(stopListening);
+    }
+    function popupshown() {
+      // Don't use PopupNotifications.isPanelOpen here: it also returns true
+      // while the panel is still in the "showing" state, in which case the
+      // popup frame isn't open yet and its contents aren't focusable.
+      let panelState = panel.state;
+      if (panelState != "open") {
+        info(`Ignoring popupshown for ${aName}, panel state: ${panelState}`);
+        return;
+      }
+      stopListening();
 
-        executeSoon(() => {
-          ChromeUtils.addProfilerMarker(
-            "promisePopupNotificationShown",
-            { startTime, category: "Test" },
-            aName
-          );
-          resolve();
-        });
-      },
-      { once: true }
-    );
+      ok(
+        !!aWindow.PopupNotifications.getNotification(aName),
+        aName + " notification shown"
+      );
+      ok(aWindow.PopupNotifications.isPanelOpen, "notification panel open");
+      ok(
+        !!aWindow.PopupNotifications.panel.firstElementChild,
+        "notification panel populated"
+      );
+
+      executeSoon(() => {
+        ChromeUtils.addProfilerMarker(
+          "promisePopupNotificationShown",
+          { startTime, category: "Test" },
+          aName
+        );
+        resolve();
+      });
+    }
+    panel.addEventListener("popupshown", popupshown);
+    gPendingPopupshownListeners.add(stopListening);
 
     if (aAction) {
       aAction();

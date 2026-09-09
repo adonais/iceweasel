@@ -40,6 +40,7 @@ export class PageAssistInput extends MozInputText {
         placeholder=${ifDefined(this.placeholder)}
         aria-label=${ifDefined(this.ariaLabel ?? undefined)}
         aria-describedby="description"
+        title=${ifDefined(this.title)}
         @input=${this.handleInput}
         @change=${this.redispatchEvent}
       />

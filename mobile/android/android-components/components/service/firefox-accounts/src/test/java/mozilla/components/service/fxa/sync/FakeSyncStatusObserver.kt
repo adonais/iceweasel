@@ -9,7 +9,9 @@ import java.lang.Exception
 class FakeSyncStatusObserver : SyncStatusObserver {
     sealed class Event {
         object OnStarted : Event()
+
         object OnIdle : Event()
+
         data class OnError(val error: Exception?) : Event()
     }
 

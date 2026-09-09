@@ -30,17 +30,15 @@ import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 
-/**
- * A [ComposePreference] for the built-in VPN (IP Protection) settings entry.
- */
-class IPProtectionPreference @JvmOverloads constructor(
+/** A [ComposePreference] for the built-in VPN (IP Protection) settings entry. */
+class IPProtectionPreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : ComposePreference(context, attrs) {
 
-    /**
-     * Enables a `beta` badge next to the entry.
-     */
+    /** Enables a `beta` badge next to the entry. */
     var showBetaBadge: Boolean = false
 
     @Composable
@@ -58,13 +56,13 @@ internal fun IPProtectionPreferenceRow(
     showBetaBadge: Boolean,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .semantics(mergeDescendants = true) {}
-            .padding(
-                horizontal = FirefoxTheme.layout.space.static200,
-                vertical = FirefoxTheme.layout.space.static200,
-            ),
+        modifier =
+            Modifier.fillMaxWidth()
+                .semantics(mergeDescendants = true) {}
+                .padding(
+                    horizontal = FirefoxTheme.layout.space.static200,
+                    vertical = FirefoxTheme.layout.space.static200,
+                ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -84,11 +82,11 @@ internal fun IPProtectionPreferenceRow(
 @Composable
 private fun BetaBadge() {
     Box(
-        modifier = Modifier
-            .background(
+        modifier =
+            Modifier.background(
                 MaterialTheme.colorScheme.information,
                 MaterialTheme.shapes.small,
-            ),
+            )
     ) {
         Text(
             text = stringResource(R.string.preferences_ip_protection_beta_badge_label),
@@ -101,9 +99,7 @@ private fun BetaBadge() {
 
 @PreviewLightDark
 @Composable
-private fun IPProtectionPreferenceRowPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun IPProtectionPreferenceRowPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         Surface(color = MaterialTheme.colorScheme.surface) {
             IPProtectionPreferenceRow(
@@ -116,9 +112,7 @@ private fun IPProtectionPreferenceRowPreview(
 
 @PreviewLightDark
 @Composable
-private fun IPProtectionPreferenceRowNoBadgePreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun IPProtectionPreferenceRowNoBadgePreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         Surface(color = MaterialTheme.colorScheme.surface) {
             IPProtectionPreferenceRow(

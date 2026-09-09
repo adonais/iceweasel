@@ -72,6 +72,7 @@
 #include "mozilla/dom/StorageDBUpdater.h"
 #include "mozilla/dom/StorageUtils.h"
 #include "mozilla/dom/ipc/IdType.h"
+#include "mozilla/dom/quota/AssertionsImpl.h"
 #include "mozilla/dom/quota/CachingDatabaseConnection.h"
 #include "mozilla/dom/quota/CheckedUnsafePtr.h"
 #include "mozilla/dom/quota/Client.h"
@@ -2329,7 +2330,7 @@ class PrepareDatastoreOp
   Maybe<CipherKey> mMaybeCipherKey;
   bool mInvalidated;
 
-#ifdef DEBUG
+#if defined(NIGHTLY_BUILD) || defined(DEBUG)
   int64_t mDEBUGUsage;
 #endif
 
@@ -6622,7 +6623,7 @@ PrepareDatastoreOp::PrepareDatastoreOp(
               dom_storage_enable_migration_from_unsupported_legacy_implementation()),
       mDatabaseNotAvailable(false),
       mInvalidated(false)
-#ifdef DEBUG
+#if defined(NIGHTLY_BUILD) || defined(DEBUG)
       ,
       mDEBUGUsage(0)
 #endif
@@ -7508,7 +7509,14 @@ void PrepareDatastoreOp::GetResponse(LSRequestResponse& aResponse) {
   }
 
   if (!mDatastore) {
-    MOZ_ASSERT(mUsage == mDEBUGUsage);
+#if defined(NIGHTLY_BUILD) || defined(DEBUG)
+    // mUsage (derived from the cached usage file/SQL column) and mDEBUGUsage
+    // (a genuine recompute from the actual preloaded row contents) are
+    // independent trackers of the same value; confirm they still agree (see
+    // bug 1585978).
+    quota::ReportUsageDriftIfAny(mUsage, mDEBUGUsage,
+                                 "LS.mUsagePreloadDrift"_ns);
+#endif
 
     RefPtr<QuotaObject> quotaObject;
 
@@ -7790,7 +7798,7 @@ nsresult PrepareDatastoreOp::LoadDataOp::DoDatastoreWork() {
         mPrepareDatastoreOp->mValues.InsertOrUpdate(key, value);
         mPrepareDatastoreOp->mSizeOfKeys += key.Length();
         mPrepareDatastoreOp->mSizeOfItems += key.Length() + value.Length();
-#ifdef DEBUG
+#if defined(NIGHTLY_BUILD) || defined(DEBUG)
         mPrepareDatastoreOp->mDEBUGUsage += key.Length() + value.UTF16Length();
 #endif
 

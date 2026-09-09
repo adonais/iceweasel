@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -7,6 +7,13 @@ import android.net.Uri
 import android.os.SystemClock
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.IOException
+import java.math.BigInteger
+import java.net.UnknownHostException
+import java.nio.ByteBuffer
+import java.nio.charset.Charset
+import java.security.MessageDigest
+import java.util.Random
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.MatcherAssert.assertThat
@@ -31,13 +38,6 @@ import org.mozilla.geckoview.WebRequestError
 import org.mozilla.geckoview.WebResponse
 import org.mozilla.geckoview.test.util.RuntimeCreator
 import org.mozilla.geckoview.test.util.TestServer
-import java.io.IOException
-import java.math.BigInteger
-import java.net.UnknownHostException
-import java.nio.ByteBuffer
-import java.nio.charset.Charset
-import java.security.MessageDigest
-import java.util.Random
 
 @MediumTest
 @RunWith(Parameterized::class)
@@ -48,15 +48,14 @@ class WebExecutorTest {
 
         @get:Parameterized.Parameters(name = "{0}")
         @JvmStatic
-        val parameters: List<Array<out Any>> = listOf(
-            arrayOf("#conservative"),
-            arrayOf("#normal"),
-        )
+        val parameters: List<Array<out Any>> =
+            listOf(
+                arrayOf("#conservative"),
+                arrayOf("#normal"),
+            )
     }
 
-    @field:Parameterized.Parameter(0)
-    @JvmField
-    var id: String = ""
+    @field:Parameterized.Parameter(0) @JvmField var id: String = ""
 
     lateinit var executor: GeckoWebExecutor
     lateinit var server: TestServer
@@ -113,10 +112,11 @@ class WebExecutorTest {
     }
 
     fun webRequestBuilder(uri: String): WebRequest.Builder {
-        val beConservative = when (id) {
-            "#conservative" -> true
-            else -> false
-        }
+        val beConservative =
+            when (id) {
+                "#conservative" -> true
+                else -> false
+            }
         return WebRequest.Builder(uri).beConservative(beConservative)
     }
 
@@ -130,30 +130,43 @@ class WebExecutorTest {
         val bodyString = randomString(8192)
         val referrer = "http://foo/bar"
 
-        val request = webRequestBuilder(uri)
-            .method("POST")
-            .header("Header1", "Clobbered")
-            .header("Header1", "Value")
-            .addHeader("Header2", "Value1")
-            .addHeader("Header2", "Value2")
-            .referrer(referrer)
-            .header("Content-Type", "text/plain")
-            .body(bodyString)
-            .build()
+        val request =
+            webRequestBuilder(uri)
+                .method("POST")
+                .header("Header1", "Clobbered")
+                .header("Header1", "Value")
+                .addHeader("Header2", "Value1")
+                .addHeader("Header2", "Value2")
+                .referrer(referrer)
+                .header("Content-Type", "text/plain")
+                .body(bodyString)
+                .build()
 
         val response = fetch(request)
 
         assertThat("URI should match", response.uri, equalTo(uri))
         assertThat("Status could should match", response.statusCode, equalTo(200))
-        assertThat("Content type should match", response.headers["Content-Type"], equalTo("application/json; charset=utf-8"))
+        assertThat(
+            "Content type should match",
+            response.headers["Content-Type"],
+            equalTo("application/json; charset=utf-8"),
+        )
         assertThat("Redirected should match", response.redirected, equalTo(false))
         assertThat("isSecure should match", response.isSecure, equalTo(false))
 
         val body = response.getJSONBody()
         assertThat("Method should match", body.getString("method"), equalTo("POST"))
         assertThat("Headers should match", body.getJSONObject("headers").getString("Header1"), equalTo("Value"))
-        assertThat("Headers should match", body.getJSONObject("headers").getString("Header2"), equalTo("Value1, Value2"))
-        assertThat("Headers should match", body.getJSONObject("headers").getString("Content-Type"), equalTo("text/plain"))
+        assertThat(
+            "Headers should match",
+            body.getJSONObject("headers").getString("Header2"),
+            equalTo("Value1, Value2"),
+        )
+        assertThat(
+            "Headers should match",
+            body.getJSONObject("headers").getString("Content-Type"),
+            equalTo("text/plain"),
+        )
         assertThat("Referrer should match", body.getJSONObject("headers").getString("Referer"), equalTo("http://foo/"))
         assertThat("Data should match", body.getString("data"), equalTo(bodyString))
     }
@@ -170,9 +183,8 @@ class WebExecutorTest {
         // The "contentDisposition" query param makes the server set that header verbatim on the
         // asset response.
         val disposition = "attachment; filename=\"server-name.txt\""
-        val response = fetch(
-            webRequest("$TEST_ENDPOINT/assets/www/hello.html?contentDisposition=${Uri.encode(disposition)}"),
-        )
+        val response =
+            fetch(webRequest("$TEST_ENDPOINT/assets/www/hello.html?contentDisposition=${Uri.encode(disposition)}"))
         assertThat("Status should match", response.statusCode, equalTo(200))
         assertThat("Content-Disposition should match", response.headers["Content-Disposition"], equalTo(disposition))
     }
@@ -194,7 +206,8 @@ class WebExecutorTest {
 
     @Test
     fun testDisallowRedirect() {
-        val response = fetch(webRequest("$TEST_ENDPOINT/redirect-to?url=/status/200"), GeckoWebExecutor.FETCH_FLAGS_NO_REDIRECTS)
+        val response =
+            fetch(webRequest("$TEST_ENDPOINT/redirect-to?url=/status/200"), GeckoWebExecutor.FETCH_FLAGS_NO_REDIRECTS)
 
         assertThat("URI should match", response.uri, equalTo("$TEST_ENDPOINT/redirect-to?url=/status/200"))
         assertThat("Redirected should match", response.redirected, equalTo(false))
@@ -203,10 +216,14 @@ class WebExecutorTest {
 
     @Test
     fun testRedirectLoop() {
-        val thrown = assertThrows(WebRequestError::class.java) {
-            fetch(webRequest("$TEST_ENDPOINT/redirect/100"))
-        }
-        assertThat(thrown, equalTo(WebRequestError(WebRequestError.ERROR_REDIRECT_LOOP, WebRequestError.ERROR_CATEGORY_NETWORK)))
+        val thrown =
+            assertThrows(WebRequestError::class.java) {
+                fetch(webRequest("$TEST_ENDPOINT/redirect/100"))
+            }
+        assertThat(
+            thrown,
+            equalTo(WebRequestError(WebRequestError.ERROR_REDIRECT_LOOP, WebRequestError.ERROR_CATEGORY_NETWORK)),
+        )
     }
 
     @Test
@@ -219,11 +236,12 @@ class WebExecutorTest {
 
     @Test
     fun testSslError() {
-        val uri = if (env.isAutomation) {
-            "https://expired.example.com/"
-        } else {
-            "https://expired.badssl.com/"
-        }
+        val uri =
+            if (env.isAutomation) {
+                "https://expired.example.com/"
+            } else {
+                "https://expired.badssl.com/"
+            }
 
         try {
             fetch(webRequest(uri))
@@ -232,7 +250,11 @@ class WebExecutorTest {
             assertThat("Category should match", e.category, equalTo(WebRequestError.ERROR_CATEGORY_SECURITY))
             assertThat("Code should match", e.code, equalTo(WebRequestError.ERROR_SECURITY_BAD_CERT))
             assertThat("Certificate should be present", e.certificate, notNullValue())
-            assertThat("Certificate issuer should be present", e.certificate?.issuerX500Principal?.name, not(isEmptyOrNullString()))
+            assertThat(
+                "Certificate issuer should be present",
+                e.certificate?.issuerX500Principal?.name,
+                not(isEmptyOrNullString()),
+            )
         }
     }
 
@@ -242,17 +264,19 @@ class WebExecutorTest {
         assertThat("Status should match", response.statusCode, equalTo(200))
         assertThat("isSecure should match", response.isSecure, equalTo(true))
 
-        val expectedSubject = if (env.isAutomation) {
-            "CN=example.com"
-        } else {
-            "CN=www.example.org,OU=Technology,O=Internet Corporation for Assigned Names and Numbers,L=Los Angeles,ST=California,C=US"
-        }
+        val expectedSubject =
+            if (env.isAutomation) {
+                "CN=example.com"
+            } else {
+                "CN=www.example.org,OU=Technology,O=Internet Corporation for Assigned Names and Numbers,L=Los Angeles,ST=California,C=US"
+            }
 
-        val expectedIssuer = if (env.isAutomation) {
-            "OU=Profile Guided Optimization,O=Mozilla Testing,CN=Temporary Certificate Authority"
-        } else {
-            "CN=DigiCert SHA2 Secure Server CA,O=DigiCert Inc,C=US"
-        }
+        val expectedIssuer =
+            if (env.isAutomation) {
+                "OU=Profile Guided Optimization,O=Mozilla Testing,CN=Temporary Certificate Authority"
+            } else {
+                "CN=DigiCert SHA2 Secure Server CA,O=DigiCert Inc,C=US"
+            }
 
         assertThat(
             "Subject should match",
@@ -293,7 +317,11 @@ class WebExecutorTest {
     @Test
     fun testAnonymousSendCookies() {
         val uptimeMillis = SystemClock.uptimeMillis()
-        val response = fetch(webRequest("$TEST_ENDPOINT/cookies/set/uptimeMillis/$uptimeMillis"), GeckoWebExecutor.FETCH_FLAGS_ANONYMOUS)
+        val response =
+            fetch(
+                webRequest("$TEST_ENDPOINT/cookies/set/uptimeMillis/$uptimeMillis"),
+                GeckoWebExecutor.FETCH_FLAGS_ANONYMOUS,
+            )
 
         // We get redirected to /cookies which returns the cookies that were sent in the request
         assertThat("URI should match", response.uri, equalTo("$TEST_ENDPOINT/cookies"))
@@ -312,10 +340,11 @@ class WebExecutorTest {
         // Ensure a cookie is set for the test server
         testCookies()
 
-        val response = fetch(
-            webRequest("$TEST_ENDPOINT/cookies"),
-            GeckoWebExecutor.FETCH_FLAGS_ANONYMOUS,
-        )
+        val response =
+            fetch(
+                webRequest("$TEST_ENDPOINT/cookies"),
+                GeckoWebExecutor.FETCH_FLAGS_ANONYMOUS,
+            )
 
         assertThat("Status code should match", response.statusCode, equalTo(200))
         val cookies = response.getJSONBody().getJSONObject("cookies")
@@ -327,16 +356,18 @@ class WebExecutorTest {
         val clearData = GeckoResult<Void>()
         ThreadUtils.runOnUiThread {
             clearData.completeFrom(
-                RuntimeCreator.getRuntime()
-                    .storageController
-                    .clearData(StorageController.ClearFlags.ALL),
+                RuntimeCreator.getRuntime().storageController.clearData(StorageController.ClearFlags.ALL)
             )
         }
 
         clearData.pollDefault()
 
         val uptimeMillis = SystemClock.uptimeMillis()
-        val response = fetch(webRequest("$TEST_ENDPOINT/cookies/set/uptimeMillis/$uptimeMillis"), GeckoWebExecutor.FETCH_FLAGS_PRIVATE)
+        val response =
+            fetch(
+                webRequest("$TEST_ENDPOINT/cookies/set/uptimeMillis/$uptimeMillis"),
+                GeckoWebExecutor.FETCH_FLAGS_PRIVATE,
+            )
 
         // We get redirected to /cookies which returns the cookies that were sent in the request
         assertThat("URI should match", response.uri, equalTo("$TEST_ENDPOINT/cookies"))
@@ -349,7 +380,8 @@ class WebExecutorTest {
             equalTo(uptimeMillis.toString()),
         )
 
-        val anotherBody = fetch(webRequest("$TEST_ENDPOINT/cookies"), GeckoWebExecutor.FETCH_FLAGS_PRIVATE).getJSONBody()
+        val anotherBody =
+            fetch(webRequest("$TEST_ENDPOINT/cookies"), GeckoWebExecutor.FETCH_FLAGS_PRIVATE).getJSONBody()
         assertThat(
             "Body should match",
             anotherBody.getJSONObject("cookies").getString("uptimeMillis"),
@@ -416,10 +448,14 @@ class WebExecutorTest {
 
     @Test
     fun testFetchUnknownHost() {
-        val thrown = assertThrows(WebRequestError::class.java) {
-            fetch(webRequest("https://this.should.not.resolve"))
-        }
-        assertThat(thrown, equalTo(WebRequestError(WebRequestError.ERROR_UNKNOWN_HOST, WebRequestError.ERROR_CATEGORY_URI)))
+        val thrown =
+            assertThrows(WebRequestError::class.java) {
+                fetch(webRequest("https://this.should.not.resolve"))
+            }
+        assertThat(
+            thrown,
+            equalTo(WebRequestError(WebRequestError.ERROR_UNKNOWN_HOST, WebRequestError.ERROR_CATEGORY_URI)),
+        )
     }
 
     @Test(expected = UnknownHostException::class)
@@ -452,10 +488,13 @@ class WebExecutorTest {
     @Test(expected = IOException::class)
     fun testFetchStreamError() {
         val expectedCount = 1 * 1024 * 1024 // 1MB
-        val response = executor.fetch(
-            webRequest("$TEST_ENDPOINT/bytes/$expectedCount"),
-            GeckoWebExecutor.FETCH_FLAGS_STREAM_FAILURE_TEST,
-        ).pollDefault()!!
+        val response =
+            executor
+                .fetch(
+                    webRequest("$TEST_ENDPOINT/bytes/$expectedCount"),
+                    GeckoWebExecutor.FETCH_FLAGS_STREAM_FAILURE_TEST,
+                )
+                .pollDefault()!!
 
         assertThat("Status code should match", response.statusCode, equalTo(200))
         assertThat("Content-Length should match", response.headers["Content-Length"]!!.toInt(), equalTo(expectedCount))
@@ -514,18 +553,19 @@ class WebExecutorTest {
 
     @Test
     fun unsupportedUriScheme() {
-        val illegal = mapOf(
-            "" to "",
-            "a" to "a",
-            "ab" to "ab",
-            "abc" to "abc",
-            "htt" to "htt",
-            "123456789" to "123456789",
-            "1234567890" to "1234567890",
-            "12345678901" to "1234567890",
-            "file://test" to "file://tes",
-            "moz-extension://what" to "moz-extens",
-        )
+        val illegal =
+            mapOf(
+                "" to "",
+                "a" to "a",
+                "ab" to "ab",
+                "abc" to "abc",
+                "htt" to "htt",
+                "123456789" to "123456789",
+                "1234567890" to "1234567890",
+                "12345678901" to "1234567890",
+                "file://test" to "file://tes",
+                "moz-extension://what" to "moz-extens",
+            )
 
         for ((uri, truncated) in illegal) {
             try {
@@ -540,11 +580,12 @@ class WebExecutorTest {
             }
         }
 
-        val legal = listOf(
-            "http://$TEST_ENDPOINT\n",
-            "http://$TEST_ENDPOINT/🥲",
-            "http://$TEST_ENDPOINT/abc",
-        )
+        val legal =
+            listOf(
+                "http://$TEST_ENDPOINT\n",
+                "http://$TEST_ENDPOINT/🥲",
+                "http://$TEST_ENDPOINT/abc",
+            )
 
         for (uri in legal) {
             try {

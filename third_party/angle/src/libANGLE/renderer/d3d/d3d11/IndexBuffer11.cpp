@@ -6,11 +6,8 @@
 
 // IndexBuffer11.cpp: Defines the D3D11 IndexBuffer implementation.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "libANGLE/renderer/d3d/d3d11/IndexBuffer11.h"
+#include "common/unsafe_buffers.h"
 
 #include "libANGLE/Context.h"
 #include "libANGLE/renderer/d3d/d3d11/Context11.h"
@@ -36,6 +33,8 @@ angle::Result IndexBuffer11::initialize(const gl::Context *context,
                                         bool dynamic)
 {
     mBuffer.reset();
+    mBufferSize = 0;
+    mIndexType  = gl::DrawElementsType::InvalidEnum;
 
     updateSerial();
 
@@ -86,7 +85,7 @@ angle::Result IndexBuffer11::mapBuffer(const gl::Context *context,
     ANGLE_TRY(mRenderer->mapResource(context, mBuffer.get(), 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0,
                                      &mappedResource));
 
-    *outMappedMemory = static_cast<char *>(mappedResource.pData) + offset;
+    *outMappedMemory = ANGLE_UNSAFE_TODO(static_cast<char *>(mappedResource.pData) + offset);
     return angle::Result::Continue;
 }
 

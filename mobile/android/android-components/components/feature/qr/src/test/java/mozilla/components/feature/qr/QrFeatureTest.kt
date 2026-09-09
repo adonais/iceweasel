@@ -34,20 +34,16 @@ import org.mockito.MockitoAnnotations.openMocks
 @RunWith(AndroidJUnit4::class)
 class QrFeatureTest {
 
-    @Mock
-    lateinit var fragmentManager: FragmentManager
+    @Mock lateinit var fragmentManager: FragmentManager
 
     @Before
     fun setUp() {
         openMocks(this)
 
         mock<FragmentTransaction>().let { transaction ->
-            whenever(fragmentManager.beginTransaction())
-                .thenReturn(transaction)
-            whenever(transaction.add(anyInt(), any(), anyString()))
-                .thenReturn(transaction)
-            whenever(transaction.remove(any()))
-                .thenReturn(transaction)
+            whenever(fragmentManager.beginTransaction()).thenReturn(transaction)
+            whenever(transaction.add(anyInt(), any(), anyString())).thenReturn(transaction)
+            whenever(transaction.remove(any())).thenReturn(transaction)
         }
     }
 
@@ -68,11 +64,12 @@ class QrFeatureTest {
         val permissionsCallback: (permissions: Array<String>) -> Unit = {
             callbackInvoked = true
         }
-        val feature = QrFeature(
-            testContext,
-            fragmentManager,
-            onNeedToRequestPermissions = permissionsCallback,
-        )
+        val feature =
+            QrFeature(
+                testContext,
+                fragmentManager,
+                onNeedToRequestPermissions = permissionsCallback,
+            )
 
         // When
         val scanResult = feature.scan()
@@ -86,10 +83,11 @@ class QrFeatureTest {
     fun `scan starts qr fragment if permissions granted`() {
         // Given
         grantPermission(CAMERA)
-        val feature = QrFeature(
-            testContext,
-            fragmentManager,
-        )
+        val feature =
+            QrFeature(
+                testContext,
+                fragmentManager,
+            )
 
         // When
         val scanResult = feature.scan()
@@ -115,12 +113,13 @@ class QrFeatureTest {
     @Test
     fun `onPermissionsResult displays scanner only if permission granted`() {
         // Given
-        val feature = spy(
-            QrFeature(
-                testContext,
-                fragmentManager,
-            ),
-        )
+        val feature =
+            spy(
+                QrFeature(
+                    testContext,
+                    fragmentManager,
+                )
+            )
 
         // When
         resolvePermissionRequestFrom(feature) { PermissionResolution.DENIED }
@@ -145,11 +144,12 @@ class QrFeatureTest {
         val scanResultCallback: OnScanResult = { result ->
             scanResult = result
         }
-        val feature = QrFeature(
-            testContext,
-            fragmentManager,
-            onScanResult = scanResultCallback,
-        )
+        val feature =
+            QrFeature(
+                testContext,
+                fragmentManager,
+                onScanResult = scanResultCallback,
+            )
 
         // When
         feature.scanCompleteListener.onScanComplete("result")
@@ -161,15 +161,15 @@ class QrFeatureTest {
     @Test
     fun `qr fragment is removed on back pressed`() {
         // Given
-        whenever(fragmentManager.findFragmentByTag(QR_FRAGMENT_TAG))
-            .thenReturn(mock())
+        whenever(fragmentManager.findFragmentByTag(QR_FRAGMENT_TAG)).thenReturn(mock())
 
-        val feature = spy(
-            QrFeature(
-                testContext,
-                fragmentManager,
-            ),
-        )
+        val feature =
+            spy(
+                QrFeature(
+                    testContext,
+                    fragmentManager,
+                )
+            )
 
         // When
         feature.onBackPressed()
@@ -182,15 +182,15 @@ class QrFeatureTest {
     fun `start attaches scan complete listener`() {
         // Given
         val fragment = mock<QrFragment>()
-        whenever(fragmentManager.findFragmentByTag(QR_FRAGMENT_TAG))
-            .thenReturn(fragment)
+        whenever(fragmentManager.findFragmentByTag(QR_FRAGMENT_TAG)).thenReturn(fragment)
 
-        val feature = spy(
-            QrFeature(
-                testContext,
-                fragmentManager,
-            ),
-        )
+        val feature =
+            spy(
+                QrFeature(
+                    testContext,
+                    fragmentManager,
+                )
+            )
         val listener = feature.scanCompleteListener
 
         // When
@@ -204,14 +204,14 @@ class QrFeatureTest {
     fun `stop attaches a null listener`() {
         // Given
         val fragment = mock<QrFragment>()
-        whenever(fragmentManager.findFragmentByTag(QR_FRAGMENT_TAG))
-            .thenReturn(fragment)
-        val feature = spy(
-            QrFeature(
-                testContext,
-                fragmentManager,
-            ),
-        )
+        whenever(fragmentManager.findFragmentByTag(QR_FRAGMENT_TAG)).thenReturn(fragment)
+        val feature =
+            spy(
+                QrFeature(
+                    testContext,
+                    fragmentManager,
+                )
+            )
 
         // When
         feature.stop()
@@ -224,12 +224,12 @@ class QrFeatureTest {
     fun `setScanCompleteListener allows setting a null callback in QrFragment`() {
         // Given
         val fragment = mock<QrFragment>()
-        whenever(fragmentManager.findFragmentByTag(QR_FRAGMENT_TAG))
-            .thenReturn(fragment)
-        val feature = QrFeature(
-            testContext,
-            fragmentManager,
-        )
+        whenever(fragmentManager.findFragmentByTag(QR_FRAGMENT_TAG)).thenReturn(fragment)
+        val feature =
+            QrFeature(
+                testContext,
+                fragmentManager,
+            )
         fragment.scanCompleteListener = feature.scanCompleteListener
 
         // When
@@ -242,12 +242,12 @@ class QrFeatureTest {
     fun `setScanCompleteListener allows setting a valid callback in QrFragment`() {
         // Given
         val fragment = mock<QrFragment>()
-        whenever(fragmentManager.findFragmentByTag(QR_FRAGMENT_TAG))
-            .thenReturn(fragment)
-        val feature = QrFeature(
-            testContext,
-            fragmentManager,
-        )
+        whenever(fragmentManager.findFragmentByTag(QR_FRAGMENT_TAG)).thenReturn(fragment)
+        val feature =
+            QrFeature(
+                testContext,
+                fragmentManager,
+            )
         fragment.scanCompleteListener = null
 
         // When

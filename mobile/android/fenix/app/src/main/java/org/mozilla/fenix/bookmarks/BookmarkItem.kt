@@ -7,11 +7,10 @@ package org.mozilla.fenix.bookmarks
 import mozilla.components.concept.storage.BookmarkNode
 
 internal fun List<BookmarkItem>.folders(): List<BookmarkItem.Folder> = filterIsInstance<BookmarkItem.Folder>()
+
 internal fun List<BookmarkItem>.bookmarks(): List<BookmarkItem.Bookmark> = filterIsInstance<BookmarkItem.Bookmark>()
 
-/**
- * Items that can be represented in the Bookmarks list.
- */
+/** Items that can be represented in the Bookmarks list. */
 internal sealed class BookmarkItem {
 
     abstract val guid: String
@@ -26,9 +25,8 @@ internal sealed class BookmarkItem {
      * @property title The title of the bookmark.
      * @property previewImageUrl The url to lookup the favicon for the bookmark.
      * @property guid The guid of the [BookmarkNode] representing this bookmark.
-     * @property position The position of this bookmark relative to its parent.
-     * Note: this should be preserved across Sync, as users will re-order their bookmarks on desktop.
-     * When null, it is appended.
+     * @property position The position of this bookmark relative to its parent. Note: this should be preserved across
+     *   Sync, as users will re-order their bookmarks on desktop. When null, it is appended.
      * @property dateAdded Timestamp in milliseconds when the Bookmark Item was added.
      */
     data class Bookmark(
@@ -45,9 +43,8 @@ internal sealed class BookmarkItem {
      *
      * @property title The name of the folder.
      * @property guid The guid of the [BookmarkNode] representing this folder.
-     * @property position The position of this bookmark relative to its parent.
-     * Note: this should be preserved across Sync, as users will re-order their bookmarks on desktop.
-     * When null, it is appended.
+     * @property position The position of this bookmark relative to its parent. Note: this should be preserved across
+     *   Sync, as users will re-order their bookmarks on desktop. When null, it is appended.
      * @property dateAdded Timestamp in milliseconds when the Bookmark Item was added.
      * @property nestedItemCount The count of nested child items under this folder.
      */

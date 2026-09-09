@@ -24,13 +24,14 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
-internal val AcornShapes = Shapes(
-    extraSmall = RoundedCornerShape(AcornCorners.extraSmall),
-    small = RoundedCornerShape(AcornCorners.small),
-    medium = RoundedCornerShape(AcornCorners.medium),
-    large = RoundedCornerShape(AcornCorners.large),
-    extraLarge = RoundedCornerShape(AcornCorners.extraLarge),
-)
+internal val AcornShapes =
+    Shapes(
+        extraSmall = RoundedCornerShape(AcornCorners.extraSmall),
+        small = RoundedCornerShape(AcornCorners.small),
+        medium = RoundedCornerShape(AcornCorners.medium),
+        large = RoundedCornerShape(AcornCorners.large),
+        extraLarge = RoundedCornerShape(AcornCorners.extraLarge),
+    )
 
 @Composable
 @Preview
@@ -67,11 +68,7 @@ private fun ShapeItem(label: String, shape: Shape) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(vertical = 8.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(64.dp)
-                .background(color = MaterialTheme.colorScheme.primary, shape = shape),
-        )
+        Box(modifier = Modifier.size(64.dp).background(color = MaterialTheme.colorScheme.primary, shape = shape))
 
         Spacer(Modifier.width(16.dp))
 

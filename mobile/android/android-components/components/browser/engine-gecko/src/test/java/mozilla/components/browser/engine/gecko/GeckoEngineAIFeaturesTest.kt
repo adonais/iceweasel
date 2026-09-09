@@ -43,15 +43,17 @@ class GeckoEngineAIFeaturesTest {
         var onSuccessCalled = false
         var onErrorCalled = false
 
-        val features = mapOf("translations" to AIFeature(id = "translations", isEnabled = true, isAllowed = true, isBlocked = false))
+        val features =
+            mapOf(
+                "translations" to AIFeature(id = "translations", isEnabled = true, isAllowed = true, isBlocked = false)
+            )
 
         val onSuccess: (Map<String, AIFeature>) -> Unit = { onSuccessCalled = true }
         val onError: (AIFeaturesError) -> Unit = { onErrorCalled = true }
 
-        `when`(aiFeaturesAccessor.listFeatures(onSuccess, onError))
-            .thenAnswer {
-                onSuccess.invoke(features)
-            }
+        `when`(aiFeaturesAccessor.listFeatures(onSuccess, onError)).thenAnswer {
+            onSuccess.invoke(features)
+        }
 
         engine.aiFeatures.listFeatures(onSuccess = onSuccess, onError = onError)
 
@@ -68,10 +70,9 @@ class GeckoEngineAIFeaturesTest {
         val onSuccess: (Map<String, AIFeature>) -> Unit = { onSuccessCalled = true }
         val onError: (AIFeaturesError) -> Unit = { onErrorCalled = true }
 
-        `when`(aiFeaturesAccessor.listFeatures(onSuccess, onError))
-            .thenAnswer {
-                onError.invoke(AIFeaturesError.UnknownError(Exception()))
-            }
+        `when`(aiFeaturesAccessor.listFeatures(onSuccess, onError)).thenAnswer {
+            onError.invoke(AIFeaturesError.UnknownError(Exception()))
+        }
 
         engine.aiFeatures.listFeatures(onSuccess = onSuccess, onError = onError)
 
@@ -89,19 +90,31 @@ class GeckoEngineAIFeaturesTest {
         val onError: (AIFeaturesError) -> Unit = { onErrorCalled = true }
 
         `when`(
-            aiFeaturesAccessor.setFeatureEnablement(
-                any(),
-                anyBoolean(),
-                eq(onSuccess),
-                eq(onError),
-            ),
-        ).thenAnswer {
-            onSuccess.invoke()
-        }
+                aiFeaturesAccessor.setFeatureEnablement(
+                    any(),
+                    anyBoolean(),
+                    eq(onSuccess),
+                    eq(onError),
+                )
+            )
+            .thenAnswer {
+                onSuccess.invoke()
+            }
 
-        engine.aiFeatures.setFeatureEnablement(featureId = "translations", isEnabled = true, onSuccess = onSuccess, onError = onError)
+        engine.aiFeatures.setFeatureEnablement(
+            featureId = "translations",
+            isEnabled = true,
+            onSuccess = onSuccess,
+            onError = onError,
+        )
 
-        verify(aiFeaturesAccessor).setFeatureEnablement(featureId = "translations", isEnabled = true, onSuccess = onSuccess, onError = onError)
+        verify(aiFeaturesAccessor)
+            .setFeatureEnablement(
+                featureId = "translations",
+                isEnabled = true,
+                onSuccess = onSuccess,
+                onError = onError,
+            )
         assertTrue(onSuccessCalled)
         assertFalse(onErrorCalled)
     }
@@ -115,19 +128,31 @@ class GeckoEngineAIFeaturesTest {
         val onError: (AIFeaturesError) -> Unit = { onErrorCalled = true }
 
         `when`(
-            aiFeaturesAccessor.setFeatureEnablement(
-                any(),
-                anyBoolean(),
-                eq(onSuccess),
-                eq(onError),
-            ),
-        ).thenAnswer {
-            onError.invoke(AIFeaturesError.CouldNotSetError(null))
-        }
+                aiFeaturesAccessor.setFeatureEnablement(
+                    any(),
+                    anyBoolean(),
+                    eq(onSuccess),
+                    eq(onError),
+                )
+            )
+            .thenAnswer {
+                onError.invoke(AIFeaturesError.CouldNotSetError(null))
+            }
 
-        engine.aiFeatures.setFeatureEnablement(featureId = "translations", isEnabled = false, onSuccess = onSuccess, onError = onError)
+        engine.aiFeatures.setFeatureEnablement(
+            featureId = "translations",
+            isEnabled = false,
+            onSuccess = onSuccess,
+            onError = onError,
+        )
 
-        verify(aiFeaturesAccessor).setFeatureEnablement(featureId = "translations", isEnabled = false, onSuccess = onSuccess, onError = onError)
+        verify(aiFeaturesAccessor)
+            .setFeatureEnablement(
+                featureId = "translations",
+                isEnabled = false,
+                onSuccess = onSuccess,
+                onError = onError,
+            )
         assertFalse(onSuccessCalled)
         assertTrue(onErrorCalled)
     }
@@ -141,18 +166,20 @@ class GeckoEngineAIFeaturesTest {
         val onError: (AIFeaturesError) -> Unit = { onErrorCalled = true }
 
         `when`(
-            aiFeaturesAccessor.makeFeatureAvailable(
-                any(),
-                eq(onSuccess),
-                eq(onError),
-            ),
-        ).thenAnswer {
-            onSuccess.invoke()
-        }
+                aiFeaturesAccessor.makeFeatureAvailable(
+                    any(),
+                    eq(onSuccess),
+                    eq(onError),
+                )
+            )
+            .thenAnswer {
+                onSuccess.invoke()
+            }
 
         engine.aiFeatures.makeFeatureAvailable(featureId = "translations", onSuccess = onSuccess, onError = onError)
 
-        verify(aiFeaturesAccessor).makeFeatureAvailable(featureId = "translations", onSuccess = onSuccess, onError = onError)
+        verify(aiFeaturesAccessor)
+            .makeFeatureAvailable(featureId = "translations", onSuccess = onSuccess, onError = onError)
         assertTrue(onSuccessCalled)
         assertFalse(onErrorCalled)
     }
@@ -166,18 +193,20 @@ class GeckoEngineAIFeaturesTest {
         val onError: (AIFeaturesError) -> Unit = { onErrorCalled = true }
 
         `when`(
-            aiFeaturesAccessor.makeFeatureAvailable(
-                any(),
-                eq(onSuccess),
-                eq(onError),
-            ),
-        ).thenAnswer {
-            onError.invoke(AIFeaturesError.CouldNotMakeAvailableError(null))
-        }
+                aiFeaturesAccessor.makeFeatureAvailable(
+                    any(),
+                    eq(onSuccess),
+                    eq(onError),
+                )
+            )
+            .thenAnswer {
+                onError.invoke(AIFeaturesError.CouldNotMakeAvailableError(null))
+            }
 
         engine.aiFeatures.makeFeatureAvailable(featureId = "translations", onSuccess = onSuccess, onError = onError)
 
-        verify(aiFeaturesAccessor).makeFeatureAvailable(featureId = "translations", onSuccess = onSuccess, onError = onError)
+        verify(aiFeaturesAccessor)
+            .makeFeatureAvailable(featureId = "translations", onSuccess = onSuccess, onError = onError)
         assertFalse(onSuccessCalled)
         assertTrue(onErrorCalled)
     }

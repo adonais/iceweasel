@@ -20,19 +20,21 @@ class InterceptorTest {
         var interceptorInvoked1 = false
         var interceptorInvoked2 = false
 
-        val interceptor1 = object : Interceptor {
-            override fun intercept(chain: Interceptor.Chain): Response {
-                interceptorInvoked1 = true
-                return chain.proceed(chain.request)
+        val interceptor1 =
+            object : Interceptor {
+                override fun intercept(chain: Interceptor.Chain): Response {
+                    interceptorInvoked1 = true
+                    return chain.proceed(chain.request)
+                }
             }
-        }
 
-        val interceptor2 = object : Interceptor {
-            override fun intercept(chain: Interceptor.Chain): Response {
-                interceptorInvoked2 = true
-                return chain.proceed(chain.request)
+        val interceptor2 =
+            object : Interceptor {
+                override fun intercept(chain: Interceptor.Chain): Response {
+                    interceptorInvoked2 = true
+                    return chain.proceed(chain.request)
+                }
             }
-        }
 
         val fake = FakeClient()
         val client = fake.withInterceptors(interceptor1, interceptor2)
@@ -53,41 +55,30 @@ class InterceptorTest {
         val order = mutableListOf<String>()
 
         val fake = FakeClient()
-        val client = fake.withInterceptors(
-            object : Interceptor {
-                override fun intercept(chain: Interceptor.Chain): Response {
-                    assertEquals("https://www.mozilla.org", chain.request.url)
-                    order.add("A")
-                    return chain.proceed(
-                        chain.request.copy(
-                            url = chain.request.url + "/a",
-                        ),
-                    )
-                }
-            },
-            object : Interceptor {
-                override fun intercept(chain: Interceptor.Chain): Response {
-                    assertEquals("https://www.mozilla.org/a", chain.request.url)
-                    order.add("B")
-                    return chain.proceed(
-                        chain.request.copy(
-                            url = chain.request.url + "/b",
-                        ),
-                    )
-                }
-            },
-            object : Interceptor {
-                override fun intercept(chain: Interceptor.Chain): Response {
-                    assertEquals("https://www.mozilla.org/a/b", chain.request.url)
-                    order.add("C")
-                    return chain.proceed(
-                        chain.request.copy(
-                            url = chain.request.url + "/c",
-                        ),
-                    )
-                }
-            },
-        )
+        val client =
+            fake.withInterceptors(
+                object : Interceptor {
+                    override fun intercept(chain: Interceptor.Chain): Response {
+                        assertEquals("https://www.mozilla.org", chain.request.url)
+                        order.add("A")
+                        return chain.proceed(chain.request.copy(url = chain.request.url + "/a"))
+                    }
+                },
+                object : Interceptor {
+                    override fun intercept(chain: Interceptor.Chain): Response {
+                        assertEquals("https://www.mozilla.org/a", chain.request.url)
+                        order.add("B")
+                        return chain.proceed(chain.request.copy(url = chain.request.url + "/b"))
+                    }
+                },
+                object : Interceptor {
+                    override fun intercept(chain: Interceptor.Chain): Response {
+                        assertEquals("https://www.mozilla.org/a/b", chain.request.url)
+                        order.add("C")
+                        return chain.proceed(chain.request.copy(url = chain.request.url + "/c"))
+                    }
+                },
+            )
 
         val response = client.fetch(Request(url = "https://www.mozilla.org"))
         assertTrue(fake.resourceFetched)
@@ -100,13 +91,14 @@ class InterceptorTest {
     @Test
     fun `Intercepted request is never fetched`() {
         val fake = FakeClient()
-        val client = fake.withInterceptors(
-            object : Interceptor {
-                override fun intercept(chain: Interceptor.Chain): Response {
-                    return Response("https://www.firefox.com", 203, MutableHeaders(), Response.Body.empty())
+        val client =
+            fake.withInterceptors(
+                object : Interceptor {
+                    override fun intercept(chain: Interceptor.Chain): Response {
+                        return Response("https://www.firefox.com", 203, MutableHeaders(), Response.Body.empty())
+                    }
                 }
-            },
-        )
+            )
 
         val response = client.fetch(Request(url = "https://www.mozilla.org"))
         assertFalse(fake.resourceFetched)
@@ -115,18 +107,17 @@ class InterceptorTest {
     }
 }
 
-private class FakeClient(
-    val response: Response? = null,
-) : Client() {
+private class FakeClient(val response: Response? = null) : Client() {
     var resourceFetched = false
 
     override fun fetch(request: Request): Response {
         resourceFetched = true
-        return response ?: Response(
-            url = request.url,
-            status = 200,
-            body = Response.Body.empty(),
-            headers = MutableHeaders(),
-        )
+        return response
+            ?: Response(
+                url = request.url,
+                status = 200,
+                body = Response.Body.empty(),
+                headers = MutableHeaders(),
+            )
     }
 }

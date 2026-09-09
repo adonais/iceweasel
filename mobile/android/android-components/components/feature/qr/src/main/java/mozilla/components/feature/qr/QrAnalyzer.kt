@@ -15,30 +15,26 @@ import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.common.HybridBinarizer
 
 /**
- * Stateful ZXing-backed QR detector that callers can plug into a Camera2
- * YUV [android.media.ImageReader] pipeline.
- * Mirrors the find/decoding state machine used by [QrFragment].
- * Not thread-safe — invoke [analyze] from a single background thread.
+ * Stateful ZXing-backed QR detector that callers can plug into a Camera2 YUV [android.media.ImageReader] pipeline.
+ * Mirrors the find/decoding state machine used by [QrFragment]. Not thread-safe — invoke [analyze] from a single
+ * background thread.
  */
 class QrAnalyzer {
     private val reader = MultiFormatReader()
 
-    @Volatile
-    @VisibleForTesting
-    internal var state: Int = STATE_FIND_QRCODE
+    @Volatile @VisibleForTesting internal var state: Int = STATE_FIND_QRCODE
 
     /**
-     * Resets the analyzer so [analyze] will resume decoding after a successful
-     * detection. Call when entering QR mode or recovering from a stale result.
+     * Resets the analyzer so [analyze] will resume decoding after a successful detection. Call when entering QR mode or
+     * recovering from a stale result.
      */
     fun reset() {
         state = STATE_FIND_QRCODE
     }
 
     /**
-     * Decodes a single YUV [Image]. Returns the QR string on success, or null
-     * if no QR is present or a previous call already returned a result that
-     * has not been [reset].
+     * Decodes a single YUV [Image]. Returns the QR string on success, or null if no QR is present or a previous call
+     * already returned a result that has not been [reset].
      */
     fun analyze(image: Image): String? {
         if (state != STATE_FIND_QRCODE) return null
@@ -48,17 +44,15 @@ class QrAnalyzer {
     }
 
     /**
-     * Decodes a still [Bitmap] (e.g. picked from the system photo picker). Returns the
-     * QR string on success, or null if no QR is present.
+     * Decodes a still [Bitmap] (e.g. picked from the system photo picker). Returns the QR string on success, or null if
+     * no QR is present.
      *
-     * The bitmap must be software-backed and readable via [Bitmap.getPixels] — hardware
-     * bitmaps from [android.graphics.ImageDecoder] must be configured with a software
-     * allocator before being passed in.
+     * The bitmap must be software-backed and readable via [Bitmap.getPixels] — hardware bitmaps from
+     * [android.graphics.ImageDecoder] must be configured with a software allocator before being passed in.
      *
-     * Still-image decoding is one-shot and does not participate in the streaming state
-     * machine used by [analyze]: the [state] field is neither read nor written here. The
-     * shared [reader] is reset after each call, but because [QrAnalyzer] is not thread-safe,
-     * callers feeding the YUV camera pipeline should still allocate a separate
+     * Still-image decoding is one-shot and does not participate in the streaming state machine used by [analyze]: the
+     * [state] field is neither read nor written here. The shared [reader] is reset after each call, but because
+     * [QrAnalyzer] is not thread-safe, callers feeding the YUV camera pipeline should still allocate a separate
      * [QrAnalyzer] for bitmap decoding rather than reusing their camera instance.
      */
     fun analyze(bitmap: Bitmap): String? {

@@ -12,7 +12,6 @@ import mozilla.components.concept.engine.translate.LanguageModel
  * @property languageModel The object comes from the translation engine.
  * @property type The type of the language item.
  * @property enabled Whether the item is enabled or not.
- *
  */
 data class DownloadLanguageItemPreference(
     val languageModel: LanguageModel,
@@ -20,9 +19,7 @@ data class DownloadLanguageItemPreference(
     var enabled: Boolean = true,
 )
 
-/**
- * DownloadLanguageItemTypePreference the type of the [DownloadLanguageItemPreference]
- */
+/** DownloadLanguageItemTypePreference the type of the [DownloadLanguageItemPreference] */
 enum class DownloadLanguageItemTypePreference {
     PivotLanguage,
     AllLanguages,

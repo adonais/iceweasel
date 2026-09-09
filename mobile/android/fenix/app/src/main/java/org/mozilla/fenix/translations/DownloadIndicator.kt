@@ -30,16 +30,13 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.modifier.animateRotation
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
-/**
- * Animation duration in milliseconds.
- * If it is set to a low number, the speed of the rotation will be higher.
- */
+/** Animation duration in milliseconds. If it is set to a low number, the speed of the rotation will be higher. */
 private const val ANIMATION_DURATION_MS = 2000
 
 /**
@@ -59,10 +56,7 @@ fun DownloadIconIndicator(
 ) {
     Icon(
         painter = icon,
-        modifier = modifier.then(
-            Modifier
-                .animateRotation(animate = true, durationMillis = ANIMATION_DURATION_MS),
-        ),
+        modifier = modifier.then(Modifier.animateRotation(animate = true, durationMillis = ANIMATION_DURATION_MS)),
         contentDescription = contentDescription,
         tint = tint,
     )
@@ -83,9 +77,7 @@ fun DownloadInProgressIndicator(
     tint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     contentDescription: String? = null,
 ) {
-    Box(
-        contentAlignment = Alignment.Center,
-    ) {
+    Box(contentAlignment = Alignment.Center) {
         Icon(
             modifier = modifier.size(8.dp),
             painter = icon,
@@ -102,8 +94,7 @@ fun DownloadInProgressIndicator(
 }
 
 /**
- * Download indicator for translations screens.
- * It indicates that the download of the language file is in progress.
+ * Download indicator for translations screens. It indicates that the download of the language file is in progress.
  *
  * @param text The button text to be displayed.
  * @param modifier [Modifier] to be applied to the layout.
@@ -119,34 +110,30 @@ fun DownloadIndicator(
 ) {
     FilledButton(
         text = text,
-        modifier = modifier.then(
-            Modifier
-                .clearAndSetSemantics {
-                    role = Role.Button
-                    contentDescription?.let { this.contentDescription = contentDescription }
-                }
-                .wrapContentSize(),
-        ),
+        modifier =
+            modifier.then(
+                Modifier.clearAndSetSemantics {
+                        role = Role.Button
+                        contentDescription?.let { this.contentDescription = contentDescription }
+                    }
+                    .wrapContentSize()
+            ),
         icon = icon,
-        iconModifier = Modifier
-            .animateRotation(animate = true, durationMillis = ANIMATION_DURATION_MS)
-            .size(ButtonDefaults.IconSize),
+        iconModifier =
+            Modifier.animateRotation(animate = true, durationMillis = ANIMATION_DURATION_MS)
+                .size(ButtonDefaults.IconSize),
         onClick = {},
     )
 }
 
 @Preview
 @Composable
-private fun DownloadIconIndicatorPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun DownloadIconIndicatorPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         Surface {
             DownloadIconIndicator(
                 icon = painterResource(id = iconsR.drawable.mozac_ic_sync_24),
-                contentDescription = stringResource(
-                    id = R.string.translations_bottom_sheet_translating_in_progress,
-                ),
+                contentDescription = stringResource(id = R.string.translations_bottom_sheet_translating_in_progress),
             )
         }
     }
@@ -154,15 +141,11 @@ private fun DownloadIconIndicatorPreview(
 
 @Preview
 @Composable
-private fun DownloadInProgressIndicatorPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun DownloadInProgressIndicatorPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         Surface {
             DownloadInProgressIndicator(
-                contentDescription = stringResource(
-                    id = R.string.translations_bottom_sheet_translating_in_progress,
-                ),
+                contentDescription = stringResource(id = R.string.translations_bottom_sheet_translating_in_progress)
             )
         }
     }
@@ -170,17 +153,14 @@ private fun DownloadInProgressIndicatorPreview(
 
 @Preview
 @Composable
-private fun DownloadIndicatorPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun DownloadIndicatorPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         Surface {
             DownloadIndicator(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                 text = stringResource(id = R.string.translations_bottom_sheet_translating_in_progress),
-                contentDescription = stringResource(
-                    id = R.string.translations_bottom_sheet_translating_in_progress_content_description,
-                ),
+                contentDescription =
+                    stringResource(id = R.string.translations_bottom_sheet_translating_in_progress_content_description),
                 icon = painterResource(id = iconsR.drawable.mozac_ic_sync_24),
             )
         }

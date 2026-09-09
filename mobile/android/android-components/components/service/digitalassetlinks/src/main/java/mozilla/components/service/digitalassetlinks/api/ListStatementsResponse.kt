@@ -13,7 +13,7 @@ import org.json.JSONObject
 /**
  * @property statements A list of all the matching statements that have been found.
  * @property maxAge From serving time, how much longer the response should be considered valid barring further updates.
- * Formatted as a duration in seconds with up to nine fractional digits, terminated by 's'. Example: "3.5s".
+ *   Formatted as a duration in seconds with up to nine fractional digits, terminated by 's'. Example: "3.5s".
  * @property debug Human-readable message containing information about the response.
  */
 data class ListStatementsResponse(
@@ -23,31 +23,35 @@ data class ListStatementsResponse(
 )
 
 internal fun parseListStatementsJson(json: JSONObject): ListStatementsResponse {
-    val statements = json.getJSONArray("statements")
-        .asSequence { i -> getJSONObject(i) }
-        .mapNotNull { statementJson ->
-            val relationString = statementJson.getString("relation")
-            val relation = Relation.entries.find { relationString == it.kindAndDetail }
+    val statements =
+        json
+            .getJSONArray("statements")
+            .asSequence { i -> getJSONObject(i) }
+            .mapNotNull { statementJson ->
+                val relationString = statementJson.getString("relation")
+                val relation = Relation.entries.find { relationString == it.kindAndDetail }
 
-            val targetJson = statementJson.getJSONObject("target")
-            val webJson = targetJson.optJSONObject("web")
-            val androidJson = targetJson.optJSONObject("androidApp")
-            val target = when {
-                webJson != null -> AssetDescriptor.Web(site = webJson.getString("site"))
-                androidJson != null -> AssetDescriptor.Android(
-                    packageName = androidJson.getString("packageName"),
-                    sha256CertFingerprint = androidJson.getJSONObject("certificate")
-                        .getString("sha256Fingerprint"),
-                )
-                else -> null
-            }
+                val targetJson = statementJson.getJSONObject("target")
+                val webJson = targetJson.optJSONObject("web")
+                val androidJson = targetJson.optJSONObject("androidApp")
+                val target =
+                    when {
+                        webJson != null -> AssetDescriptor.Web(site = webJson.getString("site"))
+                        androidJson != null ->
+                            AssetDescriptor.Android(
+                                packageName = androidJson.getString("packageName"),
+                                sha256CertFingerprint =
+                                    androidJson.getJSONObject("certificate").getString("sha256Fingerprint"),
+                            )
+                        else -> null
+                    }
 
-            if (relation != null && target != null) {
-                Statement(relation, target)
-            } else {
-                null
+                if (relation != null && target != null) {
+                    Statement(relation, target)
+                } else {
+                    null
+                }
             }
-        }
     return ListStatementsResponse(
         statements = statements.toList(),
         maxAge = json.getString("maxAge"),

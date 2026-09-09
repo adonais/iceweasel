@@ -4,17 +4,19 @@
 
 package org.mozilla.fenix.library.history
 
+import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlin.test.assertIs
 
 class HistoryFragmentStoreTest {
-    private val historyItem = History.Regular(0, "title", "url", 0.toLong(), HistoryItemTimeGroup.timeGroupForTimestamp(0))
-    private val newHistoryItem = History.Regular(1, "title", "url", 0.toLong(), HistoryItemTimeGroup.timeGroupForTimestamp(0))
+    private val historyItem =
+        History.Regular(0, "title", "url", 0.toLong(), HistoryItemTimeGroup.timeGroupForTimestamp(0))
+    private val newHistoryItem =
+        History.Regular(1, "title", "url", 0.toLong(), HistoryItemTimeGroup.timeGroupForTimestamp(0))
     private val pendingDeletionItem = historyItem.toPendingDeletionHistory()
 
     @Test
@@ -62,14 +64,15 @@ class HistoryFragmentStoreTest {
 
     @Test
     fun finishSync() = runTest {
-        val initialState = HistoryFragmentState(
-            items = listOf(),
-            mode = HistoryFragmentState.Mode.Syncing,
-            pendingDeletionItems = emptySet(),
-            isEmpty = false,
-            isDeletingItems = false,
-            isSearching = false,
-        )
+        val initialState =
+            HistoryFragmentState(
+                items = listOf(),
+                mode = HistoryFragmentState.Mode.Syncing,
+                pendingDeletionItems = emptySet(),
+                isEmpty = false,
+                isDeletingItems = false,
+                isSearching = false,
+            )
         val store = HistoryFragmentStore(initialState)
 
         store.dispatch(HistoryFragmentAction.FinishSync)
@@ -188,13 +191,7 @@ class HistoryFragmentStoreTest {
 
     @Test
     fun `GIVEN mode is editing WHEN back pressed THEN mode becomes normal`() {
-        val store = HistoryFragmentStore(
-            emptyDefaultState().copy(
-                mode = HistoryFragmentState.Mode.Editing(
-                    setOf(),
-                ),
-            ),
-        )
+        val store = HistoryFragmentStore(emptyDefaultState().copy(mode = HistoryFragmentState.Mode.Editing(setOf())))
 
         store.dispatch(HistoryFragmentAction.BackPressed)
 
@@ -228,30 +225,33 @@ class HistoryFragmentStoreTest {
         assertFalse(store.state.isSearching)
     }
 
-    private fun emptyDefaultState(): HistoryFragmentState = HistoryFragmentState(
-        items = listOf(),
-        mode = HistoryFragmentState.Mode.Normal,
-        pendingDeletionItems = emptySet(),
-        isEmpty = false,
-        isDeletingItems = false,
-        isSearching = false,
-    )
+    private fun emptyDefaultState(): HistoryFragmentState =
+        HistoryFragmentState(
+            items = listOf(),
+            mode = HistoryFragmentState.Mode.Normal,
+            pendingDeletionItems = emptySet(),
+            isEmpty = false,
+            isDeletingItems = false,
+            isSearching = false,
+        )
 
-    private fun oneItemEditState(): HistoryFragmentState = HistoryFragmentState(
-        items = listOf(),
-        mode = HistoryFragmentState.Mode.Editing(setOf(historyItem)),
-        pendingDeletionItems = emptySet(),
-        isEmpty = false,
-        isDeletingItems = false,
-        isSearching = false,
-    )
+    private fun oneItemEditState(): HistoryFragmentState =
+        HistoryFragmentState(
+            items = listOf(),
+            mode = HistoryFragmentState.Mode.Editing(setOf(historyItem)),
+            pendingDeletionItems = emptySet(),
+            isEmpty = false,
+            isDeletingItems = false,
+            isSearching = false,
+        )
 
-    private fun twoItemEditState(): HistoryFragmentState = HistoryFragmentState(
-        items = listOf(),
-        mode = HistoryFragmentState.Mode.Editing(setOf(historyItem, newHistoryItem)),
-        pendingDeletionItems = emptySet(),
-        isEmpty = false,
-        isDeletingItems = false,
-        isSearching = false,
-    )
+    private fun twoItemEditState(): HistoryFragmentState =
+        HistoryFragmentState(
+            items = listOf(),
+            mode = HistoryFragmentState.Mode.Editing(setOf(historyItem, newHistoryItem)),
+            pendingDeletionItems = emptySet(),
+            isEmpty = false,
+            isDeletingItems = false,
+            isSearching = false,
+        )
 }

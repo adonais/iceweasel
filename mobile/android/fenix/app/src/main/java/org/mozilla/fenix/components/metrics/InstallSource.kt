@@ -24,30 +24,34 @@ fun installSourcePackage(
     packageManager: PackageManager,
     packageName: String,
     sdk: Int = SDK_INT,
-): String = if (sdk >= Build.VERSION_CODES.R) {
-    installSourcePackageForBuildMinR(packageManager, packageName)
-} else {
-    installSourcePackageForBuildMaxQ(packageManager, packageName)
-}
+): String =
+    if (sdk >= Build.VERSION_CODES.R) {
+        installSourcePackageForBuildMinR(packageManager, packageName)
+    } else {
+        installSourcePackageForBuildMaxQ(packageManager, packageName)
+    }
 
 @RequiresApi(Build.VERSION_CODES.R)
 private fun installSourcePackageForBuildMinR(
     packageManager: PackageManager,
     packageName: String,
-): String = try {
-    packageManager.getInstallSourceInfo(packageName).installingPackageName
-} catch (e: PackageManager.NameNotFoundException) {
-    Logger.debug("$packageName is not available to the caller")
-    null
-}.orEmpty()
+): String =
+    try {
+            packageManager.getInstallSourceInfo(packageName).installingPackageName
+        } catch (e: PackageManager.NameNotFoundException) {
+            Logger.debug("$packageName is not available to the caller")
+            null
+        }
+        .orEmpty()
 
 private fun installSourcePackageForBuildMaxQ(
     packageManager: PackageManager,
     packageName: String,
-): String = try {
-    @Suppress("DEPRECATION")
-    packageManager.getInstallerPackageName(packageName)
-} catch (e: IllegalArgumentException) {
-    Logger.debug("$packageName is not installed")
-    null
-}.orEmpty()
+): String =
+    try {
+            @Suppress("DEPRECATION") packageManager.getInstallerPackageName(packageName)
+        } catch (e: IllegalArgumentException) {
+            Logger.debug("$packageName is not installed")
+            null
+        }
+        .orEmpty()

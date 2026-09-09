@@ -5,7 +5,6 @@
 package org.mozilla.fenix.home.setup.store
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.mockk.every
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.test.runTest
@@ -17,7 +16,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.R
-import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.utils.Settings
 
 @RunWith(AndroidJUnit4::class)
@@ -125,10 +123,11 @@ class DefaultSetupChecklistRepositoryTest {
             settings.isDefaultBrowser = true
 
             val result = repository.setupChecklistPreferenceUpdates.take(1).first()
-            val expected = SetupChecklistRepository.SetupChecklistPreferenceUpdate(
-                SetupChecklistPreference.SetToDefault,
-                true,
-            )
+            val expected =
+                SetupChecklistRepository.SetupChecklistPreferenceUpdate(
+                    SetupChecklistPreference.SetToDefault,
+                    true,
+                )
             assertEquals(expected, result)
         }
 
@@ -142,10 +141,11 @@ class DefaultSetupChecklistRepositoryTest {
             settings.signedInFxaAccount = true
 
             val result = repository.setupChecklistPreferenceUpdates.take(1).first()
-            val expected = SetupChecklistRepository.SetupChecklistPreferenceUpdate(
-                SetupChecklistPreference.SignIn,
-                true,
-            )
+            val expected =
+                SetupChecklistRepository.SetupChecklistPreferenceUpdate(
+                    SetupChecklistPreference.SignIn,
+                    true,
+                )
             assertEquals(expected, result)
         }
 
@@ -159,10 +159,11 @@ class DefaultSetupChecklistRepositoryTest {
             settings.hasCompletedSetupStepTheme = true
 
             val result = repository.setupChecklistPreferenceUpdates.take(1).first()
-            val expected = SetupChecklistRepository.SetupChecklistPreferenceUpdate(
-                SetupChecklistPreference.ThemeComplete,
-                true,
-            )
+            val expected =
+                SetupChecklistRepository.SetupChecklistPreferenceUpdate(
+                    SetupChecklistPreference.ThemeComplete,
+                    true,
+                )
             assertEquals(expected, result)
         }
 
@@ -176,10 +177,11 @@ class DefaultSetupChecklistRepositoryTest {
             settings.hasCompletedSetupStepToolbar = true
 
             val result = repository.setupChecklistPreferenceUpdates.take(1).first()
-            val expected = SetupChecklistRepository.SetupChecklistPreferenceUpdate(
-                SetupChecklistPreference.ToolbarComplete,
-                true,
-            )
+            val expected =
+                SetupChecklistRepository.SetupChecklistPreferenceUpdate(
+                    SetupChecklistPreference.ToolbarComplete,
+                    true,
+                )
             assertEquals(expected, result)
         }
 
@@ -193,10 +195,11 @@ class DefaultSetupChecklistRepositoryTest {
             settings.hasCompletedSetupStepExtensions = true
 
             val result = repository.setupChecklistPreferenceUpdates.take(1).first()
-            val expected = SetupChecklistRepository.SetupChecklistPreferenceUpdate(
-                SetupChecklistPreference.ExtensionsComplete,
-                true,
-            )
+            val expected =
+                SetupChecklistRepository.SetupChecklistPreferenceUpdate(
+                    SetupChecklistPreference.ExtensionsComplete,
+                    true,
+                )
             assertEquals(expected, result)
         }
 }

@@ -13,6 +13,8 @@ import android.content.pm.ResolveInfo
 import android.net.Uri
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.File
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.whenever
@@ -29,8 +31,6 @@ import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.robolectric.Shadows.shadowOf
-import java.io.File
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class AppLinksUseCasesTest {
@@ -57,16 +57,11 @@ class AppLinksUseCasesTest {
         "intent://com.example.app#Intent;package=com.example.com;S.browser_fallback_url=https://example.com;end"
     private val appIntentWithPackageAndPlayStoreFallback =
         "intent://com.example.app#Intent;package=com.example.com;S.browser_fallback_url=https://play.google.com/store/abc;end"
-    private val urlWithAndroidFallbackLink =
-        "https://mozilla.org/?afl=https://example.com"
-    private val urlWithFallbackLink =
-        "https://mozilla.org/?link=https://example.com"
-    private val urlWithBrowserFallbackLink =
-        "https://mozilla.org/?S.browser_fallback_url=https://example.com"
-    private val appIntentWithUnsafeScheme =
-         "intent:foo#Intent;package=org.mozilla.fenix;scheme=file;end;"
-    private val appIntentWithUnsafeUpperScheme =
-         "intent:foo#Intent;package=org.mozilla.fenix;scheme=FILE;end;"
+    private val urlWithAndroidFallbackLink = "https://mozilla.org/?afl=https://example.com"
+    private val urlWithFallbackLink = "https://mozilla.org/?link=https://example.com"
+    private val urlWithBrowserFallbackLink = "https://mozilla.org/?S.browser_fallback_url=https://example.com"
+    private val appIntentWithUnsafeScheme = "intent:foo#Intent;package=org.mozilla.fenix;scheme=file;end;"
+    private val appIntentWithUnsafeUpperScheme = "intent:foo#Intent;package=org.mozilla.fenix;scheme=FILE;end;"
 
     @Before
     fun setup() {
@@ -84,17 +79,21 @@ class AppLinksUseCasesTest {
         urlToPackages.forEach { (urlString, pkgName, className) ->
             val intent = Intent.parseUri(urlString, 0).addCategory(Intent.CATEGORY_BROWSABLE)
 
-            val info = ActivityInfo().apply {
-                packageName = pkgName
-                name = className
-                icon = android.R.drawable.btn_default
-            }
+            val info =
+                ActivityInfo().apply {
+                    packageName = pkgName
+                    name = className
+                    icon = android.R.drawable.btn_default
+                }
 
-            val resolveInfo = ResolveInfo().apply {
-                labelRes = android.R.string.ok
-                activityInfo = info
-            }
-            @Suppress("DEPRECATION") // Deprecation will be handled in https://github.com/mozilla-mobile/android-components/issues/11832
+            val resolveInfo =
+                ResolveInfo().apply {
+                    labelRes = android.R.string.ok
+                    activityInfo = info
+                }
+            @Suppress(
+                "DEPRECATION"
+            ) // Deprecation will be handled in https://github.com/mozilla-mobile/android-components/issues/11832
             packageManager.addResolveInfoForIntent(intent, resolveInfo)
             packageManager.addDrawableResolution(pkgName, android.R.drawable.btn_default, mock())
         }
@@ -106,9 +105,10 @@ class AppLinksUseCasesTest {
         }
 
         installedApps.forEach { name ->
-            val packageInfo = PackageInfo().apply {
-                packageName = name
-            }
+            val packageInfo =
+                PackageInfo().apply {
+                    packageName = name
+                }
             packageManager.addPackageNoDefaults(packageInfo)
         }
 
@@ -326,10 +326,7 @@ class AppLinksUseCasesTest {
 
         assertTrue(redirect.hasExternalApp())
         assertTrue(redirect.isInstallable())
-        assert(
-            redirect.marketplaceIntent!!.flags and Intent.FLAG_ACTIVITY_NEW_TASK
-                == Intent.FLAG_ACTIVITY_NEW_TASK,
-        )
+        assert(redirect.marketplaceIntent!!.flags and Intent.FLAG_ACTIVITY_NEW_TASK == Intent.FLAG_ACTIVITY_NEW_TASK)
     }
 
     @Test
@@ -621,7 +618,12 @@ class AppLinksUseCasesTest {
 
     @Test
     fun `WHEN opening a app scheme uri without a host WITH package installed THEN try to redirect`() {
-        val context = createContext(urlToPackages = arrayOf(Triple("my.scheme", appPackage, "")), default = true, installedApps = listOf(appPackage))
+        val context =
+            createContext(
+                urlToPackages = arrayOf(Triple("my.scheme", appPackage, "")),
+                default = true,
+                installedApps = listOf(appPackage),
+            )
 
         var subject = AppLinksUseCases(context, { false })
         var redirect = subject.interceptedAppLinkRedirect("my.scheme")
@@ -649,8 +651,7 @@ class AppLinksUseCasesTest {
 
         assertNull(result)
 
-        uri =
-            "intent://blank#Intent;package=test;i.android.support.customtabs.extra.TOOLBAR_COLOR=2239095040;end"
+        uri = "intent://blank#Intent;package=test;i.android.support.customtabs.extra.TOOLBAR_COLOR=2239095040;end"
         result = subject.safeParseUri(uri, 0)
 
         assertNull(result)

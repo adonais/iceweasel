@@ -4,26 +4,20 @@
 
 package mozilla.components.service.location
 
-/**
- * Interface describing a [LocationService] that returns a [Region].
- */
+/** Interface describing a [LocationService] that returns a [Region]. */
 interface LocationService {
-    /**
-     * Determines the current [Region] of the user.
-     */
+    /** Determines the current [Region] of the user. */
     suspend fun fetchRegion(readFromCache: Boolean = true): Region?
 
-    /**
-     * Get if there is already a cached region.
-     */
+    /** Get if there is already a cached region. */
     fun hasRegionCached(): Boolean
 
     /**
      * A [Region] returned by the location service.
      *
-     * The [Region] use region codes and names from the GENC dataset, which is for the most part
-     * compatible with the ISO 3166 standard. While the API endpoint and [Region] class refers to
-     * country, no claim about the political status of any region is made by this service.
+     * The [Region] use region codes and names from the GENC dataset, which is for the most part compatible with the ISO
+     * 3166 standard. While the API endpoint and [Region] class refers to country, no claim about the political status
+     * of any region is made by this service.
      *
      * @param countryCode Country code; ISO 3166.
      * @param countryName Name of the country (English); ISO 3166.
@@ -34,24 +28,26 @@ interface LocationService {
     )
 
     companion object {
-        /**
-         * Creates a dummy [LocationService] implementation that always returns `null`.
-         */
-        fun dummy() = object : LocationService {
-            override suspend fun fetchRegion(readFromCache: Boolean): Region? = null
-            override fun hasRegionCached(): Boolean = false
-        }
+        /** Creates a dummy [LocationService] implementation that always returns `null`. */
+        fun dummy() =
+            object : LocationService {
+                override suspend fun fetchRegion(readFromCache: Boolean): Region? = null
+
+                override fun hasRegionCached(): Boolean = false
+            }
 
         /**
          * Creates a default [LocationService] implementation that always returns the "XX" region.
          *
-         * The advantage of using the default implementation over the dummy implementations is that
-         * code may stop retrying fetching a region if a region was returned from the service
-         * instead of `null` which indicates a failure.
+         * The advantage of using the default implementation over the dummy implementations is that code may stop
+         * retrying fetching a region if a region was returned from the service instead of `null` which indicates a
+         * failure.
          */
-        fun default() = object : LocationService {
-            override suspend fun fetchRegion(readFromCache: Boolean): Region? = Region("XX", "None")
-            override fun hasRegionCached(): Boolean = true
-        }
+        fun default() =
+            object : LocationService {
+                override suspend fun fetchRegion(readFromCache: Boolean): Region? = Region("XX", "None")
+
+                override fun hasRegionCached(): Boolean = true
+            }
     }
 }

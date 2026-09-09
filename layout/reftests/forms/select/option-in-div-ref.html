@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+  <head>
+    <style>
+      select,
+      select::picker(select) {
+        appearance: base-select;
+      }
+    </style>
+  </head>
+  <body>
+    <select>
+      <option>one</option>
+      <option>two</option>
+      <option>three</option>
+    </select>
+    <script>
+      onload = () => {
+        SpecialPowers.wrap(document).notifyUserGestureActivation();
+        document.querySelector("select").showPicker();
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() =>
+            document.documentElement.removeAttribute("class")
+          )
+        );
+      };
+    </script>
+  </body>
+</html>

@@ -3,13 +3,13 @@
 # NSS sources building testing
 
 :::{container}
-Getting the source code of {ref}`mozilla_projects_nss`, how to build it, and how to run its test
+Getting the source code of {ref}`mozilla-projects-nss`, how to build it, and how to run its test
 suite.
 :::
 
 (getting-source-code-and-a-quick-overview)=
 
-## [Getting source code, and a quick overview](#getting_source_code_and_a_quick_overview)
+## Getting source code, and a quick overview
 
 :::{container}
 The easiest way is to download archives of NSS releases from [Mozilla's download
@@ -65,12 +65,12 @@ listed in the .def files, NSS promises that the binary function interface (ABI) 
 stable.
 :::
 
-## [Building NSS](#building_nss)
+## Building NSS
 
 :::{container}
 NSS is built using [gyp](https://gyp.gsrc.io/) and [ninja](https://ninja-build.org/), or
 with [make](https://www.gnu.org/software/make/) on systems that don't have those tools. The
-{ref}`mozilla_projects_nss_building` include more information.
+{ref}`mozilla-projects-nss-building` include more information.
 
 Once the build is done, you can find the build output below directory dist/?, where ? will be a
 name dynamically derived from your system's architecture. Exported header files for NSS
@@ -82,7 +82,7 @@ DYLD_LIBRARY_PATH environment variable.
 
 (running-the-nss-test-suite)=
 
-## [Running the NSS test suite](#running_the_nss_test_suite)
+## Running the NSS test suite
 
 :::{container}
 This is an important part of development work, in order to ensure your changes don't introduce

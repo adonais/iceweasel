@@ -11,9 +11,7 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import org.mozilla.experiments.nimbus.Branch
 
-/**
- * A view holder for displaying a branch of a Nimbus experiment.
- */
+/** A view holder for displaying a branch of a Nimbus experiment. */
 class NimbusBranchItemViewHolder(
     view: View,
     private val nimbusBranchesDelegate: NimbusBranchesAdapterDelegate,

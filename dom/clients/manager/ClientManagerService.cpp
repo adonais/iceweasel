@@ -12,6 +12,7 @@
 #include "ClientSourceParent.h"
 #include "jsfriendapi.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Components.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
@@ -75,7 +76,7 @@ RefPtr<GenericPromise> OnShutdown() {
   nsCOMPtr<nsIRunnable> r =
       NS_NewRunnableFunction("ClientManagerServer::OnShutdown", [ref]() {
         nsCOMPtr<nsIAsyncShutdownService> svc =
-            services::GetAsyncShutdownService();
+            components::AsyncShutdown::Service();
         if (!svc) {
           ref->Resolve(true, __func__);
           return;

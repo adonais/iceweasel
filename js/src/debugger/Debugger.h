@@ -564,7 +564,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
     OnEnterFrame,
     OnNativeCall,
     OnNewGlobalObject,
-    OnNewPromise,
     OnGarbageCollection,
     HookCount
   };

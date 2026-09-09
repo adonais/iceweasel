@@ -70,7 +70,8 @@ class nsBaseFilePicker : public nsIFilePicker {
   virtual void InitNative(nsIWidget* aParent, const nsAString& aTitle) = 0;
 
   virtual nsresult ResolveSpecialDirectory(const nsAString& aSpecialDirectory);
-  bool MaybeBlockFilePicker(nsIFilePickerShownCallback* aCallback);
+  MOZ_CAN_RUN_SCRIPT bool MaybeBlockFilePicker(
+      nsIFilePickerShownCallback* aCallback);
 
   // Records the time the native picker was shown to the user. Platform
   // subclasses call this just before showing the picker.

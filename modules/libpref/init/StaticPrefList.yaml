@@ -1097,22 +1097,15 @@
   value: true
   mirror: always
 
-# Whether to encrypt HTTP disk cache data at rest with an in-memory key. The
-# decrypted cache content only ever lives in memory. Off by default; takes
-# effect on restart. Read via CacheCrypto::IsEnabled(), which caches the value
-# on first use so it is stable for the session.
+# Whether to encrypt HTTP disk cache data at rest. The key is a data encryption
+# key held by the profile keystore (security/lockstore); the decrypted cache
+# content only ever lives in memory. Off by default; takes effect on restart.
+# Read via CacheCrypto::IsEnabled(), which caches the value on first use so it
+# is stable for the session.
 - name: browser.cache.disk.encryption.enabled
   type: RelaxedAtomicBool
   value: false
   mirror: always
-
-# Base64 of the 32-byte AES-256 key used for disk cache encryption. Empty means
-# "generate one on first use and store it here". This is a development scaffold;
-# the key will move to the OS keystore later.
-- name: browser.cache.disk.encryption.key
-  type: String
-  value: ""
-  mirror: never
 
 # Minimum number of unwritten changes before the disk cache index is written
 # back to disk. Lowering it (e.g. to 1) forces the index to be persisted
@@ -1834,6 +1827,15 @@
 # Render animations and videos as a solid color
 - name: browser.measurement.render_anims_and_video_solid
   type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
+# When set, the HWInference parent resolves model availability and install
+# requests from an in-process mock instead of the ModelHub (no network,
+# IndexedDB or downloads). The full content->utility->parent IPC chain is
+# still exercised. Used by tests.
+- name: browser.ml.modelHub.testing
+  type: bool
   value: false
   mirror: always
 
@@ -2753,6 +2755,12 @@
   value: false
   mirror: always
 
+# Whether to enable large window for brotli on DecompressionStream.
+- name: dom.compression_streams.brotli.large_window.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 # Compression Streams (zstd) (CompressionStream/DecompressionStream)
 # Whether or not "zstd" is a supported format for these streams.
 - name: dom.compression_streams.zstd.enabled
@@ -2934,6 +2942,12 @@
 - name: dom.enable_event_timing
   type: RelaxedAtomicBool
   value: true
+  mirror: always
+
+# Whether the ContainerTiming API is enabled
+- name: dom.enable_container_timing
+  type: RelaxedAtomicBool
+  value: false
   mirror: always
 
 # Whether the LargestContentfulPaint API will be gathered and returned by performance observer*
@@ -3879,13 +3893,6 @@
   value: @IS_NIGHTLY_BUILD@
   mirror: always
 
-# Media element pseudo-classes
-- name: dom.media.pseudo-classes.enabled
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-  rust: true
-
 # WebCodecs API
 - name: dom.media.webcodecs.enabled
   type: RelaxedAtomicBool
@@ -4670,7 +4677,7 @@
 # Whether Scoped Custom Element Registries are enabled
 - name: dom.scoped-custom-element-registries.enabled
   type: bool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # A pref that is used to slow down database initialization for testing purposes.
@@ -5701,13 +5708,6 @@
   value: 128
   mirror: always
 
-# Is support for View Transitions Level 1 enabled?
-- name: dom.viewTransitions.enabled
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-  rust: true
-
 - name: dom.viewTransitions.cross-document.enabled
   type: RelaxedAtomicBool
   value: false
@@ -6026,6 +6026,11 @@
 - name: dom.webkitBlink.dirPicker.enabled
   type: RelaxedAtomicBool
   value: true
+  mirror: always
+
+- name: dom.range.cut_contents.use_flat_tree
+  type: bool
+  value: false
   mirror: always
 
 # If true, when user selects a range, `Selection` will split the range to
@@ -8991,6 +8996,22 @@
   value: true
   mirror: always
 
+# Whether to use libjpeg-turbo DCT scaling to produce a reduced-size
+# intermediate image before the downscaling filter.
+- name: image.jpeg.dct-scaling.enabled
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+
+# Minimum remaining scale factor to leave for the downscaling filter (Lanczos3)
+# after IDCT scaling. 1.0 means scale as close to the target as the discrete
+# IDCT factors allow; 2.0 means only take an IDCT step if at least 2x of
+# downscaling remains for Lanczos. Values below 1.0 are clamped.
+- name: image.jpeg.dct-scaling.min-factor
+  type: AtomicFloat
+  value: 2.5f
+  mirror: always
+
 # Whether EXIF density metadata is sanity checked against PixelXDimension and PixelYDimension
 - name: image.exif-density-correction.sanity-check.enabled
   type: RelaxedAtomicBool
@@ -10010,6 +10031,18 @@
   mirror: always
   set_spidermonkey_pref: always
 
+# Read once per ContStackAllocator at first allocation; changes at runtime
+# do not take effect for an already-initialized allocator.
+- name: javascript.options.wasm_cont_stack_max_vmem
+  type: uint32_t
+#if defined(HAVE_64BIT_BUILD)
+  value: 2u * 1024 * 1024 * 1024
+#else
+  value: 128 * 1024 * 1024
+#endif
+  mirror: always
+  set_spidermonkey_pref: always
+
 -   name: javascript.options.wasm_js_promise_integration
     type: bool
     value: true
@@ -10103,6 +10136,14 @@
 - name: javascript.options.wasm_wide_arithmetic
   type: bool
   value: true
+  mirror: always
+  set_spidermonkey_pref: always
+
+# When true, causes wasm baseline to generate code that can be navigated by the
+# JS debugger.  This is mostly for testing only.
+- name: javascript.options.wasm_baseline_debug
+  type: bool
+  value: false
   mirror: always
   set_spidermonkey_pref: always
 
@@ -10636,6 +10677,14 @@
   mirror: always
   rust: true
 
+# Whether anchor positioning takes the anchor element's transforms into account.
+# https://drafts.csswg.org/css-anchor-position-1/#determining
+- name: layout.css.anchor-positioning.follows-transforms.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+  rust: true
+
 # Whether to enable appearance: base for authors.
 - name: layout.css.appearance-base.enabled
   type: RelaxedAtomicBool
@@ -10873,13 +10922,6 @@
   mirror: always
   rust: true
 
-# Is support for the contrast-color() function enabled?
-- name: layout.css.contrast-color.enabled
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-  rust: true
-
 # Whether alt text in content is enabled.
 - name: layout.css.content.alt-text.enabled
   type: RelaxedAtomicBool
@@ -10918,13 +10960,6 @@
 - name: layout.css.calc-typed-arithmetic.enabled
   type: RelaxedAtomicBool
   value: @IS_NIGHTLY_BUILD@
-  mirror: always
-  rust: true
-
-# Is support for light-dark() on images in content enabled?
-- name: layout.css.light-dark.images.enabled
-  type: RelaxedAtomicBool
-  value: true
   mirror: always
   rust: true
 
@@ -10974,13 +11009,6 @@
   type: bool
   value: false
   mirror: always
-
-# Is support for (linear|radial|conic)-gradient color interpolation methods enabled?
-- name: layout.css.gradient-color-interpolation-method.enabled
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-  rust: true
 
 # Should we propagate baseline alignment information from a parent grid into
 # its subgrids?
@@ -11132,13 +11160,6 @@
 # Is support for the progress() function enabled?
 # https://drafts.csswg.org/css-values-5/#progress
 - name: layout.css.progress-function.enabled
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-  rust: true
-
-# Enable relative color syntax: https://drafts.csswg.org/css-color-5/#relative-colors
-- name: layout.css.relative-color-syntax.enabled
   type: RelaxedAtomicBool
   value: true
   mirror: always
@@ -11467,6 +11488,13 @@
 - name: layout.forms.reveal-password-button.enabled
   type: bool
   value: false
+  mirror: always
+
+# Whether we respect <button> and <input> align-content on blocks.
+# See https://github.com/w3c/csswg-drafts/issues/14190
+- name: layout.forms.button-input-align-content-block.enabled
+  type: bool
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # If enabled, textareas won't include 'overflow:auto' scrollbars in their
@@ -11807,8 +11835,8 @@
   value: true
   mirror: always
 
-# Whether :-moz-broken is supported in content.
-- name: layout.css.moz-broken.content.enabled
+# Whether :-moz-placeholder is supported in content.
+- name: layout.css.moz-placeholder.content.enabled
   type: RelaxedAtomicBool
   value: false
   mirror: always
@@ -13059,6 +13087,11 @@
 
 - name: media.hardware-video-decoding-vulkan.enabled
   type: bool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: once
+
+- name: media.hardware-video-decoding-vulkan.force-enabled
+  type: bool
   value: false
   mirror: once
 
@@ -13666,11 +13699,14 @@
   # acceleration for decoding.
 -   name: media.navigator.mediadatadecoder_h264_enabled
     type: RelaxedAtomicBool
-  #if defined(_ARM64_) && defined(XP_WIN)
-    value: false
-  #else
     value: true
-  #endif
+    mirror: always
+
+  # Use MediaDataDecoder API for AV1 in WebRTC. This includes hardware
+  # acceleration for decoding.
+-   name: media.navigator.mediadatadecoder_av1_enabled
+    type: RelaxedAtomicBool
+    value: false
     mirror: always
 
 #if defined(MOZ_WIDGET_GTK)
@@ -13834,10 +13870,11 @@
 # Encoder creation strategy for WebRTC
 # 0: prefer builtin WebRTC encoder (including OpenH264 via GMP)
 # 1: prefer PlatformEncoderModule
+# 2: prefer PlatformEncoderModule for HW, then builtin WebRTC encoder for SW
 - name: media.webrtc.encoder_creation_strategy
   type: RelaxedAtomicUint32
 #ifdef ANDROID
-  value: 1
+  value: 2
 #else
   value: 0
 #endif
@@ -16022,6 +16059,14 @@
   value: true
   mirror: never
 
+# On Android, we use a lower timeout to avoid waiting on a broken
+# DoH connection before we fallback to native. 250 ms is higher than 99th
+# percentile for DoH resolutions on Nightly.
+- name: network.android_doh.rollout_request_timeout_ms
+  type: RelaxedAtomicUint32
+  value: 250
+  mirror: always
+
 # Use GET (rather than POST)
 - name: network.trr.useGET
   type: RelaxedAtomicBool
@@ -16170,16 +16215,6 @@
   value: 50
 #else
   value: 0
-#endif
-  mirror: always
-
-# The idle timeout for the HTTP/3 connection that is used for DoH
-- name: network.trr.idle_timeout_for_http3_conn
-  type: RelaxedAtomicUint32
-#ifdef EARLY_BETA_OR_EARLIER
-  value: 400
-#else
-  value: 30
 #endif
   mirror: always
 
@@ -16508,7 +16543,7 @@
 # false to disable probing and usage without restarting Firefox.
 - name: network.http.http3.apple_fast_datapath
   type: RelaxedAtomicBool
-  value: true
+  value: false # Until https://bugzilla.mozilla.org/show_bug.cgi?id=2065491 is resolved.
   mirror: always
   rust: true
 
@@ -17271,6 +17306,18 @@
 - name: pdfjs.disabled
   type: bool
   value: false
+  mirror: always
+
+# Replace PDFs embedded with an object/embed element by a page offering to open
+# them, when the viewer is disabled. That page is only packaged on desktop, see
+# toolkit/components/pdfjs/jar.mn.
+- name: pdfjs.embedFallback
+  type: bool
+#if defined(ANDROID)
+  value: false
+#else
+  value: true
+#endif
   mirror: always
 
 #---------------------------------------------------------------------------
@@ -18240,12 +18287,6 @@
 - name: privacy.partition.network_state.connection_with_proxy
   type: bool
   value: false
-  mirror: always
-
-# Partition the service workers unconditionally when dFPI is enabled.
-- name: privacy.partition.serviceWorkers
-  type: RelaxedAtomicBool
-  value: true
   mirror: always
 
 # Enables / disables the strip on share feature which strips query parameters
@@ -20919,6 +20960,17 @@
   type: int32_t
   value: 2
   mirror: always
+
+# Whether to show notifications through the XDG Desktop Portal Notification
+# interface directly instead of going through libnotify.
+# https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Notification.html
+#  - 0: never
+#  - 1: always
+#  - 2: auto (currently false while the backend is not feature complete)
+- name: widget.use-xdg-desktop-portal.notification
+  type: int32_t
+  value: 2
+  mirror: always
 #endif
 
 #ifdef XP_WIN
@@ -21029,6 +21081,15 @@
 - name: widget.windows.fullscreen_marking_method
   type: RelaxedAtomicUint32
   value: 2
+  mirror: always
+
+# Whether to always set "NonRudeHWND" on non-fullscreen visible windows,
+# which seems to give us the benefit of using "NonRudeHWND" for the
+# fullscreen_marking_method without causing issues with the taskbar showing
+# when Firefox is fullscreen. (bug 1965699)
+- name: widget.windows.fullscreen_set_nonrudehwnd
+  type: RelaxedAtomicBool
+  value: true
   mirror: always
 
 # Whether to open the Windows file and folder pickers "remotely" (in a utility

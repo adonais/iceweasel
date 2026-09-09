@@ -6,10 +6,7 @@
 
 // SystemInfo_macos.mm: implementation of the macOS-specific parts of SystemInfo.h
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
+#include "common/unsafe_buffers.h"
 #include "gpu_info_util/SystemInfo_internal.h"
 
 #import <Cocoa/Cocoa.h>
@@ -69,7 +66,8 @@ void GetIORegistryDevices(std::vector<GPUDeviceInfo> *devices)
     for (uint32_t i = 0; i < kNumServices; ++i)
     {
         // matchDictionary will be consumed by IOServiceGetMatchingServices, no need to release it.
-        CFMutableDictionaryRef matchDictionary = IOServiceMatching(kServiceNames[i]);
+        CFMutableDictionaryRef matchDictionary =
+            ANGLE_UNSAFE_TODO(IOServiceMatching(kServiceNames[i]));
 
         io_iterator_t entryIterator;
         if (IOServiceGetMatchingServices(mainPort, matchDictionary, &entryIterator) !=
@@ -93,7 +91,7 @@ void GetIORegistryDevices(std::vector<GPUDeviceInfo> *devices)
             }
 
             io_registry_entry_t queryEntry = entry;
-            if (kServiceIsGraphicsAccelerator2[i])
+            if (ANGLE_UNSAFE_TODO(kServiceIsGraphicsAccelerator2[i]))
             {
                 // If the matching entry is an IOGraphicsAccelerator2, get the parent entry that
                 // will be the IOPCIDevice which holds vendor-id and device-id
@@ -115,7 +113,7 @@ void GetIORegistryDevices(std::vector<GPUDeviceInfo> *devices)
                 continue;
             }
             // AGXAccelerator entries only provide a vendor ID.
-            if (kServiceIsGraphicsAccelerator2[i])
+            if (ANGLE_UNSAFE_TODO(kServiceIsGraphicsAccelerator2[i]))
             {
                 if (!GetEntryProperty(queryEntry, CFSTR("class-code"), &classCode))
                 {

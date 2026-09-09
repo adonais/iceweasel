@@ -44,23 +44,26 @@ class AddonsManagementViewTest {
     @Before
     fun setup() {
         MockKAnnotations.init(this)
-        managementView = AddonsManagementView(
-            navController,
-            showPermissionDialog,
-            onMoreAddonsButtonClicked,
-            onLearnMoreLinkClicked,
-        )
+        managementView =
+            AddonsManagementView(
+                navController,
+                showPermissionDialog,
+                onMoreAddonsButtonClicked,
+                onLearnMoreLinkClicked,
+            )
     }
 
     @Test
     fun `onAddonItemClicked shows installed details if addon is installed`() {
-        val addon = mockk<Addon> {
-            every { isInstalled() } returns true
-        }
+        val addon =
+            mockk<Addon> {
+                every { isInstalled() } returns true
+            }
 
-        every { navController.currentDestination } returns NavDestination("").apply {
-            id = R.id.addonsManagementFragment
-        }
+        every { navController.currentDestination } returns
+            NavDestination("").apply {
+                id = R.id.addonsManagementFragment
+            }
 
         managementView.onAddonItemClicked(addon)
 
@@ -72,13 +75,15 @@ class AddonsManagementViewTest {
 
     @Test
     fun `onAddonItemClicked shows details if addon is not installed`() {
-        val addon = mockk<Addon> {
-            every { isInstalled() } returns false
-        }
+        val addon =
+            mockk<Addon> {
+                every { isInstalled() } returns false
+            }
 
-        every { navController.currentDestination } returns NavDestination("").apply {
-            id = R.id.addonsManagementFragment
-        }
+        every { navController.currentDestination } returns
+            NavDestination("").apply {
+                id = R.id.addonsManagementFragment
+            }
 
         managementView.onAddonItemClicked(addon)
 
@@ -90,13 +95,15 @@ class AddonsManagementViewTest {
 
     @Test
     fun `onAddonItemClicked on not installed addon does not navigate if not currently on addonsManagementFragment`() {
-        val addon = mockk<Addon> {
-            every { isInstalled() } returns false
-        }
+        val addon =
+            mockk<Addon> {
+                every { isInstalled() } returns false
+            }
 
-        every { navController.currentDestination } returns NavDestination("").apply {
-            id = R.id.settingsFragment
-        }
+        every { navController.currentDestination } returns
+            NavDestination("").apply {
+                id = R.id.settingsFragment
+            }
 
         managementView.onAddonItemClicked(addon)
 
@@ -108,13 +115,15 @@ class AddonsManagementViewTest {
 
     @Test
     fun `onAddonItemClicked on installed addon does not navigate if not currently on addonsManagementFragment`() {
-        val addon = mockk<Addon> {
-            every { isInstalled() } returns true
-        }
+        val addon =
+            mockk<Addon> {
+                every { isInstalled() } returns true
+            }
 
-        every { navController.currentDestination } returns NavDestination("").apply {
-            id = R.id.settingsFragment
-        }
+        every { navController.currentDestination } returns
+            NavDestination("").apply {
+                id = R.id.settingsFragment
+            }
 
         managementView.onAddonItemClicked(addon)
 
@@ -136,9 +145,10 @@ class AddonsManagementViewTest {
         val addons = listOf<Addon>(mockk(), mockk())
         managementView.onNotYetSupportedSectionClicked(addons)
 
-        val expected = AddonsManagementFragmentDirections.actionAddonsManagementFragmentToNotYetSupportedAddonFragment(
-            addons.toTypedArray(),
-        )
+        val expected =
+            AddonsManagementFragmentDirections.actionAddonsManagementFragmentToNotYetSupportedAddonFragment(
+                addons.toTypedArray()
+            )
         verify {
             navController.navigate(directionsEq(expected))
         }

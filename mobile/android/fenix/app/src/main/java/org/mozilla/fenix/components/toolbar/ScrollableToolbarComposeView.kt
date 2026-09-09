@@ -38,6 +38,5 @@ class ScrollableToolbarComposeView(
 
     override fun collapse() = scrollableToolbarDelegate.collapse()
 
-    @Composable
-    override fun Content() = content()
+    @Composable override fun Content() = content()
 }

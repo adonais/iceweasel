@@ -82,7 +82,7 @@ function createMockTab(
     pinned,
     documentGlobal: null, // Will be set per test
     getAttribute: () => null,
-    _tPos: 0,
+    index: 0,
   };
   return mockTab;
 }

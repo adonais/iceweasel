@@ -8,8 +8,6 @@ import android.app.PendingIntent
 
 object IntentUtils {
 
-    /**
-     * FLAG_IMMUTABLE -> Flag indicating that the created PendingIntent should be immutable.
-     */
+    /** FLAG_IMMUTABLE -> Flag indicating that the created PendingIntent should be immutable. */
     const val DEFAULT_PENDING_INTENT_FLAGS = PendingIntent.FLAG_IMMUTABLE
 }

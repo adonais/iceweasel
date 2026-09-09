@@ -26,9 +26,9 @@ import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.content.share
 import mozilla.components.support.ktx.android.content.shareWithChooserActions
 import mozilla.components.support.ktx.kotlin.trimmed
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.share.QRCodeGenerator
-import mozilla.components.ui.icons.R as iconsR
 
 internal const val SAVE_PDF_ACTION = "org.mozilla.fenix.ACTION_SAVE_TO_PDF"
 internal const val PRINT_ACTION = "org.mozilla.fenix.ACTION_PRINT"
@@ -36,21 +36,15 @@ internal const val TAB_ID_KEY = "tabID"
 internal const val SEND_TO_DEVICES_ACTION = "org.mozilla.fenix.ACTION_SEND_TO_DEVICES"
 internal const val QR_CODE_URI_KEY = "qr_code_uri"
 
-/**
- * The chooser actions that can be added to the share intent chooser in the native
- * share sheet.
- */
+/** The chooser actions that can be added to the share intent chooser in the native share sheet. */
 enum class ShareSheetChooserAction {
     SAVE_PDF,
     PRINT,
     SEND_TO_DEVICES,
-    QR_CODE,
-    ;
+    QR_CODE;
 
     companion object {
-        /**
-         * Chooser actions offered when sharing a set of tabs.
-         */
+        /** Chooser actions offered when sharing a set of tabs. */
         val tabChooserActions = listOf(SEND_TO_DEVICES, QR_CODE)
     }
 }
@@ -65,8 +59,7 @@ val isSystemShareSheetSupported: Boolean
     get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
 
 /**
- * Delegate interface to abstract away the share implementation, allowing for easier testing and
- * separation of concerns.
+ * Delegate interface to abstract away the share implementation, allowing for easier testing and separation of concerns.
  */
 interface ShareDelegate {
     /**
@@ -106,18 +99,17 @@ private class ContextShareDelegate(private val getContext: () -> Context) : Shar
         actions: Array<ChooserAction>,
         thumbnailUri: Uri?,
     ) {
-        getContext().shareWithChooserActions(
-            text = text,
-            subject = subject,
-            actions = actions,
-            thumbnailUri = thumbnailUri,
-        )
+        getContext()
+            .shareWithChooserActions(
+                text = text,
+                subject = subject,
+                actions = actions,
+                thumbnailUri = thumbnailUri,
+            )
     }
 }
 
-/**
- * Interface for handling share events and launching the system share sheet.
- */
+/** Interface for handling share events and launching the system share sheet. */
 interface ShareSheetLauncher {
 
     /**
@@ -126,14 +118,13 @@ interface ShareSheetLauncher {
      * @param id The session id of the tab to share from.
      * @param url The url to share.
      * @param title The title of the page to share.
-     * @param text Optional text to share alongside the url. When non-empty it is prepended to the
-     * shared text.
+     * @param text Optional text to share alongside the url. When non-empty it is prepended to the shared text.
      * @param subject Optional subject for the share. When `null` or empty, defaults to the title.
      * @param isPrivate Whether the tab is in private browsing mode.
-     * @param isCustomTab Whether the share is being initiated from a custom tab,
-     * used to determine the correct destination to pop up to when navigating to the share fragment.
+     * @param isCustomTab Whether the share is being initiated from a custom tab, used to determine the correct
+     *   destination to pop up to when navigating to the share fragment.
      * @param chooserActions An array of [ChooserAction] that will be added to the share intent chooser in the native
-     * share sheet.
+     *   share sheet.
      */
     fun showSystemShareSheet(
         id: String?,
@@ -151,10 +142,9 @@ interface ShareSheetLauncher {
      *
      * @param items The list of [ShareData] items to share.
      * @param isPrivate Whether the tabs are in private browsing mode.
-     * @param subject Optional explicit subject for the share. When `null`, defaults
-     * to the first item's title.
+     * @param subject Optional explicit subject for the share. When `null`, defaults to the first item's title.
      * @param chooserActions An array of [ChooserAction] that will be added to the share intent chooser in the native
-     * share sheet.
+     *   share sheet.
      * @param thumbnailUri Optional thumbnail shown in the share sheet preview.
      */
     fun showSystemShareSheet(
@@ -166,12 +156,13 @@ interface ShareSheetLauncher {
     )
 
     companion object {
-        val defaultChooserActions = listOf(
-            ShareSheetChooserAction.SAVE_PDF,
-            ShareSheetChooserAction.PRINT,
-            ShareSheetChooserAction.SEND_TO_DEVICES,
-            ShareSheetChooserAction.QR_CODE,
-        )
+        val defaultChooserActions =
+            listOf(
+                ShareSheetChooserAction.SAVE_PDF,
+                ShareSheetChooserAction.PRINT,
+                ShareSheetChooserAction.SEND_TO_DEVICES,
+                ShareSheetChooserAction.QR_CODE,
+            )
     }
 }
 
@@ -221,27 +212,31 @@ class DefaultShareSheetLauncher(
         val shareSubject = subject?.ifEmpty { null } ?: title ?: ""
         if (id != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             scope.launch {
-                val qrCodeAction = withContext(ioDispatcher) {
-                    sendQRCodeChooserAction(
-                        context = applicationContext,
-                        url = displayUrl,
-                        id = id,
-                    )
-                }
+                val qrCodeAction =
+                    withContext(ioDispatcher) {
+                        sendQRCodeChooserAction(
+                            context = applicationContext,
+                            url = displayUrl,
+                            id = id,
+                        )
+                    }
 
                 shareDelegate.shareWithChooserActions(
                     text = shareText,
                     subject = shareSubject,
-                    actions = chooserActions.mapNotNull {
-                        it.toChooserAction(
-                            applicationContext = applicationContext,
-                            id = id,
-                            url = url,
-                            title = title,
-                            isPrivate = isPrivate,
-                            qrCodeAction = qrCodeAction,
-                        )
-                    }.toTypedArray(),
+                    actions =
+                        chooserActions
+                            .mapNotNull {
+                                it.toChooserAction(
+                                    applicationContext = applicationContext,
+                                    id = id,
+                                    url = url,
+                                    title = title,
+                                    isPrivate = isPrivate,
+                                    qrCodeAction = qrCodeAction,
+                                )
+                            }
+                            .toTypedArray(),
                 )
             }
         } else {
@@ -257,13 +252,14 @@ class DefaultShareSheetLauncher(
         title: String?,
         isPrivate: Boolean,
         qrCodeAction: ChooserAction?,
-    ) = when (this) {
-        ShareSheetChooserAction.SAVE_PDF -> savePDFChooserAction(applicationContext, id)
-        ShareSheetChooserAction.PRINT -> printAction(applicationContext, id)
-        ShareSheetChooserAction.SEND_TO_DEVICES ->
-            sendToDevicesAction(applicationContext, listOf(url), listOf(title.orEmpty()), isPrivate)
-        ShareSheetChooserAction.QR_CODE -> qrCodeAction
-    }
+    ) =
+        when (this) {
+            ShareSheetChooserAction.SAVE_PDF -> savePDFChooserAction(applicationContext, id)
+            ShareSheetChooserAction.PRINT -> printAction(applicationContext, id)
+            ShareSheetChooserAction.SEND_TO_DEVICES ->
+                sendToDevicesAction(applicationContext, listOf(url), listOf(title.orEmpty()), isPrivate)
+            ShareSheetChooserAction.QR_CODE -> qrCodeAction
+        }
 
     override fun showSystemShareSheet(
         items: List<ShareData>,
@@ -276,40 +272,43 @@ class DefaultShareSheetLauncher(
         val urls = itemsWithUrl.map { it.url.orEmpty() }
         val titles = itemsWithUrl.map { it.title.orEmpty() }
 
-        val text = if (urls.size == 1) {
-            urls[0]
-        } else {
-            urls
-                .mapIndexed { i, url -> "${i + 1}. $url" }
-                .joinToString("\n")
-        }
+        val text =
+            if (urls.size == 1) {
+                urls[0]
+            } else {
+                urls.mapIndexed { i, url -> "${i + 1}. $url" }.joinToString("\n")
+            }
         val shareSubject = subject ?: items.firstOrNull()?.title ?: ""
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             scope.launch {
-                val qrCodeAction = if (urls.size == 1) {
-                    withContext(ioDispatcher) {
-                        sendQRCodeChooserAction(
-                            context = applicationContext,
-                            url = urls[0],
-                        )
+                val qrCodeAction =
+                    if (urls.size == 1) {
+                        withContext(ioDispatcher) {
+                            sendQRCodeChooserAction(
+                                context = applicationContext,
+                                url = urls[0],
+                            )
+                        }
+                    } else {
+                        null
                     }
-                } else {
-                    null
-                }
 
                 shareDelegate.shareWithChooserActions(
                     text = text,
                     subject = shareSubject,
-                    actions = chooserActions.mapNotNull {
-                        it.toChooserAction(
-                            applicationContext = applicationContext,
-                            urls = urls,
-                            titles = titles,
-                            isPrivate = isPrivate,
-                            qrCodeAction = qrCodeAction,
-                        )
-                    }.toTypedArray(),
+                    actions =
+                        chooserActions
+                            .mapNotNull {
+                                it.toChooserAction(
+                                    applicationContext = applicationContext,
+                                    urls = urls,
+                                    titles = titles,
+                                    isPrivate = isPrivate,
+                                    qrCodeAction = qrCodeAction,
+                                )
+                            }
+                            .toTypedArray(),
                     thumbnailUri = thumbnailUri,
                 )
             }
@@ -325,13 +324,13 @@ class DefaultShareSheetLauncher(
         titles: List<String>,
         isPrivate: Boolean,
         qrCodeAction: ChooserAction?,
-    ) = when (this) {
-        ShareSheetChooserAction.SAVE_PDF -> null
-        ShareSheetChooserAction.PRINT -> null
-        ShareSheetChooserAction.SEND_TO_DEVICES ->
-            sendToDevicesAction(applicationContext, urls, titles, isPrivate)
-        ShareSheetChooserAction.QR_CODE -> qrCodeAction
-    }
+    ) =
+        when (this) {
+            ShareSheetChooserAction.SAVE_PDF -> null
+            ShareSheetChooserAction.PRINT -> null
+            ShareSheetChooserAction.SEND_TO_DEVICES -> sendToDevicesAction(applicationContext, urls, titles, isPrivate)
+            ShareSheetChooserAction.QR_CODE -> qrCodeAction
+        }
 
     /**
      * Create a [ChooserAction] for saving the current page as a PDF.
@@ -344,23 +343,26 @@ class DefaultShareSheetLauncher(
     private fun savePDFChooserAction(context: Context, id: String): ChooserAction {
         val icon = Icon.createWithResource(context, iconsR.drawable.mozac_ic_save_file_24)
 
-        val actionIntent = Intent(context, SaveToPdfReceiver::class.java).apply {
-            action = SAVE_PDF_ACTION
-            putExtra(TAB_ID_KEY, id)
-        }
+        val actionIntent =
+            Intent(context, SaveToPdfReceiver::class.java).apply {
+                action = SAVE_PDF_ACTION
+                putExtra(TAB_ID_KEY, id)
+            }
 
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            id.hashCode(),
-            actionIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val pendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                id.hashCode(),
+                actionIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
 
         return ChooserAction.Builder(
-            icon,
-            context.getString(R.string.share_save_to_pdf),
-            pendingIntent,
-        ).build()
+                icon,
+                context.getString(R.string.share_save_to_pdf),
+                pendingIntent,
+            )
+            .build()
     }
 
     /**
@@ -381,33 +383,36 @@ class DefaultShareSheetLauncher(
     ): ChooserAction {
         val icon = Icon.createWithResource(context, iconsR.drawable.mozac_ic_device_desktop_send_24)
 
-        val actionIntent = Intent(context, homeActivityClass).apply {
-            action = SEND_TO_DEVICES_ACTION
-            putStringArrayListExtra(SendToDevicesDialogFragment.EXTRA_URLS, ArrayList(urls))
-            putStringArrayListExtra(SendToDevicesDialogFragment.EXTRA_TITLES, ArrayList(titles))
-            putExtra(
-                SendToDevicesDialogFragment.EXTRA_PRIVACY,
-                if (isPrivate) {
-                    SendToDevicesDialogFragment.PRIVACY_PRIVATE
-                } else {
-                    SendToDevicesDialogFragment.PRIVACY_NORMAL
-                },
-            )
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
+        val actionIntent =
+            Intent(context, homeActivityClass).apply {
+                action = SEND_TO_DEVICES_ACTION
+                putStringArrayListExtra(SendToDevicesDialogFragment.EXTRA_URLS, ArrayList(urls))
+                putStringArrayListExtra(SendToDevicesDialogFragment.EXTRA_TITLES, ArrayList(titles))
+                putExtra(
+                    SendToDevicesDialogFragment.EXTRA_PRIVACY,
+                    if (isPrivate) {
+                        SendToDevicesDialogFragment.PRIVACY_PRIVATE
+                    } else {
+                        SendToDevicesDialogFragment.PRIVACY_NORMAL
+                    },
+                )
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
 
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            urls.joinToString().hashCode() + SEND_TO_DEVICES_REQUEST_CODE_OFFSET,
-            actionIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val pendingIntent =
+            PendingIntent.getActivity(
+                context,
+                urls.joinToString().hashCode() + SEND_TO_DEVICES_REQUEST_CODE_OFFSET,
+                actionIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
 
         return ChooserAction.Builder(
-            icon,
-            context.getString(R.string.share_device_subheader),
-            pendingIntent,
-        ).build()
+                icon,
+                context.getString(R.string.share_device_subheader),
+                pendingIntent,
+            )
+            .build()
     }
 
     /**
@@ -421,23 +426,26 @@ class DefaultShareSheetLauncher(
     private fun printAction(context: Context, id: String): ChooserAction {
         val icon = Icon.createWithResource(context, iconsR.drawable.mozac_ic_print_24)
 
-        val actionIntent = Intent(context, PrintReceiver::class.java).apply {
-            action = PRINT_ACTION
-            putExtra(TAB_ID_KEY, id)
-        }
+        val actionIntent =
+            Intent(context, PrintReceiver::class.java).apply {
+                action = PRINT_ACTION
+                putExtra(TAB_ID_KEY, id)
+            }
 
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            id.hashCode() + PRINT_REQUEST_CODE_OFFSET,
-            actionIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val pendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                id.hashCode() + PRINT_REQUEST_CODE_OFFSET,
+                actionIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
 
         return ChooserAction.Builder(
-            icon,
-            context.getString(R.string.menu_print),
-            pendingIntent,
-        ).build()
+                icon,
+                context.getString(R.string.menu_print),
+                pendingIntent,
+            )
+            .build()
     }
 
     /**
@@ -446,8 +454,8 @@ class DefaultShareSheetLauncher(
      * @param context The context used to create intents and notifications.
      * @param url The URL to generate a QR code for.
      * @param id The session ID of the tab, used to compute the unique request code.
-     * @return A [ChooserAction] that can be added to the share intent chooser or `null` if the URL
-     * could not be encoded into a QR code (e.g. it exceeds the QR code data capacity).
+     * @return A [ChooserAction] that can be added to the share intent chooser or `null` if the URL could not be encoded
+     *   into a QR code (e.g. it exceeds the QR code data capacity).
      */
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private fun sendQRCodeChooserAction(
@@ -455,39 +463,43 @@ class DefaultShareSheetLauncher(
         url: String,
         id: String? = null,
     ): ChooserAction? {
-        val qrCodeBitmap = try {
-            qrCodeGenerator.generateQRCodeImage(url, 300, 300, context)
-        } catch (e: WriterException) {
-            val message = "DefaultShareSheetLauncher - Failed to generate QR code for share sheet"
-            logger.error(message = message, throwable = e)
-            crashReporter?.recordCrashBreadcrumb(Breadcrumb(message = message))
-            crashReporter?.submitCaughtException(e)
+        val qrCodeBitmap =
+            try {
+                qrCodeGenerator.generateQRCodeImage(url, 300, 300, context)
+            } catch (e: WriterException) {
+                val message = "DefaultShareSheetLauncher - Failed to generate QR code for share sheet"
+                logger.error(message = message, throwable = e)
+                crashReporter?.recordCrashBreadcrumb(Breadcrumb(message = message))
+                crashReporter?.submitCaughtException(e)
 
-            return null
-        }
+                return null
+            }
 
         val qrCodeUri = cacheHelper.saveBitmapToCache(context, qrCodeBitmap, url.hashCode().toString())
         val icon = Icon.createWithResource(context, iconsR.drawable.mozac_ic_qr_code_24)
 
-        val displayIntent = Intent(context, homeActivityClass).apply {
-            putExtra(QR_CODE_URI_KEY, qrCodeUri.toString())
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
+        val displayIntent =
+            Intent(context, homeActivityClass).apply {
+                putExtra(QR_CODE_URI_KEY, qrCodeUri.toString())
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
 
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            if (id != null) {
-                id.hashCode() + QR_CODE_REQUEST_CODE_OFFSET
-            } else {
-                url.hashCode() + QR_CODE_REQUEST_CODE_OFFSET
-            },
-            displayIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val pendingIntent =
+            PendingIntent.getActivity(
+                context,
+                if (id != null) {
+                    id.hashCode() + QR_CODE_REQUEST_CODE_OFFSET
+                } else {
+                    url.hashCode() + QR_CODE_REQUEST_CODE_OFFSET
+                },
+                displayIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
         return ChooserAction.Builder(
-            icon,
-            context.getString(R.string.share_qr_code),
-            pendingIntent,
-        ).build()
+                icon,
+                context.getString(R.string.share_qr_code),
+                pendingIntent,
+            )
+            .build()
     }
 }

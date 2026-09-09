@@ -13,31 +13,31 @@ import mozilla.components.browser.icons.IconRequest
 internal object IconResourceComparator : Comparator<IconRequest.Resource> {
 
     /**
-     * Compare two icon resources. If [resource] is more important, a negative number is returned.
-     * If [other] is more important, a positive number is returned.
-     * If the two resources are of equal importance, 0 is returned.
-     * Importance represents which icon we should try to load first.
+     * Compare two icon resources. If [resource] is more important, a negative number is returned. If [other] is more
+     * important, a positive number is returned. If the two resources are of equal importance, 0 is returned. Importance
+     * represents which icon we should try to load first.
      */
-    override fun compare(resource: IconRequest.Resource, other: IconRequest.Resource) = when {
-        // Two resources pointing to the same URL are always referencing the same icon. So treat them as equal.
-        resource.url == other.url -> 0
-        resource.maskable != other.maskable -> -resource.maskable.compareTo(other.maskable)
-        resource.type != other.type -> -resource.type.rank().compareTo(other.type.rank())
-        resource.maxSize != other.maxSize -> -resource.maxSize.compareTo(other.maxSize)
-        else -> {
-            // If there's no other way to choose, we prefer container types.
-            // They *might* contain an image larger than the size given in the <link> tag.
-            val isResourceContainerType = resource.isContainerType
-            if (isResourceContainerType != other.isContainerType) {
-                if (isResourceContainerType) -1 else 1
-            } else {
-                // There's no way to know which icon might be better. However we need to pick a consistent one
-                // to avoid breaking set implementations (See Fennec Bug 1331808).
-                // Therefore we are  picking one by just comparing the URLs.
-                resource.url.compareTo(other.url)
+    override fun compare(resource: IconRequest.Resource, other: IconRequest.Resource) =
+        when {
+            // Two resources pointing to the same URL are always referencing the same icon. So treat them as equal.
+            resource.url == other.url -> 0
+            resource.maskable != other.maskable -> -resource.maskable.compareTo(other.maskable)
+            resource.type != other.type -> -resource.type.rank().compareTo(other.type.rank())
+            resource.maxSize != other.maxSize -> -resource.maxSize.compareTo(other.maxSize)
+            else -> {
+                // If there's no other way to choose, we prefer container types.
+                // They *might* contain an image larger than the size given in the <link> tag.
+                val isResourceContainerType = resource.isContainerType
+                if (isResourceContainerType != other.isContainerType) {
+                    if (isResourceContainerType) -1 else 1
+                } else {
+                    // There's no way to know which icon might be better. However we need to pick a consistent one
+                    // to avoid breaking set implementations (See Fennec Bug 1331808).
+                    // Therefore we are  picking one by just comparing the URLs.
+                    resource.url.compareTo(other.url)
+                }
             }
         }
-    }
 }
 
 @Suppress("MagicNumber")
@@ -66,11 +66,12 @@ private val IconRequest.Resource.maxSize: Int
 private val IconRequest.Resource.isContainerType: Boolean
     get() = mimeType != null && containerTypes.contains(mimeType)
 
-private val containerTypes = listOf(
-    "image/vnd.microsoft.icon",
-    "image/ico",
-    "image/icon",
-    "image/x-icon",
-    "text/ico",
-    "application/ico",
-)
+private val containerTypes =
+    listOf(
+        "image/vnd.microsoft.icon",
+        "image/ico",
+        "image/icon",
+        "image/x-icon",
+        "text/ico",
+        "application/ico",
+    )

@@ -281,12 +281,46 @@ def addstory(command_context, name, project_name, path):
     description="Build the design tokens CSS files",
 )
 @CommandArgument(
+    "--import-figma",
+    action="store_true",
+    dest="import_figma",
+    help="Import Nova design tokens from the committed figma-variables-all.json "
+    "(no network or token needed), then build. Add --remote to fetch a fresh "
+    "export from Figma first.",
+)
+@CommandArgument(
+    "--remote",
+    action="store_true",
+    help="With --import-figma, fetch a fresh export from the Figma API before "
+    "importing. Requires a valid FIGMA_ACCESS_TOKEN in your environment.",
+)
+@CommandArgument(
     "--fetch-figma",
     action="store_true",
-    help="Fetch the current Nova design tokens from Figma before building. "
-    "Requires a valid FIGMA_ACCESS_TOKEN in your environment.",
+    help="Alias for `--import-figma --remote`.",
 )
-def buildtokens(command_context, fetch_figma):
+@CommandArgument(
+    "--match",
+    action="append",
+    dest="match",
+    default=None,
+    metavar="SUBSTRING",
+    help="Only import changed tokens whose path contains SUBSTRING. May be "
+    "passed multiple times. Requires --import-figma.",
+)
+@CommandArgument(
+    "--all",
+    action="store_true",
+    dest="import_all",
+    help="Import every changed token without prompting for a selection. "
+    "Requires --import-figma.",
+)
+def buildtokens(command_context, import_figma, remote, fetch_figma, match, import_all):
+    # `--fetch-figma` is an alias for `--import-figma --remote`.
+    do_import = import_figma or fetch_figma
+    do_remote = remote or fetch_figma
+    if (match or import_all or remote) and not do_import:
+        raise UserError("--match, --all, and --remote require --import-figma.")
     if run_mach(
         command_context,
         "npm",
@@ -297,20 +331,26 @@ def buildtokens(command_context, fetch_figma):
             "npm",
             args=["ci", "--prefix=toolkit/themes/shared/design-system"],
         )
-    if fetch_figma:
-        failed = run_mach(
-            command_context,
-            "npm",
-            args=[
-                "run",
-                "fetch-figma-nova",
-                "--prefix=toolkit/themes/shared/design-system",
-            ],
-        )
+    if do_import:
+        fetch_args = [
+            "run",
+            "import-figma-nova",
+            "--prefix=toolkit/themes/shared/design-system",
+            "--",
+        ]
+        if do_remote:
+            fetch_args.append("--remote")
+        for substring in match or []:
+            fetch_args.append(f"--match={substring}")
+        if import_all:
+            fetch_args.append("--all")
+        failed = run_mach(command_context, "npm", args=fetch_args)
         if failed:
-            raise UserError(
-                "Failed to access Figma API, is FIGMA_ACCESS_TOKEN set and valid?"
-            )
+            if do_remote:
+                raise UserError(
+                    "Failed to access Figma API, is FIGMA_ACCESS_TOKEN set and valid?"
+                )
+            raise UserError("Failed to import tokens from figma-variables-all.json.")
     run_mach(
         command_context,
         "npm",

@@ -6,10 +6,19 @@
 
 package mozilla.components.feature.prompts.ext
 
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.util.Calendar
 import java.util.Date
 
 internal fun Date.toCalendar() = Calendar.getInstance().also { it.time = this }
+
+/**
+ * Returns midnight UTC on the day this [Date] falls on in [zone], the device timezone by default. The time of day is
+ * dropped, not shifted by the timezone offset.
+ */
+internal fun Date.toLocalDayStartAsUtcMillis(zone: ZoneId = ZoneId.systemDefault()): Long =
+    toInstant().atZone(zone).toLocalDate().atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
 
 internal var Calendar.millisecond: Int
     get() = get(Calendar.MILLISECOND)
@@ -49,17 +58,31 @@ internal var Calendar.month: Int
     }
 
 internal fun Calendar.minMillisecond(): Int = getActualMinimum(Calendar.MILLISECOND)
+
 internal fun Calendar.maxMillisecond(): Int = getActualMaximum(Calendar.MILLISECOND)
+
 internal fun Calendar.minSecond(): Int = getActualMinimum(Calendar.SECOND)
+
 internal fun Calendar.maxSecond(): Int = getActualMaximum(Calendar.SECOND)
+
 internal fun Calendar.minMinute(): Int = getActualMinimum(Calendar.MINUTE)
+
 internal fun Calendar.maxMinute(): Int = getActualMaximum(Calendar.MINUTE)
+
 internal fun Calendar.minHour(): Int = getActualMinimum(Calendar.HOUR_OF_DAY)
+
 internal fun Calendar.maxHour(): Int = getActualMaximum(Calendar.HOUR_OF_DAY)
+
 internal fun Calendar.minMonth(): Int = getMinimum(Calendar.MONTH)
+
 internal fun Calendar.maxMonth(): Int = getActualMaximum(Calendar.MONTH)
+
 internal fun Calendar.minDay(): Int = getMinimum(Calendar.DAY_OF_MONTH)
+
 internal fun Calendar.maxDay(): Int = getActualMaximum(Calendar.DAY_OF_MONTH)
+
 internal fun Calendar.minYear(): Int = getMinimum(Calendar.YEAR)
+
 internal fun Calendar.maxYear(): Int = getActualMaximum(Calendar.YEAR)
+
 internal fun now() = Calendar.getInstance()

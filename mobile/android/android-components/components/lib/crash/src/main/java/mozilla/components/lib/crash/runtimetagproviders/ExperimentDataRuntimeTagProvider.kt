@@ -16,14 +16,10 @@ import mozilla.components.lib.crash.RuntimeTagProvider
  */
 @Serializable
 data class ExperimentData(val data: Map<String, String>) {
-    /**
-     * Encodes the experiment data as a JSON string.
-     */
+    /** Encodes the experiment data as a JSON string. */
     fun asJsonString(): String = Json.encodeToString(this)
 
-    /**
-    * Companion object for building [ExperimentData].
-    */
+    /** Companion object for building [ExperimentData]. */
     companion object {
         /**
          * Initializes an [ExperimentData] object from a JSON string.
@@ -31,15 +27,15 @@ data class ExperimentData(val data: Map<String, String>) {
          * @param json experiment data as a JSON string.
          * @return [ExperimentData] if valid json or null.
          */
-        fun fromJsonString(json: String): ExperimentData? = Result.runCatching {
-            Json.decodeFromString<ExperimentData>(json)
-        }.getOrNull()
+        fun fromJsonString(json: String): ExperimentData? =
+            Result.runCatching {
+                    Json.decodeFromString<ExperimentData>(json)
+                }
+                .getOrNull()
     }
 }
 
-/**
- * Interface to provide experiment data.
- */
+/** Interface to provide experiment data. */
 fun interface ExperimentDataProvider {
     /**
      * Retrieve the current [ExperimentData].
@@ -54,12 +50,9 @@ fun interface ExperimentDataProvider {
  *
  * @param experimentDataProvider a [ExperimentDataProvider] used to get the sessions experiment data.
  */
-class ExperimentDataRuntimeTagProvider(
-    private val experimentDataProvider: ExperimentDataProvider,
-) : RuntimeTagProvider {
+class ExperimentDataRuntimeTagProvider(private val experimentDataProvider: ExperimentDataProvider) :
+    RuntimeTagProvider {
     override fun invoke(): Map<String, String> {
-        return mapOf(
-             RuntimeTag.EXPERIMENT_DATA to experimentDataProvider.getExperimentData().asJsonString(),
-        )
+        return mapOf(RuntimeTag.EXPERIMENT_DATA to experimentDataProvider.getExperimentData().asJsonString())
     }
 }

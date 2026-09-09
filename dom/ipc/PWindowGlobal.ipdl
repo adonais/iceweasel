@@ -14,6 +14,9 @@ include "mozilla/ipc/URIUtils.h";
 include protocol PBrowser;
 include protocol PInProcess;
 include protocol PBrowserBridge;
+#ifdef ACCESSIBILITY
+include protocol PDocAccessible;
+#endif
 include protocol PDigitalCredential;
 include protocol PSerialManager;
 include protocol PWebAuthnTransaction;
@@ -77,6 +80,9 @@ struct IPCWebShareData
 async protocol PWindowGlobal
 {
   manager PBrowser or PInProcess;
+#ifdef ACCESSIBILITY
+  manages PDocAccessible;
+#endif
   manages PDigitalCredential;
   manages PPrefetchRecord;
   manages PSerialManager;
@@ -259,6 +265,17 @@ parent:
   async PSerialManager();
   async PWebAuthnTransaction();
   async PWebIdentity();
+
+#ifdef ACCESSIBILITY
+  /**
+   * Tell the parent process a new accessible document has been created for
+   * this WindowGlobal. For in-process iframes, aParentAcc is the id of the
+   * embedder accessible in its containing document. Otherwise, it should be 0.
+   * The containing document itself is determined using the WindowGlobal tree.
+   * aIsPrintDoc indicates whether this document is a static clone created for printing.
+   */
+  async PDocAccessible(uint64_t aParentAcc, bool aIsPrintDoc);
+#endif
 
 child:
   async NotifyAudioSessionStateChanged(AudioSessionState aState);

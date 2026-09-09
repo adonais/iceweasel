@@ -4,9 +4,9 @@
 
 package org.mozilla.fenix.ui.efficiency.navigation
 
+import java.lang.reflect.Field
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.PageContext
-import java.lang.reflect.Field
 
 object PageCatalog {
 

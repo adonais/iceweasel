@@ -8,12 +8,10 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
-import org.mozilla.fenix.R
 import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.fenix.R
 
-/**
- * Model representing different tab strip tab counter menu items.
- */
+/** Model representing different tab strip tab counter menu items. */
 sealed interface TabCounterMenuItem {
 
     /**
@@ -34,56 +32,50 @@ sealed interface TabCounterMenuItem {
          *
          * @property onClick Invoked when the item is clicked.
          */
-        data class NewTab(
-            override val onClick: () -> Unit,
-        ) : IconItem(
-            textResource = R.string.add_tab,
-            drawableRes = iconsR.drawable.mozac_ic_plus_24,
-            onClick = onClick,
-        )
+        data class NewTab(override val onClick: () -> Unit) :
+            IconItem(
+                textResource = R.string.add_tab,
+                drawableRes = iconsR.drawable.mozac_ic_plus_24,
+                onClick = onClick,
+            )
 
         /**
          * Model representing a new private tab menu item.
          *
          * @property onClick Invoked when the item is clicked.
          */
-        data class NewPrivateTab(
-            override val onClick: () -> Unit,
-        ) : IconItem(
-            textResource = R.string.add_private_tab,
-            drawableRes = iconsR.drawable.mozac_ic_private_mode_fill_24,
-            onClick = onClick,
-        )
+        data class NewPrivateTab(override val onClick: () -> Unit) :
+            IconItem(
+                textResource = R.string.add_private_tab,
+                drawableRes = iconsR.drawable.mozac_ic_private_mode_fill_24,
+                onClick = onClick,
+            )
 
         /**
          * Model representing a close tab menu item.
          *
          * @property onClick Invoked when the item is clicked.
          */
-        data class CloseTab(
-            override val onClick: () -> Unit,
-        ) : IconItem(
-            textResource = R.string.close_tab,
-            drawableRes = iconsR.drawable.mozac_ic_cross_24,
-            onClick = onClick,
-        )
+        data class CloseTab(override val onClick: () -> Unit) :
+            IconItem(
+                textResource = R.string.close_tab,
+                drawableRes = iconsR.drawable.mozac_ic_cross_24,
+                onClick = onClick,
+            )
     }
 
-    /**
-     * Model representing a divider.
-     */
+    /** Model representing a divider. */
     data object Divider : TabCounterMenuItem
 
-    /**
-     * Maps [TabCounterMenuItem] to a [MenuItem].
-     */
+    /** Maps [TabCounterMenuItem] to a [MenuItem]. */
     fun toMenuItem(): MenuItem =
         when (this) {
             is Divider -> MenuItem.Divider
-            is IconItem -> MenuItem.IconItem(
-                text = Text.Resource(textResource),
-                drawableRes = drawableRes,
-                onClick = onClick,
-            )
+            is IconItem ->
+                MenuItem.IconItem(
+                    text = Text.Resource(textResource),
+                    drawableRes = drawableRes,
+                    onClick = onClick,
+                )
         }
 }

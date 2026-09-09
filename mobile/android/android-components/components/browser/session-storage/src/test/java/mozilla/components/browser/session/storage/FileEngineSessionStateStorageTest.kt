@@ -5,6 +5,7 @@
 package mozilla.components.browser.session.storage
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.support.test.fakes.engine.FakeEngine
 import mozilla.components.support.test.fakes.engine.FakeEngineSessionState
@@ -13,7 +14,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class FileEngineSessionStateStorageTest {

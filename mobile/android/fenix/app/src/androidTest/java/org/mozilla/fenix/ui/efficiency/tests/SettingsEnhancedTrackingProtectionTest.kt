@@ -10,7 +10,9 @@ import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 
 class SettingsEnhancedTrackingProtectionTest : BaseTest() {
 
-    @Ignore("Covered by verifyNavigationReachability[1: SettingsEnhancedTrackingProtectionPage (TBD) — Navigation Reachability]")
+    @Ignore(
+        "Covered by verifyNavigationReachability[1: SettingsEnhancedTrackingProtectionPage (TBD) — Navigation Reachability]"
+    )
     @Test
     fun verifyTheEnhancedTrackingProtectionSectionTest() {
         on.settingsEnhancedTrackingProtection.navigateToPage()

@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.session.middleware.undo
 
+import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,14 +23,13 @@ import mozilla.components.browser.state.state.recover.RecoverableTab
 import mozilla.components.browser.state.state.recover.toRecoverableTab
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
-import mozilla.components.support.base.log.logger.Logger
-import java.util.UUID
 import mozilla.components.support.base.coroutines.Dispatchers as MozillaDispatchers
+import mozilla.components.support.base.log.logger.Logger
 
 /**
- * [Middleware] implementation that adds removed tabs to [BrowserState.undoHistory] for a short
- * amount of time ([clearAfterMillis]). Dispatching [UndoAction.RestoreRecoverableTabs] will restore
- * the tabs from [BrowserState.undoHistory].
+ * [Middleware] implementation that adds removed tabs to [BrowserState.undoHistory] for a short amount of time
+ * ([clearAfterMillis]). Dispatching [UndoAction.RestoreRecoverableTabs] will restore the tabs from
+ * [BrowserState.undoHistory].
  */
 class UndoMiddleware(
     private val clearAfterMillis: Long = 5000, // For comparison: a LENGTH_LONG Snackbar takes 2750.
@@ -48,35 +48,40 @@ class UndoMiddleware(
 
         when (action) {
             // Remember removed tabs
-            is TabListAction.RemoveAllNormalTabsAction -> onTabsRemoved(
-                store,
-                state.normalTabs,
-                state.selectedTabId,
-            )
-            is TabListAction.RemoveAllPrivateTabsAction -> onTabsRemoved(
-                store,
-                state.privateTabs,
-                state.selectedTabId,
-            )
+            is TabListAction.RemoveAllNormalTabsAction ->
+                onTabsRemoved(
+                    store,
+                    state.normalTabs,
+                    state.selectedTabId,
+                )
+            is TabListAction.RemoveAllPrivateTabsAction ->
+                onTabsRemoved(
+                    store,
+                    state.privateTabs,
+                    state.selectedTabId,
+                )
             is TabListAction.RemoveAllTabsAction -> {
                 if (action.recoverable) {
                     onTabsRemoved(store, state.tabs, state.selectedTabId)
                 }
             }
-            is TabListAction.RemoveTabAction -> state.findTab(action.tabId)?.let {
-                onTabsRemoved(store, listOf(it), state.selectedTabId)
-            }
-            is TabListAction.RemoveTabsAction -> {
-                action.tabIds.mapNotNull { state.findTab(it) }.let {
-                    onTabsRemoved(store, it, state.selectedTabId)
+            is TabListAction.RemoveTabAction ->
+                state.findTab(action.tabId)?.let {
+                    onTabsRemoved(store, listOf(it), state.selectedTabId)
                 }
+            is TabListAction.RemoveTabsAction -> {
+                action.tabIds
+                    .mapNotNull { state.findTab(it) }
+                    .let {
+                        onTabsRemoved(store, it, state.selectedTabId)
+                    }
             }
 
             // Restore
             is UndoAction.RestoreRecoverableTabs -> restore(store, store.state)
 
             // Do nothing when an action different from above is passed in.
-            else -> { }
+            else -> {}
         }
 
         next(action)
@@ -108,9 +113,7 @@ class UndoMiddleware(
             recoverableTabs.find { it.state.id == selectedTabId }?.state?.id
         }
 
-        store.dispatch(
-            UndoAction.AddRecoverableTabs(tag, recoverableTabs, selectionToRestore),
-        )
+        store.dispatch(UndoAction.AddRecoverableTabs(tag, recoverableTabs, selectionToRestore))
 
         clearJob = waitScope.launch {
             delay(clearAfterMillis)
@@ -130,8 +133,7 @@ class UndoMiddleware(
 
         val undoHistory = state.undoHistory
         val tabs = undoHistory.tabs
-        val tabPartitions = undoHistory.tabPartitions
-        if (tabs.isEmpty() && tabPartitions.isEmpty()) {
+        if (tabs.isEmpty()) {
             logger.debug("No recoverable tabs or tab partitions for undo.")
             return@launch
         }
@@ -140,8 +142,7 @@ class UndoMiddleware(
             TabListAction.RestoreAction(
                 tabs = tabs,
                 restoreLocation = TabListAction.RestoreAction.RestoreLocation.AT_INDEX,
-                tabPartitions = tabPartitions,
-            ),
+            )
         )
 
         // Restore the previous selection if needed.

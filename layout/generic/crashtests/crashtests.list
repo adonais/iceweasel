@@ -487,7 +487,7 @@ load 798020-1.html
 load 798235-1.html
 load 799207-1.html
 load 799207-2.html
-load 801268-1.html
+asserts(1-2) load 801268-1.html # Large sizes hit NS_UNCONSTRAINEDSIZE assert.
 load 804089-1.xhtml
 load 807565-1.html
 load 807565-2.html

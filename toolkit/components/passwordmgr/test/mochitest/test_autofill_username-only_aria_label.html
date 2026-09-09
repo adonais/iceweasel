@@ -1,0 +1,72 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test autofill on username-only forms identified by aria-label</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script type="text/javascript" src="pwmgr_common.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+Test autofill on username-only forms identified by aria-label
+
+<script>
+add_setup(async () => {
+  await setStoredLoginsAsync(
+    [window.location.origin, "https://autofill", null, "user1", "pass1"]
+  );
+});
+
+// Bug 2051116: an email-first login form whose only sign-in hint is an
+// aria-label.
+add_task(async function test_autofill_username_only_form_with_aria_label() {
+  const win = window.open("about:blank");
+  SimpleTest.registerCleanupFunction(() => win.close());
+
+  // Only the two forms below with a matching aria-label are recognised as
+  // username-only login forms, so only those two get processed for filling.
+  await loadFormIntoWindow(window.location.origin, `
+    <!-- form aria-label matches the login regex -->
+    <div id='form1'> 1
+      <form action='https://autofill' aria-label='Sign in'>
+        <input type='text' autocomplete='email' placeholder='Email address' value=''>
+        <button type='submit'>Continue</button>
+      </form>
+    </div>
+
+    <!-- input aria-label matches the username regex -->
+    <div id='form2'> 2
+      <form action='https://autofill'>
+        <input type='text' autocomplete='email' aria-label='Username' value=''>
+        <button type='submit'>Continue</button>
+      </form>
+    </div>
+
+    <!-- aria-label present but unrelated to signing in -->
+    <div id='form3'> 3
+      <form action='https://autofill' aria-label='Newsletter signup'>
+        <input type='text' autocomplete='email' placeholder='Email address' value=''>
+        <button type='submit'>Continue</button>
+      </form>
+    </div>
+
+    <!-- no aria-label anywhere: nothing identifies this as a login form -->
+    <div id='form4'> 4
+      <form action='https://autofill'>
+        <input type='text' autocomplete='email' placeholder='Email address' value=''>
+        <button type='submit'>Continue</button>
+      </form>
+    </div>`, win, 2);
+
+  await checkLoginFormInFrameWithElementValues(win, 1, "user1");
+  await checkLoginFormInFrameWithElementValues(win, 2, "user1");
+  await checkUnmodifiedFormInFrame(win, 3);
+  await checkUnmodifiedFormInFrame(win, 4);
+});
+</script>
+
+<p id="display"></p>
+<div id="content"></div>
+<pre id="test"></pre>
+</body>
+</html>

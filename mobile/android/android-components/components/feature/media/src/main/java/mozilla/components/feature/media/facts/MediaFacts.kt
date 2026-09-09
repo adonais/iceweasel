@@ -9,13 +9,9 @@ import mozilla.components.support.base.facts.Action
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.collect
 
-/**
- * Facts emitted for telemetry related to [MediaFeature]
- */
+/** Facts emitted for telemetry related to [MediaFeature] */
 class MediaFacts {
-    /**
-     * Items that specify which portion of the [MediaFeature] was interacted with
-     */
+    /** Items that specify which portion of the [MediaFeature] was interacted with */
     object Items {
         const val NOTIFICATION = "notification"
         const val STATE = "state"
@@ -23,30 +19,33 @@ class MediaFacts {
 }
 
 internal fun emitNotificationPlayFact() = emitNotificationFact(Action.PLAY)
+
 internal fun emitNotificationPauseFact() = emitNotificationFact(Action.PAUSE)
+
 internal fun emitNotificationNextFact() = emitNotificationFact(Action.NEXT)
+
 internal fun emitNotificationPreviousFact() = emitNotificationFact(Action.PREVIOUS)
 
 internal fun emitStatePlayFact() = emitStateFact(Action.PLAY)
+
 internal fun emitStatePauseFact() = emitStateFact(Action.PAUSE)
+
 internal fun emitStateStopFact() = emitStateFact(Action.STOP)
 
-private fun emitStateFact(
-    action: Action,
-) {
+private fun emitStateFact(action: Action) {
     Fact(
-        Component.FEATURE_MEDIA,
-        action,
-        MediaFacts.Items.STATE,
-    ).collect()
+            Component.FEATURE_MEDIA,
+            action,
+            MediaFacts.Items.STATE,
+        )
+        .collect()
 }
 
-private fun emitNotificationFact(
-    action: Action,
-) {
+private fun emitNotificationFact(action: Action) {
     Fact(
-        Component.FEATURE_MEDIA,
-        action,
-        MediaFacts.Items.NOTIFICATION,
-    ).collect()
+            Component.FEATURE_MEDIA,
+            action,
+            MediaFacts.Items.NOTIFICATION,
+        )
+        .collect()
 }

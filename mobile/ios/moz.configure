@@ -16,3 +16,12 @@ def check_target(target):
 
 include("../shared/moz.configure")
 include("../../toolkit/moz.configure")
+
+
+@depends(build_environment.topsrcdir)
+@imports(_import="mozpack.path", _as="mozpath")
+def package_allowed_dupes(topsrcdir):
+    return [mozpath.join(topsrcdir, "mobile", "ios", "installer", "allowed-dupes.mn")]
+
+
+set_config("MOZ_PKG_ALLOWED_DUPES", package_allowed_dupes)

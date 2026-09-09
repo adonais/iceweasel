@@ -21,8 +21,8 @@ import mozilla.components.support.base.log.logger.Logger
 /**
  * This activity is launched by Web App shortcuts on the home screen.
  *
- * Based on the Web App Manifest (display) it will decide whether the app is launched in the
- * browser or in a standalone activity.
+ * Based on the Web App Manifest (display) it will decide whether the app is launched in the browser or in a standalone
+ * activity.
  */
 class WebAppLauncherActivity : AppCompatActivity() {
 
@@ -54,23 +54,24 @@ class WebAppLauncherActivity : AppCompatActivity() {
         when (manifest?.display) {
             WebAppManifest.DisplayMode.FULLSCREEN,
             WebAppManifest.DisplayMode.STANDALONE,
-            WebAppManifest.DisplayMode.MINIMAL_UI,
-            -> {
+            WebAppManifest.DisplayMode.MINIMAL_UI -> {
                 emitHomescreenIconTapFact()
                 launchWebAppShell(startUrl)
             }
 
             // If no manifest is saved for this site, just open the browser.
-            WebAppManifest.DisplayMode.BROWSER, null -> launchBrowser(startUrl)
+            WebAppManifest.DisplayMode.BROWSER,
+            null -> launchBrowser(startUrl)
         }
     }
 
     @VisibleForTesting(otherwise = PRIVATE)
     internal fun launchBrowser(startUrl: Uri) {
-        val intent = Intent(Intent.ACTION_VIEW, startUrl).apply {
-            addCategory(SHORTCUT_CATEGORY)
-            `package` = packageName
-        }
+        val intent =
+            Intent(Intent.ACTION_VIEW, startUrl).apply {
+                addCategory(SHORTCUT_CATEGORY)
+                `package` = packageName
+            }
 
         try {
             startActivity(intent)
@@ -81,9 +82,10 @@ class WebAppLauncherActivity : AppCompatActivity() {
 
     @VisibleForTesting(otherwise = PRIVATE)
     internal fun launchWebAppShell(startUrl: Uri) {
-        val intent = Intent(ACTION_VIEW_PWA, startUrl).apply {
-            `package` = packageName
-        }
+        val intent =
+            Intent(ACTION_VIEW_PWA, startUrl).apply {
+                `package` = packageName
+            }
 
         try {
             startActivity(intent)

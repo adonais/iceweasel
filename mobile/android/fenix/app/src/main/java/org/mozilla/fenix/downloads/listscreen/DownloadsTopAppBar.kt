@@ -19,13 +19,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.IconButton
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
- * A TopAppBar for the Downloads screen. It has slots for a title, an optional navigation icon
- * and actions.
+ * A TopAppBar for the Downloads screen. It has slots for a title, an optional navigation icon and actions.
  *
  * @param backgroundColor - The background color for the TopAppBar.
  * @param modifier - The [Modifier] to be applied to this composable.
@@ -51,10 +50,11 @@ internal fun DownloadsTopAppBar(
         actions = {
             actions()
         },
-        windowInsets = WindowInsets(
-            top = 0.dp,
-            bottom = 0.dp,
-        ),
+        windowInsets =
+            WindowInsets(
+                top = 0.dp,
+                bottom = 0.dp,
+            ),
         colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor),
     )
 }
@@ -69,10 +69,11 @@ private fun DownloadsTopAppBarPreview() {
                 Text(
                     color = MaterialTheme.colorScheme.inverseOnSurface,
                     style = FirefoxTheme.typography.headline5,
-                    text = stringResource(
-                        R.string.download_multi_select_title,
-                        1,
-                    ),
+                    text =
+                        stringResource(
+                            R.string.download_multi_select_title,
+                            1,
+                        ),
                 )
             },
             navigationIcon = {
@@ -90,9 +91,7 @@ private fun DownloadsTopAppBarPreview() {
             actions = {
                 IconButton(
                     onClick = {},
-                    contentDescription = stringResource(
-                        R.string.content_description_menu,
-                    ),
+                    contentDescription = stringResource(R.string.content_description_menu),
                 ) {
                     Icon(
                         painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),

@@ -4,9 +4,7 @@
 
 package mozilla.components.concept.storage.bookmarks
 
-/**
- * Inserts bookmarks into storage.
- */
+/** Inserts bookmarks into storage. */
 fun interface BookmarkInserter {
     /**
      * Inserts the given bookmark folder (including its children) into storage.
@@ -25,9 +23,7 @@ fun interface BookmarkInserter {
  */
 data class InsertableBookmarkTreeRoot(val parentGuid: String, val rootFolder: InsertableBookmarkTreeNode.Folder)
 
-/**
- * Represents a bookmark node that can be inserted into storage.
- */
+/** Represents a bookmark node that can be inserted into storage. */
 sealed interface InsertableBookmarkTreeNode {
     val position: UInt?
     val dateAddedTimestamp: Long

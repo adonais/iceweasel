@@ -11,6 +11,7 @@ import junit.framework.TestCase.assertNull
 import junit.framework.TestCase.assertTrue
 import mozilla.components.lib.state.Store
 import mozilla.components.support.test.robolectric.testContext
+import mozilla.components.ui.icons.R as iconsR
 import mozilla.telemetry.glean.testing.GleanTestRule
 import org.junit.Before
 import org.junit.Rule
@@ -22,12 +23,10 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
 import org.robolectric.RobolectricTestRunner
-import mozilla.components.ui.icons.R as iconsR
 
 @RunWith(RobolectricTestRunner::class)
 class SetupChecklistTelemetryMiddlewareTest {
-    @get:Rule
-    val gleanTestRule = GleanTestRule(testContext)
+    @get:Rule val gleanTestRule = GleanTestRule(testContext)
 
     private lateinit var telemetry: SetupChecklistTelemetryRecorder
     private lateinit var middleware: SetupChecklistTelemetryMiddleware
@@ -41,11 +40,12 @@ class SetupChecklistTelemetryMiddlewareTest {
     @Test
     fun `WHEN ChecklistItem clicked action is invoked THEN SetupChecklistTelemetryRecorder is invoked`() {
         var setupChecklistTelemetryRecorderInvoked = false
-        val telemetry = object : SetupChecklistTelemetryRecorder {
-            override fun taskClicked(task: ChecklistItem.Task) {
-                setupChecklistTelemetryRecorderInvoked = true
+        val telemetry =
+            object : SetupChecklistTelemetryRecorder {
+                override fun taskClicked(task: ChecklistItem.Task) {
+                    setupChecklistTelemetryRecorderInvoked = true
+                }
             }
-        }
         val middleware = SetupChecklistTelemetryMiddleware(telemetry)
         checklistItemClickedAction(middleware, ChecklistItem.Task.Type.EXPLORE_EXTENSION)
 
@@ -130,20 +130,18 @@ class SetupChecklistTelemetryMiddlewareTest {
         assertEquals("extensions", result)
     }
 
-    /**
-     * Invokes the [ChecklistItem] clicked action of [type] for the given
-     * [SetupChecklistPreferencesMiddleware].
-     */
+    /** Invokes the [ChecklistItem] clicked action of [type] for the given [SetupChecklistPreferencesMiddleware]. */
     private fun checklistItemClickedAction(
         middleware: SetupChecklistTelemetryMiddleware,
         type: ChecklistItem.Task.Type,
     ) {
-        val task = ChecklistItem.Task(
-            type = type,
-            title = R.string.setup_checklist_task_default_browser,
-            icon = iconsR.drawable.mozac_ic_extension_24,
-            isCompleted = false,
-        )
+        val task =
+            ChecklistItem.Task(
+                type = type,
+                title = R.string.setup_checklist_task_default_browser,
+                icon = iconsR.drawable.mozac_ic_extension_24,
+                isCompleted = false,
+            )
 
         val store = mockk<Store<AppState, AppAction>>()
         middleware.invoke(

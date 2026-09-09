@@ -10,9 +10,8 @@ import mozilla.components.concept.engine.history.HistoryItem
  * Value type that represents browser history.
  *
  * @property items All the items in the browser history.
- * @property currentIndex The index of the currently selected [HistoryItem].
- * If this is equal to lastIndex, then there are no pages to go "forward" to.
- * If this is 0, then there are no pages to go "back" to.
+ * @property currentIndex The index of the currently selected [HistoryItem]. If this is equal to lastIndex, then there
+ *   are no pages to go "forward" to. If this is 0, then there are no pages to go "back" to.
  */
 data class HistoryState(
     val items: List<HistoryItem> = emptyList(),

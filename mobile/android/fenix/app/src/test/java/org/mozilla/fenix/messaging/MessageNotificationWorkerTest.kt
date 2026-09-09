@@ -53,9 +53,8 @@ class MessageNotificationWorkerTest {
             setMessageNotificationWorker(testContext)
 
             val workManager = WorkManager.getInstance(testContext)
-            val messageNotificationWorkExists = workManager.getWorkInfosForUniqueWork(MESSAGE_WORK_NAME)
-                .await()
-                .isNotEmpty()
+            val messageNotificationWorkExists =
+                workManager.getWorkInfosForUniqueWork(MESSAGE_WORK_NAME).await().isNotEmpty()
             assertTrue(messageNotificationWorkExists)
 
             cancelMessageNotificationWorker(testContext)
@@ -83,11 +82,12 @@ class MessageNotificationWorkerTest {
             val applyExperimentDelayMillis = 100L
             val operationTimeout = 300L
 
-            val nimbus = FakeNimbus(
-                coroutineScope = this,
-                fetchExperimentDelayMillis = fetchExperimentDelayMillis,
-                applyExperimentDelayMillis = applyExperimentDelayMillis,
-            )
+            val nimbus =
+                FakeNimbus(
+                    coroutineScope = this,
+                    fetchExperimentDelayMillis = fetchExperimentDelayMillis,
+                    applyExperimentDelayMillis = applyExperimentDelayMillis,
+                )
             val experimentsFetchedOperation = CompletableDeferred<Unit>()
             val experimentsAppliedOperation = CompletableDeferred<Unit>()
 
@@ -97,12 +97,13 @@ class MessageNotificationWorkerTest {
                 experimentsAppliedOperation,
             )
 
-            val result = tryFetchAndApplyNimbusExperiments(
-                nimbusSdk = nimbus,
-                operationTimeout = operationTimeout,
-                experimentsFetched = experimentsFetchedOperation,
-                experimentsApplied = experimentsAppliedOperation,
-            )
+            val result =
+                tryFetchAndApplyNimbusExperiments(
+                    nimbusSdk = nimbus,
+                    operationTimeout = operationTimeout,
+                    experimentsFetched = experimentsFetchedOperation,
+                    experimentsApplied = experimentsAppliedOperation,
+                )
 
             assertTrue(nimbus.wasRegistered)
             assertTrue(nimbus.fetchExperimentsWasCalled)
@@ -119,10 +120,11 @@ class MessageNotificationWorkerTest {
             val fetchExperimentDelayMillis = 400L
             val operationTimeout = 300L
 
-            val nimbus = FakeNimbus(
-                coroutineScope = this,
-                fetchExperimentDelayMillis = fetchExperimentDelayMillis,
-            )
+            val nimbus =
+                FakeNimbus(
+                    coroutineScope = this,
+                    fetchExperimentDelayMillis = fetchExperimentDelayMillis,
+                )
             val experimentsFetchedOperation = CompletableDeferred<Unit>()
             val experimentsAppliedOperation = CompletableDeferred<Unit>()
 
@@ -132,12 +134,13 @@ class MessageNotificationWorkerTest {
                 experimentsAppliedOperation,
             )
 
-            val result = tryFetchAndApplyNimbusExperiments(
-                nimbusSdk = nimbus,
-                operationTimeout = operationTimeout,
-                experimentsFetched = experimentsFetchedOperation,
-                experimentsApplied = experimentsAppliedOperation,
-            )
+            val result =
+                tryFetchAndApplyNimbusExperiments(
+                    nimbusSdk = nimbus,
+                    operationTimeout = operationTimeout,
+                    experimentsFetched = experimentsFetchedOperation,
+                    experimentsApplied = experimentsAppliedOperation,
+                )
 
             assertTrue(nimbus.wasRegistered)
             assertTrue(nimbus.fetchExperimentsWasCalled)
@@ -155,11 +158,12 @@ class MessageNotificationWorkerTest {
             val applyExperimentDelayMillis = 400L
             val operationTimeout = 300L
 
-            val nimbus = FakeNimbus(
-                coroutineScope = this,
-                fetchExperimentDelayMillis = fetchExperimentDelayMillis,
-                applyExperimentDelayMillis = applyExperimentDelayMillis,
-            )
+            val nimbus =
+                FakeNimbus(
+                    coroutineScope = this,
+                    fetchExperimentDelayMillis = fetchExperimentDelayMillis,
+                    applyExperimentDelayMillis = applyExperimentDelayMillis,
+                )
             val experimentsFetchedOperation = CompletableDeferred<Unit>()
             val experimentsAppliedOperation = CompletableDeferred<Unit>()
 
@@ -169,12 +173,13 @@ class MessageNotificationWorkerTest {
                 experimentsAppliedOperation,
             )
 
-            val result = tryFetchAndApplyNimbusExperiments(
-                nimbusSdk = nimbus,
-                operationTimeout = operationTimeout,
-                experimentsFetched = experimentsFetchedOperation,
-                experimentsApplied = experimentsAppliedOperation,
-            )
+            val result =
+                tryFetchAndApplyNimbusExperiments(
+                    nimbusSdk = nimbus,
+                    operationTimeout = operationTimeout,
+                    experimentsFetched = experimentsFetchedOperation,
+                    experimentsApplied = experimentsAppliedOperation,
+                )
 
             assertTrue(nimbus.wasRegistered)
             assertTrue(nimbus.fetchExperimentsWasCalled)
@@ -246,13 +251,18 @@ private class FakeNimbus(
     ) = Unit
 
     override fun register(observer: NimbusInterface.Observer, view: View) = Unit
+
     override fun unregisterObservers() = Unit
+
     override fun notifyObservers(block: NimbusInterface.Observer.() -> Unit) = Unit
+
     override fun notifyAtLeastOneObserver(block: NimbusInterface.Observer.() -> Unit) = Unit
+
     override fun pauseObserver(observer: NimbusInterface.Observer) = Unit
+
     override fun resumeObserver(observer: NimbusInterface.Observer) = Unit
-    override fun <R> wrapConsumers(block: NimbusInterface.Observer.(R) -> Boolean): List<(R) -> Boolean> =
-        emptyList()
+
+    override fun <R> wrapConsumers(block: NimbusInterface.Observer.(R) -> Boolean): List<(R) -> Boolean> = emptyList()
 
     override fun isObserved(): Boolean = false
 }

@@ -42,7 +42,8 @@ import org.mozilla.fenix.theme.FirefoxTheme
  */
 class RenameAndChangeLocationDialogFragment : DialogFragment(), OnEnterAnimationCompleteListener {
     private val logger = Logger("RenameAndChangeLocationDialogFragment")
-    private val safeArguments get() = requireNotNull(arguments)
+    private val safeArguments
+        get() = requireNotNull(arguments)
 
     private val promptAbuserDetector = PromptAbuserDetector(TIME_SHOWN_OFFSET_MILLIS)
 
@@ -55,17 +56,18 @@ class RenameAndChangeLocationDialogFragment : DialogFragment(), OnEnterAnimation
     internal val contentSize: Long
         get() = safeArguments.getLong(KEY_CONTENT_SIZE, 0)
 
-    private var dialogState by mutableStateOf(
-        RenameAndChangeLocationDialogState(
-            fileName = "",
-            directoryPath = "",
-        ),
-    )
+    private var dialogState by
+        mutableStateOf(
+            RenameAndChangeLocationDialogState(
+                fileName = "",
+                directoryPath = "",
+            )
+        )
     private lateinit var downloadLocationFormatter: DefaultDownloadLocationFormatter
 
     var onConfirmSave: (String, String) -> Unit = { _, _ -> }
 
-    var onCancel: () -> Unit = { }
+    var onCancel: () -> Unit = {}
 
     private val directoryLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
@@ -95,42 +97,39 @@ class RenameAndChangeLocationDialogFragment : DialogFragment(), OnEnterAnimation
 
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
-        requireContext().components.analytics.crashReporter.recordCrashBreadcrumb(
-            Breadcrumb("RenameAndChangeLocationDialogFragment onDismiss"),
-        )
+        requireContext()
+            .components
+            .analytics
+            .crashReporter
+            .recordCrashBreadcrumb(Breadcrumb("RenameAndChangeLocationDialogFragment onDismiss"))
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        downloadLocationFormatter = DefaultDownloadLocationFormatter(
-            fileUtils = DefaultAndroidFileUtils(requireContext()),
-        )
+        downloadLocationFormatter =
+            DefaultDownloadLocationFormatter(fileUtils = DefaultAndroidFileUtils(requireContext()))
 
-        dialogState = RenameAndChangeLocationDialogState(
-            fileName = fileName,
-            directoryPath = directoryPath,
-        )
+        dialogState =
+            RenameAndChangeLocationDialogState(
+                fileName = fileName,
+                directoryPath = directoryPath,
+            )
 
         val composeView = createComposeView()
 
         promptAbuserDetector.start()
 
-        return MaterialAlertDialogBuilder(requireContext())
-            .setView(composeView)
-            .create()
+        return MaterialAlertDialogBuilder(requireContext()).setView(composeView).create()
     }
 
     private fun buildDialogTitle(): String {
         return if (contentSize > 0L) {
-            val contentSizeInBytes =
-                requireComponents.core.fileSizeFormatter.formatSizeInBytes(contentSize)
+            val contentSizeInBytes = requireComponents.core.fileSizeFormatter.formatSizeInBytes(contentSize)
             getString(
                 R.string.download_rename_and_change_location_dialog_title,
                 contentSizeInBytes,
             )
         } else {
-            getString(
-                R.string.download_rename_and_change_location_dialog_title_with_unknown_size,
-            )
+            getString(R.string.download_rename_and_change_location_dialog_title_with_unknown_size)
         }
     }
 
@@ -138,15 +137,15 @@ class RenameAndChangeLocationDialogFragment : DialogFragment(), OnEnterAnimation
         return ComposeView(requireContext()).apply {
             setContent {
                 FirefoxTheme {
-                    val friendlyPath = try {
-                        downloadLocationFormatter.getFriendlyPath(dialogState.directoryPath)
-                    } catch (e: MissingUriPermission) {
-                        logger.warn("Resetting download location to default due to lost permissions.", e)
-                        val defaultLocation = Environment.getExternalStoragePublicDirectory(
-                            Environment.DIRECTORY_DOWNLOADS,
-                        ).path
-                        downloadLocationFormatter.getFriendlyPath(defaultLocation)
-                    }
+                    val friendlyPath =
+                        try {
+                            downloadLocationFormatter.getFriendlyPath(dialogState.directoryPath)
+                        } catch (e: MissingUriPermission) {
+                            logger.warn("Resetting download location to default due to lost permissions.", e)
+                            val defaultLocation =
+                                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
+                            downloadLocationFormatter.getFriendlyPath(defaultLocation)
+                        }
 
                     RenameAndChangeLocationDialogContent(
                         dialogState = dialogState,
@@ -182,8 +181,7 @@ class RenameAndChangeLocationDialogFragment : DialogFragment(), OnEnterAnimation
     private fun handleSelectedDownloadDirectory(uri: Uri?) {
         val safeUri = uri ?: return
 
-        val flags =
-            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
         try {
             context?.contentResolver?.takePersistableUriPermission(safeUri, flags)
 
@@ -214,21 +212,23 @@ class RenameAndChangeLocationDialogFragment : DialogFragment(), OnEnterAnimation
             fileName: String,
             directoryPath: String,
             contentSize: Long,
-        ) = RenameAndChangeLocationDialogFragment().apply {
-            arguments = Bundle().apply {
-                putString(KEY_FILE_NAME, fileName)
-                putString(KEY_DIRECTORY_PATH, directoryPath)
-                putLong(KEY_CONTENT_SIZE, contentSize)
+        ) =
+            RenameAndChangeLocationDialogFragment().apply {
+                arguments =
+                    Bundle().apply {
+                        putString(KEY_FILE_NAME, fileName)
+                        putString(KEY_DIRECTORY_PATH, directoryPath)
+                        putLong(KEY_CONTENT_SIZE, contentSize)
+                    }
             }
-        }
     }
 }
 
 /**
  * Starts (or restarts) the time-based check without increasing the "click count".
  *
- * Makes it safe to call from multiple/successive lifecycle methods, without running into the risk
- * of triggering the more restrictive count-based protection on the 1st click (or even before it).
+ * Makes it safe to call from multiple/successive lifecycle methods, without running into the risk of triggering the
+ * more restrictive count-based protection on the 1st click (or even before it).
  */
 private fun PromptAbuserDetector.start() {
     resetJSAlertAbuseState()

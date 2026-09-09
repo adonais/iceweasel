@@ -6,8 +6,5 @@ package org.mozilla.fenix.settings.downloads
 
 import java.io.IOException
 
-/**
- *  Thrown to indicate that the application doesn't have permission
- *  to access a given content URI.
- */
+/** Thrown to indicate that the application doesn't have permission to access a given content URI. */
 class MissingUriPermission(message: String) : IOException(message)

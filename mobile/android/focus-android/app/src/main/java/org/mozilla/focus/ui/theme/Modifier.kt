@@ -13,8 +13,8 @@ import androidx.compose.ui.res.colorResource
 import org.mozilla.focus.R
 
 /**
- * Creates a linear gradient using six predefined colors from the application's
- * resources and applies it as the background of the composable.
+ * Creates a linear gradient using six predefined colors from the application's resources and applies it as the
+ * background of the composable.
  *
  * The gradient colors are:
  * - `home_screen_modal_gradient_one`
@@ -26,9 +26,8 @@ import org.mozilla.focus.R
  *
  * These colors are currently defined in the application's `colors.xml` resource file.
  *
- * The gradient starts at the top-right corner (x = infinity, y = 0) and ends at the
- * bottom-left corner (x = 0, y = infinity). This ensures that the gradient covers
- * the entire composable area regardless of its dimensions.
+ * The gradient starts at the top-right corner (x = infinity, y = 0) and ends at the bottom-left corner (x = 0, y =
+ * infinity). This ensures that the gradient covers the entire composable area regardless of its dimensions.
  *
  * @return A [Modifier] that applies the linear gradient background.
  *
@@ -43,17 +42,19 @@ import org.mozilla.focus.R
  * ```
  */
 fun Modifier.gradientBackground() = composed {
-    val gradient = Brush.linearGradient(
-        colors = listOf(
-            colorResource(R.color.home_screen_modal_gradient_one),
-            colorResource(R.color.home_screen_modal_gradient_two),
-            colorResource(R.color.home_screen_modal_gradient_three),
-            colorResource(R.color.home_screen_modal_gradient_four),
-            colorResource(R.color.home_screen_modal_gradient_five),
-            colorResource(R.color.home_screen_modal_gradient_six),
-        ),
-        end = Offset(0f, Float.POSITIVE_INFINITY),
-        start = Offset(Float.POSITIVE_INFINITY, 0f),
-    )
+    val gradient =
+        Brush.linearGradient(
+            colors =
+                listOf(
+                    colorResource(R.color.home_screen_modal_gradient_one),
+                    colorResource(R.color.home_screen_modal_gradient_two),
+                    colorResource(R.color.home_screen_modal_gradient_three),
+                    colorResource(R.color.home_screen_modal_gradient_four),
+                    colorResource(R.color.home_screen_modal_gradient_five),
+                    colorResource(R.color.home_screen_modal_gradient_six),
+                ),
+            end = Offset(0f, Float.POSITIVE_INFINITY),
+            start = Offset(Float.POSITIVE_INFINITY, 0f),
+        )
     background(brush = gradient)
 }

@@ -7,9 +7,7 @@ package org.mozilla.fenix.downloads.listscreen.store
 import androidx.annotation.DrawableRes
 import org.mozilla.fenix.R
 
-/**
- * Returns the icon resource id for a file based on its content type.
- */
+/** Returns the icon resource id for a file based on its content type. */
 @DrawableRes
 fun FileItem.getIcon(): Int {
     return contentType?.let { contentType ->

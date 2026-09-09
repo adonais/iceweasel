@@ -51,6 +51,16 @@ static nsresult GetDefaultIcon(nsIChannel* aOriginalChannel,
   (void)(*aChannel)->SetContentType(nsLiteralCString(FAVICON_DEFAULT_MIMETYPE));
   (void)aOriginalChannel->SetContentType(
       nsLiteralCString(FAVICON_DEFAULT_MIMETYPE));
+  // Propagate properties from the original channel.
+  nsCOMPtr<nsILoadGroup> loadGroup;
+  aOriginalChannel->GetLoadGroup(getter_AddRefs(loadGroup));
+  (*aChannel)->SetLoadGroup(loadGroup);
+  nsCOMPtr<nsIInterfaceRequestor> callbacks;
+  aOriginalChannel->GetNotificationCallbacks(getter_AddRefs(callbacks));
+  (*aChannel)->SetNotificationCallbacks(callbacks);
+  nsLoadFlags loadFlags = 0;
+  aOriginalChannel->GetLoadFlags(&loadFlags);
+  (*aChannel)->SetLoadFlags(loadFlags | nsIChannel::LOAD_REPLACE);
   return NS_OK;
 }
 
@@ -126,8 +136,7 @@ class faviconAsyncLoader : public PendingStatementCallback,
 
     aListener->OnStartRequest(aChannel);
     aListener->OnStopRequest(aChannel, aResult);
-    aChannel->CancelWithReason(NS_BINDING_ABORTED,
-                               "faviconAsyncLoader::CancelRequest"_ns);
+    aChannel->CancelWithReason(aResult, "faviconAsyncLoader::CancelRequest"_ns);
   }
 
   NS_IMETHOD HandleCompletion(uint16_t aReason) override {
@@ -150,7 +159,6 @@ class faviconAsyncLoader : public PendingStatementCallback,
 
     nsresult rv;
 
-    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
     nsISerialEventTarget* target = GetMainThreadSerialEventTarget();
     if (!mData.IsEmpty()) {
       nsCOMPtr<nsIInputStream> stream;
@@ -174,23 +182,29 @@ class faviconAsyncLoader : public PendingStatementCallback,
       }
     }
 
-    // Fallback to the default favicon.
-    // we should pass the loadInfo of the original channel along
-    // to the new channel. Note that mChannel can not be null,
-    // constructor checks that.
-    rv = GetDefaultIcon(mChannel, getter_AddRefs(mDefaultIconChannel));
+    nsCOMPtr<nsIChannel> defaultIconChannel;
+    rv = GetDefaultIcon(mChannel, getter_AddRefs(defaultIconChannel));
     if (NS_FAILED(rv)) {
       CancelRequest(mListener, mChannel, rv);
       return rv;
     }
 
-    rv = mDefaultIconChannel->AsyncOpen(mListener);
+    // Open the default icon channel directly with the outer listener, rather
+    // than via Redirect(), so that:
+    // - The image loader receives OnStartRequest from the chrome:// channel
+    //   (required for -moz-pref() evaluation in SVGs).
+    // - No async runnables are queued that could outlive a test shutdown
+    //   and cause faviconAsyncLoader to leak.
+    // Clear SimpleChannel's listener first so CancelRequest below does not
+    // forward a duplicate OnStart/OnStop to the outer listener.
+    auto* simpleChannel = static_cast<nsBaseChannel*>(mChannel.get());
+    nsCOMPtr<nsIStreamListener> outerListener = simpleChannel->StreamListener();
+    simpleChannel->SetStreamListener(nullptr);
+    rv = defaultIconChannel->AsyncOpen(outerListener);
     if (NS_FAILED(rv)) {
-      mDefaultIconChannel = nullptr;
-      CancelRequest(mListener, mChannel, rv);
-      return rv;
+      simpleChannel->SetStreamListener(outerListener);
     }
-
+    CancelRequest(mListener, mChannel, NS_SUCCEEDED(rv) ? NS_OK : rv);
     return NS_OK;
   }
 
@@ -213,7 +227,6 @@ class faviconAsyncLoader : public PendingStatementCallback,
 
  private:
   nsCOMPtr<nsIChannel> mChannel;
-  nsCOMPtr<nsIChannel> mDefaultIconChannel;
   nsCOMPtr<nsIStreamListener> mListener;
   nsCOMPtr<nsIInputStreamPump> mPump;
   nsCString mData;
@@ -238,11 +251,6 @@ faviconAsyncLoader::Cancel(nsresult aStatus) {
   if (mPump) {
     mPump->Cancel(aStatus);
     mPump = nullptr;
-  }
-
-  if (mDefaultIconChannel) {
-    mDefaultIconChannel->Cancel(aStatus);
-    mDefaultIconChannel = nullptr;
   }
 
   return NS_OK;

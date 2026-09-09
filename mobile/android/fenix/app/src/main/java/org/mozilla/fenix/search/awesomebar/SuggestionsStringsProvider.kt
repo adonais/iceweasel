@@ -8,21 +8,21 @@ import android.content.Context
 import androidx.annotation.VisibleForTesting
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.search.SearchEngineProvider
-import org.mozilla.fenix.R
-import org.mozilla.fenix.search.awesomebar.SearchSuggestionsProvidersBuilder.Companion.GOOGLE_SEARCH_ENGINE_NAME
 import mozilla.components.feature.awesomebar.R as awesomebarR
 import mozilla.components.feature.fxsuggest.R as fxsuggestR
+import org.mozilla.fenix.R
+import org.mozilla.fenix.search.awesomebar.SearchSuggestionsProvidersBuilder.Companion.GOOGLE_SEARCH_ENGINE_NAME
 
 /**
- * Provides localized strings for various suggestion groups in the AwesomeBar.
- * This includes headers for different suggestion categories and descriptive texts.
+ * Provides localized strings for various suggestion groups in the AwesomeBar. This includes headers for different
+ * suggestion categories and descriptive texts.
  */
 interface SuggestionsStringsProvider {
 
     /**
-     * Returns a localized string that can be used as a header for search engine suggestions.
-     * The string will be formatted with the current search engine's name if provided.
-     * If `currentEngine` is null, it will use the `defaultSearchEngine`.
+     * Returns a localized string that can be used as a header for search engine suggestions. The string will be
+     * formatted with the current search engine's name if provided. If `currentEngine` is null, it will use the
+     * `defaultSearchEngine`.
      *
      * Examples:
      * - If `currentEngine` is null and `defaultSearchEngine.name` is "Mozilla": "Search with Mozilla"
@@ -43,14 +43,12 @@ interface SuggestionsStringsProvider {
      */
     fun forTrendingSearches(engine: SearchEngine?): String?
 
-    /**
-     * Header for recent search terms.
-     */
+    /** Header for recent search terms. */
     fun forRecentSearches(): String
 
     /**
-     * Returns the localized description text for search engine suggestions.
-     * This is typically shown below the title for search engine shortcuts/suggestions.
+     * Returns the localized description text for search engine suggestions. This is typically shown below the title for
+     * search engine shortcuts/suggestions.
      */
     fun forSearchEngineSuggestionDescription(): String
 
@@ -67,38 +65,29 @@ interface SuggestionsStringsProvider {
     fun searchEngineSuggestionProviderTitle(searchEngineName: String): String
 
     /**
-     * Returns the localized description string for "Switch to Tab" suggestions.
-     * This string is typically displayed as a secondary text or description for
-     * suggestions that allow the user to switch to an already open tab.
+     * Returns the localized description string for "Switch to Tab" suggestions. This string is typically displayed as a
+     * secondary text or description for suggestions that allow the user to switch to an already open tab.
      *
      * @return The localized description string.
      */
     fun getSwitchToTabDescriptionString(): String
 
     /**
-     * Returns the localized description string for sponsored suggestions.
-     * This string is typically displayed as secondary text or a disclaimer
-     * for suggestions that are sponsored or promoted.
+     * Returns the localized description string for sponsored suggestions. This string is typically displayed as
+     * secondary text or a disclaimer for suggestions that are sponsored or promoted.
      *
      * @return The localized description string for sponsored suggestions.
      */
     fun getSponsoredSuggestionDescription(): String
 
-    /**
-     * "Firefox Suggest" header.
-     */
+    /** "Firefox Suggest" header. */
     val firefoxSuggestHeader: String
 
-    /**
-     * Firefox Suggest Online header
-     */
+    /** Firefox Suggest Online header */
     val firefoxSuggestOnlineHeader: String
 }
 
-/**
- * Default implementation of [SuggestionsStringsProvider] that retrieves
- * headers from Android string resources.
- */
+/** Default implementation of [SuggestionsStringsProvider] that retrieves headers from Android string resources. */
 class DefaultSuggestionsStringsProvider(
     private val context: Context,
     private val searchEngineProvider: SearchEngineProvider,
@@ -108,9 +97,9 @@ class DefaultSuggestionsStringsProvider(
      * Retrieves the header text for search engine suggestions.
      *
      * This function determines the appropriate header string based on the current and default search engines.
-     * - If a `currentEngine` is provided and it's different from the `defaultSearchEngine`,
-     *   no header is returned (returns `null`). This implies that headers are only shown
-     *   for the default search engine or when no specific `currentEngine` is provided (implying the default).
+     * - If a `currentEngine` is provided and it's different from the `defaultSearchEngine`, no header is returned
+     *   (returns `null`). This implies that headers are only shown for the default search engine or when no specific
+     *   `currentEngine` is provided (implying the default).
      * - If the `defaultSearchEngine` is Google, a specific "Search Google" string is used.
      * - For any other `defaultSearchEngine`, a generic "Search with [Engine Name]" string is used.
      * - If the `defaultSearchEngine` is null or its name is empty, `null` is returned.
@@ -128,22 +117,22 @@ class DefaultSuggestionsStringsProvider(
 
         var searchEngineName = defaultSearchEngine?.name
         if (!searchEngineName.isNullOrEmpty()) {
-            searchEngineName = when (searchEngineName) {
-                GOOGLE_SEARCH_ENGINE_NAME -> context.getString(
-                    R.string.google_search_engine_suggestion_header,
-                )
-                else -> context.getString(
-                    R.string.other_default_search_engine_suggestion_header,
-                    searchEngineName,
-                )
-            }
+            searchEngineName =
+                when (searchEngineName) {
+                    GOOGLE_SEARCH_ENGINE_NAME -> context.getString(R.string.google_search_engine_suggestion_header)
+                    else ->
+                        context.getString(
+                            R.string.other_default_search_engine_suggestion_header,
+                            searchEngineName,
+                        )
+                }
         }
         return searchEngineName
     }
 
     /**
-     * Provides a string that serves as a header for trending searches.
-     * The string is localized and formatted with the provided search engine's name.
+     * Provides a string that serves as a header for trending searches. The string is localized and formatted with the
+     * provided search engine's name.
      *
      * Example: "Trending on Google"
      *
@@ -175,20 +164,17 @@ class DefaultSuggestionsStringsProvider(
     /**
      * Returns the localized string for the "Firefox Suggest" header.
      *
-     * This header is used in the awesomebar to indicate suggestions
-     * that are powered by Firefox Suggest.
+     * This header is used in the awesomebar to indicate suggestions that are powered by Firefox Suggest.
      */
-    override val firefoxSuggestHeader =
-        context.getString(R.string.firefox_suggest_header)
+    override val firefoxSuggestHeader = context.getString(R.string.firefox_suggest_header)
 
     /**
      * Returns the static string for the "Firefox Suggest Online" header.
      *
-     * This header is used in the awesomebar to indicate and group suggestions
-     * that are powered by Firefox Suggest Online.
+     * This header is used in the awesomebar to indicate and group suggestions that are powered by Firefox Suggest
+     * Online.
      */
-    override val firefoxSuggestOnlineHeader =
-        context.getString(R.string.firefox_suggest_online_header)
+    override val firefoxSuggestOnlineHeader = context.getString(R.string.firefox_suggest_online_header)
 
     override fun searchEngineSuggestionProviderTitle(searchEngineName: String): String {
         return context.getString(R.string.search_engine_suggestions_title, searchEngineName)

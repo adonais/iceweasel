@@ -4,7 +4,5 @@
 
 package mozilla.components.lib.state
 
-/**
- * Listener called when the state changes in the [Store].
- */
+/** Listener called when the state changes in the [Store]. */
 typealias Observer<S> = (S) -> Unit

@@ -4,9 +4,7 @@
 
 package org.mozilla.focus.web
 
-/**
- * Configuration constants for the web engine.
- */
+/** Configuration constants for the web engine. */
 object Config {
     const val EXPERIMENT_DESCRIPTOR_GECKOVIEW_ENGINE = "use-gecko"
     const val EXPERIMENT_DESCRIPTOR_HOME_SCREEN_TIPS = "use-homescreen-tips"

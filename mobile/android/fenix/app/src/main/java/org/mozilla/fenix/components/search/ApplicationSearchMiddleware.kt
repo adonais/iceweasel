@@ -18,8 +18,8 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.feature.search.ext.createApplicationSearchEngine
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
-import org.mozilla.fenix.R
 import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.fenix.R
 
 const val HISTORY_SEARCH_ENGINE_ID = "history_search_engine_id"
 const val BOOKMARKS_SEARCH_ENGINE_ID = "bookmarks_search_engine_id"
@@ -51,29 +51,28 @@ class ApplicationSearchMiddleware(
         next(action)
     }
 
-    private fun loadSearchEngines(
-        store: Store<BrowserState, BrowserAction>,
-    ) = scope.launch {
-        val searchEngines = listOf(
-            createApplicationSearchEngine(
-                id = BOOKMARKS_SEARCH_ENGINE_ID,
-                name = stringProvider(R.string.library_bookmarks),
-                url = "",
-                icon = bitmapProvider(iconsR.drawable.mozac_ic_bookmark_tray_fill_24),
-            ),
-            createApplicationSearchEngine(
-                id = TABS_SEARCH_ENGINE_ID,
-                name = stringProvider(R.string.preferences_tabs),
-                url = "",
-                icon = bitmapProvider(iconsR.drawable.mozac_ic_tab_tray_24),
-            ),
-            createApplicationSearchEngine(
-                id = HISTORY_SEARCH_ENGINE_ID,
-                name = stringProvider(R.string.library_history),
-                url = "",
-                icon = bitmapProvider(iconsR.drawable.mozac_ic_history_24),
-            ),
-        )
+    private fun loadSearchEngines(store: Store<BrowserState, BrowserAction>) = scope.launch {
+        val searchEngines =
+            listOf(
+                createApplicationSearchEngine(
+                    id = BOOKMARKS_SEARCH_ENGINE_ID,
+                    name = stringProvider(R.string.library_bookmarks),
+                    url = "",
+                    icon = bitmapProvider(iconsR.drawable.mozac_ic_bookmark_tray_fill_24),
+                ),
+                createApplicationSearchEngine(
+                    id = TABS_SEARCH_ENGINE_ID,
+                    name = stringProvider(R.string.preferences_tabs),
+                    url = "",
+                    icon = bitmapProvider(iconsR.drawable.mozac_ic_tab_tray_24),
+                ),
+                createApplicationSearchEngine(
+                    id = HISTORY_SEARCH_ENGINE_ID,
+                    name = stringProvider(R.string.library_history),
+                    url = "",
+                    icon = bitmapProvider(iconsR.drawable.mozac_ic_history_24),
+                ),
+            )
 
         store.dispatch(SearchAction.ApplicationSearchEnginesLoaded(searchEngines))
     }

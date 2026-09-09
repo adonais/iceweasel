@@ -5,18 +5,20 @@
 package mozilla.components.tooling.detekt
 
 import io.gitlab.arturbosch.detekt.test.lint
+import kotlin.test.assertEquals
 import mozilla.components.tooling.detekt.acorn.MaterialSwitchUsageRule
 import org.junit.Test
-import kotlin.test.assertEquals
 
 class MaterialSwitchUsageRuleTest {
 
     @Test
     fun `WHEN the M3 Switch is imported THEN it is flagged`() {
-        val code = """
+        val code =
+            """
             package com.example
             import androidx.compose.material3.Switch
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = MaterialSwitchUsageRule().lint(code)
 
@@ -29,11 +31,13 @@ class MaterialSwitchUsageRuleTest {
 
     @Test
     fun `WHEN the M3 Switch is imported with an alias THEN it is flagged`() {
-        val code = """
+        val code =
+            """
             package com.example
             import androidx.compose.material3.Switch as M3Switch
 
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = MaterialSwitchUsageRule().lint(code)
 
@@ -42,13 +46,15 @@ class MaterialSwitchUsageRuleTest {
 
     @Test
     fun `WHEN the compose-base Switch, SwitchDefaults and SwitchColors are imported THEN they are not flagged`() {
-        val code = """
+        val code =
+            """
             package com.example
             import mozilla.components.compose.base.Switch
             import androidx.compose.material3.SwitchDefaults
             import androidx.compose.material3.SwitchColors
             val colors = androidx.compose.material3.SwitchDefaults.colors()
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = MaterialSwitchUsageRule().lint(code)
 
@@ -57,13 +63,15 @@ class MaterialSwitchUsageRuleTest {
 
     @Test
     fun `WHEN the fully qualified M3 Switch is referenced THEN it is flagged`() {
-        val code = """
+        val code =
+            """
             package com.example
             @Composable
             fun Switch() {
                 androidx.compose.material3.Switch(checked = true, onCheckedChange = {})
             }
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = MaterialSwitchUsageRule().lint(code)
 
@@ -76,14 +84,16 @@ class MaterialSwitchUsageRuleTest {
 
     @Test
     fun `WHEN the M3 Switch is used multiple times THEN each usage is flagged`() {
-        val code = """
+        val code =
+            """
             package com.example
             import androidx.compose.material3.Switch
             @Composable
             fun Content() {
                 androidx.compose.material3.Switch(checked = true, onCheckedChange = {})
             }
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = MaterialSwitchUsageRule().lint(code)
 

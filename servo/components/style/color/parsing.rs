@@ -33,12 +33,6 @@ use cssparser::{
 };
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 
-/// Returns true if the relative color syntax pref is enabled.
-#[inline]
-pub fn rcs_enabled() -> bool {
-    static_prefs::pref!("layout.css.relative-color-syntax.enabled")
-}
-
 /// Represents a channel keyword inside a color.
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd, ToShmem)]
 #[repr(C)]
@@ -133,14 +127,9 @@ impl ChannelKeyword {
 }
 
 impl Parse for ChannelKeyword {
-    fn parse<'i, 't>(
-        _: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        let location = input.current_source_location();
+    fn parse(_: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         let ident = input.expect_ident()?;
-        Self::from_ident(ident.as_ref())
-            .map_err(|()| location.new_unexpected_token_error(Token::Ident(ident.clone())))
+        Self::from_ident(ident.as_ref()).map_err(|()| ParseError::unexpected_token())
     }
 }
 
@@ -195,11 +184,10 @@ pub fn parse_color_keyword(ident: &str) -> Result<SpecifiedColor, ()> {
 
 /// Parse a CSS color using the specified [`ColorParser`] and return a new color
 /// value on success.
-pub fn parse_color_with<'i, 't>(
+pub fn parse_color_with(
     context: &ParserContext,
-    input: &mut Parser<'i, 't>,
-) -> Result<SpecifiedColor, ParseError<'i>> {
-    let location = input.current_source_location();
+    input: &mut Parser,
+) -> Result<SpecifiedColor, ParseError> {
     let token = input.next()?;
     match *token {
         Token::Hash(ref value) | Token::IDHash(ref value) => parse_hash_color(value.as_bytes())
@@ -224,16 +212,16 @@ pub fn parse_color_with<'i, 't>(
         },
         _ => Err(()),
     }
-    .map_err(|()| location.new_unexpected_token_error(token.clone()))
+    .map_err(|()| ParseError::unexpected_token())
 }
 
 /// Parse one of the color functions: rgba(), lab(), color(), etc.
 #[inline]
-fn parse_color_function<'i, 't>(
+fn parse_color_function<'i>(
     context: &ParserContext,
     name: CowRcStr<'i>,
-    arguments: &mut Parser<'i, 't>,
-) -> Result<ColorFunction<SpecifiedColor>, ParseError<'i>> {
+    arguments: &mut Parser<'i, '_>,
+) -> Result<ColorFunction<SpecifiedColor>, ParseError> {
     let origin_color = parse_origin_color(context, arguments)?;
     let color = match_ignore_ascii_case! { &name,
         "rgb" | "rgba" => parse_rgb(context, arguments, origin_color),
@@ -248,24 +236,20 @@ fn parse_color_function<'i, 't>(
             parse_relative_alpha(
                 context,
                 arguments,
-                origin_color.ok_or_else(|| arguments.new_custom_error(StyleParseErrorKind::UnspecifiedError))?
+                origin_color.ok_or_else(|| ParseError::custom(StyleParseErrorKind::UnspecifiedError))?
             )
         },
-        _ => return Err(arguments.new_unexpected_token_error(Token::Ident(name))),
+        _ => return Err(ParseError::unexpected_token()),
     }?;
     arguments.expect_exhausted()?;
     Ok(color)
 }
 
 /// Parse the relative color syntax "from" syntax `from <color>`.
-fn parse_origin_color<'i, 't>(
+fn parse_origin_color(
     context: &ParserContext,
-    arguments: &mut Parser<'i, 't>,
-) -> Result<Option<SpecifiedColor>, ParseError<'i>> {
-    if !rcs_enabled() {
-        return Ok(None);
-    }
-
+    arguments: &mut Parser,
+) -> Result<Option<SpecifiedColor>, ParseError> {
     // Not finding the from keyword is not an error, it just means we don't
     // have an origin color.
     if arguments
@@ -275,15 +259,15 @@ fn parse_origin_color<'i, 't>(
         return Ok(None);
     }
 
-    SpecifiedColor::parse(context, arguments).map(Option::Some)
+    SpecifiedColor::parse(context, arguments).map(Some)
 }
 
 #[inline]
-fn parse_rgb<'i, 't>(
+fn parse_rgb(
     context: &ParserContext,
-    arguments: &mut Parser<'i, 't>,
+    arguments: &mut Parser,
     origin_color: Option<SpecifiedColor>,
-) -> Result<ColorFunction<SpecifiedColor>, ParseError<'i>> {
+) -> Result<ColorFunction<SpecifiedColor>, ParseError> {
     let allowed_channel_keywords = if origin_color.is_some() {
         ChannelKeyword::rgb()
     } else {
@@ -328,11 +312,11 @@ fn parse_rgb<'i, 't>(
 ///
 /// <https://drafts.csswg.org/css-color/#the-hsl-notation>
 #[inline]
-fn parse_hsl<'i, 't>(
+fn parse_hsl(
     context: &ParserContext,
-    arguments: &mut Parser<'i, 't>,
+    arguments: &mut Parser,
     origin_color: Option<SpecifiedColor>,
-) -> Result<ColorFunction<SpecifiedColor>, ParseError<'i>> {
+) -> Result<ColorFunction<SpecifiedColor>, ParseError> {
     let allowed_channel_keywords = if origin_color.is_some() {
         ChannelKeyword::hsl()
     } else {
@@ -374,11 +358,11 @@ fn parse_hsl<'i, 't>(
 ///
 /// <https://drafts.csswg.org/css-color/#the-hbw-notation>
 #[inline]
-fn parse_hwb<'i, 't>(
+fn parse_hwb(
     context: &ParserContext,
-    arguments: &mut Parser<'i, 't>,
+    arguments: &mut Parser,
     origin_color: Option<SpecifiedColor>,
-) -> Result<ColorFunction<SpecifiedColor>, ParseError<'i>> {
+) -> Result<ColorFunction<SpecifiedColor>, ParseError> {
     let allowed_channel_keywords = if origin_color.is_some() {
         ChannelKeyword::hwb()
     } else {
@@ -408,12 +392,12 @@ type IntoLabFn<Output> = fn(
 ) -> Output;
 
 #[inline]
-fn parse_lab_like<'i, 't>(
+fn parse_lab_like(
     context: &ParserContext,
-    arguments: &mut Parser<'i, 't>,
+    arguments: &mut Parser,
     origin_color: Option<SpecifiedColor>,
     into_color: IntoLabFn<ColorFunction<SpecifiedColor>>,
-) -> Result<ColorFunction<SpecifiedColor>, ParseError<'i>> {
+) -> Result<ColorFunction<SpecifiedColor>, ParseError> {
     let allowed_channel_keywords = if origin_color.is_some() {
         ChannelKeyword::lab()
     } else {
@@ -437,12 +421,12 @@ type IntoLchFn<Output> = fn(
 ) -> Output;
 
 #[inline]
-fn parse_lch_like<'i, 't>(
+fn parse_lch_like(
     context: &ParserContext,
-    arguments: &mut Parser<'i, 't>,
+    arguments: &mut Parser,
     origin_color: Option<SpecifiedColor>,
     into_color: IntoLchFn<ColorFunction<SpecifiedColor>>,
-) -> Result<ColorFunction<SpecifiedColor>, ParseError<'i>> {
+) -> Result<ColorFunction<SpecifiedColor>, ParseError> {
     let allowed_channel_keywords = if origin_color.is_some() {
         ChannelKeyword::lch()
     } else {
@@ -465,11 +449,11 @@ fn parse_lch_like<'i, 't>(
 
 /// Parse the color() function.
 #[inline]
-fn parse_color_with_color_space<'i, 't>(
+fn parse_color_with_color_space(
     context: &ParserContext,
-    arguments: &mut Parser<'i, 't>,
+    arguments: &mut Parser,
     origin_color: Option<SpecifiedColor>,
-) -> Result<ColorFunction<SpecifiedColor>, ParseError<'i>> {
+) -> Result<ColorFunction<SpecifiedColor>, ParseError> {
     let color_space = PredefinedColorSpace::parse(arguments)?;
     let allowed_channel_keywords = if origin_color.is_some() {
         match color_space {
@@ -504,15 +488,15 @@ fn parse_color_with_color_space<'i, 't>(
 
 /// Parse the alpha() function.
 #[inline]
-fn parse_relative_alpha<'i, 't>(
+fn parse_relative_alpha(
     context: &ParserContext,
-    arguments: &mut Parser<'i, 't>,
+    arguments: &mut Parser,
     origin_color: SpecifiedColor,
-) -> Result<ColorFunction<SpecifiedColor>, ParseError<'i>> {
+) -> Result<ColorFunction<SpecifiedColor>, ParseError> {
     let alpha = parse_modern_alpha(context, arguments, ChannelKeyword::ALPHA)?;
     if matches!(alpha, ColorComponent::AlphaOmitted) {
         // An alpha is required as it is the only controllable component.
-        return Err(arguments.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+        return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
     }
     Ok(ColorFunction::Alpha(origin_color.into(), alpha))
 }
@@ -652,12 +636,12 @@ impl ColorComponentType for f32 {
 }
 
 /// Parse an `<number>` or `<angle>` value.
-fn parse_number_or_angle<'i, 't>(
+fn parse_number_or_angle(
     context: &ParserContext,
-    input: &mut Parser<'i, 't>,
+    input: &mut Parser,
     allow_none: bool,
     allowed_channel_keywords: ChannelKeyword,
-) -> Result<ColorComponent<NumberOrAngleComponent>, ParseError<'i>> {
+) -> Result<ColorComponent<NumberOrAngleComponent>, ParseError> {
     ColorComponent::parse(
         context,
         input,
@@ -668,14 +652,12 @@ fn parse_number_or_angle<'i, 't>(
 }
 
 /// Parse a `<percentage>` value.
-fn parse_percentage<'i, 't>(
+fn parse_percentage(
     context: &ParserContext,
-    input: &mut Parser<'i, 't>,
+    input: &mut Parser,
     allow_none: bool,
     allowed_channel_keywords: ChannelKeyword,
-) -> Result<ColorComponent<NumberOrPercentageComponent>, ParseError<'i>> {
-    let location = input.current_source_location();
-
+) -> Result<ColorComponent<NumberOrPercentageComponent>, ParseError> {
     let value = ColorComponent::<NumberOrPercentageComponent>::parse(
         context,
         input,
@@ -684,21 +666,19 @@ fn parse_percentage<'i, 't>(
         PercentageContext::allowed_with_hint(NumericBaseType::Percent),
     )?;
     if !value.could_be_percentage() {
-        return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+        return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
     }
 
     Ok(value)
 }
 
 /// Parse a `<number>` value.
-fn parse_number<'i, 't>(
+fn parse_number(
     context: &ParserContext,
-    input: &mut Parser<'i, 't>,
+    input: &mut Parser,
     allow_none: bool,
     allowed_channel_keywords: ChannelKeyword,
-) -> Result<ColorComponent<NumberOrPercentageComponent>, ParseError<'i>> {
-    let location = input.current_source_location();
-
+) -> Result<ColorComponent<NumberOrPercentageComponent>, ParseError> {
     let value = ColorComponent::<NumberOrPercentageComponent>::parse(
         context,
         input,
@@ -708,19 +688,19 @@ fn parse_number<'i, 't>(
     )?;
 
     if !value.could_be_number() {
-        return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+        return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
     }
 
     Ok(value)
 }
 
 /// Parse a `<number>` or `<percentage>` value.
-fn parse_number_or_percentage<'i, 't>(
+fn parse_number_or_percentage(
     context: &ParserContext,
-    input: &mut Parser<'i, 't>,
+    input: &mut Parser,
     allow_none: bool,
     allowed_channel_keywords: ChannelKeyword,
-) -> Result<ColorComponent<NumberOrPercentageComponent>, ParseError<'i>> {
+) -> Result<ColorComponent<NumberOrPercentageComponent>, ParseError> {
     ColorComponent::parse(
         context,
         input,
@@ -730,10 +710,10 @@ fn parse_number_or_percentage<'i, 't>(
     )
 }
 
-fn parse_legacy_alpha<'i, 't>(
+fn parse_legacy_alpha(
     context: &ParserContext,
-    arguments: &mut Parser<'i, 't>,
-) -> Result<ColorComponent<NumberOrPercentageComponent>, ParseError<'i>> {
+    arguments: &mut Parser,
+) -> Result<ColorComponent<NumberOrPercentageComponent>, ParseError> {
     if !arguments.is_exhausted() {
         arguments.expect_comma()?;
         parse_number_or_percentage(context, arguments, false, ChannelKeyword::empty())
@@ -742,11 +722,11 @@ fn parse_legacy_alpha<'i, 't>(
     }
 }
 
-fn parse_modern_alpha<'i, 't>(
+fn parse_modern_alpha(
     context: &ParserContext,
-    arguments: &mut Parser<'i, 't>,
+    arguments: &mut Parser,
     allowed_channel_keywords: ChannelKeyword,
-) -> Result<ColorComponent<NumberOrPercentageComponent>, ParseError<'i>> {
+) -> Result<ColorComponent<NumberOrPercentageComponent>, ParseError> {
     if !arguments.is_exhausted() {
         arguments.expect_delim('/')?;
         parse_number_or_percentage(context, arguments, true, allowed_channel_keywords)

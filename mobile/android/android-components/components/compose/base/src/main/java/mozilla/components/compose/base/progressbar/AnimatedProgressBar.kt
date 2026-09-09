@@ -53,11 +53,11 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import mozilla.components.compose.base.R
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.support.utils.ColorUtils.lighten
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 
 // Implementation based on
 // https://medium.com/@kappdev/creating-a-smooth-animated-progress-bar-in-jetpack-compose-canvas-drawing-and-gradient-animation-ddf07f77bb56
@@ -71,13 +71,12 @@ private const val LIGHTEN_TRACK_COLOR_FACTOR = 0.2f
 /**
  * A composable that displays a progress bar with an animated gradient.
  *
- * @param progress The current progress value (0 to 100).
- * For a `0` progress an accessibility announcement of loading being started will be made.
+ * @param progress The current progress value (0 to 100). For a `0` progress an accessibility announcement of loading
+ *   being started will be made.
  * @param modifier The modifier to be applied to the layout.
- * @param color The list of colors defining the gradient animation.
- * If `null`, a default gradient will be used.
- * @param trackColor The background of the progressbar that spans for the entire width.
- * If `null`, a default color will be used - a lighter version of the application theme's background color.
+ * @param color The list of colors defining the gradient animation. If `null`, a default gradient will be used.
+ * @param trackColor The background of the progressbar that spans for the entire width. If `null`, a default color will
+ *   be used - a lighter version of the application theme's background color.
  * @param strokeWidth The width of the progress line.
  * @param glowRadius The radius of the glow effect. If null, no glow effect will be applied.
  * @param strokeCap How the progress bar should be terminated.
@@ -104,80 +103,86 @@ fun AnimatedProgressBar(
     }
 
     val backgroundColor = MaterialTheme.colorScheme.surface
-    val trackBrush = remember(trackColor) {
-        SolidColor(trackColor ?: backgroundColor.lighten(LIGHTEN_TRACK_COLOR_FACTOR))
-    }
+    val trackBrush =
+        remember(trackColor) {
+            SolidColor(trackColor ?: backgroundColor.lighten(LIGHTEN_TRACK_COLOR_FACTOR))
+        }
 
     val gradientColors = AcornTheme.gradients.accent.colorStops.map { it.color }
-    val colors = remember(color, gradientColors, layoutDirection) {
-        val colorList = color ?: gradientColors
+    val colors =
+        remember(color, gradientColors, layoutDirection) {
+            val colorList = color ?: gradientColors
 
-        if (layoutDirection == LayoutDirection.Rtl) {
-            colorList.asReversed()
-        } else {
-            colorList
-        }
-    }
-
-    val animatedProgress by animateIntAsState(
-        targetValue = progress.coerceIn(0, MAX_PERCENTAGE),
-        animationSpec = progressAnimSpec,
-    )
-
-    val offset by animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = tween(
-            durationMillis = gradientAnimationSpeed.inWholeMilliseconds.toInt(),
-            easing = LinearEasing,
-        ),
-    )
-
-    val brush: ShaderBrush = remember(offset) {
-        object : ShaderBrush() {
-            override fun createShader(size: Size): Shader {
-                val step = 1f / colors.size
-                val start = step / 2
-
-                val originalSpots = List(colors.size) { start + (step * it) }
-                val transformedSpots = originalSpots.map { spot ->
-                    val shiftedSpot = (spot + offset)
-                    if (shiftedSpot > 1f) shiftedSpot - 1f else shiftedSpot
-                }
-
-                val pairs = colors.zip(transformedSpots).sortedBy { it.second }
-
-                val margin = size.width / 2
-                return LinearGradientShader(
-                    colors = pairs.map { it.first },
-                    colorStops = pairs.map { it.second },
-                    from = Offset(-margin, 0f),
-                    to = Offset(size.width + margin, 0f),
-                )
+            if (layoutDirection == LayoutDirection.Rtl) {
+                colorList.asReversed()
+            } else {
+                colorList
             }
         }
-    }
+
+    val animatedProgress by
+        animateIntAsState(
+            targetValue = progress.coerceIn(0, MAX_PERCENTAGE),
+            animationSpec = progressAnimSpec,
+        )
+
+    val offset by
+        animateFloatAsState(
+            targetValue = 1f,
+            animationSpec =
+                tween(
+                    durationMillis = gradientAnimationSpeed.inWholeMilliseconds.toInt(),
+                    easing = LinearEasing,
+                ),
+        )
+
+    val brush: ShaderBrush =
+        remember(offset) {
+            object : ShaderBrush() {
+                override fun createShader(size: Size): Shader {
+                    val step = 1f / colors.size
+                    val start = step / 2
+
+                    val originalSpots = List(colors.size) { start + (step * it) }
+                    val transformedSpots = originalSpots.map { spot ->
+                        val shiftedSpot = (spot + offset)
+                        if (shiftedSpot > 1f) shiftedSpot - 1f else shiftedSpot
+                    }
+
+                    val pairs = colors.zip(transformedSpots).sortedBy { it.second }
+
+                    val margin = size.width / 2
+                    return LinearGradientShader(
+                        colors = pairs.map { it.first },
+                        colorStops = pairs.map { it.second },
+                        from = Offset(-margin, 0f),
+                        to = Offset(size.width + margin, 0f),
+                    )
+                }
+            }
+        }
 
     Canvas(
-        modifier
-            .fillMaxWidth()
-            .semantics {
-                progressBarRangeInfo = ProgressBarRangeInfo(
+        modifier.fillMaxWidth().semantics {
+            progressBarRangeInfo =
+                ProgressBarRangeInfo(
                     current = animatedProgress.toFloat(),
                     range = 0f..100f,
                     steps = 100,
                 )
-            },
+        }
     ) {
         val width = this.size.width
         val height = this.size.height
 
-        val paint = Paint().apply {
-            this.isAntiAlias = true
-            this.style = PaintingStyle.Stroke
-            this.strokeWidth = strokeWidth.toPx()
-            this.strokeCap = strokeCap
-            this.shader = brush.createShader(size)
-        }
+        val paint =
+            Paint().apply {
+                this.isAntiAlias = true
+                this.style = PaintingStyle.Stroke
+                this.strokeWidth = strokeWidth.toPx()
+                this.strokeCap = strokeCap
+                this.shader = brush.createShader(size)
+            }
 
         glowRadius?.let { radius ->
             paint.nativePaint.apply {
@@ -221,9 +226,7 @@ fun AnimatedProgressBar(
 private fun View.announceProgressForAccessibility(progress: Int) {
     if (progress == 0) {
         @Suppress("DEPRECATION")
-        announceForAccessibility(
-            context.getString(R.string.mozac_compose_base_progress_loading),
-        )
+        announceForAccessibility(context.getString(R.string.mozac_compose_base_progress_loading))
     }
 }
 
@@ -233,9 +236,7 @@ private fun AnimatedProgressBarPreviewContent() {
     AcornTheme {
         Surface {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(AcornTheme.layout.size.static200),
+                modifier = Modifier.fillMaxWidth().padding(AcornTheme.layout.size.static200),
                 verticalArrangement = Arrangement.spacedBy(AcornTheme.layout.size.static200),
             ) {
                 for (progress in listOf(25, 50, 75, 99)) {
@@ -267,15 +268,17 @@ private fun AnimatedProgressBarRTLPreview() {
 @Suppress("MagicNumber")
 private fun AnimatedProgressBarAnimatedPreview() {
     val transition = rememberInfiniteTransition(label = "AnimatedProgressBarPreview")
-    val progress by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = MAX_PERCENTAGE.toFloat(),
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 3000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "progress",
-    )
+    val progress by
+        transition.animateFloat(
+            initialValue = 0f,
+            targetValue = MAX_PERCENTAGE.toFloat(),
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(durationMillis = 3000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart,
+                ),
+            label = "progress",
+        )
 
     AcornTheme {
         Surface {

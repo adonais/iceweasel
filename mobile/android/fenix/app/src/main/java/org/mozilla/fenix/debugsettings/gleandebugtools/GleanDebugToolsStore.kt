@@ -25,8 +25,8 @@ data class GleanDebugToolsState(
 ) : State {
 
     /**
-     * Check whether the debug view tag related buttons should be enabled, based on whether a debug
-     * view tag is provided and whether it meets the criteria of being a debug view tag.
+     * Check whether the debug view tag related buttons should be enabled, based on whether a debug view tag is provided
+     * and whether it meets the criteria of being a debug view tag.
      */
     val isDebugTagButtonEnabled: Boolean
         get() = !hasDebugViewTagError && debugViewTag.isNotEmpty()
@@ -39,29 +39,19 @@ data class GleanDebugToolsState(
     }
 }
 
-/**
- * [Action] implementation related to [GleanDebugToolsStore].
- */
+/** [Action] implementation related to [GleanDebugToolsStore]. */
 sealed class GleanDebugToolsAction : Action {
 
-    /**
-     * Toggle whether to log pings to console.
-     */
+    /** Toggle whether to log pings to console. */
     data object LogPingsToConsoleToggled : GleanDebugToolsAction()
 
-    /**
-     * Change the debug view tag to [newTag].
-     */
+    /** Change the debug view tag to [newTag]. */
     data class DebugViewTagChanged(val newTag: String) : GleanDebugToolsAction()
 
-    /**
-     * Change the type of ping to submit to [newPing].
-     */
+    /** Change the type of ping to submit to [newPing]. */
     data class ChangePingType(val newPing: String) : GleanDebugToolsAction()
 
-    /**
-     * Send the ping.
-     */
+    /** Send the ping. */
     data object SendPing : GleanDebugToolsAction()
 
     /**
@@ -79,18 +69,14 @@ sealed class GleanDebugToolsAction : Action {
     data class CopyDebugViewLink(val useDebugViewTag: Boolean) : GleanDebugToolsAction()
 }
 
-/**
- * Reducer for [GleanDebugToolsStore].
- */
+/** Reducer for [GleanDebugToolsStore]. */
 internal object GleanDebugToolsReducer {
     fun reduce(state: GleanDebugToolsState, action: GleanDebugToolsAction): GleanDebugToolsState {
         return when (action) {
             is GleanDebugToolsAction.LogPingsToConsoleToggled ->
                 state.copy(logPingsToConsoleEnabled = !state.logPingsToConsoleEnabled)
             is GleanDebugToolsAction.DebugViewTagChanged -> {
-                state.copy(
-                    debugViewTag = action.newTag,
-                )
+                state.copy(debugViewTag = action.newTag)
             }
             is GleanDebugToolsAction.OpenDebugView -> state
             is GleanDebugToolsAction.CopyDebugViewLink -> state
@@ -101,14 +87,15 @@ internal object GleanDebugToolsReducer {
 }
 
 /**
- * A [Store] that holds the [GleanDebugToolsState] for the Glean Debug Tools and reduces
- * [GleanDebugToolsAction]s dispatched to the store.
+ * A [Store] that holds the [GleanDebugToolsState] for the Glean Debug Tools and reduces [GleanDebugToolsAction]s
+ * dispatched to the store.
  */
 class GleanDebugToolsStore(
     initialState: GleanDebugToolsState,
     middlewares: List<Middleware<GleanDebugToolsState, GleanDebugToolsAction>> = emptyList(),
-) : Store<GleanDebugToolsState, GleanDebugToolsAction>(
-    initialState,
-    GleanDebugToolsReducer::reduce,
-    middlewares,
-)
+) :
+    Store<GleanDebugToolsState, GleanDebugToolsAction>(
+        initialState,
+        GleanDebugToolsReducer::reduce,
+        middlewares,
+    )

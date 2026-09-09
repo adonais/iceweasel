@@ -91,9 +91,7 @@ struct PfxInstr {
   PfxInstr(PfxExprOp opcode, int32_t operand)
       : mOpcode(opcode), mOperand(operand) {}
   explicit PfxInstr(PfxExprOp opcode) : mOpcode(opcode), mOperand(0) {}
-  bool operator==(const PfxInstr& other) const {
-    return mOpcode == other.mOpcode && mOperand == other.mOperand;
-  }
+  bool operator==(const PfxInstr& other) const = default;
   PfxExprOp mOpcode;
   int32_t mOperand;
 };

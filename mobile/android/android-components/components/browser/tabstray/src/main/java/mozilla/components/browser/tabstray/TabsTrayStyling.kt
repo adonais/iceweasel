@@ -10,9 +10,8 @@ const val DEFAULT_ITEM_TEXT_COLOR = 0xFF111111.toInt()
 const val DEFAULT_ITEM_TEXT_SELECTED_COLOR = 0xFFFFFFFF.toInt()
 
 /**
- * Tabs tray styling for items in the [TabsAdapter]. If a custom [TabViewHolder]
- * is used with [TabsAdapter.viewHolderProvider], the styling can be applied
- * when [TabViewHolder.bind] is invoked.
+ * Tabs tray styling for items in the [TabsAdapter]. If a custom [TabViewHolder] is used with
+ * [TabsAdapter.viewHolderProvider], the styling can be applied when [TabViewHolder.bind] is invoked.
  *
  * @property itemBackgroundColor the background color for all non-selected tabs.
  * @property selectedItemBackgroundColor the background color for the selected tab.

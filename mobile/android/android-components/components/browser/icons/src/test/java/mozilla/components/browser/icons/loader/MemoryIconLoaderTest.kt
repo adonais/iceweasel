@@ -5,30 +5,32 @@
 package mozilla.components.browser.icons.loader
 
 import android.graphics.Bitmap
+import kotlin.test.assertIs
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import kotlin.test.assertIs
 
 class MemoryIconLoaderTest {
     @Test
     fun `MemoryIconLoader returns bitmap from cache`() {
         val bitmap: Bitmap = mock()
 
-        val cache = object : MemoryIconLoader.LoaderMemoryCache {
-            override fun getBitmap(request: IconRequest, resource: IconRequest.Resource): Bitmap? {
-                return bitmap
+        val cache =
+            object : MemoryIconLoader.LoaderMemoryCache {
+                override fun getBitmap(request: IconRequest, resource: IconRequest.Resource): Bitmap? {
+                    return bitmap
+                }
             }
-        }
 
         val loader = MemoryIconLoader(cache)
 
         val request = IconRequest("https://www.mozilla.org")
-        val resource = IconRequest.Resource(
-            url = "https://www.mozilla.org/favicon.ico",
-            type = IconRequest.Resource.Type.FAVICON,
-        )
+        val resource =
+            IconRequest.Resource(
+                url = "https://www.mozilla.org/favicon.ico",
+                type = IconRequest.Resource.Type.FAVICON,
+            )
 
         val result = loader.load(mock(), request, resource)
         assertIs<IconLoader.Result.BitmapResult>(result)
@@ -38,19 +40,21 @@ class MemoryIconLoaderTest {
 
     @Test
     fun `MemoryIconLoader returns NoResult if cache does not contain entry`() {
-        val cache = object : MemoryIconLoader.LoaderMemoryCache {
-            override fun getBitmap(request: IconRequest, resource: IconRequest.Resource): Bitmap? {
-                return null
+        val cache =
+            object : MemoryIconLoader.LoaderMemoryCache {
+                override fun getBitmap(request: IconRequest, resource: IconRequest.Resource): Bitmap? {
+                    return null
+                }
             }
-        }
 
         val loader = MemoryIconLoader(cache)
 
         val request = IconRequest("https://www.mozilla.org")
-        val resource = IconRequest.Resource(
-            url = "https://www.mozilla.org/favicon.ico",
-            type = IconRequest.Resource.Type.FAVICON,
-        )
+        val resource =
+            IconRequest.Resource(
+                url = "https://www.mozilla.org/favicon.ico",
+                type = IconRequest.Resource.Type.FAVICON,
+            )
 
         val result = loader.load(mock(), request, resource)
 

@@ -20,6 +20,24 @@ customElements.define("shadow-input", class extends HTMLElement {
 <script type="application/javascript" src="chrome://global/content/globalOverlay.js"/>
 <!-- Copied from toolkit/content/editMenuCommands.inc.xul -->
 <script type="application/javascript" src="chrome://global/content/editMenuOverlay.js"/>
+<script>
+// A consumer of EditContextMenu.addItems(), for the test to check against.
+window.testItemSet = EditContextMenu.addItems({
+  matches: input => input.localName == "textarea",
+  createItems() {
+    let fragment = document.createDocumentFragment();
+    let item = document.createXULElement("menuitem");
+    item.id = "test-item";
+    item.setAttribute("label", "Test");
+    fragment.appendChild(item);
+    return fragment;
+  },
+  onShowing(input, [item]) {
+    item.setAttribute("data-shown-for", input.localName);
+  },
+  after: "edit-contextmenu-paste",
+});
+</script>
 <commandset id="editMenuCommands">
   <commandset id="editMenuCommandSetAll" commandupdater="true" events="focus,select"
               oncommandupdate="goUpdateGlobalEditMenuItems()"/>

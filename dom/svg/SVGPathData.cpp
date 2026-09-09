@@ -675,7 +675,7 @@ void SVGPathData::GetMarkerPositioningData(Span<const StylePathCommand> aPath,
     }
 
     // Set the angle of the mark at the start of this segment:
-    if (aMarks->Length()) {
+    if (!aMarks->IsEmpty()) {
       SVGMark& mark = aMarks->LastElement();
       if (!cmd.IsMove() && prevSeg && prevSeg->IsMove()) {
         // start of new subpath

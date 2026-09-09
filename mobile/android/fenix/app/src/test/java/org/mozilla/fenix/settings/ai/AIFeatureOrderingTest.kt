@@ -16,11 +16,12 @@ class AIFeatureOrderingTest {
 
     @Test
     fun `sortedForDisplay places known features in canonical order regardless of input order`() {
-        val features = listOf(
-            AIControllableFeature.inMemory(id = VoiceSearchAIControlFeature.id),
-            AIControllableFeature.inMemory(id = PageSummaryFeature.id),
-            AIControllableFeature.inMemory(id = TranslationsAIControllableFeature.id),
-        )
+        val features =
+            listOf(
+                AIControllableFeature.inMemory(id = VoiceSearchAIControlFeature.id),
+                AIControllableFeature.inMemory(id = PageSummaryFeature.id),
+                AIControllableFeature.inMemory(id = TranslationsAIControllableFeature.id),
+            )
 
         assertEquals(
             listOf(

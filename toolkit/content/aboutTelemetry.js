@@ -617,83 +617,8 @@ var EnvironmentData = {
       return;
     }
 
-    let ignore = ["addons"];
-    let env = filterObject(ping.environment, ignore);
-    let sections = sectionalizeObject(env);
+    let sections = sectionalizeObject(ping.environment);
     GenericSubsection.render(sections, dataDiv, "environment-data-section");
-
-    // We use specialized rendering here to make the addon and plugin listings
-    // more readable.
-    this.createAddonSection(dataDiv, ping);
-  },
-
-  renderAddonsObject(addonObj, addonSection, sectionTitle) {
-    let table = document.createElement("table");
-    table.setAttribute("id", sectionTitle);
-    this.appendAddonSubsectionTitle(sectionTitle, table);
-
-    for (let id of Object.keys(addonObj)) {
-      let addon = addonObj[id];
-      this.appendHeadingName(table, addon.name || id);
-      this.appendAddonID(table, id);
-      let data = explodeObject(addon);
-
-      for (let [key, value] of data) {
-        this.appendRow(table, key, value);
-      }
-    }
-
-    addonSection.appendChild(table);
-  },
-
-  renderKeyValueObject(addonObj, addonSection, sectionTitle) {
-    let data = explodeObject(addonObj);
-    let table = GenericTable.render(data);
-    table.setAttribute("class", sectionTitle);
-    this.appendAddonSubsectionTitle(sectionTitle, table);
-    addonSection.appendChild(table);
-  },
-
-  appendAddonID(table, addonID) {
-    this.appendRow(table, "id", addonID);
-  },
-
-  appendHeadingName(table, name) {
-    let headings = document.createElement("tr");
-    this.appendColumn(headings, "th", name);
-    headings.cells[0].colSpan = 2;
-    table.appendChild(headings);
-  },
-
-  appendAddonSubsectionTitle(section, table) {
-    let caption = document.createElement("caption");
-    caption.appendChild(document.createTextNode(section));
-    table.appendChild(caption);
-  },
-
-  createAddonSection(dataDiv, ping) {
-    if (!ping || !("environment" in ping) || !("addons" in ping.environment)) {
-      return;
-    }
-    let addonSection = document.createElement("div");
-    addonSection.setAttribute("class", "subsection-data subdata");
-    let addons = ping.environment.addons;
-    this.renderAddonsObject(addons.activeAddons, addonSection, "activeAddons");
-    this.renderKeyValueObject(addons.theme, addonSection, "theme");
-    this.renderAddonsObject(
-      addons.activeGMPlugins,
-      addonSection,
-      "activeGMPlugins"
-    );
-
-    let hasAddonData = !!Object.keys(ping.environment.addons).length;
-    let s = GenericSubsection.renderSubsectionHeader(
-      "addons",
-      hasAddonData,
-      "environment-data-section"
-    );
-    s.appendChild(addonSection);
-    dataDiv.appendChild(s);
   },
 
   appendRow(table, id, value) {

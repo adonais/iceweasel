@@ -270,7 +270,7 @@ export class BackupUIParent extends JSWindowActorParent {
       });
     } else if (message.name == "ProbeDefaultBackupDir") {
       let readAccessGranted = await this.#bs.probeDefaultDirAccess(
-        message.data?.parentDirPath
+        this.#bs.state.embeddedComponentPersistentData?.path || undefined
       );
       return { readAccessGranted };
     } else if (message.name == "PrepareRestoreDialog") {

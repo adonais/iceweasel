@@ -25,32 +25,38 @@ class TabHistoryControllerTest {
     private val captureActionsMiddleware = CaptureActionsMiddleware<BrowserState, BrowserAction>()
     private val tab = createTab("https://www.mozilla.org")
 
-    private val store = BrowserStore(
-        initialState = BrowserState(
-            tabs = listOf(tab),
-            selectedTabId = tab.id,
-        ),
-        middleware = listOf(captureActionsMiddleware) + EngineMiddleware.create(
-            engine = mockk(),
-            TestScope(),
-        ),
-    )
+    private val store =
+        BrowserStore(
+            initialState =
+                BrowserState(
+                    tabs = listOf(tab),
+                    selectedTabId = tab.id,
+                ),
+            middleware =
+                listOf(captureActionsMiddleware) +
+                    EngineMiddleware.create(
+                        engine = mockk(),
+                        TestScope(),
+                    ),
+        )
 
     private val goToHistoryIndexUseCase = SessionUseCases(store).goToHistoryIndex
 
-    private val currentItem = TabHistoryItem(
-        index = 0,
-        title = "",
-        url = "",
-        isSelected = true,
-    )
+    private val currentItem =
+        TabHistoryItem(
+            index = 0,
+            title = "",
+            url = "",
+            isSelected = true,
+        )
 
     @Test
     fun handleGoToHistoryIndexNormalBrowsing() {
-        val controller = DefaultTabHistoryController(
-            navController = navController,
-            goToHistoryIndexUseCase = goToHistoryIndexUseCase,
-        )
+        val controller =
+            DefaultTabHistoryController(
+                navController = navController,
+                goToHistoryIndexUseCase = goToHistoryIndexUseCase,
+            )
 
         controller.handleGoToHistoryItem(currentItem)
 
@@ -65,11 +71,12 @@ class TabHistoryControllerTest {
     fun handleGoToHistoryIndexCustomTab() {
         val customTabId = "customTabId"
 
-        val customTabController = DefaultTabHistoryController(
-            navController = navController,
-            goToHistoryIndexUseCase = goToHistoryIndexUseCase,
-            customTabId = customTabId,
-        )
+        val customTabController =
+            DefaultTabHistoryController(
+                navController = navController,
+                goToHistoryIndexUseCase = goToHistoryIndexUseCase,
+                customTabId = customTabId,
+            )
 
         customTabController.handleGoToHistoryItem(currentItem)
 

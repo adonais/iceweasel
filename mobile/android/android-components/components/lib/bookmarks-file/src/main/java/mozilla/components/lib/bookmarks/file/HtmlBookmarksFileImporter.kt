@@ -6,6 +6,7 @@ package mozilla.components.lib.bookmarks.file
 
 import android.content.Context
 import android.net.Uri
+import java.io.InputStream
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +17,6 @@ import mozilla.components.concept.bookmarks.file.BookmarksFileImporter.ImportRes
 import mozilla.components.concept.bookmarks.file.BookmarksImporterError
 import mozilla.components.concept.storage.bookmarks.BookmarkInserter
 import mozilla.components.concept.storage.bookmarks.InsertableBookmarkTreeRoot
-import java.io.InputStream
 
 /**
  * Creates a [BookmarksFileImporter] that imports bookmarks from Netscape HTML bookmark files.
@@ -31,16 +31,15 @@ fun BookmarksFileImporter.Companion.htmlImporter(
     parser: BookmarksFileParser,
     inserter: BookmarkInserter,
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-): BookmarksFileImporter = HtmlBookmarksFileImporter(
-    parentGuid = parentGuid,
-    uriOpener = UriOpener.make(context, ioDispatcher),
-    parser = parser,
-    inserter = inserter,
-)
+): BookmarksFileImporter =
+    HtmlBookmarksFileImporter(
+        parentGuid = parentGuid,
+        uriOpener = UriOpener.make(context, ioDispatcher),
+        parser = parser,
+        inserter = inserter,
+    )
 
-/**
- * Opens an [InputStream] from a [Uri].
- */
+/** Opens an [InputStream] from a [Uri]. */
 internal fun interface UriOpener {
     /**
      * @param uri The [Uri] to open.
@@ -49,19 +48,17 @@ internal fun interface UriOpener {
     suspend fun open(uri: Uri): Result<InputStream>
 
     companion object {
-        /**
-         * Creates a [UriOpener] that uses the [Context.getContentResolver] to open the [Uri].
-         */
-        fun make(context: Context, ioDispatcher: CoroutineDispatcher) =
-            UriOpener { uri ->
-                withContext(ioDispatcher) {
-                    runCatching {
-                        requireNotNull(context.contentResolver.openInputStream(uri))
-                    }.onFailure {
+        /** Creates a [UriOpener] that uses the [Context.getContentResolver] to open the [Uri]. */
+        fun make(context: Context, ioDispatcher: CoroutineDispatcher) = UriOpener { uri ->
+            withContext(ioDispatcher) {
+                runCatching {
+                    requireNotNull(context.contentResolver.openInputStream(uri))
+                }
+                    .onFailure {
                         if (it is CancellationException) throw it
                     }
-                }
             }
+        }
     }
 }
 
@@ -73,20 +70,20 @@ internal class HtmlBookmarksFileImporter(
 ) : BookmarksFileImporter {
 
     override suspend fun importBookmarksFromUri(uri: Uri) = runCatching {
-        val inputStream = uriOpener.open(uri)
-            .getOrThrowError { BookmarksImporterError.FileReadError(it) }
-        val parseResult = inputStream.use { parser.parse(it) }
-            .getOrThrowError { BookmarksImporterError.FileParseError(it) }
-        val tree =
-            InsertableBookmarkTreeRoot(parentGuid = parentGuid, rootFolder = parseResult.folder)
-        val guid = inserter.insertTree(tree).getOrThrowError {
-            BookmarksImporterError.BookmarksSaveError(it)
-        }
+        val inputStream = uriOpener.open(uri).getOrThrowError { BookmarksImporterError.FileReadError(it) }
+        val parseResult =
+            inputStream.use { parser.parse(it) }.getOrThrowError { BookmarksImporterError.FileParseError(it) }
+        val tree = InsertableBookmarkTreeRoot(parentGuid = parentGuid, rootFolder = parseResult.folder)
+        val guid =
+            inserter.insertTree(tree).getOrThrowError {
+                BookmarksImporterError.BookmarksSaveError(it)
+            }
 
         ImportResult(guid, parseResult.bookmarksCount)
-    }.onFailure {
-        if (it is CancellationException) throw it
     }
+        .onFailure {
+            if (it is CancellationException) throw it
+        }
 
     private inline fun <T> Result<T>.getOrThrowError(map: (Throwable) -> Throwable): T {
         return getOrElse {

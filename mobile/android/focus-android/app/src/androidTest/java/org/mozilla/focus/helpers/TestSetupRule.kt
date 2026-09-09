@@ -10,8 +10,8 @@ import org.mozilla.focus.helpers.TestHelper.allowOrPreventSystemUIFromReadingThe
 import org.mozilla.focus.helpers.TestHelper.mDevice
 
 /**
- * A JUnit [ExternalResource] that performs the standard Focus test environment setup:
- * clipboard access prevention and status bar collapse.
+ * A JUnit [ExternalResource] that performs the standard Focus test environment setup: clipboard access prevention and
+ * status bar collapse.
  *
  * Intended to be composed inside [FocusTestRule] rather than used directly.
  */

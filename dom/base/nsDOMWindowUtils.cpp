@@ -1946,7 +1946,9 @@ nsDOMWindowUtils::NeedsFlush(int32_t aFlushType, bool* aResult) {
       return NS_ERROR_INVALID_ARG;
   }
 
-  *aResult = presShell->NeedFlush(flushType);
+  // FIXME(emilio): Some callers do care about aFlushAnimations and kinda work
+  // around it...
+  *aResult = presShell->NeedFlush(flushType, /* aFlushAnimations = */ true);
   return NS_OK;
 }
 

@@ -26,8 +26,8 @@ import mozilla.components.service.digitalassetlinks.local.StatementRelationCheck
  * @property applicationName The name of the application that integrates this feature. Used in UI.
  * @property lock Global [AutofillLock] instance used for unlocking the autofill service.
  * @property verifier Helper for verifying the connection between a domain and an application.
- * @property activityRequestCode The request code used for pending intents that launch an activity
- * on behalf of the autofill service.
+ * @property activityRequestCode The request code used for pending intents that launch an activity on behalf of the
+ *   autofill service.
  */
 data class AutofillConfiguration(
     val storage: LoginsStorage,
@@ -38,8 +38,7 @@ data class AutofillConfiguration(
     val applicationName: String,
     val httpClient: Client,
     val lock: AutofillLock = AutofillLock(),
-    val verifier: CredentialAccessVerifier = CredentialAccessVerifier(
-        StatementRelationChecker(StatementApi(httpClient)),
-    ),
+    val verifier: CredentialAccessVerifier =
+        CredentialAccessVerifier(StatementRelationChecker(StatementApi(httpClient))),
     val activityRequestCode: Int = 1010,
 )

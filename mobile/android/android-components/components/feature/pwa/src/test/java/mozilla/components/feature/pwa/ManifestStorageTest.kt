@@ -29,23 +29,26 @@ import org.mockito.Mockito.`when`
 @RunWith(AndroidJUnit4::class)
 class ManifestStorageTest {
 
-    private val firefoxManifest = WebAppManifest(
-        name = "Firefox",
-        startUrl = "https://firefox.com",
-        scope = "/",
-    )
+    private val firefoxManifest =
+        WebAppManifest(
+            name = "Firefox",
+            startUrl = "https://firefox.com",
+            scope = "/",
+        )
 
-    private val googleMapsManifest = WebAppManifest(
-        name = "Google Maps",
-        startUrl = "https://google.com/maps",
-        scope = "https://google.com/maps/",
-    )
+    private val googleMapsManifest =
+        WebAppManifest(
+            name = "Google Maps",
+            startUrl = "https://google.com/maps",
+            scope = "https://google.com/maps/",
+        )
 
-    private val exampleWebAppManifest = WebAppManifest(
-        name = "Example Web App",
-        startUrl = "https://pwa.example.com/dashboard",
-        scope = "https://pwa.example.com/",
-    )
+    private val exampleWebAppManifest =
+        WebAppManifest(
+            name = "Example Web App",
+            startUrl = "https://pwa.example.com/dashboard",
+            scope = "https://pwa.example.com/",
+        )
 
     @Test
     fun `load returns null if entry does not exist`() = runTest {
@@ -60,8 +63,7 @@ class ManifestStorageTest {
         val dao = mockDatabase(storage)
 
         val manifest = WebAppManifest(name = "Mozilla", startUrl = "https://mozilla.org")
-        whenever(dao.getManifest("https://mozilla.org"))
-            .thenReturn(ManifestEntity(manifest))
+        whenever(dao.getManifest("https://mozilla.org")).thenReturn(ManifestEntity(manifest))
 
         assertEquals(manifest, storage.loadManifest("https://mozilla.org"))
     }
@@ -111,9 +113,12 @@ class ManifestStorageTest {
     fun `loading manifests by scope returns list of manifests`() = runTest {
         val storage = spy(ManifestStorage(testContext))
         val dao = mockDatabase(storage)
-        val manifest1 = WebAppManifest(name = "Mozilla1", startUrl = "https://mozilla.org", scope = "https://mozilla.org/pwa/1/")
-        val manifest2 = WebAppManifest(name = "Mozilla2", startUrl = "https://mozilla.org", scope = "https://mozilla.org/pwa/1/")
-        val manifest3 = WebAppManifest(name = "Mozilla3", startUrl = "https://mozilla.org", scope = "https://mozilla.org/pwa/")
+        val manifest1 =
+            WebAppManifest(name = "Mozilla1", startUrl = "https://mozilla.org", scope = "https://mozilla.org/pwa/1/")
+        val manifest2 =
+            WebAppManifest(name = "Mozilla2", startUrl = "https://mozilla.org", scope = "https://mozilla.org/pwa/1/")
+        val manifest3 =
+            WebAppManifest(name = "Mozilla3", startUrl = "https://mozilla.org", scope = "https://mozilla.org/pwa/")
 
         whenever(dao.getManifestsByScope("https://mozilla.org/index.html?key=value"))
             .thenReturn(listOf(ManifestEntity(manifest1), ManifestEntity(manifest2), ManifestEntity(manifest3)))
@@ -128,16 +133,18 @@ class ManifestStorageTest {
     fun `loading manifests with share targets returns list of manifests`() = runTest {
         val storage = spy(ManifestStorage(testContext))
         val dao = mockDatabase(storage)
-        val manifest1 = WebAppManifest(
-            name = "Mozilla",
-            startUrl = "https://mozilla.org",
-            shareTarget = WebAppManifest.ShareTarget("https://mozilla.org/share"),
-        )
-        val manifest2 = WebAppManifest(
-            name = "Firefox",
-            startUrl = "https://firefox.com",
-            shareTarget = WebAppManifest.ShareTarget("https://firefox.com/share"),
-        )
+        val manifest1 =
+            WebAppManifest(
+                name = "Mozilla",
+                startUrl = "https://mozilla.org",
+                shareTarget = WebAppManifest.ShareTarget("https://mozilla.org/share"),
+            )
+        val manifest2 =
+            WebAppManifest(
+                name = "Firefox",
+                startUrl = "https://firefox.com",
+                shareTarget = WebAppManifest.ShareTarget("https://firefox.com/share"),
+            )
         val timeout = ManifestStorage.ACTIVE_THRESHOLD_MS
         val currentTime = System.currentTimeMillis()
         val deadline = currentTime - timeout
@@ -160,8 +167,7 @@ class ManifestStorageTest {
 
         val entityCaptor = ArgumentCaptor.forClass(ManifestEntity::class.java)
 
-        whenever(dao.getManifest(manifest.startUrl))
-            .thenReturn(entity)
+        whenever(dao.getManifest(manifest.startUrl)).thenReturn(entity)
 
         assertEquals(0, entity.usedAt)
 
@@ -179,8 +185,7 @@ class ManifestStorageTest {
         val currentTime = System.currentTimeMillis()
         val deadline = currentTime - timeout
 
-        whenever(dao.hasRecentManifest("https://mozilla.org/", deadline))
-            .thenReturn(0)
+        whenever(dao.hasRecentManifest("https://mozilla.org/", deadline)).thenReturn(0)
 
         assertFalse(storage.hasRecentManifest("https://mozilla.org/", currentTime))
     }
@@ -193,13 +198,11 @@ class ManifestStorageTest {
         val currentTime = System.currentTimeMillis()
         val deadline = currentTime - timeout
 
-        whenever(dao.hasRecentManifest("https://mozilla.org/", deadline))
-            .thenReturn(1)
+        whenever(dao.hasRecentManifest("https://mozilla.org/", deadline)).thenReturn(1)
 
         assertTrue(storage.hasRecentManifest("https://mozilla.org/", currentTime))
 
-        whenever(dao.hasRecentManifest("https://mozilla.org/", deadline))
-            .thenReturn(5)
+        whenever(dao.hasRecentManifest("https://mozilla.org/", deadline)).thenReturn(5)
 
         assertTrue(storage.hasRecentManifest("https://mozilla.org/", currentTime))
     }
@@ -212,18 +215,15 @@ class ManifestStorageTest {
         val currentTime = System.currentTimeMillis()
         val deadline = currentTime - testThreshold
 
-        whenever(dao.recentManifestsCount(deadline))
-            .thenReturn(0)
+        whenever(dao.recentManifestsCount(deadline)).thenReturn(0)
 
         assertEquals(0, storage.recentManifestsCount(currentTimeMs = currentTime))
 
-        whenever(dao.recentManifestsCount(deadline))
-            .thenReturn(5)
+        whenever(dao.recentManifestsCount(deadline)).thenReturn(5)
 
         assertEquals(5, storage.recentManifestsCount(currentTimeMs = currentTime))
 
-        whenever(dao.recentManifestsCount(deadline - 10L))
-            .thenReturn(3)
+        whenever(dao.recentManifestsCount(deadline - 10L)).thenReturn(3)
 
         assertEquals(
             3,
@@ -293,7 +293,8 @@ class ManifestStorageTest {
         assertEquals("https://pwa.example.com/dashboard", result)
     }
 
-    private fun mockDatabase(storage: ManifestStorage): ManifestDao = mock<ManifestDao>().also {
-        storage.manifestDao = lazy { it }
-    }
+    private fun mockDatabase(storage: ManifestStorage): ManifestDao =
+        mock<ManifestDao>().also {
+            storage.manifestDao = lazy { it }
+        }
 }

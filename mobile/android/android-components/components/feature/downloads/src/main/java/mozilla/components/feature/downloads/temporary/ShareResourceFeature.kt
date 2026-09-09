@@ -30,24 +30,24 @@ import mozilla.components.support.ktx.android.content.shareMedia
  *
  * This [ShareResourceFeature] can handle two different cases:
  * 1) In the case of an online resource, it will transparently
- *  - download internet resources while respecting the private mode related to cookies handling
- *  - temporarily cache the downloaded resources
- *  - automatically open the platform app chooser to share the cached files with other installed Android apps
- * with a 1 second timeout to ensure a smooth UX.
+ *     - download internet resources while respecting the private mode related to cookies handling
+ *     - temporarily cache the downloaded resources
+ *     - automatically open the platform app chooser to share the cached files with other installed Android apps with a
+ *       1 second timeout to ensure a smooth UX.
  *
- * To finish the process in this small timeframe the feature is recommended to be used only for images,
- * PDFs, or other small files.
+ * To finish the process in this small timeframe the feature is recommended to be used only for images, PDFs, or other
+ * small files.
  *
  * 2) In the case of a local resource (currently, specifically PDFs):
- *  - automatically open the platform app chooser to share the local file with other installed Android apps.
+ *     - automatically open the platform app chooser to share the local file with other installed Android apps.
  *
- *  @property context Android context used for various platform interactions
- *  @property store a reference to the application's [BrowserStore]
- *  @property tabId ID of the tab session, or null if the selected session should be used.
- *  @param httpClient Client used for downloading internet resources
- *  @param mainDispatcher [CoroutineDispatcher] used for observing the store. Defaults to [Dispatchers.Main].
- *  @param ioDispatcher Coroutine dispatcher used for IO operations like the download operation
- *  and cleanup of old cached files. Defaults to IO.
+ *     @property context Android context used for various platform interactions
+ *     @property store a reference to the application's [BrowserStore]
+ *     @property tabId ID of the tab session, or null if the selected session should be used.
+ *     @param httpClient Client used for downloading internet resources
+ *     @param mainDispatcher [CoroutineDispatcher] used for observing the store. Defaults to [Dispatchers.Main].
+ *     @param ioDispatcher Coroutine dispatcher used for IO operations like the download operation and cleanup of old
+ *       cached files. Defaults to IO.
  */
 class ShareResourceFeature(
     private val context: Context,
@@ -56,26 +56,29 @@ class ShareResourceFeature(
     httpClient: Client,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-) : TemporaryDownloadFeature(
-    context = context,
-    httpClient = httpClient,
-    ioDispatcher = ioDispatcher,
-) {
+) :
+    TemporaryDownloadFeature(
+        context = context,
+        httpClient = httpClient,
+        ioDispatcher = ioDispatcher,
+    ) {
 
     override fun start() {
-        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.mapNotNull { state -> state.findTabOrCustomTabOrSelectedTab(tabId) }
-                .distinctUntilChangedBy { it.content.share }
-                .collect { state ->
-                    state.content.share?.let { shareState ->
-                        logger.debug("Starting the sharing process")
-                        startSharing(shareState)
+        scope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .mapNotNull { state -> state.findTabOrCustomTabOrSelectedTab(tabId) }
+                    .distinctUntilChangedBy { it.content.share }
+                    .collect { state ->
+                        state.content.share?.let { shareState ->
+                            logger.debug("Starting the sharing process")
+                            startSharing(shareState)
 
-                        // This is a fire and forget action, not something that we want lingering the tab state.
-                        store.dispatch(ShareResourceAction.ConsumeShareAction(state.id))
+                            // This is a fire and forget action, not something that we want lingering the tab state.
+                            store.dispatch(ShareResourceAction.ConsumeShareAction(state.id))
+                        }
                     }
-                }
-        }
+            }
     }
 
     @VisibleForTesting
@@ -93,8 +96,7 @@ class ShareResourceFeature(
                         )
                     }
                 }
-                is ShareResourceState.LocalResource ->
-                    shareLocalPdf(internetResource.url, internetResource.contentType)
+                is ShareResourceState.LocalResource -> shareLocalPdf(internetResource.url, internetResource.contentType)
             }
         }
     }

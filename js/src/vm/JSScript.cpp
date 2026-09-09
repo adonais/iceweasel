@@ -2749,6 +2749,8 @@ JSScript* JSScript::fromStencil(JSContext* cx,
 void JSScript::assertValidJumpTargets() const {
   BytecodeLocation mainLoc = mainLocation();
   BytecodeLocation endLoc = endLocation();
+  uint32_t numSuspends = 0;
+  uint32_t numTableSwitchCases = 0;
   AllBytecodesIterable iter(this);
   for (BytecodeLocation loc : iter) {
     // Check jump instructions' target.
@@ -2792,8 +2794,22 @@ void JSScript::assertValidJumpTargets() const {
         MOZ_ASSERT(mainLoc <= switchCase && switchCase < endLoc);
         MOZ_ASSERT(switchCase.is(JSOp::JumpTarget));
       }
+      numTableSwitchCases += high - low + 1;
+    }
+
+    // Yield and await ops have the first entries in resumeOffsets(), in
+    // bytecode order, followed by the JSOp::TableSwitch case targets. Each of
+    // these entries is the offset of the op's JSOp::AfterYield.
+    if (loc.is(JSOp::InitialYield) || loc.is(JSOp::Yield) ||
+        loc.is(JSOp::Await)) {
+      MOZ_ASSERT(numSuspends < resumeOffsets().size());
+      MOZ_ASSERT(loc.getResumeIndex() == numSuspends);
+      MOZ_ASSERT(resumeOffsets()[numSuspends] ==
+                 loc.next().bytecodeToOffset(this));
+      numSuspends++;
     }
   }
+  MOZ_ASSERT(numSuspends + numTableSwitchCases == resumeOffsets().size());
 
   // Check catch/finally blocks as jump targets.
   for (const TryNote& tn : trynotes()) {

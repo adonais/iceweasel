@@ -13,15 +13,10 @@ import mozilla.components.lib.publicsuffixlist.PublicSuffixList
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 
-/**
- * A function representing the search use case, accepting
- * the search terms as string.
- */
+/** A function representing the search use case, accepting the search terms as string. */
 typealias SearchUseCase = (String) -> Unit
 
-/**
- * Feature implementation for connecting a toolbar implementation with the session module.
- */
+/** Feature implementation for connecting a toolbar implementation with the session module. */
 class ToolbarFeature(
     private val toolbar: Toolbar,
     store: BrowserStore,
@@ -32,23 +27,20 @@ class ToolbarFeature(
     urlRenderConfiguration: UrlRenderConfiguration? = null,
 ) : LifecycleAwareFeature, UserInteractionHandler {
     @VisibleForTesting
-    internal var presenter = ToolbarPresenter(
-        toolbar,
-        store,
-        customTabId,
-        shouldDisplaySearchTerms,
-        urlRenderConfiguration,
-    )
+    internal var presenter =
+        ToolbarPresenter(
+            toolbar,
+            store,
+            customTabId,
+            shouldDisplaySearchTerms,
+            urlRenderConfiguration,
+        )
 
-    @VisibleForTesting
-    internal var interactor = ToolbarInteractor(toolbar, loadUrlUseCase, searchUseCase)
+    @VisibleForTesting internal var interactor = ToolbarInteractor(toolbar, loadUrlUseCase, searchUseCase)
 
-    @VisibleForTesting
-    internal var controller = ToolbarBehaviorController(toolbar, store, customTabId)
+    @VisibleForTesting internal var controller = ToolbarBehaviorController(toolbar, store, customTabId)
 
-    /**
-     * Start feature: App is in the foreground.
-     */
+    /** Start feature: App is in the foreground. */
     override fun start() {
         interactor.start()
         presenter.start()
@@ -62,9 +54,7 @@ class ToolbarFeature(
      */
     override fun onBackPressed(): Boolean = toolbar.onBackPressed()
 
-    /**
-     * Stop feature: App is in the background.
-     */
+    /** Stop feature: App is in the background. */
     override fun stop() {
         presenter.stop()
         controller.stop()
@@ -76,7 +66,7 @@ class ToolbarFeature(
      *
      * @property publicSuffixList A shared/global [PublicSuffixList] object required to extract certain domain parts.
      * @property registrableDomainColor Text color that should be used for the registrable domain of the URL (see
-     * [PublicSuffixList.getPublicSuffixPlusOne] for an explanation of "registrable domain".
+     *   [PublicSuffixList.getPublicSuffixPlusOne] for an explanation of "registrable domain".
      * @property urlColor Optional text color used for the URL.
      * @property renderStyle Sealed class that controls the style of the url to be displayed
      */
@@ -87,30 +77,22 @@ class ToolbarFeature(
         internal val renderStyle: RenderStyle = RenderStyle.ColoredUrl,
     )
 
-    /**
-     * Options for how the URL should be styled.
-     */
+    /** Options for how the URL should be styled. */
     sealed class RenderStyle {
-        /**
-         * Display only the eTLD+1 (direct subdomain of the public suffix), uncolored.
-         */
+        /** Display only the eTLD+1 (direct subdomain of the public suffix), uncolored. */
         object RegistrableDomain : RenderStyle()
 
-        /**
-         * Display only the host using distinct colors for the registrable domain and its subdomains
-         */
+        /** Display only the host using distinct colors for the registrable domain and its subdomains */
         object ColoredDomain : RenderStyle()
 
         /**
-         * Display the full URL with distinct colors for the registrable domain and the rest of the URL.
-         * Colors the entire hostname if the registrable domain cannot be determined or is an IP address.
-         * Leaves non http(s) URLs uncolored.
+         * Display the full URL with distinct colors for the registrable domain and the rest of the URL. Colors the
+         * entire hostname if the registrable domain cannot be determined or is an IP address. Leaves non http(s) URLs
+         * uncolored.
          */
         object ColoredUrl : RenderStyle()
 
-        /**
-         * Display the full URL, uncolored
-         */
+        /** Display the full URL, uncolored */
         object UncoloredUrl : RenderStyle()
     }
 }

@@ -47,7 +47,7 @@ class AboutFragmentTest {
         every { context.getString(R.string.about_debug_menu_toast_progress, 3) } returns message
         every { context.getString(R.string.about_debug_menu_toast_done) } returns doneMessage
         every { settings.showSecretDebugMenuThisSession = true } just runs
-        every { lifecycle.addObserver(capture(secretDebugMenuTrigger)) } answers { }
+        every { lifecycle.addObserver(capture(secretDebugMenuTrigger)) } answers {}
     }
 
     @Test

@@ -27,21 +27,7 @@ namespace mozilla {
 
 namespace {
 struct Int96 {
-  bool operator==(const Int96& aOther) const {
-    return high == aOther.high && low == aOther.low;
-  }
-  bool operator>=(const Int96& aOther) const {
-    if (high == aOther.high) {
-      return low >= aOther.low;
-    }
-    return high > aOther.high;
-  }
-  bool operator<=(const Int96& aOther) const {
-    if (high == aOther.high) {
-      return low <= aOther.low;
-    }
-    return high < aOther.high;
-  }
+  auto operator<=>(const Int96& aOther) const = default;
 
   const int64_t high;
   const uint32_t low;

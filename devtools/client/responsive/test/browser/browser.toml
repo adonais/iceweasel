@@ -277,5 +277,8 @@ skip-if = [
 ]
 
 ["browser_window_sizing.js"]
+skip-if = [
+  "os == 'win' && opt && standalone", # Bug 2063169
+]
 
 ["browser_zoom.js"]

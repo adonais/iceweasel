@@ -19,9 +19,7 @@ import org.mozilla.focus.perf.Performance
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.utils.SearchUtils
 
-/**
- * Handles all actions from outside the app that starts it.
- */
+/** Handles all actions from outside the app that starts it. */
 object ExternalIntentNavigation {
 
     /**
@@ -44,17 +42,14 @@ object ExternalIntentNavigation {
     }
 
     /**
-     * Handle the app being opened with no specified destination.
-     * This can show the onboarding or the app's home screen.
+     * Handle the app being opened with no specified destination. This can show the onboarding or the app's home screen.
      */
     @VisibleForTesting
     internal fun handleAppOpened(
         bundle: Bundle?,
         context: Context,
     ) {
-        if (context.settings.isFirstRun &&
-            !Performance.processIntentIfPerformanceTest(bundle, context)
-        ) {
+        if (context.settings.isFirstRun && !Performance.processIntentIfPerformanceTest(bundle, context)) {
             context.components.appStore.dispatch(AppAction.ShowFirstRun)
         }
     }
@@ -107,17 +102,19 @@ object ExternalIntentNavigation {
 
         return when (!voiceSearchText.isNullOrEmpty()) {
             true -> {
-                val tabId = context.components.tabsUseCases.addTab(
-                    url = SearchUtils.createSearchUrl(
-                        context,
-                        voiceSearchText,
-                    ),
-                    source = SessionState.Source.External.ActionSend(null),
-                    searchTerms = voiceSearchText,
-                    selectTab = true,
-                    private = true,
-                    flags = LoadUrlFlags.external(),
-                )
+                val tabId =
+                    context.components.tabsUseCases.addTab(
+                        url =
+                            SearchUtils.createSearchUrl(
+                                context,
+                                voiceSearchText,
+                            ),
+                        source = SessionState.Source.External.ActionSend(null),
+                        searchTerms = voiceSearchText,
+                        selectTab = true,
+                        private = true,
+                        flags = LoadUrlFlags.external(),
+                    )
                 context.components.appStore.dispatch(AppAction.OpenTab(tabId))
                 true
             }

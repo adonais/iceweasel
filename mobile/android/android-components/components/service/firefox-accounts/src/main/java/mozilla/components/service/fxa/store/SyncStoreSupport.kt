@@ -23,13 +23,12 @@ import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.sync.SyncStatusObserver
 
 /**
- * Connections an [FxaAccountManager] with a [SyncStore], so that updates to Sync
- * state can be observed.
+ * Connections an [FxaAccountManager] with a [SyncStore], so that updates to Sync state can be observed.
  *
  * @param store The [SyncStore] to publish state updates based on [fxaAccountManager] observations.
  * @param fxaAccountManager Account manager that is used to interact with Sync backends.
- * @param lifecycleOwner The lifecycle owner that will tie to the when account manager observations.
- * Recommended that this be an Application or at minimum a persistent Activity.
+ * @param lifecycleOwner The lifecycle owner that will tie to the when account manager observations. Recommended that
+ *   this be an Application or at minimum a persistent Activity.
  * @param autoPause Whether the account manager observations will stop between onPause and onResume.
  * @param ioDispatcher Dispatcher used for background operations.
  * @param mainDispatcher Dispatcher used for main thread operations.
@@ -43,8 +42,8 @@ class SyncStoreSupport(
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) {
     /**
-     * Initialize the integration. This will cause it to register itself as an observer
-     * of the [FxaAccountManager] and begin dispatching [SyncStore] updates.
+     * Initialize the integration. This will cause it to register itself as an observer of the [FxaAccountManager] and
+     * begin dispatching [SyncStore] updates.
      */
     fun initialize() {
         val accountManager = fxaAccountManager.value
@@ -54,14 +53,15 @@ class SyncStoreSupport(
             autoPause = autoPause,
         )
 
-        val accountObserver = FxaAccountObserver(
-            store,
-            ConstellationObserver(store),
-            lifecycleOwner,
-            autoPause,
-            ioDispatcher,
-            mainDispatcher,
-        )
+        val accountObserver =
+            FxaAccountObserver(
+                store,
+                ConstellationObserver(store),
+                lifecycleOwner,
+                autoPause,
+                ioDispatcher,
+                mainDispatcher,
+            )
         accountManager.register(accountObserver, owner = lifecycleOwner, autoPause = autoPause)
     }
 }
@@ -89,8 +89,8 @@ internal class AccountSyncObserver(private val store: SyncStore) : SyncStatusObs
  * Maps various [AccountObserver] callbacks to [SyncAction] dispatches.
  *
  * @param store The [SyncStore] that updates will be dispatched to.
- * @param deviceConstellationObserver Will be registered as an observer to any constellations
- * received in [AccountObserver.onAuthenticated].
+ * @param deviceConstellationObserver Will be registered as an observer to any constellations received in
+ *   [AccountObserver.onAuthenticated].
  * @param lifecycleOwner The lifecycle owner that will tie to the when account manager observations.
  * @param autoPause Whether the account manager observations will stop between onPause and onResume.
  * @param ioDispatcher Dispatcher used for background operations.
@@ -109,11 +109,13 @@ internal class FxaAccountObserver(
 
     override fun onAuthenticated(account: OAuthAccount, authType: AuthType) {
         scope.launch(mainDispatcher) {
-            account.deviceConstellation().registerDeviceObserver(
-                deviceConstellationObserver,
-                owner = lifecycleOwner,
-                autoPause = autoPause,
-            )
+            account
+                .deviceConstellation()
+                .registerDeviceObserver(
+                    deviceConstellationObserver,
+                    owner = lifecycleOwner,
+                    autoPause = autoPause,
+                )
         }
         scope.launch {
             val syncAccount = account.getProfile()?.toAccount() ?: return@launch
@@ -139,12 +141,13 @@ internal class FxaAccountObserver(
 
     override fun onProfileUpdated(profile: Profile) {
         val currentAccount = store.state.account ?: return
-        val updatedAccount = currentAccount.copy(
-            uid = profile.uid,
-            email = profile.email,
-            avatar = profile.avatar,
-            displayName = profile.displayName,
-        )
+        val updatedAccount =
+            currentAccount.copy(
+                uid = profile.uid,
+                email = profile.email,
+                avatar = profile.avatar,
+                displayName = profile.displayName,
+            )
         store.dispatch(SyncAction.UpdateAccount(updatedAccount))
     }
 }

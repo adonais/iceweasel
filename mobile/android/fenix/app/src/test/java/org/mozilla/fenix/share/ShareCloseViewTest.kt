@@ -9,6 +9,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import io.mockk.mockk
 import io.mockk.verify
+import kotlin.test.assertIs
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Before
 import org.junit.Test
@@ -16,7 +17,6 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.databinding.ShareCloseBinding
 import org.mozilla.fenix.share.listadapters.ShareTabsAdapter
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertIs
 
 @RunWith(RobolectricTestRunner::class)
 class ShareCloseViewTest {

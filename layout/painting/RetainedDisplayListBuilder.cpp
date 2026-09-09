@@ -961,7 +961,7 @@ static bool ProcessFrameInternal(nsIFrame* aFrame,
     // that frame.
     aOverflow = nsLayoutUtils::TransformFrameRectToAncestor(
         currentFrame, aOverflow, aStopAtFrame, nullptr, nullptr,
-        /* aStopAtStackingContextAndDisplayPortAndOOFFrame = */ true,
+        TransformMatrixFlag::StopAtStackingContextAndDisplayPort,
         &currentFrame);
     if (IsInPreserve3DContext(currentFrame)) {
       return false;

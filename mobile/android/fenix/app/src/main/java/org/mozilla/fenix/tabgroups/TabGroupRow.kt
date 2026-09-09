@@ -72,52 +72,50 @@ fun TabGroupRow(
     trailingContentColor: Color? = null,
     shouldClickListen: Boolean = true,
 ) {
-    val tabGroupRowContentDescription = pluralStringResource(
-        id = R.plurals.add_to_exiting_tab_group_content_description,
-        count = tabGroup.tabs.size,
-        tabGroup.title,
-        tabGroup.tabs.size,
-        tabGroup.theme.contentLabel,
-    )
+    val tabGroupRowContentDescription =
+        pluralStringResource(
+            id = R.plurals.add_to_exiting_tab_group_content_description,
+            count = tabGroup.tabs.size,
+            tabGroup.title,
+            tabGroup.tabs.size,
+            tabGroup.theme.contentLabel,
+        )
 
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(enabled = shouldClickListen, onClick = onClick)
-            .testTag("${TabsTrayTestTag.TAB_GROUP_ROOT}.${tabGroup.id}")
-            .padding(
-                if (trailingContent == null) {
-                    PaddingValues(
-                        horizontal = FirefoxTheme.layout.space.dynamic200,
-                        vertical = FirefoxTheme.layout.space.static100,
-                    )
-                } else {
-                    PaddingValues(
-                        start = FirefoxTheme.layout.space.dynamic200,
-                        top = FirefoxTheme.layout.space.static100,
-                        end = 0.dp,
-                        bottom = FirefoxTheme.layout.space.static100,
-                    )
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clickable(enabled = shouldClickListen, onClick = onClick)
+                .testTag("${TabsTrayTestTag.TAB_GROUP_ROOT}.${tabGroup.id}")
+                .padding(
+                    if (trailingContent == null) {
+                        PaddingValues(
+                            horizontal = FirefoxTheme.layout.space.dynamic200,
+                            vertical = FirefoxTheme.layout.space.static100,
+                        )
+                    } else {
+                        PaddingValues(
+                            start = FirefoxTheme.layout.space.dynamic200,
+                            top = FirefoxTheme.layout.space.static100,
+                            end = 0.dp,
+                            bottom = FirefoxTheme.layout.space.static100,
+                        )
+                    }
+                )
+                .semantics(mergeDescendants = true) {
+                    contentDescription = tabGroupRowContentDescription
+                    role = Role.Button
+                    selected = selectionState.isFocused
                 },
-            )
-            .semantics(mergeDescendants = true) {
-                contentDescription = tabGroupRowContentDescription
-                role = Role.Button
-                selected = selectionState.isFocused
-            },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static200),
     ) {
-        TabGroupListThumbnail(
-            thumbnails = tabGroup.thumbnails,
-        )
+        TabGroupListThumbnail(thumbnails = tabGroup.thumbnails)
 
         TabGroupTextContent(tabGroup = tabGroup, modifier = Modifier.weight(1f))
 
         trailingContent?.let { content ->
-            CompositionLocalProvider(
-                LocalContentColor provides (trailingContentColor ?: LocalContentColor.current),
-            ) {
+            CompositionLocalProvider(LocalContentColor provides (trailingContentColor ?: LocalContentColor.current)) {
                 content()
             }
         }
@@ -137,7 +135,7 @@ private fun TabGroupTextContent(
 
             Text(
                 text = tabGroup.title,
-                modifier = Modifier.clearAndSetSemantics { },
+                modifier = Modifier.clearAndSetSemantics {},
                 color = MaterialTheme.colorScheme.onSurface,
                 style = FirefoxTheme.typography.body1,
                 maxLines = 1,
@@ -148,12 +146,13 @@ private fun TabGroupTextContent(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = pluralStringResource(
-                id = R.plurals.tab_group_tabs_count_subtitle,
-                count = tabGroup.tabs.size,
-                tabGroup.tabs.size,
-            ),
-            modifier = Modifier.clearAndSetSemantics { },
+            text =
+                pluralStringResource(
+                    id = R.plurals.tab_group_tabs_count_subtitle,
+                    count = tabGroup.tabs.size,
+                    tabGroup.tabs.size,
+                ),
+            modifier = Modifier.clearAndSetSemantics {},
             color = MaterialTheme.colorScheme.secondary,
             style = FirefoxTheme.typography.caption,
             maxLines = 1,
@@ -168,20 +167,17 @@ private fun TabGroupListThumbnail(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier
-            .size(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT),
+        modifier = modifier.size(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT),
         border = tablistItemThumbnailBorder,
         shape = MaterialTheme.shapes.extraSmall,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-        ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         ThumbnailsGridView(
             thumbnails = thumbnails,
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.extraSmall)
-                .padding(tablistItemThumbnailBorder.width) // inset to prevent spillover
-                .fillMaxSize(),
+            modifier =
+                Modifier.clip(MaterialTheme.shapes.extraSmall)
+                    .padding(tablistItemThumbnailBorder.width) // inset to prevent spillover
+                    .fillMaxSize(),
         )
     }
 }
@@ -195,12 +191,13 @@ private fun TabGroupRowPreview() {
     val tab4 = TabsTrayItem.Tab(createTab("test4"))
 
     TabGroupRow(
-        tabGroup = TabsTrayItem.TabGroup(
-            title = "Tab Group",
-            theme = TabGroupTheme.default,
-            tabs = mutableListOf(tab, tab2, tab3, tab4),
-            closed = false,
-        ),
+        tabGroup =
+            TabsTrayItem.TabGroup(
+                title = "Tab Group",
+                theme = TabGroupTheme.default,
+                tabs = mutableListOf(tab, tab2, tab3, tab4),
+                closed = false,
+            ),
         onClick = {},
     )
 }

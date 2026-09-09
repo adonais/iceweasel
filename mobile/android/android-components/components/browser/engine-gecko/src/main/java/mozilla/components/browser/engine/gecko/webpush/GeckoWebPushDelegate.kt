@@ -10,14 +10,10 @@ import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.WebPushDelegate as GeckoViewWebPushDelegate
 import org.mozilla.geckoview.WebPushSubscription as GeckoWebPushSubscription
 
-/**
- * A wrapper for the [WebPushDelegate] to communicate with the Gecko-based delegate.
- */
+/** A wrapper for the [WebPushDelegate] to communicate with the Gecko-based delegate. */
 internal class GeckoWebPushDelegate(private val delegate: WebPushDelegate) : GeckoViewWebPushDelegate {
 
-    /**
-     * See [GeckoViewWebPushDelegate.onGetSubscription].
-     */
+    /** See [GeckoViewWebPushDelegate.onGetSubscription]. */
     override fun onGetSubscription(scope: String): GeckoResult<GeckoWebPushSubscription>? {
         val result: GeckoResult<GeckoWebPushSubscription> = GeckoResult()
 
@@ -28,9 +24,7 @@ internal class GeckoWebPushDelegate(private val delegate: WebPushDelegate) : Gec
         return result
     }
 
-    /**
-     * See [GeckoViewWebPushDelegate.onSubscribe].
-     */
+    /** See [GeckoViewWebPushDelegate.onSubscribe]. */
     override fun onSubscribe(scope: String, appServerKey: ByteArray?): GeckoResult<GeckoWebPushSubscription>? {
         val result: GeckoResult<GeckoWebPushSubscription> = GeckoResult()
 
@@ -41,9 +35,7 @@ internal class GeckoWebPushDelegate(private val delegate: WebPushDelegate) : Gec
         return result
     }
 
-    /**
-     * See [GeckoViewWebPushDelegate.onUnsubscribe].
-     */
+    /** See [GeckoViewWebPushDelegate.onUnsubscribe]. */
     override fun onUnsubscribe(scope: String): GeckoResult<Void>? {
         val result: GeckoResult<Void> = GeckoResult()
 
@@ -59,15 +51,14 @@ internal class GeckoWebPushDelegate(private val delegate: WebPushDelegate) : Gec
     }
 }
 
-/**
- * A helper extension to convert the subscription data class to the Gecko-based implementation.
- */
-internal fun WebPushSubscription.toGeckoSubscription() = GeckoWebPushSubscription(
-    scope,
-    endpoint,
-    appServerKey,
-    publicKey,
-    authSecret,
-)
+/** A helper extension to convert the subscription data class to the Gecko-based implementation. */
+internal fun WebPushSubscription.toGeckoSubscription() =
+    GeckoWebPushSubscription(
+        scope,
+        endpoint,
+        appServerKey,
+        publicKey,
+        authSecret,
+    )
 
 internal class WebPushException(message: String) : IllegalStateException(message)

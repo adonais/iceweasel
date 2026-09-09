@@ -18,11 +18,12 @@ class ProfileLockedTest : BaseSessionTest() {
     @Test
     @ClosedSessionAtStart
     fun profileLocked() {
-        val runtime0 = RuntimeInstance.start(
-            targetContext,
-            TestRuntimeService.instance0::class.java,
-            temporaryProfile.get(),
-        )
+        val runtime0 =
+            RuntimeInstance.start(
+                targetContext,
+                TestRuntimeService.instance0::class.java,
+                temporaryProfile.get(),
+            )
 
         // Start the first runtime and wait until it's ready
         sessionRule.waitForResult(runtime0.started)
@@ -31,11 +32,12 @@ class ProfileLockedTest : BaseSessionTest() {
 
         // Now start a _second_ runtime with the same profile folder, this will kill the first
         // runtime
-        val runtime1 = RuntimeInstance.start(
-            targetContext,
-            TestRuntimeService.instance1::class.java,
-            temporaryProfile.get(),
-        )
+        val runtime1 =
+            RuntimeInstance.start(
+                targetContext,
+                TestRuntimeService.instance1::class.java,
+                temporaryProfile.get(),
+            )
 
         // Wait for the first runtime to disconnect
         sessionRule.waitForResult(runtime0.disconnected)

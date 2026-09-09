@@ -7,7 +7,7 @@
 const { Timeouts } = ChromeUtils.importESModule(
   "chrome://remote/content/shared/webdriver/Capabilities.sys.mjs"
 );
-const { getWebDriverSessionById, WebDriverSession } =
+const { getWebDriverSessionById, hasActiveWebDriverSession, WebDriverSession } =
   ChromeUtils.importESModule(
     "chrome://remote/content/shared/webdriver/Session.sys.mjs"
   );
@@ -24,6 +24,35 @@ function createSession(options = {}) {
 
   return new WebDriverSession(capabilities, flags, connection);
 }
+
+// Has to run before the other tasks, which leave sessions behind and would
+// prevent hasActiveWebDriverSession from returning false.
+add_task(function test_hasActiveWebDriverSession() {
+  const topic = "webdriver-session-changed";
+  let notifications = 0;
+  const observer = () => notifications++;
+  Services.obs.addObserver(observer, topic);
+
+  ok(!hasActiveWebDriverSession(), "No active session initially");
+
+  const session1 = createSession();
+  equal(notifications, 1, "Creating a session sent a notification");
+  ok(hasActiveWebDriverSession(), "Session is active after creation");
+
+  const session2 = createSession();
+  equal(notifications, 2, "Creating a second session sent a notification");
+  ok(hasActiveWebDriverSession(), "Sessions are still active");
+
+  session1.destroy();
+  equal(notifications, 3, "Destroying a session sent a notification");
+  ok(hasActiveWebDriverSession(), "One session is still active");
+
+  session2.destroy();
+  equal(notifications, 4, "Destroying the last session sent a notification");
+  ok(!hasActiveWebDriverSession(), "No active session after destroying all");
+
+  Services.obs.removeObserver(observer, topic);
+});
 
 add_task(function test_WebDriverSession_ctor() {
   // Missing WebDriver session flags

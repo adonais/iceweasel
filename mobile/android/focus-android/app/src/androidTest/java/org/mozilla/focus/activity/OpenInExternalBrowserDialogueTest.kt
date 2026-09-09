@@ -23,13 +23,12 @@ import org.mozilla.focus.testAnnotations.SmokeTest
 class OpenInExternalBrowserDialogueTest {
     private val featureSettingsHelper = FeatureSettingsHelper()
 
-    @get:Rule(order = 0)
-    val focusTestRule: FocusTestRule = FocusTestRule()
+    @get:Rule(order = 0) val focusTestRule: FocusTestRule = FocusTestRule()
 
-    private val webServerRule get() = focusTestRule.mockWebServerRule
+    private val webServerRule
+        get() = focusTestRule.mockWebServerRule
 
-    @get:Rule
-    val mActivityTestRule = MainActivityIntentsTestRule(showFirstRun = false)
+    @get:Rule val mActivityTestRule = MainActivityIntentsTestRule(showFirstRun = false)
 
     @Before
     fun setUp() {
@@ -47,13 +46,13 @@ class OpenInExternalBrowserDialogueTest {
     fun openPageInExternalAppTest() {
         val pageUrl = webServerRule.server.genericAsset.url
 
-        searchScreen {
-        }.loadPage(pageUrl) {
-        }.openMainMenu {
-            clickOpenInOption()
-            verifyOpenInDialog()
-            clickOpenInChrome()
-            assertNativeAppOpens(GOOGLE_CHROME)
-        }
+        searchScreen {}
+            .loadPage(pageUrl) {}
+            .openMainMenu {
+                clickOpenInOption()
+                verifyOpenInDialog()
+                clickOpenInChrome()
+                assertNativeAppOpens(GOOGLE_CHROME)
+            }
     }
 }

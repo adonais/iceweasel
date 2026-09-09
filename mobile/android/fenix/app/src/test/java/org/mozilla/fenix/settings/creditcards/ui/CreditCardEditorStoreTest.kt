@@ -5,6 +5,7 @@
 package org.mozilla.fenix.settings.creditcards.ui
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -23,19 +24,18 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.CreditCards
 import org.mozilla.fenix.helpers.FenixGleanTestRule
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class CreditCardEditorStoreTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private val creditCardsStorage = FakeCreditCardsStorage()
-    private val calendarDataProvider = FakeCalendarDataProvider(
-        expectedMonths = listOf("January", "February", "March"),
-        expectedYears = listOf("2025", "2026", "2027"),
-    )
+    private val calendarDataProvider =
+        FakeCalendarDataProvider(
+            expectedMonths = listOf("January", "February", "March"),
+            expectedYears = listOf("2025", "2026", "2027"),
+        )
 
     private val testDispatcher = StandardTestDispatcher()
 
@@ -54,53 +54,58 @@ class CreditCardEditorStoreTest {
         }
 
     @Test
-    fun `WHEN delete confirmation is cancelled, the dialog is hidden`() = runTest(testDispatcher) {
-        val store = makeStore(scope = this)
+    fun `WHEN delete confirmation is cancelled, the dialog is hidden`() =
+        runTest(testDispatcher) {
+            val store = makeStore(scope = this)
 
-        store.dispatch(CreditCardEditorAction.DeleteClicked)
-        store.dispatch(CreditCardEditorAction.DeleteDialogAction.Cancel)
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(CreditCardEditorAction.DeleteClicked)
+            store.dispatch(CreditCardEditorAction.DeleteDialogAction.Cancel)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertFalse(
-            "Expected delete confirmation dialog to be hidden",
-            store.state.showDeleteDialog,
-        )
-    }
+            assertFalse(
+                "Expected delete confirmation dialog to be hidden",
+                store.state.showDeleteDialog,
+            )
+        }
 
     @Test
-    fun `WHEN delete confirmation is confirmed, the card is deleted`() = runTest(testDispatcher) {
-        val store = makeStore(
-            state = createState(guid = "card-id"),
-            scope = this,
-        )
+    fun `WHEN delete confirmation is confirmed, the card is deleted`() =
+        runTest(testDispatcher) {
+            val store =
+                makeStore(
+                    state = createState(guid = "card-id"),
+                    scope = this,
+                )
 
-        store.dispatch(CreditCardEditorAction.DeleteDialogAction.Confirm)
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(CreditCardEditorAction.DeleteDialogAction.Confirm)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertEquals(
-            "Expected that the deleted card has guid 'card-id'",
-            "card-id",
-            creditCardsStorage.deletedCard,
-        )
-    }
+            assertEquals(
+                "Expected that the deleted card has guid 'card-id'",
+                "card-id",
+                creditCardsStorage.deletedCard,
+            )
+        }
 
     @Test
     fun `GIVEN valid form in 'edit' mode, WHEN save action is received, the card is saved`() =
         runTest(testDispatcher) {
             val validMasterCard = "5555444433331111"
-            val store = makeStore(
-                state = createState(
-                    guid = "1234",
-                    inEditMode = true,
-                    nameOnCard = "Jane Doe",
-                    cardNumber = validMasterCard,
-                    expiryYears = listOf("2025", "2026", "2027"),
-                    selectedExpiryYearIndex = 1,
-                    expiryMonths = listOf("January", "February", "March"),
-                    selectedExpiryMonthIndex = 0,
-                ),
-                scope = this,
-            )
+            val store =
+                makeStore(
+                    state =
+                        createState(
+                            guid = "1234",
+                            inEditMode = true,
+                            nameOnCard = "Jane Doe",
+                            cardNumber = validMasterCard,
+                            expiryYears = listOf("2025", "2026", "2027"),
+                            selectedExpiryYearIndex = 1,
+                            expiryMonths = listOf("January", "February", "March"),
+                            selectedExpiryMonthIndex = 0,
+                        ),
+                    scope = this,
+                )
 
             store.dispatch(CreditCardEditorAction.Save)
             testDispatcher.scheduler.advanceUntilIdle()
@@ -130,17 +135,19 @@ class CreditCardEditorStoreTest {
     fun `GIVEN valid form in 'create' mode, WHEN save action is received, the card is saved`() =
         runTest(testDispatcher) {
             val validMasterCard = "5555444433331111"
-            val store = makeStore(
-                state = createState(
-                    nameOnCard = "Jane Doe",
-                    cardNumber = validMasterCard,
-                    expiryYears = listOf("2025", "2026", "2027"),
-                    selectedExpiryYearIndex = 1,
-                    expiryMonths = listOf("January", "February", "March"),
-                    selectedExpiryMonthIndex = 0,
-                ),
-                scope = this,
-            )
+            val store =
+                makeStore(
+                    state =
+                        createState(
+                            nameOnCard = "Jane Doe",
+                            cardNumber = validMasterCard,
+                            expiryYears = listOf("2025", "2026", "2027"),
+                            selectedExpiryYearIndex = 1,
+                            expiryMonths = listOf("January", "February", "March"),
+                            selectedExpiryMonthIndex = 0,
+                        ),
+                    scope = this,
+                )
 
             store.dispatch(CreditCardEditorAction.Save)
             testDispatcher.scheduler.advanceUntilIdle()
@@ -163,10 +170,11 @@ class CreditCardEditorStoreTest {
     fun `GIVEN invalid card number, WHEN save action is received, an error is shown on the card field`() =
         runTest(testDispatcher) {
             val americanExpressCardInvalid = "371449635398432"
-            val store = makeStore(
-                state = createState(cardNumber = americanExpressCardInvalid),
-                scope = this,
-            )
+            val store =
+                makeStore(
+                    state = createState(cardNumber = americanExpressCardInvalid),
+                    scope = this,
+                )
 
             store.dispatch(CreditCardEditorAction.Save)
             testDispatcher.scheduler.advanceUntilIdle()
@@ -180,10 +188,11 @@ class CreditCardEditorStoreTest {
     @Test
     fun `GIVEN empty card number, WHEN save action is received, an error is shown on the card field`() =
         runTest(testDispatcher) {
-            val store = makeStore(
-                state = createState(cardNumber = ""),
-                scope = this,
-            )
+            val store =
+                makeStore(
+                    state = createState(cardNumber = ""),
+                    scope = this,
+                )
 
             store.dispatch(CreditCardEditorAction.Save)
             testDispatcher.scheduler.advanceUntilIdle()
@@ -197,10 +206,11 @@ class CreditCardEditorStoreTest {
     @Test
     fun `GIVEN an empty name on card, WHEN save action is received, an error is shown on the name field`() =
         runTest(testDispatcher) {
-            val store = makeStore(
-                state = createState(nameOnCard = ""),
-                scope = this,
-            )
+            val store =
+                makeStore(
+                    state = createState(nameOnCard = ""),
+                    scope = this,
+                )
 
             store.dispatch(CreditCardEditorAction.Save)
             testDispatcher.scheduler.advanceUntilIdle()
@@ -212,37 +222,42 @@ class CreditCardEditorStoreTest {
         }
 
     @Test
-    fun `WHEN cancel action is received, user is navigated back`() = runTest(testDispatcher) {
-        var navigatedBack = false
-        val store = makeStore(
-            environment = CreditCardEditorEnvironment.Default.copy(
-                navigateBack = {
-                    navigatedBack = true
-                },
-            ),
-            scope = this,
-        )
+    fun `WHEN cancel action is received, user is navigated back`() =
+        runTest(testDispatcher) {
+            var navigatedBack = false
+            val store =
+                makeStore(
+                    environment =
+                        CreditCardEditorEnvironment.Default.copy(
+                            navigateBack = {
+                                navigatedBack = true
+                            }
+                        ),
+                    scope = this,
+                )
 
-        store.dispatch(CreditCardEditorAction.Cancel)
+            store.dispatch(CreditCardEditorAction.Cancel)
 
-        assertTrue(
-            "Expected that we navigate back",
-            navigatedBack,
-        )
-    }
+            assertTrue(
+                "Expected that we navigate back",
+                navigatedBack,
+            )
+        }
 
     @Test
     fun `WHEN 'navigate back' action is received, user is navigated back`() =
         runTest(testDispatcher) {
             var navigatedBack = false
-            val store = makeStore(
-                environment = CreditCardEditorEnvironment.Default.copy(
-                    navigateBack = {
-                        navigatedBack = true
-                    },
-                ),
-                scope = this,
-            )
+            val store =
+                makeStore(
+                    environment =
+                        CreditCardEditorEnvironment.Default.copy(
+                            navigateBack = {
+                                navigatedBack = true
+                            }
+                        ),
+                    scope = this,
+                )
 
             store.dispatch(CreditCardEditorAction.NavigateBack)
 
@@ -293,19 +308,20 @@ class CreditCardEditorStoreTest {
             creditCardsStorage.expectedPlainCardNumber = expectedPlainCardNumber
             creditCardsStorage.expectedEncryptedCardNumber = expectedEncryptedCardNumber
 
-            val creditCard = CreditCard(
-                guid = "id",
-                billingName = "Banana Apple",
-                encryptedCardNumber = CreditCardNumber.Encrypted(expectedEncryptedCardNumber),
-                cardNumberLast4 = "1111",
-                expiryMonth = 2,
-                expiryYear = 2025,
-                cardType = CreditCardNetworkType.MASTERCARD.cardName,
-                timeCreated = 1L,
-                timeLastUsed = 1L,
-                timeLastModified = 1L,
-                timesUsed = 1L,
-            )
+            val creditCard =
+                CreditCard(
+                    guid = "id",
+                    billingName = "Banana Apple",
+                    encryptedCardNumber = CreditCardNumber.Encrypted(expectedEncryptedCardNumber),
+                    cardNumberLast4 = "1111",
+                    expiryMonth = 2,
+                    expiryYear = 2025,
+                    cardType = CreditCardNetworkType.MASTERCARD.cardName,
+                    timeCreated = 1L,
+                    timeLastUsed = 1L,
+                    timeLastModified = 1L,
+                    timesUsed = 1L,
+                )
 
             val store = makeStore(state = CreditCardEditorState.Default, scope = this)
 
@@ -332,62 +348,70 @@ class CreditCardEditorStoreTest {
         }
 
     @Test
-    fun `WHEN a card is deleted, then a telemetry event is sent`() = runTest(testDispatcher) {
-        val store = makeStore(
-            state = createState(guid = "card-id"),
-            scope = this,
-        )
+    fun `WHEN a card is deleted, then a telemetry event is sent`() =
+        runTest(testDispatcher) {
+            val store =
+                makeStore(
+                    state = createState(guid = "card-id"),
+                    scope = this,
+                )
 
-        store.dispatch(CreditCardEditorAction.DeleteDialogAction.Confirm)
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(CreditCardEditorAction.DeleteDialogAction.Confirm)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        // verify that the event is sent
-        assertNotNull(CreditCards.deleted.testGetValue())
-    }
-
-    @Test
-    fun `WHEN a card is saved, THEN a telemetry event is sent`() = runTest(testDispatcher) {
-        val store = makeStore(
-            state = createState(
-                nameOnCard = "Jane Doe",
-                cardNumber = "5555444433331111",
-                expiryYears = listOf("2025", "2026", "2027"),
-                selectedExpiryYearIndex = 1,
-                expiryMonths = listOf("January", "February", "March"),
-                selectedExpiryMonthIndex = 0,
-            ),
-            scope = this,
-        )
-
-        store.dispatch(CreditCardEditorAction.Save)
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // verify that the event is sent
-        assertNotNull(CreditCards.saved.testGetValue())
-    }
+            // verify that the event is sent
+            assertNotNull(CreditCards.deleted.testGetValue())
+        }
 
     @Test
-    fun `WHEN a card is updated, THEN a telemetry event is sent`() = runTest(testDispatcher) {
-        val store = makeStore(
-            state = createState(
-                guid = "1234",
-                inEditMode = true,
-                nameOnCard = "Jane Doe",
-                cardNumber = "5555444433331111",
-                expiryYears = listOf("2025", "2026", "2027"),
-                selectedExpiryYearIndex = 1,
-                expiryMonths = listOf("January", "February", "March"),
-                selectedExpiryMonthIndex = 0,
-            ),
-            scope = this,
-        )
+    fun `WHEN a card is saved, THEN a telemetry event is sent`() =
+        runTest(testDispatcher) {
+            val store =
+                makeStore(
+                    state =
+                        createState(
+                            nameOnCard = "Jane Doe",
+                            cardNumber = "5555444433331111",
+                            expiryYears = listOf("2025", "2026", "2027"),
+                            selectedExpiryYearIndex = 1,
+                            expiryMonths = listOf("January", "February", "March"),
+                            selectedExpiryMonthIndex = 0,
+                        ),
+                    scope = this,
+                )
 
-        store.dispatch(CreditCardEditorAction.Save)
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(CreditCardEditorAction.Save)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        // verify that the event is sent
-        assertNotNull(CreditCards.modified.testGetValue())
-    }
+            // verify that the event is sent
+            assertNotNull(CreditCards.saved.testGetValue())
+        }
+
+    @Test
+    fun `WHEN a card is updated, THEN a telemetry event is sent`() =
+        runTest(testDispatcher) {
+            val store =
+                makeStore(
+                    state =
+                        createState(
+                            guid = "1234",
+                            inEditMode = true,
+                            nameOnCard = "Jane Doe",
+                            cardNumber = "5555444433331111",
+                            expiryYears = listOf("2025", "2026", "2027"),
+                            selectedExpiryYearIndex = 1,
+                            expiryMonths = listOf("January", "February", "March"),
+                            selectedExpiryMonthIndex = 0,
+                        ),
+                    scope = this,
+                )
+
+            store.dispatch(CreditCardEditorAction.Save)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // verify that the event is sent
+            assertNotNull(CreditCards.modified.testGetValue())
+        }
 
     private fun makeStore(
         state: CreditCardEditorState = createState(),
@@ -398,16 +422,17 @@ class CreditCardEditorStoreTest {
     ): CreditCardEditorStore {
         return CreditCardEditorStore(
             initialState = state,
-            middleware = listOf(
-                CreditCardEditorMiddleware(
-                    environment = environment,
-                    calendarDataProvider = monthsProvider,
-                    storage = storage,
-                    coroutineScope = scope,
-                    ioDispatcher = testDispatcher,
-                    mainDispatcher = testDispatcher,
+            middleware =
+                listOf(
+                    CreditCardEditorMiddleware(
+                        environment = environment,
+                        calendarDataProvider = monthsProvider,
+                        storage = storage,
+                        coroutineScope = scope,
+                        ioDispatcher = testDispatcher,
+                        mainDispatcher = testDispatcher,
+                    )
                 ),
-            ),
         )
     }
 }

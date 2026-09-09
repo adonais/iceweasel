@@ -11,8 +11,8 @@ import android.widget.TextView
 private const val DEFAULT_FONT_PADDING = 6
 
 /**
- * Adjusts the text size of the [TextView] according to the height restriction given to the
- * [View.MeasureSpec] given in the parameter.
+ * Adjusts the text size of the [TextView] according to the height restriction given to the [View.MeasureSpec] given in
+ * the parameter.
  *
  * This will take [TextView.getIncludeFontPadding] into account when calculating the available height
  */
@@ -24,8 +24,7 @@ fun TextView.adjustMaxTextSize(heightMeasureSpec: Int, ascenderPadding: Int = DE
         availableHeight -= ascenderPadding * resources.displayMetrics.density
     }
 
-    availableHeight -= (this.paddingBottom + this.paddingTop) *
-        resources.displayMetrics.density
+    availableHeight -= (this.paddingBottom + this.paddingTop) * resources.displayMetrics.density
 
     if (availableHeight > 0 && this.textSize > availableHeight) {
         this.textSize = availableHeight / resources.displayMetrics.density

@@ -16,30 +16,30 @@
 
 namespace nss_test {
 
-static void IncrementCounterArg(void *arg) {
+static void IncrementCounterArg(void* arg) {
   if (arg) {
-    auto *called = reinterpret_cast<size_t *>(arg);
+    auto* called = reinterpret_cast<size_t*>(arg);
     ++*called;
   }
 }
 
-static PRBool NoopExtensionWriter(PRFileDesc *fd, SSLHandshakeType message,
-                                  PRUint8 *data, unsigned int *len,
-                                  unsigned int maxLen, void *arg) {
+static PRBool NoopExtensionWriter(PRFileDesc* fd, SSLHandshakeType message,
+                                  PRUint8* data, unsigned int* len,
+                                  unsigned int maxLen, void* arg) {
   IncrementCounterArg(arg);
   return PR_FALSE;
 }
 
-static PRBool EmptyExtensionWriter(PRFileDesc *fd, SSLHandshakeType message,
-                                   PRUint8 *data, unsigned int *len,
-                                   unsigned int maxLen, void *arg) {
+static PRBool EmptyExtensionWriter(PRFileDesc* fd, SSLHandshakeType message,
+                                   PRUint8* data, unsigned int* len,
+                                   unsigned int maxLen, void* arg) {
   IncrementCounterArg(arg);
   return PR_TRUE;
 }
 
-static SECStatus NoopExtensionHandler(PRFileDesc *fd, SSLHandshakeType message,
-                                      const PRUint8 *data, unsigned int len,
-                                      SSLAlertDescription *alert, void *arg) {
+static SECStatus NoopExtensionHandler(PRFileDesc* fd, SSLHandshakeType message,
+                                      const PRUint8* data, unsigned int len,
+                                      SSLAlertDescription* alert, void* arg) {
   return SECSuccess;
 }
 
@@ -77,8 +77,8 @@ static const uint16_t kManyExtensions[] = {
 PR_STATIC_ASSERT((SSL_MAX_EXTENSIONS + 5) == PR_ARRAY_SIZE(kManyExtensions));
 
 void InstallManyWriters(std::shared_ptr<TlsAgent> agent,
-                        SSLExtensionWriter writer, size_t *installed = nullptr,
-                        size_t *called = nullptr) {
+                        SSLExtensionWriter writer, size_t* installed = nullptr,
+                        size_t* called = nullptr) {
   for (size_t i = 0; i < PR_ARRAY_SIZE(kManyExtensions); ++i) {
     SSLExtensionSupport support = ssl_ext_none;
     SECStatus rv = SSL_GetExtensionSupport(kManyExtensions[i], &support);
@@ -163,10 +163,10 @@ TEST_F(TlsConnectStreamTls13, CustomExtensionWriterDisable) {
 // An extension that is unlikely to be parsed as valid.
 static uint8_t kNonsenseExtension[] = {91, 82, 73, 64, 55, 46, 37, 28, 19};
 
-static PRBool NonsenseExtensionWriter(PRFileDesc *fd, SSLHandshakeType message,
-                                      PRUint8 *data, unsigned int *len,
-                                      unsigned int maxLen, void *arg) {
-  TlsAgent *agent = reinterpret_cast<TlsAgent *>(arg);
+static PRBool NonsenseExtensionWriter(PRFileDesc* fd, SSLHandshakeType message,
+                                      PRUint8* data, unsigned int* len,
+                                      unsigned int maxLen, void* arg) {
+  TlsAgent* agent = reinterpret_cast<TlsAgent*>(arg);
   EXPECT_NE(nullptr, agent);
   EXPECT_NE(nullptr, data);
   EXPECT_NE(nullptr, len);
@@ -215,12 +215,12 @@ TEST_F(TlsConnectStreamTls13, CustomExtensionOverride) {
             capture->extension());
 }
 
-static SECStatus NonsenseExtensionHandler(PRFileDesc *fd,
+static SECStatus NonsenseExtensionHandler(PRFileDesc* fd,
                                           SSLHandshakeType message,
-                                          const PRUint8 *data, unsigned int len,
-                                          SSLAlertDescription *alert,
-                                          void *arg) {
-  TlsAgent *agent = reinterpret_cast<TlsAgent *>(arg);
+                                          const PRUint8* data, unsigned int len,
+                                          SSLAlertDescription* alert,
+                                          void* arg) {
+  TlsAgent* agent = reinterpret_cast<TlsAgent*>(arg);
   EXPECT_EQ(agent->ssl_fd(), fd);
   if (agent->role() == TlsAgent::SERVER) {
     EXPECT_EQ(ssl_hs_client_hello, message);
@@ -261,10 +261,10 @@ TEST_F(TlsConnectStreamTls13, CustomExtensionClientToServer) {
             capture->extension());
 }
 
-static PRBool NonsenseExtensionWriterSH(PRFileDesc *fd,
-                                        SSLHandshakeType message, PRUint8 *data,
-                                        unsigned int *len, unsigned int maxLen,
-                                        void *arg) {
+static PRBool NonsenseExtensionWriterSH(PRFileDesc* fd,
+                                        SSLHandshakeType message, PRUint8* data,
+                                        unsigned int* len, unsigned int maxLen,
+                                        void* arg) {
   if (message == ssl_hs_server_hello) {
     return NonsenseExtensionWriter(fd, message, data, len, maxLen, arg);
   }
@@ -299,10 +299,10 @@ TEST_F(TlsConnectStreamTls13, CustomExtensionServerToClientSH) {
             capture->extension());
 }
 
-static PRBool NonsenseExtensionWriterEE(PRFileDesc *fd,
-                                        SSLHandshakeType message, PRUint8 *data,
-                                        unsigned int *len, unsigned int maxLen,
-                                        void *arg) {
+static PRBool NonsenseExtensionWriterEE(PRFileDesc* fd,
+                                        SSLHandshakeType message, PRUint8* data,
+                                        unsigned int* len, unsigned int maxLen,
+                                        void* arg) {
   if (message == ssl_hs_encrypted_extensions) {
     return NonsenseExtensionWriter(fd, message, data, len, maxLen, arg);
   }
@@ -359,9 +359,9 @@ TEST_F(TlsConnectStreamTls13, CustomExtensionUnsolicitedServer) {
             capture->extension());
 }
 
-SECStatus RejectExtensionHandler(PRFileDesc *fd, SSLHandshakeType message,
-                                 const PRUint8 *data, unsigned int len,
-                                 SSLAlertDescription *alert, void *arg) {
+SECStatus RejectExtensionHandler(PRFileDesc* fd, SSLHandshakeType message,
+                                 const PRUint8* data, unsigned int len,
+                                 SSLAlertDescription* alert, void* arg) {
   return SECFailure;
 }
 
@@ -408,9 +408,9 @@ TEST_F(TlsConnectStreamTls13, CustomExtensionClientReject) {
 
 static const uint8_t kCustomAlert = 0xf6;
 
-SECStatus AlertExtensionHandler(PRFileDesc *fd, SSLHandshakeType message,
-                                const PRUint8 *data, unsigned int len,
-                                SSLAlertDescription *alert, void *arg) {
+SECStatus AlertExtensionHandler(PRFileDesc* fd, SSLHandshakeType message,
+                                const PRUint8* data, unsigned int len,
+                                SSLAlertDescription* alert, void* arg) {
   *alert = kCustomAlert;
   return SECFailure;
 }
@@ -482,9 +482,9 @@ TEST_F(TlsConnectStreamTls13, CustomExtensionOnlyHandler) {
 TEST_F(TlsConnectStreamTls13, CustomExtensionOverrunBuffer) {
   EnsureTlsSetup();
   // This doesn't actually overrun the buffer, but it says that it does.
-  auto overrun_writer = [](PRFileDesc *fd, SSLHandshakeType message,
-                           PRUint8 *data, unsigned int *len,
-                           unsigned int maxLen, void *arg) -> PRBool {
+  auto overrun_writer = [](PRFileDesc* fd, SSLHandshakeType message,
+                           PRUint8* data, unsigned int* len,
+                           unsigned int maxLen, void* arg) -> PRBool {
     *len = maxLen + 1;
     return PR_TRUE;
   };

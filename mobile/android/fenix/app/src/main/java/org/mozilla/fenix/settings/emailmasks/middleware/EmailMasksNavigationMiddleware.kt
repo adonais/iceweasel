@@ -38,30 +38,24 @@ class EmailMasksNavigationMiddleware(
             is EmailMasksUserAction.SuggestEmailMasksDisabled,
             is EmailMasksUserAction.SuggestEmailMasksEnabled,
             is EmailMasksSystemAction.ManageTabOpened,
-            is EmailMasksSystemAction.LearnMoreTabOpened,
-                -> {
+            is EmailMasksSystemAction.LearnMoreTabOpened -> {
                 // no-op
             }
         }
     }
 }
 
-/**
- * Provides URLs for hyperlinks shown on the Email Masks settings screen.
- */
+/** Provides URLs for hyperlinks shown on the Email Masks settings screen. */
 interface EmailMasksUrlProvider {
-    /**
-     * URL for managing Email Masks.
-     */
+    /** URL for managing Email Masks. */
     fun manageUrl(): String
 
-    /**
-     * URL for learning more about Email Masks.
-     */
+    /** URL for learning more about Email Masks. */
     fun learnMoreUrl(): String
 }
 
 private class DefaultEmailMasksUrlProvider : EmailMasksUrlProvider {
     override fun manageUrl(): String = SupportUtils.RELAY_MANAGE_URL
+
     override fun learnMoreUrl(): String = getGenericSumoURLForTopic(SupportUtils.SumoTopic.RELAY)
 }

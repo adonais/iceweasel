@@ -53,7 +53,6 @@ gfxFontEntry::gfxFontEntry(const nsACString& aName, bool aIsStandardFace)
       mIgnoreGSUB(false),
       mSkipDefaultFeatureSpaceCheck(false),
       mSVGInitialized(false),
-      mHasCmapTable(false),
       mGrFaceInitialized(false),
       mCheckedForColorGlyph(false),
       mCheckedForVariationAxes(false),
@@ -100,6 +99,12 @@ gfxFontEntry::~gfxFontEntry() {
   gfxCharacterMap* cmap = mCharacterMap.exchange(nullptr);
   NS_IF_RELEASE(cmap);
 
+#ifdef MOZ_FONTATIONS
+  if (SkrifaFontRef* font = mSkrifaFontFace) {
+    skrifa_font_delete(font);
+  }
+#endif
+
   // By the time the entry is destroyed, all font instances that were
   // using it should already have been deleted, and so any Graphite
   // face object should have been released.
@@ -122,8 +127,32 @@ void gfxFontEntry::InitializeFrom(fontlist::Face* aFace,
   MOZ_PUSH_IGNORE_THREAD_SAFETY
   mFamilyName = aFamily->DisplayName().AsString(list);
   MOZ_POP_THREAD_SAFETY
-  mHasCmapTable = TrySetShmemCharacterMap();
+  TrySetShmemCharacterMap();
 }
+
+#ifdef MOZ_FONTATIONS
+void gfxFontEntry::SetSkrifaFont(SkrifaFontRef* aSkrifaFont,
+                                 MemoryMappedFile&& aSkrifaFontFile) {
+  // If another thread came in and initialized the font face ahead of us,
+  // just delete the face this thread constructed.
+  if (mSkrifaFontFace.compareExchange(nullptr, aSkrifaFont)) {
+    // If we won the race, store our file data to back the font.
+    mSkrifaFontFile = std::move(aSkrifaFontFile);
+  } else {
+    // We lost the race, delete the font we just constructed and let the
+    // file mapping be destroyed normally.
+    skrifa_font_delete(aSkrifaFont);
+  }
+}
+
+void gfxFontEntry::SetSkrifaFont(SkrifaFontRef* aSkrifaFont) {
+  // If we lose a race to set the Skrifa font, just discard it.
+  MOZ_ASSERT(mIsDataUserFont);
+  if (!mSkrifaFontFace.compareExchange(nullptr, aSkrifaFont)) {
+    skrifa_font_delete(aSkrifaFont);
+  }
+}
+#endif
 
 bool gfxFontEntry::TrySetShmemCharacterMap() {
   auto* pfl = gfxPlatformFontList::PlatformFontList();
@@ -141,22 +170,24 @@ bool gfxFontEntry::TrySetShmemCharacterMap() {
 }
 
 bool gfxFontEntry::TestCharacterMap(uint32_t aCh) {
-  if (!mCharacterMap && !mShmemCharacterMap) {
+  if (!HasCharacterMap()) {
     ReadCMAP();
-    MOZ_ASSERT(mCharacterMap || mShmemCharacterMap,
-               "failed to initialize character map");
+    MOZ_ASSERT(HasCharacterMap(), "failed to initialize character map");
   }
-  return mShmemCharacterMap ? GetShmemCharacterMap()->test(aCh)
-                            : GetCharacterMap()->test(aCh);
+  if (const auto* map = GetShmemCharacterMap()) {
+    return map->test(aCh);
+  }
+  AutoReadLock lock(mLock);
+  gfxCharacterMap* map = mCharacterMap;
+  return map ? map->test(aCh) : false;
 }
 
 void gfxFontEntry::EnsureUVSMapInitialized() {
   // mUVSOffset will not be initialized
   // until cmap is initialized.
-  if (!mCharacterMap && !mShmemCharacterMap) {
+  if (!HasCharacterMap()) {
     ReadCMAP();
-    NS_ASSERTION(mCharacterMap || mShmemCharacterMap,
-                 "failed to initialize character map");
+    MOZ_ASSERT(HasCharacterMap(), "failed to initialize character map");
   }
 
   if (!mUVSOffset) {
@@ -210,6 +241,7 @@ bool gfxFontEntry::SupportsScriptInGSUB(const hb_tag_t* aScriptTags,
 
 nsresult gfxFontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
   MOZ_ASSERT(false, "using default no-op implementation of ReadCMAP");
+  AutoWriteLock lock(mLock);
   RefPtr<gfxCharacterMap> cmap = new gfxCharacterMap(0);
   if (mCharacterMap.compareExchange(nullptr, cmap.get())) {
     cmap.forget().leak();  // mCharacterMap now owns the reference
@@ -218,12 +250,25 @@ nsresult gfxFontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
 }
 
 nsCString gfxFontEntry::RealFaceName() {
+#if MOZ_FONTATIONS
+  if (auto* skf = GetSkrifaFont()) {
+    nsCString name;
+    if (skrifa_font_get_preferred_name(skf, gfxFontUtils::NAME_ID_FULL,
+                                       &name)) {
+#  if NIGHTLY_BUILD
+      name.AppendLiteral(" (skrifa)");
+#  endif
+      return name;
+    }
+  }
+#endif
+
   AutoTable nameTable(this, TRUETYPE_TAG('n', 'a', 'm', 'e'));
   if (nameTable) {
-    nsAutoCString name;
+    nsCString name;
     nsresult rv = gfxFontUtils::GetFullNameFromTable(nameTable, name);
     if (NS_SUCCEEDED(rv)) {
-      return std::move(name);
+      return name;
     }
   }
   return Name();
@@ -419,6 +464,22 @@ size_t gfxFontEntry::FontTableBlob::SizeOfExcludingThis(
 }
 
 hb_blob_t* gfxFontEntry::GetFontTable(uint32_t aTag) {
+#if MOZ_FONTATIONS
+  if (auto* skf = GetSkrifaFont()) {
+    SkrifaFontTable table = skrifa_font_get_table(skf, aTag);
+    if (!table.length) {
+      return nullptr;
+    }
+    return hb_blob_create(reinterpret_cast<const char*>(table.data),
+                          table.length, HB_MEMORY_MODE_READONLY, nullptr,
+                          nullptr);
+  }
+#endif
+  return GetFontTableInternal(aTag);
+}
+
+// virtual method: may be overridden by platform subclasses
+hb_blob_t* gfxFontEntry::GetFontTableInternal(uint32_t aTag) {
   auto* cache = GetFontTableCache(true);
   MOZ_ASSERT(cache, "missing or incomplete GetFontTable override?");
   if (!cache) {
@@ -631,7 +692,8 @@ void gfxFontEntry::DisconnectSVG() {
   }
 }
 
-bool gfxFontEntry::HasFontTable(uint32_t aTableTag) {
+// Default implementation, may be overridden by platform backends
+bool gfxFontEntry::HasFontTableInternal(uint32_t aTableTag) {
   AutoTable table(this, aTableTag);
   return table && hb_blob_get_length(table) > 0;
 }
@@ -1042,6 +1104,53 @@ gfxFloat gfxFontEntry::TrackingForCSSPx(gfxFloat aSize) const {
          t * int16_t(mTrakValues[sizeIndex]);
 }
 
+bool gfxFontEntry::HasVariations() {
+#if MOZ_FONTATIONS
+  if (const auto* skf = GetSkrifaFont()) {
+    return skrifa_font_axes_count(skf) > 0;
+  }
+#endif
+  return HasVariationsInternal();
+}
+
+void gfxFontEntry::GetVariationAxes(
+    nsTArray<gfxFontVariationAxis>& aVariationAxes) {
+  MOZ_ASSERT(aVariationAxes.IsEmpty());
+#if MOZ_FONTATIONS
+  if (const auto* skf = GetSkrifaFont()) {
+    size_t count = skrifa_font_axes_count(skf);
+    aVariationAxes.SetCapacity(count);
+    if (skrifa_font_copy_axes(skf, &aVariationAxes, false) < count) {
+      // We got fewer axes than |count|, presumably because some were hidden.
+      // Compact the array to reduce wasted space.
+      aVariationAxes.Compact();
+    }
+    return;
+  }
+#endif
+  GetVariationAxesInternal(aVariationAxes);
+}
+
+void gfxFontEntry::GetVariationInstances(
+    nsTArray<gfxFontVariationInstance>& aInstances) {
+  MOZ_ASSERT(aInstances.IsEmpty());
+#if MOZ_FONTATIONS
+  if (const auto* skf = GetSkrifaFont()) {
+    size_t count = skrifa_font_instances_count(skf);
+    aInstances.SetCapacity(count);
+    for (size_t i = 0; i < count; ++i) {
+      gfxFontVariationInstance* inst = aInstances.AppendElement();
+      if (!skrifa_font_copy_instance(skf, i, &inst->mName, &inst->mValues)) {
+        NS_WARNING("failed to get font variation instance from skrifa?");
+        aInstances.RemoveLastElement();
+      }
+    }
+    return;
+  }
+#endif
+  GetVariationInstancesInternal(aInstances);
+}
+
 void gfxFontEntry::SetupVariationRanges() {
   // No locking because this is done during initialization before any other
   // thread has access to the entry.
@@ -1266,9 +1375,10 @@ void gfxFontEntry::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
   aSizes->mFontListSize += mName.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
 
   // cmaps are shared so only non-shared cmaps are included here
-  if (mCharacterMap && GetCharacterMap()->mBuildOnTheFly) {
-    aSizes->mCharMapsSize +=
-        GetCharacterMap()->SizeOfIncludingThis(aMallocSizeOf);
+  if (RefPtr<gfxCharacterMap> map = GetCharacterMapAddRefed()) {
+    if (map->mBuildOnTheFly) {
+      aSizes->mCharMapsSize += map->SizeOfIncludingThis(aMallocSizeOf);
+    }
   }
 
   {
@@ -2032,7 +2142,8 @@ void gfxFontFamily::ReadAllCMAPs(FontInfoData* aFontInfoData) {
       continue;
     }
     face->ReadCMAP(aFontInfoData);
-    familyMap.Union(*(face->GetCharacterMap()));
+    RefPtr faceMap = face->GetCharacterMapAddRefed();
+    familyMap.Union(*(faceMap));
   }
 
   AutoWriteLock lock(mLock);

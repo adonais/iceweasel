@@ -8,9 +8,7 @@ import mozilla.components.concept.toolbar.AutocompleteDelegate
 import mozilla.components.concept.toolbar.Toolbar
 import org.junit.Assert.fail
 
-/**
- * A fake implementation of [Toolbar] that mocks browser toolbar functionality and enables easier testing.
- */
+/** A fake implementation of [Toolbar] that mocks browser toolbar functionality and enables easier testing. */
 @Suppress("TooManyFunctions")
 class FakeToolbar(
     override var url: CharSequence = "",
@@ -20,8 +18,7 @@ class FakeToolbar(
     override var private: Boolean = false
     override var siteInfo: Toolbar.SiteInfo = Toolbar.SiteInfo.INSECURE
     override var highlight: Toolbar.Highlight = Toolbar.Highlight.NONE
-    override var siteTrackingProtection: Toolbar.SiteTrackingProtection =
-        Toolbar.SiteTrackingProtection.OFF_GLOBALLY
+    override var siteTrackingProtection: Toolbar.SiteTrackingProtection = Toolbar.SiteTrackingProtection.OFF_GLOBALLY
 
     var autocompleteFilter: (suspend (String, AutocompleteDelegate) -> Unit)? = null
 

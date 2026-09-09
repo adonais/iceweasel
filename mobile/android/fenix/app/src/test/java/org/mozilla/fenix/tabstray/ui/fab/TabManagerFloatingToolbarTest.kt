@@ -35,26 +35,22 @@ import org.mozilla.fenix.theme.Theme
 
 @RunWith(AndroidJUnit4::class)
 class TabManagerFloatingToolbarTest {
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
-    private val testTabs = listOf(
-        TabsTrayItem.Tab(tab = createTab(url = "https://www.google.com", id = "a")),
-        TabsTrayItem.Tab(tab = createTab(url = "https://www.duckduckgo.com", id = "b")),
-    )
+    private val testTabs =
+        listOf(
+            TabsTrayItem.Tab(tab = createTab(url = "https://www.google.com", id = "a")),
+            TabsTrayItem.Tab(tab = createTab(url = "https://www.duckduckgo.com", id = "b")),
+        )
 
     @Test
     fun `Close all tabs menu item in light theme uses Error color`() {
         val initialState = TabsTrayState(normalTabsState = TabsTrayState.NormalTabsState(items = testTabs))
 
-        setTestContent(
-            initialState = initialState,
-        )
+        setTestContent(initialState = initialState)
 
         composeTestRule.onNodeWithTag(TabsTrayTestTag.THREE_DOT_BUTTON).performClick()
-        composeTestRule.onNodeWithTag(CLOSE_ALL_TABS)
-            .assertExists()
-            .assert(hasTextColor(acornLightColorScheme().error))
+        composeTestRule.onNodeWithTag(CLOSE_ALL_TABS).assertExists().assert(hasTextColor(acornLightColorScheme().error))
     }
 
     @Test
@@ -67,7 +63,8 @@ class TabManagerFloatingToolbarTest {
         )
 
         composeTestRule.onNodeWithTag(TabsTrayTestTag.THREE_DOT_BUTTON).performClick()
-        composeTestRule.onNodeWithTag(CLOSE_ALL_TABS)
+        composeTestRule
+            .onNodeWithTag(CLOSE_ALL_TABS)
             .assertExists()
             .assert(hasTextColor(acornPrivateColorScheme().error))
     }
@@ -82,21 +79,18 @@ class TabManagerFloatingToolbarTest {
         )
 
         composeTestRule.onNodeWithTag(TabsTrayTestTag.THREE_DOT_BUTTON).performClick()
-        composeTestRule.onNodeWithTag(CLOSE_ALL_TABS)
-            .assertExists()
-            .assert(hasTextColor(acornDarkColorScheme().error))
+        composeTestRule.onNodeWithTag(CLOSE_ALL_TABS).assertExists().assert(hasTextColor(acornDarkColorScheme().error))
     }
 
     @Test
     fun `Select all tabs menu item is not displayed on private tabs page`() {
-        val initialState = TabsTrayState(
-            selectedPage = Page.PrivateTabs,
-            privateBrowsing = TabsTrayState.PrivateBrowsingState(tabs = testTabs),
-        )
+        val initialState =
+            TabsTrayState(
+                selectedPage = Page.PrivateTabs,
+                privateBrowsing = TabsTrayState.PrivateBrowsingState(tabs = testTabs),
+            )
 
-        setTestContent(
-            initialState = initialState,
-        )
+        setTestContent(initialState = initialState)
 
         composeTestRule.onNodeWithTag(TabsTrayTestTag.THREE_DOT_BUTTON).performClick()
         composeTestRule.onNodeWithTag(TabsTrayTestTag.SELECT_ALL_TABS).assertDoesNotExist()
@@ -104,14 +98,13 @@ class TabManagerFloatingToolbarTest {
 
     @Test
     fun `Select all tabs menu item is not displayed on synced tabs page`() {
-        val initialState = TabsTrayState(
-            selectedPage = Page.SyncedTabs,
-            privateBrowsing = TabsTrayState.PrivateBrowsingState(tabs = testTabs),
-        )
+        val initialState =
+            TabsTrayState(
+                selectedPage = Page.SyncedTabs,
+                privateBrowsing = TabsTrayState.PrivateBrowsingState(tabs = testTabs),
+            )
 
-        setTestContent(
-            initialState = initialState,
-        )
+        setTestContent(initialState = initialState)
 
         composeTestRule.onNodeWithTag(TabsTrayTestTag.THREE_DOT_BUTTON).performClick()
         composeTestRule.onNodeWithTag(TabsTrayTestTag.SELECT_ALL_TABS).assertDoesNotExist()
@@ -120,10 +113,11 @@ class TabManagerFloatingToolbarTest {
     @Test
     fun `GIVEN user is not signed in WHEN on synced tabs page THEN clicking FAB does not trigger sync`() {
         var clicked = false
-        val initialState = TabsTrayState(
-            selectedPage = Page.SyncedTabs,
-            sync = TabsTrayState.SyncState(isSignedIn = false),
-        )
+        val initialState =
+            TabsTrayState(
+                selectedPage = Page.SyncedTabs,
+                sync = TabsTrayState.SyncState(isSignedIn = false),
+            )
 
         setTestContent(
             initialState = initialState,
@@ -139,15 +133,15 @@ class TabManagerFloatingToolbarTest {
     fun `GIVEN reauth error exists WHEN on synced tabs page THEN clicking FAB does not trigger sync`() {
         val reauthErrorString = testContext.getString(R.string.synced_tabs_reauth)
         var clicked = false
-        val initialState = TabsTrayState(
-            selectedPage = Page.SyncedTabs,
-            sync = TabsTrayState.SyncState(
-                syncedTabs = listOf(
-                    SyncedTabsListItem.Error(errorText = reauthErrorString),
-                ),
-                isSignedIn = false,
-            ),
-        )
+        val initialState =
+            TabsTrayState(
+                selectedPage = Page.SyncedTabs,
+                sync =
+                    TabsTrayState.SyncState(
+                        syncedTabs = listOf(SyncedTabsListItem.Error(errorText = reauthErrorString)),
+                        isSignedIn = false,
+                    ),
+            )
 
         setTestContent(
             initialState = initialState,
@@ -162,19 +156,18 @@ class TabManagerFloatingToolbarTest {
     @Test
     fun `GIVEN user is signed in and no errors WHEN on synced tabs page THEN clicking FAB triggers sync`() {
         var clicked = false
-        val initialState = TabsTrayState(
-            selectedPage = Page.SyncedTabs,
-            sync = TabsTrayState.SyncState(syncedTabs = emptyList(), isSignedIn = true),
-        )
+        val initialState =
+            TabsTrayState(
+                selectedPage = Page.SyncedTabs,
+                sync = TabsTrayState.SyncState(syncedTabs = emptyList(), isSignedIn = true),
+            )
 
         setTestContent(
             initialState = initialState,
             onSyncedTabsFabClicked = { clicked = true },
         )
 
-        composeTestRule.onNodeWithTag(TabsTrayTestTag.FAB)
-            .assertIsDisplayed()
-            .performClick()
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.FAB).assertIsDisplayed().performClick()
 
         assert(clicked)
     }
@@ -182,10 +175,11 @@ class TabManagerFloatingToolbarTest {
     @Test
     fun `GIVEN mode is Select WHEN toolbar is rendered THEN it is hidden`() {
         setTestContent(
-            initialState = TabsTrayState(
-                mode = Mode.Select(),
-                selectedPage = Page.NormalTabs,
-            ),
+            initialState =
+                TabsTrayState(
+                    mode = Mode.Select(),
+                    selectedPage = Page.NormalTabs,
+                )
         )
 
         composeTestRule.onNodeWithTag(TabsTrayTestTag.FAB).assertDoesNotExist()
@@ -230,19 +224,18 @@ class TabManagerFloatingToolbarTest {
             )
         }
 
-        composeTestRule.onNodeWithTag(TabsTrayTestTag.FAB)
-            .assertIsDisplayed()
-            .performClick()
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.FAB).assertIsDisplayed().performClick()
 
         assert(clicked)
     }
 
     @Test
     fun `GIVEN homepage as new tab is enabled WHEN on the normal tabs menu THEN the new tab group item is shown`() {
-        val initialState = TabsTrayState(
-            normalTabsState = TabsTrayState.NormalTabsState(items = testTabs),
-            config = TabsTrayState.TabsTrayConfig(homepageAsNewTabEnabled = true),
-        )
+        val initialState =
+            TabsTrayState(
+                normalTabsState = TabsTrayState.NormalTabsState(items = testTabs),
+                config = TabsTrayState.TabsTrayConfig(homepageAsNewTabEnabled = true),
+            )
 
         setTestContent(initialState = initialState)
 
@@ -252,10 +245,11 @@ class TabManagerFloatingToolbarTest {
 
     @Test
     fun `GIVEN homepage as new tab is disabled WHEN on the normal tabs menu THEN the new tab group item is not shown`() {
-        val initialState = TabsTrayState(
-            normalTabsState = TabsTrayState.NormalTabsState(items = testTabs),
-            config = TabsTrayState.TabsTrayConfig(homepageAsNewTabEnabled = false),
-        )
+        val initialState =
+            TabsTrayState(
+                normalTabsState = TabsTrayState.NormalTabsState(items = testTabs),
+                config = TabsTrayState.TabsTrayConfig(homepageAsNewTabEnabled = false),
+            )
 
         setTestContent(initialState = initialState)
 

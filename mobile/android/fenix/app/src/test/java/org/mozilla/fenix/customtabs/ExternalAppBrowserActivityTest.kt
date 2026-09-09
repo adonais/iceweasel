@@ -15,6 +15,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createCustomTab
 import mozilla.components.browser.state.state.createTab
@@ -36,7 +37,6 @@ import org.mozilla.fenix.ext.getIntentSource
 import org.mozilla.fenix.ext.getNavDirections
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class ExternalAppBrowserActivityTest {
@@ -45,9 +45,12 @@ class ExternalAppBrowserActivityTest {
     fun getIntentSource() {
         val activity = ExternalAppBrowserActivity()
 
-        val launcherIntent = Intent(Intent.ACTION_MAIN).apply {
-            addCategory(Intent.CATEGORY_LAUNCHER)
-        }.toSafeIntent()
+        val launcherIntent =
+            Intent(Intent.ACTION_MAIN)
+                .apply {
+                    addCategory(Intent.CATEGORY_LAUNCHER)
+                }
+                .toSafeIntent()
         assertEquals("CUSTOM_TAB", activity.getIntentSource(launcherIntent))
 
         val viewIntent = Intent(Intent.ACTION_VIEW).toSafeIntent()
@@ -103,20 +106,21 @@ class ExternalAppBrowserActivityTest {
 
     @Test
     fun `getNavDirections finishes activity if session ID is null`() {
-        val activity = spyk(
-            object : ExternalAppBrowserActivity() {
-                override fun getIntent(): Intent {
-                    val intent: Intent = mockk()
-                    val bundle: Bundle = mockk()
-                    every { bundle.getString(any()) } returns ""
-                    every { intent.extras } returns bundle
-                    every { intent.getBooleanExtra(any(), any()) } returns false
-                    every { intent.dataString } returns null
+        val activity =
+            spyk(
+                object : ExternalAppBrowserActivity() {
+                    override fun getIntent(): Intent {
+                        val intent: Intent = mockk()
+                        val bundle: Bundle = mockk()
+                        every { bundle.getString(any()) } returns ""
+                        every { intent.extras } returns bundle
+                        every { intent.getBooleanExtra(any(), any()) } returns false
+                        every { intent.dataString } returns null
 
-                    return intent
+                        return intent
+                    }
                 }
-            },
-        )
+            )
 
         var directions = activity.getNavDirections(BrowserDirection.FromGlobal, "id")
         assertNotNull(directions)
@@ -129,76 +133,82 @@ class ExternalAppBrowserActivityTest {
 
     @Test
     fun `GIVEN intent isSandboxCustomTab is true WHEN getNavDirections called THEN actionGlobalExternalAppBrowser isSandboxCustomTab is true`() {
-        val activity = spyk(
-            object : ExternalAppBrowserActivity() {
-                override fun getIntent(): Intent {
-                    val intent: Intent = mockk()
-                    val bundle: Bundle = mockk()
-                    every { bundle.getString(any()) } returns ""
-                    every { intent.getBooleanExtra(any(), any()) } returns true
-                    every { intent.extras } returns bundle
-                    every { intent.dataString } returns null
+        val activity =
+            spyk(
+                object : ExternalAppBrowserActivity() {
+                    override fun getIntent(): Intent {
+                        val intent: Intent = mockk()
+                        val bundle: Bundle = mockk()
+                        every { bundle.getString(any()) } returns ""
+                        every { intent.getBooleanExtra(any(), any()) } returns true
+                        every { intent.extras } returns bundle
+                        every { intent.dataString } returns null
 
-                    return intent
+                        return intent
+                    }
                 }
-            },
-        )
+            )
 
         val customTabSessionId = "id"
         val directions = activity.getNavDirections(BrowserDirection.FromGlobal, customTabSessionId)
         assertNotNull(directions)
         verify(exactly = 0) { activity.finishAndRemoveTask() }
 
-        val expected = NavGraphDirections.actionGlobalExternalAppBrowser(
-            activeSessionId = customTabSessionId,
-            webAppManifestUrl = null,
-            isSandboxCustomTab = true,
-        )
+        val expected =
+            NavGraphDirections.actionGlobalExternalAppBrowser(
+                activeSessionId = customTabSessionId,
+                webAppManifestUrl = null,
+                isSandboxCustomTab = true,
+            )
         assertEquals(expected, directions)
     }
 
     @Test
     fun `GIVEN intent isSandboxCustomTab is false WHEN getNavDirections called THEN actionGlobalExternalAppBrowser isSandboxCustomTab is false`() {
-        val activity = spyk(
-            object : ExternalAppBrowserActivity() {
-                override fun getIntent(): Intent {
-                    val intent: Intent = mockk()
-                    val bundle: Bundle = mockk()
-                    every { bundle.getString(any()) } returns ""
-                    every { intent.getBooleanExtra(any(), any()) } returns false
-                    every { intent.extras } returns bundle
-                    every { intent.dataString } returns null
+        val activity =
+            spyk(
+                object : ExternalAppBrowserActivity() {
+                    override fun getIntent(): Intent {
+                        val intent: Intent = mockk()
+                        val bundle: Bundle = mockk()
+                        every { bundle.getString(any()) } returns ""
+                        every { intent.getBooleanExtra(any(), any()) } returns false
+                        every { intent.extras } returns bundle
+                        every { intent.dataString } returns null
 
-                    return intent
+                        return intent
+                    }
                 }
-            },
-        )
+            )
 
         val customTabSessionId = "id"
         val directions = activity.getNavDirections(BrowserDirection.FromGlobal, customTabSessionId)
         assertNotNull(directions)
         verify(exactly = 0) { activity.finishAndRemoveTask() }
 
-        val expected = NavGraphDirections.actionGlobalExternalAppBrowser(
-            activeSessionId = customTabSessionId,
-            webAppManifestUrl = null,
-            isSandboxCustomTab = false,
-        )
+        val expected =
+            NavGraphDirections.actionGlobalExternalAppBrowser(
+                activeSessionId = customTabSessionId,
+                webAppManifestUrl = null,
+                isSandboxCustomTab = false,
+            )
         assertEquals(expected, directions)
     }
 
     @Test
     fun `ExternalAppBrowserActivity with matching external tab`() {
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(
-                    createCustomTab(
-                        url = "https://www.mozilla.org",
-                        id = "mozilla",
-                    ),
-                ),
-            ),
-        )
+        val store =
+            BrowserStore(
+                BrowserState(
+                    customTabs =
+                        listOf(
+                            createCustomTab(
+                                url = "https://www.mozilla.org",
+                                id = "mozilla",
+                            )
+                        )
+                )
+            )
 
         val intent = Intent(Intent.ACTION_VIEW).apply { putSessionId("mozilla") }
 
@@ -232,16 +242,18 @@ class ExternalAppBrowserActivityTest {
 
     @Test
     fun `ExternalAppBrowserActivity with matching regular tab`() {
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab(
-                        url = "https://www.mozilla.org",
-                        id = "mozilla",
-                    ),
-                ),
-            ),
-        )
+        val store =
+            BrowserStore(
+                BrowserState(
+                    tabs =
+                        listOf(
+                            createTab(
+                                url = "https://www.mozilla.org",
+                                id = "mozilla",
+                            )
+                        )
+                )
+            )
 
         val intent = Intent(Intent.ACTION_VIEW).apply { putSessionId("mozilla") }
 

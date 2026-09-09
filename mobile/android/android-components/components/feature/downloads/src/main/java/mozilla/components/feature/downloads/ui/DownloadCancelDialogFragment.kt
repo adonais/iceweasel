@@ -28,16 +28,15 @@ import mozilla.components.feature.downloads.R
 import mozilla.components.feature.downloads.databinding.MozacDownloadCancelBinding
 import mozilla.components.support.utils.ext.getParcelableCompat
 
-/**
- * The dialog warns the user that closing last private tab leads to cancellation of active private
- * downloads.
- */
+/** The dialog warns the user that closing last private tab leads to cancellation of active private downloads. */
 class DownloadCancelDialogFragment : AppCompatDialogFragment() {
 
     var onAcceptClicked: ((tabId: String?, source: String?) -> Unit)? = null
     var onDenyClicked: (() -> Unit)? = null
 
-    private val safeArguments get() = requireNotNull(arguments)
+    private val safeArguments
+        get() = requireNotNull(arguments)
+
     private val downloadCount by lazy { safeArguments.getInt(KEY_DOWNLOAD_COUNT) }
     private val tabId by lazy { safeArguments.getString(KEY_TAB_ID) }
     private val source by lazy { safeArguments.getString(KEY_SOURCE) }
@@ -91,67 +90,71 @@ class DownloadCancelDialogFragment : AppCompatDialogFragment() {
     }
 
     @Suppress("InflateParams", "NestedBlockDepth")
-    private fun createContainer() = LayoutInflater.from(requireContext()).inflate(
-        R.layout.mozac_download_cancel,
-        null,
-        false,
-    ).apply {
-        with(MozacDownloadCancelBinding.bind(this)) {
-            acceptButton.setOnClickListener {
-                onAcceptClicked?.invoke(tabId, source)
-                dismiss()
-            }
+    private fun createContainer() =
+        LayoutInflater.from(requireContext())
+            .inflate(
+                R.layout.mozac_download_cancel,
+                null,
+                false,
+            )
+            .apply {
+                with(MozacDownloadCancelBinding.bind(this)) {
+                    acceptButton.setOnClickListener {
+                        onAcceptClicked?.invoke(tabId, source)
+                        dismiss()
+                    }
 
-            denyButton.setOnClickListener {
-                onDenyClicked?.invoke()
-                dismiss()
-            }
+                    denyButton.setOnClickListener {
+                        onDenyClicked?.invoke()
+                        dismiss()
+                    }
 
-            with(promptText) {
-                title.text = getString(titleText)
-                body.text = buildWarningText(downloadCount, bodyText)
-                acceptButton.text = getString(acceptText)
-                denyButton.text = getString(denyText)
-            }
+                    with(promptText) {
+                        title.text = getString(titleText)
+                        body.text = buildWarningText(downloadCount, bodyText)
+                        acceptButton.text = getString(acceptText)
+                        denyButton.text = getString(denyText)
+                    }
 
-            with(promptStyling) {
-                positiveButtonBackgroundColor?.let {
-                    val backgroundTintList = AppCompatResources.getColorStateList(requireContext(), it)
-                    acceptButton.backgroundTintList = backgroundTintList
+                    with(promptStyling) {
+                        positiveButtonBackgroundColor?.let {
+                            val backgroundTintList = AppCompatResources.getColorStateList(requireContext(), it)
+                            acceptButton.backgroundTintList = backgroundTintList
 
-                    // It appears there is not guaranteed way to get background color of a button,
-                    // there are always nullable types, hence the code changing the positiveButtonRadius
-                    // executes only if positiveButtonBackgroundColor is provided
-                    positiveButtonRadius?.let {
-                        val shape = GradientDrawable()
-                        shape.shape = GradientDrawable.RECTANGLE
-                        shape.setColor(
-                            ContextCompat.getColor(
-                                requireContext(),
-                                positiveButtonBackgroundColor,
-                            ),
-                        )
-                        shape.cornerRadius = positiveButtonRadius
-                        acceptButton.background = shape
+                            // It appears there is not guaranteed way to get background color of a button,
+                            // there are always nullable types, hence the code changing the positiveButtonRadius
+                            // executes only if positiveButtonBackgroundColor is provided
+                            positiveButtonRadius?.let {
+                                val shape = GradientDrawable()
+                                shape.shape = GradientDrawable.RECTANGLE
+                                shape.setColor(
+                                    ContextCompat.getColor(
+                                        requireContext(),
+                                        positiveButtonBackgroundColor,
+                                    )
+                                )
+                                shape.cornerRadius = positiveButtonRadius
+                                acceptButton.background = shape
+                            }
+                        }
+
+                        positiveButtonTextColor?.let {
+                            val color = ContextCompat.getColor(requireContext(), it)
+                            acceptButton.setTextColor(color)
+                        }
                     }
                 }
-
-                positiveButtonTextColor?.let {
-                    val color = ContextCompat.getColor(requireContext(), it)
-                    acceptButton.setTextColor(color)
-                }
             }
-        }
-    }
 
     @VisibleForTesting
     internal fun buildWarningText(
         downloadCount: Int,
         @StringRes stringId: Int,
-    ) = String.format(
-        getString(stringId),
-        downloadCount,
-    )
+    ) =
+        String.format(
+            getString(stringId),
+            downloadCount,
+        )
 
     companion object {
         private const val KEY_DOWNLOAD_COUNT = "KEY_DOWNLOAD_COUNT"
@@ -162,6 +165,7 @@ class DownloadCancelDialogFragment : AppCompatDialogFragment() {
 
         /**
          * Returns a new instance of [DownloadCancelDialogFragment].
+         *
          * @param downloadCount The number of currently active downloads.
          * @param promptStyling Styling properties for the dialog.
          * @param onPositiveButtonClicked A lambda called when the allow button is clicked.
@@ -177,13 +181,14 @@ class DownloadCancelDialogFragment : AppCompatDialogFragment() {
             onNegativeButtonClicked: (() -> Unit)? = null,
         ): DownloadCancelDialogFragment {
             return DownloadCancelDialogFragment().apply {
-                this.arguments = Bundle().apply {
-                    putInt(KEY_DOWNLOAD_COUNT, downloadCount)
-                    tabId?.let { putString(KEY_TAB_ID, it) }
-                    source?.let { putString(KEY_SOURCE, it) }
-                    promptText?.let { putParcelable(KEY_TEXT, it) }
-                    promptStyling?.let { putParcelable(KEY_STYLE, it) }
-                }
+                this.arguments =
+                    Bundle().apply {
+                        putInt(KEY_DOWNLOAD_COUNT, downloadCount)
+                        tabId?.let { putString(KEY_TAB_ID, it) }
+                        source?.let { putString(KEY_SOURCE, it) }
+                        promptText?.let { putParcelable(KEY_TEXT, it) }
+                        promptStyling?.let { putParcelable(KEY_STYLE, it) }
+                    }
                 this.onAcceptClicked = onPositiveButtonClicked
                 this.onDenyClicked = onNegativeButtonClicked
             }
@@ -191,9 +196,8 @@ class DownloadCancelDialogFragment : AppCompatDialogFragment() {
     }
 
     /**
-     * Styling for the downloads cancellation dialog.
-     * Note that for [positiveButtonRadius] to be applied,
-     * specifying [positiveButtonBackgroundColor] is necessary.
+     * Styling for the downloads cancellation dialog. Note that for [positiveButtonRadius] to be applied, specifying
+     * [positiveButtonBackgroundColor] is necessary.
      */
     @Parcelize
     data class PromptStyling(
@@ -204,9 +208,7 @@ class DownloadCancelDialogFragment : AppCompatDialogFragment() {
         val positiveButtonRadius: Float? = null,
     ) : Parcelable
 
-    /**
-     * The class gives an option to override string resources used by [DownloadCancelDialogFragment].
-     */
+    /** The class gives an option to override string resources used by [DownloadCancelDialogFragment]. */
     @Parcelize
     data class PromptText(
         @param:StringRes

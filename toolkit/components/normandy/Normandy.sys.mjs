@@ -18,7 +18,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://normandy/lib/PreferenceExperiments.sys.mjs",
   PreferenceRollouts: "resource://normandy/lib/PreferenceRollouts.sys.mjs",
   RecipeRunner: "resource://normandy/lib/RecipeRunner.sys.mjs",
-  ShieldPreferences: "resource://normandy/lib/ShieldPreferences.sys.mjs",
 });
 
 const UI_AVAILABLE_NOTIFICATION = "sessionstore-windows-restored";
@@ -130,12 +129,6 @@ export var Normandy = {
       await lazy.PreferenceExperiments.init();
     } catch (err) {
       log.error("Failed to initialize preference experiments:", err);
-    }
-
-    try {
-      lazy.ShieldPreferences.init();
-    } catch (err) {
-      log.error("Failed to initialize preferences UI:", err);
     }
 
     await lazy.RecipeRunner.init();

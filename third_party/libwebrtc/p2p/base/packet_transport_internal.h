@@ -91,6 +91,7 @@ class RTC_EXPORT PacketTransportInternal {
   void SubscribeReceivingState(
       void* tag,
       absl::AnyInvocable<void(PacketTransportInternal*)> callback);
+  void UnsubscribeReceivingState(void* tag);
   void NotifyReceivingState(PacketTransportInternal* packet_transport);
 
   // Callback is invoked each time a packet is received on this channel.

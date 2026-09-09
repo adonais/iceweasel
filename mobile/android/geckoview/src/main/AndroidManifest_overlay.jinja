@@ -93,5 +93,16 @@
                 android:useAppZygote="true"
                 android:process=":zygoteTab{{ tag }}">
         </service>
+        <!-- Serves the bytes Firefox put on the system clipboard via URI-
+             backed ClipData items. Its primary consumer is the W3C Async
+             Clipboard API web custom format protocol, but the provider
+             itself is MIME-agnostic. Exported so other Android apps
+             (Chrome, etc.) can read the data Firefox copied. -->
+        <provider
+                android:name="org.mozilla.gecko.GeckoClipboardContentProvider"
+                android:authorities="${applicationId}.clipboard"
+                android:exported="true"
+                android:grantUriPermissions="true">
+        </provider>
     </application>
 </manifest>

@@ -16,7 +16,7 @@ internal object TopSitesTestTag {
 
     const val ADD_WEBSITE = "$TOP_SITES.add_website"
 
-    const val TOP_SITES_PAGER_INDICATOR = "$TOP_SITES.pager_indicator"
+    const val EXPAND_TOGGLE = "$TOP_SITES.expand_toggle"
 
     // Contextual/DropDown menu
     const val TOP_SITE_CONTEXTUAL_MENU = "$TOP_SITES.top_site_contextual_menu"

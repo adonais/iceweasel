@@ -40,9 +40,7 @@ class AddonFilePickerTest {
     @Before
     fun setup() {
         addonManager = mock()
-        filePicker = spy(
-            AddonFilePicker(testContext, addonManager),
-        )
+        filePicker = spy(AddonFilePicker(testContext, addonManager))
     }
 
     @Test
@@ -89,12 +87,13 @@ class AddonFilePickerTest {
 
         filePicker.handleUriSelected(uri)
 
-        verify(addonManager).installAddon(
-            url = any<String>(),
-            installationMethod = eq(InstallationMethod.FROM_FILE),
-            onSuccess = any(),
-            onError = any(),
-        )
+        verify(addonManager)
+            .installAddon(
+                url = any<String>(),
+                installationMethod = eq(InstallationMethod.FROM_FILE),
+                onSuccess = any(),
+                onError = any(),
+            )
     }
 
     @Test
@@ -116,12 +115,13 @@ class AddonFilePickerTest {
         val onSuccessCallbackCapture = argumentCaptor<((Addon) -> Unit)>()
         filePicker.handleUriSelected(uri)
 
-        verify(addonManager).installAddon(
-            url = any<String>(),
-            installationMethod = eq(InstallationMethod.FROM_FILE),
-            onSuccess = onSuccessCallbackCapture.capture(),
-            onError = any(),
-        )
+        verify(addonManager)
+            .installAddon(
+                url = any<String>(),
+                installationMethod = eq(InstallationMethod.FROM_FILE),
+                onSuccess = onSuccessCallbackCapture.capture(),
+                onError = any(),
+            )
 
         onSuccessCallbackCapture.value.invoke(mock())
 
@@ -137,12 +137,13 @@ class AddonFilePickerTest {
         val onErrorCapture = argumentCaptor<((Throwable) -> Unit)>()
         filePicker.handleUriSelected(uri)
 
-        verify(addonManager).installAddon(
-            url = any<String>(),
-            installationMethod = eq(InstallationMethod.FROM_FILE),
-            onSuccess = any(),
-            onError = onErrorCapture.capture(),
-        )
+        verify(addonManager)
+            .installAddon(
+                url = any<String>(),
+                installationMethod = eq(InstallationMethod.FROM_FILE),
+                onSuccess = any(),
+                onError = onErrorCapture.capture(),
+            )
 
         onErrorCapture.value.invoke(mock())
 

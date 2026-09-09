@@ -546,9 +546,6 @@ class MOZ_STACK_CLASS TryNoteIterAllNoGC
       : Base(script, pc, NoOpTryNoteFilter()) {}
 };
 
-bool HandleClosingGeneratorReturn(JSContext* cx, AbstractFramePtr frame,
-                                  bool ok);
-
 /************************************************************************/
 
 bool ThrowOperation(JSContext* cx, HandleValue v);

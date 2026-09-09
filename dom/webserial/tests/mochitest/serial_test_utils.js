@@ -87,13 +87,15 @@ async function simulateDeviceConnection(
   deviceId,
   devicePath,
   vendorId,
-  productId
+  productId,
+  bluetoothServiceClassId = ""
 ) {
   await navigator.serial.simulateDeviceConnection(
     deviceId,
     devicePath,
     vendorId,
-    productId
+    productId,
+    bluetoothServiceClassId
   );
 }
 

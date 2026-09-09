@@ -4,6 +4,8 @@
 
 package org.mozilla.focus.components
 
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import mozilla.components.browser.engine.gecko.fetch.GeckoViewFetchClient
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.EngineSession.TrackingProtectionPolicy.CookiePolicy
@@ -17,8 +19,6 @@ import org.mockito.Mockito.mock
 import org.mozilla.focus.utils.Settings
 import org.mozilla.geckoview.GeckoRuntime
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class EngineProviderTest {
@@ -75,14 +75,18 @@ class EngineProviderTest {
     fun `createTrackingProtectionPolicy should block analytics trackers when setting is true`() {
         whenever(settings.shouldBlockAnalyticTrackers()).thenReturn(true)
         val policy = EngineProvider.createTrackingProtectionPolicy(testContext, settings)
-        assertTrue(policy.trackingCategories.contains(EngineSession.TrackingProtectionPolicy.TrackingCategory.ANALYTICS))
+        assertTrue(
+            policy.trackingCategories.contains(EngineSession.TrackingProtectionPolicy.TrackingCategory.ANALYTICS)
+        )
     }
 
     @Test
     fun `createTrackingProtectionPolicy should not block analytics trackers when setting is false`() {
         whenever(settings.shouldBlockAnalyticTrackers()).thenReturn(false)
         val policy = EngineProvider.createTrackingProtectionPolicy(testContext, settings)
-        assertTrue(!policy.trackingCategories.contains(EngineSession.TrackingProtectionPolicy.TrackingCategory.ANALYTICS))
+        assertTrue(
+            !policy.trackingCategories.contains(EngineSession.TrackingProtectionPolicy.TrackingCategory.ANALYTICS)
+        )
     }
 
     @Test

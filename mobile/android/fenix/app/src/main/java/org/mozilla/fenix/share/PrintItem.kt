@@ -20,25 +20,20 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A Print item.
  *
- *  @param onClick event handler when the print item is clicked.
+ * @param onClick event handler when the print item is clicked.
  */
 @Composable
-fun PrintItem(
-    onClick: () -> Unit,
-) {
+fun PrintItem(onClick: () -> Unit) {
     Surface {
         Row(
-            modifier = Modifier
-                .height(56.dp)
-                .fillMaxWidth()
-                .clickable(onClick = onClick),
+            modifier = Modifier.height(56.dp).fillMaxWidth().clickable(onClick = onClick),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Spacer(Modifier.width(16.dp))

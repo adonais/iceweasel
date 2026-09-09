@@ -155,7 +155,7 @@ class OriginInfo final : public SupportsThreadSafeWeakPtr<OriginInfo> {
   constexpr TimeStamp GetLastModifiedTime() const { return mLastModifiedTime; }
 
 #if defined(NIGHTLY_BUILD) || defined(DEBUG)
-  void CheckIfUsageIsConsistent(const nsACString& context) const;
+  bool CheckIfUsageIsConsistent(const nsACString& context) const;
 #endif  // defined(NIGHTLY_BUILD) || defined(DEBUG)
 
   nsTHashMap<nsStringHashKey, NotNull<CanonicalQuotaObject*>>

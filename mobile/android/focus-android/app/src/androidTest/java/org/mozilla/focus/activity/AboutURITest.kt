@@ -16,11 +16,9 @@ import org.mozilla.focus.helpers.MainActivityFirstrunTestRule
 class AboutURITest {
     private val featureSettingsHelper = FeatureSettingsHelper()
 
-    @get:Rule(order = 0)
-    val focusTestRule: FocusTestRule = FocusTestRule()
+    @get:Rule(order = 0) val focusTestRule: FocusTestRule = FocusTestRule()
 
-    @get:Rule
-    val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
+    @get:Rule val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
 
     @Before
     fun setUp() {
@@ -36,19 +34,19 @@ class AboutURITest {
     fun verifyWebCompatPageIsLoadingTest() {
         val webCompatPage = "about:compat"
 
-        searchScreen {
-        }.loadPage(webCompatPage) {
-            verifyPageURL(webCompatPage)
+        searchScreen {}
+            .loadPage(webCompatPage) {
+                verifyPageURL(webCompatPage)
 
-            verifyPageContent("More Information: Bug")
-            verifyPageContent("Interventions")
-            verifyPageContent("Disable", alsoClick = true)
-            verifyPageContent("Enable", alsoClick = true)
-            verifyPageContent("Disable", alsoClick = true)
+                verifyPageContent("More Information: Bug")
+                verifyPageContent("Interventions")
+                verifyPageContent("Disable", alsoClick = true)
+                verifyPageContent("Enable", alsoClick = true)
+                verifyPageContent("Disable", alsoClick = true)
 
-            verifyPageContent("SmartBlock Fixes", alsoClick = true)
-            verifyPageContent("More Information: Bug")
-            verifyPageContent("Disable")
-        }
+                verifyPageContent("SmartBlock Fixes", alsoClick = true)
+                verifyPageContent("More Information: Bug")
+                verifyPageContent("Disable")
+            }
     }
 }

@@ -8,9 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.painter.Painter
+import java.util.concurrent.TimeUnit
 import mozilla.components.concept.fetch.Client
 import mozilla.components.support.images.DesiredSize
-import java.util.concurrent.TimeUnit
 
 /**
  * The scope of an [ImageLoader] block.
@@ -21,13 +21,9 @@ interface ImageLoaderScope {
     val loaderState: MutableState<ImageLoaderState>
 }
 
-/**
- * Renders the inner [content] block if an image was loaded successfully.
- */
+/** Renders the inner [content] block if an image was loaded successfully. */
 @Composable
-fun ImageLoaderScope.WithImage(
-    content: @Composable (Painter) -> Unit,
-) {
+fun ImageLoaderScope.WithImage(content: @Composable (Painter) -> Unit) {
     WithInternalScope {
         val state = loaderState.value
         if (state is ImageLoaderState.Image) {
@@ -36,13 +32,9 @@ fun ImageLoaderScope.WithImage(
     }
 }
 
-/**
- * Renders the inner [content] block while the image is still getting loaded.
- */
+/** Renders the inner [content] block while the image is still getting loaded. */
 @Composable
-fun ImageLoaderScope.Placeholder(
-    content: @Composable () -> Unit,
-) {
+fun ImageLoaderScope.Placeholder(content: @Composable () -> Unit) {
     WithInternalScope {
         val state = loaderState.value
         if (state == ImageLoaderState.Loading) {
@@ -51,13 +43,9 @@ fun ImageLoaderScope.Placeholder(
     }
 }
 
-/**
- * Renders the inner [content] block if loading the image failed.
- */
+/** Renders the inner [content] block if loading the image failed. */
 @Composable
-fun ImageLoaderScope.Fallback(
-    content: @Composable () -> Unit,
-) {
+fun ImageLoaderScope.Fallback(content: @Composable () -> Unit) {
     WithInternalScope {
         val state = loaderState.value
         if (state == ImageLoaderState.Failed) {
@@ -77,9 +65,7 @@ internal class InternalImageLoaderScope(
 ) : ImageLoaderScope
 
 @Composable
-private fun ImageLoaderScope.WithInternalScope(
-    content: @Composable InternalImageLoaderScope.() -> Unit,
-) {
+private fun ImageLoaderScope.WithInternalScope(content: @Composable InternalImageLoaderScope.() -> Unit) {
     val internalScope = this as InternalImageLoaderScope
     internalScope.content()
 }

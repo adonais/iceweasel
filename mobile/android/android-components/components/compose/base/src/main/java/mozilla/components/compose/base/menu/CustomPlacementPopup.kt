@@ -51,12 +51,8 @@ private const val ANIMATION_ORIGIN_BOTTOM_EDGE = 1f
 private const val FULLY_VISIBLE_POPUP_ANIMATION_RATIO = 1f
 private const val FULLY_HIDDEN_POPUP_ANIMATION_RATIO = 0f
 
-/**
- * Layout scope for content that can be shown inside of [CustomPlacementPopup].
- */
-@LayoutScopeMarker
-@Immutable
-object CustomPlacementPopup
+/** Layout scope for content that can be shown inside of [CustomPlacementPopup]. */
+@LayoutScopeMarker @Immutable object CustomPlacementPopup
 
 /**
  * Composable for displaying a custom popup.
@@ -65,8 +61,8 @@ object CustomPlacementPopup
  * @param onDismissRequest Callback to be invoked when the popup is dismissed.
  * @param horizontalAlignment 1D horizontal alignment bias of the popup's content.
  * @param verticalAlignment 1D vertical alignment bias of the popup's content.
- * @param offset The [DpOffset] to apply to the popup's position.
- * This is not used when based on [horizontalAlignment] or [verticalAlignment] the popup should be centered.
+ * @param offset The [DpOffset] to apply to the popup's position. This is not used when based on [horizontalAlignment]
+ *   or [verticalAlignment] the popup should be centered.
  * @param properties The [PopupProperties] used to configure the popup.
  * @param content The composable to be shown inside this popup.
  */
@@ -87,15 +83,16 @@ fun CustomPlacementPopup(
         val density = LocalDensity.current
 
         val transformOriginState = remember { mutableStateOf(TransformOrigin.Center) }
-        val popupPositionProvider = CustomPopupPlacementPositionProvider(
-            horizontalAlignment = horizontalAlignment,
-            verticalAlignment = verticalAlignment,
-            contentOffset = offset,
-            density = density,
-            onPositionCalculated = { parentBounds, menuBounds ->
-                transformOriginState.value = calculateTransformOrigin(parentBounds, menuBounds)
-            },
-        )
+        val popupPositionProvider =
+            CustomPopupPlacementPositionProvider(
+                horizontalAlignment = horizontalAlignment,
+                verticalAlignment = verticalAlignment,
+                contentOffset = offset,
+                density = density,
+                onPositionCalculated = { parentBounds, menuBounds ->
+                    transformOriginState.value = calculateTransformOrigin(parentBounds, menuBounds)
+                },
+            )
 
         Popup(
             onDismissRequest = onDismissRequest,
@@ -122,30 +119,28 @@ internal fun calculateTransformOrigin(
     parentBounds: IntRect,
     menuBounds: IntRect,
 ): TransformOrigin {
-    val pivotX = when {
-        menuBounds.left >= parentBounds.right -> ANIMATION_ORIGIN_START_EDGE
-        menuBounds.right <= parentBounds.left -> ANIMATION_ORIGIN_END_EDGE
-        menuBounds.width == 0 -> ANIMATION_ORIGIN_START_EDGE
-        else -> {
-            val intersectionCenter = (
-                max(parentBounds.left, menuBounds.left) +
-                    min(parentBounds.right, menuBounds.right)
-                ) / 2
-            (intersectionCenter - menuBounds.left).toFloat() / menuBounds.width
+    val pivotX =
+        when {
+            menuBounds.left >= parentBounds.right -> ANIMATION_ORIGIN_START_EDGE
+            menuBounds.right <= parentBounds.left -> ANIMATION_ORIGIN_END_EDGE
+            menuBounds.width == 0 -> ANIMATION_ORIGIN_START_EDGE
+            else -> {
+                val intersectionCenter =
+                    (max(parentBounds.left, menuBounds.left) + min(parentBounds.right, menuBounds.right)) / 2
+                (intersectionCenter - menuBounds.left).toFloat() / menuBounds.width
+            }
         }
-    }
-    val pivotY = when {
-        menuBounds.top >= parentBounds.bottom -> ANIMATION_ORIGIN_TOP_EDGE
-        menuBounds.bottom <= parentBounds.top -> ANIMATION_ORIGIN_BOTTOM_EDGE
-        menuBounds.height == 0 -> ANIMATION_ORIGIN_TOP_EDGE
-        else -> {
-            val intersectionCenter = (
-                max(parentBounds.top, menuBounds.top) +
-                    min(parentBounds.bottom, menuBounds.bottom)
-                ) / 2
-            (intersectionCenter - menuBounds.top).toFloat() / menuBounds.height
+    val pivotY =
+        when {
+            menuBounds.top >= parentBounds.bottom -> ANIMATION_ORIGIN_TOP_EDGE
+            menuBounds.bottom <= parentBounds.top -> ANIMATION_ORIGIN_BOTTOM_EDGE
+            menuBounds.height == 0 -> ANIMATION_ORIGIN_TOP_EDGE
+            else -> {
+                val intersectionCenter =
+                    (max(parentBounds.top, menuBounds.top) + min(parentBounds.bottom, menuBounds.bottom)) / 2
+                (intersectionCenter - menuBounds.top).toFloat() / menuBounds.height
+            }
         }
-    }
     return TransformOrigin(pivotX, pivotY)
 }
 
@@ -164,35 +159,37 @@ private fun CustomPlacementPopupContent(
 ) {
     val expandingMenuState = rememberTransition(expandedStates)
 
-    val scale by expandingMenuState.animateFloat(
-        transitionSpec = {
-            if (false isTransitioningTo true) {
-                tween(durationMillis = ANIMATION_DURATION_MS)
-            } else {
-                tween(durationMillis = ANIMATION_DURATION_MS)
+    val scale by
+        expandingMenuState.animateFloat(
+            transitionSpec = {
+                if (false isTransitioningTo true) {
+                    tween(durationMillis = ANIMATION_DURATION_MS)
+                } else {
+                    tween(durationMillis = ANIMATION_DURATION_MS)
+                }
             }
-        },
-    ) { isExpanding ->
-        when (isExpanding) {
-            true -> FULLY_VISIBLE_POPUP_ANIMATION_RATIO
-            false -> FULLY_HIDDEN_POPUP_ANIMATION_RATIO
+        ) { isExpanding ->
+            when (isExpanding) {
+                true -> FULLY_VISIBLE_POPUP_ANIMATION_RATIO
+                false -> FULLY_HIDDEN_POPUP_ANIMATION_RATIO
+            }
         }
-    }
 
-    val alpha by expandingMenuState.animateFloat(
-        transitionSpec = {
-            if (false isTransitioningTo true) {
-                tween(durationMillis = ANIMATION_DURATION_MS)
-            } else {
-                tween(durationMillis = ANIMATION_DURATION_MS)
+    val alpha by
+        expandingMenuState.animateFloat(
+            transitionSpec = {
+                if (false isTransitioningTo true) {
+                    tween(durationMillis = ANIMATION_DURATION_MS)
+                } else {
+                    tween(durationMillis = ANIMATION_DURATION_MS)
+                }
             }
-        },
-    ) { isExpanding ->
-        when (isExpanding) {
-            true -> FULLY_VISIBLE_POPUP_ANIMATION_RATIO
-            false -> FULLY_HIDDEN_POPUP_ANIMATION_RATIO
+        ) { isExpanding ->
+            when (isExpanding) {
+                true -> FULLY_VISIBLE_POPUP_ANIMATION_RATIO
+                false -> FULLY_HIDDEN_POPUP_ANIMATION_RATIO
+            }
         }
-    }
 
     fun GraphicsLayerScope.graphicsLayerAnim() {
         scaleX = scale
@@ -213,17 +210,17 @@ private fun CustomPlacementPopupContent(
 /**
  * Custom [PopupPositionProvider] implementation for positioning a popup relative to an anchor.
  *
- * This class provides a flexible way to calculate the position of a popup menu, allowing to specify
- * an alignment bias and taking into account the anchor's position and size, the window's size, and a content offset.
+ * This class provides a flexible way to calculate the position of a popup menu, allowing to specify an alignment bias
+ * and taking into account the anchor's position and size, the window's size, and a content offset.
  *
- * @property horizontalAlignment The horizontal alignment bias of the popup's content.
- * The popup might not always respect this if it cannot fit in the available space.
- * @property verticalAlignment The vertical alignment bias of the popup's content.
- * The popup might not always respect this if it cannot fit in the available space.
+ * @property horizontalAlignment The horizontal alignment bias of the popup's content. The popup might not always
+ *   respect this if it cannot fit in the available space.
+ * @property verticalAlignment The vertical alignment bias of the popup's content. The popup might not always respect
+ *   this if it cannot fit in the available space.
  * @property contentOffset The offset to apply to the popup's position relative to the anchor.
  * @property density The screen density used for converting between DP and pixel values.
- * @property onPositionCalculated A callback for when a suitable popup position is found through which
- * the integrator will be informed about the anchor and the popup bounds in the window's coordinate system.
+ * @property onPositionCalculated A callback for when a suitable popup position is found through which the integrator
+ *   will be informed about the anchor and the popup bounds in the window's coordinate system.
  */
 @Immutable
 @VisibleForTesting
@@ -240,24 +237,27 @@ internal data class CustomPopupPlacementPositionProvider(
         layoutDirection: LayoutDirection,
         popupContentSize: IntSize,
     ): IntOffset {
-        val popupOffsetPx = with(density) {
-            IntOffset(contentOffset.x.roundToPx(), contentOffset.y.roundToPx())
-        }
-        val x = computePopupXCoord(
-            horizontalAlignment,
-            windowSize,
-            anchorBounds,
-            popupContentSize,
-            popupOffsetPx,
-            layoutDirection,
-        )
-        val y = computePopupYCoord(
-            verticalAlignment,
-            windowSize,
-            anchorBounds,
-            popupContentSize,
-            popupOffsetPx,
-        )
+        val popupOffsetPx =
+            with(density) {
+                IntOffset(contentOffset.x.roundToPx(), contentOffset.y.roundToPx())
+            }
+        val x =
+            computePopupXCoord(
+                horizontalAlignment,
+                windowSize,
+                anchorBounds,
+                popupContentSize,
+                popupOffsetPx,
+                layoutDirection,
+            )
+        val y =
+            computePopupYCoord(
+                verticalAlignment,
+                windowSize,
+                anchorBounds,
+                popupContentSize,
+                popupOffsetPx,
+            )
 
         onPositionCalculated(
             anchorBounds,
@@ -270,8 +270,8 @@ internal data class CustomPopupPlacementPositionProvider(
 /**
  * Compute the Y coordinate of the popup.
  *
- * @param wantedAlignment The vertical alignment bias of the popup's content.
- * The result might not always respect this if it cannot fit in the available space.
+ * @param wantedAlignment The vertical alignment bias of the popup's content. The result might not always respect this
+ *   if it cannot fit in the available space.
  * @param windowSize The size of the window containing the anchor layout.
  * @param anchorBounds The window relative bounds of the layout which this popup is anchored to.
  * @param popupContentSize The size of the popup's content.
@@ -313,38 +313,41 @@ private fun computePopupYCoord(
     // Or anchor it in the available space with bias towards the wanted alignment
     return if (wantedAlignment == CenterVertically) {
         sequenceOf(
-            bottomToAnchorTop,
-            topToAnchorBottom,
-            topToWindowTop,
-        ).firstOrNull {
-            it >= 0 && it + popupContentSize.height <= maxWindowBottom
-        } ?: bottomToWindowBottom
+                bottomToAnchorTop,
+                topToAnchorBottom,
+                topToWindowTop,
+            )
+            .firstOrNull {
+                it >= 0 && it + popupContentSize.height <= maxWindowBottom
+            } ?: bottomToWindowBottom
     } else if (wantedAlignment == Top) {
         sequenceOf(
-            bottomToAnchorTop,
-            topToAnchorBottom,
-            centerToAnchorTop,
-            topToWindowTop,
-        ).firstOrNull {
-            it >= 0 && it + popupContentSize.height <= maxWindowBottom
-        } ?: bottomToWindowBottom
+                bottomToAnchorTop,
+                topToAnchorBottom,
+                centerToAnchorTop,
+                topToWindowTop,
+            )
+            .firstOrNull {
+                it >= 0 && it + popupContentSize.height <= maxWindowBottom
+            } ?: bottomToWindowBottom
     } else {
         sequenceOf(
-            topToAnchorBottom,
-            bottomToAnchorTop,
-            centerToAnchorTop,
-            bottomToWindowBottom,
-        ).firstOrNull {
-            it >= 0 && it + popupContentSize.height <= maxWindowBottom
-        } ?: topToWindowTop
+                topToAnchorBottom,
+                bottomToAnchorTop,
+                centerToAnchorTop,
+                bottomToWindowBottom,
+            )
+            .firstOrNull {
+                it >= 0 && it + popupContentSize.height <= maxWindowBottom
+            } ?: topToWindowTop
     }
 }
 
 /**
  * Compute the X coordinate of the popup.
  *
- * @param wantedAlignment The horizontal alignment bias of the popup's content.
- * The result might not always respect this if it cannot fit in the available space.
+ * @param wantedAlignment The horizontal alignment bias of the popup's content. The result might not always respect this
+ *   if it cannot fit in the available space.
  * @param windowSize The size of the window containing the anchor layout.
  * @param anchorBounds The window relative bounds of the layout which this popup is anchored to.
  * @param popupContentSize The size of the popup's content.
@@ -388,35 +391,37 @@ private fun computePopupXCoord(
     // Or anchor it in the available space with bias towards the wanted alignment
     return if (wantedAlignment == Start || wantedAlignment == CenterHorizontally) {
         if (layoutDirection == Ltr) {
-            sequenceOf(
-                leftToAnchorLeft,
-                rightToAnchorRight,
-                if (anchorBounds.left >= 0) rightToWindowRight else leftToWindowLeft,
-            )
-        } else {
-            sequenceOf(
-                rightToAnchorRight,
-                leftToAnchorLeft,
-                if (anchorBounds.right <= windowSize.width) leftToWindowLeft else rightToWindowRight,
-            )
-        }.firstOrNull {
-            it >= 0 && it + popupContentSize.width <= windowSize.width
-        } ?: leftToWindowLeft
+                sequenceOf(
+                    leftToAnchorLeft,
+                    rightToAnchorRight,
+                    if (anchorBounds.left >= 0) rightToWindowRight else leftToWindowLeft,
+                )
+            } else {
+                sequenceOf(
+                    rightToAnchorRight,
+                    leftToAnchorLeft,
+                    if (anchorBounds.right <= windowSize.width) leftToWindowLeft else rightToWindowRight,
+                )
+            }
+            .firstOrNull {
+                it >= 0 && it + popupContentSize.width <= windowSize.width
+            } ?: leftToWindowLeft
     } else {
         if (layoutDirection == Ltr) {
-            sequenceOf(
-                leftToAnchorRight,
-                leftToAnchorLeft,
-                if (anchorBounds.right <= windowSize.width) leftToWindowLeft else rightToWindowRight,
-            )
-        } else {
-            sequenceOf(
-                rightToAnchorLeft,
-                leftToAnchorRight,
-                if (anchorBounds.left >= 0) rightToWindowRight else leftToWindowLeft,
-            )
-        }.firstOrNull {
-            it >= 0 && it + popupContentSize.width <= windowSize.width
-        } ?: rightToWindowRight
+                sequenceOf(
+                    leftToAnchorRight,
+                    leftToAnchorLeft,
+                    if (anchorBounds.right <= windowSize.width) leftToWindowLeft else rightToWindowRight,
+                )
+            } else {
+                sequenceOf(
+                    rightToAnchorLeft,
+                    leftToAnchorRight,
+                    if (anchorBounds.left >= 0) rightToWindowRight else leftToWindowLeft,
+                )
+            }
+            .firstOrNull {
+                it >= 0 && it + popupContentSize.width <= windowSize.width
+            } ?: rightToWindowRight
     }
 }

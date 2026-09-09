@@ -7,8 +7,7 @@ package org.mozilla.fenix.tabstray.ui.tabitems
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 
 /**
- * Data object that orchestrates click handling for a TabTray item.
- * This item may be a tab or group of tabs.
+ * Data object that orchestrates click handling for a TabTray item. This item may be a tab or group of tabs.
  *
  * @property enabled: Whether this TabItem should listen to clicks
  * @property onClick: Invoked when the TabItem is clicked

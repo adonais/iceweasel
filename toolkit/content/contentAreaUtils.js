@@ -111,7 +111,7 @@ function saveBrowser(aBrowser, aSkipPrompt, aBrowsingContext = null) {
   // PDF.js has its own way to handle saving PDFs since it may need to
   // generate a new PDF to save modified form data.
   if (aBrowser.contentPrincipal.spec == "resource://pdf.js/web/viewer.html") {
-    aBrowser.sendMessageToActor("PDFJS:Save", {}, "Pdfjs");
+    aBrowser.sendMessageToActor("PDFJS:Save", {}, "PdfJs");
     return;
   }
   let stack = Components.stack.caller;
@@ -348,7 +348,12 @@ function internalSave(
     let relatedURI =
       aOriginalURL || aReferrerInfo?.originalReferrer || sourceURI;
 
-    promiseTargetFile(fpParams, aSkipPrompt, relatedURI)
+    promiseTargetFile(
+      fpParams,
+      aSkipPrompt,
+      relatedURI,
+      aOriginalURL || sourceURI
+    )
       .then(aDialogAccepted => {
         if (!aDialogAccepted) {
           // Close the persist document to tear down the IPC actor
@@ -691,6 +696,8 @@ function initFileInfo(
  *        An nsIURI associated with the download. The last used
  *        directory of the picker is retrieved from/stored in the
  *        Content Pref Service using this URI.
+ * @param aSourceURI
+ *        The source URI, used to prefer its parent directory for local files.
  * @returns {Promise<boolean>}
  *   Resolves to a boolean. When true, it indicates that the file picker dialog is
  *   accepted.
@@ -698,8 +705,42 @@ function initFileInfo(
 function promiseTargetFile(
   aFpP,
   /* optional */ aSkipPrompt,
-  /* optional */ aRelatedURI
+  /* optional */ aRelatedURI,
+  /* optional */ aSourceURI
 ) {
+  /**
+   * Returns an existing parent directory for a local source outside the system
+   * temporary directory.
+   *
+   * @param {string|nsIURI|URL} aURI
+   *        The source URI.
+   * @returns {Promise<nsIFile|null>}
+   *   The source directory, or null.
+   */
+  async function getLocalSourceDirectory(aURI) {
+    try {
+      let uri = typeof aURI == "string" ? makeURI(aURI) : aURI;
+      if (URL.isInstance(uri)) {
+        uri = uri.URI;
+      }
+      if (!uri.schemeIs("file")) {
+        return null;
+      }
+      const dir = uri.QueryInterface(Ci.nsIFileURL).file.parent;
+      if (!(await IOUtils.exists(dir.path))) {
+        return null;
+      }
+      // Normalize both paths before checking whether the source is under TmpD.
+      const realDir = dir.clone();
+      realDir.normalize();
+      const tmpDir = Services.dirsvc.get("TmpD", Ci.nsIFile);
+      tmpDir.normalize();
+      return realDir.equals(tmpDir) || tmpDir.contains(realDir) ? null : dir;
+    } catch {
+      return null;
+    }
+  }
+
   return (async function () {
     let downloadLastDir = new DownloadLastDir(window);
     let prefBranch = Services.prefs.getBranch("browser.download.");
@@ -722,9 +763,12 @@ function promiseTargetFile(
     }
 
     // We must prompt for the file name explicitly.
-    // If we must prompt because we were asked to...
-    let file = null;
-    if (!useDownloadDir) {
+    // When the source is a local file, default to its own directory so it's
+    // easy to save it "in place": DownloadLastDir shares a single last-used
+    // directory across all file: URLs, which is rarely the right one.
+    let file = await getLocalSourceDirectory(aSourceURI);
+    // Otherwise, if we must prompt because we were asked to...
+    if (!file && !useDownloadDir) {
       file = await downloadLastDir.getFileAsync(aRelatedURI);
     }
     if (file && (await IOUtils.exists(file.path))) {
@@ -855,6 +899,7 @@ function DownloadURL(aURL, aFileName, aInitiatingDocument) {
     let accepted = await promiseTargetFile(
       filepickerParams,
       true,
+      fileInfo.uri,
       fileInfo.uri
     );
     if (!accepted) {

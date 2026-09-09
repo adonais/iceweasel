@@ -5,11 +5,11 @@
 package org.mozilla.fenix.home.recenttabs.controller
 
 import androidx.navigation.NavController
-import androidx.navigation.NavDirections
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.LastMediaAccessState
@@ -27,13 +27,11 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class RecentTabControllerTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private val navController: NavController = mockk(relaxed = true)
     private val selectTabUseCase: TabsUseCases = mockk(relaxed = true)
@@ -45,30 +43,31 @@ class RecentTabControllerTest {
 
     @Before
     fun setup() {
-        store = BrowserStore(
-            BrowserState(),
-        )
-        controller = spyk(
-            DefaultRecentTabsController(
-                selectTabUseCase = selectTabUseCase.selectTab,
-                navController = navController,
-                appStore = appStore,
-            ),
-        )
+        store = BrowserStore(BrowserState())
+        controller =
+            spyk(
+                DefaultRecentTabsController(
+                    selectTabUseCase = selectTabUseCase.selectTab,
+                    navController = navController,
+                    appStore = appStore,
+                )
+            )
     }
 
     @Test
     fun handleRecentTabClicked() {
         assertNull(RecentTabs.recentTabOpened.testGetValue())
 
-        every { navController.currentDestination } returns mockk {
-            every { id } returns R.id.homeFragment
-        }
+        every { navController.currentDestination } returns
+            mockk {
+                every { id } returns R.id.homeFragment
+            }
 
-        val tab = createTab(
-            url = "https://mozilla.org",
-            title = "Mozilla",
-        )
+        val tab =
+            createTab(
+                url = "https://mozilla.org",
+                title = "Mozilla",
+            )
         store.dispatch(TabListAction.AddTabAction(tab))
         store.dispatch(TabListAction.SelectTabAction(tab.id))
 
@@ -85,15 +84,17 @@ class RecentTabControllerTest {
     fun handleRecentTabClickedForMediaTab() {
         assertNull(RecentTabs.recentTabOpened.testGetValue())
 
-        every { navController.currentDestination } returns mockk {
-            every { id } returns R.id.homeFragment
-        }
+        every { navController.currentDestination } returns
+            mockk {
+                every { id } returns R.id.homeFragment
+            }
 
-        val inProgressMediaTab = createTab(
-            url = "mediaUrl",
-            id = "2",
-            lastMediaAccessState = LastMediaAccessState("https://mozilla.com", 123, true),
-        )
+        val inProgressMediaTab =
+            createTab(
+                url = "mediaUrl",
+                id = "2",
+                lastMediaAccessState = LastMediaAccessState("https://mozilla.com", 123, true),
+            )
 
         store.dispatch(TabListAction.AddTabAction(inProgressMediaTab))
         store.dispatch(TabListAction.SelectTabAction(inProgressMediaTab.id))
@@ -105,20 +106,5 @@ class RecentTabControllerTest {
             navController.navigate(R.id.browserFragment)
         }
         assertNotNull(RecentTabs.recentTabOpened.testGetValue())
-    }
-
-    @Test
-    fun handleRecentTabShowAllClickedFromHome() {
-        assertNull(RecentTabs.showAllClicked.testGetValue())
-
-        controller.handleRecentTabShowAllClicked()
-
-        verify {
-            navController.navigate(
-                match<NavDirections> { it.actionId == R.id.action_global_tabManagementFragment },
-            )
-        }
-
-        assertNotNull(RecentTabs.showAllClicked.testGetValue())
     }
 }

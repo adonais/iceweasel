@@ -6,23 +6,17 @@ package mozilla.components.support.base.facts
 
 import androidx.annotation.VisibleForTesting
 
-/**
- * Global API for collecting [Fact] objects and forwarding them to [FactProcessor] instances.
- */
+/** Global API for collecting [Fact] objects and forwarding them to [FactProcessor] instances. */
 object Facts {
     private val processors = mutableListOf<FactProcessor>()
 
-    /**
-     * Registers a new [FactProcessor].
-     */
+    /** Registers a new [FactProcessor]. */
     fun registerProcessor(processor: FactProcessor): Facts {
         processors.add(processor)
         return this
     }
 
-    /**
-     * Collects a [Fact] and forwards it to all registered [FactProcessor] instances.
-     */
+    /** Collects a [Fact] and forwards it to all registered [FactProcessor] instances. */
     fun collect(fact: Fact) {
         processors.forEach { it.process(fact) }
     }

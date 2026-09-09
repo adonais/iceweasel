@@ -21,35 +21,33 @@ import mozilla.components.support.base.ids.SharedIdsHelper
 private const val NOTIFICATION_TAG = "mozac.lib.crash.sendcrash"
 private const val NOTIFICATION_ID = 1
 
-@VisibleForTesting(otherwise = PRIVATE)
-internal const val NOTIFICATION_TAG_KEY = "mozac.lib.crash.notification.tag"
+@VisibleForTesting(otherwise = PRIVATE) internal const val NOTIFICATION_TAG_KEY = "mozac.lib.crash.notification.tag"
 
-@VisibleForTesting(otherwise = PRIVATE)
-internal const val NOTIFICATION_ID_KEY = "mozac.lib.crash.notification.id"
+@VisibleForTesting(otherwise = PRIVATE) internal const val NOTIFICATION_ID_KEY = "mozac.lib.crash.notification.id"
 
 class SendCrashReportService : Service() {
     private val crashReporter: CrashReporter by lazy { CrashReporter.requireInstance }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         intent.getStringExtra(NOTIFICATION_TAG_KEY)?.apply {
-            NotificationManagerCompat.from(applicationContext)
-                .cancel(this, intent.getIntExtra(NOTIFICATION_ID_KEY, 0))
+            NotificationManagerCompat.from(applicationContext).cancel(this, intent.getIntExtra(NOTIFICATION_ID_KEY, 0))
         }
 
         val channel = CrashNotification.ensureChannelExists(this)
-        val notification = NotificationCompat.Builder(this, channel)
-            .setContentTitle(
-                getString(
-                    R.string.mozac_lib_send_crash_report_in_progress,
-                    crashReporter.promptConfiguration.organizationName,
-                ),
-            )
-            .setSmallIcon(R.drawable.mozac_lib_crash_notification)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setCategory(NotificationCompat.CATEGORY_ERROR)
-            .setAutoCancel(true)
-            .setProgress(0, 0, true)
-            .build()
+        val notification =
+            NotificationCompat.Builder(this, channel)
+                .setContentTitle(
+                    getString(
+                        R.string.mozac_lib_send_crash_report_in_progress,
+                        crashReporter.promptConfiguration.organizationName,
+                    )
+                )
+                .setSmallIcon(R.drawable.mozac_lib_crash_notification)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setCategory(NotificationCompat.CATEGORY_ERROR)
+                .setAutoCancel(true)
+                .setProgress(0, 0, true)
+                .build()
 
         val notificationId = SharedIdsHelper.getIdForTag(this, NOTIFICATION_TAG)
         startForeground(notificationId, notification)

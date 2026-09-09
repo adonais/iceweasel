@@ -6,9 +6,7 @@ package mozilla.components.feature.intent.processing
 
 import android.content.Intent
 
-/**
- * Processor for Android intents which should trigger session-related actions.
- */
+/** Processor for Android intents which should trigger session-related actions. */
 interface IntentProcessor {
     /**
      * Processes the given [Intent].

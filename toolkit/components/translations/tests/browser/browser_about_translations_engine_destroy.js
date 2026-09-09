@@ -4,115 +4,49 @@
 "use strict";
 
 /**
- * Manually destroys the engine and verifies that about:translations can
- * translate additional source text with a new engine.
+ * This test case verifies recovery after an explicit engine shutdown.
  */
 add_task(async function test_about_translations_engine_destroy() {
-  const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations({
-    languagePairs: [
-      { fromLang: "en", toLang: "fr" },
-      { fromLang: "fr", toLang: "en" },
-    ],
-  });
-
-  const initialSourceText = "Hello world";
-
-  await aboutTranslationsTestUtils.assertEvents(
-    {
-      expected: [
-        [
-          AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
-          { sourceText: initialSourceText },
-        ],
-        [
-          AboutTranslationsTestUtils.Events.TranslationRequested,
-          { translationId: 1 },
-        ],
-        [AboutTranslationsTestUtils.Events.ShowTranslatingPlaceholder],
-      ],
+  await AboutTranslationsTestUtils.assertTranslationAfterEngineShutdown({
+    async shutdownEngine() {
+      info("Explicitly destroy the engine process.");
+      await destroyTranslationsEngine();
     },
-    async () => {
-      await aboutTranslationsTestUtils.setSourceLanguageSelectorValue("en");
-      await aboutTranslationsTestUtils.setTargetLanguageSelectorValue("fr");
-      await aboutTranslationsTestUtils.setSourceTextAreaValue(
-        initialSourceText
+  });
+});
+
+/**
+ * This test case covers recreating both the inference process and translations
+ * engine after an idle timeout.
+ */
+add_task(async function test_about_translations_process_idle_timeout() {
+  await AboutTranslationsTestUtils.assertTranslationAfterEngineShutdown({
+    async shutdownEngine() {
+      info("Wait for the engine to shut down after its idle timeout.");
+      await TranslationsEngineTestUtils.waitForIdleTimeout({
+        sourceLanguage: "en",
+        targetLanguage: "fr",
+      });
+    },
+  });
+});
+
+/**
+ * This test case covers recreating a translations engine inside an inference
+ * process kept alive by another engine actor.
+ */
+add_task(async function test_about_translations_engine_idle_timeout() {
+  await AboutTranslationsTestUtils.assertTranslationAfterEngineShutdown({
+    keepProcessAlive: true,
+    prefs: [["browser.ml.enable", true]],
+    async shutdownEngine(engineParent) {
+      info(
+        "Wait for the translations engine to expire after its idle timeout."
       );
-    }
-  );
-
-  await aboutTranslationsTestUtils.assertEvents(
-    {
-      expected: [
-        [
-          AboutTranslationsTestUtils.Events.TranslationComplete,
-          { translationId: 1 },
-        ],
-      ],
-    },
-    async () => {
-      await aboutTranslationsTestUtils.resolveDownloads(1);
-    }
-  );
-
-  await aboutTranslationsTestUtils.assertTranslatedText({
-    sourceLanguage: "en",
-    targetLanguage: "fr",
-    sourceText: initialSourceText,
-  });
-
-  info("Destroy the engine process.");
-  await destroyTranslationsEngine();
-
-  const updatedSourceText = "Hello again";
-
-  info("Update the source text to trigger a new translation.");
-  await aboutTranslationsTestUtils.assertEvents(
-    {
-      expected: [
-        [
-          AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
-          { sourceText: updatedSourceText },
-        ],
-        [
-          AboutTranslationsTestUtils.Events.URLUpdatedFromUI,
-          {
-            sourceLanguage: "en",
-            targetLanguage: "fr",
-            sourceText: updatedSourceText,
-          },
-        ],
-        [
-          AboutTranslationsTestUtils.Events.TranslationRequested,
-          { translationId: 2 },
-        ],
-      ],
-    },
-    async () => {
-      await aboutTranslationsTestUtils.setSourceTextAreaValue(
-        updatedSourceText
+      await TranslationsEngineTestUtils.waitForIdleTimeoutWithProcessAlive(
+        engineParent,
+        { sourceLanguage: "en", targetLanguage: "fr" }
       );
-    }
-  );
-
-  await aboutTranslationsTestUtils.assertEvents(
-    {
-      expected: [
-        [
-          AboutTranslationsTestUtils.Events.TranslationComplete,
-          { translationId: 2 },
-        ],
-      ],
     },
-    async () => {
-      await aboutTranslationsTestUtils.resolveDownloads(1);
-    }
-  );
-
-  await aboutTranslationsTestUtils.assertTranslatedText({
-    sourceLanguage: "en",
-    targetLanguage: "fr",
-    sourceText: updatedSourceText,
   });
-
-  await cleanup();
 });

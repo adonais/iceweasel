@@ -355,6 +355,17 @@ inline void GCRuntime::forEachNonEmptyChunk(const AutoLockGC& lock, F&& func) {
   }
 }
 
+inline AutoMarkingLock::AutoMarkingLock(JSRuntime* rt, LightLock& markingLock) {
+#ifdef JS_GC_CONCURRENT_MARKING
+  GCRuntime* gc = &rt->gc;
+  if (gc->isConcurrentMarkingEnabled() && gc->isIncrementalGCInProgress()) {
+    lock = &markingLock;
+    runtime = rt;
+    lock->lock(runtime);
+  }
+#endif
+}
+
 }  // namespace js::gc
 
 template <typename F>

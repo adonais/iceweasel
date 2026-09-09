@@ -16,18 +16,19 @@ import org.junit.runners.JUnit4
 class JUnitAssertNotNullDetectorTest : LintDetectorTest() {
     override fun getDetector(): Detector = JUnitAssertNotNullDetector()
 
-    override fun getIssues(): List<Issue> =
-        listOf(JUnitAssertNotNullDetector.ISSUE_USE_KOTLIN_TEST_ASSERT_NOT_NULL)
+    override fun getIssues(): List<Issue> = listOf(JUnitAssertNotNullDetector.ISSUE_USE_KOTLIN_TEST_ASSERT_NOT_NULL)
 
-    private val junitAssertStub = TestFiles.java(
-        """
+    private val junitAssertStub =
+        TestFiles.java(
+                """
         package org.junit;
         public class Assert {
             public static void assertNotNull(Object value) {}
             public static void assertNotNull(String message, Object value) {}
         }
-        """,
-    ).indented()
+        """
+            )
+            .indented()
 
     @Test
     fun `single-arg JUnit assertNotNull via static import is replaced`() {
@@ -35,7 +36,7 @@ class JUnitAssertNotNullDetectorTest : LintDetectorTest() {
             .files(
                 junitAssertStub,
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     import org.junit.Assert.assertNotNull
 
@@ -45,8 +46,9 @@ class JUnitAssertNotNullDetectorTest : LintDetectorTest() {
                             assertNotNull(value)
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectWarningCount(1)
@@ -56,7 +58,8 @@ class JUnitAssertNotNullDetectorTest : LintDetectorTest() {
                 @@ -7 +7 @@
                 -        assertNotNull(value)
                 +        kotlin.test.assertNotNull(value)
-                """.trimIndent(),
+                """
+                    .trimIndent()
             )
     }
 
@@ -66,7 +69,7 @@ class JUnitAssertNotNullDetectorTest : LintDetectorTest() {
             .files(
                 junitAssertStub,
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     import org.junit.Assert
 
@@ -76,8 +79,9 @@ class JUnitAssertNotNullDetectorTest : LintDetectorTest() {
                             Assert.assertNotNull(value)
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectWarningCount(1)
@@ -87,7 +91,8 @@ class JUnitAssertNotNullDetectorTest : LintDetectorTest() {
                 @@ -7 +7 @@
                 -        Assert.assertNotNull(value)
                 +        kotlin.test.assertNotNull(value)
-                """.trimIndent(),
+                """
+                    .trimIndent()
             )
     }
 
@@ -97,7 +102,7 @@ class JUnitAssertNotNullDetectorTest : LintDetectorTest() {
             .files(
                 junitAssertStub,
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     import org.junit.Assert
 
@@ -107,8 +112,9 @@ class JUnitAssertNotNullDetectorTest : LintDetectorTest() {
                             Assert.assertNotNull("should not be null", value)
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectWarningCount(1)
@@ -118,7 +124,8 @@ class JUnitAssertNotNullDetectorTest : LintDetectorTest() {
                 @@ -7 +7 @@
                 -        Assert.assertNotNull("should not be null", value)
                 +        kotlin.test.assertNotNull(value, "should not be null")
-                """.trimIndent(),
+                """
+                    .trimIndent()
             )
     }
 
@@ -129,7 +136,7 @@ class JUnitAssertNotNullDetectorTest : LintDetectorTest() {
                 // lint won't resolve source stubs declared in kotlin.* packages, so the
                 // kotlin.test-style assertNotNull is stubbed in the test package.
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     fun <T : Any> assertNotNull(actual: T?, message: String? = null): T = actual!!
 
@@ -139,8 +146,9 @@ class JUnitAssertNotNullDetectorTest : LintDetectorTest() {
                             assertNotNull(value)
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented()
             )
             .run()
             .expectClean()

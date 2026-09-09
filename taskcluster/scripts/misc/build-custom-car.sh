@@ -84,7 +84,7 @@ fi
 # Logic for macosx64
 if [[ $(uname -s) == "Darwin" ]]; then
   export MACOS_SYSROOT="$MOZ_FETCHES_DIR/MacOSX26.5.sdk"
-  CONFIG=$(echo $CONFIG mac_sdk_path='"'$MACOS_SYSROOT'"')
+  CONFIG=$(echo $CONFIG mac_sdk_path='"//out/Default/MacOSX.sdk"')
 
   PGO_SUBSTR="chrome-mac-arm-main"
 
@@ -220,12 +220,9 @@ CONFIG=$(echo $CONFIG pgo_data_path='"'$PGO_FILE'"')
 
 # Set up then build chrome
 if [[ $(uname -s) == "Darwin" ]]; then
-  # Bug 2045375: build/config/mac/BUILD.gn's sdk_inputs action declares SDK
-  # files as outputs so RBE remote workers can access them. We don't use RBE,
-  # and GN rejects the action when mac_sdk_path is outside root_build_dir.
-  sed -i '' 's/if (use_system_xcode && current_toolchain == default_toolchain)/if (false)/' build/config/mac/BUILD.gn
-  grep -q 'use_system_xcode && current_toolchain == default_toolchain' build/config/mac/BUILD.gn && \
-    { echo "ERROR: sdk_inputs patch failed - upstream BUILD.gn may have changed"; exit 1; }
+  # Bug 2045375/2066139: Chromium requires sdk_inputs to be inside root_build_dir.
+  mkdir -p out/Default
+  ln -s "$MACOS_SYSROOT" out/Default/MacOSX.sdk
 fi
 
 gn gen out/Default --args="$CONFIG"

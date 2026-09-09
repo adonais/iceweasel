@@ -257,7 +257,7 @@ class Loader final {
    * @param aBuffer the stylesheet data
    */
   Result<LoadSheetResult, nsresult> LoadInlineStyle(
-      const SheetInfo&, const nsAString& aBuffer,
+      const SheetInfo&, const nsACString& aBuffer,
       nsICSSLoaderObserver* aObserver);
 
   /**

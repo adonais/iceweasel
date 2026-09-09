@@ -8,11 +8,6 @@
 #include "js/TypeDecls.h"
 
 namespace js {
-
-namespace gc {
-class AutoMarkingLock;
-}  // namespace gc
-
 namespace jit {
 
 class CacheIRWriter;
@@ -22,13 +17,8 @@ class ICScript;
 bool TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback, JSScript* script,
                      ICScript* icScript);
 
-bool TryFoldingStubsLocked(JSContext* cx, ICFallbackStub* fallback,
-                           JSScript* script, ICScript* icScript,
-                           gc::AutoMarkingLock& lock);
-
 bool AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
-                     ICScript* icScript, ICFallbackStub* fallback,
-                     const gc::AutoMarkingLock& lock);
+                     ICScript* icScript, ICFallbackStub* fallback);
 
 }  // namespace jit
 }  // namespace js

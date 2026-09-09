@@ -10,16 +10,13 @@ import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesCategory
 import org.mozilla.fenix.home.pocket.controller.PocketStoriesController
 import org.mozilla.fenix.home.pocket.controller.StoriesImpressionSource
 
-/**
- * Contract for all possible user interactions with the Pocket recommended stories feature.
- */
+/** Contract for all possible user interactions with the Pocket recommended stories feature. */
 interface PocketStoriesInteractor {
     /**
      * Callback for when a certain story is shown to the user.
      *
      * @param storyShown The story shown to the user.
-     * @param storyPosition `row x column x index` matrix representing the grid and index position
-     * of the shown story.
+     * @param storyPosition `row x column x index` matrix representing the grid and index position of the shown story.
      */
     fun onStoryShown(storyShown: PocketStory, storyPosition: Triple<Int, Int, Int>)
 
@@ -42,8 +39,7 @@ interface PocketStoriesInteractor {
      * Callback for when the user clicks on a specific story.
      *
      * @param storyClicked The just clicked [PocketStory].
-     * @param storyPosition `row x column x index` matrix representing the grid and index position
-     * of the clicked story.
+     * @param storyPosition `row x column x index` matrix representing the grid and index position of the clicked story.
      * @param source The surface where the clicked story was shown.
      */
     fun onStoryClicked(
@@ -52,23 +48,15 @@ interface PocketStoriesInteractor {
         source: StoriesImpressionSource,
     )
 
-    /**
-     * Callback when an user clicks on the "Discover more" nutton for stories on the homepage.
-     */
+    /** Callback when an user clicks on the "Discover more" nutton for stories on the homepage. */
     fun onDiscoverMoreClicked()
 
-    /**
-     * Sends telemetry related to the "Discover more" screen being viewed.
-     */
+    /** Sends telemetry related to the "Discover more" screen being viewed. */
     fun onDiscoverMoreScreenViewed()
 }
 
-/**
- * Default implementation of [PocketStoriesInteractor].
- */
-class DefaultPocketStoriesInteractor(
-    private val controller: PocketStoriesController,
-) : PocketStoriesInteractor {
+/** Default implementation of [PocketStoriesInteractor]. */
+class DefaultPocketStoriesInteractor(private val controller: PocketStoriesController) : PocketStoriesInteractor {
     override fun onStoryShown(storyShown: PocketStory, storyPosition: Triple<Int, Int, Int>) {
         controller.handleStoryShown(storyShown, storyPosition)
     }

@@ -9,6 +9,11 @@ import android.graphics.Bitmap
 import android.util.DisplayMetrics
 import android.widget.ImageView
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.Calendar.MILLISECOND
+import java.util.Date
+import java.util.GregorianCalendar
+import java.util.Locale
+import java.util.TimeZone
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.R
 import mozilla.components.feature.addons.update.AddonUpdater
@@ -26,27 +31,23 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.any
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.verify
-import java.util.Calendar.MILLISECOND
-import java.util.Date
-import java.util.GregorianCalendar
-import java.util.Locale
-import java.util.TimeZone
 
 @RunWith(AndroidJUnit4::class)
 class ExtensionsTest {
 
     @Test
     fun `add-on translateName`() {
-        val addon = Addon(
-            id = "id",
-            downloadUrl = "downloadUrl",
-            version = "version",
-            permissions = emptyList(),
-            rating = Addon.Rating(4.5f, 1000),
-            createdAt = "",
-            updatedAt = "",
-            translatableName = mapOf(Addon.DEFAULT_LOCALE to "name", "de" to "Name", "es" to "nombre"),
-        )
+        val addon =
+            Addon(
+                id = "id",
+                downloadUrl = "downloadUrl",
+                version = "version",
+                permissions = emptyList(),
+                rating = Addon.Rating(4.5f, 1000),
+                createdAt = "",
+                updatedAt = "",
+                translatableName = mapOf(Addon.DEFAULT_LOCALE to "name", "de" to "Name", "es" to "nombre"),
+            )
 
         Locale.setDefault(Locale.forLanguageTag("es"))
 
@@ -83,27 +84,35 @@ class ExtensionsTest {
         val locales = mapOf("es" to "Hola", "de" to "Hallo")
 
         val lang = Locale.getDefault().language
-        val notFoundTranslation = testContext.getString(R.string.mozac_feature_addons_failed_to_translate, lang, addon.defaultLocale)
+        val notFoundTranslation =
+            testContext.getString(R.string.mozac_feature_addons_failed_to_translate, lang, addon.defaultLocale)
 
         assertEquals(notFoundTranslation, locales.translate(addon, testContext))
     }
 
     @Test
     fun createdAtUpdatedAtDate() {
-        val addon = Addon(
-            id = "id",
-            createdAt = "2015-04-25T07:26:22Z",
-            updatedAt = "2020-06-28T12:45:18Z",
-        )
+        val addon =
+            Addon(
+                id = "id",
+                createdAt = "2015-04-25T07:26:22Z",
+                updatedAt = "2020-06-28T12:45:18Z",
+            )
 
-        val expectedCreatedAt = GregorianCalendar(TimeZone.getTimeZone("GMT")).apply {
-            set(2015, 3, 25, 7, 26, 22)
-            set(MILLISECOND, 0)
-        }.time
-        val expectedUpdatedAt = GregorianCalendar(TimeZone.getTimeZone("GMT")).apply {
-            set(2020, 5, 28, 12, 45, 18)
-            set(MILLISECOND, 0)
-        }.time
+        val expectedCreatedAt =
+            GregorianCalendar(TimeZone.getTimeZone("GMT"))
+                .apply {
+                    set(2015, 3, 25, 7, 26, 22)
+                    set(MILLISECOND, 0)
+                }
+                .time
+        val expectedUpdatedAt =
+            GregorianCalendar(TimeZone.getTimeZone("GMT"))
+                .apply {
+                    set(2020, 5, 28, 12, 45, 18)
+                    set(MILLISECOND, 0)
+                }
+                .time
         assertEquals(expectedCreatedAt, addon.createdAtDate)
         assertEquals(expectedUpdatedAt, addon.updatedAtDate)
 

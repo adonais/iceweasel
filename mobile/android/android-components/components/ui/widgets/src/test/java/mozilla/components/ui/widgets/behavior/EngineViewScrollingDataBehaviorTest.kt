@@ -44,14 +44,15 @@ class EngineViewScrollingDataBehaviorTest {
         behavior.yTranslator = yTranslator
 
         doReturn(View.GONE).`when`(dependency).visibility
-        val acceptsNestedScroll = behavior.onStartNestedScroll(
-            coordinatorLayout = mock(),
-            child = mock(),
-            directTargetChild = mock(),
-            target = mock(),
-            axes = ViewCompat.SCROLL_AXIS_VERTICAL,
-            type = ViewCompat.TYPE_TOUCH,
-        )
+        val acceptsNestedScroll =
+            behavior.onStartNestedScroll(
+                coordinatorLayout = mock(),
+                child = mock(),
+                directTargetChild = mock(),
+                target = mock(),
+                axes = ViewCompat.SCROLL_AXIS_VERTICAL,
+                type = ViewCompat.TYPE_TOUCH,
+            )
 
         assertFalse(acceptsNestedScroll)
         verify(yTranslator, never()).cancelInProgressTranslation()
@@ -140,76 +141,90 @@ class EngineViewScrollingDataBehaviorTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `GIVEN dependency is valid and scrolling is enabled WHEN receiving vertical scroll data THEN translate the dependency`() = runTest {
-        val scrollDeltaUpdates = MutableStateFlow(0f)
-        val engineView = object : EngineView by createDummyEngineView() {
-            override val verticalScrollDelta = scrollDeltaUpdates
+    fun `GIVEN dependency is valid and scrolling is enabled WHEN receiving vertical scroll data THEN translate the dependency`() =
+        runTest {
+            val scrollDeltaUpdates = MutableStateFlow(0f)
+            val engineView =
+                object : EngineView by createDummyEngineView() {
+                    override val verticalScrollDelta = scrollDeltaUpdates
+                }
+            val scrollUpdatesJob = Job()
+            val dependency: View = mock()
+            doReturn(View.VISIBLE).`when`(dependency).isVisible
+            val behavior = EngineViewScrollingDataBehavior(engineView, dependency, Bottom, this + scrollUpdatesJob)
+            behavior.enableScrolling()
+            val yTranslator: ViewYTranslator = mock()
+            behavior.yTranslator = yTranslator
+
+            behavior.onStartNestedScroll(mock(), mock(), mock(), mock(), 2, 2)
+            scrollDeltaUpdates.emit(8f)
+            advanceUntilIdle()
+            scrollDeltaUpdates.emit(9f)
+            advanceUntilIdle()
+
+            verify(yTranslator).cancelInProgressTranslation()
+            verify(yTranslator).translate(dependency, 8f)
+            verify(yTranslator).translate(dependency, 9f)
+            verifyNoMoreInteractions(yTranslator)
+
+            behavior.onStopNestedScroll(mock(), mock(), mock(), 2)
+            verify(yTranslator).snapWithAnimation(dependency)
         }
-        val scrollUpdatesJob = Job()
-        val dependency: View = mock()
-        doReturn(View.VISIBLE).`when`(dependency).isVisible
-        val behavior = EngineViewScrollingDataBehavior(engineView, dependency, Bottom, this + scrollUpdatesJob)
-        behavior.enableScrolling()
-        val yTranslator: ViewYTranslator = mock()
-        behavior.yTranslator = yTranslator
-
-        behavior.onStartNestedScroll(mock(), mock(), mock(), mock(), 2, 2)
-        scrollDeltaUpdates.emit(8f)
-        advanceUntilIdle()
-        scrollDeltaUpdates.emit(9f)
-        advanceUntilIdle()
-
-        verify(yTranslator).cancelInProgressTranslation()
-        verify(yTranslator).translate(dependency, 8f)
-        verify(yTranslator).translate(dependency, 9f)
-        verifyNoMoreInteractions(yTranslator)
-
-        behavior.onStopNestedScroll(mock(), mock(), mock(), 2)
-        verify(yTranslator).snapWithAnimation(dependency)
-    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `GIVEN scrolling is disabled WHEN receiving vertical scroll data THEN don't translate the dependency`() = runTest {
-        val scrollDeltaUpdates = MutableStateFlow(0f)
-        val engineView = object : EngineView by createDummyEngineView() {
-            override val verticalScrollDelta = scrollDeltaUpdates
+    fun `GIVEN scrolling is disabled WHEN receiving vertical scroll data THEN don't translate the dependency`() =
+        runTest {
+            val scrollDeltaUpdates = MutableStateFlow(0f)
+            val engineView =
+                object : EngineView by createDummyEngineView() {
+                    override val verticalScrollDelta = scrollDeltaUpdates
+                }
+            val dependency: View = mock()
+            doReturn(View.VISIBLE).`when`(dependency).isVisible
+            val behavior = EngineViewScrollingDataBehavior(engineView, dependency, Bottom, this + Job())
+            behavior.disableScrolling()
+            val yTranslator: ViewYTranslator = mock()
+            behavior.yTranslator = yTranslator
+
+            behavior.onStartNestedScroll(mock(), mock(), mock(), mock(), 2, 2)
+            scrollDeltaUpdates.emit(8f)
+            advanceUntilIdle()
+            scrollDeltaUpdates.emit(9f)
+            advanceUntilIdle()
+            verifyNoMoreInteractions(yTranslator)
+
+            behavior.onStopNestedScroll(mock(), mock(), mock(), 2)
+            verify(yTranslator).snapWithAnimation(dependency)
         }
-        val dependency: View = mock()
-        doReturn(View.VISIBLE).`when`(dependency).isVisible
-        val behavior = EngineViewScrollingDataBehavior(engineView, dependency, Bottom, this + Job())
-        behavior.disableScrolling()
-        val yTranslator: ViewYTranslator = mock()
-        behavior.yTranslator = yTranslator
-
-        behavior.onStartNestedScroll(mock(), mock(), mock(), mock(), 2, 2)
-        scrollDeltaUpdates.emit(8f)
-        advanceUntilIdle()
-        scrollDeltaUpdates.emit(9f)
-        advanceUntilIdle()
-        verifyNoMoreInteractions(yTranslator)
-
-        behavior.onStopNestedScroll(mock(), mock(), mock(), 2)
-        verify(yTranslator).snapWithAnimation(dependency)
-    }
 
     private fun createDummyEngineView(): EngineView = DummyEngineView(testContext)
 
     open class DummyEngineView(context: Context) : FrameLayout(context), EngineView {
         override val verticalScrollPosition = flowOf(0f)
         override val verticalScrollDelta = flowOf(0f)
+
         override fun setVerticalClipping(clippingHeight: Int) {}
+
         override fun setDynamicToolbarMaxHeight(height: Int) {}
+
         override fun setActivityContext(context: Context?) {}
+
         override fun captureThumbnail(onFinish: (Bitmap?) -> Unit) = Unit
+
         override fun render(session: EngineSession) {}
+
         override fun release() {}
+
         override var selectionActionDelegate: SelectionActionDelegate? = null
+
         override fun addWindowInsetsListener(
             key: String,
             listener: androidx.core.view.OnApplyWindowInsetsListener?,
         ) {}
+
         override fun removeWindowInsetsListener(key: String) {}
+
         override fun asView() = View(context)
     }
 }

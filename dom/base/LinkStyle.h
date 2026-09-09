@@ -174,6 +174,10 @@ class LinkStyle {
    */
   void SetStyleSheet(StyleSheet* aStyleSheet);
 
+  // Gets the inline stylesheet text, as either utf-16 or utf-8.
+  [[nodiscard]] bool GetInlineSheetText(nsACString&);
+  [[nodiscard]] bool GetInlineSheetText(nsAString&);
+
   /**
    * Tells this element whether to update the stylesheet when the element's
    * properties change. This is used by the parser until it has all content etc,

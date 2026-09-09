@@ -7,9 +7,8 @@ package mozilla.components.concept.engine.webextension
 import mozilla.components.concept.engine.EngineSession
 
 /**
- * Notifies applications or other components of engine events related to web
- * extensions e.g. an extension was installed, or an extension wants to open
- * a new tab.
+ * Notifies applications or other components of engine events related to web extensions e.g. an extension was installed,
+ * or an extension wants to open a new tab.
  */
 interface WebExtensionDelegate {
 
@@ -63,23 +62,22 @@ interface WebExtensionDelegate {
     fun onAllowedInPrivateBrowsingChanged(extension: WebExtension) = Unit
 
     /**
-     * Invoked to determine the current private browsing mode. New tabs opened
-     * by extensions may use this state if not specified otherwise.
+     * Invoked to determine the current private browsing mode. New tabs opened by extensions may use this state if not
+     * specified otherwise.
      */
     fun isInPrivateBrowsing(): Boolean = false
 
     /**
-     * Invoked when a web extension attempts to open a new tab via
-     * browser.tabs.create. Note that browser.tabs.update and browser.tabs.remove
-     * can only be observed using session-specific handlers,
-     * see [WebExtension.registerTabHandler].
+     * Invoked when a web extension attempts to open a new tab via browser.tabs.create. Note that browser.tabs.update
+     * and browser.tabs.remove can only be observed using session-specific handlers, see
+     * [WebExtension.registerTabHandler].
      *
      * @param extension The [WebExtension] that wants to open a new tab.
      * @param engineSession an instance of engine session to open a new tab with.
      * @param active whether or not the new tab should be active/selected.
      * @param url the target url to be loaded in a new tab.
-     * @param isPrivate whether private browsing mode is enabled for the new
-     * tab. Must match the engineSession.privateMode flag.
+     * @param isPrivate whether private browsing mode is enabled for the new tab. Must match the
+     *   engineSession.privateMode flag.
      */
     fun onNewTab(
         extension: WebExtension,
@@ -90,9 +88,8 @@ interface WebExtensionDelegate {
     ) = Unit
 
     /**
-     * Invoked when a web extension defines a browser action. To listen for session-specific
-     * overrides of [Action]s and other action-specific events (e.g. opening a popup)
-     * see [WebExtension.registerActionHandler].
+     * Invoked when a web extension defines a browser action. To listen for session-specific overrides of [Action]s and
+     * other action-specific events (e.g. opening a popup) see [WebExtension.registerActionHandler].
      *
      * @param extension The [WebExtension] defining the browser action.
      * @param action the defined browser [Action].
@@ -100,9 +97,8 @@ interface WebExtensionDelegate {
     fun onBrowserActionDefined(extension: WebExtension, action: Action) = Unit
 
     /**
-     * Invoked when a web extension defines a page action. To listen for session-specific
-     * overrides of [Action]s and other action-specific events (e.g. opening a popup)
-     * see [WebExtension.registerActionHandler].
+     * Invoked when a web extension defines a page action. To listen for session-specific overrides of [Action]s and
+     * other action-specific events (e.g. opening a popup) see [WebExtension.registerActionHandler].
      *
      * @param extension The [WebExtension] defining the browser action.
      * @param action the defined page [Action].
@@ -115,10 +111,9 @@ interface WebExtensionDelegate {
      * @param extension The [WebExtension] that wants to display the popup.
      * @param engineSession The [EngineSession] to use for displaying the popup.
      * @param action the [Action] that defines the popup.
-     * @param isPrivate whether private browsing mode is enabled for the popup.
-     * Must match the engineSession.privateMode flag.
-     * @return the [EngineSession] used to display the popup, or null if no popup
-     * was displayed.
+     * @param isPrivate whether private browsing mode is enabled for the popup. Must match the engineSession.privateMode
+     *   flag.
+     * @return the [EngineSession] used to display the popup, or null if no popup was displayed.
      */
     fun onToggleActionPopup(
         extension: WebExtension,
@@ -132,15 +127,13 @@ interface WebExtensionDelegate {
      *
      * @param extension The [WebExtension] that wants to open its options page.
      */
-    fun onOpenOptionsPage(
-        extension: WebExtension,
-    ) = Unit
+    fun onOpenOptionsPage(extension: WebExtension) = Unit
 
     /**
      * Invoked during installation of a [WebExtension] to confirm the required permissions.
      *
      * @param extension the extension being installed. The required permissions can be accessed using
-     * [WebExtension.getMetadata] and [Metadata.requiredPermissions]/[Metadata.requiredOrigins]/.
+     *   [WebExtension.getMetadata] and [Metadata.requiredPermissions]/[Metadata.requiredOrigins]/.
      * @param onConfirm A callback to indicate the user's selection on the prompt.
      * @param permissions Contains a list of all the permissions requested for install.
      * @param origins Contains a list of all the origins requested for install.
@@ -158,8 +151,8 @@ interface WebExtensionDelegate {
     /**
      * Invoked whenever the installation of a [WebExtension] failed.
      *
-     * @param extension extension the extension that failed to be installed. It can be null when the
-     * extension couldn't be downloaded or the extension couldn't be parsed for example.
+     * @param extension extension the extension that failed to be installed. It can be null when the extension couldn't
+     *   be downloaded or the extension couldn't be parsed for example.
      * @param exception the reason why the installation failed.
      */
     fun onInstallationFailedRequest(
@@ -168,9 +161,8 @@ interface WebExtensionDelegate {
     ) = Unit
 
     /**
-     * Invoked when a web extension has changed its permissions while trying to update to a
-     * new version. This requires user interaction as the updated extension will not be installed,
-     * until the user grants the new permissions.
+     * Invoked when a web extension has changed its permissions while trying to update to a new version. This requires
+     * user interaction as the updated extension will not be installed, until the user grants the new permissions.
      *
      * @param extension The new version of the [WebExtension] being updated.
      * @param newPermissions Contains a list of all the new required permissions.
@@ -187,8 +179,8 @@ interface WebExtensionDelegate {
     ) = Unit
 
     /**
-     * Invoked when a web extension requests optional permissions. This requires user interaction since the
-     * user needs to grant or revoke these optional permissions.
+     * Invoked when a web extension requests optional permissions. This requires user interaction since the user needs
+     * to grant or revoke these optional permissions.
      *
      * @param extension The [WebExtension].
      * @param permissions The list of optional permissions.
@@ -205,16 +197,15 @@ interface WebExtensionDelegate {
     ) = Unit
 
     /**
-     * Invoked when the list of installed extensions has been updated in the engine
-     * (the web extension runtime). This happens as a result of debugging tools (e.g
-     * web-ext) installing temporary extensions. It does not happen in the regular flow
-     * of installing / uninstalling extensions by the user.
+     * Invoked when the list of installed extensions has been updated in the engine (the web extension runtime). This
+     * happens as a result of debugging tools (e.g web-ext) installing temporary extensions. It does not happen in the
+     * regular flow of installing / uninstalling extensions by the user.
      */
     fun onExtensionListUpdated() = Unit
 
     /**
-     * Invoked when the extension process spawning has been disabled. This can occur because
-     * it has been killed or crashed too many times. A client should determine what to do next.
+     * Invoked when the extension process spawning has been disabled. This can occur because it has been killed or
+     * crashed too many times. A client should determine what to do next.
      */
     fun onDisabledExtensionProcessSpawning() = Unit
 }

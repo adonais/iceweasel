@@ -23,20 +23,16 @@ import org.mozilla.focus.ui.theme.focusDimensions
 import org.mozilla.focus.ui.theme.focusTypography
 
 /**
- * The main settings screen, displaying a list of top-level setting categories.
- * Each category, when clicked, navigates to its respective detailed settings page.
+ * The main settings screen, displaying a list of top-level setting categories. Each category, when clicked, navigates
+ * to its respective detailed settings page.
  *
- * @param onSettingClick A lambda function that is invoked when a setting category is clicked.
- * It passes the corresponding [Screen.Settings.Page] to the caller, which is responsible
- * for handling the navigation to the detailed settings screen.
+ * @param onSettingClick A lambda function that is invoked when a setting category is clicked. It passes the
+ *   corresponding [Screen.Settings.Page] to the caller, which is responsible for handling the navigation to the
+ *   detailed settings screen.
  */
 @Composable
 fun SettingsScreen(onSettingClick: (Screen.Settings.Page) -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-    ) {
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         SettingItem(
             title = R.string.preference_category_general,
             summary = stringResource(id = R.string.preference_general_summary2),
@@ -59,10 +55,11 @@ fun SettingsScreen(onSettingClick: (Screen.Settings.Page) -> Unit) {
         )
         SettingItem(
             title = R.string.preference_category_mozilla,
-            summary = stringResource(
-                id = R.string.preference_mozilla_summary,
-                stringResource(id = R.string.app_name),
-            ),
+            summary =
+                stringResource(
+                    id = R.string.preference_mozilla_summary,
+                    stringResource(id = R.string.app_name),
+                ),
             onClick = { onSettingClick(Screen.Settings.Page.Mozilla) },
         )
     }
@@ -75,12 +72,7 @@ private fun SettingItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(focusDimensions.paddingDefault),
-    ) {
+    Row(modifier = modifier.fillMaxWidth().clickable(onClick = onClick).padding(focusDimensions.paddingDefault)) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = stringResource(id = title),

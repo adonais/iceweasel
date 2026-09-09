@@ -12,8 +12,6 @@ ChromeUtils.defineESModuleGetters(this, {
   Management: "resource://gre/modules/Extension.sys.mjs",
 });
 
-AddonTestUtils.init(this);
-AddonTestUtils.overrideCertDB();
 AddonTestUtils.usePrivilegedSignatures = false;
 
 const testStartTime = Date.now();

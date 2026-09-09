@@ -20,10 +20,11 @@ class DebugActionTest {
     @Before
     fun setUp() {
         val existingTab = createTab("https://www.mozilla.org")
-        state = BrowserState(
-            tabs = listOf(existingTab),
-            selectedTabId = existingTab.id,
-        )
+        state =
+            BrowserState(
+                tabs = listOf(existingTab),
+                selectedTabId = existingTab.id,
+            )
     }
 
     @Test

@@ -107,7 +107,12 @@ class ViewportSizeHighlighter {
     const { window } = this.env;
     const { innerHeight, innerWidth } = window;
     const infobarId = "viewport-size-highlighter-viewport-infobar-container";
-    const textContent = innerWidth + "px \u00D7 " + innerHeight + "px";
+    // We're getting un-rounded inner(Height|Width), but here 1 decimal should be enough.
+    // Note: we're not using Intl.NumberFormat with maximumFractionDigits as the size
+    // "strings" could have different length while resizing the window, which will make
+    // the highlighter look very jittery.
+    const textContent =
+      innerWidth.toFixed(1) + "px \u00D7 " + innerHeight.toFixed(1) + "px";
     this.markup.getElement(infobarId).setTextContent(textContent);
   }
 

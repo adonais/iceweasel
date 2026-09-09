@@ -962,6 +962,13 @@ class LocalAccessible : public nsISupports, public Accessible {
   virtual void ARIAGroupPosition(int32_t* aLevel, int32_t* aSetSize,
                                  int32_t* aPosInSet) const override;
 
+  /**
+   * Traverses the accessible's parent chain in search of an accessible with
+   * a frame. Returns the frame when found. Includes special handling for
+   * OOP iframe docs and tab documents.
+   */
+  nsIFrame* FindNearestAccessibleAncestorFrame() const;
+
   // Data Members
   // mContent can be null in a DocAccessible if the document has no body or
   // root element, or if the initial tree hasn't been constructed yet.
@@ -1030,13 +1037,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   friend class AccGroupInfo;
 
  private:
-  /**
-   * Traverses the accessible's parent chain in search of an accessible with
-   * a frame. Returns the frame when found. Includes special handling for
-   * OOP iframe docs and tab documents.
-   */
-  nsIFrame* FindNearestAccessibleAncestorFrame();
-
   LocalAccessible* GetCommandForDetailsRelation() const;
 
   LocalAccessible* GetPopoverTargetDetailsRelation() const;

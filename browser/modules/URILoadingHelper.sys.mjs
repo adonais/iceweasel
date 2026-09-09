@@ -153,6 +153,9 @@ function openInWindow(url, params, sourceWindow) {
   if (params.aiWindow) {
     extraOptions.setPropertyAsBool("ai-window", true);
   }
+  if (chromeless) {
+    extraOptions.setPropertyAsBool("chromeless-window", true);
+  }
 
   var allowThirdPartyFixupSupports = Cc[
     "@mozilla.org/supports-PRBool;1"
@@ -352,23 +355,33 @@ function _createNullPrincipalFromTabUserContextId(tab = null) {
 
 export const URILoadingHelper = {
   /**
-   * openLinkIn opens a URL in a place specified by the parameter |where|.
+   * Opens a URL in the place given by ``where``, which can be:
    *
-   * The params object is the same as for `openLinkIn` and documented below.
+   * - ``"current"``: the current tab, or a new window if there are no browser
+   *   windows
+   * - ``"tab"``: a new tab, or a new window if there are no browser windows
+   * - ``"tabshifted"``: as ``"tab"``, but with the foreground decision inverted
+   * - ``"window"``: a new window
+   * - ``"chromeless"``: a new minimal window, with no browser navigation UI
+   * - ``"save"``: save to disk, with no filename hint
    *
+   * The keys of ``params`` fall into five groups, in the order they appear
+   * below:
+   *
+   * 1. which tab or window to use, and how to open it
+   * 2. the load itself
+   * 3. security, whether the load is allowed, and which cookie container to use
+   * 4. tracking the load elsewhere
+   * 5. ``where="save"`` only
+   *
+   * @param {Window} window
+   *                  The window the load is initiated from.
+   * @param {string}  url
+   *                  The URL to load.
    * @param {string}  where
-   *   |where| can be:
-   *    "current"     current tab            (if there aren't any browser windows, then in a new window instead)
-   *    "tab"         new tab                (if there aren't any browser windows, then in a new window instead)
-   *    "tabshifted"  same as "tab" but in background if default is to select new tabs, and vice versa
-   *    "window"      new window
-   *    "chromeless"  new minimal window     (no browser navigation UI)
-   *    "save"        save to disk (with no filename hint!)
-   *
+   *                  Where to open the URL, from the list above.
    * @param {object}  params
-   *
-   * Options relating to what tab/window to use and how to open it:
-   *
+   *                  Options for the load, in the five groups above.
    * @param {boolean} params.private
    *                  Load the URL in a private window.
    * @param {boolean} params.forceNonPrivate
@@ -379,7 +392,7 @@ export const URILoadingHelper = {
    *                  The browser to use for the load. Only used if where == "current".
    * @param {boolean} params.inBackground
    *                  If explicitly true or false, whether to switch to the tab immediately.
-   *                  If null, will switch to the tab if `forceForeground` was true. If
+   *                  If null, will switch to the tab if ``forceForeground`` was true. If
    *                  neither is passed, will defer to the user preference browser.tabs.loadInBackground.
    * @param {boolean} params.forceForeground
    *                  Ignore the user preference and load in the foreground.
@@ -396,9 +409,6 @@ export const URILoadingHelper = {
    *                  Don't focus the browser element immediately after starting
    *                  the load. Used by the URL bar to avoid leaking user input
    *                  into web content, see bug 1641287.
-   *
-   * Options relating to the load itself:
-   *
    * @param {boolean} params.allowThirdPartyFixup
    *                  Allow transforming the 'url' into a search query.
    * @param {nsIInputStream} params.postData
@@ -413,10 +423,6 @@ export const URILoadingHelper = {
    *                  Legacy argument - do not use.
    * @param {SchemelessInputType}  params.schemelessInput
    *                  Whether the search/URL term was without an explicit scheme.
-   *
-   * Options relating to security, whether the load is allowed to happen,
-   * and what cookie container to use for the load:
-   *
    * @param {boolean} params.forceAllowDataURI
    *                  Force allow a data URI to load as a toplevel load.
    * @param {number}  params.userContextId
@@ -443,20 +449,14 @@ export const URILoadingHelper = {
    * @param {boolean} params.fromExternal
    *                  Indicates the load was started outside of the browser,
    *                  e.g. passed on the commandline or through OS mechanisms.
-   *
-   * Options used to track the load elsewhere
-   *
-   * @param {function} params.resolveOnNewTabCreated
+   * @param {Function} params.resolveOnNewTabCreated
    *                   This callback will be called when a new tab is created.
-   * @param {function} params.resolveOnContentBrowserCreated
+   * @param {Function} params.resolveOnContentBrowserCreated
    *                   This callback will be called with the content browser once it's created.
    * @param {object}   params.globalHistoryOptions
    *                   Used by places to keep track of search related metadata for loads.
    * @param {number}   params.frameID
    *                   Used by webextensions for their loads.
-   *
-   * Options used for where="save" only:
-   *
    * @param {boolean}  params.isContentWindowPrivate
    *                   Save content as coming from a private window.
    * @param {Document} params.initiatingDoc
@@ -618,6 +618,7 @@ export const URILoadingHelper = {
           focusUrlBar,
           openerBrowser: params.openerBrowser,
           fromExternal: params.fromExternal,
+          eventDetail: params.eventDetail,
           globalHistoryOptions,
           schemelessInput: params.schemelessInput,
           hasValidUserGestureActivation,
@@ -671,7 +672,7 @@ export const URILoadingHelper = {
     }
   },
   /**
-   * Resolve the initial browser window to use for a load, based on `where`.
+   * Resolve the initial browser window to use for a load, based on ``where``.
    *
    * @param {string} where
    *        The target location for the load (e.g. "current", "tab", "window").
@@ -704,7 +705,7 @@ export const URILoadingHelper = {
   },
   /**
    * Finds a browser window suitable for opening a link matching the
-   * requirements given in the `params` argument. If the current window matches
+   * requirements given in the ``params`` argument. If the current window matches
    * the requirements then it is returned otherwise the top-most window that
    * matches will be returned.
    *
@@ -744,16 +745,27 @@ export const URILoadingHelper = {
   /**
    * openUILink handles clicks on UI elements that cause URLs to load.
    *
+   * @param {Window} window
+   *                 The window the load is initiated from.
    * @param {string} url
-   * @param {Event | object} event Event or JSON object representing an Event
+   *                 The URL to load.
+   * @param {Event | object} event
+   *                 The event that asked for the load, or a JSON object
+   *                 representing one. Its modifiers decide where the URL opens.
    * @param {boolean | object} aIgnoreButton
-   *                           Boolean or object with the same properties as
-   *                           accepted by openLinkIn, plus "ignoreButton"
-   *                           and "ignoreAlt".
+   *                 Options for the load, as for openLinkIn, plus
+   *                 ``ignoreButton`` to ignore which mouse button was used and
+   *                 ``ignoreAlt`` to ignore the Alt modifier. The positional
+   *                 arguments below are the legacy form of this argument, and
+   *                 cannot carry the required triggering principal.
    * @param {boolean} aIgnoreAlt
+   *                 As ``ignoreAlt`` above.
    * @param {boolean} aAllowThirdPartyFixup
+   *                 As ``params.allowThirdPartyFixup`` for openLinkIn.
    * @param {object} aPostData
+   *                 As ``params.postData`` for openLinkIn.
    * @param {object} aReferrerInfo
+   *                 As ``params.referrerInfo`` for openLinkIn.
    */
   openUILink(
     window,
@@ -796,11 +808,19 @@ export const URILoadingHelper = {
     this.openLinkIn(window, url, where, params);
   },
 
-  /* openTrustedLinkIn will attempt to open the given URI using the SystemPrincipal
-   * as the trigeringPrincipal, unless a more specific Principal is provided.
+  /**
+   * Opens the given URI using the SystemPrincipal as the triggeringPrincipal,
+   * unless a more specific principal is provided.
    *
-   * Otherwise, parameters are the same as openLinkIn, but we will set `forceForeground`
-   * to true.
+   * @param {Window} window
+   *                  The window the load is initiated from.
+   * @param {string}  url
+   *                  The URL to load.
+   * @param {string}  where
+   *                  Where to open the URL, as for openLinkIn.
+   * @param {object}  [params]
+   *                  Options for the load, as for openLinkIn, except that
+   *                  ``forceForeground`` defaults to true.
    */
   openTrustedLinkIn(window, url, where, params = {}) {
     if (!params.triggeringPrincipal) {
@@ -812,11 +832,20 @@ export const URILoadingHelper = {
     this.openLinkIn(window, url, where, params);
   },
 
-  /* openWebLinkIn will attempt to open the given URI using the NullPrincipal
-   * as the triggeringPrincipal, unless a more specific Principal is provided.
+  /**
+   * Opens the given URI using a NullPrincipal as the triggeringPrincipal,
+   * unless a more specific principal is provided. Throws if handed the system
+   * principal.
    *
-   * Otherwise, parameters are the same as openLinkIn, but we will set `forceForeground`
-   * to true.
+   * @param {Window} window
+   *                  The window the load is initiated from.
+   * @param {string}  url
+   *                  The URL to load.
+   * @param {string}  where
+   *                  Where to open the URL, as for openLinkIn.
+   * @param {object}  [params]
+   *                  Options for the load, as for openLinkIn, except that
+   *                  ``forceForeground`` defaults to true.
    */
   openWebLinkIn(window, url, where, params = {}) {
     if (!params.triggeringPrincipal) {
@@ -836,7 +865,6 @@ export const URILoadingHelper = {
    * Given a URI, guess which container to use to open it. This is used for external
    * openers as a quality of life improvement (e.g. to open a document into the container
    * where you are logged in to the service that hosts it).
-   * matches will be returned.
    * For now this can only use currently-open tabs, until history is tagged with the
    * container id (https://bugzilla.mozilla.org/show_bug.cgi?id=1283320).
    *
@@ -880,36 +908,36 @@ export const URILoadingHelper = {
    * If a matching tab is in this window, it will be switched to. Otherwise, other
    * windows will be searched.
    *
-   * @param window
+   * @param {Window} window
    *        The current window
-   * @param aURI
+   * @param {nsIURI | string} aURI
    *        URI to search for
-   * @param aOpenNew
+   * @param {boolean} aOpenNew
    *        True to open a new tab and switch to it, if no existing tab is found.
    *        If no suitable window is found, a new one will be opened.
-   * @param aOpenParams
+   * @param {object} [aOpenParams]
    *        If switching to this URI results in us opening a tab, aOpenParams
    *        will be the parameter object that gets passed to openTrustedLinkIn. Please
    *        see the documentation for openTrustedLinkIn to see what parameters can be
-   *        passed via this object.
-   *        This object also allows:
-   *        - 'ignoreFragment' property to be set to true to exclude fragment-portion
-   *        matching when comparing URIs.
-   *          If set to "whenComparing", the fragment will be unmodified.
-   *          If set to "whenComparingAndReplace", the fragment will be replaced.
-   *        - 'ignoreQueryString' boolean property to be set to true to exclude query string
-   *        matching when comparing URIs.
-   *        - 'replaceQueryString' boolean property to be set to true to exclude query string
-   *        matching when comparing URIs and overwrite the initial query string with
-   *        the one from the new URI.
-   *        - 'adoptIntoActiveWindow' boolean property to be set to true to adopt the tab
-   *        into the current window.
-   * @param aUserContextId
+   *        passed via this object. The four properties below are consumed here
+   *        rather than forwarded.
+   * @param {string} [aOpenParams.ignoreFragment]
+   *        ``"whenComparing"`` to exclude the fragment when comparing URIs,
+   *        ``"whenComparingAndReplace"`` to also load the requested URI into the
+   *        tab that was found.
+   * @param {boolean} [aOpenParams.ignoreQueryString]
+   *        Exclude the query string when comparing URIs.
+   * @param {boolean} [aOpenParams.replaceQueryString]
+   *        Exclude the query string when comparing URIs, and load the
+   *        requested URI into the tab that was found.
+   * @param {boolean} [aOpenParams.adoptIntoActiveWindow]
+   *        Adopt a tab found in another window into the current one.
+   * @param {number} [aUserContextId]
    *        If not null, will switch to the first found tab having the provided
    *        userContextId.
-   * @param aSplitView
+   * @param {object} [aSplitView]
    *        If not null, will move the tab to the active split view instead of switching to tab
-   * @return True if an existing tab was found, false otherwise
+   * @returns {boolean} True if an existing tab was found, false otherwise
    */
   switchToTabHavingURI(
     window,

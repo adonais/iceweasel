@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.toolbar
 
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.domains.Domain
 import mozilla.components.browser.domains.autocomplete.BaseDomainAutocompleteProvider
@@ -28,7 +29,6 @@ import org.mockito.Mockito.reset
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
-import kotlin.test.assertNotNull
 
 class ToolbarAutocompleteFeatureTest {
     private val toolbar = FakeToolbar()
@@ -52,11 +52,12 @@ class ToolbarAutocompleteFeatureTest {
         val autocompleteDelegate: AutocompleteDelegate = mock()
 
         var history: AutocompleteProvider = mock()
-        val domains = object : BaseDomainAutocompleteProvider(DomainList.CUSTOM, { emptyList() }, 22) {
-            fun testDomains(list: List<Domain>) {
-                domains = list
+        val domains =
+            object : BaseDomainAutocompleteProvider(DomainList.CUSTOM, { emptyList() }, 22) {
+                fun testDomains(list: List<Domain>) {
+                    domains = list
+                }
             }
-        }
 
         // Can autocomplete with just an empty history provider.
         feature.addAutocompleteProvider(history)
@@ -64,14 +65,16 @@ class ToolbarAutocompleteFeatureTest {
 
         // Can autocomplete with a non-empty history provider.
         doReturn(
-            AutocompleteResult(
-                input = "mo",
-                text = "mozilla.org",
-                url = "https://www.mozilla.org",
-                source = "memoryHistory",
-                totalItems = 1,
-            ),
-        ).`when`(history).getAutocompleteSuggestion("mo")
+                AutocompleteResult(
+                    input = "mo",
+                    text = "mozilla.org",
+                    url = "https://www.mozilla.org",
+                    source = "memoryHistory",
+                    totalItems = 1,
+                )
+            )
+            .`when`(history)
+            .getAutocompleteSuggestion("mo")
 
         verifyNoAutocompleteResult(toolbar, autocompleteDelegate, "hi")
         verifyAutocompleteResult(
@@ -94,11 +97,7 @@ class ToolbarAutocompleteFeatureTest {
         verifyNoAutocompleteResult(toolbar, autocompleteDelegate, "hi")
 
         // Can autocomplete with a non-empty domain provider.
-        domains.testDomains(
-            listOf(
-                Domain.create("https://www.mozilla.org"),
-            ),
-        )
+        domains.testDomains(listOf(Domain.create("https://www.mozilla.org")))
 
         verifyNoAutocompleteResult(toolbar, autocompleteDelegate, "hi")
         verifyAutocompleteResult(
@@ -127,7 +126,7 @@ class ToolbarAutocompleteFeatureTest {
             listOf(
                 Domain.create("https://www.mozilla.org"),
                 Domain.create("https://moscow.ru"),
-            ),
+            )
         )
 
         verifyAutocompleteResult(
@@ -144,14 +143,16 @@ class ToolbarAutocompleteFeatureTest {
         )
 
         doReturn(
-            AutocompleteResult(
-                input = "mo",
-                text = "mozilla.org",
-                url = "https://www.mozilla.org",
-                source = "memoryHistory",
-                totalItems = 1,
-            ),
-        ).`when`(history).getAutocompleteSuggestion("mo")
+                AutocompleteResult(
+                    input = "mo",
+                    text = "mozilla.org",
+                    url = "https://www.mozilla.org",
+                    source = "memoryHistory",
+                    totalItems = 1,
+                )
+            )
+            .`when`(history)
+            .getAutocompleteSuggestion("mo")
 
         verifyAutocompleteResult(
             toolbar,
@@ -186,11 +187,12 @@ class ToolbarAutocompleteFeatureTest {
         val feature = ToolbarAutocompleteFeature(toolbar, engine) { true }
         val autocompleteDelegate: AutocompleteDelegate = mock()
 
-        val domains = object : BaseDomainAutocompleteProvider(DomainList.CUSTOM, { emptyList() }) {
-            fun testDomains(list: List<Domain>) {
-                domains = list
+        val domains =
+            object : BaseDomainAutocompleteProvider(DomainList.CUSTOM, { emptyList() }) {
+                fun testDomains(list: List<Domain>) {
+                    domains = list
+                }
             }
-        }
         domains.testDomains(listOf(Domain.create("https://www.mozilla.org")))
         feature.addAutocompleteProvider(domains)
 
@@ -210,11 +212,12 @@ class ToolbarAutocompleteFeatureTest {
         val feature = ToolbarAutocompleteFeature(toolbar, engine) { shouldAutoComplete }
         val autocompleteDelegate: AutocompleteDelegate = mock()
 
-        val domains = object : BaseDomainAutocompleteProvider(DomainList.CUSTOM, { emptyList() }) {
-            fun testDomains(list: List<Domain>) {
-                domains = list
+        val domains =
+            object : BaseDomainAutocompleteProvider(DomainList.CUSTOM, { emptyList() }) {
+                fun testDomains(list: List<Domain>) {
+                    domains = list
+                }
             }
-        }
         domains.testDomains(listOf(Domain.create("https://www.mozilla.org")))
         feature.addAutocompleteProvider(domains)
 
@@ -234,73 +237,80 @@ class ToolbarAutocompleteFeatureTest {
     }
 
     @Test
-    fun `GIVEN no autocomplete providers WHEN checking for autocomplete results THEN silently fail with no results`() = runTest {
-        val engine: Engine = mock()
-        val feature = ToolbarAutocompleteFeature(toolbar, engine) { true }
-        val autocompleteDelegate: AutocompleteDelegate = mock()
+    fun `GIVEN no autocomplete providers WHEN checking for autocomplete results THEN silently fail with no results`() =
+        runTest {
+            val engine: Engine = mock()
+            val feature = ToolbarAutocompleteFeature(toolbar, engine) { true }
+            val autocompleteDelegate: AutocompleteDelegate = mock()
 
-        val domains = object : BaseDomainAutocompleteProvider(DomainList.CUSTOM, { emptyList() }) {
-            fun testDomains(list: List<Domain>) {
-                domains = list
-            }
+            val domains =
+                object : BaseDomainAutocompleteProvider(DomainList.CUSTOM, { emptyList() }) {
+                    fun testDomains(list: List<Domain>) {
+                        domains = list
+                    }
+                }
+            domains.testDomains(listOf(Domain.create("https://www.mozilla.org")))
+
+            feature.addAutocompleteProvider(domains)
+            toolbar.autocompleteFilter!!.invoke("mo", autocompleteDelegate)
+            val callbackCaptor = argumentCaptor<() -> Unit>()
+            verify(autocompleteDelegate, times(1)).applyAutocompleteResult(any(), callbackCaptor.capture())
+            verify(engine, never()).speculativeConnect("https://www.mozilla.org")
+            callbackCaptor.value.invoke()
+            verify(engine).speculativeConnect("https://www.mozilla.org")
+
+            // After checking the results for when a provider exists test what happens when no providers exist.
+            feature.removeAutocompleteProvider(domains)
+            toolbar.autocompleteFilter!!.invoke("mo", autocompleteDelegate)
+            verify(autocompleteDelegate, times(1)).noAutocompleteResult(any())
+            verify(engine, times(1)).speculativeConnect("https://www.mozilla.org")
         }
-        domains.testDomains(listOf(Domain.create("https://www.mozilla.org")))
-
-        feature.addAutocompleteProvider(domains)
-        toolbar.autocompleteFilter!!.invoke("mo", autocompleteDelegate)
-        val callbackCaptor = argumentCaptor<() -> Unit>()
-        verify(autocompleteDelegate, times(1)).applyAutocompleteResult(any(), callbackCaptor.capture())
-        verify(engine, never()).speculativeConnect("https://www.mozilla.org")
-        callbackCaptor.value.invoke()
-        verify(engine).speculativeConnect("https://www.mozilla.org")
-
-        // After checking the results for when a provider exists test what happens when no providers exist.
-        feature.removeAutocompleteProvider(domains)
-        toolbar.autocompleteFilter!!.invoke("mo", autocompleteDelegate)
-        verify(autocompleteDelegate, times(1)).noAutocompleteResult(any())
-        verify(engine, times(1)).speculativeConnect("https://www.mozilla.org")
-    }
 
     @Test
-    fun `GIVEN no initial autocomplete providers and one is added WHEN checking for autocomplete results THEN return autocomplete suggestions`() = runTest {
-        val engine: Engine = mock()
-        val feature = ToolbarAutocompleteFeature(toolbar, engine) { true }
-        val autocompleteDelegate: AutocompleteDelegate = mock()
+    fun `GIVEN no initial autocomplete providers and one is added WHEN checking for autocomplete results THEN return autocomplete suggestions`() =
+        runTest {
+            val engine: Engine = mock()
+            val feature = ToolbarAutocompleteFeature(toolbar, engine) { true }
+            val autocompleteDelegate: AutocompleteDelegate = mock()
 
-        val domains = object : BaseDomainAutocompleteProvider(DomainList.CUSTOM, { emptyList() }) {
-            fun testDomains(list: List<Domain>) {
-                domains = list
-            }
+            val domains =
+                object : BaseDomainAutocompleteProvider(DomainList.CUSTOM, { emptyList() }) {
+                    fun testDomains(list: List<Domain>) {
+                        domains = list
+                    }
+                }
+            domains.testDomains(listOf(Domain.create("https://www.mozilla.org")))
+
+            toolbar.autocompleteFilter!!.invoke("mo", autocompleteDelegate)
+            verify(autocompleteDelegate, times(1)).noAutocompleteResult(any())
+            verify(engine, never()).speculativeConnect("https://www.mozilla.org")
+
+            // After checking no results for when no providers exist test what happens when a new one is added.
+            feature.addAutocompleteProvider(domains)
+            toolbar.autocompleteFilter!!.invoke("mo", autocompleteDelegate)
+            val callbackCaptor = argumentCaptor<() -> Unit>()
+            verify(autocompleteDelegate, times(1)).applyAutocompleteResult(any(), callbackCaptor.capture())
+            verify(engine, never()).speculativeConnect("https://www.mozilla.org")
+            callbackCaptor.value.invoke()
+            verify(engine).speculativeConnect("https://www.mozilla.org")
         }
-        domains.testDomains(listOf(Domain.create("https://www.mozilla.org")))
-
-        toolbar.autocompleteFilter!!.invoke("mo", autocompleteDelegate)
-        verify(autocompleteDelegate, times(1)).noAutocompleteResult(any())
-        verify(engine, never()).speculativeConnect("https://www.mozilla.org")
-
-        // After checking no results for when no providers exist test what happens when a new one is added.
-        feature.addAutocompleteProvider(domains)
-        toolbar.autocompleteFilter!!.invoke("mo", autocompleteDelegate)
-        val callbackCaptor = argumentCaptor<() -> Unit>()
-        verify(autocompleteDelegate, times(1)).applyAutocompleteResult(any(), callbackCaptor.capture())
-        verify(engine, never()).speculativeConnect("https://www.mozilla.org")
-        callbackCaptor.value.invoke()
-        verify(engine).speculativeConnect("https://www.mozilla.org")
-    }
 
     @Test
     fun `GIVEN providers exist WHEN a new one is added THEN they are sorted by their priority`() {
         val feature = ToolbarAutocompleteFeature(mock())
 
-        val provider1 = AutocompleteProviderFake(autocompletePriority = 11).also {
-            assertTrue(feature.addAutocompleteProvider(it))
-        }
-        val provider2 = AutocompleteProviderFake(autocompletePriority = 22).also {
-            assertTrue(feature.addAutocompleteProvider(it))
-        }
-        val provider3 = AutocompleteProviderFake(autocompletePriority = 3).also {
-            assertTrue(feature.addAutocompleteProvider(it))
-        }
+        val provider1 =
+            AutocompleteProviderFake(autocompletePriority = 11).also {
+                assertTrue(feature.addAutocompleteProvider(it))
+            }
+        val provider2 =
+            AutocompleteProviderFake(autocompletePriority = 22).also {
+                assertTrue(feature.addAutocompleteProvider(it))
+            }
+        val provider3 =
+            AutocompleteProviderFake(autocompletePriority = 3).also {
+                assertTrue(feature.addAutocompleteProvider(it))
+            }
 
         assertEquals(
             listOf(provider3, provider1, provider2),
@@ -311,18 +321,22 @@ class ToolbarAutocompleteFeatureTest {
     @Test
     fun `GIVEN providers exist WHEN trying to add an existing one THEN avoid adding`() {
         val feature = ToolbarAutocompleteFeature(mock())
-        val provider1 = AutocompleteProviderFake(autocompletePriority = 11).also {
-            feature.addAutocompleteProvider(it)
-        }
-        val provider2 = AutocompleteProviderFake(autocompletePriority = 22).also {
-            feature.addAutocompleteProvider(it)
-        }
-        val provider3 = AutocompleteProviderFake(autocompletePriority = 3).also {
-            feature.addAutocompleteProvider(it)
-        }
-        val provider4 = AutocompleteProviderFake(autocompletePriority = 15).also {
-            feature.addAutocompleteProvider(it)
-        }
+        val provider1 =
+            AutocompleteProviderFake(autocompletePriority = 11).also {
+                feature.addAutocompleteProvider(it)
+            }
+        val provider2 =
+            AutocompleteProviderFake(autocompletePriority = 22).also {
+                feature.addAutocompleteProvider(it)
+            }
+        val provider3 =
+            AutocompleteProviderFake(autocompletePriority = 3).also {
+                feature.addAutocompleteProvider(it)
+            }
+        val provider4 =
+            AutocompleteProviderFake(autocompletePriority = 15).also {
+                feature.addAutocompleteProvider(it)
+            }
 
         assertTrue(feature.removeAutocompleteProvider(provider4))
 
@@ -335,12 +349,14 @@ class ToolbarAutocompleteFeatureTest {
     @Test
     fun `GIVEN providers don't exist WHEN trying to remove one THEN avoid fail gracefully`() {
         val feature = ToolbarAutocompleteFeature(mock())
-        val provider1 = AutocompleteProviderFake(autocompletePriority = 11).also {
-            feature.addAutocompleteProvider(it)
-        }
-        val provider2 = AutocompleteProviderFake(autocompletePriority = 22).also {
-            feature.addAutocompleteProvider(it)
-        }
+        val provider1 =
+            AutocompleteProviderFake(autocompletePriority = 11).also {
+                feature.addAutocompleteProvider(it)
+            }
+        val provider2 =
+            AutocompleteProviderFake(autocompletePriority = 22).also {
+                feature.addAutocompleteProvider(it)
+            }
         val provider3 = AutocompleteProviderFake(autocompletePriority = 3)
 
         assertFalse(feature.removeAutocompleteProvider(provider3))
@@ -354,12 +370,14 @@ class ToolbarAutocompleteFeatureTest {
     @Test
     fun `GIVEN providers exist WHEN removing one THEN keep the other sorted`() {
         val feature = ToolbarAutocompleteFeature(mock())
-        val provider1 = AutocompleteProviderFake(autocompletePriority = 11).also {
-            assertTrue(feature.addAutocompleteProvider(it))
-        }
-        val provider2 = AutocompleteProviderFake(autocompletePriority = 22).also {
-            assertTrue(feature.addAutocompleteProvider(it))
-        }
+        val provider1 =
+            AutocompleteProviderFake(autocompletePriority = 11).also {
+                assertTrue(feature.addAutocompleteProvider(it))
+            }
+        val provider2 =
+            AutocompleteProviderFake(autocompletePriority = 22).also {
+                assertTrue(feature.addAutocompleteProvider(it))
+            }
 
         assertFalse(feature.addAutocompleteProvider(provider1))
 
@@ -372,19 +390,23 @@ class ToolbarAutocompleteFeatureTest {
     @Test
     fun `GIVEN providers exist WHEN when they are updated THEN the old ones are replaced by new ones sorted by priority`() {
         val feature = ToolbarAutocompleteFeature(mock())
-        feature.autocompleteProviders = sortedSetOf(
-            AutocompleteProviderFake(autocompletePriority = 11),
-            AutocompleteProviderFake(autocompletePriority = 22),
-        )
-        val provider1 = AutocompleteProviderFake(autocompletePriority = 11).also {
-            feature.addAutocompleteProvider(it)
-        }
-        val provider2 = AutocompleteProviderFake(autocompletePriority = 2).also {
-            feature.addAutocompleteProvider(it)
-        }
-        val provider3 = AutocompleteProviderFake().also {
-            feature.addAutocompleteProvider(it)
-        }
+        feature.autocompleteProviders =
+            sortedSetOf(
+                AutocompleteProviderFake(autocompletePriority = 11),
+                AutocompleteProviderFake(autocompletePriority = 22),
+            )
+        val provider1 =
+            AutocompleteProviderFake(autocompletePriority = 11).also {
+                feature.addAutocompleteProvider(it)
+            }
+        val provider2 =
+            AutocompleteProviderFake(autocompletePriority = 2).also {
+                feature.addAutocompleteProvider(it)
+            }
+        val provider3 =
+            AutocompleteProviderFake().also {
+                feature.addAutocompleteProvider(it)
+            }
 
         feature.updateAutocompleteProviders(listOf(provider1, provider2, provider3))
 
@@ -458,8 +480,7 @@ class ToolbarAutocompleteFeatureTest {
 }
 
 /**
- * Empty implementation of [AutocompleteProvider].
- * [getAutocompleteSuggestion] will return `null` by default.
+ * Empty implementation of [AutocompleteProvider]. [getAutocompleteSuggestion] will return `null` by default.
  *
  * @param resultToReturn Optional nullable [AutocompleteResult] to return for all queries.
  */

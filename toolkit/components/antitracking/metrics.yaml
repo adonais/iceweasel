@@ -261,9 +261,6 @@ contentblocking:
     description: >
       The time remaining until expiration per storage access permissions, in
       days (one record per permission, not averaged).
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram STORAGE_ACCESS_REMAINING_DAYS.
     range_min: 0
     range_max: 60
     bucket_count: 61
@@ -275,7 +272,6 @@ contentblocking:
     notification_emails:
       - privacy-team@mozilla.org
     expires: never
-    telemetry_mirror: STORAGE_ACCESS_REMAINING_DAYS
 
   query_stripping_count:
     type: labeled_counter
@@ -498,7 +494,6 @@ contentblocking:
     notification_emails:
       - privacy-team@mozilla.org
     expires: never
-    telemetry_mirror: COOKIE_BEHAVIOR
 
   tracking_protection_enabled:
     type: labeled_counter
@@ -572,9 +567,6 @@ contentblocking:
       ('pageLoad' = There was a page load, 'blocked' = at least one
       fingerprinter was blocked, 'allowed' = at least one fingerprinter was
       detected and allowed.) Note, pageLoad is used as a baseline measurement.
-
-      This metric was generated to correspond to the Legacy Telemetry
-      categorical histogram FINGERPRINTERS_BLOCKED_COUNT.
     labels:
       - pageLoad
       - blocked
@@ -587,7 +579,6 @@ contentblocking:
       - privacy-team@mozilla.org
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: h#FINGERPRINTERS_BLOCKED_COUNT
 
   cryptominers_blocked_count:
     type: labeled_counter
@@ -596,9 +587,6 @@ contentblocking:
       ('pageLoad' = There was a page load, 'blocked' = at least one cryptominer
       was blocked, 'allowed' = at least one cryptominer was detected and
       allowed.) Note, pageLoad is used as a baseline measurement.
-
-      This metric was generated to correspond to the Legacy Telemetry
-      categorical histogram CRYPTOMINERS_BLOCKED_COUNT.
     labels:
       - pageLoad
       - blocked
@@ -611,7 +599,6 @@ contentblocking:
       - privacy-team@mozilla.org
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: h#CRYPTOMINERS_BLOCKED_COUNT
 
 cookie_purging:
   origins_purged:

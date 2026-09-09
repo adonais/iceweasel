@@ -302,3 +302,19 @@ TEST(WinUtils, TelemetryPathPrefix)
         << "input=" << NS_ConvertUTF16toUTF8(c.mInput).get();
   }
 }
+
+/*****************************************************************************/
+
+TEST(WinUtils, CanonicalizePathLength)
+{
+  nsAutoString shortPath(u"C:\\a\\.\\b");
+  EXPECT_TRUE(WinUtils::CanonicalizePath(shortPath));
+  EXPECT_STREQ(NS_ConvertUTF16toUTF8(shortPath).get(), "C:\\a\\b");
+
+  nsAutoString longPath(u"C:\\");
+  for (size_t i = 0; i < 5000; ++i) {
+    longPath.Append(u'A');
+  }
+  EXPECT_FALSE(WinUtils::CanonicalizePath(longPath));
+  EXPECT_EQ(longPath.Length(), 5003u);
+}

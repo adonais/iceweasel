@@ -1447,11 +1447,9 @@ class ListNode : public ParseNode {
     using pointer = ParseNode**;
     using reference = ParseNode*&;
 
-    bool operator==(const iterator& other) const {
-      return node_ == other.node_;
-    }
+    bool operator==(const iterator& other) const = default;
 
-    bool operator!=(const iterator& other) const { return !(*this == other); }
+    bool operator!=(const iterator& other) const = default;
 
     iterator& operator++() {
       node_ = node_->pn_next;

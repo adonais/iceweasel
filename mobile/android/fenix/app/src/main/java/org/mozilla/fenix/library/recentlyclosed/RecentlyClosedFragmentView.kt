@@ -11,19 +11,17 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.SimpleItemAnimator
+import com.google.android.material.R as materialR
 import mozilla.components.browser.state.state.recover.TabState
 import mozilla.components.support.ktx.android.content.getColorFromAttr
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.ComponentRecentlyClosedBinding
 import org.mozilla.fenix.library.LibraryPageView
 import org.mozilla.fenix.selection.SelectionInteractor
-import com.google.android.material.R as materialR
-import mozilla.components.ui.icons.R as iconsR
 
 interface RecentlyClosedInteractor : SelectionInteractor<TabState> {
-    /**
-     * Called when the view more history option is tapped.
-     */
+    /** Called when the view more history option is tapped. */
     fun onNavigateToHistory()
 
     /**
@@ -34,19 +32,18 @@ interface RecentlyClosedInteractor : SelectionInteractor<TabState> {
     fun onDelete(tab: TabState)
 }
 
-/**
- * View that contains and configures the Recently Closed List
- */
+/** View that contains and configures the Recently Closed List */
 class RecentlyClosedFragmentView(
     container: ViewGroup,
     private val interactor: RecentlyClosedFragmentInteractor,
 ) : LibraryPageView(container) {
 
-    private val binding = ComponentRecentlyClosedBinding.inflate(
-        LayoutInflater.from(container.context),
-        container,
-        true,
-    )
+    private val binding =
+        ComponentRecentlyClosedBinding.inflate(
+            LayoutInflater.from(container.context),
+            container,
+            true,
+        )
 
     private val recentlyClosedAdapter: RecentlyClosedAdapter = RecentlyClosedAdapter(interactor)
 
@@ -58,8 +55,7 @@ class RecentlyClosedFragmentView(
         }
 
         binding.viewMoreHistory.apply {
-            titleView.text =
-                containerView.context.getString(R.string.recently_closed_show_full_history)
+            titleView.text = containerView.context.getString(R.string.recently_closed_show_full_history)
             urlView.isVisible = false
             overflowView.isVisible = false
             iconView.background = null
@@ -67,11 +63,9 @@ class RecentlyClosedFragmentView(
                 AppCompatResources.getDrawable(
                     containerView.context,
                     iconsR.drawable.mozac_ic_history_24,
-                ),
+                )
             )
-            iconView.imageTintList = ColorStateList.valueOf(
-                context.getColorFromAttr(materialR.attr.colorOnSurface),
-            )
+            iconView.imageTintList = ColorStateList.valueOf(context.getColorFromAttr(materialR.attr.colorOnSurface))
             setOnClickListener {
                 interactor.onNavigateToHistory()
             }
@@ -88,9 +82,7 @@ class RecentlyClosedFragmentView(
             if (selectedTabs.isEmpty()) {
                 setUiForNormalMode(context.getString(R.string.library_recently_closed_tabs))
             } else {
-                setUiForSelectingMode(
-                    context.getString(R.string.history_multi_select_title, selectedTabs.size),
-                )
+                setUiForSelectingMode(context.getString(R.string.history_multi_select_title, selectedTabs.size))
             }
         }
     }

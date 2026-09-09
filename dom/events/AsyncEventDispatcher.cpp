@@ -50,7 +50,7 @@ AsyncEventDispatcher::Run() {
   if (mEventMessage != eUnidentifiedEvent) {
     MOZ_ASSERT(mComposed == Composed::eDefault);
     return nsContentUtils::DispatchTrustedEvent<WidgetEvent>(
-        node->OwnerDoc(), mTarget, mEventMessage, mCanBubble, Cancelable::eNo,
+        mTarget, mEventMessage, mCanBubble, Cancelable::eNo,
         nullptr /* aDefaultAction */, mOnlyChromeDispatch);
   }
   // MOZ_KnownLives because this instance shouldn't be touched while running.

@@ -87,6 +87,10 @@ sidebar-show-on-the-left =
 # hovers over it.
 expand-sidebar-on-hover =
   .label = Expand sidebar on hover
+# Option to show a preview of the most recently active tabs when the mouse
+# pointer hovers over the Open Tabs button in the sidebar.
+sidebar-show-preview-on-hover =
+  .label = Show preview on hover
 sidebar-manage-extensions2 = Manage all extensions
 
 ## Labels for sidebar context menu items

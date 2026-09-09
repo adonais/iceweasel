@@ -56,6 +56,7 @@ class PaletteCache
   already_AddRefed<FontPalette> GetPaletteFor(gfxFontEntry* aFontEntry,
                                               nsAtom* aPaletteName);
 
+  static bool IsEmpty(const CacheData& aVal) { return !aVal.mKey.first; }
   static mozilla::HashNumber Hash(const CacheKey& aKey) {
     return mozilla::HashGeneric(aKey.first.get(), aKey.second.get());
   }

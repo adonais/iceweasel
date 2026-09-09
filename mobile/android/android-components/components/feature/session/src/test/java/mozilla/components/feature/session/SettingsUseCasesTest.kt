@@ -24,28 +24,30 @@ class SettingsUseCasesTest {
         val engineSessionA: EngineSession = mock()
         val engineSessionB: EngineSession = mock()
 
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "A"),
-                    createTab("https://www.mozilla.org", id = "B"),
-                ),
-                selectedTabId = "A",
-            ),
-        )
+        val store =
+            BrowserStore(
+                BrowserState(
+                    tabs =
+                        listOf(
+                            createTab("https://www.mozilla.org", id = "A"),
+                            createTab("https://www.mozilla.org", id = "B"),
+                        ),
+                    selectedTabId = "A",
+                )
+            )
 
         store.dispatch(
             EngineAction.LinkEngineSessionAction(
                 tabId = "A",
                 engineSession = engineSessionA,
-            ),
+            )
         )
 
         store.dispatch(
             EngineAction.LinkEngineSessionAction(
                 tabId = "B",
                 engineSession = engineSessionB,
-            ),
+            )
         )
 
         val engine: Engine = mock()

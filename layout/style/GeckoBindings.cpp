@@ -794,11 +794,15 @@ bool Gecko_MatchViewTransitionClass(
   const Document* doc = aElement->OwnerDoc();
   MOZ_ASSERT(doc);
   const ViewTransition* vt = doc->GetActiveViewTransition();
-  MOZ_ASSERT(
-      vt, "We should have an active view transition for this pseudo-element");
-
+  if (!vt) {
+    // We can get here while lazily resolving the style of a named view
+    // transition pseudo-element that doesn't exist.
+    return false;
+  }
   nsAtom* name = Gecko_GetImplementedPseudoIdentifier(aElement);
-  MOZ_ASSERT(name);
+  if (!name) {
+    return false;
+  }
   return vt->MatchClassList(name, *aPtNameAndClassSelector);
 }
 
@@ -2005,12 +2009,12 @@ bool Gecko_GetAnchorPosSize(const AnchorPosResolutionParams* aParams,
     return false;
   }
   const auto* positioned = aParams->mFrame;
+  const auto* containingBlock = positioned->GetParent();
   const auto size = AnchorPositioningUtils::ResolveAnchorPosSize(
-      positioned, {aAnchorName, *aTreeScope}, aParams->mCache);
+      positioned, containingBlock, {aAnchorName, *aTreeScope}, aParams->mCache);
   if (!size) {
     return false;
   }
-  const auto* containingBlock = positioned->GetParent();
   const auto l = [&]() {
     switch (aAnchorSizeKeyword) {
       case StyleAnchorSizeKeyword::None:

@@ -9,7 +9,6 @@
 
 #include "components/capturer/RTCCameraVideoCapturer.h"
 #import "helpers/NSString+StdString.h"
-#include "media/base/video_common.h"
 #include "modules/video_capture/video_capture_defines.h"
 #include "rtc_base/logging.h"
 

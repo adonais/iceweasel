@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.BetaLabel
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
@@ -32,7 +33,6 @@ import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.TabGroupState
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 private val EmptyPageWidth = 225.dp
 
@@ -56,10 +56,11 @@ internal fun TabGroupsPage(
     if (state.groups.isNotEmpty()) {
         Column {
             BetaLabel(
-                modifier = Modifier.padding(
-                    start = FirefoxTheme.layout.space.dynamic200,
-                    top = FirefoxTheme.layout.space.static200,
-                ),
+                modifier =
+                    Modifier.padding(
+                        start = FirefoxTheme.layout.space.dynamic200,
+                        top = FirefoxTheme.layout.space.static200,
+                    )
             )
 
             TabGroupList(
@@ -81,12 +82,8 @@ internal fun TabGroupsPage(
  * @param modifier The [Modifier] to be applied to the layout.
  */
 @Composable
-private fun EmptyTabGroupsPage(
-    modifier: Modifier = Modifier,
-) {
-    EmptyTabPage(
-        modifier = modifier.testTag(TabsTrayTestTag.EMPTY_TAB_GROUPS_LIST),
-    ) {
+private fun EmptyTabGroupsPage(modifier: Modifier = Modifier) {
+    EmptyTabPage(modifier = modifier.testTag(TabsTrayTestTag.EMPTY_TAB_GROUPS_LIST)) {
         Column(
             modifier = Modifier.width(EmptyPageWidth),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -119,36 +116,38 @@ private fun EmptyTabGroupsPage(
     }
 }
 
-private class TabGroupsPagePreviewParameterProvider :
-    PreviewParameterProvider<List<TabsTrayItem.TabGroup>> {
-    val data = listOf(
-        Pair(
-            "Empty",
-            emptyList(),
-        ),
-        Pair(
-            "2 Tab Groups",
-            listOf(
-                TabsTrayItem.TabGroup(
-                    title = "Work",
-                    theme = TabGroupTheme.Blue,
-                    tabs = mutableListOf(
-                        createTab(url = "https://www.mozilla.org"),
-                        createTab(url = "https://www.firefox.com"),
+private class TabGroupsPagePreviewParameterProvider : PreviewParameterProvider<List<TabsTrayItem.TabGroup>> {
+    val data =
+        listOf(
+            Pair(
+                "Empty",
+                emptyList(),
+            ),
+            Pair(
+                "2 Tab Groups",
+                listOf(
+                    TabsTrayItem.TabGroup(
+                        title = "Work",
+                        theme = TabGroupTheme.Blue,
+                        tabs =
+                            mutableListOf(
+                                createTab(url = "https://www.mozilla.org"),
+                                createTab(url = "https://www.firefox.com"),
+                            ),
                     ),
-                ),
-                TabsTrayItem.TabGroup(
-                    title = "Other Work",
-                    theme = TabGroupTheme.Purple,
-                    tabs = mutableListOf(
-                        createTab(url = "https://www.mozilla.org"),
-                        createTab(url = "https://www.firefox.com"),
-                        createTab(url = "https://www.mozilla.org/about"),
+                    TabsTrayItem.TabGroup(
+                        title = "Other Work",
+                        theme = TabGroupTheme.Purple,
+                        tabs =
+                            mutableListOf(
+                                createTab(url = "https://www.mozilla.org"),
+                                createTab(url = "https://www.firefox.com"),
+                                createTab(url = "https://www.mozilla.org/about"),
+                            ),
                     ),
                 ),
             ),
-        ),
-    )
+        )
     override val values: Sequence<List<TabsTrayItem.TabGroup>>
         get() = data.map { it.second }.asSequence()
 
@@ -160,8 +159,7 @@ private class TabGroupsPagePreviewParameterProvider :
 @FlexibleWindowLightDarkPreview
 @Composable
 private fun TabGroupsPagePreview(
-    @PreviewParameter(TabGroupsPagePreviewParameterProvider::class)
-    groups: List<TabsTrayItem.TabGroup>,
+    @PreviewParameter(TabGroupsPagePreviewParameterProvider::class) groups: List<TabsTrayItem.TabGroup>
 ) {
     FirefoxTheme {
         TabGroupsPage(

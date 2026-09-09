@@ -367,11 +367,17 @@ export const AutoTabGroupingSuggestions = {
       label: proposal.label,
       color: TAB_GROUP_COLORS[index % TAB_GROUP_COLORS.length],
       tabs: proposal.tabs,
-      tabInfos: proposal.tabs.map(tab => this._tabInfo(tab)),
+      tabInfos: proposal.tabs.map(tab => this.toTabInfo(tab)),
     };
   },
 
-  _tabInfo(tab) {
+  /**
+   * The display data a tab is shown with, in a suggestion row or a flyout.
+   *
+   * @param {MozTabbrowserTab} tab
+   * @returns {{iconUrl: string, title: string}}
+   */
+  toTabInfo(tab) {
     // Derive a user-visible site label from the tab's URI.
     const uri = tab.linkedBrowser?.currentURI;
     let site = "";

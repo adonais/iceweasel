@@ -136,6 +136,8 @@ static wasm::RefType WasmRefTestOrCastDestType(MDefinition* refTestOrCast) {
 static void TryOptimizeWasmCast(MDefinition* cast, MIRGraph& graph) {
   MDefinition* ref = WasmRefCastOrTestSourceRef(cast);
 
+  // Don't optimize casts involving uninhabitable types. See ReplaceAllUsesWith
+  // in ValueNumbering.cpp.
   if (ref->wasmRefType().isSome() &&
       !ref->wasmRefType().value().isInhabitable()) {
     return;

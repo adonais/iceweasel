@@ -368,7 +368,7 @@ void AtomRefRuntime::recordRef(JSContext* cx, T* thing) {
   // not being collected by the incremental GC.
   ReadBarrier(thing);
 
-  return inlinedRecordRef(cx->zone(), thing);
+  inlinedRecordRefInfallible(cx->zone(), thing);
 }
 
 template void AtomRefRuntime::recordRef(JSContext* cx, JSAtom* thing);
@@ -424,6 +424,8 @@ CellColor AtomRefRuntime::getRefColor(Zone* zone, T* thing) {
       return CellColor::Black;
     }
   }
+
+  AutoMarkingLock lock(zone, atomRefLock);
 
   size_t bit = getAtomBit(&thing->asTenured());
 

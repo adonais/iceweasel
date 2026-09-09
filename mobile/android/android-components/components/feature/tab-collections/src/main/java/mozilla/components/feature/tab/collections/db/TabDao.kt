@@ -8,14 +8,10 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 
-/**
- * Internal DAO for accessing [TabEntity] instances.
- */
+/** Internal DAO for accessing [TabEntity] instances. */
 @Dao
 internal interface TabDao {
-    @Insert
-    fun insertTab(tab: TabEntity): Long
+    @Insert fun insertTab(tab: TabEntity): Long
 
-    @Delete
-    fun deleteTab(tab: TabEntity)
+    @Delete fun deleteTab(tab: TabEntity)
 }

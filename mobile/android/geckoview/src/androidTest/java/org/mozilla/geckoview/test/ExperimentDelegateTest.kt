@@ -1,10 +1,11 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import java.lang.RuntimeException
 import org.hamcrest.Matchers.equalTo
 import org.json.JSONObject
 import org.junit.Test
@@ -15,7 +16,6 @@ import org.mozilla.geckoview.ExperimentDelegate.ExperimentException.ERROR_EXPERI
 import org.mozilla.geckoview.ExperimentDelegate.ExperimentException.ERROR_FEATURE_NOT_FOUND
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
-import java.lang.RuntimeException
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
@@ -43,8 +43,8 @@ class ExperimentDelegateTest : BaseSessionTest() {
     }
 
     /*
-        Basic test of setting a runtime experiment delegate and an example experiment delegate with example functionality usage.
-     */
+       Basic test of setting a runtime experiment delegate and an example experiment delegate with example functionality usage.
+    */
     @Test
     fun experimentDelegateTest() {
         sessionRule.addExternalDelegateUntilTestEnd(
@@ -105,9 +105,11 @@ class ExperimentDelegateTest : BaseSessionTest() {
         assertThat("Experiment item two matches", experimentFeature?.get("item-two"), equalTo(5))
         val recordedExposureEvent = sessionRule.waitForResult(experimentDelegate.onRecordExposureEvent("test"))
         assertThat("Recorded an exposure event", recordedExposureEvent, equalTo(null))
-        val recordedExperimentExposureEvent = sessionRule.waitForResult(experimentDelegate.onRecordExperimentExposureEvent("test", "test"))
+        val recordedExperimentExposureEvent =
+            sessionRule.waitForResult(experimentDelegate.onRecordExperimentExposureEvent("test", "test"))
         assertThat("Recorded an experiment exposure event", recordedExperimentExposureEvent, equalTo(null))
-        val recordedMalformedEvent = sessionRule.waitForResult(experimentDelegate.onRecordMalformedConfigurationEvent("test", "data"))
+        val recordedMalformedEvent =
+            sessionRule.waitForResult(experimentDelegate.onRecordMalformedConfigurationEvent("test", "data"))
         assertThat("Recorded a malformed event", recordedMalformedEvent, equalTo(null))
 
         try {

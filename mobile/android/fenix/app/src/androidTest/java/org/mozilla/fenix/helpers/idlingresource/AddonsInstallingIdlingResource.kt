@@ -9,10 +9,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.test.espresso.IdlingResource
 import mozilla.components.feature.addons.ui.AddonInstallationDialogFragment
 
-class AddonsInstallingIdlingResource(
-    private val fragmentManager: FragmentManager,
-) :
-    IdlingResource {
+class AddonsInstallingIdlingResource(private val fragmentManager: FragmentManager) : IdlingResource {
     private var resourceCallback: IdlingResource.ResourceCallback? = null
     private var isAddonInstalled = false
 
@@ -32,8 +29,7 @@ class AddonsInstallingIdlingResource(
 
     private fun isInstalledAddonDialogShown(): Boolean {
         val activityChildFragments =
-            (fragmentManager.fragments.first() as NavHostFragment)
-                .childFragmentManager.fragments
+            (fragmentManager.fragments.first() as NavHostFragment).childFragmentManager.fragments
 
         for (childFragment in activityChildFragments.indices) {
             if (activityChildFragments[childFragment] is AddonInstallationDialogFragment) {

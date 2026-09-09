@@ -17,6 +17,7 @@ export const ImpressionsSection = ({
   messageImpressions,
   groupImpressions,
   screenImpressions,
+  multiProfileMessageImpressions,
 }) => {
   const handleSaveMessageImpressions = useCallback(newImpressions => {
     ASRouterUtils.editState("messageImpressions", newImpressions);
@@ -27,6 +28,9 @@ export const ImpressionsSection = ({
   const handleSaveScreenImpressions = useCallback(newImpressions => {
     ASRouterUtils.editState("screenImpressions", newImpressions);
   }, []);
+  const handleSaveProfileImpressions = useCallback(newImpressions => {
+    ASRouterUtils.editState("multiProfileMessageImpressions", newImpressions);
+  }, []);
 
   const handleResetMessageImpressions = useCallback(() => {
     ASRouterUtils.sendMessage({ type: "RESET_MESSAGE_STATE" });
@@ -36,6 +40,9 @@ export const ImpressionsSection = ({
   }, []);
   const handleResetScreenImpressions = useCallback(() => {
     ASRouterUtils.sendMessage({ type: "RESET_SCREEN_IMPRESSIONS" });
+  }, []);
+  const handleResetProfileImpressions = useCallback(() => {
+    ASRouterUtils.editState("multiProfileMessageImpressions", {});
   }, []);
 
   return (
@@ -60,6 +67,13 @@ export const ImpressionsSection = ({
         description="Screen impressions are stored in an object, where each key is a screen ID and each value is the most recent timestamp that screen was shown. They are never cleaned up."
         onSave={handleSaveScreenImpressions}
         onReset={handleResetScreenImpressions}
+      />
+      <ImpressionsItem
+        impressions={multiProfileMessageImpressions}
+        label="Profile Impressions"
+        description="Profile impressions are shared across all profiles in a profile group and are stored in an object, where each key is a message ID and each value is an array of timestamps. They are recorded for messages with a profileScope set."
+        onSave={handleSaveProfileImpressions}
+        onReset={handleResetProfileImpressions}
       />
     </div>
   );

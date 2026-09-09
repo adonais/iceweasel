@@ -18,12 +18,10 @@ import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 
 /**
- * Responsible for starting or stopping a [SessionNotificationService]
- * depending on whether a private tab is open.
+ * Responsible for starting or stopping a [SessionNotificationService] depending on whether a private tab is open.
  *
- * This feature observes the number of private tabs in the [BrowserStore].
- * When a private tab is opened, it starts the [SessionNotificationService].
- * When all private tabs are closed, it stops the service.
+ * This feature observes the number of private tabs in the [BrowserStore]. When a private tab is opened, it starts the
+ * [SessionNotificationService]. When all private tabs are closed, it stops the service.
  *
  * @param context The application context.
  * @param browserStore The [BrowserStore] used to observe the number of private tabs.
@@ -43,17 +41,23 @@ class PrivateNotificationFeature(
     private var scope: CoroutineScope? = null
 
     override fun start() {
-        scope = browserStore.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.map { state -> state.privateTabs.isNotEmpty() }
-                .distinctUntilChanged()
-                .collect { hasPrivateTabs ->
-                    if (hasPrivateTabs) {
-                        SessionNotificationService.start(applicationContext, permissionRequestHandler, crashReporter)
-                    } else {
-                        SessionNotificationService.stop(applicationContext)
+        scope =
+            browserStore.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .map { state -> state.privateTabs.isNotEmpty() }
+                    .distinctUntilChanged()
+                    .collect { hasPrivateTabs ->
+                        if (hasPrivateTabs) {
+                            SessionNotificationService.start(
+                                applicationContext,
+                                permissionRequestHandler,
+                                crashReporter,
+                            )
+                        } else {
+                            SessionNotificationService.stop(applicationContext)
+                        }
                     }
-                }
-        }
+            }
     }
 
     override fun stop() {

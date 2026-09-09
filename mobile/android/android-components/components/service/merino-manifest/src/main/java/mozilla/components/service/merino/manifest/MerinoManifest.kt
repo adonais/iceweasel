@@ -12,10 +12,7 @@ import kotlinx.serialization.Serializable
  *
  * @property domains List of website entries with metadata such as icons and categories.
  */
-@Serializable
-data class MerinoManifest(
-    @SerialName("domains") val domains: List<ManifestEntry>,
-)
+@Serializable data class MerinoManifest(@SerialName("domains") val domains: List<ManifestEntry>)
 
 /**
  * Metadata for a website entry in the Merino manifest.

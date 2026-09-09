@@ -10,8 +10,8 @@ origin:
 
   url: https://gitlab.freedesktop.org/freetype/freetype
 
-  release: VER-2-14-2 (2026-03-01T14:55:17+01:00).
-  revision: VER-2-14-2
+  release: VER-2-14-3 (2026-03-22T16:07:10+01:00).
+  revision: VER-2-14-3
 
   license: FTL
   license-file: LICENSE.TXT
@@ -41,3 +41,8 @@ vendoring:
 
   keep:
     - moz.build
+
+  patches:
+    - patches/0001-Bug-2032039-colr-blend-layer-mono-source.patch
+    - patches/0002-Bug-2032043-cherry-pick-upstream-1803559c.patch
+    - patches/0003-Bug-2038537-truetype-interpreter-fixes.patch

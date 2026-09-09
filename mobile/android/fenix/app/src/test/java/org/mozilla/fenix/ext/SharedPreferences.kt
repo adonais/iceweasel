@@ -7,7 +7,5 @@ package org.mozilla.fenix.ext
 import android.content.SharedPreferences
 import androidx.core.content.edit
 
-/**
- * Clear everything in shared preferences and commit changes immediately.
- */
+/** Clear everything in shared preferences and commit changes immediately. */
 fun SharedPreferences.clearAndCommit() = this.edit(commit = true) { clear() }

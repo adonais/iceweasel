@@ -11,7 +11,7 @@ Profile: https://profiler.firefox.com/public/m19tkpgxjewvtbpjeyegtkhfj0k543fp5zx
 
 ```
 profiler-cli load https://profiler.firefox.com/public/m19tkpgxjewvtbpjeyegtkhfj0k543fp5zxmcwg --session fenix-sync
-profiler-cli profile info
+profiler-cli profile info --session fenix-sync
 ```
 
 ```
@@ -38,8 +38,8 @@ investigation: something is running in the Kotlin coroutine pool. Let's look at 
 ## Check the timing of t-46's activity
 
 ```
-profiler-cli thread select t-46
-profiler-cli thread info
+profiler-cli thread select t-46 --session fenix-sync
+profiler-cli thread info --session fenix-sync
 ```
 
 ```
@@ -61,9 +61,9 @@ doing.
 ## Zoom into the sync window
 
 ```
-profiler-cli zoom push 6.9,10.9
-profiler-cli thread select t-46
-profiler-cli thread samples
+profiler-cli zoom push 6.9,10.9 --session fenix-sync
+profiler-cli thread select t-46 --session fenix-sync
+profiler-cli thread samples --session fenix-sync
 ```
 
 ```
@@ -102,7 +102,7 @@ the read path.
 ## Bottom-up: what calls pread64?
 
 ```
-profiler-cli thread samples-bottom-up
+profiler-cli thread samples-bottom-up --session fenix-sync
 ```
 
 ```
@@ -144,7 +144,7 @@ is the logins journal flush -- two independent operations running on the same th
 ## Trace the hot path top-down
 
 ```
-profiler-cli thread samples-top-down
+profiler-cli thread samples-top-down --session fenix-sync
 ```
 
 ```
@@ -205,8 +205,8 @@ database and cold page cache, this causes hundreds of `pread64` calls to pull pa
 ## Isolate the fetch_outgoing subtree
 
 ```
-profiler-cli filter push --root-at f-14310
-profiler-cli thread samples
+profiler-cli filter push --root-at f-14310 --session fenix-sync
+profiler-cli thread samples --session fenix-sync
 ```
 
 ```

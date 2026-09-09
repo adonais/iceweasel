@@ -5,6 +5,7 @@
 package mozilla.components.browser.engine.gecko
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
 import mozilla.components.browser.engine.gecko.webextension.GeckoWebExtensionException
 import mozilla.components.concept.engine.webextension.WebExtensionInstallException
 import mozilla.components.support.test.mock
@@ -21,7 +22,6 @@ import org.mozilla.geckoview.WebExtension.InstallException.ErrorCodes.ERROR_SIGN
 import org.mozilla.geckoview.WebExtension.InstallException.ErrorCodes.ERROR_SOFT_BLOCKED
 import org.mozilla.geckoview.WebExtension.InstallException.ErrorCodes.ERROR_UNSUPPORTED_ADDON_TYPE
 import org.mozilla.geckoview.WebExtension.InstallException.ErrorCodes.ERROR_USER_CANCELED
-import kotlin.test.assertIs
 
 @RunWith(AndroidJUnit4::class)
 class GeckoWebExtensionExceptionTest {
@@ -30,8 +30,7 @@ class GeckoWebExtensionExceptionTest {
     fun `Handles an user cancelled exception`() {
         val geckoException = mock<WebExtension.InstallException>()
         ReflectionUtils.setField(geckoException, "code", ERROR_USER_CANCELED)
-        val webExtensionException =
-            GeckoWebExtensionException.createWebExtensionException(geckoException)
+        val webExtensionException = GeckoWebExtensionException.createWebExtensionException(geckoException)
 
         assertIs<WebExtensionInstallException.UserCancelled>(webExtensionException)
     }
@@ -39,8 +38,7 @@ class GeckoWebExtensionExceptionTest {
     @Test
     fun `Handles a generic exception`() {
         val geckoException = Exception()
-        val webExtensionException =
-            GeckoWebExtensionException.createWebExtensionException(geckoException)
+        val webExtensionException = GeckoWebExtensionException.createWebExtensionException(geckoException)
 
         assertIs<GeckoWebExtensionException>(webExtensionException)
     }
@@ -49,8 +47,7 @@ class GeckoWebExtensionExceptionTest {
     fun `Handles a blocklisted exception`() {
         val geckoException = mock<WebExtension.InstallException>()
         ReflectionUtils.setField(geckoException, "code", ERROR_BLOCKLISTED)
-        val webExtensionException =
-            GeckoWebExtensionException.createWebExtensionException(geckoException)
+        val webExtensionException = GeckoWebExtensionException.createWebExtensionException(geckoException)
 
         assertIs<WebExtensionInstallException.Blocklisted>(webExtensionException)
     }
@@ -59,8 +56,7 @@ class GeckoWebExtensionExceptionTest {
     fun `Handles a CorruptFile exception`() {
         val geckoException = mock<WebExtension.InstallException>()
         ReflectionUtils.setField(geckoException, "code", ERROR_CORRUPT_FILE)
-        val webExtensionException =
-            GeckoWebExtensionException.createWebExtensionException(geckoException)
+        val webExtensionException = GeckoWebExtensionException.createWebExtensionException(geckoException)
 
         assertIs<WebExtensionInstallException.CorruptFile>(webExtensionException)
     }
@@ -69,8 +65,7 @@ class GeckoWebExtensionExceptionTest {
     fun `Handles a NetworkFailure exception`() {
         val geckoException = mock<WebExtension.InstallException>()
         ReflectionUtils.setField(geckoException, "code", ERROR_NETWORK_FAILURE)
-        val webExtensionException =
-            GeckoWebExtensionException.createWebExtensionException(geckoException)
+        val webExtensionException = GeckoWebExtensionException.createWebExtensionException(geckoException)
 
         assertIs<WebExtensionInstallException.NetworkFailure>(webExtensionException)
     }
@@ -83,8 +78,7 @@ class GeckoWebExtensionExceptionTest {
             "code",
             ERROR_SIGNEDSTATE_REQUIRED,
         )
-        val webExtensionException =
-            GeckoWebExtensionException.createWebExtensionException(geckoException)
+        val webExtensionException = GeckoWebExtensionException.createWebExtensionException(geckoException)
 
         assertIs<WebExtensionInstallException.NotSigned>(webExtensionException)
     }
@@ -97,8 +91,7 @@ class GeckoWebExtensionExceptionTest {
             "code",
             ERROR_INCOMPATIBLE,
         )
-        val webExtensionException =
-            GeckoWebExtensionException.createWebExtensionException(geckoException)
+        val webExtensionException = GeckoWebExtensionException.createWebExtensionException(geckoException)
 
         assertIs<WebExtensionInstallException.Incompatible>(webExtensionException)
     }

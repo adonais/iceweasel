@@ -14,14 +14,15 @@ class CrashReducerTest {
     @Test
     fun `middlewear actions don't manipulate the state`() {
         listOf(
-            CrashAction.Initialize,
-            CrashAction.CheckDeferred(),
-            CrashAction.CheckForCrashes(),
-            CrashAction.FinishCheckingForCrashes(hasUnsentCrashes = true),
-            CrashAction.FinishCheckingForCrashes(hasUnsentCrashes = false),
-        ).forEach {
-            assertEquals(crashReducer(CrashState.Idle, it), CrashState.Idle)
-        }
+                CrashAction.Initialize,
+                CrashAction.CheckDeferred(),
+                CrashAction.CheckForCrashes(),
+                CrashAction.FinishCheckingForCrashes(hasUnsentCrashes = true),
+                CrashAction.FinishCheckingForCrashes(hasUnsentCrashes = false),
+            )
+            .forEach {
+                assertEquals(crashReducer(CrashState.Idle, it), CrashState.Idle)
+            }
     }
 
     @Test
@@ -51,11 +52,12 @@ class CrashReducerTest {
     @Test
     fun `GIVEN a Reporting state WHEN we process a CancelTapped or ReportTapped action THEN update state to Done`() {
         listOf(
-            CrashAction.CancelTapped,
-            CrashAction.ReportTapped(automaticallySendChecked = true, crashIDs = listOf()),
-        ).forEach {
-            assertEquals(crashReducer(CrashState.Reporting(), it), CrashState.Done)
-        }
+                CrashAction.CancelTapped,
+                CrashAction.ReportTapped(automaticallySendChecked = true, crashIDs = listOf()),
+            )
+            .forEach {
+                assertEquals(crashReducer(CrashState.Reporting(), it), CrashState.Done)
+            }
     }
 
     @Test

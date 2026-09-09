@@ -64,20 +64,6 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
       onAvailable: this.noopStylesheetListener,
     });
 
-    // @backward-compat { version 154 } Firefox 154 started supporting toggling
-    // global highlighters via Target Actor Configuration. We no longer need to watch
-    // for will-navigate to clear frontend highlighters and can remove this code.
-    const { configuration } =
-      this.targetFront.commands.targetConfigurationCommand;
-    if ("enabledHighlighters" in configuration) {
-      await resourceCommand.watchResources(
-        [resourceCommand.TYPES.DOCUMENT_EVENT],
-        {
-          onAvailable: this.#documentEventListener,
-        }
-      );
-    }
-
     // Bail out if the inspector is closed while watchResources was pending
     if (this.isDestroyed()) {
       return null;
@@ -109,26 +95,6 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     await this.walker.reparentRemoteFrame();
   }
 
-  // @backward-compat { version 154 } Firefox 154 started supporting toggling
-  // global highlighters via Target Actor Configuration. We no longer need to watch
-  // for will-navigate to clear frontend highlighters and can remove this code.
-  #documentEventListener = resources => {
-    const willNavigate = resources.some(
-      resource =>
-        resource.name == "will-navigate" && resource.targetFront.isTopLevel
-    );
-    if (!willNavigate) {
-      return;
-    }
-    // Manually clear the highlighters on the frontend, to replicate what happens
-    // on the backend and avoid keeping defunct enabled highlighters
-    this._highlighters.clear();
-  };
-
-  hasHighlighter(type) {
-    return this._highlighters.has(type);
-  }
-
   async _getPageStyle() {
     this.pageStyle = await super.getPageStyle();
   }
@@ -157,9 +123,6 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     const { resourceCommand } = this;
     resourceCommand.unwatchResources([resourceCommand.TYPES.STYLESHEET], {
       onAvailable: this.noopStylesheetListener,
-    });
-    resourceCommand.unwatchResources([resourceCommand.TYPES.DOCUMENT_EVENT], {
-      onAvailable: this.#documentEventListener,
     });
     this.resourceCommand = null;
 

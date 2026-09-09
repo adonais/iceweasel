@@ -18,26 +18,23 @@ import org.robolectric.Shadows.shadowOf
 
 @RunWith(AndroidJUnit4::class)
 class PackageManagerTest {
-    private fun createContext(
-        installedApps: List<String> = emptyList(),
-    ): Context {
+    private fun createContext(installedApps: List<String> = emptyList()): Context {
         val pm = testContext.packageManager
         val packageManager = shadowOf(pm)
         val context = mock<Context>()
         `when`(context.packageManager).thenReturn(pm)
         installedApps.forEach { name ->
-            val packageInfo = PackageInfo().apply {
-                packageName = name
-            }
+            val packageInfo =
+                PackageInfo().apply {
+                    packageName = name
+                }
             packageManager.addPackageNoDefaults(packageInfo)
         }
 
         return context
     }
 
-    /**
-     * Verify that PackageManager.isPackageInstalled works correctly.
-     */
+    /** Verify that PackageManager.isPackageInstalled works correctly. */
     @Test
     fun `isPackageInstalled() returns true when package is installed, false otherwise`() {
         val context = createContext(listOf("com.example", "com.test"))

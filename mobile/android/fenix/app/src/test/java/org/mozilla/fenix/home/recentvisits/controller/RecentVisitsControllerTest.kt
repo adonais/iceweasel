@@ -12,6 +12,7 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -42,13 +43,11 @@ import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryGrou
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryHighlight
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class RecentVisitsControllerTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private val testDispatcher = StandardTestDispatcher()
     private val scope = TestScope(testDispatcher)
@@ -66,142 +65,153 @@ class RecentVisitsControllerTest {
 
     @Before
     fun setup() {
-        every { navController.currentDestination } returns mockk {
-            every { id } returns R.id.homeFragment
-        }
+        every { navController.currentDestination } returns
+            mockk {
+                every { id } returns R.id.homeFragment
+            }
         storage = mockk(relaxed = true)
         appStore = mockk(relaxed = true)
         store = BrowserStore()
 
-        controller = spyk(
-            DefaultRecentVisitsController(
-                appStore = appStore,
-                store = store,
-                settings = settings,
-                fenixBrowserUseCases = fenixBrowserUseCases,
-                selectOrAddTabUseCase = selectOrAddTabUseCase,
-                navController = navController,
-                scope = scope,
-                storage = storage,
-            ),
-        )
-    }
-
-    @Test
-    fun handleHistoryShowAllClicked() = runTest(testDispatcher) {
-        controller.handleHistoryShowAllClicked()
-
-        verify {
-            navController.navigate(
-                HomeFragmentDirections.actionGlobalHistoryFragment(),
+        controller =
+            spyk(
+                DefaultRecentVisitsController(
+                    appStore = appStore,
+                    store = store,
+                    settings = settings,
+                    fenixBrowserUseCases = fenixBrowserUseCases,
+                    selectOrAddTabUseCase = selectOrAddTabUseCase,
+                    navController = navController,
+                    scope = scope,
+                    storage = storage,
+                )
             )
-        }
     }
 
     @Test
-    fun handleRecentHistoryGroupClicked() = runTest(testDispatcher) {
-        val historyEntry = HistoryMetadata(
-            key = HistoryMetadataKey("http://www.mozilla.com", "mozilla", null),
-            title = "mozilla",
-            createdAt = System.currentTimeMillis(),
-            updatedAt = System.currentTimeMillis(),
-            totalViewTime = 10,
-            documentType = DocumentType.Regular,
-            previewImageUrl = null,
-        )
-        val historyGroup = RecentHistoryGroup(
-            title = "mozilla",
-            historyMetadata = listOf(historyEntry),
-        )
+    fun handleHistoryShowAllClicked() =
+        runTest(testDispatcher) {
+            controller.handleHistoryShowAllClicked()
 
-        controller.handleRecentHistoryGroupClicked(historyGroup)
-
-        verify {
-            navController.navigate(
-                match<NavDirections> { it.actionId == R.id.action_global_history_metadata_group },
-            )
+            verify {
+                navController.navigate(HomeFragmentDirections.actionGlobalHistoryFragment())
+            }
         }
-    }
 
-    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
-    fun handleRemoveGroup() = runTest(testDispatcher) {
-        val historyMetadataKey = HistoryMetadataKey(
-            "http://www.mozilla.com",
-            "mozilla",
-            null,
-        )
-
-        val historyGroup = RecentHistoryGroup(
-            title = "mozilla",
-            historyMetadata = listOf(
+    fun handleRecentHistoryGroupClicked() =
+        runTest(testDispatcher) {
+            val historyEntry =
                 HistoryMetadata(
-                    key = historyMetadataKey,
+                    key = HistoryMetadataKey("http://www.mozilla.com", "mozilla", null),
                     title = "mozilla",
                     createdAt = System.currentTimeMillis(),
                     updatedAt = System.currentTimeMillis(),
                     totalViewTime = 10,
                     documentType = DocumentType.Regular,
                     previewImageUrl = null,
-                ),
-            ),
-        )
-        assertNull(RecentSearches.groupDeleted.testGetValue())
+                )
+            val historyGroup =
+                RecentHistoryGroup(
+                    title = "mozilla",
+                    historyMetadata = listOf(historyEntry),
+                )
 
-        controller.handleRemoveRecentHistoryGroup(historyGroup.title)
+            controller.handleRecentHistoryGroupClicked(historyGroup)
 
-        advanceUntilIdle()
-        verify {
-            store.dispatch(HistoryMetadataAction.DisbandSearchGroupAction(searchTerm = historyGroup.title))
-            appStore.dispatch(AppAction.DisbandSearchGroupAction(searchTerm = historyGroup.title))
-        }
-        assertNotNull(RecentSearches.groupDeleted.testGetValue())
-
-        coVerify {
-            storage.deleteHistoryMetadata(historyGroup.title)
-        }
-    }
-
-    @Test
-    fun handleRecentHistoryHighlightClicked() = runTest(testDispatcher) {
-        val historyHighlight = RecentHistoryHighlight("title", "url")
-
-        controller.handleRecentHistoryHighlightClicked(historyHighlight)
-
-        verifyOrder {
-            selectOrAddTabUseCase.invoke(historyHighlight.url)
-            navController.navigate(R.id.browserFragment)
-        }
-    }
-
-    @Test
-    fun `GIVEN homepage as a new tab is enabled WHEN a recent history highlight is clicked THEN open item in the existing tab`() = runTest(testDispatcher) {
-        every { settings.enableHomepageAsNewTab } returns true
-
-        val historyHighlight = RecentHistoryHighlight("title", "url")
-
-        controller.handleRecentHistoryHighlightClicked(historyHighlight)
-
-        verifyOrder {
-            fenixBrowserUseCases.loadUrlOrSearch(
-                searchTermOrURL = historyHighlight.url,
-                newTab = false,
-                private = false,
-            )
-            navController.navigate(R.id.browserFragment)
-        }
-    }
-
-    @Test
-    fun handleRemoveRecentHistoryHighlight() = runTest(testDispatcher) {
-        val highlightUrl = "highlightUrl"
-        controller.handleRemoveRecentHistoryHighlight(highlightUrl)
-
-        verify {
-            appStore.dispatch(AppAction.RemoveRecentHistoryHighlight(highlightUrl))
-            scope.launch {
-                storage.deleteHistoryMetadataForUrl(highlightUrl)
+            verify {
+                navController.navigate(
+                    match<NavDirections> { it.actionId == R.id.action_global_history_metadata_group }
+                )
             }
         }
-    }
+
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
+    @Test
+    fun handleRemoveGroup() =
+        runTest(testDispatcher) {
+            val historyMetadataKey =
+                HistoryMetadataKey(
+                    "http://www.mozilla.com",
+                    "mozilla",
+                    null,
+                )
+
+            val historyGroup =
+                RecentHistoryGroup(
+                    title = "mozilla",
+                    historyMetadata =
+                        listOf(
+                            HistoryMetadata(
+                                key = historyMetadataKey,
+                                title = "mozilla",
+                                createdAt = System.currentTimeMillis(),
+                                updatedAt = System.currentTimeMillis(),
+                                totalViewTime = 10,
+                                documentType = DocumentType.Regular,
+                                previewImageUrl = null,
+                            )
+                        ),
+                )
+            assertNull(RecentSearches.groupDeleted.testGetValue())
+
+            controller.handleRemoveRecentHistoryGroup(historyGroup.title)
+
+            advanceUntilIdle()
+            verify {
+                store.dispatch(HistoryMetadataAction.DisbandSearchGroupAction(searchTerm = historyGroup.title))
+                appStore.dispatch(AppAction.DisbandSearchGroupAction(searchTerm = historyGroup.title))
+            }
+            assertNotNull(RecentSearches.groupDeleted.testGetValue())
+
+            coVerify {
+                storage.deleteHistoryMetadata(historyGroup.title)
+            }
+        }
+
+    @Test
+    fun handleRecentHistoryHighlightClicked() =
+        runTest(testDispatcher) {
+            val historyHighlight = RecentHistoryHighlight("title", "url")
+
+            controller.handleRecentHistoryHighlightClicked(historyHighlight)
+
+            verifyOrder {
+                selectOrAddTabUseCase.invoke(historyHighlight.url)
+                navController.navigate(R.id.browserFragment)
+            }
+        }
+
+    @Test
+    fun `GIVEN homepage as a new tab is enabled WHEN a recent history highlight is clicked THEN open item in the existing tab`() =
+        runTest(testDispatcher) {
+            every { settings.enableHomepageAsNewTab } returns true
+
+            val historyHighlight = RecentHistoryHighlight("title", "url")
+
+            controller.handleRecentHistoryHighlightClicked(historyHighlight)
+
+            verifyOrder {
+                fenixBrowserUseCases.loadUrlOrSearch(
+                    searchTermOrURL = historyHighlight.url,
+                    newTab = false,
+                    private = false,
+                )
+                navController.navigate(R.id.browserFragment)
+            }
+        }
+
+    @Test
+    fun handleRemoveRecentHistoryHighlight() =
+        runTest(testDispatcher) {
+            val highlightUrl = "highlightUrl"
+            controller.handleRemoveRecentHistoryHighlight(highlightUrl)
+
+            verify {
+                appStore.dispatch(AppAction.RemoveRecentHistoryHighlight(highlightUrl))
+                scope.launch {
+                    storage.deleteHistoryMetadataForUrl(highlightUrl)
+                }
+            }
+        }
 }

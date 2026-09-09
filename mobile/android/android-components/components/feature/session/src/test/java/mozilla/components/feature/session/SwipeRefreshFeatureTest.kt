@@ -42,15 +42,17 @@ class SwipeRefreshFeatureTest {
 
     @Before
     fun setup() {
-        store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "A"),
-                    createTab("https://www.firefox.com", id = "B"),
-                ),
-                selectedTabId = "B",
-            ),
-        )
+        store =
+            BrowserStore(
+                BrowserState(
+                    tabs =
+                        listOf(
+                            createTab("https://www.mozilla.org", id = "A"),
+                            createTab("https://www.firefox.com", id = "B"),
+                        ),
+                    selectedTabId = "B",
+                )
+            )
 
         refreshFeature = SwipeRefreshFeature(store, useCase, mockLayout, mainDispatcher = testDispatcher)
     }
@@ -75,68 +77,81 @@ class SwipeRefreshFeatureTest {
     }
 
     @Test
-    fun `onRefresh should refresh the active session and perform haptic feedback`() = runTest(testDispatcher) {
-        refreshFeature.start()
-        testDispatcher.scheduler.advanceUntilIdle()
-        refreshFeature.onRefresh()
+    fun `onRefresh should refresh the active session and perform haptic feedback`() =
+        runTest(testDispatcher) {
+            refreshFeature.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+            refreshFeature.onRefresh()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            verify(mockLayout).performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                verify(mockLayout).performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+            }
+            verify(useCase).invoke("B")
         }
-        verify(useCase).invoke("B")
-    }
 
     @Test
-    fun `feature MUST reset refreshCanceled after is used`() = runTest(testDispatcher) {
-        refreshFeature.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+    fun `feature MUST reset refreshCanceled after is used`() =
+        runTest(testDispatcher) {
+            refreshFeature.start()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        val selectedTab = store.state.findCustomTabOrSelectedTab()!!
+            val selectedTab = store.state.findCustomTabOrSelectedTab()!!
 
-        store.dispatch(ContentAction.UpdateRefreshCanceledStateAction(selectedTab.id, true))
+            store.dispatch(ContentAction.UpdateRefreshCanceledStateAction(selectedTab.id, true))
 
-        assertFalse(selectedTab.content.refreshCanceled)
-    }
+            assertFalse(selectedTab.content.refreshCanceled)
+        }
 
     @Test
-    fun `feature clears the swipeRefreshLayout#isRefreshing when tab fishes loading or a refreshCanceled`() = runTest(testDispatcher) {
-        refreshFeature.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+    fun `feature clears the swipeRefreshLayout#isRefreshing when tab fishes loading or a refreshCanceled`() =
+        runTest(testDispatcher) {
+            refreshFeature.start()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        val selectedTab = store.state.findCustomTabOrSelectedTab()!!
+            val selectedTab = store.state.findCustomTabOrSelectedTab()!!
 
-        // Ignoring the first event from the initial state.
-        reset(mockLayout)
+            // Ignoring the first event from the initial state.
+            reset(mockLayout)
 
-        store.dispatch(ContentAction.UpdateRefreshCanceledStateAction(selectedTab.id, true))
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(ContentAction.UpdateRefreshCanceledStateAction(selectedTab.id, true))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(mockLayout, times(2)).isRefreshing = false
+            verify(mockLayout, times(2)).isRefreshing = false
 
-        // To trigger to an event we have to change loading from its previous value (false to true).
-        // As if we dispatch with loading = false, none event will be trigger.
-        store.dispatch(ContentAction.UpdateLoadingStateAction(selectedTab.id, true))
-        store.dispatch(ContentAction.UpdateLoadingStateAction(selectedTab.id, false))
-        testDispatcher.scheduler.advanceUntilIdle()
+            // To trigger to an event we have to change loading from its previous value (false to true).
+            // As if we dispatch with loading = false, none event will be trigger.
+            store.dispatch(ContentAction.UpdateLoadingStateAction(selectedTab.id, true))
+            store.dispatch(ContentAction.UpdateLoadingStateAction(selectedTab.id, false))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(mockLayout, times(3)).isRefreshing = false
-    }
+            verify(mockLayout, times(3)).isRefreshing = false
+        }
 
     private open class DummyEngineView(context: Context) : FrameLayout(context), EngineView {
         override val verticalScrollPosition = flowOf(0f)
         override val verticalScrollDelta = flowOf(0f)
+
         override fun setVerticalClipping(clippingHeight: Int) {}
+
         override fun setDynamicToolbarMaxHeight(height: Int) {}
+
         override fun setActivityContext(context: Context?) {}
+
         override fun captureThumbnail(onFinish: (Bitmap?) -> Unit) = Unit
+
         override fun clearSelection() {}
+
         override fun render(session: EngineSession) {}
+
         override fun release() {}
+
         override var selectionActionDelegate: SelectionActionDelegate? = null
+
         override fun addWindowInsetsListener(
             key: String,
             listener: androidx.core.view.OnApplyWindowInsetsListener?,
         ) {}
+
         override fun removeWindowInsetsListener(key: String) {}
     }
 }

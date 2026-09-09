@@ -5,8 +5,8 @@
 package org.mozilla.fenix.bookmarks
 
 /**
- * A simple type representing different failure modes in the bookmarks feature that need to
- * be reported even after the feature leaves scope.
+ * A simple type representing different failure modes in the bookmarks feature that need to be reported even after the
+ * feature leaves scope.
  */
 enum class BookmarksGlobalResultReport {
 

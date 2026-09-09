@@ -43,6 +43,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.BottomSheetHandle
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.compose.ExpandableMenuItemAnimation
 import org.mozilla.fenix.components.menu.compose.MenuGroup
@@ -50,7 +51,6 @@ import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.webcompat.store.PreviewReporterItem
-import mozilla.components.ui.icons.R as iconsR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,37 +65,33 @@ internal fun WebCompatReporterPreviewSheet(
             BottomSheetHandle(
                 onRequestDismiss = onDismissRequest,
                 contentDescription = stringResource(R.string.a11y_action_label_collapse),
-                modifier = Modifier
-                    .width(FirefoxTheme.layout.size.static400)
-                    .padding(vertical = FirefoxTheme.layout.space.static200)
-                    .semantics { traversalIndex = -1f },
+                modifier =
+                    Modifier.width(FirefoxTheme.layout.size.static400)
+                        .padding(vertical = FirefoxTheme.layout.space.static200)
+                        .semantics { traversalIndex = -1f },
             )
         },
         containerColor = MaterialTheme.colorScheme.surface,
         modifier = Modifier.padding(top = 72.dp),
         contentWindowInsets = { WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom) },
     ) {
-        PreviewSheetContent(
-            previewReporterItems = previewReporterItems,
-        )
+        PreviewSheetContent(previewReporterItems = previewReporterItems)
     }
 }
 
 @Composable
-private fun PreviewSheetContent(
-    previewReporterItems: List<PreviewReporterItem>,
-) {
+private fun PreviewSheetContent(previewReporterItems: List<PreviewReporterItem>) {
     val expandedItems = remember { mutableStateMapOf<String, Boolean>() }
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(
-                start = FirefoxTheme.layout.space.dynamic200,
-                end = FirefoxTheme.layout.space.dynamic200,
-                bottom = FirefoxTheme.layout.space.dynamic200,
-            ),
+        modifier =
+            Modifier.fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    start = FirefoxTheme.layout.space.dynamic200,
+                    end = FirefoxTheme.layout.space.dynamic200,
+                    bottom = FirefoxTheme.layout.space.dynamic200,
+                ),
         horizontalAlignment = Alignment.Start,
     ) {
         Text(
@@ -126,32 +122,30 @@ private fun PreviewReporterItemRow(
 ) {
     val rotation by animateFloatAsState(targetValue = if (isExpanded) 180f else 0f)
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.extraSmall),
-    ) {
+    Column(modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.extraSmall)) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    color = if (isExpanded) {
-                        MaterialTheme.colorScheme.surfaceContainerHighest
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHigh
-                    },
-                )
-                .clickable(
-                    onClickLabel = stringResource(
-                        if (isExpanded) {
-                            R.string.a11y_action_label_collapse
-                        } else {
-                            R.string.a11y_action_label_expand
-                        },
-                    ),
-                    onClick = onExpandToggle,
-                )
-                .padding(FirefoxTheme.layout.space.static200),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .background(
+                        color =
+                            if (isExpanded) {
+                                MaterialTheme.colorScheme.surfaceContainerHighest
+                            } else {
+                                MaterialTheme.colorScheme.surfaceContainerHigh
+                            }
+                    )
+                    .clickable(
+                        onClickLabel =
+                            stringResource(
+                                if (isExpanded) {
+                                    R.string.a11y_action_label_collapse
+                                } else {
+                                    R.string.a11y_action_label_expand
+                                }
+                            ),
+                        onClick = onExpandToggle,
+                    )
+                    .padding(FirefoxTheme.layout.space.static200),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -162,12 +156,12 @@ private fun PreviewReporterItemRow(
             )
 
             Row(
-                modifier = Modifier
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        shape = MaterialTheme.shapes.large,
-                    )
-                    .padding(all = 2.dp),
+                modifier =
+                    Modifier.background(
+                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            shape = MaterialTheme.shapes.large,
+                        )
+                        .padding(all = 2.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -188,18 +182,12 @@ private fun PreviewReporterItemRow(
 
 @Composable
 private fun PreviewReporterItemExpandedContent(data: Map<String, String>) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(color = MaterialTheme.colorScheme.surfaceContainerHigh),
-    ) {
+    Column(modifier = Modifier.fillMaxWidth().background(color = MaterialTheme.colorScheme.surfaceContainerHigh)) {
         Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static100))
         for ((key, value) in data) {
             Text(
                 text = "$key: $value",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = FirefoxTheme.layout.space.static200),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = FirefoxTheme.layout.space.static200),
                 style = FirefoxTheme.typography.body2,
                 color = MaterialTheme.colorScheme.secondary,
             )
@@ -214,38 +202,37 @@ private fun WebCompatReporterPreviewSheetContent() {
         listOf(
             PreviewReporterItem(
                 title = "Browser Info",
-                data = mapOf(
-                    "App" to "Fenix",
-                    "Version" to "123.0",
-                    "OS" to "Android 14",
-                ),
+                data =
+                    mapOf(
+                        "App" to "Fenix",
+                        "Version" to "123.0",
+                        "OS" to "Android 14",
+                    ),
             ),
             PreviewReporterItem(
                 title = "Basic",
-                data = mapOf(
-                    "Vendor" to "Google",
-                    "Renderer" to "ANGLE",
-                ),
+                data =
+                    mapOf(
+                        "Vendor" to "Google",
+                        "Renderer" to "ANGLE",
+                    ),
             ),
             PreviewReporterItem(
                 title = "Graphics",
-                data = mapOf(
-                    "Vendor" to "Google",
-                    "Renderer" to "ANGLE",
-                ),
+                data =
+                    mapOf(
+                        "Vendor" to "Google",
+                        "Renderer" to "ANGLE",
+                    ),
             ),
         )
     }
-    PreviewSheetContent(
-        previewReporterItems = previewReporterItems,
-    )
+    PreviewSheetContent(previewReporterItems = previewReporterItems)
 }
 
 @Preview
 @Composable
-private fun WebCompatReporterSheetPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun WebCompatReporterSheetPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         WebCompatReporterPreviewSheetContent()
     }

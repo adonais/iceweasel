@@ -13,9 +13,7 @@ import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.showToolbar
 
-/**
- * Lets the user customize remote improvements (rollouts) settings.
- */
+/** Lets the user customize remote improvements (rollouts) settings. */
 class RemoteImprovementsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -35,10 +33,11 @@ class RemoteImprovementsFragment : PreferenceFragmentCompat(), SystemInsetsPadde
             onPreferenceClickListener = Preference.OnPreferenceClickListener {
                 SupportUtils.launchSandboxCustomTab(
                     context = requireContext(),
-                    url = SupportUtils.getSumoURLForTopic(
-                        context = requireContext(),
-                        topic = SupportUtils.SumoTopic.REMOTE_IMPROVEMENTS,
-                    ),
+                    url =
+                        SupportUtils.getSumoURLForTopic(
+                            context = requireContext(),
+                            topic = SupportUtils.SumoTopic.REMOTE_IMPROVEMENTS,
+                        ),
                 )
                 true
             }

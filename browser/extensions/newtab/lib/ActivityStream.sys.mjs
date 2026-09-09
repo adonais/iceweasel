@@ -50,6 +50,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   SportsFeed: "resource://newtab/lib/Widgets/SportsFeed.sys.mjs",
   StocksFeed: "resource://newtab/lib/Widgets/StocksFeed.sys.mjs",
   PrivacyFeed: "resource://newtab/lib/Widgets/PrivacyFeed.sys.mjs",
+  RecentSearchesFeed:
+    "resource://newtab/lib/Widgets/RecentSearchesFeed.sys.mjs",
   PictureOfTheDayFeed:
     "resource://newtab/lib/Widgets/PictureOfTheDayFeed.sys.mjs",
   StartupCacheInit: "resource://newtab/lib/StartupCacheInit.sys.mjs",
@@ -207,19 +209,11 @@ function useSov({ geo, locale }) {
   );
 }
 
-/**
- * @backward-compat { version 154 }
- * We are turning this on in US/en-US,en-GB,en-CA, but doing it in here so it
- * can trainhop. Drop the `|| "US"` / `|| "en-US,en-GB,en-CA"` fallbacks once
- * 154 hits Release.
- */
 export function useContextualAds({ geo, locale }) {
-  const regions =
-    Services.prefs.getStringPref(REGION_CONTEXTUAL_AD_CONFIG, "") || "US";
-  const locales =
-    Services.prefs.getStringPref(LOCALE_CONTEXTUAL_AD_CONFIG, "") ||
-    "en-US,en-GB,en-CA";
-  return csvHasValue(regions, geo) && csvHasValue(locales, locale);
+  return (
+    csvPrefHasValue(REGION_CONTEXTUAL_AD_CONFIG, geo) &&
+    csvPrefHasValue(LOCALE_CONTEXTUAL_AD_CONFIG, locale)
+  );
 }
 
 // Determine if spocs should be shown for a geo/locale
@@ -758,13 +752,6 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "telemetry.privatePing.redactNewtabPing.enabled",
-    {
-      title: "Redacts content interaction ids from original New Tab ping",
-      value: false,
-    },
-  ],
-  [
     "telemetry.privatePing.inferredInterests.enabled",
     {
       title:
@@ -891,6 +878,14 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "newtabWallpapers.visibilityGroups",
+    {
+      title:
+        "Comma-separated wallpaper visibility groups the user is opted into",
+      value: "",
+    },
+  ],
+  [
     "newtabAdSize.leaderboard",
     {
       title: "Boolean flag to turn the leaderboard ad size on and off",
@@ -995,27 +990,32 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "discoverystream.dailyBrief.sectionId",
+    "discoverystream.carousel.enabled",
     {
-      title: "sectionId for the Daily brief section",
-      value: "top_stories_section",
+      title: "Boolean flag to enable the story carousel",
+      value: false,
     },
   ],
   [
-    "discoverystream.dailyBrief.enabled",
+    "discoverystream.carousel.paused",
     {
-      title: "Boolean flag to enable daily briefing",
+      title:
+        "Whether the user stopped the story carousel from rotating on its own",
       value: false,
+    },
+  ],
+  [
+    "discoverystream.carousel.slideCount",
+    {
+      title: "Number of stories shown in the story carousel",
+      value: 5,
     },
   ],
   [
     "discoverystream.sections.ordering",
     {
       title: "Name of the sections ordering to render from Remote Settings",
-      // Channel-derived (resolves on the host), so it's set in Nightly but stays
-      // empty after the XPI train-hops to Beta/Release. Hardcoding the value
-      // would bake it into the XPI and wrongly activate it on other channels.
-      value: AppConstants.NIGHTLY_BUILD ? "default" : "",
+      value: "default",
     },
   ],
   [
@@ -1586,6 +1586,21 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.recentSearches.enabled",
+    {
+      title: "Enables the recent searches widget",
+      value: true,
+    },
+  ],
+  [
+    "widgets.recentSearches.interaction",
+    {
+      title:
+        "Boolean flag for determining if a user has interacted with the recent searches widget",
+      value: false,
+    },
+  ],
+  [
     "widgets.pictureOfTheDay.enabled",
     {
       title: "Enables the picture of the day widget",
@@ -1603,6 +1618,13 @@ export const PREFS_CONFIG = new Map([
     "widgets.system.crossword.enabled",
     {
       title: "Enables the crossword widget experiment in Nimbus",
+      value: false,
+    },
+  ],
+  [
+    "widgets.system.recentSearches.enabled",
+    {
+      title: "Enables the recent searches widget experiment in Nimbus",
       value: false,
     },
   ],
@@ -1725,16 +1747,23 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "widgets.pictureOfTheDay.size",
+    "widgets.recentSearches.size",
     {
-      title: "Size of the picture of the day widget (small, medium, or large)",
+      title: "Size of the recent searches widget (medium or large)",
       value: "",
     },
   ],
   [
-    "widgets.stocks.size",
+    "widgets.stocks.watchlist",
     {
-      title: "Size of the stocks widget (small, medium, or large)",
+      title: "Saved stocks widget watchlist ticker symbols (comma-separated)",
+      value: "",
+    },
+  ],
+  [
+    "widgets.pictureOfTheDay.size",
+    {
+      title: "Size of the picture of the day widget (small, medium, or large)",
       value: "",
     },
   ],
@@ -2090,6 +2119,38 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "spaces.storiesOptOut",
+    {
+      title:
+        "Mirrors Recommended stories being turned off while enrolled in the spaces experiment, which stops the experiment overriding it. Only written on a change, so the value a profile enrolled with is left alone, and only read while a spaces variant is assigned.",
+      value: false,
+    },
+  ],
+  [
+    "spaces.activityOptOut",
+    {
+      title:
+        "Mirrors Recent Activity being turned off while enrolled in the spaces experiment, which stops the experiment overriding it. Only written on a change, so the value a profile enrolled with is left alone, and only read while a spaces variant is assigned.",
+      value: false,
+    },
+  ],
+  [
+    "spaces.widgetsOptOut",
+    {
+      title:
+        "Mirrors widgets being turned off while enrolled in the spaces experiment, which stops the experiment overriding it. Only written on a change, so the value a profile enrolled with is left alone, and only read while a spaces variant is assigned.",
+      value: false,
+    },
+  ],
+  [
+    "pageLayouts.variant",
+    {
+      title:
+        "Name of the active newtab page layout variant, for layout experimentation. One of nova-full-width, side-by-side-content-lead, side-by-side-widgets-lead, side-by-side-content-lead-five, side-by-side-widgets-lead-five, spaces-buttons-top, spaces-buttons-bottom. The -five variants reach five card columns counting the widgets column, the others four. The spaces variants split the band into separately-navigable panels and differ only in where the segmented control sits. Overridden by trainhopConfig.pageLayouts.variant.",
+      value: "nova-full-width",
+    },
+  ],
+  [
     "selfLoading.enabled",
     {
       title:
@@ -2312,13 +2373,20 @@ const FEEDS_DATA = [
     name: "sportsfeed",
     factory: () => new lazy.SportsFeed(),
     title: "Handles persistent state for the Sports widget",
-    value: true,
+    // Bug 2063657: the sports widget is retired; removed in bug 2063656.
+    value: false,
   },
   {
     name: "privacyfeed",
     factory: () => new lazy.PrivacyFeed(),
     title:
       "Handles fetching the daily tracker-blocked count for the Privacy widget",
+    value: true,
+  },
+  {
+    name: "recentsearchesfeed",
+    factory: () => new lazy.RecentSearchesFeed(),
+    title: "Handles the data for the Recent Searches widget",
     value: true,
   },
   {

@@ -223,8 +223,7 @@ document.addEventListener(
         #identity-permission-box,
         #translations-button,
         #split-view-button,
-        #smartwindow-ask-button,
-        #smartwindow-group-tabs-button
+        #smartwindow-ask-button
         `);
       if (!element) {
         return;
@@ -325,12 +324,6 @@ document.addEventListener(
           }
           break;
 
-        case "smartwindow-group-tabs-button":
-          if (isLeftClick) {
-            AIWindowUI.toggleGroupTabsPanel(window);
-          }
-          break;
-
         default:
           throw new Error(`Missing case for #${element.id}`);
       }
@@ -364,8 +357,7 @@ document.addEventListener(
         #library-button,
         #ipprotection-button,
         #split-view-button,
-        #smartwindow-ask-button,
-        #smartwindow-group-tabs-button
+        #smartwindow-ask-button
       `);
       if (!element) {
         return;
@@ -468,12 +460,6 @@ document.addEventListener(
         case "smartwindow-ask-button":
           if (isLikeLeftClick) {
             AIWindowUI.toggleSidebar(window);
-          }
-          break;
-
-        case "smartwindow-group-tabs-button":
-          if (isLikeLeftClick) {
-            AIWindowUI.toggleGroupTabsPanel(window);
           }
           break;
 

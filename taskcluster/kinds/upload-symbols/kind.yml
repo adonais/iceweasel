@@ -12,6 +12,7 @@ transforms:
 
 kind-dependencies:
     - build
+    - fetch
     - toolchain
 
 not-for-build-platforms:
@@ -40,6 +41,7 @@ tasks:
                 # {level} gets replaced in the upload_symbols transform
                 SYMBOL_SECRET: "project/releng/gecko/build/level-{level}/gecko-symbol-upload"
                 MAKECAB: /builds/worker/fetches/makecab/makecab
+                UPLOAD_SYMBOLS: /builds/worker/fetches/upload-symbols-cli/upload-symbols
                 MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
         run:
             clone-with: hg
@@ -49,5 +51,7 @@ tasks:
         scopes:
             - secrets:get:project/releng/gecko/build/level-{level}/gecko-symbol-upload
         fetches:
+            fetch:
+                - upload-symbols-linux64
             toolchain:
                 - linux64-makecab

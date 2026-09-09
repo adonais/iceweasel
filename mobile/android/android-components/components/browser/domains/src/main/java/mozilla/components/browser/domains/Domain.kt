@@ -4,9 +4,7 @@
 
 package mozilla.components.browser.domains
 
-/**
- * Class intended for internal use which encapsulates meta data about a domain.
- */
+/** Class intended for internal use which encapsulates meta data about a domain. */
 data class Domain(val protocol: String, val hasWww: Boolean, val host: String) {
     internal val url: String
         get() = "$protocol${if (hasWww) "www." else "" }$host"

@@ -124,7 +124,7 @@ async function serveRemoteSettings() {
   );
 
   const message = await PanelTestProvider.getMessages().then(msgs =>
-    msgs.find(msg => msg.id === "PERSONALIZED_CFR_MESSAGE")
+    msgs.find(msg => msg.id === "INFOBAR_ACTION_86")
   );
 
   // Serve the "changed" cfr entries. If there are no changes, then ASRouter

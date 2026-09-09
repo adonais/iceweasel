@@ -35,7 +35,7 @@ class SpeechTaskCallback final : public nsISpeechTaskCallback {
   SpeechTaskCallback(nsISpeechTask* aTask, AVSpeechSynthesizer* aSynth,
                      const nsTArray<size_t>& aOffsets);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(SpeechTaskCallback,
                                            nsISpeechTaskCallback)
 
@@ -130,7 +130,7 @@ SpeechTaskCallback::OnPause() {
 
   [mSpeechSynthesizer pauseSpeakingAtBoundary:AVSpeechBoundaryImmediate];
   if (!mTask) {
-    // When calling pause() on child porcess, it may not receive end event
+    // When calling pause() on child process, it may not receive end event
     // from chrome process yet.
     return NS_ERROR_FAILURE;
   }
@@ -146,7 +146,7 @@ SpeechTaskCallback::OnResume() {
 
   [mSpeechSynthesizer continueSpeaking];
   if (!mTask) {
-    // When calling resume() on child porcess, it may not receive end event
+    // When calling resume() on child process, it may not receive end event
     // from chrome process yet.
     return NS_ERROR_FAILURE;
   }

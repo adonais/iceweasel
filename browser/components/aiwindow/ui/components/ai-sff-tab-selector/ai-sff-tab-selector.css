@@ -1,0 +1,42 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+:host {
+  position: fixed;
+  inset: 0;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  padding: var(--space-xlarge);
+}
+
+.tab-selector-dialog {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-large);
+  /* TODO: Bug 2061358 */
+  /* stylelint-disable-next-line */
+  inline-size: min(600px, 100%);
+  padding: var(--space-xlarge);
+  border: var(--card-border);
+  /* TODO: Bug 2061358 */
+  /* stylelint-disable-next-line */
+  border-radius: var(--border-radius-xlarge);
+  background-color: var(--card-background-color);
+  box-shadow: var(--card-box-shadow);
+}
+
+h1,
+h2 {
+  margin: 0;
+}
+
+.scrollable {
+  --box-group-max-height: 280px;
+}
+
+moz-button-group {
+  flex-shrink: 0;
+}

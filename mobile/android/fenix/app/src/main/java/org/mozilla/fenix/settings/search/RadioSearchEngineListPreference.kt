@@ -35,7 +35,9 @@ import org.mozilla.fenix.databinding.SearchEngineRadioButtonBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.telemetryName
 
-class RadioSearchEngineListPreference @JvmOverloads constructor(
+class RadioSearchEngineListPreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = android.R.attr.preferenceStyle,
@@ -59,12 +61,14 @@ class RadioSearchEngineListPreference @JvmOverloads constructor(
         )
     }
 
-    private fun subscribeToSearchEngineUpdates(store: BrowserStore, view: View) = view.toScope().launch {
-        store.flow()
-            .map { state -> state.search }
-            .distinctUntilChanged()
-            .collect { state -> refreshSearchEngineViews(view, state) }
-    }
+    private fun subscribeToSearchEngineUpdates(store: BrowserStore, view: View) =
+        view.toScope().launch {
+            store
+                .flow()
+                .map { state -> state.search }
+                .distinctUntilChanged()
+                .collect { state -> refreshSearchEngineViews(view, state) }
+        }
 
     private fun refreshSearchEngineViews(view: View, state: SearchState) {
         val searchEngineGroup = view.findViewById<RadioGroup>(R.id.search_engine_group)
@@ -72,47 +76,53 @@ class RadioSearchEngineListPreference @JvmOverloads constructor(
         searchEngineGroup.tag = key
 
         val layoutInflater = LayoutInflater.from(context)
-        val layoutParams = ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-        )
+        val layoutParams =
+            ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            )
 
-        val selectedEngine = if (isForPrivateBrowsing) {
-            state.selectedOrDefaultPrivateSearchEngine
-        } else {
-            state.selectedOrDefaultSearchEngine
-        }
+        val selectedEngine =
+            if (isForPrivateBrowsing) {
+                state.selectedOrDefaultPrivateSearchEngine
+            } else {
+                state.selectedOrDefaultSearchEngine
+            }
 
-        val hasExplicitPrivateChoice = isForPrivateBrowsing &&
-            state.userSelectedPrivateSearchEngineId != null
+        val hasExplicitPrivateChoice = isForPrivateBrowsing && state.userSelectedPrivateSearchEngineId != null
 
         if (isForPrivateBrowsing) {
-            val useDefaultView = makeUseDefaultButton(
-                layoutInflater = layoutInflater,
-                isSelected = !hasExplicitPrivateChoice,
-            )
+            val useDefaultView =
+                makeUseDefaultButton(
+                    layoutInflater = layoutInflater,
+                    isSelected = !hasExplicitPrivateChoice,
+                )
             searchEngineGroup.addView(useDefaultView, layoutParams)
         }
 
-        state.searchEngines.filter { engine ->
-            engine.type != SearchEngine.Type.APPLICATION
-        }.forEach { engine ->
-            val isSelected = if (isForPrivateBrowsing) {
-                hasExplicitPrivateChoice && engine == selectedEngine
-            } else {
-                engine == selectedEngine
+        state.searchEngines
+            .filter { engine ->
+                engine.type != SearchEngine.Type.APPLICATION
             }
+            .forEach { engine ->
+                val isSelected =
+                    if (isForPrivateBrowsing) {
+                        hasExplicitPrivateChoice && engine == selectedEngine
+                    } else {
+                        engine == selectedEngine
+                    }
 
-            val searchEngineView = makeButtonFromSearchEngine(
-                engine = engine,
-                layoutInflater = layoutInflater,
-                res = context.resources,
-                allowDeletion = engine.type == SearchEngine.Type.CUSTOM,
-                isSelected = isSelected,
-            )
+                val searchEngineView =
+                    makeButtonFromSearchEngine(
+                        engine = engine,
+                        layoutInflater = layoutInflater,
+                        res = context.resources,
+                        allowDeletion = engine.type == SearchEngine.Type.CUSTOM,
+                        isSelected = isSelected,
+                    )
 
-            searchEngineGroup.addView(searchEngineView, layoutParams)
-        }
+                searchEngineGroup.addView(searchEngineView, layoutParams)
+            }
     }
 
     private fun makeUseDefaultButton(
@@ -155,19 +165,23 @@ class RadioSearchEngineListPreference @JvmOverloads constructor(
         binding.overflowMenu.isVisible = allowDeletion || isCustomSearchEngine
         binding.overflowMenu.setOnClickListener {
             SearchEngineMenu(
-                context = context,
-                allowDeletion = allowDeletion,
-                isCustomSearchEngine = isCustomSearchEngine,
-                onItemTapped = {
-                    when (it) {
-                        is SearchEngineMenu.Item.Edit -> editCustomSearchEngine(wrapper, engine)
-                        is SearchEngineMenu.Item.Delete -> deleteSearchEngine(
-                            context,
-                            engine,
-                        )
-                    }
-                },
-            ).menuBuilder.build(context).show(binding.overflowMenu)
+                    context = context,
+                    allowDeletion = allowDeletion,
+                    isCustomSearchEngine = isCustomSearchEngine,
+                    onItemTapped = {
+                        when (it) {
+                            is SearchEngineMenu.Item.Edit -> editCustomSearchEngine(wrapper, engine)
+                            is SearchEngineMenu.Item.Delete ->
+                                deleteSearchEngine(
+                                    context,
+                                    engine,
+                                )
+                        }
+                    },
+                )
+                .menuBuilder
+                .build(context)
+                .show(binding.overflowMenu)
         }
         val iconSize = res.getDimension(R.dimen.preference_icon_drawable_size).toInt()
         val engineIcon = engine.icon.toDrawable(res)
@@ -200,16 +214,17 @@ class RadioSearchEngineListPreference @JvmOverloads constructor(
                 Events.DefaultEngineSelectedExtra(
                     engine = "default",
                     isPrivateDefault = true,
-                ),
+                )
             )
             return
         }
 
-        val engine = requireNotNull(
-            context.components.core.store.state.search.searchEngines.find { searchEngine ->
-                searchEngine.id == searchEngineId
-            },
-        )
+        val engine =
+            requireNotNull(
+                context.components.core.store.state.search.searchEngines.find { searchEngine ->
+                    searchEngine.id == searchEngineId
+                }
+            )
 
         if (isForPrivateBrowsing) {
             context.components.useCases.searchUseCases.selectPrivateSearchEngine(engine)
@@ -221,14 +236,13 @@ class RadioSearchEngineListPreference @JvmOverloads constructor(
             Events.DefaultEngineSelectedExtra(
                 engine = engine.telemetryName(),
                 isPrivateDefault = isForPrivateBrowsing,
-            ),
+            )
         )
     }
 
     private fun editCustomSearchEngine(view: View, engine: SearchEngine) {
         val directions =
-            DefaultSearchEngineFragmentDirections
-                .actionDefaultEngineFragmentToSaveSearchEngineFragment(engine.id)
+            DefaultSearchEngineFragmentDirections.actionDefaultEngineFragmentToSaveSearchEngineFragment(engine.id)
         view.findNavController().navigate(directions)
     }
 
@@ -249,16 +263,12 @@ class RadioSearchEngineListPreference @JvmOverloads constructor(
                     }
 
             nextSearchEngine?.let {
-                context.components.useCases.searchUseCases.selectSearchEngine(
-                    nextSearchEngine,
-                )
+                context.components.useCases.searchUseCases.selectSearchEngine(nextSearchEngine)
             }
         }
 
         val selectedOrDefaultPrivateSearchEngine = searchState.selectedOrDefaultPrivateSearchEngine
-        if (selectedOrDefaultPrivateSearchEngine == engine &&
-            searchState.userSelectedPrivateSearchEngineId != null
-        ) {
+        if (selectedOrDefaultPrivateSearchEngine == engine && searchState.userSelectedPrivateSearchEngineId != null) {
             context.components.useCases.searchUseCases.clearPrivateSearchEngine()
         }
 

@@ -23,9 +23,7 @@ class ModifierTest {
     fun `GIVEN predicate is true WHEN thenConditional called THEN the updated modifier is returned`() {
         val modifier = Modifier.height(1.dp)
 
-        val expected = Modifier
-            .height(1.dp)
-            .width(1.dp)
+        val expected = Modifier.height(1.dp).width(1.dp)
         val actual = modifier.thenConditional(Modifier.width(1.dp)) { true }
 
         assertEquals(expected, actual)

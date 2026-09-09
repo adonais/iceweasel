@@ -49,10 +49,11 @@ class WebAppShortcutManagerTest {
 
     @Mock private lateinit var icons: BrowserIcons
     private lateinit var manager: WebAppShortcutManager
-    private val baseManifest = WebAppManifest(
-        name = "Demo",
-        startUrl = "https://example.com",
-    )
+    private val baseManifest =
+        WebAppManifest(
+            name = "Demo",
+            startUrl = "https://example.com",
+        )
 
     @Before
     fun setup() {
@@ -68,15 +69,17 @@ class WebAppShortcutManagerTest {
 
     @Test
     fun `requestPinShortcut no-op if pinning unsupported`() = runTest {
-        val manifest = baseManifest.copy(
-            display = WebAppManifest.DisplayMode.STANDALONE,
-            icons = listOf(
-                WebAppManifest.Icon(
-                    src = "https://example.com/icon.png",
-                    sizes = listOf(Size(192, 192)),
-                ),
-            ),
-        )
+        val manifest =
+            baseManifest.copy(
+                display = WebAppManifest.DisplayMode.STANDALONE,
+                icons =
+                    listOf(
+                        WebAppManifest.Icon(
+                            src = "https://example.com/icon.png",
+                            sizes = listOf(Size(192, 192)),
+                        )
+                    ),
+            )
         val session = buildInstallableSession(manifest)
         `when`(shortcutManager.isRequestPinShortcutSupported).thenReturn(false)
 
@@ -86,10 +89,11 @@ class WebAppShortcutManagerTest {
 
     @Test
     fun `requestPinShortcut won't make a PWA icon if the session is not installable`() = runTest {
-        val manifest = baseManifest.copy(
-            display = WebAppManifest.DisplayMode.STANDALONE,
-            icons = emptyList(), // no icons
-        )
+        val manifest =
+            baseManifest.copy(
+                display = WebAppManifest.DisplayMode.STANDALONE,
+                icons = emptyList(), // no icons
+            )
         val session = buildInstallableSession(manifest)
         val shortcutCompat: ShortcutInfoCompat = mock()
         `when`(shortcutManager.isRequestPinShortcutSupported).thenReturn(true)
@@ -102,15 +106,17 @@ class WebAppShortcutManagerTest {
 
     @Test
     fun `requestPinShortcut pins PWA shortcut`() = runTest {
-        val manifest = baseManifest.copy(
-            display = WebAppManifest.DisplayMode.STANDALONE,
-            icons = listOf(
-                WebAppManifest.Icon(
-                    src = "https://example.com/icon.png",
-                    sizes = listOf(Size(192, 192)),
-                ),
-            ),
-        )
+        val manifest =
+            baseManifest.copy(
+                display = WebAppManifest.DisplayMode.STANDALONE,
+                icons =
+                    listOf(
+                        WebAppManifest.Icon(
+                            src = "https://example.com/icon.png",
+                            sizes = listOf(Size(192, 192)),
+                        )
+                    ),
+            )
 
         val session = buildInstallableSession(manifest)
 
@@ -138,17 +144,20 @@ class WebAppShortcutManagerTest {
 
     @Test
     fun `buildBasicShortcut uses manifest short name as label by default`() = runTest {
-        val session = createTab("https://www.mozilla.org", title = "Internet for people, not profit — Mozilla").let {
-            it.copy(
-                content = it.content.copy(
-                    webAppManifest = WebAppManifest(
-                        name = "Mozilla",
-                        shortName = "Moz",
-                        startUrl = "https://mozilla.org",
-                    ),
-                ),
-            )
-        }
+        val session =
+            createTab("https://www.mozilla.org", title = "Internet for people, not profit — Mozilla").let {
+                it.copy(
+                    content =
+                        it.content.copy(
+                            webAppManifest =
+                                WebAppManifest(
+                                    name = "Mozilla",
+                                    shortName = "Moz",
+                                    startUrl = "https://mozilla.org",
+                                )
+                        )
+                )
+            }
 
         val shortcut = manager.buildBasicShortcut(context, session)
 
@@ -157,16 +166,19 @@ class WebAppShortcutManagerTest {
 
     @Test
     fun `buildBasicShortcut uses manifest name as label by default`() = runTest {
-        val session = createTab("https://www.mozilla.org", title = "Internet for people, not profit — Mozilla").let {
-            it.copy(
-                content = it.content.copy(
-                    webAppManifest = WebAppManifest(
-                        name = "Mozilla",
-                        startUrl = "https://mozilla.org",
-                    ),
-                ),
-            )
-        }
+        val session =
+            createTab("https://www.mozilla.org", title = "Internet for people, not profit — Mozilla").let {
+                it.copy(
+                    content =
+                        it.content.copy(
+                            webAppManifest =
+                                WebAppManifest(
+                                    name = "Mozilla",
+                                    startUrl = "https://mozilla.org",
+                                )
+                        )
+                )
+            }
 
         val shortcut = manager.buildBasicShortcut(context, session)
 
@@ -249,16 +261,18 @@ class WebAppShortcutManagerTest {
     fun `findShortcut returns shortcut`() {
         assertNull(manager.findShortcut(context, "https://mozilla.org"))
 
-        val exampleShortcut = mock<ShortcutInfo>().apply {
-            `when`(id).thenReturn("https://example.com")
-        }
+        val exampleShortcut =
+            mock<ShortcutInfo>().apply {
+                `when`(id).thenReturn("https://example.com")
+            }
         `when`(shortcutManager.pinnedShortcuts).thenReturn(listOf(exampleShortcut))
 
         assertNull(manager.findShortcut(context, "https://mozilla.org"))
 
-        val mozShortcut = mock<ShortcutInfo>().apply {
-            `when`(id).thenReturn("https://mozilla.org")
-        }
+        val mozShortcut =
+            mock<ShortcutInfo>().apply {
+                `when`(id).thenReturn("https://mozilla.org")
+            }
         `when`(shortcutManager.pinnedShortcuts).thenReturn(listOf(mozShortcut, exampleShortcut))
 
         assertEquals(mozShortcut, manager.findShortcut(context, "https://mozilla.org"))
@@ -294,10 +308,11 @@ class WebAppShortcutManagerTest {
         val tab = createTab(manifest?.startUrl ?: "https://www.mozilla.org")
 
         return tab.copy(
-            content = tab.content.copy(
-                webAppManifest = manifest,
-                securityInfo = SecurityInfo.Secure(),
-            ),
+            content =
+                tab.content.copy(
+                    webAppManifest = manifest,
+                    securityInfo = SecurityInfo.Secure(),
+                )
         )
     }
 }

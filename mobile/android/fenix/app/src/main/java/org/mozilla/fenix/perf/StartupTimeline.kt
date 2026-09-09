@@ -12,17 +12,16 @@ import org.mozilla.fenix.perf.StartupTimelineStateMachine.StartupDestination
 import org.mozilla.fenix.perf.StartupTimelineStateMachine.StartupState
 
 /**
- * A collection of functionality to instrument, measure, and understand startup performance. The
- * responsibilities of this class are to update the internal [StartupState] based on the methods
- * called and to delegate calls to its dependencies, which handle other functionality related to
- * understanding startup.
+ * A collection of functionality to instrument, measure, and understand startup performance. The responsibilities of
+ * this class are to update the internal [StartupState] based on the methods called and to delegate calls to its
+ * dependencies, which handle other functionality related to understanding startup.
  *
  * This class, and its dependencies, may need to be modified for any changes in startup.
  *
  * This class is not thread safe and should only be called from the main thread.
  *
- * [onApplicationInit] is called from multiple processes. To minimize overhead, the class
- * dependencies are lazily initialized.
+ * [onApplicationInit] is called from multiple processes. To minimize overhead, the class dependencies are lazily
+ * initialized.
  */
 @UiThread
 object StartupTimeline {
@@ -44,8 +43,8 @@ object StartupTimeline {
     }
 
     /**
-     * Called at the end of [Activity.onCreate] to signal that the home activity has finished
-     * creating. This advances the startup state machine and triggers fully drawn reporting.
+     * Called at the end of [Activity.onCreate] to signal that the home activity has finished creating. This advances
+     * the startup state machine and triggers fully drawn reporting.
      *
      * @param activity The [Activity] that has finished creating.
      */
@@ -54,9 +53,7 @@ object StartupTimeline {
         reportFullyDrawn.onActivityCreateEndHome(state, activity)
     }
 
-    /**
-     * Instruments "visually complete" cold startup time to homescreen for use with FNPRMS.
-     */
+    /** Instruments "visually complete" cold startup time to homescreen for use with FNPRMS. */
     fun onTopSitesItemBound(activity: Activity) {
         reportFullyDrawn.onTopSitesItemBound(state, activity)
     }

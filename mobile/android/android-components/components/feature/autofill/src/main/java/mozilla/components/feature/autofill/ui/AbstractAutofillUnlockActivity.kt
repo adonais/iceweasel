@@ -27,8 +27,8 @@ import mozilla.components.feature.autofill.structure.ParsedStructure
 import mozilla.components.support.utils.ext.getParcelableExtraCompat
 
 /**
- * Activity responsible for unlocking the autofill service by asking the user to verify with a
- * fingerprint or alternative device unlocking mechanism.
+ * Activity responsible for unlocking the autofill service by asking the user to verify with a fingerprint or
+ * alternative device unlocking mechanism.
  */
 abstract class AbstractAutofillUnlockActivity : FragmentActivity() {
     abstract val configuration: AutofillConfiguration
@@ -40,22 +40,24 @@ abstract class AbstractAutofillUnlockActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val parsedStructure = with(Parcel.obtain()) {
-            val rawBytes = intent.getByteArrayExtra(EXTRA_PARSED_STRUCTURE)
-            unmarshall(rawBytes!!, 0, rawBytes.size)
-            setDataPosition(0)
-            ParsedStructure(this).also {
-                recycle()
+        val parsedStructure =
+            with(Parcel.obtain()) {
+                val rawBytes = intent.getByteArrayExtra(EXTRA_PARSED_STRUCTURE)
+                unmarshall(rawBytes!!, 0, rawBytes.size)
+                setDataPosition(0)
+                ParsedStructure(this).also {
+                    recycle()
+                }
             }
-        }
         val imeSpec = intent.getImeSpec()
         val maxSuggestionCount = intent.getIntExtra(EXTRA_MAX_SUGGESTION_COUNT, MAX_LOGINS)
         // While the user is asked to authenticate, we already try to build the fill response asynchronously.
-        fillResponse = lifecycleScope.async(Dispatchers.IO) {
-            val builder = fillHandler.handle(parsedStructure, forceUnlock = true, maxSuggestionCount)
-            val result = builder.build(this@AbstractAutofillUnlockActivity, configuration, imeSpec)
-            result
-        }
+        fillResponse =
+            lifecycleScope.async(Dispatchers.IO) {
+                val builder = fillHandler.handle(parsedStructure, forceUnlock = true, maxSuggestionCount)
+                val result = builder.build(this@AbstractAutofillUnlockActivity, configuration, imeSpec)
+                result
+            }
 
         if (authenticator == null) {
             // If no authenticator is available then we just bail here. Instead we should ask the user to
@@ -87,11 +89,12 @@ abstract class AbstractAutofillUnlockActivity : FragmentActivity() {
         override fun onAuthenticationSucceeded() {
             configuration.lock.unlock()
 
-            val replyIntent = Intent().apply {
-                // At this point it should be safe to block since the fill response should be ready once
-                // the user has authenticated.
-                runBlocking { putExtra(AutofillManager.EXTRA_AUTHENTICATION_RESULT, fillResponse?.await()) }
-            }
+            val replyIntent =
+                Intent().apply {
+                    // At this point it should be safe to block since the fill response should be ready once
+                    // the user has authenticated.
+                    runBlocking { putExtra(AutofillManager.EXTRA_AUTHENTICATION_RESULT, fillResponse?.await()) }
+                }
 
             emitAutofillLock(unlocked = true)
 

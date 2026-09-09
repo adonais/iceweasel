@@ -17,29 +17,24 @@ private const val ID_OFFSET = 10000
 
 private const val ID_PREFERENCE_FILE = "mozac_support_base_shared_ids_helper"
 
-/**
- * Helper for component and app code to use unique notification ids without conflicts.
- */
+/** Helper for component and app code to use unique notification ids without conflicts. */
 object SharedIdsHelper {
     private val ids = SharedIds(ID_PREFERENCE_FILE, ID_LIFETIME, ID_OFFSET)
 
-    /**
-     * Get a unique notification ID for the provided unique tag.
-     */
+    /** Get a unique notification ID for the provided unique tag. */
     fun getIdForTag(context: Context, tag: String): Int = ids.getIdForTag(context, tag)
 
-    /**
-     * Get the next available unique notification ID for the provided unique tag.
-     */
+    /** Get the next available unique notification ID for the provided unique tag. */
     fun getNextIdForTag(context: Context, tag: String): Int = ids.getNextIdForTag(context, tag)
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal var now: () -> Long
         get() = ids.now
-        set(value) { ids.now = value }
+        set(value) {
+            ids.now = value
+        }
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal fun clear(context: Context) = ids.clear(context)
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal fun clear(context: Context) = ids.clear(context)
 }
 
 /**

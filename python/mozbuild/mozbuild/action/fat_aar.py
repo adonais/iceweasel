@@ -10,6 +10,7 @@ compatibility, and ready inputs to an Android multi-architecture fat AAR build.
 import argparse
 import subprocess
 import sys
+import time
 from collections import OrderedDict, defaultdict
 from hashlib import sha1  # We don't need a strong hash to compare inputs.
 from io import BytesIO
@@ -21,6 +22,16 @@ from mozpack.copier import FileCopier
 from mozpack.files import JarFinder
 from mozpack.mozjar import JarReader
 from mozpack.packager.unpack import UnpackFinder
+
+
+def print_copy_result(elapsed, destdir, result):
+    print(
+        f"Elapsed: {elapsed:.2f}s; From {destdir}: "
+        f"Kept {result.existing_files_count} existing; "
+        f"Added/updated {result.updated_files_count}; "
+        f"Removed {result.removed_files_count} files "
+        f"and {result.removed_directories_count} directories."
+    )
 
 
 def _download_zip(distdir, arch):
@@ -51,10 +62,14 @@ def _download_zip(distdir, arch):
     return mozpath.join(dest, "target.maven.zip")
 
 
-def fat_aar(distdir, zip_paths, no_process=False, no_compatibility_check=False):
+def fat_aar(
+    distdir, zip_paths, no_process=False, no_compatibility_check=False, verbose=False
+):
     if no_process:
         print("Not processing architecture-specific artifact Maven AARs.")
         return 0
+
+    start = time.monotonic()
 
     # Map {filename: {fingerprint: [arch1, arch2, ...]}}.
     diffs = defaultdict(lambda: defaultdict(list))
@@ -65,6 +80,8 @@ def fat_aar(distdir, zip_paths, no_process=False, no_compatibility_check=False):
     for arch, zip_path in zip_paths.items():
         if not zip_path:
             zip_path = _download_zip(distdir, arch)
+        if verbose:
+            print(f"Processing '{zip_path}' for architecture {arch}")
         # Map old non-architecture-specific path to new architecture-specific path.
         old_rewrite_map = {
             "greprefs.js": f"{arch}/greprefs.js",
@@ -75,49 +92,76 @@ def fat_aar(distdir, zip_paths, no_process=False, no_compatibility_check=False):
         arch_prefs = set(old_rewrite_map.values())
         missing_arch_prefs |= set(arch_prefs)
 
-        aars = [
-            (path, file)
-            for (path, file) in JarFinder(zip_path, JarReader(zip_path)).find(
-                "**/geckoview-*.aar"
+        known_aars = {
+            "geckoview": (
+                lambda path: mozpath.match(
+                    path, "**/org/mozilla/geckoview/**/geckoview-*.aar"
+                ),
+                "geckoview",
+            ),
+            "full-megazord": (
+                lambda path: mozpath.match(
+                    path,
+                    "**/org/mozilla/appservices/**/full-megazord/**/full-megazord-*.aar",
+                ),
+                "appservices",
+            ),
+        }
+
+        expected_keys = {"geckoview"}
+        if buildconfig.substs.get("MOZ_APPSERVICES_IN_TREE"):
+            expected_keys.add("full-megazord")
+
+        aars = []
+        for path, file in JarFinder(zip_path, JarReader(zip_path)):
+            for key, (predicate, prefix) in known_aars.items():
+                if predicate(path):
+                    aars.append((key, path, file, prefix))
+
+        for expected_key in sorted(expected_keys):
+            found = sorted(p for key, p, _, _ in aars if key == expected_key)
+            if len(found) != 1:
+                raise ValueError(
+                    f'Maven zip "{zip_path}" with {len(found)} candidate '
+                    f"{expected_key} AARs found: {found}"
+                )
+
+        for key, aar_path, aar_file, aar_prefix in aars:
+            if verbose:
+                print(f"Processing '{key}' AAR '{aar_path}' for architecture {arch}")
+
+            jar_finder = JarFinder(
+                aar_file.file.filename, JarReader(fileobj=aar_file.open())
             )
-        ]
-        if len(aars) != 1:
-            raise ValueError(
-                f'Maven zip "{zip_path}" with more than one candidate AAR found: {sorted(p for p, _ in aars)}'
-            )
-        aar_path, aar_file = aars[0]
+            for path, fileobj in UnpackFinder(jar_finder):
+                path_with_prefix = mozpath.join(aar_prefix, path)
 
-        jar_finder = JarFinder(
-            aar_file.file.filename, JarReader(fileobj=aar_file.open())
-        )
-        for path, fileobj in UnpackFinder(jar_finder):
-            path_with_prefix = mozpath.join("geckoview", path)
+                # Native libraries go straight through.
+                if mozpath.match(path, "jni/**"):
+                    copier.add(path_with_prefix, fileobj)
 
-            # Native libraries go straight through.
-            if mozpath.match(path, "jni/**"):
-                copier.add(path_with_prefix, fileobj)
+                elif key == "geckoview" and path in arch_prefs:
+                    copier.add(path_with_prefix, fileobj)
 
-            elif path in arch_prefs:
-                copier.add(path_with_prefix, fileobj)
+                elif path in ("classes.jar", "annotations.zip"):
+                    # annotations.zip differs due to timestamps, but the contents should not.
 
-            elif path in ("classes.jar", "annotations.zip"):
-                # annotations.zip differs due to timestamps, but the contents should not.
+                    # `JarReader` fails on the non-standard `classes.jar` produced by Gradle/aapt,
+                    # and it's not worth working around, so we use Python's zip functionality
+                    # instead.
+                    z = ZipFile(BytesIO(fileobj.open().read()))
+                    for r in z.namelist():
+                        fingerprint = sha1(z.open(r).read()).hexdigest()
+                        diffs[f"{path_with_prefix}!/{r}"][fingerprint].append(arch)
 
-                # `JarReader` fails on the non-standard `classes.jar` produced by Gradle/aapt,
-                # and it's not worth working around, so we use Python's zip functionality
-                # instead.
-                z = ZipFile(BytesIO(fileobj.open().read()))
-                for r in z.namelist():
-                    fingerprint = sha1(z.open(r).read()).hexdigest()
-                    diffs[f"{path_with_prefix}!/{r}"][fingerprint].append(arch)
+                else:
+                    fingerprint = sha1(fileobj.open().read()).hexdigest()
+                    # There's no need to distinguish `target.maven.zip` from `assets/omni.ja` here,
+                    # since in practice they will never overlap.
+                    diffs[f"{path_with_prefix}"][fingerprint].append(arch)
 
-            else:
-                fingerprint = sha1(fileobj.open().read()).hexdigest()
-                # There's no need to distinguish `target.maven.zip` from `assets/omni.ja` here,
-                # since in practice they will never overlap.
-                diffs[path_with_prefix][fingerprint].append(arch)
-
-            missing_arch_prefs.discard(path)
+                if key == "geckoview":
+                    missing_arch_prefs.discard(path)
 
     # Some differences are allowed across the architecture-specific AARs.  We could allow-list
     # the actual content, but it's not necessary right now.
@@ -132,6 +176,8 @@ def fat_aar(distdir, zip_paths, no_process=False, no_compatibility_check=False):
         "geckoview/**/*.ftl",
         "geckoview/**/*.dtd",
         "geckoview/**/*.properties",
+        "appservices/AndroidManifest.xml",
+        "appservices/classes.jar!/org/mozilla/appservices/**/BuildConfig.class",
     }
 
     not_allowed = OrderedDict()
@@ -174,7 +220,14 @@ def fat_aar(distdir, zip_paths, no_process=False, no_compatibility_check=False):
         return 1
 
     output_dir = mozpath.join(distdir, "output")
-    copier.copy(output_dir)
+    result = copier.copy(output_dir)
+
+    if verbose:
+        print_copy_result(
+            time.monotonic() - start,
+            output_dir,
+            result,
+        )
 
     return 0
 
@@ -197,6 +250,7 @@ compatibility, and ready inputs to an Android multi-architecture fat AAR build."
         help="Do not fail if Maven AARs are not compatible.",
     )
     parser.add_argument("--distdir", required=True)
+    parser.add_argument("--verbose", "-v", action="store_true", default=False)
 
     for arch in _ALL_ARCHS:
         command_line_flag = arch.replace("_", "-")
@@ -215,6 +269,7 @@ compatibility, and ready inputs to an Android multi-architecture fat AAR build."
         zip_paths,
         no_process=args.no_process,
         no_compatibility_check=args.no_compatibility_check,
+        verbose=args.verbose,
     )
 
 

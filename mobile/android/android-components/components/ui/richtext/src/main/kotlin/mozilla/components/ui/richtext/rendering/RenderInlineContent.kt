@@ -24,49 +24,49 @@ import mozilla.components.ui.richtext.ir.InlineContent
 internal fun List<InlineContent>.asAnnotatedString(
     linkStyle: SpanStyle,
     codeStyle: SpanStyle,
-): AnnotatedString =
-    buildAnnotatedString {
-        fun build(content: InlineContent) {
-            when (content) {
-                is InlineContent.Code -> {
-                    withStyle(codeStyle) {
-                        append(content.value)
-                    }
-                }
-
-                is InlineContent.Emphasis -> {
-                    withStyle(SpanStyle(fontStyle = FontStyle.Italic)) {
-                        content.children.forEach(::build)
-                    }
-                }
-
-                is InlineContent.Link -> {
-                    withLink(
-                        link = Url(
-                            url = content.url,
-                            styles = TextLinkStyles(style = linkStyle),
-                        ),
-                    ) {
-                        content.children.forEach(::build)
-                    }
-                }
-
-                is InlineContent.Plain -> {
+): AnnotatedString = buildAnnotatedString {
+    fun build(content: InlineContent) {
+        when (content) {
+            is InlineContent.Code -> {
+                withStyle(codeStyle) {
                     append(content.value)
                 }
+            }
 
-                is InlineContent.Strong -> {
-                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                        content.children.forEach(::build)
-                    }
-                }
-
-                InlineContent.LineBreak -> {
-                    appendLine()
+            is InlineContent.Emphasis -> {
+                withStyle(SpanStyle(fontStyle = FontStyle.Italic)) {
+                    content.children.forEach(::build)
                 }
             }
-        }
-        forEach { inlineContent ->
-            build(inlineContent)
+
+            is InlineContent.Link -> {
+                withLink(
+                    link =
+                        Url(
+                            url = content.url,
+                            styles = TextLinkStyles(style = linkStyle),
+                        )
+                ) {
+                    content.children.forEach(::build)
+                }
+            }
+
+            is InlineContent.Plain -> {
+                append(content.value)
+            }
+
+            is InlineContent.Strong -> {
+                withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                    content.children.forEach(::build)
+                }
+            }
+
+            InlineContent.LineBreak -> {
+                appendLine()
+            }
         }
     }
+    forEach { inlineContent ->
+        build(inlineContent)
+    }
+}

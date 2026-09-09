@@ -23,6 +23,7 @@ private const val MIN_INSTALLABLE_ICON_SIZE = 192
  * Checks if the web app manifest can be used to create a shortcut icon.
  *
  * Websites have an installable icon if the manifest contains an icon of at least 192x192.
+ *
  * @see [installableManifest]
  */
 fun WebAppManifest.hasLargeIcons() = icons.any { icon ->
@@ -35,28 +36,26 @@ fun WebAppManifest.hasLargeIcons() = icons.any { icon ->
 /**
  * Creates a [TaskDescription] for the activity manager based on the manifest.
  *
- * Since the web app icon is provided dynamically by the web site, we can't provide a resource ID.
- * Instead we use the deprecated constructor.
+ * Since the web app icon is provided dynamically by the web site, we can't provide a resource ID. Instead we use the
+ * deprecated constructor.
  */
 @Suppress("Deprecation")
-fun WebAppManifest.toTaskDescription(icon: Bitmap?) =
-    TaskDescription(name, icon, themeColor ?: 0)
+fun WebAppManifest.toTaskDescription(icon: Bitmap?) = TaskDescription(name, icon, themeColor ?: 0)
 
-/**
- * Creates a [CustomTabConfig] that styles a custom tab toolbar to match the manifest theme.
- */
+/** Creates a [CustomTabConfig] that styles a custom tab toolbar to match the manifest theme. */
 fun WebAppManifest.toCustomTabConfig(): CustomTabConfig {
     val backgroundColor = this.backgroundColor
-    val colorSchemes = if (themeColor != null && backgroundColor != null) {
-        ColorSchemes(
-            ColorSchemeParams(
-                toolbarColor = themeColor,
-                navigationBarColor = getNavBarColor(backgroundColor),
-            ),
-        )
-    } else {
-        null
-    }
+    val colorSchemes =
+        if (themeColor != null && backgroundColor != null) {
+            ColorSchemes(
+                ColorSchemeParams(
+                    toolbarColor = themeColor,
+                    navigationBarColor = getNavBarColor(backgroundColor),
+                )
+            )
+        } else {
+            null
+        }
 
     return CustomTabConfig(
         colorSchemes = colorSchemes,
@@ -70,24 +69,21 @@ fun WebAppManifest.toCustomTabConfig(): CustomTabConfig {
     )
 }
 
-private fun getNavBarColor(backgroundColor: Int) =
-    if (isDark(backgroundColor)) Color.BLACK else Color.WHITE
+private fun getNavBarColor(backgroundColor: Int) = if (isDark(backgroundColor)) Color.BLACK else Color.WHITE
 
 /**
- * Returns the scope of the manifest as a [Uri] for use
- * with [mozilla.components.feature.pwa.feature.WebAppHideToolbarFeature].
+ * Returns the scope of the manifest as a [Uri] for use with
+ * [mozilla.components.feature.pwa.feature.WebAppHideToolbarFeature].
  *
- * Null is returned when the scope should be ignored, such as with display: minimal-ui,
- * where the toolbar should always be displayed.
+ * Null is returned when the scope should be ignored, such as with display: minimal-ui, where the toolbar should always
+ * be displayed.
  */
 fun WebAppManifest.getTrustedScope(): Uri? {
     return when (display) {
         WebAppManifest.DisplayMode.FULLSCREEN,
-        WebAppManifest.DisplayMode.STANDALONE,
-        -> (scope ?: startUrl).toUri()
+        WebAppManifest.DisplayMode.STANDALONE -> (scope ?: startUrl).toUri()
 
         WebAppManifest.DisplayMode.MINIMAL_UI,
-        WebAppManifest.DisplayMode.BROWSER,
-        -> null
+        WebAppManifest.DisplayMode.BROWSER -> null
     }
 }

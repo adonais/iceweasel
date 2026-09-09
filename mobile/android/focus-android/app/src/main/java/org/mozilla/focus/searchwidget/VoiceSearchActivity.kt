@@ -5,22 +5,19 @@
 package org.mozilla.focus.searchwidget
 
 import android.content.Intent
+import java.util.Locale
 import mozilla.components.feature.search.widget.BaseVoiceSearchActivity
 import mozilla.components.support.locale.LocaleManager
 import mozilla.components.support.locale.LocaleManager.getCurrentLocale
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.focus.GleanMetrics.SearchWidget
 import org.mozilla.focus.activity.IntentReceiverActivity
-import java.util.Locale
 
-/**
- * Activity for handling voice search.
- */
+/** Activity for handling voice search. */
 class VoiceSearchActivity : BaseVoiceSearchActivity() {
 
     override fun getCurrentLocale(): Locale {
-        return getCurrentLocale(this)
-            ?: LocaleManager.getSystemDefault()
+        return getCurrentLocale(this) ?: LocaleManager.getSystemDefault()
     }
 
     override fun onSpeechRecognitionEnded(spokenText: String) {

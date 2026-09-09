@@ -9,6 +9,11 @@
 
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  CustomizableUITestUtils:
+    "resource://testing-common/CustomizableUITestUtils.sys.mjs",
+});
+
 const SCALARS = {
   ABANDONMENT: "urlbar.zeroprefix.abandonment",
   ENGAGEMENT: "urlbar.zeroprefix.engagement",
@@ -55,6 +60,49 @@ add_task(async function engagement() {
   checkScalars({
     [SCALARS.ENGAGEMENT]: 1,
   });
+});
+
+// The search bar shares this view, but not the top sites in it: its zero-prefix
+// results are recent searches and trending, so it counts into nothing here.
+add_task(async function searchbarIsNotCounted() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.search.widget.new", true]],
+  });
+  let cuiTestUtils = new CustomizableUITestUtils(window);
+  await cuiTestUtils.addSearchBar();
+  let searchbar = SearchbarTestUtils.getUrlbar(window);
+  // A recent search, so the zero-prefix query has something to show and the
+  // view opens the way it does for a user who has searched before.
+  await SearchbarTestUtils.formHistory.add(["a recent search"]);
+
+  try {
+    await BrowserTestUtils.withNewTab("about:blank", async () => {
+      let { promise, cleanup } = waitForQueryFinished(searchbar);
+      await SimpleTest.promiseFocus(window);
+      await SearchbarTestUtils.promisePopupOpen(window, () => {
+        EventUtils.synthesizeMouseAtCenter(searchbar.inputField, {}, window);
+      });
+      await promise;
+      cleanup();
+
+      Assert.greater(
+        SearchbarTestUtils.getResultCount(window),
+        0,
+        "The search bar's zero prefix view has a row"
+      );
+
+      await SearchbarTestUtils.promisePopupClose(window, () =>
+        EventUtils.synthesizeKey("KEY_Escape")
+      );
+    });
+  } finally {
+    searchbar.view.queryContextCache.clear();
+    await SearchbarTestUtils.formHistory.clear();
+    await cuiTestUtils.removeSearchBar();
+    await SpecialPowers.popPrefEnv();
+  }
+
+  checkScalars({});
 });
 
 // zero prefix abandonment
@@ -183,6 +231,8 @@ async function showZeroPrefix() {
  * important to wait for `onQueryFinished()` because that's when the view checks
  * whether it's showing zero prefix.
  *
+ * @param {UrlbarInput} [input]
+ *   The input whose query to wait for.
  * @returns {object}
  *   An object with the following properties:
  *     {Promise} promise
@@ -190,17 +240,17 @@ async function showZeroPrefix() {
  *     {Function} cleanup
  *       This should be called to remove the listener.
  */
-function waitForQueryFinished() {
+function waitForQueryFinished(input = gURLBar) {
   let deferred = Promise.withResolvers();
   let listener = {
     onQueryFinished: () => deferred.resolve(),
   };
-  gURLBar.controller.addListener(listener);
+  input.controller.addListener(listener);
 
   return {
     promise: deferred.promise,
     cleanup() {
-      gURLBar.controller.removeListener(listener);
+      input.controller.removeListener(listener);
     },
   };
 }

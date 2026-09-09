@@ -7,14 +7,12 @@ package mozilla.components.concept.engine
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 
-/**
- * Represents an async operation that can be cancelled.
- */
+/** Represents an async operation that can be cancelled. */
 interface CancellableOperation {
 
     /**
-     * Implementation of [CancellableOperation] that does nothing (for
-     * testing purposes or implementing default methods.)
+     * Implementation of [CancellableOperation] that does nothing (for testing purposes or implementing default
+     * methods.)
      */
     class Noop : CancellableOperation {
         override fun cancel(): Deferred<Boolean> {

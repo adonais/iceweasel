@@ -25,6 +25,29 @@ int FileMgr::getlinenum() const { return moz_glue_hunspell_get_line_num(mFd); }
 FileMgr::~FileMgr() { moz_glue_hunspell_destruct_filemgr(mFd); }
 
 // Glue code to set global callbacks
+//
+// When hunspell is wasmboxed, each sandbox instance has its own copy of these
+// statics, so the callbacks below are per-instance state.
+//
+// When the sandbox is disabled (replaced with the noop sandbox), all live
+// RLBoxHunspell instances -- there is one per loaded dictionary -- share a
+// single copy of these statics. Unlike woff2 (see
+// modules/woff2/RLBoxWOFF2Sandbox.cpp) we cannot skip registration in that
+// case, because these callbacks are the only way sandboxed hunspell can read
+// dictionary files. Sharing them is nonetheless safe, for two reasons that are
+// easy to break:
+//
+//  1. RLBoxHunspell only registers callbacks, and only invokes the sandbox,
+//     on the main thread, so the writes below cannot race.
+//  2. Every instance registers the same callbacks in the same order, so the
+//     noop sandbox assigns them the same callback slots and hands us identical
+//     trampoline pointers. Those trampolines recover the sandbox that is
+//     currently executing on this thread from thread-local state, so a
+//     callback still reaches the right instance.
+//
+// Registering different callbacks per instance, storing anything
+// instance-specific here, or invoking hunspell off the main thread would each
+// invalidate this. See security/rlbox/docs/index.md for the full rationale.
 
 hunspell_create_filemgr_t* moz_glue_hunspell_create_filemgr = nullptr;
 hunspell_get_line_t* moz_glue_hunspell_get_line = nullptr;

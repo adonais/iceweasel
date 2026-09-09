@@ -8,8 +8,7 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import org.mozilla.fenix.GleanMetrics.Vpn
 
-internal class IPProtectionPromptTelemetryMiddleware :
-    Middleware<IPProtectionPromptState, IPProtectionPromptAction> {
+internal class IPProtectionPromptTelemetryMiddleware : Middleware<IPProtectionPromptState, IPProtectionPromptAction> {
     override fun invoke(
         store: Store<IPProtectionPromptState, IPProtectionPromptAction>,
         next: (IPProtectionPromptAction) -> Unit,
@@ -19,37 +18,27 @@ internal class IPProtectionPromptTelemetryMiddleware :
 
         when (action) {
             is IPProtectionPromptAction.OnImpression ->
-                Vpn.onboardingShown.record(
-                    Vpn.OnboardingShownExtra(entrypoint = action.surface.metricLabel),
-                )
+                Vpn.onboardingShown.record(Vpn.OnboardingShownExtra(entrypoint = action.surface.metricLabel))
 
             is IPProtectionPromptAction.OnGetStartedClicked ->
-                Vpn.getStartedTapped.record(
-                    Vpn.GetStartedTappedExtra(entrypoint = action.surface.metricLabel),
-                )
+                Vpn.getStartedTapped.record(Vpn.GetStartedTappedExtra(entrypoint = action.surface.metricLabel))
 
             is IPProtectionPromptAction.OnNotNowClicked ->
                 Vpn.onboardingNotNowTapped.record(
-                    Vpn.OnboardingNotNowTappedExtra(entrypoint = action.surface.metricLabel),
+                    Vpn.OnboardingNotNowTappedExtra(entrypoint = action.surface.metricLabel)
                 )
 
             is IPProtectionPromptAction.OnPromptManuallyDismissed ->
-                Vpn.onboardingDismissed.record(
-                    Vpn.OnboardingDismissedExtra(entrypoint = action.surface.metricLabel),
-                )
+                Vpn.onboardingDismissed.record(Vpn.OnboardingDismissedExtra(entrypoint = action.surface.metricLabel))
 
             is IPProtectionPromptAction.OnBrowseWithExtraProtectionClicked ->
                 Vpn.onboardingBrowseWithProtectionTapped.record(
-                    Vpn.OnboardingBrowseWithProtectionTappedExtra(
-                        entrypoint = action.surface.metricLabel,
-                    ),
+                    Vpn.OnboardingBrowseWithProtectionTappedExtra(entrypoint = action.surface.metricLabel)
                 )
 
             // no-ops
             is IPProtectionPromptAction.OnPromptCreated,
-            is IPProtectionPromptAction.OnPromptDismissed,
-                -> {
-            }
+            is IPProtectionPromptAction.OnPromptDismissed -> {}
         }
     }
 }

@@ -9,7 +9,10 @@ add_task(async function test_FormFieldLabels() {
 
     let fields = Array.from(helper.get("print").elements);
     for (let field of fields) {
-      if (field.localName == "button") {
+      if (
+        field.localName == "button" ||
+        field.localName == "moz-segmented-control"
+      ) {
         continue;
       }
       ok(

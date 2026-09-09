@@ -5,7 +5,5 @@ package mozilla.components.support.utils.provider
 
 import androidx.core.content.FileProvider
 
-/**
- * FileProvider used to share downloaded files with other apps.
- */
+/** FileProvider used to share downloaded files with other apps. */
 class FileProvider : FileProvider()

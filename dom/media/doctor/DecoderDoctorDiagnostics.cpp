@@ -417,7 +417,8 @@ static void ReportToConsole(dom::Document* aDocument,
       aParams.Length() < 2 ? "" : ", ...");
   if (StaticPrefs::media_decoder_doctor_testing()) {
     NS_DispatchToCurrentThread(NS_NewRunnableFunction(
-        "mozreportmediaerror", [doc = RefPtr{aDocument}] {
+        "mozreportmediaerror",
+        [doc = RefPtr{aDocument}]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
           (void)nsContentUtils::DispatchTrustedEvent(
               doc, doc, u"mozreportmediaerror"_ns, CanBubble::eNo,
               Cancelable::eNo);

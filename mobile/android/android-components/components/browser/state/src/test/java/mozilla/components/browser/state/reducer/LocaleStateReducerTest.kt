@@ -4,12 +4,12 @@
 
 package mozilla.components.browser.state.reducer
 
+import java.util.Locale
 import mozilla.components.browser.state.action.LocaleAction
 import mozilla.components.browser.state.state.BrowserState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import java.util.Locale
 
 class LocaleStateReducerTest {
     @Test

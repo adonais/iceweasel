@@ -12,15 +12,14 @@ import org.mozilla.focus.R
 import org.mozilla.focus.generated.LocalesList
 
 /**
- * A storage class responsible for managing the application's language settings.
- * It provides access to the list of available languages, the currently selected language,
- * and methods for persisting the user's language choice in SharedPreferences.
+ * A storage class responsible for managing the application's language settings. It provides access to the list of
+ * available languages, the currently selected language, and methods for persisting the user's language choice in
+ * SharedPreferences.
  *
  * @param context The application context, used to access resources and SharedPreferences.
  */
 class LanguageStorage(private val context: Context) {
-    private val sharedPref: SharedPreferences =
-        PreferenceManager.getDefaultSharedPreferences(context)
+    private val sharedPref: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
 
     private val localePrefKey: String by lazy {
         context.resources.getString(R.string.pref_key_locale)
@@ -31,23 +30,22 @@ class LanguageStorage(private val context: Context) {
      *
      * This map is lazily initialized and includes:
      * 1. The "System default" language.
-     * 2. All bundled locales from [LocalesList.BUNDLED_LOCALES], sorted alphabetically
-     *    by their native display names.
+     * 2. All bundled locales from [LocalesList.BUNDLED_LOCALES], sorted alphabetically by their native display names.
      *
      * This provides efficient look-up of a [Language] object by its tag.
      */
     private val languagesByTag: Map<String, Language> by lazy {
         buildMap {
             put(systemDefaultLanguage.tag, systemDefaultLanguage)
-            LocalesList.BUNDLED_LOCALES
-                .map { LocaleDescriptor(it) }
+            LocalesList.BUNDLED_LOCALES.map { LocaleDescriptor(it) }
                 .sorted()
                 .forEach { descriptor ->
-                    val language = Language(
-                        displayName = descriptor.getNativeName(),
-                        tag = descriptor.getTag(),
-                        index = size,
-                    )
+                    val language =
+                        Language(
+                            displayName = descriptor.getNativeName(),
+                            tag = descriptor.getTag(),
+                            index = size,
+                        )
                     put(language.tag, language)
                 }
         }
@@ -66,17 +64,15 @@ class LanguageStorage(private val context: Context) {
     }
 
     /**
-     * The language currently selected by the user. If no language has been explicitly
-     * selected, this will default to the "System default" language.
+     * The language currently selected by the user. If no language has been explicitly selected, this will default to
+     * the "System default" language.
      *
-     * The value is retrieved from SharedPreferences using the `pref_key_locale`.
-     * If the stored language tag doesn't match any available language, it also
-     * falls back to the system default.
+     * The value is retrieved from SharedPreferences using the `pref_key_locale`. If the stored language tag doesn't
+     * match any available language, it also falls back to the system default.
      */
     internal val selectedLanguage: Language
         get() {
-            val savedLanguageTag =
-                sharedPref.getString(localePrefKey, LOCALE_SYSTEM_DEFAULT) ?: LOCALE_SYSTEM_DEFAULT
+            val savedLanguageTag = sharedPref.getString(localePrefKey, LOCALE_SYSTEM_DEFAULT) ?: LOCALE_SYSTEM_DEFAULT
 
             return languagesByTag[savedLanguageTag] ?: systemDefaultLanguage
         }

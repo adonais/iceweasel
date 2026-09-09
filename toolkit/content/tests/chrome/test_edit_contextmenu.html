@@ -32,6 +32,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1513343
         await testElement(element, win);
       }
       await testConsecutiveReveals(win);
+      await testRemoveItems(win);
       win.close();
       SimpleTest.finish();
     }
@@ -54,7 +55,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1513343
         await popupshown;
 
         const contextmenu = win.document.getElementById("textbox-contextmenu");
-        const revealPassword = contextmenu.querySelector("#textbox-contextmenu-reveal-password");
+        const revealPassword = contextmenu.querySelector("#edit-contextmenu-reveal-password");
         const wasRevealed = element.revealPassword;
 
         let popuphidden = new Promise(r => win.addEventListener("popuphidden", r, { once: true }));
@@ -63,6 +64,30 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1513343
 
         is(element.revealPassword, !wasRevealed, "reveal toggled the field that was right clicked");
       }
+    }
+
+    // Removing a set takes its items out of the current menu and keeps them out
+    // of one built later.
+    async function testRemoveItems(win) {
+      let contextmenu = win.document.getElementById("textbox-contextmenu");
+      ok(contextmenu.querySelector("#test-item"), "added item is in the menu");
+
+      win.EditContextMenu.removeItems(win.testItemSet);
+      ok(!contextmenu.querySelector("#test-item"), "removed item is out of the menu");
+
+      contextmenu.remove();
+      const textarea = win.document.querySelector("textarea");
+      textarea.focus();
+      let popupshown = new Promise(r => win.addEventListener("popupshown", r, { once: true }));
+      synthesizeMouseAtCenter(textarea, {type: "contextmenu"}, win);
+      await popupshown;
+
+      contextmenu = win.document.getElementById("textbox-contextmenu");
+      ok(!contextmenu.querySelector("#test-item"), "removed item stays out of a menu built later");
+
+      let popuphidden = new Promise(r => win.addEventListener("popuphidden", r, { once: true }));
+      contextmenu.hidePopup();
+      await popuphidden;
     }
 
     async function testElement(element, win) {
@@ -101,9 +126,19 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1513343
       ok(contextmenu.querySelector("[command=cmd_delete]").hasAttribute("disabled"), "delete disabled");
       ok(!contextmenu.querySelector("[command=cmd_selectAll]").hasAttribute("disabled"), "select all enabled");
 
-      let revealPassword = contextmenu.querySelector("#textbox-contextmenu-reveal-password");
+      let revealPassword = contextmenu.querySelector("#edit-contextmenu-reveal-password");
       let isPassword = element.type == "password";
       is(revealPassword.hidden, !isPassword, "reveal password");
+
+      // Items contributed by the fixture through EditContextMenu.addItems().
+      let addedItem = contextmenu.querySelector("#test-item");
+      ok(addedItem, "added item is in the menu");
+      is(addedItem.previousElementSibling.id, "edit-contextmenu-paste",
+         "added item sits after the item it asked for");
+      let matches = element.localName == "textarea";
+      is(addedItem.hidden, !matches, "added item is only shown for a matching field");
+      is(addedItem.getAttribute("data-shown-for"), matches ? "textarea" : null,
+         "onShowing only ran for a matching field");
 
       let popuphidden = new Promise(r => win.addEventListener("popuphidden", r, { once: true }));
       if (isPassword) {

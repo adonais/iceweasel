@@ -31,10 +31,11 @@ class OnSharedPreferenceChangeListenerTest {
     @Before
     fun setup() {
         sharedPrefs = mockk(relaxUnitFun = true)
-        owner = object : LifecycleOwner {
-            override val lifecycle: Lifecycle
-                get() = lifecycleRegistry
-        }
+        owner =
+            object : LifecycleOwner {
+                override val lifecycle: Lifecycle
+                    get() = lifecycleRegistry
+            }
         lifecycleRegistry = LifecycleRegistry(owner)
     }
 

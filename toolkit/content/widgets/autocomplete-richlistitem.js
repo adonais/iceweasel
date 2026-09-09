@@ -760,7 +760,7 @@
 
       setTimeout(() => {
         const { AutoCompleteParent } = ChromeUtils.importESModule(
-          "resource://gre/actors/AutoCompleteParent.sys.mjs"
+          "moz-src:///toolkit/actors/AutoCompleteParent.sys.mjs"
         );
         const actor = AutoCompleteParent.getCurrentActor();
         actor?.previewAutoCompleteEntry();

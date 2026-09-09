@@ -114,12 +114,14 @@ class NestedGeckoViewTest {
         nestedWebView.inputResultDetail = nestedWebView.inputResultDetail.copy(INPUT_RESULT_HANDLED)
         doReturn(true).`when`(nestedWebView).callSuperOnTouchEvent(any())
 
-        doReturn(true).`when`(mockChildHelper).dispatchNestedPreScroll(
-            anyInt(),
-            anyInt(),
-            any(),
-            any(),
-        )
+        doReturn(true)
+            .`when`(mockChildHelper)
+            .dispatchNestedPreScroll(
+                anyInt(),
+                anyInt(),
+                any(),
+                any(),
+            )
 
         nestedWebView.scrollOffset[0] = 1
         nestedWebView.scrollOffset[1] = 2
@@ -129,13 +131,15 @@ class NestedGeckoViewTest {
         assertEquals(2, nestedWebView.nestedOffsetY)
         assertEquals(3, nestedWebView.lastY)
 
-        doReturn(true).`when`(mockChildHelper).dispatchNestedScroll(
-            anyInt(),
-            anyInt(),
-            anyInt(),
-            anyInt(),
-            any(),
-        )
+        doReturn(true)
+            .`when`(mockChildHelper)
+            .dispatchNestedScroll(
+                anyInt(),
+                anyInt(),
+                anyInt(),
+                anyInt(),
+                any(),
+            )
 
         nestedWebView.onTouchEvent(mockMotionEvent(ACTION_MOVE, y = 10f))
         assertEquals(6, nestedWebView.nestedOffsetY)
@@ -177,25 +181,28 @@ class NestedGeckoViewTest {
     fun `requestDisallowInterceptTouchEvent doesn't pass touch events to parents until engineView responds`() {
         var viewParentInterceptCounter = 0
         val result: GeckoResult<InputResultDetail> = GeckoResult()
-        val nestedWebView = object : NestedGeckoView(context) {
-            init {
-                // We need to make the view a non-zero size so that the touch events hit it.
-                left = 0
-                top = 0
-                right = 5
-                bottom = 5
-            }
+        val nestedWebView =
+            object : NestedGeckoView(context) {
+                init {
+                    // We need to make the view a non-zero size so that the touch events hit it.
+                    left = 0
+                    top = 0
+                    right = 5
+                    bottom = 5
+                }
 
-            override fun superOnTouchEventForDetailResult(event: MotionEvent) = result
-        }
-        val viewParent = object : FrameLayout(context) {
-            override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
-                viewParentInterceptCounter++
-                return super.onInterceptTouchEvent(ev)
+                override fun superOnTouchEventForDetailResult(event: MotionEvent) = result
             }
-        }.apply {
-            addView(nestedWebView)
-        }
+        val viewParent =
+            object : FrameLayout(context) {
+                    override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
+                        viewParentInterceptCounter++
+                        return super.onInterceptTouchEvent(ev)
+                    }
+                }
+                .apply {
+                    addView(nestedWebView)
+                }
 
         // Down action enables requestDisallowInterceptTouchEvent (and starts a gesture).
         viewParent.dispatchTouchEvent(mockMotionEvent(ACTION_DOWN, y = 0f))
@@ -209,11 +216,12 @@ class NestedGeckoViewTest {
         assertEquals(1, viewParentInterceptCounter)
 
         // Simulate a `handled` response from the APZ GeckoEngineView API.
-        val inputResultMock = mock<InputResultDetail>().apply {
-            whenever(handledResult()).thenReturn(INPUT_RESULT_HANDLED)
-            whenever(scrollableDirections()).thenReturn(SCROLLABLE_FLAG_BOTTOM)
-            whenever(overscrollDirections()).thenReturn(OVERSCROLL_FLAG_VERTICAL)
-        }
+        val inputResultMock =
+            mock<InputResultDetail>().apply {
+                whenever(handledResult()).thenReturn(INPUT_RESULT_HANDLED)
+                whenever(scrollableDirections()).thenReturn(SCROLLABLE_FLAG_BOTTOM)
+                whenever(overscrollDirections()).thenReturn(OVERSCROLL_FLAG_VERTICAL)
+            }
         result.complete(inputResultMock)
         shadowOf(getMainLooper()).idle()
 
@@ -232,26 +240,30 @@ class NestedGeckoViewTest {
     fun `touch events are never intercepted once after scrolled down`() {
         var viewParentInterceptCounter = 0
         val result: GeckoResult<InputResultDetail> = GeckoResult()
-        val nestedWebView = object : NestedGeckoView(context) {
-            init {
-                // We need to make the view a non-zero size so that the touch events hit it.
-                left = 0
-                top = 0
-                right = 5
-                bottom = 5
+        val nestedWebView =
+            object : NestedGeckoView(context) {
+                init {
+                    // We need to make the view a non-zero size so that the touch events hit it.
+                    left = 0
+                    top = 0
+                    right = 5
+                    bottom = 5
+                }
+
+                override fun superOnTouchEventForDetailResult(event: MotionEvent): GeckoResult<InputResultDetail> =
+                    result
             }
 
-            override fun superOnTouchEventForDetailResult(event: MotionEvent): GeckoResult<InputResultDetail> = result
-        }
-
-        val viewParent = object : FrameLayout(context) {
-            override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
-                viewParentInterceptCounter++
-                return super.onInterceptTouchEvent(ev)
-            }
-        }.apply {
-            addView(nestedWebView)
-        }
+        val viewParent =
+            object : FrameLayout(context) {
+                    override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
+                        viewParentInterceptCounter++
+                        return super.onInterceptTouchEvent(ev)
+                    }
+                }
+                .apply {
+                    addView(nestedWebView)
+                }
 
         // Down action enables requestDisallowInterceptTouchEvent (and starts a gesture).
         viewParent.dispatchTouchEvent(mockMotionEvent(ACTION_DOWN, y = 4f))
@@ -265,11 +277,12 @@ class NestedGeckoViewTest {
         assertEquals(1, viewParentInterceptCounter)
 
         // Simulate a `handled` response from the APZ GeckoEngineView API.
-        val inputResultMock = mock<InputResultDetail>().apply {
-            whenever(handledResult()).thenReturn(INPUT_RESULT_HANDLED)
-            whenever(scrollableDirections()).thenReturn(SCROLLABLE_FLAG_BOTTOM)
-            whenever(overscrollDirections()).thenReturn(OVERSCROLL_FLAG_VERTICAL or OVERSCROLL_FLAG_HORIZONTAL)
-        }
+        val inputResultMock =
+            mock<InputResultDetail>().apply {
+                whenever(handledResult()).thenReturn(INPUT_RESULT_HANDLED)
+                whenever(scrollableDirections()).thenReturn(SCROLLABLE_FLAG_BOTTOM)
+                whenever(overscrollDirections()).thenReturn(OVERSCROLL_FLAG_VERTICAL or OVERSCROLL_FLAG_HORIZONTAL)
+            }
         result.complete(inputResultMock)
         shadowOf(getMainLooper()).idle()
 
@@ -290,28 +303,31 @@ class NestedGeckoViewTest {
         var viewParentInterceptCounter = 0
         val geckoResults = mutableListOf<GeckoResult<InputResultDetail>>()
         var resultCurrentIndex = 0
-        val nestedWebView = object : NestedGeckoView(context) {
-            init {
-                // We need to make the view a non-zero size so that the touch events hit it.
-                left = 0
-                top = 0
-                right = 5
-                bottom = 5
+        val nestedWebView =
+            object : NestedGeckoView(context) {
+                init {
+                    // We need to make the view a non-zero size so that the touch events hit it.
+                    left = 0
+                    top = 0
+                    right = 5
+                    bottom = 5
+                }
+
+                override fun superOnTouchEventForDetailResult(event: MotionEvent): GeckoResult<InputResultDetail> {
+                    return GeckoResult<InputResultDetail>().also(geckoResults::add)
+                }
             }
 
-            override fun superOnTouchEventForDetailResult(event: MotionEvent): GeckoResult<InputResultDetail> {
-                return GeckoResult<InputResultDetail>().also(geckoResults::add)
-            }
-        }
-
-        val viewParent = object : FrameLayout(context) {
-            override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
-                viewParentInterceptCounter++
-                return super.onInterceptTouchEvent(ev)
-            }
-        }.apply {
-            addView(nestedWebView)
-        }
+        val viewParent =
+            object : FrameLayout(context) {
+                    override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
+                        viewParentInterceptCounter++
+                        return super.onInterceptTouchEvent(ev)
+                    }
+                }
+                .apply {
+                    addView(nestedWebView)
+                }
 
         // Down action enables requestDisallowInterceptTouchEvent (and starts a gesture).
         viewParent.dispatchTouchEvent(mockMotionEvent(ACTION_DOWN, y = 1f))
@@ -323,11 +339,12 @@ class NestedGeckoViewTest {
         viewParent.dispatchTouchEvent(mockMotionEvent(ACTION_MOVE, y = 2f))
 
         // Simulate a `handled` response from the APZ GeckoEngineView API.
-        val inputResultMock = mock<InputResultDetail>().apply {
-            whenever(handledResult()).thenReturn(INPUT_RESULT_HANDLED)
-            whenever(scrollableDirections()).thenReturn(SCROLLABLE_FLAG_BOTTOM)
-            whenever(overscrollDirections()).thenReturn(OVERSCROLL_FLAG_NONE)
-        }
+        val inputResultMock =
+            mock<InputResultDetail>().apply {
+                whenever(handledResult()).thenReturn(INPUT_RESULT_HANDLED)
+                whenever(scrollableDirections()).thenReturn(SCROLLABLE_FLAG_BOTTOM)
+                whenever(overscrollDirections()).thenReturn(OVERSCROLL_FLAG_NONE)
+            }
         geckoResults[resultCurrentIndex++].complete(inputResultMock)
         shadowOf(getMainLooper()).idle()
 
@@ -350,31 +367,35 @@ class NestedGeckoViewTest {
         var viewParentInterceptCounter = 0
         val result: GeckoResult<InputResultDetail> = GeckoResult()
         var disallowInterceptTouchEventValue = false
-        val nestedWebView = object : NestedGeckoView(context) {
-            init {
-                // We need to make the view a non-zero size so that the touch events hit it.
-                left = 0
-                top = 0
-                right = 5
-                bottom = 5
+        val nestedWebView =
+            object : NestedGeckoView(context) {
+                init {
+                    // We need to make the view a non-zero size so that the touch events hit it.
+                    left = 0
+                    top = 0
+                    right = 5
+                    bottom = 5
+                }
+
+                override fun superOnTouchEventForDetailResult(event: MotionEvent): GeckoResult<InputResultDetail> =
+                    result
             }
 
-            override fun superOnTouchEventForDetailResult(event: MotionEvent): GeckoResult<InputResultDetail> = result
-        }
+        val viewParent =
+            object : FrameLayout(context) {
+                    override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
+                        viewParentInterceptCounter++
+                        return super.onInterceptTouchEvent(ev)
+                    }
 
-        val viewParent = object : FrameLayout(context) {
-            override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
-                viewParentInterceptCounter++
-                return super.onInterceptTouchEvent(ev)
-            }
-
-            override fun requestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
-                disallowInterceptTouchEventValue = disallowIntercept
-                super.requestDisallowInterceptTouchEvent(disallowIntercept)
-            }
-        }.apply {
-            addView(nestedWebView)
-        }
+                    override fun requestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
+                        disallowInterceptTouchEventValue = disallowIntercept
+                        super.requestDisallowInterceptTouchEvent(disallowIntercept)
+                    }
+                }
+                .apply {
+                    addView(nestedWebView)
+                }
 
         // Down action enables requestDisallowInterceptTouchEvent (and starts a gesture).
         viewParent.dispatchTouchEvent(mockMotionEvent(ACTION_DOWN, y = 2f))
@@ -441,40 +462,44 @@ class NestedGeckoViewTest {
         val geckoResults = mutableListOf<GeckoResult<InputResultDetail>>()
         var resultCurrentIndex = 0
         var disallowInterceptTouchEventValue = false
-        val nestedWebView = object : NestedGeckoView(context) {
-            init {
-                // We need to make the view a non-zero size so that the touch events hit it.
-                left = 0
-                top = 0
-                right = 5
-                bottom = 5
+        val nestedWebView =
+            object : NestedGeckoView(context) {
+                init {
+                    // We need to make the view a non-zero size so that the touch events hit it.
+                    left = 0
+                    top = 0
+                    right = 5
+                    bottom = 5
+                }
+
+                override fun superOnTouchEventForDetailResult(event: MotionEvent): GeckoResult<InputResultDetail> {
+                    return GeckoResult<InputResultDetail>().also(geckoResults::add)
+                }
             }
 
-            override fun superOnTouchEventForDetailResult(event: MotionEvent): GeckoResult<InputResultDetail> {
-                return GeckoResult<InputResultDetail>().also(geckoResults::add)
-            }
-        }
+        val viewParent =
+            object : FrameLayout(context) {
+                    override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
+                        viewParentInterceptCounter++
+                        return super.onInterceptTouchEvent(ev)
+                    }
 
-        val viewParent = object : FrameLayout(context) {
-            override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
-                viewParentInterceptCounter++
-                return super.onInterceptTouchEvent(ev)
-            }
-
-            override fun requestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
-                disallowInterceptTouchEventValue = disallowIntercept
-                super.requestDisallowInterceptTouchEvent(disallowIntercept)
-            }
-        }.apply {
-            addView(nestedWebView)
-        }
+                    override fun requestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
+                        disallowInterceptTouchEventValue = disallowIntercept
+                        super.requestDisallowInterceptTouchEvent(disallowIntercept)
+                    }
+                }
+                .apply {
+                    addView(nestedWebView)
+                }
 
         // Simulate a `handled` response from the APZ GeckoEngineView API.
-        val inputResultMock = mock<InputResultDetail>().apply {
-            whenever(handledResult()).thenReturn(INPUT_RESULT_HANDLED)
-            whenever(scrollableDirections()).thenReturn(SCROLLABLE_FLAG_BOTTOM)
-            whenever(overscrollDirections()).thenReturn(OVERSCROLL_FLAG_VERTICAL or OVERSCROLL_FLAG_HORIZONTAL)
-        }
+        val inputResultMock =
+            mock<InputResultDetail>().apply {
+                whenever(handledResult()).thenReturn(INPUT_RESULT_HANDLED)
+                whenever(scrollableDirections()).thenReturn(SCROLLABLE_FLAG_BOTTOM)
+                whenever(overscrollDirections()).thenReturn(OVERSCROLL_FLAG_VERTICAL or OVERSCROLL_FLAG_HORIZONTAL)
+            }
 
         // Down action enables requestDisallowInterceptTouchEvent (and starts a gesture).
         viewParent.dispatchTouchEvent(mockMotionEvent(ACTION_DOWN, y = 2f))
@@ -536,31 +561,35 @@ class NestedGeckoViewTest {
         var viewParentInterceptCounter = 0
         val result: GeckoResult<InputResultDetail> = GeckoResult()
         var disallowInterceptTouchEventValue = false
-        val nestedWebView = object : NestedGeckoView(context) {
-            init {
-                // We need to make the view a non-zero size so that the touch events hit it.
-                left = 0
-                top = 0
-                right = 5
-                bottom = 5
+        val nestedWebView =
+            object : NestedGeckoView(context) {
+                init {
+                    // We need to make the view a non-zero size so that the touch events hit it.
+                    left = 0
+                    top = 0
+                    right = 5
+                    bottom = 5
+                }
+
+                override fun superOnTouchEventForDetailResult(event: MotionEvent): GeckoResult<InputResultDetail> =
+                    result
             }
 
-            override fun superOnTouchEventForDetailResult(event: MotionEvent): GeckoResult<InputResultDetail> = result
-        }
+        val viewParent =
+            object : FrameLayout(context) {
+                    override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
+                        viewParentInterceptCounter++
+                        return super.onInterceptTouchEvent(ev)
+                    }
 
-        val viewParent = object : FrameLayout(context) {
-            override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
-                viewParentInterceptCounter++
-                return super.onInterceptTouchEvent(ev)
-            }
-
-            override fun requestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
-                disallowInterceptTouchEventValue = disallowIntercept
-                super.requestDisallowInterceptTouchEvent(disallowIntercept)
-            }
-        }.apply {
-            addView(nestedWebView)
-        }
+                    override fun requestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
+                        disallowInterceptTouchEventValue = disallowIntercept
+                        super.requestDisallowInterceptTouchEvent(disallowIntercept)
+                    }
+                }
+                .apply {
+                    addView(nestedWebView)
+                }
 
         // Down action enables requestDisallowInterceptTouchEvent.
         viewParent.dispatchTouchEvent(mockMotionEvent(ACTION_DOWN, y = 0f))
@@ -577,9 +606,10 @@ class NestedGeckoViewTest {
         assertFalse(disallowInterceptTouchEventValue)
     }
 
-    private fun generateOverscrollInputResultMock(inputResult: Int) = mock<InputResultDetail>().apply {
-        whenever(handledResult()).thenReturn(inputResult)
-        whenever(scrollableDirections()).thenReturn(SCROLLABLE_FLAG_BOTTOM)
-        whenever(overscrollDirections()).thenReturn(OVERSCROLL_FLAG_VERTICAL or OVERSCROLL_FLAG_HORIZONTAL)
-    }
+    private fun generateOverscrollInputResultMock(inputResult: Int) =
+        mock<InputResultDetail>().apply {
+            whenever(handledResult()).thenReturn(inputResult)
+            whenever(scrollableDirections()).thenReturn(SCROLLABLE_FLAG_BOTTOM)
+            whenever(overscrollDirections()).thenReturn(OVERSCROLL_FLAG_VERTICAL or OVERSCROLL_FLAG_HORIZONTAL)
+        }
 }

@@ -12,9 +12,7 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 
-/**
- * Middleware preventing creating non-private tabs.
- */
+/** Middleware preventing creating non-private tabs. */
 class SanityCheckMiddleware : Middleware<BrowserState, BrowserAction> {
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,

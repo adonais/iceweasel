@@ -4,6 +4,8 @@
 
 package mozilla.components.concept.engine.prompt
 
+import java.util.Date
+import kotlin.test.assertNotNull
 import mozilla.components.concept.engine.prompt.PromptRequest.Alert
 import mozilla.components.concept.engine.prompt.PromptRequest.Authentication
 import mozilla.components.concept.engine.prompt.PromptRequest.Color
@@ -32,8 +34,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.util.Date
-import kotlin.test.assertNotNull
 
 class PromptRequestTest {
 
@@ -79,14 +79,15 @@ class PromptRequestTest {
 
     @Test
     fun `TextPrompt`() {
-        val textPrompt = TextPrompt(
-            "title",
-            "label",
-            "value",
-            true,
-            { _, _ -> },
-            {},
-        )
+        val textPrompt =
+            TextPrompt(
+                "title",
+                "label",
+                "value",
+                true,
+                { _, _ -> },
+                {},
+            )
 
         assertEquals(textPrompt.title, "title")
         assertEquals(textPrompt.inputLabel, "label")
@@ -99,17 +100,18 @@ class PromptRequestTest {
 
     @Test
     fun `TimeSelection`() {
-        val dateRequest = TimeSelection(
-            "title",
-            Date(),
-            Date(),
-            Date(),
-            "1",
-            Type.DATE,
-            { _ -> },
-            {},
-            {},
-        )
+        val dateRequest =
+            TimeSelection(
+                "title",
+                Date(),
+                Date(),
+                Date(),
+                "1",
+                Type.DATE,
+                { _ -> },
+                {},
+                {},
+            )
 
         assertEquals(dateRequest.title, "title")
         assertEquals(dateRequest.type, Type.DATE)
@@ -124,14 +126,15 @@ class PromptRequestTest {
 
     @Test
     fun `File`() {
-        val filePickerRequest = File(
-            emptyArray(),
-            true,
-            PromptRequest.File.FacingMode.NONE,
-            { _, _ -> },
-            { _, _ -> },
-            {},
-        )
+        val filePickerRequest =
+            File(
+                emptyArray(),
+                true,
+                PromptRequest.File.FacingMode.NONE,
+                { _, _ -> },
+                { _, _ -> },
+                {},
+            )
 
         assertTrue(filePickerRequest.mimeTypes.isEmpty())
         assertTrue(filePickerRequest.isMultipleFilesSelection)
@@ -147,10 +150,11 @@ class PromptRequestTest {
         var onSelectedWasCalled = false
         var onDismissWasCalled = false
 
-        val folderPickerRequest = Folder(
-            { _, _ -> onSelectedWasCalled = true },
-            { onDismissWasCalled = true },
-        )
+        val folderPickerRequest =
+            Folder(
+                { _, _ -> onSelectedWasCalled = true },
+                { onDismissWasCalled = true },
+            )
 
         folderPickerRequest.onSelected(mock(), mock())
         folderPickerRequest.onDismiss()
@@ -160,20 +164,21 @@ class PromptRequestTest {
 
     @Test
     fun `Authentication`() {
-        val promptRequest = Authentication(
-            "example.org",
-            "title",
-            "message",
-            "username",
-            "password",
-            PromptRequest.Authentication.Method.HOST,
-            PromptRequest.Authentication.Level.NONE,
-            false,
-            false,
-            false,
-            { _, _ -> },
-            {},
-        )
+        val promptRequest =
+            Authentication(
+                "example.org",
+                "title",
+                "message",
+                "username",
+                "password",
+                PromptRequest.Authentication.Method.HOST,
+                PromptRequest.Authentication.Level.NONE,
+                false,
+                false,
+                false,
+                { _, _ -> },
+                {},
+            )
 
         assertEquals(promptRequest.title, "title")
         assertEquals(promptRequest.message, "message")
@@ -216,18 +221,19 @@ class PromptRequestTest {
         val onConfirmNegativeButton: (Boolean) -> Unit = {}
         val onConfirmNeutralButton: (Boolean) -> Unit = {}
 
-        val confirmRequest = Confirm(
-            "title",
-            "message",
-            false,
-            "positive",
-            "negative",
-            "neutral",
-            onConfirmPositiveButton,
-            onConfirmNegativeButton,
-            onConfirmNeutralButton,
-            {},
-        )
+        val confirmRequest =
+            Confirm(
+                "title",
+                "message",
+                false,
+                "positive",
+                "negative",
+                "neutral",
+                onConfirmPositiveButton,
+                onConfirmNegativeButton,
+                onConfirmNeutralButton,
+                {},
+            )
 
         assertEquals(confirmRequest.title, "title")
         assertEquals(confirmRequest.message, "message")
@@ -262,8 +268,7 @@ class PromptRequestTest {
         val login = Login(guid = "test-guid", origin = "origin", username = "username", password = "password")
         val generatedPassword = "generatedPassword123#"
 
-        val loginSelectRequest =
-            SelectLoginPrompt(listOf(login), generatedPassword, onLoginConfirm, onLoginDismiss)
+        val loginSelectRequest = SelectLoginPrompt(listOf(login), generatedPassword, onLoginConfirm, onLoginDismiss)
 
         assertEquals(loginSelectRequest.logins, listOf(login))
         assertEquals(loginSelectRequest.generatedPassword, generatedPassword)
@@ -277,14 +282,15 @@ class PromptRequestTest {
         var onAcceptWasCalled = false
         var onDismissWasCalled = false
 
-        val repostRequest = Repost(
-            onConfirm = {
-                onAcceptWasCalled = true
-            },
-            onDismiss = {
-                onDismissWasCalled = true
-            },
-        )
+        val repostRequest =
+            Repost(
+                onConfirm = {
+                    onAcceptWasCalled = true
+                },
+                onDismiss = {
+                    onDismissWasCalled = true
+                },
+            )
 
         repostRequest.onConfirm()
         repostRequest.onDismiss()
@@ -298,15 +304,16 @@ class PromptRequestTest {
         var onAcceptWasCalled = false
         var onDismissWasCalled = false
 
-        val confirmRequest = FolderUploadPrompt(
-            folderName = "",
-            onConfirm = {
-                onAcceptWasCalled = true
-            },
-            onDismiss = {
-                onDismissWasCalled = true
-            },
-        )
+        val confirmRequest =
+            FolderUploadPrompt(
+                folderName = "",
+                onConfirm = {
+                    onAcceptWasCalled = true
+                },
+                onDismiss = {
+                    onDismissWasCalled = true
+                },
+            )
 
         confirmRequest.onConfirm()
         confirmRequest.onDismiss()
@@ -317,28 +324,30 @@ class PromptRequestTest {
 
     @Test
     fun `GIVEN a list of credit cards WHEN SelectCreditCard is confirmed or dismissed THEN their respective callback is invoked`() {
-        val creditCard = CreditCardEntry(
-            guid = "id",
-            name = "Banana Apple",
-            number = "4111111111111110",
-            expiryMonth = "5",
-            expiryYear = "2030",
-            cardType = "amex",
-        )
+        val creditCard =
+            CreditCardEntry(
+                guid = "id",
+                name = "Banana Apple",
+                number = "4111111111111110",
+                expiryMonth = "5",
+                expiryYear = "2030",
+                cardType = "amex",
+            )
         var onDismissCalled = false
         var onConfirmCalled = false
         var confirmedCreditCard: CreditCardEntry? = null
 
-        val selectCreditCardRequest = SelectCreditCard(
-            creditCards = listOf(creditCard),
-            onDismiss = {
-                onDismissCalled = true
-            },
-            onConfirm = {
-                confirmedCreditCard = it
-                onConfirmCalled = true
-            },
-        )
+        val selectCreditCardRequest =
+            SelectCreditCard(
+                creditCards = listOf(creditCard),
+                onDismiss = {
+                    onDismissCalled = true
+                },
+                onConfirm = {
+                    confirmedCreditCard = it
+                    onConfirmCalled = true
+                },
+            )
 
         assertEquals(selectCreditCardRequest.creditCards, listOf(creditCard))
 
@@ -360,33 +369,35 @@ class PromptRequestTest {
 
     @Test
     fun `WHEN calling confirm or dismiss on the SelectAddress prompt request THEN the respective callback is invoked`() {
-        val address = Address(
-            guid = "1",
-            name = "Firefox",
-            organization = "-",
-            streetAddress = "street",
-            addressLevel3 = "address3",
-            addressLevel2 = "address2",
-            addressLevel1 = "address1",
-            postalCode = "1",
-            country = "Country",
-            tel = "1",
-            email = "@",
-        )
+        val address =
+            Address(
+                guid = "1",
+                name = "Firefox",
+                organization = "-",
+                streetAddress = "street",
+                addressLevel3 = "address3",
+                addressLevel2 = "address2",
+                addressLevel1 = "address1",
+                postalCode = "1",
+                country = "Country",
+                tel = "1",
+                email = "@",
+            )
         var onDismissCalled = false
         var onConfirmCalled = false
         var confirmedAddress: Address? = null
 
-        val selectAddresPromptRequest = PromptRequest.SelectAddress(
-            addresses = listOf(address),
-            onDismiss = {
-                onDismissCalled = true
-            },
-            onConfirm = {
-                confirmedAddress = it
-                onConfirmCalled = true
-            },
-        )
+        val selectAddresPromptRequest =
+            PromptRequest.SelectAddress(
+                addresses = listOf(address),
+                onDismiss = {
+                    onDismissCalled = true
+                },
+                onConfirm = {
+                    confirmedAddress = it
+                    onConfirmCalled = true
+                },
+            )
 
         assertEquals(selectAddresPromptRequest.addresses, listOf(address))
 

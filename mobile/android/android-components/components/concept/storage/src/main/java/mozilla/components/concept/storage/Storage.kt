@@ -4,17 +4,11 @@
 
 package mozilla.components.concept.storage
 
-/**
- * An interface which provides generic operations for storing browser data like history and bookmarks.
- */
+/** An interface which provides generic operations for storing browser data like history and bookmarks. */
 interface Storage : Cancellable {
-    /**
-     * Make sure underlying database connections are established.
-     */
+    /** Make sure underlying database connections are established. */
     suspend fun warmUp()
 
-    /**
-     * Runs internal database maintenance tasks
-     */
+    /** Runs internal database maintenance tasks */
     suspend fun runMaintenance(dbSizeLimit: UInt)
 }

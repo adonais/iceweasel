@@ -10,9 +10,7 @@ import android.net.Uri
 // (manifest/manifest.json).
 private val commonDomain = listOf("wikipedia.org")
 
-/**
- * Returns the host's common domain if found, else null is returned
- */
+/** Returns the host's common domain if found, else null is returned */
 internal val Uri.hostWithCommonDomain: String?
     get() {
         val host = host ?: return null

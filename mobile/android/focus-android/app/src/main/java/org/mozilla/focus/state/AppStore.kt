@@ -6,9 +6,5 @@ package org.mozilla.focus.state
 
 import mozilla.components.lib.state.Store
 
-/**
- * A [Store] keeping track of the global app state.
- */
-class AppStore(
-    initialState: AppState,
-) : Store<AppState, AppAction>(initialState, AppReducer)
+/** A [Store] keeping track of the global app state. */
+class AppStore(initialState: AppState) : Store<AppState, AppAction>(initialState, AppReducer)

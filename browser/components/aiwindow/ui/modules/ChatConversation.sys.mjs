@@ -391,7 +391,7 @@ export class ChatConversation extends Conversation {
     }
     if (plainText || tokens) {
       this.emit("chat-conversation:message-update", currentMessage);
-      lazy.ChatStore.updateConversation(this);
+      lazy.ChatStore.persistStreamingMessage(this, currentMessage);
     }
   }
 
@@ -424,7 +424,15 @@ export class ChatConversation extends Conversation {
       currentMessage.citations = this.getCitationsSnapshot();
     }
 
-    const result = await super.receiveResponse(stream, currentMessage);
+    let result;
+    try {
+      result = await super.receiveResponse(stream, currentMessage);
+    } catch (e) {
+      // An aborted or failed stream skips the persist below, so land what
+      // streamed before it stopped rather than leaving it only in memory.
+      await lazy.ChatStore.endStreamingWrites(this.id);
+      throw e;
+    }
 
     if (result.currentMessage?.content?.body) {
       // Expand URL tokens and remove any hallucinated ones.
@@ -447,6 +455,10 @@ export class ChatConversation extends Conversation {
       this.emit("chat-conversation:message-update", currentMessage);
     }
 
+    // Drop the pending chunk write rather than flushing it: the full write
+    // below covers the same message, plus the token remainder the stream loop
+    // appends after the last chunk.
+    await lazy.ChatStore.endStreamingWrites(this.id, false);
     await lazy.ChatStore.updateConversation(this);
 
     // Only finalize the message when the turn is actually done. When the model
@@ -904,7 +916,8 @@ export class ChatConversation extends Conversation {
   ) {
     const memoriesContext = await constructMemories(
       prompt,
-      this.#getPreviousRelevantMemories(messageCount)
+      this.#getPreviousRelevantMemories(messageCount),
+      this.engine?.model
     );
     if (memoriesContext == null) {
       return;

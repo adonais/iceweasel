@@ -35,19 +35,20 @@ class TrackingProtectionExceptionsInteractorTest {
     private val engine: Engine = mockk(relaxed = true)
 
     private val results: List<TrackingProtectionException> = emptyList()
-    private val store = BrowserStore(
-        BrowserState(
-            tabs = listOf(
-                // Using copy to add TP state because `createTab` doesn't support it right now.
-                createTab("https://mozilla.org", false, "tab1")
-                    .copy(trackingProtection = TrackingProtectionState(ignoredOnTrackingProtection = true)),
-                createTab("https://firefox.com", false, "tab2")
-                    .copy(trackingProtection = TrackingProtectionState(ignoredOnTrackingProtection = true)),
-            ),
-        ),
-    )
-    private val capture =
-        CaptureActionsMiddleware<ExceptionsFragmentState, ExceptionsFragmentAction>()
+    private val store =
+        BrowserStore(
+            BrowserState(
+                tabs =
+                    listOf(
+                        // Using copy to add TP state because `createTab` doesn't support it right now.
+                        createTab("https://mozilla.org", false, "tab1")
+                            .copy(trackingProtection = TrackingProtectionState(ignoredOnTrackingProtection = true)),
+                        createTab("https://firefox.com", false, "tab2")
+                            .copy(trackingProtection = TrackingProtectionState(ignoredOnTrackingProtection = true)),
+                    )
+            )
+        )
+    private val capture = CaptureActionsMiddleware<ExceptionsFragmentState, ExceptionsFragmentAction>()
     private val exceptionsStore = ExceptionsFragmentStore(middlewares = listOf(capture))
     private val trackingProtectionUseCases = TrackingProtectionUseCases(store, engine)
     private var openedSupportUrl: String? = null
@@ -64,8 +65,11 @@ class TrackingProtectionExceptionsInteractorTest {
             }
 
             override fun add(session: EngineSession, persistInPrivateMode: Boolean) = Unit
+
             override fun contains(session: EngineSession, onResult: (Boolean) -> Unit) = Unit
+
             override fun remove(session: EngineSession) = Unit
+
             override fun remove(exception: TrackingProtectionException) = Unit
         }
     private val exceptionsItem: (String) -> TrackingProtectionException = {
@@ -78,13 +82,14 @@ class TrackingProtectionExceptionsInteractorTest {
 
     @Before
     fun setup() {
-        interactor = DefaultTrackingProtectionExceptionsInteractor(
-            exceptionsStore = exceptionsStore,
-            trackingProtectionUseCases = trackingProtectionUseCases,
-            openLearnMorePage = { url ->
-                openedSupportUrl = url
-            },
-        )
+        interactor =
+            DefaultTrackingProtectionExceptionsInteractor(
+                exceptionsStore = exceptionsStore,
+                trackingProtectionUseCases = trackingProtectionUseCases,
+                openLearnMorePage = { url ->
+                    openedSupportUrl = url
+                },
+            )
 
         every { engine.trackingProtectionExceptionStore } returns trackingStorage
 
@@ -97,9 +102,7 @@ class TrackingProtectionExceptionsInteractorTest {
     fun onLearnMore() {
         interactor.onLearnMore()
 
-        val supportUrl = SupportUtils.getGenericSumoURLForTopic(
-            SupportUtils.SumoTopic.TRACKING_PROTECTION,
-        )
+        val supportUrl = SupportUtils.getGenericSumoURLForTopic(SupportUtils.SumoTopic.TRACKING_PROTECTION)
         assertEquals(supportUrl, openedSupportUrl)
     }
 

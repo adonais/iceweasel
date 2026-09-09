@@ -35,15 +35,14 @@ class TranslationsAIControllableFeatureRegistrar(
                 .distinctUntilChangedBy { it.translationEngine.isEngineSupported }
                 .onEach { state ->
                     if (state.translationEngine.isEngineSupported != false) {
-                        val isFeatureRegistered = aiRegistry
-                            .getFeatures()
-                            .any { it.id == TranslationsAIControllableFeature.id }
+                        val isFeatureRegistered =
+                            aiRegistry.getFeatures().any { it.id == TranslationsAIControllableFeature.id }
                         if (!isFeatureRegistered) {
                             aiRegistry.register(
                                 TranslationsAIControllableFeature(
                                     settings = translationsEnabledSettings,
                                     browserStore = browserStore,
-                                ),
+                                )
                             )
                         }
                     }

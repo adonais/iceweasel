@@ -16,30 +16,34 @@ import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListSupportedFeature
  * @param features Supported [SyncedTabsListSupportedFeature]s.
  */
 fun List<SyncedDeviceTabs>.toComposeList(
-    features: Set<SyncedTabsListSupportedFeature> = emptySet(),
+    features: Set<SyncedTabsListSupportedFeature> = emptySet()
 ): List<SyncedTabsListItem> =
-    asSequence().flatMap { (device, tabs) ->
-        val deviceTabs = if (tabs.isEmpty()) {
-            emptyList()
-        } else {
-            tabs.map {
-                val url = it.active().url
-                val titleText = it.active().title.ifEmpty { url.trimmed() }
-                SyncedTabsListItem.Tab(
-                    displayTitle = titleText,
-                    displayURL = url,
-                    action = if (
-                        features.contains(SyncedTabsListSupportedFeature.CLOSE_TABS) &&
-                        device.capabilities.contains(DeviceCapability.CLOSE_TABS)
-                    ) {
-                        SyncedTabsListItem.Tab.Action.Close(deviceId = device.id)
-                    } else {
-                        SyncedTabsListItem.Tab.Action.None
-                    },
-                    tab = it,
-                )
-            }
-        }
+    asSequence()
+        .flatMap { (device, tabs) ->
+            val deviceTabs =
+                if (tabs.isEmpty()) {
+                    emptyList()
+                } else {
+                    tabs.map {
+                        val url = it.active().url
+                        val titleText = it.active().title.ifEmpty { url.trimmed() }
+                        SyncedTabsListItem.Tab(
+                            displayTitle = titleText,
+                            displayURL = url,
+                            action =
+                                if (
+                                    features.contains(SyncedTabsListSupportedFeature.CLOSE_TABS) &&
+                                        device.capabilities.contains(DeviceCapability.CLOSE_TABS)
+                                ) {
+                                    SyncedTabsListItem.Tab.Action.Close(deviceId = device.id)
+                                } else {
+                                    SyncedTabsListItem.Tab.Action.None
+                                },
+                            tab = it,
+                        )
+                    }
+                }
 
-        sequenceOf(SyncedTabsListItem.DeviceSection(device.displayName, deviceTabs))
-    }.toList()
+            sequenceOf(SyncedTabsListItem.DeviceSection(device.displayName, deviceTabs))
+        }
+        .toList()

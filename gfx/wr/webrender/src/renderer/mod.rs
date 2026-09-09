@@ -253,6 +253,7 @@ impl BatchKind {
             BatchKind::Quad(PatternKind::Gradient) => GPU_TAG_GRADIENT,
             BatchKind::Quad(PatternKind::Repeat) => GPU_TAG_REPEAT,
             BatchKind::Quad(PatternKind::BoxShadow) => GPU_TAG_PRIMITIVE,
+            BatchKind::Quad(PatternKind::BoxShadowSuperellipse) => GPU_TAG_PRIMITIVE,
             BatchKind::Quad(PatternKind::Yuv) => GPU_TAG_BRUSH_YUV_IMAGE,
             BatchKind::Quad(PatternKind::YuvTextureExternal) => GPU_TAG_BRUSH_YUV_IMAGE,
             BatchKind::Quad(PatternKind::YuvTextureExternalBT709) => GPU_TAG_BRUSH_YUV_IMAGE,
@@ -2452,6 +2453,50 @@ impl Renderer {
                 self.device.disable_scissor();
             }
 
+            if !masks.mask_instances_superellipse.is_empty() {
+                self.shaders.borrow_mut().ps_mask_superellipse().bind(
+                    &mut self.device,
+                    projection,
+                    None,
+                    &mut self.renderer_errors,
+                    &mut self.profile,
+                    &mut self.command_log,
+                );
+
+                self.draw_instanced_batch(
+                    &masks.mask_instances_superellipse,
+                    VertexArrayKind::Mask,
+                    &BatchTextures::empty(),
+                    stats,
+                );
+            }
+
+            if !masks.mask_instances_superellipse_with_scissor.is_empty() {
+                self.shaders.borrow_mut().ps_mask_superellipse().bind(
+                    &mut self.device,
+                    projection,
+                    None,
+                    &mut self.renderer_errors,
+                    &mut self.profile,
+                    &mut self.command_log,
+                );
+
+                self.device.enable_scissor();
+
+                for (scissor_rect, instances) in &masks.mask_instances_superellipse_with_scissor {
+                    self.device.set_scissor_rect(draw_target.to_framebuffer_rect(*scissor_rect));
+
+                    self.draw_instanced_batch(
+                        instances,
+                        VertexArrayKind::Mask,
+                        &BatchTextures::empty(),
+                        stats,
+                    );
+                }
+
+                self.device.disable_scissor();
+            }
+
             if !masks.image_mask_instances.is_empty() {
                 self.shaders.borrow_mut().ps_quad_textured().bind(
                     &mut self.device,
@@ -3351,7 +3396,9 @@ impl Renderer {
 
         // Draw any borders for this target.
         if !target.border_segments_solid.is_empty() ||
-           !target.border_segments_complex.is_empty()
+           !target.border_segments_complex.is_empty() ||
+           !target.border_segments_solid_superellipse.is_empty() ||
+           !target.border_segments_complex_superellipse.is_empty()
         {
             let _timer = self.gpu_profiler.start_timer(GPU_TAG_CACHE_BORDER);
 
@@ -3388,6 +3435,42 @@ impl Renderer {
 
                 self.draw_instanced_batch(
                     &target.border_segments_complex,
+                    VertexArrayKind::Border,
+                    &BatchTextures::empty(),
+                    stats,
+                );
+            }
+
+            if !target.border_segments_solid_superellipse.is_empty() {
+                self.shaders.borrow_mut().cs_border_solid_superellipse().bind(
+                    &mut self.device,
+                    &projection,
+                    None,
+                    &mut self.renderer_errors,
+                    &mut self.profile,
+                    &mut self.command_log,
+                );
+
+                self.draw_instanced_batch(
+                    &target.border_segments_solid_superellipse,
+                    VertexArrayKind::Border,
+                    &BatchTextures::empty(),
+                    stats,
+                );
+            }
+
+            if !target.border_segments_complex_superellipse.is_empty() {
+                self.shaders.borrow_mut().cs_border_segment_superellipse().bind(
+                    &mut self.device,
+                    &projection,
+                    None,
+                    &mut self.renderer_errors,
+                    &mut self.profile,
+                    &mut self.command_log,
+                );
+
+                self.draw_instanced_batch(
+                    &target.border_segments_complex_superellipse,
                     VertexArrayKind::Border,
                     &BatchTextures::empty(),
                     stats,

@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.settings.deletebrowsingdata
 
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
@@ -23,42 +24,27 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.PermissionStorage
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.utils.Settings
-import kotlin.coroutines.CoroutineContext
 
-/**
- * A controller responsible for handling the deletion of different categories of browsing data.
- */
+/** A controller responsible for handling the deletion of different categories of browsing data. */
 interface DeleteBrowsingDataController {
-    /**
-     * Deletes all open tabs.
-     */
+    /** Deletes all open tabs. */
     suspend fun deleteTabs()
 
-    /**
-     * Deletes browsing history, search history, and recently closed tabs.
-     */
+    /** Deletes browsing history, search history, and recently closed tabs. */
     suspend fun deleteBrowsingHistory()
 
-    /**
-     * Deletes cookies, active logins, and site data (e.g., localStorage, sessionStorage).
-     */
+    /** Deletes cookies, active logins, and site data (e.g., localStorage, sessionStorage). */
     suspend fun deleteCookiesAndSiteData()
 
-    /**
-     * Deletes cached files, including image caches, startup caches, and cached
-     * translation models.
-     */
+    /** Deletes cached files, including image caches, startup caches, and cached translation models. */
     suspend fun deleteCachedFiles()
 
-    /**
-     * Deletes all site permissions.
-     */
+    /** Deletes all site permissions. */
     suspend fun deleteSitePermissions()
 
     /**
-     * Deletes all downloaded files from the downloads list.
-     * Note: This only removes the entries from the app's download list,
-     * it does not delete the actual files from the device's storage.
+     * Deletes all downloaded files from the downloads list. Note: This only removes the entries from the app's download
+     * list, it does not delete the actual files from the device's storage.
      */
     suspend fun deleteDownloads()
 
@@ -72,11 +58,11 @@ interface DeleteBrowsingDataController {
     /**
      * Deletes browsing data selected in the "Delete browsing data on quit" settings.
      *
-     * This function is designed as a fire-and-forget operation from the caller's perspective.
-     * If no data types are selected for deletion, the callback is invoked immediately.
+     * This function is designed as a fire-and-forget operation from the caller's perspective. If no data types are
+     * selected for deletion, the callback is invoked immediately.
      *
-     * @param onDeletionComplete A callback function to be executed after all selected
-     * data has been deleted. This is typically used to trigger the final application shutdown.
+     * @param onDeletionComplete A callback function to be executed after all selected data has been deleted. This is
+     *   typically used to trigger the final application shutdown.
      */
     suspend fun clearBrowsingDataOnQuit(onDeletionComplete: () -> Unit)
 }
@@ -84,8 +70,8 @@ interface DeleteBrowsingDataController {
 /**
  * The default implementation of [DeleteBrowsingDataController].
  *
- * This class coordinates with various components like the browser engine, use cases,
- * and storage layers to perform the deletion of specific browsing data categories.
+ * This class coordinates with various components like the browser engine, use cases, and storage layers to perform the
+ * deletion of specific browsing data categories.
  *
  * @param deleteDataUseCases A collection of use cases for deleting data like tabs and downloads.
  * @param dataStorage A container for low-level data persistence layers like history and permissions.
@@ -117,8 +103,7 @@ class DefaultDeleteBrowsingDataController(
     /**
      * A container for central state stores.
      *
-     * This data class groups together app-level and browser-level state stores
-     * required by the controller.
+     * This data class groups together app-level and browser-level state stores required by the controller.
      *
      * @property appStore The central state store for the application.
      * @property browserStore The central state store for the browser.
@@ -162,7 +147,7 @@ class DefaultDeleteBrowsingDataController(
                 Engine.BrowsingData.select(
                     Engine.BrowsingData.COOKIES,
                     Engine.BrowsingData.AUTH_SESSIONS,
-                ),
+                )
             )
             engine.clearData(Engine.BrowsingData.select(Engine.BrowsingData.DOM_STORAGES))
         }
@@ -171,24 +156,21 @@ class DefaultDeleteBrowsingDataController(
     override suspend fun deleteCachedFiles() {
         withContext(coroutineContext) {
             engine.manageTranslationsLanguageModel(
-                options = ModelManagementOptions(
-                    operation = ModelOperation.DELETE,
-                    operationLevel = OperationLevel.CACHE,
-                ),
-                onSuccess = { },
-                onError = { },
+                options =
+                    ModelManagementOptions(
+                        operation = ModelOperation.DELETE,
+                        operationLevel = OperationLevel.CACHE,
+                    ),
+                onSuccess = {},
+                onError = {},
             )
-            engine.clearData(
-                Engine.BrowsingData.select(Engine.BrowsingData.ALL_CACHES),
-            )
+            engine.clearData(Engine.BrowsingData.select(Engine.BrowsingData.ALL_CACHES))
         }
     }
 
     override suspend fun deleteSitePermissions() {
         withContext(coroutineContext) {
-            engine.clearData(
-                Engine.BrowsingData.select(Engine.BrowsingData.ALL_SITE_SETTINGS),
-            )
+            engine.clearData(Engine.BrowsingData.select(Engine.BrowsingData.ALL_SITE_SETTINGS))
         }
         dataStorage.permissions.deleteAllSitePermissions()
     }
@@ -205,17 +187,16 @@ class DefaultDeleteBrowsingDataController(
             DeleteBrowsingDataOnQuitType.HISTORY -> deleteBrowsingHistory()
             DeleteBrowsingDataOnQuitType.COOKIES -> deleteCookiesAndSiteData()
             DeleteBrowsingDataOnQuitType.CACHE -> deleteCachedFiles()
-            DeleteBrowsingDataOnQuitType.PERMISSIONS -> withContext(IO) {
-                deleteSitePermissions()
-            }
+            DeleteBrowsingDataOnQuitType.PERMISSIONS ->
+                withContext(IO) {
+                    deleteSitePermissions()
+                }
 
             DeleteBrowsingDataOnQuitType.DOWNLOADS -> deleteDownloads()
         }
     }
 
-    override suspend fun clearBrowsingDataOnQuit(
-        onDeletionComplete: () -> Unit,
-    ) {
+    override suspend fun clearBrowsingDataOnQuit(onDeletionComplete: () -> Unit) {
         val typesToDelete = determineDataTypesToDelete(settings)
 
         if (typesToDelete.isEmpty()) {
@@ -241,8 +222,8 @@ class DefaultDeleteBrowsingDataController(
     /**
      * Determines which data types to delete based on the user's settings.
      *
-     * This function iterates through all possible `DeleteBrowsingDataOnQuitType` values
-     * and checks the corresponding setting to see if it has been enabled for deletion on quit.
+     * This function iterates through all possible `DeleteBrowsingDataOnQuitType` values and checks the corresponding
+     * setting to see if it has been enabled for deletion on quit.
      *
      * @param settings The [Settings] instance to query for the "delete on quit" preferences.
      * @return A list of [DeleteBrowsingDataOnQuitType] enums that are configured to be deleted.

@@ -28,13 +28,13 @@ private val logger = Logger("StartupTypeTelemetry")
 
 /**
  * Records telemetry for the number of start ups. See the
- * [Fenix perf glossary](https://wiki.mozilla.org/index.php?title=Performance/Fenix/Glossary)
- * for specific definitions.
+ * [Fenix perf glossary](https://wiki.mozilla.org/index.php?title=Performance/Fenix/Glossary) for specific definitions.
  *
- * This should be a member variable of [MainActivity] because its data is tied to the lifecycle of an
- * Activity. Call [attachOnMainActivityOnCreate] for this class to work correctly.
+ * This should be a member variable of [MainActivity] because its data is tied to the lifecycle of an Activity. Call
+ * [attachOnMainActivityOnCreate] for this class to work correctly.
  *
  * N.B.: this class is lightly hardcoded to MainActivity.
+ *
  * @param startupStateProvider Provides the startup state for the activity.
  * @param startupPathProvider Provides the startup path for the activity.
  */
@@ -61,22 +61,23 @@ class StartupTypeTelemetry(
         val startupState = startupStateProvider.getStartupStateForStartedActivity(activityClass)
         val startupPath = startupPathProvider.startupPathForActivity
         // We don't use the enum name directly to avoid unintentional changes when refactoring.
-        val stateLabel = when (startupState) {
-            StartupState.COLD -> "cold"
-            StartupState.WARM -> "warm"
-            StartupState.HOT -> "hot"
-            StartupState.UNKNOWN -> "unknown"
-        }
+        val stateLabel =
+            when (startupState) {
+                StartupState.COLD -> "cold"
+                StartupState.WARM -> "warm"
+                StartupState.HOT -> "hot"
+                StartupState.UNKNOWN -> "unknown"
+            }
 
-        val pathLabel = when (startupPath) {
-            StartupPath.MAIN -> "main"
-            StartupPath.VIEW -> "view"
+        val pathLabel =
+            when (startupPath) {
+                StartupPath.MAIN -> "main"
+                StartupPath.VIEW -> "view"
 
-            // To avoid combinatorial explosion in label names, we bucket NOT_SET into UNKNOWN.
-            StartupPath.NOT_SET,
-            StartupPath.UNKNOWN,
-            -> "unknown"
-        }
+                // To avoid combinatorial explosion in label names, we bucket NOT_SET into UNKNOWN.
+                StartupPath.NOT_SET,
+                StartupPath.UNKNOWN -> "unknown"
+            }
 
         return "${stateLabel}_$pathLabel"
     }
@@ -86,15 +87,14 @@ class StartupTypeTelemetry(
      *
      * @return A new instance of `StartupTypeLifecycleObserver`.
      */
-    @VisibleForTesting(otherwise = NONE)
-    fun getTestCallbacks() = StartupTypeLifecycleObserver()
+    @VisibleForTesting(otherwise = NONE) fun getTestCallbacks() = StartupTypeLifecycleObserver()
 
     /**
      * Records startup telemetry based on the available [startupStateProvider] and [startupPathProvider].
      *
      * @param owner The [LifecycleOwner] whose [LifecycleCoroutineScope] is to be used for recording telemetry.
-     * @param dispatcher The dispatcher used to control the thread on which telemetry will be recorded.
-     * Defaults to [Dispatchers.IO].
+     * @param dispatcher The dispatcher used to control the thread on which telemetry will be recorded. Defaults to
+     *   [Dispatchers.IO].
      */
     @VisibleForTesting(otherwise = PRIVATE)
     fun recordStartupTelemetry(
@@ -120,9 +120,7 @@ class StartupTypeTelemetry(
         return owner.lifecycleScope
     }
 
-    /**
-     * Lifecycle observer that records startup telemetry when the activity starts and resumes.
-     */
+    /** Lifecycle observer that records startup telemetry when the activity starts and resumes. */
     @VisibleForTesting(otherwise = PRIVATE)
     inner class StartupTypeLifecycleObserver : DefaultLifecycleObserver {
         private var shouldRecordStart = false

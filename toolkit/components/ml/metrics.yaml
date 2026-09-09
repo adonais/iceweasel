@@ -367,6 +367,11 @@ firefox.ai.runtime:
       backend:
         type: string
         description: The backend that is being used, e.g. onnx, onnx-native, llama.cpp
+      backend_source_revision:
+        type: string
+        description: >
+          Version identifier of the backend library. Populated per-backend when
+          the running library exposes a version; null otherwise.
       token_count:
         description: The number of tokens generated for text generation tasks.
         type: quantity
@@ -394,6 +399,7 @@ firefox.ai.runtime:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1997016
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2029250
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2016214
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2047026
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1992779
       - https://phabricator.services.mozilla.com/D270909

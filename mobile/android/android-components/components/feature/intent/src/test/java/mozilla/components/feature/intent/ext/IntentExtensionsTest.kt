@@ -66,7 +66,8 @@ class IntentExtensionsTest {
     @Test
     fun `WHEN unparcel fails with RuntimeException and ClassNotFoundException cause THEN extras are cleared`() {
         val intent: Intent = mock()
-        `when`(intent.getBooleanExtra("TriggerUnparcel", false)).thenThrow(RuntimeException("test", ClassNotFoundException("test")))
+        `when`(intent.getBooleanExtra("TriggerUnparcel", false))
+            .thenThrow(RuntimeException("test", ClassNotFoundException("test")))
         `when`(intent.replaceExtras(null)).thenReturn(intent)
 
         intent.sanitize()

@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <utility>
 
 #include "api/field_trials.h"
@@ -30,6 +31,8 @@ namespace webrtc {
 namespace {
 
 using ::testing::_;
+using ::testing::ElementsAre;
+using ::testing::Eq;
 using ::testing::Field;
 using ::testing::FieldsAre;
 using ::testing::Return;
@@ -42,6 +45,10 @@ class MockVideoJitterTiming : public VideoJitterTimingInterface {
               LocalTime,
               (uint32_t rtp_timestamp),
               (const, override));
+  MOCK_METHOD(std::optional<TimeDelta>,
+              OnContinuousTemporalUnits,
+              (std::span<const uint32_t> rtp_timestamps, Timestamp now),
+              (override));
   MOCK_METHOD(std::optional<TimeDelta>,
               OnDecodableTemporalUnit,
               (const TemporalUnitInfo& info),
@@ -354,9 +361,10 @@ TEST(VCMTimingTest, OnDecodableTemporalUnitUpdatesMinimumDelay) {
   SimulatedClock clock(Timestamp::Millis(0));
   VCMTiming timing(&clock, field_trials, kRenderDelay);
 
-  timing.OnDecodableTemporalUnit(/*rtp_timestamp=*/0, DataSize::Bytes(789),
-                                 clock.CurrentTime(),
-                                 /*was_retransmitted=*/false);
+  timing.OnDecodableTemporalUnit({.rtp_timestamp = 0,
+                                  .size = DataSize::Bytes(789),
+                                  .time = clock.CurrentTime(),
+                                  .was_retransmitted = false});
 
   EXPECT_GT(timing.GetTimings().minimum_delay, TimeDelta::Zero());
 }
@@ -367,9 +375,10 @@ TEST(VCMTimingTest,
   SimulatedClock clock(Timestamp::Millis(0));
   VCMTiming timing(&clock, field_trials, kRenderDelay);
 
-  timing.OnDecodableTemporalUnit(/*rtp_timestamp=*/0, DataSize::Bytes(789),
-                                 clock.CurrentTime(),
-                                 /*was_retransmitted=*/true);
+  timing.OnDecodableTemporalUnit({.rtp_timestamp = 0,
+                                  .size = DataSize::Bytes(789),
+                                  .time = clock.CurrentTime(),
+                                  .was_retransmitted = true});
 
   EXPECT_EQ(timing.GetTimings().minimum_delay, TimeDelta::Zero());
 }
@@ -380,27 +389,44 @@ TEST(VCMTimingTest, UsesDefaultVideoJitterTimingWhenNotProvided) {
   VCMTiming timing(&clock, field_trials, kRenderDelay,
                    /*video_jitter_timing=*/nullptr);
 
-  timing.OnDecodableTemporalUnit(/*rtp_timestamp=*/0, DataSize::Bytes(789),
-                                 clock.CurrentTime(),
-                                 /*was_retransmitted=*/false);
+  timing.OnDecodableTemporalUnit({.rtp_timestamp = 0,
+                                  .size = DataSize::Bytes(789),
+                                  .time = clock.CurrentTime(),
+                                  .was_retransmitted = false});
 
   EXPECT_GT(timing.GetTimings().minimum_delay, TimeDelta::Zero());
 }
 
-TEST(VCMTimingTest, UsesInjectedVideoJitterTiming) {
+TEST(VCMTimingTest, OnDecodableTemporalUnitSetsMinimumDelay) {
   FieldTrials field_trials = CreateTestFieldTrials();
   SimulatedClock clock(Timestamp::Millis(0));
   auto mock_jitter_timing = std::make_unique<MockVideoJitterTiming>();
-  MockVideoJitterTiming* mock_ptr = mock_jitter_timing.get();
+  EXPECT_CALL(*mock_jitter_timing, OnDecodableTemporalUnit(_))
+      .WillOnce(Return(TimeDelta::Millis(123)));
 
   VCMTiming timing(&clock, field_trials, kRenderDelay,
                    std::move(mock_jitter_timing));
+  timing.OnDecodableTemporalUnit({.rtp_timestamp = 0,
+                                  .size = DataSize::Bytes(789),
+                                  .time = clock.CurrentTime(),
+                                  .was_retransmitted = false});
 
-  EXPECT_CALL(*mock_ptr, OnDecodableTemporalUnit(_))
+  EXPECT_EQ(timing.GetTimings().minimum_delay, TimeDelta::Millis(123));
+}
+
+TEST(VCMTimingTest, OnContinuousTemporalUnitsSetsMinimumDelay) {
+  FieldTrials field_trials = CreateTestFieldTrials();
+  SimulatedClock clock(Timestamp::Millis(0));
+  auto mock_jitter_timing = std::make_unique<MockVideoJitterTiming>();
+  EXPECT_CALL(
+      *mock_jitter_timing,
+      OnContinuousTemporalUnits(ElementsAre(234u), Eq(clock.CurrentTime())))
       .WillOnce(Return(TimeDelta::Millis(123)));
-  timing.OnDecodableTemporalUnit(/*rtp_timestamp=*/0, DataSize::Bytes(789),
-                                 clock.CurrentTime(),
-                                 /*was_retransmitted=*/false);
+
+  VCMTiming timing(&clock, field_trials, kRenderDelay,
+                   std::move(mock_jitter_timing));
+  timing.OnContinuousTemporalUnits({{234}}, clock.CurrentTime());
+
   EXPECT_EQ(timing.GetTimings().minimum_delay, TimeDelta::Millis(123));
 }
 
@@ -589,35 +615,36 @@ TEST(VCMTimingTest, MinPlayoutDelayUpdatesTargetDelay) {
 TEST(VCMTimingTest, DelegatesToVideoJitterTiming) {
   FieldTrials field_trials = CreateTestFieldTrials();
   SimulatedClock clock(Timestamp::Millis(11));
-  auto mock_jitter_timing = std::make_unique<MockVideoJitterTiming>();
-  MockVideoJitterTiming* mock_ptr = mock_jitter_timing.get();
+  auto video_jitter_timing = std::make_unique<MockVideoJitterTiming>();
 
-  VCMTiming timing(&clock, field_trials, kRenderDelay,
-                   std::move(mock_jitter_timing));
-
-  EXPECT_CALL(*mock_ptr, OnNetworkUpdate(FieldsAre(TimeDelta::Millis(101))));
-  timing.UpdateRtt(TimeDelta::Millis(101));
-
-  EXPECT_CALL(*mock_ptr, Reset());
-  timing.Reset();
-
-  EXPECT_CALL(*mock_ptr,
+  EXPECT_CALL(*video_jitter_timing,
+              OnNetworkUpdate(FieldsAre(TimeDelta::Millis(101))));
+  EXPECT_CALL(*video_jitter_timing, Reset());
+  EXPECT_CALL(
+      *video_jitter_timing,
+      OnContinuousTemporalUnits(ElementsAre(44, 55), Eq(clock.CurrentTime())));
+  EXPECT_CALL(*video_jitter_timing,
               OnCompleteFrame(Field(
                   &VideoJitterTimingInterface::FrameInfo::rtp_timestamp, 123)));
+
+  VCMTiming timing(&clock, field_trials, kRenderDelay,
+                   std::move(video_jitter_timing));
+  timing.OnNetworkUpdate({.rtt = TimeDelta::Millis(101)});
+  timing.Reset();
+  timing.OnContinuousTemporalUnits({{44, 55}}, clock.CurrentTime());
   timing.OnCompleteFrame({.rtp_timestamp = 123});
 }
 
 TEST(VCMTimingTest, RenderTimeReturnsEstimatedLocalTimeForRtpTimestamp) {
   FieldTrials field_trials = CreateTestFieldTrials();
   SimulatedClock clock(Timestamp::Millis(0));
-  auto mock_jitter_timing = std::make_unique<MockVideoJitterTiming>();
-  MockVideoJitterTiming* mock_ptr = mock_jitter_timing.get();
+  auto video_jitter_timing = std::make_unique<MockVideoJitterTiming>();
+
+  EXPECT_CALL(*video_jitter_timing, LocalTime(22))
+      .WillOnce(::testing::Return(Timestamp::Millis(1234)));
 
   VCMTiming timing(&clock, field_trials, kRenderDelay,
-                   std::move(mock_jitter_timing));
-
-  EXPECT_CALL(*mock_ptr, LocalTime(22))
-      .WillOnce(::testing::Return(Timestamp::Millis(1234)));
+                   std::move(video_jitter_timing));
   EXPECT_EQ(timing.RenderTime(/*rtp_timestamp=*/22, clock.CurrentTime()),
             Timestamp::Millis(1234));
 }

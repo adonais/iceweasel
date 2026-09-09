@@ -21,7 +21,6 @@ class SecretSettingsKeysProviderTest {
 
         assertTrue(keys.contains(testContext.getString(R.string.pref_key_allow_third_party_root_certs)))
         assertTrue(keys.contains(testContext.getString(R.string.pref_key_native_share_sheet)))
-        assertTrue(keys.contains(testContext.getString(R.string.pref_key_tab_groups)))
         assertFalse(keys.contains(testContext.getString(R.string.pref_key_show_debug_info)))
         assertFalse(keys.contains(testContext.getString(R.string.pref_key_custom_glean_server_url)))
     }

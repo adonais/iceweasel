@@ -28,6 +28,7 @@ import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.tabstray.R
 import mozilla.components.lib.state.ext.observeAsComposableState
+import mozilla.components.ui.icons.R as iconsR
 
 private const val MAX_VISIBLE_TABS = 99
 private const val SO_MANY_TABS_OPEN = "∞"
@@ -57,7 +58,7 @@ fun TabCounterButton(
         contentDescription = createContentDescription(count),
     ) {
         Image(
-            painter = painterResource(R.drawable.mozac_tabcounter_background),
+            painter = painterResource(iconsR.drawable.mozac_ic_tab_24),
             contentDescription = null,
             colorFilter = ColorFilter.tint(foregroundColor),
         )
@@ -101,13 +102,16 @@ private fun TabCounterButtonPreview() {
             ) {
                 PREVIEW_TAB_COUNTS.forEach { count ->
                     TabCounterButton(
-                        store = BrowserStore(
-                            initialState = BrowserState(
-                                tabs = List(count) { index ->
-                                    createTab(url = "https://example.com/$index")
-                                },
+                        store =
+                            BrowserStore(
+                                initialState =
+                                    BrowserState(
+                                        tabs =
+                                            List(count) { index ->
+                                                createTab(url = "https://example.com/$index")
+                                            }
+                                    )
                             ),
-                        ),
                         onClicked = {},
                     )
                 }

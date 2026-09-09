@@ -140,6 +140,13 @@ function getTimeMultiplier(unit) {
   }
   throw new Error("Invalid time unit: " + unit);
 }
+// We produce localized numbers, with "," as a thousands separator in en-US
+// builds, but `parseFloat` doesn't understand the ",", so we need to remove it
+// before parsing.
+function parseLocalizedFloat(str) {
+  return Number.parseFloat(str.replace(/,/g, ""));
+}
+
 async function testCpu(element, total, slope, assumptions) {
   info(
     `Testing CPU display ${element.textContent} - ${element.title} vs total ${total}, slope ${slope}`
@@ -177,8 +184,8 @@ async function testCpu(element, total, slope, assumptions) {
       // Nothing else to do here.
       return;
     default: {
-      // `Number.parseFloat("99%")` returns `99`.
-      let computedPercentage = Number.parseFloat(extractedPercentage);
+      // `parseLocalizedFloat("99%")` returns `99`.
+      let computedPercentage = parseLocalizedFloat(extractedPercentage);
       Assert.ok(
         isCloseEnough(computedPercentage, slope * 100),
         `The displayed approximation of the slope is reasonable: ${computedPercentage} vs ${
@@ -213,11 +220,7 @@ async function testCpu(element, total, slope, assumptions) {
 
   let totalMS = total / MS_PER_NS;
   let computedTotal =
-    // We produce localized numbers, with "," as a thousands separator in en-US builds,
-    // but `parseFloat` doesn't understand the ",", so we need to remove it
-    // before parsing.
-    Number.parseFloat(extractedTotal.replace(/,/g, "")) *
-    getTimeMultiplier(extractedUnit);
+    parseLocalizedFloat(extractedTotal) * getTimeMultiplier(extractedUnit);
   Assert.ok(
     isCloseEnough(computedTotal, totalMS),
     `The displayed approximation of the total duration is reasonable: ${computedTotal} vs ${totalMS}`
@@ -243,7 +246,7 @@ async function testMemory(element, total, delta, assumptions) {
   );
   let [, extractedTotal, extractedUnit] = extracted;
 
-  let extractedTotalNumber = Number.parseFloat(extractedTotal);
+  let extractedTotalNumber = parseLocalizedFloat(extractedTotal);
   Assert.greater(
     extractedTotalNumber,
     0,
@@ -287,10 +290,7 @@ async function testMemory(element, total, delta, assumptions) {
     Assert.equal(delta || 0, 0);
     return;
   }
-  let deltaTotalNumber = Number.parseFloat(
-    // Remove the thousands separator that breaks parseFloat.
-    extractedDeltaTotal.replace(/,/g, "")
-  );
+  let deltaTotalNumber = parseLocalizedFloat(extractedDeltaTotal);
   // Note: displaying 1024KB can happen if the value is slightly less than
   // 1024*1024B but rounded to 1024KB.
   Assert.ok(
@@ -397,7 +397,28 @@ async function setupAudioTab() {
     audio.setAttribute("loop", true);
     audio.src = `${ROOT}/small-shot.mp3`;
     content.document.body.appendChild(audio);
-    await audio.play();
+
+    // play() sometimes never settles on Windows, which would stall the test
+    // until the harness kills it after several minutes with no output. Bound
+    // the wait so the failure is reported with the element's state instead.
+    const PLAY_TIMEOUT_MS = 10000;
+    let timer;
+    await Promise.race([
+      audio.play().then(() => content.clearTimeout(timer)),
+      new Promise((resolve, reject) => {
+        timer = content.setTimeout(
+          () =>
+            reject(
+              new Error(
+                `audio.play() did not resolve within ${PLAY_TIMEOUT_MS}ms ` +
+                  `(readyState=${audio.readyState}, networkState=${audio.networkState}, ` +
+                  `paused=${audio.paused}, currentTime=${audio.currentTime})`
+              )
+            ),
+          PLAY_TIMEOUT_MS
+        );
+      }),
+    ]);
   });
   return tab;
 }

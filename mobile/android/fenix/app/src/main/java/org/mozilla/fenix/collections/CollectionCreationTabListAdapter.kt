@@ -17,9 +17,8 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.loadIntoView
 import org.mozilla.fenix.utils.view.ViewHolder
 
-class CollectionCreationTabListAdapter(
-    private val interactor: CollectionCreationInteractor,
-) : RecyclerView.Adapter<TabViewHolder>() {
+class CollectionCreationTabListAdapter(private val interactor: CollectionCreationInteractor) :
+    RecyclerView.Adapter<TabViewHolder>() {
 
     private var tabs: List<Tab> = listOf()
     private var selectedTabs: MutableSet<Tab> = mutableSetOf()
@@ -28,11 +27,12 @@ class CollectionCreationTabListAdapter(
     private lateinit var binding: CollectionTabListRowBinding
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TabViewHolder {
-        binding = CollectionTabListRowBinding.inflate(
-            LayoutInflater.from(parent.context),
-            parent,
-            false,
-        )
+        binding =
+            CollectionTabListRowBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false,
+            )
 
         return TabViewHolder(binding)
     }
@@ -68,16 +68,17 @@ class CollectionCreationTabListAdapter(
     override fun getItemCount(): Int = tabs.size
 
     fun updateData(tabs: List<Tab>, selectedTabs: Set<Tab>, hideCheckboxes: Boolean = false) {
-        val diffUtil = DiffUtil.calculateDiff(
-            TabDiffUtil(
-                this.tabs,
-                tabs,
-                this.selectedTabs,
-                selectedTabs,
-                this.hideCheckboxes,
-                hideCheckboxes,
-            ),
-        )
+        val diffUtil =
+            DiffUtil.calculateDiff(
+                TabDiffUtil(
+                    this.tabs,
+                    tabs,
+                    this.selectedTabs,
+                    selectedTabs,
+                    this.hideCheckboxes,
+                    hideCheckboxes,
+                )
+            )
 
         this.tabs = tabs
         this.selectedTabs = selectedTabs.toMutableSet()
@@ -109,6 +110,7 @@ class TabViewHolder(private val binding: CollectionTabListRowBinding) : ViewHold
 
     /**
      * Method used to change the tabSelectedCheckbox state
+     *
      * @param checkChanged [CheckChanged] class containing the required checkbox updates
      */
     fun updateCheckbox(checkChanged: CheckChanged) {
@@ -117,7 +119,6 @@ class TabViewHolder(private val binding: CollectionTabListRowBinding) : ViewHold
     }
 
     companion object {
-        @LayoutRes
-        val LAYOUT_ID = R.layout.collection_tab_list_row
+        @LayoutRes val LAYOUT_ID = R.layout.collection_tab_list_row
     }
 }

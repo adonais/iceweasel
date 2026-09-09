@@ -1648,6 +1648,11 @@
         android:id="@+id/translationsDialogFragment"
         android:name="org.mozilla.fenix.translations.TranslationsDialogFragment">
         <argument
+            android:name="sessionId"
+            android:defaultValue="@null"
+            app:nullable="true"
+            app:argType="string" />
+        <argument
             android:name="translationsDialogAccessPoint"
             android:defaultValue="Translations"
             app:argType="org.mozilla.fenix.translations.TranslationsDialogAccessPoint" />
@@ -1659,6 +1664,11 @@
     <dialog
         android:id="@+id/summarizationFragment"
         android:name="org.mozilla.fenix.summarization.SummarizationFragment">
+        <argument
+            android:name="sessionId"
+            android:defaultValue="@null"
+            app:nullable="true"
+            app:argType="string" />
         <argument
             android:name="fromShake"
             android:defaultValue="false"
@@ -1896,9 +1906,6 @@
             android:name="customTabSessionId"
             app:argType="string"
             app:nullable="true" />
-        <argument
-            android:name="source"
-            app:argType="string" />
     </dialog>
 
     <dialog

@@ -9,9 +9,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import org.mozilla.experiments.nimbus.AvailableExperiment
 
-/**
- * A view holder for displaying Nimbus experiment items.
- */
+/** A view holder for displaying Nimbus experiment items. */
 class NimbusExperimentItemViewHolder(
     view: View,
     private val nimbusExperimentsDelegate: NimbusExperimentsAdapterDelegate,

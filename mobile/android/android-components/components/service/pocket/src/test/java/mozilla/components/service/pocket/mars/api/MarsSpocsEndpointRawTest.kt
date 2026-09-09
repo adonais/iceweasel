@@ -5,6 +5,7 @@
 package mozilla.components.service.pocket.mars.api
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.IOException
 import kotlinx.serialization.json.Json
 import mozilla.components.concept.fetch.Client
 import mozilla.components.concept.fetch.Headers.Names.CONTENT_TYPE
@@ -27,7 +28,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.IOException
 
 @RunWith(AndroidJUnit4::class)
 class MarsSpocsEndpointRawTest {
@@ -45,14 +45,16 @@ class MarsSpocsEndpointRawTest {
         successResponse = MockResponses.getSuccess()
         defaultResponse = errorResponse
 
-        client = mock<Client>().also {
-            whenever(it.fetch(any())).thenReturn(defaultResponse)
-        }
+        client =
+            mock<Client>().also {
+                whenever(it.fetch(any())).thenReturn(defaultResponse)
+            }
 
-        endpoint = MarsSpocsEndpointRaw(
-            client = client,
-            config = getRequestConfig(),
-        )
+        endpoint =
+            MarsSpocsEndpointRaw(
+                client = client,
+                config = getRequestConfig(),
+            )
     }
 
     @Test
@@ -60,13 +62,12 @@ class MarsSpocsEndpointRawTest {
         MarsSpocsEndpointRaw.isDebugBuild = false
 
         val placement = Placement(placement = "newtab_mobile_spocs", count = 10)
-        val config = getRequestConfig(
-            placements = listOf(placement),
-        )
-        val customEndpoint = MarsSpocsEndpointRaw(
-            client = client,
-            config = config,
-        )
+        val config = getRequestConfig(placements = listOf(placement))
+        val customEndpoint =
+            MarsSpocsEndpointRaw(
+                client = client,
+                config = config,
+            )
 
         assertRequestParams(
             client = client,
@@ -78,25 +79,31 @@ class MarsSpocsEndpointRawTest {
                 assertEquals(Request.Method.POST, request.method)
                 assertTrue(request.conservative)
 
-                request.headers!!.first {
-                    it.name.equals(CONTENT_TYPE, true)
-                }.value.contains(CONTENT_TYPE_APPLICATION_JSON, true)
+                request.headers!!
+                    .first {
+                        it.name.equals(CONTENT_TYPE, true)
+                    }
+                    .value
+                    .contains(CONTENT_TYPE_APPLICATION_JSON, true)
 
-                request.headers!!.last {
-                    it.name.equals(USER_AGENT, true)
-                }.value.contains(config.userAgent!!, true)
+                request.headers!!
+                    .last {
+                        it.name.equals(USER_AGENT, true)
+                    }
+                    .value
+                    .contains(config.userAgent!!, true)
 
-                val requestBody = JSONObject(
-                    request.body!!.useStream {
-                        it.bufferedReader().readText()
-                    },
-                )
+                val requestBody =
+                    JSONObject(
+                        request.body!!.useStream {
+                            it.bufferedReader().readText()
+                        }
+                    )
 
                 assertEquals(config.contextId, requestBody.get(REQUEST_BODY_CONTEXT_ID_KEY))
 
-                val placements = Json.decodeFromString<List<Placement>>(
-                    requestBody.get(REQUEST_BODY_PLACEMENTS_KEY).toString(),
-                )
+                val placements =
+                    Json.decodeFromString<List<Placement>>(requestBody.get(REQUEST_BODY_PLACEMENTS_KEY).toString())
 
                 assertEquals(1, placements.size)
                 assertEquals(placement.placement, placements.first().placement)
@@ -108,10 +115,11 @@ class MarsSpocsEndpointRawTest {
     @Test
     fun `WHEN deleting a user with a custom request config THEN ensure the correct request parameters are used`() {
         val config = getRequestConfig()
-        val customEndpoint = MarsSpocsEndpointRaw(
-            client = client,
-            config = config,
-        )
+        val customEndpoint =
+            MarsSpocsEndpointRaw(
+                client = client,
+                config = config,
+            )
 
         assertRequestParams(
             client = client,
@@ -123,15 +131,19 @@ class MarsSpocsEndpointRawTest {
                 assertEquals(Request.Method.DELETE, request.method)
                 assertTrue(request.conservative)
 
-                request.headers!!.first {
-                    it.name.equals(CONTENT_TYPE, true)
-                }.value.contains(CONTENT_TYPE_APPLICATION_JSON, true)
+                request.headers!!
+                    .first {
+                        it.name.equals(CONTENT_TYPE, true)
+                    }
+                    .value
+                    .contains(CONTENT_TYPE_APPLICATION_JSON, true)
 
-                val requestBody = JSONObject(
-                    request.body!!.useStream {
-                        it.bufferedReader().readText()
-                    },
-                )
+                val requestBody =
+                    JSONObject(
+                        request.body!!.useStream {
+                            it.bufferedReader().readText()
+                        }
+                    )
 
                 assertEquals(config.contextId, requestBody.get(REQUEST_BODY_CONTEXT_ID_KEY))
             },
@@ -225,9 +237,10 @@ class MarsSpocsEndpointRawTest {
         contextId: String = "contextId",
         userAgent: String = "userAgent",
         placements: List<Placement> = listOf(),
-    ) = MarsSpocsRequestConfig(
-        contextId = contextId,
-        userAgent = userAgent,
-        placements = placements,
-    )
+    ) =
+        MarsSpocsRequestConfig(
+            contextId = contextId,
+            userAgent = userAgent,
+            placements = placements,
+        )
 }

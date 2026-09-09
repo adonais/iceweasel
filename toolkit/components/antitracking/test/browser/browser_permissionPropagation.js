@@ -26,7 +26,7 @@ add_setup(async function () {
     ],
   });
 
-  UrlClassifierTestUtils.addTestTrackers();
+  await UrlClassifierTestUtils.addTestTrackers();
 
   registerCleanupFunction(() => {
     UrlClassifierTestUtils.cleanupTestTrackers();
@@ -165,8 +165,6 @@ add_task(async function testPermissionGrantedOn3rdParty() {
       ],
     ],
   });
-
-  await UrlClassifierTestUtils.addTestTrackers();
 
   let msg = {};
   msg.blockingCallback = (async _ => {

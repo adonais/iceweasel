@@ -378,6 +378,7 @@ export class AutoCompleteParent extends JSWindowActorParent {
     } else {
       AutoCompleteResultView.setResults(this, results);
       this.openedPopup.invalidate();
+      this.#notifyAutoCompletePopupUpdated();
       this._maybeRecordTelemetryEvents(results);
     }
   }
@@ -566,7 +567,12 @@ export class AutoCompleteParent extends JSWindowActorParent {
   // entry. LoginManager is prioritized to handle potential username fields first,
   // allowing FormAutofill to safely support single email fields without
   // manual exclusions.
-  #AUTOCOMPLETE_PROVIDERS = ["LoginManager", "FormAutofill", "FormHistory"];
+  #AUTOCOMPLETE_PROVIDERS = [
+    "LoginManager",
+    "FormAutofill",
+    "FormHistory",
+    "SmartFormFill",
+  ];
 
   /**
    * Search across multiple module to gather autocomplete entries for a given search string.
@@ -611,6 +617,7 @@ export class AutoCompleteParent extends JSWindowActorParent {
     const prefixToActor = [
       { prefix: "PasswordManager", actor: "LoginManager" },
       { prefix: "FormAutofill", actor: "FormAutofill" },
+      { prefix: "SmartFormFill", actor: "SmartFormFill" },
     ];
 
     const name = prefixToActor.find(x => message.startsWith(x.prefix))?.actor;
@@ -638,6 +645,27 @@ export class AutoCompleteParent extends JSWindowActorParent {
 
     for (const actor of actors) {
       actor.onAutoCompletePopupOpened?.(elementId);
+    }
+  }
+
+  /**
+   * Notifies displayed entry providers after an open popup is updated.
+   */
+  #notifyAutoCompletePopupUpdated() {
+    const actors = new Set();
+    for (const result of AutoCompleteResultView.results) {
+      try {
+        const { fillMessageName } = JSON.parse(result.comment);
+        if (!fillMessageName) {
+          continue;
+        }
+
+        actors.add(this.#getActorByMessagePrefix(fillMessageName));
+      } catch {}
+    }
+
+    for (const actor of actors) {
+      actor.onAutoCompletePopupUpdated?.();
     }
   }
 

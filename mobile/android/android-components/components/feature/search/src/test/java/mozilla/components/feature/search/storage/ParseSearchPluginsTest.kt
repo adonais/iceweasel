@@ -5,6 +5,9 @@
 package mozilla.components.feature.search.storage
 
 import android.text.TextUtils
+import java.io.File
+import java.io.FileInputStream
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.feature.search.middleware.SearchExtraParams
 import mozilla.components.support.test.robolectric.testContext
@@ -14,9 +17,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
-import java.io.File
-import java.io.FileInputStream
-import kotlin.test.assertNotNull
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 class ParseSearchPluginsTest(private val searchEngineIdentifier: String) {
@@ -25,8 +25,9 @@ class ParseSearchPluginsTest(private val searchEngineIdentifier: String) {
     @Throws(Exception::class)
     fun parserNoSearchExtraParams() {
         val stream = FileInputStream(File(basePath, searchEngineIdentifier))
-        val searchEngine = SearchEngineReader(context = testContext, type = SearchEngine.Type.BUNDLED)
-            .loadStream(searchEngineIdentifier, stream)
+        val searchEngine =
+            SearchEngineReader(context = testContext, type = SearchEngine.Type.BUNDLED)
+                .loadStream(searchEngineIdentifier, stream)
 
         assertEquals(searchEngineIdentifier, searchEngine.id)
 
@@ -50,22 +51,24 @@ class ParseSearchPluginsTest(private val searchEngineIdentifier: String) {
         val featureEnablerParam = "enabled"
         val channelIdName = "p"
         val channelIdParam = "12345"
-        val searchExtraParams = SearchExtraParams(
-            searchEngineName = searchEngineName,
-            featureEnablerName = featureEnablerName,
-            featureEnablerParam = featureEnablerParam,
-            channelIdName = channelIdName,
-            channelIdParam = channelIdParam,
-        )
+        val searchExtraParams =
+            SearchExtraParams(
+                searchEngineName = searchEngineName,
+                featureEnablerName = featureEnablerName,
+                featureEnablerParam = featureEnablerParam,
+                channelIdName = channelIdName,
+                channelIdParam = channelIdParam,
+            )
         val searchEngine =
             SearchEngineReader(
-                context = testContext,
-                type = SearchEngine.Type.BUNDLED,
-                searchExtraParams = searchExtraParams,
-            ).loadStream(
-                identifier = searchEngineIdentifier,
-                stream = stream,
-            )
+                    context = testContext,
+                    type = SearchEngine.Type.BUNDLED,
+                    searchExtraParams = searchExtraParams,
+                )
+                .loadStream(
+                    identifier = searchEngineIdentifier,
+                    stream = stream,
+                )
 
         assertEquals(searchEngineIdentifier, searchEngine.id)
 
@@ -95,14 +98,19 @@ class ParseSearchPluginsTest(private val searchEngineIdentifier: String) {
     companion object {
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0}")
-        fun searchPlugins(): Collection<Array<Any>> = basePath.list().orEmpty()
-            .mapNotNull { it as Any }
-            .map { arrayOf(it) }
-            .apply { if (isEmpty()) { throw IllegalStateException("No search plugins found.") } }
+        fun searchPlugins(): Collection<Array<Any>> =
+            basePath
+                .list()
+                .orEmpty()
+                .mapNotNull { it as Any }
+                .map { arrayOf(it) }
+                .apply {
+                    if (isEmpty()) {
+                        throw IllegalStateException("No search plugins found.")
+                    }
+                }
 
         private val basePath: File
-            get() = ParseSearchPluginsTest::class.java.classLoader!!
-                .getResource("searchplugins").file
-                .let { File(it) }
+            get() = ParseSearchPluginsTest::class.java.classLoader!!.getResource("searchplugins").file.let { File(it) }
     }
 }

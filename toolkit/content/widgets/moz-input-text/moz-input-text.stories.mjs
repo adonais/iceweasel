@@ -49,6 +49,7 @@ const Template = ({
   description,
   supportPage,
   accessKey,
+  title,
   hasSlottedDescription,
   hasSlottedSupportLink,
   ellipsized,
@@ -63,6 +64,7 @@ const Template = ({
     data-l10n-id=${l10nId}
     support-page=${ifDefined(supportPage || null)}
     accesskey=${ifDefined(accessKey || null)}
+    title=${ifDefined(title || null)}
     class=${classMap({ "text-truncated-ellipsis": ellipsized })}
   >
     ${hasSlottedDescription
@@ -85,6 +87,7 @@ Default.args = {
   l10nId: "moz-input-text-label",
   supportPage: "",
   accessKey: "",
+  title: "",
   hasSlottedDescription: false,
   hasSlottedSupportLink: false,
 };

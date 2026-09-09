@@ -7,4 +7,6 @@ run-if = [
 
 ["test_default_agent.js"]
 
+["test_default_agent_scheduler.js"]
+
 ["test_windows_mutex.js"]

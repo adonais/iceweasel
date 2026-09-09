@@ -13,9 +13,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import mozilla.components.support.ktx.android.util.dpToPx
 
-fun View.increaseTapArea(
-    @Dimension(unit = DP) extraDps: Int,
-) {
+fun View.increaseTapArea(@Dimension(unit = DP) extraDps: Int) {
     val extraPx = extraDps.dpToPx(resources.displayMetrics)
     increaseTapAreaInternal(extraPx)
 }
@@ -36,9 +34,7 @@ internal fun View.increaseTapAreaInternal(extraPx: Int) {
  *
  * @param extraDps the extra dps that's wanted to be added on top and bottom of the view
  */
-fun View.increaseTapAreaVertically(
-    @Dimension(unit = DP) extraDps: Int,
-) {
+fun View.increaseTapAreaVertically(@Dimension(unit = DP) extraDps: Int) {
     val dips = extraDps.dpToPx(resources.displayMetrics)
     val parent = this.parent as View
     parent.post {
@@ -61,8 +57,8 @@ fun View.removeTouchDelegate() {
  * Fills a [Rect] with data about a view's location in the screen.
  *
  * @see android.view.View.getLocationOnScreen
- * @see mozilla.components.support.ktx.android.view.getRectWithViewLocation for a version of this
- * that is relative to a window
+ * @see mozilla.components.support.ktx.android.view.getRectWithViewLocation for a version of this that is relative to a
+ *   window
  */
 fun View.getRectWithScreenLocation(): Rect {
     val locationOnScreen = IntArray(2).apply { getLocationOnScreen(this) }
@@ -74,9 +70,7 @@ fun View.getRectWithScreenLocation(): Rect {
     )
 }
 
-/**
- * Used to get and set CoordinatorLayout Behavior on a View.
- */
+/** Used to get and set CoordinatorLayout Behavior on a View. */
 var View.behavior: CoordinatorLayout.Behavior<*>?
     get() = (layoutParams as? CoordinatorLayout.LayoutParams)?.behavior
     set(value) {

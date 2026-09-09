@@ -41,6 +41,13 @@ interface nsIDNSByTypeRecord : nsIDNSRecord
   readonly attribute unsigned long type;
 
   [noscript] readonly attribute TypeResult results;
+
+  /**
+   * True if this answer was served from a stale cache entry, i.e. one past
+   * its TTL but still within the grace period. Happy Eyeballs uses this to
+   * revalidate the answer with a cache-bypassing lookup (Optimistic DNS).
+   */
+  readonly attribute boolean fromStaleCache;
 };
 
 [scriptable, builtinclass, uuid(2a71750d-cb21-45f1-9e1c-666d18dd7645)]

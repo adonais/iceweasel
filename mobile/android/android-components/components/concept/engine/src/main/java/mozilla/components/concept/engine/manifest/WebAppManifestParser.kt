@@ -16,13 +16,9 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 
-/**
- * Parser for constructing a [WebAppManifest] from JSON.
- */
+/** Parser for constructing a [WebAppManifest] from JSON. */
 class WebAppManifestParser {
-    /**
-     * A parsing result.
-     */
+    /** A parsing result. */
     sealed class Result {
         /**
          * The JSON was parsed successful.
@@ -43,21 +39,21 @@ class WebAppManifestParser {
      * Parses the provided JSON and returns a [WebAppManifest] (wrapped in [Result.Success] if parsing was successful.
      * Otherwise [Result.Failure].
      *
-     * Gecko performs some initial parsing on the Web App Manifest, so the [JSONObject] we work with
-     * does not match what was originally provided by the website. Gecko:
+     * Gecko performs some initial parsing on the Web App Manifest, so the [JSONObject] we work with does not match what
+     * was originally provided by the website. Gecko:
      * - Changes relative URLs to be absolute
      * - Changes some space-separated strings into arrays (purpose, sizes)
      * - Changes colors to follow Android format (#AARRGGBB)
      * - Removes invalid enum values (ie display: halfscreen)
      * - Ensures display, dir, start_url, and scope always have a value
-     * - Trims most strings (name, short_name, ...)
-     * See https://searchfox.org/firefox-main/source/dom/manifest/ManifestProcessor.jsm
+     * - Trims most strings (name, short_name, ...) See
+     *   https://searchfox.org/firefox-main/source/dom/manifest/ManifestProcessor.jsm
      */
     fun parse(json: JSONObject): Result {
         return try {
             val shortName = json.tryGetString("short_name")
-            val name = json.tryGetString("name") ?: shortName
-                ?: return Result.Failure(JSONException("Missing manifest name"))
+            val name =
+                json.tryGetString("name") ?: shortName ?: return Result.Failure(JSONException("Missing manifest name"))
 
             Result.Success(
                 WebAppManifest(
@@ -76,7 +72,7 @@ class WebAppManifestParser {
                     relatedApplications = parseRelatedApplications(json),
                     preferRelatedApplications = json.optBoolean("prefer_related_applications", false),
                     shareTarget = ShareTargetParser.parse(json.optJSONObject("share_target")),
-                ),
+                )
             )
         } catch (e: JSONException) {
             Result.Failure(e)
@@ -87,39 +83,40 @@ class WebAppManifestParser {
      * Parses the provided JSON and returns a [WebAppManifest] (wrapped in [Result.Success] if parsing was successful.
      * Otherwise [Result.Failure].
      */
-    fun parse(json: String) = try {
-        parse(JSONObject(json))
-    } catch (e: JSONException) {
-        Result.Failure(e)
-    }
+    fun parse(json: String) =
+        try {
+            parse(JSONObject(json))
+        } catch (e: JSONException) {
+            Result.Failure(e)
+        }
 
-    fun serialize(manifest: WebAppManifest) = JSONObject().apply {
-        put("name", manifest.name)
-        putOpt("short_name", manifest.shortName)
-        put("start_url", manifest.startUrl)
-        putOpt("display", serializeEnumName(manifest.display.name))
-        putOpt("background_color", serializeColor(manifest.backgroundColor))
-        putOpt("description", manifest.description)
-        putOpt("icons", serializeIcons(manifest.icons))
-        putOpt("scope", manifest.scope)
-        putOpt("theme_color", serializeColor(manifest.themeColor))
-        putOpt("dir", serializeEnumName(manifest.dir.name))
-        putOpt("lang", manifest.lang)
-        putOpt("orientation", serializeEnumName(manifest.orientation.name))
-        putOpt("orientation", serializeEnumName(manifest.orientation.name))
-        put("related_applications", serializeRelatedApplications(manifest.relatedApplications))
-        put("prefer_related_applications", manifest.preferRelatedApplications)
-        putOpt("share_target", ShareTargetParser.serialize(manifest.shareTarget))
-    }
+    fun serialize(manifest: WebAppManifest) =
+        JSONObject().apply {
+            put("name", manifest.name)
+            putOpt("short_name", manifest.shortName)
+            put("start_url", manifest.startUrl)
+            putOpt("display", serializeEnumName(manifest.display.name))
+            putOpt("background_color", serializeColor(manifest.backgroundColor))
+            putOpt("description", manifest.description)
+            putOpt("icons", serializeIcons(manifest.icons))
+            putOpt("scope", manifest.scope)
+            putOpt("theme_color", serializeColor(manifest.themeColor))
+            putOpt("dir", serializeEnumName(manifest.dir.name))
+            putOpt("lang", manifest.lang)
+            putOpt("orientation", serializeEnumName(manifest.orientation.name))
+            putOpt("orientation", serializeEnumName(manifest.orientation.name))
+            put("related_applications", serializeRelatedApplications(manifest.relatedApplications))
+            put("prefer_related_applications", manifest.preferRelatedApplications)
+            putOpt("share_target", ShareTargetParser.serialize(manifest.shareTarget))
+        }
 }
 
-/**
- * Returns the encapsulated value if this instance represents success or `null` if it is failure.
- */
-fun WebAppManifestParser.Result.getOrNull(): WebAppManifest? = when (this) {
-    is WebAppManifestParser.Result.Success -> manifest
-    is WebAppManifestParser.Result.Failure -> null
-}
+/** Returns the encapsulated value if this instance represents success or `null` if it is failure. */
+fun WebAppManifestParser.Result.getOrNull(): WebAppManifest? =
+    when (this) {
+        is WebAppManifestParser.Result.Success -> manifest
+        is WebAppManifestParser.Result.Failure -> null
+    }
 
 private fun parseDisplayMode(json: JSONObject): WebAppManifest.DisplayMode {
     return when (json.optString("display")) {
@@ -153,25 +150,23 @@ private fun parseTextDirection(json: JSONObject): WebAppManifest.TextDirection {
     }
 }
 
-private fun parseOrientation(json: JSONObject) = when (json.optString("orientation")) {
-    "any" -> WebAppManifest.Orientation.ANY
-    "natural" -> WebAppManifest.Orientation.NATURAL
-    "landscape" -> WebAppManifest.Orientation.LANDSCAPE
-    "portrait" -> WebAppManifest.Orientation.PORTRAIT
-    "portrait-primary" -> WebAppManifest.Orientation.PORTRAIT_PRIMARY
-    "portrait-secondary" -> WebAppManifest.Orientation.PORTRAIT_SECONDARY
-    "landscape-primary" -> WebAppManifest.Orientation.LANDSCAPE_PRIMARY
-    "landscape-secondary" -> WebAppManifest.Orientation.LANDSCAPE_SECONDARY
-    else -> WebAppManifest.Orientation.ANY
-}
+private fun parseOrientation(json: JSONObject) =
+    when (json.optString("orientation")) {
+        "any" -> WebAppManifest.Orientation.ANY
+        "natural" -> WebAppManifest.Orientation.NATURAL
+        "landscape" -> WebAppManifest.Orientation.LANDSCAPE
+        "portrait" -> WebAppManifest.Orientation.PORTRAIT
+        "portrait-primary" -> WebAppManifest.Orientation.PORTRAIT_PRIMARY
+        "portrait-secondary" -> WebAppManifest.Orientation.PORTRAIT_SECONDARY
+        "landscape-primary" -> WebAppManifest.Orientation.LANDSCAPE_PRIMARY
+        "landscape-secondary" -> WebAppManifest.Orientation.LANDSCAPE_SECONDARY
+        else -> WebAppManifest.Orientation.ANY
+    }
 
 private fun parseRelatedApplications(json: JSONObject): List<WebAppManifest.ExternalApplicationResource> {
     val array = json.optJSONArray("related_applications") ?: return emptyList()
 
-    return array
-        .asSequence { i -> getJSONObject(i) }
-        .mapNotNull { app -> parseRelatedApplication(app) }
-        .toList()
+    return array.asSequence { i -> getJSONObject(i) }.mapNotNull { app -> parseRelatedApplication(app) }.toList()
 }
 
 private fun parseRelatedApplication(app: JSONObject): WebAppManifest.ExternalApplicationResource? {
@@ -211,7 +206,7 @@ private fun serializeColor(color: Int?): String? = color?.let {
 }
 
 private fun serializeRelatedApplications(
-    relatedApplications: List<WebAppManifest.ExternalApplicationResource>,
+    relatedApplications: List<WebAppManifest.ExternalApplicationResource>
 ): JSONArray {
     val list = relatedApplications.map { app ->
         JSONObject().apply {
@@ -226,7 +221,7 @@ private fun serializeRelatedApplications(
 }
 
 private fun serializeFingerprints(
-    fingerprints: List<WebAppManifest.ExternalApplicationResource.Fingerprint>,
+    fingerprints: List<WebAppManifest.ExternalApplicationResource.Fingerprint>
 ): JSONArray {
     val list = fingerprints.map {
         JSONObject().apply {

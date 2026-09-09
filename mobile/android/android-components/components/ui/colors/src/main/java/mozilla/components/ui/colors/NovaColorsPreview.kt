@@ -49,29 +49,28 @@ private fun SwatchCell(swatch: ColorSwatch, modifier: Modifier = Modifier) {
 
     Box(
         contentAlignment = Alignment.Center,
-        modifier = modifier
-            .width(120.dp)
-            .background(swatch.color)
-            .padding(16.dp),
+        modifier = modifier.width(120.dp).background(swatch.color).padding(16.dp),
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             BasicText(
                 text = swatch.name,
-                style = TextStyle(
-                    color = textColor,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    textAlign = TextAlign.Center,
-                ),
+                style =
+                    TextStyle(
+                        color = textColor,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                    ),
             )
 
             BasicText(
                 text = swatch.color.toHexString(),
-                style = TextStyle(
-                    color = textColor,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center,
-                ),
+                style =
+                    TextStyle(
+                        color = textColor,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center,
+                    ),
             )
         }
     }
@@ -79,11 +78,7 @@ private fun SwatchCell(swatch: ColorSwatch, modifier: Modifier = Modifier) {
 
 @Composable
 private fun ColorRow(group: ColorGroup, modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier
-            .clip(MaterialTheme.shapes.large)
-            .horizontalScroll(rememberScrollState()),
-    ) {
+    Row(modifier = modifier.clip(MaterialTheme.shapes.large).horizontalScroll(rememberScrollState())) {
         group.swatches.forEach { swatch ->
             SwatchCell(swatch)
         }
@@ -93,11 +88,7 @@ private fun ColorRow(group: ColorGroup, modifier: Modifier = Modifier) {
 @Preview(showBackground = true, widthDp = 2400, heightDp = 1000)
 @Composable
 private fun NovaColorsPalettePreview() {
-    Column(
-        modifier = Modifier
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState()),
-    ) {
+    Column(modifier = Modifier.padding(24.dp).verticalScroll(rememberScrollState())) {
         novaColorGroups.forEach { group ->
             ColorRow(
                 group = group,

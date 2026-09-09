@@ -14,9 +14,7 @@ import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 
-/**
- * Helper for querying and interacting with items based on their matchers.
- */
+/** Helper for querying and interacting with items based on their matchers. */
 object MatcherHelper {
 
     fun itemWithResId(resourceId: String): UiObject {
@@ -81,12 +79,7 @@ object MatcherHelper {
 
     fun checkedItemWithResIdAndText(resourceId: String, text: String, isChecked: Boolean): UiObject {
         Log.i(TAG, "Looking for checked item with resource id: $resourceId and text: $text")
-        return mDevice.findObject(
-            UiSelector()
-                .resourceId(resourceId)
-                .textContains(text)
-                .checked(isChecked),
-        )
+        return mDevice.findObject(UiSelector().resourceId(resourceId).textContains(text).checked(isChecked))
     }
 
     fun itemWithResIdAndDescription(resourceId: String, description: String): UiObject {
@@ -138,19 +131,28 @@ object MatcherHelper {
     fun assertItemTextEquals(vararg appItems: UiObject, expectedText: String, isEqual: Boolean = true) {
         for (appItem in appItems) {
             if (isEqual) {
-                Log.i(TAG, "assertItemTextEquals: Trying to verify that ${appItem.selector} text equals to $expectedText")
+                Log.i(
+                    TAG,
+                    "assertItemTextEquals: Trying to verify that ${appItem.selector} text equals to $expectedText",
+                )
                 assertTrue(
                     "${appItem.selector} text does not equal to $expectedText",
                     appItem.text.equals(expectedText),
                 )
                 Log.i(TAG, "assertItemTextEquals: Verified ${appItem.selector} text equals to $expectedText")
             } else {
-                Log.i(TAG, "assertItemTextEquals: Trying to verify that ${appItem.selector} text does not equal to $expectedText")
+                Log.i(
+                    TAG,
+                    "assertItemTextEquals: Trying to verify that ${appItem.selector} text does not equal to $expectedText",
+                )
                 assertFalse(
                     "${appItem.selector} text equals to $expectedText",
                     appItem.text.equals(expectedText),
                 )
-                Log.i(TAG, "assertItemTextEquals: Verified that ${appItem.selector} text does not equal to $expectedText")
+                Log.i(
+                    TAG,
+                    "assertItemTextEquals: Verified that ${appItem.selector} text does not equal to $expectedText",
+                )
             }
         }
     }
@@ -169,7 +171,10 @@ object MatcherHelper {
     fun assertItemIsEnabledAndVisible(vararg appItems: UiObject, isEnabled: Boolean = true) {
         for (appItem in appItems) {
             if (isEnabled) {
-                Log.i(TAG, "assertItemIsEnabledAndVisible: Trying to verify that ${appItem.selector} is visible and enabled")
+                Log.i(
+                    TAG,
+                    "assertItemIsEnabledAndVisible: Trying to verify that ${appItem.selector} is visible and enabled",
+                )
                 assertTrue(appItem.waitForExists(waitingTime) && appItem.isEnabled)
                 Log.i(TAG, "assertItemIsEnabledAndVisible: Verified ${appItem.selector} is visible and enabled")
             } else {

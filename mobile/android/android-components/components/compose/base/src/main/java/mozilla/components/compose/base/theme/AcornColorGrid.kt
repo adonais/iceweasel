@@ -36,21 +36,19 @@ private data class ColorGridParameters(
 
 private class ColorParameterProvider : PreviewParameterProvider<ColorGridParameters> {
     override val values: Sequence<ColorGridParameters>
-        get() = sequenceOf(
-            ColorGridParameters(lightColorPalette, acornLightColorScheme(), lightAcornGradientScheme),
-            ColorGridParameters(darkColorPalette, acornDarkColorScheme(), darkAcornGradientScheme),
-            ColorGridParameters(privateColorPalette, acornPrivateColorScheme(), privateAcornGradientScheme),
-            ColorGridParameters(oledColorPalette, acornOledColorScheme(), oledAcornGradientScheme),
-        )
+        get() =
+            sequenceOf(
+                ColorGridParameters(lightColorPalette, acornLightColorScheme(), lightAcornGradientScheme),
+                ColorGridParameters(darkColorPalette, acornDarkColorScheme(), darkAcornGradientScheme),
+                ColorGridParameters(privateColorPalette, acornPrivateColorScheme(), privateAcornGradientScheme),
+                ColorGridParameters(oledColorPalette, acornOledColorScheme(), oledAcornGradientScheme),
+            )
 }
 
 @Suppress("LongMethod", "MagicNumber")
 @Preview(widthDp = CONTAINER_STACK_WIDTH * 4 + CONTAINER_GUTTER * 3 + 16, heightDp = 1700)
 @Composable
-private fun AcornColorGrid(
-    @PreviewParameter(ColorParameterProvider::class)
-    parameters: ColorGridParameters,
-) {
+private fun AcornColorGrid(@PreviewParameter(ColorParameterProvider::class) parameters: ColorGridParameters) {
     val colorScheme = parameters.colorScheme
     val gradients = parameters.gradients
     AcornTheme(
@@ -60,14 +58,10 @@ private fun AcornColorGrid(
     ) {
         CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.labelSmall) {
             Column(
-                modifier = Modifier
-                    .background(color = colorScheme.background)
-                    .padding(all = 8.dp),
+                modifier = Modifier.background(color = colorScheme.background).padding(all = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(CONTAINER_GUTTER.dp),
-                ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(CONTAINER_GUTTER.dp)) {
                     ContainerColorStack(
                         color1 = colorScheme.primary,
                         color2 = colorScheme.onPrimary,
@@ -116,17 +110,17 @@ private fun AcornColorGrid(
                 Column {
                     Text(
                         text = colorScheme::primaryFixed.name,
-                        modifier = Modifier
-                            .fillMaxWidth(fraction = 0.25f)
-                            .colorGridItemShort(color = colorScheme.primaryFixed),
+                        modifier =
+                            Modifier.fillMaxWidth(fraction = 0.25f)
+                                .colorGridItemShort(color = colorScheme.primaryFixed),
                         color = colorScheme.onPrimaryFixed,
                     )
 
                     Text(
                         text = colorScheme::onPrimaryFixed.name,
-                        modifier = Modifier
-                            .fillMaxWidth(fraction = 0.25f)
-                            .colorGridItemShort(color = colorScheme.onPrimaryFixed),
+                        modifier =
+                            Modifier.fillMaxWidth(fraction = 0.25f)
+                                .colorGridItemShort(color = colorScheme.onPrimaryFixed),
                         color = colorScheme.primaryFixed,
                     )
                 }
@@ -135,33 +129,25 @@ private fun AcornColorGrid(
                     Row {
                         Text(
                             text = colorScheme::surfaceTint.name,
-                            modifier = Modifier
-                                .weight(1f)
-                                .colorGridItem(color = colorScheme.surfaceTint),
+                            modifier = Modifier.weight(1f).colorGridItem(color = colorScheme.surfaceTint),
                             color = colorScheme.onSurface,
                         )
 
                         Text(
                             text = colorScheme::surfaceDim.name,
-                            modifier = Modifier
-                                .weight(1f)
-                                .colorGridItem(color = colorScheme.surfaceDim),
+                            modifier = Modifier.weight(1f).colorGridItem(color = colorScheme.surfaceDim),
                             color = colorScheme.onSurface,
                         )
 
                         Text(
                             text = colorScheme::surface.name,
-                            modifier = Modifier
-                                .weight(1f)
-                                .colorGridItem(color = colorScheme.surface),
+                            modifier = Modifier.weight(1f).colorGridItem(color = colorScheme.surface),
                             color = colorScheme.onSurface,
                         )
 
                         Text(
                             text = colorScheme::surfaceBright.name,
-                            modifier = Modifier
-                                .weight(1f)
-                                .colorGridItem(color = colorScheme.surfaceBright),
+                            modifier = Modifier.weight(1f).colorGridItem(color = colorScheme.surfaceBright),
                             color = colorScheme.onSurface,
                         )
                     }
@@ -171,41 +157,31 @@ private fun AcornColorGrid(
                     Row {
                         Text(
                             text = colorScheme::surfaceContainerLowest.name,
-                            modifier = Modifier
-                                .weight(1f)
-                                .colorGridItem(color = colorScheme.surfaceContainerLowest),
+                            modifier = Modifier.weight(1f).colorGridItem(color = colorScheme.surfaceContainerLowest),
                             color = colorScheme.onSurface,
                         )
 
                         Text(
                             text = colorScheme::surfaceContainerLow.name,
-                            modifier = Modifier
-                                .weight(1f)
-                                .colorGridItem(color = colorScheme.surfaceContainerLow),
+                            modifier = Modifier.weight(1f).colorGridItem(color = colorScheme.surfaceContainerLow),
                             color = colorScheme.onSurface,
                         )
 
                         Text(
                             text = colorScheme::surfaceContainer.name,
-                            modifier = Modifier
-                                .weight(1f)
-                                .colorGridItem(color = colorScheme.surfaceContainer),
+                            modifier = Modifier.weight(1f).colorGridItem(color = colorScheme.surfaceContainer),
                             color = colorScheme.onSurface,
                         )
 
                         Text(
                             text = colorScheme::surfaceContainerHigh.name,
-                            modifier = Modifier
-                                .weight(1f)
-                                .colorGridItem(color = colorScheme.surfaceContainerHigh),
+                            modifier = Modifier.weight(1f).colorGridItem(color = colorScheme.surfaceContainerHigh),
                             color = colorScheme.onSurface,
                         )
 
                         Text(
                             text = colorScheme::surfaceContainerHighest.name,
-                            modifier = Modifier
-                                .weight(1f)
-                                .colorGridItem(color = colorScheme.surfaceContainerHighest),
+                            modifier = Modifier.weight(1f).colorGridItem(color = colorScheme.surfaceContainerHighest),
                             color = colorScheme.onSurface,
                         )
                     }
@@ -215,33 +191,25 @@ private fun AcornColorGrid(
                     Row {
                         Text(
                             text = colorScheme::onSurface.name,
-                            modifier = Modifier
-                                .weight(1f)
-                                .colorGridItem(color = colorScheme.onSurface),
+                            modifier = Modifier.weight(1f).colorGridItem(color = colorScheme.onSurface),
                             color = colorScheme.onPrimary,
                         )
 
                         Text(
                             text = colorScheme::onSurfaceVariant.name,
-                            modifier = Modifier
-                                .weight(1f)
-                                .colorGridItem(color = colorScheme.onSurfaceVariant),
+                            modifier = Modifier.weight(1f).colorGridItem(color = colorScheme.onSurfaceVariant),
                             color = colorScheme.onPrimary,
                         )
 
                         Text(
                             text = colorScheme::outline.name,
-                            modifier = Modifier
-                                .weight(1f)
-                                .colorGridItem(color = colorScheme.outline),
+                            modifier = Modifier.weight(1f).colorGridItem(color = colorScheme.outline),
                             color = colorScheme.onPrimary,
                         )
 
                         Text(
                             text = colorScheme::outlineVariant.name,
-                            modifier = Modifier
-                                .weight(1f)
-                                .colorGridItem(color = colorScheme.outlineVariant),
+                            modifier = Modifier.weight(1f).colorGridItem(color = colorScheme.outlineVariant),
                             color = colorScheme.onPrimaryContainer,
                         )
                     }
@@ -249,9 +217,7 @@ private fun AcornColorGrid(
                     Spacer(Modifier.height(16.dp))
 
                     Row {
-                        Column(
-                            modifier = Modifier.width(CONTAINER_STACK_WIDTH.dp),
-                        ) {
+                        Column(modifier = Modifier.width(CONTAINER_STACK_WIDTH.dp)) {
                             Text(
                                 text = colorScheme::inverseSurface.name,
                                 modifier = Modifier.colorGridItemShort(color = colorScheme.inverseSurface),
@@ -273,14 +239,10 @@ private fun AcornColorGrid(
 
                         Spacer(Modifier.width(16.dp))
 
-                        Row(
-                            modifier = Modifier.width(CONTAINER_STACK_WIDTH.dp),
-                        ) {
+                        Row(modifier = Modifier.width(CONTAINER_STACK_WIDTH.dp)) {
                             Text(
                                 text = colorScheme::scrim.name,
-                                modifier = Modifier
-                                    .fillMaxWidth(0.5f)
-                                    .colorGridItemShort(color = colorScheme.scrim),
+                                modifier = Modifier.fillMaxWidth(0.5f).colorGridItemShort(color = colorScheme.scrim),
                                 color = colorScheme.onSurface,
                             )
                         }
@@ -293,9 +255,7 @@ private fun AcornColorGrid(
                     color = colorScheme.onSurface,
                 )
 
-                Column(
-                    modifier = Modifier.width(CONTAINER_STACK_WIDTH.dp),
-                ) {
+                Column(modifier = Modifier.width(CONTAINER_STACK_WIDTH.dp)) {
                     Text(
                         text = "information",
                         modifier = Modifier.colorGridItemShort(color = colorScheme.information),
@@ -317,6 +277,18 @@ private fun AcornColorGrid(
                     Text(
                         text = "success",
                         modifier = Modifier.colorGridItemShort(color = colorScheme.success),
+                        color = colorScheme.onPrimary,
+                    )
+
+                    Text(
+                        text = "successContainer",
+                        modifier = Modifier.colorGridItemShort(color = colorScheme.successContainer),
+                        color = colorScheme.onPrimary,
+                    )
+
+                    Text(
+                        text = "onSuccessContainer",
+                        modifier = Modifier.colorGridItemShort(color = colorScheme.onSuccessContainer),
                         color = colorScheme.onPrimary,
                     )
 
@@ -345,6 +317,12 @@ private fun AcornColorGrid(
                     )
 
                     Text(
+                        text = "surfaceContainerSelected",
+                        modifier = Modifier.colorGridItemShort(color = colorScheme.surfaceContainerSelected),
+                        color = colorScheme.onSurface,
+                    )
+
+                    Text(
                         text = "autofillText",
                         modifier = Modifier.colorGridItemShort(color = colorScheme.autofillText),
                         color = colorScheme.onPrimary,
@@ -361,6 +339,12 @@ private fun AcornColorGrid(
                         modifier = Modifier.colorGridItemShort(color = colorScheme.iconPrivate),
                         color = colorScheme.onPrimary,
                     )
+
+                    Text(
+                        text = "sheetOutline",
+                        modifier = Modifier.colorGridItemShort(color = colorScheme.sheetOutline),
+                        color = colorScheme.onSurface,
+                    )
                 }
 
                 Text(
@@ -369,9 +353,7 @@ private fun AcornColorGrid(
                     color = colorScheme.onSurface,
                 )
 
-                Column(
-                    modifier = Modifier.width(CONTAINER_STACK_WIDTH.dp),
-                ) {
+                Column(modifier = Modifier.width(CONTAINER_STACK_WIDTH.dp)) {
                     Text(
                         text = gradients::cfr.name,
                         modifier = Modifier.gradientGridItemShort(brush = gradients.cfr.brush),
@@ -433,9 +415,7 @@ fun ContainerColorStack(
     color3Name: String,
     color4Name: String,
 ) {
-    Column(
-        modifier = Modifier.width(CONTAINER_STACK_WIDTH.dp),
-    ) {
+    Column(modifier = Modifier.width(CONTAINER_STACK_WIDTH.dp)) {
         Text(
             text = color1Name,
             modifier = Modifier.colorGridItemShort(color = color1),
@@ -464,31 +444,17 @@ fun ContainerColorStack(
     }
 }
 
-private fun Modifier.colorGridItemShort(color: Color) = this.then(
-    other = Modifier
-        .background(color = color)
-        .fillMaxWidth()
-        .height(50.dp)
-        .wrapContentHeight()
-        .padding(all = 12.dp),
-)
+private fun Modifier.colorGridItemShort(color: Color) =
+    this.then(
+        other = Modifier.background(color = color).fillMaxWidth().height(50.dp).wrapContentHeight().padding(all = 12.dp)
+    )
 
-private fun Modifier.gradientGridItemShort(brush: Brush) = this.then(
-    other = Modifier
-        .background(brush = brush)
-        .fillMaxWidth()
-        .height(50.dp)
-        .wrapContentHeight()
-        .padding(all = 12.dp),
-)
+private fun Modifier.gradientGridItemShort(brush: Brush) =
+    this.then(
+        other = Modifier.background(brush = brush).fillMaxWidth().height(50.dp).wrapContentHeight().padding(all = 12.dp)
+    )
 
-private fun Modifier.colorGridItem(
-    color: Color,
-) = this.then(
-    other = Modifier
-        .fillMaxWidth()
-        .background(color = color)
-        .height(70.dp)
-        .wrapContentHeight()
-        .padding(all = 12.dp),
-)
+private fun Modifier.colorGridItem(color: Color) =
+    this.then(
+        other = Modifier.fillMaxWidth().background(color = color).height(70.dp).wrapContentHeight().padding(all = 12.dp)
+    )

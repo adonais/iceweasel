@@ -32,6 +32,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.setPadding
 import com.google.android.material.snackbar.BaseTransientBottomBar
+import com.google.android.material.snackbar.Snackbar as MaterialSnackbar
 import kotlinx.coroutines.launch
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.FilledButton
@@ -43,20 +44,20 @@ import org.mozilla.fenix.components.SnackbarBehavior
 import org.mozilla.fenix.compose.core.Action
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.theme.FirefoxTheme
-import com.google.android.material.snackbar.Snackbar as MaterialSnackbar
 
 const val SNACKBAR_TEST_TAG = "snackbar"
 const val SNACKBAR_BUTTON_TEST_TAG = "snackbar_button"
 
 /**
- * A Snackbar embedded within a View. To display a Snackbar embedded in a View hierarchy, use
- * [Snackbar.make]. For rendering Snackbars within Compose, consider using [SnackbarHost] instead.
+ * A Snackbar embedded within a View. To display a Snackbar embedded in a View hierarchy, use [Snackbar.make]. For
+ * rendering Snackbars within Compose, consider using [SnackbarHost] instead.
  *
  * @param content The UI of the Snackbar.
  * @param parent The parent View to embed the Snackbar in.
  * @param snackbarAnimationCallback [SnackbarAnimationCallback] used to add animations to the Snackbar.
  */
-class Snackbar private constructor(
+class Snackbar
+private constructor(
     content: ComposeView,
     parent: ViewGroup,
     snackbarAnimationCallback: SnackbarAnimationCallback,
@@ -69,15 +70,13 @@ class Snackbar private constructor(
         view.setPadding(0)
     }
 
-    /**
-     * Snackbar helper object
-     */
+    /** Snackbar helper object */
     companion object {
         private const val LENGTH_ACCESSIBLE = 15000 // 15 seconds in ms
 
         /**
-         * Display a snackbar in the given View with the given [SnackbarState]. For rendering
-         * Snackbars within Compose, consider using [SnackbarHost] instead.
+         * Display a snackbar in the given View with the given [SnackbarState]. For rendering Snackbars within Compose,
+         * consider using [SnackbarHost] instead.
          *
          * @param snackBarParentView The [View] to embed the Snackbar in.
          * @param snackbarState [SnackbarState] containing the data parameters of the Snackbar.
@@ -86,16 +85,19 @@ class Snackbar private constructor(
             snackBarParentView: View,
             snackbarState: SnackbarState,
         ): Snackbar {
-            val parent = findSuitableParent(snackBarParentView) ?: run {
-                throw IllegalArgumentException(
-                    "No suitable parent found from the given view. Please provide a valid view.",
-                )
-            }
+            val parent =
+                findSuitableParent(snackBarParentView)
+                    ?: run {
+                        throw IllegalArgumentException(
+                            "No suitable parent found from the given view. Please provide a valid view."
+                        )
+                    }
             val contentView = ComposeView(context = parent.context)
             val callback = SnackbarAnimationCallback(contentView)
             val durationOrAccessibleDuration =
-                if (parent.context.components.settings.accessibilityServicesEnabled &&
-                    LENGTH_ACCESSIBLE > snackbarState.durationMs
+                if (
+                    parent.context.components.settings.accessibilityServicesEnabled &&
+                        LENGTH_ACCESSIBLE > snackbarState.durationMs
                 ) {
                     LENGTH_ACCESSIBLE
                 } else {
@@ -103,52 +105,56 @@ class Snackbar private constructor(
                 }
 
             return Snackbar(
-                content = contentView,
-                parent = parent,
-                snackbarAnimationCallback = callback,
-            ).also { snackbar ->
-                val action = snackbarState.action?.let {
-                    Action(
-                        label = snackbarState.action.label,
-                        onClick = {
-                            snackbarState.action.onClick()
-                            snackbar.dismiss()
-                        },
-                    )
-                }
-
-                contentView.setContent {
-                    FirefoxTheme {
-                        Snackbar(
-                            snackbarData = snackbarState.copy(
-                                action = action,
-                                onDismiss = {
+                    content = contentView,
+                    parent = parent,
+                    snackbarAnimationCallback = callback,
+                )
+                .also { snackbar ->
+                    val action =
+                        snackbarState.action?.let {
+                            Action(
+                                label = snackbarState.action.label,
+                                onClick = {
+                                    snackbarState.action.onClick()
                                     snackbar.dismiss()
-                                    snackbarState.onDismiss()
                                 },
-                            ).toSnackbarData(),
-                        )
+                            )
+                        }
+
+                    contentView.setContent {
+                        FirefoxTheme {
+                            Snackbar(
+                                snackbarData =
+                                    snackbarState
+                                        .copy(
+                                            action = action,
+                                            onDismiss = {
+                                                snackbar.dismiss()
+                                                snackbarState.onDismiss()
+                                            },
+                                        )
+                                        .toSnackbarData()
+                            )
+                        }
+                    }
+
+                    snackbar.duration = durationOrAccessibleDuration
+
+                    if (parent.id == R.id.dynamicSnackbarContainer) {
+                        (parent.layoutParams as? CoordinatorLayout.LayoutParams)?.apply {
+                            behavior =
+                                SnackbarBehavior<FrameLayout>(
+                                    context = snackBarParentView.context,
+                                    toolbarPosition = snackBarParentView.context.components.settings.toolbarPosition,
+                                    shouldUseExpandedToolbar =
+                                        snackBarParentView.context.components.settings.shouldUseExpandedToolbar,
+                                )
+                        }
                     }
                 }
-
-                snackbar.duration = durationOrAccessibleDuration
-
-                if (parent.id == R.id.dynamicSnackbarContainer) {
-                    (parent.layoutParams as? CoordinatorLayout.LayoutParams)?.apply {
-                        behavior = SnackbarBehavior<FrameLayout>(
-                            context = snackBarParentView.context,
-                            toolbarPosition = snackBarParentView.context.components.settings.toolbarPosition,
-                            shouldUseExpandedToolbar =
-                                snackBarParentView.context.components.settings.shouldUseExpandedToolbar,
-                        )
-                    }
-                }
-            }
         }
 
-        /**
-         * This is a re-implementation of [MaterialSnackbar.findSuitableParent].
-         */
+        /** This is a re-implementation of [MaterialSnackbar.findSuitableParent]. */
         @Suppress("ReturnCount")
         private fun findSuitableParent(view: View?): ViewGroup? {
             var currentView = view
@@ -166,8 +172,9 @@ class Snackbar private constructor(
                     return currentView
                 }
 
-                if (currentView is FrameLayout &&
-                    (currentView.id == android.R.id.content || currentView.id == R.id.dynamicSnackbarContainer)
+                if (
+                    currentView is FrameLayout &&
+                        (currentView.id == android.R.id.content || currentView.id == R.id.dynamicSnackbarContainer)
                 ) {
                     return currentView
                 } else if (currentView is FrameLayout) {
@@ -183,9 +190,8 @@ class Snackbar private constructor(
             return fallback
         }
 
-        private class SnackbarAnimationCallback(
-            private val content: View,
-        ) : com.google.android.material.snackbar.ContentViewCallback {
+        private class SnackbarAnimationCallback(private val content: View) :
+            com.google.android.material.snackbar.ContentViewCallback {
 
             override fun animateContentIn(delay: Int, duration: Int) {
                 content.translationY = (content.height).toFloat()
@@ -223,11 +229,7 @@ private fun SnackbarHostPreview() {
 
     FirefoxTheme {
         Surface {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(all = 16.dp),
-            ) {
+            Box(modifier = Modifier.fillMaxSize().padding(all = 16.dp)) {
                 Column {
                     FilledButton(
                         text = "Show snackbar",
@@ -235,11 +237,12 @@ private fun SnackbarHostPreview() {
                     ) {
                         scope.launch {
                             snackbarHostState.displaySnackbar(
-                                visuals = SnackbarVisuals(
-                                    message = "Snackbar",
-                                    subMessage = "SubMessage",
-                                    actionLabel = "click me",
-                                ),
+                                visuals =
+                                    SnackbarVisuals(
+                                        message = "Snackbar",
+                                        subMessage = "SubMessage",
+                                        actionLabel = "click me",
+                                    ),
                                 onActionPerformed = { snackbarClicks++ },
                             )
                         }
@@ -247,9 +250,7 @@ private fun SnackbarHostPreview() {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Text(
-                        text = "Snackbar action clicks: $snackbarClicks",
-                    )
+                    Text(text = "Snackbar action clicks: $snackbarClicks")
 
                     Spacer(modifier = Modifier.height(16.dp))
                 }

@@ -18,22 +18,22 @@ import mozilla.components.lib.state.Store
 import mozilla.components.lib.state.ext.observeAsComposableState
 
 /**
- * Helper for allowing a component consumer to specify which tab a component should target (e.g.
- * the selected tab, a specific pinned tab or a custom tab). Additional helper methods make it
- * easier to lookup the current state of the tab or observe changes.
+ * Helper for allowing a component consumer to specify which tab a component should target (e.g. the selected tab, a
+ * specific pinned tab or a custom tab). Additional helper methods make it easier to lookup the current state of the tab
+ * or observe changes.
  */
 sealed class Target {
     /**
-     * Looks up this target in the given [BrowserStore] and returns the matching [SessionState] if
-     * available. Otherwise returns `null`.
+     * Looks up this target in the given [BrowserStore] and returns the matching [SessionState] if available. Otherwise
+     * returns `null`.
      *
      * @param store to lookup this target in.
      */
     fun lookupIn(store: BrowserStore): SessionState? = lookupIn(store.state)
 
     /**
-     * Looks up this target in the given [BrowserState] and returns the matching [SessionState] if
-     * available. Otherwise returns `null`.
+     * Looks up this target in the given [BrowserState] and returns the matching [SessionState] if available. Otherwise
+     * returns `null`.
      *
      * @param state to lookup this target in.
      */
@@ -42,15 +42,14 @@ sealed class Target {
     /**
      * Observes this target and represents the mapped state (using [map]) via [State].
      *
-     * Everytime the [Store] state changes and the result of the [observe] function changes for this
-     * state, the returned [State] will be updated causing recomposition of every [State.value] usage.
+     * Everytime the [Store] state changes and the result of the [observe] function changes for this state, the returned
+     * [State] will be updated causing recomposition of every [State.value] usage.
      *
-     * The [Store] observer will automatically be removed when this composable disposes or the current
-     * [LifecycleOwner] moves to the [Lifecycle.State.DESTROYED] state.
+     * The [Store] observer will automatically be removed when this composable disposes or the current [LifecycleOwner]
+     * moves to the [Lifecycle.State.DESTROYED] state.
      *
      * @param store that should get observed
-     * @param observe function that maps a [SessionState] to the (sub) state that should get observed
-     * for changes.
+     * @param observe function that maps a [SessionState] to the (sub) state that should get observed for changes.
      */
     @Composable
     fun <R> observeAsComposableStateFrom(
@@ -63,9 +62,7 @@ sealed class Target {
         )
     }
 
-    /**
-     * Targets the selected tab.
-     */
+    /** Targets the selected tab. */
     object SelectedTab : Target() {
         override fun lookupIn(state: BrowserState): SessionState? {
             return state.selectedTab

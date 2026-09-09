@@ -8,11 +8,12 @@ import mozilla.components.concept.engine.EngineSession.TrackingProtectionPolicy.
 
 /**
  * Represents a blocked content tracker.
+ *
  * @property url The URL of the tracker.
  * @property loadedCategories A list of tracking categories loaded for this tracker.
  * @property blockedCategories A list of tracking categories blocked for this tracker.
- * @property unBlockedBySmartBlock Indicates if the content of the [blockedCategories]
- * has been partially unblocked by the SmartBlock feature.
+ * @property unBlockedBySmartBlock Indicates if the content of the [blockedCategories] has been partially unblocked by
+ *   the SmartBlock feature.
  */
 data class TrackerLog(
     val url: String,

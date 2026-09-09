@@ -14,7 +14,15 @@
 </style>
 <body>
   <div id="player">
-    <video id="mock-video-controls" src="test-video.mp4" controls loop="true" width="400" height="225"></video>
+    <video id="mock-video-controls" src="test-video.mp4" controls loop="true" width="400" height="225">
+      <track
+        kind="subtitles"
+        label="Mock track"
+        srclang="en"
+        src="test-webvtt-1.vtt"
+      />
+    </video>
+    <div class="captions-container"></div>
     <button class="play-pause-button" onclick="playPause()">play/pause button</button>
     <button class="mute-button" onclick="toggleMute()">mute/unmute button</button>
   </div>

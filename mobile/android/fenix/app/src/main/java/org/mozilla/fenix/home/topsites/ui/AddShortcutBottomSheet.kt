@@ -25,13 +25,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import mozilla.components.compose.base.BottomSheetHandle
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.compose.MenuGroup
 import org.mozilla.fenix.components.menu.compose.MenuItem
 import org.mozilla.fenix.home.topsites.TopSitesTestTag
 import org.mozilla.fenix.home.topsites.store.PopularSite
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 private const val PREVIEW_POPULAR_SITE_COUNT = 8
 
@@ -72,9 +72,8 @@ private fun AddShortcutBottomSheetContent(
     onAddPopularSiteClick: (PopularSite) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = FirefoxTheme.layout.space.static200),
+        modifier =
+            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = FirefoxTheme.layout.space.static200)
     ) {
         Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static150))
 
@@ -113,9 +112,10 @@ private fun AddShortcutBottomSheetPreview() {
     FirefoxTheme {
         Surface {
             AddShortcutBottomSheetContent(
-                popularSites = List(PREVIEW_POPULAR_SITE_COUNT) {
-                    PopularSite(title = "Mozilla", url = "https://mozilla.com", iconUrl = null)
-                },
+                popularSites =
+                    List(PREVIEW_POPULAR_SITE_COUNT) {
+                        PopularSite(title = "Mozilla", url = "https://mozilla.com", iconUrl = null)
+                    },
                 onAddWebsiteClicked = {},
                 onAddPopularSiteClick = {},
             )

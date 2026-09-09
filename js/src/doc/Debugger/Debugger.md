@@ -118,17 +118,6 @@ method to walk the tree and obtain all the newly introduced scripts.
 
 This method's return value is ignored.
 
-### `onNewPromise(promise)`
-A new Promise object, referenced by the [`Debugger.Object`][object] instance
-*promise*, has been allocated in the scope of the debuggees. The Promise's
-allocation stack can be obtained using the *promiseAllocationStack*
-accessor property of the [`Debugger.Object`][object] instance *promise*.
-
-This handler method should return a [resumption value][rv] specifying how
-the debuggee's execution should proceed. However, note that a <code>{
-return: <i>value</i> }</code> resumption value is treated like `undefined`
-("continue normally"); <i>value</i> is ignored.
-
 ### `onDebuggerStatement(frame)`
 Debuggee code has executed a <i>debugger</i> statement in <i>frame</i>.
 This method should return a [resumption value][rv] specifying how the

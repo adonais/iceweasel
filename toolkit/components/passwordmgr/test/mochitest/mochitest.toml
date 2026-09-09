@@ -261,6 +261,8 @@ scheme = "https"
 
 ["test_autofill_username-only.html"]
 
+["test_autofill_username-only_aria_label.html"]
+
 ["test_autofill_username-only_threshold.html"]
 
 ["test_autofocus_js.html"]

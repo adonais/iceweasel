@@ -3132,7 +3132,10 @@ bool ContinueDynamicImport(JSContext* cx, Handle<JSScript*> referrer,
   // Step 8. Perform PerformPromiseThen(loadPromise, linkAndEvaluate,
   // onRejected).
   js::SetFunctionNativeReserved(linkAndEvaluate, 0, ObjectValue(*context));
-  JS::AddPromiseReactions(cx, loadPromise, linkAndEvaluate, nullptr);
+  if (!JS::AddPromiseReactions(cx, loadPromise, linkAndEvaluate, nullptr)) {
+    return RejectPromiseWithPendingError(cx, promiseCapability);
+  }
+
   return AsyncFunctionReturned(cx, loadPromise, UndefinedHandleValue);
 }
 

@@ -34,9 +34,7 @@ import mozilla.components.concept.engine.permission.SitePermissionsStorage.Permi
 import mozilla.components.feature.sitepermissions.db.SitePermissionsDatabase
 import mozilla.components.feature.sitepermissions.db.toSitePermissionsEntity
 
-/**
- * A storage implementation to save [SitePermissions] on disk.
- */
+/** A storage implementation to save [SitePermissions] on disk. */
 class OnDiskSitePermissionsStorage(
     context: Context,
     private val dataCleanable: DataCleanable? = null,
@@ -51,6 +49,7 @@ class OnDiskSitePermissionsStorage(
 
     /**
      * Persists the [sitePermissions] provided as a parameter.
+     *
      * @param sitePermissions the [sitePermissions] to be stored.
      * @param private indicates if the [SitePermissions] belongs to a private session.
      */
@@ -60,15 +59,12 @@ class OnDiskSitePermissionsStorage(
         private: Boolean,
     ) {
         if (private) return // never save private browsing site permissions
-        database
-            .sitePermissionsDao()
-            .insert(
-                sitePermissions.toSitePermissionsEntity(),
-            )
+        database.sitePermissionsDao().insert(sitePermissions.toSitePermissionsEntity())
     }
 
     /**
      * Replaces an existing SitePermissions with the values of [sitePermissions] provided as a parameter.
+     *
      * @param sitePermissions the sitePermissions to be updated.
      * @param private indicates if the [SitePermissions] belongs to a private session.
      */
@@ -77,12 +73,12 @@ class OnDiskSitePermissionsStorage(
         coroutineScope.launch {
             dataCleanable?.clearData(Engine.BrowsingData.select(PERMISSIONS), sitePermissions.origin)
         }
-        database.sitePermissionsDao()
-            .update(sitePermissions.toSitePermissionsEntity())
+        database.sitePermissionsDao().update(sitePermissions.toSitePermissionsEntity())
     }
 
     /**
      * Finds all SitePermissions that match the [origin].
+     *
      * @param origin the site to be used as filter in the search.
      * @param private indicates if the [SitePermissions] belongs to a private session.
      */
@@ -92,10 +88,7 @@ class OnDiskSitePermissionsStorage(
         private: Boolean,
     ): SitePermissions? {
         if (private) return null
-        return database
-            .sitePermissionsDao()
-            .getSitePermissionsBy(origin)
-            ?.toSitePermission()
+        return database.sitePermissionsDao().getSitePermissionsBy(origin)?.toSitePermission()
     }
 
     /**
@@ -108,16 +101,14 @@ class OnDiskSitePermissionsStorage(
      * - https://developer.android.com/topic/libraries/architecture/paging/ui
      */
     override suspend fun getSitePermissionsPaged(): DataSource.Factory<Int, SitePermissions> {
-        return database
-            .sitePermissionsDao()
-            .getSitePermissionsPaged()
-            .map { entity ->
-                entity.toSitePermission()
-            }
+        return database.sitePermissionsDao().getSitePermissionsPaged().map { entity ->
+            entity.toSitePermission()
+        }
     }
 
     /**
      * Finds all SitePermissions grouped by [Permission].
+     *
      * @return a map of site grouped by [Permission].
      */
     suspend fun findAllSitePermissionsGroupedByPermission(): Map<Permission, List<SitePermissions>> {
@@ -145,41 +136,29 @@ class OnDiskSitePermissionsStorage(
 
     /**
      * Deletes all sitePermissions that match the sitePermissions provided as a parameter.
+     *
      * @param sitePermissions the sitePermissions to be deleted from the storage.
      */
     override suspend fun remove(sitePermissions: SitePermissions, private: Boolean) {
         coroutineScope.launch {
             dataCleanable?.clearData(Engine.BrowsingData.select(PERMISSIONS), sitePermissions.origin)
         }
-        database
-            .sitePermissionsDao()
-            .deleteSitePermissions(
-                sitePermissions.toSitePermissionsEntity(),
-            )
+        database.sitePermissionsDao().deleteSitePermissions(sitePermissions.toSitePermissionsEntity())
     }
 
-    /**
-     * Deletes all sitePermissions sitePermissions.
-     */
+    /** Deletes all sitePermissions sitePermissions. */
     override suspend fun removeAll() {
         coroutineScope.launch {
             dataCleanable?.clearData(Engine.BrowsingData.select(PERMISSIONS))
         }
-        return database
-            .sitePermissionsDao()
-            .deleteAllSitePermissions()
+        return database.sitePermissionsDao().deleteAllSitePermissions()
     }
 
-    /**
-     * Returns all sitePermissions in the store.
-     */
+    /** Returns all sitePermissions in the store. */
     override suspend fun all(): List<SitePermissions> {
-        return database
-            .sitePermissionsDao()
-            .getSitePermissions()
-            .map {
-                it.toSitePermission()
-            }
+        return database.sitePermissionsDao().getSitePermissions().map {
+            it.toSitePermission()
+        }
     }
 
     private fun MutableMap<Permission, MutableList<SitePermissions>>.putIfAllowed(

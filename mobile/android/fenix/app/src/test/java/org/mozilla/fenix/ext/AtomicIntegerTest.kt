@@ -4,12 +4,12 @@
 
 package org.mozilla.fenix.ext
 
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.util.concurrent.atomic.AtomicInteger
 
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -21,7 +21,7 @@ class AtomicIntegerTest {
     fun `Safely increment an AtomicInteger from different coroutines`() {
         val integer = AtomicInteger(0)
         runBlocking {
-            for (i in 1..2) {
+            repeat(2) {
                 launch(Dispatchers.Default) {
                     integer.getAndIncrementNoOverflow()
                 }

@@ -6,9 +6,7 @@ package org.mozilla.fenix.ext
 
 import android.widget.EditText
 
-/**
- * Places cursor at the end of an EditText.
- */
+/** Places cursor at the end of an EditText. */
 fun EditText.placeCursorAtEnd() {
     this.text?.length?.let { setSelection(it, it) }
 }

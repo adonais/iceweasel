@@ -33,7 +33,6 @@ import mozilla.components.service.fxa.sync.SyncStatusObserver
  * - Connected to Sync, but tabs haven't been synced yet (they stay in memory after the first sync).
  * - Connected to Sync, but only one device in the account (us), so no other tab to show.
  * - Connected to Sync.
- *
  */
 internal class DefaultPresenter(
     private val context: Context,
@@ -44,14 +43,11 @@ internal class DefaultPresenter(
     private val lifecycleOwner: LifecycleOwner,
 ) : SyncedTabsPresenter {
 
-    @VisibleForTesting
-    internal val eventObserver = SyncedTabsSyncObserver(context, view, controller)
+    @VisibleForTesting internal val eventObserver = SyncedTabsSyncObserver(context, view, controller)
 
-    @VisibleForTesting
-    internal val accountObserver = SyncedTabsAccountObserver(view, controller)
+    @VisibleForTesting internal val accountObserver = SyncedTabsAccountObserver(view, controller)
 
-    @VisibleForTesting
-    internal val commandsObserver = SyncedTabsCommandsObserver(context, view, controller)
+    @VisibleForTesting internal val commandsObserver = SyncedTabsCommandsObserver(context, view, controller)
 
     override fun start() {
         accountManager.registerForSyncEvents(
@@ -136,6 +132,7 @@ internal class DefaultPresenter(
         private val controller: SyncedTabsController,
     ) : DeviceCommandQueue.Observer {
         override fun onAdded() = refresh()
+
         override fun onRemoved() = refresh()
 
         private fun refresh() {

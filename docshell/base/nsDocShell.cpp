@@ -6720,7 +6720,8 @@ nsresult nsDocShell::CreateAboutBlankDocumentViewer(
         if (mLoadingEntry && mBrowsingContext->IsTop()) {
           mLoadingEntry->mInfo.SetTransient();
         }
-        rv = Embed(viewer, aActor, true, nullptr, mCurrentURI);
+        const nsCOMPtr<nsIURI> uri = mCurrentURI;
+        rv = Embed(viewer, aActor, true, nullptr, uri);
         NS_ENSURE_SUCCESS(rv, rv);
 
         SetCurrentURI(blankDoc->GetDocumentURI(), nullptr,
@@ -7258,7 +7259,8 @@ nsresult nsDocShell::SetupNewViewer(nsIDocumentViewer* aNewViewer,
 
   mDocumentViewer->SetNavigationTiming(mTiming);
 
-  nsresult rv = mDocumentViewer->Init(widget, bounds, aWindowActor);
+  nsresult rv =
+      MOZ_KnownLive(mDocumentViewer)->Init(widget, bounds, aWindowActor);
   if (NS_FAILED(rv)) {
     nsCOMPtr<nsIDocumentViewer> viewer = mDocumentViewer;
     viewer->Close();
@@ -8721,13 +8723,31 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   }
 
   // The following steps are from https://html.spec.whatwg.org/#navigate
-  // Step 19, and here we actually also perform step 2 from
-  // #navigate-to-a-javascript:-url (step 20) where the ongoing navigation is
-  // set to null.
-  SetOngoingNavigation(isJavaScript ? Nothing()
-                                    : Some(OngoingNavigation::NavigationID));
+  // 20. Set the ongoing navigation for navigable to navigationId.
+  SetOngoingNavigation(Some(OngoingNavigation::NavigationID));
 
-  // Step 21
+  // 21. If url's scheme is "javascript":
+  if (isJavaScript) {
+    // 21.1 Queue a global task on the navigation and traversal task source
+    //      given navigable's active window to navigate to a javascript: URL
+    //      given navigable, url, historyHandling, sourceSnapshotParams,
+    //      initiatorOriginSnapshot, userInvolvement, cspNavigationType,
+    //      initialInsertion, and navigationId.
+    // 21.2 Return.
+    //
+    // Note: We don't queue a task, so instead we run step 3 of
+    // https://html.spec.whatwg.org/#navigate-to-a-javascript:-url
+    // 3. Set the ongoing navigation for targetNavigable to null.
+    SetOngoingNavigation(Nothing());
+  }
+
+  // 22. If all of the following are true:
+  //    * userInvolvement is not "browser UI";
+  //    * navigable's active document's origin is same origin-domain with
+  //      sourceDocument's origin;
+  //    * navigable's active document's is initial about:blank is false; and
+  //    * url's scheme is a fetch scheme,
+  //    then:
   if (RefPtr<Document> document = GetDocument();
       !aLoadState->LoadIsFromSessionHistory() && document &&
       aLoadState->UserNavigationInvolvement() !=
@@ -8738,21 +8758,31 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
       document->NodePrincipal()->EqualsConsideringDomain(
           aLoadState->TriggeringPrincipal())) {
     if (nsCOMPtr<nsPIDOMWindowInner> window = document->GetInnerWindow()) {
-      // Step 21.1
+      // 22.1 Let navigation be navigable's active window's navigation API.
       if (RefPtr<Navigation> navigation = window->Navigation()) {
         AutoJSAPI jsapi;
         if (jsapi.Init(window)) {
           RefPtr<Element> sourceElement = aLoadState->GetSourceElement();
 
-          // Step 21.2
+          // 22.2 Let entryListForFiring be formDataEntryList if
+          //      documentResource is a POST resource; otherwise, null.
           RefPtr<FormData> formData = aLoadState->GetFormDataEntryList();
 
-          // Step 21.3
+          // 22.3 Let navigationAPIStateForFiring be navigationAPIState if
+          //      navigationAPIState is not null; otherwise,
+          //      StructuredSerializeForStorage(undefined).
           RefPtr<nsIStructuredCloneContainer> navigationAPIStateForFiring =
               aLoadState->GetNavigationAPIState();
 
           nsCOMPtr<nsIURI> destinationURL = aLoadState->URI();
-          // Step 21.4
+          // 22.4 Let continue be the result of firing a push/replace/reload
+          //      navigate event at navigation with navigationType set to
+          //      historyHandling, isSameDocument set to false, userInvolvement
+          //      set to userInvolvement, sourceElement set to sourceElement,
+          //      formDataEntryList set to entryListForFiring, destinationURL
+          //      set to url, navigationAPIState set to
+          //      navigationAPIStateForFiring, and apiMethodTracker set to
+          //      apiMethodTracker.
           RefPtr apiMethodTracker = aLoadState->GetNavigationAPIMethodTracker();
           bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
               jsapi.cx(), aLoadState->GetNavigationType(), destinationURL,
@@ -8761,7 +8791,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
               formData, navigationAPIStateForFiring,
               /* aClassicHistoryAPIState */ nullptr, apiMethodTracker);
 
-          // Step 21.5
+          // 22.5 If continue is false, then return.
           if (!shouldContinue) {
             return NS_OK;
           }
@@ -9793,7 +9823,8 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     // - We also set IsDocumentPiP on chrome but the spec doesn't apply to it.
     if (Document* doc = GetExtantDocument()) {
       NS_DispatchToMainThread(NS_NewRunnableFunction(
-          "Close PIP window on navigate", [doc = RefPtr(doc)]() {
+          "Close PIP window on navigate",
+          [doc = RefPtr(doc)]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
             doc->CloseAnyAssociatedDocumentPiPWindows();
           }));
     }
@@ -12642,9 +12673,8 @@ bool nsDocShell::ServiceWorkerAllowedToControlWindow(nsIPrincipal* aPrincipal,
   StorageAccess storage =
       StorageAllowedForNewWindow(aPrincipal, aURI, parentInner);
 
-  // If the partitioned service worker is enabled, service worker is allowed to
-  // control the window if partition is enabled.
-  if (StaticPrefs::privacy_partition_serviceWorkers() && parentInner) {
+  // A service worker is allowed to control the window if partition is enabled.
+  if (parentInner) {
     RefPtr<Document> doc = parentInner->GetExtantDoc();
 
     if (doc && StoragePartitioningEnabled(storage, doc->CookieJarSettings())) {

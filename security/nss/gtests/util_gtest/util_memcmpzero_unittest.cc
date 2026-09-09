@@ -11,7 +11,7 @@ namespace nss_test {
 
 class MemcmpZeroTest : public ::testing::Test {
  protected:
-  unsigned int test_memcmp_zero(const std::vector<uint8_t> &mem) {
+  unsigned int test_memcmp_zero(const std::vector<uint8_t>& mem) {
     return NSS_SecureMemcmpZero(mem.data(), mem.size());
   };
 };

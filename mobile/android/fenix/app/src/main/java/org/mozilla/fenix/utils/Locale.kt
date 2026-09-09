@@ -5,9 +5,8 @@
 package org.mozilla.fenix.utils
 
 /**
- * Enum representing various locales (language–region).
- * Country-only names are used when there is a single locale per country in this list.
- * For countries with multiple locales, the language is appended to the country name.
+ * Enum representing various locales (language–region). Country-only names are used when there is a single locale per
+ * country in this list. For countries with multiple locales, the language is appended to the country name.
  */
 internal enum class Locale(val localeCode: String) {
     // Austria

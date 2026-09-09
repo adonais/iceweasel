@@ -170,6 +170,8 @@ support-files = ["../captureStream_common.js"]
 
 ["test_draw_fakevert_large_offset.html"]
 
+["test_draw_matrix_attrib_fetch_limits.html"]
+
 ["test_fb_param.html"]
 
 ["test_fb_param_crash.html"]

@@ -7,17 +7,21 @@
        class="panel-no-padding"
        type="arrow"
        role="dialog"
+       aria-labelledby="share-panel-heading"
+       noautofocus="true"
        orient="vertical">
   <panelmultiview id="share-panel-multiview"
                   mainViewId="share-panel-mainView">
     <panelview id="share-panel-mainView"
                class="PanelUI-subView"
                role="document"
+               aria-labelledby="share-panel-heading"
                mainview-with-header="true"
                has-custom-header="true">
       <hbox class="panel-header">
         <html:h1>
-          <html:span data-l10n-id="share-panel-heading"></html:span>
+          <html:span id="share-panel-heading"
+                     data-l10n-id="share-panel-heading"></html:span>
         </html:h1>
       </hbox>
       <toolbarseparator/>
@@ -45,11 +49,12 @@
 
     <panelview id="share-panel-deviceView"
                class="PanelUI-subView"
+               aria-labelledby="share-panel-deviceView-heading"
                data-l10n-id="share-panel-device-subview"
                data-l10n-attrs="title">
       <hbox class="panel-header">
         <html:h1>
-          <html:span></html:span>
+          <html:span id="share-panel-deviceView-heading"></html:span>
         </html:h1>
       </hbox>
       <toolbarseparator/>
@@ -58,11 +63,12 @@
 
     <panelview id="share-panel-osShareView"
                class="PanelUI-subView"
+               aria-labelledby="share-panel-osShareView-heading"
                data-l10n-id="share-panel-os-share-subview"
                data-l10n-attrs="title">
       <hbox class="panel-header">
         <html:h1>
-          <html:span></html:span>
+          <html:span id="share-panel-osShareView-heading"></html:span>
         </html:h1>
       </hbox>
       <toolbarseparator/>

@@ -11,15 +11,12 @@ import androidx.core.view.isVisible
 import org.mozilla.fenix.R
 
 /**
- * A [CoordinatorLayout.Behavior] implementation that synchronizes the navbar's y-translation
- * with the top toolbar. This ensures that when the top toolbar scrolls, the navbar at the
- * bottom follows the same translation behavior.
+ * A [CoordinatorLayout.Behavior] implementation that synchronizes the navbar's y-translation with the top toolbar. This
+ * ensures that when the top toolbar scrolls, the navbar at the bottom follows the same translation behavior.
  *
  * @param context [Context] needed for behavior initialization.
  */
-class NavbarToolbarSyncBehavior(
-    context: Context,
-) : CoordinatorLayout.Behavior<View>(context, null) {
+class NavbarToolbarSyncBehavior(context: Context) : CoordinatorLayout.Behavior<View>(context, null) {
 
     override fun layoutDependsOn(
         parent: CoordinatorLayout,

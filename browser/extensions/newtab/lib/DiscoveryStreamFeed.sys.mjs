@@ -37,6 +37,11 @@ import {
   actionTypes as at,
   actionCreators as ac,
 } from "resource://newtab/common/Actions.mjs";
+import {
+  isSpaceOverridden,
+  isSpacesAssigned,
+  SPACE_IDS,
+} from "resource://newtab/common/PageLayoutVariants.mjs";
 
 import { scoreItemInferred } from "resource://newtab/lib/InferredModel/GreedyContentRanker.mjs";
 
@@ -280,9 +285,11 @@ export class DiscoveryStreamFeed {
 
   get showStories() {
     // Combine user-set stories opt-out with Mozilla-set config
+    const prefs = this.store.getState().Prefs.values;
     return (
-      this.store.getState().Prefs.values[PREF_SYSTEM_TOPSTORIES] &&
-      this.store.getState().Prefs.values[PREF_USER_TOPSTORIES]
+      prefs[PREF_SYSTEM_TOPSTORIES] &&
+      (prefs[PREF_USER_TOPSTORIES] ||
+        isSpaceOverridden(SPACE_IDS.STORIES, prefs))
     );
   }
 
@@ -1578,12 +1585,17 @@ export class DiscoveryStreamFeed {
             lastUpdated: Date.now(),
             spocs: {},
           };
-    await this.cache.set("spocs", {
-      lastUpdated: spocsState.lastUpdated,
-      spocs: spocsState.spocs,
-      spocsOnDemand: this.spocsOnDemand,
-      spocsCacheUpdateTime: this.spocsCacheUpdateTime,
-    });
+    // The ads-client has its own HTTP response cache, so it is the only cache
+    // on that path. Leaving this one unwritten also bypasses the freshness
+    // window, since isExpired() treats a missing entry as expired.
+    if (!lazy.AdsClient.isEnabled(this.store.getState().Prefs.values)) {
+      await this.cache.set("spocs", {
+        lastUpdated: spocsState.lastUpdated,
+        spocs: spocsState.spocs,
+        spocsOnDemand: this.spocsOnDemand,
+        spocsCacheUpdateTime: this.spocsCacheUpdateTime,
+      });
+    }
 
     sendUpdate({
       type: at.DISCOVERY_STREAM_SPOCS_UPDATE,
@@ -1921,30 +1933,11 @@ export class DiscoveryStreamFeed {
         }));
 
         if (sectionsEnabled) {
-          const dailyBriefEnabled =
-            prefs.trainhopConfig?.dailyBriefing?.enabled ||
-            this.store.getState().Prefs.values[
-              "discoverystream.dailyBrief.enabled"
-            ];
-          const dailyBriefSectionId =
-            prefs.trainhopConfig?.dailyBriefing?.sectionId ||
-            prefs["discoverystream.dailyBrief.sectionId"] ||
-            "top_stories_section";
-
           for (const [sectionKey, sectionData] of Object.entries(
             feedResponse.feeds
           )) {
             if (sectionData) {
-              let headlineCount = 0;
-              const shouldMarkHeadlines =
-                dailyBriefEnabled && sectionKey === dailyBriefSectionId;
-
               for (const item of sectionData.recommendations) {
-                const isHeadline = shouldMarkHeadlines && headlineCount < 3;
-                if (isHeadline) {
-                  headlineCount++;
-                }
-
                 recommendations.push({
                   id:
                     item.corpusItemId ||
@@ -1965,7 +1958,6 @@ export class DiscoveryStreamFeed {
                   section: sectionKey,
                   icon_src: item.iconUrl,
                   isTimeSensitive: item.isTimeSensitive,
-                  isHeadline,
                 });
               }
 
@@ -2600,6 +2592,13 @@ export class DiscoveryStreamFeed {
 
   async onTrainhopConfigChanged() {
     this.resetSpocsOnDemand();
+    // The spaces experiment turns stories on without the user pref changing, so
+    // the config arriving is what starts the feed. Scoped to the experiment, so
+    // an unrelated train-hop config does not trigger a refresh.
+    const prefs = this.store.getState().Prefs.values;
+    if (isSpacesAssigned(prefs) && this.showStories) {
+      this.enableStories();
+    }
   }
 
   async onPrefChangedAction(action) {

@@ -26,11 +26,14 @@ plugins {
 }
 
 mozilla {
-    ktlintSourcePaths = ["app/src/**/*.kt", "!**/build/**/*.kt"]
+    ktfmtSourcePaths = ["app/src/**/*.kt", "!**/build/**/*.kt"]
 }
 
-tasks.register('clean', Delete) {
-    delete rootProject.layout.buildDirectory
+// Spotless applies the base plugin, which already registers an equivalent clean.
+if (!tasks.names.contains('clean')) {
+    tasks.register('clean', Delete) {
+        delete rootProject.layout.buildDirectory
+    }
 }
 
 dependencyAnalysis {

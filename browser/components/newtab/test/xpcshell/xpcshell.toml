@@ -44,3 +44,6 @@ head = "../../../../extensions/newtab/test/xpcshell/head.js head_nimbus_trainhop
 
 ["test_nimbus_newtabTrainhopAddon_onBrowserReady.js"]
 head = "../../../../extensions/newtab/test/xpcshell/head.js head_nimbus_trainhop.js"
+
+["test_nimbus_newtabTrainhopAddon_shutdown.js"]
+head = "../../../../extensions/newtab/test/xpcshell/head.js head_nimbus_trainhop.js"

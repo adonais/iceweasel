@@ -12,9 +12,7 @@ import mozilla.components.concept.engine.EngineSession
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 
-/**
- * [Middleware] responsible for recovering crashed [EngineSession] instances.
- */
+/** [Middleware] responsible for recovering crashed [EngineSession] instances. */
 internal class CrashMiddleware : Middleware<BrowserState, BrowserAction> {
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,
@@ -40,8 +38,6 @@ internal class CrashMiddleware : Middleware<BrowserState, BrowserAction> {
         // We suspend the crashed session here. After that the reducer will mark it as "crashed".
         // That will prevent it from getting recreated until explicitly handling the crash by
         // restoring.
-        store.dispatch(
-            EngineAction.SuspendEngineSessionAction(action.tabId),
-        )
+        store.dispatch(EngineAction.SuspendEngineSessionAction(action.tabId))
     }
 }

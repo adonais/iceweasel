@@ -16,7 +16,10 @@
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/TimelineName.h"
 #include "mozilla/dom/ViewTimelineBinding.h"
+#include "mozilla/layout/StickyScrollContainer.h"
 #include "nsComputedDOMStyle.h"
+#include "nsIFrame.h"
+#include "nsIFrameInlines.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 
@@ -276,6 +279,92 @@ static std::pair<nscoord, nscoord> ComputeInsets(
   return {startInset, endInset};
 }
 
+nscoord ViewTimeline::StickyDisplacement::Earliest(
+    nscoord aOffsetIgnoringSticky) const {
+  if (mEndSideMax && aOffsetIgnoringSticky <= mEndSideUnstuckAt) {
+    return aOffsetIgnoringSticky - mEndSideMax;
+  }
+  if (mStartSideMax && aOffsetIgnoringSticky > mStartSideStuckAt) {
+    return aOffsetIgnoringSticky + mStartSideMax;
+  }
+  return aOffsetIgnoringSticky;
+}
+
+nscoord ViewTimeline::StickyDisplacement::Latest(
+    nscoord aOffsetIgnoringSticky) const {
+  if (mEndSideMax && aOffsetIgnoringSticky < mEndSideUnstuckAt) {
+    return aOffsetIgnoringSticky - mEndSideMax;
+  }
+  if (mStartSideMax && aOffsetIgnoringSticky >= mStartSideStuckAt) {
+    return aOffsetIgnoringSticky + mStartSideMax;
+  }
+  return aOffsetIgnoringSticky;
+}
+
+/* static */
+Maybe<std::pair<nscoord, ViewTimeline::StickyDisplacement>>
+ViewTimeline::ComputeStickyDisplacement(
+    const nsIFrame* aSubject, const ScrollContainerFrame* aScrollContainerFrame,
+    layers::ScrollDirection aAxis) {
+  StickyScrollContainer* stickyContainer =
+      aScrollContainerFrame->GetStickyContainer();
+  if (!stickyContainer) {
+    return Nothing();
+  }
+
+  const nsIFrame* scrolledFrame = aScrollContainerFrame->GetScrolledFrame();
+  const nsIFrame* sticky = nullptr;
+  for (const nsIFrame* f = aSubject; f && f != scrolledFrame;
+       f = f->GetParent()) {
+    if (!f->IsStickyPositioned()) {
+      continue;
+    }
+    const StickyScrollContainer* container =
+        StickyScrollContainer::GetForFrame(f);
+    if (!container || container->ScrollContainer() != aScrollContainerFrame) {
+      continue;
+    }
+    if (sticky) {
+      // Multiple sticky ancestors would each contribute displacement; we
+      // don't try to model that. See
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=2066973
+      return Nothing();
+    }
+    sticky = f;
+  }
+  if (!sticky) {
+    return Nothing();
+  }
+
+  const auto ranges =
+      stickyContainer->GetStickyScrollRangesForAxis(sticky, aAxis);
+  if (!ranges.mStartSide && !ranges.mEndSide) {
+    return Nothing();
+  }
+
+  StickyDisplacement displacement;
+  if (ranges.mStartSide) {
+    displacement.mStartSideStuckAt = ranges.mStartSide->mScrollPosition;
+    displacement.mStartSideMax = ranges.mStartSide->mMaxOffset;
+  }
+  if (ranges.mEndSide) {
+    displacement.mEndSideUnstuckAt = ranges.mEndSide->mScrollPosition;
+    displacement.mEndSideMax = ranges.mEndSide->mMaxOffset;
+  }
+
+  MOZ_ASSERT(displacement.mStartSideMax >= 0);
+  MOZ_ASSERT(displacement.mEndSideMax >= 0);
+  MOZ_ASSERT(
+      !displacement.mStartSideMax || !displacement.mEndSideMax ||
+          displacement.mEndSideUnstuckAt <= displacement.mStartSideStuckAt,
+      "End-side sticking should end before start-side sticking begins");
+
+  const nsPoint shift = sticky->GetPosition() - sticky->GetNormalPosition();
+  return Some(
+      std::pair{aAxis == layers::ScrollDirection::eVertical ? shift.y : shift.x,
+                displacement});
+}
+
 bool ViewTimeline::UpdateCachedCurrentTime() {
   const auto prevCachedCurrentTime = std::move(mCachedCurrentTime);
 
@@ -341,6 +430,24 @@ bool ViewTimeline::UpdateCachedCurrentTime() {
   const auto sideInsets =
       ComputeInsets(scrollContainerFrame, orientation, mAxis, mInset);
 
+  const auto stickyInfo =
+      ComputeStickyDisplacement(subject, scrollContainerFrame, orientation);
+
+  // Returns the given subject position with the sticky shift removed, along
+  // with the displacement model oriented to match the timeline's direction.
+  const auto takeStickyOut =
+      [&stickyInfo](
+          nscoord aSubjectPosition,
+          bool aIsReversed) -> std::pair<nscoord, StickyDisplacement> {
+    if (!stickyInfo) {
+      return {aSubjectPosition, StickyDisplacement{}};
+    }
+    const auto& [shift, displacement] = *stickyInfo;
+    aSubjectPosition += aIsReversed ? shift : -shift;
+    return {aSubjectPosition,
+            aIsReversed ? displacement.Reversed() : displacement};
+  };
+
   // Adjuct the positions and sizes based on the physical axis.
   const WritingMode wm = scrolledFrame->GetWritingMode();
   switch (orientation) {
@@ -349,28 +456,32 @@ bool ViewTimeline::UpdateCachedCurrentTime() {
       // writing-mode + direction:rtl), where the inline axis is vertical and
       // reversed, so scrollPosition.y is zero or negative.
       const bool isBottomToTop = wm.IsVertical() && wm.IsInlineReversed();
-      mCachedCurrentTime.emplace(CurrentTimeData{
-          ScrollTimeline::CurrentTimeData{scrollPosition.y, scrollRange.height},
-          scrollPort.height,
+      const auto [subjectPosition, sticky] = takeStickyOut(
           isBottomToTop ? scrolledFrame->GetSize().height - subjectRect.YMost()
                         : subjectRect.y,
-          subjectRect.height, sideInsets.first, sideInsets.second});
+          isBottomToTop);
+      mCachedCurrentTime.emplace(CurrentTimeData{
+          ScrollTimeline::CurrentTimeData{scrollPosition.y, scrollRange.height},
+          scrollPort.height, subjectPosition, subjectRect.height,
+          sideInsets.first, sideInsets.second, sticky});
       break;
     }
-    case layers::ScrollDirection::eHorizontal:
+    case layers::ScrollDirection::eHorizontal: {
+      // |mSubjectPosition| should be the position of the start border edge of
+      // the subject, so for R-L case, we have to use XMost() as the start
+      // border edge of the subject, and compute its position by using the
+      // x-most side of the scrolled frame as the origin on the horizontal axis.
+      const bool isRightToLeft = wm.IsPhysicalRTL();
+      const auto [subjectPosition, sticky] = takeStickyOut(
+          isRightToLeft ? scrolledFrame->GetSize().width - subjectRect.XMost()
+                        : subjectRect.x,
+          isRightToLeft);
       mCachedCurrentTime.emplace(CurrentTimeData{
           ScrollTimeline::CurrentTimeData{scrollPosition.x, scrollRange.width},
-          scrollPort.width,
-          // |mSubjectPosition| should be the position of the start border edge
-          // of the subject, so for R-L case, we have to use XMost() as the
-          // start border edge of the subject, and compute its position by using
-          // the x-most side of the scrolled frame as the origin on the
-          // horizontal axis.
-          wm.IsPhysicalRTL()
-              ? scrolledFrame->GetSize().width - subjectRect.XMost()
-              : subjectRect.x,
-          subjectRect.width, sideInsets.first, sideInsets.second});
+          scrollPort.width, subjectPosition, subjectRect.width,
+          sideInsets.first, sideInsets.second, sticky});
       break;
+    }
   }
 
   if (!prevCachedCurrentTime ||
@@ -380,37 +491,42 @@ bool ViewTimeline::UpdateCachedCurrentTime() {
   return mCachedCurrentTime != prevCachedCurrentTime;
 }
 
-// FIXME: Bug 2018678. Need to be adjusted for sticky positioning element.
+ViewTimeline::AlignmentOffsetsIgnoringSticky
+ViewTimeline::ComputeAlignmentOffsetsIgnoringSticky() const {
+  MOZ_ASSERT(mCachedCurrentTime, "We should have a cached current time");
+  const CurrentTimeData& data = mCachedCurrentTime.ref();
+
+  // Note: `mSubjectPosition - mScrollPortSize` means the distance between the
+  // start border edge of the subject and the end edge of the scrollport.
+  const nscoord startAtViewEnd =
+      data.mSubjectPosition - data.mScrollPortSize + data.mInsetEnd;
+  // Note: `mSubjectPosition + mSubjectSize` means the position of the end
+  // border edge of the subject.
+  const nscoord endAtViewStart =
+      data.mSubjectPosition + data.mSubjectSize - data.mInsetStart;
+  return {startAtViewEnd, endAtViewStart, endAtViewStart - data.mSubjectSize,
+          startAtViewEnd + data.mSubjectSize};
+}
+
 // https://drafts.csswg.org/scroll-animations-1/#view-timelines-ranges
 std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
-    const StyleTimelineRangeName aName,
-    const ScrollTimeline::ComputedTimelineData& aData) const {
+    const StyleTimelineRangeName aName) const {
   MOZ_ASSERT(mCachedCurrentTime, "We should have a cached current time");
 
-  // The following variable names are based on the vertical scrolling direction
-  // and the subject becomes visible from the bottom of the scroll port.
+  const auto& sticky = mCachedCurrentTime->mSticky;
+  const auto offsets = ComputeAlignmentOffsetsIgnoringSticky();
 
-  // The scroll offset when we align the start border edge of the subject with
-  // the end edge of the scroll port.
-  const nscoord alignedSubjectStartViewEnd = aData.mStart;
-  // The scroll offset when we align the end border edge of the subject with
-  // the start edge of the scroll port.
-  const nscoord alignedSubjectEndViewStart = aData.mEnd;
-  // The scroll offset when we align the start border edge of the subject with
-  // the start edge of the scroll port.
-  const nscoord alignedSubjectStartViewStart =
-      alignedSubjectEndViewStart - mCachedCurrentTime->mSubjectSize;
-  // The scroll offset when we align the end border edge of the subject with the
-  // end edge of the scroll port.
-  const nscoord alignedSubjectEndViewEnd =
-      alignedSubjectStartViewEnd + mCachedCurrentTime->mSubjectSize;
+  const nscoord coverStart = sticky.Latest(offsets.mSubjectStartAtViewEnd);
+  const nscoord coverEnd = sticky.Earliest(offsets.mSubjectEndAtViewStart);
 
   // Precompute the range of `contain` to avoid the code duplication. See below
   // for more details.
   const nscoord containStart =
-      std::min(alignedSubjectStartViewStart, alignedSubjectEndViewEnd);
+      std::min(sticky.Earliest(offsets.mSubjectStartAtViewStart),
+               sticky.Earliest(offsets.mSubjectEndAtViewEnd));
   const nscoord containEnd =
-      std::max(alignedSubjectStartViewStart, alignedSubjectEndViewEnd);
+      std::max(sticky.Latest(offsets.mSubjectStartAtViewStart),
+               sticky.Latest(offsets.mSubjectEndAtViewEnd));
 
   // FIXME: Bug 2030453. Check the case for RTL for horizontal axis. Perhaps we
   // have to swap these two values.
@@ -426,7 +542,7 @@ std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
       // * 100% progress represents the earliest position at which the end
       //   border edge of the element’s principal box coincides with the start
       //   edge of its view progress visibility range.
-      return {alignedSubjectStartViewEnd, alignedSubjectEndViewStart};
+      return {coverStart, coverEnd};
 
     case StyleTimelineRangeName::Contain:
       // Represents the range during which the principal box is either fully
@@ -456,36 +572,34 @@ std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
       // view progress visibility range.
       // * 0% is equivalent to 0% of the cover range.
       // * 100% is equivalent to 0% of the contain range.
-      return {alignedSubjectStartViewEnd, containStart};
+      //
+      // Sticking can hold the subject in the view so long that the contain
+      // endpoints fall outside the cover range (e.g. a subject that is stuck
+      // throughout its entry), hence the clamps here and below.
+      return {coverStart, std::max(coverStart, containStart)};
 
     case StyleTimelineRangeName::Exit:
       // Represents the range during which the principal box is exiting the view
       // progress visibility range.
       // * 0% is equivalent to 100% of the contain range.
       // * 100% is equivalent to 100% of the cover range.
-      return {containEnd, alignedSubjectEndViewStart};
+      return {std::min(coverEnd, containEnd), coverEnd};
 
     case StyleTimelineRangeName::EntryCrossing:
       // Represents the range during which the principal box crosses the end
       // border edge.
       // * 0% is equivalent to 0% of the cover range.
-      //
-      // Note that the duration of the entry-crossing range is equal to the
-      // subject size, so this is equivalent to
-      // `{alignedSubjectStartViewEnd,
-      //   alignedSubjectStartViewEnd + mCachedCurrentTime->mSubjectSize}`.
-      return {alignedSubjectStartViewEnd, alignedSubjectEndViewEnd};
+      return {
+          coverStart,
+          std::max(coverStart, sticky.Earliest(offsets.mSubjectEndAtViewEnd))};
 
     case StyleTimelineRangeName::ExitCrossing:
       // Represents the range during which the principal box crosses the start
       // border edge.
       // * 100% is equivalent to 100% of the cover range.
-      //
-      // Note that the duration of the exit-crossing range is equal to the
-      // subject size, so this is equivalent to
-      // `{alignedSubjectEndViewStart - mCachedCurrentTime->mSubjectSize,
-      //   alignedSubjectEndViewStart}`.
-      return {alignedSubjectStartViewStart, alignedSubjectEndViewStart};
+      return {
+          std::min(coverEnd, sticky.Latest(offsets.mSubjectStartAtViewStart)),
+          coverEnd};
 
     case StyleTimelineRangeName::Scroll:
       // Represents the full range of the scroll container on which the view
@@ -497,7 +611,7 @@ std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
 
   MOZ_ASSERT_UNREACHABLE("All cases should be handled.");
   // Use cover as the default value. However, we shouldn't be here.
-  return {alignedSubjectStartViewEnd, alignedSubjectEndViewStart};
+  return {coverStart, coverEnd};
 }
 
 // Calculate the offset (as a percentage) for a pair of range name and offset,
@@ -507,7 +621,7 @@ double ViewTimeline::ComputeOffsetToTimelineRange(
     const StyleTimelineRangeName& aName,
     const ScrollTimeline::ComputedTimelineData& aData,
     F&& aFuncToResolveValue) const {
-  const auto [nameStart, nameEnd] = IntervalForTimelineRangeName(aName, aData);
+  const auto [nameStart, nameEnd] = IntervalForTimelineRangeName(aName);
   const auto timelineRange = aData.mEnd - aData.mStart;
   const auto nameRange = nameEnd - nameStart;
   const auto positionInNameRange = nameStart + aFuncToResolveValue(nameRange);
@@ -564,25 +678,15 @@ Maybe<ScrollTimeline::ComputedTimelineData> ViewTimeline::ComputeTimelineData()
   }
 
   const CurrentTimeData& data = mCachedCurrentTime.ref();
+  const auto offsets = ComputeAlignmentOffsetsIgnoringSticky();
 
   // We use "cover" timeline range as the default full range for view
   // timeline.
   // https://drafts.csswg.org/scroll-animations-1/#view-timeline-progress
-
-  // Note: `mSubjectPosition - mScrollPortSize` means the distance between the
-  // start border edge of the subject and the end edge of the scrollport.
-  const nscoord startOffset =
-      data.mSubjectPosition - data.mScrollPortSize + data.mInsetEnd;
-  // Note: `mSubjectPosition + mSubjectSize` means the position of the end
-  // border edge of the subject. When it touches the start edge of the
-  // scrollport, it is 100%.
-  const nscoord endOffset =
-      data.mSubjectPosition + data.mSubjectSize - data.mInsetStart;
-
   return Some(ComputedTimelineData{
       data.mScrollData.mPosition,
-      startOffset,
-      endOffset,
+      data.mSticky.Latest(offsets.mSubjectStartAtViewEnd),
+      data.mSticky.Earliest(offsets.mSubjectEndAtViewStart),
   });
 }
 

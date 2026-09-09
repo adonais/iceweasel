@@ -14,40 +14,38 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.settings.downloads.DownloadLocationManager
 
 object CustomTabContextMenuCandidate {
-    /**
-     * Returns the default list of context menu candidates for custom tabs/external apps.
-     *
-     */
+    /** Returns the default list of context menu candidates for custom tabs/external apps. */
     fun defaultCandidates(
         context: Context,
         contextMenuUseCases: ContextMenuUseCases,
         snackBarParentView: View,
         snackbarDelegate: SnackbarDelegate = DefaultSnackbarDelegate(),
-    ): List<ContextMenuCandidate> = listOf(
-        ContextMenuCandidate.createCopyLinkCandidate(
-            context,
-            snackBarParentView,
-            snackbarDelegate,
-        ),
-        ContextMenuCandidate.createShareLinkCandidate(context),
-        ContextMenuCandidate.createSaveImageCandidate(
-            context = context,
-            contextMenuUseCases = contextMenuUseCases,
-            downloadsLocation = {
-                DownloadLocationManager(context.components.settings, context.contentResolver).defaultLocation
-            },
-        ),
-        ContextMenuCandidate.createSaveVideoAudioCandidate(
-            context = context,
-            contextMenuUseCases = contextMenuUseCases,
-            downloadsLocation = {
-                DownloadLocationManager(context.components.settings, context.contentResolver).defaultLocation
-            },
-        ),
-        ContextMenuCandidate.createCopyImageLocationCandidate(
-            context,
-            snackBarParentView,
-            snackbarDelegate,
-        ),
-    )
+    ): List<ContextMenuCandidate> =
+        listOf(
+            ContextMenuCandidate.createCopyLinkCandidate(
+                context,
+                snackBarParentView,
+                snackbarDelegate,
+            ),
+            ContextMenuCandidate.createShareLinkCandidate(context),
+            ContextMenuCandidate.createSaveImageCandidate(
+                context = context,
+                contextMenuUseCases = contextMenuUseCases,
+                downloadsLocation = {
+                    DownloadLocationManager(context.components.settings, context.contentResolver).defaultLocation
+                },
+            ),
+            ContextMenuCandidate.createSaveVideoAudioCandidate(
+                context = context,
+                contextMenuUseCases = contextMenuUseCases,
+                downloadsLocation = {
+                    DownloadLocationManager(context.components.settings, context.contentResolver).defaultLocation
+                },
+            ),
+            ContextMenuCandidate.createCopyImageLocationCandidate(
+                context,
+                snackBarParentView,
+                snackbarDelegate,
+            ),
+        )
 }

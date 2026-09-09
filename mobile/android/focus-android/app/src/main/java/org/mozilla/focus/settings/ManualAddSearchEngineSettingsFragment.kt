@@ -17,6 +17,10 @@ import android.widget.EditText
 import androidx.core.view.forEach
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
+import java.io.IOException
+import java.net.MalformedURLException
+import java.net.URL
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -46,22 +50,18 @@ import org.mozilla.focus.settings.ManualAddSearchEngineSettingsFragment.Companio
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.utils.SupportUtils
 import org.mozilla.focus.utils.ViewUtils
-import java.io.IOException
-import java.net.MalformedURLException
-import java.net.URL
-import java.util.concurrent.TimeUnit
 
 /**
  * A fragment that provides a user interface for manually adding a custom search engine.
  *
- * This fragment allows users to input a display name and a search query URL (using `%s` as a placeholder).
- * It performs validation on the input:
+ * This fragment allows users to input a display name and a search query URL (using `%s` as a placeholder). It performs
+ * validation on the input:
  * 1. Checks if the engine name is unique and non-empty.
  * 2. Validates the search query format.
  * 3. Asynchronously attempts to ping the provided URL to ensure it is reachable and valid.
  *
- * If validation is successful, the search engine is saved to the application's search store
- * and set as the default search engine.
+ * If validation is successful, the search engine is saved to the application's search store and set as the default
+ * search engine.
  *
  * @see BaseSettingsFragment
  * @see ManualAddSearchEnginePreference
@@ -92,10 +92,11 @@ class ManualAddSearchEngineSettingsFragment : BaseSettingsFragment() {
 
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
         val openLearnMore = {
-            val learnMoreUrl = SupportUtils.getSumoURLForTopic(
-                SupportUtils.getAppVersion(requireContext()),
-                SupportUtils.SumoTopic.ADD_SEARCH_ENGINE,
-            )
+            val learnMoreUrl =
+                SupportUtils.getSumoURLForTopic(
+                    SupportUtils.getAppVersion(requireContext()),
+                    SupportUtils.SumoTopic.ADD_SEARCH_ENGINE,
+                )
             SupportUtils.openUrlInCustomTab(requireActivity(), learnMoreUrl)
             SearchEngines.learnMoreTapped.record(NoExtras())
 
@@ -162,11 +163,12 @@ class ManualAddSearchEngineSettingsFragment : BaseSettingsFragment() {
         if (isValidating) {
             view?.alpha = DISABLED_ALPHA
             // Delay showing the loading indicator to prevent it flashing on the screen
-            job = viewLifecycleOwner.lifecycleScope.launch {
-                delay(LOADING_INDICATOR_DELAY)
-                pref?.setProgressViewShown(isValidating)
-                updateViews()
-            }
+            job =
+                viewLifecycleOwner.lifecycleScope.launch {
+                    delay(LOADING_INDICATOR_DELAY)
+                    pref?.setProgressViewShown(isValidating)
+                    updateViews()
+                }
         } else {
             view?.alpha = 1f
             job?.cancel()
@@ -199,16 +201,15 @@ class ManualAddSearchEngineSettingsFragment : BaseSettingsFragment() {
         /**
          * Checks if a given search query URL is valid.
          *
-         * A URL is considered valid if the network request is successful and returns a status code
-         * less than [VALID_RESPONSE_CODE_UPPER_BOUND] (typically meaning a success or redirect, but not an error).
+         * A URL is considered valid if the network request is successful and returns a status code less than
+         * [VALID_RESPONSE_CODE_UPPER_BOUND] (typically meaning a success or redirect, but not an error).
          *
          * @param client The [Client] to use for making the network request.
-         * @param query The search query URL string to validate.
-         *              This string should contain "%s" as a placeholder for the search term.
-         * @param ioDispatcher The [CoroutineDispatcher] on which to perform the network operation.
-         *        Defaults to [Dispatchers.IO].
+         * @param query The search query URL string to validate. This string should contain "%s" as a placeholder for
+         *   the search term.
+         * @param ioDispatcher The [CoroutineDispatcher] on which to perform the network operation. Defaults to
+         *   [Dispatchers.IO].
          * @return `true` if the search query URL is valid, `false` otherwise (e.g., malformed URL, network error, etc).
-         *
          * @see URLStringUtils.toNormalizedURL
          * @see SEARCH_QUERY_VALIDATION_TIMEOUT_MILLIS
          * @see VALID_RESPONSE_CODE_UPPER_BOUND
@@ -234,17 +235,19 @@ class ManualAddSearchEngineSettingsFragment : BaseSettingsFragment() {
                     return@withContext false
                 }
 
-                val request = Request(
-                    url = searchURLStr,
-                    connectTimeout = SEARCH_QUERY_VALIDATION_TIMEOUT_MILLIS.toLong() to TimeUnit.MILLISECONDS,
-                    readTimeout = SEARCH_QUERY_VALIDATION_TIMEOUT_MILLIS.toLong() to TimeUnit.MILLISECONDS,
-                    redirect = FOLLOW,
-                    private = true,
-                )
+                val request =
+                    Request(
+                        url = searchURLStr,
+                        connectTimeout = SEARCH_QUERY_VALIDATION_TIMEOUT_MILLIS.toLong() to TimeUnit.MILLISECONDS,
+                        readTimeout = SEARCH_QUERY_VALIDATION_TIMEOUT_MILLIS.toLong() to TimeUnit.MILLISECONDS,
+                        redirect = FOLLOW,
+                        private = true,
+                    )
 
                 return@withContext try {
                     val response = client.fetch(request)
-                    // Close the response stream to ensure the body is closed correctly. See https://bugzilla.mozilla.org/show_bug.cgi?id=1603114.
+                    // Close the response stream to ensure the body is closed correctly. See
+                    // https://bugzilla.mozilla.org/show_bug.cgi?id=1603114.
                     response.close()
 
                     response.status < VALID_RESPONSE_CODE_UPPER_BOUND
@@ -265,9 +268,8 @@ class ManualAddSearchEngineSettingsFragment : BaseSettingsFragment() {
                 createSearchEngine(
                     engineName,
                     query.toSearchUrl(),
-                    requireComponents.icons.loadIcon(IconRequest(query, isPrivate = true))
-                        .await().bitmap,
-                ),
+                    requireComponents.icons.loadIcon(IconRequest(query, isPrivate = true)).await().bitmap,
+                )
             )
 
             ViewUtils.showBrandedSnackbar(
@@ -278,9 +280,7 @@ class ManualAddSearchEngineSettingsFragment : BaseSettingsFragment() {
             requireActivity().settings.setDefaultSearchEngineByName(engineName)
             SearchEngines.saveEngineTapped.record(SearchEngines.SaveEngineTappedExtra(true))
 
-            requireComponents.appStore.dispatch(
-                AppAction.NavigateUp(requireComponents.store.state.selectedTabId),
-            )
+            requireComponents.appStore.dispatch(AppAction.NavigateUp(requireComponents.store.state.selectedTabId))
         } else {
             showServerError()
             SearchEngines.saveEngineTapped.record(SearchEngines.SaveEngineTappedExtra(false))

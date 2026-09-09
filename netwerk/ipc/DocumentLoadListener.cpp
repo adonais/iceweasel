@@ -36,6 +36,7 @@
 #include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/RemoteWebProgressRequest.h"
+#include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/ipc/IdType.h"
@@ -625,6 +626,9 @@ void DocumentLoadListener::TryActivateFromPrefetch(nsIURI* aURI) {
   if (mTiming) {
     mTiming->SetWasActivatedFromNavigationalPrefetch();
   }
+
+  nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+  loadInfo->SetActivatedFromNavigationalPrefetch(true);
 
   LOG_SPECRULES(
       ("DocumentLoadListener::TryActivateFromPrefetch: [%p] activated from "
@@ -2706,6 +2710,17 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
            this));
       RedirectToRealChannelFinished(rv);
       return;
+    }
+
+    // Update the enterprise ServiceWorder policy on the destination
+    // BrowsingContext before sending the navigation to the content process.
+    // Since IPC messages from the parent to a given content process are
+    // ordered, the content process will see the correct
+    // ServiceWorkersDisabledByPolicy value before it begins loading the
+    // document, preventing scripts from observing a stale value.
+    if (aDestinationBrowsingContext->IsTopContent()) {
+      (void)aDestinationBrowsingContext->SetServiceWorkersDisabledByPolicy(
+          dom::IsServiceWorkersDisabledByPolicy(docURI));
     }
   }
 

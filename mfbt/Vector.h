@@ -36,7 +36,7 @@ namespace detail {
  * power-of-two as possible. growStorageBy() is responsible for ensuring this.
  */
 template <size_t EltSize>
-static bool CapacityHasExcessSpace(size_t aCapacity) {
+bool CapacityHasExcessSpace(size_t aCapacity) {
   size_t size = aCapacity * EltSize;
   return RoundUpPow2(size) - size >= EltSize;
 }

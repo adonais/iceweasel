@@ -14,6 +14,7 @@ export class SmartWindowTasksChild extends JSWindowActorChild {
     "SmartWindowTasks:RequestRunMonitor",
     "SmartWindowTasks:RequestPauseMonitor",
     "SmartWindowTasks:RequestConstants",
+    "SmartWindowTasks:RequestOpenUrl",
   ]);
 
   #eventToMessageMap = new Map([
@@ -24,6 +25,7 @@ export class SmartWindowTasksChild extends JSWindowActorChild {
     ["SmartWindowTasks:RequestRunMonitor", "SmartWindowTasks:RunMonitor"],
     ["SmartWindowTasks:RequestPauseMonitor", "SmartWindowTasks:PauseMonitor"],
     ["SmartWindowTasks:RequestConstants", "SmartWindowTasks:GetConstants"],
+    ["SmartWindowTasks:RequestOpenUrl", "SmartWindowTasks:OpenUrl"],
   ]);
 
   /**

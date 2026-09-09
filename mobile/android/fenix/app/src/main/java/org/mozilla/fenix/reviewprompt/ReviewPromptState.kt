@@ -4,27 +4,20 @@
 
 package org.mozilla.fenix.reviewprompt
 
-/**
- * Results of the review prompt eligibility check.
- */
+/** Results of the review prompt eligibility check. */
 sealed interface ReviewPromptState {
-    /**
-     * The eligibility check hasn't run yet.
-     */
+    /** The eligibility check hasn't run yet. */
     data object Unknown : ReviewPromptState
 
-    /**
-     * No triggers were satisfied.
-     */
+    /** No triggers were satisfied. */
     data object NotEligible : ReviewPromptState
 
-    /**
-     * At least one trigger was satisfied and we want to show a prompt of the given [type].
-     */
+    /** At least one trigger was satisfied and we want to show a prompt of the given [type]. */
     data class Eligible(val type: Type) : ReviewPromptState {
-        /**
-         * Types of review prompts we can show.
-         */
-        enum class Type { PlayStore, Custom }
+        /** Types of review prompts we can show. */
+        enum class Type {
+            PlayStore,
+            Custom,
+        }
     }
 }

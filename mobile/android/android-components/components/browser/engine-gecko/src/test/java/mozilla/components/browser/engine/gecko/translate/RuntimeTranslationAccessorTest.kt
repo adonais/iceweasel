@@ -3,6 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package mozilla.components.browser.engine.gecko.translate
 
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import mozilla.components.concept.engine.translate.TranslationError
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -16,8 +18,6 @@ import org.mozilla.geckoview.TranslationsController.TranslationsException
 import org.mozilla.geckoview.TranslationsController.TranslationsException.ERROR_COULD_NOT_TRANSLATE
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.shadows.ShadowLooper
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class RuntimeTranslationAccessorTest {

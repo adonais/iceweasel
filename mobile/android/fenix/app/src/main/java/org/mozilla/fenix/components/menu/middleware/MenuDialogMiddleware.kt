@@ -13,7 +13,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.state.SessionState
-import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.concept.engine.webextension.InstallationMethod
 import mozilla.components.concept.storage.BookmarksStorage
 import mozilla.components.feature.addons.Addon
@@ -50,38 +49,32 @@ import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
 import org.mozilla.fenix.utils.Settings
 
 /**
- * [Middleware] implementation for handling [MenuAction] and managing the [MenuState] for the menu
- * dialog.
+ * [Middleware] implementation for handling [MenuAction] and managing the [MenuState] for the menu dialog.
  *
  * @param appStore The [AppStore] used to dispatch actions to update the global state.
  * @param addonManager An instance of the [AddonManager] used to provide access to [Addon]s.
- * @param settings An instance of [Settings] to read and write to the [SharedPreferences]
- * properties.
+ * @param settings An instance of [Settings] to read and write to the [SharedPreferences] properties.
  * @param summarizeMenuSettings An instance of [SummarizationFeatureDiscoveryConfiguration] to manage the feature's
- * settings in the menu.
+ *   settings in the menu.
  * @param summarizationEligibilityChecker Callback to check whether a page is eligibile for summarization.
- * @param bookmarksStorage An instance of the [BookmarksStorage] used
- * to query matching bookmarks.
- * @param pinnedSiteStorage An instance of the [PinnedSiteStorage] used
- * to query matching pinned shortcuts.
+ * @param bookmarksStorage An instance of the [BookmarksStorage] used to query matching bookmarks.
+ * @param pinnedSiteStorage An instance of the [PinnedSiteStorage] used to query matching pinned shortcuts.
  * @param appLinksUseCases The [AppLinksUseCases] for opening a site in an external app.
- * @param addBookmarkUseCase The [BookmarksUseCase.AddBookmarksUseCase] for adding the
- * selected tab as a bookmark.
- * @param addPinnedSiteUseCase The [TopSitesUseCases.AddPinnedSiteUseCase] for adding the
- * selected tab as a pinned shortcut.
- * @param removePinnedSitesUseCase The [TopSitesUseCases.RemoveTopSiteUseCase] for removing the
- * selected tab from pinned shortcuts.
- * @param requestDesktopSiteUseCase The [SessionUseCases.RequestDesktopSiteUseCase] for toggling
- * desktop mode for the current session.
- * @param migratePrivateTabUseCase The [TabsUseCases.MigratePrivateTabUseCase] for moving a private
- * tab to a normal tab.
- * @param materialAlertDialogBuilder The [MaterialAlertDialogBuilder] used to create a popup when trying to
- * add a shortcut after the shortcut limit has been reached.
+ * @param addBookmarkUseCase The [BookmarksUseCase.AddBookmarksUseCase] for adding the selected tab as a bookmark.
+ * @param addPinnedSiteUseCase The [TopSitesUseCases.AddPinnedSiteUseCase] for adding the selected tab as a pinned
+ *   shortcut.
+ * @param removePinnedSitesUseCase The [TopSitesUseCases.RemoveTopSiteUseCase] for removing the selected tab from pinned
+ *   shortcuts.
+ * @param requestDesktopSiteUseCase The [SessionUseCases.RequestDesktopSiteUseCase] for toggling desktop mode for the
+ *   current session.
+ * @param migratePrivateTabUseCase The [TabsUseCases.MigratePrivateTabUseCase] for moving a private tab to a normal tab.
+ * @param materialAlertDialogBuilder The [MaterialAlertDialogBuilder] used to create a popup when trying to add a
+ *   shortcut after the shortcut limit has been reached.
  * @param topSitesMaxLimit The maximum number of top sites the user can have.
  * @param onDeleteAndQuit Callback invoked to delete browsing data and quit the browser.
  * @param onDismiss Callback invoked to dismiss the menu dialog.
- * @param onSendPendingIntentWithUrl Callback invoked to send the pending intent of a custom menu item
- * with the url of the custom tab.
+ * @param onSendPendingIntentWithUrl Callback invoked to send the pending intent of a custom menu item with the url of
+ *   the custom tab.
  * @param mainDispatcher The [CoroutineDispatcher] for performing UI updates.
  */
 @Suppress("LongParameterList", "CyclomaticComplexMethod")
@@ -135,11 +128,11 @@ class MenuDialogMiddleware(
             is MenuAction.OnMoreMenuClicked -> cacheMoreMenuClick(store)
             is MenuAction.MoveToNonPrivateTab -> migratePrivateTab(store)
             is MenuAction.RequestDesktopSite,
-            is MenuAction.RequestMobileSite,
-            -> requestSiteMode(
-                tabId = currentState.browserMenuState?.selectedTab?.id,
-                shouldRequestDesktopMode = !currentState.isDesktopMode,
-            )
+            is MenuAction.RequestMobileSite ->
+                requestSiteMode(
+                    tabId = currentState.browserMenuState?.selectedTab?.id,
+                    shouldRequestDesktopMode = !currentState.isDesktopMode,
+                )
 
             else -> Unit
         }
@@ -147,9 +140,7 @@ class MenuDialogMiddleware(
         next(action)
     }
 
-    private fun initialize(
-        store: Store<MenuState, MenuAction>,
-    ) = scope.launch {
+    private fun initialize(store: Store<MenuState, MenuAction>) = scope.launch {
         setupBookmarkState(store)
         setupPinnedState(store)
         setupExtensionState(store)
@@ -162,16 +153,15 @@ class MenuDialogMiddleware(
         val isSummarizationEligible = selectedTab.checkSummarizationEligibility()
         val showMenuItem = summarizeMenuSettings.showMenuItem
 
-        val summarizationState = SummarizationMenuState.Default.copy(
-            visible = showMenuItem,
-            highlighted = summarizeMenuSettings.shouldHighlightMenuItem && isNormalTab,
-            overflowMenuHighlighted = summarizeMenuSettings.shouldHighlightOverflowMenuItem && isNormalTab,
-            showNewFeatureBadge = true,
-            enabled = showMenuItem && isNormalTab && isSummarizationEligible,
-        )
-        store.dispatch(
-            MenuAction.InitializeSummarizationMenuState(summarizationState),
-        )
+        val summarizationState =
+            SummarizationMenuState.Default.copy(
+                visible = showMenuItem,
+                highlighted = summarizeMenuSettings.shouldHighlightMenuItem && isNormalTab,
+                overflowMenuHighlighted = summarizeMenuSettings.shouldHighlightOverflowMenuItem && isNormalTab,
+                showNewFeatureBadge = true,
+                enabled = showMenuItem && isNormalTab && isSummarizationEligible,
+            )
+        store.dispatch(MenuAction.InitializeSummarizationMenuState(summarizationState))
         if (isNormalTab) {
             // the user must have interacted with the toolbar to open the menu
             // so we want to cache that interaction for normal tabs.
@@ -184,44 +174,32 @@ class MenuDialogMiddleware(
             summarizationEligibilityChecker.checkLanguage(session).getOrDefault(false)
         } ?: false
 
-    private suspend fun setupBookmarkState(
-        store: Store<MenuState, MenuAction>,
-    ) {
+    private suspend fun setupBookmarkState(store: Store<MenuState, MenuAction>) {
         val url = store.state.browserMenuState?.selectedTab?.content?.url ?: return
-        val bookmark = bookmarksStorage
-            .getBookmarksWithUrl(url)
-            .getOrDefault(listOf())
-            .firstOrNull { it.url == url } ?: return
+        val bookmark =
+            bookmarksStorage.getBookmarksWithUrl(url).getOrDefault(listOf()).firstOrNull { it.url == url } ?: return
 
         store.dispatch(
             MenuAction.UpdateBookmarkState(
-                bookmarkState = BookmarkState(
-                    guid = bookmark.guid,
-                    isBookmarked = true,
-                ),
-            ),
+                bookmarkState =
+                    BookmarkState(
+                        guid = bookmark.guid,
+                        isBookmarked = true,
+                    )
+            )
         )
     }
 
-    private suspend fun setupPinnedState(
-        store: Store<MenuState, MenuAction>,
-    ) {
+    private suspend fun setupPinnedState(store: Store<MenuState, MenuAction>) {
         val selectedTab = store.state.browserMenuState?.selectedTab
         if (selectedTab.isCustomTab()) return
         val url = selectedTab?.content?.url ?: return
-        pinnedSiteStorage.getPinnedSites()
-            .firstOrNull { it.url == url } ?: return
+        pinnedSiteStorage.getPinnedSites().firstOrNull { it.url == url } ?: return
 
-        store.dispatch(
-            MenuAction.UpdatePinnedState(
-                isPinned = true,
-            ),
-        )
+        store.dispatch(MenuAction.UpdatePinnedState(isPinned = true))
     }
 
-    private fun setupExtensionState(
-        store: Store<MenuState, MenuAction>,
-    ) = scope.launch {
+    private fun setupExtensionState(store: Store<MenuState, MenuAction>) = scope.launch {
         try {
             val addons = addonManager.getAddons()
 
@@ -231,26 +209,18 @@ class MenuDialogMiddleware(
                 return@launch
             }
 
-            val recommendedAddons = addons
-                .filter { !it.isInstalled() }
-                .shuffled()
-                .take(NUMBER_OF_RECOMMENDED_ADDONS_TO_SHOW)
+            val recommendedAddons =
+                addons.filter { !it.isInstalled() }.shuffled().take(NUMBER_OF_RECOMMENDED_ADDONS_TO_SHOW)
 
             if (recommendedAddons.isNotEmpty()) {
-                store.dispatch(
-                    MenuAction.UpdateExtensionState(
-                        recommendedAddons = recommendedAddons,
-                    ),
-                )
+                store.dispatch(MenuAction.UpdateExtensionState(recommendedAddons = recommendedAddons))
             }
         } catch (e: AddonManagerException) {
             logger.error("Failed to query extensions", e)
         }
     }
 
-    private fun addBookmark(
-        store: Store<MenuState, MenuAction>,
-    ) = scope.launch {
+    private fun addBookmark(store: Store<MenuState, MenuAction>) = scope.launch {
         val browserMenuState = store.state.browserMenuState ?: return@launch
 
         if (browserMenuState.bookmarkState.isBookmarked) {
@@ -260,50 +230,46 @@ class MenuDialogMiddleware(
         val selectedTab = browserMenuState.selectedTab
         val url = selectedTab.getTabUrl() ?: return@launch
 
-        val result = addBookmarkUseCase(
-            url = url,
-            title = selectedTab.content.title,
-        )
+        val result =
+            addBookmarkUseCase(
+                url = url,
+                title = selectedTab.content.title,
+            )
 
         appStore.dispatch(
             BookmarkAction.BookmarkAdded(
                 guidToEdit = result.guidToEdit,
                 parentNode = result.parentNode,
                 source = MetricsUtils.BookmarkAction.Source.MENU_DIALOG,
-            ),
+            )
         )
 
         onDismiss()
     }
 
-    private fun SessionState.isNormalTab(): Boolean {
-        return when (this) {
-            is TabSessionState -> !content.private
-            else -> false
-        }
-    }
+    private fun SessionState.isNormalTab() = !content.private
 
-    private fun addShortcut(
-        store: Store<MenuState, MenuAction>,
-    ) = scope.launch {
+    private fun addShortcut(store: Store<MenuState, MenuAction>) = scope.launch {
         val browserMenuState = store.state.browserMenuState ?: return@launch
 
         if (browserMenuState.isPinned) {
             return@launch
         }
 
-        val numPinnedSites = pinnedSiteStorage.getPinnedSites()
-            .filter { it is TopSite.Default || it is TopSite.Pinned }.size
+        val numPinnedSites =
+            pinnedSiteStorage.getPinnedSites().filter { it is TopSite.Default || it is TopSite.Pinned }.size
 
         if (numPinnedSites >= topSitesMaxLimit) {
-            materialAlertDialogBuilder.apply {
-                setTitle(R.string.shortcut_max_limit_title)
-                setMessage(R.string.shortcut_max_limit_content)
-                setPositiveButton(R.string.top_sites_max_limit_confirmation_button) { dialog, _ ->
-                    dialog.dismiss()
+            materialAlertDialogBuilder
+                .apply {
+                    setTitle(R.string.shortcut_max_limit_title)
+                    setMessage(R.string.shortcut_max_limit_content)
+                    setPositiveButton(R.string.top_sites_max_limit_confirmation_button) { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                    create().withCenterAlignedButtons()
                 }
-                create().withCenterAlignedButtons()
-            }.show()
+                .show()
 
             onDismiss()
 
@@ -322,15 +288,13 @@ class MenuDialogMiddleware(
             ShortcutAction.ShortcutAdded(
                 source = AddShortcutSource.MANUAL,
                 entryPoint = AddShortcutEntryPoint.PAGE_MENU,
-            ),
+            )
         )
 
         onDismiss()
     }
 
-    private fun removeShortcut(
-        store: Store<MenuState, MenuAction>,
-    ) = scope.launch {
+    private fun removeShortcut(store: Store<MenuState, MenuAction>) = scope.launch {
         val browserMenuState = store.state.browserMenuState ?: return@launch
 
         if (!browserMenuState.isPinned) {
@@ -339,8 +303,7 @@ class MenuDialogMiddleware(
 
         val selectedTab = browserMenuState.selectedTab
         val url = selectedTab.getTabUrl() ?: return@launch
-        val topSite = pinnedSiteStorage.getPinnedSites()
-            .firstOrNull { it.url == url } ?: return@launch
+        val topSite = pinnedSiteStorage.getPinnedSites().firstOrNull { it.url == url } ?: return@launch
 
         removePinnedSitesUseCase(topSite = topSite)
         onDismiss()
@@ -351,9 +314,7 @@ class MenuDialogMiddleware(
         onDismiss()
     }
 
-    private fun openInApp(
-        store: Store<MenuState, MenuAction>,
-    ) = scope.launch {
+    private fun openInApp(store: Store<MenuState, MenuAction>) = scope.launch {
         val url = store.state.browserMenuState?.selectedTab?.content?.url ?: return@launch
         val redirect = appLinksUseCases.appLinkRedirect.invoke(url)
 
@@ -380,11 +341,7 @@ class MenuDialogMiddleware(
             return@launch
         }
 
-        store.dispatch(
-            MenuAction.UpdateInstallAddonInProgress(
-                addon = addon,
-            ),
-        )
+        store.dispatch(MenuAction.UpdateInstallAddonInProgress(addon = addon))
 
         addonManager.installAddon(
             url = addon.downloadUrl,

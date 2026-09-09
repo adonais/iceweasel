@@ -3,6 +3,9 @@
 
 "use strict";
 
+// This file may timeout before it had a chance to complete its run in test-verify.
+requestLongerTimeout(2);
+
 const { AddonTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/AddonTestUtils.sys.mjs"
 );
@@ -13,6 +16,11 @@ const { sinon } = ChromeUtils.importESModule(
 );
 
 loadTestSubscript("head_unified_extensions.js");
+
+const ONBOARDING_ILLUSTRATION_URL =
+  "chrome://browser/skin/addons/extensions-panel-empty-onboarding.svg";
+const EMPTYSTATE_ILLUSTRATION_URL =
+  "chrome://browser/skin/addons/extensions-panel-empty.svg";
 
 // The createExtensions helper (using ExtensionTestUtils.loadExtension) does
 // not support disabled add-ons. This helper uses AOM directly instead.
@@ -70,6 +78,24 @@ function assertIsEmptyPanelOnboardingExtensions(win) {
     "unified-extensions-empty-content-explain-extensions-onboarding2",
     "Has description explaining extensions"
   );
+  const emptyStateImgEl = emptyStateBox.querySelector("img");
+  ok(
+    emptyStateImgEl.classList.contains(
+      win.gUnifiedExtensions.EMPTY_STATE_ILLUSTRATION_ONBOARDING_CLASS
+    ),
+    "Expect empty state onboarding class to be set"
+  );
+  ok(
+    !emptyStateImgEl.classList.contains(
+      win.gUnifiedExtensions.EMPTY_STATE_ILLUSTRATION_CLASS
+    ),
+    "Expect empty state disabled extensions class to not be set"
+  );
+  is(
+    win.getComputedStyle(emptyStateImgEl).content,
+    `url("${ONBOARDING_ILLUSTRATION_URL}")`,
+    "Got the expected onboarding illustration SVG"
+  );
 
   const discoverButton = getDiscoverButton(win);
   ok(discoverButton, "Got 'Discover button'");
@@ -103,6 +129,27 @@ async function checkManageExtensionsText(elem) {
   if (doc.hasPendingL10nMutations) {
     await BrowserTestUtils.waitForEvent(doc, "L10nMutationsFinished");
   }
+  const emptyStateImgEl = elem
+    .closest("#unified-extensions-empty-state")
+    .querySelector("img");
+  const win = doc.defaultView;
+  ok(
+    emptyStateImgEl.classList.contains(
+      win.gUnifiedExtensions.EMPTY_STATE_ILLUSTRATION_CLASS
+    ),
+    "Expect empty state disabled extensions class to be set"
+  );
+  ok(
+    !emptyStateImgEl.classList.contains(
+      win.gUnifiedExtensions.EMPTY_STATE_ILLUSTRATION_ONBOARDING_CLASS
+    ),
+    "Expect empty state onboarding class to not be set"
+  );
+  is(
+    win.getComputedStyle(emptyStateImgEl).content,
+    `url("${EMPTYSTATE_ILLUSTRATION_URL}")`,
+    "Got the expected extensions disabled illustration SVG"
+  );
   const expectedButtonText = "Manage extensions";
   let expectedTextContent;
   if (l10nId === "unified-extensions-empty-content-explain-enable2") {
@@ -214,66 +261,32 @@ add_task(async function test_button_opens_extlist_when_all_exts_pinned() {
 });
 
 add_task(
-  async function test_button_opens_extlist_when_no_extension_and_pane_disabled() {
-    // If extensions.getAddons.showPane is set to false, there is no "Recommended" tab,
-    // so we need to make sure we don't navigate to it.
-
+  async function test_no_discover_button_when_pane_disabled_and_no_extension() {
+    // Without the discovery pane, the empty panel keeps "Manage Extensions"
+    // rather than offering "Discover extensions".
     await SpecialPowers.pushPrefEnv({
-      set: [
-        // Set this to another value to make sure not to "accidentally" land on the right page
-        ["extensions.ui.lastCategory", "addons://list/theme"],
-        ["extensions.getAddons.showPane", false],
-      ],
+      set: [["extensions.getAddons.showPane", false]],
     });
 
-    await BrowserTestUtils.withNewTab(
-      { gBrowser, url: "about:robots" },
-      async () => {
-        // This clicks on gUnifiedExtensions.button and waits for panel to show.
-        await openExtensionsPanel(window);
+    await openExtensionsPanel(window);
 
-        assertIsEmptyPanelOnboardingExtensions(window);
-        const discoverButton = getDiscoverButton(window);
-
-        const tabPromise = BrowserTestUtils.waitForNewTab(
-          gBrowser,
-          "about:addons",
-          true
-        );
-
-        discoverButton.click();
-
-        const tab = await tabPromise;
-        is(
-          gBrowser.currentURI.spec,
-          "about:addons",
-          "expected about:addons to be open"
-        );
-        const managerWindow = gBrowser.selectedBrowser.contentWindow;
-        is(
-          managerWindow.gViewController.currentViewId,
-          "addons://list/extension",
-          "expected about:addons to show the extension list"
-        );
-        if (managerWindow.gViewController.isLoading) {
-          info("Waiting for about:addons to finish loading");
-          await BrowserTestUtils.waitForEvent(
-            managerWindow.document,
-            "view-loaded"
-          );
-        }
-        const amoLink = managerWindow.document.querySelector(
-          `#empty-addons-message a[data-l10n-name="get-extensions"]`
-        );
-        ok(amoLink, "Found link to get extensions");
-        is(
-          amoLink.href,
-          "https://addons.mozilla.org/en-US/firefox/",
-          "Link points to AMO, where the user can discover extensions"
-        );
-        BrowserTestUtils.removeTab(tab);
-      }
+    ok(
+      BrowserTestUtils.isVisible(getEmptyStateContainer(window)),
+      "Empty state is visible"
     );
+    ok(
+      !getDiscoverButton(window),
+      "'Discover extensions' button should not be present"
+    );
+    const manageExtensionsButton = getListView(window).querySelector(
+      "#unified-extensions-manage-extensions"
+    );
+    ok(
+      BrowserTestUtils.isVisible(manageExtensionsButton),
+      "'Manage Extensions' button should be visible"
+    );
+
+    await closeExtensionsPanel(window);
 
     await SpecialPowers.popPrefEnv();
   }

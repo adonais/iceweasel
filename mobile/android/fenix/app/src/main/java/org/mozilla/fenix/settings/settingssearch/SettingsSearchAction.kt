@@ -6,19 +6,13 @@ package org.mozilla.fenix.settings.settingssearch
 
 import mozilla.components.lib.state.Action
 
-/**
- * Actions for the settings search screen.
- */
+/** Actions for the settings search screen. */
 sealed interface SettingsSearchAction : Action {
 
-    /**
-     * User has started a search.
-     */
+    /** User has started a search. */
     data object Init : SettingsSearchAction
 
-    /**
-     * Signals that the current [SettingsSearchEnvironment] has been cleared.
-     */
+    /** Signals that the current [SettingsSearchEnvironment] has been cleared. */
     data object EnvironmentCleared : SettingsSearchAction
 
     /**
@@ -60,8 +54,6 @@ sealed interface SettingsSearchAction : Action {
      */
     data class RecentSearchesUpdated(val recentSearches: List<SettingsSearchItem>) : SettingsSearchAction
 
-    /**
-     * User has clicked on the clear recent searches button.
-     */
+    /** User has clicked on the clear recent searches button. */
     data object ClearRecentSearchesClicked : SettingsSearchAction
 }

@@ -436,7 +436,7 @@ loser:
     return result;
 }
 
-#define NSSPBE_ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
+#define NSSPBE_ROUNDUP(x, y) ((((x) + ((y) - 1)) / (y)) * (y))
 #define NSSPBE_MIN(x, y) ((x) < (y) ? (x) : (y))
 /*
  * This is the extended PBE function defined by the final PKCS #12 spec.

@@ -7,15 +7,26 @@
 :host {
   display: block;
   width: fit-content;
+  max-width: 100%;
   padding: var(--segmented-control-padding);
   border: var(--segmented-control-border);
   border-radius: var(--segmented-control-border-radius);
+  box-sizing: border-box;
 }
 
 moz-fieldset {
   --fieldset-gap-column: var(--space-xsmall);
+
+  &::part(inputs) {
+    flex-wrap: nowrap;
+  }
 }
 
 ::slotted(moz-segmented-control-item) {
   flex-grow: 1;
+  min-width: var(--button-size-icon);
+}
+
+::slotted(moz-segmented-control-item[size="small"]) {
+  min-width: var(--button-size-icon-small);
 }

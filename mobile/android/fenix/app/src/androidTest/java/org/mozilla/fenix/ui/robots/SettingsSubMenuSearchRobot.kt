@@ -16,6 +16,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.preference.R as preferenceR
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.espresso.Espresso.onView
@@ -68,82 +69,125 @@ import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.click
 import org.mozilla.fenix.helpers.isChecked
 import org.mozilla.fenix.helpers.isEnabled
-import androidx.preference.R as preferenceR
 
-/**
- * Implementation of Robot Pattern for the settings search sub menu.
- */
+/** Implementation of Robot Pattern for the settings search sub menu. */
 class SettingsSubMenuSearchRobot {
     fun verifyToolbarText(title: String) {
         Log.i(TAG, "verifyToolbarText: Trying to verify that the $title toolbar title is visible")
         onView(
-            allOf(
-                withId(R.id.navigationToolbar),
-                hasDescendant(withContentDescription(R.string.action_bar_up_description)),
-                hasDescendant(withText(title)),
-            ),
-        ).check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+                allOf(
+                    withId(R.id.navigationToolbar),
+                    hasDescendant(withContentDescription(R.string.action_bar_up_description)),
+                    hasDescendant(withText(title)),
+                )
+            )
+            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
         Log.i(TAG, "verifyToolbarText: Verified that the $title toolbar title is visible")
     }
 
     fun verifySearchEnginesSectionHeader() {
-        Log.i(TAG, "verifySearchEnginesSectionHeader: Trying to verify that the \"Search engines\" heading is displayed")
+        Log.i(
+            TAG,
+            "verifySearchEnginesSectionHeader: Trying to verify that the \"Search engines\" heading is displayed",
+        )
         onView(withText("Search engines")).check(matches(isDisplayed()))
         Log.i(TAG, "verifySearchEnginesSectionHeader: Verified that the \"Search engines\" heading is displayed")
     }
 
     fun verifyDefaultSearchEngineHeader() {
-        Log.i(TAG, "verifyDefaultSearchEngineHeader: Trying to verify that the \"Default search engine\" option is displayed")
-        defaultSearchEngineHeader
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+        Log.i(
+            TAG,
+            "verifyDefaultSearchEngineHeader: Trying to verify that the \"Default search engine\" option is displayed",
+        )
+        defaultSearchEngineHeader.check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
         Log.i(TAG, "verifyDefaultSearchEngineHeader: Verified that the \"Default search engine\" option is displayed")
     }
 
     fun verifyDefaultSearchEngineSummary(engineName: String) {
-        Log.i(TAG, "verifyDefaultSearchEngineSummary: Trying to verify that the \"Default search engine\" option has $engineName as summary")
+        Log.i(
+            TAG,
+            "verifyDefaultSearchEngineSummary: Trying to verify that the \"Default search engine\" option has $engineName as summary",
+        )
         defaultSearchEngineHeader.check(matches(hasSibling(withText(engineName))))
-        Log.i(TAG, "verifyDefaultSearchEngineSummary: Verified that the \"Default search engine\" option has $engineName as summary")
+        Log.i(
+            TAG,
+            "verifyDefaultSearchEngineSummary: Verified that the \"Default search engine\" option has $engineName as summary",
+        )
     }
 
     fun verifyManageSearchShortcutsHeader() {
-        Log.i(TAG, "verifyManageSearchShortcutsHeader: Trying to verify that the \"Manage alternative search engines\" option is displayed")
+        Log.i(
+            TAG,
+            "verifyManageSearchShortcutsHeader: Trying to verify that the \"Manage alternative search engines\" option is displayed",
+        )
         manageSearchShortcutsHeader.check(matches(isDisplayed()))
-        Log.i(TAG, "verifyManageSearchShortcutsHeader: Verified that the \"Manage alternative search engines\" option is displayed")
+        Log.i(
+            TAG,
+            "verifyManageSearchShortcutsHeader: Verified that the \"Manage alternative search engines\" option is displayed",
+        )
     }
 
     fun verifyManageShortcutsSummary() {
-        Log.i(TAG, "verifyManageShortcutsSummary: Trying to verify that the \"Manage alternative search engines\" option has \"Edit engines visible in the search menu\" as summary")
-        manageSearchShortcutsHeader
-            .check(matches(hasSibling(withText("Edit engines visible in the search menu"))))
-        Log.i(TAG, "verifyManageShortcutsSummary: Verified that the \"Manage alternative search engines\" option has \"Edit engines visible in the search menu\" as summary")
+        Log.i(
+            TAG,
+            "verifyManageShortcutsSummary: Trying to verify that the \"Manage alternative search engines\" option has \"Edit engines visible in the search menu\" as summary",
+        )
+        manageSearchShortcutsHeader.check(matches(hasSibling(withText("Edit engines visible in the search menu"))))
+        Log.i(
+            TAG,
+            "verifyManageShortcutsSummary: Verified that the \"Manage alternative search engines\" option has \"Edit engines visible in the search menu\" as summary",
+        )
     }
 
-    fun verifyEnginesShortcutsListHeader() =
-        assertUIObjectExists(itemWithText("Engines visible on the search menu"))
+    fun verifyEnginesShortcutsListHeader() = assertUIObjectExists(itemWithText("Engines visible on the search menu"))
 
     fun verifyAddressBarSectionHeader() {
-        Log.i(TAG, "verifyAddressBarSectionHeader: Trying to verify that the \"Address bar - Firefox Suggest\" heading is displayed")
+        Log.i(
+            TAG,
+            "verifyAddressBarSectionHeader: Trying to verify that the \"Address bar - Firefox Suggest\" heading is displayed",
+        )
         onView(withText("Address bar - Firefox Suggest")).check(matches(isDisplayed()))
-        Log.i(TAG, "verifyAddressBarSectionHeader: Verified that the \"Address bar - Firefox Suggest\" heading is displayed")
+        Log.i(
+            TAG,
+            "verifyAddressBarSectionHeader: Verified that the \"Address bar - Firefox Suggest\" heading is displayed",
+        )
     }
 
     fun verifyDefaultSearchEngineList() {
-        Log.i(TAG, "verifyDefaultSearchEngineList: Trying to verify that the \"Google\" search engine option has a favicon")
+        Log.i(
+            TAG,
+            "verifyDefaultSearchEngineList: Trying to verify that the \"Google\" search engine option has a favicon",
+        )
         defaultSearchEngineOption("Google").check(matches(hasSibling(withId(R.id.engine_icon))))
         Log.i(TAG, "verifyDefaultSearchEngineList: Verified that the \"Google\" search engine option has a favicon")
-        Log.i(TAG, "verifyDefaultSearchEngineList: Trying to verify that the \"Google\" search engine option is displayed")
+        Log.i(
+            TAG,
+            "verifyDefaultSearchEngineList: Trying to verify that the \"Google\" search engine option is displayed",
+        )
         defaultSearchEngineOption("Google").check(matches(isDisplayed()))
         Log.i(TAG, "verifyDefaultSearchEngineList: Verified that the \"Google\" search engine option is displayed")
-        Log.i(TAG, "verifyDefaultSearchEngineList: Trying to verify that the \"Bing\" search engine option has a favicon")
+        Log.i(
+            TAG,
+            "verifyDefaultSearchEngineList: Trying to verify that the \"Bing\" search engine option has a favicon",
+        )
         defaultSearchEngineOption("Bing").check(matches(hasSibling(withId(R.id.engine_icon))))
         Log.i(TAG, "verifyDefaultSearchEngineList: Verified that the \"Bing\" search engine option has a favicon")
-        Log.i(TAG, "verifyDefaultSearchEngineList: Trying to verify that the \"Bing\" search engine option is displayed")
+        Log.i(
+            TAG,
+            "verifyDefaultSearchEngineList: Trying to verify that the \"Bing\" search engine option is displayed",
+        )
         defaultSearchEngineOption("Bing").check(matches(isDisplayed()))
         Log.i(TAG, "verifyDefaultSearchEngineList: Verified that the \"Bing\" search engine option is displayed")
-        Log.i(TAG, "verifyDefaultSearchEngineList: Trying to verify that the \"DuckDuckGo\" search engine option has a favicon")
+        Log.i(
+            TAG,
+            "verifyDefaultSearchEngineList: Trying to verify that the \"DuckDuckGo\" search engine option has a favicon",
+        )
         defaultSearchEngineOption("DuckDuckGo").check(matches(hasSibling(withId(R.id.engine_icon))))
         Log.i(TAG, "verifyDefaultSearchEngineList: Verified that the \"DuckDuckGo\" search engine option has a favicon")
-        Log.i(TAG, "verifyDefaultSearchEngineList: Trying to verify that the \"DuckDuckGo\" search engine option is displayed")
+        Log.i(
+            TAG,
+            "verifyDefaultSearchEngineList: Trying to verify that the \"DuckDuckGo\" search engine option is displayed",
+        )
         defaultSearchEngineOption("DuckDuckGo").check(matches(isDisplayed()))
         Log.i(TAG, "verifyDefaultSearchEngineList: Verified that the \"DuckDuckGo\" search engine option is displayed")
         assertUIObjectExists(addSearchEngineButton())
@@ -151,12 +195,16 @@ class SettingsSubMenuSearchRobot {
 
     fun verifyManageShortcutsList(testRule: ComposeTestRule) {
         val defaultEngineId = appContext.components.core.store.state.search.selectedOrDefaultSearchEngine?.id
-        val availableShortcutsEngines = (getRegionSearchEnginesList() + getAvailableSearchEngines())
-            .filter { it.id != defaultEngineId }
+        val availableShortcutsEngines =
+            (getRegionSearchEnginesList() + getAvailableSearchEngines()).filter { it.id != defaultEngineId }
 
         availableShortcutsEngines.forEach {
-            Log.i(TAG, "verifyManageShortcutsList: Trying to verify that the ${it.name} alternative search engine is displayed")
-            testRule.onNodeWithText(it.name)
+            Log.i(
+                TAG,
+                "verifyManageShortcutsList: Trying to verify that the ${it.name} alternative search engine is displayed",
+            )
+            testRule
+                .onNodeWithText(it.name)
                 .assert(hasAnySibling(hasContentDescription("Search engine: ${it.name}")))
                 .assertIsDisplayed()
             Log.i(TAG, "verifyManageShortcutsList: Verify that the ${it.name} alternative search engine is displayed")
@@ -165,44 +213,70 @@ class SettingsSubMenuSearchRobot {
         assertUIObjectExists(addSearchEngineButton())
     }
 
-    /**
-     * Method that verifies the selected engines inside the Manage search shortcuts list.
-     */
+    /** Method that verifies the selected engines inside the Manage search shortcuts list. */
     fun verifySearchShortcutChecked(vararg engineShortcut: EngineShortcut) {
         engineShortcut.forEach {
-            val shortcutIsChecked = mDevice.findObject(UiSelector().text(it.name))
-                .getFromParent(
-                    UiSelector().index(it.checkboxIndex),
-                ).isChecked
+            val shortcutIsChecked =
+                mDevice
+                    .findObject(UiSelector().text(it.name))
+                    .getFromParent(UiSelector().index(it.checkboxIndex))
+                    .isChecked
 
             if (it.isChecked) {
-                Log.i(TAG, "verifySearchShortcutChecked: Trying to verify that ${it.name}'s alternative search engine check box is checked")
+                Log.i(
+                    TAG,
+                    "verifySearchShortcutChecked: Trying to verify that ${it.name}'s alternative search engine check box is checked",
+                )
                 assertTrue("$TAG: ${it.name} alternative search engine check box is not checked", shortcutIsChecked)
-                Log.i(TAG, "verifySearchShortcutChecked: Verified that the ${it.name}'s alternative search engine check box is checked")
+                Log.i(
+                    TAG,
+                    "verifySearchShortcutChecked: Verified that the ${it.name}'s alternative search engine check box is checked",
+                )
             } else {
-                Log.i(TAG, "verifySearchShortcutChecked: Trying to verify that the ${it.name}'s alternative search engine check box is not checked")
+                Log.i(
+                    TAG,
+                    "verifySearchShortcutChecked: Trying to verify that the ${it.name}'s alternative search engine check box is not checked",
+                )
                 assertFalse("$TAG: ${it.name} alternative search engine check box is checked", shortcutIsChecked)
-                Log.i(TAG, "verifySearchShortcutChecked: Verified that the ${it.name}'s alternative search engine check box is not checked")
+                Log.i(
+                    TAG,
+                    "verifySearchShortcutChecked: Verified that the ${it.name}'s alternative search engine check box is not checked",
+                )
             }
         }
     }
 
     fun verifyAutocompleteURlsIsEnabled(enabled: Boolean) {
-        Log.i(TAG, "verifyAutocompleteURlsIsEnabled: Trying to verify that the \"Autocomplete URLs\" toggle is checked: $enabled")
+        Log.i(
+            TAG,
+            "verifyAutocompleteURlsIsEnabled: Trying to verify that the \"Autocomplete URLs\" toggle is checked: $enabled",
+        )
         autocompleteSwitchButton()
             .check(matches(hasCousin(allOf(withClassName(endsWith("Switch")), isChecked(enabled)))))
-        Log.i(TAG, "verifyAutocompleteURlsIsEnabled: Verified that the \"Autocomplete URLs\" toggle is checked: $enabled")
+        Log.i(
+            TAG,
+            "verifyAutocompleteURlsIsEnabled: Verified that the \"Autocomplete URLs\" toggle is checked: $enabled",
+        )
     }
 
     fun verifyShowSearchSuggestionsEnabled(enabled: Boolean) {
-        Log.i(TAG, "verifyShowSearchSuggestionsEnabled: Trying to verify that the \"Show search suggestions\" toggle is checked: $enabled")
+        Log.i(
+            TAG,
+            "verifyShowSearchSuggestionsEnabled: Trying to verify that the \"Show search suggestions\" toggle is checked: $enabled",
+        )
         showSearchSuggestionSwitchButton()
             .check(matches(hasCousin(allOf(withClassName(endsWith("Switch")), isChecked(enabled)))))
-        Log.i(TAG, "verifyShowSearchSuggestionsEnabled: Verified that the \"Show search suggestions\" toggle is checked: $enabled")
+        Log.i(
+            TAG,
+            "verifyShowSearchSuggestionsEnabled: Verified that the \"Show search suggestions\" toggle is checked: $enabled",
+        )
     }
 
     fun verifyShowSearchSuggestionsInPrivateEnabled(enabled: Boolean) {
-        Log.i(TAG, "verifyShowSearchSuggestionsInPrivateEnabled: Trying to verify that the \"Show in private sessions\" check box is checked: $enabled")
+        Log.i(
+            TAG,
+            "verifyShowSearchSuggestionsInPrivateEnabled: Trying to verify that the \"Show in private sessions\" check box is checked: $enabled",
+        )
         showSuggestionsInPrivateModeSwitch()
             .check(
                 matches(
@@ -211,38 +285,71 @@ class SettingsSubMenuSearchRobot {
                             allOf(
                                 withClassName(endsWith("CheckBox")),
                                 isChecked(enabled),
-                            ),
-                        ),
-                    ),
-                ),
+                            )
+                        )
+                    )
+                )
             )
-        Log.i(TAG, "verifyShowSearchSuggestionsInPrivateEnabled: Verified that the \"Show in private sessions\" check box is checked: $enabled")
+        Log.i(
+            TAG,
+            "verifyShowSearchSuggestionsInPrivateEnabled: Verified that the \"Show in private sessions\" check box is checked: $enabled",
+        )
     }
 
     fun verifyShowClipboardSuggestionsEnabled(enabled: Boolean) {
-        Log.i(TAG, "verifyShowClipboardSuggestionsEnabled: Trying to verify that the \"Show clipboard suggestions\" option is visible")
+        Log.i(
+            TAG,
+            "verifyShowClipboardSuggestionsEnabled: Trying to verify that the \"Show clipboard suggestions\" option is visible",
+        )
         showClipboardSuggestionSwitch().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
-        Log.i(TAG, "verifyShowClipboardSuggestionsEnabled: Verified that the \"Show clipboard suggestions\" option is visible")
-        Log.i(TAG, "verifyShowClipboardSuggestionsEnabled: Trying to verify that the \"Show clipboard suggestions\" toggle is checked: $enabled")
-        showClipboardSuggestionSwitch().check(matches(hasCousin(allOf(withClassName(endsWith("Switch")), isChecked(enabled)))))
-        Log.i(TAG, "verifyShowClipboardSuggestionsEnabled: Verified that the \"Show clipboard suggestions\" toggle is checked: $enabled")
+        Log.i(
+            TAG,
+            "verifyShowClipboardSuggestionsEnabled: Verified that the \"Show clipboard suggestions\" option is visible",
+        )
+        Log.i(
+            TAG,
+            "verifyShowClipboardSuggestionsEnabled: Trying to verify that the \"Show clipboard suggestions\" toggle is checked: $enabled",
+        )
+        showClipboardSuggestionSwitch()
+            .check(matches(hasCousin(allOf(withClassName(endsWith("Switch")), isChecked(enabled)))))
+        Log.i(
+            TAG,
+            "verifyShowClipboardSuggestionsEnabled: Verified that the \"Show clipboard suggestions\" toggle is checked: $enabled",
+        )
     }
 
     fun verifySearchBrowsingHistoryEnabled(enabled: Boolean) {
-        Log.i(TAG, "verifySearchBrowsingHistoryEnabled: Trying to verify that the \"Search browsing history\" option is visible")
+        Log.i(
+            TAG,
+            "verifySearchBrowsingHistoryEnabled: Trying to verify that the \"Search browsing history\" option is visible",
+        )
         searchHistorySwitchButton().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
-        Log.i(TAG, "verifySearchBrowsingHistoryEnabled: Verified that the \"Search browsing history\" option is visible")
-        Log.i(TAG, "verifySearchBrowsingHistoryEnabled: Trying to verify that the \"Search browsing history\" toggle is checked: $enabled")
-        searchHistorySwitchButton().check(matches(hasCousin(allOf(withClassName(endsWith("Switch")), isChecked(enabled)))))
-        Log.i(TAG, "verifySearchBrowsingHistoryEnabled: Verified that the \"Search browsing history\" toggle is checked: $enabled")
+        Log.i(
+            TAG,
+            "verifySearchBrowsingHistoryEnabled: Verified that the \"Search browsing history\" option is visible",
+        )
+        Log.i(
+            TAG,
+            "verifySearchBrowsingHistoryEnabled: Trying to verify that the \"Search browsing history\" toggle is checked: $enabled",
+        )
+        searchHistorySwitchButton()
+            .check(matches(hasCousin(allOf(withClassName(endsWith("Switch")), isChecked(enabled)))))
+        Log.i(
+            TAG,
+            "verifySearchBrowsingHistoryEnabled: Verified that the \"Search browsing history\" toggle is checked: $enabled",
+        )
     }
 
     fun verifySearchBookmarksEnabled(enabled: Boolean) {
         Log.i(TAG, "verifySearchBookmarksEnabled: Trying to verify that the \"Search bookmarks\" option is visible")
         searchBookmarksSwitchButton().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
         Log.i(TAG, "verifySearchBookmarksEnabled: Verified that the \"Search bookmarks\" option is visible")
-        Log.i(TAG, "verifySearchBookmarksEnabled: Trying to verify that the \"Search bookmarks\" toggle is checked: $enabled")
-        searchBookmarksSwitchButton().check(matches(hasCousin(allOf(withClassName(endsWith("Switch")), isChecked(enabled)))))
+        Log.i(
+            TAG,
+            "verifySearchBookmarksEnabled: Trying to verify that the \"Search bookmarks\" toggle is checked: $enabled",
+        )
+        searchBookmarksSwitchButton()
+            .check(matches(hasCousin(allOf(withClassName(endsWith("Switch")), isChecked(enabled)))))
         Log.i(TAG, "verifySearchBookmarksEnabled: Verified that the \"Search bookmarks\" toggle is checked: $enabled")
     }
 
@@ -250,17 +357,28 @@ class SettingsSubMenuSearchRobot {
         Log.i(TAG, "verifySearchSyncedTabsEnabled: Trying to verify that the \"Search synced tabs\" option is visible")
         searchSyncedTabsSwitchButton().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
         Log.i(TAG, "verifySearchSyncedTabsEnabled: Verified that the \"Search synced tabs\" option is visible")
-        Log.i(TAG, "verifySearchSyncedTabsEnabled: Trying to verify that the \"Search synced tabs\" toggle is checked: $enabled")
-        searchSyncedTabsSwitchButton().check(matches(hasCousin(allOf(withClassName(endsWith("Switch")), isChecked(enabled)))))
-        Log.i(TAG, "verifySearchSyncedTabsEnabled: Verified that the \"Search synced tabs\" toggle is checked: $enabled")
+        Log.i(
+            TAG,
+            "verifySearchSyncedTabsEnabled: Trying to verify that the \"Search synced tabs\" toggle is checked: $enabled",
+        )
+        searchSyncedTabsSwitchButton()
+            .check(matches(hasCousin(allOf(withClassName(endsWith("Switch")), isChecked(enabled)))))
+        Log.i(
+            TAG,
+            "verifySearchSyncedTabsEnabled: Verified that the \"Search synced tabs\" toggle is checked: $enabled",
+        )
     }
 
     fun verifyVoiceSearchEnabled(enabled: Boolean) {
         Log.i(TAG, "verifyVoiceSearchEnabled: Trying to verify that the \"Show voice search\" option is visible")
         voiceSearchSwitchButton().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
         Log.i(TAG, "verifyVoiceSearchEnabled: Verified that the \"Show voice search\" option is visible")
-        Log.i(TAG, "verifyVoiceSearchEnabled: Trying to verify that the \"Show voice search\" toggle is checked: $enabled")
-        voiceSearchSwitchButton().check(matches(hasCousin(allOf(withClassName(endsWith("Switch")), isChecked(enabled)))))
+        Log.i(
+            TAG,
+            "verifyVoiceSearchEnabled: Trying to verify that the \"Show voice search\" toggle is checked: $enabled",
+        )
+        voiceSearchSwitchButton()
+            .check(matches(hasCousin(allOf(withClassName(endsWith("Switch")), isChecked(enabled)))))
         Log.i(TAG, "verifyVoiceSearchEnabled: Verified that the \"Show voice search\" toggle is checked: $enabled")
     }
 
@@ -292,10 +410,10 @@ class SettingsSubMenuSearchRobot {
                     throw e
                 } else {
                     Log.i(TAG, "changeDefaultSearchEngine: Exception caught, executing fallback methods")
-                    settingsSubMenuSearch {
-                    }.goBackToSearchSettings {
-                        openDefaultSearchEngineMenu()
-                    }
+                    settingsSubMenuSearch {}
+                        .goBackToSearchSettings {
+                            openDefaultSearchEngineMenu()
+                        }
                 }
             }
         }
@@ -303,7 +421,8 @@ class SettingsSubMenuSearchRobot {
 
     fun selectSearchShortcut(shortcut: EngineShortcut) {
         Log.i(TAG, "selectSearchShortcut: Trying to click ${shortcut.name}'s alternative search engine check box")
-        mDevice.findObject(UiSelector().text(shortcut.name))
+        mDevice
+            .findObject(UiSelector().text(shortcut.name))
             .getFromParent(UiSelector().index(shortcut.checkboxIndex))
             .click()
         Log.i(TAG, "selectSearchShortcut: Clicked ${shortcut.name}'s alternative search engine check box")
@@ -346,7 +465,10 @@ class SettingsSubMenuSearchRobot {
     }
 
     fun switchShowSuggestionsInPrivateSessionsToggle() {
-        Log.i(TAG, "switchShowSuggestionsInPrivateSessionsToggle: Trying to click the \"Show in private sessions\" check box")
+        Log.i(
+            TAG,
+            "switchShowSuggestionsInPrivateSessionsToggle: Trying to click the \"Show in private sessions\" check box",
+        )
         showSuggestionsInPrivateModeSwitch().click()
         Log.i(TAG, "switchShowSuggestionsInPrivateSessionsToggle: Clicked the \"Show in private sessions\" check box")
     }
@@ -361,7 +483,10 @@ class SettingsSubMenuSearchRobot {
         assertUIObjectExists(itemWithText(searchEngineName), exists = shouldExist)
 
     fun verifyDefaultSearchEngineSelected(searchEngineName: String) {
-        Log.i(TAG, "verifyDefaultSearchEngineSelected: Trying to verify that $searchEngineName's radio button is checked")
+        Log.i(
+            TAG,
+            "verifyDefaultSearchEngineSelected: Trying to verify that $searchEngineName's radio button is checked",
+        )
         defaultSearchEngineOption(searchEngineName).check(matches(isChecked(true)))
         Log.i(TAG, "verifyDefaultSearchEngineSelected: Verified that $searchEngineName's radio button is checked")
     }
@@ -389,18 +514,14 @@ class SettingsSubMenuSearchRobot {
             Log.i(TAG, "typeCustomEngineDetails: Trying to set the \"Search engine name\" text field to: $engineName")
             mDevice.findObject(By.res("$packageName:id/edit_engine_name")).text = engineName
             Log.i(TAG, "typeCustomEngineDetails: The \"Search engine name\" text field text was set to: $engineName")
-            assertUIObjectExists(
-                itemWithResIdAndText("$packageName:id/edit_engine_name", engineName),
-            )
+            assertUIObjectExists(itemWithResIdAndText("$packageName:id/edit_engine_name", engineName))
             Log.i(TAG, "typeCustomEngineDetails: Trying to clear the \"URL to use for search\" text field")
             mDevice.findObject(By.res("$packageName:id/edit_search_string")).clear()
             Log.i(TAG, "typeCustomEngineDetails: Cleared the \"URL to use for search\" text field")
             Log.i(TAG, "typeCustomEngineDetails: Trying to set the \"URL to use for search\" text field to: $engineURL")
             mDevice.findObject(By.res("$packageName:id/edit_search_string")).text = engineURL
             Log.i(TAG, "typeCustomEngineDetails: The \"URL to use for search\" text field text was set to: $engineURL")
-            assertUIObjectExists(
-                itemWithResIdAndText("$packageName:id/edit_search_string", engineURL),
-            )
+            assertUIObjectExists(itemWithResIdAndText("$packageName:id/edit_search_string", engineURL))
         } catch (e: AssertionError) {
             Log.i(TAG, "typeCustomEngineDetails: AssertionError caught, executing fallback methods")
             Log.i(TAG, "typeCustomEngineDetails: Trying to clear the \"Search engine name\" text field")
@@ -409,18 +530,14 @@ class SettingsSubMenuSearchRobot {
             Log.i(TAG, "typeCustomEngineDetails: Trying to set the \"Search engine name\" text field to: $engineName")
             mDevice.findObject(By.res("$packageName:id/edit_engine_name")).setText(engineName)
             Log.i(TAG, "typeCustomEngineDetails: The \"Search engine name\" text field text was set to: $engineName")
-            assertUIObjectExists(
-                itemWithResIdAndText("$packageName:id/edit_engine_name", engineName),
-            )
+            assertUIObjectExists(itemWithResIdAndText("$packageName:id/edit_engine_name", engineName))
             Log.i(TAG, "typeCustomEngineDetails: Trying to clear the \"URL to use for search\" text field")
             mDevice.findObject(By.res("$packageName:id/edit_search_string")).clear()
             Log.i(TAG, "typeCustomEngineDetails: Cleared the \"URL to use for search\" text field")
             Log.i(TAG, "typeCustomEngineDetails: Trying to set the \"URL to use for search\" text field to: $engineURL")
             mDevice.findObject(By.res("$packageName:id/edit_search_string")).setText(engineURL)
             Log.i(TAG, "typeCustomEngineDetails: The \"URL to use for search\" text field text was set to: $engineURL")
-            assertUIObjectExists(
-                itemWithResIdAndText("$packageName:id/edit_search_string", engineURL),
-            )
+            assertUIObjectExists(itemWithResIdAndText("$packageName:id/edit_search_string", engineURL))
         }
     }
 
@@ -431,16 +548,28 @@ class SettingsSubMenuSearchRobot {
         Log.i(TAG, "typeSearchEngineSuggestionString: Trying to clear the \"Search suggestion API URL\" text field")
         onView(withId(R.id.edit_suggest_string)).perform(clearText())
         Log.i(TAG, "typeSearchEngineSuggestionString: Cleared the \"Search suggestion API URL\" text field")
-        Log.i(TAG, "typeSearchEngineSuggestionString: Trying to type $searchSuggestionString in the \"Search suggestion API URL\" text field")
+        Log.i(
+            TAG,
+            "typeSearchEngineSuggestionString: Trying to type $searchSuggestionString in the \"Search suggestion API URL\" text field",
+        )
         onView(withId(R.id.edit_suggest_string)).perform(typeText(searchSuggestionString))
-        Log.i(TAG, "typeSearchEngineSuggestionString: Typed $searchSuggestionString in the \"Search suggestion API URL\" text field")
+        Log.i(
+            TAG,
+            "typeSearchEngineSuggestionString: Typed $searchSuggestionString in the \"Search suggestion API URL\" text field",
+        )
     }
 
     // Used in the non-Compose Default search engines menu
     fun openEngineOverflowMenu(searchEngineName: String) {
-        Log.i(TAG, "openEngineOverflowMenu: Waiting for $waitingTimeShort ms for $searchEngineName's three dot button to exist")
+        Log.i(
+            TAG,
+            "openEngineOverflowMenu: Waiting for $waitingTimeShort ms for $searchEngineName's three dot button to exist",
+        )
         threeDotMenu(searchEngineName).waitForExists(waitingTimeShort)
-        Log.i(TAG, "openEngineOverflowMenu: Waited for $waitingTimeShort ms for $searchEngineName's three dot button to exist")
+        Log.i(
+            TAG,
+            "openEngineOverflowMenu: Waited for $waitingTimeShort ms for $searchEngineName's three dot button to exist",
+        )
         Log.i(TAG, "openEngineOverflowMenu: Trying to click $searchEngineName's three dot button")
         threeDotMenu(searchEngineName).click()
         Log.i(TAG, "openEngineOverflowMenu: Clicked $searchEngineName's three dot button")
@@ -462,9 +591,7 @@ class SettingsSubMenuSearchRobot {
     // Used in the Default search engine menu
     fun clickDeleteSearchEngine() {
         Log.i(TAG, "clickDeleteSearchEngine: Trying to click the \"Delete\" button")
-        mDevice.findObject(
-            UiSelector().textContains(getStringResource(R.string.search_engine_delete)),
-        ).click()
+        mDevice.findObject(UiSelector().textContains(getStringResource(R.string.search_engine_delete))).click()
         Log.i(TAG, "clickDeleteSearchEngine: Clicked the \"Delete\" button")
     }
 
@@ -485,33 +612,54 @@ class SettingsSubMenuSearchRobot {
         Log.i(TAG, "verifyInvalidTemplateSearchStringFormatError: Trying to perform \"Close soft keyboard\" action")
         closeSoftKeyboard()
         Log.i(TAG, "verifyInvalidTemplateSearchStringFormatError: Performed \"Close soft keyboard\" action")
-        Log.i(TAG, "verifyInvalidTemplateSearchStringFormatError: Trying to verify that the \"Check that search string matches Example format\" error message is displayed")
+        Log.i(
+            TAG,
+            "verifyInvalidTemplateSearchStringFormatError: Trying to verify that the \"Check that search string matches Example format\" error message is displayed",
+        )
         onView(withText(getStringResource(R.string.search_add_custom_engine_error_missing_template)))
             .check(matches(isDisplayed()))
-        Log.i(TAG, "verifyInvalidTemplateSearchStringFormatError: Verified that the \"Check that search string matches Example format\" error message is displayed")
+        Log.i(
+            TAG,
+            "verifyInvalidTemplateSearchStringFormatError: Verified that the \"Check that search string matches Example format\" error message is displayed",
+        )
     }
 
     fun verifyErrorConnectingToSearchString(searchEngineName: String) {
         Log.i(TAG, "verifyErrorConnectingToSearchString: Trying to perform \"Close soft keyboard\" action")
         closeSoftKeyboard()
         Log.i(TAG, "verifyErrorConnectingToSearchString: Performed \"Close soft keyboard\" action")
-        Log.i(TAG, "verifyErrorConnectingToSearchString: Trying to verify that the \"Error connecting to $searchEngineName\" error message is displayed")
-        assertUIObjectExists(itemWithResIdContainingText("$packageName:id/textinput_error", "Error connecting to “$searchEngineName”"))
-        Log.i(TAG, "verifyErrorConnectingToSearchString: Verified that the \"Error connecting to $searchEngineName\" error message is displayed")
+        Log.i(
+            TAG,
+            "verifyErrorConnectingToSearchString: Trying to verify that the \"Error connecting to $searchEngineName\" error message is displayed",
+        )
+        assertUIObjectExists(
+            itemWithResIdContainingText("$packageName:id/textinput_error", "Error connecting to “$searchEngineName”")
+        )
+        Log.i(
+            TAG,
+            "verifyErrorConnectingToSearchString: Verified that the \"Error connecting to $searchEngineName\" error message is displayed",
+        )
     }
 
     fun verifyTheHomeScreenWidgetOption() {
-        Log.i(TAG, "verifyTheHomeScreenWidgetOption: Trying to verify that the \"Home screen widget\" option is visible")
-        homeScreenWidgetOption()
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        Log.i(
+            TAG,
+            "verifyTheHomeScreenWidgetOption: Trying to verify that the \"Home screen widget\" option is visible",
+        )
+        homeScreenWidgetOption().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyTheHomeScreenWidgetOption: Verified that the \"Home screen widget\" option is visible")
     }
 
     fun verifyTheHomeScreenWidgetToggle(enabled: Boolean) {
-        Log.i(TAG, "verifyTheHomeScreenWidgetToggle: Trying to verify that the \"Home screen widget\" toggle is checked: $enabled")
-        homeScreenWidgetOption()
-            .check(matches(hasCousin(allOf(withClassName(endsWith("Switch")), isChecked(enabled)))))
-        Log.i(TAG, "verifyTheHomeScreenWidgetToggle: Verified that the \"Home screen widget\" toggle is checked: $enabled")
+        Log.i(
+            TAG,
+            "verifyTheHomeScreenWidgetToggle: Trying to verify that the \"Home screen widget\" toggle is checked: $enabled",
+        )
+        homeScreenWidgetOption().check(matches(hasCousin(allOf(withClassName(endsWith("Switch")), isChecked(enabled)))))
+        Log.i(
+            TAG,
+            "verifyTheHomeScreenWidgetToggle: Verified that the \"Home screen widget\" toggle is checked: $enabled",
+        )
     }
 
     fun clickTheHomeScreenWidgetToggle() {
@@ -549,7 +697,9 @@ class SettingsSubMenuSearchRobot {
             return SettingsRobot.Transition()
         }
 
-        fun goBackToSearchSettings(interact: SettingsSubMenuSearchRobot.() -> Unit): SettingsSubMenuSearchRobot.Transition {
+        fun goBackToSearchSettings(
+            interact: SettingsSubMenuSearchRobot.() -> Unit
+        ): SettingsSubMenuSearchRobot.Transition {
             Log.i(TAG, "goBackToSearchSettings: Waiting for device to be idle")
             mDevice.waitForIdle()
             Log.i(TAG, "goBackToSearchSettings: Waited for device to be idle")
@@ -561,8 +711,14 @@ class SettingsSubMenuSearchRobot {
             return SettingsSubMenuSearchRobot.Transition()
         }
 
-        fun clickCustomSearchStringLearnMoreLink(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            Log.i(TAG, "clickCustomSearchStringLearnMoreLink: Trying to click the \"Search string URL\" learn more link")
+        fun clickCustomSearchStringLearnMoreLink(
+            composeTestRule: ComposeTestRule,
+            interact: BrowserRobot.() -> Unit,
+        ): BrowserRobot.Transition {
+            Log.i(
+                TAG,
+                "clickCustomSearchStringLearnMoreLink: Trying to click the \"Search string URL\" learn more link",
+            )
             onView(withId(R.id.custom_search_engines_learn_more)).click()
             Log.i(TAG, "clickCustomSearchStringLearnMoreLink: Clicked the \"Search string URL\" learn more link")
 
@@ -570,18 +726,32 @@ class SettingsSubMenuSearchRobot {
             return BrowserRobot.Transition(composeTestRule)
         }
 
-        fun clickCustomSearchSuggestionsLearnMoreLink(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            Log.i(TAG, "clickCustomSearchSuggestionsLearnMoreLink: Trying to click the \"Search suggestions API\" learn more link")
+        fun clickCustomSearchSuggestionsLearnMoreLink(
+            composeTestRule: ComposeTestRule,
+            interact: BrowserRobot.() -> Unit,
+        ): BrowserRobot.Transition {
+            Log.i(
+                TAG,
+                "clickCustomSearchSuggestionsLearnMoreLink: Trying to click the \"Search suggestions API\" learn more link",
+            )
             onView(withId(R.id.custom_search_suggestions_learn_more)).click()
-            Log.i(TAG, "clickCustomSearchSuggestionsLearnMoreLink: Clicked the \"Search suggestions API\" learn more link")
+            Log.i(
+                TAG,
+                "clickCustomSearchSuggestionsLearnMoreLink: Clicked the \"Search suggestions API\" learn more link",
+            )
 
             BrowserRobot(composeTestRule).interact()
             return BrowserRobot.Transition(composeTestRule)
         }
 
-        fun clickSearchWidgetOnHomeScreen(composeTestRule: ComposeTestRule, interact: SearchRobot.() -> Unit): SearchRobot.Transition {
+        fun clickSearchWidgetOnHomeScreen(
+            composeTestRule: ComposeTestRule,
+            interact: SearchRobot.() -> Unit,
+        ): SearchRobot.Transition {
             Log.i(TAG, "clickSearchWidgetOnHomeScreen: Trying to click voice search on the search widget")
-            mDevice.findObject(UiSelector().description(getStringResource(R.string.search_widget_voice))).clickAndWaitForNewWindow(waitingTime)
+            mDevice
+                .findObject(UiSelector().description(getStringResource(R.string.search_widget_voice)))
+                .clickAndWaitForNewWindow(waitingTime)
             Log.i(TAG, "clickSearchWidgetOnHomeScreen: Clicked the voice search on the search widget")
             mDevice.waitForIdle()
 
@@ -598,9 +768,10 @@ fun settingsSubMenuSearch(interact: SettingsSubMenuSearchRobot.() -> Unit): Sett
 
 /**
  * Matches search shortcut items inside the 'Manage search shortcuts' menu
- * @param name, of type String, should be the name of the search engine.
- * @param checkboxIndex, of type Int, is the checkbox' index afferent to the search engine.
- * @param isChecked, of type Boolean, should show if the checkbox is expected to be checked.
+ *
+ * @property name, of type String, should be the name of the search engine.
+ * @property checkboxIndex, of type Int, is the checkbox' index afferent to the search engine.
+ * @property isChecked, of type Boolean, should show if the checkbox is expected to be checked.
  */
 class EngineShortcut(
     val name: String,
@@ -614,110 +785,111 @@ private val manageSearchShortcutsHeader = onView(withText("Manage alternative se
 
 private fun searchHistorySwitchButton(): ViewInteraction {
     Log.i(TAG, "searchHistorySwitchButton: Trying to perform scroll action to the \"Search browsing history\" option")
-    onView(withId(preferenceR.id.recycler_view)).perform(
-        RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
-            hasDescendant(withText("Search browsing history")),
-        ),
-    )
+    onView(withId(preferenceR.id.recycler_view))
+        .perform(
+            RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(hasDescendant(withText("Search browsing history")))
+        )
     Log.i(TAG, "searchHistorySwitchButton: Performed scroll action to the \"Search browsing history\" option")
     return onView(withText("Search browsing history"))
 }
 
 private fun searchBookmarksSwitchButton(): ViewInteraction {
     Log.i(TAG, "searchBookmarksSwitchButton: Trying to perform scroll action to the \"Search bookmarks\" option")
-    onView(withId(preferenceR.id.recycler_view)).perform(
-        RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
-            hasDescendant(withText("Search bookmarks")),
-        ),
-    )
+    onView(withId(preferenceR.id.recycler_view))
+        .perform(RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(hasDescendant(withText("Search bookmarks"))))
     Log.i(TAG, "searchBookmarksSwitchButton: Performed scroll action to the \"Search bookmarks\" option")
     return onView(withText("Search bookmarks"))
 }
 
 private fun searchSyncedTabsSwitchButton(): ViewInteraction {
     Log.i(TAG, "searchSyncedTabsSwitchButton: Trying to perform scroll action to the \"Search synced tabs\" option")
-    onView(withId(preferenceR.id.recycler_view)).perform(
-        RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
-            hasDescendant(withText("Search synced tabs")),
-        ),
-    )
+    onView(withId(preferenceR.id.recycler_view))
+        .perform(RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(hasDescendant(withText("Search synced tabs"))))
     Log.i(TAG, "searchSyncedTabsSwitchButton: Performed scroll action to the \"Search synced tabs\" option")
     return onView(withText("Search synced tabs"))
 }
 
 private fun voiceSearchSwitchButton(): ViewInteraction {
     Log.i(TAG, "voiceSearchSwitchButton: Trying to perform scroll action to the \"Show voice search\" option")
-    onView(withId(preferenceR.id.recycler_view)).perform(
-        RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
-            hasDescendant(withText("Show voice search")),
-        ),
-    )
+    onView(withId(preferenceR.id.recycler_view))
+        .perform(RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(hasDescendant(withText("Show voice search"))))
     Log.i(TAG, "voiceSearchSwitchButton: Performed scroll action to the \"Show voice search\" option")
     return onView(withText("Show voice search"))
 }
 
 private fun autocompleteSwitchButton(): ViewInteraction {
     Log.i(TAG, "autocompleteSwitchButton: Trying to perform scroll action to the \"Autocomplete URLs\" option")
-    onView(withId(preferenceR.id.recycler_view)).perform(
-        RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
-            hasDescendant(withText(getStringResource(R.string.preferences_enable_autocomplete_urls))),
-        ),
-    )
+    onView(withId(preferenceR.id.recycler_view))
+        .perform(
+            RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
+                hasDescendant(withText(getStringResource(R.string.preferences_enable_autocomplete_urls)))
+            )
+        )
     Log.i(TAG, "autocompleteSwitchButton: Performed scroll action to the \"Autocomplete URLs\" option")
     return onView(withText(getStringResource(R.string.preferences_enable_autocomplete_urls)))
 }
 
 private fun showSearchSuggestionSwitchButton(): ViewInteraction {
-    Log.i(TAG, "showSearchSuggestionSwitchButton: Trying to perform scroll action to the \"Show search suggestions\" option")
-    onView(withId(preferenceR.id.recycler_view)).perform(
-        RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
-            hasDescendant(withText("Show search suggestions")),
-        ),
+    Log.i(
+        TAG,
+        "showSearchSuggestionSwitchButton: Trying to perform scroll action to the \"Show search suggestions\" option",
     )
+    onView(withId(preferenceR.id.recycler_view))
+        .perform(
+            RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(hasDescendant(withText("Show search suggestions")))
+        )
     Log.i(TAG, "showSearchSuggestionSwitchButton: Performed scroll action to the \"Show search suggestions\" option")
     return onView(withText("Show search suggestions"))
 }
 
 private fun showClipboardSuggestionSwitch(): ViewInteraction {
-    Log.i(TAG, "showClipboardSuggestionSwitch: Trying to perform scroll action to the \"Show clipboard suggestions\" option")
-    onView(withId(preferenceR.id.recycler_view)).perform(
-        RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
-            hasDescendant(withText(getStringResource(R.string.preferences_show_clipboard_suggestions))),
-        ),
+    Log.i(
+        TAG,
+        "showClipboardSuggestionSwitch: Trying to perform scroll action to the \"Show clipboard suggestions\" option",
     )
+    onView(withId(preferenceR.id.recycler_view))
+        .perform(
+            RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
+                hasDescendant(withText(getStringResource(R.string.preferences_show_clipboard_suggestions)))
+            )
+        )
     Log.i(TAG, "showClipboardSuggestionSwitch: Performed scroll action to the \"Show clipboard suggestions\" option")
     return onView(withText(getStringResource(R.string.preferences_show_clipboard_suggestions)))
 }
 
 private fun showSuggestionsInPrivateModeSwitch(): ViewInteraction {
-    Log.i(TAG, "showSuggestionsInPrivateModeSwitch: Trying to perform scroll action to the \"Show in private sessions\" option")
-    onView(withId(preferenceR.id.recycler_view)).perform(
-        RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
-            hasDescendant(withText(getStringResource(R.string.preferences_show_search_suggestions_in_private))),
-        ),
+    Log.i(
+        TAG,
+        "showSuggestionsInPrivateModeSwitch: Trying to perform scroll action to the \"Show in private sessions\" option",
     )
+    onView(withId(preferenceR.id.recycler_view))
+        .perform(
+            RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
+                hasDescendant(withText(getStringResource(R.string.preferences_show_search_suggestions_in_private)))
+            )
+        )
     Log.i(TAG, "showSuggestionsInPrivateModeSwitch: Performed scroll action to the \"Show in private sessions\" option")
     return onView(withText(getStringResource(R.string.preferences_show_search_suggestions_in_private)))
 }
 
-private fun goBackButton() =
-    onView(CoreMatchers.allOf(withContentDescription("Navigate up")))
+private fun goBackButton() = onView(CoreMatchers.allOf(withContentDescription("Navigate up")))
 
 private fun addSearchEngineButton() = mDevice.findObject(UiSelector().text("Add search engine"))
 
 private fun addSearchEngineSaveButton() = onView(withId(R.id.save_button))
 
 private fun threeDotMenu(searchEngineName: String) =
-    mDevice.findObject(UiSelector().text(searchEngineName))
-        .getFromParent(UiSelector().description("More options"))
+    mDevice.findObject(UiSelector().text(searchEngineName)).getFromParent(UiSelector().description("More options"))
 
 private fun defaultSearchEngineOption(searchEngineName: String) =
     onView(
         allOf(
             withId(R.id.radio_button),
             hasSibling(withText(searchEngineName)),
-            isDescendantOfA(withTagValue(CoreMatchers.equalTo(getStringResource(R.string.pref_key_search_engine_list)))),
-        ),
+            isDescendantOfA(
+                withTagValue(CoreMatchers.equalTo(getStringResource(R.string.pref_key_search_engine_list)))
+            ),
+        )
     )
 
 private fun overflowMenuWithSiblingText(text: String): SemanticsMatcher =

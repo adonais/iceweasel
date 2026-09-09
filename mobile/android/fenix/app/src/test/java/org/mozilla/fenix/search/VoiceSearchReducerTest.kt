@@ -13,10 +13,11 @@ class VoiceSearchReducerTest {
 
     @Test
     fun `GIVEN default state WHEN VoiceInputRequested THEN isRequestingVoiceInput is true and voiceInputResult is null`() {
-        val initialState = VoiceSearchState(
-            isRequestingVoiceInput = false,
-            voiceInputResult = "previous result",
-        )
+        val initialState =
+            VoiceSearchState(
+                isRequestingVoiceInput = false,
+                voiceInputResult = "previous result",
+            )
 
         val newState = VoiceSearchReducer.reduce(initialState, VoiceSearchAction.VoiceInputRequested)
 
@@ -26,10 +27,11 @@ class VoiceSearchReducerTest {
 
     @Test
     fun `GIVEN requesting input WHEN this could not be recorded THEN isRequestingVoiceInput is false and voiceInputResult is set`() {
-        val initialState = VoiceSearchState(
-            isRequestingVoiceInput = true,
-            voiceInputResult = null,
-        )
+        val initialState =
+            VoiceSearchState(
+                isRequestingVoiceInput = true,
+                voiceInputResult = null,
+            )
         val searchTerms = "hello world"
 
         val newState = VoiceSearchReducer.reduce(initialState, VoiceSearchAction.VoiceInputResultReceived(searchTerms))
@@ -40,10 +42,11 @@ class VoiceSearchReducerTest {
 
     @Test
     fun `GIVEN requesting input WHEN there the input is empty THEN isRequestingVoiceInput is false and voiceInputResult is set`() {
-        val initialState = VoiceSearchState(
-            isRequestingVoiceInput = true,
-            voiceInputResult = "",
-        )
+        val initialState =
+            VoiceSearchState(
+                isRequestingVoiceInput = true,
+                voiceInputResult = "",
+            )
         val searchTerms = "hello world"
 
         val newState = VoiceSearchReducer.reduce(initialState, VoiceSearchAction.VoiceInputResultReceived(searchTerms))
@@ -54,10 +57,11 @@ class VoiceSearchReducerTest {
 
     @Test
     fun `GIVEN any state WHEN VoiceInputRequestCleared THEN isRequestingVoiceInput is false and voiceInputResult is null`() {
-        val initialState = VoiceSearchState(
-            isRequestingVoiceInput = true,
-            voiceInputResult = "something",
-        )
+        val initialState =
+            VoiceSearchState(
+                isRequestingVoiceInput = true,
+                voiceInputResult = "something",
+            )
 
         val newState = VoiceSearchReducer.reduce(initialState, VoiceSearchAction.VoiceInputRequestCleared)
 

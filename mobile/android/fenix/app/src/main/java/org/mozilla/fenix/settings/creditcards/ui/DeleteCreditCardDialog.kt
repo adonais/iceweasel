@@ -59,8 +59,7 @@ internal fun DeleteCreditCardDialog(
 
 @Composable
 @Preview
-private fun PreviewDeleteCreditCardDialog(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) = FirefoxTheme(theme) {
-    DeleteCreditCardDialog()
-}
+private fun PreviewDeleteCreditCardDialog(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) =
+    FirefoxTheme(theme) {
+        DeleteCreditCardDialog()
+    }

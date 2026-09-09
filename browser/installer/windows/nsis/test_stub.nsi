@@ -97,6 +97,13 @@ FunctionEnd
 !macroend
 !define AssertEqual "!insertmacro AssertEqual"
 
+!macro AssertNoErrors
+  ${If} ${Errors}
+    ${Fail} "Expected the errors flag to be unset"
+  ${EndIf}
+!macroend
+!define AssertNoErrors "!insertmacro AssertNoErrors"
+
 Var TestFailureCount
 
 !macro UnitTest _testFunctionName
@@ -177,6 +184,9 @@ Function .onInit
     ${UnitTest} TestGetHadExistingProfileFailure
     ${UnitTest} TestGetHadExistingProfileSuccess
 
+    ${UnitTest} TestGetProfileDirExistedFailure
+    ${UnitTest} TestGetProfileDirExistedSuccess
+
     ${UnitTest} TestIsInstallerLaunchedByDesktopLauncherNoParameter
     ${UnitTest} TestIsInstallerLaunchedByDesktopLauncherUnknownParameter
     ${UnitTest} TestIsInstallerLaunchedByDesktopLauncherSuccess
@@ -202,6 +212,9 @@ Function .onInit
 
     ${UnitTest} TestShouldInstallDesktopLauncherFailure
     ${UnitTest} TestShouldInstallDesktopLauncherSuccess
+
+    ${UnitTest} TestPostUpdateTargetArgs
+    ${UnitTest} TestPostUpdateTargetGuess
 
     Call TelemetryTests
 
@@ -670,6 +683,32 @@ Function TestGetHadExistingProfileSuccess
   RMDir /r $MockLocalAppDataFolder
 FunctionEnd
 
+Function TestGetProfileDirExistedFailure
+  GetTempFileName $0
+  Delete $0
+  CreateDirectory $0
+  StrCpy $MockLocalAppDataFolder $0
+
+  Call GetProfileDirExisted
+  Pop $0
+  ${AssertEqual} 0 "false"
+
+  RMDir $MockLocalAppDataFolder
+FunctionEnd
+
+Function TestGetProfileDirExistedSuccess
+  GetTempFileName $0
+  Delete $0
+  CreateDirectory "$0\Mozilla\Firefox"
+  StrCpy $MockLocalAppDataFolder $0
+
+  Call GetProfileDirExisted
+  Pop $0
+  ${AssertEqual} 0 "true"
+
+  RMDir /r $MockLocalAppDataFolder
+FunctionEnd
+
 Function TestIsInstallerLaunchedByDesktopLauncherNoParameter
   StrCpy $MockParameters ""
   Call IsInstallerLaunchedByDesktopLauncher
@@ -887,6 +926,70 @@ Function TestShouldInstallDesktopLauncherSuccess
   Call ShouldInstallDesktopLauncher
   Pop $0
   ${AssertEqual} 0 "1"
+FunctionEnd
+
+Function TestPostUpdateTargetArgs
+  StrCpy $MockParameters "/PostUpdateTarget:Installation"
+  Call GetPostUpdateTarget
+  ${AssertNoErrors}
+  Pop $0
+  ${AssertEqual} 0 "Installation"
+
+  StrCpy $MockParameters "/PostUpdateTarget:CurrentUser"
+  Call GetPostUpdateTarget
+  ${AssertNoErrors}
+  Pop $0
+  ${AssertEqual} 0 "CurrentUser"
+
+  StrCpy $MockParameters "/PostUpdateTarget:somethingELSE"
+  Call GetPostUpdateTarget
+  ${AssertNoErrors}
+  Pop $0
+  ${AssertEqual} 0 "somethingELSE"
+FunctionEnd
+
+Function TestPostUpdateTargetGuess
+  StrCpy $MockParameters ""
+
+  GetTempFileName $0
+  Delete $0
+  CreateDirectory $0
+
+  Push $INSTDIR
+  StrCpy $INSTDIR $0
+
+  ; We _do_ have write access, so it should attempt Installation.
+  Call GetPostUpdateTarget
+  ${AssertNoErrors}
+  Pop $0
+  ${AssertEqual} 0 "Installation"
+
+  ; (WD) is 'SDDL_EVERYONE', so no-one can write.
+  AccessControl::DenyOnFile "$INSTDIR" "(WD)" "GenericWrite"
+  Pop $0
+  ${If} $0 == "error"
+    Pop $0
+    ${Fail} "AccessControl::DenyOnFile failed: $0"
+  ${EndIf}
+
+  ; Now that there is no write access, it should go for CurrentUser.
+  Call GetPostUpdateTarget
+  ${AssertNoErrors}
+  Pop $0
+  ${AssertEqual} 0 "CurrentUser"
+
+  AccessControl::GrantOnFile "$INSTDIR" "(WD)" "GenericWrite"
+  Pop $0
+  ${If} $0 == "error"
+    Pop $0
+    ${Fail} "AccessControl::DenyOnFile failed: $0"
+  ${EndIf}
+
+  RMDir $INSTDIR
+  ; This also catches files that were left over from the guessing.
+  ${AssertNoErrors}
+
+  Pop $INSTDIR
 FunctionEnd
 
 Section

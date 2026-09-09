@@ -105,6 +105,16 @@ async function resetDownloads() {
   }
 }
 
+/**
+ * Triggers a download from a page and waits for the checks to pass.
+ *
+ * @param {string} url The page to open.
+ * @param {string} link The id of the link to click to start the download.
+ * @param {Function} checkFunction Returns a promise resolved once the expected
+ *        console messages have been seen.
+ * @param {string} description Description of the checked behavior.
+ * @returns {Promise} Resolves to the download the test triggered.
+ */
 async function runTest(url, link, checkFunction, description) {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -114,6 +124,23 @@ async function runTest(url, link, checkFunction, description) {
   });
   requestLongerTimeout(2);
   await resetDownloads();
+
+  // The download is only added to the list when the transfer starts, which
+  // happens after the console messages checkFunction waits for, sometimes after
+  // the end of this test file. The view has to be added after resetDownloads()
+  // emptied the list, as addView replays onDownloadAdded for the downloads
+  // already in the list, which in a browser session running several test files
+  // could be a download another file left behind.
+  let downloadList = await Downloads.getList(Downloads.PUBLIC);
+  let downloadAdded = new Promise(resolve => {
+    let view = {
+      onDownloadAdded(download) {
+        downloadList.removeView(view);
+        resolve(download);
+      },
+    };
+    downloadList.addView(view);
+  });
 
   let tab = BrowserTestUtils.addTab(gBrowser, url);
   gBrowser.selectedTab = tab;
@@ -135,6 +162,8 @@ async function runTest(url, link, checkFunction, description) {
   await checkPromise;
   ok(true, description);
   BrowserTestUtils.removeTab(tab);
+
+  return downloadAdded;
 }
 
 //Test description:
@@ -144,15 +173,30 @@ async function runTest(url, link, checkFunction, description) {
 // 4. Upgrading fails - so http-first downgrade download to http.
 
 add_task(async function test_mixed_download() {
-  await runTest(
+  let download = await runTest(
     SECURE_BASE_URL,
     "insecure",
     () => Promise.all([shouldTriggerDownload(), shouldConsoleError()]),
     "Secure -> Insecure should Error"
   );
+  is(
+    download.source.url,
+    "http://" + DOWNLOAD_URL,
+    "The download the test triggered was added to the public list"
+  );
+
+  // The insecure download is blocked, which notifies an "error" download event
+  // and opens the downloads panel whatever browser.download.alwaysOpenPanel is
+  // set to.
+  await BrowserTestUtils.waitForPopupEvent(DownloadsPanel.panel, "shown");
+  let panelHidden = BrowserTestUtils.waitForPopupEvent(
+    DownloadsPanel.panel,
+    "hidden"
+  );
+  DownloadsPanel.hidePanel();
+  await panelHidden;
+
   // remove downloaded file
-  let downloadsPromise = Downloads.getList(Downloads.PUBLIC);
-  let downloadList = await downloadsPromise;
-  let [download] = downloadList._downloads;
+  let downloadList = await Downloads.getList(Downloads.PUBLIC);
   await downloadList.remove(download);
 });

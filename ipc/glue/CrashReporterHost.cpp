@@ -96,7 +96,8 @@ void CrashReporterHost::FinalizeCrashReport() {
   // have one).
   if (mExtraAnnotations[CrashReporter::Annotation::CrashEventID].IsEmpty()) {
     NSID_TrimBracketsASCII uuidString(nsID::GenerateUUID());
-    mExtraAnnotations[CrashReporter::Annotation::CrashEventID] = uuidString;
+    mExtraAnnotations[CrashReporter::Annotation::CrashEventID] =
+        std::move(uuidString);
   }
 
   char startTime[32];

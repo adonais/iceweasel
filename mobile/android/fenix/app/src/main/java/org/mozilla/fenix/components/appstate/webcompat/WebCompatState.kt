@@ -8,8 +8,8 @@ package org.mozilla.fenix.components.appstate.webcompat
  * State for WebCompat Reporter feature that's required to live the lifetime of a session.
  *
  * @property tabUrl The URL that was active at the time the user was last in the Web Compat Reporter feature.
- * @property enteredUrl The URL that was in the URL text field at the time the user was last
- * in the Web Compat Reporter feature.
+ * @property enteredUrl The URL that was in the URL text field at the time the user was last in the Web Compat Reporter
+ *   feature.
  * @property reason Optional param specifying the reason that [tabUrl] is broken.
  * @property problemDescription Description of the encountered problem.
  * @property includeEtpBlockedUrls Checks if the user wants to include URLs blocked by ETP when they submit the report.

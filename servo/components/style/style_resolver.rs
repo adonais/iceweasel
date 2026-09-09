@@ -173,7 +173,10 @@ where
         rule_inclusion: RuleInclusion,
         pseudo_resolution: PseudoElementResolution,
     ) -> Self {
-        debug_assert_eq!(element.as_node().depth(), context.thread_local.current_dom_depth);
+        debug_assert_eq!(
+            element.as_node().depth(),
+            context.thread_local.current_dom_depth
+        );
         Self {
             element,
             context,
@@ -196,9 +199,15 @@ where
         let visited_rules = if self.context.shared.visited_styles_enabled
             && (inside_link || self.element.is_link())
         {
-            let visited_matching_results =
-                self.match_primary(VisitedHandlingMode::RelevantLinkVisited);
-            Some(visited_matching_results.rule_node)
+            if self.needs_visited_matching() {
+                let visited_matching_results =
+                    self.match_primary(VisitedHandlingMode::RelevantLinkVisited);
+                Some(visited_matching_results.rule_node)
+            } else {
+                // Not `None`: the style sharing cache compares these against
+                // the candidate's visited rules, which are the same node.
+                Some(primary_results.rule_node.clone())
+            }
         } else {
             None
         };
@@ -213,6 +222,30 @@ where
             parent_style,
             layout_parent_style,
         )
+    }
+
+    /// Whether matching again with the relevant link treated as visited can give a different rule
+    /// node than the pass we already did.
+    ///
+    /// `:link` and `:visited` only match links, so for anything else other than them (and their
+    /// pseudo-elements), this needs a selector testing link state from a position that reaches a
+    /// non-link, like `a:visited span`.
+    fn needs_visited_matching(&self) -> bool {
+        if self.element.is_link() {
+            return true;
+        }
+        if self.element.implemented_pseudo_element().is_some()
+            && self
+                .element
+                .pseudo_element_originating_element()
+                .is_some_and(|e| e.is_link())
+        {
+            return true;
+        }
+        self.context
+            .shared
+            .stylist
+            .any_applicable_rule_data(self.element, |data| data.has_non_link_visited_dependency())
     }
 
     fn cascade_primary_style(

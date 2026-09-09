@@ -33,13 +33,13 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.DisplayState
 import mozilla.components.lib.state.ext.observeAsComposableState
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.wallpapers.WallpaperTheme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A simple browser toolbar that displays only the browser end actions configured in [store].
@@ -62,29 +62,21 @@ fun BrowserSimpleToolbar(
     // Tint the browser action icons with the wallpaper text color only under the universal
     // treatment. WallpaperTheme.onWallpaper falls back to onSurface for the default wallpaper, in
     // previews, and anywhere LocalWallpaperState is not provided (e.g. tab previews).
-    val browserActionsColor = if (
-        !inComposePreview &&
-        components.settings.enableUniversalEdgeToEdgeWallpapers &&
-        !isPrivateMode
-    ) {
-        WallpaperTheme.onWallpaper
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
+    val browserActionsColor =
+        if (!inComposePreview && components.settings.enableUniversalEdgeToEdgeWallpapers && !isPrivateMode) {
+            WallpaperTheme.onWallpaper
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        }
 
-    MaterialTheme(
-        colorScheme = MaterialTheme.colorScheme.copy(onSurface = browserActionsColor),
-    ) {
+    MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(onSurface = browserActionsColor)) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Spacer(
-                modifier = Modifier
-                    .clickable { onInteraction(requireNotNull(pageOrigin.onClick)) }
-                    .height(64.dp)
-                    .weight(1f),
+                modifier =
+                    Modifier.clickable { onInteraction(requireNotNull(pageOrigin.onClick)) }.height(64.dp).weight(1f)
             )
 
             if (browserActionsEnd.isNotEmpty()) {
@@ -103,7 +95,7 @@ private fun editEndActions(): List<Action> {
             drawableResId = iconsR.drawable.mozac_ic_cross_24,
             contentDescription = android.R.string.untitled,
             onClick = object : BrowserToolbarEvent {},
-        ),
+        )
     )
 }
 
@@ -133,29 +125,28 @@ private fun initialActions(): List<Action> {
         ActionButtonRes(
             drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
             contentDescription = android.R.string.untitled,
-            onClick = BrowserToolbarMenu {
-                listOf(
-                    BrowserToolbarMenuButton(
-                        icon = Icon.DrawableResIcon(iconsR.drawable.mozac_ic_settings_24),
-                        text = Text.StringResText(android.R.string.untitled),
-                        contentDescription = ContentDescription.StringResContentDescription(
-                            android.R.string.untitled,
-                        ),
-                        onClick = object : BrowserToolbarEvent {},
-                    ),
-                )
-            },
+            onClick =
+                BrowserToolbarMenu {
+                    listOf(
+                        BrowserToolbarMenuButton(
+                            icon = Icon.DrawableResIcon(iconsR.drawable.mozac_ic_settings_24),
+                            text = Text.StringResText(android.R.string.untitled),
+                            contentDescription =
+                                ContentDescription.StringResContentDescription(android.R.string.untitled),
+                            onClick = object : BrowserToolbarEvent {},
+                        )
+                    )
+                },
         ),
     )
 }
 
 @Composable
 private fun SimpleBrowserToolbarPreview(actions: List<Action>, theme: Theme) {
-    val store = BrowserToolbarStore(
-        initialState = BrowserToolbarState(
-            displayState = DisplayState(browserActionsEnd = actions),
-        ),
-    )
+    val store =
+        BrowserToolbarStore(
+            initialState = BrowserToolbarState(displayState = DisplayState(browserActionsEnd = actions))
+        )
     FirefoxTheme(theme = theme) {
         Surface {
             BrowserSimpleToolbar(store = store, appStore = AppStore())
@@ -165,24 +156,18 @@ private fun SimpleBrowserToolbarPreview(actions: List<Action>, theme: Theme) {
 
 @Preview
 @Composable
-private fun BrowserSimpleToolbarPreview_Edit(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun BrowserSimpleToolbarPreview_Edit(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     SimpleBrowserToolbarPreview(editEndActions(), theme = theme)
 }
 
 @Preview
 @Composable
-private fun BrowserSimpleToolbarPreview_Initial(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun BrowserSimpleToolbarPreview_Initial(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     SimpleBrowserToolbarPreview(initialActions(), theme = theme)
 }
 
 @Preview
 @Composable
-private fun BrowserSimpleToolbarPreview_Search(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun BrowserSimpleToolbarPreview_Search(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     SimpleBrowserToolbarPreview(searchEndActions(), theme = theme)
 }

@@ -16,8 +16,9 @@ import mozilla.components.lib.state.Store
 class SecureScreenStore(
     initialState: SecureScreenState = SecureScreenState.Initial,
     reducer: Reducer<SecureScreenState, SecureScreenAction> = ::secureScreenReducer,
-) : Store<SecureScreenState, SecureScreenAction>(
-    initialState = initialState,
-    reducer = reducer,
-    middleware = emptyList(),
-)
+) :
+    Store<SecureScreenState, SecureScreenAction>(
+        initialState = initialState,
+        reducer = reducer,
+        middleware = emptyList(),
+    )

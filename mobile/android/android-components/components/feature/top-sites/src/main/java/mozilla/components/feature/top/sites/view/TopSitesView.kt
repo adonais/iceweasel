@@ -6,12 +6,8 @@ package mozilla.components.feature.top.sites.view
 
 import mozilla.components.feature.top.sites.TopSite
 
-/**
- * Implemented by the application for displaying onto the UI.
- */
+/** Implemented by the application for displaying onto the UI. */
 interface TopSitesView {
-    /**
-     * Updates the UI with new list of top sites.
-     */
+    /** Updates the UI with new list of top sites. */
     fun displayTopSites(topSites: List<TopSite>)
 }

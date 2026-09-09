@@ -49,7 +49,9 @@ class SettingsAppIconPage(composeRule: AndroidComposeTestRule<HomeActivityIntent
 
     fun restartApp(): SettingsAppIconPage {
         TestHelper.restartApp(composeRule.activityRule)
-        PageStateTracker.currentPageName = "AppEntry"
+        // A restart puts the app back at its entry point, so navigation's breadcrumb has to go
+        // with it or every later step reasons from a page that is no longer on screen.
+        PageStateTracker.reset()
         return this
     }
 

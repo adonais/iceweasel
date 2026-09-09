@@ -21,7 +21,7 @@
 #  include "libavutil/hwcontext.h"
 #  include "libavutil/pixfmt.h"
 #endif
-#if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+#ifdef MOZ_USE_HWDECODE_VULKAN
 #  include "libavutil/hwcontext_vulkan.h"
 #  include "libavutil/macros.h"
 #  include "libavutil/version.h"
@@ -49,7 +49,7 @@
 #  include "H265.h"
 #endif
 #if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
-#  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+#  ifdef MOZ_USE_HWDECODE_VULKAN
 // DMABufDevice defines its own version of this which collides with the
 // official version in drm_fourcc.h
 #    ifdef DRM_FORMAT_MOD_INVALID
@@ -248,12 +248,17 @@ static AVPixelFormat ChooseV4L2PixelFormat(AVCodecContext* aCodecContext,
   return AV_PIX_FMT_NONE;
 }
 
-#  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+#  ifdef MOZ_USE_HWDECODE_VULKAN
 static bool VulkanDirectDecodeExportEnabled() {
+  // Keep direct export disabled on bundled ffvpx until lavc is greater than
+  // MOZ_FFMPEG_MIN_LAVC_FOR_VULKAN_DMABUF (62.29.101); then remove this #if.
+#    if defined(FFVPX_VERSION) && \
+        LIBAVCODEC_VERSION_INT <= MOZ_FFMPEG_MIN_LAVC_FOR_VULKAN_DMABUF
+  return false;
+#    else
   return StaticPrefs::
-             media_hardware_video_decoding_vulkan_enabled_AtStartup() &&
-         StaticPrefs::
-             media_hardware_video_decoding_vulkan_direct_export_enabled_AtStartup();
+      media_hardware_video_decoding_vulkan_direct_export_enabled_AtStartup();
+#    endif
 }
 
 static AVPixelFormat ChooseVulkanPixelFormat(AVCodecContext* aCodecContext,
@@ -348,7 +353,7 @@ bool FFmpegVideoDecoder<LIBAV_VER>::CreateVAAPIDeviceContext() {
   return true;
 }
 
-#  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+#  ifdef MOZ_USE_HWDECODE_VULKAN
 static uint32_t VulkanTransferQueueFamily(const AVVulkanDeviceContext* aVkCtx) {
 #    if LIBAVCODEC_VERSION_MAJOR >= 63
   // FFmpeg 63 replaced queue_family_tx_index with the qf array.
@@ -435,9 +440,11 @@ int FFmpegVideoDecoder<LIBAV_VER>::ChooseVulkanPixelFormatFromContext(
     if (*aFormats != AV_PIX_FMT_VULKAN) {
       continue;
     }
+    // Failed to get avcodec_get_hw_frames_parameters() leads later to
+    // playback freeze at MESA/video frame export.
     if (!mLib->avcodec_get_hw_frames_parameters) {
       FFMPEGV_LOG("Requesting pixel format VULKAN (no hw_frames_parameters)");
-      return AV_PIX_FMT_VULKAN;
+      return AV_PIX_FMT_NONE;
     }
     AVBufferRef* frames_ref = nullptr;
     int ret = mLib->avcodec_get_hw_frames_parameters(
@@ -449,7 +456,7 @@ int FFmpegVideoDecoder<LIBAV_VER>::ChooseVulkanPixelFormatFromContext(
       }
       FFMPEGV_LOG(
           "Requesting pixel format VULKAN (get_hw_frames_parameters failed)");
-      return AV_PIX_FMT_VULKAN;
+      return AV_PIX_FMT_NONE;
     }
     AVHWFramesContext* frames_ctx = (AVHWFramesContext*)frames_ref->data;
 
@@ -651,10 +658,10 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitVAAPIDecoder() {
   return NS_OK;
 }
 
-#  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+#  ifdef MOZ_USE_HWDECODE_VULKAN
 MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitVulkanDecoder() {
-  if (!StaticPrefs::media_hardware_video_decoding_vulkan_enabled_AtStartup()) {
-    FFMPEG_LOG("Vulkan FFmpeg decoder disabled by pref");
+  if (!gfx::gfxVars::CanUseVulkanHardwareVideoDecoding()) {
+    FFMPEG_LOG("Vulkan FFmpeg decoder disabled");
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -715,6 +722,12 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitVulkanDecoder() {
   if (!CreateVulkanDeviceContext(mon)) {
     FFMPEG_LOG("  Failed to create Vulkan device context");
     return NS_ERROR_DOM_MEDIA_FATAL_ERR;
+  }
+
+  if (!mVulkanDecoder.VulkanCanDecodeFormat(
+          mCodecID, mLib->avcodec_version(), mVulkanDeviceContext,
+          mInfo.mExtraData, mInfo.mColorDepth)) {
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
   MediaResult ret = AllocateExtraData();
@@ -985,6 +998,13 @@ FFmpegVideoDecoder<LIBAV_VER>::FFmpegVideoDecoder(
 }
 
 FFmpegVideoDecoder<LIBAV_VER>::~FFmpegVideoDecoder() {
+#ifdef MOZ_WIDGET_ANDROID
+  // We must wait to release mSurfaceTextureHandle because there may be
+  // outstanding frames that reference us. Those frames take a strong reference
+  // to FFmpegVideoDecoder in their CompositorListener, so it keeps it alive
+  // long enough to present the frames in the compositor.
+  ReleaseSurfaceMediaCodec();
+#endif
 #ifdef CUSTOMIZED_BUFFER_ALLOCATION_ASSERT_ENABLED
   // ffmpeg should have cleared all of its strong references to the decoded data
   // buffers.
@@ -1001,8 +1021,7 @@ void FFmpegVideoDecoder<LIBAV_VER>::InitHWDecoderIfAllowed() {
     return;
   }
 
-#  if defined(MOZ_ENABLE_VULKAN_VIDEO) && LIBAVCODEC_VERSION_MAJOR >= 60 && \
-      !defined(FFVPX_VERSION)
+#  ifdef MOZ_USE_HWDECODE_VULKAN
   if (NS_SUCCEEDED(InitVulkanDecoder())) {
     return;
   }
@@ -1446,7 +1465,7 @@ void FFmpegVideoDecoder<LIBAV_VER>::InitHWCodecContext(ContextType aType) {
     case ContextType::VAAPI:
       mCodecContext->get_format = ChooseVAAPIPixelFormat;
       break;
-#  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+#  ifdef MOZ_USE_HWDECODE_VULKAN
     case ContextType::Vulkan:
       mCodecContext->get_format = ChooseVulkanPixelFormat;
       break;
@@ -1670,7 +1689,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
         rv = CreateImageV4L2(fpos, GetFramePts(mFrame), Duration(mFrame),
                              aResults);
       }
-#      if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+#      ifdef MOZ_USE_HWDECODE_VULKAN
       else if (mVulkanDeviceContext) {
         rv = CreateImageVulkan(fpos, GetFramePts(mFrame), Duration(mFrame),
                                aResults);
@@ -2179,7 +2198,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageVAAPI(
   return NS_OK;
 }
 
-#  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+#  ifdef MOZ_USE_HWDECODE_VULKAN
 
 static void FillDRMDescriptorYUVSingleObject(
     uint32_t aFormat, int aFd, size_t aSize, uint64_t aModifier,
@@ -2563,7 +2582,7 @@ void FFmpegVideoDecoder<LIBAV_VER>::ProcessShutdown() {
   FFmpegDataDecoder<LIBAV_VER>::ProcessShutdown();
 #if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
   if (IsHardwareAccelerated()) {
-#  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+#  ifdef MOZ_USE_HWDECODE_VULKAN
     if (mVulkanDecoder.mDevice) {
       mVulkanDecoder.Cleanup();
     }
@@ -3087,6 +3106,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitMediaCodecDecoder() {
     if (mMediaCodecDeviceContext) {
       mLib->av_buffer_unref(&mMediaCodecDeviceContext);
     }
+    ReleaseSurfaceMediaCodec();
   });
 
   FFMPEG_LOG("  creating device context");
@@ -3282,6 +3302,14 @@ bool FFmpegVideoDecoder<LIBAV_VER>::ReleaseFrameMediaCodec(void* aKey,
     }
     mLib->av_frame_free(&aFrame);
   });
+}
+
+void FFmpegVideoDecoder<LIBAV_VER>::ReleaseSurfaceMediaCodec() {
+  if (mSurfaceTextureSurface) {
+    java::SurfaceAllocator::DisposeSurface(mSurfaceTextureSurface);
+    mSurfaceTextureSurface = nullptr;
+    mSurfaceHandle = {};
+  }
 }
 
 void FFmpegVideoDecoder<LIBAV_VER>::ReleaseFramesMediaCodec() {

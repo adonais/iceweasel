@@ -37,10 +37,10 @@ import androidx.compose.ui.util.fastForEach
 /**
  * Configure component to receive right/secondary-button clicks.
  *
- * @param interactionSource [MutableInteractionSource] that will be used to emit
- * [PressInteraction.Press] when this clickable is pressed.
+ * @param interactionSource [MutableInteractionSource] that will be used to emit [PressInteraction.Press] when this
+ *   clickable is pressed.
  * @param indication indication to be shown when modified element is pressed. Pass `null` to show no indication, or
- * current value from [LocalIndication] to show theme default
+ *   current value from [LocalIndication] to show theme default
  * @param enabled Whether or not the component will react to mouse right clicks.
  * @param onRightClick Invoked when the user right clicks on the component.
  */
@@ -49,34 +49,34 @@ fun Modifier.rightClickable(
     indication: Indication?,
     enabled: Boolean = true,
     onRightClick: () -> Unit,
-): Modifier = this.then(
-    Modifier
-        .indication(
-            interactionSource = interactionSource,
-            indication = indication,
-        )
-        .pointerInput(enabled) {
-            if (enabled) {
-                awaitEachGesture {
-                    val event = awaitPointerEvent()
-                    if (event.buttons.isSecondaryPressed) {
-                        onRightClick.invoke()
-                        event.changes.fastForEach { it.consume() }
+): Modifier =
+    this.then(
+        Modifier.indication(
+                interactionSource = interactionSource,
+                indication = indication,
+            )
+            .pointerInput(enabled) {
+                if (enabled) {
+                    awaitEachGesture {
+                        val event = awaitPointerEvent()
+                        if (event.buttons.isSecondaryPressed) {
+                            onRightClick.invoke()
+                            event.changes.fastForEach { it.consume() }
 
-                        val pressInteraction = PressInteraction.Press(event.changes[0].position)
-                        interactionSource.tryEmit(pressInteraction)
+                            val pressInteraction = PressInteraction.Press(event.changes[0].position)
+                            interactionSource.tryEmit(pressInteraction)
 
-                        do {
-                            val event2 = awaitPointerEvent()
-                            event2.changes.fastForEach { it.consume() }
-                        } while (event2.changes.fastAny { it.pressed })
+                            do {
+                                val event2 = awaitPointerEvent()
+                                event2.changes.fastForEach { it.consume() }
+                            } while (event2.changes.fastAny { it.pressed })
 
-                        interactionSource.tryEmit(PressInteraction.Release(pressInteraction))
+                            interactionSource.tryEmit(PressInteraction.Release(pressInteraction))
+                        }
                     }
                 }
             }
-        },
-)
+    )
 
 @Preview
 @Composable
@@ -87,32 +87,28 @@ private fun RightClickablePreview() {
     var longLeftClickCount by remember { mutableIntStateOf(0) }
 
     MaterialTheme {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(color = Color.White),
-        ) {
+        Column(modifier = Modifier.fillMaxSize().background(color = Color.White)) {
             Box(
-                modifier = Modifier
-                    .background(color = Color.Yellow)
-                    .size(size = 200.dp)
-                    .combinedClickable(
-                        interactionSource = interactionSource,
-                        indication = LocalIndication.current,
-                        onClick = {
-                            leftClickCount++
-                        },
-                        onLongClick = {
-                            longLeftClickCount++
-                        },
-                    )
-                    .rightClickable(
-                        interactionSource = interactionSource,
-                        indication = LocalIndication.current,
-                        onRightClick = {
-                            rightClickCount++
-                        },
-                    ),
+                modifier =
+                    Modifier.background(color = Color.Yellow)
+                        .size(size = 200.dp)
+                        .combinedClickable(
+                            interactionSource = interactionSource,
+                            indication = LocalIndication.current,
+                            onClick = {
+                                leftClickCount++
+                            },
+                            onLongClick = {
+                                longLeftClickCount++
+                            },
+                        )
+                        .rightClickable(
+                            interactionSource = interactionSource,
+                            indication = LocalIndication.current,
+                            onRightClick = {
+                                rightClickCount++
+                            },
+                        ),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(text = "Click me")

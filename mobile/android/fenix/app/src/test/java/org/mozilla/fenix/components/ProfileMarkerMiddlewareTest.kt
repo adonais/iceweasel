@@ -17,27 +17,33 @@ import org.junit.Test
 class ProfileMarkerMiddlewareTest {
 
     data object SState : State
+
     data class AAction(val arg: String = "") : Action
 
     @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `profile marker middleware creates markers for every action dispatched to store`() = runTest {
         val captured = mutableListOf<Pair<String, String?>>()
-        val profiler = FakeProfiler(fakeAddMarker = { markerName, text ->
-            captured.add(markerName to text)
-        })
+        val profiler =
+            FakeProfiler(
+                fakeAddMarker = { markerName, text ->
+                    captured.add(markerName to text)
+                }
+            )
         val markerName = "hi, my name is"
-        val store = Store<SState, AAction>(
-            initialState = SState,
-            reducer = { state, _ -> state },
-            middleware = listOf(
-                ProfileMarkerMiddleware(
-                    markerName = markerName,
-                    profiler = profiler,
-                    scope = this,
-                ),
-            ),
-        )
+        val store =
+            Store<SState, AAction>(
+                initialState = SState,
+                reducer = { state, _ -> state },
+                middleware =
+                    listOf(
+                        ProfileMarkerMiddleware(
+                            markerName = markerName,
+                            profiler = profiler,
+                            scope = this,
+                        )
+                    ),
+            )
 
         val actionMessages = listOf("one!", "two!", "buckle my shoe!")
         actionMessages.forEach { message ->

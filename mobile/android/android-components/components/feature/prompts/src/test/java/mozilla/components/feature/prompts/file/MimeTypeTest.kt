@@ -40,12 +40,13 @@ import org.mockito.Mockito.`when`
 @RunWith(AndroidJUnit4::class)
 class MimeTypeTest {
 
-    private val request = PromptRequest.File(
-        mimeTypes = emptyArray(),
-        onSingleFileSelected = { _, _ -> },
-        onMultipleFilesSelected = { _, _ -> },
-        onDismiss = {},
-    )
+    private val request =
+        PromptRequest.File(
+            mimeTypes = emptyArray(),
+            onSingleFileSelected = { _, _ -> },
+            onMultipleFilesSelected = { _, _ -> },
+            onDismiss = {},
+        )
     private val capture = PromptRequest.File.FacingMode.ANY
 
     private lateinit var context: Context
@@ -235,10 +236,7 @@ class MimeTypeTest {
         val image = MimeType.Image { _, _, _ -> uri }
 
         @Suppress("DEPRECATION")
-        `when`(
-            packageManager
-                .resolveContentProvider(eq("org.mozilla.browser.fileprovider"), anyInt()),
-        )
+        `when`(packageManager.resolveContentProvider(eq("org.mozilla.browser.fileprovider"), anyInt()))
             .thenReturn(mock(ProviderInfo::class.java))
         mockResolveActivity()
 
@@ -246,8 +244,7 @@ class MimeTypeTest {
             assertEquals(action, ACTION_IMAGE_CAPTURE)
             assertEquals(1, extras?.size())
 
-            @Suppress("DEPRECATION")
-            val photoUri = extras!!.get(EXTRA_OUTPUT) as Uri
+            @Suppress("DEPRECATION") val photoUri = extras!!.get(EXTRA_OUTPUT) as Uri
             assertEquals(uri, photoUri)
         }
 
@@ -335,10 +332,11 @@ class MimeTypeTest {
 
         // allowMultipleFiles true and not empty mimeTypes will create an intent
         // with EXTRA_ALLOW_MULTIPLE and EXTRA_MIME_TYPES
-        val multiJpegRequest = request.copy(
-            mimeTypes = arrayOf("image/jpeg"),
-            isMultipleFilesSelection = true,
-        )
+        val multiJpegRequest =
+            request.copy(
+                mimeTypes = arrayOf("image/jpeg"),
+                isMultipleFilesSelection = true,
+            )
         with(MimeType.Wildcard.buildIntent(testContext, multiJpegRequest)) {
             assertEquals(action, ACTION_GET_CONTENT)
             assertEquals(type, "*/*")

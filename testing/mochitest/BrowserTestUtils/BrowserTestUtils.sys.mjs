@@ -25,6 +25,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
+  gfxInfo: ["@mozilla.org/gfx/info;1", Ci.nsIGfxInfo],
   ProtocolProxyService: [
     "@mozilla.org/network/protocol-proxy-service;1",
     Ci.nsIProtocolProxyService,
@@ -62,6 +63,25 @@ function describeMutationWait(checkFn, frame) {
     return source;
   }
   return `${frame.filename.replace(/.*\//, "")}:${frame.lineNumber} - ${source}`;
+}
+
+/**
+ * Gives a lazy tab the browser it was created without.
+ *
+ * @backward-compat { version 156 }
+ * `insertBrowser()` is new in 156, but the newtab train-hop jobs run these
+ * tests against Beta and Release builds, whose tabbrowser only has the
+ * underscored predecessor. Call it directly once 156 reaches Release.
+ *
+ * @param {object} tabbrowser
+ * @param {MozTabbrowserTab} tab
+ */
+function insertBrowser(tabbrowser, tab) {
+  if (tabbrowser.insertBrowser) {
+    tabbrowser.insertBrowser(tab);
+  } else {
+    tabbrowser._insertBrowser(tab);
+  }
 }
 
 /**
@@ -116,6 +136,21 @@ registerActors();
  * @class
  */
 export var BrowserTestUtils = {
+  /**
+   * Whether minimizing a window has any observable effect on this platform.
+   * Wayland offers no way to tell that a window was minimized, so neither a
+   * sizemodechange event nor the window's deactivation follows
+   * ``window.minimize()`` there. See bug 2063202.
+   *
+   * @returns {boolean}
+   */
+  get canMinimize() {
+    return !(
+      AppConstants.platform == "linux" &&
+      lazy.gfxInfo.windowProtocol == "wayland"
+    );
+  },
+
   // We define the function separately, rather than using an arrow function
   // inline due to https://github.com/jsdoc/jsdoc/issues/2143.
   /**
@@ -501,7 +536,7 @@ export var BrowserTestUtils = {
     if (tabbrowser && tabbrowser.getTabForBrowser) {
       let tab = tabbrowser.getTabForBrowser(browser);
       if (tab) {
-        tabbrowser._insertBrowser(tab);
+        insertBrowser(tabbrowser, tab);
       }
     }
 
@@ -1227,7 +1262,7 @@ export var BrowserTestUtils = {
         // Ensure all browsers have been inserted or we won't get
         // messages back from them.
         browserSet.forEach(browser => {
-          win.gBrowser._insertBrowser(win.gBrowser.getTabForBrowser(browser));
+          insertBrowser(win.gBrowser, win.gBrowser.getTabForBrowser(browser));
         });
 
         let observer = subject => {
@@ -1823,7 +1858,35 @@ export var BrowserTestUtils = {
   },
 
   /**
+   * Waits until painting is no longer suppressed in a browsing context.
+   *
+   * This is needed before synthesizing a mouse event on a freshly loaded
+   * document, because hit testing ignores content while painting is
+   * suppressed: the click resolves to the document root and fires no event.
+   *
+   * @param {BrowsingContext} browsingContext
+   *        The browsing context to wait for. Note that painting is suppressed
+   *        per document, so for content in an iframe this needs to be the
+   *        iframe's browsing context rather than the top level one.
+   */
+  async waitForPaintingUnsuppressed(browsingContext) {
+    try {
+      await this.sendQuery(
+        browsingContext,
+        "BrowserTestUtils:WaitForPaintingUnsuppressed"
+      );
+    } catch (ex) {
+      // The document may have gone away while we were waiting, eg. because the
+      // error page was only transient. There is nothing left to paint then.
+      console.warn(`waitForPaintingUnsuppressed: ${ex}`);
+    }
+  },
+
+  /**
    * Like browserLoaded, but waits for an error page to appear.
+   *
+   * Also waits for painting to be unsuppressed in the browser, so that clicks
+   * synthesized on the error page actually hit test to its content.
    *
    * @param {xul:browser} browser
    *        A xul:browser.
@@ -1832,14 +1895,18 @@ export var BrowserTestUtils = {
    *   Resolves when an error page has been loaded in the browser, with the name
    *   of the event.
    */
-  waitForErrorPage(browser) {
-    return this.waitForContentEvent(
+  async waitForErrorPage(browser) {
+    let eventName = await this.waitForContentEvent(
       browser,
       "AboutNetErrorLoad",
       false,
       null,
       true
     );
+
+    await this.waitForPaintingUnsuppressed(browser.browsingContext);
+
+    return eventName;
   },
 
   /**

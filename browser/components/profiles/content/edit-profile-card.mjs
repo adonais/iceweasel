@@ -135,7 +135,7 @@ export class EditProfileCard extends MozLitElement {
     window.addEventListener("pagehide", this);
     document.addEventListener("Profiles:CustomAvatarUpload", this);
     document.addEventListener("Profiles:AvatarSelected", this);
-    document.addEventListener("ThemePickerThemeUpdated", this);
+    window.addEventListener("ThemePickerThemeUpdated", this);
     window.addEventListener("ThemePickerDeviceAppearanceUpdated", this);
 
     this.init().then(() => (this.initialized = true));
@@ -148,7 +148,7 @@ export class EditProfileCard extends MozLitElement {
     window.removeEventListener("pagehide", this);
     document.removeEventListener("Profiles:CustomAvatarUpload", this);
     document.removeEventListener("Profiles:AvatarSelected", this);
-    document.removeEventListener("ThemePickerThemeUpdated", this);
+    window.removeEventListener("ThemePickerThemeUpdated", this);
     window.removeEventListener("ThemePickerDeviceAppearanceUpdated", this);
   }
 
@@ -281,7 +281,14 @@ export class EditProfileCard extends MozLitElement {
         this.updateAvatar(avatar);
         break;
       }
-      case "ThemePickerThemeUpdated":
+      case "ThemePickerThemeUpdated": {
+        RPMSendAsyncMessage(
+          "Profiles:RecordThemeTelemetry",
+          this.profile?.themeId
+        );
+        this.refreshProfile();
+        break;
+      }
       case "ThemePickerDeviceAppearanceUpdated": {
         this.refreshProfile();
         break;
@@ -560,7 +567,6 @@ export class EditProfileCard extends MozLitElement {
       </div>
       <div class="avatar-selector-parent">
         <profile-avatar-selector
-          hidden
           value=${this.profile.avatar}
         ></profile-avatar-selector>
       </div>

@@ -55,6 +55,10 @@ export class EnterprisePoliciesManagerContent {
   }
 
   isAllowed(feature) {
+    if (this.status == Ci.nsIEnterprisePolicies.INACTIVE) {
+      return true;
+    }
+
     let disallowedFeatures = Services.cpmm.sharedData.get(
       "EnterprisePolicies:DisallowedFeatures"
     );
@@ -62,6 +66,10 @@ export class EnterprisePoliciesManagerContent {
   }
 
   isAllowedForURI(feature, uri) {
+    if (this.status == Ci.nsIEnterprisePolicies.INACTIVE) {
+      return true;
+    }
+
     return lazy.SitePolicyUtils.isAllowedForURI(
       this,
       this.sitePolicies,

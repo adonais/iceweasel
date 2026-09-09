@@ -17,15 +17,17 @@ class RelayEligibilityStoreTest {
 
     @Test
     fun `GIVEN RelayEligibilityStore WHEN dispatching AccountChanged THEN reducer updates state`() {
-        val initialState = RelayState(
-            eligibilityState = Ineligible.FirefoxAccountNotLoggedIn,
-            lastEntitlementCheckMs = 0L,
-        )
+        val initialState =
+            RelayState(
+                eligibilityState = Ineligible.FirefoxAccountNotLoggedIn,
+                lastEntitlementCheckMs = 0L,
+            )
 
-        val store = RelayEligibilityStore(
-            initialState = initialState,
-            reducer = ::relayEligibilityReducer,
-        )
+        val store =
+            RelayEligibilityStore(
+                initialState = initialState,
+                reducer = ::relayEligibilityReducer,
+            )
 
         assertEquals(initialState, store.state)
 

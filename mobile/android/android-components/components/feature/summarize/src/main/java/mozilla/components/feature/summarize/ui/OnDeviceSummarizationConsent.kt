@@ -24,9 +24,7 @@ import mozilla.components.feature.summarize.LocalProductName
 import mozilla.components.feature.summarize.OnDeviceSummarizationShakeConsentAction
 import mozilla.components.feature.summarize.R
 
-/**
- * Composable to be rendered to request user consent to allow on-device summarization.
- */
+/** Composable to be rendered to request user consent to allow on-device summarization. */
 @Composable
 internal fun OnDeviceSummarizationConsent(
     modifier: Modifier = Modifier,
@@ -54,9 +52,7 @@ private fun OnDeviceSummarizationConsentContent(
     onClickCancel: () -> Unit,
 ) {
     Column(modifier) {
-        OnDeviceSummarizationDescription(
-            onClickLearnMore = onClickLearnMore,
-        )
+        OnDeviceSummarizationDescription(onClickLearnMore = onClickLearnMore)
 
         Spacer(modifier = Modifier.height(AcornTheme.layout.space.static300))
 
@@ -103,9 +99,7 @@ private fun OnDeviceSummarizationButtons(
     onClickAllow: () -> Unit,
     onClickCancel: () -> Unit,
 ) {
-    Column(
-        modifier = modifier,
-    ) {
+    Column(modifier = modifier) {
         FilledButton(
             modifier = Modifier.fillMaxWidth(),
             onClick = onClickAllow,

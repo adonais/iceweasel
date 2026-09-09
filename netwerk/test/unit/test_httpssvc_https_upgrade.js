@@ -367,6 +367,73 @@ add_task(async function testHTTPSRRUpgradeWithOriginHeader() {
   Assert.equal(buf, originURL);
 });
 
+// A plain CNAME is not an HTTPS AliasMode record: when the HTTPS RR query for
+// the origin only returns a CNAME whose target has no HTTPS record, there is no
+// HTTPS RR and the http:// load must not be upgraded. Bug 2066852.
+add_task(async function testNoUpgradeForPlainCnameWithoutHTTPSRecord() {
+  Services.dns.clearCache(true);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/dns-query`
+  );
+
+  let httpserv = new HttpServer();
+  let content = "ok";
+  httpserv.registerPathHandler("/", function handler(metadata, response) {
+    response.setHeader("Content-Length", `${content.length}`);
+    response.bodyOutputStream.write(content, content.length);
+  });
+  httpserv.start(-1);
+  let port = httpserv.identity.primaryPort;
+  httpserv.identity.setPrimary("http", "cname-no-https.com", port);
+
+  // The HTTPS RR query for a non-default port uses a port-prefixed name.
+  let originQuery = `_${port}._https.cname-no-https.com`;
+  await trrServer.registerDoHAnswers(originQuery, "HTTPS", {
+    answers: [
+      {
+        name: originQuery,
+        type: "CNAME",
+        ttl: 55,
+        class: "IN",
+        flush: false,
+        data: "cname-target-no-https.com",
+      },
+    ],
+  });
+  // The CNAME target resolves, but has no HTTPS record (NODATA).
+  await trrServer.registerDoHAnswers("cname-target-no-https.com", "HTTPS", {
+    answers: [],
+  });
+  await trrServer.registerDoHAnswers("cname-no-https.com", "A", {
+    answers: [
+      {
+        name: "cname-no-https.com",
+        ttl: 55,
+        type: "A",
+        flush: false,
+        data: "127.0.0.1",
+      },
+    ],
+  });
+
+  let chan = makeChan(`http://cname-no-https.com:${port}/`);
+  let [req, response] = await channelOpenPromise(chan);
+  Assert.equal(response, content, "the load must not be upgraded to https");
+  Assert.equal(req.QueryInterface(Ci.nsIChannel).URI.scheme, "http");
+  Assert.greater(
+    await trrServer.requestCount(originQuery, "HTTPS"),
+    0,
+    "the HTTPS RR query for the origin was actually made"
+  );
+  await new Promise(resolve => httpserv.stop(resolve));
+
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?httpssvc_as_altsvc=1`
+  );
+});
+
 // See bug 1899841. Test the case when network.dns.use_https_rr_as_altsvc
 // is disabled.
 add_task(async function testPrefDisabled() {

@@ -23,8 +23,8 @@ import org.mozilla.fenix.ext.getIntentSessionId
 const val EXTRA_IS_SANDBOX_CUSTOM_TAB = "org.mozilla.fenix.customtabs.EXTRA_IS_SANDBOX_CUSTOM_TAB"
 
 /**
- * Activity that holds the [ExternalAppBrowserFragment] that is launched within an external app,
- * such as custom tabs and progressive web apps.
+ * Activity that holds the [ExternalAppBrowserFragment] that is launched within an external app, such as custom tabs and
+ * progressive web apps.
  */
 @Suppress("TooManyFunctions")
 open class ExternalAppBrowserActivity : HomeActivity() {
@@ -60,14 +60,12 @@ open class ExternalAppBrowserActivity : HomeActivity() {
 
     /**
      * [ExternalAppBrowserActivity], which is responsible for custom tabs, shares the [BrowserStore] and observing
-     * [AboutHomeBinding] would navigate the custom tab to the homepage when the selected tab's URL is
-     * [ABOUT_HOME_URL], so this is intentionally a no-op.
+     * [AboutHomeBinding] would navigate the custom tab to the homepage when the selected tab's URL is [ABOUT_HOME_URL],
+     * so this is intentionally a no-op.
      */
-    @VisibleForTesting
-    override fun addAboutHomeBinding(lifecycle: Lifecycle) = Unit
+    @VisibleForTesting override fun addAboutHomeBinding(lifecycle: Lifecycle) = Unit
 
-    @VisibleForTesting
-    override fun addHomepageTabBinding(lifecycle: Lifecycle) = Unit
+    @VisibleForTesting override fun addHomepageTabBinding(lifecycle: Lifecycle) = Unit
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun hasExternalTab(): Boolean {

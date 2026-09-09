@@ -5,6 +5,7 @@
 package org.mozilla.fenix.settings.advanced
 
 import android.content.Context
+import java.util.Locale
 import mozilla.components.support.locale.LocaleManager
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.After
@@ -17,7 +18,6 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.BuildConfig
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import java.util.Locale
 
 @RunWith(RobolectricTestRunner::class)
 class LocaleManagerExtensionTest {

@@ -214,27 +214,37 @@ async function test_change_keyword(engineList) {
   inputElem = dialogDoc.getElementById("engineAlias");
   acceptBtn = dialogDoc.getElementById("add-engine-dialog")._buttons.accept;
 
+  inputElem.focus();
   inputElem.value = "Keyword";
   inputElem.dispatchEvent(new Event("input", { bubbles: true }));
+  await TestUtils.waitForCondition(
+    () => inputElem.validationMessage,
+    "Wait for keyword validation to complete"
+  );
+  // Press Enter to reveal the validation error, as if the user tried to
+  // submit the form.
+  EventUtils.synthesizeKey("KEY_Enter", {}, dialogDoc.defaultView);
   acceptBtn.scrollIntoView();
   EventUtils.synthesizeMouseAtCenter(acceptBtn, {}, dialogDoc.defaultView);
   await TestUtils.waitForCondition(
-    () =>
-      inputElem.parentElement.querySelector(".error-label").textContent !=
-      "valid",
+    () => inputElem.parentElement.querySelector(".error-label").textContent,
     "Wait for error label to appear"
   );
   let errorLabel =
     inputElem.parentElement.querySelector(".error-label").textContent;
   Assert.notEqual(
     errorLabel,
-    "valid",
+    "",
     "Should have an error message because of duplicate keywords"
   );
   Assert.ok(
     acceptBtn.disabled,
     "Should not be able to submit an invalid keyword"
   );
+
+  // Cancel the invalid dialog before opening a new one.
+  let cancelBtn = dialogDoc.getElementById("add-engine-dialog")._buttons.cancel;
+  EventUtils.synthesizeMouseAtCenter(cancelBtn, {}, dialogDoc.defaultView);
 
   // Open new subdialog and ensure keyword has not changed.
   promiseSubDialogLoaded = promiseLoadSubDialog(

@@ -24,67 +24,48 @@ data class CfrToolsState(
     val pwaShown: Boolean = false,
 ) : State
 
-/**
- * [Action] implementation related to [CfrToolsStore].
- */
+/** [Action] implementation related to [CfrToolsStore]. */
 sealed class CfrToolsAction : Action {
 
-    /**
-     * Dispatched when the store is initialized.
-     */
+    /** Dispatched when the store is initialized. */
     data object Init : CfrToolsAction()
 
-    /**
-     * Toggle whether the tab auto close banner CFR has been shown.
-     */
+    /** Toggle whether the tab auto close banner CFR has been shown. */
     data object TabAutoCloseBannerShownToggled : CfrToolsAction()
 
-    /**
-     * Toggle whether the inactive tabs CFR has been shown.
-     */
+    /** Toggle whether the inactive tabs CFR has been shown. */
     data object InactiveTabsShownToggled : CfrToolsAction()
 
-    /**
-     * Toggle whether the open in app CFR has been shown.
-     */
+    /** Toggle whether the open in app CFR has been shown. */
     data object OpenInAppShownToggled : CfrToolsAction()
 
-    /**
-     * Toggle whether the progressive web app dialog CFR has been shown.
-     */
+    /** Toggle whether the progressive web app dialog CFR has been shown. */
     data object PwaShownToggled : CfrToolsAction()
 
-    /**
-     * Reset lastCfrShownTimeInMillis to 0.
-     */
+    /** Reset lastCfrShownTimeInMillis to 0. */
     data object ResetLastCFRTimestampButtonClicked : CfrToolsAction()
 
-    /**
-     * [Action] fired when the user toggles a CFR.
-     */
+    /** [Action] fired when the user toggles a CFR. */
     sealed interface LoadCfrPreference
 
     /**
      * [LoadCfrPreference] fired when the user toggles the tab auto close banner CFR.
      *
-     * @property newValue The updated value of the pref indicating whether or not to show the tab auto
-     * close banner CFR.
+     * @property newValue The updated value of the pref indicating whether or not to show the tab auto close banner CFR.
      */
     data class TabAutoCloseBannerCfrLoaded(val newValue: Boolean) : CfrToolsAction(), LoadCfrPreference
 
     /**
      * [LoadCfrPreference] fired when the user toggles the inactive tabs CFR.
      *
-     * @property newValue The updated value of the pref indicating whether or not to show the inactive
-     * tabs CFR.
+     * @property newValue The updated value of the pref indicating whether or not to show the inactive tabs CFR.
      */
     data class InactiveTabsCfrLoaded(val newValue: Boolean) : CfrToolsAction(), LoadCfrPreference
 
     /**
      * [LoadCfrPreference] fired when the user toggles the open in app CFR.
      *
-     * @property newValue The updated value of the pref indicating whether or not to show the open in
-     * app CFR.
+     * @property newValue The updated value of the pref indicating whether or not to show the open in app CFR.
      */
     data class OpenInAppCfrLoaded(val newValue: Boolean) : CfrToolsAction(), LoadCfrPreference
 
@@ -96,46 +77,35 @@ sealed class CfrToolsAction : Action {
     data class PwaCfrLoaded(val newValue: Boolean) : CfrToolsAction(), LoadCfrPreference
 }
 
-/**
- * Reducer for [CfrToolsStore].
- */
+/** Reducer for [CfrToolsStore]. */
 internal object CfrToolsReducer {
     fun reduce(state: CfrToolsState, action: CfrToolsAction): CfrToolsState {
         return when (action) {
             is CfrToolsAction.Init -> state
             is CfrToolsAction.TabAutoCloseBannerShownToggled ->
                 state.copy(tabAutoCloseBannerShown = !state.tabAutoCloseBannerShown)
-            is CfrToolsAction.InactiveTabsShownToggled ->
-                state.copy(inactiveTabsShown = !state.inactiveTabsShown)
-            is CfrToolsAction.OpenInAppShownToggled ->
-                state.copy(openInAppShown = !state.openInAppShown)
-            is CfrToolsAction.PwaShownToggled ->
-                state.copy(pwaShown = !state.pwaShown)
+            is CfrToolsAction.InactiveTabsShownToggled -> state.copy(inactiveTabsShown = !state.inactiveTabsShown)
+            is CfrToolsAction.OpenInAppShownToggled -> state.copy(openInAppShown = !state.openInAppShown)
+            is CfrToolsAction.PwaShownToggled -> state.copy(pwaShown = !state.pwaShown)
             is CfrToolsAction.ResetLastCFRTimestampButtonClicked -> state
-            is CfrToolsAction.InactiveTabsCfrLoaded ->
-                state.copy(inactiveTabsShown = action.newValue)
-            is CfrToolsAction.OpenInAppCfrLoaded ->
-                state.copy(openInAppShown = action.newValue)
-            is CfrToolsAction.PwaCfrLoaded ->
-                state.copy(pwaShown = action.newValue)
-            is CfrToolsAction.TabAutoCloseBannerCfrLoaded ->
-                state.copy(tabAutoCloseBannerShown = action.newValue)
+            is CfrToolsAction.InactiveTabsCfrLoaded -> state.copy(inactiveTabsShown = action.newValue)
+            is CfrToolsAction.OpenInAppCfrLoaded -> state.copy(openInAppShown = action.newValue)
+            is CfrToolsAction.PwaCfrLoaded -> state.copy(pwaShown = action.newValue)
+            is CfrToolsAction.TabAutoCloseBannerCfrLoaded -> state.copy(tabAutoCloseBannerShown = action.newValue)
         }
     }
 }
 
-/**
- * A [Store] that holds the [CfrToolsState] for the CFR Tools and reduces [CfrToolsAction]s
- * dispatched to the store.
- */
+/** A [Store] that holds the [CfrToolsState] for the CFR Tools and reduces [CfrToolsAction]s dispatched to the store. */
 class CfrToolsStore(
     initialState: CfrToolsState = CfrToolsState(),
     middlewares: List<Middleware<CfrToolsState, CfrToolsAction>> = emptyList(),
-) : Store<CfrToolsState, CfrToolsAction>(
-    initialState,
-    CfrToolsReducer::reduce,
-    middlewares,
-) {
+) :
+    Store<CfrToolsState, CfrToolsAction>(
+        initialState,
+        CfrToolsReducer::reduce,
+        middlewares,
+    ) {
     init {
         dispatch(CfrToolsAction.Init)
     }

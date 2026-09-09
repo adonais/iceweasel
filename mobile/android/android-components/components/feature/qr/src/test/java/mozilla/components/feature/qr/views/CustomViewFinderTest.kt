@@ -8,6 +8,7 @@ import android.graphics.Rect
 import androidx.core.content.ContextCompat
 import androidx.core.text.HtmlCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.feature.qr.R
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
@@ -16,7 +17,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.spy
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class CustomViewFinderTest {
@@ -57,10 +57,11 @@ class CustomViewFinderTest {
         customViewFinder.viewFinderRectangle = rect
         val mockWidth = 200
         val mockHeight = 300
-        val testScanMessage = HtmlCompat.fromHtml(
-            testContext.getString(R.string.mozac_feature_qr_scanner),
-            HtmlCompat.FROM_HTML_MODE_LEGACY,
-        )
+        val testScanMessage =
+            HtmlCompat.fromHtml(
+                testContext.getString(R.string.mozac_feature_qr_scanner),
+                HtmlCompat.FROM_HTML_MODE_LEGACY,
+            )
 
         CustomViewFinder.setMessage(R.string.mozac_feature_qr_scanner)
         customViewFinder.computeViewFinderRect(mockWidth, mockHeight)

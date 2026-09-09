@@ -11,10 +11,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b050c455caa1d24a0
  3 files changed, 8 insertions(+), 6 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index af5fb8cd98..8f1a2c51bd 100644
+index 0d9ff78bd6..5c61c7a981 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -650,7 +650,7 @@ if (!build_with_chromium) {
+@@ -657,7 +657,7 @@ if (!build_with_chromium) {
      if (rtc_include_internal_audio_device) {
        deps += [ "api/audio:create_audio_device_module" ]
      }
@@ -52,7 +52,7 @@ index e88107f3a5..9d521e08c7 100644
    frame_info.rtp_timestamp = frame.RtpTimestamp();
    frame_info.decode_start = now;
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index e1bf40f354..6ad806cd2c 100644
+index d328c609f1..fb65482ba9 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
 @@ -240,6 +240,7 @@ rtc_library("event_tracer") {

@@ -385,7 +385,7 @@
           "nativeTheme": "AccentColor",
           "light": "{color.violet.50}",
           "dark": "{color.violet.30}",
-          "forcedColors": "AccentColor"
+          "forcedColors": "ButtonText"
         }
       },
       "hover": {

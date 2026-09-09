@@ -5,21 +5,16 @@
 package org.mozilla.fenix.ipprotection.helpers
 
 import android.text.format.DateFormat
-import org.mozilla.fenix.nimbus.FxNimbus
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.util.Locale
+import org.mozilla.fenix.nimbus.FxNimbus
 
-/**
- * Contains an ISO 8601 date.
- */
-@JvmInline
-value class IsoPromoDeadline(val date: String)
+/** Contains an ISO 8601 date. */
+@JvmInline value class IsoPromoDeadline(val date: String)
 
-/**
- * A formatted promo date based on feature properties in [org.mozilla.fenix.nimbus.IpProtection].
- */
+/** A formatted promo date based on feature properties in [org.mozilla.fenix.nimbus.IpProtection]. */
 internal fun formatPromoDateOrCatch(
     maxGib: Int = FxNimbus.features.ipProtection.value().dataLimitGigabyte,
     onException: (Exception) -> Unit,
@@ -29,9 +24,7 @@ internal fun formatPromoDateOrCatch(
     }
 
     val date = IsoPromoDeadline(FxNimbus.features.ipProtection.value().promoDeadline)
-    return date.formatPromoDateOrCatch(
-        onException,
-    )
+    return date.formatPromoDateOrCatch(onException)
 }
 
 /**
@@ -42,9 +35,7 @@ internal fun formatPromoDateOrCatch(
 internal fun IsoPromoDeadline.formatPromoDateOrCatch(onException: (Exception) -> Unit): String? {
     return try {
         val date = LocalDate.parse(date)
-        val formatter = DateTimeFormatter.ofPattern(
-            DateFormat.getBestDateTimePattern(Locale.getDefault(), "MMMMd"),
-        )
+        val formatter = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(Locale.getDefault(), "MMMMd"))
         date.format(formatter)
     } catch (e: DateTimeParseException) {
         onException(e)

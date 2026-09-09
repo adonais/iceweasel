@@ -13,8 +13,8 @@ import mozilla.components.concept.base.profiler.Profiler
 import mozilla.components.concept.engine.Engine
 
 /**
- * A container for functions for when adding a profiler marker is less readable
- * (e.g. multiple lines, more advanced logic).
+ * A container for functions for when adding a profiler marker is less readable (e.g. multiple lines, more advanced
+ * logic).
  */
 object ProfilerMarkers {
 
@@ -37,19 +37,18 @@ object ProfilerMarkers {
         if (profiler?.isProfilerActive() == true) {
             // We only do this subset because 1) other actions like MOVE may be spammy and 2) doing
             // a generic ev?.action::class.simpleName may be too expensive for dispatchTouchEvent.
-            val detailText = when (ev?.action) {
-                MotionEvent.ACTION_DOWN -> "ACTION_DOWN"
-                MotionEvent.ACTION_UP -> "ACTION_UP"
-                else -> return
-            }
+            val detailText =
+                when (ev?.action) {
+                    MotionEvent.ACTION_DOWN -> "ACTION_DOWN"
+                    MotionEvent.ACTION_UP -> "ACTION_UP"
+                    else -> return
+                }
             profiler.addMarker("dispatchTouchEvent", detailText)
         }
     }
 }
 
-/**
- * A global layout listener that adds a profiler marker on global layout.
- */
+/** A global layout listener that adds a profiler marker on global layout. */
 class MarkerGlobalLayoutListener(
     private val engine: Engine,
     private val activityName: String,

@@ -7,9 +7,7 @@ package org.mozilla.fenix.settings.advanced // Or a more common util/locale pack
 import android.content.Context
 import mozilla.components.support.locale.LocaleManager
 
-/**
- * An interface for checking if the default locale is selected in the application.
- */
+/** An interface for checking if the default locale is selected in the application. */
 interface LocaleSelectionChecker {
     /**
      * Checks if the "System default" locale is selected in the app's language settings.

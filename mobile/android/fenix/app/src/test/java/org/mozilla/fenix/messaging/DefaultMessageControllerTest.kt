@@ -26,8 +26,7 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class DefaultMessageControllerTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private val messagingController: NimbusMessagingControllerInterface = mockk(relaxed = true)
     private lateinit var defaultMessageController: DefaultMessageController
@@ -37,11 +36,12 @@ class DefaultMessageControllerTest {
 
     @Before
     fun setup() {
-        defaultMessageController = DefaultMessageController(
-            messagingController = messagingController,
-            appStore = appStore,
-            processIntent = processIntent,
-        )
+        defaultMessageController =
+            DefaultMessageController(
+                messagingController = messagingController,
+                appStore = appStore,
+                processIntent = processIntent,
+            )
     }
 
     @Test
@@ -65,18 +65,20 @@ class DefaultMessageControllerTest {
         verify { appStore.dispatch(AppAction.MessagingAction.MessageDismissed(message)) }
     }
 
-    private fun mockMessage(data: MessageData = MessageData()) = Message(
-        id = "id",
-        data = data,
-        style = mockk(relaxed = true),
-        action = "action",
-        triggerIfAll = emptyList(),
-        excludeIfAny = emptyList(),
-        metadata = Message.Metadata(
+    private fun mockMessage(data: MessageData = MessageData()) =
+        Message(
             id = "id",
-            displayCount = 0,
-            pressed = false,
-            dismissed = false,
-        ),
-    )
+            data = data,
+            style = mockk(relaxed = true),
+            action = "action",
+            triggerIfAll = emptyList(),
+            excludeIfAny = emptyList(),
+            metadata =
+                Message.Metadata(
+                    id = "id",
+                    displayCount = 0,
+                    pressed = false,
+                    dismissed = false,
+                ),
+        )
 }

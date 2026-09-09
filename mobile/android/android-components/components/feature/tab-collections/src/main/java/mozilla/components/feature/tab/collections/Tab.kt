@@ -4,35 +4,27 @@
 
 package mozilla.components.feature.tab.collections
 
+import java.io.File
 import mozilla.components.browser.state.state.recover.RecoverableTab
 import mozilla.components.concept.engine.Engine
-import java.io.File
 
-/**
- * A tab of a [TabCollection].
- */
+/** A tab of a [TabCollection]. */
 interface Tab {
-    /**
-     * Unique ID identifying this tab.
-     */
+    /** Unique ID identifying this tab. */
     val id: Long
 
-    /**
-     * The title of the tab.
-     */
+    /** The title of the tab. */
     val title: String
 
-    /**
-     * The URL of the tab.
-     */
+    /** The URL of the tab. */
     val url: String
 
     /**
      * Restores a single tab from this collection and returns a matching [RecoverableTab].
      *
-     * @param restoreSessionId If true the original tab ID will be restored. Otherwise a new ID
-     * will be generated. An app may prefer to use a new ID if it expects sessions to get restored
-     * multiple times - otherwise breaking the promise of a unique ID per tab.
+     * @param restoreSessionId If true the original tab ID will be restored. Otherwise a new ID will be generated. An
+     *   app may prefer to use a new ID if it expects sessions to get restored multiple times - otherwise breaking the
+     *   promise of a unique ID per tab.
      */
     fun restore(
         filesDir: File,

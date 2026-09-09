@@ -41,34 +41,38 @@ fun BrowserScreenStore.updateCustomTabsColors(
         return
     }
 
-    val colorSchemeParams = customTab.config.getConfiguredColorSchemeParams(
-        currentNightMode = deviceUIMode,
-        preferredNightMode = when (shouldFollowDeviceTheme) {
-            true -> MODE_NIGHT_FOLLOW_SYSTEM
-            false -> {
-                when (shouldUseLightTheme) {
-                    true -> MODE_NIGHT_NO
-                    false -> MODE_NIGHT_YES
-                }
-            }
-        },
-    )
+    val colorSchemeParams =
+        customTab.config.getConfiguredColorSchemeParams(
+            currentNightMode = deviceUIMode,
+            preferredNightMode =
+                when (shouldFollowDeviceTheme) {
+                    true -> MODE_NIGHT_FOLLOW_SYSTEM
+                    false -> {
+                        when (shouldUseLightTheme) {
+                            true -> MODE_NIGHT_NO
+                            false -> MODE_NIGHT_YES
+                        }
+                    }
+                },
+        )
     if (colorSchemeParams == null) {
         dispatch(CustomTabColorsUpdated(null))
         return
     }
 
-    val readableColor = colorSchemeParams.getToolbarContrastColor(
-        context = context,
-        shouldUpdateTheme = true,
-        fallbackColor = Color(context.getColorFromAttr(android.R.attr.textColorPrimary)).toArgb(),
-    )
+    val readableColor =
+        colorSchemeParams.getToolbarContrastColor(
+            context = context,
+            shouldUpdateTheme = true,
+            fallbackColor = Color(context.getColorFromAttr(android.R.attr.textColorPrimary)).toArgb(),
+        )
 
-    val secondaryReadableColor = colorSchemeParams.getToolbarSecondaryContrastColor(
-        context = context,
-        shouldUpdateTheme = true,
-        fallbackColor = Color(context.getColorFromAttr(android.R.attr.textColorSecondary)).toArgb(),
-    )
+    val secondaryReadableColor =
+        colorSchemeParams.getToolbarSecondaryContrastColor(
+            context = context,
+            shouldUpdateTheme = true,
+            fallbackColor = Color(context.getColorFromAttr(android.R.attr.textColorSecondary)).toArgb(),
+        )
 
     dispatch(
         CustomTabColorsUpdated(
@@ -79,7 +83,7 @@ fun BrowserScreenStore.updateCustomTabsColors(
                 navigationBarDividerColor = colorSchemeParams.navigationBarDividerColor,
                 readableColor = readableColor,
                 secondaryReadableColor = secondaryReadableColor,
-            ),
-        ),
+            )
+        )
     )
 }

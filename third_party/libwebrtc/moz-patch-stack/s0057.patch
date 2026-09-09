@@ -30,10 +30,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/ee566d1bfb654d36e
  12 files changed, 70 insertions(+), 8 deletions(-)
 
 diff --git a/api/video/frame_buffer.cc b/api/video/frame_buffer.cc
-index fcff81f41c..77834e7d1f 100644
+index 0fcf54a76d..754ce00da1 100644
 --- a/api/video/frame_buffer.cc
 +++ b/api/video/frame_buffer.cc
-@@ -150,14 +150,29 @@ void FrameBuffer::DropNextDecodableTemporalUnit() {
+@@ -151,14 +151,29 @@ void FrameBuffer::DropNextDecodableTemporalUnit() {
    }
  
    auto end_it = std::next(next_decodable_temporal_unit_->last_frame);
@@ -66,7 +66,7 @@ index fcff81f41c..77834e7d1f 100644
  std::optional<int64_t> FrameBuffer::LastContinuousFrameId() const {
    return last_continuous_frame_id_;
  }
-@@ -177,6 +192,9 @@ int FrameBuffer::GetTotalNumberOfContinuousTemporalUnits() const {
+@@ -182,6 +197,9 @@ int FrameBuffer::GetTotalNumberOfContinuousTemporalUnits() const {
  int FrameBuffer::GetTotalNumberOfDroppedFrames() const {
    return num_dropped_frames_;
  }
@@ -76,7 +76,7 @@ index fcff81f41c..77834e7d1f 100644
  
  size_t FrameBuffer::CurrentSize() const {
    return frames_.size();
-@@ -280,6 +298,7 @@ void FrameBuffer::FindNextAndLastDecodableTemporalUnit() {
+@@ -286,6 +304,7 @@ void FrameBuffer::FindNextAndLastDecodableTemporalUnit() {
  }
  
  void FrameBuffer::Clear() {
@@ -85,10 +85,10 @@ index fcff81f41c..77834e7d1f 100644
    next_decodable_temporal_unit_.reset();
    decodable_temporal_units_info_.reset();
 diff --git a/api/video/frame_buffer.h b/api/video/frame_buffer.h
-index e607a182c2..5f2c5d0f2a 100644
+index 87974ada5c..d8543e0ba2 100644
 --- a/api/video/frame_buffer.h
 +++ b/api/video/frame_buffer.h
-@@ -67,6 +67,7 @@ class FrameBuffer {
+@@ -73,6 +73,7 @@ class FrameBuffer {
  
    int GetTotalNumberOfContinuousTemporalUnits() const;
    int GetTotalNumberOfDroppedFrames() const;
@@ -96,7 +96,7 @@ index e607a182c2..5f2c5d0f2a 100644
    size_t CurrentSize() const;
  
   private:
-@@ -88,6 +89,8 @@ class FrameBuffer {
+@@ -94,6 +95,8 @@ class FrameBuffer {
    void PropagateContinuity(const FrameIterator& frame_it);
    void FindNextAndLastDecodableTemporalUnit();
    void Clear();
@@ -105,16 +105,16 @@ index e607a182c2..5f2c5d0f2a 100644
  
    const bool legacy_frame_id_jump_behavior_;
    const size_t max_size_;
-@@ -100,6 +103,7 @@ class FrameBuffer {
+@@ -106,6 +109,7 @@ class FrameBuffer {
  
    int num_continuous_temporal_units_ = 0;
    int num_dropped_frames_ = 0;
 +  int num_discarded_packets_ = 0;
- };
  
- }  // namespace webrtc
+   absl::InlinedVector<uint32_t, 4> new_continuous_temporal_units_;
+ };
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index 39d0e5e4fe..0cca1a5e92 100644
+index deba77c131..466043f008 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
 @@ -118,6 +118,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
@@ -214,7 +214,7 @@ index 16f42bd02d..2d9700bb73 100644
                                     int current_delay_ms,
                                     int target_delay_ms,
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index 35eec7bda6..2cdee72f72 100644
+index 83943635a9..5c69419252 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
 @@ -292,6 +292,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
@@ -233,7 +233,7 @@ index 35eec7bda6..2cdee72f72 100644
        packet_buffer_(kPacketBufferStartSize,
                       PacketBufferMaxSize(env_.field_trials())),
        reference_finder_(std::make_unique<RtpFrameReferenceFinder>()),
-@@ -1374,7 +1376,8 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
+@@ -1380,7 +1382,8 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
      int64_t unwrapped_rtp_seq_num = rtp_seq_num_unwrapper_.Unwrap(seq_num);
      packet_infos_.erase(packet_infos_.begin(),
                          packet_infos_.upper_bound(unwrapped_rtp_seq_num));
@@ -244,7 +244,7 @@ index 35eec7bda6..2cdee72f72 100644
    }
  }
 diff --git a/video/rtp_video_stream_receiver2.h b/video/rtp_video_stream_receiver2.h
-index eec407ce4c..5631729e81 100644
+index eea6813249..d0d89393e9 100644
 --- a/video/rtp_video_stream_receiver2.h
 +++ b/video/rtp_video_stream_receiver2.h
 @@ -68,6 +68,7 @@
@@ -263,7 +263,7 @@ index eec407ce4c..5631729e81 100644
        // The KeyFrameRequestSender is optional; if not provided, key frame
        // requests are sent via the internal RtpRtcp module.
        OnCompleteFrameCallback* complete_frame_callback,
-@@ -390,6 +392,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
+@@ -392,6 +394,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
    std::unique_ptr<LossNotificationController> loss_notification_controller_
        RTC_GUARDED_BY(packet_sequence_checker_);
  
@@ -272,7 +272,7 @@ index eec407ce4c..5631729e81 100644
        RTC_GUARDED_BY(packet_sequence_checker_);
    // h26x_packet_buffer_ is applicable to H.264 and H.265. For H.265 it is
 diff --git a/video/video_receive_stream2.cc b/video/video_receive_stream2.cc
-index 64d7812e61..99d0acba8d 100644
+index fc9fb7ea8e..454c0a9308 100644
 --- a/video/video_receive_stream2.cc
 +++ b/video/video_receive_stream2.cc
 @@ -249,6 +249,7 @@ VideoReceiveStream2::VideoReceiveStream2(
@@ -284,10 +284,10 @@ index 64d7812e61..99d0acba8d 100644
                                   std::move(config_.frame_decryptor),
                                   std::move(config_.frame_transformer)),
 diff --git a/video/video_stream_buffer_controller.cc b/video/video_stream_buffer_controller.cc
-index ac11225f1c..3986cceaa7 100644
+index 033a9c50ec..21681890b9 100644
 --- a/video/video_stream_buffer_controller.cc
 +++ b/video/video_stream_buffer_controller.cc
-@@ -250,6 +250,7 @@ void VideoStreamBufferController::OnFrameReady(
+@@ -254,6 +254,7 @@ void VideoStreamBufferController::OnFrameReady(
  
    // Update stats.
    UpdateDroppedFrames();
@@ -295,7 +295,7 @@ index ac11225f1c..3986cceaa7 100644
    UpdateFrameBufferTimings(min_receive_time, now);
  
    std::unique_ptr<EncodedFrame> frame =
-@@ -314,6 +315,17 @@ void VideoStreamBufferController::UpdateDroppedFrames()
+@@ -323,6 +324,17 @@ void VideoStreamBufferController::UpdateDroppedFrames()
        buffer_->GetTotalNumberOfDroppedFrames();
  }
  

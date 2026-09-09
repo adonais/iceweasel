@@ -6,7 +6,7 @@
 Find a certificate in the database with the given issuer and serial number.
 :::
 
-## [Syntax](#syntax)
+## Syntax
 
 :::{container}
 
@@ -20,31 +20,31 @@ CERTCertificate *CERT_FindCertByIssuerAndSN (
 
 :::
 
-## [Parameters](#parameters)
+## Parameters
 
 :::{container}
 
 ```{eval-rst}
-+-----------------+-------------------------------------------------------------------------------+
-| ``handle``      | *in* pointer to a `CERTCertDBHandle </en-US/NSS/CERTCertDBHandle>`__          |
-|                 | representing the certificate database to look in                              |
-+-----------------+-------------------------------------------------------------------------------+
-| ``issuerAndSN`` | *in* pointer to a `CERTIssuerAndSN </en-US/NSS/CERTIssuerAndSN>`__ that must  |
-|                 | be properly formed to contain the issuer name and the serial number (see      |
-|                 | [Example])                                                                    |
-+-----------------+-------------------------------------------------------------------------------+
++-----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``handle``      | *in* pointer to a `CERTCertDBHandle </en-US/NSS/CERTCertDBHandle>`__ representing the certificate database to look in                                            |
+|                 |                                                                                                                                                                  |
++-----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``issuerAndSN`` | *in* pointer to a `CERTIssuerAndSN </en-US/NSS/CERTIssuerAndSN>`__ that must be properly formed to contain the issuer name and the serial number (see [Example]) |
+|                 |                                                                                                                                                                  |
+|                 |                                                                                                                                                                  |
++-----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 ```
 
 :::
 
-## [Description](#description)
+## Description
 
 :::{container}
 This function creates a certificate key using the `issuerAndSN` and it then uses the key to
 find the matching certificate in the database.
 :::
 
-## [Returns](#returns)
+## Returns
 
 :::{container}
 A pointer to a [CERTCertificate](/en-US/NSS/CERTCertificate) representing the certificate in
@@ -54,7 +54,7 @@ certificate is a shallow copy, use
 on the certificate instance.
 :::
 
-## [Example](#example)
+## Example
 
 :::{container}
 
@@ -72,7 +72,7 @@ if ( issuerCert == NULL ) {
 
 :::
 
-## [See Also](#see_also)
+## See Also
 
 :::{container}
 Occurrences of

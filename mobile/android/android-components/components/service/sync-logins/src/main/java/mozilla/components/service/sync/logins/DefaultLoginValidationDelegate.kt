@@ -17,8 +17,8 @@ import mozilla.components.concept.storage.LoginsStorage
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * A delegate that will check against [storage] to see if a given Login can be persisted, and return
- * information about why it can or cannot.
+ * A delegate that will check against [storage] to see if a given Login can be persisted, and return information about
+ * why it can or cannot.
  */
 class DefaultLoginValidationDelegate(
     private val storage: Lazy<LoginsStorage>,
@@ -28,18 +28,19 @@ class DefaultLoginValidationDelegate(
     private val logger = Logger("DefaultAddonUpdater")
 
     /**
-     * Compares a [Login] to a passed in list of potential dupes [Login] or queries underlying
-     * storage for potential dupes list of [Login] to determine if it should be updated or created.
+     * Compares a [Login] to a passed in list of potential dupes [Login] or queries underlying storage for potential
+     * dupes list of [Login] to determine if it should be updated or created.
      */
     override fun shouldUpdateOrCreateAsync(entry: LoginEntry): Deferred<Result> {
         return scope.async {
-            val foundLogin = try {
-                storage.value.findLoginToUpdate(entry)
-            } catch (e: LoginsApiException) {
-                logger.warn("Failure in shouldUpdateOrCreateAsync: $e")
-                crashReporting?.submitCaughtException(e)
-                null
-            }
+            val foundLogin =
+                try {
+                    storage.value.findLoginToUpdate(entry)
+                } catch (e: LoginsApiException) {
+                    logger.warn("Failure in shouldUpdateOrCreateAsync: $e")
+                    crashReporting?.submitCaughtException(e)
+                    null
+                }
             if (foundLogin == null) Result.CanBeCreated else Result.CanBeUpdated(foundLogin)
         }
     }

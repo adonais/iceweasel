@@ -1,0 +1,136 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>WebTaskSchedulingState propagation through a non-window incumbent global</title>
+  <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="chrome://global/skin"/>
+  <link rel="stylesheet" type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<pre id="test">
+<script type="text/javascript">
+/*
+ * A promise job records the scheduling state of its entry global, and while the
+ * job runs the state is installed on its *incumbent* global
+ * (CycleCollectedJSContext::RunJSMicroTask ->
+ * incumbentGlobal->SetWebTaskSchedulingState).
+ *
+ * Both scenarios below run the same two-hop promise chain out of a
+ * scheduler.postTask() callback and then ask whether a scheduler.postTask() at
+ * the end of the chain inherited the abort source the first one had. Inheritance
+ * reads the scheduling state of the scheduler's own global
+ * (WebTaskScheduler::PostTask -> GetParentObject()->GetWebTaskSchedulingState()),
+ * so it can only see a state that made it back onto this window.
+ *
+ * The scenarios differ only in which global is the incumbent of the first job:
+ * this window (control) or a sandbox. The control exists so that a failure to
+ * observe inheritance in the sandbox case can be distinguished from a harness
+ * that cannot observe inheritance at all.
+ *
+ * Note that every .then() here is attached to a *pending* promise. A reaction on
+ * an already settled promise takes HostDefinedDataObjectOption::OptimizeOut and
+ * records no scheduling state, so no state would propagate in either scenario.
+ */
+SimpleTest.waitForExplicitFinish();
+
+const SANDBOX_HOP = `
+  this.hop = function() {
+    // .then() is called by sandbox code, so this job's incumbent global is the
+    // sandbox; its handler is sandbox code too, so the sandbox is also the entry
+    // global while the handler runs, which is what would let the handler pass on
+    // a state it had been given.
+    let resolve;
+    const pending = new Promise(r => { resolve = r; });
+    const job = pending.then(function sandboxHandler() {
+      return thenFromWindow(finalCallback);
+    });
+    resolve();
+    return job;
+  };
+`;
+
+// Creating a job from window code makes this window its incumbent global, so
+// whatever state the job recorded is installed here while the handler runs.
+function thenFromWindow(fn) {
+  let resolve;
+  const pending = new Promise(r => {
+    resolve = r;
+  });
+  const job = pending.then(fn);
+  resolve();
+  return job;
+}
+
+function runScenario(useSandbox) {
+  const controller = new AbortController();
+  let resolveOutcome;
+  const outcome = new Promise(resolve => {
+    resolveOutcome = resolve;
+  });
+
+  const finalCallback = async function () {
+    // If a scheduling state made it back to this window, its abort source is
+    // controller.signal, so aborting now means an inheriting postTask() has to
+    // reject immediately.
+    controller.abort("aborted by test");
+    try {
+      // scheduler.yield() is the only consumer of the scheduling state
+      // (WebTaskScheduler::YieldImpl); postTask() does not consult it.
+      await scheduler.yield();
+      resolveOutcome("not-inherited");
+    } catch (e) {
+      resolveOutcome("inherited");
+    }
+  };
+
+  let startChain;
+  if (useSandbox) {
+    const sandbox = new Cu.Sandbox(window);
+    sandbox.thenFromWindow = thenFromWindow;
+    sandbox.finalCallback = finalCallback;
+    Cu.evalInSandbox(SANDBOX_HOP, sandbox);
+    startChain = () => sandbox.hop();
+  } else {
+    // Same shape, same number of hops, but every incumbent global is this
+    // window.
+    startChain = () => thenFromWindow(() => thenFromWindow(finalCallback));
+  }
+
+  // Not awaited, and its rejection is ignored on purpose: aborting the signal
+  // settles this task's promise too, and the only thing under test is what the
+  // chain does.
+  scheduler
+    .postTask(startChain, { signal: controller.signal })
+    .catch(() => {});
+
+  return outcome;
+}
+
+async function runTest() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.enable_web_task_scheduling", true]],
+  });
+
+  is(
+    await runScenario(false),
+    "inherited",
+    "control: a scheduling state survives promise jobs whose incumbent global " +
+      "is this window"
+  );
+
+  is(
+    await runScenario(true),
+    "inherited",
+    "a scheduling state does survive a promise job whose incumbent global " +
+      "is a sandbox, they are stored on the global"
+  );
+
+  SimpleTest.finish();
+}
+
+runTest();
+</script>
+</pre>
+</body>
+</html>

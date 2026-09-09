@@ -16,12 +16,11 @@ import org.mozilla.experiments.nimbus.Branch
 /**
  * An adapter for displaying a experimental branch for a Nimbus experiment.
  *
- * @param nimbusBranchesDelegate An instance of [NimbusBranchesAdapterDelegate] that provides
- * methods for handling the Nimbus branch items.
+ * @param nimbusBranchesDelegate An instance of [NimbusBranchesAdapterDelegate] that provides methods for handling the
+ *   Nimbus branch items.
  */
-class NimbusBranchAdapter(
-    private val nimbusBranchesDelegate: NimbusBranchesAdapterDelegate,
-) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class NimbusBranchAdapter(private val nimbusBranchesDelegate: NimbusBranchesAdapterDelegate) :
+    RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     // The list of [Branch]s to display.
     private var branches: List<Branch> = emptyList()
@@ -33,8 +32,7 @@ class NimbusBranchAdapter(
         parent: ViewGroup,
         viewType: Int,
     ): RecyclerView.ViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.mozac_service_nimbus_branch_item, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.mozac_service_nimbus_branch_item, parent, false)
         val selectedIconView: ImageView = view.findViewById(R.id.selected_icon)
         val titleView: TextView = view.findViewById(R.id.nimbus_branch_name)
         val summaryView: TextView = view.findViewById(R.id.nimbus_branch_description)
@@ -62,14 +60,15 @@ class NimbusBranchAdapter(
      * @param selectedBranch The [Branch] slug to highlight.
      */
     fun updateData(branches: List<Branch>, selectedBranch: String) {
-        val diffUtil = DiffUtil.calculateDiff(
-            NimbusBranchesDiffUtil(
-                oldBranches = this.branches,
-                newBranches = branches,
-                oldSelectedBranch = this.selectedBranch,
-                newSelectedBranch = selectedBranch,
-            ),
-        )
+        val diffUtil =
+            DiffUtil.calculateDiff(
+                NimbusBranchesDiffUtil(
+                    oldBranches = this.branches,
+                    newBranches = branches,
+                    oldSelectedBranch = this.selectedBranch,
+                    newSelectedBranch = selectedBranch,
+                )
+            )
 
         this.branches = branches
         this.selectedBranch = selectedBranch
@@ -86,8 +85,7 @@ internal class NimbusBranchesDiffUtil(
 ) : DiffUtil.Callback() {
 
     override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
-        oldBranches[oldItemPosition].slug == newBranches[newItemPosition].slug &&
-            oldSelectedBranch == newSelectedBranch
+        oldBranches[oldItemPosition].slug == newBranches[newItemPosition].slug && oldSelectedBranch == newSelectedBranch
 
     override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
         oldBranches[oldItemPosition] == newBranches[newItemPosition]

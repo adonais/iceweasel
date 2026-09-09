@@ -4,9 +4,9 @@
 
 package mozilla.components.browser.state.state
 
+import java.util.UUID
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.manifest.WebAppManifest
-import java.util.UUID
 
 /**
  * Value type that represents the state of a Custom Tab.
@@ -16,13 +16,12 @@ import java.util.UUID
  * @property trackingProtection the [TrackingProtectionState] of this custom tab.
  * @property translationsState the [TranslationsState] of this custom tab.
  * @property config the [CustomTabConfig] used to create this custom tab.
- * @property extensionState a map of web extension ids and extensions, that contains the overridden
- * values for this tab.
+ * @property extensionState a map of web extension ids and extensions, that contains the overridden values for this tab.
  * @property mediaSessionState the [MediaSessionState] of this session.
  * @property contextId the session context ID of this custom tab.
  * @property source the [SessionState.Source] of this session.
- * @property originalInput If the user entered a URL, this is the original user
- * input before any fixups were applied to it.
+ * @property originalInput If the user entered a URL, this is the original user input before any fixups were applied to
+ *   it.
  */
 data class CustomTabSessionState(
     override val id: String = UUID.randomUUID().toString(),
@@ -48,21 +47,20 @@ data class CustomTabSessionState(
         extensionState: Map<String, WebExtensionState>,
         mediaSessionState: MediaSessionState?,
         contextId: String?,
-    ) = copy(
-        id = id,
-        content = content,
-        trackingProtection = trackingProtection,
-        translationsState = translationsState,
-        engineState = engineState,
-        extensionState = extensionState,
-        mediaSessionState = mediaSessionState,
-        contextId = contextId,
-    )
+    ) =
+        copy(
+            id = id,
+            content = content,
+            trackingProtection = trackingProtection,
+            translationsState = translationsState,
+            engineState = engineState,
+            extensionState = extensionState,
+            mediaSessionState = mediaSessionState,
+            contextId = contextId,
+        )
 }
 
-/**
- * Convenient function for creating a custom tab.
- */
+/** Convenient function for creating a custom tab. */
 fun createCustomTab(
     url: String,
     id: String = UUID.randomUUID().toString(),
@@ -83,22 +81,24 @@ fun createCustomTab(
     return CustomTabSessionState(
         id = id,
         source = source,
-        content = ContentState(
-            url = url,
-            title = title,
-            private = private,
-            securityInfo = securityInfo,
-            webAppManifest = webAppManifest,
-            desktopMode = desktopMode,
-        ),
+        content =
+            ContentState(
+                url = url,
+                title = title,
+                private = private,
+                securityInfo = securityInfo,
+                webAppManifest = webAppManifest,
+                desktopMode = desktopMode,
+            ),
         config = config,
         mediaSessionState = mediaSessionState,
         contextId = contextId,
-        engineState = EngineState(
-            engineSession = engineSession,
-            crashed = crashed,
-            initialLoadFlags = initialLoadFlags,
-        ),
+        engineState =
+            EngineState(
+                engineSession = engineSession,
+                crashed = crashed,
+                initialLoadFlags = initialLoadFlags,
+            ),
         trackingProtection = trackingProtection,
     )
 }

@@ -75,7 +75,7 @@ const TVariable *GetBaseUniform(TIntermTyped *node, bool *isSamplerInStructOut)
             *isSamplerInStructOut = true;
         }
 
-        node = asBinary->getLeft();
+        node = op == EOpComma ? asBinary->getRight() : asBinary->getLeft();
     }
 
     // Only interested in uniform opaque types.  If a function call within another function uses
@@ -99,6 +99,13 @@ TIntermTyped *ExtractSideEffects(TSymbolTable *symbolTable,
                                  TIntermTyped *node,
                                  TIntermSequence *replacementIndices)
 {
+    // If this is a comma expression, throw away the left hand side.  THIS IS INCORRECT, but it's
+    // overly complicated to try and support it.  The IR already handles this correctly.
+    while (node->getAsBinaryNode() != nullptr && node->getAsBinaryNode()->getOp() == EOpComma)
+    {
+        node = node->getAsBinaryNode()->getRight();
+    }
+
     TIntermTyped *withoutSideEffects = node->deepCopy();
 
     for (TIntermBinary *asBinary = withoutSideEffects->getAsBinaryNode(); asBinary;
@@ -509,34 +516,6 @@ class UpdateFunctionsDefinitionsTraverser final : public TIntermTraverser
     const FunctionMap &mFunctionMap;
 };
 
-void SortDeclarations(TIntermBlock *root)
-{
-    TIntermSequence *original = root->getSequence();
-
-    TIntermSequence replacement;
-    TIntermSequence functionDefs;
-
-    // Accumulate non-function-definition declarations in |replacement| and function definitions in
-    // |functionDefs|.
-    for (TIntermNode *node : *original)
-    {
-        if (node->getAsFunctionDefinition() || node->getAsFunctionPrototypeNode())
-        {
-            functionDefs.push_back(node);
-        }
-        else
-        {
-            replacement.push_back(node);
-        }
-    }
-
-    // Append function definitions to |replacement|.
-    replacement.insert(replacement.end(), functionDefs.begin(), functionDefs.end());
-
-    // Replace root's sequence with |replacement|.
-    root->replaceAllChildren(std::move(replacement));
-}
-
 bool MonomorphizeUnsupportedFunctionsImpl(TCompiler *compiler,
                                           TIntermBlock *root,
                                           TSymbolTable *symbolTable,
@@ -545,7 +524,7 @@ bool MonomorphizeUnsupportedFunctionsImpl(TCompiler *compiler,
     // First, sort out the declarations such that all non-function declarations are placed before
     // function definitions.  This way when the function is replaced with one that references said
     // declarations (i.e. uniforms), the uniform declaration is already present above it.
-    SortDeclarations(root);
+    MoveDeclarationsBeforeFunctions(root);
 
     while (true)
     {

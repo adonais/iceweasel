@@ -32,17 +32,25 @@ import {
 } from "../../lib/asrouter-message-utils.mjs";
 import {
   WIDGET_REGISTRY,
+  hasContentAreaWidgets,
   isWidgetEnabled,
   isWidgetToggleVisible,
   isWidgetsContainerVisible,
-  resolveWidgetHasSidebar,
-  resolveWidgetSize,
 } from "common/WidgetsRegistry.mjs";
+import {
+  isSideBySideActive,
+  isSpaceOverridden,
+  isSpacesActive,
+  SPACE_IDS,
+  sideBySideBandClasses,
+  spacesBandClasses,
+} from "common/PageLayoutVariants.mjs";
 
 const VISIBLE = "visible";
 const VISIBILITY_CHANGE_EVENT = "visibilitychange";
-// Minimum scroll distance in pixels to record a scroll telemetry event.
-const SCROLL_TELEMETRY_THRESHOLD = 50;
+// Scroll distances in pixels, in ascending order, that each record a scroll
+// telemetry event the first time they are passed in a session.
+const SCROLL_TELEMETRY_THRESHOLDS = [50, 100, 250];
 const PREF_INFERRED_PERSONALIZATION_SYSTEM =
   "discoverystream.sections.personalization.inferred.enabled";
 const PREF_INFERRED_PERSONALIZATION_USER =
@@ -138,7 +146,7 @@ export class BaseContent extends React.PureComponent {
     this.attachSearchSentinel = this.attachSearchSentinel.bind(this);
     this.onSearchSentinelIntersect = this.onSearchSentinelIntersect.bind(this);
     this.searchStickyObserver = null;
-    this._hasScrolledForSession = false;
+    this._nextScrollThreshold = 0;
     this.state = {
       fixedSearch: false,
       colorMode: "",
@@ -463,12 +471,17 @@ export class BaseContent extends React.PureComponent {
   }
 
   onWindowScroll() {
-    if (
-      !this._hasScrolledForSession &&
-      global.scrollY > SCROLL_TELEMETRY_THRESHOLD
+    // A single scroll can pass several thresholds at once, so report every
+    // threshold that hasn't been reported yet.
+    while (
+      this._nextScrollThreshold < SCROLL_TELEMETRY_THRESHOLDS.length &&
+      global.scrollY > SCROLL_TELEMETRY_THRESHOLDS[this._nextScrollThreshold]
     ) {
-      this._hasScrolledForSession = true;
-      this.props.dispatch(ac.OnlyToMain({ type: at.NEW_TAB_SCROLL }));
+      const threshold =
+        SCROLL_TELEMETRY_THRESHOLDS[this._nextScrollThreshold++];
+      this.props.dispatch(
+        ac.OnlyToMain({ type: at.NEW_TAB_SCROLL, data: { threshold } })
+      );
     }
 
     if (this.props.Prefs.values[PREF_NOVA_ENABLED]) {
@@ -895,7 +908,9 @@ export class BaseContent extends React.PureComponent {
 
     const topSitesEnabled = prefs["feeds.topsites"];
     const pocketEnabled =
-      prefs["feeds.section.topstories"] && prefs["feeds.system.topstories"];
+      (prefs["feeds.section.topstories"] ||
+        isSpaceOverridden(SPACE_IDS.STORIES, prefs)) &&
+      prefs["feeds.system.topstories"];
     // @nova-cleanup(remove): pre-Nova; `filteredSections` is the legacy
     // Sections redux slice that no longer drives Nova layout. Nova uses
     // `noContentSectionsEnabled` (declared in the Nova branch below).
@@ -905,7 +920,10 @@ export class BaseContent extends React.PureComponent {
       filteredSections.filter(section => section.enabled).length === 0;
     const enabledSections = {
       topSitesEnabled,
-      pocketEnabled: prefs["feeds.section.topstories"],
+      // So the toggle does not read off while the Stories space is showing.
+      pocketEnabled:
+        prefs["feeds.section.topstories"] ||
+        isSpaceOverridden(SPACE_IDS.STORIES, prefs),
       showInferredPersonalizationEnabled:
         prefs[PREF_INFERRED_PERSONALIZATION_USER],
       topSitesRowsCount: prefs.topSitesRows,
@@ -947,6 +965,7 @@ export class BaseContent extends React.PureComponent {
     const mayHaveCrosswordWidget = widgetVisibleById("crossword");
     const mayHaveStocksWidget = widgetVisibleById("stocks");
     const mayHavePictureOfTheDayWidget = widgetVisibleById("pictureOfTheDay");
+    const mayHaveRecentSearchesWidget = widgetVisibleById("recentSearches");
 
     // These prefs set the initial values on the Customize panel toggle switches
     const enabledWidgets = {
@@ -961,6 +980,7 @@ export class BaseContent extends React.PureComponent {
       crosswordEnabled: prefs["widgets.crossword.enabled"],
       stocksEnabled: prefs["widgets.stocks.enabled"],
       pictureOfTheDayEnabled: prefs["widgets.pictureOfTheDay.enabled"],
+      recentSearchesEnabled: prefs["widgets.recentSearches.enabled"],
       widgetsMaximized: prefs["widgets.maximized"],
       widgetsMayBeMaximized: prefs["widgets.system.maximized"],
     };
@@ -1054,6 +1074,12 @@ export class BaseContent extends React.PureComponent {
 
     const baseContextValue = { openWidgetsPanel: this.openWidgetsPanel };
 
+    // The experiment can turn the Widgets space on for a profile that had
+    // widgets off, and both the layout and the customize menu toggle have to
+    // agree with what is on the page.
+    const widgetsEnabled =
+      prefs["widgets.enabled"] || isSpaceOverridden(SPACE_IDS.WIDGETS, prefs);
+
     // @nova-cleanup(remove-conditional): Remove this conditional and
     // always render the Nova layout below. The classic render() return
     // and all its supporting variables (featureClassName, outerClassName,
@@ -1065,27 +1091,51 @@ export class BaseContent extends React.PureComponent {
       // anchors the inline-start sidebar. If the page has nothing on it
       // (no content sections, no search, no widgets), the Logo is
       // suppressed entirely via `isPageEmpty`.
-      const weatherWidget = WIDGET_REGISTRY.find(w => w.id === "weather");
-      const weatherGoesToSidebar =
-        resolveWidgetHasSidebar(weatherWidget, prefs) &&
-        resolveWidgetSize(weatherWidget, prefs) === "small";
-      const widgetsEnabled = prefs["widgets.enabled"];
       const hasAnyEnabledWidget = WIDGET_REGISTRY.some(w =>
         isWidgetEnabled(w, prefs, widgetsEnabled)
       );
-      const hasContentWidgets = WIDGET_REGISTRY.some(
-        w =>
-          isWidgetEnabled(w, prefs, widgetsEnabled) &&
-          !(w.id === "weather" && weatherGoesToSidebar)
-      );
+      const hasContentWidgets = hasContentAreaWidgets(prefs, widgetsEnabled);
       const highlightsEnabled = prefs["feeds.section.highlights"];
       const noContentSectionsEnabled =
         !topSitesEnabled && !pocketEnabled && !highlightsEnabled;
       const isPageEmpty =
         noContentSectionsEnabled && !prefs.showSearch && !hasAnyEnabledWidget;
       const hasManyTopSitesRows = topSitesEnabled && prefs.topSitesRows > 2;
+      // Recent activity is then alone in the band, and the logo leaves the sidebar.
+      const noFeedOrContentWidgets = !pocketEnabled && !hasContentWidgets;
+      // Gated here rather than in CSS, so the stylesheet never has to infer
+      // whether widgets or stories exist. The lead class alone means the
+      // experiment is assigned, which is enough to frame a lone section; the
+      // two-column layout additionally needs both sections.
+      const bandClassName = [
+        "content-full-width",
+        ...sideBySideBandClasses(prefs),
+        isSideBySideActive(prefs) && "side-by-side-active",
+        // Unlike side-by-side, an assigned-but-inactive spaces variant renders
+        // the ordinary band, so there is no Spaces container for these classes
+        // to describe.
+        ...(isSpacesActive(prefs) ? spacesBandClasses(prefs) : []),
+        noFeedOrContentWidgets && "highlights-only",
+      ]
+        .filter(Boolean)
+        .join(" ");
       const logoShouldBeCentered =
-        !pocketEnabled && !hasContentWidgets && !hasManyTopSitesRows;
+        noFeedOrContentWidgets && !hasManyTopSitesRows;
+      // The 5-column story grid is driven by the layout data alone: the content
+      // band only widens when every section has a columnCount: 5 entry. Sections
+      // share one subgrid track count, so a layout set where only some sections
+      // define 5 columns has to stay at 4 — widening it would leave the others
+      // with no tile for the active breakpoint, and nothing to render.
+      const sectionsWithLayouts = Object.values(
+        props.DiscoveryStream.feeds?.data ?? {}
+      ).find(feed => feed?.data?.sections?.length)?.data?.sections;
+      const hasFiveColumnLayout =
+        !!sectionsWithLayouts?.length &&
+        sectionsWithLayouts.every(section =>
+          section.layout?.responsiveLayouts?.some(
+            layout => layout.columnCount === 5
+          )
+        );
       // Rendered as a direct child of .container unless the logo is centered,
       // so position: sticky is bounded by .container (which spans the whole
       // page) rather than .content (which now ends above the content band).
@@ -1138,7 +1188,7 @@ export class BaseContent extends React.PureComponent {
             className={`nova-outer-wrapper${this.state.fixedSearch ? " stuck-search" : ""}`}
           >
             <div
-              className={`container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}`}
+              className={`container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}${hasFiveColumnLayout ? " sections-5-col" : ""}`}
             >
               <aside className="sidebar-inline-start">
                 {!prefs.hideLogo && !logoShouldBeCentered && !isPageEmpty && (
@@ -1239,8 +1289,13 @@ export class BaseContent extends React.PureComponent {
                 {/* Widgets + content feed, in a band spanning all three columns
               on the row below the grid. See _Grid.scss. */}
                 {contentFeed && (
-                  <div className="content-full-width">{contentFeed}</div>
+                  <div className={bandClassName}>{contentFeed}</div>
                 )}
+                {/* Nova only shows the wallpaper when both prefs are on, unlike
+              classic; see updateWallpaper. */}
+                {wallpapersEnabled &&
+                  wallpapersUserEnabled &&
+                  this.renderWallpaperAttribution()}
               </main>
             </div>
             <ConfirmDialog />
@@ -1269,6 +1324,7 @@ export class BaseContent extends React.PureComponent {
                 mayHaveCrosswordWidget={mayHaveCrosswordWidget}
                 mayHaveStocksWidget={mayHaveStocksWidget}
                 mayHavePictureOfTheDayWidget={mayHavePictureOfTheDayWidget}
+                mayHaveRecentSearchesWidget={mayHaveRecentSearchesWidget}
                 mayHaveWeatherForecast={
                   prefs["widgets.system.weatherForecast.enabled"]
                 }
@@ -1282,7 +1338,7 @@ export class BaseContent extends React.PureComponent {
                 toggleWidgetsManagementPanel={this.toggleWidgetsManagementPanel}
                 toggleThemesPanel={this.toggleThemesPanel}
                 showThemesPanel={this.state.showThemesPanel}
-                widgetsEnabled={prefs["widgets.enabled"]}
+                widgetsEnabled={widgetsEnabled}
                 dispatch={this.props.dispatch}
               />
               {(shouldShowOMCHighlight(
@@ -1448,6 +1504,7 @@ export class BaseContent extends React.PureComponent {
               mayHaveCrosswordWidget={mayHaveCrosswordWidget}
               mayHaveStocksWidget={mayHaveStocksWidget}
               mayHavePictureOfTheDayWidget={mayHavePictureOfTheDayWidget}
+              mayHaveRecentSearchesWidget={mayHaveRecentSearchesWidget}
               mayHaveWeatherForecast={
                 prefs["widgets.system.weatherForecast.enabled"]
               }

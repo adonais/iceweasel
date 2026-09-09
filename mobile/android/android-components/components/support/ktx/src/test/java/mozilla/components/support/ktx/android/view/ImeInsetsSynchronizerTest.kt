@@ -85,17 +85,18 @@ class ImeInsetsSynchronizerTest {
     fun `GIVEN ime animation is not in progress and it is hidden WHEN window insets change THEN inform about the current keyboard status`() {
         var isKeyboardShowing = "unknown"
         var keyboardAnimationFinishedHeight = -1
-        val synchronizer = ImeInsetsSynchronizer.setup(
-            targetView = targetView,
-            onIMEAnimationStarted = { _, height ->
-                isKeyboardShowing = "error"
-                keyboardAnimationFinishedHeight = height + 22
-            },
-            onIMEAnimationFinished = { keyboardShowing, height ->
-                isKeyboardShowing = keyboardShowing.toString()
-                keyboardAnimationFinishedHeight = height
-            },
-        )!!
+        val synchronizer =
+            ImeInsetsSynchronizer.setup(
+                targetView = targetView,
+                onIMEAnimationStarted = { _, height ->
+                    isKeyboardShowing = "error"
+                    keyboardAnimationFinishedHeight = height + 22
+                },
+                onIMEAnimationFinished = { keyboardShowing, height ->
+                    isKeyboardShowing = keyboardShowing.toString()
+                    keyboardAnimationFinishedHeight = height
+                },
+            )!!
         val windowInsets: WindowInsetsCompat = mock()
         doReturn(Insets.of(0, 0, 0, 0)).`when`(windowInsets).getInsets(ime())
         doReturn(Insets.of(10, 20, 30, 40)).`when`(windowInsets).getInsets(systemBars())
@@ -115,17 +116,18 @@ class ImeInsetsSynchronizerTest {
     fun `GIVEN ime animation is not in progress and it is shown WHEN window insets change THEN inform about the current keyboard status`() {
         var isKeyboardShowing = "unknown"
         var keyboardAnimationFinishedHeight = -1
-        val synchronizer = ImeInsetsSynchronizer.setup(
-            targetView = targetView,
-            onIMEAnimationStarted = { _, height ->
-                isKeyboardShowing = "error"
-                keyboardAnimationFinishedHeight = height + 22
-            },
-            onIMEAnimationFinished = { keyboardShowing, height ->
-                isKeyboardShowing = keyboardShowing.toString()
-                keyboardAnimationFinishedHeight = height
-            },
-        )!!
+        val synchronizer =
+            ImeInsetsSynchronizer.setup(
+                targetView = targetView,
+                onIMEAnimationStarted = { _, height ->
+                    isKeyboardShowing = "error"
+                    keyboardAnimationFinishedHeight = height + 22
+                },
+                onIMEAnimationFinished = { keyboardShowing, height ->
+                    isKeyboardShowing = keyboardShowing.toString()
+                    keyboardAnimationFinishedHeight = height
+                },
+            )!!
         val windowInsets: WindowInsetsCompat = mock()
         doReturn(Insets.of(0, 0, 0, 1000)).`when`(windowInsets).getInsets(ime())
         doReturn(Insets.of(10, 20, 30, 40)).`when`(windowInsets).getInsets(systemBars())
@@ -145,17 +147,18 @@ class ImeInsetsSynchronizerTest {
     fun `WHEN the keyboard starts to hide THEN inform about the current keyboard status`() {
         var isKeyboardShowing = "unknown"
         var keyboardAnimationFinishedHeight = -1
-        val synchronizer = ImeInsetsSynchronizer.setup(
-            targetView = targetView,
-            onIMEAnimationStarted = { keyboardShowing, height ->
-                isKeyboardShowing = keyboardShowing.toString()
-                keyboardAnimationFinishedHeight = height
-            },
-            onIMEAnimationFinished = { _, height ->
-                isKeyboardShowing = "error"
-                keyboardAnimationFinishedHeight = height + 22
-            },
-        )!!
+        val synchronizer =
+            ImeInsetsSynchronizer.setup(
+                targetView = targetView,
+                onIMEAnimationStarted = { keyboardShowing, height ->
+                    isKeyboardShowing = keyboardShowing.toString()
+                    keyboardAnimationFinishedHeight = height
+                },
+                onIMEAnimationFinished = { _, height ->
+                    isKeyboardShowing = "error"
+                    keyboardAnimationFinishedHeight = height + 22
+                },
+            )!!
         val windowInsets: WindowInsetsCompat = mock()
         doReturn(Insets.of(0, 0, 0, 1000)).`when`(windowInsets).getInsets(ime())
         doReturn(Insets.of(10, 20, 30, 40)).`when`(windowInsets).getInsets(systemBars())
@@ -179,17 +182,18 @@ class ImeInsetsSynchronizerTest {
     fun `WHEN the keyboard starts to show THEN inform about the current keyboard status`() {
         var isKeyboardShowing = "unknown"
         var keyboardAnimationFinishedHeight = -1
-        val synchronizer = ImeInsetsSynchronizer.setup(
-            targetView = targetView,
-            onIMEAnimationStarted = { keyboardShowing, height ->
-                isKeyboardShowing = keyboardShowing.toString()
-                keyboardAnimationFinishedHeight = height
-            },
-            onIMEAnimationFinished = { _, height ->
-                isKeyboardShowing = "error"
-                keyboardAnimationFinishedHeight = height + 22
-            },
-        )!!
+        val synchronizer =
+            ImeInsetsSynchronizer.setup(
+                targetView = targetView,
+                onIMEAnimationStarted = { keyboardShowing, height ->
+                    isKeyboardShowing = keyboardShowing.toString()
+                    keyboardAnimationFinishedHeight = height
+                },
+                onIMEAnimationFinished = { _, height ->
+                    isKeyboardShowing = "error"
+                    keyboardAnimationFinishedHeight = height + 22
+                },
+            )!!
         val windowInsets: WindowInsetsCompat = mock()
         doReturn(Insets.of(0, 0, 0, 1000)).`when`(windowInsets).getInsets(ime())
         doReturn(Insets.of(10, 20, 30, 40)).`when`(windowInsets).getInsets(systemBars())

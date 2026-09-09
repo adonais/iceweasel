@@ -7,13 +7,13 @@ package mozilla.components.feature.tab.collections.db
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import java.util.UUID
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import java.util.UUID
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 class TabDaoTest {
     private val context: Context
@@ -34,29 +34,34 @@ class TabDaoTest {
 
     @Test
     fun testAddingTabsToCollection() {
-        val collection = TabCollectionEntity(title = "Collection One", createdAt = 10).also {
-            it.id = tabCollectionDao.insertTabCollection(it)
-        }
+        val collection =
+            TabCollectionEntity(title = "Collection One", createdAt = 10).also {
+                it.id = tabCollectionDao.insertTabCollection(it)
+            }
 
-        val tab1 = TabEntity(
-            title = "Tab One",
-            url = "https://www.mozilla.org",
-            stateFile = UUID.randomUUID().toString(),
-            tabCollectionId = collection.id!!,
-            createdAt = 200,
-        ).also {
-            it.id = tabDao.insertTab(it)
-        }
+        val tab1 =
+            TabEntity(
+                    title = "Tab One",
+                    url = "https://www.mozilla.org",
+                    stateFile = UUID.randomUUID().toString(),
+                    tabCollectionId = collection.id!!,
+                    createdAt = 200,
+                )
+                .also {
+                    it.id = tabDao.insertTab(it)
+                }
 
-        val tab2 = TabEntity(
-            title = "Tab Two",
-            url = "https://www.firefox.com",
-            stateFile = UUID.randomUUID().toString(),
-            tabCollectionId = collection.id!!,
-            createdAt = 100,
-        ).also {
-            it.id = tabDao.insertTab(it)
-        }
+        val tab2 =
+            TabEntity(
+                    title = "Tab Two",
+                    url = "https://www.firefox.com",
+                    stateFile = UUID.randomUUID().toString(),
+                    tabCollectionId = collection.id!!,
+                    createdAt = 100,
+                )
+                .also {
+                    it.id = tabDao.insertTab(it)
+                }
 
         val pagedList = mutableListOf<TabCollectionWithTabs>()
         tabCollectionDao.getTabCollectionsPaged().create().map {
@@ -71,29 +76,34 @@ class TabDaoTest {
 
     @Test
     fun testRemovingTabFromCollection() {
-        val collection = TabCollectionEntity(title = "Collection One", createdAt = 10).also {
-            it.id = tabCollectionDao.insertTabCollection(it)
-        }
+        val collection =
+            TabCollectionEntity(title = "Collection One", createdAt = 10).also {
+                it.id = tabCollectionDao.insertTabCollection(it)
+            }
 
-        val tab1 = TabEntity(
-            title = "Tab One",
-            url = "https://www.mozilla.org",
-            stateFile = UUID.randomUUID().toString(),
-            tabCollectionId = collection.id!!,
-            createdAt = 200,
-        ).also {
-            it.id = tabDao.insertTab(it)
-        }
+        val tab1 =
+            TabEntity(
+                    title = "Tab One",
+                    url = "https://www.mozilla.org",
+                    stateFile = UUID.randomUUID().toString(),
+                    tabCollectionId = collection.id!!,
+                    createdAt = 200,
+                )
+                .also {
+                    it.id = tabDao.insertTab(it)
+                }
 
-        val tab2 = TabEntity(
-            title = "Tab Two",
-            url = "https://www.firefox.com",
-            stateFile = UUID.randomUUID().toString(),
-            tabCollectionId = collection.id!!,
-            createdAt = 100,
-        ).also {
-            it.id = tabDao.insertTab(it)
-        }
+        val tab2 =
+            TabEntity(
+                    title = "Tab Two",
+                    url = "https://www.firefox.com",
+                    stateFile = UUID.randomUUID().toString(),
+                    tabCollectionId = collection.id!!,
+                    createdAt = 100,
+                )
+                .also {
+                    it.id = tabDao.insertTab(it)
+                }
 
         tabDao.deleteTab(tab1)
 

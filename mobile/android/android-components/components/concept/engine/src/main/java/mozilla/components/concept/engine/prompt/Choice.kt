@@ -26,9 +26,12 @@ data class Choice(
     val children: Array<Choice>? = null,
 ) : Parcelable {
 
-    val isGroupType get() = children != null
+    val isGroupType
+        get() = children != null
 
-    internal constructor(parcel: Parcel) : this(
+    internal constructor(
+        parcel: Parcel
+    ) : this(
         parcel.readString() ?: "",
         parcel.readByte() != 0.toByte(),
         parcel.readString() ?: "",

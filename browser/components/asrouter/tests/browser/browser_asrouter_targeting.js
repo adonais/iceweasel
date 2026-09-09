@@ -11,7 +11,6 @@ ChromeUtils.defineESModuleGetters(this, {
   BrowserInitState: "resource:///modules/BrowserGlue.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   BuiltInThemes: "resource:///modules/BuiltInThemes.sys.mjs",
-  CFRMessageProvider: "resource:///modules/asrouter/CFRMessageProvider.sys.mjs",
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
   FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
   HomePage: "resource:///modules/HomePage.sys.mjs",
@@ -19,6 +18,9 @@ ChromeUtils.defineESModuleGetters(this, {
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   NimbusTestUtils: "resource://testing-common/NimbusTestUtils.sys.mjs",
+  OnboardingMessageProvider:
+    "resource:///modules/asrouter/OnboardingMessageProvider.sys.mjs",
+  PanelTestProvider: "resource:///modules/asrouter/PanelTestProvider.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
@@ -28,6 +30,8 @@ ChromeUtils.defineESModuleGetters(this, {
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SelectableProfileService:
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
+  SessionStartup:
+    "moz-src:///browser/components/sessionstore/SessionStartup.sys.mjs",
   ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
   Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
@@ -1504,12 +1508,15 @@ add_task(async function checkPatternMatches() {
 });
 
 add_task(async function checkPatternsValid() {
-  const messages = (await CFRMessageProvider.getMessages()).filter(
-    m => m.trigger?.patterns
-  );
+  const messages = [
+    ...(await OnboardingMessageProvider.getMessages()),
+    ...(await PanelTestProvider.getMessages()),
+  ].filter(m => m.trigger?.patterns);
+
+  Assert.greater(messages.length, 0, "Found messages with trigger patterns");
 
   for (const message of messages) {
-    Assert.ok(new MatchPatternSet(message.trigger.patterns));
+    Assert.ok(new MatchPatternSet(message.trigger.patterns), message.id);
   }
 });
 
@@ -1659,9 +1666,8 @@ add_task(async function check_newTabSettings_webExtension() {
 
 add_task(async function check_openUrlTrigger_context() {
   const message = {
-    ...(await CFRMessageProvider.getMessages()).find(
-      m => m.id === "YOUTUBE_ENHANCE_3"
-    ),
+    id: "check_openUrlTrigger_context",
+    trigger: { id: "openURL", params: ["www.youtube.com", "youtube.com"] },
     targeting: "visitsCount == 3",
   };
   const trigger = {
@@ -2417,7 +2423,7 @@ add_task(
 
 add_task(async function check_activeNotifications_infobar_shown() {
   let message = {
-    ...(await CFRMessageProvider.getMessages()).find(
+    ...(await PanelTestProvider.getMessages()).find(
       m => m.id === "INFOBAR_ACTION_86"
     ),
   };
@@ -3193,6 +3199,44 @@ add_task(async function check_crashCountInLastWeek_onlyCountsRecentCrashes() {
       await ASRouterTargeting.Environment.crashCountInLastWeek,
       2,
       "should only count crashes from within the last 7 days"
+    );
+  } finally {
+    sandbox.restore();
+  }
+});
+
+add_task(async function check_previousSessionCrashed() {
+  const sandbox = sinon.createSandbox();
+  try {
+    sandbox.stub(SessionStartup, "previousSessionCrashed").get(() => true);
+    is(
+      ASRouterTargeting.Environment.previousSessionCrashed,
+      true,
+      "should be true when the previous session crashed"
+    );
+
+    const message = {
+      id: "check_previousSessionCrashed",
+      targeting: "previousSessionCrashed",
+    };
+    is(
+      (await ASRouterTargeting.findMatchingMessage({ messages: [message] }))
+        ?.id,
+      message.id,
+      "should select message targeting previousSessionCrashed when it is true"
+    );
+
+    sandbox.restore();
+    sandbox.stub(SessionStartup, "previousSessionCrashed").get(() => false);
+    is(
+      ASRouterTargeting.Environment.previousSessionCrashed,
+      false,
+      "should be false when the previous session did not crash"
+    );
+    is(
+      await ASRouterTargeting.findMatchingMessage({ messages: [message] }),
+      null,
+      "should not select message targeting previousSessionCrashed when it is false"
     );
   } finally {
     sandbox.restore();

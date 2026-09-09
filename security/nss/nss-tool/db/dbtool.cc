@@ -23,12 +23,12 @@ const std::vector<std::string> kCommandArgs(
     {"--create", "--list-certs", "--import-cert", "--list-keys", "--import-key",
      "--delete-cert", "--delete-key", "--change-password"});
 
-static bool HasSingleCommandArgument(const ArgParser &parser) {
-  auto pred = [&](const std::string &cmd) { return parser.Has(cmd); };
+static bool HasSingleCommandArgument(const ArgParser& parser) {
+  auto pred = [&](const std::string& cmd) { return parser.Has(cmd); };
   return std::count_if(kCommandArgs.begin(), kCommandArgs.end(), pred) == 1;
 }
 
-static bool HasArgumentRequiringWriteAccess(const ArgParser &parser) {
+static bool HasArgumentRequiringWriteAccess(const ArgParser& parser) {
   return parser.Has("--create") || parser.Has("--import-cert") ||
          parser.Has("--import-key") || parser.Has("--delete-cert") ||
          parser.Has("--delete-key") || parser.Has("--change-password");
@@ -67,7 +67,7 @@ static std::string PrintFlags(unsigned int flags) {
   return ss.str();
 }
 
-static const char *const keyTypeName[] = {"null", "rsa", "dsa", "fortezza",
+static const char* const keyTypeName[] = {"null", "rsa", "dsa", "fortezza",
                                           "dh",   "kea", "ec"};
 
 void DBTool::Usage() {
@@ -83,7 +83,7 @@ void DBTool::Usage() {
   std::cerr << "  --delete-key <name>" << std::endl;
 }
 
-bool DBTool::Run(const std::vector<std::string> &arguments) {
+bool DBTool::Run(const std::vector<std::string>& arguments) {
   ArgParser parser(arguments);
 
   if (!HasSingleCommandArgument(parser)) {
@@ -127,7 +127,7 @@ bool DBTool::Run(const std::vector<std::string> &arguments) {
   }
 
   // init NSS
-  const char *certPrefix = "";  // certutil -P option  --- can leave this empty
+  const char* certPrefix = "";  // certutil -P option  --- can leave this empty
   SECStatus rv = NSS_Initialize(initDir.c_str(), certPrefix, certPrefix,
                                 "secmod.db", readOnly ? NSS_INIT_READONLY : 0);
   if (rv != SECSuccess) {
@@ -170,13 +170,13 @@ bool DBTool::PathHasDBFiles(std::string path) {
   std::regex certDBPattern("cert.*\\.db");
   std::regex keyDBPattern("key.*\\.db");
 
-  PRDir *dir = PR_OpenDir(path.c_str());
+  PRDir* dir = PR_OpenDir(path.c_str());
   if (!dir) {
     std::cerr << "Directory " << path << " could not be accessed!" << std::endl;
     return false;
   }
 
-  PRDirEntry *ent;
+  PRDirEntry* ent;
   bool dbFileExists = false;
   while ((ent = PR_ReadDir(dir, PR_SKIP_BOTH))) {
     if (std::regex_match(ent->name, certDBPattern) ||
@@ -193,7 +193,7 @@ bool DBTool::PathHasDBFiles(std::string path) {
 
 void DBTool::ListCertificates() {
   ScopedCERTCertList list(PK11_ListCerts(PK11CertListAll, nullptr));
-  CERTCertListNode *node;
+  CERTCertListNode* node;
 
   std::cout << std::setw(60) << std::left << "Certificate Nickname"
             << " "
@@ -205,10 +205,10 @@ void DBTool::ListCertificates() {
 
   for (node = CERT_LIST_HEAD(list); !CERT_LIST_END(node, list);
        node = CERT_LIST_NEXT(node)) {
-    CERTCertificate *cert = node->cert;
+    CERTCertificate* cert = node->cert;
 
     std::string name("(unknown)");
-    char *appData = static_cast<char *>(node->appData);
+    char* appData = static_cast<char*>(node->appData);
     if (appData && strlen(appData) > 0) {
       name = appData;
     } else if (cert->nickname && strlen(cert->nickname) > 0) {
@@ -235,7 +235,7 @@ void DBTool::ListCertificates() {
   }
 }
 
-bool DBTool::ImportCertificate(const ArgParser &parser) {
+bool DBTool::ImportCertificate(const ArgParser& parser) {
   if (!parser.Has("--name")) {
     std::cerr << "A name (--name) is required to import a certificate."
               << std::endl;
@@ -266,7 +266,7 @@ bool DBTool::ImportCertificate(const ArgParser &parser) {
   std::vector<uint8_t> certData = ReadInputData(derFilePath);
 
   ScopedCERTCertificate cert(CERT_DecodeCertFromPackage(
-      reinterpret_cast<char *>(certData.data()), certData.size()));
+      reinterpret_cast<char*>(certData.data()), certData.size()));
   if (cert.get() == nullptr) {
     std::cerr << "Error: Could not decode certificate!" << std::endl;
     return false;
@@ -310,11 +310,11 @@ bool DBTool::ListKeys() {
     return false;
   }
 
-  SECKEYPrivateKeyListNode *node;
+  SECKEYPrivateKeyListNode* node;
   int count = 0;
   for (node = PRIVKEY_LIST_HEAD(list.get());
        !PRIVKEY_LIST_END(node, list.get()); node = PRIVKEY_LIST_NEXT(node)) {
-    char *keyNameRaw = PK11_GetPrivateKeyNickname(node->key);
+    char* keyNameRaw = PK11_GetPrivateKeyNickname(node->key);
     std::string keyName(keyNameRaw ? keyNameRaw : "");
 
     if (keyName.empty()) {
@@ -331,7 +331,7 @@ bool DBTool::ListKeys() {
       }
     }
 
-    SECKEYPrivateKey *key = node->key;
+    SECKEYPrivateKey* key = node->key;
     ScopedSECItem keyIDItem(PK11_GetLowLevelKeyIDForPrivateKey(key));
     if (keyIDItem.get() == nullptr) {
       std::cerr << "Error: PK11_GetLowLevelKeyIDForPrivateKey failed!"
@@ -361,7 +361,7 @@ bool DBTool::ListKeys() {
   return true;
 }
 
-bool DBTool::ImportKey(const ArgParser &parser) {
+bool DBTool::ImportKey(const ArgParser& parser) {
   std::string privKeyFilePath = parser.Get("--import-key");
   std::string name;
   if (parser.Has("--name")) {
@@ -383,13 +383,13 @@ bool DBTool::ImportKey(const ArgParser &parser) {
     return false;
   }
   SECItem pkcs8PrivKeyItem = {
-      siBuffer, reinterpret_cast<unsigned char *>(privKeyData.data()),
+      siBuffer, reinterpret_cast<unsigned char*>(privKeyData.data()),
       static_cast<unsigned int>(privKeyData.size())};
 
   SECItem nickname = {siBuffer, nullptr, 0};
   if (!name.empty()) {
-    nickname.data = const_cast<unsigned char *>(
-        reinterpret_cast<const unsigned char *>(name.c_str()));
+    nickname.data = const_cast<unsigned char*>(
+        reinterpret_cast<const unsigned char*>(name.c_str()));
     nickname.len = static_cast<unsigned int>(name.size());
   }
 
@@ -407,7 +407,7 @@ bool DBTool::ImportKey(const ArgParser &parser) {
   return true;
 }
 
-bool DBTool::DeleteCert(const ArgParser &parser) {
+bool DBTool::DeleteCert(const ArgParser& parser) {
   std::string certName = parser.Get("--delete-cert");
   if (certName.empty()) {
     std::cerr << "A name is required to delete a certificate." << std::endl;
@@ -435,7 +435,7 @@ bool DBTool::DeleteCert(const ArgParser &parser) {
   return true;
 }
 
-bool DBTool::DeleteKey(const ArgParser &parser) {
+bool DBTool::DeleteKey(const ArgParser& parser) {
   std::string keyName = parser.Get("--delete-key");
   if (keyName.empty()) {
     std::cerr << "A name is required to delete a key." << std::endl;
@@ -454,7 +454,7 @@ bool DBTool::DeleteKey(const ArgParser &parser) {
   }
 
   ScopedSECKEYPrivateKeyList list(PK11_ListPrivKeysInSlot(
-      slot.get(), const_cast<char *>(keyName.c_str()), nullptr));
+      slot.get(), const_cast<char*>(keyName.c_str()), nullptr));
   if (list.get() == nullptr) {
     std::cerr << "Fetching private keys with nickname " << keyName
               << " failed with error " << PR_ErrorToName(PR_GetError())
@@ -463,10 +463,10 @@ bool DBTool::DeleteKey(const ArgParser &parser) {
   }
 
   unsigned int foundKeys = 0, deletedKeys = 0;
-  SECKEYPrivateKeyListNode *node;
+  SECKEYPrivateKeyListNode* node;
   for (node = PRIVKEY_LIST_HEAD(list.get());
        !PRIVKEY_LIST_END(node, list.get()); node = PRIVKEY_LIST_NEXT(node)) {
-    SECKEYPrivateKey *privKey = node->key;
+    SECKEYPrivateKey* privKey = node->key;
     foundKeys++;
     // see PK11_DeleteTokenPrivateKey for example usage
     // calling PK11_DeleteTokenPrivateKey directly does not work because it also

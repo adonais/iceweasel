@@ -23,13 +23,12 @@ class SettingsAdvancedTest {
 
     private val featureSettingsHelper = FeatureSettingsHelper()
 
-    @get:Rule(order = 0)
-    val focusTestRule: FocusTestRule = FocusTestRule()
+    @get:Rule(order = 0) val focusTestRule: FocusTestRule = FocusTestRule()
 
-    private val webServerRule get() = focusTestRule.mockWebServerRule
+    private val webServerRule
+        get() = focusTestRule.mockWebServerRule
 
-    @get:Rule
-    val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
+    @get:Rule val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
 
     @Before
     fun setUp() {
@@ -47,33 +46,36 @@ class SettingsAdvancedTest {
     fun openLinksInAppsTest() {
         val tab3Url = webServerRule.server.getGenericTabAsset(3).url
 
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openAdvancedSettingsMenu {
-            verifyOpenLinksInAppsSwitchState(false)
-            clickOpenLinksInAppsSwitch()
-            verifyOpenLinksInAppsSwitchState(true)
-        }.goBackToSettings {
-        }.goBackToHomeScreen {
-        }.loadPage(tab3Url) {
-            progressBar.waitUntilGone(waitingTimeShort)
-            clickLinkMatchingText("Mozilla Youtube link")
-            verifyOpenLinksInAppsPrompt(true)
-            clickOpenLinksInAppsCancelButton()
-        }.clearBrowsingData {
-        }.openMainMenu {
-        }.openSettings {
-        }.openAdvancedSettingsMenu {
-            verifyOpenLinksInAppsSwitchState(true)
-            clickOpenLinksInAppsSwitch()
-            verifyOpenLinksInAppsSwitchState(false)
-        }.goBackToSettings {
-        }.goBackToHomeScreen {
-        }.loadPage(tab3Url) {
-            progressBar.waitUntilGone(waitingTimeShort)
-            clickLinkMatchingText("Mozilla Youtube link")
-            verifyOpenLinksInAppsPrompt(false)
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openAdvancedSettingsMenu {
+                verifyOpenLinksInAppsSwitchState(false)
+                clickOpenLinksInAppsSwitch()
+                verifyOpenLinksInAppsSwitchState(true)
+            }
+            .goBackToSettings {}
+            .goBackToHomeScreen {}
+            .loadPage(tab3Url) {
+                progressBar.waitUntilGone(waitingTimeShort)
+                clickLinkMatchingText("Mozilla Youtube link")
+                verifyOpenLinksInAppsPrompt(true)
+                clickOpenLinksInAppsCancelButton()
+            }
+            .clearBrowsingData {}
+            .openMainMenu {}
+            .openSettings {}
+            .openAdvancedSettingsMenu {
+                verifyOpenLinksInAppsSwitchState(true)
+                clickOpenLinksInAppsSwitch()
+                verifyOpenLinksInAppsSwitchState(false)
+            }
+            .goBackToSettings {}
+            .goBackToHomeScreen {}
+            .loadPage(tab3Url) {
+                progressBar.waitUntilGone(waitingTimeShort)
+                clickLinkMatchingText("Mozilla Youtube link")
+                verifyOpenLinksInAppsPrompt(false)
+            }
     }
 }

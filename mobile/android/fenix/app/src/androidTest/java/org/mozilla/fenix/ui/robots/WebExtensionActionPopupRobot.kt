@@ -12,9 +12,7 @@ import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.TestHelper.packageName
 
-/**
- * Robot for interacting with a web extension browserAction/pageAction popup.
- */
+/** Robot for interacting with a web extension browserAction/pageAction popup. */
 class WebExtensionActionPopupRobot(private val composeTestRule: ComposeTestRule) {
     fun verifyPopupContent(expectedText: String) {
         // Relevant implementation detail: the popup is displayed in the same
@@ -28,9 +26,7 @@ class WebExtensionActionPopupRobot(private val composeTestRule: ComposeTestRule)
     }
 }
 
-/**
- * Enters the web extension action popup robot scope for assertions and interactions.
- */
+/** Enters the web extension action popup robot scope for assertions and interactions. */
 fun webExtensionActionPopup(
     composeTestRule: ComposeTestRule,
     interact: WebExtensionActionPopupRobot.() -> Unit,

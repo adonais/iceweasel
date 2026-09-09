@@ -7,8 +7,8 @@ package mozilla.components.support.ktx.java.io
 import java.io.File
 
 /**
- * Removes all files in the directory named by this abstract pathname. Does nothing if the [File] is not pointing to
- * a directory.
+ * Removes all files in the directory named by this abstract pathname. Does nothing if the [File] is not pointing to a
+ * directory.
  */
 fun File.truncateDirectory() {
     if (!isDirectory) {

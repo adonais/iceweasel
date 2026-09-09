@@ -28,21 +28,15 @@ class AboutHomeMiddlewareTest {
     @Before
     fun setup() {
         captureActionsMiddleware = CaptureActionsMiddleware()
-        middleware = AboutHomeMiddleware(
-            homepageTitle = homepageTitle,
-        )
+        middleware = AboutHomeMiddleware(homepageTitle = homepageTitle)
     }
 
     @Test
     fun `GIVEN ABOUT_HOME_URL tab WHEN update title action is dispatched THEN intercept the action and update the title`() {
         val tab = createTab(url = ABOUT_HOME_URL, id = "test-tab1")
-        val store = createStore(
-            initialState = BrowserState(tabs = listOf(tab)),
-        )
+        val store = createStore(initialState = BrowserState(tabs = listOf(tab)))
 
-        store.dispatch(
-            ContentAction.UpdateTitleAction(sessionId = tab.id, title = ""),
-        )
+        store.dispatch(ContentAction.UpdateTitleAction(sessionId = tab.id, title = ""))
 
         assertEquals(
             homepageTitle,
@@ -53,14 +47,10 @@ class AboutHomeMiddlewareTest {
     @Test
     fun `GIVEN a tab that is not ABOUT_HOME_URL WHEN update title action is dispatched THEN let the action pass through`() {
         val tab = createTab("https://www.mozilla.org", id = "test-tab1")
-        val store = createStore(
-            initialState = BrowserState(tabs = listOf(tab)),
-        )
+        val store = createStore(initialState = BrowserState(tabs = listOf(tab)))
         val title = "Mozilla"
 
-        store.dispatch(
-            ContentAction.UpdateTitleAction(sessionId = tab.id, title = title),
-        )
+        store.dispatch(ContentAction.UpdateTitleAction(sessionId = tab.id, title = title))
 
         assertEquals(
             title,
@@ -71,24 +61,24 @@ class AboutHomeMiddlewareTest {
     @Test
     fun `GIVEN a ABOUT_HOME_URL tab is in a tab history state WHEN update history state action is dispatched THEN intercept the action and update the title of the homepage history item`() {
         val tab = createTab("https://www.mozilla.org", id = "test-tab1")
-        val store = createStore(
-            initialState = BrowserState(tabs = listOf(tab)),
-        )
-        val originalHistoryList = listOf(
-            HistoryItem(title = "", uri = ABOUT_HOME_URL),
-            HistoryItem(title = "Mozilla", uri = "https://www.mozilla.org"),
-        )
-        val expectedHistoryList = listOf(
-            HistoryItem(title = homepageTitle, uri = ABOUT_HOME_URL),
-            HistoryItem(title = "Mozilla", uri = "https://www.mozilla.org"),
-        )
+        val store = createStore(initialState = BrowserState(tabs = listOf(tab)))
+        val originalHistoryList =
+            listOf(
+                HistoryItem(title = "", uri = ABOUT_HOME_URL),
+                HistoryItem(title = "Mozilla", uri = "https://www.mozilla.org"),
+            )
+        val expectedHistoryList =
+            listOf(
+                HistoryItem(title = homepageTitle, uri = ABOUT_HOME_URL),
+                HistoryItem(title = "Mozilla", uri = "https://www.mozilla.org"),
+            )
 
         store.dispatch(
             ContentAction.UpdateHistoryStateAction(
                 sessionId = tab.id,
                 historyList = originalHistoryList,
                 currentIndex = 1,
-            ),
+            )
         )
 
         assertEquals(
@@ -97,10 +87,9 @@ class AboutHomeMiddlewareTest {
         )
     }
 
-    private fun createStore(
-        initialState: BrowserState = BrowserState(),
-    ) = BrowserStore(
-        initialState = initialState,
-        middleware = listOf(middleware, captureActionsMiddleware),
-    )
+    private fun createStore(initialState: BrowserState = BrowserState()) =
+        BrowserStore(
+            initialState = initialState,
+            middleware = listOf(middleware, captureActionsMiddleware),
+        )
 }

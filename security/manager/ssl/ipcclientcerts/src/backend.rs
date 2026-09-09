@@ -249,10 +249,14 @@ const TOKEN_SERIAL_NUMBER_BYTES: &[u8; 16] = b"0000000000000000";
 impl ClientCertsBackend for Backend {
     type Key = Key;
 
-    fn find_objects(&mut self) -> Result<(Vec<CryptokiCert>, Vec<Key>), Error> {
+    fn find_objects(&mut self) -> Result<(Vec<CryptokiCert>, Vec<Key>, Vec<CryptokiTrust>), Error> {
         let mut find_objects_context = FindObjectsContext::new();
         DoFindObjectsWrapper(Some(find_objects_callback), &mut find_objects_context);
-        Ok((find_objects_context.certs, find_objects_context.keys))
+        Ok((
+            find_objects_context.certs,
+            find_objects_context.keys,
+            Vec::new(),
+        ))
     }
 
     fn get_slot_info(&self) -> CK_SLOT_INFO {

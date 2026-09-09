@@ -2,10 +2,11 @@
   "include": ["**/*.mjs", "types/*.ts"],
   "exclude": [
     "content/SmartbarInput.mjs",
-    "content/UrlbarInput.mjs",
+    "content/UrlbarInputBase.mjs",
     "content/UrlbarView.mjs",
     "UrlbarProviderGlobalActions.sys.mjs",
     "private/SuggestBackendRust.sys.mjs",
+    "tests/NewtabSearchbarTestUtils.sys.mjs",
     "tests/UrlbarTestUtils.sys.mjs"
   ],
   "extends": "../../../tools/@types/tsconfig.json",

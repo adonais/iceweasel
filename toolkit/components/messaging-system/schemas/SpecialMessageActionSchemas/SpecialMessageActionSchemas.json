@@ -524,6 +524,18 @@
           "properties": {
             "type": {
               "type": "string",
+              "enum": ["SET_DEFAULT_BROWSER_OPEN_WITH"]
+            }
+          },
+          "required": ["type"],
+          "additionalProperties": false,
+          "description": "Message action to set Firefox as the default browser via the OS \"Open with\" picker (IOpenWithLauncher), guaranteeing an OS-level prompt. Windows only."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
               "enum": ["SET_DEFAULT_PDF_HANDLER"]
             },
             "data": {
@@ -986,6 +998,16 @@
             "type": {
               "type": "string",
               "enum": ["FXA_AIWINDOW_SIGNIN_FLOW"]
+            },
+            "data": {
+              "type": "object",
+              "properties": {
+                "source": {
+                  "type": "string",
+                  "description": "Identifies the surface that requested the launch, recorded as the `trigger` extra key on Smart Window telemetry. Defaults to \"asrouter\"."
+                }
+              },
+              "additionalProperties": false
             }
           },
           "required": ["type"],

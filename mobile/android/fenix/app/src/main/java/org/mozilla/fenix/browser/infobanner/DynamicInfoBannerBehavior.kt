@@ -12,11 +12,11 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import mozilla.components.browser.toolbar.BrowserToolbar
 
 /**
- * A [CoordinatorLayout.Behavior] implementation to be used when placing [InfoBanner]
- * below the BrowserToolbar with which is has to scroll.
+ * A [CoordinatorLayout.Behavior] implementation to be used when placing [InfoBanner] below the BrowserToolbar with
+ * which is has to scroll.
  *
- * This Behavior will keep the Y translations of [InfoBanner] and the top [BrowserToolbar] in sync
- * so that the banner will be shown between:
+ * This Behavior will keep the Y translations of [InfoBanner] and the top [BrowserToolbar] in sync so that the banner
+ * will be shown between:
  * - the top of the container, being translated over the initial toolbar height (toolbar fully collapsed)
  * - immediately below the toolbar (toolbar fully expanded).
  */
@@ -24,8 +24,7 @@ class DynamicInfoBannerBehavior(
     context: Context,
     attrs: AttributeSet?,
 ) : CoordinatorLayout.Behavior<View>(context, attrs) {
-    @VisibleForTesting
-    internal var toolbarHeight: Int = 0
+    @VisibleForTesting internal var toolbarHeight: Int = 0
 
     override fun layoutDependsOn(parent: CoordinatorLayout, child: View, dependency: View): Boolean {
         if (dependency::class == BrowserToolbar::class) {

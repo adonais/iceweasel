@@ -23,7 +23,6 @@ onnxruntime-x86_64-linux-gnu:
     treeherder:
         symbol: TL(onnx)
     run:
-        clone-with: hg
         arguments:
             - "Linux"
             - "x64"
@@ -43,7 +42,6 @@ onnxruntime-x86_64-windows-msvc:
     treeherder:
         symbol: TW64(onnx)
     run:
-        clone-with: hg
         arguments:
             - "Windows"
             - "x64"
@@ -65,7 +63,6 @@ onnxruntime-i686-windows-msvc:
     treeherder:
         symbol: TW32(onnx)
     run:
-        clone-with: hg
         arguments:
             - "Windows"
             - "x86"
@@ -87,7 +84,6 @@ onnxruntime-x86_64-apple-darwin:
     treeherder:
         symbol: TM(onnx)
     run:
-        clone-with: hg
         arguments:
             - "Darwin"
             - "x86_64"
@@ -107,7 +103,6 @@ onnxruntime-aarch64-apple-darwin:
     treeherder:
         symbol: TMA64(onnx)
     run:
-        clone-with: hg
         arguments:
             - "Darwin"
             - "arm64"
@@ -126,7 +121,6 @@ onnxruntime-arm-linux-androideabi:
     treeherder:
         symbol: TL(onnx-android-arm)
     run:
-        clone-with: hg
         arguments:
             - "Android"
             - "armeabi-v7a"
@@ -144,7 +138,6 @@ onnxruntime-aarch64-linux-android:
     treeherder:
         symbol: TL(onnx-android-aarch64)
     run:
-        clone-with: hg
         arguments:
             - "Android"
             - "arm64-v8a"
@@ -162,7 +155,6 @@ onnxruntime-x86_64-linux-android:
     treeherder:
         symbol: TL(onnx-android-x64)
     run:
-        clone-with: hg
         arguments:
             - "Android"
             - "x86_64"

@@ -26,12 +26,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.wallpapers.WallpaperTheme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Homepage header.
@@ -56,10 +56,7 @@ fun HomeSectionHeader(
     ) {
         Text(
             text = headerText,
-            modifier = Modifier
-                .weight(1f)
-                .wrapContentHeight(align = Alignment.Top)
-                .semantics { heading() },
+            modifier = Modifier.weight(1f).wrapContentHeight(align = Alignment.Top).semantics { heading() },
             color = WallpaperTheme.onWallpaper,
             overflow = TextOverflow.Ellipsis,
             maxLines = 2,
@@ -71,14 +68,12 @@ fun HomeSectionHeader(
         onButtonClick?.let {
             TextButton(
                 onClick = { onButtonClick() },
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = WallpaperTheme.onWallpaper,
-                ),
+                colors = ButtonDefaults.textButtonColors(contentColor = WallpaperTheme.onWallpaper),
             ) {
                 Text(
                     text = buttonText,
-                    modifier = Modifier
-                        .semantics {
+                    modifier =
+                        Modifier.semantics {
                             contentDescription = description
                         },
                     style = FirefoxTheme.typography.subtitle1,
@@ -97,9 +92,7 @@ fun HomeSectionHeader(
 
 @Preview
 @Composable
-private fun HomeSectionsHeaderPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun HomeSectionsHeaderPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         Surface {
             HomeSectionHeader(

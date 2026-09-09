@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-08-10T15:43:04.147480+00:00'
+updated_at: '2026-08-26T08:46:25.532097+00:00'
 export:
   path: ./docs/mots/index.md
   format: md
@@ -594,6 +594,10 @@ people:
     bmo_id: 689836
     name: Jari Jalkanen
     nick: jjalkanen
+  - &jjaschke
+    bmo_id: 711005
+    name: Jan Jaeschke
+    nick: jjaschke
   - &jld
     bmo_id: 462836
     name: Jed Davis
@@ -1302,6 +1306,7 @@ modules:
     description: Integration of AI tools for Firefox development, including AI coding
       assistants.
     includes:
+      - .agents/**/*
       - AGENTS.md
       - docs/ai-agent-tools/**/*
       - CLAUDE.md
@@ -1370,7 +1375,7 @@ modules:
         - Yura Zenevich
         - *MarcoZ
       group: dev-accessibility
-      url: https://developer.mozilla.org/docs/Web/Accessibility
+      url: <https://developer.mozilla.org/docs/Web/Accessibility>
       components:
         - Core::Disability Access APIs
     owners:
@@ -1438,7 +1443,7 @@ modules:
       peers_emeritus:
         - Ryan Hunt
       group: dev-platform
-      url: https://wiki.mozilla.org/Platform/GFX/APZ
+      url: <https://wiki.mozilla.org/Platform/GFX/APZ>
       components:
         - Core::Panning and Zooming
     owners:
@@ -1460,7 +1465,7 @@ modules:
       owners_emeritus:
         - Aki Sasaki
       group: release-engineering
-      url: https://wiki.mozilla.org/ReleaseEngineering
+      url: <https://wiki.mozilla.org/ReleaseEngineering>
       components:
         - Release Engineering::*
     owners:
@@ -1500,6 +1505,7 @@ modules:
       url: '{ref}`Build System`'
       components:
         - Core::Build Config
+      review_group: firefox-build-system-reviewers
     owners:
       - *glandium
     peers:
@@ -1781,7 +1787,7 @@ modules:
         - Axel Hecht
         - Eric Rahm
         - Sean Feng
-      url: http://developer.mozilla.org/en/docs/DOM
+      url: <http://developer.mozilla.org/en/docs/DOM>
       components:
         - Core::DOM
         - 'Core::DOM: Core & HTML'
@@ -1801,6 +1807,7 @@ modules:
       - *edgar
       - *saschanaz
       - *tschuster
+      - *jjaschke
     machine_name: core_document_object_model
 
   - name: 'Core: DOM File'
@@ -1810,7 +1817,7 @@ modules:
       - dom/filesystem/**/*
     meta:
       group: dev-platform
-      url: http://developer.mozilla.org/en/docs/DOM
+      url: <http://developer.mozilla.org/en/docs/DOM>
       components:
         - 'Core::DOM: File'
     owners:
@@ -1832,7 +1839,7 @@ modules:
       - *evilpie
       - *mgaudet
     meta:
-      url: http://developer.mozilla.org/en/docs/DOM
+      url: <http://developer.mozilla.org/en/docs/DOM>
       group: dev-platform
       components:
         - 'Core::DOM: Streams'
@@ -1864,7 +1871,7 @@ modules:
       peers_emeritus:
         - Stone Shih
       group: dev-platform
-      url: http://developer.mozilla.org/en/docs/DOM
+      url: <http://developer.mozilla.org/en/docs/DOM>
       components:
         - 'Core::DOM: Events'
         - 'Core::DOM: UI Events & Focus Handling'
@@ -1890,7 +1897,8 @@ modules:
     meta:
       components:
         - Developer Infrastructure::Source Documentation
-      url: https://firefox-source-docs.mozilla.org/
+      url: <https://firefox-source-docs.mozilla.org/>
+      review_group: firefox-source-docs-reviewers
   - name: 'Core: Gecko Profiler'
     description: Gecko's built-in profiler
     includes:
@@ -1909,7 +1917,7 @@ modules:
         - Beth Rennie
         - Greg Tatum
       group: dev-platform
-      url: https://firefox-source-docs.mozilla.org/tools/profiler/
+      url: <https://firefox-source-docs.mozilla.org/tools/profiler/>
       components:
         - Core::Gecko Profiler
     owners:
@@ -1941,7 +1949,7 @@ modules:
         - Jim Chen
         - Randall E. Barker
         - Jonathan Almeida
-      url: https://wiki.mozilla.org/Mobile/GeckoView
+      url: <https://wiki.mozilla.org/Mobile/GeckoView>
       components:
         - GeckoView::General
       review_group: geckoview-reviewers
@@ -1961,7 +1969,7 @@ modules:
       # TODO "and platform specific directories under it"
     meta:
       group: dev-accessibility
-      url: https://support.mozilla.org/kb/keyboard-shortcuts-perform-firefox-tasks-quickly
+      url: <https://support.mozilla.org/kb/keyboard-shortcuts-perform-firefox-tasks-quickly>
       components:
         - 'Core::Keyboard: Navigation'
       peers_emeritus:
@@ -1995,7 +2003,7 @@ modules:
         - Nick Cameron
         - *rhunt
       group: dev-platform
-      url: https://wiki.mozilla.org/Platform/GFX https://wiki.mozilla.org/Gecko:Layers
+      url: <https://wiki.mozilla.org/Platform/GFX> <https://wiki.mozilla.org/Gecko:Layers>
         https://wiki.mozilla.org/Gecko:2DGraphicsSketch
       components:
         - Core::Graphics
@@ -2042,7 +2050,7 @@ modules:
       - parser/html/**/*
     meta:
       group: dev-platform
-      url: http://about.validator.nu/
+      url: <http://about.validator.nu/>
       components:
         - 'Core::DOM: HTML Parser'
       peers_emeritus:
@@ -2063,6 +2071,7 @@ modules:
       url: '{ref}`Internationalization`'
       components:
         - Core::Internationalization
+      review_group: platform-i18n-reviewers
     owners:
       - *hsivonen
       - *jfkthame
@@ -2107,7 +2116,7 @@ modules:
         - Bevis Tseng
         - Andrea Marchesini
       group: dev-platform
-      url: https://developer.mozilla.org/docs/Web/API/IndexedDB_API
+      url: <https://developer.mozilla.org/docs/Web/API/IndexedDB_API>
       components:
         - 'Core::DOM: IndexedDB'
       review_group: dom-storage-reviewers
@@ -2183,7 +2192,7 @@ modules:
         - Sean Stangl
         - Shu-yu Guo
         - Till Schneidereit
-      url: https://spidermonkey.dev/
+      url: <https://spidermonkey.dev/>
       components:
         - Core::JavaScript Engine
         - 'Core::JavaScript Engine: JIT'
@@ -2235,7 +2244,7 @@ modules:
         - Robert O'Callahan
         - Mats Palmgren
       group: dev-platform
-      url: https://wiki.mozilla.org/Gecko:Overview#Layout
+      url: <https://wiki.mozilla.org/Gecko:Overview#Layout>
       components:
         - Core::Layout
         - 'Core::Layout: Block and Inline'
@@ -2277,7 +2286,7 @@ modules:
         - Peter Van der Beken
       owners_emeritus:
         - Blake Kaplan
-      url: http://www.mozilla.org/newlayout/doc/parser.html
+      url: <http://www.mozilla.org/newlayout/doc/parser.html>
       components:
         - 'Core::HTML: Parser'
     owners: []
@@ -2384,7 +2393,7 @@ modules:
       - layout/mathml/**/*
     meta:
       group: dev-tech-mathml
-      url: https://developer.mozilla.org/docs/Web/MathML
+      url: <https://developer.mozilla.org/docs/Web/MathML>
       components:
         - Core::MathML
       peers_emeritus:
@@ -2492,7 +2501,7 @@ modules:
       - gfx/2d/**/*
     meta:
       group: dev-platform
-      url: https://wiki.mozilla.org/Platform/GFX/Moz2D
+      url: <https://wiki.mozilla.org/Platform/GFX/Moz2D>
       components:
         - Core::Graphics
     owners:
@@ -2610,7 +2619,7 @@ modules:
     meta:
       components:
         - Various
-      url: 'https://wiki.mozilla.org/Firefox/firefox-dev, #nodejs on slack'
+      url: '<https://wiki.mozilla.org/Firefox/firefox-dev>, #nodejs on slack'
       peers_emeritus:
         - Kate Hudson
     owners:
@@ -2673,7 +2682,7 @@ modules:
         - Artur Adib
         - Vivien Nicolas
       group: dev-platform
-      url: https://github.com/mozilla/pdf.js
+      url: <https://github.com/mozilla/pdf.js>
       components:
         - Core::PDF
     owners:
@@ -2722,7 +2731,7 @@ modules:
         - Robert O'Callahan
         - Johnny Stenback
         - Benjamin Smedberg
-      url: https://wiki.mozilla.org/Plugins
+      url: <https://wiki.mozilla.org/Plugins>
       components:
         - Core::Plug-ins
     owners:
@@ -2762,7 +2771,7 @@ modules:
       peers_emeritus:
         - Josh Matthews
       group: dev-platform
-      url: https://wiki.mozilla.org/Private_Browsing
+      url: <https://wiki.mozilla.org/Private_Browsing>
       components:
         - Firefox::Private Browsing
     owners:
@@ -2782,7 +2791,7 @@ modules:
         - Johnny Stenback
         - Dan Veditz
       group: dev-tech-dom
-      url: http://www.mozilla.org/projects/security/components/index.html
+      url: <http://www.mozilla.org/projects/security/components/index.html>
       components:
         - 'Core::Security: CAPS'
     owners:
@@ -2830,7 +2839,7 @@ modules:
       - security/sandbox/linux/**/*
     meta:
       group: dev-platform
-      url: https://wiki.mozilla.org/Security/Sandbox
+      url: <https://wiki.mozilla.org/Security/Sandbox>
       components:
         - 'Core::Security: Process Sandboxing'
     owners:
@@ -2845,7 +2854,7 @@ modules:
       - security/sandbox/mac/**/*
     meta:
       group: dev-platform
-      url: https://wiki.mozilla.org/Security/Sandbox
+      url: <https://wiki.mozilla.org/Security/Sandbox>
       components:
         - 'Core::Security: Process Sandboxing'
     owners:
@@ -2866,7 +2875,7 @@ modules:
         - *jimm
         - *toshi
       group: dev-platform
-      url: https://wiki.mozilla.org/Security/Sandbox
+      url: <https://wiki.mozilla.org/Security/Sandbox>
       components:
         - 'Core::Security: Process Sandboxing'
     owners:
@@ -2983,7 +2992,7 @@ modules:
       - toolkit/modules/Sqlite.sys.mjs
     meta:
       group: dev-platform
-      url: https://firefox-source-docs.mozilla.org/storage/index.html
+      url: <https://firefox-source-docs.mozilla.org/storage/index.html>
       components:
         - Core::SQLite and Embedded Database Bindings
       owners_emeritus:
@@ -2995,23 +3004,6 @@ modules:
       - *janv
       - *lina
     machine_name: core_storage
-
-  - name: 'Core: String'
-    description: ''
-    includes:
-      - xpcom/string/**/*
-    meta:
-      group: dev-tech-xpcom
-      url: '{ref}`String Guide`'
-      components:
-        - Core::String
-      owners_emeritus:
-        - David Baron
-      peers_emeritus:
-        - Eric Rahm
-    owners: []
-    peers: []
-    machine_name: core_string
 
   - name: 'Core: Style System'
     description: CSS style sheet handling; style data computation
@@ -3025,7 +3017,7 @@ modules:
       peers_emeritus:
         - Boris Zbarsky
       group: dev-platform
-      url: https://wiki.mozilla.org/Gecko:Overview#Style_System
+      url: <https://wiki.mozilla.org/Gecko:Overview#Style_System>
       components:
         - Core::CSS Parsing and Computation
         - 'Core::DOM: CSS Object Model'
@@ -3069,7 +3061,7 @@ modules:
       - dom/smil/**/*
     meta:
       group: dev-tech-svg
-      url: https://developer.mozilla.org/docs/Web/SVG
+      url: <https://developer.mozilla.org/docs/Web/SVG>
       components:
         - Core::SVG
       peers_emeritus:
@@ -3089,7 +3081,7 @@ modules:
       - netwerk/protocol/http/**/*
     meta:
       group: dev-platform
-      url: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/User-Agent/Firefox
+      url: <https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/User-Agent/Firefox>
       components:
         - 'Core::Networking: HTTP'
     owners:
@@ -3130,7 +3122,7 @@ modules:
       peers_emeritus:
         - Robert O'Callahan
       group: dev-platform
-      url: https://wiki.mozilla.org/Web_Audio_API
+      url: <https://wiki.mozilla.org/Web_Audio_API>
       components:
         - Core::Web Audio
     owners:
@@ -3178,7 +3170,7 @@ modules:
         - Ben Kelly
         - Yaron Tausky
       group: dev-platform
-      url: https://developer.mozilla.org/docs/Web/API/Web_Workers_API/Using_web_workers
+      url: <https://developer.mozilla.org/docs/Web/API/Web_Workers_API/Using_web_workers>
       components:
         - 'Core::DOM: Service Workers'
         - 'Core::DOM: Workers'
@@ -3207,7 +3199,7 @@ modules:
       - testing/web-platform/mozilla/meta/webgpu/**/*
     meta:
       group: dev-platform
-      url: https://wiki.mozilla.org/Platform/GFX/WebGPU
+      url: <https://wiki.mozilla.org/Platform/GFX/WebGPU>
       components:
         - Core::Graphics::WebGPU
       review_group: webgpu-reviewers
@@ -3238,7 +3230,7 @@ modules:
         - Eric Rescola
         - Adam Roach
       group: dev-media
-      url: https://wiki.mozilla.org/Media/webrtc
+      url: <https://wiki.mozilla.org/Media/webrtc>
       components:
         - Core::WebRTC
         - Core::WebRTC Networking
@@ -3259,7 +3251,7 @@ modules:
         - Vladimir Vukicevic
         - Imanol Fernández
       group: dev-platform
-      url: https://mozvr.com/
+      url: <https://mozvr.com/>
       components:
         - Core::WebVR
     owners:
@@ -3281,7 +3273,7 @@ modules:
             - Paul Kerr
             - Ethan Hugg
           group: dev-media
-          url: https://wiki.mozilla.org/Media/webrtc
+          url: <https://wiki.mozilla.org/Media/webrtc>
           components:
             - Core::WebRTC (Audio/Video)
         owners:
@@ -3304,7 +3296,7 @@ modules:
             - Adam Roach
             - *nohlmeier
           group: dev-media
-          url: https://wiki.mozilla.org/Media/webrtc
+          url: <https://wiki.mozilla.org/Media/webrtc>
           components:
             - Core::WebRTC (Signaling)
         owners:
@@ -3350,7 +3342,7 @@ modules:
       owners_emeritus:
         - Robert O'Callahan
       group: dev-platform
-      url: http://www.mozilla.org/ports/gtk/
+      url: <http://www.mozilla.org/ports/gtk/>
       review_group: gtk-reviewers
       components:
         - 'Core::Widget: Gtk'
@@ -3486,6 +3478,7 @@ modules:
       - xpcom/ioutils/**/*
       - xpcom/reflect/**/*
       - xpcom/rust/**/*
+      - xpcom/string/**/*
       - xpcom/system/**/*
       - xpcom/tests/**/*
       - xpcom/threads/**/*
@@ -3493,6 +3486,7 @@ modules:
     meta:
       owners_emeritus:
         - Benjamin Smedberg
+        - David Baron (String)
       peers_emeritus:
         - Doug Turner
         - Eric Rahm
@@ -3796,7 +3790,7 @@ modules:
             - Firefox::Normandy
             - Firefox::Nimbus Desktop Client
           review_group: nimbus-reviewers
-          url: https://experimenter.info/
+          url: <https://experimenter.info/>
         owners:
           - *beth
         peers:
@@ -3851,7 +3845,7 @@ modules:
         meta:
           components:
             - Firefox::IP Protection
-          url: https://firefox-source-docs.mozilla.org/toolkit/ipprotection/
+          url: <https://firefox-source-docs.mozilla.org/toolkit/ipprotection/>
           review_group: ip-protection-reviewers
         owners:
           - *fchasen
@@ -3882,7 +3876,7 @@ modules:
           components:
             - Firefox::Messaging System
             - Firefox::Tours
-          url: https://firefox-source-docs.mozilla.org/browser/components/asrouter/docs/
+          url: <https://firefox-source-docs.mozilla.org/browser/components/asrouter/docs/>
           review_group: omc-reviewers
           owners_emeritus:
             - *Mardak
@@ -3970,7 +3964,7 @@ modules:
             - Jared Wein
             - *tgiles
             - *sfoster
-          url: https://wiki.mozilla.org/Toolkit:Password_Manager
+          url: <https://wiki.mozilla.org/Toolkit:Password_Manager>
           components:
             - Toolkit::Password Manager
             - 'Toolkit::Password Manager: Site'
@@ -4141,6 +4135,7 @@ modules:
         meta:
           components:
             - Firefox::Tabbed Browser
+          review_group: tabbrowser-reviewers
           peers_emeritus:
             - Jared Wein
             - Matthew N
@@ -4233,7 +4228,7 @@ modules:
         - Nick Fitzgerald
         - Jim Blandy
         - Belén Albeza
-      url: http://firefox-dev.tools/
+      url: <http://firefox-dev.tools/>
       components:
         - DevTools
       review_group: devtools-reviewers
@@ -4367,7 +4362,8 @@ modules:
     meta:
       components:
         - Remote Protocol
-      url: https://firefox-source-docs.mozilla.org/remote/
+      url: <https://firefox-source-docs.mozilla.org/remote/>
+      review_group: webdriver-reviewers
     owners:
       - *whimboo
     peers:
@@ -4483,7 +4479,7 @@ modules:
     meta:
       owners_emeritus:
         - Ryan Kelly
-      url: https://wiki.mozilla.org/Services/Process/Code_Review
+      url: <https://wiki.mozilla.org/Services/Process/Code_Review>
       components:
         - Sync
 
@@ -4519,6 +4515,7 @@ modules:
       components:
         - 'Testing :: geckodriver'
       group: dev-webdriver
+      review_group: webdriver-reviewers
 
   - machine_name: testing_gtest
     name: gtest
@@ -4546,6 +4543,7 @@ modules:
         - David Burns
       components:
         - 'Testing :: Marionette Client & Harness'
+      review_group: webdriver-reviewers
     owners:
       - *whimboo
     peers:
@@ -4582,6 +4580,7 @@ modules:
       components:
         - 'Testing :: Mozbase'
         - 'Testing :: Mozbase Rust'
+      review_group: mozbase
       peers_emeritus:
         - *ato
         - *bc
@@ -4747,6 +4746,7 @@ modules:
             - Neil Deakin
           peers_emeritus:
             - Andrew Swan
+          review_group: reusable-components-reviewers
         owners:
           - *mstriemer
         peers:
@@ -4765,7 +4765,7 @@ modules:
           - toolkit/components/reportbrokensite
           - https://github.com/mozilla-extensions/webcompat-addon
         meta:
-          url: https://wiki.mozilla.org/Compatibility/System_Addon
+          url: <https://wiki.mozilla.org/Compatibility/System_Addon>
           group: compatibility
           peers_emeritus:
             - Mike Taylor
@@ -4815,7 +4815,7 @@ modules:
       - *marco
     meta:
       group: dev-platform
-      url: https://github.com/mozilla/firefox-translations-training https://github.com/mozilla/firefox-translations-models
+      url: <https://github.com/mozilla/firefox-translations-training> <https://github.com/mozilla/firefox-translations-models>
         https://github.com/mozilla/firefox-translations-evaluations https://github.com/mozilla/firefox-translations
       components:
         - Firefox::Translation
@@ -4832,7 +4832,7 @@ modules:
       and identifying poorly performing automation machines.
     meta:
       group: sheriffs
-      url: https://wiki.mozilla.org/Sheriffing
+      url: <https://wiki.mozilla.org/Sheriffing>
       owner_emeritus:
         - bmo_id: 75935
           name: Ryan VanderMeulen
@@ -4860,7 +4860,7 @@ modules:
       - *dimi
       - *gcp
     meta:
-      url: https://github.com/mozilla-services/shavar https://wiki.mozilla.org/Phishing_Protection
+      url: <https://github.com/mozilla-services/shavar> <https://wiki.mozilla.org/Phishing_Protection>
         https://wiki.mozilla.org/Security/Tracking_protection https://wiki.mozilla.org/Security/Application_Reputation
       owners_emeritus:
         - François Marier
@@ -4869,5 +4869,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 047f362e10b5d3c0d197644c02c888be932b73dd
-  export: b38e97f0df6cea50fe3a137e2bb1a48c1fb3c0f2
+  config: 2a527868daa58f879b3f1ad9feb19f5573158362
+  export: fa50618a86a1ec2c9bff94fdf93f978b870927dc

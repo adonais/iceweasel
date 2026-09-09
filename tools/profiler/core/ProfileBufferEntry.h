@@ -108,14 +108,8 @@ struct JITFrameInfoForBufferRange final {
   uint64_t mRangeEnd;  // mRangeEnd marks the first invalid index.
 
   struct JITFrameKey {
-    bool operator==(const JITFrameKey& aOther) const {
-      return mCanonicalAddress == aOther.mCanonicalAddress &&
-             mDepth == aOther.mDepth && mLine == aOther.mLine &&
-             mColumn == aOther.mColumn;
-    }
-    bool operator!=(const JITFrameKey& aOther) const {
-      return !(*this == aOther);
-    }
+    bool operator==(const JITFrameKey& aOther) const = default;
+    bool operator!=(const JITFrameKey& aOther) const = default;
 
     void* mCanonicalAddress;
     uint32_t mDepth;

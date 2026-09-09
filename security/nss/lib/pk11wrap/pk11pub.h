@@ -859,7 +859,11 @@ SECStatus PK11_VerifyWithMechanism(SECKEYPublicKey *key,
  * specified in |attrFlags| and operation attributes as specified in |opFlags|.
  *
  * The function asserts that |pubKey|, |outKey|, and |ciphertext| are not NULL.
-
+ * |pubKey| must be a KEM key. If it is not already on a slot it is imported
+ * onto the best slot for the mechanism and left there for
+ * SECKEY_DestroyPublicKey to reclaim; a caller that needs a particular token,
+ * or that needs to authenticate to one, should import the key itself first.
+ *
  * If an error occurs, no allocations are made to |outKey| and |ciphertext|;
  * otherwise (if SECSuccess is returned) allocations are made to |outKey| and
  * |ciphertext| and the caller is responsible for freeing the memory occupied
@@ -875,7 +879,8 @@ SECStatus PK11_Encapsulate(SECKEYPublicKey *pubKey, CK_MECHANISM_TYPE target,
  * in |attrFlags| and operation attributes as specified in |opFlags|.
  *
  * The function asserts that |privKey|, |ciphertext|, and |outKey| are not NULL.
-
+ * |privKey| must be a KEM key and must already be on a slot.
+ *
  * If an error occurs, |outKey| is not allocated; otherwise (if SECSuccess is
  * returned) |outKey| is allocated and the caller is responsible for freeing
  * the memory occupied by it.

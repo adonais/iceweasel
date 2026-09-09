@@ -12,12 +12,12 @@ import android.os.Build
 import android.view.textclassifier.TextClassifier
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.graphics.drawable.toBitmap
+import java.util.UUID
 import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.concept.engine.Engine
 import mozilla.components.feature.awesomebar.facts.emitClipboardSuggestionClickedFact
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.support.utils.WebURLFinder
-import java.util.UUID
 import mozilla.components.ui.icons.R as iconsR
 
 private const val MIME_TYPE_TEXT_PLAIN = "text/plain"
@@ -28,14 +28,13 @@ private const val MINIMUM_CONFIDENCE_SCORE_FOR_URL = 0.7F
  * any).
  *
  * @property context the activity or application context, required to look up the clipboard manager.
- * @property loadUrlUseCase the use case invoked to load the url when
- * the user clicks on the suggestion.
+ * @property loadUrlUseCase the use case invoked to load the url when the user clicks on the suggestion.
  * @property icon optional icon used for the [AwesomeBar.Suggestion].
  * @property title optional title used for the [AwesomeBar.Suggestion].
- * @property requireEmptyText whether or no the input text must be empty for a
- * clipboard suggestion to be provided, defaults to true.
- * @property engine optional [Engine] instance to call [Engine.speculativeConnect] for the
- * highest scored suggestion URL.
+ * @property requireEmptyText whether or no the input text must be empty for a clipboard suggestion to be provided,
+ *   defaults to true.
+ * @property engine optional [Engine] instance to call [Engine.speculativeConnect] for the highest scored suggestion
+ *   URL.
  */
 class ClipboardSuggestionProvider(
     private val context: Context,
@@ -75,7 +74,7 @@ class ClipboardSuggestionProvider(
                     loadUrlUseCase(url)
                     emitClipboardSuggestionClickedFact()
                 },
-            ),
+            )
         )
     }
 

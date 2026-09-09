@@ -9,6 +9,7 @@ import android.view.View
 import android.widget.PopupWindow
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.math.roundToInt
 import mozilla.components.browser.menu2.R
 import mozilla.components.browser.menu2.adapter.MenuCandidateListAdapter
 import mozilla.components.concept.menu.MenuStyle
@@ -25,16 +26,11 @@ import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.`when`
-import kotlin.math.roundToInt
 
-/**
- * [PopupWindow] const's.
- */
+/** [PopupWindow] const's. */
 private const val HALF_MENU_ITEM = 0.5
 
-/**
- * [PopupWindow] UI components.
- */
+/** [PopupWindow] UI components. */
 private const val SCREEN_ROOT_VIEW_HEIGHT = 1000
 private const val SCREEN_ROOT_VIEW_WIDTH = 400
 private const val MENU_ITEM_HEIGHT = 50
@@ -53,8 +49,7 @@ class BrowserMenuPositioningTest {
     fun setUp() {
         overlapStyle = MenuStyle(completelyOverlap = true)
         offsetStyle = MenuStyle(horizontalOffset = 10, verticalOffset = 10)
-        offsetOverlapStyle =
-            MenuStyle(completelyOverlap = true, horizontalOffset = 10, verticalOffset = 10)
+        offsetOverlapStyle = MenuStyle(completelyOverlap = true, horizontalOffset = 10, verticalOffset = 10)
 
         popupWindow = spy(PopupWindow())
     }
@@ -113,13 +108,14 @@ class BrowserMenuPositioningTest {
         val result = inferMenuPositioningData(containerView, anchor, orientation = Orientation.UP)
 
         val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftBottom,
-        )
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftBottom,
+            )
 
         assertEquals(expected, result)
     }
@@ -134,13 +130,14 @@ class BrowserMenuPositioningTest {
         val result = inferMenuPositioningData(containerView, anchor, orientation = Orientation.UP)
 
         val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, directionRight = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightBottom,
-        )
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightBottom,
+            )
 
         assertEquals(expected, result)
     }
@@ -155,13 +152,14 @@ class BrowserMenuPositioningTest {
         val result = inferMenuPositioningData(containerView, anchor, orientation = Orientation.UP)
 
         val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, directionUp = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
-        )
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
+            )
 
         assertEquals(expected, result)
     }
@@ -177,13 +175,14 @@ class BrowserMenuPositioningTest {
         val result = inferMenuPositioningData(containerView, anchor, orientation = Orientation.UP)
 
         val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, directionUp = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeft,
-        )
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeft,
+            )
 
         assertEquals(expected, result)
     }
@@ -198,14 +197,16 @@ class BrowserMenuPositioningTest {
 
         val result = inferMenuPositioningData(containerView, anchor, orientation = Orientation.UP)
 
-        val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, directionRight = false, directionUp = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRight,
-        )
+        val (targetX, targetY) =
+            getTargetCoordinates(x, y, containerView, anchor, directionRight = false, directionUp = false)
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRight,
+            )
 
         assertEquals(expected, result)
     }
@@ -220,13 +221,14 @@ class BrowserMenuPositioningTest {
         val result = inferMenuPositioningData(containerView, anchor, orientation = Orientation.UP)
 
         val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, directionUp = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
-        )
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
+            )
 
         assertEquals(expected, result)
     }
@@ -240,14 +242,16 @@ class BrowserMenuPositioningTest {
 
         val result = inferMenuPositioningData(containerView, anchor, orientation = Orientation.DOWN)
 
-        val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, directionRight = false, directionUp = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightTop,
-        )
+        val (targetX, targetY) =
+            getTargetCoordinates(x, y, containerView, anchor, directionRight = false, directionUp = false)
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightTop,
+            )
 
         assertEquals(expected, result)
     }
@@ -280,13 +284,14 @@ class BrowserMenuPositioningTest {
         val result = inferMenuPositioningData(containerView, anchor, orientation = null)
 
         val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, directionUp = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
-        )
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
+            )
 
         assertEquals(expected, result)
     }
@@ -300,14 +305,16 @@ class BrowserMenuPositioningTest {
 
         val result = inferMenuPositioningData(containerView, anchor, orientation = null)
 
-        val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, directionRight = false, directionUp = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRight,
-        )
+        val (targetX, targetY) =
+            getTargetCoordinates(x, y, containerView, anchor, directionRight = false, directionUp = false)
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRight,
+            )
 
         assertEquals(expected, result)
     }
@@ -322,13 +329,14 @@ class BrowserMenuPositioningTest {
         val result = inferMenuPositioningData(containerView, anchor, overlapStyle, Orientation.UP)
 
         val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, overlapStyle)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftBottom,
-        )
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftBottom,
+            )
 
         assertEquals(expected, result)
     }
@@ -343,13 +351,14 @@ class BrowserMenuPositioningTest {
         val result = inferMenuPositioningData(containerView, anchor, overlapStyle, Orientation.UP)
 
         val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, overlapStyle, directionRight = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightBottom,
-        )
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightBottom,
+            )
 
         assertEquals(expected, result)
     }
@@ -364,13 +373,14 @@ class BrowserMenuPositioningTest {
         val result = inferMenuPositioningData(containerView, anchor, overlapStyle, Orientation.DOWN)
 
         val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, overlapStyle, directionUp = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
-        )
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
+            )
 
         assertEquals(expected, result)
     }
@@ -384,14 +394,16 @@ class BrowserMenuPositioningTest {
 
         val result = inferMenuPositioningData(containerView, anchor, overlapStyle, Orientation.DOWN)
 
-        val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, overlapStyle, directionUp = false, directionRight = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightTop,
-        )
+        val (targetX, targetY) =
+            getTargetCoordinates(x, y, containerView, anchor, overlapStyle, directionUp = false, directionRight = false)
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightTop,
+            )
 
         assertEquals(expected, result)
     }
@@ -406,13 +418,14 @@ class BrowserMenuPositioningTest {
         val result = inferMenuPositioningData(containerView, anchor, overlapStyle, Orientation.UP)
 
         val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, overlapStyle, directionUp = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
-        )
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
+            )
 
         assertEquals(expected, result)
     }
@@ -428,13 +441,14 @@ class BrowserMenuPositioningTest {
         val result = inferMenuPositioningData(containerView, anchor, overlapStyle, Orientation.UP)
 
         val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, overlapStyle, directionUp = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeft,
-        )
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeft,
+            )
 
         assertEquals(expected, result)
     }
@@ -449,13 +463,14 @@ class BrowserMenuPositioningTest {
         val result = inferMenuPositioningData(containerView, anchor, offsetStyle, Orientation.UP)
 
         val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, offsetStyle)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftBottom,
-        )
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftBottom,
+            )
 
         assertEquals(expected, result)
     }
@@ -470,13 +485,14 @@ class BrowserMenuPositioningTest {
         val result = inferMenuPositioningData(containerView, anchor, offsetStyle, Orientation.UP)
 
         val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, offsetStyle, directionRight = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightBottom,
-        )
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightBottom,
+            )
 
         assertEquals(expected, result)
     }
@@ -491,13 +507,14 @@ class BrowserMenuPositioningTest {
         val result = inferMenuPositioningData(containerView, anchor, offsetStyle, Orientation.UP)
 
         val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, offsetStyle, directionUp = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
-        )
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
+            )
 
         assertEquals(expected, result)
     }
@@ -511,14 +528,16 @@ class BrowserMenuPositioningTest {
 
         val result = inferMenuPositioningData(containerView, anchor, offsetStyle, Orientation.UP)
 
-        val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, offsetStyle, directionUp = false, directionRight = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightTop,
-        )
+        val (targetX, targetY) =
+            getTargetCoordinates(x, y, containerView, anchor, offsetStyle, directionUp = false, directionRight = false)
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightTop,
+            )
 
         assertEquals(expected, result)
     }
@@ -533,13 +552,14 @@ class BrowserMenuPositioningTest {
         val result = inferMenuPositioningData(containerView, anchor, offsetStyle, Orientation.UP)
 
         val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, offsetStyle, directionUp = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
-        )
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
+            )
 
         assertEquals(expected, result)
     }
@@ -555,13 +575,14 @@ class BrowserMenuPositioningTest {
         val result = inferMenuPositioningData(containerView, anchor, offsetStyle, Orientation.UP)
 
         val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, offsetStyle, directionUp = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeft,
-        )
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeft,
+            )
 
         assertEquals(expected, result)
     }
@@ -576,13 +597,14 @@ class BrowserMenuPositioningTest {
         val result = inferMenuPositioningData(containerView, anchor, offsetOverlapStyle, Orientation.UP)
 
         val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, offsetOverlapStyle)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftBottom,
-        )
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftBottom,
+            )
 
         assertEquals(expected, result)
     }
@@ -596,14 +618,16 @@ class BrowserMenuPositioningTest {
 
         val result = inferMenuPositioningData(containerView, anchor, offsetOverlapStyle, Orientation.UP)
 
-        val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, offsetOverlapStyle, directionRight = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightBottom,
-        )
+        val (targetX, targetY) =
+            getTargetCoordinates(x, y, containerView, anchor, offsetOverlapStyle, directionRight = false)
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightBottom,
+            )
 
         assertEquals(expected, result)
     }
@@ -617,14 +641,16 @@ class BrowserMenuPositioningTest {
 
         val result = inferMenuPositioningData(containerView, anchor, offsetOverlapStyle, Orientation.UP)
 
-        val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, offsetOverlapStyle, directionUp = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
-        )
+        val (targetX, targetY) =
+            getTargetCoordinates(x, y, containerView, anchor, offsetOverlapStyle, directionUp = false)
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
+            )
 
         assertEquals(expected, result)
     }
@@ -638,14 +664,24 @@ class BrowserMenuPositioningTest {
 
         val result = inferMenuPositioningData(containerView, anchor, offsetOverlapStyle, Orientation.UP)
 
-        val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, offsetOverlapStyle, directionUp = false, directionRight = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightTop,
-        )
+        val (targetX, targetY) =
+            getTargetCoordinates(
+                x,
+                y,
+                containerView,
+                anchor,
+                offsetOverlapStyle,
+                directionUp = false,
+                directionRight = false,
+            )
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightTop,
+            )
 
         assertEquals(expected, result)
     }
@@ -659,14 +695,16 @@ class BrowserMenuPositioningTest {
 
         val result = inferMenuPositioningData(containerView, anchor, offsetOverlapStyle, Orientation.UP)
 
-        val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, offsetOverlapStyle, directionUp = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
-        )
+        val (targetX, targetY) =
+            getTargetCoordinates(x, y, containerView, anchor, offsetOverlapStyle, directionUp = false)
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
+            )
 
         assertEquals(expected, result)
     }
@@ -681,14 +719,16 @@ class BrowserMenuPositioningTest {
 
         val result = inferMenuPositioningData(containerView, anchor, offsetOverlapStyle, Orientation.UP)
 
-        val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor, offsetOverlapStyle, directionUp = false)
-        val expected = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeft,
-        )
+        val (targetX, targetY) =
+            getTargetCoordinates(x, y, containerView, anchor, offsetOverlapStyle, directionUp = false)
+        val expected =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeft,
+            )
 
         assertEquals(expected, result)
     }
@@ -708,8 +748,7 @@ internal fun createContainerView(
     `when`(containerView.measuredHeight).thenReturn(containerHeight)
     `when`(containerView.measuredWidth).thenReturn(containerWidth)
 
-    doReturn(recyclerView).`when`(containerView)
-        .findViewById<RecyclerView>(R.id.mozac_browser_menu_recyclerView)
+    doReturn(recyclerView).`when`(containerView).findViewById<RecyclerView>(R.id.mozac_browser_menu_recyclerView)
     return containerView
 }
 
@@ -726,10 +765,7 @@ private fun createRecyclerView(
         `when`(recyclerView.adapter).thenReturn(adapter)
     }
 
-    `when`(recyclerView.measuredHeight).thenReturn(
-        recyclerViewHeight
-            ?: (itemCount * MENU_ITEM_HEIGHT),
-    )
+    `when`(recyclerView.measuredHeight).thenReturn(recyclerViewHeight ?: (itemCount * MENU_ITEM_HEIGHT))
 
     `when`(recyclerView.measuredWidth).thenReturn(MENU_CONTAINER_WIDTH)
 
@@ -740,18 +776,22 @@ internal fun createAnchor(x: Int, y: Int, isRTL: Boolean = false): View {
     val view = spy(View(testContext))
 
     doAnswer { invocation ->
-        val locationOnScreen = (invocation.getArgument(0) as IntArray)
-        locationOnScreen[0] = x
-        locationOnScreen[1] = y
-        locationOnScreen
-    }.`when`(view).getLocationOnScreen(any())
+            val locationOnScreen = (invocation.getArgument(0) as IntArray)
+            locationOnScreen[0] = x
+            locationOnScreen[1] = y
+            locationOnScreen
+        }
+        .`when`(view)
+        .getLocationOnScreen(any())
 
     doAnswer { invocation ->
-        val locationInWindow = (invocation.getArgument(0) as IntArray)
-        locationInWindow[0] = x
-        locationInWindow[1] = y
-        locationInWindow
-    }.`when`(view).getLocationInWindow(any())
+            val locationInWindow = (invocation.getArgument(0) as IntArray)
+            locationInWindow[0] = x
+            locationInWindow[1] = y
+            locationInWindow
+        }
+        .`when`(view)
+        .getLocationInWindow(any())
 
     if (isRTL) {
         doReturn(View.LAYOUT_DIRECTION_RTL).`when`(view).layoutDirection
@@ -770,12 +810,14 @@ internal fun createAnchor(x: Int, y: Int, isRTL: Boolean = false): View {
 private fun createAnchorRootView(): View {
     val view = spy(View(testContext))
     doAnswer { invocation ->
-        val displayFrame = (invocation.getArgument(0) as Rect)
-        displayFrame.left = 0
-        displayFrame.right = SCREEN_ROOT_VIEW_WIDTH
-        displayFrame.bottom = SCREEN_ROOT_VIEW_HEIGHT
-        displayFrame
-    }.`when`(view).getWindowVisibleDisplayFrame(any())
+            val displayFrame = (invocation.getArgument(0) as Rect)
+            displayFrame.left = 0
+            displayFrame.right = SCREEN_ROOT_VIEW_WIDTH
+            displayFrame.bottom = SCREEN_ROOT_VIEW_HEIGHT
+            displayFrame
+        }
+        .`when`(view)
+        .getWindowVisibleDisplayFrame(any())
 
     `when`(view.measuredHeight).thenReturn(SCREEN_ROOT_VIEW_HEIGHT)
 
@@ -791,22 +833,24 @@ internal fun getTargetCoordinates(
     directionUp: Boolean = true,
     directionRight: Boolean = true,
 ): Pair<Int, Int> {
-    val targetX = getTargetX(
-        anchorX,
-        containerView,
-        anchor,
-        directionRight,
-        style?.completelyOverlap ?: false,
-        style?.horizontalOffset ?: 0,
-    )
-    val targetY = getTargetY(
-        anchorY,
-        containerView,
-        anchor,
-        directionUp,
-        style?.completelyOverlap ?: false,
-        style?.verticalOffset ?: 0,
-    )
+    val targetX =
+        getTargetX(
+            anchorX,
+            containerView,
+            anchor,
+            directionRight,
+            style?.completelyOverlap ?: false,
+            style?.horizontalOffset ?: 0,
+        )
+    val targetY =
+        getTargetY(
+            anchorY,
+            containerView,
+            anchor,
+            directionUp,
+            style?.completelyOverlap ?: false,
+            style?.verticalOffset ?: 0,
+        )
     return targetX to targetY
 }
 
@@ -818,12 +862,14 @@ private fun getTargetX(
     shouldOverlap: Boolean,
     horizontalOffset: Int,
 ): Int {
-    val targetX = when {
-        directionRight && shouldOverlap -> anchorX - (MENU_CONTAINER_PADDING / 2)
-        directionRight && !shouldOverlap -> anchorX
-        !directionRight && shouldOverlap -> anchorX - (containerView.measuredWidth - anchor.width) + (MENU_CONTAINER_PADDING / 2)
-        else -> anchorX - (containerView.measuredWidth - anchor.width)
-    }
+    val targetX =
+        when {
+            directionRight && shouldOverlap -> anchorX - (MENU_CONTAINER_PADDING / 2)
+            directionRight && !shouldOverlap -> anchorX
+            !directionRight && shouldOverlap ->
+                anchorX - (containerView.measuredWidth - anchor.width) + (MENU_CONTAINER_PADDING / 2)
+            else -> anchorX - (containerView.measuredWidth - anchor.width)
+        }
 
     return if (directionRight) {
         targetX + horizontalOffset
@@ -840,12 +886,14 @@ private fun getTargetY(
     shouldOverlap: Boolean,
     verticalOffset: Int,
 ): Int {
-    val targetY = when {
-        directionUp && shouldOverlap -> anchorY - (containerView.measuredHeight - anchor.height) + (MENU_CONTAINER_PADDING / 2)
-        directionUp && !shouldOverlap -> anchorY - (containerView.measuredHeight - anchor.height)
-        !directionUp && shouldOverlap -> anchorY - (MENU_CONTAINER_PADDING / 2)
-        else -> anchorY
-    }
+    val targetY =
+        when {
+            directionUp && shouldOverlap ->
+                anchorY - (containerView.measuredHeight - anchor.height) + (MENU_CONTAINER_PADDING / 2)
+            directionUp && !shouldOverlap -> anchorY - (containerView.measuredHeight - anchor.height)
+            !directionUp && shouldOverlap -> anchorY - (MENU_CONTAINER_PADDING / 2)
+            else -> anchorY
+        }
 
     return if (directionUp) {
         targetY - verticalOffset

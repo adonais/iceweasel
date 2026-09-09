@@ -11,13 +11,10 @@
 #ifndef LIBANGLE_CONTEXT_H_
 #define LIBANGLE_CONTEXT_H_
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_libc_calls
-#endif
-
 #include <mutex>
 #include <set>
 #include <string>
+#include "common/unsafe_buffers.h"
 
 #include "angle_gl.h"
 #include "common/MemoryBuffer.h"
@@ -727,7 +724,7 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     [[nodiscard]] bool getScratchBuffer(size_t requestedSizeBytes,
                                         angle::MemoryBuffer **scratchBufferOut) const;
     [[nodiscard]] bool getZeroFilledBuffer(size_t requstedSizeBytes,
-                                           angle::MemoryBuffer **zeroBufferOut) const;
+                                           const angle::MemoryBuffer **zeroBufferOut) const;
     angle::ScratchBuffer *getScratchBuffer() const;
 
     angle::Result prepareForCopyImage();
@@ -808,8 +805,9 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
 
     bool nameStartsWithReservedPrefix(const GLchar *name) const
     {
-        return (strncmp(name, "gl_", 3) == 0) ||
-               (isWebGL() && (strncmp(name, "webgl_", 6) == 0 || strncmp(name, "_webgl_", 7) == 0));
+        return (ANGLE_UNSAFE_TODO(strncmp(name, "gl_", 3)) == 0) ||
+               (isWebGL() && (ANGLE_UNSAFE_TODO(strncmp(name, "webgl_", 6)) == 0 ||
+                              ANGLE_UNSAFE_TODO(strncmp(name, "_webgl_", 7)) == 0));
     }
 
     ANGLE_INLINE bool isTextureGenerated(TextureID texture) const
@@ -953,10 +951,10 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
 
     size_t getMemoryUsage() const;
 
-    // Only used by vulkan backend.
     void onSwapChainImageChanged() const { mDefaultFramebuffer->onSwapChainImageChanged(); }
     void onBufferChanged(const Buffer *buffer,
                          const angle::SubjectMessage message,
+                         bool isUsedInTransformFeedback,
                          VertexArrayBufferBindingMask vertexArrayBufferBindingMask) const
     {
         // Notify current vertex array of the buffer changed. Note that other vertex arrays of this
@@ -967,6 +965,10 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
             ASSERT(mState.mVertexArray != nullptr);
             mState.mVertexArray->onBufferChanged(this, buffer, message,
                                                  vertexArrayBufferBindingMask);
+        }
+        if (isUsedInTransformFeedback && message == angle::SubjectMessage::SubjectChanged)
+        {
+            invalidateTransformFeedbackCapacities(buffer);
         }
     }
 
@@ -1025,6 +1027,7 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     egl::Error setDefaultFramebuffer(egl::Surface *drawSurface, egl::Surface *readSurface);
     egl::Error unsetDefaultFramebuffer();
 
+    const char *makeStaticString(const std::string &str);
     void initRendererString();
     void initVendorString();
     void initVersionStrings();
@@ -1036,6 +1039,14 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
 
     gl::LabeledObject *getLabeledObject(GLenum identifier, GLuint name) const;
     gl::LabeledObject *getLabeledObjectFromPtr(const void *ptr) const;
+
+    angle::Result readPixelsImpl(GLint x,
+                                 GLint y,
+                                 GLsizei width,
+                                 GLsizei height,
+                                 GLenum format,
+                                 GLenum type,
+                                 void *pixels);
 
     void setUniform1iImpl(Program *program,
                           UniformLocation location,
@@ -1052,6 +1063,7 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     void updateActiveAttribsMaskIfNeeded() const;
 
     void endTilingImplicit();
+    void invalidateTransformFeedbackCapacities(const Buffer *buffer) const;
 
     State mState;
     bool mShared;
@@ -1089,6 +1101,12 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     TransformFeedbackMap mTransformFeedbackMap;
     HandleAllocator mTransformFeedbackHandleAllocator;
 
+    // Some GL queries return a "static" string, which ANGLE interprets as a string that doesn't
+    // need to be deallocated by the application but which automatically gets freed on context
+    // destruction, following mesa.  In typical drivers, these strings are calculated once and never
+    // change and so could have been std::string, but ANGLE_request_extension makes it such that
+    // some strings do change and so the "static string cache" is used to store the backing for
+    // these pointers.
     const char *mVendorString;
     const char *mVersionString;
     const char *mShadingLanguageString;
@@ -1097,6 +1115,7 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     std::vector<const char *> mExtensionStrings;
     const char *mRequestableExtensionString;
     std::vector<const char *> mRequestableExtensionStrings;
+    std::set<std::string> mStaticStrings;
 
     // GLES1 renderer state
     std::unique_ptr<GLES1Renderer> mGLES1Renderer;
@@ -1152,8 +1171,6 @@ class Context final : public egl::LabeledObject, angle::NonCopyable, public angl
     mutable std::string mCachedSerializedStateString;
 
     mutable size_t mRefCount;
-
-    OverlayType mOverlay;
 
     bool mIsDestroyed;
     bool mDestroyedManagers;

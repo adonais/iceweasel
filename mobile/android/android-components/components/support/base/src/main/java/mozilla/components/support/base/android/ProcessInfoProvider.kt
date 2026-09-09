@@ -7,20 +7,16 @@ package mozilla.components.support.base.android
 import android.app.ActivityManager
 
 /**
- * This class provides information the running app process without exposing the android framework
- * APIs directly, making easier to test the code that depends on it.
+ * This class provides information the running app process without exposing the android framework APIs directly, making
+ * easier to test the code that depends on it.
  */
 interface ProcessInfoProvider {
 
-    /**
-     * Returns true if the current app process is in the foreground.
-     */
+    /** Returns true if the current app process is in the foreground. */
     fun isForegroundImportance(): Boolean
 }
 
-/**
- * @see ProcessInfoProvider
- */
+/** @see ProcessInfoProvider */
 class DefaultProcessInfoProvider : ProcessInfoProvider {
 
     override fun isForegroundImportance(): Boolean {

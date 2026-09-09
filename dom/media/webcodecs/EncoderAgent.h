@@ -12,6 +12,7 @@
 #include "mozilla/DefineEnum.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TaskQueue.h"
+#include "mozilla/dom/MediaDebugInfoBinding.h"
 
 class nsISerialEventTarget;
 
@@ -57,6 +58,9 @@ class EncoderAgent final {
   // WebCodecs's flush() flushes out all the pending encoded data in the
   // encoder. It's called Drain internally.
   RefPtr<EncodePromise> Drain();
+  using DebugInfoPromise =
+      MozPromise<dom::EncoderDebugInfo, MediaResult, true /* exclusive */>;
+  RefPtr<DebugInfoPromise> RequestDebugInfo();
 
   const WebCodecsId mId;
 

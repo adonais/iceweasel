@@ -25,7 +25,9 @@ data class ParsedStructure(
     val webDomain: String? = null,
     val packageName: String,
 ) : Parcelable {
-    constructor(parcel: Parcel) : this(
+    constructor(
+        parcel: Parcel
+    ) : this(
         parcel.readParcelableCompat(AutofillId::class.java),
         parcel.readParcelableCompat(AutofillId::class.java),
         parcel.readString(),
@@ -43,9 +45,7 @@ data class ParsedStructure(
         return 0
     }
 
-    /**
-     * Create instances of [ParsedStructure] from a [Parcel].
-     */
+    /** Create instances of [ParsedStructure] from a [Parcel]. */
     companion object CREATOR : Creator<ParsedStructure> {
         override fun createFromParcel(parcel: Parcel): ParsedStructure {
             return ParsedStructure(parcel)
@@ -58,23 +58,24 @@ data class ParsedStructure(
 }
 
 /**
- * Try to find a domain in the [ParsedStructure] for looking up logins. This is either a "web domain"
- * for web content the third-party app is displaying (e.g. in a WebView) or the package name of the
- * application transformed into a domain. In any case the [publicSuffixList] will be used to turn
- * the domain into a "base" domain (public suffix + 1) before returning.
+ * Try to find a domain in the [ParsedStructure] for looking up logins. This is either a "web domain" for web content
+ * the third-party app is displaying (e.g. in a WebView) or the package name of the application transformed into a
+ * domain. In any case the [publicSuffixList] will be used to turn the domain into a "base" domain (public suffix + 1)
+ * before returning.
  */
 internal suspend fun ParsedStructure.getLookupDomain(publicSuffixList: PublicSuffixList): String {
     println("Lookup: webDomain=$webDomain, packageName=$packageName")
-    val domain = if (webDomain != null && Browsers.isBrowser(packageName)) {
-        // If the application we are auto-filling is a known browser and it provided a webDomain
-        // for the content it is displaying then we try to autofill for that.
-        webDomain
-    } else {
-        // We reverse the package name in the hope that this will resemble a domain name. This is
-        // of course fragile. So we want to find better mechanisms in the future (e.g. looking up
-        // what URLs the application registers intent handlers for).
-        packageName.split('.').asReversed().joinToString(".")
-    }
+    val domain =
+        if (webDomain != null && Browsers.isBrowser(packageName)) {
+            // If the application we are auto-filling is a known browser and it provided a webDomain
+            // for the content it is displaying then we try to autofill for that.
+            webDomain
+        } else {
+            // We reverse the package name in the hope that this will resemble a domain name. This is
+            // of course fragile. So we want to find better mechanisms in the future (e.g. looking up
+            // what URLs the application registers intent handlers for).
+            packageName.split('.').asReversed().joinToString(".")
+        }
 
     return publicSuffixList.getPublicSuffixPlusOne(domain).await() ?: domain
 }
@@ -101,7 +102,6 @@ internal fun <T> Parcel.readParcelableCompat(clazz: Class<T>): T? {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         readParcelable(clazz.classLoader, clazz)
     } else {
-        @Suppress("DEPRECATION")
-        readParcelable(clazz.classLoader)
+        @Suppress("DEPRECATION") readParcelable(clazz.classLoader)
     }
 }

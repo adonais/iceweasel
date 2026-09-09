@@ -1,0 +1,67 @@
+<!DOCTYPE HTML>
+<meta charset=utf-8>
+<title>Container Timing: size does not overflow for large containers</title>
+<style>
+  html, body { margin: 0; }
+  #ct { position: absolute; top: 0; left: 0; }
+  /* Exceeds the visible area on any platform, so the clipped painted region is
+     the whole visible area. On a large enough viewport that is past the
+     ~596,523 px^2 point where a 32-bit app-units-squared area computation would
+     overflow; the arithmetic itself is covered by the nsRegion/Rect gtests. */
+  #big { display: block; width: 2000px; height: 2000px; }
+</style>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<body>
+<div id="ct" containertiming="ct">
+  <img id="big" src="/container-timing/resources/square100.png">
+</div>
+<script>
+  async_test(function (t) {
+    assert_implements(window.PerformanceContainerTiming,
+      "PerformanceContainerTiming not implemented");
+
+    // Keep the entry reporting the largest painted area.
+    let largest = null;
+    const observer = new PerformanceObserver(t.step_func(function (list) {
+      for (const entry of list.getEntries()) {
+        if (entry.identifier === 'ct' &&
+            (!largest || entry.size > largest.size)) {
+          largest = entry;
+        }
+      }
+    }));
+    observer.observe({ entryTypes: ['container'], buffered: true });
+
+    t.step_timeout(function () {
+      assert_true(!!largest, "expected a container entry");
+
+      // How much of the image is visible (and therefore paints) depends on the
+      // platform's viewport, so assert on properties that hold everywhere rather
+      // than on an expected absolute size.
+
+      // The image is all that paints, so its area is a hard upper bound. A
+      // 32-bit area overflow would report a wildly larger garbage value.
+      assert_less_than_equal(largest.size, 2000 * 2000,
+        "size must not exceed the image's area (overflow); got " +
+        largest.size);
+
+      // Well past a trivial amount, so a value that wrapped around to near zero
+      // is caught.
+      assert_greater_than(largest.size, 100 * 100,
+        "size should be a large area; got " + largest.size);
+
+      // The container paints a single solid image, so the painted region is one
+      // rectangle: its area must agree with the reported intersectionRect. This
+      // is what actually catches a miscomputed area, independent of viewport
+      // size.
+      const rect = largest.intersectionRect;
+      const rectArea = rect.width * rect.height;
+      assert_approx_equals(largest.size, rectArea, Math.max(2, rectArea / 100),
+        "size (" + largest.size + ") should match the intersectionRect area (" +
+        rectArea + ")");
+      t.done();
+    }, 1000);
+  }, 'Container size does not overflow for large containers');
+</script>
+</body>

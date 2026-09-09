@@ -4,6 +4,7 @@
 package org.mozilla.focus.privacy
 
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
+import java.io.IOException
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -15,11 +16,8 @@ import org.mozilla.focus.helpers.FocusTestRule
 import org.mozilla.focus.helpers.MainActivityFirstrunTestRule
 import org.mozilla.focus.helpers.TestAssetHelper.getStorageTestAsset
 import org.mozilla.focus.testAnnotations.SmokeTest
-import java.io.IOException
 
-/**
- * Make sure that session storage values are kept and written but removed at the end of a session.
- */
+/** Make sure that session storage values are kept and written but removed at the end of a session. */
 @RunWith(AndroidJUnit4ClassRunner::class)
 class LocalSessionStorageTest {
 
@@ -30,13 +28,12 @@ class LocalSessionStorageTest {
         const val LOCAL_STORAGE_MISS = "Local storage empty"
     }
 
-    @get:Rule(order = 0)
-    val focusTestRule: FocusTestRule = FocusTestRule()
+    @get:Rule(order = 0) val focusTestRule: FocusTestRule = FocusTestRule()
 
-    private val webServerRule get() = focusTestRule.mockWebServerRule
+    private val webServerRule
+        get() = focusTestRule.mockWebServerRule
 
-    @get:Rule
-    val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
+    @get:Rule val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
 
     @Before
     fun setUp() {
@@ -46,8 +43,7 @@ class LocalSessionStorageTest {
 
     @After
     fun tearDown() {
-        try {
-            } catch (e: IOException) {
+        try {} catch (e: IOException) {
             throw AssertionError("Could not stop web server", e)
         }
     }
@@ -58,21 +54,24 @@ class LocalSessionStorageTest {
         val storageStartUrl = webServerRule.server.getStorageTestAsset("storage_start.html").url
         val storageCheckUrl = webServerRule.server.getStorageTestAsset("storage_check.html").url
 
-        searchScreen {
-        }.loadPage(storageStartUrl) {
-            // Assert website is loaded and values are written.
-            verifyPageContent("Values written to storage")
-        }.openSearchBar {
-            // Now load the next website and assert that the values are still in the storage
-        }.loadPage(storageCheckUrl) {
-            verifyPageContent(SESSION_STORAGE_HIT)
-            verifyPageContent(LOCAL_STORAGE_MISS)
-        }.clearBrowsingData {}
-        searchScreen {
-        }.loadPage(storageCheckUrl) {
-            verifyPageContent("Session storage empty")
-            verifyPageContent("Local storage empty")
-        }
+        searchScreen {}
+            .loadPage(storageStartUrl) {
+                // Assert website is loaded and values are written.
+                verifyPageContent("Values written to storage")
+            }
+            .openSearchBar {
+                // Now load the next website and assert that the values are still in the storage
+            }
+            .loadPage(storageCheckUrl) {
+                verifyPageContent(SESSION_STORAGE_HIT)
+                verifyPageContent(LOCAL_STORAGE_MISS)
+            }
+            .clearBrowsingData {}
+        searchScreen {}
+            .loadPage(storageCheckUrl) {
+                verifyPageContent("Session storage empty")
+                verifyPageContent("Local storage empty")
+            }
     }
 
     @SmokeTest
@@ -80,15 +79,16 @@ class LocalSessionStorageTest {
     fun eraseCookiesTest() {
         val storageStartUrl = webServerRule.server.getStorageTestAsset("storage_start.html").url
 
-        searchScreen {
-        }.loadPage(storageStartUrl) {
-            verifyPageContent("No cookies set")
-            clickSetCookiesButton()
-            verifyPageContent("user=android")
-        }.clearBrowsingData {}
-        searchScreen {
-        }.loadPage(storageStartUrl) {
-            verifyPageContent("No cookies set")
-        }
+        searchScreen {}
+            .loadPage(storageStartUrl) {
+                verifyPageContent("No cookies set")
+                clickSetCookiesButton()
+                verifyPageContent("user=android")
+            }
+            .clearBrowsingData {}
+        searchScreen {}
+            .loadPage(storageStartUrl) {
+                verifyPageContent("No cookies set")
+            }
     }
 }

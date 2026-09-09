@@ -582,6 +582,7 @@ export const TabsSetupFlowManager = new (class {
     }
     const url =
       await lazy.fxAccounts.constructor.config.promiseConnectAccountURI(
+        "sync",
         "fx-view"
       );
     this.didFxaTabOpen = true;

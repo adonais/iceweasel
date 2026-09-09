@@ -2,6 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import {
+  isSpaceOverridden,
+  SPACE_IDS,
+} from "resource://newtab/common/PageLayoutVariants.mjs";
+
 export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
   const { layout, feeds, spocs } = state;
   let spocIndexPlacementMap = {};
@@ -81,7 +86,9 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
 
   // Filter sections is Recommended Stories are turned off
   const pocketEnabled =
-    prefs["feeds.section.topstories"] && prefs["feeds.system.topstories"];
+    (prefs["feeds.section.topstories"] ||
+      isSpaceOverridden(SPACE_IDS.STORIES, prefs)) &&
+    prefs["feeds.system.topstories"];
   if (!pocketEnabled) {
     filterArray.push(
       // Bug 1980459 - Do not remove Widgets if DS is disabled
@@ -176,8 +183,7 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
 
     result.forEach(section => {
       const { sectionKey } = section;
-      const sectionRecs = sectionsMap[sectionKey] || [];
-      section.data = sectionRecs.filter(rec => !rec.isHeadline);
+      section.data = sectionsMap[sectionKey] || [];
     });
 
     return result;
@@ -251,15 +257,25 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
                     // We can then move it from there via breakpoints.
                     .find(item => item.columnCount === 1);
 
+                // A carousel fills one tile with several recommendations, so each
+                // tile after it reads from an index offset by the number of slides.
+                const carouselTile = smallestBreakpointLayout.tiles.find(
+                  tile => tile.carousel
+                );
+                const carouselSlideCount =
+                  prefs.trainhopConfig?.carousel?.slideCount ??
+                  prefs["discoverystream.carousel.slideCount"];
+                // The carousel's own tile accounts for one of those slides.
+                const carouselExtra = carouselTile ? carouselSlideCount - 1 : 0;
+
                 smallestBreakpointLayout.tiles.forEach(tile => {
                   if (tile.hasAd && section.allowAds !== false) {
-                    const widgetsBeforeThisPosition =
-                      smallestBreakpointLayout.tiles.filter(
-                        t => t.allowsWidget && t.position < tile.position
-                      ).length;
-                    const adjustedPosition =
-                      tile.position - widgetsBeforeThisPosition;
-                    sectionsSpocsPositions.push({ index: adjustedPosition });
+                    const isAfterCarousel =
+                      carouselTile && tile.position > carouselTile.position;
+                    sectionsSpocsPositions.push({
+                      index:
+                        tile.position + (isAfterCarousel ? carouselExtra : 0),
+                    });
                   }
                 });
                 return {

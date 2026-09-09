@@ -22,8 +22,8 @@ import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryC
 import org.mozilla.fenix.tabstray.ext.isNormalTab
 
 /**
- * Binding between [AppStore] and [BrowserStore] that determines if and when to add a
- * toolbar notification for the "Summarize" feature
+ * Binding between [AppStore] and [BrowserStore] that determines if and when to add a toolbar notification for the
+ * "Summarize" feature
  */
 class SummarizeToolbarHighlightBinding(
     private val appStore: AppStore,
@@ -34,19 +34,20 @@ class SummarizeToolbarHighlightBinding(
 
     override suspend fun onState(flow: Flow<BrowserState>) {
         combine(
-            featureDiscoverySettings.toolbarMenuButtonHighlight,
-            flow.filter { it.selectedTab?.content?.url != null }
-                .map { it.selectedTab?.isNormalTab() == true },
-        ) { highlightToolbar, isNormalTab ->
-            // we only want to highlight the toolbar for normal tabs
-            highlightToolbar && isNormalTab
-        }.distinctUntilChanged()
+                featureDiscoverySettings.toolbarMenuButtonHighlight,
+                flow.filter { it.selectedTab?.content?.url != null }.map { it.selectedTab?.isNormalTab() == true },
+            ) { highlightToolbar, isNormalTab ->
+                // we only want to highlight the toolbar for normal tabs
+                highlightToolbar && isNormalTab
+            }
+            .distinctUntilChanged()
             .collect { highlight ->
-                val action = if (highlight) {
-                    AppAction.MenuNotification.AddMenuNotification(SupportedMenuNotifications.Summarize)
-                } else {
-                    AppAction.MenuNotification.RemoveMenuNotification(SupportedMenuNotifications.Summarize)
-                }
+                val action =
+                    if (highlight) {
+                        AppAction.MenuNotification.AddMenuNotification(SupportedMenuNotifications.Summarize)
+                    } else {
+                        AppAction.MenuNotification.RemoveMenuNotification(SupportedMenuNotifications.Summarize)
+                    }
                 appStore.dispatch(action = action)
             }
     }

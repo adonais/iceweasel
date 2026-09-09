@@ -50,8 +50,7 @@ dbg2.onDebuggerStatement = undefined;
 function testHook(hookName) {
   var newestG1Frame = dbg1.getNewestFrame();
   if (hookName != 'onNewGlobalObject' &&
-      hookName != 'onNewScript' &&
-      hookName != 'onNewPromise')
+      hookName != 'onNewScript')
   {
     var newestG2Frame = dbg2.getNewestFrame();
   }

@@ -21,7 +21,6 @@ linux64-libxml2:
     treeherder:
         symbol: TL(libxml2)
     run:
-        clone-with: hg
         arguments: ['x86_64-unknown-linux-gnu']
     fetches:
         toolchain:
@@ -31,7 +30,6 @@ linux64-aarch64-libxml2:
     treeherder:
         symbol: TLA64(libxml2)
     run:
-        clone-with: hg
         arguments: ['aarch64-unknown-linux-gnu']
     fetches:
         toolchain:
@@ -41,7 +39,6 @@ win64-libxml2:
     treeherder:
         symbol: TW64(libxml2)
     run:
-        clone-with: hg
         arguments: ['x86_64-pc-windows-msvc']
     fetches:
         toolchain:
@@ -52,7 +49,6 @@ win64-aarch64-libxml2:
     treeherder:
         symbol: TWA64(libxml2)
     run:
-        clone-with: hg
         arguments: ['aarch64-pc-windows-msvc']
     fetches:
         toolchain:

@@ -11,8 +11,8 @@ private const val MIN_NUMBER_OF_APP_LAUNCHES = 3
 /**
  * Try to show the wallpaper onboarding dialog on the third opening of the app.
  *
- * Note: We use 'at least three' instead of exactly 'three' in case the app is opened in such a
- * way that the other conditions are not met.
+ * Note: We use 'at least three' instead of exactly 'three' in case the app is opened in such a way that the other
+ * conditions are not met.
  */
 internal fun Settings.showWallpaperOnboardingDialog() =
     numberOfAppLaunches >= MIN_NUMBER_OF_APP_LAUNCHES &&

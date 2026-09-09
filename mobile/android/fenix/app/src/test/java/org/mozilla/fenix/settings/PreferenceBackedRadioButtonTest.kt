@@ -9,6 +9,7 @@ import android.content.SharedPreferences
 import android.content.res.TypedArray
 import android.util.AttributeSet
 import android.widget.CompoundButton.OnCheckedChangeListener
+import androidx.appcompat.R as appcompatR
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -16,6 +17,7 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
+import kotlin.random.Random
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -29,8 +31,6 @@ import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
-import kotlin.random.Random
-import androidx.appcompat.R as appcompatR
 
 @RunWith(RobolectricTestRunner::class)
 class PreferenceBackedRadioButtonTest {
@@ -73,7 +73,9 @@ class PreferenceBackedRadioButtonTest {
         // Configure mockTypedArray to return the preference key
         every { mockTypedArray.getString(R.styleable.PreferenceBackedRadioButton_preferenceKey) } returns testKey
         // Default behavior for other attributes if not specified for this test
-        every { mockTypedArray.getBoolean(R.styleable.PreferenceBackedRadioButton_preferenceKeyDefaultValue, false) } returns false
+        every {
+            mockTypedArray.getBoolean(R.styleable.PreferenceBackedRadioButton_preferenceKeyDefaultValue, false)
+        } returns false
         // Configure SharedPreferences for initial isChecked state
         every { mockPrefs.getBoolean(testKey, false) } returns Random.nextBoolean()
 
@@ -88,8 +90,11 @@ class PreferenceBackedRadioButtonTest {
     fun `GIVEN a default preference value is provided WHEN initialized THEN cache the value`() {
         val defaultPrefValue = true
         // Configure mockTypedArray for default value
-        every { mockTypedArray.getString(R.styleable.PreferenceBackedRadioButton_preferenceKey) } returns null // No specific key
-        every { mockTypedArray.getBoolean(R.styleable.PreferenceBackedRadioButton_preferenceKeyDefaultValue, false) } returns defaultPrefValue
+        every { mockTypedArray.getString(R.styleable.PreferenceBackedRadioButton_preferenceKey) } returns
+            null // No specific key
+        every {
+            mockTypedArray.getBoolean(R.styleable.PreferenceBackedRadioButton_preferenceKeyDefaultValue, false)
+        } returns defaultPrefValue
         // Configure SharedPreferences (key will be null, default value from TypedArray is used)
         every { mockPrefs.getBoolean(null, defaultPrefValue) } returns Random.nextBoolean()
 
@@ -114,7 +119,9 @@ class PreferenceBackedRadioButtonTest {
         val defaultCheckedValue = true
 
         every { mockTypedArray.getString(R.styleable.PreferenceBackedRadioButton_preferenceKey) } returns testKey
-        every { mockTypedArray.getBoolean(R.styleable.PreferenceBackedRadioButton_preferenceKeyDefaultValue, false) } returns defaultCheckedValue
+        every {
+            mockTypedArray.getBoolean(R.styleable.PreferenceBackedRadioButton_preferenceKeyDefaultValue, false)
+        } returns defaultCheckedValue
         // Simulate preference key not existing, so getBoolean returns its provided default value
         every { mockPrefs.getBoolean(testKey, defaultCheckedValue) } returns defaultCheckedValue
 
@@ -128,7 +135,9 @@ class PreferenceBackedRadioButtonTest {
     @Test
     fun `GIVEN there is no backing preference or default value set vaWHEN initialized THEN set if checked as false`() {
         every { mockTypedArray.getString(R.styleable.PreferenceBackedRadioButton_preferenceKey) } returns null
-        every { mockTypedArray.getBoolean(R.styleable.PreferenceBackedRadioButton_preferenceKeyDefaultValue, false) } returns false // Default is false
+        every {
+            mockTypedArray.getBoolean(R.styleable.PreferenceBackedRadioButton_preferenceKeyDefaultValue, false)
+        } returns false // Default is false
         // Prefs will be called with (null, false)
         every { mockPrefs.getBoolean(null, false) } returns false
 
@@ -145,7 +154,9 @@ class PreferenceBackedRadioButtonTest {
         val defaultFromAttr = false
 
         every { mockTypedArray.getString(R.styleable.PreferenceBackedRadioButton_preferenceKey) } returns testKey
-        every { mockTypedArray.getBoolean(R.styleable.PreferenceBackedRadioButton_preferenceKeyDefaultValue, false) } returns defaultFromAttr
+        every {
+            mockTypedArray.getBoolean(R.styleable.PreferenceBackedRadioButton_preferenceKeyDefaultValue, false)
+        } returns defaultFromAttr
         // Simulate preference having a stored value
         every { mockPrefs.getBoolean(testKey, defaultFromAttr) } returns preferenceStoredValue
 

@@ -6,9 +6,7 @@ package org.mozilla.fenix.collections
 
 import androidx.recyclerview.widget.DiffUtil
 
-/**
- * Diff callback for comparing tab lists with selected state.
- */
+/** Diff callback for comparing tab lists with selected state. */
 internal class TabDiffUtil(
     private val old: List<Tab>,
     private val new: List<Tab>,
@@ -18,15 +16,11 @@ internal class TabDiffUtil(
     private val newHideCheckboxes: Boolean,
 ) : DiffUtil.Callback() {
 
-    /**
-     * Checks if the tabs in the given positions refer to the same tab (based on ID).
-     */
+    /** Checks if the tabs in the given positions refer to the same tab (based on ID). */
     override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
         old[oldItemPosition].sessionId == new[newItemPosition].sessionId
 
-    /**
-     * Checks if the combination of tab ID, selection, and checkbox visibility is the same.
-     */
+    /** Checks if the combination of tab ID, selection, and checkbox visibility is the same. */
     override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
         val isSameTab = old[oldItemPosition].sessionId == new[newItemPosition].sessionId
         val sameSelectedState = oldItemSelected(oldItemPosition) == newItemSelected(newItemPosition)
@@ -34,18 +28,18 @@ internal class TabDiffUtil(
         return isSameTab && sameSelectedState && isSameHideCheckboxes
     }
 
-    /**
-     * Returns a change payload indication if the item is now/no longer selected.
-     */
+    /** Returns a change payload indication if the item is now/no longer selected. */
     override fun getChangePayload(oldItemPosition: Int, newItemPosition: Int): Any? {
         val shouldBeChecked = newItemSelected(newItemPosition)
         return CheckChanged(shouldBeChecked, newHideCheckboxes)
     }
 
     override fun getOldListSize(): Int = old.size
+
     override fun getNewListSize(): Int = new.size
 
     private fun oldItemSelected(oldItemPosition: Int) = oldSelected.contains(old[oldItemPosition])
+
     private fun newItemSelected(newItemPosition: Int) = newSelected.contains(new[newItemPosition])
 }
 

@@ -8,50 +8,94 @@
 
 using namespace mozilla;
 
-static bool gPrefUpdate = false;
+static bool gTestIntUpdated = false;
+static bool gEnabledUpdated = false;
+
+static constexpr auto TEST_FEATURE = "testFeature"_ns;
+static constexpr auto TEST_INT = "testInt"_ns;
+static constexpr auto ENABLED = "enabled"_ns;
+
+namespace {
+
+namespace prefs::rollout {
+static constexpr auto TEST_FEATURE_ENABLED =
+    "nimbus.syncdefaultsstore.testFeature.enabled";
+static constexpr auto TEST_FEATURE_TEST_INT =
+    "nimbus.syncdefaultsstore.testFeature.testInt";
+}  // namespace prefs::rollout
+
+namespace prefs::experiment {
+static constexpr auto TEST_FEATURE_ENABLED =
+    "nimbus.syncdatastore.testFeature.enabled";
+static constexpr auto TEST_FEATURE_TEST_INT =
+    "nimbus.syncdatastore.testFeature.testInt";
+}  // namespace prefs::experiment
+
+namespace prefs::fallback {
+static constexpr auto TEST_FEATURE_TEST_INT = "nimbus.testing.testInt";
+}
+
+}  // namespace
 
 TEST(NimbusFeaturesGet, Errors)
 {
-  ASSERT_EQ(Preferences::SetInt("nimbus.syncdatastore.foo.value", 42,
+  ASSERT_EQ(Preferences::SetInt(prefs::experiment::TEST_FEATURE_TEST_INT, 42,
                                 PrefValueKind::User),
             NS_OK);
-  ASSERT_EQ(NimbusFeatures::GetInt("foo"_ns, "value"_ns, 0), 42);
-  ASSERT_EQ(Preferences::SetBool("nimbus.syncdatastore.foo.enabled", true,
+  ASSERT_EQ(NimbusFeatures::GetInt(TEST_FEATURE, TEST_INT, 0), 42);
+  ASSERT_EQ(Preferences::SetBool(prefs::experiment::TEST_FEATURE_ENABLED, true,
                                  PrefValueKind::User),
             NS_OK);
-  ASSERT_TRUE(NimbusFeatures::GetBool("foo"_ns, "enabled"_ns, false));
+  ASSERT_TRUE(NimbusFeatures::GetBool(TEST_FEATURE, ENABLED, false));
 
-  ASSERT_EQ(Preferences::ClearUser("nimbus.syncdatastore.foo.value"), NS_OK);
+  ASSERT_EQ(Preferences::ClearUser(prefs::experiment::TEST_FEATURE_TEST_INT),
+            NS_OK);
+  ASSERT_EQ(Preferences::ClearUser(prefs::experiment::TEST_FEATURE_ENABLED),
+            NS_OK);
 }
 
 TEST(NimbusFeaturesGetRollout, Errors)
 {
-  ASSERT_EQ(Preferences::SetInt("nimbus.syncdefaultsstore.rollout.value", 7,
+  ASSERT_EQ(Preferences::SetInt(prefs::rollout::TEST_FEATURE_TEST_INT, 7,
                                 PrefValueKind::User),
             NS_OK);
-  ASSERT_EQ(NimbusFeatures::GetInt("rollout"_ns, "value"_ns, 0), 7);
-  ASSERT_EQ(Preferences::SetBool("nimbus.syncdefaultsstore.rollout.enabled",
-                                 true, PrefValueKind::User),
+  ASSERT_EQ(NimbusFeatures::GetInt(TEST_FEATURE, TEST_INT, 0), 7);
+  ASSERT_EQ(Preferences::SetBool(prefs::rollout::TEST_FEATURE_ENABLED, true,
+                                 PrefValueKind::User),
             NS_OK);
-  ASSERT_TRUE(NimbusFeatures::GetBool("rollout"_ns, "enabled"_ns, false));
+  ASSERT_TRUE(NimbusFeatures::GetBool(TEST_FEATURE, ENABLED, false));
+
+  ASSERT_EQ(Preferences::ClearUser(prefs::rollout::TEST_FEATURE_TEST_INT),
+            NS_OK);
+  ASSERT_EQ(Preferences::ClearUser(prefs::rollout::TEST_FEATURE_ENABLED),
+            NS_OK);
 }
 
 TEST(NimbusFeaturesExperimentPriorityOverRollouts, Errors)
 {
-  ASSERT_EQ(Preferences::SetInt("nimbus.syncdatastore.feature.value", 12,
+  ASSERT_EQ(Preferences::SetInt(prefs::experiment::TEST_FEATURE_TEST_INT, 12,
                                 PrefValueKind::User),
             NS_OK);
-  ASSERT_EQ(Preferences::SetInt("nimbus.syncdefaultsstore.feature.value", 22,
+  ASSERT_EQ(Preferences::SetInt(prefs::rollout::TEST_FEATURE_TEST_INT, 22,
                                 PrefValueKind::User),
             NS_OK);
-  ASSERT_EQ(NimbusFeatures::GetInt("feature"_ns, "value"_ns, 0), 12);
-  ASSERT_EQ(Preferences::SetBool("nimbus.syncdatastore.feature.enabled", true,
+  ASSERT_EQ(NimbusFeatures::GetInt(TEST_FEATURE, TEST_INT, 0), 12);
+  ASSERT_EQ(Preferences::SetBool(prefs::experiment::TEST_FEATURE_ENABLED, true,
                                  PrefValueKind::User),
             NS_OK);
-  ASSERT_EQ(Preferences::SetBool("nimbus.syncdefaultsstore.feature.enabled",
-                                 false, PrefValueKind::User),
+  ASSERT_EQ(Preferences::SetBool(prefs::rollout::TEST_FEATURE_ENABLED, false,
+                                 PrefValueKind::User),
             NS_OK);
-  ASSERT_TRUE(NimbusFeatures::GetBool("feature"_ns, "enabled"_ns, false));
+  ASSERT_TRUE(NimbusFeatures::GetBool(TEST_FEATURE, ENABLED, false));
+
+  ASSERT_EQ(Preferences::ClearUser(prefs::experiment::TEST_FEATURE_TEST_INT),
+            NS_OK);
+  ASSERT_EQ(Preferences::ClearUser(prefs::experiment::TEST_FEATURE_ENABLED),
+            NS_OK);
+  ASSERT_EQ(Preferences::ClearUser(prefs::rollout::TEST_FEATURE_TEST_INT),
+            NS_OK);
+  ASSERT_EQ(Preferences::ClearUser(prefs::rollout::TEST_FEATURE_ENABLED),
+            NS_OK);
 }
 
 TEST(NimbusFeaturesDataSourcePrecedence, Errors)
@@ -60,131 +104,115 @@ TEST(NimbusFeaturesDataSourcePrecedence, Errors)
   const auto EXPERIMENT_VALUE = 2;
   const auto ROLLOUT_VALUE = 3;
 
-  ASSERT_EQ(Preferences::SetInt("nimbus.testing.testInt", FALLBACK_VALUE,
-                                PrefValueKind::User),
+  ASSERT_EQ(Preferences::SetInt(prefs::fallback::TEST_FEATURE_TEST_INT,
+                                FALLBACK_VALUE, PrefValueKind::User),
             NS_OK);
 
   // If there is no experiment or rollout, the fallback value should be
   // returned.
-  ASSERT_EQ(NimbusFeatures::GetInt("testFeature"_ns, "testInt"_ns, 0),
-            FALLBACK_VALUE);
+  ASSERT_EQ(NimbusFeatures::GetInt(TEST_FEATURE, TEST_INT, 0), FALLBACK_VALUE);
 
   // Enroll in an experiment.
-  ASSERT_EQ(Preferences::SetInt("nimbus.syncdatastore.testFeature.testInt",
+  ASSERT_EQ(Preferences::SetInt(prefs::experiment::TEST_FEATURE_TEST_INT,
                                 EXPERIMENT_VALUE, PrefValueKind::User),
             NS_OK);
 
   // Enroll in a rollout.
-  ASSERT_EQ(Preferences::SetInt("nimbus.syncdefaultsstore.testFeature.testInt",
+  ASSERT_EQ(Preferences::SetInt(prefs::rollout::TEST_FEATURE_TEST_INT,
                                 ROLLOUT_VALUE, PrefValueKind::User),
             NS_OK);
 
   // Experiment value should take precedence.
-  ASSERT_EQ(NimbusFeatures::GetInt("testFeature"_ns, "testInt"_ns, 0),
+  ASSERT_EQ(NimbusFeatures::GetInt(TEST_FEATURE, TEST_INT, 0),
             EXPERIMENT_VALUE);
 
   // After experiments it should default to rollouts.
-  Preferences::ClearUser("nimbus.syncdatastore.testFeature.testInt");
-  ASSERT_EQ(NimbusFeatures::GetInt("testFeature"_ns, "testInt"_ns, 0),
-            ROLLOUT_VALUE);
+  Preferences::ClearUser(prefs::experiment::TEST_FEATURE_TEST_INT);
+  ASSERT_EQ(NimbusFeatures::GetInt(TEST_FEATURE, TEST_INT, 0), ROLLOUT_VALUE);
 
   // Cleanup
-  Preferences::ClearUser("nimbus.syncdefaultsstore.testFeature.testInt");
-  Preferences::ClearUser("nimbus.testing.testInt");
+  ASSERT_EQ(Preferences::ClearUser(prefs::rollout::TEST_FEATURE_TEST_INT),
+            NS_OK);
+  ASSERT_EQ(Preferences::ClearUser(prefs::fallback::TEST_FEATURE_TEST_INT),
+            NS_OK);
 }
 
-static void FooValueUpdated(const char* aPref, void* aUserData) {
-  ASSERT_STREQ(aPref, "nimbus.syncdatastore.foo.value");
+static void TestFeatureTestIntUpdated(const char* aPref, void* aUserData) {
+  ASSERT_STREQ(aPref, prefs::experiment::TEST_FEATURE_TEST_INT);
   ASSERT_EQ(aUserData, reinterpret_cast<void*>(13));
 
-  ASSERT_FALSE(gPrefUpdate);
-  gPrefUpdate = true;
+  ASSERT_FALSE(gTestIntUpdated);
+  gTestIntUpdated = true;
 
-  ASSERT_EQ(NimbusFeatures::GetInt("foo"_ns, "value"_ns, 0), 24);
+  ASSERT_EQ(NimbusFeatures::GetInt(TEST_FEATURE, TEST_INT, 0), 24);
 }
 
-static void BarRolloutValueUpdated(const char* aPref, void* aUserData) {
-  ASSERT_STREQ(aPref, "nimbus.syncdefaultsstore.bar.value");
+static void TestFeatureEnabledUpdated(const char* aPref, void* aUserData) {
+  ASSERT_STREQ(aPref, prefs::rollout::TEST_FEATURE_ENABLED);
 
-  ASSERT_FALSE(gPrefUpdate);
-  gPrefUpdate = true;
-}
-
-TEST(NimbusFeaturesGetFallback, Errors)
-{
-  // No experiment is set and we expect to return fallback pref values
-
-  // As defined by fallbackPref browser.aboutwelcome.enabled
-  // in FeatureManifest.yaml
-  Preferences::SetBool("browser.aboutwelcome.enabled", true,
-                       PrefValueKind::Default);
-  ASSERT_EQ(NimbusFeatures::GetBool("aboutwelcome"_ns, "enabled"_ns, false),
-            true);
-  Preferences::SetBool("browser.aboutwelcome.enabled", false,
-                       PrefValueKind::User);
-  ASSERT_EQ(NimbusFeatures::GetBool("aboutwelcome"_ns, "enabled"_ns, true),
-            false);
-  Preferences::ClearUser("browser.aboutwelcome.enabled");
-
-  const auto FALLBACK_VALUE = 5;
-  const auto DEFAULT_VALUE = 42;
-
-  Preferences::SetInt("nimbus.testing.testInt", FALLBACK_VALUE,
-                      PrefValueKind::Default);
-  ASSERT_EQ(
-      NimbusFeatures::GetInt("testFeature"_ns, "testInt"_ns, DEFAULT_VALUE),
-      FALLBACK_VALUE);
-
-  Preferences::ClearUser("nimbus.testing.testInt");
+  ASSERT_FALSE(gEnabledUpdated);
+  gEnabledUpdated = true;
 }
 
 TEST(NimbusFeaturesUpdate, Errors)
 {
-  // Verify updating foo.value calls FooValueUpdated.
-  ASSERT_EQ(NimbusFeatures::OnUpdate("foo"_ns, "value"_ns, FooValueUpdated,
+  // Verify updating testFeature.testInt calls TestFeatureTestIntUpdated and not
+  // TestFeatureEnabledUpdated.
+  ASSERT_EQ(NimbusFeatures::OnUpdate(TEST_FEATURE, TEST_INT,
+                                     TestFeatureTestIntUpdated,
                                      reinterpret_cast<void*>(13)),
             NS_OK);
   ASSERT_EQ(
-      NimbusFeatures::OnUpdate("bar"_ns, "value"_ns, BarRolloutValueUpdated,
+      NimbusFeatures::OnUpdate(TEST_FEATURE, ENABLED, TestFeatureEnabledUpdated,
                                reinterpret_cast<void*>(13)),
       NS_OK);
-  ASSERT_EQ(Preferences::SetInt("nimbus.syncdatastore.foo.value", 24,
+  ASSERT_EQ(Preferences::SetInt(prefs::experiment::TEST_FEATURE_TEST_INT, 24,
                                 PrefValueKind::User),
             NS_OK);
-  ASSERT_TRUE(gPrefUpdate);
-  ASSERT_EQ(NimbusFeatures::GetInt("foo"_ns, "value"_ns, 0), 24);
+  ASSERT_TRUE(gTestIntUpdated);
+  ASSERT_FALSE(gEnabledUpdated);
+  gTestIntUpdated = false;
 
-  // Verify updating foo.enabled doesn't call FooValueUpdated.
-  gPrefUpdate = false;
-  ASSERT_EQ(Preferences::SetBool("nimbus.syncdatastore.foo.enabled", false,
+  ASSERT_EQ(NimbusFeatures::GetInt(TEST_FEATURE, TEST_INT, 0), 24);
+
+  // Verify updating testFeature.enabled calls TestFeatureEnabledUpdated and not
+  // TestFeatureTestIntUpdated.
+  ASSERT_EQ(Preferences::SetBool(prefs::rollout::TEST_FEATURE_ENABLED, false,
                                  PrefValueKind::User),
             NS_OK);
-  ASSERT_FALSE(NimbusFeatures::GetBool("foo"_ns, "enabled"_ns, true));
-  ASSERT_EQ(Preferences::SetBool("nimbus.syncdatastore.foo.enabled", true,
-                                 PrefValueKind::User),
-            NS_OK);
-  ASSERT_TRUE(NimbusFeatures::GetBool("foo"_ns, "enabled"_ns, false));
-  ASSERT_FALSE(gPrefUpdate);
-
-  // Verify updating bar.value calls BarRolloutValueUpdated
-  ASSERT_EQ(Preferences::SetInt("nimbus.syncdefaultsstore.bar.value", 25,
-                                PrefValueKind::User),
-            NS_OK);
-  ASSERT_TRUE(gPrefUpdate);
-  gPrefUpdate = false;
+  ASSERT_FALSE(NimbusFeatures::GetBool(TEST_FEATURE, ENABLED, true));
+  ASSERT_FALSE(gTestIntUpdated);
+  ASSERT_TRUE(gEnabledUpdated);
+  gEnabledUpdated = false;
 
   // Verify OffUpdate requires a matching user data pointer to unregister.
-  ASSERT_EQ(NimbusFeatures::OffUpdate("foo"_ns, "value"_ns, FooValueUpdated,
+  ASSERT_EQ(NimbusFeatures::OffUpdate(TEST_FEATURE, TEST_INT,
+                                      TestFeatureTestIntUpdated,
                                       reinterpret_cast<void*>(14)),
             NS_ERROR_FAILURE);
 
-  // Verify updating foo.value no longer calls FooValueUpdated after it has
-  // been unregistered.
-  ASSERT_EQ(NimbusFeatures::OffUpdate("foo"_ns, "value"_ns, FooValueUpdated,
+  // Verify updating testFeature.testInt no longer calls
+  // TestFeatureTestIntUpdated after it has been unregistered.
+  ASSERT_EQ(NimbusFeatures::OffUpdate(TEST_FEATURE, TEST_INT,
+                                      TestFeatureTestIntUpdated,
                                       reinterpret_cast<void*>(13)),
             NS_OK);
-  ASSERT_EQ(Preferences::SetInt("nimbus.syncdatastore.foo.value", 25,
+  ASSERT_EQ(Preferences::SetInt(prefs::experiment::TEST_FEATURE_TEST_INT, 25,
                                 PrefValueKind::User),
             NS_OK);
-  ASSERT_EQ(NimbusFeatures::GetInt("foo"_ns, "value"_ns, 0), 25);
+  ASSERT_EQ(NimbusFeatures::GetInt(TEST_FEATURE, TEST_INT, 0), 25);
+
+  ASSERT_EQ(NimbusFeatures::OffUpdate(TEST_FEATURE, ENABLED,
+                                      TestFeatureEnabledUpdated,
+                                      reinterpret_cast<void*>(13)),
+            NS_OK);
+
+  ASSERT_EQ(Preferences::ClearUser(prefs::experiment::TEST_FEATURE_TEST_INT),
+            NS_OK);
+  ASSERT_EQ(Preferences::ClearUser(prefs::experiment::TEST_FEATURE_ENABLED),
+            NS_OK);
+  ASSERT_EQ(Preferences::ClearUser(prefs::rollout::TEST_FEATURE_TEST_INT),
+            NS_OK);
+  ASSERT_EQ(Preferences::ClearUser(prefs::rollout::TEST_FEATURE_ENABLED),
+            NS_OK);
 }

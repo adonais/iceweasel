@@ -62,7 +62,6 @@ tasks:
             product: firefox
             job-name: firefox-release-bouncer-check
         run:
-            clone-with: hg
             config:
                 by-release-type:
                     beta:
@@ -82,7 +81,6 @@ tasks:
             product: devedition
             job-name: devedition-release-bouncer-check
         run:
-            clone-with: hg
             config:
                 - releases/bouncer_firefox_devedition.py
         treeherder:

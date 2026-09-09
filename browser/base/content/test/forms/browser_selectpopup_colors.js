@@ -797,7 +797,7 @@ add_task(async function test_scrollbar_props() {
   is(popupStyle.scrollbarColor, "rgb(255, 0, 0) rgb(0, 0, 255)");
 
   let scrollBoxStyle = getComputedStyle(selectPopup.scrollBox.scrollbox);
-  is(scrollBoxStyle.overflow, "auto", "Should be the scrollable box");
+  is(scrollBoxStyle.overflowY, "auto", "Should be the scrollable box");
   is(scrollBoxStyle.scrollbarWidth, "thin");
   is(scrollBoxStyle.scrollbarColor, "rgb(255, 0, 0) rgb(0, 0, 255)");
 

@@ -79,12 +79,8 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
     nscolor mBg = kWhite;
     nscolor mFg = kBlack;
 
-    bool operator==(const ColorPair& aOther) const {
-      return mBg == aOther.mBg && mFg == aOther.mFg;
-    }
-    bool operator!=(const ColorPair& aOther) const {
-      return !(*this == aOther);
-    }
+    bool operator==(const ColorPair& aOther) const = default;
+    bool operator!=(const ColorPair& aOther) const = default;
   };
 
   struct ButtonColors : ColorPair {

@@ -7,6 +7,7 @@ package org.mozilla.focus.searchwidget
 import android.app.Activity
 import android.content.Context
 import android.os.Bundle
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.selector.allTabs
 import mozilla.components.browser.state.selector.findCustomTabOrSelectedTab
 import mozilla.components.browser.state.selector.privateTabs
@@ -36,13 +37,11 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 @Config(application = TestFocusApplication::class)
 internal class ExternalIntentNavigationTest {
-    @get:Rule
-    val gleanTestRule = GleanTestRule(testContext)
+    @get:Rule val gleanTestRule = GleanTestRule(testContext)
 
     private val activity: Activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     private val appStore = activity.components.appStore
@@ -113,9 +112,10 @@ internal class ExternalIntentNavigationTest {
 
     @Test
     fun `GIVEN a text search from the search widget WHEN handling widget interactions THEN record telemetry, show the home screen and return true`() {
-        val bundle = Bundle().apply {
-            putBoolean(IntentReceiverActivity.SEARCH_WIDGET_EXTRA, true)
-        }
+        val bundle =
+            Bundle().apply {
+                putBoolean(IntentReceiverActivity.SEARCH_WIDGET_EXTRA, true)
+            }
 
         val result = ExternalIntentNavigation.handleWidgetTextSearch(bundle, activity)
 
@@ -141,9 +141,10 @@ internal class ExternalIntentNavigationTest {
     fun `GIVEN a voice search WHEN handling widget interactions THEN create and open a new tab with LoadUrlFlags EXTERNAL and return true`() {
         val browserStore = activity.components.store
         val searchArgument = "test"
-        val bundle = Bundle().apply {
-            putString(BaseVoiceSearchActivity.SPEECH_PROCESSING, searchArgument)
-        }
+        val bundle =
+            Bundle().apply {
+                putString(BaseVoiceSearchActivity.SPEECH_PROCESSING, searchArgument)
+            }
 
         val result = ExternalIntentNavigation.handleWidgetVoiceSearch(bundle, activity)
 
@@ -175,12 +176,10 @@ internal class ExternalIntentNavigationTest {
     }
 }
 
-/**
- * Shadow of [Performance] that will have [processIntentIfPerformanceTest] always return `true`.
- */
+/** Shadow of [Performance] that will have [processIntentIfPerformanceTest] always return `true`. */
 @Implements(Performance::class)
 class ShadowPerformance {
     @Implementation
-    @Suppress("Unused_Parameter")
+    @Suppress("UnusedParameter", "FunctionOnlyReturningConstant")
     fun processIntentIfPerformanceTest(bundle: Bundle?, context: Context) = true
 }

@@ -43,8 +43,6 @@ run-if = [
 ["test_AddonRepository_paging.js"]
 
 ["test_EnvironmentAddonBuilder_telemetry.js"]
- # Ensure EnvironmentAddonBuilder is managed by AMTelemetry on all builds.
-prefs = ["extensions.telemetry.EnvironmentAddonBuilder=true"]
 
 ["test_ModelHubProvider.js"]
 run-if = [
@@ -421,10 +419,6 @@ run-if = [
 ]
 
 ["test_types.js"]
-# prevents test failure due to EnvironmentAddonBuilder calls
-# to getActiveAddons used to collect the Glean activeAddons
-# metric.
-prefs = ["extensions.telemetry.EnvironmentAddonBuilder=false"]
 
 ["test_undouninstall.js"]
 skip-if = [

@@ -50,57 +50,52 @@ import mozilla.components.support.ktx.android.view.hideKeyboard
  * If you are using a browser toolbar, do not use this class directly.
  */
 @OptIn(FlowPreview::class)
-class MenuButton @JvmOverloads constructor(
+class MenuButton
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
-) : FrameLayout(context, attrs, defStyleAttr),
+) :
+    FrameLayout(context, attrs, defStyleAttr),
     MenuButton,
     View.OnClickListener,
     Observable<MenuButton.Observer> by ObserverRegistry() {
 
     /**
-     * Trigger [kotlinx.coroutines.flow.Flow] to help debounce the [getHighlight] & [setHighlight]
-     * calls when [setHighlightStatus] has been called.
+     * Trigger [kotlinx.coroutines.flow.Flow] to help debounce the [getHighlight] & [setHighlight] calls when
+     * [setHighlightStatus] has been called.
      */
     private val highlightStatusTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     /**
-     * Flag to let us know if we already started observing the [highlightStatusTrigger]. This is to
-     * avoid observing the flow multiple times.
+     * Flag to let us know if we already started observing the [highlightStatusTrigger]. This is to avoid observing the
+     * flow multiple times.
      */
     private var isObservingHighlightStatusTrigger = false
 
-    private val menuControllerObserver = object : MenuController.Observer {
-        /**
-         * Change the menu button appearance when the menu list changes.
-         */
-        override fun onMenuListSubmit(list: List<MenuCandidate>) {
-            val effect = list.effects().max()
+    private val menuControllerObserver =
+        object : MenuController.Observer {
+            /** Change the menu button appearance when the menu list changes. */
+            override fun onMenuListSubmit(list: List<MenuCandidate>) {
+                val effect = list.effects().max()
 
-            // If a highlighted item is found, show the indicator
-            setEffect(effect)
+                // If a highlighted item is found, show the indicator
+                setEffect(effect)
+            }
+
+            override fun onDismiss() = notifyObservers { onDismiss() }
         }
 
-        override fun onDismiss() = notifyObservers { onDismiss() }
-    }
+    /** Listener called when the menu is shown. */
+    @Deprecated("Use the Observable interface to listen for onShow") var onShow: () -> Unit = {}
+
+    /** Listener called when the menu is dismissed. */
+    @Deprecated("Use the Observable interface to listen for onDismiss") var onDismiss: () -> Unit = {}
 
     /**
-     * Listener called when the menu is shown.
-     */
-    @Deprecated("Use the Observable interface to listen for onShow")
-    var onShow: () -> Unit = {}
-
-    /**
-     * Listener called when the menu is dismissed.
-     */
-    @Deprecated("Use the Observable interface to listen for onDismiss")
-    var onDismiss: () -> Unit = {}
-
-    /**
-     * Callback to get the orientation for the menu.
-     * This is called every time the menu should be displayed.
-     * This has no effect when a [MenuController] is set.
+     * Callback to get the orientation for the menu. This is called every time the menu should be displayed. This has no
+     * effect when a [MenuController] is set.
      */
     var getOrientation: () -> Orientation = {
         BrowserMenu.determineMenuOrientation(parent as? View?)
@@ -117,8 +112,8 @@ class MenuButton @JvmOverloads constructor(
     /**
      * [CoroutineScope] to use for background tasks.
      *
-     * In production code, it uses [findViewTreeLifecycleOwner]'s
-     * lifecycle scope, and it is set in [onAttachedToWindow], when the view has been attached.
+     * In production code, it uses [findViewTreeLifecycleOwner]'s lifecycle scope, and it is set in
+     * [onAttachedToWindow], when the view has been attached.
      *
      * This is captured in a variable for overriding in tests.
      */
@@ -126,8 +121,8 @@ class MenuButton @JvmOverloads constructor(
     var coroutineScope: CoroutineScope? = findViewTreeLifecycleOwner()?.lifecycleScope
 
     /**
-     * Sets a [MenuController] that will be used to create a menu when this button is clicked.
-     * If present, [menuBuilder] will be ignored.
+     * Sets a [MenuController] that will be used to create a menu when this button is clicked. If present, [menuBuilder]
+     * will be ignored.
      */
     override var menuController: MenuController? = null
         set(value) {
@@ -140,9 +135,7 @@ class MenuButton @JvmOverloads constructor(
             value?.register(menuControllerObserver, this)
         }
 
-    /**
-     * Sets a [BrowserMenuBuilder] that will be used to create a menu when this button is clicked.
-     */
+    /** Sets a [BrowserMenuBuilder] that will be used to create a menu when this button is clicked. */
     var menuBuilder: BrowserMenuBuilder? = null
         set(value) {
             field = value
@@ -167,16 +160,16 @@ class MenuButton @JvmOverloads constructor(
 
         // Hook up deprecated callbacks using new observer system
         @Suppress("Deprecation")
-        val internalObserver = object : MenuButton.Observer {
-            override fun onShow() = this@MenuButton.onShow()
-            override fun onDismiss() = this@MenuButton.onDismiss()
-        }
+        val internalObserver =
+            object : MenuButton.Observer {
+                override fun onShow() = this@MenuButton.onShow()
+
+                override fun onDismiss() = this@MenuButton.onDismiss()
+            }
         register(internalObserver)
     }
 
-    /**
-     * Shows the menu, or dismisses it if already open.
-     */
+    /** Shows the menu, or dismisses it if already open. */
     override fun onClick(v: View) {
         this.hideKeyboard()
         recordClickEvent()
@@ -206,15 +199,10 @@ class MenuButton @JvmOverloads constructor(
         notifyObservers { onShow() }
     }
 
-    /**
-     * Show the indicator for a browser menu highlight.
-     */
-    fun setHighlight(highlight: BrowserMenuHighlight?) =
-        setEffect(highlight?.asEffect(context))
+    /** Show the indicator for a browser menu highlight. */
+    fun setHighlight(highlight: BrowserMenuHighlight?) = setEffect(highlight?.asEffect(context))
 
-    /**
-     * Show the indicator for a browser menu effect.
-     */
+    /** Show the indicator for a browser menu effect. */
     override fun setEffect(effect: MenuEffect?) {
         when (effect) {
             is HighPriorityHighlightEffect -> {
@@ -234,34 +222,23 @@ class MenuButton @JvmOverloads constructor(
         }
     }
 
-    /**
-     * Sets the tint of the 3-dot menu icon.
-     */
-    override fun setColorFilter(
-        @ColorInt color: Int,
-    ) {
+    /** Sets the tint of the 3-dot menu icon. */
+    override fun setColorFilter(@ColorInt color: Int) {
         menuIcon.setColorFilter(color)
     }
 
-    /**
-     * Dismiss the menu, if open.
-     */
+    /** Dismiss the menu, if open. */
     fun dismissMenu() {
         menuController?.dismiss()
         menu?.dismiss()
     }
 
-    /**
-     * Invalidates the [BrowserMenu], if open.
-     */
+    /** Invalidates the [BrowserMenu], if open. */
     fun invalidateBrowserMenu() {
         menu?.invalidate()
     }
 
-    /**
-     * Check the current [BrowserMenuBuilder], if exists, for highlight effect
-     * and apply it.
-     */
+    /** Check the current [BrowserMenuBuilder], if exists, for highlight effect and apply it. */
     fun setHighlightStatus(mainDispatcher: CoroutineDispatcher = Dispatchers.Main) {
         if (menuBuilder != null) {
             observeAndDebounceSetHighlightStatusRequests(mainDispatcher)
@@ -270,11 +247,10 @@ class MenuButton @JvmOverloads constructor(
     }
 
     /**
-     * This function helps to listen to and debounce requests to set highlight status using
-     * [highlightStatusTrigger].
+     * This function helps to listen to and debounce requests to set highlight status using [highlightStatusTrigger].
      *
-     * The reason we are debouncing the [setHighlightStatus] calls is because we call [setHighlightStatus]
-     * multiple times in quick successions especially during app startups.
+     * The reason we are debouncing the [setHighlightStatus] calls is because we call [setHighlightStatus] multiple
+     * times in quick successions especially during app startups.
      *
      * See [https://bugzilla.mozilla.org/show_bug.cgi?id=1947534](https://bugzilla.mozilla.org/show_bug.cgi?id=1947534)
      * for more.
@@ -300,8 +276,8 @@ class MenuButton @JvmOverloads constructor(
     /**
      * This function should be used only in tests.
      *
-     * Returns true when there is a highlight on this menu button. Uses [highlightView]'s
-     * or [notificationIconView]'s visibility to infer whether or not there's a highlight.
+     * Returns true when there is a highlight on this menu button. Uses [highlightView]'s or [notificationIconView]'s
+     * visibility to infer whether or not there's a highlight.
      */
     @VisibleForTesting
     internal fun hasHighlight(): Boolean {

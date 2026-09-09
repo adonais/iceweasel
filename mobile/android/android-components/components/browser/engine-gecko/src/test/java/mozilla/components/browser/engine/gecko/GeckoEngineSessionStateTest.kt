@@ -6,6 +6,7 @@ package mozilla.components.browser.engine.gecko
 
 import android.util.JsonWriter
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.ByteArrayOutputStream
 import mozilla.components.support.test.mock
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -15,7 +16,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.doReturn
 import org.mozilla.geckoview.GeckoSession
-import java.io.ByteArrayOutputStream
 
 @RunWith(AndroidJUnit4::class)
 class GeckoEngineSessionStateTest {
@@ -39,9 +39,10 @@ class GeckoEngineSessionStateTest {
 
     @Test
     fun fromJSON() {
-        val json = JSONObject().apply {
-            put("GECKO_STATE", "{ 'foo': 'bar' }")
-        }
+        val json =
+            JSONObject().apply {
+                put("GECKO_STATE", "{ 'foo': 'bar' }")
+            }
 
         val state = GeckoEngineSessionState.fromJSON(json)
 
@@ -50,9 +51,10 @@ class GeckoEngineSessionStateTest {
 
     @Test
     fun `fromJSON with invalid JSON returns empty State`() {
-        val json = JSONObject().apply {
-            put("nothing", "helpful")
-        }
+        val json =
+            JSONObject().apply {
+                put("nothing", "helpful")
+            }
 
         val state = GeckoEngineSessionState.fromJSON(json)
 

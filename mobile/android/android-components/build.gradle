@@ -18,12 +18,12 @@ plugins {
 }
 
 mozilla {
-    ktlintSourcePaths = ["components/**/*.kt", "samples/**/*.kt", "buildSrc/**/*.kt", "!**/build/**/*.kt"]
+    ktfmtSourcePaths = ["components/**/*.kt", "samples/**/*.kt", "buildSrc/**/*.kt", "!**/build/**/*.kt"]
     detektSourcePaths = [
         "**/components/**/*.kt", "**/buildSrc/**/*.kt", "**/samples/**/*.kt",
         "!**/build.gradle.kts", "!**/build/**", "!**/docs/**", "!**/resources/**",
-        "!**/src/androidTest/**", "!**/src/iosTest/**", "!**/src/main/assets/extensions/**",
-        "!**/src/test/**", "!**/test/src/**", "!**/tmp/**", "!**/tooling/fetch-tests/**",
+        "!**/src/iosTest/**", "!**/src/main/assets/extensions/**",
+        "!**/tmp/**", "!**/tooling/fetch-tests/**",
     ]
     detektConfig = "$projectDir/config/detekt.yml"
     detektBaseline = "$projectDir/config/detekt-baseline.xml"
@@ -134,8 +134,9 @@ subprojects {
     }
 }
 
-if (findProject(":geckoview") == null) {
-    // Avoid adding this task if it already exists in a different root project.
+// Avoid adding this task if it already exists in a different root project, or if
+// the base plugin applied by spotless already registered an equivalent clean.
+if (findProject(":geckoview") == null && !tasks.names.contains("clean")) {
     tasks.register("clean", Delete) {
         delete rootProject.layout.buildDirectory
     }

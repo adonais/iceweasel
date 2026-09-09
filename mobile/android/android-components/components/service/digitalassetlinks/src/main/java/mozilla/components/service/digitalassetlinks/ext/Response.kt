@@ -7,9 +7,7 @@ package mozilla.components.service.digitalassetlinks.ext
 import mozilla.components.concept.fetch.Response
 import org.json.JSONException
 
-/**
- * Safely parse a JSON [Response] returned by an API.
- */
+/** Safely parse a JSON [Response] returned by an API. */
 inline fun <T> Response.parseJsonBody(crossinline parser: (String) -> T): T? {
     val responseBody = use { body.string() }
     return try {

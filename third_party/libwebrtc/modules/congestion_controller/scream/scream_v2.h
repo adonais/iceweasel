@@ -48,6 +48,11 @@ class ScreamV2 {
     return std::min(max_target_bitrate_, target_rate_);
   }
   DataRate pacing_rate() const {
+    if (received_rate_.IsFinite()) {
+      return std::max(
+          target_rate_ * params_.pacing_factor.Get(),
+          params_.pacing_rate_received_factor.Get() * received_rate_);
+    }
     return target_rate_ * params_.pacing_factor.Get();
   }
 

@@ -1825,8 +1825,8 @@ class FileCreationHandler final : public PromiseNativeHandler {
     aPromise->AppendNativeHandler(handler);
   }
 
-  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
-                        ErrorResult& aRv) override {
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void ResolvedCallback(
+      JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv) override {
     if (NS_WARN_IF(!aValue.isObject())) {
       mXHR->LocalFileToBlobCompleted(nullptr);
       return;
@@ -1838,11 +1838,12 @@ class FileCreationHandler final : public PromiseNativeHandler {
       return;
     }
 
-    mXHR->LocalFileToBlobCompleted(blob->Impl());
+    const RefPtr<BlobImpl> blobImpl = blob->Impl();
+    mXHR->LocalFileToBlobCompleted(blobImpl);
   }
 
-  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
-                        ErrorResult& aRv) override {
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void RejectedCallback(
+      JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv) override {
     mXHR->LocalFileToBlobCompleted(nullptr);
   }
 
@@ -1853,7 +1854,7 @@ class FileCreationHandler final : public PromiseNativeHandler {
 
   ~FileCreationHandler() = default;
 
-  RefPtr<XMLHttpRequestMainThread> mXHR;
+  MOZ_KNOWN_LIVE const RefPtr<XMLHttpRequestMainThread> mXHR;
 };
 
 NS_IMPL_ISUPPORTS0(FileCreationHandler)
@@ -2215,7 +2216,8 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest* request) {
 }
 
 NS_IMETHODIMP
-XMLHttpRequestMainThread::OnStopRequest(nsIRequest* request, nsresult status) {
+XMLHttpRequestMainThread::OnStopRequest(nsIRequest* request, nsresult status)
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   DEBUG_WORKERREFS;
   AUTO_PROFILER_LABEL("XMLHttpRequestMainThread::OnStopRequest", NETWORK);
 
@@ -2547,8 +2549,7 @@ void XMLHttpRequestMainThread::ChangeStateToDoneInternal() {
   // Call this prior to changing state to DONE to ensure we set up the
   // observer before mutations occur.
   if (mErrorLoad == ErrorType::eOK) {
-    Document* doc = GetDocumentIfCurrent();
-    if (doc) {
+    if (const RefPtr<Document> doc = GetDocumentIfCurrent()) {
       doc->NotifyFetchOrXHRSuccess();
     }
   }

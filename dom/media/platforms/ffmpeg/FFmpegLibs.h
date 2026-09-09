@@ -15,7 +15,7 @@ extern "C" {
 #if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
 #  include "libavutil/hwcontext_drm.h"
 #  include "libavutil/hwcontext_vaapi.h"
-#  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+#  ifdef MOZ_USE_HWDECODE_VULKAN
 #    include <vulkan/vulkan_core.h>
 #    ifndef FF_API_VULKAN_FIXED_QUEUES
 #      define FF_API_VULKAN_FIXED_QUEUES (LIBAVUTIL_VERSION_MAJOR < 61)

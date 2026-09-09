@@ -336,7 +336,10 @@ function Weather({ dispatch, size, widgetEnabledMap }) {
           type="ghost"
           size="small"
         />
-        <panel-list id="weather-widget-context-menu">
+        <panel-list
+          className="panel-list-no-icons"
+          id="weather-widget-context-menu"
+        >
           {!showOptInState &&
             (prefs["weather.temperatureUnits"] === "f" ? (
               <panel-item

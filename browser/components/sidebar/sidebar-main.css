@@ -15,6 +15,11 @@
 
 :host {
   width: 100%;
+  /* moz-button paints its focus indicator outside the button's border box, so
+   * containers that clip labels have to extend their clip rect by the same
+   * amount, or they slice the indicator. Resolves to 0 where the indicator is
+   * inset (negative offset), which needs no extra room. */
+  --focus-ring-clip-margin: max(0px, calc(var(--focus-outline-offset) + var(--focus-outline-width)));
 }
 
 .wrapper {
@@ -47,7 +52,11 @@
 
 #sidebar-tools-and-extensions-splitter {
   display: block;
-  border-top: var(--tabstrip-inner-border);
+  border: none;
+  background-image: var(--sidebar-divider-image);
+  background-size: var(--sidebar-divider-size);
+  background-position: var(--sidebar-divider-position);
+  background-repeat: no-repeat;
   margin-inline: var(--tab-inner-inline-margin);
   margin-block-end: var(--space-small);
   min-height: 2px;
@@ -57,6 +66,7 @@
 
   &:hover {
     background-color: var(--focus-outline-color);
+    background-image: none;
     border-radius: var(--border-radius-medium);
   }
 
@@ -66,8 +76,15 @@
     has not been added to root. There are certain scenarios when that attribute is temporarily
     removed from root such as when toggling the sidebar to expand with the toolbar button. */
     :host([expanded]) & {
-      border-color: transparent;
+      background-image: none;
     }
+  }
+
+  /* Collapsing holds the launcher at its expanded width so that clip-path has
+  something to clip, so the divider would otherwise be drawn around the width
+  it is animating away from. Wait for the real width to be restored. */
+  :host([sidebar-ongoing-animations]:not([expanded])) & {
+    background-image: none;
   }
 }
 
@@ -76,7 +93,14 @@
   flex-direction: column;
   align-items: start;
   max-width: 100%;
-  overflow: hidden;
+  overflow: clip;
+  overflow-clip-margin: var(--focus-ring-clip-margin);
+  /* Unlike overflow: hidden, clip doesn't make this a scroll container, so the
+   * automatic minimum size no longer collapses to zero. Restore it explicitly:
+   * collapsed expand-on-hover relies on this list shrinking away so that only
+   * the overflow chevron remains visible. */
+  min-height: 0;
+  min-width: 0;
 
   > moz-button {
     --button-icon-fill: var(--toolbarbutton-icon-fill);
@@ -107,12 +131,6 @@
       @media -moz-pref("browser.nova.enabled") and (not -moz-pref("sidebar.verticalTabs")) {
         --button-outer-padding-block-end: 4px;
       }
-    }
-  }
-
-  moz-button:not([type~="ghost"]):not(:hover) {
-    &::part(button) {
-      background-color: var(--toolbarbutton-background-color-active);
     }
   }
 
@@ -165,7 +183,8 @@
   flex-shrink: 0;
   justify-content: space-between;
   min-height: calc(var(--button-min-height) + (var(--space-small) * 2));
-  overflow: hidden;
+  overflow: clip;
+  overflow-clip-margin: var(--focus-ring-clip-margin);
 
   :host([expanded]) & {
     flex-direction: row;

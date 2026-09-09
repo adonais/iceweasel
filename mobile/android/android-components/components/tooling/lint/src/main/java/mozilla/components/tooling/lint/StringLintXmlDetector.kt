@@ -17,9 +17,7 @@ import org.w3c.dom.Node
 import org.w3c.dom.Node.COMMENT_NODE
 import org.w3c.dom.Node.ELEMENT_NODE
 
-/**
- * Custom lint check that ensures the string resources are correctly formatted.
- */
+/** Custom lint check that ensures the string resources are correctly formatted. */
 class StringLintXmlDetector : ResourceXmlDetector() {
 
     override fun appliesTo(folderType: ResourceFolderType): Boolean {
@@ -115,18 +113,14 @@ class StringLintXmlDetector : ResourceXmlDetector() {
 
     private fun checkPlaceholders(context: XmlContext, node: Node, element: Element, stringText: String) {
         val placeholderRegex = Regex("%(\\d+\\$)?(?:\\.[0-9]+)?[sdf]")
-        val xmlPlaceholders = placeholderRegex.findAll(stringText)
-            .map { it.value }
-            .toSet()
+        val xmlPlaceholders = placeholderRegex.findAll(stringText).map { it.value }.toSet()
 
         // Try to extract the comment for this string.
         val commentText = extractCommentText(element)
 
         // Only check the comment if the XML string actually contains placeholders.
         if (xmlPlaceholders.isNotEmpty()) {
-            val commentPlaceholders = placeholderRegex.findAll(commentText)
-                .map { it.value }
-                .toSet()
+            val commentPlaceholders = placeholderRegex.findAll(commentText).map { it.value }.toSet()
 
             val missingPlaceholders = xmlPlaceholders - commentPlaceholders
             if (missingPlaceholders.isNotEmpty()) {
@@ -134,19 +128,20 @@ class StringLintXmlDetector : ResourceXmlDetector() {
                     issue = ISSUE_PLACEHOLDER_COMMENT,
                     scope = node,
                     location = context.getLocation(node),
-                    message = """
+                    message =
+                        """
                         The comment is missing or doesn't include references to
                         the following placeholders: ${missingPlaceholders.joinToString(", ")}
-                    """.trimIndent(),
+                    """
+                            .trimIndent(),
                 )
             }
         }
     }
 
     /**
-     * Traverses previous siblings of the element to find a comment.
-     * If it encounters another <string> element before a comment,
-     * it assumes no comment and returns an empty string.
+     * Traverses previous siblings of the element to find a comment. If it encounters another <string> element before a
+     * comment, it assumes no comment and returns an empty string.
      */
     private fun extractCommentText(element: Element): String {
         var prev = element.previousSibling
@@ -170,83 +165,104 @@ class StringLintXmlDetector : ResourceXmlDetector() {
     }
 
     companion object {
-        private val BRANDS = listOf(
-            "Firefox",
-            "Focus",
-            "Klar",
-            "Mozilla",
-            "Pocket",
-        )
+        private val BRANDS =
+            listOf(
+                "Firefox",
+                "Focus",
+                "Klar",
+                "Mozilla",
+                "Pocket",
+            )
 
         @JvmField
-        val ISSUE_BLANK_STRING = createStringLintXmlDetectorIssue(
-            id = "BlankString",
-            briefDescription = "String resource should not be blank",
-            explanation = """
-                A <string> resource was created, but no string value was added.
-            """.trimIndent(),
-        )
+        val ISSUE_BLANK_STRING =
+            createStringLintXmlDetectorIssue(
+                id = "BlankString",
+                briefDescription = "String resource should not be blank",
+                explanation =
+                    """
+                    A <string> resource was created, but no string value was added.
+                    """
+                        .trimIndent(),
+            )
 
         @JvmField
-        val ISSUE_INCORRECT_ELLIPSIS = createStringLintXmlDetectorIssue(
-            id = "IncorrectEllipsisCharacter",
-            briefDescription = "Incorrect ellipsis character was used",
-            explanation = """
-                Incorrect ellipsis character \`...\`. Use \`…\` instead.
-            """.trimIndent(),
-        )
+        val ISSUE_INCORRECT_ELLIPSIS =
+            createStringLintXmlDetectorIssue(
+                id = "IncorrectEllipsisCharacter",
+                briefDescription = "Incorrect ellipsis character was used",
+                explanation =
+                    """
+                    Incorrect ellipsis character \`...\`. Use \`…\` instead.
+                    """
+                        .trimIndent(),
+            )
 
         @JvmField
-        val ISSUE_STRAIGHT_QUOTE_USAGE = createStringLintXmlDetectorIssue(
-            id = "IncorrectStraightQuote",
-            briefDescription = "Incorrect straight quote character was used",
-            explanation = """
-                Incorrect straight quote character \`'\`. use \`’\` instead.
-            """.trimIndent(),
-        )
+        val ISSUE_STRAIGHT_QUOTE_USAGE =
+            createStringLintXmlDetectorIssue(
+                id = "IncorrectStraightQuote",
+                briefDescription = "Incorrect straight quote character was used",
+                explanation =
+                    """
+                    Incorrect straight quote character \`'\`. use \`’\` instead.
+                    """
+                        .trimIndent(),
+            )
 
         @JvmField
-        val ISSUE_STRAIGHT_DOUBLE_QUOTE_USAGE = createStringLintXmlDetectorIssue(
-            id = "IncorrectStraightDoubleQuote",
-            briefDescription = "Incorrect straight double quote character was used",
-            explanation = """
-                Incorrect straight double quote character \`"\`. use \`“”\` instead.
-            """.trimIndent(),
-        )
+        val ISSUE_STRAIGHT_DOUBLE_QUOTE_USAGE =
+            createStringLintXmlDetectorIssue(
+                id = "IncorrectStraightDoubleQuote",
+                briefDescription = "Incorrect straight double quote character was used",
+                explanation =
+                    """
+                    Incorrect straight double quote character \`"\`. use \`“”\` instead.
+                    """
+                        .trimIndent(),
+            )
 
         @JvmField
-        val ISSUE_BRAND_USAGE = createStringLintXmlDetectorIssue(
-            id = "BrandUsage",
-            briefDescription = "Hard-coded brand name in string",
-            explanation = """
-                Hard-coded brand name in string. Use a variable instead.
-            """.trimIndent(),
-        )
+        val ISSUE_BRAND_USAGE =
+            createStringLintXmlDetectorIssue(
+                id = "BrandUsage",
+                briefDescription = "Hard-coded brand name in string",
+                explanation =
+                    """
+                    Hard-coded brand name in string. Use a variable instead.
+                    """
+                        .trimIndent(),
+            )
 
         @JvmField
-        val ISSUE_PLACEHOLDER_COMMENT = createStringLintXmlDetectorIssue(
-            id = "PlaceholderComment",
-            briefDescription = "Missing Placeholder references in string comment",
-            explanation = """
-                String comments need to document all placeholders in a string.
-            """.trimIndent(),
-        )
+        val ISSUE_PLACEHOLDER_COMMENT =
+            createStringLintXmlDetectorIssue(
+                id = "PlaceholderComment",
+                briefDescription = "Missing Placeholder references in string comment",
+                explanation =
+                    """
+                    String comments need to document all placeholders in a string.
+                    """
+                        .trimIndent(),
+            )
 
         private fun createStringLintXmlDetectorIssue(
             id: String,
             briefDescription: String,
             explanation: String,
-        ) = Issue.create(
-            id = id,
-            briefDescription = briefDescription,
-            explanation = explanation,
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            implementation = Implementation(
-                StringLintXmlDetector::class.java,
-                Scope.RESOURCE_FILE_SCOPE,
-            ),
-        )
+        ) =
+            Issue.create(
+                id = id,
+                briefDescription = briefDescription,
+                explanation = explanation,
+                category = Category.CORRECTNESS,
+                priority = 6,
+                severity = Severity.ERROR,
+                implementation =
+                    Implementation(
+                        StringLintXmlDetector::class.java,
+                        Scope.RESOURCE_FILE_SCOPE,
+                    ),
+            )
     }
 }

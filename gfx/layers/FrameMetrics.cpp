@@ -305,9 +305,7 @@ OverscrollBehaviorInfo OverscrollBehaviorInfo::FromStyleConstants(
 }
 
 bool OverscrollBehaviorInfo::operator==(
-    const OverscrollBehaviorInfo& aOther) const {
-  return mBehaviorX == aOther.mBehaviorX && mBehaviorY == aOther.mBehaviorY;
-}
+    const OverscrollBehaviorInfo& aOther) const = default;
 
 std::ostream& operator<<(std::ostream& aStream,
                          const OverscrollBehaviorInfo& aInfo) {
@@ -319,9 +317,7 @@ std::ostream& operator<<(std::ostream& aStream,
   return aStream;
 }
 
-bool OverflowInfo::operator==(const OverflowInfo& aOther) const {
-  return mOverflowX == aOther.mOverflowX && mOverflowY == aOther.mOverflowY;
-}
+bool OverflowInfo::operator==(const OverflowInfo& aOther) const = default;
 
 std::ostream& operator<<(std::ostream& aStream,
                          const ScrollMetadata& aMetadata) {

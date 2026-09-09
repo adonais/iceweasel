@@ -13,7 +13,6 @@ EXPORTS += [
 
 EXPORTS.mozilla += [
     "!GeckoProcessTypes.h",
-    "!Services.h",
     "FileLocation.h",
     "IOInterposer.h",
     "LateWriteChecks.h",
@@ -62,15 +61,11 @@ UNIFIED_SOURCES += [
     "XPCOMInit.cpp",
 ]
 
-SOURCES += ["!Services.cpp"]
-
 if CONFIG["OS_ARCH"] != "WINNT":
     SOURCES += [
         "NSPRInterposer.cpp",
     ]
 
-GeneratedFile("Services.cpp", script="Services.py", entry_point="services_cpp")
-GeneratedFile("Services.h", script="Services.py", entry_point="services_h")
 GeneratedFile(
     "GeckoProcessTypes.h",
     script="gen_process_types.py",

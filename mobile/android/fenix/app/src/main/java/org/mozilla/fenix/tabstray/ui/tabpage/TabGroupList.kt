@@ -51,48 +51,47 @@ fun TabGroupList(
     onDeleteTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
 ) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface),
         contentAlignment = Alignment.TopCenter,
     ) {
         LazyColumn(
-            modifier = modifier
-                .width(FirefoxTheme.layout.size.containerMaxWidth)
-                .padding(
-                    start = FirefoxTheme.layout.space.dynamic200,
-                    top = FirefoxTheme.layout.space.dynamic200,
-                    end = FirefoxTheme.layout.space.dynamic200,
-                ),
+            modifier =
+                modifier
+                    .width(FirefoxTheme.layout.size.containerMaxWidth)
+                    .padding(
+                        start = FirefoxTheme.layout.space.dynamic200,
+                        top = FirefoxTheme.layout.space.dynamic200,
+                        end = FirefoxTheme.layout.space.dynamic200,
+                    ),
             verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static25),
         ) {
             itemsIndexed(
                 items = groups,
                 key = { _, group -> group.id },
             ) { index, group ->
-                val selectionState = TabsTrayItemSelectionState(
-                    isFocused = group.isFocused,
-                )
-                val tabShapeInfo = when {
-                    groups.size == 1 -> TabListShapeInfo(TabListSingleItemShape, true)
-                    index == 0 -> TabListShapeInfo(TabListFirstItemShape, true)
-                    index == groups.lastIndex -> TabListShapeInfo(TabListLastItemShape, true)
-                    else -> TabListShapeInfo(TabListBorderMiddleItemShape, false)
-                }
+                val selectionState = TabsTrayItemSelectionState(isFocused = group.isFocused)
+                val tabShapeInfo =
+                    when {
+                        groups.size == 1 -> TabListShapeInfo(TabListSingleItemShape, true)
+                        index == 0 -> TabListShapeInfo(TabListFirstItemShape, true)
+                        index == groups.lastIndex -> TabListShapeInfo(TabListLastItemShape, true)
+                        else -> TabListShapeInfo(TabListBorderMiddleItemShape, false)
+                    }
 
                 TabGroupRow(
                     tabGroup = group,
                     onClick = { onTabGroupClick(group) },
-                    modifier = Modifier
-                        .tabListItemShapeStyling(
-                            tabShapeInfo = tabShapeInfo,
-                            selectionState = TabsTrayItemSelectionState(
-                                isFocused = group.isFocused,
-                                multiSelectEnabled = false,
-                                focusEnabled = true,
-                            ),
-                        )
-                        .background(MaterialTheme.colorScheme.surfaceBright),
+                    modifier =
+                        Modifier.tabListItemShapeStyling(
+                                tabShapeInfo = tabShapeInfo,
+                                selectionState =
+                                    TabsTrayItemSelectionState(
+                                        isFocused = group.isFocused,
+                                        multiSelectEnabled = false,
+                                        focusEnabled = true,
+                                    ),
+                            )
+                            .background(MaterialTheme.colorScheme.surfaceBright),
                     selectionState = selectionState,
                     trailingContent = {
                         TabGroupMenuButton(
@@ -113,29 +112,29 @@ fun TabGroupList(
 @Preview(showBackground = true)
 @Composable
 private fun TabGroupListPreview() {
-    val firstGroupTabs = mutableListOf(
-        TabsTrayItem.Tab(createTab(url = "https://www.mozilla.org")),
-        TabsTrayItem.Tab(createTab(url = "https://www.mozilla.org/en-US")),
-        TabsTrayItem.Tab(createTab(url = "https://www.firefox.com")),
-    )
-    val secondGroupTabs = mutableListOf(
-        TabsTrayItem.Tab(createTab(url = "https://www.google.com")),
-    )
+    val firstGroupTabs =
+        mutableListOf(
+            TabsTrayItem.Tab(createTab(url = "https://www.mozilla.org")),
+            TabsTrayItem.Tab(createTab(url = "https://www.mozilla.org/en-US")),
+            TabsTrayItem.Tab(createTab(url = "https://www.firefox.com")),
+        )
+    val secondGroupTabs = mutableListOf(TabsTrayItem.Tab(createTab(url = "https://www.google.com")))
 
     FirefoxTheme {
         TabGroupList(
-            groups = listOf(
-                TabsTrayItem.TabGroup(
-                    title = "Work",
-                    theme = TabGroupTheme.Blue,
-                    tabs = firstGroupTabs,
+            groups =
+                listOf(
+                    TabsTrayItem.TabGroup(
+                        title = "Work",
+                        theme = TabGroupTheme.Blue,
+                        tabs = firstGroupTabs,
+                    ),
+                    TabsTrayItem.TabGroup(
+                        title = "Search",
+                        theme = TabGroupTheme.Purple,
+                        tabs = secondGroupTabs,
+                    ),
                 ),
-                TabsTrayItem.TabGroup(
-                    title = "Search",
-                    theme = TabGroupTheme.Purple,
-                    tabs = secondGroupTabs,
-                ),
-            ),
             onTabGroupClick = {},
             onEditTabGroupClick = {},
             onShareTabGroupClick = {},

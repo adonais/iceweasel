@@ -9,14 +9,10 @@ import mozilla.components.support.base.facts.Action
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.collect
 
-/**
- * Facts emitted for telemetry related to FxA Sync operations.
- */
+/** Facts emitted for telemetry related to FxA Sync operations. */
 class SyncFacts {
 
-    /**
-     * Specific types of telemetry items.
-     */
+    /** Specific types of telemetry items. */
     object Items {
         const val SYNC_FAILED = "sync_failed"
     }
@@ -29,12 +25,13 @@ private fun emitSyncFact(
     metadata: Map<String, Any>? = null,
 ) {
     Fact(
-        Component.SERVICE_FIREFOX_ACCOUNTS,
-        action,
-        item,
-        value,
-        metadata,
-    ).collect()
+            Component.SERVICE_FIREFOX_ACCOUNTS,
+            action,
+            item,
+            value,
+            metadata,
+        )
+        .collect()
 }
 
 internal fun emitSyncFailedFact() = emitSyncFact(Action.INTERACTION, SyncFacts.Items.SYNC_FAILED)

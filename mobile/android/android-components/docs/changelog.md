@@ -4,7 +4,22 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 155.0 (In Development)
+# 156.0 (In Development)
+* **browser-domains**
+    * ⚠️ **Breaking change**: Removed the deprecated `DomainAutoCompleteProvider` class. Use `ShippedDomainsProvider` or `CustomDomainsProvider` instead.
+* **browser-state**
+    * ⚠️ **Breaking change**: Removed `TabPartition` and `TabGroup` from `BrowserState`.
+* **feature-accounts**
+    * 🆕 Added `FxaCapability.PAIRING_V2`, which advertises `capabilities.pairingVersion` in the `fxaccounts:fxa_status` WebChannel response and enables the `fxaccounts:pair_oauth_start` WebChannel command.
+* **support-ktx**
+    * 🆕 Added `File.toSampledBitmap` and `InputStream.toSampledBitmap`, which subsample as they decode so an image is never allocated at full resolution. [Bug 2061502](https://bugzilla.mozilla.org/show_bug.cgi?id=2061502)
+    * ⚠️ **Breaking change**: `String.base64ToBitmap` now takes the target width and height, in pixels, and subsamples to suit. [Bug 2061502](https://bugzilla.mozilla.org/show_bug.cgi?id=2061502)
+* **feature-addons**, **feature-prompts**
+    * Add-on and identity credential icons are now decoded at the size they are displayed at. [Bug 2061502](https://bugzilla.mozilla.org/show_bug.cgi?id=2061502)
+* **compose-base**
+    * 🆕 Added `Modifier.debouncedToggleable`to prevent rapid successive toggles from calling `onValueChange`. [Bug 2064179](https://bugzilla.mozilla.org/show_bug.cgi?id=2064179)
+
+# 155.0
 
 # 154.0
 * **browser-icons**

@@ -21,8 +21,7 @@ import org.robolectric.shadows.ShadowToast
 @RunWith(AndroidJUnit4::class)
 class FullScreenNotificationTest {
 
-    @Mock
-    lateinit var mockGestureNavUtils: GestureNavUtils
+    @Mock lateinit var mockGestureNavUtils: GestureNavUtils
 
     @Before
     fun setup() {
@@ -37,11 +36,12 @@ class FullScreenNotificationTest {
         ActivityScenario.launch(EmptyActivity::class.java).use { scenario ->
             scenario.onActivity { activity: EmptyActivity ->
                 FullScreenNotificationToast(
-                    activity,
-                    "gesture",
-                    "button",
-                    mockGestureNavUtils,
-                ).show()
+                        activity,
+                        "gesture",
+                        "button",
+                        mockGestureNavUtils,
+                    )
+                    .show()
                 assertTrue(ShadowToast.showedToast("button"))
             }
         }
@@ -53,11 +53,12 @@ class FullScreenNotificationTest {
         ActivityScenario.launch(EmptyActivity::class.java).use { scenario ->
             scenario.onActivity { activity: EmptyActivity ->
                 FullScreenNotificationToast(
-                    activity,
-                    "gesture",
-                    "button",
-                    mockGestureNavUtils,
-                ).show()
+                        activity,
+                        "gesture",
+                        "button",
+                        mockGestureNavUtils,
+                    )
+                    .show()
                 assertTrue(ShadowToast.showedToast("gesture"))
             }
         }

@@ -6,9 +6,7 @@ package org.mozilla.fenix
 
 import mozilla.components.service.pocket.PocketStory.ContentRecommendation
 
-/**
- * Utility file for providing shared functions that are used across multiple test files.
- */
+/** Utility file for providing shared functions that are used across multiple test files. */
 object TestUtils {
 
     /**
@@ -16,9 +14,7 @@ object TestUtils {
      *
      * @param limit Number of [ContentRecommendation]s to create.
      */
-    fun getFakeContentRecommendations(
-        limit: Int = 1,
-    ): List<ContentRecommendation> {
+    fun getFakeContentRecommendations(limit: Int = 1): List<ContentRecommendation> {
         return mutableListOf<ContentRecommendation>().apply {
             for (index in 0 until limit) {
                 add(
@@ -36,7 +32,7 @@ object TestUtils {
                         receivedRank = index,
                         recommendedAt = index.toLong(),
                         impressions = index.toLong(),
-                    ),
+                    )
                 )
             }
         }

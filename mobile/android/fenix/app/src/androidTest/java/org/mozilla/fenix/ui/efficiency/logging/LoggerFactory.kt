@@ -14,94 +14,74 @@ import java.io.File
  * - [SummarySink]: human-readable, line-oriented log (`summary.log`)
  * - [JsonSink]: machine-readable, newline-delimited JSON (`details.jsonl`)
  *
- *  This logger is **best-effort**: any sink failure is swallowed and logged to Logcat
- *  so logging can never crash a test or mask the root failure.
+ * This logger is **best-effort**: any sink failure is swallowed and logged to Logcat so logging can never crash a test
+ * or mask the root failure.
  *
- * This class implements the [StepLogger] interface used by factories so
- * calling code does not care about concrete sinks or file layout.
+ * This class implements the [StepLogger] interface used by factories so calling code does not care about concrete sinks
+ * or file layout.
  */
 class CombinedLogger(
-    private val summary: SummarySink,
-    private val json: JsonSink,
+    private val summary: SummarySink?,
+    private val json: JsonSink?,
 ) : StepLogger {
 
     /**
-     * Executes [fn] and swallows any Throwable raised by sinks, logging a WARN.
-     * This ensures logging never interferes with test execution.
+     * Every event is the same two writes: a human line and a machine record. Both best-effort and independently
+     * guarded, because logging must never fail a test or mask the failure it was recording - and a full disk should not
+     * cost you the console narrative as well.
+     *
+     * Null sinks are the no-op logger: the case where the artifact directory could not be created.
      */
-    private fun swallow(phase: String, fn: () -> Unit) {
+    private fun emit(type: String, line: String, fields: Map<String, Any?> = emptyMap()) {
         try {
-            fn()
+            summary?.line(line)
         } catch (t: Throwable) {
-            android.util.Log.w("CombinedLogger", "Sink failure during $phase: ${t.message}", t)
+            android.util.Log.w("CombinedLogger", "summary sink failed during $type: ${t.message}", t)
+        }
+        try {
+            json?.event(mapOf("type" to type) + fields)
+        } catch (t: Throwable) {
+            android.util.Log.w("CombinedLogger", "json sink failed during $type: ${t.message}", t)
         }
     }
 
-    /** Marks the beginning of a factory suite (e.g., `FEATURE.Presence`). */
-    override fun testStart(testId: String, meta: Map<String, Any?>) {
-        swallow("testStart:summary") { summary.line("[TEST] $testId — START") }
-        swallow("testStart:json") { json.event(mapOf("type" to "testStart", "testId" to testId, "meta" to meta)) }
-    }
+    override fun testStart(testId: String, meta: Map<String, Any?>) =
+        emit("testStart", "[TEST] $testId — START", mapOf("testId" to testId, "meta" to meta))
 
-    /** Marks the end of a suite with a terminal [TestStatus]. */
-    override fun testEnd(testId: String, status: TestStatus) {
-        swallow("testEnd:summary") { summary.line("[TEST] $testId — $status") }
-        swallow("testEnd:json") { json.event(mapOf("type" to "testEnd", "testId" to testId, "status" to status.name)) }
-    }
+    override fun testEnd(testId: String, status: TestStatus) =
+        emit("testEnd", "[TEST] $testId — $status", mapOf("testId" to testId, "status" to status.name))
 
-    /** Emits a step-begin record (navigation, action, verify, etc.). */
+    // Summary only. stepEnd repeats the name and adds the outcome, so a JSON record here would
+    // double the volume of the structured stream to say nothing the next record does not.
     override fun stepStart(step: StepDescriptor) {
-        swallow("stepStart:summary") { summary.line("[STEP] ${step.name} ${step.args} — START") }
-        swallow("stepStart:json") {
-            json.event(mapOf("type" to "stepStart", "stepId" to step.id, "name" to step.name, "args" to step.args))
+        try {
+            summary?.line("[STEP] ${step.name} ${step.args} — START")
+        } catch (t: Throwable) {
+            android.util.Log.w("CombinedLogger", "summary sink failed during stepStart: ${t.message}", t)
         }
     }
 
-    /** Emits a step-end record with PASS/FAIL (and reason if failed). */
     override fun stepEnd(step: StepDescriptor, result: StepResult) {
-        val status = if (result is StepResult.Ok) "PASS" else "FAIL"
-        swallow("stepEnd:summary") { summary.line("[STEP] ${step.name} — $status") }
-        swallow("stepEnd:json") {
-            json.event(
+        val failure = result as? StepResult.Fail
+        emit(
+            "stepEnd",
+            "[STEP] ${step.name} — ${if (failure == null) "PASS" else "FAIL"}",
+            // step.args carries the verb's structured facts, including `outcome` (OK/FAIL/SKIP);
+            // the cause is the stack that the console line reduces to a single message. There is
+            // deliberately no second PASS/FAIL field: two spellings of the same thing invite a
+            // consumer to match the one that cannot express a skip.
+            step.args +
                 mapOf(
-                    "type" to "stepEnd",
                     "stepId" to step.id,
                     "name" to step.name,
-                    "result" to status,
-                    "reason" to (result as? StepResult.Fail)?.reason,
+                    "reason" to failure?.reason,
+                    "cause" to failure?.cause?.stackTraceToString(),
                 ),
-            )
-        }
+        )
     }
 
-    /** Free-form informational note. */
-    override fun info(msg: String, kv: Map<String, Any?>) {
-        swallow("info:summary") { summary.line("[INFO] $msg $kv") }
-        swallow("info:json") { json.event(mapOf("type" to "info", "msg" to msg, "kv" to kv)) }
-    }
-
-    /** Warning (non-fatal). */
-    override fun warn(msg: String, kv: Map<String, Any?>) {
-        swallow("warn:summary") { summary.line("[WARN] $msg $kv") }
-        swallow("warn:json") { json.event(mapOf("type" to "warn", "msg" to msg, "kv" to kv)) }
-    }
-
-    /** Error (non-fatal); include throwable stack trace if provided. */
-    override fun error(msg: String, kv: Map<String, Any?>, throwable: Throwable?) {
-        swallow("error:summary") { summary.line("[ERROR] $msg $kv ${throwable?.message ?: ""}") }
-        swallow("error:json") {
-            json.event(mapOf("type" to "error", "msg" to msg, "kv" to kv, "error" to (throwable?.stackTraceToString())))
-        }
-    }
-
-    /**
-     * Attaches a screenshot path to both sinks so consumers
-     * (humans + machines) can correlate imagery with a step.
-     */
-    override fun attachScreenshot(step: StepDescriptor, path: String) {
-        swallow("screenshot:summary") { summary.line("[SHOT] ${step.name} → $path") }
-        swallow("screenshot:json") { json.event(mapOf("type" to "screenshot", "stepId" to step.id, "path" to path)) }
-    }
+    override fun record(type: String, fields: Map<String, Any?>) =
+        emit(type, "[${type.uppercase()}] " + fields.entries.joinToString(" ") { "${it.key}=${it.value}" }, fields)
 }
 
 /**
@@ -121,14 +101,12 @@ object LoggerFactory {
     /**
      * Create a [StepLogger] and initialize the artifacts root for this run.
      *
-     * The method prefers external app storage, then falls back to internal storage,
-     * and finally to an internal fallback directory if needed. If sink setup fails,
-     * a **no-op** logger is returned so tests continue to run.
+     * The method prefers external app storage, then falls back to internal storage, and finally to an internal fallback
+     * directory if needed. If sink setup fails, a **no-op** logger is returned so tests continue to run.
      *
-     * @param runId Optional run identifier used as the artifacts directory name (sanitized).
-     *              Defaults to current epoch millis for uniqueness.
-     * @param ctx Optional Android context; defaults to instrumentation target context
-     *            via [InstrumentationRegistry].
+     * @param runId Optional run identifier used as the artifacts directory name (sanitized). Defaults to current epoch
+     *   millis for uniqueness.
+     * @param ctx Optional Android context; defaults to instrumentation target context via [InstrumentationRegistry].
      */
     fun create(
         runId: String = System.currentTimeMillis().toString(),
@@ -137,43 +115,22 @@ object LoggerFactory {
         val appCtx = ctx ?: InstrumentationRegistry.getInstrumentation().targetContext
         val safeRunId = runId.replace("""[^\w.\-]+""".toRegex(), "_")
 
-        // Choose a base storage root (prefer external, fall back to internal)
-        val externalBase: File? = try {
-            appCtx.getExternalFilesDir(null)
-        } catch (_: Throwable) {
-            null
-        }
-        val internalBase: File = appCtx.filesDir
-
-        // Try external/artifacts/<runId>, else internal/artifacts/<runId>, else internal fallback.
-        val candidateRoots = sequenceOf(
-            (externalBase ?: internalBase) to "preferred",
-            internalBase to "internal",
-        ).map { (base, label) ->
-            val dir = File(base, "artifacts/$safeRunId")
-            label to dir
-        }.toList()
-
-        val root: File = run {
-            var chosen: File? = null
-            for ((label, dir) in candidateRoots) {
-                try {
-                    if (dir.exists() || dir.mkdirs()) {
-                        android.util.Log.i("LoggerFactory", "Artifacts root: [$label] ${dir.absolutePath}")
-                        chosen = dir
-                        break
-                    } else {
-                        android.util.Log.w("LoggerFactory", "mkdirs failed: ${dir.absolutePath}")
-                    }
-                } catch (t: Throwable) {
-                    android.util.Log.w("LoggerFactory", "Failed creating ${dir.absolutePath}: ${t.message}", t)
-                }
-            }
-            chosen ?: File(internalBase, "artifacts/_fallback_${System.currentTimeMillis()}").apply {
-                mkdirs()
-                android.util.Log.w("LoggerFactory", "Using fallback artifacts root: $absolutePath")
-            }
-        }
+        // Prefer external app storage so the artifacts can be pulled off the device without root.
+        val candidates =
+            listOfNotNull(
+                runCatching { appCtx.getExternalFilesDir(null) }.getOrNull(),
+                appCtx.filesDir,
+            )
+        val root =
+            candidates
+                .asSequence()
+                .map { File(it, "artifacts/$safeRunId") }
+                .firstOrNull { dir ->
+                    runCatching { dir.exists() || dir.mkdirs() }
+                        .onFailure { android.util.Log.w("LoggerFactory", "mkdirs failed: ${dir.absolutePath}", it) }
+                        .getOrDefault(false)
+                } ?: File(appCtx.filesDir, "artifacts/_fallback_$safeRunId").apply { mkdirs() }
+        android.util.Log.i("LoggerFactory", "Artifacts root: ${root.absolutePath}")
 
         // Initialize artifact manager safely
         try {
@@ -194,15 +151,6 @@ object LoggerFactory {
         }
     }
 
-    /** Minimal logger that never writes; used when sinks cannot be initialized. */
-    private fun noOpLogger(): StepLogger = object : StepLogger {
-        override fun testStart(testId: String, meta: Map<String, Any?>) {}
-        override fun testEnd(testId: String, status: TestStatus) {}
-        override fun stepStart(step: StepDescriptor) {}
-        override fun stepEnd(step: StepDescriptor, result: StepResult) {}
-        override fun info(msg: String, kv: Map<String, Any?>) {}
-        override fun warn(msg: String, kv: Map<String, Any?>) {}
-        override fun error(msg: String, kv: Map<String, Any?>, throwable: Throwable?) {}
-        override fun attachScreenshot(step: StepDescriptor, path: String) {}
-    }
+    /** Writes nowhere; used when the artifact directory or the sinks could not be created. */
+    private fun noOpLogger(): StepLogger = CombinedLogger(null, null)
 }

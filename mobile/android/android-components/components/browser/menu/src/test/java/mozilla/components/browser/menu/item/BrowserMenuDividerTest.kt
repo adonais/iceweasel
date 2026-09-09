@@ -36,12 +36,12 @@ class BrowserMenuDividerTest {
         )
 
         assertEquals(
-            DividerMenuCandidate(
-                containerStyle = ContainerStyle(isVisible = true),
-            ),
-            BrowserMenuDivider().apply {
-                visible = { true }
-            }.asCandidate(mock()),
+            DividerMenuCandidate(containerStyle = ContainerStyle(isVisible = true)),
+            BrowserMenuDivider()
+                .apply {
+                    visible = { true }
+                }
+                .asCandidate(mock()),
         )
     }
 }

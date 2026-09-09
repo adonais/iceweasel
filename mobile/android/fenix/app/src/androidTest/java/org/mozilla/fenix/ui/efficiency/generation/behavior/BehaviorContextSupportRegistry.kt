@@ -15,24 +15,23 @@ data class BehaviorContextSupportDecision(
 
 object BehaviorContextSupportRegistry {
 
-    fun evaluate(
-        context: BehaviorContextVariant,
-    ): BehaviorContextSupportDecision {
-        val unsupported = context.values.entries.mapNotNull { (key, value) ->
-            val spec = BehaviorContextManifest.find(key, value)
+    fun evaluate(context: BehaviorContextVariant): BehaviorContextSupportDecision {
+        val unsupported =
+            context.values.entries.mapNotNull { (key, value) ->
+                val spec = BehaviorContextManifest.find(key, value)
 
-            when {
-                spec == null -> {
-                    "$key=$value is not declared in BehaviorContextManifest"
+                when {
+                    spec == null -> {
+                        "$key=$value is not declared in BehaviorContextManifest"
+                    }
+
+                    spec.status != BehaviorContextStatus.IMPLEMENTED -> {
+                        "${spec.id} is ${spec.status}: ${spec.reason}"
+                    }
+
+                    else -> null
                 }
-
-                spec.status != BehaviorContextStatus.IMPLEMENTED -> {
-                    "${spec.id} is ${spec.status}: ${spec.reason}"
-                }
-
-                else -> null
             }
-        }
 
         if (unsupported.isEmpty()) {
             return BehaviorContextSupportDecision.Supported

@@ -8,13 +8,13 @@ import android.content.Context
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 class LoginExceptionDaoTest {
     private val context: Context
@@ -24,8 +24,7 @@ class LoginExceptionDaoTest {
     private lateinit var loginExceptionDao: LoginExceptionDao
     private lateinit var executor: ExecutorService
 
-    @get:Rule
-    var instantTaskExecutorRule = InstantTaskExecutorRule()
+    @get:Rule var instantTaskExecutorRule = InstantTaskExecutorRule()
 
     @Before
     fun setUp() {
@@ -42,11 +41,10 @@ class LoginExceptionDaoTest {
 
     @Test
     fun testAddingLoginException() {
-        val exception = LoginExceptionEntity(
-            origin = "mozilla.org",
-        ).also {
-            it.id = loginExceptionDao.insertLoginException(it)
-        }
+        val exception =
+            LoginExceptionEntity(origin = "mozilla.org").also {
+                it.id = loginExceptionDao.insertLoginException(it)
+            }
 
         val loginExceptionsList = loginExceptionDao.getLoginExceptionsList()
 
@@ -56,17 +54,15 @@ class LoginExceptionDaoTest {
 
     @Test
     fun testRemovingLoginException() {
-        val exception1 = LoginExceptionEntity(
-            origin = "mozilla.org",
-        ).also {
-            it.id = loginExceptionDao.insertLoginException(it)
-        }
+        val exception1 =
+            LoginExceptionEntity(origin = "mozilla.org").also {
+                it.id = loginExceptionDao.insertLoginException(it)
+            }
 
-        val exception2 = LoginExceptionEntity(
-            origin = "firefox.com",
-        ).also {
-            it.id = loginExceptionDao.insertLoginException(it)
-        }
+        val exception2 =
+            LoginExceptionEntity(origin = "firefox.com").also {
+                it.id = loginExceptionDao.insertLoginException(it)
+            }
 
         loginExceptionDao.deleteLoginException(exception1)
 

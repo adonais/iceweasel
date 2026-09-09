@@ -18,13 +18,15 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class DohSettingsStoreIntegrationTest {
 
-    private val settingsProvider = FakeDohSettingsProvider(
-        exceptionsList = listOf(
-            "example1.com",
-            "example2.com",
-            "example3.com",
-        ),
-    )
+    private val settingsProvider =
+        FakeDohSettingsProvider(
+            exceptionsList =
+                listOf(
+                    "example1.com",
+                    "example2.com",
+                    "example3.com",
+                )
+        )
     private lateinit var navController: NavController
     private lateinit var middleware: DohSettingsMiddleware
 
@@ -32,12 +34,13 @@ class DohSettingsStoreIntegrationTest {
     fun setUp() {
         navController = mockk(relaxed = true)
 
-        middleware = DohSettingsMiddleware(
-            getNavController = { navController },
-            getSettingsProvider = { settingsProvider },
-            openUrlInBrowser = { },
-            exitDohSettings = { },
-        )
+        middleware =
+            DohSettingsMiddleware(
+                getNavController = { navController },
+                getSettingsProvider = { settingsProvider },
+                openUrlInBrowser = {},
+                exitDohSettings = {},
+            )
     }
 
     @Test
@@ -48,13 +51,14 @@ class DohSettingsStoreIntegrationTest {
         store.dispatch(Init)
 
         // Then assert that the UI state contains expected state
-        val expectedState = DohSettingsState(
-            allProtectionLevels = settingsProvider.getProtectionLevels(),
-            selectedProtectionLevel = settingsProvider.getSelectedProtectionLevel(),
-            providers = settingsProvider.getDefaultProviders(),
-            selectedProvider = settingsProvider.getSelectedProvider(),
-            exceptionsList = settingsProvider.getExceptions(),
-        )
+        val expectedState =
+            DohSettingsState(
+                allProtectionLevels = settingsProvider.getProtectionLevels(),
+                selectedProtectionLevel = settingsProvider.getSelectedProtectionLevel(),
+                providers = settingsProvider.getDefaultProviders(),
+                selectedProvider = settingsProvider.getSelectedProvider(),
+                exceptionsList = settingsProvider.getExceptions(),
+            )
 
         assertEquals(expectedState, store.state)
     }
@@ -67,7 +71,7 @@ class DohSettingsStoreIntegrationTest {
             DohSettingsRootAction.DohOptionSelected(
                 protectionLevel = ProtectionLevel.Off,
                 provider = Provider.BuiltIn(url = "dummy.dummy", name = "Dummy"),
-            ),
+            )
         )
 
         // Then verify selectedProtectionLevel is Off in the state
@@ -77,9 +81,7 @@ class DohSettingsStoreIntegrationTest {
         )
 
         // Then verify selectedProvider is null in the state
-        assertNull(
-            store.state.selectedProvider,
-        )
+        assertNull(store.state.selectedProvider)
     }
 
     @Test
@@ -90,7 +92,7 @@ class DohSettingsStoreIntegrationTest {
             DohSettingsRootAction.DohOptionSelected(
                 protectionLevel = ProtectionLevel.Default,
                 provider = Provider.BuiltIn(url = "dummy.dummy", name = "Dummy"),
-            ),
+            )
         )
 
         // Then verify selectedProtectionLevel is Default in the state
@@ -100,9 +102,7 @@ class DohSettingsStoreIntegrationTest {
         )
 
         // Then verify selectedProvider is null in the state
-        assertNull(
-            store.state.selectedProvider,
-        )
+        assertNull(store.state.selectedProvider)
     }
 
     @Test
@@ -113,7 +113,7 @@ class DohSettingsStoreIntegrationTest {
             DohSettingsRootAction.DohOptionSelected(
                 protectionLevel = ProtectionLevel.Increased,
                 provider = settingsProvider.getBuiltInProvider(),
-            ),
+            )
         )
 
         // Then verify selectedProtectionLevel is Increased in the state
@@ -137,7 +137,7 @@ class DohSettingsStoreIntegrationTest {
             DohSettingsRootAction.DohOptionSelected(
                 protectionLevel = ProtectionLevel.Max,
                 provider = settingsProvider.getBuiltInProvider(),
-            ),
+            )
         )
 
         // Then verify selectedProtectionLevel is Max in the state
@@ -157,14 +157,10 @@ class DohSettingsStoreIntegrationTest {
     fun `WHEN CustomClicked action is dispatched, THEN the custom provider dialog should be on`() {
         val store = middleware.makeStore()
 
-        store.dispatch(
-            DohSettingsRootAction.CustomClicked,
-        )
+        store.dispatch(DohSettingsRootAction.CustomClicked)
 
         // Then the custom provider dialog is on
-        assertTrue(
-            store.state.isCustomProviderDialogOn,
-        )
+        assertTrue(store.state.isCustomProviderDialogOn)
     }
 
     @Test
@@ -179,7 +175,7 @@ class DohSettingsStoreIntegrationTest {
             DohSettingsRootAction.DohCustomProviderDialogAction.AddCustomClicked(
                 customProvider = settingsProvider.getCustomProvider(),
                 url = newUrl,
-            ),
+            )
         )
 
         // Then verify CustomProviderErrorState is "Valid"
@@ -189,9 +185,7 @@ class DohSettingsStoreIntegrationTest {
         )
 
         // Then the dialog should be off
-        assertFalse(
-            store.state.isCustomProviderDialogOn,
-        )
+        assertFalse(store.state.isCustomProviderDialogOn)
 
         // The custom provider url in the state must be updated
         assertEquals(
@@ -209,7 +203,7 @@ class DohSettingsStoreIntegrationTest {
             DohSettingsRootAction.DohCustomProviderDialogAction.AddCustomClicked(
                 customProvider = settingsProvider.getCustomProvider(),
                 url = "http://foo.bar",
-            ),
+            )
         )
 
         // Then verify the CustomProviderErrorState is a "NonHttps" error
@@ -219,9 +213,7 @@ class DohSettingsStoreIntegrationTest {
         )
 
         // Then the dialog should still be on
-        assertTrue(
-            store.state.isCustomProviderDialogOn,
-        )
+        assertTrue(store.state.isCustomProviderDialogOn)
     }
 
     @Test
@@ -233,7 +225,7 @@ class DohSettingsStoreIntegrationTest {
             DohSettingsRootAction.DohCustomProviderDialogAction.AddCustomClicked(
                 customProvider = settingsProvider.getCustomProvider(),
                 url = "https://@.bar",
-            ),
+            )
         )
 
         // Then verify the CustomProviderErrorState is an "Invalid" error
@@ -243,9 +235,7 @@ class DohSettingsStoreIntegrationTest {
         )
 
         // Then the dialog should still be on
-        assertTrue(
-            store.state.isCustomProviderDialogOn,
-        )
+        assertTrue(store.state.isCustomProviderDialogOn)
     }
 
     @Test
@@ -256,16 +246,10 @@ class DohSettingsStoreIntegrationTest {
         val exceptionUrl = settingsProvider.getExceptions().first()
 
         // When RemoveClicked is dispatched with an exception site
-        store.dispatch(
-            ExceptionsAction.RemoveClicked(
-                url = exceptionUrl,
-            ),
-        )
+        store.dispatch(ExceptionsAction.RemoveClicked(url = exceptionUrl))
 
         // Then verify the exceptionUrl is removed from the exceptions
-        assertFalse(
-            exceptionUrl in settingsProvider.getExceptions(),
-        )
+        assertFalse(exceptionUrl in settingsProvider.getExceptions())
     }
 
     @Test
@@ -275,16 +259,10 @@ class DohSettingsStoreIntegrationTest {
         // An exception that does not exist
         val exceptionUrl = "foo.bar"
         val prevExceptionsList = settingsProvider.getExceptions().toList()
-        assertFalse(
-            exceptionUrl in prevExceptionsList,
-        )
+        assertFalse(exceptionUrl in prevExceptionsList)
 
         // When RemoveClicked is dispatched with an exception site but it does not exist
-        store.dispatch(
-            ExceptionsAction.RemoveClicked(
-                url = exceptionUrl,
-            ),
-        )
+        store.dispatch(ExceptionsAction.RemoveClicked(url = exceptionUrl))
 
         // Then nothing should happen
         assertEquals(
@@ -297,34 +275,22 @@ class DohSettingsStoreIntegrationTest {
     fun `WHEN RemoveAllClicked is dispatched, THEN exceptions should become empty`() {
         val store = middleware.makeStore()
 
-        store.dispatch(
-            ExceptionsAction.RemoveAllClicked,
-        )
+        store.dispatch(ExceptionsAction.RemoveAllClicked)
 
         // Then exceptions should become empty
-        assertTrue(
-            settingsProvider.getExceptions().isEmpty(),
-        )
+        assertTrue(settingsProvider.getExceptions().isEmpty())
     }
 
     @Test
     fun `WHEN RemoveAllClicked is dispatched twice (emptied list is emptied again), THEN exceptions should stay empty`() {
         val store = middleware.makeStore()
 
-        store.dispatch(
-            ExceptionsAction.RemoveAllClicked,
-        )
-        assertTrue(
-            settingsProvider.getExceptions().isEmpty(),
-        )
-        store.dispatch(
-            ExceptionsAction.RemoveAllClicked,
-        )
+        store.dispatch(ExceptionsAction.RemoveAllClicked)
+        assertTrue(settingsProvider.getExceptions().isEmpty())
+        store.dispatch(ExceptionsAction.RemoveAllClicked)
 
         // Then exceptions should become empty
-        assertTrue(
-            settingsProvider.getExceptions().isEmpty(),
-        )
+        assertTrue(settingsProvider.getExceptions().isEmpty())
     }
 
     @Test
@@ -332,15 +298,9 @@ class DohSettingsStoreIntegrationTest {
         val store = middleware.makeStore()
 
         // A url with an invalid character
-        store.dispatch(
-            ExceptionsAction.SaveClicked(
-                url = "@e.com",
-            ),
-        )
+        store.dispatch(ExceptionsAction.SaveClicked(url = "@e.com"))
 
-        assertTrue(
-            store.state.isUserExceptionValid,
-        )
+        assertTrue(store.state.isUserExceptionValid)
     }
 
     @Test
@@ -350,16 +310,10 @@ class DohSettingsStoreIntegrationTest {
         // An exception that does not exist
         val exceptionUrl = "foo.bar"
         val prevExceptionsList = settingsProvider.getExceptions().toList()
-        assertFalse(
-            exceptionUrl in prevExceptionsList,
-        )
+        assertFalse(exceptionUrl in prevExceptionsList)
 
         // When SaveClicked is dispatched with an exception site that does not exist
-        store.dispatch(
-            ExceptionsAction.SaveClicked(
-                url = exceptionUrl,
-            ),
-        )
+        store.dispatch(ExceptionsAction.SaveClicked(url = exceptionUrl))
 
         // exceptionUrl is appended to the exceptions
         assertEquals(
@@ -375,11 +329,7 @@ class DohSettingsStoreIntegrationTest {
         val prevExceptionsList = settingsProvider.getExceptions().toList()
 
         // When SaveClicked is dispatched with an exception site that already exists
-        store.dispatch(
-            ExceptionsAction.SaveClicked(
-                url = prevExceptionsList.first(),
-            ),
-        )
+        store.dispatch(ExceptionsAction.SaveClicked(url = prevExceptionsList.first()))
 
         // Then nothing should happen to the exceptions
         assertEquals(
@@ -388,10 +338,9 @@ class DohSettingsStoreIntegrationTest {
         )
     }
 
-    private fun DohSettingsMiddleware.makeStore(
-        initialState: DohSettingsState = DohSettingsState(),
-    ) = DohSettingsStore(
-        initialState = initialState,
-        middleware = listOf(this),
-    )
+    private fun DohSettingsMiddleware.makeStore(initialState: DohSettingsState = DohSettingsState()) =
+        DohSettingsStore(
+            initialState = initialState,
+            middleware = listOf(this),
+        )
 }

@@ -8,13 +8,14 @@ import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.state.availableSearchEngines
 
-/**
- * The list of search engine shortcuts to be available for quick search menu.
- */
+/** The list of search engine shortcuts to be available for quick search menu. */
 val SearchState.searchEngineShortcuts: List<SearchEngine>
-    get() = (
-        regionSearchEngines + additionalSearchEngines + availableSearchEngines +
-            customSearchEngines + applicationSearchEngines
-        ).filter {
-        !disabledSearchEngineIds.contains(it.id)
-    }
+    get() =
+        (regionSearchEngines +
+                additionalSearchEngines +
+                availableSearchEngines +
+                customSearchEngines +
+                applicationSearchEngines)
+            .filter {
+                !disabledSearchEngineIds.contains(it.id)
+            }

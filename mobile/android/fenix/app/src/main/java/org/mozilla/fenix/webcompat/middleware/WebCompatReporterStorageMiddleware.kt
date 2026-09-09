@@ -19,9 +19,8 @@ import org.mozilla.fenix.webcompat.store.WebCompatReporterState
  *
  * @property appStore [AppStore] used to persist the [WebCompatState].
  */
-class WebCompatReporterStorageMiddleware(
-    val appStore: AppStore,
-) : Middleware<WebCompatReporterState, WebCompatReporterAction> {
+class WebCompatReporterStorageMiddleware(val appStore: AppStore) :
+    Middleware<WebCompatReporterState, WebCompatReporterAction> {
 
     override fun invoke(
         store: Store<WebCompatReporterState, WebCompatReporterAction>,
@@ -51,31 +50,29 @@ class WebCompatReporterStorageMiddleware(
                     }
                 }
             }
-            WebCompatReporterAction.LearnMoreClicked,
-            -> appStore.dispatch(
-                WebCompatAction.WebCompatStateUpdated(
-                    newState = store.state.toPersistedState(),
-                ),
-            )
+            WebCompatReporterAction.LearnMoreClicked ->
+                appStore.dispatch(WebCompatAction.WebCompatStateUpdated(newState = store.state.toPersistedState()))
             WebCompatReporterAction.CancelClicked -> appStore.dispatch(WebCompatAction.WebCompatStateReset)
         }
     }
 }
 
 @VisibleForTesting
-internal fun WebCompatState.toReporterState() = WebCompatReporterState(
-    tabUrl = tabUrl,
-    enteredUrl = enteredUrl,
-    reason = reason?.let { WebCompatReporterState.BrokenSiteReason.valueOf(it) },
-    problemDescription = problemDescription,
-    includeEtpBlockedUrls = includeEtpBlockedUrls,
-)
+internal fun WebCompatState.toReporterState() =
+    WebCompatReporterState(
+        tabUrl = tabUrl,
+        enteredUrl = enteredUrl,
+        reason = reason?.let { WebCompatReporterState.BrokenSiteReason.valueOf(it) },
+        problemDescription = problemDescription,
+        includeEtpBlockedUrls = includeEtpBlockedUrls,
+    )
 
 @VisibleForTesting
-internal fun WebCompatReporterState.toPersistedState() = WebCompatState(
-    tabUrl = tabUrl,
-    enteredUrl = enteredUrl.ifEmpty { tabUrl }, // do not save the URL is the text field is empty
-    reason = reason?.name,
-    problemDescription = problemDescription,
-    includeEtpBlockedUrls = includeEtpBlockedUrls,
-)
+internal fun WebCompatReporterState.toPersistedState() =
+    WebCompatState(
+        tabUrl = tabUrl,
+        enteredUrl = enteredUrl.ifEmpty { tabUrl }, // do not save the URL is the text field is empty
+        reason = reason?.name,
+        problemDescription = problemDescription,
+        includeEtpBlockedUrls = includeEtpBlockedUrls,
+    )

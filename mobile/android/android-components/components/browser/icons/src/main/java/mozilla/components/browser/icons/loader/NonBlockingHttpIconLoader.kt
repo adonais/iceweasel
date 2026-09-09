@@ -12,14 +12,13 @@ import mozilla.components.browser.icons.IconRequest
 import mozilla.components.concept.fetch.Client
 
 /**
- * [HttpIconLoader] variation that will immediately resolve a [load] request with [IconLoader.Result.NoResult]
- * and then continue to actually download the icon in the background finally calling [loadCallback]
- * with the actual result and details about the request.
+ * [HttpIconLoader] variation that will immediately resolve a [load] request with [IconLoader.Result.NoResult] and then
+ * continue to actually download the icon in the background finally calling [loadCallback] with the actual result and
+ * details about the request.
  *
  * @property httpClient [Client] used for downloading the icon.
- * @property scope [CoroutineScope] used for downloading the icon in the background.
- * Defaults to a new scope using [Dispatchers.IO] for allowing multiple requests to block their threads
- * while waiting for the download to complete.
+ * @property scope [CoroutineScope] used for downloading the icon in the background. Defaults to a new scope using
+ *   [Dispatchers.IO] for allowing multiple requests to block their threads while waiting for the download to complete.
  * @property loadCallback Callback for when the network icon finished downloading or an error or timeout occurred.
  */
 class NonBlockingHttpIconLoader(

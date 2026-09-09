@@ -3,8 +3,8 @@
 
 "use strict";
 
-const { PdfjsParent } = ChromeUtils.importESModule(
-  "resource://pdf.js/PdfjsParent.sys.mjs"
+const { PdfJsParent } = ChromeUtils.importESModule(
+  "resource://pdf.js/PdfJsParent.sys.mjs"
 );
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
@@ -175,7 +175,7 @@ add_task(async function test_sandboxed_iframe_blocks_download() {
       // Spy on `_saveURL` to prove the chrome-side `ChromeActions.download`
       // guard rejected the request before it was forwarded to the parent
       // process.
-      const spy = sinon.spy(PdfjsParent.prototype, "_saveURL");
+      const spy = sinon.spy(PdfJsParent.prototype, "_saveURL");
       try {
         info("Forging a download request from inside the sandboxed iframe...");
         await forgeDownloadAndExpectBlock(iframeBC);
@@ -237,7 +237,7 @@ add_task(async function test_sandbox_allow_downloads_permits_download() {
       const { filePickerShown, downloadFinished, cleanup } =
         await awaitNextDownload();
 
-      const spy = sinon.spy(PdfjsParent.prototype, "_saveURL");
+      const spy = sinon.spy(PdfJsParent.prototype, "_saveURL");
       try {
         info("Triggering a download from inside the allow-downloads iframe...");
         await SpecialPowers.spawn(iframeBC, [], async () => {
@@ -300,7 +300,7 @@ add_task(
         const { filePickerShown, downloadFinished, cleanup } =
           await awaitNextDownload();
 
-        const spy = sinon.spy(PdfjsParent.prototype, "_saveURL");
+        const spy = sinon.spy(PdfJsParent.prototype, "_saveURL");
         try {
           info(
             "Triggering a download in a top-level blob PDF whose policy was " +
@@ -355,7 +355,7 @@ add_task(async function test_top_level_pdf_supports_download() {
       const { filePickerShown, downloadFinished, cleanup } =
         await awaitNextDownload();
 
-      const spy = sinon.spy(PdfjsParent.prototype, "_saveURL");
+      const spy = sinon.spy(PdfJsParent.prototype, "_saveURL");
       try {
         info("Clicking the download button at top-level...");
         await SpecialPowers.spawn(browser, [], () => {

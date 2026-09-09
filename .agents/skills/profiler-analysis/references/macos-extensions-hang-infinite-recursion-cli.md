@@ -9,8 +9,8 @@ Profile: https://profiler.firefox.com/public/jek6z1sbxtybk77ptwk79yna774r6ab6g2t
 ## Load the profile and get an overview
 
 ```
-profiler-cli load https://profiler.firefox.com/public/jek6z1sbxtybk77ptwk79yna774r6ab6g2t8n6g
-profiler-cli profile info
+profiler-cli load https://profiler.firefox.com/public/jek6z1sbxtybk77ptwk79yna774r6ab6g2t8n6g --session ext-recursion
+profiler-cli profile info --session ext-recursion
 ```
 
 ```
@@ -35,8 +35,8 @@ The story is immediate: `p-8: WebExtensions` has 4054ms of CPU in a 5.46-second 
 ## Check what the WebExtensions thread is doing
 
 ```
-profiler-cli thread select t-13
-profiler-cli thread samples
+profiler-cli thread select t-13 --session ext-recursion
+profiler-cli thread samples --session ext-recursion
 ```
 
 ```
@@ -93,7 +93,7 @@ The self-time breakdown is also telling: the top self-time functions are all dee
 ## Confirm the infinite recursion with the top-down tree
 
 ```
-profiler-cli thread samples-top-down --max-lines 40
+profiler-cli thread samples-top-down --max-lines 40 --session ext-recursion
 ```
 
 ```
@@ -135,8 +135,8 @@ The recursion cycle (`jj → getItem → getItem → RjA → vj → YG → og �
 To strip away the engine entry path and focus only on the `isEnabled` subtree, use `filter push --root-at`:
 
 ```
-profiler-cli filter push --root-at f-18053
-profiler-cli thread samples-top-down --max-lines 25
+profiler-cli filter push --root-at f-18053 --session ext-recursion
+profiler-cli thread samples-top-down --max-lines 25 --session ext-recursion
 ```
 
 ```
@@ -163,7 +163,7 @@ f-18053. 1Password!Kq/this.isEnabled [total: 100.0%, self: 0.0%]
 With the engine frames gone, 100% of all samples are inside the `isEnabled` call, and every single sample is the same recurring cycle. This is the clearest possible view of the recursion.
 
 ```
-profiler-cli filter clear
+profiler-cli filter clear --session ext-recursion
 ```
 
 ---
@@ -171,7 +171,7 @@ profiler-cli filter clear
 ## GC pressure from the error flood
 
 ```
-profiler-cli thread markers --category "GC / CC" --min-duration 50
+profiler-cli thread markers --category "GC / CC" --min-duration 50 --session ext-recursion
 ```
 
 ```
@@ -183,7 +183,7 @@ By Name:
 ```
 
 ```
-profiler-cli thread markers --category "GC / CC"
+profiler-cli thread markers --category "GC / CC" --session ext-recursion
 ```
 
 ```
@@ -198,7 +198,7 @@ By Name:
 Every recursive stack overflow creates a new Error object with a full JS stack trace attached. The JS heap fills rapidly with these objects. The GC response: 8 major GCs averaging 65ms each, 59 incremental slices, and 55 minor GCs. Combined that is roughly 850ms of garbage collection in 5.46 seconds, about 15% of total recording time.
 
 ```
-profiler-cli thread markers --search "Jank"
+profiler-cli thread markers --search "Jank" --session ext-recursion
 ```
 
 ```
@@ -226,5 +226,5 @@ The bottom-up tree confirms this: the top self-time function is `CompactBufferRe
 ---
 
 ```
-profiler-cli stop
+profiler-cli stop --session ext-recursion
 ```

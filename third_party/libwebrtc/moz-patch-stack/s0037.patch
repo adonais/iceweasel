@@ -15,7 +15,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/edac9d01a9ac7594f
  3 files changed, 24 insertions(+)
 
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index bf7dfad998..f0d9936f96 100644
+index d3d111cee6..dbccbbe556 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
 @@ -1139,6 +1139,16 @@ std::optional<int64_t> RtpVideoStreamReceiver2::LastReceivedKeyframePacketMs()
@@ -36,11 +36,11 @@ index bf7dfad998..f0d9936f96 100644
  RtpVideoStreamReceiver2::GetSenderReportStats() const {
    RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
 diff --git a/video/rtp_video_stream_receiver2.h b/video/rtp_video_stream_receiver2.h
-index 8aa6c56bf6..224930a17f 100644
+index 71fb67af4f..ee99c42a3f 100644
 --- a/video/rtp_video_stream_receiver2.h
 +++ b/video/rtp_video_stream_receiver2.h
-@@ -228,6 +228,12 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
-   std::optional<RtpRtcpInterface::SenderReportStats> GetSenderReportStats()
+@@ -230,6 +230,12 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
+   std::optional<RtpRtcpInterface::NonSenderRttStats> GetNonSenderRttStats()
        const;
  
 +  // Mozilla modification: VideoReceiveStream2 and friends do not surface RTCP
@@ -53,12 +53,12 @@ index 8aa6c56bf6..224930a17f 100644
    // Implements RtpVideoFrameReceiver.
    void ManageFrame(std::unique_ptr<RtpFrameObject> frame) override;
 diff --git a/video/video_receive_stream2.cc b/video/video_receive_stream2.cc
-index 7c1b81b7f8..62cd9d097e 100644
+index 2dc761a906..8698ac9db7 100644
 --- a/video/video_receive_stream2.cc
 +++ b/video/video_receive_stream2.cc
-@@ -612,6 +612,14 @@ VideoReceiveStreamInterface::Stats VideoReceiveStream2::GetStats() const {
-     stats.sender_reports_bytes_sent = rtcp_sr_stats->bytes_sent;
-     stats.sender_reports_reports_count = rtcp_sr_stats->reports_count;
+@@ -623,6 +623,14 @@ VideoReceiveStreamInterface::Stats VideoReceiveStream2::GetStats() const {
+         non_sender_rtt_stats->round_trip_time_measurements;
+     stats.total_round_trip_time = non_sender_rtt_stats->total_round_trip_time;
    }
 +
 +  // Mozilla modification: VideoReceiveStream2 and friends do not surface RTCP

@@ -67,15 +67,20 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
     // Cache shaders
     shaders.insert("cs_blur", vec!["ALPHA_TARGET".to_string(), "COLOR_TARGET".to_string()]);
 
-    shaders.insert("ps_quad_mask", vec![String::new(), "FAST_PATH".to_string()]);
+    shaders.insert("ps_quad_mask", vec![String::new(), "FAST_PATH".to_string(), "SUPERELLIPSE".to_string()]);
 
     for name in &[
         "cs_line_decoration",
-        "cs_border_segment",
-        "cs_border_solid",
         "cs_svg_filter_node",
     ] {
         shaders.insert(name, vec![String::new()]);
+    }
+
+    for name in &[
+        "cs_border_segment",
+        "cs_border_solid",
+    ] {
+        shaders.insert(name, vec![String::new(), "SUPERELLIPSE".to_string()]);
     }
 
     let mut base_prim_features = FeatureList::new();
@@ -168,7 +173,7 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
 
     shaders.insert("ps_quad_repeat", vec![base_prim_features.finish()]);
 
-    shaders.insert("ps_quad_box_shadow", vec![base_prim_features.finish()]);
+    shaders.insert("ps_quad_box_shadow", vec![base_prim_features.finish(), "SUPERELLIPSE".to_string()]);
 
     // Like ps_quad_textured, ps_quad_yuv needs per-texture-kind variants so that
     // the YUV planes are sampled with the correct sampler type.

@@ -9,6 +9,7 @@ const { updateAppInfo } = ChromeUtils.importESModule(
 
 ChromeUtils.defineESModuleGetters(this, {
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
+  AdsClient: "resource://newtab/lib/AdsClient.sys.mjs",
   ContextId: "moz-src:///browser/modules/ContextId.sys.mjs",
   actionCreators: "resource://newtab/common/Actions.mjs",
   actionTypes: "resource://newtab/common/Actions.mjs",
@@ -29,10 +30,14 @@ const PREF_IMPRESSION_ID = "browser.newtabpage.activity-stream.impressionId";
 const PREF_TELEMETRY = "browser.newtabpage.activity-stream.telemetry";
 const PREF_PRIVATE_PING_ENABLED =
   "browser.newtabpage.activity-stream.telemetry.privatePing.enabled";
-const PREF_REDACT_NEWTAB_PING_ENABLED =
-  "browser.newtabpage.activity-stream.telemetry.privatePing.redactNewtabPing.enabled";
 const PREF_IS_MERINO_FEED_EXPERIMENT =
   "browser.newtabpage.activity-stream.discoverystream.merino-feed-experiment";
+const PREF_ENDPOINTS =
+  "browser.newtabpage.activity-stream.discoverystream.endpoints";
+const PREF_UNIFIED_ADS_TILES_ENABLED =
+  "browser.newtabpage.activity-stream.unifiedAds.tiles.enabled";
+const PREF_UNIFIED_ADS_SPOCS_ENABLED =
+  "browser.newtabpage.activity-stream.unifiedAds.spocs.enabled";
 
 add_setup(async function setup() {
   do_get_profile();
@@ -1385,6 +1390,57 @@ add_task(async function test_sendPageTakeoverData_newtab_ping() {
 });
 
 add_task(
+  async function test_handleDiscoveryStreamImpressionStats_records_adsClient_impression_if_enabled() {
+    info(
+      "TelemetryFeed.handleDiscoveryStreamImpressionStats should record adsClient impression " +
+        "when enabled"
+    );
+    let sandbox = sinon.createSandbox();
+    Services.prefs.setStringPref(PREF_ENDPOINTS, "https://test.reporting.net/");
+    Services.prefs.setBoolPref(PREF_UNIFIED_ADS_SPOCS_ENABLED, true);
+
+    sandbox.stub(AdsClient, "isEnabled").returns(true);
+    const ADS_CLIENT = { recordImpression: sinon.fake.resolves() };
+    sandbox.stub(AdsClient, "getClient").returns(ADS_CLIENT);
+    sandbox.stub(AdsClient, "callbackOptions").returns({ ohttp: true });
+
+    let instance = new TelemetryFeed();
+    sandbox.replaceGetter(
+      instance,
+      "SHOW_SPONSORED_STORIES_ENABLED",
+      sinon.fake.returns(true)
+    );
+
+    await instance.onAction({
+      type: actionTypes.PREFS_INITIAL_VALUES,
+    });
+    Assert.ok(AdsClient.isEnabled.calledOnce);
+    Assert.ok(AdsClient.getClient.calledOnce);
+
+    sandbox
+      .stub(instance.sessions, "get")
+      .returns({ session_id: "decafc0ffee" });
+
+    instance.handleDiscoveryStreamImpressionStats(42, {
+      tiles: [
+        {
+          card_type: "spoc",
+          pos: 42,
+          shim: "https://test.reporting.net/",
+        },
+      ],
+    });
+
+    Assert.ok(AdsClient.callbackOptions.calledOnce);
+    Assert.ok(ADS_CLIENT.recordImpression.calledOnce);
+
+    Services.prefs.clearUserPref(PREF_UNIFIED_ADS_SPOCS_ENABLED);
+    Services.prefs.clearUserPref(PREF_ENDPOINTS);
+    sandbox.restore();
+  }
+);
+
+add_task(
   async function test_handleDiscoveryStreamImpressionStats_should_throw() {
     info(
       "TelemetryFeed.handleDiscoveryStreamImpressionStats should throw " +
@@ -1552,6 +1608,104 @@ add_task(
     let impressions = Glean.topsites.impression.testGetValue();
     Assert.ok(!impressions, "Should not have recorded any impressions");
 
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_handleTopSitesSponsoredImpressionStats_record_adsClient_impression_if_enabled() {
+    info(
+      "TelemetryFeed.handleTopSitesSponsoredImpressionStats should record an " +
+        "adsClient impression event on an impression event if enabled"
+    );
+
+    let sandbox = sinon.createSandbox();
+    Services.prefs.setStringPref(PREF_ENDPOINTS, "https://test.reporting.net/");
+    Services.prefs.setBoolPref(PREF_UNIFIED_ADS_TILES_ENABLED, true);
+
+    sandbox.stub(AdsClient, "isEnabled").returns(true);
+    const ADS_CLIENT = { recordImpression: sinon.fake.resolves() };
+    sandbox.stub(AdsClient, "getClient").returns(ADS_CLIENT);
+    sandbox.stub(AdsClient, "callbackOptions").returns({ ohttp: true });
+
+    let instance = new TelemetryFeed();
+    sandbox.replaceGetter(
+      instance,
+      "SHOW_SPONSORED_TOPSITES_ENABLED",
+      sinon.fake.returns(true)
+    );
+
+    await instance.onAction({
+      type: actionTypes.PREFS_INITIAL_VALUES,
+    });
+    Assert.ok(AdsClient.isEnabled.calledOnce);
+    Assert.ok(AdsClient.getClient.calledOnce);
+
+    await instance.handleTopSitesSponsoredImpressionStats({
+      data: {
+        type: "impression",
+        tile_id: 42,
+        source: "newtab",
+        position: 1,
+        reporting_url: "https://test.reporting.net/",
+        advertiser: "adnoid ads",
+      },
+    });
+
+    Assert.ok(AdsClient.callbackOptions.calledOnce);
+    Assert.ok(ADS_CLIENT.recordImpression.calledOnce);
+
+    Services.prefs.clearUserPref(PREF_UNIFIED_ADS_TILES_ENABLED);
+    Services.prefs.clearUserPref(PREF_ENDPOINTS);
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_handleTopSitesSponsoredImpressionStats_record_adsClient_click_if_enabled() {
+    info(
+      "TelemetryFeed.handleTopSitesSponsoredImpressionStats should record an " +
+        "adsClient impresclicksion event on an click event if enabled"
+    );
+
+    let sandbox = sinon.createSandbox();
+    Services.prefs.setStringPref(PREF_ENDPOINTS, "https://test.reporting.net/");
+    Services.prefs.setBoolPref(PREF_UNIFIED_ADS_TILES_ENABLED, true);
+
+    sandbox.stub(AdsClient, "isEnabled").returns(true);
+    const ADS_CLIENT = { recordClick: sinon.fake.resolves() };
+    sandbox.stub(AdsClient, "getClient").returns(ADS_CLIENT);
+    sandbox.stub(AdsClient, "callbackOptions").returns({ ohttp: true });
+
+    let instance = new TelemetryFeed();
+    sandbox.replaceGetter(
+      instance,
+      "SHOW_SPONSORED_TOPSITES_ENABLED",
+      sinon.fake.returns(true)
+    );
+
+    await instance.onAction({
+      type: actionTypes.PREFS_INITIAL_VALUES,
+    });
+    Assert.ok(AdsClient.isEnabled.calledOnce);
+    Assert.ok(AdsClient.getClient.calledOnce);
+
+    await instance.handleTopSitesSponsoredImpressionStats({
+      data: {
+        type: "click",
+        tile_id: 42,
+        source: "newtab",
+        position: 1,
+        reporting_url: "https://test.reporting.net/",
+        advertiser: "adnoid ads",
+      },
+    });
+
+    Assert.ok(AdsClient.callbackOptions.calledOnce);
+    Assert.ok(ADS_CLIENT.recordClick.calledOnce);
+
+    Services.prefs.clearUserPref(PREF_UNIFIED_ADS_TILES_ENABLED);
+    Services.prefs.clearUserPref(PREF_ENDPOINTS);
     sandbox.restore();
   }
 );
@@ -1928,7 +2082,6 @@ add_task(
         "top stories click"
     );
     Services.prefs.setBoolPref(PREF_PRIVATE_PING_ENABLED, false);
-    Services.prefs.setBoolPref(PREF_REDACT_NEWTAB_PING_ENABLED, false);
 
     let sandbox = sinon.createSandbox();
     let instance = new TelemetryFeed();
@@ -1956,79 +2109,11 @@ add_task(
       newtab_visit_id: SESSION_ID,
       is_sponsored: String(false),
       position: String(ACTION_POSITION),
-      corpus_item_id: "decaf-beef",
-      scheduled_corpus_item_id: "dead-beef",
-      tile_id: String(314623757745896),
+      content_redacted: String(true),
     });
 
     sandbox.restore();
     Services.prefs.clearUserPref(PREF_PRIVATE_PING_ENABLED);
-    Services.prefs.clearUserPref(PREF_REDACT_NEWTAB_PING_ENABLED);
-  }
-);
-
-add_task(
-  async function test_handleDiscoveryStreamUserEvent_private_ping_without_redactions_organic_top_stories_click() {
-    info(
-      "TelemetryFeed.handleDiscoveryStreamUserEvent instruments an organic " +
-        "top stories click with private ping fully enabled"
-    );
-
-    Services.prefs.setBoolPref(PREF_PRIVATE_PING_ENABLED, true);
-    Services.prefs.setBoolPref(PREF_REDACT_NEWTAB_PING_ENABLED, false);
-
-    let sandbox = sinon.createSandbox();
-    let instance = new TelemetryFeed();
-    Services.fog.testResetFOG();
-    const ACTION_POSITION = 42;
-    let action = actionCreators.DiscoveryStreamUserEvent({
-      event: "CLICK",
-      action_position: ACTION_POSITION,
-      value: {
-        card_type: "organic",
-        corpus_item_id: "decaf-beef",
-        scheduled_corpus_item_id: "dead-beef",
-        tile_id: 314623757745896,
-      },
-    });
-
-    const SESSION_ID = "decafc0ffee";
-    sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
-    sandbox.spy(instance.newtabContentPing, "recordEvent");
-
-    instance.handleDiscoveryStreamUserEvent(action);
-
-    let clicks = Glean.pocket.click.testGetValue();
-
-    Assert.equal(clicks.length, 1, "Recorded 1 content click");
-    Assert.equal(clicks.length, 1, "Recorded 1 private click");
-    Assert.deepEqual(clicks[0].extra, {
-      newtab_visit_id: SESSION_ID,
-      is_sponsored: String(false),
-      corpus_item_id: "decaf-beef",
-      scheduled_corpus_item_id: "dead-beef",
-      position: String(ACTION_POSITION),
-      tile_id: 314623757745896,
-    });
-
-    Assert.ok(
-      instance.newtabContentPing.recordEvent.calledWith(
-        "click",
-        sinon.match({
-          newtab_visit_id: SESSION_ID,
-          is_sponsored: false,
-          position: ACTION_POSITION,
-          tile_id: 314623757745896,
-          corpus_item_id: "decaf-beef",
-          scheduled_corpus_item_id: "dead-beef",
-        })
-      ),
-      "NewTabContentPing passed the expected arguments."
-    );
-
-    sandbox.restore();
-    Services.prefs.clearUserPref(PREF_PRIVATE_PING_ENABLED);
-    Services.prefs.clearUserPref(PREF_REDACT_NEWTAB_PING_ENABLED);
   }
 );
 
@@ -2040,7 +2125,6 @@ add_task(
     );
 
     Services.prefs.setBoolPref(PREF_PRIVATE_PING_ENABLED, true);
-    Services.prefs.setBoolPref(PREF_REDACT_NEWTAB_PING_ENABLED, true);
 
     let sandbox = sinon.createSandbox();
     let instance = new TelemetryFeed();
@@ -2092,7 +2176,6 @@ add_task(
 
     sandbox.restore();
     Services.prefs.clearUserPref(PREF_PRIVATE_PING_ENABLED);
-    Services.prefs.clearUserPref(PREF_REDACT_NEWTAB_PING_ENABLED);
   }
 );
 
@@ -2113,7 +2196,6 @@ add_task(
       action_position: ACTION_POSITION,
       value: {
         card_type: "spoc",
-        recommendation_id: undefined,
         tile_id: 448685088,
         shim: SHIM,
       },
@@ -2135,6 +2217,172 @@ add_task(
     });
 
     sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_handleDiscoveryStreamUserEvent_record_adsClient_click_if_enabled() {
+    info(
+      "TelemetryFeed.handleDiscoveryStreamUserEvent records an adsClient click " +
+        "if enabled"
+    );
+
+    let sandbox = sinon.createSandbox();
+    Services.prefs.setStringPref(PREF_ENDPOINTS, "https://test.reporting.net/");
+    Services.prefs.setBoolPref(PREF_UNIFIED_ADS_SPOCS_ENABLED, true);
+
+    sandbox.stub(AdsClient, "isEnabled").returns(true);
+    const ADS_CLIENT = { recordClick: sinon.fake.resolves() };
+    sandbox.stub(AdsClient, "getClient").returns(ADS_CLIENT);
+    sandbox.stub(AdsClient, "callbackOptions").returns({ ohttp: true });
+
+    let instance = new TelemetryFeed();
+    sandbox.replaceGetter(
+      instance,
+      "SHOW_SPONSORED_STORIES_ENABLED",
+      sinon.fake.returns(true)
+    );
+
+    await instance.onAction({
+      type: actionTypes.PREFS_INITIAL_VALUES,
+    });
+    Assert.ok(AdsClient.isEnabled.calledOnce);
+    Assert.ok(AdsClient.getClient.calledOnce);
+
+    sandbox
+      .stub(instance.sessions, "get")
+      .returns({ session_id: "decafc0ffee" });
+
+    instance.handleDiscoveryStreamUserEvent(
+      actionCreators.DiscoveryStreamUserEvent({
+        event: "CLICK",
+        action_position: 42,
+        value: {
+          card_type: "spoc",
+          shim: "https://test.reporting.net/",
+        },
+      })
+    );
+
+    Assert.ok(AdsClient.callbackOptions.calledOnce);
+    Assert.ok(ADS_CLIENT.recordClick.calledOnce);
+
+    Services.prefs.clearUserPref(PREF_UNIFIED_ADS_SPOCS_ENABLED);
+    Services.prefs.clearUserPref(PREF_ENDPOINTS);
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_handleReportAdUserEvent_reports_adsClient_ad_if_enabled() {
+    info(
+      "TelemetryFeed.handleDiscoveryStreamImpressionStats should report add to adsClient " +
+        "when enabled"
+    );
+
+    let sandbox = sinon.createSandbox();
+    Services.prefs.setStringPref(PREF_ENDPOINTS, "https://test.reporting.net/");
+
+    sandbox.stub(AdsClient, "isEnabled").returns(true);
+    const ADS_CLIENT = { reportAd: sinon.fake.resolves() };
+    sandbox.stub(AdsClient, "getClient").returns(ADS_CLIENT);
+    sandbox.stub(AdsClient, "callbackOptions").returns({ ohttp: true });
+
+    let instance = new TelemetryFeed();
+
+    await instance.onAction({
+      type: actionTypes.PREFS_INITIAL_VALUES,
+    });
+    Assert.ok(AdsClient.isEnabled.calledOnce);
+    Assert.ok(AdsClient.getClient.calledOnce);
+
+    await instance.handleReportAdUserEvent({
+      type: actionTypes.REPORT_AD_SUBMIT,
+      data: {
+        placement_id: "place",
+        position: 42,
+        report_reason: "not_interested",
+        reporting_url: "https://test.reporting.net/",
+      },
+    });
+
+    Assert.ok(AdsClient.callbackOptions.calledOnce);
+    Assert.ok(ADS_CLIENT.reportAd.calledOnce);
+
+    Services.prefs.clearUserPref(PREF_ENDPOINTS);
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_handleDiscoveryStreamUserEvent_sponsored_top_stories_click_tile_id_redacted() {
+    info(
+      "TelemetryFeed.handleDiscoveryStreamUserEvent redacts the tile_id from " +
+        "the newtab ping for a sponsored top stories click when the " +
+        "redactTileIdForSponsored trainhop config is enabled"
+    );
+
+    Services.prefs.setBoolPref(PREF_PRIVATE_PING_ENABLED, true);
+
+    let sandbox = sinon.createSandbox();
+    let instance = new TelemetryFeed();
+    instance.store = {
+      getState: () => ({
+        Prefs: {
+          values: {
+            trainhopConfig: {
+              newtabPing: { redactTileIdForSponsored: true },
+            },
+          },
+        },
+      }),
+    };
+    Services.fog.testResetFOG();
+    const ACTION_POSITION = 42;
+    const TILE_ID = 448685088;
+    let action = actionCreators.DiscoveryStreamUserEvent({
+      event: "CLICK",
+      action_position: ACTION_POSITION,
+      value: {
+        card_type: "spoc",
+        tile_id: TILE_ID,
+      },
+    });
+
+    const SESSION_ID = "decafc0ffee";
+    sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
+    sandbox.spy(instance.newtabContentPing, "recordEvent");
+
+    instance.handleDiscoveryStreamUserEvent(action);
+
+    let clicks = Glean.pocket.click.testGetValue();
+    Assert.equal(clicks.length, 1, "Recorded 1 click");
+    Assert.deepEqual(
+      clicks[0].extra,
+      {
+        newtab_visit_id: SESSION_ID,
+        is_sponsored: String(true),
+        position: String(ACTION_POSITION),
+        content_redacted: String(true),
+      },
+      "The tile_id should have been redacted from the newtab ping."
+    );
+
+    Assert.ok(
+      instance.newtabContentPing.recordEvent.calledWith(
+        "click",
+        sinon.match({
+          is_sponsored: true,
+          position: ACTION_POSITION,
+          tile_id: TILE_ID,
+        })
+      ),
+      "Redacting the newtab ping should not have mutated the event data handed " +
+        "to the newtab-content ping, which does its own sanitization."
+    );
+
+    sandbox.restore();
+    Services.prefs.clearUserPref(PREF_PRIVATE_PING_ENABLED);
   }
 );
 
@@ -3080,6 +3328,47 @@ add_task(async function test_recordEnabledWidgets_partial() {
   );
 });
 
+add_task(async function test_recordEnabledWidgets_excludes_no_history() {
+  info(
+    "recordEnabledWidgets should drop the privacy widget when the profile records no history"
+  );
+  Services.fog.testResetFOG();
+
+  const values = {
+    "widgets.enabled": true,
+    "widgets.privacy.enabled": true,
+    "widgets.system.privacy.enabled": true,
+    "widgets.lists.enabled": true,
+    "widgets.system.lists.enabled": true,
+  };
+
+  let instance = new TelemetryFeed();
+  instance.store = {
+    getState: () => ({ Prefs: { values } }),
+  };
+
+  instance.recordEnabledWidgets();
+  Assert.deepEqual(
+    Glean.newtab.widgetsEnabledList.testGetValue().sort(),
+    ["lists", "privacy"],
+    "privacy is listed while the profile records history"
+  );
+
+  // Turning history off flips enablement without any widget toggle, so the
+  // PREF_CHANGED for the derived value has to re-record the list (Bug 2063207).
+  values.recordsHistory = false;
+  instance.onAction({
+    type: actionTypes.PREF_CHANGED,
+    data: { name: "recordsHistory", value: false },
+  });
+
+  Assert.deepEqual(
+    Glean.newtab.widgetsEnabledList.testGetValue(),
+    ["lists"],
+    "privacy drops out once the profile records no history"
+  );
+});
+
 add_task(async function test_recordEnabledWidgets_trainhop() {
   info(
     "recordEnabledWidgets should count a widget enabled via trainhopConfig when the system pref is off"
@@ -3166,13 +3455,622 @@ add_task(async function test_recordEnabledWidgets_none_enabled() {
   );
 });
 
-add_task(async function test_onAction_NEW_TAB_SCROLL_records_scroll_metric() {
+add_task(async function test_recordPageLayoutVariant_default() {
+  info("recordPageLayoutVariant should report the default layout name");
   Services.fog.testResetFOG();
+
   let instance = new TelemetryFeed();
-  instance.onAction({ type: actionTypes.NEW_TAB_SCROLL });
+  instance.store = { getState: () => ({ Prefs: { values: {} } }) };
+
+  instance.recordPageLayoutVariant();
+
   Assert.equal(
-    Glean.newtab.scroll.testGetValue(),
-    true,
-    "newtab.scroll should be true after NEW_TAB_SCROLL action"
+    Glean.newtab.pageLayoutVariant.testGetValue(),
+    "nova-full-width",
+    "pageLayoutVariant should be the default name rather than an empty string"
   );
+});
+
+add_task(async function test_handleSpacesUserEvent() {
+  info("handleSpacesUserEvent should record a spaces_switch event");
+  Services.fog.testResetFOG();
+
+  let instance = new TelemetryFeed();
+  const session = instance.addSession("foo", "about:newtab");
+
+  instance.handleSpacesUserEvent({
+    data: { space: "widgets", previous_space: "stories", method: "tab" },
+    meta: { fromTarget: "foo" },
+  });
+
+  const events = Glean.newtab.spacesSwitch.testGetValue();
+  Assert.equal(events.length, 1, "one spaces_switch event should be recorded");
+  Assert.deepEqual(
+    events[0].extra,
+    {
+      newtab_visit_id: session.session_id,
+      space: "widgets",
+      previous_space: "stories",
+      method: "tab",
+    },
+    "spaces_switch should carry the visit id and the switch it describes"
+  );
+});
+
+add_task(async function test_handleSpacesUserEvent_no_session() {
+  info("handleSpacesUserEvent should record nothing without a session");
+  Services.fog.testResetFOG();
+
+  let instance = new TelemetryFeed();
+
+  instance.handleSpacesUserEvent({
+    data: { space: "widgets", previous_space: "stories", method: "tab" },
+    meta: { fromTarget: "missing" },
+  });
+
+  Assert.equal(
+    Glean.newtab.spacesSwitch.testGetValue(),
+    null,
+    "no event should be recorded for an unknown port"
+  );
+});
+
+add_task(async function test_recordPageLayoutVariant_pref() {
+  info("recordPageLayoutVariant should report the variant set by pref");
+  Services.fog.testResetFOG();
+
+  let instance = new TelemetryFeed();
+  instance.store = {
+    getState: () => ({
+      Prefs: { values: { "pageLayouts.variant": "side-by-side-content-lead" } },
+    }),
+  };
+
+  instance.recordPageLayoutVariant();
+
+  Assert.equal(
+    Glean.newtab.pageLayoutVariant.testGetValue(),
+    "side-by-side-content-lead",
+    "pageLayoutVariant should be the pref value"
+  );
+});
+
+add_task(async function test_recordPageLayoutVariant_trainhop() {
+  info(
+    "recordPageLayoutVariant should report a variant that only trainhopConfig carries"
+  );
+  Services.fog.testResetFOG();
+
+  let instance = new TelemetryFeed();
+  instance.store = {
+    getState: () => ({
+      Prefs: {
+        values: {
+          "pageLayouts.variant": "nova-full-width",
+          trainhopConfig: {
+            pageLayouts: { variant: "side-by-side-widgets-lead" },
+          },
+        },
+      },
+    }),
+  };
+
+  instance.recordPageLayoutVariant();
+
+  Assert.equal(
+    Glean.newtab.pageLayoutVariant.testGetValue(),
+    "side-by-side-widgets-lead",
+    "pageLayoutVariant should follow trainhopConfig over the pref"
+  );
+});
+
+add_task(async function test_onAction_NEW_TAB_SCROLL_tracks_max_threshold() {
+  info(
+    "TelemetryFeed should track the deepest scroll threshold passed in a session"
+  );
+  let instance = new TelemetryFeed();
+  instance.addSession("foo");
+
+  const scrollAction = threshold => ({
+    type: actionTypes.NEW_TAB_SCROLL,
+    data: { threshold },
+    meta: { fromTarget: "foo" },
+  });
+
+  instance.onAction(scrollAction(50));
+  Assert.equal(instance.sessions.get("foo").max_scroll_threshold, 50);
+
+  instance.onAction(scrollAction(250));
+  Assert.equal(instance.sessions.get("foo").max_scroll_threshold, 250);
+
+  info("A shallower threshold should not lower the recorded one");
+  instance.onAction(scrollAction(100));
+  Assert.equal(instance.sessions.get("foo").max_scroll_threshold, 250);
+});
+
+add_task(async function test_onAction_NEW_TAB_SCROLL_no_throw_on_bad_session() {
+  info("TelemetryFeed should ignore a scroll for an unknown session");
+  let instance = new TelemetryFeed();
+  try {
+    instance.onAction({
+      type: actionTypes.NEW_TAB_SCROLL,
+      data: { threshold: 50 },
+      meta: { fromTarget: "doesn't exist" },
+    });
+    Assert.ok(true, "Did not throw.");
+  } catch (e) {
+    Assert.ok(false, "Should not have thrown.");
+  }
+});
+
+add_task(async function test_endSession_records_scroll_metrics() {
+  info(
+    "TelemetryFeed.endSession should record a scroll metric for every " +
+      "threshold, true only for those the session passed"
+  );
+  Services.fog.testResetFOG();
+  Services.prefs.setBoolPref(PREF_TELEMETRY, true);
+  let sandbox = sinon.createSandbox();
+  let instance = new TelemetryFeed();
+  sandbox.stub(instance, "configureContentPing");
+
+  const session = instance.addSession("foo");
+  session.perf.visibility_event_rcvd_ts = 1000;
+  instance.onAction({
+    type: actionTypes.NEW_TAB_SCROLL,
+    data: { threshold: 100 },
+    meta: { fromTarget: "foo" },
+  });
+
+  // Ping lifetime metrics are cleared on submission, so assert before it.
+  let pingSubmitted = new Promise(resolve => {
+    GleanPings.newtab.testBeforeNextSubmit(() => {
+      Assert.equal(Glean.newtab.scroll.testGetValue(), true);
+      Assert.equal(Glean.newtab.scroll100.testGetValue(), true);
+      Assert.equal(Glean.newtab.scroll250.testGetValue(), false);
+      resolve();
+    });
+  });
+
+  await instance.endSession("foo");
+  await pingSubmitted;
+
+  Services.prefs.clearUserPref(PREF_TELEMETRY);
+  sandbox.restore();
+});
+
+add_task(async function test_endSession_records_false_scroll_metrics() {
+  info(
+    "TelemetryFeed.endSession should record false for every scroll metric " +
+      "when the session was never scrolled"
+  );
+  Services.fog.testResetFOG();
+  Services.prefs.setBoolPref(PREF_TELEMETRY, true);
+  let sandbox = sinon.createSandbox();
+  let instance = new TelemetryFeed();
+  sandbox.stub(instance, "configureContentPing");
+
+  const session = instance.addSession("foo");
+  session.perf.visibility_event_rcvd_ts = 1000;
+
+  let pingSubmitted = new Promise(resolve => {
+    GleanPings.newtab.testBeforeNextSubmit(() => {
+      Assert.equal(Glean.newtab.scroll.testGetValue(), false);
+      Assert.equal(Glean.newtab.scroll100.testGetValue(), false);
+      Assert.equal(Glean.newtab.scroll250.testGetValue(), false);
+      resolve();
+    });
+  });
+
+  await instance.endSession("foo");
+  await pingSubmitted;
+
+  Services.prefs.clearUserPref(PREF_TELEMETRY);
+  sandbox.restore();
+});
+
+const USER_INTERACTION_ACTIVE = "user-interaction-active-non-synthesized";
+const USER_INTERACTION_INACTIVE = "user-interaction-inactive-non-synthesized";
+// EventStateManager's default notification cadence. The feed takes its cutoff
+// from the notifications themselves, so this only paces the fake ones.
+const USER_INTERACTION_INTERVAL_MS = 5000;
+// testGetValue().sum is in nanoseconds, whatever the time_unit.
+const NS_PER_MS = 1000000;
+
+/**
+ * Build a TelemetryFeed with the clock and the foreground check under the
+ * test's control, and telemetry on so the newtab ping is submitted.
+ *
+ * @param {object} sandbox a sinon sandbox
+ * @returns {object} the instance and a setTime(ms) helper
+ */
+function setupDwellFeed(sandbox) {
+  Services.fog.testResetFOG();
+  Services.prefs.setBoolPref(PREF_TELEMETRY, true);
+
+  let instance = new TelemetryFeed();
+  sandbox.stub(instance, "configureContentPing");
+  sandbox.stub(instance, "isSessionInForeground").returns(true);
+  let clock = sandbox.stub(instance, "now").returns(0);
+
+  return { instance, setTime: ms => clock.returns(ms) };
+}
+
+/**
+ * setupDwellFeed plus one session the user has already seen.
+ *
+ * @param {object} sandbox a sinon sandbox
+ * @returns {object} the instance, its session, and a setTime(ms) helper
+ */
+function setupDwellTest(sandbox) {
+  let ctx = setupDwellFeed(sandbox);
+  ctx.session = ctx.instance.addSession("port1");
+  ctx.session.perf.visibility_event_rcvd_ts = 1;
+  return ctx;
+}
+
+/**
+ * Undo setupDwellFeed.
+ *
+ * @param {object} sandbox the sinon sandbox it was given
+ */
+function teardownDwellTest(sandbox) {
+  sandbox.restore();
+  Services.prefs.clearUserPref(PREF_TELEMETRY);
+  Services.fog.testResetFOG();
+}
+
+/**
+ * End a session and return the dwell_time distribution as the newtab ping saw
+ * it. Read at submission time because testGetValue() alone cannot tell a value
+ * that rode along in the ping from one recorded too late and cleared by the
+ * submit.
+ *
+ * @param {object} instance a TelemetryFeed
+ * @param {string} portID the session to end
+ * @returns {Promise<object|null>} null if no ping carried a sample
+ */
+async function endSessionAndReadDwell(instance, portID) {
+  let dwell = null;
+  GleanPings.newtab.testBeforeNextSubmit(() => {
+    dwell = Glean.newtab.dwellTime.testGetValue("newtab");
+  });
+  await instance.endSession(portID);
+  return dwell;
+}
+
+add_task(async function test_dwell_time_accrues_while_active_and_foreground() {
+  info(
+    "TelemetryFeed should accrue dwell time while the user is interacting " +
+      "and the newtab is in the foreground"
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellTest(sandbox);
+
+  // Interaction starts at 0 and continues at 5000. The inactive tick at 10000
+  // says the last interval had no input, so only 0-5000 is credited.
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(USER_INTERACTION_INTERVAL_MS);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(USER_INTERACTION_INTERVAL_MS * 2);
+  instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+  let dwell = await endSessionAndReadDwell(instance, "port1");
+
+  Assert.ok(dwell, "dwell_time was recorded");
+  Assert.equal(dwell.count, 1, "Exactly one sample per newtab session");
+  Assert.equal(
+    dwell.sum,
+    USER_INTERACTION_INTERVAL_MS * NS_PER_MS,
+    "Credited up to the last notification that said the user was there"
+  );
+
+  teardownDwellTest(sandbox);
+});
+
+add_task(async function test_dwell_time_partial_credit_at_session_end() {
+  info(
+    "TelemetryFeed should credit a session that ends mid-interaction with " +
+      "its real elapsed time, not a whole interval"
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellTest(sandbox);
+
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(1200);
+
+  let dwell = await endSessionAndReadDwell(instance, "port1");
+
+  Assert.ok(dwell, "dwell_time was recorded");
+  Assert.equal(
+    dwell.sum,
+    1200 * NS_PER_MS,
+    "A visit shorter than one interval still records its real duration"
+  );
+
+  teardownDwellTest(sandbox);
+});
+
+add_task(async function test_dwell_time_sums_separate_runs() {
+  info(
+    "TelemetryFeed should add up the separate runs of interaction in one " +
+      "newtab session"
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellTest(sandbox);
+
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(5000);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(10000);
+  instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+  // A long pause, then a second run of the same length.
+  setTime(30000);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(35000);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(40000);
+  instance.observe(null, USER_INTERACTION_INACTIVE, null);
+
+  let dwell = await endSessionAndReadDwell(instance, "port1");
+
+  Assert.equal(dwell.count, 1, "Still one sample for the session");
+  Assert.equal(
+    dwell.sum,
+    10000 * NS_PER_MS,
+    "Both runs are counted, the idle stretch between them is not"
+  );
+
+  teardownDwellTest(sandbox);
+});
+
+add_task(async function test_dwell_time_stops_when_newtab_leaves_foreground() {
+  info(
+    "TelemetryFeed should stop accruing dwell time once the newtab is no " +
+      "longer the foreground tab, even while the user keeps interacting"
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellTest(sandbox);
+
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+
+  // The user switches to another tab and carries on interacting there. The
+  // switch is only noticed at the next notification, so this newtab keeps the
+  // interval it was left during.
+  instance.isSessionInForeground.returns(false);
+  setTime(USER_INTERACTION_INTERVAL_MS);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(USER_INTERACTION_INTERVAL_MS * 4);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+
+  let dwell = await endSessionAndReadDwell(instance, "port1");
+
+  Assert.equal(
+    dwell.sum,
+    USER_INTERACTION_INTERVAL_MS * NS_PER_MS,
+    "Interaction in another tab is not credited to this newtab"
+  );
+
+  teardownDwellTest(sandbox);
+});
+
+add_task(async function test_dwell_time_absent_when_no_activity() {
+  info(
+    "TelemetryFeed should leave dwell_time absent for a newtab the user " +
+      "never interacted with"
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellTest(sandbox);
+
+  setTime(60000);
+
+  Assert.equal(
+    await endSessionAndReadDwell(instance, "port1"),
+    null,
+    "dwell_time is absent, not zero"
+  );
+
+  teardownDwellTest(sandbox);
+});
+
+add_task(async function test_dwell_time_clamped_when_visible_after_cutoff() {
+  info(
+    "TelemetryFeed should credit nothing, rather than negative time, when a " +
+      "newtab becomes visible after the last moment the user was known active"
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellFeed(sandbox);
+
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+
+  setTime(4000);
+  let session = instance.addSession("port1");
+  instance.saveSessionPerfData("port1", { visibility_event_rcvd_ts: 1 });
+  Assert.equal(session.dwellStartedAt, 4000, "The stopwatch started");
+
+  // The interval that just ended saw no input, so the cutoff is the previous
+  // notification, which predates this newtab becoming visible.
+  setTime(5000);
+  instance.observe(null, USER_INTERACTION_INACTIVE, null);
+  Assert.equal(session.dwellTimeMs, 0, "No negative time was accrued");
+
+  Assert.equal(
+    await endSessionAndReadDwell(instance, "port1"),
+    null,
+    "dwell_time is absent rather than negative"
+  );
+
+  teardownDwellTest(sandbox);
+});
+
+add_task(async function test_dwell_time_only_credits_foreground_session() {
+  info(
+    "TelemetryFeed should credit only the foreground session when several " +
+      "newtabs are open"
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellFeed(sandbox);
+
+  let foreground = instance.addSession("port-foreground");
+  foreground.perf.visibility_event_rcvd_ts = 1;
+  let background = instance.addSession("port-background");
+  background.perf.visibility_event_rcvd_ts = 1;
+  instance.isSessionInForeground.callsFake(session => session === foreground);
+
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(USER_INTERACTION_INTERVAL_MS);
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+
+  Assert.equal(
+    await endSessionAndReadDwell(instance, "port-background"),
+    null,
+    "The background session contributes nothing"
+  );
+
+  let dwell = await endSessionAndReadDwell(instance, "port-foreground");
+  Assert.equal(dwell.count, 1, "Only the foreground session recorded a sample");
+  Assert.equal(
+    dwell.sum,
+    USER_INTERACTION_INTERVAL_MS * NS_PER_MS,
+    "Credited to the session the user was actually looking at"
+  );
+
+  teardownDwellTest(sandbox);
+});
+
+add_task(async function test_dwell_time_starts_for_a_newtab_opened_mid_run() {
+  info(
+    "TelemetryFeed should start the stopwatch when a newtab becomes visible " +
+      "during a run of interaction already under way"
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellFeed(sandbox);
+
+  // The user is already interacting when the tab opens. The next notification
+  // could be a whole interval away.
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+
+  setTime(1000);
+  let session = instance.addSession("port1");
+  instance.saveSessionPerfData("port1", { visibility_event_rcvd_ts: 1 });
+  Assert.equal(
+    session.dwellStartedAt,
+    1000,
+    "The stopwatch started when the newtab became visible"
+  );
+
+  setTime(3000);
+  let dwell = await endSessionAndReadDwell(instance, "port1");
+
+  Assert.equal(
+    dwell.sum,
+    2000 * NS_PER_MS,
+    "Timed from becoming visible, not from the next notification"
+  );
+
+  teardownDwellTest(sandbox);
+});
+
+add_task(async function test_dwell_time_not_recorded_when_telemetry_disabled() {
+  info(
+    "TelemetryFeed should not leave a dwell sample behind when no newtab " +
+      "ping will be submitted for the session"
+  );
+  let sandbox = sinon.createSandbox();
+  let { instance, setTime } = setupDwellTest(sandbox);
+  Services.prefs.setBoolPref(PREF_TELEMETRY, false);
+
+  instance.observe(null, USER_INTERACTION_ACTIVE, null);
+  setTime(3000);
+  await instance.endSession("port1");
+
+  Assert.equal(
+    Glean.newtab.dwellTime.testGetValue("newtab"),
+    null,
+    "Nothing is left in ping-lifetime storage for a later ping to pick up"
+  );
+
+  teardownDwellTest(sandbox);
+});
+
+add_task(async function test_isSessionInForeground() {
+  info(
+    "TelemetryFeed.isSessionInForeground should only accept the selected " +
+      "browser of the focused window"
+  );
+  let sandbox = sinon.createSandbox();
+  let instance = new TelemetryFeed();
+
+  let win = { closed: false, gBrowser: { selectedBrowser: null } };
+  let browser = { documentGlobal: win };
+  win.gBrowser.selectedBrowser = browser;
+  let session = { browserRef: new WeakRef(browser) };
+  sandbox.stub(instance, "getActiveChromeWindow").returns(win);
+
+  Assert.ok(
+    instance.isSessionInForeground(session),
+    "Selected browser of the focused window is in the foreground"
+  );
+
+  instance.getActiveChromeWindow.returns({});
+  Assert.ok(
+    !instance.isSessionInForeground(session),
+    "Not in the foreground when another window has focus"
+  );
+
+  instance.getActiveChromeWindow.returns(win);
+  win.gBrowser.selectedBrowser = { documentGlobal: win };
+  Assert.ok(
+    !instance.isSessionInForeground(session),
+    "Not in the foreground when another tab is selected"
+  );
+
+  win.gBrowser.selectedBrowser = browser;
+  win.closed = true;
+  Assert.ok(
+    !instance.isSessionInForeground(session),
+    "Not in the foreground once the window has closed"
+  );
+
+  win.closed = false;
+  Assert.ok(
+    !instance.isSessionInForeground({}),
+    "A session with no browser is never in the foreground"
+  );
+
+  sandbox.restore();
+});
+
+add_task(async function test_user_interaction_observers_registered() {
+  info(
+    "TelemetryFeed should observe the user interaction topics between init " +
+      "and uninit"
+  );
+  let sandbox = sinon.createSandbox();
+  let instance = new TelemetryFeed();
+
+  instance.init();
+
+  sandbox.stub(instance, "isSessionInForeground").returns(true);
+  sandbox.stub(instance, "now").returns(0);
+  let session = instance.addSession("port1");
+  Services.obs.notifyObservers(null, USER_INTERACTION_ACTIVE);
+  Assert.equal(
+    session.dwellStartedAt,
+    0,
+    "A real notification drives the stopwatch"
+  );
+
+  instance.uninit();
+
+  session.dwellStartedAt = null;
+  Services.obs.notifyObservers(null, USER_INTERACTION_ACTIVE);
+  Assert.equal(
+    session.dwellStartedAt,
+    null,
+    "Notifications no longer reach the feed after uninit"
+  );
+
+  sandbox.restore();
 });

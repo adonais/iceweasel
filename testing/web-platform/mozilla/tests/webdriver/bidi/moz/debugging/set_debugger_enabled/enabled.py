@@ -94,6 +94,7 @@ async def test_disable_resumes_debugger(
     inline,
     subscribe_events,
     wait_for_event,
+    wait_for_future_safe,
     set_breakpoint,
 ):
     await subscribe_events([PAUSED_EVENT, RESUMED_EVENT])
@@ -115,16 +116,94 @@ async def test_disable_resumes_debugger(
             await_promise=False,
         )
     )
-    await on_paused
+    await wait_for_future_safe(on_paused)
 
     # Breakpoint should be automatically resumed when debugging is disabled.
     on_resumed = wait_for_event(RESUMED_EVENT)
     await bidi_session.moz.debugging.set_debugger_enabled(enabled=None)
-    await on_resumed
+    await wait_for_future_safe(on_resumed)
 
     result = await eval_task
     assert result["type"] == "number"
     assert result["value"] == 42
+
+
+async def test_disable_resumes_debugger_with_nested_pauses(
+    bidi_session,
+    new_tab,
+    enable_debugging,
+    inline,
+    subscribe_events,
+    wait_for_event,
+    wait_for_future_safe,
+    set_breakpoint,
+):
+    await subscribe_events([PAUSED_EVENT, RESUMED_EVENT])
+    await enable_debugging(contexts=[new_tab["context"]])
+
+    url = inline(
+        """<script>
+function test(n) {
+    const a = n + 1;
+    const b = a + 1;
+    return b;
+}
+</script>"""
+    )
+
+    await bidi_session.browsing_context.navigate(
+        context=new_tab["context"], url=url, wait="complete"
+    )
+
+    await set_breakpoint(location={"url": url, "line": 6})
+
+    on_paused = wait_for_event(PAUSED_EVENT)
+
+    outer_task = asyncio.create_task(
+        bidi_session.script.evaluate(
+            expression="test(1)",
+            target=ContextTarget(new_tab["context"]),
+            await_promise=False,
+        )
+    )
+
+    paused_event = await wait_for_future_safe(on_paused)
+    assert paused_event["line"] == 6
+
+    # Step over once, so that the frame of the outer pause has stepping hooks
+    # which will have to be cleared when debugging is disabled.
+    on_paused = wait_for_event(PAUSED_EVENT)
+    await bidi_session.moz.debugging.step_over(context=new_tab["context"])
+
+    paused_event = await wait_for_future_safe(on_paused)
+    assert paused_event["line"] == 7
+
+    # Evaluating in the paused frame hits the breakpoint again and pauses a
+    # second time, in a new frame, at line 6.
+    on_paused = wait_for_event(PAUSED_EVENT)
+
+    inner_task = asyncio.create_task(
+        bidi_session.script.evaluate(
+            expression="test(10)",
+            target=ContextTarget(new_tab["context"]),
+            await_promise=False,
+        )
+    )
+
+    paused_event = await wait_for_future_safe(on_paused)
+    assert paused_event["line"] == 6
+
+    # Disabling debugging should resume all the pauses, and both evaluations
+    # should complete normally.
+    await bidi_session.moz.debugging.set_debugger_enabled(
+        contexts=[new_tab["context"]], enabled=None
+    )
+
+    inner_result = await wait_for_future_safe(inner_task)
+    assert inner_result == {"type": "number", "value": 12}
+
+    outer_result = await wait_for_future_safe(outer_task)
+    assert outer_result == {"type": "number", "value": 3}
 
 
 async def test_several_contexts_and_user_contexts(

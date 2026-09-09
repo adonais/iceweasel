@@ -17,7 +17,9 @@ data class TabData(
     val selectedTabId: String? = null,
     val tabs: List<TabSessionState> = emptyList(),
 ) {
-    constructor(browserState: BrowserState) : this(
+    constructor(
+        browserState: BrowserState
+    ) : this(
         selectedTabId = browserState.selectedTabId,
         tabs = browserState.tabs,
     )

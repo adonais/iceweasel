@@ -16,10 +16,9 @@ import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.SyncEnginesStorage
 
 /**
- * A view to help manage the sync preference in the "Passwords" and "Payment Methods"
- * settings. The provided [syncPreference] is used to navigate to the different fragments
- * that manages the sync account authentication. A toggle will be also added
- * depending on the sync account status.
+ * A view to help manage the sync preference in the "Passwords" and "Payment Methods" settings. The provided
+ * [syncPreference] is used to navigate to the different fragments that manages the sync account authentication. A
+ * toggle will be also added depending on the sync account status.
  *
  * @param syncPreference The sync [SyncPreference] to update and handle navigation.
  * @param lifecycleOwner View lifecycle owner used to determine when to cancel UI jobs.
@@ -29,8 +28,8 @@ import mozilla.components.service.fxa.manager.SyncEnginesStorage
  * @param loggedOffTitle Text label for the setting when user is not logged in.
  * @param loggedInTitle Text label for the setting when user is logged in.
  * @param onSyncSignInClicked A callback executed when the sync sign in [syncPreference] is clicked.
- * @param onReconnectClicked A callback executed when the [syncPreference] is clicked with a
- * preference status of "Reconnect".
+ * @param onReconnectClicked A callback executed when the [syncPreference] is clicked with a preference status of
+ *   "Reconnect".
  */
 @Suppress("LongParameterList")
 class SyncPreferenceView(
@@ -73,9 +72,7 @@ class SyncPreferenceView(
         }
     }
 
-    /**
-     * Shows a switch toggle for the sync preference when the user is logged in.
-     */
+    /** Shows a switch toggle for the sync preference when the user is logged in. */
     private fun updateSyncPreferenceStatus() {
         syncPreference.apply {
             isSwitchWidgetVisible = true
@@ -96,9 +93,7 @@ class SyncPreferenceView(
         }
     }
 
-    /**
-     * Display that the user can sync across devices when the user is logged off.
-     */
+    /** Display that the user can sync across devices when the user is logged off. */
     private fun updateSyncPreferenceNeedsLogin() {
         syncPreference.apply {
             isSwitchWidgetVisible = false
@@ -112,9 +107,7 @@ class SyncPreferenceView(
         }
     }
 
-    /**
-     * Displays the logged off title to prompt the user to to re-authenticate their sync account.
-     */
+    /** Displays the logged off title to prompt the user to to re-authenticate their sync account. */
     private fun updateSyncPreferenceNeedsReauth() {
         syncPreference.apply {
             isSwitchWidgetVisible = false

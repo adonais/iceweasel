@@ -10,9 +10,7 @@ import mozilla.components.feature.share.db.RecentAppEntity
 import mozilla.components.feature.share.db.RecentAppsDao
 import mozilla.components.feature.share.db.RecentAppsDatabase
 
-/**
- * Class used for storing and retrieving the most recent apps
- */
+/** Class used for storing and retrieving the most recent apps */
 class RecentAppsStorage(context: Context) {
 
     @VisibleForTesting
@@ -21,10 +19,9 @@ class RecentAppsStorage(context: Context) {
     }
 
     /**
-     * Increment the value stored in the database for the selected app. Then, apply a decay to all
-     * other apps in the database. This allows newly installed apps to catch up and appear in the
-     * most recent section faster. We do not need to handle overflow as it's not reasonably expected
-     * to reach Double.MAX_VALUE for users
+     * Increment the value stored in the database for the selected app. Then, apply a decay to all other apps in the
+     * database. This allows newly installed apps to catch up and appear in the most recent section faster. We do not
+     * need to handle overflow as it's not reasonably expected to reach Double.MAX_VALUE for users
      */
     fun updateRecentApp(selectedActivityName: String) {
         recentAppsDao.value.updateRecentAppAndDecayRest(selectedActivityName)
@@ -32,6 +29,7 @@ class RecentAppsStorage(context: Context) {
 
     /**
      * Deletes an app form the recent apps list
+     *
      * @param activityName - name of the activity of the app
      */
     fun deleteRecentApp(activityName: String) {
@@ -40,6 +38,7 @@ class RecentAppsStorage(context: Context) {
 
     /**
      * Get a descending ordered list of the most recent apps
+     *
      * @param limit - size of list
      */
     fun getRecentAppsUpTo(limit: Int): List<RecentApp> {
@@ -47,14 +46,14 @@ class RecentAppsStorage(context: Context) {
     }
 
     /**
-     * If there are apps that could resolve our share and are not added in our database, we add them
-     * with a 0 count, so they can be updated later when a user uses that app
+     * If there are apps that could resolve our share and are not added in our database, we add them with a 0 count, so
+     * they can be updated later when a user uses that app
      */
     fun updateDatabaseWithNewApps(activityNames: List<String>) {
         recentAppsDao.value.insertRecentApps(
             activityNames.map { activityName ->
                 RecentAppEntity(activityName)
-            },
+            }
         )
     }
 }

@@ -18,9 +18,7 @@ import org.robolectric.RobolectricTestRunner
 
 private const val TIME_IN_MILLIS = 1759926358L
 
-/**
- * This copies the default set in `nimbus.fml.yaml` `terms-of-use-prompt` `max-display-count`.
- */
+/** This copies the default set in `nimbus.fml.yaml` `terms-of-use-prompt` `max-display-count`. */
 private const val MAX_DISPLAY_COUNT = 2
 
 @RunWith(RobolectricTestRunner::class)

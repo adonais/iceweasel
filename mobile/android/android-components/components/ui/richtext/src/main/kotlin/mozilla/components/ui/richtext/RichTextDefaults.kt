@@ -15,13 +15,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.sp
 
-/**
- * Default values for use with [RichText]
- */
+/** Default values for use with [RichText] */
 object RichTextDefaults {
-    /**
-     * Default [RichTextTypography] from a base [TextStyle]
-     */
+    /** Default [RichTextTypography] from a base [TextStyle] */
     @Composable
     fun typography(base: TextStyle = LocalTextStyle.current): RichTextTypography {
         val baseSize = base.fontSize.takeIf { it.isSp }?.value ?: 16f

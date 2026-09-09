@@ -4,8 +4,6 @@
 
 package org.mozilla.fenix.components.metrics.fonts
 
-import org.json.JSONException
-import org.json.JSONObject
 import java.io.DataInputStream
 import java.io.FileInputStream
 import java.io.IOException
@@ -13,10 +11,10 @@ import java.io.InputStream
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import kotlin.math.min
+import org.json.JSONException
+import org.json.JSONObject
 
-/**
- * FontMetric represents the information about a Font File
- */
+/** FontMetric represents the information about a Font File */
 data class FontMetric(
     val path: String = "",
     val hash: String = "",
@@ -30,9 +28,7 @@ data class FontMetric(
     var created: Long = -1L
     var modified: Long = -1L
 
-    /**
-     * Return a JSONObject of this Font's details
-     */
+    /** Return a JSONObject of this Font's details */
     fun toJson(): JSONObject {
         val jsonObject = JSONObject()
         try {
@@ -47,22 +43,19 @@ data class FontMetric(
             jsonObject.put("M", modified)
             jsonObject.put("H", hash)
             jsonObject.put("P", path.replace("\u0000", ""))
-        } catch (_: JSONException) {
-        }
+        } catch (_: JSONException) {}
         return jsonObject
     }
 }
 
 /**
- * Parse a font, given via an InputStream, to extract the Font information
- * including Family, SubFamily, Revision, etc
+ * Parse a font, given via an InputStream, to extract the Font information including Family, SubFamily, Revision, etc
  */
 object FontParser {
     /**
-     * Parse a font file and return a FontMetric object describing it.
-     * These functions are very similar, because this one is used in
-     * real devices, the other in unit tests. Outside tests, the
-     * FileInputStream does not support the reset() method
+     * Parse a font file and return a FontMetric object describing it. These functions are very similar, because this
+     * one is used in real devices, the other in unit tests. Outside tests, the FileInputStream does not support the
+     * reset() method
      */
     fun parse(path: String): FontMetric {
         val hash = calculateFileHash(FileInputStream(path))
@@ -73,9 +66,7 @@ object FontParser {
         return fontDetails
     }
 
-    /**
-     * Parse a font file and return a FontMetric object describing it
-     */
+    /** Parse a font file and return a FontMetric object describing it */
     fun parse(path: String, inputStream: InputStream): FontMetric {
         val hash = calculateFileHash(inputStream)
         val fontDetails = FontMetric(path, hash)
@@ -220,16 +211,12 @@ object FontParser {
         return String(stringTable.copyOfRange(offset, offset + length))
     }
 
-    /**
-     * Calculate the SHA-256 hash of the file passed
-     */
+    /** Calculate the SHA-256 hash of the file passed */
     fun calculateFileHash(path: String): String {
         return calculateFileHash(FileInputStream(path))
     }
 
-    /**
-     * Calculate the SHA-256 hash of the InputStream passed
-     */
+    /** Calculate the SHA-256 hash of the InputStream passed */
     @Suppress("MagicNumber")
     private fun calculateFileHash(inputStream: InputStream): String {
         try {

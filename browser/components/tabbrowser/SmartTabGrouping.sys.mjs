@@ -33,7 +33,8 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   NLP: "resource://gre/modules/NLP.sys.mjs",
-  MLEngineParent: "resource://gre/actors/MLEngineParent.sys.mjs",
+  MLEngineParent:
+    "moz-src:///toolkit/components/ml/actors/MLEngineParent.sys.mjs",
   MultiProgressAggregator: "chrome://global/content/ml/Utils.sys.mjs",
   Progress: "chrome://global/content/ml/Utils.sys.mjs",
   MLUninstallService: "chrome://global/content/ml/Utils.sys.mjs",

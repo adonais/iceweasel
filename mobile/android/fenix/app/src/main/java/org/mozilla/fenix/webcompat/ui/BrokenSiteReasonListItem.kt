@@ -64,18 +64,18 @@ fun BrokenSiteReasonListItem(
         modifier = modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-                .semantics {
-                    testTagsAsResourceId = true
-                    testTag = "$BROKEN_SITE_REPORTER_REASON_OPTION-$text"
-                }
-                .defaultMinSize(minHeight = 56.dp)
-                .padding(
-                    horizontal = FirefoxTheme.layout.space.dynamic200,
-                    vertical = FirefoxTheme.layout.space.static100,
-                ),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+                    .semantics {
+                        testTagsAsResourceId = true
+                        testTag = "$BROKEN_SITE_REPORTER_REASON_OPTION-$text"
+                    }
+                    .defaultMinSize(minHeight = 56.dp)
+                    .padding(
+                        horizontal = FirefoxTheme.layout.space.dynamic200,
+                        vertical = FirefoxTheme.layout.space.static100,
+                    ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -90,14 +90,14 @@ fun BrokenSiteReasonListItem(
                     painter = iconPainter,
                     contentDescription = iconDescription,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .padding(start = FirefoxTheme.layout.space.static100)
-                        .clip(CircleShape)
-                        .clickable(
-                            enabled = onIconClick != null,
-                            onClick = { onIconClick?.invoke() },
-                        )
-                        .padding(FirefoxTheme.layout.space.static100),
+                    modifier =
+                        Modifier.padding(start = FirefoxTheme.layout.space.static100)
+                            .clip(CircleShape)
+                            .clickable(
+                                enabled = onIconClick != null,
+                                onClick = { onIconClick?.invoke() },
+                            )
+                            .padding(FirefoxTheme.layout.space.static100),
                 )
             }
         }
@@ -107,13 +107,11 @@ fun BrokenSiteReasonListItem(
 @Preview
 @Composable
 private fun WebCompatReporterBrokenSiteReasonListItemPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme
 ) {
     FirefoxTheme(theme) {
         Surface(color = MaterialTheme.colorScheme.background) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static100),
-            ) {
+            Column(verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static100)) {
                 BrokenSiteReason.entries.forEach { reason ->
                     BrokenSiteReasonListItem(
                         text = stringResource(reason.displayStringId),

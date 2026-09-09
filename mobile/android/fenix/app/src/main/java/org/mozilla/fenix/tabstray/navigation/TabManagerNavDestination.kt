@@ -4,36 +4,28 @@
 
 package org.mozilla.fenix.tabstray.navigation
 
+import org.mozilla.fenix.tabgroups.EditTabGroup as EditTabGroupSheet
+import org.mozilla.fenix.tabgroups.ExpandedTabGroup as ExpandedTabGroupScreen
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.ui.tabsearch.TabSearchScreen
 import org.mozilla.fenix.tabstray.ui.tabstray.TabsTray
-import org.mozilla.fenix.tabgroups.EditTabGroup as EditTabGroupSheet
-import org.mozilla.fenix.tabgroups.ExpandedTabGroup as ExpandedTabGroupScreen
 
-/**
- * Destinations the user can visit within the Tab Manager
- */
+/** Destinations the user can visit within the Tab Manager */
 sealed interface TabManagerNavDestination {
 
     /**
-     * [TabManagerNavDestination] representing the root screen of the Tab Manager, [TabsTray], where
-     * users access their tabs.
+     * [TabManagerNavDestination] representing the root screen of the Tab Manager, [TabsTray], where users access their
+     * tabs.
      */
     data object Root : TabManagerNavDestination
 
-    /**
-     * [TabManagerNavDestination] representing the [TabSearchScreen].
-     */
+    /** [TabManagerNavDestination] representing the [TabSearchScreen]. */
     data object TabSearch : TabManagerNavDestination
 
-    /**
-     * [TabManagerNavDestination] representing the [EditTabGroupSheet].
-     */
+    /** [TabManagerNavDestination] representing the [EditTabGroupSheet]. */
     data object EditTabGroup : TabManagerNavDestination
 
-    /**
-     * [TabManagerNavDestination] representing the [AddToTabGroup].
-     */
+    /** [TabManagerNavDestination] representing the [AddToTabGroup]. */
     data object AddToTabGroup : TabManagerNavDestination
 
     /**

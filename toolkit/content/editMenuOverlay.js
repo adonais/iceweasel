@@ -88,14 +88,171 @@ window.addEventListener(
   { once: true }
 );
 
+/**
+ * The context menu for HTML inputs and textareas in chrome documents, holding
+ * the usual undo / cut / copy / paste / delete / select all items. It's created
+ * on first use and shared by every input in the document, so consumers
+ * contribute their own items to it with addItems().
+ */
+var EditContextMenu = {
+  _itemSets: [],
+
+  /**
+   * The menu, built on first access.
+   *
+   * @type {Element}
+   */
+  get popup() {
+    return this._ensurePopup();
+  },
+
+  /**
+   * Adds items to the menu.
+   *
+   * @param {object} itemSet
+   * @param {(input: Element) => boolean} itemSet.matches
+   *   Whether the items apply to the input the menu is being opened on. They
+   *   are hidden when it returns false.
+   * @param {() => DocumentFragment} itemSet.createItems
+   *   Creates the items. Called once per menu, which may be built more than
+   *   once in the lifetime of a document.
+   * @param {(input: Element, items: Element[]) => void} [itemSet.onShowing]
+   *   Called before the menu opens on a matching input, to update the items'
+   *   state. `items` is the set's live membership: amend it to claim items
+   *   created outside createItems(), so they're hidden along with the rest when
+   *   the menu opens on another input.
+   * @param {string} [itemSet.after]
+   *   Id of the item to insert the items after. They go last by default.
+   * @returns {object}
+   *   The set, to pass to removeItems().
+   */
+  addItems({ matches, createItems, onShowing, after }) {
+    let itemSet = { matches, createItems, onShowing, after, items: [] };
+    this._itemSets.push(itemSet);
+
+    let popup = document.getElementById("textbox-contextmenu");
+    if (popup) {
+      this._insertItems(popup, itemSet);
+    }
+    return itemSet;
+  },
+
+  /**
+   * Removes items from the menu.
+   *
+   * @param {object} itemSet
+   *   The set addItems() returned.
+   */
+  removeItems(itemSet) {
+    this._itemSets = this._itemSets.filter(set => set != itemSet);
+    for (let item of itemSet.items) {
+      item.remove();
+    }
+    itemSet.items = [];
+  },
+
+  /**
+   * Opens the menu for an input.
+   *
+   * @param {Element} input
+   *   The input or textarea to open the menu for.
+   * @param {MouseEvent} event
+   *   The contextmenu event that asked for the menu.
+   */
+  open(input, event) {
+    let popup = this._ensurePopup();
+
+    // Commands are enabled for whatever has focus, so the items would otherwise
+    // reflect a different element than the one the menu was opened on.
+    if (document.commandDispatcher.focusedElement != input) {
+      input.focus();
+    }
+
+    goUpdateGlobalEditMenuItems(true);
+    for (let itemSet of this._itemSets) {
+      let matches = itemSet.matches(input);
+      for (let item of itemSet.items) {
+        item.hidden = !matches;
+      }
+      if (matches) {
+        itemSet.onShowing?.(input, itemSet.items);
+      }
+    }
+
+    popup.openPopupAtScreen(event.screenX, event.screenY, true, event);
+  },
+
+  _ensurePopup() {
+    let popup = document.getElementById("textbox-contextmenu");
+    if (popup) {
+      return popup;
+    }
+
+    MozXULElement.insertFTLIfNeeded("toolkit/global/textActions.ftl");
+    // showservicesmenu is read by macOS cocoa code to enable the "services"
+    // menu here.
+    document.documentElement.appendChild(
+      MozXULElement.parseXULToFragment(`
+      <menupopup id="textbox-contextmenu" class="textbox-contextmenu"
+                 showservicesmenu="true">
+        <menuitem id="edit-contextmenu-undo" data-l10n-id="text-action-undo" command="cmd_undo"></menuitem>
+        <menuitem id="edit-contextmenu-redo" data-l10n-id="text-action-redo" command="cmd_redo"></menuitem>
+        <menuseparator></menuseparator>
+        <menuitem id="edit-contextmenu-cut" data-l10n-id="text-action-cut" command="cmd_cut"></menuitem>
+        <menuitem id="edit-contextmenu-copy" data-l10n-id="text-action-copy" command="cmd_copy"></menuitem>
+        <menuitem id="edit-contextmenu-paste" data-l10n-id="text-action-paste" command="cmd_paste"></menuitem>
+        <menuitem id="edit-contextmenu-delete" data-l10n-id="text-action-delete" command="cmd_delete"></menuitem>
+        <menuitem id="edit-contextmenu-select-all" data-l10n-id="text-action-select-all" command="cmd_selectAll"></menuitem>
+      </menupopup>
+    `)
+    );
+    popup = document.documentElement.lastElementChild;
+
+    for (let itemSet of this._itemSets) {
+      this._insertItems(popup, itemSet);
+    }
+    return popup;
+  },
+
+  _insertItems(popup, itemSet) {
+    let fragment = itemSet.createItems();
+    itemSet.items = [...fragment.children];
+    if (itemSet.after) {
+      popup.querySelector(`#${itemSet.after}`).after(fragment);
+    } else {
+      popup.appendChild(fragment);
+    }
+  },
+};
+
+EditContextMenu.addItems({
+  matches: input => input.type == "password",
+  createItems() {
+    return MozXULElement.parseXULToFragment(`
+      <menuitem id="edit-contextmenu-reveal-password"
+                data-l10n-id="text-action-reveal-password" type="checkbox"/>
+    `);
+  },
+  onShowing(input, [item]) {
+    // Reassigned on every contextmenu so it acts on the current input.
+    item.oncommand = () => {
+      input.revealPassword = !input.revealPassword;
+    };
+    item.toggleAttribute("checked", input.revealPassword);
+  },
+});
+
 // Support context menus on html textareas in the parent process:
 window.addEventListener("contextmenu", e => {
   const HTML_NS = "http://www.w3.org/1999/xhtml";
+  const XUL_NS =
+    "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
   let target = e.composedTarget;
+  let parent = target.parentNode;
   let needsContextMenu =
     target.ownerDocument == document &&
     !e.defaultPrevented &&
-    target.parentNode.nodeName != "moz-input-box" &&
+    !(parent.namespaceURI == XUL_NS && parent.localName == "moz-input-box") &&
     ["textarea", "input"].includes(target.localName) &&
     target.namespaceURI == HTML_NS;
 
@@ -103,48 +260,7 @@ window.addEventListener("contextmenu", e => {
     return;
   }
 
-  let popup = document.getElementById("textbox-contextmenu");
-  if (!popup) {
-    MozXULElement.insertFTLIfNeeded("toolkit/global/textActions.ftl");
-    document.documentElement.appendChild(
-      MozXULElement.parseXULToFragment(`
-      <menupopup id="textbox-contextmenu" class="textbox-contextmenu">
-        <menuitem data-l10n-id="text-action-undo" command="cmd_undo"></menuitem>
-        <menuitem data-l10n-id="text-action-redo" command="cmd_redo"></menuitem>
-        <menuseparator></menuseparator>
-        <menuitem data-l10n-id="text-action-cut" command="cmd_cut"></menuitem>
-        <menuitem data-l10n-id="text-action-copy" command="cmd_copy"></menuitem>
-        <menuitem data-l10n-id="text-action-paste" command="cmd_paste"></menuitem>
-        <menuitem data-l10n-id="text-action-delete" command="cmd_delete"></menuitem>
-        <menuitem data-l10n-id="text-action-select-all" command="cmd_selectAll"></menuitem>
-        <menuitem data-l10n-id="text-action-reveal-password" type="checkbox" id="textbox-contextmenu-reveal-password" />
-      </menupopup>
-    `)
-    );
-    popup = document.documentElement.lastElementChild;
-  }
-
-  goUpdateGlobalEditMenuItems(true);
-  const isPasswordInput =
-    target.localName == "input" &&
-    target.namespaceURI == HTML_NS &&
-    target.type == "password";
-  let revealPassword = popup.querySelector(
-    "#textbox-contextmenu-reveal-password"
-  );
-  // Reassigned on every contextmenu so it acts on the current target.
-  revealPassword.oncommand = () => {
-    target.revealPassword = !target.revealPassword;
-  };
-  revealPassword.hidden = !isPasswordInput;
-  if (isPasswordInput) {
-    if (target.revealPassword) {
-      revealPassword.setAttribute("checked", "true");
-    } else {
-      revealPassword.removeAttribute("checked");
-    }
-  }
-  popup.openPopupAtScreen(e.screenX, e.screenY, true, e);
+  EditContextMenu.open(target, e);
   // Don't show any other context menu at the same time. There can be a
   // context menu from an ancestor too but we only want to show this one.
   e.preventDefault();

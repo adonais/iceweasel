@@ -7,20 +7,16 @@ package org.mozilla.fenix.debugsettings.info
 import android.os.Build
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import mozilla.components.Build as ComponentsBuild
 import mozilla.components.service.nimbus.NimbusApi
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.utils.Settings
-import mozilla.components.Build as ComponentsBuild
 import org.mozilla.geckoview.BuildConfig as GeckoViewBuildConfig
 
-/**
- * An interface for providing application debug information to display.
- */
+/** An interface for providing application debug information to display. */
 fun interface DebugInfoRepository {
 
-    /**
-     * Builds the [DebugInfoSection] this repository is responsible for.
-     */
+    /** Builds the [DebugInfoSection] this repository is responsible for. */
     suspend fun getSection(): DebugInfoSection
 }
 
@@ -29,17 +25,16 @@ fun interface DebugInfoRepository {
  *
  * @param versionName The application version name.
  */
-class BuildDebugInfoRepository(
-    private val versionName: String,
-) : DebugInfoRepository {
-    override suspend fun getSection() = buildSection("Build") {
-        textItem("Version", versionName)
-        textItem("VCS Commit", ComponentsBuild.GIT_HASH.ifBlank { "-" })
-        textItem("GeckoView", "${GeckoViewBuildConfig.MOZ_APP_VERSION}-${GeckoViewBuildConfig.MOZ_APP_BUILDID}")
-        textItem("Application Services", ComponentsBuild.APPLICATION_SERVICES_VERSION)
-        textItem("Glean SDK", ComponentsBuild.GLEAN_SDK_VERSION)
-        textItem("Build Date", BuildConfig.BUILD_DATE)
-    }
+class BuildDebugInfoRepository(private val versionName: String) : DebugInfoRepository {
+    override suspend fun getSection() =
+        buildSection("Build") {
+            textItem("Version", versionName)
+            textItem("VCS Commit", ComponentsBuild.GIT_HASH.ifBlank { "-" })
+            textItem("GeckoView", "${GeckoViewBuildConfig.MOZ_APP_VERSION}-${GeckoViewBuildConfig.MOZ_APP_BUILDID}")
+            textItem("Application Services", ComponentsBuild.APPLICATION_SERVICES_VERSION)
+            textItem("Glean SDK", ComponentsBuild.GLEAN_SDK_VERSION)
+            textItem("Build Date", BuildConfig.BUILD_DATE)
+        }
 }
 
 /**
@@ -47,25 +42,23 @@ class BuildDebugInfoRepository(
  *
  * @param localeTag The BCP-47 language tag of the current locale.
  */
-class DeviceDebugInfoRepository(
-    private val localeTag: String,
-) : DebugInfoRepository {
-    override suspend fun getSection() = buildSection("Device") {
-        textItem("Android", "Android ${Build.VERSION.RELEASE}")
-        textItem("Manufacturer", Build.MANUFACTURER)
-        textItem("Model", Build.MODEL)
-        textItem("Locale", localeTag)
-    }
+class DeviceDebugInfoRepository(private val localeTag: String) : DebugInfoRepository {
+    override suspend fun getSection() =
+        buildSection("Device") {
+            textItem("Android", "Android ${Build.VERSION.RELEASE}")
+            textItem("Manufacturer", Build.MANUFACTURER)
+            textItem("Model", Build.MODEL)
+            textItem("Locale", localeTag)
+        }
 }
 
-/**
- * [DebugInfoRepository] for the build configuration.
- */
+/** [DebugInfoRepository] for the build configuration. */
 class ConfigurationDebugInfoRepository : DebugInfoRepository {
-    override suspend fun getSection() = buildSection("Configuration") {
-        statusItem("Telemetry", BuildConfig.TELEMETRY)
-        statusItem("Crash reporting", BuildConfig.CRASH_REPORTING)
-    }
+    override suspend fun getSection() =
+        buildSection("Configuration") {
+            statusItem("Telemetry", BuildConfig.TELEMETRY)
+            statusItem("Crash reporting", BuildConfig.CRASH_REPORTING)
+        }
 }
 
 /**
@@ -73,22 +66,22 @@ class ConfigurationDebugInfoRepository : DebugInfoRepository {
  *
  * @param nimbusApi [NimbusApi] used to fetch the currently enrolled experiments.
  */
-class NimbusExperimentsDebugInfoRepository(
-    private val nimbusApi: NimbusApi,
-) : DebugInfoRepository {
-    override suspend fun getSection() = buildSection("Nimbus experiments") {
-        val activeExperiments = withContext(Dispatchers.IO) {
-            nimbusApi.getActiveExperiments()
-        }
+class NimbusExperimentsDebugInfoRepository(private val nimbusApi: NimbusApi) : DebugInfoRepository {
+    override suspend fun getSection() =
+        buildSection("Nimbus experiments") {
+            val activeExperiments =
+                withContext(Dispatchers.IO) {
+                    nimbusApi.getActiveExperiments()
+                }
 
-        if (activeExperiments.isEmpty()) {
-            textItem("Enrolled experiments", "-")
-        } else {
-            activeExperiments.forEach {
-                textItem(it.slug, it.branchSlug)
+            if (activeExperiments.isEmpty()) {
+                textItem("Enrolled experiments", "-")
+            } else {
+                activeExperiments.forEach {
+                    textItem(it.slug, it.branchSlug)
+                }
             }
         }
-    }
 }
 
 /**
@@ -96,20 +89,19 @@ class NimbusExperimentsDebugInfoRepository(
  *
  * @param settings [Settings] used to read the homepage states.
  */
-class HomepageDebugInfoRepository(
-    private val settings: Settings,
-) : DebugInfoRepository {
-    override suspend fun getSection() = buildSection("Homepage") {
-        statusItem("Top sites", settings.showTopSitesFeature)
-        statusItem("Jump back in", settings.showRecentTabsFeature)
-        statusItem("Bookmarks", settings.showBookmarksHomeFeature)
-        statusItem("Recently visited", settings.historyMetadataUIFeature)
-        statusItem("Stories", settings.showPocketRecommendationsFeature)
-        statusItem("Sponsored stories", settings.showPocketSponsoredStories)
-        statusItem("Synced tabs", settings.showSyncedTabs)
-        statusItem("Collections", settings.collections)
-        statusItem("Privacy report", settings.showPrivacyReportFeature)
-    }
+class HomepageDebugInfoRepository(private val settings: Settings) : DebugInfoRepository {
+    override suspend fun getSection() =
+        buildSection("Homepage") {
+            statusItem("Top sites", settings.showTopSitesFeature)
+            statusItem("Jump back in", settings.showRecentTabsFeature)
+            statusItem("Bookmarks", settings.showBookmarksHomeFeature)
+            statusItem("Recently visited", settings.historyMetadataUIFeature)
+            statusItem("Stories", settings.showPocketRecommendationsFeature)
+            statusItem("Sponsored stories", settings.showPocketSponsoredStories)
+            statusItem("Synced tabs", settings.showSyncedTabs)
+            statusItem("Collections", settings.collections)
+            statusItem("Privacy report", settings.showPrivacyReportFeature)
+        }
 }
 
 /**
@@ -117,14 +109,13 @@ class HomepageDebugInfoRepository(
  *
  * @param settings [Settings] used to read the toolbar states.
  */
-class ToolbarDebugInfoRepository(
-    private val settings: Settings,
-) : DebugInfoRepository {
-    override suspend fun getSection() = buildSection("Toolbar") {
-        textItem("Position", settings.toolbarPosition.name)
-        statusItem("Expanded toolbar", settings.shouldUseExpandedToolbar)
-        statusItem("Tab strip", settings.isTabStripEnabled)
-    }
+class ToolbarDebugInfoRepository(private val settings: Settings) : DebugInfoRepository {
+    override suspend fun getSection() =
+        buildSection("Toolbar") {
+            textItem("Position", settings.toolbarPosition.name)
+            statusItem("Expanded toolbar", settings.shouldUseExpandedToolbar)
+            statusItem("Tab strip", settings.isTabStripEnabled)
+        }
 }
 
 /**
@@ -137,20 +128,22 @@ class SecretSettingsDebugInfoRepository(
     private val preferenceKeys: List<String>,
     private val settings: Settings,
 ) : DebugInfoRepository {
-    override suspend fun getSection() = buildSection("Secret settings") {
-        // Get the list of secret settings preference where the setting was explicitly toggled by the user or by code.
-        val preferences = settings.preferences.all
-        val storedKeys = preferenceKeys.filter { preferences.containsKey(it) }.sorted()
+    override suspend fun getSection() =
+        buildSection("Secret settings") {
+            // Get the list of secret settings preference where the setting was explicitly toggled by the user or by
+            // code.
+            val preferences = settings.preferences.all
+            val storedKeys = preferenceKeys.filter { preferences.containsKey(it) }.sorted()
 
-        if (storedKeys.isEmpty()) {
-            textItem("Persisted settings", "-")
-        } else {
-            storedKeys.forEach { key ->
-                when (val value = preferences[key]) {
-                    is Boolean -> statusItem(key, value)
-                    else -> textItem(key, value.toString())
+            if (storedKeys.isEmpty()) {
+                textItem("Persisted settings", "-")
+            } else {
+                storedKeys.forEach { key ->
+                    when (val value = preferences[key]) {
+                        is Boolean -> statusItem(key, value)
+                        else -> textItem(key, value.toString())
+                    }
                 }
             }
         }
-    }
 }

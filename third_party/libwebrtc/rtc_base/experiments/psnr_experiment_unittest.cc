@@ -16,10 +16,11 @@
 namespace webrtc {
 namespace {
 
-TEST(PsnrExperimentTest, DisabledByDefault) {
+TEST(PsnrExperimentTest, EnabledByDefault) {
   FieldTrials field_trials = CreateTestFieldTrials("");
   PsnrExperiment config(field_trials);
-  EXPECT_FALSE(config.IsEnabled());
+  EXPECT_TRUE(config.IsEnabled());
+  EXPECT_EQ(config.SamplingInterval(), TimeDelta::Millis(1000));
 }
 
 TEST(PsnrExperimentTest, Enabled) {

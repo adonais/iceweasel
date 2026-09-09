@@ -6,11 +6,12 @@
 
 #![allow(unsafe_code)]
 
-use cssparser::{serialize_identifier, CowRcStr, ToCss};
-use cssparser::{BasicParseErrorKind, ParseError, ParseErrorKind, SourceLocation, Token};
+use cssparser::{BasicParseErrorKind, ParseError, ParseErrorKind, SourceLocation};
+use cssparser::{CowRcStr, ToCss};
 use selectors::parser::SelectorParseErrorKind;
 use selectors::SelectorList;
 use std::ffi::CStr;
+use std::fmt::Write;
 use std::ptr;
 use style::error_reporting::{ContextualParseError, ParseErrorReporter};
 use style::gecko_bindings::bindings;
@@ -18,9 +19,9 @@ use style::gecko_bindings::structs::URLExtraData as RawUrlExtraData;
 use style::gecko_bindings::structs::{nsIURI, Loader, StyleSheet as DomStyleSheet};
 use style::selector_parser::SelectorImpl;
 use style::stylesheets::UrlExtraData;
-use style_traits::{PropertySyntaxParseError, StyleParseErrorKind, ValueParseErrorKind};
+use style_traits::{PropertySyntaxParseError, StyleParseErrorKind};
 
-pub type ErrorKind<'i> = ParseErrorKind<'i, StyleParseErrorKind<'i>>;
+pub type ErrorKind = ParseErrorKind<StyleParseErrorKind>;
 
 /// An error reporter with all the data we need to report errors.
 pub struct ErrorReporter {
@@ -56,26 +57,6 @@ impl ErrorReporter {
     }
 }
 
-enum ErrorString<'a> {
-    Snippet(CowRcStr<'a>),
-    Ident(CowRcStr<'a>),
-    UnexpectedToken(Token<'a>),
-}
-
-impl<'a> ErrorString<'a> {
-    fn into_str(self) -> CowRcStr<'a> {
-        match self {
-            ErrorString::Snippet(s) => s,
-            ErrorString::UnexpectedToken(t) => t.to_css_string().into(),
-            ErrorString::Ident(i) => {
-                let mut s = String::new();
-                serialize_identifier(&i, &mut s).unwrap();
-                s.into()
-            },
-        }
-    }
-}
-
 #[derive(Debug)]
 enum Action {
     Nothing,
@@ -84,108 +65,60 @@ enum Action {
 }
 
 trait ErrorHelpers<'a> {
-    fn error_data(self) -> (CowRcStr<'a>, ErrorKind<'a>);
+    fn error_data(self) -> (CowRcStr<'a>, ErrorKind);
     fn error_params(self) -> ErrorParams<'a>;
     fn selectors(&self) -> &'a [SelectorList<SelectorImpl>];
     fn to_gecko_message(&self) -> (Option<&'static CStr>, &'static CStr, Action);
 }
 
-fn extract_error_param<'a>(err: ErrorKind<'a>) -> Option<ErrorString<'a>> {
-    Some(match err {
-        ParseErrorKind::Basic(BasicParseErrorKind::UnexpectedToken(t)) => {
-            ErrorString::UnexpectedToken(t)
-        },
-
-        ParseErrorKind::Basic(BasicParseErrorKind::AtRuleInvalid(i)) => {
-            let mut s = String::from("@");
-            serialize_identifier(&i, &mut s).unwrap();
-            ErrorString::Snippet(s.into())
-        },
-
-        ParseErrorKind::Custom(StyleParseErrorKind::OtherInvalidValue(property)) => {
-            ErrorString::Snippet(property)
-        },
-
-        ParseErrorKind::Custom(StyleParseErrorKind::SelectorError(
-            SelectorParseErrorKind::UnexpectedIdent(ident),
-        )) => ErrorString::Ident(ident),
-
-        ParseErrorKind::Custom(StyleParseErrorKind::UnknownProperty(property)) => {
-            ErrorString::Ident(property)
-        },
-
-        ParseErrorKind::Custom(StyleParseErrorKind::UnexpectedTokenWithinNamespace(token)) => {
-            ErrorString::UnexpectedToken(token)
-        },
-
-        _ => return None,
-    })
-}
-
 #[derive(Default)]
 struct ErrorParams<'a> {
-    prefix_param: Option<ErrorString<'a>>,
-    main_param: Option<ErrorString<'a>>,
+    prefix_param: Option<CowRcStr<'a>>,
+    main_param: Option<CowRcStr<'a>>,
+}
+
+fn needs_escape(c: char) -> bool {
+    // matches cssparser::serialize_name
+    c <= '\u{1f}' || c == '\u{7f}'
+}
+
+/// The text we quote in error messages is the source text of the offending rule
+/// or declaration, which trails whitespace and, for a rule, the opening brace.
+fn snippet_of<'a>(s: &'a str) -> CowRcStr<'a> {
+    let s = s.trim().trim_end_matches('{').trim_end();
+    if !s.contains(needs_escape) {
+        return s.into();
+    }
+    let mut escaped = String::with_capacity(s.len());
+    for c in s.chars() {
+        if needs_escape(c) {
+            let _ = write!(escaped, "\\{:x} ", c as u32);
+        } else {
+            escaped.push(c);
+        }
+    }
+    escaped.into()
 }
 
 /// If an error parameter is present in the given error, return it. Additionally return
 /// a second parameter if it exists, for use in the prefix for the eventual error message.
-fn extract_error_params<'a>(err: ErrorKind<'a>) -> Option<ErrorParams<'a>> {
-    let (main, prefix) = match err {
-        ParseErrorKind::Custom(StyleParseErrorKind::InvalidColor(property, token))
-        | ParseErrorKind::Custom(StyleParseErrorKind::InvalidFilter(property, token)) => (
-            Some(ErrorString::Snippet(property.into())),
-            Some(ErrorString::UnexpectedToken(token)),
-        ),
-
-        ParseErrorKind::Custom(StyleParseErrorKind::MediaQueryExpectedFeatureName(ident)) => {
-            (Some(ErrorString::Ident(ident)), None)
-        },
-
-        ParseErrorKind::Basic(BasicParseErrorKind::UnexpectedToken(token))
-        | ParseErrorKind::Custom(StyleParseErrorKind::ValueError(
-            ValueParseErrorKind::InvalidColor(token),
-        )) => (Some(ErrorString::UnexpectedToken(token)), None),
-
-        ParseErrorKind::Custom(StyleParseErrorKind::SelectorError(err)) => match err {
-            SelectorParseErrorKind::UnexpectedTokenInAttributeSelector(t)
-            | SelectorParseErrorKind::BadValueInAttr(t)
-            | SelectorParseErrorKind::ExpectedBarInAttr(t)
-            | SelectorParseErrorKind::NoQualifiedNameInAttributeSelector(t)
-            | SelectorParseErrorKind::InvalidQualNameInAttr(t)
-            | SelectorParseErrorKind::ExplicitNamespaceUnexpectedToken(t)
-            | SelectorParseErrorKind::PseudoElementExpectedIdent(t)
-            | SelectorParseErrorKind::NoIdentForPseudo(t)
-            | SelectorParseErrorKind::ClassNeedsIdent(t)
-            | SelectorParseErrorKind::PseudoElementExpectedColon(t) => {
-                (None, Some(ErrorString::UnexpectedToken(t)))
-            },
-            SelectorParseErrorKind::ExpectedNamespace(namespace) => {
-                (None, Some(ErrorString::Ident(namespace)))
-            },
-            SelectorParseErrorKind::UnsupportedPseudoClassOrElement(p) => {
-                (None, Some(ErrorString::Ident(p)))
-            },
-            SelectorParseErrorKind::EmptySelector | SelectorParseErrorKind::DanglingCombinator => {
-                (None, None)
-            },
-            err => (
-                Some(extract_error_param(ParseErrorKind::Custom(
-                    StyleParseErrorKind::SelectorError(err),
-                ))?),
-                None,
-            ),
-        },
-        err => (Some(extract_error_param(err)?), None),
+fn extract_error_params<'a>(err: ErrorKind, snippet: &CowRcStr<'a>) -> Option<ErrorParams<'a>> {
+    // Selector errors are reported with a prefix message that takes a `%1$S`.
+    let prefix = match err {
+        ParseErrorKind::Custom(StyleParseErrorKind::SelectorError(
+            SelectorParseErrorKind::EmptySelector | SelectorParseErrorKind::DanglingCombinator,
+        )) => None,
+        ParseErrorKind::Custom(StyleParseErrorKind::SelectorError(..)) => Some(snippet.clone()),
+        _ => None,
     };
     Some(ErrorParams {
-        main_param: main,
+        main_param: None,
         prefix_param: prefix,
     })
 }
 
 impl<'a> ErrorHelpers<'a> for ContextualParseError<'a> {
-    fn error_data(self) -> (CowRcStr<'a>, ErrorKind<'a>) {
+    fn error_data(self) -> (CowRcStr<'a>, ErrorKind) {
         match self {
             ContextualParseError::UnsupportedPropertyDeclaration(s, err, _)
             | ContextualParseError::UnsupportedPropertyDescriptor(s, err)
@@ -201,7 +134,7 @@ impl<'a> ErrorHelpers<'a> for ContextualParseError<'a> {
             | ContextualParseError::InvalidMediaRule(s, err)
             | ContextualParseError::UnsupportedValue(s, err)
             | ContextualParseError::UnsupportedViewTransitionDescriptor(s, err) => {
-                (s.into(), err.kind)
+                (snippet_of(s), err.kind)
             },
             ContextualParseError::NeverMatchingHostSelector(s)
             | ContextualParseError::InvalidCounterStyleWithoutSymbols(s)
@@ -220,10 +153,8 @@ impl<'a> ErrorHelpers<'a> for ContextualParseError<'a> {
 
     fn error_params(self) -> ErrorParams<'a> {
         let (s, error) = self.error_data();
-        let mut params = extract_error_params(error).unwrap_or_default();
-        params
-            .main_param
-            .get_or_insert_with(|| ErrorString::Snippet(s));
+        let mut params = extract_error_params(error, &s).unwrap_or_default();
+        params.main_param.get_or_insert_with(|| s);
         params
     }
 
@@ -239,7 +170,7 @@ impl<'a> ErrorHelpers<'a> for ContextualParseError<'a> {
             ContextualParseError::UnsupportedPropertyDeclaration(
                 _,
                 ParseError {
-                    kind: ParseErrorKind::Basic(BasicParseErrorKind::UnexpectedToken(_)),
+                    kind: ParseErrorKind::Basic(BasicParseErrorKind::UnexpectedToken),
                     ..
                 },
                 _,
@@ -247,7 +178,7 @@ impl<'a> ErrorHelpers<'a> for ContextualParseError<'a> {
             | ContextualParseError::UnsupportedPropertyDeclaration(
                 _,
                 ParseError {
-                    kind: ParseErrorKind::Basic(BasicParseErrorKind::AtRuleInvalid(_)),
+                    kind: ParseErrorKind::Basic(BasicParseErrorKind::AtRuleInvalid),
                     ..
                 },
                 _,
@@ -260,21 +191,7 @@ impl<'a> ErrorHelpers<'a> for ContextualParseError<'a> {
                 },
                 _,
             ) => match *err {
-                StyleParseErrorKind::InvalidColor(_, _) => {
-                    return (
-                        Some(cstr!("PEColorNotColor")),
-                        cstr!("PEValueParsingError"),
-                        Action::Drop,
-                    );
-                },
-                StyleParseErrorKind::InvalidFilter(_, _) => {
-                    return (
-                        Some(cstr!("PEExpectedNoneOrURLOrFilterFunction")),
-                        cstr!("PEValueParsingError"),
-                        Action::Drop,
-                    );
-                },
-                StyleParseErrorKind::OtherInvalidValue(_) => {
+                StyleParseErrorKind::OtherInvalidValue => {
                     (cstr!("PEValueParsingError"), Action::Drop)
                 },
                 StyleParseErrorKind::UnexpectedImportantDeclaration => {
@@ -295,7 +212,7 @@ impl<'a> ErrorHelpers<'a> for ContextualParseError<'a> {
                 _,
                 ParseError {
                     kind:
-                        ParseErrorKind::Custom(StyleParseErrorKind::UnexpectedTokenWithinNamespace(_)),
+                        ParseErrorKind::Custom(StyleParseErrorKind::UnexpectedTokenWithinNamespace),
                     ..
                 },
             ) => (cstr!("PEAtNSUnexpected"), Action::Nothing),
@@ -309,7 +226,7 @@ impl<'a> ErrorHelpers<'a> for ContextualParseError<'a> {
             ContextualParseError::InvalidRule(
                 _,
                 ParseError {
-                    kind: ParseErrorKind::Basic(BasicParseErrorKind::AtRuleInvalid(_)),
+                    kind: ParseErrorKind::Basic(BasicParseErrorKind::AtRuleInvalid),
                     ..
                 },
             ) => (cstr!("PEUnknownAtRule"), Action::Nothing),
@@ -317,25 +234,25 @@ impl<'a> ErrorHelpers<'a> for ContextualParseError<'a> {
                 let prefix = match err.kind {
                     ParseErrorKind::Custom(StyleParseErrorKind::SelectorError(ref err)) => {
                         match *err {
-                            SelectorParseErrorKind::UnexpectedTokenInAttributeSelector(_) => {
+                            SelectorParseErrorKind::UnexpectedTokenInAttributeSelector => {
                                 Some(cstr!("PEAttSelUnexpected"))
                             },
-                            SelectorParseErrorKind::ExpectedBarInAttr(_) => {
+                            SelectorParseErrorKind::ExpectedBarInAttr => {
                                 Some(cstr!("PEAttSelNoBar"))
                             },
-                            SelectorParseErrorKind::BadValueInAttr(_) => {
+                            SelectorParseErrorKind::BadValueInAttr => {
                                 Some(cstr!("PEAttSelBadValue"))
                             },
-                            SelectorParseErrorKind::NoQualifiedNameInAttributeSelector(_) => {
+                            SelectorParseErrorKind::NoQualifiedNameInAttributeSelector => {
                                 Some(cstr!("PEAttributeNameOrNamespaceExpected"))
                             },
-                            SelectorParseErrorKind::InvalidQualNameInAttr(_) => {
+                            SelectorParseErrorKind::InvalidQualNameInAttr => {
                                 Some(cstr!("PEAttributeNameExpected"))
                             },
-                            SelectorParseErrorKind::ExplicitNamespaceUnexpectedToken(_) => {
+                            SelectorParseErrorKind::ExplicitNamespaceUnexpectedToken => {
                                 Some(cstr!("PETypeSelNotType"))
                             },
-                            SelectorParseErrorKind::ExpectedNamespace(_) => {
+                            SelectorParseErrorKind::ExpectedNamespace => {
                                 Some(cstr!("PEUnknownNamespacePrefix"))
                             },
                             SelectorParseErrorKind::EmptySelector => {
@@ -344,19 +261,19 @@ impl<'a> ErrorHelpers<'a> for ContextualParseError<'a> {
                             SelectorParseErrorKind::DanglingCombinator => {
                                 Some(cstr!("PESelectorGroupExtraCombinator"))
                             },
-                            SelectorParseErrorKind::UnsupportedPseudoClassOrElement(_) => {
+                            SelectorParseErrorKind::UnsupportedPseudoClassOrElement => {
                                 Some(cstr!("PEPseudoSelUnknown"))
                             },
-                            SelectorParseErrorKind::PseudoElementExpectedColon(_) => {
+                            SelectorParseErrorKind::PseudoElementExpectedColon => {
                                 Some(cstr!("PEPseudoSelEndOrUserActionPC"))
                             },
-                            SelectorParseErrorKind::NoIdentForPseudo(_) => {
+                            SelectorParseErrorKind::NoIdentForPseudo => {
                                 Some(cstr!("PEPseudoClassArgNotIdent"))
                             },
-                            SelectorParseErrorKind::PseudoElementExpectedIdent(_) => {
+                            SelectorParseErrorKind::PseudoElementExpectedIdent => {
                                 Some(cstr!("PEPseudoSelBadName"))
                             },
-                            SelectorParseErrorKind::ClassNeedsIdent(_) => {
+                            SelectorParseErrorKind::ClassNeedsIdent => {
                                 Some(cstr!("PEClassSelNotIdent"))
                             },
                             _ => None,
@@ -376,9 +293,9 @@ impl<'a> ErrorHelpers<'a> for ContextualParseError<'a> {
             },
             ContextualParseError::InvalidMediaRule(_, ref err) => {
                 let err: &CStr = match err.kind {
-                    ParseErrorKind::Custom(StyleParseErrorKind::MediaQueryExpectedFeatureName(
-                        ..,
-                    )) => cstr!("PEMQExpectedFeatureName"),
+                    ParseErrorKind::Custom(StyleParseErrorKind::MediaQueryExpectedFeatureName) => {
+                        cstr!("PEMQExpectedFeatureName")
+                    },
                     ParseErrorKind::Custom(StyleParseErrorKind::MediaQueryExpectedFeatureValue) => {
                         cstr!("PEMQExpectedFeatureValue")
                     },
@@ -411,9 +328,6 @@ impl<'a> ErrorHelpers<'a> for ContextualParseError<'a> {
             },
             ContextualParseError::UnsupportedValue(_, ParseError { ref kind, .. }) => {
                 match *kind {
-                    ParseErrorKind::Custom(StyleParseErrorKind::ValueError(
-                        ValueParseErrorKind::InvalidColor(..),
-                    )) => (cstr!("PEColorNotColor"), Action::Nothing),
                     ParseErrorKind::Custom(StyleParseErrorKind::PropertySyntaxField(ref kind)) => {
                         let name = match kind {
                             PropertySyntaxParseError::NoSyntax => {
@@ -456,14 +370,9 @@ impl<'a> ErrorHelpers<'a> for ContextualParseError<'a> {
                         };
                         (name, Action::Nothing)
                     },
-                    _ => {
-                        // Not the best error message, since we weren't parsing
-                        // a declaration, just a value. But we don't produce
-                        // UnsupportedValue errors other than InvalidColors
-                        // currently.
-                        debug_assert!(false, "should use a more specific error message");
-                        (cstr!("PEDeclDropped"), Action::Nothing)
-                    },
+                    // Not the best error message, since we weren't parsing a
+                    // declaration, just a value.
+                    _ => (cstr!("PEValueParsingError"), Action::Nothing),
                 }
             },
             ContextualParseError::UnsupportedViewTransitionDescriptor(..) => {
@@ -500,8 +409,6 @@ impl ErrorReporter {
         let params = error.error_params();
         let param = params.main_param;
         let pre_param = params.prefix_param;
-        let param = param.map(|p| p.into_str());
-        let pre_param = pre_param.map(|p| p.into_str());
         let param_ptr = param.as_ref().map_or(ptr::null(), |p| p.as_ptr());
         let pre_param_ptr = pre_param.as_ref().map_or(ptr::null(), |p| p.as_ptr());
         unsafe {

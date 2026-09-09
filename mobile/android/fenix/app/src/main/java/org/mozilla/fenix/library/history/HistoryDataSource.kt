@@ -11,12 +11,10 @@ import org.mozilla.fenix.components.history.HistoryDB
 import org.mozilla.fenix.components.history.PagedHistoryProvider
 
 /**
- * PagingSource of History items, used in History Screen. It is the data source for the
- * Flow<PagingData>, that provides HistoryAdapter with items to display.
+ * PagingSource of History items, used in History Screen. It is the data source for the Flow<PagingData>, that provides
+ * HistoryAdapter with items to display.
  */
-class HistoryDataSource(
-    private val historyProvider: PagedHistoryProvider,
-) : PagingSource<Int, History>() {
+class HistoryDataSource(private val historyProvider: PagedHistoryProvider) : PagingSource<Int, History>() {
 
     // The refresh key is set to null so that it will always reload the entire list for any data
     // updates such as pull to refresh, and return the user to the start of the list.
@@ -26,14 +24,16 @@ class HistoryDataSource(
         // Get the offset of the last loaded page or default to 0 when it is null on the initial
         // load or a refresh.
         val offset = params.key ?: 0
-        val historyItems = historyProvider.getHistory(offset, params.loadSize).run {
-            positionWithOffset(offset)
-        }
-        val nextOffset = if (historyItems.isEmpty()) {
-            null
-        } else {
-            offset + params.loadSize
-        }
+        val historyItems =
+            historyProvider.getHistory(offset, params.loadSize).run {
+                positionWithOffset(offset)
+            }
+        val nextOffset =
+            if (historyItems.isEmpty()) {
+                null
+            } else {
+                offset + params.loadSize
+            }
         return LoadResult.Page(
             data = historyItems,
             prevKey = null, // Only paging forward.
@@ -46,11 +46,12 @@ class HistoryDataSource(
 internal fun List<HistoryDB>.positionWithOffset(offset: Int): List<History> {
     return this.foldIndexed(listOf()) { index, prev, item ->
         // Only offset once while folding, so that we don't accumulate the offset for each element.
-        val itemOffset = if (index == 0) {
-            offset
-        } else {
-            0
-        }
+        val itemOffset =
+            if (index == 0) {
+                offset
+            } else {
+                0
+            }
         val previousPosition = prev.lastOrNull()?.position ?: 0
         when (item) {
             is HistoryDB.Group -> {
@@ -58,11 +59,12 @@ internal fun List<HistoryDB>.positionWithOffset(offset: Int): List<History> {
                 // limitation of the current approach, and indicates that we're conflating
                 // two concepts here - position of an element for the sake of a RecyclerView,
                 // and an offset for the sake of our history pagination API.
-                val groupOffset = if (item.items.isEmpty()) {
-                    1
-                } else {
-                    item.items.size
-                }
+                val groupOffset =
+                    if (item.items.isEmpty()) {
+                        1
+                    } else {
+                        item.items.size
+                    }
                 prev + item.positioned(position = previousPosition + itemOffset + groupOffset)
             }
             is HistoryDB.Metadata -> {

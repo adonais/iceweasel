@@ -20,10 +20,11 @@ class AddMechanismEventProcessorTest {
     @Test
     fun `GIVEN a FATAL SentryEvent WHEN process is called THEN a Mechanism is attached to the exception`() {
         val processor = AddMechanismEventProcessor()
-        val event = SentryEvent().apply {
-            level = SentryLevel.FATAL
-            exceptions = listOf(SentryException())
-        }
+        val event =
+            SentryEvent().apply {
+                level = SentryLevel.FATAL
+                exceptions = listOf(SentryException())
+            }
 
         assertNull(event.exceptions?.first()?.mechanism)
         processor.process(event, Hint())
@@ -34,10 +35,11 @@ class AddMechanismEventProcessorTest {
     @Test
     fun `GIVEN a less than FATAL SentryEvent WHEN process is called THEN no Mechanism is attached to the exception`() {
         val processor = AddMechanismEventProcessor()
-        val event = SentryEvent().apply {
-            level = SentryLevel.INFO
-            exceptions = listOf(SentryException())
-        }
+        val event =
+            SentryEvent().apply {
+                level = SentryLevel.INFO
+                exceptions = listOf(SentryException())
+            }
 
         assertNull(event.exceptions?.first()?.mechanism)
         processor.process(event, Hint())

@@ -20,34 +20,22 @@ import org.mozilla.focus.ext.settings
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.state.AppStore
 
-/**
- * Controller for the onboarding flow.
- */
+/** Controller for the onboarding flow. */
 interface OnboardingController {
-    /**
-     * Finishes the onboarding flow.
-     */
+    /** Finishes the onboarding flow. */
     fun handleFinishOnBoarding()
 
-    /**
-     * Handles clicking the "Get Started" button.
-     */
+    /** Handles clicking the "Get Started" button. */
     fun handleGetStartedButtonClicked()
 
-    /**
-     * Handles clicking the button to make Focus the default browser.
-     */
+    /** Handles clicking the button to make Focus the default browser. */
     fun handleMakeFocusDefaultBrowserButtonClicked(activityResultLauncher: ActivityResultLauncher<Intent>)
 
-    /**
-     * Handles the [activityResult] from the default browser request.
-     */
+    /** Handles the [activityResult] from the default browser request. */
     fun handleActivityResultImplementation(activityResult: ActivityResult)
 }
 
-/**
- * Default implementation of the [OnboardingController].
- */
+/** Default implementation of the [OnboardingController]. */
 class DefaultOnboardingController(
     private val onboardingStorage: OnboardingStorage,
     val appStore: AppStore,
@@ -91,10 +79,7 @@ class DefaultOnboardingController(
     private fun makeFocusDefaultBrowser(activityResultLauncher: ActivityResultLauncher<Intent>) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             context.getSystemService(RoleManager::class.java).also {
-                if (
-                    it.isRoleAvailable(RoleManager.ROLE_BROWSER) &&
-                    !it.isRoleHeld(RoleManager.ROLE_BROWSER)
-                ) {
+                if (it.isRoleAvailable(RoleManager.ROLE_BROWSER) && !it.isRoleHeld(RoleManager.ROLE_BROWSER)) {
                     try {
                         activityResultLauncher.launch(it.createRequestRoleIntent(RoleManager.ROLE_BROWSER))
                     } catch (e: ActivityNotFoundException) {

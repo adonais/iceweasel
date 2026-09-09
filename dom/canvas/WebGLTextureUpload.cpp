@@ -526,51 +526,108 @@ static bool DoChannelsMatchForCopyTexImage(const webgl::FormatInfo* srcFormat,
   }
 }
 
-static bool EnsureImageDataInitializedForUpload(
-    WebGLTexture* tex, TexImageTarget target, uint32_t level,
-    const uvec3& offset, const uvec3& size, webgl::ImageInfo* imageInfo,
-    bool* const out_expectsInit = nullptr) {
-  if (out_expectsInit) {
-    *out_expectsInit = false;
+// Tracker for uninitialized image memory uploads. For partial image uploads
+// this is used to zero slice memory and mark it as initialized. For full image
+// uploads this is used to mark slice memory as initialized after a successful
+// upload.
+class UploadInitMemTracker {
+ private:
+  const detail::IntegerRange<uint32_t> sliceRange;
+  const webgl::ImageInfo* imageInfo;
+
+  enum class UploadMem {
+    // Memory is initialized, no action needed.
+    Initialized,
+    // Uninitialized and writing a partial image, needs to be zeroed to prevent
+    // reading uninitialized memory.
+    NeedsPartial,
+    // Uninitialized and writing a full image, all memory should be overwritten
+    // therefore zeroing unnecessary if successful.
+    NeedsFull,
+  } uploadInitState;
+
+  UploadMem UploadInitState(const uvec3& size) {
+    if (!imageInfo->mUninitializedSlices) {
+      return UploadMem::Initialized;
+    } else if (size.x == imageInfo->mWidth && size.y == imageInfo->mHeight) {
+      auto& isSliceUninit = *imageInfo->mUninitializedSlices;
+      for (const auto i : sliceRange) {
+        if (isSliceUninit[i]) {
+          return UploadMem::NeedsFull;
+        }
+      }
+      return UploadMem::Initialized;
+    } else {
+      return UploadMem::NeedsPartial;
+    }
   }
-  if (!imageInfo->mUninitializedSlices) return true;
 
-  if (size.x == imageInfo->mWidth && size.y == imageInfo->mHeight) {
-    bool expectsInit = false;
+ public:
+  UploadInitMemTracker(const uvec3& offset, const uvec3& size,
+                       webgl::ImageInfo* imageInfo)
+      : sliceRange(IntegerRange(offset.z, offset.z + size.z)),
+        imageInfo(imageInfo),
+        uploadInitState(UploadInitState(size)) {}
+
+  // Zero-initializes the target image and clears the uninitialized slices.
+  bool EnsureImageDataZeroedBeforePartialUpload(WebGLTexture* tex,
+                                                TexImageTarget target,
+                                                uint32_t level) {
+    if (uploadInitState != UploadMem::NeedsPartial) {
+      return true;
+    }
+
+    WebGLContext* webgl = tex->mContext;
+    webgl->GenerateWarning(
+        "Texture has not been initialized prior to a"
+        " partial upload, forcing the browser to clear it."
+        " This may be slow.");
+
+    if (!tex->EnsureImageDataInitialized(target, level)) {
+      MOZ_ASSERT(false, "Unexpected failure to init image data.");
+      return false;
+    }
+
+    uploadInitState = UploadMem::Initialized;
+
+    return true;
+  }
+
+  // True when awaiting confirmation that a full upload was successful to clear
+  // the associated uninitialized slice tracking.
+  bool ExpectsFullUpload() { return uploadInitState == UploadMem::NeedsFull; }
+
+  // Marks slices associated to a full upload as initialized, clearing
+  // uninitialized slices if all slices are initialized.
+  void ClearSliceUninitAfterFullUpload() {
+    if (uploadInitState != UploadMem::NeedsFull) {
+      return;
+    }
+
+    uploadInitState = UploadMem::Initialized;
+
+    if (!imageInfo->mUninitializedSlices) return;
+
+    // Mark upload associated slices as initialized.
+    bool sliceWasInitialized = false;
     auto& isSliceUninit = *imageInfo->mUninitializedSlices;
-    for (const auto z : IntegerRange(offset.z, offset.z + size.z)) {
-      if (!isSliceUninit[z]) continue;
-      expectsInit = true;
-      isSliceUninit[z] = false;
-    }
-    if (out_expectsInit) {
-      *out_expectsInit = expectsInit;
+    for (const auto i : sliceRange) {
+      sliceWasInitialized |= isSliceUninit[i];
+      isSliceUninit[i] = false;
     }
 
-    if (!expectsInit) return true;
+    if (!sliceWasInitialized) return;
 
+    // Clear uninitialized slices if they're all initialized.
     bool hasUninitialized = false;
-    for (const auto z : IntegerRange(imageInfo->mDepth)) {
-      hasUninitialized |= isSliceUninit[z];
+    for (const auto isUninit : isSliceUninit) {
+      hasUninitialized |= isUninit;
     }
     if (!hasUninitialized) {
       imageInfo->mUninitializedSlices.reset();
     }
-    return true;
   }
-
-  WebGLContext* webgl = tex->mContext;
-  webgl->GenerateWarning(
-      "Texture has not been initialized prior to a"
-      " partial upload, forcing the browser to clear it."
-      " This may be slow.");
-  if (!tex->EnsureImageDataInitialized(target, level)) {
-    MOZ_ASSERT(false, "Unexpected failure to init image data.");
-    return false;
-  }
-
-  return true;
-}
+};
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -1072,6 +1129,7 @@ void WebGLTexture::TexImage(uint32_t level, GLenum respecFormat,
 
   Maybe<webgl::ImageInfo> newImageInfo;
   bool isRespec = false;
+  Maybe<UploadInitMemTracker> uploadInitTracker;
   if (respecFormat) {
     // It's tempting to do allocation first, and TexSubImage second, but this is
     // generally slower.
@@ -1089,8 +1147,10 @@ void WebGLTexture::TexImage(uint32_t level, GLenum respecFormat,
       mContext->ErrorInvalidValue("`source` cannot be null.");
       return;
     }
-    if (!EnsureImageDataInitializedForUpload(this, imageTarget, level, offset,
-                                             size, imageInfo)) {
+
+    uploadInitTracker.emplace(offset, size, imageInfo);
+    if (!uploadInitTracker->EnsureImageDataZeroedBeforePartialUpload(
+            this, imageTarget, level)) {
       return;
     }
   }
@@ -1125,8 +1185,12 @@ void WebGLTexture::TexImage(uint32_t level, GLenum respecFormat,
         driverUnpackInfo->unpackType);
     mContext->ErrorInvalidOperation("%s", dui.get());
     gfxCriticalError() << mContext->FuncName() << ": " << dui.get();
+    Truncate();
     return;
   }
+
+  uploadInitTracker.apply(
+      [](auto& uit) { uit.ClearSliceUninitAfterFullUpload(); });
 
   ////////////////////////////////////
   // Update our specification data?
@@ -1294,9 +1358,11 @@ void WebGLTexture::CompressedTexImage(bool sub, GLenum imageTarget,
   ////////////////////////////////////
   // Do the thing!
 
+  Maybe<UploadInitMemTracker> uploadInitTracker;
   if (sub) {
-    if (!EnsureImageDataInitializedForUpload(this, imageTarget, level, offset,
-                                             size, imageInfo)) {
+    uploadInitTracker.emplace(UploadInitMemTracker(offset, size, imageInfo));
+    if (!uploadInitTracker->EnsureImageDataZeroedBeforePartialUpload(
+            this, imageTarget, level)) {
       return;
     }
   }
@@ -1343,6 +1409,9 @@ void WebGLTexture::CompressedTexImage(bool sub, GLenum imageTarget,
                        << " from driver: " << call.get();
     return;
   }
+
+  uploadInitTracker.apply(
+      [](auto& uit) { uit.ClearSliceUninitAfterFullUpload(); });
 
   ////////////////////////////////////
   // Update our specification data?
@@ -1880,12 +1949,16 @@ void WebGLTexture::CopyTexImage(GLenum imageTarget, uint32_t level,
 
   const bool isSubImage = !respecFormat;
   bool expectsInit = true;
+  Maybe<UploadInitMemTracker> uploadInitTracker;
+
   if (isSubImage) {
-    if (!EnsureImageDataInitializedForUpload(this, imageTarget, level,
-                                             dstOffset, size, imageInfo,
-                                             &expectsInit)) {
+    uploadInitTracker.emplace(UploadInitMemTracker(dstOffset, size, imageInfo));
+    if (!uploadInitTracker->EnsureImageDataZeroedBeforePartialUpload(
+            this, imageTarget, level)) {
       return;
     }
+
+    expectsInit = uploadInitTracker->ExpectsFullUpload();
   }
 
   if (!DoCopyTexOrSubImage(mContext, isSubImage, expectsInit, this, imageTarget,
@@ -1900,6 +1973,9 @@ void WebGLTexture::CopyTexImage(GLenum imageTarget, uint32_t level,
 
   ////////////////////////////////////
   // Update our specification data?
+
+  uploadInitTracker.apply(
+      [](auto& uit) { uit.ClearSliceUninitAfterFullUpload(); });
 
   if (respecFormat) {
     constexpr auto uninitializedSlices = std::nullopt;

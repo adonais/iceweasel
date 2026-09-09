@@ -32,11 +32,12 @@ class WebCompatFeatureTest {
 
         val onSuccess = argumentCaptor<((WebExtension) -> Unit)>()
         val onError = argumentCaptor<((Throwable) -> Unit)>()
-        verify(engine, times(1)).installBuiltInWebExtension(
-            eq(WebCompatFeature.WEBCOMPAT_EXTENSION_ID),
-            eq(WebCompatFeature.WEBCOMPAT_EXTENSION_URL),
-            onSuccess.capture(),
-            onError.capture(),
-        )
+        verify(engine, times(1))
+            .installBuiltInWebExtension(
+                eq(WebCompatFeature.WEBCOMPAT_EXTENSION_ID),
+                eq(WebCompatFeature.WEBCOMPAT_EXTENSION_URL),
+                onSuccess.capture(),
+                onError.capture(),
+            )
     }
 }

@@ -36,8 +36,7 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 internal class HomeSettingsFragmentTest {
-    @get:Rule
-    val gleanRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanRule = FenixGleanTestRule(testContext)
 
     private lateinit var homeSettingsFragment: HomeSettingsFragment
     private lateinit var appSettings: Settings
@@ -50,12 +49,14 @@ internal class HomeSettingsFragmentTest {
     @Before
     fun setup() {
         appPrefsEditor = mockk(relaxed = true)
-        appPrefs = mockk(relaxed = true) {
-            every { edit() } returns appPrefsEditor
-        }
-        appSettings = mockk(relaxed = true) {
-            every { preferences } returns appPrefs
-        }
+        appPrefs =
+            mockk(relaxed = true) {
+                every { edit() } returns appPrefsEditor
+            }
+        appSettings =
+            mockk(relaxed = true) {
+                every { preferences } returns appPrefs
+            }
         appStore = mockk(relaxed = true)
         pocketService = mockk(relaxed = true)
         contentRecommendationsHelper = mockk(relaxed = true)
@@ -118,11 +119,7 @@ internal class HomeSettingsFragmentTest {
         verify {
             appPrefsEditor.putBoolean(homeSettingsFragment.getString(R.string.pref_key_pocket_sponsored_stories), false)
             pocketService.deleteUser()
-            appStore.dispatch(
-                ContentRecommendationsAction.SponsoredContentsChange(
-                    sponsoredContents = emptyList(),
-                ),
-            )
+            appStore.dispatch(ContentRecommendationsAction.SponsoredContentsChange(sponsoredContents = emptyList()))
         }
     }
 
@@ -167,33 +164,33 @@ internal class HomeSettingsFragmentTest {
         val mockCore: Core = mockk {
             every { pocketStoriesService } returns this@HomeSettingsFragmentTest.pocketService
         }
-        val mockComponents: Components = mockk(relaxed = true) {
-            every { appStore } returns this@HomeSettingsFragmentTest.appStore
-            every { core } returns mockCore
-            every { settings } returns this@HomeSettingsFragmentTest.appSettings
-        }
+        val mockComponents: Components =
+            mockk(relaxed = true) {
+                every { appStore } returns this@HomeSettingsFragmentTest.appStore
+                every { core } returns mockCore
+                every { settings } returns this@HomeSettingsFragmentTest.appSettings
+            }
 
         homeSettingsFragment.fenixSettings = appSettings
         homeSettingsFragment.fenixComponents = mockComponents
         homeSettingsFragment.contentRecommendationsHelper = contentRecommendationsHelper
 
-        activity.supportFragmentManager.beginTransaction()
+        activity.supportFragmentManager
+            .beginTransaction()
             .add(homeSettingsFragment, "HomeSettingFragmentTest")
             .commitNow()
     }
 
     private fun getSponsoredStoriesPreference(): CheckBoxPreference =
         homeSettingsFragment.findPreference(
-            homeSettingsFragment.getPreferenceKey(R.string.pref_key_pocket_sponsored_stories),
+            homeSettingsFragment.getPreferenceKey(R.string.pref_key_pocket_sponsored_stories)
         )!!
 
     private fun getPrivacyReportPreference(): SwitchPreferenceCompat =
-        homeSettingsFragment.findPreference(
-            homeSettingsFragment.getPreferenceKey(R.string.pref_key_privacy_report),
-        )!!
+        homeSettingsFragment.findPreference(homeSettingsFragment.getPreferenceKey(R.string.pref_key_privacy_report))!!
 
     private fun getWeatherPreference(): SwitchPreferenceCompat =
         homeSettingsFragment.findPreference(
-            homeSettingsFragment.getPreferenceKey(R.string.pref_key_show_homepage_weather_widget),
+            homeSettingsFragment.getPreferenceKey(R.string.pref_key_show_homepage_weather_widget)
         )!!
 }

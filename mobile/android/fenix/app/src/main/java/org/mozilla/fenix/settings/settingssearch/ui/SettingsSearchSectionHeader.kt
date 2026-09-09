@@ -23,11 +23,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
  */
 @Composable
 fun SettingsSearchSectionHeader(title: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(all = 16.dp),
-    ) {
+    Box(modifier = Modifier.fillMaxWidth().padding(all = 16.dp)) {
         Text(
             text = title,
             style = FirefoxTheme.typography.headline8,

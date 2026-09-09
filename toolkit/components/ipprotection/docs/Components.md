@@ -35,6 +35,7 @@ flowchart LR
       IPPOnboardingMessage["Onboarding Message"]
       IPPOptOutHelper["Opt-Out Helper"]
       IPPUsageHelper["Usage Helper"]
+      IPPL10nHelper["L10n Coverage Helper"]
       IPProtectionAlertManager["Alert Manager"]
       IPProtectionInfobarManager["Infobar Manager"]
     end
@@ -177,7 +178,9 @@ IPPStartupCache
 IPPNimbusHelper
 
 : Monitors the Nimbus feature (`NimbusFeatures.ipProtection`) and triggers a
-  state recomputation on updates.
+  state recomputation on updates. Exposes a `hidesFeature()` veto that
+  `#computeState()` consults to return `UNAVAILABLE` when the device is not
+  eligible.
 
 ### FxA authentication (`toolkit/components/ipprotection/fxa`)
 
@@ -263,14 +266,30 @@ IPProtectionPanel
 IPProtectionHelpers
 
 : Registers browser-specific helpers with `IPProtectionActivator` via
-  `addHelpers()`: `UIHelper`, `IPPOnboardingMessage`, `IPPOptOutHelper`,
-  `IPPUsageHelper`, `IPProtectionAlertManager`, and `IPProtectionInfobarManager`.
-  It also registers `IPPFxaActivateAuthProvider` (and its FxA helpers) via
-  `setAuthProvider()` and `addHelpers()`.
+  `addHelpers()`: `IPPL10nHelper`, `UIHelper`, `IPPOnboardingMessage`,
+  `IPPOptOutHelper`, `IPPUsageHelper`, `IPProtectionAlertManager`, and
+  `IPProtectionInfobarManager`. It also registers `IPPFxaActivateAuthProvider`
+  (and its FxA helpers) via `setAuthProvider()` and `addHelpers()`.
 
 UIHelper
 
 : Shows and hides the UI based on the current state machine state.
+
+IPPL10nHelper
+
+: Gates the UI on localization coverage. A user who never saw the feature does
+  not see it until `browser/ipProtection.ftl` is localized enough in the locale
+  Firefox is effectively displaying (`mozILocaleService.isLocalizedEnough`).
+  Exposes a `hidesFeature()` veto that `IPProtectionService.#computeState()`
+  consults to return `UNAVAILABLE`. As soon as the state machine reaches a state
+  where the UI is shown, it sets `browser.ipProtection.hasSeenFeature`, so a
+  later version adding untranslated strings never takes the feature away from a
+  user who already saw it. The gate is also bound to a single release cycle: the
+  Firefox major version is recorded in `browser.ipProtection.l10nGateVersion`
+  the first time the UI is hidden, and the gate gives up once the browser is
+  updated to a different major version. Being a browser helper, the gate only
+  exists on desktop. Set `browser.ipProtection.hasSeenFeature` to `true` to
+  bypass the gate while testing in a locale below the threshold.
 
 IPPOptOutHelper
 

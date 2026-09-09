@@ -9,44 +9,26 @@ import mozilla.components.support.ktx.android.org.json.asSequence
 import org.json.JSONArray
 import org.json.JSONObject
 
-/**
- * The Parser is a function that takes a JSON Response and maps
- * it to a Suggestion list.
- */
+/** The Parser is a function that takes a JSON Response and maps it to a Suggestion list. */
 typealias JSONResponse = String
+
 typealias ResponseParser = (JSONResponse) -> List<String>
 
-/**
- * Builds a Parser that pulls suggestions out of a given index
- */
+/** Builds a Parser that pulls suggestions out of a given index */
 private fun buildJSONArrayParser(resultsIndex: Int): ResponseParser {
     return { input ->
-        JSONArray(input)
-            .getJSONArray(resultsIndex)
-            .asSequence()
-            .map { it as? String }
-            .filterNotNull()
-            .toList()
+        JSONArray(input).getJSONArray(resultsIndex).asSequence().map { it as? String }.filterNotNull().toList()
     }
 }
 
-/**
- * Builds a Parser that pulls suggestions out of a JSON object with the given key
- */
+/** Builds a Parser that pulls suggestions out of a JSON object with the given key */
 private fun buildJSONObjectParser(resultsKey: String): ResponseParser {
     return { input ->
-        JSONObject(input)
-            .getJSONArray(resultsKey)
-            .asSequence()
-            .map { it as? String }
-            .filterNotNull()
-            .toList()
+        JSONObject(input).getJSONArray(resultsKey).asSequence().map { it as? String }.filterNotNull().toList()
     }
 }
 
-/**
- * Builds a custom parser for Qwant
- */
+/** Builds a custom parser for Qwant */
 private fun buildQwantParser(): ResponseParser {
     return { input ->
         JSONObject(input)
@@ -60,20 +42,17 @@ private fun buildQwantParser(): ResponseParser {
     }
 }
 
-/**
- * The available Parsers
- */
+/** The available Parsers */
 internal val defaultResponseParser = buildJSONArrayParser(1)
 internal val azerdictResponseParser = buildJSONObjectParser("suggestions")
 internal val daumResponseParser = buildJSONObjectParser("items")
 internal val qwantResponseParser = buildQwantParser()
 
-/**
- * Selects a Parser based on a SearchEngine
- */
-internal fun selectResponseParser(searchEngine: SearchEngine): ResponseParser = when (searchEngine.name) {
-    "Azerdict" -> azerdictResponseParser
-    "다음지도" -> daumResponseParser
-    "Qwant" -> qwantResponseParser
-    else -> defaultResponseParser
-}
+/** Selects a Parser based on a SearchEngine */
+internal fun selectResponseParser(searchEngine: SearchEngine): ResponseParser =
+    when (searchEngine.name) {
+        "Azerdict" -> azerdictResponseParser
+        "다음지도" -> daumResponseParser
+        "Qwant" -> qwantResponseParser
+        else -> defaultResponseParser
+    }

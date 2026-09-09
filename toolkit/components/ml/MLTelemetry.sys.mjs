@@ -370,6 +370,7 @@ export class MLTelemetry {
    * @param {number | null} [options.characterCount]
    * @param {number | null} [options.timeToFirstChunk]
    * @param {number | null} [options.averageChunkTime]
+   * @param {string | null} [options.backendSourceRevision]
    * @param {string} [options.flow_id]
    * @param {string} [options.feature_id]
    */
@@ -384,6 +385,7 @@ export class MLTelemetry {
     characterCount,
     timeToFirstChunk = null,
     averageChunkTime = null,
+    backendSourceRevision = null,
     flow_id = this.#flowId,
     feature_id = this.#featureId,
   }) {
@@ -420,6 +422,7 @@ export class MLTelemetry {
       engine_id: engineId,
       model_id: modelId,
       backend,
+      backend_source_revision: backendSourceRevision,
       // Specifically use the "||" operator since Glean expects "null" rather than
       // "undefined". When the counts are 0, this can mean nothing was generated for
       // the counts. We should count these as null.

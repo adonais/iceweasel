@@ -8,10 +8,9 @@ import mozilla.components.concept.integrity.IntegrityClient
 import mozilla.components.lib.llm.mlpa.service.UserId
 import org.mozilla.fenix.components.ClientUUID
 
-/**
- * A Fake [IntegrityClient] to be used in the debug drawer preview.
- */
+/** A Fake [IntegrityClient] to be used in the debug drawer preview. */
 class FakeClientUUID : ClientUUID {
     override fun getUserId() = UserId("fake-userid")
+
     override fun generateHash() = "generated-hash"
 }

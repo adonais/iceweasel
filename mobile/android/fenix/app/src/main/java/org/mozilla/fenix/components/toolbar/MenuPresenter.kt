@@ -27,20 +27,22 @@ class MenuPresenter(
 
     fun start() {
         menuToolbar.addOnAttachStateChangeListener(this)
-        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.mapNotNull { state -> state.findCustomTabOrSelectedTab(customTabId) }
-                .ifAnyChanged { tab ->
-                    arrayOf(
-                        tab.content.loading,
-                        tab.content.canGoBack,
-                        tab.content.canGoForward,
-                        tab.content.webAppManifest,
-                    )
-                }
-                .collect {
-                    invalidateActions()
-                }
-        }
+        scope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .mapNotNull { state -> state.findCustomTabOrSelectedTab(customTabId) }
+                    .ifAnyChanged { tab ->
+                        arrayOf(
+                            tab.content.loading,
+                            tab.content.canGoBack,
+                            tab.content.canGoForward,
+                            tab.content.webAppManifest,
+                        )
+                    }
+                    .collect {
+                        invalidateActions()
+                    }
+            }
     }
 
     fun stop() {

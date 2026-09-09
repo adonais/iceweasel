@@ -4443,6 +4443,9 @@ static const struct SSLSignatureSchemeString {
     MAKE_SCHEME(dsa_sha256),
     MAKE_SCHEME(dsa_sha384),
     MAKE_SCHEME(dsa_sha512),
+    MAKE_SCHEME(mldsa44),
+    MAKE_SCHEME(mldsa65),
+    MAKE_SCHEME(mldsa87),
 };
 
 static const size_t sslSignatureSchemeStringLen =

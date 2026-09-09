@@ -1,0 +1,46 @@
+schema: 1
+
+bugzilla:
+  product: "Core"
+  component: "mozglue"
+
+origin:
+  name: Decimal
+  description: Decimal data type representation
+
+  url: https://chromium.googlesource.com/chromium/src/
+
+  release: cad4c9e3b3c9e80bb189059373db528272bca96f (Wed Feb 17 01:33:04 2016).
+  revision: cad4c9e3b3c9e80bb189059373db528272bca96f
+
+  license: BSD-3-Clause
+
+vendoring:
+  url: https://chromium.googlesource.com/chromium/src/
+  source-hosting: googlesource
+  flavor: individual-files
+  tracking: commit
+
+  skip-vendoring-steps:
+    - update-moz-build
+
+  individual-files-default-upstream: "third_party/WebKit/Source/platform/"
+  individual-files-default-destination: "{vendor_dir}/"
+  individual-files-list:
+    - Decimal.cpp
+    - Decimal.h
+
+  # Apply patches that are taken from upstream first as these will not be
+  # needed at some point, so we want subsequent patches to work after the
+  # upstream fix.
+  patches:
+    - patches/zero-serialization.patch
+    - patches/comparison-with-nan.patch
+    - patches/mfbt-abi-markers.patch
+    - patches/to-moz-dependencies.patch
+    - patches/add-doubleconversion-impl.patch
+    - patches/moz-constexpr-decimal.patch
+    - patches/moz-constexpr-nan.patch
+    # The following is disabled. See
+    # https://bugzilla.mozilla.org/show_bug.cgi?id=1208357#c7
+    # patches/fix-wshadow-warnings.patch

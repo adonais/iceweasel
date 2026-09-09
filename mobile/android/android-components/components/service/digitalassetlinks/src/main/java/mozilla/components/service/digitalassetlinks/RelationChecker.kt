@@ -4,14 +4,12 @@
 
 package mozilla.components.service.digitalassetlinks
 
-/**
- * Verifies that a source is linked to a target.
- */
+/** Verifies that a source is linked to a target. */
 interface RelationChecker {
 
     /**
-     * Performs a check to ensure a directional relationships exists between the specified
-     * [source] and [target] assets. The relationship must match the [relation] type given.
+     * Performs a check to ensure a directional relationships exists between the specified [source] and [target] assets.
+     * The relationship must match the [relation] type given.
      */
     fun checkRelationship(
         source: AssetDescriptor.Web,

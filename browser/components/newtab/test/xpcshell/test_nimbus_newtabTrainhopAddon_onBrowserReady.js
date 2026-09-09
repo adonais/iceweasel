@@ -12,8 +12,6 @@ add_task(
     pref_set: [
       [TRAINHOP_SCHEDULED_UPDATE_STATE_TIMEOUT_PREF, 100],
       [TRAINHOP_SCHEDULED_UPDATE_STATE_DELAY_PREF, 100],
-      // Allow this test to call `AsyncShutdown.appShutdownConfirmed._trigger`.
-      ["toolkit.asyncshutdown.testing", true],
     ],
   },
   async function test_scheduled_updateAddonState_onBrowserReady() {
@@ -70,13 +68,8 @@ add_task(
     // application restarts).
     AboutNewTab.activityStream = null;
 
-    // NOTE: ensures the _updateAddonStateDeferredTask to return right away if triggered
-    // after this test is completed while the xpcshell test harness is shutting down
-    // (similarly to what would happen if it would be getting triggered too late on
-    // the actual application shutdown).
-    const { AsyncShutdown } = ChromeUtils.importESModule(
-      "resource://gre/modules/AsyncShutdown.sys.mjs"
-    );
-    AsyncShutdown.appShutdownConfirmed._trigger();
+    // We finalize explicitly here to make sure the task cannot be re-armed and
+    // run again while the xpcshell test harness is shutting down.
+    await AboutNewTabResourceMapping._updateAddonStateDeferredTask?.finalize();
   }
 );

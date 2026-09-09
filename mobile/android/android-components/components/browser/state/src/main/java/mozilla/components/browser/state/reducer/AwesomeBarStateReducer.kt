@@ -8,9 +8,7 @@ import mozilla.components.browser.state.action.AwesomeBarAction
 import mozilla.components.browser.state.state.AwesomeBarState
 import mozilla.components.browser.state.state.BrowserState
 
-/**
- * An [AwesomeBarAction] reducer that updates [BrowserState.awesomeBarState].
- */
+/** An [AwesomeBarAction] reducer that updates [BrowserState.awesomeBarState]. */
 internal object AwesomeBarStateReducer {
     fun reduce(state: BrowserState, action: AwesomeBarAction): BrowserState {
         return when (action) {

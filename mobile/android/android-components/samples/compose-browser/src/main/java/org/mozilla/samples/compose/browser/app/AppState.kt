@@ -6,9 +6,5 @@ package org.mozilla.samples.compose.browser.app
 
 import mozilla.components.lib.state.State
 
-/**
- * Global state the browser is in (regardless of the currently displayed screen).
- */
-data class AppState(
-    val theme: Int = 1,
-) : State
+/** Global state the browser is in (regardless of the currently displayed screen). */
+data class AppState(val theme: Int = 1) : State

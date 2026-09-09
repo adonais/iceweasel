@@ -140,13 +140,15 @@ bool WindowsSMTCProvider::Open() {
     return false;
   }
 
-  if (!UpdateButtons()) {
-    LOG("Failed to initialize the buttons");
+  // Register events first: UpdateButtons() reads mSeekRegistrationToken, which
+  // RegisterEvents() sets.
+  if (!RegisterEvents()) {
+    LOG("Failed to register SMTC key-event listener");
     return false;
   }
 
-  if (!RegisterEvents()) {
-    LOG("Failed to register SMTC key-event listener");
+  if (!UpdateButtons()) {
+    LOG("Failed to initialize the buttons");
     return false;
   }
 

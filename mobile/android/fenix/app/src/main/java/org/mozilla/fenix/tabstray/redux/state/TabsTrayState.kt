@@ -11,18 +11,15 @@ import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 
-@VisibleForTesting
-internal const val TAB_GROUP_ONBOARDING_IMPRESSION_LIMIT = 3
+@VisibleForTesting internal const val TAB_GROUP_ONBOARDING_IMPRESSION_LIMIT = 3
 
-@VisibleForTesting
-internal const val MIN_TABS_FOR_TAB_GROUP_ONBOARDING = 2
+@VisibleForTesting internal const val MIN_TABS_FOR_TAB_GROUP_ONBOARDING = 2
 
 /**
  * Value type that represents the state of the Tabs Tray.
  *
  * @property selectedPage The current page in the tray can be on.
- * @property mode Whether the browser tab list is in multi-select mode or not with the set of
- * currently selected tabs.
+ * @property mode Whether the browser tab list is in multi-select mode or not with the set of currently selected tabs.
  * @property selectedTabId The ID of the currently selected (active) tab.
  * @property normalTabsState The state of the normal tabs page.
  * @property inactiveTabs The state of inactive tabs, including the list of tabs and UI flags.
@@ -50,29 +47,22 @@ data class TabsTrayState(
     val hasTabDataLoaded: Boolean = false,
 ) : State {
 
-    /**
-     *  Drops the last entry of [TabsTrayState.backStack]. If [backStack] only has one entry, no changes occur.
-     */
-    internal fun popBackStack(): List<TabManagerNavDestination> = if (backStack.size > 1) {
-        backStack.dropLast(1)
-    } else {
-        backStack
-    }
+    /** Drops the last entry of [TabsTrayState.backStack]. If [backStack] only has one entry, no changes occur. */
+    internal fun popBackStack(): List<TabManagerNavDestination> =
+        if (backStack.size > 1) {
+            backStack.dropLast(1)
+        } else {
+            backStack
+        }
 
-    /**
-     * The current mode that the tabs list is in.
-     */
+    /** The current mode that the tabs list is in. */
     @Immutable
     sealed interface Mode {
 
-        /**
-         * A set of selected [TabsTrayItem.Tab]s which we would want to perform an action on.
-         */
+        /** A set of selected [TabsTrayItem.Tab]s which we would want to perform an action on. */
         val selectedTabs: Set<TabsTrayItem.Tab>
 
-        /**
-         * A set of selected [TabsTrayItem.TabGroup]s which we would want to perform an action on.
-         */
+        /** A set of selected [TabsTrayItem.TabGroup]s which we would want to perform an action on. */
         val selectedTabGroups: Set<TabsTrayItem.TabGroup>
 
         /**
@@ -80,22 +70,16 @@ data class TabsTrayState(
          *
          * @param item The [TabsTrayItem] to search for.
          */
-        fun contains(item: TabsTrayItem) =
-            selectedTabs.contains(item) || selectedTabGroups.contains(item)
+        fun contains(item: TabsTrayItem) = selectedTabs.contains(item) || selectedTabGroups.contains(item)
 
-        /**
-         * The default mode the tabs list is in.
-         */
+        /** The default mode the tabs list is in. */
         data object Normal : Mode {
             override val selectedTabs: Set<TabsTrayItem.Tab> = emptySet()
 
             override val selectedTabGroups: Set<TabsTrayItem.TabGroup> = emptySet()
         }
 
-        /**
-         * The multi-select mode that the tabs list is in containing the set of currently
-         * selected [TabsTrayItem]s.
-         */
+        /** The multi-select mode that the tabs list is in containing the set of currently selected [TabsTrayItem]s. */
         data class Select(
             override val selectedTabs: Set<TabsTrayItem.Tab> = emptySet(),
             override val selectedTabGroups: Set<TabsTrayItem.TabGroup> = emptySet(),
@@ -186,11 +170,11 @@ data class TabsTrayState(
      *
      * @property displayTabsInGrid Whether normal and private tabs are displayed in a grid (vs list).
      * @property tabGroupsEnabled Whether the Tab Groups feature is enabled.
-     * @property tabGroupsDragAndDropEnabled:  Whether drag and drop is enabled for Tab Groups.
+     * @property tabGroupsDragAndDropEnabled: Whether drag and drop is enabled for Tab Groups.
      * @property tabGroupsOnboardingEnabled Whether the onboarding card for Tab Groups is enabled.
      * @property tabGroupsLiveReorderEnabled Whether in-place reorder is enabled for drag and drop.
-     * @property homepageAsNewTabEnabled Whether the homepage as a new tab feature is enabled, which gates the
-     * Tab Groups create FAB.
+     * @property homepageAsNewTabEnabled Whether the homepage as a new tab feature is enabled, which gates the Tab
+     *   Groups create FAB.
      * @property isInDebugMode Whether the app is in a debug state or has secret menu enabled.
      * @property showTabAutoCloseBanner Whether the banner for the tab auto-closer feature is visible.
      * @property collectionsEnabled Whether the Collections feature is enabled.
@@ -217,8 +201,8 @@ data class TabsTrayState(
      * @property hasUserEverHadOneTabGroup Whether the user has ever had a tab group.
      * @property hasViewedTabGroupsPage Whether the user has viewed the Tab Groups page.
      * @property hasRecordedOnboardingImpression Whether an onboarding impression has been recorded this session.
-     * @property enteringGroupId Recently created group id, to be referenced for animations.  Cleared after
-     * entrance animations are played.
+     * @property enteringGroupId Recently created group id, to be referenced for animations. Cleared after entrance
+     *   animations are played.
      * @property dragProcessingState The lifecycle state of tab-group drag handling
      */
     @Immutable
@@ -234,9 +218,7 @@ data class TabsTrayState(
         val dragProcessingState: DragProcessingState = DragProcessingState.UNINITIALIZED,
     )
 
-    /**
-     * State for the drag handling flow for Tab Groups.
-     */
+    /** State for the drag handling flow for Tab Groups. */
     enum class DragProcessingState {
         UNINITIALIZED,
         DRAG_IN_PROGRESS,
@@ -244,54 +226,46 @@ data class TabsTrayState(
         COMPLETED,
     }
 
-    /**
-     * Whether the Tab Search button is visible.
-     */
+    /** Whether the Tab Search button is visible. */
     val searchIconVisible: Boolean
         get() = selectedPage != Page.SyncedTabs
 
-    /**
-     * Whether the Tab Search button is enabled.
-     */
+    /** Whether the Tab Search button is enabled. */
     val searchIconEnabled: Boolean
-        get() = when {
-            selectedPage == Page.NormalTabs && normalTabsState.items.isNotEmpty() -> true
-            selectedPage == Page.PrivateTabs && privateBrowsing.tabs.isNotEmpty() -> true
-            else -> false
-        }
+        get() =
+            when {
+                selectedPage == Page.NormalTabs && normalTabsState.items.isNotEmpty() -> true
+                selectedPage == Page.PrivateTabs && privateBrowsing.tabs.isNotEmpty() -> true
+                else -> false
+            }
 
     /**
      * Show onboarding for tab groups if these conditions are met:
-     *  - Onboarding for tab groups is enabled.
-     *  - Drag and drop to create tab groups is enabled.
-     *  - The user has a selected tab.
-     *  - The user has no existing tab groups.
-     *  - The user has at least [MIN_TABS_FOR_TAB_GROUP_ONBOARDING] tabs.
-     *  - The user has not dismissed the onboarding.
-     *  - The user has never had a tab group.
-     *  - The user has seen the onboarding fewer than [TAB_GROUP_ONBOARDING_IMPRESSION_LIMIT] instances.
+     * - Onboarding for tab groups is enabled.
+     * - Drag and drop to create tab groups is enabled.
+     * - The user has a selected tab.
+     * - The user has no existing tab groups.
+     * - The user has at least [MIN_TABS_FOR_TAB_GROUP_ONBOARDING] tabs.
+     * - The user has not dismissed the onboarding.
+     * - The user has never had a tab group.
+     * - The user has seen the onboarding fewer than [TAB_GROUP_ONBOARDING_IMPRESSION_LIMIT] instances.
      */
     val shouldShowTabGroupOnboarding: Boolean
-        get() = config.tabGroupsOnboardingEnabled &&
-            config.tabGroupsDragAndDropEnabled &&
-            normalTabsState.selectedItemIndex in normalTabsState.items.indices &&
-            tabGroupState.groups.isEmpty() &&
-            normalTabsState.items.count { it is TabsTrayItem.Tab } >= MIN_TABS_FOR_TAB_GROUP_ONBOARDING &&
-            !tabGroupState.hasUserDismissedTabGroupOnboarding &&
-            !tabGroupState.hasUserEverHadOneTabGroup &&
-            tabGroupState.tabGroupOnboardingImpressionCount < TAB_GROUP_ONBOARDING_IMPRESSION_LIMIT
+        get() =
+            config.tabGroupsOnboardingEnabled &&
+                config.tabGroupsDragAndDropEnabled &&
+                normalTabsState.selectedItemIndex in normalTabsState.items.indices &&
+                tabGroupState.groups.isEmpty() &&
+                normalTabsState.items.count { it is TabsTrayItem.Tab } >= MIN_TABS_FOR_TAB_GROUP_ONBOARDING &&
+                !tabGroupState.hasUserDismissedTabGroupOnboarding &&
+                !tabGroupState.hasUserEverHadOneTabGroup &&
+                tabGroupState.tabGroupOnboardingImpressionCount < TAB_GROUP_ONBOARDING_IMPRESSION_LIMIT
 
-    /**
-     * Whether to show the new-content badge on the Tab Groups page button.
-     */
+    /** Whether to show the new-content badge on the Tab Groups page button. */
     val shouldShowTabGroupBadge: Boolean
-        get() = config.tabGroupsEnabled &&
-            !tabGroupState.hasViewedTabGroupsPage &&
-            tabGroupState.groups.isNotEmpty()
+        get() = config.tabGroupsEnabled && !tabGroupState.hasViewedTabGroupsPage && tabGroupState.groups.isNotEmpty()
 
-    /**
-     * Whether the floating toolbar should be visible.
-     */
+    /** Whether the floating toolbar should be visible. */
     val isFloatingToolbarVisible: Boolean
         get() {
             if (mode !is Mode.Normal) return false

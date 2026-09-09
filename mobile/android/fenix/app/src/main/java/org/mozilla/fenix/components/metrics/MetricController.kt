@@ -5,8 +5,10 @@
 package org.mozilla.fenix.components.metrics
 
 import androidx.annotation.VisibleForTesting
+import java.util.UUID
 import mozilla.components.browser.menu.facts.BrowserMenuFacts
 import mozilla.components.browser.toolbar.facts.ToolbarFacts
+import mozilla.components.compose.browser.awesomebar.AwesomeBarFacts as ComposeAwesomeBarFacts
 import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.feature.autofill.facts.AutofillFacts
 import mozilla.components.feature.awesomebar.facts.AwesomeBarFacts
@@ -67,18 +69,19 @@ import org.mozilla.fenix.GleanMetrics.SyncedTabs
 import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.utils.Settings
-import java.util.UUID
-import mozilla.components.compose.browser.awesomebar.AwesomeBarFacts as ComposeAwesomeBarFacts
 
 interface MetricController {
     fun start(type: MetricServiceType)
+
     fun stop(type: MetricServiceType)
+
     fun track(event: Event)
 
     companion object {
         /**
-         * Instantiate either a debug or release version of the metric controller.
-         * The debug version writes logs rather than sending real telemetry.
+         * Instantiate either a debug or release version of the metric controller. The debug version writes logs rather
+         * than sending real telemetry.
+         *
          * @param services the list of available services to start
          * @param isDataTelemetryEnabled has data telemetry been enabled?
          * @param isMarketingDataTelemetryEnabled has marketing telemetry been enabled?
@@ -108,9 +111,7 @@ interface MetricController {
 }
 
 @VisibleForTesting
-internal class DebugMetricController(
-    private val logger: Logger = Logger(),
-) : MetricController {
+internal class DebugMetricController(private val logger: Logger = Logger()) : MetricController {
 
     override fun start(type: MetricServiceType) {
         logger.debug("DebugMetricController: start")
@@ -142,328 +143,329 @@ internal class ReleaseMetricController(
                 override fun process(fact: Fact) {
                     fact.process()
                 }
-            },
+            }
         )
     }
 
     @VisibleForTesting
     @Suppress("LongMethod", "CognitiveComplexMethod")
-    internal fun Fact.process(): Unit = when (component to item) {
-        Component.FEATURE_PROMPTS to LoginDialogFacts.Items.DISPLAY -> {
-            LoginDialog.displayed.record(NoExtras())
-        }
-        Component.FEATURE_PROMPTS to LoginDialogFacts.Items.CANCEL -> {
-            LoginDialog.cancelled.record(NoExtras())
-        }
-        Component.FEATURE_PROMPTS to LoginDialogFacts.Items.NEVER_SAVE -> {
-            LoginDialog.neverSave.record(NoExtras())
-        }
-        Component.FEATURE_PROMPTS to LoginDialogFacts.Items.SAVE -> {
-            LoginDialog.saved.record(NoExtras())
-        }
-        Component.FEATURE_PROMPTS to GeneratedPasswordFacts.Items.SHOWN -> {
-            GeneratedPasswordDialog.shown.record(NoExtras())
-        }
-        Component.FEATURE_PROMPTS to GeneratedPasswordFacts.Items.FILLED -> {
-            GeneratedPasswordDialog.filled.record(NoExtras())
-        }
-        Component.FEATURE_MEDIA to MediaFacts.Items.STATE -> {
-            when (action) {
-                Action.PLAY -> MediaState.play.record(NoExtras())
-                Action.PAUSE -> MediaState.pause.record(NoExtras())
-                Action.STOP -> MediaState.stop.record(NoExtras())
-                else -> Unit
+    internal fun Fact.process(): Unit =
+        when (component to item) {
+            Component.FEATURE_PROMPTS to LoginDialogFacts.Items.DISPLAY -> {
+                LoginDialog.displayed.record(NoExtras())
             }
-        }
-        Component.FEATURE_MEDIA to MediaFacts.Items.NOTIFICATION -> {
-            when (action) {
-                Action.PLAY -> MediaNotification.play.record(NoExtras())
-                Action.PAUSE -> MediaNotification.pause.record(NoExtras())
-                Action.NEXT -> MediaNotification.next.record(NoExtras())
-                Action.PREVIOUS -> MediaNotification.previous.record(NoExtras())
-                else -> Unit
+            Component.FEATURE_PROMPTS to LoginDialogFacts.Items.CANCEL -> {
+                LoginDialog.cancelled.record(NoExtras())
             }
-        }
-        Component.FEATURE_PROTECTION_DASHBOARD to ProtectionDashboardFacts.Items.TRACKER_CATEGORY -> {
-            when (value) {
-                TrackerCategory.CROSS_SITE_COOKIES.name ->
-                    TrackingProtection.privacyReportTrackingCookiesTapped.record(NoExtras())
-                TrackerCategory.SOCIAL_MEDIA_TRACKERS.name ->
-                    TrackingProtection.privacyReportSocialTapped.record(NoExtras())
-                TrackerCategory.FINGERPRINTERS.name ->
-                    TrackingProtection.privacyReportFingerprintsTapped.record(NoExtras())
-                TrackerCategory.TRACKING_CONTENT.name ->
-                    TrackingProtection.privacyReportTrackingContentTapped.record(NoExtras())
-                else -> Unit
+            Component.FEATURE_PROMPTS to LoginDialogFacts.Items.NEVER_SAVE -> {
+                LoginDialog.neverSave.record(NoExtras())
             }
-        }
-        Component.BROWSER_TOOLBAR to ToolbarFacts.Items.MENU -> {
-            Events.toolbarMenuVisible.record(NoExtras())
-        }
-        Component.FEATURE_CONTEXTMENU to ContextMenuFacts.Items.ITEM -> {
-            metadata?.get("item")?.let { item ->
-                contextMenuAllowList[item]?.let { extraKey ->
-                    ContextMenu.itemTapped.record(ContextMenu.ItemTappedExtra(extraKey))
+            Component.FEATURE_PROMPTS to LoginDialogFacts.Items.SAVE -> {
+                LoginDialog.saved.record(NoExtras())
+            }
+            Component.FEATURE_PROMPTS to GeneratedPasswordFacts.Items.SHOWN -> {
+                GeneratedPasswordDialog.shown.record(NoExtras())
+            }
+            Component.FEATURE_PROMPTS to GeneratedPasswordFacts.Items.FILLED -> {
+                GeneratedPasswordDialog.filled.record(NoExtras())
+            }
+            Component.FEATURE_MEDIA to MediaFacts.Items.STATE -> {
+                when (action) {
+                    Action.PLAY -> MediaState.play.record(NoExtras())
+                    Action.PAUSE -> MediaState.pause.record(NoExtras())
+                    Action.STOP -> MediaState.stop.record(NoExtras())
+                    else -> Unit
                 }
-                if (item == SHARE_LINK_CONTEXT_MENU_ITEM_ID) {
-                    NativeShareSheet.shown.record(
-                        NativeShareSheet.ShownExtra(source = ShareSource.CONTEXT_MENU_LINK.value),
+            }
+            Component.FEATURE_MEDIA to MediaFacts.Items.NOTIFICATION -> {
+                when (action) {
+                    Action.PLAY -> MediaNotification.play.record(NoExtras())
+                    Action.PAUSE -> MediaNotification.pause.record(NoExtras())
+                    Action.NEXT -> MediaNotification.next.record(NoExtras())
+                    Action.PREVIOUS -> MediaNotification.previous.record(NoExtras())
+                    else -> Unit
+                }
+            }
+            Component.FEATURE_PROTECTION_DASHBOARD to ProtectionDashboardFacts.Items.TRACKER_CATEGORY -> {
+                when (value) {
+                    TrackerCategory.CROSS_SITE_COOKIES.name ->
+                        TrackingProtection.privacyReportTrackingCookiesTapped.record(NoExtras())
+                    TrackerCategory.SOCIAL_MEDIA_TRACKERS.name ->
+                        TrackingProtection.privacyReportSocialTapped.record(NoExtras())
+                    TrackerCategory.FINGERPRINTERS.name ->
+                        TrackingProtection.privacyReportFingerprintsTapped.record(NoExtras())
+                    TrackerCategory.TRACKING_CONTENT.name ->
+                        TrackingProtection.privacyReportTrackingContentTapped.record(NoExtras())
+                    else -> Unit
+                }
+            }
+            Component.BROWSER_TOOLBAR to ToolbarFacts.Items.MENU -> {
+                Events.toolbarMenuVisible.record(NoExtras())
+            }
+            Component.FEATURE_CONTEXTMENU to ContextMenuFacts.Items.ITEM -> {
+                metadata?.get("item")?.let { item ->
+                    contextMenuAllowList[item]?.let { extraKey ->
+                        ContextMenu.itemTapped.record(ContextMenu.ItemTappedExtra(extraKey))
+                    }
+                    if (item == SHARE_LINK_CONTEXT_MENU_ITEM_ID) {
+                        NativeShareSheet.shown.record(
+                            NativeShareSheet.ShownExtra(source = ShareSource.CONTEXT_MENU_LINK.value)
+                        )
+                    }
+                } ?: Unit
+            }
+
+            Component.BROWSER_MENU to BrowserMenuFacts.Items.WEB_EXTENSION_MENU_ITEM -> {
+                metadata?.get("id")?.let {
+                    Addons.openAddonInToolbarMenu.record(Addons.OpenAddonInToolbarMenuExtra(it.toString()))
+                } ?: Unit
+            }
+            Component.FEATURE_PROMPTS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_FORM_DETECTED ->
+                CreditCards.formDetected.record(NoExtras())
+            Component.FEATURE_PROMPTS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_SUCCESS ->
+                CreditCards.autofilled.record(NoExtras())
+            Component.FEATURE_PROMPTS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_PROMPT_SHOWN ->
+                CreditCards.autofillPromptShown.record(NoExtras())
+            Component.FEATURE_PROMPTS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_PROMPT_EXPANDED ->
+                CreditCards.autofillPromptExpanded.record(NoExtras())
+            Component.FEATURE_PROMPTS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_PROMPT_DISMISSED ->
+                CreditCards.autofillPromptDismissed.record(NoExtras())
+            Component.FEATURE_PROMPTS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_CREATED ->
+                CreditCards.savePromptCreate.record(NoExtras())
+            Component.FEATURE_PROMPTS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_UPDATED ->
+                CreditCards.savePromptUpdate.record(NoExtras())
+            Component.FEATURE_PROMPTS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_SAVE_PROMPT_SHOWN ->
+                CreditCards.savePromptShown.record(NoExtras())
+
+            Component.FEATURE_PROMPTS to AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_FORM_DETECTED ->
+                Addresses.formDetected.record(NoExtras())
+            Component.FEATURE_PROMPTS to AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_SUCCESS ->
+                Addresses.autofilled.record(NoExtras())
+            Component.FEATURE_PROMPTS to AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_PROMPT_SHOWN ->
+                Addresses.autofillPromptShown.record(NoExtras())
+            Component.FEATURE_PROMPTS to AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_PROMPT_EXPANDED ->
+                Addresses.autofillPromptExpanded.record(NoExtras())
+            Component.FEATURE_PROMPTS to AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_PROMPT_DISMISSED ->
+                Addresses.autofillPromptDismissed.record(NoExtras())
+            Component.FEATURE_PROMPTS to AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_SAVE_PROMPT_SHOWN ->
+                Addresses.savePromptShown.record(NoExtras())
+            Component.FEATURE_PROMPTS to AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_SAVE_PROMPT_DISMISSED ->
+                Addresses.savePromptDismissed.record(NoExtras())
+            Component.FEATURE_PROMPTS to AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_CREATED ->
+                Addresses.savePromptCreate.record(NoExtras())
+            Component.FEATURE_PROMPTS to AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_UPDATED ->
+                Addresses.savePromptUpdate.record(NoExtras())
+
+            Component.FEATURE_PROMPTS to LoginAutofillDialogFacts.Items.AUTOFILL_LOGIN_PERFORMED ->
+                Logins.autofilled.record(NoExtras())
+            Component.FEATURE_PROMPTS to LoginAutofillDialogFacts.Items.AUTOFILL_LOGIN_PROMPT_SHOWN ->
+                Logins.autofillPromptShown.record(NoExtras())
+            Component.FEATURE_PROMPTS to LoginAutofillDialogFacts.Items.AUTOFILL_LOGIN_PROMPT_DISMISSED ->
+                Logins.autofillPromptDismissed.record(NoExtras())
+
+            Component.FEATURE_AUTOFILL to AutofillFacts.Items.AUTOFILL_REQUEST -> {
+                val hasMatchingLogins = metadata?.get(AutofillFacts.Metadata.HAS_MATCHING_LOGINS) as Boolean?
+                if (hasMatchingLogins == true) {
+                    AndroidAutofill.requestMatchingLogins.record(NoExtras())
+                } else {
+                    AndroidAutofill.requestNoMatchingLogins.record(NoExtras())
+                }
+            }
+            Component.FEATURE_AUTOFILL to AutofillFacts.Items.AUTOFILL_SEARCH -> {
+                if (action == Action.SELECT) {
+                    AndroidAutofill.searchItemSelected.record(NoExtras())
+                } else {
+                    AndroidAutofill.searchDisplayed.record(NoExtras())
+                }
+            }
+            Component.FEATURE_AUTOFILL to AutofillFacts.Items.AUTOFILL_CONFIRMATION -> {
+                if (action == Action.CONFIRM) {
+                    AndroidAutofill.confirmSuccessful.record(NoExtras())
+                } else {
+                    AndroidAutofill.confirmCancelled.record(NoExtras())
+                }
+            }
+            Component.FEATURE_AUTOFILL to AutofillFacts.Items.AUTOFILL_LOCK -> {
+                if (action == Action.CONFIRM) {
+                    AndroidAutofill.unlockSuccessful.record(NoExtras())
+                } else {
+                    AndroidAutofill.unlockCancelled.record(NoExtras())
+                }
+            }
+            Component.FEATURE_AUTOFILL to AutofillFacts.Items.AUTOFILL_LOGIN_PASSWORD_DETECTED -> {
+                Logins.passwordDetected.record(NoExtras())
+            }
+            Component.FEATURE_SYNCEDTABS to SyncedTabsFacts.Items.SYNCED_TABS_SUGGESTION_CLICKED -> {
+                SyncedTabs.syncedTabsSuggestionClicked.record(NoExtras())
+            }
+            Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.BOOKMARK_SUGGESTION_CLICKED -> {
+                Awesomebar.bookmarkSuggestionClicked.record(NoExtras())
+            }
+            Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.CLIPBOARD_SUGGESTION_CLICKED -> {
+                Awesomebar.clipboardSuggestionClicked.record(NoExtras())
+            }
+            Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.HISTORY_SUGGESTION_CLICKED -> {
+                Awesomebar.historySuggestionClicked.record(NoExtras())
+            }
+            Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.SEARCH_ACTION_CLICKED -> {
+                Awesomebar.searchActionClicked.record(NoExtras())
+            }
+            Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.SEARCH_SUGGESTION_CLICKED -> {
+                Awesomebar.searchSuggestionClicked.record(NoExtras())
+            }
+            Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.TRENDING_SEARCH_SUGGESTION_CLICKED -> {
+                Awesomebar.trendingSearchSuggestionClicked.record(
+                    Awesomebar.TrendingSearchSuggestionClickedExtra(position = value?.toInt() ?: 0)
+                )
+            }
+            Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.TOP_SITE_SUGGESTION_CLICKED -> {
+                Awesomebar.topSiteSuggestionClicked.record(
+                    Awesomebar.TopSiteSuggestionClickedExtra(position = value?.toInt() ?: 0)
+                )
+            }
+            Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.RECENT_SEARCH_SUGGESTION_CLICKED -> {
+                Awesomebar.recentSearchSuggestionClicked.record(
+                    Awesomebar.RecentSearchSuggestionClickedExtra(position = value?.toInt() ?: 0)
+                )
+            }
+            Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.TRENDING_SEARCH_SUGGESTIONS_DISPLAYED -> {
+                Awesomebar.trendingSearchSuggestionsDisplayed.record(
+                    Awesomebar.TrendingSearchSuggestionsDisplayedExtra(count = value?.toInt() ?: 0)
+                )
+            }
+            Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.TOP_SITE_SUGGESTIONS_DISPLAYED -> {
+                Awesomebar.topSiteSuggestionsDisplayed.record(
+                    Awesomebar.TopSiteSuggestionsDisplayedExtra(count = value?.toInt() ?: 0)
+                )
+            }
+            Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.RECENT_SEARCH_SUGGESTIONS_DISPLAYED -> {
+                Awesomebar.recentSearchSuggestionsDisplayed.record(
+                    Awesomebar.RecentSearchSuggestionsDisplayedExtra(count = value?.toInt() ?: 0)
+                )
+            }
+            Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.OPENED_TAB_SUGGESTION_CLICKED -> {
+                Awesomebar.openedTabSuggestionClicked.record(NoExtras())
+            }
+            Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.SEARCH_TERM_SUGGESTION_CLICKED -> {
+                Awesomebar.searchTermSuggestionClicked.record(NoExtras())
+            }
+            Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.OPTIMIZED_SUGGESTION_CARD_DISPLAYED -> {
+                Awesomebar.optimizedSuggestionCardDisplayed.record(
+                    Awesomebar.OptimizedSuggestionCardDisplayedExtra(
+                        cardType = value,
+                        extra = metadata?.get("extra")?.toString(),
                     )
-                }
-            } ?: Unit
-        }
-
-        Component.BROWSER_MENU to BrowserMenuFacts.Items.WEB_EXTENSION_MENU_ITEM -> {
-            metadata?.get("id")?.let {
-                Addons.openAddonInToolbarMenu.record(Addons.OpenAddonInToolbarMenuExtra(it.toString()))
-            } ?: Unit
-        }
-        Component.FEATURE_PROMPTS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_FORM_DETECTED ->
-            CreditCards.formDetected.record(NoExtras())
-        Component.FEATURE_PROMPTS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_SUCCESS ->
-            CreditCards.autofilled.record(NoExtras())
-        Component.FEATURE_PROMPTS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_PROMPT_SHOWN ->
-            CreditCards.autofillPromptShown.record(NoExtras())
-        Component.FEATURE_PROMPTS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_PROMPT_EXPANDED ->
-            CreditCards.autofillPromptExpanded.record(NoExtras())
-        Component.FEATURE_PROMPTS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_PROMPT_DISMISSED ->
-            CreditCards.autofillPromptDismissed.record(NoExtras())
-        Component.FEATURE_PROMPTS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_CREATED ->
-            CreditCards.savePromptCreate.record(NoExtras())
-        Component.FEATURE_PROMPTS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_UPDATED ->
-            CreditCards.savePromptUpdate.record(NoExtras())
-        Component.FEATURE_PROMPTS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_SAVE_PROMPT_SHOWN ->
-            CreditCards.savePromptShown.record(NoExtras())
-
-        Component.FEATURE_PROMPTS to AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_FORM_DETECTED ->
-            Addresses.formDetected.record(NoExtras())
-        Component.FEATURE_PROMPTS to AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_SUCCESS ->
-            Addresses.autofilled.record(NoExtras())
-        Component.FEATURE_PROMPTS to AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_PROMPT_SHOWN ->
-            Addresses.autofillPromptShown.record(NoExtras())
-        Component.FEATURE_PROMPTS to AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_PROMPT_EXPANDED ->
-            Addresses.autofillPromptExpanded.record(NoExtras())
-        Component.FEATURE_PROMPTS to AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_PROMPT_DISMISSED ->
-            Addresses.autofillPromptDismissed.record(NoExtras())
-
-        Component.FEATURE_PROMPTS to LoginAutofillDialogFacts.Items.AUTOFILL_LOGIN_PERFORMED ->
-            Logins.autofilled.record(NoExtras())
-        Component.FEATURE_PROMPTS to LoginAutofillDialogFacts.Items.AUTOFILL_LOGIN_PROMPT_SHOWN ->
-            Logins.autofillPromptShown.record(NoExtras())
-        Component.FEATURE_PROMPTS to LoginAutofillDialogFacts.Items.AUTOFILL_LOGIN_PROMPT_DISMISSED ->
-            Logins.autofillPromptDismissed.record(NoExtras())
-
-        Component.FEATURE_AUTOFILL to AutofillFacts.Items.AUTOFILL_REQUEST -> {
-            val hasMatchingLogins =
-                metadata?.get(AutofillFacts.Metadata.HAS_MATCHING_LOGINS) as Boolean?
-            if (hasMatchingLogins == true) {
-                AndroidAutofill.requestMatchingLogins.record(NoExtras())
-            } else {
-                AndroidAutofill.requestNoMatchingLogins.record(NoExtras())
+                )
             }
-        }
-        Component.FEATURE_AUTOFILL to AutofillFacts.Items.AUTOFILL_SEARCH -> {
-            if (action == Action.SELECT) {
-                AndroidAutofill.searchItemSelected.record(NoExtras())
-            } else {
-                AndroidAutofill.searchDisplayed.record(NoExtras())
-            }
-        }
-        Component.FEATURE_AUTOFILL to AutofillFacts.Items.AUTOFILL_CONFIRMATION -> {
-            if (action == Action.CONFIRM) {
-                AndroidAutofill.confirmSuccessful.record(NoExtras())
-            } else {
-                AndroidAutofill.confirmCancelled.record(NoExtras())
-            }
-        }
-        Component.FEATURE_AUTOFILL to AutofillFacts.Items.AUTOFILL_LOCK -> {
-            if (action == Action.CONFIRM) {
-                AndroidAutofill.unlockSuccessful.record(NoExtras())
-            } else {
-                AndroidAutofill.unlockCancelled.record(NoExtras())
-            }
-        }
-        Component.FEATURE_AUTOFILL to AutofillFacts.Items.AUTOFILL_LOGIN_PASSWORD_DETECTED -> {
-            Logins.passwordDetected.record(NoExtras())
-        }
-        Component.FEATURE_SYNCEDTABS to SyncedTabsFacts.Items.SYNCED_TABS_SUGGESTION_CLICKED -> {
-            SyncedTabs.syncedTabsSuggestionClicked.record(NoExtras())
-        }
-        Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.BOOKMARK_SUGGESTION_CLICKED -> {
-            Awesomebar.bookmarkSuggestionClicked.record(NoExtras())
-        }
-        Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.CLIPBOARD_SUGGESTION_CLICKED -> {
-            Awesomebar.clipboardSuggestionClicked.record(NoExtras())
-        }
-        Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.HISTORY_SUGGESTION_CLICKED -> {
-            Awesomebar.historySuggestionClicked.record(NoExtras())
-        }
-        Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.SEARCH_ACTION_CLICKED -> {
-            Awesomebar.searchActionClicked.record(NoExtras())
-        }
-        Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.SEARCH_SUGGESTION_CLICKED -> {
-            Awesomebar.searchSuggestionClicked.record(NoExtras())
-        }
-        Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.TRENDING_SEARCH_SUGGESTION_CLICKED -> {
-            Awesomebar.trendingSearchSuggestionClicked.record(
-                Awesomebar.TrendingSearchSuggestionClickedExtra(position = value?.toInt() ?: 0),
-            )
-        }
-        Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.TOP_SITE_SUGGESTION_CLICKED -> {
-            Awesomebar.topSiteSuggestionClicked.record(
-                Awesomebar.TopSiteSuggestionClickedExtra(position = value?.toInt() ?: 0),
-            )
-        }
-        Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.RECENT_SEARCH_SUGGESTION_CLICKED -> {
-            Awesomebar.recentSearchSuggestionClicked.record(
-                Awesomebar.RecentSearchSuggestionClickedExtra(position = value?.toInt() ?: 0),
-            )
-        }
-        Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.TRENDING_SEARCH_SUGGESTIONS_DISPLAYED -> {
-            Awesomebar.trendingSearchSuggestionsDisplayed.record(
-                Awesomebar.TrendingSearchSuggestionsDisplayedExtra(count = value?.toInt() ?: 0),
-            )
-        }
-        Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.TOP_SITE_SUGGESTIONS_DISPLAYED -> {
-            Awesomebar.topSiteSuggestionsDisplayed.record(
-                Awesomebar.TopSiteSuggestionsDisplayedExtra(count = value?.toInt() ?: 0),
-            )
-        }
-        Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.RECENT_SEARCH_SUGGESTIONS_DISPLAYED -> {
-            Awesomebar.recentSearchSuggestionsDisplayed.record(
-                Awesomebar.RecentSearchSuggestionsDisplayedExtra(count = value?.toInt() ?: 0),
-            )
-        }
-        Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.OPENED_TAB_SUGGESTION_CLICKED -> {
-            Awesomebar.openedTabSuggestionClicked.record(NoExtras())
-        }
-        Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.SEARCH_TERM_SUGGESTION_CLICKED -> {
-            Awesomebar.searchTermSuggestionClicked.record(NoExtras())
-        }
-        Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.OPTIMIZED_SUGGESTION_CARD_DISPLAYED -> {
-            Awesomebar.optimizedSuggestionCardDisplayed.record(
-                Awesomebar.OptimizedSuggestionCardDisplayedExtra(
-                    cardType = value,
-                    extra = metadata?.get("extra")?.toString(),
-                ),
-            )
-        }
-        Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.OPTIMIZED_SUGGESTION_CARD_CLICKED -> {
-            Awesomebar.optimizedSuggestionCardClicked.record(
-                Awesomebar.OptimizedSuggestionCardClickedExtra(
-                    cardType = value,
-                    extra = metadata?.get("extra")?.toString(),
-                ),
-            )
-        }
-        Component.FEATURE_CONTEXTMENU to ContextMenuFacts.Items.TEXT_SELECTION_OPTION -> {
-            when (metadata?.get("textSelectionOption")?.toString()) {
-                CONTEXT_MENU_COPY -> ContextualMenu.copyTapped.record(NoExtras())
-                CONTEXT_MENU_SEARCH,
-                CONTEXT_MENU_SEARCH_PRIVATELY,
-                -> ContextualMenu.searchTapped.record(NoExtras())
-                CONTEXT_MENU_SELECT_ALL -> ContextualMenu.selectAllTapped.record(NoExtras())
-                CONTEXT_MENU_SHARE -> ContextualMenu.shareTapped.record(NoExtras())
-                else -> Unit
-            }
-        }
-
-        Component.FEATURE_FXSUGGEST to FxSuggestFacts.Items.AMP_SUGGESTION_CLICKED,
-        Component.FEATURE_FXSUGGEST to FxSuggestFacts.Items.WIKIPEDIA_SUGGESTION_CLICKED,
-        -> {
-            val clickInfo = metadata?.get(FxSuggestFacts.MetadataKeys.INTERACTION_INFO)
-
-            // Record an event for this click in the `events` ping. These events include the `client_id`.
-            when (clickInfo) {
-                is FxSuggestInteractionInfo.Amp -> {
-                    Awesomebar.sponsoredSuggestionClicked.record(
-                        Awesomebar.SponsoredSuggestionClickedExtra(
-                            provider = "amp",
-                        ),
+            Component.FEATURE_AWESOMEBAR to AwesomeBarFacts.Items.OPTIMIZED_SUGGESTION_CARD_CLICKED -> {
+                Awesomebar.optimizedSuggestionCardClicked.record(
+                    Awesomebar.OptimizedSuggestionCardClickedExtra(
+                        cardType = value,
+                        extra = metadata?.get("extra")?.toString(),
                     )
-                }
-                is FxSuggestInteractionInfo.Wikipedia -> {
-                    Awesomebar.nonSponsoredSuggestionClicked.record(
-                        Awesomebar.NonSponsoredSuggestionClickedExtra(
-                            provider = "wikipedia",
-                        ),
-                    )
-                }
+                )
             }
-
-            // Submit a separate `fx-suggest` ping for this click. These pings do not include the `client_id`.
-            FxSuggest.pingType.set("fxsuggest-click")
-            (metadata?.get(FxSuggestFacts.MetadataKeys.CLIENT_COUNTRY) as? String)?.let {
-                FxSuggest.country.set(it)
-            }
-            FxSuggest.isClicked.set(true)
-            (metadata?.get(FxSuggestFacts.MetadataKeys.POSITION) as? Long)?.let {
-                FxSuggest.position.set(it)
-            }
-            when (clickInfo) {
-                is FxSuggestInteractionInfo.Amp -> {
-                    FxSuggest.blockId.set(clickInfo.blockId)
-                    FxSuggest.advertiser.set(clickInfo.advertiser)
-                    FxSuggest.reportingUrl.set(clickInfo.reportingUrl)
-                    FxSuggest.iabCategory.set(clickInfo.iabCategory)
-                    FxSuggest.contextId.set(UUID.fromString(clickInfo.contextId))
-                }
-                is FxSuggestInteractionInfo.Wikipedia -> {
-                    FxSuggest.advertiser.set("wikipedia")
-                    FxSuggest.contextId.set(UUID.fromString(clickInfo.contextId))
-                }
-            }
-            Pings.fxSuggest.submit()
-        }
-
-        Component.FEATURE_FXSUGGEST to FxSuggestFacts.Items.AMP_SUGGESTION_IMPRESSED,
-        Component.FEATURE_FXSUGGEST to FxSuggestFacts.Items.WIKIPEDIA_SUGGESTION_IMPRESSED,
-        -> recordFxSuggestImpression(metadata)
-
-        Component.FEATURE_FXSUGGEST to FxSuggestFacts.Items.SUGGESTION_QUERY_COUNT -> {
-            FxSuggest.pingType.set("fxsuggest-query")
-            (metadata?.get("query_count") as? Long)?.let {
-                FxSuggest.queryCount.set(it)
-            }
-            Pings.fxSuggestApi.submit()
-        }
-
-        Component.FEATURE_PWA to ProgressiveWebAppFacts.Items.HOMESCREEN_ICON_TAP -> {
-            ProgressiveWebApp.homescreenTap.record(NoExtras())
-        }
-        Component.FEATURE_PWA to ProgressiveWebAppFacts.Items.INSTALL_SHORTCUT -> {
-            ProgressiveWebApp.installTap.record(NoExtras())
-        }
-
-        Component.FEATURE_SEARCH to AdsTelemetry.SERP_ADD_CLICKED -> {
-            BrowserSearch.adClicks[value!!].add()
-            track(Event.GrowthData.ConversionEvent5)
-        }
-        Component.FEATURE_SEARCH to AdsTelemetry.SERP_SHOWN_WITH_ADDS -> {
-            BrowserSearch.withAds[value!!].add()
-        }
-        Component.FEATURE_SEARCH to InContentTelemetry.IN_CONTENT_SEARCH -> {
-            BrowserSearch.inContent[value!!].add()
-            track(Event.GrowthData.ConversionEvent7(fromSearch = true))
-        }
-        Component.SUPPORT_WEBEXTENSIONS to WebExtensionFacts.Items.WEB_EXTENSIONS_INITIALIZED -> {
-            metadata?.get("installed")?.let { installedAddons ->
-                if (installedAddons is List<*>) {
-                    settings.installedAddonsCount = installedAddons.size
-                    settings.installedAddonsList = installedAddons.joinToString(",")
+            Component.FEATURE_CONTEXTMENU to ContextMenuFacts.Items.TEXT_SELECTION_OPTION -> {
+                when (metadata?.get("textSelectionOption")?.toString()) {
+                    CONTEXT_MENU_COPY -> ContextualMenu.copyTapped.record(NoExtras())
+                    CONTEXT_MENU_SEARCH,
+                    CONTEXT_MENU_SEARCH_PRIVATELY -> ContextualMenu.searchTapped.record(NoExtras())
+                    CONTEXT_MENU_SELECT_ALL -> ContextualMenu.selectAllTapped.record(NoExtras())
+                    CONTEXT_MENU_SHARE -> ContextualMenu.shareTapped.record(NoExtras())
+                    else -> Unit
                 }
             }
 
-            metadata?.get("enabled")?.let { enabledAddons ->
-                if (enabledAddons is List<*>) {
-                    settings.enabledAddonsCount = enabledAddons.size
-                    settings.enabledAddonsList = enabledAddons.joinToString(",")
+            Component.FEATURE_FXSUGGEST to FxSuggestFacts.Items.AMP_SUGGESTION_CLICKED,
+            Component.FEATURE_FXSUGGEST to FxSuggestFacts.Items.WIKIPEDIA_SUGGESTION_CLICKED -> {
+                val clickInfo = metadata?.get(FxSuggestFacts.MetadataKeys.INTERACTION_INFO)
+
+                // Record an event for this click in the `events` ping. These events include the `client_id`.
+                when (clickInfo) {
+                    is FxSuggestInteractionInfo.Amp -> {
+                        Awesomebar.sponsoredSuggestionClicked.record(
+                            Awesomebar.SponsoredSuggestionClickedExtra(provider = "amp")
+                        )
+                    }
+                    is FxSuggestInteractionInfo.Wikipedia -> {
+                        Awesomebar.nonSponsoredSuggestionClicked.record(
+                            Awesomebar.NonSponsoredSuggestionClickedExtra(provider = "wikipedia")
+                        )
+                    }
                 }
-            } ?: Unit
-        }
-        Component.COMPOSE_AWESOMEBAR to ComposeAwesomeBarFacts.Items.PROVIDER_DURATION -> {
-            metadata?.get(ComposeAwesomeBarFacts.MetadataKeys.DURATION_PAIR)
-                ?.let { providerTiming ->
+
+                // Submit a separate `fx-suggest` ping for this click. These pings do not include the `client_id`.
+                FxSuggest.pingType.set("fxsuggest-click")
+                (metadata?.get(FxSuggestFacts.MetadataKeys.CLIENT_COUNTRY) as? String)?.let {
+                    FxSuggest.country.set(it)
+                }
+                FxSuggest.isClicked.set(true)
+                (metadata?.get(FxSuggestFacts.MetadataKeys.POSITION) as? Long)?.let {
+                    FxSuggest.position.set(it)
+                }
+                when (clickInfo) {
+                    is FxSuggestInteractionInfo.Amp -> {
+                        FxSuggest.blockId.set(clickInfo.blockId)
+                        FxSuggest.advertiser.set(clickInfo.advertiser)
+                        FxSuggest.reportingUrl.set(clickInfo.reportingUrl)
+                        FxSuggest.iabCategory.set(clickInfo.iabCategory)
+                        FxSuggest.contextId.set(UUID.fromString(clickInfo.contextId))
+                    }
+                    is FxSuggestInteractionInfo.Wikipedia -> {
+                        FxSuggest.advertiser.set("wikipedia")
+                        FxSuggest.contextId.set(UUID.fromString(clickInfo.contextId))
+                    }
+                }
+                Pings.fxSuggest.submit()
+            }
+
+            Component.FEATURE_FXSUGGEST to FxSuggestFacts.Items.AMP_SUGGESTION_IMPRESSED,
+            Component.FEATURE_FXSUGGEST to FxSuggestFacts.Items.WIKIPEDIA_SUGGESTION_IMPRESSED ->
+                recordFxSuggestImpression(metadata)
+
+            Component.FEATURE_FXSUGGEST to FxSuggestFacts.Items.SUGGESTION_QUERY_COUNT -> {
+                FxSuggest.pingType.set("fxsuggest-query")
+                (metadata?.get("query_count") as? Long)?.let {
+                    FxSuggest.queryCount.set(it)
+                }
+                Pings.fxSuggestApi.submit()
+            }
+
+            Component.FEATURE_PWA to ProgressiveWebAppFacts.Items.HOMESCREEN_ICON_TAP -> {
+                ProgressiveWebApp.homescreenTap.record(NoExtras())
+            }
+            Component.FEATURE_PWA to ProgressiveWebAppFacts.Items.INSTALL_SHORTCUT -> {
+                ProgressiveWebApp.installTap.record(NoExtras())
+            }
+
+            Component.FEATURE_SEARCH to AdsTelemetry.SERP_ADD_CLICKED -> {
+                BrowserSearch.adClicks[value!!].add()
+                track(Event.GrowthData.ConversionEvent5)
+            }
+            Component.FEATURE_SEARCH to AdsTelemetry.SERP_SHOWN_WITH_ADDS -> {
+                BrowserSearch.withAds[value!!].add()
+            }
+            Component.FEATURE_SEARCH to InContentTelemetry.IN_CONTENT_SEARCH -> {
+                BrowserSearch.inContent[value!!].add()
+                track(Event.GrowthData.ConversionEvent7(fromSearch = true))
+            }
+            Component.SUPPORT_WEBEXTENSIONS to WebExtensionFacts.Items.WEB_EXTENSIONS_INITIALIZED -> {
+                metadata?.get("installed")?.let { installedAddons ->
+                    if (installedAddons is List<*>) {
+                        settings.installedAddonsCount = installedAddons.size
+                        settings.installedAddonsList = installedAddons.joinToString(",")
+                    }
+                }
+
+                metadata?.get("enabled")?.let { enabledAddons ->
+                    if (enabledAddons is List<*>) {
+                        settings.enabledAddonsCount = enabledAddons.size
+                        settings.enabledAddonsList = enabledAddons.joinToString(",")
+                    }
+                } ?: Unit
+            }
+            Component.COMPOSE_AWESOMEBAR to ComposeAwesomeBarFacts.Items.PROVIDER_DURATION -> {
+                metadata?.get(ComposeAwesomeBarFacts.MetadataKeys.DURATION_PAIR)?.let { providerTiming ->
                     require(providerTiming is Pair<*, *>) { "Expected providerTiming to be a Pair" }
                     when (val provider = providerTiming.first as AwesomeBar.SuggestionProvider) {
                         is HistoryStorageSuggestionProvider -> PerfAwesomebar.historySuggestions
@@ -478,51 +480,39 @@ internal class ReleaseMetricController(
                         }
                     }?.accumulateSamples(listOf(providerTiming.second as Long))
                 } ?: Unit
-        }
-        Component.FEATURE_TOP_SITES to TopSitesFacts.Items.COUNT -> {
-            value?.let {
-                var count = 0
-                try {
-                    count = it.toInt()
-                } catch (e: NumberFormatException) {
-                    // Do nothing
-                }
+            }
+            Component.FEATURE_TOP_SITES to TopSitesFacts.Items.COUNT -> {
+                value?.let {
+                    var count = 0
+                    try {
+                        count = it.toInt()
+                    } catch (e: NumberFormatException) {
+                        // Do nothing
+                    }
 
-                settings.topSitesSize = count
-            } ?: Unit
-        }
-        Component.FEATURE_SITEPERMISSIONS to SitePermissionsFacts.Items.PERMISSIONS -> {
-            when (action) {
-                Action.DISPLAY -> SitePermissions.promptShown.record(
-                    SitePermissions.PromptShownExtra(
-                        value,
-                    ),
-                )
-                Action.CONFIRM ->
-                    SitePermissions.permissionsAllowed.record(
-                        SitePermissions.PermissionsAllowedExtra(
-                            value,
-                        ),
-                    )
-                Action.CANCEL ->
-                    SitePermissions.permissionsDenied.record(
-                        SitePermissions.PermissionsDeniedExtra(
-                            value,
-                        ),
-                    )
-                else -> {
-                    // no-op
+                    settings.topSitesSize = count
+                } ?: Unit
+            }
+            Component.FEATURE_SITEPERMISSIONS to SitePermissionsFacts.Items.PERMISSIONS -> {
+                when (action) {
+                    Action.DISPLAY -> SitePermissions.promptShown.record(SitePermissions.PromptShownExtra(value))
+                    Action.CONFIRM ->
+                        SitePermissions.permissionsAllowed.record(SitePermissions.PermissionsAllowedExtra(value))
+                    Action.CANCEL ->
+                        SitePermissions.permissionsDenied.record(SitePermissions.PermissionsDeniedExtra(value))
+                    else -> {
+                        // no-op
+                    }
                 }
             }
-        }
-        Component.SERVICE_FIREFOX_ACCOUNTS to SyncFacts.Items.SYNC_FAILED -> {
-            Sync.failed.record(NoExtras())
-        }
+            Component.SERVICE_FIREFOX_ACCOUNTS to SyncFacts.Items.SYNC_FAILED -> {
+                Sync.failed.record(NoExtras())
+            }
 
-        else -> {
-            // no-op
+            else -> {
+                // no-op
+            }
         }
-    }
 
     override fun start(type: MetricServiceType) {
         val isEnabled = isTelemetryEnabled(type)
@@ -531,9 +521,7 @@ internal class ReleaseMetricController(
             return
         }
 
-        services
-            .filter { it.type == type }
-            .forEach { it.start() }
+        services.filter { it.type == type }.forEach { it.start() }
 
         initialized.add(type)
     }
@@ -545,9 +533,7 @@ internal class ReleaseMetricController(
             return
         }
 
-        services
-            .filter { it.type == type }
-            .forEach { it.stop() }
+        services.filter { it.type == type }.forEach { it.stop() }
 
         initialized.remove(type)
     }
@@ -568,24 +554,19 @@ internal class ReleaseMetricController(
 
     private fun recordFxSuggestImpression(metadata: Map<String, Any>?) {
         val impressionInfo = metadata?.get(FxSuggestFacts.MetadataKeys.INTERACTION_INFO)
-        val engagementAbandoned = metadata?.get(FxSuggestFacts.MetadataKeys.ENGAGEMENT_ABANDONED) as? Boolean
-            ?: false
+        val engagementAbandoned = metadata?.get(FxSuggestFacts.MetadataKeys.ENGAGEMENT_ABANDONED) as? Boolean ?: false
 
         // Record an event for this impression in the `events` ping. These events include the `client_id`, and
         // we record them for engaged and abandoned search sessions.
         when (impressionInfo) {
             is FxSuggestInteractionInfo.Amp -> {
                 Awesomebar.sponsoredSuggestionImpressed.record(
-                    Awesomebar.SponsoredSuggestionImpressedExtra(
-                        provider = "amp",
-                    ),
+                    Awesomebar.SponsoredSuggestionImpressedExtra(provider = "amp")
                 )
             }
             is FxSuggestInteractionInfo.Wikipedia -> {
                 Awesomebar.nonSponsoredSuggestionImpressed.record(
-                    Awesomebar.NonSponsoredSuggestionImpressedExtra(
-                        provider = "wikipedia",
-                    ),
+                    Awesomebar.NonSponsoredSuggestionImpressedExtra(provider = "wikipedia")
                 )
             }
         }
@@ -622,38 +603,35 @@ internal class ReleaseMetricController(
 
     private fun isInitialized(type: MetricServiceType): Boolean = initialized.contains(type)
 
-    private fun isTelemetryEnabled(type: MetricServiceType): Boolean = when (type) {
-        MetricServiceType.Data -> isDataTelemetryEnabled()
-        MetricServiceType.Marketing -> isMarketingDataTelemetryEnabled()
-        MetricServiceType.UsageReporting -> isUsageTelemetryEnabled()
-    }
+    private fun isTelemetryEnabled(type: MetricServiceType): Boolean =
+        when (type) {
+            MetricServiceType.Data -> isDataTelemetryEnabled()
+            MetricServiceType.Marketing -> isMarketingDataTelemetryEnabled()
+            MetricServiceType.UsageReporting -> isUsageTelemetryEnabled()
+        }
 
     companion object {
-        /**
-         * Text selection long press context items to be tracked.
-         */
+        /** Text selection long press context items to be tracked. */
         const val CONTEXT_MENU_COPY = "org.mozilla.geckoview.COPY"
         const val CONTEXT_MENU_SEARCH = "CUSTOM_CONTEXT_MENU_SEARCH"
         const val CONTEXT_MENU_SEARCH_PRIVATELY = "CUSTOM_CONTEXT_MENU_SEARCH_PRIVATELY"
         const val CONTEXT_MENU_SELECT_ALL = "org.mozilla.geckoview.SELECT_ALL"
         const val CONTEXT_MENU_SHARE = "CUSTOM_CONTEXT_MENU_SHARE"
 
-        @VisibleForTesting
-        internal const val SHARE_LINK_CONTEXT_MENU_ITEM_ID = "mozac.feature.contextmenu.share_link"
+        @VisibleForTesting internal const val SHARE_LINK_CONTEXT_MENU_ITEM_ID = "mozac.feature.contextmenu.share_link"
 
-        /**
-         * Non - Text selection long press context menu items to be tracked.
-         */
-        private val contextMenuAllowList = mapOf(
-            "mozac.feature.contextmenu.open_in_new_tab" to "open_in_new_tab",
-            "mozac.feature.contextmenu.open_in_private_tab" to "open_in_private_tab",
-            "mozac.feature.contextmenu.open_image_in_new_tab" to "open_image_in_new_tab",
-            "mozac.feature.contextmenu.save_image" to "save_image",
-            SHARE_LINK_CONTEXT_MENU_ITEM_ID to "share_link",
-            "mozac.feature.contextmenu.copy_link" to "copy_link",
-            "mozac.feature.contextmenu.copy_image_location" to "copy_image_location",
-            "mozac.feature.contextmenu.share_image" to "share_image",
-            "fenix.contextmenu.open_with_google_lens" to "open_with_google_lens",
-        )
+        /** Non - Text selection long press context menu items to be tracked. */
+        private val contextMenuAllowList =
+            mapOf(
+                "mozac.feature.contextmenu.open_in_new_tab" to "open_in_new_tab",
+                "mozac.feature.contextmenu.open_in_private_tab" to "open_in_private_tab",
+                "mozac.feature.contextmenu.open_image_in_new_tab" to "open_image_in_new_tab",
+                "mozac.feature.contextmenu.save_image" to "save_image",
+                SHARE_LINK_CONTEXT_MENU_ITEM_ID to "share_link",
+                "mozac.feature.contextmenu.copy_link" to "copy_link",
+                "mozac.feature.contextmenu.copy_image_location" to "copy_image_location",
+                "mozac.feature.contextmenu.share_image" to "share_image",
+                "fenix.contextmenu.open_with_google_lens" to "open_with_google_lens",
+            )
     }
 }

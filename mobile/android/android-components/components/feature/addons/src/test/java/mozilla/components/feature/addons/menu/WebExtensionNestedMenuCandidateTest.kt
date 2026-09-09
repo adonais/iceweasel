@@ -6,6 +6,7 @@ package mozilla.components.feature.addons.menu
 
 import android.graphics.Color
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.WebExtensionState
 import mozilla.components.browser.state.state.createTab
@@ -24,40 +25,42 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertIs
 
 @RunWith(AndroidJUnit4::class)
 class WebExtensionNestedMenuCandidateTest {
 
-    private val pageAction = Action(
-        title = "page title",
-        loadIcon = { mock() },
-        enabled = true,
-        badgeText = "pageBadge",
-        badgeTextColor = Color.WHITE,
-        badgeBackgroundColor = Color.BLUE,
-    ) {}
+    private val pageAction =
+        Action(
+            title = "page title",
+            loadIcon = { mock() },
+            enabled = true,
+            badgeText = "pageBadge",
+            badgeTextColor = Color.WHITE,
+            badgeBackgroundColor = Color.BLUE,
+        ) {}
 
-    private val browserAction = Action(
-        title = "browser title",
-        loadIcon = { mock() },
-        enabled = true,
-        badgeText = "browserBadge",
-        badgeTextColor = Color.WHITE,
-        badgeBackgroundColor = Color.BLUE,
-    ) {}
+    private val browserAction =
+        Action(
+            title = "browser title",
+            loadIcon = { mock() },
+            enabled = true,
+            badgeText = "browserBadge",
+            badgeTextColor = Color.WHITE,
+            badgeBackgroundColor = Color.BLUE,
+        ) {}
 
     @Test
     fun `create nested menu from browser extensions and actions`() {
-        val state = BrowserState(
-            extensions = mapOf(
-                "1" to WebExtensionState(id = "1", browserAction = browserAction, pageAction = pageAction),
-            ),
-        )
-        val candidate = state.createWebExtensionMenuCandidate(
-            testContext,
-            appendExtensionSubMenuAt = Side.END,
-        ) as NestedMenuCandidate
+        val state =
+            BrowserState(
+                extensions =
+                    mapOf("1" to WebExtensionState(id = "1", browserAction = browserAction, pageAction = pageAction))
+            )
+        val candidate =
+            state.createWebExtensionMenuCandidate(
+                testContext,
+                appendExtensionSubMenuAt = Side.END,
+            ) as NestedMenuCandidate
 
         assertEquals(6, candidate.subMenuItems!!.size)
 
@@ -100,46 +103,52 @@ class WebExtensionNestedMenuCandidateTest {
 
     @Test
     fun `browser actions can be overridden per tab`() {
-        val pageActionOverride = Action(
-            title = "updatedTitle",
-            loadIcon = null,
-            enabled = true,
-            badgeText = "updatedText",
-            badgeTextColor = Color.RED,
-            badgeBackgroundColor = Color.GREEN,
-        ) {}
-        val browserActionOverride = Action(
-            title = "updatedTitle",
-            loadIcon = null,
-            enabled = false,
-            badgeText = "updatedText",
-            badgeTextColor = Color.RED,
-            badgeBackgroundColor = Color.GREEN,
-        ) {}
+        val pageActionOverride =
+            Action(
+                title = "updatedTitle",
+                loadIcon = null,
+                enabled = true,
+                badgeText = "updatedText",
+                badgeTextColor = Color.RED,
+                badgeBackgroundColor = Color.GREEN,
+            ) {}
+        val browserActionOverride =
+            Action(
+                title = "updatedTitle",
+                loadIcon = null,
+                enabled = false,
+                badgeText = "updatedText",
+                badgeTextColor = Color.RED,
+                badgeBackgroundColor = Color.GREEN,
+            ) {}
 
-        val state = BrowserState(
-            extensions = mapOf(
-                "1" to WebExtensionState(id = "1", browserAction = browserAction, pageAction = pageAction),
-            ),
-            tabs = listOf(
-                createTab(
-                    id = "tab-1",
-                    url = "https://mozilla.org",
-                    extensions = mapOf(
-                        "1" to WebExtensionState(
-                            id = "1",
-                            browserAction = browserActionOverride,
-                            pageAction = pageActionOverride,
-                        ),
+        val state =
+            BrowserState(
+                extensions =
+                    mapOf("1" to WebExtensionState(id = "1", browserAction = browserAction, pageAction = pageAction)),
+                tabs =
+                    listOf(
+                        createTab(
+                            id = "tab-1",
+                            url = "https://mozilla.org",
+                            extensions =
+                                mapOf(
+                                    "1" to
+                                        WebExtensionState(
+                                            id = "1",
+                                            browserAction = browserActionOverride,
+                                            pageAction = pageActionOverride,
+                                        )
+                                ),
+                        )
                     ),
-                ),
-            ),
-        )
-        val candidate = state.createWebExtensionMenuCandidate(
-            testContext,
-            tabId = "tab-1",
-            appendExtensionSubMenuAt = Side.START,
-        ) as NestedMenuCandidate
+            )
+        val candidate =
+            state.createWebExtensionMenuCandidate(
+                testContext,
+                tabId = "tab-1",
+                appendExtensionSubMenuAt = Side.START,
+            ) as NestedMenuCandidate
 
         assertEquals(6, candidate.subMenuItems!!.size)
 

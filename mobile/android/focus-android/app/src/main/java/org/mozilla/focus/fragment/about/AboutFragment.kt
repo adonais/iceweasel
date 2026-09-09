@@ -4,6 +4,7 @@
 
 package org.mozilla.focus.fragment.about
 
+import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -41,9 +42,7 @@ import org.mozilla.geckoview.BuildConfig as GeckoViewBuildConfig
 
 private const val GECKO_EMOJI = " \uD83E\uDD8E "
 
-/**
- * A [BaseComposeFragment] responsible for displaying the [About] screen.
- */
+/** A [BaseComposeFragment] responsible for displaying the [About] screen. */
 class AboutFragment : BaseComposeFragment() {
 
     override val titleRes: Int = R.string.menu_about
@@ -55,51 +54,47 @@ class AboutFragment : BaseComposeFragment() {
         val aboutContent = stringResource(R.string.about_content, appName, "")
         val servicesAbbreviation = stringResource(R.string.services_abbreviation)
 
-        val aboutHeader = remember(servicesAbbreviation) {
-            val packageInfo =
-                context.packageManagerCompatHelper.getPackageInfoCompat(context.packageName, 0)
+        val aboutHeader =
+            remember(servicesAbbreviation) {
+                val packageInfo = context.packageManagerCompatHelper.getPackageInfoCompat(context.packageName, 0)
 
-            getAboutHeader(
-                versionName = packageInfo.versionName,
-                versionCode = PackageInfoCompat.getLongVersionCode(packageInfo).toString(),
-                servicesAbbreviation = servicesAbbreviation,
-            )
-        }
+                getAboutHeader(
+                    versionName = packageInfo.versionName,
+                    versionCode = PackageInfoCompat.getLongVersionCode(packageInfo).toString(),
+                    servicesAbbreviation = servicesAbbreviation,
+                )
+            }
 
-        val content = remember(aboutContent) {
-            aboutContent
-                .replace("<li>", "\u2022 \u0009 ")
-                .replace("</li>", "\n")
-                .replace("<ul>", "\n \n")
-                .replace("</ul>", "")
-                .replace("<p>", "\n")
-                .replace("</p>", "")
-                .replaceAfter("<br/>", "")
-                .replace("<br/>", "")
-        }
+        val content =
+            remember(aboutContent) {
+                aboutContent
+                    .replace("<li>", "\u2022 \u0009 ")
+                    .replace("</li>", "\n")
+                    .replace("<ul>", "\n \n")
+                    .replace("</ul>", "")
+                    .replace("<p>", "\n")
+                    .replace("</p>", "")
+                    .replaceAfter("<br/>", "")
+                    .replace("<br/>", "")
+            }
 
         val openLearnMore = remember {
             {
-                val tabId = context.components.tabsUseCases.addTab(
-                    url = manifestoURL,
-                    source = SessionState.Source.Internal.Menu,
-                    selectTab = true,
-                    private = true,
-                )
+                val tabId =
+                    context.components.tabsUseCases.addTab(
+                        url = manifestoURL,
+                        source = SessionState.Source.Internal.Menu,
+                        selectTab = true,
+                        private = true,
+                    )
                 context.components.appStore.dispatch(AppAction.OpenTab(tabId))
                 Unit
             }
         }
 
         val secretSettingsUnlocker = remember {
-            SecretSettingsUnlocker(
-                context,
-            ) {
-                context.components.appStore.dispatch(
-                    AppAction.SecretSettingsStateChange(
-                        true,
-                    ),
-                )
+            SecretSettingsUnlocker(context) {
+                context.components.appStore.dispatch(AppAction.SecretSettingsStateChange(true))
             }
         }
 
@@ -121,10 +116,8 @@ private fun AboutPageContent(
 ) {
     FocusTheme {
         Column(
-            modifier = Modifier
-                .padding(focusDimensions.paddingSmall)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+            modifier =
+                Modifier.padding(focusDimensions.paddingSmall).fillMaxSize().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -141,9 +134,7 @@ private fun LogoIcon(onLogoClick: () -> Unit) {
     Image(
         painter = painterResource(R.drawable.wordmark2),
         contentDescription = null,
-            modifier = Modifier
-                .padding(focusDimensions.paddingTiny)
-            .clickable(onClick = onLogoClick),
+        modifier = Modifier.padding(focusDimensions.paddingTiny).clickable(onClick = onLogoClick),
     )
 }
 
@@ -153,12 +144,12 @@ private fun VersionInfo(aboutVersion: String) {
         Text(
             text = aboutVersion,
             color = focusColors.aboutPageText,
-            style = focusTypography.bodyLarge.copy(
-                // Use LTR in all cases since the version is not translatable.
-                textDirection = TextDirection.Ltr,
-            ),
-            modifier = Modifier
-                .padding(focusDimensions.paddingText),
+            style =
+                focusTypography.bodyLarge.copy(
+                    // Use LTR in all cases since the version is not translatable.
+                    textDirection = TextDirection.Ltr
+                ),
+            modifier = Modifier.padding(focusDimensions.paddingText),
         )
     }
 }
@@ -169,8 +160,7 @@ private fun AboutContent(content: String) {
         text = content,
         color = focusColors.aboutPageText,
         style = focusTypography.bodyLarge,
-        modifier = Modifier
-            .padding(focusDimensions.paddingText),
+        modifier = Modifier.padding(focusDimensions.paddingText),
     )
 }
 
@@ -182,10 +172,13 @@ private fun getAboutHeader(
     val servicesVersion = mozilla.components.Build.APPLICATION_SERVICES_VERSION
     val geckoVersionInfo =
         GECKO_EMOJI + GeckoViewBuildConfig.MOZ_APP_VERSION + "-" + GeckoViewBuildConfig.MOZ_APP_BUILDID
-    val vcsHash = BuildConfig.VCS_HASH.takeIf { it.isNotBlank() }?.let { ", $it" } ?: ""
+    val vcsHash = BuildConfig.VCS_HASH.takeIf { it.isNotBlank() && it != "null" }?.let { ", $it" } ?: ""
+    val operatingSystemVersion = "Android ${Build.VERSION.RELEASE}"
 
     return """
         ${versionName ?: ""} (Build #${versionCode}$geckoVersionInfo)$vcsHash
         $servicesAbbreviation: $servicesVersion
-    """.trimIndent()
+        OS: $operatingSystemVersion
+    """
+        .trimIndent()
 }

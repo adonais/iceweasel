@@ -7,7 +7,6 @@ package org.mozilla.fenix.home.intent
 import android.content.Intent
 import androidx.navigation.NavController
 import io.mockk.Called
-import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.Test
@@ -37,9 +36,10 @@ class OpenBrowserIntentProcessorTest {
 
     @Test
     fun `do not process when open extra is false`() {
-        val intent = Intent().apply {
-            putExtra(HomeActivity.OPEN_TO_BROWSER, false)
-        }
+        val intent =
+            Intent().apply {
+                putExtra(HomeActivity.OPEN_TO_BROWSER, false)
+            }
         val processor = OpenBrowserIntentProcessor(activity) { null }
         processor.process(intent, navController, out, settings)
 
@@ -50,9 +50,10 @@ class OpenBrowserIntentProcessorTest {
 
     @Test
     fun `process when open extra is true`() {
-        val intent = Intent().apply {
-            putExtra(HomeActivity.OPEN_TO_BROWSER, true)
-        }
+        val intent =
+            Intent().apply {
+                putExtra(HomeActivity.OPEN_TO_BROWSER, true)
+            }
         val processor = OpenBrowserIntentProcessor(activity) { "session-id" }
         processor.process(intent, navController, out, settings)
 

@@ -58,9 +58,9 @@ const val FADE_OUT_DURATION_MILLIS = 600
 const val ANIMATION_DELAY_MILLIS = 400L
 
 /**
- * A transient pill-shaped button that displays an [icon] alongside a [text] label, then
- * animates away automatically: after [ANIMATION_DELAY_MILLIS] the label and pill fade out while
- * the pill shrinks to a circle, causing the parent to reflow its children.
+ * A transient pill-shaped button that displays an [icon] alongside a [text] label, then animates away automatically:
+ * after [ANIMATION_DELAY_MILLIS] the label and pill fade out while the pill shrinks to a circle, causing the parent to
+ * reflow its children.
  *
  * @param icon The main icon to display.
  * @param overlayIcon A smaller optional icon overlaid at the bottom-end of [icon].
@@ -71,6 +71,8 @@ const val ANIMATION_DELAY_MILLIS = 400L
  * @param onClick Interaction dispatched when the button is tapped.
  * @param onInteraction Callback for dispatching [BrowserToolbarEvent]s to the store.
  * @param testTag Optional test tag for this button.
+ * @param onAnimationFinished Optional [BrowserToolbarEvent] dispatched via [onInteraction] once the pill has fully
+ *   collapsed on screen (or immediately, if [animated] is false).
  */
 @Suppress("CognitiveComplexMethod")
 @Composable
@@ -84,6 +86,7 @@ internal fun AnimatedPillButton(
     onClick: BrowserToolbarInteraction,
     onInteraction: (BrowserToolbarEvent) -> Unit,
     testTag: String? = null,
+    onAnimationFinished: BrowserToolbarEvent? = null,
 ) {
     // refactoring planned in https://bugzilla.mozilla.org/show_bug.cgi?id=2030770
     val view = LocalView.current
@@ -92,45 +95,48 @@ internal fun AnimatedPillButton(
     val contractionProgress = remember { Animatable(if (animated) 1f else 0f) }
 
     // We use a single background color for both the pill and overlay background so that they match.
-    val containerColor = lerp(
-        MaterialTheme.colorScheme.surfaceContainerHighest,
-        MaterialTheme.colorScheme.surfaceContainerLowest,
-        contractionProgress.value,
-    )
+    val containerColor =
+        lerp(
+            MaterialTheme.colorScheme.surfaceContainerHighest,
+            MaterialTheme.colorScheme.surfaceContainerLowest,
+            contractionProgress.value,
+        )
 
     LaunchedEffect(fullWidthPx) {
         if (fullWidthPx == 0) return@LaunchedEffect
-        delay(ANIMATION_DELAY_MILLIS)
-        contractionProgress.animateTo(0f, tween(durationMillis = FADE_OUT_DURATION_MILLIS))
+        if (animated) {
+            delay(ANIMATION_DELAY_MILLIS)
+            contractionProgress.animateTo(0f, tween(durationMillis = FADE_OUT_DURATION_MILLIS))
+        }
+
+        onAnimationFinished?.let(onInteraction)
     }
 
     val animatedWidthDp = animatedWidth(fullWidthPx, COLLAPSED_WIDTH, contractionProgress.value, density)
 
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .padding(horizontal = 4.dp)
-            .height(40.dp)
-            .then(
-                if (animatedWidthDp != Dp.Unspecified) Modifier.width(animatedWidthDp) else Modifier,
-            )
-            .onSizeChanged { size ->
-                if (fullWidthPx == 0 && size.width > 0) fullWidthPx = size.width
-            }
-            .clip(CircleShape)
-            .background(containerColor)
-            .clickable {
-                view.playSoundEffect(SoundEffectConstants.CLICK)
-                if (onClick is BrowserToolbarEvent) {
-                    onInteraction(onClick)
+        modifier =
+            Modifier.padding(horizontal = 4.dp)
+                .height(40.dp)
+                .then(if (animatedWidthDp != Dp.Unspecified) Modifier.width(animatedWidthDp) else Modifier)
+                .onSizeChanged { size ->
+                    if (fullWidthPx == 0 && size.width > 0) fullWidthPx = size.width
                 }
-            }
-            .semantics(mergeDescendants = true) {
-                this.contentDescription = contentDescription
-                if (testTag != null) {
-                    this.testTag = testTag
+                .clip(CircleShape)
+                .background(containerColor)
+                .clickable {
+                    view.playSoundEffect(SoundEffectConstants.CLICK)
+                    if (onClick is BrowserToolbarEvent) {
+                        onInteraction(onClick)
+                    }
                 }
-            },
+                .semantics(mergeDescendants = true) {
+                    this.contentDescription = contentDescription
+                    if (testTag != null) {
+                        this.testTag = testTag
+                    }
+                },
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 8.dp),
@@ -164,12 +170,13 @@ private fun animatedWidth(
     collapsedWidthDp: Dp,
     contractionProgress: Float,
     density: Density,
-) = if (fullWidthPx > 0) {
-    val collapsedPx = with(density) { collapsedWidthDp.toPx() }
-    with(density) { (collapsedPx + (fullWidthPx - collapsedPx) * contractionProgress).toDp() }
-} else {
-    Dp.Unspecified
-}
+) =
+    if (fullWidthPx > 0) {
+        val collapsedPx = with(density) { collapsedWidthDp.toPx() }
+        with(density) { (collapsedPx + (fullWidthPx - collapsedPx) * contractionProgress).toDp() }
+    } else {
+        Dp.Unspecified
+    }
 
 /**
  * Renders an icon with an optional [overlayPainter] icon layered at the bottom-end corner.
@@ -178,8 +185,7 @@ private fun animatedWidth(
  * @param overlayPainter The optional overlay icon layered at the bottom-end corner.
  * @param tint Tint applied to [painter].
  * @param overlayTint Tint applied to [overlayPainter].
- * @param overlayBackground Solid fill drawn behind [overlayPainter] as a circle, used to
- * occlude the base icon.
+ * @param overlayBackground Solid fill drawn behind [overlayPainter] as a circle, used to occlude the base icon.
  * @param isHighlighted Whether to render a highlight badge.
  */
 @Composable
@@ -202,12 +208,12 @@ private fun LayeredIcon(
             Icon(
                 painter = overlayPainter,
                 contentDescription = null,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 1.dp)
-                    .size(11.dp)
-                    .clip(CircleShape)
-                    .background(overlayBackground),
+                modifier =
+                    Modifier.align(Alignment.BottomEnd)
+                        .padding(end = 1.dp)
+                        .size(11.dp)
+                        .clip(CircleShape)
+                        .background(overlayBackground),
                 tint = overlayTint,
             )
         }
@@ -219,14 +225,16 @@ private fun LayeredIcon(
 private fun AnimatedPillButtonPreview() {
     AcornTheme {
         AnimatedPillButton(
-            icon = AppCompatResources.getDrawable(
-                LocalContext.current,
-                iconsR.drawable.mozac_ic_shield_checkmark_24,
-            )!!,
-            overlayIcon = AppCompatResources.getDrawable(
-                LocalContext.current,
-                iconsR.drawable.mozac_ic_globe_24,
-            )!!,
+            icon =
+                AppCompatResources.getDrawable(
+                    LocalContext.current,
+                    iconsR.drawable.mozac_ic_shield_checkmark_24,
+                )!!,
+            overlayIcon =
+                AppCompatResources.getDrawable(
+                    LocalContext.current,
+                    iconsR.drawable.mozac_ic_globe_24,
+                )!!,
             text = "VPN On",
             contentDescription = "VPN On",
             onClick = object : BrowserToolbarEvent {},
@@ -240,14 +248,16 @@ private fun AnimatedPillButtonPreview() {
 private fun AnimatedPillButtonHighlightedPreview() {
     AcornTheme {
         AnimatedPillButton(
-            icon = AppCompatResources.getDrawable(
-                LocalContext.current,
-                iconsR.drawable.mozac_ic_shield_checkmark_24,
-            )!!,
-            overlayIcon = AppCompatResources.getDrawable(
-                LocalContext.current,
-                iconsR.drawable.mozac_ic_globe_24,
-            )!!,
+            icon =
+                AppCompatResources.getDrawable(
+                    LocalContext.current,
+                    iconsR.drawable.mozac_ic_shield_checkmark_24,
+                )!!,
+            overlayIcon =
+                AppCompatResources.getDrawable(
+                    LocalContext.current,
+                    iconsR.drawable.mozac_ic_globe_24,
+                )!!,
             text = "VPN On",
             contentDescription = "VPN On",
             highlighted = true,

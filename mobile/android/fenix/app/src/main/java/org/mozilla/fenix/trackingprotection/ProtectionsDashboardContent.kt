@@ -24,27 +24,27 @@ import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import java.text.DateFormat
+import java.util.Date
 import mozilla.components.compose.base.BottomSheetHandle
 import mozilla.components.feature.protection.dashboard.TrackerCategory
 import mozilla.components.feature.protection.dashboard.TrackerProtectionDashboard
 import mozilla.components.feature.protection.dashboard.TrackersBlockedCategory
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import java.text.DateFormat
-import java.util.Date
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * The trackers protections dashboard styled as a bottom sheet layout.
  *
  * @param totalTrackersBlocked The total number of trackers blocked across visited websites.
  * @param trackersBlockedThisWeek List of the trackers blocked this week.
- * @param earliestTrackingDate the earliest date for which we have information about blocked trackers
- * as a Unix time stamp.
- * @param onDismiss Callback for when the user dismisses this panel
- * (by pressing system back or from interacting with the bottom sheet handle).
+ * @param earliestTrackingDate the earliest date for which we have information about blocked trackers as a Unix time
+ *   stamp.
+ * @param onDismiss Callback for when the user dismisses this panel (by pressing system back or from interacting with
+ *   the bottom sheet handle).
  */
 @Composable
 fun ProtectionsDashboardContent(
@@ -57,28 +57,27 @@ fun ProtectionsDashboardContent(
         onDismiss()
     }
 
-    val formattedEarliestDate = remember(earliestTrackingDate) {
-        earliestTrackingDate?.let {
-            DateFormat.getDateInstance(DateFormat.LONG).format(Date(it))
+    val formattedEarliestDate =
+        remember(earliestTrackingDate) {
+            earliestTrackingDate?.let {
+                DateFormat.getDateInstance(DateFormat.LONG).format(Date(it))
+            }
         }
-    }
 
     FirefoxTheme {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(
-                    MaterialTheme.shapes.extraLarge.copy(
-                        bottomStart = CornerSize(0.dp),
-                        bottomEnd = CornerSize(0.dp),
-                    ),
-                )
-                .semantics { isTraversalGroup = true },
+            modifier =
+                Modifier.fillMaxWidth()
+                    .clip(
+                        MaterialTheme.shapes.extraLarge.copy(
+                            bottomStart = CornerSize(0.dp),
+                            bottomEnd = CornerSize(0.dp),
+                        )
+                    )
+                    .semantics { isTraversalGroup = true }
         ) {
             TrackerProtectionDashboard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .semantics { traversalIndex = 0f },
+                modifier = Modifier.fillMaxWidth().semantics { traversalIndex = 0f },
                 appName = stringResource(R.string.firefox),
                 totalTrackersBlockedAllTime = totalTrackersBlocked,
                 trackingSinceDate = formattedEarliestDate,
@@ -86,20 +85,20 @@ fun ProtectionsDashboardContent(
                 sitesCount = 0, // We don't yet have an API to get this data from.
                 dataSavedMB = null, // We don't yet have an API to get this data from.
                 trackersBlocked = trackersBlockedThisWeek,
-                contentPadding = PaddingValues(
-                    top = FirefoxTheme.layout.size.static300, // handle height + its top padding
-                ),
+                contentPadding =
+                    PaddingValues(
+                        top = FirefoxTheme.layout.size.static300 // handle height + its top padding
+                    ),
             )
 
             BottomSheetHandle(
                 onRequestDismiss = onDismiss,
-                contentDescription = stringResource(
-                    R.string.tracker_protections_dashboard_close_handlebar_content_description,
-                ),
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .minimumInteractiveComponentSize()
-                    .semantics { traversalIndex = 1f },
+                contentDescription =
+                    stringResource(R.string.tracker_protections_dashboard_close_handlebar_content_description),
+                modifier =
+                    Modifier.align(Alignment.TopCenter).minimumInteractiveComponentSize().semantics {
+                        traversalIndex = 1f
+                    },
             )
         }
     }
@@ -107,35 +106,34 @@ fun ProtectionsDashboardContent(
 
 @Preview
 @Composable
-private fun ProtectionsDashboardContentPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
-    val trackersBlocked = listOf(
-        TrackersBlockedCategory(
-            icon = iconsR.drawable.mozac_ic_cookies_24,
-            name = R.plurals.trackers_blocked_panel_num_cross_site_cookies,
-            count = 302,
-            category = TrackerCategory.CROSS_SITE_COOKIES,
-        ),
-        TrackersBlockedCategory(
-            icon = iconsR.drawable.mozac_ic_thumbs_down_24,
-            name = R.plurals.trackers_blocked_panel_num_social_media_trackers,
-            count = 241,
-            category = TrackerCategory.SOCIAL_MEDIA_TRACKERS,
-        ),
-        TrackersBlockedCategory(
-            icon = iconsR.drawable.mozac_ic_fingerprinter_24,
-            name = R.plurals.trackers_blocked_panel_num_fingerprinters,
-            count = 0,
-            category = TrackerCategory.FINGERPRINTERS,
-        ),
-        TrackersBlockedCategory(
-            icon = iconsR.drawable.mozac_ic_image_24,
-            name = R.plurals.trackers_blocked_panel_num_trackers_2,
-            count = 2234,
-            category = TrackerCategory.TRACKING_CONTENT,
-        ),
-    )
+private fun ProtectionsDashboardContentPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
+    val trackersBlocked =
+        listOf(
+            TrackersBlockedCategory(
+                icon = iconsR.drawable.mozac_ic_cookies_24,
+                name = R.plurals.trackers_blocked_panel_num_cross_site_cookies,
+                count = 302,
+                category = TrackerCategory.CROSS_SITE_COOKIES,
+            ),
+            TrackersBlockedCategory(
+                icon = iconsR.drawable.mozac_ic_thumbs_down_24,
+                name = R.plurals.trackers_blocked_panel_num_social_media_trackers,
+                count = 241,
+                category = TrackerCategory.SOCIAL_MEDIA_TRACKERS,
+            ),
+            TrackersBlockedCategory(
+                icon = iconsR.drawable.mozac_ic_fingerprinter_24,
+                name = R.plurals.trackers_blocked_panel_num_fingerprinters,
+                count = 0,
+                category = TrackerCategory.FINGERPRINTERS,
+            ),
+            TrackersBlockedCategory(
+                icon = iconsR.drawable.mozac_ic_image_24,
+                name = R.plurals.trackers_blocked_panel_num_trackers_2,
+                count = 2234,
+                category = TrackerCategory.TRACKING_CONTENT,
+            ),
+        )
 
     FirefoxTheme(theme) {
         Surface {

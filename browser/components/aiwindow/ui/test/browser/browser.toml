@@ -7,6 +7,7 @@ prefs = [
 ]
 support-files = [
   "head.js",
+  "head_smartformfill_autocomplete.js",
   "head_history_thumbnails.js",
   "test_agent_monitor_item_page.html",
   "test_agent_monitor_item.mjs",
@@ -27,6 +28,10 @@ support-files = [
   "test_memories_icon_button.mjs",
   "test_grouped_chips_page.html",
   "test_grouped_chips.mjs",
+  "test_smartformfill_autocomplete.html",
+  "test_smartwindow_promo_page.html",
+  "test_smartwindow_promo.mjs",
+  "test_smartformfill_telemetry.html",
   "test_smartwindow_prompts_page.html",
   "test_smartwindow_prompts.mjs",
   "test_smartwindow_panel_list_page.html",
@@ -81,6 +86,9 @@ skip-if = [
 ["browser_aiwindow_ai_action_confirmation.js"]
 
 ["browser_aiwindow_ai_action_result.js"]
+skip-if = [
+  "verify", # Bug 2057151 - intermittent no-output timeout under test-verify (post-test focus race in CI); same class as bug 2060705
+]
 
 ["browser_aiwindow_aifeature_contract.js"]
 
@@ -122,6 +130,8 @@ skip-if = [
 ["browser_aiwindow_memories.js"]
 
 ["browser_aiwindow_memories_toggle_prefs.js"]
+
+["browser_aiwindow_monitor_button.js"]
 
 ["browser_aiwindow_monitor_create.js"]
 
@@ -174,6 +184,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && ccov",
 ]
 
+["browser_aiwindow_smartwindow_promo.js"]
+
 ["browser_aiwindow_stop_generation.js"]
 
 ["browser_aiwindow_switcher.js"]
@@ -222,6 +234,8 @@ skip-if = [
 ["browser_security_search_browsing_history.js"]
 
 ["browser_sidebar_aiwindow.js"]
+
+["browser_smartformfill_tab_selector.js"]
 
 ["browser_smartwindow_abort_on_tab_close.js"]
 
@@ -314,6 +328,12 @@ skip-if = [
 
 ["browser_smartwindow_smartbar_tab_state.js"]
 
+["browser_smartwindow_smartformfill_autocomplete.js"]
+
+["browser_smartwindow_smartformfill_metadata_lifecycle.js"]
+
+["browser_smartwindow_smartformfill_telemetry.js"]
+
 ["browser_smartwindow_switcher_telemetry.js"]
 
 ["browser_smartwindow_tab_move.js"]
@@ -327,15 +347,6 @@ skip-if = [
 ["browser_smartwindow_tasks_actors.js"]
 
 ["browser_smartwindow_telemetry.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 2024015
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 2024015
-  "os == 'win' && debug && standalone", # Bug 2024015
-  "os == 'win' && os_version == '11.26100' && arch == 'x86'", # Bug 2024015
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 2024015
-  "os == 'win' && os_version == '11.26200' && arch == 'x86'", # Bug 2024015
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 2024015
-]
 
 ["browser_smartwindow_topsites.js"]
 

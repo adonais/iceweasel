@@ -15,6 +15,7 @@ filters:
   - target_tasks_method
 head_git_repository: https://github.com/mozilla-releng/git-backing
 head_git_rev: f18a08cd59a4c299c1f9bd6ed0d735647ca58d5b
+head_git_ref: refs/heads/try/f18a08cd59a4c299c1f9bd6ed0d735647ca58d5b
 head_ref: 482ccd66d49e0e4a0d260ca872f770df4983ccea
 head_repository: https://hg.mozilla.org/try
 head_rev: 482ccd66d49e0e4a0d260ca872f770df4983ccea

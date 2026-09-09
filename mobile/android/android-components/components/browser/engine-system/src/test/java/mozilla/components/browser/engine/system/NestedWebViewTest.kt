@@ -82,12 +82,14 @@ class NestedWebViewTest {
         val mockChildHelper: NestedScrollingChildHelper = mock()
         nestedWebView.childHelper = mockChildHelper
 
-        doReturn(true).`when`(mockChildHelper).dispatchNestedPreScroll(
-            anyInt(),
-            anyInt(),
-            any(),
-            any(),
-        )
+        doReturn(true)
+            .`when`(mockChildHelper)
+            .dispatchNestedPreScroll(
+                anyInt(),
+                anyInt(),
+                any(),
+                any(),
+            )
 
         nestedWebView.scrollOffset[0] = 1
         nestedWebView.scrollOffset[1] = 2
@@ -96,13 +98,15 @@ class NestedWebViewTest {
         assertEquals(nestedWebView.nestedOffsetY, 2)
         assertEquals(nestedWebView.lastY, 8)
 
-        doReturn(true).`when`(mockChildHelper).dispatchNestedScroll(
-            anyInt(),
-            anyInt(),
-            anyInt(),
-            anyInt(),
-            any(),
-        )
+        doReturn(true)
+            .`when`(mockChildHelper)
+            .dispatchNestedScroll(
+                anyInt(),
+                anyInt(),
+                anyInt(),
+                anyInt(),
+                any(),
+            )
 
         nestedWebView.onTouchEvent(mockMotionEvent(ACTION_MOVE, y = 10f))
         assertEquals(nestedWebView.nestedOffsetY, 6)

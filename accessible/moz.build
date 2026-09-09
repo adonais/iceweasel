@@ -39,6 +39,7 @@ BROWSER_CHROME_MANIFESTS += [
     "tests/browser/e10s/browser.toml",
     "tests/browser/events/browser.toml",
     "tests/browser/fission/browser.toml",
+    "tests/browser/forceEnabled/browser.toml",
     "tests/browser/general/browser.toml",
     "tests/browser/hittest/browser.toml",
     "tests/browser/mac/browser.toml",

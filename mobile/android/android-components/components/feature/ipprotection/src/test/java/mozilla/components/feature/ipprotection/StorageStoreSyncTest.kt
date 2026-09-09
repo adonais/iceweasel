@@ -21,8 +21,7 @@ class StorageStoreSyncTest {
         val storage = FakeEligibilityStorage()
         val (ipProtectionStore, _) = buildStore()
 
-        StorageStoreSync(storage, ipProtectionStore, StandardTestDispatcher(testScheduler))
-            .initialize()
+        StorageStoreSync(storage, ipProtectionStore, StandardTestDispatcher(testScheduler)).initialize()
 
         testScheduler.advanceUntilIdle()
 
@@ -35,8 +34,7 @@ class StorageStoreSyncTest {
         storage.emit(EligibilityStatus.Eligible)
         val (ipProtectionStore, captureMiddleware) = buildStore()
 
-        StorageStoreSync(storage, ipProtectionStore, StandardTestDispatcher(testScheduler))
-            .initialize()
+        StorageStoreSync(storage, ipProtectionStore, StandardTestDispatcher(testScheduler)).initialize()
 
         testScheduler.advanceUntilIdle()
 
@@ -49,19 +47,19 @@ class StorageStoreSyncTest {
     @Test
     fun `WHEN the eligibility status changes THEN the new status is forwarded`() = runTest {
         // All these cases are the same mappings - and we do not want them to change.
-        val cases = listOf(
-            EligibilityStatus.Unknown,
-            EligibilityStatus.Ineligible,
-            EligibilityStatus.UnsupportedRegion,
-            EligibilityStatus.Eligible,
-        )
+        val cases =
+            listOf(
+                EligibilityStatus.Unknown,
+                EligibilityStatus.Ineligible,
+                EligibilityStatus.UnsupportedRegion,
+                EligibilityStatus.Eligible,
+            )
 
         cases.forEach { eligibility ->
             val (ipProtectionStore, captureMiddleware) = buildStore()
             val storage = FakeEligibilityStorage()
 
-            StorageStoreSync(storage, ipProtectionStore, StandardTestDispatcher(testScheduler))
-                .initialize()
+            StorageStoreSync(storage, ipProtectionStore, StandardTestDispatcher(testScheduler)).initialize()
 
             storage.emit(eligibility)
 
@@ -83,8 +81,7 @@ class StorageStoreSyncTest {
         val storage = FakeEligibilityStorage()
         val (ipProtectionStore, captureMiddleware) = buildStore()
 
-        StorageStoreSync(storage, ipProtectionStore, StandardTestDispatcher(testScheduler))
-            .initialize()
+        StorageStoreSync(storage, ipProtectionStore, StandardTestDispatcher(testScheduler)).initialize()
         storage.emit(EligibilityStatus.Eligible)
 
         testScheduler.advanceUntilIdle()

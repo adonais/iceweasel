@@ -66,8 +66,7 @@ class AboutPageAdapterTest {
         val adapter = AboutPageAdapter(listener)
         val parentView = FrameLayout(testContext)
 
-        val view = LayoutInflater.from(parentView.context)
-            .inflate(AboutItemViewHolder.LAYOUT_ID, parentView, false)
+        val view = LayoutInflater.from(parentView.context).inflate(AboutItemViewHolder.LAYOUT_ID, parentView, false)
 
         val viewHolder = spyk(AboutItemViewHolder(view, listener))
 

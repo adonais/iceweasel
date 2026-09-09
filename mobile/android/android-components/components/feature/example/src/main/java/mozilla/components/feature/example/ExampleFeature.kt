@@ -4,13 +4,13 @@
 
 package mozilla.components.feature.example
 
+import kotlin.random.Random
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import mozilla.components.support.base.feature.LifecycleAwareFeature
-import kotlin.random.Random
 
 /**
  * An example feature class that ties multiple gradle modules or individual pieces together to form a unified entry

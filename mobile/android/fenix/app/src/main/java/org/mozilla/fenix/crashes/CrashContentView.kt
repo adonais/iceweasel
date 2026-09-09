@@ -16,23 +16,23 @@ import org.mozilla.fenix.databinding.ViewCrashReporterBinding
 import org.mozilla.fenix.ext.increaseTapArea
 
 /**
- * View shown when a tab crashes. Intended to entirely overlay an EngineView.
- * This will allow users to close or restore the current tab while optionally
- * send all reports for non-fatal crashes or dismiss them.
+ * View shown when a tab crashes. Intended to entirely overlay an EngineView. This will allow users to close or restore
+ * the current tab while optionally send all reports for non-fatal crashes or dismiss them.
  */
-class CrashContentView @JvmOverloads constructor(
+class CrashContentView
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
 ) : ConstraintLayout(context, attrs, defStyleAttr) {
-    @VisibleForTesting
-    internal lateinit var binding: ViewCrashReporterBinding
+    @VisibleForTesting internal lateinit var binding: ViewCrashReporterBinding
 
-    @VisibleForTesting val isBindingInitialized
+    @VisibleForTesting
+    val isBindingInitialized
         get() = ::binding.isInitialized
 
-    @VisibleForTesting
-    internal lateinit var controller: CrashReporterController
+    @VisibleForTesting internal lateinit var controller: CrashReporterController
 
     /**
      * Inflate if necessary and show this `View`.
@@ -45,9 +45,7 @@ class CrashContentView @JvmOverloads constructor(
         visibility = VISIBLE
     }
 
-    /**
-     * Remove this View from layout.
-     */
+    /** Remove this View from layout. */
     fun hide() {
         visibility = GONE
     }
@@ -69,8 +67,7 @@ class CrashContentView @JvmOverloads constructor(
 
     @VisibleForTesting
     internal fun bindViews() {
-        binding.title.text =
-            context.getString(R.string.tab_crash_title_2, context.getString(R.string.app_name))
+        binding.title.text = context.getString(R.string.tab_crash_title_2, context.getString(R.string.app_name))
 
         binding.restoreTabButton.apply {
             increaseTapArea(this)
@@ -88,8 +85,7 @@ class CrashContentView @JvmOverloads constructor(
     }
 
     /**
-     * Increases the tap area of the current view by a predefined amount.
-     * This amount is defined by [TAP_INCREASE_DP].
+     * Increases the tap area of the current view by a predefined amount. This amount is defined by [TAP_INCREASE_DP].
      */
     @VisibleForTesting
     internal fun increaseTapArea(view: View) {
@@ -97,7 +93,6 @@ class CrashContentView @JvmOverloads constructor(
     }
 
     companion object {
-        @VisibleForTesting
-        internal const val TAP_INCREASE_DP = 12
+        @VisibleForTesting internal const val TAP_INCREASE_DP = 12
     }
 }

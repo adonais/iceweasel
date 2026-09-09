@@ -15,13 +15,13 @@ import org.mozilla.fenix.components.appstate.AppAction.FindInPageAction
 import org.mozilla.fenix.components.appstate.AppState
 
 /**
- * A binding for observing the [AppState.showFindInPage] state in the [AppStore] and displaying
- * the find in page feature.
+ * A binding for observing the [AppState.showFindInPage] state in the [AppStore] and displaying the find in page
+ * feature.
  *
  * @param appStore The [AppStore] used to observe [AppState.showFindInPage].
  * @param onFindInPageLaunch Invoked when the find in page feature should be launched.
- * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur.
- *                       Defaults to [Dispatchers.Main].
+ * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur. Defaults to
+ *   [Dispatchers.Main].
  */
 class FindInPageBinding(
     private val appStore: AppStore,
@@ -30,7 +30,8 @@ class FindInPageBinding(
 ) : AbstractBinding<AppState>(appStore, mainDispatcher) {
 
     override suspend fun onState(flow: Flow<AppState>) {
-        flow.map { state -> state.showFindInPage }
+        flow
+            .map { state -> state.showFindInPage }
             .distinctUntilChanged()
             .collect { showFindInPage ->
                 if (showFindInPage) {

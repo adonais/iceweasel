@@ -9,12 +9,10 @@ import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.home.HomeFragment
 
 /**
- * This empty fragment serves as a start destination in our navigation
- * graph. It contains no layout and is fast to create compared to our
- * [HomeFragment], which would otherwise be the start destination.
+ * This empty fragment serves as a start destination in our navigation graph. It contains no layout and is fast to
+ * create compared to our [HomeFragment], which would otherwise be the start destination.
  *
- * When our [HomeActivity] is created we make a decision which fragment
- * to navigate to, which makes sure we only render the [HomeFragment]
- * as needed.
+ * When our [HomeActivity] is created we make a decision which fragment to navigate to, which makes sure we only render
+ * the [HomeFragment] as needed.
  */
 class StartupFragment : Fragment(), SystemInsetsPaddedFragment

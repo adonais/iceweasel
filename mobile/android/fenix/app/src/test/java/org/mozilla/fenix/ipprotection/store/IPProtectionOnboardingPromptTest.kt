@@ -23,18 +23,20 @@ import org.mozilla.fenix.ipprotection.FakeIPProtectionPromptRepository
 class IPProtectionOnboardingPromptTest {
     private val testDispatcher = StandardTestDispatcher()
 
-    private val accountReadyStatuses = listOf(
-        AccountStatus.NoAccount,
-        AccountStatus.NeedsAuthorization,
-        AccountStatus.NeedsAuthentication,
-        AccountStatus.Authenticated,
-        AccountStatus.EnrolledAndEntitled,
-    )
+    private val accountReadyStatuses =
+        listOf(
+            AccountStatus.NoAccount,
+            AccountStatus.NeedsAuthorization,
+            AccountStatus.NeedsAuthentication,
+            AccountStatus.Authenticated,
+            AccountStatus.EnrolledAndEntitled,
+        )
 
-    private val accountInitializingStatuses = listOf(
-        AccountStatus.Uninitialized,
-        AccountStatus.WarmingUp,
-    )
+    private val accountInitializingStatuses =
+        listOf(
+            AccountStatus.Uninitialized,
+            AccountStatus.WarmingUp,
+        )
 
     @Test
     fun `GIVEN repository allows the prompt WHEN eligibility becomes Eligible AND account is ready THEN onShowOnboarding is invoked`() =
@@ -125,10 +127,11 @@ class IPProtectionOnboardingPromptTest {
     @Test
     fun `GIVEN showOnboardingBottomSheet is true and account is ready WHEN eligibility becomes Eligible THEN onShowOnboarding is invoked`() =
         runTest(testDispatcher) {
-            val repository = FakeIPProtectionPromptRepository(
-                canShowIPProtectionPrompt = true,
-                showOnboardingBottomSheet = true,
-            )
+            val repository =
+                FakeIPProtectionPromptRepository(
+                    canShowIPProtectionPrompt = true,
+                    showOnboardingBottomSheet = true,
+                )
             var shownCount = 0
             val store = buildStore(accountStatus = AccountStatus.NoAccount)
 
@@ -143,10 +146,11 @@ class IPProtectionOnboardingPromptTest {
     @Test
     fun `GIVEN showOnboardingBottomSheet is false WHEN eligibility becomes Eligible THEN onShowOnboarding is not invoked`() =
         runTest(testDispatcher) {
-            val repository = FakeIPProtectionPromptRepository(
-                canShowIPProtectionPrompt = false,
-                showOnboardingBottomSheet = false,
-            )
+            val repository =
+                FakeIPProtectionPromptRepository(
+                    canShowIPProtectionPrompt = false,
+                    showOnboardingBottomSheet = false,
+                )
             var shownCount = 0
             val store = IPProtectionStore()
 
@@ -164,12 +168,13 @@ class IPProtectionOnboardingPromptTest {
         onShowOnboarding: () -> Unit,
     ) {
         IPProtectionOnboardingPrompt(
-            repository = repository,
-            onShowOnboarding = onShowOnboarding,
-            timeProvider = FakeDateTimeProvider(),
-            mainDispatcher = testDispatcher,
-            store = store,
-        ).start()
+                repository = repository,
+                onShowOnboarding = onShowOnboarding,
+                timeProvider = FakeDateTimeProvider(),
+                mainDispatcher = testDispatcher,
+                store = store,
+            )
+            .start()
         testDispatcher.scheduler.advanceUntilIdle()
     }
 
@@ -178,10 +183,11 @@ class IPProtectionOnboardingPromptTest {
         eligibilityStatus: EligibilityStatus = EligibilityStatus.Unknown,
     ): IPProtectionStore {
         return IPProtectionStore(
-            initialState = IPProtectionState(
-                eligibilityStatus = eligibilityStatus,
-                accountState = AccountState(accountStatus),
-            ),
+            initialState =
+                IPProtectionState(
+                    eligibilityStatus = eligibilityStatus,
+                    accountState = AccountState(accountStatus),
+                )
         )
     }
 }

@@ -13,21 +13,25 @@ import mozilla.components.feature.summarize.LlmProviderAction
 import mozilla.components.feature.summarize.SummarizationFailed
 import mozilla.components.feature.summarize.SummarizationRequested
 
-internal val CloudLlmProvider.fetchLlm get() = flow {
-    // Only announce loading once preparation has resolved to a usable provider, so a sign-in
-    // prompt or error is shown directly instead of flashing a loading state first.
-    if (state.value is CloudLlmProvider.State.Ready) {
-        emit(SummarizationRequested(info))
+internal val CloudLlmProvider.fetchLlm
+    get() = flow {
+        // Only announce loading once preparation has resolved to a usable provider, so a sign-in
+        // prompt or error is shown directly instead of flashing a loading state first.
+        if (state.value is CloudLlmProvider.State.Ready) {
+            emit(SummarizationRequested(info))
+        }
+        emitAll(state.mapNotNull { it.action })
     }
-    emitAll(state.mapNotNull { it.action })
-}
 
-internal val CloudLlmProvider.State.action get() = when (this) {
-    CloudLlmProvider.State.Available -> null
-    is CloudLlmProvider.State.Ready -> LlmProviderAction.ProviderInitialized(llm)
-    is CloudLlmProvider.State.Unavailable -> if (exception is AuthenticationRequired) {
-        LlmProviderAction.SignInRequired(exception)
-    } else {
-        SummarizationFailed(exception)
-    }
-}
+internal val CloudLlmProvider.State.action
+    get() =
+        when (this) {
+            CloudLlmProvider.State.Available -> null
+            is CloudLlmProvider.State.Ready -> LlmProviderAction.ProviderInitialized(llm)
+            is CloudLlmProvider.State.Unavailable ->
+                if (exception is AuthenticationRequired) {
+                    LlmProviderAction.SignInRequired(exception)
+                } else {
+                    SummarizationFailed(exception)
+                }
+        }

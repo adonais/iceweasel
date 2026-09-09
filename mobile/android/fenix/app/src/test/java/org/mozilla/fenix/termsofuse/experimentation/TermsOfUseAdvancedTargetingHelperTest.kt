@@ -15,10 +15,11 @@ class TermsOfUseAdvancedTargetingHelperTest {
 
     @Test
     fun `WHEN privacySettingsPoints and sponsoredContentPoints each return 1 THEN getTouPoints returns 2`() {
-        val dataProvider = FakeTermsOfUseDataProvider(
-            useStrictTrackingProtection = true,
-            showSponsoredShortcuts = false,
-        )
+        val dataProvider =
+            FakeTermsOfUseDataProvider(
+                useStrictTrackingProtection = true,
+                showSponsoredShortcuts = false,
+            )
 
         val result = TermsOfUseAdvancedTargetingHelper(dataProvider, shortcutsLocale).getTouPoints()
 
@@ -27,9 +28,7 @@ class TermsOfUseAdvancedTargetingHelperTest {
 
     @Test
     fun `WHEN only privacySettingsPoints returns 1 THEN getTouPoints returns 1`() {
-        val dataProvider = FakeTermsOfUseDataProvider(
-            useStrictTrackingProtection = true,
-        )
+        val dataProvider = FakeTermsOfUseDataProvider(useStrictTrackingProtection = true)
 
         val result = TermsOfUseAdvancedTargetingHelper(dataProvider, shortcutsLocale).getTouPoints()
 
@@ -38,9 +37,7 @@ class TermsOfUseAdvancedTargetingHelperTest {
 
     @Test
     fun `WHEN only sponsoredContentPoints returns 1 THEN getTouPoints returns 1`() {
-        val dataProvider = FakeTermsOfUseDataProvider(
-            showSponsoredShortcuts = false,
-        )
+        val dataProvider = FakeTermsOfUseDataProvider(showSponsoredShortcuts = false)
 
         val result = TermsOfUseAdvancedTargetingHelper(dataProvider, shortcutsLocale).getTouPoints()
 

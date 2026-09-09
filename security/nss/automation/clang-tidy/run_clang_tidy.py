@@ -20,6 +20,7 @@ DEFAULT_EXCLUDES = {
     "lib/sqlite",
     "lib/zlib",
     "lib/freebl/verified",
+    "lib/freebl/libcrux",
 }
 
 

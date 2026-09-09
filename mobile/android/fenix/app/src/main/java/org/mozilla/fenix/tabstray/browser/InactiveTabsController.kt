@@ -6,9 +6,7 @@ package org.mozilla.fenix.tabstray.browser
 
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 
-/**
- * Contract for how all user interactions with the Inactive Tabs feature are to be handled.
- */
+/** Contract for how all user interactions with the Inactive Tabs feature are to be handled. */
 interface InactiveTabsController {
 
     /**
@@ -32,18 +30,12 @@ interface InactiveTabsController {
      */
     fun handleInactiveTabsHeaderClicked(expanded: Boolean)
 
-    /**
-     * Dismisses the inactive tabs auto-close dialog.
-     */
+    /** Dismisses the inactive tabs auto-close dialog. */
     fun handleInactiveTabsAutoCloseDialogDismiss()
 
-    /**
-     * Enables the inactive tabs auto-close feature with a default time period.
-     */
+    /** Enables the inactive tabs auto-close feature with a default time period. */
     fun handleEnableInactiveTabsAutoCloseClicked()
 
-    /**
-     * Deletes all inactive tabs.
-     */
+    /** Deletes all inactive tabs. */
     fun handleDeleteAllInactiveTabsClicked()
 }

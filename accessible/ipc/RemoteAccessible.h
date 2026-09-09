@@ -371,7 +371,7 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
   uint32_t GetCachedTextLength();
   Maybe<const nsTArray<int32_t>&> GetCachedTextLines();
   nsRect GetCachedCharRect(int32_t aOffset);
-  RefPtr<const AccAttributes> GetCachedTextAttributes();
+  const AccAttributes* GetCachedTextAttributes();
   const AccAttributes* GetCachedARIAAttributes() const;
 
   nsString GetCachedHTMLNameAttribute() const;

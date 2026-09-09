@@ -428,6 +428,21 @@ GpuSandboxLevel:
   type: u32
   scope: report
 
+CPUArchitecture:
+  description: >
+    Architecture of the CPU. One of the values described in `system_info.cpu_arch` of
+    https://github.com/rust-minidump/rust-minidump/blob/main/minidump-processor/json-schema.md:
+    "x86", "amd64", "ppc", "ppc64", "sparc", "arm", "arm64", or "unknown".
+  type: string
+  scope: ping
+
+CPUInfo:
+  description: >
+    Information about the CPU, as a string. This typically includes family,
+    model, and stepping.
+  type: string
+  scope: ping
+
 CPUMicrocodeVersion:
   description: >
     Version of the CPU microcode.
@@ -745,7 +760,9 @@ IPCShutdownState:
     IPC shutdown state, can be set to either "RecvShutdown" or
     "SendFinishShutdown" by a content process while it's shutting down.
   type: string
-  scope: report
+  scope: ping
+  bugs:
+    - 2049749
 
 IPCSystemError:
   description: >
@@ -970,6 +987,14 @@ MemtestOutput:
   type: string
   scope: report
 
+LauncherProcessState:
+  description: >
+    Launcher process enabled state. The integer value of this annotation must
+    match with one of the values in the
+    mozilla::LauncherRegistryInfo::EnableState enum
+  type: u32
+  scope: report
+
 LinuxUnderMemoryPressure:
   description: >
     Set to true if the memory pressure watcher was under memory pressure when
@@ -984,13 +1009,11 @@ LinuxMemoryPSI:
   type: string
   scope: ping
 
-LauncherProcessState:
-  description: >
-    Launcher process enabled state. The integer value of this annotation must
-    match with one of the values in the
-    mozilla::LauncherRegistryInfo::EnableState enum
-  type: u32
-  scope: report
+LinuxLSBDescription:
+  description:
+    The Linux lsb_release description.
+  type: string
+  scope: ping
 
 LowPhysicalMemoryEvents:
   description: >
@@ -1058,6 +1081,19 @@ OOMAllocationSize:
     metric: memory
     type: quantity
     unit: bytes
+
+OS:
+  description: >
+    The operating system name. One of the values described in `system_info.os` of
+    https://github.com/rust-minidump/rust-minidump/blob/main/minidump-processor/json-schema.md:
+    "Windows NT", "Mac OS X", "iOS", "Linux", "Solaris", "Android", or "Unknown".
+  type: string
+  scope: ping
+
+OSVersion:
+  description: The operating system version number.
+  type: string
+  scope: ping
 
 PluginFilename:
   description: >
@@ -1332,7 +1368,13 @@ StartupTime:
   description: >
     The time when Firefox was launched expressed in seconds since the Epoch.
   type: u64
-  scope: report
+  scope: ping
+  glean:
+    type: timespan
+    time_unit: second
+    custom_convert: duration_seconds
+  bugs:
+    - 2049749
 
 StorageConnectionNotClosed:
   description: >
@@ -1537,7 +1579,9 @@ useragent_locale:
   description: >
     User-agent locale.
   type: string
-  scope: report
+  scope: ping
+  bugs:
+    - 2049749
 
 UserFontRulesExhausted:
   description: >

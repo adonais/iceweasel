@@ -10,17 +10,13 @@ import mozilla.components.concept.engine.manifest.WebAppManifestParser
 
 internal const val EXTRA_URL_OVERRIDE = "mozilla.components.feature.pwa.EXTRA_URL_OVERRIDE"
 
-/**
- * Add extended [WebAppManifest] data to the intent.
- */
+/** Add extended [WebAppManifest] data to the intent. */
 fun Intent.putWebAppManifest(webAppManifest: WebAppManifest) {
     val json = WebAppManifestParser().serialize(webAppManifest)
     putExtra(EXTRA_WEB_APP_MANIFEST, json.toString())
 }
 
-/**
- * Retrieve extended [WebAppManifest] data from the intent.
- */
+/** Retrieve extended [WebAppManifest] data from the intent. */
 fun Intent.getWebAppManifest(): WebAppManifest? {
     return extras?.getWebAppManifest()
 }
@@ -29,10 +25,7 @@ fun Intent.getWebAppManifest(): WebAppManifest? {
  * Add [String] URL override to the intent.
  *
  * @param url The URL override value.
- *
- * @return Returns the same Intent object, for chaining multiple calls
- * into a single statement.
- *
+ * @return Returns the same Intent object, for chaining multiple calls into a single statement.
  * @see [getUrlOverride]
  */
 fun Intent.putUrlOverride(url: String?): Intent {
@@ -42,7 +35,6 @@ fun Intent.putUrlOverride(url: String?): Intent {
 /**
  * Retrieves [String] Url override from the intent.
  *
- * @return The URL override previously added with [putUrlOverride],
- * or null if no URL was found.
+ * @return The URL override previously added with [putUrlOverride], or null if no URL was found.
  */
 fun Intent.getUrlOverride(): String? = getStringExtra(EXTRA_URL_OVERRIDE)

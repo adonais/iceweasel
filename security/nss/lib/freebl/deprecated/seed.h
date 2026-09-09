@@ -15,7 +15,7 @@
 typedef PRUint32 seed_word;
 
 #define G_FUNC(v)                   \
-    SS[0][((v)&0xff)] ^             \
+    SS[0][((v) & 0xff)] ^           \
         SS[1][((v) >> 8 & 0xff)] ^  \
         SS[2][((v) >> 16 & 0xff)] ^ \
         SS[3][((v) >> 24 & 0xff)]

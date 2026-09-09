@@ -46,7 +46,7 @@ class txTransformNotifier final : public nsIScriptLoaderObserver,
 
  private:
   ~txTransformNotifier();
-  void SignalTransformEnd(nsresult aResult = NS_OK);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void SignalTransformEnd(nsresult aResult = NS_OK);
 
   nsCOMPtr<mozilla::dom::Document> mSourceDocument;
   nsCOMPtr<mozilla::dom::Document> mDocument;

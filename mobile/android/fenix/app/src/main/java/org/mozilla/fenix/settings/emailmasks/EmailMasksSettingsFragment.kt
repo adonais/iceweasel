@@ -21,9 +21,7 @@ import org.mozilla.fenix.settings.emailmasks.middleware.EmailMasksPreferencesMid
 import org.mozilla.fenix.settings.emailmasks.middleware.EmailMasksTelemetryMiddleware
 import org.mozilla.fenix.theme.FirefoxTheme
 
-/**
- * Fragment host for the Email Masks settings screen.
- */
+/** Fragment host for the Email Masks settings screen. */
 class EmailMasksSettingsFragment : Fragment(), SystemInsetsPaddedFragment {
 
     override fun onCreateView(
@@ -32,11 +30,15 @@ class EmailMasksSettingsFragment : Fragment(), SystemInsetsPaddedFragment {
         savedInstanceState: Bundle?,
     ) = content {
         FirefoxTheme {
-            val store by fragmentStore(
-                initialState = EmailMasksState(
-                    isSuggestMasksEnabled = requireComponents.emailMasksRepository.isSuggestionEnabled(),
-                ),
-            ) { state -> createEmailMasksStore(state) }
+            val store by
+                fragmentStore(
+                    initialState =
+                        EmailMasksState(
+                            isSuggestMasksEnabled = requireComponents.emailMasksRepository.isSuggestionEnabled()
+                        )
+                ) { state ->
+                    createEmailMasksStore(state)
+                }
 
             EmailMasksSettingsScreen(store)
         }
@@ -47,22 +49,24 @@ class EmailMasksSettingsFragment : Fragment(), SystemInsetsPaddedFragment {
         showToolbar(getString(R.string.preferences_email_masks))
     }
 
-    private fun createEmailMasksStore(initialState: EmailMasksState) = EmailMasksStore(
-        initialState = initialState,
-        middleware = listOf(
-            EmailMasksNavigationMiddleware(
-                openTab = { url ->
-                    if (isAdded) {
-                        findNavController().openToBrowser()
-                        requireComponents.useCases.fenixBrowserUseCases.loadUrlOrSearch(
-                            searchTermOrURL = url,
-                            newTab = true,
-                        )
-                    }
-                },
-            ),
-            EmailMasksPreferencesMiddleware(requireComponents.emailMasksRepository),
-            EmailMasksTelemetryMiddleware(),
-        ),
-    )
+    private fun createEmailMasksStore(initialState: EmailMasksState) =
+        EmailMasksStore(
+            initialState = initialState,
+            middleware =
+                listOf(
+                    EmailMasksNavigationMiddleware(
+                        openTab = { url ->
+                            if (isAdded) {
+                                findNavController().openToBrowser()
+                                requireComponents.useCases.fenixBrowserUseCases.loadUrlOrSearch(
+                                    searchTermOrURL = url,
+                                    newTab = true,
+                                )
+                            }
+                        }
+                    ),
+                    EmailMasksPreferencesMiddleware(requireComponents.emailMasksRepository),
+                    EmailMasksTelemetryMiddleware(),
+                ),
+        )
 }

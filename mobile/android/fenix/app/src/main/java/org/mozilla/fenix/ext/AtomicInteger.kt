@@ -6,9 +6,7 @@ package org.mozilla.fenix.ext
 
 import java.util.concurrent.atomic.AtomicInteger
 
-/**
- *  Increases an AtomicInteger safely.
- */
+/** Increases an AtomicInteger safely. */
 fun AtomicInteger.getAndIncrementNoOverflow() {
     var prev: Int
     var next: Int

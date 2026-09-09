@@ -16,9 +16,7 @@ private class EventWrapper<T : Enum<T>>(
     private val keyMapper: ((String) -> T)? = null,
 ) {
 
-    /**
-     * Converts snake_case string to camelCase.
-     */
+    /** Converts snake_case string to camelCase. */
     private fun String.asCamelCase(): String {
         val parts = split("_")
         val builder = StringBuilder()
@@ -36,13 +34,14 @@ private class EventWrapper<T : Enum<T>>(
     }
 
     fun track(event: Event) {
-        val extras = if (keyMapper != null) {
-            event.extras?.mapKeys { (key) ->
-                keyMapper.invoke(key.toString().asCamelCase())
+        val extras =
+            if (keyMapper != null) {
+                event.extras?.mapKeys { (key) ->
+                    keyMapper.invoke(key.toString().asCamelCase())
+                }
+            } else {
+                null
             }
-        } else {
-            null
-        }
 
         @Suppress("DEPRECATION")
         // FIXME(#19967): Migrate to non-deprecated API.
@@ -55,9 +54,7 @@ private class EventWrapper<T : Enum<T>>(
 private val Event.wrapper: EventWrapper<*>?
     get() = null
 
-/**
- * Service responsible for sending the activation and installation pings.
- */
+/** Service responsible for sending the activation and installation pings. */
 class GleanMetricsService(
     private val context: Context,
     private val runWhenReadyQueue: RunWhenReadyQueue = context.components.performance.visualCompletenessQueue,

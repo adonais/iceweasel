@@ -8,24 +8,11 @@
  * are open.
  */
 
-var {
-  DevToolsServer,
-} = require("resource://devtools/server/devtools-server.js");
-var {
-  DevToolsClient,
-} = require("resource://devtools/client/devtools-client.js");
-
 const TAB1_URL = "data:text/html;charset=utf-8,first-tab";
 const TAB2_URL = "data:text/html;charset=utf-8,second-tab";
 
 add_task(async function () {
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
-
-  const transport = DevToolsServer.connectPipe();
-  const client = new DevToolsClient(transport);
-  const [type] = await client.connect();
-  is(type, "browser", "Root actor should identify itself as a browser.");
+  const client = await createLocalClientForTests();
 
   const tab = await addTab(TAB1_URL);
   await testFirstTab(client, tab);

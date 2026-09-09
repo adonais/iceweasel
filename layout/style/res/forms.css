@@ -202,6 +202,15 @@ input[type="password"]::-moz-text-control-preview {
   unicode-bidi: bidi-override;
 }
 
+@media -moz-pref("layout.forms.button-input-align-content-block.enabled") {
+  /* https://github.com/w3c/csswg-drafts/issues/14190
+   * We use :where() because otherwise the button rules would need more
+   * specificity, or be in a separate rule.  */
+  input:where(:not([type="file" i], [type="range" i], [type="checkbox" i], [type="radio" i])) {
+    align-content: unsafe center;
+  }
+}
+
 select {
   margin: 0;
   border-color: ButtonBorder;
@@ -227,6 +236,9 @@ select {
   vertical-align: baseline;
   appearance: auto;
   -moz-default-appearance: menulist;
+  @media -moz-pref("layout.forms.button-input-align-content-block.enabled") {
+    align-content: center;
+  }
 }
 
 select::-moz-select-content {
@@ -291,6 +303,7 @@ select:-moz-select-list-box {
   vertical-align: text-bottom;
   appearance: auto;
   -moz-default-appearance: listbox;
+  align-content: normal;
 
   @media (-moz-platform: macos) {
     scrollbar-width: thin;
@@ -348,7 +361,7 @@ option:read-write {
   user-select: text;
 }
 
-select > option {
+select option:not(optgroup option) {
   padding-inline: 4px;
 }
 
@@ -374,7 +387,7 @@ optgroup {
   word-wrap: normal !important;
 }
 
-optgroup > option {
+optgroup option {
   padding-inline-start: 20px;
   font-style: normal;
   font-weight: normal;
@@ -513,6 +526,9 @@ input:where([type="color"], [type="reset"], [type="button"], [type="submit"]) {
   cursor: default;
   box-sizing: border-box;
   break-inside: avoid;
+  @media -moz-pref("layout.forms.button-input-align-content-block.enabled") {
+    align-content: center;
+  }
 }
 
 /* Disable text-selection by default, for button-flavored input elements

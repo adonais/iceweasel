@@ -45,16 +45,18 @@ internal data class LoginDatasetBuilder(
     ): Dataset {
         val dataset = Dataset.Builder()
 
-        val attributionIntent = Intent().apply {
-            `package` = context.packageName
-        }
+        val attributionIntent =
+            Intent().apply {
+                `package` = context.packageName
+            }
 
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            0,
-            attributionIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT,
-        )
+        val pendingIntent =
+            PendingIntent.getActivity(
+                context,
+                0,
+                attributionIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT,
+            )
 
         val usernameText = login.usernamePresentationOrFallback(context)
         val passwordText = login.passwordPresentation(context)
@@ -87,12 +89,14 @@ internal data class LoginDatasetBuilder(
             val confirmIntent = Intent(context, configuration.confirmActivity)
             confirmIntent.putExtra(EXTRA_LOGIN_ID, login.guid)
 
-            val intentSender: IntentSender = PendingIntent.getActivity(
-                context,
-                configuration.activityRequestCode + requestOffset,
-                confirmIntent,
-                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_CANCEL_CURRENT,
-            ).intentSender
+            val intentSender: IntentSender =
+                PendingIntent.getActivity(
+                        context,
+                        configuration.activityRequestCode + requestOffset,
+                        confirmIntent,
+                        PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_CANCEL_CURRENT,
+                    )
+                    .intentSender
 
             dataset.setAuthentication(intentSender)
         }
@@ -127,9 +131,7 @@ internal fun createInlinePresentation(
     title: String,
     icon: Icon? = null,
 ): InlinePresentation? {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && imeSpec != null &&
-        canUseInlineSuggestions(imeSpec)
-    ) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && imeSpec != null && canUseInlineSuggestions(imeSpec)) {
         return InlinePresentation(
             createSlice(title, attribution = pendingIntent, startIcon = icon),
             imeSpec,
@@ -150,8 +152,7 @@ internal fun createSlice(
     attribution: PendingIntent,
 ): Slice {
     // Build the content for the v1 UI.
-    val builder = InlineSuggestionUi.newContentBuilder(attribution)
-        .setContentDescription(contentDescription)
+    val builder = InlineSuggestionUi.newContentBuilder(attribution).setContentDescription(contentDescription)
     if (!TextUtils.isEmpty(title)) {
         builder.setTitle(title)
     }
@@ -194,10 +195,8 @@ internal fun Dataset.Builder.setValue(
         fieldBuilder.setPresentations(presentationsBuilder.build())
         this.setField(id, fieldBuilder.build())
     } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && inlinePresentation != null) {
-        @Suppress("DEPRECATION")
-        setValue(id, value, presentation, inlinePresentation)
+        @Suppress("DEPRECATION") setValue(id, value, presentation, inlinePresentation)
     } else {
-        @Suppress("DEPRECATION")
-        setValue(id, value, presentation)
+        @Suppress("DEPRECATION") setValue(id, value, presentation)
     }
 }

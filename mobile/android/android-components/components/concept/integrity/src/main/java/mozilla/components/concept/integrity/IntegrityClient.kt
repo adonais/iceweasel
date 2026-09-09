@@ -4,19 +4,12 @@
 
 package mozilla.components.concept.integrity
 
-/**
- * A value type describing an Integrity Token returned by an [IntegrityClient]
- */
-@JvmInline
-value class IntegrityToken(val value: String)
+/** A value type describing an Integrity Token returned by an [IntegrityClient] */
+@JvmInline value class IntegrityToken(val value: String)
 
-/**
- * Interface used to fetch an integrity token
- */
+/** Interface used to fetch an integrity token */
 fun interface IntegrityClient {
-    /**
-     * Requests an [IntegrityToken]
-     */
+    /** Requests an [IntegrityToken] */
     suspend fun request(): Result<IntegrityToken>
 
     companion object {

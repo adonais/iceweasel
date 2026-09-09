@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -39,35 +39,40 @@ class ProgressDelegateTest : BaseSessionTest() {
         var counter = 0
         var lastProgress = -1
 
-        sessionRule.forCallbacksDuringWait(object :
-            ProgressDelegate,
-            NavigationDelegate {
-            @AssertCalled
-            override fun onLocationChange(session: GeckoSession, url: String?, perms: MutableList<ContentPermission>, hasUserGesture: Boolean) {
-                assertThat("LocationChange is called", url, endsWith(path))
-            }
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate, NavigationDelegate {
+                @AssertCalled
+                override fun onLocationChange(
+                    session: GeckoSession,
+                    url: String?,
+                    perms: MutableList<ContentPermission>,
+                    hasUserGesture: Boolean,
+                ) {
+                    assertThat("LocationChange is called", url, endsWith(path))
+                }
 
-            @AssertCalled
-            override fun onProgressChange(session: GeckoSession, progress: Int) {
-                assertThat(
-                    "Progress must be strictly increasing",
-                    progress,
-                    greaterThan(lastProgress),
-                )
-                lastProgress = progress
-                counter++
-            }
+                @AssertCalled
+                override fun onProgressChange(session: GeckoSession, progress: Int) {
+                    assertThat(
+                        "Progress must be strictly increasing",
+                        progress,
+                        greaterThan(lastProgress),
+                    )
+                    lastProgress = progress
+                    counter++
+                }
 
-            @AssertCalled
-            override fun onPageStart(session: GeckoSession, url: String) {
-                assertThat("PageStart is called", url, endsWith(path))
-            }
+                @AssertCalled
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    assertThat("PageStart is called", url, endsWith(path))
+                }
 
-            @AssertCalled
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                assertThat("PageStop is called", success, equalTo(true))
+                @AssertCalled
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    assertThat("PageStop is called", success, equalTo(true))
+                }
             }
-        })
+        )
 
         assertThat(
             "Callback should be called at least twice",
@@ -81,7 +86,8 @@ class ProgressDelegateTest : BaseSessionTest() {
         )
     }
 
-    @Test fun loadProgress() {
+    @Test
+    fun loadProgress() {
         testProgress(HELLO_HTML_PATH)
         // Test that loading the same path again still
         // results in the right progress events
@@ -90,35 +96,38 @@ class ProgressDelegateTest : BaseSessionTest() {
         testProgress(HELLO2_HTML_PATH)
     }
 
-    @Test fun load() {
+    @Test
+    fun load() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(count = 1, order = [1])
-            override fun onPageStart(session: GeckoSession, url: String) {
-                assertThat("Session should not be null", session, notNullValue())
-                assertThat("URL should not be null", url, notNullValue())
-                assertThat("URL should match", url, endsWith(HELLO_HTML_PATH))
-            }
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1, order = [1])
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    assertThat("Session should not be null", session, notNullValue())
+                    assertThat("URL should not be null", url, notNullValue())
+                    assertThat("URL should match", url, endsWith(HELLO_HTML_PATH))
+                }
 
-            @AssertCalled(count = 1, order = [2])
-            override fun onSecurityChange(
-                session: GeckoSession,
-                securityInfo: GeckoSession.ProgressDelegate.SecurityInformation,
-            ) {
-                assertThat("Session should not be null", session, notNullValue())
-                assertThat("Security info should not be null", securityInfo, notNullValue())
+                @AssertCalled(count = 1, order = [2])
+                override fun onSecurityChange(
+                    session: GeckoSession,
+                    securityInfo: GeckoSession.ProgressDelegate.SecurityInformation,
+                ) {
+                    assertThat("Session should not be null", session, notNullValue())
+                    assertThat("Security info should not be null", securityInfo, notNullValue())
 
-                assertThat("Should not be secure", securityInfo.isSecure, equalTo(false))
-            }
+                    assertThat("Should not be secure", securityInfo.isSecure, equalTo(false))
+                }
 
-            @AssertCalled(count = 1, order = [3])
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                assertThat("Session should not be null", session, notNullValue())
-                assertThat("Load should succeed", success, equalTo(true))
+                @AssertCalled(count = 1, order = [3])
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    assertThat("Session should not be null", session, notNullValue())
+                    assertThat("Load should succeed", success, equalTo(true))
+                }
             }
-        })
+        )
     }
 
     @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
@@ -128,58 +137,63 @@ class ProgressDelegateTest : BaseSessionTest() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStops(2)
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(count = 2, order = [1, 3])
-            override fun onPageStart(session: GeckoSession, url: String) {
-                assertThat(
-                    "URL should match",
-                    url,
-                    endsWith(forEachCall(UNKNOWN_HOST_URI, HELLO_HTML_PATH)),
-                )
-            }
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 2, order = [1, 3])
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    assertThat(
+                        "URL should match",
+                        url,
+                        endsWith(forEachCall(UNKNOWN_HOST_URI, HELLO_HTML_PATH)),
+                    )
+                }
 
-            @AssertCalled(count = 2, order = [2, 4])
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                // The first load is certain to fail because of interruption by the second load
-                // or by invalid domain name, whereas the second load is certain to succeed.
-                assertThat(
-                    "Success flag should match",
-                    success,
-                    equalTo(forEachCall(false, true)),
-                )
+                @AssertCalled(count = 2, order = [2, 4])
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    // The first load is certain to fail because of interruption by the second load
+                    // or by invalid domain name, whereas the second load is certain to succeed.
+                    assertThat(
+                        "Success flag should match",
+                        success,
+                        equalTo(forEachCall(false, true)),
+                    )
+                }
             }
-        })
+        )
     }
 
-    @Test fun reload() {
+    @Test
+    fun reload() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
         mainSession.reload()
         sessionRule.waitForPageStop()
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(count = 1, order = [1])
-            override fun onPageStart(session: GeckoSession, url: String) {
-                assertThat("URL should match", url, endsWith(HELLO_HTML_PATH))
-            }
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1, order = [1])
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    assertThat("URL should match", url, endsWith(HELLO_HTML_PATH))
+                }
 
-            @AssertCalled(count = 1, order = [2])
-            override fun onSecurityChange(
-                session: GeckoSession,
-                securityInfo: GeckoSession.ProgressDelegate.SecurityInformation,
-            ) {
-            }
+                @AssertCalled(count = 1, order = [2])
+                override fun onSecurityChange(
+                    session: GeckoSession,
+                    securityInfo: GeckoSession.ProgressDelegate.SecurityInformation,
+                ) {}
 
-            @AssertCalled(count = 1, order = [3])
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                assertThat("Load should succeed", success, equalTo(true))
+                @AssertCalled(count = 1, order = [3])
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    assertThat("Load should succeed", success, equalTo(true))
+                }
             }
-        })
+        )
     }
 
     @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
-    @Test fun goBackAndForward() {
+    @Test
+    fun goBackAndForward() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
         mainSession.loadTestPath(HELLO2_HTML_PATH)
@@ -188,107 +202,112 @@ class ProgressDelegateTest : BaseSessionTest() {
         mainSession.goBack()
         sessionRule.waitForPageStop()
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(count = 1, order = [1])
-            override fun onPageStart(session: GeckoSession, url: String) {
-                assertThat("URL should match", url, endsWith(HELLO_HTML_PATH))
-            }
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1, order = [1])
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    assertThat("URL should match", url, endsWith(HELLO_HTML_PATH))
+                }
 
-            @AssertCalled(count = 1, order = [2])
-            override fun onSecurityChange(
-                session: GeckoSession,
-                securityInfo: GeckoSession.ProgressDelegate.SecurityInformation,
-            ) {
-            }
+                @AssertCalled(count = 1, order = [2])
+                override fun onSecurityChange(
+                    session: GeckoSession,
+                    securityInfo: GeckoSession.ProgressDelegate.SecurityInformation,
+                ) {}
 
-            @AssertCalled(count = 1, order = [3])
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                assertThat("Load should succeed", success, equalTo(true))
+                @AssertCalled(count = 1, order = [3])
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    assertThat("Load should succeed", success, equalTo(true))
+                }
             }
-        })
+        )
 
         mainSession.goForward()
         sessionRule.waitForPageStop()
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(count = 1, order = [1])
-            override fun onPageStart(session: GeckoSession, url: String) {
-                assertThat("URL should match", url, endsWith(HELLO2_HTML_PATH))
-            }
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1, order = [1])
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    assertThat("URL should match", url, endsWith(HELLO2_HTML_PATH))
+                }
 
-            @AssertCalled(count = 1, order = [2])
-            override fun onSecurityChange(
-                session: GeckoSession,
-                securityInfo: GeckoSession.ProgressDelegate.SecurityInformation,
-            ) {
-            }
+                @AssertCalled(count = 1, order = [2])
+                override fun onSecurityChange(
+                    session: GeckoSession,
+                    securityInfo: GeckoSession.ProgressDelegate.SecurityInformation,
+                ) {}
 
-            @AssertCalled(count = 1, order = [3])
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                assertThat("Load should succeed", success, equalTo(true))
+                @AssertCalled(count = 1, order = [3])
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    assertThat("Load should succeed", success, equalTo(true))
+                }
             }
-        })
+        )
     }
 
-    @Test fun correctSecurityInfoForValidTLS_automation() {
+    @Test
+    fun correctSecurityInfoForValidTLS_automation() {
         assumeThat(sessionRule.env.isAutomation, equalTo(true))
 
         mainSession.loadUri("https://example.com")
         sessionRule.waitForPageStop()
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onSecurityChange(
-                session: GeckoSession,
-                securityInfo: GeckoSession.ProgressDelegate.SecurityInformation,
-            ) {
-                assertThat(
-                    "Should be secure",
-                    securityInfo.isSecure,
-                    equalTo(true),
-                )
-                assertThat(
-                    "Should not be exception",
-                    securityInfo.isException,
-                    equalTo(false),
-                )
-                assertThat(
-                    "Origin should match",
-                    securityInfo.origin,
-                    equalTo("https://example.com"),
-                )
-                assertThat(
-                    "Host should match",
-                    securityInfo.host,
-                    equalTo("example.com"),
-                )
-                assertThat(
-                    "Subject should match",
-                    securityInfo.certificate?.subjectX500Principal?.name,
-                    equalTo("CN=example.com"),
-                )
-                assertThat(
-                    "Issuer should match",
-                    securityInfo.certificate?.issuerX500Principal?.name,
-                    equalTo("OU=Profile Guided Optimization,O=Mozilla Testing,CN=Temporary Certificate Authority"),
-                )
-                assertThat(
-                    "Security mode should match",
-                    securityInfo.securityMode,
-                    equalTo(GeckoSession.ProgressDelegate.SecurityInformation.SECURITY_MODE_IDENTIFIED),
-                )
-                assertThat(
-                    "Active mixed mode should match",
-                    securityInfo.mixedModeActive,
-                    equalTo(GeckoSession.ProgressDelegate.SecurityInformation.CONTENT_UNKNOWN),
-                )
-                assertThat(
-                    "Passive mixed mode should match",
-                    securityInfo.mixedModePassive,
-                    equalTo(GeckoSession.ProgressDelegate.SecurityInformation.CONTENT_UNKNOWN),
-                )
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onSecurityChange(
+                    session: GeckoSession,
+                    securityInfo: GeckoSession.ProgressDelegate.SecurityInformation,
+                ) {
+                    assertThat(
+                        "Should be secure",
+                        securityInfo.isSecure,
+                        equalTo(true),
+                    )
+                    assertThat(
+                        "Should not be exception",
+                        securityInfo.isException,
+                        equalTo(false),
+                    )
+                    assertThat(
+                        "Origin should match",
+                        securityInfo.origin,
+                        equalTo("https://example.com"),
+                    )
+                    assertThat(
+                        "Host should match",
+                        securityInfo.host,
+                        equalTo("example.com"),
+                    )
+                    assertThat(
+                        "Subject should match",
+                        securityInfo.certificate?.subjectX500Principal?.name,
+                        equalTo("CN=example.com"),
+                    )
+                    assertThat(
+                        "Issuer should match",
+                        securityInfo.certificate?.issuerX500Principal?.name,
+                        equalTo("OU=Profile Guided Optimization,O=Mozilla Testing,CN=Temporary Certificate Authority"),
+                    )
+                    assertThat(
+                        "Security mode should match",
+                        securityInfo.securityMode,
+                        equalTo(GeckoSession.ProgressDelegate.SecurityInformation.SECURITY_MODE_IDENTIFIED),
+                    )
+                    assertThat(
+                        "Active mixed mode should match",
+                        securityInfo.mixedModeActive,
+                        equalTo(GeckoSession.ProgressDelegate.SecurityInformation.CONTENT_UNKNOWN),
+                    )
+                    assertThat(
+                        "Passive mixed mode should match",
+                        securityInfo.mixedModePassive,
+                        equalTo(GeckoSession.ProgressDelegate.SecurityInformation.CONTENT_UNKNOWN),
+                    )
+                }
             }
-        })
+        )
     }
 
     @LargeTest
@@ -299,59 +318,61 @@ class ProgressDelegateTest : BaseSessionTest() {
         mainSession.loadUri("https://mozilla-modern.badssl.com")
         sessionRule.waitForPageStop()
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onSecurityChange(
-                session: GeckoSession,
-                securityInfo: GeckoSession.ProgressDelegate.SecurityInformation,
-            ) {
-                assertThat(
-                    "Should be secure",
-                    securityInfo.isSecure,
-                    equalTo(true),
-                )
-                assertThat(
-                    "Should not be exception",
-                    securityInfo.isException,
-                    equalTo(false),
-                )
-                assertThat(
-                    "Origin should match",
-                    securityInfo.origin,
-                    equalTo("https://mozilla-modern.badssl.com"),
-                )
-                assertThat(
-                    "Host should match",
-                    securityInfo.host,
-                    equalTo("mozilla-modern.badssl.com"),
-                )
-                assertThat(
-                    "Subject should match",
-                    securityInfo.certificate?.subjectX500Principal?.name,
-                    equalTo("CN=*.badssl.com,O=Lucas Garron,L=Walnut Creek,ST=California,C=US"),
-                )
-                assertThat(
-                    "Issuer should match",
-                    securityInfo.certificate?.issuerX500Principal?.name,
-                    equalTo("CN=DigiCert SHA2 Secure Server CA,O=DigiCert Inc,C=US"),
-                )
-                assertThat(
-                    "Security mode should match",
-                    securityInfo.securityMode,
-                    equalTo(GeckoSession.ProgressDelegate.SecurityInformation.SECURITY_MODE_IDENTIFIED),
-                )
-                assertThat(
-                    "Active mixed mode should match",
-                    securityInfo.mixedModeActive,
-                    equalTo(GeckoSession.ProgressDelegate.SecurityInformation.CONTENT_UNKNOWN),
-                )
-                assertThat(
-                    "Passive mixed mode should match",
-                    securityInfo.mixedModePassive,
-                    equalTo(GeckoSession.ProgressDelegate.SecurityInformation.CONTENT_UNKNOWN),
-                )
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onSecurityChange(
+                    session: GeckoSession,
+                    securityInfo: GeckoSession.ProgressDelegate.SecurityInformation,
+                ) {
+                    assertThat(
+                        "Should be secure",
+                        securityInfo.isSecure,
+                        equalTo(true),
+                    )
+                    assertThat(
+                        "Should not be exception",
+                        securityInfo.isException,
+                        equalTo(false),
+                    )
+                    assertThat(
+                        "Origin should match",
+                        securityInfo.origin,
+                        equalTo("https://mozilla-modern.badssl.com"),
+                    )
+                    assertThat(
+                        "Host should match",
+                        securityInfo.host,
+                        equalTo("mozilla-modern.badssl.com"),
+                    )
+                    assertThat(
+                        "Subject should match",
+                        securityInfo.certificate?.subjectX500Principal?.name,
+                        equalTo("CN=*.badssl.com,O=Lucas Garron,L=Walnut Creek,ST=California,C=US"),
+                    )
+                    assertThat(
+                        "Issuer should match",
+                        securityInfo.certificate?.issuerX500Principal?.name,
+                        equalTo("CN=DigiCert SHA2 Secure Server CA,O=DigiCert Inc,C=US"),
+                    )
+                    assertThat(
+                        "Security mode should match",
+                        securityInfo.securityMode,
+                        equalTo(GeckoSession.ProgressDelegate.SecurityInformation.SECURITY_MODE_IDENTIFIED),
+                    )
+                    assertThat(
+                        "Active mixed mode should match",
+                        securityInfo.mixedModeActive,
+                        equalTo(GeckoSession.ProgressDelegate.SecurityInformation.CONTENT_UNKNOWN),
+                    )
+                    assertThat(
+                        "Passive mixed mode should match",
+                        securityInfo.mixedModePassive,
+                        equalTo(GeckoSession.ProgressDelegate.SecurityInformation.CONTENT_UNKNOWN),
+                    )
+                }
             }
-        })
+        )
     }
 
     @LargeTest
@@ -362,23 +383,24 @@ class ProgressDelegateTest : BaseSessionTest() {
                 "https://expired.example.com"
             } else {
                 "https://expired.badssl.com"
-            },
+            }
         )
         sessionRule.waitForPageStop()
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                assertThat("Load should fail", success, equalTo(false))
-            }
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    assertThat("Load should fail", success, equalTo(false))
+                }
 
-            @AssertCalled(false)
-            override fun onSecurityChange(
-                session: GeckoSession,
-                securityInfo: GeckoSession.ProgressDelegate.SecurityInformation,
-            ) {
+                @AssertCalled(false)
+                override fun onSecurityChange(
+                    session: GeckoSession,
+                    securityInfo: GeckoSession.ProgressDelegate.SecurityInformation,
+                ) {}
             }
-        })
+        )
     }
 
     val errorEpsilon = 0.1
@@ -399,7 +421,8 @@ class ProgressDelegateTest : BaseSessionTest() {
              }
              window.requestAnimationFrame(step);
            });
-            """.trimIndent(),
+            """
+                .trimIndent()
         )
     }
 
@@ -420,16 +443,18 @@ class ProgressDelegateTest : BaseSessionTest() {
         waitForVerticalScroll(100.0, sessionRule.env.defaultTimeoutMillis.toDouble())
 
         var savedState: GeckoSession.SessionState? = null
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onSessionStateChange(session: GeckoSession, state: GeckoSession.SessionState) {
-                savedState = state
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onSessionStateChange(session: GeckoSession, state: GeckoSession.SessionState) {
+                    savedState = state
 
-                val serialized = state.toString()
-                val deserialized = GeckoSession.SessionState.fromString(serialized)
-                assertThat("Deserialized session state should match", deserialized, equalTo(state))
+                    val serialized = state.toString()
+                    val deserialized = GeckoSession.SessionState.fromString(serialized)
+                    assertThat("Deserialized session state should match", deserialized, equalTo(state))
+                }
             }
-        })
+        )
 
         assertThat("State should not be null", savedState, notNullValue())
         return savedState!!
@@ -471,17 +496,19 @@ class ProgressDelegateTest : BaseSessionTest() {
         session.restoreState(savedState)
         session.waitForPageStop()
 
-        session.forCallbacksDuringWait(object : NavigationDelegate {
-            @AssertCalled
-            override fun onLocationChange(
-                session: GeckoSession,
-                url: String?,
-                perms: MutableList<ContentPermission>,
-                hasUserGesture: Boolean,
-            ) {
-                assertThat("URI should match", url, equalTo(startUri))
+        session.forCallbacksDuringWait(
+            object : NavigationDelegate {
+                @AssertCalled
+                override fun onLocationChange(
+                    session: GeckoSession,
+                    url: String?,
+                    perms: MutableList<ContentPermission>,
+                    hasUserGesture: Boolean,
+                ) {
+                    assertThat("URI should match", url, equalTo(startUri))
+                }
             }
-        })
+        )
 
         /* TODO: Reenable when we have a workaround for ContentSessionStore not
                  saving in response to JS-driven formdata changes.
@@ -497,11 +524,18 @@ class ProgressDelegateTest : BaseSessionTest() {
 
         session.goBack()
 
-        session.waitUntilCalled(object : NavigationDelegate {
-            override fun onLocationChange(session: GeckoSession, url: String?, perms: MutableList<ContentPermission>, hasUserGesture: Boolean) {
-                assertThat("History should be preserved", url, equalTo(helloUri))
+        session.waitUntilCalled(
+            object : NavigationDelegate {
+                override fun onLocationChange(
+                    session: GeckoSession,
+                    url: String?,
+                    perms: MutableList<ContentPermission>,
+                    hasUserGesture: Boolean,
+                ) {
+                    assertThat("History should be preserved", url, equalTo(helloUri))
+                }
             }
-        })
+        )
     }
 
     @WithDisplay(width = 400, height = 400)
@@ -518,12 +552,19 @@ class ProgressDelegateTest : BaseSessionTest() {
         mainSession.restoreState(savedState)
         sessionRule.waitForPageStop()
 
-        sessionRule.forCallbacksDuringWait(object : NavigationDelegate {
-            @AssertCalled
-            override fun onLocationChange(session: GeckoSession, url: String?, perms: MutableList<ContentPermission>, hasUserGesture: Boolean) {
-                assertThat("URI should match", url, equalTo(startUri))
+        sessionRule.forCallbacksDuringWait(
+            object : NavigationDelegate {
+                @AssertCalled
+                override fun onLocationChange(
+                    session: GeckoSession,
+                    url: String?,
+                    perms: MutableList<ContentPermission>,
+                    hasUserGesture: Boolean,
+                ) {
+                    assertThat("URI should match", url, equalTo(startUri))
+                }
             }
-        })
+        )
 
         /* TODO: Reenable when we have a workaround for ContentSessionStore not
                  saving in response to JS-driven formdata changes.
@@ -547,26 +588,31 @@ class ProgressDelegateTest : BaseSessionTest() {
 
         var oldState: GeckoSession.SessionState? = null
 
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onSessionStateChange(session: GeckoSession, sessionState: GeckoSession.SessionState) {
-                oldState = sessionState
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onSessionStateChange(session: GeckoSession, sessionState: GeckoSession.SessionState) {
+                    oldState = sessionState
+                }
             }
-        })
+        )
 
         assertThat("State should not be null", oldState, notNullValue())
 
         mainSession.setActive(false)
 
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onSessionStateChange(session: GeckoSession, sessionState: GeckoSession.SessionState) {
-                assertThat("Old session state and new should match", sessionState, equalTo(oldState))
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onSessionStateChange(session: GeckoSession, sessionState: GeckoSession.SessionState) {
+                    assertThat("Old session state and new should match", sessionState, equalTo(oldState))
+                }
             }
-        })
+        )
     }
 
-    @Test fun nullState() {
+    @Test
+    fun nullState() {
         val stateFromNull: GeckoSession.SessionState? = GeckoSession.SessionState.fromString(null)
         val nullState: GeckoSession.SessionState? = null
         assertThat("Null string should result in null state", stateFromNull, equalTo(nullState))
@@ -578,11 +624,12 @@ class ProgressDelegateTest : BaseSessionTest() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onSessionStateChange(session: GeckoSession, sessionState: GeckoSession.SessionState) {
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onSessionStateChange(session: GeckoSession, sessionState: GeckoSession.SessionState) {}
             }
-        })
+        )
     }
 
     @Test
@@ -592,7 +639,11 @@ class ProgressDelegateTest : BaseSessionTest() {
         val expectedResult = """{"devicePixelRatio":2.5,"antitracking":{"hasTrackingContentBlocked":false}}"""
 
         val info = mainSession.webCompatInfo
-        assertThat("Result should match mocked web compat info", sessionRule.waitForResult(info).toString(), equalTo(expectedResult))
+        assertThat(
+            "Result should match mocked web compat info",
+            sessionRule.waitForResult(info).toString(),
+            equalTo(expectedResult),
+        )
     }
 
     @Test
@@ -621,12 +672,13 @@ class ProgressDelegateTest : BaseSessionTest() {
     fun sendMoreWebCompatInfoSuccess() {
         sessionRule.setPrefsUntilTestEnd(mapOf("browser.webcompat.geckoview.enableAllTestMocks" to true))
 
-        val testInfo = JSONObject().apply {
-            put("reason", "test-reason")
-            put("description", "test-description")
-            put("endpointUrl", "https://webcompat.com/issues/new")
-            put("reportUrl", "https://example.com")
-        }
+        val testInfo =
+            JSONObject().apply {
+                put("reason", "test-reason")
+                put("description", "test-description")
+                put("endpointUrl", "https://webcompat.com/issues/new")
+                put("reportUrl", "https://example.com")
+            }
 
         try {
             sessionRule.waitForResult(mainSession.sendMoreWebCompatInfo(testInfo))
@@ -641,12 +693,14 @@ class ProgressDelegateTest : BaseSessionTest() {
         sessionRule.setPrefsUntilTestEnd(mapOf("page_load.progressbar_completion" to 0))
         val progressChanges = mutableListOf<Int>()
 
-        sessionRule.delegateUntilTestEnd(object : ProgressDelegate {
-            @AssertCalled
-            override fun onProgressChange(session: GeckoSession, progress: Int) {
-                progressChanges.add(progress)
+        sessionRule.delegateUntilTestEnd(
+            object : ProgressDelegate {
+                @AssertCalled
+                override fun onProgressChange(session: GeckoSession, progress: Int) {
+                    progressChanges.add(progress)
+                }
             }
-        })
+        )
 
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
@@ -668,12 +722,14 @@ class ProgressDelegateTest : BaseSessionTest() {
         sessionRule.setPrefsUntilTestEnd(mapOf("page_load.progressbar_completion" to 1))
         val progressChanges = mutableListOf<Int>()
 
-        sessionRule.delegateUntilTestEnd(object : ProgressDelegate {
-            @AssertCalled
-            override fun onProgressChange(session: GeckoSession, progress: Int) {
-                progressChanges.add(progress)
+        sessionRule.delegateUntilTestEnd(
+            object : ProgressDelegate {
+                @AssertCalled
+                override fun onProgressChange(session: GeckoSession, progress: Int) {
+                    progressChanges.add(progress)
+                }
             }
-        })
+        )
 
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
@@ -695,12 +751,14 @@ class ProgressDelegateTest : BaseSessionTest() {
         sessionRule.setPrefsUntilTestEnd(mapOf("page_load.progressbar_completion" to 2))
         val progressChanges = mutableListOf<Int>()
 
-        sessionRule.delegateUntilTestEnd(object : ProgressDelegate {
-            @AssertCalled
-            override fun onProgressChange(session: GeckoSession, progress: Int) {
-                progressChanges.add(progress)
+        sessionRule.delegateUntilTestEnd(
+            object : ProgressDelegate {
+                @AssertCalled
+                override fun onProgressChange(session: GeckoSession, progress: Int) {
+                    progressChanges.add(progress)
+                }
             }
-        })
+        )
 
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
@@ -717,27 +775,31 @@ class ProgressDelegateTest : BaseSessionTest() {
         )
     }
 
-    @Test fun flushSessionStateTriggersSessionStateChange() {
+    @Test
+    fun flushSessionStateTriggersSessionStateChange() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.waitForPageStop()
 
         var oldState: GeckoSession.SessionState? = null
 
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onSessionStateChange(session: GeckoSession, sessionState: GeckoSession.SessionState) {
-                oldState = sessionState
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onSessionStateChange(session: GeckoSession, sessionState: GeckoSession.SessionState) {
+                    oldState = sessionState
+                }
             }
-        })
+        )
 
         assertThat("State should not be null", oldState, notNullValue())
 
         mainSession.flushSessionState()
 
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onSessionStateChange(session: GeckoSession, sessionState: GeckoSession.SessionState) {
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onSessionStateChange(session: GeckoSession, sessionState: GeckoSession.SessionState) {}
             }
-        })
+        )
     }
 }

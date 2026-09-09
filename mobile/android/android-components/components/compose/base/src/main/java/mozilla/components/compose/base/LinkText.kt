@@ -36,9 +36,7 @@ import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.support.base.log.logger.Logger
 
-/**
- * The tag used for links in the text for annotated strings.
- */
+/** The tag used for links in the text for annotated strings. */
 private const val URL_TAG = "URL_TAG"
 
 private val logger = Logger("LinkText")
@@ -60,39 +58,41 @@ data class LinkTextState(
  * A composable for displaying text that contains a clickable link text.
  *
  * @param text The complete text.
- * @param linkTextStates The clickable part of the text. The order of the states added in the list
- * should be the same as the links shown in the text.
+ * @param linkTextStates The clickable part of the text. The order of the states added in the list should be the same as
+ *   the links shown in the text.
  * @param modifier The [Modifier] to be applied to the underlying [Text].
  * @param style [TextStyle] applied to the text.
  * @param linkTextColor [Color] applied to the clickable part of the text.
  * @param linkTextDecoration [TextDecoration] applied to the clickable part of the text.
  * @param textAlign The alignment of the text within the lines of the paragraph. See [TextStyle.textAlign].
- * @param contentDescription Optional accessibility content description. When provided, overrides
- * the default description that is derived from the text content. Used for when more custom context is needed.
- * @param shouldApplyAccessibleSize determines whether a minimum interactive size should be applied
- * to improve accessibility touch targets.
+ * @param contentDescription Optional accessibility content description. When provided, overrides the default
+ *   description that is derived from the text content. Used for when more custom context is needed.
+ * @param shouldApplyAccessibleSize determines whether a minimum interactive size should be applied to improve
+ *   accessibility touch targets.
  */
 @Composable
 fun LinkText(
     text: String,
     linkTextStates: List<LinkTextState>,
     modifier: Modifier = Modifier,
-    style: TextStyle = AcornTheme.typography.body2.copy(
-        textAlign = TextAlign.Center,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    ),
+    style: TextStyle =
+        AcornTheme.typography.body2.copy(
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
     linkTextColor: Color = MaterialTheme.colorScheme.tertiary,
     linkTextDecoration: TextDecoration = TextDecoration.None,
     textAlign: TextAlign? = null,
     contentDescription: String? = null,
     shouldApplyAccessibleSize: Boolean = false,
 ) {
-    val annotatedString = buildUrlAnnotatedString(
-        text,
-        linkTextStates,
-        linkTextColor,
-        linkTextDecoration,
-    )
+    val annotatedString =
+        buildUrlAnnotatedString(
+            text,
+            linkTextStates,
+            linkTextColor,
+            linkTextDecoration,
+        )
 
     val showDialog = remember { mutableStateOf(false) }
     val linksAvailable = stringResource(id = R.string.mozac_compose_base_link_text_links_available)
@@ -104,27 +104,28 @@ fun LinkText(
     Text(
         text = annotatedString,
         style = style,
-        modifier = modifier
-            .then(
-                if (shouldApplyAccessibleSize) {
-                    Modifier.minimumInteractiveComponentSize()
-                } else {
-                    Modifier
-                },
-            )
-            .clearAndSetSemantics {
-                onClick {
-                    if (linkTextStates.size > 1) {
-                        showDialog.value = true
+        modifier =
+            modifier
+                .then(
+                    if (shouldApplyAccessibleSize) {
+                        Modifier.minimumInteractiveComponentSize()
                     } else {
-                        linkTextStates.firstOrNull()?.let {
-                            it.onClick(it.url)
-                        }
+                        Modifier
                     }
-                    return@onClick true
-                }
-                this.contentDescription = contentDescription ?: "$annotatedString $linksAvailable"
-            },
+                )
+                .clearAndSetSemantics {
+                    onClick {
+                        if (linkTextStates.size > 1) {
+                            showDialog.value = true
+                        } else {
+                            linkTextStates.firstOrNull()?.let {
+                                it.onClick(it.url)
+                            }
+                        }
+                        return@onClick true
+                    }
+                    this.contentDescription = contentDescription ?: "$annotatedString $linksAvailable"
+                },
         textAlign = textAlign,
     )
 }
@@ -136,12 +137,12 @@ private fun LinksDialog(
 ) {
     Dialog(onDismissRequest = { onDismissRequest() }) {
         Column(
-            modifier = Modifier
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    shape = MaterialTheme.shapes.extraLarge,
-                )
-                .padding(16.dp),
+            modifier =
+                Modifier.background(
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = MaterialTheme.shapes.extraLarge,
+                    )
+                    .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
@@ -168,12 +169,12 @@ private fun LinksDialog(
 }
 
 /**
- * Builds an [AnnotatedString] from [fullText], adding a clickable link annotation for each
- * [LinkTextState] whose [LinkTextState.text] is found in [fullText].
+ * Builds an [AnnotatedString] from [fullText], adding a clickable link annotation for each [LinkTextState] whose
+ * [LinkTextState.text] is found in [fullText].
  *
- * Any state whose text is blank or cannot be found (e.g. a localized [fullText] that does not
- * contain the expected substring) is logged and skipped, so it is never turned into a link with an
- * out of range span - which would otherwise crash later in the text layout pass.
+ * Any state whose text is blank or cannot be found (e.g. a localized [fullText] that does not contain the expected
+ * substring) is logged and skipped, so it is never turned into a link with an out of range span - which would otherwise
+ * crash later in the text layout pass.
  */
 private fun buildUrlAnnotatedString(
     fullText: String,
@@ -186,7 +187,6 @@ private fun buildUrlAnnotatedString(
     var previousWordEndIndex = 0
 
     linkTextStates.forEach { linkTextState ->
-
         if (linkTextState.text.isBlank()) {
             logger.error("Link text was blank")
             return@forEach
@@ -200,18 +200,20 @@ private fun buildUrlAnnotatedString(
 
         val endIndex = startIndex + linkTextState.text.length
 
-        val link = LinkAnnotation.Clickable(
-            tag = URL_TAG,
-            styles = TextLinkStyles(
-                SpanStyle(
-                    color = color,
-                    textDecoration = decoration,
-                ),
-            ),
-            linkInteractionListener = {
-                linkTextState.onClick(linkTextState.url)
-            },
-        )
+        val link =
+            LinkAnnotation.Clickable(
+                tag = URL_TAG,
+                styles =
+                    TextLinkStyles(
+                        SpanStyle(
+                            color = color,
+                            textDecoration = decoration,
+                        )
+                    ),
+                linkInteractionListener = {
+                    linkTextState.onClick(linkTextState.url)
+                },
+            )
         addLink(link, startIndex, endIndex)
 
         previousWordEndIndex = endIndex
@@ -221,11 +223,12 @@ private fun buildUrlAnnotatedString(
 @Preview
 @Composable
 private fun LinkTextEndPreview() {
-    val state = LinkTextState(
-        text = "click here",
-        url = "www.mozilla.com",
-        onClick = {},
-    )
+    val state =
+        LinkTextState(
+            text = "click here",
+            url = "www.mozilla.com",
+            onClick = {},
+        )
 
     AcornTheme {
         Surface {
@@ -237,11 +240,12 @@ private fun LinkTextEndPreview() {
 @Preview
 @Composable
 private fun LinkTextMiddlePreview() {
-    val state = LinkTextState(
-        text = "clickable text",
-        url = "www.mozilla.com",
-        onClick = {},
-    )
+    val state =
+        LinkTextState(
+            text = "clickable text",
+            url = "www.mozilla.com",
+            onClick = {},
+        )
 
     AcornTheme {
         Surface {
@@ -253,11 +257,12 @@ private fun LinkTextMiddlePreview() {
 @Preview
 @Composable
 private fun LinkTextStyledPreview() {
-    val state = LinkTextState(
-        text = "clickable text",
-        url = "www.mozilla.com",
-        onClick = {},
-    )
+    val state =
+        LinkTextState(
+            text = "clickable text",
+            url = "www.mozilla.com",
+            onClick = {},
+        )
 
     AcornTheme {
         Surface {
@@ -273,11 +278,12 @@ private fun LinkTextStyledPreview() {
 @Preview
 @Composable
 private fun LinkTextClickStyledPreview() {
-    val state = LinkTextState(
-        text = "clickable text",
-        url = "www.mozilla.com",
-        onClick = {},
-    )
+    val state =
+        LinkTextState(
+            text = "clickable text",
+            url = "www.mozilla.com",
+            onClick = {},
+        )
 
     AcornTheme {
         Surface {
@@ -295,16 +301,18 @@ private fun LinkTextClickStyledPreview() {
 @Preview
 @Composable
 private fun MultipleLinksPreview() {
-    val state1 = LinkTextState(
-        text = "clickable text",
-        url = "www.mozilla.com",
-        onClick = {},
-    )
-    val state2 = LinkTextState(
-        text = "another clickable text",
-        url = "www.mozilla.com",
-        onClick = {},
-    )
+    val state1 =
+        LinkTextState(
+            text = "clickable text",
+            url = "www.mozilla.com",
+            onClick = {},
+        )
+    val state2 =
+        LinkTextState(
+            text = "another clickable text",
+            url = "www.mozilla.com",
+            onClick = {},
+        )
 
     AcornTheme {
         Surface {
@@ -319,16 +327,18 @@ private fun MultipleLinksPreview() {
 @Preview
 @Composable
 private fun LinksDialogPreview() {
-    val state1 = LinkTextState(
-        text = "clickable text",
-        url = "www.mozilla.com",
-        onClick = {},
-    )
-    val state2 = LinkTextState(
-        text = "another clickable text",
-        url = "www.mozilla.com",
-        onClick = {},
-    )
+    val state1 =
+        LinkTextState(
+            text = "clickable text",
+            url = "www.mozilla.com",
+            onClick = {},
+        )
+    val state2 =
+        LinkTextState(
+            text = "another clickable text",
+            url = "www.mozilla.com",
+            onClick = {},
+        )
     val linkTextStateList = listOf(state1, state2)
 
     AcornTheme {

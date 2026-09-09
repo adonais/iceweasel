@@ -2204,6 +2204,7 @@ if (rtc_include_tests) {
         "numerics/mod_ops_unittest.cc",
         "numerics/moving_max_counter_unittest.cc",
         "numerics/safe_compare_unittest.cc",
+        "numerics/safe_conversions_unittest.cc",
         "numerics/safe_minmax_unittest.cc",
         "numerics/sample_counter_unittest.cc",
         "one_time_event_unittest.cc",
@@ -2265,6 +2266,7 @@ if (rtc_include_tests) {
         ":rtc_event",
         ":rtc_numerics",
         ":safe_compare",
+        ":safe_conversions",
         ":safe_minmax",
         ":sample_counter",
         ":sanitizer",
@@ -2520,6 +2522,12 @@ if (rtc_include_tests) {
 }
 
 if (is_android && !build_with_mozilla) {
+  import("//third_party/jni_zero/jni_zero.gni")
+  generate_jni("base_java_jni") {
+    sources = [ "java/src/org/webrtc/Logging.java" ]
+    namespace = "webrtc::jni"
+  }
+
   rtc_android_library("base_java") {
     visibility = [ "*" ]
     sources = [
@@ -2529,7 +2537,11 @@ if (is_android && !build_with_mozilla) {
       "java/src/org/webrtc/Size.java",
       "java/src/org/webrtc/ThreadUtils.java",
     ]
-    deps = [ "//third_party/androidx:androidx_annotation_annotation_java" ]
+    deps = [
+      ":base_java_jni_java",
+      "//third_party/androidx:androidx_annotation_annotation_java",
+      "//third_party/jni_zero:jni_zero_java",
+    ]
   }
   java_cpp_enum("network_monitor_enums") {
     sources = [ "network_monitor.h" ]

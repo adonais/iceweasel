@@ -63,7 +63,7 @@
         adrp            \rd, \val+(\offset)@PAGE
         add             \rd, \rd, \val+(\offset)@PAGEOFF
   .endif
-#elif defined(PIC) && defined(_WIN32)
+#elif defined(_WIN32)
   .if \offset < 0
         adrp            \rd, \val
         add             \rd, \rd, :lo12:\val
@@ -76,11 +76,9 @@
         adrp            \rd, :pg_hi21_nc:\val+(\offset)
         movk            \rd, #:prel_g3:\val+0x100000000
         add             \rd, \rd, :lo12:\val+(\offset)
-#elif defined(PIC)
+#else
         adrp            \rd, \val+(\offset)
         add             \rd, \rd, :lo12:\val+(\offset)
-#else
-        ldr             \rd, =\val+\offset
 #endif
 .endm
 

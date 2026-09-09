@@ -19,8 +19,8 @@ import kotlinx.parcelize.Parcelize
 // sticky-layoutmanager/src/main/java/com/jay/widget/StickyHeadersLinearLayoutManager.java
 
 /**
- * Contract needed to be implemented by all [RecyclerView.Adapter]s
- * that want to display a list with a sticky header / footer.
+ * Contract needed to be implemented by all [RecyclerView.Adapter]s that want to display a list with a sticky header /
+ * footer.
  */
 interface StickyItemsAdapter {
     /**
@@ -30,40 +30,34 @@ interface StickyItemsAdapter {
      */
     fun isStickyItem(position: Int): Boolean
 
-    /**
-     * Callback allowing any customization for the view that will become sticky.
-     */
+    /** Callback allowing any customization for the view that will become sticky. */
     fun setupStickyItem(stickyItem: View) {}
 
-    /**
-     * Callback allowing cleanup after the previous sticky view becomes a regular view.
-     */
+    /** Callback allowing cleanup after the previous sticky view becomes a regular view. */
     fun tearDownStickyItem(stickyItem: View) {}
 }
 
-/**
- * Whether the sticky item should be a header or a footer.
- */
+/** Whether the sticky item should be a header or a footer. */
 enum class StickyItemPlacement {
     /**
      * The sticky item will be fixed at the top of the list.
      *
-     * If the list is scrolled down until past the sticky item's position that view
-     * will become a regular view and will be scrolled down as the others.
+     * If the list is scrolled down until past the sticky item's position that view will become a regular view and will
+     * be scrolled down as the others.
      *
-     * If the list is scrolled up past the sticky item's position that view
-     * will be anchored to the top of the list, always being shown as the first item.
+     * If the list is scrolled up past the sticky item's position that view will be anchored to the top of the list,
+     * always being shown as the first item.
      */
     TOP,
 
     /**
      * The sticky item will be fixed at the bottom of the list.
      *
-     * If the list is scrolled up until past the sticky item's position that view
-     * will become a regular view and will be scrolled up as the others.
+     * If the list is scrolled up until past the sticky item's position that view will become a regular view and will be
+     * scrolled up as the others.
      *
-     * If the list is scrolled down past the sticky item's position that view
-     * will be anchored to the bottom of the list, always being shown as the last item.
+     * If the list is scrolled down past the sticky item's position that view will be anchored to the bottom of the
+     * list, always being shown as the last item.
      */
     BOTTOM,
 }
@@ -72,47 +66,43 @@ enum class StickyItemPlacement {
  * Vertical LinearLayoutManager that will prevent certain items from being scrolled off-screen.
  *
  * @param context [Context] needed for various Android interactions.
- * @param stickyItemPlacement whether the sticky item should be blocked from being scrolled off
- * to the top of the screen or off to the bottom of the screen.
+ * @param stickyItemPlacement whether the sticky item should be blocked from being scrolled off to the top of the screen
+ *   or off to the bottom of the screen.
  * @param reverseLayout When set to true, layouts from end to start.
  */
 @Suppress("TooManyFunctions")
-abstract class StickyItemsLinearLayoutManager<T> constructor(
+abstract class StickyItemsLinearLayoutManager<T>
+constructor(
     context: Context,
     private val stickyItemPlacement: StickyItemPlacement,
     reverseLayout: Boolean = false,
 ) : LinearLayoutManager(context, RecyclerView.VERTICAL, reverseLayout)
     where T : RecyclerView.Adapter<*>, T : StickyItemsAdapter {
 
-    @VisibleForTesting
-    internal var listAdapter: T? = null
+    @VisibleForTesting internal var listAdapter: T? = null
 
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
     internal var stickyItemPosition = RecyclerView.NO_POSITION
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
-    internal var stickyItemView: View? = null
+    @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED) internal var stickyItemView: View? = null
 
     // Allows to re-evaluate and display a possibly new sticky item if data / adapter changed.
-    @VisibleForTesting
-    internal var stickyItemPositionsObserver = ItemPositionsAdapterDataObserver()
+    @VisibleForTesting internal var stickyItemPositionsObserver = ItemPositionsAdapterDataObserver()
 
     // Save / Restore scroll state
-    @VisibleForTesting
-    internal var scrollPosition = RecyclerView.NO_POSITION
+    @VisibleForTesting internal var scrollPosition = RecyclerView.NO_POSITION
 
-    @VisibleForTesting
-    internal var scrollOffset = 0
+    @VisibleForTesting internal var scrollOffset = 0
 
     /**
-     * @see [LinearLayoutManager.scrollToPositionWithOffset]
-     *
      * @param position list item index which needs to be shown.
      * @param offset optional distance offset from the top of the list to be applied after scrolling to [position]
-     * @param actuallyScrollToPositionWithOffset callback to be used for actually scrolling to an updated position
-     * ad offset based on the relation with the sticky item.
+     * @param actuallyScrollToPositionWithOffset callback to be used for actually scrolling to an updated position ad
+     *   offset based on the relation with the sticky item.
      *
      * Use [setScrollState] before and after
+     *
+     * @see [LinearLayoutManager.scrollToPositionWithOffset]
      */
     abstract fun scrollToIndicatedPositionWithOffset(
         position: Int,
@@ -123,14 +113,14 @@ abstract class StickyItemsLinearLayoutManager<T> constructor(
     /**
      * Whether the sticky item should be shown.
      *
-     * Expected to return if the sticky header item is scrolled past the list top or the sticky bottom item
-     * is scrolled past the list bottom.
+     * Expected to return if the sticky header item is scrolled past the list top or the sticky bottom item is scrolled
+     * past the list bottom.
      */
     abstract fun shouldStickyItemBeShownForCurrentPosition(): Boolean
 
     /**
-     * Returns the position in the Y axis to position the header appropriately,
-     * depending on direction and [android.R.attr.clipToPadding].
+     * Returns the position in the Y axis to position the header appropriately, depending on direction and
+     * [android.R.attr.clipToPadding].
      */
     abstract fun getY(itemView: View): Float
 
@@ -183,29 +173,33 @@ abstract class StickyItemsLinearLayoutManager<T> constructor(
         return distanceScrolled
     }
 
-    override fun findLastVisibleItemPosition(): Int =
-        restoreView { super.findLastVisibleItemPosition() }
+    override fun findLastVisibleItemPosition(): Int = restoreView { super.findLastVisibleItemPosition() }
 
-    override fun findFirstVisibleItemPosition(): Int =
-        restoreView { super.findFirstVisibleItemPosition() }
+    override fun findFirstVisibleItemPosition(): Int = restoreView { super.findFirstVisibleItemPosition() }
 
-    override fun findFirstCompletelyVisibleItemPosition(): Int =
-        restoreView { super.findFirstCompletelyVisibleItemPosition() }
+    override fun findFirstCompletelyVisibleItemPosition(): Int = restoreView {
+        super.findFirstCompletelyVisibleItemPosition()
+    }
 
-    override fun findLastCompletelyVisibleItemPosition(): Int =
-        restoreView { super.findLastCompletelyVisibleItemPosition() }
+    override fun findLastCompletelyVisibleItemPosition(): Int = restoreView {
+        super.findLastCompletelyVisibleItemPosition()
+    }
 
-    override fun computeVerticalScrollExtent(state: RecyclerView.State): Int =
-        restoreView { super.computeVerticalScrollExtent(state) }
+    override fun computeVerticalScrollExtent(state: RecyclerView.State): Int = restoreView {
+        super.computeVerticalScrollExtent(state)
+    }
 
-    override fun computeVerticalScrollOffset(state: RecyclerView.State): Int =
-        restoreView { super.computeVerticalScrollOffset(state) }
+    override fun computeVerticalScrollOffset(state: RecyclerView.State): Int = restoreView {
+        super.computeVerticalScrollOffset(state)
+    }
 
-    override fun computeVerticalScrollRange(state: RecyclerView.State): Int =
-        restoreView { super.computeVerticalScrollRange(state) }
+    override fun computeVerticalScrollRange(state: RecyclerView.State): Int = restoreView {
+        super.computeVerticalScrollRange(state)
+    }
 
-    override fun computeScrollVectorForPosition(targetPosition: Int): PointF? =
-        restoreView { super.computeScrollVectorForPosition(targetPosition) }
+    override fun computeScrollVectorForPosition(targetPosition: Int): PointF? = restoreView {
+        super.computeScrollVectorForPosition(targetPosition)
+    }
 
     override fun scrollToPosition(position: Int) {
         if (stickyItemView != null) {
@@ -240,8 +234,8 @@ abstract class StickyItemsLinearLayoutManager<T> constructor(
 
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
     internal fun getAdapterPositionForItemIndex(index: Int): Int {
-        return (getChildAt(index)?.layoutParams as? RecyclerView.LayoutParams)
-            ?.absoluteAdapterPosition ?: RecyclerView.NO_POSITION
+        return (getChildAt(index)?.layoutParams as? RecyclerView.LayoutParams)?.absoluteAdapterPosition
+            ?: RecyclerView.NO_POSITION
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -253,10 +247,11 @@ abstract class StickyItemsLinearLayoutManager<T> constructor(
             listAdapter = newAdapter
             listAdapter?.registerAdapterDataObserver(stickyItemPositionsObserver)
             stickyItemPositionsObserver.onChanged()
-        } ?: run {
-            listAdapter = null
-            stickyItemView = null
         }
+            ?: run {
+                listAdapter = null
+                stickyItemView = null
+            }
     }
 
     /**
@@ -303,8 +298,8 @@ abstract class StickyItemsLinearLayoutManager<T> constructor(
     }
 
     /**
-     * Construct and configure a [RecyclerView.ViewHolder] for [position],
-     * including measure, layout, and data binding and assigns this to [stickyItemView].
+     * Construct and configure a [RecyclerView.ViewHolder] for [position], including measure, layout, and data binding
+     * and assigns this to [stickyItemView].
      */
     @VisibleForTesting
     internal fun createStickyView(recycler: RecyclerView.Recycler, position: Int) {
@@ -323,9 +318,7 @@ abstract class StickyItemsLinearLayoutManager<T> constructor(
         stickyItemView = stickyItem
     }
 
-    /**
-     * Binds a new [stickyItem].
-     */
+    /** Binds a new [stickyItem]. */
     @VisibleForTesting
     internal fun bindStickyItem(stickyItem: View) {
         measureAndLayout(stickyItem)
@@ -333,8 +326,7 @@ abstract class StickyItemsLinearLayoutManager<T> constructor(
         // If we have a pending scroll wait until the end of layout and scroll again.
         if (scrollPosition != RecyclerView.NO_POSITION) {
             stickyItem.viewTreeObserver.addOnGlobalLayoutListener(
-                object :
-                    ViewTreeObserver.OnGlobalLayoutListener {
+                object : ViewTreeObserver.OnGlobalLayoutListener {
                     override fun onGlobalLayout() {
                         stickyItem.viewTreeObserver.removeOnGlobalLayoutListener(this)
                         if (scrollPosition != RecyclerView.NO_POSITION) {
@@ -342,14 +334,12 @@ abstract class StickyItemsLinearLayoutManager<T> constructor(
                             setScrollState(RecyclerView.NO_POSITION, INVALID_OFFSET)
                         }
                     }
-                },
+                }
             )
         }
     }
 
-    /**
-     * Measures and lays out [stickyItemView].
-     */
+    /** Measures and lays out [stickyItemView]. */
     @VisibleForTesting
     internal fun measureAndLayout(stickyItem: View) {
         measureChildWithMargins(stickyItem, 0, 0)
@@ -362,8 +352,8 @@ abstract class StickyItemsLinearLayoutManager<T> constructor(
     }
 
     /**
-     * Returns a no longer needed [stickyItemView] View to the [RecyclerView]'s [RecyclerView.RecycledViewPool]
-     * allowing it to be recycled and reused later after being re-binded in the Adapter.
+     * Returns a no longer needed [stickyItemView] View to the [RecyclerView]'s [RecyclerView.RecycledViewPool] allowing
+     * it to be recycled and reused later after being re-binded in the Adapter.
      *
      * @param recycler [RecyclerView.Recycler] instance handling views recycling.
      */
@@ -389,9 +379,7 @@ abstract class StickyItemsLinearLayoutManager<T> constructor(
         scrollOffset = offset
     }
 
-    /**
-     * Observer for any changes in the items displayed or even when the Adapter changes.
-     */
+    /** Observer for any changes in the items displayed or even when the Adapter changes. */
     @VisibleForTesting
     internal inner class ItemPositionsAdapterDataObserver : RecyclerView.AdapterDataObserver() {
         override fun onChanged() = handleChange()
@@ -443,8 +431,8 @@ abstract class StickyItemsLinearLayoutManager<T> constructor(
 
     companion object {
         /**
-         * Get a new instance of a vertical [LinearLayoutManager] that can show one specific item
-         * as a fixed header / footer in the list, be that reversed or not.
+         * Get a new instance of a vertical [LinearLayoutManager] that can show one specific item as a fixed header /
+         * footer in the list, be that reversed or not.
          *
          * @param stickyItemPlacement whether the sticky item should be anchored to the top or bottom of the list
          * @param reverseLayout when set to true, layouts from end to start.
@@ -453,25 +441,24 @@ abstract class StickyItemsLinearLayoutManager<T> constructor(
             context: Context,
             stickyItemPlacement: StickyItemPlacement = StickyItemPlacement.TOP,
             reverseLayout: Boolean = false,
-        ): StickyItemsLinearLayoutManager<T>
-            where T : RecyclerView.Adapter<*>, T : StickyItemsAdapter {
+        ): StickyItemsLinearLayoutManager<T> where T : RecyclerView.Adapter<*>, T : StickyItemsAdapter {
             return when (stickyItemPlacement) {
-                StickyItemPlacement.TOP -> StickyHeaderLinearLayoutManager(
-                    context,
-                    reverseLayout,
-                )
-                StickyItemPlacement.BOTTOM -> StickyFooterLinearLayoutManager(
-                    context,
-                    reverseLayout,
-                )
+                StickyItemPlacement.TOP ->
+                    StickyHeaderLinearLayoutManager(
+                        context,
+                        reverseLayout,
+                    )
+                StickyItemPlacement.BOTTOM ->
+                    StickyFooterLinearLayoutManager(
+                        context,
+                        reverseLayout,
+                    )
             }
         }
     }
 }
 
-/**
- * Save / restore existing [RecyclerView] state and scrolling position and offset.
- */
+/** Save / restore existing [RecyclerView] state and scrolling position and offset. */
 @Parcelize
 @VisibleForTesting
 internal data class SavedState(

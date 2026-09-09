@@ -82,8 +82,8 @@ private fun PermissionOptionsListComposablePreview() {
  * @param state The current selected option's preference key ID.
  * @param permissionLabel The label for the site permission (e.g., "Camera", "Location").
  * @param goToPhoneSettings A callback function to navigate to the phone's settings screen.
- * @param componentPermissionBlockedByAndroidVisibility A boolean indicating whether the
- * "permission blocked by Android" component should be visible.
+ * @param componentPermissionBlockedByAndroidVisibility A boolean indicating whether the "permission blocked by Android"
+ *   component should be visible.
  */
 @Composable
 fun OptionsPermissionList(
@@ -95,17 +95,14 @@ fun OptionsPermissionList(
 ) {
     FocusTheme {
         Column(
-            Modifier
-                .fillMaxWidth()
+            Modifier.fillMaxWidth()
                 .fillMaxHeight()
                 .background(
                     colorResource(R.color.settings_background),
                     shape = RectangleShape,
-                ),
+                )
         ) {
-            LazyColumn(
-                contentPadding = PaddingValues(horizontal = focusDimensions.paddingListHorizontal),
-            ) {
+            LazyColumn(contentPadding = PaddingValues(horizontal = focusDimensions.paddingListHorizontal)) {
                 items(optionsListItems) { item ->
                     OptionPermission(
                         sitePermissionOption = item.sitePermissionOption,
@@ -130,8 +127,7 @@ private fun OptionPermission(
     onClick: (SitePermissionOption) -> Unit,
 ) {
     Row(
-        Modifier
-            .fillMaxWidth()
+        Modifier.fillMaxWidth()
             .wrapContentHeight()
             .selectable(
                 selected = isSelected,
@@ -148,9 +144,7 @@ private fun OptionPermission(
             colors = RadioButtonDefaults.colors(selectedColor = focusColors.radioButtonSelected),
             onClick = null,
         )
-        OptionPermissionDisplayName(
-            sitePermissionOption = sitePermissionOption,
-        )
+        OptionPermissionDisplayName(sitePermissionOption = sitePermissionOption)
     }
 }
 
@@ -161,43 +155,36 @@ private fun OptionPermissionDisplayName(sitePermissionOption: SitePermissionOpti
             textAlign = TextAlign.Start,
             color = focusColors.settingsTextColor,
             text = AnnotatedString(stringResource(id = sitePermissionOption.titleId)),
-            style = TextStyle(
-                fontSize = 16.sp,
-            ),
-                modifier = Modifier
-                    .padding(start = focusDimensions.paddingSmall, end = focusDimensions.paddingSmall),
-            )
-            sitePermissionOption.summaryId?.let {
-                Text(
-                    textAlign = TextAlign.Start,
-                    text = AnnotatedString(stringResource(id = it)),
-                    color = focusColors.settingsTextSummaryColor,
-                    style = TextStyle(
-                        fontSize = 14.sp,
-                    ),
-                    modifier = Modifier
-                        .padding(start = focusDimensions.paddingSmall, end = focusDimensions.paddingSmall),
+            style = TextStyle(fontSize = 16.sp),
+            modifier = Modifier.padding(start = focusDimensions.paddingSmall, end = focusDimensions.paddingSmall),
+        )
+        sitePermissionOption.summaryId?.let {
+            Text(
+                textAlign = TextAlign.Start,
+                text = AnnotatedString(stringResource(id = it)),
+                color = focusColors.settingsTextSummaryColor,
+                style = TextStyle(fontSize = 14.sp),
+                modifier = Modifier.padding(start = focusDimensions.paddingSmall, end = focusDimensions.paddingSmall),
             )
         }
     }
 }
 
 /**
- * Displays a component if the Site Permission needs user approval from Phone Settings
- * This is needed for Permissions like Camera ,Location, Microphone
+ * Displays a component if the Site Permission needs user approval from Phone Settings This is needed for Permissions
+ * like Camera ,Location, Microphone
  *
  * @param goToPhoneSettings callback when the user press Go to Settings button
  * @param permissionLabel label for the Site Permission
  */
-
 @Composable
 private fun ComponentPermissionBlockedByAndroid(goToPhoneSettings: () -> Unit, permissionLabel: String?) {
     Column(
-        modifier = Modifier
-            .background(colorResource(R.color.settings_background), shape = RectangleShape)
-            .fillMaxWidth()
-            .padding(top = focusDimensions.paddingDefault)
-            .wrapContentHeight(),
+        modifier =
+            Modifier.background(colorResource(R.color.settings_background), shape = RectangleShape)
+                .fillMaxWidth()
+                .padding(top = focusDimensions.paddingDefault)
+                .wrapContentHeight()
     ) {
         ComponentPermissionBlockedByAndroidText(
             stringRes = R.string.phone_feature_blocked_by_android,
@@ -223,9 +210,7 @@ private fun ComponentPermissionBlockedByAndroid(goToPhoneSettings: () -> Unit, p
             stringRes = R.string.phone_feature_blocked_step_feature,
             permissionLabel,
         )
-        ComponentPermissionBlockedByAndroidButton(
-            goToPhoneSettings = goToPhoneSettings,
-        )
+        ComponentPermissionBlockedByAndroidButton(goToPhoneSettings = goToPhoneSettings)
     }
 }
 
@@ -233,12 +218,8 @@ private fun ComponentPermissionBlockedByAndroid(goToPhoneSettings: () -> Unit, p
 private fun ComponentPermissionBlockedByAndroidButton(goToPhoneSettings: () -> Unit) {
     Button(
         onClick = goToPhoneSettings,
-        colors = ButtonDefaults.textButtonColors(
-            containerColor = PhotonColors.LightGrey50,
-        ),
-        modifier = Modifier
-            .padding(focusDimensions.paddingDefault)
-            .fillMaxWidth(),
+        colors = ButtonDefaults.textButtonColors(containerColor = PhotonColors.LightGrey50),
+        modifier = Modifier.padding(focusDimensions.paddingDefault).fillMaxWidth(),
     ) {
         Text(
             color = PhotonColors.Ink20,
@@ -258,11 +239,12 @@ private fun ComponentPermissionBlockedByAndroidText(
         color = focusColors.settingsTextColor,
         text = stringResource(id = stringRes, permissionLabel ?: "").parseBold(),
         style = TextStyle(fontSize = 16.sp),
-        modifier = Modifier.padding(
-            start = focusDimensions.paddingPermissionStart,
-            end = focusDimensions.paddingDefault,
-            bottom = bottomPadding,
-        ),
+        modifier =
+            Modifier.padding(
+                start = focusDimensions.paddingPermissionStart,
+                end = focusDimensions.paddingDefault,
+                bottom = bottomPadding,
+            ),
     )
 }
 

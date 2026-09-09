@@ -54,7 +54,7 @@ const openOAuthWindow = (details, redirectURI) => {
     null,
     AppConstants.BROWSER_CHROME_URL,
     "launchWebAuthFlow_dialog",
-    "chrome,location=yes,centerscreen,dialog=no,resizable=yes,scrollbars=yes",
+    "chrome,location=yes,centerscreen,dialog=no,resizable=yes",
     args
   );
 

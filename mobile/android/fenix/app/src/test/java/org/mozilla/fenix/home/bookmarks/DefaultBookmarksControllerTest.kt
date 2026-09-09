@@ -9,6 +9,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.state.state.BrowserState
@@ -31,13 +32,11 @@ import org.mozilla.fenix.home.HomeFragmentDirections
 import org.mozilla.fenix.home.bookmarks.controller.DefaultBookmarksController
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class DefaultBookmarksControllerTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private val navController: NavController = mockk(relaxUnitFun = true)
     private val settings: Settings = mockk(relaxed = true)
@@ -51,16 +50,17 @@ class DefaultBookmarksControllerTest {
     fun setup() {
         browserStore = BrowserStore()
 
-        controller = spyk(
-            DefaultBookmarksController(
-                navController = navController,
-                appStore = mockk(),
-                browserStore = browserStore,
-                settings = settings,
-                fenixBrowserUseCases = fenixBrowserUseCases,
-                selectTabUseCase = selectTabUseCase.selectTab,
-            ),
-        )
+        controller =
+            spyk(
+                DefaultBookmarksController(
+                    navController = navController,
+                    appStore = mockk(),
+                    browserStore = browserStore,
+                    settings = settings,
+                    fenixBrowserUseCases = fenixBrowserUseCases,
+                    selectTabUseCase = selectTabUseCase.selectTab,
+                )
+            )
     }
 
     @Test

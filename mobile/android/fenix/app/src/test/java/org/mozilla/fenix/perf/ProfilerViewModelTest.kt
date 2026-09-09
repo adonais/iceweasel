@@ -15,6 +15,8 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.unmockkAll
 import io.mockk.verify
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -38,27 +40,20 @@ import org.mozilla.fenix.components.Components
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowApplication
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class ProfilerViewModelTest {
 
-    @MockK
-    lateinit var mockProfiler: Profiler
+    @MockK lateinit var mockProfiler: Profiler
 
-    @RelaxedMockK
-    lateinit var mockApplication: Application
+    @RelaxedMockK lateinit var mockApplication: Application
 
-    @RelaxedMockK
-    lateinit var mockComponents: Components
+    @RelaxedMockK lateinit var mockComponents: Components
 
-    @RelaxedMockK
-    lateinit var mockEngine: Engine
+    @RelaxedMockK lateinit var mockEngine: Engine
 
-    @MockK
-    lateinit var mockProfilerUtils: ProfilerUtils
+    @MockK lateinit var mockProfilerUtils: ProfilerUtils
 
     private lateinit var viewModel: ProfilerViewModel
     private lateinit var context: Context
@@ -73,17 +68,20 @@ class ProfilerViewModelTest {
         val mockFenixApplicationContext = mockk<FenixApplication>(relaxed = true)
 
         // Forward service calls from the mock to the real context for Robolectric to track.
-        every { mockApplication.startForegroundService(any()) } answers {
-            context.startForegroundService(firstArg())
-        }
-        every { mockApplication.startService(any()) } answers {
-            context.startService(firstArg())
-        }
+        every { mockApplication.startForegroundService(any()) } answers
+            {
+                context.startForegroundService(firstArg())
+            }
+        every { mockApplication.startService(any()) } answers
+            {
+                context.startService(firstArg())
+            }
 
         // Extension function Context.components requires applicationContext to be FenixApplication
         every { mockFenixApplicationContext.components } returns mockComponents
         every { mockApplication.applicationContext } returns mockFenixApplicationContext
-        every { mockFenixApplicationContext.getSystemService(any()) } returns context.getSystemService(Context.CLIPBOARD_SERVICE)
+        every { mockFenixApplicationContext.getSystemService(any()) } returns
+            context.getSystemService(Context.CLIPBOARD_SERVICE)
         every { mockFenixApplicationContext.cacheDir } returns context.cacheDir
 
         // Set up component chain: components -> core -> engine -> profiler
@@ -91,14 +89,16 @@ class ProfilerViewModelTest {
         every { mockComponents.core.engine.profiler } returns mockProfiler
         every { mockProfiler.isProfilerActive() } returns false
 
-        every { mockApplication.getSystemService(Context.CLIPBOARD_SERVICE) } returns context.getSystemService(Context.CLIPBOARD_SERVICE)
+        every { mockApplication.getSystemService(Context.CLIPBOARD_SERVICE) } returns
+            context.getSystemService(Context.CLIPBOARD_SERVICE)
         every { mockApplication.cacheDir } returns context.cacheDir
 
         every { mockProfilerUtils.saveProfileUrlToClipboard(any(), any()) } returns "http://example.com/profile/123"
-        every { mockProfilerUtils.finishProfileSave(any(), any(), any()) } answers {
-            val callback = arg<(Int) -> Unit>(2)
-            callback.invoke(R.string.profiler_uploaded_url_to_clipboard)
-        }
+        every { mockProfilerUtils.finishProfileSave(any(), any(), any()) } answers
+            {
+                val callback = arg<(Int) -> Unit>(2)
+                callback.invoke(R.string.profiler_uploaded_url_to_clipboard)
+            }
     }
 
     @After
@@ -112,302 +112,319 @@ class ProfilerViewModelTest {
         ioDispatcher: CoroutineDispatcher = testDispatcher,
     ) {
         every { mockProfiler.isProfilerActive() } returns isInitiallyActive
-        viewModel = ProfilerViewModel(
-            application = mockApplication,
-            mainDispatcher = mainDispatcher,
-            ioDispatcher = ioDispatcher,
-            profilerUtils = mockProfilerUtils,
-        )
+        viewModel =
+            ProfilerViewModel(
+                application = mockApplication,
+                mainDispatcher = mainDispatcher,
+                ioDispatcher = ioDispatcher,
+                profilerUtils = mockProfilerUtils,
+            )
     }
 
     @Test
-    fun `WHEN the ViewModel is created THEN its initial UI state and active status correctly reflect the profiler's state`() = runTest(testDispatcher) {
-        initializeViewModel(isInitiallyActive = false)
+    fun `WHEN the ViewModel is created THEN its initial UI state and active status correctly reflect the profiler's state`() =
+        runTest(testDispatcher) {
+            initializeViewModel(isInitiallyActive = false)
 
-        val collectedUiStates = mutableListOf<ProfilerUiState>()
-        val uiCollectJob = launch {
-            viewModel.uiState.toList(collectedUiStates)
+            val collectedUiStates = mutableListOf<ProfilerUiState>()
+            val uiCollectJob = launch {
+                viewModel.uiState.toList(collectedUiStates)
+            }
+            val collectedActiveStates = mutableListOf<Boolean>()
+            val activeCollectJob = launch {
+                viewModel.isProfilerActive.toList(collectedActiveStates)
+            }
+
+            runCurrent()
+            assertEquals(listOf(ProfilerUiState.Idle), collectedUiStates)
+            assertEquals(listOf(false), collectedActiveStates)
+
+            uiCollectJob.cancel()
+            activeCollectJob.cancel()
+
+            collectedUiStates.clear()
+            collectedActiveStates.clear()
+
+            initializeViewModel(isInitiallyActive = true)
+            val uiCollectJob2 = launch {
+                viewModel.uiState.toList(collectedUiStates)
+            }
+            val activeCollectJob2 = launch {
+                viewModel.isProfilerActive.toList(collectedActiveStates)
+            }
+
+            runCurrent()
+            assertEquals(listOf(ProfilerUiState.Idle), collectedUiStates)
+            assertEquals(listOf(true), collectedActiveStates)
+
+            uiCollectJob2.cancel()
+            activeCollectJob2.cancel()
         }
-        val collectedActiveStates = mutableListOf<Boolean>()
-        val activeCollectJob = launch {
-            viewModel.isProfilerActive.toList(collectedActiveStates)
-        }
-
-        runCurrent()
-        assertEquals(listOf(ProfilerUiState.Idle), collectedUiStates)
-        assertEquals(listOf(false), collectedActiveStates)
-
-        uiCollectJob.cancel()
-        activeCollectJob.cancel()
-
-        collectedUiStates.clear()
-        collectedActiveStates.clear()
-
-        initializeViewModel(isInitiallyActive = true)
-        val uiCollectJob2 = launch {
-            viewModel.uiState.toList(collectedUiStates)
-        }
-        val activeCollectJob2 = launch {
-            viewModel.isProfilerActive.toList(collectedActiveStates)
-        }
-
-        runCurrent()
-        assertEquals(listOf(ProfilerUiState.Idle), collectedUiStates)
-        assertEquals(listOf(true), collectedActiveStates)
-
-        uiCollectJob2.cancel()
-        activeCollectJob2.cancel()
-    }
 
     @Test
-    fun `GIVEN the profiler is unavailable WHEN start profiling is tried THEN the state should be moved to error`() = runTest(testDispatcher) {
-        every { mockComponents.core.engine.profiler } returns null
+    fun `GIVEN the profiler is unavailable WHEN start profiling is tried THEN the state should be moved to error`() =
+        runTest(testDispatcher) {
+            every { mockComponents.core.engine.profiler } returns null
 
-        initializeViewModel(
-            isInitiallyActive = false,
-            mainDispatcher = testDispatcher,
-            ioDispatcher = testDispatcher,
-        )
-        runCurrent()
+            initializeViewModel(
+                isInitiallyActive = false,
+                mainDispatcher = testDispatcher,
+                ioDispatcher = testDispatcher,
+            )
+            runCurrent()
 
-        assertEquals(ProfilerUiState.Idle, viewModel.uiState.value)
-        viewModel.initiateProfilerStartProcess(ProfilerSettings.Firefox)
-        runCurrent()
+            assertEquals(ProfilerUiState.Idle, viewModel.uiState.value)
+            viewModel.initiateProfilerStartProcess(ProfilerSettings.Firefox)
+            runCurrent()
 
-        val finalState = viewModel.uiState.value
-        assertIs<ProfilerUiState.Error>(finalState)
-        assertEquals(R.string.profiler_error, finalState.messageResId)
-        assertTrue(
-            finalState.errorDetails.contains("Profiler not available"),
-        )
-        verify(exactly = 0) { mockProfiler.startProfiler(any(), any()) }
-    }
+            val finalState = viewModel.uiState.value
+            assertIs<ProfilerUiState.Error>(finalState)
+            assertEquals(R.string.profiler_error, finalState.messageResId)
+            assertTrue(finalState.errorDetails.contains("Profiler not available"))
+            verify(exactly = 0) { mockProfiler.startProfiler(any(), any()) }
+        }
 
     @Test
-    fun `GIVEN the profiler is already running WHEN profiling again THEN the UI state remains Running and no new profiler session is started`() = runTest(testDispatcher) {
-        initializeViewModel(
-            isInitiallyActive = true,
-            mainDispatcher = testDispatcher,
-            ioDispatcher = testDispatcher,
-        )
-        runCurrent()
-        assertEquals(ProfilerUiState.Idle, viewModel.uiState.value)
-        viewModel.initiateProfilerStartProcess(ProfilerSettings.Firefox)
-        runCurrent()
-        assertEquals(ProfilerUiState.Running, viewModel.uiState.value)
-        verify(exactly = 0) { mockProfiler.startProfiler(any(), any()) }
-    }
+    fun `GIVEN the profiler is already running WHEN profiling again THEN the UI state remains Running and no new profiler session is started`() =
+        runTest(testDispatcher) {
+            initializeViewModel(
+                isInitiallyActive = true,
+                mainDispatcher = testDispatcher,
+                ioDispatcher = testDispatcher,
+            )
+            runCurrent()
+            assertEquals(ProfilerUiState.Idle, viewModel.uiState.value)
+            viewModel.initiateProfilerStartProcess(ProfilerSettings.Firefox)
+            runCurrent()
+            assertEquals(ProfilerUiState.Running, viewModel.uiState.value)
+            verify(exactly = 0) { mockProfiler.startProfiler(any(), any()) }
+        }
 
     @Test
-    fun `WHEN profiling starts successfully THEN the profiler starts and service launches with notification`() = runTest(testDispatcher) {
-        initializeViewModel(
-            isInitiallyActive = false,
-            mainDispatcher = testDispatcher,
-            ioDispatcher = testDispatcher,
-        )
-        val settings = ProfilerSettings.Firefox
+    fun `WHEN profiling starts successfully THEN the profiler starts and service launches with notification`() =
+        runTest(testDispatcher) {
+            initializeViewModel(
+                isInitiallyActive = false,
+                mainDispatcher = testDispatcher,
+                ioDispatcher = testDispatcher,
+            )
+            val settings = ProfilerSettings.Firefox
 
-        val collectedStates = mutableListOf<ProfilerUiState>()
-        backgroundScope.launch {
-            viewModel.uiState.toList(collectedStates)
+            val collectedStates = mutableListOf<ProfilerUiState>()
+            backgroundScope.launch {
+                viewModel.uiState.toList(collectedStates)
+            }
+            runCurrent()
+
+            viewModel.initiateProfilerStartProcess(settings)
+            every { mockProfiler.isProfilerActive() } returns true
+
+            runCurrent()
+
+            val expectedSequence =
+                listOf(
+                    ProfilerUiState.Idle::class,
+                    ProfilerUiState.Starting::class,
+                )
+
+            val actualSequence = collectedStates.map { it::class }
+            assertEquals("The sequence of UI states was not as expected", expectedSequence, actualSequence)
+
+            verify { mockProfiler.startProfiler(settings.threads, settings.features) }
         }
-        runCurrent()
-
-        viewModel.initiateProfilerStartProcess(settings)
-        every { mockProfiler.isProfilerActive() } returns true
-
-        runCurrent()
-
-        val expectedSequence = listOf(
-            ProfilerUiState.Idle::class,
-            ProfilerUiState.Starting::class,
-        )
-
-        val actualSequence = collectedStates.map { it::class }
-        assertEquals("The sequence of UI states was not as expected", expectedSequence, actualSequence)
-
-        verify { mockProfiler.startProfiler(settings.threads, settings.features) }
-    }
 
     @Test
-    fun `GIVEN the profiler is not currently active WHEN an attempt is made to stop and save a profile THEN the UI state becomes Finished and no profile URL is available`() = runTest(testDispatcher) {
-        initializeViewModel(
-            isInitiallyActive = false,
-            mainDispatcher = testDispatcher,
-            ioDispatcher = testDispatcher,
-        )
-        runCurrent()
+    fun `GIVEN the profiler is not currently active WHEN an attempt is made to stop and save a profile THEN the UI state becomes Finished and no profile URL is available`() =
+        runTest(testDispatcher) {
+            initializeViewModel(
+                isInitiallyActive = false,
+                mainDispatcher = testDispatcher,
+                ioDispatcher = testDispatcher,
+            )
+            runCurrent()
 
-        viewModel.stopProfilerAndSave()
-        runCurrent()
+            viewModel.stopProfilerAndSave()
+            runCurrent()
 
-        val lastState = viewModel.uiState.value
-        assertIs<ProfilerUiState.Finished>(lastState)
-        assertNull(lastState.profileUrl)
+            val lastState = viewModel.uiState.value
+            assertIs<ProfilerUiState.Finished>(lastState)
+            assertNull(lastState.profileUrl)
 
-        verify(exactly = 0) { mockProfiler.stopProfiler(any(), any()) }
-    }
+            verify(exactly = 0) { mockProfiler.stopProfiler(any(), any()) }
+        }
 
     @Test
-    fun `WHEN a profile is successfully saved THEN the UI shows successful completing with copied URL`() = runTest(testDispatcher) {
-        initializeViewModel(
-            isInitiallyActive = true,
-            mainDispatcher = testDispatcher,
-            ioDispatcher = testDispatcher,
-        )
+    fun `WHEN a profile is successfully saved THEN the UI shows successful completing with copied URL`() =
+        runTest(testDispatcher) {
+            initializeViewModel(
+                isInitiallyActive = true,
+                mainDispatcher = testDispatcher,
+                ioDispatcher = testDispatcher,
+            )
 
-        val fakeProfileData = "profile_data".toByteArray()
-        val expectedUrl = "http://example.com/profile/123"
-        val successCallbackSlot = slot<(ByteArray?) -> Unit>()
+            val fakeProfileData = "profile_data".toByteArray()
+            val expectedUrl = "http://example.com/profile/123"
+            val successCallbackSlot = slot<(ByteArray?) -> Unit>()
 
-        every {
-            mockProfiler.stopProfiler(capture(successCallbackSlot), any())
-        } answers {
-            successCallbackSlot.captured(fakeProfileData)
+            every {
+                mockProfiler.stopProfiler(capture(successCallbackSlot), any())
+            } answers
+                {
+                    successCallbackSlot.captured(fakeProfileData)
+                }
+
+            val collectedStates = mutableListOf<ProfilerUiState>()
+            backgroundScope.launch {
+                viewModel.uiState.toList(collectedStates)
+            }
+            runCurrent()
+
+            viewModel.stopProfilerAndSave()
+            advanceUntilIdle()
+
+            assertTrue(collectedStates.any { it is ProfilerUiState.Idle })
+            assertTrue(collectedStates.any { it is ProfilerUiState.Gathering })
+            val toastState = collectedStates.find { it is ProfilerUiState.ShowToast }
+            assertNotNull(toastState)
+            assertEquals(
+                R.string.profiler_uploaded_url_to_clipboard,
+                (toastState as ProfilerUiState.ShowToast).messageResId,
+            )
+            val finishedState = collectedStates.last()
+            assertIs<ProfilerUiState.Finished>(finishedState)
+            assertEquals(expectedUrl, finishedState.profileUrl)
+
+            verify { mockProfiler.stopProfiler(any(), any()) }
+            verify { mockProfilerUtils.saveProfileUrlToClipboard(fakeProfileData, mockApplication) }
+            verify { mockProfilerUtils.finishProfileSave(mockApplication, expectedUrl, any()) }
         }
-
-        val collectedStates = mutableListOf<ProfilerUiState>()
-        backgroundScope.launch {
-            viewModel.uiState.toList(collectedStates)
-        }
-        runCurrent()
-
-        viewModel.stopProfilerAndSave()
-        advanceUntilIdle()
-
-        assertTrue(collectedStates.any { it is ProfilerUiState.Idle })
-        assertTrue(collectedStates.any { it is ProfilerUiState.Gathering })
-        val toastState = collectedStates.find { it is ProfilerUiState.ShowToast }
-        assertNotNull(toastState)
-        assertEquals(R.string.profiler_uploaded_url_to_clipboard, (toastState as ProfilerUiState.ShowToast).messageResId)
-        val finishedState = collectedStates.last()
-        assertIs<ProfilerUiState.Finished>(finishedState)
-        assertEquals(expectedUrl, finishedState.profileUrl)
-
-        verify { mockProfiler.stopProfiler(any(), any()) }
-        verify { mockProfilerUtils.saveProfileUrlToClipboard(fakeProfileData, mockApplication) }
-        verify { mockProfilerUtils.finishProfileSave(mockApplication, expectedUrl, any()) }
-    }
 
     @Test
-    fun `WHEN the profiler fails during saving the profile THEN state changes to error and the error message is displayed`() = runTest(testDispatcher) {
-        initializeViewModel(
-            isInitiallyActive = true,
-            mainDispatcher = testDispatcher,
-            ioDispatcher = testDispatcher,
-        )
+    fun `WHEN the profiler fails during saving the profile THEN state changes to error and the error message is displayed`() =
+        runTest(testDispatcher) {
+            initializeViewModel(
+                isInitiallyActive = true,
+                mainDispatcher = testDispatcher,
+                ioDispatcher = testDispatcher,
+            )
 
-        val exception = RuntimeException("Profiler Stop Failed")
-        val errorCallbackSlot = slot<(Throwable) -> Unit>()
+            val exception = RuntimeException("Profiler Stop Failed")
+            val errorCallbackSlot = slot<(Throwable) -> Unit>()
 
-        every {
-            mockProfiler.stopProfiler(any(), capture(errorCallbackSlot))
-        } answers {
-            errorCallbackSlot.captured(exception)
+            every {
+                mockProfiler.stopProfiler(any(), capture(errorCallbackSlot))
+            } answers
+                {
+                    errorCallbackSlot.captured(exception)
+                }
+
+            val collectedStates = mutableListOf<ProfilerUiState>()
+            backgroundScope.launch {
+                viewModel.uiState.toList(collectedStates)
+            }
+            runCurrent()
+
+            viewModel.stopProfilerAndSave()
+            runCurrent()
+
+            assertTrue(collectedStates.any { it is ProfilerUiState.Idle })
+            assertTrue(collectedStates.any { it is ProfilerUiState.Gathering })
+            val errorState = collectedStates.last()
+            assertIs<ProfilerUiState.Error>(errorState)
+            assertEquals(R.string.profiler_error, errorState.messageResId)
+            assertEquals("Profiler Stop Failed", errorState.errorDetails)
+
+            verify { mockProfiler.stopProfiler(any(), any()) }
+            verify(exactly = 0) { mockProfilerUtils.saveProfileUrlToClipboard(any(), any()) }
         }
-
-        val collectedStates = mutableListOf<ProfilerUiState>()
-        backgroundScope.launch {
-            viewModel.uiState.toList(collectedStates)
-        }
-        runCurrent()
-
-        viewModel.stopProfilerAndSave()
-        runCurrent()
-
-        assertTrue(collectedStates.any { it is ProfilerUiState.Idle })
-        assertTrue(collectedStates.any { it is ProfilerUiState.Gathering })
-        val errorState = collectedStates.last()
-        assertIs<ProfilerUiState.Error>(errorState)
-        assertEquals(R.string.profiler_error, errorState.messageResId)
-        assertEquals("Profiler Stop Failed", errorState.errorDetails)
-
-        verify { mockProfiler.stopProfiler(any(), any()) }
-        verify(exactly = 0) { mockProfilerUtils.saveProfileUrlToClipboard(any(), any()) }
-    }
 
     @Test
-    fun `WHEN data save after stopping the profiler THEN toast shows error and service stops`() = runTest(testDispatcher) {
-        initializeViewModel(
-            isInitiallyActive = true,
-            mainDispatcher = testDispatcher,
-            ioDispatcher = testDispatcher,
-        )
+    fun `WHEN data save after stopping the profiler THEN toast shows error and service stops`() =
+        runTest(testDispatcher) {
+            initializeViewModel(
+                isInitiallyActive = true,
+                mainDispatcher = testDispatcher,
+                ioDispatcher = testDispatcher,
+            )
 
-        val fakeProfileData = "profile_data".toByteArray()
-        val saveException = java.io.IOException("Disk full")
-        val successCallbackSlot = slot<(ByteArray?) -> Unit>()
+            val fakeProfileData = "profile_data".toByteArray()
+            val saveException = java.io.IOException("Disk full")
+            val successCallbackSlot = slot<(ByteArray?) -> Unit>()
 
-        every {
-            mockProfiler.stopProfiler(capture(successCallbackSlot), any())
-        } answers {
-            successCallbackSlot.captured(fakeProfileData)
+            every {
+                mockProfiler.stopProfiler(capture(successCallbackSlot), any())
+            } answers
+                {
+                    successCallbackSlot.captured(fakeProfileData)
+                }
+
+            every {
+                mockProfilerUtils.saveProfileUrlToClipboard(fakeProfileData, mockApplication)
+            } throws saveException
+
+            val collectedStates = mutableListOf<ProfilerUiState>()
+            backgroundScope.launch {
+                viewModel.uiState.toList(collectedStates)
+            }
+            runCurrent()
+
+            viewModel.stopProfilerAndSave()
+            runCurrent()
+
+            val expectedSequence =
+                listOf(
+                    ProfilerUiState.Idle::class,
+                    ProfilerUiState.Gathering::class,
+                    ProfilerUiState.Error::class,
+                )
+            val actualSequence = collectedStates.map { it::class }
+            assertEquals("The sequence of UI states was not as expected", expectedSequence, actualSequence)
+
+            val errorState = collectedStates.last() as ProfilerUiState.Error
+            assertEquals(R.string.profiler_io_error, errorState.messageResId)
+            assertEquals("Disk full", errorState.errorDetails)
+
+            verify { mockProfiler.stopProfiler(any(), any()) }
+            verify { mockProfilerUtils.saveProfileUrlToClipboard(fakeProfileData, mockApplication) }
+            verify(exactly = 0) { mockProfilerUtils.finishProfileSave(any(), any(), any()) }
         }
-
-        every {
-            mockProfilerUtils.saveProfileUrlToClipboard(fakeProfileData, mockApplication)
-        } throws saveException
-
-        val collectedStates = mutableListOf<ProfilerUiState>()
-        backgroundScope.launch {
-            viewModel.uiState.toList(collectedStates)
-        }
-        runCurrent()
-
-        viewModel.stopProfilerAndSave()
-        runCurrent()
-
-        val expectedSequence = listOf(
-            ProfilerUiState.Idle::class,
-            ProfilerUiState.Gathering::class,
-            ProfilerUiState.Error::class,
-        )
-        val actualSequence = collectedStates.map { it::class }
-        assertEquals("The sequence of UI states was not as expected", expectedSequence, actualSequence)
-
-        val errorState = collectedStates.last() as ProfilerUiState.Error
-        assertEquals(R.string.profiler_io_error, errorState.messageResId)
-        assertEquals("Disk full", errorState.errorDetails)
-
-        verify { mockProfiler.stopProfiler(any(), any()) }
-        verify { mockProfilerUtils.saveProfileUrlToClipboard(fakeProfileData, mockApplication) }
-        verify(exactly = 0) { mockProfilerUtils.finishProfileSave(any(), any(), any()) }
-    }
 
     @Test
-    fun `WHEN the profiler is stopped without saving THEN the UI shows the profiler is stopped without a URL copied`() = runTest(testDispatcher) {
-        initializeViewModel(
-            isInitiallyActive = true,
-            mainDispatcher = testDispatcher,
-            ioDispatcher = testDispatcher,
-        )
+    fun `WHEN the profiler is stopped without saving THEN the UI shows the profiler is stopped without a URL copied`() =
+        runTest(testDispatcher) {
+            initializeViewModel(
+                isInitiallyActive = true,
+                mainDispatcher = testDispatcher,
+                ioDispatcher = testDispatcher,
+            )
 
-        val successCallbackSlot = slot<(ByteArray?) -> Unit>()
-        every {
-            mockProfiler.stopProfiler(capture(successCallbackSlot), any())
-        } answers {
-            successCallbackSlot.captured(null)
+            val successCallbackSlot = slot<(ByteArray?) -> Unit>()
+            every {
+                mockProfiler.stopProfiler(capture(successCallbackSlot), any())
+            } answers
+                {
+                    successCallbackSlot.captured(null)
+                }
+
+            val collectedUiStates = mutableListOf<ProfilerUiState>()
+            backgroundScope.launch {
+                viewModel.uiState.toList(collectedUiStates)
+            }
+            runCurrent()
+
+            viewModel.stopProfilerWithoutSaving()
+            runCurrent()
+
+            assertEquals("Expected 3 state emissions: Initial, Stopping, Finished", 3, collectedUiStates.size)
+            assertIs<ProfilerUiState.Idle>(collectedUiStates[0], "First collected state should be Idle")
+            assertIs<ProfilerUiState.Stopping>(collectedUiStates[1], "Second collected state should be Stopping")
+            val finalState = collectedUiStates[2]
+            assertIs<ProfilerUiState.Finished>(finalState, "Third collected state should be Finished")
+            assertNull("Profile URL should be null in the final Finished state", finalState.profileUrl)
+
+            verify { mockProfiler.stopProfiler(any(), any()) }
+            verify(exactly = 0) { mockProfilerUtils.saveProfileUrlToClipboard(any(), any()) }
         }
-
-        val collectedUiStates = mutableListOf<ProfilerUiState>()
-        backgroundScope.launch {
-            viewModel.uiState.toList(collectedUiStates)
-        }
-        runCurrent()
-
-        viewModel.stopProfilerWithoutSaving()
-        runCurrent()
-
-        assertEquals("Expected 3 state emissions: Initial, Stopping, Finished", 3, collectedUiStates.size)
-        assertIs<ProfilerUiState.Idle>(collectedUiStates[0], "First collected state should be Idle")
-        assertIs<ProfilerUiState.Stopping>(collectedUiStates[1], "Second collected state should be Stopping")
-        val finalState = collectedUiStates[2]
-        assertIs<ProfilerUiState.Finished>(finalState, "Third collected state should be Finished")
-        assertNull("Profile URL should be null in the final Finished state", finalState.profileUrl)
-
-        verify { mockProfiler.stopProfiler(any(), any()) }
-        verify(exactly = 0) { mockProfilerUtils.saveProfileUrlToClipboard(any(), any()) }
-    }
 
     @Test
     fun `GIVEN all profiler presets THEN they must include the java feature for polling to work`() {

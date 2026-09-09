@@ -69,6 +69,12 @@ class DNSPacket {
 
   void SetOriginHost(const Maybe<nsCString>& aHost) { mOriginHost = aHost; }
 
+  // True when the aCname returned by the last Decode() call came from an HTTPS
+  // AliasMode (SvcPriority 0) record rather than a plain CNAME record. Only an
+  // AliasMode TargetName has to be chased by the client (RFC 9460); a CNAME is
+  // already resolved by the recursive resolver.
+  bool CnameIsHTTPSAlias() const { return mCnameIsHTTPSAlias; }
+
   nsresult FillBuffer(std::function<int(unsigned char response[MAX_SIZE])>&&);
 
   static nsresult ParseHTTPS(uint16_t aRDLen, struct SVCB& aParsed,
@@ -102,6 +108,7 @@ class DNSPacket {
   bool mNativePacket = false;
   nsresult mStatus = NS_OK;
   Maybe<nsCString> mOriginHost;
+  bool mCnameIsHTTPSAlias = false;
 };
 
 }  // namespace net

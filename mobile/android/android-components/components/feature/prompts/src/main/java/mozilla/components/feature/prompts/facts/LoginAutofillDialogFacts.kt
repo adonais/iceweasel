@@ -9,13 +9,9 @@ import mozilla.components.support.base.facts.Action
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.collect
 
-/**
- * Facts emitted for telemetry related to the Autofill prompt feature for logins.
- */
+/** Facts emitted for telemetry related to the Autofill prompt feature for logins. */
 class LoginAutofillDialogFacts {
-    /**
-     * Specific types of telemetry items.
-     */
+    /** Specific types of telemetry items. */
     object Items {
         const val AUTOFILL_LOGIN_PROMPT_SHOWN = "autofill_login_prompt_shown"
         const val AUTOFILL_LOGIN_PROMPT_DISMISSED = "autofill_login_prompt_dismissed"
@@ -30,12 +26,13 @@ private fun emitLoginAutofillDialogFact(
     metadata: Map<String, Any>? = null,
 ) {
     Fact(
-        Component.FEATURE_PROMPTS,
-        action,
-        item,
-        value,
-        metadata,
-    ).collect()
+            Component.FEATURE_PROMPTS,
+            action,
+            item,
+            value,
+            metadata,
+        )
+        .collect()
 }
 
 internal fun emitLoginAutofillShownFact() {

@@ -17,17 +17,17 @@ import mozilla.components.feature.push.AutoPushSubscription
 import mozilla.components.feature.push.PushScope
 import mozilla.components.support.base.log.logger.Logger
 
-/**
- * Engine integration with the push feature to enable WebPush support.
- */
+/** Engine integration with the push feature to enable WebPush support. */
 class WebPushEngineIntegration(
     private val engine: Engine,
     private val pushFeature: AutoPushFeature,
     private val coroutineScope: CoroutineScope = MainScope(),
-    stringDecoder: (String) -> ByteArray =
-        { s -> Base64.decode(s.toByteArray(), Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP) },
-    byteArrayEncoder: (ByteArray) -> String =
-        { ba -> Base64.encodeToString(ba, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP) },
+    stringDecoder: (String) -> ByteArray = { s ->
+        Base64.decode(s.toByteArray(), Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
+    },
+    byteArrayEncoder: (ByteArray) -> String = { ba ->
+        Base64.encodeToString(ba, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
+    },
 ) : AutoPushFeature.Observer {
 
     private var handler: WebPushHandler? = null
@@ -101,12 +101,13 @@ internal class WebPushEngineDelegate(
     }
 }
 
-internal fun AutoPushSubscription.toEnginePushSubscription(stringDecoder: (String) -> ByteArray) = WebPushSubscription(
-    scope = this.scope,
-    publicKey = stringDecoder(this.publicKey),
-    endpoint = this.endpoint,
-    authSecret = stringDecoder(this.authKey),
-    // We don't have the appServerKey unless an app is creating a new subscription so we
-    // allow the key to be null since it won't be overridden from a previous subscription.
-    appServerKey = null,
-)
+internal fun AutoPushSubscription.toEnginePushSubscription(stringDecoder: (String) -> ByteArray) =
+    WebPushSubscription(
+        scope = this.scope,
+        publicKey = stringDecoder(this.publicKey),
+        endpoint = this.endpoint,
+        authSecret = stringDecoder(this.authKey),
+        // We don't have the appServerKey unless an app is creating a new subscription so we
+        // allow the key to be null since it won't be overridden from a previous subscription.
+        appServerKey = null,
+    )

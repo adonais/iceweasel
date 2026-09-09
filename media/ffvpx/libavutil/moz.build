@@ -70,6 +70,12 @@ if not CONFIG['MOZ_FFVPX_AUDIOONLY']:
         'timecode.c',
         'video_enc_params.c'
     ]
+    if CONFIG['MOZ_ENABLE_VULKAN_VIDEO']:
+        LOCAL_INCLUDES += ['/third_party/khronos/vulkan-headers/include']
+        SOURCES += [
+            'hwcontext_vulkan.c',
+            'vulkan.c',
+        ]
     if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
         LOCAL_INCLUDES += ['/media/mozva']
         SOURCES += [

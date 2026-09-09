@@ -14,22 +14,20 @@ import org.junit.Test
 
 class CreditCardEntryTest {
 
-    private val creditCard = CreditCardEntry(
-        guid = "1",
-        name = "Banana Apple",
-        number = "4111111111111110",
-        expiryMonth = "5",
-        expiryYear = "2030",
-        cardType = "amex",
-    )
+    private val creditCard =
+        CreditCardEntry(
+            guid = "1",
+            name = "Banana Apple",
+            number = "4111111111111110",
+            expiryMonth = "5",
+            expiryYear = "2030",
+            cardType = "amex",
+        )
 
     @Test
     fun `WHEN obfuscatedCardNumber getter is called THEN the expected obfuscated card number is returned`() {
         assertEquals(
-            ELLIPSES_START +
-                ELLIPSIS + ELLIPSIS + ELLIPSIS + ELLIPSIS +
-                creditCard.number.last4Digits() +
-                ELLIPSES_END,
+            ELLIPSES_START + ELLIPSIS + ELLIPSIS + ELLIPSIS + ELLIPSIS + creditCard.number.last4Digits() + ELLIPSES_END,
             creditCard.obfuscatedCardNumber,
         )
     }
@@ -41,30 +39,33 @@ class CreditCardEntryTest {
 
     @Test
     fun `GIVEN empty expiration date strings WHEN a credit card needs to display its full expiration date THEN the an empty string is returned`() {
-        val creditCardWithoutYear = CreditCardEntry(
-            guid = "1",
-            name = "Banana Apple",
-            number = "4111111111111110",
-            expiryMonth = "5",
-            expiryYear = "",
-            cardType = "amex",
-        )
-        val creditCardWithoutMonth = CreditCardEntry(
-            guid = "1",
-            name = "Banana Apple",
-            number = "4111111111111110",
-            expiryMonth = "",
-            expiryYear = "2030",
-            cardType = "amex",
-        )
-        val creditCardWithoutFullDate = CreditCardEntry(
-            guid = "1",
-            name = "Banana Apple",
-            number = "4111111111111110",
-            expiryMonth = "",
-            expiryYear = "",
-            cardType = "amex",
-        )
+        val creditCardWithoutYear =
+            CreditCardEntry(
+                guid = "1",
+                name = "Banana Apple",
+                number = "4111111111111110",
+                expiryMonth = "5",
+                expiryYear = "",
+                cardType = "amex",
+            )
+        val creditCardWithoutMonth =
+            CreditCardEntry(
+                guid = "1",
+                name = "Banana Apple",
+                number = "4111111111111110",
+                expiryMonth = "",
+                expiryYear = "2030",
+                cardType = "amex",
+            )
+        val creditCardWithoutFullDate =
+            CreditCardEntry(
+                guid = "1",
+                name = "Banana Apple",
+                number = "4111111111111110",
+                expiryMonth = "",
+                expiryYear = "",
+                cardType = "amex",
+            )
 
         assertEquals("", creditCardWithoutYear.expiryDate)
         assertEquals("", creditCardWithoutMonth.expiryDate)

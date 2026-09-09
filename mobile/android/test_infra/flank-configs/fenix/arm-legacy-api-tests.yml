@@ -22,11 +22,11 @@ gcloud:
   test-targets:
     - notPackage org.mozilla.fenix.syncintegration
     - notPackage org.mozilla.fenix.experimentintegration
-    - class org.mozilla.fenix.ui.MainMenuTest#navigateBackAndForwardTest
+    - class org.mozilla.fenix.ui.MainMenuTest#verifyTheMainMenuForwardButtonTest
     - class org.mozilla.fenix.ui.HistoryTest#verifyHistoryMenuWithHistoryItemsTest
     - class org.mozilla.fenix.ui.CollectionTest#deleteCollectionTest
     - class org.mozilla.fenix.ui.HistoryTest#noHistoryInPrivateBrowsingTest
-    - class org.mozilla.fenix.ui.MainMenuTest#openNewTabTest
+    - class org.mozilla.fenix.ui.NavigationToolbarTest#verifyTheNewTabButtonTest
     - class org.mozilla.fenix.ui.TabbedBrowsingTest#closeAllTabsTest
     - class org.mozilla.fenix.ui.TopSitesTest#openTopSiteInANewTabTest
     - class org.mozilla.fenix.ui.BookmarksTest#verifyAddBookmarkButtonTest

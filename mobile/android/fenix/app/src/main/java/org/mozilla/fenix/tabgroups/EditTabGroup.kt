@@ -63,6 +63,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import mozilla.components.compose.base.BottomSheetHandle
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
@@ -82,11 +83,9 @@ import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import kotlin.time.Duration.Companion.milliseconds
 
 private val formFieldShape: Shape
-    @Composable
-    get() = MaterialTheme.shapes.large
+    @Composable get() = MaterialTheme.shapes.large
 private const val COLOR_PICKER_MAX_ITEMS_PER_ROW = 5
 internal const val MAX_TAB_GROUP_NAME_LENGTH = 256
 private val FOCUS_REQUEST_DELAY = 50.milliseconds
@@ -106,14 +105,14 @@ fun EditTabGroup(
     onTabGroupThemeChange: (TabGroupTheme) -> Unit,
     onConfirmSave: () -> Unit,
 ) {
-    val title = stringResource(
-        if (formState.inEditState) R.string.edit_tab_group_title else R.string.create_tab_group_title,
-    )
+    val title =
+        stringResource(if (formState.inEditState) R.string.edit_tab_group_title else R.string.create_tab_group_title)
 
-    val defaultName = stringResource(
-        R.string.create_tab_group_form_default_name,
-        formState.nextTabGroupNumber,
-    )
+    val defaultName =
+        stringResource(
+            R.string.create_tab_group_form_default_name,
+            formState.nextTabGroupNumber,
+        )
     val initialName = formState.getInitialName(defaultName)
 
     var tabGroupName by remember {
@@ -121,7 +120,7 @@ fun EditTabGroup(
             TextFieldValue(
                 text = initialName,
                 selection = TextRange(0, initialName.length),
-            ),
+            )
         )
     }
 
@@ -133,39 +132,28 @@ fun EditTabGroup(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-    ) {
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = FirefoxTheme.layout.space.static150),
+            modifier = Modifier.fillMaxWidth().padding(vertical = FirefoxTheme.layout.space.static150),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = title,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 24.dp),
+                modifier = Modifier.weight(1f).padding(start = 24.dp),
                 style = FirefoxTheme.typography.headline7,
             )
 
             FilledButton(
                 text = stringResource(R.string.create_tab_group_save_button),
-                modifier = Modifier.padding(end = FirefoxTheme.layout.space.static150)
-                    .testTag(EDIT_BOTTOM_SHEET_SAVE),
+                modifier = Modifier.padding(end = FirefoxTheme.layout.space.static150).testTag(EDIT_BOTTOM_SHEET_SAVE),
                 onClick = onConfirmSave,
             )
         }
 
         Surface(
             shape = formFieldShape,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = FirefoxTheme.layout.space.dynamic200),
+            color = MaterialTheme.colorScheme.surfaceBright,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = FirefoxTheme.layout.space.dynamic200),
         ) {
             TabGroupNameTextField(
                 tabGroupName = tabGroupName,
@@ -173,10 +161,10 @@ fun EditTabGroup(
                     tabGroupName = newName
                     onTabGroupNameChange(newName.text)
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag(TabsTrayTestTag.GROUP_NAME)
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .testTag(TabsTrayTestTag.GROUP_NAME)
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
             )
         }
 
@@ -196,15 +184,11 @@ private fun TabGroupColorPicker(theme: TabGroupTheme, onTabGroupThemeChange: (Ta
 
     Surface(
         shape = formFieldShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = FirefoxTheme.layout.space.dynamic200),
+        color = MaterialTheme.colorScheme.surfaceBright,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = FirefoxTheme.layout.space.dynamic200),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = FirefoxTheme.layout.space.static200),
+            modifier = Modifier.fillMaxWidth().padding(vertical = FirefoxTheme.layout.space.static200),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(space = FirefoxTheme.layout.space.static200),
         ) {
@@ -236,68 +220,73 @@ private fun TabGroupColorPickerItem(
     // Animating from 8.dp to 1000.dp causes a janky UX
     val iconSize = if (isLargeWindow()) FirefoxTheme.layout.size.static600 else FirefoxTheme.layout.size.static400
     val circularRadius = iconSize / 2
-    val animatedCorner by animateDpAsState(
-        targetValue = if (selected) {
-            circularRadius
-        } else {
-            AcornCorners.small
-        },
-        animationSpec = colorPickerAnimationSpec(),
-    )
+    val animatedCorner by
+        animateDpAsState(
+            targetValue =
+                if (selected) {
+                    circularRadius
+                } else {
+                    AcornCorners.small
+                },
+            animationSpec = colorPickerAnimationSpec(),
+        )
     val interactionSource = remember {
         MutableInteractionSource()
     }
-    val outerBorderWidth by animateDpAsState(
-        targetValue = if (selected) {
-            3.dp
-        } else {
-            0.dp
-        },
-        animationSpec = colorPickerAnimationSpec(),
-    )
-    val innerBorderWidth by animateDpAsState(
-        targetValue = if (selected) {
-            6.dp // 3dp is showing, half is covered by the outer border
-        } else {
-            0.dp
-        },
-        animationSpec = colorPickerAnimationSpec(),
-    )
+    val outerBorderWidth by
+        animateDpAsState(
+            targetValue =
+                if (selected) {
+                    3.dp
+                } else {
+                    0.dp
+                },
+            animationSpec = colorPickerAnimationSpec(),
+        )
+    val innerBorderWidth by
+        animateDpAsState(
+            targetValue =
+                if (selected) {
+                    6.dp // 3dp is showing, half is covered by the outer border
+                } else {
+                    0.dp
+                },
+            animationSpec = colorPickerAnimationSpec(),
+        )
     val contentLabel = theme.contentLabel
 
     Box(
-        modifier = Modifier
-            .size(iconSize + (FirefoxTheme.layout.space.static100 * 2))
-            .padding(FirefoxTheme.layout.space.static100)
-            .thenConditional(
-                Modifier
-                    .border(
-                        outerBorderWidth,
-                        color = MaterialTheme.colorScheme.primary,
-                        shape = CircleShape,
-                    )
-                    .border(
-                        innerBorderWidth,
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        shape = CircleShape,
-                    ),
-                predicate = { selected },
-            )
-            .clip(shape = RoundedCornerShape(animatedCorner))
-            .background(color = theme.primary)
-            .testTag("$BOTTOM_SHEET_COLOR_LIST.${theme.name}")
-            .clickable(
-                enabled = true,
-                interactionSource = interactionSource,
-                onClickLabel = contentLabel,
-                onClick = {
-                    onClicked(theme)
-                },
-            )
-            .semantics(mergeDescendants = true) {
-                contentDescription = contentLabel
-                role = Role.Button
-            },
+        modifier =
+            Modifier.size(iconSize + (FirefoxTheme.layout.space.static100 * 2))
+                .padding(FirefoxTheme.layout.space.static100)
+                .thenConditional(
+                    Modifier.border(
+                            outerBorderWidth,
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = CircleShape,
+                        )
+                        .border(
+                            innerBorderWidth,
+                            color = MaterialTheme.colorScheme.surfaceBright,
+                            shape = CircleShape,
+                        ),
+                    predicate = { selected },
+                )
+                .clip(shape = RoundedCornerShape(animatedCorner))
+                .background(color = theme.primary)
+                .testTag("$BOTTOM_SHEET_COLOR_LIST.${theme.name}")
+                .clickable(
+                    enabled = true,
+                    interactionSource = interactionSource,
+                    onClickLabel = contentLabel,
+                    onClick = {
+                        onClicked(theme)
+                    },
+                )
+                .semantics(mergeDescendants = true) {
+                    contentDescription = contentLabel
+                    role = Role.Button
+                }
     )
 }
 
@@ -318,10 +307,11 @@ private fun TabGroupNameTextField(
         keyboardController?.show()
     }
 
-    val selectionColors = TextSelectionColors(
-        handleColor = LocalTextSelectionColors.current.handleColor,
-        backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-    )
+    val selectionColors =
+        TextSelectionColors(
+            handleColor = LocalTextSelectionColors.current.handleColor,
+            backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+        )
 
     OutlinedTextField(
         value = tabGroupName,
@@ -336,9 +326,7 @@ private fun TabGroupNameTextField(
         },
         singleLine = true,
         modifier = modifier.focusRequester(focusRequester),
-        colors = OutlinedTextFieldDefaults.colors(
-            selectionColors = selectionColors,
-        ),
+        colors = OutlinedTextFieldDefaults.colors(selectionColors = selectionColors),
     )
 }
 
@@ -349,51 +337,52 @@ private fun <T> colorPickerAnimationSpec(): SpringSpec<T> =
     )
 
 private class TabGroupFormStateParameterProvider : PreviewParameterProvider<TabGroupFormState> {
-    val data = listOf(
-        Pair(
-            "Create tab group",
-            TabGroupFormState(
-                tabGroupId = null,
-                name = "",
-                nextTabGroupNumber = 1,
-                edited = false,
+    val data =
+        listOf(
+            Pair(
+                "Create tab group",
+                TabGroupFormState(
+                    tabGroupId = null,
+                    name = "",
+                    nextTabGroupNumber = 1,
+                    edited = false,
+                ),
             ),
-        ),
-        Pair(
-            "Edit tab group",
-            TabGroupFormState(
-                tabGroupId = "1",
-                name = "Test group",
-                edited = false,
+            Pair(
+                "Edit tab group",
+                TabGroupFormState(
+                    tabGroupId = "1",
+                    name = "Test group",
+                    edited = false,
+                ),
             ),
-        ),
-        Pair(
-            "Edit tab group with blank name",
-            TabGroupFormState(
-                tabGroupId = "1",
-                name = "",
-                edited = true,
+            Pair(
+                "Edit tab group with blank name",
+                TabGroupFormState(
+                    tabGroupId = "1",
+                    name = "",
+                    edited = true,
+                ),
             ),
-        ),
-        Pair(
-            "Edit tab group with first color selected",
-            TabGroupFormState(
-                tabGroupId = "1",
-                name = "First color",
-                edited = false,
-                theme = TabGroupTheme.entries.first(),
+            Pair(
+                "Edit tab group with first color selected",
+                TabGroupFormState(
+                    tabGroupId = "1",
+                    name = "First color",
+                    edited = false,
+                    theme = TabGroupTheme.entries.first(),
+                ),
             ),
-        ),
-        Pair(
-            "Edit tab group with last color selected",
-            TabGroupFormState(
-                tabGroupId = "1",
-                name = "Last color",
-                edited = false,
-                theme = TabGroupTheme.entries.last(),
+            Pair(
+                "Edit tab group with last color selected",
+                TabGroupFormState(
+                    tabGroupId = "1",
+                    name = "Last color",
+                    edited = false,
+                    theme = TabGroupTheme.entries.last(),
+                ),
             ),
-        ),
-    )
+        )
 
     override fun getDisplayName(index: Int): String {
         return data[index].first
@@ -406,7 +395,7 @@ private class TabGroupFormStateParameterProvider : PreviewParameterProvider<TabG
 @PreviewLightDark
 @Composable
 private fun EditTabGroupContentPreview(
-    @PreviewParameter(TabGroupFormStateParameterProvider::class) formState: TabGroupFormState,
+    @PreviewParameter(TabGroupFormStateParameterProvider::class) formState: TabGroupFormState
 ) {
     FirefoxTheme {
         Surface {
@@ -423,21 +412,22 @@ private fun EditTabGroupContentPreview(
 @OptIn(ExperimentalMaterial3Api::class)
 @FlexibleWindowPreview
 @Composable
-private fun EditTabGroupBottomSheetPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun EditTabGroupBottomSheetPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     val tabsTrayStore = remember {
         TabsTrayStore(
-            initialState = TabsTrayState(
-                tabGroupState = TabsTrayState.TabGroupState(
-                    formState = TabGroupFormState(
-                        tabGroupId = null,
-                        name = "",
-                        nextTabGroupNumber = 1,
-                        edited = false,
-                    ),
-                ),
-            ),
+            initialState =
+                TabsTrayState(
+                    tabGroupState =
+                        TabsTrayState.TabGroupState(
+                            formState =
+                                TabGroupFormState(
+                                    tabGroupId = null,
+                                    name = "",
+                                    nextTabGroupNumber = 1,
+                                    edited = false,
+                                )
+                        )
+                )
         )
     }
     val state by tabsTrayStore.stateFlow.collectAsState()
@@ -446,12 +436,10 @@ private fun EditTabGroupBottomSheetPreview(
         Surface {
             ModalBottomSheet(
                 // rememberStandardBottomSheetState() allows this sheet to display properly for Previews
-                sheetState = rememberStandardBottomSheetState(
-                    initialValue = SheetValue.Expanded,
-                ),
+                sheetState = rememberStandardBottomSheetState(initialValue = SheetValue.Expanded),
                 dragHandle = {
                     BottomSheetHandle(
-                        onRequestDismiss = { },
+                        onRequestDismiss = {},
                         contentDescription = "",
                         modifier = Modifier.padding(all = 16.dp),
                     )

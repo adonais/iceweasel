@@ -39,8 +39,8 @@ private const val ACTION_RECORDING_DEVICES_NOTIFICATION_DISMISSED =
 private const val NOTIFICATION_REMINDER_DELAY_MS = 5 * 60 * 1000L // 5 minutes
 
 /**
- * Middleware for displaying an ongoing notification while recording devices (camera, microphone)
- * are used by web content.
+ * Middleware for displaying an ongoing notification while recording devices (camera, microphone) are used by web
+ * content.
  */
 class RecordingDevicesMiddleware(
     private val context: Context,
@@ -57,11 +57,7 @@ class RecordingDevicesMiddleware(
 
         // Whenever the recording devices of a tab change or tabs get added/removed then process
         // the current list and show/hide the notification.
-        if (
-            action is ContentAction.SetRecordingDevices ||
-            action is TabListAction ||
-            action is CustomTabListAction
-        ) {
+        if (action is ContentAction.SetRecordingDevices || action is TabListAction || action is CustomTabListAction) {
             process(store, false)
         }
     }
@@ -70,21 +66,23 @@ class RecordingDevicesMiddleware(
         store: Store<BrowserState, BrowserAction>,
         isReminder: Boolean,
     ) {
-        val devices = store.state.tabs
-            .map { tab -> tab.content.recordingDevices }
-            .flatten()
-            .filter { device -> device.status == RecordingDevice.Status.RECORDING }
-            .distinctBy { device -> device.type }
+        val devices =
+            store.state.tabs
+                .map { tab -> tab.content.recordingDevices }
+                .flatten()
+                .filter { device -> device.status == RecordingDevice.Status.RECORDING }
+                .distinctBy { device -> device.type }
 
         val isUsingCamera = devices.find { it.type == RecordingDevice.Type.CAMERA } != null
         val isUsingMicrophone = devices.find { it.type == RecordingDevice.Type.MICROPHONE } != null
 
-        val recordingState = when {
-            isUsingCamera && isUsingMicrophone -> RecordingState.CameraAndMicrophone
-            isUsingCamera -> RecordingState.Camera
-            isUsingMicrophone -> RecordingState.Microphone
-            else -> RecordingState.None
-        }
+        val recordingState =
+            when {
+                isUsingCamera && isUsingMicrophone -> RecordingState.CameraAndMicrophone
+                isUsingCamera -> RecordingState.Camera
+                isUsingMicrophone -> RecordingState.Microphone
+                else -> RecordingState.None
+            }
 
         updateNotification(
             recordingState,
@@ -119,8 +117,7 @@ class RecordingDevicesMiddleware(
     }
 
     private fun hideNotification() {
-        NotificationManagerCompat.from(context)
-            .cancel(NOTIFICATION_TAG, NOTIFICATION_ID)
+        NotificationManagerCompat.from(context).cancel(NOTIFICATION_TAG, NOTIFICATION_ID)
     }
 
     private fun showNotification(
@@ -138,19 +135,21 @@ class RecordingDevicesMiddleware(
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
             } ?: throw IllegalStateException("Package has no launcher intent")
 
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            SharedIdsHelper.getIdForTag(context, PENDING_INTENT_TAG),
-            intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
+        val pendingIntent =
+            PendingIntent.getActivity(
+                context,
+                SharedIdsHelper.getIdForTag(context, PENDING_INTENT_TAG),
+                intent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
 
-        val dismissPendingIntent = PendingIntent.getBroadcast(
-            context,
-            0,
-            Intent(ACTION_RECORDING_DEVICES_NOTIFICATION_DISMISSED),
-            PendingIntent.FLAG_IMMUTABLE,
-        )
+        val dismissPendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                0,
+                Intent(ACTION_RECORDING_DEVICES_NOTIFICATION_DISMISSED),
+                PendingIntent.FLAG_IMMUTABLE,
+            )
 
         val broadcastReceiver = NotificationDismissedReceiver(processRecordingState)
 
@@ -160,25 +159,27 @@ class RecordingDevicesMiddleware(
             ContextCompat.RECEIVER_EXPORTED,
         )
 
-        val textResource = if (isReminder) {
-            context.getString(
-                recordingState.reminderTextResource,
-                context.packageManager.getApplicationLabel(context.applicationInfo).toString(),
-            )
-        } else {
-            context.getString(recordingState.textResource)
-        }
+        val textResource =
+            if (isReminder) {
+                context.getString(
+                    recordingState.reminderTextResource,
+                    context.packageManager.getApplicationLabel(context.applicationInfo).toString(),
+                )
+            } else {
+                context.getString(recordingState.textResource)
+            }
 
-        val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(recordingState.iconResource)
-            .setContentTitle(context.getString(recordingState.titleResource))
-            .setContentText(textResource)
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setCategory(NotificationCompat.CATEGORY_CALL)
-            .setContentIntent(pendingIntent)
-            .setOngoing(true)
-            .setDeleteIntent(dismissPendingIntent)
-            .build()
+        val notification =
+            NotificationCompat.Builder(context, channelId)
+                .setSmallIcon(recordingState.iconResource)
+                .setContentTitle(context.getString(recordingState.titleResource))
+                .setContentText(textResource)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setCategory(NotificationCompat.CATEGORY_CALL)
+                .setContentIntent(pendingIntent)
+                .setOngoing(true)
+                .setDeleteIntent(dismissPendingIntent)
+                .build()
 
         notificationsDelegate.notify(
             NOTIFICATION_TAG,
@@ -188,9 +189,7 @@ class RecordingDevicesMiddleware(
         )
     }
 
-    internal class NotificationDismissedReceiver(
-        private val processRecordingState: () -> Unit,
-    ) : BroadcastReceiver() {
+    internal class NotificationDismissedReceiver(private val processRecordingState: () -> Unit) : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val callingAppInfo = context.packageManager.getNameForUid(Binder.getCallingUid())
             if (callingAppInfo.equals(context.packageName)) {
@@ -218,24 +217,21 @@ internal sealed class RecordingState {
         override val iconResource = iconsR.drawable.mozac_ic_camera_24
         override val titleResource = R.string.mozac_feature_media_sharing_camera_and_microphone
         override val textResource = R.string.mozac_feature_media_sharing_camera_and_microphone_text
-        override val reminderTextResource =
-            R.string.mozac_feature_media_sharing_camera_and_microphone_reminder_text_2
+        override val reminderTextResource = R.string.mozac_feature_media_sharing_camera_and_microphone_reminder_text_2
     }
 
     object Camera : RecordingState() {
         override val iconResource = iconsR.drawable.mozac_ic_camera_24
         override val titleResource = R.string.mozac_feature_media_sharing_camera
         override val textResource = R.string.mozac_feature_media_sharing_camera_text
-        override val reminderTextResource =
-            R.string.mozac_feature_media_sharing_camera_reminder_text
+        override val reminderTextResource = R.string.mozac_feature_media_sharing_camera_reminder_text
     }
 
     object Microphone : RecordingState() {
         override val iconResource = iconsR.drawable.mozac_ic_microphone_24
         override val titleResource = R.string.mozac_feature_media_sharing_microphone
         override val textResource = R.string.mozac_feature_media_sharing_microphone_text
-        override val reminderTextResource =
-            R.string.mozac_feature_media_sharing_microphone_reminder_text_2
+        override val reminderTextResource = R.string.mozac_feature_media_sharing_microphone_reminder_text_2
     }
 
     object None : RecordingState() {
@@ -244,8 +240,10 @@ internal sealed class RecordingState {
 
         override val titleResource: Int
             get() = throw UnsupportedOperationException()
+
         override val textResource: Int
             get() = throw UnsupportedOperationException()
+
         override val reminderTextResource: Int
             get() = throw UnsupportedOperationException()
     }

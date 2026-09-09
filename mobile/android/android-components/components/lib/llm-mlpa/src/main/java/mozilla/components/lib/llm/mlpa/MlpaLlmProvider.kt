@@ -26,8 +26,7 @@ internal val LlmProvider.ModelID.Companion.mozSummarization
  * - Initializing an [MlpaLlm] instance when authentication succeeds.
  * - Exposing availability and readiness through a [StateFlow].
  *
- * The provider starts in [State.Available]. After calling [prepare],
- * the state will transition to:
+ * The provider starts in [State.Available]. After calling [prepare], the state will transition to:
  * - [Ready] with an initialized [MlpaLlm] instance if token retrieval succeeds.
  * - [Unavailable] if token retrieval fails.
  *
@@ -41,16 +40,15 @@ class MlpaLlmProvider(
 ) : CloudLlmProvider {
     private val modelID = LlmProvider.ModelID.mozSummarization
 
-    override val info = LlmProvider.Info(
-        nameRes = R.string.mlpa_llm_provider_name,
-        iconRes = R.drawable.firefox_icon,
-        modelId = modelID,
-    )
+    override val info =
+        LlmProvider.Info(
+            nameRes = R.string.mlpa_llm_provider_name,
+            iconRes = R.drawable.firefox_icon,
+            modelId = modelID,
+        )
     private val _state = MutableStateFlow<State>(State.Available)
 
-    /**
-     * The current state.
-     */
+    /** The current state. */
     override val state: StateFlow<State> = _state
 
     /**
@@ -62,35 +60,35 @@ class MlpaLlmProvider(
      * - On failure, updates [state] to [State.Unavailable].
      */
     override suspend fun prepare() {
-        tokenProvider.fetchToken()
+        tokenProvider
+            .fetchToken()
             .onSuccess { _state.value = State.Ready(MlpaLlm(chatService, it, modelID)) }
             .onFailure {
-                _state.value = State.Unavailable(
-                    it as? Llm.Exception
-                        ?: Llm.Exception(
-                            message = it.message ?: "missing token provider error",
-                            cause = it,
-                        ),
-                )
+                _state.value =
+                    State.Unavailable(
+                        it as? Llm.Exception
+                            ?: Llm.Exception(
+                                message = it.message ?: "missing token provider error",
+                                cause = it,
+                            )
+                    )
             }
     }
 
-    /**
-     * Wraps the [ChatService]
-     */
+    /** Wraps the [ChatService] */
     private val chatService = ChatService { token, request ->
-        mlpaService.completion(token, request)
-            .catch { throwable ->
-                val error = throwable as? Llm.Exception
+        mlpaService.completion(token, request).catch { throwable ->
+            val error =
+                throwable as? Llm.Exception
                     ?: Llm.Exception(
                         message = throwable.message ?: "missing chat service error",
                         cause = throwable,
                     )
-                if (throwable is InvalidToken) {
-                    storage.clear()
-                    _state.value = State.Available
-                }
-                throw error
+            if (throwable is InvalidToken) {
+                storage.clear()
+                _state.value = State.Available
             }
+            throw error
+        }
     }
 }

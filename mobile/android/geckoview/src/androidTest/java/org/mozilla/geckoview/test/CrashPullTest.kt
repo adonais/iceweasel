@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -76,7 +76,10 @@ class CrashPullTest : BaseSessionTest() {
                 @AssertCalled(count = 1)
                 override fun onCrashPull(crashIDs: Array<String>) {
                     assertArrayEquals(
-                        arrayOf("$CRASH_PATH/989df240-a40c-405a-9a22-f2fc4a31db6c.dmp", "$CRASH_PATH/a3adbf3d-9a9a-48a1-a9ed-c603ef9c5c87.dmp"),
+                        arrayOf(
+                            "$CRASH_PATH/989df240-a40c-405a-9a22-f2fc4a31db6c.dmp",
+                            "$CRASH_PATH/a3adbf3d-9a9a-48a1-a9ed-c603ef9c5c87.dmp",
+                        ),
                         crashIDs,
                     )
                     super.onCrashPull(crashIDs)
@@ -85,7 +88,13 @@ class CrashPullTest : BaseSessionTest() {
         )
 
         val bundle = GeckoBundle()
-        bundle.putStringArray("crashIDs", arrayOf("$CRASH_PATH/989df240-a40c-405a-9a22-f2fc4a31db6c.dmp", "$CRASH_PATH/a3adbf3d-9a9a-48a1-a9ed-c603ef9c5c87.dmp"))
+        bundle.putStringArray(
+            "crashIDs",
+            arrayOf(
+                "$CRASH_PATH/989df240-a40c-405a-9a22-f2fc4a31db6c.dmp",
+                "$CRASH_PATH/a3adbf3d-9a9a-48a1-a9ed-c603ef9c5c87.dmp",
+            ),
+        )
         EventDispatcher.getInstance().dispatch("GeckoView:RemoteSettingsCrashPull", bundle)
         mainSession.waitUntilCalled(CrashPullController.Delegate::class, "onCrashPull")
     }

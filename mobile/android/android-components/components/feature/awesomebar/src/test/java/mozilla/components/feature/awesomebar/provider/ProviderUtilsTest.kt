@@ -4,12 +4,12 @@
 
 package mozilla.components.feature.awesomebar.provider
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Test
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.Locale
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Test
 
 class ProviderUtilsTest {
 

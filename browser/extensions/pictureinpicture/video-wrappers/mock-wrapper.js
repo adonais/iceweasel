@@ -5,6 +5,27 @@
 "use strict";
 
 class PictureInPictureVideoWrapper {
+  setCaptionContainerObserver(_video, updateCaptionsFunction) {
+    let container = document.querySelector("#player .captions-container");
+
+    if (container) {
+      updateCaptionsFunction("");
+
+      const callback = () => updateCaptionsFunction(container.textContent);
+      callback();
+
+      this.captionsObserver = new MutationObserver(callback);
+      this.captionsObserver.observe(container, {
+        childList: true,
+        subtree: true,
+      });
+    }
+  }
+
+  removeCaptionContainerObserver() {
+    this.captionsObserver?.disconnect();
+  }
+
   play() {
     let playPauseButton = document.querySelector("#player .play-pause-button");
     playPauseButton.click();

@@ -19,14 +19,8 @@ import androidx.compose.ui.unit.dp
  * @param content Composable items to be shown as horizontal content in a [CustomPlacementPopup].
  */
 @Composable
-inline fun CustomPlacementPopup.CustomPlacementPopupHorizontalContent(
-    crossinline content: LazyListScope.() -> Unit,
-) {
-    LazyRow(
-        modifier = Modifier
-            .background(MaterialTheme.colorScheme.surfaceBright)
-            .height(48.dp),
-    ) {
+inline fun CustomPlacementPopup.CustomPlacementPopupHorizontalContent(crossinline content: LazyListScope.() -> Unit) {
+    LazyRow(modifier = Modifier.background(MaterialTheme.colorScheme.surfaceBright).height(48.dp)) {
         content()
     }
 }

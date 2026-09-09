@@ -1,27 +1,42 @@
+# Tests for WebGPU behavior when `dom.webgpu.enabled` is not explicitly set.
+#
+# - On Windows, Mac aarch64, or in nightly, `dom.webgpu.enabled` is true by
+#   default and we run the two `enabled` tests.
+# - On Linux beta or release, or on Mac x86_64, `dom.webgpu.enabled` is false
+#   by default, and we run the `disabled` test.
+
 [DEFAULT]
 subsuite = "webgpu"
 dupe-manifest = true # duplicates mochitest-disabled.toml
 
-# This file's tests should run when WebGPU is disabled by the default
-# value of `dom.webgpu.enabled` in `modules/libpref/init/StaticPrefList.yaml`.
-#
-# This condition should be the same as the `run-if` condition in
-# `mochitest.toml`, except for `verify`.
 skip-if = [
-  "early_beta_or_earlier",
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
-  "os == 'win'",
   "verify", # `test-verify` jobs don't guarantee a GPU, so skip them.
 ]
+
 prefs = [
   "gfx.webgpu.ignore-blocklist=true", # https://bugzilla.mozilla.org/show_bug.cgi?id=1985348
 ]
 
-# Even if the pref were enabled, WebGPU is only available in secure contexts.
+# WebGPU is only ever available in secure contexts.
 #
 # See spec WebIDL, like this: https://www.w3.org/TR/webgpu/#navigatorgpu
 scheme = "https"
 
+["test_adapter_enabled.html"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && !early_beta_or_earlier",
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
+]
+
+["test_enabled.html"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && !early_beta_or_earlier",
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
+]
+
 ["test_gpu_disabled.html"]
+skip-if = [
+  "early_beta_or_earlier",
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
+  "os == 'win'",
+]

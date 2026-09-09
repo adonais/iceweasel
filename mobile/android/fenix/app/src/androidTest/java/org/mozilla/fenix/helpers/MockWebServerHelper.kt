@@ -13,16 +13,18 @@ object MockWebServerHelper {
 
     /**
      * Create a mock webserver that accepts all requests and replies with "OK".
+     *
      * @return a [MockWebServer] instance
      */
     fun createAlwaysOkMockWebServer(): MockWebServer {
         return MockWebServer().apply {
-            val dispatcher = object : Dispatcher() {
-                @Throws(InterruptedException::class)
-                override fun dispatch(request: RecordedRequest): MockResponse {
-                    return MockResponse(body = "OK")
+            val dispatcher =
+                object : Dispatcher() {
+                    @Throws(InterruptedException::class)
+                    override fun dispatch(request: RecordedRequest): MockResponse {
+                        return MockResponse(body = "OK")
+                    }
                 }
-            }
             this.dispatcher = dispatcher
             start()
         }

@@ -4,6 +4,10 @@
 
 package org.mozilla.fenix.ipprotection.helpers
 
+import java.time.format.DateTimeParseException
+import java.util.Locale
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -12,16 +16,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.helpers.LocaleTestRule
 import org.robolectric.RobolectricTestRunner
-import java.time.format.DateTimeParseException
-import java.util.Locale
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class IsoPromoDeadlineTest {
 
-    @get:Rule
-    val localeTestRule = LocaleTestRule(Locale.US)
+    @get:Rule val localeTestRule = LocaleTestRule(Locale.US)
 
     @Test
     fun `GIVEN a valid ISO date WHEN formatted THEN returns a non-null localized string and does not report an exception`() {

@@ -31,46 +31,50 @@ class AddressPickerTest {
     private lateinit var addressPicker: AddressPicker
     private lateinit var addressSelectBar: AddressSelectBar
 
-    private val address = Address(
-        guid = "1",
-        name = "Jane Marie Doe",
-        organization = "Mozilla",
-        streetAddress = "1230 Main st",
-        addressLevel3 = "Location3",
-        addressLevel2 = "Location2",
-        addressLevel1 = "Location1",
-        postalCode = "90237",
-        country = "USA",
-        tel = "00",
-        email = "email",
-    )
+    private val address =
+        Address(
+            guid = "1",
+            name = "Jane Marie Doe",
+            organization = "Mozilla",
+            streetAddress = "1230 Main st",
+            addressLevel3 = "Location3",
+            addressLevel2 = "Location2",
+            addressLevel1 = "Location1",
+            postalCode = "90237",
+            country = "USA",
+            tel = "00",
+            email = "email",
+        )
 
     private var onDismissCalled = false
     private var confirmedAddress: Address? = null
 
-    private val promptRequest = PromptRequest.SelectAddress(
-        addresses = listOf(address),
-        onDismiss = { onDismissCalled = true },
-        onConfirm = { confirmedAddress = it },
-    )
+    private val promptRequest =
+        PromptRequest.SelectAddress(
+            addresses = listOf(address),
+            onDismiss = { onDismissCalled = true },
+            onConfirm = { confirmedAddress = it },
+        )
 
     @Before
     fun setup() {
         state = mock()
         store = BrowserStore(state)
         addressSelectBar = mock()
-        addressPicker = AddressPicker(
-            store = store,
-            addressSelectBar = addressSelectBar,
-        )
+        addressPicker =
+            AddressPicker(
+                store = store,
+                addressSelectBar = addressSelectBar,
+            )
     }
 
     @Test
     fun `WHEN onOptionSelect is called with an address THEN selectAddressCallback is invoked and prompt is hidden`() {
-        val content = ContentState(
-            url = "http://mozilla.org",
-            promptRequests = listOf(promptRequest),
-        )
+        val content =
+            ContentState(
+                url = "http://mozilla.org",
+                promptRequests = listOf(promptRequest),
+            )
         val selectedTab = TabSessionState("browser-tab", content, mock(), mock())
         whenever(state.selectedTabId).thenReturn(selectedTab.id)
         whenever(state.tabs).thenReturn(listOf(selectedTab))
@@ -89,7 +93,7 @@ class AddressPickerTest {
                 override fun process(fact: Fact) {
                     facts.add(fact)
                 }
-            },
+            }
         )
 
         assertEquals(0, facts.size)
@@ -110,7 +114,13 @@ class AddressPickerTest {
     @Test
     fun `GIVEN a custom tab and a prompt request WHEN handleSelectAddressRequest is called THEN the prompt is shown with the provided addresses`() {
         val customTabContent: ContentState = mock()
-        val customTab = CustomTabSessionState(id = "custom-tab", content = customTabContent, trackingProtection = mock(), config = mock())
+        val customTab =
+            CustomTabSessionState(
+                id = "custom-tab",
+                content = customTabContent,
+                trackingProtection = mock(),
+                config = mock(),
+            )
         whenever(customTabContent.promptRequests).thenReturn(listOf(promptRequest))
         whenever(state.customTabs).thenReturn(listOf(customTab))
 
@@ -128,7 +138,7 @@ class AddressPickerTest {
                 override fun process(fact: Fact) {
                     facts.add(fact)
                 }
-            },
+            }
         )
 
         assertEquals(0, facts.size)

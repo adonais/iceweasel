@@ -8,8 +8,8 @@ import android.app.Activity
 import android.content.Intent
 
 /**
- * Generic interface for fragments, activities, features and other components that want to handle
- * the [Activity.onActivityResult] event.
+ * Generic interface for fragments, activities, features and other components that want to handle the
+ * [Activity.onActivityResult] event.
  */
 interface ActivityResultHandler {
 

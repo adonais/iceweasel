@@ -1,9 +1,22 @@
+(reviewer-checklist)=
+
 # Reviewer Checklist
 
 Submitting patches to Mozilla source code needn't be complex. This
 article provides a list of best practices for your patch content that
 reviewers will check for or require. Following these best practices
 will lead to a smoother, more rapid process of review and acceptance.
+
+## Tooling
+
+- Install the [MyQOnly
+  add-on](https://addons.mozilla.org/firefox/addon/myqonly/). This is
+  strongly recommended for anyone who reviews patches: it displays a
+  badge with the number of reviews waiting on you in Phabricator,
+  Bugzilla and GitHub, so requests don't sit unnoticed for days.
+- Use the [phab-test-policy
+  add-on](https://addons.mozilla.org/firefox/addon/phab-test-policy/) to
+  help select the right test policy for the patch in Phabricator.
 
 ## Good web citizenship
 
@@ -30,9 +43,6 @@ will lead to a smoother, more rapid process of review and acceptance.
 - If you can unit-test it, you should unit-test it.
 - If it's JS, try to design and build so that xpcshell can exercise
   most functionality. It's quicker.
-- Use the [phab-test-policy
-  add-on](https://addons.mozilla.org/firefox/addon/phab-test-policy/) to
-  help select the right test policy for the patch in Phabricator.
 - Make sure the patch doesn't create any unused code (e.g., remove
   strings when removing a feature)
 - All caught exceptions should be logged at the appropriate level,

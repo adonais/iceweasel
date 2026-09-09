@@ -44,9 +44,7 @@ internal fun InfoError(
         Icon(
             painter = painterResource(mozilla.components.ui.icons.R.drawable.mozac_ic_warning_24),
             contentDescription = null,
-            modifier = Modifier
-                .padding(end = 8.dp).size(32.dp)
-                .onLongPress { showErrorCode = true },
+            modifier = Modifier.padding(end = 8.dp).size(32.dp).onLongPress { showErrorCode = true },
             tint = MaterialTheme.colorScheme.error,
         )
 

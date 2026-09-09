@@ -37,43 +37,43 @@ internal data class LoginsState(
     val updateLoginState: UpdateLoginState?,
 ) : State {
     companion object {
-        val default: LoginsState = LoginsState(
-            loginItems = listOf(),
-            searchText = null,
-            sortOrder = LoginsSortOrder.default,
-            importPasswordsMenuShown = false,
-            showPasswordsImport = true,
-            loginsListState = null,
-            loginsAddLoginState = null,
-            loginsEditLoginState = null,
-            loginsLoginDetailState = null,
-            loginDeletionDialogState = LoginDeletionDialogState.None,
-            newLoginState = NewLoginState.None,
-            updateLoginState = UpdateLoginState.None,
-        )
+        val default: LoginsState =
+            LoginsState(
+                loginItems = listOf(),
+                searchText = null,
+                sortOrder = LoginsSortOrder.default,
+                importPasswordsMenuShown = false,
+                showPasswordsImport = true,
+                loginsListState = null,
+                loginsAddLoginState = null,
+                loginsEditLoginState = null,
+                loginsLoginDetailState = null,
+                loginDeletionDialogState = LoginDeletionDialogState.None,
+                newLoginState = NewLoginState.None,
+                updateLoginState = UpdateLoginState.None,
+            )
     }
 }
 
 internal sealed class NewLoginState {
     data object None : NewLoginState()
+
     data object Duplicate : NewLoginState()
 }
 
 internal sealed class UpdateLoginState {
     data object None : UpdateLoginState()
+
     data object Duplicate : UpdateLoginState()
 }
 
 internal sealed class LoginDeletionDialogState {
     data object None : LoginDeletionDialogState()
-    data class Presenting(
-        val guidToDelete: String,
-    ) : LoginDeletionDialogState()
+
+    data class Presenting(val guidToDelete: String) : LoginDeletionDialogState()
 }
 
-internal data class LoginsListState(
-    val logins: List<LoginItem>,
-)
+internal data class LoginsListState(val logins: List<LoginItem>)
 
 internal data class LoginsEditLoginState(
     val login: LoginItem,
@@ -88,20 +88,14 @@ internal data class LoginsAddLoginState(
     val password: String?,
 )
 
-internal data class LoginsLoginDetailState(
-    val login: LoginItem,
-)
+internal data class LoginsLoginDetailState(val login: LoginItem)
 
-/**
- * Represents the order of the Logins list items.
- */
+/** Represents the order of the Logins list items. */
 sealed class LoginsSortOrder {
     abstract val asString: String
     abstract val comparator: Comparator<LoginItem>
 
-    /**
-     *  Represents the ordering of the logins list when sorted alphabetically.
-     */
+    /** Represents the ordering of the logins list when sorted alphabetically. */
     data object Alphabetical : LoginsSortOrder() {
         override val asString: String
             get() = "alphabetical"
@@ -110,9 +104,7 @@ sealed class LoginsSortOrder {
             get() = compareBy { it.url }
     }
 
-    /**
-     *  Represents the ordering of the logins list when sorted by the last used date.
-     */
+    /** Represents the ordering of the logins list when sorted by the last used date. */
     data object LastUsed : LoginsSortOrder() {
         override val asString: String
             get() = "last-used"
@@ -121,16 +113,12 @@ sealed class LoginsSortOrder {
             get() = compareByDescending { it.timeLastUsed }
     }
 
-    /**
-     *  Represents the [LoginsSortOrder] object.
-     */
+    /** Represents the [LoginsSortOrder] object. */
     companion object {
         val default: LoginsSortOrder
             get() = Alphabetical
 
-        /**
-         *  Converts a string into a [LoginsSortOrder] object.
-         */
+        /** Converts a string into a [LoginsSortOrder] object. */
         fun fromString(value: String, default: LoginsSortOrder = Alphabetical): LoginsSortOrder {
             return when (value) {
                 "alphabetical" -> Alphabetical
@@ -140,8 +128,9 @@ sealed class LoginsSortOrder {
         }
     }
 
-    internal fun LoginsState.isGuidToDelete(guid: String): Boolean = when (loginDeletionDialogState) {
-        is LoginDeletionDialogState.Presenting -> loginDeletionDialogState.guidToDelete == guid
-        else -> false
-    }
+    internal fun LoginsState.isGuidToDelete(guid: String): Boolean =
+        when (loginDeletionDialogState) {
+            is LoginDeletionDialogState.Presenting -> loginDeletionDialogState.guidToDelete == guid
+            else -> false
+        }
 }

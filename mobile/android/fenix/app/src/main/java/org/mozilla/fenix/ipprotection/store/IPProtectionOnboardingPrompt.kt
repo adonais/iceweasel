@@ -17,11 +17,11 @@ import mozilla.components.lib.state.helpers.AbstractBinding
 import mozilla.components.support.utils.DateTimeProvider
 
 /**
- * Triggers the IP protection onboarding bottom sheet when the user first becomes
- * eligible and meets our required heuristic provided by [IPProtectionPromptRepository].
+ * Triggers the IP protection onboarding bottom sheet when the user first becomes eligible and meets our required
+ * heuristic provided by [IPProtectionPromptRepository].
  *
- * @param repository Source of truth for whether the onboarding prompt is still allowed to appear
- * (feature flag, install age, prior dismissals, prior VPN usage).
+ * @param repository Source of truth for whether the onboarding prompt is still allowed to appear (feature flag, install
+ *   age, prior dismissals, prior VPN usage).
  * @param onShowOnboarding Callback invoked when the prompt should be presented to the user.
  * @param timeProvider Supplies the current time.
  * @param mainDispatcher [CoroutineDispatcher] on which [onShowOnboarding] is invoked.
@@ -35,7 +35,8 @@ class IPProtectionOnboardingPrompt(
     store: IPProtectionStore,
 ) : AbstractBinding<IPProtectionState>(store, mainDispatcher) {
     override suspend fun onState(flow: Flow<IPProtectionState>) {
-        flow.map { Pair(it.eligibilityStatus, it.accountState.status) }
+        flow
+            .map { Pair(it.eligibilityStatus, it.accountState.status) }
             .distinctUntilChanged()
             .collect { (eligibilityStatus, accountStatus) ->
                 val accountInitializing =

@@ -19,6 +19,8 @@ prefs = [
 
 ["browser_action.js"]
 
+["browser_forceEnabled.js"]
+
 ["browser_groupPosition.js"]
 
 ["browser_keyboard_shortcut.js"]

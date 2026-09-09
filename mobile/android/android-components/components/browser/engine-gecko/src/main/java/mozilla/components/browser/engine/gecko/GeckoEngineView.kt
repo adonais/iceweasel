@@ -11,7 +11,9 @@ import android.graphics.Color
 import android.util.AttributeSet
 import android.widget.FrameLayout
 import androidx.annotation.VisibleForTesting
+import androidx.core.view.OnApplyWindowInsetsListener as AndroidxOnApplyWindowInsetsListener
 import androidx.core.view.ViewCompat
+import java.lang.ref.WeakReference
 import mozilla.components.browser.engine.gecko.activity.GeckoViewActivityContextDelegate
 import mozilla.components.browser.engine.gecko.selection.GeckoSelectionActionDelegate
 import mozilla.components.concept.engine.EngineSession
@@ -21,57 +23,57 @@ import mozilla.components.concept.engine.selection.SelectionActionDelegate
 import org.mozilla.geckoview.BasicSelectionActionDelegate
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
-import java.lang.ref.WeakReference
-import androidx.core.view.OnApplyWindowInsetsListener as AndroidxOnApplyWindowInsetsListener
 
-/**
- * Gecko-based EngineView implementation.
- */
-class GeckoEngineView @JvmOverloads constructor(
+/** Gecko-based EngineView implementation. */
+class GeckoEngineView
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
 ) : FrameLayout(context, attrs, defStyleAttr), EngineView {
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal var geckoView = object : NestedGeckoView(context) {
+    internal var geckoView =
+        object : NestedGeckoView(context) {
 
-        override fun onAttachedToWindow() {
-            try {
-                super.onAttachedToWindow()
-            } catch (e: IllegalStateException) {
-                // This is to debug "display already acquired" crashes
-                val otherActivityClassName =
-                    this.session?.accessibility?.view?.context?.javaClass?.simpleName
-                val otherActivityClassHashcode =
-                    this.session?.accessibility?.view?.context?.hashCode()
-                val activityClassName = context.javaClass.simpleName
-                val activityClassHashCode = context.hashCode()
-                val msg = "ATTACH VIEW: Current activity: $activityClassName hashcode " +
-                    "$activityClassHashCode Other activity: $otherActivityClassName " +
-                    "hashcode $otherActivityClassHashcode"
-                throw IllegalStateException(msg, e)
+                override fun onAttachedToWindow() {
+                    try {
+                        super.onAttachedToWindow()
+                    } catch (e: IllegalStateException) {
+                        // This is to debug "display already acquired" crashes
+                        val otherActivityClassName = this.session?.accessibility?.view?.context?.javaClass?.simpleName
+                        val otherActivityClassHashcode = this.session?.accessibility?.view?.context?.hashCode()
+                        val activityClassName = context.javaClass.simpleName
+                        val activityClassHashCode = context.hashCode()
+                        val msg =
+                            "ATTACH VIEW: Current activity: $activityClassName hashcode " +
+                                "$activityClassHashCode Other activity: $otherActivityClassName " +
+                                "hashcode $otherActivityClassHashcode"
+                        throw IllegalStateException(msg, e)
+                    }
+                }
+
+                override fun onDetachedFromWindow() {
+                    // We are releasing the session before GeckoView gets detached from the window. Otherwise
+                    // GeckoView will close the session automatically and we do not want that.
+                    releaseSession()
+
+                    super.onDetachedFromWindow()
+                }
             }
-        }
-
-        override fun onDetachedFromWindow() {
-            // We are releasing the session before GeckoView gets detached from the window. Otherwise
-            // GeckoView will close the session automatically and we do not want that.
-            releaseSession()
-
-            super.onDetachedFromWindow()
-        }
-    }.apply {
-        // Explicitly mark this view as important for autofill. The default "auto" doesn't seem to trigger any
-        // autofill behavior for us here.
-        ViewCompat.setImportantForAutofill(this, IMPORTANT_FOR_AUTOFILL_YES)
-    }
+            .apply {
+                // Explicitly mark this view as important for autofill. The default "auto" doesn't seem to trigger any
+                // autofill behavior for us here.
+                ViewCompat.setImportantForAutofill(this, IMPORTANT_FOR_AUTOFILL_YES)
+            }
 
     internal fun setColorScheme(preferredColorScheme: PreferredColorScheme) {
         var colorScheme = preferredColorScheme
         if (preferredColorScheme == PreferredColorScheme.System) {
             colorScheme =
-                if (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
-                    == Configuration.UI_MODE_NIGHT_YES
+                if (
+                    context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
+                        Configuration.UI_MODE_NIGHT_YES
                 ) {
                     PreferredColorScheme.Dark
                 } else {
@@ -86,16 +88,14 @@ class GeckoEngineView @JvmOverloads constructor(
         }
     }
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal var currentSession: GeckoEngineSession? = null
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal var currentSession: GeckoEngineSession? = null
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal var currentSelection: BasicSelectionActionDelegate? = null
 
     override var selectionActionDelegate: SelectionActionDelegate? = null
 
-    @VisibleForTesting
-    internal var verticalScrollListener = GeckoVerticalScrollListener()
+    @VisibleForTesting internal var verticalScrollListener = GeckoVerticalScrollListener()
     override val verticalScrollPosition = verticalScrollListener.scrollYPosition
     override val verticalScrollDelta = verticalScrollListener.scrollYDeltas
 
@@ -124,9 +124,7 @@ class GeckoEngineView @JvmOverloads constructor(
         isNestedScrollingEnabled = true
     }
 
-    /**
-     * Render the content of the given session.
-     */
+    /** Render the content of the given session. */
     @Synchronized
     override fun render(session: EngineSession) {
         val internalSession = session as GeckoEngineSession
@@ -148,13 +146,13 @@ class GeckoEngineView @JvmOverloads constructor(
                 // This is to debug "display already acquired" crashes
                 val otherActivityClassName =
                     internalSession.geckoSession.accessibility.view?.context?.javaClass?.simpleName
-                val otherActivityClassHashcode =
-                    internalSession.geckoSession.accessibility.view?.context?.hashCode()
+                val otherActivityClassHashcode = internalSession.geckoSession.accessibility.view?.context?.hashCode()
                 val activityClassName = context.javaClass.simpleName
                 val activityClassHashCode = context.hashCode()
-                val msg = "SET SESSION: Current activity: $activityClassName hashcode " +
-                    "$activityClassHashCode Other activity: $otherActivityClassName " +
-                    "hashcode $otherActivityClassHashcode"
+                val msg =
+                    "SET SESSION: Current activity: $activityClassName hashcode " +
+                        "$activityClassHashCode Other activity: $otherActivityClassName " +
+                        "hashcode $otherActivityClassHashcode"
                 throw IllegalStateException(msg, e)
             }
         }

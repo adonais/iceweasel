@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "EncoderConfig.h"
 #include "MediaCodecsSupport.h"
 #include "PerformanceRecorder.h"
 #include "api/video/video_codec_type.h"
@@ -14,7 +15,6 @@
 
 namespace mozilla {
 
-class EncoderConfig;
 class WebrtcVideoDecoder;
 class WebrtcVideoEncoder;
 class MediaDataCodec {
@@ -37,7 +37,7 @@ class MediaDataCodec {
    * failed.
    */
   static std::unique_ptr<WebrtcVideoEncoder> CreateEncoder(
-      const webrtc::SdpVideoFormat& aFormat);
+      const webrtc::SdpVideoFormat& aFormat, HardwarePreference aHardwarePref);
 
   /**
    * Mime-level support check. For the deeper check used by

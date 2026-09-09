@@ -11,12 +11,12 @@ namespace nss_test {
 
 struct SomeContext {
   uint8_t some_buf[13];
-  void *mem;
+  void* mem;
 };
 
 template <class T>
 struct ScopedDelete {
-  void operator()(T *ptr) {
+  void operator()(T* ptr) {
     if (ptr) {
       PORT_Free(ptr->mem);
     }
@@ -33,9 +33,9 @@ class AlignedMallocTest : public ::testing::Test,
     return ctx;
   };
   ScopedSomeContext test_align_alloc(size_t alignment) {
-    void *mem = nullptr;
-    ScopedSomeContext ctx((SomeContext *)PORT_ZAllocAligned(sizeof(SomeContext),
-                                                            alignment, &mem));
+    void* mem = nullptr;
+    ScopedSomeContext ctx(
+        (SomeContext*)PORT_ZAllocAligned(sizeof(SomeContext), alignment, &mem));
     if (ctx) {
       ctx->mem = mem;
     }

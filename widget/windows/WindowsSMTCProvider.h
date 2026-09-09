@@ -115,8 +115,8 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
 
   // EventRegistrationTokens are used to have a handle on a callback (to remove
   // it again)
-  EventRegistrationToken mButtonPressedToken;
-  EventRegistrationToken mSeekRegistrationToken;
+  EventRegistrationToken mButtonPressedToken{};
+  EventRegistrationToken mSeekRegistrationToken{};
 };
 
 #endif  // __MINGW32__

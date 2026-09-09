@@ -24,45 +24,34 @@ interface Interceptor {
      * request.
      *
      * Finally the interceptor needs to return a [Response]. This can either be the [Response] from calling
-     * [Chain.proceed] - modified or unmodified - or a [Response] the interceptor created manually or obtained from
-     * a different source.
+     * [Chain.proceed] - modified or unmodified - or a [Response] the interceptor created manually or obtained from a
+     * different source.
      */
     fun intercept(chain: Chain): Response
 
-    /**
-     * The request interceptor chain.
-     */
+    /** The request interceptor chain. */
     interface Chain {
-        /**
-         * The current request. May be modified by a previously executed interceptor.
-         */
+        /** The current request. May be modified by a previously executed interceptor. */
         val request: Request
 
-        /**
-         * Proceed executing the interceptor chain and eventually perform the request.
-         */
+        /** Proceed executing the interceptor chain and eventually perform the request. */
         fun proceed(request: Request): Response
     }
 }
 
-/**
- * Creates a new [Client] instance that will use the provided list of [Interceptor] instances.
- */
-fun Client.withInterceptors(
-    vararg interceptors: Interceptor,
-): Client = InterceptorClient(this, interceptors.toList())
+/** Creates a new [Client] instance that will use the provided list of [Interceptor] instances. */
+fun Client.withInterceptors(vararg interceptors: Interceptor): Client = InterceptorClient(this, interceptors.toList())
 
 /**
- * A [Client] instance that will wrap the provided [actualClient] and call the interceptor chain before executing
- * the request.
+ * A [Client] instance that will wrap the provided [actualClient] and call the interceptor chain before executing the
+ * request.
  */
 private class InterceptorClient(
     private val actualClient: Client,
     private val interceptors: List<Interceptor>,
 ) : Client() {
     override fun fetch(request: Request): Response =
-        InterceptorChain(actualClient, interceptors.toList(), request)
-            .proceed(request)
+        InterceptorChain(actualClient, interceptors.toList(), request).proceed(request)
 }
 
 /**

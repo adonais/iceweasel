@@ -11,9 +11,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 
-/**
- * Internal DAO for accessing [ManifestEntity] instances.
- */
+/** Internal DAO for accessing [ManifestEntity] instances. */
 @Dao
 internal interface ManifestDao {
     @WorkerThread
@@ -39,17 +37,13 @@ internal interface ManifestDao {
         WHERE has_share_targets == 1
         AND used_at > :deadline
         ORDER BY used_at DESC
-    """,
+    """
     )
     fun getRecentShareableManifests(deadline: Long): List<ManifestEntity>
 
-    @WorkerThread
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertManifest(manifest: ManifestEntity): Long
+    @WorkerThread @Insert(onConflict = OnConflictStrategy.REPLACE) fun insertManifest(manifest: ManifestEntity): Long
 
-    @WorkerThread
-    @Update
-    fun updateManifest(manifest: ManifestEntity)
+    @WorkerThread @Update fun updateManifest(manifest: ManifestEntity)
 
     @WorkerThread
     @Query("DELETE FROM manifests WHERE start_url IN (:startUrls)")

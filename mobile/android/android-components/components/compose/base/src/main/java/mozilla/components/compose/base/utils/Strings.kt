@@ -13,9 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.core.text.HtmlCompat
 import androidx.core.text.getSpans
 
-/**
- * Method used to transform HTML strings containing bold style to [AnnotatedString] to be used inside composables.
- */
+/** Method used to transform HTML strings containing bold style to [AnnotatedString] to be used inside composables. */
 fun parseHtml(html: String): AnnotatedString {
     val text = HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_COMPACT)
     return buildAnnotatedString {

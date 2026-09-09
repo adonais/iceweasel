@@ -81,15 +81,12 @@ impl<'a> SceneBuilder<'a> {
         spatial_node_index: SpatialNodeIndex,
         clip_node_id: ClipNodeId,
     ) {
-        let mut border = *border;
-        ensure_no_corner_overlap(&mut border.radius, info.rect.size());
-
         self.add_primitive(
             spatial_node_index,
             clip_node_id,
             info,
             NormalBorderPrim {
-                border: border.into(),
+                border: (*border).into(),
                 widths: widths.to_au(),
             },
         );
@@ -857,10 +854,13 @@ fn add_segment(
     v_adjacent_corner_radius: DeviceSize,
     gpu_buffer_builder: &mut GpuBufferBuilderF,
 ) {
+    let superellipse = shape != 1.0;
+
     let base_flags = (segment as i32) |
                      ((style0 as i32) << 8) |
                      ((style1 as i32) << 16) |
-                     ((do_aa as i32) << 28);
+                     ((do_aa as i32) << 28) |
+                     ((superellipse as i32) << 29);
 
     let instance_gpu_data = BorderInstanceGpuData {
         local_rect: task_rect,
@@ -877,7 +877,7 @@ fn add_segment(
         task_origin: DevicePoint::zero(),
         flags: base_flags,
         clip_params: [0.0; 8],
-        gpu_data_address: instance_gpu_data.write(gpu_buffer_builder)
+        gpu_data_address: instance_gpu_data.write(superellipse, gpu_buffer_builder)
     };
 
     match segment {
@@ -1230,11 +1230,19 @@ pub fn build_border_instances(
     let color0 = side0.border_color(flip0);
     let color1 = side1.border_color(flip1);
 
-    let widths = (LayoutSize::from_au(cache_key.size) * scale).ceil();
-    let radius = (LayoutSize::from_au(cache_key.radius) * scale).ceil();
+    // The corner box is a whole number of device pixels (see `snap_radius` in
+    // `prim_store::borders`), so the geometry below is representable in the task
+    // exactly. Rounding it up here instead would draw the arc with a radius and
+    // thickness of up to a whole pixel more than was asked for. A hairline side
+    // still gets a texel of its own so it can't drop out of the cached arc
+    // entirely, but a side with no width keeps none.
+    let side_texels = |v: f32| if v > 0.0 { (v * scale.0).max(1.0) } else { 0.0 };
+    let size = LayoutSize::from_au(cache_key.size);
+    let widths = DeviceSize::new(side_texels(size.width), side_texels(size.height));
+    let radius = LayoutSize::from_au(cache_key.radius) * scale;
     let shape = f32::from_bits(cache_key.shape);
-    let shape_offset = (LayoutSize::from_au(cache_key.shape_offset) * scale).ceil();
-    let inset = (LayoutSize::from_au(cache_key.inset) * scale).ceil();
+    let shape_offset = LayoutSize::from_au(cache_key.shape_offset) * scale;
+    let inset = LayoutSize::from_au(cache_key.inset) * scale;
 
     let h_corner_outer = (LayoutPoint::from_au(cache_key.h_adjacent_corner_outer) * scale).round();
     let h_corner_radius = (LayoutSize::from_au(cache_key.h_adjacent_corner_radius) * scale).ceil();

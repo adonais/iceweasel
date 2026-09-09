@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet href="chrome://global/skin" type="text/css"?>
+<?xml-stylesheet href="chrome://mochikit/content/tests/SimpleTest/test.css" type="text/css"?>
+
+<window title="Menulist Scrollbar Test"
+        onload="setTimeout(runTest, 0)"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+<script>
+<![CDATA[
+SimpleTest.waitForExplicitFinish();
+
+async function runTest() {
+  let menulist = document.getElementById("menulist");
+  let popup = document.getElementById("menulistpopup");
+
+  for (let i = 1; i <= 30; i++) {
+    let menuitem = document.createXULElement("menuitem");
+    menuitem.setAttribute("label", "Item " + i);
+    popup.appendChild(menuitem);
+  }
+
+  let shown = new Promise(resolve => {
+    popup.addEventListener("popupshown", resolve, { once: true });
+  });
+  menulist.open = true;
+  await shown;
+
+  let arrowscrollbox = popup.scrollBox;
+
+  // A vertical arrowscrollbox hides the scrollbar of a scrollbox it knows to
+  // overflow, and it learns that from a ResizeObserver, a frame late.
+  for (let i = 0; i < 60 && !arrowscrollbox.overflowing; i++) {
+    await new Promise(resolve => requestAnimationFrame(resolve));
+  }
+  ok(arrowscrollbox.overflowing, "The arrowscrollbox should overflow");
+
+  let { scrollbox } = arrowscrollbox;
+  ok(scrollbox.scrollTopMax > 0, "The popup should be scrollable");
+  isnot(
+    getComputedStyle(scrollbox).scrollbarWidth,
+    "none",
+    "The popup should have a scrollbar"
+  );
+
+  SimpleTest.finish();
+}
+
+]]>
+</script>
+
+<menulist id="menulist">
+  <menupopup style="max-height: 90px" id="menulistpopup" nonnative=""/>
+</menulist>
+
+</window>

@@ -36,7 +36,7 @@ class StringLintXmlDetectorTest : LintDetectorTest() {
     <string name='mozac_tooling_lint_test_string'></string>
 </resources>
 """,
-                ),
+                )
             )
             .run()
             .expect(
@@ -45,7 +45,7 @@ res/values/string.xml:3: Error: mozac_tooling_lint_test_string is blank. [BlankS
     <string name='mozac_tooling_lint_test_string'></string>
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 1 errors, 0 warnings
-            """,
+            """
             )
     }
 
@@ -60,7 +60,7 @@ res/values/string.xml:3: Error: mozac_tooling_lint_test_string is blank. [BlankS
     <string name='mozac_tooling_lint_test_string'>   </string>
 </resources>
 """,
-                ),
+                )
             )
             .run()
             .expect(
@@ -69,7 +69,7 @@ res/values/string.xml:3: Error: mozac_tooling_lint_test_string is blank. [BlankS
     <string name='mozac_tooling_lint_test_string'>   </string>
                                                   ~~~
 1 errors, 0 warnings
-            """,
+            """
             )
     }
 
@@ -84,7 +84,7 @@ res/values/string.xml:3: Error: mozac_tooling_lint_test_string is blank. [BlankS
     <string name='mozac_tooling_lint_test_string'>Share with...</string>
 </resources>
 """,
-                ),
+                )
             )
             .run()
             .expect(
@@ -93,7 +93,7 @@ res/values/string.xml:3: Error: Incorrect ellipsis character `...`. Use `…` in
     <string name='mozac_tooling_lint_test_string'>Share with...</string>
                                                   ~~~~~~~~~~~~~
 1 errors, 0 warnings
-            """,
+            """
             )
     }
 
@@ -108,7 +108,7 @@ res/values/string.xml:3: Error: Incorrect ellipsis character `...`. Use `…` in
     <string name='mozac_tooling_lint_test_string'>Couldn't load site</string>
 </resources>
 """,
-                ),
+                )
             )
             .run()
             .expect(
@@ -117,7 +117,7 @@ res/values/string.xml:3: Error: Incorrect straight quote character `'`. use `’
     <string name='mozac_tooling_lint_test_string'>Couldn't load site</string>
                                                   ~~~~~~~~~~~~~~~~~~
 1 errors, 0 warnings
-            """,
+            """
             )
     }
 
@@ -132,7 +132,7 @@ res/values/string.xml:3: Error: Incorrect straight quote character `'`. use `’
     <string name='mozac_tooling_lint_test_string'>Select a language to manage "always translate" and "never translate" preferences.</string>
 </resources>
 """,
-                ),
+                )
             )
             .run()
             .expect(
@@ -141,7 +141,7 @@ res/values/string.xml:3: Error: Incorrect straight double quote character `"`. u
     <string name='mozac_tooling_lint_test_string'>Select a language to manage "always translate" and "never translate" preferences.</string>
                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 1 errors, 0 warnings
-            """,
+            """
             )
     }
 
@@ -156,7 +156,7 @@ res/values/string.xml:3: Error: Incorrect straight double quote character `"`. u
     <string name='mozac_tooling_lint_test_string'><![CDATA[Logging in to Firefox]]></string>
 </resources>
 """,
-                ),
+                )
             )
             .run()
             .expect(
@@ -165,7 +165,7 @@ res/values/string.xml:3: Error: Hard-coded brand Firefox in string. Use a variab
     <string name='mozac_tooling_lint_test_string'><![CDATA[Logging in to Firefox]]></string>
                                                            ~~~~~~~~~~~~~~~~~~~~~
 1 errors, 0 warnings
-            """,
+            """
             )
     }
 
@@ -180,7 +180,7 @@ res/values/string.xml:3: Error: Hard-coded brand Firefox in string. Use a variab
     <string name='mozac_tooling_lint_test_string'>Logging in to Firefox></string>
 </resources>
 """,
-                ),
+                )
             )
             .run()
             .expect(
@@ -189,7 +189,7 @@ res/values/string.xml:3: Error: Hard-coded brand Firefox in string. Use a variab
     <string name='mozac_tooling_lint_test_string'>Logging in to Firefox></string>
                                                   ~~~~~~~~~~~~~~~~~~~~~~
 1 errors, 0 warnings
-            """,
+            """
             )
     }
 
@@ -208,7 +208,7 @@ res/values/string.xml:3: Error: Hard-coded brand Firefox in string. Use a variab
     <string name='mozac_tooling_lint_test_string'>Logging in></string>
 </resources>
 """,
-                ),
+                )
             )
             .run()
             .expectClean()
@@ -225,7 +225,7 @@ res/values/string.xml:3: Error: Hard-coded brand Firefox in string. Use a variab
     <string name='mozac_tooling_lint_test_string'>Share with…</string>
 </resources>
 """,
-                ),
+                )
             )
             .run()
             .expectClean()
@@ -258,7 +258,7 @@ res/values/string.xml:3: Error: Hard-coded brand Firefox in string. Use a variab
     <string name="errorpage_httpsonly_message2"><![CDATA[%1${'$'}s tries to use an HTTPS connection whenever possible for more security.]]></string>
 </resources>
 """,
-                ),
+                )
             )
             .run()
             .expectClean()
@@ -292,7 +292,7 @@ res/values/string.xml:3: Error: Hard-coded brand Firefox in string. Use a variab
     <string name="errorpage_httpsonly_message2"><![CDATA[%1${'$'}s tries to use an HTTPS connection whenever possible for more security.]]></string>
 </resources>
 """,
-                ),
+                )
             )
             .run()
             .expect(
@@ -330,7 +330,7 @@ the following placeholders: %1＄s [PlaceholderComment]
     <string name="errorpage_httpsonly_message2"><![CDATA[%1＄s tries to use an HTTPS connection whenever possible for more security.]]></string>
                                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 8 errors, 0 warnings
-            """,
+            """
             )
     }
 }

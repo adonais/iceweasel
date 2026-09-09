@@ -7,16 +7,16 @@ package mozilla.components.support.utils.cache
 import android.content.Context
 import androidx.annotation.VisibleForTesting
 import com.jakewharton.disklrucache.DiskLruCache
-import mozilla.components.support.base.log.logger.Logger
 import java.io.File
 import java.io.IOException
 import java.io.OutputStream
+import mozilla.components.support.base.log.logger.Logger
 
 /**
  * Shared disk cache utility for Android Components features backed by [DiskLruCache].
  *
- * The store creates the cache lazily in the provided [directoryProvider] and offers
- * helpers to read, write, remove, and clear cached entries.
+ * The store creates the cache lazily in the provided [directoryProvider] and offers helpers to read, write, remove, and
+ * clear cached entries.
  *
  * @param logger logger used for cache warnings and recoverable I/O failures.
  * @param version cache version passed to [DiskLruCache.open].
@@ -31,9 +31,7 @@ class DiskLruCacheStore(
     private val directoryProvider: (Context) -> File,
     private val migration: CacheDirectoryMigration? = null,
 ) {
-    @Volatile
-    @VisibleForTesting
-    internal var cache: DiskLruCache? = null
+    @Volatile @VisibleForTesting internal var cache: DiskLruCache? = null
 
     private val cacheLock = Any()
 
@@ -160,17 +158,20 @@ class DiskLruCacheStore(
 
     private fun getCache(context: Context): DiskLruCache? =
         synchronized(cacheLock) {
-            cache?.let { return it }
+            cache?.let {
+                return it
+            }
 
             migration?.migrateIfNeeded(context)
 
             return try {
                 DiskLruCache.open(
-                    directoryProvider(context),
-                    version,
-                    1,
-                    maxSizeBytes,
-                ).also { cache = it }
+                        directoryProvider(context),
+                        version,
+                        1,
+                        maxSizeBytes,
+                    )
+                    .also { cache = it }
             } catch (e: IOException) {
                 logger.warn("Cache could not be created.", e)
                 null

@@ -135,7 +135,7 @@ function setupOnAvailableFunction(
   const expectedMessages = [
     {
       pageError: {
-        errorMessage: /Expected color but found ‘bloup’/,
+        errorMessage: /Error in parsing value for ‘color: bloup;’/,
         sourceName: /test_css_messages/,
         category: MESSAGE_CATEGORY.CSS_PARSER,
         timeStamp: FRACTIONAL_NUMBER_REGEX,
@@ -147,7 +147,7 @@ function setupOnAvailableFunction(
     },
     {
       pageError: {
-        errorMessage: /Error in parsing value for ‘width’/,
+        errorMessage: /Error in parsing value for ‘width: red’/,
         sourceName: /test_css_messages/,
         category: MESSAGE_CATEGORY.CSS_PARSER,
         timeStamp: FRACTIONAL_NUMBER_REGEX,
@@ -158,7 +158,7 @@ function setupOnAvailableFunction(
     },
     {
       pageError: {
-        errorMessage: /Error in parsing value for ‘height’/,
+        errorMessage: /Error in parsing value for ‘height: blue’/,
         sourceName: /test_css_messages/,
         category: MESSAGE_CATEGORY.CSS_PARSER,
         timeStamp: FRACTIONAL_NUMBER_REGEX,

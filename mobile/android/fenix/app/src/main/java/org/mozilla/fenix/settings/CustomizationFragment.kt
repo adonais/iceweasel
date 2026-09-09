@@ -43,26 +43,25 @@ import org.mozilla.fenix.translations.TranslationsEnabledSettings
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.view.addToRadioGroup
 
-/**
- * Lets the user customize the UI.
- */
-
+/** Lets the user customize the UI. */
 @Suppress("TooManyFunctions")
 class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
     private lateinit var radioLightTheme: RadioButtonPreference
     private lateinit var radioDarkTheme: RadioButtonPreference
+    private lateinit var radioDarkestTheme: RadioButtonPreference
     private lateinit var radioAutoBatteryTheme: RadioButtonPreference
     private lateinit var radioFollowDeviceTheme: RadioButtonPreference
     private val args by navArgs<CustomizationFragmentArgs>()
 
     // Cached reactive feature state used when (re)building preferences.
     // Defaults match the DataStore defaults (summarization off, translations on)
-    private var dynamicFeaturesStatus = DynamicFeaturesStatus(
-        isSummarizationFeatureEnabled = false,
-        isSummarizationGestureEnabled = false,
-        isTranslationsFeatureEnabled = true,
-        isTranslationsFeatureSupported = false,
-    )
+    private var dynamicFeaturesStatus =
+        DynamicFeaturesStatus(
+            isSummarizationFeatureEnabled = false,
+            isSummarizationGestureEnabled = false,
+            isTranslationsFeatureEnabled = true,
+            isTranslationsFeatureSupported = false,
+        )
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.customization_preferences, rootKey)
@@ -79,18 +78,18 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
                 val translationsDataStore = TranslationsEnabledSettings.dataStore(requireContext())
                 val browserStore = requireComponents.core.store
                 combine(
-                    summarizationDataStore.getFeatureEnabledUserStatus(),
-                    summarizationDataStore.getGestureEnabledUserStatus(),
-                    translationsDataStore.isEnabled,
-                    browserStore.stateFlow,
-                ) { isSummarizationEnabled, isSummarizationGestureEnabled, areTranslationsEnabled, browserState ->
-                    DynamicFeaturesStatus(
-                        isSummarizationFeatureEnabled = isSummarizationEnabled == true,
-                        isSummarizationGestureEnabled = isSummarizationGestureEnabled,
-                        isTranslationsFeatureEnabled = areTranslationsEnabled,
-                        isTranslationsFeatureSupported = browserState.translationEngine.isEngineSupported ?: false,
-                    )
-                }
+                        summarizationDataStore.getFeatureEnabledUserStatus(),
+                        summarizationDataStore.getGestureEnabledUserStatus(),
+                        translationsDataStore.isEnabled,
+                        browserStore.stateFlow,
+                    ) { isSummarizationEnabled, isSummarizationGestureEnabled, areTranslationsEnabled, browserState ->
+                        DynamicFeaturesStatus(
+                            isSummarizationFeatureEnabled = isSummarizationEnabled == true,
+                            isSummarizationGestureEnabled = isSummarizationGestureEnabled,
+                            isTranslationsFeatureEnabled = areTranslationsEnabled,
+                            isTranslationsFeatureSupported = browserState.translationEngine.isEngineSupported ?: false,
+                        )
+                    }
                     .distinctUntilChanged()
                     .collect { status ->
                         setupPreferences(status)
@@ -112,6 +111,7 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
 
         bindFollowDeviceTheme()
         bindDarkTheme()
+        bindDarkestTheme()
         bindLightTheme()
         bindAutoBatteryTheme()
         setupRadioGroups()
@@ -130,9 +130,7 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
         )
     }
 
-    private fun updateToolbarCategoryBasedOnTabStrip(
-        tabStripEnabled: Boolean,
-    ) {
+    private fun updateToolbarCategoryBasedOnTabStrip(tabStripEnabled: Boolean) {
         val topPreference = requirePreference<RadioButtonPreference>(R.string.pref_key_toolbar_top)
         val bottomPreference = requirePreference<RadioButtonPreference>(R.string.pref_key_toolbar_bottom)
         val tabStripMessagePref = findPreference<Preference>(getString(R.string.pref_key_tab_strip_message))
@@ -150,26 +148,25 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
     }
 
     private fun updateToolbarShortcut() {
-        val category = requirePreference<PreferenceCategory>(
-            R.string.pref_key_customization_category_toolbar_shortcut,
-        )
+        val category = requirePreference<PreferenceCategory>(R.string.pref_key_customization_category_toolbar_shortcut)
         val settings = requireComponents.settings
         val isExpandedToolbarEnabled = settings.shouldUseExpandedToolbar && isTallWindow() && !isWideWindow()
         val isAnyShortcutSelectedForSimpleToolbar = settings.toolbarSimpleShortcutKey != ShortcutType.NONE.value
 
-        val shortcutPreference = if (isExpandedToolbarEnabled) {
-            buildExpandedToolbarCustomButtonSetting()
-        } else if (settings.isTabStripEnabled) {
-            if (settings.toolbarTabStripShortcutKey != ShortcutType.NONE.value) {
-                buildTabStripToolbarWithCustomButtonSelectedSetting()
+        val shortcutPreference =
+            if (isExpandedToolbarEnabled) {
+                buildExpandedToolbarCustomButtonSetting()
+            } else if (settings.isTabStripEnabled) {
+                if (settings.toolbarTabStripShortcutKey != ShortcutType.NONE.value) {
+                    buildTabStripToolbarWithCustomButtonSelectedSetting()
+                } else {
+                    buildTabStripToolbarWithNoCustomButtonSelectedSetting()
+                }
+            } else if (isAnyShortcutSelectedForSimpleToolbar) {
+                buildSimpleToolbarWithCustomButtonSelectedSetting()
             } else {
-                buildTabStripToolbarWithNoCustomButtonSelectedSetting()
+                buildSimpleToolbarWithNoCustomButtonSelectedSetting()
             }
-        } else if (isAnyShortcutSelectedForSimpleToolbar) {
-            buildSimpleToolbarWithCustomButtonSelectedSetting()
-        } else {
-            buildSimpleToolbarWithNoCustomButtonSelectedSetting()
-        }
         category.apply {
             removeAll()
             addPreference(shortcutPreference)
@@ -237,6 +234,7 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
         addToRadioGroup(
             radioLightTheme,
             radioDarkTheme,
+            radioDarkestTheme,
             if (SDK_INT >= Build.VERSION_CODES.P) {
                 radioFollowDeviceTheme
             } else {
@@ -262,13 +260,15 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
     private fun bindDarkTheme() {
         radioDarkTheme = requirePreference(R.string.pref_key_dark_theme)
         radioDarkTheme.onClickListener {
-            AppTheme.darkThemeSelected.record(
-                AppTheme.DarkThemeSelectedExtra(
-                    "SETTINGS",
-                ),
-            )
+            AppTheme.darkThemeSelected.record(AppTheme.DarkThemeSelectedExtra("SETTINGS"))
             setNewTheme(AppCompatDelegate.MODE_NIGHT_YES)
         }
+    }
+
+    private fun bindDarkestTheme() {
+        val settings = requireComponents.settings
+        radioDarkestTheme = requirePreference(R.string.pref_key_oled_theme)
+        radioDarkestTheme.isVisible = settings.enableOledTheme
     }
 
     private fun bindFollowDeviceTheme() {
@@ -293,22 +293,14 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
     private fun setupToolbarCategory() {
         val topPreference = requirePreference<RadioButtonPreference>(R.string.pref_key_toolbar_top)
         topPreference.onClickListener {
-            ToolbarSettings.changedPosition.record(
-                ToolbarSettings.ChangedPositionExtra(
-                    Position.TOP.name,
-                ),
-            )
+            ToolbarSettings.changedPosition.record(ToolbarSettings.ChangedPositionExtra(Position.TOP.name))
 
             updateToolbarLayoutIcons()
         }
 
         val bottomPreference = requirePreference<RadioButtonPreference>(R.string.pref_key_toolbar_bottom)
         bottomPreference.onClickListener {
-            ToolbarSettings.changedPosition.record(
-                ToolbarSettings.ChangedPositionExtra(
-                    Position.BOTTOM.name,
-                ),
-            )
+            ToolbarSettings.changedPosition.record(ToolbarSettings.ChangedPositionExtra(Position.BOTTOM.name))
 
             updateToolbarLayoutIcons()
         }
@@ -382,8 +374,7 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_shake_gesture_enabled).apply {
-            isVisible = context.components.settings.shakeToSummarizeFeatureFlagEnabled &&
-                    isSummarizationEnabled
+            isVisible = context.components.settings.shakeToSummarizeFeatureFlagEnabled && isSummarizationEnabled
             isChecked = isSummarizationGestureEnabled
             onPreferenceChangeListener = { _, newValue ->
                 val updatedValue = (newValue as? Boolean) ?: false
@@ -415,7 +406,10 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
 
     companion object {
         // Used to send telemetry data about toolbar position changes
-        enum class Position { TOP, BOTTOM }
+        enum class Position {
+            TOP,
+            BOTTOM,
+        }
     }
 
     private data class DynamicFeaturesStatus(
@@ -426,23 +420,18 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
     )
 }
 
-/**
- * Provides the toolbar shortcuts options for use in settings search.
- */
+/** Provides the toolbar shortcuts options for use in settings search. */
 object ToolbarShortcutSettingsSearchProvider : SettingsSearchProvider {
     private val preferenceFileInformation = CustomizationPreferences
 
-    override fun getSearchItems(context: Context) = listOf(
-        SettingsSearchItem(
-            title = context.getString(R.string.preferences_toolbar_shortcut),
-            summary = "",
-            preferenceKey = context.getString(
-                R.string.pref_key_customization_category_toolbar_shortcut,
-            ),
-            categoryHeader = context.getString(
-                preferenceFileInformation.categoryHeaderResourceId,
-            ),
-            preferenceFileInformation = preferenceFileInformation,
-        ),
-    )
+    override fun getSearchItems(context: Context) =
+        listOf(
+            SettingsSearchItem(
+                title = context.getString(R.string.preferences_toolbar_shortcut),
+                summary = "",
+                preferenceKey = context.getString(R.string.pref_key_customization_category_toolbar_shortcut),
+                categoryHeader = context.getString(preferenceFileInformation.categoryHeaderResourceId),
+                preferenceFileInformation = preferenceFileInformation,
+            )
+        )
 }

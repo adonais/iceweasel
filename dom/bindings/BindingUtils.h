@@ -2991,7 +2991,7 @@ struct DeferredFinalizer<T, true> {
 };
 
 template <class T>
-static void AddForDeferredFinalization(T* aObject) {
+void AddForDeferredFinalization(T* aObject) {
   DeferredFinalizer<T>::AddForDeferredFinalization(aObject);
 }
 

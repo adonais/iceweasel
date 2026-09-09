@@ -38,10 +38,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.feature.summarize.R
 import mozilla.components.lib.shake.ShakeSensitivity
-import kotlin.math.roundToInt
 
 private const val HALF_ALPHA = 0.5f
 private const val SLIDER_STEPS_BETWEEN = 0
@@ -51,8 +51,8 @@ private val SLIDER_TICK_SIZE = 4.dp
 private const val SLIDER_TICK_COUNT = 3
 
 /**
- * Discrete slider for selecting [ShakeSensitivity]. The slider has three stops
- * mapped to [ShakeSensitivity.Low], [ShakeSensitivity.Medium] and [ShakeSensitivity.High].
+ * Discrete slider for selecting [ShakeSensitivity]. The slider has three stops mapped to [ShakeSensitivity.Low],
+ * [ShakeSensitivity.Medium] and [ShakeSensitivity.High].
  *
  * @param isEnabled Whether the slider can be interacted with.
  * @param value The current [ShakeSensitivity].
@@ -67,24 +67,15 @@ fun ShakeSensitivityPreference(
 ) {
     val alpha = if (isEnabled) 1f else HALF_ALPHA
 
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .alpha(alpha)
-            .padding(vertical = AcornTheme.layout.space.static150),
-    ) {
+    Column(modifier = modifier.fillMaxWidth().alpha(alpha).padding(vertical = AcornTheme.layout.space.static150)) {
         Text(
             text = stringResource(id = R.string.mozac_summarize_settings_shake_sensitivity),
-            style = AcornTheme.typography.body1.copy(
-                color = MaterialTheme.colorScheme.onSurface,
-            ),
+            style = AcornTheme.typography.body1.copy(color = MaterialTheme.colorScheme.onSurface),
         )
 
         Text(
             text = stringResource(id = R.string.mozac_summarize_settings_shake_sensitivity_description),
-            style = AcornTheme.typography.body2.copy(
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            ),
+            style = AcornTheme.typography.body2.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
         )
 
         Spacer(modifier = Modifier.height(AcornTheme.layout.space.static100))
@@ -98,9 +89,7 @@ fun ShakeSensitivityPreference(
         Text(
             text = stringResource(id = value.labelResId()),
             modifier = Modifier.padding(top = AcornTheme.layout.space.static100),
-            style = AcornTheme.typography.body2.copy(
-                color = MaterialTheme.colorScheme.onSurface,
-            ),
+            style = AcornTheme.typography.body2.copy(color = MaterialTheme.colorScheme.onSurface),
         )
     }
 }
@@ -112,20 +101,21 @@ private fun ShakeSensitivitySlider(
     value: ShakeSensitivity,
     onValueChange: (ShakeSensitivity) -> Unit,
 ) {
-    val sliderContentDescription =
-        stringResource(id = R.string.mozac_summarize_settings_shake_sensitivity)
+    val sliderContentDescription = stringResource(id = R.string.mozac_summarize_settings_shake_sensitivity)
     val sliderStateDescription = stringResource(id = value.labelResId())
-    var rawPosition by remember(value) {
-        mutableFloatStateOf(value.toSliderPosition())
-    }
+    var rawPosition by
+        remember(value) {
+            mutableFloatStateOf(value.toSliderPosition())
+        }
     var isDragging by remember {
         mutableStateOf(false)
     }
-    val displayedPosition by animateFloatAsState(
-        targetValue = if (isDragging) rawPosition else rawPosition.roundToInt().toFloat(),
-        animationSpec = if (isDragging) snap() else tween(),
-        label = "shakeSensitivityThumb",
-    )
+    val displayedPosition by
+        animateFloatAsState(
+            targetValue = if (isDragging) rawPosition else rawPosition.roundToInt().toFloat(),
+            animationSpec = if (isDragging) snap() else tween(),
+            label = "shakeSensitivityThumb",
+        )
 
     Slider(
         value = displayedPosition,
@@ -141,20 +131,20 @@ private fun ShakeSensitivitySlider(
         },
         valueRange = SLIDER_MIN..SLIDER_MAX,
         steps = SLIDER_STEPS_BETWEEN,
-        modifier = Modifier
-            .fillMaxWidth()
-            .semantics {
+        modifier =
+            Modifier.fillMaxWidth().semantics {
                 contentDescription = sliderContentDescription
                 stateDescription = sliderStateDescription
             },
         enabled = isEnabled,
         thumb = { Thumb(isEnabled) },
         track = { _ ->
-            val fraction by remember(displayedPosition) {
-                derivedStateOf {
-                    (displayedPosition - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN)
+            val fraction by
+                remember(displayedPosition) {
+                    derivedStateOf {
+                        (displayedPosition - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN)
+                    }
                 }
-            }
             Track(fraction, isEnabled)
         },
     )
@@ -164,19 +154,19 @@ private fun ShakeSensitivitySlider(
 private fun Thumb(isEnabled: Boolean) {
     if (isEnabled) {
         Box(
-            modifier = Modifier
-                .padding(vertical = AcornTheme.layout.space.static50)
-                .size(12.dp)
-                .background(MaterialTheme.colorScheme.primary, CircleShape),
+            modifier =
+                Modifier.padding(vertical = AcornTheme.layout.space.static50)
+                    .size(12.dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
         )
     } else {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .padding(vertical = AcornTheme.layout.space.static50)
-                .size(8.dp)
-                .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                .padding(AcornTheme.layout.space.static50),
+            modifier =
+                Modifier.padding(vertical = AcornTheme.layout.space.static50)
+                    .size(8.dp)
+                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    .padding(AcornTheme.layout.space.static50),
         ) {}
     }
 }
@@ -188,13 +178,13 @@ private fun Track(fraction: Float, isEnabled: Boolean) {
         contentAlignment = Alignment.CenterStart,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(2.dp)
-                .background(
-                    MaterialTheme.colorScheme.surfaceContainerHighest,
-                    MaterialTheme.shapes.medium,
-                ),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(2.dp)
+                    .background(
+                        MaterialTheme.colorScheme.surfaceContainerHighest,
+                        MaterialTheme.shapes.medium,
+                    ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             FilledTrack(fraction = fraction, isEnabled = isEnabled)
@@ -206,9 +196,8 @@ private fun Track(fraction: Float, isEnabled: Boolean) {
         ) {
             repeat(SLIDER_TICK_COUNT) {
                 Box(
-                    modifier = Modifier
-                        .size(SLIDER_TICK_SIZE)
-                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                    modifier =
+                        Modifier.size(SLIDER_TICK_SIZE).background(MaterialTheme.colorScheme.primary, CircleShape)
                 )
             }
         }
@@ -217,35 +206,37 @@ private fun Track(fraction: Float, isEnabled: Boolean) {
 
 @Composable
 private fun FilledTrack(fraction: Float, isEnabled: Boolean) {
-    val color = if (isEnabled) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.surfaceContainerHighest
-    }
+    val color =
+        if (isEnabled) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerHighest
+        }
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth(fraction)
-            .height(2.dp)
-            .background(color = color, shape = MaterialTheme.shapes.medium),
+        modifier =
+            Modifier.fillMaxWidth(fraction).height(2.dp).background(color = color, shape = MaterialTheme.shapes.medium)
     ) {}
 }
 
-private fun ShakeSensitivity.toSliderPosition(): Float = when (this) {
-    ShakeSensitivity.Low -> 0f
-    ShakeSensitivity.Medium -> 1f
-    ShakeSensitivity.High -> 2f
-    else -> 1f
-}
+private fun ShakeSensitivity.toSliderPosition(): Float =
+    when (this) {
+        ShakeSensitivity.Low -> 0f
+        ShakeSensitivity.Medium -> 1f
+        ShakeSensitivity.High -> 2f
+        else -> 1f
+    }
 
-private fun Int.toShakeSensitivity(): ShakeSensitivity = when (this) {
-    0 -> ShakeSensitivity.Low
-    2 -> ShakeSensitivity.High
-    else -> ShakeSensitivity.Medium
-}
+private fun Int.toShakeSensitivity(): ShakeSensitivity =
+    when (this) {
+        0 -> ShakeSensitivity.Low
+        2 -> ShakeSensitivity.High
+        else -> ShakeSensitivity.Medium
+    }
 
-private fun ShakeSensitivity.labelResId(): Int = when (this) {
-    ShakeSensitivity.Low -> R.string.mozac_summarize_settings_shake_sensitivity_low
-    ShakeSensitivity.High -> R.string.mozac_summarize_settings_shake_sensitivity_high
-    else -> R.string.mozac_summarize_settings_shake_sensitivity_medium
-}
+private fun ShakeSensitivity.labelResId(): Int =
+    when (this) {
+        ShakeSensitivity.Low -> R.string.mozac_summarize_settings_shake_sensitivity_low
+        ShakeSensitivity.High -> R.string.mozac_summarize_settings_shake_sensitivity_high
+        else -> R.string.mozac_summarize_settings_shake_sensitivity_medium
+    }

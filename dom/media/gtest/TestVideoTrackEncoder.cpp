@@ -223,6 +223,84 @@ TEST(VP8VideoTrackEncoder, FrameEncode)
   EXPECT_FALSE(encoder.mEncodedVideoQueue.AtEndOfStream());
 }
 
+struct FrameSpec {
+  gfx::IntSize mIntrinsicSize;
+  bool mForceBlack;
+  TimeDuration mDuration;
+};
+
+// Encodes the given frames through a fresh encoder and returns the resulting
+// packets. All frames share one bright (non-black) source image, so a muted
+// frame differs from an unmuted one only through the encoder's black-frame
+// substitution.
+static nsTArray<RefPtr<EncodedFrame>> EncodeFrames(
+    const TimeStamp& aStart, const gfx::IntSize& aCodedSize,
+    const nsTArray<FrameSpec>& aFrames) {
+  YUVBufferGenerator generator;
+  generator.Init(aCodedSize, /* aLuma = */ 180, /* aChroma = */ 128);
+  TestVP8TrackEncoder encoder;
+  VideoSegment segment;
+  TimeDuration offset;
+  for (const FrameSpec& frame : aFrames) {
+    segment.AppendFrame(generator.GenerateI420Image(), frame.mIntrinsicSize,
+                        PRINCIPAL_HANDLE_NONE, frame.mForceBlack,
+                        aStart + offset);
+    offset += frame.mDuration;
+  }
+  encoder.SetStartOffset(aStart);
+  encoder.AppendVideoSegment(std::move(segment));
+  encoder.AdvanceCurrentTime(aStart + offset);
+  encoder.NotifyEndOfStream();
+  EXPECT_TRUE(encoder.IsEncodingComplete());
+  EXPECT_TRUE(encoder.mEncodedVideoQueue.IsFinished());
+  nsTArray<RefPtr<EncodedFrame>> frames;
+  while (RefPtr<EncodedFrame> frame = encoder.mEncodedVideoQueue.PopFront()) {
+    frames.AppendElement(std::move(frame));
+  }
+  return frames;
+}
+
+// A muted VideoChunk keeps its source image but records as black. When its
+// intrinsic size exceeds the black-image dimension cap, the encoder must still
+// emit the same black frame as an ordinary muted chunk. Verify this by
+// comparing encoded packets: a muted frame with an oversized intrinsic size
+// must encode identically to an ordinary muted frame, and both must differ from
+// an unmuted control.
+TEST(VP8VideoTrackEncoder, MutedFrameWithLargeIntrinsicSizeEncodesBlack)
+{
+  const gfx::IntSize codedSize(64, 64);
+  const gfx::IntSize largeIntrinsicSize(65535, 65535);
+  const TimeDuration oneSecond = TimeDuration::FromSeconds(1);
+  const TimeStamp start = TimeStamp::Now();
+
+  const nsTArray<RefPtr<EncodedFrame>> normalMutedFrames =
+      EncodeFrames(start, codedSize,
+                   nsTArray<FrameSpec>{{codedSize, false, oneSecond},
+                                       {codedSize, true, oneSecond}});
+  const nsTArray<RefPtr<EncodedFrame>> largeMutedFrames =
+      EncodeFrames(start, codedSize,
+                   nsTArray<FrameSpec>{{codedSize, false, oneSecond},
+                                       {largeIntrinsicSize, true, oneSecond}});
+  const nsTArray<RefPtr<EncodedFrame>> unmutedFrames =
+      EncodeFrames(start, codedSize,
+                   nsTArray<FrameSpec>{{codedSize, false, oneSecond},
+                                       {codedSize, false, oneSecond}});
+
+  ASSERT_GE(normalMutedFrames.Length(), 2u);
+  ASSERT_EQ(normalMutedFrames.Length(), largeMutedFrames.Length());
+  ASSERT_EQ(normalMutedFrames.Length(), unmutedFrames.Length());
+
+  const RefPtr<EncodedFrame>& normalMuted = normalMutedFrames.LastElement();
+  const RefPtr<EncodedFrame>& largeMuted = largeMutedFrames.LastElement();
+  const RefPtr<EncodedFrame>& unmuted = unmutedFrames.LastElement();
+
+  EXPECT_EQ(normalMuted->mFrameType, largeMuted->mFrameType);
+  EXPECT_EQ(normalMuted->mDuration, largeMuted->mDuration);
+  EXPECT_TRUE(*normalMuted->mFrameData == *largeMuted->mFrameData);
+  EXPECT_FALSE(*normalMuted->mFrameData == *unmuted->mFrameData);
+  EXPECT_FALSE(*largeMuted->mFrameData == *unmuted->mFrameData);
+}
+
 // Test that encoding a single frame gives useful output.
 TEST(VP8VideoTrackEncoder, SingleFrameEncode)
 {

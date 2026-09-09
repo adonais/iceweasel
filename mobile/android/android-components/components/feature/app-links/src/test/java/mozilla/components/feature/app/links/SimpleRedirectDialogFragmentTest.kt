@@ -55,13 +55,14 @@ class SimpleRedirectDialogFragmentTest {
             }
         }
 
-        val fragment = spy(
-            SimpleRedirectDialogFragment.newInstance(
-                dialogTitleString = "Open in another app",
-                themeResId = themeResId,
-                showCheckbox = true,
-            ),
-        )
+        val fragment =
+            spy(
+                SimpleRedirectDialogFragment.newInstance(
+                    dialogTitleString = "Open in another app",
+                    themeResId = themeResId,
+                    showCheckbox = true,
+                )
+            )
         doNothing().`when`(fragment).dismiss()
 
         doReturn(testContext).`when`(fragment).requireContext()
@@ -96,12 +97,13 @@ class SimpleRedirectDialogFragmentTest {
         val onConfirm = { onConfirmCalled = true }
         val onCancel = { onCancelCalled = true }
 
-        val fragment = spy(
-            SimpleRedirectDialogFragment.newInstance(
-                dialogTitleString = "Open in another app",
-                themeResId = themeResId,
-            ),
-        )
+        val fragment =
+            spy(
+                SimpleRedirectDialogFragment.newInstance(
+                    dialogTitleString = "Open in another app",
+                    themeResId = themeResId,
+                )
+            )
         doNothing().`when`(fragment).dismiss()
 
         doReturn(testContext).`when`(fragment).requireContext()
@@ -128,12 +130,13 @@ class SimpleRedirectDialogFragmentTest {
         val onConfirm = { onConfirmCalled = true }
         val onCancel = { onCancelCalled = true }
 
-        val fragment = spy(
-            SimpleRedirectDialogFragment.newInstance(
-                dialogTitleString = "Open in another app",
-                themeResId = themeResId,
-            ),
-        )
+        val fragment =
+            spy(
+                SimpleRedirectDialogFragment.newInstance(
+                    dialogTitleString = "Open in another app",
+                    themeResId = themeResId,
+                )
+            )
         doNothing().`when`(fragment).dismiss()
 
         doReturn(testContext).`when`(fragment).requireContext()

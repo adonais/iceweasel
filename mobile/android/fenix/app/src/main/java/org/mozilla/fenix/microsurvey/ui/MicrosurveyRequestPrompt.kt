@@ -35,12 +35,12 @@ import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.support.utils.KeyboardState
 import mozilla.components.support.utils.keyboardAsState
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.microsurvey.ui.ext.MicrosurveyUIData
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 private const val TABLET_WIDTH_FRACTION = 0.5f
 private const val NON_TABLET_WIDTH_FRACTION = 1.0f
@@ -74,15 +74,15 @@ fun MicrosurveyRequestPrompt(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(
-                    modifier = Modifier
-                        .padding(all = 16.dp)
-                        .fillMaxWidth(
-                            if (FirefoxTheme.windowSize.isNotSmall()) {
-                                TABLET_WIDTH_FRACTION
-                            } else {
-                                NON_TABLET_WIDTH_FRACTION
-                            },
-                        ),
+                    modifier =
+                        Modifier.padding(all = 16.dp)
+                            .fillMaxWidth(
+                                if (FirefoxTheme.windowSize.isNotSmall()) {
+                                    TABLET_WIDTH_FRACTION
+                                } else {
+                                    NON_TABLET_WIDTH_FRACTION
+                                }
+                            )
                 ) {
                     Header(microsurvey.promptTitle) { onCloseButtonClicked() }
 
@@ -135,19 +135,18 @@ private fun Header(
 
 @FlexibleWindowPreview
 @Composable
-private fun MicrosurveyRequestPromptPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun MicrosurveyRequestPromptPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         MicrosurveyRequestPrompt(
-            microsurvey = MicrosurveyUIData(
-                id = "",
-                promptTitle = "Help make printing in Firefox better. It only takes a sec.",
-                icon = iconsR.drawable.mozac_ic_lightbulb_24,
-                question = "",
-                maxNumberLines = 2,
-                answers = emptyList(),
-            ),
+            microsurvey =
+                MicrosurveyUIData(
+                    id = "",
+                    promptTitle = "Help make printing in Firefox better. It only takes a sec.",
+                    icon = iconsR.drawable.mozac_ic_lightbulb_24,
+                    question = "",
+                    maxNumberLines = 2,
+                    answers = emptyList(),
+                ),
             onStartSurveyClicked = {},
             onCloseButtonClicked = {},
         )

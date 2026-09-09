@@ -17,14 +17,14 @@ import org.mozilla.fenix.settings.datastore.RecentSettingsSearches
 
 class FenixRecentSettingsSearchesRepositoryTest {
 
-    @get:Rule
-    val tmpFolder = TemporaryFolder()
+    @get:Rule val tmpFolder = TemporaryFolder()
 
-    private val allPreferenceFiles = listOf(
-        PreferenceFileInformation.GeneralPreferences,
-        PreferenceFileInformation.SearchSettingsPreferences,
-        PreferenceFileInformation.SecretSettingsPreferences,
-    )
+    private val allPreferenceFiles =
+        listOf(
+            PreferenceFileInformation.GeneralPreferences,
+            PreferenceFileInformation.SearchSettingsPreferences,
+            PreferenceFileInformation.SecretSettingsPreferences,
+        )
 
     private fun createDataStore(): DataStore<RecentSettingsSearches> =
         DataStoreFactory.create(
@@ -36,13 +36,14 @@ class FenixRecentSettingsSearchesRepositoryTest {
         key: String,
         title: String = key,
         prefInfo: PreferenceFileInformation = PreferenceFileInformation.GeneralPreferences,
-    ) = SettingsSearchItem(
-        preferenceKey = key,
-        title = title,
-        summary = "",
-        categoryHeader = "",
-        preferenceFileInformation = prefInfo,
-    )
+    ) =
+        SettingsSearchItem(
+            preferenceKey = key,
+            title = title,
+            summary = "",
+            categoryHeader = "",
+            preferenceFileInformation = prefInfo,
+        )
 
     @Test
     fun `WHEN addRecentSearchItem is called THEN item appears in recentSearches flow`() = runTest {
@@ -104,9 +105,7 @@ class FenixRecentSettingsSearchesRepositoryTest {
         val limitedPrefFiles = listOf(PreferenceFileInformation.SecretSettingsPreferences)
         val repository = FenixRecentSettingsSearchesRepository(createDataStore(), limitedPrefFiles)
 
-        repository.addRecentSearchItem(
-            createItem("key1", prefInfo = PreferenceFileInformation.GeneralPreferences),
-        )
+        repository.addRecentSearchItem(createItem("key1", prefInfo = PreferenceFileInformation.GeneralPreferences))
         val results = repository.recentSearches.first()
 
         assertTrue(results.isEmpty())

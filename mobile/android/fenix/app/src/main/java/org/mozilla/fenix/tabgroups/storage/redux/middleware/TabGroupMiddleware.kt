@@ -66,8 +66,8 @@ class TabGroupMiddleware(
             is TabListAction.MoveTabsAction,
             is TabListAction.RestoreAction,
             is TabListAction.SelectTabAction,
-            is TabListAction.RemoveAllPrivateTabsAction, // Tab groups are not supported in Private browsing
-                -> {} // no-op
+            is TabListAction.RemoveAllPrivateTabsAction // Tab groups are not supported in Private browsing
+            -> {} // no-op
         }
     }
 }

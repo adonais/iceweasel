@@ -3130,6 +3130,26 @@ PK11_Encapsulate(SECKEYPublicKey *pubKey, CK_MECHANISM_TYPE target,
     *outKey = NULL;
     *outCiphertext = NULL;
 
+    if (kemType == CKM_INVALID_MECHANISM) {
+        PORT_SetError(SEC_ERROR_UNSUPPORTED_KEYALG);
+        return SECFailure;
+    }
+
+    if (slot == NULL) {
+        slot = PK11_GetBestSlot(kemType, NULL);
+        if (slot == NULL) {
+            PORT_SetError(SEC_ERROR_NO_MODULE);
+            return SECFailure;
+        }
+        if (PK11_ImportPublicKey(slot, pubKey, PR_FALSE) == CK_INVALID_HANDLE) {
+            PK11_FreeSlot(slot);
+            PORT_SetError(SEC_ERROR_BAD_KEY);
+            return SECFailure;
+        }
+        PK11_FreeSlot(slot); /* pubKey holds a slot reference on success. */
+        slot = pubKey->pkcs11Slot;
+    }
+
     /* create a struxture for the target key */
     sharedSecret = pk11_CreateSymKey(slot, target, PR_TRUE, PR_TRUE, NULL);
     if (sharedSecret == NULL) {
@@ -3283,6 +3303,16 @@ PK11_Decapsulate(SECKEYPrivateKey *privKey, const SECItem *ciphertext,
     CK_RV crv;
 
     *outKey = NULL;
+
+    if (kemType == CKM_INVALID_MECHANISM) {
+        PORT_SetError(SEC_ERROR_UNSUPPORTED_KEYALG);
+        return SECFailure;
+    }
+    if (slot == NULL) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+
     sharedSecret = pk11_CreateSymKey(slot, target, PR_TRUE, PR_TRUE, NULL);
     if (sharedSecret == NULL) {
         PORT_SetError(SEC_ERROR_NO_MEMORY);

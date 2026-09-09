@@ -14,6 +14,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.verify
+import kotlin.test.assertNotNull
 import mozilla.components.support.ktx.android.view.putCompoundDrawablesRelative
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
@@ -24,13 +25,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.R
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class ExtensionsTest {
 
-    @MockK(relaxUnitFun = true)
-    private lateinit var radioButton: RadioButton
+    @MockK(relaxUnitFun = true) private lateinit var radioButton: RadioButton
 
     @MockK private lateinit var fragment: PreferenceFragmentCompat
     private lateinit var preference: Preference
@@ -55,9 +54,10 @@ class ExtensionsTest {
 
         verify {
             radioButton.putCompoundDrawablesRelative(
-                start = withArg {
-                    assertEquals(Rect(0, 0, it.intrinsicWidth, it.intrinsicHeight), it.bounds)
-                },
+                start =
+                    withArg {
+                        assertEquals(Rect(0, 0, it.intrinsicWidth, it.intrinsicHeight), it.bounds)
+                    }
             )
         }
     }

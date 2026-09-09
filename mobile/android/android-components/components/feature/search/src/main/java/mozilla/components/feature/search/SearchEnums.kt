@@ -3,9 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package mozilla.components.feature.search
 
-/**
- * Enum class representing the remote-services SearchUpdateChannel.
- */
+/** Enum class representing the remote-services SearchUpdateChannel. */
 enum class SearchUpdateChannel {
     NIGHTLY,
     AURORA,
@@ -16,9 +14,8 @@ enum class SearchUpdateChannel {
 }
 
 /**
- * Convert between the android-components defined [SearchUpdateChannel] type into
- * the remote-services one, so consumers of android-components
- * do not have to know about application services.
+ * Convert between the android-components defined [SearchUpdateChannel] type into the remote-services one, so consumers
+ * of android-components do not have to know about application services.
  */
 fun SearchUpdateChannel.into(): mozilla.appservices.search.SearchUpdateChannel {
     return when (this) {
@@ -31,9 +28,7 @@ fun SearchUpdateChannel.into(): mozilla.appservices.search.SearchUpdateChannel {
     }
 }
 
-/**
- * Enum class representing the remote-services SearchDeviceType.
- */
+/** Enum class representing the remote-services SearchDeviceType. */
 enum class SearchDeviceType {
     SMARTPHONE,
     TABLET,
@@ -41,9 +36,8 @@ enum class SearchDeviceType {
 }
 
 /**
- * Convert between the android-components defined [SearchDeviceType] type into
- * the remote-services one, so consumers of android-components
- * do not have to know about application services.
+ * Convert between the android-components defined [SearchDeviceType] type into the remote-services one, so consumers of
+ * android-components do not have to know about application services.
  */
 fun SearchDeviceType.into(): mozilla.appservices.search.SearchDeviceType {
     return when (this) {
@@ -53,9 +47,7 @@ fun SearchDeviceType.into(): mozilla.appservices.search.SearchDeviceType {
     }
 }
 
-/**
- * Enum class representing the remote-services SearchApplicationName.
- */
+/** Enum class representing the remote-services SearchApplicationName. */
 enum class SearchApplicationName {
     FIREFOX_ANDROID,
     FOCUS_ANDROID,
@@ -63,9 +55,8 @@ enum class SearchApplicationName {
 }
 
 /**
- * Convert between the android-components defined [SearchApplicationName] type into
- * the remote-services one, so consumers of android-components
- * do not have to know about application services.
+ * Convert between the android-components defined [SearchApplicationName] type into the remote-services one, so
+ * consumers of android-components do not have to know about application services.
  */
 fun SearchApplicationName.into(): mozilla.appservices.search.SearchApplicationName {
     return when (this) {

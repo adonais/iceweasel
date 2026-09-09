@@ -189,6 +189,12 @@ struct FrontendFeatures : FeatureSetBase
         &members,
     };
 
+    FeatureInfo enableCreateContextBackwardsCompatible = {
+        "enableCreateContextBackwardsCompatible",
+        FeatureCategory::FrontendFeatures,
+        &members,
+    };
+
     FeatureInfo clipCullDistanceBrokenWithPassthroughShaders = {
         "clipCullDistanceBrokenWithPassthroughShaders",
         FeatureCategory::FrontendFeatures,
@@ -203,6 +209,36 @@ struct FrontendFeatures : FeatureSetBase
 
     FeatureInfo forceDebugContexts = {
         "forceDebugContexts",
+        FeatureCategory::FrontendFeatures,
+        &members,
+    };
+
+    FeatureInfo limitMaxBufferBytesTo1MB = {
+        "limitMaxBufferBytesTo1MB",
+        FeatureCategory::FrontendFeatures,
+        &members,
+    };
+
+    FeatureInfo limitMaxTextureBytesTo1MB = {
+        "limitMaxTextureBytesTo1MB",
+        FeatureCategory::FrontendFeatures,
+        &members,
+    };
+
+    FeatureInfo allowExtensionDisableAfterNonPpTokens = {
+        "allowExtensionDisableAfterNonPpTokens",
+        FeatureCategory::FrontendFeatures,
+        &members,
+    };
+
+    FeatureInfo setNeedInitOnInvalidation = {
+        "setNeedInitOnInvalidation",
+        FeatureCategory::FrontendFeatures,
+        &members,
+    };
+
+    FeatureInfo compressProgramBinaryBlob = {
+        "compressProgramBinaryBlob",
         FeatureCategory::FrontendFeatures,
         &members,
     };

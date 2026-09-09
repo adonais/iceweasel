@@ -334,6 +334,75 @@ def filter_out_shippable(task):
     return not task.attributes.get("shippable", False)
 
 
+def _restricts_tests(parameters):
+    """Whether try asked for a subset of each suite's tests."""
+    env = parameters["try_task_config"].get("env", {})
+    return "MOZHARNESS_TEST_PATHS" in env or "MOZHARNESS_TEST_TAG" in env
+
+
+def _chunk_number(label, base):
+    if not label.startswith(base + "-"):
+        return None
+    suffix = label[len(base) + 1 :]
+    return suffix if suffix.isnumeric() else None
+
+
+def _drop_redundant_chunks(full_task_graph, labels):
+    """Keep only the first chunk of the tasks whose manifests were not
+    restricted to what try asked for: the harness filters the whole suite down
+    for those, so every chunk of one runs the same tests."""
+    kept = []
+    for label in labels:
+        task = full_task_graph.tasks.get(label)
+        if task and task.attributes.get("test-manifests-restricted", False):
+            kept.append(label)
+        elif label.endswith("-1") or not label.rsplit("-", 1)[-1].isnumeric():
+            kept.append(label)
+    return kept
+
+
+def _renumbered_chunks(full_task_graph, labels):
+    """Map explicitly requested chunk labels that no longer exist onto the
+    chunks their task ends up with.
+
+    Chunk counts are computed from what try asked for, so a caller that picked
+    labels from an unrestricted graph, like `mach try coverage` or a
+    `mach try again` of an older push, can name a chunk that doesn't exist.
+    """
+    recovered = []
+    for label in labels:
+        if label in full_task_graph.tasks:
+            recovered.append(label)
+            continue
+
+        base = label.rsplit("-", 1)[0]
+        if _chunk_number(label, base) is None:
+            recovered.append(label)
+            continue
+
+        chunks = [
+            t for t in full_task_graph.graph.nodes if _chunk_number(t, base) is not None
+        ] or [t for t in [base] if t in full_task_graph.graph.nodes]
+        # Only test tasks get renumbered, so anything else that happens to have a
+        # numeric suffix, like a toolchain version, is left to be reported as
+        # requested but missing.
+        chunks = [t for t in chunks if full_task_graph.tasks[t].kind in TEST_KINDS]
+        if not chunks:
+            recovered.append(label)
+            continue
+
+        # The chunks of a task that wasn't restricted to the request all run the
+        # same tests, so substituting them all would schedule identical jobs.
+        chunks = _drop_redundant_chunks(full_task_graph, chunks)
+
+        logger.info(
+            f"{label} no longer exists, replacing it with the chunks the task "
+            f"was split into: {', '.join(sorted(chunks))}"
+        )
+        recovered.extend(chunks)
+    return recovered
+
+
 def _try_task_config(full_task_graph, parameters, graph_config):
     requested_tasks = parameters["try_task_config"]["tasks"]
     pattern_tasks = [x for x in requested_tasks if x.endswith("-*")]
@@ -357,19 +426,9 @@ def _try_task_config(full_task_graph, parameters, graph_config):
         else:
             missing.add(pattern)
 
-        if "MOZHARNESS_TEST_PATHS" in parameters["try_task_config"].get("env", {}):
-            matched_tasks = [
-                x
-                for x in matched_tasks
-                if x.endswith("-1") or not x.rsplit("-", 1)[-1].isnumeric()
-            ]
-
-        if "MOZHARNESS_TEST_TAG" in parameters["try_task_config"].get("env", {}):
-            matched_tasks = [
-                x
-                for x in matched_tasks
-                if x.endswith("-1") or not x.rsplit("-", 1)[-1].isnumeric()
-            ]
+    if _restricts_tests(parameters):
+        matched_tasks = _drop_redundant_chunks(full_task_graph, matched_tasks)
+        tasks = _renumbered_chunks(full_task_graph, tasks)
 
     selected_tasks = set(tasks) | set(matched_tasks)
     missing.update(selected_tasks - set(full_task_graph.tasks))
@@ -791,13 +850,6 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
                         for x in ["speedometer3", "jetstream3", "motionmark"]
                     ):
                         return False
-                # Bug 1928416
-                # For ARM coverage, this will only run on M2 machines at the moment.
-                if "jetstream2" in try_name:
-                    # Bug 1963732 - Disable js2 on 1500 mac for custom-car due to near perma
-                    if "m-car" in try_name and "1500" in platform:
-                        return False
-                    return True
                 return True
         elif accept_raptor_android_build(platform):
             if "browsertime" in try_name and "cstm-car-m" in try_name:
@@ -805,8 +857,6 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
                     return False
                 if "hw-s24" in platform and "speedometer3" not in try_name:
                     return False
-                if "jetstream2" in try_name:
-                    return True
                 if "jetstream3" in try_name:
                     return True
                 # Bug 1898514 - Avoid tp6m or non-essential tp6 jobs in cron on non-a55 platform
@@ -912,9 +962,11 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                         for x in ["speedometer3", "jetstream3", "motionmark"]
                     ):
                         return False
+                # Labels for this suite carry no "benchmark" token, so the
+                # check below cannot match them.
+                if "safari" in try_name and "video-playback-latency" in try_name:
+                    return True
                 if "safari" and "benchmark" in try_name:
-                    if "jetstream2" in try_name and "safari" in try_name:
-                        return False
                     # JetStream 3 fails with Safari 18.3 but not Safari-TP.
                     # See bug 1996277.
                     if (
@@ -969,8 +1021,6 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                 # Don't run android CaR sp tests as we already have a cron for this.
                 if "m-car" in try_name:
                     return False
-                if "jetstream2" in try_name:
-                    return True
                 if "jetstream3" in try_name:
                     return True
                 if "fenix" in try_name:
@@ -1745,8 +1795,7 @@ def retrigger_perftests_autoland_commits(full_task_graph, parameters, graph_conf
     - "perftest-android-hw-a55-aarch64-shippable-startup-fenix-cold-view-nav-start",
     - "perftest-android-hw-a55-aarch64-shippable-startup-fenix-homeview-startup",
     - "perftest-android-hw-a55-aarch64-shippable-startup-fenix-newssite-applink-startup",
-    - "perftest-android-hw-a55-aarch64-shippable-startup-fenix-shopify-applink-startup",
-    - "perftest-android-hw-a55-aarch64-shippable-startup-fenix-tab-restore-shopify"
+    - "perftest-android-hw-a55-aarch64-shippable-startup-fenix-tab-restore-newssite"
     - "test-windows11-64-24h2-shippable/opt-browsertime-benchmark-firefox-speedometer3",
     """
     retrigger_count = 4

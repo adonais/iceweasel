@@ -50,7 +50,7 @@ async function setAuthenticated(content, isReady, sandbox) {
   } else {
     lazy.IPPDummyAuthProvider.simulateSignIn(false);
   }
-  sandbox.stub(lazy.IPPNimbusHelper, "isEligible").get(() => true);
+  sandbox.stub(lazy.IPPNimbusHelper, "hidesFeature").returns(false);
   lazy.IPProtectionService.updateState();
   content.requestUpdate();
   await content.updateComplete;

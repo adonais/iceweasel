@@ -12,62 +12,58 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.graphics.BlendModeColorFilterCompat.createBlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat.SRC_IN
 import androidx.core.graphics.drawable.toBitmap
-import mozilla.components.support.ktx.android.content.getColorFromAttr
-import org.mozilla.fenix.R
 import com.google.android.material.R as materialR
+import mozilla.components.support.ktx.android.content.getColorFromAttr
 import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.fenix.R
 
 /**
- * Provides themed/tinted icons for search suggestions.
- * This interface abstracts the retrieval and potential processing (like tinting)
- * of icons used within the awesomebar suggestions.
+ * Provides themed/tinted icons for search suggestions. This interface abstracts the retrieval and potential processing
+ * (like tinting) of icons used within the awesomebar suggestions.
  */
 interface SuggestionIconProvider {
 
     /**
-     * Provides a standard search icon, typically tinted with the primary text color.
-     * The result is cached for efficiency.
+     * Provides a standard search icon, typically tinted with the primary text color. The result is cached for
+     * efficiency.
      *
      * @return A [Bitmap] of the search icon, or null if it cannot be loaded/created.
      */
     fun getSearchIconBitmap(): Bitmap?
 
     /**
-     * Provides a search icon that might include additional visual elements (e.g., "search with").
-     * The result is cached for efficiency.
+     * Provides a search icon that might include additional visual elements (e.g., "search with"). The result is cached
+     * for efficiency.
      *
      * @return A [Bitmap] of the "search with" icon, or null if it cannot be loaded/created.
      */
     fun getSearchWithIconBitmap(): Bitmap?
 
     /**
-     * Provides a trending search icon, tinted with the primary text color.
-     * The result is cached for efficiency.
+     * Provides a trending search icon, tinted with the primary text color. The result is cached for efficiency.
      *
      * @return A [Bitmap] of the trending search icon, or null if it cannot be loaded/created.
      */
     fun getTrendingSearchIconBitmap(): Bitmap?
 
     /**
-     * Provides a standard history icon.
-     * The result is cached for efficiency.
+     * Provides a standard history icon. The result is cached for efficiency.
      *
      * @return A [Bitmap] of the history icon, or null if it cannot be loaded/created.
      */
     fun getHistoryIconBitmap(): Bitmap?
 
     /**
-     * Provides an icon for bookmark suggestions.
-     * The result is cached for efficiency.
+     * Provides an icon for bookmark suggestions. The result is cached for efficiency.
      *
      * @return A [Drawable] of the bookmark icon, or null if it cannot be loaded/created.
      */
     fun getBookmarkIconDrawable(): Drawable?
 
     /**
-     * Provides an icon for local tabs (open tabs) suggestions.
-     * This method returns a Drawable as it might be used directly where a Drawable is expected,
-     * and it's assumed to be used infrequently enough not to warrant bitmap caching by default.
+     * Provides an icon for local tabs (open tabs) suggestions. This method returns a Drawable as it might be used
+     * directly where a Drawable is expected, and it's assumed to be used infrequently enough not to warrant bitmap
+     * caching by default.
      *
      * @return A [Drawable] of the local tab icon, or null if it cannot be loaded/created.
      */
@@ -95,9 +91,8 @@ interface SuggestionIconProvider {
     fun getTabletIconDrawable(): Drawable?
 
     /**
-     * Provides a generic icon for a given drawable resource ID, potentially tinted.
-     * This can be used for other icons like synced devices, etc.
-     * This method does not cache its result as inputs can vary.
+     * Provides a generic icon for a given drawable resource ID, potentially tinted. This can be used for other icons
+     * like synced devices, etc. This method does not cache its result as inputs can vary.
      *
      * @param drawableRes The resource ID of the drawable.
      * @param tintWithPrimaryColor If true, the icon will be tinted with the primary text color.
@@ -110,9 +105,8 @@ interface SuggestionIconProvider {
 }
 
 /**
- * Default implementation of [SuggestionIconProvider].
- * It loads drawables using [AppCompatResources], applies tinting where appropriate,
- * and converts them to [Bitmap]s. Frequently used icons are cached lazily.
+ * Default implementation of [SuggestionIconProvider]. It loads drawables using [AppCompatResources], applies tinting
+ * where appropriate, and converts them to [Bitmap]s. Frequently used icons are cached lazily.
  *
  * @param context The [Context] used for resource loading and attribute retrieval.
  */
@@ -123,12 +117,15 @@ class DefaultSuggestionIconProvider(private val context: Context) : SuggestionIc
     }
 
     private val searchIconBitmapInstance: Bitmap? by lazy {
-        AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_search_24)?.apply {
-            colorFilter = createBlendModeColorFilterCompat(
-                primaryTextColor,
-                SRC_IN,
-            )
-        }?.toBitmap()
+        AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_search_24)
+            ?.apply {
+                colorFilter =
+                    createBlendModeColorFilterCompat(
+                        primaryTextColor,
+                        SRC_IN,
+                    )
+            }
+            ?.toBitmap()
     }
 
     private val searchWithIconBitmapInstance: Bitmap? by lazy {
@@ -136,21 +133,27 @@ class DefaultSuggestionIconProvider(private val context: Context) : SuggestionIc
     }
 
     private val trendingSearchIconBitmapInstance: Bitmap? by lazy {
-        AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_arrow_trending_24)?.apply {
-            colorFilter = createBlendModeColorFilterCompat(
-                primaryTextColor,
-                SRC_IN,
-            )
-        }?.toBitmap()
+        AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_arrow_trending_24)
+            ?.apply {
+                colorFilter =
+                    createBlendModeColorFilterCompat(
+                        primaryTextColor,
+                        SRC_IN,
+                    )
+            }
+            ?.toBitmap()
     }
 
     private val historyIconBitmapInstance: Bitmap? by lazy {
-        AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_history_24)?.apply {
-            colorFilter = createBlendModeColorFilterCompat(
-                primaryTextColor,
-                SRC_IN,
-            )
-        }?.toBitmap()
+        AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_history_24)
+            ?.apply {
+                colorFilter =
+                    createBlendModeColorFilterCompat(
+                        primaryTextColor,
+                        SRC_IN,
+                    )
+            }
+            ?.toBitmap()
     }
 
     override fun getSearchIconBitmap(): Bitmap? {
@@ -193,13 +196,16 @@ class DefaultSuggestionIconProvider(private val context: Context) : SuggestionIc
         @DrawableRes drawableRes: Int,
         tintWithPrimaryColor: Boolean,
     ): Bitmap? {
-        return AppCompatResources.getDrawable(context, drawableRes)?.apply {
-            if (tintWithPrimaryColor) {
-                colorFilter = createBlendModeColorFilterCompat(
-                    primaryTextColor,
-                    SRC_IN,
-                )
+        return AppCompatResources.getDrawable(context, drawableRes)
+            ?.apply {
+                if (tintWithPrimaryColor) {
+                    colorFilter =
+                        createBlendModeColorFilterCompat(
+                            primaryTextColor,
+                            SRC_IN,
+                        )
+                }
             }
-        }?.toBitmap()
+            ?.toBitmap()
     }
 }

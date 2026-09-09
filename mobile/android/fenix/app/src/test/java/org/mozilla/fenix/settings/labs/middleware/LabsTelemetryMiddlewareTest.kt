@@ -22,28 +22,28 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class LabsTelemetryMiddlewareTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
-    private fun buildStore(
-        initialState: LabsState = LabsState.INITIAL,
-    ): LabsStore = LabsStore(
-        initialState = initialState,
-        middleware = listOf(LabsTelemetryMiddleware()),
-    )
+    private fun buildStore(initialState: LabsState = LabsState.INITIAL): LabsStore =
+        LabsStore(
+            initialState = initialState,
+            middleware = listOf(LabsTelemetryMiddleware()),
+        )
 
-    private fun homepageItem(enrolled: Boolean = false) = LabsItem(
-        slug = "homepage-as-new-tab",
-        title = "Homepage as a New Tab",
-        description = "With this feature enabled, Homepage will behave as a tab.",
-        enrolled = enrolled,
-        requiresRestart = true,
-    )
+    private fun homepageItem(enrolled: Boolean = false) =
+        LabsItem(
+            slug = "homepage-as-new-tab",
+            title = "Homepage as a New Tab",
+            description = "With this feature enabled, Homepage will behave as a tab.",
+            enrolled = enrolled,
+            requiresRestart = true,
+        )
 
-    private fun stateWithDialog(item: LabsItem, dialog: DialogState) = LabsState(
-        labsItems = listOf(item),
-        dialogState = dialog,
-    )
+    private fun stateWithDialog(item: LabsItem, dialog: DialogState) =
+        LabsState(
+            labsItems = listOf(item),
+            dialogState = dialog,
+        )
 
     @Test
     fun `WHEN UpdateLabsItems is dispatched with an empty list THEN empty_state_shown is recorded`() {
@@ -72,8 +72,8 @@ class LabsTelemetryMiddlewareTest {
                 listOf(
                     homepageItem(),
                     homepageItem().copy(slug = "other-lab"),
-                ),
-            ),
+                )
+            )
         )
 
         val extra = FirefoxLabs.initialLabsFetch.testGetValue()!!.single().extra
@@ -95,7 +95,7 @@ class LabsTelemetryMiddlewareTest {
         val store = buildStore()
 
         store.dispatch(
-            LabsAction.ToggleCompleted(slug = "homepage-as-new-tab", enabled = true, status = "feature_conflict"),
+            LabsAction.ToggleCompleted(slug = "homepage-as-new-tab", enabled = true, status = "feature_conflict")
         )
 
         val extra = FirefoxLabs.toggleButtonPressed.testGetValue()!!.single().extra
@@ -108,9 +108,7 @@ class LabsTelemetryMiddlewareTest {
     fun `WHEN RestoreDefaultsCompleted is dispatched THEN restore_defaults_dialog is recorded with succeeded`() {
         val store = buildStore()
 
-        store.dispatch(
-            LabsAction.RestoreDefaultsCompleted(succeeded = false, itemsChanged = listOf("lab-a", "lab-b")),
-        )
+        store.dispatch(LabsAction.RestoreDefaultsCompleted(succeeded = false, itemsChanged = listOf("lab-a", "lab-b")))
 
         val extra = FirefoxLabs.restoreDefaultsDialog.testGetValue()!!.single().extra
         assertEquals("lab-a,lab-b", extra?.get("slug_ids"))
@@ -122,9 +120,7 @@ class LabsTelemetryMiddlewareTest {
     @Test
     fun `WHEN ToggleLabsItem is dispatched from the dialog flow THEN toggled_dialog is recorded with did_user_confirm true`() {
         val item = homepageItem()
-        val store = buildStore(
-            initialState = stateWithDialog(item, DialogState.ToggleLabsItem(item)),
-        )
+        val store = buildStore(initialState = stateWithDialog(item, DialogState.ToggleLabsItem(item)))
 
         store.dispatch(LabsAction.ToggleLabsItem(item))
 
@@ -155,9 +151,7 @@ class LabsTelemetryMiddlewareTest {
     @Test
     fun `WHEN CloseDialog is dispatched while the toggle dialog is open THEN toggled_dialog is recorded with did_user_confirm false`() {
         val item = homepageItem()
-        val store = buildStore(
-            initialState = stateWithDialog(item, DialogState.ToggleLabsItem(item)),
-        )
+        val store = buildStore(initialState = stateWithDialog(item, DialogState.ToggleLabsItem(item)))
 
         store.dispatch(LabsAction.CloseDialog)
 
@@ -168,12 +162,14 @@ class LabsTelemetryMiddlewareTest {
 
     @Test
     fun `WHEN CloseDialog is dispatched while the restore dialog is open THEN restore_defaults_dialog is recorded with did_user_confirm false`() {
-        val store = buildStore(
-            initialState = LabsState(
-                labsItems = listOf(homepageItem(enrolled = true)),
-                dialogState = DialogState.RestoreDefaults,
-            ),
-        )
+        val store =
+            buildStore(
+                initialState =
+                    LabsState(
+                        labsItems = listOf(homepageItem(enrolled = true)),
+                        dialogState = DialogState.RestoreDefaults,
+                    )
+            )
 
         store.dispatch(LabsAction.CloseDialog)
 

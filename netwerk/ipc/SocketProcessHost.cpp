@@ -146,7 +146,7 @@ void SocketProcessHost::InitAfterConnect(bool aSucceeded) {
   DebugOnly<bool> rv = TakeInitialEndpoint().Bind(mSocketProcessParent.get());
   MOZ_ASSERT(rv);
 
-  SocketPorcessInitAttributes attributes;
+  SocketProcessInitAttributes attributes;
   nsCOMPtr<nsIIOService> ioService(do_GetIOService());
   MOZ_ASSERT(ioService, "No IO service?");
   DebugOnly<nsresult> result = ioService->GetOffline(&attributes.mOffline());

@@ -1,4 +1,4 @@
-From 47cdac4b96daf88ca0e2aac1cc5476efc42db36c Mon Sep 17 00:00:00 2001
+From 9c118e50eb2db17876633d758411c69852c808ab Mon Sep 17 00:00:00 2001
 From: Dzmitry Malyshau <dmalyshau@mozilla.com>
 Date: Thu, 5 Dec 2019 13:02:14 -0500
 Subject: [PATCH] Restrict the slow texture upload workaround to 128bit
@@ -15,16 +15,15 @@ Co-authored-by: Erich Gubler <erichdongubler@gmail.com>
  src/libANGLE/renderer/d3d/TextureD3D.cpp      | 21 +++++++++++++++++--
  src/libANGLE/renderer/d3d/TextureD3D.h        |  1 +
  .../renderer/d3d/d3d11/renderer11_utils.cpp   |  6 ++++--
- .../renderer/d3d/d3d9/renderer9_utils.cpp     |  1 +
  util/autogen/angle_features_autogen.cpp       |  1 +
  util/autogen/angle_features_autogen.h         |  1 +
- 8 files changed, 40 insertions(+), 4 deletions(-)
+ 7 files changed, 39 insertions(+), 4 deletions(-)
 
 diff --git a/include/platform/autogen/FeaturesD3D_autogen.h b/include/platform/autogen/FeaturesD3D_autogen.h
-index c690b444ed..6c29dc7f81 100644
+index 8bd269c..5d38b6e 100644
 --- a/include/platform/autogen/FeaturesD3D_autogen.h
 +++ b/include/platform/autogen/FeaturesD3D_autogen.h
-@@ -38,6 +38,12 @@ struct FeaturesD3D : FeatureSetBase
+@@ -32,6 +32,12 @@ struct FeaturesD3D : FeatureSetBase
          &members,
      };
  
@@ -34,14 +33,14 @@ index c690b444ed..6c29dc7f81 100644
 +        &members,
 +    };
 +
-     FeatureInfo zeroMaxLodWorkaround = {
-         "zeroMaxLodWorkaround",
+     FeatureInfo depthStencilBlitExtraCopy = {
+         "depthStencilBlitExtraCopy",
          FeatureCategory::D3DWorkarounds,
 diff --git a/include/platform/d3d_features.json b/include/platform/d3d_features.json
-index 14746940e6..175ed88d90 100644
+index c718ced..0997289 100644
 --- a/include/platform/d3d_features.json
 +++ b/include/platform/d3d_features.json
-@@ -28,6 +28,13 @@
+@@ -21,6 +21,13 @@
                  "Set data faster than image upload"
              ]
          },
@@ -53,13 +52,13 @@ index 14746940e6..175ed88d90 100644
 +            ]
 +        },
          {
-             "name": "zero_max_lod_workaround",
+             "name": "depth_stencil_blit_extra_copy",
              "category": "Workarounds",
 diff --git a/src/libANGLE/renderer/d3d/TextureD3D.cpp b/src/libANGLE/renderer/d3d/TextureD3D.cpp
-index 4c32ef8444..bbfc65f85c 100644
+index caffb44..a0e6708 100644
 --- a/src/libANGLE/renderer/d3d/TextureD3D.cpp
 +++ b/src/libANGLE/renderer/d3d/TextureD3D.cpp
-@@ -284,13 +284,30 @@ angle::Result TextureD3D::setStorageExternalMemory(const gl::Context *context,
+@@ -281,13 +281,30 @@ angle::Result TextureD3D::setStorageExternalMemory(const gl::Context *context,
      return angle::Result::Continue;
  }
  
@@ -91,7 +90,7 @@ index 4c32ef8444..bbfc65f85c 100644
      if (image->isDirty())
      {
          return false;
-@@ -573,7 +590,7 @@ angle::Result TextureD3D::generateMipmapUsingImages(const gl::Context *context,
+@@ -569,7 +586,7 @@ angle::Result TextureD3D::generateMipmapUsingImages(const gl::Context *context,
          }
          ANGLE_TRY(ensureRenderTarget(context));
      }
@@ -101,10 +100,10 @@ index 4c32ef8444..bbfc65f85c 100644
          // When making mipmaps with the setData workaround enabled, the texture storage has
          // the image data already. For non-render-target storage, we have to pull it out into
 diff --git a/src/libANGLE/renderer/d3d/TextureD3D.h b/src/libANGLE/renderer/d3d/TextureD3D.h
-index 8e89c3e022..42764add11 100644
+index ee2dbe6..fe25217 100644
 --- a/src/libANGLE/renderer/d3d/TextureD3D.h
 +++ b/src/libANGLE/renderer/d3d/TextureD3D.h
-@@ -224,6 +224,7 @@ class TextureD3D : public TextureImpl, public angle::ObserverInterface
+@@ -227,6 +227,7 @@ class TextureD3D : public TextureImpl, public angle::ObserverInterface
  
      virtual angle::Result updateStorage(const gl::Context *context) = 0;
  
@@ -113,10 +112,10 @@ index 8e89c3e022..42764add11 100644
  
      angle::Result generateMipmapUsingImages(const gl::Context *context, const GLuint maxLevel);
 diff --git a/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp b/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
-index 4de7ba5c3d..b6c796dfaf 100644
+index d250ea3..d0be62f 100644
 --- a/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
 +++ b/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
-@@ -2480,8 +2480,10 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
+@@ -2188,8 +2188,10 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
                              isIntel && capsVersion >= angle::VersionTriple(16, 0, 0) &&
                                  capsVersion < angle::VersionTriple(16, 4815, 0));
  
@@ -129,42 +128,30 @@ index 4de7ba5c3d..b6c796dfaf 100644
                              !(isIvyBridge || isBroadwell || isHaswell));
  
      ANGLE_FEATURE_CONDITION(features, disableB5G6R5Support,
-diff --git a/src/libANGLE/renderer/d3d/d3d9/renderer9_utils.cpp b/src/libANGLE/renderer/d3d/d3d9/renderer9_utils.cpp
-index 52e9cdad65..aa53849f2a 100644
---- a/src/libANGLE/renderer/d3d/d3d9/renderer9_utils.cpp
-+++ b/src/libANGLE/renderer/d3d/d3d9/renderer9_utils.cpp
-@@ -831,6 +831,7 @@ void InitializeFeatures(angle::FeaturesD3D *features, DWORD vendorID)
- {
-     ANGLE_FEATURE_CONDITION(features, mrtPerfWorkaround, true);
-     ANGLE_FEATURE_CONDITION(features, setDataFasterThanImageUpload, false);
-+    ANGLE_FEATURE_CONDITION(features, setDataFasterThanImageUploadOn128bitFormats, false);
- 
-     // TODO(jmadill): Disable workaround when we have a fixed compiler DLL.
-     ANGLE_FEATURE_CONDITION(features, expandIntegerPowExpressions, true);
 diff --git a/util/autogen/angle_features_autogen.cpp b/util/autogen/angle_features_autogen.cpp
-index 689d0af5ef..317e27e398 100644
+index ed34de9..2e0c9e2 100644
 --- a/util/autogen/angle_features_autogen.cpp
 +++ b/util/autogen/angle_features_autogen.cpp
-@@ -306,6 +306,7 @@ constexpr PackedEnumMap<Feature, const char *> kFeatureNames = {{
+@@ -322,6 +322,7 @@ constexpr PackedEnumMap<Feature, const char *> kFeatureNames = {{
      {Feature::ScalarizeVecAndMatConstructorArgs, "scalarizeVecAndMatConstructorArgs"},
      {Feature::SelectViewInGeometryShader, "selectViewInGeometryShader"},
      {Feature::SetDataFasterThanImageUpload, "setDataFasterThanImageUpload"},
 +    {Feature::SetDataFasterThanImageUploadOn128bitFormats, "setDataFasterThanImageUploadOn128bitFormats"},
+     {Feature::SetNeedInitOnInvalidation, "setNeedInitOnInvalidation"},
      {Feature::SetPrimitiveRestartFixedIndexForDrawArrays, "setPrimitiveRestartFixedIndexForDrawArrays"},
      {Feature::SetZeroLevelBeforeGenerateMipmap, "setZeroLevelBeforeGenerateMipmap"},
-     {Feature::ShiftInstancedArrayDataWithOffset, "shiftInstancedArrayDataWithOffset"},
 diff --git a/util/autogen/angle_features_autogen.h b/util/autogen/angle_features_autogen.h
-index fa7afb6d8b..2627f9652d 100644
+index 5d63579..68724b7 100644
 --- a/util/autogen/angle_features_autogen.h
 +++ b/util/autogen/angle_features_autogen.h
-@@ -306,6 +306,7 @@ enum class Feature
+@@ -322,6 +322,7 @@ enum class Feature
      ScalarizeVecAndMatConstructorArgs,
      SelectViewInGeometryShader,
      SetDataFasterThanImageUpload,
 +    SetDataFasterThanImageUploadOn128bitFormats,
+     SetNeedInitOnInvalidation,
      SetPrimitiveRestartFixedIndexForDrawArrays,
      SetZeroLevelBeforeGenerateMipmap,
-     ShiftInstancedArrayDataWithOffset,
 -- 
-2.54.0
+2.43.0
 

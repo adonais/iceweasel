@@ -17,21 +17,24 @@ import org.robolectric.RobolectricTestRunner
 class GeckoPreferencesUtilsTest {
     @Test
     fun `intoSetGeckoPreference maps SetGeckoPreference correctly`() {
-        val aCStringPref = SetBrowserPreference.setStringPref(
-            pref = "my.string.pref",
-            value = "hello-world",
-            branch = Branch.USER,
-        )
-       val aCIntPref = SetBrowserPreference.setIntPref(
-           pref = "my.int.pref",
-           value = 1,
-           branch = Branch.DEFAULT,
-        )
-        val aCBoolPref = SetBrowserPreference.setBoolPref(
-            pref = "my.bool.pref",
-            value = false,
-            branch = Branch.USER,
-        )
+        val aCStringPref =
+            SetBrowserPreference.setStringPref(
+                pref = "my.string.pref",
+                value = "hello-world",
+                branch = Branch.USER,
+            )
+        val aCIntPref =
+            SetBrowserPreference.setIntPref(
+                pref = "my.int.pref",
+                value = 1,
+                branch = Branch.DEFAULT,
+            )
+        val aCBoolPref =
+            SetBrowserPreference.setBoolPref(
+                pref = "my.bool.pref",
+                value = false,
+                branch = Branch.USER,
+            )
 
         val geckoStringPref = aCStringPref.intoSetGeckoPreference()
         assertEquals(geckoStringPref.pref, "my.string.pref")

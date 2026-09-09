@@ -826,6 +826,79 @@ std::ostream &operator<<(std::ostream &os, FogMode value)
 }
 
 template <>
+FramebufferParameter FromGLenum<FramebufferParameter>(GLenum from)
+{
+    switch (from)
+    {
+        case GL_FRAMEBUFFER_DEFAULT_WIDTH:
+            return FramebufferParameter::DefaultWidth;
+        case GL_FRAMEBUFFER_DEFAULT_HEIGHT:
+            return FramebufferParameter::DefaultHeight;
+        case GL_FRAMEBUFFER_DEFAULT_LAYERS:
+            return FramebufferParameter::DefaultLayers;
+        case GL_FRAMEBUFFER_DEFAULT_SAMPLES:
+            return FramebufferParameter::DefaultSamples;
+        case GL_FRAMEBUFFER_DEFAULT_FIXED_SAMPLE_LOCATIONS:
+            return FramebufferParameter::DefaultFixedSampleLocations;
+        case GL_FRAMEBUFFER_FLIP_Y_MESA:
+            return FramebufferParameter::FlipY;
+        default:
+            return FramebufferParameter::InvalidEnum;
+    }
+}
+
+GLenum ToGLenum(FramebufferParameter from)
+{
+    switch (from)
+    {
+        case FramebufferParameter::DefaultWidth:
+            return GL_FRAMEBUFFER_DEFAULT_WIDTH;
+        case FramebufferParameter::DefaultHeight:
+            return GL_FRAMEBUFFER_DEFAULT_HEIGHT;
+        case FramebufferParameter::DefaultLayers:
+            return GL_FRAMEBUFFER_DEFAULT_LAYERS;
+        case FramebufferParameter::DefaultSamples:
+            return GL_FRAMEBUFFER_DEFAULT_SAMPLES;
+        case FramebufferParameter::DefaultFixedSampleLocations:
+            return GL_FRAMEBUFFER_DEFAULT_FIXED_SAMPLE_LOCATIONS;
+        case FramebufferParameter::FlipY:
+            return GL_FRAMEBUFFER_FLIP_Y_MESA;
+        default:
+            UNREACHABLE();
+            return 0;
+    }
+}
+
+std::ostream &operator<<(std::ostream &os, FramebufferParameter value)
+{
+    switch (value)
+    {
+        case FramebufferParameter::DefaultWidth:
+            os << "GL_FRAMEBUFFER_DEFAULT_WIDTH";
+            break;
+        case FramebufferParameter::DefaultHeight:
+            os << "GL_FRAMEBUFFER_DEFAULT_HEIGHT";
+            break;
+        case FramebufferParameter::DefaultLayers:
+            os << "GL_FRAMEBUFFER_DEFAULT_LAYERS";
+            break;
+        case FramebufferParameter::DefaultSamples:
+            os << "GL_FRAMEBUFFER_DEFAULT_SAMPLES";
+            break;
+        case FramebufferParameter::DefaultFixedSampleLocations:
+            os << "GL_FRAMEBUFFER_DEFAULT_FIXED_SAMPLE_LOCATIONS";
+            break;
+        case FramebufferParameter::FlipY:
+            os << "GL_FRAMEBUFFER_FLIP_Y_MESA";
+            break;
+        default:
+            os << "GL_INVALID_ENUM";
+            break;
+    }
+    return os;
+}
+
+template <>
 GraphicsResetStatus FromGLenum<GraphicsResetStatus>(GLenum from)
 {
     switch (from)
@@ -1907,6 +1980,8 @@ SamplerParameter FromGLenum<SamplerParameter>(GLenum from)
             return SamplerParameter::MaxAnisotropy;
         case GL_TEXTURE_SRGB_DECODE_EXT:
             return SamplerParameter::SrgbDecode;
+        case GL_TEXTURE_LOD_BIAS_QCOM:
+            return SamplerParameter::LodBiasQCOM;
         default:
             return SamplerParameter::InvalidEnum;
     }
@@ -1940,6 +2015,8 @@ GLenum ToGLenum(SamplerParameter from)
             return GL_TEXTURE_MAX_ANISOTROPY_EXT;
         case SamplerParameter::SrgbDecode:
             return GL_TEXTURE_SRGB_DECODE_EXT;
+        case SamplerParameter::LodBiasQCOM:
+            return GL_TEXTURE_LOD_BIAS_QCOM;
         default:
             UNREACHABLE();
             return 0;
@@ -1985,6 +2062,9 @@ std::ostream &operator<<(std::ostream &os, SamplerParameter value)
             break;
         case SamplerParameter::SrgbDecode:
             os << "GL_TEXTURE_SRGB_DECODE_EXT";
+            break;
+        case SamplerParameter::LodBiasQCOM:
+            os << "GL_TEXTURE_LOD_BIAS_QCOM";
             break;
         default:
             os << "GL_INVALID_ENUM";
@@ -2495,6 +2575,8 @@ TextureEnvParameter FromGLenum<TextureEnvParameter>(GLenum from)
             return TextureEnvParameter::Op2Alpha;
         case GL_COORD_REPLACE_OES:
             return TextureEnvParameter::PointCoordReplace;
+        case GL_TEXTURE_LOD_BIAS_EXT:
+            return TextureEnvParameter::LodBias;
         default:
             return TextureEnvParameter::InvalidEnum;
     }
@@ -2542,6 +2624,8 @@ GLenum ToGLenum(TextureEnvParameter from)
             return GL_OPERAND2_ALPHA;
         case TextureEnvParameter::PointCoordReplace:
             return GL_COORD_REPLACE_OES;
+        case TextureEnvParameter::LodBias:
+            return GL_TEXTURE_LOD_BIAS_EXT;
         default:
             UNREACHABLE();
             return 0;
@@ -2609,6 +2693,9 @@ std::ostream &operator<<(std::ostream &os, TextureEnvParameter value)
         case TextureEnvParameter::PointCoordReplace:
             os << "GL_COORD_REPLACE_OES";
             break;
+        case TextureEnvParameter::LodBias:
+            os << "GL_TEXTURE_LOD_BIAS_EXT";
+            break;
         default:
             os << "GL_INVALID_ENUM";
             break;
@@ -2625,6 +2712,8 @@ TextureEnvTarget FromGLenum<TextureEnvTarget>(GLenum from)
             return TextureEnvTarget::Env;
         case GL_POINT_SPRITE_OES:
             return TextureEnvTarget::PointSprite;
+        case GL_TEXTURE_FILTER_CONTROL_EXT:
+            return TextureEnvTarget::TextureFilterControl;
         default:
             return TextureEnvTarget::InvalidEnum;
     }
@@ -2638,6 +2727,8 @@ GLenum ToGLenum(TextureEnvTarget from)
             return GL_TEXTURE_ENV;
         case TextureEnvTarget::PointSprite:
             return GL_POINT_SPRITE_OES;
+        case TextureEnvTarget::TextureFilterControl:
+            return GL_TEXTURE_FILTER_CONTROL_EXT;
         default:
             UNREACHABLE();
             return 0;
@@ -2653,6 +2744,9 @@ std::ostream &operator<<(std::ostream &os, TextureEnvTarget value)
             break;
         case TextureEnvTarget::PointSprite:
             os << "GL_POINT_SPRITE_OES";
+            break;
+        case TextureEnvTarget::TextureFilterControl:
+            os << "GL_TEXTURE_FILTER_CONTROL_EXT";
             break;
         default:
             os << "GL_INVALID_ENUM";
@@ -3011,8 +3105,6 @@ TextureTarget FromGLenum<TextureTarget>(GLenum from)
             return TextureTarget::CubeMapNegativeZ;
         case GL_TEXTURE_CUBE_MAP_ARRAY:
             return TextureTarget::CubeMapArray;
-        case GL_TEXTURE_VIDEO_IMAGE_WEBGL:
-            return TextureTarget::VideoImage;
         case GL_TEXTURE_BUFFER:
             return TextureTarget::Buffer;
         default:
@@ -3052,8 +3144,6 @@ GLenum ToGLenum(TextureTarget from)
             return GL_TEXTURE_CUBE_MAP_NEGATIVE_Z;
         case TextureTarget::CubeMapArray:
             return GL_TEXTURE_CUBE_MAP_ARRAY;
-        case TextureTarget::VideoImage:
-            return GL_TEXTURE_VIDEO_IMAGE_WEBGL;
         case TextureTarget::Buffer:
             return GL_TEXTURE_BUFFER;
         default:
@@ -3108,9 +3198,6 @@ std::ostream &operator<<(std::ostream &os, TextureTarget value)
         case TextureTarget::CubeMapArray:
             os << "GL_TEXTURE_CUBE_MAP_ARRAY";
             break;
-        case TextureTarget::VideoImage:
-            os << "GL_TEXTURE_VIDEO_IMAGE_WEBGL";
-            break;
         case TextureTarget::Buffer:
             os << "GL_TEXTURE_BUFFER";
             break;
@@ -3144,8 +3231,6 @@ TextureType FromGLenum<TextureType>(GLenum from)
             return TextureType::CubeMap;
         case GL_TEXTURE_CUBE_MAP_ARRAY:
             return TextureType::CubeMapArray;
-        case GL_TEXTURE_VIDEO_IMAGE_WEBGL:
-            return TextureType::VideoImage;
         case GL_TEXTURE_BUFFER:
             return TextureType::Buffer;
         default:
@@ -3175,8 +3260,6 @@ GLenum ToGLenum(TextureType from)
             return GL_TEXTURE_CUBE_MAP;
         case TextureType::CubeMapArray:
             return GL_TEXTURE_CUBE_MAP_ARRAY;
-        case TextureType::VideoImage:
-            return GL_TEXTURE_VIDEO_IMAGE_WEBGL;
         case TextureType::Buffer:
             return GL_TEXTURE_BUFFER;
         default:
@@ -3215,9 +3298,6 @@ std::ostream &operator<<(std::ostream &os, TextureType value)
             break;
         case TextureType::CubeMapArray:
             os << "GL_TEXTURE_CUBE_MAP_ARRAY";
-            break;
-        case TextureType::VideoImage:
-            os << "GL_TEXTURE_VIDEO_IMAGE_WEBGL";
             break;
         case TextureType::Buffer:
             os << "GL_TEXTURE_BUFFER";

@@ -14,14 +14,11 @@ import mozilla.components.service.fxa.manager.FxaAccountManager
  *
  * The use cases send commands to close tabs using the [FxaAccountManager].
  *
- * See [CloseTabsFeature] for the ability to close tabs on this device from
- * other devices.
+ * See [CloseTabsFeature] for the ability to close tabs on this device from other devices.
  *
  * @param commands The queue used to send "close tab" commands to other devices.
  */
-class CloseTabsUseCases(
-    private val commands: DeviceCommandQueue<DeviceCommandQueue.Type.RemoteTabs>,
-) {
+class CloseTabsUseCases(private val commands: DeviceCommandQueue<DeviceCommandQueue.Type.RemoteTabs>) {
     /**
      * Closes a tab that's currently open on another device.
      *

@@ -247,54 +247,6 @@ Structure:
       firewall: [ <string>, ... ],     // null if unavailable on platform: Product name(s) of registered firewall programs
     },
   },
-  addons: {
-    activeAddons: { // the currently enabled add-ons
-      <addon id>: {
-        blocklisted: <bool>,
-        description: <string>, // null if not available
-        name: <string>,
-        userDisabled: <bool>,
-        appDisabled: <bool>,
-        version: <string>,
-        scope: <integer>,
-        type: <string>, // "extension", "locale", ...
-        foreignInstall: <bool>,
-        hasBinaryComponents: <bool>,
-        installDay: <number>, // days since UNIX epoch, 0 on failure
-        updateDay: <number>, // days since UNIX epoch, 0 on failure
-        signedState: <integer>, // whether the add-on is signed by AMO
-        signedTypes: <string>, // JSON-stringified array of signature types found (see nsIAppSignatureInfo's SignatureAlgorithm enum)
-        isSystem: <bool>, // true if this is a System Add-on
-        isWebExtension: <bool>, // true if this is a WebExtension
-        multiprocessCompatible: <bool>, // true if this add-on does *not* require e10s shims
-      },
-      ...
-    },
-    theme: { // the active theme
-      id: <string>,
-      blocklisted: <bool>,
-      description: <string>,
-      name: <string>,
-      userDisabled: <bool>,
-      appDisabled: <bool>,
-      version: <string>,
-      scope: <integer>,
-      foreignInstall: <bool>,
-      hasBinaryComponents: <bool>
-      installDay: <number>, // days since UNIX epoch, 0 on failure
-      updateDay: <number>, // days since UNIX epoch, 0 on failure
-      signedState: <integer>, // whether the add-on is signed by AMO
-      signedTypes: <string>, // JSON-stringified array of signature types found (see nsIAppSignatureInfo's SignatureAlgorithm enum)
-    },
-    activeGMPlugins: {
-        <gmp id>: {
-            version: <string>,
-            userDisabled: <bool>,
-            applyBackgroundUpdates: <integer>,
-        },
-        ...
-    },
-  },
   experiments: {
     "<experiment id>": { branch: "<branch>", type: "<type>", enrollmentId: "<id>" },
     // ...
@@ -496,18 +448,6 @@ This object contains operating system information.
 - `hasPrefetch`: the Windows-only boolean representing whether or not the OS-based prefetch application start-up optimization is set to use the default settings.
 - `hasSuperfetch`: the Windows-only boolean representing whether or not the OS-based superfetch application start-up optimization service is running and using the default settings.
 
-## addons
-
-### activeAddons
-
-Starting from Firefox 44, the length of the following string fields: `name`, `description` and `version` is limited to 100 characters. The same limitation applies to the same fields in `theme`.
-
-Some of the fields in the record for each add-on are not available during startup. The fields that will always be present are `id`, `version`, `type`, `updateDate`, `scope`, `isSystem`, `isWebExtension`, and `multiprocessCompatible`. All the other fields documented above become present shortly after the `sessionstore-windows-restored` observer topic is notified.
-
-### activeGMPPlugins
-
-Up-to-date information is not available immediately during startup. The field will be populated with dummy information until the blocklist is loaded. At the latest, this will happen just after the `sessionstore-windows-restored` observer topic is notified.
-
 ## experiments
 
 For each experiment we collect the
@@ -522,6 +462,10 @@ In the event any of these fields are truncated, a warning is printed to the cons
 Note that this list includes other types of deliveries, including Normandy rollouts and Nimbus feature defaults.
 
 ## Version History
+
+- Firefox 155:
+
+  - Removed `addons.activeAddons`/`theme`/`activeGMPlugins` from the environment. The `addons` Glean ping should be used instead. ([bug 2055613](https://bugzilla.mozilla.org/show_bug.cgi?id=2055613))
 
 - Firefox 137:
 

@@ -6,11 +6,11 @@
 
 :::{note}
 
-- This page is part of the {ref}`mozilla_projects_nss_ssl_functions_old_ssl_reference` that
+- This page is part of the {ref}`mozilla-projects-nss-ssl-functions-old-ssl-reference` that
   we are migrating into the format described in the [MDN Style
   Guide](https://developer.mozilla.org/en-US/docs/MDN/Guidelines). If you are inclined to
   help with this migration, your help would be very much appreciated.
-- Upgraded documentation may be found in the {ref}`mozilla_projects_nss_reference`
+- Upgraded documentation may be found in the {ref}`mozilla-projects-nss-reference`
 :::
 
 ```{rubric} PKCS #11 Functions
@@ -85,20 +85,20 @@ CERTCertificate *PK11_FindCertFromNickname(
 This function has the following parameters:
 
 ```{eval-rst}
-+-------------------------------------------------+-------------------------------------------------+
-| .. code::                                       | A pointer to the nickname in the certificate    |
-|                                                 | database or to the nickname in the token.       |
-|    nickname                                     |                                                 |
-+-------------------------------------------------+-------------------------------------------------+
-| .. code::                                       | A pointer to application data for the password  |
-|                                                 | callback function. This pointer is set with     |
-|    wincx                                        | :ref:`moz                                       |
-|                                                 | illa_projects_nss_ssl_functions_sslfnc#1088040` |
-|                                                 | during SSL configuration. To retrieve its       |
-|                                                 | current value, use                              |
-|                                                 | :ref:`mozi                                      |
-|                                                 | lla_projects_nss_ssl_functions_sslfnc#1123385`. |
-+-------------------------------------------------+-------------------------------------------------+
++-------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| .. code::   | A pointer to the nickname in the certificate                                                                                                                                                                                                               |
+|             | database or to the nickname in the token.                                                                                                                                                                                                                  |
+|    nickname |                                                                                                                                                                                                                                                            |
++-------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| .. code::   | A pointer to application data for the password callback function. This pointer is set with :ref:`mozilla-projects-nss-ssl-functions-sslfnc` during SSL configuration. To retrieve its current value, use :ref:`mozilla-projects-nss-ssl-functions-sslfnc`. |
+|             |                                                                                                                                                                                                                                                            |
+|    wincx    |                                                                                                                                                                                                                                                            |
+|             |                                                                                                                                                                                                                                                            |
+|             |                                                                                                                                                                                                                                                            |
+|             |                                                                                                                                                                                                                                                            |
+|             |                                                                                                                                                                                                                                                            |
+|             |                                                                                                                                                                                                                                                            |
++-------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 ```
 
 ```{rubric} Returns
@@ -148,20 +148,20 @@ SECKEYPrivateKey *PK11_FindKeyByAnyCert(
 This function has the following parameters:
 
 ```{eval-rst}
-+-------------------------------------------------+-------------------------------------------------+
-| .. code::                                       | A pointer to a certificate structure in the     |
-|                                                 | certificate database.                           |
-|    cert                                         |                                                 |
-+-------------------------------------------------+-------------------------------------------------+
-| .. code::                                       | A pointer to application data for the password  |
-|                                                 | callback function. This pointer is set with     |
-|    wincx                                        | :ref:`moz                                       |
-|                                                 | illa_projects_nss_ssl_functions_sslfnc#1088040` |
-|                                                 | during SSL configuration. To retrieve its       |
-|                                                 | current value, use                              |
-|                                                 | :ref:`mozi                                      |
-|                                                 | lla_projects_nss_ssl_functions_sslfnc#1123385`. |
-+-------------------------------------------------+-------------------------------------------------+
++-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| .. code:: | A pointer to a certificate structure in the                                                                                                                                                                                                                |
+|           | certificate database.                                                                                                                                                                                                                                      |
+|    cert   |                                                                                                                                                                                                                                                            |
++-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| .. code:: | A pointer to application data for the password callback function. This pointer is set with :ref:`mozilla-projects-nss-ssl-functions-sslfnc` during SSL configuration. To retrieve its current value, use :ref:`mozilla-projects-nss-ssl-functions-sslfnc`. |
+|           |                                                                                                                                                                                                                                                            |
+|    wincx  |                                                                                                                                                                                                                                                            |
+|           |                                                                                                                                                                                                                                                            |
+|           |                                                                                                                                                                                                                                                            |
+|           |                                                                                                                                                                                                                                                            |
+|           |                                                                                                                                                                                                                                                            |
+|           |                                                                                                                                                                                                                                                            |
++-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 ```
 
 ```{rubric} Returns
@@ -434,19 +434,19 @@ typedef char *(*PK11PasswordFunc)(
 This callback function has the following parameters:
 
 ```{eval-rst}
-+-------------------------------------------------+-------------------------------------------------+
-| .. code::                                       | A pointer to a slot info structure.             |
-|                                                 |                                                 |
-|    slot                                         |                                                 |
-+-------------------------------------------------+-------------------------------------------------+
-| .. code::                                       | Set to ``PR_TRUE`` if this is a retry. This     |
-|                                                 | implies that the callback has previously        |
-|    retry                                        | returned the wrong password.                    |
-+-------------------------------------------------+-------------------------------------------------+
-| .. code::                                       | A pointer supplied by the application that can  |
-|                                                 | be used to pass state information. Can be       |
-|    arg                                          | ``NULL``.                                       |
-+-------------------------------------------------+-------------------------------------------------+
++-----------+-------------------------------------------------------------------------------------------------------------------+
+| .. code:: | A pointer to a slot info structure.                                                                               |
+|           |                                                                                                                   |
+|    slot   |                                                                                                                   |
++-----------+-------------------------------------------------------------------------------------------------------------------+
+| .. code:: | Set to ``PR_TRUE`` if this is a retry. This implies that the callback has previously returned the wrong password. |
+|           |                                                                                                                   |
+|    retry  |                                                                                                                   |
++-----------+-------------------------------------------------------------------------------------------------------------------+
+| .. code:: | A pointer supplied by the application that can be used to pass state information. Can be ``NULL``.                |
+|           |                                                                                                                   |
+|    arg    |                                                                                                                   |
++-----------+-------------------------------------------------------------------------------------------------------------------+
 ```
 
 This callback function returns one of these values:
@@ -474,5 +474,5 @@ callback function, the value they pass in the third parameter is determined by
 ```
 
 For examples of password callback functions, see the samples in the
-{ref}`mozilla_projects_nss_nss_sample_code` directory.
+{ref}`mozilla-projects-nss-nss-sample-code` directory.
 :::

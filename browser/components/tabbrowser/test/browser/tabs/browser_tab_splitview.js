@@ -106,7 +106,7 @@ add_task(async function test_splitViewCreateAndAddTabs() {
     "Right tab has the correct ARIA label."
   );
 
-  gBrowser.selectTabAtIndex(tab1._tPos);
+  gBrowser.selectTabAtIndex(tab1.index);
   await BrowserTestUtils.waitForMutationCondition(
     splitview,
     { attributes: true, attributeFilter: ["hasactivetab"] },
@@ -493,41 +493,6 @@ add_task(async function test_split_view_preserves_multiple_pairings() {
   splitView2.close();
 });
 
-add_task(async function test_click_findbar_to_select_panel() {
-  const tab1 = await addTabAndLoadBrowser();
-  const tab2 = await addTabAndLoadBrowser();
-  const panel1 = document.getElementById(tab1.linkedPanel);
-  const panel2 = document.getElementById(tab2.linkedPanel);
-  await BrowserTestUtils.switchTab(gBrowser, tab1);
-
-  info("Activate split view with the first panel selected.");
-  const splitView = gBrowser.addTabSplitView([tab1, tab2]);
-  await SimpleTest.promiseFocus(tab1.linkedBrowser);
-  Assert.ok(
-    panel1.classList.contains("deck-selected"),
-    "First panel is selected."
-  );
-
-  info("Activate Find in Page within the second panel.");
-  const findbar = await gBrowser.getFindBar(tab2);
-  const promiseFindbarOpen = BrowserTestUtils.waitForEvent(
-    findbar,
-    "findbaropen"
-  );
-  findbar.open();
-  await promiseFindbarOpen;
-
-  info("Select the second panel by clicking the find bar.");
-  findbar.getElement("findbar-textbox").click();
-  await BrowserTestUtils.waitForMutationCondition(
-    panel2,
-    { attributeFilter: ["class"] },
-    () => panel2.classList.contains("deck-selected")
-  );
-
-  splitView.close();
-});
-
 add_task(async function test_moving_tabs() {
   let [tab1, tab2, tab3, tab4] = await Promise.all(
     Array.from({ length: 4 }).map((_, index) =>
@@ -769,9 +734,9 @@ add_task(async function test_createGroupFromPinnedTabWithSplitView() {
     tab1.splitview && tab2.splitview,
     "Tab 1 and tab 2 are in a split view"
   );
-  Assert.equal(pinnedTab._tPos, 0, "Pinned tab is at position 0");
+  Assert.equal(pinnedTab.index, 0, "Pinned tab is at position 0");
   Assert.less(
-    pinnedTab._tPos,
+    pinnedTab.index,
     splitViewPosition,
     "Pinned tab is before split view"
   );
@@ -861,15 +826,15 @@ add_task(async function test_move_splitview_to_end_and_start() {
   Assert.ok(!tab2.group, "tab2 is no longer in a group after moveTabToEnd");
   Assert.ok(!tab3.group, "tab3 is no longer in a group after moveTabToEnd");
   Assert.ok(
-    tab2._tPos > startingTab._tPos && tab3._tPos > startingTab._tPos,
+    tab2.index > startingTab.index && tab3.index > startingTab.index,
     "Splitview tabs are after startingTab"
   );
   Assert.ok(
-    tab2._tPos > tab1._tPos && tab3._tPos > tab1._tPos,
+    tab2.index > tab1.index && tab3.index > tab1.index,
     "Splitview tabs are after tab1"
   );
   Assert.ok(
-    tab2._tPos > tab4._tPos && tab3._tPos > tab4._tPos,
+    tab2.index > tab4.index && tab3.index > tab4.index,
     "Splitview tabs are after tab4"
   );
   Assert.ok(
@@ -918,4 +883,117 @@ add_task(async function test_width_preserved_between_splitviews() {
 
   splitView1.close();
   splitView2.close();
+});
+
+/**
+ * Tests that while both split view tabs are not active, showing and hiding
+ * one of the tabs updates the entire split view - its visibility and whether
+ * it can be dragged.
+ */
+add_task(async function test_show_hide_split_view_tab_affects_whole_view() {
+  const tab1 = await addTabAndLoadBrowser();
+  const tab2 = await addTabAndLoadBrowser();
+  const splitView = gBrowser.addTabSplitView([tab1, tab2]);
+
+  // Select a non split view tab.
+  gBrowser.selectedTab = gBrowser.tabs[0];
+  Assert.ok(
+    !splitView.tabs.includes(gBrowser.selectedTab),
+    "Selected tab is outside the split view"
+  );
+  Assert.ok(
+    splitView.visible,
+    "All split view tabs are considered visible before hiding a tab"
+  );
+  Assert.ok(
+    BrowserTestUtils.isVisible(splitView),
+    "Split view container is visible on the tab strip"
+  );
+  Assert.ok(
+    gBrowser.tabContainer.dragAndDropElements.includes(splitView),
+    "Visible split view is included in dragAndDropElements"
+  );
+
+  info("Hiding one tab hides the whole view");
+  gBrowser.hideTab(tab1);
+
+  Assert.ok(tab1.hidden, "Explicitly hidden tab is hidden");
+  Assert.ok(tab2.hidden, "Sibling tab is hidden too");
+  Assert.ok(
+    !splitView.visible,
+    "Not all split view tabs are considered visible after hiding a tab"
+  );
+  Assert.ok(
+    splitView.hasAttribute("hidden"),
+    "The split view container should be hidden"
+  );
+  Assert.ok(
+    BrowserTestUtils.isHidden(splitView),
+    "Split view container is visually hidden on the tab strip"
+  );
+  Assert.ok(
+    !gBrowser.tabContainer.dragAndDropElements.includes(splitView),
+    "Hidden split view is excluded from dragAndDropElements"
+  );
+
+  info("Showing one tab shows the whole view");
+  gBrowser.showTab(tab1);
+
+  Assert.ok(!tab1.hidden, "Shown tab is visible");
+  Assert.ok(!tab2.hidden, "Sibling tab is shown too");
+  Assert.ok(
+    splitView.visible,
+    "All split view tabs are considered visible again after showing a tab"
+  );
+  Assert.ok(
+    !splitView.hasAttribute("hidden"),
+    "The split view container should no longer be hidden"
+  );
+  Assert.ok(
+    BrowserTestUtils.isVisible(splitView),
+    "Split view container is visible on the tab strip again"
+  );
+  Assert.ok(
+    gBrowser.tabContainer.dragAndDropElements.includes(splitView),
+    "Restored split view is included in dragAndDropElements again"
+  );
+
+  splitView.close();
+});
+
+/**
+ * Tests that while one split view tab is active, hiding its sibling
+ * keeps the active tab selected (a selected tab can't be hidden).
+ * The split view container should still be hidden despite the active tab
+ * so that a lone tab is never shown on the tab strip.
+ */
+add_task(async function test_hidden_split_view_sibling_keeps_active_tab() {
+  const tab1 = await addTabAndLoadBrowser();
+  const tab2 = await addTabAndLoadBrowser();
+  const splitView = gBrowser.addTabSplitView([tab1, tab2]);
+
+  gBrowser.selectedTab = tab1;
+  Assert.ok(splitView.hasActiveTab, "Split view holds the active tab");
+
+  info("Hide the non-selected sibling of the active split view");
+  gBrowser.hideTab(tab2);
+
+  Assert.ok(tab2.hidden, "Sibling tab is hidden");
+  Assert.ok(!tab1.hidden, "Active tab is not hidden");
+  Assert.ok(tab1.selected, "Active tab is still selected");
+  Assert.ok(
+    !splitView.visible,
+    "Not all split view tabs are considered visible after hiding the sibling tab"
+  );
+  Assert.ok(
+    splitView.hasAttribute("hidden"),
+    "The split view container should be hidden"
+  );
+  Assert.ok(
+    BrowserTestUtils.isHidden(splitView),
+    "Split view container is visually hidden on the tab strip"
+  );
+
+  gBrowser.showTab(tab2);
+  splitView.close();
 });

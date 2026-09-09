@@ -714,6 +714,19 @@ impl NeqoHttp3Conn {
         };
         glean::http_3_quic_version.get(version_label).add(1);
 
+        // neqo's `pto_counts` is a sliding histogram: the highest set bucket is
+        // the longest run of consecutive PTOs the connection saw, i.e. how deep
+        // it fell into a black hole. Record that run length once per connection.
+        let max_consecutive_ptos = i64::try_from(
+            stats
+                .pto_counts
+                .iter()
+                .rposition(|&count| count > 0)
+                .map_or(0, |i| i + 1),
+        )
+        .unwrap_or(i64::MAX);
+        glean::http_3_max_consecutive_ptos.accumulate_single_sample_signed(max_consecutive_ptos);
+
         if !static_prefs::pref!("network.http.http3.use_nspr_for_io")
             && static_prefs::pref!("network.http.http3.ecn_report")
         {

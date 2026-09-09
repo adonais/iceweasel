@@ -7,12 +7,8 @@ package mozilla.components.browser.engine.gecko.mediasession
 import mozilla.components.concept.engine.mediasession.MediaSession
 import org.mozilla.geckoview.MediaSession as GeckoViewMediaSession
 
-/**
- * [MediaSession.Controller] (`concept-engine`) implementation for GeckoView.
- */
-internal class GeckoMediaSessionController(
-    private val mediaSession: GeckoViewMediaSession,
-) : MediaSession.Controller {
+/** [MediaSession.Controller] (`concept-engine`) implementation for GeckoView. */
+internal class GeckoMediaSessionController(private val mediaSession: GeckoViewMediaSession) : MediaSession.Controller {
 
     override fun pause() {
         mediaSession.pause()
@@ -57,13 +53,12 @@ internal class GeckoMediaSessionController(
     override fun onSystemAudioFocusChanged(change: MediaSession.SystemAudioFocusChange) {
         mediaSession.notifySystemAudioFocusChange(
             when (change) {
-                MediaSession.SystemAudioFocusChange.GAIN ->
-                    GeckoViewMediaSession.SYSTEM_AUDIO_FOCUS_GAIN
+                MediaSession.SystemAudioFocusChange.GAIN -> GeckoViewMediaSession.SYSTEM_AUDIO_FOCUS_GAIN
                 MediaSession.SystemAudioFocusChange.TRANSIENT_LOSS ->
                     GeckoViewMediaSession.SYSTEM_AUDIO_FOCUS_TRANSIENT_LOSS
                 MediaSession.SystemAudioFocusChange.PERMANENT_LOSS ->
                     GeckoViewMediaSession.SYSTEM_AUDIO_FOCUS_PERMANENT_LOSS
-            },
+            }
         )
     }
 }

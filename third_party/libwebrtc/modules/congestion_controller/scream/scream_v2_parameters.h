@@ -135,6 +135,8 @@ struct ScreamV2Parameters {
 
   // Factor multiplied by the current target rate to decide the pacing rate.
   FieldTrialParameter<double> pacing_factor;
+  // Minimum pacing rate relative to received_rate.
+  FieldTrialParameter<double> pacing_rate_received_factor;
 
   // Exponentially Weighted Moving Average (EWMA) factor for calculating average
   // time feedback is delayed by the receiver. I.e the time from a packet is
@@ -157,6 +159,11 @@ struct ScreamV2Parameters {
 
   // Window over which received rate is calculated.
   FieldTrialParameter<TimeDelta> received_rate_window;
+
+  // Minimum pacing delay before starting cwnd pushback reduction.
+  FieldTrialParameter<TimeDelta> min_pacing_delay_for_pushback;
+  // Maximum pacing delay for full cwnd pushback reduction.
+  FieldTrialParameter<TimeDelta> max_pacing_delay_for_pushback;
 };
 
 }  // namespace webrtc

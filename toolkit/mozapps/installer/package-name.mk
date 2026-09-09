@@ -10,7 +10,7 @@
 ifndef PACKAGE_NAME_MK_INCLUDED
 PACKAGE_NAME_MK_INCLUDED := 1
 
-MOZ_PKG_DIR ?= $(MOZ_APP_NAME)
+MOZ_PKG_DIR ?= $(MOZ_PKG_DIR_DEFAULT)
 
 ifdef MOZ_SIMPLE_PACKAGE_NAME
 PKG_BASENAME := $(MOZ_SIMPLE_PACKAGE_NAME)
@@ -48,6 +48,8 @@ MOZSEARCH_JAVA_INDEX_BASENAME = $(PKG_BASENAME).mozsearch-java-index
 # Mozharness naming
 MOZHARNESS_PACKAGE = mozharness.zip
 
+# `libmegazord.so` artifacts: for use in Android unit tests run on host.
+LIBMEGAZORD_SO_ARTIFACTS_ARCHIVE_BASENAME = $(PKG_BASENAME).libmegazord_so_artifacts
 # `.xpt` artifacts: for use in artifact builds.
 XPT_ARTIFACTS_ARCHIVE_BASENAME = $(PKG_BASENAME).xpt_artifacts
 ifeq (Darwin, $(OS_ARCH))
@@ -62,11 +64,6 @@ MOZ_MOZINFO_FILE = $(DIST)/$(PKG_PATH)/$(MOZ_INFO_BASENAME).mozinfo.json
 MOZ_TEST_PACKAGES_FILE = $(DIST)/$(PKG_PATH)/$(PKG_BASENAME).test_packages.json
 
 # JavaScript Shell
-ifdef MOZ_SIMPLE_PACKAGE_NAME
-JSSHELL_NAME := $(MOZ_SIMPLE_PACKAGE_NAME).jsshell.zip
-else
-JSSHELL_NAME = jsshell-$(MOZ_PKG_PLATFORM).zip
-endif
 PKG_JSSHELL = $(DIST)/$(JSSHELL_NAME)
 
 endif # PACKAGE_NAME_MK_INCLUDED

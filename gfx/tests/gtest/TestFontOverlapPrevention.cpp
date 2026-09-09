@@ -13,9 +13,11 @@
 #elif defined(XP_MACOSX)
 #  include "../thebes/StandardFonts-macos.inc"
 #elif defined(XP_LINUX)
-#  include "../thebes/StandardFonts-linux.inc"
-#elif defined(XP_ANDROID)
-#  include "../thebes/StandardFonts-android.inc"
+#  if defined(ANDROID)
+#    include "../thebes/StandardFonts-android.inc"
+#  else
+#    include "../thebes/StandardFonts-linux.inc"
+#  endif
 #endif
 #undef StandardFonts
 
@@ -31,9 +33,11 @@ std::vector<std::string> GetFontRuleNames() {
 #elif defined(XP_MACOSX)
 #  include "../thebes/StandardFonts-macos.inc"
 #elif defined(XP_LINUX)
-#  include "../thebes/StandardFonts-linux.inc"
-#elif defined(XP_ANDROID)
-#  include "../thebes/StandardFonts-android.inc"
+#  if defined(ANDROID)
+#    include "../thebes/StandardFonts-android.inc"
+#  else
+#    include "../thebes/StandardFonts-linux.inc"
+#  endif
 #endif
 
 #undef FontInclusionByLocaleRules

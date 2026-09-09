@@ -102,17 +102,12 @@ NSSCryptoContext_FindOrImportCertificate(
         return rvCert;
     }
     rvCert = nssCertificateStore_FindOrAdd(cc->certStore, c);
+    nssPKIObject_Lock(&c->object);
     if (rvCert == c && c->object.cryptoContext != cc) {
         PORT_Assert(!c->object.cryptoContext);
         c->object.cryptoContext = cc;
     }
-    if (rvCert) {
-        /* an NSSCertificate cannot be part of two crypto contexts
-        ** simultaneously.  If this assertion fails, then there is
-        ** a serious Stan design flaw.
-        */
-        PORT_Assert(cc == c->object.cryptoContext);
-    }
+    nssPKIObject_Unlock(&c->object);
     return rvCert;
 }
 
@@ -154,11 +149,6 @@ nssCryptoContext_ImportTrust(
         return PR_FAILURE;
     }
     nssrv = nssCertificateStore_AddTrust(cc->certStore, trust);
-#if 0
-    if (nssrv == PR_SUCCESS) {
-    trust->object.cryptoContext = cc;
-    }
-#endif
     return nssrv;
 }
 
@@ -173,11 +163,6 @@ nssCryptoContext_ImportSMIMEProfile(
         return PR_FAILURE;
     }
     nssrv = nssCertificateStore_AddSMIMEProfile(cc->certStore, profile);
-#if 0
-    if (nssrv == PR_SUCCESS) {
-    profile->object.cryptoContext = cc;
-    }
-#endif
     return nssrv;
 }
 

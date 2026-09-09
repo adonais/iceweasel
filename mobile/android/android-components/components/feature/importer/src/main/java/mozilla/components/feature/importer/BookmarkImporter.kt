@@ -12,8 +12,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import mozilla.components.concept.bookmarks.file.BookmarksFileImporter
 
 /**
- * Self-contained bookmarks import flow that drives file selection, the in-progress dialog, and
- * completion via an internal [ImporterStore].
+ * Self-contained bookmarks import flow that drives file selection, the in-progress dialog, and completion via an
+ * internal [ImporterStore].
  *
  * @param onEventReceived Invoked when the import flow has received an import event.
  */
@@ -22,9 +22,7 @@ fun BookmarkImporter(
     importer: BookmarksFileImporter,
     onEventReceived: (ImporterEvent) -> Unit,
 ) {
-    val viewModel: ImporterViewModel = viewModel(
-        factory = ImporterViewModel.factory(importer),
-    )
+    val viewModel: ImporterViewModel = viewModel(factory = ImporterViewModel.factory(importer))
     val state by viewModel.store.stateFlow.collectAsState(initial = viewModel.store.state)
 
     when (val current = state) {
@@ -41,7 +39,7 @@ fun BookmarkImporter(
                     } else {
                         viewModel.store.dispatch(ImporterAction.FileSelectionCanceled)
                     }
-                },
+                }
             )
         }
         ImporterState.Loading -> {

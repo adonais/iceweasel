@@ -94,8 +94,8 @@ bool nsDequeBase::GrowCapacity() {
   // Since capacity has changed, the old origin doesn't make
   // sense anymore. It's better to resequence the elements now.
 
-  memcpy(temp, mData + mOrigin, sizeof(void*) * (mCapacity - mOrigin));
-  memcpy(temp + (mCapacity - mOrigin), mData, sizeof(void*) * mOrigin);
+  void** temp_next = std::copy(mData + mOrigin, mData + mCapacity, temp);
+  std::copy(mData, mData + mOrigin, temp_next);
 
   if (mData != mBuffer) {
     free(mData);

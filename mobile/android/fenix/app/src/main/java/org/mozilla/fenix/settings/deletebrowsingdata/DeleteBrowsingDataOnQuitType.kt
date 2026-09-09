@@ -10,24 +10,21 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.getPreferenceKey
 
 /**
- * Represents the different types of browsing data that can be configured
- * to be deleted automatically when the user quits the application.
+ * Represents the different types of browsing data that can be configured to be deleted automatically when the user
+ * quits the application.
  *
- * Each enum constant is associated with a specific preference key, which is used
- * to store the user's choice for that data type.
+ * Each enum constant is associated with a specific preference key, which is used to store the user's choice for that
+ * data type.
  *
  * @param prefKey The string resource ID for the preference key.
  */
-enum class DeleteBrowsingDataOnQuitType(
-    @param:StringRes private val prefKey: Int,
-) {
+enum class DeleteBrowsingDataOnQuitType(@param:StringRes private val prefKey: Int) {
     TABS(R.string.pref_key_delete_open_tabs_on_quit),
     HISTORY(R.string.pref_key_delete_browsing_history_on_quit),
     COOKIES(R.string.pref_key_delete_cookies_and_site_data_on_quit),
     CACHE(R.string.pref_key_delete_caches_on_quit),
     PERMISSIONS(R.string.pref_key_delete_permissions_on_quit),
-    DOWNLOADS(R.string.pref_key_delete_downloads_on_quit),
-    ;
+    DOWNLOADS(R.string.pref_key_delete_downloads_on_quit);
 
     fun getPreferenceKey(context: Context) = context.getPreferenceKey(prefKey)
 }

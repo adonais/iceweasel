@@ -16,25 +16,24 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.XmlContext
 import org.w3c.dom.Element
 
-/**
- * A custom lint check that prohibits not using the style attribute on buttons
- */
+/** A custom lint check that prohibits not using the style attribute on buttons */
 class ButtonStyleXmlDetector : ResourceXmlDetector() {
     companion object {
-        const val ERROR_MESSAGE =
-            "All buttons must have a style, try using NeutralButton or similar."
+        const val ERROR_MESSAGE = "All buttons must have a style, try using NeutralButton or similar."
 
-        val ISSUE_XML_STYLE = Issue.create(
-            id = "ButtonStyleXmlDetector",
-            briefDescription = "Prohibits using a button without a style",
-            explanation = "Butttons should have a style applied",
-            category = Category.CORRECTNESS,
-            severity = Severity.ERROR,
-            implementation = Implementation(
-                ButtonStyleXmlDetector::class.java,
-                Scope.RESOURCE_FILE_SCOPE,
-            ),
-        )
+        val ISSUE_XML_STYLE =
+            Issue.create(
+                id = "ButtonStyleXmlDetector",
+                briefDescription = "Prohibits using a button without a style",
+                explanation = "Butttons should have a style applied",
+                category = Category.CORRECTNESS,
+                severity = Severity.ERROR,
+                implementation =
+                    Implementation(
+                        ButtonStyleXmlDetector::class.java,
+                        Scope.RESOURCE_FILE_SCOPE,
+                    ),
+            )
     }
 
     override fun appliesTo(folderType: ResourceFolderType): Boolean {
@@ -52,7 +51,9 @@ class ButtonStyleXmlDetector : ResourceXmlDetector() {
     }
 
     override fun visitElement(context: XmlContext, element: Element) {
-        if (element.hasAttribute(ATTR_STYLE)) { return }
+        if (element.hasAttribute(ATTR_STYLE)) {
+            return
+        }
 
         context.report(
             issue = ISSUE_XML_STYLE,

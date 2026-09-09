@@ -37,7 +37,8 @@ import org.mozilla.fenix.theme.Theme
 internal fun DeleteAddressDialog(store: AddressStore) {
     val dialogState by remember {
         store.stateFlow.map { it.deleteDialog }
-    }.collectAsState(store.state.deleteDialog)
+    }
+        .collectAsState(store.state.deleteDialog)
 
     if (dialogState is DialogState.Presenting) {
         AlertDialog(
@@ -68,13 +69,13 @@ internal fun DeleteAddressDialog(store: AddressStore) {
 
 @Preview
 @Composable
-private fun DeleteAddressDialogPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
-    val store = AddressStore(
-        AddressState.initial().copy(deleteDialog = DialogState.Presenting),
-        listOf(),
-    ).also { it.dispatch(ViewAppeared) }
+private fun DeleteAddressDialogPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
+    val store =
+        AddressStore(
+                AddressState.initial().copy(deleteDialog = DialogState.Presenting),
+                listOf(),
+            )
+            .also { it.dispatch(ViewAppeared) }
 
     FirefoxTheme(theme) {
         Surface {

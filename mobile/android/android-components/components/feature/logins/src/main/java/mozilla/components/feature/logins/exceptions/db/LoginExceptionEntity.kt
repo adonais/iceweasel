@@ -8,14 +8,9 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-/**
- * Internal entity representing a login exception.
- */
+/** Internal entity representing a login exception. */
 @Entity(tableName = "logins_exceptions")
 internal data class LoginExceptionEntity(
-    @PrimaryKey(autoGenerate = true)
-    @ColumnInfo(name = "id")
-    var id: Long? = null,
-    @ColumnInfo(name = "origin")
-    var origin: String,
+    @PrimaryKey(autoGenerate = true) @ColumnInfo(name = "id") var id: Long? = null,
+    @ColumnInfo(name = "origin") var origin: String,
 )

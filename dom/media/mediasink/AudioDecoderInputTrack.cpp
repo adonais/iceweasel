@@ -353,6 +353,9 @@ void AudioDecoderInputTrack::HandleSPSCData(SPSCData& aData) {
   if (aData.IsClearFutureData()) {
     LOG("Clear future data");
     mBufferedData.Clear();
+    if (mTimeStretcher) {
+      mTimeStretcher->clear();
+    }
     if (!Ended()) {
       LOG("Clear EOS");
       mReceivedEOS = false;

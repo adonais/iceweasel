@@ -6,27 +6,19 @@ package mozilla.components.concept.menu
 
 import android.view.Gravity
 
-/**
- * Indicates the preferred orientation to show the menu.
- */
+/** Indicates the preferred orientation to show the menu. */
 enum class Orientation {
-    /**
-     * Position the menu above the toolbar.
-     */
+    /** Position the menu above the toolbar. */
     UP,
 
-    /**
-     * Position the menu below the toolbar.
-     */
-    DOWN,
-
-    ;
+    /** Position the menu below the toolbar. */
+    DOWN;
 
     companion object {
 
         /**
-         * Returns an orientation that matches the given [Gravity] value.
-         * Meant to be used with a CoordinatorLayout's gravity.
+         * Returns an orientation that matches the given [Gravity] value. Meant to be used with a CoordinatorLayout's
+         * gravity.
          */
         fun fromGravity(gravity: Int): Orientation {
             return if ((gravity and Gravity.BOTTOM) == Gravity.BOTTOM) {

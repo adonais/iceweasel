@@ -7,6 +7,7 @@ package mozilla.components.feature.awesomebar
 import android.content.res.Resources
 import android.view.View
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.awesomebar.AwesomeBar
@@ -32,7 +33,6 @@ import org.mockito.Mockito.never
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class AwesomeBarFeatureTest {

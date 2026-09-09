@@ -110,7 +110,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
         () =>
           !moveTabToNewSplitViewItem.hidden &&
           moveTabToNewSplitViewItem.disabled,
-        "moveTabToNewSplitViewItem is visible and disabled"
+        { msg: "moveTabToNewSplitViewItem is visible and disabled" }
       );
       Assert.ok(
         !moveTabToNewSplitViewItem.hidden && moveTabToNewSplitViewItem.disabled,
@@ -120,7 +120,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
         unsplitTabItem,
         { attributes: true },
         () => unsplitTabItem.hidden,
-        "unsplitTabItem is hidden"
+        { msg: "unsplitTabItem is hidden" }
       );
       Assert.ok(unsplitTabItem.hidden, "unsplitTabItem is hidden");
     }
@@ -146,7 +146,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
         () =>
           !moveTabToNewSplitViewItem.hidden &&
           !moveTabToNewSplitViewItem.disabled,
-        "moveTabToNewSplitViewItem is visible and not disabled"
+        { msg: "moveTabToNewSplitViewItem is visible and not disabled" }
       );
       Assert.ok(
         !moveTabToNewSplitViewItem.hidden &&
@@ -157,7 +157,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
         unsplitTabItem,
         { attributes: true },
         () => unsplitTabItem.hidden,
-        "unsplitTabItem is hidden"
+        { msg: "unsplitTabItem is hidden" }
       );
       Assert.ok(unsplitTabItem.hidden, "unsplitTabItem is hidden");
 
@@ -178,7 +178,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
         tab3.splitview
       );
     },
-    "Split view has been added"
+    { msg: "Split view has been added" }
   );
   info("Split view has been added");
 
@@ -207,7 +207,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
         !tab3.splitview
       );
     },
-    "Split view has been removed"
+    { msg: "Split view has been removed" }
   );
   info("Split view has been removed");
 
@@ -233,7 +233,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
         () =>
           !moveTabToNewSplitViewItem.hidden &&
           !moveTabToNewSplitViewItem.disabled,
-        "moveTabToNewSplitViewItem is visible and not disabled"
+        { msg: "moveTabToNewSplitViewItem is visible and not disabled" }
       );
       Assert.ok(
         !moveTabToNewSplitViewItem.hidden &&
@@ -244,7 +244,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
         unsplitTabItem,
         { attributes: true },
         () => unsplitTabItem.hidden,
-        "unsplitTabItem is hidden"
+        { msg: "unsplitTabItem is hidden" }
       );
       Assert.ok(unsplitTabItem.hidden, "unsplitTabItem is hidden");
 
@@ -265,7 +265,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
         tab2.splitview
       );
     },
-    "Split view has been added"
+    { msg: "Split view has been added" }
   );
   info("Split view has been added");
 
@@ -285,7 +285,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
         moveTabToNewSplitViewItem,
         { attributes: true },
         () => moveTabToNewSplitViewItem.hidden,
-        "moveTabToNewSplitViewItem is hidden"
+        { msg: "moveTabToNewSplitViewItem is hidden" }
       );
       Assert.ok(
         moveTabToNewSplitViewItem.hidden,
@@ -295,7 +295,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
         unsplitTabItem,
         { attributes: true },
         () => !unsplitTabItem.hidden,
-        "unsplitTabItem is visible"
+        { msg: "unsplitTabItem is visible" }
       );
       Assert.ok(!unsplitTabItem.hidden, "unsplitTabItem is visible");
 
@@ -316,7 +316,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
         !tab2.splitview
       );
     },
-    "Split view has been removed"
+    { msg: "Split view has been removed" }
   );
   info("Split view has been removed");
 
@@ -334,7 +334,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
         () =>
           !moveTabToNewSplitViewItem.hidden &&
           !moveTabToNewSplitViewItem.disabled,
-        "moveTabToNewSplitViewItem is visible and not disabled"
+        { msg: "moveTabToNewSplitViewItem is visible and not disabled" }
       );
       Assert.ok(
         !moveTabToNewSplitViewItem.hidden &&
@@ -345,7 +345,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
         unsplitTabItem,
         { attributes: true },
         () => unsplitTabItem.hidden,
-        "unsplitTabItem is hidden"
+        { msg: "unsplitTabItem is hidden" }
       );
       Assert.ok(unsplitTabItem.hidden, "unsplitTabItem is hidden");
 
@@ -364,7 +364,7 @@ add_task(async function test_contextMenuMoveTabsToNewSplitView() {
         ) && tab1.splitview
       );
     },
-    "Split view has been added"
+    { msg: "Split view has been added" }
   );
   info("Split view has been added");
 
@@ -407,7 +407,7 @@ add_task(async function test_contextMenuAddSplitViewToNewTabGroup() {
         tab2.splitview
       );
     },
-    "Split view has been added"
+    { msg: "Split view has been added" }
   );
   info("Split view has been added");
 
@@ -435,7 +435,9 @@ add_task(async function test_contextMenuAddSplitViewToNewTabGroup() {
           !addSplitViewToNewGroupItem.hidden &&
           addSplitViewToNewGroupItem.textContent ===
             "Add Split View to New Group",
-        "addSplitViewToNewGroupItem is visible and has the expected label"
+        {
+          msg: "addSplitViewToNewGroupItem is visible and has the expected label",
+        }
       );
 
       info("Click menu option to add split view to new group");
@@ -451,7 +453,7 @@ add_task(async function test_contextMenuAddSplitViewToNewTabGroup() {
         tabChild => tabChild.tagName === "tab-group"
       );
     },
-    "Split view has been added to a new tab group"
+    { msg: "Split view has been added to a new tab group" }
   );
   Assert.ok(
     tab1.splitview.group && tab2.splitview.group,
@@ -479,7 +481,9 @@ add_task(async function test_contextMenuAddSplitViewToNewTabGroup() {
             removeSplitViewFromGroupItem.textContent === "Remove from Group"
           );
         },
-        "removeSplitViewFromGroupItem is visible and has the expected label"
+        {
+          msg: "removeSplitViewFromGroupItem is visible and has the expected label",
+        }
       );
 
       info("Click menu option to remove split view from group");
@@ -495,7 +499,7 @@ add_task(async function test_contextMenuAddSplitViewToNewTabGroup() {
         tabChild => tabChild.tagName === "tab-group"
       );
     },
-    "Split view has been removed from tab group"
+    { msg: "Split view has been removed from tab group" }
   );
   Assert.ok(
     !tab1.splitview.group && !tab2.splitview.group,
@@ -528,7 +532,7 @@ add_task(async function test_move_to_split_view_disabled_in_customize_mode() {
       { attributes: true },
       () =>
         !moveTabToNewSplitViewItem.hidden && moveTabToNewSplitViewItem.disabled,
-      "moveTabToNewSplitViewItem is visible and disabled."
+      { msg: "moveTabToNewSplitViewItem is visible and disabled." }
     )
   );
 
@@ -651,7 +655,7 @@ add_task(
           reverseTabsItem,
           { attributes: true },
           () => !reverseTabsItem.hidden,
-          "reverseTabsItem is visible"
+          { msg: "reverseTabsItem is visible" }
         );
 
         info(
@@ -712,7 +716,7 @@ add_task(async function test_contextMenuReverseSplitView() {
         reverseTabsItem,
         { attributes: true },
         () => !reverseTabsItem.hidden,
-        "reverseTabsItem is visible"
+        { msg: "reverseTabsItem is visible" }
       );
       Assert.ok(!reverseTabsItem.hidden, "reverseTabsItem is visible");
 
@@ -757,7 +761,7 @@ add_task(async function test_moveTabToEnd_disabled_in_splitview() {
       ) &&
       tab1.splitview &&
       tab2.splitview,
-    "Split view wrapper is present"
+    { msg: "Split view wrapper is present" }
   );
 
   await withTabMenu(
@@ -777,7 +781,7 @@ add_task(async function test_moveTabToEnd_disabled_in_splitview() {
           contextMoveTabToEnd,
           { attributes: true },
           () => contextMoveTabToEnd.disabled,
-          "Waiting for contextMoveTabToEnd to be disabled"
+          { msg: "Waiting for contextMoveTabToEnd to be disabled" }
         );
       }
       Assert.ok(
@@ -821,7 +825,7 @@ add_task(async function test_moveTabToStart_disabled_in_splitview() {
       ) &&
       tab1.splitview &&
       tab2.splitview,
-    "Split view wrapper is present"
+    { msg: "Split view wrapper is present" }
   );
 
   const firstChild = tabContainer.children[0];
@@ -848,7 +852,7 @@ add_task(async function test_moveTabToStart_disabled_in_splitview() {
           contextMoveTabToStart,
           { attributes: true },
           () => contextMoveTabToStart.disabled,
-          "Waiting for contextMoveTabToStart to be disabled"
+          { msg: "Waiting for contextMoveTabToStart to be disabled" }
         );
       }
       Assert.ok(

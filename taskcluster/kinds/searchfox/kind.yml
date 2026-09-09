@@ -53,7 +53,6 @@ tasks:
             env:
                 MOZSEARCH_PLATFORM: "linux64-opt"
         run:
-            clone-with: hg
             config:
                 - builds/releng_base_firefox.py
                 - builds/releng_sub_linux_configs/64_searchfox_and_opt.py
@@ -66,6 +65,7 @@ tasks:
                 - linux64-nasm
                 - linux64-node
                 - linux64-rust
+                - linux64-rust-analyzer
                 - linux64-cbindgen
                 - linux64-dump_syms
                 - linux64-pkgconf
@@ -84,7 +84,6 @@ tasks:
             env:
                 MOZSEARCH_PLATFORM: "linux64"
         run:
-            clone-with: hg
             config:
                 - builds/releng_base_firefox.py
                 - builds/releng_sub_linux_configs/64_searchfox_and_debug.py
@@ -97,6 +96,7 @@ tasks:
                 - linux64-nasm
                 - linux64-node
                 - linux64-rust
+                - linux64-rust-analyzer
                 - linux64-cbindgen
                 - linux64-dump_syms
                 - linux64-pkgconf
@@ -114,7 +114,6 @@ tasks:
             env:
                 MOZSEARCH_PLATFORM: "macosx64"
         run:
-            clone-with: hg
             config:
                 - builds/releng_base_firefox.py
                 - builds/releng_base_mac_64_cross_builds.py
@@ -129,6 +128,7 @@ tasks:
                 - linux64-nasm
                 - linux64-node
                 - linux64-rust-cross
+                - linux64-rust-analyzer
                 - linux64-cbindgen
                 - linux64-dump_syms
                 - macosx64-sdk
@@ -146,7 +146,6 @@ tasks:
             env:
                 MOZSEARCH_PLATFORM: "macosx64-aarch64-opt"
         run:
-            clone-with: hg
             config:
                 - builds/releng_base_firefox.py
                 - builds/releng_base_mac_64_cross_builds.py
@@ -164,6 +163,7 @@ tasks:
                 - linux64-nasm
                 - linux64-node
                 - linux64-rust-cross
+                - linux64-rust-analyzer
                 - linux64-cbindgen
                 - linux64-dump_syms
                 - macosx64-sdk
@@ -182,7 +182,6 @@ tasks:
             env:
                 MOZSEARCH_PLATFORM: "macosx64-aarch64"
         run:
-            clone-with: hg
             config:
                 - builds/releng_base_firefox.py
                 - builds/releng_base_mac_64_cross_builds.py
@@ -200,6 +199,7 @@ tasks:
                 - linux64-nasm
                 - linux64-node
                 - linux64-rust-cross
+                - linux64-rust-analyzer
                 - linux64-cbindgen
                 - linux64-dump_syms
                 - macosx64-sdk
@@ -217,7 +217,6 @@ tasks:
             env:
                 MOZSEARCH_PLATFORM: "ios"
         run:
-            clone-with: hg
             config:
                 - builds/releng_base_firefox.py
             script: "mozharness/scripts/fx_desktop_build.py"
@@ -237,6 +236,7 @@ tasks:
                 - linux64-nasm
                 - linux64-node
                 - linux64-rust-ios
+                - linux64-rust-analyzer
                 - linux64-cbindgen
                 - linux64-dump_syms
                 - ios-sdk
@@ -254,7 +254,6 @@ tasks:
             env:
                 MOZSEARCH_PLATFORM: "win64-opt"
         run:
-            clone-with: hg
             options: [append-env-variables-from-configs]
             script: mozharness/scripts/fx_desktop_build.py
             config:
@@ -272,6 +271,7 @@ tasks:
                 - linux64-nasm
                 - linux64-node
                 - linux64-rust-cross
+                - linux64-rust-analyzer
                 - linux64-rust-size
                 - linux64-upx
                 - linux64-winchecksec
@@ -297,7 +297,6 @@ tasks:
             env:
                 MOZSEARCH_PLATFORM: "win64"
         run:
-            clone-with: hg
             options: [append-env-variables-from-configs]
             script: mozharness/scripts/fx_desktop_build.py
             config:
@@ -315,6 +314,7 @@ tasks:
                 - linux64-nasm
                 - linux64-node
                 - linux64-rust-cross
+                - linux64-rust-analyzer
                 - linux64-rust-size
                 - linux64-upx
                 - linux64-winchecksec
@@ -342,7 +342,6 @@ tasks:
                 GRADLE_USER_HOME: "/builds/worker/checkouts/gecko/mobile/android/gradle/dotgradle-offline"
                 TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
         run:
-            clone-with: hg
             config:
                 - builds/releng_base_android_64_builds.py
             script: "mozharness/scripts/fx_desktop_build.py"
@@ -358,6 +357,7 @@ tasks:
                 - linux64-jdk
                 - linux64-clang
                 - linux64-rust-cross
+                - linux64-rust-analyzer
                 - linux64-rust-size
                 - linux64-cbindgen
                 - linux64-dump_syms

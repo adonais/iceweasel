@@ -56,7 +56,6 @@ internal class TextMenuIconViewHolder(
     }
 
     companion object {
-        @LayoutRes
-        val layoutResource = R.layout.mozac_browser_menu2_icon_text
+        @LayoutRes val layoutResource = R.layout.mozac_browser_menu2_icon_text
     }
 }

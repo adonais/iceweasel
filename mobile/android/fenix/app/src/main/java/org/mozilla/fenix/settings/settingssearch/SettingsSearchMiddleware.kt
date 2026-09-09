@@ -19,8 +19,8 @@ import mozilla.components.lib.state.Store
  *
  * @param fenixSettingsIndexer [SettingsIndexer] to use for indexing and querying settings.
  * @param navController [NavController] used for navigation.
- * @param recentSettingsSearchesRepository Optional [RecentSettingsSearchesRepository] for storing recent searches.
- *   When null, recent search tracking is disabled.
+ * @param recentSettingsSearchesRepository Optional [RecentSettingsSearchesRepository] for storing recent searches. When
+ *   null, recent search tracking is disabled.
  * @param scope [CoroutineScope] used for running long running operations in background.
  * @param dispatcher [CoroutineDispatcher] to use for performing background tasks.
  */
@@ -32,6 +32,7 @@ class SettingsSearchMiddleware(
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : Middleware<SettingsSearchState, SettingsSearchAction> {
     private var currentSearchJob: Job? = null
+
     override fun invoke(
         store: Store<SettingsSearchState, SettingsSearchAction>,
         next: (SettingsSearchAction) -> Unit,
@@ -50,26 +51,28 @@ class SettingsSearchMiddleware(
             is SettingsSearchAction.SearchQueryUpdated -> {
                 next(action)
                 currentSearchJob?.cancel()
-                currentSearchJob = scope.launch(dispatcher) {
-                    val results = fenixSettingsIndexer.getSettingsWithQuery(action.query)
-                    if (results.isEmpty()) {
-                        store.dispatch(SettingsSearchAction.NoResultsFound(action.query))
-                    } else {
-                        store.dispatch(
-                            SettingsSearchAction.SearchResultsLoaded(
-                                query = action.query,
-                                results = results,
-                            ),
-                        )
+                currentSearchJob =
+                    scope.launch(dispatcher) {
+                        val results = fenixSettingsIndexer.getSettingsWithQuery(action.query)
+                        if (results.isEmpty()) {
+                            store.dispatch(SettingsSearchAction.NoResultsFound(action.query))
+                        } else {
+                            store.dispatch(
+                                SettingsSearchAction.SearchResultsLoaded(
+                                    query = action.query,
+                                    results = results,
+                                )
+                            )
+                        }
                     }
-                }
             }
             is SettingsSearchAction.ResultItemClicked -> {
                 val searchItem = action.item
-                val bundle = Bundle().apply {
-                    putString("preference_to_scroll_to", searchItem.preferenceKey)
-                    putBoolean("search_in_progress", true)
-                }
+                val bundle =
+                    Bundle().apply {
+                        putString("preference_to_scroll_to", searchItem.preferenceKey)
+                        putBoolean("search_in_progress", true)
+                    }
                 val fragmentId = searchItem.preferenceFileInformation.fragmentId
                 if (recentSettingsSearchesRepository != null) {
                     scope.launch(dispatcher) {

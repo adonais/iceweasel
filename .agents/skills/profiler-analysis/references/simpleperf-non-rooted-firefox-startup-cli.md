@@ -9,15 +9,15 @@ Note: This is a simpleperf profile captured with `--trace-offcpu`. There are no 
 ## Load the profile
 
 ```
-$ profiler-cli load https://profiler.firefox.com/public/m19tkpgxjewvtbpjeyegtkhfj0k543fp5zxmcwg
+$ profiler-cli load https://profiler.firefox.com/public/m19tkpgxjewvtbpjeyegtkhfj0k543fp5zxmcwg --session fenix-startup
 Loading profile from ...
-Session started: default
+Session started: fenix-startup
 ```
 
 ## Orient: find the interesting threads
 
 ```
-$ profiler-cli profile info
+$ profiler-cli profile info --session fenix-startup
 [Thread: t-31 (Gecko) | View: Full profile | Full: 20.14s]
 
 Name: org.mozilla.fenix on samsung SM-G991W – Android 14
@@ -41,8 +41,8 @@ The `Gecko` thread is the Firefox main thread with the most active CPU. `QuotaMa
 Select the `QuotaManager IO` thread and look at its call tree:
 
 ```
-$ profiler-cli thread select t-142
-$ profiler-cli thread samples-top-down
+$ profiler-cli thread select t-142 --session fenix-startup
+$ profiler-cli thread samples-top-down --session fenix-startup
 ```
 
 The active work (31.3% of the thread's samples) breaks down as:
@@ -66,8 +66,8 @@ InitTemporaryStorageOp::DoDirectoryWork
 Check the second `DefaultDispatch` thread (t-53, 630ms active CPU):
 
 ```
-$ profiler-cli thread select t-53
-$ profiler-cli thread samples --search "suggest\|ingest"
+$ profiler-cli thread select t-53 --session fenix-startup
+$ profiler-cli thread samples --search "suggest\|ingest" --session fenix-startup
 ```
 
 The output shows 13.8% of all samples in the SuggestStore ingest path:
@@ -82,7 +82,7 @@ The output shows 13.8% of all samples in the SuggestStore ingest path:
 Drilling into the filter path with a top-down view:
 
 ```
-$ profiler-cli thread samples-top-down --search "filter_records"
+$ profiler-cli thread samples-top-down --search "filter_records" --session fenix-startup
 ```
 
 The bottleneck is JEXL filter expression parsing:
@@ -106,3 +106,9 @@ Two independent issues slow down the startup:
 1. **QuotaManager IO** (~2 second Gecko pause): `InitializeTemporaryStorageInternal` scans per-origin metadata files on every startup. The scan time grows with the number of stored origins. Bug 1903530 tracks this.
 
 2. **SuggestStore ingest**: `FxSuggestStorage.ingest` calls `RemoteSettingsClient::get_records`, which evaluates a JEXL filter for each record but rebuilds the JEXL parser machinery (including regex compilation) for every evaluation instead of caching it. Bug 1978973 tracks the broader `get_records` cost; the JEXL parser allocation is the specific hot path here.
+
+---
+
+```
+$ profiler-cli stop --session fenix-startup
+```

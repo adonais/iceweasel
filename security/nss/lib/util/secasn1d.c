@@ -258,12 +258,12 @@ typedef struct sec_asn1d_state_struct {
 } sec_asn1d_state;
 
 #define IS_HIGH_TAG_NUMBER(n) ((n) == SEC_ASN1_HIGH_TAG_NUMBER)
-#define LAST_TAG_NUMBER_BYTE(b) (((b)&0x80) == 0)
+#define LAST_TAG_NUMBER_BYTE(b) (((b) & 0x80) == 0)
 #define TAG_NUMBER_BITS 7
 #define TAG_NUMBER_MASK 0x7f
 
-#define LENGTH_IS_SHORT_FORM(b) (((b)&0x80) == 0)
-#define LONG_FORM_LENGTH(b) ((b)&0x7f)
+#define LENGTH_IS_SHORT_FORM(b) (((b) & 0x80) == 0)
+#define LONG_FORM_LENGTH(b) ((b) & 0x7f)
 
 #define HIGH_BITS(field, cnt) ((field) >> ((sizeof(field) * 8) - (cnt)))
 

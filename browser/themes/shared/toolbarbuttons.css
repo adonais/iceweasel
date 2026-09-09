@@ -173,6 +173,9 @@
 }
 
 toolbar .toolbarbutton-1 {
+  /* horizontal padding + actual icon width */
+  --toolbarbutton-icon-size: calc(2 * var(--toolbarbutton-padding-inner) + 16px);
+
   appearance: none;
   margin: 0;
   padding: 0 var(--toolbarbutton-padding-outer);
@@ -200,9 +203,8 @@ toolbar .toolbarbutton-1 {
   }
 
   > .toolbarbutton-icon {
-    /* horizontal padding + actual icon width */
-    width: calc(2 * var(--toolbarbutton-padding-inner) + 16px);
-    height: calc(2 * var(--toolbarbutton-padding-inner) + 16px);
+    width: var(--toolbarbutton-icon-size);
+    height: var(--toolbarbutton-icon-size);
   }
 
   > .toolbarbutton-text {
@@ -745,9 +747,6 @@ toolbar[keyNav]:not([collapsed], [customizing]) toolbartabstop,
 /* Smart Window auto tab grouping button */
 #smartwindow-group-tabs-button {
   align-items: center;
-}
-
-#smartwindow-group-tabs-button-inner {
   -moz-user-focus: normal;
   align-self: center;
 
@@ -766,6 +765,11 @@ toolbar[keyNav]:not([collapsed], [customizing]) toolbartabstop,
   &[aria-expanded="true"] > .toolbarbutton-icon {
     background-color: var(--toolbarbutton-background-color-active);
   }
+}
+
+/* Smart Window monitor button */
+#smartwindow-monitor-button[aria-expanded="true"] > .toolbarbutton-icon {
+  background-color: var(--toolbarbutton-background-color-active);
 }
 
 /* Document Picture-in-Picture API window */

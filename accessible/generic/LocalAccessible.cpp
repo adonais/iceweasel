@@ -593,9 +593,10 @@ LocalAccessible* LocalAccessible::LocalChildAtPoint(
   return accessible;
 }
 
-nsIFrame* LocalAccessible::FindNearestAccessibleAncestorFrame() {
+nsIFrame* LocalAccessible::FindNearestAccessibleAncestorFrame() const {
   nsIFrame* frame = GetFrame();
-  if (frame->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
+  if (frame &&
+      frame->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
       nsLayoutUtils::IsReallyFixedPos(frame)) {
     return mDoc->PresShellPtr()->GetRootFrame();
   }
@@ -617,8 +618,8 @@ nsIFrame* LocalAccessible::FindNearestAccessibleAncestorFrame() {
     ancestor = ancestor->LocalParent();
   }
 
-  MOZ_ASSERT_UNREACHABLE("No ancestor with frame?");
-  return nsLayoutUtils::GetContainingBlockForClientRect(frame);
+  return frame ? nsLayoutUtils::GetContainingBlockForClientRect(frame)
+               : nullptr;
 }
 
 nsRect LocalAccessible::ParentRelativeBounds() {
@@ -1366,8 +1367,6 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
   // Fire accessible event after short timer, because we need to wait for
   // DOM attribute & resulting layout to actually change. Otherwise,
   // assistive technology will retrieve the wrong state/value/selection info.
-
-  CssAltContent::HandleAttributeChange(mContent, aNameSpaceID, aAttribute);
 
   // XXX todo
   // We still need to handle special HTML cases here

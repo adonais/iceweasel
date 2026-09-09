@@ -4,6 +4,8 @@
 
 package mozilla.components.concept.fetch
 
+import java.io.IOException
+import java.io.InputStream
 import mozilla.components.concept.fetch.Headers.Names.CONTENT_TYPE
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
@@ -15,8 +17,6 @@ import org.mockito.Mockito
 import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import java.io.IOException
-import java.io.InputStream
 
 class ResponseTest {
     @Test
@@ -144,16 +144,18 @@ class ResponseTest {
 
     @Test
     fun `Fully configured Response`() {
-        val response = Response(
-            url = "https://www.mozilla.org",
-            status = 200,
-            headers = MutableHeaders(
-                CONTENT_TYPE to "text/html; charset=utf-8",
-                "Connection" to "Close",
-                "Expires" to "Thu, 08 Nov 2018 15:41:43 GMT",
-            ),
-            body = Response.Body("Hello World".byteInputStream()),
-        )
+        val response =
+            Response(
+                url = "https://www.mozilla.org",
+                status = 200,
+                headers =
+                    MutableHeaders(
+                        CONTENT_TYPE to "text/html; charset=utf-8",
+                        "Connection" to "Close",
+                        "Expires" to "Thu, 08 Nov 2018 15:41:43 GMT",
+                    ),
+                body = Response.Body("Hello World".byteInputStream()),
+            )
 
         assertEquals("https://www.mozilla.org", response.url)
         assertEquals(200, response.status)

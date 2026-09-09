@@ -4,32 +4,24 @@
 
 package org.mozilla.fenix.settings.trustpanel.store
 
+import java.security.cert.X509Certificate
 import mozilla.components.concept.engine.content.blocking.TrackerLog
 import mozilla.components.concept.engine.permission.SitePermissions
 import mozilla.components.lib.state.Action
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory
-import java.security.cert.X509Certificate
 
-/**
- * Actions to dispatch through the [TrustPanelStore] to modify the [TrustPanelState].
- */
+/** Actions to dispatch through the [TrustPanelStore] to modify the [TrustPanelState]. */
 sealed class TrustPanelAction : Action {
 
-    /**
-     * [TrustPanelAction] dispatched when the current site's data is cleared.
-     */
+    /** [TrustPanelAction] dispatched when the current site's data is cleared. */
     data object ClearSiteData : TrustPanelAction()
 
-    /**
-     * [TrustPanelAction] dispatched when tracking protection is toggled.
-     */
+    /** [TrustPanelAction] dispatched when tracking protection is toggled. */
     data object ToggleTrackingProtection : TrustPanelAction()
 
-    /**
-     * [TrustPanelAction] dispatched when the clear site data dialog is requested.
-     */
+    /** [TrustPanelAction] dispatched when the clear site data dialog is requested. */
     data object RequestClearSiteDataDialog : TrustPanelAction()
 
     /**
@@ -40,15 +32,14 @@ sealed class TrustPanelAction : Action {
     data class UpdateBaseDomain(val baseDomain: String) : TrustPanelAction()
 
     /**
-     * [TrustPanelAction] dispatched when the detailed tracker category is updated for the tracker
-     * category details panel.
+     * [TrustPanelAction] dispatched when the detailed tracker category is updated for the tracker category details
+     * panel.
      *
-     * @property detailedTrackerCategory The [TrackingProtectionCategory] for which detailed information
-     * should be displayed.
+     * @property detailedTrackerCategory The [TrackingProtectionCategory] for which detailed information should be
+     *   displayed.
      */
-    data class UpdateDetailedTrackerCategory(
-        val detailedTrackerCategory: TrackingProtectionCategory,
-    ) : TrustPanelAction()
+    data class UpdateDetailedTrackerCategory(val detailedTrackerCategory: TrackingProtectionCategory) :
+        TrustPanelAction()
 
     /**
      * [TrustPanelAction] dispatched when the number of blocked trackers is updated.
@@ -78,9 +69,7 @@ sealed class TrustPanelAction : Action {
      */
     data class UpdateIPProtectionMenuState(val state: IPProtectionMenuState) : TrustPanelAction()
 
-    /**
-     * [TrustPanelAction] dispatched when QWAC status is requested.
-     */
+    /** [TrustPanelAction] dispatched when QWAC status is requested. */
     data object RequestQWAC : TrustPanelAction()
 
     /**
@@ -113,41 +102,32 @@ sealed class TrustPanelAction : Action {
         /**
          * Change resulting from a previously blocked [WebsitePermission] being granted permission by Android.
          *
-         * @property updatedFeature [PhoneFeature] backing a certain [WebsitePermission].
-         * Allows to easily identify which permission changed
+         * @property updatedFeature [PhoneFeature] backing a certain [WebsitePermission]. Allows to easily identify
+         *   which permission changed
          */
-        class GrantPermissionBlockedByAndroid(
-            override val updatedFeature: PhoneFeature,
-        ) : WebsitePermissionAction(updatedFeature)
+        class GrantPermissionBlockedByAndroid(override val updatedFeature: PhoneFeature) :
+            WebsitePermissionAction(updatedFeature)
 
         /**
          * Change resulting from toggling a specific [WebsitePermission] for the current website.
          *
-         * @property updatedFeature [PhoneFeature] backing a certain [WebsitePermission].
-         * Allows to easily identify which permission changed
+         * @property updatedFeature [PhoneFeature] backing a certain [WebsitePermission]. Allows to easily identify
+         *   which permission changed
          */
-        class TogglePermission(
-            override val updatedFeature: PhoneFeature,
-        ) : WebsitePermissionAction(updatedFeature)
+        class TogglePermission(override val updatedFeature: PhoneFeature) : WebsitePermissionAction(updatedFeature)
 
         /**
          * Change resulting from changing a specific [WebsitePermission.Autoplay] for the current website.
          *
-         * @property autoplayValue [AutoplayValue] backing a certain [WebsitePermission.Autoplay].
-         * Allows to easily identify which permission changed
+         * @property autoplayValue [AutoplayValue] backing a certain [WebsitePermission.Autoplay]. Allows to easily
+         *   identify which permission changed
          */
-        class ChangeAutoplay(
-            val autoplayValue: AutoplayValue,
-        ) : WebsitePermissionAction(PhoneFeature.AUTOPLAY)
+        class ChangeAutoplay(val autoplayValue: AutoplayValue) : WebsitePermissionAction(PhoneFeature.AUTOPLAY)
     }
 
-    /**
-     * [TrustPanelAction] dispatched when a navigation event occurs for a specific destination.
-     */
+    /** [TrustPanelAction] dispatched when a navigation event occurs for a specific destination. */
     sealed class Navigate : TrustPanelAction() {
-        /**
-         * [Navigate] action dispatched when navigating to the privacy and security settings.
-         */
+        /** [Navigate] action dispatched when navigating to the privacy and security settings. */
         data object PrivacySecuritySettings : Navigate()
 
         /**
@@ -157,24 +137,16 @@ sealed class TrustPanelAction : Action {
          */
         data class ManagePhoneFeature(val phoneFeature: PhoneFeature) : Navigate()
 
-        /**
-         * [Navigate] action dispatched when navigating to view the security certificate.
-         */
+        /** [Navigate] action dispatched when navigating to view the security certificate. */
         data object SecurityCertificate : Navigate()
 
-        /**
-         * [Navigate] action dispatched when navigating to view the QWAC.
-         */
+        /** [Navigate] action dispatched when navigating to view the QWAC. */
         data object QWAC : Navigate()
 
-        /**
-         * [Navigate] action dispatched when showing the protections dashboard.
-         */
+        /** [Navigate] action dispatched when showing the protections dashboard. */
         data object TrackersProtectionDashboard : Navigate()
 
-        /**
-         * [Navigate] action dispatched when navigating to the IP protection settings screen.
-         */
+        /** [Navigate] action dispatched when navigating to the IP protection settings screen. */
         data object IPProtectionSettings : Navigate()
     }
 }

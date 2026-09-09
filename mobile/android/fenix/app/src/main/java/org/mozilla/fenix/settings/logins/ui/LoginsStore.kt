@@ -19,8 +19,9 @@ internal class LoginsStore(
     initialState: LoginsState = LoginsState.default,
     reducer: Reducer<LoginsState, LoginsAction> = ::loginsReducer,
     middleware: List<Middleware<LoginsState, LoginsAction>> = listOf(),
-) : Store<LoginsState, LoginsAction>(
-    initialState = initialState,
-    reducer = reducer,
-    middleware = middleware,
-)
+) :
+    Store<LoginsState, LoginsAction>(
+        initialState = initialState,
+        reducer = reducer,
+        middleware = middleware,
+    )

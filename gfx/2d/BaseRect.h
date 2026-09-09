@@ -490,7 +490,15 @@ struct BaseRect {
   Point Center() const { return Point(x, y) + Point(width, height) / 2; }
   SizeT Size() const { return SizeT(width, height); }
 
-  T Area() const { return width * height; }
+  // For integer coordinates, widen to 64-bit before multiplying so that the
+  // area of a large rect does not overflow.
+  auto Area() const {
+    if constexpr (std::is_integral_v<T>) {
+      return int64_t(width) * int64_t(height);
+    } else {
+      return width * height;
+    }
+  }
 
   // Helper methods for computing the extents
   MOZ_ALWAYS_INLINE T X() const { return x; }

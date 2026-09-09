@@ -15,31 +15,17 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.click
 
-/**
- * Implementation of Robot Pattern for the URL toolbar.
- */
+/** Implementation of Robot Pattern for the URL toolbar. */
 class AccountSettingsRobot {
     fun verifyBookmarksCheckbox() {
         Log.i(TAG, "verifyBookmarksCheckbox: Trying to verify that the bookmarks check box is visible")
-        bookmarksCheckbox().check(
-            matches(
-                withEffectiveVisibility(
-                    Visibility.VISIBLE,
-                ),
-            ),
-        )
+        bookmarksCheckbox().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyBookmarksCheckbox: Verified that the bookmarks check box is visible")
     }
 
     fun verifyHistoryCheckbox() {
         Log.i(TAG, "verifyHistoryCheckbox: Trying to verify that the history check box is visible")
-        historyCheckbox().check(
-            matches(
-                withEffectiveVisibility(
-                    Visibility.VISIBLE,
-                ),
-            ),
-        )
+        historyCheckbox().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyHistoryCheckbox: Verified that the history check box is visible")
     }
 
@@ -77,9 +63,11 @@ fun accountSettings(interact: AccountSettingsRobot.() -> Unit): AccountSettingsR
 }
 
 private fun bookmarksCheckbox() = Espresso.onView(CoreMatchers.allOf(ViewMatchers.withText("Bookmarks")))
+
 private fun historyCheckbox() = Espresso.onView(CoreMatchers.allOf(ViewMatchers.withText("History")))
 
 private fun signOutButton() = Espresso.onView(CoreMatchers.allOf(ViewMatchers.withText("Sign out")))
+
 private fun deviceName() = Espresso.onView(CoreMatchers.allOf(ViewMatchers.withText("Device name")))
 
 private fun disconnectButton() = Espresso.onView(CoreMatchers.allOf(ViewMatchers.withId(R.id.signOutDisconnect)))

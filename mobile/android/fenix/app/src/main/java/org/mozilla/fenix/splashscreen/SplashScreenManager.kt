@@ -5,6 +5,7 @@
 package org.mozilla.fenix.splashscreen
 
 import androidx.core.splashscreen.SplashScreen.KeepOnScreenCondition
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -14,15 +15,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withContext
 import org.mozilla.fenix.utils.Settings
-import kotlin.coroutines.CoroutineContext
 
-/**
- * An interface to persis the state of the splash screen.
- */
+/** An interface to persis the state of the splash screen. */
 interface SplashScreenStorage {
-    /**
-     * Indicates whether the first splash screen has already been shown.
-     */
+    /** Indicates whether the first splash screen has already been shown. */
     var isFirstSplashScreenShown: Boolean
 }
 
@@ -31,17 +27,15 @@ interface SplashScreenStorage {
  *
  * @property settings The settings object used to persist the splash screen state.
  */
-class DefaultSplashScreenStorage(
-    val settings: Settings,
-) : SplashScreenStorage {
+class DefaultSplashScreenStorage(val settings: Settings) : SplashScreenStorage {
     override var isFirstSplashScreenShown
         get() = settings.isFirstSplashScreenShown
-        set(value) { settings.isFirstSplashScreenShown = value }
+        set(value) {
+            settings.isFirstSplashScreenShown = value
+        }
 }
 
-/**
- * Possible results of showing the splash screen operation.
- */
+/** Possible results of showing the splash screen operation. */
 sealed class SplashScreenManagerResult {
 
     /**
@@ -60,28 +54,29 @@ sealed class SplashScreenManagerResult {
      */
     data class TimeoutExceeded(val type: String, val dataFetched: Boolean) : SplashScreenManagerResult()
 
-    /**
-     * Indicates the splash screen was not presented.
-     */
+    /** Indicates the splash screen was not presented. */
     data object DidNotPresentSplashScreen : SplashScreenManagerResult()
 
     val sendTelemetry: Boolean
-        get() = when (this) {
-            is TimeoutExceeded, is OperationFinished -> true
-            DidNotPresentSplashScreen -> false
-        }
+        get() =
+            when (this) {
+                is TimeoutExceeded,
+                is OperationFinished -> true
+                DidNotPresentSplashScreen -> false
+            }
 
     val wasDataFetched: Boolean
-        get() = when (this) {
-            is OperationFinished -> this.dataFetched
-            is TimeoutExceeded -> this.dataFetched
-            else -> false
-        }
+        get() =
+            when (this) {
+                is OperationFinished -> this.dataFetched
+                is TimeoutExceeded -> this.dataFetched
+                else -> false
+            }
 }
 
 /**
- * Manages the splash screen logic, including conditions for displaying the splash screen
- * and handling experiment data application and fetching.
+ * Manages the splash screen logic, including conditions for displaying the splash screen and handling experiment data
+ * application and fetching.
  *
  * @param splashScreenOperation The operation to execute during the splash screen.
  * @param splashScreenTimeout The timeout for the operation.
@@ -102,13 +97,14 @@ class SplashScreenManager(
 ) : KeepOnScreenCondition {
 
     private var isSplashScreenFinished = false
+
     override fun shouldKeepOnScreen(): Boolean {
         return !isSplashScreenFinished
     }
 
     /**
-     * If conditions are met, this function delays the system splash screen while
-     * trying to complete [splashScreenOperation] before reaching [splashScreenTimeout].
+     * If conditions are met, this function delays the system splash screen while trying to complete
+     * [splashScreenOperation] before reaching [splashScreenTimeout].
      */
     fun showSplashScreen() {
         if (storage.isFirstSplashScreenShown) {
@@ -127,7 +123,8 @@ class SplashScreenManager(
                         type = splashScreenOperation.type,
                         dataFetched = splashScreenOperation.dataFetched,
                     )
-                }.onAwait { it }
+                }
+                    .onAwait { it }
 
                 async {
                     delay(splashScreenTimeout)
@@ -135,7 +132,8 @@ class SplashScreenManager(
                         type = splashScreenOperation.type,
                         dataFetched = splashScreenOperation.dataFetched,
                     )
-                }.onAwait { it }
+                }
+                    .onAwait { it }
             }
 
             splashScreenOperation.dispose()

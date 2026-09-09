@@ -99,6 +99,7 @@ complexity:
   active: true
   CognitiveComplexMethod:
     active: true
+    excludes: ['**/test/**', '**/androidTest/**']
     threshold: 15
   ComplexCondition:
     active: true
@@ -111,6 +112,7 @@ complexity:
     ignoreOverloaded: false
   CyclomaticComplexMethod:
     active: true
+    excludes: ['**/test/**', '**/androidTest/**']
     threshold: 18 # (Default: 15) Increased in https://github.com/mozilla-mobile/android-components/pull/10328
     ignoreSingleWhenExpression: true # Enabled in https://github.com/mozilla-mobile/android-components/pull/3271
     ignoreSimpleWhenEntries: false
@@ -130,9 +132,11 @@ complexity:
     ignoredLabels: []
   LargeClass:
     active: true
+    excludes: ['**/test/**', '**/androidTest/**']
     threshold: 600
   LongMethod:
     active: true
+    excludes: ['**/test/**', '**/androidTest/**']
     threshold: 75 # (Default: 60) Increased in https://github.com/mozilla-mobile/android-components/issues/6350
   LongParameterList:
     active: true
@@ -150,6 +154,7 @@ complexity:
     ignoreArgumentsMatchingNames: false
   NestedBlockDepth:
     active: true
+    excludes: ['**/test/**', '**/androidTest/**']
     threshold: 4
   NestedScopeFunctions:
     active: false
@@ -222,6 +227,7 @@ empty-blocks:
     active: true
   EmptyFunctionBlock:
     active: true
+    excludes: ['**/test/**', '**/androidTest/**']
     ignoreOverridden: false
   EmptyIfBlock:
     active: true
@@ -233,10 +239,12 @@ empty-blocks:
     active: true
   EmptyTryBlock:
     active: true
+    excludes: ['**/test/**', '**/androidTest/**']
   EmptyWhenBlock:
     active: true
   EmptyWhileBlock:
     active: true
+    excludes: ['**/test/**', '**/androidTest/**']
 
 exceptions:
   active: true
@@ -303,6 +311,7 @@ exceptions:
     allowedExceptionNameRegex: '_|(ignore|expected).*'
   TooGenericExceptionThrown:
     active: true
+    excludes: ['**/test/**', '**/androidTest/**']
     exceptionNames:
       - 'Error'
       - 'Exception'
@@ -640,6 +649,7 @@ style:
     maxChainedCalls: 5
   MaxLineLength:
     active: true
+    excludes: ['**/test/**', '**/androidTest/**']
     maxLineLength: 120
     excludePackageStatements: true
     excludeImportStatements: true
@@ -797,6 +807,7 @@ mozilla-rules:
   active: true
   ClassAcronymCasing:
     active: true
+    excludes: ['**/test/**', '**/androidTest/**']
 
 acorn-detekt-rules:
   active: true

@@ -10,21 +10,17 @@ import android.os.Bundle
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 
-/**
- * [android.support.v4.app.DialogFragment] implementation to display web Alerts with native dialogs.
- */
+/** [android.support.v4.app.DialogFragment] implementation to display web Alerts with native dialogs. */
 internal class AlertDialogFragment : AbstractPromptTextDialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val builder = MaterialAlertDialogBuilder(requireContext())
-            .setTitle(title)
-            .setCancelable(true)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
+        val builder =
+            MaterialAlertDialogBuilder(requireContext()).setTitle(title).setCancelable(true).setPositiveButton(
+                android.R.string.ok
+            ) { _, _ ->
                 onPositiveClickAction()
             }
-        return setCustomMessageView(builder)
-            .create()
-            .withCenterAlignedButtons()
+        return setCustomMessageView(builder).create().withCenterAlignedButtons()
     }
 
     override fun onCancel(dialog: DialogInterface) {
@@ -43,15 +39,16 @@ internal class AlertDialogFragment : AbstractPromptTextDialogFragment() {
     companion object {
         /**
          * A builder method for creating a [AlertDialogFragment]
+         *
          * @param sessionId to create the dialog.
          * @param promptRequestUID identifier of the [PromptRequest] for which this dialog is shown.
-         * @param shouldDismissOnLoad whether or not the dialog should automatically be dismissed
-         * when a new page is loaded.
+         * @param shouldDismissOnLoad whether or not the dialog should automatically be dismissed when a new page is
+         *   loaded.
          * @param title the title of the dialog.
          * @param message the message of the dialog.
-         * @param hasShownManyDialogs tells if this [sessionId] has shown many dialogs
-         * in a short period of time, if is true a checkbox will be part of the dialog, for the user
-         * to choose if wants to prevent this [sessionId] continuing showing dialogs.
+         * @param hasShownManyDialogs tells if this [sessionId] has shown many dialogs in a short period of time, if is
+         *   true a checkbox will be part of the dialog, for the user to choose if wants to prevent this [sessionId]
+         *   continuing showing dialogs.
          */
         fun newInstance(
             sessionId: String,

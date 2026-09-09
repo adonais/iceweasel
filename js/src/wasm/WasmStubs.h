@@ -370,10 +370,8 @@ extern void GenerateDirectCallFromJit(jit::MacroAssembler& masm,
 // When the callee returns, the results are converted again to the `resume`
 // stack arguments ABI and the stub performs a stack switch to the enclosing
 // handler.
-//
-// There will need to be a unique stub for each function type passed to
-// `cont.new`. Right now we only support `[] -> []`, so we take no func type.
 extern bool GenerateContBaseFrameStub(jit::MacroAssembler& masm,
+                                      const FuncType& funcType,
                                       Offsets* offsets);
 #endif
 

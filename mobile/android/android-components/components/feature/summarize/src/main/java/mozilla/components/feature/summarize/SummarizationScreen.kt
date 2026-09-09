@@ -54,41 +54,37 @@ import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.concept.llm.AttestationFailure
 import mozilla.components.concept.llm.LlmProvider
 import mozilla.components.concept.llm.RequestTooLarge
+import mozilla.components.feature.summarize.content.PaywalledContentException
 import mozilla.components.feature.summarize.settings.SettingsAppBar
 import mozilla.components.feature.summarize.settings.SummarizeSettingsContent
 import mozilla.components.feature.summarize.settings.SummarizeSettingsState
-import mozilla.components.feature.summarize.settings.SummarizeSettingsStore
-import mozilla.components.feature.summarize.settings.summarizeSettingsReducer
 import mozilla.components.feature.summarize.ui.ContentTooLongError
 import mozilla.components.feature.summarize.ui.DownloadError
 import mozilla.components.feature.summarize.ui.FxaSignInContent
 import mozilla.components.feature.summarize.ui.InfoError
 import mozilla.components.feature.summarize.ui.OffDeviceSummarizationConsent
 import mozilla.components.feature.summarize.ui.OnDeviceSummarizationConsent
+import mozilla.components.feature.summarize.ui.PaywalledContentError
 import mozilla.components.feature.summarize.ui.SummarizingContent
 import mozilla.components.feature.summarize.ui.SummaryContentLoaded
 import mozilla.components.feature.summarize.ui.gradient.summaryLoadingGradient
 import mozilla.components.ui.richtext.ir.RichDocument
 import mozilla.components.ui.richtext.parsing.Parser
 
-/**
- * The corner ration of the handle shape
- */
+/** The corner ration of the handle shape */
 private const val DRAG_HANDLE_CORNER_RATIO = 50
 
 /**
  * Composable function that renders the summarized text of a webpage.
  *
- * @param resolveError Resolves a thrown failure into a numeric code for display (long-press
- *  reveal on the error icon, telemetry, support). The summarize feature has no knowledge of
- *  which concrete [mozilla.components.concept.llm.Llm.Exception] subtypes exist; the caller
- *  (app layer) supplies that mapping.
- **/
+ * @param resolveError Resolves a thrown failure into a numeric code for display (long-press reveal on the error icon,
+ *   telemetry, support). The summarize feature has no knowledge of which concrete
+ *   [mozilla.components.concept.llm.Llm.Exception] subtypes exist; the caller (app layer) supplies that mapping.
+ */
 @Composable
 fun SummarizationUi(
     productName: String,
     store: SummarizationStore,
-    settingsStore: SummarizeSettingsStore? = null,
     resolveError: (Throwable) -> Int,
 ) {
     LaunchedEffect(Unit) {
@@ -99,55 +95,56 @@ fun SummarizationUi(
         SummarizationScreen(
             modifier = Modifier.fillMaxWidth(),
             store = store,
-            settingsStore = settingsStore,
             errorCodeFor = resolveError,
         )
     }
 }
 
-@JvmInline
-internal value class ProductName(val value: String)
+@JvmInline internal value class ProductName(val value: String)
+
 internal val LocalProductName = compositionLocalOf { ProductName("Firefox Debug") }
 
 @Composable
 private fun SummarizationScreen(
     modifier: Modifier = Modifier,
     store: SummarizationStore,
-    settingsStore: SummarizeSettingsStore? = null,
     errorCodeFor: (Throwable) -> Int,
 ) {
     val state by store.stateFlow.collectAsStateWithLifecycle()
 
     ApplyHaptics(state)
 
-    val loadingAlpha by animateFloatAsState(
-        targetValue = if (
-            (state.isLoading || state.isPageLoading) && useGradient
-        ) {
-            1f
-        } else {
-            0f
-        },
-        animationSpec = if (state.isLoading || state.isPageLoading) {
-            state.tween
-        } else {
-            snap()
-        },
-        label = "gradientAlpha",
-    )
+    val loadingAlpha by
+        animateFloatAsState(
+            targetValue =
+                if ((state.isLoading || state.isPageLoading) && useGradient) {
+                    1f
+                } else {
+                    0f
+                },
+            animationSpec =
+                if (state.isLoading || state.isPageLoading) {
+                    state.tween
+                } else {
+                    snap()
+                },
+            label = "gradientAlpha",
+        )
 
     SummarizationScreenScaffold(
-        modifier = modifier
-            .summaryLoadingGradientCompat(loadingAlpha)
-            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom))
-            .nestedScroll(rememberNestedScrollInteropConnection()),
+        modifier =
+            modifier
+                .summaryLoadingGradientCompat(loadingAlpha)
+                .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom))
+                .nestedScroll(rememberNestedScrollInteropConnection()),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 1f - loadingAlpha),
     ) {
-        SummarizationScreenContent(store, settingsStore, errorCodeFor)
+        SummarizationScreenContent(store, errorCodeFor)
     }
 }
 
-private val useGradient get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+private val useGradient
+    get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
 
 private fun Modifier.summaryLoadingGradientCompat(loadingAlpha: Float): Modifier =
     this.thenConditional(
@@ -155,7 +152,7 @@ private fun Modifier.summaryLoadingGradientCompat(loadingAlpha: Float): Modifier
             Modifier.summaryLoadingGradient(loadingAlpha)
         } else {
             Modifier
-        },
+        }
     ) {
         loadingAlpha > 0
     }
@@ -163,7 +160,6 @@ private fun Modifier.summaryLoadingGradientCompat(loadingAlpha: Float): Modifier
 @Composable
 private fun SummarizationScreenContent(
     store: SummarizationStore,
-    settingsStore: SummarizeSettingsStore? = null,
     errorCodeFor: (Throwable) -> Int,
 ) {
     val state by store.stateFlow.collectAsStateWithLifecycle()
@@ -172,12 +168,11 @@ private fun SummarizationScreenContent(
         is SummarizationState.Inert -> Unit
 
         is SummarizationState.LearnMoreAboutShakeConsent,
-        is SummarizationState.ShakeConsentRequired,
-            -> {
+        is SummarizationState.ShakeConsentRequired -> {
             OffDeviceSummarizationConsent(
                 dispatchAction = {
                     store.dispatch(it)
-                },
+                }
             )
         }
 
@@ -185,58 +180,60 @@ private fun SummarizationScreenContent(
             OnDeviceSummarizationConsent(
                 dispatchAction = {
                     store.dispatch(it)
-                },
+                }
             )
         }
 
         is SummarizationState.Loading,
-        SummarizationState.PageLoading,
-        -> {
+        SummarizationState.PageLoading -> {
             SummarizingContent(
                 modifier = Modifier.height(252.dp),
                 useGradientColors = useGradient,
             )
         }
 
-        is SummarizationState.Summarizing -> SummaryContentLoaded(
-            info = state.info,
-            document = state.document,
-            onSettingsClicked = { store.dispatch(SettingsClicked) },
-        )
+        is SummarizationState.Summarizing ->
+            SummaryContentLoaded(
+                info = state.info,
+                document = state.document,
+                onSettingsClicked = { store.dispatch(SettingsClicked) },
+            )
 
-        is SummarizationState.Summarized -> SummaryContentLoaded(
-            info = state.info,
-            document = state.document,
-            onSettingsClicked = { store.dispatch(SettingsClicked) },
-        )
+        is SummarizationState.Summarized ->
+            SummaryContentLoaded(
+                info = state.info,
+                document = state.document,
+                onSettingsClicked = { store.dispatch(SettingsClicked) },
+                feedback = state.feedback,
+                onFeedbackClicked = { store.dispatch(SummaryFeedbackProvided(it)) },
+            )
 
         is SummarizationState.Settings -> {
             SettingsAppBar(onBackClicked = { store.dispatch(SettingsBackClicked) })
 
-            if (settingsStore != null) {
-                SummarizeSettingsContent(store = settingsStore)
-            }
-        }
-
-        is SummarizationState.SignInRequired -> {
-            FxaSignInContent(
-                dispatchAction = { store.dispatch(it) },
+            SummarizeSettingsContent(
+                state = state.settingsState,
+                dispatch = { store.dispatch(SummarizeSettingsActionWrapper(it)) },
             )
         }
 
-        is SummarizationState.Error -> SummarizationErrorContent(
-            error = state.error,
-            errorCodeFor = errorCodeFor,
-            dispatch = { store.dispatch(it) },
-        )
+        is SummarizationState.SignInRequired -> {
+            FxaSignInContent(dispatchAction = { store.dispatch(it) })
+        }
+
+        is SummarizationState.Error ->
+            SummarizationErrorContent(
+                error = state.error,
+                errorCodeFor = errorCodeFor,
+                dispatch = { store.dispatch(it) },
+            )
 
         SummarizationState.DownloadConsentRequired,
         is SummarizationState.Downloading,
         SummarizationState.Finished.Cancelled,
         SummarizationState.Finished.ErrorDismissed,
         SummarizationState.Finished.NavigatedToSignIn,
-        SummarizationState.LearnMoreAboutCloudSupportedFeatures,
-        -> Unit
+        SummarizationState.LearnMoreAboutCloudSupportedFeatures -> Unit
     }
 }
 
@@ -248,20 +245,23 @@ private fun SummarizationErrorContent(
 ) {
     when (error) {
         is SummarizationError.DownloadFailed -> DownloadError()
-        is SummarizationError.SummarizationFailed -> when (error.exception) {
-            is RequestTooLarge -> ContentTooLongError(
-                onDismiss = { dispatch(ErrorAction.ErrorDismissed) },
-            )
-            is AttestationFailure -> {
-                FxaSignInContent(
-                    dispatchAction = { dispatch(it) },
-                )
+        is SummarizationError.SummarizationFailed ->
+            when (error.exception) {
+                is RequestTooLarge -> ContentTooLongError(onDismiss = { dispatch(ErrorAction.ErrorDismissed) })
+
+                is PaywalledContentException ->
+                    PaywalledContentError(onDismiss = { dispatch(ErrorAction.ErrorDismissed) })
+
+                is AttestationFailure -> {
+                    FxaSignInContent(dispatchAction = { dispatch(it) })
+                }
+
+                else ->
+                    InfoError(
+                        errorCode = errorCodeFor(error.exception),
+                        onDismiss = { dispatch(ErrorAction.ErrorDismissed) },
+                    )
             }
-            else -> InfoError(
-                errorCode = errorCodeFor(error.exception),
-                onDismiss = { dispatch(ErrorAction.ErrorDismissed) },
-            )
-        }
     }
 }
 
@@ -293,8 +293,7 @@ private fun ApplyHaptics(state: SummarizationState) {
             SummarizationState.ShakeConsentWithDownloadRequired,
             is SummarizationState.Summarizing,
             SummarizationState.LearnMoreAboutCloudSupportedFeatures,
-            SummarizationState.SignInRequired,
-            -> {}
+            SummarizationState.SignInRequired -> {}
         }
     }
 }
@@ -306,29 +305,28 @@ private fun SummarizationScreenScaffold(
     content: @Composable (() -> Unit),
 ) {
     Surface(
-        shape = MaterialTheme.shapes.extraLarge.copy(
-            bottomStart = CornerSize(0.dp),
-            bottomEnd = CornerSize(0.dp),
-        ),
+        shape =
+            MaterialTheme.shapes.extraLarge.copy(
+                bottomStart = CornerSize(0.dp),
+                bottomEnd = CornerSize(0.dp),
+            ),
         color = color,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight(align = Alignment.Bottom)
-            .clip(
-                MaterialTheme.shapes.extraLarge.copy(
-                    bottomStart = CornerSize(0.dp),
-                    bottomEnd = CornerSize(0.dp),
-                ),
-            )
-            .then(modifier)
-            .widthIn(max = AcornTheme.layout.size.containerMaxWidth),
+        modifier =
+            Modifier.fillMaxWidth()
+                .wrapContentHeight(align = Alignment.Bottom)
+                .clip(
+                    MaterialTheme.shapes.extraLarge.copy(
+                        bottomStart = CornerSize(0.dp),
+                        bottomEnd = CornerSize(0.dp),
+                    )
+                )
+                .then(modifier)
+                .widthIn(max = AcornTheme.layout.size.containerMaxWidth),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(horizontal = AcornTheme.layout.space.static200),
+            modifier =
+                Modifier.fillMaxWidth().wrapContentHeight().padding(horizontal = AcornTheme.layout.space.static200)
         ) {
             DragHandle(modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(AcornTheme.layout.space.static200))
@@ -339,27 +337,24 @@ private fun SummarizationScreenScaffold(
 }
 
 @Composable
-private fun DragHandle(
-    modifier: Modifier = Modifier,
-) {
+private fun DragHandle(modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier
-            .requiredHeight(36.dp)
-            .verticalScroll(rememberScrollState()),
+        modifier = modifier.requiredHeight(36.dp).verticalScroll(rememberScrollState()),
         contentAlignment = Alignment.Center,
     ) {
         Box(
-            modifier = Modifier
-                .requiredSize(width = 32.dp, height = 4.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.outline,
-                    shape = RoundedCornerShape(DRAG_HANDLE_CORNER_RATIO),
-                ),
+            modifier =
+                Modifier.requiredSize(width = 32.dp, height = 4.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.outline,
+                        shape = RoundedCornerShape(DRAG_HANDLE_CORNER_RATIO),
+                    )
         )
     }
 }
 
-private val previewSummarizedText = """
+private val previewSummarizedText =
+    """
     **What's happening:** Lucasfilm has announced a new Star Wars trilogy set in the Old Republic era, thousands of years before the Skywalker saga.
 
     **Why it matters:** Fans have long requested stories from this period, which explores the ancient conflict between the Jedi and the Sith at the height of their power.
@@ -369,50 +364,49 @@ private val previewSummarizedText = """
     - Director: Yet to be announced
     - First film expected: 2028
     - Will feature the original Sith Wars and the founding of the Jedi Order
-""".trimIndent()
+    """
+        .trimIndent()
 
 private class SummarizationStatePreviewProvider : PreviewParameterProvider<SummarizationState> {
     val info = LlmProvider.Info(R.string.mozac_summarize_fake_llm_name)
     val parser = Parser()
-    override val values: Sequence<SummarizationState> = sequenceOf(
-        SummarizationState.Summarizing(info = info),
-        SummarizationState.Summarized(info = info, document = parser.parse(previewSummarizedText)),
-        SummarizationState.Settings(info = info, document = RichDocument(listOf())),
-        SummarizationState.ShakeConsentRequired,
-        SummarizationState.ShakeConsentWithDownloadRequired,
-        SummarizationState.Error(
-            SummarizationError.SummarizationFailed(NullPointerException("preview failure")),
-        ),
-    )
+    override val values: Sequence<SummarizationState> =
+        sequenceOf(
+            SummarizationState.Summarizing(info = info),
+            SummarizationState.Summarized(info = info, document = parser.parse(previewSummarizedText)),
+            SummarizationState.Settings(
+                info = info,
+                document = RichDocument(listOf()),
+                settingsState = SummarizeSettingsState(isFeatureEnabled = true, isGestureEnabled = true),
+            ),
+            SummarizationState.ShakeConsentRequired,
+            SummarizationState.ShakeConsentWithDownloadRequired,
+            SummarizationState.Error(SummarizationError.SummarizationFailed(NullPointerException("preview failure"))),
+        )
 }
 
 @FlexibleWindowLightDarkPreview
 @Composable
 private fun SummarizationScreenPreview(
-    @PreviewParameter(SummarizationStatePreviewProvider::class) state: SummarizationState,
+    @PreviewParameter(SummarizationStatePreviewProvider::class) state: SummarizationState
 ) {
     AcornTheme {
         SummarizationScreen(
-            store = SummarizationStore(
-                initialState = state,
-                reducer = ::summarizationReducer,
-                middleware = listOf(),
-            ),
-            settingsStore = SummarizeSettingsStore(
-                initialState = SummarizeSettingsState(
-                    isFeatureEnabled = true,
-                    isGestureEnabled = true,
+            store =
+                SummarizationStore(
+                    initialState = state,
+                    reducer = ::summarizationReducer,
+                    middleware = listOf(),
                 ),
-                reducer = ::summarizeSettingsReducer,
-                middleware = listOf(),
-            ),
             errorCodeFor = { 9999 },
         )
     }
 }
 
-private val SummarizationState.tween: AnimationSpec<Float> get() = if (isSummarizing) {
-    tween(durationMillis = 3000)
-} else {
-    snap()
-}
+private val SummarizationState.tween: AnimationSpec<Float>
+    get() =
+        if (isSummarizing) {
+            tween(durationMillis = 3000)
+        } else {
+            snap()
+        }

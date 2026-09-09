@@ -29,6 +29,7 @@ void profiler_add_network_marker(
     nsICacheInfoChannel::CacheDisposition aCacheDisposition,
     uint64_t aInnerWindowID, bool aIsPrivateBrowsing,
     nsIClassOfService* aClassOfService, nsresult aRequestStatus,
+    const nsACString& aSecPurpose = ""_ns, bool aActivatedFromPrefetch = false,
     const mozilla::net::TimingStruct* aTimings = nullptr,
     mozilla::UniquePtr<mozilla::ProfileChunkedBuffer> aSource = nullptr,
     const mozilla::Maybe<mozilla::net::HttpVersion> aHttpVersion =

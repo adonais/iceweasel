@@ -7,12 +7,12 @@ package mozilla.components.browser.thumbnails.utils
 import android.content.Context
 import android.graphics.Bitmap
 import androidx.annotation.VisibleForTesting
+import java.io.File
 import mozilla.components.concept.base.images.ImageLoadRequest
 import mozilla.components.concept.base.images.ImageSaveRequest
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.cache.CacheDirectoryMigration
 import mozilla.components.support.utils.cache.DiskLruCacheStore
-import java.io.File
 
 private const val MAXIMUM_CACHE_THUMBNAIL_DATA_BYTES: Long = 1024L * 1024L * 100L // 100 MB
 private const val THUMBNAIL_DISK_CACHE_VERSION = 1
@@ -29,17 +29,19 @@ class ThumbnailDiskCache(private val isPrivate: Boolean = false) {
     private val logger = Logger("ThumbnailDiskCache")
 
     @VisibleForTesting
-    internal val thumbnailStore = DiskLruCacheStore(
-        logger = logger,
-        version = THUMBNAIL_DISK_CACHE_VERSION,
-        maxSizeBytes = MAXIMUM_CACHE_THUMBNAIL_DATA_BYTES,
-        directoryProvider = ::getThumbnailCacheDirectory,
-        migration = CacheDirectoryMigration(
+    internal val thumbnailStore =
+        DiskLruCacheStore(
             logger = logger,
-            legacyDirectory = { File(it.cacheDir, THUMBNAILS_DIR_NAME) },
-            newDirectory = { File(it.noBackupFilesDir, THUMBNAILS_DIR_NAME) },
-        ),
-    )
+            version = THUMBNAIL_DISK_CACHE_VERSION,
+            maxSizeBytes = MAXIMUM_CACHE_THUMBNAIL_DATA_BYTES,
+            directoryProvider = ::getThumbnailCacheDirectory,
+            migration =
+                CacheDirectoryMigration(
+                    logger = logger,
+                    legacyDirectory = { File(it.cacheDir, THUMBNAILS_DIR_NAME) },
+                    newDirectory = { File(it.noBackupFilesDir, THUMBNAILS_DIR_NAME) },
+                ),
+        )
 
     internal fun clear(context: Context) = thumbnailStore.clear(context)
 

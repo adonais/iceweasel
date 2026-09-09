@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.emailmasks
 
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.telemetry.glean.private.RecordedEvent
 import org.junit.Assert.assertEquals
@@ -19,12 +20,10 @@ import org.mozilla.fenix.settings.emailmasks.EmailMasksSystemAction
 import org.mozilla.fenix.settings.emailmasks.EmailMasksUserAction
 import org.mozilla.fenix.settings.emailmasks.middleware.EmailMasksTelemetryMiddleware
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class) // For gleanTestRule
 class EmailMasksTelemetryMiddlewareTest {
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     @Test
     fun `WHEN SuggestEmailMasksEnabled is dispatched THEN settingChanged event is recorded with enabled=true`() {
@@ -35,10 +34,11 @@ class EmailMasksTelemetryMiddlewareTest {
 
         assertEventRecorded(
             expectedName = "setting_changed",
-            expectedExtras = mapOf(
-                "setting" to "email_mask_suggestions",
-                "enabled" to "true",
-            ),
+            expectedExtras =
+                mapOf(
+                    "setting" to "email_mask_suggestions",
+                    "enabled" to "true",
+                ),
         ) {
             EmailMask.settingChanged.testGetValue()
         }
@@ -53,10 +53,11 @@ class EmailMasksTelemetryMiddlewareTest {
 
         assertEventRecorded(
             expectedName = "setting_changed",
-            expectedExtras = mapOf(
-                "setting" to "email_mask_suggestions",
-                "enabled" to "false",
-            ),
+            expectedExtras =
+                mapOf(
+                    "setting" to "email_mask_suggestions",
+                    "enabled" to "false",
+                ),
         ) {
             EmailMask.settingChanged.testGetValue()
         }
@@ -98,14 +99,10 @@ class EmailMasksTelemetryMiddlewareTest {
         assertNull(EmailMask.settingChanged.testGetValue())
     }
 
-    private fun createStore(
-        initialState: EmailMasksState = EmailMasksState(),
-    ): EmailMasksStore {
+    private fun createStore(initialState: EmailMasksState = EmailMasksState()): EmailMasksStore {
         return EmailMasksStore(
             initialState = initialState,
-            middleware = listOf(
-                EmailMasksTelemetryMiddleware(),
-            ),
+            middleware = listOf(EmailMasksTelemetryMiddleware()),
         )
     }
 

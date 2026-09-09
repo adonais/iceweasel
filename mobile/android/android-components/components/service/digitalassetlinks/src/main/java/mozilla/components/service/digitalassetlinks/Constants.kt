@@ -6,5 +6,4 @@ package mozilla.components.service.digitalassetlinks
 
 import java.util.concurrent.TimeUnit
 
-@Suppress("MagicNumber", "TopLevelPropertyNaming")
-internal val TIMEOUT = 3L to TimeUnit.SECONDS
+@Suppress("MagicNumber", "TopLevelPropertyNaming") internal val TIMEOUT = 3L to TimeUnit.SECONDS

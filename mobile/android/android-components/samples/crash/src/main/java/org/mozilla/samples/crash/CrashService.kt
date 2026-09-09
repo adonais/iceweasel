@@ -25,8 +25,8 @@ private const val NOTIFICATION_TAG = "mozac.lib.crash.foreground-service"
 private const val DELAY_CRASH_MS = 10000L
 
 /**
- * This service will wait 10 seconds and then crash. We need to wait some time because Android still allows to launch
- * an activity from a background service if the app was in the foreground a couple of seconds ago.
+ * This service will wait 10 seconds and then crash. We need to wait some time because Android still allows to launch an
+ * activity from a background service if the app was in the foreground a couple of seconds ago.
  */
 class CrashService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
@@ -62,15 +62,15 @@ class CrashService : Service() {
     }
 
     private fun ensureChannelExists(): String {
-        val notificationManager: NotificationManager = getSystemService(
-            Context.NOTIFICATION_SERVICE,
-        ) as NotificationManager
+        val notificationManager: NotificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val channel = NotificationChannel(
-            NOTIFICATION_CHANNEL_ID,
-            "Crash Service",
-            NotificationManager.IMPORTANCE_DEFAULT,
-        )
+        val channel =
+            NotificationChannel(
+                NOTIFICATION_CHANNEL_ID,
+                "Crash Service",
+                NotificationManager.IMPORTANCE_DEFAULT,
+            )
 
         notificationManager.createNotificationChannel(channel)
 

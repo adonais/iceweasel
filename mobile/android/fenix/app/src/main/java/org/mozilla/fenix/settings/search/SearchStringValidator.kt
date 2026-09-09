@@ -5,33 +5,36 @@
 package org.mozilla.fenix.settings.search
 
 import android.net.Uri
+import java.io.IOException
+import java.net.HttpURLConnection
 import mozilla.components.concept.fetch.Client
 import mozilla.components.concept.fetch.Request
 import mozilla.components.concept.fetch.isSuccess
 import mozilla.components.support.ktx.kotlin.toNormalizedUrl
-import java.io.IOException
-import java.net.HttpURLConnection
 
 object SearchStringValidator {
-    enum class Result { Success, CannotReach }
+    enum class Result {
+        Success,
+        CannotReach,
+    }
 
     private const val QUERY_PARAM = "1"
 
     fun isSearchStringValid(client: Client, searchString: String): Result {
         val request = createRequest(searchString)
-        val response = try {
-            client.fetch(request)
-        } catch (e: IOException) {
-            return Result.CannotReach
-        } catch (e: IllegalArgumentException) {
-            return Result.CannotReach
-        }
+        val response =
+            try {
+                client.fetch(request)
+            } catch (e: IOException) {
+                return Result.CannotReach
+            } catch (e: IllegalArgumentException) {
+                return Result.CannotReach
+            }
 
-        // read the response stream to ensure the body is closed correctly. workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=1603114
+        // read the response stream to ensure the body is closed correctly. workaround for
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=1603114
         response.close()
-        return if (response.isSuccess ||
-            isTestQueryParamNotFound(response.status)
-        ) {
+        return if (response.isSuccess || isTestQueryParamNotFound(response.status)) {
             Result.Success
         } else {
             Result.CannotReach
@@ -48,9 +51,8 @@ object SearchStringValidator {
     }
 
     /**
-     * There is no universal query param, so a site returning 404 doesn't mean the user input is wrong,
-     * it means that the website's search functionality doesn't find our test param, but it's reachable.
+     * There is no universal query param, so a site returning 404 doesn't mean the user input is wrong, it means that
+     * the website's search functionality doesn't find our test param, but it's reachable.
      */
-    private fun isTestQueryParamNotFound(status: Int): Boolean =
-        status == HttpURLConnection.HTTP_NOT_FOUND
+    private fun isTestQueryParamNotFound(status: Int): Boolean = status == HttpURLConnection.HTTP_NOT_FOUND
 }

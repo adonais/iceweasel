@@ -22,8 +22,8 @@ import androidx.compose.ui.platform.createLifecycleAwareWindowRecomposer
 import androidx.lifecycle.Lifecycle
 
 /**
- * View class that sets the status bar background with the tab strip gradient by overlaying a
- * [ComposeView] on the given [rootView].
+ * View class that sets the status bar background with the tab strip gradient by overlaying a [ComposeView] on the given
+ * [rootView].
  *
  * @param rootView The [ViewGroup] container to embed the gradient overlay. This should be the window's decor view.
  * @param lifecycle The [Lifecycle] of the activity hosting [rootView].
@@ -35,27 +35,26 @@ class TabStripStatusBarView(
 
     private var composeView: ComposeView? = null
 
-    /**
-     * Shows the tab strip gradient by overlaying the [rootView].
-     */
+    /** Shows the tab strip gradient by overlaying the [rootView]. */
     fun show() {
         if (composeView != null) return
 
-        composeView = ComposeView(rootView.context).apply {
-            // Ensure that the overlay is recomposed when the activity is recreated.
-            setParentCompositionContext(createLifecycleAwareWindowRecomposer(lifecycle = lifecycle))
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
-            setContent {
-                FirefoxTheme {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .windowInsetsTopHeight(WindowInsets.statusBars)
-                            .background(brush = FirefoxTheme.gradients.accentSubtle.brush),
-                    )
+        composeView =
+            ComposeView(rootView.context).apply {
+                // Ensure that the overlay is recomposed when the activity is recreated.
+                setParentCompositionContext(createLifecycleAwareWindowRecomposer(lifecycle = lifecycle))
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+                setContent {
+                    FirefoxTheme {
+                        Box(
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .windowInsetsTopHeight(WindowInsets.statusBars)
+                                    .background(brush = FirefoxTheme.gradients.accentSubtle.brush)
+                        )
+                    }
                 }
             }
-        }
 
         rootView.addView(
             composeView,
@@ -65,9 +64,7 @@ class TabStripStatusBarView(
         rootView.bringChildToFront(composeView)
     }
 
-    /**
-     * Removes the gradient overlay from the [rootView], if present.
-     */
+    /** Removes the gradient overlay from the [rootView], if present. */
     fun hide() {
         composeView?.let { rootView.removeView(it) }
         composeView = null

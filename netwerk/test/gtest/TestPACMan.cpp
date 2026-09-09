@@ -86,6 +86,7 @@ class ProcessPendingEventsAction final : public Runnable {
 
 class TestPACMan : public ::testing::Test {
  protected:
+  nsCOMPtr<nsIFactory> mFactory;
   RefPtr<nsPACMan> mPACMan;
 
   void ProcessAllEvents() {
@@ -114,19 +115,10 @@ class TestPACMan : public ::testing::Test {
     Preferences::SetBool("network.proxy.dhcp_wpad_only_one_outstanding", false);
     Preferences::SetFloat("network.proxy.dhcp_wpad_timeout_sec", 30);
     ASSERT_EQ(NS_OK, GetNetworkProxyType(&originalNetworkProxyTypePref));
-    nsCOMPtr<nsIFactory> factory;
-    nsresult rv = nsComponentManagerImpl::gComponentManager->GetClassObject(
-        kNS_TESTDHCPCLIENTSERVICE_CID, NS_GET_IID(nsIFactory),
-        getter_AddRefs(factory));
-    if (NS_SUCCEEDED(rv) && factory) {
-      rv = nsComponentManagerImpl::gComponentManager->UnregisterFactory(
-          kNS_TESTDHCPCLIENTSERVICE_CID, factory);
-      ASSERT_EQ(NS_OK, rv);
-    }
-    factory = new mozilla::GenericFactory(nsTestDHCPClientConstructor);
+    mFactory = new mozilla::GenericFactory(nsTestDHCPClientConstructor);
     nsComponentManagerImpl::gComponentManager->RegisterFactory(
         kNS_TESTDHCPCLIENTSERVICE_CID, "nsTestDHCPClient",
-        NS_DHCPCLIENT_CONTRACTID, factory);
+        NS_DHCPCLIENT_CONTRACTID, mFactory);
 
     mPACMan = new nsPACMan(nullptr);
     mPACMan->SetWPADOverDHCPEnabled(true);
@@ -135,6 +127,10 @@ class TestPACMan : public ::testing::Test {
   }
 
   virtual void TearDown() {
+    nsresult rv = nsComponentManagerImpl::gComponentManager->UnregisterFactory(
+        kNS_TESTDHCPCLIENTSERVICE_CID, mFactory);
+    ASSERT_EQ(NS_OK, rv);
+
     mPACMan->Shutdown();
     if (originalNetworkProxyTypePref != GETTING_NETWORK_PROXY_TYPE_FAILED) {
       ASSERT_EQ(NS_OK, SetNetworkProxyType(originalNetworkProxyTypePref));

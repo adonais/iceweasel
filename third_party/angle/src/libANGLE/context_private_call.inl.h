@@ -7,10 +7,7 @@
 // context_private_call.inl.h:
 //   Helpers that set/get state that is entirely locally accessed by the context.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
+#include "common/unsafe_buffers.h"
 #include "libANGLE/context_private_call_autogen.h"
 
 #include "common/debug.h"
@@ -26,7 +23,7 @@ inline angle::Mat4 FixedMatrixToMat4(const GLfixed *m)
 
     for (int i = 0; i < 16; i++)
     {
-        floatData[i] = gl::ConvertFixedToFloat(m[i]);
+        ANGLE_UNSAFE_TODO(floatData[i] = gl::ConvertFixedToFloat(m[i]));
     }
 
     return matrixAsFloat;
@@ -292,7 +289,7 @@ inline void ContextPrivateVertexAttrib2fv(PrivateState *privateState,
                                           GLuint index,
                                           const GLfloat *values)
 {
-    GLfloat vals[4] = {values[0], values[1], 0, 1};
+    GLfloat vals[4] = {values[0], ANGLE_UNSAFE_TODO(values[1]), 0, 1};
     privateState->setVertexAttribf(index, vals);
     privateStateCache->onDefaultVertexAttributeChange();
 }
@@ -314,7 +311,7 @@ inline void ContextPrivateVertexAttrib3fv(PrivateState *privateState,
                                           GLuint index,
                                           const GLfloat *values)
 {
-    GLfloat vals[4] = {values[0], values[1], values[2], 1};
+    ANGLE_UNSAFE_TODO(GLfloat vals[4] = {values[0], values[1], values[2], 1});
     privateState->setVertexAttribf(index, vals);
     privateStateCache->onDefaultVertexAttributeChange();
 }
@@ -445,14 +442,6 @@ inline void ContextPrivatePolygonMode(PrivateState *privateState,
 {
     ASSERT(face == GL_FRONT_AND_BACK);
     privateState->setPolygonMode(mode);
-}
-
-inline void ContextPrivatePolygonModeNV(PrivateState *privateState,
-                                        PrivateStateCache *privateStateCache,
-                                        GLenum face,
-                                        PolygonMode mode)
-{
-    ContextPrivatePolygonMode(privateState, privateStateCache, face, mode);
 }
 
 inline void ContextPrivateProvokingVertex(PrivateState *privateState,
@@ -703,70 +692,44 @@ inline void ContextPrivateStencilOpSeparate(PrivateState *privateState,
 
 inline void ContextPrivatePixelStorei(PrivateState *privateState,
                                       PrivateStateCache *privateStateCache,
-                                      GLenum pname,
+                                      PackUnpackParameter pnamePacked,
                                       GLint param)
 {
-    switch (pname)
+    switch (pnamePacked)
     {
-        case GL_UNPACK_ALIGNMENT:
-            privateState->setUnpackAlignment(param);
-            break;
-
-        case GL_PACK_ALIGNMENT:
-            privateState->setPackAlignment(param);
-            break;
-
-        case GL_PACK_REVERSE_ROW_ORDER_ANGLE:
-            ASSERT(privateState->getExtensions().packReverseRowOrderANGLE);
-            privateState->setPackReverseRowOrder(param != 0);
-            break;
-
-        case GL_UNPACK_ROW_LENGTH:
-            ASSERT(privateState->getClientVersion() >= ES_3_0 ||
-                   privateState->getExtensions().unpackSubimageEXT);
+        case PackUnpackParameter::UnpackRowLength:
             privateState->setUnpackRowLength(param);
             break;
-
-        case GL_UNPACK_IMAGE_HEIGHT:
-            ASSERT(privateState->getClientVersion() >= ES_3_0);
-            privateState->setUnpackImageHeight(param);
-            break;
-
-        case GL_UNPACK_SKIP_IMAGES:
-            ASSERT(privateState->getClientVersion() >= ES_3_0);
-            privateState->setUnpackSkipImages(param);
-            break;
-
-        case GL_UNPACK_SKIP_ROWS:
-            ASSERT((privateState->getClientVersion() >= ES_3_0) ||
-                   privateState->getExtensions().unpackSubimageEXT);
+        case PackUnpackParameter::UnpackSkipRows:
             privateState->setUnpackSkipRows(param);
             break;
-
-        case GL_UNPACK_SKIP_PIXELS:
-            ASSERT((privateState->getClientVersion() >= ES_3_0) ||
-                   privateState->getExtensions().unpackSubimageEXT);
+        case PackUnpackParameter::UnpackSkipPixels:
             privateState->setUnpackSkipPixels(param);
             break;
-
-        case GL_PACK_ROW_LENGTH:
-            ASSERT((privateState->getClientVersion() >= ES_3_0) ||
-                   privateState->getExtensions().packSubimageNV);
+        case PackUnpackParameter::UnpackAlignment:
+            privateState->setUnpackAlignment(param);
+            break;
+        case PackUnpackParameter::PackRowLength:
             privateState->setPackRowLength(param);
             break;
-
-        case GL_PACK_SKIP_ROWS:
-            ASSERT((privateState->getClientVersion() >= ES_3_0) ||
-                   privateState->getExtensions().packSubimageNV);
+        case PackUnpackParameter::PackSkipRows:
             privateState->setPackSkipRows(param);
             break;
-
-        case GL_PACK_SKIP_PIXELS:
-            ASSERT((privateState->getClientVersion() >= ES_3_0) ||
-                   privateState->getExtensions().packSubimageNV);
+        case PackUnpackParameter::PackSkipPixels:
             privateState->setPackSkipPixels(param);
             break;
-
+        case PackUnpackParameter::PackAlignment:
+            privateState->setPackAlignment(param);
+            break;
+        case PackUnpackParameter::UnpackSkipImages:
+            privateState->setUnpackSkipImages(param);
+            break;
+        case PackUnpackParameter::UnpackImageHeight:
+            privateState->setUnpackImageHeight(param);
+            break;
+        case PackUnpackParameter::PackReverseRowOrder:
+            privateState->setPackReverseRowOrder(param != 0);
+            break;
         default:
             UNREACHABLE();
             return;
@@ -820,14 +783,8 @@ inline void ContextPrivatePatchParameteri(PrivateState *privateState,
                                           GLenum pname,
                                           GLint value)
 {
-    switch (pname)
-    {
-        case GL_PATCH_VERTICES:
-            privateState->setPatchVertices(value);
-            break;
-        default:
-            break;
-    }
+    ASSERT(pname == GL_PATCH_VERTICES);
+    privateState->setPatchVertices(value);
 }
 
 inline void ContextPrivateAlphaFunc(PrivateState *privateState,
@@ -861,9 +818,9 @@ inline void ContextPrivateClipPlanex(PrivateState *privateState,
 {
     const GLfloat equationf[4] = {
         ConvertFixedToFloat(equation[0]),
-        ConvertFixedToFloat(equation[1]),
-        ConvertFixedToFloat(equation[2]),
-        ConvertFixedToFloat(equation[3]),
+        ConvertFixedToFloat(ANGLE_UNSAFE_TODO(equation[1])),
+        ConvertFixedToFloat(ANGLE_UNSAFE_TODO(equation[2])),
+        ConvertFixedToFloat(ANGLE_UNSAFE_TODO(equation[3])),
     };
 
     ContextPrivateClipPlanef(privateState, privateStateCache, plane, equationf);
@@ -947,8 +904,9 @@ inline void ContextPrivateFogxv(PrivateState *privateState,
         GLfloat paramsf[4];
         for (int i = 0; i < paramCount; i++)
         {
-            paramsf[i] =
-                pname == GL_FOG_MODE ? ConvertToGLenum(params[i]) : ConvertFixedToFloat(params[i]);
+            ANGLE_UNSAFE_TODO(paramsf[i]) = pname == GL_FOG_MODE
+                                                ? ConvertToGLenum(ANGLE_UNSAFE_TODO(params[i]))
+                                                : ConvertFixedToFloat(ANGLE_UNSAFE_TODO(params[i]));
         }
         ContextPrivateFogfv(privateState, privateStateCache, pname, paramsf);
     }
@@ -1003,7 +961,7 @@ inline void ContextPrivateGetClipPlanex(PrivateState *privateState,
 
     for (int i = 0; i < 4; i++)
     {
-        equation[i] = ConvertFloatToFixed(equationf[i]);
+        ANGLE_UNSAFE_TODO(equation[i] = ConvertFloatToFixed(equationf[i]));
     }
 }
 
@@ -1027,7 +985,7 @@ inline void ContextPrivateGetLightxv(PrivateState *privateState,
 
     for (unsigned int i = 0; i < GetLightParameterCount(pname); i++)
     {
-        params[i] = ConvertFloatToFixed(paramsf[i]);
+        ANGLE_UNSAFE_TODO(params[i] = ConvertFloatToFixed(paramsf[i]));
     }
 }
 
@@ -1051,7 +1009,7 @@ inline void ContextPrivateGetMaterialxv(PrivateState *privateState,
 
     for (unsigned int i = 0; i < GetMaterialParameterCount(pname); i++)
     {
-        params[i] = ConvertFloatToFixed(paramsf[i]);
+        ANGLE_UNSAFE_TODO(params[i] = ConvertFloatToFixed(paramsf[i]));
     }
 }
 
@@ -1120,7 +1078,7 @@ inline void ContextPrivateLightModelxv(PrivateState *privateState,
 
     for (unsigned int i = 0; i < GetLightModelParameterCount(pname); i++)
     {
-        paramsf[i] = ConvertFixedToFloat(param[i]);
+        ANGLE_UNSAFE_TODO(paramsf[i] = ConvertFixedToFloat(param[i]));
     }
 
     ContextPrivateLightModelfv(privateState, privateStateCache, pname, paramsf);
@@ -1163,7 +1121,7 @@ inline void ContextPrivateLightxv(PrivateState *privateState,
 
     for (unsigned int i = 0; i < GetLightParameterCount(pname); i++)
     {
-        paramsf[i] = ConvertFixedToFloat(params[i]);
+        ANGLE_UNSAFE_TODO(paramsf[i] = ConvertFixedToFloat(params[i]));
     }
 
     ContextPrivateLightfv(privateState, privateStateCache, light, pname, paramsf);
@@ -1227,7 +1185,7 @@ inline void ContextPrivateMaterialxv(PrivateState *privateState,
 
     for (unsigned int i = 0; i < GetMaterialParameterCount(pname); i++)
     {
-        paramsf[i] = ConvertFixedToFloat(param[i]);
+        ANGLE_UNSAFE_TODO(paramsf[i] = ConvertFixedToFloat(param[i]));
     }
 
     ContextPrivateMaterialfv(privateState, privateStateCache, face, pname, paramsf);
@@ -1360,7 +1318,7 @@ inline void ContextPrivatePointParameterxv(PrivateState *privateState,
     GLfloat paramsf[4] = {};
     for (unsigned int i = 0; i < GetPointParameterCount(pname); i++)
     {
-        paramsf[i] = ConvertFixedToFloat(params[i]);
+        ANGLE_UNSAFE_TODO(paramsf[i] = ConvertFixedToFloat(params[i]));
     }
     ContextPrivatePointParameterfv(privateState, privateStateCache, pname, paramsf);
 }

@@ -4,9 +4,7 @@
 
 package mozilla.components.feature.top.sites
 
-/**
- * A top site.
- */
+/** A top site. */
 sealed class TopSite {
     abstract val id: Long?
     abstract val title: String?

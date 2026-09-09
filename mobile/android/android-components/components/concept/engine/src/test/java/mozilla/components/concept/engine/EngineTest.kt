@@ -7,6 +7,9 @@ package mozilla.components.concept.engine
 import android.content.Context
 import android.util.AttributeSet
 import android.util.JsonReader
+import java.lang.UnsupportedOperationException
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import mozilla.components.concept.base.profiler.Profiler
 import mozilla.components.concept.engine.Engine.BrowsingData
 import mozilla.components.concept.engine.preferences.BrowserPrefObserverDelegate
@@ -16,70 +19,68 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.lang.UnsupportedOperationException
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 class EngineTest {
 
-    private val testEngine = object : Engine {
-        override val version: EngineVersion
-            get() = throw NotImplementedError("Not needed for test")
+    private val testEngine =
+        object : Engine {
+            override val version: EngineVersion
+                get() = throw NotImplementedError("Not needed for test")
 
-        override fun createView(context: Context, attrs: AttributeSet?): EngineView {
-            throw NotImplementedError("Not needed for test")
+            override fun createView(context: Context, attrs: AttributeSet?): EngineView {
+                throw NotImplementedError("Not needed for test")
+            }
+
+            override fun createSession(private: Boolean, contextId: String?): EngineSession {
+                throw NotImplementedError("Not needed for test")
+            }
+
+            override fun createSessionState(json: JSONObject): EngineSessionState {
+                throw NotImplementedError("Not needed for test")
+            }
+
+            override fun createSessionStateFrom(reader: JsonReader): EngineSessionState {
+                throw NotImplementedError("Not needed for test")
+            }
+
+            override fun name(): String {
+                throw NotImplementedError("Not needed for test")
+            }
+
+            override fun speculativeConnect(url: String) {
+                throw NotImplementedError("Not needed for test")
+            }
+
+            override val profiler: Profiler?
+                get() = throw NotImplementedError("Not needed for test")
+
+            override val settings: Settings
+                get() = throw NotImplementedError("Not needed for test")
+
+            override fun registerPrefObserverDelegate(prefObserverDelegate: BrowserPrefObserverDelegate) {
+                throw NotImplementedError("Not needed for test")
+            }
+
+            override fun unregisterPrefObserverDelegate() {
+                throw NotImplementedError("Not needed for test")
+            }
+
+            override fun registerPrefForObservation(
+                pref: String,
+                onSuccess: () -> Unit,
+                onError: (Throwable) -> Unit,
+            ) {
+                throw NotImplementedError("Not needed for test")
+            }
+
+            override fun unregisterPrefForObservation(
+                pref: String,
+                onSuccess: () -> Unit,
+                onError: (Throwable) -> Unit,
+            ) {
+                throw NotImplementedError("Not needed for test")
+            }
         }
-
-        override fun createSession(private: Boolean, contextId: String?): EngineSession {
-            throw NotImplementedError("Not needed for test")
-        }
-
-        override fun createSessionState(json: JSONObject): EngineSessionState {
-            throw NotImplementedError("Not needed for test")
-        }
-
-        override fun createSessionStateFrom(reader: JsonReader): EngineSessionState {
-            throw NotImplementedError("Not needed for test")
-        }
-
-        override fun name(): String {
-            throw NotImplementedError("Not needed for test")
-        }
-
-        override fun speculativeConnect(url: String) {
-            throw NotImplementedError("Not needed for test")
-        }
-
-        override val profiler: Profiler?
-            get() = throw NotImplementedError("Not needed for test")
-
-        override val settings: Settings
-            get() = throw NotImplementedError("Not needed for test")
-
-        override fun registerPrefObserverDelegate(prefObserverDelegate: BrowserPrefObserverDelegate) {
-            throw NotImplementedError("Not needed for test")
-        }
-
-        override fun unregisterPrefObserverDelegate() {
-            throw NotImplementedError("Not needed for test")
-        }
-
-        override fun registerPrefForObservation(
-            pref: String,
-            onSuccess: () -> Unit,
-            onError: (Throwable) -> Unit,
-        ) {
-            throw NotImplementedError("Not needed for test")
-        }
-
-        override fun unregisterPrefForObservation(
-            pref: String,
-            onSuccess: () -> Unit,
-            onError: (Throwable) -> Unit,
-        ) {
-            throw NotImplementedError("Not needed for test")
-        }
-    }
 
     @Test
     fun `invokes default functions on trackingProtectionExceptionStore`() {
@@ -105,7 +106,7 @@ class EngineTest {
         assertIs<UnsupportedOperationException>(exception)
 
         exception = null
-        testEngine.listInstalledWebExtensions(onSuccess = { }, onError = { e -> exception = e })
+        testEngine.listInstalledWebExtensions(onSuccess = {}, onError = { e -> exception = e })
         assertNotNull(exception)
         assertIs<UnsupportedOperationException>(exception)
     }

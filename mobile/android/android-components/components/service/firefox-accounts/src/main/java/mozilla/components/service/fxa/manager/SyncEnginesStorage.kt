@@ -9,17 +9,13 @@ import androidx.core.content.edit
 import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.service.fxa.sync.toSyncEngine
 
-/**
- * Storage layer for the enabled/disabled state of [SyncEngine].
- */
+/** Storage layer for the enabled/disabled state of [SyncEngine]. */
 class SyncEnginesStorage(private val context: Context) {
     companion object {
         const val SYNC_ENGINES_KEY = "syncEngines"
     }
 
-    /**
-     * @return A map describing known enabled/disabled state of [SyncEngine].
-     */
+    /** @return A map describing known enabled/disabled state of [SyncEngine]. */
     fun getStatus(): Map<SyncEngine, Boolean> {
         val resultMap = mutableMapOf<SyncEngine, Boolean>()
         // When adding new SyncEngines, think through implications for default values.
@@ -47,9 +43,7 @@ class SyncEnginesStorage(private val context: Context) {
         storage().edit { putBoolean(engine.nativeName, status) }
     }
 
-    /**
-     * Clears out any stored [SyncEngine] state.
-     */
+    /** Clears out any stored [SyncEngine] state. */
     internal fun clear() {
         storage().edit { clear() }
     }

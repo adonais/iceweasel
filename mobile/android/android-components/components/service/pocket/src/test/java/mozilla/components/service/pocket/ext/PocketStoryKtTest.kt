@@ -20,19 +20,21 @@ class PocketStoryKtTest {
     private val flightPeriod = 100
     private val flightImpression1 = nowInSeconds - flightPeriod / 2
     private val flightImpression2 = nowInSeconds - flightPeriod / 3
-    private val currentImpressions = listOf(
-        nowInSeconds - flightPeriod * 2, // older impression that doesn't fit the flight period
-        flightImpression1,
-        flightImpression2,
-    )
+    private val currentImpressions =
+        listOf(
+            nowInSeconds - flightPeriod * 2, // older impression that doesn't fit the flight period
+            flightImpression1,
+            flightImpression2,
+        )
 
     @Test
     fun `GIVEN sponsored content impressions are recorded WHEN asking for the current flight impressions THEN return all impressions in the flight period`() {
-        val frequencyCaps = SponsoredContentFrequencyCaps(
-            currentImpressions = currentImpressions,
-            flightCount = 5,
-            flightPeriod = flightPeriod,
-        )
+        val frequencyCaps =
+            SponsoredContentFrequencyCaps(
+                currentImpressions = currentImpressions,
+                flightCount = 5,
+                flightPeriod = flightPeriod,
+            )
         val sponsoredContent: SponsoredContent = mock()
 
         doReturn(frequencyCaps).`when`(sponsoredContent).caps
@@ -45,11 +47,12 @@ class PocketStoryKtTest {
 
     @Test
     fun `GIVEN 3 recorded sponsored content impressions and 5 flight count WHEN asking if flight impressions limit has been reached THEN return false`() {
-        val frequencyCaps = SponsoredContentFrequencyCaps(
-            currentImpressions = currentImpressions,
-            flightCount = 5,
-            flightPeriod = flightPeriod,
-        )
+        val frequencyCaps =
+            SponsoredContentFrequencyCaps(
+                currentImpressions = currentImpressions,
+                flightCount = 5,
+                flightPeriod = flightPeriod,
+            )
         val sponsoredContent: SponsoredContent = mock()
 
         doReturn(frequencyCaps).`when`(sponsoredContent).caps
@@ -59,11 +62,12 @@ class PocketStoryKtTest {
 
     @Test
     fun `GIVEN 3 recorded sponsored content impressions and 2 flight count WHEN asking if flight impressions limit has been reached THEN return true`() {
-        val frequencyCaps = SponsoredContentFrequencyCaps(
-            currentImpressions = currentImpressions,
-            flightCount = 2,
-            flightPeriod = flightPeriod,
-        )
+        val frequencyCaps =
+            SponsoredContentFrequencyCaps(
+                currentImpressions = currentImpressions,
+                flightCount = 2,
+                flightPeriod = flightPeriod,
+            )
         val sponsoredContent: SponsoredContent = mock()
 
         doReturn(frequencyCaps).`when`(sponsoredContent).caps
@@ -94,9 +98,6 @@ class PocketStoryKtTest {
         assertEquals(4, result.caps.currentImpressions.size)
         assertEquals(currentImpressions, result.caps.currentImpressions.take(3))
         // Check if a new impression has been added around the current time.
-        assertTrue(
-            LongRange(nowInSeconds - 5, nowInSeconds + 5)
-                .contains(result.caps.currentImpressions[3]),
-        )
+        assertTrue(LongRange(nowInSeconds - 5, nowInSeconds + 5).contains(result.caps.currentImpressions[3]))
     }
 }

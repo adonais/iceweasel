@@ -45,7 +45,6 @@ class DisplayMetricsTest {
 
         val result = floatValue.spToPx(metrics)
 
-        @Suppress("DEPRECATION")
-        assertEquals(metrics.scaledDensity * floatValue, result)
+        @Suppress("DEPRECATION") assertEquals(metrics.scaledDensity * floatValue, result)
     }
 }

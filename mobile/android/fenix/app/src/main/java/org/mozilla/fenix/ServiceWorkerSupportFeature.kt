@@ -13,16 +13,15 @@ import mozilla.components.concept.engine.serviceworker.ServiceWorkerDelegate
 import org.mozilla.fenix.ext.components
 
 /**
- * Fenix own version of the `ServiceWorkerSupportFeature` from Android-Components
- * which adds the ability to navigate to the browser before opening a new tab.
+ * Fenix own version of the `ServiceWorkerSupportFeature` from Android-Components which adds the ability to navigate to
+ * the browser before opening a new tab.
  *
  * Will automatically register callbacks for service workers requests and cleanup when [homeActivity] is destroyed.
  *
  * @param homeActivity [HomeActivity] used for navigating to browser or accessing various app components.
  */
-class ServiceWorkerSupportFeature(
-    private val homeActivity: HomeActivity,
-) : ServiceWorkerDelegate, DefaultLifecycleObserver {
+class ServiceWorkerSupportFeature(private val homeActivity: HomeActivity) :
+    ServiceWorkerDelegate, DefaultLifecycleObserver {
     override fun onDestroy(owner: LifecycleOwner) {
         homeActivity.components.core.engine.unregisterServiceWorkerDelegate()
     }

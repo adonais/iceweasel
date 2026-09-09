@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.tabstray
 
+import kotlin.test.assertIs
 import mozilla.components.browser.state.state.createTab
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -14,7 +15,6 @@ import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
-import kotlin.test.assertIs
 
 class TabsTrayStoreTest {
 
@@ -158,11 +158,10 @@ class TabsTrayStoreTest {
 
     @Test
     fun `WHEN UpdateInactiveExpanded is dispatched THEN update inactiveTabsExpanded`() {
-        val tabsTrayStore = TabsTrayStore(
-            initialState = TabsTrayState(
-                inactiveTabs = TabsTrayState.InactiveTabsState(isExpanded = false),
-            ),
-        )
+        val tabsTrayStore =
+            TabsTrayStore(
+                initialState = TabsTrayState(inactiveTabs = TabsTrayState.InactiveTabsState(isExpanded = false))
+            )
 
         assertFalse(tabsTrayStore.state.inactiveTabs.isExpanded)
 

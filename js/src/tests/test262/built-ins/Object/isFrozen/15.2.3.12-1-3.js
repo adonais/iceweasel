@@ -8,6 +8,6 @@ description: >
     is a boolean
 ---*/
 
-Object.isFrozen(true);
+assert.sameValue(Object.isFrozen(true), true);
 
 reportCompare(0, 0);

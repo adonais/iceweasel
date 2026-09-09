@@ -10,19 +10,13 @@ package org.mozilla.fenix.home.topsites
  * @property value The value reported in the `source` event extras.
  */
 enum class AddShortcutSource(val value: String) {
-    /**
-     * The shortcut was added from a user selection in the popular sites list.
-     */
+    /** The shortcut was added from a user selection in the popular sites list. */
     POPULAR("popular"),
 
-    /**
-     * The shortcut was manually added by the user.
-     */
+    /** The shortcut was manually added by the user. */
     MANUAL("manual"),
 
-    /**
-     * A frecent top site was promoted to a pinned shortcut.
-     */
+    /** A frecent top site was promoted to a pinned shortcut. */
     FRECENCY_PROMOTE("frecency_promote"),
 }
 
@@ -33,18 +27,12 @@ enum class AddShortcutSource(val value: String) {
  * @property value The value reported in the `entry_point` event extras.
  */
 enum class AddShortcutEntryPoint(val value: String) {
-    /**
-     * The flow was started from the homepage.
-     */
+    /** The flow was started from the homepage. */
     HOMEPAGE("homepage"),
 
-    /**
-     * The flow was started from the page menu.
-     */
+    /** The flow was started from the page menu. */
     PAGE_MENU("page_menu"),
 
-    /**
-     * The flow was started from the shortcuts library screen.
-     */
+    /** The flow was started from the shortcuts library screen. */
     SHORTCUTS_LIBRARY("shortcuts_library"),
 }

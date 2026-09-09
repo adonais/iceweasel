@@ -15,10 +15,7 @@ import java.io.Reader
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.LinkedList
 
-/**
- * Provides functionality to process categorized URL block/safe lists and match
- * URLs against these lists.
- */
+/** Provides functionality to process categorized URL block/safe lists and match URLs against these lists. */
 class UrlMatcher {
     private val categories: MutableMap<String, Trie>
     internal val enabledCategories = HashSet<String>()
@@ -86,28 +83,26 @@ class UrlMatcher {
     }
 
     /**
-     * Checks if the given page URI is blocklisted for the given resource URI.
-     * Returns true if the site (page URI) is allowed to access
-     * the resource URI, otherwise false.
+     * Checks if the given page URI is blocklisted for the given resource URI. Returns true if the site (page URI) is
+     * allowed to access the resource URI, otherwise false.
      *
      * @param resourceURI URI of a resource to be loaded by the page
      * @param pageURI URI of the page
-     * @return a [Pair] of <Boolean, String?> the first indicates, if the URI matches and the second
-     * indicates the category of the match if available otherwise null.
+     * @return a [Pair] of <Boolean, String?> the first indicates, if the URI matches and the second indicates the
+     *   category of the match if available otherwise null.
      */
     fun matches(resourceURI: String, pageURI: String): Pair<Boolean, String?> {
         return matches(resourceURI.toUri(), pageURI.toUri())
     }
 
     /**
-     * Checks if the given page URI is blocklisted for the given resource URI.
-     * Returns true if the site (page URI) is allowed to access
-     * the resource URI, otherwise false.
+     * Checks if the given page URI is blocklisted for the given resource URI. Returns true if the site (page URI) is
+     * allowed to access the resource URI, otherwise false.
      *
      * @param resourceURI URI of a resource to be loaded by the page
      * @param pageURI URI of the page
-     * @return a [Pair] of <Boolean, String?> the first indicates, if the URI matches and the second
-     * indicates the category of the match if available otherwise null.
+     * @return a [Pair] of <Boolean, String?> the first indicates, if the URI matches and the second indicates the
+     *   category of the match if available otherwise null.
      */
     @Suppress("ReturnCount")
     fun matches(resourceURI: Uri, pageURI: Uri): Pair<Boolean, String?> {
@@ -158,29 +153,29 @@ class UrlMatcher {
 
         private val ignoredCategories = setOf("Legacy Disconnect", "Legacy Content")
         private val webfontExtensions = arrayOf(".woff2", ".woff", ".eot", ".ttf", ".otf")
-        private val supportedCategories = setOf(
-            ADVERTISING,
-            ANALYTICS,
-            SOCIAL,
-            CONTENT,
-            CRYPTOMINING,
-            FINGERPRINTING,
-        )
+        private val supportedCategories =
+            setOf(
+                ADVERTISING,
+                ANALYTICS,
+                SOCIAL,
+                CONTENT,
+                CRYPTOMINING,
+                FINGERPRINTING,
+            )
 
         /**
          * Creates a new matcher instance for the provided URL lists.
          *
-         * @deprecated Pass resources directly
          * @param blocklistFile resource ID to a JSON file containing the block list
          * @param safelistFile resource ID to a JSON file containing the safe list
+         * @deprecated Pass resources directly
          */
         fun createMatcher(
             context: Context,
             @RawRes blocklistFile: Int,
             @RawRes safelistFile: Int,
             enabledCategories: Set<String> = supportedCategories,
-        ): UrlMatcher =
-            createMatcher(context.resources, blocklistFile, safelistFile, enabledCategories)
+        ): UrlMatcher = createMatcher(context.resources, blocklistFile, safelistFile, enabledCategories)
 
         /**
          * Creates a new matcher instance for the provided URL lists.
@@ -223,8 +218,8 @@ class UrlMatcher {
 
         /**
          * Checks if the given URI points to a Web font.
-         * @param uri the URI to check.
          *
+         * @param uri the URI to check.
          * @return true if the URI is a Web font, otherwise false.
          */
         fun isWebFont(uri: Uri): Boolean {

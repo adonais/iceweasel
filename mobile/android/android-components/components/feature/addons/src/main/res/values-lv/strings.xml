@@ -45,6 +45,8 @@
   <string name="mozac_feature_addons_supported_checker_notification_content_more_than_two">Pievienot tos %1$s</string>
   <!-- Text link to a sumo page for learning more about unsupported add-ons. -->
   <string name="mozac_feature_addons_unsupported_learn_more">Uzzināt vairāk</string>
+  <!-- Displayed in the "Status" field for the updater when there was an error during the add-on update. -->
+  <string name="mozac_feature_addons_updater_status_error">Kļūda</string>
   <!-- "Learn more" link displayed below an add-on status message. -->
   <string name="mozac_feature_addons_status_learn_more">Uzzināt vairāk</string>
 </resources>

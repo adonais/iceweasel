@@ -4,15 +4,12 @@
 
 package org.mozilla.fenix.home.collections
 
-import androidx.compose.runtime.Composable
 import mozilla.components.browser.state.selector.normalTabs
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.feature.tab.collections.TabCollection
 import org.mozilla.fenix.components.appstate.AppState
 
-/**
- * State object encapsulating the UI state of the collections section of the homepage.
- */
+/** State object encapsulating the UI state of the collections section of the homepage. */
 sealed class CollectionsState {
 
     /**
@@ -21,7 +18,7 @@ sealed class CollectionsState {
      * @property collections List of [TabCollection] to display.
      * @property expandedCollections List of ids corresponding to [TabCollection]s which are currently expanded.
      * @property showSaveTabsToCollection Whether to show the "Save tabs to collection" menu item in the collections
-     * menu.
+     *   menu.
      */
     data class Content(
         val collections: List<TabCollection>,
@@ -29,26 +26,33 @@ sealed class CollectionsState {
         val showSaveTabsToCollection: Boolean,
     ) : CollectionsState()
 
-    /**
-     * State in which no collections section should be displayed.
-     */
+    /** State in which the Collections to Tab Groups migration card should be displayed in place of the collections. */
+    data object MigrationCard : CollectionsState()
+
+    /** State in which no collections section should be displayed. */
     data object Gone : CollectionsState()
 
     companion object {
-        @Composable
         internal fun build(
             appState: AppState,
             browserState: BrowserState,
+            showCollections: Boolean,
+            shouldShowCollectionsMigrationCard: Boolean,
         ): CollectionsState =
             with(appState) {
-                if (collections.isNotEmpty()) {
-                    Content(
-                        collections = collections,
-                        expandedCollections = expandedCollections,
-                        showSaveTabsToCollection = browserState.normalTabs.isNotEmpty(),
-                    )
-                } else {
-                    Gone
+                val collections = if (showCollections) this.collections else emptyList()
+
+                when {
+                    shouldShowCollectionsMigrationCard -> MigrationCard
+
+                    collections.isNotEmpty() ->
+                        Content(
+                            collections = collections,
+                            expandedCollections = expandedCollections,
+                            showSaveTabsToCollection = browserState.normalTabs.isNotEmpty(),
+                        )
+
+                    else -> Gone
                 }
             }
     }

@@ -1,0 +1,238 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test Web Serial API - Bluetooth allowlist and blocklist (spec step 5.2)</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="serial_test_utils.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<script>
+
+"use strict";
+
+SimpleTest.waitForExplicitFinish();
+
+// All tests in this file work with a hand-picked set of Bluetooth devices,
+// so start each one from a clean slate and restore the defaults at the end.
+async function resetToOnlyBluetoothDevices(devices) {
+  await cleanupSerialPorts();
+  await navigator.serial.removeAllMockDevices();
+  for (const dev of devices) {
+    await simulateDeviceConnection(dev.id, dev.path, 0, 0, dev.uuid);
+  }
+}
+
+SimpleTest.registerCleanupFunction(async function restoreDefaultDevices() {
+  await cleanupSerialPorts();
+  await navigator.serial.resetToDefaultMockDevices();
+});
+
+const SPP_UUID = "00001101-0000-1000-8000-00805f9b34fb";
+// A 128-bit custom UUID that is not in the SIG base range.
+const CUSTOM_UUID = "12345678-1234-1234-1234-123456789abc";
+const CUSTOM_UUID_2 = "abcdef01-0000-0000-0000-abcdef012345";
+// A non-SPP UUID in the SIG base range; the spec blocklist algorithm says
+// any UUID ending in "-0000-1000-8000-00805f9b34fb" other than SPP is blocked.
+const SIG_NON_SPP_UUID = "00001102-0000-1000-8000-00805f9b34fb";
+
+add_task(async function testSppDeviceShownByDefault() {
+  await resetToOnlyBluetoothDevices([
+    { id: "bt-spp", path: "/dev/rfcomm0", uuid: SPP_UUID },
+  ]);
+
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  const port = await navigator.serial.requestPort({ filters: [] });
+  const info = port.getInfo();
+  is(info.bluetoothServiceClassId, SPP_UUID,
+     "SPP-UUID Bluetooth port is selected even without allowedBluetoothServiceClassIds");
+});
+
+add_task(async function testCustomUuidHiddenWithoutAllowedList() {
+  await resetToOnlyBluetoothDevices([
+    { id: "bt-custom", path: "/dev/rfcomm1", uuid: CUSTOM_UUID },
+  ]);
+
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  await Assert.rejects(
+    navigator.serial.requestPort({ filters: [] }),
+    /NotFoundError/,
+    "A custom-UUID Bluetooth port must not be presented when the page didn't opt-in via allowedBluetoothServiceClassIds"
+  );
+});
+
+add_task(async function testCustomUuidShownWhenAllowed() {
+  await resetToOnlyBluetoothDevices([
+    { id: "bt-custom", path: "/dev/rfcomm1", uuid: CUSTOM_UUID },
+  ]);
+
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  const port = await navigator.serial.requestPort({
+    filters: [],
+    allowedBluetoothServiceClassIds: [CUSTOM_UUID],
+  });
+  const info = port.getInfo();
+  is(info.bluetoothServiceClassId, CUSTOM_UUID,
+     "Custom-UUID Bluetooth port is presented when listed in allowedBluetoothServiceClassIds");
+});
+
+add_task(async function testAllowedListUuidsAreCanonicalized() {
+  await resetToOnlyBluetoothDevices([
+    { id: "bt-custom", path: "/dev/rfcomm1", uuid: CUSTOM_UUID },
+  ]);
+
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  // Uppercase entry should match the lowercase canonical UUID stored on the
+  // port info: ResolveBluetoothServiceUUID returns the string verbatim when
+  // it's already a valid UUID, so this test verifies the case where the
+  // resolver passes the page-supplied string through.
+  const port = await navigator.serial.requestPort({
+    allowedBluetoothServiceClassIds: [CUSTOM_UUID],
+  });
+  is(port.getInfo().bluetoothServiceClassId, CUSTOM_UUID,
+     "Canonicalized allow-list entry matches the port's lowercase UUID");
+});
+
+add_task(async function testAllowedListAcceptsMultipleEntries() {
+  await resetToOnlyBluetoothDevices([
+    { id: "bt-1", path: "/dev/rfcomm0", uuid: CUSTOM_UUID_2 },
+  ]);
+
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  const port = await navigator.serial.requestPort({
+    allowedBluetoothServiceClassIds: [CUSTOM_UUID, CUSTOM_UUID_2],
+  });
+  is(port.getInfo().bluetoothServiceClassId, CUSTOM_UUID_2,
+     "A Bluetooth port matching any entry in allowedBluetoothServiceClassIds is shown");
+});
+
+add_task(async function testSigBaseUuidIsBlocked() {
+  // Non-SPP UUIDs in the SIG base range fall under spec step 5.2.1's
+  // blocked-service-class-UUID rule. They are dropped before the chooser
+  // even sees them, so requestPort() rejects with NotFoundError.
+  await resetToOnlyBluetoothDevices([
+    { id: "bt-sig-non-spp", path: "/dev/rfcomm2", uuid: SIG_NON_SPP_UUID },
+  ]);
+
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  await Assert.rejects(
+    navigator.serial.requestPort({ filters: [] }),
+    /NotFoundError/,
+    "A non-SPP SIG-base Bluetooth UUID is blocked"
+  );
+});
+
+add_task(async function testBlocklistOverridesAllowedList() {
+  // Even if the page lists the blocked UUID in allowedBluetoothServiceClassIds,
+  // it stays blocked.
+  await resetToOnlyBluetoothDevices([
+    { id: "bt-sig-non-spp", path: "/dev/rfcomm2", uuid: SIG_NON_SPP_UUID },
+  ]);
+
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  await Assert.rejects(
+    navigator.serial.requestPort({
+      allowedBluetoothServiceClassIds: [SIG_NON_SPP_UUID],
+    }),
+    /NotFoundError/,
+    "A blocklisted Bluetooth UUID cannot be unblocked via allowedBluetoothServiceClassIds"
+  );
+});
+
+add_task(async function testInvalidAllowedUuidStringRejects() {
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  await Assert.rejects(
+    navigator.serial.requestPort({
+      allowedBluetoothServiceClassIds: ["not-a-uuid"],
+    }),
+    /TypeError/,
+    "Non-UUID string in allowedBluetoothServiceClassIds is rejected with TypeError"
+  );
+});
+
+add_task(async function testShortAliasInAllowedListResolves() {
+  // 0x1101 (Serial Port Profile) is the short alias for SPP. It always
+  // resolves whether or not it appears in the allowlist, but this verifies
+  // that the integer-form alias passes the resolver in the content process.
+  await resetToOnlyBluetoothDevices([
+    { id: "bt-spp", path: "/dev/rfcomm0", uuid: SPP_UUID },
+  ]);
+
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  const port = await navigator.serial.requestPort({
+    allowedBluetoothServiceClassIds: [0x1101],
+  });
+  is(port.getInfo().bluetoothServiceClassId, SPP_UUID,
+     "0x1101 short alias is resolved to canonical SPP UUID");
+});
+
+add_task(async function testExplicitEmptyAllowedListHidesCustomUuid() {
+  // Spec step 5.2: "options[allowedBluetoothServiceClassIds] is present and
+  // contains uuid" is false for an empty list, so passing [] must behave the
+  // same as omitting the member entirely.
+  await resetToOnlyBluetoothDevices([
+    { id: "bt-custom", path: "/dev/rfcomm1", uuid: CUSTOM_UUID },
+  ]);
+
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  await Assert.rejects(
+    navigator.serial.requestPort({
+      filters: [],
+      allowedBluetoothServiceClassIds: [],
+    }),
+    /NotFoundError/,
+    "An explicitly empty allowedBluetoothServiceClassIds excludes non-SPP Bluetooth ports"
+  );
+});
+
+add_task(async function testExplicitEmptyAllowedListAllowsSpp() {
+  await resetToOnlyBluetoothDevices([
+    { id: "bt-spp", path: "/dev/rfcomm0", uuid: SPP_UUID },
+  ]);
+
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  const port = await navigator.serial.requestPort({
+    filters: [],
+    allowedBluetoothServiceClassIds: [],
+  });
+  is(port.getInfo().bluetoothServiceClassId, SPP_UUID,
+     "SPP Bluetooth port is still shown when allowedBluetoothServiceClassIds is explicitly empty");
+});
+
+add_task(async function testSppShownAlongsideCustomAllowedUuid() {
+  // SPP is implicitly allowed by spec step 5.2 regardless of the allow list,
+  // so it must still be presented when the allow list contains only non-SPP
+  // entries.
+  await resetToOnlyBluetoothDevices([
+    { id: "bt-spp", path: "/dev/rfcomm0", uuid: SPP_UUID },
+  ]);
+
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  const port = await navigator.serial.requestPort({
+    allowedBluetoothServiceClassIds: [CUSTOM_UUID],
+  });
+  is(port.getInfo().bluetoothServiceClassId, SPP_UUID,
+     "SPP UUID is allowed even when not in allowedBluetoothServiceClassIds");
+});
+
+add_task(async function testMixedDevicesFilteringIsBluetoothOnly() {
+  // The allowlist gate must only affect Bluetooth ports, not USB ports.
+  await cleanupSerialPorts();
+  await navigator.serial.removeAllMockDevices();
+  await simulateDeviceConnection("usb-only", "/dev/ttyUSB0", 0x1234, 0x5678);
+  await simulateDeviceConnection("bt-custom", "/dev/rfcomm0", 0, 0, CUSTOM_UUID);
+
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  // Without an allow-list, the Bluetooth custom-UUID port is dropped but the
+  // USB port remains; autoselect picks whatever is left.
+  const port = await navigator.serial.requestPort({ filters: [] });
+  const info = port.getInfo();
+  ok(!("bluetoothServiceClassId" in info),
+     "Allowlist gate only removes Bluetooth ports, not USB ports");
+  is(info.usbVendorId, 0x1234, "USB port survives the Bluetooth allowlist gate");
+});
+
+</script>
+</body>
+</html>

@@ -14,8 +14,7 @@ class AboutPageAdapter(private val listener: AboutPageListener) :
     ListAdapter<AboutPageItem, AboutItemViewHolder>(DiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AboutItemViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(AboutItemViewHolder.LAYOUT_ID, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(AboutItemViewHolder.LAYOUT_ID, parent, false)
         return AboutItemViewHolder(view, listener)
     }
 
@@ -25,11 +24,9 @@ class AboutPageAdapter(private val listener: AboutPageListener) :
 
     private object DiffCallback : DiffUtil.ItemCallback<AboutPageItem>() {
 
-        override fun areItemsTheSame(oldItem: AboutPageItem, newItem: AboutPageItem) =
-            oldItem.title == newItem.title
+        override fun areItemsTheSame(oldItem: AboutPageItem, newItem: AboutPageItem) = oldItem.title == newItem.title
 
-        override fun areContentsTheSame(oldItem: AboutPageItem, newItem: AboutPageItem) =
-            oldItem == newItem
+        override fun areContentsTheSame(oldItem: AboutPageItem, newItem: AboutPageItem) = oldItem == newItem
     }
 }
 

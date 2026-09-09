@@ -256,6 +256,26 @@ export class UrlbarQueryContext {
   sapName;
 
   /**
+   * Whether the query runs in a bar dedicated to search.
+   *
+   * @see {UrlbarShared.isSearchbarSAP}
+   * @type {boolean}
+   */
+  get isSearchbarSAP() {
+    return UrlbarShared.isSearchbarSAP(this.sapName);
+  }
+
+  /**
+   * Whether a string that isn't a URL may be searched for.
+   *
+   * @see {UrlbarShared.keywordEnabled}
+   * @type {boolean}
+   */
+  get keywordEnabled() {
+    return UrlbarShared.keywordEnabled(this.sapName);
+  }
+
+  /**
    * @type {UrlbarSearchModeData}
    *   Details about the search mode associated with this context.
    */
@@ -319,6 +339,8 @@ export class UrlbarQueryContext {
    * Only returns a subset of the properties from URIFixup. This is both to
    * reduce the memory footprint of UrlbarQueryContexts and to keep them
    * serializable so they can be sent to extensions.
+   *
+   * IMPORTANT: This uses `Services`, so it only works in privileged code.
    */
   get fixupInfo() {
     if (!this._fixupError && !this._fixupInfo && this.trimmedSearchString) {

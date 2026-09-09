@@ -20,18 +20,16 @@ import mozilla.components.concept.base.images.ImageLoader
 import mozilla.components.support.ktx.android.util.dpToPx
 import mozilla.components.support.ktx.kotlin.tryGetHostFromUrl
 
-/**
- * An abstract ViewHolder implementation for "tab" items.
- */
+/** An abstract ViewHolder implementation for "tab" items. */
 abstract class TabViewHolder(view: View) : RecyclerView.ViewHolder(view) {
     abstract var tab: TabSessionState?
 
     /**
      * Binds the ViewHolder to the `Tab`.
+     *
      * @param tab the `Tab` used to bind the viewHolder.
      * @param isSelected boolean to describe whether or not the `Tab` is selected.
-     * @param observable message bus to pass events to Observers of the TabsTray.
-     * // TODO fix comment
+     * @param observable message bus to pass events to Observers of the TabsTray. // TODO fix comment
      */
     abstract fun bind(
         tab: TabSessionState,
@@ -41,8 +39,8 @@ abstract class TabViewHolder(view: View) : RecyclerView.ViewHolder(view) {
     )
 
     /**
-     * Ask for a partial update of the current tab.
-     * Allows for overriding the current behavior and add or remove the 'selected tab' UI decorator.
+     * Ask for a partial update of the current tab. Allows for overriding the current behavior and add or remove the
+     * 'selected tab' UI decorator.
      *
      * When implementing this do not call super.
      */
@@ -53,18 +51,14 @@ abstract class TabViewHolder(view: View) : RecyclerView.ViewHolder(view) {
     }
 }
 
-/**
- * The default implementation of `TabViewHolder`
- */
+/** The default implementation of `TabViewHolder` */
 class DefaultTabViewHolder(
     itemView: View,
     private val thumbnailLoader: ImageLoader? = null,
 ) : TabViewHolder(itemView) {
-    @VisibleForTesting
-    internal val iconView: ImageView? = itemView.findViewById(R.id.mozac_browser_tabstray_icon)
+    @VisibleForTesting internal val iconView: ImageView? = itemView.findViewById(R.id.mozac_browser_tabstray_icon)
 
-    @VisibleForTesting
-    internal val titleView: TextView = itemView.findViewById(R.id.mozac_browser_tabstray_title)
+    @VisibleForTesting internal val titleView: TextView = itemView.findViewById(R.id.mozac_browser_tabstray_title)
 
     @VisibleForTesting
     internal val closeView: AppCompatImageButton = itemView.findViewById(R.id.mozac_browser_tabstray_close)
@@ -73,12 +67,9 @@ class DefaultTabViewHolder(
 
     override var tab: TabSessionState? = null
 
-    @VisibleForTesting
-    internal var styling: TabsTrayStyling? = null
+    @VisibleForTesting internal var styling: TabsTrayStyling? = null
 
-    /**
-     * Displays the data of the given session and notifies the given observable about events.
-     */
+    /** Displays the data of the given session and notifies the given observable about events. */
     override fun bind(
         tab: TabSessionState,
         isSelected: Boolean,
@@ -88,11 +79,12 @@ class DefaultTabViewHolder(
         this.tab = tab
         this.styling = styling
 
-        val title = if (tab.content.title.isNotEmpty()) {
-            tab.content.title
-        } else {
-            tab.content.url
-        }
+        val title =
+            if (tab.content.title.isNotEmpty()) {
+                tab.content.title
+            } else {
+                tab.content.url
+            }
 
         titleView.text = title
         urlView?.text = tab.content.url.tryGetHostFromUrl()
@@ -146,7 +138,6 @@ class DefaultTabViewHolder(
     }
 
     companion object {
-        @Dimension(unit = DP)
-        private const val THUMBNAIL_SIZE = 100
+        @Dimension(unit = DP) private const val THUMBNAIL_SIZE = 100
     }
 }

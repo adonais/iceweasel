@@ -11,14 +11,15 @@
 namespace mozilla {
 
 /*
-This provides a stable set of codec preferences for unit tests. In order to
-change a preference, you can set the member variable to the desired value.
-*/
+ * This provides a stable set of codec preferences for unit tests. In order to
+ * change a preference, you can set the member variable to the desired value.
+ */
 struct MockJsepCodecPreferences : public JsepCodecPreferences {
   bool AV1Enabled() const override { return mAv1Enabled; }
   bool AV1Preferred() const override { return mAv1Preferred; }
   bool H264Enabled() const override { return mH264Enabled; }
   bool SoftwareH264Enabled() const override { return mSoftwareH264Enabled; }
+  bool HardwareH264Enabled() const override { return mHardwareH264Enabled; }
   bool SendingH264PacketizationModeZeroSupported() const override {
     return mH264PacketizationModeZeroSupported;
   }
@@ -42,6 +43,7 @@ struct MockJsepCodecPreferences : public JsepCodecPreferences {
   bool mAv1Preferred = false;
   bool mH264Enabled = true;
   bool mSoftwareH264Enabled = true;
+  bool mHardwareH264Enabled = false;
   bool mH264PacketizationModeZeroSupported = true;
   bool mH264BaselineDisabled =
       StaticPrefs::GetPrefDefault_media_navigator_video_disable_h264_baseline();

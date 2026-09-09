@@ -263,10 +263,8 @@ class SlimLinkedList {
       return *this;
     }
 
-    bool operator==(const Iterator& other) const {
-      return current_ == other.current_;
-    }
-    bool operator!=(const Iterator& other) const { return !(*this == other); }
+    bool operator==(const Iterator& other) const = default;
+    bool operator!=(const Iterator& other) const = default;
   };
 
   SlimLinkedList() = default;

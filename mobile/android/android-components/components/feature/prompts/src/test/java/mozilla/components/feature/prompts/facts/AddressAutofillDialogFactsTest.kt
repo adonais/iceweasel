@@ -15,7 +15,6 @@ class AddressAutofillDialogFactsTest {
     @Test
     fun `Emits facts for address autofill form detected events`() {
         CollectionProcessor.withFactCollection { facts ->
-
             emitSuccessfulAddressAutofillFormDetectedFact()
 
             assertEquals(1, facts.size)
@@ -31,7 +30,6 @@ class AddressAutofillDialogFactsTest {
     @Test
     fun `Emits facts for autofill success events`() {
         CollectionProcessor.withFactCollection { facts ->
-
             emitSuccessfulAddressAutofillSuccessFact()
 
             assertEquals(1, facts.size)
@@ -47,7 +45,6 @@ class AddressAutofillDialogFactsTest {
     @Test
     fun `Emits facts for autofill shown events`() {
         CollectionProcessor.withFactCollection { facts ->
-
             emitAddressAutofillShownFact()
 
             assertEquals(1, facts.size)
@@ -63,7 +60,6 @@ class AddressAutofillDialogFactsTest {
     @Test
     fun `Emits facts for autofill expanded events`() {
         CollectionProcessor.withFactCollection { facts ->
-
             emitAddressAutofillExpandedFact()
 
             assertEquals(1, facts.size)
@@ -79,7 +75,6 @@ class AddressAutofillDialogFactsTest {
     @Test
     fun `Emits facts for autofill dismissed events`() {
         CollectionProcessor.withFactCollection { facts ->
-
             emitAddressAutofillDismissedFact()
 
             assertEquals(1, facts.size)

@@ -244,6 +244,24 @@ TEST_F(TestAudioDecoderInputTrack, ClearFuture) {
             (audio1->Frames() - 10 /* got clear */) + audio2->Frames());
 }
 
+TEST_F(TestAudioDecoderInputTrack, ClearFutureTimeStretched) {
+  RefPtr<AudioDecoderInputTrack> track =
+      CreateTrack(mGraph, NS_GetCurrentThread(), mInfo, 0.5, false);
+  RefPtr<AudioData> audio = CreateAudioData(4096);
+  track->AppendData(audio, nullptr);
+  track->ProcessInput(0, 10, kNoFlags);
+
+  track->ClearFutureData();
+  track->ProcessInput(10, 20, kNoFlags);
+
+  AudioSegment output;
+  output.AppendSlice(*track->GetData(), 10, 20);
+  EXPECT_TRUE(output.IsNull());
+
+  track->Close();
+  track->Destroy();
+}
+
 TEST_F(TestAudioDecoderInputTrack, InputRateChange) {
   // Start from [0:10] and each time we move the time by 10ms.
   // Expected: appended=10, expected duration=10

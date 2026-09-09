@@ -650,6 +650,28 @@ JSObject* SandboxPrototypeOrNull(JSContext* aCx, JSObject* aObj) {
   return js::CheckedUnwrapDynamic(proto, aCx, /* stopAtWindowProxy = */ false);
 }
 
+already_AddRefed<nsGlobalWindowInner> SandboxAssociatedWindowOrNull(
+    JSObject* aObj) {
+  MOZ_ASSERT(aObj);
+
+  if (!IsSandbox(aObj)) {
+    return nullptr;
+  }
+
+  SandboxPrivate* priv = SandboxPrivate::GetPrivate(aObj);
+  if (!priv) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsPIDOMWindowInner> window = priv->GetAssociatedWindow();
+  if (!window) {
+    return nullptr;
+  }
+
+  RefPtr<nsGlobalWindowInner> win = nsGlobalWindowInner::Cast(window);
+  return win.forget();
+}
+
 nsGlobalWindowInner* CurrentWindowOrNull(JSContext* cx) {
   JSObject* glob = JS::CurrentGlobalOrNull(cx);
   return glob ? WindowOrNull(glob) : nullptr;
@@ -2924,19 +2946,6 @@ static void SetUseCounterCallback(JSObject* obj, JSUseCounter counter) {
       return;
     case JSUseCounter::DATEPARSE_IMPL_DEF:
       SetUseCounter(obj, eUseCounter_custom_JS_dateparse_impl_def);
-      return;
-    case JSUseCounter::GENERATOR_FUNCTION_CREATED:
-      SetUseCounter(obj, eUseCounter_custom_JS_generatorFunctionCreated);
-      return;
-    case JSUseCounter::ASYNC_GENERATOR_FUNCTION_CREATED:
-      SetUseCounter(obj, eUseCounter_custom_JS_asyncGeneratorFunctionCreated);
-      return;
-    case JSUseCounter::GENERATOR_FUNCTION_ION_ELIGIBLE:
-      SetUseCounter(obj, eUseCounter_custom_JS_generatorFunctionIonEligible);
-      return;
-    case JSUseCounter::ASYNC_GENERATOR_FUNCTION_ION_ELIGIBLE:
-      SetUseCounter(obj,
-                    eUseCounter_custom_JS_asyncGeneratorFunctionIonEligible);
       return;
     case JSUseCounter::COUNT:
       break;

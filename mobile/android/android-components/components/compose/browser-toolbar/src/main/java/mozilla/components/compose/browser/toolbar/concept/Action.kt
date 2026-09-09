@@ -11,9 +11,7 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteractio
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarMenu
 
-/**
- * Actions that can be added to the toolbar.
- */
+/** Actions that can be added to the toolbar. */
 sealed class Action {
     /**
      * An action button to be added to the toolbar that can be configures with resource ids.
@@ -23,8 +21,8 @@ sealed class Action {
      * @property state the current [State] of the action button.
      * @property highlighted Whether or not to highlight this button.
      * @property onClick [BrowserToolbarInteraction] describing how to handle this button being clicked.
-     * @property onLongClick Optional [BrowserToolbarInteraction] describing how to handle this button
-     * being long clicked.
+     * @property onLongClick Optional [BrowserToolbarInteraction] describing how to handle this button being long
+     *   clicked.
      * @property testTag Optional test tag for this button.
      */
     data class ActionButtonRes(
@@ -46,8 +44,8 @@ sealed class Action {
      * @property state the current [State] of the action button.
      * @property highlighted Whether or not to highlight this button.
      * @property onClick [BrowserToolbarInteraction] describing how to handle this button being clicked.
-     * @property onLongClick Optional [BrowserToolbarInteraction] describing how to handle this button
-     * being long clicked.
+     * @property onLongClick Optional [BrowserToolbarInteraction] describing how to handle this button being long
+     *   clicked.
      * @property testTag Optional test tag for this button.
      */
     data class ActionButton(
@@ -61,19 +59,18 @@ sealed class Action {
         val testTag: String? = null,
     ) : Action() {
 
-        /**
-         * An enum class defining the current state of the [ActionButton].
-         */
+        /** An enum class defining the current state of the [ActionButton]. */
         enum class State {
-            DEFAULT, DISABLED, ACTIVE,
+            DEFAULT,
+            DISABLED,
+            ACTIVE,
         }
     }
 
     /**
-     * An action button styled as a search selector to be added to the toolbar, that upon pressed will
-     * automatically show a dropdown menu built from the passed in [menu] configuration.
-     * This wraps the provided [icon] at the start with a down arrow to it's end
-     * to indicate that clicking this will open a dropdown menu.
+     * An action button styled as a search selector to be added to the toolbar, that upon pressed will automatically
+     * show a dropdown menu built from the passed in [menu] configuration. This wraps the provided [icon] at the start
+     * with a down arrow to it's end to indicate that clicking this will open a dropdown menu.
      *
      * @property icon A [Drawable] or [DrawableRes] to use as icon for this button.
      * @property contentDescription A [String] or [StringRes] to use as content description for this button.
@@ -87,81 +84,55 @@ sealed class Action {
         val onClick: BrowserToolbarEvent?,
     ) : Action() {
 
-        /**
-         * The image to use as icon for this button.
-         */
+        /** The image to use as icon for this button. */
         sealed interface Icon {
             /**
-             *  The [Drawable] as icon for this button.
+             * The [Drawable] as icon for this button.
              *
-             *  @property drawable The [Drawable] to use as icon.
-             *  @property shouldTint Whether or not to apply the application default tint to this icon.
+             * @property drawable The [Drawable] to use as icon.
+             * @property shouldTint Whether or not to apply the application default tint to this icon.
              */
             data class DrawableIcon(
                 val drawable: Drawable,
                 val shouldTint: Boolean = true,
             ) : Icon
 
-            /**
-             * The [DrawableRes] as icon for this button.
-             */
-            @JvmInline
-            value class DrawableResIcon(
-                @param:DrawableRes val resourceId: Int,
-            ) : Icon
+            /** The [DrawableRes] as icon for this button. */
+            @JvmInline value class DrawableResIcon(@param:DrawableRes val resourceId: Int) : Icon
         }
 
-        /**
-         * The text that this button should display.
-         */
+        /** The text that this button should display. */
         sealed interface Text {
-            /**
-             * The [String] to display in this this button.
-             */
-            @JvmInline
-            value class StringText(val text: String) : Text
+            /** The [String] to display in this this button. */
+            @JvmInline value class StringText(val text: String) : Text
 
-            /**
-             * The [StringRes] to display as text in this button.
-             */
-            @JvmInline
-            value class StringResText(
-                @param:StringRes val resourceId: Int,
-            ) : Text
+            /** The [StringRes] to display as text in this button. */
+            @JvmInline value class StringResText(@param:StringRes val resourceId: Int) : Text
         }
 
-        /**
-         * The content description menu item.
-         */
+        /** The content description menu item. */
         sealed interface ContentDescription {
-            /**
-             * The [String] to use as content description of this button.
-             */
-            @JvmInline
-            value class StringContentDescription(val text: String) : ContentDescription
+            /** The [String] to use as content description of this button. */
+            @JvmInline value class StringContentDescription(val text: String) : ContentDescription
 
-            /**
-             * The [StringRes] to use as content description of this button.
-             */
+            /** The [StringRes] to use as content description of this button. */
             @JvmInline
-            value class StringResContentDescription(
-                @param:StringRes val resourceId: Int,
-            ) : ContentDescription
+            value class StringResContentDescription(@param:StringRes val resourceId: Int) : ContentDescription
         }
     }
 
     /**
-     * An action button styled as a tab counter to be added to the toolbar.
-     * This shows the provided [count] number inside of a squircle if lower than 100, otherwise it will
-     * show an infinity symbol inside of the same squircle shape.
+     * An action button styled as a tab counter to be added to the toolbar. This shows the provided [count] number
+     * inside of a squircle if lower than 100, otherwise it will show an infinity symbol inside of the same squircle
+     * shape.
      *
      * @property count The number of tabs to display in the tab counter.
      * @property contentDescription The content description for this button.
-     * @property showPrivacyMask Whether ot not to decorate this button with a top right icon
-     * signaling that the tabs are private.
+     * @property showPrivacyMask Whether ot not to decorate this button with a top right icon signaling that the tabs
+     *   are private.
      * @property onClick [BrowserToolbarEvent] to be dispatched when this button is clicked.
-     * @property onLongClick Optional [BrowserToolbarInteraction] describing how to handle this button
-     * being long clicked.
+     * @property onLongClick Optional [BrowserToolbarInteraction] describing how to handle this button being long
+     *   clicked.
      */
     data class TabCounterAction(
         val count: Int,
@@ -172,8 +143,8 @@ sealed class Action {
     ) : Action()
 
     /**
-     * A transient pill-shaped action that shows an [iconResId] with a [textResId] label, then animates
-     * away into regular action button. Optionally displays an [overlayResId] icon at the bottom-end.
+     * A transient pill-shaped action that shows an [iconResId] with a [textResId] label, then animates away into
+     * regular action button. Optionally displays an [overlayResId] icon at the bottom-end.
      *
      * @property iconResId The resource ID of the main icon to display.
      * @property overlayResId The resource ID of a smaller optional icon overlaid at the bottom-end of [iconResId].
@@ -183,7 +154,8 @@ sealed class Action {
      * @property highlighted Whether to highlight this button.
      * @property onClick [BrowserToolbarInteraction] dispatched when the button is tapped.
      * @property testTag Optional test tag for this button.
-     * @property onAnimationStarted Optional callback invoked when the pill animation starts on screen.
+     * @property onAnimationFinished Optional [BrowserToolbarEvent] dispatched once the pill has fully collapsed on
+     *   screen.
      */
     data class AnimatedPillActionRes(
         @param:DrawableRes val iconResId: Int,
@@ -194,6 +166,6 @@ sealed class Action {
         val highlighted: Boolean = false,
         val onClick: BrowserToolbarInteraction,
         val testTag: String? = null,
-        val onAnimationStarted: (() -> Unit)? = null,
+        val onAnimationFinished: BrowserToolbarEvent? = null,
     ) : Action()
 }

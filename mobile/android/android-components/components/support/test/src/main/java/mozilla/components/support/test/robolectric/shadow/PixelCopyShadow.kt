@@ -12,10 +12,10 @@ import android.view.Window
 import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
 
-/**
- * Shadow for [PixelCopy] API.
- */
+/** Shadow for [PixelCopy] API. */
 @Implements(PixelCopy::class)
+// Robolectric instantiates shadows, so this has to stay a class.
+@Suppress("UtilityClassWithPublicConstructor")
 class PixelCopyShadow {
 
     companion object {

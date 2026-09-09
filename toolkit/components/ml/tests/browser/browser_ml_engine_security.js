@@ -26,7 +26,7 @@ add_task(async function test_mlengine_instantiation() {
 
   try {
     const { MLEngine } = ChromeUtils.importESModule(
-      "resource://gre/actors/MLEngineParent.sys.mjs"
+      "moz-src:///toolkit/components/ml/actors/MLEngineParent.sys.mjs"
     );
 
     // Create engine instance

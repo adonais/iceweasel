@@ -14,13 +14,15 @@ import org.robolectric.RobolectricTestRunner
 class SetupChecklistStateTest {
     @Test
     fun `WHEN state is initialized THEN the initial state is correct`() {
-        val expected = SetupChecklistState(
-            checklistItems = emptyList(),
-            progress = Progress(
-                totalTasks = 0,
-                completedTasks = 0,
-            ),
-        )
+        val expected =
+            SetupChecklistState(
+                checklistItems = emptyList(),
+                progress =
+                    Progress(
+                        totalTasks = 0,
+                        completedTasks = 0,
+                    ),
+            )
         assertEquals(expected, SetupChecklistState())
     }
 
@@ -44,8 +46,7 @@ class SetupChecklistStateTest {
         val step3Text = "You’re halfway there! Three steps finished and 3 to go."
         val step4Text = "You’re 4 steps in. Only 2 more to go!"
         val step5Text = "Almost there! You’re just 1 step away from the finish line."
-        val step6Text =
-            "You’ve completed all 6 setup steps. Enjoy the speed, privacy, and security of Firefox."
+        val step6Text = "You’ve completed all 6 setup steps. Enjoy the speed, privacy, and security of Firefox."
 
         assertEquals(step0Text, getSubtitleForGroupWith6Tasks(0))
         assertEquals(step1Text, getSubtitleForGroupWith6Tasks(1))
@@ -57,8 +58,7 @@ class SetupChecklistStateTest {
         assertEquals(null, getSubtitleForGroupWith6Tasks(7))
     }
 
-    private fun getSubtitleForGroupWith6Tasks(completedTasks: Int) =
-        getBasicSubtitleForGroup(6, completedTasks)
+    private fun getSubtitleForGroupWith6Tasks(completedTasks: Int) = getBasicSubtitleForGroup(6, completedTasks)
 
     @Test
     fun `GIVEN tab strip enabled when calling getSetupChecklistSubtitle then returns expected subtitles`() {
@@ -67,8 +67,7 @@ class SetupChecklistStateTest {
         val step2Text = "You’ve completed 2 out of 5 steps. Great progress!"
         val step3Text = "You’re halfway there! Three steps finished and 2 to go."
         val step4Text = "Almost there! You’re just 1 step away from the finish line."
-        val step5Text =
-            "You’ve completed all 5 setup steps. Enjoy the speed, privacy, and security of Firefox."
+        val step5Text = "You’ve completed all 5 setup steps. Enjoy the speed, privacy, and security of Firefox."
 
         assertEquals(step0Text, getSubtitleForGroupWith5Tasks(0))
         assertEquals(step1Text, getSubtitleForGroupWith5Tasks(1))
@@ -79,8 +78,7 @@ class SetupChecklistStateTest {
         assertEquals(null, getSubtitleForGroupWith5Tasks(6))
     }
 
-    private fun getSubtitleForGroupWith5Tasks(completedTasks: Int) =
-        getBasicSubtitleForGroup(5, completedTasks)
+    private fun getSubtitleForGroupWith5Tasks(completedTasks: Int) = getBasicSubtitleForGroup(5, completedTasks)
 
     @Test
     fun `GIVEN total tasks is less than 5 and more 6 getSetupChecklistSubtitle then returns null`() {

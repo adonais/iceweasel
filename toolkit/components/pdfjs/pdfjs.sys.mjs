@@ -13,16 +13,40 @@
  * limitations under the License.
  */
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  PdfEmbedFallbackStreamConverter:
+    "resource://pdf.js/PdfEmbedFallbackStreamConverter.sys.mjs",
   PdfStreamConverter: "resource://pdf.js/PdfStreamConverter.sys.mjs",
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "pdfjsDisabled",
+  "pdfjs.disabled",
+  false
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "embedFallbackEnabled",
+  "pdfjs.embedFallback",
+  true
+);
+
 // Register/unregister a constructor as a factory.
 export function StreamConverterFactory() {
-  if (!Services.prefs.getBoolPref("pdfjs.disabled", false)) {
+  if (!lazy.pdfjsDisabled) {
     return new lazy.PdfStreamConverter();
+  }
+  // Even when the viewer is disabled, a converter is needed to display a
+  // fallback page in object/embed elements. That page is only packaged on
+  // desktop, see toolkit/components/pdfjs/jar.mn.
+  if (AppConstants.platform !== "android" && lazy.embedFallbackEnabled) {
+    return new lazy.PdfEmbedFallbackStreamConverter();
   }
   throw Components.Exception("", Cr.NS_ERROR_FACTORY_NOT_REGISTERED);
 }

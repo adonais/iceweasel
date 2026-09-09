@@ -12,14 +12,15 @@ import org.mozilla.geckoview.Autocomplete
  *
  * @return The corresponding [LoginHint] enum value, or [LoginHint.NONE] if the hint is not recognized.
  */
-fun @receiver:Autocomplete.SelectOption.SelectOptionHint Int.toLoginHint() = when (this) {
-    Autocomplete.SelectOption.Hint.GENERATED -> LoginHint.GENERATED
-    Autocomplete.SelectOption.Hint.INSECURE_FORM -> LoginHint.INSECURE_FORM
-    Autocomplete.SelectOption.Hint.DUPLICATE_USERNAME -> LoginHint.DUPLICATE_USERNAME
-    Autocomplete.SelectOption.Hint.MATCHING_ORIGIN -> LoginHint.MATCHING_ORIGIN
-    Autocomplete.SelectOption.Hint.FIREFOX_RELAY -> LoginHint.EMAIL_MASK
-    else -> LoginHint.NONE
-}
+fun @receiver:Autocomplete.SelectOption.SelectOptionHint Int.toLoginHint() =
+    when (this) {
+        Autocomplete.SelectOption.Hint.GENERATED -> LoginHint.GENERATED
+        Autocomplete.SelectOption.Hint.INSECURE_FORM -> LoginHint.INSECURE_FORM
+        Autocomplete.SelectOption.Hint.DUPLICATE_USERNAME -> LoginHint.DUPLICATE_USERNAME
+        Autocomplete.SelectOption.Hint.MATCHING_ORIGIN -> LoginHint.MATCHING_ORIGIN
+        Autocomplete.SelectOption.Hint.FIREFOX_RELAY -> LoginHint.EMAIL_MASK
+        else -> LoginHint.NONE
+    }
 
 /**
  * Converts a [LoginHint] enum value to a GeckoView [Autocomplete.SelectOption.Hint] integer constant.
@@ -27,11 +28,12 @@ fun @receiver:Autocomplete.SelectOption.SelectOptionHint Int.toLoginHint() = whe
  * @return The corresponding [Autocomplete.SelectOption.Hint] integer constant.
  */
 @Autocomplete.SelectOption.SelectOptionHint
-fun LoginHint.toSelectOption() = when (this) {
-    LoginHint.GENERATED -> Autocomplete.SelectOption.Hint.GENERATED
-    LoginHint.INSECURE_FORM -> Autocomplete.SelectOption.Hint.INSECURE_FORM
-    LoginHint.DUPLICATE_USERNAME -> Autocomplete.SelectOption.Hint.DUPLICATE_USERNAME
-    LoginHint.MATCHING_ORIGIN -> Autocomplete.SelectOption.Hint.MATCHING_ORIGIN
-    LoginHint.EMAIL_MASK -> Autocomplete.SelectOption.Hint.FIREFOX_RELAY
-    LoginHint.NONE -> Autocomplete.SelectOption.Hint.NONE
-}
+fun LoginHint.toSelectOption() =
+    when (this) {
+        LoginHint.GENERATED -> Autocomplete.SelectOption.Hint.GENERATED
+        LoginHint.INSECURE_FORM -> Autocomplete.SelectOption.Hint.INSECURE_FORM
+        LoginHint.DUPLICATE_USERNAME -> Autocomplete.SelectOption.Hint.DUPLICATE_USERNAME
+        LoginHint.MATCHING_ORIGIN -> Autocomplete.SelectOption.Hint.MATCHING_ORIGIN
+        LoginHint.EMAIL_MASK -> Autocomplete.SelectOption.Hint.FIREFOX_RELAY
+        LoginHint.NONE -> Autocomplete.SelectOption.Hint.NONE
+    }

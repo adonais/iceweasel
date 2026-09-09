@@ -8,7 +8,6 @@ import mozilla.components.feature.protection.dashboard.TrackerCategory
 import mozilla.components.feature.protection.dashboard.TrackersBlockedCategory
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateEarliestTrackingDate
 import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateTrackersBlockedCount
 import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateTrackersBlockedThisWeek
@@ -20,7 +19,8 @@ class BlockedTrackersStateReducerTest {
         val initialState = AppState()
         val newBlockedTrackersTotal = 53
 
-        val updatedState = BlockedTrackersStateReducer.reduce(initialState, UpdateTrackersBlockedCount(newBlockedTrackersTotal))
+        val updatedState =
+            BlockedTrackersStateReducer.reduce(initialState, UpdateTrackersBlockedCount(newBlockedTrackersTotal))
 
         assertEquals(
             BlockedTrackersState(trackersBlockedCount = newBlockedTrackersTotal),
@@ -34,7 +34,8 @@ class BlockedTrackersStateReducerTest {
         val newTrackersBlocked: List<TrackersBlockedCategory> =
             listOf(TrackersBlockedCategory(1, 1, 2, TrackerCategory.CROSS_SITE_COOKIES))
 
-        val updatedState = BlockedTrackersStateReducer.reduce(initialState, UpdateTrackersBlockedThisWeek(newTrackersBlocked))
+        val updatedState =
+            BlockedTrackersStateReducer.reduce(initialState, UpdateTrackersBlockedThisWeek(newTrackersBlocked))
 
         assertEquals(
             BlockedTrackersState(trackersBlockedThisWeek = newTrackersBlocked),

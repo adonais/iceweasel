@@ -22,15 +22,10 @@ import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.IntentReceiverActivity
 import org.mozilla.fenix.ext.components
 
-/**
- * Launches voice recognition then uses it to start a new web search.
- */
+/** Launches voice recognition then uses it to start a new web search. */
 class VoiceSearchActivity : AppCompatActivity() {
 
-    /**
-     * Holds the intent that initially started this activity
-     * so that it can persist through the speech activity.
-     */
+    /** Holds the intent that initially started this activity so that it can persist through the speech activity. */
     private var previousIntent: Intent? = null
     private lateinit var startForResult: ActivityResultLauncher<Intent>
 
@@ -59,9 +54,10 @@ class VoiceSearchActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        startForResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            handleActivityResult(it)
-        }
+        startForResult =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+                handleActivityResult(it)
+            }
 
         if (Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).resolveActivity(packageManager) == null) {
             finish()
@@ -86,40 +82,37 @@ class VoiceSearchActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Displays a speech recognizer popup that listens for input from the user.
-     */
+    /** Displays a speech recognizer popup that listens for input from the user. */
     private fun displaySpeechRecognizer() {
-        val intentSpeech = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
-            )
-            putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE,
-                components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
-                    LocaleManager.getCurrentLocale(this@VoiceSearchActivity)
-                },
-            )
-        }
+        val intentSpeech =
+            Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(
+                    RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
+                )
+                putExtra(
+                    RecognizerIntent.EXTRA_LANGUAGE,
+                    components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
+                        LocaleManager.getCurrentLocale(this@VoiceSearchActivity)
+                    },
+                )
+            }
         SearchWidget.voiceButton.record(NoExtras())
 
         startForResult.launch(intentSpeech)
     }
 
     /**
-     * Returns true if the [SPEECH_PROCESSING] extra is present and set to true.
-     * Returns false if the intent is null.
+     * Returns true if the [SPEECH_PROCESSING] extra is present and set to true. Returns false if the intent is null.
      */
-    private fun Intent?.isForSpeechProcessing(): Boolean =
-        this?.getBooleanExtra(SPEECH_PROCESSING, false) == true
+    private fun Intent?.isForSpeechProcessing(): Boolean = this?.getBooleanExtra(SPEECH_PROCESSING, false) == true
 
     companion object {
         internal const val PREVIOUS_INTENT = "org.mozilla.fenix.previous_intent"
 
         /**
-         * In [VoiceSearchActivity] activity, used to store if the speech processing should start.
-         * In [IntentReceiverActivity] activity, used to store the search terms.
+         * In [VoiceSearchActivity] activity, used to store if the speech processing should start. In
+         * [IntentReceiverActivity] activity, used to store the search terms.
          */
         const val SPEECH_PROCESSING = "speech_processing"
     }

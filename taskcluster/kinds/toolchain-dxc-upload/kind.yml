@@ -12,7 +12,7 @@ transforms:
     - gecko_taskgraph.transforms.task
 
 kind-dependencies:
-    - toolchain
+    - fetch
 
 task-defaults:
     run-on-repo-type: [hg]
@@ -33,6 +33,7 @@ tasks:
                 MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
                 # NOTE: `{level}` gets replaced in the `upload_symbols` transform.
                 SYMBOL_SECRET: "project/releng/gecko/build/level-{level}/gecko-symbol-upload"
+                UPLOAD_SYMBOLS: /builds/worker/fetches/upload-symbols-cli/upload-symbols
         run:
             clone-with: hg
             using: mach
@@ -40,3 +41,6 @@ tasks:
             sparse-profile: upload-symbols
         scopes:
             - secrets:get:project/releng/gecko/build/level-{level}/gecko-symbol-upload
+        fetches:
+            fetch:
+                - upload-symbols-linux64

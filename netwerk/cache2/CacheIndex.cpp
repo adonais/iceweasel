@@ -1856,12 +1856,15 @@ void CacheIndex::WriteIndexToDisk(const StaticMutexAutoLock& aProofOfLock) {
   NetworkEndian::writeUint32(mRWBuf + mRWBufPos,
                              static_cast<uint32_t>(mTotalBytesWritten >> 10));
   mRWBufPos += sizeof(uint32_t);
-  // Whether the entries on disk are encrypted at rest. This reflects the
-  // session's actual encryption state (fixed at startup when CacheCrypto is
-  // initialized), not the live pref, so that a mid-session pref flip -- which
-  // only takes effect on the next restart -- is not masked here.
+  // Whether the entries on disk are encrypted at rest. This is the session's
+  // captured pref value, which is fixed at startup -- a mid-session flip only
+  // takes effect on the next restart, so reading the live pref here would mask
+  // it. Deliberately not IsActive(): a session where encryption is enabled but
+  // no cipher could be loaded writes no entries at all, since
+  // CacheFile::SetupEncryption() fails them closed, so the entries on disk are
+  // still the encrypted ones an earlier session wrote.
   NetworkEndian::writeUint32(mRWBuf + mRWBufPos,
-                             CacheCrypto::IsActive() ? 1 : 0);
+                             CacheCrypto::IsEnabled() ? 1 : 0);
   mRWBufPos += sizeof(uint32_t);
 
   mSkipEntries = 0;
@@ -2344,7 +2347,10 @@ void CacheIndex::ParseRecords(const StaticMutexAutoLock& aProofOfLock) {
 
     bool wasEncrypted = !!NetworkEndian::readUint32(mRWBuf + pos);
     pos += sizeof(uint32_t);
-    bool nowEncrypted = CacheCrypto::IsActive();
+    // The pref rather than IsActive(), matching what WriteRecords() stores: a
+    // keystore that is temporarily unavailable must not be read as "the user
+    // turned encryption off" and cost them the whole cache.
+    bool nowEncrypted = CacheCrypto::IsEnabled();
     if (wasEncrypted != nowEncrypted) {
       // The at-rest encryption setting changed since the cache was written, so
       // the entries on disk no longer match the current setting. Purge the

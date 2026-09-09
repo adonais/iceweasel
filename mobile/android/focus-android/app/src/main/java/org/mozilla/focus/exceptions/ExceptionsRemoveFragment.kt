@@ -9,6 +9,7 @@ import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import androidx.lifecycle.lifecycleScope
+import kotlin.collections.forEach as withEach
 import kotlinx.coroutines.launch
 import org.mozilla.focus.GleanMetrics.TrackingProtectionExceptions
 import org.mozilla.focus.R
@@ -16,29 +17,27 @@ import org.mozilla.focus.ext.components
 import org.mozilla.focus.ext.requireComponents
 import org.mozilla.focus.ext.showToolbar
 import org.mozilla.focus.state.AppAction
-import kotlin.collections.forEach as withEach
 
-/**
- * Fragment for removing tracking protection exceptions.
- */
+/** Fragment for removing tracking protection exceptions. */
 class ExceptionsRemoveFragment : ExceptionsListFragment() {
 
     override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
         menuInflater.inflate(R.menu.menu_autocomplete_remove, menu)
     }
 
-    override fun onMenuItemSelected(menuItem: MenuItem): Boolean = when (menuItem.itemId) {
-        R.id.remove -> {
-            removeSelectedDomains(requireActivity().applicationContext)
-            true
+    override fun onMenuItemSelected(menuItem: MenuItem): Boolean =
+        when (menuItem.itemId) {
+            R.id.remove -> {
+                removeSelectedDomains(requireActivity().applicationContext)
+                true
+            }
+            else -> false
         }
-        else -> false
-    }
 
     private fun removeSelectedDomains(context: Context) {
         val exceptions = (binding.exceptionList.adapter as DomainListAdapter).selection()
         TrackingProtectionExceptions.selectedItemsRemoved.record(
-            TrackingProtectionExceptions.SelectedItemsRemovedExtra(exceptions.size),
+            TrackingProtectionExceptions.SelectedItemsRemovedExtra(exceptions.size)
         )
 
         if (exceptions.isNotEmpty()) {
@@ -47,9 +46,7 @@ class ExceptionsRemoveFragment : ExceptionsListFragment() {
                     context.components.trackingProtectionUseCases.removeException(exception)
                 }
 
-                requireComponents.appStore.dispatch(
-                    AppAction.NavigateUp(requireComponents.store.state.selectedTabId),
-                )
+                requireComponents.appStore.dispatch(AppAction.NavigateUp(requireComponents.store.state.selectedTabId))
             }
         }
     }

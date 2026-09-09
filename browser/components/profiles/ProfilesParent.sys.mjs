@@ -20,6 +20,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PlacesDBUtils: "resource://gre/modules/PlacesDBUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
+  getThemesList: "moz-src:///browser/themes/ThemesList.sys.mjs",
 });
 
 /**
@@ -247,6 +248,16 @@ export class ProfilesParent extends JSWindowActorParent {
         // theme is up to date at this point.
         return SelectableProfileService.currentProfile.toContentSafeObject();
       }
+      case "Profiles:RecordThemeTelemetry": {
+        // Record telemetry when theme is updated via theme-picker (Nova mode)
+        let themeId = message.data;
+        if (source === "about:editprofile") {
+          Glean.profilesExisting.theme.record({ value: themeId });
+        } else if (source === "about:newprofile") {
+          Glean.profilesNew.theme.record({ value: themeId });
+        }
+        break;
+      }
       case "Profiles:CloseProfileTab": {
         if (source === "about:editprofile") {
           Glean.profilesExisting.closed.record({ value: "done_editing" });
@@ -280,6 +291,15 @@ export class ProfilesParent extends JSWindowActorParent {
   }
 
   async getSafeForContentThemes(isDark) {
+    let novaEnabled = Services.prefs.getBoolPref("browser.nova.enabled", false);
+
+    if (novaEnabled) {
+      let themesList = await lazy.getThemesList({
+        installSource: "about:newprofile",
+      });
+      return themesList.getThemesInfo();
+    }
+
     let lightDark = isDark ? "dark" : "light";
     let themes = [];
     for (let [themeId, themeObj] of PROFILE_THEMES_MAP) {

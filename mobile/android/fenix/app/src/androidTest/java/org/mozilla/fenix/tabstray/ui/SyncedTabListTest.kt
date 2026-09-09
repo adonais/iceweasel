@@ -8,23 +8,19 @@ import androidx.compose.ui.test.onChildAt
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.mockk.mockk
-import io.mockk.verify
+import mozilla.components.browser.storage.sync.Tab as SyncTab
 import mozilla.components.browser.storage.sync.TabEntry
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.tabstray.TabsTrayTestTag.SYNCED_TABS_LIST
-import org.mozilla.fenix.tabstray.syncedtabs.OnSectionExpansionToggled
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 import org.mozilla.fenix.tabstray.ui.syncedtabs.SyncedTabsList
-import mozilla.components.browser.storage.sync.Tab as SyncTab
 
 @RunWith(AndroidJUnit4::class)
 class SyncedTabListTest {
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun testClickingSyncedTabHeaderInvokesCallback() {
@@ -50,11 +46,12 @@ class SyncedTabListTest {
         List(deviceCount) { index ->
             SyncedTabsListItem.DeviceSection(
                 displayName = "Device $index",
-                tabs = listOf(
-                    generateFakeSyncedTab("Mozilla", "www.mozilla.org"),
-                    generateFakeSyncedTab("Google", "www.google.com"),
-                    generateFakeSyncedTab("", "www.google.com"),
-                ),
+                tabs =
+                    listOf(
+                        generateFakeSyncedTab("Mozilla", "www.mozilla.org"),
+                        generateFakeSyncedTab("Google", "www.google.com"),
+                        generateFakeSyncedTab("", "www.google.com"),
+                    ),
             )
         }
 

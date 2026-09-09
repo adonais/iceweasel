@@ -1,0 +1,20 @@
+[package]
+name = "backgroundtaskregistrar"
+version = "0.1.0"
+edition = "2024"
+license = "MPL-2.0"
+
+[dependencies]
+log = "0.4"
+mozbuild = "0.1"
+nserror = { path = "../../../../xpcom/rust/nserror" }
+nsstring = { path = "../../../../xpcom/rust/nsstring" }
+xpcom = { path = "../../../../xpcom/rust/xpcom" }
+mozilla-central-workspace-hack = { version = "0.1", features = ["backgroundtaskregistrar"], optional = true }
+windows-collections = "0.3.0"
+
+[dependencies.windows]
+version = "0.62"
+features = [
+    "ApplicationModel_Background",
+]

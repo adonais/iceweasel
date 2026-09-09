@@ -47,6 +47,8 @@ support-files = ["topstories.json"]
 
 ["test_PrivacyFeed.js"]
 
+["test_RecentSearchesFeed.js"]
+
 ["test_RemoteRenderer.js"]
 prefs = [
   "browser.newtabpage.activity-stream.remote-renderer.log=true"

@@ -19,9 +19,7 @@ import org.mozilla.focus.GleanMetrics.SearchWidget
 import org.mozilla.focus.activity.MainActivity
 import org.mozilla.focus.ui.theme.FocusTheme
 
-/**
- * Utility class for search widget related operations.
- */
+/** Utility class for search widget related operations. */
 object SearchWidgetUtils {
 
     private fun addSearchWidgetToHomeScreen(activity: Activity) {
@@ -29,44 +27,44 @@ object SearchWidgetUtils {
         val searchWidgetProvider = ComponentName(activity, SearchWidgetProvider::class.java)
         if (appWidgetManager!!.isRequestPinAppWidgetSupported) {
             val pinnedWidgetCallbackIntent = Intent(activity, SearchWidgetProvider::class.java)
-            val successCallback = PendingIntent.getBroadcast(
-                activity,
-                0,
-                pinnedWidgetCallbackIntent,
-                PendingIntent.FLAG_IMMUTABLE or
-                    PendingIntent.FLAG_UPDATE_CURRENT,
-            )
+            val successCallback =
+                PendingIntent.getBroadcast(
+                    activity,
+                    0,
+                    pinnedWidgetCallbackIntent,
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+                )
             appWidgetManager.requestPinAppWidget(searchWidgetProvider, Bundle(), successCallback)
         }
     }
 
-    /**
-     * Shows promote search widget dialog
-     */
+    /** Shows promote search widget dialog */
     fun showPromoteSearchWidgetDialog(activity: MainActivity) {
         val promoteSearchWidgetDialog = Dialog(activity)
-        promoteSearchWidgetDialog.apply {
-            setContentView(
-                ComposeView(activity).apply {
-                    setViewTreeLifecycleOwner(activity)
-                    this.setViewTreeSavedStateRegistryOwner(activity)
-                    setContent {
-                        FocusTheme {
-                            PromoteSearchWidgetDialogCompose(
-                                onAddSearchWidgetButtonClick = {
-                                    addSearchWidgetToHomeScreen(activity)
-                                    SearchWidget.addToHomeScreenButton.record(NoExtras())
-                                },
-                                onDismiss = {
-                                    promoteSearchWidgetDialog.dismiss()
-                                },
-                            )
+        promoteSearchWidgetDialog
+            .apply {
+                setContentView(
+                    ComposeView(activity).apply {
+                        setViewTreeLifecycleOwner(activity)
+                        this.setViewTreeSavedStateRegistryOwner(activity)
+                        setContent {
+                            FocusTheme {
+                                PromoteSearchWidgetDialogCompose(
+                                    onAddSearchWidgetButtonClick = {
+                                        addSearchWidgetToHomeScreen(activity)
+                                        SearchWidget.addToHomeScreenButton.record(NoExtras())
+                                    },
+                                    onDismiss = {
+                                        promoteSearchWidgetDialog.dismiss()
+                                    },
+                                )
+                            }
                         }
+                        isTransitionGroup = true
                     }
-                    isTransitionGroup = true
-                },
-            )
-        }.show()
+                )
+            }
+            .show()
         SearchWidget.promoteDialogShown.record(NoExtras())
     }
 }

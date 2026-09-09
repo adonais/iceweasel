@@ -1,0 +1,44 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+task-defaults:
+    platform: linux64/debug
+    worker-type: t-linux-docker-amd
+    worker:
+        docker-image: {in-tree: static-analysis-build}
+        max-run-time: 18000
+    run-on-projects: []
+    treeherder:
+        kind: other
+        tier: 2
+    run:
+        using: run-task
+        tooltool-downloads: public
+    fetches:
+        toolchain:
+            - linux64-cbindgen
+            - linux64-nasm
+            - linux64-node
+
+full:
+    description: Run static-analysis (clang-tidy) on whole codebase
+    treeherder:
+        symbol: cpp(clang-tidy-full)
+    run:
+        cwd: '{checkout}'
+        command: >-
+            source taskcluster/scripts/misc/source-test-clang-setup.sh &&
+            ./mach --log-no-times static-analysis check --output $HOME/clang-tidy.json --format json
+    fetches:
+        toolchain:
+            - linux64-clang
+            - linux64-clang-tidy
+            - linux64-rust
+            - sysroot-x86_64-linux-gnu
+            - sysroot-wasm32-wasi
+    worker:
+        artifacts:
+            - type: file
+              name: public/code-review/clang-tidy.json
+              path: /builds/worker/clang-tidy.json

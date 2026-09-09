@@ -8,9 +8,7 @@ import mozilla.components.browser.state.action.SystemAction
 import mozilla.components.browser.state.state.BrowserState
 
 internal object SystemReducer {
-    /**
-     * [SystemAction] Reducer function for modifying [BrowserState].
-     */
+    /** [SystemAction] Reducer function for modifying [BrowserState]. */
     fun reduce(state: BrowserState, action: SystemAction): BrowserState {
         return when (action) {
             is SystemAction.LowMemoryAction -> {

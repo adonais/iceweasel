@@ -378,7 +378,7 @@ add_task(async function test_move_keyboard_ctrl_shift_pagedown() {
   let tab1 = await addTab("about:blank");
   let tab2 = await addTab("about:blank");
   gBrowser.selectedTab = tab1;
-  let startPos = tab1._tPos;
+  let startPos = tab1.index;
   Assert.equal(getInteractionEvents().length, 0, "No events before keypress");
 
   let tabMovePromise = BrowserTestUtils.waitForEvent(
@@ -392,7 +392,7 @@ add_task(async function test_move_keyboard_ctrl_shift_pagedown() {
   );
   await tabMovePromise;
 
-  Assert.greater(tab1._tPos, startPos, "Tab moved forward");
+  Assert.greater(tab1.index, startPos, "Tab moved forward");
   assertInteractionEvent(getLastInteractionEvent(), {
     action: TabMetrics.METRIC_ACTION.MOVE,
     source: TabMetrics.METRIC_SOURCE.KEYBOARD,
@@ -410,7 +410,7 @@ add_task(async function test_move_context_menu_to_start() {
   // Add a spacer tab so the target tab actually has somewhere to move.
   let spacer = await addTab("about:blank");
   let tab = await addTab("about:blank");
-  Assert.greater(tab._tPos, 0, "Tab starts after index 0");
+  Assert.greater(tab.index, 0, "Tab starts after index 0");
 
   // context_moveToStart is inside the moveTabOptions submenu; navigating
   // nested submenus in headless tests is not reliable, so we call the same
@@ -426,7 +426,7 @@ add_task(async function test_move_context_menu_to_start() {
   });
   await tabMovePromise;
 
-  Assert.equal(tab._tPos, 0, "Tab moved to start");
+  Assert.equal(tab.index, 0, "Tab moved to start");
   assertInteractionEvent(getLastInteractionEvent(), {
     action: TabMetrics.METRIC_ACTION.MOVE,
     source: TabMetrics.METRIC_SOURCE.TAB_MENU,
@@ -685,7 +685,7 @@ add_task(async function test_move_keyboard_tabstrip_arrow_moves() {
   let tab1 = await addTab("about:blank");
   let tab2 = await addTab("about:blank");
   gBrowser.selectedTab = tab1;
-  Assert.less(tab1._tPos, tab2._tPos, "tab1 starts before tab2");
+  Assert.less(tab1.index, tab2.index, "tab1 starts before tab2");
 
   let tabMovePromise = BrowserTestUtils.waitForEvent(tab1, "TabMove");
   Services.focus.setFocus(tab1, Services.focus.FLAG_BYKEY);
@@ -695,7 +695,7 @@ add_task(async function test_move_keyboard_tabstrip_arrow_moves() {
   });
   await tabMovePromise;
 
-  Assert.greater(tab1._tPos, tab2._tPos, "tab1 moved past tab2");
+  Assert.greater(tab1.index, tab2.index, "tab1 moved past tab2");
   assertInteractionEvent(getLastInteractionEvent(), {
     action: TabMetrics.METRIC_ACTION.MOVE,
     source: TabMetrics.METRIC_SOURCE.KEYBOARD,

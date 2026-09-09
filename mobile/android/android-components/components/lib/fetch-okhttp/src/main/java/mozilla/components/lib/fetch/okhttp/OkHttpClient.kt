@@ -5,6 +5,8 @@
 package mozilla.components.lib.fetch.okhttp
 
 import android.content.Context
+import java.net.CookieHandler
+import java.net.CookieManager
 import mozilla.components.concept.fetch.BuildConfig
 import mozilla.components.concept.fetch.Client
 import mozilla.components.concept.fetch.Headers
@@ -19,22 +21,19 @@ import okhttp3.CacheControl
 import okhttp3.JavaNetCookieJar
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.net.CookieHandler
-import java.net.CookieManager
 
 typealias RequestBuilder = okhttp3.Request.Builder
 
-/**
- * [Client] implementation using OkHttp.
- */
+/** [Client] implementation using OkHttp. */
 class OkHttpClient(
     private val client: OkHttpClient = OkHttpClient(),
     private val context: Context? = null,
 ) : Client() {
-    private val defaultHeaders: Headers = MutableHeaders(
-        "User-Agent" to "MozacFetch/${BuildConfig.LIBRARY_VERSION}",
-        "Accept-Encoding" to "gzip",
-    )
+    private val defaultHeaders: Headers =
+        MutableHeaders(
+            "User-Agent" to "MozacFetch/${BuildConfig.LIBRARY_VERSION}",
+            "Accept-Encoding" to "gzip",
+        )
 
     override fun fetch(request: Request): Response {
         require(!request.private) {
@@ -54,9 +53,7 @@ class OkHttpClient(
             requestBuilder.cacheControl(CacheControl.FORCE_NETWORK)
         }
 
-        val actualResponse = requestClient.newCall(
-            requestBuilder.build(),
-        ).execute()
+        val actualResponse = requestClient.newCall(requestBuilder.build()).execute()
 
         return actualResponse.toResponse()
     }
@@ -83,10 +80,11 @@ class OkHttpClient(
 
 private fun OkHttpClient.rebuildFor(request: Request, context: Context?): OkHttpClient {
     @Suppress("ComplexCondition")
-    if (request.connectTimeout != null ||
-        request.readTimeout != null ||
-        request.redirect != Request.Redirect.FOLLOW ||
-        request.cookiePolicy != Request.CookiePolicy.OMIT
+    if (
+        request.connectTimeout != null ||
+            request.readTimeout != null ||
+            request.redirect != Request.Redirect.FOLLOW ||
+            request.cookiePolicy != Request.CookiePolicy.OMIT
     ) {
         val clientBuilder = newBuilder()
 
@@ -124,22 +122,25 @@ private fun okhttp3.Response.toResponse(): Response {
 }
 
 private fun createRequestBuilderWithBody(request: Request): RequestBuilder {
-    val requestBody = request.body?.useStream { it.readBytes() }?.let {
-        it.toRequestBody(null, 0, it.size)
-    }
+    val requestBody =
+        request.body
+            ?.useStream { it.readBytes() }
+            ?.let {
+                it.toRequestBody(null, 0, it.size)
+            }
 
-    return RequestBuilder()
-        .url(request.url)
-        .method(request.method.name, requestBody)
+    return RequestBuilder().url(request.url).method(request.method.name, requestBody)
 }
 
 private fun RequestBuilder.addHeadersFrom(request: Request, defaultHeaders: Headers) {
     defaultHeaders
         .filter { header ->
             request.headers?.contains(header.name) != true
-        }.filter { header ->
+        }
+        .filter { header ->
             header.name != "Accept-Encoding" && header.value != "gzip"
-        }.forEach { header ->
+        }
+        .forEach { header ->
             addHeader(header.name, header.value)
         }
 

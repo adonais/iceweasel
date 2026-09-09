@@ -389,8 +389,11 @@ add_task(async function test_support_sidebar_border_color() {
   );
   const sidebarPanelCS = window.getComputedStyle(sidebarPanel);
 
+  // Nova draws the panel's separator as a border, everything else as an outline.
   is(
-    sidebarPanelCS.outlineColor,
+    novaEnabled
+      ? sidebarPanelCS.borderBlockStartColor
+      : sidebarPanelCS.outlineColor,
     hexToCSS(LIGHT_SALMON),
     "The card border of the history sidebar panel should be colored properly"
   );

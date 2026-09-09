@@ -12,15 +12,18 @@ import androidx.core.content.withStyledAttributes
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.TrackingProtectionCategoryBinding
 
-class TrackingProtectionCategoryItem @JvmOverloads constructor(
+class TrackingProtectionCategoryItem
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
 ) : ConstraintLayout(context, attrs, defStyleAttr) {
-    private val binding = TrackingProtectionCategoryBinding.inflate(
-        LayoutInflater.from(context),
-        this,
-    )
+    private val binding =
+        TrackingProtectionCategoryBinding.inflate(
+            LayoutInflater.from(context),
+            this,
+        )
 
     init {
         context.withStyledAttributes(
@@ -29,28 +32,26 @@ class TrackingProtectionCategoryItem @JvmOverloads constructor(
             defStyleAttr,
             0,
         ) {
-            binding.trackingProtectionCategoryTitle.text = resources.getString(
-                getResourceId(
-                    R.styleable.TrackingProtectionCategory_categoryItemTitle,
-                    R.string.etp_cookies_title,
-                ),
-            )
-            binding.trackingProtectionCategoryItemDescription.text = resources.getString(
-                getResourceId(
-                    R.styleable.TrackingProtectionCategory_categoryItemDescription,
-                    R.string.etp_cookies_description,
-                ),
-            )
+            binding.trackingProtectionCategoryTitle.text =
+                resources.getString(
+                    getResourceId(
+                        R.styleable.TrackingProtectionCategory_categoryItemTitle,
+                        R.string.etp_cookies_title,
+                    )
+                )
+            binding.trackingProtectionCategoryItemDescription.text =
+                resources.getString(
+                    getResourceId(
+                        R.styleable.TrackingProtectionCategory_categoryItemDescription,
+                        R.string.etp_cookies_description,
+                    )
+                )
         }
     }
 
-    /**
-     * The displayed title of this item.
-     */
+    /** The displayed title of this item. */
     val trackingProtectionCategoryTitle = binding.trackingProtectionCategoryTitle
 
-    /**
-     * The displayed description of this item.
-     */
+    /** The displayed description of this item. */
     val trackingProtectionCategoryItemDescription = binding.trackingProtectionCategoryItemDescription
 }

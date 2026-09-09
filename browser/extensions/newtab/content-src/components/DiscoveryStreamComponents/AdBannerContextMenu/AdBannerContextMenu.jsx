@@ -2,9 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import React, { useState } from "react";
+import React, { useRef } from "react";
+import { useSelector } from "react-redux";
 import { actionCreators as ac } from "common/Actions.mjs";
-import { LinkMenu } from "../../LinkMenu/LinkMenu";
+import { getLinkMenuOptions } from "content-src/lib/link-menu-options";
+import { PanelListItems } from "content-src/components/LinkMenu/PanelListItems";
+import { usePanelListIsOpen } from "content-src/lib/panel-list-utils";
 
 /**
  * A context menu for IAB banners (e.g. billboard, leaderboard).
@@ -38,59 +41,56 @@ export function AdBannerContextMenu({
     "OurSponsorsAndYourPrivacy",
   ];
 
-  const [showContextMenu, setShowContextMenu] = useState(false);
-  const [contextMenuClassNames, setContextMenuClassNames] =
-    useState("ads-context-menu");
+  const { isPrivateBrowsingEnabled, platform, privacyInfoUrl } = useSelector(
+    state => ({
+      isPrivateBrowsingEnabled: state.Prefs.values.isPrivateBrowsingEnabled,
+      platform: state.Prefs.values.platform,
+      privacyInfoUrl: state.Prefs.values["privacyInfo.url"],
+    })
+  );
 
-  // The keyboard access parameter is passed down to LinkMenu component
-  // that uses it to focus on the first context menu option for accessibility.
-  const [isKeyboardAccess, setIsKeyboardAccess] = useState(false);
+  const panelListRef = useRef(null);
+  const contextMenuOpen = usePanelListIsOpen(panelListRef, {
+    onShown: () => toggleActive(true),
+    onHidden: () => toggleActive(false),
+  });
+  const contextMenuClassNames = `ads-context-menu${
+    contextMenuOpen ? " context-menu-open" : ""
+  }`;
 
-  /**
-   * Toggles the style fix for context menu hover/active styles.
-   * This allows us to have unobtrusive, transparent button background by default,
-   * yet flip it over to semi-transparent grey when the menu is visible.
-   *
-   * @param contextMenuOpen
-   */
-  const toggleContextMenuStyleSwitch = contextMenuOpen => {
-    if (contextMenuOpen) {
-      setContextMenuClassNames("ads-context-menu context-menu-open");
-    } else {
-      setContextMenuClassNames("ads-context-menu");
-    }
-  };
+  const menuId = `ad-banner-context-menu-${position}`;
 
-  /**
-   * Toggles the context menu to open or close. Sets state depending on whether
-   * the context menu is accessed by mouse or keyboard.
-   *
-   * @param isKeyBoard
-   */
-  const toggleContextMenu = isKeyBoard => {
-    toggleContextMenuStyleSwitch(!showContextMenu);
-    toggleActive(!showContextMenu);
-    setShowContextMenu(!showContextMenu);
-    setIsKeyboardAccess(isKeyBoard);
-  };
-
-  const onClick = e => {
-    e.preventDefault();
-    toggleContextMenu(false);
-  };
-
-  const onKeyDown = e => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      toggleContextMenu(true);
-    }
-  };
-
-  const onUpdate = () => {
-    toggleContextMenuStyleSwitch(!showContextMenu);
-    toggleActive(!showContextMenu);
-    setShowContextMenu(!showContextMenu);
-  };
+  const options = getLinkMenuOptions({
+    dispatch,
+    isPrivateBrowsingEnabled,
+    platform,
+    privacyInfoUrl,
+    options: ADBANNER_CONTEXT_MENU_OPTIONS,
+    shouldSendImpressionStats: true,
+    userEvent: ac.DiscoveryStreamUserEvent,
+    site: {
+      // Props we want to pass on for new ad types that come from Unified Ads API
+      block_key: spoc.block_key,
+      flight_id: spoc.flight_id,
+      format: spoc.format,
+      id: spoc.id,
+      guid: spoc.guid,
+      card_type: "spoc",
+      // required to record telemetry for an action, see handleBlockUrl in TelemetryFeed.sys.mjs
+      is_pocket_card: true,
+      position,
+      sponsor: spoc.sponsor,
+      title: spoc.title,
+      url: spoc.url || spoc.shim?.url,
+      personalization_models: spoc.personalization_models,
+      priority: spoc.priority,
+      score: spoc.score,
+      alt_text: spoc.alt_text,
+      shim: spoc.shim,
+    },
+    index: position,
+    source: type?.toUpperCase(),
+  });
 
   return (
     <div className="ads-context-menu-wrapper">
@@ -103,42 +103,15 @@ export function AdBannerContextMenu({
             title: spoc.title || spoc.sponsor || spoc.alt_text,
           })}
           iconsrc="chrome://global/skin/icons/more.svg"
-          aria-expanded={showContextMenu ? "true" : "false"}
-          onClick={onClick}
-          onKeyDown={onKeyDown}
+          menuId={menuId}
         />
-        {showContextMenu && (
-          <LinkMenu
-            onUpdate={onUpdate}
-            dispatch={dispatch}
-            keyboardAccess={isKeyboardAccess}
-            options={ADBANNER_CONTEXT_MENU_OPTIONS}
-            shouldSendImpressionStats={true}
-            userEvent={ac.DiscoveryStreamUserEvent}
-            site={{
-              // Props we want to pass on for new ad types that come from Unified Ads API
-              block_key: spoc.block_key,
-              flight_id: spoc.flight_id,
-              format: spoc.format,
-              id: spoc.id,
-              guid: spoc.guid,
-              card_type: "spoc",
-              // required to record telemetry for an action, see handleBlockUrl in TelemetryFeed.sys.mjs
-              is_pocket_card: true,
-              position,
-              sponsor: spoc.sponsor,
-              title: spoc.title,
-              url: spoc.url || spoc.shim.url,
-              personalization_models: spoc.personalization_models,
-              priority: spoc.priority,
-              score: spoc.score,
-              alt_text: spoc.alt_text,
-              shim: spoc.shim,
-            }}
-            index={position}
-            source={type.toUpperCase()}
-          />
-        )}
+        <panel-list
+          className="panel-list-no-icons"
+          id={menuId}
+          ref={panelListRef}
+        >
+          <PanelListItems options={options} />
+        </panel-list>
       </div>
     </div>
   );

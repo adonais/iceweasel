@@ -59,8 +59,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 
-@VisibleForTesting
-private const val MAX_TAB_GROUPS_GENERATED = 100
+@VisibleForTesting private const val MAX_TAB_GROUPS_GENERATED = 100
 
 private val TAB_GROUP_COLORS = TabGroupTheme.entries.map { it.name }
 
@@ -120,12 +119,13 @@ fun TabGroupTools(
                 coroutineScope.launch {
                     val currentState = tabManagerUiStateRepository.uiState.value ?: PersistedUIState()
                     tabManagerUiStateRepository.initializeDataStore(
-                        initialUiState = currentState.copy(
-                            hasUserDismissedTabGroupOnboarding = false,
-                            tabGroupOnboardingImpressionCount = 0,
-                            hasUserEverHadOneTabGroup = false,
-                            hasViewedTabGroupsPage = false,
-                        ),
+                        initialUiState =
+                            currentState.copy(
+                                hasUserDismissedTabGroupOnboarding = false,
+                                tabGroupOnboardingImpressionCount = 0,
+                                hasUserEverHadOneTabGroup = false,
+                                hasViewedTabGroupsPage = false,
+                            )
                     )
                 }
             },
@@ -152,10 +152,9 @@ private fun generateTabGroup(
 }
 
 /**
- * Auto-populates the browser and database with a realistic mock state for testing tab groups.
- * This initializes the state by generating an interleaved sequence to mirror a real-world
- * tab tray: 1 tab group, 4 ungrouped tabs, 4 more tab groups, and 16 more ungrouped tabs.
- * Each group contains a predefined representative number of tabs.
+ * Auto-populates the browser and database with a realistic mock state for testing tab groups. This initializes the
+ * state by generating an interleaved sequence to mirror a real-world tab tray: 1 tab group, 4 ungrouped tabs, 4 more
+ * tab groups, and 16 more ungrouped tabs. Each group contains a predefined representative number of tabs.
  *
  * @param tabGroupRepository [TabGroupRepository] used to save the generated tab groups to the database.
  * @param browserStore [BrowserStore] used to dispatch the created tabs into the live session.
@@ -166,48 +165,53 @@ private suspend fun autoPopulateTabGroupsUseCase(
     browserStore: BrowserStore,
     now: Long = System.currentTimeMillis(),
 ) {
-    val scenarios = listOf(
-        Triple("Work", TAB_GROUP_COLORS.random(), 8),
-        Triple("Shopping", TAB_GROUP_COLORS.random(), 4),
-        Triple("Recipes", TAB_GROUP_COLORS.random(), 12),
-        Triple("Travel", TAB_GROUP_COLORS.random(), 3),
-        Triple("News", TAB_GROUP_COLORS.random(), 6),
-    )
+    val scenarios =
+        listOf(
+            Triple("Work", TAB_GROUP_COLORS.random(), 8),
+            Triple("Shopping", TAB_GROUP_COLORS.random(), 4),
+            Triple("Recipes", TAB_GROUP_COLORS.random(), 12),
+            Triple("Travel", TAB_GROUP_COLORS.random(), 3),
+            Triple("News", TAB_GROUP_COLORS.random(), 6),
+        )
 
     var ungroupedTabCounter = 1
 
     scenarios.forEachIndexed { index, (title, theme, tabCount) ->
-        val groupTabs = List(tabCount) { i ->
-            createTab(url = "https://example.com", title = "$title Item ${i + 1}")
-        }
+        val groupTabs =
+            List(tabCount) { i ->
+                createTab(url = "https://example.com", title = "$title Item ${i + 1}")
+            }
 
         browserStore.dispatch(TabListAction.AddMultipleTabsAction(tabs = groupTabs))
 
-        val newGroup = TabGroup(
-            title = title,
-            theme = theme,
-            closed = false,
-            lastModified = now,
-        )
+        val newGroup =
+            TabGroup(
+                title = title,
+                theme = theme,
+                closed = false,
+                lastModified = now,
+            )
 
         tabGroupRepository.createTabGroupWithTabs(
             tabGroup = newGroup,
             tabIds = groupTabs.map { it.id },
         )
 
-        val ungroupedCountToGenerate = when (index) {
-            0 -> 4
-            scenarios.lastIndex -> 16
-            else -> 0
-        }
+        val ungroupedCountToGenerate =
+            when (index) {
+                0 -> 4
+                scenarios.lastIndex -> 16
+                else -> 0
+            }
 
         if (ungroupedCountToGenerate > 0) {
-            val ungroupedTabs = List(ungroupedCountToGenerate) {
-                createTab(
-                    url = "https://www.mozilla.org",
-                    title = "Ungrouped Tab ${ungroupedTabCounter++}",
-                )
-            }
+            val ungroupedTabs =
+                List(ungroupedCountToGenerate) {
+                    createTab(
+                        url = "https://www.mozilla.org",
+                        title = "Ungrouped Tab ${ungroupedTabCounter++}",
+                    )
+                }
             browserStore.dispatch(TabListAction.AddMultipleTabsAction(tabs = ungroupedTabs))
         }
     }
@@ -224,9 +228,10 @@ private suspend fun createTabGroupsUseCase(
     repeat(groupQuantity) {
         val newGroup = generateTabGroup(counter = getAndIncrementCounter(), isClosed = isClosed)
         if (tabsPerGroup > 0) {
-            val realTabs = List(tabsPerGroup) { index ->
-                createTab(url = "https://example.com", title = "Generated Tab ${index + 1}")
-            }
+            val realTabs =
+                List(tabsPerGroup) { index ->
+                    createTab(url = "https://example.com", title = "Generated Tab ${index + 1}")
+                }
 
             browserStore.dispatch(TabListAction.AddMultipleTabsAction(tabs = realTabs))
 
@@ -251,10 +256,10 @@ private fun TabGroupToolsContent(
     onRemoveAllGroupsClick: () -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(all = FirefoxTheme.layout.space.static200),
+        modifier =
+            Modifier.fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(all = FirefoxTheme.layout.space.static200),
         verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static200),
     ) {
         TabGroupCounter(
@@ -312,9 +317,7 @@ private fun TabGroupCounter(
 @Composable
 private fun TabGroupCountRow(groupType: String, count: Int) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = FirefoxTheme.layout.space.static200),
+        modifier = Modifier.fillMaxWidth().padding(start = FirefoxTheme.layout.space.static200),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
@@ -411,13 +414,14 @@ private fun TabGroupInputField(
     hasError: Boolean,
     keyboardController: SoftwareKeyboardController?,
 ) {
-    val errorText = when (errorId) {
-        null -> ""
-        R.string.debug_drawer_tab_group_tools_quantity_exceed_max_error -> {
-            stringResource(id = errorId, MAX_TAB_GROUPS_GENERATED)
+    val errorText =
+        when (errorId) {
+            null -> ""
+            R.string.debug_drawer_tab_group_tools_quantity_exceed_max_error -> {
+                stringResource(id = errorId, MAX_TAB_GROUPS_GENERATED)
+            }
+            else -> stringResource(id = errorId)
         }
-        else -> stringResource(id = errorId)
-    }
 
     TextField(
         value = value,
@@ -507,9 +511,7 @@ private fun validateTabGroupInput(text: String): Int? {
 
 @Preview
 @Composable
-private fun TabGroupToolsPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun TabGroupToolsPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     val mockTabGroupRepository = FakeTabGroupRepository()
 
     FirefoxTheme(theme) {

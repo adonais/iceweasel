@@ -2,7 +2,7 @@ import pytest
 
 URL = "https://ftiunpam.com/"
 SUPPORTED_TEXT = "Bersama anda"
-UNSUPPORTED_TEXT = "tidak support untuk akses"
+UNSUPPORTED_TEXT = "Mozilla Firefox"
 
 
 @pytest.mark.asyncio

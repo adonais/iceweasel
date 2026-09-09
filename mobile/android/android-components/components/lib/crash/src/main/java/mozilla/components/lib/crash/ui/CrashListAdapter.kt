@@ -10,17 +10,14 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import mozilla.components.lib.crash.R
 
-/**
- * RecyclerView adapter for displaying the list of crashes.
- */
+/** RecyclerView adapter for displaying the list of crashes. */
 internal class CrashListAdapter(
     private val onShareCrashClicked: (DisplayableCrash) -> Unit,
     private val onCrashServiceSelected: (DisplayableCrash.Report) -> Unit,
 ) : ListAdapter<DisplayableCrash, CrashViewHolder>(CrashListDiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CrashViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.mozac_lib_crash_item_crash, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.mozac_lib_crash_item_crash, parent, false)
         return CrashViewHolder(view, onShareCrashClicked, onCrashServiceSelected)
     }
 

@@ -12,9 +12,8 @@ import org.mozilla.fenix.settings.labs.store.LabsAction
 import org.mozilla.fenix.settings.labs.store.LabsStore
 
 /**
- * A [LifecycleAwareFeature] that keeps the Firefox Labs screen in sync with Nimbus. It refreshes
- * [store] whenever Nimbus applies enrollment changes mid-session, such as an unenroll forced by a
- * failed Gecko pref update.
+ * A [LifecycleAwareFeature] that keeps the Firefox Labs screen in sync with Nimbus. It refreshes [store] whenever
+ * Nimbus applies enrollment changes mid-session, such as an unenroll forced by a failed Gecko pref update.
  *
  * @param store The [LabsStore] to refresh when Nimbus reports enrollment changes.
  * @param nimbusApi The [NimbusApi] to observe for enrollment changes.

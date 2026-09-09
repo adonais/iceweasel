@@ -13,15 +13,19 @@ import org.junit.Test
 
 class RequestSerializationTest {
 
-    val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+    }
 
     @Test
     fun `authentication service request gets serialized to json correctly`() {
-        val request = AuthenticationService.Request(
-            userId = UserId("my-user-id"),
-            integrityToken = IntegrityToken(value = "my-integrity-token"),
-            packageName = PackageName("my.package.name"),
-        )
+        val request =
+            AuthenticationService.Request(
+                userId = UserId("my-user-id"),
+                integrityToken = IntegrityToken(value = "my-integrity-token"),
+                packageName = PackageName("my.package.name"),
+            )
 
         assertEquals(
             "{" +
@@ -35,13 +39,15 @@ class RequestSerializationTest {
 
     @Test
     fun `chat service completion request gets serialized to json correctly`() {
-        val request = ChatService.Request(
-            model = LlmProvider.ModelID.mozSummarization,
-            messages = listOf(
-                ChatService.Request.Message.system("system prompt"),
-                ChatService.Request.Message.user("hello"),
-            ),
-        )
+        val request =
+            ChatService.Request(
+                model = LlmProvider.ModelID.mozSummarization,
+                messages =
+                    listOf(
+                        ChatService.Request.Message.system("system prompt"),
+                        ChatService.Request.Message.user("hello"),
+                    ),
+            )
 
         assertEquals(
             "{\"model\":\"moz-summarization\",\"messages\":[{\"role\":\"system\",\"content\":\"system prompt\"},{\"role\":\"user\",\"content\":\"hello\"}],\"stream\":true,\"temperature\":0.1,\"top_p\":0.01}",

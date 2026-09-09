@@ -145,11 +145,11 @@ class TbplFormatter(BaseFormatter):
             if data.get("minidump_path"):
                 rv.append("Crash dump filename: %s" % data["minidump_path"])
 
+            if data.get("stackwalk_stdout"):
+                rv.append(data["stackwalk_stdout"])
             if data.get("stackwalk_stderr"):
                 rv.append("stderr from minidump-stackwalk:")
                 rv.append(data["stackwalk_stderr"])
-            elif data.get("stackwalk_stdout"):
-                rv.append(data["stackwalk_stdout"])
 
             if data.get("stackwalk_returncode", 0) != 0:
                 rv.append(

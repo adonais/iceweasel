@@ -6,9 +6,7 @@ package mozilla.components.concept.engine.mediasession
 
 import android.graphics.Bitmap
 
-/**
- * Value type that represents a media session that is present on the currently displayed page in a session.
- */
+/** Value type that represents a media session that is present on the currently displayed page in a session. */
 class MediaSession {
 
     /**
@@ -82,14 +80,10 @@ class MediaSession {
             const val FOCUS: Long = 1L shl 9
         }
 
-        /**
-         * Returns `true` if this [Feature] contains the [type].
-         */
+        /** Returns `true` if this [Feature] contains the [type]. */
         fun contains(flag: Long): Boolean = (flags and flag) != 0L
 
-        /**
-         * Returns `true` if this is [Feature] equal to the [other] [Feature].
-         */
+        /** Returns `true` if this is [Feature] equal to the [other] [Feature]. */
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Feature) return false
@@ -100,35 +94,24 @@ class MediaSession {
         override fun hashCode() = flags.hashCode()
     }
 
-    /**
-     * A simplified media session playback state.
-     */
+    /** A simplified media session playback state. */
     enum class PlaybackState {
-        /**
-         * Unknown. No state has been received from the engine yet.
-         */
+        /** Unknown. No state has been received from the engine yet. */
         UNKNOWN,
 
-        /**
-         * Playback of this [MediaSession] has stopped (either completed or aborted).
-         */
+        /** Playback of this [MediaSession] has stopped (either completed or aborted). */
         STOPPED,
 
-        /**
-         * This [MediaSession] is paused.
-         */
+        /** This [MediaSession] is paused. */
         PAUSED,
 
-        /**
-         * This [MediaSession] is currently playing.
-         */
+        /** This [MediaSession] is currently playing. */
         PLAYING,
     }
 
     /**
-     * The W3C Audio Session type a tab is currently claiming, used to pick the
-     * matching platform audio-focus request. Mirrors the AudioSessionType
-     * WebIDL enum; see https://w3c.github.io/audio-session/#audio-session-type
+     * The W3C Audio Session type a tab is currently claiming, used to pick the matching platform audio-focus request.
+     * Mirrors the AudioSessionType WebIDL enum; see https://w3c.github.io/audio-session/#audio-session-type
      */
     enum class AudioSessionType {
         AUTO,
@@ -140,10 +123,9 @@ class MediaSession {
     }
 
     /**
-     * A system audio-focus change reported by the platform, routed to the
-     * tab's Audio Session interrupt: a transient or permanent focus loss
-     * interrupts the tab's audible sources (media elements, Web Audio, and Web
-     * Speech), and a focus gain resumes what the interruption silenced.
+     * A system audio-focus change reported by the platform, routed to the tab's Audio Session interrupt: a transient or
+     * permanent focus loss interrupts the tab's audible sources (media elements, Web Audio, and Web Speech), and a
+     * focus gain resumes what the interruption silenced.
      */
     enum class SystemAudioFocusChange {
         GAIN,
@@ -151,65 +133,43 @@ class MediaSession {
         PERMANENT_LOSS,
     }
 
-    /**
-     * Controller for controlling playback of a media element.
-     */
+    /** Controller for controlling playback of a media element. */
     interface Controller {
-        /**
-         * Pauses the media.
-         */
+        /** Pauses the media. */
         fun pause()
 
-        /**
-         * Stop playback for the media session.
-         */
+        /** Stop playback for the media session. */
         fun stop()
 
-        /**
-         * Plays the media.
-         */
+        /** Plays the media. */
         fun play()
 
         /**
-         * Seek to a specific time.
-         * Prefer using fast seeking when calling this in a sequence.
-         * Don't use fast seeking for the last or only call in a sequence.
+         * Seek to a specific time. Prefer using fast seeking when calling this in a sequence. Don't use fast seeking
+         * for the last or only call in a sequence.
          *
          * @param time The time in seconds to move the playback time to.
          * @param fast Whether fast seeking should be used.
          */
         fun seekTo(time: Double, fast: Boolean)
 
-        /**
-         * Seek forward by a sensible number of seconds.
-         */
+        /** Seek forward by a sensible number of seconds. */
         fun seekForward()
 
-        /**
-         * Seek backward by a sensible number of seconds.
-         */
+        /** Seek backward by a sensible number of seconds. */
         fun seekBackward()
 
-        /**
-         * Select and play the next track.
-         * Move playback to the next item in the playlist when supported.
-         */
+        /** Select and play the next track. Move playback to the next item in the playlist when supported. */
         fun nextTrack()
 
-        /**
-         * Select and play the previous track.
-         * Move playback to the previous item in the playlist when supported.
-         */
+        /** Select and play the previous track. Move playback to the previous item in the playlist when supported. */
         fun previousTrack()
 
-        /**
-         * Skip the advertisement that is currently playing.
-         */
+        /** Skip the advertisement that is currently playing. */
         fun skipAd()
 
         /**
-         * Set whether audio should be muted.
-         * Muting audio is supported by default and does not require the media
+         * Set whether audio should be muted. Muting audio is supported by default and does not require the media
          * session to be active.
          *
          * @param mute True if audio for this media session should be muted.
@@ -217,9 +177,8 @@ class MediaSession {
         fun muteAudio(mute: Boolean)
 
         /**
-         * Route a system audio-focus change to the tab's Audio Session
-         * interrupt, suspending or resuming the tab's audible sources (media
-         * elements, Web Audio, and Web Speech).
+         * Route a system audio-focus change to the tab's Audio Session interrupt, suspending or resuming the tab's
+         * audible sources (media elements, Web Audio, and Web Speech).
          *
          * @param change The system audio-focus change to apply.
          */

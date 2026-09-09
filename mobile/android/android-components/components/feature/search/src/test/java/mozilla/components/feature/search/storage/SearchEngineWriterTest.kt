@@ -6,6 +6,16 @@ package mozilla.components.feature.search.storage
 
 import android.util.AtomicFile
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.File
+import java.io.StringWriter
+import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.transform.OutputKeys
+import javax.xml.transform.TransformerConfigurationException
+import javax.xml.transform.TransformerException
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.dom.DOMSource
+import javax.xml.transform.stream.StreamResult
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
@@ -19,30 +29,21 @@ import org.mockito.Mockito.spy
 import org.w3c.dom.DOMException
 import org.w3c.dom.DOMException.INVALID_CHARACTER_ERR
 import org.w3c.dom.Document
-import java.io.File
-import java.io.StringWriter
-import javax.xml.parsers.DocumentBuilderFactory
-import javax.xml.transform.OutputKeys
-import javax.xml.transform.TransformerConfigurationException
-import javax.xml.transform.TransformerException
-import javax.xml.transform.TransformerFactory
-import javax.xml.transform.dom.DOMSource
-import javax.xml.transform.stream.StreamResult
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class SearchEngineWriterTest {
     @Test
     fun `buildSearchEngineXML builds search engine xml correctly`() {
         val writer = SearchEngineWriter()
-        val searchEngine = SearchEngine(
-            id = "id1",
-            name = "example",
-            icon = mock(),
-            type = SearchEngine.Type.CUSTOM,
-            inputEncoding = "UTF-8",
-            resultUrls = listOf("https://www.example.com/search?q={searchTerms}'"),
-        )
+        val searchEngine =
+            SearchEngine(
+                id = "id1",
+                name = "example",
+                icon = mock(),
+                type = SearchEngine.Type.CUSTOM,
+                inputEncoding = "UTF-8",
+                resultUrls = listOf("https://www.example.com/search?q={searchTerms}'"),
+            )
 
         val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument()
         writer.buildSearchEngineXML(searchEngine, document)
@@ -58,17 +59,19 @@ class SearchEngineWriterTest {
     @Test
     fun `buildSearchEngineXML builds multiple resultUrls correctly`() {
         val writer = SearchEngineWriter()
-        val searchEngine = SearchEngine(
-            id = "id1",
-            name = "example",
-            icon = mock(),
-            type = SearchEngine.Type.CUSTOM,
-            resultUrls = listOf(
-                "https://www.example.com/search?q=%s",
-                "https://www.example.com/search1?q=%s",
-                "https://www.example.com/search2?q=%s",
-            ),
-        )
+        val searchEngine =
+            SearchEngine(
+                id = "id1",
+                name = "example",
+                icon = mock(),
+                type = SearchEngine.Type.CUSTOM,
+                resultUrls =
+                    listOf(
+                        "https://www.example.com/search?q=%s",
+                        "https://www.example.com/search1?q=%s",
+                        "https://www.example.com/search2?q=%s",
+                    ),
+            )
 
         val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument()
         writer.buildSearchEngineXML(searchEngine, document)
@@ -86,13 +89,14 @@ class SearchEngineWriterTest {
     @Test
     fun `buildSearchEngineXML builds suggestUrl correctly`() {
         val writer = SearchEngineWriter()
-        val searchEngine = SearchEngine(
-            id = "id1",
-            name = "example",
-            icon = mock(),
-            type = SearchEngine.Type.CUSTOM,
-            suggestUrl = "https://www.example.com/search-suggestion?q=%s",
-        )
+        val searchEngine =
+            SearchEngine(
+                id = "id1",
+                name = "example",
+                icon = mock(),
+                type = SearchEngine.Type.CUSTOM,
+                suggestUrl = "https://www.example.com/search-suggestion?q=%s",
+            )
 
         val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument()
         writer.buildSearchEngineXML(searchEngine, document)
@@ -107,13 +111,14 @@ class SearchEngineWriterTest {
     @Test
     fun `GIVEN a search engine with a trending URL WHEN building the search engine XML THEN the trendingUrl is built correctly`() {
         val writer = SearchEngineWriter()
-        val searchEngine = SearchEngine(
-            id = "id1",
-            name = "example",
-            icon = mock(),
-            type = SearchEngine.Type.CUSTOM,
-            trendingUrl = "https://www.example.com/search-suggestion?q=%s",
-        )
+        val searchEngine =
+            SearchEngine(
+                id = "id1",
+                name = "example",
+                icon = mock(),
+                type = SearchEngine.Type.CUSTOM,
+                trendingUrl = "https://www.example.com/search-suggestion?q=%s",
+            )
 
         val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument()
         writer.buildSearchEngineXML(searchEngine, document)
@@ -128,71 +133,76 @@ class SearchEngineWriterTest {
     @Test
     fun `buildSearchEngineXML successfully for search engines with XML escaped characters`() {
         val writer = SearchEngineWriter()
-        val invalidSearchEngineNameAmp = SearchEngine(
-            id = "id1",
-            name = "&&&example&&&",
-            icon = mock(),
-            type = SearchEngine.Type.CUSTOM,
-            suggestUrl = "https://www.example.com/search-suggestion?q=%s",
-        )
-        val invalidResultUrlLessSign = SearchEngine(
-            id = "id1",
-            name = "example",
-            icon = mock(),
-            type = SearchEngine.Type.CUSTOM,
-            resultUrls = listOf("https://www.example.com/search?<q=%s"),
-        )
-        val invalidResultUrlGreaterSign = SearchEngine(
-            id = "id1",
-            name = "example",
-            icon = mock(),
-            type = SearchEngine.Type.CUSTOM,
-            resultUrls = listOf("https://www.example.com/search?>q=%s"),
-        )
-        val invalidSuggestionUrlApo = SearchEngine(
-            id = "id1",
-            name = "example",
-            icon = mock(),
-            type = SearchEngine.Type.CUSTOM,
-            suggestUrl = "https://www.example.com/search-'suggestion'?q=%s",
-        )
+        val invalidSearchEngineNameAmp =
+            SearchEngine(
+                id = "id1",
+                name = "&&&example&&&",
+                icon = mock(),
+                type = SearchEngine.Type.CUSTOM,
+                suggestUrl = "https://www.example.com/search-suggestion?q=%s",
+            )
+        val invalidResultUrlLessSign =
+            SearchEngine(
+                id = "id1",
+                name = "example",
+                icon = mock(),
+                type = SearchEngine.Type.CUSTOM,
+                resultUrls = listOf("https://www.example.com/search?<q=%s"),
+            )
+        val invalidResultUrlGreaterSign =
+            SearchEngine(
+                id = "id1",
+                name = "example",
+                icon = mock(),
+                type = SearchEngine.Type.CUSTOM,
+                resultUrls = listOf("https://www.example.com/search?>q=%s"),
+            )
+        val invalidSuggestionUrlApo =
+            SearchEngine(
+                id = "id1",
+                name = "example",
+                icon = mock(),
+                type = SearchEngine.Type.CUSTOM,
+                suggestUrl = "https://www.example.com/search-'suggestion'?q=%s",
+            )
 
         assertNotNull(
             writer.buildSearchEngineXML(
                 invalidSearchEngineNameAmp,
                 DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument(),
-            ),
+            )
         )
         assertNotNull(
             writer.buildSearchEngineXML(
                 invalidResultUrlLessSign,
                 DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument(),
-            ),
+            )
         )
         assertNotNull(
             writer.buildSearchEngineXML(
                 invalidResultUrlGreaterSign,
                 DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument(),
-            ),
+            )
         )
         assertNotNull(
             writer.buildSearchEngineXML(
                 invalidSuggestionUrlApo,
                 DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument(),
-            ),
+            )
         )
     }
 
     @Test
     fun `saveSearchEngineXML returns false when failed to write to a bad file data`() {
         val writer = spy(SearchEngineWriter())
-        val searchEngine = SearchEngine(
-            id = "id1",
-            name = "example",
-            icon = mock(),
-            type = SearchEngine.Type.CUSTOM,
-            resultUrls = listOf("https://www.example.com/search?q=%s'"),
-        )
+        val searchEngine =
+            SearchEngine(
+                id = "id1",
+                name = "example",
+                icon = mock(),
+                type = SearchEngine.Type.CUSTOM,
+                resultUrls = listOf("https://www.example.com/search?q=%s'"),
+            )
 
         val badFile = AtomicFile(File("", ""))
         assertFalse(writer.saveSearchEngineXML(searchEngine, badFile))
@@ -202,13 +212,14 @@ class SearchEngineWriterTest {
     fun `saveSearchEngineXML returns false when there's DOMException while generating XML doc`() {
         val storage = CustomSearchEngineStorage(testContext)
         val writer = spy(SearchEngineWriter())
-        val searchEngine = SearchEngine(
-            id = "id1",
-            name = "example",
-            icon = mock(),
-            type = SearchEngine.Type.CUSTOM,
-            resultUrls = listOf("https://www.example.com/search?q=%s'"),
-        )
+        val searchEngine =
+            SearchEngine(
+                id = "id1",
+                name = "example",
+                icon = mock(),
+                type = SearchEngine.Type.CUSTOM,
+                resultUrls = listOf("https://www.example.com/search?q=%s'"),
+            )
 
         val file = storage.getSearchFile(searchEngine.id)
         val mockDoc: Document = mock()

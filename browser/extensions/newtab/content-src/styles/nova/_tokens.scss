@@ -64,7 +64,11 @@
   --button-background-color-muted-active: light-dark(var(--color-gray-40), var(--color-gray-35));
   --button-background-color-muted-disabled: var(--button-background-color-muted);
   --button-background-color-muted-selected: var(--button-background-color-muted-active);
+  --button-background-color-primary: var(--color-accent-primary);
+  --button-background-color-primary-hover: var(--color-accent-primary-hover);
+  --button-background-color-primary-active: var(--color-accent-primary-active);
   --button-background-color-primary-disabled: light-dark(var(--color-violet-desaturated-50), var(--color-violet-desaturated-40));
+  --button-background-color-selected: var(--button-background-color-active);
   --button-border-color: var(--color-accent-primary);
   --button-border-color-destructive: var(--button-border-color-ghost);
   --button-border-color-destructive-selected: var(--button-border-color-destructive);
@@ -86,7 +90,6 @@
   --button-gap-split: 0;
   --button-opacity-disabled: 0.7;
   --button-padding-inline-small: var(--space-medium);
-  --button-size-icon-small: var(--size-item-medium);
   --button-split-separator-background-color: var(--button-border-color);
   --button-text-color: light-dark(var(--color-violet-90), var(--color-gray-0));
   --button-text-color-destructive: light-dark(var(--color-white), var(--button-text-color-primary));
@@ -396,7 +399,7 @@
     --button-text-color-ghost-disabled: GrayText;
     --button-text-color-menu-hover: var(--button-text-color-primary);
     --button-text-color-menu-active: var(--button-text-color-primary-active);
-    --button-text-color-menu-disabled: var(--button-text-color-primary-disabled);
+    --button-text-color-menu-disabled: var(--button-text-color-disabled);
     --button-text-color-menu-selected: var(--button-text-color-primary-selected);
     --button-text-color-muted: ButtonText;
     --button-text-color-muted-hover: var(--button-text-color-ghost-active);
@@ -413,7 +416,7 @@
 
     /** color **/
     --color-accent-attention: AccentColor;
-    --color-accent-primary: AccentColor;
+    --color-accent-primary: ButtonText;
     --color-accent-primary-hover: SelectedItem;
     --color-accent-primary-active: var(--color-accent-primary-hover);
     --color-accent-primary-selected: SelectedItem;

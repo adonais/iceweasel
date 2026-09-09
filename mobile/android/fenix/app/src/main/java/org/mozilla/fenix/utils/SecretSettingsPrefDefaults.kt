@@ -8,14 +8,10 @@ import androidx.core.content.edit
 import androidx.preference.PreferenceGroup
 import androidx.preference.PreferenceScreen
 
-/**
- * Resets secret settings preferences to their default values defined in [Settings].
- */
+/** Resets secret settings preferences to their default values defined in [Settings]. */
 class SecretSettingsPrefDefaults(private val settings: Settings) {
 
-    /**
-     * Removes all preferences in the given [preferenceScreen] from shared preferences.
-     */
+    /** Removes all preferences in the given [preferenceScreen] from shared preferences. */
     fun resetAll(preferenceScreen: PreferenceScreen) {
         settings.preferences.edit {
             keysFromScreen(preferenceScreen).forEach { remove(it) }

@@ -11,14 +11,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 
 @Composable
-internal fun FilePicker(
-    onFileSelected: (Uri?) -> Unit,
-) {
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-    ) { uri ->
-        onFileSelected(uri)
-    }
+internal fun FilePicker(onFileSelected: (Uri?) -> Unit) {
+    val launcher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri ->
+            onFileSelected(uri)
+        }
 
     LaunchedEffect(Unit) {
         launcher.launch("text/comma-separated-values")

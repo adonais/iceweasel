@@ -36,28 +36,30 @@ class SuggestionFetcherTest {
     }
 
     @Test
-    fun `GIVEN a suggestion group THEN the group's priority becomes highest suggestions' score within the group`() = runTest {
-        val provider: SuggestionProvider = mock()
-        val providerGroup = SuggestionProviderGroup(listOf(provider))
-        val suggestions = listOf(
-            AwesomeBar.Suggestion(
-                provider = provider,
-                score = Int.MAX_VALUE,
-            ),
-            AwesomeBar.Suggestion(
-                provider = provider,
-                score = Int.MIN_VALUE,
-            ),
-        )
-        val fetcher = spy(SuggestionFetcher(listOf(providerGroup), null))
+    fun `GIVEN a suggestion group THEN the group's priority becomes highest suggestions' score within the group`() =
+        runTest {
+            val provider: SuggestionProvider = mock()
+            val providerGroup = SuggestionProviderGroup(listOf(provider))
+            val suggestions =
+                listOf(
+                    AwesomeBar.Suggestion(
+                        provider = provider,
+                        score = Int.MAX_VALUE,
+                    ),
+                    AwesomeBar.Suggestion(
+                        provider = provider,
+                        score = Int.MIN_VALUE,
+                    ),
+                )
+            val fetcher = spy(SuggestionFetcher(listOf(providerGroup), null))
 
-        fetcher.processResultFrom(
-            group = providerGroup,
-            provider = provider,
-            suggestions = suggestions,
-            profilerStartTime = null,
-        )
+            fetcher.processResultFrom(
+                group = providerGroup,
+                provider = provider,
+                suggestions = suggestions,
+                profilerStartTime = null,
+            )
 
-        assertEquals(providerGroup.priority, Int.MAX_VALUE)
-    }
+            assertEquals(providerGroup.priority, Int.MAX_VALUE)
+        }
 }

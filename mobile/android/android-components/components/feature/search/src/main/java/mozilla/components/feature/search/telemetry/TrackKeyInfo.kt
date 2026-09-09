@@ -10,8 +10,7 @@ import java.util.Locale
  * Key information about a Search Engine Result Page (SERP).
  *
  * @property provider The name of the search provider.
- * @property type The search access point type (SAP). This is either "organic", "sap" or
- * "sap-follow-on".
+ * @property type The search access point type (SAP). This is either "organic", "sap" or "sap-follow-on".
  * @property code The search URL's `code` query parameter.
  * @property channel The search URL's `channel` query parameter.
  */

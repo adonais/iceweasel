@@ -11,14 +11,16 @@ import org.mozilla.fenix.databinding.ShareToAccountDevicesBinding
 import org.mozilla.fenix.share.listadapters.AccountDevicesShareAdapter
 import org.mozilla.fenix.share.listadapters.SyncShareOption
 
-/**
- * Callbacks for possible user interactions on the [ShareToAccountDevicesView]
- */
+/** Callbacks for possible user interactions on the [ShareToAccountDevicesView] */
 interface ShareToAccountDevicesInteractor {
     fun onSignIn()
+
     fun onReauth()
+
     fun onAddNewDevice()
+
     fun onShareToDevice(device: Device)
+
     fun onShareToAllDevices(devices: List<Device>)
 }
 
@@ -30,11 +32,12 @@ class ShareToAccountDevicesView(
     private val adapter = AccountDevicesShareAdapter(interactor)
 
     init {
-        val binding = ShareToAccountDevicesBinding.inflate(
-            LayoutInflater.from(containerView.context),
-            containerView,
-            true,
-        )
+        val binding =
+            ShareToAccountDevicesBinding.inflate(
+                LayoutInflater.from(containerView.context),
+                containerView,
+                true,
+            )
 
         binding.devicesList.adapter = adapter
     }

@@ -16,9 +16,7 @@ import androidx.core.graphics.createBitmap
 import androidx.core.graphics.get
 import java.io.ByteArrayOutputStream
 
-/**
- * Transform bitmap into base64 encoded data uri (PNG).
- */
+/** Transform bitmap into base64 encoded data uri (PNG). */
 fun Bitmap.toDataUri(): String {
     val stream = ByteArrayOutputStream()
     compress(Bitmap.CompressFormat.PNG, BITMAP_COMPRESSION_QUALITY, stream)
@@ -29,11 +27,10 @@ fun Bitmap.toDataUri(): String {
 private const val BITMAP_COMPRESSION_QUALITY = 100
 
 /**
- * Returns a new bitmap that is the receiver Bitmap with four rounded corners;
- * the receiver is unmodified.
+ * Returns a new bitmap that is the receiver Bitmap with four rounded corners; the receiver is unmodified.
  *
- * This operation is expensive: it requires allocating an identical Bitmap and copying
- * all of the Bitmap's pixels. Consider these theoretically cheaper alternatives:
+ * This operation is expensive: it requires allocating an identical Bitmap and copying all of the Bitmap's pixels.
+ * Consider these theoretically cheaper alternatives:
  * - android:background= a drawable with rounded corners
  * - Wrap your bitmap's ImageView with a layout that masks your view with rounded corners (e.g. CardView)
  */
@@ -41,10 +38,11 @@ private const val BITMAP_COMPRESSION_QUALITY = 100
 fun Bitmap.withRoundedCorners(cornerRadiusPx: Float, config: Config): Bitmap {
     val roundedBitmap = createBitmap(width, height, config)
     val canvas = Canvas(roundedBitmap)
-    val paint = Paint().apply {
-        isAntiAlias = true
-        shader = BitmapShader(this@withRoundedCorners, TileMode.CLAMP, TileMode.CLAMP)
-    }
+    val paint =
+        Paint().apply {
+            isAntiAlias = true
+            shader = BitmapShader(this@withRoundedCorners, TileMode.CLAMP, TileMode.CLAMP)
+        }
 
     canvas.drawRoundRect(
         0.0f,
@@ -58,9 +56,7 @@ fun Bitmap.withRoundedCorners(cornerRadiusPx: Float, config: Config): Bitmap {
     return roundedBitmap
 }
 
-/**
- * Returns true if all pixels have the same value, false otherwise.
- */
+/** Returns true if all pixels have the same value, false otherwise. */
 fun Bitmap.arePixelsAllTheSame(): Boolean {
     val testPixel = this[0, 0]
 

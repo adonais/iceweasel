@@ -19,14 +19,13 @@ import org.mozilla.fenix.components.HomepageAsANewTabPreferencesRepository
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 
 /**
- * A binding for adding a homepage ("about:home") tab whenever there are no tabs for the current
- * browsing mode on cold boot and warm relaunch of the application, so that a tab is always available on startup.
+ * A binding for adding a homepage ("about:home") tab whenever there are no tabs for the current browsing mode on cold
+ * boot and warm relaunch of the application, so that a tab is always available on startup.
  *
  * @param browserStore The [BrowserStore] to observe the tabs state from.
  * @param browsingModeManager [BrowsingModeManager] used to determine the current browsing mode.
  * @param fenixBrowserUseCases [FenixBrowserUseCases] used to add the homepage tab.
- * @param repository [HomepageAsANewTabPreferencesRepository] used to access the homepage as a
- * new tab preferences.
+ * @param repository [HomepageAsANewTabPreferencesRepository] used to access the homepage as a new tab preferences.
  * @param mainDispatcher The [CoroutineDispatcher] used to observe the [browserStore].
  */
 class HomepageTabBinding(

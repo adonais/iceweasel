@@ -12,9 +12,8 @@ import org.mozilla.focus.ext.application
 /**
  * Debug-specific implementation of the [FocusApplication] class.
  *
- * This class provides additional functionality for debug builds, such as
- * initializing and managing the LeakCanary memory leak detection library
- * based on user preferences.
+ * This class provides additional functionality for debug builds, such as initializing and managing the LeakCanary
+ * memory leak detection library based on user preferences.
  */
 class DebugFocusApplication : FocusApplication() {
 
@@ -25,8 +24,9 @@ class DebugFocusApplication : FocusApplication() {
                 watchersToInstall = AppWatcher.appDefaultWatchers(application),
             )
         }
-        val isEnabled = PreferenceManager.getDefaultSharedPreferences(applicationContext)
-            .getBoolean(getString(R.string.pref_key_leakcanary), true)
+        val isEnabled =
+            PreferenceManager.getDefaultSharedPreferences(applicationContext)
+                .getBoolean(getString(R.string.pref_key_leakcanary), true)
         updateLeakCanaryState(isEnabled)
     }
 

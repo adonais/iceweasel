@@ -42,8 +42,8 @@ import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.base.theme.acornPrivateColorScheme
 import mozilla.components.compose.base.theme.privateColorPalette
 import mozilla.components.compose.base.utils.toLocaleString
-import mozilla.components.ui.tabcounter.TabCounterTestTags.NORMAL_TABS_COUNTER
 import mozilla.components.ui.icons.R as iconsR
+import mozilla.components.ui.tabcounter.TabCounterTestTags.NORMAL_TABS_COUNTER
 
 private const val MAX_SINGLE_DIGIT = 9
 private const val MAX_VISIBLE_TABS = 99
@@ -53,8 +53,7 @@ private const val TWO_DIGITS_SIZE_RATIO = 0.4f
 /**
  * UI for displaying the number of opened tabs.
  *
- * This composable uses LocalContentColor, provided by CompositionLocalProvider,
- * to set the color of its icons and text.
+ * This composable uses LocalContentColor, provided by CompositionLocalProvider, to set the color of its icons and text.
  *
  * @param tabCount The number to be displayed inside the counter.
  * @param showPrivacyBadge Whether the privacy badge is visible.
@@ -69,19 +68,21 @@ fun TabCounter(
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     val formattedTabCount = remember(tabCount) { tabCount.toLocaleString() }
-    val (counterBoxBackground, counterBoxTestTag) = when (tabCount > MAX_VISIBLE_TABS) {
-        true -> Pair(R.drawable.mozac_ui_infinite_tabcounter_box, TabCounterTestTags.TAB_COUNTER_INFINITY_ICON)
-        false -> Pair(R.drawable.mozac_ui_tabcounter_box, TabCounterTestTags.TAB_COUNTER_ICON)
-    }
-    val tabsCounterDescription = if (showPrivacyBadge) {
-        stringResource(R.string.mozac_tab_counter_private, formattedTabCount)
-    } else {
-        stringResource(R.string.mozac_open_tab_counter_tab_tray, formattedTabCount)
-    }
+    val (counterBoxBackground, counterBoxTestTag) =
+        when (tabCount > MAX_VISIBLE_TABS) {
+            true -> Pair(iconsR.drawable.mozac_ic_infinite_tabs_24, TabCounterTestTags.TAB_COUNTER_INFINITY_ICON)
+            false -> Pair(iconsR.drawable.mozac_ic_tab_24, TabCounterTestTags.TAB_COUNTER_ICON)
+        }
+    val tabsCounterDescription =
+        if (showPrivacyBadge) {
+            stringResource(R.string.mozac_tab_counter_private, formattedTabCount)
+        } else {
+            stringResource(R.string.mozac_open_tab_counter_tab_tray, formattedTabCount)
+        }
 
     Box(
-        modifier = Modifier
-            .semantics(mergeDescendants = false) {
+        modifier =
+            Modifier.semantics(mergeDescendants = false) {
                 this.contentDescription = tabsCounterDescription
                 testTag = NORMAL_TABS_COUNTER
             },
@@ -107,11 +108,11 @@ fun TabCounter(
             Image(
                 painter = painterResource(id = iconsR.drawable.mozac_ic_private_mode_circle_fill_stroke_20),
                 contentDescription = null,
-                modifier = Modifier
-                    .testTag(TabCounterTestTags.PRIVACY_BADGE)
-                    .align(Alignment.TopEnd)
-                    .padding(0.dp)
-                    .offset(x = 8.dp, y = (-8).dp),
+                modifier =
+                    Modifier.testTag(TabCounterTestTags.PRIVACY_BADGE)
+                        .align(Alignment.TopEnd)
+                        .padding(0.dp)
+                        .offset(x = 8.dp, y = (-8).dp),
             )
         }
     }
@@ -124,29 +125,32 @@ private fun TabCounterText(
     showTabCount: Boolean,
     contentColor: Color,
 ) {
-    val normalTabCountText by remember(tabCount) {
-        derivedStateOf {
-            // Showing more than 99 tabs will be done through a different drawable / background
-            // so we don't need to show any text.
-            when (tabCount > MAX_VISIBLE_TABS) {
-                true -> ""
-                false -> formattedTabCount
+    val normalTabCountText by
+        remember(tabCount) {
+            derivedStateOf {
+                // Showing more than 99 tabs will be done through a different drawable / background
+                // so we don't need to show any text.
+                when (tabCount > MAX_VISIBLE_TABS) {
+                    true -> ""
+                    false -> formattedTabCount
+                }
             }
         }
-    }
-    val tabCountTextRatio by remember(tabCount) {
-        derivedStateOf {
-            when (tabCount > MAX_SINGLE_DIGIT) {
-                true -> TWO_DIGITS_SIZE_RATIO
-                false -> ONE_DIGIT_SIZE_RATIO
+    val tabCountTextRatio by
+        remember(tabCount) {
+            derivedStateOf {
+                when (tabCount > MAX_SINGLE_DIGIT) {
+                    true -> TWO_DIGITS_SIZE_RATIO
+                    false -> ONE_DIGIT_SIZE_RATIO
+                }
             }
         }
-    }
     val counterBoxWidthDp = dimensionResource(id = R.dimen.mozac_tab_counter_box_width_height)
     val counterBoxWidthPx = LocalDensity.current.run { counterBoxWidthDp.roundToPx() }
-    val counterTabsTextSize by remember(tabCountTextRatio) {
-        mutableIntStateOf((tabCountTextRatio * counterBoxWidthPx).toInt())
-    }
+    val counterTabsTextSize by
+        remember(tabCountTextRatio) {
+            mutableIntStateOf((tabCountTextRatio * counterBoxWidthPx).toInt())
+        }
 
     AnimatedVisibility(
         visible = showTabCount,
@@ -155,9 +159,10 @@ private fun TabCounterText(
     ) {
         Text(
             text = normalTabCountText,
-            modifier = Modifier.clearAndSetSemantics {
-                testTag = TabCounterTestTags.TAB_COUNTER_TEXT + normalTabCountText
-            },
+            modifier =
+                Modifier.clearAndSetSemantics {
+                    testTag = TabCounterTestTags.TAB_COUNTER_TEXT + normalTabCountText
+                },
             color = contentColor,
             fontSize = with(LocalDensity.current) { counterTabsTextSize.toDp().toSp() },
             fontWeight = FontWeight.W700,
@@ -166,9 +171,7 @@ private fun TabCounterText(
     }
 }
 
-/**
- * Test tags for the [TabCounter] composable.
- */
+/** Test tags for the [TabCounter] composable. */
 object TabCounterTestTags {
     private const val TAG = "TabCounterTestTags"
     const val NORMAL_TABS_COUNTER = "$TAG.tabCounter"

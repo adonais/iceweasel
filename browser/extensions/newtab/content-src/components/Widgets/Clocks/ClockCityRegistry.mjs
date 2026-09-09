@@ -1,0 +1,650 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+// Curated World Clock cities: source of truth for each city's `id`,
+// `fallbackName`, `timeZone`, `iataCode`, `aliases`. `id` is `<iso2>-<slug>`
+// (collision-safe) and is persisted as a clock's `cityId`.
+export const CLOCK_CITIES = [
+  {
+    id: "us-new-york",
+    fallbackName: "New York",
+    timeZone: "America/New_York",
+    iataCode: "NYC",
+  },
+  {
+    id: "us-los-angeles",
+    fallbackName: "Los Angeles",
+    timeZone: "America/Los_Angeles",
+    iataCode: "LAX",
+  },
+  {
+    id: "us-chicago",
+    fallbackName: "Chicago",
+    timeZone: "America/Chicago",
+    iataCode: "CHI",
+  },
+  {
+    id: "us-san-francisco",
+    fallbackName: "San Francisco",
+    timeZone: "America/Los_Angeles",
+    iataCode: "SFO",
+  },
+  {
+    id: "us-san-diego",
+    fallbackName: "San Diego",
+    timeZone: "America/Los_Angeles",
+    iataCode: "SAN",
+  },
+  {
+    id: "us-dallas",
+    fallbackName: "Dallas",
+    timeZone: "America/Chicago",
+    iataCode: "DFW",
+  },
+  {
+    id: "us-houston",
+    fallbackName: "Houston",
+    timeZone: "America/Chicago",
+    iataCode: "HOU",
+  },
+  {
+    id: "us-philadelphia",
+    fallbackName: "Philadelphia",
+    timeZone: "America/New_York",
+    iataCode: "PHL",
+  },
+  {
+    id: "us-atlanta",
+    fallbackName: "Atlanta",
+    timeZone: "America/New_York",
+    iataCode: "ATL",
+  },
+  {
+    id: "us-washington-dc",
+    fallbackName: "Washington, D.C.",
+    timeZone: "America/New_York",
+    iataCode: "WAS",
+  },
+  {
+    id: "us-boston",
+    fallbackName: "Boston",
+    timeZone: "America/New_York",
+    iataCode: "BOS",
+  },
+  {
+    id: "us-miami",
+    fallbackName: "Miami",
+    timeZone: "America/New_York",
+    iataCode: "MIA",
+  },
+  {
+    id: "us-seattle",
+    fallbackName: "Seattle",
+    timeZone: "America/Los_Angeles",
+    iataCode: "SEA",
+  },
+  {
+    id: "us-denver",
+    fallbackName: "Denver",
+    timeZone: "America/Denver",
+    iataCode: "DEN",
+  },
+  {
+    id: "us-honolulu",
+    fallbackName: "Honolulu",
+    timeZone: "Pacific/Honolulu",
+    iataCode: "HNL",
+  },
+  {
+    id: "us-anchorage",
+    fallbackName: "Anchorage",
+    timeZone: "America/Anchorage",
+    iataCode: "ANC",
+  },
+  {
+    id: "de-berlin",
+    fallbackName: "Berlin",
+    timeZone: "Europe/Berlin",
+    iataCode: "BER",
+  },
+  {
+    id: "de-munich",
+    fallbackName: "Munich",
+    timeZone: "Europe/Berlin",
+    iataCode: "MUC",
+  },
+  {
+    id: "de-frankfurt",
+    fallbackName: "Frankfurt",
+    timeZone: "Europe/Berlin",
+    iataCode: "FRA",
+  },
+  {
+    id: "de-hamburg",
+    fallbackName: "Hamburg",
+    timeZone: "Europe/Berlin",
+    iataCode: "HAM",
+  },
+  {
+    id: "fr-paris",
+    fallbackName: "Paris",
+    timeZone: "Europe/Paris",
+    iataCode: "PAR",
+  },
+  {
+    id: "fr-lyon",
+    fallbackName: "Lyon",
+    timeZone: "Europe/Paris",
+    iataCode: "LYS",
+  },
+  {
+    id: "fr-marseille",
+    fallbackName: "Marseille",
+    timeZone: "Europe/Paris",
+    iataCode: "MRS",
+  },
+  {
+    id: "fr-toulouse",
+    fallbackName: "Toulouse",
+    timeZone: "Europe/Paris",
+    iataCode: "TLS",
+  },
+  {
+    id: "in-kolkata",
+    fallbackName: "Kolkata",
+    timeZone: "Asia/Kolkata",
+    iataCode: "CCU",
+    aliases: ["calcutta"],
+  },
+  {
+    id: "in-mumbai",
+    fallbackName: "Mumbai",
+    timeZone: "Asia/Kolkata",
+    iataCode: "BOM",
+    aliases: ["bombay"],
+  },
+  {
+    id: "in-delhi",
+    fallbackName: "Delhi",
+    timeZone: "Asia/Kolkata",
+    iataCode: "DEL",
+  },
+  {
+    id: "in-bangalore",
+    fallbackName: "Bangalore",
+    timeZone: "Asia/Kolkata",
+    iataCode: "BLR",
+    aliases: ["bengaluru"],
+  },
+  {
+    id: "cn-shanghai",
+    fallbackName: "Shanghai",
+    timeZone: "Asia/Shanghai",
+    iataCode: "SHA",
+  },
+  {
+    id: "cn-beijing",
+    fallbackName: "Beijing",
+    timeZone: "Asia/Shanghai",
+    iataCode: "BJS",
+    aliases: ["peking"],
+  },
+  {
+    id: "cn-shenzhen",
+    fallbackName: "Shenzhen",
+    timeZone: "Asia/Shanghai",
+    iataCode: "SZX",
+  },
+  {
+    id: "br-sao-paulo",
+    fallbackName: "São Paulo",
+    timeZone: "America/Sao_Paulo",
+    iataCode: "SAO",
+  },
+  {
+    id: "br-rio-de-janeiro",
+    fallbackName: "Rio de Janeiro",
+    timeZone: "America/Sao_Paulo",
+    iataCode: "RIO",
+  },
+  {
+    id: "br-brasilia",
+    fallbackName: "Brasília",
+    timeZone: "America/Sao_Paulo",
+    iataCode: "BSB",
+  },
+  {
+    id: "id-jakarta",
+    fallbackName: "Jakarta",
+    timeZone: "Asia/Jakarta",
+    iataCode: "JKT",
+  },
+  {
+    id: "id-surabaya",
+    fallbackName: "Surabaya",
+    timeZone: "Asia/Jakarta",
+    iataCode: "SUB",
+  },
+  {
+    id: "id-makassar",
+    fallbackName: "Makassar",
+    timeZone: "Asia/Makassar",
+    iataCode: "UPG",
+  },
+  {
+    id: "ca-toronto",
+    fallbackName: "Toronto",
+    timeZone: "America/Toronto",
+    iataCode: "YTO",
+  },
+  {
+    id: "ca-montreal",
+    fallbackName: "Montreal",
+    timeZone: "America/Toronto",
+    iataCode: "YMQ",
+  },
+  {
+    id: "ca-vancouver",
+    fallbackName: "Vancouver",
+    timeZone: "America/Vancouver",
+    iataCode: "YVR",
+  },
+  {
+    id: "au-sydney",
+    fallbackName: "Sydney",
+    timeZone: "Australia/Sydney",
+    iataCode: "SYD",
+  },
+  {
+    id: "au-perth",
+    fallbackName: "Perth",
+    timeZone: "Australia/Perth",
+    iataCode: "PER",
+  },
+  {
+    id: "au-adelaide",
+    fallbackName: "Adelaide",
+    timeZone: "Australia/Adelaide",
+    iataCode: "ADL",
+  },
+  {
+    id: "pl-warsaw",
+    fallbackName: "Warsaw",
+    timeZone: "Europe/Warsaw",
+    iataCode: "WAW",
+  },
+  {
+    id: "pl-krakow",
+    fallbackName: "Kraków",
+    timeZone: "Europe/Warsaw",
+    iataCode: "KRK",
+  },
+  {
+    id: "jp-tokyo",
+    fallbackName: "Tokyo",
+    timeZone: "Asia/Tokyo",
+    iataCode: "TYO",
+  },
+  {
+    id: "jp-osaka",
+    fallbackName: "Osaka",
+    timeZone: "Asia/Tokyo",
+    iataCode: "OSA",
+  },
+  {
+    id: "mx-mexico-city",
+    fallbackName: "Mexico City",
+    timeZone: "America/Mexico_City",
+    iataCode: "MEX",
+  },
+  {
+    id: "mx-guadalajara",
+    fallbackName: "Guadalajara",
+    timeZone: "America/Mexico_City",
+    iataCode: "GDL",
+  },
+  {
+    id: "it-rome",
+    fallbackName: "Rome",
+    timeZone: "Europe/Rome",
+    iataCode: "ROM",
+  },
+  {
+    id: "it-milan",
+    fallbackName: "Milan",
+    timeZone: "Europe/Rome",
+    iataCode: "MIL",
+  },
+  {
+    id: "ru-moscow",
+    fallbackName: "Moscow",
+    timeZone: "Europe/Moscow",
+    iataCode: "MOW",
+  },
+  {
+    id: "ru-saint-petersburg",
+    fallbackName: "Saint Petersburg",
+    timeZone: "Europe/Moscow",
+    iataCode: "LED",
+  },
+  {
+    id: "gb-london",
+    fallbackName: "London",
+    timeZone: "Europe/London",
+    iataCode: "LON",
+  },
+  {
+    id: "gb-birmingham",
+    fallbackName: "Birmingham",
+    timeZone: "Europe/London",
+    iataCode: "BHX",
+  },
+  {
+    id: "es-madrid",
+    fallbackName: "Madrid",
+    timeZone: "Europe/Madrid",
+    iataCode: "MAD",
+  },
+  {
+    id: "es-barcelona",
+    fallbackName: "Barcelona",
+    timeZone: "Europe/Madrid",
+    iataCode: "BCN",
+  },
+  {
+    id: "nl-amsterdam",
+    fallbackName: "Amsterdam",
+    timeZone: "Europe/Amsterdam",
+    iataCode: "AMS",
+  },
+  {
+    id: "ch-zurich",
+    fallbackName: "Zurich",
+    timeZone: "Europe/Zurich",
+    iataCode: "ZRH",
+  },
+  {
+    id: "at-vienna",
+    fallbackName: "Vienna",
+    timeZone: "Europe/Vienna",
+    iataCode: "VIE",
+  },
+  {
+    id: "cz-prague",
+    fallbackName: "Prague",
+    timeZone: "Europe/Prague",
+    iataCode: "PRG",
+  },
+  {
+    id: "ar-buenos-aires",
+    fallbackName: "Buenos Aires",
+    timeZone: "America/Argentina/Buenos_Aires",
+    iataCode: "BUE",
+  },
+  {
+    id: "gr-athens",
+    fallbackName: "Athens",
+    timeZone: "Europe/Athens",
+    iataCode: "ATH",
+  },
+  {
+    id: "hu-budapest",
+    fallbackName: "Budapest",
+    timeZone: "Europe/Budapest",
+    iataCode: "BUD",
+  },
+  {
+    id: "be-brussels",
+    fallbackName: "Brussels",
+    timeZone: "Europe/Brussels",
+    iataCode: "BRU",
+  },
+  {
+    id: "ua-kyiv",
+    fallbackName: "Kyiv",
+    timeZone: "Europe/Kyiv",
+    iataCode: "IEV",
+    aliases: ["kiev"],
+  },
+  {
+    id: "fi-helsinki",
+    fallbackName: "Helsinki",
+    timeZone: "Europe/Helsinki",
+    iataCode: "HEL",
+  },
+  {
+    id: "co-bogota",
+    fallbackName: "Bogotá",
+    timeZone: "America/Bogota",
+    iataCode: "BOG",
+  },
+  {
+    id: "ph-manila",
+    fallbackName: "Manila",
+    timeZone: "Asia/Manila",
+    iataCode: "MNL",
+  },
+  {
+    id: "tr-istanbul",
+    fallbackName: "Istanbul",
+    timeZone: "Europe/Istanbul",
+    iataCode: "IST",
+  },
+  {
+    id: "my-kuala-lumpur",
+    fallbackName: "Kuala Lumpur",
+    timeZone: "Asia/Kuala_Lumpur",
+    iataCode: "KUL",
+  },
+  {
+    id: "eg-cairo",
+    fallbackName: "Cairo",
+    timeZone: "Africa/Cairo",
+    iataCode: "CAI",
+  },
+  {
+    id: "se-stockholm",
+    fallbackName: "Stockholm",
+    timeZone: "Europe/Stockholm",
+    iataCode: "STO",
+  },
+  {
+    id: "ro-bucharest",
+    fallbackName: "Bucharest",
+    timeZone: "Europe/Bucharest",
+    iataCode: "BUH",
+  },
+  {
+    id: "th-bangkok",
+    fallbackName: "Bangkok",
+    timeZone: "Asia/Bangkok",
+    iataCode: "BKK",
+  },
+  {
+    id: "ng-lagos",
+    fallbackName: "Lagos",
+    timeZone: "Africa/Lagos",
+    iataCode: "LOS",
+  },
+  {
+    id: "tw-taipei",
+    fallbackName: "Taipei",
+    timeZone: "Asia/Taipei",
+    iataCode: "TPE",
+  },
+  {
+    id: "za-johannesburg",
+    fallbackName: "Johannesburg",
+    timeZone: "Africa/Johannesburg",
+    iataCode: "JNB",
+  },
+  {
+    id: "cl-santiago",
+    fallbackName: "Santiago",
+    timeZone: "America/Santiago",
+    iataCode: "SCL",
+  },
+  {
+    id: "pk-karachi",
+    fallbackName: "Karachi",
+    timeZone: "Asia/Karachi",
+    iataCode: "KHI",
+  },
+  {
+    id: "bg-sofia",
+    fallbackName: "Sofia",
+    timeZone: "Europe/Sofia",
+    iataCode: "SOF",
+  },
+  {
+    id: "sg-singapore",
+    fallbackName: "Singapore",
+    timeZone: "Asia/Singapore",
+    iataCode: "SIN",
+  },
+  {
+    id: "hk-hong-kong",
+    fallbackName: "Hong Kong",
+    timeZone: "Asia/Hong_Kong",
+    iataCode: "HKG",
+  },
+  {
+    id: "sa-riyadh",
+    fallbackName: "Riyadh",
+    timeZone: "Asia/Riyadh",
+    iataCode: "RUH",
+  },
+  {
+    id: "dk-copenhagen",
+    fallbackName: "Copenhagen",
+    timeZone: "Europe/Copenhagen",
+    iataCode: "CPH",
+  },
+  {
+    id: "pe-lima",
+    fallbackName: "Lima",
+    timeZone: "America/Lima",
+    iataCode: "LIM",
+  },
+  {
+    id: "ke-nairobi",
+    fallbackName: "Nairobi",
+    timeZone: "Africa/Nairobi",
+    iataCode: "NBO",
+  },
+  {
+    id: "nz-auckland",
+    fallbackName: "Auckland",
+    timeZone: "Pacific/Auckland",
+    iataCode: "AKL",
+  },
+  {
+    id: "kr-seoul",
+    fallbackName: "Seoul",
+    timeZone: "Asia/Seoul",
+    iataCode: "SEL",
+  },
+  {
+    id: "lt-vilnius",
+    fallbackName: "Vilnius",
+    timeZone: "Europe/Vilnius",
+    iataCode: "VNO",
+  },
+  {
+    id: "ie-dublin",
+    fallbackName: "Dublin",
+    timeZone: "Europe/Dublin",
+    iataCode: "DUB",
+  },
+  {
+    id: "ae-dubai",
+    fallbackName: "Dubai",
+    timeZone: "Asia/Dubai",
+    iataCode: "DXB",
+  },
+  {
+    id: "lv-riga",
+    fallbackName: "Riga",
+    timeZone: "Europe/Riga",
+    iataCode: "RIX",
+  },
+  {
+    id: "pt-lisbon",
+    fallbackName: "Lisbon",
+    timeZone: "Europe/Lisbon",
+    iataCode: "LIS",
+  },
+  {
+    id: "ir-tehran",
+    fallbackName: "Tehran",
+    timeZone: "Asia/Tehran",
+    iataCode: "THR",
+  },
+  {
+    id: "bd-dhaka",
+    fallbackName: "Dhaka",
+    timeZone: "Asia/Dhaka",
+    iataCode: "DAC",
+  },
+  {
+    id: "ec-guayaquil",
+    fallbackName: "Guayaquil",
+    timeZone: "America/Guayaquil",
+    iataCode: "GYE",
+  },
+  {
+    id: "vn-ho-chi-minh-city",
+    fallbackName: "Ho Chi Minh City",
+    timeZone: "Asia/Ho_Chi_Minh",
+    iataCode: "SGN",
+    aliases: ["saigon", "ho chi minh"],
+  },
+  {
+    id: "np-kathmandu",
+    fallbackName: "Kathmandu",
+    timeZone: "Asia/Kathmandu",
+    iataCode: "KTM",
+  },
+  {
+    id: "mm-yangon",
+    fallbackName: "Yangon",
+    timeZone: "Asia/Yangon",
+    iataCode: "RGN",
+    aliases: ["rangoon"],
+  },
+];
+
+// id -> entry, for O(1) lookup from a persisted clock's cityId.
+export const CLOCK_CITY_BY_ID = new Map(
+  CLOCK_CITIES.map(entry => [entry.id, entry])
+);
+
+// en-US fallbackName -> entry, so clocks persisted by display name (legacy or
+// pre-localization) still resolve the correct IATA code.
+export const CLOCK_CITY_BY_NAME = new Map(
+  CLOCK_CITIES.map(entry => [entry.fallbackName, entry])
+);
+
+// IATA codes for common NON-curated cities the OS reports from base IANA zones
+// (Tel Aviv, Detroit, ...), plus legacy spellings (Kiev/Calcutta/Saigon) that
+// older tzdata still emits. Curated cities carry their code on CLOCK_CITIES;
+// getCityAbbreviation falls back to the first three letters for anything else.
+export const BASE_ZONE_IATA_CODES = {
+  Beirut: "BEY",
+  Brisbane: "BNE",
+  Calcutta: "CCU",
+  Colombo: "CMB",
+  Detroit: "DTW",
+  Geneva: "GVA",
+  Halifax: "YHZ",
+  "Ho Chi Minh": "SGN",
+  Jerusalem: "JRS",
+  Kiev: "IEV",
+  Phoenix: "PHX",
+  Saigon: "SGN",
+  "Tel Aviv": "TLV",
+};
+
+// Fluent message id for a curated city's localized display name.
+export const clockCityFluentId = id => `newtab-clock-city-${id}`;

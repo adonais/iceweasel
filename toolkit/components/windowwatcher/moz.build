@@ -21,7 +21,6 @@ XPIDL_MODULE = "windowwatcher"
 
 EXPORTS += [
     "nsOpenWindowInfo.h",
-    "nsPromptUtils.h",
     "nsWindowWatcher.h",
 ]
 

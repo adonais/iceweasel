@@ -17,18 +17,33 @@ import androidx.test.uiautomator.UiObject2
 /**
  * A backend-agnostic handle to a single located UI element.
  *
- * This is the harness's interaction facade: once a selector has been resolved to one of these, the
- * interaction verbs (mozClick, later mozVerify/mozEnterText/…) act through this interface and never
- * switch on Compose (SemanticsNodeInteraction) vs Espresso (ViewInteraction) vs UiAutomator
- * (UiObject/UiObject2) types themselves. That keeps the per-backend quirks in one place (here) and
- * the verbs thin. Grow this interface (longClick, enterText, …) as verbs migrate onto it.
+ * This is the harness's interaction facade: once a selector has been resolved to one of these, the interaction verbs
+ * (mozClick, later mozVerify/mozEnterText/…) act through this interface and never switch on Compose
+ * (SemanticsNodeInteraction) vs Espresso (ViewInteraction) vs UiAutomator (UiObject/UiObject2) types themselves. That
+ * keeps the per-backend quirks in one place (here) and the verbs thin. Grow this interface (longClick, enterText, …) as
+ * verbs migrate onto it.
  *
  * Lives in the `core` package (split out of BasePage) so it can be shared and evolved independently.
  */
 interface UiElement {
     fun exists(): Boolean
+
     fun isDisplayed(): Boolean
+
     fun click()
+
+    companion object {
+        /** Wrap a raw located node - whatever backend produced it - into the facade. */
+        fun wrap(any: Any?): UiElement? =
+            when (any) {
+                is UiElement -> any
+                is SemanticsNodeInteraction -> ComposeUiElement(any)
+                is ViewInteraction -> EspressoUiElement(any)
+                is UiObject -> UiObjectUiElement(any)
+                is UiObject2 -> UiObject2UiElement(any)
+                else -> null
+            }
+    }
 }
 
 class ComposeUiElement(private val node: SemanticsNodeInteraction) : UiElement {
@@ -69,12 +84,16 @@ class EspressoUiElement(private val interaction: ViewInteraction) : UiElement {
     // (matches the previous BasePage behavior for ViewInteraction).
     override fun exists(): Boolean = isDisplayed()
 
-    override fun click() { interaction.perform(ViewActions.click()) }
+    override fun click() {
+        interaction.perform(ViewActions.click())
+    }
 }
 
 class UiObjectUiElement(private val obj: UiObject) : UiElement {
     override fun exists(): Boolean = obj.exists()
+
     override fun isDisplayed(): Boolean = obj.exists()
+
     override fun click() {
         if (!obj.exists()) throw AssertionError("UiObject does not exist")
         if (!obj.click()) throw AssertionError("Failed to click UiObject")
@@ -83,6 +102,10 @@ class UiObjectUiElement(private val obj: UiObject) : UiElement {
 
 class UiObject2UiElement(private val obj: UiObject2) : UiElement {
     override fun exists(): Boolean = true
+
     override fun isDisplayed(): Boolean = true
-    override fun click() { obj.click() }
+
+    override fun click() {
+        obj.click()
+    }
 }

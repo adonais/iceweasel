@@ -10,25 +10,23 @@ import mozilla.components.concept.engine.Engine
 import org.mozilla.focus.ext.components
 import org.mozilla.focus.utils.SupportUtils
 
-/**
- * Preference for HTTPS-Only mode.
- */
+/** Preference for HTTPS-Only mode. */
 class HttpsOnlyModePreference(
     context: Context,
     attrs: AttributeSet?,
 ) : LearnMoreSwitchPreference(context, attrs) {
 
-    override fun getLearnMoreUrl() =
-        SupportUtils.getGenericSumoURLForTopic(SupportUtils.SumoTopic.HTTPS_ONLY)
+    override fun getLearnMoreUrl() = SupportUtils.getGenericSumoURLForTopic(SupportUtils.SumoTopic.HTTPS_ONLY)
 
     init {
         setOnPreferenceChangeListener { _, newValue ->
             val enableHttpsOnly = newValue as Boolean
-            context.components.engine.settings.httpsOnlyMode = if (enableHttpsOnly) {
-                Engine.HttpsOnlyMode.ENABLED
-            } else {
-                Engine.HttpsOnlyMode.DISABLED
-            }
+            context.components.engine.settings.httpsOnlyMode =
+                if (enableHttpsOnly) {
+                    Engine.HttpsOnlyMode.ENABLED
+                } else {
+                    Engine.HttpsOnlyMode.DISABLED
+                }
             true
         }
     }

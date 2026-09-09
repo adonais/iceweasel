@@ -23,6 +23,7 @@ import { ClocksRow } from "./ClocksRow";
 import { EditClocksPanel } from "./EditClocksPanel";
 import { SizeSubmenu } from "../SizeSubmenu";
 import { WidgetMenuFooter } from "../WidgetMenuFooter";
+import { useCuratedCityNames } from "./useCuratedCityNames";
 import {
   backfillClockLabelColors,
   buildNextClockZones,
@@ -225,6 +226,12 @@ function Clocks({ dispatch, handleUserInteraction, widgetEnabledMap }) {
 
   const canAddClock = clockZones.length < MAX_CLOCK_COUNT;
   const supportedTimeZones = useMemo(() => getSupportedTimeZones(), []);
+
+  // Localized names for the shown clocks only (<= MAX_CLOCK_COUNT); the add
+  // form resolves the full curated list on demand when it opens.
+  const curatedNames = useCuratedCityNames(
+    clockZones.map(clock => clock.cityId).filter(Boolean)
+  );
   const resetAddClockForm = useCallback(() => {
     setEditingClockIndex(null);
   }, []);
@@ -391,7 +398,11 @@ function Clocks({ dispatch, handleUserInteraction, widgetEnabledMap }) {
           size="small"
           ref={contextMenuButtonRef}
         />
-        <panel-list ref={contextMenuRef} id="clocks-widget-context-menu">
+        <panel-list
+          className="panel-list-no-icons"
+          ref={contextMenuRef}
+          id="clocks-widget-context-menu"
+        >
           <panel-item
             data-l10n-id="newtab-clock-widget-menu-edit"
             onClick={() => {
@@ -445,6 +456,7 @@ function Clocks({ dispatch, handleUserInteraction, widgetEnabledMap }) {
       {isEditingClocks && (
         <EditClocksPanel
           clockZones={clockZones}
+          curatedNames={curatedNames}
           canAddClock={canAddClock}
           onShowAddClock={() => handleShowAddClock(CLOCK_WIDGET_SOURCE.MANAGE)}
           onEditClock={index =>
@@ -470,6 +482,7 @@ function Clocks({ dispatch, handleUserInteraction, widgetEnabledMap }) {
             <ClocksRow
               key={`${c.timeZone}-${i}`}
               clock={c}
+              curatedNames={curatedNames}
               locale={locale}
               now={now}
               onEdit={

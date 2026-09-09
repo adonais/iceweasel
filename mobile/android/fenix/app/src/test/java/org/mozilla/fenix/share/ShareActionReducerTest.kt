@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.share
 
 import io.mockk.mockk
@@ -14,10 +18,11 @@ class ShareActionReducerTest {
     fun `WHEN ShareToAppFailed action is dispatched THEN snackbar state is updated`() {
         val initialState = AppState()
 
-        val finalState = AppStoreReducer.reduce(
-            initialState,
-            AppAction.ShareAction.ShareToAppFailed,
-        )
+        val finalState =
+            AppStoreReducer.reduce(
+                initialState,
+                AppAction.ShareAction.ShareToAppFailed,
+            )
 
         assertEquals(
             SnackbarState.ShareToAppFailed,
@@ -31,10 +36,11 @@ class ShareActionReducerTest {
         val tabs = listOf(mockk<TabData>(), mockk<TabData>())
         val initialState = AppState()
 
-        val finalState = AppStoreReducer.reduce(
-            initialState,
-            AppAction.ShareAction.SharedTabsSuccessfully(destination, tabs),
-        )
+        val finalState =
+            AppStoreReducer.reduce(
+                initialState,
+                AppAction.ShareAction.SharedTabsSuccessfully(destination, tabs),
+            )
 
         assertEquals(
             SnackbarState.SharedTabsSuccessfully(destination, tabs),
@@ -48,10 +54,11 @@ class ShareActionReducerTest {
         val tabs = listOf(mockk<TabData>(), mockk<TabData>())
         val initialState = AppState()
 
-        val finalState = AppStoreReducer.reduce(
-            initialState,
-            AppAction.ShareAction.ShareTabsFailed(destination, tabs),
-        )
+        val finalState =
+            AppStoreReducer.reduce(
+                initialState,
+                AppAction.ShareAction.ShareTabsFailed(destination, tabs),
+            )
 
         assertEquals(
             SnackbarState.ShareTabsFailed(destination, tabs),
@@ -63,10 +70,11 @@ class ShareActionReducerTest {
     fun `WHEN CopyLinkToClipboard action is dispatched THEN snackbar state is updated`() {
         val initialState = AppState()
 
-        val finalState = AppStoreReducer.reduce(
-            initialState,
-            AppAction.ShareAction.CopyLinkToClipboard,
-        )
+        val finalState =
+            AppStoreReducer.reduce(
+                initialState,
+                AppAction.ShareAction.CopyLinkToClipboard,
+            )
 
         assertEquals(
             SnackbarState.CopyLinkToClipboard,

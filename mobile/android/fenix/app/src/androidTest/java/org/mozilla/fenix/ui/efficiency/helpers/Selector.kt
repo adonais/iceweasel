@@ -26,9 +26,7 @@ data class Selector(
 }
 
 enum class SelectorStrategy {
-    /**
-     * Supported strategies for locating UI elements.
-     */
+    /** Supported strategies for locating UI elements. */
     COMPOSE_BY_CONTENT_DESCRIPTION,
     COMPOSE_BY_CONTENT_DESCRIPTION_SUBSTRING,
     COMPOSE_BY_TAG,
@@ -98,4 +96,10 @@ enum class SelectorStrategy {
     // e.g. the notification shade's scroller. UIAUTOMATOR_WITH_RAW_RES_ID_CONTAINING_TEXT cannot stand in
     // for this: its text criterion is not optional at the UiSelector level.
     UIAUTOMATOR_WITH_RAW_RES_ID,
+
+    // A raw (un-prefixed) res-id resolved as a UiObject2. Needed for system-dialog buttons such as
+    // "com.android.permissioncontroller:id/permission_deny_and_dont_ask_again_button": UIAUTOMATOR2_BY_RES
+    // cannot address them because it prefixes the app's own package, and the UiObject strategies click via
+    // clickAndSync, which intermittently reports a successful dialog dismissal as a failure.
+    UIAUTOMATOR2_BY_RAW_RES,
 }

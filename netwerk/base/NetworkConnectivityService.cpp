@@ -439,12 +439,25 @@ NetworkConnectivityService::Observe(nsISupports* aSubject, const char* aTopic,
     observerService->RemoveObserver(this,
                                     "network:captive-portal-connectivity");
     observerService->RemoveObserver(this, NS_NETWORK_LINK_TOPIC);
+    observerService->RemoveObserver(this,
+                                    "browser-idle-startup-tasks-finished");
   } else if (!strcmp(aTopic, NS_NETWORK_LINK_TOPIC) &&
              !NS_LITERAL_STRING_FROM_CSTRING(NS_NETWORK_LINK_DATA_UNKNOWN)
                   .Equals(aData)) {
     PerformChecks();
   } else if (!strcmp(aTopic, "browser-idle-startup-tasks-finished")) {
+    // GeckoView notifies this topic once per window, but we only want to run
+    // the checks the first time.
+    if (mIdleStartupDone) {
+      return NS_OK;
+    }
     mIdleStartupDone = true;
+
+    nsCOMPtr<nsIObserverService> observerService =
+        mozilla::services::GetObserverService();
+    observerService->RemoveObserver(this,
+                                    "browser-idle-startup-tasks-finished");
+
     PerformChecks();
   }
 

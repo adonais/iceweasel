@@ -44,14 +44,11 @@ import mozilla.components.ui.icons.R as iconsR
  * @param footer An optional piece of text with a clickable link.
  * @param illustration Composable slot displayed at the end of the card. Commonly used for illustrations.
  * @param contentSpacing The vertical spacing between the title/message and the actions slot.
- * @param verticalAlignment Vertical alignment of the text content and the [illustration].
- * Defaults to [Alignment.Bottom].
- * @param colors Defines the color styling for the card. Defaults to
- * [PromoCardColors.promoCardColors].
- * @param closeButtonContentDescription The content description for the close button. Ignored
- * when [onDismiss] is null.
- * @param onDismiss Callback invoked when the close button is clicked. When null, the close
- * button is not rendered.
+ * @param verticalAlignment Vertical alignment of the text content and the [illustration]. Defaults to
+ *   [Alignment.Bottom].
+ * @param colors Defines the color styling for the card. Defaults to [PromoCardColors.promoCardColors].
+ * @param closeButtonContentDescription The content description for the close button. Ignored when [onDismiss] is null.
+ * @param onDismiss Callback invoked when the close button is clicked. When null, the close button is not rendered.
  */
 @Composable
 fun PromoCard(
@@ -70,19 +67,18 @@ fun PromoCard(
         modifier = modifier,
         title = title?.let { titleText -> { Text(text = titleText) } },
         message = { description?.let { Text(text = remember(description) { parseHtml(description) }) } },
-        actions = footer?.let { (footerText, linkState) ->
-            {
-                LinkText(
-                    text = footerText,
-                    linkTextStates = listOf(linkState),
-                    style = AcornTheme.typography.body2.copy(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-                    linkTextColor = colors.actionsTextColor,
-                    linkTextDecoration = TextDecoration.Underline,
-                )
-            }
-        },
+        actions =
+            footer?.let { (footerText, linkState) ->
+                {
+                    LinkText(
+                        text = footerText,
+                        linkTextStates = listOf(linkState),
+                        style = AcornTheme.typography.body2.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
+                        linkTextColor = colors.actionsTextColor,
+                        linkTextDecoration = TextDecoration.Underline,
+                    )
+                }
+            },
         illustration = illustration,
         contentSpacing = contentSpacing,
         verticalAlignment = verticalAlignment,
@@ -93,8 +89,7 @@ fun PromoCard(
 }
 
 /**
- * Card for presenting promotional messages with slotted content for title, message, actions and
- * illustration.
+ * Card for presenting promotional messages with slotted content for title, message, actions and illustration.
  *
  * @param modifier The [Modifier] to be applied to the card.
  * @param title Composable slot for the card's heading.
@@ -102,13 +97,11 @@ fun PromoCard(
  * @param actions Composable slot below the message, intended for actions such as a link or buttons.
  * @param illustration Composable slot displayed at the end of the card.
  * @param contentSpacing The vertical spacing between the title/message and the actions slot.
- * @param verticalAlignment Vertical alignment of the text content and the [illustration].
- * Defaults to [Alignment.Bottom].
+ * @param verticalAlignment Vertical alignment of the text content and the [illustration]. Defaults to
+ *   [Alignment.Bottom].
  * @param colors Defines the color styling for the card. Defaults to [PromoCardColors.promoCardColors].
- * @param closeButtonContentDescription The content description for the close button. Ignored
- * when [onDismiss] is null.
- * @param onDismiss Callback invoked when the close button is clicked. When null, the close
- * button is not rendered.
+ * @param closeButtonContentDescription The content description for the close button. Ignored when [onDismiss] is null.
+ * @param onDismiss Callback invoked when the close button is clicked. When null, the close button is not rendered.
  */
 @Composable
 fun PromoCard(
@@ -124,57 +117,51 @@ fun PromoCard(
     onDismiss: (() -> Unit)? = null,
 ) {
     InfoCardContainer(
-        modifier = modifier
-            .fillMaxWidth()
-            .wrapContentWidth(Alignment.CenterHorizontally)
-            .widthIn(max = AcornTheme.layout.size.containerMaxWidth),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .wrapContentWidth(Alignment.CenterHorizontally)
+                .widthIn(max = AcornTheme.layout.size.containerMaxWidth),
         backgroundColor = colors.backgroundColor,
         elevation = 0.dp,
         contentPadding = PaddingValues(0.dp),
     ) {
         Box {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        start = AcornTheme.layout.space.static200,
-                        end = if (onDismiss != null) {
-                            AcornTheme.layout.space.static500
-                        } else {
-                            AcornTheme.layout.space.static200
-                        },
-                    ),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .padding(
+                            start = AcornTheme.layout.space.static200,
+                            end =
+                                if (onDismiss != null) {
+                                    AcornTheme.layout.space.static500
+                                } else {
+                                    AcornTheme.layout.space.static200
+                                },
+                        ),
                 horizontalArrangement = Arrangement.spacedBy(AcornTheme.layout.space.static200),
                 verticalAlignment = verticalAlignment,
             ) {
                 Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(vertical = AcornTheme.layout.space.static200),
+                    modifier = Modifier.weight(1f).padding(vertical = AcornTheme.layout.space.static200),
                     verticalArrangement = Arrangement.spacedBy(contentSpacing),
                 ) {
                     Column {
                         CompositionLocalProvider(
-                            LocalTextStyle provides AcornTheme.typography.headline7.copy(
-                                color = colors.titleTextColor,
-                            ),
+                            LocalTextStyle provides AcornTheme.typography.headline7.copy(color = colors.titleTextColor)
                         ) {
                             title?.invoke()
                         }
 
                         CompositionLocalProvider(
-                            LocalTextStyle provides AcornTheme.typography.body2.copy(
-                                color = colors.messageTextColor,
-                            ),
+                            LocalTextStyle provides AcornTheme.typography.body2.copy(color = colors.messageTextColor)
                         ) {
                             message?.invoke()
                         }
                     }
 
                     CompositionLocalProvider(
-                        LocalTextStyle provides AcornTheme.typography.body2.copy(
-                            color = colors.actionsTextColor,
-                        ),
+                        LocalTextStyle provides AcornTheme.typography.body2.copy(color = colors.actionsTextColor)
                     ) {
                         actions?.invoke()
                     }
@@ -233,9 +220,7 @@ data class PromoCardColors(
 ) {
     companion object {
 
-        /**
-         * Builder function used to construct an instance of [PromoCardColors].
-         */
+        /** Builder function used to construct an instance of [PromoCardColors]. */
         @Composable
         fun promoCardColors(
             backgroundColor: Color = MaterialTheme.colorScheme.secondaryContainer,
@@ -329,11 +314,13 @@ private fun PromoCardFromStringsPreview() {
             description = "Description",
             closeButtonContentDescription = null,
             title = "Title",
-            footer = "Link" to LinkTextState(
-                text = "Link",
-                url = "https://www.mozilla.org",
-                onClick = {},
-            ),
+            footer =
+                "Link" to
+                    LinkTextState(
+                        text = "Link",
+                        url = "https://www.mozilla.org",
+                        onClick = {},
+                    ),
             illustration = {
                 Image(
                     painter = painterResource(iconsR.drawable.mozac_ic_logo_firefox_24),

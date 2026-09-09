@@ -21,7 +21,6 @@ linux64-cargo-vet:
     treeherder:
         symbol: TL(cargo-vet)
     run:
-        clone-with: hg
         arguments: ['x86_64-unknown-linux-gnu', 'reqwest/native-tls-vendored']
     fetches:
         toolchain:
@@ -33,7 +32,6 @@ linux64-aarch64-cargo-vet:
     treeherder:
         symbol: TLA64(cargo-vet)
     run:
-        clone-with: hg
         arguments: ['aarch64-unknown-linux-gnu', 'reqwest/native-tls-vendored']
     fetches:
         toolchain:
@@ -45,7 +43,6 @@ macosx64-cargo-vet:
     treeherder:
         symbol: TM(cargo-vet)
     run:
-        clone-with: hg
         arguments: ['x86_64-apple-darwin']
     fetches:
         toolchain:
@@ -57,7 +54,6 @@ macosx64-aarch64-cargo-vet:
     treeherder:
         symbol: TMA64(cargo-vet)
     run:
-        clone-with: hg
         arguments: ['aarch64-apple-darwin']
     fetches:
         toolchain:
@@ -69,7 +65,6 @@ win64-cargo-vet:
     treeherder:
         symbol: TW64(cargo-vet)
     run:
-        clone-with: hg
         arguments: ['x86_64-pc-windows-msvc']
         toolchain-alias: win64-aarch64-cargo-vet
     fetches:

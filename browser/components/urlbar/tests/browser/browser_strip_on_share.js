@@ -192,8 +192,7 @@ async function testMenuItemDisabled({ url, prefEnabled, selection }) {
     }
 
     await UrlbarTestUtils.withContextMenu(window, async popup => {
-      let mozInputBox = popup.parentNode;
-      let menuitem = mozInputBox.getMenuItem("strip-on-share");
+      let menuitem = popup.querySelector('[anonid="strip-on-share"]');
       Assert.ok(
         !BrowserTestUtils.isVisible(menuitem),
         "Menu item is not visible"
@@ -250,8 +249,7 @@ async function testMenuItemEnabled({
     // Make sure the clean copy of the link will be copied to the clipboard
     await SimpleTest.promiseClipboardChange(strippedUrl, async () => {
       await UrlbarTestUtils.withContextMenu(window, async popup => {
-        let mozInputBox = popup.parentNode;
-        let menuitem = mozInputBox.getMenuItem("strip-on-share");
+        let menuitem = popup.querySelector('[anonid="strip-on-share"]');
         Assert.ok(BrowserTestUtils.isVisible(menuitem), "Menu item is visible");
         Assert.equal(
           menuitem.disabled,

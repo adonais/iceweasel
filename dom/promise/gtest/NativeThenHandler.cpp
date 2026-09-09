@@ -73,8 +73,9 @@ TEST(NativeThenHandler, TraceValue)
 
   // Explicit type for backward compatibility with clang<7 / gcc<8
   using HandlerType =
-      NativeThenHandler<decltype(onResolve), decltype(onReject), std::tuple<>,
-                        std::tuple<JS::HandleValue>>;
+      promise_detail::NativeThenHandler<decltype(onResolve), decltype(onReject),
+                                        std::tuple<>,
+                                        std::tuple<JS::HandleValue>>;
   RefPtr<HandlerType> handler = new HandlerType(
       nullptr, Some(onResolve), Some(onReject), std::make_tuple(),
       std::make_tuple(JS::UndefinedHandleValue));
@@ -104,8 +105,9 @@ TEST(NativeThenHandler, TraceObject)
 
   // Explicit type for backward compatibility with clang<7 / gcc<8
   using HandlerType =
-      NativeThenHandler<decltype(onResolve), decltype(onReject), std::tuple<>,
-                        std::tuple<JS::HandleObject>>;
+      promise_detail::NativeThenHandler<decltype(onResolve), decltype(onReject),
+                                        std::tuple<>,
+                                        std::tuple<JS::HandleObject>>;
   RefPtr<HandlerType> handler = new HandlerType(
       nullptr, Some(onResolve), Some(onReject), std::make_tuple(),
       std::make_tuple(JS::HandleObject(obj)));
@@ -139,10 +141,10 @@ TEST(NativeThenHandler, TraceMixed)
   RefPtr<Promise> promise = Promise::Create(global, IgnoreErrors());
 
   // Explicit type for backward compatibility with clang<7 / gcc<8
-  using HandlerType =
-      NativeThenHandler<decltype(onResolve), decltype(onReject),
-                        std::tuple<nsCOMPtr<nsIGlobalObject>, RefPtr<Promise>>,
-                        std::tuple<JS::HandleValue, JS::HandleObject>>;
+  using HandlerType = promise_detail::NativeThenHandler<
+      decltype(onResolve), decltype(onReject),
+      std::tuple<nsCOMPtr<nsIGlobalObject>, RefPtr<Promise>>,
+      std::tuple<JS::HandleValue, JS::HandleObject>>;
   RefPtr<HandlerType> handler = new HandlerType(
       nullptr, Some(onResolve), Some(onReject),
       std::make_tuple(global, promise),

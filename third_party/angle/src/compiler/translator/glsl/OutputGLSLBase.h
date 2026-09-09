@@ -24,7 +24,8 @@ class TOutputGLSLBase : public TIntermTraverser
   public:
     TOutputGLSLBase(TCompiler *compiler,
                     TInfoSinkBase &objSink,
-                    const ShCompileOptions &compileOptions);
+                    const ShCompileOptions &compileOptions,
+                    bool removeInvariant);
 
     ShShaderOutput getShaderOutput() const { return mOutput; }
 
@@ -32,6 +33,7 @@ class TOutputGLSLBase : public TIntermTraverser
     // otherwise return the hashed name. Has special handling for internal names and built-ins,
     // which are not hashed.
     ImmutableString hashName(const TSymbol *symbol);
+    ImmutableString hashBlockName(const TSymbol *symbol);
 
   protected:
     TInfoSinkBase &objSink() { return mObjSink; }
@@ -110,6 +112,7 @@ class TOutputGLSLBase : public TIntermTraverser
     // name hashing.
     ShHashFunction64 mHashFunction;
     char mUserVariablePrefix;
+    char mUserBlockPrefix;
     NameMap &mNameMap;
 
     sh::GLenum mShaderType;
@@ -121,6 +124,8 @@ class TOutputGLSLBase : public TIntermTraverser
     // previously valid fragment outputs with an implicit location of 0 are now required to specify
     // their location.
     bool mAlwaysSpecifyFragOutLocation;
+    // Whether `invariant` should be removed everywhere
+    bool mRemoveInvariant;
 
     const ShCompileOptions &mCompileOptions;
 };

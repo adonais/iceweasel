@@ -10,8 +10,8 @@ import mozilla.components.browser.state.selector.selectedTab
 import org.mozilla.focus.FocusApplication
 
 /**
- * An IdlingResource implementation that waits until the current session is not loading anymore.
- * Only after loading has completed further actions will be performed.
+ * An IdlingResource implementation that waits until the current session is not loading anymore. Only after loading has
+ * completed further actions will be performed.
  */
 class SessionLoadedIdlingResource : IdlingResource {
     private var resourceCallback: IdlingResource.ResourceCallback? = null

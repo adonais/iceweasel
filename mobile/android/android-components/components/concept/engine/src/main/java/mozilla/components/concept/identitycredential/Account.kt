@@ -9,6 +9,7 @@ import kotlinx.parcelize.Parcelize
 
 /**
  * Represents an Identity credential account:
+ *
  * @property id An identifier for this [Account].
  * @property email The email associated to this [Account].
  * @property name The name of this [Account].

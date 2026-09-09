@@ -10,9 +10,7 @@ import mozilla.components.browser.state.state.content.DownloadState
 
 internal object DownloadStateReducer {
 
-    /**
-     * [DownloadAction] Reducer function for modifying [BrowserState.downloads].
-     */
+    /** [DownloadAction] Reducer function for modifying [BrowserState.downloads]. */
     fun reduce(state: BrowserState, action: DownloadAction): BrowserState {
         return when (action) {
             is DownloadAction.AddDownloadAction -> updateDownloads(state, action.download)

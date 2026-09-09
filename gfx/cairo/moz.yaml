@@ -93,6 +93,7 @@ vendoring:
     - patches/0047-Bug-2050228-win32-print-tiny-dash.patch
     - patches/0048-Bug-2054626-type2-decode-integer.patch
     - patches/0049-Bug-2054627-skip-token-check.patch
+    - patches/0050-Bug-2065397-array-bounds-check.patch
 
 updatebot:
   maintainer-phab: "#gfx-reviewers"

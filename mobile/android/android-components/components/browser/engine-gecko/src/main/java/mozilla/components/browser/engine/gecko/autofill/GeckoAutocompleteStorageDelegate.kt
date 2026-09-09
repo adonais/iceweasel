@@ -20,14 +20,14 @@ import org.mozilla.geckoview.Autocomplete
 import org.mozilla.geckoview.GeckoResult
 
 /**
- * Gecko credit card and login storage delegate that handles runtime storage requests. This allows
- * the Gecko runtime to call the underlying storage to handle requests for fetching, saving and
- * updating of autocomplete items in the storage.
+ * Gecko credit card and login storage delegate that handles runtime storage requests. This allows the Gecko runtime to
+ * call the underlying storage to handle requests for fetching, saving and updating of autocomplete items in the
+ * storage.
  *
- * @param creditCardsAddressesStorageDelegate An instance of [CreditCardsAddressesStorageDelegate].
- * Provides methods for retrieving [CreditCard]s from the underlying storage.
- * @param loginStorageDelegate An instance of [LoginStorageDelegate].
- * Provides read/write methods for the [Login] storage.
+ * @param creditCardsAddressesStorageDelegate An instance of [CreditCardsAddressesStorageDelegate]. Provides methods for
+ *   retrieving [CreditCard]s from the underlying storage.
+ * @param loginStorageDelegate An instance of [LoginStorageDelegate]. Provides read/write methods for the [Login]
+ *   storage.
  */
 class GeckoAutocompleteStorageDelegate(
     private val creditCardsAddressesStorageDelegate: CreditCardsAddressesStorageDelegate,
@@ -39,9 +39,8 @@ class GeckoAutocompleteStorageDelegate(
 
         @OptIn(DelicateCoroutinesApi::class)
         GlobalScope.launch(IO) {
-            val addresses = creditCardsAddressesStorageDelegate.onAddressesFetch()
-                .map { it.toAutocompleteAddress() }
-                .toTypedArray()
+            val addresses =
+                creditCardsAddressesStorageDelegate.onAddressesFetch().map { it.toAutocompleteAddress() }.toTypedArray()
 
             result.complete(addresses)
         }
@@ -56,24 +55,26 @@ class GeckoAutocompleteStorageDelegate(
         GlobalScope.launch(IO) {
             val key = creditCardsAddressesStorageDelegate.getOrGenerateKey()
 
-            val creditCards = creditCardsAddressesStorageDelegate.onCreditCardsFetch()
-                .mapNotNull {
-                    val plaintextCardNumber =
-                        creditCardsAddressesStorageDelegate.decrypt(key, it.encryptedCardNumber)?.number
+            val creditCards =
+                creditCardsAddressesStorageDelegate
+                    .onCreditCardsFetch()
+                    .mapNotNull {
+                        val plaintextCardNumber =
+                            creditCardsAddressesStorageDelegate.decrypt(key, it.encryptedCardNumber)?.number
 
-                    if (plaintextCardNumber == null) {
-                        null
-                    } else {
-                        Autocomplete.CreditCard.Builder()
-                            .guid(it.guid)
-                            .name(it.billingName)
-                            .number(plaintextCardNumber)
-                            .expirationMonth(it.expiryMonth.toString())
-                            .expirationYear(it.expiryYear.toString())
-                            .build()
+                        if (plaintextCardNumber == null) {
+                            null
+                        } else {
+                            Autocomplete.CreditCard.Builder()
+                                .guid(it.guid)
+                                .name(it.billingName)
+                                .number(plaintextCardNumber)
+                                .expirationMonth(it.expiryMonth.toString())
+                                .expirationYear(it.expiryYear.toString())
+                                .build()
+                        }
                     }
-                }
-                .toTypedArray()
+                    .toTypedArray()
 
             result.complete(creditCards)
         }
@@ -106,9 +107,7 @@ class GeckoAutocompleteStorageDelegate(
         GlobalScope.launch(IO) {
             val storedLogins = loginStorageDelegate.onLoginFetch(domain)
 
-            val logins = storedLogins.await()
-                .map { it.toLoginEntry() }
-                .toTypedArray()
+            val logins = storedLogins.await().map { it.toLoginEntry() }.toTypedArray()
 
             result.complete(logins)
         }

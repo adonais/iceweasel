@@ -9,6 +9,7 @@ package org.mozilla.fenix.components.ipprotection
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.ExperimentalAndroidComponentsApi
+import mozilla.components.feature.ipprotection.store.ActivationOperation
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
@@ -22,6 +23,7 @@ import org.mozilla.fenix.components.appstate.AppState
 
 class IPProtectionSnackbarMiddlewareTest {
     private val connectionError = "Couldn't connect to VPN."
+    private val locationSelectionReset = "Selected VPN location unavailable. Switched to the recommended location."
     private lateinit var captureMiddleware: CaptureActionsMiddleware<AppState, AppAction>
     private lateinit var appStore: AppStore
     private lateinit var ipProtectionStore: IPProtectionStore
@@ -30,32 +32,45 @@ class IPProtectionSnackbarMiddlewareTest {
     fun setup() {
         captureMiddleware = CaptureActionsMiddleware()
         appStore = AppStore(middlewares = listOf(captureMiddleware))
-        ipProtectionStore = IPProtectionStore(
-            middleware = listOf(
-                IPProtectionSnackbarMiddleware(
-                    lazyAppStore = lazy { appStore },
-                    messages = IPProtectionSnackbarMessages(connectionError = connectionError),
-                ),
-            ),
-        )
+        ipProtectionStore =
+            IPProtectionStore(
+                middleware =
+                    listOf(
+                        IPProtectionSnackbarMiddleware(
+                            lazyAppStore = lazy { appStore },
+                            messages =
+                                IPProtectionSnackbarMessages(
+                                    connectionError = connectionError,
+                                    locationSelectionReset = locationSelectionReset,
+                                ),
+                        )
+                    )
+            )
     }
 
     @Test
-    fun `WHEN ActivationFailed is dispatched THEN ConnectionError snackbar action is dispatched`() {
-        ipProtectionStore.dispatch(IPProtectionAction.ToggleFailed())
+    fun `WHEN ActivationFailed is dispatched THEN ShowSnackbar action is dispatched`() {
+        ipProtectionStore.dispatch(IPProtectionAction.ToggleFailed(ActivationOperation.Activate))
 
-        captureMiddleware.assertLastAction(AppAction.IPProtectionSnackbarAction.ConnectionError::class) { action ->
+        captureMiddleware.assertLastAction(AppAction.IPProtectionSnackbarAction.ShowSnackbar::class) { action ->
             assertEquals(connectionError, action.title)
         }
     }
 
     @Test
-    fun `WHEN an unrelated action is dispatched THEN no snackbar action is dispatched`() {
-        ipProtectionStore.dispatch(
-            IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible),
-        )
+    fun `WHEN LocationReset is dispatched THEN ShowSnackbar action is dispatched`() {
+        ipProtectionStore.dispatch(IPProtectionAction.LocationReset)
 
-        captureMiddleware.assertNotDispatched(AppAction.IPProtectionSnackbarAction.ConnectionError::class)
+        captureMiddleware.assertLastAction(AppAction.IPProtectionSnackbarAction.ShowSnackbar::class) { action ->
+            assertEquals(locationSelectionReset, action.title)
+        }
+    }
+
+    @Test
+    fun `WHEN an unrelated action is dispatched THEN no snackbar action is dispatched`() {
+        ipProtectionStore.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
+
+        captureMiddleware.assertNotDispatched(AppAction.IPProtectionSnackbarAction.ShowSnackbar::class)
     }
 
     @Test
@@ -64,19 +79,20 @@ class IPProtectionSnackbarMiddlewareTest {
             // Simulates HomeActivity recreation: the same process-scoped IPProtectionStore now has
             // a new observer (a freshly-instantiated IPProtectionInfoPrompter). With the snackbar
             // owned by middleware, the new observer does not re-fire on already-set state.
-            ipProtectionStore.dispatch(IPProtectionAction.ToggleFailed())
-            captureMiddleware.assertLastAction(AppAction.IPProtectionSnackbarAction.ConnectionError::class)
+            ipProtectionStore.dispatch(IPProtectionAction.ToggleFailed(ActivationOperation.Activate))
+            captureMiddleware.assertLastAction(AppAction.IPProtectionSnackbarAction.ShowSnackbar::class)
             captureMiddleware.reset()
 
-            val newPrompter = IPProtectionInfoPrompter(
-                store = ipProtectionStore,
-                appStore = appStore,
-                errorMessages = ErrorMessages(dataLimitReached = "Data limit reached"),
-                mainDispatcher = StandardTestDispatcher(testScheduler),
-            )
+            val newPrompter =
+                IPProtectionInfoPrompter(
+                    store = ipProtectionStore,
+                    appStore = appStore,
+                    errorMessages = ErrorMessages(dataLimitReached = "Data limit reached"),
+                    mainDispatcher = StandardTestDispatcher(testScheduler),
+                )
             newPrompter.start()
             testScheduler.advanceUntilIdle()
 
-            captureMiddleware.assertNotDispatched(AppAction.IPProtectionSnackbarAction.ConnectionError::class)
+            captureMiddleware.assertNotDispatched(AppAction.IPProtectionSnackbarAction.ShowSnackbar::class)
         }
 }

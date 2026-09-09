@@ -13,25 +13,16 @@ internal object ContainerReducer {
             is ContainerAction.AddContainerAction -> {
                 val existingContainer = state.containers[action.container.contextId]
                 if (existingContainer == null) {
-                    state.copy(
-                        containers = state.containers + (action.container.contextId to action.container),
-                    )
+                    state.copy(containers = state.containers + (action.container.contextId to action.container))
                 } else {
                     state
                 }
             }
             is ContainerAction.AddContainersAction -> {
-                state.copy(
-                    containers = state.containers + (
-                        action.containers.map { it.contextId to it }
-                            .toMap()
-                        ),
-                )
+                state.copy(containers = state.containers + (action.containers.map { it.contextId to it }.toMap()))
             }
             is ContainerAction.RemoveContainerAction -> {
-                state.copy(
-                    containers = state.containers - action.contextId,
-                )
+                state.copy(containers = state.containers - action.contextId)
             }
         }
     }

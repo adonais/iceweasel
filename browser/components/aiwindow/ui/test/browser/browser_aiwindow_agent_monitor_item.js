@@ -314,6 +314,92 @@ add_task(async function test_check_now_dispatches_detail() {
   });
 });
 
+add_task(async function test_watch_url_chip_dispatches_open() {
+  const WATCH_URL = "https://soundnest.com/audio/sony-wh-1000xm5";
+
+  await withTestPage(async browser => {
+    await setProps(browser, {
+      agent: { ...AGENT, watchUrls: [WATCH_URL] },
+      mode: "display",
+      expanded: true,
+    });
+
+    await SpecialPowers.spawn(browser, [WATCH_URL], async watchUrl => {
+      const el = content.document.getElementById("test-agent-monitor-item");
+      const shadow = el.shadowRoot;
+
+      let openDetail = null;
+      el.addEventListener(
+        "AIChatContent:OpenLink",
+        e => (openDetail = e.detail)
+      );
+
+      const chip = shadow.querySelector(".url-chips ai-website-chip");
+      Assert.ok(chip, "Watched pages render as website chips");
+      Assert.equal(
+        chip.label,
+        "soundnest.com",
+        "The chip is labelled with the hostname"
+      );
+      Assert.equal(
+        chip.href,
+        watchUrl,
+        "The chip is a real link to the full watched URL"
+      );
+
+      chip.shadowRoot.querySelector(".chip").click();
+      await el.updateComplete;
+
+      Assert.ok(openDetail, "Clicking a chip emits AIChatContent:OpenLink");
+      Assert.equal(
+        openDetail.url,
+        watchUrl,
+        "OpenLink carries the full watched URL"
+      );
+      Assert.ok(
+        openDetail.preferSwitchToTab,
+        "A plain click prefers an already open tab"
+      );
+    });
+  });
+});
+
+add_task(async function test_watch_url_chip_shows_resolved_title() {
+  const WITH_TITLE = "https://soundnest.com/audio/sony-wh-1000xm5";
+  const NO_TITLE = "https://example.com/no-title-here";
+
+  await withTestPage(async browser => {
+    await setProps(browser, {
+      agent: {
+        ...AGENT,
+        watchUrls: [WITH_TITLE, NO_TITLE],
+        watchUrlTitles: { [WITH_TITLE]: "Sony WH-1000XM5 Headphones" },
+      },
+      mode: "display",
+      expanded: true,
+    });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-agent-monitor-item");
+      const chips = el.shadowRoot.querySelectorAll(
+        ".url-chips ai-website-chip"
+      );
+
+      Assert.equal(chips.length, 2, "Both watched pages render as chips");
+      Assert.equal(
+        chips[0].label,
+        "Sony WH-1000XM5 Headphones",
+        "A chip with a resolved title is labelled with the title"
+      );
+      Assert.equal(
+        chips[1].label,
+        "example.com",
+        "A chip with no resolved title falls back to the hostname"
+      );
+    });
+  });
+});
+
 add_task(async function test_edit_mode_shows_pages_and_scheduler() {
   await withTestPage(async browser => {
     await setProps(browser, {
@@ -887,6 +973,59 @@ add_task(async function test_invalid_url_shows_error() {
         shadow.querySelectorAll(".page-pill").length,
         0,
         "An invalid URL is not added as a pill"
+      );
+    });
+  });
+});
+
+add_task(async function test_max_watch_urls_from_host() {
+  await withTestPage(async browser => {
+    // The host owns the cap: about:smartwindowtasks passes the actor's value
+    await setProps(browser, {
+      agent: { conditionPresets: [] },
+      mode: "create",
+      maxWatchUrls: 1,
+    });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const el = content.document.getElementById("test-agent-monitor-item");
+      const shadow = el.shadowRoot;
+
+      const addUrl = async url => {
+        const urlInput = shadow.querySelector("moz-input-url.page-url-input");
+        urlInput.value = url;
+        urlInput.dispatchEvent(new content.Event("input", { bubbles: true }));
+        shadow.querySelector("moz-button.add-page-btn").click();
+        await el.updateComplete;
+      };
+
+      await addUrl("https://example.com/a");
+      Assert.equal(
+        shadow.querySelectorAll(".page-pill").length,
+        1,
+        "The first URL is added"
+      );
+
+      await addUrl("https://example.com/b");
+      await ContentTaskUtils.waitForCondition(
+        () => shadow.querySelector(".error-message"),
+        "Waiting for the max URLs error to appear"
+      );
+
+      Assert.equal(
+        shadow.querySelectorAll(".page-pill").length,
+        1,
+        "A URL past the host's cap is not added"
+      );
+      // Assert on substitution rather than copy: the cap has to reach Fluent
+      // under the name the string expects, or formatValue rejects and the
+      // error message never renders.
+      const errorText = shadow
+        .querySelector(".error-message")
+        .textContent.trim();
+      Assert.ok(
+        errorText.includes("1") && !errorText.includes("{"),
+        `The error message interpolates the cap: ${errorText}`
       );
     });
   });

@@ -15,6 +15,8 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat.IMPORTANCE_NONE
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
+import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.state.content.DownloadState.Status.CANCELLED
 import mozilla.components.browser.state.state.content.DownloadState.Status.COMPLETED
@@ -29,8 +31,6 @@ import mozilla.components.feature.downloads.AbstractFetchDownloadService.Compani
 import mozilla.components.feature.downloads.AbstractFetchDownloadService.Companion.ACTION_TRY_AGAIN
 import mozilla.components.feature.downloads.AbstractFetchDownloadService.DownloadJobState
 import mozilla.components.support.utils.DownloadFileUtils
-import kotlin.random.Random
-import kotlin.time.Duration.Companion.seconds
 
 @Suppress("LargeClass")
 internal object DownloadNotification {
@@ -49,16 +49,18 @@ internal object DownloadNotification {
         notificationAccentColor: Int,
     ): Notification {
         val allDownloadsHaveFinished = notifications.all { it.status != DOWNLOADING }
-        val icon = if (allDownloadsHaveFinished) {
-            R.drawable.mozac_feature_download_ic_download_complete
-        } else {
-            R.drawable.mozac_feature_download_ic_ongoing_download
-        }
-        val summaryList = getSummaryList(
-            context = context,
-            fileSizeFormatter = fileSizeFormatter,
-            notifications = notifications,
-        )
+        val icon =
+            if (allDownloadsHaveFinished) {
+                R.drawable.mozac_feature_download_ic_download_complete
+            } else {
+                R.drawable.mozac_feature_download_ic_ongoing_download
+            }
+        val summaryList =
+            getSummaryList(
+                context = context,
+                fileSizeFormatter = fileSizeFormatter,
+                notifications = notifications,
+            )
         val summaryLine1 = summaryList.first()
         val summaryLine2 = if (summaryList.size == 2) summaryList[1] else ""
 
@@ -66,7 +68,7 @@ internal object DownloadNotification {
             .setSmallIcon(icon)
             .setColor(ContextCompat.getColor(context, notificationAccentColor))
             .setContentTitle(
-                context.applicationContext.getString(R.string.mozac_feature_downloads_notification_channel),
+                context.applicationContext.getString(R.string.mozac_feature_downloads_notification_channel)
             )
             .setContentText(summaryList.joinToString("\n"))
             .setStyle(NotificationCompat.InboxStyle().addLine(summaryLine1).addLine(summaryLine2))
@@ -76,9 +78,7 @@ internal object DownloadNotification {
             .build()
     }
 
-    /**
-     * Build the notification to be displayed while the download service is active.
-     */
+    /** Build the notification to be displayed while the download service is active. */
     fun createOngoingDownloadNotification(
         context: Context,
         downloadState: DownloadState,
@@ -101,14 +101,12 @@ internal object DownloadNotification {
                             startTime = downloadState.createdTime,
                             currentBytes = downloadState.currentBytesCopied,
                             totalBytes = downloadState.contentLength,
-                        ),
-                    ),
+                        )
+                    )
             )
             .setSmallIcon(R.drawable.mozac_feature_download_ic_ongoing_download)
             .setContentTitle(downloadState.fileName.orEmpty())
-            .setContentText(
-                downloadState.getProgress(fileSizeFormatter = fileSizeFormatter),
-            )
+            .setContentText(downloadState.getProgress(fileSizeFormatter = fileSizeFormatter))
             .setColor(ContextCompat.getColor(context, notificationAccentColor))
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setProgress(PERCENTAGE_MULTIPLIER, percentCopied, isIndeterminate)
@@ -122,9 +120,7 @@ internal object DownloadNotification {
             .build()
     }
 
-    /**
-     * Build the notification to be displayed while the download service is paused.
-     */
+    /** Build the notification to be displayed while the download service is paused. */
     fun createPausedDownloadNotification(
         context: Context,
         downloadState: DownloadState,
@@ -137,7 +133,7 @@ internal object DownloadNotification {
             .setSmallIcon(R.drawable.mozac_feature_download_ic_download)
             .setContentTitle(downloadState.fileName)
             .setContentText(
-                context.applicationContext.getString(R.string.mozac_feature_downloads_paused_notification_text),
+                context.applicationContext.getString(R.string.mozac_feature_downloads_paused_notification_text)
             )
             .setColor(ContextCompat.getColor(context, notificationAccentColor))
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
@@ -151,9 +147,7 @@ internal object DownloadNotification {
             .build()
     }
 
-    /**
-     * Build the notification to be displayed when a download finishes.
-     */
+    /** Build the notification to be displayed when a download finishes. */
     fun createDownloadCompletedNotification(
         context: Context,
         downloadState: DownloadState,
@@ -170,7 +164,7 @@ internal object DownloadNotification {
             .setWhen(createdTime)
             .setOnlyAlertOnce(true)
             .setContentText(
-                context.applicationContext.getString(R.string.mozac_feature_downloads_completed_notification_text2),
+                context.applicationContext.getString(R.string.mozac_feature_downloads_completed_notification_text2)
             )
             .setColor(ContextCompat.getColor(context, notificationAccentColor))
             .setContentIntent(contentIntent)
@@ -181,9 +175,7 @@ internal object DownloadNotification {
             .build()
     }
 
-    /**
-     * Build the notification to be displayed when a download fails to finish.
-     */
+    /** Build the notification to be displayed when a download fails to finish. */
     fun createDownloadFailedNotification(
         context: Context,
         downloadState: DownloadState,
@@ -196,7 +188,7 @@ internal object DownloadNotification {
             .setSmallIcon(R.drawable.mozac_feature_download_ic_download_failed)
             .setContentTitle(downloadState.fileName)
             .setContentText(
-                context.applicationContext.getString(R.string.mozac_feature_downloads_failed_notification_text2),
+                context.applicationContext.getString(R.string.mozac_feature_downloads_failed_notification_text2)
             )
             .setColor(ContextCompat.getColor(context, notificationAccentColor))
             .setCategory(NotificationCompat.CATEGORY_ERROR)
@@ -225,8 +217,8 @@ internal object DownloadNotification {
     }
 
     /**
-     * Check if notifications from the download channel are enabled.
-     * Verifies that app notifications, channel notifications, and group notifications are enabled.
+     * Check if notifications from the download channel are enabled. Verifies that app notifications, channel
+     * notifications, and group notifications are enabled.
      */
     fun isChannelEnabled(context: Context): Boolean {
         val notificationManager: NotificationManager = context.getSystemService()!!
@@ -246,11 +238,12 @@ internal object DownloadNotification {
     private fun ensureChannelExists(context: Context): String {
         val notificationManager: NotificationManager = context.getSystemService()!!
 
-        val channel = NotificationChannel(
-            NOTIFICATION_CHANNEL_ID,
-            context.applicationContext.getString(R.string.mozac_feature_downloads_notification_channel),
-            NotificationManager.IMPORTANCE_LOW,
-        )
+        val channel =
+            NotificationChannel(
+                NOTIFICATION_CHANNEL_ID,
+                context.applicationContext.getString(R.string.mozac_feature_downloads_notification_channel),
+                NotificationManager.IMPORTANCE_LOW,
+            )
 
         notificationManager.createNotificationChannel(channel)
 
@@ -279,40 +272,44 @@ internal object DownloadNotification {
         val pauseIntent = createPendingIntent(context, ACTION_PAUSE, downloadStateId)
 
         return NotificationCompat.Action.Builder(
-            0,
-            context.applicationContext.getString(R.string.mozac_feature_downloads_button_pause),
-            pauseIntent,
-        ).build()
+                0,
+                context.applicationContext.getString(R.string.mozac_feature_downloads_button_pause),
+                pauseIntent,
+            )
+            .build()
     }
 
     private fun getResumeAction(context: Context, downloadStateId: String): NotificationCompat.Action {
         val resumeIntent = createPendingIntent(context, ACTION_RESUME, downloadStateId)
 
         return NotificationCompat.Action.Builder(
-            0,
-            context.applicationContext.getString(R.string.mozac_feature_downloads_button_resume),
-            resumeIntent,
-        ).build()
+                0,
+                context.applicationContext.getString(R.string.mozac_feature_downloads_button_resume),
+                resumeIntent,
+            )
+            .build()
     }
 
     private fun getCancelAction(context: Context, downloadStateId: String): NotificationCompat.Action {
         val cancelIntent = createPendingIntent(context, ACTION_CANCEL, downloadStateId)
 
         return NotificationCompat.Action.Builder(
-            0,
-            context.applicationContext.getString(R.string.mozac_feature_downloads_button_cancel),
-            cancelIntent,
-        ).build()
+                0,
+                context.applicationContext.getString(R.string.mozac_feature_downloads_button_cancel),
+                cancelIntent,
+            )
+            .build()
     }
 
     private fun getTryAgainAction(context: Context, downloadStateId: String): NotificationCompat.Action {
         val tryAgainIntent = createPendingIntent(context, ACTION_TRY_AGAIN, downloadStateId)
 
         return NotificationCompat.Action.Builder(
-            0,
-            context.applicationContext.getString(R.string.mozac_feature_downloads_button_try_again),
-            tryAgainIntent,
-        ).build()
+                0,
+                context.applicationContext.getString(R.string.mozac_feature_downloads_button_try_again),
+                tryAgainIntent,
+            )
+            .build()
     }
 
     private fun createDismissPendingIntent(context: Context, downloadStateId: String): PendingIntent {
@@ -339,10 +336,9 @@ internal object DownloadNotification {
 internal fun NotificationCompat.Builder.setCompatGroup(groupKey: String): NotificationCompat.Builder =
     setGroup(groupKey)
 
-private fun DownloadState.getPercent(): Int? =
-    progress?.let { progress ->
-        (DownloadNotification.PERCENTAGE_MULTIPLIER * progress).toInt()
-    }
+private fun DownloadState.getPercent(): Int? = progress?.let { progress ->
+    (DownloadNotification.PERCENTAGE_MULTIPLIER * progress).toInt()
+}
 
 @VisibleForTesting
 internal fun DownloadState.getProgress(fileSizeFormatter: FileSizeFormatter): String {
@@ -378,7 +374,8 @@ internal fun DownloadState.getStatusDescription(
             context.applicationContext.getString(R.string.mozac_feature_downloads_failed_notification_text2)
         }
 
-        CANCELLED, INITIATED -> ""
+        CANCELLED,
+        INITIATED -> ""
     }
 }
 
@@ -390,11 +387,12 @@ private fun formatDownloadTimeRemaining(
     totalBytes: Long?,
 ): String {
     if (totalBytes == null) return context.getString(R.string.mozac_feature_downloads_time_remaining_unknown)
-    val timeRemaining = downloadEstimator.estimatedRemainingTime(
-        startTime = startTime,
-        bytesDownloaded = currentBytes,
-        totalBytes = totalBytes,
-    )
+    val timeRemaining =
+        downloadEstimator.estimatedRemainingTime(
+            startTime = startTime,
+            bytesDownloaded = currentBytes,
+            totalBytes = totalBytes,
+        )
     if (timeRemaining == null) return ""
     val formattedTimeRemaining = timeRemaining.seconds.toString()
     return context.getString(

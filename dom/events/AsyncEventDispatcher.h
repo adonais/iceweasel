@@ -164,7 +164,7 @@ class AsyncEventDispatcher : public CancelableRunnable {
       Composed aComposed);
 
  public:
-  nsCOMPtr<dom::EventTarget> mTarget;
+  MOZ_KNOWN_LIVE const nsCOMPtr<dom::EventTarget> mTarget;
   RefPtr<dom::Event> mEvent;
   // If mEventType is set, mEventMessage will be eUnidentifiedEvent.
   // If mEventMessage is set, mEventType will be void.

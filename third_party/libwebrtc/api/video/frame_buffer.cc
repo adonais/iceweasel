@@ -78,6 +78,8 @@ FrameBuffer::FrameBuffer(int max_size,
       decoded_frame_history_(max_decode_history) {}
 
 bool FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
+  new_continuous_temporal_units_.clear();
+
   const uint32_t ssrc =
       frame->PacketInfos().empty() ? 0 : frame->PacketInfos()[0].ssrc();
   if (!ValidReferences(*frame)) {
@@ -219,6 +221,10 @@ FrameBuffer::DecodableTemporalUnitsInfo() const {
   return decodable_temporal_units_info_;
 }
 
+std::span<const uint32_t> FrameBuffer::NewContinuousTemporalUnits() const {
+  return new_continuous_temporal_units_;
+}
+
 int FrameBuffer::GetTotalNumberOfContinuousTemporalUnits() const {
   return num_continuous_temporal_units_;
 }
@@ -261,6 +267,7 @@ void FrameBuffer::PropagateContinuity(const FrameIterator& frame_it) {
         }
         if (IsLastFrameInTemporalUnit(it)) {
           num_continuous_temporal_units_++;
+          new_continuous_temporal_units_.push_back(GetTimestamp(it));
           if (last_continuous_temporal_unit_frame_id_ < GetFrameId(it)) {
             last_continuous_temporal_unit_frame_id_ = GetFrameId(it);
           }
@@ -338,6 +345,7 @@ void FrameBuffer::Clear() {
   last_continuous_frame_id_.reset();
   last_continuous_temporal_unit_frame_id_.reset();
   decoded_frame_history_.Clear();
+  new_continuous_temporal_units_.clear();
 }
 
 }  // namespace webrtc

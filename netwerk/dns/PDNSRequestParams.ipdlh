@@ -24,6 +24,10 @@ struct DNSRecord
   TRRMode effectiveTRRMode;
   uint32_t ttl;
   TimeStamp lastUpdate;
+  // Grace-period status of the entry this answer came from, sampled when the
+  // lookup completed. The receiving side has no expiration times of its own to
+  // recompute it from.
+  bool fromStaleCache;
 };
 
 union DNSRequestResponse

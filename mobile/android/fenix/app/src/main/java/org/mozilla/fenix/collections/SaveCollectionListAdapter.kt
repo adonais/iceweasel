@@ -22,16 +22,16 @@ import org.mozilla.fenix.utils.view.ViewHolder
  *
  * @param onCollectionClickedListener Invoked when a collection is clicked.
  */
-class SaveCollectionListAdapter(
-    private val onCollectionClickedListener: (TabCollection) -> Unit,
-) : ListAdapter<TabCollection, CollectionViewHolder>(DiffCallback) {
+class SaveCollectionListAdapter(private val onCollectionClickedListener: (TabCollection) -> Unit) :
+    ListAdapter<TabCollection, CollectionViewHolder>(DiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CollectionViewHolder {
-        val binding = CollectionsListItemBinding.inflate(
-            LayoutInflater.from(parent.context),
-            parent,
-            false,
-        )
+        val binding =
+            CollectionsListItemBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false,
+            )
 
         return CollectionViewHolder(binding)
     }
@@ -45,8 +45,7 @@ class SaveCollectionListAdapter(
     }
 
     private object DiffCallback : DiffUtil.ItemCallback<TabCollection>() {
-        override fun areItemsTheSame(oldItem: TabCollection, newItem: TabCollection) =
-            oldItem.id == newItem.id
+        override fun areItemsTheSame(oldItem: TabCollection, newItem: TabCollection) = oldItem.id == newItem.id
 
         @SuppressLint("DiffUtilEquals")
         override fun areContentsTheSame(oldItem: TabCollection, newItem: TabCollection) =

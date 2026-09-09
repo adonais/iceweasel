@@ -15,7 +15,6 @@ profiler-node-tools:
     treeherder:
         symbol: TL(profiler-node-tools)
     run:
-        clone-with: hg
         script: build-profiler-node-tools.sh
         toolchain-artifact: public/build/profiler-node-tools.tar.zst
     fetches:

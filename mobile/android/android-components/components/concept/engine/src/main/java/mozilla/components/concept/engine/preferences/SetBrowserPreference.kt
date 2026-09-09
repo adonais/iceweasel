@@ -9,19 +9,17 @@ package mozilla.components.concept.engine.preferences
  *
  * @property pref The name of the browser preference.
  * @property value The value to set the preference to. Restricted to [String], [Int], and [Boolean].
- * @param branch The branch to request the change on.
- * Setting on [Branch.USER] will change the user's active preference value. Selecting
- * [Branch.DEFAULT] will change the default for the preference. If no user preference is
- * stated, then in may become the active preference value.
+ * @param branch The branch to request the change on. Setting on [Branch.USER] will change the user's active preference
+ *   value. Selecting [Branch.DEFAULT] will change the default for the preference. If no user preference is stated, then
+ *   in may become the active preference value.
  */
-class SetBrowserPreference<T> private constructor(
+class SetBrowserPreference<T>
+private constructor(
     val pref: String,
     val value: T,
     val branch: Branch,
 ) {
-    /**
-     * Public constructors to prevent creating invalid preference T types.
-     */
+    /** Public constructors to prevent creating invalid preference T types. */
     companion object {
 
         /**

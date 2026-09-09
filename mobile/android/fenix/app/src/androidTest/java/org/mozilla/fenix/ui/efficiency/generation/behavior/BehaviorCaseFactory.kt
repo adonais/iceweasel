@@ -18,8 +18,7 @@ object BehaviorCaseFactory {
     ): List<BehaviorCase> {
         NavigationGraphBootstrap.ensureInitialized()
 
-        val plans = BehaviorTestPlanner.buildBehaviorCasePlans()
-            .filter { it.isRunnable }
+        val plans = BehaviorTestPlanner.buildBehaviorCasePlans().filter { it.isRunnable }
 
         val pageRefsByProperty = PageCatalog.discoverPages().associateBy { it.propertyName }
 
@@ -27,12 +26,10 @@ object BehaviorCaseFactory {
             if (!plan.isRunnable && !includeNonRunnable) return@mapNotNull null
 
             val capabilities = plan.capabilityIds.mapNotNull { BehaviorCapabilityCatalog.findById(it) }
-            val assertionTemplate = plan.assertionSelectorTemplateId
-                ?.let { SelectorTemplateCatalog.findById(it) }
+            val assertionTemplate = plan.assertionSelectorTemplateId?.let { SelectorTemplateCatalog.findById(it) }
 
             val assertionPageProperty = plan.assertionPagePropertyName
-            val assertionPage = assertionPageProperty
-                ?.let { pageRefsByProperty[it]?.getter }
+            val assertionPage = assertionPageProperty?.let { pageRefsByProperty[it]?.getter }
 
             if (assertionTemplate == null || assertionPageProperty == null || assertionPage == null) {
                 Log.i(TAG, "Skipping unresolved behavior plan: $plan")
@@ -47,12 +44,13 @@ object BehaviorCaseFactory {
                 entity = plan.entity,
                 templateId = plan.templateId,
                 capabilities = capabilities,
-                assertion = ResolvedBehaviorAssertion(
-                    pagePropertyName = assertionPageProperty,
-                    page = assertionPage,
-                    selectorTemplate = assertionTemplate,
-                    kind = plan.assertionKind,
-                ),
+                assertion =
+                    ResolvedBehaviorAssertion(
+                        pagePropertyName = assertionPageProperty,
+                        page = assertionPage,
+                        selectorTemplate = assertionTemplate,
+                        kind = plan.assertionKind,
+                    ),
                 data = plan.data,
                 context = plan.context,
                 state = runState.ifBlank { "Behavior Factory | ${plan.context}" },
@@ -70,16 +68,16 @@ object BehaviorCaseFactory {
         shardCount: Int,
     ): List<BehaviorCase> {
         val allCases = buildBehaviorCases(runState = runState)
-        val shardCases = ShardUtils.filterForShard(
-            items = allCases,
-            shardIndex = shardIndex,
-            shardCount = shardCount,
-        )
+        val shardCases =
+            ShardUtils.filterForShard(
+                items = allCases,
+                shardIndex = shardIndex,
+                shardCount = shardCount,
+            )
 
         Log.i(
             TAG,
-            "Shard $shardIndex/$shardCount contains ${shardCases.size} " +
-                "of ${allCases.size} total behavior cases.",
+            "Shard $shardIndex/$shardCount contains ${shardCases.size} " + "of ${allCases.size} total behavior cases.",
         )
 
         return shardCases

@@ -13,28 +13,26 @@ import com.google.android.material.materialswitch.MaterialSwitch
 import org.mozilla.fenix.R
 
 /**
- * Variation of [SwitchPreferenceCompat] that uses a custom widgetLayoutResource in order to implement
- * visibility changes to it.
- * */
-class SyncPreference @JvmOverloads constructor(
+ * Variation of [SwitchPreferenceCompat] that uses a custom widgetLayoutResource in order to implement visibility
+ * changes to it.
+ */
+class SyncPreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : SwitchPreferenceCompat(context, attrs) {
 
     private var switchView: MaterialSwitch? = null
 
-    /**
-     * Whether or not switch's toggle widget is visible.
-     * */
+    /** Whether or not switch's toggle widget is visible. */
     var isSwitchWidgetVisible: Boolean = false
 
     init {
         widgetLayoutResource = R.layout.preference_sync
     }
 
-    /**
-     * Updates the switch state.
-     * */
+    /** Updates the switch state. */
     internal fun setSwitchCheckedState(isChecked: Boolean) {
         switchView?.isChecked = isChecked
     }

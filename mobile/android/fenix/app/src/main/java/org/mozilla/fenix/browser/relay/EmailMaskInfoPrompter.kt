@@ -36,7 +36,8 @@ data class ErrorMessages(
     fun fromSource(source: MaskSource?): String? {
         return when (source) {
             MaskSource.FREE_TIER_LIMIT -> maxMasksReached
-            MaskSource.GENERATED, null -> null
+            MaskSource.GENERATED,
+            null -> null
         }
     }
 }
@@ -56,7 +57,8 @@ class EmailMaskInfoPrompter(
     mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : AbstractBinding<RelayState>(store, mainDispatcher) {
     override suspend fun onState(flow: Flow<RelayState>) {
-        flow.distinctUntilChangedBy { it.lastUsed }
+        flow
+            .distinctUntilChangedBy { it.lastUsed }
             .collect { state ->
                 if (state.lastUsed == null) {
                     return@collect

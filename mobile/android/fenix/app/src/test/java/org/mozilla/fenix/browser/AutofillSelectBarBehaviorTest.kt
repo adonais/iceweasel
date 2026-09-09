@@ -30,12 +30,13 @@ class AutofillSelectBarBehaviorTest {
     @Before
     fun setup() {
         every { loginsBar.layoutParams } returns layoutParams
-        every { loginsBar.post(any()) } answers {
-            // Immediately run the given Runnable argument
-            val action: Runnable = firstArg()
-            action.run()
-            true
-        }
+        every { loginsBar.post(any()) } answers
+            {
+                // Immediately run the given Runnable argument
+                val action: Runnable = firstArg()
+                action.run()
+                true
+            }
         parent.addView(dependency)
     }
 
@@ -80,9 +81,7 @@ class AutofillSelectBarBehaviorTest {
 
     @Test
     fun `GIVEN the login bar is anchored to the bottom toolbar WHEN the toolbar is not shown anymore THEN place the login bar at the bottom`() {
-        val toolbar = View(testContext)
-            .apply { id = R.id.toolbar }
-            .also { parent.addView(it) }
+        val toolbar = View(testContext).apply { id = R.id.toolbar }.also { parent.addView(it) }
         val behavior = AutofillSelectBarBehavior<ViewGroup>(testContext, ToolbarPosition.BOTTOM)
 
         // Test the scenario where the toolbar is invisible.
@@ -103,9 +102,7 @@ class AutofillSelectBarBehaviorTest {
 
     @Test
     fun `GIVEN the login bar is anchored based on a top toolbar WHEN the toolbar is not shown anymore THEN place the login bar at the bottom`() {
-        val toolbar = View(testContext)
-            .apply { id = R.id.toolbar }
-            .also { parent.addView(it) }
+        val toolbar = View(testContext).apply { id = R.id.toolbar }.also { parent.addView(it) }
         val behavior = AutofillSelectBarBehavior<ViewGroup>(testContext, ToolbarPosition.TOP)
 
         // Test the scenario where the toolbar is invisible.
@@ -126,9 +123,7 @@ class AutofillSelectBarBehaviorTest {
 
     @Test
     fun `GIVEN the login bar is anchored to the navbar WHEN the navbar is not shown anymore THEN place the login bar at the bottom`() {
-        val navbar = View(testContext)
-            .apply { id = R.id.navigation_bar }
-            .also { parent.addView(it) }
+        val navbar = View(testContext).apply { id = R.id.navigation_bar }.also { parent.addView(it) }
         val behavior = AutofillSelectBarBehavior<ViewGroup>(testContext, ToolbarPosition.BOTTOM)
 
         // Test the scenario where the toolbar is invisible.

@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.settings.logins.ui
 
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -14,12 +15,10 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.Logins
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class LoginsTelemetryMiddlewareTest {
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     @Test
     fun `WHEN the user clicks on a login in logins list THEN record screen viewed telemetry`() {
@@ -35,8 +34,8 @@ class LoginsTelemetryMiddlewareTest {
                     username = "u1",
                     password = "p1",
                     timeLastUsed = 0L,
-                ),
-            ),
+                )
+            )
         )
 
         assertNotNull(Logins.managementLoginsTapped.testGetValue())
@@ -131,8 +130,8 @@ class LoginsTelemetryMiddlewareTest {
                     username = "u1",
                     password = "p1",
                     timeLastUsed = 0L,
-                ),
-            ),
+                )
+            )
         )
 
         assertNotNull(Logins.openLoginEditor.testGetValue())
@@ -169,8 +168,8 @@ class LoginsTelemetryMiddlewareTest {
                     username = "u1",
                     password = "p1",
                     timeLastUsed = 0L,
-                ),
-            ),
+                )
+            )
         )
 
         assertNotNull(Logins.saveEditedLogin.testGetValue())
@@ -198,12 +197,9 @@ class LoginsTelemetryMiddlewareTest {
         assertEquals(1, snapshotDeletedLogin)
     }
 
-    private fun createStore(
-        loginsState: LoginsState = LoginsState.default,
-    ) = LoginsStore(
-        initialState = loginsState,
-        middleware = listOf(
-            LoginsTelemetryMiddleware(),
-        ),
-    )
+    private fun createStore(loginsState: LoginsState = LoginsState.default) =
+        LoginsStore(
+            initialState = loginsState,
+            middleware = listOf(LoginsTelemetryMiddleware()),
+        )
 }

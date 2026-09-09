@@ -243,6 +243,7 @@ export var Utils = {
   async fetch(input, init = {}) {
     return new Promise(function (resolve, reject) {
       const request = new ServiceRequest();
+      const { method = "GET", headers = {}, bypassProxy = false } = init;
       function fallbackOrReject(err) {
         if (
           // At most one recursive Utils.fetch call (bypassProxy=false to true).
@@ -287,8 +288,6 @@ export var Utils = {
         };
         resolve(new Response(request.response, responseAttributes));
       };
-
-      const { method = "GET", headers = {}, bypassProxy = false } = init;
 
       request.open(method, input, { bypassProxy });
       // By default, XMLHttpRequest converts the response based on the

@@ -8,7 +8,7 @@
    :language: javascript
 ```
 
-# Guidelines for Fluent Reviewers
+# Guidelines for Working with Fluent Files
 
 This document is intended as a guideline for developers and reviewers when
 working with FTL (Fluent) files. As such, it’s not meant to replace the
@@ -85,6 +85,91 @@ const messageIDs = {
 document.l10n.setAttributes(div, messageIDs[type]);
 ```
 
+## Changes to Existing Messages
+
+A string change needs a new identifier when the existing translations need to be updated.
+In other words, you must update the message identifier if:
+
+- The meaning of the sentence has changed.
+- You’re changing the morphology of the message, by adding or removing attributes.
+
+Messages are identified in the entire localization toolchain by their ID. For
+this reason, there’s no need to change attribute names.
+
+Changing the message ID will result in the updated string being treated as a
+brand new string and reported as missing translations in all tools.
+This forces retranslation, requiring localizers to update translations to include
+the changes introduced in the source string.
+
+You must also update all instances where that message identifier is used in the
+source code, including localization comments.  This is the only reliable method to
+ensure that localizers update existing localizations, and run-time stop using
+obsolete translations.
+
+### Changes in Meaning
+
+The meaning of a sentence changes when what the message conveys, how it conveys it,
+or who it addresses changes. This generally covers most message changes, where an English
+string is reworded even if the general meaning doesn't change much. For example:
+
+```fluent
+# Before
+-cookie-banner-blocker-message = { -brand-short-name } blocked a cookie
+# After
++cookie-banner-blocker-message2 = { -brand-short-name } declined a cookie
+```
+
+If your changes are relevant only for English — for example, to correct a
+typographical error or to make letter case consistent — then there is generally
+no need to update the message identifier.
+
+There is a grey area between needing a new ID or not. In some cases, it will be
+necessary to look at all the existing translations to determine if a new ID
+would be beneficial. You should always reach out to the l10n team in case of
+doubt.
+
+### Changes in Morphology
+
+The morphology of a sentence changes typically in three common patterns:
+
+**Adding a new attribute**
+```fluent
+# Before
+back-nav-button-title =
+# After
+back-nav-button-title2 =
+    .title = Go back
+    .aria-label = Go back
+```
+
+**Removing an attribute**
+```fluent
+# Before
+onboarding-panel =
+    .title = Welcome
+    .aria-text = Welcome
+    .style = min-width: 23em
+# After
+onboarding-panel2 =
+    .title = Welcome
+```
+Removing any attribute, regardless if a localizable string or an attribute like an `.accesskey` or `.style`,
+still requires a new string identifier.
+
+**Text moving between a value and an attribute**
+```fluent
+# Before
+about-logins-icon = Warning icon
+    .title = Breached website
+# After
+about-logins-breach-icon =
+    .alt = Warning icon
+    .title = Breached website
+```
+In many cases when an attribute is removed or text moves between a value and attribute, translations
+can be preserved by running a [migration](../migrations/index.md), ensuring strings remain localized
+even with the string identifier changing.
+
 ## Comments
 
 When a message includes placeables (variables), there should always be a
@@ -111,33 +196,6 @@ message at a time, and the context is only provided by comments.
 
 License headers are standalone comments, that is, a single `#` as prefix,
 and the comment is followed by at least one empty line.
-
-## Changes to Existing Messages
-
-You must update the message identifier if:
-
-- The meaning of the sentence has changed.
-- You’re changing the morphology of the message, by adding or removing attributes.
-
-Messages are identified in the entire localization toolchain by their ID. For
-this reason, there’s no need to change attribute names.
-
-If your changes are relevant only for English — for example, to correct a
-typographical error or to make letter case consistent — then there is generally
-no need to update the message identifier.
-
-There is a grey area between needing a new ID or not. In some cases, it will be
-necessary to look at all the existing translations to determine if a new ID
-would be beneficial. You should always reach out to the l10n team in case of
-doubt.
-
-Changing the message ID will invalidate the existing translation, the new
-message will be reported as missing in all tools, and localizers will have to
-retranslate it. This is the only reliable method to ensure that localizers
-update existing localizations, and run-time stop using obsolete translations.
-
-You must also update all instances where that message identifier is used in the
-source code, including localization comments.
 
 ## Non-text Elements in Messages
 

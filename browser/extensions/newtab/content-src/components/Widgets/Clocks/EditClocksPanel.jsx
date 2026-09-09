@@ -3,10 +3,11 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import React, { useEffect, useRef } from "react";
-import { getCityFromTimeZone } from "./ClocksHelpers";
+import { getClockCityDisplay } from "./ClocksHelpers";
 
 export function EditClocksPanel({
   clockZones,
+  curatedNames,
   canAddClock,
   onShowAddClock,
   onEditClock,
@@ -72,7 +73,7 @@ export function EditClocksPanel({
       </div>
       <ul className="clocks-edit-list">
         {clockZones.map((clock, i) => {
-          const city = clock.city || getCityFromTimeZone(clock.timeZone);
+          const city = getClockCityDisplay(clock, curatedNames);
           return (
             <li
               className="clocks-edit-item"
@@ -88,7 +89,9 @@ export function EditClocksPanel({
               )}
             >
               <div className="clocks-edit-top-row">
-                <span className="clocks-edit-city">{city}</span>
+                <span className="clocks-edit-city" dir="auto">
+                  {city}
+                </span>
                 <div className="clocks-edit-item-actions">
                   <moz-button
                     className="clocks-edit-item-button clocks-edit-item-edit-button"

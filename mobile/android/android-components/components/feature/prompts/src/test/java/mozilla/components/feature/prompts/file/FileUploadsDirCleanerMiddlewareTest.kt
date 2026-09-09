@@ -22,16 +22,11 @@ class FileUploadsDirCleanerMiddlewareTest {
     fun `WHEN an action that indicates the user has navigated to another website THEN clean up temporary uploads`() {
         val fileUploadsDirCleaner = mock<FileUploadsDirCleaner>()
         val tab = createTab("https://www.mozilla.org", id = "test-tab")
-        val store = BrowserStore(
-            middleware = listOf(
-                FileUploadsDirCleanerMiddleware(
-                    fileUploadsDirCleaner = fileUploadsDirCleaner,
-                ),
-            ),
-            initialState = BrowserState(
-                tabs = listOf(tab),
-            ),
-        )
+        val store =
+            BrowserStore(
+                middleware = listOf(FileUploadsDirCleanerMiddleware(fileUploadsDirCleaner = fileUploadsDirCleaner)),
+                initialState = BrowserState(tabs = listOf(tab)),
+            )
 
         store.dispatch(ContentAction.UpdateUrlAction("test-tab", "https://www.wikipedia.org"))
 
@@ -52,16 +47,11 @@ class FileUploadsDirCleanerMiddlewareTest {
     fun `GIVEN a subdomain WHEN an action that indicates the user has navigated to another website THEN clean up temporary uploads`() {
         val fileUploadsDirCleaner = mock<FileUploadsDirCleaner>()
         val tab = createTab("https://mozilla.org", id = "test-tab")
-        val store = BrowserStore(
-            middleware = listOf(
-                FileUploadsDirCleanerMiddleware(
-                    fileUploadsDirCleaner = fileUploadsDirCleaner,
-                ),
-            ),
-            initialState = BrowserState(
-                tabs = listOf(tab),
-            ),
-        )
+        val store =
+            BrowserStore(
+                middleware = listOf(FileUploadsDirCleanerMiddleware(fileUploadsDirCleaner = fileUploadsDirCleaner)),
+                initialState = BrowserState(tabs = listOf(tab)),
+            )
 
         store.dispatch(ContentAction.UpdateUrlAction("test-tab", "https://www.mozilla.org"))
 
@@ -72,16 +62,11 @@ class FileUploadsDirCleanerMiddlewareTest {
     fun `GIVEN there are not temporary uploads WHEN an action that indicates the user has navigated to another website THEN do not try to clean up temporary uploads `() {
         val fileUploadsDirCleaner = mock<FileUploadsDirCleaner>()
         val tab = createTab("https://www.mozilla.org", id = "test-tab")
-        val store = BrowserStore(
-            middleware = listOf(
-                FileUploadsDirCleanerMiddleware(
-                    fileUploadsDirCleaner = fileUploadsDirCleaner,
-                ),
-            ),
-            initialState = BrowserState(
-                tabs = listOf(tab),
-            ),
-        )
+        val store =
+            BrowserStore(
+                middleware = listOf(FileUploadsDirCleanerMiddleware(fileUploadsDirCleaner = fileUploadsDirCleaner)),
+                initialState = BrowserState(tabs = listOf(tab)),
+            )
 
         store.dispatch(ContentAction.UpdateUrlAction("test-tab", "https://www.wikipedia.org"))
 

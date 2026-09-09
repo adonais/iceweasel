@@ -32,28 +32,6 @@ toolbar[overflowable][customizing] > .customization-target {
   background-color: var(--toolbar-background-color);
   color: var(--toolbar-text-color);
   color-scheme: var(--toolbar-color-scheme);
-
-  /* stylelint-disable-next-line media-query-no-invalid */
-  @media -moz-pref("browser.nova.enabled") {
-    /* Float as a rounded card matching the nova content area. The top gap is
-     * provided by the toolbox's own nova margin-block-end. */
-    margin-inline: var(--chrome-window-gap);
-    margin-block-end: var(--chrome-window-gap);
-    border-radius: var(--chrome-block-radius);
-    border: 1px solid var(--chrome-content-separator-color);
-    overflow: clip;
-
-    /* Maximized: sit flush against the window's inline and block-end edges,
-       keeping only the block-start border that faces the gap below the
-       toolbox. */
-    :root[sizemode="maximized"] & {
-      margin-inline: 0;
-      margin-block-end: 0;
-      border-radius: 0;
-      border-inline: none;
-      border-block-end: none;
-    }
-  }
 }
 
 #customization-content-container {

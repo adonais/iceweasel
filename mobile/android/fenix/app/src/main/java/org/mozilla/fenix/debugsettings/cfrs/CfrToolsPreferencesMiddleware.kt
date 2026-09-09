@@ -32,11 +32,10 @@ class CfrToolsPreferencesMiddleware(
         when (action) {
             is CfrToolsAction.Init -> {
                 coroutineScope.launch {
-                    cfrPreferencesRepository.cfrPreferenceUpdates
-                        .collect { cfrPreferenceUpdate ->
-                            val updateAction = mapRepoUpdateToStoreAction(cfrPreferenceUpdate)
-                            store.dispatch(updateAction)
-                        }
+                    cfrPreferencesRepository.cfrPreferenceUpdates.collect { cfrPreferenceUpdate ->
+                        val updateAction = mapRepoUpdateToStoreAction(cfrPreferenceUpdate)
+                        store.dispatch(updateAction)
+                    }
                 }
                 cfrPreferencesRepository.init()
             }
@@ -45,7 +44,7 @@ class CfrToolsPreferencesMiddleware(
                     CfrPreferencesRepository.CfrPreferenceUpdate(
                         preferenceType = CfrPreferencesRepository.CfrPreference.TabAutoCloseBanner,
                         value = store.state.tabAutoCloseBannerShown,
-                    ),
+                    )
                 )
             }
             is CfrToolsAction.InactiveTabsShownToggled -> {
@@ -53,7 +52,7 @@ class CfrToolsPreferencesMiddleware(
                     CfrPreferencesRepository.CfrPreferenceUpdate(
                         preferenceType = CfrPreferencesRepository.CfrPreference.InactiveTabs,
                         value = store.state.inactiveTabsShown,
-                    ),
+                    )
                 )
             }
             is CfrToolsAction.OpenInAppShownToggled -> {
@@ -61,7 +60,7 @@ class CfrToolsPreferencesMiddleware(
                     CfrPreferencesRepository.CfrPreferenceUpdate(
                         preferenceType = CfrPreferencesRepository.CfrPreference.OpenInApp,
                         value = store.state.openInAppShown,
-                    ),
+                    )
                 )
             }
             is CfrToolsAction.PwaShownToggled -> {
@@ -77,7 +76,7 @@ class CfrToolsPreferencesMiddleware(
 
     @VisibleForTesting
     internal fun mapRepoUpdateToStoreAction(
-        cfrPreferenceUpdate: CfrPreferencesRepository.CfrPreferenceUpdate,
+        cfrPreferenceUpdate: CfrPreferencesRepository.CfrPreferenceUpdate
     ): CfrToolsAction {
         return when (cfrPreferenceUpdate.preferenceType) {
             CfrPreferencesRepository.CfrPreference.TabAutoCloseBanner ->

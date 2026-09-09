@@ -29,20 +29,19 @@ import org.mozilla.fenix.home.topsites.store.ShortcutsStore
 import org.mozilla.fenix.home.topsites.store.toPopularSite
 import org.mozilla.fenix.utils.Settings
 
-@VisibleForTesting
-internal const val POPULAR_SITES_LIMIT = 8
+@VisibleForTesting internal const val POPULAR_SITES_LIMIT = 8
 
 /**
- * [Middleware] implementation for handling [ShortcutsAction] and managing the [ShortcutsState]
- * for the shortcuts screen.
+ * [Middleware] implementation for handling [ShortcutsAction] and managing the [ShortcutsState] for the shortcuts
+ * screen.
  *
  * @param appStore The [AppStore] to observe for top site updates and dispatching actions.
  * @param topSitesUseCases The [TopSitesUseCases] used to persist new pinned shortcuts.
  * @param merinoManifestProvider The [MerinoManifestProvider] used to read popular site suggestions.
  * @param settings The [Settings] used to read whether the add shortcut tile is enabled.
- * @param scope The lifecycle-aware [CoroutineScope] used to launch coroutines. The consumer is
- * responsible for providing a scope that gets canceled when the consuming component is destroyed
- * to avoid leaking the [ShortcutsStore].
+ * @param scope The lifecycle-aware [CoroutineScope] used to launch coroutines. The consumer is responsible for
+ *   providing a scope that gets canceled when the consuming component is destroyed to avoid leaking the
+ *   [ShortcutsStore].
  * @param ioDispatcher [CoroutineDispatcher] used for the IO operations.
  */
 class ShortcutsMiddleware(
@@ -64,16 +63,12 @@ class ShortcutsMiddleware(
 
             is ShortcutsAction.ShowAddShortcutBottomSheet -> {
                 appStore.dispatch(
-                    ShortcutAction.AddShortcutSheetShown(
-                        entryPoint = AddShortcutEntryPoint.SHORTCUTS_LIBRARY,
-                    ),
+                    ShortcutAction.AddShortcutSheetShown(entryPoint = AddShortcutEntryPoint.SHORTCUTS_LIBRARY)
                 )
             }
 
             is ShortcutsAction.ShowAddShortcutDialog -> {
-                appStore.dispatch(
-                    ShortcutAction.AddWebsiteDialogShown,
-                )
+                appStore.dispatch(ShortcutAction.AddWebsiteDialogShown)
             }
 
             is ShortcutsAction.SaveShortcut -> {
@@ -91,28 +86,29 @@ class ShortcutsMiddleware(
         next(action)
     }
 
-    private fun initialize(
-        store: Store<ShortcutsState, ShortcutsAction>,
-    ) {
-        store.dispatch(
-            ShortcutsAction.UpdateShowAddShortcut(settings.enableAddShortcutsImprovement),
-        )
+    private fun initialize(store: Store<ShortcutsState, ShortcutsAction>) {
+        store.dispatch(ShortcutsAction.UpdateShowAddShortcut(settings.enableAddShortcutsImprovement))
 
         scope.launch {
-            appStore.flow()
+            appStore
+                .flow()
                 .map { it.topSites }
                 .distinctUntilChanged()
                 .collect { topSites ->
                     store.dispatch(ShortcutsAction.UpdateTopSites(topSites))
 
-                    val popularSites = withContext(ioDispatcher) {
-                        merinoManifestProvider.getTopDomains(
-                            limit = POPULAR_SITES_LIMIT,
-                            excludedDomains = topSites.mapNotNullTo(mutableSetOf()) {
-                                it.url.toUri().hostWithoutCommonPrefixes
-                            },
-                        ).map { it.toPopularSite() }
-                    }
+                    val popularSites =
+                        withContext(ioDispatcher) {
+                            merinoManifestProvider
+                                .getTopDomains(
+                                    limit = POPULAR_SITES_LIMIT,
+                                    excludedDomains =
+                                        topSites.mapNotNullTo(mutableSetOf()) {
+                                            it.url.toUri().hostWithoutCommonPrefixes
+                                        },
+                                )
+                                .map { it.toPopularSite() }
+                        }
                     store.dispatch(ShortcutsAction.UpdatePopularSites(popularSites))
                 }
         }
@@ -129,7 +125,7 @@ class ShortcutsMiddleware(
             ShortcutAction.ShortcutAdded(
                 source = source,
                 entryPoint = AddShortcutEntryPoint.SHORTCUTS_LIBRARY,
-            ),
+            )
         )
         store.dispatch(ShortcutsAction.CloseDialog)
     }

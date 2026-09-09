@@ -5,11 +5,11 @@
 package mozilla.components.browser.engine.gecko.activity
 
 import android.app.Activity
+import java.lang.ref.WeakReference
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.lang.ref.WeakReference
 
 class GeckoViewActivityContextDelegateTest {
 

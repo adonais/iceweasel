@@ -10,8 +10,8 @@ import androidx.navigation.fragment.NavHostFragment
 /**
  * Compat [NavHostFragment] for use with our navigation graph.
  *
- * This class exists as a solution to https://bugzilla.mozilla.org/show_bug.cgi?id=1812063 where our app
- * was not respecting the system settings for screens where we define a navigation animation in the nav_graph.xml
+ * This class exists as a solution to https://bugzilla.mozilla.org/show_bug.cgi?id=1812063 where our app was not
+ * respecting the system settings for screens where we define a navigation animation in the nav_graph.xml
  */
 class NavHostFragmentCompat : NavHostFragment() {
 
@@ -22,7 +22,7 @@ class NavHostFragmentCompat : NavHostFragment() {
                 context = requireContext(),
                 fragmentManager = childFragmentManager,
                 containerId = id,
-            ),
+            )
         )
     }
 }

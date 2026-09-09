@@ -9,7 +9,7 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 const { TabStateFlusher } = ChromeUtils.importESModule(
-  "resource:///modules/sessionstore/TabStateFlusher.sys.mjs"
+  "moz-src:///browser/components/sessionstore/TabStateFlusher.sys.mjs"
 );
 
 add_setup(async function () {
@@ -64,10 +64,10 @@ add_task(async function test_tabGroupCreateAndAddSplitView() {
 add_task(async function test_tabGroupCreateAndAddTabAtPosition() {
   let tabs = createManyTabs(10);
   let tabToGroup = tabs[5];
-  let originalPos = tabToGroup._tPos;
+  let originalPos = tabToGroup.index;
   gBrowser.addTabGroup([tabs[5]], { insertBefore: tabs[5] });
 
-  Assert.equal(tabToGroup._tPos, originalPos, "tab has not changed position");
+  Assert.equal(tabToGroup.index, originalPos, "tab has not changed position");
 
   tabs.forEach(t => {
     BrowserTestUtils.removeTab(t);
@@ -531,12 +531,12 @@ add_task(async function test_tabUngroup() {
   let group2 = gBrowser.addTabGroup([extraTab2]);
 
   Assert.equal(
-    groupedTab1._tPos,
+    groupedTab1.index,
     2,
     "grouped tab 1 starts in correct position"
   );
   Assert.equal(
-    groupedTab2._tPos,
+    groupedTab2.index,
     3,
     "grouped tab 2 starts in correct position"
   );
@@ -549,12 +549,12 @@ add_task(async function test_tabUngroup() {
   await removePromise;
 
   Assert.equal(
-    groupedTab1._tPos,
+    groupedTab1.index,
     2,
     "tab 1 is in the same position as before ungroup"
   );
   Assert.equal(
-    groupedTab2._tPos,
+    groupedTab2.index,
     3,
     "tab 2 is in the same position as before ungroup"
   );
@@ -813,8 +813,8 @@ add_task(async function test_moveTabToStartOrEnd() {
   let tab1 = gBrowser.selectedTab;
   let tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
   gBrowser.addTabGroup([tab1, tab2]);
-  Assert.equal(tab1._tPos, 0, "tab 1 starts at tab index 0");
-  Assert.equal(tab2._tPos, 1, "tab 2 starts at tab index 1");
+  Assert.equal(tab1.index, 0, "tab 1 starts at tab index 0");
+  Assert.equal(tab2.index, 1, "tab 2 starts at tab index 1");
   Assert.equal(
     tab1.elementIndex,
     1,
@@ -836,12 +836,12 @@ add_task(async function test_moveTabToStartOrEnd() {
     "last tab is still grouped after moving first tab to start"
   );
   Assert.equal(
-    tab1._tPos,
+    tab1.index,
     0,
     "tab 1 remains at tab index 0 after moving to start"
   );
   Assert.equal(
-    tab2._tPos,
+    tab2.index,
     1,
     "tab 2 remains at tab index 1 after tab 1 moved to start"
   );
@@ -859,12 +859,12 @@ add_task(async function test_moveTabToStartOrEnd() {
   gBrowser.moveTabToEnd(tab2);
   Assert.ok(!tab2.group, "last tab is not grouped anymore after moving to end");
   Assert.equal(
-    tab1._tPos,
+    tab1.index,
     0,
     "tab 1 remains at tab index 0 after tab 2 moved to end"
   );
   Assert.equal(
-    tab2._tPos,
+    tab2.index,
     1,
     "tab 2 remains at tab index 1 after moving to end"
   );
@@ -898,18 +898,18 @@ add_task(async function test_tabGroupSelect() {
 
   let group = gBrowser.addTabGroup([tab1, tab2]);
   await Promise.allSettled([tab1Added, tab2Added]);
-  gBrowser.selectTabAtIndex(tab3._tPos);
+  gBrowser.selectTabAtIndex(tab3.index);
   Assert.ok(tab3.selected, "Tab 3 is selected");
   group.select();
   Assert.ok(group.tabs[0].selected, "First tab is selected");
-  gBrowser.selectTabAtIndex(group.tabs[1]._tPos);
+  gBrowser.selectTabAtIndex(group.tabs[1].index);
   Assert.ok(group.tabs[1].selected, "Second tab is selected");
   group.select();
   Assert.ok(group.tabs[1].selected, "Second tab is still selected");
   group.collapsed = true;
   Assert.ok(group.collapsed, "Group is collapsed");
   Assert.ok(group.tabs[1].selected, "Second tab is still selected");
-  gBrowser.selectTabAtIndex(tab3._tPos);
+  gBrowser.selectTabAtIndex(tab3.index);
   Assert.ok(tab3.selected, "Tab 3 is selected");
   group.select();
   Assert.ok(group.tabs[0].selected, "First tab in group is selected");
@@ -1144,7 +1144,7 @@ add_task(async function test_adoptTab() {
   });
   let adoptedTab = newWin.gBrowser.adoptTab(otherWinTab, { tabIndex: 1 });
 
-  Assert.equal(adoptedTab._tPos, 1, "tab adopted into expected position");
+  Assert.equal(adoptedTab.index, 1, "tab adopted into expected position");
   Assert.equal(adoptedTab.group, group, "tab adopted into tab group");
 
   await removeTabGroup(group);
@@ -1212,7 +1212,7 @@ add_task(async function test_bug1957723_addTabsByIndex() {
     triggeringPrincipal,
   });
   Assert.equal(
-    tab1._tPos,
+    tab1.index,
     2,
     "Tab added at starting index of tab group is in correct position"
   );
@@ -1228,7 +1228,7 @@ add_task(async function test_bug1957723_addTabsByIndex() {
     triggeringPrincipal,
   });
   Assert.equal(
-    tab2._tPos,
+    tab2.index,
     4,
     "Tab added by index just before end of tab group is in correct position"
   );
@@ -1244,7 +1244,7 @@ add_task(async function test_bug1957723_addTabsByIndex() {
     triggeringPrincipal,
   });
   Assert.equal(
-    tab3._tPos,
+    tab3.index,
     5,
     "Tab added at index just after end of tab group is in correct position"
   );

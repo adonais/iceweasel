@@ -21,7 +21,6 @@ task-defaults:
         tier: 1
     platform: lint/opt
     run:
-        clone-with: hg
         using: run-task
 
 rust:
@@ -32,7 +31,6 @@ rust:
         env:
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
     run:
-        clone-with: hg
         cwd: '{checkout}'
         command: >-
             ./mach vendor rust --issues-json /builds/worker/issues.json --vcs-diff /builds/worker/vcs-diff.diff

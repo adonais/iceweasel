@@ -118,7 +118,8 @@ def _set_priority(command_context, priority, verbose):
     "-v",
     "--verbose",
     action="store_true",
-    help="Verbose output for what commands the build is running.",
+    help="Verbose output for what commands the build is running. Implies "
+    "--show-all-warnings.",
 )
 @CommandArgument(
     "-q",
@@ -152,6 +153,12 @@ def _set_priority(command_context, priority, verbose):
     action="store_true",
     help="Allow building subdirectories (not recommended, can result in bad tree state).",
 )
+@CommandArgument(
+    "--no-completion-messages",
+    default=False,
+    action="store_true",
+    help="Suppress the build completion messages (useful for nested builds).",
+)
 def build(
     command_context,
     what=None,
@@ -164,6 +171,7 @@ def build(
     priority="idle",
     show_all_warnings=None,
     allow_subdirectory_build=False,
+    no_completion_messages=False,
 ):
     """Build the source tree.
 
@@ -191,7 +199,22 @@ def build(
 
     original_log_level = command_context.log_manager.terminal_handler.level
     try:
-        if is_running_under_coding_agent():
+        if quiet and (verbose or show_all_warnings):
+            command_context.log(
+                logging.ERROR,
+                "build",
+                {},
+                "--quiet is mutually exclusive with --verbose and --show-all-warnings.",
+            )
+            return 1
+
+        # Force verbosity on automation, unless output was explicitly quieted.
+        verbose = verbose or (bool(os.environ.get("MOZ_AUTOMATION")) and not quiet)
+        show_all_warnings = show_all_warnings or verbose
+
+        from mach.logging import THIRD_PARTY_WARNING
+
+        if not verbose and is_running_under_coding_agent():
             command_context.log(
                 logging.WARNING,
                 "build",
@@ -214,17 +237,6 @@ def build(
                     {},
                     "Log file could not be created.",
                 )
-
-        from mach.logging import THIRD_PARTY_WARNING
-
-        if quiet and show_all_warnings:
-            command_context.log(
-                logging.ERROR,
-                "build",
-                {},
-                "--quiet and --show-all-warnings are mutually exclusive.",
-            )
-            return 1
 
         if quiet:
             command_context.log_manager.terminal_handler.setLevel(logging.WARNING)
@@ -261,8 +273,6 @@ def build(
         mozconfig = loader.read_mozconfig(loader.AUTODETECT)
         configure_args = mozconfig["configure_args"]
         doing_pgo = configure_args and "MOZ_PGO=1" in configure_args
-        # Force verbosity on automation.
-        verbose = verbose or bool(os.environ.get("MOZ_AUTOMATION"))
         # Keep going by default on automation so that we exhaust as many errors as
         # possible.
         keep_going = keep_going or bool(os.environ.get("MOZ_AUTOMATION"))
@@ -359,6 +369,7 @@ def build(
             mach_context=command_context._mach_context,
             append_env=append_env,
             allow_subdirectory_build=allow_subdirectory_build,
+            no_completion_messages=no_completion_messages,
         )
     finally:
         command_context.log_manager.terminal_handler.setLevel(original_log_level)

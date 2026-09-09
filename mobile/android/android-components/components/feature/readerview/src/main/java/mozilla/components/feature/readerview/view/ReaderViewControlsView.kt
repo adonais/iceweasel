@@ -8,41 +8,27 @@ import android.view.View
 import mozilla.components.feature.readerview.ReaderViewFeature.ColorScheme
 import mozilla.components.feature.readerview.ReaderViewFeature.FontType
 
-/**
- * An interface for views that can display ReaderView appearance controls (e.g. font size, font type).
- */
+/** An interface for views that can display ReaderView appearance controls (e.g. font size, font type). */
 interface ReaderViewControlsView {
 
     var listener: Listener?
 
-    /**
-     * Sets the selected font option.
-     */
+    /** Sets the selected font option. */
     fun setFont(font: FontType)
 
-    /**
-     * Sets the selected font size.
-     */
+    /** Sets the selected font size. */
     fun setFontSize(size: Int)
 
-    /**
-     * Sets the selected color scheme.
-     */
+    /** Sets the selected color scheme. */
     fun setColorScheme(scheme: ColorScheme)
 
-    /**
-     * Makes the UI controls visible and requests focus.
-     */
+    /** Makes the UI controls visible and requests focus. */
     fun showControls()
 
-    /**
-     * Makes the UI controls invisible.
-     */
+    /** Makes the UI controls invisible. */
     fun hideControls()
 
-    /**
-     * Casts this [ReaderViewControlsView] interface to an actual Android [View] object.
-     */
+    /** Casts this [ReaderViewControlsView] interface to an actual Android [View] object. */
     fun asView(): View = (this as View)
 
     /**
@@ -52,12 +38,30 @@ interface ReaderViewControlsView {
      *
      * @return true if the inflation was completed, false if the view was already inflated.
      */
-    fun tryInflate(): Boolean
+    fun tryInflate(isListenEnabled: Boolean): Boolean
 
     interface Listener {
+        /** Invoked when the user selects a new font type. */
         fun onFontChanged(font: FontType)
+
+        /**
+         * Invoked when the user requests a larger font size.
+         *
+         * @return the resulting font size, in the range [MIN_TEXT_SIZE] to [MAX_TEXT_SIZE].
+         */
         fun onFontSizeIncreased(): Int
+
+        /**
+         * Invoked when the user requests a smaller font size.
+         *
+         * @return the resulting font size, in the range [MIN_TEXT_SIZE] to [MAX_TEXT_SIZE].
+         */
         fun onFontSizeDecreased(): Int
+
+        /** Invoked when the user selects a new color scheme. */
         fun onColorSchemeChanged(scheme: ColorScheme)
+
+        /** Invoked when the listen button is clicked. */
+        fun onListenClicked()
     }
 }

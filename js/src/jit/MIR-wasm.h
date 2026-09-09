@@ -1724,7 +1724,6 @@ class MWasmStackResultArea : public MNullaryInstruction {
   }
 
   void assertInitialized() const {
-    MOZ_ASSERT(results_.length() != 0);
 #ifdef DEBUG
     for (size_t i = 0; i < results_.length(); i++) {
       MOZ_ASSERT(results_[i].initialized());
@@ -1740,7 +1739,6 @@ class MWasmStackResultArea : public MNullaryInstruction {
 
   [[nodiscard]] bool init(TempAllocator& alloc, size_t stackResultCount) {
     MOZ_ASSERT(results_.length() == 0);
-    MOZ_ASSERT(stackResultCount > 0);
     if (!results_.init(alloc, stackResultCount)) {
       return false;
     }
@@ -1764,6 +1762,9 @@ class MWasmStackResultArea : public MNullaryInstruction {
 
   uint32_t byteSize() const {
     assertInitialized();
+    if (resultCount() == 0) {
+      return 0;
+    }
     return result(resultCount() - 1).endOffset();
   }
 
@@ -2020,33 +2021,34 @@ class MWasmResume final : public MControlInstruction,
   static constexpr size_t InstanceIndex = 0;
   static constexpr size_t ContIndex = 1;
   static constexpr size_t HandlersParamsAreaIndex = 2;
-  static constexpr size_t MaxArity = 3;
+  static constexpr size_t ContResultsAreaIndex = 3;
+  static constexpr size_t MaxArity = 4;
 
   static constexpr size_t FallthroughBranchIndex = 0;
 
   mozilla::Vector<MBasicBlock*, 3, JitAllocPolicy> successors_;
-  mozilla::Vector<MUse, MaxArity, JitAllocPolicy> operands_;
+  mozilla::Array<MUse, MaxArity> operands_;
   mozilla::Vector<wasm::HandlerJitOffsets, 1, JitAllocPolicy> handlers_;
   wasm::CallSiteDesc callSiteDesc_;
   mozilla::Maybe<uint32_t> tryNoteIndex_;
 
+  // handlersParamsArea and contResultsArea are always present (empty areas when
+  // the resume has no handlers / the cont has no results) so the operand set is
+  // fixed.
   MWasmResume(TempAllocator& alloc, const wasm::CallSiteDesc& callSiteDesc,
               mozilla::Maybe<uint32_t> tryNoteIndex, MDefinition* instance,
-              MDefinition* cont, MDefinition* handlersParamsArea)
+              MDefinition* cont, MWasmStackResultArea* handlersParamsArea,
+              MWasmStackResultArea* contResultsArea)
       : MControlInstruction(classOpcode),
         successors_(alloc),
-        operands_(alloc),
         handlers_(alloc),
         callSiteDesc_(callSiteDesc),
         tryNoteIndex_(tryNoteIndex) {
-    MOZ_ASSERT(instance && cont);
-    size_t numOperands = 2 + (handlersParamsArea ? 1 : 0);
-    MOZ_RELEASE_ASSERT(operands_.growBy(numOperands));
+    MOZ_ASSERT(instance && cont && handlersParamsArea && contResultsArea);
     initOperand(InstanceIndex, instance);
     initOperand(ContIndex, cont);
-    if (handlersParamsArea) {
-      initOperand(HandlersParamsAreaIndex, handlersParamsArea);
-    }
+    initOperand(HandlersParamsAreaIndex, handlersParamsArea);
+    initOperand(ContResultsAreaIndex, contResultsArea);
   }
 
   size_t prePadBranchIndex() const {
@@ -2074,9 +2076,10 @@ class MWasmResume final : public MControlInstruction,
                           const wasm::CallSiteDesc& callSiteDesc,
                           mozilla::Maybe<uint32_t> tryNoteIndex,
                           MDefinition* instance, MDefinition* cont,
-                          MDefinition* handlersParamsArea) {
+                          MWasmStackResultArea* handlersParamsArea,
+                          MWasmStackResultArea* contResultsArea) {
     return new (alloc) MWasmResume(alloc, callSiteDesc, tryNoteIndex, instance,
-                                   cont, handlersParamsArea);
+                                   cont, handlersParamsArea, contResultsArea);
   }
 
   [[nodiscard]] bool init(MBasicBlock* fallthroughBlock,
@@ -2093,10 +2096,6 @@ class MWasmResume final : public MControlInstruction,
   const wasm::CallSiteDesc& callSiteDesc() const { return callSiteDesc_; }
   bool hasTryNote() const { return tryNoteIndex_.isSome(); }
   mozilla::Maybe<uint32_t> tryNoteIndex() const { return tryNoteIndex_; }
-  bool hasHandlersParamsArea() const {
-    return numOperands() > HandlersParamsAreaIndex;
-  }
-
   MBasicBlock* handlerBlock(size_t index) const {
     return getSuccessor(handlerBranchIndex(index));
   }
@@ -2107,9 +2106,11 @@ class MWasmResume final : public MControlInstruction,
 
   MDefinition* instance() const { return getOperand(InstanceIndex); }
   MDefinition* cont() const { return getOperand(ContIndex); }
-  MDefinition* handlersParamsArea() const {
-    MOZ_ASSERT(hasHandlersParamsArea());
-    return getOperand(HandlersParamsAreaIndex);
+  MWasmStackResultArea* handlersParamsArea() const {
+    return getOperand(HandlersParamsAreaIndex)->toWasmStackResultArea();
+  }
+  MWasmStackResultArea* contResultsArea() const {
+    return getOperand(ContResultsAreaIndex)->toWasmStackResultArea();
   }
 
   bool possiblyCalls() const final { return true; }
@@ -2126,7 +2127,7 @@ class MWasmResume final : public MControlInstruction,
   MDefinition* getOperand(size_t index) const final {
     return operands_[index].producer();
   }
-  size_t numOperands() const final { return operands_.length(); }
+  size_t numOperands() const final { return MaxArity; }
   size_t indexOf(const MUse* u) const final {
     MOZ_ASSERT(u >= &operands_[0]);
     MOZ_ASSERT(u <= &operands_[numOperands() - 1]);

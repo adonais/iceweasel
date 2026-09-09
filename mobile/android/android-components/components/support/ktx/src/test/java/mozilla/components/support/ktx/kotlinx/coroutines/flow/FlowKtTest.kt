@@ -13,6 +13,7 @@ import org.junit.Test
 class FlowKtTest {
 
     data class CharState(val value: Char)
+
     data class IntState(val value: Int)
 
     @Test
@@ -32,9 +33,11 @@ class FlowKtTest {
         val originalFlow = flowOf("banana", "bandanna", "bus", "apple", "big", "coconut", "circle", "home")
 
         val items =
-            originalFlow.ifAnyChanged { item ->
-                arrayOf(CharState(item[0]), CharState(item[1]))
-            }.toList()
+            originalFlow
+                .ifAnyChanged { item ->
+                    arrayOf(CharState(item[0]), CharState(item[1]))
+                }
+                .toList()
 
         assertEquals(
             listOf("banana", "bus", "apple", "big", "coconut", "circle", "home"),
@@ -62,13 +65,14 @@ class FlowKtTest {
 
     @Test
     fun `filterChanged operator check for structural equality`() = runTest {
-        val intFlow = flowOf(
-            listOf(IntState(0)),
-            listOf(IntState(0), IntState(1)),
-            listOf(IntState(0), IntState(1), IntState(2), IntState(3)),
-            listOf(IntState(4)),
-            listOf(IntState(5), IntState(6), IntState(7), IntState(8)),
-        )
+        val intFlow =
+            flowOf(
+                listOf(IntState(0)),
+                listOf(IntState(0), IntState(1)),
+                listOf(IntState(0), IntState(1), IntState(2), IntState(3)),
+                listOf(IntState(4)),
+                listOf(IntState(5), IntState(6), IntState(7), IntState(8)),
+            )
 
         val identityItems = intFlow.filterChanged { item -> item }.toList()
         assertEquals(
@@ -88,35 +92,37 @@ class FlowKtTest {
     }
 
     @Test
-    fun `GIVEN a flow of values WHEN asked for just full windows of these THEN avoid returning partial windows`() = runTest {
-        val values = flowOf(1, 2, 3, 4, 5)
-        var valuesReceived = 0
-        val step = 2
-        values.windowed(2, step).collect { output ->
-            assertEquals(2, output.size)
-            assertEquals(++valuesReceived, output.first())
-            assertEquals(++valuesReceived, output.last())
-        }
-        assertEquals(4, valuesReceived) // the last value in the last full window is 4
-     }
-
-    @Test
-    fun `GIVEN a flow of values WHEN asked for full and a last partial window of these THEN return the correct windows`() = runTest {
-        val values = flowOf(1, 2, 3, 4, 5)
-        var valuesReceived = 0
-        var currentStep = 0
-        val fullWindowsNo = 2
-        val step = 2
-        values.windowed(2, step, true).collect { output ->
-            if (++currentStep <= fullWindowsNo) {
+    fun `GIVEN a flow of values WHEN asked for just full windows of these THEN avoid returning partial windows`() =
+        runTest {
+            val values = flowOf(1, 2, 3, 4, 5)
+            var valuesReceived = 0
+            val step = 2
+            values.windowed(2, step).collect { output ->
                 assertEquals(2, output.size)
                 assertEquals(++valuesReceived, output.first())
                 assertEquals(++valuesReceived, output.last())
-            } else {
-                assertEquals(1, output.size)
-                assertEquals(++valuesReceived, output.first())
             }
+            assertEquals(4, valuesReceived) // the last value in the last full window is 4
         }
-        assertEquals(5, valuesReceived) // the last value in the end partial window is 5
-    }
+
+    @Test
+    fun `GIVEN a flow of values WHEN asked for full and a last partial window of these THEN return the correct windows`() =
+        runTest {
+            val values = flowOf(1, 2, 3, 4, 5)
+            var valuesReceived = 0
+            var currentStep = 0
+            val fullWindowsNo = 2
+            val step = 2
+            values.windowed(2, step, true).collect { output ->
+                if (++currentStep <= fullWindowsNo) {
+                    assertEquals(2, output.size)
+                    assertEquals(++valuesReceived, output.first())
+                    assertEquals(++valuesReceived, output.last())
+                } else {
+                    assertEquals(1, output.size)
+                    assertEquals(++valuesReceived, output.first())
+                }
+            }
+            assertEquals(5, valuesReceived) // the last value in the end partial window is 5
+        }
 }

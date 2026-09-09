@@ -9,13 +9,9 @@ import mozilla.components.support.base.facts.Action
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.collect
 
-/**
- * Facts emitted for different events related to the prompt feature.
- */
+/** Facts emitted for different events related to the prompt feature. */
 class PromptFacts {
-    /**
-     * Different events emitted by prompts.
-     */
+    /** Different events emitted by prompts. */
     object Items {
         const val PROMPT = "PROMPT"
     }
@@ -28,12 +24,13 @@ private fun emitFact(
     metadata: Map<String, Any>? = null,
 ) {
     Fact(
-        Component.FEATURE_PROMPTS,
-        action,
-        item,
-        value,
-        metadata,
-    ).collect()
+            Component.FEATURE_PROMPTS,
+            action,
+            item,
+            value,
+            metadata,
+        )
+        .collect()
 }
 
 internal fun emitPromptDisplayedFact(promptName: String) {

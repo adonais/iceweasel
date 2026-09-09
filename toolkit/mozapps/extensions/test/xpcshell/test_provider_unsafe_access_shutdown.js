@@ -25,6 +25,10 @@ function mockAddonProvider(name) {
       callback(null);
     },
 
+    getAddonsByTypes() {
+      return [];
+    },
+
     get name() {
       return name;
     },

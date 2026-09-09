@@ -1287,7 +1287,10 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
               menuId="sports-context-menu"
               type="ghost"
             />
-            <panel-list id="sports-context-menu">
+            <panel-list
+              className="panel-list-no-icons"
+              id="sports-context-menu"
+            >
               <panel-item
                 data-l10n-id="newtab-sports-widget-menu-follow-teams"
                 onClick={() => handleFollowTeams("context_menu")}

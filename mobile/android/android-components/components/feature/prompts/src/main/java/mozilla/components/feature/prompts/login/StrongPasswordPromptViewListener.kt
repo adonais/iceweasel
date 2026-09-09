@@ -12,9 +12,9 @@ import mozilla.components.feature.prompts.consumePromptFrom
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * Displays a [PasswordPromptView] for a site after receiving a [PromptRequest.SelectLoginPrompt]
- * when a user clicks into a login field and we don't have any matching logins. The user can receive
- * a suggestion for a strong password that can be used for filling in the password field.
+ * Displays a [PasswordPromptView] for a site after receiving a [PromptRequest.SelectLoginPrompt] when a user clicks
+ * into a login field and we don't have any matching logins. The user can receive a suggestion for a strong password
+ * that can be used for filling in the password field.
  *
  * @property browserStore The [BrowserStore] this feature should subscribe to.
  * @property suggestStrongPasswordBar The view where the suggest strong password "prompt" will be inflated.
@@ -26,7 +26,7 @@ internal class StrongPasswordPromptViewListener(
     private var sessionId: String? = null,
 ) : PasswordPromptView.Listener {
 
-    var onGeneratedPasswordPromptClick: () -> Unit = { }
+    var onGeneratedPasswordPromptClick: () -> Unit = {}
 
     init {
         suggestStrongPasswordBar.passwordPromptListener = this
@@ -46,7 +46,7 @@ internal class StrongPasswordPromptViewListener(
                         ContentAction.ConsumePromptRequestAction(
                             it,
                             promptRequest,
-                        ),
+                        )
                     )
                 }
                 suggestStrongPasswordBar.hidePrompt()

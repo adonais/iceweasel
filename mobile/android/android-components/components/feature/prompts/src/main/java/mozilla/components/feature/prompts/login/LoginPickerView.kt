@@ -80,7 +80,9 @@ data class LoginPickerColors(
     val primary: Color,
     val header: Color,
 ) {
-    constructor(context: Context) : this(
+    constructor(
+        context: Context
+    ) : this(
         primary = context.primrayColor,
         header = context.headerColor,
     )
@@ -100,10 +102,10 @@ private fun LoginListItem(
     onListItemClicked: () -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 64.dp, top = 8.dp, end = 8.dp, bottom = 8.dp)
-            .clickable { onListItemClicked() },
+        modifier =
+            Modifier.fillMaxWidth().padding(start = 64.dp, top = 8.dp, end = 8.dp, bottom = 8.dp).clickable {
+                onListItemClicked()
+            }
     ) {
         Text(
             text = login.origin,
@@ -133,25 +135,28 @@ private fun LoginPickerHeader(
     loginPickerColors: LoginPickerColors,
     modifier: Modifier = Modifier,
 ) {
-    val headerContentDescription = if (isExpanded) {
-        stringResource(id = R.string.mozac_feature_prompts_collapse_logins_content_description_2)
-    } else {
-        stringResource(id = R.string.mozac_feature_prompts_expand_logins_content_description_2)
-    }
+    val headerContentDescription =
+        if (isExpanded) {
+            stringResource(id = R.string.mozac_feature_prompts_collapse_logins_content_description_2)
+        } else {
+            stringResource(id = R.string.mozac_feature_prompts_expand_logins_content_description_2)
+        }
 
-    val chevronResourceId = if (isExpanded) {
-        iconsR.drawable.mozac_ic_chevron_up_24
-    } else {
-        iconsR.drawable.mozac_ic_chevron_down_24
-    }
+    val chevronResourceId =
+        if (isExpanded) {
+            iconsR.drawable.mozac_ic_chevron_up_24
+        } else {
+            iconsR.drawable.mozac_ic_chevron_down_24
+        }
 
     Row(
-        modifier = modifier
-            .semantics {
-                contentDescription = headerContentDescription
-            }
-            .defaultMinSize(minHeight = 48.dp)
-            .padding(horizontal = 16.dp),
+        modifier =
+            modifier
+                .semantics {
+                    contentDescription = headerContentDescription
+                }
+                .defaultMinSize(minHeight = 48.dp)
+                .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -190,9 +195,7 @@ private fun LoginPickerFooter(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .padding(horizontal = 16.dp)
-            .height(48.dp),
+        modifier = modifier.padding(horizontal = 16.dp).height(48.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -244,18 +247,11 @@ fun LoginPicker(
         LoginPickerHeader(
             isExpanded = isExpanded,
             loginPickerColors = loginPickerColors,
-            modifier = Modifier
-                .clickable { onExpandToggleClick(!isExpanded) }
-                .align(Alignment.TopStart),
+            modifier = Modifier.clickable { onExpandToggleClick(!isExpanded) }.align(Alignment.TopStart),
         )
 
         if (isExpanded) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.TopStart)
-                    .padding(vertical = 48.dp),
-            ) {
+            LazyColumn(modifier = Modifier.fillMaxWidth().align(Alignment.TopStart).padding(vertical = 48.dp)) {
                 items(logins) { login ->
                     LoginListItem(
                         login = login,
@@ -268,9 +264,7 @@ fun LoginPicker(
 
             LoginPickerFooter(
                 loginPickerColors = loginPickerColors,
-                modifier = Modifier
-                    .clickable { onManagePasswordClicked() }
-                    .align(Alignment.BottomStart),
+                modifier = Modifier.clickable { onManagePasswordClicked() }.align(Alignment.BottomStart),
             )
         }
     }
@@ -282,29 +276,32 @@ private fun LoginPreview() {
     var isExpanded by remember { mutableStateOf(true) }
 
     MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) {
-            darkColorScheme()
-        } else {
-            lightColorScheme()
-        },
+        colorScheme =
+            if (isSystemInDarkTheme()) {
+                darkColorScheme()
+            } else {
+                lightColorScheme()
+            }
     ) {
         Box(modifier = Modifier.background(color = MaterialTheme.colorScheme.surface)) {
             LoginPicker(
-                logins = listOf(
-                    Login("1", "foxy-1@mozilla.com", "foxy@mozilla.com", "https://website.com"),
-                    Login("2", "foxy-2@mozilla.com", "foxy@mozilla.com", "https://website.com"),
-                    Login("3", "foxy-3@mozilla.com", "foxy@mozilla.com", "https://website.com"),
-                    Login("4", "foxy-4@mozilla.com", "foxy@mozilla.com", "https://website.com"),
-                    Login("5", "foxy-5@mozilla.com", "foxy@mozilla.com", "https://website.com"),
-                ),
+                logins =
+                    listOf(
+                        Login("1", "foxy-1@mozilla.com", "foxy@mozilla.com", "https://website.com"),
+                        Login("2", "foxy-2@mozilla.com", "foxy@mozilla.com", "https://website.com"),
+                        Login("3", "foxy-3@mozilla.com", "foxy@mozilla.com", "https://website.com"),
+                        Login("4", "foxy-4@mozilla.com", "foxy@mozilla.com", "https://website.com"),
+                        Login("5", "foxy-5@mozilla.com", "foxy@mozilla.com", "https://website.com"),
+                    ),
                 isExpanded = isExpanded,
                 onExpandToggleClick = { isExpanded = it },
-                onLoginSelected = { },
-                onManagePasswordClicked = { },
-                loginPickerColors = LoginPickerColors(
-                    primary = MaterialTheme.colorScheme.primary,
-                    header = MaterialTheme.colorScheme.onBackground,
-                ),
+                onLoginSelected = {},
+                onManagePasswordClicked = {},
+                loginPickerColors =
+                    LoginPickerColors(
+                        primary = MaterialTheme.colorScheme.primary,
+                        header = MaterialTheme.colorScheme.onBackground,
+                    ),
             )
         }
     }

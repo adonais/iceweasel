@@ -219,3 +219,93 @@ async function openSharePanel(win) {
 
   return PanelMultiView.getViewNode(win.document, "share-panel");
 }
+
+async function closeSharePanel(win) {
+  const panel = PanelMultiView.getViewNode(win.document, "share-panel");
+  if (panel.state === "closed") {
+    return;
+  }
+
+  let hidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
+  panel.hidePopup();
+  await hidden;
+}
+
+async function assertTelemetryEvents(expectedEvents) {
+  await Services.fog.testFlushAllChildren();
+  let telemetry = Glean.shareButton.impression.testGetValue();
+
+  Assert.equal(
+    telemetry.length,
+    expectedEvents.length,
+    `Should have ${expectedEvents.length} events`
+  );
+
+  for (let [index, actual] of telemetry.entries()) {
+    Assert.equal(
+      actual.category,
+      expectedEvents[index].category ?? "share_button",
+      "Event should be category share_button"
+    );
+    Assert.equal(
+      actual.name,
+      expectedEvents[index].name ?? "impression",
+      "Name should be category impression"
+    );
+    Assert.deepEqual(
+      actual.extra,
+      expectedEvents[index].extra,
+      "extra should match"
+    );
+  }
+}
+
+async function waitForScreenshotsOpen(win) {
+  let panel = win.document.querySelector(".screenshotsPagePanel");
+  await TestUtils.waitForCondition(() => {
+    return (panel = win.document.querySelector(".screenshotsPagePanel"));
+  });
+  Assert.ok(BrowserTestUtils.isVisible(panel), "Screenshots panel is visible");
+
+  await SpecialPowers.spawn(win.gBrowser.selectedBrowser, [], async () => {
+    let screenshotsChild = content.windowGlobalChild.getActor(
+      "ScreenshotsComponent"
+    );
+
+    await ContentTaskUtils.waitForCondition(() => {
+      if (!screenshotsChild) {
+        screenshotsChild = content.windowGlobalChild.getActor(
+          "ScreenshotsComponent"
+        );
+      }
+      return screenshotsChild?.overlay?.initialized;
+    });
+
+    Assert.ok(screenshotsChild.overlay.initialized);
+  });
+
+  await new Promise(r => win.requestAnimationFrame(r));
+  info("Overlay is visible");
+}
+
+async function waitForQrCodeDialog(browser) {
+  const gBrowser = browser.documentGlobal.gBrowser;
+
+  let dialogBox = gBrowser.getTabDialogBox(browser);
+  let dialogManager = dialogBox.getTabDialogManager();
+
+  await TestUtils.waitForCondition(
+    () => dialogManager._dialogs.length,
+    "Waiting for the QR code subdialog to open"
+  );
+
+  let dialog = dialogManager._dialogs[0];
+  await dialog._dialogReady;
+
+  let dialogDoc = dialog._frame.contentDocument;
+  Assert.equal(
+    dialogDoc.documentElement.id,
+    "qrcode-dialog",
+    "The QR code button opens the QR code dialog"
+  );
+}

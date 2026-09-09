@@ -128,6 +128,13 @@ class Performance : public DOMEventTargetHelper {
 
   DOMHighResTimeStamp TimeStampToDOMHighResForRendering(TimeStamp) const;
 
+  // Converts a raw timestamp to a reduced-precision DOMHighResTimeStamp,
+  // applying the full time-precision reduction (random timeline seed and
+  // caller type). Shared by performance entry types such as
+  // LargestContentfulPaint and PerformanceContainerTiming.
+  DOMHighResTimeStamp GetReducedTimePrecisionDOMHighRes(
+      const TimeStamp& aTimeStamp);
+
   virtual uint64_t GetRandomTimelineSeed() = 0;
 
   void MemoryPressure();

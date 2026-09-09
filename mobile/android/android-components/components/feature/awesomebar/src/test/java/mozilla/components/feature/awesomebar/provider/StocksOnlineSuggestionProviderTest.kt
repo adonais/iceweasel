@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.awesomebar.provider
 
+import java.util.Locale
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -16,7 +17,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.util.Locale
 
 private const val ARTIFICIAL_DELAY = 350L
 
@@ -33,16 +33,18 @@ class StocksOnlineSuggestionProviderTest {
 
     @Before
     fun setUp() {
-        fakeDataSource = FakeCombinedOnlineSuggestionDataSource(
-            stockResults = listOf(sampleStockItem(query = "VOO stock", ticker = "VOO")),
-        )
+        fakeDataSource =
+            FakeCombinedOnlineSuggestionDataSource(
+                stockResults = listOf(sampleStockItem(query = "VOO stock", ticker = "VOO"))
+            )
 
-        provider = StocksOnlineSuggestionProvider(
-            searchUseCase = mock(),
-            dataSource = fakeDataSource,
-            suggestionsHeader = null,
-            maxNumberOfSuggestions = DEFAULT_STOCK_SUGGESTION_LIMIT,
-        )
+        provider =
+            StocksOnlineSuggestionProvider(
+                searchUseCase = mock(),
+                dataSource = fakeDataSource,
+                suggestionsHeader = null,
+                maxNumberOfSuggestions = DEFAULT_STOCK_SUGGESTION_LIMIT,
+            )
     }
 
     @Test
@@ -70,15 +72,17 @@ class StocksOnlineSuggestionProviderTest {
 
     @Test
     fun `fetches and returns suggestions when text is a cashtag`() = runTest {
-        val localDataSource = FakeCombinedOnlineSuggestionDataSource(
-            stockResults = listOf(sampleStockItem(query = "\$AMZN", ticker = "AMZN")),
-        )
-        val cashtagProvider = StocksOnlineSuggestionProvider(
-            searchUseCase = mock(),
-            dataSource = localDataSource,
-            suggestionsHeader = null,
-            maxNumberOfSuggestions = DEFAULT_STOCK_SUGGESTION_LIMIT,
-        )
+        val localDataSource =
+            FakeCombinedOnlineSuggestionDataSource(
+                stockResults = listOf(sampleStockItem(query = "\$AMZN", ticker = "AMZN"))
+            )
+        val cashtagProvider =
+            StocksOnlineSuggestionProvider(
+                searchUseCase = mock(),
+                dataSource = localDataSource,
+                suggestionsHeader = null,
+                maxNumberOfSuggestions = DEFAULT_STOCK_SUGGESTION_LIMIT,
+            )
 
         val deferred = async { cashtagProvider.onInputChanged("\$AMZN") }
 
@@ -93,20 +97,22 @@ class StocksOnlineSuggestionProviderTest {
 
     @Test
     fun `respects maxNumberOfSuggestions`() = runTest {
-        val manyResults = listOf(
-            sampleStockItem(query = "a stock", ticker = "A"),
-            sampleStockItem(query = "b stock", ticker = "B"),
-            sampleStockItem(query = "c stock", ticker = "C"),
-        )
+        val manyResults =
+            listOf(
+                sampleStockItem(query = "a stock", ticker = "A"),
+                sampleStockItem(query = "b stock", ticker = "B"),
+                sampleStockItem(query = "c stock", ticker = "C"),
+            )
 
         val localDataSource = FakeCombinedOnlineSuggestionDataSource(stockResults = manyResults)
 
-        val limitedProvider = StocksOnlineSuggestionProvider(
-            searchUseCase = mock(),
-            dataSource = localDataSource,
-            suggestionsHeader = null,
-            maxNumberOfSuggestions = 1,
-        )
+        val limitedProvider =
+            StocksOnlineSuggestionProvider(
+                searchUseCase = mock(),
+                dataSource = localDataSource,
+                suggestionsHeader = null,
+                maxNumberOfSuggestions = 1,
+            )
 
         val deferred = async { limitedProvider.onInputChanged("stock") }
         advanceTimeBy(ARTIFICIAL_DELAY)
@@ -117,12 +123,13 @@ class StocksOnlineSuggestionProviderTest {
 
     @Test
     fun `id is stable per instance`() = runTest {
-        val p = StocksOnlineSuggestionProvider(
-            searchUseCase = mock(),
-            dataSource = FakeCombinedOnlineSuggestionDataSource(stockResults = listOf(sampleStockItem())),
-            suggestionsHeader = null,
-            maxNumberOfSuggestions = 1,
-        )
+        val p =
+            StocksOnlineSuggestionProvider(
+                searchUseCase = mock(),
+                dataSource = FakeCombinedOnlineSuggestionDataSource(stockResults = listOf(sampleStockItem())),
+                suggestionsHeader = null,
+                maxNumberOfSuggestions = 1,
+            )
 
         val id1 = p.id
         val deferred = async { p.onInputChanged("stock") }
@@ -136,12 +143,13 @@ class StocksOnlineSuggestionProviderTest {
     @Test
     fun `cancellation before delay prevents data source call`() = runTest {
         val localDataSource = FakeCombinedOnlineSuggestionDataSource(stockResults = listOf(sampleStockItem()))
-        val cancellableProvider = StocksOnlineSuggestionProvider(
-            searchUseCase = mock(),
-            dataSource = localDataSource,
-            suggestionsHeader = null,
-            maxNumberOfSuggestions = 1,
-        )
+        val cancellableProvider =
+            StocksOnlineSuggestionProvider(
+                searchUseCase = mock(),
+                dataSource = localDataSource,
+                suggestionsHeader = null,
+                maxNumberOfSuggestions = 1,
+            )
 
         val job = async { cancellableProvider.onInputChanged("stock") }
 
@@ -193,12 +201,13 @@ private fun sampleStockItem(
     changePercToday: String = "-0.11",
     lastPrice: String = "559.44 USD",
     exchange: String = "S&P 500",
-) = StockItem(
-    query = query,
-    name = name,
-    ticker = ticker,
-    todaysChangePerc = changePercToday,
-    lastPrice = lastPrice,
-    exchange = exchange,
-    imageUrl = "",
-)
+) =
+    StockItem(
+        query = query,
+        name = name,
+        ticker = ticker,
+        todaysChangePerc = changePercToday,
+        lastPrice = lastPrice,
+        exchange = exchange,
+        imageUrl = "",
+    )

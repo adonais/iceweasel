@@ -374,6 +374,8 @@ ssl3_ExtensionAdvertisedClientHelloInner(const sslSocket *ss, PRUint16 ex_type)
 SECStatus
 ssl3_ParseExtensions(sslSocket *ss, PRUint8 **b, PRUint32 *length)
 {
+    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
+
     /* Clean out the extensions list. */
     ssl3_DestroyRemoteExtensions(&ss->ssl3.hs.remoteExtensions);
 
@@ -504,6 +506,10 @@ ssl3_HandleParsedExtensions(sslSocket *ss, SSLHandshakeType message)
                              (message == ssl_hs_certificate_request) ||
                              (message == ssl_hs_new_session_ticket);
     PRCList *cursor;
+
+    /* The handlers below write to |ss->ssl3.hs| and |ss->xtnData|, both of
+     * which are protected by the SSL3 handshake lock. */
+    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
 
     switch (message) {
         case ssl_hs_client_hello:
@@ -1167,6 +1173,10 @@ tls_ClientHelloExtensionPermutationSetup(sslSocket *ss)
     const size_t buildersSize = (sizeof(sslExtensionBuilder) * buildersLen);
     /* Psk Extension and then NULL entry MUST be last. */
     const size_t permutationLen = buildersLen - 2;
+
+    /* |ss->ssl3.hs.chExtensionPermutation| is protected by the SSL3
+     * handshake lock. */
+    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
 
     /* There shouldn't already be a stored permutation. */
     PR_ASSERT(!ss->ssl3.hs.chExtensionPermutation);

@@ -32,6 +32,7 @@ if (AppConstants.MOZ_ENTERPRISE) {
   });
 }
 import { IPPUsageHelper } from "moz-src:///browser/components/ipprotection/IPPUsageHelper.sys.mjs";
+import { IPPL10nHelper } from "moz-src:///browser/components/ipprotection/IPPL10nHelper.sys.mjs";
 import { IPPOnboardingMessage } from "moz-src:///browser/components/ipprotection/IPPOnboardingMessageHelper.sys.mjs";
 import { IPPOptOutHelper } from "moz-src:///browser/components/ipprotection/IPPOptOutHelper.sys.mjs";
 import { IPProtectionAlertManager } from "moz-src:///browser/components/ipprotection/IPProtectionAlertManager.sys.mjs";
@@ -96,6 +97,7 @@ function pickAuthProvider() {
 const authProvider = pickAuthProvider();
 
 IPProtectionActivator.addHelpers([
+  IPPL10nHelper,
   IPPOnboardingMessage,
   IPPUsageHelper,
   new UIHelper(),

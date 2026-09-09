@@ -6,22 +6,14 @@ package mozilla.components.feature.addons.ui
 
 import mozilla.components.feature.addons.Addon
 
-/**
- * Provides methods for handling the add-on items in the add-on manager.
- */
+/** Provides methods for handling the add-on items in the add-on manager. */
 interface AddonsManagerAdapterDelegate {
-    /**
-     * Defines the different learn more links a user might click.
-     */
+    /** Defines the different learn more links a user might click. */
     enum class LearnMoreLinks {
-        /**
-         * The [Addon] is blocklisted and the learn more link should give more information to the user.
-         */
+        /** The [Addon] is blocklisted and the learn more link should give more information to the user. */
         BLOCKLISTED_ADDON,
 
-        /**
-         * The [Addon] is not correctly signed and the learn more link should give more information to the user.
-         */
+        /** The [Addon] is not correctly signed and the learn more link should give more information to the user. */
         ADDON_NOT_CORRECTLY_SIGNED,
     }
 
@@ -46,18 +38,12 @@ interface AddonsManagerAdapterDelegate {
      */
     fun onNotYetSupportedSectionClicked(unsupportedAddons: List<Addon>) = Unit
 
-    /**
-     * Handler to determine whether to show the "find more add-ons" button in the add-ons manager.
-     */
+    /** Handler to determine whether to show the "find more add-ons" button in the add-ons manager. */
     fun shouldShowFindMoreAddonsButton(): Boolean = false
 
-    /**
-     * Handler for when the "find more add-ons" button is clicked.
-     */
+    /** Handler for when the "find more add-ons" button is clicked. */
     fun onFindMoreAddonsButtonClicked() = Unit
 
-    /**
-     * Handler for when a "learn more" link on an add-on item is clicked.
-     */
+    /** Handler for when a "learn more" link on an add-on item is clicked. */
     fun onLearnMoreLinkClicked(link: LearnMoreLinks, addon: Addon) = Unit
 }

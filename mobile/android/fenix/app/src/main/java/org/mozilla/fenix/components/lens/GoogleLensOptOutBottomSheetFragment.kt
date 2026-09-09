@@ -13,16 +13,16 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.fragment.app.setFragmentResult
 import androidx.fragment.compose.content
+import com.google.android.material.R as materialR
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import org.mozilla.fenix.theme.FirefoxTheme
-import com.google.android.material.R as materialR
 
 /**
- * [BottomSheetDialogFragment] wrapper for the compose [GoogleLensOptOutBottomSheet]. Reports the
- * user's choice to the host through [RESULT_REQUEST_KEY]; a swipe, back press, tap outside or
- * accessibility dismissal is reported as [ACTION_NOT_NOW].
+ * [BottomSheetDialogFragment] wrapper for the compose [GoogleLensOptOutBottomSheet]. Reports the user's choice to the
+ * host through [RESULT_REQUEST_KEY]; a swipe, back press, tap outside or accessibility dismissal is reported as
+ * [ACTION_NOT_NOW].
  */
 class GoogleLensOptOutBottomSheetFragment : BottomSheetDialogFragment() {
 
@@ -63,14 +63,16 @@ class GoogleLensOptOutBottomSheetFragment : BottomSheetDialogFragment() {
                     onSettingsClick = { reportAction(ACTION_SETTINGS) },
                 )
             }
-        }.apply {
-            // `content` leaves the layout params unset, which makes the hosting FrameLayout default
-            // to MATCH_PARENT and the sheet's fit-to-contents height ambiguous on the first pass.
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-            )
         }
+            .apply {
+                // `content` leaves the layout params unset, which makes the hosting FrameLayout default
+                // to MATCH_PARENT and the sheet's fit-to-contents height ambiguous on the first pass.
+                layoutParams =
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT,
+                    )
+            }
     }
 
     private fun reportAction(action: String) {

@@ -7,9 +7,7 @@ package mozilla.components.browser.engine.gecko.ext
 import mozilla.components.browser.engine.gecko.prompt.GeckoChoice
 import mozilla.components.concept.engine.prompt.Choice
 
-/**
- * Converts a GeckoView [GeckoChoice] to an Android Components [Choice].
- */
+/** Converts a GeckoView [GeckoChoice] to an Android Components [Choice]. */
 private fun GeckoChoice.toChoice(): Choice {
     val choiceChildren = items?.map { it.toChoice() }?.toTypedArray()
     return Choice(id, !disabled, label, selected, separator, choiceChildren)
@@ -17,11 +15,13 @@ private fun GeckoChoice.toChoice(): Choice {
 
 /**
  * Convert an array of [GeckoChoice] to Choice array.
+ *
  * @return array of Choice
  */
-fun convertToChoices(
-    geckoChoices: Array<out GeckoChoice>,
-): Array<Choice> = geckoChoices.map { geckoChoice ->
-    val choice = geckoChoice.toChoice()
-    choice
-}.toTypedArray()
+fun convertToChoices(geckoChoices: Array<out GeckoChoice>): Array<Choice> =
+    geckoChoices
+        .map { geckoChoice ->
+            val choice = geckoChoice.toChoice()
+            choice
+        }
+        .toTypedArray()

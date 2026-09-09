@@ -27,11 +27,9 @@ class DefaultBrowsingModeManagerTest {
 
     @MockK lateinit var settings: Settings
 
-    @RelaxedMockK
-    lateinit var onModeChange: (BrowsingMode) -> Unit
+    @RelaxedMockK lateinit var onModeChange: (BrowsingMode) -> Unit
 
-    @get:Rule
-    val mockkRule = MockkRetryTestRule()
+    @get:Rule val mockkRule = MockkRetryTestRule()
 
     @Before
     fun before() {
@@ -165,9 +163,7 @@ class DefaultBrowsingModeManagerTest {
         assertEquals(BrowsingMode.Normal, manager.mode)
     }
 
-    private fun buildBrowsingModeManager(
-        intent: Intent? = null,
-    ): BrowsingModeManager {
+    private fun buildBrowsingModeManager(intent: Intent? = null): BrowsingModeManager {
         return DefaultBrowsingModeManager(
             intent = intent,
             settings = settings,

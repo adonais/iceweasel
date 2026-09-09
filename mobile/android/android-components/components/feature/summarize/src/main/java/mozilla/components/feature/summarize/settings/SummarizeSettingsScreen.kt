@@ -22,7 +22,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,19 +53,35 @@ fun SummarizeSettingsContent(
     store: SummarizeSettingsStore,
     modifier: Modifier = Modifier,
 ) {
-    LaunchedEffect(Unit) {
-        store.dispatch(ViewAppeared)
-    }
-
     val state by store.stateFlow.collectAsStateWithLifecycle()
 
     SummarizeSettingsContent(
+        state = state,
+        dispatch = { store.dispatch(it) },
+        modifier = modifier,
+    )
+}
+
+/**
+ * Reusable composable that renders the summarize settings UI, driven by a host store that embeds
+ * [SummarizeSettingsState] as a sub-state.
+ *
+ * @param state The current [SummarizeSettingsState].
+ * @param dispatch Dispatches a [SummarizeSettingsAction] to the hosting store.
+ */
+@Composable
+fun SummarizeSettingsContent(
+    state: SummarizeSettingsState,
+    dispatch: (SummarizeSettingsAction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SummarizeSettingsContent(
         modifier = modifier,
         state = state,
-        onSummarizePagesToggled = { store.dispatch(SummarizePagesPreferenceToggled) },
-        onShakeToSummarizeToggled = { store.dispatch(ShakeToSummarizePreferenceToggled) },
-        onLearnMoreClicked = { store.dispatch(LearnMoreClicked) },
-        onShakeSensitivityChanged = { store.dispatch(ShakeSensitivityChanged(it)) },
+        onSummarizePagesToggled = { dispatch(SummarizePagesPreferenceToggled) },
+        onShakeToSummarizeToggled = { dispatch(ShakeToSummarizePreferenceToggled) },
+        onLearnMoreClicked = { dispatch(LearnMoreClicked) },
+        onShakeSensitivityChanged = { dispatch(ShakeSensitivityChanged(it)) },
     )
 }
 
@@ -88,36 +103,29 @@ fun SummarizeSettingsContent(
     onShakeSensitivityChanged: (ShakeSensitivity) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.fillMaxWidth()
-            .verticalScroll(rememberScrollState()),
-    ) {
+    Column(modifier = modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
         SwitchRow(
             label = stringResource(id = R.string.mozac_summarize_settings_summarize_pages),
-            description = stringResource(
-                id = R.string.mozac_summarize_settings_summarize_pages_cloud,
-            ),
+            description = stringResource(id = R.string.mozac_summarize_settings_summarize_pages_cloud),
             checked = state.isFeatureEnabled,
             onToggle = onSummarizePagesToggled,
         )
 
         Text(
             text = stringResource(id = R.string.mozac_summarize_settings_learn_more),
-            style = AcornTheme.typography.body2.copy(
-                color = MaterialTheme.colorScheme.tertiary,
-                textDecoration = TextDecoration.Underline,
-            ),
-            modifier = Modifier
-                .clickable(onClick = onLearnMoreClicked),
+            style =
+                AcornTheme.typography.body2.copy(
+                    color = MaterialTheme.colorScheme.tertiary,
+                    textDecoration = TextDecoration.Underline,
+                ),
+            modifier = Modifier.clickable(onClick = onLearnMoreClicked),
         )
 
         Spacer(modifier = Modifier.height(AcornTheme.layout.space.static300))
 
         Text(
             text = stringResource(id = R.string.mozac_summarize_settings_gestures),
-            style = AcornTheme.typography.headline8.copy(
-                color = MaterialTheme.colorScheme.onSurface,
-            ),
+            style = AcornTheme.typography.headline8.copy(color = MaterialTheme.colorScheme.onSurface),
             modifier = Modifier.padding(vertical = AcornTheme.layout.space.static100),
         )
 
@@ -125,9 +133,7 @@ fun SummarizeSettingsContent(
 
         SwitchRow(
             label = stringResource(id = R.string.mozac_summarize_settings_shake_to_summarize),
-            description = stringResource(
-                id = R.string.mozac_summarize_settings_shake_to_summarize_description,
-            ),
+            description = stringResource(id = R.string.mozac_summarize_settings_shake_to_summarize_description),
             checked = state.isGestureEnabled,
             enabled = state.isFeatureEnabled,
             onToggle = onShakeToSummarizeToggled,
@@ -150,73 +156,64 @@ private fun SwitchRow(
     onToggle: () -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .toggleable(
-                value = checked,
-                enabled = enabled,
-                role = Role.Switch,
-                onValueChange = { onToggle() },
-            )
-            .padding(vertical = AcornTheme.layout.space.static150),
+        modifier =
+            Modifier.fillMaxWidth()
+                .toggleable(
+                    value = checked,
+                    enabled = enabled,
+                    role = Role.Switch,
+                    onValueChange = { onToggle() },
+                )
+                .padding(vertical = AcornTheme.layout.space.static150),
         verticalAlignment = Alignment.Top,
     ) {
-        Column(
-            modifier = Modifier.weight(1f),
-        ) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = label,
-                style = AcornTheme.typography.body1.copy(
-                    color = if (enabled) {
-                        MaterialTheme.colorScheme.onSurface
-                    } else {
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_ALPHA)
-                    },
-                ),
+                style =
+                    AcornTheme.typography.body1.copy(
+                        color =
+                            if (enabled) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_ALPHA)
+                            }
+                    ),
             )
             Text(
                 text = description,
-                style = AcornTheme.typography.body2.copy(
-                    color = if (enabled) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = DISABLED_ALPHA)
-                    },
-                ),
+                style =
+                    AcornTheme.typography.body2.copy(
+                        color =
+                            if (enabled) {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = DISABLED_ALPHA)
+                            }
+                    ),
             )
         }
 
-        CompositionLocalProvider(
-            LocalMinimumInteractiveComponentSize provides 0.dp,
-        ) {
+        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
             Switch(
                 checked = checked,
                 onCheckedChange = { onToggle() },
                 enabled = enabled,
-                modifier = Modifier
-                    .padding(start = AcornTheme.layout.space.static200)
-                    .clearAndSetSemantics {},
+                modifier = Modifier.padding(start = AcornTheme.layout.space.static200).clearAndSetSemantics {},
             )
         }
     }
 }
 
 @Composable
-internal fun SettingsAppBar(
-    onBackClicked: () -> Unit,
-) {
+internal fun SettingsAppBar(onBackClicked: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(64.dp)
-            .background(MaterialTheme.colorScheme.surface),
+        modifier = Modifier.fillMaxWidth().height(64.dp).background(MaterialTheme.colorScheme.surface),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(
             onClick = onBackClicked,
-            contentDescription = stringResource(
-                id = R.string.mozac_summarize_settings_back_content_description,
-            ),
+            contentDescription = stringResource(id = R.string.mozac_summarize_settings_back_content_description),
         ) {
             Icon(
                 painter = painterResource(id = iconsR.drawable.mozac_ic_back_24),
@@ -242,14 +239,13 @@ private fun SummarizeSettingsContentPreview() {
         var isFeatureEnabled by remember { mutableStateOf(true) }
         var isGestureEnabled by remember { mutableStateOf(false) }
 
-        Box(
-            modifier = Modifier.background(MaterialTheme.colorScheme.background),
-        ) {
+        Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
             SummarizeSettingsContent(
-                state = SummarizeSettingsState(
-                    isFeatureEnabled = isFeatureEnabled,
-                    isGestureEnabled = isGestureEnabled,
-                ),
+                state =
+                    SummarizeSettingsState(
+                        isFeatureEnabled = isFeatureEnabled,
+                        isGestureEnabled = isGestureEnabled,
+                    ),
                 onSummarizePagesToggled = { isFeatureEnabled = !isFeatureEnabled },
                 onShakeToSummarizeToggled = { isGestureEnabled = !isGestureEnabled },
                 onLearnMoreClicked = {},

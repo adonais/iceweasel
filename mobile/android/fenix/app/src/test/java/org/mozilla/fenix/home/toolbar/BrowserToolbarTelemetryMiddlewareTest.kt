@@ -5,6 +5,8 @@
 package org.mozilla.fenix.home.toolbar
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent.Source
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.support.test.robolectric.testContext
@@ -23,13 +25,10 @@ import org.mozilla.fenix.home.toolbar.TabCounterInteractions.TabCounterLongClick
 import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
 import org.mozilla.fenix.telemetry.SOURCE_NAVIGATION_BAR
 import org.mozilla.fenix.telemetry.SURFACE_HOME
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 
 @RunWith(AndroidJUnit4::class)
 class BrowserToolbarTelemetryMiddlewareTest {
-    @get:Rule
-    val gleanRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanRule = FenixGleanTestRule(testContext)
 
     @Test
     fun `WHEN menu button is clicked THEN record telemetry based on browser end or navbar source`() {
@@ -83,10 +82,12 @@ class BrowserToolbarTelemetryMiddlewareTest {
         val values = Toolbar.buttonTapped.testGetValue()
         assertNotNull(values)
         val last = values.last()
-        val expectedSource = when (source) {
-            is Source.AddressBar, Source.Unknown -> SOURCE_ADDRESS_BAR
-            Source.NavigationBar -> SOURCE_NAVIGATION_BAR
-        }
+        val expectedSource =
+            when (source) {
+                is Source.AddressBar,
+                Source.Unknown -> SOURCE_ADDRESS_BAR
+                Source.NavigationBar -> SOURCE_NAVIGATION_BAR
+            }
         assertEquals(item, last.extra?.get("item"))
         assertEquals(expectedSource, last.extra?.get("source"))
         assertEquals(SURFACE_HOME, last.extra?.get("surface"))
@@ -97,7 +98,5 @@ class BrowserToolbarTelemetryMiddlewareTest {
         }
     }
 
-    private val buildStore = BrowserToolbarStore(
-        middleware = listOf(BrowserToolbarTelemetryMiddleware()),
-    )
+    private val buildStore = BrowserToolbarStore(middleware = listOf(BrowserToolbarTelemetryMiddleware()))
 }

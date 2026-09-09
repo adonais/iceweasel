@@ -270,14 +270,27 @@ SharedCompileArgs CompileArgs::build(JSContext* cx,
     ion = false;
   }
 
+  // true iff the user requested debug code, and we're able to honour that.
+  bool forceDebug = JS::Prefs::wasm_baseline_debug() && baseline;
+
   // Debug information such as source view or debug traps will require
-  // additional memory and permanently stay in baseline code, so we try to
-  // only enable it when a developer actually cares: when the debugger tab
-  // is open.
-  bool debug = cx->realm() && cx->realm()->debuggerObservesWasm();
+  // additional memory and permanently stay in baseline code, so we try to only
+  // enable it when a developer actually cares: when the debugger tab is open.
+  // Or when --setpref=wasm_baseline_debug=true is given to the shell and
+  // we have baseline available.
+  bool debug =
+      (cx->realm() && cx->realm()->debuggerObservesWasm()) || forceDebug;
 
   bool forceTiering =
       cx->options().testWasmAwaitTier2() || JitOptions.wasmDelayTier2;
+
+  if (forceDebug) {
+    // If --setpref=wasm_baseline_debug=true is specified and we can honour it
+    // (because baseline is available), disable Ion and tiering so as to avoid
+    // failures below.
+    ion = false;
+    forceTiering = false;
+  }
 
   // The <Compiler>Available() predicates should ensure no failure here, but
   // when we're fuzzing we allow inconsistent switches and the check may thus

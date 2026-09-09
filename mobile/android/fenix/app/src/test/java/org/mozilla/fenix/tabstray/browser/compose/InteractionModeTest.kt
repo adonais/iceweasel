@@ -24,19 +24,21 @@ class InteractionModeTest {
 
     @Test
     fun `GIVEN grid Reorder mode THEN placeAfter defaults to true`() {
-        val mode = InteractionMode.Grid.Reordering(
-            source = fakeGridActiveState(),
-            target = fakeGridActiveState(),
-        )
+        val mode =
+            InteractionMode.Grid.Reordering(
+                source = fakeGridActiveState(),
+                target = fakeGridActiveState(),
+            )
         assertEquals(mode.placeAfter, true)
     }
 
     @Test
     fun `GIVEN list Reorder mode THEN placeAfter defaults to true`() {
-        val mode = InteractionMode.List.Reordering(
-            source = fakeListActiveState(),
-            target = fakeListActiveState(),
-        )
+        val mode =
+            InteractionMode.List.Reordering(
+                source = fakeListActiveState(),
+                target = fakeListActiveState(),
+            )
         assertEquals(mode.placeAfter, true)
     }
 
@@ -44,10 +46,11 @@ class InteractionModeTest {
     fun `GIVEN Grid Reorder mode WHEN source is accessed THEN constructor argument is preserved`() {
         val source = fakeGridActiveState(key = "key1")
         val target = fakeGridActiveState(key = "key2")
-        val mode = InteractionMode.Grid.Reordering(
-            source = source,
-            target = target,
-        )
+        val mode =
+            InteractionMode.Grid.Reordering(
+                source = source,
+                target = target,
+            )
         assertEquals(source, mode.source)
     }
 
@@ -55,10 +58,11 @@ class InteractionModeTest {
     fun `GIVEN List Reorder mode WHEN source is accessed THEN constructor argument is preserved`() {
         val source = fakeListActiveState(key = "key1")
         val target = fakeListActiveState(key = "key2")
-        val mode = InteractionMode.List.Reordering(
-            source = source,
-            target = target,
-        )
+        val mode =
+            InteractionMode.List.Reordering(
+                source = source,
+                target = target,
+            )
         assertEquals(source, mode.source)
     }
 
@@ -66,10 +70,11 @@ class InteractionModeTest {
     fun `GIVEN Grid Reorder mode WHEN target is accessed THEN constructor argument is preserved`() {
         val source = fakeGridActiveState(key = "key1")
         val target = fakeGridActiveState(key = "key2")
-        val mode = InteractionMode.Grid.Reordering(
-            source = source,
-            target = target,
-        )
+        val mode =
+            InteractionMode.Grid.Reordering(
+                source = source,
+                target = target,
+            )
         assertEquals(target, mode.target)
     }
 
@@ -77,10 +82,11 @@ class InteractionModeTest {
     fun `GIVEN List Reorder mode WHEN target is accessed THEN constructor argument is preserved`() {
         val source = fakeListActiveState(key = "key1")
         val target = fakeListActiveState(key = "key2")
-        val mode = InteractionMode.List.Reordering(
-            source = source,
-            target = target,
-        )
+        val mode =
+            InteractionMode.List.Reordering(
+                source = source,
+                target = target,
+            )
         assertEquals(target, mode.target)
     }
 

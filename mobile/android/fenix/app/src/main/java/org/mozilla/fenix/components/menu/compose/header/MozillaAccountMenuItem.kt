@@ -45,12 +45,12 @@ import mozilla.components.service.fxa.manager.AccountState.AuthenticationProblem
 import mozilla.components.service.fxa.manager.AccountState.NotAuthenticated
 import mozilla.components.service.fxa.manager.AccountState.Unknown
 import mozilla.components.service.fxa.store.Account
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.Image
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.ThemedValue
 import org.mozilla.fenix.theme.ThemedValueProvider
-import mozilla.components.ui.icons.R as iconsR
 
 private val BUTTON_HEIGHT = 56.dp
 private val AVATAR_SIZE = 24.dp
@@ -68,20 +68,23 @@ internal fun MozillaAccountMenuItem(
     val contentDescription: String
 
     when (accountState) {
-        NotAuthenticated, Unknown -> {
+        NotAuthenticated,
+        Unknown -> {
             label = stringResource(id = R.string.browser_menu_sign_in)
             description = stringResource(id = R.string.browser_menu_sign_in_caption_3)
         }
 
         AuthenticationProblem -> {
-            label = account?.displayName ?: account?.email
+            label =
+                account?.displayName
+                    ?: account?.email
                     ?: stringResource(id = R.string.browser_menu_sign_back_in_to_sync)
             description = stringResource(id = R.string.browser_menu_syncing_paused_caption)
         }
 
         Authenticated -> {
-            label = account?.displayName ?: account?.email
-                    ?: stringResource(id = R.string.browser_menu_account_settings)
+            label =
+                account?.displayName ?: account?.email ?: stringResource(id = R.string.browser_menu_account_settings)
             description = stringResource(id = R.string.browser_menu_signed_in_caption)
         }
 
@@ -94,21 +97,22 @@ internal fun MozillaAccountMenuItem(
     contentDescription = if (description != null) "$label $description" else label
 
     Row(
-        modifier = modifier
-            .clearAndSetSemantics {
-                role = Role.Button
-                this.contentDescription = contentDescription
-            }
-            .wrapContentSize()
-            .clip(MaterialTheme.shapes.extraSmall)
-            .background(color = MaterialTheme.colorScheme.surfaceBright)
-            .height(IntrinsicSize.Min)
-            .defaultMinSize(minHeight = BUTTON_HEIGHT)
-            .clickable { onClick() }
-            .padding(
-                horizontal = FirefoxTheme.layout.space.dynamic200,
-                vertical = FirefoxTheme.layout.space.static100,
-            ),
+        modifier =
+            modifier
+                .clearAndSetSemantics {
+                    role = Role.Button
+                    this.contentDescription = contentDescription
+                }
+                .wrapContentSize()
+                .clip(MaterialTheme.shapes.extraSmall)
+                .background(color = MaterialTheme.colorScheme.surfaceBright)
+                .height(IntrinsicSize.Min)
+                .defaultMinSize(minHeight = BUTTON_HEIGHT)
+                .clickable { onClick() }
+                .padding(
+                    horizontal = FirefoxTheme.layout.space.dynamic200,
+                    vertical = FirefoxTheme.layout.space.static100,
+                ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
@@ -119,9 +123,7 @@ internal fun MozillaAccountMenuItem(
 
             Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static200))
 
-            Column(
-                modifier = Modifier.weight(1f),
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = label,
                     overflow = TextOverflow.Ellipsis,
@@ -132,11 +134,12 @@ internal fun MozillaAccountMenuItem(
                 description?.let {
                     Text(
                         text = description,
-                        color = if (accountState is AuthenticationProblem) {
-                            MaterialTheme.colorScheme.error
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
+                        color =
+                            if (accountState is AuthenticationProblem) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 2,
                         style = FirefoxTheme.typography.caption,
@@ -178,9 +181,7 @@ private fun AvatarIcon(
         if (avatarUrl != null) {
             Image(
                 url = avatarUrl,
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .size(AVATAR_SIZE),
+                modifier = Modifier.clip(CircleShape).size(AVATAR_SIZE),
                 targetSize = AVATAR_SIZE,
                 placeholder = { FallbackAvatarIcon() },
                 fallback = { FallbackAvatarIcon() },
@@ -211,56 +212,58 @@ private class MozillaAccountMenuItemPreviewProvider :
                 isPrivate = true,
             ),
             MozillaAccountMenuItemPreviewState(
-                account = Account(
-                    uid = "testUID",
-                    email = "test@example.com",
-                    avatar = null,
-                    displayName = "test profile",
-                ),
+                account =
+                    Account(
+                        uid = "testUID",
+                        email = "test@example.com",
+                        avatar = null,
+                        displayName = "test profile",
+                    ),
                 accountState = Authenticated,
                 isPrivate = false,
             ),
             MozillaAccountMenuItemPreviewState(
-                account = Account(
-                    uid = "testUID",
-                    email = "test@example.com",
-                    avatar = null,
-                    displayName = null,
-                ),
+                account =
+                    Account(
+                        uid = "testUID",
+                        email = "test@example.com",
+                        avatar = null,
+                        displayName = null,
+                    ),
                 accountState = Authenticated,
                 isPrivate = false,
             ),
             MozillaAccountMenuItemPreviewState(
-                account = Account(
-                    uid = "testUID",
-                    email = null,
-                    avatar = null,
-                    displayName = null,
-                ),
+                account =
+                    Account(
+                        uid = "testUID",
+                        email = null,
+                        avatar = null,
+                        displayName = null,
+                    ),
                 accountState = Authenticated,
                 isPrivate = false,
             ),
         ),
-        displayNames = listOf(
-            "Signed out",
-            "Authentication problem (private)",
-            "Authenticated with display name",
-            "Authenticated with email",
-            "Authenticated without details",
-        ),
+        displayNames =
+            listOf(
+                "Signed out",
+                "Authentication problem (private)",
+                "Authenticated with display name",
+                "Authenticated with email",
+                "Authenticated without details",
+            ),
     )
 
 @Preview
 @Composable
 private fun MozillaAccountMenuItemPreview(
     @PreviewParameter(MozillaAccountMenuItemPreviewProvider::class)
-    state: ThemedValue<MozillaAccountMenuItemPreviewState>,
+    state: ThemedValue<MozillaAccountMenuItemPreviewState>
 ) {
     FirefoxTheme(state.theme) {
         Surface {
-            Column(
-                modifier = Modifier.padding(all = FirefoxTheme.layout.space.static200),
-            ) {
+            Column(modifier = Modifier.padding(all = FirefoxTheme.layout.space.static200)) {
                 MozillaAccountMenuItem(
                     account = state.value.account,
                     accountState = state.value.accountState,

@@ -10,9 +10,7 @@ import org.mozilla.fenix.webcompat.store.WebCompatReporterAction
 import org.mozilla.fenix.webcompat.store.WebCompatReporterState
 import org.mozilla.fenix.webcompat.store.WebCompatReporterStore
 
-/**
- * [Middleware] that handles navigation events for the WebCompat Reporter.
- */
+/** [Middleware] that handles navigation events for the WebCompat Reporter. */
 class WebCompatReporterNavigationMiddleware : Middleware<WebCompatReporterState, WebCompatReporterAction> {
 
     override fun invoke(
@@ -29,9 +27,7 @@ class WebCompatReporterNavigationMiddleware : Middleware<WebCompatReporterState,
                 }
             }
             is WebCompatReporterAction.NavigationAction ->
-                (store as WebCompatReporterStore).emitNavAction(
-                    action = action,
-                )
+                (store as WebCompatReporterStore).emitNavAction(action = action)
             else -> {}
         }
     }

@@ -17,7 +17,7 @@
  * It is possible to debug the current definitions by using libintvector_debug.h
  * See the include at the bottom of the file. */
 
-#define Lib_IntVector_Intrinsics_bit_mask64(x) -((x)&1)
+#define Lib_IntVector_Intrinsics_bit_mask64(x) -((x) & 1)
 
 #if defined(__x86_64__) || defined(_M_X64)
 
@@ -651,21 +651,21 @@ typedef vector128_8 vector128;
     (vector128)((vector128_64)vec_revb(*((vector128_64*)(const uint8_t*)(x))))
 
 static inline void
-Lib_IntVector_Intrinsics_vec128_store32_le(const uint8_t *x0, vector128 x1)
+Lib_IntVector_Intrinsics_vec128_store32_le(const uint8_t* x0, vector128 x1)
 {
-    *((vector128_32 *)x0) = vec_revb((vector128_32)x1);
+    *((vector128_32*)x0) = vec_revb((vector128_32)x1);
 }
 
 static inline void
-Lib_IntVector_Intrinsics_vec128_store32_be(const uint8_t *x0, vector128 x1)
+Lib_IntVector_Intrinsics_vec128_store32_be(const uint8_t* x0, vector128 x1)
 {
-    *((vector128_32 *)x0) = (vector128_32)x1;
+    *((vector128_32*)x0) = (vector128_32)x1;
 }
 
 static inline void
-Lib_IntVector_Intrinsics_vec128_store64_le(const uint8_t *x0, vector128 x1)
+Lib_IntVector_Intrinsics_vec128_store64_le(const uint8_t* x0, vector128 x1)
 {
-    *((vector128_64 *)x0) = vec_revb((vector128_64)x1);
+    *((vector128_64*)x0) = vec_revb((vector128_64)x1);
 }
 
 #define Lib_IntVector_Intrinsics_vec128_add32(x0, x1) \

@@ -288,14 +288,6 @@ class DebugAPI {
   // Call any stepping handlers for the current scripted location.
   [[nodiscard]] static bool onSingleStep(JSContext* cx);
 
-  // Notify any Debugger instances observing this promise's global that a new
-  // promise was allocated.
-  //
-  // If the hook code modifies the Promise state, this throws an error and
-  // returns false.
-  static inline bool onNewPromise(JSContext* cx,
-                                  Handle<PromiseObject*> promise);
-
   static inline void onNewGlobalObject(JSContext* cx,
                                        Handle<GlobalObject*> global);
 
@@ -397,8 +389,6 @@ class DebugAPI {
                                                       AbstractFramePtr frame);
   static void slowPathOnNewWasmInstance(
       JSContext* cx, Handle<WasmInstanceObject*> wasmInstance);
-  static bool slowPathOnNewPromise(JSContext* cx,
-                                   Handle<PromiseObject*> promise);
   static bool inFrameMaps(AbstractFramePtr frame);
   static void slowPathTraceGeneratorFrame(JSTracer* tracer,
                                           AbstractGeneratorObject* generator);

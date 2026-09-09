@@ -11,40 +11,46 @@ import mozilla.components.browser.state.state.ReaderState
 
 internal object ReaderStateReducer {
 
-    /**
-     * [EngineAction] Reducer function for modifying a specific [ReaderState]
-     * of a [BrowserState].
-     */
-    fun reduce(state: BrowserState, action: ReaderAction): BrowserState = when (action) {
-        is ReaderAction.UpdateReaderableAction -> state.copyWithReaderState(action.tabId) {
-            it.copy(readerable = action.readerable)
+    /** [EngineAction] Reducer function for modifying a specific [ReaderState] of a [BrowserState]. */
+    fun reduce(state: BrowserState, action: ReaderAction): BrowserState =
+        when (action) {
+            is ReaderAction.UpdateReaderableAction ->
+                state.copyWithReaderState(action.tabId) {
+                    it.copy(readerable = action.readerable)
+                }
+            is ReaderAction.UpdateReaderActiveAction ->
+                state.copyWithReaderState(action.tabId) {
+                    it.copy(active = action.active)
+                }
+            is ReaderAction.UpdateReaderableCheckRequiredAction ->
+                state.copyWithReaderState(action.tabId) {
+                    it.copy(checkRequired = action.checkRequired)
+                }
+            is ReaderAction.UpdateReaderConnectRequiredAction ->
+                state.copyWithReaderState(action.tabId) {
+                    it.copy(connectRequired = action.connectRequired)
+                }
+            is ReaderAction.UpdateReaderBaseUrlAction ->
+                state.copyWithReaderState(action.tabId) {
+                    it.copy(baseUrl = action.baseUrl)
+                }
+            is ReaderAction.UpdateReaderActiveUrlAction ->
+                state.copyWithReaderState(action.tabId) {
+                    it.copy(activeUrl = action.activeUrl)
+                }
+            is ReaderAction.ClearReaderActiveUrlAction ->
+                state.copyWithReaderState(action.tabId) {
+                    it.copy(activeUrl = null)
+                }
+            is ReaderAction.UpdateReaderScrollYAction ->
+                state.copyWithReaderState(action.tabId) {
+                    if (it.active) {
+                        it.copy(scrollY = action.scrollY)
+                    } else {
+                        it
+                    }
+                }
         }
-        is ReaderAction.UpdateReaderActiveAction -> state.copyWithReaderState(action.tabId) {
-            it.copy(active = action.active)
-        }
-        is ReaderAction.UpdateReaderableCheckRequiredAction -> state.copyWithReaderState(action.tabId) {
-            it.copy(checkRequired = action.checkRequired)
-        }
-        is ReaderAction.UpdateReaderConnectRequiredAction -> state.copyWithReaderState(action.tabId) {
-            it.copy(connectRequired = action.connectRequired)
-        }
-        is ReaderAction.UpdateReaderBaseUrlAction -> state.copyWithReaderState(action.tabId) {
-            it.copy(baseUrl = action.baseUrl)
-        }
-        is ReaderAction.UpdateReaderActiveUrlAction -> state.copyWithReaderState(action.tabId) {
-            it.copy(activeUrl = action.activeUrl)
-        }
-        is ReaderAction.ClearReaderActiveUrlAction -> state.copyWithReaderState(action.tabId) {
-            it.copy(activeUrl = null)
-        }
-        is ReaderAction.UpdateReaderScrollYAction -> state.copyWithReaderState(action.tabId) {
-            if (it.active) {
-                it.copy(scrollY = action.scrollY)
-            } else {
-                it
-            }
-        }
-    }
 }
 
 private fun BrowserState.copyWithReaderState(
@@ -52,8 +58,9 @@ private fun BrowserState.copyWithReaderState(
     update: (ReaderState) -> ReaderState,
 ): BrowserState {
     return copy(
-        tabs = tabs.updateTabs(tabId) { current ->
-            current.copy(readerState = update.invoke(current.readerState))
-        } ?: tabs,
+        tabs =
+            tabs.updateTabs(tabId) { current ->
+                current.copy(readerState = update.invoke(current.readerState))
+            } ?: tabs
     )
 }

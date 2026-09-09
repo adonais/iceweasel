@@ -19,8 +19,9 @@ internal class BookmarksStore(
     initialState: BookmarksState = BookmarksState.default,
     reducer: Reducer<BookmarksState, BookmarksAction> = ::bookmarksReducer,
     middleware: List<Middleware<BookmarksState, BookmarksAction>> = listOf(),
-) : Store<BookmarksState, BookmarksAction>(
-    initialState = initialState,
-    reducer = reducer,
-    middleware = middleware,
-)
+) :
+    Store<BookmarksState, BookmarksAction>(
+        initialState = initialState,
+        reducer = reducer,
+        middleware = middleware,
+    )

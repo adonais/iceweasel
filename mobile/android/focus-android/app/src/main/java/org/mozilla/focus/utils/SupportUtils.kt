@@ -11,6 +11,9 @@ import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.fragment.app.FragmentActivity
+import java.io.UnsupportedEncodingException
+import java.net.URLEncoder
+import java.util.Locale
 import mozilla.components.browser.state.state.ExternalAppType
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.feature.customtabs.createCustomTabConfigFromIntent
@@ -21,13 +24,8 @@ import org.mozilla.focus.activity.CustomTabActivity
 import org.mozilla.focus.ext.components
 import org.mozilla.focus.locale.Locales
 import org.mozilla.focus.state.AppAction
-import java.io.UnsupportedEncodingException
-import java.net.URLEncoder
-import java.util.Locale
 
-/**
- * Utility class for support-related URLs and operations.
- */
+/** Utility class for support-related URLs and operations. */
 object SupportUtils {
     const val HELP_URL = "https://support.mozilla.org/kb/what-firefox-focus-android"
     const val FOCUS_PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=${BuildConfig.APPLICATION_ID}"
@@ -43,29 +41,23 @@ object SupportUtils {
             return "https://www.mozilla.org/$langTag/about/manifesto/"
         }
 
-    /**
-     * Paths for specific pages on the Mozilla website.
-     */
+    /** Paths for specific pages on the Mozilla website. */
     enum class MozillaPage(internal val path: String) {
         PRIVATE_NOTICE("privacy/firefox-focus/"),
         TERMS_OF_SERVICE("about/legal/terms/firefox-focus/"),
     }
 
-    /**
-     * Returns the localised URL for a given [page].
-     */
+    /** Returns the localised URL for a given [page]. */
     fun getMozillaPageUrl(page: MozillaPage, locale: Locale = Locale.getDefault()): String {
         val path = page.path
         val langTag = Locales.getLanguageTag(locale)
         return "https://www.mozilla.org/$langTag/$path"
     }
 
-    /**
-     * Topics available on Mozilla Support (SUMO).
-     */
+    /** Topics available on Mozilla Support (SUMO). */
     enum class SumoTopic(
-        /** The final path segment for a SUMO URL - see {@see #getSumoURLForTopic}  */
-        internal val topicStr: String,
+        /** The final path segment for a SUMO URL - see {@see #getSumoURLForTopic} */
+        internal val topicStr: String
     ) {
         ADD_SEARCH_ENGINE("add-search-engine"),
         AUTOCOMPLETE("autofill-domain-android"),
@@ -75,18 +67,14 @@ object SupportUtils {
         HTTPS_ONLY("https-only-prefs-focus"),
     }
 
-    /**
-     * Returns a generic Mozilla Support (SUMO) URL for the given [topic].
-     */
+    /** Returns a generic Mozilla Support (SUMO) URL for the given [topic]. */
     fun getGenericSumoURLForTopic(topic: SumoTopic): String {
         val escapedTopic = getEncodedTopicUTF8(topic.topicStr)
         val langTag = Locales.getLanguageTag(Locale.getDefault())
         return "https://support.mozilla.org/$langTag/kb/$escapedTopic"
     }
 
-    /**
-     * Returns the SUMO URL for a specific topic
-     */
+    /** Returns the SUMO URL for a specific topic */
     fun getSumoURLForTopic(appVersion: String, topic: SumoTopic): String {
         val escapedTopic = getEncodedTopicUTF8(topic.topicStr)
         val osTarget = "Android"
@@ -94,9 +82,7 @@ object SupportUtils {
         return "https://support.mozilla.org/1/mobile/$appVersion/$osTarget/$langTag/$escapedTopic"
     }
 
-    /**
-     * Returns the Mozilla Support (SUMO) URL for safe browsing.
-     */
+    /** Returns the Mozilla Support (SUMO) URL for safe browsing. */
     fun getSafeBrowsingURL(): String {
         val langTag = Locales.getLanguageTag(Locale.getDefault())
         return "https://support.mozilla.org/$langTag/kb/how-does-phishing-and-malware-protection-work"
@@ -110,40 +96,35 @@ object SupportUtils {
         }
     }
 
-    /**
-     * Returns the version name of this package or an empty string if versionName is null.
-     */
+    /** Returns the version name of this package or an empty string if versionName is null. */
     fun getAppVersion(context: Context): String {
         try {
-            return context.packageManagerCompatHelper.getPackageInfoCompat(
-                context.packageName,
-                0,
-            ).versionName ?: ""
+            return context.packageManagerCompatHelper
+                .getPackageInfoCompat(
+                    context.packageName,
+                    0,
+                )
+                .versionName ?: ""
         } catch (e: PackageManager.NameNotFoundException) {
             // This should be impossible - we should always be able to get information about ourselves:
             throw IllegalStateException("Unable find package details for Focus", e)
         }
     }
 
-    /**
-     * Opens the default browser Mozilla Support (SUMO) page.
-     */
+    /** Opens the default browser Mozilla Support (SUMO) page. */
     fun openDefaultBrowserSumoPage(context: Context) {
-        val tabId = context.components.tabsUseCases.addTab(
-            DEFAULT_BROWSER_URL,
-            source = SessionState.Source.Internal.Menu,
-            selectTab = true,
-            private = true,
-        )
+        val tabId =
+            context.components.tabsUseCases.addTab(
+                DEFAULT_BROWSER_URL,
+                source = SessionState.Source.Internal.Menu,
+                selectTab = true,
+                private = true,
+            )
 
-        context.components.appStore.dispatch(
-            AppAction.OpenTab(tabId),
-        )
+        context.components.appStore.dispatch(AppAction.OpenTab(tabId))
     }
 
-    /**
-     * Opens the given [destinationUrl] in a custom tab.
-     */
+    /** Opens the given [destinationUrl] in a custom tab. */
     fun openUrlInCustomTab(
         activity: FragmentActivity,
         destinationUrl: String,
@@ -154,16 +135,18 @@ object SupportUtils {
             ContextCompat.getColor(activity, R.color.settings_background),
         )
 
-        val tabId = activity.components.customTabsUseCases.add(
-            url = destinationUrl,
-            customTabConfig = createCustomTabConfigFromIntent(
-                intent = activity.intent,
-                resources = activity.resources,
-                externalAppType = externalAppType,
-            ),
-            private = true,
-            source = SessionState.Source.Internal.None,
-        )
+        val tabId =
+            activity.components.customTabsUseCases.add(
+                url = destinationUrl,
+                customTabConfig =
+                    createCustomTabConfigFromIntent(
+                        intent = activity.intent,
+                        resources = activity.resources,
+                        externalAppType = externalAppType,
+                    ),
+                private = true,
+                source = SessionState.Source.Internal.None,
+            )
         val openCustomTabActivityIntent =
             Intent(activity, CustomTabActivity::class.java).apply {
                 action = Intent.ACTION_VIEW

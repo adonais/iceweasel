@@ -26,12 +26,12 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.ui.richtext.ir.RichDocument
 import mozilla.components.ui.richtext.parsing.Parser
 import mozilla.components.ui.richtext.rendering.Render
-import kotlin.time.Duration.Companion.seconds
 
 /**
  * Rich text rendering composable.
@@ -50,9 +50,10 @@ fun RichText(
     colors: RichTextColors = RichTextDefaults.colors(),
     uriHandler: UriHandler = remember { NoOpUriHandler() },
 ) {
-    val document = remember(text, typography) {
-        Parser().parse(text)
-    }
+    val document =
+        remember(text, typography) {
+            Parser().parse(text)
+        }
     RichText(
         document = document,
         modifier = modifier,
@@ -97,7 +98,8 @@ fun RichText(
     }
 }
 
-private val SampleText = """
+private val SampleText =
+    """
     # H1: Markdown Renderer `Test`
     This paragraph contains **bold text**, *italic text*, and ***bold italic***.
     It also includes `inline code`, a [simple link](https://example.com), a [complex **link**](https://mozilla.org),
@@ -123,16 +125,18 @@ private val SampleText = """
     > First paragraph
     >
     > Second paragraph
-""".trimIndent()
+    """
+        .trimIndent()
 
 @PreviewLightDark
 @Composable
 private fun PreviewRichText() = AcornTheme {
     var visibleCharCount by remember { mutableIntStateOf(0) }
 
-    val currentText = remember(visibleCharCount) {
-        SampleText.substring(0, visibleCharCount)
-    }
+    val currentText =
+        remember(visibleCharCount) {
+            SampleText.substring(0, visibleCharCount)
+        }
 
     LaunchedEffect(Unit) {
         // TODO remove: delay to wait for the layout inspector to get attached
@@ -150,17 +154,15 @@ private fun PreviewRichText() = AcornTheme {
         }
     }
 
-    val document = remember(currentText) {
-        Parser().parse(currentText)
-    }
+    val document =
+        remember(currentText) {
+            Parser().parse(currentText)
+        }
 
     Scaffold {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(it)
-                .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier =
+                Modifier.fillMaxSize().padding(it).padding(horizontal = 16.dp).verticalScroll(rememberScrollState()),
             contentAlignment = Alignment.Center,
         ) {
             RichText(

@@ -54,8 +54,8 @@ import mozilla.components.ui.icons.R as iconsR
  * @param title The optional header text shown above the description.
  * @param verticalRowAlignment An optional adjustment of how the row of text aligns.
  * @param footer An optional piece of text with a clickable link.
- * @param colors [InfoCardColors] that will be used to resolve the container and content colors
- * for this card. Defaults to the palette for [type] via [InfoCardDefaults.colors].
+ * @param colors [InfoCardColors] that will be used to resolve the container and content colors for this card. Defaults
+ *   to the palette for [type] via [InfoCardDefaults.colors].
  */
 @Composable
 fun InfoCard(
@@ -71,18 +71,17 @@ fun InfoCard(
         modifier = modifier,
         backgroundColor = colors.container,
         shape = MaterialTheme.shapes.large,
-        contentPadding = PaddingValues(
-            start = AcornTheme.layout.space.static150,
-            top = AcornTheme.layout.space.static150,
-            end = AcornTheme.layout.space.static200,
-            bottom = AcornTheme.layout.space.static150,
-        ),
+        contentPadding =
+            PaddingValues(
+                start = AcornTheme.layout.space.static150,
+                top = AcornTheme.layout.space.static150,
+                end = AcornTheme.layout.space.static200,
+                bottom = AcornTheme.layout.space.static150,
+            ),
         elevation = 0.dp,
     ) {
         CompositionLocalProvider(LocalContentColor provides colors.content) {
-            Row(
-                verticalAlignment = verticalRowAlignment,
-            ) {
+            Row(verticalAlignment = verticalRowAlignment) {
                 Icon(
                     painter = painterResource(id = type.iconId),
                     contentDescription = null,
@@ -123,39 +122,29 @@ fun InfoCard(
     }
 }
 
-/**
- * The possible types of a [InfoCard].
- */
+/** The possible types of a [InfoCard]. */
 enum class InfoType {
-    /**
-     * Stylizes the card to indicate a non-permanent or minor issue has occurred.
-     */
+    /** Stylizes the card to indicate a non-permanent or minor issue has occurred. */
     Warning,
 
-    /**
-     * Stylizes the card to indicate a serious error has occurred.
-     */
+    /** Stylizes the card to indicate a serious error has occurred. */
     Error,
 
-    /**
-     * Stylizes the card for informative messages in colorful tones.
-     */
+    /** Stylizes the card for informative messages in colorful tones. */
     Info,
 
-    /**
-     * Stylizes the card for subtle informational messages using the surface palette.
-     */
-    Neutral,
-
-    ;
+    /** Stylizes the card for subtle informational messages using the surface palette. */
+    Neutral;
 
     @get:DrawableRes
     internal val iconId: Int
-        get() = when (this) {
-            Warning -> iconsR.drawable.mozac_ic_warning_24
-            Error -> iconsR.drawable.mozac_ic_critical_24
-            Info, Neutral -> iconsR.drawable.mozac_ic_information_24
-        }
+        get() =
+            when (this) {
+                Warning -> iconsR.drawable.mozac_ic_warning_24
+                Error -> iconsR.drawable.mozac_ic_critical_24
+                Info,
+                Neutral -> iconsR.drawable.mozac_ic_information_24
+            }
 }
 
 /**
@@ -170,34 +159,34 @@ data class InfoCardColors(
     val content: Color,
 )
 
-/**
- * Default values used by [InfoCard].
- */
+/** Default values used by [InfoCard]. */
 object InfoCardDefaults {
-    /**
-     * Creates the [InfoCardColors] that represent the default container and content colors for
-     * the given [type].
-     */
+    /** Creates the [InfoCardColors] that represent the default container and content colors for the given [type]. */
     @Composable
     @ReadOnlyComposable
-    fun colors(type: InfoType): InfoCardColors = when (type) {
-        InfoType.Warning -> InfoCardColors(
-            container = MaterialTheme.colorScheme.warningContainer,
-            content = MaterialTheme.colorScheme.onWarningContainer,
-        )
-        InfoType.Error -> InfoCardColors(
-            container = MaterialTheme.colorScheme.errorContainer,
-            content = MaterialTheme.colorScheme.onErrorContainer,
-        )
-        InfoType.Info -> InfoCardColors(
-            container = MaterialTheme.colorScheme.informationContainer,
-            content = MaterialTheme.colorScheme.onInformationContainer,
-        )
-        InfoType.Neutral -> InfoCardColors(
-            container = MaterialTheme.colorScheme.surfaceContainerHighest,
-            content = MaterialTheme.colorScheme.onSurface,
-        )
-    }
+    fun colors(type: InfoType): InfoCardColors =
+        when (type) {
+            InfoType.Warning ->
+                InfoCardColors(
+                    container = MaterialTheme.colorScheme.warningContainer,
+                    content = MaterialTheme.colorScheme.onWarningContainer,
+                )
+            InfoType.Error ->
+                InfoCardColors(
+                    container = MaterialTheme.colorScheme.errorContainer,
+                    content = MaterialTheme.colorScheme.onErrorContainer,
+                )
+            InfoType.Info ->
+                InfoCardColors(
+                    container = MaterialTheme.colorScheme.informationContainer,
+                    content = MaterialTheme.colorScheme.onInformationContainer,
+                )
+            InfoType.Neutral ->
+                InfoCardColors(
+                    container = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    content = MaterialTheme.colorScheme.onSurface,
+                )
+        }
 }
 
 private class InfoTypeProvider : PreviewParameterProvider<InfoType> {
@@ -217,11 +206,13 @@ private fun InfoCardPreviewContent(type: InfoType) {
                 type = type,
                 modifier = Modifier.fillMaxWidth(),
                 title = "Title text",
-                footer = "Primary link text with an underlined hyperlink." to LinkTextState(
-                    text = "underlined hyperlink",
-                    url = "https://www.mozilla.org",
-                    onClick = {},
-                ),
+                footer =
+                    "Primary link text with an underlined hyperlink." to
+                        LinkTextState(
+                            text = "underlined hyperlink",
+                            url = "https://www.mozilla.org",
+                            onClick = {},
+                        ),
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -237,9 +228,7 @@ private fun InfoCardPreviewContent(type: InfoType) {
 
 @Composable
 @PreviewLightDark
-private fun InfoCardPreview(
-    @PreviewParameter(InfoTypeProvider::class) type: InfoType,
-) {
+private fun InfoCardPreview(@PreviewParameter(InfoTypeProvider::class) type: InfoType) {
     AcornTheme {
         InfoCardPreviewContent(type = type)
     }
@@ -247,9 +236,7 @@ private fun InfoCardPreview(
 
 @Composable
 @Preview
-private fun InfoCardPrivatePreview(
-    @PreviewParameter(InfoTypeProvider::class) type: InfoType,
-) {
+private fun InfoCardPrivatePreview(@PreviewParameter(InfoTypeProvider::class) type: InfoType) {
     AcornTheme(
         colors = privateColorPalette,
         colorScheme = acornPrivateColorScheme(),

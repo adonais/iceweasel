@@ -624,8 +624,8 @@ static bool ParseTimeDuration(const CharRange& text,
 }
 
 static void PrintProfileHelpAndExit(const char* envName, const char* helpText) {
-  fprintf(stderr, "%s=N[,(main|all)]\n", envName);
-  fprintf(stderr, "%s", helpText);
+  printf_stderr("%s=N[,(main|all)]\n", envName);
+  printf_stderr("%s", helpText);
   exit(0);
 }
 
@@ -732,7 +732,10 @@ const char gc::ZealModeHelpText[] =
 "    25: (YieldWhileGrayMarking) Incremental GC in two slices that yields\n"
 "        during gray marking\n"
 "    26: (CheckHeapBeforeMinorGC) Check for invariant violations before every\n"
-"        minor GC\n";
+"        minor GC\n"
+"    27: (ConcurrentMarkingDelays) Add a short sleep at select points in the\n"
+"        mutator that could be risky under concurrent marking, to widen race\n"
+"        windows for testing\n";
 // clang-format on
 
 // The set of zeal modes that yield at specific points in collection.
@@ -882,16 +885,15 @@ static bool ParseZealModeNumericParam(const CharRange& text,
 }
 
 static bool PrintZealHelpAndFail() {
-  fprintf(stderr, "Format: JS_GC_ZEAL=mode[;mode2;mode3...][,frequency]\n");
-  fprintf(stderr, "  Examples: JS_GC_ZEAL=2 (mode 2 with default frequency)\n");
-  fprintf(
-      stderr,
+  printf_stderr("Format: JS_GC_ZEAL=mode[;mode2;mode3...][,frequency]\n");
+  printf_stderr("  Examples: JS_GC_ZEAL=2 (mode 2 with default frequency)\n");
+  printf_stderr(
       "            JS_GC_ZEAL=2;7 (modes 2 and 7 with default frequency)\n");
-  fprintf(stderr, "            JS_GC_ZEAL=2,100 (mode 2 with frequency 100)\n");
-  fprintf(stderr,
-          "            JS_GC_ZEAL=2;7,100 (modes 2 and 7, both with frequency "
-          "100)\n");
-  fputs(ZealModeHelpText, stderr);
+  printf_stderr("            JS_GC_ZEAL=2,100 (mode 2 with frequency 100)\n");
+  printf_stderr(
+      "            JS_GC_ZEAL=2;7,100 (modes 2 and 7, both with frequency "
+      "100)\n");
+  printf_stderr("%s", ZealModeHelpText);
   return false;
 }
 
@@ -1001,15 +1003,15 @@ void GCRuntime::clearZealMode(ZealMode mode) {
 }
 
 void js::gc::DumpArenaInfo() {
-  fprintf(stderr, "Arena header size: %zu\n\n", ArenaHeaderSize);
+  printf_stderr("Arena header size: %zu\n\n", ArenaHeaderSize);
 
-  fprintf(stderr, "GC thing kinds:\n");
-  fprintf(stderr, "%25s %8s %8s %8s\n",
-          "AllocKind:", "Size:", "Count:", "Padding:");
+  printf_stderr("GC thing kinds:\n");
+  printf_stderr("%25s %8s %8s %8s\n",
+                "AllocKind:", "Size:", "Count:", "Padding:");
   for (auto kind : AllAllocKinds()) {
-    fprintf(stderr, "%25s %8zu %8zu %8zu\n", AllocKindName(kind),
-            Arena::thingSize(kind), Arena::thingsPerArena(kind),
-            Arena::firstThingOffset(kind) - ArenaHeaderSize);
+    printf_stderr("%25s %8zu %8zu %8zu\n", AllocKindName(kind),
+                  Arena::thingSize(kind), Arena::thingsPerArena(kind),
+                  Arena::firstThingOffset(kind) - ArenaHeaderSize);
   }
 }
 
@@ -3760,9 +3762,11 @@ GCRuntime::MarkQueueProgress GCRuntime::processTestMarkQueue() {
       bool hadDelayed = delayedMarkingWorkAdded;
       marker().markOneObjectForTest(obj);
       if (!hadDelayed && delayedMarkingWorkAdded) {
-        // If we overflowed the stack here and delayed marking, then we won't be
-        // testing what we think we're testing.
-        MOZ_ASSERT(obj->asTenured().arena()->onDelayedMarkingList());
+        // If we overflowed the stack here and delayed marking, then we won't
+        // be testing what we think we're testing. Note that
+        // markOneObjectForTest() can't guarantee that *only* that object will
+        // be marked, so it may be a different object's arena on the delayed
+        // marking list.
         printf_stderr(
             "Hit mark stack limit while marking test queue; test results may "
             "be invalid");
@@ -3945,12 +3949,12 @@ void GCRuntime::maybeStopPretenuring() {
 
   if (nursery().reportPretenuring()) {
     if (zonesWhereStringsEnabled) {
-      fprintf(stderr, "GC re-enabled nursery string allocation in %zu zones\n",
-              zonesWhereStringsEnabled);
+      printf_stderr("GC re-enabled nursery string allocation in %zu zones\n",
+                    zonesWhereStringsEnabled);
     }
     if (zonesWhereBigIntsEnabled) {
-      fprintf(stderr, "GC re-enabled nursery big int allocation in %zu zones\n",
-              zonesWhereBigIntsEnabled);
+      printf_stderr("GC re-enabled nursery big int allocation in %zu zones\n",
+                    zonesWhereBigIntsEnabled);
     }
   }
 }
@@ -4721,14 +4725,14 @@ inline void GCRuntime::checkZoneIsScheduled(Zone* zone, JS::GCReason reason,
     return;
   }
 
-  fprintf(stderr,
-          "checkZoneIsScheduled: Zone %p not scheduled as expected in %s GC "
-          "for %s trigger\n",
-          zone, JS::ExplainGCReason(reason), trigger);
+  printf_stderr(
+      "checkZoneIsScheduled: Zone %p not scheduled as expected in %s GC "
+      "for %s trigger\n",
+      zone, JS::ExplainGCReason(reason), trigger);
   for (ZonesIter zone(this, WithAtoms); !zone.done(); zone.next()) {
-    fprintf(stderr, "  Zone %p:%s%s\n", zone.get(),
-            zone->isAtomsZone() ? " atoms" : "",
-            zone->isGCScheduled() ? " scheduled" : "");
+    printf_stderr("  Zone %p:%s%s\n", zone.get(),
+                  zone->isAtomsZone() ? " atoms" : "",
+                  zone->isGCScheduled() ? " scheduled" : "");
   }
   fflush(stderr);
   MOZ_CRASH("Zone not scheduled");

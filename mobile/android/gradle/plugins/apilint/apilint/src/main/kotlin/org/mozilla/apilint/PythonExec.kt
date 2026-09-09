@@ -4,48 +4,42 @@
 
 package org.mozilla.apilint
 
+import java.io.File
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import javax.inject.Inject
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
-import java.io.File
-import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
-import javax.inject.Inject
 
 /**
  * Executes a Python script embedded in the resources.
  *
- * `Exec` disables caching by default because it cannot know what an arbitrary command reads or
- * writes. The tasks built on this one declare their inputs and outputs, and the script itself is
- * covered by the task's implementation classpath, so the results are safe to cache.
+ * `Exec` disables caching by default because it cannot know what an arbitrary command reads or writes. The tasks built
+ * on this one declare their inputs and outputs, and the script itself is covered by the task's implementation
+ * classpath, so the results are safe to cache.
  */
 @CacheableTask
 abstract class PythonExec : Exec() {
     /** Path to the script to execute. */
-    @get:Input
-    abstract val scriptPath: Property<String>
+    @get:Input abstract val scriptPath: Property<String>
 
     /**
-     * Path to the python command used to execute the script. Kept out of the cache key because it is
-     * an absolute path into the build environment, which differs per checkout and would stop entries
-     * being shared.
+     * Path to the python command used to execute the script. Kept out of the cache key because it is an absolute path
+     * into the build environment, which differs per checkout and would stop entries being shared.
      */
-    @get:Internal
-    abstract val pythonCommand: Property<String>
+    @get:Internal abstract val pythonCommand: Property<String>
 
-    @get:Inject
-    protected abstract val providerFactory: ProviderFactory
+    @get:Inject protected abstract val providerFactory: ProviderFactory
 
     init {
         // `mach gradle` passes the interpreter it is running under, which is the one to prefer: a
         // bare `python3` is not necessarily on PATH, notably on Windows.
-        pythonCommand.convention(
-            providerFactory.environmentVariable(MACH_PYTHON_ENV_VAR).orElse("python3"),
-        )
+        pythonCommand.convention(providerFactory.environmentVariable(MACH_PYTHON_ENV_VAR).orElse("python3"))
     }
 
     override fun exec() {
@@ -62,8 +56,9 @@ abstract class PythonExec : Exec() {
     }
 
     private fun copyResourceToTemp(resource: String, prefix: String = "script-", suffix: String = ".py"): File {
-        val stream = javaClass.classLoader.getResourceAsStream(resource)
-            ?: throw RuntimeException("Java resource not found: $resource")
+        val stream =
+            javaClass.classLoader.getResourceAsStream(resource)
+                ?: throw RuntimeException("Java resource not found: $resource")
 
         var tempFile: File? = null
         return try {

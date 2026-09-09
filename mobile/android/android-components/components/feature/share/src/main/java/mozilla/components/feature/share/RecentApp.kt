@@ -12,13 +12,9 @@ package mozilla.components.feature.share
  */
 interface RecentApp {
 
-    /**
-     * The activityName of the recent app.
-     */
+    /** The activityName of the recent app. */
     val activityName: String
 
-    /**
-     * The score of the recent app (calculated based on number of selections - decay)
-     */
+    /** The score of the recent app (calculated based on number of selections - decay) */
     val score: Double
 }

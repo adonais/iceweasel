@@ -4,13 +4,9 @@
 
 package mozilla.components.concept.engine.content.blocking
 
-/**
- * Represents a site that will be ignored by the tracking protection policies.
- */
+/** Represents a site that will be ignored by the tracking protection policies. */
 interface TrackingProtectionException {
 
-    /**
-     * The url of the site to be ignored.
-     */
+    /** The url of the site to be ignored. */
     val url: String
 }

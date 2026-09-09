@@ -7,9 +7,12 @@ package org.mozilla.geckoview;
 import android.content.Context;
 import android.graphics.Matrix;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.InputType;
+import android.text.SpannableString;
 import android.text.TextUtils;
+import android.text.style.LocaleSpan;
 import android.util.Log;
 import android.view.InputDevice;
 import android.view.MotionEvent;
@@ -26,6 +29,9 @@ import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.GeckoThread;
 import org.mozilla.gecko.annotation.WrapForJNI;
@@ -62,6 +68,8 @@ public class SessionAccessibility {
   @WrapForJNI static final int FLAG_SELECTABLE = 1 << 16;
   @WrapForJNI static final int FLAG_EXPANDABLE = 1 << 17;
   @WrapForJNI static final int FLAG_EXPANDED = 1 << 18;
+  @WrapForJNI static final int FLAG_MIXED = 1 << 19;
+  @WrapForJNI static final int FLAG_REQUIRED = 1 << 20;
 
   static final int CLASSNAME_UNKNOWN = -1;
   @WrapForJNI static final int CLASSNAME_VIEW = 0;
@@ -714,6 +722,22 @@ public class SessionAccessibility {
           });
     }
 
+    private CharSequence addSpansToText(
+        @Nullable final String text, @Nullable final String language) {
+      if (text == null || language == null) {
+        return text;
+      }
+
+      final Locale locale = Locale.forLanguageTag(language);
+      if (locale == null || locale.equals(Locale.getDefault())) {
+        return text;
+      }
+
+      final SpannableString spannable = new SpannableString(text);
+      spannable.setSpan(new LocaleSpan(locale), 0, spannable.length(), 0);
+      return spannable;
+    }
+
     @WrapForJNI
     private void populateNodeInfo(
         final AccessibilityNodeInfo node,
@@ -729,6 +753,8 @@ public class SessionAccessibility {
         @Nullable final String geckoRole,
         @Nullable final String roleDescription,
         @Nullable final String viewIdResourceName,
+        @Nullable final String containerTitle,
+        @Nullable final String language,
         final int inputType) {
       if (mView == null) {
         return;
@@ -750,13 +776,23 @@ public class SessionAccessibility {
       node.setPackageName(GeckoAppShell.getApplicationContext().getPackageName());
       node.setClassName(getClassName(className));
 
-      if (text != null) {
-        node.setText(text);
+      node.setText(addSpansToText(text, language));
+
+      final List<String> contentDescription = new ArrayList<String>();
+      if (description != null) {
+        contentDescription.add(description);
       }
 
-      if (description != null) {
-        node.setContentDescription(description);
+      if (containerTitle != null) {
+        if (Build.VERSION.SDK_INT >= 34) {
+          node.setContainerTitle(addSpansToText(containerTitle, language));
+        } else {
+          // As a stopgap for older android versions, append container title to content description.
+          contentDescription.add(description);
+        }
       }
+
+      node.setContentDescription(addSpansToText(String.join(" ", contentDescription), language));
 
       // Add actions
       node.addAction(AccessibilityNodeInfo.ACTION_NEXT_HTML_ELEMENT);
@@ -774,7 +810,6 @@ public class SessionAccessibility {
 
       // Set boolean properties
       node.setCheckable((flags & FLAG_CHECKABLE) != 0);
-      node.setChecked((flags & FLAG_CHECKED) != 0);
       node.setClickable((flags & FLAG_CLICKABLE) != 0);
       node.setEnabled((flags & FLAG_ENABLED) != 0);
       node.setFocusable((flags & FLAG_FOCUSABLE) != 0);
@@ -786,6 +821,21 @@ public class SessionAccessibility {
       // Other boolean properties to consider later:
       // setHeading, setImportantForAccessibility, setScreenReaderFocusable, setShowingHintText,
       // setDismissable
+
+      if (Build.VERSION.SDK_INT >= 36) {
+        node.setFieldRequired((flags & FLAG_REQUIRED) != 0);
+      }
+
+      // Use proper setChecked for API version.
+      if (Build.VERSION.SDK_INT >= 36) {
+        if ((flags & FLAG_CHECKED) != 0) {
+          node.setChecked(AccessibilityNodeInfo.CHECKED_STATE_TRUE);
+        } else if ((flags & FLAG_MIXED) != 0) {
+          node.setChecked(AccessibilityNodeInfo.CHECKED_STATE_PARTIAL);
+        }
+      } else {
+        node.setChecked((flags & FLAG_CHECKED) != 0);
+      }
 
       if (mAccessibilityFocusedNode == id) {
         node.addAction(AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS);
@@ -815,12 +865,12 @@ public class SessionAccessibility {
       node.setMultiLine((flags & FLAG_MULTI_LINE) != 0);
       node.setContentInvalid((flags & FLAG_CONTENT_INVALID) != 0);
 
-      // Set bundle keys like role and hint
-      final Bundle bundle = node.getExtras();
       if (hint != null) {
-        bundle.putCharSequence("AccessibilityNodeInfo.hint", hint);
-        node.setHintText(hint);
+        node.setHintText(addSpansToText(hint, language));
       }
+
+      // Set bundle keys like role description
+      final Bundle bundle = node.getExtras();
       if (geckoRole != null) {
         bundle.putCharSequence("AccessibilityNodeInfo.geckoRole", geckoRole);
       }

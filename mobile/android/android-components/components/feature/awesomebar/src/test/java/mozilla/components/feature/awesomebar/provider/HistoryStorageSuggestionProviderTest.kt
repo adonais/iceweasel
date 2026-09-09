@@ -62,24 +62,28 @@ class HistoryStorageSuggestionProviderTest {
     }
 
     @Test
-    fun `WHEN onInputChanged is called with non empty text THEN cancel all previous read operations with the same input`() = runTest {
-        val history: HistoryStorage = mock()
-        doReturn(listOf(SearchResult("id", "http://www.mozilla.com/", 10)))
-            .`when`(history).getSuggestions(anyString(), anyInt())
-        val provider = HistoryStorageSuggestionProvider(history, mock())
-        val orderVerifier = inOrder(history)
+    fun `WHEN onInputChanged is called with non empty text THEN cancel all previous read operations with the same input`() =
+        runTest {
+            val history: HistoryStorage = mock()
+            doReturn(listOf(SearchResult("id", "http://www.mozilla.com/", 10)))
+                .`when`(history)
+                .getSuggestions(anyString(), anyInt())
+            val provider = HistoryStorageSuggestionProvider(history, mock())
+            val orderVerifier = inOrder(history)
 
-        provider.onInputChanged("moz")
+            provider.onInputChanged("moz")
 
-        orderVerifier.verify(provider.historyStorage, never()).cancelReads()
-        orderVerifier.verify(provider.historyStorage).cancelReads("moz")
-        orderVerifier.verify(provider.historyStorage).getSuggestions(eq("moz"), anyInt())
-    }
+            orderVerifier.verify(provider.historyStorage, never()).cancelReads()
+            orderVerifier.verify(provider.historyStorage).cancelReads("moz")
+            orderVerifier.verify(provider.historyStorage).getSuggestions(eq("moz"), anyInt())
+        }
 
     @Test
     fun `Provider returns suggestions from configured history storage`() = runTest {
         val history: HistoryStorage = mock()
-        Mockito.doReturn(listOf(SearchResult("id", "http://www.mozilla.com/", 10))).`when`(history).getSuggestions(eq("moz"), Mockito.anyInt())
+        Mockito.doReturn(listOf(SearchResult("id", "http://www.mozilla.com/", 10)))
+            .`when`(history)
+            .getSuggestions(eq("moz"), Mockito.anyInt())
         val provider = HistoryStorageSuggestionProvider(history, mock())
 
         val suggestions = provider.onInputChanged("moz")
@@ -90,7 +94,9 @@ class HistoryStorageSuggestionProviderTest {
     @Test
     fun `WHEN provider is set to not show edit suggestions THEN edit suggestion is set to null`() = runTest {
         val history: HistoryStorage = mock()
-        Mockito.doReturn(listOf(SearchResult("id", "http://www.mozilla.com/", 10))).`when`(history).getSuggestions(eq("moz"), Mockito.anyInt())
+        Mockito.doReturn(listOf(SearchResult("id", "http://www.mozilla.com/", 10)))
+            .`when`(history)
+            .getSuggestions(eq("moz"), Mockito.anyInt())
         val provider = HistoryStorageSuggestionProvider(history, mock(), showEditSuggestion = false)
 
         val suggestions = provider.onInputChanged("moz")
@@ -103,10 +109,12 @@ class HistoryStorageSuggestionProviderTest {
     fun `Provider limits number of returned suggestions to a max of 20 by default`() = runTest {
         val history: HistoryStorage = mock()
         Mockito.doReturn(
-            (1..100).map {
-                SearchResult("id$it", "http://www.mozilla.com/$it/", 10)
-            },
-        ).`when`(history).getSuggestions(eq("moz"), Mockito.anyInt())
+                (1..100).map {
+                    SearchResult("id$it", "http://www.mozilla.com/$it/", 10)
+                }
+            )
+            .`when`(history)
+            .getSuggestions(eq("moz"), Mockito.anyInt())
 
         val provider = HistoryStorageSuggestionProvider(history, mock())
         val suggestions = provider.onInputChanged("moz")
@@ -117,16 +125,19 @@ class HistoryStorageSuggestionProviderTest {
     fun `Provider allows lowering the number of returned suggestions beneath the default`() = runTest {
         val history: HistoryStorage = mock()
         Mockito.doReturn(
-            (1..50).map {
-                SearchResult("id$it", "http://www.mozilla.com/$it/", 10)
-            },
-        ).`when`(history).getSuggestions(eq("moz"), Mockito.anyInt())
+                (1..50).map {
+                    SearchResult("id$it", "http://www.mozilla.com/$it/", 10)
+                }
+            )
+            .`when`(history)
+            .getSuggestions(eq("moz"), Mockito.anyInt())
 
-        val provider = HistoryStorageSuggestionProvider(
-            historyStorage = history,
-            loadUrlUseCase = mock(),
-            maxNumberOfSuggestions = 2,
-        )
+        val provider =
+            HistoryStorageSuggestionProvider(
+                historyStorage = history,
+                loadUrlUseCase = mock(),
+                maxNumberOfSuggestions = 2,
+            )
 
         val suggestions = provider.onInputChanged("moz")
         assertEquals(2, suggestions.size)
@@ -136,80 +147,91 @@ class HistoryStorageSuggestionProviderTest {
     fun `Provider allows increasing the number of returned suggestions above the default`() = runTest {
         val history: HistoryStorage = mock()
         Mockito.doReturn(
-            (1..50).map {
-                SearchResult("id$it", "http://www.mozilla.com/$it/", 10)
-            },
-        ).`when`(history).getSuggestions(eq("moz"), Mockito.anyInt())
+                (1..50).map {
+                    SearchResult("id$it", "http://www.mozilla.com/$it/", 10)
+                }
+            )
+            .`when`(history)
+            .getSuggestions(eq("moz"), Mockito.anyInt())
 
-        val provider = HistoryStorageSuggestionProvider(
-            historyStorage = history,
-            loadUrlUseCase = mock(),
-            maxNumberOfSuggestions = 22,
-        )
+        val provider =
+            HistoryStorageSuggestionProvider(
+                historyStorage = history,
+                loadUrlUseCase = mock(),
+                maxNumberOfSuggestions = 22,
+            )
 
         val suggestions = provider.onInputChanged("moz")
         assertEquals(22, suggestions.size)
     }
 
     @Test
-    fun `WHEN provider max number of suggestions is changed THEN the number of return suggestions is updated`() = runTest {
-        val history: HistoryStorage = mock()
-        Mockito.doReturn(
-            (1..50).map {
-                SearchResult("id$it", "http://www.mozilla.com/$it/", 10)
-            },
-        ).`when`(history).getSuggestions(eq("moz"), Mockito.anyInt())
+    fun `WHEN provider max number of suggestions is changed THEN the number of return suggestions is updated`() =
+        runTest {
+            val history: HistoryStorage = mock()
+            Mockito.doReturn(
+                    (1..50).map {
+                        SearchResult("id$it", "http://www.mozilla.com/$it/", 10)
+                    }
+                )
+                .`when`(history)
+                .getSuggestions(eq("moz"), Mockito.anyInt())
 
-        val provider = HistoryStorageSuggestionProvider(
-            historyStorage = history,
-            loadUrlUseCase = mock(),
-        )
+            val provider =
+                HistoryStorageSuggestionProvider(
+                    historyStorage = history,
+                    loadUrlUseCase = mock(),
+                )
 
-        var suggestions = provider.onInputChanged("moz")
-        assertEquals(20, suggestions.size)
+            var suggestions = provider.onInputChanged("moz")
+            assertEquals(20, suggestions.size)
 
-        provider.setMaxNumberOfSuggestions(2)
-        suggestions = provider.onInputChanged("moz")
-        assertEquals(2, suggestions.size)
+            provider.setMaxNumberOfSuggestions(2)
+            suggestions = provider.onInputChanged("moz")
+            assertEquals(2, suggestions.size)
 
-        provider.setMaxNumberOfSuggestions(22)
-        suggestions = provider.onInputChanged("moz")
-        assertEquals(22, suggestions.size)
+            provider.setMaxNumberOfSuggestions(22)
+            suggestions = provider.onInputChanged("moz")
+            assertEquals(22, suggestions.size)
 
-        provider.setMaxNumberOfSuggestions(45)
-        suggestions = provider.onInputChanged("moz")
-        assertEquals(45, suggestions.size)
+            provider.setMaxNumberOfSuggestions(45)
+            suggestions = provider.onInputChanged("moz")
+            assertEquals(45, suggestions.size)
 
-        provider.setMaxNumberOfSuggestions(0)
-        suggestions = provider.onInputChanged("moz")
-        assertEquals(45, suggestions.size)
-    }
+            provider.setMaxNumberOfSuggestions(0)
+            suggestions = provider.onInputChanged("moz")
+            assertEquals(45, suggestions.size)
+        }
 
     @Test
-    fun `WHEN reset provider max number of suggestions THEN the number of return suggestions is reset to default`() = runTest {
-        val history: HistoryStorage = mock()
-        Mockito.doReturn(
-            (1..50).map {
-                SearchResult("id$it", "http://www.mozilla.com/$it/", 10)
-            },
-        ).`when`(history).getSuggestions(eq("moz"), Mockito.anyInt())
+    fun `WHEN reset provider max number of suggestions THEN the number of return suggestions is reset to default`() =
+        runTest {
+            val history: HistoryStorage = mock()
+            Mockito.doReturn(
+                    (1..50).map {
+                        SearchResult("id$it", "http://www.mozilla.com/$it/", 10)
+                    }
+                )
+                .`when`(history)
+                .getSuggestions(eq("moz"), Mockito.anyInt())
 
-        val provider = HistoryStorageSuggestionProvider(
-            historyStorage = history,
-            loadUrlUseCase = mock(),
-        )
+            val provider =
+                HistoryStorageSuggestionProvider(
+                    historyStorage = history,
+                    loadUrlUseCase = mock(),
+                )
 
-        var suggestions = provider.onInputChanged("moz")
-        assertEquals(20, suggestions.size)
+            var suggestions = provider.onInputChanged("moz")
+            assertEquals(20, suggestions.size)
 
-        provider.setMaxNumberOfSuggestions(45)
-        suggestions = provider.onInputChanged("moz")
-        assertEquals(45, suggestions.size)
+            provider.setMaxNumberOfSuggestions(45)
+            suggestions = provider.onInputChanged("moz")
+            assertEquals(45, suggestions.size)
 
-        provider.resetToDefaultMaxSuggestions()
-        suggestions = provider.onInputChanged("moz")
-        assertEquals(20, suggestions.size)
-    }
+            provider.resetToDefaultMaxSuggestions()
+            suggestions = provider.onInputChanged("moz")
+            assertEquals(20, suggestions.size)
+        }
 
     @Test
     fun `Provider dedupes suggestions`() = runTest {
@@ -217,23 +239,23 @@ class HistoryStorageSuggestionProviderTest {
 
         val provider = HistoryStorageSuggestionProvider(storage, mock())
 
-        val mozSuggestions = listOf(
-            SearchResult(id = "http://www.mozilla.com/", url = "http://www.mozilla.com/", score = 1),
-            SearchResult(id = "http://www.mozilla.com/", url = "http://www.mozilla.com/", score = 2),
-            SearchResult(id = "http://www.mozilla.com/", url = "http://www.mozilla.com/", score = 3),
-        )
+        val mozSuggestions =
+            listOf(
+                SearchResult(id = "http://www.mozilla.com/", url = "http://www.mozilla.com/", score = 1),
+                SearchResult(id = "http://www.mozilla.com/", url = "http://www.mozilla.com/", score = 2),
+                SearchResult(id = "http://www.mozilla.com/", url = "http://www.mozilla.com/", score = 3),
+            )
 
-        val pocketSuggestions = listOf(
-            SearchResult(id = "http://www.getpocket.com/", url = "http://www.getpocket.com/", score = 5),
-        )
+        val pocketSuggestions =
+            listOf(SearchResult(id = "http://www.getpocket.com/", url = "http://www.getpocket.com/", score = 5))
 
-        val exampleSuggestions = listOf(
-            SearchResult(id = "http://www.example.com", url = "http://www.example.com/", score = 2),
-        )
+        val exampleSuggestions =
+            listOf(SearchResult(id = "http://www.example.com", url = "http://www.example.com/", score = 2))
 
         `when`(storage.getSuggestions(eq("moz"), eq(DEFAULT_HISTORY_SUGGESTION_LIMIT))).thenReturn(mozSuggestions)
         `when`(storage.getSuggestions(eq("pocket"), eq(DEFAULT_HISTORY_SUGGESTION_LIMIT))).thenReturn(pocketSuggestions)
-        `when`(storage.getSuggestions(eq("www"), eq(DEFAULT_HISTORY_SUGGESTION_LIMIT))).thenReturn(pocketSuggestions + mozSuggestions + exampleSuggestions)
+        `when`(storage.getSuggestions(eq("www"), eq(DEFAULT_HISTORY_SUGGESTION_LIMIT)))
+            .thenReturn(pocketSuggestions + mozSuggestions + exampleSuggestions)
 
         var results = provider.onInputChanged("moz")
         assertEquals(1, results.size)
@@ -260,7 +282,9 @@ class HistoryStorageSuggestionProviderTest {
         assertTrue(suggestions.isEmpty())
         verify(engine, never()).speculativeConnect(anyString())
 
-        Mockito.doReturn(listOf(SearchResult("id", "http://www.mozilla.com/", 10))).`when`(history).getSuggestions(eq("moz"), Mockito.anyInt())
+        Mockito.doReturn(listOf(SearchResult("id", "http://www.mozilla.com/", 10)))
+            .`when`(history)
+            .getSuggestions(eq("moz"), Mockito.anyInt())
 
         suggestions = provider.onInputChanged("moz")
         assertEquals(1, suggestions.size)
@@ -278,7 +302,9 @@ class HistoryStorageSuggestionProviderTest {
         assertTrue(suggestions.isEmpty())
         verify(engine, never()).speculativeConnect(anyString())
 
-        Mockito.doReturn(listOf(SearchResult("id", "http://www.mozilla.com/", 10))).`when`(history).getSuggestions(eq("moz"), Mockito.anyInt())
+        Mockito.doReturn(listOf(SearchResult("id", "http://www.mozilla.com/", 10)))
+            .`when`(history)
+            .getSuggestions(eq("moz"), Mockito.anyInt())
 
         suggestions = provider.onInputChanged("moz")
         assertEquals(1, suggestions.size)
@@ -289,7 +315,7 @@ class HistoryStorageSuggestionProviderTest {
                 override fun process(fact: Fact) {
                     emittedFacts.add(fact)
                 }
-            },
+            }
         )
 
         suggestions[0].onSuggestionClicked?.invoke()
@@ -307,11 +333,12 @@ class HistoryStorageSuggestionProviderTest {
     @Test
     fun `GIVEN no external filter WHEN querying history THEN query the provided number of max results`() = runTest {
         val history: HistoryStorage = mock()
-        val provider = HistoryStorageSuggestionProvider(
-            historyStorage = history,
-            loadUrlUseCase = mock(),
-            maxNumberOfSuggestions = 13,
-        )
+        val provider =
+            HistoryStorageSuggestionProvider(
+                historyStorage = history,
+                loadUrlUseCase = mock(),
+                maxNumberOfSuggestions = 13,
+            )
 
         provider.onInputChanged("moz")
 
@@ -319,70 +346,79 @@ class HistoryStorageSuggestionProviderTest {
     }
 
     @Test
-    fun `GIVEN a results host filter WHEN querying history THEN query more than the usual default results for the host url`() = runTest {
-        val history: HistoryStorage = mock()
-        val provider = HistoryStorageSuggestionProvider(
-            historyStorage = history,
-            loadUrlUseCase = mock(),
-            maxNumberOfSuggestions = 13,
-            resultsUriFilter = {
-                it.sameHostWithoutMobileSubdomainAs("test".toUri())
-            },
-        )
-        val expectedQueryCount = 13 * HISTORY_RESULTS_TO_FILTER_SCALE_FACTOR
+    fun `GIVEN a results host filter WHEN querying history THEN query more than the usual default results for the host url`() =
+        runTest {
+            val history: HistoryStorage = mock()
+            val provider =
+                HistoryStorageSuggestionProvider(
+                    historyStorage = history,
+                    loadUrlUseCase = mock(),
+                    maxNumberOfSuggestions = 13,
+                    resultsUriFilter = {
+                        it.sameHostWithoutMobileSubdomainAs("test".toUri())
+                    },
+                )
+            val expectedQueryCount = 13 * HISTORY_RESULTS_TO_FILTER_SCALE_FACTOR
 
-        provider.onInputChanged("moz")
+            provider.onInputChanged("moz")
 
-        verify(history).getSuggestions("moz", expectedQueryCount)
-    }
+            verify(history).getSuggestions("moz", expectedQueryCount)
+        }
 
     @Test
-    fun `GIVEN a results host filter WHEN querying history THEN return only the results that pass through the filter`() = runTest {
-        val history: HistoryStorage = mock()
-        doReturn(
-            listOf(
-                SearchResult("3", "https://mozilla.com/firefox", 10),
-                SearchResult("5", "http://firefox.com/mozilla", 10),
-                SearchResult("2", "http://allizom.com/focus/", 10),
-                SearchResult("4", "https://mozilla.com/thunderbird", 10),
-                SearchResult("16", "http://www.mozilla.com/firefox", 22),
-            ),
-        ).`when`(history).getSuggestions(anyString(), anyInt())
+    fun `GIVEN a results host filter WHEN querying history THEN return only the results that pass through the filter`() =
+        runTest {
+            val history: HistoryStorage = mock()
+            doReturn(
+                    listOf(
+                        SearchResult("3", "https://mozilla.com/firefox", 10),
+                        SearchResult("5", "http://firefox.com/mozilla", 10),
+                        SearchResult("2", "http://allizom.com/focus/", 10),
+                        SearchResult("4", "https://mozilla.com/thunderbird", 10),
+                        SearchResult("16", "http://www.mozilla.com/firefox", 22),
+                    )
+                )
+                .`when`(history)
+                .getSuggestions(anyString(), anyInt())
 
-        val provider = HistoryStorageSuggestionProvider(
-            historyStorage = history,
-            loadUrlUseCase = mock(),
-            resultsUriFilter = {
-                it.sameHostWithoutMobileSubdomainAs("https://mozilla.com".toUri())
-            },
-        )
+            val provider =
+                HistoryStorageSuggestionProvider(
+                    historyStorage = history,
+                    loadUrlUseCase = mock(),
+                    resultsUriFilter = {
+                        it.sameHostWithoutMobileSubdomainAs("https://mozilla.com".toUri())
+                    },
+                )
 
-        val suggestions = provider.onInputChanged("moz")
+            val suggestions = provider.onInputChanged("moz")
 
-        assertEquals(3, suggestions.size)
-        assertTrue(suggestions.map { it.description }.contains("http://www.mozilla.com/firefox"))
-        assertTrue(suggestions.map { it.description }.contains("https://mozilla.com/firefox"))
-        assertTrue(suggestions.map { it.description }.contains("https://mozilla.com/thunderbird"))
-    }
+            assertEquals(3, suggestions.size)
+            assertTrue(suggestions.map { it.description }.contains("http://www.mozilla.com/firefox"))
+            assertTrue(suggestions.map { it.description }.contains("https://mozilla.com/firefox"))
+            assertTrue(suggestions.map { it.description }.contains("https://mozilla.com/thunderbird"))
+        }
 
     @Test
     fun `GIVEN a results host filter WHEN querying history THEN return mobile domain results`() = runTest {
         val history: HistoryStorage = mock()
         doReturn(
-            listOf(
-                SearchResult("1", "https://m.mozilla.com/firefox", 10),
-                SearchResult("2", "https://mozilla.com/thunderbird", 10),
-                SearchResult("3", "http://www.mobile.mozilla.com/firefox", 22),
-            ),
-        ).`when`(history).getSuggestions(anyString(), anyInt())
+                listOf(
+                    SearchResult("1", "https://m.mozilla.com/firefox", 10),
+                    SearchResult("2", "https://mozilla.com/thunderbird", 10),
+                    SearchResult("3", "http://www.mobile.mozilla.com/firefox", 22),
+                )
+            )
+            .`when`(history)
+            .getSuggestions(anyString(), anyInt())
 
-        val provider = HistoryStorageSuggestionProvider(
-            historyStorage = history,
-            loadUrlUseCase = mock(),
-            resultsUriFilter = {
-                it.sameHostWithoutMobileSubdomainAs("https://mozilla.com".toUri())
-            },
-        )
+        val provider =
+            HistoryStorageSuggestionProvider(
+                historyStorage = history,
+                loadUrlUseCase = mock(),
+                resultsUriFilter = {
+                    it.sameHostWithoutMobileSubdomainAs("https://mozilla.com".toUri())
+                },
+            )
 
         val suggestions = provider.onInputChanged("moz")
 

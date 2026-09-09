@@ -12,32 +12,25 @@ import android.util.Size
 import android.view.WindowManager
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
-import org.mozilla.fenix.ext.isLargeWindow
 import kotlin.math.min
 
 private const val LARGE_SCREEN_THRESHOLD_DP = 600
 
 /**
- * Returns true if the device has a large screen size. This is determined by the smallest width
- * of the screen (not window). This value will not change over the course of the app's lifecycle.
- * To determine whether the app's window size is at least that of a tablet, consider using
- * [Context.isLargeWindow] instead.
+ * Returns true if the device has a large screen size. This is determined by the smallest width of the screen (not
+ * window). This value will not change over the course of the app's lifecycle. To determine whether the app's window
+ * size is at least that of a tablet, consider using [Context.isLargeWindow] instead.
  */
-fun Context.isLargeScreenSize(): Boolean =
-    smallestScreenWidthDp() >= LARGE_SCREEN_THRESHOLD_DP
+fun Context.isLargeScreenSize(): Boolean = smallestScreenWidthDp() >= LARGE_SCREEN_THRESHOLD_DP
 
-/**
- * Returns the smallest width of the screen in dp.
- */
+/** Returns the smallest width of the screen in dp. */
 private fun Context.smallestScreenWidthDp(): Float {
     val size = ScreenMetricsCompat.getScreenSize(this)
 
     return min(size.width, size.height) / resources.displayMetrics.density
 }
 
-/**
- * Compat utility to get screen metrics.
- */
+/** Compat utility to get screen metrics. */
 private object ScreenMetricsCompat {
 
     private val screenMetricsApi: ScreenMetricsApi =
@@ -47,34 +40,25 @@ private object ScreenMetricsCompat {
             ScreenMetricsApiImpl()
         }
 
-    /**
-     * @see [ScreenMetricsApi.getScreenSize]
-     */
+    /** @see [ScreenMetricsApi.getScreenSize] */
     fun getScreenSize(context: Context): Size = screenMetricsApi.getScreenSize(context)
 
-    /**
-     * Interface to abstract the implementation of the screen metrics API based on the SDK version.
-     */
+    /** Interface to abstract the implementation of the screen metrics API based on the SDK version. */
     private interface ScreenMetricsApi {
 
         /**
          * Returns screen [Size] in pixels.
          *
-         * @param context [Context] to get the display metrics from. Use a visual Context from
-         * Activity or View.
+         * @param context [Context] to get the display metrics from. Use a visual Context from Activity or View.
          */
         fun getScreenSize(context: Context): Size
     }
 
-    /**
-     * Implementation of the screen metrics API for API 30 and above.
-     */
+    /** Implementation of the screen metrics API for API 30 and above. */
     @RequiresApi(Build.VERSION_CODES.R)
     private class ScreenMetricsApiApi30Impl : ScreenMetricsApi {
 
-        /**
-         * @see [ScreenMetricsApi.getScreenSize]
-         */
+        /** @see [ScreenMetricsApi.getScreenSize] */
         override fun getScreenSize(context: Context): Size {
             val windowManager = ContextCompat.getSystemService(context, WindowManager::class.java)
             if (windowManager != null) {
@@ -88,25 +72,21 @@ private object ScreenMetricsCompat {
         }
     }
 
-    /**
-     * Implementation of the screen metrics API for API 29 and below.
-     */
+    /** Implementation of the screen metrics API for API 29 and below. */
     private class ScreenMetricsApiImpl : ScreenMetricsApi {
 
-        /**
-         * @see [ScreenMetricsApi.getScreenSize]
-         */
+        /** @see [ScreenMetricsApi.getScreenSize] */
         @Suppress("DEPRECATION")
         override fun getScreenSize(context: Context): Size {
-            val display =
-                ContextCompat.getSystemService(context, WindowManager::class.java)?.defaultDisplay
-            val metrics: DisplayMetrics = if (display != null) {
-                DisplayMetrics().also {
-                    display.getRealMetrics(it)
+            val display = ContextCompat.getSystemService(context, WindowManager::class.java)?.defaultDisplay
+            val metrics: DisplayMetrics =
+                if (display != null) {
+                    DisplayMetrics().also {
+                        display.getRealMetrics(it)
+                    }
+                } else {
+                    Resources.getSystem().displayMetrics
                 }
-            } else {
-                Resources.getSystem().displayMetrics
-            }
             return Size(metrics.widthPixels, metrics.heightPixels)
         }
     }

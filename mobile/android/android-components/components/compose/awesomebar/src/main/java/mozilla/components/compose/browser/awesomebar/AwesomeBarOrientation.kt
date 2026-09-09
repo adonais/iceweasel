@@ -4,9 +4,7 @@
 
 package mozilla.components.compose.browser.awesomebar
 
-/**
- * The orientation of the AwesomeBar, whether it's oriented to the bottom or the top.
- */
+/** The orientation of the AwesomeBar, whether it's oriented to the bottom or the top. */
 enum class AwesomeBarOrientation {
     TOP,
     BOTTOM,

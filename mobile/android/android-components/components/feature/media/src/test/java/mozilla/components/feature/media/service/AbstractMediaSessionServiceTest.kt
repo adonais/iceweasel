@@ -8,6 +8,7 @@ import android.app.Service.START_NOT_STICKY
 import android.content.ComponentName
 import android.content.Intent
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.support.base.android.NotificationsDelegate
@@ -19,7 +20,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.verify
 import org.robolectric.Robolectric
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class AbstractMediaSessionServiceTest {

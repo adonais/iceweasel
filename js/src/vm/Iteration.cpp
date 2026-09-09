@@ -1769,24 +1769,14 @@ void js::CloseIterator(JSObject* obj) {
 bool js::IteratorCloseForException(JSContext* cx, HandleObject obj) {
   MOZ_ASSERT(cx->isExceptionPending());
 
-  // Closing an iterator is implemented as an exception.
-  bool isClosingGenerator = cx->isClosingGenerator();
-
-  // Save the current exception state. This implicitly clears any pending
-  // exception, so it needs to happen after calling |cx->isClosingGenerator()|.
-  // The destructor restores the saved exception state, unless there's a new
-  // pending exception.
+  // Save the current exception state. The destructor restores it, unless
+  // there's a new pending exception.
   JS::AutoSaveExceptionState savedExc(cx);
 
   // CloseIterOperation when called with |CompletionKind::Throw| clears any
   // pending exception, so the previously stored exception in |savedExc| is
   // correctly restored.
-  // When called with |CompletionKind::Return|, pending exceptions aren't
-  // cleared, so the "generator closing" exception state in |savedExc| is only
-  // restored if there isn't a new pending exception.
-  auto completionKind =
-      isClosingGenerator ? CompletionKind::Return : CompletionKind::Throw;
-  return CloseIterOperation(cx, obj, completionKind);
+  return CloseIterOperation(cx, obj, CompletionKind::Throw);
 }
 
 void js::UnwindIteratorForUncatchableException(JSObject* obj) {

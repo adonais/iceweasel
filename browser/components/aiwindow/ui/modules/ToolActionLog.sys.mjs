@@ -9,8 +9,6 @@ import {
   RUN_SEARCH,
   GET_USER_MEMORIES,
   GET_NAVIGATION_INFO,
-  WORLD_CUP_MATCHES,
-  WORLD_CUP_LIVE,
   SEARCH_THE_WEB,
 } from "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs";
 
@@ -115,20 +113,6 @@ const TOOL_ACTION_LOG_CONFIG = new Map([
     {
       label: { l10nId: "action-log-searched-settings" },
       pendingLabel: { l10nId: "action-log-searching-settings" },
-    },
-  ],
-  [
-    WORLD_CUP_MATCHES,
-    {
-      label: { l10nId: "action-log-searched-world-cup-matches" },
-      pendingLabel: { l10nId: "action-log-searching-world-cup-matches" },
-    },
-  ],
-  [
-    WORLD_CUP_LIVE,
-    {
-      label: { l10nId: "action-log-checked-world-cup-live" },
-      pendingLabel: { l10nId: "action-log-checking-world-cup-live" },
     },
   ],
 ]);

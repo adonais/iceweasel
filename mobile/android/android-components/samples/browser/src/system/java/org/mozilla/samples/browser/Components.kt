@@ -5,7 +5,5 @@ package org.mozilla.samples.browser
 
 import android.content.Context
 
-/**
- * Helper class for lazily instantiating components needed by the application.
- */
+/** Helper class for lazily instantiating components needed by the application. */
 class Components(applicationContext: Context) : DefaultComponents(applicationContext)

@@ -22,12 +22,15 @@ class AlertNotification : public nsIAlertNotification {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIALERTNOTIFICATION
 
+  AlertNotification();
+
  protected:
   virtual ~AlertNotification() = default;
 
  private:
   nsresult InitId();
 
+  uint64_t mCountId;
   nsString mId;
   nsString mName;
   nsString mImageURL;

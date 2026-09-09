@@ -16,10 +16,9 @@ import org.mozilla.fenix.ext.behavior
 /**
  * Fenix specific implementation of [AutocompletePrompt]. This class accomplishes two things:
  * 1. Allows us to add Fenix specific CoordinatorLayout behavior when a prompt is presented.
- * 2. The `PromptFeature` delegates require an [AutocompletePrompt] on initialization.
- *  With Bug 1947519 we need to have the ability to delay creating the view until we need it.
- *  This class allows us to pass a concrete [AutocompletePrompt] to the `PromptFeature` and lazily
- *  initialize the view.
+ * 2. The `PromptFeature` delegates require an [AutocompletePrompt] on initialization. With Bug 1947519 we need to have
+ *    the ability to delay creating the view until we need it. This class allows us to pass a concrete
+ *    [AutocompletePrompt] to the `PromptFeature` and lazily initialize the view.
  *
  * @param viewProvider Closure to provide a view of type V where V is a View AND an [AutocompletePrompt].
  * @param toolbarPositionProvider Closure to provide the current [ToolbarPosition].
@@ -46,45 +45,48 @@ class FenixAutocompletePrompt<T, V>(
 
     override fun populate(options: List<T>) = view.populate(options)
 
-    override fun showPrompt() = with(view) {
-        showPrompt()
-        selectablePromptListener = this@FenixAutocompletePrompt.selectablePromptListener
-        toggleablePromptListener = this@FenixAutocompletePrompt.toggleablePromptListener
-        expandablePromptListener = createExpandableListener()
-        behavior = createCustomAutofillBarBehavior()
-        isVisible = true
-        this@FenixAutocompletePrompt.onShow()
-    }
+    override fun showPrompt() =
+        with(view) {
+            showPrompt()
+            selectablePromptListener = this@FenixAutocompletePrompt.selectablePromptListener
+            toggleablePromptListener = this@FenixAutocompletePrompt.toggleablePromptListener
+            expandablePromptListener = createExpandableListener()
+            behavior = createCustomAutofillBarBehavior()
+            isVisible = true
+            this@FenixAutocompletePrompt.onShow()
+        }
 
-    override fun hidePrompt() = with(view) {
-        hidePrompt()
-        selectablePromptListener = null
-        toggleablePromptListener = null
-        expandablePromptListener = null
-        behavior = null
-        isVisible = false
-        this@FenixAutocompletePrompt.onHide()
-    }
+    override fun hidePrompt() =
+        with(view) {
+            hidePrompt()
+            selectablePromptListener = null
+            toggleablePromptListener = null
+            expandablePromptListener = null
+            behavior = null
+            isVisible = false
+            this@FenixAutocompletePrompt.onHide()
+        }
 
-    private fun <T : View> T.createCustomAutofillBarBehavior() = AutofillSelectBarBehavior<T>(
-        context = context,
-        toolbarPosition = toolbarPositionProvider(),
-    )
+    private fun <T : View> T.createCustomAutofillBarBehavior() =
+        AutofillSelectBarBehavior<T>(
+            context = context,
+            toolbarPosition = toolbarPositionProvider(),
+        )
 
     /**
-     * Creates an expandable listener that uses [AutofillSelectBarBehavior] to place the
-     * autofill view at the bottom.
+     * Creates an expandable listener that uses [AutofillSelectBarBehavior] to place the autofill view at the bottom.
      */
-    private fun <T : View> T.createExpandableListener() = object : ExpandablePrompt.Listener {
-        override fun onExpanded() {
-            (behavior as? AutofillSelectBarBehavior<*>)?.placeAtBottom(this@createExpandableListener)
+    private fun <T : View> T.createExpandableListener() =
+        object : ExpandablePrompt.Listener {
+            override fun onExpanded() {
+                (behavior as? AutofillSelectBarBehavior<*>)?.placeAtBottom(this@createExpandableListener)
 
-            // Remove the custom behavior to ensure the autofill bar stays fixed in place
-            behavior = null
-        }
+                // Remove the custom behavior to ensure the autofill bar stays fixed in place
+                behavior = null
+            }
 
-        override fun onCollapsed() {
-            behavior = createCustomAutofillBarBehavior()
+            override fun onCollapsed() {
+                behavior = createCustomAutofillBarBehavior()
+            }
         }
-    }
 }

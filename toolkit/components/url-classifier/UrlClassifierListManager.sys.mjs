@@ -137,6 +137,7 @@ class PROT_ListManager {
         this.#updateCheckers[table.updateUrl] = null;
       }
       delete this.#needsUpdate[table.updateUrl][tableName];
+      this.#clearNextUpdateTimes([tableName]);
     }
     delete this.tablesData[tableName];
   }
@@ -252,6 +253,163 @@ class PROT_ListManager {
       }
     }
     return false;
+  }
+
+  /**
+   * The pref holding the next update time of a provider, or of a single one of
+   * its tables when |tableName| is given.
+   */
+  #nextUpdateTimePref(provider, tableName) {
+    let pref = "browser.safebrowsing.provider." + provider + ".nextupdatetime";
+    return tableName ? pref + "." + tableName : pref;
+  }
+
+  /**
+   * The time at which |tableName| may be requested again. Tables updating at
+   * the shortest cadence of their provider have no pref of their own and fall
+   * back to the provider-wide next update time.
+   */
+  #getNextUpdateTime(tableName) {
+    let provider = this.tablesData[tableName].provider;
+    let value = Services.prefs.getCharPref(
+      this.#nextUpdateTimePref(provider, tableName),
+      ""
+    );
+    if (!value) {
+      value = Services.prefs.getCharPref(
+        this.#nextUpdateTimePref(provider),
+        ""
+      );
+    }
+    return value ? parseInt(value, 10) : 0;
+  }
+
+  /**
+   * Stores the next update time of every table of a provider. The earliest one
+   * goes to the provider-wide pref, which is what drives the update timer and
+   * what about:url-classifier displays; only the tables that have to wait
+   * longer than that get a pref of their own.
+   *
+   * @param nextUpdateTimes Object A map of table name to next update time.
+   * @return Number The earliest of the given times.
+   */
+  #setNextUpdateTimes(provider, nextUpdateTimes) {
+    let times = Object.values(nextUpdateTimes);
+    if (!times.length) {
+      return null;
+    }
+
+    let earliest = Math.min(...times);
+    Services.prefs.setCharPref(
+      this.#nextUpdateTimePref(provider),
+      earliest.toString()
+    );
+
+    for (let [tableName, time] of Object.entries(nextUpdateTimes)) {
+      let pref = this.#nextUpdateTimePref(provider, tableName);
+      if (time > earliest) {
+        log("Setting next update of " + tableName + " to " + time);
+        Services.prefs.setCharPref(pref, time.toString());
+      } else if (Services.prefs.prefHasUserValue(pref)) {
+        Services.prefs.clearUserPref(pref);
+      }
+    }
+
+    return earliest;
+  }
+
+  /**
+   * Forgets the stored next update times of the given tables, so that they are
+   * all considered due on the next check.
+   *
+   * @param clearProviderTime Boolean Also forget the provider-wide time, which
+   *        is what the tables without a pref of their own fall back to.
+   */
+  #clearNextUpdateTimes(tables, clearProviderTime = false) {
+    let clear = pref => {
+      if (Services.prefs.prefHasUserValue(pref)) {
+        Services.prefs.clearUserPref(pref);
+      }
+    };
+
+    let providers = new Set();
+    for (let tableName of tables) {
+      if (!this.tablesData[tableName]) {
+        continue;
+      }
+      let provider = this.tablesData[tableName].provider;
+      providers.add(provider);
+      clear(this.#nextUpdateTimePref(provider, tableName));
+    }
+
+    if (clearProviderTime) {
+      for (let provider of providers) {
+        clear(this.#nextUpdateTimePref(provider));
+      }
+    }
+  }
+
+  /**
+   * Arms the update timer of |updateUrl| for the earliest next update time of
+   * the tables it serves.
+   */
+  #scheduleNextUpdateCheck(updateUrl, minimumDelay = 0) {
+    let earliest = null;
+    for (const tableName in this.tablesData) {
+      if (
+        this.tablesData[tableName].updateUrl != updateUrl ||
+        !this.#needsUpdate[updateUrl][tableName]
+      ) {
+        continue;
+      }
+      let time = this.#getNextUpdateTime(tableName);
+      if (earliest === null || time < earliest) {
+        earliest = time;
+      }
+    }
+
+    let delay =
+      earliest === null
+        ? defaultUpdateIntervalMs
+        : Math.min(maxDelayMs, Math.max(0, earliest - Date.now()));
+    this.setUpdateCheckTimer(updateUrl, Math.max(delay, minimumDelay));
+  }
+
+  /**
+   * Clamps a server-provided wait duration to something sane (5 min to 1 day).
+   *
+   * @param waitForUpdateSec String|undefined The number of seconds the server
+   *        asked us to wait, if it said anything at all.
+   * @return Number The delay to use, in milliseconds.
+   */
+  #clampUpdateDelay(waitForUpdateSec) {
+    // The time units below are all milliseconds if not specified.
+    let delay = 0;
+    if (waitForUpdateSec) {
+      delay = parseInt(waitForUpdateSec, 10) * 1000;
+    }
+
+    // As long as the delay is something sane (5 min to 1 day), use the delay
+    // time the server requested.
+    if (delay > maxDelayMs) {
+      log(
+        "Ignoring delay from server (too long), waiting " +
+          Math.round(maxDelayMs / 60000) +
+          "min"
+      );
+      return maxDelayMs;
+    }
+    if (delay < minDelayMs) {
+      log(
+        "Ignoring delay from server (too short), waiting " +
+          Math.round(defaultUpdateIntervalMs / 60000) +
+          "min"
+      );
+      return defaultUpdateIntervalMs;
+    }
+
+    log("Waiting " + Math.round(delay / 60000) + "min");
+    return delay;
   }
 
   /**
@@ -407,6 +565,10 @@ class PROT_ListManager {
       }
     });
 
+    // Every table is due now, otherwise a forced update would only refresh
+    // the ones that happen to have reached their next update time.
+    this.#clearNextUpdateTimes(tables.split(","), true);
+
     let ret = true;
 
     updateUrls.forEach(url => {
@@ -501,6 +663,7 @@ class PROT_ListManager {
     let useProtobuf = false;
     let onceThru = false;
     let provider;
+    let now = Date.now();
     for (const tableName in this.tablesData) {
       // Skip tables not matching this update url
       if (this.tablesData[tableName].updateUrl != updateUrl) {
@@ -528,9 +691,17 @@ class PROT_ListManager {
         );
       }
 
-      if (this.#needsUpdate[this.tablesData[tableName].updateUrl][tableName]) {
-        streamerMap.tableNames[tableName] = true;
+      // Each table has its own next update time, because the server can ask
+      // us to wait a different amount of time for each of them. Leave out the
+      // ones that are not due yet: they stay in the batch of a later request.
+      if (
+        !this.#needsUpdate[updateUrl][tableName] ||
+        this.#getNextUpdateTime(tableName) > now
+      ) {
+        continue;
       }
+
+      streamerMap.tableNames[tableName] = true;
       if (!streamerMap.tableList) {
         streamerMap.tableList = tableName;
       } else {
@@ -629,10 +800,12 @@ class PROT_ListManager {
 
     log("update request: " + JSON.stringify(streamerMap, undefined, 2) + "\n");
 
-    // Don't send an empty request.
+    // Don't send an empty request. Note that a V4 request carries client info
+    // and so is never empty, even when no table was selected.
     if (
-      streamerMap.requestPayload.length ||
-      streamerMap.requestQueryParameters.length
+      streamerMap.tableList &&
+      (streamerMap.requestPayload.length ||
+        streamerMap.requestQueryParameters.length)
     ) {
       this.#makeUpdateRequestForEntry(
         updateUrl,
@@ -643,8 +816,13 @@ class PROT_ListManager {
         provider
       );
     } else {
-      // We were disabled between kicking off getTables and now.
+      // Either no table has reached its next update time yet, or we were
+      // disabled between kicking off getTables and now. Either way nothing
+      // will call us back, so re-arm the timer ourselves. Never come back
+      // sooner than minDelayMs, so that a table we cannot build a request for
+      // can't spin the timer.
       log("Not sending empty request");
+      this.#scheduleNextUpdateCheck(updateUrl, minDelayMs);
     }
   }
 
@@ -701,8 +879,9 @@ class PROT_ListManager {
   /**
    * Callback function if the update request succeeded.
    *
-   * @param waitForUpdate String The number of seconds that the client should
-   *        wait before requesting again.
+   * @param waitForUpdateSec String The number of seconds that the client
+   *        should wait before requesting each table again, as a
+   *        comma-separated list of "table:seconds" pairs.
    */
   #updateSuccess(tableList, updateUrl, waitForUpdateSec) {
     log(
@@ -715,43 +894,13 @@ class PROT_ListManager {
         "\n"
     );
 
-    // The time unit below are all milliseconds if not specified.
-
-    let delay = 0;
-    if (waitForUpdateSec) {
-      delay = parseInt(waitForUpdateSec, 10) * 1000;
-    }
-    // As long as the delay is something sane (5 min to 1 day), update
-    // our delay time for requesting updates. We always use a non-repeating
-    // timer since the delay is set differently at every callback.
-    if (delay > maxDelayMs) {
-      log(
-        "Ignoring delay from server (too long), waiting " +
-          Math.round(maxDelayMs / 60000) +
-          "min"
-      );
-      delay = maxDelayMs;
-    } else if (delay < minDelayMs) {
-      log(
-        "Ignoring delay from server (too short), waiting " +
-          Math.round(defaultUpdateIntervalMs / 60000) +
-          "min"
-      );
-      delay = defaultUpdateIntervalMs;
-    } else {
-      log("Waiting " + Math.round(delay / 60000) + "min");
-    }
-
-    this.setUpdateCheckTimer(updateUrl, delay);
-
     // Let the backoff object know that we completed successfully.
     this.#requestBackoffs[updateUrl].noteServerResponse(200);
 
-    // Set last update time for provider
     // Get the provider for these tables, check for consistency
-    let tables = tableList.split(",");
+    let updatedTables = tableList.split(",");
     let provider = null;
-    for (let table of tables) {
+    for (let table of updatedTables) {
       let newProvider = this.tablesData[table].provider;
       if (provider) {
         if (newProvider !== provider) {
@@ -764,27 +913,54 @@ class PROT_ListManager {
       }
     }
 
+    // The server sends one wait duration per table. A table we asked for but
+    // heard nothing about is left out of the map and falls back to the
+    // default interval below.
+    let waitSecByTable = {};
+    for (let entry of waitForUpdateSec.split(",")) {
+      let p = entry.indexOf(":");
+      if (p > 0) {
+        waitSecByTable[entry.substring(0, p)] = entry.substring(p + 1);
+      }
+    }
+
+    // Work out when each table of this provider may be requested again. The
+    // ones we just updated get a new time; the ones that were not part of
+    // this request keep the time they already had.
+    let now = Date.now();
+    let nextUpdateTimes = {};
+    for (const tableName in this.tablesData) {
+      if (
+        this.tablesData[tableName].updateUrl != updateUrl ||
+        !this.#needsUpdate[updateUrl][tableName]
+      ) {
+        continue;
+      }
+      // A table enabled after this request was built has no time of its own
+      // yet, so it reads back the provider-wide one, which has just elapsed.
+      // Clamp it to now: the table is due either way, but the pref never holds
+      // a time from the past.
+      nextUpdateTimes[tableName] = updatedTables.includes(tableName)
+        ? now + this.#clampUpdateDelay(waitSecByTable[tableName])
+        : Math.max(this.#getNextUpdateTime(tableName), now);
+    }
+
     // Store the last update time (needed to know if the table is "fresh")
-    // and the next update time (to know when to update next).
+    // and the next update times (to know when to update next).
     let lastUpdatePref =
       "browser.safebrowsing.provider." + provider + ".lastupdatetime";
-    let now = Date.now();
     log("Setting last update of " + provider + " to " + now);
     Services.prefs.setCharPref(lastUpdatePref, now.toString());
 
-    let nextUpdatePref =
-      "browser.safebrowsing.provider." + provider + ".nextupdatetime";
-    let targetTime = now + delay;
+    let earliest = this.#setNextUpdateTimes(provider, nextUpdateTimes);
+
+    // We always use a non-repeating timer since the delay is set differently
+    // at every callback. Wake up when the first table comes due.
+    let delay = earliest === null ? defaultUpdateIntervalMs : earliest - now;
     log(
-      "Setting next update of " +
-        provider +
-        " to " +
-        targetTime +
-        " (" +
-        Math.round(delay / 60000) +
-        "min from now)"
+      "Next update of " + provider + " in " + Math.round(delay / 60000) + "min"
     );
-    Services.prefs.setCharPref(nextUpdatePref, targetTime.toString());
+    this.setUpdateCheckTimer(updateUrl, Math.max(0, delay));
 
     Services.obs.notifyObservers(
       null,

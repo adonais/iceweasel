@@ -243,7 +243,7 @@ nsresult NS_NewElement(
       if (registry) {
         (*aResult)->SetCustomElementRegistry(registry);
       } else {
-        (*aResult)->SetKeepCustomElementRegistryNull();
+        (*aResult)->SetNullCustomElementRegistry();
       }
     } else if (aFromParser == FromParser::NOT_FROM_PARSER) {
       if (Document* doc = (*aResult)->OwnerDoc()) {

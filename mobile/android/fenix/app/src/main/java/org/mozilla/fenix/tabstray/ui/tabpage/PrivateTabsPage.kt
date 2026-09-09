@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.pbmlock.UnlockPrivateTabsTrayScreen
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
@@ -30,7 +31,6 @@ import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.PrivateBrowsingState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.TabsTrayConfig
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 private val EmptyPageWidth = 190.dp
 
@@ -96,12 +96,8 @@ internal fun PrivateTabsPage(
  * @param modifier The [Modifier] to be applied to the layout.
  */
 @Composable
-private fun EmptyPrivateTabsPage(
-    modifier: Modifier = Modifier,
-) {
-    EmptyTabPage(
-        modifier = modifier.testTag(TabsTrayTestTag.EMPTY_PRIVATE_TABS_LIST),
-    ) {
+private fun EmptyPrivateTabsPage(modifier: Modifier = Modifier) {
+    EmptyTabPage(modifier = modifier.testTag(TabsTrayTestTag.EMPTY_PRIVATE_TABS_LIST)) {
         Column(
             modifier = Modifier.width(EmptyPageWidth),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -120,10 +116,11 @@ private fun EmptyPrivateTabsPage(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = stringResource(
-                    id = R.string.tab_manager_empty_private_tabs_page_description,
-                    stringResource(id = R.string.app_name),
-                ),
+                text =
+                    stringResource(
+                        id = R.string.tab_manager_empty_private_tabs_page_description,
+                        stringResource(id = R.string.app_name),
+                    ),
                 textAlign = TextAlign.Center,
                 style = FirefoxTheme.typography.caption,
             )

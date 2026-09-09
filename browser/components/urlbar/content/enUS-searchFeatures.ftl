@@ -254,7 +254,7 @@ urlbar-result-aria-group-yelp-realtime =
 ## and the status like delayed, etc.
 
 # This string is shown in the result menu.
-urlbar-result-menu-dont-show-flight-status = Don’t show flight status suggestions
+urlbar-result-menu-dont-show-flight-status2 = Don’t show flight status suggestions
 
 # A message that replaces a result when the user dismisses flight status
 # suggestions.
@@ -335,7 +335,7 @@ urlbar-result-sports-status-live = Live
 urlbar-result-sports-status-final = Final
 
 # This string is shown in the result menu.
-urlbar-result-menu-dont-show-sports = Don’t show sports suggestions
+urlbar-result-menu-dont-show-sports2 = Don’t show sports suggestions
 
 # A message that replaces a result when the user dismisses sports suggestions.
 urlbar-result-dismissal-acknowledgment-sports = Thanks for your feedback. You won’t see sports suggestions anymore.

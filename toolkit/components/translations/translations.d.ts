@@ -512,6 +512,7 @@ export type RequestTranslationsPort = (
 ) => Promise<MessagePort>;
 
 export type TranslationsPortMessages =
+  | { type: "TranslationsPort:Close" }
   // We have determined that the source text is already translated into the target language, so do nothing.
   | { type: "TranslationsPort:Passthrough"; translationId: string }
   // We found translated text for this request in our cache, so send the targetText directly without translating.

@@ -9,28 +9,23 @@ import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
 
-/**
- * The [Store] for holding the [ExceptionsFragmentState] and applying [ExceptionsFragmentAction]s.
- */
+/** The [Store] for holding the [ExceptionsFragmentState] and applying [ExceptionsFragmentAction]s. */
 class ExceptionsFragmentStore(initialState: ExceptionsFragmentState) :
     Store<ExceptionsFragmentState, ExceptionsFragmentAction>(initialState, ::exceptionsStateReducer)
 
-/**
- * Actions to dispatch through the `ExceptionsStore` to modify `ExceptionsState` through the reducer.
- */
+/** Actions to dispatch through the `ExceptionsStore` to modify `ExceptionsState` through the reducer. */
 sealed class ExceptionsFragmentAction : Action {
     data class Change(val list: List<LoginException>) : ExceptionsFragmentAction()
 }
 
 /**
  * The state for the Exceptions Screen
+ *
  * @property items List of exceptions to display
  */
 data class ExceptionsFragmentState(val items: List<LoginException> = emptyList()) : State
 
-/**
- * The ExceptionsState Reducer.
- */
+/** The ExceptionsState Reducer. */
 private fun exceptionsStateReducer(
     state: ExceptionsFragmentState,
     action: ExceptionsFragmentAction,

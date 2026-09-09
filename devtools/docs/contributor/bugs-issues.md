@@ -1,6 +1,9 @@
 # Bugs and issue trackers
 
-Since we have code in two different places, issues and bugs are to be found in two different places:
+DevTools bugs are tracked in Bugzilla, under the `DevTools` product.
 
-* For code in `m-c`: [http://firefox-dev.tools/](http://firefox-dev.tools/) which also lets you filter by good bugs for beginners.
-* For code in `devtools-html`: [this page](https://github.com/search?l=&q=org%3Adevtools-html+state%3Aopen&type=Issues) lists all the issues across the organisation and these are [available issues](https://github.com/search?l=&q=org%3Adevtools-html+state%3Aopen+label%3Aavailable&type=Issues) i.e. ready to be worked on.
+[Codetribute](https://codetribute.mozilla.org/projects/firefox-devtools) lists the
+mentored and good first bugs available to work on.
+
+For how to write a bug report that someone can act on, see
+{doc}`/contributing/filing-good-bugs`.

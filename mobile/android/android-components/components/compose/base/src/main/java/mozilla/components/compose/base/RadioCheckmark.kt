@@ -37,17 +37,16 @@ fun RadioCheckmark(
     modifier: Modifier = Modifier,
     colors: RadioCheckmarkColors = RadioCheckmarkColors.default(),
 ) {
-    val boxBorderModifier = if (isSelected) {
-        modifier
-            .clip(CircleShape)
-            .background(colors.backgroundColor)
-    } else {
-        modifier.border(
-            width = borderWidthDp,
-            color = colors.borderColor,
-            shape = CircleShape,
-        )
-    }
+    val boxBorderModifier =
+        if (isSelected) {
+            modifier.clip(CircleShape).background(colors.backgroundColor)
+        } else {
+            modifier.border(
+                width = borderWidthDp,
+                color = colors.borderColor,
+                shape = CircleShape,
+            )
+        }
 
     Box(
         modifier = boxBorderModifier.size(size = 20.dp),
@@ -76,25 +75,22 @@ data class RadioCheckmarkColors(
     val borderColor: Color,
 ) {
 
-    /**
-     * @see [RadioCheckmarkColors].
-     */
+    /** @see [RadioCheckmarkColors]. */
     companion object {
 
-        /**
-         * The default colors for [RadioCheckmark].
-         */
+        /** The default colors for [RadioCheckmark]. */
         @ReadOnlyComposable
         @Composable
         fun default(
             backgroundColor: Color = MaterialTheme.colorScheme.primary,
             checkmarkColor: Color = MaterialTheme.colorScheme.onPrimary,
             borderColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
-        ) = RadioCheckmarkColors(
-            backgroundColor = backgroundColor,
-            checkmarkColor = checkmarkColor,
-            borderColor = borderColor,
-        )
+        ) =
+            RadioCheckmarkColors(
+                backgroundColor = backgroundColor,
+                checkmarkColor = checkmarkColor,
+                borderColor = borderColor,
+            )
     }
 }
 

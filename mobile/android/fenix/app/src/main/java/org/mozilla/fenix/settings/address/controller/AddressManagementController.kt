@@ -11,19 +11,15 @@ import org.mozilla.fenix.settings.address.AddressManagementFragmentDirections
 import org.mozilla.fenix.settings.address.interactor.AddressManagementInteractor
 
 /**
- * [AddressManagementFragment] controller. An interface that handles the view manipulation of
- * the address manager triggered by the interactor.
+ * [AddressManagementFragment] controller. An interface that handles the view manipulation of the address manager
+ * triggered by the interactor.
  */
 interface AddressManagementController {
 
-    /**
-     * @see [AddressManagementInteractor.onSelectAddress]
-     */
+    /** @see [AddressManagementInteractor.onSelectAddress] */
     fun handleAddressClicked(address: Address)
 
-    /**
-     * @see [AddressManagementInteractor.onAddAddressClick]
-     */
+    /** @see [AddressManagementInteractor.onAddAddressClick] */
     fun handleAddAddressButtonClicked()
 }
 
@@ -32,9 +28,7 @@ interface AddressManagementController {
  *
  * @param navController [NavController] used for navigation.
  */
-class DefaultAddressManagementController(
-    private val navController: NavController,
-) : AddressManagementController {
+class DefaultAddressManagementController(private val navController: NavController) : AddressManagementController {
 
     override fun handleAddressClicked(address: Address) {
         navigateToAddressEditor(address)
@@ -46,10 +40,9 @@ class DefaultAddressManagementController(
 
     private fun navigateToAddressEditor(address: Address? = null) {
         navController.navigate(
-            AddressManagementFragmentDirections
-                .actionAddressManagementFragmentToAddressEditorFragment(
-                    address = address,
-                ),
+            AddressManagementFragmentDirections.actionAddressManagementFragmentToAddressEditorFragment(
+                address = address
+            )
         )
     }
 }

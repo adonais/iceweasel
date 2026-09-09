@@ -17,22 +17,24 @@ class TopSitesUseCasesTest {
         val useCases = TopSitesUseCases(topSitesStorage)
 
         useCases.addPinnedSites("Mozilla", "https://www.mozilla.org", isDefault = true)
-        verify(topSitesStorage).addTopSite(
-            "Mozilla",
-            "https://www.mozilla.org",
-            isDefault = true,
-        )
+        verify(topSitesStorage)
+            .addTopSite(
+                "Mozilla",
+                "https://www.mozilla.org",
+                isDefault = true,
+            )
     }
 
     @Test
     fun `RemoveTopSiteUseCase`() = runTest {
         val topSitesStorage: TopSitesStorage = mock()
-        val topSite = TopSite.Default(
-            id = 1,
-            title = "Firefox",
-            url = "https://firefox.com",
-            createdAt = 1,
-        )
+        val topSite =
+            TopSite.Default(
+                id = 1,
+                title = "Firefox",
+                url = "https://firefox.com",
+                createdAt = 1,
+            )
 
         val useCases = TopSitesUseCases(topSitesStorage)
 
@@ -44,12 +46,13 @@ class TopSitesUseCasesTest {
     @Test
     fun `UpdateTopSiteUseCase`() = runTest {
         val topSitesStorage: TopSitesStorage = mock()
-        val topSite = TopSite.Default(
-            id = 1,
-            title = "Firefox",
-            url = "https://firefox.com",
-            createdAt = 1,
-        )
+        val topSite =
+            TopSite.Default(
+                id = 1,
+                title = "Firefox",
+                url = "https://firefox.com",
+                createdAt = 1,
+            )
 
         val useCases = TopSitesUseCases(topSitesStorage)
 

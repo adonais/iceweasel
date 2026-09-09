@@ -7,9 +7,9 @@
 
 @layer tokens-foundation, tokens-browser-theme, tokens-foundation-brand, tokens-foundation-nova, tokens-browser-theme-nova, tokens-foundation-brand-nova, tokens-prefers-contrast, tokens-prefers-contrast-nova, tokens-forced-colors, tokens-forced-colors-nova;
 
-@layer tokens-foundation {
-  :root,
-  :host {
+:root,
+:host {
+  @layer tokens-foundation {
     --urlbar-background-color: var(--toolbar-field-background-color);
     --urlbar-background-color-focus: var(--toolbar-field-background-color-focus);
     --urlbar-border-radius: var(--button-border-radius);
@@ -23,35 +23,15 @@
     --urlbar-margin-inline: 5px;
     --urlbar-padding-block: 4px;
   }
-}
 
-/* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-@layer tokens-prefers-contrast {
-  @media (prefers-contrast) {
-    :root,
-    :host {
+  @layer tokens-prefers-contrast {
+    @media (prefers-contrast) {
       --urlbar-icon-fill-opacity: 1;
     }
   }
-}
 
-/* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-@layer tokens-browser-theme {
-  @media not ((forced-colors) or (-moz-native-theme)) {
-    :root:is([theme-in-app], :not([lwtheme])),
-    :host(.anonymous-content-host) {
-      --urlbar-box-background-color: light-dark(white, rgb(66, 65, 77));
-      --urlbar-icon-fill-opacity: 0.72;
-    }
-  }
-}
-
-@media -moz-pref("browser.nova.enabled") {
-  @layer tokens-foundation-nova {
-    :root,
-    :host {
+  @media -moz-pref("browser.nova.enabled") {
+    @layer tokens-foundation-nova {
       --urlbar-border-radius: var(--popup-border-radius);
       --urlbar-box-background-color: color-mix(in srgb, currentColor 16%, transparent);
       --urlbar-box-background-color-hover: color-mix(in srgb, currentColor 22%, transparent);
@@ -59,25 +39,27 @@
       --urlbar-box-background-color-focus: var(--urlbar-box-background-color);
       --urlbar-icon-fill-opacity: 0.9;
     }
-  }
 
-  /* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-  @layer tokens-prefers-contrast-nova {
-    @media (prefers-contrast) {
-      :root,
-      :host {
+    @layer tokens-prefers-contrast-nova {
+      @media (prefers-contrast) {
         --urlbar-icon-fill-opacity: 1;
       }
     }
   }
+}
 
-  /* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-  @layer tokens-browser-theme-nova {
+:root:is([theme-in-app], :not([lwtheme])),
+:host(.anonymous-content-host) {
+  @layer tokens-browser-theme {
     @media not ((forced-colors) or (-moz-native-theme)) {
-      :root:is([theme-in-app], :not([lwtheme])),
-      :host(.anonymous-content-host) {
+      --urlbar-box-background-color: light-dark(white, rgb(66, 65, 77));
+      --urlbar-icon-fill-opacity: 0.72;
+    }
+  }
+
+  @media -moz-pref("browser.nova.enabled") {
+    @layer tokens-browser-theme-nova {
+      @media not ((forced-colors) or (-moz-native-theme)) {
         --urlbar-box-background-color: var(--urlbarview-background-color-hover);
         --urlbar-box-background-color-hover: var(--urlbarview-background-color-selected);
         --urlbar-box-background-color-active: light-dark(rgba(117, 102, 159, 0.6), rgba(176, 163, 210, 0.6));

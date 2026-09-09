@@ -33,23 +33,28 @@ class DownloadSnackbar(
     private var scope: CoroutineScope? = null
 
     override fun start() {
-        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.mapNotNull { it.downloads }
-                .distinctUntilChangedBy { it.values }
-                .collect { downloads ->
-                    val snackbarState = appStore.state.snackbarState
-                    if (snackbarState is SnackbarState.None &&
-                        snackbarState.previous is SnackbarState.DownloadInProgress
-                    ) {
-                        val previousDownloadId = snackbarState.previous.downloadId
-                        downloads.values.find {
-                            it.status == DownloadState.Status.CANCELLED && it.id == previousDownloadId
-                        }?.let {
-                            appStore.dispatch(AppAction.SnackbarAction.SnackbarDismissed)
+        scope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .mapNotNull { it.downloads }
+                    .distinctUntilChangedBy { it.values }
+                    .collect { downloads ->
+                        val snackbarState = appStore.state.snackbarState
+                        if (
+                            snackbarState is SnackbarState.None &&
+                                snackbarState.previous is SnackbarState.DownloadInProgress
+                        ) {
+                            val previousDownloadId = snackbarState.previous.downloadId
+                            downloads.values
+                                .find {
+                                    it.status == DownloadState.Status.CANCELLED && it.id == previousDownloadId
+                                }
+                                ?.let {
+                                    appStore.dispatch(AppAction.SnackbarAction.SnackbarDismissed)
+                                }
                         }
                     }
-                }
-        }
+            }
     }
 
     override fun stop() {

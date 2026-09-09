@@ -818,7 +818,7 @@ void ServiceWorkerPrivate::RegenerateClientInfo() {
   nsILoadInfo::IPAddressSpace ipAddressSpace = nsILoadInfo::Unknown;
   if (mRemoteWorkerData.clientInfo().isSome()) {
     ClientInfo current(mRemoteWorkerData.clientInfo().ref());
-    if (auto args = current.GetPolicyContainerArgs()) {
+    if (const auto& args = current.GetPolicyContainerArgs()) {
       ipAddressSpace = args->ipAddressSpace();
     }
   }

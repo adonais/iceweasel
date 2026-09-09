@@ -1151,9 +1151,11 @@ first_visit_node: {
   ropeBarrierDuringFlattening<usingBarrier>(str);
 
   JSString& left = *str->d.s.u2.left;
-  str->setFlagBit(parentFlag);
 #ifdef JS_GC_CONCURRENT_MARKING
+  str->setFlagBitAtomic(parentFlag);
   js::gc::MemoryReleaseFence(str);
+#else
+  str->setFlagBit(parentFlag);
 #endif
   setField(&str->d.s.u2.parent, parent);
   parent = nullptr;

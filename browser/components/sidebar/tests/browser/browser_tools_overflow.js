@@ -333,7 +333,9 @@ add_task(
         Array.from(sidebar.toolButtons).some(
           button => button.style.visibility === "hidden"
         ),
-      "At least one tool button is hidden while overflowing in vertical tabs."
+      {
+        msg: "At least one tool button is hidden while overflowing in vertical tabs.",
+      }
     );
 
     info("Switch to horizontal tabs.");
@@ -348,7 +350,9 @@ add_task(
         Array.from(sidebar.toolButtons).every(
           button => button.style.visibility !== "hidden"
         ),
-      "No tool buttons remain hidden after switching to horizontal tabs."
+      {
+        msg: "No tool buttons remain hidden after switching to horizontal tabs.",
+      }
     );
     for (const button of sidebar.toolButtons) {
       is(

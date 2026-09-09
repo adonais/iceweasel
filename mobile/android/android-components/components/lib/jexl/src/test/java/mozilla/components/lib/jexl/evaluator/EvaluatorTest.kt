@@ -51,8 +51,9 @@ class EvaluatorTest {
     fun `Should evaluate a string concat`() {
         assertExpressionYieldsResult(
             """
-                "Hello" + (4+4) + "Wo\"rld"
-            """.trimIndent(),
+            "Hello" + (4+4) + "Wo\"rld"
+            """
+                .trimIndent(),
             "Hello8Wo\"rld",
         )
     }
@@ -83,13 +84,7 @@ class EvaluatorTest {
 
     @Test
     fun `Should evaluate an identifier chain`() {
-        val context = JexlContext(
-            "foo" to JexlObject(
-                "baz" to JexlObject(
-                    "bar" to JexlString("tek"),
-                ),
-            ),
-        )
+        val context = JexlContext("foo" to JexlObject("baz" to JexlObject("bar" to JexlString("tek"))))
 
         assertExpressionYieldsResult(
             "foo.baz.bar",
@@ -100,33 +95,36 @@ class EvaluatorTest {
 
     @Test
     fun `Should apply transforms`() {
-        val context = JexlContext(
-            "foo" to JexlInteger(10),
-        )
+        val context = JexlContext("foo" to JexlInteger(10))
 
         assertExpressionYieldsResult(
             "foo|half + 3",
             8,
             context = context,
-            transforms = mapOf(
-                "half" to { value, _ ->
-                    value.div(JexlInteger(2))
-                },
-            ),
+            transforms =
+                mapOf(
+                    "half" to
+                        { value, _ ->
+                            value.div(JexlInteger(2))
+                        }
+                ),
         )
     }
 
     @Test
     fun `Should filter arrays`() {
-        val context = JexlContext(
-            "foo" to JexlObject(
-                "bar" to JexlArray(
-                    JexlObject("tek" to JexlString("hello")),
-                    JexlObject("tek" to JexlString("baz")),
-                    JexlObject("tok" to JexlString("baz")),
-                ),
-            ),
-        )
+        val context =
+            JexlContext(
+                "foo" to
+                    JexlObject(
+                        "bar" to
+                            JexlArray(
+                                JexlObject("tek" to JexlString("hello")),
+                                JexlObject("tek" to JexlString("baz")),
+                                JexlObject("tok" to JexlString("baz")),
+                            )
+                    )
+            )
 
         assertExpressionYieldsResult(
             "foo.bar[.tek == \"baz\"]",
@@ -137,26 +135,17 @@ class EvaluatorTest {
 
     @Test
     fun `Should assume array index 0 when traversing`() {
-        val context = JexlContext(
-            "foo" to JexlObject(
-                "bar" to JexlArray(
+        val context =
+            JexlContext(
+                "foo" to
                     JexlObject(
-                        "tek" to JexlObject(
-                            "hello" to JexlString(
-                                "world",
-                            ),
-                        ),
-                    ),
-                    JexlObject(
-                        "tek" to JexlObject(
-                            "hello" to JexlString(
-                                "universe",
-                            ),
-                        ),
-                    ),
-                ),
-            ),
-        )
+                        "bar" to
+                            JexlArray(
+                                JexlObject("tek" to JexlObject("hello" to JexlString("world"))),
+                                JexlObject("tek" to JexlObject("hello" to JexlString("universe"))),
+                            )
+                    )
+            )
 
         assertExpressionYieldsResult(
             "foo.bar.tek.hello",
@@ -167,15 +156,18 @@ class EvaluatorTest {
 
     @Test
     fun `Should make array elements addressable by index`() {
-        val context = JexlContext(
-            "foo" to JexlObject(
-                "bar" to JexlArray(
-                    JexlObject("tek" to JexlString("tok")),
-                    JexlObject("tek" to JexlString("baz")),
-                    JexlObject("tek" to JexlString("foz")),
-                ),
-            ),
-        )
+        val context =
+            JexlContext(
+                "foo" to
+                    JexlObject(
+                        "bar" to
+                            JexlArray(
+                                JexlObject("tek" to JexlString("tok")),
+                                JexlObject("tek" to JexlString("baz")),
+                                JexlObject("tek" to JexlString("foz")),
+                            )
+                    )
+            )
 
         assertExpressionYieldsResult(
             "foo.bar[1].tek",
@@ -186,13 +178,7 @@ class EvaluatorTest {
 
     @Test
     fun `Should allow filters to select object properties`() {
-        val context = JexlContext(
-            "foo" to JexlObject(
-                "baz" to JexlObject(
-                    "bar" to JexlString("tek"),
-                ),
-            ),
-        )
+        val context = JexlContext("foo" to JexlObject("baz" to JexlObject("bar" to JexlString("tek"))))
 
         assertExpressionYieldsResult(
             "foo[\"ba\" + \"z\"].bar",
@@ -203,9 +189,7 @@ class EvaluatorTest {
 
     @Test
     fun `Should allow simple filters on undefined objects`() {
-        val context = JexlContext(
-            "foo" to JexlObject(),
-        )
+        val context = JexlContext("foo" to JexlObject())
 
         assertExpressionYieldsResult(
             "foo.bar[\"baz\"].tok",
@@ -217,9 +201,7 @@ class EvaluatorTest {
 
     @Test
     fun `Should allow complex filters on undefined objects`() {
-        val context = JexlContext(
-            "foo" to JexlObject(),
-        )
+        val context = JexlContext("foo" to JexlObject())
 
         assertExpressionYieldsResult(
             "foo.bar[.size > 1].baz",
@@ -249,13 +231,7 @@ class EvaluatorTest {
     fun `Should evaluate an object literal`() {
         assertExpressionYieldsResult(
             "{foo: {bar: \"tek\"}}",
-            JexlObject(
-                "foo" to JexlObject(
-                    "bar" to JexlString(
-                        "tek",
-                    ),
-                ),
-            ),
+            JexlObject("foo" to JexlObject("bar" to JexlString("tek"))),
             unpack = false,
         )
     }
@@ -273,13 +249,13 @@ class EvaluatorTest {
         assertExpressionYieldsResult(
             """"foo"|concat("baz", "bar", "tek")""",
             "foo: bazbartek",
-            transforms = mapOf(
-                "concat" to { value, arguments ->
-                    value + JexlString(": ") + JexlString(
-                        arguments.joinToString(""),
-                    )
-                },
-            ),
+            transforms =
+                mapOf(
+                    "concat" to
+                        { value, arguments ->
+                            value + JexlString(": ") + JexlString(arguments.joinToString(""))
+                        }
+                ),
         )
     }
 
@@ -369,7 +345,6 @@ class EvaluatorTest {
         val lexer = Lexer(grammar)
         val parser = Parser(grammar)
 
-        return parser.parse(lexer.tokenize(expression))
-            ?: throw AssertionError("Expression yielded null AST tree")
+        return parser.parse(lexer.tokenize(expression)) ?: throw AssertionError("Expression yielded null AST tree")
     }
 }

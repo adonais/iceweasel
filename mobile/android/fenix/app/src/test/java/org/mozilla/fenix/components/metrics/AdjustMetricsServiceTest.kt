@@ -18,6 +18,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import io.mockk.verifyOrder
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -44,7 +45,6 @@ import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.utils.Settings
-import kotlin.test.assertNotNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -53,133 +53,131 @@ internal class AdjustMetricsServiceTest {
     val thirdPartySharingController = mockk<ThirdPartySharingController>(relaxed = true)
     val conversionEventRecorder = mockk<ConversionEventRecorder>(relaxed = true)
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(ApplicationProvider.getApplicationContext())
+    @get:Rule val gleanTestRule = FenixGleanTestRule(ApplicationProvider.getApplicationContext())
 
     @Before
     fun setUp() {
         every { testContext.components.settings } returns Settings(testContext)
-        every { testContext.components.distributionIdManager } returns mockk<DistributionIdManager>(relaxed = true) {
-            coEvery { getDistribution() } returns DistributionIdManager.Distribution.DEFAULT
-            coEvery { getDistributionAdjustStartupStrategy() } returns DistributionAdjustStartupStrategy.NONE
-        }
+        every { testContext.components.distributionIdManager } returns
+            mockk<DistributionIdManager>(relaxed = true) {
+                coEvery { getDistribution() } returns DistributionIdManager.Distribution.DEFAULT
+                coEvery { getDistributionAdjustStartupStrategy() } returns DistributionAdjustStartupStrategy.NONE
+            }
     }
 
     private fun TestScope.createAdjustMetricsService(
         adjustSdk: AdjustSdkController,
         storage: MetricsStorage = mockk(relaxed = true),
-    ) = AdjustMetricsService(
-        application = testContext as Application,
-        storage = storage,
-        crashReporter = mockk(relaxed = true),
-        dispatcher = UnconfinedTestDispatcher(testScheduler),
-        adjustSdk = adjustSdk,
-        adjustToken = "fake-adjust-token",
-        thirdPartySharingController = mockk(relaxed = true),
-    )
+    ) =
+        AdjustMetricsService(
+            application = testContext as Application,
+            storage = storage,
+            crashReporter = mockk(relaxed = true),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            adjustSdk = adjustSdk,
+            adjustToken = "fake-adjust-token",
+            thirdPartySharingController = mockk(relaxed = true),
+        )
 
     @Test
-    fun `WHEN start is called AND attribution is already known THEN Adjust is not initialized`() =
-        runTest {
-            every { testContext.components.settings } returns
-                Settings(testContext).apply { adjustCampaignId = "campaign" }
-            val adjustSdk = mockk<AdjustSdkController>(relaxed = true)
-            val service = createAdjustMetricsService(adjustSdk)
+    fun `WHEN start is called AND attribution is already known THEN Adjust is not initialized`() = runTest {
+        every { testContext.components.settings } returns Settings(testContext).apply { adjustCampaignId = "campaign" }
+        val adjustSdk = mockk<AdjustSdkController>(relaxed = true)
+        val service = createAdjustMetricsService(adjustSdk)
 
-            service.start()
-            advanceUntilIdle()
+        service.start()
+        advanceUntilIdle()
 
-            verify(exactly = 0) { adjustSdk.initSdk(any()) }
-            verify(exactly = 0) { adjustSdk.enable() }
+        verify(exactly = 0) { adjustSdk.initSdk(any()) }
+        verify(exactly = 0) { adjustSdk.enable() }
+    }
+
+    @Test
+    fun `WHEN attribution is unknown on start THEN Adjust is initialized with an attribution listener`() = runTest {
+        val adjustSdk = mockk<AdjustSdkController>(relaxed = true)
+        val configSlot = slot<AdjustConfig>()
+        every { adjustSdk.initSdk(capture(configSlot)) } just Runs
+        val service = createAdjustMetricsService(adjustSdk)
+
+        service.start()
+        advanceUntilIdle()
+
+        verify { adjustSdk.initSdk(any()) }
+        verify { adjustSdk.enable() }
+        assertNotNull(configSlot.captured.onAttributionChangedListener)
+    }
+
+    @Test
+    fun `WHEN stop is called THEN forget-me is sent before init without attribution tracking`() = runTest {
+        val adjustSdk = mockk<AdjustSdkController>(relaxed = true)
+        val configSlot = slot<AdjustConfig>()
+        every { adjustSdk.initSdk(capture(configSlot)) } just Runs
+        val service = createAdjustMetricsService(adjustSdk)
+
+        service.stop()
+        advanceUntilIdle()
+
+        verifyOrder {
+            adjustSdk.gdprForgetMe(any())
+            adjustSdk.initSdk(any())
         }
+        assertNull(configSlot.captured.onAttributionChangedListener)
+    }
 
     @Test
-    fun `WHEN attribution is unknown on start THEN Adjust is initialized with an attribution listener`() =
-        runTest {
-            val adjustSdk = mockk<AdjustSdkController>(relaxed = true)
-            val configSlot = slot<AdjustConfig>()
-            every { adjustSdk.initSdk(capture(configSlot)) } just Runs
-            val service = createAdjustMetricsService(adjustSdk)
+    fun `WHEN stop is called with service already started THEN forget-me is sent without re-init`() = runTest {
+        val adjustSdk = mockk<AdjustSdkController>(relaxed = true)
+        val configSlot = slot<AdjustConfig>()
+        every { adjustSdk.initSdk(capture(configSlot)) } just Runs
+        val service = createAdjustMetricsService(adjustSdk)
 
-            service.start()
-            advanceUntilIdle()
+        service.start()
+        advanceUntilIdle()
 
-            verify { adjustSdk.initSdk(any()) }
-            verify { adjustSdk.enable() }
-            assertNotNull(configSlot.captured.onAttributionChangedListener)
+        service.stop()
+        advanceUntilIdle()
+
+        verifyOrder {
+            adjustSdk.initSdk(any())
+            adjustSdk.enable()
+            adjustSdk.gdprForgetMe(any())
         }
+    }
 
     @Test
-    fun `WHEN stop is called THEN forget-me is sent before init without attribution tracking`() =
-        runTest {
-            val adjustSdk = mockk<AdjustSdkController>(relaxed = true)
-            val configSlot = slot<AdjustConfig>()
-            every { adjustSdk.initSdk(capture(configSlot)) } just Runs
-            val service = createAdjustMetricsService(adjustSdk)
-
-            service.stop()
-            advanceUntilIdle()
-
-            verifyOrder {
-                adjustSdk.gdprForgetMe(any())
-                adjustSdk.initSdk(any())
-            }
-            assertNull(configSlot.captured.onAttributionChangedListener)
-        }
-
-    @Test
-    fun `WHEN stop is called with service already started THEN forget-me is sent without re-init`() =
-        runTest {
-            val adjustSdk = mockk<AdjustSdkController>(relaxed = true)
-            val configSlot = slot<AdjustConfig>()
-            every { adjustSdk.initSdk(capture(configSlot)) } just Runs
-            val service = createAdjustMetricsService(adjustSdk)
-
-            service.start()
-            advanceUntilIdle()
-
-            service.stop()
-            advanceUntilIdle()
-
-            verifyOrder {
-                adjustSdk.initSdk(any())
-                adjustSdk.enable()
-                adjustSdk.gdprForgetMe(any())
-            }
-        }
-
-    @Test
-    fun `WHEN Adjust is used multiple times THEN it is initialized only once`() =
-        runTest {
-            val adjustSdk = mockk<AdjustSdkController>(relaxed = true)
-            val storage = mockk<MetricsStorage> {
+    fun `WHEN Adjust is used multiple times THEN it is initialized only once`() = runTest {
+        val adjustSdk = mockk<AdjustSdkController>(relaxed = true)
+        val storage =
+            mockk<MetricsStorage> {
                 coEvery { shouldTrack(any()) } returns true
                 coEvery { updateSentState(any()) } just Runs
             }
-            val service = createAdjustMetricsService(adjustSdk, storage)
+        val service = createAdjustMetricsService(adjustSdk, storage)
 
-            service.track(Event.GrowthData.ConversionEvent1)
-            service.track(Event.GrowthData.ConversionEvent2)
-            advanceUntilIdle()
+        service.track(Event.GrowthData.ConversionEvent1)
+        service.track(Event.GrowthData.ConversionEvent2)
+        advanceUntilIdle()
 
-            verify(exactly = 1) { adjustSdk.initSdk(any()) }
-        }
+        verify(exactly = 1) { adjustSdk.initSdk(any()) }
+    }
 
     @Test
     fun `WHEN a growth event should be tracked THEN it is sent through the Adjust SDK and its sent state is updated`() =
         runTest {
             val adjustSdk = mockk<AdjustSdkController>(relaxed = true)
-            val storage = mockk<MetricsStorage> {
-                coEvery { shouldTrack(any()) } returns true
-                coEvery { updateSentState(any()) } just Runs
-            }
-            val service = AdjustMetricsService(
-                application = testContext as Application,
-                storage = storage,
-                crashReporter = mockk(relaxed = true),
-                dispatcher = UnconfinedTestDispatcher(testScheduler),
-                adjustSdk = adjustSdk,
-            )
+            val storage =
+                mockk<MetricsStorage> {
+                    coEvery { shouldTrack(any()) } returns true
+                    coEvery { updateSentState(any()) } just Runs
+                }
+            val service =
+                AdjustMetricsService(
+                    application = testContext as Application,
+                    storage = storage,
+                    crashReporter = mockk(relaxed = true),
+                    dispatcher = UnconfinedTestDispatcher(testScheduler),
+                    adjustSdk = adjustSdk,
+                )
 
             service.track(Event.GrowthData.ConversionEvent1)
             advanceUntilIdle()
@@ -189,13 +187,14 @@ internal class AdjustMetricsServiceTest {
         }
 
     @Test
-    fun `WHEN a growth event should not be tracked THEN Adjust is neither started nor used`() =
-        runTest {
-            val adjustSdk = mockk<AdjustSdkController>(relaxed = true)
-            val storage = mockk<MetricsStorage> {
+    fun `WHEN a growth event should not be tracked THEN Adjust is neither started nor used`() = runTest {
+        val adjustSdk = mockk<AdjustSdkController>(relaxed = true)
+        val storage =
+            mockk<MetricsStorage> {
                 coEvery { shouldTrack(any()) } returns false
             }
-            val service = AdjustMetricsService(
+        val service =
+            AdjustMetricsService(
                 application = testContext as Application,
                 storage = storage,
                 crashReporter = mockk(relaxed = true),
@@ -203,13 +202,13 @@ internal class AdjustMetricsServiceTest {
                 adjustSdk = adjustSdk,
             )
 
-            service.track(Event.GrowthData.ConversionEvent1)
-            advanceUntilIdle()
+        service.track(Event.GrowthData.ConversionEvent1)
+        advanceUntilIdle()
 
-            verify(exactly = 0) { adjustSdk.initSdk(any()) }
-            verify(exactly = 0) { adjustSdk.trackEvent(any()) }
-            coVerify(exactly = 0) { storage.updateSentState(any()) }
-        }
+        verify(exactly = 0) { adjustSdk.initSdk(any()) }
+        verify(exactly = 0) { adjustSdk.trackEvent(any()) }
+        coVerify(exactly = 0) { storage.updateSentState(any()) }
+    }
 
     @Test
     fun `WHEN Adjust attribution data already exist THEN already known is true`() {

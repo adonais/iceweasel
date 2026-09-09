@@ -367,6 +367,7 @@ class ModuleEntry:
           {contract_id},
           {lower_processes(self.processes)},
           {"true" if self.serializable else "false"},
+          {"true" if self.singleton else "false"},
         }}"""
 
     # Generates the C++ code for a JSServiceEntry representing this module.

@@ -75,6 +75,12 @@
     --button-disabled-opacity:0.6;
     --hover-filter:brightness(1.4);
   }
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    --hover-filter:none;
+    --button-disabled-opacity:var(--button-opacity-disabled);
+    --button-secondary-hover-border-color:var(--button-border-color-hover);
+    --button-secondary-active-border-color:var(--button-border-color-active);
+  }
 
   @media screen and (forced-colors: active){
     --button-primary-bg-color:var(
@@ -258,6 +264,9 @@
     --button-background-color,
     light-dark(rgb(21 20 26 / 0.07), rgb(251 251 254 / 0.07))
   );
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    --message-bar-close-button-border-radius:var(--button-border-radius);
+  }
 
   @media screen and (forced-colors: active){
     --message-bar-close-button-color:var(--button-text-color, ButtonText);
@@ -376,6 +385,11 @@
     rgb(0 0 0 / 0.08),
     rgb(255 255 255 / 0.08)
   );
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    --message-bar-icon-color:var(--icon-color-information);
+    --message-bar-bg-color:var(--background-color-box);
+    --message-bar-border-color:var(--border-color-deemphasized);
+  }
 
   @media screen and (forced-colors: active){
     --message-bar-icon-color:CanvasText;
@@ -426,6 +440,11 @@
 
   --input-text-bg-color:light-dark(white, #42414d);
   --input-text-fg-color:var(--text-primary-color);
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    --dialog-border-color:var(--border-color-deemphasized);
+    --dialog-shadow:var(--box-shadow-level-3);
+    --separator-color:var(--border-color-deemphasized);
+  }
 
   @media screen and (forced-colors: active){
     --dialog-bg-color:var(--background-color-canvas, Canvas);
@@ -1876,6 +1895,10 @@
   --button-signature-border:none;
   --button-signature-hover-bg:light-dark(#e0e0e6, #52525e);
   --button-signature-hover-color:var(--button-signature-color);
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    --button-signature-hover-bg:var(--button-background-color-hover);
+    --button-signature-active-bg:var(--button-background-color-active);
+  }
 
   @media screen and (forced-colors: active){
     --signature-bg:HighlightText;
@@ -2214,6 +2237,9 @@
               margin:0;
               background-color:var(--thickness-bg);
               border-radius:4px 4px 0 0;
+              @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+                border-radius:var(--border-radius-small) var(--border-radius-small) 0 0;
+              }
               border-inline:var(--thickness-border);
               border-top:var(--thickness-border);
               pointer-events:auto;
@@ -2455,6 +2481,9 @@
       button{
         border:var(--button-signature-border);
         border-radius:4px;
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+          border-radius:var(--border-radius-small);
+        }
         background-color:var(--button-signature-bg);
         color:var(--button-signature-color);
 
@@ -2497,6 +2526,9 @@
         justify-content:flex-start;
         outline:none;
         border-radius:4px;
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+          border-radius:var(--border-radius-small);
+        }
         box-sizing:border-box;
         font:message-box;
         position:relative;
@@ -2518,6 +2550,9 @@
           box-sizing:border-box;
           border:none;
           border-radius:4px;
+          @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+            border-radius:var(--border-radius-small);
+          }
 
           > path{
             stroke:var(--button-signature-color);
@@ -2537,6 +2572,9 @@
 
         &:is(:hover, :active) > svg{
           border-radius:4px 0 0 4px;
+          @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+            border-radius:var(--border-radius-small) 0 0 var(--border-radius-small);
+          }
           background-color:var(--signature-hover-bg);
         }
 
@@ -2593,6 +2631,9 @@
   box-sizing:border-box;
 
   border-radius:8px;
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    border-radius:var(--border-radius-medium);
+  }
 }
 
 #commentManagerDialog{
@@ -2826,6 +2867,22 @@
   --button-comment-border:none;
   --button-comment-hover-bg:light-dark(#e0e0e6, #52525e);
   --button-comment-hover-color:var(--button-comment-color);
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    --comment-date-fg-color:color-mix(
+      in srgb,
+      var(--comment-fg-color) 69%,
+      transparent
+    );
+    --comment-bg-color:var(--background-color-box-info);
+    --comment-border-color:var(--border-color-deemphasized);
+    --comment-count-bg-color:var(--background-color-information);
+    --comment-indicator-active-fg-color:var(--color-accent-primary-active);
+    --comment-indicator-focus-fg-color:var(--icon-color);
+
+    --button-comment-color:var(--toolbarbutton-icon-fill);
+    --button-comment-active-bg:var(--toolbarbutton-background-color-active);
+    --button-comment-hover-bg:var(--toolbarbutton-background-color-hover);
+  }
 
   @media screen and (forced-colors: active){
     --comment-date-fg-color:CanvasText;
@@ -2895,6 +2952,9 @@
         font-style:normal;
         font-weight:400;
         line-height:normal;
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+          border-radius:var(--border-radius-small);
+        }
       }
     }
 
@@ -2945,6 +3005,14 @@
         height:0;
         overflow:hidden;
       }
+      @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+        border-radius:var(--button-border-radius);
+
+        &:focus-visible{
+          outline:var(--focus-outline);
+          outline-offset:var(--focus-outline-offset);
+        }
+      }
     }
   }
 
@@ -2973,6 +3041,10 @@
         border-radius:8px;
         border:0.5px solid var(--comment-border-color);
         background-color:var(--comment-bg-color);
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+          border-radius:var(--border-radius-medium);
+          border-width:1px;
+        }
 
         &:not(.noComments){
           &:hover{
@@ -3487,6 +3559,17 @@
     --alt-text-warning-color:light-dark(#0090ed, #80ebff);
     --alt-text-hover-done-color:var(--alt-text-done-color);
     --alt-text-hover-warning-color:var(--alt-text-warning-color);
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+      --editor-toolbar-bg-color:var(--background-color-box);
+      --editor-toolbar-fg-color:var(--toolbarbutton-icon-fill);
+      --editor-toolbar-border-color:var(--border-color-deemphasized);
+      --editor-toolbar-hover-bg-color:var(
+        --toolbarbutton-background-color-hover
+      );
+      --editor-toolbar-shadow:var(--box-shadow-level-2);
+      --editor-toolbar-height:var(--size-item-large);
+      --alt-text-warning-color:var(--icon-color-information);
+    }
 
     @media screen and (forced-colors: active){
       --editor-toolbar-bg-color:var(--button-background-color, ButtonFace);
@@ -3536,6 +3619,10 @@
     background-color:var(--editor-toolbar-bg-color);
     border:1px solid var(--editor-toolbar-border-color);
     box-shadow:var(--editor-toolbar-shadow);
+
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+      border-radius:var(--panel-border-radius);
+    }
 
     &.hidden{
       display:none;
@@ -3630,6 +3717,11 @@
           border-radius:2px;
           outline:2px solid var(--editor-toolbar-focus-outline-color);
         }
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+          &:is(:hover, :focus-visible){
+            border-radius:var(--button-border-radius);
+          }
+        }
       }
 
       .altText{
@@ -3708,6 +3800,13 @@
             );
             --alt-text-tooltip-border:var(--border-color-interactive, #8f8f9d);
             --alt-text-tooltip-shadow:0 2px 6px 0 light-dark(rgb(58 57 68 / 0.2), #15141a);
+            @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+              --alt-text-tooltip-bg:var(--background-color-box);
+              --alt-text-tooltip-border:var(--border-color-deemphasized);
+              --alt-text-tooltip-shadow:var(--box-shadow-level-2);
+
+              border-radius:var(--border-radius-xsmall);
+            }
 
             @media screen and (forced-colors: active){
               --alt-text-tooltip-bg:Canvas;
@@ -3834,6 +3933,11 @@
     --no-alt-text-badge-border-color:light-dark(#f0f0f4, #52525e);
     --no-alt-text-badge-bg-color:light-dark(#cfcfd8, #fbfbfe);
     --no-alt-text-badge-fg-color:light-dark(#5b5b66, #15141a);
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+      --no-alt-text-badge-border-color:var(--border-color-deemphasized);
+      --no-alt-text-badge-bg-color:var(--background-color-box);
+      --no-alt-text-badge-fg-color:var(--icon-color);
+    }
 
     @media screen and (forced-colors: active){
       --no-alt-text-badge-border-color:ButtonText;
@@ -3856,6 +3960,10 @@
     border-radius:2px;
     border:1px solid var(--no-alt-text-badge-border-color);
     background:var(--no-alt-text-badge-bg-color);
+
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+      border-radius:var(--border-radius-xsmall);
+    }
 
     &::before{
       content:"";
@@ -4118,6 +4226,9 @@
   --new-alt-text-spinner-icon:url(images/altText_spinner.svg);
   --preview-image-bg-color:light-dark(#f0f0f4, #2b2a33);
   --preview-image-border:none;
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    --preview-image-bg-color:var(--background-color-box-info);
+  }
 
   @media screen and (forced-colors: active){
     --preview-image-bg-color:ButtonFace;
@@ -4301,6 +4412,10 @@
   );
   --selected-outline-color:light-dark(#0060df, #aaf2ff);
   --swatch-border-color:light-dark(#cfcfd8, #52525e);
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    --selected-outline-color:var(--color-accent-primary);
+    --swatch-border-color:var(--border-color-deemphasized);
+  }
 
   @media screen and (forced-colors: active){
     --hover-outline-color:Highlight;
@@ -4325,6 +4440,11 @@
 
 .basicColorPicker{
   width:28px;
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    width:auto;
+    aspect-ratio:1;
+    padding:var(--space-small);
+  }
 
   &::-moz-color-swatch{
     border-radius:100%;
@@ -4425,6 +4545,10 @@
 
           &:has(.dropdown:not(.hidden)){
             background-color:var(--editor-toolbar-hover-bg-color);
+            @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+              background-color:var(--toolbarbutton-background-color-active);
+              border-radius:var(--button-border-radius);
+            }
 
             &::after{
               scale:-1;
@@ -4470,6 +4594,25 @@
 
               &:is(:hover, :active, :focus-visible) > .swatch{
                 outline:2px solid var(--hover-outline-color);
+              }
+            }
+            @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+              flex-direction:row;
+              gap:var(--space-small);
+              padding:var(--space-small);
+              width:max-content;
+              inset-inline-start:50%;
+              translate:calc(-50% * var(--dir-factor));
+              border-radius:var(--border-radius-medium);
+
+              button{
+                width:auto;
+                flex:0 0 auto;
+
+                > .swatch{
+                  width:var(--size-item-medium);
+                  height:var(--size-item-medium);
+                }
               }
             }
           }
@@ -4703,6 +4846,18 @@ button.hasPopupMenu{
   );
   --menuitem-hover-background-blend-mode:normal;
   --disabled-opacity:0.62;
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    --menuitem-gap:var(--space-small);
+    --menuitem-border-radius:var(--panel-menuitem-border-radius);
+    --menu-box-shadow:var(--box-shadow-level-2);
+    --menu-border-color:var(--border-color-deemphasized);
+    --menuitem-hover-bg:var(--button-background-color-menu-hover);
+    --menuitem-text-hover-fg:var(--button-text-color-menu-hover);
+    --menuitem-active-bg:var(--button-background-color-menu-active);
+    --menuitem-text-active-fg:var(--button-text-color-menu-active);
+    --menuitem-focus-border-color:transparent;
+    --disabled-opacity:var(--button-opacity-disabled);
+  }
 
   @media screen and (forced-colors: active){
     --menu-bg:var(--background-color-box, Canvas);
@@ -4741,6 +4896,10 @@ button.hasPopupMenu{
   border-radius:6px;
   border:1px solid var(--menu-border-color);
   backdrop-filter:var(--menu-backdrop-filter);
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    padding:var(--space-small) 0;
+    border-radius:var(--panel-border-radius);
+  }
 
   &.withMark{
     --menu-mark-icon-size:16px;
@@ -4771,7 +4930,7 @@ button.hasPopupMenu{
       position:absolute;
       inset-inline-start:var(--menuitem-gap);
       top:50%;
-      transform:translateY(-50%);
+      transform:translateY(-50%) scaleX(var(--dir-factor));
     }
 
     &:disabled{
@@ -4822,6 +4981,10 @@ button.hasPopupMenu{
         background-color:var(--menuitem-focus-bg);
         outline:2px solid var(--menuitem-focus-outline-color);
         outline-offset:2px;
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+          outline:var(--focus-outline);
+          outline-offset:var(--focus-outline-inset);
+        }
       }
     }
 
@@ -4852,6 +5015,30 @@ button.hasPopupMenu{
       font-weight:510;
       line-height:normal;
     }
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+      height:auto;
+      min-height:var(--size-item-large);
+      width:auto;
+      margin:var(--panel-menuitem-margin);
+      padding:var(--panel-menuitem-padding);
+
+      &.selected::after{
+        inset-inline-start:var(--panel-menuitem-padding-inline);
+      }
+
+      > span{
+        padding-inline-start:0;
+      }
+    }
+  }
+
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    &.withMark > button{
+      padding-inline-start:calc(
+        var(--panel-menuitem-padding-inline) + var(--menu-mark-icon-size) +
+          var(--menuitem-gap)
+      );
+    }
   }
 }
 
@@ -4869,6 +5056,15 @@ button.hasPopupMenu{
   );
   --treeitem-expanded-icon:url(images/treeitem-expanded.svg);
   --treeitem-collapsed-icon:url(images/treeitem-collapsed.svg);
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    --treeitem-color:var(--text-color);
+    --treeitem-bg-color:var(--toolbarbutton-background-color-hover);
+    --treeitem-hover-color:var(--text-color);
+    --treeitem-selected-color:var(--text-color);
+    --treeitem-selected-bg-color:var(--toolbarbutton-background-color-active);
+
+    padding-inline:var(--panel-menuitem-margin-inline);
+  }
 
   &.withNesting{
     .treeItemToggler{
@@ -4908,6 +5104,9 @@ button.hasPopupMenu{
         background-clip:padding-box;
         border-radius:2px;
         color:var(--treeitem-hover-color);
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+          border-radius:var(--panel-menuitem-border-radius);
+        }
       }
     }
 
@@ -4948,12 +5147,23 @@ button.hasPopupMenu{
       user-select:none;
       white-space:normal;
       cursor:default;
+      @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+        box-sizing:border-box;
+        min-width:100%;
+        padding-block:var(--space-xsmall);
+        padding-inline:var(--space-small);
+        border-radius:var(--panel-menuitem-border-radius);
+      }
 
       &:hover{
         background-color:var(--treeitem-bg-color);
         background-clip:padding-box;
         border-radius:2px;
         color:var(--treeitem-hover-color);
+
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+          border-radius:var(--panel-menuitem-border-radius);
+        }
       }
     }
 
@@ -5080,6 +5290,28 @@ button.hasPopupMenu{
   --image-dragging-shadow:0 0 0 var(--image-border-width) var(--image-current-border-color);
   --multiple-dragging-indicator-bg:var(--indicator-color);
   --multiple-dragging-text-color:light-dark(#fbfbfe, #15141a);
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    --sidebar-bg-color:var(--background-color-box);
+    --sidebar-backdrop-filter:none;
+    --header-bg:var(--background-color-box);
+    --status-undo-bg:color-mix(
+      in srgb,
+      var(--color-accent-primary) 8%,
+      transparent
+    );
+    --status-warning-bg:var(--background-color-box-info);
+    --indicator-warning-color:var(--icon-color-critical);
+    --image-border-color:var(--border-color-deemphasized);
+    --image-hover-border-color:var(--border-color-interactive);
+    --image-page-number-bg:var(--background-color-box-info);
+    --image-current-page-number-fg:var(--button-text-color-primary);
+    --image-dragging-placeholder-bg:color-mix(
+      in srgb,
+      var(--color-accent-primary) 8%,
+      transparent
+    );
+    --multiple-dragging-bg:var(--background-color-box);
+  }
 
   @media screen and (forced-colors: active){
     --views-text-color:var(--text-color, CanvasText);
@@ -5192,6 +5424,14 @@ button.hasPopupMenu{
       }
     }
   }
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    padding-block-start:0;
+
+    #viewsManagerHeader{
+      border-start-start-radius:var(--panel-border-radius);
+      border-start-end-radius:var(--panel-border-radius);
+    }
+  }
 
   #viewsManagerHeader{
     display:flex;
@@ -5225,7 +5465,8 @@ button.hasPopupMenu{
       align-self:stretch;
       justify-content:space-between;
       width:auto;
-      padding:12px 16px 12px 8px;
+      padding-block:12px;
+      padding-inline:8px 16px;
 
       &:not(:has(#viewsManagerHeaderLabel ~ button:not([hidden])))::after{
 
@@ -5261,7 +5502,7 @@ button.hasPopupMenu{
             display:inline-block;
             width:12px;
             height:12px;
-            margin-left:8px;
+            margin-inline-start:8px;
             mask-repeat:no-repeat;
             mask-position:center;
             mask-image:var(--views-manager-button-arrow-icon);
@@ -5611,6 +5852,10 @@ button.hasPopupMenu{
             min-height:24px;
             padding:4px 16px;
 
+            @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+              border-radius:var(--button-border-radius);
+            }
+
             font:menu;
             font-size:13px;
             font-style:normal;
@@ -5653,6 +5898,9 @@ button.hasPopupMenu{
         &:not(.isDragging) > .thumbnailImageContainer::after{
           content:attr(page-number);
           border-radius:8px;
+          @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+            border-radius:var(--border-radius-circle);
+          }
           border:1px solid var(--image-page-number-border-color);
           background-color:var(--image-page-number-bg);
           color:var(--image-page-number-fg);
@@ -5704,6 +5952,9 @@ button.hasPopupMenu{
           outline:var(--image-outline);
           user-select:none;
           position:relative;
+          @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+            border-radius:var(--border-radius-medium);
+          }
 
           img{
             width:100%;
@@ -5713,6 +5964,10 @@ button.hasPopupMenu{
             outline:none;
             user-select:none;
             pointer-events:none;
+
+            @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+              border-radius:var(--border-radius-medium);
+            }
           }
 
           &.missingThumbnailImage{
@@ -5826,11 +6081,22 @@ button.hasPopupMenu{
                 box-sizing:content-box;
                 outline:none;
                 user-select:none;
+
+                @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+                  border-radius:var(--border-radius-medium);
+                }
               }
 
               &::after{
                 content:attr(data-multiple-count);
                 border-radius:calc(8px * var(--thumbnail-dragging-scale));
+
+                @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+                  border-radius:calc(
+                    var(--border-radius-medium) *
+                      var(--thumbnail-dragging-scale)
+                  );
+                }
                 background-color:var(--multiple-dragging-indicator-bg);
                 color:var(--multiple-dragging-text-color);
                 position:absolute;
@@ -5862,10 +6128,18 @@ button.hasPopupMenu{
         rgb(0 0 0 / 0.9),
         rgb(255 255 255 / 0.9)
       );
+      @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+        --attachment-color:var(--text-color);
+        --attachment-hover-color:var(--text-color);
+        --attachment-bg-color:var(--toolbarbutton-background-color-hover);
+      }
 
       > ul{
         list-style-type:none;
         padding:0;
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+          padding-inline:var(--panel-menuitem-margin-inline);
+        }
 
         > li > a{
           text-decoration:none;
@@ -5888,6 +6162,17 @@ button.hasPopupMenu{
             background-clip:padding-box;
             border-radius:2px;
             color:var(--attachment-hover-color);
+          }
+          @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+            box-sizing:border-box;
+            min-width:100%;
+            padding-block:var(--space-xsmall);
+            padding-inline:var(--space-small);
+
+            &,
+            &:hover{
+              border-radius:var(--panel-menuitem-border-radius);
+            }
           }
         }
       }
@@ -5914,6 +6199,11 @@ button.hasPopupMenu{
     --color-accent-primary,
     light-dark(#0062fa, #00cadb)
   );
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    --sidebar-border-color:var(--border-color-deemphasized);
+    --sidebar-box-shadow:var(--box-shadow-level-2);
+    --sidebar-border-radius:var(--panel-border-radius);
+  }
 
   @media screen and (forced-colors: active){
     --sidebar-bg-color:var(--background-color-box, Canvas);
@@ -5957,6 +6247,10 @@ button.hasPopupMenu{
       background-color:var(--resizer-hover-bg-color);
       outline:none;
     }
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+      border-inline-width:0;
+      border-radius:var(--border-radius-large);
+    }
   }
 
   &.resizing{
@@ -5990,6 +6284,11 @@ button.hasPopupMenu{
   --new-badge-bg:light-dark(#070, #37b847);
   --new-badge-color:light-dark(#fff, #15141a);
   --new-badge-border-color:light-dark(#fbfbfe / 40%, #15141a / 40%);
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    --new-badge-bg:var(--background-color-success);
+    --new-badge-color:var(--text-color);
+    --new-badge-border-color:transparent;
+  }
 
   @media screen and (forced-colors: active){
     --pdfViewer-padding-bottom:9px;
@@ -6012,6 +6311,11 @@ button.hasPopupMenu{
   border-radius:4px;
   border:1px solid var(--new-badge-border-color);
   padding-inline:4px;
+
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    border-radius:var(--border-radius-circle);
+    padding-inline:var(--space-small);
+  }
   margin-inline:4px;
   font:menu;
   font-size:12px;
@@ -6218,6 +6522,22 @@ button.hasPopupMenu{
     --icon-color-success,
     light-dark(rgb(29 142 61), rgb(106 210 126))
   );
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    --sig-card-border:var(--border-color-deemphasized);
+    --sig-card-nested-bg:var(--background-color-box-info);
+    --sig-row-color:var(--text-color);
+    --sig-detail-color:var(--text-color-deemphasized);
+    --sig-divider-color:var(--border-color-deemphasized);
+    --sig-summary-hover-color:var(--link-color-hover);
+    --sig-link-hover-bg:var(--button-background-color-ghost-hover);
+    --sig-banner-verified-bg:var(--background-color-box-info);
+    --sig-banner-warn-bg:var(--background-color-box-info);
+    --sig-banner-error-bg:var(--background-color-box-info);
+    --sig-banner-verified-color:var(--text-color);
+    --sig-banner-warn-color:var(--text-color);
+    --sig-banner-error-color:var(--text-color);
+    --sig-icon-default:var(--text-color-deemphasized);
+  }
 
   @media screen and (forced-colors: active){
     --sig-card-border:ButtonBorder;
@@ -6322,6 +6642,9 @@ button.hasPopupMenu{
   font-size:12.5px;
   line-height:1.35;
   border-inline-start:3px solid currentcolor;
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    border-radius:var(--border-radius-medium);
+  }
 
   &.verified{
     background:var(--sig-banner-verified-bg);
@@ -6358,6 +6681,9 @@ button.hasPopupMenu{
   flex-direction:column;
   gap:3px;
   background:var(--sig-card-bg);
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    border-radius:var(--border-radius-medium);
+  }
 
   .signer{
     font-weight:600;
@@ -6440,6 +6766,10 @@ button.hasPopupMenu{
     padding:2px 4px;
     border-radius:4px;
     white-space:nowrap;
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+      padding-inline:var(--space-small);
+      border-radius:var(--button-border-radius);
+    }
 
     &:hover{
       background:var(--sig-link-hover-bg);
@@ -6448,6 +6778,11 @@ button.hasPopupMenu{
     &:focus-visible{
       outline:2px solid var(--sig-link-color);
       outline-offset:1px;
+
+      @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+        outline:var(--focus-outline);
+        outline-offset:var(--focus-outline-offset);
+      }
     }
   }
 
@@ -6456,6 +6791,9 @@ button.hasPopupMenu{
     border-top:1px dashed var(--sig-divider-color);
     padding-top:4px;
     font-size:12px;
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+      border-top-style:solid;
+    }
 
     > summary{
       cursor:pointer;
@@ -6504,6 +6842,9 @@ button.hasPopupMenu{
     padding:6px 8px;
     background:var(--sig-card-nested-bg);
     gap:2px;
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+      border-radius:var(--border-radius-small);
+    }
   }
 
   .subSignatures .signer,
@@ -6617,6 +6958,54 @@ button.hasPopupMenu{
   --secondaryToolbarButton-documentProperties-icon:url(images/secondaryToolbarButton-documentProperties.svg);
   --editorParams-stampAddImage-icon:url(images/toolbarButton-zoomIn.svg);
   --comment-edit-button-icon:url(images/comment-editButton.svg);
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    font-size:var(--font-size-root);
+
+    --toolbarButton-menuArrowNova-icon:url(images/toolbarButton-menuArrowNova.svg);
+
+    --toolbar-height:40px;
+    --toolbar-horizontal-padding:6px;
+    --toolbar-vertical-padding:4px;
+
+    --toolbar-icon-opacity:1;
+    --doorhanger-icon-opacity:1;
+
+    --main-color:var(--text-color);
+    --body-bg-color:light-dark(var(--color-gray-15), var(--color-gray-85));
+    --progressBar-color:var(--color-accent-primary);
+    --progressBar-bg-color:var(--background-color-box-info);
+    --progressBar-blend-color:color-mix(
+      in srgb,
+      var(--color-accent-primary) 40%,
+      var(--background-color-box)
+    );
+    --toolbar-icon-bg-color:var(--toolbarbutton-icon-fill);
+    --toolbar-icon-hover-bg-color:var(--toolbarbutton-icon-fill);
+
+    --sidebar-narrow-bg-color:color-mix(
+      in srgb,
+      var(--background-color-canvas) 90%,
+      transparent
+    );
+    --sidebar-toolbar-bg-color:var(--toolbar-background-color);
+    --toolbar-bg-color:var(--toolbar-background-color);
+    --toolbar-border-color:var(--border-color-deemphasized);
+    --toggled-btn-color:var(--toolbarbutton-icon-fill);
+    --toggled-btn-bg-color:var(--toolbarbutton-background-color-active);
+    --toggled-hover-active-btn-color:var(
+      --toolbarbutton-background-color-active
+    );
+    --dropdown-btn-bg-color:var(--button-background-color);
+    --dropdown-btn-border:1px solid var(--button-border-color);
+    --separator-color:var(--border-color-deemphasized);
+    --field-color:var(--text-color);
+    --field-bg-color:var(--background-color-box);
+    --field-border-color:var(--border-color-interactive);
+    --doorhanger-bg-color:var(--background-color-box);
+    --doorhanger-border-color:var(--border-color-deemphasized);
+    --doorhanger-hover-color:var(--text-color);
+    --doorhanger-separator-color:var(--border-color-deemphasized);
+  }
 }
 
 :root:dir(rtl){
@@ -6668,9 +7057,15 @@ button.hasPopupMenu{
 html{
   &[data-toolbar-density="compact"]{
     --toolbar-height:30px;
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+      --toolbar-height:32px;
+    }
   }
   &[data-toolbar-density="touch"]{
     --toolbar-height:44px;
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+      --toolbar-height:48px;
+    }
   }
 }
 
@@ -6864,6 +7259,16 @@ body{
   &::after{
     border-width:var(--doorhanger-height);
   }
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    border-radius:var(--panel-border-radius);
+    border:1px solid var(--doorhanger-border-color);
+    box-shadow:var(--box-shadow-level-2);
+
+    &::after,
+    &::before{
+      display:none;
+    }
+  }
 }
 
 .doorHangerRight{
@@ -6877,6 +7282,9 @@ body{
     border-bottom-color:var(--doorhanger-bg-color);
     inset-inline-end:1px;
   }
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    inset-inline-end:0;
+  }
 }
 
 .doorHanger{
@@ -6889,6 +7297,10 @@ body{
   &::after{
     border-bottom-color:var(--toolbar-bg-color);
     inset-inline-start:1px;
+  }
+
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    inset-inline-start:0;
   }
 }
 
@@ -6978,6 +7390,10 @@ body{
   height:9px;
   width:9px;
   border-radius:50%;
+
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    background-color:var(--color-accent-attention);
+  }
 }
 
 .verticalToolbarSeparator{
@@ -7037,6 +7453,19 @@ body{
 
   &:focus{
     border-color:#0a84ff;
+  }
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    border-radius:var(--border-radius-small);
+    padding:var(--space-xsmall) var(--space-small);
+
+    &:focus{
+      border-color:var(--field-border-color);
+    }
+
+    &:focus-visible{
+      outline:var(--focus-outline);
+      outline-offset:var(--focus-outline-inset);
+    }
   }
 }
 
@@ -7136,6 +7565,25 @@ dialog .buttonRow{
 
 dialog :link{
   color:rgb(255 255 255);
+}
+@media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+  dialog:not(.dialog){
+    padding:var(--space-large);
+    font-size:var(--font-size-small);
+    line-height:150%;
+    border-spacing:var(--space-xsmall);
+    background-color:var(--background-color-canvas);
+    border:1px solid var(--border-color);
+    box-shadow:var(--box-shadow-level-3);
+
+    .separator{
+      margin-block:var(--space-small);
+    }
+
+    :link{
+      color:var(--link-color);
+    }
+  }
 }
 
 #passwordDialog{
@@ -7291,6 +7739,24 @@ dialog :link{
       height:auto;
     }
   }
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    border-radius:var(--button-border-radius);
+
+    &:focus-visible{
+      outline:var(--focus-outline);
+      outline-offset:var(--focus-outline-inset);
+    }
+
+    &.toggled:hover:focus-visible{
+      --toggled-hover-btn-outline:var(--focus-outline);
+    }
+
+    &.labeled{
+      border-radius:var(--panel-menuitem-border-radius);
+      gap:var(--space-small);
+      padding-inline-start:var(--space-small);
+    }
+  }
 }
 
 .toolbarButtonWithContainer{
@@ -7307,6 +7773,10 @@ dialog :link{
 
   .menu{
     padding-block:5px;
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+      padding-block:var(--space-small);
+      padding-inline:var(--space-small);
+    }
   }
 
   .menuContainer{
@@ -7360,6 +7830,11 @@ dialog :link{
       padding-inline:10px;
       padding-block:10px;
 
+      @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+        padding-inline:var(--space-medium);
+        padding-block:var(--space-medium);
+      }
+
       > .editorParamsSetter{
         min-height:26px;
         display:flex;
@@ -7390,6 +7865,19 @@ dialog :link{
 
         &::-moz-range-thumb{
           background-color:white;
+        }
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+          &::-moz-range-progress{
+            background-color:var(--color-accent-primary);
+          }
+
+          &::-moz-range-track{
+            background-color:var(--border-color-interactive);
+          }
+
+          &::-moz-range-thumb{
+            background-color:var(--color-accent-primary);
+          }
         }
       }
     }
@@ -7502,6 +7990,12 @@ dialog :link{
   box-sizing:border-box;
   flex-wrap:wrap;
   justify-content:flex-start;
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    --input-horizontal-padding:var(--space-medium);
+
+    border-radius:var(--border-radius-medium);
+    padding-inline:var(--space-small);
+  }
 
   > *{
     height:var(--toolbar-height);
@@ -7535,6 +8029,13 @@ dialog :link{
 
       &[data-status="notFound"]{
         background-color:rgb(255 102 102);
+
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+          background-color:var(--background-color-critical);
+        }
+      }
+      @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+        border-radius:var(--input-search-border-radius);
       }
     }
   }
@@ -7551,6 +8052,10 @@ dialog :link{
       background-color:rgb(217 217 217);
       color:rgb(82 82 82);
       padding-block:4px;
+      @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+        background-color:var(--background-color-box-info);
+        color:var(--text-color-deemphasized);
+      }
 
       &:empty{
         display:none;
@@ -7662,6 +8167,11 @@ dialog :link{
   padding-inline:4px;
   margin:2px;
   border-radius:2px;
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    padding-inline:var(--space-small);
+    border-radius:var(--button-border-radius);
+  }
+
   color:var(--main-color);
   font-size:12px;
   line-height:14px;
@@ -7688,6 +8198,10 @@ dialog :link{
   justify-content:space-between;
   gap:1px;
   box-sizing:border-box;
+
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    gap:var(--space-xxsmall);
+  }
 }
 
 .dropdownToolbarButton{
@@ -7759,10 +8273,73 @@ dialog :link{
   &:is(:hover, :focus-visible, :active)::after{
     background-color:var(--toolbar-icon-hover-bg-color);
   }
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    overflow:hidden;
+    border:var(--button-border);
+    border-radius:var(--button-border-radius);
+    background-color:var(--button-background-color);
+    color:var(--button-text-color);
+
+    &:is(:hover, :has(> select:open)){
+      border-color:var(--border-color-interactive-hover);
+      background-color:var(--button-background-color-hover);
+      color:var(--button-text-color-hover);
+    }
+
+    &:has(> select:focus-visible){
+      outline:var(--focus-outline);
+      outline-offset:var(--focus-outline-offset);
+    }
+
+    > select{
+      height:auto;
+      min-height:var(--button-min-height);
+      border-radius:inherit;
+      padding-block:var(--button-padding-block);
+      padding-inline:var(--button-padding-inline) calc(
+          var(--button-padding-inline) + var(--icon-size) + var(--space-small)
+        );
+      font-size:var(--font-size-root);
+      font-weight:var(--button-font-weight);
+      color:inherit;
+      background-color:var(--background-color-box);
+
+      > option{
+        color:var(--text-color);
+        font-weight:var(--font-weight);
+      }
+
+      &:is(:hover, :focus-visible){
+        background-color:var(--background-color-box);
+        color:inherit;
+      }
+
+      &:focus-visible{
+        outline:none;
+      }
+    }
+
+    &:is(:hover, :has(> select:open)) > select{
+      background-image:linear-gradient(
+        var(--button-background-color-hover),
+        var(--button-background-color-hover)
+      );
+    }
+
+    &::after,
+    &:is(:hover, :focus-visible, :active)::after{
+      inset-inline-end:var(--button-padding-inline);
+      background-color:currentColor;
+      mask-image:var(--toolbarButton-menuArrowNova-icon);
+    }
+  }
 }
 
 #toolbarContainer{
   --menuitem-height:calc(var(--toolbar-height) - 6px);
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+    --menuitem-height:var(--size-item-large);
+  }
 
   width:100%;
   height:var(--toolbar-height);
@@ -7795,6 +8372,9 @@ dialog :link{
 
     #toolbarViewerLeft{
       margin-inline-start:8px;
+      @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled"){
+        margin-inline-start:0;
+      }
 
       #numPages.toolbarLabel{
         padding-inline-start:3px;

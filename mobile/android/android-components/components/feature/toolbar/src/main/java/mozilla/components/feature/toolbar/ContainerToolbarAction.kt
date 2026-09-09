@@ -34,8 +34,9 @@ class ContainerToolbarAction(
     private var listener: (() -> Unit)? = null,
 ) : Action {
     override fun createView(parent: ViewGroup): View {
-        val rootView = LayoutInflater.from(parent.context)
-            .inflate(R.layout.mozac_feature_toolbar_container_action_layout, parent, false)
+        val rootView =
+            LayoutInflater.from(parent.context)
+                .inflate(R.layout.mozac_feature_toolbar_container_action_layout, parent, false)
 
         listener?.let { clickListener ->
             rootView.setOnClickListener { clickListener.invoke() }

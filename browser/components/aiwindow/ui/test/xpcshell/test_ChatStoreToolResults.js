@@ -556,6 +556,57 @@ add_atomic_task(
 );
 
 add_atomic_task(
+  async function test_updateLLMTelemetryRecord_merges_over_null_columns() {
+    const conversation = new ChatConversation({});
+    conversation.title = "null llm telemetry conversation";
+    conversation.addUserMessage("test content", "https://www.firefox.com");
+    await gChatStore.updateConversation(conversation);
+
+    await gChatStore.updateLLMTelemetryRecord(
+      conversation.id,
+      { "wasSuccessful-v1": 1 },
+      { "wasSuccessful-v1": 0.5 },
+      0,
+      0
+    );
+
+    await gChatStore.connection.execute(
+      `UPDATE llm_telemetry
+       SET telemetry_prompts = NULL,
+           telemetry_probabilities = NULL
+       WHERE conv_id = :conv_id`,
+      { conv_id: conversation.id }
+    );
+
+    await gChatStore.updateLLMTelemetryRecord(
+      conversation.id,
+      { "isLongConvo-v1": 3 },
+      { "isLongConvo-v1": 0.7 },
+      0,
+      1
+    );
+
+    const telemetry = await gChatStore.findLLMTelemetryByConversationId(
+      conversation.id
+    );
+
+    Assert.ok(telemetry, "LLM telemetry row should exist");
+    Assert.withSoftAssertions(function (soft) {
+      soft.deepEqual(
+        telemetry.telemetryPrompts,
+        { "isLongConvo-v1": 3 },
+        "a NULL prompts column merges to the incoming values, not to NULL"
+      );
+      soft.deepEqual(
+        telemetry.telemetryProbabilities,
+        { "isLongConvo-v1": 0.7 },
+        "a NULL probabilities column merges to the incoming values, not to NULL"
+      );
+    });
+  }
+);
+
+add_atomic_task(
   async function test_findLLMTelemetryByConversationId_returns_null_for_missing_row() {
     const telemetry =
       await gChatStore.findLLMTelemetryByConversationId("missing-conv-id");

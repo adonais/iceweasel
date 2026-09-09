@@ -632,6 +632,32 @@ The metadata block holds everything about the entry other than its data:
 All multi-byte integers in the metadata are stored big-endian (network byte
 order).
 
+### At-rest encryption
+
+When `browser.cache.disk.encryption.enabled` is set, entries are encrypted on
+disk with AES-256-GCM (`CacheCrypto`). Each data chunk and the metadata content
+is one independently encrypted block, laid out as
+`[ciphertext][tag (16 B)][nonce (12 B)]` — so an encrypted chunk is 28 bytes
+larger on disk than its plaintext, and the physical metadata offset is past the
+logical data size. Every block is encrypted under a fresh random nonce, and its
+block number — the chunk index, or `UINT64_MAX` for the metadata — is bound as
+additional authenticated data, so a block cannot be moved to another position.
+The metadata's plaintext trailer (format version, and the offset word carrying
+the encrypted flag) is bound as AAD too, so it cannot be tampered with or
+downgraded. Decrypted content only ever exists in memory.
+
+The key is a 32-byte data encryption key owned by the profile keystore
+(`security/lockstore`) under the name `httpcache`, wrapped by the profile-wide
+`local` KEK `profileEncryption` that the rest of the profile's encrypted
+storage shares. It is fetched once per session, during `profile-do-change` and before the disk
+cache becomes reachable, and held in memory for the lifetime of the process.
+Because the cache only ever sees the DEK, the wrapping tier can later be moved
+to a password or PKCS#11 KEK via `nsILockstore::switchKek` without changing the
+key itself, and therefore without invalidating anything already on disk.
+
+An entry's encryption state is fixed when it is created and never flips; see the
+**encrypted** flag in the index below for how a change to the pref is handled.
+
 (cache-index)=
 
 ## Cache index
@@ -733,9 +759,10 @@ The **encrypted** flag records whether the on-disk entries were written with
 at-rest encryption (see `browser.cache.disk.encryption.enabled`). At startup it
 is compared against the current pref; if they differ the whole cache is purged,
 since flipping encryption on or off would otherwise leave a mix of encrypted and
-plaintext entries. It reflects the session's actual encryption state (fixed at
+plaintext entries. It reflects the session's captured pref value (fixed at
 startup), so a mid-session pref change — which only takes effect on restart — is
-not masked.
+not masked, and a session in which the key could not be loaded is not mistaken
+for the user having turned encryption off.
 
 All multi-byte integers are big-endian. Records are tightly packed (`#pragma
 pack(1)`), so the entry count is simply

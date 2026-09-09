@@ -16,21 +16,19 @@ import mozilla.components.lib.state.Store
 import mozilla.components.support.ktx.kotlin.toShortUrl
 import org.mozilla.fenix.components.TabCollectionStorage
 
-class CollectionCreationStore(
-    initialState: CollectionCreationState,
-) : Store<CollectionCreationState, CollectionCreationAction>(
-    initialState,
-    ::collectionCreationReducer,
-)
+class CollectionCreationStore(initialState: CollectionCreationState) :
+    Store<CollectionCreationState, CollectionCreationAction>(
+        initialState,
+        ::collectionCreationReducer,
+    )
 
 /**
- * Represents the current purpose of the screen. This determines what options are shown to the
- * user.
+ * Represents the current purpose of the screen. This determines what options are shown to the user.
  *
- * TODO refactor [CollectionCreationState] into a sealed class with four implementations, each
- * replacing a [SaveCollectionStep] value. These will not need null / emptyCollection default
- * values. Handle changes between these state changes internally, here and in the controller,
- * instead of exposing [StepChanged], which currently acts as a setter.
+ * TODO refactor [CollectionCreationState] into a sealed class with four implementations, each replacing a
+ * [SaveCollectionStep] value. These will not need null / emptyCollection default values. Handle changes between these
+ * state changes internally, here and in the controller, instead of exposing [StepChanged], which currently acts as a
+ * setter.
  */
 enum class SaveCollectionStep {
     SelectTabs,
@@ -59,11 +57,12 @@ fun createInitialCollectionCreationState(
     selectedTabCollectionId: Long,
 ): CollectionCreationState {
     val tabs = browserState.getTabs(tabIds, publicSuffixList)
-    val selectedTabs = if (selectedTabIds != null) {
-        browserState.getTabs(selectedTabIds, publicSuffixList).toSet()
-    } else {
-        if (tabs.size == 1) setOf(tabs.first()) else emptySet()
-    }
+    val selectedTabs =
+        if (selectedTabIds != null) {
+            browserState.getTabs(selectedTabIds, publicSuffixList).toSet()
+        } else {
+            if (tabs.size == 1) setOf(tabs.first()) else emptySet()
+        }
 
     val tabCollections = tabCollectionStorage.cachedTabCollections
     val selectedTabCollection = tabCollections.firstOrNull { it.id == selectedTabCollectionId }
@@ -82,15 +81,10 @@ internal fun BrowserState.getTabs(
     tabIds: Array<String>?,
     publicSuffixList: PublicSuffixList,
 ): List<Tab> {
-    return tabIds
-        ?.mapNotNull { id -> findTab(id) }
-        ?.map { it.toTab(publicSuffixList) }
-        .orEmpty()
+    return tabIds?.mapNotNull { id -> findTab(id) }?.map { it.toTab(publicSuffixList) }.orEmpty()
 }
 
-private fun TabSessionState.toTab(
-    publicSuffixList: PublicSuffixList,
-): Tab {
+private fun TabSessionState.toTab(publicSuffixList: PublicSuffixList): Tab {
     val url = readerState.activeUrl ?: content.url
     return Tab(
         sessionId = this.id,
@@ -104,8 +98,11 @@ private fun TabSessionState.toTab(
 
 sealed class CollectionCreationAction : Action {
     object AddAllTabs : CollectionCreationAction()
+
     object RemoveAllTabs : CollectionCreationAction()
+
     data class TabAdded(val tab: Tab) : CollectionCreationAction()
+
     data class TabRemoved(val tab: Tab) : CollectionCreationAction()
 
     /**
@@ -122,13 +119,15 @@ sealed class CollectionCreationAction : Action {
 private fun collectionCreationReducer(
     prevState: CollectionCreationState,
     action: CollectionCreationAction,
-): CollectionCreationState = when (action) {
-    is CollectionCreationAction.AddAllTabs -> prevState.copy(selectedTabs = prevState.tabs.toSet())
-    is CollectionCreationAction.RemoveAllTabs -> prevState.copy(selectedTabs = emptySet())
-    is CollectionCreationAction.TabAdded -> prevState.copy(selectedTabs = prevState.selectedTabs + action.tab)
-    is CollectionCreationAction.TabRemoved -> prevState.copy(selectedTabs = prevState.selectedTabs - action.tab)
-    is CollectionCreationAction.StepChanged -> prevState.copy(
-        saveCollectionStep = action.saveCollectionStep,
-        defaultCollectionNumber = action.defaultCollectionNumber,
-    )
-}
+): CollectionCreationState =
+    when (action) {
+        is CollectionCreationAction.AddAllTabs -> prevState.copy(selectedTabs = prevState.tabs.toSet())
+        is CollectionCreationAction.RemoveAllTabs -> prevState.copy(selectedTabs = emptySet())
+        is CollectionCreationAction.TabAdded -> prevState.copy(selectedTabs = prevState.selectedTabs + action.tab)
+        is CollectionCreationAction.TabRemoved -> prevState.copy(selectedTabs = prevState.selectedTabs - action.tab)
+        is CollectionCreationAction.StepChanged ->
+            prevState.copy(
+                saveCollectionStep = action.saveCollectionStep,
+                defaultCollectionNumber = action.defaultCollectionNumber,
+            )
+    }

@@ -117,7 +117,7 @@ class StartupStateProviderTest {
                 LogEntry.ActivityCreated(homeActivityClass),
                 LogEntry.ActivityStarted(homeActivityClass),
                 LogEntry.ActivityStopped(irActivityClass),
-            ),
+            )
         )
         assertFalse(provider.isColdStartForStartedActivity(homeActivityClass))
     }
@@ -135,7 +135,7 @@ class StartupStateProviderTest {
                 LogEntry.ActivityCreated(homeActivityClass),
                 LogEntry.ActivityStarted(homeActivityClass),
                 LogEntry.ActivityStopped(irActivityClass),
-            ),
+            )
         )
         assertFalse(provider.isWarmStartForStartedActivity(homeActivityClass))
     }
@@ -152,7 +152,7 @@ class StartupStateProviderTest {
                 LogEntry.AppStarted,
                 LogEntry.ActivityStarted(homeActivityClass),
                 LogEntry.ActivityStopped(irActivityClass),
-            ),
+            )
         )
         assertFalse(provider.isHotStartForStartedActivity(homeActivityClass))
     }
@@ -169,7 +169,7 @@ class StartupStateProviderTest {
                 LogEntry.ActivityCreated(homeActivityClass),
                 LogEntry.ActivityStarted(homeActivityClass),
                 LogEntry.ActivityStopped(homeActivityClass),
-            ),
+            )
         )
         assertFalse(provider.isColdStartForStartedActivity(homeActivityClass))
     }
@@ -181,11 +181,7 @@ class StartupStateProviderTest {
 
     @Test
     fun `GIVEN the app started for an activity WHEN an activity hasn't started yet THEN start up is not cold`() {
-        logEntries.addAll(
-            listOf(
-                LogEntry.ActivityCreated(homeActivityClass),
-            ),
-        )
+        logEntries.addAll(listOf(LogEntry.ActivityCreated(homeActivityClass)))
         assertFalse(provider.isColdStartForStartedActivity(homeActivityClass))
     }
 
@@ -228,7 +224,7 @@ class StartupStateProviderTest {
             listOf(
                 LogEntry.AppStopped,
                 LogEntry.ActivityCreated(homeActivityClass),
-            ),
+            )
         )
         assertFalse(provider.isWarmStartForStartedActivity(homeActivityClass))
     }
@@ -250,7 +246,7 @@ class StartupStateProviderTest {
             listOf(
                 LogEntry.AppStopped,
                 LogEntry.ActivityCreated(homeActivityClass),
-            ),
+            )
         )
         assertFalse(provider.isHotStartForStartedActivity(homeActivityClass))
     }
@@ -286,7 +282,7 @@ class StartupStateProviderTest {
                 LogEntry.ActivityCreated(homeActivityClass),
                 LogEntry.ActivityStarted(homeActivityClass),
                 LogEntry.ActivityStopped(irActivityClass),
-            ),
+            )
         )
 
         assertEquals(StartupState.UNKNOWN, provider.getStartupStateForStartedActivity(homeActivityClass))
@@ -296,20 +292,21 @@ class StartupStateProviderTest {
         // These entries mimic observed behavior.
         //
         // MAIN: open HomeActivity directly.
-        val coldStartEntries = listOf(
+        val coldStartEntries =
             listOf(
-                LogEntry.ActivityCreated(homeActivityClass),
-                LogEntry.ActivityStarted(homeActivityClass),
-                LogEntry.AppStarted,
-                // VIEW: open non-drawing IntentReceiverActivity, then HomeActivity.
-            ),
-            listOf(
-                LogEntry.ActivityCreated(irActivityClass),
-                LogEntry.ActivityCreated(homeActivityClass),
-                LogEntry.ActivityStarted(homeActivityClass),
-                LogEntry.AppStarted,
-            ),
-        )
+                listOf(
+                    LogEntry.ActivityCreated(homeActivityClass),
+                    LogEntry.ActivityStarted(homeActivityClass),
+                    LogEntry.AppStarted,
+                    // VIEW: open non-drawing IntentReceiverActivity, then HomeActivity.
+                ),
+                listOf(
+                    LogEntry.ActivityCreated(irActivityClass),
+                    LogEntry.ActivityCreated(homeActivityClass),
+                    LogEntry.ActivityStarted(homeActivityClass),
+                    LogEntry.AppStarted,
+                ),
+            )
 
         forEachStartEntry(coldStartEntries, block)
     }
@@ -320,48 +317,49 @@ class StartupStateProviderTest {
         // such an optimization).
         //
         // truncated MAIN: open HomeActivity directly.
-        val warmStartEntries = listOf(
+        val warmStartEntries =
             listOf(
-                LogEntry.AppStopped,
-                LogEntry.ActivityStopped(homeActivityClass),
-                LogEntry.ActivityCreated(homeActivityClass),
-                LogEntry.ActivityStarted(homeActivityClass),
-                LogEntry.AppStarted,
-                // untruncated MAIN: open HomeActivity directly.
-            ),
-            listOf(
-                LogEntry.ActivityCreated(homeActivityClass),
-                LogEntry.ActivityStarted(homeActivityClass),
-                LogEntry.AppStarted,
-                LogEntry.AppStopped,
-                LogEntry.ActivityStopped(homeActivityClass),
-                LogEntry.ActivityCreated(homeActivityClass),
-                LogEntry.ActivityStarted(homeActivityClass),
-                LogEntry.AppStarted,
-                // truncated VIEW: open non-drawing IntentReceiverActivity, then HomeActivity.
-            ),
-            listOf(
-                LogEntry.AppStopped,
-                LogEntry.ActivityStopped(homeActivityClass),
-                LogEntry.ActivityCreated(irActivityClass),
-                LogEntry.ActivityCreated(homeActivityClass),
-                LogEntry.ActivityStarted(homeActivityClass),
-                LogEntry.AppStarted,
-                // untruncated VIEW: open non-drawing IntentReceiverActivity, then HomeActivity.
-            ),
-            listOf(
-                LogEntry.ActivityCreated(irActivityClass),
-                LogEntry.ActivityCreated(homeActivityClass),
-                LogEntry.ActivityStarted(homeActivityClass),
-                LogEntry.AppStarted,
-                LogEntry.AppStopped,
-                LogEntry.ActivityStopped(homeActivityClass),
-                LogEntry.ActivityCreated(irActivityClass),
-                LogEntry.ActivityCreated(homeActivityClass),
-                LogEntry.ActivityStarted(homeActivityClass),
-                LogEntry.AppStarted,
-            ),
-        )
+                listOf(
+                    LogEntry.AppStopped,
+                    LogEntry.ActivityStopped(homeActivityClass),
+                    LogEntry.ActivityCreated(homeActivityClass),
+                    LogEntry.ActivityStarted(homeActivityClass),
+                    LogEntry.AppStarted,
+                    // untruncated MAIN: open HomeActivity directly.
+                ),
+                listOf(
+                    LogEntry.ActivityCreated(homeActivityClass),
+                    LogEntry.ActivityStarted(homeActivityClass),
+                    LogEntry.AppStarted,
+                    LogEntry.AppStopped,
+                    LogEntry.ActivityStopped(homeActivityClass),
+                    LogEntry.ActivityCreated(homeActivityClass),
+                    LogEntry.ActivityStarted(homeActivityClass),
+                    LogEntry.AppStarted,
+                    // truncated VIEW: open non-drawing IntentReceiverActivity, then HomeActivity.
+                ),
+                listOf(
+                    LogEntry.AppStopped,
+                    LogEntry.ActivityStopped(homeActivityClass),
+                    LogEntry.ActivityCreated(irActivityClass),
+                    LogEntry.ActivityCreated(homeActivityClass),
+                    LogEntry.ActivityStarted(homeActivityClass),
+                    LogEntry.AppStarted,
+                    // untruncated VIEW: open non-drawing IntentReceiverActivity, then HomeActivity.
+                ),
+                listOf(
+                    LogEntry.ActivityCreated(irActivityClass),
+                    LogEntry.ActivityCreated(homeActivityClass),
+                    LogEntry.ActivityStarted(homeActivityClass),
+                    LogEntry.AppStarted,
+                    LogEntry.AppStopped,
+                    LogEntry.ActivityStopped(homeActivityClass),
+                    LogEntry.ActivityCreated(irActivityClass),
+                    LogEntry.ActivityCreated(homeActivityClass),
+                    LogEntry.ActivityStarted(homeActivityClass),
+                    LogEntry.AppStarted,
+                ),
+            )
 
         forEachStartEntry(warmStartEntries, block)
     }
@@ -372,44 +370,45 @@ class StartupStateProviderTest {
         // such an optimization).
         //
         // truncated MAIN: open HomeActivity directly.
-        val hotStartEntries = listOf(
+        val hotStartEntries =
             listOf(
-                LogEntry.AppStopped,
-                LogEntry.ActivityStopped(homeActivityClass),
-                LogEntry.ActivityStarted(homeActivityClass),
-                LogEntry.AppStarted,
-                // untruncated MAIN: open HomeActivity directly.
-            ),
-            listOf(
-                LogEntry.ActivityCreated(homeActivityClass),
-                LogEntry.ActivityStarted(homeActivityClass),
-                LogEntry.AppStarted,
-                LogEntry.AppStopped,
-                LogEntry.ActivityStopped(homeActivityClass),
-                LogEntry.ActivityStarted(homeActivityClass),
-                LogEntry.AppStarted,
-                // truncated VIEW: open non-drawing IntentReceiverActivity, then HomeActivity.
-            ),
-            listOf(
-                LogEntry.AppStopped,
-                LogEntry.ActivityStopped(homeActivityClass),
-                LogEntry.ActivityCreated(irActivityClass),
-                LogEntry.ActivityStarted(homeActivityClass),
-                LogEntry.AppStarted,
-                // untruncated VIEW: open non-drawing IntentReceiverActivity, then HomeActivity.
-            ),
-            listOf(
-                LogEntry.ActivityCreated(irActivityClass),
-                LogEntry.ActivityCreated(homeActivityClass),
-                LogEntry.ActivityStarted(homeActivityClass),
-                LogEntry.AppStarted,
-                LogEntry.AppStopped,
-                LogEntry.ActivityStopped(homeActivityClass),
-                LogEntry.ActivityCreated(irActivityClass),
-                LogEntry.ActivityStarted(homeActivityClass),
-                LogEntry.AppStarted,
-            ),
-        )
+                listOf(
+                    LogEntry.AppStopped,
+                    LogEntry.ActivityStopped(homeActivityClass),
+                    LogEntry.ActivityStarted(homeActivityClass),
+                    LogEntry.AppStarted,
+                    // untruncated MAIN: open HomeActivity directly.
+                ),
+                listOf(
+                    LogEntry.ActivityCreated(homeActivityClass),
+                    LogEntry.ActivityStarted(homeActivityClass),
+                    LogEntry.AppStarted,
+                    LogEntry.AppStopped,
+                    LogEntry.ActivityStopped(homeActivityClass),
+                    LogEntry.ActivityStarted(homeActivityClass),
+                    LogEntry.AppStarted,
+                    // truncated VIEW: open non-drawing IntentReceiverActivity, then HomeActivity.
+                ),
+                listOf(
+                    LogEntry.AppStopped,
+                    LogEntry.ActivityStopped(homeActivityClass),
+                    LogEntry.ActivityCreated(irActivityClass),
+                    LogEntry.ActivityStarted(homeActivityClass),
+                    LogEntry.AppStarted,
+                    // untruncated VIEW: open non-drawing IntentReceiverActivity, then HomeActivity.
+                ),
+                listOf(
+                    LogEntry.ActivityCreated(irActivityClass),
+                    LogEntry.ActivityCreated(homeActivityClass),
+                    LogEntry.ActivityStarted(homeActivityClass),
+                    LogEntry.AppStarted,
+                    LogEntry.AppStopped,
+                    LogEntry.ActivityStopped(homeActivityClass),
+                    LogEntry.ActivityCreated(irActivityClass),
+                    LogEntry.ActivityStarted(homeActivityClass),
+                    LogEntry.AppStarted,
+                ),
+            )
 
         forEachStartEntry(hotStartEntries, block)
     }

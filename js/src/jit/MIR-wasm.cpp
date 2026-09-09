@@ -882,6 +882,10 @@ bool MWasmResume::initHandler(size_t index, uint32_t tagInstanceDataOffset,
   handlers_[index].resultsAreaOffset = resultsAreaOffset;
   return true;
 }
+
+AliasSet MWasmSuspend::getAliasSet() const {
+  return MWasmCallBase::wasmCallAliasSet();
+}
 #endif  // ENABLE_WASM_JSPI
 
 MIonToWasmCall* MIonToWasmCall::New(TempAllocator& alloc,
@@ -950,6 +954,7 @@ MWasmShuffleSimd128* jit::BuildWasmShuffleSimd128(TempAllocator& alloc,
 static MDefinition* FoldTrivialWasmTests(TempAllocator& alloc,
                                          wasm::RefType sourceType,
                                          wasm::RefType destType) {
+  // Ignore everything involving uninhabitable types, because they are weird.
   if (!sourceType.isInhabitable() || !destType.isInhabitable()) {
     return nullptr;
   }
@@ -971,6 +976,7 @@ static MDefinition* FoldTrivialWasmTests(TempAllocator& alloc,
 static MDefinition* FoldTrivialWasmCasts(MDefinition* ref,
                                          wasm::RefType sourceType,
                                          wasm::RefType destType) {
+  // Ignore everything involving uninhabitable types, because they are weird.
   if (!sourceType.isInhabitable() || !destType.isInhabitable()) {
     return nullptr;
   }

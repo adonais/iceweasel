@@ -15,17 +15,15 @@ const val NEW_TAB_SPOCS_PLACEMENT_KEY = "newtab_mobile_spocs"
  * @property spocs The list of [MarsSpocsResponseItem]s from the response payload.
  */
 @Serializable
-internal data class MarsSpocsResponse(
-    @SerialName(NEW_TAB_SPOCS_PLACEMENT_KEY) val spocs: List<MarsSpocsResponseItem>,
-)
+internal data class MarsSpocsResponse(@SerialName(NEW_TAB_SPOCS_PLACEMENT_KEY) val spocs: List<MarsSpocsResponseItem>)
 
 /**
  * A sponsored content payload response item.
  *
  * @property format The format type of the sponsored content.
  * @property url The url of the sponsored content.
- * @property callbacks The [MarsSpocResponseCallbacks] object containing callback URLs for click
- * and impression tracking.
+ * @property callbacks The [MarsSpocResponseCallbacks] object containing callback URLs for click and impression
+ *   tracking.
  * @property imageUrl The image URL of the sponsored content.
  * @property title The title of the sponsored content.
  * @property domain The domain of where the sponsored content is hosted.

@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 
 class PythonExecTest {
-    private fun task(): PythonExec = ProjectBuilder.builder().build()
-        .tasks.register("pythonExec", PythonExec::class.java).get()
+    private fun task(): PythonExec =
+        ProjectBuilder.builder().build().tasks.register("pythonExec", PythonExec::class.java).get()
 
     @Test
     fun `prefers the interpreter mach passes over a bare python3`() {

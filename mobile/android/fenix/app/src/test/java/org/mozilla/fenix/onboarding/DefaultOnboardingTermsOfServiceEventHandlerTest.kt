@@ -37,14 +37,15 @@ class DefaultOnboardingTermsOfServiceEventHandlerTest {
         telemetryRecorder = mockk(relaxed = true)
         settings = Settings(testContext)
 
-        eventHandler = DefaultOnboardingTermsOfServiceEventHandler(
-            telemetryRecorder = telemetryRecorder,
-            openLink = { openLinkUrl = it },
-            showManagePrivacyPreferencesDialog = { showManagePrivacyPreferencesDialogCalled = true },
-            settings = settings,
-            startGlean = { gleanStarted = true },
-            currentTimeMillis = { TIME_IN_MILLIS },
-        )
+        eventHandler =
+            DefaultOnboardingTermsOfServiceEventHandler(
+                telemetryRecorder = telemetryRecorder,
+                openLink = { openLinkUrl = it },
+                showManagePrivacyPreferencesDialog = { showManagePrivacyPreferencesDialogCalled = true },
+                settings = settings,
+                startGlean = { gleanStarted = true },
+                currentTimeMillis = { TIME_IN_MILLIS },
+            )
     }
 
     @Test

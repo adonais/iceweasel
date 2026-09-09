@@ -11,13 +11,11 @@
     }
 #define OD(oid, tag, desc, mech, ext) \
     {                                 \
-        OI(oid)                       \
-        , tag, desc, mech, ext        \
+        OI(oid), tag, desc, mech, ext \
     }
-#define ODN(oid, desc)                                           \
-    {                                                            \
-        OI(oid)                                                  \
-        , 0, desc, CKM_INVALID_MECHANISM, INVALID_CERT_EXTENSION \
+#define ODN(oid, desc)                                                  \
+    {                                                                   \
+        OI(oid), 0, desc, CKM_INVALID_MECHANISM, INVALID_CERT_EXTENSION \
     }
 
 #define OIDT static const unsigned char

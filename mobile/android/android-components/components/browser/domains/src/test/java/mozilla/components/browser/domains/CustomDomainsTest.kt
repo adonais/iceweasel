@@ -17,10 +17,7 @@ class CustomDomainsTest {
 
     @Before
     fun setUp() {
-        testContext.getSharedPreferences("custom_autocomplete", Context.MODE_PRIVATE)
-            .edit()
-            .clear()
-            .apply()
+        testContext.getSharedPreferences("custom_autocomplete", Context.MODE_PRIVATE).edit().clear().apply()
     }
 
     @Test

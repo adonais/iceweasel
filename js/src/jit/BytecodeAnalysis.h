@@ -46,6 +46,7 @@ struct BytecodeInfo {
 };
 
 class BytecodeAnalysis {
+  TempAllocator& alloc_;
   JSScript* script_;
   Vector<BytecodeInfo, 0, JitAllocPolicy> infos_;
   bool disableIon_ = false;
@@ -58,7 +59,7 @@ class BytecodeAnalysis {
  public:
   explicit BytecodeAnalysis(TempAllocator& alloc, JSScript* script);
 
-  [[nodiscard]] bool init(TempAllocator& alloc);
+  [[nodiscard]] bool init();
 
   BytecodeInfo& info(jsbytecode* pc) {
     uint32_t pcOffset = script_->pcToOffset(pc);

@@ -5,19 +5,21 @@
 package mozilla.components.browser.engine.system.matcher
 
 /**
- * A String wrapper utility that allows for efficient string reversal. We
- * regularly need to reverse strings. The standard way of doing this in Java
- * would be to copy the string to reverse (e.g. using StringBuffer.reverse()).
- * This seems wasteful when we only read our Strings character by character,
- * in which case can just transpose positions as needed.
+ * A String wrapper utility that allows for efficient string reversal. We regularly need to reverse strings. The
+ * standard way of doing this in Java would be to copy the string to reverse (e.g. using StringBuffer.reverse()). This
+ * seems wasteful when we only read our Strings character by character, in which case can just transpose positions as
+ * needed.
  */
-abstract class ReversibleString private constructor(
+abstract class ReversibleString
+private constructor(
     protected val string: String,
     protected val offsetStart: Int,
     protected val offsetEnd: Int,
 ) {
     abstract val isReversed: Boolean
+
     abstract fun charAt(position: Int): Char
+
     abstract fun substring(startIndex: Int): ReversibleString
 
     init {
@@ -26,14 +28,10 @@ abstract class ReversibleString private constructor(
         }
     }
 
-    /**
-     * Returns the length of this string.
-     */
+    /** Returns the length of this string. */
     fun length(): Int = offsetEnd - offsetStart
 
-    /**
-     * Reverses this string.
-     */
+    /** Reverses this string. */
     fun reverse(): ReversibleString =
         if (isReversed) {
             ForwardString(string, offsetStart, offsetEnd)
@@ -80,9 +78,7 @@ abstract class ReversibleString private constructor(
     }
 
     companion object {
-        /**
-         * Create a [ReversibleString] for the provided [String].
-         */
+        /** Create a [ReversibleString] for the provided [String]. */
         fun create(string: String): ReversibleString {
             return ForwardString(string, 0, string.length)
         }

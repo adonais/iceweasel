@@ -4,13 +4,9 @@
 
 package mozilla.components.feature.summarize
 
-/**
- * Interface for reporting a throwable.
- */
+/** Interface for reporting a throwable. */
 fun interface ErrorReporter {
 
-    /**
-     * Reports the given [throwable].
-     */
+    /** Reports the given [throwable]. */
     suspend fun report(tag: String, throwable: Throwable)
 }

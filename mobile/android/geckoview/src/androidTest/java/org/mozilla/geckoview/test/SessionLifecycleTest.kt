@@ -1,11 +1,13 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
 import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import java.lang.ref.ReferenceQueue
+import java.lang.ref.WeakReference
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.greaterThan
 import org.hamcrest.Matchers.lessThan
@@ -16,8 +18,6 @@ import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.ClosedSessionAtStart
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
 import org.mozilla.geckoview.test.util.UiThreadUtils
-import java.lang.ref.ReferenceQueue
-import java.lang.ref.WeakReference
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
@@ -26,7 +26,8 @@ class SessionLifecycleTest : BaseSessionTest() {
         val LOGTAG = "SessionLifecycleTest"
     }
 
-    @Test fun open_interleaved() {
+    @Test
+    fun open_interleaved() {
         val session1 = sessionRule.createOpenSession()
         val session2 = sessionRule.createOpenSession()
         session1.close()
@@ -38,7 +39,8 @@ class SessionLifecycleTest : BaseSessionTest() {
         mainSession.waitForPageStop()
     }
 
-    @Test fun open_repeated() {
+    @Test
+    fun open_repeated() {
         for (i in 1..5) {
             mainSession.close()
             mainSession.open()
@@ -47,7 +49,8 @@ class SessionLifecycleTest : BaseSessionTest() {
         mainSession.waitForPageStop()
     }
 
-    @Test fun open_allowCallsWhileClosed() {
+    @Test
+    fun open_allowCallsWhileClosed() {
         mainSession.close()
 
         mainSession.loadTestPath(HELLO_HTML_PATH)
@@ -70,10 +73,7 @@ class SessionLifecycleTest : BaseSessionTest() {
         extrasSetting.putInt("test1", 10)
         extrasSetting.putBoolean("test2", true)
 
-        val settings = GeckoRuntimeSettings.Builder()
-            .javaScriptEnabled(false)
-            .extras(extrasSetting)
-            .build()
+        val settings = GeckoRuntimeSettings.Builder().javaScriptEnabled(false).extras(extrasSetting).build()
 
         settings.toParcel { parcel ->
             val newSettings = GeckoRuntimeSettings.Builder().build()
@@ -97,7 +97,8 @@ class SessionLifecycleTest : BaseSessionTest() {
         }
     }
 
-    @Test fun collectClosed() {
+    @Test
+    fun collectClosed() {
         // We can't use a normal scoped function like `run` because
         // those are inlined, which leaves a local reference.
         fun createSession(): QueuedWeakReference<GeckoSession> {
@@ -107,7 +108,8 @@ class SessionLifecycleTest : BaseSessionTest() {
         waitUntilCollected(createSession())
     }
 
-    @Test fun collectAfterClose() {
+    @Test
+    fun collectAfterClose() {
         fun createSession(): QueuedWeakReference<GeckoSession> {
             val s = GeckoSession()
             s.open(sessionRule.runtime)
@@ -118,7 +120,8 @@ class SessionLifecycleTest : BaseSessionTest() {
         waitUntilCollected(createSession())
     }
 
-    @Test fun collectOpen() {
+    @Test
+    fun collectOpen() {
         fun createSession(): QueuedWeakReference<GeckoSession> {
             val s = GeckoSession()
             s.open(sessionRule.runtime)
@@ -148,7 +151,7 @@ class SessionLifecycleTest : BaseSessionTest() {
                 }
                 window.requestAnimationFrame(raf);
             });
-        """,
+        """
         ) as Double
     }
 
@@ -162,7 +165,7 @@ class SessionLifecycleTest : BaseSessionTest() {
                 // so this test doesn't time out. Should still be significantly slower tha
                 // the active frame rate so we can measure the effects
                 "layout.throttled_frame_rate" to 4,
-            ),
+            )
         )
 
         mainSession.loadTestPath(HELLO_HTML_PATH)
@@ -185,7 +188,7 @@ class SessionLifecycleTest : BaseSessionTest() {
             }
             setTimeout(fail, 1);
             fetch("missing.html").catch(fail);
-        """,
+        """
         )
 
         var rafRate = computeRequestAnimationFrameRate(mainSession)
@@ -200,9 +203,7 @@ class SessionLifecycleTest : BaseSessionTest() {
             lessThan(10000.0),
         )
 
-        val isNotGreen = mainSession.evaluateJS(
-            "document.documentElement.style.backgroundColor !== 'green'",
-        ) as Boolean
+        val isNotGreen = mainSession.evaluateJS("document.documentElement.style.backgroundColor !== 'green'") as Boolean
         assertThat("timeouts have not run yet", isNotGreen, equalTo(true))
 
         // Reactivate the GeckoSession and confirm that rAF/setTimeout/etc callbacks now run
@@ -228,13 +229,18 @@ class SessionLifecycleTest : BaseSessionTest() {
     }
 
     private fun waitUntilCollected(ref: QueuedWeakReference<*>) {
-        UiThreadUtils.waitForCondition({
-            Runtime.getRuntime().gc()
-            ref.queue.poll() != null
-        }, sessionRule.timeoutMillis)
+        UiThreadUtils.waitForCondition(
+            {
+                Runtime.getRuntime().gc()
+                ref.queue.poll() != null
+            },
+            sessionRule.timeoutMillis,
+        )
     }
 
-    class QueuedWeakReference<T> @JvmOverloads constructor(
+    class QueuedWeakReference<T>
+    @JvmOverloads
+    constructor(
         obj: T,
         var queue: ReferenceQueue<T> = ReferenceQueue(),
     ) : WeakReference<T>(obj, queue)

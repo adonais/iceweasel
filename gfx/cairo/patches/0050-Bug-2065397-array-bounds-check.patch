@@ -1,0 +1,43 @@
+diff --git a/src/cairo-array.c b/src/cairo-array.c
+--- a/src/cairo-array.c
++++ b/src/cairo-array.c
+@@ -177,16 +177,19 @@ _cairo_array_index (cairo_array_t *array, unsigned int index)
+      * which in the num_elements==0 case gets the NULL pointer here,
+      * but never dereferences it.
+      */
+     if (index == 0 && array->num_elements == 0)
+ 	return NULL;
+ 
+     assert (index < array->num_elements);
+ 
++    if (unlikely (index >= array->num_elements))
++	abort ();
++
+     return array->elements + (size_t)index * array->element_size;
+ }
+ 
+ /*< private >
+  * _cairo_array_index_const:
+  * @array: a #cairo_array_t
+  *
+  * If the resulting value is assigned to a pointer to an object of the same
+@@ -222,16 +225,19 @@ _cairo_array_index_const (const cairo_array_t *array, unsigned int index)
+      * which in the num_elements==0 case gets the NULL pointer here,
+      * but never dereferences it.
+      */
+     if (index == 0 && array->num_elements == 0)
+ 	return NULL;
+ 
+     assert (index < array->num_elements);
+ 
++    if (unlikely (index >= array->num_elements))
++	abort ();
++
+     return array->elements + (size_t)index * array->element_size;
+ }
+ 
+ /*< private >
+  * _cairo_array_copy_element:
+  * @array: a #cairo_array_t
+  *
+  * Copy a single element out of the array from index @index into the

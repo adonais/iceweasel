@@ -12,11 +12,10 @@ import mozilla.components.service.digitalassetlinks.local.StatementRelationCheck
 import mozilla.components.support.utils.ext.packageManagerCompatHelper
 
 /**
- * Helper to verify that a specific application is allowed to receive get the login credentials for
- * a specific domain.
+ * Helper to verify that a specific application is allowed to receive get the login credentials for a specific domain.
  *
- * The verification is done through Digital Asset Links, which allow a domain to specify associated
- * apps and their signatures.
+ * The verification is done through Digital Asset Links, which allow a domain to specify associated apps and their
+ * signatures.
  * - https://developers.google.com/digital-asset-links/v1/getting-started
  * - https://github.com/google/digitalassetlinks/blob/master/well-known/details.md
  */
@@ -25,19 +24,16 @@ class CredentialAccessVerifier(
     private val assetsFinder: AndroidAssetFinder = AndroidAssetFinder(),
 ) {
     /**
-     * Verifies and returns `true` if the application with [packageName] is allowed to receive
-     * credentials for [domain] according to the hosted Digital Assets Links file. Returns `false`
-     * otherwise. This method may also return `false` if a verification could not be performed,
-     * e.g. the device is offline.
+     * Verifies and returns `true` if the application with [packageName] is allowed to receive credentials for [domain]
+     * according to the hosted Digital Assets Links file. Returns `false` otherwise. This method may also return `false`
+     * if a verification could not be performed, e.g. the device is offline.
      */
     fun hasCredentialRelationship(
         context: Context,
         domain: String,
         packageName: String,
     ): Boolean {
-        val assets =
-            assetsFinder.getAndroidAppAsset(packageName, context.packageManagerCompatHelper)
-                .toList()
+        val assets = assetsFinder.getAndroidAppAsset(packageName, context.packageManagerCompatHelper).toList()
 
         // I was expecting us to need to verify all signatures here. But If I understand the usage
         // in `OriginVerifier` and the spec (see link in class comment) correctly then verifying one

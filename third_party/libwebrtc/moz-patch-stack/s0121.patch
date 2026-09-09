@@ -8,10 +8,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/ff7279205c599769b
  1 file changed, 7 insertions(+), 8 deletions(-)
 
 diff --git a/modules/rtp_rtcp/source/rtp_format.cc b/modules/rtp_rtcp/source/rtp_format.cc
-index 5d3c880aff..6363c92da6 100644
+index 75d00b1f11..224a0da15f 100644
 --- a/modules/rtp_rtcp/source/rtp_format.cc
 +++ b/modules/rtp_rtcp/source/rtp_format.cc
-@@ -36,32 +36,31 @@ std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
+@@ -39,32 +39,31 @@ std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
      PayloadSizeLimits limits,
      // Codec-specific details.
      const RTPVideoHeader& rtp_video_header) {
@@ -50,7 +50,7 @@ index 5d3c880aff..6363c92da6 100644
  #ifdef RTC_ENABLE_H265
        return std::make_unique<RtpPacketizerH265>(payload, limits);
  #else
-@@ -69,7 +68,7 @@ std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
+@@ -72,7 +71,7 @@ std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
                                                      rtp_video_header);
  #endif
      }

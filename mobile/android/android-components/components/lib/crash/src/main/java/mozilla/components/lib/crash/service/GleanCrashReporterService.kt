@@ -5,7 +5,12 @@
 package mozilla.components.lib.crash.service
 
 import android.content.Context
+import android.os.Build
 import androidx.annotation.VisibleForTesting
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.security.MessageDigest
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -25,18 +30,13 @@ import mozilla.components.lib.crash.service.CrashReport.Annotation
 import mozilla.components.support.base.ext.getStacktraceAsJsonString
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.content.isMainProcess
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
-import java.security.MessageDigest
 
 private val logger = Logger("glean/GleanCrashReporterService")
 
 /**
- * A [CrashReporterService] implementation for recording metrics with Glean.  The purpose of this
- * crash reporter is to collect crash count metrics by capturing [Crash.UncaughtExceptionCrash],
- * [Throwable] and [Crash.NativeCodeCrash] events and record to the respective
- * [mozilla.telemetry.glean.private.CounterMetricType].
+ * A [CrashReporterService] implementation for recording metrics with Glean. The purpose of this crash reporter is to
+ * collect crash count metrics by capturing [Crash.UncaughtExceptionCrash], [Throwable] and [Crash.NativeCodeCrash]
+ * events and record to the respective [mozilla.telemetry.glean.private.CounterMetricType].
  */
 class GleanCrashReporterService(
     val context: Context,
@@ -46,7 +46,7 @@ class GleanCrashReporterService(
     private val appVersion: String? = null,
     private val appBuildId: String? = null,
     private val isUploadEnabled: Boolean = true,
-    ) : CrashTelemetryService {
+) : CrashTelemetryService {
     companion object {
         // This file is stored in the application's data directory, so it should be located in the
         // same location as the application.
@@ -67,17 +67,14 @@ class GleanCrashReporterService(
     }
 
     /**
-     * The subclasses of GleanCrashAction are used to persist Glean actions to handle them later
-     * (in the application which has Glean initialized). They are serialized to JSON objects and
-     * appended to a file, in case multiple crashes occur prior to being able to submit the metrics
-     * to Glean.
+     * The subclasses of GleanCrashAction are used to persist Glean actions to handle them later (in the application
+     * which has Glean initialized). They are serialized to JSON objects and appended to a file, in case multiple
+     * crashes occur prior to being able to submit the metrics to Glean.
      */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     @Serializable
     internal sealed class GleanCrashAction {
-        /**
-         * Submit the glean metrics/pings.
-         */
+        /** Submit the glean metrics/pings. */
         abstract fun submit()
 
         @Serializable
@@ -138,29 +135,27 @@ class GleanCrashReporterService(
     }
 
     /**
-     * Parses the crashes collected in the persisted crash file. The format of this file is simple,
-     * a stream of serialized JSON GleanCrashAction objects.
+     * Parses the crashes collected in the persisted crash file. The format of this file is simple, a stream of
+     * serialized JSON GleanCrashAction objects.
      *
      * Example:
      *
-     * <--Beginning of file-->
-     * {"type":"count","label":"uncaught_exception"}\n
-     * {"type":"count","label":"uncaught_exception"}\n
-     * {"type":"count","label":"main_process_native_code_crash"}\n
+     * <--Beginning of file--> {"type":"count","label":"uncaught_exception"}\n
+     * {"type":"count","label":"uncaught_exception"}\n {"type":"count","label":"main_process_native_code_crash"}\n
      * <--End of file-->
      *
-     * It is unlikely that there will be more than one crash in a file, but not impossible.  This
-     * could happen, for instance, if the application crashed again before the file could be
-     * processed.
+     * It is unlikely that there will be more than one crash in a file, but not impossible. This could happen, for
+     * instance, if the application crashed again before the file could be processed.
      */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun parseCrashFile() {
         try {
             @OptIn(ExperimentalSerializationApi::class)
-            val actionSequence = Json.decodeToSequence<GleanCrashAction>(
-                file.inputStream(),
-                DecodeSequenceMode.WHITESPACE_SEPARATED,
-            )
+            val actionSequence =
+                Json.decodeToSequence<GleanCrashAction>(
+                    file.inputStream(),
+                    DecodeSequenceMode.WHITESPACE_SEPARATED,
+                )
             for (action in actionSequence) {
                 // We do not expect an exception to occur, however if the worst should happen, it's
                 // essential that we don't allow the exception to interfere with other actions that
@@ -182,12 +177,11 @@ class GleanCrashReporterService(
     }
 
     /**
-     * This function handles the actual recording of the crash to the persisted crash file. We are
-     * only guaranteed runtime for the lifetime of the [CrashTelemetryService.record] function,
-     * anything that we do in this function **MUST** be synchronous and blocking.  We cannot spawn
-     * work to background processes or threads here if we want to guarantee that the work is
-     * completed. Also, since the [CrashTelemetryService.record] functions are called synchronously,
-     * and from lib-crash's own process, it is unlikely that this would be called from more than one
+     * This function handles the actual recording of the crash to the persisted crash file. We are only guaranteed
+     * runtime for the lifetime of the [CrashTelemetryService.record] function, anything that we do in this function
+     * **MUST** be synchronous and blocking. We cannot spawn work to background processes or threads here if we want to
+     * guarantee that the work is completed. Also, since the [CrashTelemetryService.record] functions are called
+     * synchronously, and from lib-crash's own process, it is unlikely that this would be called from more than one
      * place at the same time.
      *
      * @param action Pass in the crash action to record.
@@ -209,8 +203,7 @@ class GleanCrashReporterService(
         // Add a line representing the crash that was received
         if (file.canWrite()) {
             try {
-                @OptIn(ExperimentalSerializationApi::class)
-                Json.encodeToStream(action, FileOutputStream(file, true))
+                @OptIn(ExperimentalSerializationApi::class) Json.encodeToStream(action, FileOutputStream(file, true))
                 file.appendText("\n")
             } catch (e: IOException) {
                 logger.error("Failed to write to crash file", e)
@@ -230,6 +223,11 @@ class GleanCrashReporterService(
 
     private fun setCommonPingFields(extras: MutableMap<String, JsonElement>, crash: Crash) {
         extras.setIfAbsent(Annotation.CrashTime) { JsonPrimitive((crash.timestamp / 1000).toString()) }
+        // CrashEventID and platform info may already be present for native crashes
+        extras.setIfAbsent(Annotation.CrashEventID) { JsonPrimitive(crash.uuid) }
+        extras.setIfAbsent(Annotation.OS) { JsonPrimitive("Android") }
+        extras.setIfAbsent(Annotation.OSVersion) { JsonPrimitive("${Build.VERSION.SDK_INT}") }
+        extras.setIfAbsent(Annotation.CPUArchitecture) { JsonPrimitive(Crash.CPU_ARCH) }
     }
 
     override fun record(crash: Crash.UncaughtExceptionCrash) {
@@ -247,7 +245,6 @@ class GleanCrashReporterService(
             appBuildId?.let { extras[Annotation.BuildID] = JsonPrimitive(it) }
             extras[Annotation.JavaException] = JsonPrimitive(crash.throwable.getStacktraceAsJsonString())
             extras[Annotation.CrashType] = JsonPrimitive("uncaught exception")
-            extras[Annotation.CrashEventID] = JsonPrimitive(crash.uuid)
 
             sendCrashPing(Json.encodeToString(extras))
         }
@@ -303,17 +300,9 @@ class GleanCrashReporterService(
             Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN ->
                 recordCrashAction(GleanCrashAction.Count(MAIN_PROCESS_NATIVE_CODE_CRASH_KEY))
             Crash.NativeCodeCrash.PROCESS_VISIBILITY_FOREGROUND_CHILD ->
-                recordCrashAction(
-                    GleanCrashAction.Count(
-                        FOREGROUND_CHILD_PROCESS_NATIVE_CODE_CRASH_KEY,
-                    ),
-                )
+                recordCrashAction(GleanCrashAction.Count(FOREGROUND_CHILD_PROCESS_NATIVE_CODE_CRASH_KEY))
             Crash.NativeCodeCrash.PROCESS_VISIBILITY_BACKGROUND_CHILD ->
-                recordCrashAction(
-                    GleanCrashAction.Count(
-                        BACKGROUND_CHILD_PROCESS_NATIVE_CODE_CRASH_KEY,
-                    ),
-                )
+                recordCrashAction(GleanCrashAction.Count(BACKGROUND_CHILD_PROCESS_NATIVE_CODE_CRASH_KEY))
         }
 
         val processType = crash.processType ?: "main"
@@ -334,8 +323,6 @@ class GleanCrashReporterService(
             extras.setIfAbsent(Annotation.CrashType) {
                 JsonPrimitive("${if (!crash.isFatal) "non-" else ""}fatal native crash")
             }
-            // CrashEventID should only be absent if there is no extras file
-            extras.setIfAbsent(Annotation.CrashEventID) { JsonPrimitive(crash.uuid) }
 
             sendCrashPing(Json.encodeToString(extras))
         }

@@ -20,6 +20,7 @@ import androidx.annotation.VisibleForTesting.Companion.PRIVATE
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.forEach
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -41,11 +42,8 @@ import mozilla.components.ui.autocomplete.AutocompleteView
 import mozilla.components.ui.autocomplete.InlineAutocompleteEditText
 import mozilla.components.ui.autocomplete.OnFilterListener
 import mozilla.components.ui.widgets.behavior.EngineViewScrollingBehavior
-import kotlin.coroutines.CoroutineContext
 
-internal fun ImageView.setTintResource(
-    @ColorRes tintColorResource: Int,
-) {
+internal fun ImageView.setTintResource(@ColorRes tintColorResource: Int) {
     if (tintColorResource != NO_ID) {
         imageTintList = AppCompatResources.getColorStateList(context, tintColorResource)
     }
@@ -54,9 +52,9 @@ internal fun ImageView.setTintResource(
 /**
  * A customizable toolbar for browsers.
  *
- * The toolbar can switch between two modes: display and edit. The display mode displays the current
- * URL and controls for navigation. In edit mode the current URL can be edited. Those two modes are
- * implemented by the DisplayToolbar and EditToolbar classes.
+ * The toolbar can switch between two modes: display and edit. The display mode displays the current URL and controls
+ * for navigation. In edit mode the current URL can be edited. Those two modes are implemented by the DisplayToolbar and
+ * EditToolbar classes.
  *
  * ```
  *           +----------------+
@@ -71,50 +69,51 @@ internal fun ImageView.setTintResource(
  * ```
  */
 @Suppress("TooManyFunctions")
-class BrowserToolbar @JvmOverloads constructor(
+class BrowserToolbar
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
 ) : ViewGroup(context, attrs, defStyleAttr), Toolbar {
     private var state: State = State.DISPLAY
 
-    @VisibleForTesting
-    internal var searchTerms: String = ""
+    @VisibleForTesting internal var searchTerms: String = ""
     private var urlCommitListener: ((String) -> Boolean)? = null
 
-    /**
-     * Toolbar in "display mode".
-     */
-    var display = DisplayToolbar(
-        context,
-        this,
-        LayoutInflater.from(context).inflate(
-            R.layout.mozac_browser_toolbar_displaytoolbar,
+    /** Toolbar in "display mode". */
+    var display =
+        DisplayToolbar(
+            context,
             this,
-            false,
-        ),
-    )
-        @VisibleForTesting(otherwise = PRIVATE)
-        internal set
+            LayoutInflater.from(context)
+                .inflate(
+                    R.layout.mozac_browser_toolbar_displaytoolbar,
+                    this,
+                    false,
+                ),
+        )
+        @VisibleForTesting(otherwise = PRIVATE) internal set
 
-    /**
-     * Toolbar in "edit mode".
-     */
-    var edit = EditToolbar(
-        context,
-        this,
-        LayoutInflater.from(context).inflate(
-            R.layout.mozac_browser_toolbar_edittoolbar,
+    /** Toolbar in "edit mode". */
+    var edit =
+        EditToolbar(
+            context,
             this,
-            false,
-        ),
-    )
-        @VisibleForTesting(otherwise = PRIVATE)
-        internal set
+            LayoutInflater.from(context)
+                .inflate(
+                    R.layout.mozac_browser_toolbar_edittoolbar,
+                    this,
+                    false,
+                ),
+        )
+        @VisibleForTesting(otherwise = PRIVATE) internal set
 
     override var title: String
         get() = display.title
-        set(value) { display.title = value }
+        set(value) {
+            display.title = value
+        }
 
     override var url: CharSequence
         get() = display.url
@@ -127,7 +126,9 @@ class BrowserToolbar @JvmOverloads constructor(
 
     override var siteInfo: Toolbar.SiteInfo
         get() = display.siteInfo
-        set(value) { display.siteInfo = value }
+        set(value) {
+            display.siteInfo = value
+        }
 
     override var highlight: Highlight = Highlight.NONE
         set(value) {
@@ -137,8 +138,7 @@ class BrowserToolbar @JvmOverloads constructor(
             }
         }
 
-    override var siteTrackingProtection: Toolbar.SiteTrackingProtection =
-        Toolbar.SiteTrackingProtection.OFF_GLOBALLY
+    override var siteTrackingProtection: Toolbar.SiteTrackingProtection = Toolbar.SiteTrackingProtection.OFF_GLOBALLY
         set(value) {
             if (field != value) {
                 display.setTrackingProtectionState(value)
@@ -148,11 +148,11 @@ class BrowserToolbar @JvmOverloads constructor(
 
     override var private: Boolean
         get() = edit.private
-        set(value) { edit.private = value }
+        set(value) {
+            edit.private = value
+        }
 
-    /**
-     * Registers the given listener to be invoked when the user edits the URL.
-     */
+    /** Registers the given listener to be invoked when the user edits the URL. */
     override fun setOnEditListener(listener: Toolbar.OnEditListener) {
         edit.editListener = listener
     }
@@ -198,11 +198,12 @@ class BrowserToolbar @JvmOverloads constructor(
         // Our toolbar will always use the full width and a fixed height (default) or the provided
         // height if it's an exact value.
         val width = MeasureSpec.getSize(widthMeasureSpec)
-        val height = if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY) {
-            MeasureSpec.getSize(heightMeasureSpec)
-        } else {
-            pixelSizeFor(R.dimen.mozac_browser_toolbar_default_toolbar_height)
-        }
+        val height =
+            if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY) {
+                MeasureSpec.getSize(heightMeasureSpec)
+            } else {
+                pixelSizeFor(R.dimen.mozac_browser_toolbar_default_toolbar_height)
+            }
 
         setMeasuredDimension(width, height)
 
@@ -245,12 +246,12 @@ class BrowserToolbar @JvmOverloads constructor(
     }
 
     /**
-     * Declare that the actions (navigation actions, browser actions, page actions) have changed and
-     * should be updated if needed.
+     * Declare that the actions (navigation actions, browser actions, page actions) have changed and should be updated
+     * if needed.
      *
-     * The toolbar will call the <code>visible</code> lambda of every action to determine whether a
-     * view for this action should be added or removed. Additionally <code>bind</code> will be
-     * called on every visible action to update its view.
+     * The toolbar will call the <code>visible</code> lambda of every action to determine whether a view for this action
+     * should be added or removed. Additionally <code>bind</code> will be called on every visible action to update its
+     * view.
      */
     override fun invalidateActions() {
         display.invalidateActions()
@@ -258,22 +259,20 @@ class BrowserToolbar @JvmOverloads constructor(
     }
 
     /**
-     * Adds an action to be displayed on the right side of the toolbar (outside of the URL bounding
-     * box) in display mode.
+     * Adds an action to be displayed on the right side of the toolbar (outside of the URL bounding box) in display
+     * mode.
      *
-     * If there is not enough room to show all icons then some icons may be moved to an overflow
-     * menu.
+     * If there is not enough room to show all icons then some icons may be moved to an overflow menu.
      *
-     * Related:
-     * https://developer.mozilla.org/en-US/Add-ons/WebExtensions/user_interface/Browser_action
+     * Related: https://developer.mozilla.org/en-US/Add-ons/WebExtensions/user_interface/Browser_action
      */
     override fun addBrowserAction(action: Toolbar.Action) {
         display.addBrowserAction(action)
     }
 
     /**
-     * Removes a previously added browser action (see [addBrowserAction]). If the provided
-     * action was never added, this method has no effect.
+     * Removes a previously added browser action (see [addBrowserAction]). If the provided action was never added, this
+     * method has no effect.
      *
      * @param action the action to remove.
      */
@@ -282,8 +281,8 @@ class BrowserToolbar @JvmOverloads constructor(
     }
 
     /**
-     * Removes a previously added page action (see [addPageAction]). If the provided
-     * action was never added, this method has no effect.
+     * Removes a previously added page action (see [addPageAction]). If the provided action was never added, this method
+     * has no effect.
      *
      * @param action the action to remove.
      */
@@ -294,24 +293,23 @@ class BrowserToolbar @JvmOverloads constructor(
     /**
      * Adds an action to be displayed on the right side of the URL in display mode.
      *
-     * Related:
-     * https://developer.mozilla.org/en-US/Add-ons/WebExtensions/user_interface/Page_actions
+     * Related: https://developer.mozilla.org/en-US/Add-ons/WebExtensions/user_interface/Page_actions
      */
     override fun addPageAction(action: Toolbar.Action) {
         display.addPageAction(action)
     }
 
     /**
-     * Adds an action to be display on the far left side of the toolbar. This area is usually used
-     * on larger devices for navigation actions like "back" and "forward".
+     * Adds an action to be display on the far left side of the toolbar. This area is usually used on larger devices for
+     * navigation actions like "back" and "forward".
      */
     override fun addNavigationAction(action: Toolbar.Action) {
         display.addNavigationAction(action)
     }
 
     /**
-     * Removes a previously added navigation action (see [addNavigationAction]). If the provided
-     * action was never added, this method has no effect.
+     * Removes a previously added navigation action (see [addNavigationAction]). If the provided action was never added,
+     * this method has no effect.
      *
      * @param action the action to remove.
      */
@@ -319,44 +317,32 @@ class BrowserToolbar @JvmOverloads constructor(
         display.removeNavigationAction(action)
     }
 
-    /**
-     * Adds an action to be displayed at the start of the URL in edit mode.
-     */
+    /** Adds an action to be displayed at the start of the URL in edit mode. */
     override fun addEditActionStart(action: Toolbar.Action) {
         edit.addEditActionStart(action)
     }
 
-    /**
-     * Adds an action to be displayed at the end of the URL in edit mode.
-     */
+    /** Adds an action to be displayed at the end of the URL in edit mode. */
     override fun addEditActionEnd(action: Toolbar.Action) {
         edit.addEditActionEnd(action)
     }
 
-    /**
-     * Removes an action end of the URL in edit mode.
-     */
+    /** Removes an action end of the URL in edit mode. */
     override fun removeEditActionEnd(action: Toolbar.Action) {
         edit.removeEditActionEnd(action)
     }
 
-    /**
-     * Hides the menu button in display mode.
-     */
+    /** Hides the menu button in display mode. */
     override fun hideMenuButton() {
         display.hideMenuButton()
     }
 
-    /**
-     * Shows the menu button in display mode.
-     */
+    /** Shows the menu button in display mode. */
     override fun showMenuButton() {
         display.showMenuButton()
     }
 
-    /**
-     * Sets the horizontal padding in display mode.
-     */
+    /** Sets the horizontal padding in display mode. */
     override fun setDisplayHorizontalPadding(horizontalPadding: Int) {
         display.setHorizontalPadding(horizontalPadding)
     }
@@ -382,16 +368,12 @@ class BrowserToolbar @JvmOverloads constructor(
         }
     }
 
-    /**
-     * Switches to URL displaying mode.
-     */
+    /** Switches to URL displaying mode. */
     override fun displayMode() {
         updateState(State.DISPLAY)
     }
 
-    /**
-     * Dismisses the display toolbar popup menu.
-     */
+    /** Dismisses the display toolbar popup menu. */
     override fun dismissMenu() {
         display.views.menu.dismissMenu()
     }
@@ -433,16 +415,17 @@ class BrowserToolbar @JvmOverloads constructor(
     private fun updateState(state: State) {
         this.state = state
 
-        val (show, hide) = when (state) {
-            State.DISPLAY -> {
-                edit.stopEditing()
-                Pair(display.rootView, edit.rootView)
+        val (show, hide) =
+            when (state) {
+                State.DISPLAY -> {
+                    edit.stopEditing()
+                    Pair(display.rootView, edit.rootView)
+                }
+                State.EDIT -> {
+                    edit.startEditing()
+                    Pair(edit.rootView, display.rootView)
+                }
             }
-            State.EDIT -> {
-                edit.startEditing()
-                Pair(edit.rootView, display.rootView)
-            }
-        }
 
         show.visibility = View.VISIBLE
         hide.visibility = View.GONE
@@ -460,9 +443,9 @@ class BrowserToolbar @JvmOverloads constructor(
      * @param contentDescription The content description to use.
      * @param visible Lambda that returns true or false to indicate whether this button should be shown.
      * @param autoHide Lambda that returns true or false to indicate whether this button should auto hide.
-     * @param weight Lambda that returns an integer to indicate weight of an action. The lesser the weight,
-     * the closer it is to the url. A default weight -1 indicates, the position is not cared for
-     * and action will be appended at the end.
+     * @param weight Lambda that returns an integer to indicate weight of an action. The lesser the weight, the closer
+     *   it is to the url. A default weight -1 indicates, the position is not cared for and action will be appended at
+     *   the end.
      * @param background A custom (stateful) background drawable resource to be used.
      * @param padding a custom [Padding] for this Button.
      * @param iconTintColorResource Optional ID of color resource to tint the icon.
@@ -480,31 +463,32 @@ class BrowserToolbar @JvmOverloads constructor(
         @ColorRes iconTintColorResource: Int = NO_ID,
         longClickListener: (() -> Unit)? = null,
         listener: () -> Unit,
-    ) : Toolbar.ActionButton(
-        imageDrawable,
-        contentDescription,
-        visible,
-        autoHide,
-        weight,
-        background,
-        padding,
-        iconTintColorResource,
-        longClickListener,
-        listener,
-    )
+    ) :
+        Toolbar.ActionButton(
+            imageDrawable,
+            contentDescription,
+            visible,
+            autoHide,
+            weight,
+            background,
+            padding,
+            iconTintColorResource,
+            longClickListener,
+            listener,
+        )
 
     /**
-     * An action button with two states, selected and unselected. When the button is pressed, the
-     * state changes automatically.
+     * An action button with two states, selected and unselected. When the button is pressed, the state changes
+     * automatically.
      *
      * @param image The drawable to be shown if the button is in unselected state.
      * @param imageSelected The drawable to be shown if the button is in selected state.
      * @param contentDescription The content description to use if the button is in unselected state.
      * @param contentDescriptionSelected The content description to use if the button is in selected state.
      * @param visible Lambda that returns true or false to indicate whether this button should be shown.
-     * @param weight Lambda that returns an integer to indicate weight of an action. The lesser the weight,
-     * the closer it is to the url. A default weight -1 indicates, the position is not cared for
-     * and action will be appended at the end.
+     * @param weight Lambda that returns an integer to indicate weight of an action. The lesser the weight, the closer
+     *   it is to the url. A default weight -1 indicates, the position is not cared for and action will be appended at
+     *   the end.
      * @param selected Sets whether this button should be selected initially.
      * @param background A custom (stateful) background drawable resource to be used.
      * @param padding a custom [Padding] for this Button.
@@ -521,23 +505,23 @@ class BrowserToolbar @JvmOverloads constructor(
         @DrawableRes background: Int = 0,
         val padding: Padding = DEFAULT_PADDING,
         listener: (Boolean) -> Unit,
-    ) : Toolbar.ActionToggleButton(
-        image,
-        imageSelected,
-        contentDescription,
-        contentDescriptionSelected,
-        visible,
-        weight,
-        selected,
-        background,
-        padding,
-        listener,
-    )
+    ) :
+        Toolbar.ActionToggleButton(
+            image,
+            imageSelected,
+            contentDescription,
+            contentDescriptionSelected,
+            visible,
+            weight,
+            selected,
+            background,
+            padding,
+            listener,
+        )
 
     /**
      * An action that either shows an active button or an inactive button based on the provided
-     * <code>isInPrimaryState</code> lambda. All secondary characteristics default to their
-     * corresponding primary.
+     * <code>isInPrimaryState</code> lambda. All secondary characteristics default to their corresponding primary.
      *
      * @param primaryImage: The drawable to be shown if the button is in the primary/enabled state
      * @param primaryContentDescription: The content description to use if the button is in the primary state.
@@ -547,9 +531,9 @@ class BrowserToolbar @JvmOverloads constructor(
      * @param primaryImageTintResource: Optional ID of color resource to tint the icon in the primary state.
      * @param secondaryImageTintResource: ID of color resource to tint the icon in the secondary state.
      * @param disableInSecondaryState: Disable the button entirely when in the secondary state?
-     * @param weight Lambda that returns an integer to indicate weight of an action. The lesser the weight,
-     * the closer it is to the url. A default weight -1 indicates, the position is not cared for
-     * and action will be appended at the end.
+     * @param weight Lambda that returns an integer to indicate weight of an action. The lesser the weight, the closer
+     *   it is to the url. A default weight -1 indicates, the position is not cared for and action will be appended at
+     *   the end.
      * @param background A custom (stateful) background drawable resource to be used.
      * @param longClickListener Callback that will be invoked whenever the button is long-pressed.
      * @param listener Callback that will be invoked whenever the button is pressed.
@@ -567,14 +551,15 @@ class BrowserToolbar @JvmOverloads constructor(
         background: Int = 0,
         longClickListener: (() -> Unit)? = null,
         listener: () -> Unit,
-    ) : Button(
-        primaryImage,
-        primaryContentDescription,
-        weight = weight,
-        background = background,
-        longClickListener = longClickListener,
-        listener = listener,
-    ) {
+    ) :
+        Button(
+            primaryImage,
+            primaryContentDescription,
+            weight = weight,
+            background = background,
+            longClickListener = longClickListener,
+            listener = listener,
+        ) {
         var enabled: Boolean = false
             private set
 
@@ -604,8 +589,8 @@ class BrowserToolbar @JvmOverloads constructor(
 }
 
 /**
- * Wraps [filter] execution in a coroutine context, cancelling prior executions on every invocation.
- * [externalScope] must be of type that doesn't propagate cancellation of its children upwards.
+ * Wraps [filter] execution in a coroutine context, cancelling prior executions on every invocation. [externalScope]
+ * must be of type that doesn't propagate cancellation of its children upwards.
  */
 class AsyncFilterListener(
     private val urlView: AutocompleteView,
@@ -635,8 +620,8 @@ class AsyncFilterListener(
 }
 
 /**
- * An autocomplete delegate which is aware of its parent scope (to check for cancellations).
- * Responsible for processing autocompletion results and discarding stale results when [urlView] moved on.
+ * An autocomplete delegate which is aware of its parent scope (to check for cancellations). Responsible for processing
+ * autocompletion results and discarding stale results when [urlView] moved on.
  */
 private class AsyncAutocompleteDelegate(
     private val urlView: AutocompleteView,
@@ -654,7 +639,7 @@ private class AsyncAutocompleteDelegate(
                         text = result.text,
                         source = result.source,
                         totalItems = result.totalItems,
-                    ),
+                    )
                 )
                 onApplied()
             } else {

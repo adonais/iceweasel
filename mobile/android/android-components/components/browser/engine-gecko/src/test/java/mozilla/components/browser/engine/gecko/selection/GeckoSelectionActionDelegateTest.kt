@@ -8,13 +8,13 @@ import android.app.Activity
 import android.app.Application
 import android.app.Service
 import android.view.MenuItem
+import kotlin.test.assertNotNull
 import mozilla.components.concept.engine.selection.SelectionActionDelegate
 import mozilla.components.support.test.mock
 import org.junit.Assert
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
-import kotlin.test.assertNotNull
 
 class GeckoSelectionActionDelegateTest {
 
@@ -39,15 +39,20 @@ class GeckoSelectionActionDelegateTest {
     @Test
     fun `getAllActions should contain all actions from the custom delegate`() {
         val customActions = arrayOf("1", "2", "3")
-        val customDelegate = object : SelectionActionDelegate {
-            override fun getAllActions(): Array<String> = customActions
-            override fun isActionAvailable(id: String, selectedText: String): Boolean = false
-            override fun getActionTitle(id: String): CharSequence? = ""
-            override fun performAction(id: String, selectedText: String): Boolean = false
-            override fun sortedActions(actions: Array<String>): Array<String> {
-                return actions
+        val customDelegate =
+            object : SelectionActionDelegate {
+                override fun getAllActions(): Array<String> = customActions
+
+                override fun isActionAvailable(id: String, selectedText: String): Boolean = false
+
+                override fun getActionTitle(id: String): CharSequence? = ""
+
+                override fun performAction(id: String, selectedText: String): Boolean = false
+
+                override fun sortedActions(actions: Array<String>): Array<String> {
+                    return actions
+                }
             }
-        }
 
         val geckoDelegate = TestGeckoSelectionActionDelegate(mock(), customDelegate)
 
@@ -61,31 +66,35 @@ class GeckoSelectionActionDelegateTest {
     @Test
     fun `WHEN perform action triggers a security exception THEN false is returned`() {
         val customActions = arrayOf("1", "2", "3")
-        val customDelegate = object : SelectionActionDelegate {
-            override fun getAllActions(): Array<String> = customActions
-            override fun isActionAvailable(id: String, selectedText: String): Boolean = false
-            override fun getActionTitle(id: String): CharSequence? = ""
-            override fun performAction(id: String, selectedText: String): Boolean {
-                throw SecurityException("test")
+        val customDelegate =
+            object : SelectionActionDelegate {
+                override fun getAllActions(): Array<String> = customActions
+
+                override fun isActionAvailable(id: String, selectedText: String): Boolean = false
+
+                override fun getActionTitle(id: String): CharSequence? = ""
+
+                override fun performAction(id: String, selectedText: String): Boolean {
+                    throw SecurityException("test")
+                }
+
+                override fun sortedActions(actions: Array<String>): Array<String> {
+                    return actions
+                }
             }
-            override fun sortedActions(actions: Array<String>): Array<String> {
-                return actions
-            }
-        }
 
         val geckoDelegate = TestGeckoSelectionActionDelegate(mock(), customDelegate)
         assertFalse(geckoDelegate.performAction("test", mock()))
     }
 }
 
-/**
- * Test object that overrides visibility for [getAllActions]
- */
+/** Test object that overrides visibility for [getAllActions] */
 class TestGeckoSelectionActionDelegate(
     activity: Activity,
     customDelegate: SelectionActionDelegate,
 ) : GeckoSelectionActionDelegate(activity, customDelegate) {
     public override fun getAllActions() = super.getAllActions()
+
     public override fun performAction(id: String, item: MenuItem): Boolean {
         return super.performAction(id, item)
     }

@@ -18,9 +18,9 @@ import org.mozilla.focus.state.AppAction
 /**
  * A Fragment that allows the user to select and remove custom autocomplete domains.
  *
- * This fragment extends [AutocompleteListFragment] to display the list of domains but operates
- * in a selection mode, allowing the user to pick specific items to delete from the [CustomDomains] storage.
- * It inflates a specific menu containing a removal action and handles the deletion logic asynchronously.
+ * This fragment extends [AutocompleteListFragment] to display the list of domains but operates in a selection mode,
+ * allowing the user to pick specific items to delete from the [CustomDomains] storage. It inflates a specific menu
+ * containing a removal action and handles the deletion logic asynchronously.
  */
 class AutocompleteRemoveFragment : AutocompleteListFragment() {
 
@@ -28,13 +28,14 @@ class AutocompleteRemoveFragment : AutocompleteListFragment() {
         menuInflater.inflate(R.menu.menu_autocomplete_remove, menu)
     }
 
-    override fun onMenuItemSelected(menuItem: MenuItem): Boolean = when (menuItem.itemId) {
-        R.id.remove -> {
-            removeSelectedDomains(requireActivity().applicationContext)
-            true
+    override fun onMenuItemSelected(menuItem: MenuItem): Boolean =
+        when (menuItem.itemId) {
+            R.id.remove -> {
+                removeSelectedDomains(requireActivity().applicationContext)
+                true
+            }
+            else -> false
         }
-        else -> false
-    }
 
     private fun removeSelectedDomains(context: Context) {
         val domains = (binding.domainList.adapter as DomainListAdapter).selection()
@@ -42,9 +43,7 @@ class AutocompleteRemoveFragment : AutocompleteListFragment() {
             CustomDomains.remove(context, domains)
             Autocomplete.domainRemoved.add()
 
-            requireComponents.appStore.dispatch(
-                AppAction.NavigateUp(requireComponents.store.state.selectedTabId),
-            )
+            requireComponents.appStore.dispatch(AppAction.NavigateUp(requireComponents.store.state.selectedTabId))
         }
     }
 

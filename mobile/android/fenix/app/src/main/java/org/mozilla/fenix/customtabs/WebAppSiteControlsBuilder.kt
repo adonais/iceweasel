@@ -13,8 +13,8 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.manifest.WebAppManifest
 import mozilla.components.feature.pwa.feature.SiteControlsBuilder
 import mozilla.components.feature.session.SessionUseCases
-import org.mozilla.fenix.R
 import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.fenix.R
 
 class WebAppSiteControlsBuilder(
     private val store: BrowserStore,

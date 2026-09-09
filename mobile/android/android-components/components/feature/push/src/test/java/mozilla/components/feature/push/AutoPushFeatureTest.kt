@@ -9,6 +9,7 @@ import android.content.SharedPreferences
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.push.BridgeType
 import mozilla.appservices.push.DecryptResponse
@@ -39,7 +40,6 @@ import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoMoreInteractions
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class AutoPushFeatureTest {
@@ -71,12 +71,13 @@ class AutoPushFeatureTest {
     fun `updateToken called if token is in prefs`() = runTest {
         preference(testContext).edit().putString(PREF_TOKEN, "token").apply()
 
-        val feature = AutoPushFeature(
-            testContext,
-            mock(),
-            mock(),
-            coroutineContext = coroutineContext,
-        )
+        val feature =
+            AutoPushFeature(
+                testContext,
+                mock(),
+                mock(),
+                coroutineContext = coroutineContext,
+            )
 
         feature.connection = connection
 
@@ -150,15 +151,17 @@ class AutoPushFeatureTest {
 
         var invoked = false
         val feature = AutoPushFeature(testContext, mock(), mock(), coroutineContext)
-        whenever(connection.subscribe(any(), any())).thenReturn(
-            SubscriptionResponse(
-                channelId = "test-cid",
-                subscriptionInfo = SubscriptionInfo(
-                    endpoint = "https://foo",
-                    keys = KeyInfo(auth = "auth", p256dh = "p256dh"),
-                ),
-            ),
-        )
+        whenever(connection.subscribe(any(), any()))
+            .thenReturn(
+                SubscriptionResponse(
+                    channelId = "test-cid",
+                    subscriptionInfo =
+                        SubscriptionInfo(
+                            endpoint = "https://foo",
+                            keys = KeyInfo(auth = "auth", p256dh = "p256dh"),
+                        ),
+                )
+            )
         feature.connection = connection
 
         feature.subscribe("testScope") {
@@ -191,7 +194,9 @@ class AutoPushFeatureTest {
         assertFalse(invoked)
         assertFalse(errorInvoked)
 
-        whenever(connection.subscribe(anyString(), nullable())).thenAnswer { throw PushApiException.InternalException("") }
+        whenever(connection.subscribe(anyString(), nullable())).thenAnswer {
+            throw PushApiException.InternalException("")
+        }
         whenever(subscription.scope).thenReturn("testScope")
 
         feature.subscribe(
@@ -280,18 +285,21 @@ class AutoPushFeatureTest {
         feature.connection = connection
         var invoked = false
 
-        whenever(connection.getSubscription(anyString())).thenReturn(
-            SubscriptionResponse(
-                channelId = "cid",
-                subscriptionInfo = SubscriptionInfo(
-                    endpoint = "endpoint",
-                    keys = KeyInfo(
-                        auth = "auth",
-                        p256dh = "p256dh",
-                    ),
-                ),
-            ),
-        )
+        whenever(connection.getSubscription(anyString()))
+            .thenReturn(
+                SubscriptionResponse(
+                    channelId = "cid",
+                    subscriptionInfo =
+                        SubscriptionInfo(
+                            endpoint = "endpoint",
+                            keys =
+                                KeyInfo(
+                                    auth = "auth",
+                                    p256dh = "p256dh",
+                                ),
+                        ),
+                )
+            )
 
         feature.getSubscription(
             scope = "testScope",
@@ -348,7 +356,8 @@ class AutoPushFeatureTest {
         verify(observers, never()).onSubscriptionChanged(any())
 
         // When there are subscription updates, observers should be notified.
-        whenever(connection.verifyConnection()).thenReturn(listOf(PushSubscriptionChanged(scope = "scope", channelId = "1246")))
+        whenever(connection.verifyConnection())
+            .thenReturn(listOf(PushSubscriptionChanged(scope = "scope", channelId = "1246")))
         feature.verifyActiveSubscriptions()
         testScheduler.advanceUntilIdle()
 
@@ -357,14 +366,15 @@ class AutoPushFeatureTest {
 
     @Test
     fun `new FCM token executes verifyActiveSubscription`() = runTest {
-        val feature = spy(
-            AutoPushFeature(
-                context = testContext,
-                service = mock(),
-                config = mock(),
-                coroutineContext = coroutineContext,
-            ),
-        )
+        val feature =
+            spy(
+                AutoPushFeature(
+                    context = testContext,
+                    service = mock(),
+                    config = mock(),
+                    coroutineContext = coroutineContext,
+                )
+            )
         feature.connection = connection
 
         feature.initialize()
@@ -381,14 +391,15 @@ class AutoPushFeatureTest {
 
     @Test
     fun `verification doesn't happen until we've got the token`() = runTest {
-        val feature = spy(
-            AutoPushFeature(
-                context = testContext,
-                service = mock(),
-                config = mock(),
-                coroutineContext = coroutineContext,
-            ),
-        )
+        val feature =
+            spy(
+                AutoPushFeature(
+                    context = testContext,
+                    service = mock(),
+                    config = mock(),
+                    coroutineContext = coroutineContext,
+                )
+            )
 
         feature.connection = connection
 
@@ -401,13 +412,14 @@ class AutoPushFeatureTest {
     fun `crash reporter is notified of errors`() = runTest {
         val connection: PushManagerInterface = mock()
         val crashReporter: CrashReporting = mock()
-        val feature = AutoPushFeature(
-            context = testContext,
-            service = mock(),
-            config = mock(),
-            coroutineContext = coroutineContext,
-            crashReporter = crashReporter,
-        )
+        val feature =
+            AutoPushFeature(
+                context = testContext,
+                service = mock(),
+                config = mock(),
+                coroutineContext = coroutineContext,
+                crashReporter = crashReporter,
+            )
         feature.connection = connection
 
         feature.onError(PushError.Rust(PushError.MalformedMessage("Bad things happened!")))
@@ -418,13 +430,14 @@ class AutoPushFeatureTest {
     @Test
     fun `Non-Internal errors are submitted to crash reporter`() = runTest {
         val crashReporter: CrashReporting = mock()
-        val feature = AutoPushFeature(
-            context = testContext,
-            service = mock(),
-            config = mock(),
-            coroutineContext = coroutineContext,
-            crashReporter = crashReporter,
-        )
+        val feature =
+            AutoPushFeature(
+                context = testContext,
+                service = mock(),
+                config = mock(),
+                coroutineContext = coroutineContext,
+                crashReporter = crashReporter,
+            )
 
         feature.connection = connection
 
@@ -440,13 +453,14 @@ class AutoPushFeatureTest {
     @Test
     fun `Internal errors errors are not reported`() = runTest {
         val crashReporter: CrashReporting = mock()
-        val feature = AutoPushFeature(
-            context = testContext,
-            service = mock(),
-            config = mock(),
-            coroutineContext = coroutineContext,
-            crashReporter = crashReporter,
-        )
+        val feature =
+            AutoPushFeature(
+                context = testContext,
+                service = mock(),
+                config = mock(),
+                coroutineContext = coroutineContext,
+                crashReporter = crashReporter,
+            )
 
         feature.connection = connection
 
@@ -468,10 +482,11 @@ class AutoPushFeatureTest {
 
     @Test
     fun `transform response to PushSubscription`() {
-        val response = SubscriptionResponse(
-            "992a0f0542383f1ea5ef51b7cf4ae6c4",
-            SubscriptionInfo("https://mozilla.com", KeyInfo("123", "456")),
-        )
+        val response =
+            SubscriptionResponse(
+                "992a0f0542383f1ea5ef51b7cf4ae6c4",
+                SubscriptionInfo("https://mozilla.com", KeyInfo("123", "456")),
+            )
         val sub = response.toPushSubscription("scope")
 
         assertEquals(response.subscriptionInfo.endpoint, sub.endpoint)

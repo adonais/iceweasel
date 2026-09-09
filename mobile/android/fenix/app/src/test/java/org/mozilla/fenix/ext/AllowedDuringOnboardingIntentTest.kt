@@ -19,15 +19,16 @@ private const val AUTH_CUSTOM_TAB_ACTIVITY_CLASS_NAME = "org.mozilla.fenix.setti
 private val FIREFOX_PACKAGE_NAME = MozillaProductDetector.MozillaProducts.FIREFOX.productName
 
 /**
- * The application ID of each Fenix build flavor (see app/build.gradle). The sync-auth check must
- * recognize the running build whichever flavor it is.
+ * The application ID of each Fenix build flavor (see app/build.gradle). The sync-auth check must recognize the running
+ * build whichever flavor it is.
  */
-private val BUILD_PACKAGE_NAMES = listOf(
-    "org.mozilla.fenix.debug", // debug
-    "org.mozilla.fenix", // nightly
-    "org.mozilla.firefox_beta", // beta
-    "org.mozilla.firefox", // release
-)
+private val BUILD_PACKAGE_NAMES =
+    listOf(
+        "org.mozilla.fenix.debug", // debug
+        "org.mozilla.fenix", // nightly
+        "org.mozilla.firefox_beta", // beta
+        "org.mozilla.firefox", // release
+    )
 
 @RunWith(RobolectricTestRunner::class)
 class AllowedDuringOnboardingIntentTest {
@@ -54,9 +55,10 @@ class AllowedDuringOnboardingIntentTest {
     @Test
     fun `WHEN the component package is the running build and the class is the sync-auth activity THEN it is allowed during onboarding for each build`() {
         BUILD_PACKAGE_NAMES.forEach { packageName ->
-            val intent = Intent().apply {
-                component = ComponentName(packageName, AUTH_CUSTOM_TAB_ACTIVITY_CLASS_NAME)
-            }
+            val intent =
+                Intent().apply {
+                    component = ComponentName(packageName, AUTH_CUSTOM_TAB_ACTIVITY_CLASS_NAME)
+                }
 
             assertTrue(intent.isAllowedDuringOnboardingIntent(packageName))
         }
@@ -64,28 +66,31 @@ class AllowedDuringOnboardingIntentTest {
 
     @Test
     fun `WHEN the component class is the sync-auth activity but the package is not the running build THEN it is not allowed during onboarding`() {
-        val intent = Intent().apply {
-            component = ComponentName("wrong package", AUTH_CUSTOM_TAB_ACTIVITY_CLASS_NAME)
-        }
+        val intent =
+            Intent().apply {
+                component = ComponentName("wrong package", AUTH_CUSTOM_TAB_ACTIVITY_CLASS_NAME)
+            }
 
         assertFalse(intent.isAllowedDuringOnboardingIntent(packageName = FIREFOX_PACKAGE_NAME))
     }
 
     @Test
     fun `WHEN the component package is the running build but the class is not the sync-auth activity THEN it is not allowed during onboarding`() {
-        val intent = Intent().apply {
-            component = ComponentName(FIREFOX_PACKAGE_NAME, "wrong class")
-        }
+        val intent =
+            Intent().apply {
+                component = ComponentName(FIREFOX_PACKAGE_NAME, "wrong class")
+            }
 
         assertFalse(intent.isAllowedDuringOnboardingIntent(packageName = FIREFOX_PACKAGE_NAME))
     }
 
     @Test
     fun `WHEN the sandbox custom tab extra is true and the component is not the sync-auth activity THEN it is still allowed during onboarding`() {
-        val intent = Intent().apply {
-            putExtra(EXTRA_IS_SANDBOX_CUSTOM_TAB, true)
-            component = ComponentName(FIREFOX_PACKAGE_NAME, "wrong class")
-        }
+        val intent =
+            Intent().apply {
+                putExtra(EXTRA_IS_SANDBOX_CUSTOM_TAB, true)
+                component = ComponentName(FIREFOX_PACKAGE_NAME, "wrong class")
+            }
 
         assertTrue(intent.isAllowedDuringOnboardingIntent(packageName = "unused"))
     }

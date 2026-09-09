@@ -20,6 +20,7 @@
 #include "mozilla/LateWriteChecks.h"
 #include "mozilla/PoisonIOInterposer.h"
 #include "mozilla/Printf.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/Services.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StartupTimeline.h"
@@ -358,6 +359,37 @@ bool AppShutdown::IsNoOrLegalShutdownTopic(const char* aTopic) {
 }
 #endif
 
+// AUTO_PROFILER_MARKER_TEXT only adds its marker once the scope ends, so a
+// profile dumped from inside that scope, as AsyncShutdown does when a blocker
+// times out, loses it. Emitting the two halves separately survives that.
+class MOZ_RAII AutoShutdownPhaseMarker {
+ public:
+  AutoShutdownPhaseMarker(const char* aMarkerName, const char* aPhaseName)
+      : mMarkerName(aMarkerName), mPhaseName(aPhaseName) {
+    if (profiler_is_active_and_unpaused()) {
+      Emit(MarkerTiming::IntervalStart());
+    }
+  }
+
+  ~AutoShutdownPhaseMarker() {
+    if (profiler_is_active_and_unpaused()) {
+      Emit(MarkerTiming::IntervalEnd());
+    }
+  }
+
+ private:
+  // Only to be called while the profiler is active, MarkerTiming's factories
+  // take a TimeStamp::Now unconditionally.
+  void Emit(MarkerTiming aTiming) {
+    PROFILER_MARKER_TEXT(
+        ProfilerString8View::WrapNullTerminatedString(mMarkerName), OTHER,
+        MarkerOptions(std::move(aTiming)), nsDependentCString(mPhaseName));
+  }
+
+  const char* mMarkerName;
+  const char* mPhaseName;
+};
+
 void AppShutdown::AdvanceShutdownPhaseInternal(
     ShutdownPhase aPhase, bool doNotify, const char16_t* aNotificationData,
     const nsCOMPtr<nsISupports>& aNotificationSubject) {
@@ -376,6 +408,9 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
   if (sCurrentShutdownPhase >= aPhase) {
     return;
   }
+
+  const char* phaseName = AppShutdown::GetShutdownPhaseName(aPhase);
+  AutoShutdownPhaseMarker phaseMarker("AdvanceShutdownPhase", phaseName);
 
   // In case we missed the earlier Init (in the parent) or notification (in
   // content processes), we ensure the flag is set from now.
@@ -406,6 +441,7 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
   // way of ensuring shutdown processing remains to have an async shutdown
   // blocker.
   if (mayProcessPending && thread) {
+    AutoShutdownPhaseMarker drainMarker("ShutdownDrainBeforePhase", phaseName);
     NS_ProcessPendingEvents(thread);
   }
 
@@ -424,10 +460,15 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
   // Note that we keep the old order here to avoid breakage, so be aware that
   // the notifications fired below will find these already cleared in case
   // you expected the opposite.
-  mozilla::KillClearOnShutdown(aPhase);
+  {
+    AutoShutdownPhaseMarker killMarker("KillClearOnShutdown", phaseName);
+    mozilla::KillClearOnShutdown(aPhase);
+  }
 
   // Empty our MT event queue to process any side effects thereof.
   if (mayProcessPending && thread) {
+    AutoShutdownPhaseMarker drainMarker("ShutdownDrainAfterKillClearOnShutdown",
+                                        phaseName);
     NS_ProcessPendingEvents(thread);
   }
 
@@ -441,10 +482,18 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
         sNotifyingShutdownObservers = true;
         auto reset = MakeScopeExit([] { sNotifyingShutdownObservers = false; });
 #endif
-        obsService->NotifyObservers(aNotificationSubject, aTopic,
-                                    aNotificationData);
+        {
+          // nsObserverService emits its own marker with the topic, but that
+          // one is scope bound and vanishes if we hang in here.
+          AutoShutdownPhaseMarker notifyMarker("ShutdownNotifyObservers",
+                                               phaseName);
+          obsService->NotifyObservers(aNotificationSubject, aTopic,
+                                      aNotificationData);
+        }
         // Empty our MT event queue again after the notification has finished
         if (mayProcessPending && thread) {
+          AutoShutdownPhaseMarker drainMarker("ShutdownDrainAfterNotification",
+                                              phaseName);
           NS_ProcessPendingEvents(thread);
         }
       }

@@ -183,6 +183,7 @@ PREPROCESSED_IPDL_SOURCES += [
     "PBrowser.ipdl",
     "PBrowserBridge.ipdl",
     "PContent.ipdl",
+    "PWindowGlobal.ipdl",
 ]
 
 IPDL_SOURCES += [
@@ -208,7 +209,6 @@ IPDL_SOURCES += [
     "PURLClassifierLocal.ipdl",
     "PURLClassifierLocalByName.ipdl",
     "PVsync.ipdl",
-    "PWindowGlobal.ipdl",
     "ServiceWorkerConfiguration.ipdlh",
     "WindowGlobalTypes.ipdlh",
 ]

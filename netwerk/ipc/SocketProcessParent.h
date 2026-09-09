@@ -81,10 +81,12 @@ class SocketProcessParent final
   already_AddRefed<PAltServiceParent> AllocPAltServiceParent();
 
   already_AddRefed<PProxyConfigLookupParent> AllocPProxyConfigLookupParent(
-      nsIURI* aURI, const uint32_t& aProxyResolveFlags);
+      nsIURI* aURI, const uint32_t& aProxyResolveFlags,
+      const bool& aIsTRRServiceChannel);
   mozilla::ipc::IPCResult RecvPProxyConfigLookupConstructor(
       PProxyConfigLookupParent* aActor, nsIURI* aURI,
-      const uint32_t& aProxyResolveFlags) override;
+      const uint32_t& aProxyResolveFlags,
+      const bool& aIsTRRServiceChannel) override;
 
   mozilla::ipc::IPCResult RecvExcludeHttp2OrHttp3(
       const HttpConnectionInfoCloneArgs& aArgs);

@@ -45,7 +45,7 @@ TEST_F(Pkcs11ModuleTest, ListSlots) {
       PK11_GetAllTokens(CKM_INVALID_MECHANISM, PR_FALSE, PR_FALSE, nullptr));
   ASSERT_NE(nullptr, slots);
 
-  PK11SlotListElement *element = PK11_GetFirstSafe(slots.get());
+  PK11SlotListElement* element = PK11_GetFirstSafe(slots.get());
   ASSERT_NE(nullptr, element);
 
   // These tokens are always present.
@@ -90,8 +90,8 @@ TEST_F(Pkcs11ModuleTest, PublicCertificatesTokenLookup) {
   EXPECT_NE(nullptr, certsByUrl.get());
 
   size_t count = 0;
-  CERTCertificate *certByUrl = nullptr;
-  for (CERTCertListNode *node = CERT_LIST_HEAD(certsByUrl);
+  CERTCertificate* certByUrl = nullptr;
+  for (CERTCertListNode* node = CERT_LIST_HEAD(certsByUrl);
        !CERT_LIST_END(node, certsByUrl); node = CERT_LIST_NEXT(node)) {
     if (count == 0) {
       certByUrl = node->cert;
@@ -164,7 +164,7 @@ class Pkcs11ModuleLoadFunctionTest : public ::testing::Test {
       PR_UnloadLibrary(library);
     }
   }
-  PRLibrary *library;
+  PRLibrary* library;
 };
 
 CK_RV NotSuppoted_GetFunctionList(CK_FUNCTION_LIST_PTR_PTR ppFunctionList) {
@@ -222,12 +222,12 @@ TEST_F(Pkcs11ModuleLoadFunctionTest, SuccessLoadModuleWithFunction) {
   EXPECT_EQ(info.cryptokiVersion.major, expectedCryptokiVersion.major);
 
   EXPECT_EQ(
-      0, PORT_Memcmp((char *)info.manufacturerID, "Test PKCS11 Manufacturer ID",
+      0, PORT_Memcmp((char*)info.manufacturerID, "Test PKCS11 Manufacturer ID",
                      sizeof("Test PKCS11 Manufacturer ID") - 1));
   EXPECT_EQ(info.flags, 0UL);
 
   EXPECT_EQ(0,
-            PORT_Memcmp((char *)info.libraryDescription, "Test PKCS11 Library",
+            PORT_Memcmp((char*)info.libraryDescription, "Test PKCS11 Library",
                         sizeof("Test PKCS11 Library") - 1));
   EXPECT_EQ(info.libraryVersion.minor, expectedLibraryVersion.minor);
   EXPECT_EQ(info.libraryVersion.major, expectedLibraryVersion.major);

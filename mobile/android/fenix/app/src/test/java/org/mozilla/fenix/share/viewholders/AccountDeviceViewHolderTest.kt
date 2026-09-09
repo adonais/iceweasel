@@ -24,16 +24,17 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class AccountDeviceViewHolderTest {
 
-    private val baseDevice = Device(
-        id = "",
-        displayName = "",
-        deviceType = DeviceType.UNKNOWN,
-        isCurrentDevice = true,
-        lastAccessTime = 0L,
-        capabilities = emptyList(),
-        subscriptionExpired = false,
-        subscription = null,
-    )
+    private val baseDevice =
+        Device(
+            id = "",
+            displayName = "",
+            deviceType = DeviceType.UNKNOWN,
+            isCurrentDevice = true,
+            lastAccessTime = 0L,
+            capabilities = emptyList(),
+            subscriptionExpired = false,
+            subscription = null,
+        )
     private lateinit var binding: AccountShareListItemBinding
     private lateinit var viewHolder: AccountDeviceViewHolder
     private lateinit var interactor: ShareToAccountDevicesInteractor
@@ -99,10 +100,11 @@ class AccountDeviceViewHolderTest {
 
     @Test
     fun `bind mobile SingleDevice option`() {
-        val device = baseDevice.copy(
-            deviceType = DeviceType.MOBILE,
-            displayName = "Mobile",
-        )
+        val device =
+            baseDevice.copy(
+                deviceType = DeviceType.MOBILE,
+                displayName = "Mobile",
+            )
         viewHolder.bind(SyncShareOption.SingleDevice(device))
         assertEquals("Mobile", binding.deviceName.text)
 
@@ -113,10 +115,11 @@ class AccountDeviceViewHolderTest {
 
     @Test
     fun `bind desktop SingleDevice option`() {
-        val device = baseDevice.copy(
-            deviceType = DeviceType.DESKTOP,
-            displayName = "Desktop",
-        )
+        val device =
+            baseDevice.copy(
+                deviceType = DeviceType.DESKTOP,
+                displayName = "Desktop",
+            )
         viewHolder.bind(SyncShareOption.SingleDevice(device))
         assertEquals("Desktop", binding.deviceName.text)
 

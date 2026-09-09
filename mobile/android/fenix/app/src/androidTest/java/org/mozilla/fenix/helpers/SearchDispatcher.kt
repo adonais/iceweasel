@@ -7,22 +7,22 @@ package org.mozilla.fenix.helpers
 import android.os.Handler
 import android.os.Looper
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.IOException
 import mockwebserver3.Dispatcher
 import mockwebserver3.MockResponse
 import mockwebserver3.RecordedRequest
 import okio.Buffer
 import okio.source
-import java.io.IOException
 
 private const val HTTP_OK = 200
 private const val HTTP_NOT_FOUND = 404
 
 /**
- * A [MockWebServer] [Dispatcher] that will return a generic search results page in the body of
- * requests and responds with status 200.
+ * A [MockWebServer] [Dispatcher] that will return a generic search results page in the body of requests and responds
+ * with status 200.
  *
- * If the dispatcher is unable to read a requested asset, it will fail the test by throwing an
- * Exception on the main thread.
+ * If the dispatcher is unable to read a requested asset, it will fail the test by throwing an Exception on the main
+ * thread.
  *
  * @see SearchMockServerRule
  */

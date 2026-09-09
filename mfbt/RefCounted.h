@@ -193,7 +193,7 @@ class RC<T, AtomicRefCount> {
       // TSan doesn't understand std::atomic_thread_fence, so in order
       // to avoid a false positive for every time a refcounted object
       // is deleted, we replace the fence with an atomic operation.
-      mValue.load(std::memory_order_acquire);
+      (void)mValue.load(std::memory_order_acquire);
 #else
       std::atomic_thread_fence(std::memory_order_acquire);
 #endif

@@ -13,8 +13,8 @@ private const val KEY_ATTRIBUTE_NAME = "key"
 private const val SWITCH_PREFERENCE_TAG = "SwitchPreferenceCompat"
 
 /**
- * Parses [R.xml.secret_settings_preferences] and returns the list of preference keys for every
- * switch preference declared in the secret settings screen.
+ * Parses [R.xml.secret_settings_preferences] and returns the list of preference keys for every switch preference
+ * declared in the secret settings screen.
  *
  * @param resources [Resources] used to read the preference XML.
  */

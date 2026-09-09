@@ -59,8 +59,9 @@ class ContentProcessController final : public GeckoContentController {
                             APZStateChange aChange, int aArg,
                             Maybe<uint64_t> aInputBlockId) override;
 
-  void NotifyMozMouseScrollEvent(const ScrollableLayerGuid::ViewID& aScrollId,
-                                 const nsString& aEvent) override;
+  MOZ_CAN_RUN_SCRIPT void NotifyMozMouseScrollEvent(
+      const ScrollableLayerGuid::ViewID& aScrollId,
+      const nsString& aEvent) override;
 
   void NotifyFlushComplete() override;
 

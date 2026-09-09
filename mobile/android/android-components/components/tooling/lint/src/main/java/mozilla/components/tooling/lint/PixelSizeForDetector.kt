@@ -16,29 +16,33 @@ import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UCallExpression
 
 /**
- * Detects usage of `resources.getDimensionPixelSize()` and suggests replacing it with the
- * `pixelSizeFor()` extension on `Context`, `View`, or `Fragment`.
+ * Detects usage of `resources.getDimensionPixelSize()` and suggests replacing it with the `pixelSizeFor()` extension on
+ * `Context`, `View`, or `Fragment`.
  */
 class PixelSizeForDetector : Detector(), SourceCodeScanner {
     companion object {
-        private val Implementation = Implementation(
-            PixelSizeForDetector::class.java,
-            Scope.JAVA_FILE_SCOPE,
-        )
+        private val Implementation =
+            Implementation(
+                PixelSizeForDetector::class.java,
+                Scope.JAVA_FILE_SCOPE,
+            )
 
         @JvmField
-        val ISSUE_USE_PIXEL_SIZE_FOR = create(
-            id = "Resources.GetDimensionPixelSizeInsteadOfPixelSizeFor",
-            briefDescription = "Use pixelSizeFor() instead of resources.getDimensionPixelSize()",
-            explanation = """
-                `pixelSizeFor()` is an extension on `Context`, `View`, and `Fragment` \
-                that wraps `resources.getDimensionPixelSize(...)`.
-            """.trimIndent(),
-            category = Category.PRODUCTIVITY,
-            priority = 6,
-            severity = Severity.WARNING,
-            implementation = Implementation,
-        )
+        val ISSUE_USE_PIXEL_SIZE_FOR =
+            create(
+                id = "Resources.GetDimensionPixelSizeInsteadOfPixelSizeFor",
+                briefDescription = "Use pixelSizeFor() instead of resources.getDimensionPixelSize()",
+                explanation =
+                    """
+                    `pixelSizeFor()` is an extension on `Context`, `View`, and `Fragment` \
+                    that wraps `resources.getDimensionPixelSize(...)`.
+                    """
+                        .trimIndent(),
+                category = Category.PRODUCTIVITY,
+                priority = 6,
+                severity = Severity.WARNING,
+                implementation = Implementation,
+            )
     }
 
     override fun getApplicableMethodNames(): List<String> = listOf("getDimensionPixelSize")

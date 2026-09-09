@@ -368,6 +368,7 @@ var SidebarController = {
   _windowRestoredObserverAdded: false,
   _mainResizeObserver: null,
   _ongoingAnimations: [],
+  _collapsedWidthMeasurementID: 0,
 
   /**
    * @type {MutationObserver | null}
@@ -710,8 +711,8 @@ var SidebarController = {
     if (this.isLauncherDragging) {
       this._state.launcherDragActive = true;
     }
-    if (this._state.visibilitySetting === "expand-on-hover") {
-      this.setLauncherCollapsedWidth();
+    if (this._launcherCollapsedWidthStale) {
+      this.refreshLauncherCollapsedWidth();
     }
   },
 
@@ -732,7 +733,14 @@ var SidebarController = {
   async _updateLauncherAndPanelMaxWidths() {
     const launcherEl = this.sidebarContainer;
     const panelEl = this._box;
-    if (!this._state.launcherExpanded || !this._state.panelOpen) {
+    const expandOnHoverEnabled = document.documentElement.hasAttribute(
+      "sidebar-expand-on-hover"
+    );
+    if (
+      expandOnHoverEnabled ||
+      !this._state.launcherExpanded ||
+      !this._state.panelOpen
+    ) {
       // We don't have both the launcher + panel open. Fallback to css max widths.
       launcherEl.style.removeProperty("max-width");
       panelEl.style.removeProperty("max-width");
@@ -1407,8 +1415,6 @@ var SidebarController = {
     let animations = [];
     let sidebarOnLeft = this._positionStart != RTL_UI;
     let sidebarShift = 0;
-    let novaTranslate = 0;
-    const novaMode = Services.prefs.getBoolPref("browser.nova.enabled", false);
     // In horizontal "hide sidebar" mode the launcher stays hidden, so the panel
     // box is the element that slides in/out and should drive the slide
     // animation in place of the (hidden) launcher.
@@ -1454,59 +1460,8 @@ var SidebarController = {
         el.style.display = "flex";
       }
 
-      // Before nova, the sidebar would "shrink" by sliding partly out of view,
-      // and only after this animation was done would the width actually
-      // change. With nova's floating chrome, this trick is visually apparent.
-      // In nova mode, we animate the sidebar's apparent width with clip-path
-      // which is a performant alternative to actually animating the width.
-      if (novaMode) {
-        if (isSidebar) {
-          novaTranslate = sidebarOnLeft
-            ? -(to.width - from.width)
-            : to.width - from.width;
-          // For collapsing, hold the sidebar at from-width so clip-path has
-          // content to clip. Negative margin keeps flex contribution at to-width.
-          if (widthGrowth < 0) {
-            el.style.minWidth = el.style.maxWidth = from.width + "px";
-            el.style["margin-" + (sidebarOnLeft ? "right" : "left")] =
-              widthGrowth + "px";
-          }
-          const clipAmount = Math.abs(widthGrowth);
-          const fromClip = sidebarOnLeft
-            ? `inset(0 ${widthGrowth > 0 ? clipAmount : 0}px 0 0)`
-            : `inset(0 0 0 ${widthGrowth > 0 ? clipAmount : 0}px)`;
-          const toClip = sidebarOnLeft
-            ? `inset(0 ${widthGrowth < 0 ? clipAmount : 0}px 0 0)`
-            : `inset(0 0 0 ${widthGrowth < 0 ? clipAmount : 0}px)`;
-          animations.push(
-            el.animate([{ clipPath: fromClip }, { clipPath: toClip }], options)
-          );
-
-          // When sidebar is on the right, content is left-aligned but the clip
-          // moves from the left. Counter-translate the inner element rightward to
-          // keep it in the visible area.
-          if (!sidebarOnLeft && clipAmount > 0) {
-            animations.push(
-              this.sidebarMain.animate(
-                [
-                  { translate: `${widthGrowth > 0 ? clipAmount : 0}px 0 0` },
-                  { translate: `${widthGrowth < 0 ? clipAmount : 0}px 0 0` },
-                ],
-                options
-              )
-            );
-          }
-        } else {
-          animations.push(
-            el.animate(
-              [{ translate: `${novaTranslate}px 0 0` }, { translate: "0" }],
-              options
-            )
-          );
-        }
-        continue;
-      }
-
+      // Only `translate` is animated, so every frame stays on the compositor.
+      // The widths and margins are set once, for the animation's duration.
       if (widthGrowth < 0) {
         el.style.minWidth = el.style.maxWidth = from.width + "px";
         el.style["margin-" + (sidebarOnLeft ? "right" : "left")] =
@@ -1539,8 +1494,8 @@ var SidebarController = {
       if (!isSidebar || !this._positionStart || launcherHidden) {
         continue;
       }
-      // We want to keep the buttons in place during the animation, for which
-      // we might need to compensate.
+      // We need to compensate to keep the buttons in place when the sidebar is
+      // on the left.
       if (!this._state.launcherExpanded) {
         animations.push(
           this.sidebarMain.animate(
@@ -2696,17 +2651,53 @@ var SidebarController = {
     return this._mouseEnterDeferred?.promise || Promise.resolve();
   },
 
+  refreshLauncherCollapsedWidth() {
+    if (
+      !document.documentElement.hasAttribute("sidebar-expand-on-hover") ||
+      !this._state
+    ) {
+      this._launcherCollapsedWidthStale = false;
+      return;
+    }
+    if (this.getUIState()?.launcherExpanded) {
+      this._launcherCollapsedWidthStale = true;
+      return;
+    }
+    this._launcherCollapsedWidthStale = false;
+    this.setLauncherCollapsedWidth();
+  },
+
+  /**
+   * Record the launcher's collapsed width, which the content area's
+   * compensating margins are derived from while the launcher is expanded and
+   * therefore out of flow.
+   *
+   * The resize observer that drives this watches #sidebar-container, so a burst
+   * of resizes (e.g. a uidensity change) starts several overlapping
+   * runs, with each awaiting before measuring. Unless every run checks that
+   * it is still the most recent one, they can resolve out of order and leave a
+   * stale width recorded.
+   */
   async setLauncherCollapsedWidth() {
     let browserEl = document.getElementById("browser");
+    const measurementID = ++this._collapsedWidthMeasurementID;
     if (this.getUIState().launcherExpanded) {
       this._state.launcherExpanded = false;
     }
     await this.waitUntilStable();
-    let collapsedWidth = await new Promise(resolve => {
-      requestAnimationFrame(() => {
-        resolve(this._getRects([this.sidebarContainer])[0][1].width);
-      });
-    });
+    let collapsedWidth = await window.promiseDocumentFlushed(
+      () => this._getRects([this.sidebarContainer])[0][1].width
+    );
+
+    if (measurementID !== this._collapsedWidthMeasurementID) {
+      // A later run superseded us while we were waiting.
+      return;
+    }
+    if (this._state.launcherExpanded) {
+      // The launcher expanded again while we were waiting, so what we just
+      // measured isn't a collapsed width.
+      return;
+    }
 
     browserEl.style.setProperty(
       "--sidebar-launcher-collapsed-width",
@@ -2743,6 +2734,9 @@ var SidebarController = {
           this._reconcileHoverState();
         }
         break;
+      case "uidensitychanged":
+        this.refreshLauncherCollapsedWidth();
+        break;
       default:
         break;
     }
@@ -2764,6 +2758,7 @@ var SidebarController = {
       }
       document.addEventListener("popupshown", this);
       document.addEventListener("popuphidden", this);
+      window.addEventListener("uidensitychanged", this);
       // Reset user-preferred height
       this.sidebarMain.buttonsWrapper.style.height = this._state
         .launcherExpanded
@@ -2777,6 +2772,8 @@ var SidebarController = {
       }
       document.removeEventListener("popupshown", this);
       document.removeEventListener("popuphidden", this);
+      window.removeEventListener("uidensitychanged", this);
+      this._launcherCollapsedWidthStale = false;
       // Add back user-preferred height if defined
       if (
         this._state.launcherExpanded &&

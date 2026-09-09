@@ -11,7 +11,8 @@
     <string name="mozac_feature_ipprotection_servicestatus">serviceStatus</string>
     <string name="mozac_feature_ipprotection_lasterror">lastError</string>
     <string name="mozac_feature_ipprotection_vpn_ui">VPN UI</string>
-    <string name="mozac_feature_ipprotection_activate">activated</string>
+    <string name="mozac_feature_ipprotection_activation_state">activation state</string>
+    <string name="mozac_feature_ipprotection_selected_location_code">location code</string>
     <string name="mozac_feature_ipprotection_data_usage">Data usage</string>
     <string name="mozac_feature_ipprotection_remainingdatabytes">remainingDataBytes</string>
     <string name="mozac_feature_ipprotection_maxdatabytes">maxDataBytes</string>

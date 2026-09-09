@@ -44,6 +44,8 @@ max_line_length = 100
 indent_style = space
 indent_size = 4
 max_line_length = 120
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
 
 [*.{html,xhtml,htm,xml,xul,svg}]
 indent_style = space

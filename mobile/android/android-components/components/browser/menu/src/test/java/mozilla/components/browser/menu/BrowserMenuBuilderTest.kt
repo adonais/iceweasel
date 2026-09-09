@@ -8,11 +8,11 @@ import android.view.View
 import android.widget.ImageButton
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class BrowserMenuBuilderTest {
@@ -34,11 +34,12 @@ class BrowserMenuBuilderTest {
         assertEquals(2, recyclerAdapter.itemCount)
     }
 
-    private fun mockMenuItem() = object : BrowserMenuItem {
-        override val visible: () -> Boolean = { true }
+    private fun mockMenuItem() =
+        object : BrowserMenuItem {
+            override val visible: () -> Boolean = { true }
 
-        override fun getLayoutResource() = R.layout.mozac_browser_menu_item_simple
+            override fun getLayoutResource() = R.layout.mozac_browser_menu_item_simple
 
-        override fun bind(menu: BrowserMenu, view: View) {}
-    }
+            override fun bind(menu: BrowserMenu, view: View) {}
+        }
 }

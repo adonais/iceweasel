@@ -19,6 +19,7 @@
 #include "nsPIDOMWindow.h"
 #include "nsStubAnimationObserver.h"
 #include "nsTArray.h"
+#include "nsTHashMap.h"
 #include "nsWrapperCache.h"
 
 class nsIPrincipal;
@@ -505,7 +506,7 @@ class nsDOMMutationObserver final : public nsISupports, public nsWrapperCache {
   friend class nsAutoAnimationMutationBatch;
   nsMutationReceiver* GetReceiverFor(nsINode* aNode, bool aMayCreate,
                                      bool aWantsAnimations);
-  void RemoveReceiver(nsMutationReceiver* aReceiver);
+  void RemoveReceiver(nsINode* aTarget, nsMutationReceiver* aReceiver);
 
   void GetAllSubtreeObserversFor(nsINode* aNode,
                                  nsTArray<nsMutationReceiver*>& aObservers);
@@ -528,6 +529,9 @@ class nsDOMMutationObserver final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsPIDOMWindowInner> mOwner;
 
   nsCOMArray<nsMutationReceiver> mReceivers;
+  // Fast lookup index for mReceivers. Values are weak pointers; mReceivers
+  // retains ownership.
+  nsTHashMap<nsINode*, nsMutationReceiver*> mReceiverMap;
   nsClassHashtable<nsISupportsHashKey, nsCOMArray<nsMutationReceiver>>
       mTransientReceivers;
   // MutationRecords which are being constructed.

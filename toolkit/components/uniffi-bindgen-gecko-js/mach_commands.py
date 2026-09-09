@@ -62,6 +62,7 @@ def build_uniffi_targets(command_context):
             sys.executable,
             mach_path,
             "build",
+            "--no-completion-messages",
             "pre-export",
             "export",
             "recurse_uniffi-target",
@@ -186,12 +187,11 @@ def generate_android(command_context, uniffi_targets):
         for p, f in FileFinder(source_base).find("**"):
             copier.add(mozpath.join(target_base, p), f)
 
-    copier.copy(
-        mozpath.join(
-            command_context.topsrcdir,
-            "toolkit/components/uniffi-bindgen-gecko-js/android",
-        ),
-    )
+    android_reldir = "toolkit/components/uniffi-bindgen-gecko-js/android"
+    copier.copy(mozpath.join(command_context.topsrcdir, android_reldir))
+
+    for p in sorted(copier.paths()):
+        print(f"Generated: {android_reldir}/{p}")
 
 
 @Command(
@@ -232,6 +232,13 @@ def generate_command(command_context):
     subprocess.check_call(cmdline, cwd=command_context.topsrcdir)
 
     generate_android(command_context, uniffi_targets)
+
+    command_context.log(
+        logging.INFO,
+        "uniffi-generate",
+        {},
+        "UniFFI bindings generated successfully.",
+    )
 
     return 0
 

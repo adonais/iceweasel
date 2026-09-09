@@ -23,7 +23,10 @@ add_task(async function test_measure() {
   const EXPECTED_KILOBYTES_FOR_EXTENSION_DATA = 100;
   const EXPECTED_KILOBYTES_FOR_EXTENSIONS_STORAGE = 200;
 
-  let tempDir = PathUtils.tempDir;
+  let tempDir = await IOUtils.createUniqueDirectory(
+    PathUtils.tempDir,
+    "AddonsBackupResource-measure-test"
+  );
 
   // Create extensions json files (all the same size).
   const extensionsFilePath = PathUtils.join(tempDir, "extensions.json");
@@ -223,7 +226,10 @@ add_task(async function test_measure() {
 add_task(async function test_measure_missing_data() {
   Services.fog.testResetFOG();
 
-  let tempDir = PathUtils.tempDir;
+  let tempDir = await IOUtils.createUniqueDirectory(
+    PathUtils.tempDir,
+    "AddonsBackupResource-missing-data-test"
+  );
 
   let extensionsBackupResource = new AddonsBackupResource();
   await extensionsBackupResource.measure(tempDir);

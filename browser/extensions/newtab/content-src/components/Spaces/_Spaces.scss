@@ -1,0 +1,226 @@
+// Spaces (Bug 2061742). The content band becomes navigable panels: the active
+// space is in flow, the rest are translated out of the track.
+// Slack between spaces, so the track can clip a little wider than its content
+// without an offscreen space showing through. Must stay larger than the
+// track's overflow-clip-margin.
+$space-gap: 16px;
+
+.nova-enabled .content-full-width.spaces {
+  // The frame's ::before bleeds --space-medium outward, so both margins lose
+  // that much before they clear anything. The start only has to clear the
+  // shortcuts; the end is against the bottom of the page and wants a gap.
+  margin-block-start: var(--space-large);
+  margin-block-end: var(--space-xxlarge);
+
+  .spaces-container {
+    grid-column: 1 / -1;
+
+    // Column flex so the frame can centre itself with align-self.
+    display: flex;
+    flex-direction: column;
+  }
+
+  // A definite width, in card units: auto-fill collapses to one repetition
+  // without one. Same ladder as side-by-side.
+  .spaces-frame {
+    align-self: center;
+
+    /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+    inline-size: --col-span(4);
+
+    @include at-band-cols(8) {
+      inline-size: --col-span(8);
+    }
+
+    @include at-band-cols(12) {
+      inline-size: --col-span(12);
+    }
+
+    @include at-band-cols(16) {
+      inline-size: --col-span(16);
+    }
+    /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
+
+    @include layout-panel;
+  }
+
+  // The frame's padding is the whole inset; the headings' margin doubles it.
+  :is(.widgets-title-container, .section-heading, .ds-highlights-title) {
+    margin-block-start: 0;
+  }
+
+  .spaces-track {
+    position: relative;
+    display: grid;
+    grid-template-areas: 'space';
+
+    // Load-bearing for telemetry: clipping is what keeps offscreen spaces from
+    // reporting impressions. clip rather than hidden so the box can be widened
+    // for a focus ring on a card at the panel edge. Must stay smaller than
+    // $space-gap, or the next space shows through.
+    overflow: clip;
+    overflow-clip-margin: calc(
+      var(--focus-outline-width) + var(--focus-outline-offset)
+    );
+  }
+
+  .space {
+    grid-area: space;
+
+    // Offset in whole spaces, set inline per space. Flipped for RTL here
+    // rather than in JS, so nothing has to read the computed direction during
+    // render -- the startup cache renders without a window.
+    translate: calc(var(--space-offset) * (100% + #{$space-gap}));
+
+    &:dir(rtl) {
+      translate: calc(var(--space-offset) * -1 * (100% + #{$space-gap}));
+    }
+
+    // Out of flow, so the band's height follows the active space.
+    &:not(.active) {
+      position: absolute;
+      inset-block-start: 0;
+      inset-inline-start: 0;
+      inline-size: 100%;
+    }
+  }
+
+  // .animate is added after first render, so the prerendered page does not slide.
+  .spaces-track.animate .space {
+    transition: translate 250ms ease-out;
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+
+  .spaces-tablist {
+    display: flex;
+    gap: var(--space-small);
+    justify-content: center;
+    inline-size: fit-content;
+    margin-inline: auto;
+    padding: var(--space-small);
+    background-color: var(--newtab-background-color-secondary);
+    border: var(--border-width) solid var(--border-color-selected);
+    border-radius: var(--border-radius-circle);
+  }
+
+  .spaces-tab {
+    display: flex;
+    align-items: center;
+    gap: var(--space-small);
+    padding-block: var(--space-small);
+    padding-inline: var(--space-medium);
+    min-block-size: var(--button-min-height);
+    background-color: transparent;
+    border: 0;
+    border-radius: var(--border-radius-circle);
+    color: inherit;
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--button-background-color-hover);
+    }
+
+    &:focus-visible {
+      outline: var(--focus-outline);
+    }
+
+    &.active {
+      background-color: var(--button-background-color-primary);
+      color: var(--button-text-color-primary);
+    }
+  }
+
+  .spaces-tab-icon {
+    -moz-context-properties: fill;
+    fill: currentColor;
+    inline-size: var(--icon-size-medium);
+    block-size: var(--icon-size-medium);
+  }
+
+  // Fixed, not sticky: sticky clamps to the container, stranding the control at
+  // the foot of a short space.
+  &.spaces-buttons-bottom .spaces-tablist-slot {
+    position: fixed;
+    inset-block-end: var(--space-large);
+    inset-inline: 0;
+    z-index: 1;
+
+    // --panel-box-shadow's blur substitutes from :root, so it cannot be widened
+    // here. Design's value, spelled out.
+    .spaces-tablist {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      box-shadow: 0 0 20px 0 hsla(0deg, 0%, 0%, 20%);
+    }
+  }
+
+  &.spaces-buttons-top {
+    .spaces-tablist-slot {
+      position: absolute;
+      inset-block-start: 0;
+      inset-inline-end: 0;
+      z-index: 1;
+    }
+
+    // 4px around a 24px chip. The tab's own padding goes too, or the line-box
+    // pushes past 24px.
+    .spaces-tablist {
+      padding-block: var(--space-xsmall);
+    }
+
+    // Below a 12-column frame the labelled control leaves no room for the
+    // section title beside it, so the tabs go icons-only. Hidden rather than
+    // removed, so each tab keeps its accessible name.
+    .spaces-tab span {
+      clip-path: inset(50%);
+      block-size: 1px;
+      inline-size: 1px;
+      overflow: hidden;
+      position: absolute;
+      white-space: nowrap;
+
+      @include at-band-cols(12) {
+        clip-path: none;
+        block-size: auto;
+        inline-size: auto;
+        overflow: visible;
+        position: static;
+      }
+    }
+
+    .spaces-tab {
+      gap: 0;
+      padding-inline: var(--space-small);
+
+      @include at-band-cols(12) {
+        gap: var(--space-small);
+        padding-inline: var(--space-medium);
+      }
+    }
+
+    .spaces-tab {
+      padding-block: 0;
+      min-block-size: var(--size-item-medium);
+    }
+
+    // On the panel rather than floating over content, so: quiet border.
+    .spaces-tablist {
+      border-color: var(--card-border-color);
+    }
+
+    // The control is absolutely positioned, so a shorter heading lets content
+    // slide under it.
+    :is(.section-heading, .widgets-title-container, .ds-highlights-title) {
+      min-block-size: calc(var(--button-min-height) + 2 * var(--border-width));
+    }
+
+    // The control holds the right end, so the menu comes in beside the title.
+    .section-heading {
+      justify-content: flex-start;
+      gap: var(--space-small);
+    }
+  }
+}

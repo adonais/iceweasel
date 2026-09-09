@@ -20,14 +20,10 @@ import org.mozilla.experiments.nimbus.internal.PrefBranch
 
 private val logger = Logger("service/Nimbus/GeckoPrefHandlerExt")
 
-/**
- * Helper method to obtain the underlying Gecko preference's string name
- */
+/** Helper method to obtain the underlying Gecko preference's string name */
 fun GeckoPrefState.prefString(): String = this.geckoPref.pref
 
-/**
- * Helper method to obtain the underlying Gecko preference's branch name
- */
+/** Helper method to obtain the underlying Gecko preference's branch name */
 fun GeckoPrefState.branch(): PrefBranch = this.geckoPref.branch
 
 /**
@@ -43,8 +39,8 @@ fun PrefBranch.toBrowserPrefBranch(): Branch {
 }
 
 /**
- * Helper method to iterate through a list of [GeckoPrefState] instances and obtain the instance
- * with the provided preference string name, if it exists.
+ * Helper method to iterate through a list of [GeckoPrefState] instances and obtain the instance with the provided
+ * preference string name, if it exists.
  *
  * @param prefString: The preference string name for which to search
  * @return The [GeckoPrefState] matching the `prefString`, if it exists
@@ -57,6 +53,7 @@ fun List<GeckoPrefState>.findByPrefString(prefString: String): GeckoPrefState? {
 
 /**
  * Helper method to correctly parse experiment preference string values.
+ *
  * @throws JSONException
  */
 @VisibleForTesting
@@ -67,6 +64,7 @@ internal fun String.fromJsonStringValue(): String {
 
 /**
  * Convenience method for converting an [OriginalGeckoPref] into a settable Gecko preference.
+ *
  * @param originalGeckoPref An original preference object to convert to a [SetBrowserPreference].
  * @param setType The confirmed Gecko stated preference type.
  * @return A [SetBrowserPreference] object, if possible, else throw.
@@ -80,38 +78,36 @@ fun createPrefSetter(originalGeckoPref: OriginalGeckoPref, setType: BrowserPrefT
 
     return when (setType) {
         BrowserPrefType.INT -> {
-                setIntPref(
-                    originalGeckoPref.pref,
-                    originalValue.toInt(),
-                    originalGeckoPref.branch.toBrowserPrefBranch(),
-                )
+            setIntPref(
+                originalGeckoPref.pref,
+                originalValue.toInt(),
+                originalGeckoPref.branch.toBrowserPrefBranch(),
+            )
         }
         BrowserPrefType.BOOL -> {
-                setBoolPref(
-                    originalGeckoPref.pref,
-                    originalValue.toBooleanStrict(),
-                    originalGeckoPref.branch.toBrowserPrefBranch(),
-                )
+            setBoolPref(
+                originalGeckoPref.pref,
+                originalValue.toBooleanStrict(),
+                originalGeckoPref.branch.toBrowserPrefBranch(),
+            )
         }
         BrowserPrefType.STRING -> {
-                setStringPref(
-                    originalGeckoPref.pref,
-                    originalValue.fromJsonStringValue(),
-                    originalGeckoPref.branch.toBrowserPrefBranch(),
-                )
+            setStringPref(
+                originalGeckoPref.pref,
+                originalValue.fromJsonStringValue(),
+                originalGeckoPref.branch.toBrowserPrefBranch(),
+            )
         }
         else -> {
-            logger.error(
-                "${originalGeckoPref.pref} of $setType does not match any known Gecko preference type.",
-            )
+            logger.error("${originalGeckoPref.pref} of $setType does not match any known Gecko preference type.")
             throw IllegalStateException("Unknown Gecko preference type!")
         }
     }
 }
 
 /**
- * Convenience method for converting an [GeckoPrefState] into a settable Gecko preference for
- * enrollment values.
+ * Convenience method for converting an [GeckoPrefState] into a settable Gecko preference for enrollment values.
+ *
  * @param geckoPrefState An original preference object to convert to a [SetBrowserPreference].
  * @param setType The confirmed Gecko stated preference type.
  * @return A [SetBrowserPreference] object, if possible, else throw (related to parsing issues).
@@ -125,30 +121,28 @@ fun createPrefSetter(geckoPrefState: GeckoPrefState, setType: BrowserPrefType?):
 
     return when (setType) {
         BrowserPrefType.INT -> {
-                setIntPref(
-                    geckoPrefState.prefString(),
-                    enrollmentValue.prefValue.toInt(),
-                    geckoPrefState.branch().toBrowserPrefBranch(),
-                )
+            setIntPref(
+                geckoPrefState.prefString(),
+                enrollmentValue.prefValue.toInt(),
+                geckoPrefState.branch().toBrowserPrefBranch(),
+            )
         }
         BrowserPrefType.BOOL -> {
-                setBoolPref(
-                    geckoPrefState.prefString(),
-                    enrollmentValue.prefValue.toBooleanStrict(),
-                    geckoPrefState.branch().toBrowserPrefBranch(),
-                )
+            setBoolPref(
+                geckoPrefState.prefString(),
+                enrollmentValue.prefValue.toBooleanStrict(),
+                geckoPrefState.branch().toBrowserPrefBranch(),
+            )
         }
         BrowserPrefType.STRING -> {
-                setStringPref(
-                    geckoPrefState.prefString(),
-                    enrollmentValue.prefValue.fromJsonStringValue(),
-                    geckoPrefState.branch().toBrowserPrefBranch(),
-                )
+            setStringPref(
+                geckoPrefState.prefString(),
+                enrollmentValue.prefValue.fromJsonStringValue(),
+                geckoPrefState.branch().toBrowserPrefBranch(),
+            )
         }
         else -> {
-            logger.error(
-                "${geckoPrefState.prefString()} of $setType does not match any known Gecko preference type.",
-            )
+            logger.error("${geckoPrefState.prefString()} of $setType does not match any known Gecko preference type.")
             throw IllegalStateException("Unknown Gecko preference type!")
         }
     }
@@ -157,10 +151,9 @@ fun createPrefSetter(geckoPrefState: GeckoPrefState, setType: BrowserPrefType?):
 /**
  * Creates a pref setter based on [OriginalGeckoPref].
  *
- * @param originalGeckoPrefs: The original Gecko pref values before Nimbus set them during
- * enrollment
- * @param setTypes: A map with the pref name as a key and the known [BrowserPrefType] as the value
- * to determine what kind of setter to create.
+ * @param originalGeckoPrefs: The original Gecko pref values before Nimbus set them during enrollment
+ * @param setTypes: A map with the pref name as a key and the known [BrowserPrefType] as the value to determine what
+ *   kind of setter to create.
  * @return The list of [SetBrowserPreference] instances
  */
 @Suppress("TooGenericExceptionCaught")
@@ -177,7 +170,7 @@ fun createSettersFromOriginalGeckoPrefs(
         } catch (t: Throwable) {
             logger.error(
                 "Enrollment value ${originalGeckoPref.pref} " +
-                        "cannot be cast to correct pref type for pref ${originalGeckoPref.value}",
+                    "cannot be cast to correct pref type for pref ${originalGeckoPref.value}",
                 t,
             )
             null
@@ -186,12 +179,11 @@ fun createSettersFromOriginalGeckoPrefs(
 }
 
 /**
- * Creates [SetBrowserPreference] objects which are used to set the
- * Gecko preference values.
+ * Creates [SetBrowserPreference] objects which are used to set the Gecko preference values.
  *
  * @param prefsState: The list of new Gecko preference states
- * @param setTypes: A map with the pref name as a key and the known [BrowserPrefType] as the value
- * to determine what kind of setter to create.
+ * @param setTypes: A map with the pref name as a key and the known [BrowserPrefType] as the value to determine what
+ *   kind of setter to create.
  * @return The list of [SetBrowserPreference] instances
  */
 @Suppress("TooGenericExceptionCaught")
@@ -208,7 +200,7 @@ fun createSettersFromGeckoPrefStates(
         } catch (t: Throwable) {
             logger.error(
                 "Enrollment value ${prefState.enrollmentValue?.prefValue} " +
-                        "cannot be cast to correct pref type for pref ${prefState.prefString()}",
+                    "cannot be cast to correct pref type for pref ${prefState.prefString()}",
                 t,
             )
             null

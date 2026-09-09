@@ -251,9 +251,8 @@ void SVGPathElement::GetAsSimplePath(SimplePath* aSimplePath) {
   auto callback = [&](const ComputedStyle* s) {
     const nsStyleSVGReset* styleSVGReset = s->StyleSVGReset();
     if (styleSVGReset->mD.IsPath()) {
-      auto pathData = styleSVGReset->mD.AsPath()._0.AsSpan();
-      auto maybeRect = SVGPathSegUtils::SVGPathToAxisAlignedRect(pathData);
-      if (maybeRect.isSome()) {
+      if (auto maybeRect = SVGPathSegUtils::SVGPathToAxisAlignedRect(
+              styleSVGReset->mD.AsPath()._0.AsSpan())) {
         maybeRect->Scale(s->EffectiveZoom().ToFloat());
         aSimplePath->SetRect(*maybeRect);
       }

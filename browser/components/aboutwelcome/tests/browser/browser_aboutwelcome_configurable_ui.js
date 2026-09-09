@@ -375,6 +375,256 @@ add_task(async function test_aboutwelcome_split_position() {
 });
 
 /**
+ * Test rendering a screen with the "center-large" position
+ */
+add_task(async function test_aboutwelcome_center_large_position() {
+  // Forcing light-mode prevents the test from failing locally if your OS is in dark-mode
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.systemUsesDarkTheme", 0]],
+  });
+
+  const TEST_CENTER_LARGE_STEP = makeTestContent("TEST_CENTER_LARGE_STEP", {
+    position: "center-large",
+    fullscreen: true,
+    title: "Test title",
+    subtitle: "Test subtitle",
+    corner_image: {
+      position: "bottom-right",
+      imageURL:
+        "chrome://activity-stream/content/data/content/assets/fox-doodle-waving.gif",
+      height: "200px",
+    },
+  });
+
+  const TEST_CENTER_LARGE_JSON = JSON.stringify([TEST_CENTER_LARGE_STEP]);
+  let browser = await openAboutWelcome(TEST_CENTER_LARGE_JSON);
+
+  await test_screen_content(
+    browser,
+    "renders screen main section with the container for the corner image",
+    // Expected selectors:
+    [
+      `main.screen[pos="center-large"]`,
+      `.section-main`,
+      `.corner-image-container`,
+    ]
+  );
+
+  // Ensure main section has center-large template styling.
+  const novaEnabled = Services.prefs.getBoolPref("browser.nova.enabled", false);
+  await test_element_styles(
+    browser,
+    "main.screen .section-main .main-content",
+    // Expected styles:
+    {
+      "backdrop-filter": "none",
+      "background-color": "rgba(0, 0, 0, 0)",
+      "border-left-style": "none",
+      "border-left-width": "0px",
+    }
+  );
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    const mainContentInner = await ContentTaskUtils.waitForCondition(() =>
+      content.document.querySelector(
+        "main.screen .section-main .main-content .main-content-inner"
+      )
+    );
+    const glowStyles = content.window.getComputedStyle(
+      mainContentInner,
+      "::before"
+    );
+    is(glowStyles.filter, "blur(70px)", "center-large glow should be blurred");
+    isnot(
+      glowStyles.backgroundColor,
+      "rgba(0, 0, 0, 0)",
+      "center-large glow should have a visible fill color"
+    );
+  });
+
+  // Ensure secondary action has button styling
+  await test_element_styles(
+    browser,
+    ".action-buttons .secondary-cta .secondary",
+    // Expected styles:
+    {
+      // Override default text-link styles
+      "background-color": novaEnabled
+        ? "rgba(0, 0, 0, 0)"
+        : "color(srgb 0.0823529 0.0784314 0.101961 / 0.07)",
+      color: novaEnabled ? "rgb(22, 20, 35)" : "rgb(21, 20, 26)",
+    }
+  );
+  await SpecialPowers.popPrefEnv();
+  browser.closeBrowser();
+});
+
+const CORNER_IMAGE_URL =
+  "chrome://activity-stream/content/data/content/assets/fox-doodle-waving.gif";
+
+const makeCornerImageScreen = (id, cornerImageAdditions, contentAdditions) =>
+  makeTestContent(id, {
+    position: "center-large",
+    fullscreen: true,
+    corner_image: {
+      imageURL: CORNER_IMAGE_URL,
+      height: "200px",
+      ...cornerImageAdditions,
+    },
+    ...contentAdditions,
+  });
+
+/**
+ * Test that the corner image is anchored to each supported corner
+ */
+add_task(async function test_aboutwelcome_corner_image_positions() {
+  const CORNER_OFFSETS = {
+    "bottom-left": { bottom: "-10px", left: "20px" },
+    "bottom-right": { bottom: "-10px", right: "20px" },
+    "top-left": { top: "-10px", left: "20px" },
+    "top-right": { top: "-10px", right: "20px" },
+  };
+
+  for (const [position, offsets] of Object.entries(CORNER_OFFSETS)) {
+    info(`Testing corner image position: ${position}`);
+    const screens = [
+      makeCornerImageScreen(`TEST_CORNER_IMAGE_${position}`, { position }),
+    ];
+    let browser = await openAboutWelcome(JSON.stringify(screens));
+
+    await test_screen_content(
+      browser,
+      `renders the corner image in the ${position} corner, outside section-main`,
+      // Expected selectors:
+      [
+        `main.screen > .corner-image-container picture.corner-image.${position}`,
+      ],
+      // Unexpected selectors:
+      [".section-main .corner-image-container"]
+    );
+
+    await test_element_styles(browser, "picture.corner-image", {
+      position: "absolute",
+      ...offsets,
+    });
+
+    browser.closeBrowser();
+  }
+});
+
+/**
+ * Test that a corner image position outside the allowlist, or omitted entirely,
+ * falls back to bottom-right
+ */
+add_task(async function test_aboutwelcome_corner_image_fallback_position() {
+  const FALLBACK_CASES = [
+    {
+      label: "an unsupported position",
+      cornerImage: { position: "not-a-corner" },
+    },
+    { label: "an omitted position", cornerImage: {} },
+  ];
+
+  for (const { label, cornerImage } of FALLBACK_CASES) {
+    info(`Testing corner image fallback for ${label}`);
+    const screens = [
+      makeCornerImageScreen("TEST_CORNER_IMAGE_FALLBACK", cornerImage),
+    ];
+    let browser = await openAboutWelcome(JSON.stringify(screens));
+
+    await test_screen_content(
+      browser,
+      `falls back to bottom-right for ${label}`,
+      // Expected selectors:
+      ["picture.corner-image.bottom-right"],
+      // Unexpected selectors:
+      ["picture.corner-image.not-a-corner", "picture.corner-image.undefined"]
+    );
+
+    browser.closeBrowser();
+  }
+});
+
+/**
+ * Test that the corner image only renders in the layout that styles it
+ */
+add_task(async function test_aboutwelcome_corner_image_layout_gating() {
+  const UNSTYLED_LAYOUTS = [
+    {
+      label: "center-large without fullscreen",
+      content: { fullscreen: false },
+    },
+    { label: "split", content: { position: "split" } },
+  ];
+
+  for (const { label, content } of UNSTYLED_LAYOUTS) {
+    info(`Testing that the corner image is not rendered for ${label}`);
+    const screens = [
+      makeCornerImageScreen(
+        "TEST_CORNER_IMAGE_GATING",
+        { position: "bottom-right" },
+        content
+      ),
+    ];
+    let browser = await openAboutWelcome(JSON.stringify(screens));
+
+    await test_screen_content(
+      browser,
+      `does not render the corner image for ${label}`,
+      // Expected selectors:
+      [".section-main"],
+      // Unexpected selectors:
+      [".corner-image-container", "picture.corner-image"]
+    );
+
+    browser.closeBrowser();
+  }
+});
+
+/**
+ * Test that the top buttons get their own row inside the card in the
+ * "center-large" layout, rather than being overlaid on the content
+ */
+add_task(async function test_aboutwelcome_center_large_top_buttons_row() {
+  const screens = [
+    makeTestContent("TEST_CENTER_LARGE_TOP_BUTTONS", {
+      position: "center-large",
+      fullscreen: true,
+      secondary_button_top: [
+        { label: { raw: "test button 1" }, action: { navigate: true } },
+        { label: { raw: "test button 2" }, action: { navigate: true } },
+      ],
+    }),
+  ];
+  let browser = await openAboutWelcome(JSON.stringify(screens));
+
+  await test_screen_content(
+    browser,
+    "renders the top buttons as a row inside the card",
+    // Expected selectors:
+    [
+      ".main-content > .secondary-buttons-top-container",
+      "#secondary_button_0",
+      "#secondary_button_1",
+    ],
+    // Unexpected selectors:
+    [".section-main > .secondary-buttons-top-container"]
+  );
+
+  await test_element_styles(
+    browser,
+    ".main-content > .secondary-buttons-top-container",
+    // Expected styles:
+    {
+      position: "static",
+      "align-self": "flex-end",
+    }
+  );
+
+  browser.closeBrowser();
+});
+
+/**
  * Test rendering a screen with a URL value and default color for backdrop
  */
 add_task(async function test_aboutwelcome_with_url_backdrop() {
@@ -826,8 +1076,8 @@ add_task(async function test_aboutwelcome_narrow_property() {
   const logo = JSON.stringify([
     makeTestContent("TEST_LOGO_STEP", {
       logo: {
-        height: "chrome://branding/content/icon64.png",
-        imageURL: "50px",
+        imageURL: "chrome://branding/content/icon64.png",
+        height: "50px",
       },
     }),
   ]);
@@ -1126,5 +1376,105 @@ add_task(async function test_aboutwelcome_fullscreen_split_layout_styles() {
   );
 
   await doExperimentCleanup();
+  browser.closeBrowser();
+});
+
+add_task(async function test_aboutwelcome_link_paragraph_inline_image() {
+  const TEST_ICON_URL =
+    "chrome://global/skin/media/picture-in-picture-open.svg";
+  const TEST_CONTENT = makeTestContent("TEST_LINK_PARAGRAPH_IMAGE_STEP", {
+    above_button_content: [
+      {
+        type: "text",
+        text: [
+          "Learn more ",
+          { imageURL: TEST_ICON_URL, alt: "icon" },
+          " here.",
+        ],
+      },
+    ],
+  });
+
+  let browser = await openAboutWelcome(JSON.stringify([TEST_CONTENT]));
+
+  await test_screen_content(
+    browser,
+    "renders an image segment in a LinkParagraph",
+    [`.link-paragraph img.inline-icon[src="${TEST_ICON_URL}"][alt="icon"]`]
+  );
+
+  browser.closeBrowser();
+});
+
+add_task(async function test_aboutwelcome_link_paragraph_segment_action() {
+  const MANAGE_DATA_PREF = "test-manage-data-pref";
+  // SET_PREF namespaces the prefs it writes.
+  const MANAGE_DATA_FULL_PREF = `messaging-system-action.${MANAGE_DATA_PREF}`;
+  const TEST_CONTENT = makeTestContent("TEST_LINK_PARAGRAPH_ACTION_STEP", {
+    above_button_content: [
+      {
+        type: "text",
+        font_styles: "legal",
+        text: [
+          "By continuing, you agree to the ",
+          { raw: "Firefox Terms of Use", link_key: "terms_of_use" },
+          ".",
+        ],
+      },
+      {
+        type: "text",
+        font_styles: "legal",
+        text: [
+          {
+            raw: "Manage diagnostic and interaction data",
+            id: "manage_data",
+            action: {
+              type: "SET_PREF",
+              data: { pref: { name: MANAGE_DATA_PREF, value: true } },
+            },
+          },
+        ],
+      },
+    ],
+    terms_of_use: {
+      action: {
+        type: "OPEN_URL",
+        data: { args: "https://example.com/terms", where: "tab" },
+      },
+    },
+  });
+
+  let browser = await openAboutWelcome(JSON.stringify([TEST_CONTENT]));
+
+  await test_screen_content(
+    browser,
+    "renders multiple legal paragraphs above the primary button",
+    [
+      `.legal-paragraph a[value="terms_of_use"]`,
+      `.legal-paragraph a[value="manage_data"]`,
+    ]
+  );
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    is(
+      content.document.querySelectorAll(".legal-paragraph").length,
+      2,
+      "Both legal paragraphs render"
+    );
+  });
+
+  // A segment carrying its own action triggers that special message action,
+  // rather than only being able to open a URL through `href`.
+  ok(
+    !Services.prefs.getBoolPref(MANAGE_DATA_FULL_PREF, false),
+    "Manage data pref is unset before clicking the link"
+  );
+  await onButtonClick(browser, `.legal-paragraph a[value="manage_data"]`);
+  await TestUtils.waitForCondition(
+    () => Services.prefs.getBoolPref(MANAGE_DATA_FULL_PREF, false),
+    "Waiting for the manage data link's SET_PREF action"
+  );
+
+  Services.prefs.clearUserPref(MANAGE_DATA_FULL_PREF);
   browser.closeBrowser();
 });

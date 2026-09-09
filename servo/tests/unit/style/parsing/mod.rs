@@ -10,17 +10,17 @@ use style::parser::ParserContext;
 use style::stylesheets::{CssRuleType, Origin};
 use style_traits::{ParseError, ParsingMode};
 
-fn parse<T, F>(f: F, s: &'static str) -> Result<T, ParseError<'static>>
+fn parse<T, F>(f: F, s: &'static str) -> Result<T, ParseError>
 where
-    F: for<'t> Fn(&ParserContext, &mut Parser<'static, 't>) -> Result<T, ParseError<'static>>,
+    F: for<'t> Fn(&ParserContext, &mut Parser<'static, 't>) -> Result<T, ParseError>,
 {
     let mut input = ParserInput::new(s);
     parse_input(f, &mut input)
 }
 
-fn parse_input<'i: 't, 't, T, F>(f: F, input: &'t mut ParserInput<'i>) -> Result<T, ParseError<'i>>
+fn parse_input<'i: 't, 't, T, F>(f: F, input: &'t mut ParserInput<'i>) -> Result<T, ParseError>
 where
-    F: Fn(&ParserContext, &mut Parser<'i, 't>) -> Result<T, ParseError<'i>>,
+    F: Fn(&ParserContext, &mut Parser<'i, 't>) -> Result<T, ParseError>,
 {
     let url = ::servo_url::ServoUrl::parse("http://localhost").unwrap();
     let context = ParserContext::new(
@@ -36,9 +36,9 @@ where
     f(&context, &mut parser)
 }
 
-fn parse_entirely<T, F>(f: F, s: &'static str) -> Result<T, ParseError<'static>>
+fn parse_entirely<T, F>(f: F, s: &'static str) -> Result<T, ParseError>
 where
-    F: for<'t> Fn(&ParserContext, &mut Parser<'static, 't>) -> Result<T, ParseError<'static>>,
+    F: for<'t> Fn(&ParserContext, &mut Parser<'static, 't>) -> Result<T, ParseError>,
 {
     let mut input = ParserInput::new(s);
     parse_entirely_input(f, &mut input)
@@ -47,9 +47,9 @@ where
 fn parse_entirely_input<'i: 't, 't, T, F>(
     f: F,
     input: &'t mut ParserInput<'i>,
-) -> Result<T, ParseError<'i>>
+) -> Result<T, ParseError>
 where
-    F: Fn(&ParserContext, &mut Parser<'i, 't>) -> Result<T, ParseError<'i>>,
+    F: Fn(&ParserContext, &mut Parser<'i, 't>) -> Result<T, ParseError>,
 {
     parse_input(
         |context, parser| parser.parse_entirely(|p| f(context, p)),

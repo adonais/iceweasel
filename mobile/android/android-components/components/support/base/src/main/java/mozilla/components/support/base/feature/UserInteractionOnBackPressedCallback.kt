@@ -15,13 +15,10 @@ import androidx.fragment.app.FragmentManager
  * child fragments that implement the [UserInteractionHandler] interface. If no fragment handles the back press, it
  * falls back to the default system behavior (either navigating back or exiting the app).
  *
- * NB: the callback is disabled by default and should be enabled in an appropriate lifecycle call.
- * Example of enabling in `onResume`:
+ * NB: the callback is disabled by default and should be enabled in an appropriate lifecycle call. Example of enabling
+ * in `onResume`:
  *
- * override fun onResume() {
- *     super.onResume()
- *     backPressedCallback.isEnabled = true
- * }
+ * override fun onResume() { super.onResume() backPressedCallback.isEnabled = true }
  *
  * @param fragmentManager used to manage fragment transactions and navigation.
  * @param dispatcher responsible for managing back press callbacks within the activity lifecycle.
@@ -37,8 +34,7 @@ open class UserInteractionOnBackPressedCallback(
             }
         }
 
-        val backStackCount =
-            fragmentManager.primaryNavigationFragment?.childFragmentManager?.backStackEntryCount ?: 0
+        val backStackCount = fragmentManager.primaryNavigationFragment?.childFragmentManager?.backStackEntryCount ?: 0
         if (backStackCount == 0) {
             // NB: Disabling the callback enables the default system handling of the back navigation.
             // In this case it means closing the current activity

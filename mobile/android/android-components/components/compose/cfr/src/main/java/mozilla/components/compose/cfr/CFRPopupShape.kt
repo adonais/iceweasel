@@ -26,13 +26,11 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import mozilla.components.compose.cfr.CFRPopup.IndicatorDirection.DOWN
 import mozilla.components.compose.cfr.CFRPopup.IndicatorDirection.UP
-import kotlin.math.roundToInt
 
-/**
- * How wide the base of the indicator should be in relation with the indicator's height.
- */
+/** How wide the base of the indicator should be in relation with the indicator's height. */
 private const val INDICATOR_BASE_TO_HEIGHT_RATIO = 2f
 
 /**
@@ -41,8 +39,8 @@ private const val INDICATOR_BASE_TO_HEIGHT_RATIO = 2f
  * @param indicatorDirection The direction the indicator arrow is pointing to.
  * @param indicatorArrowStartOffset Distance between the popup start and the indicator arrow start
  * @param indicatorArrowHeight Height of the indicator triangle. This influences the base length.
- * @param cornerRadius The radius of the popup's corners.
- * If [indicatorArrowStartOffset] is `0` then the top-start corner will not be rounded.
+ * @param cornerRadius The radius of the popup's corners. If [indicatorArrowStartOffset] is `0` then the top-start
+ *   corner will not be rounded.
  */
 class CFRPopupShape(
     private val indicatorDirection: CFRPopup.IndicatorDirection,
@@ -67,140 +65,142 @@ class CFRPopupShape(
         return when (indicatorDirection) {
             CFRPopup.IndicatorDirection.UP -> {
                 Outline.Generic(
-                    path = Path().apply {
-                        reset()
+                    path =
+                        Path().apply {
+                            reset()
 
-                        lineTo(0f, size.height - cornerRadiusPx)
-                        quadraticTo(
-                            0f,
-                            size.height,
-                            cornerRadiusPx,
-                            size.height,
-                        )
+                            lineTo(0f, size.height - cornerRadiusPx)
+                            quadraticTo(
+                                0f,
+                                size.height,
+                                cornerRadiusPx,
+                                size.height,
+                            )
 
-                        lineTo(size.width - cornerRadiusPx, size.height)
-                        quadraticTo(
-                            size.width,
-                            size.height,
-                            size.width,
-                            size.height - cornerRadiusPx,
-                        )
-
-                        if (layoutDirection == LayoutDirection.Ltr) {
-                            lineTo(size.width, cornerRadiusPx + indicatorArrowHeightPx)
+                            lineTo(size.width - cornerRadiusPx, size.height)
                             quadraticTo(
                                 size.width,
-                                indicatorArrowHeightPx,
-                                size.width - cornerRadiusPx,
-                                indicatorArrowHeightPx,
-                            )
-
-                            lineTo(indicatorArrowStartOffsetPx + indicatorArrowBasePx, indicatorArrowHeightPx)
-                            lineTo(indicatorArrowStartOffsetPx + indicatorArrowBasePx / 2, 0f)
-                            lineTo(indicatorArrowStartOffsetPx, indicatorArrowHeightPx)
-
-                            lineTo(indicatorCornerRadiusPx, indicatorArrowHeightPx)
-                            quadraticTo(
-                                0f,
-                                indicatorArrowHeightPx,
-                                0f,
-                                indicatorArrowHeightPx + indicatorCornerRadiusPx,
-                            )
-                        } else {
-                            lineTo(size.width, indicatorCornerRadiusPx + indicatorArrowHeightPx)
-                            quadraticTo(
+                                size.height,
                                 size.width,
-                                indicatorArrowHeightPx,
-                                size.width - indicatorCornerRadiusPx,
-                                indicatorArrowHeightPx,
+                                size.height - cornerRadiusPx,
                             )
 
-                            val indicatorEnd = size.width - indicatorArrowStartOffsetPx
-                            lineTo(indicatorEnd, indicatorArrowHeightPx)
-                            lineTo(indicatorEnd - indicatorArrowBasePx / 2, 0f)
-                            lineTo(indicatorEnd - indicatorArrowBasePx, indicatorArrowHeightPx)
+                            if (layoutDirection == LayoutDirection.Ltr) {
+                                lineTo(size.width, cornerRadiusPx + indicatorArrowHeightPx)
+                                quadraticTo(
+                                    size.width,
+                                    indicatorArrowHeightPx,
+                                    size.width - cornerRadiusPx,
+                                    indicatorArrowHeightPx,
+                                )
 
-                            lineTo(cornerRadiusPx, indicatorArrowHeightPx)
-                            quadraticTo(
-                                0f,
-                                indicatorArrowHeightPx,
-                                0f,
-                                indicatorArrowHeightPx + cornerRadiusPx,
-                            )
+                                lineTo(indicatorArrowStartOffsetPx + indicatorArrowBasePx, indicatorArrowHeightPx)
+                                lineTo(indicatorArrowStartOffsetPx + indicatorArrowBasePx / 2, 0f)
+                                lineTo(indicatorArrowStartOffsetPx, indicatorArrowHeightPx)
+
+                                lineTo(indicatorCornerRadiusPx, indicatorArrowHeightPx)
+                                quadraticTo(
+                                    0f,
+                                    indicatorArrowHeightPx,
+                                    0f,
+                                    indicatorArrowHeightPx + indicatorCornerRadiusPx,
+                                )
+                            } else {
+                                lineTo(size.width, indicatorCornerRadiusPx + indicatorArrowHeightPx)
+                                quadraticTo(
+                                    size.width,
+                                    indicatorArrowHeightPx,
+                                    size.width - indicatorCornerRadiusPx,
+                                    indicatorArrowHeightPx,
+                                )
+
+                                val indicatorEnd = size.width - indicatorArrowStartOffsetPx
+                                lineTo(indicatorEnd, indicatorArrowHeightPx)
+                                lineTo(indicatorEnd - indicatorArrowBasePx / 2, 0f)
+                                lineTo(indicatorEnd - indicatorArrowBasePx, indicatorArrowHeightPx)
+
+                                lineTo(cornerRadiusPx, indicatorArrowHeightPx)
+                                quadraticTo(
+                                    0f,
+                                    indicatorArrowHeightPx,
+                                    0f,
+                                    indicatorArrowHeightPx + cornerRadiusPx,
+                                )
+                            }
+
+                            close()
                         }
-
-                        close()
-                    },
                 )
             }
             CFRPopup.IndicatorDirection.DOWN -> {
                 val messageBodyHeightPx = size.height - indicatorArrowHeightPx
 
                 Outline.Generic(
-                    path = Path().apply {
-                        reset()
+                    path =
+                        Path().apply {
+                            reset()
 
-                        if (layoutDirection == LayoutDirection.Ltr) {
-                            lineTo(0f, messageBodyHeightPx - indicatorCornerRadiusPx)
-                            quadraticTo(
-                                0f,
-                                size.height - indicatorArrowHeightPx,
-                                indicatorCornerRadiusPx,
-                                size.height - indicatorArrowHeightPx,
-                            )
+                            if (layoutDirection == LayoutDirection.Ltr) {
+                                lineTo(0f, messageBodyHeightPx - indicatorCornerRadiusPx)
+                                quadraticTo(
+                                    0f,
+                                    size.height - indicatorArrowHeightPx,
+                                    indicatorCornerRadiusPx,
+                                    size.height - indicatorArrowHeightPx,
+                                )
 
-                            lineTo(indicatorArrowStartOffsetPx, messageBodyHeightPx)
-                            lineTo(indicatorArrowStartOffsetPx + indicatorArrowBasePx / 2, size.height)
-                            lineTo(indicatorArrowStartOffsetPx + indicatorArrowBasePx, messageBodyHeightPx)
+                                lineTo(indicatorArrowStartOffsetPx, messageBodyHeightPx)
+                                lineTo(indicatorArrowStartOffsetPx + indicatorArrowBasePx / 2, size.height)
+                                lineTo(indicatorArrowStartOffsetPx + indicatorArrowBasePx, messageBodyHeightPx)
 
-                            lineTo(size.width - cornerRadiusPx, messageBodyHeightPx)
+                                lineTo(size.width - cornerRadiusPx, messageBodyHeightPx)
+                                quadraticTo(
+                                    size.width,
+                                    messageBodyHeightPx,
+                                    size.width,
+                                    messageBodyHeightPx - cornerRadiusPx,
+                                )
+                            } else {
+                                lineTo(0f, messageBodyHeightPx - cornerRadiusPx)
+                                quadraticTo(
+                                    0f,
+                                    messageBodyHeightPx,
+                                    cornerRadiusPx,
+                                    messageBodyHeightPx,
+                                )
+
+                                val indicatorStartPx = size.width - indicatorArrowStartOffsetPx - indicatorArrowBasePx
+                                lineTo(indicatorStartPx, messageBodyHeightPx)
+                                lineTo(indicatorStartPx + indicatorArrowBasePx / 2, size.height)
+                                lineTo(indicatorStartPx + indicatorArrowBasePx, messageBodyHeightPx)
+
+                                lineTo(size.width - indicatorCornerRadiusPx, messageBodyHeightPx)
+                                quadraticTo(
+                                    size.width,
+                                    messageBodyHeightPx,
+                                    size.width,
+                                    messageBodyHeightPx - indicatorCornerRadiusPx,
+                                )
+                            }
+
+                            lineTo(size.width, cornerRadiusPx)
                             quadraticTo(
                                 size.width,
-                                messageBodyHeightPx,
-                                size.width,
-                                messageBodyHeightPx - cornerRadiusPx,
+                                0f,
+                                size.width - cornerRadiusPx,
+                                0f,
                             )
-                        } else {
-                            lineTo(0f, messageBodyHeightPx - cornerRadiusPx)
+
+                            lineTo(cornerRadiusPx, 0f)
                             quadraticTo(
                                 0f,
-                                messageBodyHeightPx,
+                                0f,
+                                0f,
                                 cornerRadiusPx,
-                                messageBodyHeightPx,
                             )
 
-                            val indicatorStartPx = size.width - indicatorArrowStartOffsetPx - indicatorArrowBasePx
-                            lineTo(indicatorStartPx, messageBodyHeightPx)
-                            lineTo(indicatorStartPx + indicatorArrowBasePx / 2, size.height)
-                            lineTo(indicatorStartPx + indicatorArrowBasePx, messageBodyHeightPx)
-
-                            lineTo(size.width - indicatorCornerRadiusPx, messageBodyHeightPx)
-                            quadraticTo(
-                                size.width,
-                                messageBodyHeightPx,
-                                size.width,
-                                messageBodyHeightPx - indicatorCornerRadiusPx,
-                            )
+                            close()
                         }
-
-                        lineTo(size.width, cornerRadiusPx)
-                        quadraticTo(
-                            size.width,
-                            0f,
-                            size.width - cornerRadiusPx,
-                            0f,
-                        )
-
-                        lineTo(cornerRadiusPx, 0f)
-                        quadraticTo(
-                            0f,
-                            0f,
-                            0f,
-                            cornerRadiusPx,
-                        )
-
-                        close()
-                    },
                 )
             }
         }
@@ -208,8 +208,8 @@ class CFRPopupShape(
 
     companion object {
         /**
-         * This [Shape]'s arrow indicator will have an automatic width depending on the set height.
-         * This method allows knowing what the base width will be before instantiating the class.
+         * This [Shape]'s arrow indicator will have an automatic width depending on the set height. This method allows
+         * knowing what the base width will be before instantiating the class.
          */
         fun getIndicatorBaseWidthForHeight(height: Int): Int {
             return (height * INDICATOR_BASE_TO_HEIGHT_RATIO).roundToInt()
@@ -224,17 +224,18 @@ class CFRPopupShape(
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_NO, name = "Light theme")
 private fun CFRPopupBelowShapePreview() {
     Box(
-        modifier = Modifier
-            .height(100.dp)
-            .width(200.dp)
-            .background(
-                shape = CFRPopupShape(UP, 10.dp, 10.dp, 10.dp),
-                brush = Brush.linearGradient(
-                    colors = listOf(Color.Cyan, Color.Blue),
-                    end = Offset(0f, Float.POSITIVE_INFINITY),
-                    start = Offset(Float.POSITIVE_INFINITY, 0f),
+        modifier =
+            Modifier.height(100.dp)
+                .width(200.dp)
+                .background(
+                    shape = CFRPopupShape(UP, 10.dp, 10.dp, 10.dp),
+                    brush =
+                        Brush.linearGradient(
+                            colors = listOf(Color.Cyan, Color.Blue),
+                            end = Offset(0f, Float.POSITIVE_INFINITY),
+                            start = Offset(Float.POSITIVE_INFINITY, 0f),
+                        ),
                 ),
-            ),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -251,17 +252,18 @@ private fun CFRPopupBelowShapePreview() {
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_NO, name = "Light theme")
 private fun CFRPopupAboveShapePreview() {
     Box(
-        modifier = Modifier
-            .height(100.dp)
-            .width(200.dp)
-            .background(
-                shape = CFRPopupShape(DOWN, 10.dp, 10.dp, 10.dp),
-                brush = Brush.linearGradient(
-                    colors = listOf(Color.Cyan, Color.Blue),
-                    end = Offset(0f, Float.POSITIVE_INFINITY),
-                    start = Offset(Float.POSITIVE_INFINITY, 0f),
+        modifier =
+            Modifier.height(100.dp)
+                .width(200.dp)
+                .background(
+                    shape = CFRPopupShape(DOWN, 10.dp, 10.dp, 10.dp),
+                    brush =
+                        Brush.linearGradient(
+                            colors = listOf(Color.Cyan, Color.Blue),
+                            end = Offset(0f, Float.POSITIVE_INFINITY),
+                            start = Offset(Float.POSITIVE_INFINITY, 0f),
+                        ),
                 ),
-            ),
         contentAlignment = Alignment.Center,
     ) {
         Text(

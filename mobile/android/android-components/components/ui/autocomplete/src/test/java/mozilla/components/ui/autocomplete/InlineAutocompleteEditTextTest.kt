@@ -431,11 +431,12 @@ class InlineAutocompleteEditTextTest {
         et.setText("")
         et.onAttachedToWindow()
 
-        et.autocompleteResult = AutocompleteResult(
-            text = "google.com",
-            source = "test-source",
-            totalItems = 100,
-        )
+        et.autocompleteResult =
+            AutocompleteResult(
+                text = "google.com",
+                source = "test-source",
+                totalItems = 100,
+            )
 
         et.setText("g")
         assertEquals("google.com", "${et.text}")
@@ -447,11 +448,12 @@ class InlineAutocompleteEditTextTest {
         et.setText("")
         et.onAttachedToWindow()
 
-        et.autocompleteResult = AutocompleteResult(
-            text = "google.com",
-            source = "test-source",
-            totalItems = 100,
-        )
+        et.autocompleteResult =
+            AutocompleteResult(
+                text = "google.com",
+                source = "test-source",
+                totalItems = 100,
+            )
 
         et.setText("g ")
         assertEquals("g ", "${et.text}")
@@ -463,11 +465,12 @@ class InlineAutocompleteEditTextTest {
         et.setText("google")
         et.onAttachedToWindow()
 
-        et.autocompleteResult = AutocompleteResult(
-            text = "google.com",
-            source = "test-source",
-            totalItems = 100,
-        )
+        et.autocompleteResult =
+            AutocompleteResult(
+                text = "google.com",
+                source = "test-source",
+                totalItems = 100,
+            )
 
         et.setText("googl")
         assertEquals("googl", "${et.text}")
@@ -479,11 +482,12 @@ class InlineAutocompleteEditTextTest {
         et.setText("testestest")
         et.selectAll()
         et.onAttachedToWindow()
-        et.autocompleteResult = AutocompleteResult(
-            text = "google.com",
-            source = "test-source",
-            totalItems = 100,
-        )
+        et.autocompleteResult =
+            AutocompleteResult(
+                text = "google.com",
+                source = "test-source",
+                totalItems = 100,
+            )
 
         et.setText("g")
         assertEquals("google.com", "${et.text}")
@@ -495,11 +499,12 @@ class InlineAutocompleteEditTextTest {
         et.setText("https://www.google.com/")
         et.selectAll()
         et.onAttachedToWindow()
-        et.autocompleteResult = AutocompleteResult(
-            text = "google.com",
-            source = "test-source",
-            totalItems = 100,
-        )
+        et.autocompleteResult =
+            AutocompleteResult(
+                text = "google.com",
+                source = "test-source",
+                totalItems = 100,
+            )
 
         et.setText("g")
         assertEquals("google.com", "${et.text}")
@@ -586,11 +591,12 @@ class InlineAutocompleteEditTextTest {
         et.setText("")
 
         et.onAttachedToWindow()
-        et.autocompleteResult = AutocompleteResult(
-            text = "google.com",
-            source = "test-source",
-            totalItems = 100,
-        )
+        et.autocompleteResult =
+            AutocompleteResult(
+                text = "google.com",
+                source = "test-source",
+                totalItems = 100,
+            )
         et.setText("g")
         var callbackInvoked = false
         et.setOnTextChangeListener { _, _ ->

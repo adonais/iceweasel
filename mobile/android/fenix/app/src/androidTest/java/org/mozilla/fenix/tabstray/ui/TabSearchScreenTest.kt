@@ -25,8 +25,7 @@ import org.mozilla.fenix.tabstray.ui.tabsearch.TabSearchScreen
 @RunWith(AndroidJUnit4::class)
 class TabSearchScreenTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     var store = TabsTrayStore()
 
@@ -34,15 +33,19 @@ class TabSearchScreenTest {
     fun tabSearchResultClickedTest() {
         var tabSearchInvoked = false
 
-        store = TabsTrayStore(
-            middlewares = listOf(TabSearchNavigationMiddleware(onSearchResultClicked = { tabSearchInvoked = true })),
-            initialState = TabsTrayState(
-                tabSearchState = TabSearchState(
-                    query = "mozilla",
-                    searchResults = listOf(createTab(url = "www.mozilla.com", id = "1")),
-                ),
-            ),
-        )
+        store =
+            TabsTrayStore(
+                middlewares =
+                    listOf(TabSearchNavigationMiddleware(onSearchResultClicked = { tabSearchInvoked = true })),
+                initialState =
+                    TabsTrayState(
+                        tabSearchState =
+                            TabSearchState(
+                                query = "mozilla",
+                                searchResults = listOf(createTab(url = "www.mozilla.com", id = "1")),
+                            )
+                    ),
+            )
 
         setContent()
 

@@ -1005,6 +1005,37 @@ describe("ASRouterTriggerListeners", () => {
         assert.calledOnce(aRequest.QueryInterface);
         assert.notCalled(newTriggerHandler);
       });
+      it("should not throw when the original request URI has no host", () => {
+        const newTriggerHandler = sinon.stub();
+        openURLListener.init(newTriggerHandler, hosts);
+
+        const browser = {};
+        const webProgress = { isTopLevel: true };
+        const aLocationURI = {
+          host: "subdomain.mozilla.org",
+          spec: "subdomain.mozilla.org",
+        };
+        const aRequest = {
+          QueryInterface: sandbox.stub().returns({
+            originalURI: {
+              spec: "about:robots",
+              get host() {
+                throw new Error("NS_ERROR_FAILURE");
+              },
+            },
+          }),
+        };
+
+        assert.doesNotThrow(() => {
+          openURLListener.onLocationChange(
+            browser,
+            webProgress,
+            aRequest,
+            aLocationURI
+          );
+        });
+        assert.notCalled(newTriggerHandler);
+      });
       it("should call triggerHandler when regexPatterns match the URL", () => {
         const newTriggerHandler = sinon.stub();
         openURLListener.init(newTriggerHandler, [], [], ["mozilla"]);

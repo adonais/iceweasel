@@ -10,6 +10,7 @@
   display: inline-block;
   height: fit-content;
   width: fit-content;
+  user-select: none;
 }
 
 :host([type="split"]) {
@@ -416,5 +417,12 @@ button {
     width: var(--icon-size);
     height: var(--icon-size);
     pointer-events: none;
+  }
+
+  :host(moz-segmented-control-item) & label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }

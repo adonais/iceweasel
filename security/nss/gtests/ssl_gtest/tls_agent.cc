@@ -44,9 +44,15 @@ const std::string TlsAgent::kServerEcdsa521 = "ecdsa521";
 const std::string TlsAgent::kServerEcdhRsa = "ecdh_rsa";
 const std::string TlsAgent::kServerEcdhEcdsa = "ecdh_ecdsa";
 const std::string TlsAgent::kServerDsa = "dsa";
+const std::string TlsAgent::kServerMlDsa44 = "mldsa44";
+const std::string TlsAgent::kServerMlDsa65 = "mldsa65";
+const std::string TlsAgent::kServerMlDsa87 = "mldsa87";
 const std::string TlsAgent::kDelegatorEcdsa256 = "delegator_ecdsa256";
 const std::string TlsAgent::kDelegatorRsae2048 = "delegator_rsae2048";
 const std::string TlsAgent::kDelegatorRsaPss2048 = "delegator_rsa_pss2048";
+const std::string TlsAgent::kDelegatorMlDsa44 = "delegator_mldsa44";
+const std::string TlsAgent::kDelegatorMlDsa65 = "delegator_mldsa65";
+const std::string TlsAgent::kDelegatorMlDsa87 = "delegator_mldsa87";
 
 static const uint8_t kCannedTls13ServerHello[] = {
     0x03, 0x03, 0x9c, 0xbc, 0x14, 0x9b, 0x0e, 0x2e, 0xfa, 0x0d, 0xf3,
@@ -618,7 +624,9 @@ void TlsAgent::EnableGroupsByKeyExchange(SSLKEAType kea) {
 
 void TlsAgent::EnableGroupsByAuthType(SSLAuthType authType) {
   if (authType == ssl_auth_ecdh_rsa || authType == ssl_auth_ecdh_ecdsa ||
-      authType == ssl_auth_ecdsa || authType == ssl_auth_tls13_any) {
+      authType == ssl_auth_ecdsa || authType == ssl_auth_tls13_any ||
+      authType == ssl_auth_mldsa44 || authType == ssl_auth_mldsa65 ||
+      authType == ssl_auth_mldsa87) {
     ConfigNamedGroups(kECDHEGroups);
   }
 }

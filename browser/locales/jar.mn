@@ -18,6 +18,7 @@
   preview/smartTabGroups.ftl                       (%chrome/overrides/smartTabGroups.ftl)
   preview/privacyPreferences.ftl                   (../locales-preview/privacyPreferences.ftl)
   preview/autoTabGrouping.ftl                      (../locales-preview/autoTabGrouping.ftl)
+  preview/remoteControl.ftl                          (../locales-preview/remoteControl.ftl)
 
 @AB_CD@.jar:
 % locale browser @AB_CD@ %locale/browser/

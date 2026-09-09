@@ -9,8 +9,8 @@ import mozilla.components.feature.autofill.ui.AbstractAutofillUnlockActivity
 import org.mozilla.samples.browser.ext.components
 
 /**
- * Activity responsible for unlocking the autofill service by asking the user to verify with a
- * fingerprint or alternative device unlocking mechanism.
+ * Activity responsible for unlocking the autofill service by asking the user to verify with a fingerprint or
+ * alternative device unlocking mechanism.
  */
 class AutofillUnlockActivity : AbstractAutofillUnlockActivity() {
     override val configuration: AutofillConfiguration by lazy { components.autofillConfiguration }

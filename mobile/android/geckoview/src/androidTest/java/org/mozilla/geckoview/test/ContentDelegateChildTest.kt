@@ -1,7 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
-
-@file:Suppress("ktlint:standard:no-wildcard-imports")
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -182,7 +180,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         arrayContainingInAnyOrder(*expectedActions),
                     )
                 }
-            },
+            }
         )
     }
 
@@ -213,7 +211,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         endsWith("owl.mp3"),
                     )
                 }
-            },
+            }
         )
     }
 
@@ -244,7 +242,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         element.srcUri,
                     )
                 }
-            },
+            }
         )
     }
 
@@ -281,7 +279,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         startsWith("blob:"),
                     )
                 }
-            },
+            }
         )
     }
 
@@ -317,7 +315,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         endsWith("test.gif"),
                     )
                 }
-            },
+            }
         )
     }
 
@@ -353,7 +351,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         endsWith("test.gif"),
                     )
                 }
-            },
+            }
         )
     }
 
@@ -394,7 +392,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         equalTo("Hello World"),
                     )
                 }
-            },
+            }
         )
     }
 
@@ -430,7 +428,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         equalTo(4096),
                     )
                 }
-            },
+            }
         )
     }
 
@@ -466,13 +464,12 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         endsWith("hello.html"),
                     )
                     assertThat(
-                        "The element link text should be the link text of the " +
-                                "anchor without white spaces.",
+                        "The element link text should be the link text of the " + "anchor without white spaces.",
                         element.linkText,
                         equalTo("Lorem ipsum dolor sit amet cillum amet minim."),
                     )
                 }
-            },
+            }
         )
     }
 
@@ -503,18 +500,14 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         endsWith("short.mp4"),
                     )
                 }
-            },
+            }
         )
     }
 
     @WithDisplay(width = 100, height = 100)
     @Test
     fun requestContextMenuOnLinkRightClickMouseUp() {
-        sessionRule.setPrefsUntilTestEnd(
-            mapOf(
-                "ui.context_menus.after_mouseup" to true,
-            ),
-        )
+        sessionRule.setPrefsUntilTestEnd(mapOf("ui.context_menus.after_mouseup" to true))
         mainSession.loadTestPath(CONTEXT_MENU_LINK_HTML_PATH)
         mainSession.waitForPageStop()
 
@@ -529,7 +522,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                     screenY: Int,
                     element: ContextElement,
                 ) {}
-            },
+            }
         )
 
         sendRightClickUp(50f, 50f)
@@ -564,18 +557,14 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         equalTo("Hello World"),
                     )
                 }
-            },
+            }
         )
     }
 
     @WithDisplay(width = 100, height = 100)
     @Test
     fun requestContextMenuOnLinkRightClickMouseDown() {
-        sessionRule.setPrefsUntilTestEnd(
-            mapOf(
-                "ui.context_menus.after_mouseup" to false,
-            ),
-        )
+        sessionRule.setPrefsUntilTestEnd(mapOf("ui.context_menus.after_mouseup" to false))
         mainSession.loadTestPath(CONTEXT_MENU_LINK_HTML_PATH)
         mainSession.waitForPageStop()
 
@@ -611,7 +600,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         equalTo("Hello World"),
                     )
                 }
-            },
+            }
         )
 
         sendRightClickUp(50f, 50f)
@@ -625,7 +614,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                     screenY: Int,
                     element: ContextElement,
                 ) {}
-            },
+            }
         )
     }
 
@@ -644,7 +633,8 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         resolve(true);
                     }, { once: true });
                 });
-                """.trimIndent(),
+                """
+                    .trimIndent()
             )
 
         mainSession.delegateUntilTestEnd(
@@ -655,9 +645,8 @@ class ContentDelegateChildTest : BaseSessionTest() {
                     screenX: Int,
                     screenY: Int,
                     element: ContextElement,
-                ) {
-                }
-            },
+                ) {}
+            }
         )
 
         sendLongPress(50f, 50f)
@@ -679,7 +668,8 @@ class ContentDelegateChildTest : BaseSessionTest() {
             """
             window.getSelection().setBaseAndExtent(document.querySelector('p'), 0,
                                                    document.querySelector('p'), 1)
-            """.trimIndent(),
+            """
+                .trimIndent()
         )
 
         simulateRightClick(50f, 50f)
@@ -690,7 +680,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                 ACTION_HIDE,
                 ACTION_SELECT_ALL,
                 ACTION_UNSELECT,
-            ),
+            )
         )
 
         // Calling preventDefault doesn't show action menu
@@ -704,7 +694,8 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         resolve();
                     }, { once: true })
                 )
-                """.trimIndent(),
+                """
+                    .trimIndent()
             )
 
         simulateRightClick(50f, 50f)
@@ -724,7 +715,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                     session: GeckoSession,
                     selection: SelectionActionDelegate.Selection,
                 ) {}
-            },
+            }
         )
 
         contextmenuEventPromise.value
@@ -754,7 +745,8 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         resolve();
                     }, 100);
                 });
-                """.trimIndent(),
+                """
+                    .trimIndent()
             )
 
         contentEditablePromise.value
@@ -769,7 +761,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                 ACTION_CUT,
                 ACTION_DELETE,
                 ACTION_HIDE,
-            ),
+            )
         )
     }
 
@@ -787,7 +779,8 @@ class ContentDelegateChildTest : BaseSessionTest() {
             """
             document.querySelector('input[type=text]').focus();
             document.querySelector('input[type=text]').setSelectionRange(0, 100);
-            """.trimIndent(),
+            """
+                .trimIndent()
         )
 
         simulateRightClick(50f, 50f)
@@ -800,7 +793,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                 ACTION_CUT,
                 ACTION_DELETE,
                 ACTION_HIDE,
-            ),
+            )
         )
 
         // Click non-text control doesn't show action menu and context menu
@@ -810,7 +803,8 @@ class ContentDelegateChildTest : BaseSessionTest() {
                 """
                 new Promise(
                     resolve => document.documentElement.addEventListener('contextmenu', resolve, { once: true }))
-                """.trimIndent(),
+                """
+                    .trimIndent()
             )
 
         sendRightClickDown(250f, 10f)
@@ -831,7 +825,7 @@ class ContentDelegateChildTest : BaseSessionTest() {
                     session: GeckoSession,
                     selection: SelectionActionDelegate.Selection,
                 ) {}
-            },
+            }
         )
 
         contextmenuEventPromise.value
@@ -852,7 +846,8 @@ class ContentDelegateChildTest : BaseSessionTest() {
                         resolve(true);
                     }, { once: true });
                 });
-                """.trimIndent(),
+                """
+                    .trimIndent()
             )
 
         sendLongPress(50f, 50f)

@@ -912,6 +912,22 @@ void CodeGeneratorShared::markSafepointAt(uint32_t offset, LInstruction* ins) {
   MOZ_ASSERT_IF(
       !safepointIndices_.empty() && !masm.oom(),
       offset - safepointIndices_.back().displacement() >= sizeof(uint32_t));
+#ifdef DEBUG
+  // Recording a single LSafepoint at more than one offset ("many-to-one") is
+  // only sound where the generated code is never invalidated -- always true for
+  // wasm -- or, for JS Ion, where the extra encoding has been declared via
+  // LIRGraph::addExtraSafepointUses (bug 1922829). Otherwise invalidation
+  // patches data in-place of the call, corrupting an alternate execution trace
+  // that shares the safepoint; see the comment on the maxSafepointIndices
+  // assert in CodeGenerator::generate(). That assert is the precise accounting;
+  // this is a localized early tripwire that fires at the offending call if new
+  // JS Ion code ever breaks the invariant.
+  if (LSafepoint* sp = ins->safepoint()) {
+    MOZ_ASSERT_IF(sp->recordedInSafepointIndices(),
+                  gen->compilingWasm() || graph.extraSafepointUses() > 0);
+    sp->setRecordedInSafepointIndices();
+  }
+#endif
   masm.propagateOOM(safepointIndices_.append(
       CodegenSafepointIndex(offset, ins->safepoint())));
 }

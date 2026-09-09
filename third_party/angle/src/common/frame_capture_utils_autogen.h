@@ -99,6 +99,7 @@ enum class ParamType
     TFramebufferID,
     TFramebufferIDConstPointer,
     TFramebufferIDPointer,
+    TFramebufferParameter,
     TGLDEBUGPROC,
     TGLDEBUGPROCKHR,
     TGLGETBLOBPROCANGLE,
@@ -164,6 +165,7 @@ enum class ParamType
     TMemoryObjectIDConstPointer,
     TMemoryObjectIDPointer,
     TObjectType,
+    TPackUnpackParameter,
     TPipeInfo,
     TPlaneParameter,
     TPlatformInfo,
@@ -282,7 +284,7 @@ enum class ParamType
     TvoidPointerPointer,
 };
 
-constexpr uint32_t kParamTypeCount = 245;
+constexpr uint32_t kParamTypeCount = 247;
 
 union ParamValue
 {
@@ -344,6 +346,7 @@ union ParamValue
     gl::FramebufferID FramebufferIDVal;
     const gl::FramebufferID *FramebufferIDConstPointerVal;
     gl::FramebufferID *FramebufferIDPointerVal;
+    gl::FramebufferParameter FramebufferParameterVal;
     GLDEBUGPROC GLDEBUGPROCVal;
     GLDEBUGPROCKHR GLDEBUGPROCKHRVal;
     GLGETBLOBPROCANGLE GLGETBLOBPROCANGLEVal;
@@ -398,6 +401,7 @@ union ParamValue
     const gl::MemoryObjectID *MemoryObjectIDConstPointerVal;
     gl::MemoryObjectID *MemoryObjectIDPointerVal;
     egl::ObjectType ObjectTypeVal;
+    gl::PackUnpackParameter PackUnpackParameterVal;
     gl::PlaneParameter PlaneParameterVal;
     gl::PointParameter PointParameterVal;
     gl::PolygonMode PolygonModeVal;
@@ -907,6 +911,13 @@ inline gl::FramebufferID *GetParamVal<ParamType::TFramebufferIDPointer, gl::Fram
 }
 
 template <>
+inline gl::FramebufferParameter
+GetParamVal<ParamType::TFramebufferParameter, gl::FramebufferParameter>(const ParamValue &value)
+{
+    return value.FramebufferParameterVal;
+}
+
+template <>
 inline GLDEBUGPROC GetParamVal<ParamType::TGLDEBUGPROC, GLDEBUGPROC>(const ParamValue &value)
 {
     return value.GLDEBUGPROCVal;
@@ -1250,6 +1261,13 @@ template <>
 inline egl::ObjectType GetParamVal<ParamType::TObjectType, egl::ObjectType>(const ParamValue &value)
 {
     return value.ObjectTypeVal;
+}
+
+template <>
+inline gl::PackUnpackParameter
+GetParamVal<ParamType::TPackUnpackParameter, gl::PackUnpackParameter>(const ParamValue &value)
+{
+    return value.PackUnpackParameterVal;
 }
 
 template <>
@@ -2308,6 +2326,8 @@ T AccessParamValue(ParamType paramType, const ParamValue &value)
             return GetParamVal<ParamType::TFramebufferIDConstPointer, T>(value);
         case ParamType::TFramebufferIDPointer:
             return GetParamVal<ParamType::TFramebufferIDPointer, T>(value);
+        case ParamType::TFramebufferParameter:
+            return GetParamVal<ParamType::TFramebufferParameter, T>(value);
         case ParamType::TGLDEBUGPROC:
             return GetParamVal<ParamType::TGLDEBUGPROC, T>(value);
         case ParamType::TGLDEBUGPROCKHR:
@@ -2438,6 +2458,8 @@ T AccessParamValue(ParamType paramType, const ParamValue &value)
             return GetParamVal<ParamType::TMemoryObjectIDPointer, T>(value);
         case ParamType::TObjectType:
             return GetParamVal<ParamType::TObjectType, T>(value);
+        case ParamType::TPackUnpackParameter:
+            return GetParamVal<ParamType::TPackUnpackParameter, T>(value);
         case ParamType::TPipeInfo:
             return GetParamVal<ParamType::TPipeInfo, T>(value);
         case ParamType::TPlaneParameter:
@@ -3032,6 +3054,13 @@ inline void SetParamVal<ParamType::TFramebufferIDPointer>(gl::FramebufferID *val
 }
 
 template <>
+inline void SetParamVal<ParamType::TFramebufferParameter>(gl::FramebufferParameter valueIn,
+                                                          ParamValue *valueOut)
+{
+    valueOut->FramebufferParameterVal = valueIn;
+}
+
+template <>
 inline void SetParamVal<ParamType::TGLDEBUGPROC>(GLDEBUGPROC valueIn, ParamValue *valueOut)
 {
     valueOut->GLDEBUGPROCVal = valueIn;
@@ -3370,6 +3399,13 @@ template <>
 inline void SetParamVal<ParamType::TObjectType>(egl::ObjectType valueIn, ParamValue *valueOut)
 {
     valueOut->ObjectTypeVal = valueIn;
+}
+
+template <>
+inline void SetParamVal<ParamType::TPackUnpackParameter>(gl::PackUnpackParameter valueIn,
+                                                         ParamValue *valueOut)
+{
+    valueOut->PackUnpackParameterVal = valueIn;
 }
 
 template <>
@@ -4469,6 +4505,9 @@ void InitParamValue(ParamType paramType, T valueIn, ParamValue *valueOut)
         case ParamType::TFramebufferIDPointer:
             SetParamVal<ParamType::TFramebufferIDPointer>(valueIn, valueOut);
             break;
+        case ParamType::TFramebufferParameter:
+            SetParamVal<ParamType::TFramebufferParameter>(valueIn, valueOut);
+            break;
         case ParamType::TGLDEBUGPROC:
             SetParamVal<ParamType::TGLDEBUGPROC>(valueIn, valueOut);
             break;
@@ -4663,6 +4702,9 @@ void InitParamValue(ParamType paramType, T valueIn, ParamValue *valueOut)
             break;
         case ParamType::TObjectType:
             SetParamVal<ParamType::TObjectType>(valueIn, valueOut);
+            break;
+        case ParamType::TPackUnpackParameter:
+            SetParamVal<ParamType::TPackUnpackParameter>(valueIn, valueOut);
             break;
         case ParamType::TPipeInfo:
             SetParamVal<ParamType::TPipeInfo>(valueIn, valueOut);

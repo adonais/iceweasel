@@ -9,26 +9,27 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-/**
- * Internal database for saving site AddonUpdaterRequest.
- */
+/** Internal database for saving site AddonUpdaterRequest. */
 @Database(entities = [UpdateAttemptEntity::class], version = 1)
 internal abstract class UpdateAttemptsDatabase : RoomDatabase() {
     abstract fun updateAttemptDao(): UpdateAttemptDao
 
     companion object {
-        @Volatile
-        private var instance: UpdateAttemptsDatabase? = null
+        @Volatile private var instance: UpdateAttemptsDatabase? = null
 
         @Synchronized
         fun get(context: Context): UpdateAttemptsDatabase {
-            instance?.let { return it }
+            instance?.let {
+                return it
+            }
 
             return Room.databaseBuilder(
-                context,
-                UpdateAttemptsDatabase::class.java,
-                "addons_updater_attempts_database",
-            ).build().also { instance = it }
+                    context,
+                    UpdateAttemptsDatabase::class.java,
+                    "addons_updater_attempts_database",
+                )
+                .build()
+                .also { instance = it }
         }
     }
 }

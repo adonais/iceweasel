@@ -18,9 +18,7 @@ import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.lib.crash.R
 import mozilla.components.lib.crash.db.CrashDatabase
 
-/**
- * Fragment displaying the list of crashes.
- */
+/** Fragment displaying the list of crashes. */
 abstract class AbstractCrashListFragment : Fragment(R.layout.mozac_lib_crash_crashlist) {
     private val database by lazy { CrashDatabase.get(requireContext()) }
     abstract val reporter: CrashReporter
@@ -33,21 +31,23 @@ abstract class AbstractCrashListFragment : Fragment(R.layout.mozac_lib_crash_cra
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val listView: RecyclerView = view.findViewById(R.id.mozac_lib_crash_list)
-        listView.layoutManager = LinearLayoutManager(
-            requireContext(),
-            LinearLayoutManager.VERTICAL,
-            false,
-        )
+        listView.layoutManager =
+            LinearLayoutManager(
+                requireContext(),
+                LinearLayoutManager.VERTICAL,
+                false,
+            )
 
         val emptyView = view.findViewById<TextView>(R.id.mozac_lib_crash_empty)
 
         val adapter = CrashListAdapter(::onShareCrashClicked, ::onCrashServiceSelected)
         listView.adapter = adapter
 
-        val dividerItemDecoration = DividerItemDecoration(
-            requireContext(),
-            LinearLayoutManager.VERTICAL,
-        )
+        val dividerItemDecoration =
+            DividerItemDecoration(
+                requireContext(),
+                LinearLayoutManager.VERTICAL,
+            )
         listView.addItemDecoration(dividerItemDecoration)
 
         try {
@@ -73,10 +73,11 @@ abstract class AbstractCrashListFragment : Fragment(R.layout.mozac_lib_crash_cra
     }
 
     private fun onShareCrashClicked(crash: DisplayableCrash) {
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, crash.toString())
-        }
+        val intent =
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, crash.toString())
+            }
         requireActivity().startActivity(Intent.createChooser(intent, "DisplayableCrash"))
     }
 }

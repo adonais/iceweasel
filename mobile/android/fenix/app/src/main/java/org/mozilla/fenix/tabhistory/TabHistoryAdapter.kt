@@ -18,13 +18,12 @@ data class TabHistoryItem(
     val isSelected: Boolean,
 )
 
-class TabHistoryAdapter(
-    private val interactor: TabHistoryViewInteractor,
-) : ListAdapter<TabHistoryItem, TabHistoryViewHolder>(DiffCallback) {
+class TabHistoryAdapter(private val interactor: TabHistoryViewInteractor) :
+    ListAdapter<TabHistoryItem, TabHistoryViewHolder>(DiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TabHistoryViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.site_list_item, parent, false) as WidgetSiteItemView
+        val view =
+            LayoutInflater.from(parent.context).inflate(R.layout.site_list_item, parent, false) as WidgetSiteItemView
         return TabHistoryViewHolder(view, interactor)
     }
 
@@ -33,10 +32,8 @@ class TabHistoryAdapter(
     }
 
     internal object DiffCallback : DiffUtil.ItemCallback<TabHistoryItem>() {
-        override fun areItemsTheSame(oldItem: TabHistoryItem, newItem: TabHistoryItem) =
-            oldItem.url == newItem.url
+        override fun areItemsTheSame(oldItem: TabHistoryItem, newItem: TabHistoryItem) = oldItem.url == newItem.url
 
-        override fun areContentsTheSame(oldItem: TabHistoryItem, newItem: TabHistoryItem) =
-            oldItem == newItem
+        override fun areContentsTheSame(oldItem: TabHistoryItem, newItem: TabHistoryItem) = oldItem == newItem
     }
 }

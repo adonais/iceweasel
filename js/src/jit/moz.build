@@ -43,6 +43,7 @@ UNIFIED_SOURCES += [
     "FlushICache.cpp",
     "FoldLinearArithConstants.cpp",
     "FoldTests.cpp",
+    "GeneratorResumeAnalysis.cpp",
     "GraphSpewer.cpp",
     "InlinableNatives.cpp",
     "InstructionReordering.cpp",

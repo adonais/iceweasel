@@ -38,6 +38,7 @@ dependencies {
 
     testImplementation ComponentsDependencies.mozilla_appservices_full_megazord_libsForTests
     testImplementation libs.androidx.test.core
+    testImplementation libs.androidx.arch.core.testing
     testImplementation libs.androidx.test.junit
     testImplementation libs.androidx.work.testing
     testImplementation libs.kotlin.reflect

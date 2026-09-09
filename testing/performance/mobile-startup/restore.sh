@@ -1,11 +1,16 @@
 #!/bin/bash
 
-#name: tab-restore-shopify
+#name: tab-restore-newssite
 #owner: perftest
-#description: Runs the shopify mobile restore test for chrome/fenix
+#description: Runs the newssite mobile restore test for chrome/fenix
 
-# Path to the Python script
 SCRIPT_PATH="testing/performance/mobile-startup/android_startup_videoapplink.py"
 
+source testing/performance/mobile-startup/newssite-setup.sh
+
+start_newssite_server
+
 # Run the Python script
-$PYTHON_PATH_SHELL_SCRIPT $SCRIPT_PATH $APP mobile_restore https://theme-crave-demo.myshopify.com
+$PYTHON_PATH_SHELL_SCRIPT $SCRIPT_PATH $APP mobile_restore $TEST_URL
+
+stop_newssite_server

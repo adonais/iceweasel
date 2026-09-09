@@ -9,11 +9,7 @@ const { AddonManager } = ChromeUtils.importESModule(
 add_task(async function testReloadExitedAddon() {
   await startupAddonsManager();
 
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
-
-  const client = new DevToolsClient(DevToolsServer.connectPipe());
-  await client.connect();
+  const client = await CommandsFactory.spawnClientToDebugSystemPrincipal();
 
   // Retrieve the current list of addons to be notified of the next list update.
   // We will also call listAddons every time we receive the event "addonListChanged" for

@@ -41,9 +41,7 @@ class AddToHomeScreenRobot {
             fun deviceHomeScreen() = UiScrollable(UiSelector().scrollable(true))
             deviceHomeScreen().setAsHorizontalList()
 
-            fun shortcut() =
-                deviceHomeScreen()
-                    .getChildByText(UiSelector().text(title), title, true)
+            fun shortcut() = deviceHomeScreen().getChildByText(UiSelector().text(title), title, true)
             shortcut().waitForExists(waitingTime)
             shortcut().clickAndWaitForNewWindow()
 
@@ -53,19 +51,10 @@ class AddToHomeScreenRobot {
     }
 }
 
-private val addToHSOKBtn = mDevice.findObject(
-    UiSelector()
-        .resourceId("$packageName:id/addtohomescreen_dialog_add")
-        .enabled(true),
-)
+private val addToHSOKBtn =
+    mDevice.findObject(UiSelector().resourceId("$packageName:id/addtohomescreen_dialog_add").enabled(true))
 
-private val addAutomaticallyBtn = mDevice.findObject(
-    UiSelector()
-        .className("android.widget.Button")
-        .textContains("Add to home screen"),
-)
+private val addAutomaticallyBtn =
+    mDevice.findObject(UiSelector().className("android.widget.Button").textContains("Add to home screen"))
 
-private val shortcutTitle = mDevice.findObject(
-    UiSelector()
-        .resourceId("$packageName:id/edit_title"),
-)
+private val shortcutTitle = mDevice.findObject(UiSelector().resourceId("$packageName:id/edit_title"))

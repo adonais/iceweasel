@@ -20,28 +20,30 @@ import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
  * - verifies the download prompt and the completion snackbar,
  * - verifies the file appears in the downloads manager.
  *
- * Parameterized: the runner executes [allFilesAppearInDownloadsMenuTest] once per file name, so one
- * file type failing does not mask the others.
+ * Parameterized: the runner executes [allFilesAppearInDownloadsMenuTest] once per file name, so one file type failing
+ * does not mask the others.
  */
 @RunWith(Parameterized::class)
 class DownloadFileTypesTest(private val downloadFile: String) : BaseTest() {
-    private val mockWebServer get() = fenixTestRule.mockWebServer
+    private val mockWebServer
+        get() = fenixTestRule.mockWebServer
 
     companion object {
         // The test takes each file name as a parameter and runs it individually.
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun downloadList() = listOf(
-            "zip_small.zip",
-            "docx_document.docx",
-            "mp3_audio.mp3",
-            "txt_file.txt",
-            "png_image.png",
-            "webm_video.webm",
-            "csv_file.csv",
-            "xml_file.xml",
-            "svg_image.svg",
-        )
+        fun downloadList() =
+            listOf(
+                "zip_small.zip",
+                "docx_document.docx",
+                "mp3_audio.mp3",
+                "txt_file.txt",
+                "png_image.png",
+                "webm_video.webm",
+                "csv_file.csv",
+                "xml_file.xml",
+                "svg_image.svg",
+            )
     }
 
     @Before
@@ -66,15 +68,15 @@ class DownloadFileTypesTest(private val downloadFile: String) : BaseTest() {
         // of the nine on every run.
         val downloadTestPage = mockWebServer.downloadPageAsset.url.toString()
 
-        on.browserPage.navigateToPage(downloadTestPage)
+        on.browserPage
+            .navigateToPage(downloadTestPage)
             .verifyPageContent(downloadFile)
             .clickDownloadLink(downloadFile, downloadTestPage)
             .verifyDownloadPrompt()
             .clickDownloadPromptConfirmButton()
             .verifyDownloadCompleteSnackbar(downloadFile)
 
-        on.downloads.navigateToPage()
-            .verifyDownloadedFileExistsInDownloadsList(downloadFile)
+        on.downloads.navigateToPage().verifyDownloadedFileExistsInDownloadsList(downloadFile)
 
         // Legacy exited the downloads manager back to the browser as the last step; keep it so the
         // test leaves the app on the page it started from.

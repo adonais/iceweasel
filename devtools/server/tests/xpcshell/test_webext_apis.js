@@ -10,7 +10,6 @@ const { ExtensionTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/ExtensionXPCShellUtils.sys.mjs"
 );
 
-const DistinctDevToolsServer = getDistinctDevToolsServer();
 ExtensionTestUtils.init(this);
 
 add_setup(async () => {
@@ -18,62 +17,22 @@ add_setup(async () => {
   await startupAddonsManager();
 });
 
-// Basic request wrapper that sends a request and resolves on the next packet.
-// Will only work for very basic scenarios, without events emitted on the server
-// etc...
-async function sendRequest(transport, request) {
-  return new Promise(resolve => {
-    transport.hooks = {
-      onPacket: packet => {
-        dump(`received packet: ${JSON.stringify(packet)}\n`);
-        // Let's resolve only when we get a packet that is related to our
-        // request. It is needed because some methods do not return the correct
-        // response right away. This is the case of the `reload` method, which
-        // receives a `addonListChanged` message first and then a `reload`
-        // message.
-        if (packet.from === request.to) {
-          resolve(packet);
-        }
-      },
-    };
-    transport.send(request);
-  });
-}
-
 // If this test case fails, please reach out to webext peers because
 // https://github.com/mozilla/web-ext relies on the APIs tested here.
 add_task(async function test_webext_run_apis() {
-  DistinctDevToolsServer.init();
-  DistinctDevToolsServer.registerAllActors();
-
-  const transport = DistinctDevToolsServer.connectPipe();
-
-  // After calling connectPipe, the root actor will be created on the server
-  // and a packet will be emitted after a tick. Wait for the initial packet.
-  await new Promise(resolve => {
-    transport.hooks = { onPacket: resolve };
-  });
-
-  const getRootResponse = await sendRequest(transport, {
-    to: "root",
-    type: "getRoot",
-  });
-
-  ok(getRootResponse, "received a response after calling RootActor::getRoot");
-  ok(getRootResponse.addonsActor, "getRoot returned an addonsActor id");
+  const client = await CommandsFactory.spawnClientToDebugSystemPrincipal();
+  const addons = await client.mainRoot.getFront("addons");
 
   // installTemporaryAddon
   const addonId = "test-addons-actor@mozilla.org";
   const addonPath = getFilePath("addons/web-extension", false, true);
   const promiseStarted = AddonTestUtils.promiseWebExtensionStartup(addonId);
-  const { addon } = await sendRequest(transport, {
-    to: getRootResponse.addonsActor,
-    type: "installTemporaryAddon",
+  const addon = await addons.installTemporaryAddon(
     addonPath,
     // The openDevTools parameter is not always passed by web-ext. This test
     // omits it, to make sure that the request without the flag is accepted.
-    // openDevTools: false,
-  });
+    false
+  );
   await promiseStarted;
 
   ok(addon, "addonsActor allows to install a temporary add-on");
@@ -81,24 +40,18 @@ add_task(async function test_webext_run_apis() {
   equal(addon.actor, false, "temporary add-on does not have an actor");
 
   // listAddons
-  let { addons } = await sendRequest(transport, {
-    to: "root",
-    type: "listAddons",
-  });
-  ok(Array.isArray(addons), "listAddons() returns a list of add-ons");
-  equal(addons.length, 1, "expected an add-on installed");
+  let addonsList = await client.mainRoot.listAddons();
+  ok(Array.isArray(addonsList), "listAddons() returns a list of add-ons");
+  equal(addonsList.length, 1, "expected an add-on installed");
 
-  const installedAddon = addons[0];
+  const installedAddon = addonsList[0];
   equal(installedAddon.id, addonId, "installed add-on is the expected one");
-  ok(installedAddon.actor, "returned add-on has an actor");
+  ok(installedAddon.actorID, "returned add-on has an actor");
 
   // reload
   const promiseReloaded = AddonTestUtils.promiseAddonEvent("onInstalled");
   const promiseRestarted = AddonTestUtils.promiseWebExtensionStartup(addonId);
-  await sendRequest(transport, {
-    to: installedAddon.actor,
-    type: "reload",
-  });
+  await installedAddon.reload();
   await Promise.all([promiseReloaded, promiseRestarted]);
 
   // uninstallAddon
@@ -112,30 +65,23 @@ add_task(async function test_webext_run_apis() {
     };
     AddonManager.addAddonListener(listener);
   });
-  await sendRequest(transport, {
-    to: getRootResponse.addonsActor,
-    type: "uninstallAddon",
-    addonId,
-  });
+  await addons.uninstallAddon(addonId);
   await promiseUninstalled;
 
-  ({ addons } = await sendRequest(transport, {
-    to: "root",
-    type: "listAddons",
-  }));
-  equal(addons.length, 0, "expected no add-on installed");
+  addonsList = await client.mainRoot.listAddons();
+  equal(addonsList.length, 0, "expected no add-on installed");
 
   // Attempt to uninstall an add-on that is (no longer) installed.
-  let error = await sendRequest(transport, {
-    to: getRootResponse.addonsActor,
-    type: "uninstallAddon",
-    addonId,
-  });
-  equal(
-    error?.message,
-    `Could not uninstall add-on "${addonId}"`,
-    "expected error"
-  );
+  try {
+    await addons.uninstallAddon(addonId);
+    ok(false, "should throw");
+  } catch (error) {
+    Assert.stringContains(
+      error?.message,
+      `Could not uninstall add-on "${addonId}"`,
+      "expected error"
+    );
+  }
 
   // Attempt to uninstall a non-temporarily loaded extension, which we do not
   // allow at the moment. We start by loading an extension, then we call the
@@ -149,14 +95,18 @@ add_task(async function test_webext_run_apis() {
   });
   await extension.startup();
 
-  error = await sendRequest(transport, {
-    to: getRootResponse.addonsActor,
-    type: "uninstallAddon",
-    addonId: id,
-  });
-  equal(error?.message, `Could not uninstall add-on "${id}"`, "expected error");
+  try {
+    await addons.uninstallAddon(id);
+    ok(false, "should throw");
+  } catch (error) {
+    Assert.stringContains(
+      error?.message,
+      `Could not uninstall add-on "${id}"`,
+      "expected error"
+    );
+  }
 
   await extension.unload();
 
-  transport.close();
+  await client.close();
 });

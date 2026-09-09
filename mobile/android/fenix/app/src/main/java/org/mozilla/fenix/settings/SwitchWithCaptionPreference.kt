@@ -10,14 +10,16 @@ import android.widget.TextView
 import androidx.core.view.isGone
 import androidx.preference.PreferenceViewHolder
 import androidx.preference.SwitchPreferenceCompat
-import org.mozilla.fenix.R
 import kotlin.properties.Delegates
+import org.mozilla.fenix.R
 
 /**
- * A [SwitchPreferenceCompat] that renders an additional caption line below its summary. The
- * caption text is set programmatically via [caption]; the caption view is hidden while it is empty.
+ * A [SwitchPreferenceCompat] that renders an additional caption line below its summary. The caption text is set
+ * programmatically via [caption]; the caption view is hidden while it is empty.
  */
-class SwitchWithCaptionPreference @JvmOverloads constructor(
+class SwitchWithCaptionPreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     attributeSetId: Int = androidx.preference.R.attr.switchPreferenceCompatStyle,

@@ -7,17 +7,13 @@ package mozilla.components.feature.fxsuggest.dto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-@Serializable
-internal data class CombinedSuggestionResponseDto(
-    val suggestions: List<SuggestionDto> = emptyList(),
-)
+@Serializable internal data class CombinedSuggestionResponseDto(val suggestions: List<SuggestionDto> = emptyList())
 
 @Serializable
 internal data class SuggestionDto(
     val provider: String,
     val score: Double,
-    @SerialName("custom_details")
-    val customDetails: CustomDetailsDto? = null,
+    @SerialName("custom_details") val customDetails: CustomDetailsDto? = null,
 )
 
 @Serializable

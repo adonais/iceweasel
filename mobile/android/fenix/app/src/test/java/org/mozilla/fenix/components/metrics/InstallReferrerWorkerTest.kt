@@ -35,8 +35,7 @@ import org.robolectric.RobolectricTestRunner
 class InstallReferrerWorkerTest {
     val context: Context = ApplicationProvider.getApplicationContext()
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     @Test
     fun `WHEN retrieving minimum UTM params from setting THEN result should match`() {
@@ -50,7 +49,8 @@ class InstallReferrerWorkerTest {
 
     @Test
     fun `WHEN retrieving maximum UTM params from setting THEN result should match`() {
-        val expected = UTMParams(source = "source", medium = "medium", campaign = "campaign", content = "content", term = "term")
+        val expected =
+            UTMParams(source = "source", medium = "medium", campaign = "campaign", content = "content", term = "term")
         val settings = Settings(context)
 
         expected.intoSettings(settings)
@@ -102,10 +102,14 @@ class InstallReferrerWorkerTest {
     @Test
     fun `WHEN parsing referrer response with full UTM params from setting THEN UTM params in settings should match expected`() {
         val settings = Settings(context)
-        val params = UTMParams.parseUTMParameters("utm_source=SOURCE&utm_medium=MEDIUM&utm_campaign=CAMPAIGN&utm_content=CONTENT&utm_term=TERM")
+        val params =
+            UTMParams.parseUTMParameters(
+                "utm_source=SOURCE&utm_medium=MEDIUM&utm_campaign=CAMPAIGN&utm_content=CONTENT&utm_term=TERM"
+            )
         params.recordInstallReferrer(settings)
 
-        val expected = UTMParams(source = "SOURCE", medium = "MEDIUM", campaign = "CAMPAIGN", content = "CONTENT", term = "TERM")
+        val expected =
+            UTMParams(source = "SOURCE", medium = "MEDIUM", campaign = "CAMPAIGN", content = "CONTENT", term = "TERM")
         val observed = UTMParams.fromSettings(settings)
         assertEquals(expected, observed)
 
@@ -135,7 +139,10 @@ class InstallReferrerWorkerTest {
 
     @Test
     fun `WHEN receiving a Meta encrypted attribution THEN will decrypt correctly`() {
-        val metaParams = MetaParams.extractMetaAttribution("""{"app":12345, "t":1234567890,"source":{"data":"DATA","nonce":"NONCE"}}""")
+        val metaParams =
+            MetaParams.extractMetaAttribution(
+                """{"app":12345, "t":1234567890,"source":{"data":"DATA","nonce":"NONCE"}}"""
+            )
         val expectedMetaParams = MetaParams("12345", "1234567890", "DATA", "NONCE")
 
         assertEquals(metaParams, expectedMetaParams)
@@ -143,7 +150,10 @@ class InstallReferrerWorkerTest {
 
     @Test
     fun `WHEN receiving a Meta encrypted attribution in percent format THEN will decrypt correctly`() {
-        val metaParams = MetaParams.extractMetaAttribution("%7B%22app%22%3A12345%2C%22t%22%3A1234567890%2C%22source%22%3A%7B%22data%22%3A%22DATA%22%2C%22nonce%22%3A%22NONCE%22%7D%7D")
+        val metaParams =
+            MetaParams.extractMetaAttribution(
+                "%7B%22app%22%3A12345%2C%22t%22%3A1234567890%2C%22source%22%3A%7B%22data%22%3A%22DATA%22%2C%22nonce%22%3A%22NONCE%22%7D%7D"
+            )
         val expectedMetaParams = MetaParams("12345", "1234567890", "DATA", "NONCE")
 
         assertEquals(metaParams, expectedMetaParams)
@@ -151,7 +161,10 @@ class InstallReferrerWorkerTest {
 
     @Test
     fun `WHEN receiving a Meta encrypted attribution in bad format THEN it should not crash`() {
-        val metaParams = MetaParams.extractMetaAttribution("%7B%22app%22%3A12345%2C%22t%22%3A1234567890%2C%22source%22%3A%7B%22data%22%3A%22DATA%22%2C%22nonce%22%3A%22NONCE%22%7B%7D")
+        val metaParams =
+            MetaParams.extractMetaAttribution(
+                "%7B%22app%22%3A12345%2C%22t%22%3A1234567890%2C%22source%22%3A%7B%22data%22%3A%22DATA%22%2C%22nonce%22%3A%22NONCE%22%7B%7D"
+            )
 
         assertNull(metaParams)
     }
@@ -202,8 +215,18 @@ class InstallReferrerWorkerTest {
 
     @Test
     fun `WHEN parsing referrer response with meta attribution THEN both UTM and Meta params should match expected`() {
-        val utmParams = UTMParams.parseUTMParameters("""utm_content={"app":12345, "t":1234567890,"source":{"data":"DATA","nonce":"NONCE"}}""")
-        val expectedUtmParams = UTMParams(source = "", medium = "", campaign = "", content = """{"app":12345, "t":1234567890,"source":{"data":"DATA","nonce":"NONCE"}}""", term = "")
+        val utmParams =
+            UTMParams.parseUTMParameters(
+                """utm_content={"app":12345, "t":1234567890,"source":{"data":"DATA","nonce":"NONCE"}}"""
+            )
+        val expectedUtmParams =
+            UTMParams(
+                source = "",
+                medium = "",
+                campaign = "",
+                content = """{"app":12345, "t":1234567890,"source":{"data":"DATA","nonce":"NONCE"}}""",
+                term = "",
+            )
 
         assertEquals(utmParams, expectedUtmParams)
 
@@ -216,12 +239,13 @@ class InstallReferrerWorkerTest {
     @Test
     fun `WHEN recording Meta attribution THEN correct values should be recorded to telemetry`() {
         // The data and nonce are from Meta's example https://developers.facebook.com/docs/app-ads/install-referrer/
-        val metaParams = MetaParams(
-            "12345",
-            "1234567890",
-            "afe56cf6228c6ea8c79da49186e718e92a579824596ae1d0d4d20d7793dca797bd4034ccf467bfae5c79a3981e7a2968c41949237e2b2db678c1c3d39c9ae564c5cafd52f2b77a3dc77bf1bae063114d0283b97417487207735da31ddc1531d5645a9c3e602c195a0ebf69c272aa5fda3a2d781cb47e117310164715a54c7a5a032740584e2789a7b4e596034c16425139a77e507c492b629c848573c714a03a2e7d25b9459b95842332b460f3682d19c35dbc7d53e3a51e0497ff6a6cbb367e760debc4194ae097498108df7b95eac2fa9bac4320077b510be3b7b823248bfe02ae501d9fe4ba179c7de6733c92bf89d523df9e31238ef497b9db719484cbab7531dbf6c5ea5a8087f95d59f5e4f89050e0f1dc03e464168ad76a64cca64b79",
-            "b7203c6a6fb633d16e9cf5c1",
-        )
+        val metaParams =
+            MetaParams(
+                "12345",
+                "1234567890",
+                "afe56cf6228c6ea8c79da49186e718e92a579824596ae1d0d4d20d7793dca797bd4034ccf467bfae5c79a3981e7a2968c41949237e2b2db678c1c3d39c9ae564c5cafd52f2b77a3dc77bf1bae063114d0283b97417487207735da31ddc1531d5645a9c3e602c195a0ebf69c272aa5fda3a2d781cb47e117310164715a54c7a5a032740584e2789a7b4e596034c16425139a77e507c492b629c848573c714a03a2e7d25b9459b95842332b460f3682d19c35dbc7d53e3a51e0497ff6a6cbb367e760debc4194ae097498108df7b95eac2fa9bac4320077b510be3b7b823248bfe02ae501d9fe4ba179c7de6733c92bf89d523df9e31238ef497b9db719484cbab7531dbf6c5ea5a8087f95d59f5e4f89050e0f1dc03e464168ad76a64cca64b79",
+                "b7203c6a6fb633d16e9cf5c1",
+            )
 
         assertNull(MetaAttribution.app.testGetValue())
         assertNull(MetaAttribution.t.testGetValue())
@@ -231,7 +255,8 @@ class InstallReferrerWorkerTest {
 
         val expectedApp = "12345"
         val expectedT = "1234567890"
-        val expectedData = "afe56cf6228c6ea8c79da49186e718e92a579824596ae1d0d4d20d7793dca797bd4034ccf467bfae5c79a3981e7a2968c41949237e2b2db678c1c3d39c9ae564c5cafd52f2b77a3dc77bf1bae063114d0283b97417487207735da31ddc1531d5645a9c3e602c195a0ebf69c272aa5fda3a2d781cb47e117310164715a54c7a5a032740584e2789a7b4e596034c16425139a77e507c492b629c848573c714a03a2e7d25b9459b95842332b460f3682d19c35dbc7d53e3a51e0497ff6a6cbb367e760debc4194ae097498108df7b95eac2fa9bac4320077b510be3b7b823248bfe02ae501d9fe4ba179c7de6733c92bf89d523df9e31238ef497b9db719484cbab7531dbf6c5ea5a8087f95d59f5e4f89050e0f1dc03e464168ad76a64cca64b79"
+        val expectedData =
+            "afe56cf6228c6ea8c79da49186e718e92a579824596ae1d0d4d20d7793dca797bd4034ccf467bfae5c79a3981e7a2968c41949237e2b2db678c1c3d39c9ae564c5cafd52f2b77a3dc77bf1bae063114d0283b97417487207735da31ddc1531d5645a9c3e602c195a0ebf69c272aa5fda3a2d781cb47e117310164715a54c7a5a032740584e2789a7b4e596034c16425139a77e507c492b629c848573c714a03a2e7d25b9459b95842332b460f3682d19c35dbc7d53e3a51e0497ff6a6cbb367e760debc4194ae097498108df7b95eac2fa9bac4320077b510be3b7b823248bfe02ae501d9fe4ba179c7de6733c92bf89d523df9e31238ef497b9db719484cbab7531dbf6c5ea5a8087f95d59f5e4f89050e0f1dc03e464168ad76a64cca64b79"
         val expectedNonce = "b7203c6a6fb633d16e9cf5c1"
 
         val recordedApp = MetaAttribution.app.testGetValue()
@@ -255,10 +280,11 @@ class InstallReferrerWorkerTest {
     @Test
     fun `WHEN install referrer connection succeeds THEN returns OK with referrer response`() = runTest {
         val expectedReferrer = "utm_source=test&utm_medium=organic"
-        val fakeClient = FakeInstallReferrerClient(
-            responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-            referrerResponse = expectedReferrer,
-        )
+        val fakeClient =
+            FakeInstallReferrerClient(
+                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                referrerResponse = expectedReferrer,
+            )
 
         val (responseCode, referrerResponse) = InstallReferrerWorker.fetchInstallReferrer(fakeClient)
 
@@ -271,9 +297,10 @@ class InstallReferrerWorkerTest {
     @Test
     fun `WHEN install referrer returns SERVICE_UNAVAILABLE THEN returns SERVICE_UNAVAILABLE with null response`() =
         runTest {
-            val fakeClient = FakeInstallReferrerClient(
-                responseCode = InstallReferrerClient.InstallReferrerResponse.SERVICE_UNAVAILABLE,
-            )
+            val fakeClient =
+                FakeInstallReferrerClient(
+                    responseCode = InstallReferrerClient.InstallReferrerResponse.SERVICE_UNAVAILABLE
+                )
 
             val (responseCode, referrerResponse) = InstallReferrerWorker.fetchInstallReferrer(fakeClient)
 
@@ -284,25 +311,23 @@ class InstallReferrerWorkerTest {
         }
 
     @Test
-    fun `WHEN install referrer returns FEATURE_NOT_SUPPORTED THEN returns error with null response`() =
-        runTest {
-            val fakeClient = FakeInstallReferrerClient(
-                responseCode = InstallReferrerClient.InstallReferrerResponse.FEATURE_NOT_SUPPORTED,
+    fun `WHEN install referrer returns FEATURE_NOT_SUPPORTED THEN returns error with null response`() = runTest {
+        val fakeClient =
+            FakeInstallReferrerClient(
+                responseCode = InstallReferrerClient.InstallReferrerResponse.FEATURE_NOT_SUPPORTED
             )
 
-            val (responseCode, referrerResponse) = InstallReferrerWorker.fetchInstallReferrer(fakeClient)
+        val (responseCode, referrerResponse) = InstallReferrerWorker.fetchInstallReferrer(fakeClient)
 
-            assertEquals(InstallReferrerClient.InstallReferrerResponse.FEATURE_NOT_SUPPORTED, responseCode)
-            assertNull(referrerResponse)
-            assertTrue(fakeClient.connectionStarted)
-            assertTrue(fakeClient.connectionEnded)
-        }
+        assertEquals(InstallReferrerClient.InstallReferrerResponse.FEATURE_NOT_SUPPORTED, responseCode)
+        assertNull(referrerResponse)
+        assertTrue(fakeClient.connectionStarted)
+        assertTrue(fakeClient.connectionEnded)
+    }
 
     @Test
     fun `WHEN service disconnects THEN returns SERVICE_UNAVAILABLE with null response`() = runTest {
-        val fakeClient = FakeInstallReferrerClient(
-            simulateDisconnect = true,
-        )
+        val fakeClient = FakeInstallReferrerClient(simulateDisconnect = true)
 
         val (responseCode, referrerResponse) = InstallReferrerWorker.fetchInstallReferrer(fakeClient)
 
@@ -314,10 +339,11 @@ class InstallReferrerWorkerTest {
 
     @Test
     fun `WHEN getInstallReferrer throws RemoteException THEN returns OK with null response`() = runTest {
-        val fakeClient = FakeInstallReferrerClient(
-            responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-            throwRemoteException = true,
-        )
+        val fakeClient =
+            FakeInstallReferrerClient(
+                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                throwRemoteException = true,
+            )
 
         val (responseCode, referrerResponse) = InstallReferrerWorker.fetchInstallReferrer(fakeClient)
 
@@ -329,10 +355,11 @@ class InstallReferrerWorkerTest {
 
     @Test
     fun `WHEN getInstallReferrer throws SecurityException THEN returns OK with null response`() = runTest {
-        val fakeClient = FakeInstallReferrerClient(
-            responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-            throwSecurityException = true,
-        )
+        val fakeClient =
+            FakeInstallReferrerClient(
+                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                throwSecurityException = true,
+            )
 
         val (responseCode, referrerResponse) = InstallReferrerWorker.fetchInstallReferrer(fakeClient)
 
@@ -344,19 +371,21 @@ class InstallReferrerWorkerTest {
 
     @Test
     fun `WHEN coroutine is cancelled THEN endConnection is called`() = runTest {
-        val fakeClient = FakeInstallReferrerClient(
-            responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-            referrerResponse = "test",
-            delayCallback = true,
-        )
+        val fakeClient =
+            FakeInstallReferrerClient(
+                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                referrerResponse = "test",
+                delayCallback = true,
+            )
 
-        val job = launch(start = CoroutineStart.UNDISPATCHED) {
-            try {
-                InstallReferrerWorker.fetchInstallReferrer(fakeClient)
-            } catch (e: CancellationException) {
-                throw e
+        val job =
+            launch(start = CoroutineStart.UNDISPATCHED) {
+                try {
+                    InstallReferrerWorker.fetchInstallReferrer(fakeClient)
+                } catch (e: CancellationException) {
+                    throw e
+                }
             }
-        }
 
         assertTrue(fakeClient.connectionStarted)
         assertFalse(fakeClient.connectionEnded)
@@ -385,7 +414,11 @@ class InstallReferrerWorkerTest {
         val settings = Settings(context)
         settings.isUserMetaAttributed = true
 
-        worker.handleSuccess("utm_source=google&utm_medium=cpc", InstallReferrerClient.InstallReferrerResponse.OK, settings)
+        worker.handleSuccess(
+            "utm_source=google&utm_medium=cpc",
+            InstallReferrerClient.InstallReferrerResponse.OK,
+            settings,
+        )
 
         assertFalse(settings.isUserMetaAttributed)
     }
@@ -418,7 +451,11 @@ class InstallReferrerWorkerTest {
         val settings = Settings(context)
         settings.isUserTikTokAttributed = true
 
-        worker.handleSuccess("utm_source=google&utm_medium=cpc", InstallReferrerClient.InstallReferrerResponse.OK, settings)
+        worker.handleSuccess(
+            "utm_source=google&utm_medium=cpc",
+            InstallReferrerClient.InstallReferrerResponse.OK,
+            settings,
+        )
 
         assertFalse(settings.isUserTikTokAttributed)
     }
@@ -451,7 +488,11 @@ class InstallReferrerWorkerTest {
         val settings = Settings(context)
         settings.isUserRedditAttributed = true
 
-        worker.handleSuccess("utm_source=google&utm_medium=cpc", InstallReferrerClient.InstallReferrerResponse.OK, settings)
+        worker.handleSuccess(
+            "utm_source=google&utm_medium=cpc",
+            InstallReferrerClient.InstallReferrerResponse.OK,
+            settings,
+        )
 
         assertFalse(settings.isUserRedditAttributed)
     }
@@ -484,7 +525,11 @@ class InstallReferrerWorkerTest {
         val settings = Settings(context)
         settings.isUserXTwitterAttributed = true
 
-        worker.handleSuccess("utm_source=google&utm_medium=cpc", InstallReferrerClient.InstallReferrerResponse.OK, settings)
+        worker.handleSuccess(
+            "utm_source=google&utm_medium=cpc",
+            InstallReferrerClient.InstallReferrerResponse.OK,
+            settings,
+        )
 
         assertFalse(settings.isUserXTwitterAttributed)
     }
@@ -517,7 +562,11 @@ class InstallReferrerWorkerTest {
         val settings = Settings(context)
         settings.isUserMolocoAttributed = true
 
-        worker.handleSuccess("utm_source=google&utm_medium=cpc", InstallReferrerClient.InstallReferrerResponse.OK, settings)
+        worker.handleSuccess(
+            "utm_source=google&utm_medium=cpc",
+            InstallReferrerClient.InstallReferrerResponse.OK,
+            settings,
+        )
 
         assertFalse(settings.isUserMolocoAttributed)
     }
@@ -550,7 +599,11 @@ class InstallReferrerWorkerTest {
         val settings = Settings(context)
         settings.isUserRakutenAttributed = true
 
-        worker.handleSuccess("utm_source=google&utm_medium=cpc", InstallReferrerClient.InstallReferrerResponse.OK, settings)
+        worker.handleSuccess(
+            "utm_source=google&utm_medium=cpc",
+            InstallReferrerClient.InstallReferrerResponse.OK,
+            settings,
+        )
 
         assertFalse(settings.isUserRakutenAttributed)
     }
@@ -583,7 +636,11 @@ class InstallReferrerWorkerTest {
         val settings = Settings(context)
         settings.isUserSkyflagAttributed = true
 
-        worker.handleSuccess("utm_source=google&utm_medium=cpc", InstallReferrerClient.InstallReferrerResponse.OK, settings)
+        worker.handleSuccess(
+            "utm_source=google&utm_medium=cpc",
+            InstallReferrerClient.InstallReferrerResponse.OK,
+            settings,
+        )
 
         assertFalse(settings.isUserSkyflagAttributed)
     }
@@ -603,9 +660,10 @@ class InstallReferrerWorkerTest {
     fun `GIVEN a referral referrer WHEN handleSuccess runs THEN the referrals ping is submitted with the code`() {
         val worker = TestListenableWorkerBuilder<InstallReferrerWorker>(context).build()
         val settings = Settings(context)
-        val job = Pings.referrals.testBeforeNextSubmit {
-            assertEquals(REFERRAL_CODE, Referrals.code.testGetValue())
-        }
+        val job =
+            Pings.referrals.testBeforeNextSubmit {
+                assertEquals(REFERRAL_CODE, Referrals.code.testGetValue())
+            }
 
         worker.handleSuccess(referralReferrer(), InstallReferrerClient.InstallReferrerResponse.OK, settings)
 
@@ -616,16 +674,17 @@ class InstallReferrerWorkerTest {
     fun `GIVEN a referral referrer WHEN handleSuccess runs THEN the code does not reach attribution telemetry`() {
         val worker = TestListenableWorkerBuilder<InstallReferrerWorker>(context).build()
         val settings = Settings(context)
-        val job = Pings.playStoreAttribution.testBeforeNextSubmit {
-            // Empty rather than absent: recordInstallReferrer sets all five params. The raw
-            // response drops utm_content entirely, so both fields agree that a referral install is
-            // indistinguishable from one carrying no utm_content at all.
-            assertEquals("", PlayStoreAttribution.content.testGetValue())
-            assertEquals(
-                "utm_source=SOURCE&utm_term=TERM",
-                PlayStoreAttribution.installReferrerResponse.testGetValue(),
-            )
-        }
+        val job =
+            Pings.playStoreAttribution.testBeforeNextSubmit {
+                // Empty rather than absent: recordInstallReferrer sets all five params. The raw
+                // response drops utm_content entirely, so both fields agree that a referral install is
+                // indistinguishable from one carrying no utm_content at all.
+                assertEquals("", PlayStoreAttribution.content.testGetValue())
+                assertEquals(
+                    "utm_source=SOURCE&utm_term=TERM",
+                    PlayStoreAttribution.installReferrerResponse.testGetValue(),
+                )
+            }
 
         worker.handleSuccess(referralReferrer(), InstallReferrerClient.InstallReferrerResponse.OK, settings)
 
@@ -634,16 +693,19 @@ class InstallReferrerWorkerTest {
         // utmContent is the only source for the nimbus ping's
         // install_referrer_response_utm_content and the equivalent JEXL targeting attribute.
         assertEquals("", settings.utmContent)
+        // Recorded for the debug drawer only, and only because unit tests run against the debug build type.
+        assertEquals(REFERRAL_CODE, settings.referralCode)
     }
 
     @Test
     fun `GIVEN a referral referrer WHEN handleSuccess runs THEN the other UTM params are still recorded`() {
         val worker = TestListenableWorkerBuilder<InstallReferrerWorker>(context).build()
         val settings = Settings(context)
-        val job = Pings.playStoreAttribution.testBeforeNextSubmit {
-            assertEquals("SOURCE", PlayStoreAttribution.source.testGetValue())
-            assertEquals("TERM", PlayStoreAttribution.term.testGetValue())
-        }
+        val job =
+            Pings.playStoreAttribution.testBeforeNextSubmit {
+                assertEquals("SOURCE", PlayStoreAttribution.source.testGetValue())
+                assertEquals("TERM", PlayStoreAttribution.term.testGetValue())
+            }
 
         worker.handleSuccess(referralReferrer(), InstallReferrerClient.InstallReferrerResponse.OK, settings)
 
@@ -655,11 +717,12 @@ class InstallReferrerWorkerTest {
     fun `GIVEN a referral-only referrer WHEN handleSuccess runs THEN no UTM params are recorded`() {
         val worker = TestListenableWorkerBuilder<InstallReferrerWorker>(context).build()
         val settings = Settings(context)
-        val job = Pings.playStoreAttribution.testBeforeNextSubmit {
-            assertNull(PlayStoreAttribution.source.testGetValue())
-            assertNull(PlayStoreAttribution.content.testGetValue())
-            assertEquals("", PlayStoreAttribution.installReferrerResponse.testGetValue())
-        }
+        val job =
+            Pings.playStoreAttribution.testBeforeNextSubmit {
+                assertNull(PlayStoreAttribution.source.testGetValue())
+                assertNull(PlayStoreAttribution.content.testGetValue())
+                assertEquals("", PlayStoreAttribution.installReferrerResponse.testGetValue())
+            }
 
         worker.handleSuccess(
             "utm_content=$REFERRAL_UTM_CONTENT_PREFIX$REFERRAL_CODE",
@@ -676,13 +739,14 @@ class InstallReferrerWorkerTest {
         val worker = TestListenableWorkerBuilder<InstallReferrerWorker>(context).build()
         val settings = Settings(context)
         val referrer = "utm_campaign=$REFERRAL_UTM_CONTENT_PREFIX$REFERRAL_CODE"
-        val attributionJob = Pings.playStoreAttribution.testBeforeNextSubmit {
-            assertEquals(
-                "$REFERRAL_UTM_CONTENT_PREFIX$REFERRAL_CODE",
-                PlayStoreAttribution.campaign.testGetValue(),
-            )
-            assertEquals(referrer, PlayStoreAttribution.installReferrerResponse.testGetValue())
-        }
+        val attributionJob =
+            Pings.playStoreAttribution.testBeforeNextSubmit {
+                assertEquals(
+                    "$REFERRAL_UTM_CONTENT_PREFIX$REFERRAL_CODE",
+                    PlayStoreAttribution.campaign.testGetValue(),
+                )
+                assertEquals(referrer, PlayStoreAttribution.installReferrerResponse.testGetValue())
+            }
 
         worker.handleSuccess(referrer, InstallReferrerClient.InstallReferrerResponse.OK, settings)
 
@@ -695,9 +759,10 @@ class InstallReferrerWorkerTest {
     fun `GIVEN a referral referrer WHEN handleSuccess runs twice THEN the code is recorded once`() {
         val worker = TestListenableWorkerBuilder<InstallReferrerWorker>(context).build()
         val settings = Settings(context)
-        val job = Pings.referrals.testBeforeNextSubmit {
-            assertEquals(REFERRAL_CODE, Referrals.code.testGetValue())
-        }
+        val job =
+            Pings.referrals.testBeforeNextSubmit {
+                assertEquals(REFERRAL_CODE, Referrals.code.testGetValue())
+            }
 
         worker.handleSuccess(referralReferrer(), InstallReferrerClient.InstallReferrerResponse.OK, settings)
 
@@ -716,14 +781,16 @@ class InstallReferrerWorkerTest {
         val worker = TestListenableWorkerBuilder<InstallReferrerWorker>(context).build()
         val settings = Settings(context)
         val referrer = "utm_source=SOURCE&utm_content=CONTENT"
-        val job = Pings.playStoreAttribution.testBeforeNextSubmit {
-            assertEquals(referrer, PlayStoreAttribution.installReferrerResponse.testGetValue())
-            assertEquals("CONTENT", PlayStoreAttribution.content.testGetValue())
-        }
+        val job =
+            Pings.playStoreAttribution.testBeforeNextSubmit {
+                assertEquals(referrer, PlayStoreAttribution.installReferrerResponse.testGetValue())
+                assertEquals("CONTENT", PlayStoreAttribution.content.testGetValue())
+            }
 
         worker.handleSuccess(referrer, InstallReferrerClient.InstallReferrerResponse.OK, settings)
 
         job.join()
+        assertEquals("", settings.referralCode)
     }
 
     private fun referralReferrer() =

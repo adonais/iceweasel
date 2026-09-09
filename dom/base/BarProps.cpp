@@ -35,6 +35,12 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(BarProp)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
+void BarProp::SetVisible(bool, CallerType aCallerType, ErrorResult& aRv) {
+  if (aCallerType == CallerType::System) {
+    aRv.ThrowNotAllowedError("BarProps are readonly, effectively");
+  }
+}
+
 bool BarProp::GetVisibleByIsPopup() {
   // For web content, return the value defined by the spec, instead of
   // the actual visibility of each bar.
@@ -96,7 +102,7 @@ MenubarProp::MenubarProp(nsGlobalWindowInner* aWindow) : BarProp(aWindow) {}
 MenubarProp::~MenubarProp() = default;
 
 bool MenubarProp::GetVisible(CallerType aCallerType, ErrorResult& aRv) {
-  return BarProp::GetVisibleByFlag(nsIWebBrowserChrome::CHROME_MENUBAR,
+  return BarProp::GetVisibleByFlag(nsIWebBrowserChrome::CHROME_TOOLBAR,
                                    aCallerType, aRv);
 }
 
@@ -123,8 +129,10 @@ LocationbarProp::LocationbarProp(nsGlobalWindowInner* aWindow)
 LocationbarProp::~LocationbarProp() = default;
 
 bool LocationbarProp::GetVisible(CallerType aCallerType, ErrorResult& aRv) {
-  return BarProp::GetVisibleByFlag(nsIWebBrowserChrome::CHROME_LOCATIONBAR,
-                                   aCallerType, aRv);
+  if (aCallerType != CallerType::System) {
+    return GetVisibleByIsPopup();
+  }
+  return true;
 }
 
 //
@@ -137,7 +145,7 @@ PersonalbarProp::PersonalbarProp(nsGlobalWindowInner* aWindow)
 PersonalbarProp::~PersonalbarProp() = default;
 
 bool PersonalbarProp::GetVisible(CallerType aCallerType, ErrorResult& aRv) {
-  return BarProp::GetVisibleByFlag(nsIWebBrowserChrome::CHROME_PERSONAL_TOOLBAR,
+  return BarProp::GetVisibleByFlag(nsIWebBrowserChrome::CHROME_TOOLBAR,
                                    aCallerType, aRv);
 }
 

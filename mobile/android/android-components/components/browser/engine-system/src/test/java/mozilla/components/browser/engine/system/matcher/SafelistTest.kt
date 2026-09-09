@@ -6,25 +6,22 @@ package mozilla.components.browser.engine.system.matcher
 
 import android.util.JsonReader
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.StringReader
+import kotlin.test.assertNotNull
 import org.junit.Assert
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.StringReader
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class SafelistTest {
 
     /**
-     * Test setup:
-     * mozilla.org: allow foo.com
-     * foo.mozilla.org: additionally allow bar.com
+     * Test setup: mozilla.org: allow foo.com foo.mozilla.org: additionally allow bar.com
      *
-     * Test:
-     * mozilla.org can only use foo.com, but foo.mozilla.org can use both foo.com and bar.com
+     * Test: mozilla.org can only use foo.com, but foo.mozilla.org can use both foo.com and bar.com
      */
     @Test
     fun safelist() {
@@ -86,7 +83,8 @@ class SafelistTest {
         }
     }
 
-    val safelistJson = """{
+    val safelistJson =
+        """{
       "Host1": {
         "properties": [
           "host1.com",

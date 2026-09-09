@@ -48,10 +48,10 @@ impl TextDirective {
     /// The only invalid condition is a fragment that is missing the `start` token.
     fn to_rust_type(&self) -> Option<fragment_directive_impl::TextDirective> {
         fragment_directive_impl::TextDirective::from_parts(
-            self.prefix.to_string(),
-            self.start.to_string(),
-            self.end.to_string(),
-            self.suffix.to_string(),
+            &self.prefix.to_string(),
+            &self.start.to_string(),
+            &self.end.to_string(),
+            &self.suffix.to_string(),
         )
     }
 }
@@ -100,11 +100,9 @@ pub extern "C" fn parse_fragment_directive(
             .hash_without_fragment_directive
             .assign(&stripped_hash);
         result.fragment_directive.assign(&fragment_directive);
-        result.text_directives.extend(
-            text_directives
-                .iter()
-                .map(|text_directive| TextDirective::from_rust_type(text_directive)),
-        );
+        result
+            .text_directives
+            .extend(text_directives.iter().map(TextDirective::from_rust_type));
         return true;
     }
     false
@@ -125,7 +123,7 @@ pub extern "C" fn create_fragment_directive(
     let directives_rust = Vec::from_iter(
         text_directives
             .iter()
-            .filter_map(|fragment| fragment.to_rust_type()),
+            .filter_map(TextDirective::to_rust_type),
     );
     if let Some(fragment_directive_rust) =
         fragment_directive_impl::create_fragment_directive_string(&directives_rust)

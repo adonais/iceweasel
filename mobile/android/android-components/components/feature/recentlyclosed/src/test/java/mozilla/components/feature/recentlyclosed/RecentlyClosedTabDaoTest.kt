@@ -8,6 +8,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.UUID
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import mozilla.components.feature.recentlyclosed.db.RecentlyClosedTabDao
@@ -18,7 +19,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class RecentlyClosedTabDaoTest {
@@ -31,32 +31,36 @@ class RecentlyClosedTabDaoTest {
 
     @Before
     fun setUp() {
-        database = Room
-            .inMemoryDatabaseBuilder(context, RecentlyClosedTabsDatabase::class.java)
-            .allowMainThreadQueries()
-            .build()
+        database =
+            Room.inMemoryDatabaseBuilder(context, RecentlyClosedTabsDatabase::class.java)
+                .allowMainThreadQueries()
+                .build()
         tabDao = database.recentlyClosedTabDao()
     }
 
     @Test
     fun testAddingTabs() = runTest {
-        val tab1 = RecentlyClosedTabEntity(
-            title = "RecentlyClosedTab One",
-            url = "https://www.mozilla.org",
-            uuid = UUID.randomUUID().toString(),
-            createdAt = 200,
-        ).also {
-            tabDao.insertTab(it)
-        }
+        val tab1 =
+            RecentlyClosedTabEntity(
+                    title = "RecentlyClosedTab One",
+                    url = "https://www.mozilla.org",
+                    uuid = UUID.randomUUID().toString(),
+                    createdAt = 200,
+                )
+                .also {
+                    tabDao.insertTab(it)
+                }
 
-        val tab2 = RecentlyClosedTabEntity(
-            title = "RecentlyClosedTab Two",
-            url = "https://www.firefox.com",
-            uuid = UUID.randomUUID().toString(),
-            createdAt = 100,
-        ).also {
-            tabDao.insertTab(it)
-        }
+        val tab2 =
+            RecentlyClosedTabEntity(
+                    title = "RecentlyClosedTab Two",
+                    url = "https://www.firefox.com",
+                    uuid = UUID.randomUUID().toString(),
+                    createdAt = 100,
+                )
+                .also {
+                    tabDao.insertTab(it)
+                }
 
         tabDao.getTabs().first().apply {
             assertEquals(2, this.size)
@@ -67,23 +71,27 @@ class RecentlyClosedTabDaoTest {
 
     @Test
     fun testRemovingTab() = runTest {
-        val tab1 = RecentlyClosedTabEntity(
-            title = "RecentlyClosedTab One",
-            url = "https://www.mozilla.org",
-            uuid = UUID.randomUUID().toString(),
-            createdAt = 200,
-        ).also {
-            tabDao.insertTab(it)
-        }
+        val tab1 =
+            RecentlyClosedTabEntity(
+                    title = "RecentlyClosedTab One",
+                    url = "https://www.mozilla.org",
+                    uuid = UUID.randomUUID().toString(),
+                    createdAt = 200,
+                )
+                .also {
+                    tabDao.insertTab(it)
+                }
 
-        val tab2 = RecentlyClosedTabEntity(
-            title = "RecentlyClosedTab Two",
-            url = "https://www.firefox.com",
-            uuid = UUID.randomUUID().toString(),
-            createdAt = 100,
-        ).also {
-            tabDao.insertTab(it)
-        }
+        val tab2 =
+            RecentlyClosedTabEntity(
+                    title = "RecentlyClosedTab Two",
+                    url = "https://www.firefox.com",
+                    uuid = UUID.randomUUID().toString(),
+                    createdAt = 100,
+                )
+                .also {
+                    tabDao.insertTab(it)
+                }
 
         tabDao.deleteTab(tab1)
 
@@ -96,22 +104,24 @@ class RecentlyClosedTabDaoTest {
     @Test
     fun testRemovingAllTabs() = runTest {
         RecentlyClosedTabEntity(
-            title = "RecentlyClosedTab One",
-            url = "https://www.mozilla.org",
-            uuid = UUID.randomUUID().toString(),
-            createdAt = 200,
-        ).also {
-            tabDao.insertTab(it)
-        }
+                title = "RecentlyClosedTab One",
+                url = "https://www.mozilla.org",
+                uuid = UUID.randomUUID().toString(),
+                createdAt = 200,
+            )
+            .also {
+                tabDao.insertTab(it)
+            }
 
         RecentlyClosedTabEntity(
-            title = "RecentlyClosedTab Two",
-            url = "https://www.firefox.com",
-            uuid = UUID.randomUUID().toString(),
-            createdAt = 100,
-        ).also {
-            tabDao.insertTab(it)
-        }
+                title = "RecentlyClosedTab Two",
+                url = "https://www.firefox.com",
+                uuid = UUID.randomUUID().toString(),
+                createdAt = 100,
+            )
+            .also {
+                tabDao.insertTab(it)
+            }
 
         tabDao.removeAllTabs()
 

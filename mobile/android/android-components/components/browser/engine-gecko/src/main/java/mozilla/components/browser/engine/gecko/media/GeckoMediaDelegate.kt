@@ -5,17 +5,14 @@
 package mozilla.components.browser.engine.gecko.media
 
 import androidx.annotation.VisibleForTesting
+import java.security.InvalidParameterException
 import mozilla.components.browser.engine.gecko.GeckoEngineSession
 import mozilla.components.concept.engine.media.RecordingDevice
 import org.mozilla.geckoview.GeckoSession
-import java.security.InvalidParameterException
 import org.mozilla.geckoview.GeckoSession.MediaDelegate.RecordingDevice as GeckoRecordingDevice
 
-/**
- * Gecko-based GeckoMediaDelegate implementation.
- */
-internal class GeckoMediaDelegate(private val geckoEngineSession: GeckoEngineSession) :
-    GeckoSession.MediaDelegate {
+/** Gecko-based GeckoMediaDelegate implementation. */
+internal class GeckoMediaDelegate(private val geckoEngineSession: GeckoEngineSession) : GeckoSession.MediaDelegate {
 
     override fun onRecordingStatusChanged(
         session: GeckoSession,

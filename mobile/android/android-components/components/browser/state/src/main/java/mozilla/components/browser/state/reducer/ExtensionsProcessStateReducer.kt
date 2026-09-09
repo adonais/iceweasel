@@ -9,9 +9,10 @@ import mozilla.components.browser.state.state.BrowserState
 
 internal object ExtensionsProcessStateReducer {
 
-    fun reduce(state: BrowserState, action: ExtensionsProcessAction): BrowserState = when (action) {
-        is ExtensionsProcessAction.ShowPromptAction -> state.copy(showExtensionsProcessDisabledPrompt = action.show)
-        is ExtensionsProcessAction.DisabledAction -> state.copy(extensionsProcessDisabled = true)
-        is ExtensionsProcessAction.EnabledAction -> state.copy(extensionsProcessDisabled = false)
-    }
+    fun reduce(state: BrowserState, action: ExtensionsProcessAction): BrowserState =
+        when (action) {
+            is ExtensionsProcessAction.ShowPromptAction -> state.copy(showExtensionsProcessDisabledPrompt = action.show)
+            is ExtensionsProcessAction.DisabledAction -> state.copy(extensionsProcessDisabled = true)
+            is ExtensionsProcessAction.EnabledAction -> state.copy(extensionsProcessDisabled = false)
+        }
 }

@@ -29,18 +29,19 @@ import mozilla.components.support.ktx.android.view.hideKeyboard
  *
  * If you are using a browser toolbar, do not use this class directly.
  */
-class MenuButton2 @JvmOverloads constructor(
+class MenuButton2
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
-) : FrameLayout(context, attrs, defStyleAttr),
+) :
+    FrameLayout(context, attrs, defStyleAttr),
     MenuButton,
     View.OnClickListener,
     Observable<MenuButton.Observer> by ObserverRegistry() {
 
-    /**
-     * Sets a [MenuController] that will be used to create a menu when this button is clicked.
-     */
+    /** Sets a [MenuController] that will be used to create a menu when this button is clicked. */
     override var menuController: MenuController? = null
         set(value) {
             // Clean up old controller
@@ -52,19 +53,18 @@ class MenuButton2 @JvmOverloads constructor(
             value?.register(menuControllerObserver, this)
         }
 
-    private val menuControllerObserver = object : MenuController.Observer {
-        /**
-         * Change the menu button appearance when the menu list changes.
-         */
-        override fun onMenuListSubmit(list: List<MenuCandidate>) {
-            val effect = list.effects().max()
+    private val menuControllerObserver =
+        object : MenuController.Observer {
+            /** Change the menu button appearance when the menu list changes. */
+            override fun onMenuListSubmit(list: List<MenuCandidate>) {
+                val effect = list.effects().max()
 
-            // If a highlighted item is found, show the indicator
-            setEffect(effect)
+                // If a highlighted item is found, show the indicator
+                setEffect(effect)
+            }
+
+            override fun onDismiss() = notifyObservers { onDismiss() }
         }
-
-        override fun onDismiss() = notifyObservers { onDismiss() }
-    }
 
     private val menuIcon: ImageView
     private val highlightView: ImageView
@@ -78,9 +78,7 @@ class MenuButton2 @JvmOverloads constructor(
         notificationIconView = findViewById(R.id.notification_dot)
     }
 
-    /**
-     * Shows the menu.
-     */
+    /** Shows the menu. */
     override fun onClick(v: View) {
         this.hideKeyboard()
         val menuController = menuController ?: return
@@ -89,9 +87,7 @@ class MenuButton2 @JvmOverloads constructor(
         notifyObservers { onShow() }
     }
 
-    /**
-     * Show the indicator for a browser menu effect.
-     */
+    /** Show the indicator for a browser menu effect. */
     override fun setEffect(effect: MenuEffect?) {
         when (effect) {
             is HighPriorityHighlightEffect -> {
@@ -111,10 +107,6 @@ class MenuButton2 @JvmOverloads constructor(
         }
     }
 
-    /**
-     * Sets the tint of the 3-dot menu icon.
-     */
-    override fun setColorFilter(
-        @ColorInt color: Int,
-    ) = menuIcon.setColorFilter(color)
+    /** Sets the tint of the 3-dot menu icon. */
+    override fun setColorFilter(@ColorInt color: Int) = menuIcon.setColorFilter(color)
 }

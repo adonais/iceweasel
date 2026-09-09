@@ -23,15 +23,13 @@ import androidx.compose.ui.unit.dp
  * @param content Composable content to be shown as vertical content in a [CustomPlacementPopup].
  */
 @Composable
-inline fun CustomPlacementPopup.CustomPlacementPopupVerticalContent(
-    content: @Composable ColumnScope.() -> Unit,
-) {
+inline fun CustomPlacementPopup.CustomPlacementPopupVerticalContent(content: @Composable ColumnScope.() -> Unit) {
     Column(
-        modifier = Modifier
-            .background(MaterialTheme.colorScheme.surfaceBright)
-            .requiredWidthIn(min = 250.dp)
-            .width(IntrinsicSize.Max)
-            .verticalScroll(rememberScrollState()),
+        modifier =
+            Modifier.background(MaterialTheme.colorScheme.surfaceBright)
+                .requiredWidthIn(min = 250.dp)
+                .width(IntrinsicSize.Max)
+                .verticalScroll(rememberScrollState())
     ) {
         content()
     }

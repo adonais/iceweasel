@@ -10,9 +10,7 @@ import mozilla.components.feature.media.service.AbstractMediaSessionService
 import mozilla.components.support.base.android.NotificationsDelegate
 import org.mozilla.samples.browser.ext.components
 
-/**
- * See [AbstractMediaSessionService].
- */
+/** See [AbstractMediaSessionService]. */
 class MediaSessionService : AbstractMediaSessionService() {
     override val crashReporter: CrashReporting? by lazy { components.crashReporter }
     override val store: BrowserStore by lazy { components.store }

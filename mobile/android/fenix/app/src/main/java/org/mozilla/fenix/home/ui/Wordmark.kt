@@ -24,23 +24,21 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_LOGO
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_TEXT
 
-/**
- * Semantic property for accessing a Composable item's current resource property.
- */
+/** Semantic property for accessing a Composable item's current resource property. */
 internal val ResourceId = SemanticsPropertyKey<Int>("ResourceId")
 internal var SemanticsPropertyReceiver.resourceId by ResourceId
 
 @Composable
 internal fun WordmarkLogo() {
     Image(
-        modifier = Modifier
-            .height(40.dp)
-            .semantics {
-                testTagsAsResourceId = true
-                testTag = HOMEPAGE_WORDMARK_LOGO
-                resourceId = R.attr.fenixWordmarkLogo
-            }
-            .padding(end = 10.dp),
+        modifier =
+            Modifier.height(40.dp)
+                .semantics {
+                    testTagsAsResourceId = true
+                    testTag = HOMEPAGE_WORDMARK_LOGO
+                    resourceId = R.attr.fenixWordmarkLogo
+                }
+                .padding(end = 10.dp),
         painter = painterResource(getAttr(R.attr.fenixWordmarkLogo)),
         contentDescription = null,
     )
@@ -49,12 +47,12 @@ internal fun WordmarkLogo() {
 @Composable
 internal fun WordmarkText(color: Color?) {
     Image(
-        modifier = Modifier
-            .semantics {
-                testTagsAsResourceId = true
-                testTag = HOMEPAGE_WORDMARK_TEXT
-            }
-            .height(dimensionResource(R.dimen.wordmark_text_height)),
+        modifier =
+            Modifier.semantics {
+                    testTagsAsResourceId = true
+                    testTag = HOMEPAGE_WORDMARK_TEXT
+                }
+                .height(dimensionResource(R.dimen.wordmark_text_height)),
         painter = painterResource(getAttr(R.attr.fenixWordmarkText)),
         colorFilter = color?.let { ColorFilter.tint(it) },
         contentDescription = stringResource(R.string.app_name),

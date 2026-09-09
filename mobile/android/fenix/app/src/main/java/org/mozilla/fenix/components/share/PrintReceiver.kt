@@ -12,9 +12,7 @@ import mozilla.components.feature.session.SessionUseCases
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 
-/**
- * A BroadcastReceiver to handle the "Print" action.
- */
+/** A BroadcastReceiver to handle the "Print" action. */
 class PrintReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val printUseCase: SessionUseCases.PrintContentUseCase = context.components.useCases.sessionUseCases.printContent

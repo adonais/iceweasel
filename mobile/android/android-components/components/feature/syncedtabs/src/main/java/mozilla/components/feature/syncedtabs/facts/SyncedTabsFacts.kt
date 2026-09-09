@@ -9,13 +9,9 @@ import mozilla.components.support.base.facts.Action
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.collect
 
-/**
- * Facts emitted for telemetry related to the Synced Tabs feature.
- */
+/** Facts emitted for telemetry related to the Synced Tabs feature. */
 class SyncedTabsFacts {
-    /**
-     * Specific types of telemetry items.
-     */
+    /** Specific types of telemetry items. */
     object Items {
         const val SYNCED_TABS_SUGGESTION_CLICKED = "synced_tabs_suggestion_clicked"
     }
@@ -28,12 +24,13 @@ private fun emitSyncedTabsFact(
     metadata: Map<String, Any>? = null,
 ) {
     Fact(
-        Component.FEATURE_SYNCEDTABS,
-        action,
-        item,
-        value,
-        metadata,
-    ).collect()
+            Component.FEATURE_SYNCEDTABS,
+            action,
+            item,
+            value,
+            metadata,
+        )
+        .collect()
 }
 
 internal fun emitSyncedTabSuggestionClickedFact() {

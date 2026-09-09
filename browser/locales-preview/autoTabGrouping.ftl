@@ -22,7 +22,8 @@ smartwindow-group-tabs-empty = No tab groups to suggest right now. Check again l
 # Shown in place of suggestions when every group the model found has already
 # been created.
 smartwindow-group-tabs-all-sorted = Nice work organizing your tabs
-smartwindow-group-tabs-create-all = Create Groups
+# Creates every suggested group at once.
+smartwindow-group-tabs-create-all = Create All Groups
 smartwindow-group-tabs-suggested-heading = Suggested groups
 # Accessible name for the flyout that lists the tabs of one suggested group.
 # Activating a tab in the list switches to it. $groupLabel is the suggested
@@ -58,3 +59,9 @@ smartwindow-group-tabs-close-duplicates =
         [one] Close { $tabCount } Duplicate Tab
        *[other] Close { $tabCount } Duplicate Tabs
     }
+# Accessible name for the list of duplicate tabs the row above would close,
+# one row per tab. Activating a tab in the list switches to it.
+# "Duplicate tabs" refers to tabs that are copies of each other; it is not a
+# verb telling the user to duplicate anything.
+smartwindow-group-tabs-duplicates-list =
+    .aria-label = Duplicate tabs to close

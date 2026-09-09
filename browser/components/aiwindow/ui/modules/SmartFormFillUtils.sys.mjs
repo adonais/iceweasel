@@ -166,5 +166,3 @@ export class SmartFormFillUtils {
     return txt;
   }
 }
-
-export default SmartFormFillUtils;

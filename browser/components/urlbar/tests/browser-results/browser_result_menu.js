@@ -58,6 +58,13 @@ add_task(async function test_history() {
     activationKey: " ",
   });
 
+  Assert.ok(
+    (await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1)).hasAttribute(
+      "menu-trigger"
+    ),
+    "Row is highlighted while open"
+  );
+
   gURLBar.view.resultMenu.removeAttribute("open");
 
   info("Selecting Learn more item from the result menu");

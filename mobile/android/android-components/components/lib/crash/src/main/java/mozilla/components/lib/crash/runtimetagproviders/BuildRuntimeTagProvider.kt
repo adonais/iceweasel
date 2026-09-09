@@ -14,16 +14,12 @@ import mozilla.components.support.base.log.logger.Logger
 internal const val DEFAULT_VERSION_CODE = "N/A"
 internal const val DEFAULT_VERSION_NAME = "N/A"
 
-/**
- * Interface to provide information about the current version of the application
- */
+/** Interface to provide information about the current version of the application */
 interface VersionInfoProvider {
     val versionCode: String
     val versionName: String
 
-    /**
-     * Builders [VersionInfoProvider]
-     */
+    /** Builders [VersionInfoProvider] */
     companion object {
         /**
          * Creates a [VersionInfoProvider] from the [PackageInfo] of an application.
@@ -36,20 +32,20 @@ interface VersionInfoProvider {
     }
 }
 
-private class PackageInfoVersionInfoProvider(
-    private val packageInfo: PackageInfo,
-) : VersionInfoProvider {
+private class PackageInfoVersionInfoProvider(private val packageInfo: PackageInfo) : VersionInfoProvider {
     private val logger = Logger("mozac/MozillaSocorroCrashHelperService")
 
     override val versionCode: String
-        get() = Result.runCatching { PackageInfoCompat.getLongVersionCode(packageInfo).toString() }
-            .onFailure { logger.error("failed to get application version code") }
-            .getOrElse { DEFAULT_VERSION_CODE }
+        get() =
+            Result.runCatching { PackageInfoCompat.getLongVersionCode(packageInfo).toString() }
+                .onFailure { logger.error("failed to get application version code") }
+                .getOrElse { DEFAULT_VERSION_CODE }
 
     override val versionName: String
-        get() = Result.runCatching { requireNotNull(packageInfo.versionName) }
-            .onFailure { logger.error("failed to get application version") }
-            .getOrElse { DEFAULT_VERSION_NAME }
+        get() =
+            Result.runCatching { requireNotNull(packageInfo.versionName) }
+                .onFailure { logger.error("failed to get application version") }
+                .getOrElse { DEFAULT_VERSION_NAME }
 }
 
 /**
@@ -57,17 +53,15 @@ private class PackageInfoVersionInfoProvider(
  *
  * @param versionInfoProvider a [VersionInfoProvider] used to query information about the current version.
  */
-class BuildRuntimeTagProvider(
-    private val versionInfoProvider: VersionInfoProvider,
-) : RuntimeTagProvider {
+class BuildRuntimeTagProvider(private val versionInfoProvider: VersionInfoProvider) : RuntimeTagProvider {
     override fun invoke(): Map<String, String> {
         return mapOf(
-             RuntimeTag.GIT to Build.GIT_HASH,
-             RuntimeTag.AC_VERSION to Build.VERSION,
-             RuntimeTag.AS_VERSION to Build.APPLICATION_SERVICES_VERSION,
-             RuntimeTag.GLEAN_VERSION to Build.GLEAN_SDK_VERSION,
-             RuntimeTag.VERSION_NAME to versionInfoProvider.versionName,
-             RuntimeTag.VERSION_CODE to versionInfoProvider.versionCode,
+            RuntimeTag.GIT to Build.GIT_HASH,
+            RuntimeTag.AC_VERSION to Build.VERSION,
+            RuntimeTag.AS_VERSION to Build.APPLICATION_SERVICES_VERSION,
+            RuntimeTag.GLEAN_VERSION to Build.GLEAN_SDK_VERSION,
+            RuntimeTag.VERSION_NAME to versionInfoProvider.versionName,
+            RuntimeTag.VERSION_CODE to versionInfoProvider.versionCode,
         )
     }
 }

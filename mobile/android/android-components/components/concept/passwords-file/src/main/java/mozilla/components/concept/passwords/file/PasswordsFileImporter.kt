@@ -6,9 +6,7 @@ package mozilla.components.concept.passwords.file
 
 import android.net.Uri
 
-/**
- * An interface for importing passwords from a file.
- */
+/** An interface for importing passwords from a file. */
 fun interface PasswordsFileImporter {
     /**
      * The result of a passwords file import.
@@ -31,17 +29,19 @@ fun interface PasswordsFileImporter {
          *
          * @param result The [ImportResult] to return on every import.
          */
-        fun alwaysSuccess(
-            result: ImportResult = ImportResult(count = 0),
-        ): PasswordsFileImporter = PasswordsFileImporter { Result.success(result) }
+        fun alwaysSuccess(result: ImportResult = ImportResult(count = 0)): PasswordsFileImporter =
+            PasswordsFileImporter {
+                Result.success(result)
+            }
 
         /**
          * Creates a [PasswordsFileImporter] that always returns a failed [Result].
          *
          * @param exception The [Exception] to return on every import.
          */
-        fun alwaysFailure(
-            exception: Exception = IllegalStateException("Import failed"),
-        ): PasswordsFileImporter = PasswordsFileImporter { Result.failure(exception) }
+        fun alwaysFailure(exception: Exception = IllegalStateException("Import failed")): PasswordsFileImporter =
+            PasswordsFileImporter {
+                Result.failure(exception)
+            }
     }
 }

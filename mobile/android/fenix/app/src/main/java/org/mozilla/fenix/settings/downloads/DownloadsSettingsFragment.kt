@@ -22,9 +22,7 @@ import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.scrollToPreferenceWithHighlight
 
-/**
- * A [androidx.preference.PreferenceFragmentCompat] that displays settings related to downloads.
- */
+/** A [androidx.preference.PreferenceFragmentCompat] that displays settings related to downloads. */
 class DownloadsSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
     private val logger = Logger("DownloadsSettingsFragment")
     private val args by navArgs<DownloadsSettingsFragmentArgs>()
@@ -36,16 +34,15 @@ class DownloadsSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPadded
         }
 
     /**
-     * Processes the URI returned from the SAF folder picker, takes persistable permission,
-     * and updates the relevant setting.
+     * Processes the URI returned from the SAF folder picker, takes persistable permission, and updates the relevant
+     * setting.
      *
      * @param uri The URI of the directory selected by the user. Can be null if the user cancelled.
      */
     private fun handleSelectedDownloadDirectory(uri: Uri?) {
         val safeUri = uri ?: return
 
-        val flags =
-            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
         try {
             requireContext().contentResolver.takePersistableUriPermission(safeUri, flags)
         } catch (e: SecurityException) {
@@ -60,9 +57,7 @@ class DownloadsSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPadded
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        downloadLocationFormatter = DefaultDownloadLocationFormatter(
-            DefaultAndroidFileUtils(requireContext()),
-        )
+        downloadLocationFormatter = DefaultDownloadLocationFormatter(DefaultAndroidFileUtils(requireContext()))
         setPreferencesFromResource(R.xml.downloads_settings_preferences, rootKey)
         findPreference<Preference>(getString(R.string.pref_key_downloads_default_location))?.apply {
             onPreferenceClickListener = Preference.OnPreferenceClickListener {
@@ -96,21 +91,19 @@ class DownloadsSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPadded
     }
 
     private fun updateDownloadsLocationSummary() {
-        val preference =
-            findPreference<Preference>(getString(R.string.pref_key_downloads_default_location))
+        val preference = findPreference<Preference>(getString(R.string.pref_key_downloads_default_location))
 
         val storedLocation = requireComponents.settings.downloadsDefaultLocation
-        val defaultLocation = Environment.getExternalStoragePublicDirectory(
-            Environment.DIRECTORY_DOWNLOADS,
-        ).path
+        val defaultLocation = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
         val locationToFormat = storedLocation.ifNullOrEmpty { defaultLocation }
 
-        preference?.summary = try {
-            downloadLocationFormatter.getFriendlyPath(locationToFormat)
-        } catch (e: MissingUriPermission) {
-            logger.warn("Resetting download location to default due to lost permissions.", e)
-            requireComponents.settings.downloadsDefaultLocation = defaultLocation
-            downloadLocationFormatter.getFriendlyPath(defaultLocation)
-        }
+        preference?.summary =
+            try {
+                downloadLocationFormatter.getFriendlyPath(locationToFormat)
+            } catch (e: MissingUriPermission) {
+                logger.warn("Resetting download location to default due to lost permissions.", e)
+                requireComponents.settings.downloadsDefaultLocation = defaultLocation
+                downloadLocationFormatter.getFriendlyPath(defaultLocation)
+            }
     }
 }

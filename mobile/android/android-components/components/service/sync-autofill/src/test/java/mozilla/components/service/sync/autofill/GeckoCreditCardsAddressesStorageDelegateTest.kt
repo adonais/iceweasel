@@ -58,14 +58,15 @@ class GeckoCreditCardsAddressesStorageDelegateTest {
     fun `GIVEN a newly added credit card WHEN decrypt is called THEN it returns the plain credit card number`() =
         runTest(testDispatcher) {
             val plaintextNumber = CreditCardNumber.Plaintext("4111111111111111")
-            val creditCardFields = NewCreditCardFields(
-                billingName = "Jon Doe",
-                plaintextCardNumber = plaintextNumber,
-                cardNumberLast4 = "1111",
-                expiryMonth = 12,
-                expiryYear = 2028,
-                cardType = "amex",
-            )
+            val creditCardFields =
+                NewCreditCardFields(
+                    billingName = "Jon Doe",
+                    plaintextCardNumber = plaintextNumber,
+                    cardNumberLast4 = "1111",
+                    expiryMonth = 12,
+                    expiryYear = 2028,
+                    cardType = "amex",
+                )
             val creditCard = storage.addCreditCard(creditCardFields)
             val key = delegate.getOrGenerateKey()
 
@@ -81,7 +82,12 @@ class GeckoCreditCardsAddressesStorageDelegateTest {
             val storage: AutofillCreditCardsAddressesStorage = mock()
             val storedCards = listOf<CreditCard>(mock())
             doReturn(storedCards).`when`(storage).getAllCreditCards()
-            delegate = GeckoCreditCardsAddressesStorageDelegate(lazy { storage }, testDispatcher, isCreditCardAutofillEnabled = { true })
+            delegate =
+                GeckoCreditCardsAddressesStorageDelegate(
+                    lazy { storage },
+                    testDispatcher,
+                    isCreditCardAutofillEnabled = { true },
+                )
 
             val result = delegate.onCreditCardsFetch()
 
@@ -95,7 +101,12 @@ class GeckoCreditCardsAddressesStorageDelegateTest {
             val storage: AutofillCreditCardsAddressesStorage = mock()
             val storedCards = listOf<CreditCard>(mock())
             doReturn(storedCards).`when`(storage).getAllCreditCards()
-            delegate = GeckoCreditCardsAddressesStorageDelegate(lazy { storage }, testDispatcher, isCreditCardAutofillEnabled = { false })
+            delegate =
+                GeckoCreditCardsAddressesStorageDelegate(
+                    lazy { storage },
+                    testDispatcher,
+                    isCreditCardAutofillEnabled = { false },
+                )
 
             val result = delegate.onCreditCardsFetch()
 
@@ -112,28 +123,33 @@ class GeckoCreditCardsAddressesStorageDelegateTest {
             val expiryYear = 2028L
             val cardType = "amex"
 
-            val creditCardEntry = CreditCardEntry(
-                name = billingName,
-                number = cardNumber,
-                expiryMonth = expiryMonth.toString(),
-                expiryYear = expiryYear.toString(),
-                cardType = cardType,
-            )
+            val creditCardEntry =
+                CreditCardEntry(
+                    name = billingName,
+                    number = cardNumber,
+                    expiryMonth = expiryMonth.toString(),
+                    expiryYear = expiryYear.toString(),
+                    cardType = cardType,
+                )
 
-            doReturn(CreditCardValidationDelegate.Result.CanBeCreated).`when`(validationDelegate).shouldCreateOrUpdate(creditCardEntry)
+            doReturn(CreditCardValidationDelegate.Result.CanBeCreated)
+                .`when`(validationDelegate)
+                .shouldCreateOrUpdate(creditCardEntry)
 
             delegate.onCreditCardSave(creditCardEntry)
 
-            verify(storage, times(1)).addCreditCard(
-                creditCardFields = NewCreditCardFields(
-                    billingName = billingName,
-                    plaintextCardNumber = CreditCardNumber.Plaintext(cardNumber),
-                    cardNumberLast4 = cardNumber.last4Digits(),
-                    expiryMonth = expiryMonth,
-                    expiryYear = expiryYear,
-                    cardType = cardType,
-                ),
-            )
+            verify(storage, times(1))
+                .addCreditCard(
+                    creditCardFields =
+                        NewCreditCardFields(
+                            billingName = billingName,
+                            plaintextCardNumber = CreditCardNumber.Plaintext(cardNumber),
+                            cardNumberLast4 = cardNumber.last4Digits(),
+                            expiryMonth = expiryMonth,
+                            expiryYear = expiryYear,
+                            cardType = cardType,
+                        )
+                )
         }
     }
 
@@ -146,41 +162,45 @@ class GeckoCreditCardsAddressesStorageDelegateTest {
             val expiryYear = 2028L
             val cardType = "amex"
 
-            val creditCardEntry = CreditCardEntry(
-                name = billingName,
-                number = cardNumber,
-                expiryMonth = expiryMonth.toString(),
-                expiryYear = expiryYear.toString(),
-                cardType = cardType,
-            )
-
-            val creditCard = storage.addCreditCard(
-                NewCreditCardFields(
-                    billingName = billingName,
-                    plaintextCardNumber = CreditCardNumber.Plaintext(cardNumber),
-                    cardNumberLast4 = "1111",
-                    expiryMonth = expiryMonth,
-                    expiryYear = expiryYear,
+            val creditCardEntry =
+                CreditCardEntry(
+                    name = billingName,
+                    number = cardNumber,
+                    expiryMonth = expiryMonth.toString(),
+                    expiryYear = expiryYear.toString(),
                     cardType = cardType,
-                ),
-            )
-            doReturn(CreditCardValidationDelegate.Result.CanBeUpdated(creditCard)).`when`(validationDelegate).shouldCreateOrUpdate(creditCardEntry)
+                )
 
-            delegate.onCreditCardSave(
-                creditCardEntry,
-            )
+            val creditCard =
+                storage.addCreditCard(
+                    NewCreditCardFields(
+                        billingName = billingName,
+                        plaintextCardNumber = CreditCardNumber.Plaintext(cardNumber),
+                        cardNumberLast4 = "1111",
+                        expiryMonth = expiryMonth,
+                        expiryYear = expiryYear,
+                        cardType = cardType,
+                    )
+                )
+            doReturn(CreditCardValidationDelegate.Result.CanBeUpdated(creditCard))
+                .`when`(validationDelegate)
+                .shouldCreateOrUpdate(creditCardEntry)
 
-            verify(storage, times(1)).updateCreditCard(
-                guid = creditCard.guid,
-                creditCardFields = UpdatableCreditCardFields(
-                    billingName = billingName,
-                    cardNumber = CreditCardNumber.Plaintext("4111111111111111"),
-                    cardNumberLast4 = "4111111111111111".last4Digits(),
-                    expiryMonth = expiryMonth,
-                    expiryYear = expiryYear,
-                    cardType = cardType,
-                ),
-            )
+            delegate.onCreditCardSave(creditCardEntry)
+
+            verify(storage, times(1))
+                .updateCreditCard(
+                    guid = creditCard.guid,
+                    creditCardFields =
+                        UpdatableCreditCardFields(
+                            billingName = billingName,
+                            cardNumber = CreditCardNumber.Plaintext("4111111111111111"),
+                            cardNumberLast4 = "4111111111111111".last4Digits(),
+                            expiryMonth = expiryMonth,
+                            expiryYear = expiryYear,
+                            cardType = cardType,
+                        ),
+                )
         }
     }
 
@@ -193,17 +213,16 @@ class GeckoCreditCardsAddressesStorageDelegateTest {
             val expiryYear = ""
             val cardType = "amex"
 
-            val creditCardEntry = CreditCardEntry(
-                name = billingName,
-                number = cardNumber,
-                expiryMonth = expiryMonth,
-                expiryYear = expiryYear,
-                cardType = cardType,
-            )
+            val creditCardEntry =
+                CreditCardEntry(
+                    name = billingName,
+                    number = cardNumber,
+                    expiryMonth = expiryMonth,
+                    expiryYear = expiryYear,
+                    cardType = cardType,
+                )
 
-            delegate.onCreditCardSave(
-                creditCardEntry,
-            )
+            delegate.onCreditCardSave(creditCardEntry)
 
             verify(storage, times(0)).addCreditCard(any())
             verify(storage, times(0)).updateCreditCard(any(), any())
@@ -216,24 +235,9 @@ class GeckoCreditCardsAddressesStorageDelegateTest {
             val storage: AutofillCreditCardsAddressesStorage = mock()
             delegate = GeckoCreditCardsAddressesStorageDelegate(lazy { storage }, testDispatcher, validationDelegate)
 
-            val address = Address(
-                guid = "",
-                name = "John Doe",
-                organization = "Mozilla",
-                streetAddress = "999 Test Street",
-                addressLevel3 = "",
-                addressLevel2 = "Mountain View",
-                addressLevel1 = "CA",
-                postalCode = "94016",
-                country = "US",
-                tel = "+15551234567",
-                email = "john@example.com",
-            )
-
-            delegate.onAddressSave(address)
-
-            verify(storage, times(1)).addAddress(
-                UpdatableAddressFields(
+            val address =
+                Address(
+                    guid = "",
                     name = "John Doe",
                     organization = "Mozilla",
                     streetAddress = "999 Test Street",
@@ -244,8 +248,25 @@ class GeckoCreditCardsAddressesStorageDelegateTest {
                     country = "US",
                     tel = "+15551234567",
                     email = "john@example.com",
-                ),
-            )
+                )
+
+            delegate.onAddressSave(address)
+
+            verify(storage, times(1))
+                .addAddress(
+                    UpdatableAddressFields(
+                        name = "John Doe",
+                        organization = "Mozilla",
+                        streetAddress = "999 Test Street",
+                        addressLevel3 = "",
+                        addressLevel2 = "Mountain View",
+                        addressLevel1 = "CA",
+                        postalCode = "94016",
+                        country = "US",
+                        tel = "+15551234567",
+                        email = "john@example.com",
+                    )
+                )
             verify(storage, never()).updateAddress(any(), any())
         }
 
@@ -255,25 +276,9 @@ class GeckoCreditCardsAddressesStorageDelegateTest {
             val storage: AutofillCreditCardsAddressesStorage = mock()
             delegate = GeckoCreditCardsAddressesStorageDelegate(lazy { storage }, testDispatcher, validationDelegate)
 
-            val address = Address(
-                guid = "test-guid",
-                name = "John Doe",
-                organization = "Mozilla",
-                streetAddress = "999 Test Street",
-                addressLevel3 = "",
-                addressLevel2 = "Mountain View",
-                addressLevel1 = "CA",
-                postalCode = "94016",
-                country = "US",
-                tel = "+15551234567",
-                email = "john@example.com",
-            )
-
-            delegate.onAddressSave(address)
-
-            verify(storage, times(1)).updateAddress(
-                guid = "test-guid",
-                address = UpdatableAddressFields(
+            val address =
+                Address(
+                    guid = "test-guid",
                     name = "John Doe",
                     organization = "Mozilla",
                     streetAddress = "999 Test Street",
@@ -284,8 +289,27 @@ class GeckoCreditCardsAddressesStorageDelegateTest {
                     country = "US",
                     tel = "+15551234567",
                     email = "john@example.com",
-                ),
-            )
+                )
+
+            delegate.onAddressSave(address)
+
+            verify(storage, times(1))
+                .updateAddress(
+                    guid = "test-guid",
+                    address =
+                        UpdatableAddressFields(
+                            name = "John Doe",
+                            organization = "Mozilla",
+                            streetAddress = "999 Test Street",
+                            addressLevel3 = "",
+                            addressLevel2 = "Mountain View",
+                            addressLevel1 = "CA",
+                            postalCode = "94016",
+                            country = "US",
+                            tel = "+15551234567",
+                            email = "john@example.com",
+                        ),
+                )
             verify(storage, never()).addAddress(any())
         }
 
@@ -295,7 +319,12 @@ class GeckoCreditCardsAddressesStorageDelegateTest {
             val storage: AutofillCreditCardsAddressesStorage = mock()
             val storedAddresses = listOf<Address>(mock(), mock())
             doReturn(storedAddresses).`when`(storage).getAllAddresses()
-            delegate = GeckoCreditCardsAddressesStorageDelegate(lazy { storage }, testDispatcher, isAddressAutofillEnabled = { true })
+            delegate =
+                GeckoCreditCardsAddressesStorageDelegate(
+                    lazy { storage },
+                    testDispatcher,
+                    isAddressAutofillEnabled = { true },
+                )
 
             val result = delegate.onAddressesFetch()
 
@@ -309,7 +338,12 @@ class GeckoCreditCardsAddressesStorageDelegateTest {
             val storage: AutofillCreditCardsAddressesStorage = mock()
             val storedCards = listOf<CreditCard>(mock())
             doReturn(storedCards).`when`(storage).getAllCreditCards()
-            delegate = GeckoCreditCardsAddressesStorageDelegate(lazy { storage }, testDispatcher, isAddressAutofillEnabled = { false })
+            delegate =
+                GeckoCreditCardsAddressesStorageDelegate(
+                    lazy { storage },
+                    testDispatcher,
+                    isAddressAutofillEnabled = { false },
+                )
 
             val result = delegate.onAddressesFetch()
 

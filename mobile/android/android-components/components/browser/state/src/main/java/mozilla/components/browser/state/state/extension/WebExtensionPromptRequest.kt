@@ -21,8 +21,8 @@ sealed class WebExtensionPromptRequest {
      * @property url The url from where to download the addon to install.
      * @property name Optional name of the addon.
      * @property iconUrl Optional url of the icon of the addon to install.
-     * @property installationMethod What feature triggered installing the addon.
-     * Defaults to [InstallationMethod.MANAGER].
+     * @property installationMethod What feature triggered installing the addon. Defaults to
+     *   [InstallationMethod.MANAGER].
      */
     data class InstallationRequested(
         val url: String,
@@ -32,13 +32,13 @@ sealed class WebExtensionPromptRequest {
     ) : WebExtensionPromptRequest()
 
     /**
-     * Value type that represents a request for showing a native dialog from a [WebExtension] before
-     * the installation succeeds.
+     * Value type that represents a request for showing a native dialog from a [WebExtension] before the installation
+     * succeeds.
      */
-    sealed class BeforeInstallation(open val extension: WebExtension?) :
-        WebExtensionPromptRequest() {
+    sealed class BeforeInstallation(open val extension: WebExtension?) : WebExtensionPromptRequest() {
         /**
          * Value type that represents a request for showing error prompt when an installation failed.
+         *
          * @property extension The exception with failed to installed.
          * @property exception The reason why the installation failed.
          */
@@ -49,26 +49,23 @@ sealed class WebExtensionPromptRequest {
     }
 
     /**
-     * Value type that represents a request for showing a native dialog from a [WebExtension] after
-     * installation succeeds.
+     * Value type that represents a request for showing a native dialog from a [WebExtension] after installation
+     * succeeds.
      *
      * @param extension The [WebExtension] that requested the dialog to be shown.
      */
     sealed class AfterInstallation(open val extension: WebExtension) : WebExtensionPromptRequest() {
-        /**
-         * Value type that represents a request for showing a permissions prompt.
-         */
-        sealed class Permissions(
-            override val extension: WebExtension,
-        ) : AfterInstallation(extension) {
+        /** Value type that represents a request for showing a permissions prompt. */
+        sealed class Permissions(override val extension: WebExtension) : AfterInstallation(extension) {
             /**
              * Value type that represents a request for a required permissions prompt.
+             *
              * @property extension The [WebExtension] that requested the dialog to be shown.
              * @property permissions The permissions to list in the dialog.
              * @property origins The origins to list in the dialog.
              * @property dataCollectionPermissions The data collection permissions to list in the dialog.
              * @property onConfirm A callback indicating the prompt has been confirmed and pass
-             * [PermissionPromptResponse] result.
+             *   [PermissionPromptResponse] result.
              */
             data class Required(
                 override val extension: WebExtension,
@@ -80,6 +77,7 @@ sealed class WebExtensionPromptRequest {
 
             /**
              * Value type that represents a request for an optional permissions prompt.
+             *
              * @property extension The [WebExtension] that requested the dialog to be shown.
              * @property permissions The optional permissions to list in the dialog.
              * @property origins The optional host permissions to list in the dialog.
@@ -96,12 +94,11 @@ sealed class WebExtensionPromptRequest {
         }
 
         /**
-         * Value type that represents a request for showing post-installation prompt.
-         * Normally used to give users an opportunity to enable the [extension] in private browsing mode.
+         * Value type that represents a request for showing post-installation prompt. Normally used to give users an
+         * opportunity to enable the [extension] in private browsing mode.
+         *
          * @property extension The installed extension.
          */
-        data class PostInstallation(
-            override val extension: WebExtension,
-        ) : AfterInstallation(extension)
+        data class PostInstallation(override val extension: WebExtension) : AfterInstallation(extension)
     }
 }

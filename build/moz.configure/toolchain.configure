@@ -2369,6 +2369,21 @@ set_define("_LIBCPP_ALWAYS_INLINE", libcxx_override_visibility.empty)
 
 set_define("_LIBCPP_HIDE_FROM_ABI", libcxx_override_visibility.hide_from_abi)
 
+
+# _LIBCPP_EXPORTED_FROM_ABI has no #ifndef guard in __config, so disable the
+# annotations rather than override it. wasi only: elsewhere libc++ uses them for
+# symbols another DSO provides, like the sanitizer runtime's annotations.
+@depends(target, using_libcxx)
+def libcxx_disable_visibility_annotations(target, using_libcxx):
+    return using_libcxx and target.os == "WASI"
+
+
+set_define(
+    "_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS",
+    True,
+    when=libcxx_disable_visibility_annotations,
+)
+
 # TODO: remove this once we target C++23, where clang always define it, see bug 1880762
 set_define("_LIBCPP_REMOVE_TRANSITIVE_INCLUDES", True, when=using_libcxx)
 
@@ -2607,6 +2622,10 @@ def asan_flags(c_compiler, target, compilation_flags, linker_flags, build_env):
             flag = f"-fsanitize-blacklist={build_env.topsrcdir}/build/sanitizers/asan_blacklist_win.txt"
             compilation_flags.cflags.append(flag)
             compilation_flags.cxxflags.append(flag)
+        # Disable MSVC STL <optional> ASan annotations that produce
+        # false-positive use-after-poison reports at -O2.
+        # https://github.com/llvm/llvm-project/issues/204041
+        compilation_flags.cxxflags.append("-D_DISABLE_OPTIONAL_ANNOTATION")
 
     asan_flag = "-fsanitize=address"
     compilation_flags.cflags.append(asan_flag)

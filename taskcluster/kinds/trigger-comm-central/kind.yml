@@ -37,7 +37,6 @@ tasks:
         treeherder:
             symbol: tb-rust
         run:
-            clone-with: hg
             command: '/usr/bin/curl --fail --verbose -X POST -d "{}" -H "Content-Type: application/json" ${TASKCLUSTER_PROXY_URL}/api/hooks/v1/hooks/project-releng/cron-task-comm-central%2ftb-rust-vendor-check/trigger'
         when:
             files-changed:

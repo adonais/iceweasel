@@ -15,31 +15,30 @@ import androidx.annotation.ColorInt
 import androidx.core.view.updateLayoutParams
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
+import com.google.android.material.R as materialR
 import com.google.android.material.color.MaterialColors
 import mozilla.components.support.ktx.android.content.pixelSizeFor
 import org.mozilla.fenix.GleanMetrics.CustomizationSettings
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.isWideWindow
 import org.mozilla.fenix.utils.view.addToRadioGroup
-import com.google.android.material.R as materialR
 
 /**
- * Custom Preference that renders the options list.
- * Selecting an option moves it to the top and persists to SharedPreferences.
+ * Custom Preference that renders the options list. Selecting an option moves it to the top and persists to
+ * SharedPreferences.
  */
-internal abstract class ToolbarShortcutPreference @JvmOverloads constructor(
+internal abstract class ToolbarShortcutPreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : Preference(context, attrs) {
 
-    @ColorInt
-    private var colorTertiary: Int = 0
+    @ColorInt private var colorTertiary: Int = 0
 
-    @ColorInt
-    private var colorOnSurface: Int = 0
+    @ColorInt private var colorOnSurface: Int = 0
 
-    @ColorInt
-    private var colorOnSurfaceVariant: Int = 0
+    @ColorInt private var colorOnSurfaceVariant: Int = 0
 
     init {
         layoutResource = R.layout.preference_toolbar_shortcut
@@ -49,25 +48,28 @@ internal abstract class ToolbarShortcutPreference @JvmOverloads constructor(
     protected abstract val options: List<ShortcutOption>
 
     /**
-     * Returns whether [option] can be selected.
-     * A disabled option is still shown but greyed out and non-clickable.
+     * Returns whether [option] can be selected. A disabled option is still shown but greyed out and non-clickable.
      * Defaults to `true`.
      */
     protected open fun isOptionEnabled(option: ShortcutOption): Boolean = true
 
     protected abstract fun readSelectedKey(): String
+
     protected abstract fun writeSelectedKey(key: String)
+
     protected abstract fun getToolbarType(): String
+
     protected abstract fun getSelectedIconImageView(holder: PreferenceViewHolder): ImageView?
 
     /**
-     * The toolbar type reported in telemetry. Separate from [getToolbarType] so a preference can reuse
-     * another type's preview layout but still be reported on its own.
+     * The toolbar type reported in telemetry. Separate from [getToolbarType] so a preference can reuse another type's
+     * preview layout but still be reported on its own.
      */
-    protected open fun getTelemetryToolbarType(): String = when (getToolbarType()) {
-        EXPANDED_TOOLBAR_TYPE -> EXPANDED_TOOLBAR_TYPE
-        else -> SIMPLE_TOOLBAR_TYPE
-    }
+    protected open fun getTelemetryToolbarType(): String =
+        when (getToolbarType()) {
+            EXPANDED_TOOLBAR_TYPE -> EXPANDED_TOOLBAR_TYPE
+            else -> SIMPLE_TOOLBAR_TYPE
+        }
 
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
         super.onBindViewHolder(holder)
@@ -86,11 +88,12 @@ internal abstract class ToolbarShortcutPreference @JvmOverloads constructor(
     }
 
     private fun configureShortcutPreview(holder: PreferenceViewHolder) {
-        val shortcutPreviewId = when (getToolbarType()) {
-            EXPANDED_TOOLBAR_TYPE -> R.id.toolbar_expanded_shortcut_preview
-            NO_SHORTCUT_SIMPLE_TOOLBAR_TYPE -> R.id.toolbar_simple_no_shortcut_preview
-            else -> R.id.toolbar_simple_shortcut_preview
-        }
+        val shortcutPreviewId =
+            when (getToolbarType()) {
+                EXPANDED_TOOLBAR_TYPE -> R.id.toolbar_expanded_shortcut_preview
+                NO_SHORTCUT_SIMPLE_TOOLBAR_TYPE -> R.id.toolbar_simple_no_shortcut_preview
+                else -> R.id.toolbar_simple_shortcut_preview
+            }
         val shortcutPreview = holder.itemView.findViewById<View>(shortcutPreviewId)
 
         shortcutPreview?.updateLayoutParams<LinearLayout.LayoutParams> {
@@ -100,9 +103,7 @@ internal abstract class ToolbarShortcutPreference @JvmOverloads constructor(
                 marginEnd = 0
             } else {
                 gravity = Gravity.CENTER_HORIZONTAL
-                val horizontalMargin = context.pixelSizeFor(
-                    R.dimen.radiobutton_preference_margin_start,
-                )
+                val horizontalMargin = context.pixelSizeFor(R.dimen.radiobutton_preference_margin_start)
                 marginStart = horizontalMargin
                 marginEnd = horizontalMargin
             }
@@ -118,14 +119,15 @@ internal abstract class ToolbarShortcutPreference @JvmOverloads constructor(
 
     @Suppress("SpreadOperator")
     fun getShortcutOptions(): List<RadioButtonPreference> {
-        val shortcutOptions = options
-            .distinctBy { it.key }
-            .map { newOption ->
-                createShortcutRadioButton(
-                    newOption = newOption,
-                    selectedOption = getSelectedOption(),
-                )
-            }
+        val shortcutOptions =
+            options
+                .distinctBy { it.key }
+                .map { newOption ->
+                    createShortcutRadioButton(
+                        newOption = newOption,
+                        selectedOption = getSelectedOption(),
+                    )
+                }
 
         addToRadioGroup(*shortcutOptions.toTypedArray())
         return shortcutOptions
@@ -134,26 +136,25 @@ internal abstract class ToolbarShortcutPreference @JvmOverloads constructor(
     private fun createShortcutRadioButton(
         newOption: ShortcutOption,
         selectedOption: ShortcutOption,
-    ): RadioButtonPreference = RadioButtonPreference(context).apply {
-        key = newOption.key.value
-        title = context.getString(newOption.label)
-        isEnabled = isOptionEnabled(newOption)
-        setCheckedWithoutClickListener(newOption == selectedOption)
-        onClickListener {
-            CustomizationSettings.toolbarShortcutSelection.record(
-                CustomizationSettings.ToolbarShortcutSelectionExtra(
-                    toolbarType = getTelemetryToolbarType(),
-                    item = newOption.key.value,
-                ),
-            )
-            writeSelectedKey(newOption.key.value)
-            notifyChanged()
+    ): RadioButtonPreference =
+        RadioButtonPreference(context).apply {
+            key = newOption.key.value
+            title = context.getString(newOption.label)
+            isEnabled = isOptionEnabled(newOption)
+            setCheckedWithoutClickListener(newOption == selectedOption)
+            onClickListener {
+                CustomizationSettings.toolbarShortcutSelection.record(
+                    CustomizationSettings.ToolbarShortcutSelectionExtra(
+                        toolbarType = getTelemetryToolbarType(),
+                        item = newOption.key.value,
+                    )
+                )
+                writeSelectedKey(newOption.key.value)
+                notifyChanged()
+            }
         }
-    }
 
-    private fun View.getMaterialColor(
-        @AttrRes attr: Int,
-    ): Int {
+    private fun View.getMaterialColor(@AttrRes attr: Int): Int {
         return MaterialColors.getColor(this, attr)
     }
 }

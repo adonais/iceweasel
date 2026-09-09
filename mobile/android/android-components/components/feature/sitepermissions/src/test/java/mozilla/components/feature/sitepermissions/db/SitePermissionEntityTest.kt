@@ -16,22 +16,23 @@ class SitePermissionEntityTest {
 
     @Test
     fun `convert from db entity to domain class`() {
-        val dbEntity = SitePermissionsEntity(
-            origin = "mozilla.dev",
-            localStorage = ALLOWED,
-            crossOriginStorageAccess = BLOCKED,
-            location = BLOCKED,
-            notification = NO_DECISION,
-            microphone = NO_DECISION,
-            camera = NO_DECISION,
-            bluetooth = ALLOWED,
-            autoplayInaudible = AutoplayStatus.ALLOWED,
-            autoplayAudible = AutoplayStatus.BLOCKED,
-            mediaKeySystemAccess = NO_DECISION,
-            localDeviceAccess = NO_DECISION,
-            localNetworkAccess = NO_DECISION,
-            savedAt = 0,
-        )
+        val dbEntity =
+            SitePermissionsEntity(
+                origin = "mozilla.dev",
+                localStorage = ALLOWED,
+                crossOriginStorageAccess = BLOCKED,
+                location = BLOCKED,
+                notification = NO_DECISION,
+                microphone = NO_DECISION,
+                camera = NO_DECISION,
+                bluetooth = ALLOWED,
+                autoplayInaudible = AutoplayStatus.ALLOWED,
+                autoplayAudible = AutoplayStatus.BLOCKED,
+                mediaKeySystemAccess = NO_DECISION,
+                localDeviceAccess = NO_DECISION,
+                localNetworkAccess = NO_DECISION,
+                savedAt = 0,
+            )
 
         val domainClass = dbEntity.toSitePermission()
 
@@ -55,20 +56,21 @@ class SitePermissionEntityTest {
 
     @Test
     fun `convert from domain class to db entity`() {
-        val domainClass = SitePermissions(
-            origin = "mozilla.dev",
-            localStorage = ALLOWED,
-            crossOriginStorageAccess = BLOCKED,
-            location = BLOCKED,
-            notification = NO_DECISION,
-            microphone = NO_DECISION,
-            camera = NO_DECISION,
-            bluetooth = ALLOWED,
-            autoplayInaudible = AutoplayStatus.ALLOWED,
-            autoplayAudible = AutoplayStatus.BLOCKED,
-            mediaKeySystemAccess = NO_DECISION,
-            savedAt = 0,
-        )
+        val domainClass =
+            SitePermissions(
+                origin = "mozilla.dev",
+                localStorage = ALLOWED,
+                crossOriginStorageAccess = BLOCKED,
+                location = BLOCKED,
+                notification = NO_DECISION,
+                microphone = NO_DECISION,
+                camera = NO_DECISION,
+                bluetooth = ALLOWED,
+                autoplayInaudible = AutoplayStatus.ALLOWED,
+                autoplayAudible = AutoplayStatus.BLOCKED,
+                mediaKeySystemAccess = NO_DECISION,
+                savedAt = 0,
+            )
 
         val dbEntity = domainClass.toSitePermissionsEntity()
 

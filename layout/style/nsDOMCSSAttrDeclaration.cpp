@@ -8,12 +8,14 @@
 
 #include "ActiveLayerTracker.h"
 #include "mozAutoDocUpdate.h"
+#include "mozilla/CSSPropFlags.h"
 #include "mozilla/SMILCSSValueType.h"
 #include "mozilla/SMILValue.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/SVGElement.h"
 #include "mozilla/layers/ScrollLinkedEffectDetector.h"
+#include "nsCSSProps.h"
 #include "nsIFrame.h"
 #include "nsWrapperCacheInlines.h"
 
@@ -223,42 +225,6 @@ void nsDOMCSSAttributeDeclaration::SetPropertyValue(
                                         aRv);
 }
 
-static bool IsScrollLinkedEffectiveProperty(
-    const NonCustomCSSPropertyId aPropId) {
-  switch (aPropId) {
-    case eCSSProperty_background_position:
-    case eCSSProperty_background_position_x:
-    case eCSSProperty_background_position_y:
-    case eCSSProperty_transform:
-    case eCSSProperty_translate:
-    case eCSSProperty_rotate:
-    case eCSSProperty_scale:
-    case eCSSProperty_offset_path:
-    case eCSSProperty_offset_distance:
-    case eCSSProperty_offset_rotate:
-    case eCSSProperty_offset_anchor:
-    case eCSSProperty_offset_position:
-    case eCSSProperty_top:
-    case eCSSProperty_left:
-    case eCSSProperty_bottom:
-    case eCSSProperty_right:
-    case eCSSProperty_width:
-    case eCSSProperty_height:
-    case eCSSProperty_margin:
-    case eCSSProperty_margin_top:
-    case eCSSProperty_margin_left:
-    case eCSSProperty_margin_bottom:
-    case eCSSProperty_margin_right:
-    case eCSSProperty_margin_inline_start:
-    case eCSSProperty_margin_inline_end:
-    case eCSSProperty_margin_block_start:
-    case eCSSProperty_margin_block_end:
-      return true;
-    default:
-      return false;
-  }
-}
-
 void nsDOMCSSAttributeDeclaration::MutationClosureFunction(
     void* aData, NonCustomCSSPropertyId aPropId) {
   auto* data = static_cast<MutationClosureData*>(aData);
@@ -268,7 +234,9 @@ void nsDOMCSSAttributeDeclaration::MutationClosureFunction(
   if (data->mWasCalled) {
     return;
   }
-  if (IsScrollLinkedEffectiveProperty(aPropId)) {
+  // Aliases and custom properties are not covered here.
+  if (aPropId < eCSSProperty_COUNT &&
+      nsCSSProps::PropHasFlags(aPropId, CSSPropFlags::ScrollLinkedEffective)) {
     mozilla::layers::ScrollLinkedEffectDetector::PositioningPropertyMutated();
   }
   if (IsActiveLayerProperty(aPropId)) {

@@ -1591,8 +1591,14 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
   namedGroups.AppendElement(ssl_grp_ec_secp256r1);
   namedGroups.AppendElement(ssl_grp_ec_secp384r1);
   namedGroups.AppendElement(ssl_grp_ec_secp521r1);
-  namedGroups.AppendElement(ssl_grp_ffdhe_2048);
-  namedGroups.AppendElement(ssl_grp_ffdhe_3072);
+
+  // Only include named FFDHE shares if ciphersuites that can use FFDHE are
+  // enabled.
+  if (StaticPrefs::security_ssl3_dhe_rsa_aes_128_sha() ||
+      StaticPrefs::security_ssl3_dhe_rsa_aes_256_sha()) {
+    namedGroups.AppendElement(ssl_grp_ffdhe_2048);
+    namedGroups.AppendElement(ssl_grp_ffdhe_3072);
+  }
 
   if (StaticPrefs::security_tls_enable_mlkem1024() && tls13) {
     namedGroups.AppendElement(ssl_grp_kem_mlkem1024);

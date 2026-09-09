@@ -11,8 +11,8 @@ Scenario: `browser_creditCard_telemetry_manage.js` perma-failed on Windows with 
 ## Load and get an overview
 
 ```
-profiler-cli load <profile-url>
-profiler-cli profile info
+profiler-cli load <profile-url> --session timer-race
+profiler-cli profile info --session timer-race
 ```
 
 ```
@@ -43,8 +43,8 @@ Two things to internalize immediately:
 ## Step 1 — Spin or wait? Look at the main thread with idle included
 
 ```
-profiler-cli thread select t-0
-profiler-cli thread samples --include-idle
+profiler-cli thread select t-0 --session timer-race
+profiler-cli thread samples --include-idle --session timer-race
 ```
 
 ```
@@ -68,7 +68,7 @@ Wait-primitive frames that mean "idle, blocked": `ProcessNextNativeEvent::Wait`,
 The harness logs a marker when it gives up. Find it, then find the last thing that happened before the dead air. Test-progress markers live in the `Test` category:
 
 ```
-profiler-cli thread markers --category Test --list
+profiler-cli thread markers --category Test --list --session timer-race
 ```
 
 ```
@@ -86,7 +86,7 @@ There it is: the last meaningful marker is at **12.825s** (`focus on element (id
 Confirm the timeout is just the harness alarm, not the bug:
 
 ```
-profiler-cli marker stack m-107
+profiler-cli marker stack m-107 --session timer-race
 ```
 
 ```
@@ -125,8 +125,8 @@ t-14: last marker  m-150937  Process Priority  t=49.231s  priority: FOREGROUND  
 ```
 
 ```
-profiler-cli thread select t-14
-profiler-cli thread markers --list      # read the window around 12.8s
+profiler-cli thread select t-14 --session timer-race
+profiler-cli thread markers --list --session timer-race  # read the window around 12.8s
 ```
 
 ```
@@ -139,7 +139,7 @@ profiler-cli thread markers --list      # read the window around 12.8s
 A search for the awaited message across the whole content thread returns **nothing** — the notification was never sent:
 
 ```
-profiler-cli thread markers --search "FieldsIdentified" --list      # (empty)
+profiler-cli thread markers --search "FieldsIdentified" --list --session timer-race  # (empty)
 ```
 
 ---
@@ -158,7 +158,7 @@ The focus arrived **14 ms before** the threshold cleared. Reading `FormAutofillC
 It's a near-tie race between a parent-side wait timer and a content-side clear timer, both ~1000 ms but anchored at different moments in different processes — so it loses ~5% of the time normally, and **the profiler's content-process overhead pushes the clear consistently past the focus**, making it deterministic. That cross-process timestamp correlation is the only way to see a 14 ms race; no single thread's view reveals it.
 
 ```
-profiler-cli stop
+profiler-cli stop --session timer-race
 ```
 
 ---

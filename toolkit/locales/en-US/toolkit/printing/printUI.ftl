@@ -30,8 +30,14 @@ printui-page-custom-range-input =
 printui-copies-label = Copies
 
 printui-orientation = Orientation
-printui-landscape = Landscape
-printui-portrait = Portrait
+printui-orientation-control =
+  .aria-label = Orientation
+printui-landscape-2 =
+  .label = Landscape
+  .title = Landscape
+printui-portrait-2 =
+  .label = Portrait
+  .title = Portrait
 
 # Section title for the printer or destination device to target
 printui-destination-label = Destination

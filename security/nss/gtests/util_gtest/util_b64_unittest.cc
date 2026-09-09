@@ -15,18 +15,18 @@ namespace nss_test {
 
 class B64EncodeDecodeTest : public ::testing::Test {
  public:
-  void TestDecodeStr(const std::string &str) {
+  void TestDecodeStr(const std::string& str) {
     ScopedSECItem tmp(
         NSSBase64_DecodeBuffer(nullptr, nullptr, str.c_str(), str.size()));
     ASSERT_TRUE(tmp);
-    char *out = NSSBase64_EncodeItem(nullptr, nullptr, 0, tmp.get());
+    char* out = NSSBase64_EncodeItem(nullptr, nullptr, 0, tmp.get());
     ASSERT_TRUE(out);
     ASSERT_EQ(std::string(out), str);
     PORT_Free(out);
   }
-  bool TestEncodeItem(SECItem *item) {
+  bool TestEncodeItem(SECItem* item) {
     bool rv = true;
-    char *out = NSSBase64_EncodeItem(nullptr, nullptr, 0, item);
+    char* out = NSSBase64_EncodeItem(nullptr, nullptr, 0, item);
     rv = !!out;
     if (out) {
       ScopedSECItem tmp(
@@ -62,8 +62,8 @@ TEST_F(B64EncodeDecodeTest, EncDecTest) {
 }
 
 TEST_F(B64EncodeDecodeTest, IncompleteData) {
-  NSSBase64Decoder *context = NSSBase64Decoder_Create(
-      [](void *, const unsigned char *, PRInt32) { return 0; }, nullptr);
+  NSSBase64Decoder* context = NSSBase64Decoder_Create(
+      [](void*, const unsigned char*, PRInt32) { return 0; }, nullptr);
   EXPECT_TRUE(!!context);
   char data = 'A';
   EXPECT_EQ(SECSuccess, NSSBase64Decoder_Update(context, &data, 1));
@@ -92,8 +92,8 @@ TEST_F(B64EncodeDecodeTest, DISABLED_LongFakeEncDecTest2) {
 // nssb64d.c:464) wraps to a small value, PL_Base64MaxDecodedLength returns too
 // small a value, and pl_base64_decode_4to3 writes out of bounds.
 TEST_F(B64EncodeDecodeTest, OverflowingUpdateSizeIsRejected) {
-  NSSBase64Decoder *ctx = NSSBase64Decoder_Create(
-      [](void *, const unsigned char *, PRInt32) { return 0; }, nullptr);
+  NSSBase64Decoder* ctx = NSSBase64Decoder_Create(
+      [](void*, const unsigned char*, PRInt32) { return 0; }, nullptr);
   ASSERT_TRUE(ctx);
 
   // First update: 3 chars leave token_size = 3.

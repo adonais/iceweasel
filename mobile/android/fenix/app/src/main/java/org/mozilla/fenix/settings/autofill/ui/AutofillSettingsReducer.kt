@@ -4,21 +4,15 @@
 
 package org.mozilla.fenix.settings.autofill.ui
 
-/**
- * Function for reducing a new autofill settings state based on the received action.
- */
+/** Function for reducing a new autofill settings state based on the received action. */
 internal fun autofillSettingsReducer(state: AutofillSettingsState, action: AutofillSettingsAction) =
     when (action) {
         is UpdateAddresses -> {
-            state.copy(
-                addresses = action.addresses,
-            )
+            state.copy(addresses = action.addresses)
         }
 
         is UpdateCreditCards -> {
-            state.copy(
-                creditCards = action.creditCards,
-            )
+            state.copy(creditCards = action.creditCards)
         }
 
         is AutofillSettingsBackClicked -> {
@@ -57,7 +51,11 @@ internal fun autofillSettingsReducer(state: AutofillSettingsState, action: Autof
         }
 
         ViewDisposed,
-        is InitializeAddressesAndCreditCards, AddAddressClicked, AddCardClicked, SyncAddressesAcrossDevicesClicked,
-        SyncCardsAcrossDevicesClicked, ManageAddressesClicked, ManageCreditCardsClicked,
-            -> state
+        is InitializeAddressesAndCreditCards,
+        AddAddressClicked,
+        AddCardClicked,
+        SyncAddressesAcrossDevicesClicked,
+        SyncCardsAcrossDevicesClicked,
+        ManageAddressesClicked,
+        ManageCreditCardsClicked -> state
     }

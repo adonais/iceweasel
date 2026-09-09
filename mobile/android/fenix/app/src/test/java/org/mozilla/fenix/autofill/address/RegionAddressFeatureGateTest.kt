@@ -4,37 +4,36 @@
 
 package org.mozilla.fenix.autofill.address
 
+import java.util.Locale
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.debugsettings.addresses.DebugRegion
 import org.mozilla.fenix.debugsettings.addresses.EmptyAddressesDebugRegionRepository
 import org.mozilla.fenix.debugsettings.addresses.FakeAddressesDebugRegionRepository
-import java.util.Locale
 
 class RegionAddressFeatureGateTest {
     @Test
     fun `GIVEN an enabled region WHEN calling isAddressFeatureEnabled THEN return true`() {
         listOf(
-            Locale.US,
-            Locale.CANADA,
-            Locale.GERMANY,
-            Locale.JAPAN,
-            Locale.UK,
-            Locale.FRANCE,
-            Locale.forLanguageTag("pt-BR"),
-            Locale.forLanguageTag("es-ES"),
-        ).forEach {
-            val featureGate = RegionAddressFeatureGate(it, EmptyAddressesDebugRegionRepository())
-            assertTrue(featureGate.isAddressFeatureEnabled())
-        }
+                Locale.US,
+                Locale.CANADA,
+                Locale.GERMANY,
+                Locale.JAPAN,
+                Locale.UK,
+                Locale.FRANCE,
+                Locale.forLanguageTag("pt-BR"),
+                Locale.forLanguageTag("es-ES"),
+            )
+            .forEach {
+                val featureGate = RegionAddressFeatureGate(it, EmptyAddressesDebugRegionRepository())
+                assertTrue(featureGate.isAddressFeatureEnabled())
+            }
     }
 
     @Test
     fun `GIVEN an unavailable region WHEN calling isAddressFeatureEnabled THEN return false`() {
-        listOf(
-            Locale.forLanguageTag("en-AU"),
-        ).forEach {
+        listOf(Locale.forLanguageTag("en-AU")).forEach {
             val featureGate = RegionAddressFeatureGate(it, EmptyAddressesDebugRegionRepository())
             assertFalse(featureGate.isAddressFeatureEnabled())
         }
@@ -42,9 +41,10 @@ class RegionAddressFeatureGateTest {
 
     @Test
     fun `GIVEN a region enabled in the AddressDebugRegionRepository WHEN calling isAddressFeatureEnabled THEN return true`() {
-        val repository = FakeAddressesDebugRegionRepository().also {
-            it.setRegionEnabled(DebugRegion.AU, true)
-        }
+        val repository =
+            FakeAddressesDebugRegionRepository().also {
+                it.setRegionEnabled(DebugRegion.AU, true)
+            }
 
         val featureGate = RegionAddressFeatureGate(Locale.forLanguageTag("en-AU"), repository)
         assertTrue(featureGate.isAddressFeatureEnabled())

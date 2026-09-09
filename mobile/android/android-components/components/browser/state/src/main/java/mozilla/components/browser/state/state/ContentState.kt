@@ -27,11 +27,9 @@ import mozilla.components.concept.engine.window.WindowRequest
  * @property title The title of the current page.
  * @property progress The loading progress of the current page denoted as 0-100.
  * @property loading True if state is loading.
- * @property searchTerms The last used search terms, or an empty string if no
- * search was executed for this session.
- * @property securityInfo The security information as [SecurityInfo],
- * describing whether or not the this session is for a secure URL, as well
- * as the host and SSL certificate authority.
+ * @property searchTerms The last used search terms, or an empty string if no search was executed for this session.
+ * @property securityInfo The security information as [SecurityInfo], describing whether or not the this session is for
+ *   a secure URL, as well as the host and SSL certificate authority.
  * @property icon The icon of the page currently loaded by this session.
  * @property download Last unhandled download request.
  * @property share Last unhandled request to share an internet resource that first needs to be downloaded.
@@ -48,19 +46,16 @@ import mozilla.components.concept.engine.window.WindowRequest
  * @property webAppManifest The Web App Manifest for the currently visited page (or null).
  * @property firstContentfulPaint Whether or not the first contentful paint has happened.
  * @property history The [HistoryState] of this state.
- * @property permissionHighlights Holds the state of any site permission that was granted/denied
- * that should be brought to the user's attention, for example when media content is not able to
- * play because the autoplay settings.
+ * @property permissionHighlights Holds the state of any site permission that was granted/denied that should be brought
+ *   to the user's attention, for example when media content is not able to play because the autoplay settings.
  * @property permissionRequestsList Holds unprocessed content requests.
  * @property appPermissionRequestsList Holds unprocessed app requests.
  * @property pictureInPictureEnabled True if the session is being displayed in PIP mode.
  * @property loadRequest The last [LoadRequestState] of this session.
- * @property refreshCanceled Indicates if an intent of refreshing was canceled.
- * True if a page refresh was cancelled by the user, defaults to false. Note that this is not about
- * stopping an ongoing page load but useful in cases like swipe-to-refresh which allow users to
- * cancel or abort before a page is refreshed.
- * @property recordingDevices List of recording devices (e.g. camera or microphone) currently in use
- * by web content.
+ * @property refreshCanceled Indicates if an intent of refreshing was canceled. True if a page refresh was cancelled by
+ *   the user, defaults to false. Note that this is not about stopping an ongoing page load but useful in cases like
+ *   swipe-to-refresh which allow users to cancel or abort before a page is refreshed.
+ * @property recordingDevices List of recording devices (e.g. camera or microphone) currently in use by web content.
  * @property desktopMode True if desktop mode is enabled, otherwise false.
  * @property appIntent The last received [AppIntentState].
  * @property showToolbarAsExpanded Whether the dynamic toolbar should be forced as expanded.
@@ -107,9 +102,7 @@ data class ContentState(
     val isPdf: Boolean = false,
     val hasFormData: Boolean = false,
 ) {
-    /**
-     * Use both [loading] and [progress] to determine whether the page is loading.
-     */
+    /** Use both [loading] and [progress] to determine whether the page is loading. */
     val isLoading: Boolean
         get() = loading && progress < 100
 }

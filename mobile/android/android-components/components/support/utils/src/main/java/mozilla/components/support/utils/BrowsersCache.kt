@@ -10,24 +10,22 @@ import androidx.annotation.VisibleForTesting
 /**
  * Caches the list of browsers installed on a user's device.
  *
- * BrowsersCache caches the list of installed browsers is gathered lazily when it is first accessed
- * after initial creation or invalidation. For that reason, a context is required every time
- * the cache is accessed.
+ * BrowsersCache caches the list of installed browsers is gathered lazily when it is first accessed after initial
+ * creation or invalidation. For that reason, a context is required every time the cache is accessed.
  *
- * Users are responsible for invalidating the cache at the appropriate time. It is left up to the
- * user to determine appropriate policies for maintaining the validity of the cache. If, when the
- * cache is accessed, it is filled, the contents will be returned. As mentioned above, the cache
- * will be lazily refilled after invalidation. In other words, invalidation is O(1).
+ * Users are responsible for invalidating the cache at the appropriate time. It is left up to the user to determine
+ * appropriate policies for maintaining the validity of the cache. If, when the cache is accessed, it is filled, the
+ * contents will be returned. As mentioned above, the cache will be lazily refilled after invalidation. In other words,
+ * invalidation is O(1).
  *
  * This cache is threadsafe.
  */
 object BrowsersCache {
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal var cachedBrowsers: Browsers? = null
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal var cachedBrowsers: Browsers? = null
 
     /**
-     * Return installed browsers if cache exist.  If not, Collect information about all installed
-     * browsers and return a [Browsers] object containing that data.
+     * Return installed browsers if cache exist. If not, Collect information about all installed browsers and return a
+     * [Browsers] object containing that data.
      */
     @Synchronized
     fun all(context: Context): Browsers {
@@ -42,9 +40,7 @@ object BrowsersCache {
         }
     }
 
-    /**
-     * Remove installed browsers cache
-     */
+    /** Remove installed browsers cache */
     @Synchronized
     fun resetAll() {
         cachedBrowsers = null

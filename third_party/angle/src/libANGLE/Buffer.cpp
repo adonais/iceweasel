@@ -85,6 +85,7 @@ BufferState::BufferState()
       mBindingCount(0),
       mTransformFeedbackIndexedBindingCount(0),
       mTransformFeedbackGenericBindingCount(0),
+      mActiveTransformFeedbackCount(0),
       mImmutable(GL_FALSE),
       mStorageExtUsageFlags(0),
       mExternal(GL_FALSE),
@@ -188,9 +189,18 @@ angle::Result Buffer::setDataWithUsageFlags(const gl::Context *context,
                                             GLbitfield flags,
                                             gl::BufferStorage bufferStorage)
 {
+    // If we are using robust resource init, make sure the buffer starts cleared.
+    // Note: The context is checked for nullptr because of some testing code.
+    gl::ZeroFillRequired zeroFillRequired =
+        (context != nullptr && context->isRobustResourceInitEnabled() && clientBuffer == nullptr &&
+         data == nullptr && size > 0)
+            ? gl::ZeroFillRequired::Yes
+            : gl::ZeroFillRequired::No;
+
     rx::BufferFeedback feedback;
-    angle::Result result = mImpl->setDataWithUsageFlags(context, target, clientBuffer, data, size,
-                                                        usage, flags, bufferStorage, &feedback);
+    angle::Result result =
+        mImpl->setDataWithUsageFlags(context, target, clientBuffer, data, size, usage, flags,
+                                     bufferStorage, &feedback, zeroFillRequired);
 
     applyImplFeedback(context, feedback);
 
@@ -214,8 +224,6 @@ angle::Result Buffer::bufferDataImpl(Context *context,
                                      GLbitfield flags,
                                      BufferStorage bufferStorage)
 {
-    const void *dataForImpl = data;
-
     if (mState.isMapped())
     {
         // Per the OpenGL ES 3.0 spec, buffers are implicity unmapped when a call to
@@ -229,19 +237,8 @@ angle::Result Buffer::bufferDataImpl(Context *context,
         ANGLE_TRY(unmap(context, &dontCare));
     }
 
-    // If we are using robust resource init, make sure the buffer starts cleared.
-    // Note: the Context is checked for nullptr because of some testing code.
-    // TODO(jmadill): Investigate lazier clearing.
-    if (context && context->isRobustResourceInitEnabled() && !data && size > 0)
-    {
-        angle::MemoryBuffer *scratchBuffer = nullptr;
-        ANGLE_CHECK_GL_ALLOC(
-            context, context->getZeroFilledBuffer(static_cast<size_t>(size), &scratchBuffer));
-        dataForImpl = scratchBuffer->data();
-    }
-
-    ANGLE_TRY(setDataWithUsageFlags(context, target, nullptr, dataForImpl, size, usage, flags,
-                                    bufferStorage));
+    ANGLE_TRY(
+        setDataWithUsageFlags(context, target, nullptr, data, size, usage, flags, bufferStorage));
 
     bool wholeBuffer = size == mState.mSize;
 
@@ -465,18 +462,26 @@ bool Buffer::isDoubleBoundForTransformFeedback() const
 void Buffer::onTFBindingChanged(const Context *context, bool bound, bool indexed)
 {
     ASSERT(bound || mState.mBindingCount > 0);
-    mState.mBindingCount += bound ? 1 : -1;
+    const int delta = bound ? 1 : -1;
+    mState.mBindingCount += delta;
     if (indexed)
     {
         ASSERT(bound || mState.mTransformFeedbackIndexedBindingCount > 0);
-        mState.mTransformFeedbackIndexedBindingCount += bound ? 1 : -1;
+        mState.mTransformFeedbackIndexedBindingCount += delta;
 
         onStateChange(context, angle::SubjectMessage::BindingChanged);
     }
     else
     {
-        mState.mTransformFeedbackGenericBindingCount += bound ? 1 : -1;
+        mState.mTransformFeedbackGenericBindingCount += delta;
     }
+}
+
+void Buffer::onTFActiveChanged(const Context *context, bool active)
+{
+    const int delta = active ? 1 : -1;
+    mState.mActiveTransformFeedbackCount += delta;
+    ASSERT(mState.mActiveTransformFeedbackCount >= 0);
 }
 
 angle::Result Buffer::getSubData(const gl::Context *context,
@@ -555,7 +560,9 @@ void Buffer::onStateChange(const Context *context, angle::SubjectMessage message
 
     // Apply the change directly on current context's current vertex array. All other vertex arrays
     // requires a buffer rebind in order to pick up the change.
-    context->onBufferChanged(this, message,
+    bool isUsedInTransformFeedback = mState.mTransformFeedbackGenericBindingCount > 0 ||
+                                     mState.mTransformFeedbackIndexedBindingCount > 0;
+    context->onBufferChanged(this, message, isUsedInTransformFeedback,
                              mVertexArrayBufferBindingMaskAndContext.getBufferBindingMask(context));
 }
 
@@ -567,7 +574,10 @@ void Buffer::onContentsChange(const Context *context)
         static_cast<Texture *>(contentsObserver.observer)->onBufferContentsChange();
     }
 
+    bool isUsedInTransformFeedback = mState.mTransformFeedbackGenericBindingCount > 0 ||
+                                     mState.mTransformFeedbackIndexedBindingCount > 0;
     context->onBufferChanged(this, angle::SubjectMessage::ContentsChanged,
+                             isUsedInTransformFeedback,
                              mVertexArrayBufferBindingMaskAndContext.getBufferBindingMask(context));
 }
 
@@ -584,4 +594,5 @@ void Buffer::applyImplFeedback(const gl::Context *context, const rx::BufferFeedb
         onStateChange(context, angle::SubjectMessage::SubjectChanged);
     }
 }
+
 }  // namespace gl

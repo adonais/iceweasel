@@ -518,9 +518,20 @@ const TOPSTORIES_SECTION = {
   rows: [],
 };
 
+const HIGHLIGHTS_SECTION = {
+  ...TOPSTORIES_SECTION,
+  id: "highlights",
+};
+
 // storePrefs goes into the Redux store rather than BaseContent's props, for
 // values the connected DiscoveryStreamBase reads itself (e.g. widgets gating).
-function renderBaseContentWithFeed(props, storePrefs = {}) {
+// sections goes into the store too: DiscoveryStreamBase reads it to decide whether
+// the Highlights wrapper renders at all.
+function renderBaseContentWithFeed(
+  props,
+  storePrefs = {},
+  sections = [TOPSTORIES_SECTION]
+) {
   return render(
     <Provider
       store={makeStore(
@@ -534,7 +545,7 @@ function renderBaseContentWithFeed(props, storePrefs = {}) {
             ...INITIAL_STATE.DiscoveryStream,
             ...RENDERABLE_DISCOVERY_STREAM,
           },
-          Sections: [TOPSTORIES_SECTION],
+          Sections: sections,
         }
       )}
     >
@@ -695,6 +706,154 @@ describe("<BaseContent> Nova layout ASRouterNewTabMessage positions", () => {
     expect(feedIdx).toBeGreaterThan(-1);
     expect(messageIdx).toBeGreaterThan(widgetsIdx);
     expect(messageIdx).toBeLessThan(feedIdx);
+  });
+});
+
+describe("<BaseContent> Nova layout variant class", () => {
+  const DOCUMENT_STUB = {
+    visibilityState: "visible",
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  };
+
+  // Base.jsx reads props.Prefs.values, not the store.
+  const propsWithPrefs = prefs => ({
+    store: { getState: () => {} },
+    App: { initialized: true },
+    Prefs: {
+      values: {
+        "nova.enabled": true,
+        "feeds.topsites": true,
+        "feeds.section.topstories": true,
+        "feeds.system.topstories": true,
+        // Needs a widget in the content area, not just the container on.
+        "widgets.system.enabled": true,
+        "widgets.enabled": true,
+        "widgets.system.lists.enabled": true,
+        "widgets.lists.enabled": true,
+        ...prefs,
+      },
+    },
+    Sections: [],
+    DiscoveryStream: {
+      config: { enabled: true },
+      spocs: {},
+      feeds: { loaded: true },
+      showTopicSelection: false,
+    },
+    dispatch: () => {},
+    document: DOCUMENT_STUB,
+  });
+
+  const bandClassList = prefs => {
+    const { container } = renderBaseContentWithFeed(propsWithPrefs(prefs), {
+      "widgets.system.enabled": true,
+    });
+    return [...container.querySelector(".content-full-width").classList];
+  };
+
+  it("puts the lead class on the band for each side-by-side variant", () => {
+    expect(
+      bandClassList({ "pageLayouts.variant": "side-by-side-content-lead" })
+    ).toContain("side-by-side-content-lead");
+    expect(
+      bandClassList({ "pageLayouts.variant": "side-by-side-widgets-lead" })
+    ).toContain("side-by-side-widgets-lead");
+  });
+
+  // The four-column variants must not pick up the modifier that unlocks the
+  // fourth content card.
+  it("adds no width modifier for the four-column variants", () => {
+    expect(
+      bandClassList({ "pageLayouts.variant": "side-by-side-content-lead" })
+    ).not.toContain("side-by-side-five");
+    expect(
+      bandClassList({ "pageLayouts.variant": "side-by-side-widgets-lead" })
+    ).not.toContain("side-by-side-five");
+  });
+
+  // The shared lead class is what every side-by-side rule keys off, and CSS
+  // matches per token, so the "-five" variant name must not be the class.
+  it.each([
+    ["side-by-side-content-lead-five", "side-by-side-content-lead"],
+    ["side-by-side-widgets-lead-five", "side-by-side-widgets-lead"],
+  ])("gives %s the lead class plus side-by-side-five", (variant, lead) => {
+    const classes = bandClassList({ "pageLayouts.variant": variant });
+    expect(classes).toContain(lead);
+    expect(classes).toContain("side-by-side-five");
+    expect(classes).not.toContain(variant);
+  });
+
+  // Drops the section panel in _Grid.scss; same condition that un-sidebars the logo.
+  it("marks the band highlights-only when the feed and widgets are both off", () => {
+    expect(
+      bandClassList({
+        "feeds.section.topstories": false,
+        "widgets.enabled": false,
+      })
+    ).toContain("highlights-only");
+  });
+
+  it.each([
+    ["the feed is on", { "widgets.enabled": false }],
+    ["a content-area widget is on", { "feeds.section.topstories": false }],
+  ])("is not highlights-only while %s", (_label, prefs) => {
+    expect(bandClassList(prefs)).not.toContain("highlights-only");
+  });
+
+  it("marks the layout active when both sections are there", () => {
+    expect(
+      bandClassList({ "pageLayouts.variant": "side-by-side-content-lead" })
+    ).toContain("side-by-side-active");
+  });
+
+  it("adds no classes at all for the default layout", () => {
+    expect(bandClassList({ "pageLayouts.variant": "nova-full-width" })).toEqual(
+      ["content-full-width"]
+    );
+    expect(bandClassList({})).toEqual(["content-full-width"]);
+  });
+
+  // The variant class stays so the lone section keeps its panel; only the
+  // two-column layout drops out.
+  it.each([
+    ["stories are off", { "feeds.section.topstories": false }],
+    [
+      "the widgets container is not visible",
+      { "widgets.system.enabled": false },
+    ],
+    ["the widgets toggle is off", { "widgets.enabled": false }],
+    ["every widget is hidden", { "widgets.lists.enabled": false }],
+  ])("keeps the variant class but is not active when %s", (_label, prefs) => {
+    const classes = bandClassList({
+      "pageLayouts.variant": "side-by-side-content-lead",
+      ...prefs,
+    });
+    expect(classes).toContain("side-by-side-content-lead");
+    expect(classes).not.toContain("side-by-side-active");
+  });
+
+  it("honours a variant set only through trainhopConfig", () => {
+    expect(
+      bandClassList({
+        trainhopConfig: {
+          pageLayouts: { variant: "side-by-side-widgets-lead" },
+        },
+      })
+    ).toContain("side-by-side-widgets-lead");
+    expect(
+      bandClassList({
+        trainhopConfig: {
+          pageLayouts: { variant: "side-by-side-content-lead-five" },
+        },
+      })
+    ).toEqual(
+      expect.arrayContaining([
+        "side-by-side-content-lead",
+        "side-by-side-five",
+        "side-by-side-active",
+      ])
+    );
   });
 });
 
@@ -1102,45 +1261,76 @@ describe("<BaseContent> onWindowScroll", () => {
     return ref.current;
   }
 
+  // onWindowScroll is throttled, so let the throttle lapse after each scroll.
+  function scrollWindowTo(instance, value) {
+    setScrollY(value);
+    instance.onWindowScroll();
+    jest.advanceTimersByTime(10);
+  }
+
+  function scrollAction(threshold) {
+    return ac.OnlyToMain({ type: at.NEW_TAB_SCROLL, data: { threshold } });
+  }
+
   beforeEach(() => {
+    // performance is left real so componentDidMount's getEntriesByType works
+    jest.useFakeTimers({ doNotFake: ["performance"] });
     setScrollY(0);
   });
 
   afterEach(() => {
+    jest.useRealTimers();
     setScrollY(0);
   });
 
-  it("should dispatch NEW_TAB_SCROLL when scrollY exceeds threshold", () => {
+  it("should dispatch NEW_TAB_SCROLL when scrollY exceeds the first threshold", () => {
     const dispatch = jest.fn();
     const instance = mountScroll({ ...DEFAULT_PROPS, dispatch });
-    setScrollY(150);
-    instance.onWindowScroll();
-    expect(dispatch).toHaveBeenCalledWith(
-      ac.OnlyToMain({ type: at.NEW_TAB_SCROLL })
-    );
+    scrollWindowTo(instance, 60);
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledWith(scrollAction(50));
   });
 
-  it("should not dispatch NEW_TAB_SCROLL when scrollY is at or below threshold", () => {
+  it("should not dispatch NEW_TAB_SCROLL when scrollY is at or below the first threshold", () => {
     const dispatch = jest.fn();
     const instance = mountScroll({ ...DEFAULT_PROPS, dispatch });
-    setScrollY(10);
-    instance.onWindowScroll();
+    scrollWindowTo(instance, 50);
     expect(dispatch).not.toHaveBeenCalled();
   });
 
-  it("should set _hasScrolledForSession to true when scroll threshold exceeded", () => {
-    const instance = mountScroll(DEFAULT_PROPS);
-    setScrollY(150);
-    instance.onWindowScroll();
-    expect(instance._hasScrolledForSession).toBe(true);
-  });
-
-  it("should not dispatch NEW_TAB_SCROLL again once _hasScrolledForSession is true", () => {
+  it("should dispatch every threshold passed by a single scroll", () => {
     const dispatch = jest.fn();
     const instance = mountScroll({ ...DEFAULT_PROPS, dispatch });
-    instance._hasScrolledForSession = true;
-    setScrollY(150);
-    instance.onWindowScroll();
+    scrollWindowTo(instance, 300);
+    expect(dispatch).toHaveBeenCalledTimes(3);
+    expect(dispatch).toHaveBeenCalledWith(scrollAction(50));
+    expect(dispatch).toHaveBeenCalledWith(scrollAction(100));
+    expect(dispatch).toHaveBeenCalledWith(scrollAction(250));
+  });
+
+  it("should dispatch each threshold as the user scrolls further", () => {
+    const dispatch = jest.fn();
+    const instance = mountScroll({ ...DEFAULT_PROPS, dispatch });
+    scrollWindowTo(instance, 60);
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledWith(scrollAction(50));
+
+    scrollWindowTo(instance, 150);
+    expect(dispatch).toHaveBeenCalledTimes(2);
+    expect(dispatch).toHaveBeenCalledWith(scrollAction(100));
+
+    scrollWindowTo(instance, 300);
+    expect(dispatch).toHaveBeenCalledTimes(3);
+    expect(dispatch).toHaveBeenCalledWith(scrollAction(250));
+  });
+
+  it("should not dispatch NEW_TAB_SCROLL again for an already reported threshold", () => {
+    const dispatch = jest.fn();
+    const instance = mountScroll({ ...DEFAULT_PROPS, dispatch });
+    scrollWindowTo(instance, 300);
+    dispatch.mockClear();
+
+    scrollWindowTo(instance, 400);
     expect(dispatch).not.toHaveBeenCalled();
   });
 });
@@ -1765,5 +1955,312 @@ describe("<BaseContent> customize menu dispatch", () => {
     instance.closeCustomizationMenu();
 
     expect(dispatch).not.toHaveBeenCalled();
+  });
+});
+
+describe("<BaseContent> Highlights wrapper", () => {
+  const DOCUMENT_STUB = {
+    visibilityState: "visible",
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  };
+
+  const props = {
+    store: { getState: () => {} },
+    App: { initialized: true },
+    Prefs: {
+      values: {
+        "nova.enabled": true,
+        "feeds.topsites": true,
+        "feeds.section.topstories": true,
+        "feeds.system.topstories": true,
+        "feeds.section.highlights": true,
+      },
+    },
+    Sections: [],
+    DiscoveryStream: {
+      config: { enabled: true },
+      spocs: {},
+      feeds: { loaded: true },
+      showTopicSelection: false,
+    },
+    dispatch: () => {},
+    document: DOCUMENT_STUB,
+  };
+
+  const renderWithSections = sections =>
+    renderBaseContentWithFeed(props, {}, sections).container;
+
+  // The point of the wrapper: side-by-side frames it separately from the feed.
+  it("renders Highlights in its own wrapper outside the content column", () => {
+    const container = renderWithSections([
+      TOPSTORIES_SECTION,
+      HIGHLIGHTS_SECTION,
+    ]);
+
+    const highlightsColumn = container.querySelector(
+      ".layout-highlights-column"
+    );
+    expect(highlightsColumn).toBeInTheDocument();
+    expect(
+      highlightsColumn.querySelector(".ds-highlights")
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(
+        ".layout-content-column .layout-highlights-column"
+      )
+    ).toBeNull();
+    expect(
+      container.querySelector(".layout-content-column .ds-highlights")
+    ).toBeNull();
+  });
+
+  // renderLayout always returns a div, so the gate is what keeps the panel off nothing.
+  it("renders no wrapper when the highlights section is absent or disabled", () => {
+    expect(
+      renderWithSections([TOPSTORIES_SECTION]).querySelector(
+        ".layout-highlights-column"
+      )
+    ).toBeNull();
+    expect(
+      renderWithSections([
+        TOPSTORIES_SECTION,
+        { ...HIGHLIGHTS_SECTION, enabled: false },
+      ]).querySelector(".layout-highlights-column")
+    ).toBeNull();
+  });
+
+  // The content feed keeps its own privacy link; only Highlights moved.
+  it("keeps the content column ahead of the Highlights wrapper", () => {
+    const container = renderWithSections([
+      TOPSTORIES_SECTION,
+      HIGHLIGHTS_SECTION,
+    ]);
+    const contentColumn = container.querySelector(".layout-content-column");
+    const highlightsColumn = container.querySelector(
+      ".layout-highlights-column"
+    );
+
+    expect(
+      contentColumn.compareDocumentPosition(highlightsColumn) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+});
+
+describe("<BaseContent> five column gate", () => {
+  const DOCUMENT_STUB = {
+    visibilityState: "visible",
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  };
+
+  const sectionWithColumns = columnCounts => ({
+    layout: {
+      responsiveLayouts: columnCounts.map(columnCount => ({
+        columnCount,
+        tiles: [],
+      })),
+    },
+  });
+
+  const renderWithSections = sections =>
+    renderBaseContentWithFeed({
+      store: { getState: () => {} },
+      App: { initialized: true },
+      Prefs: {
+        values: { "nova.enabled": true, "feeds.topsites": true },
+      },
+      Sections: [],
+      DiscoveryStream: {
+        config: { enabled: true },
+        spocs: {},
+        feeds: {
+          loaded: true,
+          data: { "https://example.com/feed": { data: { sections } } },
+        },
+        showTopicSelection: false,
+      },
+      dispatch: () => {},
+      document: DOCUMENT_STUB,
+    });
+
+  it("widens the content band when every section defines 5 columns", () => {
+    const { container } = renderWithSections([
+      sectionWithColumns([1, 2, 3, 4, 5]),
+      sectionWithColumns([1, 2, 3, 4, 5]),
+    ]);
+
+    expect(container.querySelector(".container")).toHaveClass("sections-5-col");
+  });
+
+  // Sections share one subgrid track count, so a partial layout set has to stay
+  // at 4 columns; widening would leave the 4-column section with no tile for the
+  // active breakpoint and nothing to render.
+  it("stays at 4 columns when any section is missing a 5-column layout", () => {
+    const { container } = renderWithSections([
+      sectionWithColumns([1, 2, 3, 4, 5]),
+      sectionWithColumns([1, 2, 3, 4]),
+    ]);
+
+    expect(container.querySelector(".container")).not.toHaveClass(
+      "sections-5-col"
+    );
+  });
+
+  it("stays at 4 columns before any sections have loaded", () => {
+    const { container } = renderWithSections([]);
+
+    expect(container.querySelector(".container")).not.toHaveClass(
+      "sections-5-col"
+    );
+  });
+});
+
+describe("<Base> wallpaper attribution", () => {
+  const ATTRIBUTED_WALLPAPER = {
+    title: "photo-hills",
+    wallpaperUrl: "https://example.com/hills.avif",
+    attribution: {
+      name: { string: "Ada Lovelace", url: "https://example.com/ada" },
+      webpage: { string: "example.com", url: "https://example.com" },
+    },
+  };
+
+  const PLAIN_WALLPAPER = { title: "solid-blue", solid_color: "#0000ff" };
+
+  // Mounting runs updateWallpaper, which writes to the shared jsdom body.
+  afterEach(() => {
+    document.body.style.removeProperty("--newtab-wallpaper");
+    document.body.style.removeProperty("--newtab-wallpaper-color");
+    document.body.style.removeProperty("--newtab-wallpaper-backgroundPosition");
+    document.body.classList.remove("lightWallpaper", "darkWallpaper");
+  });
+
+  function renderWithWallpaper({ prefs = {}, wallpapers = {} } = {}) {
+    return render(
+      <Provider
+        store={makeStore(
+          {
+            "nova.enabled": true,
+            "newtabWallpapers.enabled": true,
+            "newtabWallpapers.user.enabled": true,
+            "newtabWallpapers.wallpaper": ATTRIBUTED_WALLPAPER.title,
+            ...prefs,
+          },
+          {
+            Wallpapers: {
+              ...INITIAL_STATE.Wallpapers,
+              wallpaperList: [ATTRIBUTED_WALLPAPER, PLAIN_WALLPAPER],
+              ...wallpapers,
+            },
+          }
+        )}
+      >
+        <ConnectedBase />
+      </Provider>
+    );
+  }
+
+  it("renders the attribution under Nova when the wallpaper credits a photographer", () => {
+    const { container } = renderWithWallpaper();
+
+    const attribution = container.querySelector(".wallpaper-attribution");
+    expect(attribution).toBeInTheDocument();
+    expect(attribution).toHaveAttribute(
+      "data-l10n-id",
+      "newtab-wallpaper-attribution"
+    );
+    expect(JSON.parse(attribution.getAttribute("data-l10n-args"))).toEqual({
+      author_string: "Ada Lovelace",
+      author_url: "https://example.com/ada",
+      webpage_string: "example.com",
+      webpage_url: "https://example.com",
+    });
+  });
+
+  // Screen reader parity with classic, which also puts the attribution in the
+  // main landmark. Asserting on lastElementChild rather than a descendant match
+  // so a move into .content fails here: _Grid.scss gives every direct child of
+  // .content inline-size containment, which collapses the credit to its padding.
+  it("renders the attribution as the last child of the Nova main landmark", () => {
+    const { container } = renderWithWallpaper();
+
+    expect(
+      container.querySelector(".content-main").lastElementChild
+    ).toHaveClass("wallpaper-attribution");
+  });
+
+  it("does not render the attribution under Nova when the user turned wallpapers off", () => {
+    const { container } = renderWithWallpaper({
+      prefs: { "newtabWallpapers.user.enabled": false },
+    });
+
+    expect(
+      container.querySelector(".wallpaper-attribution")
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not render the attribution under Nova when wallpapers are disabled system-wide", () => {
+    const { container } = renderWithWallpaper({
+      prefs: { "newtabWallpapers.enabled": false },
+    });
+
+    expect(
+      container.querySelector(".wallpaper-attribution")
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not render the attribution for a wallpaper that ships no credit", () => {
+    const { container } = renderWithWallpaper({
+      prefs: { "newtabWallpapers.wallpaper": PLAIN_WALLPAPER.title },
+    });
+
+    expect(
+      container.querySelector(".wallpaper-attribution")
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not render the attribution for an uploaded custom wallpaper", () => {
+    const { container } = renderWithWallpaper({
+      prefs: { "newtabWallpapers.wallpaper": "custom" },
+      wallpapers: { uploadedWallpaper: "blob:custom-wallpaper" },
+    });
+
+    expect(
+      container.querySelector(".wallpaper-attribution")
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not render the attribution for a colour from the solid colour picker", () => {
+    const { container } = renderWithWallpaper({
+      prefs: { "newtabWallpapers.wallpaper": "solid-color-picker-#0000ff" },
+    });
+
+    expect(
+      container.querySelector(".wallpaper-attribution")
+    ).not.toBeInTheDocument();
+  });
+
+  it("still renders the attribution in the classic layout", () => {
+    const { container } = renderWithWallpaper({
+      prefs: { "nova.enabled": false },
+    });
+
+    expect(
+      container.querySelector("main.newtab-main .wallpaper-attribution")
+    ).toBeInTheDocument();
+  });
+
+  // The user pref applies to Nova only; classic checks newtabWallpapers.enabled
+  // on its own.
+  it("still renders the attribution in classic when the user pref is off", () => {
+    const { container } = renderWithWallpaper({
+      prefs: { "nova.enabled": false, "newtabWallpapers.user.enabled": false },
+    });
+
+    expect(
+      container.querySelector("main.newtab-main .wallpaper-attribution")
+    ).toBeInTheDocument();
   });
 });

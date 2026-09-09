@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.debugsettings
 
 import android.content.Context
@@ -15,7 +19,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.debugsettings.data.DefaultDebugSettingsRepository
 
-private val Context.testDataStore: DataStore<Preferences> by preferencesDataStore(name = "DefaultDebugSettingsRepositoryTest")
+private val Context.testDataStore: DataStore<Preferences> by
+    preferencesDataStore(name = "DefaultDebugSettingsRepositoryTest")
 
 @RunWith(AndroidJUnit4::class)
 class DefaultDebugSettingsRepositoryTest {
@@ -23,11 +28,12 @@ class DefaultDebugSettingsRepositoryTest {
     @Test
     fun `GIVEN the debug drawer is disabled WHEN the flag is enabled THEN the store should emit true`() = runTest {
         val dataStore = testContext.testDataStore
-        val defaultDebugSettingsRepository = DefaultDebugSettingsRepository(
-            context = testContext,
-            dataStore = dataStore,
-            writeScope = this,
-        )
+        val defaultDebugSettingsRepository =
+            DefaultDebugSettingsRepository(
+                context = testContext,
+                dataStore = dataStore,
+                writeScope = this,
+            )
         val expected = listOf(false, false, true) // First emit is from initialization
         val expectedEmitCount = expected.size
 
@@ -43,11 +49,12 @@ class DefaultDebugSettingsRepositoryTest {
     @Test
     fun `GIVEN the debug drawer is enabled WHEN the flag is disabled THEN the store should emit false`() = runTest {
         val dataStore = testContext.testDataStore
-        val defaultDebugSettingsRepository = DefaultDebugSettingsRepository(
-            context = testContext,
-            dataStore = dataStore,
-            writeScope = this,
-        )
+        val defaultDebugSettingsRepository =
+            DefaultDebugSettingsRepository(
+                context = testContext,
+                dataStore = dataStore,
+                writeScope = this,
+            )
         val expected = listOf(false, true, false) // First emit is from initialization
         val expectedEmitCount = expected.size
 

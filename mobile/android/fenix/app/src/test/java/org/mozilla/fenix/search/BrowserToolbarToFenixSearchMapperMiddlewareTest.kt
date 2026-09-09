@@ -7,7 +7,6 @@ package org.mozilla.fenix.search
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -42,79 +41,84 @@ class BrowserToolbarToFenixSearchMapperMiddlewareTest {
     }
 
     @Test
-    fun `WHEN entering in edit mode THEN consider it as search being started`() = runTest(testDispatcher) {
-        val searchStatusMapperMiddleware = buildMiddleware()
-        val captorMiddleware = CaptureActionsMiddleware<SearchFragmentState, SearchFragmentAction>()
-        val searchStore = buildSearchStore(listOf(searchStatusMapperMiddleware, captorMiddleware))
+    fun `WHEN entering in edit mode THEN consider it as search being started`() =
+        runTest(testDispatcher) {
+            val searchStatusMapperMiddleware = buildMiddleware()
+            val captorMiddleware = CaptureActionsMiddleware<SearchFragmentState, SearchFragmentAction>()
+            val searchStore = buildSearchStore(listOf(searchStatusMapperMiddleware, captorMiddleware))
 
-        toolbarStore.dispatch(EnterEditMode(false))
-        testDispatcher.scheduler.advanceUntilIdle()
+            toolbarStore.dispatch(EnterEditMode(false))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        captorMiddleware.assertLastAction(SearchStarted::class) {
-            assertNull(it.selectedSearchEngine)
-            assertTrue(it.inPrivateMode)
+            captorMiddleware.assertLastAction(SearchStarted::class) {
+                assertNull(it.selectedSearchEngine)
+                assertTrue(it.inPrivateMode)
+            }
         }
-    }
 
     @Test
-    fun `GIVEN search was started WHEN there's a new query in the toolbar THEN update the search state`() = runTest(testDispatcher) {
-        val searchStore = buildSearchStore(listOf(buildMiddleware()))
-        toolbarStore.dispatch(EnterEditMode(false))
+    fun `GIVEN search was started WHEN there's a new query in the toolbar THEN update the search state`() =
+        runTest(testDispatcher) {
+            val searchStore = buildSearchStore(listOf(buildMiddleware()))
+            toolbarStore.dispatch(EnterEditMode(false))
 
-        searchStore.dispatch(SearchStarted(mockk(), false, false, searchStartedForCurrentUrl = false))
-        testDispatcher.scheduler.advanceUntilIdle()
+            searchStore.dispatch(SearchStarted(mockk(), false, false, searchStartedForCurrentUrl = false))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("t")))
-        testDispatcher.scheduler.advanceUntilIdle()
-        assertEquals("t", searchStore.state.query)
+            toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("t")))
+            testDispatcher.scheduler.advanceUntilIdle()
+            assertEquals("t", searchStore.state.query)
 
-        toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("te")))
-        testDispatcher.scheduler.advanceUntilIdle()
-        assertEquals("te", searchStore.state.query)
+            toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("te")))
+            testDispatcher.scheduler.advanceUntilIdle()
+            assertEquals("te", searchStore.state.query)
 
-        toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("tes")))
-        testDispatcher.scheduler.advanceUntilIdle()
-        assertEquals("tes", searchStore.state.query)
+            toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("tes")))
+            testDispatcher.scheduler.advanceUntilIdle()
+            assertEquals("tes", searchStore.state.query)
 
-        toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("test")))
-        testDispatcher.scheduler.advanceUntilIdle()
-        assertEquals("test", searchStore.state.query)
-    }
+            toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("test")))
+            testDispatcher.scheduler.advanceUntilIdle()
+            assertEquals("test", searchStore.state.query)
+        }
 
     @Test
-    fun `GIVEN search was started for the current URL WHEN there's a new query in the toolbar THEN don't update the search state`() = runTest(testDispatcher) {
-        val currentTab = createTab("https://mozilla.org")
-        val browserStore = BrowserStore(
-            BrowserState(
-                tabs = listOf(currentTab),
-                selectedTabId = currentTab.id,
-            ),
-        )
-        val searchStore = buildSearchStore(listOf(buildMiddleware(browserStore = browserStore)))
-        toolbarStore.dispatch(EnterEditMode(false))
+    fun `GIVEN search was started for the current URL WHEN there's a new query in the toolbar THEN don't update the search state`() =
+        runTest(testDispatcher) {
+            val currentTab = createTab("https://mozilla.org")
+            val browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs = listOf(currentTab),
+                        selectedTabId = currentTab.id,
+                    )
+                )
+            val searchStore = buildSearchStore(listOf(buildMiddleware(browserStore = browserStore)))
+            toolbarStore.dispatch(EnterEditMode(false))
 
-        toolbarStore.dispatch(
-            SearchQueryUpdated(BrowserToolbarQuery("https://mozilla.org"), isQueryPrefilled = true),
-        )
-        searchStore.dispatch(SearchStarted(mockk(), false, false, searchStartedForCurrentUrl = true))
-        testDispatcher.scheduler.advanceUntilIdle()
-        assertEquals("", searchStore.state.query)
+            toolbarStore.dispatch(
+                SearchQueryUpdated(BrowserToolbarQuery("https://mozilla.org"), isQueryPrefilled = true)
+            )
+            searchStore.dispatch(SearchStarted(mockk(), false, false, searchStartedForCurrentUrl = true))
+            testDispatcher.scheduler.advanceUntilIdle()
+            assertEquals("", searchStore.state.query)
 
-        toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("t")))
-        testDispatcher.scheduler.advanceUntilIdle()
-        assertEquals("t", searchStore.state.query)
+            toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("t")))
+            testDispatcher.scheduler.advanceUntilIdle()
+            assertEquals("t", searchStore.state.query)
 
-        toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("https://mozilla.org")))
-        testDispatcher.scheduler.advanceUntilIdle()
-        assertEquals("https://mozilla.org", searchStore.state.query)
-    }
+            toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("https://mozilla.org")))
+            testDispatcher.scheduler.advanceUntilIdle()
+            assertEquals("https://mozilla.org", searchStore.state.query)
+        }
 
     private fun buildSearchStore(
-        middlewares: List<Middleware<SearchFragmentState, SearchFragmentAction>> = emptyList(),
-    ) = SearchFragmentStore(
-        initialState = emptySearchState,
-        middleware = middlewares,
-    )
+        middlewares: List<Middleware<SearchFragmentState, SearchFragmentAction>> = emptyList()
+    ) =
+        SearchFragmentStore(
+            initialState = emptySearchState,
+            middleware = middlewares,
+        )
 
     private fun buildMiddleware(
         toolbarStore: BrowserToolbarStore = this.toolbarStore,
@@ -123,10 +127,11 @@ class BrowserToolbarToFenixSearchMapperMiddlewareTest {
         browserStore: BrowserStore? = null,
     ) = BrowserToolbarToFenixSearchMapperMiddleware(toolbarStore, browsingModeManager, scope, browserStore)
 
-    private val emptySearchState = EMPTY_SEARCH_FRAGMENT_STATE.copy(
-        searchEngineSource = mockk(),
-        defaultEngine = mockk(),
-        showSearchTermHistory = true,
-        showQrButton = true,
-    )
+    private val emptySearchState =
+        EMPTY_SEARCH_FRAGMENT_STATE.copy(
+            searchEngineSource = mockk(),
+            defaultEngine = mockk(),
+            showSearchTermHistory = true,
+            showQrButton = true,
+        )
 }

@@ -77,11 +77,13 @@ class SitePermissionsDaoTest {
         assertEquals(AutoplayStatus.ALLOWED, siteFromDb.autoplayInaudible)
 
         dao.update(
-            siteFromDb.copy(
-                camera = ALLOWED,
-                autoplayInaudible = AutoplayStatus.ALLOWED,
-                autoplayAudible = AutoplayStatus.ALLOWED,
-            ).toSitePermissionsEntity(),
+            siteFromDb
+                .copy(
+                    camera = ALLOWED,
+                    autoplayInaudible = AutoplayStatus.ALLOWED,
+                    autoplayAudible = AutoplayStatus.ALLOWED,
+                )
+                .toSitePermissionsEntity()
         )
 
         siteFromDb = dao.getSitePermissionsBy(origin)!!.toSitePermission()
@@ -99,14 +101,13 @@ class SitePermissionsDaoTest {
 
     private fun insertMockSitePermissions(url: String): String {
         val origin = url.toUri().host!!
-        val sitePermissions = SitePermissions(
-            origin = origin,
-            camera = BLOCKED,
-            savedAt = System.currentTimeMillis(),
-        )
-        dao.insert(
-            sitePermissions.toSitePermissionsEntity(),
-        )
+        val sitePermissions =
+            SitePermissions(
+                origin = origin,
+                camera = BLOCKED,
+                savedAt = System.currentTimeMillis(),
+            )
+        dao.insert(sitePermissions.toSitePermissionsEntity())
         return origin
     }
 }

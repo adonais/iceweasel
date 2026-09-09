@@ -21,56 +21,65 @@ class BrowserToolbarSyncToBookmarksMiddlewareTest {
     private val testScope = TestScope(testDispatcher)
 
     @Test
-    fun `GIVEN in the process of searching in bookmarks WHEN the toolbar exits search mode THEN the search is dismissed`() = runTest(testDispatcher) {
-        val toolbarStore = BrowserToolbarStore(BrowserToolbarState(Mode.EDIT))
-        val middleware = BrowserToolbarSyncToBookmarksMiddleware(toolbarStore, testScope)
+    fun `GIVEN in the process of searching in bookmarks WHEN the toolbar exits search mode THEN the search is dismissed`() =
+        runTest(testDispatcher) {
+            val toolbarStore = BrowserToolbarStore(BrowserToolbarState(Mode.EDIT))
+            val middleware = BrowserToolbarSyncToBookmarksMiddleware(toolbarStore, testScope)
 
-        val bookmarksStore = BookmarksStore(
-            initialState = BookmarksState.default.copy(searchState = SearchState("")),
-            middleware = listOf(middleware),
-        ).also {
-            it.dispatch(ViewAppeared())
+            val bookmarksStore =
+                BookmarksStore(
+                        initialState = BookmarksState.default.copy(searchState = SearchState("")),
+                        middleware = listOf(middleware),
+                    )
+                    .also {
+                        it.dispatch(ViewAppeared())
+                    }
+
+            toolbarStore.dispatch(ExitEditMode)
+            testScheduler.advanceUntilIdle()
+
+            assertFalse(bookmarksStore.state.isSearching)
         }
-
-        toolbarStore.dispatch(ExitEditMode)
-        testScheduler.advanceUntilIdle()
-
-        assertFalse(bookmarksStore.state.isSearching)
-    }
 
     @Test
-    fun `GIVEN not in the process of searching in bookmarks WHEN the toolbar exits search mode THEN the search mode is not changed`() = runTest(testDispatcher) {
-        val toolbarStore = BrowserToolbarStore(BrowserToolbarState(Mode.EDIT))
-        val middleware = BrowserToolbarSyncToBookmarksMiddleware(toolbarStore, testScope)
+    fun `GIVEN not in the process of searching in bookmarks WHEN the toolbar exits search mode THEN the search mode is not changed`() =
+        runTest(testDispatcher) {
+            val toolbarStore = BrowserToolbarStore(BrowserToolbarState(Mode.EDIT))
+            val middleware = BrowserToolbarSyncToBookmarksMiddleware(toolbarStore, testScope)
 
-        val bookmarksStore = BookmarksStore(
-            initialState = BookmarksState.default.copy(searchState = null),
-            middleware = listOf(middleware),
-        ).also {
-            it.dispatch(ViewAppeared())
+            val bookmarksStore =
+                BookmarksStore(
+                        initialState = BookmarksState.default.copy(searchState = null),
+                        middleware = listOf(middleware),
+                    )
+                    .also {
+                        it.dispatch(ViewAppeared())
+                    }
+
+            toolbarStore.dispatch(ExitEditMode)
+            testScheduler.advanceUntilIdle()
+
+            assertFalse(bookmarksStore.state.isSearching)
         }
-
-        toolbarStore.dispatch(ExitEditMode)
-        testScheduler.advanceUntilIdle()
-
-        assertFalse(bookmarksStore.state.isSearching)
-    }
 
     @Test
-    fun `GIVEN not in the process of searching in bookmarks WHEN the toolbar enters search mode THEN the search mode is not changed`() = runTest(testDispatcher) {
-        val toolbarStore = BrowserToolbarStore(BrowserToolbarState(Mode.DISPLAY))
-        val middleware = BrowserToolbarSyncToBookmarksMiddleware(toolbarStore, testScope)
+    fun `GIVEN not in the process of searching in bookmarks WHEN the toolbar enters search mode THEN the search mode is not changed`() =
+        runTest(testDispatcher) {
+            val toolbarStore = BrowserToolbarStore(BrowserToolbarState(Mode.DISPLAY))
+            val middleware = BrowserToolbarSyncToBookmarksMiddleware(toolbarStore, testScope)
 
-        val bookmarksStore = BookmarksStore(
-            initialState = BookmarksState.default.copy(searchState = null),
-            middleware = listOf(middleware),
-        ).also {
-            it.dispatch(ViewAppeared())
+            val bookmarksStore =
+                BookmarksStore(
+                        initialState = BookmarksState.default.copy(searchState = null),
+                        middleware = listOf(middleware),
+                    )
+                    .also {
+                        it.dispatch(ViewAppeared())
+                    }
+
+            toolbarStore.dispatch(EnterEditMode(false))
+            testScheduler.advanceUntilIdle()
+
+            assertFalse(bookmarksStore.state.isSearching)
         }
-
-        toolbarStore.dispatch(EnterEditMode(false))
-        testScheduler.advanceUntilIdle()
-
-        assertFalse(bookmarksStore.state.isSearching)
-    }
 }

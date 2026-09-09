@@ -60,7 +60,9 @@ data class PasswordGeneratorPromptColors(
     val primaryText: Color,
     val headerText: Color,
 ) {
-    constructor(context: Context) : this(
+    constructor(
+        context: Context
+    ) : this(
         primaryText = context.primaryColor,
         headerText = context.headerColor,
     )
@@ -80,11 +82,12 @@ fun PasswordGeneratorPrompt(
     colors: PasswordGeneratorPromptColors,
 ) {
     Row(
-        modifier = modifier
-            .clickable { onGeneratedPasswordPromptClick() }
-            .fillMaxWidth()
-            .height(48.dp)
-            .padding(horizontal = 16.dp),
+        modifier =
+            modifier
+                .clickable { onGeneratedPasswordPromptClick() }
+                .fillMaxWidth()
+                .height(48.dp)
+                .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,
     ) {
@@ -111,10 +114,11 @@ private fun PasswordGeneratorPromptPreview() {
     DialogPreviewMaterialTheme {
         PasswordGeneratorPrompt(
             onGeneratedPasswordPromptClick = {},
-            colors = PasswordGeneratorPromptColors(
-                primaryText = MaterialTheme.colorScheme.primary,
-                headerText = MaterialTheme.colorScheme.onBackground,
-            ),
+            colors =
+                PasswordGeneratorPromptColors(
+                    primaryText = MaterialTheme.colorScheme.primary,
+                    headerText = MaterialTheme.colorScheme.onBackground,
+                ),
             modifier = Modifier.background(Color.White),
         )
     }

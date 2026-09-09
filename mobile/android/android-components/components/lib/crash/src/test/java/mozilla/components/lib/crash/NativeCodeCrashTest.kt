@@ -17,10 +17,11 @@ class NativeCodeCrashTest {
     @Test
     fun `Creating NativeCodeCrash object from sample GeckoView intent`() {
         val intent = Intent("org.mozilla.gecko.ACTION_CRASHED")
-        intent.component = ComponentName(
-            "org.mozilla.samples.browser",
-            "mozilla.components.lib.crash.handler.CrashHandlerService",
-        )
+        intent.component =
+            ComponentName(
+                "org.mozilla.samples.browser",
+                "mozilla.components.lib.crash.handler.CrashHandlerService",
+            )
         intent.putExtra("uuid", "afc91225-93d7-4328-b3eb-d26ad5af4d86")
         intent.putExtra(
             "minidumpPath",
@@ -56,15 +57,16 @@ class NativeCodeCrashTest {
 
     @Test
     fun `to and from bundle`() {
-        val crash = Crash.NativeCodeCrash(
-            0,
-            "minidumpPath",
-            "extrasPath",
-            Crash.NativeCodeCrash.PROCESS_VISIBILITY_FOREGROUND_CHILD,
-            processType = "content",
-            breadcrumbs = arrayListOf(),
-            remoteType = null,
-        )
+        val crash =
+            Crash.NativeCodeCrash(
+                0,
+                "minidumpPath",
+                "extrasPath",
+                Crash.NativeCodeCrash.PROCESS_VISIBILITY_FOREGROUND_CHILD,
+                processType = "content",
+                breadcrumbs = arrayListOf(),
+                remoteType = null,
+            )
 
         val bundle = crash.toBundle()
         val otherCrash = Crash.NativeCodeCrash.fromBundle(bundle)

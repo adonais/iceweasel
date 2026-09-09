@@ -16,10 +16,18 @@ import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
 
 class PwaRobot {
-    fun verifyCustomTabToolbarIsNotDisplayed() = assertUIObjectExists(itemWithResId("$packageName:id/toolbar"), exists = false)
+    fun verifyCustomTabToolbarIsNotDisplayed() =
+        assertUIObjectExists(itemWithResId("$packageName:id/toolbar"), exists = false)
+
     fun verifyPwaActivityInCurrentTask() {
-        assertTrue("$TAG: The latest activity of the application is not used for custom tabs or PWAs", isExternalAppBrowserActivityInCurrentTask())
-        Log.i(TAG, "verifyPwaActivityInCurrentTask: Verified that the latest activity of the application is used for custom tabs or PWAs")
+        assertTrue(
+            "$TAG: The latest activity of the application is not used for custom tabs or PWAs",
+            isExternalAppBrowserActivityInCurrentTask(),
+        )
+        Log.i(
+            TAG,
+            "verifyPwaActivityInCurrentTask: Verified that the latest activity of the application is used for custom tabs or PWAs",
+        )
     }
 
     class Transition

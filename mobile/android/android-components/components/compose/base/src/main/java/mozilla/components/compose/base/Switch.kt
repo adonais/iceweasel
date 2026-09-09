@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch as M3Switch
 import androidx.compose.material3.SwitchColors
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.runtime.Composable
@@ -19,18 +20,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import mozilla.components.compose.base.theme.AcornTheme
-import androidx.compose.material3.Switch as M3Switch
 
 /**
  * Switch toggle.
  *
  * @param checked [Boolean] indicating whether the switch is checked or not.
- * @param onCheckedChange Invoked when the switch is clicked. Pass `null` to make the switch
- * non-interactive.
+ * @param onCheckedChange Invoked when the switch is clicked. Pass `null` to make the switch non-interactive.
  * @param modifier [Modifier] to be applied to the switch.
  * @param enabled [Boolean] that controls the enabled state of this switch.
- * @param colors [SwitchColors] that will be used to resolve the colors used for this switch in
- * different states. See [SwitchDefaults.colors].
+ * @param colors [SwitchColors] that will be used to resolve the colors used for this switch in different states. See
+ *   [SwitchDefaults.colors].
  */
 @Composable
 fun Switch(
@@ -38,9 +37,7 @@ fun Switch(
     onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    colors: SwitchColors = SwitchDefaults.colors(
-        checkedTrackColor = MaterialTheme.colorScheme.tertiary,
-    ),
+    colors: SwitchColors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.tertiary),
 ) {
     M3Switch(
         checked = checked,

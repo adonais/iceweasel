@@ -42,21 +42,21 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.modifier.debouncedClickable
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuStatus
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 private val MENU_ITEM_MIN_HEIGHT = 52.dp
 
 /**
  * A menu item showing the current IP Protection status.
  *
- * State is driven externally via [IPProtectionMenuState] so that the caller (menu fragment)
- * can subscribe to the IP protection feature store and dispatch updates.
+ * State is driven externally via [IPProtectionMenuState] so that the caller (menu fragment) can subscribe to the IP
+ * protection feature store and dispatch updates.
  *
  * @param state The current [IPProtectionMenuState] to display.
  * @param onToggle Called when the label row is tapped to toggle IP Protection on or off.
@@ -70,12 +70,12 @@ internal fun IPProtectionMenuItem(
 ) {
     CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         Row(
-            modifier = Modifier
-                .wrapContentSize()
-                .clip(MaterialTheme.shapes.extraSmall)
-                .background(MaterialTheme.colorScheme.surfaceBright)
-                .height(IntrinsicSize.Min)
-                .defaultMinSize(minHeight = MENU_ITEM_MIN_HEIGHT),
+            modifier =
+                Modifier.wrapContentSize()
+                    .clip(MaterialTheme.shapes.extraSmall)
+                    .background(MaterialTheme.colorScheme.surfaceBright)
+                    .height(IntrinsicSize.Min)
+                    .defaultMinSize(minHeight = MENU_ITEM_MIN_HEIGHT),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IPProtectionToggle(
@@ -85,18 +85,15 @@ internal fun IPProtectionMenuItem(
             )
 
             VerticalDivider(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .padding(vertical = FirefoxTheme.layout.space.static100)
-                    .width(1.dp),
+                modifier = Modifier.fillMaxHeight().padding(vertical = FirefoxTheme.layout.space.static100).width(1.dp),
                 color = MaterialTheme.colorScheme.outlineVariant,
             )
 
             Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .clickable(role = Role.Button, onClick = onNavigate)
-                    .padding(horizontal = 12.dp),
+                modifier =
+                    Modifier.fillMaxHeight()
+                        .clickable(role = Role.Button, onClick = onNavigate)
+                        .padding(horizontal = 12.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -118,14 +115,15 @@ private fun IPProtectionToggle(
     val statusDescription = badgeText(state.status)
 
     Row(
-        modifier = modifier
-            .fillMaxHeight()
-            .debouncedClickable { onToggle() }
-            .semantics {
-                stateDescription = statusDescription
-                liveRegion = LiveRegionMode.Polite
-            }
-            .padding(horizontal = FirefoxTheme.layout.space.dynamic200),
+        modifier =
+            modifier
+                .fillMaxHeight()
+                .debouncedClickable { onToggle() }
+                .semantics {
+                    stateDescription = statusDescription
+                    liveRegion = LiveRegionMode.Polite
+                }
+                .padding(horizontal = FirefoxTheme.layout.space.dynamic200),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static200),
     ) {
@@ -155,22 +153,25 @@ private fun IPProtectionLabel(
     val label = stringResource(R.string.ip_protection_toggle_label)
     val labelStyle = FirefoxTheme.typography.subtitle1
     val textMeasurer = rememberTextMeasurer()
-    val textLayout = remember(label, labelStyle) {
-        textMeasurer.measure(text = label, style = labelStyle).size.width
-    }
+    val textLayout =
+        remember(label, labelStyle) {
+            textMeasurer.measure(text = label, style = labelStyle).size.width
+        }
 
     Column(
-        modifier = modifier.layout { measurable, constraints ->
-            val placeable = if (constraints.maxWidth >= textLayout) {
-                measurable.measure(constraints)
-            } else {
-                null
-            }
+        modifier =
+            modifier.layout { measurable, constraints ->
+                val placeable =
+                    if (constraints.maxWidth >= textLayout) {
+                        measurable.measure(constraints)
+                    } else {
+                        null
+                    }
 
-            layout(width = placeable?.width ?: 0, height = placeable?.height ?: 0) {
-                placeable?.placeRelative(0, 0)
+                layout(width = placeable?.width ?: 0, height = placeable?.height ?: 0) {
+                    placeable?.placeRelative(0, 0)
+                }
             }
-        },
     ) {
         Text(
             text = label,
@@ -193,31 +194,29 @@ private fun IPProtectionLabel(
 }
 
 @Composable
-private fun badgeText(status: IPProtectionMenuStatus): String = when (status) {
-    IPProtectionMenuStatus.Disabled -> stringResource(R.string.preferences_ip_protection_off)
-    IPProtectionMenuStatus.Enabled -> stringResource(R.string.preferences_ip_protection_on)
-    IPProtectionMenuStatus.Activating -> stringResource(R.string.ip_protection_menu_connecting)
-    IPProtectionMenuStatus.DataLimitReached -> stringResource(R.string.ip_protection_menu_paused)
-    IPProtectionMenuStatus.ConnectionError -> stringResource(R.string.ip_protection_menu_error)
-    IPProtectionMenuStatus.AuthRequired -> stringResource(R.string.ip_protection_menu_auth_required)
-}
+private fun badgeText(status: IPProtectionMenuStatus): String =
+    when (status) {
+        IPProtectionMenuStatus.Disabled -> stringResource(R.string.preferences_ip_protection_off)
+        IPProtectionMenuStatus.Enabled -> stringResource(R.string.preferences_ip_protection_on)
+        IPProtectionMenuStatus.Activating -> stringResource(R.string.ip_protection_menu_connecting)
+        IPProtectionMenuStatus.DataLimitReached -> stringResource(R.string.ip_protection_menu_paused)
+        IPProtectionMenuStatus.ConnectionError -> stringResource(R.string.ip_protection_menu_error)
+        IPProtectionMenuStatus.AuthRequired -> stringResource(R.string.ip_protection_menu_try_vpn_cta)
+    }
 
-private fun badgeState(status: IPProtectionMenuStatus): MenuItemState = when (status) {
-    IPProtectionMenuStatus.Enabled,
-    IPProtectionMenuStatus.Activating,
-    -> MenuItemState.ACTIVE
-    IPProtectionMenuStatus.ConnectionError -> MenuItemState.WARNING
-    IPProtectionMenuStatus.DataLimitReached -> MenuItemState.DISABLED
-    IPProtectionMenuStatus.Disabled,
-    IPProtectionMenuStatus.AuthRequired,
-    -> MenuItemState.ENABLED
-}
+private fun badgeState(status: IPProtectionMenuStatus): MenuItemState =
+    when (status) {
+        IPProtectionMenuStatus.Enabled,
+        IPProtectionMenuStatus.Activating -> MenuItemState.ACTIVE
+        IPProtectionMenuStatus.ConnectionError -> MenuItemState.WARNING
+        IPProtectionMenuStatus.DataLimitReached -> MenuItemState.DISABLED
+        IPProtectionMenuStatus.Disabled,
+        IPProtectionMenuStatus.AuthRequired -> MenuItemState.ENABLED
+    }
 
 @FlexibleWindowLightDarkPreview
 @Composable
-private fun IPProtectionMenuItemOffPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun IPProtectionMenuItemOffPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme = theme) {
         MenuGroup {
             IPProtectionMenuItem(
@@ -231,9 +230,7 @@ private fun IPProtectionMenuItemOffPreview(
 
 @FlexibleWindowLightDarkPreview
 @Composable
-private fun IPProtectionMenuItemOnPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun IPProtectionMenuItemOnPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme = theme) {
         MenuGroup {
             IPProtectionMenuItem(
@@ -247,9 +244,7 @@ private fun IPProtectionMenuItemOnPreview(
 
 @FlexibleWindowLightDarkPreview
 @Composable
-private fun IPProtectionMenuItemConnectingPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun IPProtectionMenuItemConnectingPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme = theme) {
         MenuGroup {
             IPProtectionMenuItem(
@@ -263,16 +258,15 @@ private fun IPProtectionMenuItemConnectingPreview(
 
 @FlexibleWindowLightDarkPreview
 @Composable
-private fun IPProtectionMenuItemPausedPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun IPProtectionMenuItemPausedPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme = theme) {
         MenuGroup {
             IPProtectionMenuItem(
-                state = IPProtectionMenuState(
-                    status = IPProtectionMenuStatus.DataLimitReached,
-                    dataLimitGb = 50,
-                ),
+                state =
+                    IPProtectionMenuState(
+                        status = IPProtectionMenuStatus.DataLimitReached,
+                        dataLimitGb = 50,
+                    ),
                 onToggle = {},
                 onNavigate = {},
             )

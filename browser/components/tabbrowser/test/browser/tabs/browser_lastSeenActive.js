@@ -225,20 +225,26 @@ add_task(async function switchingWindows() {
     win => win.gBrowser.selectedTab.lastSeenActive
   );
   // minimize the foreground window and focus the other
-  let promiseSizeModeChange = BrowserTestUtils.waitForEvent(
-    win2,
-    "sizemodechange"
-  );
-  win2.minimize();
-  info("Waiting for the sizemodechange on minimized window");
-  await promiseSizeModeChange;
+  if (BrowserTestUtils.canMinimize) {
+    let promiseSizeModeChange = BrowserTestUtils.waitForEvent(
+      win2,
+      "sizemodechange"
+    );
+    win2.minimize();
+    info("Waiting for the sizemodechange on minimized window");
+    await promiseSizeModeChange;
+  }
   await switchToWindow(win1);
 
-  ok(
-    !win2.gBrowser.selectedTab.linkedBrowser.docShellIsActive,
-    "Docshell should be Inactive"
-  );
-  ok(win2.document.hidden, "Minimized windows's document should be hidden");
+  if (BrowserTestUtils.canMinimize) {
+    ok(
+      !win2.gBrowser.selectedTab.linkedBrowser.docShellIsActive,
+      "Docshell should be Inactive"
+    );
+    ok(win2.document.hidden, "Minimized windows's document should be hidden");
+  } else {
+    todo(false, "Minimizing a window is observable, bug 2063202");
+  }
 
   // wait a little so the timestamps will differ and then check again
   // eslint-disable-next-line mozilla/no-arbitrary-setTimeout

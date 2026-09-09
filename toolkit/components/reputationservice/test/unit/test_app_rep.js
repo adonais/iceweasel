@@ -213,8 +213,12 @@ add_test(function test_local_list() {
   // Download some updates, and don't continue until the downloads are done.
   function updateSuccess(aEvent) {
     // Timeout of n:1000 is constructed in processUpdateRequest above and
-    // passed back in the callback in nsIUrlClassifierStreamUpdater on success.
-    Assert.equal("1000", aEvent);
+    // passed back in the callback in nsIUrlClassifierStreamUpdater on success,
+    // as one "table:seconds" pair per requested table.
+    Assert.deepEqual(aEvent.split(",").sort(), [
+      "goog-badbinurl-shavar:1000",
+      "goog-downloadwhite-digest256:1000",
+    ]);
     info("All data processed");
     run_next_test();
   }

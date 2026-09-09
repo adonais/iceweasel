@@ -6,6 +6,7 @@ package org.mozilla.fenix.home.toolbar
 
 import io.mockk.mockk
 import io.mockk.verify
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -17,13 +18,11 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class) // For gleanTestRule
 class DefaultToolbarControllerTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private val appStore: AppStore = mockk(relaxed = true)
 
@@ -42,7 +41,5 @@ class DefaultToolbarControllerTest {
         verify { appStore.dispatch(SearchStarted()) }
     }
 
-    private fun createController() = DefaultToolbarController(
-        appStore = appStore,
-    )
+    private fun createController() = DefaultToolbarController(appStore = appStore)
 }

@@ -8,6 +8,8 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import androidx.annotation.VisibleForTesting
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import kotlin.math.roundToInt
+import mozilla.components.compose.browser.toolbar.R as toolbarR
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.feature.pwa.feature.WebAppHideToolbarFeature
 import mozilla.components.feature.session.FullScreenFeature
@@ -15,19 +17,15 @@ import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.ktx.android.view.pixelSizeFor
 import mozilla.components.support.utils.ext.isKeyboardVisible
 import org.mozilla.fenix.utils.Settings
-import kotlin.math.roundToInt
-import mozilla.components.compose.browser.toolbar.R as toolbarR
 
 /**
- * Helper for ensuring the top and bottom toolbars are correctly configured depending on
- * whether the IME is shown or not and will dynamically adapt all related properties when
- * the IME visibility changes.
- * This will also handle the scenarios in which the toolbars should not be visible as it
- * happens when the engine view is shown in fullscreen.
+ * Helper for ensuring the top and bottom toolbars are correctly configured depending on whether the IME is shown or not
+ * and will dynamically adapt all related properties when the IME visibility changes. This will also handle the
+ * scenarios in which the toolbars should not be visible as it happens when the engine view is shown in fullscreen.
  *
  * @param fullScreenFeature The [FullScreenFeature] instance used to check when the website is in fullscreen.
- * @param webAppHideToolbarFeature The [WebAppHideToolbarFeature] instance used to check when the
- * toolbars should be hidden for the current PWA configuration.
+ * @param webAppHideToolbarFeature The [WebAppHideToolbarFeature] instance used to check when the toolbars should be
+ *   hidden for the current PWA configuration.
  * @param settings [Settings] object to get the toolbar position and other settings.
  * @param browserLayout The root layout of the engine view.
  * @param engineView The engine View rendering web content.
@@ -72,9 +70,7 @@ class ToolbarsIntegration(
     @VisibleForTesting
     internal fun onKeyboardShown(isKeyboardShown: Boolean) {
         // Ignore any updates relating to the toolbar if the toolbar should not be visible.
-        if (fullScreenFeature()?.isFullScreen == true ||
-            webAppHideToolbarFeature()?.shouldToolbarsBeVisible == false
-        ) {
+        if (fullScreenFeature()?.isFullScreen == true || webAppHideToolbarFeature()?.shouldToolbarsBeVisible == false) {
             return
         }
 
@@ -88,17 +84,18 @@ class ToolbarsIntegration(
                 val isTopToolbarShown = browserLayout.translationY.roundToInt() > 0
 
                 browserLayoutParams.behavior = null
-                browserLayoutParams.topMargin = when {
-                    isTopToolbarShown -> 0
-                    else -> topToolbarHeight()
-                }
-                browserLayoutParams.bottomMargin = when {
-                    isUsingBottomToolbar -> browserLayout.pixelSizeFor(
-                        toolbarR.dimen.mozac_minimal_display_toolbar_height,
-                    )
-                    isTopToolbarShown -> topToolbarHeight()
-                    else -> 0
-                }
+                browserLayoutParams.topMargin =
+                    when {
+                        isTopToolbarShown -> 0
+                        else -> topToolbarHeight()
+                    }
+                browserLayoutParams.bottomMargin =
+                    when {
+                        isUsingBottomToolbar ->
+                            browserLayout.pixelSizeFor(toolbarR.dimen.mozac_minimal_display_toolbar_height)
+                        isTopToolbarShown -> topToolbarHeight()
+                        else -> 0
+                    }
 
                 engineView.apply {
                     setDynamicToolbarMaxHeight(0)

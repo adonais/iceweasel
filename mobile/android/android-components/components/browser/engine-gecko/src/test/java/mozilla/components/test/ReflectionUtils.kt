@@ -9,17 +9,18 @@ import java.security.PrivilegedExceptionAction
 
 object ReflectionUtils {
     fun <T : Any> setField(instance: T, fieldName: String, value: Any?) {
-        val mapField = AccessController.doPrivileged(
-            PrivilegedExceptionAction {
-                try {
-                    val field = instance::class.java.getField(fieldName)
-                    field.isAccessible = true
-                    return@PrivilegedExceptionAction field
-                } catch (e: ReflectiveOperationException) {
-                    throw Error(e)
+        val mapField =
+            AccessController.doPrivileged(
+                PrivilegedExceptionAction {
+                    try {
+                        val field = instance::class.java.getField(fieldName)
+                        field.isAccessible = true
+                        return@PrivilegedExceptionAction field
+                    } catch (e: ReflectiveOperationException) {
+                        throw Error(e)
+                    }
                 }
-            },
-        )
+            )
 
         mapField.set(instance, value)
     }

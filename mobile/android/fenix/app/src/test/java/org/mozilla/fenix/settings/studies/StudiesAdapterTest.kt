@@ -20,6 +20,7 @@ import io.mockk.verify
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
+import kotlin.test.assertIs
 import mozilla.components.service.nimbus.messaging.MESSAGING_FEATURE_ID
 import org.junit.Before
 import org.junit.Test
@@ -30,12 +31,10 @@ import org.mozilla.fenix.settings.studies.CustomViewHolder.SectionViewHolder
 import org.mozilla.fenix.settings.studies.CustomViewHolder.StudyViewHolder
 import org.mozilla.fenix.settings.studies.StudiesAdapter.Section
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertIs
 
 @RunWith(RobolectricTestRunner::class)
 class StudiesAdapterTest {
-    @RelaxedMockK
-    private lateinit var delegate: StudiesAdapterDelegate
+    @RelaxedMockK private lateinit var delegate: StudiesAdapterDelegate
 
     private lateinit var adapter: StudiesAdapter
     private lateinit var studies: List<EnrolledExperiment>

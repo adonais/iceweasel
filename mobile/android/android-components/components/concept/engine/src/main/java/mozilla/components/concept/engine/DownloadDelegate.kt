@@ -4,9 +4,7 @@
 
 package mozilla.components.concept.engine
 
-/**
- * Interface defining a delegate for handling download-related operations within the engine.
- */
+/** Interface defining a delegate for handling download-related operations within the engine. */
 interface DownloadDelegate {
 
     /**

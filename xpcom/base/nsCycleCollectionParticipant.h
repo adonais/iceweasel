@@ -762,22 +762,20 @@ T* DowncastCCParticipant(void* aPtr) {
 #define NS_DECL_CYCLE_COLLECTION_CLASS_NAME_METHOD(_class) \
   NS_IMETHOD_(const char*) ClassName() override { return #_class; };
 
-#define NS_DECL_CYCLE_COLLECTION_CLASS_BODY(_class, _base)                     \
- public:                                                                       \
-  NS_IMETHOD TraverseNative(void* p, nsCycleCollectionTraversalCallback& cb)   \
-      override;                                                                \
-  NS_DECL_CYCLE_COLLECTION_CLASS_NAME_METHOD(_class)                           \
-  NS_IMETHOD_(void) DeleteCycleCollectable(void* p) override {                 \
-    DowncastCCParticipant<_class>(p)->DeleteCycleCollectable();                \
-  }                                                                            \
-  static _class* Downcast(nsISupports* s) {                                    \
-    return static_cast<_class*>(static_cast<_base*>(s));                       \
-  }                                                                            \
-  static nsISupports* Upcast(_class* p) {                                      \
-    return NS_ISUPPORTS_CAST(_base*, p);                                       \
-  }                                                                            \
-  template <typename T>                                                        \
-  friend nsISupports* ToSupports(T* p, NS_CYCLE_COLLECTION_INNERCLASS* dummy); \
+#define NS_DECL_CYCLE_COLLECTION_CLASS_BODY(_class, _base)                   \
+ public:                                                                     \
+  NS_IMETHOD TraverseNative(void* p, nsCycleCollectionTraversalCallback& cb) \
+      override;                                                              \
+  NS_DECL_CYCLE_COLLECTION_CLASS_NAME_METHOD(_class)                         \
+  NS_IMETHOD_(void) DeleteCycleCollectable(void* p) override {               \
+    DowncastCCParticipant<_class>(p)->DeleteCycleCollectable();              \
+  }                                                                          \
+  static _class* Downcast(nsISupports* s) {                                  \
+    return static_cast<_class*>(static_cast<_base*>(s));                     \
+  }                                                                          \
+  static nsISupports* Upcast(_class* p) {                                    \
+    return NS_ISUPPORTS_CAST(_base*, p);                                     \
+  }                                                                          \
   NS_IMETHOD_(void) Unlink(void* p) override;
 
 #define NS_PARTICIPANT_AS(type, participant) \

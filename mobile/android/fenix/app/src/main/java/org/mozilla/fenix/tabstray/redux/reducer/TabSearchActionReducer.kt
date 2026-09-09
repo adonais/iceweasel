@@ -7,9 +7,7 @@ package org.mozilla.fenix.tabstray.redux.reducer
 import org.mozilla.fenix.tabstray.redux.action.TabSearchAction
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 
-/**
- * Reducer for [TabSearchAction] dispatched from the Tabs Tray store.
- */
+/** Reducer for [TabSearchAction] dispatched from the Tabs Tray store. */
 object TabSearchActionReducer {
 
     /**
@@ -25,19 +23,16 @@ object TabSearchActionReducer {
         return when (action) {
             is TabSearchAction.SearchQueryChanged -> {
                 state.copy(
-                    tabSearchState = state.tabSearchState.copy(
-                        query = action.query,
-                        searchResults = state.tabSearchState.searchResults,
-                    ),
+                    tabSearchState =
+                        state.tabSearchState.copy(
+                            query = action.query,
+                            searchResults = state.tabSearchState.searchResults,
+                        )
                 )
             }
 
             is TabSearchAction.SearchResultsUpdated -> {
-                state.copy(
-                    tabSearchState = state.tabSearchState.copy(
-                        searchResults = action.results,
-                    ),
-                )
+                state.copy(tabSearchState = state.tabSearchState.copy(searchResults = action.results))
             }
 
             is TabSearchAction.SearchResultClicked -> {

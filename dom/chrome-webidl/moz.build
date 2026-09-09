@@ -86,6 +86,7 @@ WEBIDL_FILES = [
     "PathUtils.webidl",
     "PermissionSetParameters.webidl",
     "PrecompiledScript.webidl",
+    "ProfilerCounter.webidl",
     "PromiseDebugging.webidl",
     "SessionStoreUtils.webidl",
     "StripOnShareRule.webidl",

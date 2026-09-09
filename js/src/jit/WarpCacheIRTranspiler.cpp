@@ -22,6 +22,7 @@
 #include "jit/WarpBuilderShared.h"
 #include "jit/WarpSnapshot.h"
 #include "js/ScalarType.h"  // js::Scalar::Type
+#include "vm/BoundFunctionObject.h"
 #include "vm/BytecodeLocation.h"
 #include "vm/ObjectFuse.h"
 #include "vm/TypeofEqOperand.h"  // TypeofEqOperand
@@ -287,6 +288,10 @@ class MOZ_RAII WarpCacheIRTranspiler : public WarpBuilderShared {
   enum class CallKind { Native, DOM, Scripted };
 
   [[nodiscard]] bool updateCallInfo(MDefinition* callee, CallFlags flags);
+  [[nodiscard]] bool updateCallInfoForInlinedBoundCall(MDefinition* callee,
+                                                       MDefinition* target,
+                                                       CallFlags flags,
+                                                       uint32_t numBoundArgs);
 
   [[nodiscard]] bool emitCallFunction(
       ObjOperandId calleeId, Int32OperandId argcId,
@@ -6322,9 +6327,10 @@ bool WarpCacheIRTranspiler::maybeCreateThis(MDefinition* callee,
   if (kind == CallKind::Native) {
     // Native functions keep the is-constructing MagicValue as |this|.
     // If one of the arguments uses spread syntax this can be a loop phi with
-    // MIRType::Value.
+    // MIRType::Value. If one of the arguments uses |yield|, this can be a
+    // LoadElement to restore |this| from the generator's stack storage array.
     MOZ_ASSERT(thisArg->type() == MIRType::MagicIsConstructing ||
-               thisArg->isPhi());
+               thisArg->isPhi() || thisArg->isLoadElement());
     return false;
   }
   MOZ_ASSERT(kind == CallKind::Scripted);
@@ -6342,7 +6348,7 @@ bool WarpCacheIRTranspiler::maybeCreateThis(MDefinition* callee,
   }
   // See the Native case above.
   MOZ_ASSERT(thisArg->type() == MIRType::MagicIsConstructing ||
-             thisArg->isPhi());
+             thisArg->isPhi() || thisArg->isLoadElement());
 
   auto* newTarget = unboxObjectInfallible(callInfo_->getNewTarget());
   auto* createThis = MCreateThis::New(alloc(), callee, newTarget);
@@ -6686,6 +6692,38 @@ bool WarpCacheIRTranspiler::emitCallClassHook(ObjOperandId calleeId,
   return resumeAfter(call);
 }
 
+// Update the CallInfo for a bound function call that will be inlined by
+// WarpBuilder::buildInlinedCall instead of becoming an MCall. With no bound
+// arguments the outer frame is the same shape as a direct call to the target,
+// so we can use ResumeMode::InlinedStandardCall.
+bool WarpCacheIRTranspiler::updateCallInfoForInlinedBoundCall(
+    MDefinition* callee, MDefinition* target, CallFlags flags,
+    uint32_t numBoundArgs) {
+  MOZ_ASSERT(callInfo_->isInlined());
+  MOZ_ASSERT(numBoundArgs == 0);
+  MOZ_ASSERT(!flags.isConstructing());
+  MOZ_ASSERT(callInfo_->argFormat() == CallInfo::ArgFormat::Standard);
+
+  callInfo_->setCallee(target);
+  updateArgumentsFromOperands();
+
+  auto* thisv = MLoadFixedSlot::New(alloc(), callee,
+                                    BoundFunctionObject::boundThisSlot());
+  add(thisv);
+  callInfo_->thisArg()->setImplicitlyUsedUnchecked();
+  callInfo_->setThis(thisv);
+
+  callInfo_->setInliningResumeMode(ResumeMode::InlinedStandardCall);
+  return true;
+}
+
+bool WarpCacheIRTranspiler::emitCallInlinedBoundFunction(
+    ObjOperandId calleeId, ObjOperandId targetId, Int32OperandId argcId,
+    CallFlags flags, uint32_t icScriptOffset, uint32_t numBoundArgs) {
+  return emitCallBoundScriptedFunction(calleeId, targetId, argcId, flags,
+                                       numBoundArgs);
+}
+
 bool WarpCacheIRTranspiler::emitCallBoundScriptedFunction(
     ObjOperandId calleeId, ObjOperandId targetId, Int32OperandId argcId,
     CallFlags flags, uint32_t numBoundArgs) {
@@ -6694,6 +6732,14 @@ bool WarpCacheIRTranspiler::emitCallBoundScriptedFunction(
 
   MOZ_ASSERT(callInfo_->argFormat() == CallInfo::ArgFormat::Standard);
   MOZ_ASSERT(callInfo_->constructing() == flags.isConstructing());
+
+  // We are transpiling to generate the correct guards. We also update the
+  // CallInfo to use the correct arguments. Code for the inlined function itself
+  // will be generated in WarpBuilder::buildInlinedCall.
+  if (callInfo_->isInlined()) {
+    return updateCallInfoForInlinedBoundCall(callee, target, flags,
+                                             numBoundArgs);
+  }
 
   callInfo_->setCallee(target);
   updateArgumentsFromOperands();
@@ -6792,7 +6838,8 @@ bool WarpCacheIRTranspiler::emitSpecializedBindFunctionResult(
   MOZ_ASSERT_IF(callInfo_, callInfo_->argc() == argc);
   MOZ_ASSERT_IF(!callInfo_, argc == 0);
 
-  auto* bound = MNewBoundFunction::New(alloc(), templateObj);
+  auto* templateConst = constant(ObjectValue(*templateObj));
+  auto* bound = MNewBoundFunction::New(alloc(), templateConst);
   add(bound);
 
   size_t numBoundArgs = argc > 0 ? argc - 1 : 0;

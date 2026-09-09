@@ -16,12 +16,11 @@ import org.junit.runners.JUnit4
 class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
     override fun getDetector(): Detector = NoFunctionTypeMockingDetector()
 
-    override fun getIssues(): List<Issue> = listOf(
-        NoFunctionTypeMockingDetector.ISSUE_NO_FUNCTION_TYPE_MOCKING,
-    )
+    override fun getIssues(): List<Issue> = listOf(NoFunctionTypeMockingDetector.ISSUE_NO_FUNCTION_TYPE_MOCKING)
 
-    private val mockkStubs = TestFiles.kotlin(
-        """
+    private val mockkStubs =
+        TestFiles.kotlin(
+                """
         package io.mockk
 
         inline fun <reified T : Any> mockk(
@@ -39,8 +38,9 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
             recordPrivateCalls: Boolean = false,
             block: T.() -> Unit = {},
         ): T = null as T
-        """,
-    ).indented()
+        """
+            )
+            .indented()
 
     @Test
     fun `explicit Function0 type argument is flagged`() {
@@ -48,14 +48,15 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     import io.mockk.mockk
                     class MyTest {
                         val onClick = mockk<() -> Unit>(relaxed = true)
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectErrorCount(1)
@@ -68,14 +69,15 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     import io.mockk.mockk
                     class MyTest {
                         val onValue = mockk<(String) -> Int>()
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectErrorCount(1)
@@ -88,14 +90,15 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     import io.mockk.mockk
                     class MyTest {
                         val onPair = mockk<(String, Int) -> Boolean>()
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectErrorCount(1)
@@ -108,14 +111,15 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     import io.mockk.mockk
                     class MyTest {
                         val onSuspend = mockk<suspend () -> Unit>(relaxed = true)
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectErrorCount(1)
@@ -128,14 +132,15 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     import io.mockk.spyk
                     class MyTest {
                         val onClick = spyk<() -> Unit>()
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectErrorCount(1)
@@ -148,14 +153,15 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     import io.mockk.mockk
                     class MyTest {
                         private val onClick: () -> Unit = mockk(relaxed = true)
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectErrorCount(1)
@@ -168,15 +174,16 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     import io.mockk.mockk
                     interface MyService { fun doIt() }
                     class MyTest {
                         val svc = mockk<MyService>(relaxed = true)
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectClean()
@@ -187,14 +194,15 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
         lint()
             .files(
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.other
                     fun <T> mockk(): T = TODO()
                     class MyTest {
                         val foo: () -> Unit = com.example.other.mockk()
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented()
             )
             .run()
             .expectClean()
@@ -206,15 +214,16 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     import io.mockk.spyk
                     class Subject { fun doIt() = Unit }
                     class MyTest {
                         val subject = spyk(Subject())
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectClean()
@@ -226,7 +235,7 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     import io.mockk.mockk
                     interface MyService { fun doIt() }
@@ -236,8 +245,9 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
                         private val onValue: (String) -> Unit = { _ -> Unit }
                         private val svc: MyService = mockk(relaxed = true)
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectClean()
@@ -249,7 +259,7 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
-                    """
+                        """
                     package com.example.test
                     import io.mockk.mockk
                     interface MyService { fun doIt() }
@@ -260,8 +270,9 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
                             onClick = { }
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectClean()

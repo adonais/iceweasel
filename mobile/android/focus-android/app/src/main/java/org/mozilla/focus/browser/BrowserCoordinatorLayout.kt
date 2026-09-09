@@ -11,10 +11,10 @@ import androidx.core.view.WindowInsetsCompat.Type.displayCutout
 import androidx.core.view.WindowInsetsCompat.Type.systemBars
 import androidx.core.view.updatePadding
 
-/**
- * A [CoordinatorLayout] implementation used in the browser.
- */
-class BrowserCoordinatorLayout @JvmOverloads constructor(
+/** A [CoordinatorLayout] implementation used in the browser. */
+class BrowserCoordinatorLayout
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,

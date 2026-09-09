@@ -10041,6 +10041,7 @@ filters:
   - target_tasks_method
 head_git_repository: https://github.com/mozilla-firefox/firefox
 head_git_rev: 19f835d232f3c15d93893981b7b0a0edbb5afa69
+head_git_ref: refs/heads/esr140
 head_ref: c4525dfe35a20458c7a6966c0c6d27f92f2deca7
 head_repository: https://hg.mozilla.org/releases/mozilla-esr140
 head_rev: c4525dfe35a20458c7a6966c0c6d27f92f2deca7

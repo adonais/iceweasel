@@ -28,23 +28,28 @@ class TabManagerCfrControllerTest {
     @Before
     fun setup() {
         settings = Settings(testContext)
-        tabsTrayStore = TabsTrayStore(
-            initialState = TabsTrayState(
-                selectedTabId = "tab1",
-                normalTabsState = TabsTrayState.NormalTabsState(
-                    items = listOf(
-                        createTab(id = "tab1", url = ""),
-                        createTab(id = "tab2", url = ""),
-                        createTab(id = "tab3", url = ""),
-                    ),
-                ),
-            ),
-        )
-        cfrController = TabManagerCfrController(
-            settings = settings,
-            tabsTrayStore = tabsTrayStore,
-            currentTimeProvider = { currentTime },
-        )
+        tabsTrayStore =
+            TabsTrayStore(
+                initialState =
+                    TabsTrayState(
+                        selectedTabId = "tab1",
+                        normalTabsState =
+                            TabsTrayState.NormalTabsState(
+                                items =
+                                    listOf(
+                                        createTab(id = "tab1", url = ""),
+                                        createTab(id = "tab2", url = ""),
+                                        createTab(id = "tab3", url = ""),
+                                    )
+                            ),
+                    )
+            )
+        cfrController =
+            TabManagerCfrController(
+                settings = settings,
+                tabsTrayStore = tabsTrayStore,
+                currentTimeProvider = { currentTime },
+            )
     }
 
     @Test

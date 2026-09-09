@@ -22,14 +22,46 @@
 #  include <limits.h>
 #endif
 
+#ifdef XP_MACOSX
+#  include "nsILocalFileMac.h"
+#endif
+
 #include <algorithm>
 
 #include "gtest/gtest.h"
+#include "mozilla/Debug.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/gtest/MozAssertions.h"
 
+// RAII guard for enabling/disabling the DOS device path prefix (\\?\) in tests.
+// Prefixed paths allow exceeding MAX_PATH (260 characters).
+// Saves the current value on construction, restores it on destruction.
+// No-op on non-Windows platforms.
+class TestWithPrefixWinScope {
+ public:
 #ifdef XP_WIN
-using namespace mozilla;
-bool gTestWithPrefix_Win = false;
+  explicit TestWithPrefixWinScope(bool aPrefix) : mOldValue(sEnabled) {
+    sEnabled = aPrefix;
+  }
+  ~TestWithPrefixWinScope() { sEnabled = mOldValue; }
+
+  static bool IsEnabled() { return sEnabled; }
+#else
+  explicit TestWithPrefixWinScope(bool) {}
+  static bool IsEnabled() { return false; }
+#endif
+
+  TestWithPrefixWinScope(const TestWithPrefixWinScope&) = delete;
+  TestWithPrefixWinScope& operator=(const TestWithPrefixWinScope&) = delete;
+
+#ifdef XP_WIN
+ private:
+  bool mOldValue;
+  static bool sEnabled;
+#endif
+};
+#ifdef XP_WIN
+bool TestWithPrefixWinScope::sEnabled = false;
 #endif
 
 static bool VerifyResult(nsresult aRV, const char* aMsg) {
@@ -40,7 +72,7 @@ static bool VerifyResult(nsresult aRV, const char* aMsg) {
 
 #ifdef XP_WIN
 static void SetUseDOSDevicePathSyntax(nsIFile* aFile) {
-  if (gTestWithPrefix_Win) {
+  if (TestWithPrefixWinScope::IsEnabled()) {
     nsresult rv;
     nsCOMPtr<nsILocalFileWin> winFile = do_QueryInterface(aFile, &rv);
     VerifyResult(rv, "Querying nsILocalFileWin");
@@ -60,10 +92,10 @@ static auto GetSecurityInfoStructured(nsIFile* aFile) {
       pathStr.getW(), SE_FILE_OBJECT,
       DACL_SECURITY_INFORMATION | OWNER_SECURITY_INFORMATION |
           GROUP_SECURITY_INFORMATION,
-      nullptr, nullptr, &pDacl, nullptr, getter_Transfers(secDesc));
+      nullptr, nullptr, &pDacl, nullptr, mozilla::getter_Transfers(secDesc));
   MOZ_RELEASE_ASSERT(errCode == ERROR_SUCCESS && pDacl);
 
-  return std::make_tuple(std::move(pathStr), WrapNotNull(pDacl),
+  return std::make_tuple(std::move(pathStr), mozilla::WrapNotNull(pDacl),
                          std::move(secDesc));
 }
 
@@ -74,8 +106,8 @@ static void AddAcesForRandomSidToDir(nsIFile* aDir) {
 
   constexpr BYTE kSubAuthorityCount = 4;
   BYTE randomSidBuffer[SECURITY_SID_SIZE(4)];
-  ASSERT_TRUE(
-      GenerateRandomBytesFromOS(randomSidBuffer, sizeof(randomSidBuffer)));
+  ASSERT_TRUE(mozilla::GenerateRandomBytesFromOS(randomSidBuffer,
+                                                 sizeof(randomSidBuffer)));
   auto* randomSid = reinterpret_cast<SID*>(randomSidBuffer);
   randomSid->Revision = SID_REVISION;
   randomSid->SubAuthorityCount = kSubAuthorityCount;
@@ -91,9 +123,9 @@ static void AddAcesForRandomSidToDir(nsIFile* aDir) {
   newAccess[1].grfAccessPermissions = GENERIC_WRITE;
   newAccess[1].grfInheritance = SUB_CONTAINERS_AND_OBJECTS_INHERIT;
   ::BuildTrusteeWithSidW(&newAccess[1].Trustee, randomSid);
-  UniquePtr<ACL, LocalFreeDeleter> newDacl;
+  mozilla::UniquePtr<ACL, LocalFreeDeleter> newDacl;
   ASSERT_EQ(::SetEntriesInAclW(std::size(newAccess), newAccess, pDirDacl,
-                               getter_Transfers(newDacl)),
+                               mozilla::getter_Transfers(newDacl)),
             (ULONG)ERROR_SUCCESS);
 
   ASSERT_EQ(::SetNamedSecurityInfoW(dirPath.get(), SE_FILE_OBJECT,
@@ -675,23 +707,19 @@ static void SetupAndTestFunctions(const nsAString& aDirName,
 
 TEST(TestFile, Unprefixed)
 {
-#ifdef XP_WIN
-  gTestWithPrefix_Win = false;
-#endif
+  TestWithPrefixWinScope prefixed(false);
 
   SetupAndTestFunctions(u"mozfiletests"_ns,
                         /* aTestCreateUnique */ true,
                         /* aTestNormalize */ true);
-
-#ifdef XP_WIN
-  gTestWithPrefix_Win = true;
-#endif
 }
 
 // This simulates what QM_NewLocalFile does (NS_NewLocalFiles and then
 // SetUseDOSDevicePathSyntax if it's on Windows for NewFile)
 TEST(TestFile, PrefixedOnWin)
 {
+  TestWithPrefixWinScope prefixed(true);
+
   SetupAndTestFunctions(u"mozfiletests"_ns,
                         /* aTestCreateUnique */ true,
                         /* aTestNormalize */ true);
@@ -699,6 +727,8 @@ TEST(TestFile, PrefixedOnWin)
 
 TEST(TestFile, PrefixedOnWin_PathExceedsMaxPath)
 {
+  TestWithPrefixWinScope prefixed(true);
+
   // We want to verify if the prefix would allow as to create a file with over
   // 260 char for its path. However, on Windows, the maximum length of filename
   // is 255. Given the base file path and we are going append some other file
@@ -718,6 +748,8 @@ TEST(TestFile, PrefixedOnWin_PathExceedsMaxPath)
 
 TEST(TestFile, PrefixedOnWin_ComponentEndsWithPeriod)
 {
+  TestWithPrefixWinScope prefixed(true);
+
   // Bypass the normalization for this because it would strip the trailing
   // period.
   SetupAndTestFunctions(u"mozfiletests."_ns,
@@ -768,6 +800,254 @@ TEST(TestFile, GetRelativePath)
   ASSERT_NS_SUCCEEDED(child->GetRelativePath(prefixedBase, result));
   EXPECT_STREQ(result.get(), "places.sqlite");
 #endif
+}
+
+// Writes aLen bytes of aData to aFile, creating/truncating it.
+static bool WriteFileContent(nsIFile* aFile, const char* aData, int32_t aLen) {
+  PRFileDesc* fd = nullptr;
+  nsresult rv = aFile->OpenNSPRFileDesc(
+      PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE, 0600, &fd);
+  if (NS_FAILED(rv) || !fd) return false;
+  bool ok = aLen == 0 || PR_Write(fd, aData, aLen) == aLen;
+  PR_Close(fd);
+  return ok;
+}
+
+// Reads the full content of aFile into aOut.
+static bool ReadFileContent(nsIFile* aFile, nsCString& aOut) {
+  PRFileDesc* fd = nullptr;
+  nsresult rv = aFile->OpenNSPRFileDesc(PR_RDONLY, 0, &fd);
+  if (NS_FAILED(rv) || !fd) return false;
+  char buf[4096];
+  int32_t n;
+  while ((n = PR_Read(fd, buf, sizeof(buf))) > 0) {
+    aOut.Append(buf, n);
+  }
+  PR_Close(fd);
+  return n == 0;
+}
+
+TEST(TestFile, CopyToContent)
+{
+  nsCOMPtr<nsIFile> base;
+  nsresult rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(base));
+  ASSERT_NS_SUCCEEDED(rv);
+  rv = base->AppendNative("copyto_content_test"_ns);
+  ASSERT_NS_SUCCEEDED(rv);
+  base->Remove(true);
+  rv = base->Create(nsIFile::DIRECTORY_TYPE, 0700);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  nsCOMPtr<nsIFile> subdir = NewFile(base);
+  ASSERT_TRUE(subdir);
+  rv = subdir->AppendNative("subdir"_ns);
+  ASSERT_NS_SUCCEEDED(rv);
+  rv = subdir->Create(nsIFile::DIRECTORY_TYPE, 0700);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  // Empty file copy.
+  {
+    nsCOMPtr<nsIFile> src = NewFile(base);
+    ASSERT_TRUE(src);
+    ASSERT_NS_SUCCEEDED(src->AppendNative("empty.dat"_ns));
+    ASSERT_TRUE(WriteFileContent(src, nullptr, 0));
+
+    ASSERT_NS_SUCCEEDED(src->CopyToNative(base, "empty_copy.dat"_ns));
+
+    nsCOMPtr<nsIFile> dest = NewFile(base);
+    ASSERT_TRUE(dest);
+    ASSERT_NS_SUCCEEDED(dest->AppendNative("empty_copy.dat"_ns));
+    int64_t size = -1;
+    ASSERT_NS_SUCCEEDED(dest->GetFileSize(&size));
+    EXPECT_EQ(size, 0);
+  }
+
+  // Small content copy: exact byte verification, source unchanged.
+  {
+    constexpr nsLiteralCString kData = "Hello, CopyToNative!"_ns;
+
+    nsCOMPtr<nsIFile> src = NewFile(base);
+    ASSERT_TRUE(src);
+    ASSERT_NS_SUCCEEDED(src->AppendNative("small_src.dat"_ns));
+    ASSERT_TRUE(WriteFileContent(src, kData.get(), kData.Length()));
+
+    ASSERT_NS_SUCCEEDED(src->CopyToNative(subdir, "small_copy.dat"_ns));
+
+    nsCOMPtr<nsIFile> dest = NewFile(subdir);
+    ASSERT_TRUE(dest);
+    ASSERT_NS_SUCCEEDED(dest->AppendNative("small_copy.dat"_ns));
+    nsCString content;
+    ASSERT_TRUE(ReadFileContent(dest, content));
+    EXPECT_EQ(content, kData);
+
+    bool exists = false;
+    ASSERT_NS_SUCCEEDED(src->Exists(&exists));
+    EXPECT_TRUE(exists);
+    nsCString srcContent;
+    ASSERT_TRUE(ReadFileContent(src, srcContent));
+    EXPECT_EQ(srcContent, kData);
+  }
+
+  // Large file copy (1 MiB): size and full content verified.
+  {
+    const int32_t kLargeSize = 1024 * 1024;
+    nsCString largeData;
+    largeData.SetLength(kLargeSize);
+    for (int32_t i = 0; i < kLargeSize; ++i) {
+      largeData.BeginWriting()[i] = static_cast<char>(i & 0xFF);
+    }
+
+    nsCOMPtr<nsIFile> src = NewFile(base);
+    ASSERT_TRUE(src);
+    ASSERT_NS_SUCCEEDED(src->AppendNative("large_src.dat"_ns));
+    ASSERT_TRUE(WriteFileContent(src, largeData.get(), kLargeSize));
+
+    ASSERT_NS_SUCCEEDED(src->CopyToNative(base, "large_copy.dat"_ns));
+
+    nsCOMPtr<nsIFile> dest = NewFile(base);
+    ASSERT_TRUE(dest);
+    ASSERT_NS_SUCCEEDED(dest->AppendNative("large_copy.dat"_ns));
+
+    int64_t size = 0;
+    ASSERT_NS_SUCCEEDED(dest->GetFileSize(&size));
+    EXPECT_EQ(size, static_cast<int64_t>(kLargeSize));
+
+    nsCString destContent;
+    ASSERT_TRUE(ReadFileContent(dest, destContent));
+    ASSERT_EQ(destContent.Length(), static_cast<size_t>(kLargeSize));
+    EXPECT_EQ(destContent, largeData);
+  }
+
+#if !defined(XP_WIN) && !defined(ANDROID)
+  // Permission preservation (Unix only, Android's filesystem sandbox does not
+  // honour traditional Unix permissions).
+  {
+    nsCOMPtr<nsIFile> src = NewFile(base);
+    ASSERT_TRUE(src);
+    ASSERT_NS_SUCCEEDED(src->AppendNative("perms_src.dat"_ns));
+    ASSERT_TRUE(WriteFileContent(src, "x", 1));
+    ASSERT_NS_SUCCEEDED(src->SetPermissions(0640));
+
+    ASSERT_NS_SUCCEEDED(src->CopyToNative(base, "perms_copy.dat"_ns));
+
+    nsCOMPtr<nsIFile> dest = NewFile(base);
+    ASSERT_TRUE(dest);
+    ASSERT_NS_SUCCEEDED(dest->AppendNative("perms_copy.dat"_ns));
+    uint32_t perms = 0;
+    ASSERT_NS_SUCCEEDED(dest->GetPermissions(&perms));
+    EXPECT_EQ(perms, static_cast<uint32_t>(0640));
+  }
+#endif  // !defined(XP_WIN) && !defined(ANDROID)
+
+#if defined(XP_MACOSX)
+  // Quarantine attribute handling.
+  // Check two things:
+  // - a source file with quarantine attribute shall result in the attribute
+  //   being present in the destination file (i.e. attribute preserved)
+  // - a source file without quarantine attribute shall result in the attribute
+  //   not being present in the destination file
+  {
+    constexpr auto kQuarantineAttr = "com.apple.quarantine"_ns;
+    // A copy of a file that is quarantined should be quarantined too
+    nsCOMPtr<nsIFile> src = NewFile(base);
+    ASSERT_TRUE(src);
+    ASSERT_NS_SUCCEEDED(src->AppendNative("src.dat"_ns));
+    ASSERT_TRUE(WriteFileContent(src, "x", 1));
+
+    // macOS quarantines every newly created file, including the one just
+    // written above.
+    // Check the previous statement is correct, and if so, use that quarantined
+    // file for our test
+    nsCOMPtr<nsILocalFileMac> srcMac = do_QueryInterface(src);
+    ASSERT_TRUE(srcMac);
+    bool hasQuarantineAttr = true;
+    ASSERT_NS_SUCCEEDED(srcMac->HasXAttr(kQuarantineAttr, &hasQuarantineAttr));
+    ASSERT_TRUE(hasQuarantineAttr);
+
+    // Copy the file
+    {
+      constexpr auto kDestFilenameQuarantined = "dst_quarantined.dat"_ns;
+      ASSERT_NS_SUCCEEDED(src->CopyToNative(base, kDestFilenameQuarantined));
+      // Check the destination file is quarantined too (like source file)
+      nsCOMPtr<nsIFile> quarantinedCopy = NewFile(base);
+      ASSERT_TRUE(quarantinedCopy);
+      ASSERT_NS_SUCCEEDED(
+          quarantinedCopy->AppendNative(kDestFilenameQuarantined));
+      nsCOMPtr<nsILocalFileMac> quarantinedCopyMac =
+          do_QueryInterface(quarantinedCopy);
+      ASSERT_TRUE(quarantinedCopyMac);
+      ASSERT_NS_SUCCEEDED(
+          quarantinedCopyMac->HasXAttr(kQuarantineAttr, &hasQuarantineAttr));
+      EXPECT_TRUE(hasQuarantineAttr);
+    }
+
+    // Remove the quarantine attribute from the source file
+    (void)srcMac->DelXAttr(kQuarantineAttr);
+    // Check it was actually removed
+    ASSERT_NS_SUCCEEDED(srcMac->HasXAttr(kQuarantineAttr, &hasQuarantineAttr));
+    EXPECT_FALSE(hasQuarantineAttr);
+
+    // Copy the file again
+    {
+      constexpr auto kDestFilenameNotQuarantined = "dst_not_quarantined.dat"_ns;
+      ASSERT_NS_SUCCEEDED(src->CopyToNative(base, kDestFilenameNotQuarantined));
+      // Check the destination file is not quarantined too (like source file)
+      nsCOMPtr<nsIFile> notQuarantinedCopy = NewFile(base);
+      ASSERT_TRUE(notQuarantinedCopy);
+      ASSERT_NS_SUCCEEDED(
+          notQuarantinedCopy->AppendNative(kDestFilenameNotQuarantined));
+      nsCOMPtr<nsILocalFileMac> notQuarantinedCopyMac =
+          do_QueryInterface(notQuarantinedCopy);
+      ASSERT_TRUE(notQuarantinedCopyMac);
+      ASSERT_NS_SUCCEEDED(
+          notQuarantinedCopyMac->HasXAttr(kQuarantineAttr, &hasQuarantineAttr));
+      EXPECT_FALSE(hasQuarantineAttr);
+    }
+  }
+#endif  // defined(XP_MACOSX)
+
+  // Directory copy: structure and file contents preserved.
+  {
+    nsCOMPtr<nsIFile> srcDir = NewFile(base);
+    ASSERT_TRUE(srcDir);
+    ASSERT_NS_SUCCEEDED(srcDir->AppendNative("dir_src"_ns));
+    ASSERT_NS_SUCCEEDED(srcDir->Create(nsIFile::DIRECTORY_TYPE, 0700));
+
+    nsCOMPtr<nsIFile> fileA = NewFile(srcDir);
+    ASSERT_TRUE(fileA);
+    ASSERT_NS_SUCCEEDED(fileA->AppendNative("a.txt"_ns));
+    ASSERT_TRUE(WriteFileContent(fileA, "aaa", 3));
+
+    nsCOMPtr<nsIFile> fileB = NewFile(srcDir);
+    ASSERT_TRUE(fileB);
+    ASSERT_NS_SUCCEEDED(fileB->AppendNative("b.txt"_ns));
+    ASSERT_TRUE(WriteFileContent(fileB, "bbb", 3));
+
+    ASSERT_NS_SUCCEEDED(srcDir->CopyToNative(base, "dir_copy"_ns));
+
+    nsCOMPtr<nsIFile> destDir = NewFile(base);
+    ASSERT_TRUE(destDir);
+    ASSERT_NS_SUCCEEDED(destDir->AppendNative("dir_copy"_ns));
+    bool isDir = false;
+    ASSERT_NS_SUCCEEDED(destDir->IsDirectory(&isDir));
+    EXPECT_TRUE(isDir);
+
+    nsCOMPtr<nsIFile> destA = NewFile(destDir);
+    ASSERT_TRUE(destA);
+    ASSERT_NS_SUCCEEDED(destA->AppendNative("a.txt"_ns));
+    nsCString contentA;
+    ASSERT_TRUE(ReadFileContent(destA, contentA));
+    EXPECT_EQ(contentA, "aaa"_ns);
+
+    nsCOMPtr<nsIFile> destB = NewFile(destDir);
+    ASSERT_TRUE(destB);
+    ASSERT_NS_SUCCEEDED(destB->AppendNative("b.txt"_ns));
+    nsCString contentB;
+    ASSERT_TRUE(ReadFileContent(destB, contentB));
+    EXPECT_EQ(contentB, "bbb"_ns);
+  }
+
+  base->Remove(true);
 }
 
 // These match the limits in nsLocalFileCommon.cpp's CreateUnique.
@@ -956,6 +1236,84 @@ TEST(TestFile, CreateUnique_TruncatesLongPath)
     ASSERT_NS_SUCCEEDED(rv);
     EXPECT_TRUE(StringEndsWith(leafName, ".dat"_ns));
     EXPECT_LT(leafName.Length(), static_cast<size_t>(kLeafLen));
+  }
+
+  base->Remove(true);
+}
+
+// The following test was made to quickly assess the performance improvements
+// made in the scope of bug 2047435, but there is no need to run it everytime,
+// so keep it disabled
+TEST(TestFile, DISABLED_CopyToPerf)
+{
+  nsCOMPtr<nsIFile> base;
+  nsresult rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(base));
+  ASSERT_NS_SUCCEEDED(rv);
+  rv = base->AppendNative("copyto_perf_test"_ns);
+  ASSERT_NS_SUCCEEDED(rv);
+  base->Remove(true);
+  rv = base->Create(nsIFile::DIRECTORY_TYPE, 0700);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  struct TestCase {
+    const char* label;
+    int32_t sizeBytes;
+    int iterations;
+  };
+  // clang-format off
+  static const TestCase kCases[] = {
+      {"4 KB", 4 * 1024, 200},
+      {"256 KB", 256 * 1024, 100},
+      {"1 MB", 1 * 1024 * 1024, 50},
+      {"10 MB", 10 * 1024 * 1024, 10},
+      {"50 MB", 50 * 1024 * 1024, 5},
+  };
+  // clang-format on
+
+  for (const auto& tc : kCases) {
+    nsCOMPtr<nsIFile> src = NewFile(base);
+    ASSERT_TRUE(src);
+    nsAutoCString srcName;
+    srcName.AppendLiteral("src_");
+    srcName.AppendInt(tc.sizeBytes);
+    srcName.AppendLiteral(".dat");
+    ASSERT_NS_SUCCEEDED(src->AppendNative(srcName));
+
+    nsCString data;
+    data.SetLength(tc.sizeBytes);
+    for (int32_t i = 0; i < tc.sizeBytes; ++i) {
+      data.BeginWriting()[i] = static_cast<char>(i & 0xFF);
+    }
+    ASSERT_TRUE(WriteFileContent(src, data.get(), tc.sizeBytes));
+
+    // Warm up once to populate the OS buffer cache before timing.
+    ASSERT_NS_SUCCEEDED(src->CopyToNative(base, "warmup.dat"_ns));
+    {
+      nsCOMPtr<nsIFile> warmup = NewFile(base);
+      ASSERT_TRUE(warmup);
+      ASSERT_NS_SUCCEEDED(warmup->AppendNative("warmup.dat"_ns));
+      warmup->Remove(false);
+    }
+
+    mozilla::TimeStamp t0 = mozilla::TimeStamp::Now();
+    for (int i = 0; i < tc.iterations; ++i) {
+      nsAutoCString destName;
+      destName.AppendLiteral("dest_");
+      destName.AppendInt(i);
+      destName.AppendLiteral(".dat");
+      ASSERT_NS_SUCCEEDED(src->CopyToNative(base, destName));
+      nsCOMPtr<nsIFile> dest = NewFile(base);
+      ASSERT_TRUE(dest);
+      ASSERT_NS_SUCCEEDED(dest->AppendNative(destName));
+      dest->Remove(false);
+    }
+    double elapsedMs = (mozilla::TimeStamp::Now() - t0).ToMilliseconds();
+
+    double totalMB = (double)tc.sizeBytes * tc.iterations / (1024.0 * 1024.0);
+    double throughputMBs = totalMB / (elapsedMs / 1000.0);
+    double avgMs = elapsedMs / tc.iterations;
+    printf_stderr("  CopyTo %s: %.2f ms/copy, %.0f MB/s (%d copies)\n",
+                  tc.label, avgMs, throughputMBs, tc.iterations);
   }
 
   base->Remove(true);

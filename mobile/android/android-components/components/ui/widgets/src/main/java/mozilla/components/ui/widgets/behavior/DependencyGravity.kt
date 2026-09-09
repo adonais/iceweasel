@@ -4,17 +4,11 @@
 
 package mozilla.components.ui.widgets.behavior
 
-/**
- * Where the dynamic view dependent on webpage scrolls is placed on the screen.
- */
+/** Where the dynamic view dependent on webpage scrolls is placed on the screen. */
 sealed interface DependencyGravity {
-    /**
-     * The view is placed at the top of the screen.
-     */
+    /** The view is placed at the top of the screen. */
     data object Top : DependencyGravity
 
-    /**
-     * The view is placed at the bottom of the screen.
-     */
+    /** The view is placed at the bottom of the screen. */
     data object Bottom : DependencyGravity
 }

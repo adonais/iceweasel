@@ -223,6 +223,21 @@ void LinkStyle::BindToTree() {
   }
 }
 
+template <typename CharT>
+static bool DoGetInlineSheetText(nsIContent& aContent,
+                                 nsTSubstring<CharT>& aResult) {
+  return nsContentUtils::GetNodeTextContent(&aContent, false, aResult,
+                                            fallible);
+}
+
+bool LinkStyle::GetInlineSheetText(nsACString& aResult) {
+  return DoGetInlineSheetText(AsContent(), aResult);
+}
+
+bool LinkStyle::GetInlineSheetText(nsAString& aResult) {
+  return DoGetInlineSheetText(AsContent(), aResult);
+}
+
 Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
     Document* aOldDocument, ShadowRoot* aOldShadowRoot,
     nsICSSLoaderObserver* aObserver, ForceUpdate aForceUpdate) {
@@ -308,19 +323,17 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
   }
 
   if (info->mIsInline) {
-    nsAutoString text;
-    if (!nsContentUtils::GetNodeTextContent(&thisContent, false, text,
-                                            fallible)) {
+    nsAutoCString text;
+    if (!DoGetInlineSheetText(thisContent, text)) {
       return Err(NS_ERROR_OUT_OF_MEMORY);
     }
-
     MOZ_ASSERT(thisContent.NodeInfo()->NameAtom() != nsGkAtoms::link,
                "<link> is not 'inline', and needs different CSP checks");
     MOZ_ASSERT(thisContent.IsElement());
     nsresult rv = NS_OK;
     if (!nsStyleUtil::CSPAllowsInlineStyle(
             thisContent.AsElement(), doc, info->mTriggeringPrincipal,
-            mLineNumber, mColumnNumber, text, &rv)) {
+            mLineNumber, mColumnNumber, VoidString(), &rv)) {
       if (NS_FAILED(rv)) {
         return Err(rv);
       }

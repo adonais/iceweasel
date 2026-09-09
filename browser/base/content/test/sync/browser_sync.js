@@ -1754,6 +1754,21 @@ function checkSyncNowButtons(syncing, tooltip = null) {
       );
     }
   }
+
+  const secureSyncNowLabel = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-secure-sync-now-label"
+  );
+  const expectedSecureSyncNowLabel = syncing
+    ? gSync.fluentStrings.formatValueSync("fxa-toolbar-sync-syncing2")
+    : gSync.fluentStrings.formatValueSync("fxa-menu-sync-device-now", {
+        deviceName: fxAccounts.device.getLocalName(),
+      });
+  is(
+    secureSyncNowLabel.value,
+    expectedSecureSyncNowLabel,
+    "secure sync now button label reflects the syncing state"
+  );
 }
 
 async function checkFxaToolbarButtonPanel({
@@ -2932,6 +2947,34 @@ add_task(async function test_sync_status_button_sync_off_signed_out() {
 
   gSync._onSyncStatusButtonClick(syncStatusBtn, new PointerEvent("click"));
   ok(signInStub.called, "Clicking leads to the sign-in page when signed out");
+
+  sandbox.restore();
+});
+
+add_task(async function test_sync_your_data_closes_panel_when_signed_out() {
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(UIState, "get").returns({
+    status: UIState.STATUS_NOT_CONFIGURED,
+  });
+  let signInStub = sandbox.stub(gSync, "openFxAEmailFirstPageFromFxaMenu");
+
+  gSync.updateAllUI(UIState.get());
+  await openFxaPanel();
+
+  const syncStatusBtn = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-sync-status-button"
+  );
+  ok(!syncStatusBtn.hidden, "Sync status button is shown when signed out");
+
+  let hidden = BrowserTestUtils.waitForEvent(document, "popuphidden", true);
+  syncStatusBtn.click();
+  await hidden;
+
+  ok(
+    signInStub.called,
+    "Clicking 'Sync Your Data' navigates to the sign-in page"
+  );
 
   sandbox.restore();
 });

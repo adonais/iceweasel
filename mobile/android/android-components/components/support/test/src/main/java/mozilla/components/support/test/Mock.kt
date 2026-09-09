@@ -8,25 +8,20 @@ import android.view.MotionEvent
 import org.mockito.Mockito
 
 /**
- * Dynamically create a mock object. This method is helpful when creating mocks of classes
- * using generics.
+ * Dynamically create a mock object. This method is helpful when creating mocks of classes using generics.
  *
  * Optional @param setup will be called on the mock after init.
  *
- * Instead of:
- * <code>val foo = Mockito.mock(....Class of Bar<Baz>?...)<code>
+ * Instead of: <code>val foo = Mockito.mock(....Class of Bar<Baz>?...)<code>
  *
- * You can just use:
- * <code>val foo: Bar<Baz> = mock()</code>
+ * You can just use: <code>val foo: Bar<Baz> = mock()</code>
  */
-inline fun <reified T : Any> mock(noinline setup: (T.() -> Unit)? = null): T = Mockito.mock(T::class.java)!!
-    .apply { setup?.invoke(this) }
+inline fun <reified T : Any> mock(noinline setup: (T.() -> Unit)? = null): T =
+    Mockito.mock(T::class.java)!!.apply { setup?.invoke(this) }
 
-/**
- * Equivalent to [mock] but allows inline setup of suspending functions.
- */
-suspend inline fun <reified T : Any> coMock(noinline setup: (suspend T.() -> Unit)? = null): T = Mockito.mock(T::class.java)!!
-    .apply { setup?.invoke(this) }
+/** Equivalent to [mock] but allows inline setup of suspending functions. */
+suspend inline fun <reified T : Any> coMock(noinline setup: (suspend T.() -> Unit)? = null): T =
+    Mockito.mock(T::class.java)!!.apply { setup?.invoke(this) }
 
 /**
  * Enables stubbing methods. Use it when you want the mock to return particular value when particular method is called.
@@ -35,12 +30,11 @@ suspend inline fun <reified T : Any> coMock(noinline setup: (suspend T.() -> Uni
  *
  * Taken from [mockito-kotlin](https://github.com/nhaarman/mockito-kotlin/).
  */
-@Suppress("NOTHING_TO_INLINE")
-inline fun <T> whenever(methodCall: T) = Mockito.`when`(methodCall)!!
+@Suppress("NOTHING_TO_INLINE") inline fun <T> whenever(methodCall: T) = Mockito.`when`(methodCall)!!
 
 /**
- * Creates a custom [MotionEvent] for testing. As of SDK 28 [MotionEvent]s can't be mocked anymore and need to be created
- * through [MotionEvent.obtain].
+ * Creates a custom [MotionEvent] for testing. As of SDK 28 [MotionEvent]s can't be mocked anymore and need to be
+ * created through [MotionEvent.obtain].
  */
 fun mockMotionEvent(
     action: Int,

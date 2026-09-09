@@ -17,9 +17,7 @@ import org.mozilla.fenix.settings.SharedPreferenceUpdater
 import org.mozilla.fenix.settings.requirePreference
 import org.mozilla.fenix.utils.view.addToRadioGroup
 
-/**
- * Settings screen allowing users to choose whether newly used passwords should be remembered or not.
- */
+/** Settings screen allowing users to choose whether newly used passwords should be remembered or not. */
 class SavedLoginsSettingFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.save_logins_preferences, rootKey)
@@ -35,44 +33,45 @@ class SavedLoginsSettingFragment : PreferenceFragmentCompat(), SystemInsetsPadde
 
     private fun bindSave(): RadioButtonPreference {
         val preferenceSave = requirePreference<RadioButtonPreference>(R.string.pref_key_save_logins)
-        preferenceSave.onPreferenceChangeListener = object : SharedPreferenceUpdater() {
-            override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
-                if (newValue == true) {
-                    Logins.saveLoginsSettingChanged.record(
-                        Logins.SaveLoginsSettingChangedExtra(
-                            Setting.ASK_TO_SAVE.name,
-                        ),
-                    )
+        preferenceSave.onPreferenceChangeListener =
+            object : SharedPreferenceUpdater() {
+                override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
+                    if (newValue == true) {
+                        Logins.saveLoginsSettingChanged.record(
+                            Logins.SaveLoginsSettingChangedExtra(Setting.ASK_TO_SAVE.name)
+                        )
+                    }
+                    // We want to reload the current session here so we can try to fill the current page
+                    context?.components?.useCases?.sessionUseCases?.reload?.invoke()
+                    return super.onPreferenceChange(preference, newValue)
                 }
-                // We want to reload the current session here so we can try to fill the current page
-                context?.components?.useCases?.sessionUseCases?.reload?.invoke()
-                return super.onPreferenceChange(preference, newValue)
             }
-        }
         return preferenceSave
     }
 
     private fun bindNeverSave(): RadioButtonPreference {
         val preferenceNeverSave = requirePreference<RadioButtonPreference>(R.string.pref_key_never_save_logins)
-        preferenceNeverSave.onPreferenceChangeListener = object : SharedPreferenceUpdater() {
-            override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
-                if (newValue == true) {
-                    Logins.saveLoginsSettingChanged.record(
-                        Logins.SaveLoginsSettingChangedExtra(
-                            Setting.NEVER_SAVE.name,
-                        ),
-                    )
+        preferenceNeverSave.onPreferenceChangeListener =
+            object : SharedPreferenceUpdater() {
+                override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
+                    if (newValue == true) {
+                        Logins.saveLoginsSettingChanged.record(
+                            Logins.SaveLoginsSettingChangedExtra(Setting.NEVER_SAVE.name)
+                        )
+                    }
+                    // We want to reload the current session here so we don't save any currently inserted login
+                    context?.components?.useCases?.sessionUseCases?.reload?.invoke()
+                    return super.onPreferenceChange(preference, newValue)
                 }
-                // We want to reload the current session here so we don't save any currently inserted login
-                context?.components?.useCases?.sessionUseCases?.reload?.invoke()
-                return super.onPreferenceChange(preference, newValue)
             }
-        }
         return preferenceNeverSave
     }
 
     companion object {
         // Setting describing the approach of saving logins, used for telemetry
-        enum class Setting { NEVER_SAVE, ASK_TO_SAVE }
+        enum class Setting {
+            NEVER_SAVE,
+            ASK_TO_SAVE,
+        }
     }
 }

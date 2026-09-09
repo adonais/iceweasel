@@ -30,9 +30,7 @@ import mozilla.components.feature.summarize.R
 import mozilla.components.feature.summarize.SignInSummarizationContentAction
 
 @Composable
-internal fun FxaSignInContent(
-    dispatchAction: (SignInSummarizationContentAction) -> Unit = {},
-) {
+internal fun FxaSignInContent(dispatchAction: (SignInSummarizationContentAction) -> Unit = {}) {
     FxaSignInContentBody(
         onSignIn = { dispatchAction(SignInSummarizationContentAction.SignInClicked) },
         onDismiss = { dispatchAction(SignInSummarizationContentAction.DismissClicked) },
@@ -91,11 +89,10 @@ private fun FxaSignInAnnotatedBodyText(
         withLink(
             LinkAnnotation.Clickable(
                 tag = "LEARN_MORE",
-                styles = TextLinkStyles(
-                    style = SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline),
-                ),
+                styles =
+                    TextLinkStyles(style = SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline)),
                 linkInteractionListener = { onClickLearnMore() },
-            ),
+            )
         ) {
             append(learnMore)
         }
@@ -104,10 +101,11 @@ private fun FxaSignInAnnotatedBodyText(
     Text(
         modifier = modifier,
         text = annotatedMessage,
-        style = AcornTheme.typography.body2.copy(
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        ),
+        style =
+            AcornTheme.typography.body2.copy(
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            ),
     )
 }
 

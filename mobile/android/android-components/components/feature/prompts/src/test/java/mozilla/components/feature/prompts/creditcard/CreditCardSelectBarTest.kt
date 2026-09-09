@@ -38,14 +38,15 @@ class CreditCardSelectBarTest {
 
     private lateinit var creditCardSelectBar: CreditCardSelectBar
 
-    private val creditCard = CreditCardEntry(
-        guid = "1",
-        name = "Banana Apple",
-        number = "4111111111111110",
-        expiryMonth = "5",
-        expiryYear = "2030",
-        cardType = "",
-    )
+    private val creditCard =
+        CreditCardEntry(
+            guid = "1",
+            name = "Banana Apple",
+            number = "4111111111111110",
+            expiryMonth = "5",
+            expiryYear = "2030",
+            cardType = "",
+        )
 
     @Before
     fun setup() {
@@ -92,13 +93,14 @@ class CreditCardSelectBarTest {
                 override fun process(fact: Fact) {
                     facts.add(fact)
                 }
-            },
+            }
         )
 
         creditCardSelectBar.showPrompt()
         creditCardSelectBar.populate(listOf(creditCard))
 
-        val adapter = creditCardSelectBar.findViewById<RecyclerView>(R.id.credit_cards_list).adapter as CreditCardsAdapter
+        val adapter =
+            creditCardSelectBar.findViewById<RecyclerView>(R.id.credit_cards_list).adapter as CreditCardsAdapter
         val holder = adapter.onCreateViewHolder(LinearLayout(testContext), 0)
         adapter.bindViewHolder(holder, 0)
 
@@ -122,7 +124,7 @@ class CreditCardSelectBarTest {
                 override fun process(fact: Fact) {
                     facts.add(fact)
                 }
-            },
+            }
         )
 
         creditCardSelectBar.showPrompt()

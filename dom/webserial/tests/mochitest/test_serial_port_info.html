@@ -209,6 +209,69 @@ add_task(async function testEmptyFiltersMatchesAll() {
   ok(port, "requestPort with empty filters should return a port");
 });
 
+add_task(async function testBluetoothFilterMatchesDefaultSppDevice() {
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  const sppUuid = "00001101-0000-1000-8000-00805f9b34fb";
+
+  const port = await navigator.serial.requestPort({
+    filters: [{ bluetoothServiceClassId: sppUuid }],
+  });
+
+  const info = port.getInfo();
+  ok(info, "got port info for bluetooth filter match");
+  ok(!("usbVendorId" in info),
+     "bluetooth port should not have usbVendorId");
+  ok(!("usbProductId" in info),
+     "bluetooth port should not have usbProductId");
+  is(info.bluetoothServiceClassId, sppUuid,
+     "bluetooth port should report SPP service class id");
+});
+
+add_task(async function testBluetoothFilterShortAliasMatches() {
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  // 0x1101 is the GATT-assigned alias for the Serial Port Profile UUID.
+  const port = await navigator.serial.requestPort({
+    filters: [{ bluetoothServiceClassId: 0x1101 }],
+  });
+
+  const info = port.getInfo();
+  is(info.bluetoothServiceClassId, "00001101-0000-1000-8000-00805f9b34fb",
+     "0x1101 alias should resolve to canonical SPP UUID");
+});
+
+add_task(async function testBluetoothFilterNonMatchingUUIDFails() {
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  await Assert.rejects(
+    navigator.serial.requestPort({
+      filters: [{ bluetoothServiceClassId: "12345678-0000-1000-8000-00805f9b34fb" }],
+    }),
+    /NotFoundError/,
+    "requestPort should reject with NotFoundError when no port matches the bluetooth UUID"
+  );
+});
+
+add_task(async function testInvalidBluetoothUUIDRejected() {
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  await Assert.rejects(
+    navigator.serial.requestPort({
+      filters: [{ bluetoothServiceClassId: "not-a-uuid" }],
+    }),
+    /TypeError/,
+    "requestPort should reject with TypeError for an invalid bluetooth UUID"
+  );
+});
+
+add_task(async function testBluetoothFilterWithUsbVendorIdRejected() {
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  await Assert.rejects(
+    navigator.serial.requestPort({
+      filters: [{ bluetoothServiceClassId: 0x1101, usbVendorId: 0x2341 }],
+    }),
+    /TypeError/,
+    "requestPort should reject when bluetoothServiceClassId is combined with usbVendorId"
+  );
+});
+
 </script>
 </body>
 </html>

@@ -10,6 +10,7 @@
 #include "EncryptedRandomAccessBlock.h"
 #include "EncryptedRandomAccessBlockView.h"
 #include "ErrorList.h"
+#include "NSSRandomAccessCipherStrategy.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
@@ -126,7 +127,6 @@ class EncryptedRandomAccessStreamBase : public nsIRandomAccessStream,
 
   NS_DECL_NSITELLABLESTREAM
   NS_DECL_NSISEEKABLESTREAM
-  NS_DECL_NSIRANDOMACCESSSTREAM
   NS_DECL_NSIOUTPUTSTREAM
 
   // nsIInputStream
@@ -134,6 +134,15 @@ class EncryptedRandomAccessStreamBase : public nsIRandomAccessStream,
   NS_IMETHOD ReadSegments(nsWriteSegmentFun aWriter, void* aClosure,
                           uint32_t aCount, uint32_t* _retval) override;
   NS_IMETHOD Available(uint64_t* _retval) override;
+
+  // nsIRandomAccessStream
+  NS_IMETHOD GetInputStream(nsIInputStream** _retval) override;
+  NS_IMETHOD GetOutputStream(nsIOutputStream** _retval) override;
+  nsIInputStream* InputStream(void) override;
+  nsIOutputStream* OutputStream(void) override;
+  bool Deserialize(mozilla::ipc::RandomAccessStreamParams& params) override;
+  mozilla::ipc::RandomAccessStreamParams Serialize(
+      nsIInterfaceRequestor* aCallbacks) override = 0;
 
  protected:
   using BlockIndexType = uint64_t;
@@ -215,6 +224,32 @@ class EncryptedRandomAccessStream final
          MovingNotNull<nsCOMPtr<nsIRandomAccessStream>> aStream,
          typename CipherStrategy::KeyType aMasterKey);
 
+  /**
+   * Serializing saves the current block and then closes this stream, just like
+   * |nsFileRandomAccessStream::Serialize| closes itself once it has handed out
+   * its file descriptor. The logical position is not part of the parameters, so
+   * the deserialized stream starts at zero.
+   *
+   * Currently only implemented for |NSSRandomAccessCipherStrategy|.
+   */
+  mozilla::ipc::RandomAccessStreamParams Serialize(
+      nsIInterfaceRequestor* aCallbacks) override;
+
+  /**
+   * Alternative for |Deserialize|.
+   *
+   * The usual deserialization path constructs an empty stream and then restores
+   * its members through |Deserialize|. |EncryptedRandomAccessStream| does not
+   * fit that pattern: it must be built through |Create|, which requires a valid
+   * base stream and master key already in place. This factory therefore
+   * deserializes the base stream and key first and then goes through |Create|,
+   * instead of restoring members onto an already-constructed instance.
+   *
+   * Currently only implemented for |NSSRandomAccessCipherStrategy|.
+   */
+  static Result<RefPtr<EncryptedRandomAccessStream<CipherStrategy>>, nsresult>
+  CreateFromParams(mozilla::ipc::RandomAccessStreamParams& aParams);
+
  private:
   template <typename T, typename... Args>
   friend RefPtr<T> mozilla::MakeRefPtr(Args&&... aArgs);
@@ -242,6 +277,17 @@ class EncryptedRandomAccessStream final
   // stateless, this class doesn't have to own a strategy.
   const typename CipherStrategy::KeyType mMasterKey;
 };
+
+template <>
+mozilla::ipc::RandomAccessStreamParams
+EncryptedRandomAccessStream<NSSRandomAccessCipherStrategy>::Serialize(
+    nsIInterfaceRequestor* aCallbacks);
+
+template <>
+Result<RefPtr<EncryptedRandomAccessStream<NSSRandomAccessCipherStrategy>>,
+       nsresult>
+EncryptedRandomAccessStream<NSSRandomAccessCipherStrategy>::CreateFromParams(
+    mozilla::ipc::RandomAccessStreamParams& aParams);
 
 }  // namespace mozilla::dom::quota
 

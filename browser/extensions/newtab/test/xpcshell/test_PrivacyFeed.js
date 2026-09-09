@@ -109,6 +109,28 @@ add_task(async function test_enabled_via_trainhop_config() {
   Assert.ok(feed.enabled, "Enabled via trainhopConfig even when system is off");
 });
 
+add_task(async function test_disabled_when_history_is_off() {
+  // The readout needs history, so profiles that record none hide the widget
+  // outright and the feed must stop fetching for them (Bug 2063207).
+  const feed = feedWithPrefs({
+    [PREF_WIDGETS_ENABLED]: true,
+    [PREF_PRIVACY_ENABLED]: true,
+    [PREF_SYSTEM_PRIVACY_ENABLED]: true,
+    recordsHistory: false,
+  });
+  Assert.ok(!feed.enabled, "Disabled when the profile records no history");
+});
+
+add_task(async function test_enabled_when_history_value_is_absent() {
+  // A missing PrefsFeed broadcast must not disable a working widget.
+  const feed = feedWithPrefs({
+    [PREF_WIDGETS_ENABLED]: true,
+    [PREF_PRIVACY_ENABLED]: true,
+    [PREF_SYSTEM_PRIVACY_ENABLED]: true,
+  });
+  Assert.ok(feed.enabled, "Enabled when recordsHistory was never broadcast");
+});
+
 add_task(async function test_disabled_when_master_widgets_off() {
   const feed = feedWithPrefs({
     [PREF_WIDGETS_ENABLED]: false,
@@ -116,6 +138,143 @@ add_task(async function test_disabled_when_master_widgets_off() {
     [PREF_SYSTEM_PRIVACY_ENABLED]: true,
   });
   Assert.ok(!feed.enabled, "Disabled when master widgets.enabled is off");
+});
+
+add_task(async function test_view_refresh_broadcasts_counts_only() {
+  // A preloaded tab reads the count at NEW_TAB_INIT, while it is still hidden.
+  // Showing it has to re-read the count, but must NOT re-run the scheduler:
+  // that would swap the message out from under the user (Bug 2063963).
+  const feed = feedWithPrefs({
+    [PREF_WIDGETS_ENABLED]: true,
+    [PREF_PRIVACY_ENABLED]: true,
+    [PREF_SYSTEM_PRIVACY_ENABLED]: true,
+  });
+  const sandbox = sinon.createSandbox();
+  sandbox
+    .stub(PrivacyMetricsService, "getTodayStats")
+    .resolves({ total: 137, trackers: 20, lastUpdated: 456 });
+  sandbox.stub(feed, "getSitesVisitedToday").resolves(9);
+  const runSelection = sandbox.spy(feed, "_runMessageSelection");
+
+  await feed.onAction({ type: actionTypes.WIDGETS_PRIVACY_VISIBLE });
+
+  const action = broadcastCall(feed);
+  Assert.ok(action, "Broadcasts a count update when a tab is shown");
+  Assert.equal(action.data.trackersToday, 137, "Sends the fresh count");
+  Assert.equal(action.data.variant, undefined, "Sends no message fields");
+  Assert.ok(!runSelection.called, "Does not re-run the message scheduler");
+
+  sandbox.restore();
+});
+
+add_task(async function test_view_refresh_sends_counts_and_nothing_else() {
+  // The reducer merges, so every key omitted here leaves that tab's own value
+  // alone. countCeiling: clearing it would drop the daily-cap "100+" as the tab
+  // is revealed, which is the view the cap exists for. celebration: awarding one
+  // here could start a second count-up over a running one.
+  const feed = feedWithPrefs({
+    [PREF_WIDGETS_ENABLED]: true,
+    [PREF_PRIVACY_ENABLED]: true,
+    [PREF_SYSTEM_PRIVACY_ENABLED]: true,
+  });
+  const sandbox = sinon.createSandbox();
+  sandbox
+    .stub(PrivacyMetricsService, "getTodayStats")
+    .resolves({ total: 137, trackers: 20, lastUpdated: 1 });
+  sandbox.stub(feed, "getSitesVisitedToday").resolves(9);
+  const resolveCelebration = sandbox.spy(feed, "resolveCelebration");
+
+  await feed.onAction({ type: actionTypes.WIDGETS_PRIVACY_VISIBLE });
+
+  const action = broadcastCall(feed);
+  Assert.equal(action.data.trackersToday, 137, "Sends the fresh count");
+  Assert.ok(!("countCeiling" in action.data), "Sends no countCeiling");
+  Assert.ok(!("celebration" in action.data), "Sends no celebration");
+  Assert.ok(!resolveCelebration.called, "Awards no celebration on this path");
+
+  sandbox.restore();
+});
+
+add_task(async function test_view_refresh_skips_a_read_already_running() {
+  // Two tabs revealed together both pass the freshness check, since the stamp
+  // only lands after the await. An in-flight flag is what stops the second.
+  const feed = feedWithPrefs({
+    [PREF_WIDGETS_ENABLED]: true,
+    [PREF_PRIVACY_ENABLED]: true,
+    [PREF_SYSTEM_PRIVACY_ENABLED]: true,
+  });
+  const sandbox = sinon.createSandbox();
+  const getTodayStats = sandbox
+    .stub(PrivacyMetricsService, "getTodayStats")
+    .resolves({ total: 42, trackers: 4, lastUpdated: 1 });
+  sandbox.stub(feed, "getSitesVisitedToday").resolves(3);
+
+  // The store middleware does not await onAction, so a real burst overlaps.
+  await Promise.all([
+    feed.onAction({ type: actionTypes.WIDGETS_PRIVACY_VISIBLE }),
+    feed.onAction({ type: actionTypes.WIDGETS_PRIVACY_VISIBLE }),
+    feed.onAction({ type: actionTypes.WIDGETS_PRIVACY_VISIBLE }),
+  ]);
+
+  Assert.equal(getTodayStats.callCount, 1, "Only the first reveal reads");
+
+  sandbox.restore();
+});
+
+add_task(async function test_view_refresh_skips_a_recent_read() {
+  // Each reveal costs a Places query, so one that lands while the last read is
+  // still fresh is dropped. Awaited one at a time on purpose: each read has to
+  // finish for the next to see its stamp. Concurrent reveals are the test below.
+  const feed = feedWithPrefs({
+    [PREF_WIDGETS_ENABLED]: true,
+    [PREF_PRIVACY_ENABLED]: true,
+    [PREF_SYSTEM_PRIVACY_ENABLED]: true,
+  });
+  const sandbox = sinon.createSandbox();
+  const getTodayStats = sandbox
+    .stub(PrivacyMetricsService, "getTodayStats")
+    .resolves({ total: 50, trackers: 5, lastUpdated: 1 });
+  sandbox.stub(feed, "getSitesVisitedToday").resolves(3);
+
+  await feed.onAction({ type: actionTypes.WIDGETS_PRIVACY_VISIBLE });
+  await feed.onAction({ type: actionTypes.WIDGETS_PRIVACY_VISIBLE });
+  await feed.onAction({ type: actionTypes.WIDGETS_PRIVACY_VISIBLE });
+  Assert.equal(getTodayStats.callCount, 1, "Reads the count once for a burst");
+
+  // Past the throttle window, the next reveal reads again.
+  feed._lastCountsAt -= 60 * 1000;
+  await feed.onAction({ type: actionTypes.WIDGETS_PRIVACY_VISIBLE });
+  Assert.equal(getTodayStats.callCount, 2, "Reads again once the count is old");
+
+  sandbox.restore();
+});
+
+add_task(async function test_view_refresh_follows_the_enabled_pref() {
+  const feed = feedWithPrefs({
+    [PREF_WIDGETS_ENABLED]: false,
+    [PREF_PRIVACY_ENABLED]: true,
+    [PREF_SYSTEM_PRIVACY_ENABLED]: true,
+  });
+  const sandbox = sinon.createSandbox();
+  const getTodayStats = sandbox
+    .stub(PrivacyMetricsService, "getTodayStats")
+    .resolves({ total: 12, trackers: 2, lastUpdated: 1 });
+  sandbox.stub(feed, "getSitesVisitedToday").resolves(1);
+
+  await feed.onAction({ type: actionTypes.WIDGETS_PRIVACY_VISIBLE });
+  Assert.ok(!getTodayStats.called, "No fetch while the widget is disabled");
+
+  // Same feed, same action, only the pref changed — so the pref is what stopped
+  // the fetch, not a handler that never ran.
+  feed.store.state.Prefs.values[PREF_WIDGETS_ENABLED] = true;
+  await feed.onAction({ type: actionTypes.WIDGETS_PRIVACY_VISIBLE });
+  Assert.equal(
+    getTodayStats.callCount,
+    1,
+    "Fetches once the widget is enabled"
+  );
+
+  sandbox.restore();
 });
 
 add_task(async function test_broadcasts_counts_only_on_tick() {
@@ -152,6 +311,9 @@ add_task(async function test_broadcasts_counts_only_on_tick() {
       "Clears a stale daily-cap ceiling"
     );
 
+    // INIT registers the ETP pref observers; drop them so a later test's pref
+    // write can't refresh a feed whose stubs are gone.
+    feed.uninit();
     sandbox.restore();
   }
 });
@@ -163,9 +325,8 @@ add_task(async function test_new_tab_init_runs_scheduler() {
     [PREF_SYSTEM_PRIVACY_ENABLED]: true,
   });
   const sandbox = sinon.createSandbox();
-  // getTodayStats must exist (backward-compat guard); the data-gathering
-  // helpers are stubbed so we exercise the scheduler + routing wiring only.
-  sandbox.stub(PrivacyMetricsService, "getTodayStats").resolves({ total: 1 });
+  // The data-gathering helpers are stubbed so we exercise the scheduler +
+  // routing wiring only.
   sandbox
     .stub(feed, "fetchTodayCounts")
     .resolves({ trackersToday: 42, sitesToday: 7, lastUpdated: 123 });
@@ -204,6 +365,13 @@ add_task(async function test_new_tab_init_runs_scheduler() {
     "Carries the category"
   );
   Assert.equal(message.data.icon, "kit", "First-protection uses the kit icon");
+  // strictEqual, so dropping the field from the broadcast fails here rather
+  // than quietly passing as undefined == false.
+  Assert.strictEqual(
+    message.data.etpOff,
+    false,
+    "Carries the ETP state, off by default in this profile"
+  );
 
   const setPref = feed.store.dispatch
     .getCalls()
@@ -230,7 +398,6 @@ add_task(async function test_force_message_id_pins_the_message() {
     [PREF_FORCE_MESSAGE_ID]: "newtab-privacy-message-promo-relay-1",
   });
   const sandbox = sinon.createSandbox();
-  sandbox.stub(PrivacyMetricsService, "getTodayStats").resolves({ total: 1 });
   sandbox
     .stub(feed, "fetchTodayCounts")
     .resolves({ trackersToday: 42, sitesToday: 7, lastUpdated: 123 });
@@ -687,4 +854,309 @@ add_task(async function test_celebration_survives_malformed_state() {
       `Re-seeds a usable baseline after ${raw}`
     );
   }
+});
+
+// --- Enhanced Tracking Protection off state (Bug 2063525) ------------------
+
+const ETP_PREFS = [
+  "network.cookie.cookieBehavior",
+  "privacy.fingerprintingProtection",
+  "privacy.socialtracking.block_cookies.enabled",
+  "privacy.trackingprotection.cryptomining.enabled",
+  "privacy.trackingprotection.enabled",
+  "privacy.trackingprotection.fingerprinting.enabled",
+  "privacy.trackingprotection.socialtracking.enabled",
+];
+
+// "ETP off" is Custom with every blocking option unchecked; there is no single
+// pref for it. Start from that baseline and let each test turn one back on.
+function setEtpAllOff() {
+  Services.prefs.setIntPref("network.cookie.cookieBehavior", 0);
+  Services.prefs.setBoolPref("privacy.fingerprintingProtection", false);
+  Services.prefs.setBoolPref(
+    "privacy.socialtracking.block_cookies.enabled",
+    false
+  );
+  Services.prefs.setBoolPref(
+    "privacy.trackingprotection.cryptomining.enabled",
+    false
+  );
+  Services.prefs.setBoolPref("privacy.trackingprotection.enabled", false);
+  Services.prefs.setBoolPref(
+    "privacy.trackingprotection.fingerprinting.enabled",
+    false
+  );
+  Services.prefs.setBoolPref(
+    "privacy.trackingprotection.socialtracking.enabled",
+    false
+  );
+}
+
+function clearEtpPrefs() {
+  for (const pref of ETP_PREFS) {
+    Services.prefs.clearUserPref(pref);
+  }
+}
+
+// Belt and braces: the tasks below clear up after themselves, but one failing
+// mid-task would otherwise leave the profile's prefs rewritten.
+registerCleanupFunction(clearEtpPrefs);
+
+add_task(async function test_etp_off_when_nothing_is_blocked() {
+  setEtpAllOff();
+  Assert.ok(
+    new PrivacyFeed().isEtpOff(),
+    "Off once every blocking option is unchecked"
+  );
+  clearEtpPrefs();
+});
+
+add_task(async function test_etp_on_by_default() {
+  // The default cookie behavior blocks cross-site trackers, so a profile that
+  // has never touched these prefs is protected. Cleared on entry rather than
+  // trusting the previous task to have tidied up.
+  clearEtpPrefs();
+  Assert.ok(!new PrivacyFeed().isEtpOff(), "On with the shipped defaults");
+});
+
+add_task(async function test_etp_on_when_any_single_option_is_blocking() {
+  // Each option alone is enough to keep the count meaningful, so none of them
+  // may fall through to the off state.
+  const singleOption = [
+    () => Services.prefs.setIntPref("network.cookie.cookieBehavior", 5),
+    () =>
+      Services.prefs.setBoolPref("privacy.trackingprotection.enabled", true),
+    () =>
+      Services.prefs.setBoolPref(
+        "privacy.trackingprotection.cryptomining.enabled",
+        true
+      ),
+    () =>
+      Services.prefs.setBoolPref(
+        "privacy.trackingprotection.fingerprinting.enabled",
+        true
+      ),
+    () => Services.prefs.setBoolPref("privacy.fingerprintingProtection", true),
+  ];
+
+  for (const turnOn of singleOption) {
+    setEtpAllOff();
+    turnOn();
+    Assert.ok(
+      !new PrivacyFeed().isEtpOff(),
+      "One blocking option keeps ETP on"
+    );
+  }
+
+  clearEtpPrefs();
+});
+
+add_task(async function test_etp_social_tracking_needs_a_blocked_category() {
+  // The social cookie pref only counts as blocking when something is actually
+  // blocked for it, matching about:protections' socialEnabled check.
+  setEtpAllOff();
+  Services.prefs.setBoolPref(
+    "privacy.socialtracking.block_cookies.enabled",
+    true
+  );
+  Assert.ok(
+    new PrivacyFeed().isEtpOff(),
+    "Social cookies alone block nothing, so ETP is still off"
+  );
+
+  Services.prefs.setBoolPref("privacy.trackingprotection.enabled", true);
+  Services.prefs.setBoolPref(
+    "privacy.trackingprotection.socialtracking.enabled",
+    true
+  );
+  Assert.ok(
+    !new PrivacyFeed().isEtpOff(),
+    "Social tracking with tracking content on is blocking"
+  );
+
+  clearEtpPrefs();
+});
+
+add_task(async function test_broadcasts_etp_off_with_the_counts() {
+  // The count keeps its last value while protection is off (those trackers
+  // really were blocked earlier today), so the flag is what tells content to
+  // swap in the warning card.
+  setEtpAllOff();
+  const feed = feedWithPrefs({
+    [PREF_WIDGETS_ENABLED]: true,
+    [PREF_PRIVACY_ENABLED]: true,
+    [PREF_SYSTEM_PRIVACY_ENABLED]: true,
+  });
+  const sandbox = sinon.createSandbox();
+  sandbox
+    .stub(PrivacyMetricsService, "getTodayStats")
+    .resolves({ total: 42, trackers: 10, lastUpdated: 123 });
+  sandbox.stub(feed, "getSitesVisitedToday").resolves(7);
+
+  await feed.updateCounts();
+
+  Assert.ok(broadcastCall(feed).data.etpOff, "Broadcasts etpOff on a refresh");
+
+  sandbox.restore();
+  clearEtpPrefs();
+});
+
+add_task(async function test_new_tab_broadcast_carries_etp_off() {
+  // The scheduler path assembles its own broadcast data, so covering
+  // updateCounts() above doesn't cover the broadcast every new tab goes
+  // through. Asserting the true case catches a hardcoded flag as well as a
+  // missing one.
+  setEtpAllOff();
+  const feed = feedWithPrefs({
+    [PREF_WIDGETS_ENABLED]: true,
+    [PREF_PRIVACY_ENABLED]: true,
+    [PREF_SYSTEM_PRIVACY_ENABLED]: true,
+  });
+  const sandbox = sinon.createSandbox();
+  sandbox
+    .stub(feed, "fetchTodayCounts")
+    .resolves({ trackersToday: 42, sitesToday: 7, lastUpdated: 123 });
+  sandbox.stub(feed, "getPeriodTotals").resolves({
+    weekTotal: 0,
+    monthTotal: 0,
+    yearTotal: 0,
+    allTimeTotal: 0,
+    streakDays: 0,
+  });
+  sandbox
+    .stub(feed, "getFeatureFlags")
+    .resolves({ signedIn: false, hasLogins: false, relayMasks: false });
+  sandbox.stub(feed, "getProfileCreatedMs").resolves(0);
+
+  const portID = "port-etp";
+  await feed.onAction({
+    type: actionTypes.NEW_TAB_INIT,
+    data: { portID, browser: {} },
+    meta: { fromTarget: portID },
+  });
+
+  Assert.ok(
+    broadcastCall(feed).data.etpOff,
+    "The new-tab broadcast carries etpOff alongside the message decision"
+  );
+
+  sandbox.restore();
+  clearEtpPrefs();
+});
+
+// Feed with the ETP observers running and updateCounts() stubbed, for the
+// refresh-scheduling tests below. Call feed.uninit() when done.
+function observingFeed(sandbox, prefOverrides = {}) {
+  const feed = feedWithPrefs({
+    [PREF_WIDGETS_ENABLED]: true,
+    [PREF_PRIVACY_ENABLED]: true,
+    [PREF_SYSTEM_PRIVACY_ENABLED]: true,
+    ...prefOverrides,
+  });
+  const updateCounts = sandbox.stub(feed, "updateCounts").resolves();
+  feed.init();
+  return { feed, updateCounts };
+}
+
+add_task(async function test_etp_pref_change_refreshes_the_widget() {
+  // PrefsFeed doesn't forward these prefs, so without the feed's own observers
+  // a toggle wouldn't reach open tabs until the next tick.
+  setEtpAllOff();
+  const sandbox = sinon.createSandbox();
+  const { feed, updateCounts } = observingFeed(sandbox);
+
+  // Turning one blocking option back on flips the derived value off -> on.
+  Services.prefs.setBoolPref("privacy.trackingprotection.enabled", true);
+  Assert.ok(updateCounts.calledOnce, "Turning protection on refreshes");
+
+  feed.uninit();
+  Services.prefs.setBoolPref("privacy.trackingprotection.enabled", false);
+  Assert.ok(updateCounts.calledOnce, "No refresh once the feed is torn down");
+
+  sandbox.restore();
+  clearEtpPrefs();
+});
+
+add_task(async function test_etp_pref_change_ignored_when_widget_is_off() {
+  // The observers run for the feed's lifetime, not just while the widget is
+  // shown, so a toggle with the widget hidden must not fetch or broadcast.
+  setEtpAllOff();
+  const sandbox = sinon.createSandbox();
+  const { feed, updateCounts } = observingFeed(sandbox, {
+    [PREF_PRIVACY_ENABLED]: false,
+  });
+
+  Services.prefs.setBoolPref("privacy.trackingprotection.enabled", true);
+  Assert.ok(updateCounts.notCalled, "No fetch while the widget is hidden");
+
+  // The flip isn't lost: turning the widget back on runs the enablement path,
+  // which recomputes the state from the prefs as they now stand.
+  feed.store.state.Prefs.values[PREF_PRIVACY_ENABLED] = true;
+  await feed.onAction({
+    type: actionTypes.PREF_CHANGED,
+    data: { name: PREF_PRIVACY_ENABLED, value: true },
+  });
+  Assert.ok(updateCounts.calledOnce, "Picked up when the widget comes back");
+
+  feed.uninit();
+  sandbox.restore();
+  clearEtpPrefs();
+});
+
+add_task(async function test_etp_category_switch_refreshes_once() {
+  // Picking a category in about:preferences#privacy rewrites several of these
+  // prefs in one go. Only the derived value matters, so that must cost one
+  // refresh, not one per write (each is a Places query + tracking DB read).
+  setEtpAllOff();
+  const sandbox = sinon.createSandbox();
+  const { feed, updateCounts } = observingFeed(sandbox);
+
+  // Roughly what switching from "everything unchecked" to Standard writes.
+  Services.prefs.setIntPref("network.cookie.cookieBehavior", 5);
+  Services.prefs.setBoolPref("privacy.trackingprotection.enabled", true);
+  Services.prefs.setBoolPref(
+    "privacy.trackingprotection.cryptomining.enabled",
+    true
+  );
+  Services.prefs.setBoolPref(
+    "privacy.trackingprotection.fingerprinting.enabled",
+    true
+  );
+  Services.prefs.setBoolPref(
+    "privacy.trackingprotection.socialtracking.enabled",
+    true
+  );
+
+  Assert.equal(updateCounts.callCount, 1, "Five writes, one refresh");
+
+  feed.uninit();
+  sandbox.restore();
+  clearEtpPrefs();
+});
+
+add_task(async function test_etp_write_that_changes_nothing_does_not_refresh() {
+  // A write inside a category — e.g. unchecking cryptominers while cookies are
+  // still blocked — leaves the widget showing the same card. Starts from the
+  // defaults, so clear on entry rather than trusting the previous task.
+  clearEtpPrefs();
+  const sandbox = sinon.createSandbox();
+  const { feed, updateCounts } = observingFeed(sandbox);
+
+  Services.prefs.setBoolPref(
+    "privacy.trackingprotection.cryptomining.enabled",
+    true
+  );
+  Services.prefs.setBoolPref(
+    "privacy.trackingprotection.cryptomining.enabled",
+    false
+  );
+
+  Assert.ok(
+    updateCounts.notCalled,
+    "Protection stayed on throughout, so nothing to refresh"
+  );
+
+  feed.uninit();
+  sandbox.restore();
+  clearEtpPrefs();
 });

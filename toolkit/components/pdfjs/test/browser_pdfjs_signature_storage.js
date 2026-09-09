@@ -24,7 +24,7 @@ add_task(async function test_js_signature_storage() {
         }
         const HANDLE_SIGNATURE = "PDFJS:Parent:handleSignature";
 
-        const actor = content.windowGlobalChild.getActor("Pdfjs");
+        const actor = content.windowGlobalChild.getActor("PdfJs");
         let all = await actor.sendQuery(HANDLE_SIGNATURE, {
           action: "get",
         });

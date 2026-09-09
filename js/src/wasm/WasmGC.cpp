@@ -17,6 +17,7 @@
 #include "wasm/WasmGC.h"
 
 #include "wasm/WasmInstance.h"
+#include "wasm/WasmSummarizeInsn.h"
 
 #include "jit/MacroAssembler-inl.h"
 
@@ -198,6 +199,12 @@ const char* wasm::NameOfTrap(Trap t) {
       return "StackOverflow";
     case Trap::CheckInterrupt:
       return "CheckInterrupt";
+#  ifdef ENABLE_WASM_JSPI
+    case Trap::ThrowSuspendError:
+      return "ThrowSuspendError";
+#  endif
+    case Trap::Unimplemented:
+      return "Unimplemented";
     case Trap::ThrowReported:
       return "ThrowReported";
     case Trap::Limit:
@@ -207,6 +214,33 @@ const char* wasm::NameOfTrap(Trap t) {
   }
 }
 #endif
+
+bool wasm::TrapMightResume(Trap t) {
+  switch (t) {
+    case Trap::CheckInterrupt:
+      return true;
+    case Trap::Unreachable:
+    case Trap::IntegerOverflow:
+    case Trap::InvalidConversionToInteger:
+    case Trap::IntegerDivideByZero:
+    case Trap::OutOfBounds:
+    case Trap::UnalignedAccess:
+    case Trap::IndirectCallToNull:
+    case Trap::IndirectCallBadSig:
+    case Trap::NullPointerDereference:
+    case Trap::BadCast:
+    case Trap::StackOverflow:
+#ifdef ENABLE_WASM_JSPI
+    case Trap::ThrowSuspendError:
+#endif
+    case Trap::Unimplemented:
+    case Trap::ThrowReported:
+      return false;
+    case Trap::Limit:
+      break;
+  }
+  MOZ_CRASH();
+}
 
 bool wasm::GenerateStackmapEntriesForTrapExit(
     const ArgTypeVector& args, const RegisterOffsets& trapExitLayout,
@@ -407,57 +441,238 @@ void wasm::CheckWholeCellLastElementCache(MacroAssembler& masm,
 }
 
 #ifdef DEBUG
-bool wasm::IsPlausibleStackMapKey(const uint8_t* nextPC) {
+bool wasm::IsPlausibleStackMapKey(const uint8_t* base,
+                                  uint32_t stackmapOffset) {
+  // See block comment at the declaration of this function for explanation.
+  const uint8_t* nextPC = base + size_t(stackmapOffset);
+
+  // Most stackmaps are associated with call instructions.  Look backwards to
+  // see if that's plausible, while being aware of the limitations described in
+  // the abovementioned block comment, at least for targets with variable-length
+  // insn encodings (x86, x64, Arm-Thumb2 [which we don't generate],
+  // RiscV-compressed [which we don't currently generate]).
+
 #  if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
   const uint8_t* insn = nextPC;
-  return (insn[-2] == 0x0F && insn[-1] == 0x0B) ||           // ud2
-         (insn[-2] == 0xFF && (insn[-1] & 0xF8) == 0xD0) ||  // call *%r_
-         insn[-5] == 0xE8;                                   // call simm32
-
-#  elif defined(JS_CODEGEN_ARM)
-  const uint32_t* insn = (const uint32_t*)nextPC;
-  return ((uintptr_t(insn) & 3) == 0) &&            // must be ARM, not Thumb
-         (insn[-1] == 0xe7f000f0 ||                 // udf
-          (insn[-1] & 0xfffffff0) == 0xe12fff30 ||  // blx reg (ARM, enc A1)
-          (insn[-1] & 0x0f000000) == 0x0b000000);  // bl.cc simm24 (ARM, enc A1)
+  if ((insn[-2] == 0xFF && (insn[-1] & 0xF8) == 0xD0) ||  // call *%r_
+      insn[-5] == 0xE8) {                                 // call simm32
+    return true;
+  }
 
 #  elif defined(JS_CODEGEN_ARM64)
-  const uint32_t hltInsn = 0xd4a00000;
+  if ((uintptr_t(nextPC) & 3) != 0) {
+    return false;  // misaligned
+  }
   const uint32_t* insn = (const uint32_t*)nextPC;
-  return ((uintptr_t(insn) & 3) == 0) &&
-         (insn[-1] == hltInsn ||                    // hlt
-          (insn[-1] & 0xfffffc1f) == 0xd63f0000 ||  // blr reg
-          (insn[-1] & 0xfc000000) == 0x94000000);   // bl simm26
+  if (((insn[-1] & 0xfffffc1f) == 0xd63f0000) ||  // blr reg
+      ((insn[-1] & 0xfc000000) == 0x94000000)) {  // bl simm26
+    return true;
+  }
+
+#  elif defined(JS_CODEGEN_ARM)
+  if ((uintptr_t(nextPC) & 3) != 0) {
+    return false;  // misaligned or Thumb
+  }
+  const uint32_t* insn = (const uint32_t*)nextPC;
+  if (((insn[-1] & 0xfffffff0) == 0xe12fff30) ||  // blx reg (ARM, enc A1)
+      ((insn[-1] & 0x0f000000) == 0x0b000000)) {  // bl.cc simm24 (ARM, enc A1)
+    return true;
+  }
+
+#  elif defined(JS_CODEGEN_RISCV64)
+  if ((uintptr_t(nextPC) & 3) != 0) {
+    return false;  // misaligned
+  }
+  const uint32_t* insn = (const uint32_t*)nextPC;
+  if (((insn[-1] & kBaseOpcodeMask) == JALR) ||  // jalr
+      ((insn[-1] & kBaseOpcodeMask) == JAL) ||   // jal
+      ((insn[-2] & kBaseOpcodeMask) == JAL &&
+       insn[-1] == 0x00000013 /* addi zero, zero, 0 */)) {  // jal; nop
+    return true;
+  }
 
 #  elif defined(JS_CODEGEN_MIPS64)
-  // TODO (bug 1699696): Implement this.  As for the platforms above, we need to
-  // enumerate all code sequences that can precede the stackmap location.
+  // TODO (bug 1699696): Implement this.  As with the platforms above, we need
+  // to identify call instructions that we generate.
+  // FIXME (also for Loong64): this should be implemented properly.  Not doing
+  // so increases the likelyhood of the trap/stackmap machinery having
+  // undetected bugs on these targets.
   return true;
+
 #  elif defined(JS_CODEGEN_LOONG64)
   // TODO(loong64): Implement IsValidStackMapKey.
   return true;
-#  elif defined(JS_CODEGEN_RISCV64)
-  const uint32_t* insn = reinterpret_cast<const uint32_t*>(nextPC);
-  return (((uintptr_t(insn) & 3) == 0) &&
-          ((insn[-1] == 0x00006037 && insn[-2] == 0x00100073) ||  // break;
-           ((insn[-1] & kBaseOpcodeMask) == JALR) ||              // jalr
-           ((insn[-1] & kBaseOpcodeMask) == JAL) ||               // jal
-           ((insn[-2] & kBaseOpcodeMask) == JAL &&
-            insn[-1] == 0x00000013 /* addi zero, zero, 0 */) ||  // jal; nop
-           (insn[-1] == 0xc0035073)));  // "csrwi csr_cycle, 0x6";
+
 #  else
-  MOZ_CRASH("IsValidStackMapKey: requires implementation on this platform");
+  MOZ_CRASH(
+      "IsValidStackMapKey: call-instruction identification "
+      "requires implementation on this platform");
 #  endif
+
+  // It's not associated with a call instruction, so it must instead be
+  // associated with some instruction that can trap.  We can check that by using
+  // SummarizeTrapInstruction, and for that we need the start point of the
+  // instruction, but what we have to hand is the start point of the following
+  // instruction.  So the best we can do is to use SummarizeTrapInstruction to
+  // inspect up to one-instruction-length's worth of byte offsets before
+  // `nextPC`, to see if any of them is a trapping instruction of the right kind
+  // and length.
+
+  // The minimum and maximum instruction lengths we are looking for, with
+  // clamping so we don't back up into negative offset land.
+  uint32_t minLen =
+      std::min(stackmapOffset, FaultingCodeRange::minInsnLength());
+  uint32_t maxLen =
+      std::min(stackmapOffset, FaultingCodeRange::maxInsnLength());
+
+  uint32_t len = 0;
+  bool found = false;
+  SummarizeResult summary;
+
+  // Inspect instructions in `nextPC -minLen, -(minLen+1), .. -maxLen`, to see
+  // if any of them are a trapping instruction of the right kind.
+  for (len = minLen; len <= maxLen; len++) {
+    const uint8_t* maybeTrappingInsn = (uint8_t*)nextPC - len;
+    summary = SummarizeTrapInstruction(maybeTrappingInsn);
+    if (!summary.identified()) {
+      // Wasn't identified.  In effect, not found.
+      continue;
+    }
+    if (summary.length() != len) {
+      // Was identified, but is the wrong length.
+      continue;
+    }
+    // So we've found something plausible.
+    found = true;
+    MOZ_ASSERT(maybeTrappingInsn + len == nextPC);
+    break;
+  }
+
+  if (!found) {
+    // There's no mention of a trapping instruction that immediately precedes
+    // `nextPC`.  Give up.  Note that we can also get here if
+    // SummarizeTrapInstruction fails to identify a valid trapping insn, or
+    // fails to compute its length.  That would be a bug in
+    // SummarizeTrapInstruction, which should be fixed.
+    return false;
+  }
+
+  // The instruction was identified and has the right length.
+  MOZ_ASSERT(summary.kind() != TrapMachineInsn::INVALID);
+  return true;
 }
 #endif
 
 void StackMaps::checkInvariants(const uint8_t* base) const {
 #ifdef DEBUG
-  // Chech that each entry points from the stackmap structure points
-  // to a plausible instruction.
+  // Check that each entry in the stackmap hash table points to a plausible
+  // instruction.
   for (auto iter = codeOffsetToStackMap_.iter(); !iter.done(); iter.next()) {
-    MOZ_ASSERT(IsPlausibleStackMapKey(base + iter.get().key()),
+    MOZ_ASSERT(IsPlausibleStackMapKey(base, iter.get().key()),
                "wasm stackmap does not reference a valid insn");
   }
 #endif
 }
+
+#ifdef DEBUG
+void wasm::CheckStackMapsForTraps(const jit::MacroAssembler& masm,
+                                  const StackMaps& stackMaps,
+                                  const TrapSitesFrontierArray& trapSitesBefore,
+                                  const TrapSitesFrontierArray& trapSitesAfter,
+                                  bool (*checkThisTrapKind)(Trap)) {
+  // Collect some stats
+  uint32_t numTrapsTotal = 0;
+  uint32_t numTrapsToCheck = 0;
+  for (Trap kind : mozilla::MakeEnumeratedRange(Trap::Limit)) {
+    MOZ_ASSERT(trapSitesBefore[kind] <= trapSitesAfter[kind]);
+    size_t kindCount = trapSitesAfter[kind] - trapSitesBefore[kind];
+    numTrapsTotal += kindCount;
+    if (checkThisTrapKind(kind)) {
+      numTrapsToCheck += kindCount;
+    }
+  }
+
+  JitSpew(JitSpew_Codegen,
+          "Verifying stackmaps: %u trapSites total, %u to check", numTrapsTotal,
+          numTrapsToCheck);
+
+  // Perform the actual checking
+  bool stackmapCheckOK = true;
+
+  for (Trap kind : mozilla::MakeEnumeratedRange(Trap::Limit)) {
+    size_t kindCount = trapSitesAfter[kind] - trapSitesBefore[kind];
+    if (kindCount > 0 && !checkThisTrapKind(kind)) {
+      JitSpew(JitSpew_Codegen, "  skipping  %zu trapSites of kind %s",
+              kindCount, NameOfTrap(kind));
+      continue;
+    }
+
+    const TrapSitesForKind& sitesForKind = masm.trapSites().get(kind);
+    // Strictly speaking, this doesn't need to be true.  However, we expect
+    // callers to use this routine to check trapsites they have just generated,
+    // not to check some arbitrary slice of older trapsites.
+    MOZ_ASSERT(sitesForKind.length() == trapSitesAfter[kind]);
+
+    for (uint32_t tsi = trapSitesBefore[kind]; tsi < trapSitesAfter[kind];
+         tsi++) {
+      // This is the offset of the first byte of the trapping instruction.  In
+      // order to verify it has a stackmap, we need to find the associated
+      // stackmap key, by adding the length of the instruction onto the
+      // trapsite key.  And we find the length by asking
+      // SummarizeTrapInstruction.
+      uint32_t trapsiteKey = sitesForKind.getPCoffset(tsi);
+
+      SummarizeResult summary = SummarizeTrapInstruction(masm, trapsiteKey);
+      if (!summary.identified()) {
+        JitSpew(JitSpew_Codegen,
+                "  FAIL     could not identify trap insn at 0x%06x",
+                trapsiteKey);
+        // Failure of this is serious: it means the trapsiteKey we got doesn't
+        // point at a plausible trap instruction.
+        MOZ_CRASH(
+            "wasm::CheckStackMapsForTraps: "
+            "could not identify trapping instruction");
+      }
+
+      JitSpew(JitSpew_Codegen,
+              "  checking  tsKey=0x%06x  tsKind=%s  "
+              "insn.len=%u  insn.tmi=%s",
+              trapsiteKey, NameOfTrap(kind), summary.length(),
+              ToString(summary.kind()));
+
+      // So this is the stack map key we expect.
+      uint32_t stackmapKey = trapsiteKey + summary.length();
+      const StackMap* stackmap = stackMaps.lookup(stackmapKey);
+      stackmapCheckOK = stackmapCheckOK && !!stackmap;
+      JitSpew(JitSpew_Codegen, "   %s  tsKey=0x%06x  smKey=0x%06x  kind=%s",
+              stackmap ? "present" : "MISSING", trapsiteKey, stackmapKey,
+              NameOfTrap(kind));
+      if (!stackmap) {
+        // There are two reasons we can get here.  The more obvious is that
+        // there isn't a stackmap corresponding to the trap at `trapsiteKey`,
+        // so the fix is to add one.
+        //
+        // The less obvious reason is that there is a stackmap, but
+        // SummarizeTrapInstruction computes an incorrect `summary.length()`,
+        // hence `stackmapKey` is wrong.  On x86_{32,64}, instruction length
+        // computation is non-trivial, so this is a real possibility that
+        // should be investigated.
+        //
+        // Recall that the key used to create a stackmap for a trap is derived
+        // from the trapping instruction's FaultingCodeRange, which is derived
+        // from assembler offsets, and is not computed by
+        // SummarizeTrapInstruction.  Hence, technically, an incorrect
+        // `stackmapKey` value indicates an inconsistency between the length
+        // from the FaultingCodeRange and the length as computed by
+        // SummarizeTrapInstruction.  Given that the FaultingCodeRange
+        // mechanism is very simple, it's more likely SummarizeTrapInstruction
+        // is wrong.
+        MOZ_CRASH(
+            "wasm::CheckStackMapsForTraps: "
+            "trapping instruction lacks a stackmap");
+      }
+    }
+  }
+  MOZ_ASSERT(stackmapCheckOK);
+}
+#endif

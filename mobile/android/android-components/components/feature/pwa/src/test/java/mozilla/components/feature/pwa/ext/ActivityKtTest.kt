@@ -20,10 +20,11 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 
 class ActivityKtTest {
-    private val baseManifest = WebAppManifest(
-        name = "Test Manifest",
-        startUrl = "/",
-    )
+    private val baseManifest =
+        WebAppManifest(
+            name = "Test Manifest",
+            startUrl = "/",
+        )
 
     private lateinit var activity: Activity
     private lateinit var logger: Logger

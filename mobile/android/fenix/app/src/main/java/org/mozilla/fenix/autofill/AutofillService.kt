@@ -8,9 +8,7 @@ import mozilla.components.feature.autofill.AbstractAutofillService
 import mozilla.components.feature.autofill.AutofillConfiguration
 import org.mozilla.fenix.ext.components
 
-/**
- * Service responsible for implementing Android's Autofill framework.
- */
+/** Service responsible for implementing Android's Autofill framework. */
 class AutofillService : AbstractAutofillService() {
     override val configuration: AutofillConfiguration by lazy { components.autofillConfiguration }
 }

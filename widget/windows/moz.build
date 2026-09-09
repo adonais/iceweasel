@@ -211,6 +211,7 @@ USE_LIBS += [
 
 OS_LIBS += [
     "ktmw32",
+    "pathcch",
     "rpcrt4",
     "shcore",
     "urlmon",
@@ -240,5 +241,7 @@ if CONFIG["MOZ_WINDOWSAPPSDK_DIR"]:
             "Microsoft.UI.Input.dll",
             "Microsoft.UI.Windowing.Core.dll",
             "Microsoft.UI.Windowing.dll",
+            "Microsoft.WindowsAppRuntime.dll",
+            "Microsoft.WindowsAppRuntime.Insights.Resource.dll",
         )
     ]

@@ -17,16 +17,13 @@ import org.mozilla.focus.ext.components
 private const val ENGINE_TYPE_CUSTOM = "custom"
 private const val ENGINE_TYPE_BUNDLED = "bundled"
 
-/**
- * A search engine list preference that uses radio buttons to allow selecting a single engine.
- */
+/** A search engine list preference that uses radio buttons to allow selecting a single engine. */
 class RadioSearchEngineListPreference : SearchEngineListPreference, RadioGroup.OnCheckedChangeListener {
 
     override val itemResId: Int
         get() = R.layout.search_engine_radio_button
 
-    @Suppress("unused")
-    constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
+    @Suppress("unused") constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
 
     @Suppress("unused")
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
@@ -47,7 +44,7 @@ class RadioSearchEngineListPreference : SearchEngineListPreference, RadioGroup.O
         val hasProperState = selectedEngine.isPressed || selectedEngine.isAccessibilityFocused
 
         /* onCheckedChanged is called intermittently before the search engine table is full, so we
-           must check these conditions to prevent crashes and inconsistent states. */
+        must check these conditions to prevent crashes and inconsistent states. */
         if (group.childCount != searchEngines.count() || !hasProperState) {
             return
         }
@@ -56,11 +53,12 @@ class RadioSearchEngineListPreference : SearchEngineListPreference, RadioGroup.O
 
         context.components.searchUseCases.selectSearchEngine(newDefaultEngine)
 
-        val source = if (newDefaultEngine.type == SearchEngine.Type.CUSTOM) {
-            ENGINE_TYPE_CUSTOM
-        } else {
-            ENGINE_TYPE_BUNDLED
-        }
+        val source =
+            if (newDefaultEngine.type == SearchEngine.Type.CUSTOM) {
+                ENGINE_TYPE_CUSTOM
+            } else {
+                ENGINE_TYPE_BUNDLED
+            }
 
         SearchEngines.setDefault.record(SearchEngines.SetDefaultExtra(source))
     }

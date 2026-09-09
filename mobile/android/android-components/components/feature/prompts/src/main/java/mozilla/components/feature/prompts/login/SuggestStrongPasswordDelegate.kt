@@ -6,14 +6,10 @@ package mozilla.components.feature.prompts.login
 
 import mozilla.components.feature.prompts.concept.PasswordPromptView
 
-/**
- * Delegate to display the suggest strong password prompt.
- */
+/** Delegate to display the suggest strong password prompt. */
 interface SuggestStrongPasswordDelegate {
 
-    /**
-     * The [PasswordPromptView] used for [StrongPasswordPromptViewListener] to display a simple prompt.
-     */
+    /** The [PasswordPromptView] used for [StrongPasswordPromptViewListener] to display a simple prompt. */
     val strongPasswordPromptViewListenerView: PasswordPromptView?
         get() = null
 }

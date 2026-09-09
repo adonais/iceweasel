@@ -19,26 +19,26 @@ import org.jetbrains.kotlin.psi.psiUtil.getStrictParentOfType
 /**
  * Lints against `MaterialTheme.typography` in apps that provide their own typography.
  *
- * `appTypographyName` is an optional parameter provided to the detekt rule config that is used to
- * specify the full import namespace for where to access the `typography` properties from
- * (e.g. org.mozilla.fenix.theme.FirefoxTheme.typography).
+ * `appTypographyName` is an optional parameter provided to the detekt rule config that is used to specify the full
+ * import namespace for where to access the `typography` properties from (e.g.
+ * org.mozilla.fenix.theme.FirefoxTheme.typography).
  */
 class MaterialTypographyUsageRule(config: Config = Config.empty) : Rule(config) {
     override val issue: Issue
-        get() = Issue(
-            id = "MaterialTypographyUsage",
-            severity = Severity.Maintainability,
-            description = "MaterialTheme.typography should not be used directly in apps " +
-                "that provide their own typography. Use the app-level typography instead.",
-            debt = Debt.FIVE_MINS,
-        )
+        get() =
+            Issue(
+                id = "MaterialTypographyUsage",
+                severity = Severity.Maintainability,
+                description =
+                    "MaterialTheme.typography should not be used directly in apps " +
+                        "that provide their own typography. Use the app-level typography instead.",
+                debt = Debt.FIVE_MINS,
+            )
 
     private val appTypographyName: String
         get() = valueOrDefault(key = APP_TYPOGRAPHY_NAME_KEY, default = "")
 
-    /**
-     * Report a code smell if FORBIDDEN_IMPORT is found in the imports.
-     */
+    /** Report a code smell if FORBIDDEN_IMPORT is found in the imports. */
     override fun visitImportDirective(importDirective: KtImportDirective) {
         super.visitImportDirective(importDirective)
 
@@ -49,10 +49,7 @@ class MaterialTypographyUsageRule(config: Config = Config.empty) : Rule(config) 
         }
     }
 
-    /**
-     * Report a code smell for `MaterialTheme.typography` or
-     * `androidx.compose.material3.MaterialTheme` usage.
-     */
+    /** Report a code smell for `MaterialTheme.typography` or `androidx.compose.material3.MaterialTheme` usage. */
     override fun visitDotQualifiedExpression(expression: KtDotQualifiedExpression) {
         super.visitDotQualifiedExpression(expression)
 
@@ -63,8 +60,7 @@ class MaterialTypographyUsageRule(config: Config = Config.empty) : Rule(config) 
         val receiver = expression.receiverExpression.text
         val selector = expression.selectorExpression?.text
 
-        val isForbiddenReceiver = receiver == FORBIDDEN_RECEIVER ||
-            receiver == "$FORBIDDEN_PACKAGE.$FORBIDDEN_RECEIVER"
+        val isForbiddenReceiver = receiver == FORBIDDEN_RECEIVER || receiver == "$FORBIDDEN_PACKAGE.$FORBIDDEN_RECEIVER"
 
         if (isForbiddenReceiver && selector == FORBIDDEN_SELECTOR) {
             reportCodeSmell(expression)
@@ -80,7 +76,7 @@ class MaterialTypographyUsageRule(config: Config = Config.empty) : Rule(config) 
                 issue = issue,
                 entity = Entity.from(element = element),
                 message = "Use $name instead of $FORBIDDEN_RECEIVER.$FORBIDDEN_SELECTOR.",
-            ),
+            )
         )
     }
 

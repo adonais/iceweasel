@@ -32,11 +32,12 @@ class ManifestUpdateFeatureTest {
     private lateinit var store: BrowserStore
 
     private val sessionId = "external-app-session-id"
-    private val baseManifest = WebAppManifest(
-        name = "Mozilla",
-        startUrl = "https://mozilla.org",
-        scope = "https://mozilla.org",
-    )
+    private val baseManifest =
+        WebAppManifest(
+            name = "Mozilla",
+            startUrl = "https://mozilla.org",
+            scope = "https://mozilla.org",
+        )
 
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
@@ -46,220 +47,226 @@ class ManifestUpdateFeatureTest {
         storage = mock()
         shortcutManager = mock()
 
-        store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(
-                    createCustomTab("https://mozilla.org", id = sessionId),
-                ),
-            ),
-        )
+        store = BrowserStore(BrowserState(customTabs = listOf(createCustomTab("https://mozilla.org", id = sessionId))))
     }
 
     @Test
-    fun `start and stop handle null session`() = runTest(testDispatcher) {
-        val feature = ManifestUpdateFeature(
-            testContext,
-            store,
-            shortcutManager,
-            storage,
-            "not existing",
-            baseManifest,
-            mainScope = testScope,
-        )
+    fun `start and stop handle null session`() =
+        runTest(testDispatcher) {
+            val feature =
+                ManifestUpdateFeature(
+                    testContext,
+                    store,
+                    shortcutManager,
+                    storage,
+                    "not existing",
+                    baseManifest,
+                    mainScope = testScope,
+                )
 
-        feature.start()
-        testScheduler.advanceUntilIdle()
+            feature.start()
+            testScheduler.advanceUntilIdle()
 
-        feature.stop()
+            feature.stop()
 
-        verify(storage).updateManifestUsedAt(baseManifest)
-        verify(storage, never()).updateManifest(any())
-    }
-
-    @Test
-    fun `Last usage is updated when feature is started`() = runTest(testDispatcher) {
-        val feature = ManifestUpdateFeature(
-            testContext,
-            store,
-            shortcutManager,
-            storage,
-            sessionId,
-            baseManifest,
-            mainScope = testScope,
-        )
-
-        // Insert base manifest
-        store.dispatch(
-            ContentAction.UpdateWebAppManifestAction(
-                sessionId,
-                baseManifest,
-            ),
-        )
-
-        feature.start()
-        testScheduler.advanceUntilIdle()
-
-        feature.updateUsageJob!!
-
-        verify(storage).updateManifestUsedAt(baseManifest)
-    }
+            verify(storage).updateManifestUsedAt(baseManifest)
+            verify(storage, never()).updateManifest(any())
+        }
 
     @Test
-    fun `updateStoredManifest is called when the manifest changes`() = runTest(testDispatcher) {
-        val feature = ManifestUpdateFeature(
-            testContext,
-            store,
-            shortcutManager,
-            storage,
-            sessionId,
-            baseManifest,
-            testScope,
-        )
+    fun `Last usage is updated when feature is started`() =
+        runTest(testDispatcher) {
+            val feature =
+                ManifestUpdateFeature(
+                    testContext,
+                    store,
+                    shortcutManager,
+                    storage,
+                    sessionId,
+                    baseManifest,
+                    mainScope = testScope,
+                )
 
-        // Insert base manifest
-        store.dispatch(
-            ContentAction.UpdateWebAppManifestAction(
-                sessionId,
-                baseManifest,
-            ),
-        )
+            // Insert base manifest
+            store.dispatch(
+                ContentAction.UpdateWebAppManifestAction(
+                    sessionId,
+                    baseManifest,
+                )
+            )
 
-        feature.start()
-        testScheduler.advanceUntilIdle()
+            feature.start()
+            testScheduler.advanceUntilIdle()
 
-        val newManifest = baseManifest.copy(shortName = "Moz")
+            feature.updateUsageJob!!
 
-        // Update manifest
-        store.dispatch(
-            ContentAction.UpdateWebAppManifestAction(
-                sessionId,
-                newManifest,
-            ),
-        )
-        testScheduler.advanceUntilIdle()
-
-        feature.updateJob!!
-
-        verify(storage).updateManifest(newManifest)
-    }
+            verify(storage).updateManifestUsedAt(baseManifest)
+        }
 
     @Test
-    fun `updateStoredManifest is not called when the manifest is the same`() = runTest(testDispatcher) {
-        val feature = ManifestUpdateFeature(
-            testContext,
-            store,
-            shortcutManager,
-            storage,
-            sessionId,
-            baseManifest,
-            testScope,
-        )
+    fun `updateStoredManifest is called when the manifest changes`() =
+        runTest(testDispatcher) {
+            val feature =
+                ManifestUpdateFeature(
+                    testContext,
+                    store,
+                    shortcutManager,
+                    storage,
+                    sessionId,
+                    baseManifest,
+                    testScope,
+                )
 
-        feature.start()
-        testScheduler.advanceUntilIdle()
+            // Insert base manifest
+            store.dispatch(
+                ContentAction.UpdateWebAppManifestAction(
+                    sessionId,
+                    baseManifest,
+                )
+            )
 
-        // Update manifest
-        store.dispatch(
-            ContentAction.UpdateWebAppManifestAction(
-                sessionId,
-                baseManifest,
-            ),
-        )
+            feature.start()
+            testScheduler.advanceUntilIdle()
 
-        feature.updateJob
+            val newManifest = baseManifest.copy(shortName = "Moz")
 
-        verify(storage, never()).updateManifest(any())
-    }
+            // Update manifest
+            store.dispatch(
+                ContentAction.UpdateWebAppManifestAction(
+                    sessionId,
+                    newManifest,
+                )
+            )
+            testScheduler.advanceUntilIdle()
 
-    @Test
-    fun `updateStoredManifest is not called when the manifest is removed`() = runTest(testDispatcher) {
-        val feature = ManifestUpdateFeature(
-            testContext,
-            store,
-            shortcutManager,
-            storage,
-            sessionId,
-            baseManifest,
-            testScope,
-        )
+            feature.updateJob!!
 
-        // Insert base manifest
-        store.dispatch(
-            ContentAction.UpdateWebAppManifestAction(
-                sessionId,
-                baseManifest,
-            ),
-        )
-
-        feature.start()
-        testScheduler.advanceUntilIdle()
-
-        // Update manifest
-        store.dispatch(
-            ContentAction.RemoveWebAppManifestAction(
-                sessionId,
-            ),
-        )
-
-        feature.updateJob
-
-        verify(storage, never()).updateManifest(any())
-    }
+            verify(storage).updateManifest(newManifest)
+        }
 
     @Test
-    fun `updateStoredManifest is not called when the manifest has a different start URL`() = runTest(testDispatcher) {
-        val feature = ManifestUpdateFeature(
-            testContext,
-            store,
-            shortcutManager,
-            storage,
-            sessionId,
-            baseManifest,
-            testScope,
-        )
+    fun `updateStoredManifest is not called when the manifest is the same`() =
+        runTest(testDispatcher) {
+            val feature =
+                ManifestUpdateFeature(
+                    testContext,
+                    store,
+                    shortcutManager,
+                    storage,
+                    sessionId,
+                    baseManifest,
+                    testScope,
+                )
 
-        // Insert base manifest
-        store.dispatch(
-            ContentAction.UpdateWebAppManifestAction(
-                sessionId,
-                baseManifest,
-            ),
-        )
+            feature.start()
+            testScheduler.advanceUntilIdle()
 
-        feature.start()
-        testScheduler.advanceUntilIdle()
+            // Update manifest
+            store.dispatch(
+                ContentAction.UpdateWebAppManifestAction(
+                    sessionId,
+                    baseManifest,
+                )
+            )
 
-        // Update manifest
-        store.dispatch(
-            ContentAction.UpdateWebAppManifestAction(
-                sessionId,
-                WebAppManifest(name = "Mozilla", startUrl = "https://netscape.com"),
-            ),
-        )
+            feature.updateJob
 
-        feature.updateJob
-
-        verify(storage, never()).updateManifest(any())
-    }
+            verify(storage, never()).updateManifest(any())
+        }
 
     @Test
-    fun `updateStoredManifest updates storage and shortcut`() = runTest(testDispatcher) {
-        val feature = ManifestUpdateFeature(testContext, store, shortcutManager, storage, sessionId, baseManifest, testScope)
+    fun `updateStoredManifest is not called when the manifest is removed`() =
+        runTest(testDispatcher) {
+            val feature =
+                ManifestUpdateFeature(
+                    testContext,
+                    store,
+                    shortcutManager,
+                    storage,
+                    sessionId,
+                    baseManifest,
+                    testScope,
+                )
 
-        val manifest = baseManifest.copy(shortName = "Moz")
-        feature.updateStoredManifest(manifest)
+            // Insert base manifest
+            store.dispatch(
+                ContentAction.UpdateWebAppManifestAction(
+                    sessionId,
+                    baseManifest,
+                )
+            )
 
-        verify(storage).updateManifest(manifest)
-        verify(shortcutManager).updateShortcuts(testContext, listOf(manifest))
-    }
+            feature.start()
+            testScheduler.advanceUntilIdle()
+
+            // Update manifest
+            store.dispatch(ContentAction.RemoveWebAppManifestAction(sessionId))
+
+            feature.updateJob
+
+            verify(storage, never()).updateManifest(any())
+        }
 
     @Test
-    fun `start updates last web app usage`() = runTest(testDispatcher) {
-        val feature = ManifestUpdateFeature(testContext, store, shortcutManager, storage, sessionId, baseManifest, testScope)
+    fun `updateStoredManifest is not called when the manifest has a different start URL`() =
+        runTest(testDispatcher) {
+            val feature =
+                ManifestUpdateFeature(
+                    testContext,
+                    store,
+                    shortcutManager,
+                    storage,
+                    sessionId,
+                    baseManifest,
+                    testScope,
+                )
 
-        feature.start()
-        testScheduler.advanceUntilIdle()
+            // Insert base manifest
+            store.dispatch(
+                ContentAction.UpdateWebAppManifestAction(
+                    sessionId,
+                    baseManifest,
+                )
+            )
 
-        verify(storage).updateManifestUsedAt(baseManifest)
-    }
+            feature.start()
+            testScheduler.advanceUntilIdle()
+
+            // Update manifest
+            store.dispatch(
+                ContentAction.UpdateWebAppManifestAction(
+                    sessionId,
+                    WebAppManifest(name = "Mozilla", startUrl = "https://netscape.com"),
+                )
+            )
+
+            feature.updateJob
+
+            verify(storage, never()).updateManifest(any())
+        }
+
+    @Test
+    fun `updateStoredManifest updates storage and shortcut`() =
+        runTest(testDispatcher) {
+            val feature =
+                ManifestUpdateFeature(testContext, store, shortcutManager, storage, sessionId, baseManifest, testScope)
+
+            val manifest = baseManifest.copy(shortName = "Moz")
+            feature.updateStoredManifest(manifest)
+
+            verify(storage).updateManifest(manifest)
+            verify(shortcutManager).updateShortcuts(testContext, listOf(manifest))
+        }
+
+    @Test
+    fun `start updates last web app usage`() =
+        runTest(testDispatcher) {
+            val feature =
+                ManifestUpdateFeature(testContext, store, shortcutManager, storage, sessionId, baseManifest, testScope)
+
+            feature.start()
+            testScheduler.advanceUntilIdle()
+
+            verify(storage).updateManifestUsedAt(baseManifest)
+        }
 }

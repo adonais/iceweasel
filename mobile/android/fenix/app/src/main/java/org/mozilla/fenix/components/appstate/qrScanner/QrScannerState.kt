@@ -16,9 +16,7 @@ data class QrScannerState(
     val inProgress: Boolean,
     val lastScanData: String?,
 ) {
-    /**
-     * Holds default QrScannerState.
-     */
+    /** Holds default QrScannerState. */
     companion object {
         val DEFAULT = QrScannerState(isRequesting = false, inProgress = false, lastScanData = null)
     }

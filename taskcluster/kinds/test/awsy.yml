@@ -5,6 +5,7 @@
 task-defaults:
     suite: awsy
     max-run-time: 7200
+    use-python: system
     instance-size: xlarge-noscratch
     worker-type:
         by-test-platform:

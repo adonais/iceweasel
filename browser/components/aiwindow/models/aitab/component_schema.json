@@ -1,0 +1,833 @@
+[
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "page",
+    "title": "Generated page",
+    "description": "A composed page: an optional header, an ordered array of body blocks, and an optional footer. Body blocks are six families (text / table / cards / list / timeline / highlight), each self-identifying via `type` and choosing a `layout`. Rendered with the Mozilla design-token system (light).",
+    "type": "object",
+    "required": ["blocks"],
+    "additionalProperties": false,
+    "properties": {
+      "version": {
+        "type": "string",
+        "description": "Optional schema/version tag, e.g. \"2\"."
+      },
+      "header": { "$ref": "header" },
+      "blocks": {
+        "type": "array",
+        "description": "Ordered body content. Each item is discriminated by its `type`.",
+        "items": {
+          "oneOf": [
+            { "$ref": "text" },
+            { "$ref": "table" },
+            { "$ref": "cards" },
+            { "$ref": "list" },
+            { "$ref": "timeline" },
+            { "$ref": "highlight" }
+          ]
+        }
+      },
+      "footer": { "$ref": "footer" }
+    },
+    "examples": [
+      {
+        "version": "2",
+        "header": {
+          "type": "header",
+          "eyebrow": "From your open tabs",
+          "icon": "🏨",
+          "title": "Places to Stay on Niijima",
+          "subhead": "Three saved listings, compared"
+        },
+        "blocks": [
+          {
+            "type": "highlight",
+            "layout": "full-width",
+            "eyebrow": "The short answer",
+            "title": "Yado Marubun is the pick unless price is the deciding factor.",
+            "body": "Best-reviewed and closest to the port; $106/night more than the cheapest."
+          },
+          {
+            "type": "table",
+            "layout": "ranked",
+            "title": "Hotel Comparison",
+            "description": "The best options gathered from your open tabs",
+            "itemType": "Hotel",
+            "fields": [
+              {
+                "key": "name",
+                "label": "Name",
+                "type": "text",
+                "role": "title",
+                "property": "name"
+              },
+              {
+                "key": "source",
+                "label": "",
+                "type": "text",
+                "role": "subtitle"
+              },
+              {
+                "key": "price",
+                "label": "Price",
+                "type": "currency",
+                "role": "detail",
+                "sortable": true,
+                "suffix": " / night",
+                "property": "offers.price",
+                "goal": "min"
+              },
+              {
+                "key": "rating",
+                "label": "Rating",
+                "type": "rating",
+                "role": "detail",
+                "sortable": true,
+                "max": 5,
+                "property": "aggregateRating.ratingValue",
+                "goal": "max"
+              },
+              {
+                "key": "url",
+                "label": "Open",
+                "type": "url",
+                "role": "action",
+                "property": "url"
+              }
+            ],
+            "data": [
+              {
+                "name": "Nijima Escape",
+                "source": "airbnb.com",
+                "price": 109,
+                "rating": 3.9,
+                "url": "https://www.airbnb.com"
+              },
+              {
+                "name": "Yado Marubun",
+                "source": "expedia.com",
+                "price": 215,
+                "rating": 4.9,
+                "url": "https://www.expedia.com"
+              }
+            ]
+          }
+        ],
+        "footer": {
+          "type": "footer",
+          "text": "Keep it going",
+          "buttons": [
+            { "text": "Turn this into cards", "href": "app://views/relayout" },
+            { "text": "Add a block", "href": "app://views/add" }
+          ]
+        }
+      }
+    ]
+  },
+
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "header",
+    "title": "Header block",
+    "description": "Page hero: an optional uppercase eyebrow/kicker, an optional emoji icon, a title, and an optional subhead.",
+    "type": "object",
+    "required": ["type", "title"],
+    "additionalProperties": false,
+    "properties": {
+      "type": { "const": "header", "description": "Block discriminator." },
+      "eyebrow": {
+        "type": "string",
+        "description": "Small uppercase kicker above the title, e.g. \"From your open tabs\"."
+      },
+      "icon": {
+        "type": "string",
+        "description": "Optional single emoji shown with the title.",
+        "maxLength": 8
+      },
+      "title": {
+        "type": "string",
+        "description": "Main page title (rendered in the condensed display face).",
+        "minLength": 1
+      },
+      "subhead": {
+        "type": "string",
+        "description": "Optional supporting line beneath the title."
+      }
+    },
+    "examples": [
+      {
+        "type": "header",
+        "eyebrow": "Content blocks · Exploration",
+        "icon": "🏨",
+        "title": "Hotels in Lisbon",
+        "subhead": "4 options gathered from your open tabs"
+      }
+    ]
+  },
+
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "footer",
+    "title": "Footer block",
+    "description": "Follow-up actions rendered as pill chips. Each points at an external URL or an in-app route/action id.",
+    "type": "object",
+    "required": ["type", "buttons"],
+    "additionalProperties": false,
+    "properties": {
+      "type": { "const": "footer", "description": "Block discriminator." },
+      "text": {
+        "type": "string",
+        "description": "Optional heading above the chips, e.g. \"Keep it going\"."
+      },
+      "buttons": {
+        "type": "array",
+        "description": "1 to 4 follow-up actions.",
+        "minItems": 1,
+        "maxItems": 4,
+        "items": {
+          "type": "object",
+          "required": ["text", "href"],
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Chip label."
+            },
+            "href": {
+              "type": "string",
+              "format": "uri-reference",
+              "description": "External URL or in-app route/action id."
+            },
+            "variant": {
+              "enum": ["primary", "secondary"],
+              "default": "secondary",
+              "description": "Visual weight."
+            }
+          }
+        }
+      }
+    },
+    "examples": [
+      {
+        "type": "footer",
+        "text": "Keep it going",
+        "buttons": [
+          {
+            "text": "Try another layout for this block",
+            "href": "app://views/relayout"
+          },
+          {
+            "text": "Turn this into a table instead",
+            "href": "app://views/table"
+          },
+          { "text": "Add a block to this page", "href": "app://views/add" }
+        ]
+      }
+    ]
+  },
+
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "text",
+    "title": "Text block",
+    "description": "Plain writing — a summary, an explanation, a side-titled passage, or a quote. Fields used depend on `layout`.",
+    "type": "object",
+    "required": ["type", "layout"],
+    "additionalProperties": false,
+    "anyOf": [
+      { "required": ["lead"] },
+      { "required": ["paragraphs"] },
+      { "required": ["sections"] },
+      { "required": ["quote"] }
+    ],
+    "properties": {
+      "type": { "const": "text" },
+      "layout": {
+        "description": "summary = lead sentence + paragraphs; subheads = named `sections`; side-title = `title` in a left column + paragraphs; quote = pulled `quote` + `attribution`.",
+        "enum": ["summary", "subheads", "side-title", "quote"]
+      },
+      "title": {
+        "type": "string",
+        "description": "Heading (left column for side-title; small caption elsewhere)."
+      },
+      "subtitle": {
+        "type": "string",
+        "description": "Optional caption under the title (side-title layout)."
+      },
+      "lead": {
+        "type": "string",
+        "description": "Larger lead sentence (summary layout)."
+      },
+      "paragraphs": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Body paragraphs."
+      },
+      "sections": {
+        "type": "array",
+        "description": "Named sub-sections (subheads layout).",
+        "items": {
+          "type": "object",
+          "required": ["heading", "body"],
+          "additionalProperties": false,
+          "properties": {
+            "heading": { "type": "string" },
+            "body": { "type": "string" }
+          }
+        }
+      },
+      "quote": {
+        "type": "string",
+        "description": "Pulled quotation (quote layout)."
+      },
+      "attribution": {
+        "type": "string",
+        "description": "Who/what the quote is from."
+      }
+    },
+    "examples": [
+      {
+        "type": "text",
+        "layout": "subheads",
+        "sections": [
+          {
+            "heading": "How cold is too cold",
+            "body": "Rated output holds to roughly 5°F on qualifying models."
+          },
+          {
+            "heading": "What it costs to run",
+            "body": "Every estimate depends on the local electric-to-gas price ratio."
+          }
+        ]
+      }
+    ]
+  },
+
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "table",
+    "title": "Table block",
+    "description": "Structured comparison. Record layouts (ranked / thumbnail / grouped / side-title) use `fields` + `data`; `matrix` transposes to `columns` + `rows` with a per-row winner; `key-value` uses `pairs`.",
+    "type": "object",
+    "required": ["type", "layout"],
+    "additionalProperties": false,
+    "anyOf": [
+      { "required": ["fields", "data"] },
+      { "required": ["columns", "rows"] },
+      { "required": ["pairs"] }
+    ],
+    "properties": {
+      "type": { "const": "table" },
+      "layout": {
+        "enum": [
+          "ranked",
+          "matrix",
+          "grouped",
+          "key-value",
+          "side-title",
+          "thumbnail"
+        ]
+      },
+      "title": { "type": "string" },
+      "description": { "type": "string" },
+      "itemType": {
+        "type": "string",
+        "description": "schema.org type of each row (record layouts), for JSON-LD."
+      },
+      "fields": {
+        "type": "array",
+        "minItems": 1,
+        "items": { "$ref": "field" },
+        "description": "Column definitions (record layouts)."
+      },
+      "data": {
+        "type": "array",
+        "items": { "type": "object" },
+        "description": "One object per row."
+      },
+      "groupBy": {
+        "type": "string",
+        "description": "For `grouped`: the data key whose value names each group (shown once on the left)."
+      },
+      "pairs": {
+        "type": "array",
+        "description": "For `key-value`: a single subject's facts.",
+        "items": {
+          "type": "object",
+          "required": ["label", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "label": { "type": "string" },
+            "value": { "type": "string" }
+          }
+        }
+      },
+      "columns": {
+        "type": "array",
+        "description": "For `matrix`: the things being compared (each a column).",
+        "items": {
+          "type": "object",
+          "required": ["name"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" },
+            "label": {
+              "type": "string",
+              "description": "Superlative eyebrow, e.g. \"Best value\"."
+            }
+          }
+        }
+      },
+      "rows": {
+        "type": "array",
+        "description": "For `matrix`: one attribute per row; cells align to `columns`.",
+        "items": {
+          "type": "object",
+          "required": ["label", "cells"],
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string",
+              "description": "Attribute name (left)."
+            },
+            "cells": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["value"],
+                "additionalProperties": false,
+                "properties": {
+                  "value": { "type": "string" },
+                  "winner": {
+                    "type": "boolean",
+                    "description": "Accent this cell as the best in the row.",
+                    "default": false
+                  },
+                  "note": {
+                    "type": "string",
+                    "description": "Winner pill, e.g. \"+6 hrs\" or \"Lower\"."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "examples": [
+      {
+        "type": "table",
+        "layout": "key-value",
+        "title": "Ferry Details",
+        "pairs": [
+          { "label": "Ferry crossing", "value": "8 hr 30 min" },
+          { "label": "Operator", "value": "Tokai Kisen" },
+          { "label": "One-way fare", "value": "¥8,400" }
+        ]
+      }
+    ]
+  },
+
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "cards",
+    "title": "Cards block",
+    "description": "Blocks with images or a link out. `picks` = superlative grid; `wide-detail` = image + specs; `source-tiles` = the tabs themselves (no image); `centered` = big centered title over a grid.",
+    "type": "object",
+    "required": ["type", "layout", "items"],
+    "additionalProperties": false,
+    "properties": {
+      "type": { "const": "cards" },
+      "layout": {
+        "enum": ["picks", "wide-detail", "source-tiles", "centered"]
+      },
+      "title": { "type": "string" },
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "image": {
+              "type": "string",
+              "format": "uri-reference",
+              "description": "Card image URL."
+            },
+            "favicon": {
+              "type": "string",
+              "format": "uri-reference",
+              "description": "Small brand/domain icon."
+            },
+            "eyebrow": {
+              "type": "string",
+              "description": "Superlative label, e.g. \"Cheapest\", \"Best battery\"."
+            },
+            "title": { "type": "string" },
+            "value": {
+              "type": "string",
+              "description": "Prominent value, e.g. \"$109 / night\"."
+            },
+            "subtitle": {
+              "type": "string",
+              "description": "Brand / domain / secondary line."
+            },
+            "body": {
+              "type": "string",
+              "description": "Description (wide-detail, source-tiles)."
+            },
+            "specs": {
+              "type": "array",
+              "description": "Small labeled stats (wide-detail).",
+              "items": {
+                "type": "object",
+                "required": ["label", "value"],
+                "additionalProperties": false,
+                "properties": {
+                  "label": { "type": "string" },
+                  "value": { "type": "string" }
+                }
+              }
+            },
+            "href": { "type": "string", "format": "uri-reference" }
+          }
+        }
+      }
+    },
+    "examples": [
+      {
+        "type": "cards",
+        "layout": "picks",
+        "items": [
+          {
+            "eyebrow": "Cheapest",
+            "value": "$109 / night",
+            "title": "Nijima Escape",
+            "subtitle": "airbnb.com",
+            "href": "https://www.airbnb.com"
+          },
+          {
+            "eyebrow": "Best reviews",
+            "value": "4.9 / 5",
+            "title": "Yado Marubun",
+            "subtitle": "expedia.com",
+            "href": "https://www.expedia.com"
+          }
+        ]
+      }
+    ]
+  },
+
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "list",
+    "title": "List block",
+    "description": "Sequences and sets. `checklist` = grouped actionable checkboxes; `side-title` = title left, groups right; `takeaways` = numbered claim + evidence; `big-number` = figure-led rundown. Use `groups` for checklist, `items` for the rest.",
+    "type": "object",
+    "required": ["type", "layout"],
+    "additionalProperties": false,
+    "anyOf": [{ "required": ["groups"] }, { "required": ["items"] }],
+    "properties": {
+      "type": { "const": "list" },
+      "layout": {
+        "enum": ["checklist", "side-title", "takeaways", "big-number"]
+      },
+      "title": { "type": "string" },
+      "showProgress": {
+        "type": "boolean",
+        "description": "For checklist: show done/total.",
+        "default": true
+      },
+      "groups": {
+        "type": "array",
+        "description": "Checklist groups (each carries a sequence).",
+        "items": {
+          "type": "object",
+          "required": ["heading", "items"],
+          "additionalProperties": false,
+          "properties": {
+            "heading": { "type": "string" },
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["text"],
+                "additionalProperties": false,
+                "properties": {
+                  "text": { "type": "string", "minLength": 1 },
+                  "done": { "type": "boolean", "default": false },
+                  "due": { "type": "string", "format": "date" },
+                  "priority": { "enum": ["low", "medium", "high"] },
+                  "note": { "type": "string" },
+                  "href": { "type": "string", "format": "uri-reference" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "items": {
+        "type": "array",
+        "description": "Rows for takeaways (claim/body) or big-number (number/label/body).",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "number": {
+              "type": "string",
+              "description": "Big figure (big-number) or index (takeaways, e.g. \"01\")."
+            },
+            "title": {
+              "type": "string",
+              "description": "Claim / label headline."
+            },
+            "body": { "type": "string", "description": "Supporting text." }
+          }
+        }
+      }
+    },
+    "examples": [
+      {
+        "type": "list",
+        "layout": "big-number",
+        "items": [
+          {
+            "number": "10 wks",
+            "title": "Start to finished kitchen",
+            "body": "Permit filing on Aug 4 through final inspection on Oct 12."
+          },
+          {
+            "number": "$34.5k",
+            "title": "Midpoint of the two quotes",
+            "body": "Bright Build came in at $31,200; Sterling at $37,800."
+          }
+        ]
+      }
+    ]
+  },
+
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "timeline",
+    "title": "Timeline block",
+    "description": "Anything with dates. `phase-rail` = vertical rail with a current marker; `horizontal` = a few stops; `day-schedule` = hour-by-hour with a highlighted current slot; `side-title` = title left, phase rows right.",
+    "type": "object",
+    "required": ["type", "layout", "items"],
+    "additionalProperties": false,
+    "properties": {
+      "type": { "const": "timeline" },
+      "layout": {
+        "enum": ["phase-rail", "horizontal", "day-schedule", "side-title"]
+      },
+      "title": { "type": "string" },
+      "description": { "type": "string" },
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "required": ["title"],
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string",
+              "description": "Date or time, e.g. \"Aug 4 – 15\" or \"9:00\"."
+            },
+            "sublabel": {
+              "type": "string",
+              "description": "Duration / period, e.g. \"2 weeks\", \"Morning\"."
+            },
+            "eyebrow": {
+              "type": "string",
+              "description": "Small uppercase marker, e.g. \"Now\", \"Fri evening\"."
+            },
+            "title": { "type": "string" },
+            "body": { "type": "string" },
+            "state": {
+              "enum": ["now", "done", "upcoming"],
+              "default": "upcoming",
+              "description": "Drives the filled/hollow dot and current-card styling."
+            }
+          }
+        }
+      }
+    },
+    "examples": [
+      {
+        "type": "timeline",
+        "layout": "phase-rail",
+        "title": "Project Timeline",
+        "items": [
+          {
+            "label": "Aug 4 – 15",
+            "sublabel": "2 weeks",
+            "eyebrow": "Now",
+            "title": "Permits & prep",
+            "body": "Drawings signed off, permit filed, temporary kitchen set up.",
+            "state": "now"
+          },
+          {
+            "label": "Oct 12",
+            "eyebrow": "Done",
+            "title": "Kitchen finished",
+            "body": "Ten weeks from the first permit to cooking dinner in it.",
+            "state": "upcoming"
+          }
+        ]
+      }
+    ]
+  },
+
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "highlight",
+    "title": "Highlight block",
+    "description": "Soft 80px-radius boxes that pull one thing out of the page. `full-width` = a single dark hero verdict; `number-trio` = three big-number boxes; `verdict-pair` = two boxes (light vs dark).",
+    "type": "object",
+    "required": ["type", "layout"],
+    "additionalProperties": false,
+    "anyOf": [
+      { "required": ["title"] },
+      { "required": ["items"] },
+      { "required": ["boxes"] }
+    ],
+    "properties": {
+      "type": { "const": "highlight" },
+      "layout": { "enum": ["full-width", "number-trio", "verdict-pair"] },
+      "eyebrow": {
+        "type": "string",
+        "description": "Small uppercase kicker (full-width)."
+      },
+      "title": { "type": "string", "description": "Headline (full-width)." },
+      "body": {
+        "type": "string",
+        "description": "Supporting text (full-width)."
+      },
+      "items": {
+        "type": "array",
+        "description": "Three stat boxes (number-trio).",
+        "items": {
+          "type": "object",
+          "required": ["value", "label"],
+          "additionalProperties": false,
+          "properties": {
+            "value": {
+              "type": "string",
+              "description": "Big figure, e.g. \"-$210\", \"10%\"."
+            },
+            "label": { "type": "string" },
+            "body": { "type": "string" }
+          }
+        }
+      },
+      "boxes": {
+        "type": "array",
+        "description": "Two verdict boxes (verdict-pair).",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": {
+          "type": "object",
+          "required": ["tone", "title"],
+          "additionalProperties": false,
+          "properties": {
+            "tone": { "enum": ["light", "dark"] },
+            "title": { "type": "string" },
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["body"],
+                "additionalProperties": false,
+                "properties": {
+                  "title": { "type": "string" },
+                  "body": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "examples": [
+      {
+        "type": "highlight",
+        "layout": "number-trio",
+        "items": [
+          {
+            "value": "-$210",
+            "label": "Apple trade-in",
+            "body": "Quoted for a 2019 Air in good condition."
+          },
+          {
+            "value": "10%",
+            "label": "Student discount",
+            "body": "Both stores, with a verified .edu address."
+          },
+          {
+            "value": "$89",
+            "label": "Extra for 16GB",
+            "body": "Cheaper on the Dell than on the Air."
+          }
+        ]
+      }
+    ]
+  },
+
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "field",
+    "title": "Field (shared)",
+    "description": "A column/attribute definition used by record-oriented table layouts. Carries display type, role, sort, schema.org mapping, and best-value goal.",
+    "type": "object",
+    "required": ["key", "type"],
+    "additionalProperties": false,
+    "properties": {
+      "key": {
+        "type": "string",
+        "description": "Property name read from each data object."
+      },
+      "label": { "type": "string" },
+      "type": {
+        "enum": [
+          "text",
+          "number",
+          "currency",
+          "rating",
+          "tags",
+          "badge",
+          "boolean",
+          "date",
+          "url",
+          "image",
+          "long"
+        ]
+      },
+      "role": {
+        "enum": ["image", "title", "subtitle", "badge", "detail", "action"],
+        "default": "detail"
+      },
+      "sortable": { "type": "boolean" },
+      "prefix": { "type": "string" },
+      "suffix": { "type": "string" },
+      "max": {
+        "type": "number",
+        "description": "Denominator for `rating` (default 5)."
+      },
+      "currency": {
+        "type": "string",
+        "default": "USD",
+        "description": "ISO 4217 code for `currency`."
+      },
+      "property": {
+        "type": "string",
+        "description": "schema.org property; dotted paths nest (e.g. \"offers.price\")."
+      },
+      "goal": {
+        "enum": ["min", "max"],
+        "description": "Which direction is better; drives superlatives & best-value."
+      }
+    }
+  }
+]

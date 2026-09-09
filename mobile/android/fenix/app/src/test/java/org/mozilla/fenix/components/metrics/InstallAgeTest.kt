@@ -1,18 +1,25 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.components.metrics
 
+import java.util.Calendar
+import java.util.Locale
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.util.Calendar
-import java.util.Locale
 
 class InstallAgeTest {
     private val dayMillis: Long = 1000 * 60 * 60 * 24
 
-    private val installedTime: Long = Calendar.getInstance(Locale.US).apply {
-        set(2026, Calendar.FEBRUARY, 6, 12, 0, 0)
-        set(Calendar.MILLISECOND, 0)
-    }.timeInMillis
+    private val installedTime: Long =
+        Calendar.getInstance(Locale.US)
+            .apply {
+                set(2026, Calendar.FEBRUARY, 6, 12, 0, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            .timeInMillis
 
     private val installAge = InstallAge(installedTime)
 

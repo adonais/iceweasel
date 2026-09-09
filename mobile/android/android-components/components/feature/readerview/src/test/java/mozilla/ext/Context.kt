@@ -5,9 +5,9 @@
 package mozilla.ext
 
 import android.content.Context
+import androidx.appcompat.R as appcompatR
 import androidx.appcompat.view.ContextThemeWrapper
 import mozilla.components.support.test.robolectric.testContext
-import androidx.appcompat.R as appcompatR
 
 /**
  * `testContext` wrapped with AppCompat theme.

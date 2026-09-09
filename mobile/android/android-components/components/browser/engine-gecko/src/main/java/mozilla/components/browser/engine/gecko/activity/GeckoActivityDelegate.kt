@@ -6,18 +6,15 @@ package mozilla.components.browser.engine.gecko.activity
 
 import android.app.PendingIntent
 import android.content.Intent
+import java.lang.ref.WeakReference
 import mozilla.components.concept.engine.activity.ActivityDelegate
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoRuntime
-import java.lang.ref.WeakReference
 
-/**
- * A wrapper for the [ActivityDelegate] to communicate with the Gecko-based delegate.
- */
-internal class GeckoActivityDelegate(
-    private val delegateRef: WeakReference<ActivityDelegate>,
-) : GeckoRuntime.ActivityDelegate {
+/** A wrapper for the [ActivityDelegate] to communicate with the Gecko-based delegate. */
+internal class GeckoActivityDelegate(private val delegateRef: WeakReference<ActivityDelegate>) :
+    GeckoRuntime.ActivityDelegate {
 
     private val logger = Logger(GeckoActivityDelegate::javaClass.name)
 

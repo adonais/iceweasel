@@ -7,12 +7,9 @@ package mozilla.components.lib.crash.db
 import androidx.room.Embedded
 import androidx.room.Relation
 
-/**
- * Data class modelling the relationship between [CrashEntity] and [ReportEntity] objects.
- */
+/** Data class modelling the relationship between [CrashEntity] and [ReportEntity] objects. */
 internal data class CrashWithReports(
-    @Embedded
-    val crash: CrashEntity,
+    @Embedded val crash: CrashEntity,
     @Relation(
         parentColumn = "uuid",
         entityColumn = "crash_uuid",

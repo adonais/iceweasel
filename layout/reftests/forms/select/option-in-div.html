@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+  <head>
+    <style>
+      select,
+      select::picker(select) {
+        appearance: base-select;
+      }
+    </style>
+  </head>
+  <body>
+    <select>
+      <div>
+        <option>one</option>
+        <option>two</option>
+        <option>three</option>
+      </div>
+    </select>
+    <script>
+      onload = () => {
+        // Opening the picker needs a user gesture, which only SpecialPowers can
+        // hand out here.
+        SpecialPowers.wrap(document).notifyUserGestureActivation();
+        document.querySelector("select").showPicker();
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() =>
+            document.documentElement.removeAttribute("class")
+          )
+        );
+      };
+    </script>
+  </body>
+</html>

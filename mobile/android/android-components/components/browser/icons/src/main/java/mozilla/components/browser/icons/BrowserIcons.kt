@@ -18,6 +18,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
+import java.lang.ref.WeakReference
+import java.util.concurrent.Executors
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -71,11 +73,8 @@ import mozilla.components.support.images.decoder.AndroidImageDecoder
 import mozilla.components.support.images.decoder.ImageDecoder
 import mozilla.components.support.ktx.android.content.pixelSizeFor
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.filterChanged
-import java.lang.ref.WeakReference
-import java.util.concurrent.Executors
 
-@VisibleForTesting
-internal const val MAXIMUM_SCALE_FACTOR = 2.0f
+@VisibleForTesting internal const val MAXIMUM_SCALE_FACTOR = 2.0f
 
 private const val EXTENSION_MESSAGING_NAME = "MozacBrowserIcons"
 
@@ -92,8 +91,7 @@ internal val sharedDiskCache = IconDiskCache()
  * @param httpClient The [Client] used to fetch icons over the network.
  * @param generator The [IconGenerator] to generate an icon if no icon could be loaded.
  * @param memoryInfoProvider Used to check available memory when deciding whether to cache icons.
- * @param manifestProvider An instance of [MerinoManifestProvider] used to look up website metadata
- * for loading an icon.
+ * @param manifestProvider An instance of [MerinoManifestProvider] used to look up website metadata for loading an icon.
  * @param preparers List of [IconPreprarer] instances that enrich an [IconRequest] before loading.
  * @param loaders List of [IconLoader] instances used to load icons.
  * @param decoders List of [ImageDecoder] instances to use when decoding a loaded icon into a [Bitmap].
@@ -106,63 +104,65 @@ class BrowserIcons(
     private val generator: IconGenerator = DefaultIconGenerator(),
     private val memoryInfoProvider: MemoryInfoProvider = DefaultMemoryInfoProvider(context),
     manifestProvider: MerinoManifestProvider = MerinoManifestProvider(context.assets),
-    private val preparers: List<IconPreprarer> = listOf(
-        MerinoManifestIconPreparer(manifestProvider = manifestProvider),
-        MemoryIconPreparer(sharedMemoryCache),
-        DiskIconPreparer(sharedDiskCache),
-    ),
-    internal var loaders: List<IconLoader> = listOf(
-        MemoryIconLoader(sharedMemoryCache),
-        DiskIconLoader(sharedDiskCache),
-        HttpIconLoader(
-            httpClient = httpClient,
-            memoryInfoProvider = memoryInfoProvider,
+    private val preparers: List<IconPreprarer> =
+        listOf(
+            MerinoManifestIconPreparer(manifestProvider = manifestProvider),
+            MemoryIconPreparer(sharedMemoryCache),
+            DiskIconPreparer(sharedDiskCache),
         ),
-        DataUriIconLoader(),
-    ),
-    private val decoders: List<ImageDecoder> = listOf(
-        AndroidImageDecoder(),
-        ICOIconDecoder(),
-        SvgIconDecoder(),
-    ),
-    private val processors: List<IconProcessor> = listOf(
-        MemoryIconProcessor(sharedMemoryCache),
-        DiskIconProcessor(sharedDiskCache),
-    ),
-    jobDispatcher: CoroutineDispatcher = Executors.newFixedThreadPool(
-        THREADS,
-        NamedThreadFactory("BrowserIcons"),
-    ).asCoroutineDispatcher(),
+    internal var loaders: List<IconLoader> =
+        listOf(
+            MemoryIconLoader(sharedMemoryCache),
+            DiskIconLoader(sharedDiskCache),
+            HttpIconLoader(
+                httpClient = httpClient,
+                memoryInfoProvider = memoryInfoProvider,
+            ),
+            DataUriIconLoader(),
+        ),
+    private val decoders: List<ImageDecoder> =
+        listOf(
+            AndroidImageDecoder(),
+            ICOIconDecoder(),
+            SvgIconDecoder(),
+        ),
+    private val processors: List<IconProcessor> =
+        listOf(
+            MemoryIconProcessor(sharedMemoryCache),
+            DiskIconProcessor(sharedDiskCache),
+        ),
+    jobDispatcher: CoroutineDispatcher =
+        Executors.newFixedThreadPool(
+                THREADS,
+                NamedThreadFactory("BrowserIcons"),
+            )
+            .asCoroutineDispatcher(),
     val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : MemoryConsumer {
     private val logger = Logger("BrowserIcons")
     private val maximumSize = context.pixelSizeFor(R.dimen.mozac_browser_icons_maximum_size)
     private val minimumSize = context.pixelSizeFor(R.dimen.mozac_browser_icons_minimum_size)
     private val scope = CoroutineScope(jobDispatcher)
-    private val backgroundHttpIconLoader = NonBlockingHttpIconLoader(
-        httpClient = httpClient,
-        memoryInfoProvider = DefaultMemoryInfoProvider(context),
-    ) { request, resource, result ->
-        val desiredSize = request.getDesiredSize(context, minimumSize, maximumSize)
+    private val backgroundHttpIconLoader =
+        NonBlockingHttpIconLoader(
+            httpClient = httpClient,
+            memoryInfoProvider = DefaultMemoryInfoProvider(context),
+        ) { request, resource, result ->
+            val desiredSize = request.getDesiredSize(context, minimumSize, maximumSize)
 
-        val icon = decodeIconLoaderResult(result, decoders, desiredSize)
-            ?: generator.generate(context, request)
+            val icon = decodeIconLoaderResult(result, decoders, desiredSize) ?: generator.generate(context, request)
 
-        process(context, processors, request, resource, icon, desiredSize)
-    }
+            process(context, processors, request, resource, icon, desiredSize)
+        }
 
-    /**
-     * Asynchronously loads an [Icon] for the given [IconRequest].
-     */
+    /** Asynchronously loads an [Icon] for the given [IconRequest]. */
     fun loadIcon(request: IconRequest): Deferred<Icon> = scope.async {
         loadIconInternalAsync(request).await().also { loadedIcon ->
             logger.debug("Loaded icon (source = ${loadedIcon.source}): ${request.url}")
         }
     }
 
-    /**
-     * Synchronously loads an [Icon] for the given [IconRequest] using an in-memory loader.
-     */
+    /** Synchronously loads an [Icon] for the given [IconRequest] using an in-memory loader. */
     private fun loadIconMemoryOnly(initialRequest: IconRequest, desiredSize: DesiredSize): Icon? {
         val preparers = listOf(MemoryIconPreparer(sharedMemoryCache))
         val loaders = listOf(MemoryIconLoader(sharedMemoryCache))
@@ -196,17 +196,15 @@ class BrowserIcons(
         }
 
         // (3) Then try to load an icon.
-        val (icon, resource) = load(context, request, updatedLoaders, decoders, desiredSize)
-            ?: (generator.generate(context, request) to null)
+        val (icon, resource) =
+            load(context, request, updatedLoaders, decoders, desiredSize)
+                ?: (generator.generate(context, request) to null)
 
         // (4) Finally process the icon.
-        process(context, processors, request, resource, icon, desiredSize)
-            ?: generator.generate(context, request)
+        process(context, processors, request, resource, icon, desiredSize) ?: generator.generate(context, request)
     }
 
-    /**
-     * Installs the "icons" extension in the engine in order to dynamically load icons for loaded websites.
-     */
+    /** Installs the "icons" extension in the engine in order to dynamically load icons for loaded websites. */
     fun install(engine: Engine, store: BrowserStore) {
         engine.installBuiltInWebExtension(
             id = "icons@mozac.org",
@@ -223,9 +221,9 @@ class BrowserIcons(
     }
 
     /**
-     * Loads an icon using [BrowserIcons] and then displays it in the [ImageView]. Synchronous loading
-     * via an in-memory cache is attempted first, followed by an asynchronous load as a fallback.
-     * If the view is detached from the window before loading is completed, then loading is cancelled.
+     * Loads an icon using [BrowserIcons] and then displays it in the [ImageView]. Synchronous loading via an in-memory
+     * cache is attempted first, followed by an asynchronous load as a fallback. If the view is detached from the window
+     * before loading is completed, then loading is cancelled.
      *
      * @param view [ImageView] to load icon into.
      * @param request Load icon for this given [IconRequest].
@@ -265,12 +263,12 @@ class BrowserIcons(
         }
 
         // Unhappy path: if the in-memory load didn't succeed, try the expensive IO loaders.
-        @SuppressLint("WrongThread")
-        val deferredIcon = loadIconInternalAsync(request, desiredSize)
+        @SuppressLint("WrongThread") val deferredIcon = loadIconInternalAsync(request, desiredSize)
         view.get()?.setTag(R.id.mozac_browser_icons_tag_job, deferredIcon)
-        val onAttachStateChangeListener = CancelOnDetach(deferredIcon).also {
-            view.get()?.addOnAttachStateChangeListener(it)
-        }
+        val onAttachStateChangeListener =
+            CancelOnDetach(deferredIcon).also {
+                view.get()?.addOnAttachStateChangeListener(it)
+            }
 
         return scope.launch(Dispatchers.Main) {
             try {
@@ -286,8 +284,8 @@ class BrowserIcons(
     }
 
     /**
-     * Loads an icon using [BrowserIcons] into the given Composable [content]. Synchronous loading
-     * via an in-memory cache is attempted first, followed by an asynchronous load as a fallback.
+     * Loads an icon using [BrowserIcons] into the given Composable [content]. Synchronous loading via an in-memory
+     * cache is attempted first, followed by an asynchronous load as a fallback.
      *
      * @param url The URL of the website an icon should be loaded for.
      * @param iconResource Optional [IconRequest.Resource] to load the icon from.
@@ -311,12 +309,13 @@ class BrowserIcons(
         val desiredSize = desiredSizeForRequest(request)
         val inMemoryIcon = loadIconMemoryOnly(request, desiredSize)
         if (inMemoryIcon != null) {
-            iconLoaderScope.state.value = IconLoaderState.Icon(
-                BitmapPainter(inMemoryIcon.bitmap.asImageBitmap()),
-                inMemoryIcon.color,
-                inMemoryIcon.source,
-                inMemoryIcon.maskable,
-            )
+            iconLoaderScope.state.value =
+                IconLoaderState.Icon(
+                    BitmapPainter(inMemoryIcon.bitmap.asImageBitmap()),
+                    inMemoryIcon.color,
+                    inMemoryIcon.source,
+                    inMemoryIcon.maskable,
+                )
         } else {
             // Unhappy path: if the in-memory load didn't succeed, try the expensive IO loaders.
             val deferredIcon = loadIconInternalAsync(request, desiredSize)
@@ -324,12 +323,13 @@ class BrowserIcons(
             LaunchedEffect(request) {
                 try {
                     val icon = deferredIcon.await()
-                    iconLoaderScope.state.value = IconLoaderState.Icon(
-                        BitmapPainter(icon.bitmap.asImageBitmap()),
-                        icon.color,
-                        icon.source,
-                        icon.maskable,
-                    )
+                    iconLoaderScope.state.value =
+                        IconLoaderState.Icon(
+                            BitmapPainter(icon.bitmap.asImageBitmap()),
+                            icon.color,
+                            icon.source,
+                            icon.maskable,
+                        )
                 } catch (e: CancellationException) {
                     Logger.debug("Could not retrieve icon for $url", e)
                 }
@@ -339,16 +339,15 @@ class BrowserIcons(
         iconLoaderScope.content()
     }
 
-    private fun desiredSizeForRequest(request: IconRequest) = DesiredSize(
-        targetSize = context.pixelSizeFor(request.size.dimen),
-        minSize = minimumSize,
-        maxSize = maximumSize,
-        maxScaleFactor = MAXIMUM_SCALE_FACTOR,
-    )
+    private fun desiredSizeForRequest(request: IconRequest) =
+        DesiredSize(
+            targetSize = context.pixelSizeFor(request.size.dimen),
+            minSize = minimumSize,
+            maxSize = maximumSize,
+            maxScaleFactor = MAXIMUM_SCALE_FACTOR,
+        )
 
-    /**
-     * The device is running low on memory. This component should trim its memory usage.
-     */
+    /** The device is running low on memory. This component should trim its memory usage. */
     @Deprecated("Use onTrimMemory instead.", replaceWith = ReplaceWith("onTrimMemory"))
     fun onLowMemory() {
         sharedMemoryCache.clear()
@@ -357,25 +356,24 @@ class BrowserIcons(
     @Suppress("DEPRECATION") // Apps are not notified of these levels since API level 34.
     // See https://bugzilla.mozilla.org/show_bug.cgi?id=1909473
     override fun onTrimMemory(level: Int) {
-        val shouldClearMemoryCache = when (level) {
-            // Foreground: The device is running much lower on memory. The app is running and not killable, but the
-            // system wants us to release unused resources to improve system performance.
-            ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW,
-            // Foreground: The device is running extremely low on memory. The app is not yet considered a killable
-            // process, but the system will begin killing background processes if apps do not release resources.
-            ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL,
-            -> true
+        val shouldClearMemoryCache =
+            when (level) {
+                // Foreground: The device is running much lower on memory. The app is running and not killable, but the
+                // system wants us to release unused resources to improve system performance.
+                ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW,
+                // Foreground: The device is running extremely low on memory. The app is not yet considered a killable
+                // process, but the system will begin killing background processes if apps do not release resources.
+                ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL -> true
 
-            // Background: The system is running low on memory and our process is near the middle of the LRU list.
-            // If the system becomes further constrained for memory, there's a chance our process will be killed.
-            ComponentCallbacks2.TRIM_MEMORY_MODERATE,
-            // Background: The system is running low on memory and our process is one of the first to be killed
-            // if the system does not recover memory now.
-            ComponentCallbacks2.TRIM_MEMORY_COMPLETE,
-            -> true
+                // Background: The system is running low on memory and our process is near the middle of the LRU list.
+                // If the system becomes further constrained for memory, there's a chance our process will be killed.
+                ComponentCallbacks2.TRIM_MEMORY_MODERATE,
+                // Background: The system is running low on memory and our process is one of the first to be killed
+                // if the system does not recover memory now.
+                ComponentCallbacks2.TRIM_MEMORY_COMPLETE -> true
 
-            else -> false
-        }
+                else -> false
+            }
 
         if (shouldClearMemoryCache) {
             sharedMemoryCache.clear()
@@ -385,9 +383,9 @@ class BrowserIcons(
     /**
      * Clears all icons and metadata from disk and memory.
      *
-     * This will clear the default disk and memory cache that is used by the default configuration.
-     * If custom [IconLoader] and [IconProcessor] instances with a custom storage are provided to
-     * [BrowserIcons] then the calling app is responsible for clearing that data.
+     * This will clear the default disk and memory cache that is used by the default configuration. If custom
+     * [IconLoader] and [IconProcessor] instances with a custom storage are provided to [BrowserIcons] then the calling
+     * app is responsible for clearing that data.
      */
     fun clear() {
         sharedDiskCache.clear(context)
@@ -402,7 +400,8 @@ class BrowserIcons(
         // Whenever we see a new EngineSession in the store then we register our content message
         // handler if it has not been added yet.
 
-        flow.map { it.tabs }
+        flow
+            .map { it.tabs }
             .filterChanged { it.engineState.engineSession }
             .collect { state ->
                 val engineSession = state.engineState.engineSession ?: return@collect
@@ -429,21 +428,17 @@ private fun load(
     decoders: List<ImageDecoder>,
     desiredSize: DesiredSize,
 ): Pair<Icon, IconRequest.Resource>? {
-    request.resources
-        .asSequence()
-        .distinct()
-        .sortedWith(IconResourceComparator)
-        .forEach { resource ->
-            loaders.forEach { loader ->
-                val result = loader.load(context, request, resource)
+    request.resources.asSequence().distinct().sortedWith(IconResourceComparator).forEach { resource ->
+        loaders.forEach { loader ->
+            val result = loader.load(context, request, resource)
 
-                val icon = decodeIconLoaderResult(result, decoders, desiredSize)
+            val icon = decodeIconLoaderResult(result, decoders, desiredSize)
 
-                if (icon != null) {
-                    return Pair(icon, resource)
-                }
+            if (icon != null) {
+                return Pair(icon, resource)
             }
         }
+    }
 
     return null
 }
@@ -452,14 +447,15 @@ private fun decodeIconLoaderResult(
     result: IconLoader.Result,
     decoders: List<ImageDecoder>,
     desiredSize: DesiredSize,
-): Icon? = when (result) {
-    IconLoader.Result.NoResult -> null
+): Icon? =
+    when (result) {
+        IconLoader.Result.NoResult -> null
 
-    is IconLoader.Result.BitmapResult -> Icon(result.bitmap, source = result.source)
+        is IconLoader.Result.BitmapResult -> Icon(result.bitmap, source = result.source)
 
-    is IconLoader.Result.BytesResult ->
-        decodeBytes(result.bytes, decoders, desiredSize)?.let { Icon(it, source = result.source) }
-}
+        is IconLoader.Result.BytesResult ->
+            decodeBytes(result.bytes, decoders, desiredSize)?.let { Icon(it, source = result.source) }
+    }
 
 @VisibleForTesting
 internal fun IconRequest.getDesiredSize(context: Context, minimumSize: Int, maximumSize: Int) =

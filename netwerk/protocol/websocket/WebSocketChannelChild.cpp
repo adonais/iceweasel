@@ -503,7 +503,8 @@ WebSocketChannelChild::AsyncOpenNative(
         static_cast<mozilla::dom::BrowserChild*>(iBrowserChild.get());
   }
 
-  ContentChild* cc = static_cast<ContentChild*>(gNeckoChild->Manager());
+  ContentChild* cc =
+      mozilla::ipc::ActorCast<ContentChild>(gNeckoChild->Manager());
   if (cc->IsShuttingDown()) {
     return NS_ERROR_FAILURE;
   }

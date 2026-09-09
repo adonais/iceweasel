@@ -31,11 +31,8 @@ skip-if = [
 ["browser_open_docgroup.js"]
 
 ["browser_partialsource.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1713913 - new Fission platform triage
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && opt", # Bug 1713913 - new Fission platform triage
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1713913 - new Fission platform triage
-]
+
+["browser_partialsource_reload.js"]
 
 ["browser_srcdoc.js"]
 

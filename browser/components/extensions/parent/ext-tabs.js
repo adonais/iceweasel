@@ -12,7 +12,8 @@ ChromeUtils.defineESModuleGetters(this, {
   ExtensionControlledPopup:
     "resource:///modules/ExtensionControlledPopup.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
-  SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
+  SessionStore:
+    "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(this, "strBundle", function () {
@@ -902,7 +903,7 @@ this.tabs = class extends ExtensionAPIPersistent {
                 () => browser.fixupAndLoadURIString(url, options),
                 { once: true }
               );
-              tabbrowser._insertBrowser(nativeTab);
+              tabbrowser.insertBrowser(nativeTab);
             }
           }
 
@@ -1122,7 +1123,7 @@ this.tabs = class extends ExtensionAPIPersistent {
               } else {
                 insertionPoint = Math.min(insertionPoint, maxIndex);
               }
-            } else if (isSameWindow && nativeTab._tPos <= lastInsertion) {
+            } else if (isSameWindow && nativeTab.index <= lastInsertion) {
               // lastInsertion is the current index of the last inserted tab.
               // insertionPoint is the desired index of the current tab *after* moving it.
               // When the tab is moved, the last inserted tab will no longer be at index
@@ -1166,7 +1167,7 @@ this.tabs = class extends ExtensionAPIPersistent {
               } else if (isSameWindow) {
                 // Other tab in split was not specified, but the index points
                 // to the same split view. Reverse if needed:
-                wantReversedSplit = otherTabInSplit._tPos === insertionPoint;
+                wantReversedSplit = otherTabInSplit.index === insertionPoint;
               }
               if (wantReversedSplit) {
                 // Split views move as one unit, but if the API call describes
@@ -1203,7 +1204,7 @@ this.tabs = class extends ExtensionAPIPersistent {
             }
             lastInsertionMap.set(
               window,
-              splitview ? splitviewTabs.at(-1)._tPos : nativeTab._tPos
+              splitview ? splitviewTabs.at(-1).index : nativeTab.index
             );
             if (splitview) {
               for (const tab of splitviewTabs) {
@@ -1785,7 +1786,7 @@ this.tabs = class extends ExtensionAPIPersistent {
             for (const nativeTab of nativeTabs) {
               if (
                 nativeTab.documentGlobal === window &&
-                nativeTab._tPos < firstTabInGroup._tPos
+                nativeTab.index < firstTabInGroup.index
               ) {
                 tabsBefore.push(nativeTab);
               } else {
@@ -1818,7 +1819,7 @@ this.tabs = class extends ExtensionAPIPersistent {
           }
           for (let [group, tabs] of ungroupOrder) {
             // Preserve original order of ungrouped tabs.
-            tabs.sort((a, b) => a._tPos - b._tPos);
+            tabs.sort((a, b) => a.index - b.index);
             tabs = getNativeTabsOrSplitViews(tabs);
             let firstTab = tabs[0];
             if (group.documentGlobal.gBrowser.isSplitViewWrapper(firstTab)) {

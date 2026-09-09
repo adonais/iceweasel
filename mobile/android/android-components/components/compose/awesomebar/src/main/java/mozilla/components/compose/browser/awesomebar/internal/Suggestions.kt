@@ -103,10 +103,7 @@ internal fun Suggestions(
     }
 }
 
-/**
- * An effect for handling scrolls in a [LazyColumn]. Will invoke [onScroll] at the beginning
- * of a scroll gesture.
- */
+/** An effect for handling scrolls in a [LazyColumn]. Will invoke [onScroll] at the beginning of a scroll gesture. */
 @Composable
 private fun ScrollHandler(
     state: LazyListState,
@@ -154,15 +151,16 @@ private fun SuggestionItem(
         is SportSuggestion -> {
             SportSuggestion(
                 onClick = { onSuggestionClicked(group, suggestion) },
-                state = SportSuggestionState(
-                    sport = suggestion.sport,
-                    sportCategory = suggestion.sportCategory,
-                    status = suggestion.status,
-                    statusType = suggestion.statusType,
-                    date = suggestion.date,
-                    homeTeam = suggestion.homeTeam,
-                    awayTeam = suggestion.awayTeam,
-                ),
+                state =
+                    SportSuggestionState(
+                        sport = suggestion.sport,
+                        sportCategory = suggestion.sportCategory,
+                        status = suggestion.status,
+                        statusType = suggestion.statusType,
+                        date = suggestion.date,
+                        homeTeam = suggestion.homeTeam,
+                        awayTeam = suggestion.awayTeam,
+                    ),
             )
         }
 
@@ -181,14 +179,15 @@ private fun SuggestionItem(
 }
 
 /**
- * [RememberObserver] implementation that will make sure that [onScroll] get called only once as
- * long as [scrollInProgress] doesn't change.
+ * [RememberObserver] implementation that will make sure that [onScroll] get called only once as long as
+ * [scrollInProgress] doesn't change.
  */
 private class ScrollHandlerImpl(
     private val scrollInProgress: Boolean,
     private val onScroll: () -> Unit,
 ) : RememberObserver {
     override fun onAbandoned() = Unit
+
     override fun onForgotten() = Unit
 
     override fun onRemembered() {
@@ -198,12 +197,9 @@ private class ScrollHandlerImpl(
     }
 }
 
-/**
- * A stable, unique key for an item in the [Suggestions] list.
- */
+/** A stable, unique key for an item in the [Suggestions] list. */
 internal sealed interface ItemKey {
-    @Parcelize
-    data class SuggestionGroup(val id: String) : ItemKey, Parcelable
+    @Parcelize data class SuggestionGroup(val id: String) : ItemKey, Parcelable
 
     @Parcelize
     data class Suggestion(
@@ -214,8 +210,8 @@ internal sealed interface ItemKey {
 }
 
 /**
- * A snapshot of all the fetched suggestions to show in the [Suggestions] list, and the keys of the visible items
- * in that list, ordered top to bottom. The intersection of the two is the current [AwesomeBar.VisibilityState].
+ * A snapshot of all the fetched suggestions to show in the [Suggestions] list, and the keys of the visible items in
+ * that list, ordered top to bottom. The intersection of the two is the current [AwesomeBar.VisibilityState].
  */
 internal data class VisibleItems(
     val suggestions: Map<AwesomeBar.SuggestionProviderGroup, List<AwesomeBar.SuggestionItem>>,
@@ -228,21 +224,25 @@ internal data class VisibleItems(
             AwesomeBar.VisibilityState(
                 // `suggestions` is insertion-ordered, and `toMap()` preserves that order, so the groups in
                 // `visibleProviderGroups` are in the same order as they're shown in the awesomebar.
-                visibleProviderGroups = suggestions.mapNotNull { (group, suggestions) ->
-                    val visibleSuggestions = suggestions.filter { suggestion ->
-                        val suggestionItemKey = ItemKey.Suggestion(
-                            groupId = group.id,
-                            providerId = suggestion.provider.id,
-                            suggestionId = suggestion.id,
-                        )
-                        visibleItemKeys.contains(suggestionItemKey)
-                    }
-                    if (visibleSuggestions.isNotEmpty()) {
-                        group to visibleSuggestions
-                    } else {
-                        null
-                    }
-                }.toMap(),
+                visibleProviderGroups =
+                    suggestions
+                        .mapNotNull { (group, suggestions) ->
+                            val visibleSuggestions = suggestions.filter { suggestion ->
+                                val suggestionItemKey =
+                                    ItemKey.Suggestion(
+                                        groupId = group.id,
+                                        providerId = suggestion.provider.id,
+                                        suggestionId = suggestion.id,
+                                    )
+                                visibleItemKeys.contains(suggestionItemKey)
+                            }
+                            if (visibleSuggestions.isNotEmpty()) {
+                                group to visibleSuggestions
+                            } else {
+                                null
+                            }
+                        }
+                        .toMap()
             )
         }
 }

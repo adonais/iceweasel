@@ -11,29 +11,31 @@ import org.junit.Test
 class ActionTest {
 
     private val onClick: () -> Unit = {}
-    private val baseAction = Action(
-        title = "title",
-        enabled = false,
-        loadIcon = null,
-        badgeText = "badge",
-        badgeTextColor = Color.BLACK,
-        badgeBackgroundColor = Color.BLUE,
-        onClick = onClick,
-    )
+    private val baseAction =
+        Action(
+            title = "title",
+            enabled = false,
+            loadIcon = null,
+            badgeText = "badge",
+            badgeTextColor = Color.BLACK,
+            badgeBackgroundColor = Color.BLUE,
+            onClick = onClick,
+        )
 
     @Test
     fun `override using non-null attributes`() {
-        val overridden = baseAction.copyWithOverride(
-            Action(
-                title = "other",
-                enabled = null,
-                loadIcon = null,
-                badgeText = null,
-                badgeTextColor = Color.WHITE,
-                badgeBackgroundColor = null,
-                onClick = onClick,
-            ),
-        )
+        val overridden =
+            baseAction.copyWithOverride(
+                Action(
+                    title = "other",
+                    enabled = null,
+                    loadIcon = null,
+                    badgeText = null,
+                    badgeTextColor = Color.WHITE,
+                    badgeBackgroundColor = null,
+                    onClick = onClick,
+                )
+            )
 
         assertEquals(
             Action(

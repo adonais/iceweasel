@@ -18,17 +18,16 @@ import mozilla.components.support.base.log.logger.Logger
 /**
  * A feature that uses the [FxaAccountManager] to receive tabs.
  *
- * Adding push support with [AutoPushFeature] will allow for the account to be notified immediately.
- * If the push components are not used, the feature can still function
- * while tabs would only be received when refreshing the device state.
+ * Adding push support with [AutoPushFeature] will allow for the account to be notified immediately. If the push
+ * components are not used, the feature can still function while tabs would only be received when refreshing the device
+ * state.
  *
  * See [SendTabUseCases] for the ability to send tabs to other devices.
  *
  * @param accountManager Account manager.
- * @param owner Android lifecycle owner for the observers. Defaults to the [ProcessLifecycleOwner]
- * so that we can always observe events throughout the application lifecycle.
- * @param autoPause whether or not the observer should automatically be
- * paused/resumed with the bound lifecycle.
+ * @param owner Android lifecycle owner for the observers. Defaults to the [ProcessLifecycleOwner] so that we can always
+ *   observe events throughout the application lifecycle.
+ * @param autoPause whether or not the observer should automatically be paused/resumed with the bound lifecycle.
  * @param onTabsReceived the callback invoked with new tab(s) are received.
  */
 class SendTabFeature(
@@ -46,13 +45,13 @@ class SendTabFeature(
     }
 }
 
-internal class TabReceivedEventsObserver(
-    private val onTabsReceived: (Device?, List<TabData>) -> Unit,
-) : AccountEventsObserver {
+internal class TabReceivedEventsObserver(private val onTabsReceived: (Device?, List<TabData>) -> Unit) :
+    AccountEventsObserver {
     private val logger = Logger("TabReceivedEventsObserver")
 
     override fun onEvents(events: List<AccountEvent>) {
-        events.asSequence()
+        events
+            .asSequence()
             .filterIsInstance<AccountEvent.DeviceCommandIncoming>()
             .map { it.command }
             .filterIsInstance<DeviceCommandIncoming.TabReceived>()

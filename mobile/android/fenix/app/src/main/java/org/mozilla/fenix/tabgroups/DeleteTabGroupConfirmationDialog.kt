@@ -16,20 +16,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.TextButton
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
- * This dialog is used to prompt the user to confirm if they want to delete
- * their selected tab group. It provides options to confirm or cancel the deletion.
+ * This dialog is used to prompt the user to confirm if they want to delete their selected tab group. It provides
+ * options to confirm or cancel the deletion.
  *
  * @param onConfirmDelete Callback invoked when the user confirms the deletion.
  * @param onCancel Callback invoked when the user cancels the deletion.
  */
-
 @Composable
 fun DeleteTabGroupConfirmationDialog(
     onConfirmDelete: () -> Unit,
@@ -74,9 +73,7 @@ fun DeleteTabGroupConfirmationDialog(
 
 @FlexibleWindowPreview
 @Composable
-private fun DeleteTabGroupConfirmationDialogPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun DeleteTabGroupConfirmationDialogPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         Surface {
             DeleteTabGroupConfirmationDialog(

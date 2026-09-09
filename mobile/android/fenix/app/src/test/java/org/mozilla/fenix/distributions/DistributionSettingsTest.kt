@@ -23,9 +23,7 @@ class DistributionSettingsTest {
     @Before
     fun setup() {
         settings = Settings(testContext)
-        subject = DefaultDistributionSettings(
-            settings = settings,
-        )
+        subject = DefaultDistributionSettings(settings = settings)
     }
 
     @Test

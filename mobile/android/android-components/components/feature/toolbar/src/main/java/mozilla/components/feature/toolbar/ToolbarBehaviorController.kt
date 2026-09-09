@@ -29,38 +29,37 @@ class ToolbarBehaviorController(
     private val customTabId: String? = null,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) {
-    @VisibleForTesting
-    internal var updatesScope: CoroutineScope? = null
+    @VisibleForTesting internal var updatesScope: CoroutineScope? = null
 
-    /**
-     * Starts listening for changes in the current tab and updates how the toolbar should behave.
-     */
+    /** Starts listening for changes in the current tab and updates how the toolbar should behave. */
     fun start() {
-        updatesScope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.mapNotNull { state ->
-                state.findCustomTabOrSelectedTab(customTabId)
-            }.distinctUntilChangedBy {
-                arrayOf(it.content.loading, it.content.showToolbarAsExpanded)
-            }.collect { state ->
-                if (state.content.showToolbarAsExpanded) {
-                    expandToolbar()
-                    store.dispatch(ContentAction.UpdateExpandedToolbarStateAction(state.id, false))
-                    return@collect
-                }
+        updatesScope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .mapNotNull { state ->
+                        state.findCustomTabOrSelectedTab(customTabId)
+                    }
+                    .distinctUntilChangedBy {
+                        arrayOf(it.content.loading, it.content.showToolbarAsExpanded)
+                    }
+                    .collect { state ->
+                        if (state.content.showToolbarAsExpanded) {
+                            expandToolbar()
+                            store.dispatch(ContentAction.UpdateExpandedToolbarStateAction(state.id, false))
+                            return@collect
+                        }
 
-                if (state.content.loading) {
-                    expandToolbar()
-                    disableScrolling()
-                } else if (!state.content.loading) {
-                    enableScrolling()
-                }
+                        if (state.content.loading) {
+                            expandToolbar()
+                            disableScrolling()
+                        } else if (!state.content.loading) {
+                            enableScrolling()
+                        }
+                    }
             }
-        }
     }
 
-    /**
-     * Stop listening for changes in the current tab.
-     */
+    /** Stop listening for changes in the current tab. */
     fun stop() {
         updatesScope?.cancel()
     }

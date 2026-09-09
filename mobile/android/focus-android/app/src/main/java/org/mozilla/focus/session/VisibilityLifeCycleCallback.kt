@@ -14,16 +14,15 @@ import org.mozilla.focus.appreview.AppReviewUtils
 import org.mozilla.focus.telemetry.startuptelemetry.DefaultActivityLifecycleCallbacks
 
 /**
- * This ActivityLifecycleCallbacks implementations tracks if there is at least one activity in the
- * STARTED state (meaning some part of our application is visible).
- * Based on this information the current task can be removed if the app is not visible.
+ * This ActivityLifecycleCallbacks implementations tracks if there is at least one activity in the STARTED state
+ * (meaning some part of our application is visible). Based on this information the current task can be removed if the
+ * app is not visible.
  */
 class VisibilityLifeCycleCallback(private val context: Context) : DefaultActivityLifecycleCallbacks {
-    /**
-     * Activities are not stopped/started in an ordered way. So we are using
-     */
+    /** Activities are not stopped/started in an ordered way. So we are using */
     private var activitiesInStartedState = 0
     private var appInForeground = false
+
     private fun finishAndRemoveTaskIfInBackground() {
         if (activitiesInStartedState == 0) {
             val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
@@ -55,8 +54,8 @@ class VisibilityLifeCycleCallback(private val context: Context) : DefaultActivit
 
     companion object {
         /**
-         * If all activities of this app are in the background then finish and remove all tasks. After
-         * that the app won't show up in "recent apps" anymore.
+         * If all activities of this app are in the background then finish and remove all tasks. After that the app
+         * won't show up in "recent apps" anymore.
          */
         fun finishAndRemoveTaskIfInBackground(context: Context) {
             (context.applicationContext as FocusApplication)
@@ -65,15 +64,16 @@ class VisibilityLifeCycleCallback(private val context: Context) : DefaultActivit
         }
 
         /**
-         * Checks if the application is currently in the background.
-         * The application is considered in the background if there are no activities in the started state.
+         * Checks if the application is currently in the background. The application is considered in the background if
+         * there are no activities in the started state.
          *
          * @param context The context used to access the application and its VisibilityLifeCycleCallback.
          * @return True if the application is in the background, false otherwise.
          */
         fun isInBackground(context: Context): Boolean {
             return (context.applicationContext as FocusApplication)
-                .visibilityLifeCycleCallback?.activitiesInStartedState == 0
+                .visibilityLifeCycleCallback
+                ?.activitiesInStartedState == 0
         }
     }
 }

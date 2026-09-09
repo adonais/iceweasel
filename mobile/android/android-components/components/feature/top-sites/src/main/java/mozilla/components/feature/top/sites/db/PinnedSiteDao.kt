@@ -12,22 +12,14 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 
-/**
- * Internal DAO for accessing [PinnedSiteEntity] instances.
- */
+/** Internal DAO for accessing [PinnedSiteEntity] instances. */
 @Dao
 internal interface PinnedSiteDao {
-    @WorkerThread
-    @Insert
-    fun insertPinnedSite(site: PinnedSiteEntity): Long
+    @WorkerThread @Insert fun insertPinnedSite(site: PinnedSiteEntity): Long
 
-    @WorkerThread
-    @Update
-    fun updatePinnedSite(site: PinnedSiteEntity)
+    @WorkerThread @Update fun updatePinnedSite(site: PinnedSiteEntity)
 
-    @WorkerThread
-    @Delete
-    fun deletePinnedSite(site: PinnedSiteEntity)
+    @WorkerThread @Delete fun deletePinnedSite(site: PinnedSiteEntity)
 
     @WorkerThread
     @Transaction
@@ -39,10 +31,7 @@ internal interface PinnedSiteDao {
         }
     }
 
-    @WorkerThread
-    @Query("SELECT * FROM top_sites")
-    fun getPinnedSites(): List<PinnedSiteEntity>
+    @WorkerThread @Query("SELECT * FROM top_sites") fun getPinnedSites(): List<PinnedSiteEntity>
 
-    @Query("SELECT COUNT(*) FROM top_sites")
-    fun getPinnedSitesCount(): Int
+    @Query("SELECT COUNT(*) FROM top_sites") fun getPinnedSitesCount(): Int
 }

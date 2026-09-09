@@ -32,13 +32,9 @@
 #endif
 
 class CommonSocketControl;
-struct SslTokensPersistedRecord;
-
-namespace mozilla {
-namespace ipc {
-class ByteBuf;
-}
-}  // namespace mozilla
+class mozIStorageConnection;
+class mozIStorageService;
+class mozIStorageStatement;
 
 namespace mozilla {
 namespace net {
@@ -111,24 +107,23 @@ class SSLTokensCache : public nsIMemoryReporter,
       const nsACString& aSite, const mozilla::OriginAttributesPattern& aPattern)
       MOZ_EXCLUDES(sLock);
 
-  // Serialize the current cache state into STCF format for IPC transport.
-  static nsTArray<uint8_t> SerializeForIPC();
+  // Snapshot the cache as records for IPC transport.
+  static nsTArray<SSLTokensCacheRecordInfo> SerializeForIPC();
 
-  // Replace the cache with STCF data received via IPC. aRestored is the
-  // provenance to record for the incoming records (see mRestored).
-  static void DeserializeFromIPC(mozilla::Span<const uint8_t> aData,
+  // Replace the cache with records from IPC; aRestored is their provenance.
+  static void DeserializeFromIPC(nsTArray<SSLTokensCacheRecordInfo>&& aRecords,
                                  bool aRestored);
-  // Dispatches DeserializeFromIPC to a background thread; no-ops on empty buf.
-  static void DeserializeFromIPCAsync(mozilla::ipc::ByteBuf&& aBuf,
-                                      bool aRestored);
+  // Dispatches DeserializeFromIPC to a background thread.
+  static void DeserializeFromIPCAsync(
+      nsTArray<SSLTokensCacheRecordInfo>&& aRecords, bool aRestored);
 
   // Non-consuming snapshot of all current records, for about:networking.
   static void GetAllRecords(nsTArray<SSLTokensCacheRecordInfo>& aOut);
 
   // Replaces the cache with aRecords, received directly via IPC from the
-  // socket process (bypassing the Rust/STCF format). Each record's own
-  // restored field is preserved, unlike DeserializeFromIPC which always
-  // records the same provenance for the whole batch.
+  // socket process. Each record's own restored field is preserved, unlike
+  // DeserializeFromIPC which always records the same provenance for the
+  // whole batch.
   static void ReplaceAllRecords(nsTArray<SSLTokensCacheRecordInfo>&& aRecords);
 
   // aDecompressedLength, if non-null, receives the size of the decompressed
@@ -189,8 +184,14 @@ class SSLTokensCache : public nsIMemoryReporter,
   // Persistence state (parent process only)
   bool mPrefCallbackRegistered{false};  // main-thread-only
   bool mWriteObserversRegistered MOZ_GUARDED_BY(sLock){false};
-  nsCOMPtr<nsIFile> mBackingFile MOZ_GUARDED_BY(sLock);
-  nsCOMPtr<nsISerialEventTarget> mWriteTaskQueue MOZ_GUARDED_BY(sLock);
+  // Created lazily and kept alive across a pref-disable, so every DB
+  // operation serializes on the same target. Needs no explicit shutdown.
+  nsCOMPtr<nsISerialEventTarget> mDBQueue MOZ_GUARDED_BY(sLock);
+  // Resolved once on the main thread, since NS_GetSpecialDirectory asserts
+  // NS_IsMainThread(); read-only afterwards via GetCachedDBFile().
+  nsCOMPtr<nsIFile> mDBFile MOZ_GUARDED_BY(sLock);
+  // False once persistence is off, even though mDBQueue stays alive.
+  bool mDBActive MOZ_GUARDED_BY(sLock){false};
   bool mLoadComplete MOZ_GUARDED_BY(sLock){false};
   TimeStamp mLoadStartTime MOZ_GUARDED_BY(sLock);
   // Bumped by Clear() to invalidate in-flight background loads.
@@ -198,40 +199,73 @@ class SSLTokensCache : public nsIMemoryReporter,
   void DoWrite(bool aSynchronous) MOZ_EXCLUDES(sLock);
   void RegisterShutdownBlocker() MOZ_EXCLUDES(sLock);
   void RemoveShutdownBlocker() MOZ_EXCLUDES(sLock);
+  // Unregisters aInstance from the memory reporter, observers and pref
+  // callbacks. Called exactly once, from whichever teardown path runs.
+  static void UnregisterFromServices(SSLTokensCache* aInstance)
+      MOZ_EXCLUDES(sLock);
   nsCOMPtr<nsIAsyncShutdownClient> mShutdownBarrier MOZ_GUARDED_BY(sLock);
-  // Sets up gInstance's mBackingFile/mWriteTaskQueue and captures load
-  // timing. Returns the path to load on success, empty if ProfD is
-  // unavailable. Parent-process only; caller must hold sLock and have
-  // verified mBackingFile is not yet set.
-  static nsCString SetupPersistenceLocked(uint32_t& aLoadGen)
+
+  // Creates mDBQueue if needed and marks persistence active. The caller must
+  // check storage service availability before taking sLock, since
+  // do_GetService must not run under it.
+  static bool SetupPersistenceLocked(uint32_t& aLoadGen,
+                                     bool aStorageServiceAvailable)
       MOZ_REQUIRES(sLock);
-  static void DispatchLoad(nsCString aPath, uint32_t aLoadGen);
+  // Dispatches open+migrate+load to mDBQueue.
+  static void DispatchOpenAndLoad(uint32_t aLoadGen);
   static void OnLoadCompleteNotify(uint32_t aCount);
-  // Builds a TokenCacheRecord from its raw persisted/IPC fields. Shared by
-  // PutFromPersisted (Rust FFI records) and ReplaceAllRecords (IPC struct
-  // records).
+  // Builds a TokenCacheRecord from its raw persisted/IPC fields.
   static UniquePtr<TokenCacheRecord> MakeRecord(
       const nsACString& aKey, PRTime aExpirationTime, uint8_t aOverridableError,
       bool aRestored, nsTArray<uint8_t>&& aCompressedPayload);
 
-  // aExpectedGen: mLoadGeneration captured at load start; insertion is skipped
-  // if Clear() has run since (generation mismatch).
-  // Returns true if the record was inserted, false if skipped (generation
-  // mismatch after a concurrent Clear()).
-  static bool PutFromPersisted(const SslTokensPersistedRecord* aRec,
+  // Skips insertion, returning false, if Clear() bumped mLoadGeneration past
+  // aExpectedGen since the load started.
+  static bool PutFromPersisted(const SSLTokensCacheRecordInfo& aRec,
                                uint32_t aExpectedGen, bool aRestored);
 
-  struct LoadCtx {
-    uint32_t loadGen;
-    uint32_t count = 0;
-  };
-  static void LoadCallback(void* aCtx, const SslTokensPersistedRecord* aRec);
-  // Ctx for PutFromPersistedCallback, shared by DeserializeFromIPC and
-  // LoadForTest, which need to pass aRestored through the C FFI callback.
-  struct PersistedPutCtx {
-    uint32_t loadGen;
-    bool restored;
-  };
+  // False once persistence is off, so a task queued earlier can't recreate
+  // the DB file.
+  static bool IsPersistenceStillActive();
+
+  // Null if persistence was never activated. Safe on the DB task queue.
+  static already_AddRefed<nsIFile> GetCachedDBFile();
+
+  // The following run on the DB task queue only, each opening and closing
+  // its own connection.
+  static bool OpenDB(nsCOMPtr<mozIStorageConnection>& aConn);
+  // IsPersistenceStillActive + OpenDB; caller must Close() the result.
+  static already_AddRefed<mozIStorageConnection> OpenActiveDB();
+  static uint32_t LoadFromDB(uint32_t aLoadGen);
+  static void WriteSnapshotToDB(nsTArray<SSLTokensCacheRecordInfo>&& aSnapshot);
+  // Writes a snapshot, but only once the startup load has completed.
+  static void CollectAndWriteSnapshotIfLoaded();
+  static void ClearDB();
+  static void RemoveDBFileSync();
+  // Best-effort removal so a fresh DB is created on next open. Unlike
+  // Places, an ephemeral cache gains nothing from keeping a corrupt backup.
+  static bool RemoveDBFile(nsIFile* aDbFile);
+#ifdef DEBUG
+  // Stronger than !NS_IsMainThread(): asserts we're specifically on mDBQueue.
+  static void AssertOnDBThread();
+#endif
+
+  // Schema helpers, shared with the test-only hooks below. EnsureSchema
+  // creates or recreates the ssl_tokens table as needed.
+  static nsresult EnsureSchema(mozIStorageConnection* aConn);
+  static nsresult CreateSchemaOn(mozIStorageConnection* aConn);
+  static nsresult PrepareInsertStatement(
+      mozIStorageConnection* aConn,
+      nsCOMPtr<mozIStorageStatement>& aStmtInsert);
+  static nsresult WriteSnapshotTo(
+      mozIStorageConnection* aConn, mozIStorageStatement* aStmtInsert,
+      const nsTArray<SSLTokensCacheRecordInfo>& aSnapshot);
+  // aCorrupted is set if a row fails to read, i.e. corruption found after a
+  // successful open; OpenDB already handles corruption at open time.
+  static uint32_t LoadValidRecordsFrom(mozIStorageConnection* aConn,
+                                       uint32_t aLoadGen,
+                                       bool* aCorrupted = nullptr);
+
   static nsDependentCSubstring BasePartFromKey(const nsACString& aKey);
   static nsDependentCSubstring HostFromBasePart(
       const nsDependentCSubstring& aBasePart);
@@ -240,27 +274,14 @@ class SSLTokensCache : public nsIMemoryReporter,
       const nsACString& aValue, const nsACString& aSeparatedValue,
       const mozilla::OriginAttributesPattern& aPattern) MOZ_EXCLUDES(sLock);
 
-  // Builds a snapshot of all currently cached records that should be
-  // persisted (filtered by ShouldPersistKey). Each snapshot record
-  // borrows the token bytes via raw pointer (valid only while sLock is
-  // held); cert chain fields are cloned so the snapshot owns them.
-  nsTArray<SslTokensPersistedRecord> CollectSnapshotLocked() const
-      MOZ_REQUIRES(sLock);
-  static nsTArray<uint8_t> SerializeSnapshotLocked() MOZ_REQUIRES(sLock);
-  // Builds a snapshot of all currently cached records as
-  // SSLTokensCacheRecordInfo. If aFilterForPersistence is true, applies the
-  // same filtering as CollectSnapshotLocked (excludes PBM / cert-error
-  // overrides); GetAllRecords() uses this unfiltered.
+  // Snapshot owning its key and payload bytes, so it can cross threads and
+  // processes. aFilterForPersistence applies ShouldPersistKey.
   void CollectRecordInfosLocked(nsTArray<SSLTokensCacheRecordInfo>& aOut,
                                 bool aFilterForPersistence) const
       MOZ_REQUIRES(sLock);
   // Removes entries matching aPredicate.
   template <typename Pred>
   void RemoveMatchingLocked(Pred&& aPredicate) MOZ_REQUIRES(sLock);
-  // FFI callback used by DeserializeFromIPC and LoadForTest; aCtx is a
-  // PersistedPutCtx*.
-  static void PutFromPersistedCallback(void* aCtx,
-                                       const SslTokensPersistedRecord* aRec);
 
   class TokenCacheRecord {
    public:

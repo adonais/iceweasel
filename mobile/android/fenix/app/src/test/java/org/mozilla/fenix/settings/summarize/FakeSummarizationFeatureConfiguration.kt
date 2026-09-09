@@ -9,9 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
 import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
 
-/**
- * Fake [SummarizationFeatureDiscoveryConfiguration] for testing
- */
+/** Fake [SummarizationFeatureDiscoveryConfiguration] for testing */
 class FakeSummarizationFeatureConfiguration(
     var expectedToolbarMenuButtonHighlight: Boolean = false,
     override var shouldToolbarShowCfr: Boolean = false,

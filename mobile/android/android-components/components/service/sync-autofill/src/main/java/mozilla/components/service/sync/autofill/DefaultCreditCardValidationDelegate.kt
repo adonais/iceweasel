@@ -13,14 +13,13 @@ import mozilla.components.concept.storage.CreditCardValidationDelegate.Result
 import mozilla.components.concept.storage.CreditCardsAddressesStorage
 
 /**
- * A delegate that will check against the [CreditCardsAddressesStorage] to determine if a given
- * [CreditCard] can be persisted and returns information about why it can or cannot.
+ * A delegate that will check against the [CreditCardsAddressesStorage] to determine if a given [CreditCard] can be
+ * persisted and returns information about why it can or cannot.
  *
  * @param storage An instance of [CreditCardsAddressesStorage].
  */
-class DefaultCreditCardValidationDelegate(
-    private val storage: Lazy<CreditCardsAddressesStorage>,
-) : CreditCardValidationDelegate {
+class DefaultCreditCardValidationDelegate(private val storage: Lazy<CreditCardsAddressesStorage>) :
+    CreditCardValidationDelegate {
 
     private val coroutineContext by lazy { Dispatchers.IO }
 
@@ -28,19 +27,20 @@ class DefaultCreditCardValidationDelegate(
         withContext(coroutineContext) {
             val creditCards = storage.value.getAllCreditCards()
 
-            val foundCreditCard = if (creditCards.isEmpty()) {
-                // No credit cards exist in the storage -> create a new credit card
-                null
-            } else {
-                val crypto = storage.value.getCreditCardCrypto()
-                val key = crypto.getOrGenerateKey()
+            val foundCreditCard =
+                if (creditCards.isEmpty()) {
+                    // No credit cards exist in the storage -> create a new credit card
+                    null
+                } else {
+                    val crypto = storage.value.getCreditCardCrypto()
+                    val key = crypto.getOrGenerateKey()
 
-                creditCards.find {
-                    val cardNumber = crypto.decrypt(key, it.encryptedCardNumber)?.number
+                    creditCards.find {
+                        val cardNumber = crypto.decrypt(key, it.encryptedCardNumber)?.number
 
-                    it.guid == creditCard.guid || cardNumber == creditCard.number
+                        it.guid == creditCard.guid || cardNumber == creditCard.number
+                    }
                 }
-            }
 
             if (foundCreditCard == null) {
                 Result.CanBeCreated

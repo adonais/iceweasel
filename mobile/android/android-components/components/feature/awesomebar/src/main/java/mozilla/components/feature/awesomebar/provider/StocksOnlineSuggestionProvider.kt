@@ -5,6 +5,10 @@
 package mozilla.components.feature.awesomebar.provider
 
 import androidx.annotation.VisibleForTesting
+import java.text.NumberFormat
+import java.util.Locale
+import java.util.UUID
+import kotlin.math.abs
 import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.feature.awesomebar.facts.SuggestionCardType
 import mozilla.components.feature.awesomebar.facts.emitOptimizedSuggestionCardClickedFact
@@ -14,10 +18,6 @@ import mozilla.components.feature.awesomebar.optimizedsuggestions.CombinedSugges
 import mozilla.components.feature.awesomebar.optimizedsuggestions.StockItem
 import mozilla.components.feature.awesomebar.optimizedsuggestions.StockSuggestion
 import mozilla.components.feature.search.SearchUseCases
-import java.text.NumberFormat
-import java.util.Locale
-import java.util.UUID
-import kotlin.math.abs
 
 internal const val DEFAULT_STOCK_SUGGESTION_LIMIT = 1
 
@@ -65,8 +65,7 @@ class StocksOnlineSuggestionProvider(
     }
 
     private fun StockItem.toSuggestionOrNull(locale: Locale): StockSuggestion? {
-        val hasRequiredFields =
-            query.isNotBlank() && ticker.isNotBlank() && name.isNotBlank() && exchange.isNotBlank()
+        val hasRequiredFields = query.isNotBlank() && ticker.isNotBlank() && name.isNotBlank() && exchange.isNotBlank()
 
         val formattedLastPrice = formatLastPrice(lastPrice, locale)
         val parsedChange = parseChangePercent(todaysChangePerc, locale)
@@ -95,20 +94,18 @@ class StocksOnlineSuggestionProvider(
     internal fun parseChangePercent(rawChangePerc: String?, locale: Locale): ChangePercent? {
         val raw = rawChangePerc?.trim().orEmpty()
         val cleaned = raw.removeSuffix("%").trim()
-        val numeric = cleaned
-            .takeIf { it.isNotEmpty() }
-            ?.replace(",", ".")
-            ?.toDoubleOrNull()
+        val numeric = cleaned.takeIf { it.isNotEmpty() }?.replace(",", ".")?.toDoubleOrNull()
 
         return numeric?.let { n ->
             if (n == 0.0) {
                 ChangePercent.Neutral
             } else {
-                val formatter = NumberFormat.getNumberInstance(locale).apply {
-                    minimumFractionDigits = 2
-                    maximumFractionDigits = 2
-                    isGroupingUsed = false
-                }
+                val formatter =
+                    NumberFormat.getNumberInstance(locale).apply {
+                        minimumFractionDigits = 2
+                        maximumFractionDigits = 2
+                        isGroupingUsed = false
+                    }
                 val magnitude = formatter.format(abs(n))
                 if (n > 0) {
                     ChangePercent.Positive("+$magnitude")
@@ -123,23 +120,17 @@ class StocksOnlineSuggestionProvider(
     internal fun formatLastPrice(rawLastPrice: String?, locale: Locale): String? {
         val trimmed = rawLastPrice?.trim().orEmpty()
 
-        val currency = trailingCurrencyRegex
-            .find(trimmed)
-            ?.groupValues
-            ?.getOrNull(1)
+        val currency = trailingCurrencyRegex.find(trimmed)?.groupValues?.getOrNull(1)
 
-        val value = numericRegex
-            .find(trimmed)
-            ?.value
-            ?.replace(",", ".")
-            ?.toDoubleOrNull()
+        val value = numericRegex.find(trimmed)?.value?.replace(",", ".")?.toDoubleOrNull()
 
         return if (trimmed.isNotEmpty() && currency != null && value != null) {
-            val formatter = NumberFormat.getNumberInstance(locale).apply {
-                minimumFractionDigits = 2
-                maximumFractionDigits = 2
-                isGroupingUsed = true
-            }
+            val formatter =
+                NumberFormat.getNumberInstance(locale).apply {
+                    minimumFractionDigits = 2
+                    maximumFractionDigits = 2
+                    isGroupingUsed = true
+                }
             "$currency ${formatter.format(value)}"
         } else {
             null

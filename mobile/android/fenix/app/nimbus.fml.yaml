@@ -47,7 +47,7 @@ import:
             enabled: true
         - channel: release
           value:
-            enabled: false
+            enabled: true
 
 features:
   homescreen:
@@ -113,60 +113,6 @@ features:
         type: Option<Int>
         gecko-pref:
           pref: "gecko.nimbus.test.two"
-          branch: "user"
-  nimbus-qa-string-default:
-    description: "A feature for testing string pref-setting on the default branch."
-    variables:
-      value:
-        description: "The value to set for the pref."
-        type: Option<String>
-        gecko-pref:
-          pref: "nimbus.qa.pref-string-default"
-          branch: "default"
-  nimbus-qa-string-user:
-    description: "A feature for testing string pref-setting on the user branch."
-    variables:
-      value:
-        description: "The value to set for the pref."
-        type: Option<String>
-        gecko-pref:
-          pref: "nimbus.qa.pref-string-user"
-          branch: "user"
-  nimbus-qa-int-default:
-    description: "A feature for testing int pref-setting on the default branch."
-    variables:
-      value:
-        description: "The value to set for the pref."
-        type: Option<Int>
-        gecko-pref:
-          pref: "nimbus.qa.pref-int-default"
-          branch: "default"
-  nimbus-qa-int-user:
-    description: "A feature for testing int pref-setting on the user branch."
-    variables:
-      value:
-        description: "The value to set for the pref."
-        type: Option<Int>
-        gecko-pref:
-          pref: "nimbus.qa.pref-int-user"
-          branch: "user"
-  nimbus-qa-bool-default:
-    description: "A feature for testing boolean pref-setting on the default branch."
-    variables:
-      value:
-        description: "The value to set for the pref."
-        type: Option<Boolean>
-        gecko-pref:
-          pref: "nimbus.qa.pref-bool-default"
-          branch: "default"
-  nimbus-qa-bool-user:
-    description: "A feature for testing boolean pref-setting on the user branch."
-    variables:
-      value:
-        description: "The value to set for the pref."
-        type: Option<Boolean>
-        gecko-pref:
-          pref: "nimbus.qa.pref-bool-user"
           branch: "user"
 
   onboarding:
@@ -267,6 +213,23 @@ features:
           template-message: sent_from_firefox_template
           download-link: "[Download Link]"
           show-snackbar: true
+  listen-to-page:
+    description: A feature that allows audio listening of a page
+    variables:
+      enabled:
+        type: Boolean
+        description: If true, listen to page will be enabled
+        default: false
+    defaults:
+      - channel: developer
+        value:
+          enabled: false
+      - channel: nightly
+        value:
+          enabled: false
+      - channel: beta
+        value:
+          enabled: false
 
   shake-to-summarize:
     description: A feature that can summarize the content of a page when you shake the screen.
@@ -285,6 +248,14 @@ features:
       - channel: beta
         value:
           enabled: true
+
+  weekly-privacy-notification:
+    description: A feature that shows a recurring weekly notification summarizing Tracking Protection activity.
+    variables:
+      enabled:
+        description: If true, the weekly privacy notification will be scheduled.
+        type: Boolean
+        default: false
 
   import-bookmarks:
     description: A feature that lets users import bookmarks from another browser.
@@ -792,6 +763,16 @@ features:
           pref: "privacy.trackingprotection.defer_annotation.enabled"
           branch: "default"
 
+  webcompat-interventions:
+    description: "Experimental controls for webcompat site interventions"
+    variables:
+      disabled-intervention-2060611:
+        description: If `true`, disables the webcompat intervention tracked by bug 2060611 (background media playback). Unset or false leaves the intervention enabled.
+        type: Option<Boolean>
+        gecko-pref:
+          pref: "extensions.webcompat.disabled_interventions.2060611"
+          branch: "default"
+
   pki:
     description: Certificate verification configuration
     variables:
@@ -1114,7 +1095,7 @@ features:
       enabled:
         description: If true, Native Share Sheet is enabled.
         type: Boolean
-        default: false
+        default: true
     defaults:
       - channel: developer
         value:
@@ -1130,6 +1111,14 @@ features:
         description: If true, Add Shortcuts improvement is enabled.
         type: Boolean
         default: true
+
+  show-more-shortcuts:
+    description: Feature to show expand/collapse buttons for shortcuts on the homepage.
+    variables:
+      enabled:
+        description: If true, show the expand/collapse buttons on the homepage.
+        type: Boolean
+        default: false
 
   merino-client:
     description: Feature to enable the Merino Client for users on Firefox on Android.
@@ -1306,6 +1295,10 @@ features:
     variables:
       hide-collections-ui:
         description: If true, the Collections UI is hidden.
+        type: Boolean
+        default: false
+      enabled:
+        description: If true, run the one-time migration that converts existing Collections into Tab Groups.
         type: Boolean
         default: false
 

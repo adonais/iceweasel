@@ -23,7 +23,6 @@ linux64-android-avd-x86_64-repack:
     treeherder:
         symbol: TL(avd-x86_64-linux)
     run:
-        clone-with: hg
         script: repack-android-avd-linux.sh
         arguments:
             - 'python/mozboot/mozboot/android-avds/x86_64.json'
@@ -44,7 +43,6 @@ linux64-android31-avd-x86_64-repack:
     worker:
         kvm: true
     run:
-        clone-with: hg
         script: repack-android-avd-linux.sh
         arguments:
             - 'python/mozboot/mozboot/android-avds/android31-x86_64.json'
@@ -65,7 +63,6 @@ linux64-android30-avd-x86-repack:
     worker:
         kvm: true
     run:
-        clone-with: hg
         script: repack-android-avd-linux.sh
         arguments:
             - 'python/mozboot/mozboot/android-avds/android30-x86.json'
@@ -86,7 +83,6 @@ linux64-android34-avd-x86_64-repack:
     worker:
         kvm: true
     run:
-        clone-with: hg
         script: repack-android-avd-linux.sh
         arguments:
             - 'python/mozboot/mozboot/android-avds/android34-x86_64.json'
@@ -106,7 +102,6 @@ linux64-android-avd-arm64-repack:
     treeherder:
         symbol: TL(avd-arm64-linux)
     run:
-        clone-with: hg
         script: repack-android-avd-linux.sh
         arguments:
             - 'python/mozboot/mozboot/android-avds/arm64.json'
@@ -124,7 +119,6 @@ linux64-android-system-image-x86_64-repack:
     treeherder:
         symbol: TL(x86_64-avd-img-linux)
     run:
-        clone-with: hg
         script: repack-android-system-images-linux.sh
         arguments:
             - 'python/mozboot/mozboot/android-avds/x86_64.json'
@@ -142,7 +136,6 @@ linux64-android31-system-image-x86_64-repack:
     treeherder:
         symbol: TL(x86_64-avd31-img-linux)
     run:
-        clone-with: hg
         script: repack-android-system-images-linux.sh
         arguments:
             - 'python/mozboot/mozboot/android-avds/android31-x86_64.json'
@@ -160,7 +153,6 @@ linux64-android30-system-image-x86-repack:
     treeherder:
         symbol: TL(x86-avd30-img-linux)
     run:
-        clone-with: hg
         script: repack-android-system-images-linux.sh
         arguments:
             - 'python/mozboot/mozboot/android-avds/android30-x86.json'
@@ -178,7 +170,6 @@ linux64-android34-system-image-x86_64-repack:
     treeherder:
         symbol: TL(x86_64-avd34-img-linux)
     run:
-        clone-with: hg
         script: repack-android-system-images-linux.sh
         arguments:
             - 'python/mozboot/mozboot/android-avds/android34-x86_64.json'
@@ -196,7 +187,6 @@ linux64-jdk-repack:
     treeherder:
         symbol: TL(jdk)
     run:
-        clone-with: hg
         script: repack-jdk-linux.sh
         resources:
             - 'python/mozboot/**/*android*'
@@ -210,7 +200,6 @@ linux64-android-sdk-linux-repack:
     treeherder:
         symbol: TL(android-sdk-linux)
     run:
-        clone-with: hg
         script: repack-android-sdk-linux.sh
         resources:
             - 'python/mozboot/**/*android*'
@@ -226,7 +215,6 @@ linux64-android-emulator-linux-repack:
     treeherder:
         symbol: TL(android-emulator-linux)
     run:
-        clone-with: hg
         script: repack-android-emulator-linux.sh
         resources:
             - 'python/mozboot/**/*android*'
@@ -242,7 +230,6 @@ linux64-android-ndk-linux-repack:
     treeherder:
         symbol: TL(android-ndk-linux)
     run:
-        clone-with: hg
         script: repack-android-ndk-linux.sh
         resources:
             - 'python/mozboot/**/*android*'
@@ -254,7 +241,6 @@ linux64-android-simpleperf-linux-repack:
     treeherder:
         symbol: TL(android-simpleperf-linux)
     run:
-        clone-with: hg
         script: repack-android-simpleperf-linux.sh
         resources:
             - 'python/mozboot/**/*android*'
@@ -271,7 +257,6 @@ linux64-android-gradle-dependencies:
             ANDROID_SDK_ROOT: "/builds/worker/fetches/android-sdk-linux"
         max-run-time: 2700
     run:
-        clone-with: hg
         script: android-gradle-dependencies.sh
         sparse-profile: null
         resources:
@@ -290,49 +275,10 @@ linux64-android-gradle-dependencies:
             # The enumeration passes live here.
             - 'mobile/android/mach_commands.py'
             - 'taskcluster/scripts/misc/android-gradle-dependencies/**'
+            - 'third_party/application-services/**/*.gradle'
+            - 'third_party/application-services/.buildconfig-android.yml'
         toolchain-artifact: public/build/android-gradle-dependencies.tar.zst
         toolchain-alias: android-gradle-dependencies
-    fetches:
-        fetch:
-            - sonatype-nexus
-            # Nexus needs Java 8
-            - jdk-8-linux64
-        toolchain:
-            # Aliases aren't allowed for toolchains depending on toolchains.
-            - linux64-android-sdk-linux-repack
-            - linux64-jdk-repack
-            - linux64-node
-            - terser
-
-linux64-android-gradle-dependencies-lite:
-    description: "Android Lite Gradle dependencies toolchain task"
-    treeherder:
-        symbol: TL(gradle-dependencies-lite)
-    worker:
-        env:
-            GRADLE_USER_HOME: "/builds/worker/workspace/build/src/mobile/android/gradle/dotgradle-online"
-    run:
-        clone-with: hg
-        script: android-gradle-dependencies-lite.sh
-        sparse-profile: null
-        resources:
-            - '*.gradle'
-            - 'config/milestone.txt'
-            - 'gradle.properties'
-            - 'gradle/**'
-            - 'mobile/android/**/*.gradle'
-            - 'mobile/android/**/*.gradle.kts'
-            - 'mobile/android/**/gradle.properties'
-            - 'mobile/android/android-components/plugins/dependencies/src/main/java/ApplicationServices.kt'
-            - 'mobile/android/android-components/plugins/dependencies/src/main/java/DependenciesPlugin.kt'
-            - 'mobile/android/config/mozconfigs/android-arm-gradle-dependencies/**'
-            - 'mobile/android/config/mozconfigs/common*'
-            - 'mobile/android/gradle.configure'
-            # The enumeration passes live here.
-            - 'mobile/android/mach_commands.py'
-            - 'taskcluster/scripts/misc/android-gradle-dependencies/**'
-        toolchain-artifact: public/build/android-gradle-dependencies.tar.zst
-        toolchain-alias: android-gradle-dependencies-lite
     fetches:
         fetch:
             - sonatype-nexus
@@ -350,7 +296,6 @@ linux64-android-xmlstarlet:
     treeherder:
         symbol: TL(xmlstarlet)
     run:
-        clone-with: hg
         script: android-xmlstarlet.sh
         toolchain-artifact: public/build/android-xmlstarlet.tar.zst
         toolchain-alias: android-xmlstarlet

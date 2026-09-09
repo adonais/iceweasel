@@ -12,9 +12,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.Constants.TAG
 
-/**
- * Implementation of Robot Pattern for the settings AI Controls sub menu.
- */
+/** Implementation of Robot Pattern for the settings AI Controls sub menu. */
 class SettingsSubMenuAIControlsRobot {
 
     fun verifyAIControlsToolbarTitle() {
@@ -27,7 +25,7 @@ class SettingsSubMenuAIControlsRobot {
 }
 
 fun settingsSubMenuAIControls(
-    interact: SettingsSubMenuAIControlsRobot.() -> Unit,
+    interact: SettingsSubMenuAIControlsRobot.() -> Unit
 ): SettingsSubMenuAIControlsRobot.Transition {
     SettingsSubMenuAIControlsRobot().interact()
     return SettingsSubMenuAIControlsRobot.Transition()

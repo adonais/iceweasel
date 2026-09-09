@@ -49,7 +49,7 @@ export const NormandyMigrations = {
     PreferenceExperiments.migrations.migration03AddActionName,
     PreferenceExperiments.migrations.migration04RenameNameToSlug,
     RecipeRunner.migrations.migration01RemoveOldRecipesCollection,
-    AddonStudies.migrations.migration02RemoveOldAddonStudyAction,
+    migrateRemoveOldAddonStudyAction,
     migrateRemoveLastBuildIdPref,
     PreferenceExperiments.migrations.migration05RemoveOldAction,
     PreferenceExperiments.migrations.migration06TrackOverriddenPrefs,
@@ -105,6 +105,12 @@ function migrateShieldPrefs() {
 
     legacyBranch.clearUserPref(prefName);
   }
+}
+
+function migrateRemoveOldAddonStudyAction() {
+  // Removed with the branched-addon-study action. This migration was in place to
+  // unenroll clients from studies enrolled by the old unbranched add-on study
+  // action.
 }
 
 function migrateStudiesEnabledWithoutHealthReporting() {

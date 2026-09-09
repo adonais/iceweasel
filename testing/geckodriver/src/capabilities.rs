@@ -28,6 +28,18 @@ use thiserror::Error;
 use webdriver::capabilities::{BrowserCapabilities, Capabilities};
 use webdriver::error::{ErrorStatus, WebDriverError, WebDriverResult};
 
+/// Firefox for Android packages (release, beta, nightly) plus the debug variant
+const FENIX_FAMILY_PACKAGES: &[&str] = &[
+    "org.mozilla.fenix",
+    "org.mozilla.fenix.debug",
+    "org.mozilla.firefox",
+    "org.mozilla.firefox_beta",
+];
+
+fn is_fenix_family(package: &str) -> bool {
+    FENIX_FAMILY_PACKAGES.contains(&package)
+}
+
 #[derive(Clone, Debug, Error)]
 enum VersionError {
     #[error(transparent)]
@@ -731,11 +743,7 @@ impl FirefoxOptions {
                 }
                 None => {
                     match package.as_str() {
-                        "org.mozilla.firefox"
-                        | "org.mozilla.firefox_beta"
-                        | "org.mozilla.fenix"
-                        | "org.mozilla.fenix.debug"
-                        | "org.mozilla.reference.browser" => {
+                        p if is_fenix_family(p) || p == "org.mozilla.reference.browser" => {
                             Some("org.mozilla.fenix.IntentReceiverActivity".to_string())
                         }
                         "org.mozilla.focus"
@@ -788,12 +796,23 @@ impl FirefoxOptions {
                 None => {
                     // All GeckoView based applications support this view,
                     // and allow to open a blank page in a Gecko window.
-                    Some(vec![
+                    let mut args = vec![
                         "-a".to_string(),
                         "android.intent.action.VIEW".to_string(),
                         "-d".to_string(),
                         "about:blank".to_string(),
-                    ])
+                    ];
+                    // Fenix-family builds honor this extra to bypass the onboarding
+                    // flow and other startup interruptions that would otherwise
+                    // block automation (bug 2064609).
+                    if is_fenix_family(package.as_str()) {
+                        args.extend([
+                            "--ez".to_string(),
+                            "automationtest".to_string(),
+                            "true".to_string(),
+                        ]);
+                    }
+                    Some(args)
                 }
             };
 
@@ -1303,15 +1322,20 @@ mod tests {
             firefox_opts.insert("androidPackage".into(), json!(package));
 
             let opts = make_options(firefox_opts, None).expect("valid firefox options");
-            assert_eq!(
-                opts.android.unwrap().intent_arguments,
-                Some(vec![
-                    "-a".to_string(),
-                    "android.intent.action.VIEW".to_string(),
-                    "-d".to_string(),
-                    "about:blank".to_string(),
-                ])
-            );
+            let mut expected = vec![
+                "-a".to_string(),
+                "android.intent.action.VIEW".to_string(),
+                "-d".to_string(),
+                "about:blank".to_string(),
+            ];
+            if is_fenix_family(package) {
+                expected.extend([
+                    "--ez".to_string(),
+                    "automationtest".to_string(),
+                    "true".to_string(),
+                ]);
+            }
+            assert_eq!(opts.android.unwrap().intent_arguments, Some(expected));
         }
     }
 

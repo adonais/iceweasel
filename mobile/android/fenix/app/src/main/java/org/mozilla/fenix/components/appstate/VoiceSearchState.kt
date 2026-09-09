@@ -4,16 +4,10 @@
 
 package org.mozilla.fenix.components.appstate
 
-/**
- * State related to voice search functionality.
- */
+/** State related to voice search functionality. */
 data class VoiceSearchState(
-    /**
-     * Whether the app is currently requesting voice input from the user.
-     */
+    /** Whether the app is currently requesting voice input from the user. */
     val isRequestingVoiceInput: Boolean = false,
-    /**
-     * The search terms received from voice input, if any.
-     */
+    /** The search terms received from voice input, if any. */
     val voiceInputResult: String? = null,
 )

@@ -902,8 +902,16 @@ nsresult IMEContentObserver::MaybeHandleSelectionEvent(
     nsPresContext* aPresContext, WidgetSelectionEvent* aEvent) {
   MOZ_ASSERT(aEvent);
   MOZ_ASSERT(aEvent->mMessage == eSetSelection);
-  NS_ASSERTION(!mNeedsToNotifyIMEOfSelectionChange,
-               "Selection cache has not been updated yet");
+  if (mIsForEditContext) {
+    // It's possible for this to fail if the web app does not handle
+    // EditContext characterboundsupdate events, since we suppress
+    // IME notifications until updateCharacterBounds() is called.
+    NS_WARNING_ASSERTION(!mNeedsToNotifyIMEOfSelectionChange,
+                         "Selection cache has not been updated yet");
+  } else {
+    NS_ASSERTION(!mNeedsToNotifyIMEOfSelectionChange,
+                 "Selection cache has not been updated yet");
+  }
 
   MOZ_LOG(sIMECOLog, LogLevel::Debug,
           ("0x%p MaybeHandleSelectionEvent(aEvent={ "
@@ -923,7 +931,8 @@ nsresult IMEContentObserver::MaybeHandleSelectionEvent(
   if (!mNeedsToNotifyIMEOfSelectionChange && mSelectionData.IsInitialized() &&
       mSelectionData.HasRange() &&
       mSelectionData.StartOffset() == aEvent->mOffset &&
-      mSelectionData.Length() == aEvent->mLength) {
+      mSelectionData.Length() == aEvent->mLength &&
+      mSelectionData.mReversed == aEvent->mReversed) {
     if (RefPtr<Selection> selection = GetSelection()) {
       selection->ScrollIntoView(nsISelectionController::SELECTION_FOCUS_REGION);
     }

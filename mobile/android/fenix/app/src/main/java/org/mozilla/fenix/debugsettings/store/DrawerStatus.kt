@@ -4,17 +4,11 @@
 
 package org.mozilla.fenix.debugsettings.store
 
-/**
- * Possible values of the debug drawer's physical state.
- */
+/** Possible values of the debug drawer's physical state. */
 enum class DrawerStatus {
-    /**
-     * The state of the drawer when it is closed.
-     */
+    /** The state of the drawer when it is closed. */
     Closed,
 
-    /**
-     * The state of the drawer when it is open.
-     */
+    /** The state of the drawer when it is open. */
     Open,
 }

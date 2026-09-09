@@ -32,14 +32,13 @@ class FindInPagePresenterTest {
 
     @Before
     fun setUp() {
-        store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "test-tab"),
-                ),
-                selectedTabId = "test-tab",
-            ),
-        )
+        store =
+            BrowserStore(
+                BrowserState(
+                    tabs = listOf(createTab("https://www.mozilla.org", id = "test-tab")),
+                    selectedTabId = "test-tab",
+                )
+            )
     }
 
     @Test

@@ -32,6 +32,7 @@ import mozilla.components.compose.base.button.IconButton
 import mozilla.components.concept.storage.Address
 import mozilla.components.concept.storage.CreditCard
 import mozilla.components.service.fxa.manager.FxaAccountManager
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.IconListItem
 import org.mozilla.fenix.compose.list.SwitchListItem
@@ -44,7 +45,6 @@ import org.mozilla.fenix.debugsettings.addresses.generateFakeAddressForLangTag
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.ThemedValue
 import org.mozilla.fenix.theme.ThemedValueProvider
-import mozilla.components.ui.icons.R as iconsR
 
 @Composable
 internal fun AutofillSettingsScreen(
@@ -79,13 +79,9 @@ internal fun AutofillSettingsScreen(
     Scaffold(
         topBar = {
             AutofillSettingsTopBar(store)
-        },
+        }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxWidth(),
-        ) {
+        Column(modifier = Modifier.padding(paddingValues).fillMaxWidth()) {
             Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static100))
 
             AutofillSettingsAddressSection(store, isAddressSyncEnabled)
@@ -105,10 +101,11 @@ internal fun AutofillSettingsScreen(
 @Composable
 private fun AutofillSettingsTopBar(store: AutofillSettingsStore) {
     TopAppBar(
-        windowInsets = WindowInsets(
-            top = 0.dp,
-            bottom = 0.dp,
-        ),
+        windowInsets =
+            WindowInsets(
+                top = 0.dp,
+                bottom = 0.dp,
+            ),
         title = {
             Text(
                 text = stringResource(R.string.preferences_autofill),
@@ -118,9 +115,8 @@ private fun AutofillSettingsTopBar(store: AutofillSettingsStore) {
         navigationIcon = {
             IconButton(
                 onClick = { store.dispatch(AutofillSettingsBackClicked) },
-                contentDescription = stringResource(
-                    R.string.autofill_settings_navigate_back_button_content_description,
-                ),
+                contentDescription =
+                    stringResource(R.string.autofill_settings_navigate_back_button_content_description),
             ) {
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_back_24),
@@ -203,10 +199,11 @@ private fun AutofillSettingsCreditCardSection(store: AutofillSettingsStore) {
     SwitchListItem(
         label = stringResource(id = R.string.preferences_credit_cards_save_and_autofill_cards_2),
         checked = state.saveFillCards,
-        description = stringResource(
-            id = R.string.preferences_credit_cards_save_and_autofill_cards_summary_2,
-            stringResource(id = R.string.app_name),
-        ),
+        description =
+            stringResource(
+                id = R.string.preferences_credit_cards_save_and_autofill_cards_summary_2,
+                stringResource(id = R.string.app_name),
+            ),
         maxDescriptionLines = Int.MAX_VALUE,
         showSwitchAfter = true,
     ) {
@@ -239,9 +236,7 @@ private fun AutofillSettingsCreditCardSection(store: AutofillSettingsStore) {
             onClick = { store.dispatch(AddCardClicked) },
         )
     } else {
-        TextListItem(
-            label = stringResource(id = R.string.preferences_credit_cards_manage_saved_cards_2),
-        ) {
+        TextListItem(label = stringResource(id = R.string.preferences_credit_cards_manage_saved_cards_2)) {
             store.dispatch(ManageCreditCardsClicked)
         }
     }
@@ -258,30 +253,27 @@ private class AutofillSettingsScreenPreviewProvider :
         sequenceOf(
             AutofillSettingsScreenPreviewState(),
             AutofillSettingsScreenPreviewState(
-                addresses = listOf(
-                    "en-CA".generateFakeAddressForLangTag().toAddress(),
-                ),
+                addresses = listOf("en-CA".generateFakeAddressForLangTag().toAddress()),
                 creditCards = listOf(generateCreditCard().toCreditCard()),
             ),
-            AutofillSettingsScreenPreviewState(
-                accountAuthState = AccountAuthState.Authenticated,
-            ),
-        ),
+            AutofillSettingsScreenPreviewState(accountAuthState = AccountAuthState.Authenticated),
+        )
     )
 
 @Composable
 @FlexibleWindowPreview
 private fun AutofillSettingsScreenPreview(
     @PreviewParameter(AutofillSettingsScreenPreviewProvider::class)
-    state: ThemedValue<AutofillSettingsScreenPreviewState>,
+    state: ThemedValue<AutofillSettingsScreenPreviewState>
 ) {
     val store = { _: NavHostController ->
         AutofillSettingsStore(
-            initialState = AutofillSettingsState.default.copy(
-                addresses = state.value.addresses,
-                creditCards = state.value.creditCards,
-                accountAuthState = state.value.accountAuthState,
-            ),
+            initialState =
+                AutofillSettingsState.default.copy(
+                    addresses = state.value.addresses,
+                    creditCards = state.value.creditCards,
+                    accountAuthState = state.value.accountAuthState,
+                )
         )
     }
     FirefoxTheme(state.theme) {

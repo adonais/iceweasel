@@ -115,6 +115,7 @@ alias_set_flags = {
     "WasmArrayDataArea",
     "GlobalGenerationCounter",
     "SharedArrayRawBufferLength",
+    "GeneratorResumeState",
     "Any",
 }
 

@@ -5,7 +5,7 @@
 // Tests for Bug 2040637: SSLTokensCache persistence teardown.
 //
 // The toml [prefs] block sets network.ssl_tokens_cache_persistence=true so
-// Init() sets up persistence (write observers, mBackingFile, etc.).  The
+// Init() sets up persistence (write observers, DB thread, etc.).  The
 // test then sets the pref to false *before* firing profile-after-change,
 // simulating a user whose user.js disables the pref.  The handler must
 // tear down persistence so no cache file is written on idle-daily.
@@ -25,7 +25,7 @@ add_setup({ skip_if: () => AppConstants.MOZ_SYSTEM_NSS }, async () => {
   );
 
   gProfileDir = do_get_profile();
-  gCacheFile = PathUtils.join(gProfileDir.path, "ssl_tokens_cache.bin");
+  gCacheFile = PathUtils.join(gProfileDir.path, "ssl_tokens_cache.sqlite");
 
   // Disable persistence *before* profile-after-change fires, simulating
   // a user.js override that is applied after Init() but before
@@ -79,7 +79,7 @@ add_task(
 
     ok(
       !(await IOUtils.exists(gCacheFile)),
-      "ssl_tokens_cache.bin must NOT be written when pref is disabled"
+      "ssl_tokens_cache.sqlite must NOT be written when pref is disabled"
     );
   }
 );

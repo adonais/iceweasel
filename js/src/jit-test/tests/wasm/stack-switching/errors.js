@@ -134,7 +134,7 @@
   assertErrorMessage(() => run(), WebAssembly.RuntimeError, /unimplemented/);
 }
 
-// cont.new/resume with cont type having params or results is NYI
+// cont.new/resume with cont type having params or results works
 {
   let { run } = wasmEvalText(`(module
     (type $ft (func (param i32) (result i32)))
@@ -148,5 +148,5 @@
       resume $ct
     )
   )`).exports;
-  assertErrorMessage(() => run(), WebAssembly.RuntimeError, /unimplemented/);
+  assertEq(run(), 1);
 }

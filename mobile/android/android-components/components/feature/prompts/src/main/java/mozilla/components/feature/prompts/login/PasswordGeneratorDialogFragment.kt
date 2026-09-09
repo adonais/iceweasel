@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.fragment.compose.content
+import com.google.android.material.R as materialR
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import mozilla.components.concept.storage.Login
@@ -25,15 +26,11 @@ import mozilla.components.feature.prompts.dialog.KEY_PROMPT_UID
 import mozilla.components.feature.prompts.dialog.KEY_SESSION_ID
 import mozilla.components.feature.prompts.dialog.PromptDialogFragment
 import mozilla.components.feature.prompts.dialog.emitGeneratedPasswordFilledFact
-import com.google.android.material.R as materialR
 
 private const val GENERATED_PASSWORD = "GENERATED_PASSWORD"
 private const val URL = "URL"
 
-/**
- *  Defines a dialog for suggesting a strong generated password when creating a
- *  new account on a website
- */
+/** Defines a dialog for suggesting a strong generated password when creating a new account on a website */
 internal class PasswordGeneratorDialogFragment : PromptDialogFragment() {
 
     private val generatedPassword: String by lazy {
@@ -46,8 +43,7 @@ internal class PasswordGeneratorDialogFragment : PromptDialogFragment() {
 
     private var onSavedGeneratedPassword: (Boolean) -> Unit = { _ -> }
 
-    private var colorsProvider: PasswordGeneratorDialogColorsProvider =
-        PasswordGeneratorDialogColors.defaultProvider()
+    private var colorsProvider: PasswordGeneratorDialogColorsProvider = PasswordGeneratorDialogColors.defaultProvider()
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return BottomSheetDialog(requireContext(), R.style.MozDialogStyle).apply {
@@ -84,20 +80,19 @@ internal class PasswordGeneratorDialogFragment : PromptDialogFragment() {
         }
     }
 
-    /**
-     * Called when a generated password is being used when creating a new account on a website.
-     */
+    /** Called when a generated password is being used when creating a new account on a website. */
     @VisibleForTesting
     internal fun onUsePassword(generatedPassword: String, currentUrl: String) {
-        val login = Login(
-            guid = "",
-            origin = currentUrl,
-            formActionOrigin = currentUrl,
-            httpRealm = currentUrl,
-            username = "",
-            password = generatedPassword,
-            hint = LoginHint.GENERATED,
-        )
+        val login =
+            Login(
+                guid = "",
+                origin = currentUrl,
+                formActionOrigin = currentUrl,
+                httpRealm = currentUrl,
+                username = "",
+                password = generatedPassword,
+                hint = LoginHint.GENERATED,
+            )
         feature?.onConfirm(sessionId, promptRequestUID, login)
         emitGeneratedPasswordFilledFact()
         dismiss()
@@ -115,6 +110,7 @@ internal class PasswordGeneratorDialogFragment : PromptDialogFragment() {
 
         /**
          * A builder method for creating a [PasswordGeneratorDialogFragment]
+         *
          * @param sessionId The id of the session for which this dialog will be created.
          * @param promptRequestUID Identifier of the PromptRequest for which this dialog is shown.
          * @param generatedPassword The strong generated password.
@@ -128,15 +124,17 @@ internal class PasswordGeneratorDialogFragment : PromptDialogFragment() {
             currentUrl: String,
             onSavedGeneratedPassword: (Boolean) -> Unit,
             colorsProvider: PasswordGeneratorDialogColorsProvider,
-        ) = PasswordGeneratorDialogFragment().apply {
-            arguments = (arguments ?: Bundle()).apply {
-                putString(KEY_SESSION_ID, sessionId)
-                putString(KEY_PROMPT_UID, promptRequestUID)
-                putString(GENERATED_PASSWORD, generatedPassword)
-                putString(URL, currentUrl)
+        ) =
+            PasswordGeneratorDialogFragment().apply {
+                arguments =
+                    (arguments ?: Bundle()).apply {
+                        putString(KEY_SESSION_ID, sessionId)
+                        putString(KEY_PROMPT_UID, promptRequestUID)
+                        putString(GENERATED_PASSWORD, generatedPassword)
+                        putString(URL, currentUrl)
+                    }
+                this.onSavedGeneratedPassword = onSavedGeneratedPassword
+                this.colorsProvider = colorsProvider
             }
-            this.onSavedGeneratedPassword = onSavedGeneratedPassword
-            this.colorsProvider = colorsProvider
-        }
     }
 }

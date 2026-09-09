@@ -54,21 +54,19 @@ class CrashReporterController(
 
         // When the only tab crashed and the user chose to close it we'll navigate to Home.
         if (currentNumberOfTabs == 1) {
-            navController.navigate(
-                BrowserFragmentDirections.actionGlobalHome(),
-            )
+            navController.navigate(BrowserFragmentDirections.actionGlobalHome())
         }
 
         return job
     }
 
     /**
-     * Submits all pending non-fatal crash reports if the "Send crash" checkbox was checked
-     * and the report crashes setting is enabled.
-     * Also clears the current list of non-fatal crashes irrespective of whether they are reported or not.
+     * Submits all pending non-fatal crash reports if the "Send crash" checkbox was checked and the report crashes
+     * setting is enabled. Also clears the current list of non-fatal crashes irrespective of whether they are reported
+     * or not.
      *
-     * @param reportCrashes A second condition beside crash reporting being enabled in app settings
-     * based on which the current crashes will be reported or immediately disposed off.
+     * @param reportCrashes A second condition beside crash reporting being enabled in app settings based on which the
+     *   current crashes will be reported or immediately disposed off.
      * @return [Job] allowing to check status / cancel the reporting operation or null if reporting is disabled.
      */
     @VisibleForTesting
@@ -76,13 +74,14 @@ class CrashReporterController(
     internal fun submitPendingNonFatalCrashesIfNecessary(reportCrashes: Boolean): Job? {
         var job: Job? = null
         if (reportCrashes && settings.isCrashReportingEnabled) {
-            job = GlobalScope.launch(Dispatchers.IO) {
-                val crashes = appStore.state.nonFatalCrashes
-                crashes.forEach {
-                    components.analytics.crashReporter.submitReport(it)
-                    appStore.dispatch(AppAction.RemoveNonFatalCrash(it))
+            job =
+                GlobalScope.launch(Dispatchers.IO) {
+                    val crashes = appStore.state.nonFatalCrashes
+                    crashes.forEach {
+                        components.analytics.crashReporter.submitReport(it)
+                        appStore.dispatch(AppAction.RemoveNonFatalCrash(it))
+                    }
                 }
-            }
         } else {
             appStore.dispatch(AppAction.RemoveAllNonFatalCrashes)
         }

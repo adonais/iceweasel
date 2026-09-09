@@ -383,11 +383,10 @@ WrFiltersStatus FilterInstance::BuildWebRenderFiltersImpl(
     }
 
     if (!filterIsNoop) {
-      if (finalClip.isNothing()) {
+      if (!finalClip) {
         finalClip = Some(primitive.PrimitiveSubregion());
       } else {
-        finalClip =
-            Some(primitive.PrimitiveSubregion().Intersect(finalClip.value()));
+        finalClip = Some(primitive.PrimitiveSubregion().Intersect(*finalClip));
       }
     }
   }
@@ -398,7 +397,7 @@ WrFiltersStatus FilterInstance::BuildWebRenderFiltersImpl(
 
   if (finalClip) {
     aWrFilters.post_filters_clip =
-        Some(instance.FilterSpaceToFrameSpace(finalClip.value()));
+        Some(instance.FilterSpaceToFrameSpace(*finalClip));
   }
   return WrFiltersStatus::CHAIN;
 }
@@ -1563,8 +1562,7 @@ FilterInstance::FilterInstance(
       filterToUserSpace * GetUserSpaceToFrameSpaceInCSSPxTransform();
   // mFilterSpaceToFrameSpaceInCSSPxTransform is always invertible
   mFrameSpaceInCSSPxToFilterSpaceTransform =
-      mFilterSpaceToFrameSpaceInCSSPxTransform;
-  mFrameSpaceInCSSPxToFilterSpaceTransform.Invert();
+      mFilterSpaceToFrameSpaceInCSSPxTransform.Inverse();
 
   nsIntRect targetBounds;
   if (aPreFilterInkOverflowRectOverride) {
@@ -1818,9 +1816,8 @@ void FilterInstance::BuildSourceImage(DrawTarget* aDest,
   // code more complex while being hard to get right without introducing
   // subtle bugs, and in practice it probably makes no real difference.)
   gfxContext ctx(offscreenDT);
-  gfxMatrix devPxToCssPxTM = SVGUtils::GetCSSPxToDevPxMatrix(mTargetFrame);
-  DebugOnly<bool> invertible = devPxToCssPxTM.Invert();
-  MOZ_ASSERT(invertible);
+  gfxMatrix devPxToCssPxTM =
+      SVGUtils::GetCSSPxToDevPxMatrix(mTargetFrame).Inverse();
   ctx.SetMatrixDouble(devPxToCssPxTM * mPaintTransform *
                       gfxMatrix::Translation(-neededRect.TopLeft()));
 

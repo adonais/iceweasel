@@ -22,13 +22,11 @@ import mozilla.components.support.ktx.android.content.isOSOnLowMemory
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
 
 /**
- * Feature implementation for automatically taking thumbnails of sites.
- * The feature will take a screenshot when the page finishes loading,
- * and will add it to the [ContentState.thumbnail] property.
+ * Feature implementation for automatically taking thumbnails of sites. The feature will take a screenshot when the page
+ * finishes loading, and will add it to the [ContentState.thumbnail] property.
  *
- * If the OS is under low memory conditions, the screenshot will be not taken.
- * Ideally, this should be used in conjunction with `SessionManager.onLowMemory` to allow
- * free up some [ContentState.thumbnail] from memory.
+ * If the OS is under low memory conditions, the screenshot will be not taken. Ideally, this should be used in
+ * conjunction with `SessionManager.onLowMemory` to allow free up some [ContentState.thumbnail] from memory.
  */
 class BrowserThumbnails(
     private val context: Context,
@@ -39,24 +37,24 @@ class BrowserThumbnails(
 
     private var scope: CoroutineScope? = null
 
-    /**
-     * Starts observing the selected session to listen for when a session finishes loading.
-     */
+    /** Starts observing the selected session to listen for when a session finishes loading. */
     override fun start() {
-        scope = store.flowScoped(dispatcher = dispatcher) { flow ->
-            flow.map { it.selectedTab }
-                .ifAnyChanged { arrayOf(it?.content?.loading, it?.content?.firstContentfulPaint) }
-                .collect { state ->
-                    if (state?.content?.loading == false && state.content.firstContentfulPaint) {
-                        requestScreenshot()
+        scope =
+            store.flowScoped(dispatcher = dispatcher) { flow ->
+                flow
+                    .map { it.selectedTab }
+                    .ifAnyChanged { arrayOf(it?.content?.loading, it?.content?.firstContentfulPaint) }
+                    .collect { state ->
+                        if (state?.content?.loading == false && state.content.firstContentfulPaint) {
+                            requestScreenshot()
+                        }
                     }
-                }
-        }
+            }
     }
 
     /**
-     * Requests a screenshot to be taken that can be observed from [BrowserStore] if successful. The request can fail
-     * if the device is low on memory or if there is no tab attached to the [EngineView].
+     * Requests a screenshot to be taken that can be observed from [BrowserStore] if successful. The request can fail if
+     * the device is low on memory or if there is no tab attached to the [EngineView].
      */
     fun requestScreenshot() {
         if (!isLowOnMemory()) {
@@ -74,15 +72,12 @@ class BrowserThumbnails(
         }
     }
 
-    /**
-     * Stops observing the selected session.
-     */
+    /** Stops observing the selected session. */
     override fun stop() {
         scope?.cancel()
     }
 
-    @VisibleForTesting
-    internal var testLowMemory = false
+    @VisibleForTesting internal var testLowMemory = false
 
     private fun isLowOnMemory() = testLowMemory || context.isOSOnLowMemory()
 }

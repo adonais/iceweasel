@@ -15,11 +15,8 @@ import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.state.Screen
 import org.mozilla.focus.utils.SupportUtils
 
-/**
- * Settings fragment for Mozilla-related links and information.
- */
-class MozillaSettingsFragment :
-    BaseSettingsFragment() {
+/** Settings fragment for Mozilla-related links and information. */
+class MozillaSettingsFragment : BaseSettingsFragment() {
     override fun onCreatePreferences(p0: Bundle?, p1: String?) {
         addPreferencesFromResource(R.xml.mozilla_settings)
     }
@@ -37,56 +34,56 @@ class MozillaSettingsFragment :
 
         when (preference.key) {
             resources.getString(R.string.pref_key_about) -> {
-                requireComponents.appStore.dispatch(
-                    AppAction.OpenSettings(Screen.Settings.Page.About),
-                )
+                requireComponents.appStore.dispatch(AppAction.OpenSettings(Screen.Settings.Page.About))
             }
-            resources.getString(R.string.pref_key_help) -> run {
-                val tabId = activity.components.tabsUseCases.addTab(
-                    SupportUtils.HELP_URL,
-                    source = SessionState.Source.Internal.Menu,
-                    selectTab = true,
-                    private = true,
-                )
-                requireComponents.appStore.dispatch(AppAction.OpenTab(tabId))
-            }
-            resources.getString(R.string.pref_key_terms_of_use) -> run {
-                val tabId = activity.components.tabsUseCases.addTab(
-                    SupportUtils.TERMS_OF_USE_URL,
-                    source = SessionState.Source.Internal.Menu,
-                    selectTab = true,
-                    private = true,
-                )
-                requireComponents.appStore.dispatch(AppAction.OpenTab(tabId))
-            }
+            resources.getString(R.string.pref_key_help) ->
+                run {
+                    val tabId =
+                        activity.components.tabsUseCases.addTab(
+                            SupportUtils.HELP_URL,
+                            source = SessionState.Source.Internal.Menu,
+                            selectTab = true,
+                            private = true,
+                        )
+                    requireComponents.appStore.dispatch(AppAction.OpenTab(tabId))
+                }
+            resources.getString(R.string.pref_key_terms_of_use) ->
+                run {
+                    val tabId =
+                        activity.components.tabsUseCases.addTab(
+                            SupportUtils.TERMS_OF_USE_URL,
+                            source = SessionState.Source.Internal.Menu,
+                            selectTab = true,
+                            private = true,
+                        )
+                    requireComponents.appStore.dispatch(AppAction.OpenTab(tabId))
+                }
             resources.getString(R.string.pref_key_privacy_notice) -> {
-                val tabId = activity.components.tabsUseCases.addTab(
-                    SupportUtils.PRIVACY_NOTICE_URL,
-                    source = SessionState.Source.Internal.Menu,
-                    selectTab = true,
-                    private = true,
-                )
+                val tabId =
+                    activity.components.tabsUseCases.addTab(
+                        SupportUtils.PRIVACY_NOTICE_URL,
+                        source = SessionState.Source.Internal.Menu,
+                        selectTab = true,
+                        private = true,
+                    )
                 requireComponents.appStore.dispatch(AppAction.OpenTab(tabId))
             }
             resources.getString(R.string.pref_key_licensing_info) -> {
-                val tabId = activity.components.tabsUseCases.addTab(
-                    "about:license",
-                    source = SessionState.Source.Internal.Menu,
-                    selectTab = true,
-                    private = true,
-                )
+                val tabId =
+                    activity.components.tabsUseCases.addTab(
+                        "about:license",
+                        source = SessionState.Source.Internal.Menu,
+                        selectTab = true,
+                        private = true,
+                    )
                 requireComponents.appStore.dispatch(AppAction.OpenTab(tabId))
             }
             resources.getString(R.string.pref_key_libraries_we_use) -> {
-                requireComponents.appStore.dispatch(
-                    AppAction.OpenSettings(Screen.Settings.Page.Licenses),
-                )
+                requireComponents.appStore.dispatch(AppAction.OpenSettings(Screen.Settings.Page.Licenses))
             }
 
             resources.getString(R.string.pref_key_crash_reports) -> {
-                requireComponents.appStore.dispatch(
-                    AppAction.OpenSettings(Screen.Settings.Page.CrashList),
-                )
+                requireComponents.appStore.dispatch(AppAction.OpenSettings(Screen.Settings.Page.CrashList))
             }
         }
         return super.onPreferenceTreeClick(preference)

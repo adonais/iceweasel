@@ -12,11 +12,9 @@ import org.mozilla.geckoview.GeckoSession.PromptDelegate.ChoicePrompt
 import org.mozilla.geckoview.GeckoSession.PromptDelegate.PromptInstanceDelegate
 
 /**
- * Implementation of [PromptInstanceDelegate] used to update a
- * prompt request when onPromptUpdate is invoked.
+ * Implementation of [PromptInstanceDelegate] used to update a prompt request when onPromptUpdate is invoked.
  *
- * @param geckoSession [GeckoEngineSession] used to notify the engine observer
- * with the onPromptUpdate callback.
+ * @param geckoSession [GeckoEngineSession] used to notify the engine observer with the onPromptUpdate callback.
  * @param previousPrompt [PromptRequest] to be updated.
  */
 internal class ChoicePromptDelegate(
@@ -44,21 +42,19 @@ internal class ChoicePromptDelegate(
 
     /**
      * Use the received prompt to create the updated [PromptRequest]
+     *
      * @param updatedPrompt The [ChoicePrompt] with the updated choices.
      */
     private fun updatePromptChoices(updatedPrompt: ChoicePrompt): PromptRequest? {
         return when (previousPrompt) {
             is PromptRequest.MenuChoice -> {
-                (previousPrompt as PromptRequest.MenuChoice)
-                    .copy(choices = convertToChoices(updatedPrompt.choices))
+                (previousPrompt as PromptRequest.MenuChoice).copy(choices = convertToChoices(updatedPrompt.choices))
             }
             is PromptRequest.SingleChoice -> {
-                (previousPrompt as PromptRequest.SingleChoice)
-                    .copy(choices = convertToChoices(updatedPrompt.choices))
+                (previousPrompt as PromptRequest.SingleChoice).copy(choices = convertToChoices(updatedPrompt.choices))
             }
             is PromptRequest.MultipleChoice -> {
-                (previousPrompt as PromptRequest.MultipleChoice)
-                    .copy(choices = convertToChoices(updatedPrompt.choices))
+                (previousPrompt as PromptRequest.MultipleChoice).copy(choices = convertToChoices(updatedPrompt.choices))
             }
             else -> null
         }

@@ -1326,7 +1326,7 @@ impl PictureInstance {
                     }
                 };
 
-                let surface = SurfaceInfo::new(
+                let mut surface = SurfaceInfo::new(
                     surface_spatial_node_index,
                     raster_spatial_node_index,
                     frame_context.global_screen_device_rect,
@@ -1337,6 +1337,29 @@ impl PictureInstance {
                     surface_snaps,
                     force_scissor_rect,
                 );
+
+                // For a backdrop filter the SVGFE graph composites in this
+                // surface's (backdrop-root) space, but its subregions are
+                // authored against the filtered element's spatial node. Record
+                // the mapping between the two so every coverage path can map the
+                // subregions consistently. Recomputed per frame, so an async
+                // (APZ) scroll of either node is accounted for.
+                //
+                // Only a 2D scale+offset relationship is handled here; if the
+                // element->backdrop-root transform is not a 2D scale/translation
+                // (e.g. rotation or a 3D transform) `as_2d_scale_offset` returns
+                // None and the mapping stays identity, leaving the subregions
+                // as authored for that rare case.
+                if let PictureCompositeMode::SVGFEGraph(_, source_spatial_node_index) = &composite_mode {
+                    if *source_spatial_node_index != surface_spatial_node_index {
+                        if let Some(scale_offset) = frame_context.spatial_tree
+                            .get_relative_transform(*source_spatial_node_index, surface_spatial_node_index)
+                            .as_2d_scale_offset()
+                        {
+                            surface.svgfe_source_map = scale_offset;
+                        }
+                    }
+                }
 
                 let surface_index = SurfaceIndex(surfaces.len());
 
@@ -2719,7 +2742,10 @@ pub fn prepare_picture_primitive(
             }
         }
         PictureCompositeMode::Filter(Filter::Opacity(_, amount)) => {
-            opacity = amount;
+            // Animated opacity is interpolated unclamped, so the resolved
+            // amount can be outside [0, 1]. The composite quad multiplies the
+            // source by it, which would overflow the 8 bit target.
+            opacity = amount.clamp(0.0, 1.0);
         }
         PictureCompositeMode::Filter(ref f) => {
             let extra_gpu_data = pic_scratch
@@ -2888,6 +2914,7 @@ fn test_large_surface_scale_1() {
             local_scale: (1.0, 1.0),
             allow_snapping: true,
             force_scissor_rect: false,
+            svgfe_source_map: ScaleOffset::identity(),
         },
         SurfaceInfo {
             unclipped_local_rect: PictureRect::new(
@@ -2907,6 +2934,7 @@ fn test_large_surface_scale_1() {
             local_scale: (1.0, 1.0),
             allow_snapping: true,
             force_scissor_rect: false,
+            svgfe_source_map: ScaleOffset::identity(),
         },
     ];
 
@@ -2986,6 +3014,7 @@ fn test_drop_filter_dirty_region_outside_prim() {
             local_scale: (1.0, 1.0),
             allow_snapping: true,
             force_scissor_rect: false,
+            svgfe_source_map: ScaleOffset::identity(),
             culling_rect: VisRect::max_rect(),
         },
         SurfaceInfo {
@@ -3008,6 +3037,7 @@ fn test_drop_filter_dirty_region_outside_prim() {
             local_scale: (1.0, 1.0),
             allow_snapping: true,
             force_scissor_rect: false,
+            svgfe_source_map: ScaleOffset::identity(),
             culling_rect: VisRect::max_rect(),
         },
     ];
@@ -3101,6 +3131,7 @@ fn test_drop_filter_partial_dirty_content_inflate() {
             local_scale: (1.0, 1.0),
             allow_snapping: true,
             force_scissor_rect: false,
+            svgfe_source_map: ScaleOffset::identity(),
             culling_rect: VisRect::max_rect(),
         },
         SurfaceInfo {
@@ -3123,6 +3154,7 @@ fn test_drop_filter_partial_dirty_content_inflate() {
             local_scale: (1.0, 1.0),
             allow_snapping: true,
             force_scissor_rect: false,
+            svgfe_source_map: ScaleOffset::identity(),
             culling_rect: VisRect::max_rect(),
         },
     ];

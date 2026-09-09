@@ -23,8 +23,8 @@ import mozilla.components.support.base.feature.LifecycleAwareFeature
  * Prevents screenshots and screen recordings in private tabs.
  *
  * @param isSecure Returns true if the session should have [FLAG_SECURE] set.
- * @param clearFlagOnStop Used to keep [FLAG_SECURE] enabled or not when calling [stop].
- * Can be overriden to customize when the secure flag is set.
+ * @param clearFlagOnStop Used to keep [FLAG_SECURE] enabled or not when calling [stop]. Can be overriden to customize
+ *   when the secure flag is set.
  */
 class SecureWindowFeature(
     private val window: Window,
@@ -38,18 +38,20 @@ class SecureWindowFeature(
     private var scope: CoroutineScope? = null
 
     override fun start() {
-        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.mapNotNull { state -> state.findCustomTabOrSelectedTab(customTabId) }
-                .map { isSecure(it) }
-                .distinctUntilChanged()
-                .collect { isSecure ->
-                    if (isSecure) {
-                        window.addFlags(FLAG_SECURE)
-                    } else {
-                        window.clearFlags(FLAG_SECURE)
+        scope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .mapNotNull { state -> state.findCustomTabOrSelectedTab(customTabId) }
+                    .map { isSecure(it) }
+                    .distinctUntilChanged()
+                    .collect { isSecure ->
+                        if (isSecure) {
+                            window.addFlags(FLAG_SECURE)
+                        } else {
+                            window.clearFlags(FLAG_SECURE)
+                        }
                     }
-                }
-        }
+            }
     }
 
     override fun stop() {

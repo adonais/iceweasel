@@ -12,8 +12,8 @@ import androidx.core.content.pm.ShortcutManagerCompat
 /**
  * A wrapper for ShortcutManagerCompat to simplify testing.
  *
- * This interface abstracts the static methods of ShortcutManagerCompat,
- * allowing for easier mocking and verification in unit tests.
+ * This interface abstracts the static methods of ShortcutManagerCompat, allowing for easier mocking and verification in
+ * unit tests.
  */
 interface ShortcutManagerCompatWrapper {
     /**
@@ -30,8 +30,8 @@ interface ShortcutManagerCompatWrapper {
      * @param context The application context.
      * @param shortcut The [ShortcutInfoCompat] object representing the shortcut to be pinned.
      * @param intentSender An optional [IntentSender] to be notified when the shortcut is pinned or canceled.
-     * @return `true` if the request was successfully sent, `false` otherwise.
-     *         Note that this does not guarantee the shortcut will be pinned, as the user can cancel the request.
+     * @return `true` if the request was successfully sent, `false` otherwise. Note that this does not guarantee the
+     *   shortcut will be pinned, as the user can cancel the request.
      */
     fun requestPinShortcut(context: Context, shortcut: ShortcutInfoCompat, intentSender: IntentSender?): Boolean
 
@@ -52,9 +52,7 @@ interface ShortcutManagerCompatWrapper {
     fun removeDynamicShortcuts(context: Context, shortcutIds: List<String>)
 }
 
-/**
- * A wrapper for [ShortcutManagerCompat] to allow for easier testing.
- */
+/** A wrapper for [ShortcutManagerCompat] to allow for easier testing. */
 class DefaultShortcutManagerCompatWrapper : ShortcutManagerCompatWrapper {
     override fun isRequestPinShortcutSupported(context: Context): Boolean {
         return ShortcutManagerCompat.isRequestPinShortcutSupported(context)

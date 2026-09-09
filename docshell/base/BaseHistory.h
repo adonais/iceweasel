@@ -30,8 +30,8 @@ class BaseHistory : public IHistory {
   void NotifyVisitedFromParent(nsIURI*, VisitedStatus, const ContentParentSet*);
   static constexpr const size_t kTrackedUrisInitialSize = 64;
 
-  BaseHistory();
-  ~BaseHistory();
+  BaseHistory() = default;
+  ~BaseHistory() = default;
 
   using ObserverArray = nsTObserverArray<dom::Link*>;
   struct ObservingLinks {
@@ -64,7 +64,8 @@ class BaseHistory : public IHistory {
  protected:
   // A map from URI to links that depend on that URI, and whether that URI is
   // known-to-be-visited-or-unvisited already.
-  nsTHashMap<nsURIHashKey, ObservingLinks> mTrackedURIs;
+  nsTHashMap<nsURIHashKey, ObservingLinks> mTrackedURIs{
+      kTrackedUrisInitialSize};
 
  private:
   // The set of pending URIs that we haven't queried yet but need to.

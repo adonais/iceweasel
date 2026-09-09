@@ -8,12 +8,8 @@ import android.content.Context
 import mozilla.components.browser.icons.Icon
 import mozilla.components.browser.icons.IconRequest
 
-/**
- * [IconLoader] implementation that loads icons from a disk cache.
- */
-class DiskIconLoader(
-    private val cache: LoaderDiskCache,
-) : IconLoader {
+/** [IconLoader] implementation that loads icons from a disk cache. */
+class DiskIconLoader(private val cache: LoaderDiskCache) : IconLoader {
     interface LoaderDiskCache {
         fun getIconData(context: Context, resource: IconRequest.Resource): ByteArray?
     }

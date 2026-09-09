@@ -83,7 +83,7 @@ void GetFileOrDirectoryTaskChild::SetSuccessRequestResult(
   MOZ_ASSERT(NS_IsMainThread(), "Only call on main thread!");
   switch (aValue.type()) {
     case FileSystemResponseValue::TFileSystemFileResponse: {
-      FileSystemFileResponse r = aValue;
+      const FileSystemFileResponse& r = aValue;
 
       RefPtr<BlobImpl> blobImpl = IPCBlobUtils::Deserialize(r.blob());
       MOZ_ASSERT(blobImpl);
@@ -98,7 +98,7 @@ void GetFileOrDirectoryTaskChild::SetSuccessRequestResult(
       break;
     }
     case FileSystemResponseValue::TFileSystemDirectoryResponse: {
-      FileSystemDirectoryResponse r = aValue;
+      const FileSystemDirectoryResponse& r = aValue;
 
       nsCOMPtr<nsIFile> file;
       aRv = NS_NewLocalFile(r.realPath(), getter_AddRefs(file));

@@ -1,0 +1,133 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+//! Static library backing `msixcomserver.dll`, the packaged (MSIX) build's
+//! host DLL for MSIX-specific COM servers.
+
+use std::future::IntoFuture;
+use std::sync::atomic::{AtomicI32, Ordering};
+
+use futures_executor::block_on;
+use windows::ApplicationModel::Background::{
+    IBackgroundTask, IBackgroundTaskInstance, IBackgroundTask_Impl,
+};
+use windows::ApplicationModel::FullTrustProcessLauncher;
+use windows::Win32::Foundation::{CLASS_E_CLASSNOTAVAILABLE, S_FALSE, S_OK};
+use windows::Win32::System::WinRT::{IActivationFactory, IActivationFactory_Impl};
+use windows_core::{
+    implement, IInspectable, OutRef, Ref, Result as WindowsResult, HRESULT, HSTRING,
+};
+
+const ACTIVATABLE_CLASS_ID: &str = mozbuild::config::MOZ_BACKGROUNDTASK_ACTIVATABLE_CLASS_ID;
+
+/// Number of live COM objects plus outstanding server locks. Windows may call
+/// `DllCanUnloadNow` to decide whether to unload this DLL; it must stay loaded
+/// while this count is non-zero.
+static LOCK_COUNT: AtomicI32 = AtomicI32::new(0);
+
+fn lock_module() {
+    LOCK_COUNT.fetch_add(1, Ordering::Relaxed);
+}
+
+fn unlock_module() {
+    LOCK_COUNT.fetch_sub(1, Ordering::Release);
+}
+
+#[implement(IBackgroundTask)]
+struct FirefoxBackgroundTask;
+
+impl FirefoxBackgroundTask {
+    fn new() -> Self {
+        lock_module();
+        FirefoxBackgroundTask
+    }
+}
+
+impl Drop for FirefoxBackgroundTask {
+    fn drop(&mut self) {
+        unlock_module();
+    }
+}
+
+impl IBackgroundTask_Impl for FirefoxBackgroundTask_Impl {
+    fn Run(&self, task_instance: Ref<IBackgroundTaskInstance>) -> WindowsResult<()> {
+        let Some(instance) = task_instance.as_ref() else {
+            return Ok(());
+        };
+
+        let name = instance.Task()?.Name()?.to_string();
+        if name.is_empty() {
+            return Ok(());
+        }
+
+        // Windows activates this DLL inside `backgroundtaskhost.exe`, which runs
+        // in an AppContainer at low integrity. The tasks we run need the same
+        // access a normal Firefox launch has, so ask the shell to start the package's
+        // full trust process.
+        launch_full_trust(&name)
+    }
+}
+
+/// The registration name encodes the command line as colon-separated segments:
+/// "defaultagent:do-task" launches `firefox --backgroundtask defaultagent do-task`.
+fn task_args(task_name: &str) -> Vec<String> {
+    let mut args = vec!["--backgroundtask".to_string()];
+    args.extend(task_name.split(':').map(str::to_string));
+    args
+}
+
+/// Ask the shell to start the package's full trust process with the task args.
+/// See https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/migrate-to-windows-app-sdk/guides/background-task-migration-strategy
+fn launch_full_trust(task_name: &str) -> WindowsResult<()> {
+    let command_line = HSTRING::from(task_args(task_name).join(" "));
+    let operation =
+        FullTrustProcessLauncher::LaunchFullTrustProcessForCurrentAppWithArgumentsAsync(
+            &command_line,
+        )?;
+
+    block_on(operation.into_future())?;
+    Ok(())
+}
+
+#[implement(IActivationFactory)]
+struct BackgroundTaskActivationFactory;
+
+impl IActivationFactory_Impl for BackgroundTaskActivationFactory_Impl {
+    fn ActivateInstance(&self) -> WindowsResult<IInspectable> {
+        Ok(FirefoxBackgroundTask::new().into())
+    }
+}
+
+/// WinRT in-process activation entry point.
+/// This symbol is re-exported from the DLL by `msixcomserver.def`.
+///
+/// # Safety
+///
+/// Called by the WinRT runtime with the ABI-compatible `Ref` and `OutRef`
+/// wrappers, which handle the borrowed name and the out parameter. `OutRef::write`
+/// rejects a null `factory` with `E_POINTER`.
+#[unsafe(no_mangle)]
+pub unsafe extern "system" fn DllGetActivationFactory(
+    name: Ref<HSTRING>,
+    factory: OutRef<IActivationFactory>,
+) -> HRESULT {
+    if name.to_string() != ACTIVATABLE_CLASS_ID {
+        let _ = factory.write(None);
+        return CLASS_E_CLASSNOTAVAILABLE;
+    }
+
+    let instance: IActivationFactory = BackgroundTaskActivationFactory.into();
+    factory.write(Some(instance)).into()
+}
+
+/// In-process server unload check: `S_OK` when no objects are alive and no
+/// server locks are held, otherwise `S_FALSE`.
+#[unsafe(no_mangle)]
+pub extern "system" fn DllCanUnloadNow() -> HRESULT {
+    if LOCK_COUNT.load(Ordering::Acquire) == 0 {
+        S_OK
+    } else {
+        S_FALSE
+    }
+}

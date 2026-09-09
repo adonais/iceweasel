@@ -13,9 +13,9 @@
 
 class CmacAesTest : public ::testing::Test {
  protected:
-  bool Compare(const uint8_t *actual, const uint8_t *expected,
+  bool Compare(const uint8_t* actual, const uint8_t* expected,
                unsigned int length) {
-    return strncmp((const char *)actual, (const char *)expected, length) == 0;
+    return strncmp((const char*)actual, (const char*)expected, length) == 0;
   }
 };
 
@@ -26,7 +26,7 @@ TEST_F(CmacAesTest, CreateInvalidSize) {
 }
 
 TEST_F(CmacAesTest, CreateRightSize) {
-  uint8_t *key = PORT_NewArray(uint8_t, AES_128_KEY_LENGTH);
+  uint8_t* key = PORT_NewArray(uint8_t, AES_128_KEY_LENGTH);
   ScopedCMACContext ctx(CMAC_Create(CMAC_AES, key, AES_128_KEY_LENGTH));
 
   ASSERT_NE(ctx, nullptr);

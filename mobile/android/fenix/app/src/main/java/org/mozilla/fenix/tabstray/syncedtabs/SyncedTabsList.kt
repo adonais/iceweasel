@@ -32,31 +32,25 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import mozilla.components.browser.storage.sync.Tab as SyncTab
 import mozilla.components.browser.storage.sync.TabEntry
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.modifier.dashedBorder
 import mozilla.components.feature.syncedtabs.view.SyncedTabsView
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.ExpandableListHeader
 import org.mozilla.fenix.compose.list.FaviconListItem
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.browser.storage.sync.Tab as SyncTab
-import mozilla.components.ui.icons.R as iconsR
 
-/**
- * A lambda invoked when the user clicks on a synced tab in the [SyncedTabsList].
- */
+/** A lambda invoked when the user clicks on a synced tab in the [SyncedTabsList]. */
 typealias OnTabClick = (tab: SyncTab) -> Unit
 
-/**
- * A lambda invoked when the user clicks a synced tab's close button in the [SyncedTabsList].
- */
+/** A lambda invoked when the user clicks a synced tab's close button in the [SyncedTabsList]. */
 typealias OnTabCloseClick = (deviceId: String, tab: SyncTab) -> Unit
 
-/**
- * A lambda invoked when the expands a section in the [SyncedTabsList].
- */
+/** A lambda invoked when the expands a section in the [SyncedTabsList]. */
 typealias OnSectionExpansionToggled = (index: Int) -> Unit
 
 /**
@@ -79,9 +73,7 @@ fun SyncedTabsList(
 ) {
     val listState = rememberLazyListState()
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag(TabsTrayTestTag.SYNCED_TABS_LIST),
+        modifier = Modifier.fillMaxSize().testTag(TabsTrayTestTag.SYNCED_TABS_LIST),
         state = listState,
     ) {
         syncedTabs.forEachIndexed { index, syncedTabItem ->
@@ -102,21 +94,23 @@ fun SyncedTabsList(
                         if (syncedTabItem.tabs.isNotEmpty()) {
                             items(syncedTabItem.tabs) { syncedTab ->
                                 when (syncedTab.action) {
-                                    is SyncedTabsListItem.Tab.Action.Close -> FaviconListItem(
-                                        label = syncedTab.displayTitle,
-                                        url = syncedTab.displayURL,
-                                        description = syncedTab.displayURL,
-                                        onClick = { onTabClick(syncedTab.tab) },
-                                        iconDescription = stringResource(R.string.close_tab),
-                                        iconPainter = painterResource(iconsR.drawable.mozac_ic_cross_24),
-                                        onIconClick = { onTabCloseClick(syncedTab.action.deviceId, syncedTab.tab) },
-                                    )
-                                    is SyncedTabsListItem.Tab.Action.None -> FaviconListItem(
-                                        label = syncedTab.displayTitle,
-                                        url = syncedTab.displayURL,
-                                        description = syncedTab.displayURL,
-                                        onClick = { onTabClick(syncedTab.tab) },
-                                    )
+                                    is SyncedTabsListItem.Tab.Action.Close ->
+                                        FaviconListItem(
+                                            label = syncedTab.displayTitle,
+                                            url = syncedTab.displayURL,
+                                            description = syncedTab.displayURL,
+                                            onClick = { onTabClick(syncedTab.tab) },
+                                            iconDescription = stringResource(R.string.close_tab),
+                                            iconPainter = painterResource(iconsR.drawable.mozac_ic_cross_24),
+                                            onIconClick = { onTabCloseClick(syncedTab.action.deviceId, syncedTab.tab) },
+                                        )
+                                    is SyncedTabsListItem.Tab.Action.None ->
+                                        FaviconListItem(
+                                            label = syncedTab.displayTitle,
+                                            url = syncedTab.displayURL,
+                                            description = syncedTab.displayURL,
+                                            onClick = { onTabClick(syncedTab.tab) },
+                                        )
                                 }
                             }
                         } else {
@@ -160,11 +154,7 @@ fun SyncedTabsSectionHeader(
     expanded: Boolean? = null,
     onClick: () -> Unit = {},
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface),
-    ) {
+    Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)) {
         ExpandableListHeader(
             headerText = headerText,
             expanded = expanded,
@@ -189,21 +179,16 @@ fun SyncedTabsErrorItem(
     errorButton: SyncedTabsListItem.ErrorButton? = null,
 ) {
     Box(
-        Modifier
-            .padding(all = 8.dp)
+        Modifier.padding(all = 8.dp)
             .height(IntrinsicSize.Min)
             .dashedBorder(
                 color = MaterialTheme.colorScheme.outlineVariant,
                 cornerRadius = 8.dp,
                 dashHeight = 2.dp,
                 dashWidth = 4.dp,
-            ),
+            )
     ) {
-        Column(
-            Modifier
-                .padding(all = 16.dp)
-                .fillMaxWidth(),
-        ) {
+        Column(Modifier.padding(all = 16.dp).fillMaxWidth()) {
             Text(
                 text = errorText,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -225,17 +210,13 @@ fun SyncedTabsErrorItem(
     }
 }
 
-/**
- * UI to be displayed when a user's device has no synced tabs.
- */
+/** UI to be displayed when a user's device has no synced tabs. */
 @Composable
 fun SyncedTabsNoTabsItem() {
     Text(
         text = stringResource(R.string.synced_tabs_no_open_tabs),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .fillMaxWidth(),
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth(),
         fontSize = 16.sp,
         maxLines = 1,
     )
@@ -253,7 +234,9 @@ private fun SyncedTabsListItemsPreview() {
             SyncedTabsSectionHeader(
                 headerText = "Collapsible Google Pixel Pro Max +Ultra 5000",
                 expanded = true,
-            ) { println("Clicked section header") }
+            ) {
+                println("Clicked section header")
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -284,11 +267,10 @@ private fun SyncedTabsErrorPreview() {
         Surface {
             SyncedTabsErrorItem(
                 errorText = stringResource(R.string.synced_tabs_no_tabs),
-                errorButton = SyncedTabsListItem.ErrorButton(
-                    buttonText = stringResource(R.string.synced_tabs_sign_in_button),
-                ) {
-                    println("SyncedTabsErrorButton click")
-                },
+                errorButton =
+                    SyncedTabsListItem.ErrorButton(buttonText = stringResource(R.string.synced_tabs_sign_in_button)) {
+                        println("SyncedTabsErrorButton click")
+                    },
             )
         }
     }
@@ -311,33 +293,36 @@ private fun SyncedTabsListPreview() {
     }
 }
 
-/**
- * Helper function to create a List of [SyncedTabsListItem] for previewing.
- */
+/** Helper function to create a List of [SyncedTabsListItem] for previewing. */
 @VisibleForTesting
-internal fun getFakeSyncedTabList(): List<SyncedTabsListItem> = listOf(
-    SyncedTabsListItem.DeviceSection(
-        displayName = "Device 1",
-        tabs = listOf(
-            generateFakeTab("Mozilla", "www.mozilla.org"),
-            generateFakeTab("Google", "www.google.com"),
-            generateFakeTab("", "www.google.com"),
+internal fun getFakeSyncedTabList(): List<SyncedTabsListItem> =
+    listOf(
+        SyncedTabsListItem.DeviceSection(
+            displayName = "Device 1",
+            tabs =
+                listOf(
+                    generateFakeTab("Mozilla", "www.mozilla.org"),
+                    generateFakeTab("Google", "www.google.com"),
+                    generateFakeTab("", "www.google.com"),
+                ),
         ),
-    ),
-    SyncedTabsListItem.DeviceSection(
-        displayName = "Device 2",
-        tabs = listOf(
-            generateFakeTab("Firefox", "www.getfirefox.org", SyncedTabsListItem.Tab.Action.Close("device2222")),
-            generateFakeTab("Thunderbird", "www.getthunderbird.org", SyncedTabsListItem.Tab.Action.Close("device2222")),
+        SyncedTabsListItem.DeviceSection(
+            displayName = "Device 2",
+            tabs =
+                listOf(
+                    generateFakeTab("Firefox", "www.getfirefox.org", SyncedTabsListItem.Tab.Action.Close("device2222")),
+                    generateFakeTab(
+                        "Thunderbird",
+                        "www.getthunderbird.org",
+                        SyncedTabsListItem.Tab.Action.Close("device2222"),
+                    ),
+                ),
         ),
-    ),
-    SyncedTabsListItem.DeviceSection("Device 3", emptyList()),
-    SyncedTabsListItem.Error("Please re-authenticate"),
-)
+        SyncedTabsListItem.DeviceSection("Device 3", emptyList()),
+        SyncedTabsListItem.Error("Please re-authenticate"),
+    )
 
-/**
- * Helper function to create a [SyncedTabsListItem.Tab] for previewing.
- */
+/** Helper function to create a [SyncedTabsListItem.Tab] for previewing. */
 @VisibleForTesting
 internal fun generateFakeTab(
     tabName: String,

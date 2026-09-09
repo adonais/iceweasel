@@ -100,12 +100,8 @@ class RollingNumber {
 
   // Normal (in)equality operators.
 
-  bool operator==(const RollingNumber& aOther) const {
-    return mIndex == aOther.mIndex;
-  }
-  bool operator!=(const RollingNumber& aOther) const {
-    return !(*this == aOther);
-  }
+  bool operator==(const RollingNumber& aOther) const = default;
+  bool operator!=(const RollingNumber& aOther) const = default;
 
   // Modified comparison operators.
 

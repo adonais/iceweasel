@@ -31,9 +31,7 @@ import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.utils.Settings
 
-/**
- * Settings screen allowing users to choose what browsing data to delete.
- */
+/** Settings screen allowing users to choose what browsing data to delete. */
 @SuppressWarnings("TooManyFunctions", "LargeClass")
 class DeleteBrowsingDataFragment : Fragment(R.layout.fragment_delete_browsing_data), SystemInsetsPaddedFragment {
 
@@ -42,7 +40,8 @@ class DeleteBrowsingDataFragment : Fragment(R.layout.fragment_delete_browsing_da
     private lateinit var settings: Settings
 
     private var _binding: FragmentDeleteBrowsingDataBinding? = null
-    private val binding get() = _binding!!
+    private val binding
+        get() = _binding!!
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -50,23 +49,27 @@ class DeleteBrowsingDataFragment : Fragment(R.layout.fragment_delete_browsing_da
         val downloadUseCases = requireComponents.useCases.downloadUseCases
 
         _binding = FragmentDeleteBrowsingDataBinding.bind(view)
-        controller = DefaultDeleteBrowsingDataController(
-            deleteDataUseCases = DefaultDeleteBrowsingDataController.DeleteDataUseCases(
-                removeAllTabs = tabsUseCases.removeAllTabs,
-                removeAllDownloads = downloadUseCases.removeAllDownloads,
-            ),
-            dataStorage = DefaultDeleteBrowsingDataController.DataStorage(
-                history = requireComponents.core.historyStorage,
-                permissions = requireComponents.core.permissionStorage,
-            ),
-            stores = DefaultDeleteBrowsingDataController.Stores(
-                appStore = requireComponents.appStore,
-                browserStore = requireComponents.core.store,
-            ),
-            engine = requireComponents.core.engine,
-            settings = requireComponents.settings,
-            coroutineContext = requireActivity().lifecycleScope.coroutineContext,
-        )
+        controller =
+            DefaultDeleteBrowsingDataController(
+                deleteDataUseCases =
+                    DefaultDeleteBrowsingDataController.DeleteDataUseCases(
+                        removeAllTabs = tabsUseCases.removeAllTabs,
+                        removeAllDownloads = downloadUseCases.removeAllDownloads,
+                    ),
+                dataStorage =
+                    DefaultDeleteBrowsingDataController.DataStorage(
+                        history = requireComponents.core.historyStorage,
+                        permissions = requireComponents.core.permissionStorage,
+                    ),
+                stores =
+                    DefaultDeleteBrowsingDataController.Stores(
+                        appStore = requireComponents.appStore,
+                        browserStore = requireComponents.core.store,
+                    ),
+                engine = requireComponents.core.engine,
+                settings = requireComponents.settings,
+                coroutineContext = requireActivity().lifecycleScope.coroutineContext,
+            )
         settings = requireComponents.settings
 
         getCheckboxes().iterator().forEach {
@@ -77,15 +80,16 @@ class DeleteBrowsingDataFragment : Fragment(R.layout.fragment_delete_browsing_da
         }
 
         getCheckboxes().iterator().forEach {
-            it.isChecked = when (it.id) {
-                R.id.open_tabs_item -> settings.deleteOpenTabs
-                R.id.browsing_history_item -> settings.deleteBrowsingHistory
-                R.id.cookies_and_site_data_item -> settings.deleteCookies
-                R.id.cached_files_item -> settings.deleteCache
-                R.id.site_permissions_item -> settings.deleteSitePermissions
-                R.id.downloads_item -> settings.deleteDownloads
-                else -> true
-            }
+            it.isChecked =
+                when (it.id) {
+                    R.id.open_tabs_item -> settings.deleteOpenTabs
+                    R.id.browsing_history_item -> settings.deleteBrowsingHistory
+                    R.id.cookies_and_site_data_item -> settings.deleteCookies
+                    R.id.cached_files_item -> settings.deleteCache
+                    R.id.site_permissions_item -> settings.deleteSitePermissions
+                    R.id.downloads_item -> settings.deleteDownloads
+                    else -> true
+                }
         }
 
         binding.deleteData.setOnClickListener {
@@ -109,11 +113,13 @@ class DeleteBrowsingDataFragment : Fragment(R.layout.fragment_delete_browsing_da
     override fun onStart() {
         super.onStart()
 
-        scope = requireComponents.core.store.flowScoped(viewLifecycleOwner, Dispatchers.Main) { flow ->
-            flow.map { state -> state.tabs.size }
-                .distinctUntilChanged()
-                .collect { openTabs -> updateTabCount(openTabs) }
-        }
+        scope =
+            requireComponents.core.store.flowScoped(viewLifecycleOwner, Dispatchers.Main) { flow ->
+                flow
+                    .map { state -> state.tabs.size }
+                    .distinctUntilChanged()
+                    .collect { openTabs -> updateTabCount(openTabs) }
+            }
     }
 
     override fun onResume() {
@@ -147,24 +153,27 @@ class DeleteBrowsingDataFragment : Fragment(R.layout.fragment_delete_browsing_da
 
     private fun askToDelete() {
         runIfFragmentIsAttached {
-            MaterialAlertDialogBuilder(requireContext()).apply {
-                setMessage(
-                    requireContext().getString(
-                        R.string.delete_browsing_data_prompt_message_3,
-                        requireContext().getString(R.string.app_name),
-                    ),
-                )
+            MaterialAlertDialogBuilder(requireContext())
+                .apply {
+                    setMessage(
+                        requireContext()
+                            .getString(
+                                R.string.delete_browsing_data_prompt_message_3,
+                                requireContext().getString(R.string.app_name),
+                            )
+                    )
 
-                setNegativeButton(R.string.delete_browsing_data_prompt_cancel) { it: DialogInterface, _ ->
-                    it.cancel()
-                }
+                    setNegativeButton(R.string.delete_browsing_data_prompt_cancel) { it: DialogInterface, _ ->
+                        it.cancel()
+                    }
 
-                setPositiveButton(R.string.delete_browsing_data_prompt_allow) { it: DialogInterface, _ ->
-                    it.dismiss()
-                    deleteSelected()
+                    setPositiveButton(R.string.delete_browsing_data_prompt_allow) { it: DialogInterface, _ ->
+                        it.dismiss()
+                        deleteSelected()
+                    }
+                    create().withCenterAlignedButtons()
                 }
-                create().withCenterAlignedButtons()
-            }.show()
+                .show()
         }
     }
 
@@ -212,11 +221,10 @@ class DeleteBrowsingDataFragment : Fragment(R.layout.fragment_delete_browsing_da
         updateItemCounts()
 
         Snackbar.make(
-            snackBarParentView = requireView(),
-            snackbarState = SnackbarState(
-                message = getString(R.string.preferences_delete_browsing_data_snackbar),
-            ),
-        ).show()
+                snackBarParentView = requireView(),
+                snackbarState = SnackbarState(message = getString(R.string.preferences_delete_browsing_data_snackbar)),
+            )
+            .show()
     }
 
     override fun onPause() {
@@ -244,10 +252,11 @@ class DeleteBrowsingDataFragment : Fragment(R.layout.fragment_delete_browsing_da
 
     private fun updateTabCount(openTabs: Int = requireComponents.core.store.state.tabs.size) {
         binding.openTabsItem.apply {
-            subtitleView.text = resources.getString(
-                R.string.preferences_delete_browsing_data_tabs_subtitle,
-                openTabs,
-            )
+            subtitleView.text =
+                resources.getString(
+                    R.string.preferences_delete_browsing_data_tabs_subtitle,
+                    openTabs,
+                )
         }
     }
 

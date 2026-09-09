@@ -570,6 +570,24 @@ ssl_GetCertificateAuthTypes(CERTCertificate *cert, SSLAuthType targetAuthType)
             }
             break;
 
+        case SEC_OID_ML_DSA_44:
+            if (cert->keyUsage & KU_DIGITAL_SIGNATURE) {
+                authTypes |= 1 << ssl_auth_mldsa44;
+            }
+            break;
+
+        case SEC_OID_ML_DSA_65:
+            if (cert->keyUsage & KU_DIGITAL_SIGNATURE) {
+                authTypes |= 1 << ssl_auth_mldsa65;
+            }
+            break;
+
+        case SEC_OID_ML_DSA_87:
+            if (cert->keyUsage & KU_DIGITAL_SIGNATURE) {
+                authTypes |= 1 << ssl_auth_mldsa87;
+            }
+            break;
+
         default:
             break;
     }
@@ -730,6 +748,15 @@ ssl_CertSuitableForAuthType(CERTCertificate *cert, sslAuthTypeMask authTypes)
             mask |= 1 << ssl_auth_ecdsa;
             mask |= 1 << ssl_auth_ecdh_rsa;
             mask |= 1 << ssl_auth_ecdh_ecdsa;
+            break;
+        case SEC_OID_ML_DSA_44:
+            mask |= 1 << ssl_auth_mldsa44;
+            break;
+        case SEC_OID_ML_DSA_65:
+            mask |= 1 << ssl_auth_mldsa65;
+            break;
+        case SEC_OID_ML_DSA_87:
+            mask |= 1 << ssl_auth_mldsa87;
             break;
         default:
             break;

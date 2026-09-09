@@ -10,6 +10,7 @@
 #include "SourceBuffer.h"
 #include "gtest/MozGTestBench.h"
 #include "gtest/gtest.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"
 
 using namespace mozilla;
@@ -161,5 +162,26 @@ IMAGE_GTEST_BENCH_F(JXL, RgbLossy)
 IMAGE_GTEST_BENCH_ALPHA_F(JXL, RgbAlphaLossless)
 IMAGE_GTEST_BENCH_ALPHA_F(JXL, RgbAlphaLossy)
 #endif
+
+static void CheckDownscaleDct(const ImageTestCase& aTestCase,
+                              SourceBuffer* aSourceBuffer, bool aEnabled) {
+  bool oldValue = true;
+  Preferences::GetBool("image.jpeg.dct-scaling.enabled", &oldValue);
+  Preferences::SetBool("image.jpeg.dct-scaling.enabled", aEnabled);
+  IntSize outputSize(100, 100);
+  WithSingleChunkDecode(aTestCase, aSourceBuffer, Some(outputSize),
+                        [&](image::Decoder* aDecoder) {
+                          CheckDecoderState(aTestCase, aDecoder, outputSize);
+                        });
+  Preferences::SetBool("image.jpeg.dct-scaling.enabled", oldValue);
+}
+
+MOZ_GTEST_BENCH_F(ImageDecodersPerf_JPG_YCbCr, DownscaleDctOff, [this] {
+  CheckDownscaleDct(mTestCase, mSourceBuffer, false);
+});
+
+MOZ_GTEST_BENCH_F(ImageDecodersPerf_JPG_YCbCr, DownscaleDctOn, [this] {
+  CheckDownscaleDct(mTestCase, mSourceBuffer, true);
+});
 
 }  // namespace

@@ -37,7 +37,7 @@ function run_test() {
   );
 
   let badQuery = Services.io.newURI(
-    "moz-page-thumb://thumbnail/http%3A%2F%2Fwww.mozilla.org%2F"
+    "moz-page-thumb://thumbnails/http%3A%2F%2Fwww.mozilla.org%2F"
   );
   Assert.throws(
     () => handler.newChannel(badQuery, dummyLoadInfo),
@@ -45,7 +45,7 @@ function run_test() {
     "moz-page-thumb object with malformed query parameters must not resolve to a file path"
   );
 
-  let noURL = Services.io.newURI("moz-page-thumb://thumbnail/?badStuff");
+  let noURL = Services.io.newURI("moz-page-thumb://thumbnails/?badStuff");
   Assert.throws(
     () => handler.newChannel(noURL, dummyLoadInfo),
     /NS_ERROR_NOT_AVAILABLE/i,

@@ -6,7 +6,5 @@ package org.mozilla.fenix.tabstray.ext
 
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
 
-/**
- * A helper to check if we're in [Mode.Select] mode.
- */
+/** A helper to check if we're in [Mode.Select] mode. */
 fun Mode.isSelect() = this is Mode.Select

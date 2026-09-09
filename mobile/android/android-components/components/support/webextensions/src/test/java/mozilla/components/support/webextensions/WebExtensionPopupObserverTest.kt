@@ -4,6 +4,7 @@
 
 package mozilla.components.support.webextensions
 
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.WebExtensionAction
@@ -15,50 +16,47 @@ import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import kotlin.test.assertNotNull
 
 class WebExtensionPopupObserverTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
     @Test
-    fun `observes and forwards request to open popup`() = runTest(testDispatcher) {
-        val extensionId = "ext1"
-        val engineSession: EngineSession = mock()
-        val store = BrowserStore(
-            BrowserState(
-                extensions = mapOf(extensionId to WebExtensionState(extensionId)),
-            ),
-        )
+    fun `observes and forwards request to open popup`() =
+        runTest(testDispatcher) {
+            val extensionId = "ext1"
+            val engineSession: EngineSession = mock()
+            val store = BrowserStore(BrowserState(extensions = mapOf(extensionId to WebExtensionState(extensionId))))
 
-        var extensionOpeningPopup: WebExtensionState? = null
-        val observer = WebExtensionPopupObserver(
-            store,
-            mainDispatcher = testDispatcher,
-            onOpenPopup = {
-                extensionOpeningPopup = it
-            },
-        )
+            var extensionOpeningPopup: WebExtensionState? = null
+            val observer =
+                WebExtensionPopupObserver(
+                    store,
+                    mainDispatcher = testDispatcher,
+                    onOpenPopup = {
+                        extensionOpeningPopup = it
+                    },
+                )
 
-        observer.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+            observer.start()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertNull(extensionOpeningPopup)
+            assertNull(extensionOpeningPopup)
 
-        store.dispatch(WebExtensionAction.UpdatePopupSessionAction(extensionId, popupSession = engineSession))
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(WebExtensionAction.UpdatePopupSessionAction(extensionId, popupSession = engineSession))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertNotNull(extensionOpeningPopup)
-        assertEquals(extensionId, extensionOpeningPopup.id)
-        assertEquals(engineSession, extensionOpeningPopup.popupSession)
+            assertNotNull(extensionOpeningPopup)
+            assertEquals(extensionId, extensionOpeningPopup.id)
+            assertEquals(engineSession, extensionOpeningPopup.popupSession)
 
-        // Verify that stopped feature does not observe and forward requests to open popup
-        extensionOpeningPopup = null
-        observer.stop()
-        store.dispatch(WebExtensionAction.UpdatePopupSessionAction(extensionId, popupSession = mock()))
+            // Verify that stopped feature does not observe and forward requests to open popup
+            extensionOpeningPopup = null
+            observer.stop()
+            store.dispatch(WebExtensionAction.UpdatePopupSessionAction(extensionId, popupSession = mock()))
 
-        testDispatcher.scheduler.advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertNull(extensionOpeningPopup)
-    }
+            assertNull(extensionOpeningPopup)
+        }
 }

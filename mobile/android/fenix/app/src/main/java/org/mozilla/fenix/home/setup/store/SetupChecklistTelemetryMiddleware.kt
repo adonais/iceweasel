@@ -11,11 +11,9 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
 
-/**
- * [Middleware] for recording telemetry related to the setup checklist feature.
- */
+/** [Middleware] for recording telemetry related to the setup checklist feature. */
 class SetupChecklistTelemetryMiddleware(
-    val telemetry: SetupChecklistTelemetryRecorder = DefaultSetupChecklistTelemetryRecorder(),
+    val telemetry: SetupChecklistTelemetryRecorder = DefaultSetupChecklistTelemetryRecorder()
 ) : Middleware<AppState, AppAction> {
     override fun invoke(
         store: Store<AppState, AppAction>,
@@ -38,19 +36,13 @@ class SetupChecklistTelemetryMiddleware(
     }
 }
 
-/**
- * Interface for recording telemetry related to the setup checklist feature.
- */
+/** Interface for recording telemetry related to the setup checklist feature. */
 interface SetupChecklistTelemetryRecorder {
-    /**
-     * Called when a task in the setup checklist is clicked.
-     */
+    /** Called when a task in the setup checklist is clicked. */
     fun taskClicked(task: ChecklistItem.Task)
 }
 
-/**
- * Default implementation for recording telemetry related to the setup checklist feature.
- */
+/** Default implementation for recording telemetry related to the setup checklist feature. */
 class DefaultSetupChecklistTelemetryRecorder : SetupChecklistTelemetryRecorder {
     /**
      * Records the SetupChecklist item telemetry based on [task].
@@ -59,9 +51,7 @@ class DefaultSetupChecklistTelemetryRecorder : SetupChecklistTelemetryRecorder {
      */
     override fun taskClicked(task: ChecklistItem.Task) {
         Onboarding.setupChecklistTaskClicked.record(
-            Onboarding.SetupChecklistTaskClickedExtra(
-                taskId = task.type.telemetryName,
-            ),
+            Onboarding.SetupChecklistTaskClickedExtra(taskId = task.type.telemetryName)
         )
     }
 }

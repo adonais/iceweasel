@@ -19,29 +19,31 @@ import org.mozilla.fenix.webcompat.testdata.WebCompatTestData
 @RunWith(AndroidJUnit4::class)
 class DefaultWebCompatReporterRetrievalServiceTest {
     @Test
-    fun `WHEN WebCompatInfo is retrieved successfully THEN all corresponding fields in the JSON are submitted`() = runTest {
-        val engineSession = FakeEngineSession(WebCompatTestData.basicDataJson)
-        val service = createService(engineSession = engineSession)
-        val actual = service.retrieveInfo()
-        val expected = WebCompatTestData.createTestObject()
-        assertEquals(expected.toString(), actual.toString())
-    }
+    fun `WHEN WebCompatInfo is retrieved successfully THEN all corresponding fields in the JSON are submitted`() =
+        runTest {
+            val engineSession = FakeEngineSession(WebCompatTestData.basicDataJson)
+            val service = createService(engineSession = engineSession)
+            val actual = service.retrieveInfo()
+            val expected = WebCompatTestData.createTestObject()
+            assertEquals(expected.toString(), actual.toString())
+        }
 
     private fun createService(engineSession: EngineSession): WebCompatReporterRetrievalService {
-        val tab = createTab(
-            url = "https://www.mozilla.org",
-            id = "test-tab",
-            engineSession = engineSession,
-        )
-        val browserStore = BrowserStore(
-            initialState = BrowserState(
-                tabs = listOf(tab),
-                selectedTabId = tab.id,
-            ),
-        )
+        val tab =
+            createTab(
+                url = "https://www.mozilla.org",
+                id = "test-tab",
+                engineSession = engineSession,
+            )
+        val browserStore =
+            BrowserStore(
+                initialState =
+                    BrowserState(
+                        tabs = listOf(tab),
+                        selectedTabId = tab.id,
+                    )
+            )
 
-        return DefaultWebCompatReporterRetrievalService(
-            browserStore = browserStore,
-        )
+        return DefaultWebCompatReporterRetrievalService(browserStore = browserStore)
     }
 }

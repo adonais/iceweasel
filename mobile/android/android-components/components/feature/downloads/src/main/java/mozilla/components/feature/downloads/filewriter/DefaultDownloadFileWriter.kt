@@ -16,17 +16,17 @@ import android.provider.DocumentsContract
 import android.provider.MediaStore
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
+import java.io.File
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.OutputStream
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.DownloadFileUtils
 import mozilla.components.support.utils.DownloadUtils
 import mozilla.components.support.utils.DownloadUtils.findFileInMediaStore
 import mozilla.components.support.utils.DownloadUtils.isDefaultDownloadDirectory
-import java.io.File
-import java.io.FileNotFoundException
-import java.io.FileOutputStream
-import java.io.IOException
-import java.io.OutputStream
 
 /**
  * A [DownloadFileWriter] implementation that handles writing download data to a file.
@@ -60,9 +60,7 @@ class DefaultDownloadFileWriter(
         }
     }
 
-    /**
-     * Returns an updated [DownloadState] with a unique fileName if the file is not being appended.
-     */
+    /** Returns an updated [DownloadState] with a unique fileName if the file is not being appended. */
     @VisibleForTesting
     internal fun makeUniqueFileNameIfNecessary(
         download: DownloadState,
@@ -75,10 +73,11 @@ class DefaultDownloadFileWriter(
 
         val directoryPath = download.directoryPath
 
-        val uniqueFileName = downloadFileUtils.uniqueFileName(
-            directoryPath = directoryPath,
-            fileName = fileName,
-        )
+        val uniqueFileName =
+            downloadFileUtils.uniqueFileName(
+                directoryPath = directoryPath,
+                fileName = fileName,
+            )
 
         return if (uniqueFileName != fileName) {
             download.copy(fileName = uniqueFileName)
@@ -96,17 +95,16 @@ class DefaultDownloadFileWriter(
     ) {
         val resolver = context.contentResolver
         val isDefault = download.directoryPath.isDefaultDownloadDirectory()
-        val fileUri = if (isDefault) {
-            // Case 1: Saving to the default "Downloads" public directory.
-            // We find an existing file or create a new one using MediaStore.
-            handleDownloadToDefaultDirectory(resolver, download, append)
-        } else {
-            // Case 2: Saving to a custom directory chosen by the user via SAF.
-            // The directoryPath is expected to be a 'content://' URI string.
-            handleDownloadToCustomDirectory(resolver, download, append, onUpdateState)
-        } ?: throw IOException(
-            "Failed to create or find a document for the download: ${download.fileName}",
-        )
+        val fileUri =
+            if (isDefault) {
+                // Case 1: Saving to the default "Downloads" public directory.
+                // We find an existing file or create a new one using MediaStore.
+                handleDownloadToDefaultDirectory(resolver, download, append)
+            } else {
+                // Case 2: Saving to a custom directory chosen by the user via SAF.
+                // The directoryPath is expected to be a 'content://' URI string.
+                handleDownloadToCustomDirectory(resolver, download, append, onUpdateState)
+            } ?: throw IOException("Failed to create or find a document for the download: ${download.fileName}")
 
         writeToFileUri(resolver, fileUri, append, block)
     }
@@ -118,37 +116,36 @@ class DefaultDownloadFileWriter(
         append: Boolean,
     ): Uri? {
         val fileName = download.fileName ?: return null
-        val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-        } else {
-            MediaStore.Files.getContentUri("external")
-        }
+        val collection =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            } else {
+                MediaStore.Files.getContentUri("external")
+            }
 
         if (append) {
-            val existingUri =
-                resolver.findFileInMediaStore(collection = collection, fileName = fileName)
+            val existingUri = resolver.findFileInMediaStore(collection = collection, fileName = fileName)
             if (existingUri != null) {
                 return existingUri
             }
         }
 
-        val newFileDetails = ContentValues().apply {
-            put(MediaStore.Downloads.DISPLAY_NAME, fileName)
-            put(MediaStore.Downloads.IS_PENDING, 1)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
-                put(
-                    MediaStore.MediaColumns.MIME_TYPE,
-                    downloadFileUtils.getSafeContentType(fileName, download.contentType),
-                )
+        val newFileDetails =
+            ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                put(MediaStore.Downloads.IS_PENDING, 1)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                    put(
+                        MediaStore.MediaColumns.MIME_TYPE,
+                        downloadFileUtils.getSafeContentType(fileName, download.contentType),
+                    )
+                }
             }
-        }
         return resolver.insert(collection, newFileDetails)
     }
 
-    /**
-     * Handles file creation in a custom directory using the Storage Access Framework (SAF).
-     */
+    /** Handles file creation in a custom directory using the Storage Access Framework (SAF). */
     @VisibleForTesting
     internal fun handleDownloadToCustomDirectory(
         resolver: ContentResolver,
@@ -156,34 +153,35 @@ class DefaultDownloadFileWriter(
         append: Boolean,
         onUpdateState: (DownloadState) -> Unit,
     ): Uri? {
-        val directoryTreeUri = try {
-            download.directoryPath.toUri()
-        } catch (e: IllegalArgumentException) {
-            throw IllegalArgumentException(
-                "Invalid directory path URI: ${download.directoryPath}",
-                e,
-            )
-        }
+        val directoryTreeUri =
+            try {
+                download.directoryPath.toUri()
+            } catch (e: IllegalArgumentException) {
+                throw IllegalArgumentException(
+                    "Invalid directory path URI: ${download.directoryPath}",
+                    e,
+                )
+            }
 
         verifySafPermission(resolver, directoryTreeUri)
 
-        val existingFileUri = downloadFileUtils.findDownloadFileUri(
-            fileName = download.fileName,
-            directoryPath = download.directoryPath,
-        )
+        val existingFileUri =
+            downloadFileUtils.findDownloadFileUri(
+                fileName = download.fileName,
+                directoryPath = download.directoryPath,
+            )
 
-        return existingFileUri ?: createNewDocument(
-            resolver,
-            directoryTreeUri,
-            download,
-            append,
-            onUpdateState,
-        )
+        return existingFileUri
+            ?: createNewDocument(
+                resolver,
+                directoryTreeUri,
+                download,
+                append,
+                onUpdateState,
+            )
     }
 
-    /**
-     * Verifies that the app has retained write permissions for the given SAF directory URI.
-     */
+    /** Verifies that the app has retained write permissions for the given SAF directory URI. */
     @VisibleForTesting
     internal fun verifySafPermission(resolver: ContentResolver, directoryUri: Uri) {
         val persistedPermissions = resolver.persistedUriPermissions
@@ -196,8 +194,8 @@ class DefaultDownloadFileWriter(
     }
 
     /**
-     * Creates a new document in the specified SAF directory.
-     * If the directory is inaccessible, it falls back to the default downloads directory.
+     * Creates a new document in the specified SAF directory. If the directory is inaccessible, it falls back to the
+     * default downloads directory.
      */
     @VisibleForTesting
     internal fun createNewDocument(
@@ -209,15 +207,17 @@ class DefaultDownloadFileWriter(
     ): Uri? {
         val fileName = download.fileName ?: return null
 
-        val parentDocumentUri = DocumentsContract.buildDocumentUriUsingTree(
-            directoryTreeUri,
-            DocumentsContract.getTreeDocumentId(directoryTreeUri),
-        )
+        val parentDocumentUri =
+            DocumentsContract.buildDocumentUriUsingTree(
+                directoryTreeUri,
+                DocumentsContract.getTreeDocumentId(directoryTreeUri),
+            )
 
-        val safeContentType = downloadFileUtils.getSafeContentType(
-            fileName = fileName,
-            contentType = download.contentType,
-        )
+        val safeContentType =
+            downloadFileUtils.getSafeContentType(
+                fileName = fileName,
+                contentType = download.contentType,
+            )
 
         return try {
             DocumentsContract.createDocument(
@@ -238,18 +238,14 @@ class DefaultDownloadFileWriter(
         }
     }
 
-    /**
-     * Updates the download state to use the default downloads directory and attempts the download again.
-     */
+    /** Updates the download state to use the default downloads directory and attempts the download again. */
     private fun handleFallbackToDefaultDirectory(
         resolver: ContentResolver,
         download: DownloadState,
         append: Boolean,
         onUpdateState: (DownloadState) -> Unit,
     ): Uri? {
-        val defaultPath = Environment.getExternalStoragePublicDirectory(
-            Environment.DIRECTORY_DOWNLOADS,
-        ).path
+        val defaultPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
 
         val fallbackDownload = download.copy(directoryPath = defaultPath)
 
@@ -258,9 +254,7 @@ class DefaultDownloadFileWriter(
         return handleDownloadToDefaultDirectory(resolver, fallbackDownload, append)
     }
 
-    /**
-     * Opens a file descriptor for the given URI and writes data using the provided block.
-     */
+    /** Opens a file descriptor for the given URI and writes data using the provided block. */
     @VisibleForTesting
     internal fun writeToFileUri(
         resolver: ContentResolver,
@@ -269,8 +263,9 @@ class DefaultDownloadFileWriter(
         block: (OutputStream) -> Unit,
     ) {
         val writingMode = if (append) "wa" else "w"
-        val pfd = resolver.openFileDescriptor(uri, writingMode)
-            ?: throw IOException("Failed to open file descriptor for URI: $uri")
+        val pfd =
+            resolver.openFileDescriptor(uri, writingMode)
+                ?: throw IOException("Failed to open file descriptor for URI: $uri")
 
         pfd.use { descriptor ->
             ParcelFileDescriptor.AutoCloseOutputStream(descriptor).use(block)
@@ -280,13 +275,12 @@ class DefaultDownloadFileWriter(
         }
     }
 
-    /**
-     * Updates a MediaStore entry to mark a download as complete by setting IS_PENDING to 0.
-     */
+    /** Updates a MediaStore entry to mark a download as complete by setting IS_PENDING to 0. */
     private fun markMediaStoreDownloadAsComplete(resolver: ContentResolver, uri: Uri) {
-        val updateDetails = ContentValues().apply {
-            put(MediaStore.Downloads.IS_PENDING, 0)
-        }
+        val updateDetails =
+            ContentValues().apply {
+                put(MediaStore.Downloads.IS_PENDING, 0)
+            }
         resolver.update(uri, updateDetails, null, null)
     }
 

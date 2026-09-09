@@ -25,14 +25,11 @@ import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.click
 
-/**
- * Implementation of Robot Pattern for the settings Site Permissions Notification sub menu.
- */
+/** Implementation of Robot Pattern for the settings Site Permissions Notification sub menu. */
 class SettingsSubMenuSitePermissionsExceptionsRobot {
     fun verifyExceptionsEmptyList() {
         Log.i(TAG, "verifyExceptionsEmptyList: Waiting for $waitingTime ms for empty exceptions list to exist")
-        mDevice.findObject(UiSelector().text(getStringResource(R.string.no_site_exceptions)))
-            .waitForExists(waitingTime)
+        mDevice.findObject(UiSelector().text(getStringResource(R.string.no_site_exceptions))).waitForExists(waitingTime)
         Log.i(TAG, "verifyExceptionsEmptyList: Waited for $waitingTime ms for empty exceptions list to exist")
         Log.i(TAG, "verifyExceptionsEmptyList: Trying to verify that the empty exceptions list is displayed")
         onView(withText(R.string.no_site_exceptions)).check(matches(isDisplayed()))
@@ -53,12 +50,21 @@ class SettingsSubMenuSitePermissionsExceptionsRobot {
     }
 
     fun verifyClearPermissionsDialog() {
-        Log.i(TAG, "verifyClearPermissionsDialog: Trying to verify that the \"Clear permissions\" dialog title is displayed")
+        Log.i(
+            TAG,
+            "verifyClearPermissionsDialog: Trying to verify that the \"Clear permissions\" dialog title is displayed",
+        )
         onView(withText(R.string.clear_permissions)).check(matches(isDisplayed()))
         Log.i(TAG, "verifyClearPermissionsDialog: Verified that the \"Clear permissions\" dialog title is displayed")
-        Log.i(TAG, "verifyClearPermissionsDialog: Trying to verify that the \"Are you sure that you want to clear all the permissions on all sites?\" dialog message is displayed")
+        Log.i(
+            TAG,
+            "verifyClearPermissionsDialog: Trying to verify that the \"Are you sure that you want to clear all the permissions on all sites?\" dialog message is displayed",
+        )
         onView(withText(R.string.confirm_clear_permissions_on_all_sites)).check(matches(isDisplayed()))
-        Log.i(TAG, "verifyClearPermissionsDialog: Verified that the \"Are you sure that you want to clear all the permissions on all sites?\" dialog message is displayed")
+        Log.i(
+            TAG,
+            "verifyClearPermissionsDialog: Verified that the \"Are you sure that you want to clear all the permissions on all sites?\" dialog message is displayed",
+        )
         Log.i(TAG, "verifyClearPermissionsDialog: Trying to verify that the \"Ok\" dialog button is displayed")
         onView(withText(R.string.clear_permissions_positive)).check(matches(isDisplayed()))
         Log.i(TAG, "verifyClearPermissionsDialog: Verified that the \"Ok\" dialog button is displayed")
@@ -71,22 +77,39 @@ class SettingsSubMenuSitePermissionsExceptionsRobot {
     fun clickClearPermissionsForOneSite() {
         swipeToBottom()
         Log.i(TAG, "clickClearPermissionsForOneSite: Trying to click the \"Clear permissions\" button")
-        onView(withText(R.string.clear_permissions))
-            .check(matches(isDisplayed()))
-            .click()
+        onView(withText(R.string.clear_permissions)).check(matches(isDisplayed())).click()
         Log.i(TAG, "clickClearPermissionsForOneSite: Clicked the \"Clear permissions\" button")
     }
+
     fun verifyClearPermissionsForOneSiteDialog() {
-        Log.i(TAG, "verifyClearPermissionsForOneSiteDialog: Trying to verify that the \"Clear permissions\" dialog title is displayed")
+        Log.i(
+            TAG,
+            "verifyClearPermissionsForOneSiteDialog: Trying to verify that the \"Clear permissions\" dialog title is displayed",
+        )
         onView(withText(R.string.clear_permissions)).check(matches(isDisplayed()))
-        Log.i(TAG, "verifyClearPermissionsForOneSiteDialog: Verified that the \"Clear permissions\" dialog title is displayed")
-        Log.i(TAG, "verifyClearPermissionsForOneSiteDialog: Trying to verify that the \"Are you sure that you want to clear all the permissions for this site?\" dialog message is displayed")
+        Log.i(
+            TAG,
+            "verifyClearPermissionsForOneSiteDialog: Verified that the \"Clear permissions\" dialog title is displayed",
+        )
+        Log.i(
+            TAG,
+            "verifyClearPermissionsForOneSiteDialog: Trying to verify that the \"Are you sure that you want to clear all the permissions for this site?\" dialog message is displayed",
+        )
         onView(withText(R.string.confirm_clear_permissions_site)).check(matches(isDisplayed()))
-        Log.i(TAG, "verifyClearPermissionsForOneSiteDialog: Verified that the \"Are you sure that you want to clear all the permissions for this site?\" dialog message is displayed")
-        Log.i(TAG, "verifyClearPermissionsForOneSiteDialog: Trying to verify that the \"Ok\" dialog button is displayed")
+        Log.i(
+            TAG,
+            "verifyClearPermissionsForOneSiteDialog: Verified that the \"Are you sure that you want to clear all the permissions for this site?\" dialog message is displayed",
+        )
+        Log.i(
+            TAG,
+            "verifyClearPermissionsForOneSiteDialog: Trying to verify that the \"Ok\" dialog button is displayed",
+        )
         onView(withText(R.string.clear_permissions_positive)).check(matches(isDisplayed()))
         Log.i(TAG, "verifyClearPermissionsForOneSiteDialog: Verified that the \"Ok\" dialog button is displayed")
-        Log.i(TAG, "verifyClearPermissionsForOneSiteDialog: Trying to verify that the \"Cancel\" dialog button is displayed")
+        Log.i(
+            TAG,
+            "verifyClearPermissionsForOneSiteDialog: Trying to verify that the \"Cancel\" dialog button is displayed",
+        )
         onView(withText(R.string.clear_permissions_negative)).check(matches(isDisplayed()))
         Log.i(TAG, "verifyClearPermissionsForOneSiteDialog: Verified that the \"Cancel\" dialog button is displayed")
     }
@@ -101,13 +124,17 @@ class SettingsSubMenuSitePermissionsExceptionsRobot {
     }
 
     fun verifyPermissionSettingSummary(setting: String, summary: String) {
-        Log.i(TAG, "verifyPermissionSettingSummary: Trying to verify that $setting permission is $summary and is displayed")
+        Log.i(
+            TAG,
+            "verifyPermissionSettingSummary: Trying to verify that $setting permission is $summary and is displayed",
+        )
         onView(
-            allOf(
-                withText(setting),
-                hasSibling(withText(summary)),
-            ),
-        ).check(matches(isDisplayed()))
+                allOf(
+                    withText(setting),
+                    hasSibling(withText(summary)),
+                )
+            )
+            .check(matches(isDisplayed()))
         Log.i(TAG, "verifyPermissionSettingSummary: Verified that $setting permission is $summary and is displayed")
     }
 
@@ -123,34 +150,51 @@ class SettingsSubMenuSitePermissionsExceptionsRobot {
         exceptionsList().waitForExists(waitingTime)
         Log.i(TAG, "clickClearPermissionsOnAllSites: Waited for $waitingTime ms for exceptions list to exist")
         Log.i(TAG, "clickClearPermissionsOnAllSites: Trying to click the \"Clear permissions on all sites\" button")
-        onView(withId(R.id.delete_all_site_permissions_button))
-            .check(matches(isDisplayed()))
-            .click()
+        onView(withId(R.id.delete_all_site_permissions_button)).check(matches(isDisplayed())).click()
         Log.i(TAG, "clickClearPermissionsOnAllSites: Clicked the \"Clear permissions on all sites\" button")
     }
 
     // Click button for resetting one site permission to default
     fun clickClearOnePermissionForOneSite() {
         Log.i(TAG, "clickClearOnePermissionForOneSite: Trying to click the \"Clear permissions\" button")
-        onView(withText(R.string.clear_permission))
-            .check(matches(isDisplayed()))
-            .click()
+        onView(withText(R.string.clear_permission)).check(matches(isDisplayed())).click()
         Log.i(TAG, "clickClearOnePermissionForOneSite: Clicked the \"Clear permissions\" button")
     }
 
     fun verifyResetPermissionDefaultForThisSiteDialog() {
-        Log.i(TAG, "verifyResetPermissionDefaultForThisSiteDialog: Trying to verify that the \"Clear permissions\" dialog title is displayed")
+        Log.i(
+            TAG,
+            "verifyResetPermissionDefaultForThisSiteDialog: Trying to verify that the \"Clear permissions\" dialog title is displayed",
+        )
         onView(withText(R.string.clear_permission)).check(matches(isDisplayed()))
-        Log.i(TAG, "verifyResetPermissionDefaultForThisSiteDialog: Verified that the \"Clear permissions\" dialog title is displayed")
-        Log.i(TAG, "verifyResetPermissionDefaultForThisSiteDialog: Trying to verify that the \"Are you sure that you want to clear this permission for this site?\" dialog message is displayed")
+        Log.i(
+            TAG,
+            "verifyResetPermissionDefaultForThisSiteDialog: Verified that the \"Clear permissions\" dialog title is displayed",
+        )
+        Log.i(
+            TAG,
+            "verifyResetPermissionDefaultForThisSiteDialog: Trying to verify that the \"Are you sure that you want to clear this permission for this site?\" dialog message is displayed",
+        )
         onView(withText(R.string.confirm_clear_permission_site)).check(matches(isDisplayed()))
-        Log.i(TAG, "verifyResetPermissionDefaultForThisSiteDialog: Verified that the \"Are you sure that you want to clear this permission for this site?\" dialog message is displayed")
-        Log.i(TAG, "verifyResetPermissionDefaultForThisSiteDialog: Trying to verify that the \"Ok\" dialog button is displayed")
+        Log.i(
+            TAG,
+            "verifyResetPermissionDefaultForThisSiteDialog: Verified that the \"Are you sure that you want to clear this permission for this site?\" dialog message is displayed",
+        )
+        Log.i(
+            TAG,
+            "verifyResetPermissionDefaultForThisSiteDialog: Trying to verify that the \"Ok\" dialog button is displayed",
+        )
         onView(withText(R.string.clear_permissions_positive)).check(matches(isDisplayed()))
         Log.i(TAG, "verifyResetPermissionDefaultForThisSiteDialog: Verified that the \"Ok\" dialog button is displayed")
-        Log.i(TAG, "verifyResetPermissionDefaultForThisSiteDialog: Trying to verify that the \"Cancel\" dialog button is displayed")
+        Log.i(
+            TAG,
+            "verifyResetPermissionDefaultForThisSiteDialog: Trying to verify that the \"Cancel\" dialog button is displayed",
+        )
         onView(withText(R.string.clear_permissions_negative)).check(matches(isDisplayed()))
-        Log.i(TAG, "verifyResetPermissionDefaultForThisSiteDialog: Verified that the \"Cancel\" dialog button is displayed")
+        Log.i(
+            TAG,
+            "verifyResetPermissionDefaultForThisSiteDialog: Verified that the \"Cancel\" dialog button is displayed",
+        )
     }
 
     fun clickOK() {
@@ -166,7 +210,9 @@ class SettingsSubMenuSitePermissionsExceptionsRobot {
     }
 
     class Transition {
-        fun goBack(interact: SettingsSubMenuSitePermissionsRobot.() -> Unit): SettingsSubMenuSitePermissionsRobot.Transition {
+        fun goBack(
+            interact: SettingsSubMenuSitePermissionsRobot.() -> Unit
+        ): SettingsSubMenuSitePermissionsRobot.Transition {
             Log.i(TAG, "goBack: Trying to click the navigate up button")
             goBackButton().click()
             Log.i(TAG, "goBack: Clicked the navigate up button")
@@ -177,8 +223,6 @@ class SettingsSubMenuSitePermissionsExceptionsRobot {
     }
 }
 
-private fun goBackButton() =
-    onView(allOf(withContentDescription("Navigate up")))
+private fun goBackButton() = onView(allOf(withContentDescription("Navigate up")))
 
-private fun exceptionsList() =
-    mDevice.findObject(UiSelector().resourceId("$packageName:id/exceptions"))
+private fun exceptionsList() = mDevice.findObject(UiSelector().resourceId("$packageName:id/exceptions"))

@@ -10,7 +10,7 @@ Profile: https://profiler.firefox.com/public/bshgqkfff7kny34jzk5ht8nn2m99hg8rjm4
 
 ```
 profiler-cli load https://profiler.firefox.com/public/bshgqkfff7kny34jzk5ht8nn2m99hg8rjm4fd80 --session broken-stack
-profiler-cli profile info
+profiler-cli profile info --session broken-stack
 ```
 
 ```
@@ -36,8 +36,8 @@ The file:// Content process accounts for 1332ms of the 4.66-second profile. Insi
 ## Select the task controller thread and check its activity timeline
 
 ```
-profiler-cli thread select t-33
-profiler-cli thread info
+profiler-cli thread select t-33 --session broken-stack
+profiler-cli thread info --session broken-stack
 ```
 
 ```
@@ -57,8 +57,8 @@ The thread is essentially idle for the first 3 seconds, then goes to 85% CPU for
 ## Zoom into the active window and check hot functions
 
 ```
-profiler-cli zoom push 3.033,3.504
-profiler-cli thread samples --include-idle
+profiler-cli zoom push 3.033,3.504 --session broken-stack
+profiler-cli thread samples --include-idle --session broken-stack
 ```
 
 Using `--include-idle` matches what the profiler UI shows (it includes kernel-wait samples). Active-only percentages will differ slightly.
@@ -98,7 +98,7 @@ The total-time column reveals the problem: `jsimd_idct_islow_avx2` has 26.5% tot
 ## Examine the top-down tree to see the broken stacks
 
 ```
-profiler-cli thread samples-top-down --max-lines 80 --include-idle
+profiler-cli thread samples-top-down --max-lines 80 --include-idle --session broken-stack
 ```
 
 ```
@@ -149,7 +149,7 @@ The raw address frames are the telltale sign of a failed Windows stack walk. The
 ## Bottom-up view to confirm which callers are visible
 
 ```
-profiler-cli thread samples-bottom-up --include-idle
+profiler-cli thread samples-bottom-up --include-idle --session broken-stack
 ```
 
 ```
@@ -199,7 +199,7 @@ For `decode_mcu_fast`, a neighboring JPEG function at the same call depth, the b
 ## Check for markers around the problematic code
 
 ```
-profiler-cli thread markers
+profiler-cli thread markers --session broken-stack
 ```
 
 ```

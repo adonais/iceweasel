@@ -26,7 +26,6 @@ class ExceptionsHeaderViewHolder(
     }
 
     companion object {
-        @LayoutRes
-        val LAYOUT_ID = R.layout.exceptions_description
+        @LayoutRes val LAYOUT_ID = R.layout.exceptions_description
     }
 }

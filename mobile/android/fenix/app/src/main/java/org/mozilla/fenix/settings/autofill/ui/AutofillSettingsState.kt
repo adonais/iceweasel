@@ -29,20 +29,23 @@ internal data class AutofillSettingsState(
     val syncCreditCards: Boolean,
 ) : State {
     companion object {
-        val default: AutofillSettingsState = AutofillSettingsState(
-            addresses = listOf(),
-            creditCards = listOf(),
-            saveFillAddresses = false,
-            saveFillCards = false,
-            accountAuthState = AccountAuthState.LoggedOut,
-            syncAddresses = false,
-            syncCreditCards = false,
-        )
+        val default: AutofillSettingsState =
+            AutofillSettingsState(
+                addresses = listOf(),
+                creditCards = listOf(),
+                saveFillAddresses = false,
+                saveFillCards = false,
+                accountAuthState = AccountAuthState.LoggedOut,
+                syncAddresses = false,
+                syncCreditCards = false,
+            )
     }
 }
 
 internal sealed class AccountAuthState {
     data object LoggedOut : AccountAuthState()
+
     data object Authenticated : AccountAuthState()
+
     data object NeedsReauthentication : AccountAuthState()
 }

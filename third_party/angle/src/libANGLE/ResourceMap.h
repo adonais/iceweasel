@@ -11,12 +11,10 @@
 #ifndef LIBANGLE_RESOURCE_MAP_H_
 #define LIBANGLE_RESOURCE_MAP_H_
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
+#include <atomic>
 #include <mutex>
 #include <type_traits>
+#include "common/unsafe_buffers.h"
 
 #include "common/SimpleMutex.h"
 #include "common/hash_containers.h"
@@ -58,12 +56,18 @@ struct SelectResourceMapMutex<false>
 // thousands.
 //
 // The initial size of the flat resource map is based on the above, rounded up to a multiple of
-// 1536.  Resource maps that need a lock (kNeedsLock == true) have the maximum flat size identical
-// to initial flat size to avoid reallocation.  For others, the maps start small and can grow.
+// 1536.  Resource maps that need a lock (kNeedsLock == true) have an initial flat size and the
+// maximum flat size can be extended when an additional flat size is specified.  For others, the
+// maps start small and can grow.
+//
+// kAdditionalFlatResourcesSize defines the size of the additional flat resource map.
+// Handles in [kInitialFlatResourcesSize, kInitialFlatResourcesSize + kAdditionalFlatResourcesSize)
+// are stored in mAdditionalFlatResources.  0 means the additional flat map is disabled.
 template <typename IDType>
 struct ResourceMapParams
 {
-    static constexpr size_t kInitialFlatResourcesSize = 192;
+    static constexpr size_t kInitialFlatResourcesSize    = 0xC0;
+    static constexpr size_t kAdditionalFlatResourcesSize = 0;
 
     // The following are private to the context and don't need a lock:
     //
@@ -80,34 +84,30 @@ struct ResourceMapParams
 template <>
 struct ResourceMapParams<BufferID>
 {
-    static constexpr size_t kInitialFlatResourcesSize = 6144;
-    static constexpr bool kNeedsLock                  = true;
+    static constexpr size_t kInitialFlatResourcesSize    = 0x1800;
+    static constexpr size_t kAdditionalFlatResourcesSize = 0x7800 - kInitialFlatResourcesSize;
+    static constexpr bool kNeedsLock                     = true;
 };
 template <>
 struct ResourceMapParams<TextureID>
 {
-    static constexpr size_t kInitialFlatResourcesSize = 1536;
-    static constexpr bool kNeedsLock                  = false;
+    static constexpr size_t kInitialFlatResourcesSize    = 0x600;
+    static constexpr size_t kAdditionalFlatResourcesSize = 0;
+    static constexpr bool kNeedsLock                     = false;
 };
 template <>
 struct ResourceMapParams<ShaderProgramID>
 {
-    static constexpr size_t kInitialFlatResourcesSize = 1536;
-    static constexpr bool kNeedsLock                  = false;
+    static constexpr size_t kInitialFlatResourcesSize    = 0x600;
+    static constexpr size_t kAdditionalFlatResourcesSize = 0;
+    static constexpr bool kNeedsLock                     = false;
 };
 template <>
 struct ResourceMapParams<SyncID>
 {
-    static constexpr size_t kInitialFlatResourcesSize = 1536;
-    static constexpr bool kNeedsLock                  = false;
-};
-// For the purpose of unit testing, |int| is considered private (not needing lock), and
-// |unsigned int| is considered shared (needing lock).
-template <>
-struct ResourceMapParams<unsigned int>
-{
-    static constexpr size_t kInitialFlatResourcesSize = 192;
-    static constexpr bool kNeedsLock                  = true;
+    static constexpr size_t kInitialFlatResourcesSize    = 0x600;
+    static constexpr size_t kAdditionalFlatResourcesSize = 0;
+    static constexpr bool kNeedsLock                     = false;
 };
 
 template <typename ResourceType, typename IDType>
@@ -126,8 +126,25 @@ class ResourceMap final : angle::NonCopyable
 
         if (ANGLE_LIKELY(handle < mFlatResourcesSize))
         {
-            ResourceType *value = mFlatResources[handle];
+            ResourceType *value = ANGLE_UNSAFE_TODO(mFlatResources[handle]);
             return (value == InvalidPointer() ? nullptr : value);
+        }
+
+        if constexpr (kAdditionalFlatResourcesSize > 0)
+        {
+            if (handle < kLocklessFlatResourcesLimit)
+            {
+                ASSERT(handle >= kInitialFlatResourcesSize);
+                ResourceType **additionalResources =
+                    mAdditionalFlatResources.load(std::memory_order_acquire);
+                if (additionalResources != nullptr)
+                {
+                    ResourceType *value =
+                        ANGLE_UNSAFE_TODO(additionalResources[handle - kInitialFlatResourcesSize]);
+                    return (value == InvalidPointer() ? nullptr : value);
+                }
+                return nullptr;
+            }
         }
 
         return findInHashedResources(handle);
@@ -185,6 +202,7 @@ class ResourceMap final : angle::NonCopyable
 
     // Used by iterators and related functions only (due to lack of thread safety).
     GLuint nextResource(size_t flatIndex, bool skipNulls) const;
+    GLuint getFlatEndIndex() const;
 
     // constexpr methods cannot contain reinterpret_cast, so we need a static method.
     static ResourceType *InvalidPointer();
@@ -194,6 +212,8 @@ class ResourceMap final : angle::NonCopyable
     static constexpr bool kNeedsLock = ResourceMapParams<IDType>::kNeedsLock;
     static constexpr size_t kInitialFlatResourcesSize =
         ResourceMapParams<IDType>::kInitialFlatResourcesSize;
+    static constexpr size_t kAdditionalFlatResourcesSize =
+        ResourceMapParams<IDType>::kAdditionalFlatResourcesSize;
 #else
     // When share group locks are disabled, we are already in an thread-unsafe state so disable
     // locking in the ResourceManager too.
@@ -202,10 +222,24 @@ class ResourceMap final : angle::NonCopyable
     // Always grow from a small initial allocation when locks are disabled. Chromium uses very few
     // total resources.
     static constexpr size_t kInitialFlatResourcesSize = 192;
+
+    // Additional flat array requires the share group lock for safe lazy allocation.  Disable lazy
+    // allocation when locks are unavailable.
+    static constexpr size_t kAdditionalFlatResourcesSize = 0;
 #endif
 
+    // Both mFlatResources and mAdditionalFlatResources are valid when kNeedsLock is true.
+    static constexpr size_t kLocklessFlatResourcesLimit =
+        kInitialFlatResourcesSize + kAdditionalFlatResourcesSize;
+    static_assert(
+        kAdditionalFlatResourcesSize == 0 || kNeedsLock,
+        "kAdditionalFlatResourcesSize > 0 requires kNeedsLock to ensure safe lazy allocation");
+
     using Mutex = typename SelectResourceMapMutex<kNeedsLock>::type;
-    // Experimental testing suggests that ~10k is a reasonable upper limit.
+
+    // For the lock-free flat map, experimental testing suggests that 10K is a reasonable upper
+    // limit, rounded up to 0x3000 here for simplicity.  For the map that needs a lock, the flat
+    // array size is fixed based on observed usage.
     static constexpr size_t kFlatResourcesLimit = kNeedsLock ? kInitialFlatResourcesSize : 0x3000;
     // Due to the way assign() is implemented, kFlatResourcesLimit / kInitialFlatResourcesSize must
     // be a power of 2.
@@ -217,10 +251,12 @@ class ResourceMap final : angle::NonCopyable
     ResourceType *findInHashedResources(GLuint handle) const;
     bool eraseFromHashedResources(GLuint handle, ResourceType **resourceOut);
     void assignAboveCurrentFlatSize(GLuint handle, ResourceType *resource);
-    void assignInHashedResources(GLuint handle, ResourceType *resource);
 
     size_t mFlatResourcesSize;
     ResourceType **mFlatResources;
+    // Additional flat array is allocated lazily on first use under mMutex and published through
+    // store/load, enabling lock-free reads in query().
+    std::atomic<ResourceType **> mAdditionalFlatResources;
 
     // A map of GL objects indexed by object ID.
     HashMap mHashedResources;
@@ -271,9 +307,11 @@ class UnsafeResourceMapIter
 template <typename ResourceType, typename IDType>
 ResourceMap<ResourceType, IDType>::ResourceMap()
     : mFlatResourcesSize(kInitialFlatResourcesSize),
-      mFlatResources(new ResourceType *[kInitialFlatResourcesSize])
+      mFlatResources(new ResourceType *[kInitialFlatResourcesSize]),
+      mAdditionalFlatResources(nullptr)
 {
-    memset(mFlatResources, kInvalidPointer, mFlatResourcesSize * sizeof(mFlatResources[0]));
+    ANGLE_UNSAFE_TODO(
+        memset(mFlatResources, kInvalidPointer, mFlatResourcesSize * sizeof(mFlatResources[0])));
 }
 
 template <typename ResourceType, typename IDType>
@@ -281,6 +319,7 @@ ResourceMap<ResourceType, IDType>::~ResourceMap()
 {
     ASSERT(begin() == end());
     delete[] mFlatResources;
+    delete[] mAdditionalFlatResources.load(std::memory_order_acquire);
 }
 
 template <typename ResourceType, typename IDType>
@@ -323,7 +362,22 @@ ANGLE_INLINE bool ResourceMap<ResourceType, IDType>::contains(IDType id) const
     GLuint handle = GetIDValue(id);
     if (ANGLE_LIKELY(handle < mFlatResourcesSize))
     {
-        return mFlatResources[handle] != InvalidPointer();
+        return ANGLE_UNSAFE_TODO(mFlatResources[handle]) != InvalidPointer();
+    }
+
+    if constexpr (kAdditionalFlatResourcesSize > 0)
+    {
+        if (handle < kLocklessFlatResourcesLimit)
+        {
+            ResourceType **additionalResources =
+                mAdditionalFlatResources.load(std::memory_order_acquire);
+            if (additionalResources != nullptr)
+            {
+                return ANGLE_UNSAFE_TODO(additionalResources[handle - kInitialFlatResourcesSize]) !=
+                       InvalidPointer();
+            }
+            return false;
+        }
     }
 
     return containsInHashedResources(handle);
@@ -335,7 +389,7 @@ bool ResourceMap<ResourceType, IDType>::erase(IDType id, ResourceType **resource
     GLuint handle = GetIDValue(id);
     if (ANGLE_LIKELY(handle < mFlatResourcesSize))
     {
-        auto &value = mFlatResources[handle];
+        auto &value = ANGLE_UNSAFE_TODO(mFlatResources[handle]);
         if (value == InvalidPointer())
         {
             return false;
@@ -343,6 +397,28 @@ bool ResourceMap<ResourceType, IDType>::erase(IDType id, ResourceType **resource
         *resourceOut = value;
         value        = InvalidPointer();
         return true;
+    }
+
+    if constexpr (kAdditionalFlatResourcesSize > 0)
+    {
+        if (handle < kLocklessFlatResourcesLimit)
+        {
+            ResourceType **additionalResources =
+                mAdditionalFlatResources.load(std::memory_order_acquire);
+            if (additionalResources != nullptr)
+            {
+                ResourceType **value =
+                    ANGLE_UNSAFE_TODO(&additionalResources[handle - kInitialFlatResourcesSize]);
+                if (*value == InvalidPointer())
+                {
+                    return false;
+                }
+                *resourceOut = *value;
+                *value       = InvalidPointer();
+                return true;
+            }
+            return false;
+        }
     }
 
     return eraseFromHashedResources(handle, resourceOut);
@@ -367,21 +443,56 @@ void ResourceMap<ResourceType, IDType>::assignAboveCurrentFlatSize(GLuint handle
         ResourceType **oldResources = mFlatResources;
 
         mFlatResources = new ResourceType *[newSize];
-        memset(&mFlatResources[mFlatResourcesSize], kInvalidPointer,
-               (newSize - mFlatResourcesSize) * sizeof(mFlatResources[0]));
-        memcpy(mFlatResources, oldResources, mFlatResourcesSize * sizeof(mFlatResources[0]));
+        ANGLE_UNSAFE_TODO(memset(&mFlatResources[mFlatResourcesSize], kInvalidPointer,
+                                 (newSize - mFlatResourcesSize) * sizeof(mFlatResources[0])));
+        ANGLE_UNSAFE_TODO(
+            memcpy(mFlatResources, oldResources, mFlatResourcesSize * sizeof(mFlatResources[0])));
         mFlatResourcesSize = newSize;
         ASSERT(mFlatResourcesSize <= kFlatResourcesLimit);
         delete[] oldResources;
 
         ASSERT(mFlatResourcesSize > handle);
-        mFlatResources[handle] = resource;
+        ANGLE_UNSAFE_TODO(mFlatResources[handle]) = resource;
+        return;
     }
-    else
+
+    if constexpr (kAdditionalFlatResourcesSize > 0)
     {
-        std::lock_guard<Mutex> lock(mMutex);
-        mHashedResources[handle] = resource;
+        // This should only possible when lock is needed. Otherwise we could just grow
+        // mFlatResources.
+        static_assert(kNeedsLock);
+        if (handle < kLocklessFlatResourcesLimit)
+        {
+            ResourceType **additionalResources =
+                mAdditionalFlatResources.load(std::memory_order_acquire);
+            if (ANGLE_UNLIKELY(additionalResources == nullptr))
+            {
+                std::lock_guard<Mutex> lock(mMutex);
+                // Re-read under lock to avoid double allocation if two threads raced here.
+                // memory_order_relaxed is sufficient as the mutex provides the memory barrier.
+                additionalResources = mAdditionalFlatResources.load(std::memory_order_relaxed);
+                if (additionalResources == nullptr)
+                {
+                    additionalResources = new ResourceType *[kAdditionalFlatResourcesSize];
+                    ANGLE_UNSAFE_TODO(
+                        memset(additionalResources, kInvalidPointer,
+                               kAdditionalFlatResourcesSize * sizeof(additionalResources[0])));
+                    // Write the elements before the release-store so that a concurrent reader
+                    // loading the pointer with memory_order_acquire observes a fully initialized
+                    // array.
+                    ANGLE_UNSAFE_TODO(additionalResources[handle - kInitialFlatResourcesSize]) =
+                        resource;
+                    mAdditionalFlatResources.store(additionalResources, std::memory_order_release);
+                    return;
+                }
+            }
+            ANGLE_UNSAFE_TODO(additionalResources[handle - kInitialFlatResourcesSize]) = resource;
+            return;
+        }
     }
+
+    std::lock_guard<Mutex> lock(mMutex);
+    mHashedResources[handle] = resource;
 }
 
 template <typename ResourceType, typename IDType>
@@ -390,7 +501,7 @@ ANGLE_INLINE void ResourceMap<ResourceType, IDType>::assign(IDType id, ResourceT
     GLuint handle = GetIDValue(id);
     if (ANGLE_LIKELY(handle < mFlatResourcesSize))
     {
-        mFlatResources[handle] = resource;
+        ANGLE_UNSAFE_TODO(mFlatResources[handle]) = resource;
     }
     else
     {
@@ -408,7 +519,7 @@ typename ResourceMap<ResourceType, IDType>::Iterator ResourceMap<ResourceType, I
 template <typename ResourceType, typename IDType>
 typename ResourceMap<ResourceType, IDType>::Iterator ResourceMap<ResourceType, IDType>::end() const
 {
-    return Iterator(*this, static_cast<GLuint>(mFlatResourcesSize), mHashedResources.end(), true);
+    return Iterator(*this, getFlatEndIndex(), mHashedResources.end(), true);
 }
 
 template <typename ResourceType, typename IDType>
@@ -422,7 +533,7 @@ template <typename ResourceType, typename IDType>
 typename ResourceMap<ResourceType, IDType>::Iterator
 ResourceMap<ResourceType, IDType>::endWithNull() const
 {
-    return Iterator(*this, static_cast<GLuint>(mFlatResourcesSize), mHashedResources.end(), false);
+    return Iterator(*this, getFlatEndIndex(), mHashedResources.end(), false);
 }
 
 template <typename ResourceType, typename IDType>
@@ -435,8 +546,20 @@ template <typename ResourceType, typename IDType>
 void ResourceMap<ResourceType, IDType>::clear()
 {
     // No need for a lock as this is only called on destruction.
-    memset(mFlatResources, kInvalidPointer, kInitialFlatResourcesSize * sizeof(mFlatResources[0]));
+    ANGLE_UNSAFE_TODO(memset(mFlatResources, kInvalidPointer,
+                             kInitialFlatResourcesSize * sizeof(mFlatResources[0])));
     mFlatResourcesSize = kInitialFlatResourcesSize;
+    if constexpr (kAdditionalFlatResourcesSize > 0)
+    {
+        ResourceType **additionalResources =
+            mAdditionalFlatResources.load(std::memory_order_acquire);
+        if (additionalResources != nullptr)
+        {
+            ANGLE_UNSAFE_TODO(
+                memset(additionalResources, kInvalidPointer,
+                       kAdditionalFlatResourcesSize * sizeof(additionalResources[0])));
+        }
+    }
     mHashedResources.clear();
 }
 
@@ -445,13 +568,42 @@ GLuint ResourceMap<ResourceType, IDType>::nextResource(size_t flatIndex, bool sk
 {
     // This function is only used by the iterators, access to which is marked by
     // UnsafeResourceMapIter.  Locking is the responsibility of the caller.
-    for (size_t index = flatIndex; index < mFlatResourcesSize; index++)
+    size_t index = flatIndex;
+    for (; index < mFlatResourcesSize; index++)
     {
-        if ((mFlatResources[index] != nullptr || !skipNulls) &&
-            mFlatResources[index] != InvalidPointer())
+        if ((ANGLE_UNSAFE_TODO(mFlatResources[index]) != nullptr || !skipNulls) &&
+            ANGLE_UNSAFE_TODO(mFlatResources[index]) != InvalidPointer())
         {
             return static_cast<GLuint>(index);
         }
+    }
+    if constexpr (kAdditionalFlatResourcesSize > 0)
+    {
+        ResourceType **additionalResources =
+            mAdditionalFlatResources.load(std::memory_order_acquire);
+        if (additionalResources != nullptr)
+        {
+            for (; index < kLocklessFlatResourcesLimit; index++)
+            {
+                ResourceType *value =
+                    ANGLE_UNSAFE_TODO(additionalResources[index - kInitialFlatResourcesSize]);
+                if ((value != nullptr || !skipNulls) && value != InvalidPointer())
+                {
+                    return static_cast<GLuint>(index);
+                }
+            }
+        }
+        return static_cast<GLuint>(kLocklessFlatResourcesLimit);
+    }
+    return static_cast<GLuint>(mFlatResourcesSize);
+}
+
+template <typename ResourceType, typename IDType>
+GLuint ResourceMap<ResourceType, IDType>::getFlatEndIndex() const
+{
+    if constexpr (kAdditionalFlatResourcesSize > 0)
+    {
+        return static_cast<GLuint>(kLocklessFlatResourcesLimit);
     }
     return static_cast<GLuint>(mFlatResourcesSize);
 }
@@ -490,7 +642,7 @@ template <typename ResourceType, typename IDType>
 typename ResourceMap<ResourceType, IDType>::Iterator &
 ResourceMap<ResourceType, IDType>::Iterator::operator++()
 {
-    if (mFlatIndex < static_cast<GLuint>(mOrigin.mFlatResourcesSize))
+    if (mFlatIndex < mOrigin.getFlatEndIndex())
     {
         mFlatIndex = mOrigin.nextResource(mFlatIndex + 1, mSkipNulls);
     }
@@ -519,10 +671,22 @@ ResourceMap<ResourceType, IDType>::Iterator::operator*() const
 template <typename ResourceType, typename IDType>
 void ResourceMap<ResourceType, IDType>::Iterator::updateValue()
 {
-    if (mFlatIndex < static_cast<GLuint>(mOrigin.mFlatResourcesSize))
+    if (mFlatIndex < mOrigin.getFlatEndIndex())
     {
-        mValue.first  = mFlatIndex;
-        mValue.second = mOrigin.mFlatResources[mFlatIndex];
+        if (mFlatIndex < static_cast<GLuint>(mOrigin.mFlatResourcesSize))
+        {
+            mValue.first  = mFlatIndex;
+            mValue.second = ANGLE_UNSAFE_TODO(mOrigin.mFlatResources[mFlatIndex]);
+        }
+        else
+        {
+            ResourceType **additionalResources =
+                mOrigin.mAdditionalFlatResources.load(std::memory_order_acquire);
+            ASSERT(additionalResources != nullptr);
+            mValue.first = mFlatIndex;
+            mValue.second = ANGLE_UNSAFE_TODO(
+                additionalResources[mFlatIndex - ResourceMap::kInitialFlatResourcesSize]);
+        }
     }
     else if (mHashIndex != mOrigin.mHashedResources.end())
     {

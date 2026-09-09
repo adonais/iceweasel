@@ -10,21 +10,16 @@ import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import org.mozilla.focus.R
 
-/**
- * Storage for onboarding-related state.
- */
+/** Storage for onboarding-related state. */
 class OnboardingStorage(val context: Context) {
 
     /**
-     * Saves the step of the onBoarding flow.
-     * If the user closes the app at step two he should start again from step two
+     * Saves the step of the onBoarding flow. If the user closes the app at step two he should start again from step two
      * when he enters again in the app.
      *
      * @param onBoardingStep current onBoarding step
      */
-    internal fun saveCurrentOnboardingStepInSharePref(
-        onBoardingStep: OnboardingStep,
-    ) {
+    internal fun saveCurrentOnboardingStepInSharePref(onBoardingStep: OnboardingStep) {
         val sharedPref = PreferenceManager.getDefaultSharedPreferences(context)
         sharedPref.edit {
             putString(
@@ -37,8 +32,7 @@ class OnboardingStorage(val context: Context) {
     @VisibleForTesting
     internal fun getCurrentOnboardingStepFromSharedPref(): String {
         val sharedPref = PreferenceManager.getDefaultSharedPreferences(context)
-        return sharedPref.getString(context.getString(R.string.pref_key_onboarding_step), "")
-            ?: ""
+        return sharedPref.getString(context.getString(R.string.pref_key_onboarding_step), "") ?: ""
     }
 
     internal fun getCurrentOnboardingStep() =

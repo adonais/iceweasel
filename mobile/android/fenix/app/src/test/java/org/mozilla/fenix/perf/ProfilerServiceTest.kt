@@ -17,6 +17,7 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.unmockkAll
+import kotlin.test.assertNotNull
 import mozilla.components.browser.engine.gecko.profiler.Profiler
 import mozilla.components.concept.engine.Engine
 import mozilla.components.support.base.android.NotificationsDelegate
@@ -39,7 +40,6 @@ import org.robolectric.android.controller.ServiceController
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowNotificationManager
 import org.robolectric.shadows.ShadowService
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 @Config(application = FenixRobolectricTestApplication::class, sdk = [Build.VERSION_CODES.TIRAMISU])
@@ -51,14 +51,11 @@ class ProfilerServiceTest {
     private lateinit var service: ProfilerService
     private lateinit var shadowService: ShadowService
 
-    @RelaxedMockK
-    lateinit var mockCore: Core
+    @RelaxedMockK lateinit var mockCore: Core
 
-    @RelaxedMockK
-    lateinit var mockEngine: Engine
+    @RelaxedMockK lateinit var mockEngine: Engine
 
-    @MockK
-    lateinit var mockProfiler: Profiler
+    @MockK lateinit var mockProfiler: Profiler
 
     @Before
     fun setup() {
@@ -131,9 +128,21 @@ class ProfilerServiceTest {
 
         val shadowNotification = Shadows.shadowOf(postedNotification)
         assertEquals("Notification title mismatch", "Profiler active", shadowNotification.contentTitle.toString())
-        assertEquals("Notification text mismatch", "Profiling is active. Tap to stop profiler", shadowNotification.contentText.toString())
-        assertNotEquals("FLAG_ONGOING_EVENT should be set", 0, postedNotification.flags and Notification.FLAG_ONGOING_EVENT)
-        assertNotEquals("FLAG_FOREGROUND_SERVICE should be set", 0, postedNotification.flags and Notification.FLAG_FOREGROUND_SERVICE)
+        assertEquals(
+            "Notification text mismatch",
+            "Profiling is active. Tap to stop profiler",
+            shadowNotification.contentText.toString(),
+        )
+        assertNotEquals(
+            "FLAG_ONGOING_EVENT should be set",
+            0,
+            postedNotification.flags and Notification.FLAG_ONGOING_EVENT,
+        )
+        assertNotEquals(
+            "FLAG_FOREGROUND_SERVICE should be set",
+            0,
+            postedNotification.flags and Notification.FLAG_FOREGROUND_SERVICE,
+        )
 
         assertFalse("Service should not be foreground-stopped after start", shadowService.isForegroundStopped)
     }
@@ -152,10 +161,11 @@ class ProfilerServiceTest {
             "Notification should be present after starting",
         )
 
-        val broadcast = Intent(INTENT_PROFILER_STATE_CHANGED).apply {
-            putExtra(ProfilerService.IS_PROFILER_ACTIVE, false)
-            setPackage(context.packageName)
-        }
+        val broadcast =
+            Intent(INTENT_PROFILER_STATE_CHANGED).apply {
+                putExtra(ProfilerService.IS_PROFILER_ACTIVE, false)
+                setPackage(context.packageName)
+            }
 
         context.sendBroadcast(broadcast)
 
@@ -183,9 +193,10 @@ class ProfilerServiceTest {
             "Notification should be present after starting",
         )
 
-        val unknownIntent = Intent(context, ProfilerService::class.java).apply {
-            action = "org.mozilla.fenix.perf.RANDOM"
-        }
+        val unknownIntent =
+            Intent(context, ProfilerService::class.java).apply {
+                action = "org.mozilla.fenix.perf.RANDOM"
+            }
 
         service.onStartCommand(unknownIntent, 0, 2)
 

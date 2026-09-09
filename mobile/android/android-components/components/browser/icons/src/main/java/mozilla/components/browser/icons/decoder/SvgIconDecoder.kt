@@ -19,8 +19,9 @@ import mozilla.components.support.images.decoder.ImageDecoder
 /**
  * [ImageDecoder] that will use the AndroidSVG in order to decode the byte data.
  *
- * The code is largely borrowed from [coil-svg](https://github.com/coil-kt/coil/blob/2.4.0/coil-svg/src/main/java/coil/decode/SvgDecoder.kt)
- * with some fixed options.
+ * The code is largely borrowed from
+ * [coil-svg](https://github.com/coil-kt/coil/blob/2.4.0/coil-svg/src/main/java/coil/decode/SvgDecoder.kt) with some
+ * fixed options.
  */
 class SvgIconDecoder : ImageDecoder {
     private val logger = Logger("SvgIconDecoder")
@@ -33,8 +34,7 @@ class SvgIconDecoder : ImageDecoder {
             when (throwable) {
                 is IllegalArgumentException,
                 is NullPointerException,
-                is SVGParseException,
-                -> {
+                is SVGParseException -> {
                     logger.error("Failed to parse the byte data to Bitmap", throwable)
                 }
                 is OutOfMemoryError -> {

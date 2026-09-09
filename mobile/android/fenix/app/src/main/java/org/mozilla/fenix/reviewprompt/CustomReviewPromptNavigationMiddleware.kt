@@ -11,12 +11,11 @@ import mozilla.components.lib.state.Store
 import org.mozilla.fenix.settings.SupportUtils
 
 /**
- * [Middleware] that emits [CustomReviewPromptNavigationEvent]s handled by the hosting fragment
- * when an action results in navigation.
+ * [Middleware] that emits [CustomReviewPromptNavigationEvent]s handled by the hosting fragment when an action results
+ * in navigation.
  */
-class CustomReviewPromptNavigationMiddleware(
-    private val scope: CoroutineScope,
-) : Middleware<CustomReviewPromptState, CustomReviewPromptAction> {
+class CustomReviewPromptNavigationMiddleware(private val scope: CoroutineScope) :
+    Middleware<CustomReviewPromptState, CustomReviewPromptAction> {
 
     override fun invoke(
         store: Store<CustomReviewPromptState, CustomReviewPromptAction>,
@@ -48,22 +47,14 @@ class CustomReviewPromptNavigationMiddleware(
     }
 }
 
-/**
- * Events to emit to the fragment to handle navigation side-effects.
- */
+/** Events to emit to the fragment to handle navigation side-effects. */
 sealed class CustomReviewPromptNavigationEvent {
-    /**
-     * Dismiss the custom review prompt bottom sheet.
-     */
+    /** Dismiss the custom review prompt bottom sheet. */
     data object Dismiss : CustomReviewPromptNavigationEvent()
 
-    /**
-     * Call the Play In-App Review API to show the review prompt.
-     */
+    /** Call the Play In-App Review API to show the review prompt. */
     data object OpenPlayStoreReviewPrompt : CustomReviewPromptNavigationEvent()
 
-    /**
-     * Open a [url] in a new tab.
-     */
+    /** Open a [url] in a new tab. */
     data class OpenInNewTab(val url: String) : CustomReviewPromptNavigationEvent()
 }

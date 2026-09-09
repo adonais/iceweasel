@@ -7,13 +7,8 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  AddonStudies: "resource://normandy/lib/AddonStudies.sys.mjs",
-  BranchedAddonStudyAction:
-    "resource://normandy/actions/BranchedAddonStudyAction.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   NimbusTelemetry: "resource://nimbus/lib/Telemetry.sys.mjs",
-  PreferenceExperiments:
-    "resource://normandy/lib/PreferenceExperiments.sys.mjs",
   RecipeRunner: "resource://normandy/lib/RecipeRunner.sys.mjs",
   UnenrollmentCause: "resource://nimbus/lib/ExperimentManager.sys.mjs",
 });
@@ -47,14 +42,6 @@ ChromeUtils.defineLazyGetter(
   "aboutStudies",
   () =>
     new (class {
-      getAddonStudyList() {
-        return lazy.AddonStudies.getAll();
-      }
-
-      getPreferenceStudyList() {
-        return lazy.PreferenceExperiments.getAll();
-      }
-
       getMessagingSystemList() {
         const debugEnabled = Services.prefs.getBoolPref("nimbus.debug");
 
@@ -123,58 +110,6 @@ ChromeUtils.defineLazyGetter(
       async getStudiesEnabled() {
         await lazy.RecipeRunner.initializedPromise.promise;
         return lazy.RecipeRunner.enabled && lazy.gOptOutStudiesEnabled;
-      }
-
-      /**
-       * Disable an active add-on study and remove its add-on.
-       *
-       * @param {string} recipeId the id of the addon to remove
-       * @param {string} reason the reason for removal
-       */
-      async removeAddonStudy(recipeId, reason) {
-        try {
-          const action = new lazy.BranchedAddonStudyAction();
-          await action.unenroll(recipeId, reason);
-        } catch (err) {
-          // If the exception was that the study was already removed, that's ok.
-          // If not, rethrow the error.
-          if (!err.toString().includes("already inactive")) {
-            throw err;
-          }
-        } finally {
-          // Update any open tabs with the new study list now that it has changed,
-          // even if the above failed.
-          this.getAddonStudyList().then(list =>
-            this._sendToAll("Shield:UpdateAddonStudyList", list)
-          );
-        }
-      }
-
-      /**
-       * Disable an active preference study.
-       *
-       * @param {string} experimentName the name of the experiment to remove
-       * @param {string} reason the reason for removal
-       */
-      async removePreferenceStudy(experimentName, reason) {
-        try {
-          await lazy.PreferenceExperiments.stop(experimentName, {
-            reason,
-            caller: "AboutPages.removePreferenceStudy",
-          });
-        } catch (err) {
-          // If the exception was that the study was already removed, that's ok.
-          // If not, rethrow the error.
-          if (!err.toString().includes("already expired")) {
-            throw err;
-          }
-        } finally {
-          // Update any open tabs with the new study list now that it has changed,
-          // even if the above failed.
-          this.getPreferenceStudyList().then(list =>
-            this._sendToAll("Shield:UpdatePreferenceStudyList", list)
-          );
-        }
       }
 
       async removeMessagingSystemExperiment(slug) {

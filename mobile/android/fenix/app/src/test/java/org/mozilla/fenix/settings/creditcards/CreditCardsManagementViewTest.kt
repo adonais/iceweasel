@@ -32,8 +32,10 @@ class CreditCardsManagementViewTest {
 
     @Before
     fun setup() {
-        view = LayoutInflater.from(testContext).inflate(CreditCardsManagementView.LAYOUT_ID, null)
-            .findViewById(R.id.credit_cards_wrapper)
+        view =
+            LayoutInflater.from(testContext)
+                .inflate(CreditCardsManagementView.LAYOUT_ID, null)
+                .findViewById(R.id.credit_cards_wrapper)
         componentCreditCardsBinding = ComponentCreditCardsBinding.bind(view)
         interactor = mockk(relaxed = true)
 
@@ -52,7 +54,7 @@ class CreditCardsManagementViewTest {
             AutofillFragmentState(
                 creditCards = creditCards,
                 isLoading = false,
-            ),
+            )
         )
 
         assertFalse(componentCreditCardsBinding.progressBar.isVisible)

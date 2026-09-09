@@ -7,8 +7,8 @@ package mozilla.components.compose.base.utils
 import androidx.compose.ui.unit.Dp
 
 /**
- * Extension function for calculating the fraction of a measurement in Dp against a total width
- * returned in float value (0f-1f).
+ * Extension function for calculating the fraction of a measurement in Dp against a total width returned in float value
+ * (0f-1f).
  *
  * @param totalWidth the denominator in the fraction.
  */

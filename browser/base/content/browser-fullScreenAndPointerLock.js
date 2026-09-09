@@ -679,6 +679,7 @@ var FullScreen = {
   cleanup() {
     if (!window.fullScreen) {
       this._mouseTargetRectObserver?.disconnect();
+      this._collapsedToolboxObserver?.disconnect();
       MousePosTracker.removeListener(this);
       document.removeEventListener("keypress", this._keyToggleCallback);
       document.removeEventListener("popupshown", this._setPopupOpen);
@@ -977,12 +978,40 @@ var FullScreen = {
     FullScreen.hideNavToolbox(true);
   },
 
+  // Pull the toolbox up by exactly its own height so it sits fully offscreen.
+  // Skipping the write when the margin already matches keeps the
+  // ResizeObserver below from scheduling another pass for our own mutation.
+  _setCollapsedToolboxMargin(height) {
+    let marginTop = `${-height}px`;
+    if (gNavToolbox.style.marginTop != marginTop) {
+      gNavToolbox.style.marginTop = marginTop;
+    }
+  },
+
+  // Re-measure the collapsed toolbox once layout has settled. This is driven by
+  // a ResizeObserver, so we go through promiseDocumentFlushed to debounce bursts
+  // of resizes, and read the height with getBoundsWithoutFlushing so measuring
+  // never forces a synchronous flush.
+  _updateCollapsedToolboxMargin() {
+    return window
+      .promiseDocumentFlushed(
+        () => window.windowUtils.getBoundsWithoutFlushing(gNavToolbox).height
+      )
+      .then(height => {
+        if (this._isChromeCollapsed) {
+          this._setCollapsedToolboxMargin(height);
+        }
+      })
+      .catch(() => {});
+  },
+
   showNavToolbox(trackMouse = true) {
     if (BrowserHandler.kiosk) {
       return;
     }
     this.fullScreenToggler.hidden = true;
     gNavToolbox.removeAttribute("fullscreenShouldAnimate");
+    this._collapsedToolboxObserver?.disconnect();
     gNavToolbox.style.marginTop = "";
 
     if (!this._isChromeCollapsed) {
@@ -1081,8 +1110,13 @@ var FullScreen = {
       gNavToolbox.setAttribute("fullscreenShouldAnimate", true);
     }
 
-    gNavToolbox.style.marginTop =
-      -gNavToolbox.getBoundingClientRect().height + "px";
+    // Seed the margin synchronously so the collapse starts on this tick.
+    // getBoundsWithoutFlushing never forces a flush, so this height can be
+    // stale; the ResizeObserver set up below always delivers an initial
+    // observation, which corrects it against settled layout.
+    this._setCollapsedToolboxMargin(
+      window.windowUtils.getBoundsWithoutFlushing(gNavToolbox).height
+    );
     this._isChromeCollapsed = true;
     document.documentElement.toggleAttribute(
       "fullscreenNavToolboxHidden",
@@ -1096,6 +1130,20 @@ var FullScreen = {
 
     this._mouseTargetRectObserver?.disconnect();
     MousePosTracker.removeListener(this);
+
+    // The toolbox can still change height after it has been collapsed, which
+    // would leave the bottom of the toolbars peeking into view. On Windows the
+    // "fullscreen" event that brings us here runs before the resize event that
+    // makes automatic density re-evaluate, so entering fullscreen from compact
+    // mode grows the toolbox right after we measured it (bug 2058900). Keep the
+    // negative margin in sync with the measured height instead of relying on
+    // that ordering.
+    if (!this._collapsedToolboxObserver) {
+      this._collapsedToolboxObserver = new ResizeObserver(() =>
+        this._updateCollapsedToolboxMargin()
+      );
+    }
+    this._collapsedToolboxObserver.observe(gNavToolbox);
   },
 };
 

@@ -17,6 +17,7 @@
     "-mfpu=neon",
     "-msse2",
     "-Wno-comma",
+    "-Wno-unused-template",
     "-Wno-tautological-type-limit-compare"
   ],
   "write_mozbuild_variables": {

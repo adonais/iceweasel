@@ -15,9 +15,9 @@ add_task(async function () {
 
   await BrowserTestUtils.switchTab(gBrowser, tab2);
 
-  is(tab1._tPos, 1, "First tab");
-  is(tab2._tPos, 2, "Second tab");
-  is(tab3._tPos, 3, "Third tab");
+  is(tab1.index, 1, "First tab");
+  is(tab2.index, 2, "Second tab");
+  is(tab3.index, 3, "Third tab");
 
   updateTabContextMenu(tab2);
   is(menuItemOpenANewTab.hidden, false, "Open a new Tab is visible");
@@ -43,10 +43,10 @@ add_task(async function () {
 
   let newTab = await newTabPromise;
 
-  is(tab1._tPos, 1, "First tab");
-  is(tab2._tPos, 2, "Second tab");
-  is(newTab._tPos, 3, "Third tab");
-  is(tab3._tPos, 4, "Fourth tab");
+  is(tab1.index, 1, "First tab");
+  is(tab2.index, 2, "Second tab");
+  is(newTab.index, 3, "Third tab");
+  is(tab3.index, 4, "Fourth tab");
 
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);

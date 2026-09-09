@@ -155,14 +155,44 @@ struct CGScopeNoteList {
 };
 
 struct CGResumeOffsetList {
-  Vector<uint32_t, 0> list;
+  using OffsetVector = Vector<uint32_t, 0>;
+  OffsetVector list;
+
   explicit CGResumeOffsetList(FrontendContext* fc) : list(fc) {}
 
   [[nodiscard]] bool append(uint32_t offset) { return list.append(offset); }
+  [[nodiscard]] bool appendAll(const OffsetVector& offsets) {
+    return list.appendAll(offsets);
+  }
+  void setFrom(OffsetVector&& offsets) {
+    MOZ_ASSERT(list.empty());
+    list = std::move(offsets);
+  }
   mozilla::Span<const uint32_t> span() const {
     return {list.begin(), list.length()};
   }
   size_t length() const { return list.length(); }
+};
+
+// The case targets of JSOp::TableSwitch ops have entries in the script's
+// resumeOffsets list, but they must go after the resume indices for yield/await
+// ops.
+struct CGTableSwitchOffsetList {
+  CGResumeOffsetList::OffsetVector caseOffsets;
+
+  // The bytecode offset of each JSOp::TableSwitch op.
+  Vector<BytecodeOffset, 0> switchOffsets;
+
+  explicit CGTableSwitchOffsetList(FrontendContext* fc)
+      : caseOffsets(fc), switchOffsets(fc) {}
+
+  [[nodiscard]] bool appendCaseOffset(BytecodeOffset offset) {
+    return caseOffsets.append(offset.value());
+  }
+  [[nodiscard]] bool appendTableSwitch(BytecodeOffset switchOffset) {
+    return switchOffsets.append(switchOffset);
+  }
+  size_t numCaseOffsets() const { return caseOffsets.length(); }
 };
 
 static constexpr size_t MaxBytecodeLength = INT32_MAX;
@@ -231,6 +261,10 @@ class BytecodeSection {
   CGResumeOffsetList& resumeOffsetList() { return resumeOffsetList_; }
   const CGResumeOffsetList& resumeOffsetList() const {
     return resumeOffsetList_;
+  }
+
+  CGTableSwitchOffsetList& tableSwitchOffsetList() {
+    return tableSwitchOffsetList_;
   }
 
   uint32_t numYields() const { return numYields_; }
@@ -327,7 +361,12 @@ class BytecodeSection {
   // list. This can be used to map from the op's resumeIndex to the bytecode
   // offset of the next pc. This indirection makes it easy to resume in the JIT
   // (because BaselineScript stores a resumeIndex => native code array).
+  //
+  // JSOp::TableSwitch case targets use the same resumeOffsets list, but their
+  // entries are collected separately and appended at the end, so that all yield
+  // and await resume indices are contiguous.
   CGResumeOffsetList resumeOffsetList_;
+  CGTableSwitchOffsetList tableSwitchOffsetList_;
 
   // Number of yield instructions emitted. Does not include JSOp::Await.
   uint32_t numYields_ = 0;

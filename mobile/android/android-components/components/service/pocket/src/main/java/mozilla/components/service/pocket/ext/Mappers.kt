@@ -15,40 +15,35 @@ import mozilla.components.service.pocket.recommendations.api.ContentRecommendati
 import mozilla.components.service.pocket.recommendations.db.ContentRecommendationEntity
 import mozilla.components.service.pocket.recommendations.db.ContentRecommendationImpression
 
-@VisibleForTesting
-internal const val DEFAULT_TIMES_SHOWN = 0L
+@VisibleForTesting internal const val DEFAULT_TIMES_SHOWN = 0L
 
-@VisibleForTesting
-internal const val DEFAULT_FLIGHT_CAP_PERIOD_IN_SECONDS = 24 * 60 * 60 // 1 Day
+@VisibleForTesting internal const val DEFAULT_FLIGHT_CAP_PERIOD_IN_SECONDS = 24 * 60 * 60 // 1 Day
 
-/**
- * Maps the sponsored content Room entities to the object type we expose to service clients.
- */
-internal fun SponsoredContentEntity.toSponsoredContent(
-    impressions: List<Long> = emptyList(),
-) = SponsoredContent(
-    url = url,
-    title = title,
-    callbacks = SponsoredContentCallbacks(
-        clickUrl = clickUrl,
-        impressionUrl = impressionUrl,
-    ),
-    imageUrl = imageUrl,
-    domain = domain,
-    excerpt = excerpt,
-    sponsor = sponsor,
-    blockKey = blockKey,
-    caps = SponsoredContentFrequencyCaps(
-        currentImpressions = impressions,
-        flightCount = flightCapCount,
-        flightPeriod = flightCapPeriod,
-    ),
-    priority = priority,
-)
+/** Maps the sponsored content Room entities to the object type we expose to service clients. */
+internal fun SponsoredContentEntity.toSponsoredContent(impressions: List<Long> = emptyList()) =
+    SponsoredContent(
+        url = url,
+        title = title,
+        callbacks =
+            SponsoredContentCallbacks(
+                clickUrl = clickUrl,
+                impressionUrl = impressionUrl,
+            ),
+        imageUrl = imageUrl,
+        domain = domain,
+        excerpt = excerpt,
+        sponsor = sponsor,
+        blockKey = blockKey,
+        caps =
+            SponsoredContentFrequencyCaps(
+                currentImpressions = impressions,
+                flightCount = flightCapCount,
+                flightPeriod = flightCapPeriod,
+            ),
+        priority = priority,
+    )
 
-/**
- * Maps the sponsored content response item to the object type that is persisted locally.
- */
+/** Maps the sponsored content response item to the object type that is persisted locally. */
 internal fun MarsSpocsResponseItem.toSponsoredContentEntity() =
     SponsoredContentEntity(
         url = url,
@@ -65,9 +60,7 @@ internal fun MarsSpocsResponseItem.toSponsoredContentEntity() =
         priority = ranking.priority,
     )
 
-/**
- * Maps the Room entities to the object type that we expose to service clients.
- */
+/** Maps the Room entities to the object type that we expose to service clients. */
 internal fun ContentRecommendationEntity.toContentRecommendation() =
     ContentRecommendation(
         corpusItemId = corpusItemId,

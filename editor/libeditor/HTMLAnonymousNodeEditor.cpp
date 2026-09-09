@@ -7,6 +7,7 @@
 #include "CSSEditUtils.h"
 #include "HTMLEditUtils.h"
 
+#include "js/GCAPI.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/dom/BindContext.h"
@@ -109,7 +110,8 @@ class ElementDeletionObserver final : public nsStubMultiMutationObserver {
 
 NS_IMPL_ISUPPORTS(ElementDeletionObserver, nsIMutationObserver)
 
-void ElementDeletionObserver::ParentChainChanged(nsIContent* aContent) {
+void ElementDeletionObserver::ParentChainChanged(nsIContent* aContent)
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   // If the native anonymous content has been unbound already in
   // DeleteRefToAnonymousNode, mNativeAnonNode's parentNode is null.
   if (aContent != mObservedElement || !mNativeAnonNode ||
@@ -122,30 +124,36 @@ void ElementDeletionObserver::ParentChainChanged(nsIContent* aContent) {
 
   // aContent is mObservedElement so that mNativeAnonNode may be stored only by
   // the MNC array. Let's grab it.
-  nsCOMPtr<nsIContent> nativeAnonNode(mNativeAnonNode);
+  mObservedElement->RemoveMutationObserver(self);
+  mObservedElement = nullptr;
+  nsCOMPtr<nsIContent> nativeAnonNode = mNativeAnonNode;
   mNativeAnonNode = nullptr;
   nativeAnonNode->RemoveMutationObserver(self);
   ManualNACPtr::RemoveContentFromNACArray(nativeAnonNode);
-
-  // aContent is mObservedElement so that it's safe to remove it without adding
-  // the refcount.
-  mObservedElement->RemoveMutationObserver(self);
-  mObservedElement = nullptr;
+  // FYI: The call of RemoveContentFromNACArray() might have caused dispatching
+  // a chrome event. So, if you want to refer a member after here, you should
+  // grab it before the call.
 }
 
 void ElementDeletionObserver::NodeWillBeDestroyed(nsINode* aNode) {
   MOZ_DIAGNOSTIC_ASSERT(mSelf);
   MOZ_ASSERT(aNode == mNativeAnonNode || aNode == mObservedElement);
 
+  nsAutoScriptBlocker scriptBlocker;
   // If either mObservedElement or mNativeAnonNode, we don't need to keep
   // observing the other. Therefore, we should stop observing the both and
   // release ourselves.
   RefPtr<ElementDeletionObserver> self = std::move(mSelf);
   mObservedElement->RemoveMutationObserver(self);
   mObservedElement = nullptr;
-  mNativeAnonNode->RemoveMutationObserver(self);
-  mNativeAnonNode->UnbindFromTree();
+  const RefPtr nativeAnonNode = mNativeAnonNode;
   mNativeAnonNode = nullptr;
+  nativeAnonNode->RemoveMutationObserver(self);
+  nativeAnonNode->UnbindFromTree();
+  // FYI: The call of UnbindFromTree() might have caused dispatching a chrome
+  // event. So, if you want to refer a member after `scriptBlocker` above is
+  // destroyed, you have to store the member with a strong pointer before the
+  // call.
 }
 
 /******************************************************************************
@@ -171,6 +179,13 @@ ManualNACPtr HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
   RefPtr<PresShell> presShell = GetPresShell();
   if (NS_WARN_IF(!presShell)) {
     return nullptr;
+  }
+
+  // Neither <a>, <img> nor <span> will create a UA shadow, so,
+  // CreateAnonymousElement() shouldn't run script.
+  Maybe<JS::AutoAssertNoGC> maybeAssertNoGC;
+  if (aTag == nsGkAtoms::span || aTag == nsGkAtoms::img) {
+    maybeAssertNoGC.emplace();
   }
 
   // Create a new node through the element factory
@@ -199,6 +214,8 @@ ManualNACPtr HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
     }
   }
 
+  // We need to put a script blocker before calling BindToTree()  and
+  // UnbindFromTree() because some helper methods require it.
   nsAutoScriptBlocker scriptBlocker;
 
   // establish parenthood of the element

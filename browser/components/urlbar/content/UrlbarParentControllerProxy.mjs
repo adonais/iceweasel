@@ -6,7 +6,7 @@ import { UrlbarQueryContext } from "chrome://browser/content/urlbar/UrlbarQueryC
 import { UrlbarResult } from "chrome://browser/content/urlbar/UrlbarResult.mjs";
 
 /**
- * @import {UrlbarChild} from "../../../actors/UrlbarChild.sys.mjs"
+ * @import {UrlbarChild} from "moz-src:///browser/components/urlbar/actors/UrlbarChild.sys.mjs"
  * @import {UrlbarParentController} from "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs"
  */
 
@@ -448,23 +448,6 @@ export class UrlbarParentControllerProxy {
     this.#actor.sendAsyncMessage("OnSelection", {
       instanceId: this.#instanceId,
       result: result.toWire(),
-    });
-  }
-
-  /**
-   * Returns a dynamic result's view update. This one is already async on the
-   * caller's side, so it round-trips through the parent rather than being
-   * pre-fetched.
-   *
-   * @param {UrlbarResult} result The dynamic result.
-   * @param {object} idsByName A map from node names to element ids.
-   * @returns {Promise<object>} The view update.
-   */
-  getViewUpdate(result, idsByName) {
-    return this.#actor.sendQuery("GetViewUpdate", {
-      instanceId: this.#instanceId,
-      result: result.toWire(),
-      idsByName,
     });
   }
 

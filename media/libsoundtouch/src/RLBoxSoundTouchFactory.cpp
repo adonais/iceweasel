@@ -56,5 +56,7 @@ uint ReceiveSamples(SoundTouch* mTimeStretcher, SAMPLETYPE* output,
   return mTimeStretcher->receiveSamples(output, maxSamples);
 }
 
+void Clear(SoundTouch* mTimeStretcher) { mTimeStretcher->clear(); }
+
 void Flush(SoundTouch* mTimeStretcher) { return mTimeStretcher->flush(); }
 }

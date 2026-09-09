@@ -16,29 +16,29 @@ import org.jetbrains.kotlin.psi.KtValueArgument
 import org.jetbrains.kotlin.psi.KtValueArgumentList
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 
-/**
- * Verifies that padding uses Acorn design system spacing tokens.
- */
+/** Verifies that padding uses Acorn design system spacing tokens. */
 class AcornPaddingRule(config: Config = Config.empty) : Rule(config) {
     private val namedParameterRegex = "^[a-zA-Z0-9]+ =".toRegex()
     private val dpRegex = ".[d,D]p$".toRegex()
     override val issue: Issue
-        get() = Issue(
-            id = "HardcodedPaddingUsage",
-            severity = Severity.Maintainability,
-            description = "Hardcoded Dp values are prohibited.  Please use Acorn spacing tokens.",
-            debt = Debt.FIVE_MINS,
-        )
+        get() =
+            Issue(
+                id = "HardcodedPaddingUsage",
+                severity = Severity.Maintainability,
+                description = "Hardcoded Dp values are prohibited.  Please use Acorn spacing tokens.",
+                debt = Debt.FIVE_MINS,
+            )
 
     private val allowedValues: List<String>
-        get() = valueOrDefault(
-            "allowedValues",
-            listOf("0", "0f", "1", "1f", "2", "2f"),
-        )
+        get() =
+            valueOrDefault(
+                "allowedValues",
+                listOf("0", "0f", "1", "1f", "2", "2f"),
+            )
 
     /**
-     * Look for arguments for padding() or PaddingValues(), but exclude
-     * padding it recursively calls PaddingValues to avoid duplicate reports.
+     * Look for arguments for padding() or PaddingValues(), but exclude padding it recursively calls PaddingValues to
+     * avoid duplicate reports.
      */
     private fun KtValueArgument.isPaddingArgument(): Boolean {
         return (this.parent.parent.firstChild.text == "padding" && !this.text.contains("PaddingValues")) ||
@@ -51,20 +51,19 @@ class AcornPaddingRule(config: Config = Config.empty) : Rule(config) {
         if (list.getParentOfType<KtImportDirective>(false) != null) return
 
         // Find a hardcoded Dp padding argument
-        list.arguments.filter { it.text.contains(".Dp", ignoreCase = true) }.forEach {
-            val value = it.text
-                .replaceFirst(namedParameterRegex, "")
-                .replaceFirst(dpRegex, "")
-                .trim()
-            if (it.isPaddingArgument() && value !in allowedValues) {
-                report(
-                    CodeSmell(
-                        issue = issue,
-                        entity = Entity.Companion.from(list),
-                        message = "Hardcoded padding '$value.dp' detected",
-                    ),
-                )
+        list.arguments
+            .filter { it.text.contains(".Dp", ignoreCase = true) }
+            .forEach {
+                val value = it.text.replaceFirst(namedParameterRegex, "").replaceFirst(dpRegex, "").trim()
+                if (it.isPaddingArgument() && value !in allowedValues) {
+                    report(
+                        CodeSmell(
+                            issue = issue,
+                            entity = Entity.Companion.from(list),
+                            message = "Hardcoded padding '$value.dp' detected",
+                        )
+                    )
+                }
             }
-        }
     }
 }

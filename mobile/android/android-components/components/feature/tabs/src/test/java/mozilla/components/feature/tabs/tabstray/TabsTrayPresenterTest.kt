@@ -4,11 +4,11 @@
 
 package mozilla.components.feature.tabs.tabstray
 
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.BrowserState
-import mozilla.components.browser.state.state.TabPartition
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
@@ -20,348 +20,369 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verifyNoMoreInteractions
-import kotlin.test.assertNotNull
 
 class TabsTrayPresenterTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
     @Test
-    fun `initial set of sessions will be passed to tabs tray`() = runTest(testDispatcher) {
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "a"),
-                    createTab("https://getpocket.com", id = "b"),
-                ),
-                selectedTabId = "a",
-            ),
-        )
+    fun `initial set of sessions will be passed to tabs tray`() =
+        runTest(testDispatcher) {
+            val store =
+                BrowserStore(
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab("https://www.mozilla.org", id = "a"),
+                                createTab("https://getpocket.com", id = "b"),
+                            ),
+                        selectedTabId = "a",
+                    )
+                )
 
-        val tabsTray: MockedTabsTray = spy(MockedTabsTray())
-        val presenter = TabsTrayPresenter(
-            tabsTray,
-            store,
-            closeTabsTray = {},
-            tabPartitionsFilter = { null },
-            tabsFilter = { true },
-            mainDispatcher = testDispatcher,
-        )
+            val tabsTray: MockedTabsTray = spy(MockedTabsTray())
+            val presenter =
+                TabsTrayPresenter(
+                    tabsTray,
+                    store,
+                    closeTabsTray = {},
+                    tabsFilter = { true },
+                    mainDispatcher = testDispatcher,
+                )
 
-        verifyNoMoreInteractions(tabsTray)
+            verifyNoMoreInteractions(tabsTray)
 
-        presenter.start()
+            presenter.start()
 
-        testDispatcher.scheduler.advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertNotNull(tabsTray.updateTabs)
+            assertNotNull(tabsTray.updateTabs)
 
-        assertEquals("a", tabsTray.selectedTabId!!)
-        assertEquals(2, tabsTray.updateTabs!!.size)
-        assertEquals("https://www.mozilla.org", tabsTray.updateTabs!![0].content.url)
-        assertEquals("https://getpocket.com", tabsTray.updateTabs!![1].content.url)
+            assertEquals("a", tabsTray.selectedTabId!!)
+            assertEquals(2, tabsTray.updateTabs!!.size)
+            assertEquals("https://www.mozilla.org", tabsTray.updateTabs!![0].content.url)
+            assertEquals("https://getpocket.com", tabsTray.updateTabs!![1].content.url)
 
-        presenter.stop()
-    }
-
-    @Test
-    fun `tab tray will get updated if session gets added`() = runTest(testDispatcher) {
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "a"),
-                    createTab("https://getpocket.com", id = "b"),
-                ),
-                selectedTabId = "a",
-            ),
-        )
-
-        val tabsTray: MockedTabsTray = spy(MockedTabsTray())
-        val presenter = TabsTrayPresenter(
-            tabsTray,
-            store,
-            closeTabsTray = {},
-            tabPartitionsFilter = { null },
-            tabsFilter = { true },
-            mainDispatcher = testDispatcher,
-        )
-
-        presenter.start()
-
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertEquals(2, tabsTray.updateTabs!!.size)
-
-        store.dispatch(
-            TabListAction.AddTabAction(
-                createTab("https://developer.mozilla.org/"),
-            ),
-        )
-
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertEquals(3, tabsTray.updateTabs!!.size)
-
-        presenter.stop()
-    }
+            presenter.stop()
+        }
 
     @Test
-    fun `tabs tray will get updated if session gets removed`() = runTest(testDispatcher) {
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "a"),
-                    createTab("https://getpocket.com", id = "b"),
-                ),
-                selectedTabId = "a",
-            ),
-        )
+    fun `tab tray will get updated if session gets added`() =
+        runTest(testDispatcher) {
+            val store =
+                BrowserStore(
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab("https://www.mozilla.org", id = "a"),
+                                createTab("https://getpocket.com", id = "b"),
+                            ),
+                        selectedTabId = "a",
+                    )
+                )
 
-        val tabsTray: MockedTabsTray = spy(MockedTabsTray())
-        val presenter = TabsTrayPresenter(
-            tabsTray,
-            store,
-            closeTabsTray = {},
-            tabPartitionsFilter = { null },
-            tabsFilter = { true },
-            mainDispatcher = testDispatcher,
-        )
+            val tabsTray: MockedTabsTray = spy(MockedTabsTray())
+            val presenter =
+                TabsTrayPresenter(
+                    tabsTray,
+                    store,
+                    closeTabsTray = {},
+                    tabsFilter = { true },
+                    mainDispatcher = testDispatcher,
+                )
 
-        presenter.start()
+            presenter.start()
 
-        testDispatcher.scheduler.advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertEquals(2, tabsTray.updateTabs!!.size)
+            assertEquals(2, tabsTray.updateTabs!!.size)
 
-        store.dispatch(TabListAction.RemoveTabAction("a"))
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(TabListAction.AddTabAction(createTab("https://developer.mozilla.org/")))
 
-        assertEquals(1, tabsTray.updateTabs!!.size)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        store.dispatch(TabListAction.RemoveTabAction("b"))
-        testDispatcher.scheduler.advanceUntilIdle()
+            assertEquals(3, tabsTray.updateTabs!!.size)
 
-        assertEquals(0, tabsTray.updateTabs!!.size)
-
-        presenter.stop()
-    }
-
-    @Test
-    fun `tabs tray will get updated if all sessions get removed`() = runTest(testDispatcher) {
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "a"),
-                    createTab("https://getpocket.com", id = "b"),
-                ),
-                selectedTabId = "a",
-            ),
-        )
-
-        val tabsTray: MockedTabsTray = spy(MockedTabsTray())
-        val presenter = TabsTrayPresenter(
-            tabsTray,
-            store,
-            closeTabsTray = {},
-            tabPartitionsFilter = { null },
-            tabsFilter = { true },
-            mainDispatcher = testDispatcher,
-        )
-
-        presenter.start()
-
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertEquals(2, tabsTray.updateTabs!!.size)
-
-        store.dispatch(TabListAction.RemoveAllTabsAction())
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertEquals(0, tabsTray.updateTabs!!.size)
-
-        presenter.stop()
-    }
+            presenter.stop()
+        }
 
     @Test
-    fun `tabs tray will get updated if selection changes`() = runTest(testDispatcher) {
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "a"),
-                    createTab("https://getpocket.com", id = "b"),
-                    createTab("https://developer.mozilla.org", id = "c"),
-                    createTab("https://www.firefox.com", id = "d"),
-                    createTab("https://www.google.com", id = "e"),
-                ),
-                selectedTabId = "a",
-            ),
-        )
+    fun `tabs tray will get updated if session gets removed`() =
+        runTest(testDispatcher) {
+            val store =
+                BrowserStore(
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab("https://www.mozilla.org", id = "a"),
+                                createTab("https://getpocket.com", id = "b"),
+                            ),
+                        selectedTabId = "a",
+                    )
+                )
 
-        val tabsTray: MockedTabsTray = spy(MockedTabsTray())
-        val presenter = TabsTrayPresenter(
-            tabsTray,
-            store,
-            closeTabsTray = {},
-            tabPartitionsFilter = { null },
-            tabsFilter = { true },
-            mainDispatcher = testDispatcher,
-        )
+            val tabsTray: MockedTabsTray = spy(MockedTabsTray())
+            val presenter =
+                TabsTrayPresenter(
+                    tabsTray,
+                    store,
+                    closeTabsTray = {},
+                    tabsFilter = { true },
+                    mainDispatcher = testDispatcher,
+                )
 
-        presenter.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+            presenter.start()
 
-        assertEquals(5, tabsTray.updateTabs!!.size)
-        assertEquals("a", tabsTray.selectedTabId)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        store.dispatch(TabListAction.SelectTabAction("d"))
-        testDispatcher.scheduler.advanceUntilIdle()
+            assertEquals(2, tabsTray.updateTabs!!.size)
 
-        println("Selection: " + store.state.selectedTabId)
-        assertEquals("d", tabsTray.selectedTabId)
-    }
+            store.dispatch(TabListAction.RemoveTabAction("a"))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-    @Test
-    fun `presenter invokes session filtering`() = runTest(testDispatcher) {
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "a"),
-                    createTab("https://getpocket.com", id = "b", private = true),
-                ),
-                selectedTabId = "a",
-            ),
-        )
+            assertEquals(1, tabsTray.updateTabs!!.size)
 
-        val tabsTray: MockedTabsTray = spy(MockedTabsTray())
-        val presenter = TabsTrayPresenter(
-            tabsTray,
-            store,
-            closeTabsTray = {},
-            tabPartitionsFilter = { null },
-            tabsFilter = { it.content.private },
-            mainDispatcher = testDispatcher,
-        )
+            store.dispatch(TabListAction.RemoveTabAction("b"))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        presenter.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+            assertEquals(0, tabsTray.updateTabs!!.size)
 
-        assertTrue(tabsTray.updateTabs?.size == 1)
-    }
+            presenter.stop()
+        }
 
     @Test
-    fun `presenter will close tabs tray when all sessions get removed`() = runTest(testDispatcher) {
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "a"),
-                    createTab("https://getpocket.com", id = "b"),
-                    createTab("https://developer.mozilla.org", id = "c"),
-                    createTab("https://www.firefox.com", id = "d"),
-                    createTab("https://www.google.com", id = "e"),
-                ),
-                selectedTabId = "a",
-            ),
-        )
+    fun `tabs tray will get updated if all sessions get removed`() =
+        runTest(testDispatcher) {
+            val store =
+                BrowserStore(
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab("https://www.mozilla.org", id = "a"),
+                                createTab("https://getpocket.com", id = "b"),
+                            ),
+                        selectedTabId = "a",
+                    )
+                )
 
-        var closed = false
+            val tabsTray: MockedTabsTray = spy(MockedTabsTray())
+            val presenter =
+                TabsTrayPresenter(
+                    tabsTray,
+                    store,
+                    closeTabsTray = {},
+                    tabsFilter = { true },
+                    mainDispatcher = testDispatcher,
+                )
 
-        val tabsTray: MockedTabsTray = spy(MockedTabsTray())
-        val presenter = TabsTrayPresenter(
-            tabsTray,
-            store,
-            tabPartitionsFilter = { null },
-            tabsFilter = { true },
-            closeTabsTray = { closed = true },
-            mainDispatcher = testDispatcher,
-        )
+            presenter.start()
 
-        presenter.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        Assert.assertFalse(closed)
+            assertEquals(2, tabsTray.updateTabs!!.size)
 
-        store.dispatch(TabListAction.RemoveAllTabsAction())
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(TabListAction.RemoveAllTabsAction())
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertTrue(closed)
+            assertEquals(0, tabsTray.updateTabs!!.size)
 
-        presenter.stop()
-    }
-
-    @Test
-    fun `presenter will close tabs tray when last session gets removed`() = runTest(testDispatcher) {
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "a"),
-                    createTab("https://getpocket.com", id = "b"),
-                ),
-                selectedTabId = "a",
-            ),
-        )
-
-        var closed = false
-
-        val tabsTray: MockedTabsTray = spy(MockedTabsTray())
-        val presenter = TabsTrayPresenter(
-            tabsTray,
-            store,
-            tabPartitionsFilter = { null },
-            tabsFilter = { true },
-            closeTabsTray = { closed = true },
-            mainDispatcher = testDispatcher,
-        )
-
-        presenter.start()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        Assert.assertFalse(closed)
-
-        store.dispatch(TabListAction.RemoveTabAction("a"))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        Assert.assertFalse(closed)
-
-        store.dispatch(TabListAction.RemoveTabAction("b"))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertTrue(closed)
-
-        presenter.stop()
-    }
+            presenter.stop()
+        }
 
     @Test
-    fun `tabs tray should not invoke the close callback on start`() = runTest(testDispatcher) {
-        val store = BrowserStore(
-            BrowserState(
-                tabs = emptyList(),
-                selectedTabId = null,
-            ),
-        )
+    fun `tabs tray will get updated if selection changes`() =
+        runTest(testDispatcher) {
+            val store =
+                BrowserStore(
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab("https://www.mozilla.org", id = "a"),
+                                createTab("https://getpocket.com", id = "b"),
+                                createTab("https://developer.mozilla.org", id = "c"),
+                                createTab("https://www.firefox.com", id = "d"),
+                                createTab("https://www.google.com", id = "e"),
+                            ),
+                        selectedTabId = "a",
+                    )
+                )
 
-        var invoked = false
-        val tabsTray: MockedTabsTray = spy(MockedTabsTray())
-        val presenter = TabsTrayPresenter(
-            tabsTray,
-            store,
-            tabPartitionsFilter = { null },
-            tabsFilter = { it.content.private },
-            closeTabsTray = { invoked = true },
-            mainDispatcher = testDispatcher,
-        )
+            val tabsTray: MockedTabsTray = spy(MockedTabsTray())
+            val presenter =
+                TabsTrayPresenter(
+                    tabsTray,
+                    store,
+                    closeTabsTray = {},
+                    tabsFilter = { true },
+                    mainDispatcher = testDispatcher,
+                )
 
-        presenter.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+            presenter.start()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertFalse(invoked)
-    }
+            assertEquals(5, tabsTray.updateTabs!!.size)
+            assertEquals("a", tabsTray.selectedTabId)
+
+            store.dispatch(TabListAction.SelectTabAction("d"))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            println("Selection: " + store.state.selectedTabId)
+            assertEquals("d", tabsTray.selectedTabId)
+        }
+
+    @Test
+    fun `presenter invokes session filtering`() =
+        runTest(testDispatcher) {
+            val store =
+                BrowserStore(
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab("https://www.mozilla.org", id = "a"),
+                                createTab("https://getpocket.com", id = "b", private = true),
+                            ),
+                        selectedTabId = "a",
+                    )
+                )
+
+            val tabsTray: MockedTabsTray = spy(MockedTabsTray())
+            val presenter =
+                TabsTrayPresenter(
+                    tabsTray,
+                    store,
+                    closeTabsTray = {},
+                    tabsFilter = { it.content.private },
+                    mainDispatcher = testDispatcher,
+                )
+
+            presenter.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertTrue(tabsTray.updateTabs?.size == 1)
+        }
+
+    @Test
+    fun `presenter will close tabs tray when all sessions get removed`() =
+        runTest(testDispatcher) {
+            val store =
+                BrowserStore(
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab("https://www.mozilla.org", id = "a"),
+                                createTab("https://getpocket.com", id = "b"),
+                                createTab("https://developer.mozilla.org", id = "c"),
+                                createTab("https://www.firefox.com", id = "d"),
+                                createTab("https://www.google.com", id = "e"),
+                            ),
+                        selectedTabId = "a",
+                    )
+                )
+
+            var closed = false
+
+            val tabsTray: MockedTabsTray = spy(MockedTabsTray())
+            val presenter =
+                TabsTrayPresenter(
+                    tabsTray,
+                    store,
+                    tabsFilter = { true },
+                    closeTabsTray = { closed = true },
+                    mainDispatcher = testDispatcher,
+                )
+
+            presenter.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            Assert.assertFalse(closed)
+
+            store.dispatch(TabListAction.RemoveAllTabsAction())
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertTrue(closed)
+
+            presenter.stop()
+        }
+
+    @Test
+    fun `presenter will close tabs tray when last session gets removed`() =
+        runTest(testDispatcher) {
+            val store =
+                BrowserStore(
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab("https://www.mozilla.org", id = "a"),
+                                createTab("https://getpocket.com", id = "b"),
+                            ),
+                        selectedTabId = "a",
+                    )
+                )
+
+            var closed = false
+
+            val tabsTray: MockedTabsTray = spy(MockedTabsTray())
+            val presenter =
+                TabsTrayPresenter(
+                    tabsTray,
+                    store,
+                    tabsFilter = { true },
+                    closeTabsTray = { closed = true },
+                    mainDispatcher = testDispatcher,
+                )
+
+            presenter.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            Assert.assertFalse(closed)
+
+            store.dispatch(TabListAction.RemoveTabAction("a"))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            Assert.assertFalse(closed)
+
+            store.dispatch(TabListAction.RemoveTabAction("b"))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertTrue(closed)
+
+            presenter.stop()
+        }
+
+    @Test
+    fun `tabs tray should not invoke the close callback on start`() =
+        runTest(testDispatcher) {
+            val store =
+                BrowserStore(
+                    BrowserState(
+                        tabs = emptyList(),
+                        selectedTabId = null,
+                    )
+                )
+
+            var invoked = false
+            val tabsTray: MockedTabsTray = spy(MockedTabsTray())
+            val presenter =
+                TabsTrayPresenter(
+                    tabsTray,
+                    store,
+                    tabsFilter = { it.content.private },
+                    closeTabsTray = { invoked = true },
+                    mainDispatcher = testDispatcher,
+                )
+
+            presenter.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertFalse(invoked)
+        }
 }
 
 private class MockedTabsTray : TabsTray {
     var updateTabs: List<TabSessionState>? = null
     var selectedTabId: String? = null
 
-    override fun updateTabs(tabs: List<TabSessionState>, tabPartition: TabPartition?, selectedTabId: String?) {
+    override fun updateTabs(tabs: List<TabSessionState>, selectedTabId: String?) {
         updateTabs = tabs
         this.selectedTabId = selectedTabId
     }

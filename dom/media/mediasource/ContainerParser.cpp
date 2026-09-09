@@ -408,7 +408,7 @@ class MP4ContainerParser : public ContainerParser,
 
     Result<Ok, nsresult> Init(const MP4ContainerParser& aParser,
                               const MediaSpan& aData, StopAt aStop) {
-      const MediaContainerType mType(
+      const MediaContainerType& mType(
           aParser.ContainerType());  // for logging macro.
       BufferReader reader(aData);
       AtomType initAtom("moov");

@@ -17,19 +17,19 @@ import mozilla.components.service.pocket.recommendations.db.ContentRecommendatio
 import mozilla.components.service.pocket.recommendations.db.ContentRecommendationsDatabase.Companion.SPONSORED_CONTENT_IMPRESSION_TABLE
 import mozilla.components.service.pocket.recommendations.db.ContentRecommendationsDatabase.Companion.SPONSORED_CONTENT_TABLE
 
-/**
- * Internal database for storing content recommendations.
- */
+/** Internal database for storing content recommendations. */
 @Database(
-    entities = [
-        ContentRecommendationEntity::class,
-        SponsoredContentEntity::class,
-        SponsoredContentImpressionEntity::class,
-    ],
+    entities =
+        [
+            ContentRecommendationEntity::class,
+            SponsoredContentEntity::class,
+            SponsoredContentImpressionEntity::class,
+        ],
     version = 3,
 )
 internal abstract class ContentRecommendationsDatabase : RoomDatabase() {
     abstract fun contentRecommendationsDao(): ContentRecommendationsDao
+
     abstract fun sponsoredContentsDao(): SponsoredContentsDao
 
     companion object {
@@ -38,36 +38,41 @@ internal abstract class ContentRecommendationsDatabase : RoomDatabase() {
         internal const val SPONSORED_CONTENT_TABLE = "sponsored_content"
         internal const val SPONSORED_CONTENT_IMPRESSION_TABLE = "sponsored_content_impressions"
 
-        @Volatile
-        private var instance: ContentRecommendationsDatabase? = null
+        @Volatile private var instance: ContentRecommendationsDatabase? = null
 
         @Synchronized
         fun get(context: Context): ContentRecommendationsDatabase {
-            instance?.let { return it }
+            instance?.let {
+                return it
+            }
 
             return Room.databaseBuilder(
-                context,
-                ContentRecommendationsDatabase::class.java,
-                DATABASE_NAME,
-            ).addMigrations(
-                Migrations.migration_1_2,
-                Migrations.migration_2_3,
-            ).build().also {
-                instance = it
-            }
+                    context,
+                    ContentRecommendationsDatabase::class.java,
+                    DATABASE_NAME,
+                )
+                .addMigrations(
+                    Migrations.migration_1_2,
+                    Migrations.migration_2_3,
+                )
+                .build()
+                .also {
+                    instance = it
+                }
         }
     }
 }
 
 internal object Migrations {
-    val migration_1_2 = object : Migration(1, 2) {
-        override fun migrate(db: SupportSQLiteDatabase) {
-            // Drop the old table.
-            db.execSQL("DROP TABLE $CONTENT_RECOMMENDATIONS_TABLE")
+    val migration_1_2 =
+        object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Drop the old table.
+                db.execSQL("DROP TABLE $CONTENT_RECOMMENDATIONS_TABLE")
 
-            // Create the version 2 table.
-            db.execSQL(
-                """
+                // Create the version 2 table.
+                db.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS `$CONTENT_RECOMMENDATIONS_TABLE` (
                     `corpusItemId` TEXT NOT NULL,
                     `scheduledCorpusItemId` TEXT NOT NULL,
@@ -83,15 +88,16 @@ internal object Migrations {
                     `recommendedAt` INTEGER NOT NULL,
                     `impressions` INTEGER NOT NULL,
                     PRIMARY KEY(`corpusItemId`))
-                """,
-            )
-        }
-    }
-
-    val migration_2_3 = object : Migration(2, 3) {
-        override fun migrate(db: SupportSQLiteDatabase) {
-            db.execSQL(
                 """
+                )
+            }
+        }
+
+    val migration_2_3 =
+        object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS `$SPONSORED_CONTENT_TABLE` (
                     `url` TEXT NOT NULL,
                     `title` TEXT NOT NULL,
@@ -106,25 +112,25 @@ internal object Migrations {
                     `flightCapPeriod` INTEGER NOT NULL,
                     `priority` INTEGER NOT NULL,
                     PRIMARY KEY(`url`))
-                """,
-            )
-
-            db.execSQL(
                 """
+                )
+
+                db.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS `$SPONSORED_CONTENT_IMPRESSION_TABLE` (
                     `url` TEXT NOT NULL,
                     `impressionId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     `impressionDateInSeconds` INTEGER NOT NULL,
                     FOREIGN KEY(`url`) REFERENCES `$SPONSORED_CONTENT_TABLE`(`url`) ON UPDATE NO ACTION ON DELETE CASCADE )
-                """,
-            )
-
-            db.execSQL(
                 """
+                )
+
+                db.execSQL(
+                    """
                     CREATE INDEX IF NOT EXISTS `index_sponsored_content_impressions_url`
                     ON `$SPONSORED_CONTENT_IMPRESSION_TABLE` (`url`)
-                """,
-            )
+                """
+                )
+            }
         }
-    }
 }

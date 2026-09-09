@@ -7,7 +7,6 @@ const TRACKING_PAGE =
   // eslint-disable-next-line sdl/no-insecure-url
   "http://example.org/browser/browser/base/content/test/protectionsUI/trackingPage.html";
 const FP_PROTECTION_PREF = "privacy.trackingprotection.fingerprinting.enabled";
-let fpHistogram;
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
@@ -27,16 +26,13 @@ add_setup(async function () {
       ["urlclassifier.features.cryptomining.annotate.blacklistTables", ""],
     ],
   });
-  fpHistogram = Services.telemetry.getHistogramById(
-    "FINGERPRINTERS_BLOCKED_COUNT"
-  );
   registerCleanupFunction(() => {
-    fpHistogram.clear();
+    Services.fog.testResetFOG();
   });
 });
 
 async function testIdentityState(hasException) {
-  fpHistogram.clear();
+  Services.fog.testResetFOG();
   let promise = BrowserTestUtils.openNewForegroundTab({
     url: TRACKING_PAGE,
     gBrowser,
@@ -178,7 +174,7 @@ async function testCategoryItem() {
 }
 
 async function testSubview(hasException) {
-  fpHistogram.clear();
+  Services.fog.testResetFOG();
   let promise = BrowserTestUtils.openNewForegroundTab({
     url: TRACKING_PAGE,
     gBrowser,
@@ -273,16 +269,22 @@ async function testSubview(hasException) {
   BrowserTestUtils.removeTab(tab);
 }
 
+// testGetValue() returns null rather than 0 for a label that never recorded, so
+// coalesce to keep a miscount reported as a number rather than a TypeError.
+function assertLabelCount(label, expectedCount, message) {
+  let count =
+    Glean.contentblocking.fingerprintersBlockedCount[label].testGetValue();
+  Assert.equal(count ?? 0, expectedCount, message);
+}
+
 function testTelemetry(pagesVisited, pagesWithBlockableContent, hasException) {
-  let results = fpHistogram.snapshot();
-  Assert.equal(
-    results.values[0],
+  assertLabelCount(
+    "pageLoad",
     pagesVisited,
     "The correct number of page loads have been recorded"
   );
-  let expectedValue = hasException ? 2 : 1;
-  Assert.equal(
-    results.values[expectedValue],
+  assertLabelCount(
+    hasException ? "allowed" : "blocked",
     pagesWithBlockableContent,
     "The correct number of fingerprinters have been recorded as blocked or allowed."
   );

@@ -509,6 +509,7 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
   RtpParameters GetRtpReceiverParameters(uint32_t ssrc) const override;
   RtpParameters GetDefaultRtpReceiveParameters() const override;
   void SetReceive(bool receive) override;
+  void SetReceiveNonSenderRttEnabled(bool enabled) override;
   bool AddRecvStream(const StreamParams& sp) override;
   bool AddDefaultRecvStreamForTesting(const StreamParams& sp) override {
     // Invokes private AddRecvStream variant function
@@ -609,6 +610,7 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
     RtpParameters GetRtpParameters() const;
 
     void SetReceiverParameters(const ChangedReceiverParameters& recv_params);
+    void SetNonSenderRttMeasurement(bool enabled);
 
     void OnFrame(const VideoFrame& frame) override;
     bool IsDefaultStream() const;
@@ -680,6 +682,7 @@ class WebRtcVideoReceiveChannel : public MediaChannelUtil,
 
   std::map<uint32_t, WebRtcVideoReceiveStream*> receive_streams_
       RTC_GUARDED_BY(thread_checker_);
+  bool enable_non_sender_rtt_ RTC_GUARDED_BY(thread_checker_) = false;
   void FillReceiverStats(VideoMediaReceiveInfo* info, bool log_stats)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(thread_checker_);
   void FillReceiveCodecStats(VideoMediaReceiveInfo* video_media_info)

@@ -30,16 +30,16 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.AcornTheme
 
 /**
- * An horizontally laid out indicator for a [HorizontalPager] with the ability to leave the trail of
- * indicators to show progress, instead of just showing the current one as active.
+ * An horizontally laid out indicator for a [HorizontalPager] with the ability to leave the trail of indicators to show
+ * progress, instead of just showing the current one as active.
  *
  * @param pagerState The state object of your [HorizontalPager] to be used to observe the list's state.
  * @param modifier The modifier to apply to this layout.
- * @param activeColor The color of the active page indicator, and the color of previous page
- * indicators in case [leaveTrail] is set to true.
+ * @param activeColor The color of the active page indicator, and the color of previous page indicators in case
+ *   [leaveTrail] is set to true.
  * @param inactiveColor The color of page indicators that are inactive.
- * @param leaveTrail Whether to leave the trail of indicators to show progress.
- * This defaults to false and just shows the current one as active.
+ * @param leaveTrail Whether to leave the trail of indicators to show progress. This defaults to false and just shows
+ *   the current one as active.
  * @param spacing The spacing between each pager indicator in [Dp].
  */
 @Composable
@@ -65,16 +65,17 @@ fun PagerIndicator(
 
         repeat(pagerState.pageCount) {
             Box(
-                modifier = Modifier
-                    .size(6.dp)
-                    .background(
-                        shape = CircleShape,
-                        color = if (showActiveModifier(it)) {
-                            activeColor
-                        } else {
-                            inactiveColor
-                        },
-                    ),
+                modifier =
+                    Modifier.size(6.dp)
+                        .background(
+                            shape = CircleShape,
+                            color =
+                                if (showActiveModifier(it)) {
+                                    activeColor
+                                } else {
+                                    inactiveColor
+                                },
+                        )
             )
         }
     }

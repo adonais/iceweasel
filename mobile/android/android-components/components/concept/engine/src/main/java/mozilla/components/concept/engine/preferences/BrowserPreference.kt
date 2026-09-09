@@ -9,14 +9,12 @@ package mozilla.components.concept.engine.preferences
  *
  * @property pref The name of the browser preference.
  * @property value The value of the preference that is currently active.
- * @property defaultValue The default value of the preference.
- * This is the browser recommended base or value to return to.
- * @property userValue The user value of the preference.
- * This is the value the user or a system set instead of the default value.
+ * @property defaultValue The default value of the preference. This is the browser recommended base or value to return
+ *   to.
+ * @property userValue The user value of the preference. This is the value the user or a system set instead of the
+ *   default value.
  * @property hasUserChangedValue Whether the user value of the preference has changed from the default.
- * @property prefType The officially stated preference type. Should correspond with [T], but has a more
- * limited subset.
- *
+ * @property prefType The officially stated preference type. Should correspond with [T], but has a more limited subset.
  */
 data class BrowserPreference<T>(
     val pref: String,

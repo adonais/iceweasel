@@ -18,6 +18,7 @@ import androidx.fragment.compose.content
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import com.google.android.material.R as materialR
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -33,11 +34,8 @@ import org.mozilla.fenix.microsurvey.ui.MicrosurveyBottomSheetFragmentArgs
 import org.mozilla.fenix.microsurvey.ui.ext.MicrosurveyUIData
 import org.mozilla.fenix.microsurvey.ui.ext.toMicrosurveyUIData
 import org.mozilla.fenix.theme.FirefoxTheme
-import com.google.android.material.R as materialR
 
-/**
- * A bottom sheet fragment for displaying a microsurvey.
- */
+/** A bottom sheet fragment for displaying a microsurvey. */
 class UninstallSurveyBottomSheetFragment : BottomSheetDialogFragment() {
 
     private val args by navArgs<MicrosurveyBottomSheetFragmentArgs>()

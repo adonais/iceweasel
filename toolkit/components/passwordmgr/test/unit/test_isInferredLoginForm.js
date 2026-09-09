@@ -67,6 +67,13 @@ const TESTCASES = [
     },
     subtests: [...attributeTestData, ...classNameTestData],
   },
+  {
+    description: "Test aria-label attribute",
+    update: (doc, v) => {
+      doc.querySelector("form").setAttribute("aria-label", v);
+    },
+    subtests: attributeTestData,
+  },
 ];
 
 for (let testcase of TESTCASES) {

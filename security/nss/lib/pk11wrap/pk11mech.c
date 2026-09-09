@@ -931,13 +931,17 @@ pk11_ParamFromIVWithLen(CK_MECHANISM_TYPE type, SECItem *iv, int keyLen)
             break;
         case CKM_RC2_CBC:
         case CKM_RC2_CBC_PAD:
+            if (!iv || !iv->data || iv->len < sizeof(rc2_params->iv)) {
+                PORT_SetError(SEC_ERROR_INPUT_LEN);
+                PORT_Free(param);
+                return NULL;
+            }
             rc2_params = (CK_RC2_CBC_PARAMS *)PORT_Alloc(sizeof(CK_RC2_CBC_PARAMS));
             if (rc2_params == NULL)
                 break;
             /* Maybe we should pass the key size in too to get this value? */
             rc2_params->ulEffectiveBits = keyLen ? keyLen * 8 : 128;
-            if (iv && iv->data)
-                PORT_Memcpy(rc2_params->iv, iv->data, sizeof(rc2_params->iv));
+            PORT_Memcpy(rc2_params->iv, iv->data, sizeof(rc2_params->iv));
             param->data = (unsigned char *)rc2_params;
             param->len = sizeof(CK_RC2_CBC_PARAMS);
             break;

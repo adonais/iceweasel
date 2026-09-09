@@ -1,0 +1,20 @@
+
+1 function with some indirect sub-type change:
+
+  [C] 'function SECStatus SSL_ConfigServerCert(PRFileDesc*, CERTCertificate*, SECKEYPrivateKey*, const SSLExtraServerCertData*, unsigned int)' at sslcert.c:645:1 has some indirect sub-type changes:
+    parameter 4 of type 'const SSLExtraServerCertData*' has sub-type changes:
+      in pointed to type 'const SSLExtraServerCertData':
+        in unqualified underlying type 'typedef SSLExtraServerCertData' at sslt.h:315:1:
+          underlying type 'struct SSLExtraServerCertDataStr' at sslt.h:274:1 changed:
+            type size hasn't changed
+            1 data member change:
+              type of 'SSLAuthType authType' changed:
+                underlying type 'enum SSLAuthType' at sslt.h:178:1 changed:
+                 type size hasn't changed
+                 3 enumerator insertions:
+                    'SSLAuthType::ssl_auth_mldsa44' value '11'
+                    'SSLAuthType::ssl_auth_mldsa65' value '12'
+                    'SSLAuthType::ssl_auth_mldsa87' value '13'
+                 1 enumerator change:
+                    'SSLAuthType::ssl_auth_size' from value '11' to '14' at sslt.h:182:1
+

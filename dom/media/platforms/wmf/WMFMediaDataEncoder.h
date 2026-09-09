@@ -102,11 +102,7 @@ class WMFMediaDataEncoder final : public MediaDataEncoder {
   // Can be accessed on any thread, but only written on during init.
   Atomic<bool> mIsHardwareAccelerated;
 
-  // Both Encode and EncodeBatch share mEncodePromise and mEncodeRequest, as
-  // concurrent calls are not allowed.
-  MozPromiseHolder<EncodePromise> mEncodePromise;
-  MozPromiseRequestHolder<MFTEncoder::EncodePromise> mEncodeRequest;
-
+  AutoTArray<RefPtr<EncodePromise::Private>, 4> mEncodePromises;
   MozPromiseHolder<EncodePromise> mDrainPromise;
   MozPromiseRequestHolder<MFTEncoder::EncodePromise> mDrainRequest;
 };

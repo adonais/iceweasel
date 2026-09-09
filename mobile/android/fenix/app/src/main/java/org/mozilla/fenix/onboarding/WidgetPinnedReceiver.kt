@@ -14,16 +14,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.mozilla.fenix.onboarding.view.OnboardingScreen
 
-/**
- * Receiver required to catch callback from Launcher when prompted
- * to add search widget from Onboarding.
- */
+/** Receiver required to catch callback from Launcher when prompted to add search widget from Onboarding. */
 class WidgetPinnedReceiver : BroadcastReceiver() {
 
     companion object {
-        /**
-         * Prepare success callback for when requesting to pin Search Widget.
-         */
+        /** Prepare success callback for when requesting to pin Search Widget. */
         fun getPendingIntent(context: Context): PendingIntent {
             val callbackIntent = Intent(context, WidgetPinnedReceiver::class.java)
             val bundle = Bundle()
@@ -39,8 +34,7 @@ class WidgetPinnedReceiver : BroadcastReceiver() {
     }
 
     /**
-     * Object containing boolean that updates behavior of Add Search Widget
-     * card from [OnboardingScreen].
+     * Object containing boolean that updates behavior of Add Search Widget card from [OnboardingScreen].
      * - True if widget added successfully and app resumed from launcher add widget dialog.
      * - False if dialog opened but widget was not added.
      */
@@ -48,10 +42,7 @@ class WidgetPinnedReceiver : BroadcastReceiver() {
         private val _isPinned = MutableStateFlow(false)
         val isPinned: StateFlow<Boolean> = _isPinned
 
-        /**
-         * Update state when resumed to add search widget card
-         * and the widget was added successfully.
-         */
+        /** Update state when resumed to add search widget card and the widget was added successfully. */
         fun widgetPinned() {
             _isPinned.value = true
         }

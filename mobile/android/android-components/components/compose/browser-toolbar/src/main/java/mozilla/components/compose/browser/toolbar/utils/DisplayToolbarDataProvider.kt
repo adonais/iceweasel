@@ -17,76 +17,81 @@ import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Top
 import mozilla.components.ui.icons.R as iconsR
 
 internal class DisplayToolbarDataProvider : PreviewParameterProvider<DisplayToolbarPreviewModel> {
-    val browserStartActions = listOf(
-        ActionButtonRes(
-            drawableResId = iconsR.drawable.mozac_ic_home_24,
-            contentDescription = android.R.string.untitled,
-            onClick = object : BrowserToolbarEvent {},
-        ),
-    )
-    val pageActionsStart = listOf(
-        SearchSelectorAction(
-            icon = DrawableResIcon(iconsR.drawable.mozac_ic_search_24),
-            contentDescription = StringResContentDescription(resourceId = android.R.string.untitled),
-            menu = { emptyList() },
-            onClick = null,
-        ),
-    )
-    val pageActionsEnd = listOf(
-        ActionButtonRes(
-            drawableResId = iconsR.drawable.mozac_ic_arrow_clockwise_24,
-            contentDescription = android.R.string.untitled,
-            onClick = object : BrowserToolbarEvent {},
-        ),
-    )
-    val browserActionsEnd = listOf(
-        ActionButtonRes(
-            drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
-            contentDescription = android.R.string.untitled,
-            onClick = object : BrowserToolbarEvent {},
-        ),
-    )
+    val browserStartActions =
+        listOf(
+            ActionButtonRes(
+                drawableResId = iconsR.drawable.mozac_ic_home_24,
+                contentDescription = android.R.string.untitled,
+                onClick = object : BrowserToolbarEvent {},
+            )
+        )
+    val pageActionsStart =
+        listOf(
+            SearchSelectorAction(
+                icon = DrawableResIcon(iconsR.drawable.mozac_ic_search_24),
+                contentDescription = StringResContentDescription(resourceId = android.R.string.untitled),
+                menu = { emptyList() },
+                onClick = null,
+            )
+        )
+    val pageActionsEnd =
+        listOf(
+            ActionButtonRes(
+                drawableResId = iconsR.drawable.mozac_ic_arrow_clockwise_24,
+                contentDescription = android.R.string.untitled,
+                onClick = object : BrowserToolbarEvent {},
+            )
+        )
+    val browserActionsEnd =
+        listOf(
+            ActionButtonRes(
+                drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
+                contentDescription = android.R.string.untitled,
+                onClick = object : BrowserToolbarEvent {},
+            )
+        )
     val title = "Firefox"
     val url = "mozilla.com/firefox"
 
-    override val values = sequenceOf(
-        DisplayToolbarPreviewModel(
-            browserStartActions = browserStartActions,
-            pageActionsStart = pageActionsStart,
-            title = title,
-            url = url,
-            gravity = Top,
-            pageActionsEnd = pageActionsEnd,
-            browserEndActions = browserActionsEnd,
-        ),
-        DisplayToolbarPreviewModel(
-            browserStartActions = emptyList(),
-            pageActionsStart = pageActionsStart,
-            title = null,
-            url = url,
-            gravity = Bottom,
-            pageActionsEnd = pageActionsEnd,
-            browserEndActions = emptyList(),
-        ),
-        DisplayToolbarPreviewModel(
-            browserStartActions = browserStartActions,
-            pageActionsStart = emptyList(),
-            title = title,
-            url = url,
-            gravity = Top,
-            pageActionsEnd = emptyList(),
-            browserEndActions = browserActionsEnd,
-        ),
-        DisplayToolbarPreviewModel(
-            browserStartActions = emptyList(),
-            pageActionsStart = emptyList(),
-            title = null,
-            url = null,
-            gravity = Bottom,
-            pageActionsEnd = emptyList(),
-            browserEndActions = emptyList(),
-        ),
-    )
+    override val values =
+        sequenceOf(
+            DisplayToolbarPreviewModel(
+                browserStartActions = browserStartActions,
+                pageActionsStart = pageActionsStart,
+                title = title,
+                url = url,
+                gravity = Top,
+                pageActionsEnd = pageActionsEnd,
+                browserEndActions = browserActionsEnd,
+            ),
+            DisplayToolbarPreviewModel(
+                browserStartActions = emptyList(),
+                pageActionsStart = pageActionsStart,
+                title = null,
+                url = url,
+                gravity = Bottom,
+                pageActionsEnd = pageActionsEnd,
+                browserEndActions = emptyList(),
+            ),
+            DisplayToolbarPreviewModel(
+                browserStartActions = browserStartActions,
+                pageActionsStart = emptyList(),
+                title = title,
+                url = url,
+                gravity = Top,
+                pageActionsEnd = emptyList(),
+                browserEndActions = browserActionsEnd,
+            ),
+            DisplayToolbarPreviewModel(
+                browserStartActions = emptyList(),
+                pageActionsStart = emptyList(),
+                title = null,
+                url = null,
+                gravity = Bottom,
+                pageActionsEnd = emptyList(),
+                browserEndActions = emptyList(),
+            ),
+        )
 }
 
 internal data class DisplayToolbarPreviewModel(

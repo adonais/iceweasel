@@ -184,13 +184,10 @@ export class UrlbarProviderQuickSuggestContextualOptIn extends UrlbarProvider {
   }
 
   /**
-   * This is called only for dynamic result types, when the urlbar view updates
-   * the view of one of the results of the provider.  It should return an object
-   * describing the view update.
-   *
+   * @param {UrlbarResult} _result The result whose view will be updated.
    * @returns {object} An object describing the view update.
    */
-  getViewUpdate() {
+  getViewUpdate(_result) {
     return {
       icon: {
         attributes: {
@@ -210,6 +207,10 @@ export class UrlbarProviderQuickSuggestContextualOptIn extends UrlbarProvider {
     };
   }
 
+  /**
+   * @param {UrlbarResult} result The result being selected.
+   * @param {Element} [element] The selected element. Undefined in the message path.
+   */
   onBeforeSelection(result, element) {
     if (element.getAttribute("name") == "learn_more") {
       this.#a11yAlertRow(element.closest(".urlbarView-row"));

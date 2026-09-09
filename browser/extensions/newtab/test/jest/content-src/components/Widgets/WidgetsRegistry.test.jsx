@@ -63,6 +63,72 @@ describe("isWidgetToggleVisible", () => {
   });
 });
 
+// Bug 2063657: the sports widget is retired; removed in bug 2063656.
+describe("retired sports widget", () => {
+  const sportsWidget = WIDGET_REGISTRY.find(w => w.id === "sportsWidget");
+  const everythingOn = {
+    "widgets.enabled": true,
+    "widgets.sportsWidget.enabled": true,
+    "widgets.system.sportsWidget.enabled": true,
+    widgetsConfig: { sportsWidgetEnabled: true },
+    trainhopConfig: {
+      widgets: { sportsWidgetEnabled: true },
+      widgetsSettings: { sportsWidgetVisible: true },
+    },
+  };
+
+  it("is never addable, visible or enabled, whatever the prefs say", () => {
+    expect(isWidgetAddable(sportsWidget, everythingOn)).toBe(false);
+    expect(isWidgetToggleVisible(sportsWidget, everythingOn)).toBe(false);
+    expect(isWidgetEnabled(sportsWidget, everythingOn, true)).toBe(false);
+  });
+});
+
+// Bug 2063207: the privacy widget's readout needs history, so it is hidden
+// outright on profiles that record none.
+describe("privacy widget on a profile with no history", () => {
+  const privacy = WIDGET_REGISTRY.find(w => w.id === "privacy");
+  const everythingOn = {
+    "widgets.enabled": true,
+    "widgets.privacy.enabled": true,
+    "widgets.system.privacy.enabled": true,
+    widgetsConfig: { privacyEnabled: true },
+    trainhopConfig: {
+      widgetPrivacy: { visible: true },
+      widgets: { privacyEnabled: true },
+      widgetsSettings: { privacyVisible: true },
+    },
+  };
+
+  it("is not addable, visible or enabled when history is off", () => {
+    const prefs = { ...everythingOn, recordsHistory: false };
+    expect(isWidgetAddable(privacy, prefs)).toBe(false);
+    expect(isWidgetToggleVisible(privacy, prefs)).toBe(false);
+    expect(isWidgetEnabled(privacy, prefs, true)).toBe(false);
+  });
+
+  it("is unaffected when history is on", () => {
+    const prefs = { ...everythingOn, recordsHistory: true };
+    expect(isWidgetAddable(privacy, prefs)).toBe(true);
+    expect(isWidgetToggleVisible(privacy, prefs)).toBe(true);
+    expect(isWidgetEnabled(privacy, prefs, true)).toBe(true);
+  });
+
+  it("stays available when the value is missing entirely", () => {
+    // A missing broadcast must not hide a working widget.
+    expect(isWidgetAddable(privacy, everythingOn)).toBe(true);
+  });
+
+  it("leaves widgets that do not need history alone", () => {
+    expect(
+      isWidgetAddable(listsWidget, {
+        "widgets.system.lists.enabled": true,
+        recordsHistory: false,
+      })
+    ).toBe(true);
+  });
+});
+
 describe("isWidgetsContainerVisible", () => {
   it("is false when nothing enables it", () => {
     expect(isWidgetsContainerVisible({})).toBe(false);
@@ -116,6 +182,7 @@ describe("getWidgetOrder", () => {
       "crossword",
       "pictureOfTheDay",
       "stocks",
+      "recentSearches",
     ]);
   });
 
@@ -130,6 +197,7 @@ describe("getWidgetOrder", () => {
       "privacy",
       "crossword",
       "stocks",
+      "recentSearches",
     ]);
   });
 
@@ -144,6 +212,7 @@ describe("getWidgetOrder", () => {
       "privacy",
       "crossword",
       "stocks",
+      "recentSearches",
     ]);
   });
 
@@ -165,6 +234,7 @@ describe("getWidgetOrder", () => {
       "privacy",
       "crossword",
       "stocks",
+      "recentSearches",
     ]);
     expect(result.length).toBe(registryIds.length);
   });
@@ -190,6 +260,7 @@ describe("resolveWidgetOrder", () => {
       "privacy",
       "crossword",
       "stocks",
+      "recentSearches",
     ]);
   });
 
@@ -209,6 +280,7 @@ describe("resolveWidgetOrder", () => {
       "privacy",
       "crossword",
       "stocks",
+      "recentSearches",
     ]);
   });
 
@@ -228,6 +300,7 @@ describe("resolveWidgetOrder", () => {
       "privacy",
       "crossword",
       "stocks",
+      "recentSearches",
     ]);
   });
 });

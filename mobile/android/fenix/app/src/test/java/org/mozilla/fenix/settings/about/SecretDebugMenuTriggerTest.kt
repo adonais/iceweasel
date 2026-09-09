@@ -21,10 +21,11 @@ class SecretDebugMenuTriggerTest {
         logoClicks = mutableListOf()
         debugMenuWasActivated = false
 
-        trigger = SecretDebugMenuTrigger(
-            onLogoClicked = { remaining -> logoClicks.add(remaining) },
-            onDebugMenuActivated = { debugMenuWasActivated = true },
-        )
+        trigger =
+            SecretDebugMenuTrigger(
+                onLogoClicked = { remaining -> logoClicks.add(remaining) },
+                onDebugMenuActivated = { debugMenuWasActivated = true },
+            )
     }
 
     @Test

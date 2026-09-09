@@ -20,31 +20,20 @@ import org.mozilla.fenix.home.bookmarks.Bookmark
 import org.mozilla.fenix.home.bookmarks.interactor.BookmarksInteractor
 import org.mozilla.fenix.utils.Settings
 
-/**
- * An interface that handles the view manipulation of the bookmarks on the
- * Home screen.
- */
+/** An interface that handles the view manipulation of the bookmarks on the Home screen. */
 interface BookmarksController {
 
-    /**
-     * @see [BookmarksInteractor.onBookmarkClicked]
-     */
+    /** @see [BookmarksInteractor.onBookmarkClicked] */
     fun handleBookmarkClicked(bookmark: Bookmark)
 
-    /**
-     * @see [BookmarksInteractor.onShowAllBookmarksClicked]
-     */
+    /** @see [BookmarksInteractor.onShowAllBookmarksClicked] */
     fun handleShowAllBookmarksClicked()
 
-    /**
-     * @see [BookmarksInteractor.onBookmarkRemoved]
-     */
+    /** @see [BookmarksInteractor.onBookmarkRemoved] */
     fun handleBookmarkRemoved(bookmark: Bookmark)
 }
 
-/**
- * The default implementation of [BookmarksController].
- */
+/** The default implementation of [BookmarksController]. */
 class DefaultBookmarksController(
     private val navController: NavController,
     private val appStore: AppStore,
@@ -64,9 +53,10 @@ class DefaultBookmarksController(
                 flags = EngineSession.LoadUrlFlags.select(ALLOW_JAVASCRIPT_URL),
             )
         } else {
-            val existingTabForBookmark = browserStore.state.tabs.firstOrNull {
-                it.content.url == bookmark.url
-            }
+            val existingTabForBookmark =
+                browserStore.state.tabs.firstOrNull {
+                    it.content.url == bookmark.url
+                }
 
             if (existingTabForBookmark == null) {
                 navController.navigate(R.id.browserFragment)
@@ -87,9 +77,7 @@ class DefaultBookmarksController(
 
     override fun handleShowAllBookmarksClicked() {
         HomeBookmarks.showAllBookmarks.add()
-        navController.navigate(
-            HomeFragmentDirections.actionGlobalBookmarkFragment(BookmarkRoot.Mobile.id),
-        )
+        navController.navigate(HomeFragmentDirections.actionGlobalBookmarkFragment(BookmarkRoot.Mobile.id))
     }
 
     override fun handleBookmarkRemoved(bookmark: Bookmark) {

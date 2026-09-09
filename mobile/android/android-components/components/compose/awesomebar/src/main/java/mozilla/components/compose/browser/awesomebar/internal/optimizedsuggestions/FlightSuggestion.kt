@@ -43,6 +43,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.base.theme.acornPrivateColorScheme
@@ -54,7 +55,6 @@ import mozilla.components.compose.browser.awesomebar.internal.utils.FlightSugges
 import mozilla.components.compose.browser.awesomebar.internal.utils.FlightSuggestionPreviewModel
 import mozilla.components.feature.awesomebar.optimizedsuggestions.FlightData
 import mozilla.components.feature.awesomebar.optimizedsuggestions.FlightSuggestionStatus
-import kotlin.math.roundToInt
 import mozilla.components.ui.icons.R as iconsR
 
 @Composable
@@ -69,19 +69,20 @@ internal fun FlightSuggestion(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(color = MaterialTheme.colorScheme.surface)
-            .clickable(enabled = true, onClick = onClick),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .background(color = MaterialTheme.colorScheme.surface)
+                .clickable(enabled = true, onClick = onClick)
     ) {
         Column(
-            modifier = Modifier
-                .padding(
+            modifier =
+                Modifier.padding(
                     start = AcornTheme.layout.space.static200,
                     end = AcornTheme.layout.space.static200,
                     top = AcornTheme.layout.space.static200,
                     bottom = AcornTheme.layout.space.static300,
-                ),
+                )
         ) {
             FlightSuggestionHeader(
                 flightNumber = flightNumber,
@@ -90,10 +91,11 @@ internal fun FlightSuggestion(
             )
 
             Box(
-                modifier = Modifier.padding(
-                    bottom = 4.dp,
-                    top = if (airlineName == null) 8.dp else 4.dp,
-                ),
+                modifier =
+                    Modifier.padding(
+                        bottom = 4.dp,
+                        top = if (airlineName == null) 8.dp else 4.dp,
+                    )
             ) {
                 if (flightStatus == FlightSuggestionStatus.CANCELLED) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -121,11 +123,7 @@ private fun FlightSuggestionHeader(
     flightStatus: FlightSuggestionStatus,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = 16.dp),
-        ) {
+        Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
             Text(
                 text = flightNumber,
                 overflow = TextOverflow.Ellipsis,
@@ -160,22 +158,24 @@ private fun FlightSuggestionFooter(
         FlightInfo(
             flightData = departureFlightData,
             flightStatus = flightStatus,
-            dateColor = when (flightStatus) {
-                FlightSuggestionStatus.CANCELLED -> MaterialTheme.colorScheme.onSurfaceVariant
-                FlightSuggestionStatus.DELAYED if progress == 0f -> MaterialTheme.colorScheme.error
-                else -> MaterialTheme.colorScheme.onSurface
-            },
+            dateColor =
+                when (flightStatus) {
+                    FlightSuggestionStatus.CANCELLED -> MaterialTheme.colorScheme.onSurfaceVariant
+                    FlightSuggestionStatus.DELAYED if progress == 0f -> MaterialTheme.colorScheme.error
+                    else -> MaterialTheme.colorScheme.onSurface
+                },
             horizontalAlignment = Alignment.Start,
             modifier = Modifier.weight(1f),
         )
         FlightInfo(
             flightData = arrivalFlightData,
             flightStatus = flightStatus,
-            dateColor = when (flightStatus) {
-                FlightSuggestionStatus.CANCELLED -> MaterialTheme.colorScheme.onSurfaceVariant
-                FlightSuggestionStatus.DELAYED if progress > 0f -> MaterialTheme.colorScheme.error
-                else -> MaterialTheme.colorScheme.onSurface
-            },
+            dateColor =
+                when (flightStatus) {
+                    FlightSuggestionStatus.CANCELLED -> MaterialTheme.colorScheme.onSurfaceVariant
+                    FlightSuggestionStatus.DELAYED if progress > 0f -> MaterialTheme.colorScheme.error
+                    else -> MaterialTheme.colorScheme.onSurface
+                },
             horizontalAlignment = Alignment.End,
             modifier = Modifier.weight(1f),
         )
@@ -189,28 +189,29 @@ private fun FlightPath(progress: Float, modifier: Modifier = Modifier) {
     val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
     val isFlightEnRoute = progress > 0f && progress < 1f
     val progressPercent = (progress * 100).roundToInt()
-    val flightPathContentDescription = stringResource(
-        R.string.mozac_browser_awesomebar_flight_suggestion_progress,
-        progressPercent,
-    )
+    val flightPathContentDescription =
+        stringResource(
+            R.string.mozac_browser_awesomebar_flight_suggestion_progress,
+            progressPercent,
+        )
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
 
     Canvas(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(20.dp)
-            .scale(scaleX = if (isRtl) -1f else 1f, scaleY = 1f)
-            .thenConditional(
+        modifier =
+            modifier.fillMaxWidth().height(20.dp).scale(scaleX = if (isRtl) -1f else 1f, scaleY = 1f).thenConditional(
                 Modifier.clearAndSetSemantics {
                     contentDescription = flightPathContentDescription
-                },
-            ) { isFlightEnRoute },
+                }
+            ) {
+                isFlightEnRoute
+            }
     ) {
         val iconIntrinsicSize = airplaneIconPainter.intrinsicSize
-        val iconStartPosition = when (progress) {
-            0f -> 0f
-            else -> (size.width * progress) - iconIntrinsicSize.width
-        }
+        val iconStartPosition =
+            when (progress) {
+                0f -> 0f
+                else -> (size.width * progress) - iconIntrinsicSize.width
+            }
 
         if (progress > 0f) {
             drawFlightProgressPath(color = errorColor, iconStartPosition = iconStartPosition)
@@ -271,10 +272,11 @@ private fun DrawScope.drawRemainingPath(color: Color, iconEndPosition: Float) {
         start = Offset(lineStartX, center.y),
         end = Offset(size.width, center.y),
         strokeWidth = strokeWidthPx,
-        pathEffect = PathEffect.dashPathEffect(
-            intervals = floatArrayOf(dashWidthPx, gapSizePx),
-            phase = 0f,
-        ),
+        pathEffect =
+            PathEffect.dashPathEffect(
+                intervals = floatArrayOf(dashWidthPx, gapSizePx),
+                phase = 0f,
+            ),
     )
 }
 
@@ -287,11 +289,12 @@ private fun FlightInfo(
     modifier: Modifier = Modifier,
 ) {
     val flightSchedule = "${flightData.time} · ${flightData.date}"
-    val cancelledScheduleContentDescription = stringResource(
-        R.string.mozac_browser_awesomebar_flight_suggestion_canceled_schedule,
-        flightData.time,
-        flightData.date,
-    )
+    val cancelledScheduleContentDescription =
+        stringResource(
+            R.string.mozac_browser_awesomebar_flight_suggestion_canceled_schedule,
+            flightData.time,
+            flightData.date,
+        )
     Column(modifier = modifier, horizontalAlignment = horizontalAlignment) {
         Text(
             text = flightData.airportCity,
@@ -314,18 +317,21 @@ private fun FlightInfo(
                 maxLines = 2,
                 style = AcornTheme.typography.subtitle2,
                 color = dateColor,
-                textDecoration = if (flightStatus == FlightSuggestionStatus.CANCELLED) {
-                    TextDecoration.LineThrough
-                } else {
-                    null
-                },
-                modifier = Modifier.clearAndSetSemantics {
-                    contentDescription = if (flightStatus == FlightSuggestionStatus.CANCELLED) {
-                        cancelledScheduleContentDescription
+                textDecoration =
+                    if (flightStatus == FlightSuggestionStatus.CANCELLED) {
+                        TextDecoration.LineThrough
                     } else {
-                        flightSchedule
-                    }
-                },
+                        null
+                    },
+                modifier =
+                    Modifier.clearAndSetSemantics {
+                        contentDescription =
+                            if (flightStatus == FlightSuggestionStatus.CANCELLED) {
+                                cancelledScheduleContentDescription
+                            } else {
+                                flightSchedule
+                            }
+                    },
             )
         }
     }
@@ -335,13 +341,14 @@ private fun FlightInfo(
 private fun FlightStatusBadge(flightStatus: FlightSuggestionStatus, modifier: Modifier = Modifier) {
     val (text, color) = getFlightStatusInfo(status = flightStatus)
     Box(
-        modifier = modifier
-            .background(
-                color = color,
-                shape = MaterialTheme.shapes.small,
-            )
-            .clip(MaterialTheme.shapes.small)
-            .padding(horizontal = 8.dp),
+        modifier =
+            modifier
+                .background(
+                    color = color,
+                    shape = MaterialTheme.shapes.small,
+                )
+                .clip(MaterialTheme.shapes.small)
+                .padding(horizontal = 8.dp)
     ) {
         Text(
             text = text,
@@ -380,7 +387,7 @@ private fun getFlightStatusInfo(status: FlightSuggestionStatus): Pair<String, Co
 @PreviewLightDark
 @Composable
 private fun FlightSuggestionPreview(
-    @PreviewParameter(FlightSuggestionDataProvider::class) config: FlightSuggestionPreviewModel,
+    @PreviewParameter(FlightSuggestionDataProvider::class) config: FlightSuggestionPreviewModel
 ) {
     AcornTheme {
         Surface {
@@ -400,7 +407,7 @@ private fun FlightSuggestionPreview(
 @Preview
 @Composable
 private fun FlightSuggestionPreviewPrivate(
-    @PreviewParameter(FlightSuggestionDataProvider::class) config: FlightSuggestionPreviewModel,
+    @PreviewParameter(FlightSuggestionDataProvider::class) config: FlightSuggestionPreviewModel
 ) {
     AcornTheme(
         colors = privateColorPalette,

@@ -14,7 +14,8 @@ import org.mozilla.fenix.ui.efficiency.selectors.CustomTabsSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.ToolbarSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.UnifiedTrustPanelSelectors
 
-class UnifiedTrustPanelPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
+class UnifiedTrustPanelPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) :
+    BasePage(composeRule) {
     override val pageName = "UnifiedTrustPanelPage"
 
     init {
@@ -24,21 +25,20 @@ class UnifiedTrustPanelPage(composeRule: AndroidComposeTestRule<HomeActivityInte
             // The site-info button's tag depends on the page's state (insecure connection / secure /
             // tracking protection off / unknown). Try each - ClickIfPresent opens the panel from
             // whichever one the page shows.
-            steps = listOf(
-                NavigationStep.ClickIfPresent(ToolbarSelectors.INSECURE_CONNECTION_INFORMATION_BUTTON),
-                NavigationStep.ClickIfPresent(ToolbarSelectors.SECURE_SITE_INFORMATION_BUTTON),
-                NavigationStep.ClickIfPresent(ToolbarSelectors.TRACKING_PROTECTION_OFF_INFORMATION_BUTTON),
-                NavigationStep.ClickIfPresent(ToolbarSelectors.UNKNOWN_SITE_INFORMATION_BUTTON),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.ClickIfPresent(ToolbarSelectors.INSECURE_CONNECTION_INFORMATION_BUTTON),
+                    NavigationStep.ClickIfPresent(ToolbarSelectors.SECURE_SITE_INFORMATION_BUTTON),
+                    NavigationStep.ClickIfPresent(ToolbarSelectors.TRACKING_PROTECTION_OFF_INFORMATION_BUTTON),
+                    NavigationStep.ClickIfPresent(ToolbarSelectors.UNKNOWN_SITE_INFORMATION_BUTTON),
+                ),
         )
 
         // From a custom tab, the trust panel opens via the custom-tab toolbar's "Site information" button.
         NavigationRegistry.register(
             from = "CustomTabsPage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(CustomTabsSelectors.SITE_INFO_BUTTON),
-            ),
+            steps = listOf(NavigationStep.Click(CustomTabsSelectors.SITE_INFO_BUTTON)),
         )
     }
 
@@ -114,7 +114,11 @@ class UnifiedTrustPanelPage(composeRule: AndroidComposeTestRule<HomeActivityInte
         }
     }
 
-    private fun verifyTrackersBlockedState(isSecure: Boolean, isTrackerBlockingEnabled: Boolean, areTrackersBlocked: Boolean) {
+    private fun verifyTrackersBlockedState(
+        isSecure: Boolean,
+        isTrackerBlockingEnabled: Boolean,
+        areTrackersBlocked: Boolean,
+    ) {
         if (!isTrackerBlockingEnabled) {
             mozVerify(UnifiedTrustPanelSelectors.TRACKERS_DISABLED_NONE_BLOCKED)
         } else if (isSecure) {

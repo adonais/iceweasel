@@ -14,8 +14,8 @@ import mozilla.components.feature.tabs.TabsUseCases.AddNewTabUseCase
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * Add support for all [Engine] registered service workers' events and callbacks.
- * Call [install] to actually start observing them.
+ * Add support for all [Engine] registered service workers' events and callbacks. Call [install] to actually start
+ * observing them.
  */
 object ServiceWorkerSupport {
     @VisibleForTesting internal lateinit var addTabUseCase: AddNewTabUseCase
@@ -43,7 +43,7 @@ object ServiceWorkerSupport {
 
                         return true
                     }
-                },
+                }
             )
         } catch (e: UnsupportedOperationException) {
             logger.error("failed to register a service worker delegate", e)

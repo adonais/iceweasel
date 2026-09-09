@@ -57,16 +57,13 @@ internal fun CrashTools(
     }
 
     Surface {
-        Column(
-            modifier = Modifier
-                .padding(all = 16.dp)
-                .verticalScroll(state = rememberScrollState()),
-        ) {
+        Column(modifier = Modifier.padding(all = 16.dp).verticalScroll(state = rememberScrollState())) {
             Text(
-                text = stringResource(
-                    R.string.crash_debug_deferral_timer,
-                    convertMillisToDHMS(maxOf(genericDeferPeriod, 0)),
-                ),
+                text =
+                    stringResource(
+                        R.string.crash_debug_deferral_timer,
+                        convertMillisToDHMS(maxOf(genericDeferPeriod, 0)),
+                    ),
                 style = FirefoxTheme.typography.body2,
             )
             FilledButton(
@@ -115,9 +112,7 @@ internal fun convertMillisToDHMS(milliseconds: Long): String {
 
 @FlexibleWindowPreview
 @Composable
-private fun CrashToolsPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun CrashToolsPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         CrashTools(Settings(LocalContext.current))
     }

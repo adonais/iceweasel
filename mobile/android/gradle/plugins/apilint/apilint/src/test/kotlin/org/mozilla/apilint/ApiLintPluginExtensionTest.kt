@@ -10,12 +10,12 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 /**
- * The default help command reaches a developer verbatim and interpolates the variant name next to an
- * escaped `$`, so a reformatting can change what it prints without breaking the build.
+ * The default help command reaches a developer verbatim and interpolates the variant name next to an escaped `$`, so a
+ * reformatting can change what it prints without breaking the build.
  */
 class ApiLintPluginExtensionTest {
-    private val extension: ApiLintPluginExtension = ProjectBuilder.builder().build()
-        .extensions.create("apiLint", ApiLintPluginExtension::class.java)
+    private val extension: ApiLintPluginExtension =
+        ProjectBuilder.builder().build().extensions.create("apiLint", ApiLintPluginExtension::class.java)
 
     @Test
     fun `the default help command names the variant's update task`() {
@@ -31,7 +31,7 @@ class ApiLintPluginExtensionTest {
             object : Closure<String>(null) {
                 @Suppress("unused")
                 fun doCall(variantName: String) = "./mach gradle :geckoview:apiUpdateFile$variantName"
-            },
+            }
         )
 
         assertEquals(

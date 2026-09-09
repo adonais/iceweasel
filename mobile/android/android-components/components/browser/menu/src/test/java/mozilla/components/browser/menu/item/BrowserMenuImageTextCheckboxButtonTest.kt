@@ -12,6 +12,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat.getImageTintList
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.browser.menu.BrowserMenu
 import mozilla.components.browser.menu.R
 import mozilla.components.support.test.robolectric.testContext
@@ -23,7 +24,6 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class BrowserMenuImageTextCheckboxButtonTest {
@@ -36,55 +36,56 @@ class BrowserMenuImageTextCheckboxButtonTest {
     private val iconTintColorResource = android.R.color.holo_red_dark
 
     private val tintColorResource = android.R.color.holo_purple
-    private val labelListener = { }
+    private val labelListener = {}
     private val primaryLabel = "Add"
     private val secondaryLabel = "Edit"
     private val primaryStateIconResource = android.R.drawable.star_big_off
     private val secondaryStateIconResource = android.R.drawable.star_big_on
     private val isInPrimaryState: () -> Boolean = { true }
-    private val onCheckedChangedListener: (Boolean) -> Unit = { }
+    private val onCheckedChangedListener: (Boolean) -> Unit = {}
 
     @Before
     fun setUp() {
-        item = spy(
-            BrowserMenuImageTextCheckboxButton(
-                imageResource = imageResource,
-                label = label,
-                iconTintColorResource = iconTintColorResource,
-                textColorResource = tintColorResource,
-                labelListener = labelListener,
-                primaryLabel = primaryLabel,
-                secondaryLabel = secondaryLabel,
-                primaryStateIconResource = primaryStateIconResource,
-                secondaryStateIconResource = secondaryStateIconResource,
-                tintColorResource = tintColorResource,
-                isInPrimaryState = isInPrimaryState,
-                onCheckedChangedListener = onCheckedChangedListener,
-            ),
-        )
+        item =
+            spy(
+                BrowserMenuImageTextCheckboxButton(
+                    imageResource = imageResource,
+                    label = label,
+                    iconTintColorResource = iconTintColorResource,
+                    textColorResource = tintColorResource,
+                    labelListener = labelListener,
+                    primaryLabel = primaryLabel,
+                    secondaryLabel = secondaryLabel,
+                    primaryStateIconResource = primaryStateIconResource,
+                    secondaryStateIconResource = secondaryStateIconResource,
+                    tintColorResource = tintColorResource,
+                    isInPrimaryState = isInPrimaryState,
+                    onCheckedChangedListener = onCheckedChangedListener,
+                )
+            )
 
-        secondaryItem = spy(
-            BrowserMenuImageTextCheckboxButton(
-                imageResource = imageResource,
-                label = label,
-                iconTintColorResource = iconTintColorResource,
-                textColorResource = tintColorResource,
-                labelListener = labelListener,
-                primaryLabel = primaryLabel,
-                secondaryLabel = secondaryLabel,
-                primaryStateIconResource = primaryStateIconResource,
-                secondaryStateIconResource = secondaryStateIconResource,
-                tintColorResource = tintColorResource,
-                isInPrimaryState = { false },
-                onCheckedChangedListener = onCheckedChangedListener,
-            ),
-        )
+        secondaryItem =
+            spy(
+                BrowserMenuImageTextCheckboxButton(
+                    imageResource = imageResource,
+                    label = label,
+                    iconTintColorResource = iconTintColorResource,
+                    textColorResource = tintColorResource,
+                    labelListener = labelListener,
+                    primaryLabel = primaryLabel,
+                    secondaryLabel = secondaryLabel,
+                    primaryStateIconResource = primaryStateIconResource,
+                    secondaryStateIconResource = secondaryStateIconResource,
+                    tintColorResource = tintColorResource,
+                    isInPrimaryState = { false },
+                    onCheckedChangedListener = onCheckedChangedListener,
+                )
+            )
     }
 
     @Test
     fun `layout resource can be inflated`() {
-        val view = LayoutInflater.from(testContext)
-            .inflate(item.getLayoutResource(), null)
+        val view = LayoutInflater.from(testContext).inflate(item.getLayoutResource(), null)
 
         assertNotNull(view)
     }
@@ -102,8 +103,7 @@ class BrowserMenuImageTextCheckboxButtonTest {
     @Test
     fun `initialState is invoked on bind and properly sets label`() {
         val menu = mock(BrowserMenu::class.java)
-        val view = LayoutInflater.from(testContext)
-            .inflate(item.getLayoutResource(), null)
+        val view = LayoutInflater.from(testContext).inflate(item.getLayoutResource(), null)
 
         item.bind(menu, view)
         val checkBox = view.findViewById<CheckBox>(R.id.checkbox)

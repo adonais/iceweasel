@@ -17,62 +17,51 @@ interface IPProtectionHandler {
      * Activates the IP protection.
      *
      * @param countryCode ISO 3166-1 alpha-2 country code.
-     * @param onResult Invoked once the activation request resolves. Receives `null` on success or
-     *  the [Throwable] that caused the failure.
+     * @param onResult Invoked once the activation request resolves. Receives `null` on success or the [Throwable] that
+     *   caused the failure.
      */
     fun activate(countryCode: String?, onResult: (Throwable?) -> Unit = {})
 
     /**
      * Deactivates the IP protection proxy.
      *
-     * @param onResult Invoked once the deactivation request resolves. Receives `null` on success or
-     *  the [Throwable] that caused the failure.
+     * @param onResult Invoked once the deactivation request resolves. Receives `null` on success or the [Throwable]
+     *   that caused the failure.
      */
     fun deactivate(onResult: (Throwable?) -> Unit = {})
 
     /**
-     * Triggers enrollment via the active auth provider. The [onResult] callback is invoked once
-     * the enrollment attempt has completed, with the final outcome.
+     * Triggers enrollment via the active auth provider. The [onResult] callback is invoked once the enrollment attempt
+     * has completed, with the final outcome.
      *
-     * @param onResult Called with the [EnrollResult] describing whether the user is now enrolled
-     *  and entitled, and the error string if not.
+     * @param onResult Called with the [EnrollResult] describing whether the user is now enrolled and entitled, and the
+     *   error string if not.
      */
     fun enroll(onResult: (EnrollResult) -> Unit)
 
-    /**
-     * Request for the current [ServiceState].
-     */
+    /** Request for the current [ServiceState]. */
     fun getState(onResult: (ServiceState) -> Unit)
 
-    /**
-     * Requests an update for the list of countries available in the proxy server-list.
-     */
+    /** Requests an update for the list of countries available in the proxy server-list. */
     fun updateCountryList()
 
-    /**
-     * Initializes the proxy state machine.
-     */
+    /** Initializes the proxy state machine. */
     fun init()
 
-    /**
-     * Uninitializes the proxy state machine.
-     */
+    /** Uninitializes the proxy state machine. */
     fun uninit()
 
     /**
-     * Sets the [AuthProvider] used to supply authentication tokens to the IP protection service.
-     * Pass null to sign out.
+     * Sets the [AuthProvider] used to supply authentication tokens to the IP protection service. Pass null to sign out.
      *
      * @param provider The [AuthProvider], or null to deauthenticate.
      */
     // FIXME(IPP) move this to the IPProtectionDelegate.
-    fun setAuthProvider(
-        provider: AuthProvider?,
-    )
+    fun setAuthProvider(provider: AuthProvider?)
 
     /**
-     * Sets the [GpiProvider] used to handle Google Play Integrity warm-up and token requests.
-     * Pass null to clear the provider.
+     * Sets the [GpiProvider] used to handle Google Play Integrity warm-up and token requests. Pass null to clear the
+     * provider.
      *
      * @param provider The [GpiProvider], or null to clear.
      */
@@ -81,8 +70,7 @@ interface IPProtectionHandler {
     /**
      * Result of an enrollment attempt.
      *
-     * @property isEnrolledAndEntitled Whether the user is now enrolled and entitled to use the
-     *  proxy.
+     * @property isEnrolledAndEntitled Whether the user is now enrolled and entitled to use the proxy.
      * @property error Error string describing why enrollment failed, or null on success.
      */
     data class EnrollResult(
@@ -90,43 +78,34 @@ interface IPProtectionHandler {
         val error: String? = null,
     )
 
-    /**
-     * Notify account state changed.
-     */
+    /** Notify account state changed. */
     fun notifyAccountStatus(signedIn: Boolean)
 
     /**
-     * Provides a fresh authentication token on demand. Invoked each time the engine needs to
-     * authenticate with the Guardian API.
+     * Provides a fresh authentication token on demand. Invoked each time the engine needs to authenticate with the
+     * Guardian API.
      */
     interface AuthProvider {
         /**
-         * Fetches a fresh authentication token and delivers it via [onComplete].
-         * Pass null to [onComplete] if the token could not be obtained.
+         * Fetches a fresh authentication token and delivers it via [onComplete]. Pass null to [onComplete] if the token
+         * could not be obtained.
          */
         fun getToken(onComplete: (String?) -> Unit)
     }
 
-    /**
-     * Provides Google Play Integrity warm-up and token retrieval for the IP protection service.
-     */
+    /** Provides Google Play Integrity warm-up and token retrieval for the IP protection service. */
     interface GpiProvider {
-        /**
-         * Warms up the GPI token provider. Calls [onComplete] with true on success, false on
-         * failure.
-         */
+        /** Warms up the GPI token provider. Calls [onComplete] with true on success, false on failure. */
         fun warmUp(onComplete: (Boolean) -> Unit)
 
         /**
-         * Fetches a GPI integrity token and delivers it via [onComplete].
-         * Pass null to [onComplete] if the token could not be obtained.
+         * Fetches a GPI integrity token and delivers it via [onComplete]. Pass null to [onComplete] if the token could
+         * not be obtained.
          */
         fun getToken(onComplete: (String?) -> Unit)
     }
 
-    /**
-     * Holds the current IP protection service and proxy state along with usage information.
-     */
+    /** Holds the current IP protection service and proxy state along with usage information. */
     // refactor to enum in https://bugzilla.mozilla.org/show_bug.cgi?id=2030410
     data class StateInfo(
         val serviceState: ServiceState = ServiceState.Uninitialized,
@@ -149,15 +128,16 @@ interface IPProtectionHandler {
         }
 
         override fun toString(): String {
-            val proxy = when (proxyState) {
-                PROXY_STATE_NOT_READY -> "NOT_READY"
-                PROXY_STATE_READY -> "READY"
-                PROXY_STATE_ACTIVATING -> "ACTIVATING"
-                PROXY_STATE_ACTIVE -> "ACTIVE"
-                PROXY_STATE_ERROR -> "ERROR"
-                PROXY_STATE_PAUSED -> "PAUSED"
-                else -> "UNKNOWN($proxyState)"
-            }
+            val proxy =
+                when (proxyState) {
+                    PROXY_STATE_NOT_READY -> "NOT_READY"
+                    PROXY_STATE_READY -> "READY"
+                    PROXY_STATE_ACTIVATING -> "ACTIVATING"
+                    PROXY_STATE_ACTIVE -> "ACTIVE"
+                    PROXY_STATE_ERROR -> "ERROR"
+                    PROXY_STATE_PAUSED -> "PAUSED"
+                    else -> "UNKNOWN($proxyState)"
+                }
             return "StateInfo(serviceState=$serviceState, proxyState=$proxy," +
                 " remaining=$remaining, max=$max, resetTime=$resetTime," +
                 " lastError=$lastError)"

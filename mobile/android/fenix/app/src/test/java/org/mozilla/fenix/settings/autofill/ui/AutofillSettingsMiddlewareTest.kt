@@ -35,13 +35,12 @@ class AutofillSettingsMiddlewareTest {
     @Before
     fun setup() {
         securePrefs = SecureAbove22Preferences(testContext, "autofill", forceInsecure = true)
-        autofillSettingsStorage =
-            AutofillCreditCardsAddressesStorage(testContext, lazy { securePrefs })
+        autofillSettingsStorage = AutofillCreditCardsAddressesStorage(testContext, lazy { securePrefs })
         accountManager = mockk(relaxUnitFun = true)
         updateSaveFillStatus = { _, _ -> }
         updateSyncStatusAcrossDevices = { _, _ -> }
-        goToScreen = { }
-        exitAutofillSettings = { }
+        goToScreen = {}
+        exitAutofillSettings = {}
     }
 
     @Test
@@ -134,20 +133,22 @@ class AutofillSettingsMiddlewareTest {
             assertFalse(newSyncCreditCardsOption)
         }
 
-    private fun buildMiddleware() = AutofillSettingsMiddleware(
-        autofillSettingsStorage = autofillSettingsStorage,
-        accountManager = accountManager,
-        updateSaveFillStatus = updateSaveFillStatus,
-        updateSyncStatusAcrossDevices = updateSyncStatusAcrossDevices,
-        goToScreen = goToScreen,
-        exitAutofillSettings = exitAutofillSettings,
-        ioDispatcher = testDispatcher,
-    )
+    private fun buildMiddleware() =
+        AutofillSettingsMiddleware(
+            autofillSettingsStorage = autofillSettingsStorage,
+            accountManager = accountManager,
+            updateSaveFillStatus = updateSaveFillStatus,
+            updateSyncStatusAcrossDevices = updateSyncStatusAcrossDevices,
+            goToScreen = goToScreen,
+            exitAutofillSettings = exitAutofillSettings,
+            ioDispatcher = testDispatcher,
+        )
 
     private fun AutofillSettingsMiddleware.makeStore(
-        initialState: AutofillSettingsState = AutofillSettingsState.default,
-    ) = AutofillSettingsStore(
-        initialState = initialState,
-        middleware = listOf(this),
-    )
+        initialState: AutofillSettingsState = AutofillSettingsState.default
+    ) =
+        AutofillSettingsStore(
+            initialState = initialState,
+            middleware = listOf(this),
+        )
 }

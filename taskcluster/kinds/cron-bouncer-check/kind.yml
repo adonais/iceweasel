@@ -47,7 +47,6 @@ tasks:
             product: firefox
             job-name: firefox-bouncer-check
         run:
-            clone-with: hg
             config:
                 by-release-type:
                     nightly:
@@ -78,7 +77,6 @@ tasks:
             product: devedition
             job-name: devedition-bouncer-check
         run:
-            clone-with: hg
             config:
                 - releases/bouncer_firefox_devedition.py
             product-field: FIREFOX_DEVEDITION

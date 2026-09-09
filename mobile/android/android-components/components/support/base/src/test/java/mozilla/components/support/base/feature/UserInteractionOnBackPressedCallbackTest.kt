@@ -34,8 +34,10 @@ class UserInteractionOnBackPressedCallbackTest {
         fragment = mock()
         childFragmentManager = mock()
 
-        interactionFragment = mock(Fragment::class.java, withSettings().extraInterfaces(UserInteractionHandler::class.java))
-        secondInteractionFragment = mock(Fragment::class.java, withSettings().extraInterfaces(UserInteractionHandler::class.java))
+        interactionFragment =
+            mock(Fragment::class.java, withSettings().extraInterfaces(UserInteractionHandler::class.java))
+        secondInteractionFragment =
+            mock(Fragment::class.java, withSettings().extraInterfaces(UserInteractionHandler::class.java))
 
         `when`(fragmentManager.primaryNavigationFragment).thenReturn(fragment)
         `when`(fragment.childFragmentManager).thenReturn(childFragmentManager)

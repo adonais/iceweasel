@@ -7,15 +7,11 @@ package org.mozilla.fenix.ui.efficiency.generation.behavior
 /**
  * Context variants are intentionally separate from behavior definitions.
  *
- * Behavior answers: what product rule is being checked?
- * Context answers: under which state/device/account/browser-mode should it run?
+ * Behavior answers: what product rule is being checked? Context answers: under which state/device/account/browser-mode
+ * should it run?
  */
-data class BehaviorContextVariant(
-    val values: Map<String, String>,
-) {
-    override fun toString(): String = values.entries
-        .sortedBy { it.key }
-        .joinToString(" | ") { "${it.key}=${it.value}" }
+data class BehaviorContextVariant(val values: Map<String, String>) {
+    override fun toString(): String = values.entries.sortedBy { it.key }.joinToString(" | ") { "${it.key}=${it.value}" }
 }
 
 enum class BehaviorMatrixProfile {
@@ -27,9 +23,7 @@ enum class BehaviorMatrixProfile {
 
 object BehaviorContextMatrix {
 
-    fun variants(
-        profile: BehaviorMatrixProfile = BehaviorRunArguments.matrixProfile(),
-    ): List<BehaviorContextVariant> {
+    fun variants(profile: BehaviorMatrixProfile = BehaviorRunArguments.matrixProfile()): List<BehaviorContextVariant> {
         return when (profile) {
             BehaviorMatrixProfile.SMOKE -> smoke()
             BehaviorMatrixProfile.BASE_FLAGS -> baseFlags()
@@ -38,28 +32,28 @@ object BehaviorContextMatrix {
         }
     }
 
-    private fun smoke(): List<BehaviorContextVariant> = listOf(
-        defaultContext(),
-    )
+    private fun smoke(): List<BehaviorContextVariant> = listOf(defaultContext())
 
-    private fun baseFlags(): List<BehaviorContextVariant> = listOf(
-        defaultContext(),
-        defaultContext("PocketEnabled" to "false"),
-        defaultContext("RecentlyVisitedEnabled" to "false"),
-        defaultContext("UnifiedTrustPanelEnabled" to "false"),
-    )
+    private fun baseFlags(): List<BehaviorContextVariant> =
+        listOf(
+            defaultContext(),
+            defaultContext("PocketEnabled" to "false"),
+            defaultContext("RecentlyVisitedEnabled" to "false"),
+            defaultContext("UnifiedTrustPanelEnabled" to "false"),
+        )
 
-    private fun pairwisePreview(): List<BehaviorContextVariant> = listOf(
-        defaultContext(),
-        defaultContext("BrowserMode" to "Private"),
-        defaultContext("Account" to "SignedIn"),
-        defaultContext("DeviceClass" to "Tablet"),
-        defaultContext(
-            "PocketEnabled" to "false",
-            "RecentlyVisitedEnabled" to "false",
-            "UnifiedTrustPanelEnabled" to "false",
-        ),
-    )
+    private fun pairwisePreview(): List<BehaviorContextVariant> =
+        listOf(
+            defaultContext(),
+            defaultContext("BrowserMode" to "Private"),
+            defaultContext("Account" to "SignedIn"),
+            defaultContext("DeviceClass" to "Tablet"),
+            defaultContext(
+                "PocketEnabled" to "false",
+                "RecentlyVisitedEnabled" to "false",
+                "UnifiedTrustPanelEnabled" to "false",
+            ),
+        )
 
     private fun exhaustivePreview(): List<BehaviorContextVariant> {
         val browserModes = listOf("Default", "Private")
@@ -84,7 +78,7 @@ object BehaviorContextMatrix {
                                             "PocketEnabled" to pocket,
                                             "RecentlyVisitedEnabled" to recentlyVisited,
                                             "UnifiedTrustPanelEnabled" to unifiedTrustPanel,
-                                        ),
+                                        )
                                     )
                                 }
                             }
@@ -92,15 +86,12 @@ object BehaviorContextMatrix {
                     }
                 }
             }
-        }.distinctBy { it.toString() }
+        }
+            .distinctBy { it.toString() }
     }
 
-    private fun defaultContext(
-        vararg overrides: Pair<String, String>,
-    ): BehaviorContextVariant {
-        val values = mutableMapOf(
-            "BrowserMode" to "Default",
-        )
+    private fun defaultContext(vararg overrides: Pair<String, String>): BehaviorContextVariant {
+        val values = mutableMapOf("BrowserMode" to "Default")
 
         overrides.forEach { (key, value) ->
             values[key] = value

@@ -53,16 +53,13 @@ internal class CreditCardEditorMiddleware(
 
             is CreditCardEditorAction.Save -> handleSaveAction(store)
             is CreditCardEditorAction.NavigateBack,
-            is CreditCardEditorAction.Cancel,
-                -> navigateBack()
+            is CreditCardEditorAction.Cancel -> navigateBack()
 
             else -> Unit
         }
     }
 
-    private fun DeleteDialogAction.handleDeleteDialog(
-        store: Store<CreditCardEditorState, CreditCardEditorAction>,
-    ) {
+    private fun DeleteDialogAction.handleDeleteDialog(store: Store<CreditCardEditorState, CreditCardEditorAction>) {
         when (this) {
             DeleteDialogAction.Confirm -> {
                 coroutineScope.launch(ioDispatcher) {
@@ -83,9 +80,7 @@ internal class CreditCardEditorMiddleware(
         environment?.navigateBack()
     }
 
-    private fun handleSaveAction(
-        store: Store<CreditCardEditorState, CreditCardEditorAction>,
-    ) {
+    private fun handleSaveAction(store: Store<CreditCardEditorState, CreditCardEditorAction>) {
         val state = store.state
 
         if (!state.showCardNumberError && !state.showNameOnCardError) {
@@ -103,14 +98,15 @@ internal class CreditCardEditorMiddleware(
 
     private fun updateCreditCard(state: CreditCardEditorState) {
         coroutineScope.launch(ioDispatcher) {
-            val fields = UpdatableCreditCardFields(
-                billingName = state.nameOnCard,
-                cardNumber = CreditCardNumber.Plaintext(state.cardNumber),
-                cardNumberLast4 = state.cardNumber.last4Digits(),
-                expiryMonth = state.selectedExpiryMonthIndex + 1L,
-                expiryYear = state.expiryYears[state.selectedExpiryYearIndex].toLong(),
-                cardType = state.cardNumber.creditCardIIN()?.creditCardIssuerNetwork?.name ?: "",
-            )
+            val fields =
+                UpdatableCreditCardFields(
+                    billingName = state.nameOnCard,
+                    cardNumber = CreditCardNumber.Plaintext(state.cardNumber),
+                    cardNumberLast4 = state.cardNumber.last4Digits(),
+                    expiryMonth = state.selectedExpiryMonthIndex + 1L,
+                    expiryYear = state.expiryYears[state.selectedExpiryYearIndex].toLong(),
+                    cardType = state.cardNumber.creditCardIIN()?.creditCardIssuerNetwork?.name ?: "",
+                )
 
             storage.updateCreditCard(state.guid, fields)
 
@@ -123,14 +119,15 @@ internal class CreditCardEditorMiddleware(
 
     private fun addCreditCard(state: CreditCardEditorState) {
         coroutineScope.launch(ioDispatcher) {
-            val fields = NewCreditCardFields(
-                billingName = state.nameOnCard,
-                plaintextCardNumber = CreditCardNumber.Plaintext(state.cardNumber),
-                cardNumberLast4 = state.cardNumber.last4Digits(),
-                expiryMonth = state.selectedExpiryMonthIndex + 1L,
-                expiryYear = state.expiryYears[state.selectedExpiryYearIndex].toLong(),
-                cardType = state.cardNumber.creditCardIIN()?.creditCardIssuerNetwork?.name ?: "",
-            )
+            val fields =
+                NewCreditCardFields(
+                    billingName = state.nameOnCard,
+                    plaintextCardNumber = CreditCardNumber.Plaintext(state.cardNumber),
+                    cardNumberLast4 = state.cardNumber.last4Digits(),
+                    expiryMonth = state.selectedExpiryMonthIndex + 1L,
+                    expiryYear = state.expiryYears[state.selectedExpiryYearIndex].toLong(),
+                    cardType = state.cardNumber.creditCardIIN()?.creditCardIssuerNetwork?.name ?: "",
+                )
 
             storage.addCreditCard(fields)
 
@@ -142,7 +139,7 @@ internal class CreditCardEditorMiddleware(
     }
 
     private fun CreditCardEditorAction.Initialization.handleInitAction(
-        store: Store<CreditCardEditorState, CreditCardEditorAction>,
+        store: Store<CreditCardEditorState, CreditCardEditorAction>
     ) {
         when (this) {
             is CreditCardEditorAction.Initialization.InitStarted -> {
@@ -157,21 +154,20 @@ internal class CreditCardEditorMiddleware(
         }
     }
 
-    private fun initializeFromScratch(
-        store: Store<CreditCardEditorState, CreditCardEditorAction>,
-    ) {
+    private fun initializeFromScratch(store: Store<CreditCardEditorState, CreditCardEditorAction>) {
         val state = store.state
         store.dispatch(
             CreditCardEditorAction.Initialization.InitCompleted(
-                state = state.copy(
-                    expiryMonths = calendarDataProvider.months(),
-                    selectedExpiryMonthIndex = 0,
-                    expiryYears = calendarDataProvider.years(),
-                    selectedExpiryYearIndex = 0,
-                    inEditMode = false,
-                    showDeleteDialog = false,
-                ),
-            ),
+                state =
+                    state.copy(
+                        expiryMonths = calendarDataProvider.months(),
+                        selectedExpiryMonthIndex = 0,
+                        expiryYears = calendarDataProvider.years(),
+                        selectedExpiryYearIndex = 0,
+                        inEditMode = false,
+                        showDeleteDialog = false,
+                    )
+            )
         )
     }
 
@@ -183,29 +179,32 @@ internal class CreditCardEditorMiddleware(
             val state = store.state
             val crypto = storage.getCreditCardCrypto()
 
-            val plainTextCardNumber = crypto.decrypt(
-                key = crypto.getOrGenerateKey(),
-                encryptedCardNumber = creditCard.encryptedCardNumber,
-            )
+            val plainTextCardNumber =
+                crypto.decrypt(
+                    key = crypto.getOrGenerateKey(),
+                    encryptedCardNumber = creditCard.encryptedCardNumber,
+                )
 
             val years = calendarDataProvider.years(creditCard.expiryYear)
 
             store.dispatch(
                 CreditCardEditorAction.Initialization.InitCompleted(
-                    state = state.copy(
-                        guid = creditCard.guid,
-                        nameOnCard = creditCard.billingName,
-                        cardNumber = plainTextCardNumber?.number ?: "",
-                        expiryMonths = calendarDataProvider.months(),
-                        selectedExpiryMonthIndex = creditCard.expiryMonth.toInt() - 1,
-                        expiryYears = years,
-                        selectedExpiryYearIndex = years.indexOfFirst { year ->
-                            year == creditCard.expiryYear.toString()
-                        },
-                        inEditMode = true,
-                        showDeleteDialog = false,
-                    ),
-                ),
+                    state =
+                        state.copy(
+                            guid = creditCard.guid,
+                            nameOnCard = creditCard.billingName,
+                            cardNumber = plainTextCardNumber?.number ?: "",
+                            expiryMonths = calendarDataProvider.months(),
+                            selectedExpiryMonthIndex = creditCard.expiryMonth.toInt() - 1,
+                            expiryYears = years,
+                            selectedExpiryYearIndex =
+                                years.indexOfFirst { year ->
+                                    year == creditCard.expiryYear.toString()
+                                },
+                            inEditMode = true,
+                            showDeleteDialog = false,
+                        )
+                )
             )
         }
     }

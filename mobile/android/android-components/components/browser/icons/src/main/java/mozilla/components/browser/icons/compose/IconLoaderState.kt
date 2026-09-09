@@ -8,18 +8,13 @@ import androidx.compose.ui.graphics.painter.Painter
 import mozilla.components.browser.icons.BrowserIcons
 import mozilla.components.browser.icons.Icon.Source
 
-/**
- * The state an [IconLoaderScope] is in.
- */
+/** The state an [IconLoaderScope] is in. */
 sealed class IconLoaderState {
-    /**
-     * The [BrowserIcons.Loader] is currently loading the icon.
-     */
+    /** The [BrowserIcons.Loader] is currently loading the icon. */
     object Loading : IconLoaderState()
 
     /**
-     * The [BrowserIcons.Loader] has completed loading the icon and it is available through the
-     * attached [painter].
+     * The [BrowserIcons.Loader] has completed loading the icon and it is available through the attached [painter].
      *
      * @property painter The loaded or generated icon as a [Painter].
      * @property color The dominant color of the icon. Will be null if no color could be extracted.

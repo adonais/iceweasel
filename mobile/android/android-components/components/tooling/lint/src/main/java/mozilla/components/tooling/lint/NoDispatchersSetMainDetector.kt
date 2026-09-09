@@ -13,55 +13,58 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiMethod
-import org.jetbrains.uast.UCallExpression
 import java.util.EnumSet
+import org.jetbrains.uast.UCallExpression
 
 /**
  * A custom Lint detector that checks for direct usage of `Dispatchers.setMain` within test files.
  *
- * This detector aims to enforce best practices for managing coroutine dispatchers in tests.
- * Directly manipulating `Dispatchers.setMain` can lead to brittle and hard-to-maintain tests.
- * Instead, it encourages injecting dispatchers into components, allowing tests to provide
- * a `TestDispatcher` or a controlled dispatcher without modifying global state.
+ * This detector aims to enforce best practices for managing coroutine dispatchers in tests. Directly manipulating
+ * `Dispatchers.setMain` can lead to brittle and hard-to-maintain tests. Instead, it encourages injecting dispatchers
+ * into components, allowing tests to provide a `TestDispatcher` or a controlled dispatcher without modifying global
+ * state.
  *
- * The detector specifically looks for `UCallExpression` nodes where the method name is `setMain`
- * or `resetMain` and the receiver is `kotlinx.coroutines.test`. It only operates on files
- * identified as test files (based on their path containing `/src/test/` or `/src/androidTest/`).
+ * The detector specifically looks for `UCallExpression` nodes where the method name is `setMain` or `resetMain` and the
+ * receiver is `kotlinx.coroutines.test`. It only operates on files identified as test files (based on their path
+ * containing `/src/test/` or `/src/androidTest/`).
  */
 class NoDispatchersSetMainDetector : Detector(), SourceCodeScanner {
 
-    /**
-     * Companion object holding the lint issue definitions and detector implementation details.
-     */
+    /** Companion object holding the lint issue definitions and detector implementation details. */
     companion object {
 
-        private val Implementation = Implementation(
-            NoDispatchersSetMainDetector::class.java,
-            EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
-        )
+        private val Implementation =
+            Implementation(
+                NoDispatchersSetMainDetector::class.java,
+                EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+            )
 
         @JvmField
-        val ISSUE_NO_DISPATCHERS_SET_MAIN: Issue = Issue.create(
-            id = "NoDispatchersSetMainInTests",
-            briefDescription = "Prohibits `Dispatchers.setMain` in test files",
-            explanation = """
-                Using `Dispatchers.setMain` directly within test methods can lead to complex and hard-to-manage test setups
-                due to global state manipulation.
-                It's preferable to use dependency injection to provide dispatchers to your components.
-                In tests, you can then pass a `StandardTestDispatcher` or `UnconfinedTestDispatcher` directly
-                to the component being tested. This promotes better isolation and simplifies test code.
-            """.trimIndent(),
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            implementation = Implementation,
-        )
+        val ISSUE_NO_DISPATCHERS_SET_MAIN: Issue =
+            Issue.create(
+                id = "NoDispatchersSetMainInTests",
+                briefDescription = "Prohibits `Dispatchers.setMain` in test files",
+                explanation =
+                    """
+                    Using `Dispatchers.setMain` directly within test methods can lead to complex and hard-to-manage test setups
+                    due to global state manipulation.
+                    It's preferable to use dependency injection to provide dispatchers to your components.
+                    In tests, you can then pass a `StandardTestDispatcher` or `UnconfinedTestDispatcher` directly
+                    to the component being tested. This promotes better isolation and simplifies test code.
+                    """
+                        .trimIndent(),
+                category = Category.CORRECTNESS,
+                priority = 6,
+                severity = Severity.ERROR,
+                implementation = Implementation,
+            )
     }
 
-    override fun getApplicableMethodNames(): List<String>? = listOf(
-        "setMain",
-        "resetMain",
-    )
+    override fun getApplicableMethodNames(): List<String>? =
+        listOf(
+            "setMain",
+            "resetMain",
+        )
 
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
         val methodName = method.name
@@ -69,8 +72,8 @@ class NoDispatchersSetMainDetector : Detector(), SourceCodeScanner {
         val className = containingClass?.qualifiedName ?: ""
         val packageName = if (className.contains(".")) className.substringBeforeLast('.') else ""
 
-        if (packageName.startsWith("kotlinx.coroutines.test") &&
-            (methodName == "setMain" || methodName == "resetMain")
+        if (
+            packageName.startsWith("kotlinx.coroutines.test") && (methodName == "setMain" || methodName == "resetMain")
         ) {
             context.report(
                 ISSUE_NO_DISPATCHERS_SET_MAIN,

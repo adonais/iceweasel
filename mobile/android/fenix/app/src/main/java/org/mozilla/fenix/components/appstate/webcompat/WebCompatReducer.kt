@@ -8,9 +8,7 @@ import org.mozilla.fenix.components.appstate.AppAction.WebCompatAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState
 
-/**
- * Helper object which reduces [WebCompatAction].
- */
+/** Helper object which reduces [WebCompatAction]. */
 internal object WebCompatReducer {
 
     /**
@@ -20,18 +18,16 @@ internal object WebCompatReducer {
      * @param action The [WebCompatAction] being reduced.
      * @return The resulting [AppState] after [action] has been reduced.
      */
-    fun reduce(state: AppState, action: WebCompatAction): AppState = when (action) {
-        is WebCompatAction.WebCompatStateUpdated -> state.copy(
-            webCompatState = action.newState,
-        )
+    fun reduce(state: AppState, action: WebCompatAction): AppState =
+        when (action) {
+            is WebCompatAction.WebCompatStateUpdated -> state.copy(webCompatState = action.newState)
 
-        WebCompatAction.WebCompatStateReset -> state.copy(
-            webCompatState = null,
-        )
+            WebCompatAction.WebCompatStateReset -> state.copy(webCompatState = null)
 
-        WebCompatAction.WebCompatReportSent -> state.copy(
-            snackbarState = SnackbarState.WebCompatReportSent,
-            webCompatState = null,
-        )
-    }
+            WebCompatAction.WebCompatReportSent ->
+                state.copy(
+                    snackbarState = SnackbarState.WebCompatReportSent,
+                    webCompatState = null,
+                )
+        }
 }

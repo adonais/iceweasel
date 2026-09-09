@@ -4,7 +4,5 @@
 
 package org.mozilla.fenix.tabstray.redux.action
 
-/**
- * Actions which trigger UI state storage side effects.
- */
+/** Actions which trigger UI state storage side effects. */
 sealed interface TabManagerUiStateStorageAction

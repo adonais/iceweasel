@@ -33,17 +33,19 @@ class ViewTest {
         MockKAnnotations.init(this)
 
         every { view.context } answers { testContext }
-        every { view.resources.getDimensionPixelSize(any()) } answers {
-            testContext.resources.getDimensionPixelSize(firstArg())
-        }
+        every { view.resources.getDimensionPixelSize(any()) } answers
+            {
+                testContext.resources.getDimensionPixelSize(firstArg())
+            }
         every { view.parent } returns parent
         every { parent.touchDelegate = any() } just Runs
-        every { parent.post(any()) } answers {
-            // Immediately run the given Runnable argument
-            val action: Runnable = firstArg()
-            action.run()
-            true
-        }
+        every { parent.post(any()) } answers
+            {
+                // Immediately run the given Runnable argument
+                val action: Runnable = firstArg()
+                action.run()
+                true
+            }
     }
 
     @Test
@@ -72,10 +74,11 @@ class ViewTest {
     @Test
     fun `getRectWithScreenLocation should transform getLocationInScreen method values`() {
         val locationOnScreen = slot<IntArray>()
-        every { view.getLocationOnScreen(capture(locationOnScreen)) } answers {
-            locationOnScreen.captured[0] = 100
-            locationOnScreen.captured[1] = 200
-        }
+        every { view.getLocationOnScreen(capture(locationOnScreen)) } answers
+            {
+                locationOnScreen.captured[0] = 100
+                locationOnScreen.captured[1] = 200
+            }
         every { view.width } returns 150
         every { view.height } returns 250
 

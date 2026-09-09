@@ -6,10 +6,7 @@ package mozilla.components.feature.downloads.fake
 
 import mozilla.components.feature.downloads.FileSizeFormatter
 
-/**
- * A fake file size formatter to be used for testing.
- */
+/** A fake file size formatter to be used for testing. */
 class FakeFileSizeFormatter : FileSizeFormatter {
-    override fun formatSizeInBytes(sizeInBytes: Long): String =
-        sizeInBytes.toString()
+    override fun formatSizeInBytes(sizeInBytes: Long): String = sizeInBytes.toString()
 }

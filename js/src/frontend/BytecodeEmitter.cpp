@@ -513,6 +513,13 @@ bool BytecodeEmitter::emitPopN(unsigned n) {
     return emit1(JSOp::Pop) && emit1(JSOp::Pop);
   }
 
+  // Emit multiple ops if there are many values to pop.
+  while (n > UINT16_MAX) {
+    if (!emitUint16Operand(JSOp::PopN, UINT16_MAX)) {
+      return false;
+    }
+    n -= UINT16_MAX;
+  }
   return emitUint16Operand(JSOp::PopN, n);
 }
 
@@ -2121,10 +2128,9 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitSwitch(SwitchStatement* switchStmt) {
   return true;
 }
 
-bool BytecodeEmitter::allocateResumeIndex(BytecodeOffset offset,
-                                          uint32_t* resumeIndex) {
-  static constexpr uint32_t MaxResumeIndex = BitMask(24);
+static constexpr size_t MaxResumeIndex = BitMask(24);
 
+bool BytecodeEmitter::checkResumeIndexLimit() {
   static_assert(
       MaxResumeIndex < uint32_t(AbstractGeneratorObject::RESUME_INDEX_RUNNING),
       "resumeIndex should not include magic AbstractGeneratorObject "
@@ -2134,29 +2140,75 @@ bool BytecodeEmitter::allocateResumeIndex(BytecodeOffset offset,
       "resumeIndex * sizeof(uintptr_t) must fit in an int32. JIT code relies "
       "on this when loading resume entries from BaselineScript");
 
-  *resumeIndex = bytecodeSection().resumeOffsetList().length();
-  if (*resumeIndex > MaxResumeIndex) {
+  size_t numIndices =
+      bytecodeSection().resumeOffsetList().length() +
+      bytecodeSection().tableSwitchOffsetList().numCaseOffsets();
+  if (numIndices > MaxResumeIndex) {
     reportError(nullptr, JSMSG_TOO_MANY_RESUME_INDEXES);
     return false;
   }
+  return true;
+}
 
+bool BytecodeEmitter::allocateResumeIndex(BytecodeOffset offset,
+                                          uint32_t* resumeIndex) {
+  if (!checkResumeIndexLimit()) {
+    return false;
+  }
+  *resumeIndex = bytecodeSection().resumeOffsetList().length();
   return bytecodeSection().resumeOffsetList().append(offset.value());
 }
 
-bool BytecodeEmitter::allocateResumeIndexRange(
-    mozilla::Span<BytecodeOffset> offsets, uint32_t* firstResumeIndex) {
-  *firstResumeIndex = 0;
+bool BytecodeEmitter::allocateTableSwitchResumeIndexRange(
+    mozilla::Span<BytecodeOffset> caseOffsets, BytecodeOffset switchOffset,
+    uint32_t* firstResumeIndex) {
+  auto& list = bytecodeSection().tableSwitchOffsetList();
 
-  for (size_t i = 0, len = offsets.size(); i < len; i++) {
-    uint32_t resumeIndex;
-    if (!allocateResumeIndex(offsets[i], &resumeIndex)) {
+  // The final resume index depends on the number of yield and await ops in the
+  // script, so store an index relative to the first table switch entry for now.
+  // finishResumeOffsets adjusts it.
+  *firstResumeIndex = list.numCaseOffsets();
+  if (!list.appendTableSwitch(switchOffset)) {
+    return false;
+  }
+
+  for (BytecodeOffset offset : caseOffsets) {
+    if (!checkResumeIndexLimit()) {
       return false;
     }
-    if (i == 0) {
-      *firstResumeIndex = resumeIndex;
+    if (!list.appendCaseOffset(offset)) {
+      return false;
     }
   }
 
+  return true;
+}
+
+bool BytecodeEmitter::finishResumeOffsets() {
+  auto& resumeOffsets = bytecodeSection().resumeOffsetList();
+  auto& tableSwitches = bytecodeSection().tableSwitchOffsetList();
+
+  size_t numIndices = resumeOffsets.length() + tableSwitches.numCaseOffsets();
+  MOZ_RELEASE_ASSERT(numIndices <= MaxResumeIndex + 1);
+
+  // Without yield/await entries, the relative indices SwitchEmitter wrote are
+  // already the final resume indices, so there's nothing to patch.
+  if (resumeOffsets.length() == 0) {
+    resumeOffsets.setFrom(std::move(tableSwitches.caseOffsets));
+    return true;
+  }
+
+  // The table switch entries go after the yield and await entries.
+  uint32_t firstTableSwitchIndex = resumeOffsets.length();
+  if (!resumeOffsets.appendAll(tableSwitches.caseOffsets)) {
+    return false;
+  }
+  for (BytecodeOffset switchOffset : tableSwitches.switchOffsets) {
+    jsbytecode* pc = bytecodeSection().code(switchOffset);
+    MOZ_ASSERT(JSOp(*pc) == JSOp::TableSwitch);
+    pc += 3 * JUMP_OFFSET_LEN;
+    SET_RESUMEINDEX(pc, GET_RESUMEINDEX(pc) + firstTableSwitchIndex);
+  }
   return true;
 }
 
@@ -2495,6 +2547,10 @@ js::UniquePtr<ImmutableScriptData>
 BytecodeEmitter::createImmutableScriptData() {
   uint32_t nslots;
   if (!getNslots(&nslots)) {
+    return nullptr;
+  }
+
+  if (!finishResumeOffsets()) {
     return nullptr;
   }
 
@@ -3061,10 +3117,47 @@ bool BytecodeEmitter::emitIteratorCloseInScope(EmitterScope& currentScope,
   //                [stack] ...
 }
 
+bool BytecodeEmitter::emitDestructuringIteratorClose(
+    SelfHostedIter selfHostedIter) {
+  //                [stack] ... OBJ NEXT ITER DONE
+
+  InternalIfEmitter ifDone(this);
+  if (!ifDone.emitThenElse()) {
+    //              [stack] ... OBJ NEXT ITER
+    return false;
+  }
+  if (!emitPopN(2)) {
+    //              [stack] ... OBJ
+    return false;
+  }
+  if (!ifDone.emitElse()) {
+    //              [stack] ... OBJ NEXT ITER
+    return false;
+  }
+  if (!emit1(JSOp::Swap)) {
+    //              [stack] ... OBJ ITER NEXT
+    return false;
+  }
+  if (!emit1(JSOp::Pop)) {
+    //              [stack] ... OBJ ITER
+    return false;
+  }
+  if (!emitIteratorCloseInInnermostScope(
+          IteratorKind::Sync, CompletionKind::Normal, selfHostedIter)) {
+    //              [stack] ... OBJ
+    return false;
+  }
+  return ifDone.emitEnd();
+}
+
 template <typename InnerEmitter>
 bool BytecodeEmitter::wrapWithDestructuringTryNote(int32_t iterDepth,
                                                    InnerEmitter emitter) {
   MOZ_ASSERT(bytecodeSection().stackDepth() >= iterDepth);
+#ifdef DEBUG
+  auto* control = findInnermostNestableControl<DestructuringControl>();
+  MOZ_ASSERT(*control->nonLocalExitStackDepth() == iterDepth);
+#endif
 
   // Pad a nop at the beginning of the bytecode covered by the trynote so
   // that when unwinding environments, we may unwind to the scope
@@ -3487,6 +3580,12 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
   // IteratorClose is called upon exception only if done is false.
   int32_t tryNoteDepth = bytecodeSection().stackDepth();
 
+  // A forced return from a `yield` will jump out of the destructuring region,
+  // so in that case DestructuringControl emits the IteratorClose after the
+  // loop.
+  DestructuringControl control(this, selfHostedIter);
+  control.setNonLocalExitStackDepth(tryNoteDepth);
+
   for (ParseNode* member : pattern->contents()) {
     bool isFirst = member == pattern->head();
     DebugOnly<bool> hasNext = !!member->pn_next;
@@ -3750,34 +3849,8 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
   // The last DONE value is on top of the stack. If not DONE, call
   // IteratorClose.
   //                [stack] ... OBJ NEXT ITER DONE
-
-  InternalIfEmitter ifDone(this);
-  if (!ifDone.emitThenElse()) {
-    //              [stack] ... OBJ NEXT ITER
-    return false;
-  }
-  if (!emitPopN(2)) {
+  if (!control.emitEnd(this)) {
     //              [stack] ... OBJ
-    return false;
-  }
-  if (!ifDone.emitElse()) {
-    //              [stack] ... OBJ NEXT ITER
-    return false;
-  }
-  if (!emit1(JSOp::Swap)) {
-    //              [stack] ... OBJ ITER NEXT
-    return false;
-  }
-  if (!emit1(JSOp::Pop)) {
-    //              [stack] ... OBJ ITER
-    return false;
-  }
-  if (!emitIteratorCloseInInnermostScope(
-          IteratorKind::Sync, CompletionKind::Normal, selfHostedIter)) {
-    //              [stack] ... OBJ
-    return false;
-  }
-  if (!ifDone.emitEnd()) {
     return false;
   }
 
@@ -6517,6 +6590,12 @@ bool BytecodeEmitter::finishReturn(BytecodeOffset setRvalOffset) {
   }
 
   if (needsFinalYield) {
+    // A forced return from a `yield` expression can have extra values on the
+    // expression stack. Pop them here.
+    int32_t nvalues = bytecodeSection().stackDepth();
+    if (nvalues > 0 && !emitPopN(nvalues)) {
+      return false;
+    }
     if (!emitJump(JSOp::Goto, &finalYields)) {
       return false;
     }
@@ -6532,6 +6611,101 @@ bool BytecodeEmitter::finishReturn(BytecodeOffset setRvalOffset) {
 
   // Nothing special needs to be done.
   return emitReturnRval();
+}
+
+bool BytecodeEmitter::emitCheckYieldResumeKind() {
+  // The bytecode below relies on Next being falsy and Throw/Return being
+  // truthy.
+  static_assert(uint8_t(GeneratorResumeKind::Next) == 0);
+  static_assert(uint8_t(GeneratorResumeKind::Throw) != 0);
+  static_assert(uint8_t(GeneratorResumeKind::Return) != 0);
+
+  const int32_t startDepth = bytecodeSection().stackDepth();
+  //                [stack] RVAL RESUMEKIND
+
+  if (!emit1(JSOp::Dup)) {
+    //              [stack] RVAL RESUMEKIND RESUMEKIND
+    return false;
+  }
+  InternalIfEmitter ifNotNext(this);
+  if (!ifNotNext.emitThen()) {
+    //              [stack] RVAL RESUMEKIND
+    return false;
+  }
+
+  // Handle Throw and Return.
+  if (!emitPushResumeKind(GeneratorResumeKind::Throw)) {
+    //              [stack] RVAL RESUMEKIND THROW
+    return false;
+  }
+  if (!emit1(JSOp::StrictEq)) {
+    //              [stack] RVAL (RESUMEKIND==Throw)
+    return false;
+  }
+  InternalIfEmitter ifThrow(this);
+  if (!ifThrow.emitThen()) {
+    //              [stack] RVAL
+    return false;
+  }
+  if (!emit1(JSOp::Throw)) {
+    //              [stack]
+    return false;
+  }
+  bytecodeSection().setStackDepth(startDepth - 1);
+  if (!ifThrow.emitEnd()) {
+    //              [stack] RVAL
+    return false;
+  }
+  if (!emit1(JSOp::SetRval)) {
+    //              [stack]
+    return false;
+  }
+  {
+    NonLocalExitControl nle(this, NonLocalExitKind::Return);
+    if (!nle.emitReturn()) {
+      return false;
+    }
+  }
+
+  bytecodeSection().setStackDepth(startDepth);
+  if (!ifNotNext.emitEnd()) {
+    //              [stack] RVAL RESUMEKIND
+    return false;
+  }
+  if (!emit1(JSOp::Pop)) {
+    //              [stack] RVAL
+    return false;
+  }
+  return true;
+}
+
+bool BytecodeEmitter::emitCheckAwaitResumeKind() {
+  // An `await` is only resumed by a promise reaction, so we don't have to
+  // handle the Return resume kind here, only Next and Throw.
+  // See https://tc39.es/ecma262/#await.
+
+  // The bytecode below relies on Next being falsy and Throw being truthy.
+  static_assert(uint8_t(GeneratorResumeKind::Next) == 0);
+  static_assert(uint8_t(GeneratorResumeKind::Throw) != 0);
+
+  const int32_t startDepth = bytecodeSection().stackDepth();
+  //                [stack] RVAL RESUMEKIND
+
+  InternalIfEmitter ifThrow(this);
+  if (!ifThrow.emitThen()) {
+    //              [stack] RVAL
+    return false;
+  }
+  if (!emit1(JSOp::Throw)) {
+    //              [stack]
+    return false;
+  }
+  bytecodeSection().setStackDepth(startDepth - 1);
+  if (!ifThrow.emitEnd()) {
+    //              [stack] RVAL
+    return false;
+  }
+  return true;
 }
 
 bool BytecodeEmitter::emitGetDotGeneratorInScope(EmitterScope& currentScope) {
@@ -6554,10 +6728,10 @@ bool BytecodeEmitter::emitInitialYield(UnaryNode* yieldNode) {
   }
 
   if (!emitYieldOp(JSOp::InitialYield)) {
-    //              [stack] RVAL GENERATOR RESUMEKIND
+    //              [stack] RVAL RESUMEKIND
     return false;
   }
-  if (!emit1(JSOp::CheckResumeKind)) {
+  if (!emitCheckYieldResumeKind()) {
     //              [stack] RVAL
     return false;
   }
@@ -6617,11 +6791,11 @@ bool BytecodeEmitter::emitYield(UnaryNode* yieldNode) {
   }
 
   if (!emitYieldOp(JSOp::Yield)) {
-    //              [stack] YIELDRESULT GENERATOR RESUMEKIND
+    //              [stack] YIELDRESULT RESUMEKIND
     return false;
   }
 
-  if (!emit1(JSOp::CheckResumeKind)) {
+  if (!emitCheckYieldResumeKind()) {
     //              [stack] YIELDRESULT
     return false;
   }
@@ -6678,10 +6852,10 @@ bool BytecodeEmitter::emitAwaitInScope(EmitterScope& currentScope) {
     return false;
   }
   if (!emitYieldOp(JSOp::Await)) {
-    //              [stack] RESOLVED GENERATOR RESUMEKIND
+    //              [stack] RESOLVED RESUMEKIND
     return false;
   }
-  if (!emit1(JSOp::CheckResumeKind)) {
+  if (!emitCheckAwaitResumeKind()) {
     //              [stack] RESOLVED
     return false;
   }
@@ -6711,8 +6885,6 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
   IteratorKind iterKind = sc->asSuspendableContext()->isAsync()
                               ? IteratorKind::Async
                               : IteratorKind::Sync;
-  bool needsIteratorResult = sc->asSuspendableContext()->needsIteratorResult();
-
   // Steps 2-5.
   if (!emitTree(iter)) {
     //              [stack] ITERABLE
@@ -6988,13 +7160,6 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
       //            [stack] NEXT ITER RET ITER RECEIVED
       return false;
     }
-    if (needsIteratorResult) {
-      if (!emitAtomOp(JSOp::GetProp,
-                      TaggedParserAtomIndex::WellKnown::value())) {
-        //          [stack] NEXT ITER RET ITER VAL
-        return false;
-      }
-    }
     if (!emitCall(JSOp::Call, 1)) {
       //            [stack] NEXT ITER RESULT
       return false;
@@ -7037,21 +7202,6 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
       //            [stack] NEXT ITER VALUE
       return false;
     }
-    if (needsIteratorResult) {
-      if (!emitPrepareIteratorResult()) {
-        //          [stack] NEXT ITER VALUE RESULT
-        return false;
-      }
-      if (!emit1(JSOp::Swap)) {
-        //          [stack] NEXT ITER RESULT VALUE
-        return false;
-      }
-      if (!emitFinishIteratorResult(true)) {
-        //          [stack] NEXT ITER RESULT
-        return false;
-      }
-    }
-
     if (!ifReturnDone.emitElse()) {
       //            [stack] NEXT ITER RESULT
       return false;
@@ -7064,7 +7214,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     }
 
     if (!ifReturnDone.emitEnd()) {
-      //            [stack] NEXT ITER RESULT
+      //            [stack] NEXT ITER VALUE
       return false;
     }
 
@@ -7093,18 +7243,17 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     //
     // Step 7.c.iii.2.
     // Step 7.c.viii.2.
-    if (!emitGetDotGeneratorInInnermostScope()) {
-      //            [stack] NEXT ITER RESULT GENOBJ
+    if (!emit1(JSOp::SetRval)) {
+      //            [stack] NEXT ITER
       return false;
     }
-    if (!emitPushResumeKind(GeneratorResumeKind::Return)) {
-      //            [stack] NEXT ITER RESULT GENOBJ RESUMEKIND
-      return false;
+    {
+      NonLocalExitControl nle(this, NonLocalExitKind::Return);
+      if (!nle.emitReturn()) {
+        return false;
+      }
     }
-    if (!emit1(JSOp::CheckResumeKind)) {
-      //            [stack] NEXT ITER RESULT GENOBJ RESUMEKIND
-      return false;
-    }
+    bytecodeSection().setStackDepth(startDepth - 1);
   }
 
   if (!ifKind.emitEnd()) {
@@ -7151,14 +7300,6 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     return false;
   }
   if (!emitYieldOp(JSOp::Yield)) {
-    //              [stack] NEXT ITER RVAL GENOBJ RESUMEKIND
-    return false;
-  }
-  if (!emit1(JSOp::Swap)) {
-    //              [stack] NEXT ITER RVAL RESUMEKIND GENOBJ
-    return false;
-  }
-  if (!emit1(JSOp::Pop)) {
     //              [stack] NEXT ITER RVAL RESUMEKIND
     return false;
   }

@@ -8,13 +8,10 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
-import mozilla.components.browser.state.state.TabPartition
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.concept.base.images.ImageLoader
 
-/**
- * Function responsible for creating a `TabViewHolder` in the `TabsAdapter`.
- */
+/** Function responsible for creating a `TabViewHolder` in the `TabsAdapter`. */
 typealias ViewHolderProvider = (ViewGroup) -> TabViewHolder
 
 /**
@@ -71,7 +68,7 @@ open class TabsAdapter(
         }
     }
 
-    override fun updateTabs(tabs: List<TabSessionState>, tabPartition: TabPartition?, selectedTabId: String?) {
+    override fun updateTabs(tabs: List<TabSessionState>, selectedTabId: String?) {
         this.selectedTabId = selectedTabId
 
         submitList(tabs)

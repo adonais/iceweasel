@@ -27,7 +27,7 @@ fi
 # - UI tests
 # - android lint (takes a long time to run)
 ./gradlew -q \
-        ktlint \
+        ktfmtCheck \
         detekt \
         assembleDebug \
         assembleDebugAndroidTest \

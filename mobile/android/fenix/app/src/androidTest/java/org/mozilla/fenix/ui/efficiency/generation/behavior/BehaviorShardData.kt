@@ -11,10 +11,11 @@ object BehaviorShardData {
         shardIndex: Int,
         shardCount: Int,
         runStateOverride: String? = null,
-    ): List<Array<Any>> = ShardUtils.loadShard(
-        shardIndex = shardIndex,
-        shardCount = shardCount,
-        runStateOverride = runStateOverride,
-        buildForShard = BehaviorCaseFactory::buildBehaviorCasesForShard,
-    )
+    ): List<Array<Any>> =
+        ShardUtils.loadShard(
+            shardIndex = shardIndex,
+            shardCount = shardCount,
+            runStateOverride = runStateOverride,
+            buildForShard = BehaviorCaseFactory::buildBehaviorCasesForShard,
+        )
 }

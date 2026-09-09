@@ -3,7 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * The origin of this IDL file is
- * http://www.w3.org/TR/WebCryptoAPI/
+ * https://w3c.github.io/webcrypto/
  */
 
 typedef DOMString KeyType;
@@ -216,7 +216,7 @@ interface SubtleCrypto {
   [NewObject]
   Promise<any> deriveBits(AlgorithmIdentifier algorithm,
                           CryptoKey baseKey,
-                          optional unsigned long? length = null);
+                          optional [EnforceRange] unsigned long? length = null);
 
   [NewObject]
   Promise<any> importKey(KeyFormat format,

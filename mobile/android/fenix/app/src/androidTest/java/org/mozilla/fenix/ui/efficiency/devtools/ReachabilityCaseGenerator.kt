@@ -15,9 +15,8 @@ object ReachabilityCaseGenerator {
     private const val TAG = "NavCaseGenerator"
 
     /**
-     * Builds the reachability boilerplate report without emitting it anywhere, so a future
-     * consumer (a debug UI, an export, etc.) can reuse the same computation
-     * [logNavigationCaseBoilerplate] uses.
+     * Builds the reachability boilerplate report without emitting it anywhere, so a future consumer (a debug UI, an
+     * export, etc.) can reuse the same computation [logNavigationCaseBoilerplate] uses.
      */
     fun buildNavigationCaseBoilerplateReport(context: PageContext): DevToolReport {
         val cases = NavigationTestPlanner.buildReachabilityCases()
@@ -38,7 +37,8 @@ object ReachabilityCaseGenerator {
                 page = { ${case.propertyName} },
                 state = runState.ifBlank { "Navigation Reachability" },
             ),
-            """.trimIndent()
+            """
+                .trimIndent()
         }
     }
 

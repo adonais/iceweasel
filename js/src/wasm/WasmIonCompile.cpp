@@ -321,7 +321,6 @@ class RootCompiler {
   // The current stack of bytecode offsets of the caller functions of the
   // function currently being inlined.
   BytecodeOffsetVector inlinedCallerOffsets_;
-  InlinedCallerOffsetIndex inlinedCallerOffsetsIndex_;
 
   // Compilation statistics for this function.
   CompileStats funcStats_;
@@ -389,17 +388,15 @@ class RootCompiler {
 
   [[nodiscard]] bool generate();
 
-  InlinedCallerOffsetIndex inlinedCallerOffsetsIndex() const {
-    return inlinedCallerOffsetsIndex_;
-  }
-
   // Add a compile info for an inlined function. This keeps the inlined
   // function's compile info alive for the outermost function's
-  // compilation.
+  // compilation. On success, `*inlinedCallerOffsetsIndex` is set to the
+  // index the inlined callee should use for its call and trap sites.
   [[nodiscard]] CompileInfo* startInlineCall(
       uint32_t callerFuncIndex, BytecodeOffset callerOffset,
       uint32_t calleeFuncIndex, uint32_t numLocals, size_t inlineeBytecodeSize,
-      InliningHeuristics::CallKind callKind);
+      InliningHeuristics::CallKind callKind,
+      InlinedCallerOffsetIndex* inlinedCallerOffsetsIndex);
   void finishInlineCall();
 
   // Add a try note and return the index.
@@ -440,6 +437,10 @@ class FunctionCompiler {
   // second inlinee, etc.
   const FunctionCompiler* callerCompiler_;
   const uint32_t inliningDepth_;
+
+  // The index of the inlined caller offsets for this function's call and trap
+  // sites. This is 'none' for the root function and set per inlined callee.
+  const InlinedCallerOffsetIndex inlinedCallerOffsetsIndex_;
 
   // Information about this function's bytecode and parsing state
   IonOpIter iter_;
@@ -497,6 +498,7 @@ class FunctionCompiler {
       : rootCompiler_(rootCompiler),
         callerCompiler_(nullptr),
         inliningDepth_(0),
+        inlinedCallerOffsetsIndex_(),
         iter_(rootCompiler.codeMeta(), decoder, locals),
         functionBodyOffset_(decoder.beginOffset()),
         func_(func),
@@ -514,10 +516,12 @@ class FunctionCompiler {
   // Construct a FunctionCompiler for an inlined callee of a compilation
   FunctionCompiler(const FunctionCompiler* callerCompiler, Decoder& decoder,
                    const FuncCompileInput& func, const ValTypeVector& locals,
-                   const CompileInfo& compileInfo)
+                   const CompileInfo& compileInfo,
+                   InlinedCallerOffsetIndex inlinedCallerOffsetsIndex)
       : rootCompiler_(callerCompiler->rootCompiler_),
         callerCompiler_(callerCompiler),
         inliningDepth_(callerCompiler_->inliningDepth() + 1),
+        inlinedCallerOffsetsIndex_(inlinedCallerOffsetsIndex),
         iter_(rootCompiler_.codeMeta(), decoder, locals),
         functionBodyOffset_(decoder.beginOffset()),
         func_(func),
@@ -555,16 +559,16 @@ class FunctionCompiler {
   MBasicBlock* getCurBlock() const { return curBlock_; }
   BytecodeOffset bytecodeOffset() const { return iter_.bytecodeOffset(); }
   CallSiteDesc callSiteDesc(CallSiteKind kind) {
-    return CallSiteDesc(bytecodeOffset().offset(),
-                        rootCompiler_.inlinedCallerOffsetsIndex(), kind);
+    return CallSiteDesc(bytecodeOffset().offset(), inlinedCallerOffsetsIndex_,
+                        kind);
   }
   TrapSiteDesc trapSiteDesc() {
     return TrapSiteDesc(wasm::BytecodeOffset(bytecodeOffset()),
-                        rootCompiler_.inlinedCallerOffsetsIndex());
+                        inlinedCallerOffsetsIndex_);
   }
   TrapSiteDesc trapSiteDescWithCallSiteLineNumber() {
     return TrapSiteDesc(wasm::BytecodeOffset(readBytecodeOffset()),
-                        rootCompiler_.inlinedCallerOffsetsIndex());
+                        inlinedCallerOffsetsIndex_);
   }
   FeatureUsage featureUsage() const { return iter_.featureUsage(); }
 
@@ -844,16 +848,6 @@ class FunctionCompiler {
       return nullptr;
     }
     T* ins = T::New(alloc(), op, type);
-    curBlock_->add(ins);
-    return ins;
-  }
-
-  template <class T>
-  MDefinition* binary(MDefinition* lhs, MDefinition* rhs) {
-    if (inDeadCode()) {
-      return nullptr;
-    }
-    T* ins = T::New(alloc(), lhs, rhs);
     curBlock_->add(ins);
     return ins;
   }
@@ -2834,7 +2828,7 @@ class FunctionCompiler {
     MOZ_ASSERT(!inDeadCode());
 
     CallCompileState callState(ABIKind::Wasm);
-    CallSiteDesc desc(bytecodeOffset, rootCompiler_.inlinedCallerOffsetsIndex(),
+    CallSiteDesc desc(bytecodeOffset, inlinedCallerOffsetsIndex_,
                       CallSiteKind::Func);
     ResultType resultType = ResultType::Vector(funcType.results());
     auto callee = CalleeDesc::function(funcIndex);
@@ -2968,7 +2962,7 @@ class FunctionCompiler {
       return false;
     }
 
-    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsetsIndex(),
+    CallSiteDesc desc(lineOrBytecode, inlinedCallerOffsetsIndex_,
                       CallSiteKind::Indirect);
     ArgTypeVector argTypes(funcType);
     ResultType resultType = ResultType::Vector(funcType.results());
@@ -2985,7 +2979,7 @@ class FunctionCompiler {
     MOZ_ASSERT(!inDeadCode());
 
     CallCompileState callState(ABIKind::Wasm);
-    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsetsIndex(),
+    CallSiteDesc desc(lineOrBytecode, inlinedCallerOffsetsIndex_,
                       CallSiteKind::Import);
     auto callee = CalleeDesc::import(instanceDataOffset);
     ArgTypeVector argTypes(funcType);
@@ -3007,7 +3001,7 @@ class FunctionCompiler {
 
     MOZ_ASSERT(builtin.failureMode == FailureMode::Infallible);
 
-    CallSiteDesc desc(bytecodeOffset, rootCompiler_.inlinedCallerOffsetsIndex(),
+    CallSiteDesc desc(bytecodeOffset, inlinedCallerOffsetsIndex_,
                       CallSiteKind::Symbolic);
     auto callee = CalleeDesc::builtin(builtin.identity);
 
@@ -3087,7 +3081,7 @@ class FunctionCompiler {
       return true;
     }
 
-    CallSiteDesc desc(bytecodeOffset, rootCompiler_.inlinedCallerOffsetsIndex(),
+    CallSiteDesc desc(bytecodeOffset, inlinedCallerOffsetsIndex_,
                       CallSiteKind::Symbolic);
     if (builtin.failureMode != FailureMode::Infallible &&
         !beginCatchableCall(callState)) {
@@ -3253,7 +3247,7 @@ class FunctionCompiler {
 
     CallCompileState callState(ABIKind::Wasm);
     CalleeDesc callee = CalleeDesc::wasmFuncRef();
-    CallSiteDesc desc(lineOrBytecode, rootCompiler_.inlinedCallerOffsetsIndex(),
+    CallSiteDesc desc(lineOrBytecode, inlinedCallerOffsetsIndex_,
                       CallSiteKind::FuncRef);
     ArgTypeVector argTypes(funcType);
     ResultType resultType = ResultType::Vector(funcType.results());
@@ -5816,6 +5810,8 @@ class FunctionCompiler {
 #ifdef ENABLE_WASM_JSPI
   bool emitContNew();
   bool emitContBind();
+  [[nodiscard]] bool makeSwitchStackResultArea(const ValTypeVector& types,
+                                               MWasmStackResultArea** out);
   bool emitStoreSuspendParams(MDefinition* paramsArea,
                               const ValTypeVector& suspendTagParams,
                               const DefVector& suspendParams,
@@ -5834,14 +5830,9 @@ class FunctionCompiler {
   bool emitSetGlobal();
   bool emitTeeGlobal();
   template <typename MIRClass>
-  bool emitUnary(ValType operandType);
-  template <typename MIRClass>
   bool emitConversion(ValType operandType, ValType resultType);
   template <typename MIRClass>
   bool emitUnaryWithType(ValType operandType, MIRType mirType);
-  template <typename MIRClass>
-  bool emitConversionWithType(ValType operandType, ValType resultType,
-                              MIRType mirType);
   bool emitTruncate(ValType operandType, ValType resultType, bool isUnsigned,
                     bool isSaturating);
   bool emitSignExtend(uint32_t srcSize, uint32_t targetSize);
@@ -6412,14 +6403,16 @@ bool FunctionCompiler::emitInlineCall(const FuncType& funcType,
     return false;
   }
 
+  InlinedCallerOffsetIndex inlinedCallerOffsetsIndex;
   CompileInfo* compileInfo = rootCompiler().startInlineCall(
       this->funcIndex(), bytecodeOffset(), funcIndex, locals.length(),
-      funcRange.size(), callKind);
+      funcRange.size(), callKind, &inlinedCallerOffsetsIndex);
   if (!compileInfo) {
     return false;
   }
 
-  FunctionCompiler calleeCompiler(this, d, func, locals, *compileInfo);
+  FunctionCompiler calleeCompiler(this, d, func, locals, *compileInfo,
+                                  inlinedCallerOffsetsIndex);
   if (!calleeCompiler.initInline(args)) {
     MOZ_ASSERT(!error);
     return false;
@@ -6685,17 +6678,6 @@ bool FunctionCompiler::emitSetGlobal() {
 }
 
 template <typename MIRClass>
-bool FunctionCompiler::emitUnary(ValType operandType) {
-  MDefinition* input;
-  if (!iter().readUnary(operandType, &input)) {
-    return false;
-  }
-
-  iter().setResult(unary<MIRClass>(input));
-  return true;
-}
-
-template <typename MIRClass>
 bool FunctionCompiler::emitConversion(ValType operandType, ValType resultType) {
   MDefinition* input;
   if (!iter().readConversion(operandType, resultType, &input)) {
@@ -6710,19 +6692,6 @@ template <typename MIRClass>
 bool FunctionCompiler::emitUnaryWithType(ValType operandType, MIRType mirType) {
   MDefinition* input;
   if (!iter().readUnary(operandType, &input)) {
-    return false;
-  }
-
-  iter().setResult(unary<MIRClass>(input, mirType));
-  return true;
-}
-
-template <typename MIRClass>
-bool FunctionCompiler::emitConversionWithType(ValType operandType,
-                                              ValType resultType,
-                                              MIRType mirType) {
-  MDefinition* input;
-  if (!iter().readConversion(operandType, resultType, &input)) {
     return false;
   }
 
@@ -9370,22 +9339,23 @@ bool FunctionCompiler::emitContNew() {
     return false;
   }
 
-  const TypeDef& typeDef = codeMeta().types->type(typeIndex);
-  const ContType& contType = typeDef.contType();
-
-  // TODO: Temporary restriction that cont type cannot have params or results.
-  if (!contType.funcType().args().empty() ||
-      !contType.funcType().results().empty()) {
-    unimplementedTrap();
-    return true;
-  }
-
   if (inDeadCode()) {
     return true;
   }
 
+  // Load the type-specific base frame stub pointer from TypeDefInstanceData.
+  uint32_t stubOffset = wasm::Instance::offsetInData(
+      codeMeta().offsetOfContBaseFrameStub(typeIndex));
+  auto* stub = MWasmLoadInstance::New(alloc(), instancePointer_, stubOffset,
+                                      MIRType::Pointer, AliasSet::None());
+  if (!stub) {
+    return false;
+  }
+  curBlock_->add(stub);
+
   MDefinition* result = nullptr;
-  if (!emitInstanceCall1(readBytecodeOffset(), SASigContNew, func, &result)) {
+  if (!emitInstanceCall2(readBytecodeOffset(), SASigContNew, func, stub,
+                         &result)) {
     return false;
   }
   iter().setResult(result);
@@ -9451,6 +9421,26 @@ bool FunctionCompiler::emitStoreSuspendParams(
   return true;
 }
 
+// Always returns a (possibly empty) area, so switch nodes can hold it as a
+// fixed operand. An empty area reserves no stack and byteSize() is 0.
+bool FunctionCompiler::makeSwitchStackResultArea(const ValTypeVector& types,
+                                                 MWasmStackResultArea** out) {
+  *out = nullptr;
+  auto* area = MWasmStackResultArea::New(alloc());
+  if (!area || !area->init(alloc(), types.length())) {
+    return false;
+  }
+  size_t offset = 0;
+  for (uint32_t i = 0; i < types.length(); i++) {
+    MWasmStackResultArea::StackResult loc(offset, types[i].toMIRType());
+    area->initResult(i, loc);
+    offset = loc.endOffset();
+  }
+  curBlock_->add(area);
+  *out = area;
+  return true;
+}
+
 bool FunctionCompiler::emitSuspend() {
   uint32_t tagIndex;
   DefVector suspendParams;
@@ -9464,12 +9454,6 @@ bool FunctionCompiler::emitSuspend() {
 
   const TagDesc& tagDesc = codeMeta().tags[tagIndex];
   const TagType& tagType = *tagDesc.type;
-
-  // TODO: Temporary restriction that suspend tags cannot have results.
-  if (!tagType.resultTypes().empty()) {
-    unimplementedTrap();
-    return true;
-  }
 
   // TODO: Temporary restriction that we can't be in a try block yet. A
   // resume_throw will be able to trigger an exception that we need to handle.
@@ -9520,14 +9504,40 @@ bool FunctionCompiler::emitSuspend() {
     return false;
   }
 
+  // The suspendResultsArea is always present (empty when the tag has no
+  // results) so MWasmSuspend has a fixed operand set. After re-resume, the tag
+  // results are read from it.
+  const ValTypeVector& tagResults = tagType.resultTypes();
+  MWasmStackResultArea* suspendResultsArea = nullptr;
+  if (!makeSwitchStackResultArea(tagResults, &suspendResultsArea)) {
+    return false;
+  }
+
   // Emit the suspend instruction.
-  MWasmSuspend* suspend =
-      MWasmSuspend::New(alloc(), instancePointer_, suspendedCont, handler,
-                        callSiteDesc(CallSiteKind::StackSwitch));
+  MWasmSuspend* suspend = MWasmSuspend::New(
+      alloc(), instancePointer_, suspendedCont, handler, suspendResultsArea,
+      callSiteDesc(CallSiteKind::StackSwitch));
   if (!suspend) {
     return false;
   }
   curBlock_->add(suspend);
+
+  // After re-resume, read tag results from the suspendResultsArea.
+  if (!tagResults.empty()) {
+    DefVector resultDefs;
+    for (uint32_t i = 0; i < tagResults.length(); i++) {
+      if (!mirGen().ensureBallast()) {
+        return false;
+      }
+      MWasmStackResult* stackResult =
+          MWasmStackResult::New(alloc(), suspendResultsArea, i);
+      if (!stackResult || !resultDefs.append(stackResult)) {
+        return false;
+      }
+      curBlock_->add(stackResult);
+    }
+    iter().setResults(resultDefs.length(), resultDefs);
+  }
 
   return true;
 }
@@ -9545,26 +9555,16 @@ bool FunctionCompiler::emitResume() {
     return true;
   }
 
-  // TODO: Temporary restriction that cont type cannot have params or results.
-  const TypeDef& typeDef = codeMeta().types->type(typeIndex);
-  const ContType& contType = typeDef.contType();
-  if (!contType.funcType().args().empty() ||
-      !contType.funcType().results().empty()) {
-    unimplementedTrap();
-    return true;
-  }
-
-  // TODO: Temporary restriction that suspend tags cannot have params or
-  // results.
+  // TODO: Temporary restriction that suspend tags cannot have switch handlers.
   for (const HandlerExpr& handler : handlers) {
-    const TagDesc& tagDesc = codeMeta().tags[handler.tagIndex()];
-    const TagType& tagType = *tagDesc.type;
-
-    if (handler.isSwitch() || !tagType.resultTypes().empty()) {
+    if (handler.isSwitch()) {
       unimplementedTrap();
       return true;
     }
   }
+
+  const TypeDef& contTypeDef = codeMeta().types->type(typeIndex);
+  const FuncType& contFuncType = contTypeDef.contType().funcType();
 
   // Start with a resume barrier which will mark the stack if it hasn't yet and
   // we're in an incremental GC.
@@ -9574,6 +9574,43 @@ bool FunctionCompiler::emitResume() {
     return false;
   }
   curBlock_->add(barrier);
+
+  // Allocate the cont params area (empty when the cont takes none) and emit
+  // MWasmPrepareResume unconditionally. It validates the continuation (trapping
+  // if it is not resumable) and computes where the args go: the resumer's own
+  // resumeParamsArea for a fresh continuation, or the suspender's advertised
+  // suspendResultsArea for a suspended one, so the args are written straight
+  // there without an extra copy. Emitting it for every resume also means the
+  // resumability check happens once here rather than again in EmitResume.
+  MWasmStackResultArea* resumeParamsArea = nullptr;
+  if (!makeSwitchStackResultArea(contFuncType.args(), &resumeParamsArea)) {
+    return false;
+  }
+  MWasmPrepareResume* prepareResume =
+      MWasmPrepareResume::New(alloc(), cont, resumeParamsArea, trapSiteDesc());
+  if (!prepareResume) {
+    return false;
+  }
+  curBlock_->add(prepareResume);
+  for (uint32_t i = 0; i < args.length(); i++) {
+    if (!mirGen().ensureBallast()) {
+      return false;
+    }
+    size_t argOffset = resumeParamsArea->result(i).offset();
+    MWasmStoreStackResult* store =
+        MWasmStoreStackResult::New(alloc(), prepareResume, argOffset, args[i]);
+    if (!store) {
+      return false;
+    }
+    curBlock_->add(store);
+  }
+
+  // If the cont has results, allocate a stack area for them so the typed base
+  // frame stub can store them; results are read after the fallthrough.
+  MWasmStackResultArea* contResultsArea = nullptr;
+  if (!makeSwitchStackResultArea(contFuncType.results(), &contResultsArea)) {
+    return false;
+  }
 
   MBasicBlock* fallthroughBlock = nullptr;
   MBasicBlock* prePadBlock = nullptr;
@@ -9602,19 +9639,18 @@ bool FunctionCompiler::emitResume() {
         1 + codeMeta().getTagType(handler.tagIndex()).argTypes().length();
   }
 
-  MWasmStackResultArea* handlersResultArea = nullptr;
-  if (numResultsAreaItems) {
-    handlersResultArea = MWasmStackResultArea::New(alloc());
-    if (!handlersResultArea ||
-        !handlersResultArea->init(alloc(), numResultsAreaItems)) {
-      return false;
-    }
-    curBlock_->add(handlersResultArea);
+  // Always present (empty when the resume has no handlers) so MWasmResume has a
+  // fixed operand set.
+  MWasmStackResultArea* handlersResultArea = MWasmStackResultArea::New(alloc());
+  if (!handlersResultArea ||
+      !handlersResultArea->init(alloc(), numResultsAreaItems)) {
+    return false;
   }
+  curBlock_->add(handlersResultArea);
 
-  MWasmResume* resume =
-      MWasmResume::New(alloc(), callSiteDesc(CallSiteKind::StackSwitch),
-                       tryNote, instancePointer_, cont, handlersResultArea);
+  MWasmResume* resume = MWasmResume::New(
+      alloc(), callSiteDesc(CallSiteKind::StackSwitch), tryNote,
+      instancePointer_, cont, handlersResultArea, contResultsArea);
   if (!resume ||
       !resume->init(fallthroughBlock, prePadBlock, handlers.length())) {
     return false;
@@ -9707,6 +9743,25 @@ bool FunctionCompiler::emitResume() {
 
   // Compilation continues in the fallthroughBlock.
   curBlock_ = fallthroughBlock;
+
+  // Read cont results from contResultsArea into the value stack.
+  if (!contFuncType.results().empty()) {
+    size_t numResults = contFuncType.results().length();
+    DefVector resultDefs;
+    for (uint32_t i = 0; i < numResults; i++) {
+      if (!mirGen().ensureBallast()) {
+        return false;
+      }
+      MWasmStackResult* stackResult =
+          MWasmStackResult::New(alloc(), contResultsArea, i);
+      if (!stackResult || !resultDefs.append(stackResult)) {
+        return false;
+      }
+      curBlock_->add(stackResult);
+    }
+    iter().setResults(resultDefs.length(), resultDefs);
+  }
+
   return true;
 }
 
@@ -11067,7 +11122,8 @@ bool RootCompiler::generate() {
 CompileInfo* RootCompiler::startInlineCall(
     uint32_t callerFuncIndex, BytecodeOffset callerOffset,
     uint32_t calleeFuncIndex, uint32_t numLocals, size_t inlineeBytecodeSize,
-    InliningHeuristics::CallKind callKind) {
+    InliningHeuristics::CallKind callKind,
+    InlinedCallerOffsetIndex* inlinedCallerOffsetsIndex) {
   if (callKind == InliningHeuristics::CallKind::Direct) {
     inliningStats_.inlinedDirectBytecodeSize += inlineeBytecodeSize;
     inliningStats_.inlinedDirectFunctions += 1;
@@ -11105,7 +11161,7 @@ CompileInfo* RootCompiler::startInlineCall(
   }
 
   if (!inliningContext_.append(std::move(inlinedCallerOffsets),
-                               &inlinedCallerOffsetsIndex_)) {
+                               inlinedCallerOffsetsIndex)) {
     return nullptr;
   }
 
@@ -11162,6 +11218,16 @@ bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
     JitSpew(JitSpew_Codegen,
             "# wasm::IonCompileFunctions: starting on function index %d",
             (int)func.index);
+
+#ifdef DEBUG
+    // Snapshot the "frontier" of the trapsite vectors so we can determine
+    // which ones are added to during compilation of this function.
+    mozilla::EnumeratedArray<Trap, uint32_t, size_t(Trap::Limit)>
+        trapSitesBefore;
+    for (Trap kind : mozilla::MakeEnumeratedRange(Trap::Limit)) {
+      trapSitesBefore[kind] = uint32_t(masm.trapSites().length(kind));
+    }
+#endif
 
     Decoder d(func.begin, func.end, func.bytecodeOffset, error);
 
@@ -11235,6 +11301,24 @@ bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
     if (!code->funcs.emplaceBack(func.index, observedFeatures)) {
       return false;
     }
+
+#ifdef DEBUG
+    // Get a second snapshot of the frontier of the TrapSite vectors, and
+    // use this to check that traps that need a stackmap, actually have one.
+    mozilla::EnumeratedArray<Trap, uint32_t, size_t(Trap::Limit)>
+        trapSitesAfter;
+    for (Trap kind : mozilla::MakeEnumeratedRange(Trap::Limit)) {
+      trapSitesAfter[kind] = uint32_t(masm.trapSites().length(kind));
+    }
+
+    // Do the check.  This asserts if the check fails.
+    auto checkThisTrapKind = [](Trap t) -> bool {
+      // Temporary setting, to make all of this a no-op.
+      return false;
+    };
+    CheckStackMapsForTraps(masm, code->stackMaps, trapSitesBefore,
+                           trapSitesAfter, checkThisTrapKind);
+#endif
 
     JitSpew(JitSpew_Codegen,
             "# wasm::IonCompileFunctions: completed function index %d",

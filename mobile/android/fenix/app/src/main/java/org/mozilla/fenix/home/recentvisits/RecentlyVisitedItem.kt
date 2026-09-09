@@ -7,9 +7,7 @@ package org.mozilla.fenix.home.recentvisits
 import mozilla.components.concept.storage.HistoryMetadata
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryGroup
 
-/**
- * History items as individual or groups of previously accessed webpages.
- */
+/** History items as individual or groups of previously accessed webpages. */
 sealed class RecentlyVisitedItem {
     /**
      * A history highlight - previously accessed webpage of particular importance.

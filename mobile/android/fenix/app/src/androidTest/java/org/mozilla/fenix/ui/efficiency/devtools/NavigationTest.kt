@@ -16,8 +16,7 @@ import org.mozilla.fenix.ui.efficiency.helpers.PageContext
  * NavigationTest
  *
  * Purpose:
- * - Verify that each selected page/component can be reached via `navigateToPage()`
- *   from a fresh test setup.
+ * - Verify that each selected page/component can be reached via `navigateToPage()` from a fresh test setup.
  *
  * Why this shape:
  * - Matches the same parameterized structure already proven to work in this project.
@@ -25,13 +24,11 @@ import org.mozilla.fenix.ui.efficiency.helpers.PageContext
  * - Allows the case list to be pasted in from a helper/generator so maintenance stays low.
  *
  * Future direction:
- * - The static `listOf(...)` below can be replaced or regenerated from a helper that reflects
- *   over PageContext and prints `Case(...)` boilerplate.
+ * - The static `listOf(...)` below can be replaced or regenerated from a helper that reflects over PageContext and
+ *   prints `Case(...)` boilerplate.
  */
 @RunWith(Parameterized::class)
-class NavigationTest(
-    private val case: Case,
-) : BaseTest() {
+class NavigationTest(private val case: Case) : BaseTest() {
 
     data class Case(
         val label: String,
@@ -39,8 +36,7 @@ class NavigationTest(
         val page: PageContext.() -> BasePage,
         val state: String = "",
     ) {
-        override fun toString(): String =
-            "$label ($testRailId)${if (state.isNotBlank()) " — $state" else ""}"
+        override fun toString(): String = "$label ($testRailId)${if (state.isNotBlank()) " — $state" else ""}"
     }
 
     companion object {
@@ -50,29 +46,30 @@ class NavigationTest(
             val runState = System.getProperty("testRunState")?.takeIf { it.isNotBlank() } ?: ""
 
             // The test cases below are generated from navigation.NavigationTestPlanner
-            val cases = listOf(
-                // pageName=BookmarksPage, property=bookmarks, paths=9
-                Case(
-                    label = "BookmarksPage",
-                    testRailId = "TBD",
-                    page = { bookmarks },
-                    state = runState.ifBlank { "Navigation Reachability" },
-                ),
-                // pageName=BrowserPage, property=browserPage, paths=2
-                Case(
-                    label = "BrowserPage",
-                    testRailId = "TBD",
-                    page = { browserPage },
-                    state = runState.ifBlank { "Navigation Reachability" },
-                ),
-                // pageName=CollectionsPage, property=collections, paths=1
-                Case(
-                    label = "CollectionsPage",
-                    testRailId = "TBD",
-                    page = { collections },
-                    state = runState.ifBlank { "Navigation Reachability" },
-                ),
-            )
+            val cases =
+                listOf(
+                    // pageName=BookmarksPage, property=bookmarks, paths=9
+                    Case(
+                        label = "BookmarksPage",
+                        testRailId = "TBD",
+                        page = { bookmarks },
+                        state = runState.ifBlank { "Navigation Reachability" },
+                    ),
+                    // pageName=BrowserPage, property=browserPage, paths=2
+                    Case(
+                        label = "BrowserPage",
+                        testRailId = "TBD",
+                        page = { browserPage },
+                        state = runState.ifBlank { "Navigation Reachability" },
+                    ),
+                    // pageName=CollectionsPage, property=collections, paths=1
+                    Case(
+                        label = "CollectionsPage",
+                        testRailId = "TBD",
+                        page = { collections },
+                        state = runState.ifBlank { "Navigation Reachability" },
+                    ),
+                )
 
             return cases.map { it as Any }
         }

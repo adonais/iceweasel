@@ -1559,8 +1559,10 @@ void HTMLEditor::HTMLTransferablePreparer::AddDataFlavorsInBestOrder(
   // Create the desired DataFlavor for the type of data
   // we want to get out of the transferable
   // This should only happen in html editors, not plaintext
-  // Note that if you add more flavors here you will need to add them
-  // to DataTransfer::GetExternalClipboardFormats as well.
+  // NOTE: If you change the order or flavors, you need to modify
+  // HTMLEditor::InsertFromDataTransfer() too.
+  // NOTE: If you add more flavors here you will need to add them to
+  // DataTransfer::GetExternalClipboardFormats as well.
   if (mHTMLEditor.IsStyleEditable(mEditingHost)) {
     DebugOnly<nsresult> rvIgnored =
         aTransferable.AddDataFlavor(kNativeHTMLMime);
@@ -2320,46 +2322,128 @@ nsresult HTMLEditor::InsertFromDataTransfer(
     return error.StealNSResult();
   }
 
-  const bool hasPrivateHTMLFlavor =
-      types->Contains(NS_LITERAL_STRING_FROM_CSTRING(kHTMLContext));
-
-  const bool isPlaintextEditor = !IsStyleEditable(&aEditingHost);
-  const SafeToInsertData safeToInsertData =
-      IsSafeToInsertData(aSourcePrincipal);
-
-  uint32_t length = types->Length();
-  for (uint32_t i = 0; i < length; i++) {
+  enum class FlavorType {
+    NativeHTML,
+    HTML,
+    File,
+    Image,
+    URLData,
+    Text,
+    MozTextInternal,
+    Unsupported,
+  };
+  AutoTArray<FlavorType, 8> flavors;
+  for (const uint32_t i : IntegerRange(types->Length())) {
     nsAutoString type;
     types->Item(i, type);
-
-    if (!isPlaintextEditor) {
-      if (type.EqualsLiteral(kFileMime) || type.EqualsLiteral(kJPEGImageMime) ||
+    if (type.IsEmpty()) {
+      flavors.AppendElement(FlavorType::Unsupported);
+      continue;
+    }
+    if (StringBeginsWith(type, u"image/"_ns)) {
+      if (type.EqualsLiteral(kJPEGImageMime) ||
           type.EqualsLiteral(kJPGImageMime) ||
           type.EqualsLiteral(kPNGImageMime) ||
           type.EqualsLiteral(kGIFImageMime)) {
+        flavors.AppendElement(FlavorType::Image);
+      } else {
+        flavors.AppendElement(FlavorType::Unsupported);
+      }
+      continue;
+    }
+    if (StringBeginsWith(type, u"text/"_ns)) {
+      if (type.EqualsLiteral(kHTMLMime)) {
+        flavors.AppendElement(FlavorType::HTML);
+      } else if (type.EqualsLiteral(kTextMime)) {
+        flavors.AppendElement(FlavorType::Text);
+      } else if (type.EqualsLiteral(kMozTextInternal)) {
+        flavors.AppendElement(FlavorType::MozTextInternal);
+      } else if (type.EqualsLiteral(kURLDataMime)) {
+        flavors.AppendElement(FlavorType::URLData);
+      } else {
+        flavors.AppendElement(FlavorType::Unsupported);
+      }
+      continue;
+    }
+    if (type.EqualsLiteral(kFileMime)) {
+      flavors.AppendElement(FlavorType::File);
+    } else if (type.EqualsLiteral(kNativeHTMLMime)) {
+      flavors.AppendElement(FlavorType::NativeHTML);
+    } else {
+      flavors.AppendElement(FlavorType::Unsupported);
+    }
+  }
+  AutoTArray<uint32_t, 8> preferredIndices;
+  {
+    // The DataTransfer may be not created by AddDataFlavorsInBestOrder.
+    // Therefore, we may need to reorder the flavors better.
+    // NOTE: If you touch here, you need to maintain
+    // HTMLTransferablePreparer::AddDataFlavorsInBestOrder() too.
+    const auto AppendIndexOf = [&](FlavorType aFlavorType) {
+      const auto index = flavors.IndexOf(aFlavorType);
+      if (index != decltype(flavors)::NoIndex) {
+        preferredIndices.AppendElement(index);
+        return true;
+      }
+      return false;
+    };
+    if (IsStyleEditable(&aEditingHost)) {
+      AppendIndexOf(FlavorType::NativeHTML);
+      AppendIndexOf(FlavorType::HTML);
+      AppendIndexOf(FlavorType::File);
+      for (const uint32_t i : IntegerRange(flavors.Length())) {
+        if (flavors[i] == FlavorType::Image) {
+          preferredIndices.AppendElement(i);
+        }
+      }
+    }
+    for (const uint32_t i : IntegerRange(flavors.Length())) {
+      if (flavors[i] == FlavorType::URLData || flavors[i] == FlavorType::Text ||
+          flavors[i] == FlavorType::MozTextInternal) {
+        preferredIndices.AppendElement(i);
+        // We won't fallback to the others once we reach these types.
+        break;
+      }
+    }
+  }
+
+  const SafeToInsertData safeToInsertData =
+      IsSafeToInsertData(aSourcePrincipal);
+  for (const uint32_t i : preferredIndices) {
+    switch (flavors[i]) {
+      case FlavorType::File:
+      case FlavorType::Image: {
+        nsAutoString type;
+        types->Item(i, type);
         nsCOMPtr<nsIVariant> variant;
         DebugOnly<nsresult> rvIgnored = aDataTransfer->GetDataAtNoSecurityCheck(
             type, aIndex, getter_AddRefs(variant));
-        if (variant) {
-          NS_WARNING_ASSERTION(
-              NS_SUCCEEDED(rvIgnored),
-              "DataTransfer::GetDataAtNoSecurityCheck() failed, but ignored");
-          nsCOMPtr<nsISupports> object;
-          rvIgnored = variant->GetAsISupports(getter_AddRefs(object));
-          NS_WARNING_ASSERTION(
-              NS_SUCCEEDED(rvIgnored),
-              "nsIVariant::GetAsISupports() failed, but ignored");
-          nsresult rv = InsertObject(NS_ConvertUTF16toUTF8(type), object,
-                                     safeToInsertData, aDroppedAt,
-                                     aDeleteSelectedContent, aEditingHost);
-          NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                               "HTMLEditor::InsertObject() failed");
-          return rv;
+        if (!variant) {
+          continue;
         }
-      } else if (type.EqualsLiteral(kNativeHTMLMime)) {
+        NS_WARNING_ASSERTION(
+            NS_SUCCEEDED(rvIgnored),
+            "DataTransfer::GetDataAtNoSecurityCheck() failed, but ignored");
+        nsCOMPtr<nsISupports> object;
+        rvIgnored = variant->GetAsISupports(getter_AddRefs(object));
+        NS_WARNING_ASSERTION(
+            NS_SUCCEEDED(rvIgnored),
+            "nsIVariant::GetAsISupports() failed, but ignored");
+        nsresult rv =
+            InsertObject(NS_ConvertUTF16toUTF8(type), object, safeToInsertData,
+                         aDroppedAt, aDeleteSelectedContent, aEditingHost);
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                             "HTMLEditor::InsertObject() failed");
+        return rv;
+      }
+      case FlavorType::NativeHTML: {
         // Windows only clipboard parsing.
+        const nsDependentString kUTF16NativeHTMLMime(
+            u"application/x-moz-nativehtml");
+        MOZ_ASSERT(kUTF16NativeHTMLMime.EqualsLiteral(kNativeHTMLMime));
         nsAutoString text;
-        GetStringFromDataTransfer(aDataTransfer, type, aIndex, text);
+        GetStringFromDataTransfer(aDataTransfer, kUTF16NativeHTMLMime, aIndex,
+                                  text);
         NS_ConvertUTF16toUTF8 cfhtml(text);
 
         nsString cfcontext, cffragment,
@@ -2367,83 +2451,94 @@ nsresult HTMLEditor::InsertFromDataTransfer(
 
         nsresult rv = ParseCFHTML(cfhtml, getter_Copies(cffragment),
                                   getter_Copies(cfcontext));
-        if (NS_SUCCEEDED(rv) && !cffragment.IsEmpty()) {
-          if (hasPrivateHTMLFlavor) {
-            // If we have our private HTML flavor, we will only use the fragment
-            // from the CF_HTML. The rest comes from the clipboard.
-            nsAutoString contextString, infoString;
-            GetStringFromDataTransfer(
-                aDataTransfer, NS_LITERAL_STRING_FROM_CSTRING(kHTMLContext),
-                aIndex, contextString);
-            GetStringFromDataTransfer(aDataTransfer,
-                                      NS_LITERAL_STRING_FROM_CSTRING(kHTMLInfo),
-                                      aIndex, infoString);
-            AutoPlaceholderBatch treatAsOneTransaction(
-                *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
-            nsresult rv = InsertHTMLWithContextAsSubAction(
-                cffragment, contextString, infoString, type, safeToInsertData,
-                aDroppedAt, aDeleteSelectedContent,
-                InlineStylesAtInsertionPoint::Clear, aEditingHost);
-            NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                                 "HTMLEditor::InsertHTMLWithContextAsSubAction("
-                                 "InlineStylesAtInsertionPoint::Clear) failed");
-            return rv;
-          }
+        if (NS_FAILED(rv) || cffragment.IsEmpty()) {
+          continue;
+        }
+        if (types->Contains(NS_LITERAL_STRING_FROM_CSTRING(kHTMLContext))) {
+          // If we have our private HTML flavor, we will only use the fragment
+          // from the CF_HTML. The rest comes from the clipboard.
+          nsAutoString contextString, infoString;
+          GetStringFromDataTransfer(
+              aDataTransfer, NS_LITERAL_STRING_FROM_CSTRING(kHTMLContext),
+              aIndex, contextString);
+          GetStringFromDataTransfer(aDataTransfer,
+                                    NS_LITERAL_STRING_FROM_CSTRING(kHTMLInfo),
+                                    aIndex, infoString);
           AutoPlaceholderBatch treatAsOneTransaction(
               *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
           nsresult rv = InsertHTMLWithContextAsSubAction(
-              cffragment, cfcontext, cfselection, type, safeToInsertData,
-              aDroppedAt, aDeleteSelectedContent,
+              cffragment, contextString, infoString, kUTF16NativeHTMLMime,
+              safeToInsertData, aDroppedAt, aDeleteSelectedContent,
               InlineStylesAtInsertionPoint::Clear, aEditingHost);
           NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                                "HTMLEditor::InsertHTMLWithContextAsSubAction("
                                "InlineStylesAtInsertionPoint::Clear) failed");
           return rv;
         }
-      } else if (type.EqualsLiteral(kHTMLMime)) {
+        AutoPlaceholderBatch treatAsOneTransaction(
+            *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
+        rv = InsertHTMLWithContextAsSubAction(
+            cffragment, cfcontext, cfselection, kUTF16NativeHTMLMime,
+            safeToInsertData, aDroppedAt, aDeleteSelectedContent,
+            InlineStylesAtInsertionPoint::Clear, aEditingHost);
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                             "HTMLEditor::InsertHTMLWithContextAsSubAction("
+                             "InlineStylesAtInsertionPoint::Clear) failed");
+        return rv;
+      }
+      case FlavorType::HTML: {
+        const nsDependentString kUTF16HTMLMime(u"text/html");
+        MOZ_ASSERT(kUTF16HTMLMime.EqualsLiteral(kHTMLMime));
         nsAutoString text, contextString, infoString;
-        GetStringFromDataTransfer(aDataTransfer, type, aIndex, text);
+        GetStringFromDataTransfer(aDataTransfer, kUTF16HTMLMime, aIndex, text);
         GetStringFromDataTransfer(aDataTransfer,
                                   NS_LITERAL_STRING_FROM_CSTRING(kHTMLContext),
                                   aIndex, contextString);
         GetStringFromDataTransfer(aDataTransfer,
                                   NS_LITERAL_STRING_FROM_CSTRING(kHTMLInfo),
                                   aIndex, infoString);
-        if (type.EqualsLiteral(kHTMLMime)) {
-          AutoPlaceholderBatch treatAsOneTransaction(
-              *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
-          nsresult rv = InsertHTMLWithContextAsSubAction(
-              text, contextString, infoString, type, safeToInsertData,
-              aDroppedAt, aDeleteSelectedContent,
-              InlineStylesAtInsertionPoint::Clear, aEditingHost);
-          NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                               "HTMLEditor::InsertHTMLWithContextAsSubAction("
-                               "InlineStylesAtInsertionPoint::Clear) failed");
-          return rv;
-        }
-      } else if (type.EqualsLiteral(kURLDataMime)) {
-        // Handle URL data before text so HTML editors insert a link here.
-        nsAutoString url;
-        GetStringFromDataTransfer(aDataTransfer, type, aIndex, url);
         AutoPlaceholderBatch treatAsOneTransaction(
             *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
-        nsresult rv =
-            InsertURLAsLinkInternal(url, aDroppedAt, aDeleteSelectedContent);
-        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "InsertURLAsLink() failed");
+        nsresult rv = InsertHTMLWithContextAsSubAction(
+            text, contextString, infoString, kUTF16HTMLMime, safeToInsertData,
+            aDroppedAt, aDeleteSelectedContent,
+            InlineStylesAtInsertionPoint::Clear, aEditingHost);
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                             "HTMLEditor::InsertHTMLWithContextAsSubAction("
+                             "InlineStylesAtInsertionPoint::Clear) failed");
         return rv;
       }
-    }
-
-    if (type.EqualsLiteral(kTextMime) || type.EqualsLiteral(kMozTextInternal) ||
-        type.EqualsLiteral(kURLDataMime)) {
-      nsAutoString text;
-      GetStringFromDataTransfer(aDataTransfer, type, aIndex, text);
-      AutoPlaceholderBatch treatAsOneTransaction(
-          *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
-      nsresult rv = InsertTextAt(text, aDroppedAt, aDeleteSelectedContent);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "EditorBase::InsertTextAt() failed");
-      return rv;
+      case FlavorType::URLData:
+        if (IsStyleEditable(&aEditingHost)) {
+          const nsDependentString kUTF16URLDataMime(u"text/x-moz-url-data");
+          MOZ_ASSERT(kUTF16URLDataMime.EqualsLiteral(kURLDataMime));
+          // Handle URL data before text so HTML editors insert a link here.
+          nsAutoString url;
+          GetStringFromDataTransfer(aDataTransfer, kUTF16URLDataMime, aIndex,
+                                    url);
+          AutoPlaceholderBatch treatAsOneTransaction(
+              *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
+          nsresult rv =
+              InsertURLAsLinkInternal(url, aDroppedAt, aDeleteSelectedContent);
+          NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "InsertURLAsLink() failed");
+          return rv;
+        }
+        [[fallthrough]];
+      case FlavorType::Text:
+      case FlavorType::MozTextInternal: {
+        nsAutoString type;
+        types->Item(i, type);
+        nsAutoString text;
+        GetStringFromDataTransfer(aDataTransfer, type, aIndex, text);
+        AutoPlaceholderBatch treatAsOneTransaction(
+            *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
+        nsresult rv = InsertTextAt(text, aDroppedAt, aDeleteSelectedContent);
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                             "EditorBase::InsertTextAt() failed");
+        return rv;
+      }
+      case FlavorType::Unsupported:
+        continue;
     }
   }
 

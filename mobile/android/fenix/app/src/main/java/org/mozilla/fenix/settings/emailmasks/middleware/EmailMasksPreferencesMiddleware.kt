@@ -16,9 +16,8 @@ import org.mozilla.fenix.settings.emailmasks.EmailMasksUserAction
  *
  * @param repository The [EmailMasksRepository] used to persist preferences.
  */
-class EmailMasksPreferencesMiddleware(
-    private val repository: EmailMasksRepository,
-) : Middleware<EmailMasksState, EmailMasksAction> {
+class EmailMasksPreferencesMiddleware(private val repository: EmailMasksRepository) :
+    Middleware<EmailMasksState, EmailMasksAction> {
     /**
      * Refactor EmailMasksPreferencesMiddleware to use a repository instead of passing in a lambda.
      * https://bugzilla.mozilla.org/show_bug.cgi?id=2008596
@@ -37,8 +36,7 @@ class EmailMasksPreferencesMiddleware(
             is EmailMasksSystemAction.LearnMoreTabOpened,
             is EmailMasksSystemAction.ManageTabOpened,
             is EmailMasksUserAction.LearnMoreClicked,
-            is EmailMasksUserAction.ManageClicked,
-                -> {
+            is EmailMasksUserAction.ManageClicked -> {
                 // no-op
             }
         }

@@ -4,6 +4,7 @@
 
 package mozilla.components.lib.password.parser.csv
 
+import java.io.InputStream
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -12,31 +13,27 @@ import mozilla.components.concept.password.parser.PasswordsFileParser
 import mozilla.components.concept.password.parser.PasswordsParseResult
 import mozilla.components.concept.password.parser.PasswordsParserError
 import mozilla.components.concept.storage.LoginEntry
-import java.io.InputStream
 
-/**
- * A [PasswordsFileParser] that reads CSV exports of password data.
- */
-class CsvPasswordsFileParser(
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-) : PasswordsFileParser {
+/** A [PasswordsFileParser] that reads CSV exports of password data. */
+class CsvPasswordsFileParser(private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO) : PasswordsFileParser {
 
-    override suspend fun parse(inputStream: InputStream): Result<PasswordsParseResult> =
-        runCatching {
-            withContext(ioDispatcher) {
-                val text = inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
-                parseCsvText(stripBom(text))
-            }
-        }.onFailure {
+    override suspend fun parse(inputStream: InputStream): Result<PasswordsParseResult> = runCatching {
+        withContext(ioDispatcher) {
+            val text = inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            parseCsvText(stripBom(text))
+        }
+    }
+        .onFailure {
             if (it is CancellationException) throw it
         }
 
     private fun parseCsvText(text: String): PasswordsParseResult {
-        val rows = try {
-            readRows(text)
-        } catch (e: ParsingFailedException) {
-            throw PasswordsParserError.UnexpectedError("Malformed CSV", e)
-        }
+        val rows =
+            try {
+                readRows(text)
+            } catch (e: ParsingFailedException) {
+                throw PasswordsParserError.UnexpectedError("Malformed CSV", e)
+            }
         val header = rows.firstOrNull().orEmpty()
         val dataRows = if (rows.size > 1) rows.subList(1, rows.size) else emptyList()
         val indices = headerIndices(header, hasRows = dataRows.isNotEmpty())
@@ -56,14 +53,15 @@ class CsvPasswordsFileParser(
                 skipped++
                 continue
             }
-            logins += LoginEntry(
-                origin = origin,
-                username = row.cellAt(usernameIdx),
-                password = password,
-                // Empty httpRealm signals a form login (matches desktop LoginCSVImport).
-                httpRealm = row.cellAt(httpRealmIdx).ifEmpty { null },
-                formActionOrigin = formActionIdx?.let { row.cellAt(it) },
-            )
+            logins +=
+                LoginEntry(
+                    origin = origin,
+                    username = row.cellAt(usernameIdx),
+                    password = password,
+                    // Empty httpRealm signals a form login (matches desktop LoginCSVImport).
+                    httpRealm = row.cellAt(httpRealmIdx).ifEmpty { null },
+                    formActionOrigin = formActionIdx?.let { row.cellAt(it) },
+                )
         }
         return PasswordsParseResult(logins = logins, skippedRowCount = skipped)
     }
@@ -74,7 +72,7 @@ class CsvPasswordsFileParser(
             val field = COLUMN_TO_FIELD[column.lowercase()] ?: continue
             if (indices.put(field, index) != null) {
                 throw PasswordsParserError.ConflictingColumnsError(
-                    "Two CSV columns map to the same login field: $field",
+                    "Two CSV columns map to the same login field: $field"
                 )
             }
         }
@@ -98,16 +96,17 @@ class CsvPasswordsFileParser(
         // Column-name aliases mirror toolkit/components/passwordmgr/LoginCSVImport.sys.mjs.
         // Unrecognized columns (including guid + timestamps from a Firefox export) are silently
         // ignored — LoginsStorage.add(LoginEntry) doesn't accept that metadata.
-        private val COLUMN_TO_FIELD = mapOf(
-            "url" to "origin",
-            "login_uri" to "origin",
-            "username" to "username",
-            "login_username" to "username",
-            "password" to "password",
-            "login_password" to "password",
-            "httprealm" to "httpRealm",
-            "formactionorigin" to "formActionOrigin",
-        )
+        private val COLUMN_TO_FIELD =
+            mapOf(
+                "url" to "origin",
+                "login_uri" to "origin",
+                "username" to "username",
+                "login_username" to "username",
+                "password" to "password",
+                "login_password" to "password",
+                "httprealm" to "httpRealm",
+                "formactionorigin" to "formActionOrigin",
+            )
 
         private val REQUIRED_FIELDS = listOf("origin", "username", "password")
 
@@ -137,8 +136,7 @@ private fun readRows(text: String): List<List<String>> {
     return rows
 }
 
-private fun List<String>.cellAt(index: Int?): String =
-    if (index != null && index in indices) this[index] else ""
+private fun List<String>.cellAt(index: Int?): String = if (index != null && index in indices) this[index] else ""
 
 private class CsvCursor(private val text: String) {
     private var i = 0

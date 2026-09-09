@@ -30,9 +30,7 @@ import mozilla.components.feature.summarize.LocalProductName
 import mozilla.components.feature.summarize.OffDeviceSummarizationShakeConsentAction
 import mozilla.components.feature.summarize.R
 
-/**
- * Composable to be rendered to request user consent to allow off-device summarization.
- */
+/** Composable to be rendered to request user consent to allow off-device summarization. */
 @Composable
 internal fun OffDeviceSummarizationConsent(
     modifier: Modifier = Modifier,
@@ -60,9 +58,7 @@ private fun OffDeviceSummarizationConsentContent(
     onClickCancel: () -> Unit,
 ) {
     Column(modifier) {
-        OffDeviceSummarizationDescription(
-            onClickLearnMore = onClickLearnMore,
-        )
+        OffDeviceSummarizationDescription(onClickLearnMore = onClickLearnMore)
 
         Spacer(modifier = Modifier.height(AcornTheme.layout.space.static600))
 
@@ -111,11 +107,10 @@ private fun AnnotatedBodyText(
         withLink(
             LinkAnnotation.Clickable(
                 tag = "LEARN_MORE",
-                styles = TextLinkStyles(
-                    style = SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline),
-                ),
+                styles =
+                    TextLinkStyles(style = SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline)),
                 linkInteractionListener = { onClickLearnMore() },
-            ),
+            )
         ) {
             append(learnMore)
         }
@@ -124,10 +119,11 @@ private fun AnnotatedBodyText(
     Text(
         modifier = modifier,
         text = annotatedMessage,
-        style = AcornTheme.typography.body2.copy(
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        ),
+        style =
+            AcornTheme.typography.body2.copy(
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            ),
     )
 }
 
@@ -137,9 +133,7 @@ private fun OffDeviceSummarizationButtons(
     onClickAllow: () -> Unit,
     onClickCancel: () -> Unit,
 ) {
-    Column(
-        modifier = modifier,
-    ) {
+    Column(modifier = modifier) {
         FilledButton(
             modifier = Modifier.fillMaxWidth(),
             onClick = onClickAllow,

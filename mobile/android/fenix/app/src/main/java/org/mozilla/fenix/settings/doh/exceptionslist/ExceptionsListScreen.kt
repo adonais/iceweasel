@@ -23,6 +23,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.DestructiveButton
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.FaviconListItem
 import org.mozilla.fenix.compose.list.IconListItem
@@ -31,7 +32,6 @@ import org.mozilla.fenix.settings.doh.ProtectionLevel
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Composable function that displays the exceptions list screen of DoH settings.
@@ -49,18 +49,15 @@ internal fun ExceptionsListScreen(
     onRemoveAllClicked: () -> Unit = {},
 ) {
     Surface {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-        ) {
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = stringResource(
-                    R.string.preference_doh_exceptions_summary,
-                    stringResource(id = R.string.app_name),
-                ),
+                text =
+                    stringResource(
+                        R.string.preference_doh_exceptions_summary,
+                        stringResource(id = R.string.app_name),
+                    ),
                 modifier = Modifier.padding(horizontal = 16.dp),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = FirefoxTheme.typography.body1,
@@ -86,44 +83,43 @@ internal fun ExceptionsListScreen(
 
             DestructiveButton(
                 text = stringResource(R.string.preference_doh_exceptions_remove_all_exceptions),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        vertical = 12.dp,
-                        horizontal = 16.dp,
-                    ),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .padding(
+                            vertical = 12.dp,
+                            horizontal = 16.dp,
+                        ),
                 onClick = onRemoveAllClicked,
             )
         }
     }
 }
 
-private fun createState() = DohSettingsState(
-    allProtectionLevels = listOf(
-        ProtectionLevel.Default,
-        ProtectionLevel.Increased,
-        ProtectionLevel.Max,
-        ProtectionLevel.Off,
-    ),
-    selectedProtectionLevel = ProtectionLevel.Off,
-    providers = emptyList(),
-    selectedProvider = null,
-    exceptionsList = listOf(
-        "example1.com",
-        "example2.com",
-        "example3.com",
-    ),
-    isUserExceptionValid = true,
-)
+private fun createState() =
+    DohSettingsState(
+        allProtectionLevels =
+            listOf(
+                ProtectionLevel.Default,
+                ProtectionLevel.Increased,
+                ProtectionLevel.Max,
+                ProtectionLevel.Off,
+            ),
+        selectedProtectionLevel = ProtectionLevel.Off,
+        providers = emptyList(),
+        selectedProvider = null,
+        exceptionsList =
+            listOf(
+                "example1.com",
+                "example2.com",
+                "example3.com",
+            ),
+        isUserExceptionValid = true,
+    )
 
 @FlexibleWindowPreview
 @Composable
-private fun ExceptionsListScreenPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun ExceptionsListScreenPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
-        ExceptionsListScreen(
-            state = createState(),
-        )
+        ExceptionsListScreen(state = createState())
     }
 }

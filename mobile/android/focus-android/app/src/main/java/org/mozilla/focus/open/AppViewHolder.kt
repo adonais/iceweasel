@@ -12,16 +12,12 @@ import androidx.recyclerview.widget.RecyclerView
 import org.mozilla.focus.R
 import org.mozilla.focus.open.AppAdapter.OnAppSelectedListener
 
-/**
- * View holder for an app item in the [OpenWithFragment] list.
- */
+/** View holder for an app item in the [OpenWithFragment] list. */
 class AppViewHolder internal constructor(itemView: View) : RecyclerView.ViewHolder(itemView) {
     private val titleView: TextView = itemView.findViewById(R.id.title)
     private val iconView: ImageView = itemView.findViewById(R.id.icon)
 
-    /**
-     * Binds the [AppViewHolder] item.
-     */
+    /** Binds the [AppViewHolder] item. */
     fun bind(app: AppAdapter.App, listener: OnAppSelectedListener?) {
         titleView.text = app.label
         iconView.setImageDrawable(app.loadIcon())
@@ -36,7 +32,6 @@ class AppViewHolder internal constructor(itemView: View) : RecyclerView.ViewHold
     }
 
     companion object {
-        @LayoutRes
-        val LAYOUT_ID = R.layout.item_app
+        @LayoutRes val LAYOUT_ID = R.layout.item_app
     }
 }

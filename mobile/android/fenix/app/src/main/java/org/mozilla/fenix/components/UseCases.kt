@@ -6,6 +6,8 @@ package org.mozilla.fenix.components
 
 import android.content.Context
 import android.os.StrictMode
+import android.util.Size
+import androidx.annotation.VisibleForTesting
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.fetch.Client
@@ -49,8 +51,7 @@ import org.mozilla.fenix.settings.downloads.DownloadLocationManager
 import org.mozilla.fenix.wallpapers.WallpapersUseCases
 
 /**
- * Component group for all use cases. Use cases are provided by feature
- * modules and can be triggered by UI interactions.
+ * Component group for all use cases. Use cases are provided by feature modules and can be triggered by UI interactions.
  */
 @Suppress("LongParameterList")
 class UseCases(
@@ -69,26 +70,18 @@ class UseCases(
     client: Lazy<Client>,
     strictMode: Lazy<StrictModeManager>,
 ) {
-    /**
-     * Use cases that provide engine interactions for a given browser session.
-     */
+    /** Use cases that provide engine interactions for a given browser session. */
     val sessionUseCases by lazyMonitored { SessionUseCases(store.value) }
 
-    /**
-     * Use cases that provide tab management.
-     */
+    /** Use cases that provide tab management. */
     val tabsUseCases: TabsUseCases by lazyMonitored { TabsUseCases(store.value) }
 
-    /**
-     * Use cases for managing custom tabs.
-     */
+    /** Use cases for managing custom tabs. */
     val customTabsUseCases: CustomTabsUseCases by lazyMonitored {
         CustomTabsUseCases(store.value, sessionUseCases.loadUrl)
     }
 
-    /**
-     * Use cases that provide search engine integration.
-     */
+    /** Use cases that provide search engine integration. */
     val searchUseCases by lazyMonitored {
         SearchUseCases(
             store.value,
@@ -97,9 +90,7 @@ class UseCases(
         )
     }
 
-    /**
-     * Use cases that provide settings management.
-     */
+    /** Use cases that provide settings management. */
     val settingsUseCases by lazyMonitored { SettingsUseCases(engine.value, store.value) }
 
     val appLinksUseCases by lazyMonitored { AppLinksUseCases(context.applicationContext) }
@@ -111,12 +102,13 @@ class UseCases(
     val downloadUseCases by lazyMonitored {
         DownloadsUseCases(
             store = store.value,
-            downloadFileUtils = DefaultDownloadFileUtils(
-                context = context.applicationContext,
-                downloadLocation = {
-                    DownloadLocationManager(context.components.settings, context.contentResolver).defaultLocation
-                },
-            ),
+            downloadFileUtils =
+                DefaultDownloadFileUtils(
+                    context = context.applicationContext,
+                    downloadLocation = {
+                        DownloadLocationManager(context.components.settings, context.contentResolver).defaultLocation
+                    },
+                ),
         )
     }
 
@@ -124,31 +116,27 @@ class UseCases(
 
     val trackingProtectionUseCases by lazyMonitored { TrackingProtectionUseCases(store.value, engine.value) }
 
-    /**
-     * Use cases that provide top sites management.
-     */
+    /** Use cases that provide top sites management. */
     val topSitesUseCase by lazyMonitored { TopSitesUseCases(topSitesStorage.value) }
 
-    /**
-     * Use cases that handle locale management.
-     */
+    /** Use cases that handle locale management. */
     val localeUseCases by lazyMonitored { LocaleUseCases(store.value) }
 
-    /**
-     * Use cases that provide bookmark management.
-     */
+    /** Use cases that provide bookmark management. */
     val bookmarksUseCases by lazyMonitored {
         BookmarksUseCase(bookmarksStorage.value, historyStorage.value, lastSavedFolderCache.value)
     }
 
     val wallpaperUseCases by lazyMonitored {
         // Required to even access context.filesDir property and to retrieve current locale
-        val (rootStorageDirectory, currentLocale) = strictMode.value.allowViolation(StrictMode::allowThreadDiskReads) {
-            val rootStorageDirectory = context.filesDir
-            val currentLocale = LocaleManager.getCurrentLocale(context)?.toLanguageTag()
-                ?: LocaleManager.getSystemDefault().toLanguageTag()
-            rootStorageDirectory to currentLocale
-        }
+        val (rootStorageDirectory, currentLocale) =
+            strictMode.value.allowViolation(StrictMode::allowThreadDiskReads) {
+                val rootStorageDirectory = context.filesDir
+                val currentLocale =
+                    LocaleManager.getCurrentLocale(context)?.toLanguageTag()
+                        ?: LocaleManager.getSystemDefault().toLanguageTag()
+                rootStorageDirectory to currentLocale
+            }
         WallpapersUseCases(
             context.components.settings,
             rootStorageDirectory,
@@ -156,6 +144,7 @@ class UseCases(
             client.value,
             rootStorageDirectory,
             currentLocale,
+            getDisplaySize = { displaySize(context) },
         )
     }
 
@@ -189,10 +178,7 @@ class UseCases(
         )
     }
 
-    /**
-     * Use cases for sharing content via the system share sheet or the in-app
-     * share fragment.
-     */
+    /** Use cases for sharing content via the system share sheet or the in-app share fragment. */
     val shareUseCases by lazyMonitored {
         ShareUseCases(
             browserStore = store.value,
@@ -203,5 +189,14 @@ class UseCases(
 
     val privateBrowsingLockUseCases by lazyMonitored {
         PrivateBrowsingLockUseCases(appStore.value)
+    }
+
+    companion object {
+        /** The size, in pixels, of the display a full screen wallpaper has to cover. */
+        @VisibleForTesting
+        internal fun displaySize(context: Context): Size {
+            val metrics = context.resources.displayMetrics
+            return Size(metrics.widthPixels, metrics.heightPixels)
+        }
     }
 }

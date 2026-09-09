@@ -152,10 +152,9 @@ class CharacterDataBuffer final {
   bool Append(const char16_t* aBuffer, uint32_t aLength, bool aUpdateBidi,
               bool aForce2b);
 
-  /**
-   * Append the contents of this data buffer to aString
-   */
-  void AppendTo(nsAString& aString) const {
+  // Append the contents of this data buffer to aString
+  template <typename CharT>
+  void AppendTo(nsTSubstring<CharT>& aString) const {
     if (!AppendTo(aString, fallible)) {
       aString.AllocFailed(aString.Length() + GetLength());
     }
@@ -175,6 +174,17 @@ class CharacterDataBuffer final {
       return aString.Append(Get2b(), mState.mLength, aFallible);
     }
     return AppendASCIItoUTF16(Substring(m1b, mState.mLength), aString,
+                              aFallible);
+  }
+
+  // As above but to UTF-8.
+  [[nodiscard]] bool AppendTo(nsACString& aString,
+                              const fallible_t& aFallible) const {
+    if (mState.mIs2b) {
+      return AppendUTF16toUTF8(Span(Get2b(), mState.mLength), aString,
+                               aFallible);
+    }
+    return AppendLatin1toUTF8(Substring(m1b, mState.mLength), aString,
                               aFallible);
   }
 
@@ -200,16 +210,10 @@ class CharacterDataBuffer final {
                               uint32_t aLength,
                               const fallible_t& aFallible) const {
     if (mState.mIs2b) {
-      bool ok = aString.Append(Get2b() + aOffset, aLength, aFallible);
-      if (!ok) {
-        return false;
-      }
-
-      return true;
-    } else {
-      return AppendASCIItoUTF16(Substring(m1b + aOffset, aLength), aString,
-                                aFallible);
+      return aString.Append(Get2b() + aOffset, aLength, aFallible);
     }
+    return AppendASCIItoUTF16(Substring(m1b + aOffset, aLength), aString,
+                              aFallible);
   }
 
   /**

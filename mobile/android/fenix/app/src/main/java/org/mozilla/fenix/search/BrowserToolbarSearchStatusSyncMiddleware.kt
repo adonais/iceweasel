@@ -56,7 +56,8 @@ class BrowserToolbarSearchStatusSyncMiddleware(
 
     private fun syncSearchActive(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
         syncSearchActiveJob = scope.launch {
-            appStore.flow()
+            appStore
+                .flow()
                 .distinctUntilChangedBy { it.searchState.isSearchActive }
                 .collect {
                     if (it.searchState.isSearchActive) {

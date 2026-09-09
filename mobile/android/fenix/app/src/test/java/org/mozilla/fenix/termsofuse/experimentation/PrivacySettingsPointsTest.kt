@@ -8,9 +8,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.mozilla.fenix.termsofuse.experimentation.utils.FakeTermsOfUseDataProvider
 
-/**
- * Test for the [TermsOfUseAdvancedTargetingHelper.privacySettingsPoints] function.
- */
+/** Test for the [TermsOfUseAdvancedTargetingHelper.privacySettingsPoints] function. */
 class PrivacySettingsPointsTest {
 
     @Test
@@ -55,10 +53,11 @@ class PrivacySettingsPointsTest {
 
     @Test
     fun `WHEN some privacy settings are enabled THEN privacySettingsPoints returns 1`() {
-        val dataProvider = FakeTermsOfUseDataProvider(
-            isIncreasedDohProtectionEnabled = true,
-            enabledHttpsOnlyMode = true,
-        )
+        val dataProvider =
+            FakeTermsOfUseDataProvider(
+                isIncreasedDohProtectionEnabled = true,
+                enabledHttpsOnlyMode = true,
+            )
         val helper = TermsOfUseAdvancedTargetingHelper(dataProvider, "UNUSED")
 
         val result = helper.privacySettingsPoints()
@@ -68,12 +67,13 @@ class PrivacySettingsPointsTest {
 
     @Test
     fun `WHEN all privacy settings are enabled THEN privacySettingsPoints returns 1`() {
-        val dataProvider = FakeTermsOfUseDataProvider(
-            useStrictTrackingProtection = true,
-            shouldEnableGlobalPrivacyControl = true,
-            isIncreasedDohProtectionEnabled = true,
-            enabledHttpsOnlyMode = true,
-        )
+        val dataProvider =
+            FakeTermsOfUseDataProvider(
+                useStrictTrackingProtection = true,
+                shouldEnableGlobalPrivacyControl = true,
+                isIncreasedDohProtectionEnabled = true,
+                enabledHttpsOnlyMode = true,
+            )
         val helper = TermsOfUseAdvancedTargetingHelper(dataProvider, "UNUSED")
 
         val result = helper.privacySettingsPoints()
@@ -83,12 +83,13 @@ class PrivacySettingsPointsTest {
 
     @Test
     fun `WHEN no privacy settings are enabled THEN privacySettingsPoints returns 0`() {
-        val dataProvider = FakeTermsOfUseDataProvider(
-            useStrictTrackingProtection = false,
-            shouldEnableGlobalPrivacyControl = false,
-            isIncreasedDohProtectionEnabled = false,
-            enabledHttpsOnlyMode = false,
-        )
+        val dataProvider =
+            FakeTermsOfUseDataProvider(
+                useStrictTrackingProtection = false,
+                shouldEnableGlobalPrivacyControl = false,
+                isIncreasedDohProtectionEnabled = false,
+                enabledHttpsOnlyMode = false,
+            )
         val helper = TermsOfUseAdvancedTargetingHelper(dataProvider, "UNUSED")
 
         val result = helper.privacySettingsPoints()

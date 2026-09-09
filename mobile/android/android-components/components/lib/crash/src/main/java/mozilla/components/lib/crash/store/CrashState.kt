@@ -6,13 +6,9 @@ package mozilla.components.lib.crash.store
 
 typealias TimeInMillis = Long
 
-/**
- * The state of the crash reporter.
- */
+/** The state of the crash reporter. */
 sealed class CrashState {
-    /**
-     * Crash reporter is currently idle.
-     */
+    /** Crash reporter is currently idle. */
     data object Idle : CrashState()
 
     /**
@@ -22,18 +18,12 @@ sealed class CrashState {
      */
     data class Deferred(val until: TimeInMillis) : CrashState()
 
-    /**
-     * Crash Reporter is ready to send any unsent crashes
-     */
+    /** Crash Reporter is ready to send any unsent crashes */
     data object Ready : CrashState()
 
-    /**
-     * Crash reporter is presenting UI to the user to send unsent crash reports.
-     */
+    /** Crash reporter is presenting UI to the user to send unsent crash reports. */
     data class Reporting(val crashIDs: List<String> = listOf()) : CrashState()
 
-    /**
-     * Crash reporter is done.
-     */
+    /** Crash reporter is done. */
     data object Done : CrashState()
 }

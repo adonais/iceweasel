@@ -8,9 +8,7 @@ import android.app.Activity
 import android.app.Dialog
 import android.view.WindowManager
 
-/**
- * Checks if activity's window has a FLAG_SECURE set and sets it to dialog
- */
+/** Checks if activity's window has a FLAG_SECURE set and sets it to dialog */
 fun Dialog.secure(activity: Activity?) {
     this.window.apply {
         val flags = activity?.window?.attributes?.flags

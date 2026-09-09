@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8>
+<script src='/tests/SimpleTest/SimpleTest.js'></script>
+</head>
+<body>
+<pre id=e_out></pre>
+<script>
+ok = window.ok || function(e, s) {
+  e_out.textContent += `\n${!e ? 'FAIL' : 'pass'}: ${s}`;
+};
+
+// Bug 2061503
+function run(version, vsSrc, attribName, numLocs, comps, opts = {}) {
+  const gl = document.createElement("canvas").getContext(version);
+  const fsSrc = version == "webgl2"
+    ? `#version 300 es
+       precision mediump float;
+       out vec4 o;
+       void main() { o = vec4(0.0); }`
+    : `void main() { gl_FragColor = vec4(0.0); }`;
+
+  const vs = gl.createShader(gl.VERTEX_SHADER);
+  gl.shaderSource(vs, vsSrc);
+  gl.compileShader(vs);
+  const fs = gl.createShader(gl.FRAGMENT_SHADER);
+  gl.shaderSource(fs, fsSrc);
+  gl.compileShader(fs);
+
+  const prog = gl.createProgram();
+  gl.attachShader(prog, vs);
+  gl.attachShader(prog, fs);
+  gl.bindAttribLocation(prog, 0, attribName);
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  const N = 4096;
+  const vertBytes = comps * 4;
+
+  const big = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, big);
+  gl.bufferData(gl.ARRAY_BUFFER, N * vertBytes, gl.STATIC_DRAW);
+
+  const tiny = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, tiny);
+  gl.bufferData(gl.ARRAY_BUFFER, vertBytes, gl.STATIC_DRAW);
+
+  for (let loc = 0; loc < numLocs; loc++) {
+    const colBig = opts.allBig ||
+                   (loc == 0 ? !opts.firstColSmall : false);
+    gl.bindBuffer(gl.ARRAY_BUFFER, colBig ? big : tiny);
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, comps, gl.FLOAT, false, vertBytes, 0);
+    if (opts.instanced) {
+      gl.vertexAttribDivisor(loc, 1);
+    }
+  }
+
+  // Ensure no pending errors.
+  ok(gl.getError() == gl.NO_ERROR, "no error during setup");
+
+  if (opts.instanced) {
+    gl.drawArraysInstanced(gl.POINTS, 0, 1, N);
+  } else {
+    gl.drawArrays(gl.POINTS, 0, N);
+  }
+  return gl.getError();
+}
+
+const INVALID_OPERATION =
+    document.createElement("canvas").getContext("webgl").INVALID_OPERATION;
+
+function check(desc, expectError, version, ...args) {
+  const err = run(version, ...args);
+  const errored = err == INVALID_OPERATION;
+  ok(errored == expectError,
+     `${desc}: err:0x${err.toString(16)} ` +
+     `(expected ${expectError ? "INVALID_OPERATION" : "no error"})`);
+}
+
+const WEBGL1 = {
+  vec4: `attribute vec4 a; void main() { gl_Position = a; gl_PointSize = 1.0; }`,
+  mat2: `attribute mat2 m;
+         void main() { gl_Position = vec4(m[0], m[1]); gl_PointSize = 1.0; }`,
+  mat3: `attribute mat3 m;
+         void main() { gl_Position = vec4(m[0] + m[1] + m[2], 1.0);
+                       gl_PointSize = 1.0; }`,
+  mat4: `attribute mat4 m;
+         void main() { gl_Position = m[0] + m[1] + m[2] + m[3];
+                       gl_PointSize = 1.0; }`,
+};
+
+check("vec4 over-fetch", true, "webgl", WEBGL1.vec4, "a", 1, 4, {firstColSmall: true});
+check("mat2 later-column over-fetch", true, "webgl", WEBGL1.mat2, "m", 2, 4);
+check("mat3 later-column over-fetch", true, "webgl", WEBGL1.mat3, "m", 3, 4);
+check("mat4 later-column over-fetch", true, "webgl", WEBGL1.mat4, "m", 4, 4);
+
+check("mat4 fully backed", false, "webgl", WEBGL1.mat4, "m", 4, 4,
+      {allBig: true});
+
+if (document.createElement("canvas").getContext("webgl2")) {
+  const WEBGL2 = {
+    mat2x4: `#version 300 es
+            in mat2x4 m;
+            void main() { gl_Position = m[0] + m[1]; gl_PointSize = 1.0; }`,
+    mat4x2: `#version 300 es
+            in mat4x2 m;
+            void main() { gl_Position = vec4(m[0], m[1]) + vec4(m[2], m[3]);
+                          gl_PointSize = 1.0; }`,
+  };
+
+  check("mat2x4 later-column over-fetch", true, "webgl2",
+        WEBGL2.mat2x4, "m", 2, 4);
+  check("mat4x2 later-column over-fetch", true, "webgl2",
+        WEBGL2.mat4x2, "m", 4, 2);
+  check("mat4x2 instanced later-column over-fetch", true, "webgl2",
+        WEBGL2.mat4x2, "m", 4, 2, {instanced: true});
+} else {
+  ok(true, "webgl2 unavailable, skipping non-square/instanced cases");
+}
+
+ok(true, 'done');
+</script>
+</body>
+</html>

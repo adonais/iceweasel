@@ -31,12 +31,11 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
- * A custom list item that displays a URL with its base domain bolded.
- * The entire component acts as a clickable surface.
+ * A custom list item that displays a URL with its base domain bolded. The entire component acts as a clickable surface.
  *
  * @param url The full URL string to display.
  * @param baseDomain The exact base domain (e.g., "example.com") to be bolded within the [url].
@@ -52,25 +51,24 @@ fun ReadOnlyUrlField(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val annotatedUrl = remember(url, baseDomain) {
-        buildAnnotatedString {
-            append(url)
+    val annotatedUrl =
+        remember(url, baseDomain) {
+            buildAnnotatedString {
+                append(url)
 
-            val startIndex = url.indexOf(baseDomain)
+                val startIndex = url.indexOf(baseDomain)
 
-            if (startIndex != -1) {
-                addStyle(
-                    style = SpanStyle(fontWeight = FontWeight.Bold),
-                    start = startIndex,
-                    end = startIndex + baseDomain.length,
-                )
+                if (startIndex != -1) {
+                    addStyle(
+                        style = SpanStyle(fontWeight = FontWeight.Bold),
+                        start = startIndex,
+                        end = startIndex + baseDomain.length,
+                    )
+                }
             }
         }
-    }
 
-    Column(
-        modifier = modifier,
-    ) {
+    Column(modifier = modifier) {
         Text(
             text = label,
             modifier = Modifier.padding(vertical = FirefoxTheme.layout.space.static100),
@@ -82,20 +80,21 @@ fun ReadOnlyUrlField(
         Surface(
             shape = RoundedCornerShape(FirefoxTheme.layout.space.static100),
             color = MaterialTheme.colorScheme.surface,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = FirefoxTheme.layout.space.static50)
-                .clip(RoundedCornerShape(FirefoxTheme.layout.space.static100))
-                .clickable(
-                    onClick = onClick,
-                    role = Role.Button,
-                ),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .padding(top = FirefoxTheme.layout.space.static50)
+                    .clip(RoundedCornerShape(FirefoxTheme.layout.space.static100))
+                    .clickable(
+                        onClick = onClick,
+                        role = Role.Button,
+                    ),
         ) {
             Row(
-                modifier = Modifier.padding(
-                    vertical = FirefoxTheme.layout.space.static100,
-                    horizontal = FirefoxTheme.layout.space.static200,
-                ),
+                modifier =
+                    Modifier.padding(
+                        vertical = FirefoxTheme.layout.space.static100,
+                        horizontal = FirefoxTheme.layout.space.static200,
+                    ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -124,9 +123,8 @@ fun ReadOnlyUrlField(
 private fun ReadOnlyUrlFieldPreview() {
     FirefoxTheme {
         Box(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.background)
-                .padding(FirefoxTheme.layout.space.static150),
+            modifier =
+                Modifier.background(MaterialTheme.colorScheme.background).padding(FirefoxTheme.layout.space.static150)
         ) {
             Column {
                 ReadOnlyUrlField(

@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ProtocolParser.h"
+#include "Entries.h"
 #include "LookupCache.h"
 #include "nsNetCID.h"
 #include "mozilla/Components.h"
@@ -70,6 +71,22 @@ ProtocolParser::ProtocolParser() : mUpdateStatus(NS_OK), mUpdateWaitSec(0) {}
 
 ProtocolParser::~ProtocolParser() = default;
 
+nsTArray<TableWaitDuration> ProtocolParser::TakeUpdateWaits() {
+  // V5: the response carries a duration per hash list, so hand over the ones
+  // that were parsed.
+  if (!mUpdateWaits.IsEmpty()) {
+    return std::move(mUpdateWaits);
+  }
+
+  // V2 and V4: the response carries a single duration, which applies to every
+  // table we asked for.
+  nsTArray<TableWaitDuration> waits(mRequestedTables.Length());
+  for (const auto& table : mRequestedTables) {
+    waits.AppendElement(TableWaitDuration{table, mUpdateWaitSec});
+  }
+  return waits;
+}
+
 nsresult ProtocolParser::Begin(const nsACString& aTable,
                                const nsTArray<nsCString>& aUpdateTables) {
   // ProtocolParser objects should never be reused.
@@ -78,6 +95,7 @@ nsresult ProtocolParser::Begin(const nsACString& aTable,
   MOZ_ASSERT(mForwards.IsEmpty());
   MOZ_ASSERT(mRequestedTables.IsEmpty());
   MOZ_ASSERT(mTablesToReset.IsEmpty());
+  MOZ_ASSERT(mUpdateWaits.IsEmpty());
 
   if (!aTable.IsEmpty()) {
     SetCurrentTable(aTable);
@@ -412,6 +430,12 @@ nsresult ProtocolParserV2::ProcessPlaintextChunk(const nsACString& aChunk) {
 nsresult ProtocolParserV2::ProcessShaChunk(const nsACString& aChunk) {
   uint32_t start = 0;
   while (start < aChunk.Length()) {
+    // Each chunk must be at least 5 bytes (domain + count))
+    if (aChunk.Length() - start < DOMAIN_SIZE + 1) {
+      NS_WARNING("Chunk is not long enough to contain the record header.");
+      return NS_ERROR_FAILURE;
+    }
+
     // First four bytes are the domain key.
     Prefix domain;
     domain.Assign(Substring(aChunk, start, DOMAIN_SIZE));
@@ -466,8 +490,10 @@ nsresult ProtocolParserV2::ProcessDigestChunk(const nsACString& aChunk) {
 nsresult ProtocolParserV2::ProcessDigestAdd(const nsACString& aChunk) {
   MOZ_ASSERT(mTableUpdate);
   // The ABNF format for add chunks is (HASH)+, where HASH is 32 bytes.
-  MOZ_ASSERT(aChunk.Length() % 32 == 0,
-             "Chunk length in bytes must be divisible by 4");
+  if (aChunk.Length() % COMPLETE_SIZE != 0) {
+    NS_WARNING("Chunk length in bytes must be divisible by 32");
+    return NS_ERROR_FAILURE;
+  }
   uint32_t start = 0;
   while (start < aChunk.Length()) {
     Completion hash;
@@ -485,8 +511,10 @@ nsresult ProtocolParserV2::ProcessDigestSub(const nsACString& aChunk) {
   MOZ_ASSERT(mTableUpdate);
   // The ABNF format for sub chunks is (ADDCHUNKNUM HASH)+, where ADDCHUNKNUM
   // is a 4 byte chunk number, and HASH is 32 bytes.
-  MOZ_ASSERT(aChunk.Length() % 36 == 0,
-             "Chunk length in bytes must be divisible by 36");
+  if (aChunk.Length() % (4 + COMPLETE_SIZE) != 0) {
+    NS_WARNING("Chunk length in bytes must be divisible by 36");
+    return NS_ERROR_FAILURE;
+  }
   uint32_t start = 0;
   while (start < aChunk.Length()) {
     // Read ADDCHUNKNUM
@@ -731,7 +759,7 @@ void ProtocolParserProtobuf::End() {
       minWaitDuration.seconds() + minWaitDuration.nanos() / 1000000000;
 
   for (int i = 0; i < response.list_update_responses_size(); i++) {
-    auto r = response.list_update_responses(i);
+    const auto& r = response.list_update_responses(i);
     nsAutoCString listName;
     nsresult rv = ProcessOneResponse(r, listName);
     if (NS_SUCCEEDED(rv)) {
@@ -850,7 +878,7 @@ nsresult ProtocolParserProtobuf::ProcessAdditionOrRemoval(
   nsresult ret = NS_OK;
 
   for (int i = 0; i < aUpdate.size(); i++) {
-    auto update = aUpdate.Get(i);
+    const auto& update = aUpdate.Get(i);
     if (!update.has_compression_type()) {
       NS_WARNING(nsPrintfCString("%s with no compression type.",
                                  aIsAddition ? "Addition" : "Removal")
@@ -885,7 +913,7 @@ nsresult ProtocolParserProtobuf::ProcessRawAddition(
     return NS_OK;
   }
 
-  auto rawHashes = aAddition.raw_hashes();
+  const auto& rawHashes = aAddition.raw_hashes();
   if (!rawHashes.has_prefix_size()) {
     NS_WARNING("Raw hash has no prefix size");
     return NS_OK;
@@ -1111,7 +1139,7 @@ void ProtocolParserProtobufV5::End() {
 
   // Iterate over all the hash lists in the response.
   for (int i = 0; i < response.hash_lists_size(); i++) {
-    v5::HashList hashList = response.hash_lists(i);
+    const v5::HashList& hashList = response.hash_lists(i);
     nsAutoCString listName;
     nsresult rv = ProcessOneResponse(hashList, listName);
     if (NS_SUCCEEDED(rv)) {
@@ -1198,14 +1226,16 @@ nsresult ProtocolParserProtobufV5::ProcessOneResponse(
     }
   }
 
-  auto minWaitDuration = aHashList.minimum_wait_duration();
-  mUpdateWaitSec =
+  const auto& minWaitDuration = aHashList.minimum_wait_duration();
+  uint32_t waitSec =
       minWaitDuration.seconds() + minWaitDuration.nanos() / 1000000000;
+  mUpdateWaits.AppendElement(TableWaitDuration{nsCString(aListName), waitSec});
 
   PARSER_LOG(("==== V5 Update for list '%s' ====",
               PromiseFlatCString(aListName).get()));
   PARSER_LOG(("* newVersion: %s\n", version.get()));
   PARSER_LOG(("* isFullUpdate: %s\n", (!isPartialUpdate ? "yes" : "no")));
+  PARSER_LOG(("* minimumWaitDuration: %u sec\n", waitSec));
 
   return NS_OK;
 }

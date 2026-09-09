@@ -20,7 +20,7 @@ impl BreakpadString for OsString {
     }
 
     fn deserialize(bytes: Vec<u8>) -> Result<OsString, MessageError> {
-        if (bytes.len() % 2) != 0 {
+        if !bytes.len().is_multiple_of(2) {
             return Err(MessageError::InvalidData);
         }
 

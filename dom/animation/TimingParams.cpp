@@ -225,6 +225,35 @@ TimingParams TimingParams::Normalize(
     const TimeDuration& aTimelineDuration) const {
   TimingParams normalizedTiming(*this);
 
+  auto ComputeIntrinsicIterationDuration = [&](const TimeDuration& aStartDelay,
+                                               const TimeDuration& aEndDelay) {
+    // https://drafts.csswg.org/web-animations-2/#intrinsic-iteration-duration
+    // If the animation effect is a group effect,
+    //   ...
+    // If the animation effect is a sequence effect,
+    //   ...
+    // If timeline duration is unresolved or iteration count is zero,
+    //   Return 0
+    // Otherwise
+    //   Return (100% - start delay - end delay) / iteration count
+    // Note: The caller makes sure the timeline duration is resolved.
+    if (std::isnan(mIterations) || std::isinf(mIterations) ||
+        mIterations == 0.0) {
+      // Since mIteration could be NaN (from JS) or +/-Infinity, so we set it to
+      // 0 for all edge cases.
+      // Note that WebKit also set 0% duration for the infinity iteration count.
+      return TimeDuration();
+    }
+    // Note: |aTimelineDuration| should be always 100% since this function gets
+    // called only for finite timelines. However, |aTimelineDuration| is not a
+    // percentage type (i.e. we use an integer value to represent 100%), and it
+    // is adjusted by animation ranges, so it could be 0. This should be fine
+    // since it is possible to have a zero active duration after applying the
+    // animation ranges.
+    return (aTimelineDuration - aStartDelay - aEndDelay)
+        .MultDouble(1.0 / mIterations);
+  };
+
   // Handle iteration duration value of "auto" first.
   if (!mDuration) {
     // If the iteration duration is auto, then:
@@ -232,7 +261,9 @@ TimingParams TimingParams::Normalize(
     //   and proportions.
     normalizedTiming.mDelay = TimeDuration();
     normalizedTiming.mEndDelay = TimeDuration();
-    normalizedTiming.mDuration.emplace(aTimelineDuration);
+    // Use intrinsic iteration duration.
+    normalizedTiming.mDuration = Some(ComputeIntrinsicIterationDuration(
+        normalizedTiming.mDelay, normalizedTiming.mEndDelay));
     normalizedTiming.Update();
     return normalizedTiming;
   }
@@ -243,6 +274,7 @@ TimingParams TimingParams::Normalize(
     // FIXME: The spec doesn't mention this case, so we might have to update
     // this based on the spec issue,
     // https://github.com/w3c/csswg-drafts/issues/7459.
+    // https://github.com/w3c/csswg-drafts/issues/11276
     normalizedTiming.mDelay = TimeDuration();
     normalizedTiming.mEndDelay = TimeDuration();
     normalizedTiming.mDuration = Some(TimeDuration());
@@ -259,10 +291,11 @@ TimingParams TimingParams::Normalize(
     // FIXME: The spec doesn't mention this case, so we might have to update
     // this based on the spec issue,
     // https://github.com/w3c/csswg-drafts/issues/7459.
+    // https://github.com/w3c/csswg-drafts/issues/11276
     normalizedTiming.mDelay = TimeDuration();
     normalizedTiming.mEndDelay = TimeDuration();
-    normalizedTiming.mDuration =
-        Some(aTimelineDuration.MultDouble(1.0 / mIterations));
+    normalizedTiming.mDuration = Some(ComputeIntrinsicIterationDuration(
+        normalizedTiming.mDelay, normalizedTiming.mEndDelay));
   } else {
     // Convert to percentages then multiply by the timeline duration.
     const double endTimeInSec = mEndTime.ToSeconds();

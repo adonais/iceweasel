@@ -60,12 +60,6 @@
   }
 }
 
-/** End titlebar **/
-
-:root[chromehidden~="toolbar"][chromehidden~="location"][chromehidden~="directories"] {
-  border-top: 1px solid rgba(0, 0, 0, 0.65);
-}
-
 /* ----- BOOKMARK TOOLBAR ----- */
 
 #nav-bar-customization-target > #wrapper-personal-bookmarks > #personal-bookmarks {
@@ -148,9 +142,10 @@
 
 /* ::::: tabbrowser ::::: */
 
-.tab-label,
-.tab-group-label {
-  margin-block: 1px 0;
+@media not -moz-pref("browser.nova.enabled") {
+  .tab-group-label {
+    margin-block: 1px 0;
+  }
 }
 
 .tabbrowser-tab:not(:hover) > .tab-stack > .tab-content > .tab-icon-image:not([selected], [multiselected]) {

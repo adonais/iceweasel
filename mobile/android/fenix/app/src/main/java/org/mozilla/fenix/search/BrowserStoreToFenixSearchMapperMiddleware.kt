@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.lib.state.Action as MVIAction
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
@@ -20,7 +21,6 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.search.SearchFragmentAction.Init
 import org.mozilla.fenix.search.SearchFragmentAction.UpdateSearchState
 import org.mozilla.fenix.search.SearchFragmentStore.Environment
-import mozilla.components.lib.state.Action as MVIAction
 
 /**
  * [SearchFragmentStore] [Middleware] to synchronize search related details from [BrowserStore].
@@ -34,8 +34,7 @@ class BrowserStoreToFenixSearchMapperMiddleware(
     private val scope: CoroutineScope,
     private val appStore: AppStore? = null,
 ) : Middleware<SearchFragmentState, SearchFragmentAction> {
-    @VisibleForTesting
-    internal var environment: Environment? = null
+    @VisibleForTesting internal var environment: Environment? = null
     private var observeBrowserSearchStateJob: Job? = null
 
     override fun invoke(
@@ -59,13 +58,13 @@ class BrowserStoreToFenixSearchMapperMiddleware(
                         UpdateSearchState(
                             searchState,
                             isPrivate = appStore?.state?.mode?.isPrivate ?: false,
-                        ),
+                        )
                     )
                 }
         }
     }
 
     private inline fun <S : State, A : MVIAction> Store<S, A>.observeWhileActive(
-        crossinline observe: suspend (Flow<S>.() -> Unit),
+        crossinline observe: suspend (Flow<S>.() -> Unit)
     ): Job = scope.launch { flow().observe() }
 }

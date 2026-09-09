@@ -23,25 +23,21 @@ import mozilla.components.support.ktx.android.view.showKeyboard
 
 private const val DEFAULT_VALUE = 0
 
-/**
- * A customizable "Find in page" bar implementing [FindInPageView].
- */
-class FindInPageBar @JvmOverloads constructor(
+/** A customizable "Find in page" bar implementing [FindInPageView]. */
+class FindInPageBar
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
 ) : ConstraintLayout(context, attrs, defStyleAttr), FindInPageView {
     private val styling: FindInPageBarStyling = createStyling(context, attrs, defStyleAttr)
 
-    @VisibleForTesting
-    internal val queryEditText: EditText
+    @VisibleForTesting internal val queryEditText: EditText
 
-    @VisibleForTesting
-    internal val resultsCountTextView: TextView
+    @VisibleForTesting internal val resultsCountTextView: TextView
 
-    @VisibleForTesting
-    internal val resultFormat: String =
-        context.getString(R.string.mozac_feature_findindpage_result)
+    @VisibleForTesting internal val resultFormat: String = context.getString(R.string.mozac_feature_findindpage_result)
 
     @VisibleForTesting
     internal val accessibilityFormat: String =
@@ -58,11 +54,12 @@ class FindInPageBar @JvmOverloads constructor(
     override var private: Boolean
         get() = (queryEditText.imeOptions and EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING) != 0
         set(value) {
-            queryEditText.imeOptions = if (value) {
-                queryEditText.imeOptions or EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING
-            } else {
-                queryEditText.imeOptions and (EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING.inv())
-            }
+            queryEditText.imeOptions =
+                if (value) {
+                    queryEditText.imeOptions or EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING
+                } else {
+                    queryEditText.imeOptions and (EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING.inv())
+                }
         }
 
     init {
@@ -103,7 +100,7 @@ class FindInPageBar @JvmOverloads constructor(
             val ordinal = if (numberOfMatches > 0) activeMatchOrdinal + 1 else activeMatchOrdinal
             resultsCountTextView.text = String.format(resultFormat, ordinal, numberOfMatches)
             resultsCountTextView.setTextColorIfNotDefaultValue(
-                if (numberOfMatches > 0) styling.resultCountTextColor else styling.resultNoMatchesTextColor,
+                if (numberOfMatches > 0) styling.resultCountTextColor else styling.resultNoMatchesTextColor
             )
             val accessibilityLabel = String.format(accessibilityFormat, ordinal, numberOfMatches)
             resultsCountTextView.contentDescription = accessibilityLabel
@@ -119,32 +116,33 @@ class FindInPageBar @JvmOverloads constructor(
 
         with(attr) {
             return FindInPageBarStyling(
-                getColor(
-                    R.styleable.FindInPageBar_findInPageQueryTextColor,
-                    DEFAULT_VALUE,
-                ),
-                getColor(
-                    R.styleable.FindInPageBar_findInPageQueryHintTextColor,
-                    DEFAULT_VALUE,
-                ),
-                getDimensionPixelSize(
-                    R.styleable.FindInPageBar_findInPageQueryTextSize,
-                    DEFAULT_VALUE,
-                ),
-                getColor(
-                    R.styleable.FindInPageBar_findInPageResultCountTextColor,
-                    DEFAULT_VALUE,
-                ),
-                getColor(
-                    R.styleable.FindInPageBar_findInPageNoMatchesTextColor,
-                    DEFAULT_VALUE,
-                ),
-                getDimensionPixelSize(
-                    R.styleable.FindInPageBar_findInPageResultCountTextSize,
-                    DEFAULT_VALUE,
-                ),
-                getColorStateList(R.styleable.FindInPageBar_findInPageButtonsTint),
-            ).also { recycle() }
+                    getColor(
+                        R.styleable.FindInPageBar_findInPageQueryTextColor,
+                        DEFAULT_VALUE,
+                    ),
+                    getColor(
+                        R.styleable.FindInPageBar_findInPageQueryHintTextColor,
+                        DEFAULT_VALUE,
+                    ),
+                    getDimensionPixelSize(
+                        R.styleable.FindInPageBar_findInPageQueryTextSize,
+                        DEFAULT_VALUE,
+                    ),
+                    getColor(
+                        R.styleable.FindInPageBar_findInPageResultCountTextColor,
+                        DEFAULT_VALUE,
+                    ),
+                    getColor(
+                        R.styleable.FindInPageBar_findInPageNoMatchesTextColor,
+                        DEFAULT_VALUE,
+                    ),
+                    getDimensionPixelSize(
+                        R.styleable.FindInPageBar_findInPageResultCountTextSize,
+                        DEFAULT_VALUE,
+                    ),
+                    getColorStateList(R.styleable.FindInPageBar_findInPageButtonsTint),
+                )
+                .also { recycle() }
         }
     }
 
@@ -192,6 +190,7 @@ class FindInPageBar @JvmOverloads constructor(
             addTextChangedListener(
                 object : TextWatcher {
                     override fun afterTextChanged(s: Editable?) = Unit
+
                     override fun beforeTextChanged(
                         s: CharSequence?,
                         start: Int,
@@ -208,7 +207,7 @@ class FindInPageBar @JvmOverloads constructor(
                         val newQuery = newCharacter?.toString() ?: return
                         onQueryChange(newQuery)
                     }
-                },
+                }
             )
 
             onFocusChangeListener = OnFocusChangeListener { _, hasFocus ->

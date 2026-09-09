@@ -22,23 +22,24 @@ import mozilla.components.support.utils.ext.registerReceiverCompat
 import org.mozilla.samples.crash.databinding.ActivityCrashBinding
 
 class CrashActivity : AppCompatActivity(), View.OnClickListener {
-    private val receiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if (!Crash.isCrashIntent(intent)) {
-                return
+    private val receiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                if (!Crash.isCrashIntent(intent)) {
+                    return
+                }
+
+                val crash = Crash.fromIntent(intent)
+
+                Snackbar.make(
+                        findViewById(android.R.id.content),
+                        "Sorry. We crashed.",
+                        Snackbar.LENGTH_LONG,
+                    )
+                    .setAction("Report") { crashReporter.submitReport(crash) }
+                    .show()
             }
-
-            val crash = Crash.fromIntent(intent)
-
-            Snackbar.make(
-                findViewById(android.R.id.content),
-                "Sorry. We crashed.",
-                Snackbar.LENGTH_LONG,
-            )
-                .setAction("Report") { crashReporter.submitReport(crash) }
-                .show()
         }
-    }
     private lateinit var binding: ActivityCrashBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,7 +61,7 @@ class CrashActivity : AppCompatActivity(), View.OnClickListener {
                 "sample",
                 Breadcrumb.Level.DEBUG,
                 Breadcrumb.Type.NAVIGATION,
-            ),
+            )
         )
     }
 
@@ -80,7 +81,7 @@ class CrashActivity : AppCompatActivity(), View.OnClickListener {
                 "sample",
                 Breadcrumb.Level.DEBUG,
                 Breadcrumb.Type.NAVIGATION,
-            ),
+            )
         )
     }
 
@@ -95,7 +96,7 @@ class CrashActivity : AppCompatActivity(), View.OnClickListener {
                 "sample",
                 Breadcrumb.Level.DEBUG,
                 Breadcrumb.Type.NAVIGATION,
-            ),
+            )
         )
     }
 
@@ -110,7 +111,7 @@ class CrashActivity : AppCompatActivity(), View.OnClickListener {
                         "sample",
                         Breadcrumb.Level.INFO,
                         Breadcrumb.Type.USER,
-                    ),
+                    )
                 )
 
                 throw RuntimeException("Boom!")
@@ -124,15 +125,16 @@ class CrashActivity : AppCompatActivity(), View.OnClickListener {
                         "sample",
                         Breadcrumb.Level.INFO,
                         Breadcrumb.Type.USER,
-                    ),
+                    )
                 )
 
                 // Pretend GeckoView has crashed by re-building a crash Intent and launching the CrashHandlerService.
                 val intent = Intent("org.mozilla.gecko.ACTION_CRASHED")
-                intent.component = ComponentName(
-                    packageName,
-                    "mozilla.components.lib.crash.handler.CrashHandlerService",
-                )
+                intent.component =
+                    ComponentName(
+                        packageName,
+                        "mozilla.components.lib.crash.handler.CrashHandlerService",
+                    )
                 intent.putExtra(
                     "minidumpPath",
                     "${filesDir.path}/mozilla/Crash Reports/pending/3ba5f665-8422-dc8e-a88e-fc65c081d304.dmp",
@@ -154,7 +156,7 @@ class CrashActivity : AppCompatActivity(), View.OnClickListener {
                         "sample",
                         Breadcrumb.Level.INFO,
                         Breadcrumb.Type.USER,
-                    ),
+                    )
                 )
 
                 startService(Intent(this, CrashService::class.java))
@@ -162,9 +164,7 @@ class CrashActivity : AppCompatActivity(), View.OnClickListener {
             }
 
             binding.crashList -> {
-                supportFragmentManager.beginTransaction()
-                    .add(binding.root.id, CrashListFragment())
-                    .commit()
+                supportFragmentManager.beginTransaction().add(binding.root.id, CrashListFragment()).commit()
             }
 
             else -> throw java.lang.RuntimeException("Unknown ID")

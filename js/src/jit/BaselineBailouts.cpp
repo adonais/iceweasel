@@ -211,6 +211,7 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
 #endif
 
   bool isPrologueBailout();
+  bool isGeneratorResumePrologueBailout();
   jsbytecode* getResumePC();
   void* getStubReturnAddress();
 
@@ -1187,7 +1188,11 @@ bool BaselineStackBuilder::finishLastFrame() {
   // Compute the native address (within the Baseline Interpreter) that we will
   // resume at and initialize the frame's interpreter fields.
   uint8_t* resumeAddr;
-  if (isPrologueBailout()) {
+  if (isGeneratorResumePrologueBailout()) {
+    JitSpew(JitSpew_BaselineBailouts, "      Redoing the generator resume.");
+    blFrame()->setInterpreterFieldsForPrologue(script_);
+    resumeAddr = baselineInterp.bailoutResumePrologueEntryAddr();
+  } else if (isPrologueBailout()) {
     JitSpew(JitSpew_BaselineBailouts, "      Resuming into prologue.");
     MOZ_ASSERT(pc_ == script_->code());
     blFrame()->setInterpreterFieldsForPrologue(script_);
@@ -1251,8 +1256,13 @@ bool BaselineStackBuilder::envChainSlotCanBeOptimized() {
 bool jit::AssertBailoutStackDepth(JSContext* cx, JSScript* script,
                                   jsbytecode* pc, ResumeMode mode,
                                   uint32_t exprStackSlots) {
+  bool resumeAfterNonFallthrough = false;
   if (IsResumeAfter(mode)) {
-    pc = GetNextPc(pc);
+    if (BytecodeFallsThrough(JSOp(*pc))) {
+      pc = GetNextPc(pc);
+    } else {
+      resumeAfterNonFallthrough = true;
+    }
   }
 
   uint32_t expectedDepth;
@@ -1265,6 +1275,14 @@ bool jit::AssertBailoutStackDepth(JSContext* cx, JSScript* script,
   }
 
   JSOp op = JSOp(*pc);
+
+  if (resumeAfterNonFallthrough) {
+    // Because the op doesn't fall through, ReconstructStackDepth returned the
+    // depth before it. Account for the op's own stack effect.
+    uint32_t uses = StackUses(op, pc);
+    MOZ_ASSERT(expectedDepth >= uses);
+    expectedDepth = expectedDepth - uses + StackDefs(op);
+  }
 
   if (mode == ResumeMode::InlinedFunCall) {
     // For inlined fun.call(this, ...); the reconstructed stack depth will
@@ -1392,6 +1410,18 @@ jsbytecode* BaselineStackBuilder::getResumePC() {
   }
 
   return slowerPc;
+}
+
+bool BaselineStackBuilder::isGeneratorResumePrologueBailout() {
+  // If we bail out while still mid-resume (before JSOp::AfterYield cleared the
+  // descriptor bit), we redo the generator resume in Baseline.
+  if (!frame_->isResumingGenerator()) {
+    return false;
+  }
+  MOZ_RELEASE_ASSERT(isOutermostFrame());
+  MOZ_RELEASE_ASSERT(script_->isGenerator() || script_->isAsync());
+  MOZ_RELEASE_ASSERT(!excInfo_);
+  return true;
 }
 
 bool BaselineStackBuilder::isPrologueBailout() {
@@ -1971,6 +2001,14 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
     case BailoutKind::TypePolicy:
       // A conversion inserted by a type policy failed.
       // We will invalidate and disable recompilation if this happens too often.
+      action = BailoutAction::DisableIfFrequent;
+      break;
+
+    case BailoutKind::UncompiledGeneratorResume:
+      // We're resuming a generator but didn't compile the AfterYield code. This
+      // can happen for yield/await in (or only reachable from) a catch-block.
+      // Fall back to running the generator in Baseline if this happens
+      // frequently.
       action = BailoutAction::DisableIfFrequent;
       break;
 

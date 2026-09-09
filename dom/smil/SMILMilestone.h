@@ -41,13 +41,9 @@ class SMILMilestone {
 
   constexpr SMILMilestone() : mTime(0), mIsEnd(false) {}
 
-  bool operator==(const SMILMilestone& aOther) const {
-    return mTime == aOther.mTime && mIsEnd == aOther.mIsEnd;
-  }
+  bool operator==(const SMILMilestone& aOther) const = default;
 
-  bool operator!=(const SMILMilestone& aOther) const {
-    return !(*this == aOther);
-  }
+  bool operator!=(const SMILMilestone& aOther) const = default;
 
   bool operator<(const SMILMilestone& aOther) const {
     // Earlier times sort first, and for equal times end milestones sort first

@@ -24,9 +24,7 @@ import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.theme.FirefoxTheme
 
-/**
- * A fragment displaying the AI Controls settings screen.
- */
+/** A fragment displaying the AI Controls settings screen. */
 class AIControlsFragment : Fragment(), SystemInsetsPaddedFragment {
     private val args by navArgs<AIControlsFragmentArgs>()
 
@@ -58,19 +56,19 @@ class AIControlsFragment : Fragment(), SystemInsetsPaddedFragment {
                 itemToScrollTo = args.preferenceToScrollTo,
                 onDialogDismiss = {
                     GenaiAiControls.globalPrefConfirmationClick.record(
-                        GenaiAiControls.GlobalPrefConfirmationClickExtra(element = "cancel"),
+                        GenaiAiControls.GlobalPrefConfirmationClickExtra(element = "cancel")
                     )
                     aiBlockUiController.onDialogDismiss()
                 },
                 onDialogConfirm = {
                     GenaiAiControls.globalPrefConfirmationClick.record(
-                        GenaiAiControls.GlobalPrefConfirmationClickExtra(element = "block"),
+                        GenaiAiControls.GlobalPrefConfirmationClickExtra(element = "block")
                     )
                     aiBlockUiController.onDialogConfirm()
                 },
                 onToggle = { currentlyBlocked ->
                     GenaiAiControls.globalPrefToggle.record(
-                        GenaiAiControls.GlobalPrefToggleExtra(block = !currentlyBlocked),
+                        GenaiAiControls.GlobalPrefToggleExtra(block = !currentlyBlocked)
                     )
                     if (!currentlyBlocked) {
                         GenaiAiControls.globalPrefConfirmationShown.record(NoExtras())
@@ -82,19 +80,17 @@ class AIControlsFragment : Fragment(), SystemInsetsPaddedFragment {
                         GenaiAiControls.FeaturePrefChangeExtra(
                             feature = feature.id.value,
                             selection = if (enabled) "enabled" else "blocked",
-                        ),
+                        )
                     )
                     scope.launch { feature.set(enabled) }
                 },
                 onFeatureNavLinkClick = { destination, featureId ->
-                    GenaiAiControls.featureLinkClick.record(
-                        GenaiAiControls.FeatureLinkClickExtra(link = featureId),
-                    )
+                    GenaiAiControls.featureLinkClick.record(GenaiAiControls.FeatureLinkClickExtra(link = featureId))
                     destination.nav(this)
                 },
                 onBannerLearnMoreClick = {
                     GenaiAiControls.featureLinkClick.record(
-                        GenaiAiControls.FeatureLinkClickExtra(link = "global_control"),
+                        GenaiAiControls.FeatureLinkClickExtra(link = "global_control")
                     )
                     openAiControlsSumoPage()
                 },
@@ -112,11 +108,12 @@ class AIControlsFragment : Fragment(), SystemInsetsPaddedFragment {
         val context = requireContext()
         SupportUtils.launchSandboxCustomTab(
             context = context,
-            url = SupportUtils.getSumoURLForTopic(
-                context = context,
-                topic = SupportUtils.SumoTopic.AI_CONTROLS,
-                useMobilePage = true,
-            ),
+            url =
+                SupportUtils.getSumoURLForTopic(
+                    context = context,
+                    topic = SupportUtils.SumoTopic.AI_CONTROLS,
+                    useMobilePage = true,
+                ),
         )
     }
 }

@@ -58,7 +58,7 @@ add_task(async function () {
   let tabStripRect =
     gBrowser.tabContainer.arrowScrollbox.getBoundingClientRect();
   let textBoxRect = gURLBar
-    .querySelector("moz-input-box")
+    .querySelector(".urlbar-input-box")
     .getBoundingClientRect();
 
   let ignoreTabstripRects = {

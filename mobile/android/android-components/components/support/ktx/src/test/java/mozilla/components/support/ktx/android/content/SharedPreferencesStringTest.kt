@@ -34,9 +34,7 @@ class SharedPreferencesStringTest {
 
     @Test
     fun `GIVEN string does not exist and asked to persist the default WHEN asked for it THEN persist the default and return it`() {
-        preferencesHolder = StringTestPreferenceHolder(
-            persistDefaultIfNotExists = true,
-        )
+        preferencesHolder = StringTestPreferenceHolder(persistDefaultIfNotExists = true)
 
         val result = preferencesHolder.string
 
@@ -46,9 +44,7 @@ class SharedPreferencesStringTest {
 
     @Test
     fun `GIVEN string does not exist and not asked to persist the default WHEN asked for it THEN return the default but not persist it`() {
-        preferencesHolder = StringTestPreferenceHolder(
-            persistDefaultIfNotExists = false,
-        )
+        preferencesHolder = StringTestPreferenceHolder(persistDefaultIfNotExists = false)
 
         val result = preferencesHolder.string
 
@@ -59,9 +55,7 @@ class SharedPreferencesStringTest {
     @Test
     fun `GIVEN string exists and asked to persist the default WHEN asked for it THEN return the existing string and don't persist the default`() {
         testPreferences.edit().putString(key, "test").apply()
-        preferencesHolder = StringTestPreferenceHolder(
-            persistDefaultIfNotExists = true,
-        )
+        preferencesHolder = StringTestPreferenceHolder(persistDefaultIfNotExists = true)
 
         val result = preferencesHolder.string
 
@@ -71,9 +65,7 @@ class SharedPreferencesStringTest {
     @Test
     fun `GIVEN string exists and not asked to persist the default WHEN asked for it THEN return the existing string and don't persist the default`() {
         testPreferences.edit().putString(key, "test").apply()
-        preferencesHolder = StringTestPreferenceHolder(
-            persistDefaultIfNotExists = true,
-        )
+        preferencesHolder = StringTestPreferenceHolder(persistDefaultIfNotExists = true)
 
         val result = preferencesHolder.string
 
@@ -105,9 +97,7 @@ class SharedPreferencesStringTest {
         )
     }
 
-    private inner class StringTestPreferenceHolder(
-        persistDefaultIfNotExists: Boolean = false,
-    ) : PreferencesHolder {
+    private inner class StringTestPreferenceHolder(persistDefaultIfNotExists: Boolean = false) : PreferencesHolder {
         override val preferences = testPreferences
 
         var string by stringPreference(key, defaultValue, persistDefaultIfNotExists)

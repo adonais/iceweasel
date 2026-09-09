@@ -100,20 +100,22 @@ class AppLinksFeatureTest {
         `when`(mockGetRedirect.invoke(intentUrl)).thenReturn(appRedirect)
         `when`(mockGetRedirect.invoke(webUrlWithAppLink)).thenReturn(appRedirectFromWebUrl)
 
-        feature = spy(
-            AppLinksFeature(
-                context = mockContext,
-                store = store,
-                fragmentManager = mockFragmentManager,
-                dialog = { _ -> mockDialog },
-                useCases = mockUseCases,
-                loadUrlUseCase = mockLoadUrlUseCase,
-                mainDispatcher = testDispatcher,
-            ),
-        ).also {
-            it.start()
-            testDispatcher.scheduler.advanceUntilIdle()
-        }
+        feature =
+            spy(
+                    AppLinksFeature(
+                        context = mockContext,
+                        store = store,
+                        fragmentManager = mockFragmentManager,
+                        dialog = { _ -> mockDialog },
+                        useCases = mockUseCases,
+                        loadUrlUseCase = mockLoadUrlUseCase,
+                        mainDispatcher = testDispatcher,
+                    )
+                )
+                .also {
+                    it.start()
+                    testDispatcher.scheduler.advanceUntilIdle()
+                }
     }
 
     @After
@@ -161,20 +163,22 @@ class AppLinksFeatureTest {
 
     @Test
     fun `WHEN should prompt AND in non-private mode THEN an external app dialog is shown`() {
-        feature = spy(
-            AppLinksFeature(
-                context = mockContext,
-                store = store,
-                fragmentManager = mockFragmentManager,
-                dialog = { _ -> mockDialog },
-                useCases = mockUseCases,
-                loadUrlUseCase = mockLoadUrlUseCase,
-                mainDispatcher = testDispatcher,
-            ),
-        ).also {
-            it.start()
-            testDispatcher.scheduler.advanceUntilIdle()
-        }
+        feature =
+            spy(
+                    AppLinksFeature(
+                        context = mockContext,
+                        store = store,
+                        fragmentManager = mockFragmentManager,
+                        dialog = { _ -> mockDialog },
+                        useCases = mockUseCases,
+                        loadUrlUseCase = mockLoadUrlUseCase,
+                        mainDispatcher = testDispatcher,
+                    )
+                )
+                .also {
+                    it.start()
+                    testDispatcher.scheduler.advanceUntilIdle()
+                }
 
         val tab = createTab(webUrl)
         feature.handleAppIntent(tab, intentUrl, mock(), null, null)
@@ -185,21 +189,23 @@ class AppLinksFeatureTest {
 
     @Test
     fun `WHEN should not prompt AND in non-private mode THEN an external app dialog is not shown`() {
-        feature = spy(
-            AppLinksFeature(
-                context = mockContext,
-                store = store,
-                fragmentManager = mockFragmentManager,
-                dialog = { _ -> mockDialog },
-                useCases = mockUseCases,
-                loadUrlUseCase = mockLoadUrlUseCase,
-                shouldPrompt = { false },
-                mainDispatcher = testDispatcher,
-            ),
-        ).also {
-            it.start()
-            testDispatcher.scheduler.advanceUntilIdle()
-        }
+        feature =
+            spy(
+                    AppLinksFeature(
+                        context = mockContext,
+                        store = store,
+                        fragmentManager = mockFragmentManager,
+                        dialog = { _ -> mockDialog },
+                        useCases = mockUseCases,
+                        loadUrlUseCase = mockLoadUrlUseCase,
+                        shouldPrompt = { false },
+                        mainDispatcher = testDispatcher,
+                    )
+                )
+                .also {
+                    it.start()
+                    testDispatcher.scheduler.advanceUntilIdle()
+                }
 
         val tab = createTab(webUrl)
         feature.handleAppIntent(tab, intentUrl, mock(), null, null)
@@ -209,28 +215,31 @@ class AppLinksFeatureTest {
 
     @Test
     fun `WHEN tab have action send and caller is the same as external app THEN an external app dialog is shown`() {
-        feature = spy(
-            AppLinksFeature(
-                context = mockContext,
-                store = store,
-                fragmentManager = mockFragmentManager,
-                dialog = { _ -> mockDialog },
-                useCases = mockUseCases,
-                loadUrlUseCase = mockLoadUrlUseCase,
-                mainDispatcher = testDispatcher,
-            ),
-        ).also {
-            it.start()
-            testDispatcher.scheduler.advanceUntilIdle()
-        }
+        feature =
+            spy(
+                    AppLinksFeature(
+                        context = mockContext,
+                        store = store,
+                        fragmentManager = mockFragmentManager,
+                        dialog = { _ -> mockDialog },
+                        useCases = mockUseCases,
+                        loadUrlUseCase = mockLoadUrlUseCase,
+                        mainDispatcher = testDispatcher,
+                    )
+                )
+                .also {
+                    it.start()
+                    testDispatcher.scheduler.advanceUntilIdle()
+                }
 
         val tab =
             createCustomTab(
                 id = "d",
                 url = webUrl,
-                source = SessionState.Source.External.ActionSend(
-                    ExternalPackage("com.zxing.app", PackageCategory.PRODUCTIVITY),
-                ),
+                source =
+                    SessionState.Source.External.ActionSend(
+                        ExternalPackage("com.zxing.app", PackageCategory.PRODUCTIVITY)
+                    ),
             )
 
         val appIntent: Intent = mock()
@@ -246,28 +255,31 @@ class AppLinksFeatureTest {
 
     @Test
     fun `WHEN tab have action search and caller is the same as external app THEN an external app dialog is shown`() {
-        feature = spy(
-            AppLinksFeature(
-                context = mockContext,
-                store = store,
-                fragmentManager = mockFragmentManager,
-                dialog = { _ -> mockDialog },
-                useCases = mockUseCases,
-                loadUrlUseCase = mockLoadUrlUseCase,
-                mainDispatcher = testDispatcher,
-            ),
-        ).also {
-            it.start()
-            testDispatcher.scheduler.advanceUntilIdle()
-        }
+        feature =
+            spy(
+                    AppLinksFeature(
+                        context = mockContext,
+                        store = store,
+                        fragmentManager = mockFragmentManager,
+                        dialog = { _ -> mockDialog },
+                        useCases = mockUseCases,
+                        loadUrlUseCase = mockLoadUrlUseCase,
+                        mainDispatcher = testDispatcher,
+                    )
+                )
+                .also {
+                    it.start()
+                    testDispatcher.scheduler.advanceUntilIdle()
+                }
 
         val tab =
             createCustomTab(
                 id = "d",
                 url = webUrl,
-                source = SessionState.Source.External.ActionSearch(
-                    ExternalPackage("com.zxing.app", PackageCategory.PRODUCTIVITY),
-                ),
+                source =
+                    SessionState.Source.External.ActionSearch(
+                        ExternalPackage("com.zxing.app", PackageCategory.PRODUCTIVITY)
+                    ),
             )
 
         val appIntent: Intent = mock()
@@ -283,20 +295,22 @@ class AppLinksFeatureTest {
 
     @Test
     fun `WHEN should prompt and in private mode THEN an external app dialog is shown`() {
-        feature = spy(
-            AppLinksFeature(
-                context = mockContext,
-                store = store,
-                fragmentManager = mockFragmentManager,
-                dialog = { _ -> mockDialog },
-                useCases = mockUseCases,
-                loadUrlUseCase = mockLoadUrlUseCase,
-                mainDispatcher = testDispatcher,
-            ),
-        ).also {
-            it.start()
-            testDispatcher.scheduler.advanceUntilIdle()
-        }
+        feature =
+            spy(
+                    AppLinksFeature(
+                        context = mockContext,
+                        store = store,
+                        fragmentManager = mockFragmentManager,
+                        dialog = { _ -> mockDialog },
+                        useCases = mockUseCases,
+                        loadUrlUseCase = mockLoadUrlUseCase,
+                        mainDispatcher = testDispatcher,
+                    )
+                )
+                .also {
+                    it.start()
+                    testDispatcher.scheduler.advanceUntilIdle()
+                }
 
         val tab = createTab(webUrl, private = true)
         feature.handleAppIntent(tab, intentUrl, mock(), null, null)
@@ -307,21 +321,23 @@ class AppLinksFeatureTest {
 
     @Test
     fun `WHEN should not prompt and in private mode THEN an external app dialog is shown`() {
-        feature = spy(
-            AppLinksFeature(
-                context = mockContext,
-                store = store,
-                fragmentManager = mockFragmentManager,
-                dialog = { _ -> mockDialog },
-                useCases = mockUseCases,
-                loadUrlUseCase = mockLoadUrlUseCase,
-                mainDispatcher = testDispatcher,
-                shouldPrompt = { false },
-            ),
-        ).also {
-            it.start()
-            testDispatcher.scheduler.advanceUntilIdle()
-        }
+        feature =
+            spy(
+                    AppLinksFeature(
+                        context = mockContext,
+                        store = store,
+                        fragmentManager = mockFragmentManager,
+                        dialog = { _ -> mockDialog },
+                        useCases = mockUseCases,
+                        loadUrlUseCase = mockLoadUrlUseCase,
+                        mainDispatcher = testDispatcher,
+                        shouldPrompt = { false },
+                    )
+                )
+                .also {
+                    it.start()
+                    testDispatcher.scheduler.advanceUntilIdle()
+                }
 
         val tab = createTab(webUrl, private = true)
         feature.handleAppIntent(tab, intentUrl, mock(), null, null)
@@ -393,21 +409,23 @@ class AppLinksFeatureTest {
 
     @Test
     fun `WHEN url scheme is a wallet scheme THEN wallet prompt is shown even if shouldPrompt is false`() {
-        feature = spy(
-            AppLinksFeature(
-                context = mockContext,
-                store = store,
-                fragmentManager = mockFragmentManager,
-                dialog = { _ -> mockDialog },
-                useCases = mockUseCases,
-                loadUrlUseCase = mockLoadUrlUseCase,
-                mainDispatcher = testDispatcher,
-                shouldPrompt = { false },
-            ),
-        ).also {
-            it.start()
-            testDispatcher.scheduler.advanceUntilIdle()
-        }
+        feature =
+            spy(
+                    AppLinksFeature(
+                        context = mockContext,
+                        store = store,
+                        fragmentManager = mockFragmentManager,
+                        dialog = { _ -> mockDialog },
+                        useCases = mockUseCases,
+                        loadUrlUseCase = mockLoadUrlUseCase,
+                        mainDispatcher = testDispatcher,
+                        shouldPrompt = { false },
+                    )
+                )
+                .also {
+                    it.start()
+                    testDispatcher.scheduler.advanceUntilIdle()
+                }
 
         val walletUrl = "openid4vp://credential-offer"
         val tab = createTab("https://example.com", private = false)
@@ -422,28 +440,31 @@ class AppLinksFeatureTest {
 
     @Test
     fun `WHEN intent data scheme is a wallet scheme THEN wallet prompt is shown even if shouldPrompt is false`() {
-        feature = spy(
-            AppLinksFeature(
-                context = mockContext,
-                store = store,
-                fragmentManager = mockFragmentManager,
-                dialog = { _ -> mockDialog },
-                useCases = mockUseCases,
-                loadUrlUseCase = mockLoadUrlUseCase,
-                mainDispatcher = testDispatcher,
-                shouldPrompt = { false },
-            ),
-        ).also {
-            it.start()
-            testDispatcher.scheduler.advanceUntilIdle()
-        }
+        feature =
+            spy(
+                    AppLinksFeature(
+                        context = mockContext,
+                        store = store,
+                        fragmentManager = mockFragmentManager,
+                        dialog = { _ -> mockDialog },
+                        useCases = mockUseCases,
+                        loadUrlUseCase = mockLoadUrlUseCase,
+                        mainDispatcher = testDispatcher,
+                        shouldPrompt = { false },
+                    )
+                )
+                .also {
+                    it.start()
+                    testDispatcher.scheduler.advanceUntilIdle()
+                }
 
         val nonWalletUrl = "https://example.com"
         val tab = createTab(nonWalletUrl, private = false)
 
-        val appIntent = Intent(Intent.ACTION_VIEW).apply {
-            data = "mdoc-openid4vp://present".toUri()
-        }
+        val appIntent =
+            Intent(Intent.ACTION_VIEW).apply {
+                data = "mdoc-openid4vp://present".toUri()
+            }
 
         feature.handleAppIntent(tab, nonWalletUrl, appIntent, null, null)
 
@@ -453,104 +474,115 @@ class AppLinksFeatureTest {
 
     @Test
     fun `isWalletLink returns true only for wallet schemes`() {
-        val feature = AppLinksFeature(
-            context = mockContext,
-            store = store,
-            fragmentManager = mockFragmentManager,
-            useCases = mockUseCases,
-            mainDispatcher = testDispatcher,
-            loadUrlUseCase = mockLoadUrlUseCase,
-        )
+        val feature =
+            AppLinksFeature(
+                context = mockContext,
+                store = store,
+                fragmentManager = mockFragmentManager,
+                useCases = mockUseCases,
+                mainDispatcher = testDispatcher,
+                loadUrlUseCase = mockLoadUrlUseCase,
+            )
 
         val walletUrl = "openid4vp://credential-offer"
         var appIntent = Intent(Intent.ACTION_VIEW)
         assertTrue(feature.isWalletLink(walletUrl, appIntent))
 
         val nonWalletUrl = "https://example.com"
-        appIntent = Intent(Intent.ACTION_VIEW).apply {
-            data = "mdoc-openid4vp://something".toUri()
-        }
+        appIntent =
+            Intent(Intent.ACTION_VIEW).apply {
+                data = "mdoc-openid4vp://something".toUri()
+            }
         assertTrue(feature.isWalletLink(nonWalletUrl, appIntent))
 
-        appIntent = Intent(Intent.ACTION_VIEW).apply {
-            data = "https://mozilla.org".toUri()
-        }
+        appIntent =
+            Intent(Intent.ACTION_VIEW).apply {
+                data = "https://mozilla.org".toUri()
+            }
         assertFalse(feature.isWalletLink("https://example.com", appIntent))
 
-        appIntent = Intent(Intent.ACTION_VIEW).apply {
-            data = "eudi-wallet://open".toUri()
-        }
+        appIntent =
+            Intent(Intent.ACTION_VIEW).apply {
+                data = "eudi-wallet://open".toUri()
+            }
         assertTrue(feature.isWalletLink("openid-credential-offer://init", appIntent))
     }
 
     @Test
     fun `WHEN shouldPrompt is false regardless of private or wallet THEN shouldBypassPrompt returns true`() {
-        feature = AppLinksFeature(
-            context = mockContext,
-            store = store,
-            fragmentManager = mockFragmentManager,
-            useCases = mockUseCases,
-            mainDispatcher = testDispatcher,
-            shouldPrompt = { false },
-        )
+        feature =
+            AppLinksFeature(
+                context = mockContext,
+                store = store,
+                fragmentManager = mockFragmentManager,
+                useCases = mockUseCases,
+                mainDispatcher = testDispatcher,
+                shouldPrompt = { false },
+            )
 
         assertTrue(
             feature.shouldBypassPrompt(
                 isPrivate = false,
                 isWallet = false,
-            ),
+            )
         )
     }
 
     @Test
     fun `WHEN isPrivate is true THEN shouldBypassPrompt returns false`() {
-        feature = AppLinksFeature(
-            context = mockContext,
-            store = store,
-            fragmentManager = mockFragmentManager,
-            useCases = mockUseCases,
-            mainDispatcher = testDispatcher,
-        )
+        feature =
+            AppLinksFeature(
+                context = mockContext,
+                store = store,
+                fragmentManager = mockFragmentManager,
+                useCases = mockUseCases,
+                mainDispatcher = testDispatcher,
+            )
 
         assertFalse(
             feature.shouldBypassPrompt(
                 isPrivate = true,
                 isWallet = false,
-            ),
+            )
         )
     }
 
     @Test
     fun `WHEN isWallet is true THEN shouldBypassPrompt returns false`() {
-        feature = AppLinksFeature(
-            context = mockContext,
-            store = store,
-            fragmentManager = mockFragmentManager,
-            useCases = mockUseCases,
-            mainDispatcher = testDispatcher,
-            shouldPrompt = { false },
-        )
+        feature =
+            AppLinksFeature(
+                context = mockContext,
+                store = store,
+                fragmentManager = mockFragmentManager,
+                useCases = mockUseCases,
+                mainDispatcher = testDispatcher,
+                shouldPrompt = { false },
+            )
 
         assertFalse(
             feature.shouldBypassPrompt(
                 isPrivate = false,
                 isWallet = true,
-            ),
+            )
         )
     }
 
     @Test
     fun `WHEN custom dialog factory is set THEN it receives correct source URL, destination URL, and package name`() {
         var capturedData: RedirectDialogData? = null
-        val capturingFeature = AppLinksFeature(
-            context = mockContext,
-            store = store,
-            fragmentManager = mockFragmentManager,
-            dialog = { data -> capturedData = data; mockDialog },
-            useCases = mockUseCases,
-            loadUrlUseCase = mockLoadUrlUseCase,
-            mainDispatcher = testDispatcher,
-        )
+        val capturingFeature =
+            AppLinksFeature(
+                context = mockContext,
+                store = store,
+                fragmentManager = mockFragmentManager,
+                dialog = { data ->
+                    capturedData = data
+                    mockDialog
+                },
+                useCases = mockUseCases,
+                loadUrlUseCase = mockLoadUrlUseCase,
+                mainDispatcher = testDispatcher,
+            )
 
         capturingFeature.getOrCreateDialog(
             isPrivate = false,
@@ -571,16 +603,20 @@ class AppLinksFeatureTest {
     @Test
     fun `WHEN private mode THEN showCheckbox is false in RedirectDialogData`() {
         var capturedData: RedirectDialogData? = null
-        val capturingFeature = AppLinksFeature(
-            context = mockContext,
-            store = store,
-            fragmentManager = mockFragmentManager,
-            dialog = { data -> capturedData = data; mockDialog },
-            useCases = mockUseCases,
-            loadUrlUseCase = mockLoadUrlUseCase,
-            mainDispatcher = testDispatcher,
-            alwaysOpenCheckboxAction = {},
-        )
+        val capturingFeature =
+            AppLinksFeature(
+                context = mockContext,
+                store = store,
+                fragmentManager = mockFragmentManager,
+                dialog = { data ->
+                    capturedData = data
+                    mockDialog
+                },
+                useCases = mockUseCases,
+                loadUrlUseCase = mockLoadUrlUseCase,
+                mainDispatcher = testDispatcher,
+                alwaysOpenCheckboxAction = {},
+            )
 
         capturingFeature.getOrCreateDialog(isPrivate = true, isWallet = false, url = intentUrl, targetAppName = null)
 
@@ -590,15 +626,19 @@ class AppLinksFeatureTest {
     @Test
     fun `WHEN destination URL scheme is supported THEN firefoxUrl equals destination URL`() {
         var capturedData: RedirectDialogData? = null
-        val capturingFeature = AppLinksFeature(
-            context = mockContext,
-            store = store,
-            fragmentManager = mockFragmentManager,
-            dialog = { data -> capturedData = data; mockDialog },
-            useCases = mockUseCases,
-            loadUrlUseCase = mockLoadUrlUseCase,
-            mainDispatcher = testDispatcher,
-        )
+        val capturingFeature =
+            AppLinksFeature(
+                context = mockContext,
+                store = store,
+                fragmentManager = mockFragmentManager,
+                dialog = { data ->
+                    capturedData = data
+                    mockDialog
+                },
+                useCases = mockUseCases,
+                loadUrlUseCase = mockLoadUrlUseCase,
+                mainDispatcher = testDispatcher,
+            )
 
         capturingFeature.getOrCreateDialog(isPrivate = false, isWallet = false, url = webUrl, targetAppName = null)
 
@@ -608,15 +648,19 @@ class AppLinksFeatureTest {
     @Test
     fun `WHEN destination URL scheme is unsupported AND fallback URL provided THEN firefoxUrl equals fallback`() {
         var capturedData: RedirectDialogData? = null
-        val capturingFeature = AppLinksFeature(
-            context = mockContext,
-            store = store,
-            fragmentManager = mockFragmentManager,
-            dialog = { data -> capturedData = data; mockDialog },
-            useCases = mockUseCases,
-            loadUrlUseCase = mockLoadUrlUseCase,
-            mainDispatcher = testDispatcher,
-        )
+        val capturingFeature =
+            AppLinksFeature(
+                context = mockContext,
+                store = store,
+                fragmentManager = mockFragmentManager,
+                dialog = { data ->
+                    capturedData = data
+                    mockDialog
+                },
+                useCases = mockUseCases,
+                loadUrlUseCase = mockLoadUrlUseCase,
+                mainDispatcher = testDispatcher,
+            )
 
         capturingFeature.getOrCreateDialog(
             isPrivate = false,
@@ -632,15 +676,19 @@ class AppLinksFeatureTest {
     @Test
     fun `WHEN destination URL scheme is unsupported AND no fallback THEN firefoxUrl is null`() {
         var capturedData: RedirectDialogData? = null
-        val capturingFeature = AppLinksFeature(
-            context = mockContext,
-            store = store,
-            fragmentManager = mockFragmentManager,
-            dialog = { data -> capturedData = data; mockDialog },
-            useCases = mockUseCases,
-            loadUrlUseCase = mockLoadUrlUseCase,
-            mainDispatcher = testDispatcher,
-        )
+        val capturingFeature =
+            AppLinksFeature(
+                context = mockContext,
+                store = store,
+                fragmentManager = mockFragmentManager,
+                dialog = { data ->
+                    capturedData = data
+                    mockDialog
+                },
+                useCases = mockUseCases,
+                loadUrlUseCase = mockLoadUrlUseCase,
+                mainDispatcher = testDispatcher,
+            )
 
         capturingFeature.getOrCreateDialog(
             isPrivate = false,

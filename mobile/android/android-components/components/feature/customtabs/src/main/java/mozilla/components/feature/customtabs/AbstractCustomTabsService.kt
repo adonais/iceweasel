@@ -29,9 +29,7 @@ import mozilla.components.support.utils.ext.packageManagerCompatHelper
  */
 private const val MAX_SPECULATIVE_URLS = 50
 
-/**
- * [Service] providing Custom Tabs related functionality.
- */
+/** [Service] providing Custom Tabs related functionality. */
 abstract class AbstractCustomTabsService : CustomTabsService() {
     private val logger = Logger("CustomTabsService")
     open val scope = MainScope()
@@ -46,7 +44,9 @@ abstract class AbstractCustomTabsService : CustomTabsService() {
             OriginVerifierFeature(
                 packageManagerCompatHelper,
                 checker,
-            ) { customTabsServiceStore.dispatch(it) }
+            ) {
+                customTabsServiceStore.dispatch(it)
+            }
         }
     }
 
@@ -65,9 +65,7 @@ abstract class AbstractCustomTabsService : CustomTabsService() {
         return false
     }
 
-    /**
-     * Saves the package name of the app creating the custom tab when a new session is started.
-     */
+    /** Saves the package name of the app creating the custom tab when a new session is started. */
     override fun newSession(sessionToken: CustomTabsSessionToken): Boolean {
         // Extract the process UID of the app creating the custom tab.
         val uid = Binder.getCallingUid()

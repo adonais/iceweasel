@@ -20,7 +20,6 @@ linux64-python-3.9:
     treeherder:
         symbol: TL(python)
     run:
-        clone-with: hg
         toolchain-alias: linux64-python
         toolchain-artifact: public/build/python.tar.zst
     fetches:
@@ -35,7 +34,6 @@ linux64-aarch64-python-3.9:
     treeherder:
         symbol: TLA64(python)
     run:
-        clone-with: hg
         toolchain-alias: linux64-aarch64-python
         toolchain-artifact: public/build/python.tar.zst
     fetches:
@@ -49,7 +47,6 @@ linux64-aarch64-python-3.11:
     treeherder:
         symbol: TLA64(python3.11)
     run:
-        clone-with: hg
         toolchain-artifact: public/build/python.tar.zst
     fetches:
         fetch:
@@ -62,7 +59,6 @@ win64-python-3.9:
     treeherder:
         symbol: TW64(python)
     run:
-        clone-with: hg
         script: pack-cpython.sh
         toolchain-alias: win64-python
         toolchain-artifact: public/build/python.tar.zst
@@ -77,7 +73,6 @@ macosx64-python-3.9:
         symbol: TM(python)
     worker-type: b-osx-1015
     run:
-        clone-with: hg
         toolchain-alias: macosx64-python
         toolchain-artifact: public/build/python.tar.zst
     fetches:
@@ -94,7 +89,6 @@ linux64-python-3.11:
     treeherder:
         symbol: TL(python3.11)
     run:
-        clone-with: hg
         toolchain-artifact: public/build/python.tar.zst
     fetches:
         fetch:
@@ -107,7 +101,6 @@ win64-python-3.11:
     treeherder:
         symbol: TW64(python3.11)
     run:
-        clone-with: hg
         script: pack-cpython.sh
         toolchain-artifact: public/build/python.tar.zst
     fetches:
@@ -121,7 +114,6 @@ macosx64-python-3.11:
         symbol: TM(python3.11)
     worker-type: b-osx-1015
     run:
-        clone-with: hg
         toolchain-artifact: public/build/python.tar.zst
     fetches:
         fetch:

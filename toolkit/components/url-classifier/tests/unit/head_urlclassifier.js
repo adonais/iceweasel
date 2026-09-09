@@ -190,8 +190,8 @@ function doSimpleUpdate(updateText, success, failure) {
     updateError(errorCode) {
       failure(errorCode);
     },
-    updateSuccess(requestedTimeout) {
-      success(requestedTimeout);
+    updateSuccess(tables, waitSeconds) {
+      success(tables, waitSeconds);
     },
   };
 
@@ -214,8 +214,8 @@ function doErrorUpdate(tables, success, failure) {
     updateError(errorCode) {
       success(errorCode);
     },
-    updateSuccess(requestedTimeout) {
-      failure(requestedTimeout);
+    updateSuccess(tables, waitSeconds) {
+      failure(tables, waitSeconds);
     },
   };
 

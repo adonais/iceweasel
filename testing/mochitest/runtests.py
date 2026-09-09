@@ -55,6 +55,7 @@ from manifestparser.filters import (
 from manifestparser.util import normsep
 from mozgeckoprofiler import (
     symbolicate_profile_json,
+    symbolicate_profiles,
     view_gecko_profile,
 )
 from mozserve import DoHServer, Http2Server, Http3Server, MozHttp2Server
@@ -3877,6 +3878,9 @@ toolbar#nav-bar {
                 with out_path.open("w", encoding="utf-8") as f:
                     f.write(json.dumps(data))
 
+        if "MOZ_AUTOMATION" in os.environ:
+            symbolicate_profiles()
+
         self.handleShutdownProfile(options)
 
         if not result:
@@ -4253,8 +4257,7 @@ toolbar#nav-bar {
             profiler_logger.info("Wait 10s for Firefox to write the profile to disk.")
             time.sleep(10)
 
-            # Symbolicate the profile generated above using signals. The profile
-            # file will be named something like:
+            # The profile file will be named something like:
             #  `$MOZ_UPLOAD_DIR/profile_${tid}_${pid}.json
             # where `tid` is /currently/ always 0 (we can only write our profile
             # from the main thread). This may change if we end up writing from
@@ -4262,16 +4265,6 @@ toolbar#nav-bar {
             # `platform.cpp` for more details on how we name signal-generated
             # profiles.
             # Sanity check that we actually have a MOZ_UPLOAD_DIR
-            if "MOZ_UPLOAD_DIR" in os.environ:
-                profiler_logger.info(
-                    f"Symbolicating profile in {os.environ['MOZ_UPLOAD_DIR']}"
-                )
-                profile_path = "{}/profile_0_{}.json".format(
-                    os.environ["MOZ_UPLOAD_DIR"], browser_pid
-                )
-                profiler_logger.info(f"Looking inside symbols dir: {symbolsPath})")
-                profiler_logger.info(f"Symbolicating profile: {profile_path}")
-                symbolicate_profile_json(profile_path, symbolsPath)
         else:
             profiler_logger.info(
                 "Not sending a signal to start the profiler - not on MacOS or Linux. See Bug 1823370."

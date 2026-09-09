@@ -8,6 +8,9 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.StrictMode
 import android.util.Log
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.android.asCoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -19,20 +22,15 @@ import mozilla.components.support.webextensions.WebExtensionSupport
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.TestHelper.appContext
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Generic installer for built-in web extension fixtures used by add-on UI tests.
  *
- * Extension descriptors ([BuiltInTestExtension]) and any extension-specific readiness conditions
- * belong in the test class that uses them, not here.
+ * Extension descriptors ([BuiltInTestExtension]) and any extension-specific readiness conditions belong in the test
+ * class that uses them, not here.
  */
 object TestWebExtensionInstaller {
-    /**
-     * Descriptor for a built-in test extension packaged in the APK assets.
-     */
+    /** Descriptor for a built-in test extension packaged in the APK assets. */
     data class BuiltInTestExtension(
         val name: String,
         val id: String,
@@ -43,13 +41,13 @@ object TestWebExtensionInstaller {
     private val POLL_INTERVAL_MS = 250.milliseconds
 
     /**
-     * Ensures the given built-in test extension is installed and waits until [readyState] returns
-     * a non-null description for the extension.
+     * Ensures the given built-in test extension is installed and waits until [readyState] returns a non-null
+     * description for the extension.
      *
      * @param extension Descriptor of the built-in test extension to install or reuse.
-     * @param readyState Callback that returns a non-null readiness description once the extension
-     * is ready for the calling test's next step. The default only checks that the extension is
-     * present in [WebExtensionSupport.installedExtensions].
+     * @param readyState Callback that returns a non-null readiness description once the extension is ready for the
+     *   calling test's next step. The default only checks that the extension is present in
+     *   [WebExtensionSupport.installedExtensions].
      */
     fun ensureBuiltInExtensionInstalled(
         extension: BuiltInTestExtension,
@@ -57,29 +55,30 @@ object TestWebExtensionInstaller {
             WebExtensionSupport.installedExtensions[builtInExtension.id]?.let { "installed" }
         },
     ) = runBlocking {
-            val existingReadyState = readyState(extension)
-            if (existingReadyState != null) {
-                Log.i(
-                    TAG,
-                    "ensureBuiltInExtensionInstalled: Reusing ${extension.name} with $existingReadyState",
-                )
-                return@runBlocking
-            }
-
+        val existingReadyState = readyState(extension)
+        if (existingReadyState != null) {
             Log.i(
                 TAG,
-                "ensureBuiltInExtensionInstalled: Installing ${extension.name} from ${extension.uri}",
+                "ensureBuiltInExtensionInstalled: Reusing ${extension.name} with $existingReadyState",
             )
-            installBuiltInExtension(appContext, extension)
-            waitForExtensionReady(extension, readyState)
+            return@runBlocking
         }
 
+        Log.i(
+            TAG,
+            "ensureBuiltInExtensionInstalled: Installing ${extension.name} from ${extension.uri}",
+        )
+        installBuiltInExtension(appContext, extension)
+        waitForExtensionReady(extension, readyState)
+    }
+
     fun uninstallExtension(extension: BuiltInTestExtension) = runBlocking {
-        val installed = WebExtensionSupport.installedExtensions[extension.id]
-            ?: run {
-                Log.i(TAG, "uninstallExtension: ${extension.name} was not installed")
-                return@runBlocking
-            }
+        val installed =
+            WebExtensionSupport.installedExtensions[extension.id]
+                ?: run {
+                    Log.i(TAG, "uninstallExtension: ${extension.name} was not installed")
+                    return@runBlocking
+                }
         Log.i(TAG, "uninstallExtension: Uninstalling ${extension.name}")
         onExtensionHandlerThread {
             suspendCancellableCoroutine { continuation ->
@@ -99,10 +98,12 @@ object TestWebExtensionInstaller {
         onExtensionHandlerThread {
             val previousPolicy = StrictMode.allowThreadDiskReads()
             try {
-                context.components.core.geckoRuntime.webExtensionController.ensureBuiltIn(
-                    extension.uri,
-                    extension.id,
-                ).await()
+                context.components.core.geckoRuntime.webExtensionController
+                    .ensureBuiltIn(
+                        extension.uri,
+                        extension.id,
+                    )
+                    .await()
             } finally {
                 StrictMode.setThreadPolicy(previousPolicy)
             }

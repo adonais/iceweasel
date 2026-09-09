@@ -7,17 +7,16 @@ package org.mozilla.fenix.home.topsites.store
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 
-/**
- * The [Store] for holding the [ShortcutsState] and applying [ShortcutsAction]s.
- */
+/** The [Store] for holding the [ShortcutsState] and applying [ShortcutsAction]s. */
 class ShortcutsStore(
     initialState: ShortcutsState,
     middleware: List<Middleware<ShortcutsState, ShortcutsAction>> = listOf(),
-) : Store<ShortcutsState, ShortcutsAction>(
-    initialState = initialState,
-    reducer = ::reducer,
-    middleware = middleware,
-) {
+) :
+    Store<ShortcutsState, ShortcutsAction>(
+        initialState = initialState,
+        reducer = ::reducer,
+        middleware = middleware,
+    ) {
     init {
         dispatch(ShortcutsAction.InitAction)
     }
@@ -26,31 +25,18 @@ class ShortcutsStore(
 private fun reducer(state: ShortcutsState, action: ShortcutsAction): ShortcutsState {
     return when (action) {
         is ShortcutsAction.InitAction,
-        is ShortcutsAction.SaveShortcut,
-            -> state
+        is ShortcutsAction.SaveShortcut -> state
 
-        is ShortcutsAction.UpdateTopSites -> state.copy(
-            topSites = action.topSites,
-        )
+        is ShortcutsAction.UpdateTopSites -> state.copy(topSites = action.topSites)
 
-        is ShortcutsAction.UpdatePopularSites -> state.copy(
-            popularSites = action.popularSites,
-        )
+        is ShortcutsAction.UpdatePopularSites -> state.copy(popularSites = action.popularSites)
 
-        is ShortcutsAction.UpdateShowAddShortcut -> state.copy(
-            showAddShortcut = action.showAddShortcut,
-        )
+        is ShortcutsAction.UpdateShowAddShortcut -> state.copy(showAddShortcut = action.showAddShortcut)
 
-        is ShortcutsAction.ShowAddShortcutBottomSheet -> state.copy(
-            dialogState = DialogState.AddShortcutBottomSheet,
-        )
+        is ShortcutsAction.ShowAddShortcutBottomSheet -> state.copy(dialogState = DialogState.AddShortcutBottomSheet)
 
-        is ShortcutsAction.ShowAddShortcutDialog -> state.copy(
-            dialogState = DialogState.AddShortcut,
-        )
+        is ShortcutsAction.ShowAddShortcutDialog -> state.copy(dialogState = DialogState.AddShortcut)
 
-        is ShortcutsAction.CloseDialog -> state.copy(
-            dialogState = DialogState.Closed,
-        )
+        is ShortcutsAction.CloseDialog -> state.copy(dialogState = DialogState.Closed)
     }
 }

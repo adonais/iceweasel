@@ -151,6 +151,56 @@ describe("LinkParagraph component", () => {
       assert.isUndefined(linkKeyAnchor.prop("href"));
     });
 
+    it("should render image segments as an inline-icon img with the resolved src", () => {
+      wrapper.setProps({
+        text_content: {
+          text: [{ imageURL: "chrome://test.svg", alt: "test icon" }],
+        },
+      });
+      const img = wrapper.find(".link-paragraph img");
+      assert.lengthOf(img, 1);
+      assert.strictEqual(img.prop("src"), "chrome://test.svg");
+      assert.strictEqual(img.prop("alt"), "test icon");
+      assert.isTrue(img.hasClass("inline-icon"));
+    });
+
+    it("should default the alt text to an empty string when not provided on an image segment", () => {
+      wrapper.setProps({
+        text_content: {
+          text: [{ imageURL: "chrome://test.svg" }],
+        },
+      });
+      const img = wrapper.find(".link-paragraph img");
+      assert.strictEqual(img.prop("alt"), "");
+    });
+
+    it("should apply CONFIGURABLE_STYLES from an image segment to the img style", () => {
+      wrapper.setProps({
+        text_content: {
+          text: [{ imageURL: "chrome://test.svg", width: "16px" }],
+        },
+      });
+      const img = wrapper.find(".link-paragraph img");
+      assert.strictEqual(img.prop("style").width, "16px");
+    });
+
+    it("should use rtlImageURL for an image segment when in RTL", () => {
+      document.documentElement.setAttribute("dir", "rtl");
+      wrapper.setProps({
+        text_content: {
+          text: [
+            {
+              imageURL: "chrome://ltr.svg",
+              rtlImageURL: "chrome://rtl.svg",
+            },
+          ],
+        },
+      });
+      const img = wrapper.find(".link-paragraph img");
+      assert.strictEqual(img.prop("src"), "chrome://rtl.svg");
+      document.documentElement.removeAttribute("dir");
+    });
+
     it("should fall back to a localized span when a segment has neither href nor link_key", () => {
       wrapper.setProps({
         text_content: { text: [{ raw: "plain segment" }] },
@@ -223,6 +273,64 @@ describe("LinkParagraph component", () => {
           where: "tabshifted",
         },
       });
+    });
+
+    it("should dispatch an arbitrary special message action for an action segment", () => {
+      const action = {
+        type: "OPEN_ABOUT_PAGE",
+        data: { args: "preferences#privacy" },
+      };
+      wrapper.setProps({
+        text_content: {
+          text: [{ raw: "Manage diagnostic and interaction data", action }],
+        },
+      });
+
+      const anchor = wrapper.find(".link-paragraph a");
+      assert.lengthOf(anchor, 1);
+      assert.strictEqual(anchor.prop("role"), "link");
+      assert.isUndefined(anchor.prop("href"));
+
+      anchor.simulate("click", { preventDefault() {} });
+      assert.calledOnce(handleAction);
+      assert.deepEqual(handleAction.firstCall.args[1], action);
+    });
+
+    it("should dispatch an action segment on Enter and ignore repeats", () => {
+      const action = { type: "OPEN_ABOUT_PAGE", data: { args: "logins" } };
+      wrapper.setProps({
+        text_content: { text: [{ raw: "Manage", action }] },
+      });
+
+      const anchor = wrapper.find(".link-paragraph a");
+      anchor.simulate("keypress", {
+        key: "Enter",
+        repeat: true,
+        preventDefault() {},
+      });
+      assert.notCalled(handleAction);
+
+      anchor.simulate("keypress", {
+        key: "Enter",
+        repeat: false,
+        preventDefault() {},
+      });
+      assert.calledOnce(handleAction);
+      assert.deepEqual(handleAction.firstCall.args[1], action);
+    });
+
+    it("should prefer the action over href when a segment has both", () => {
+      const action = { type: "SET_TERMS_OF_USE_INTERACTED" };
+      wrapper.setProps({
+        text_content: {
+          text: [{ raw: "Terms", href: "https://example.com/terms", action }],
+        },
+      });
+
+      const anchor = wrapper.find(".link-paragraph a");
+      assert.strictEqual(anchor.prop("href"), "https://example.com/terms");
+      anchor.simulate("click", { preventDefault() {} });
+      assert.deepEqual(handleAction.firstCall.args[1], action);
     });
 
     it('should default the OPEN_URL `where` to "tab" when the segment omits it', () => {

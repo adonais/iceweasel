@@ -8,8 +8,8 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import org.mozilla.fenix.R
 import java.util.Locale
+import org.mozilla.fenix.R
 
 class LocaleAdapter(private val interactor: LocaleSettingsViewInteractor) :
     RecyclerView.Adapter<BaseLocaleViewHolder>() {
@@ -18,22 +18,23 @@ class LocaleAdapter(private val interactor: LocaleSettingsViewInteractor) :
     private var selectedLocale: Locale = Locale.getDefault()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BaseLocaleViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.locale_settings_item, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.locale_settings_item, parent, false)
 
         return when (viewType) {
-            ItemType.DEFAULT.ordinal -> SystemLocaleViewHolder(
-                view,
-                selectedLocale,
-                interactor,
-                DefaultLocaleSelectionChecker(),
-            )
-            ItemType.LOCALE.ordinal -> LocaleViewHolder(
-                view,
-                selectedLocale,
-                interactor,
-                DefaultLocaleSelectionChecker(),
-            )
+            ItemType.DEFAULT.ordinal ->
+                SystemLocaleViewHolder(
+                    view,
+                    selectedLocale,
+                    interactor,
+                    DefaultLocaleSelectionChecker(),
+                )
+            ItemType.LOCALE.ordinal ->
+                LocaleViewHolder(
+                    view,
+                    selectedLocale,
+                    interactor,
+                    DefaultLocaleSelectionChecker(),
+                )
             else -> throw IllegalStateException("ViewType $viewType does not match to a ViewHolder")
         }
     }
@@ -54,14 +55,15 @@ class LocaleAdapter(private val interactor: LocaleSettingsViewInteractor) :
     }
 
     fun updateData(localeList: List<Locale>, selectedLocale: Locale) {
-        val diffUtil = DiffUtil.calculateDiff(
-            LocaleDiffUtil(
-                this.localeList,
-                localeList,
-                this.selectedLocale,
-                selectedLocale,
-            ),
-        )
+        val diffUtil =
+            DiffUtil.calculateDiff(
+                LocaleDiffUtil(
+                    this.localeList,
+                    localeList,
+                    this.selectedLocale,
+                    selectedLocale,
+                )
+            )
         this.localeList = localeList
         this.selectedLocale = selectedLocale
 
@@ -76,8 +78,7 @@ class LocaleAdapter(private val interactor: LocaleSettingsViewInteractor) :
     ) : DiffUtil.Callback() {
 
         override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-            val selectionChanged =
-                old[oldItemPosition] == oldSelectedLocale && oldSelectedLocale != newSelectedLocale
+            val selectionChanged = old[oldItemPosition] == oldSelectedLocale && oldSelectedLocale != newSelectedLocale
             return old[oldItemPosition] == new[newItemPosition] && !selectionChanged
         }
 
@@ -85,10 +86,12 @@ class LocaleAdapter(private val interactor: LocaleSettingsViewInteractor) :
             old[oldItemPosition].toLanguageTag() == new[newItemPosition].toLanguageTag()
 
         override fun getOldListSize(): Int = old.size
+
         override fun getNewListSize(): Int = new.size
     }
 
     enum class ItemType {
-        DEFAULT, LOCALE
+        DEFAULT,
+        LOCALE,
     }
 }

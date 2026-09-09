@@ -23,10 +23,10 @@ import org.mozilla.fenix.utils.Settings
  * @param settings Fenix [Settings]
  * @param topSitesProvider [TopSitesProvider] to refresh top sites
  * @param visualCompletenessQueue [RunWhenReadyQueue] for visual completeness
- * @param startupPathProvider [StartupPathProvider] that tells us whether the app was started
- * for "app link" (aka [StartupPathProvider.StartupPath.VIEW]) or "home" (aka [StartupPathProvider.StartupPath.MAIN])
- * @param dispatcher [CoroutineDispatcher] to use launch the refresh job.
- * Default value is [Dispatchers.IO]. It is helpful to improve testability
+ * @param startupPathProvider [StartupPathProvider] that tells us whether the app was started for "app link" (aka
+ *   [StartupPathProvider.StartupPath.VIEW]) or "home" (aka [StartupPathProvider.StartupPath.MAIN])
+ * @param dispatcher [CoroutineDispatcher] to use launch the refresh job. Default value is [Dispatchers.IO]. It is
+ *   helpful to improve testability
  */
 class TopSitesRefresher(
     private val settings: Settings,
@@ -62,9 +62,10 @@ class TopSitesRefresher(
         scope.launch(dispatcher) {
             runCatching {
                 topSitesProvider.refreshTopSitesIfCacheExpired()
-            }.onFailure { exception ->
-                logger.error("Failed to refresh contile top sites", exception)
             }
+                .onFailure { exception ->
+                    logger.error("Failed to refresh contile top sites", exception)
+                }
         }
     }
 

@@ -26,14 +26,14 @@ fun homepageToolbarColors(
     val colors = MaterialTheme.colorScheme
 
     return when {
-        isPrivateMode -> colors.copy(
-            outlineVariant = colorResource(R.color.homepage_tab_edge_to_edge_private_toolbar_outline),
-        )
+        isPrivateMode ->
+            colors.copy(outlineVariant = colorResource(R.color.homepage_tab_edge_to_edge_private_toolbar_outline))
 
-        shouldUseEdgeToEdgeColors -> colors.copy(
-            surface = colorResource(R.color.homepage_tab_edge_to_edge_toolbar_background),
-            outlineVariant = colorResource(R.color.homepage_tab_edge_to_edge_toolbar_outline),
-        )
+        shouldUseEdgeToEdgeColors ->
+            colors.copy(
+                surface = colorResource(R.color.homepage_tab_edge_to_edge_toolbar_background),
+                outlineVariant = colorResource(R.color.homepage_tab_edge_to_edge_toolbar_outline),
+            )
 
         else -> colors
     }
@@ -43,8 +43,8 @@ fun homepageToolbarColors(
  * Returns the background color for the clipboard suggestion bar.
  *
  * When Edge2Edge background is enabled, the surrounding homepage toolbar surface is transparent, so the clipboard bar
- * needs its own color to stay legible on top of the wallpaper. In private mode, we defer
- * to the theme-aware [MaterialTheme] surface, which honors the private color scheme.
+ * needs its own color to stay legible on top of the wallpaper. In private mode, we defer to the theme-aware
+ * [MaterialTheme] surface, which honors the private color scheme.
  *
  * @param shouldUseEdgeToEdgeColors Whether the edge-to-edge wallpaper colors should be used.
  * @param isPrivateMode Whether private browsing is enabled.

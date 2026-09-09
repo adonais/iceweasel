@@ -148,7 +148,7 @@ Result<nsCString, nsresult> RemoteWorkerManager::GetRemoteType(
 
 // static
 bool RemoteWorkerManager::HasExtensionPrincipal(const RemoteWorkerData& aData) {
-  auto principalInfo = aData.principalInfo();
+  const auto& principalInfo = aData.principalInfo();
   return principalInfo.type() == PrincipalInfo::TContentPrincipalInfo &&
          // This helper method is also called from the background thread and so
          // we can't check if the principal does have an addonPolicy object

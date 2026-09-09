@@ -8,9 +8,7 @@ import mozilla.components.browser.engine.gecko.GeckoEngineSession
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.window.WindowRequest
 
-/**
- * Gecko-based implementation of [WindowRequest].
- */
+/** Gecko-based implementation of [WindowRequest]. */
 class GeckoWindowRequest(
     override val url: String = "",
     private val engineSession: GeckoEngineSession,

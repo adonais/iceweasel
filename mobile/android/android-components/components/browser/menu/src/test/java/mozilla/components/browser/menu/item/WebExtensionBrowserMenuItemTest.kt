@@ -12,7 +12,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.R as appcompatR
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.menu.R
 import mozilla.components.browser.menu.WebExtensionBrowserMenu
@@ -29,8 +31,6 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.notNull
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import kotlin.test.assertNotNull
-import androidx.appcompat.R as appcompatR
 
 @RunWith(AndroidJUnit4::class)
 class WebExtensionBrowserMenuItemTest {
@@ -46,8 +46,7 @@ class WebExtensionBrowserMenuItemTest {
     fun `layout resource can be inflated`() {
         val webExtMenuItem = WebExtensionBrowserMenuItem(mock(), mock())
 
-        val view = LayoutInflater.from(testContext)
-            .inflate(webExtMenuItem.getLayoutResource(), null)
+        val view = LayoutInflater.from(testContext).inflate(webExtMenuItem.getLayoutResource(), null)
 
         assertNotNull(view)
     }
@@ -67,14 +66,15 @@ class WebExtensionBrowserMenuItemTest {
         whenever(view.findViewById<View>(R.id.container)).thenReturn(container)
         whenever(view.context).thenReturn(testContext)
 
-        val browserAction = Action(
-            title = "title",
-            loadIcon = { icon },
-            enabled = false,
-            badgeText = "badgeText",
-            badgeTextColor = Color.WHITE,
-            badgeBackgroundColor = Color.BLUE,
-        ) {}
+        val browserAction =
+            Action(
+                title = "title",
+                loadIcon = { icon },
+                enabled = false,
+                badgeText = "badgeText",
+                badgeTextColor = Color.WHITE,
+                badgeBackgroundColor = Color.BLUE,
+            ) {}
 
         val action = WebExtensionBrowserMenuItem(browserAction, {})
         action.bind(mock(), view)
@@ -100,14 +100,15 @@ class WebExtensionBrowserMenuItemTest {
         whenever(view.findViewById<View>(R.id.container)).thenReturn(container)
         whenever(view.context).thenReturn(testContext)
 
-        val browserAction = Action(
-            title = "title",
-            loadIcon = { icon },
-            enabled = true,
-            badgeText = "badgeText",
-            badgeTextColor = Color.WHITE,
-            badgeBackgroundColor = Color.BLUE,
-        ) {}
+        val browserAction =
+            Action(
+                title = "title",
+                loadIcon = { icon },
+                enabled = true,
+                badgeText = "badgeText",
+                badgeTextColor = Color.WHITE,
+                badgeBackgroundColor = Color.BLUE,
+            ) {}
 
         val action = WebExtensionBrowserMenuItem(browserAction, {}, uiScope = this)
         action.bind(mock(), view)
@@ -140,14 +141,15 @@ class WebExtensionBrowserMenuItemTest {
         whenever(view.context).thenReturn(testContext)
 
         val badgeText = ""
-        val browserAction = Action(
-            title = "title",
-            loadIcon = { icon },
-            enabled = true,
-            badgeText = badgeText,
-            badgeTextColor = Color.WHITE,
-            badgeBackgroundColor = Color.BLUE,
-        ) {}
+        val browserAction =
+            Action(
+                title = "title",
+                loadIcon = { icon },
+                enabled = true,
+                badgeText = badgeText,
+                badgeTextColor = Color.WHITE,
+                badgeBackgroundColor = Color.BLUE,
+            ) {}
 
         val action = WebExtensionBrowserMenuItem(browserAction, {})
         action.bind(mock(), view)
@@ -171,14 +173,15 @@ class WebExtensionBrowserMenuItemTest {
         whenever(view.findViewById<View>(R.id.container)).thenReturn(container)
         whenever(view.context).thenReturn(testContext)
 
-        val browserAction = Action(
-            title = "title",
-            loadIcon = { throw IllegalArgumentException() },
-            enabled = true,
-            badgeText = "badgeText",
-            badgeTextColor = Color.WHITE,
-            badgeBackgroundColor = Color.BLUE,
-        ) {}
+        val browserAction =
+            Action(
+                title = "title",
+                loadIcon = { throw IllegalArgumentException() },
+                enabled = true,
+                badgeText = "badgeText",
+                badgeTextColor = Color.WHITE,
+                badgeBackgroundColor = Color.BLUE,
+            ) {}
 
         val action = WebExtensionBrowserMenuItem(browserAction, {}, uiScope = this)
         action.bind(mock(), view)
@@ -204,14 +207,15 @@ class WebExtensionBrowserMenuItemTest {
         whenever(view.findViewById<View>(R.id.container)).thenReturn(container)
         whenever(view.context).thenReturn(testContext)
 
-        val browserAction = Action(
-            title = "title",
-            loadIcon = { icon },
-            enabled = true,
-            badgeText = "badgeText",
-            badgeTextColor = Color.WHITE,
-            badgeBackgroundColor = Color.BLUE,
-        ) {}
+        val browserAction =
+            Action(
+                title = "title",
+                loadIcon = { icon },
+                enabled = true,
+                badgeText = "badgeText",
+                badgeTextColor = Color.WHITE,
+                badgeBackgroundColor = Color.BLUE,
+            ) {}
 
         val item = WebExtensionBrowserMenuItem(browserAction, { callbackInvoked = true })
 
@@ -241,14 +245,15 @@ class WebExtensionBrowserMenuItemTest {
         whenever(view.findViewById<View>(R.id.container)).thenReturn(container)
         whenever(view.context).thenReturn(testContext)
 
-        val browserAction = Action(
-            title = "title",
-            loadIcon = { icon },
-            enabled = true,
-            badgeText = "badgeText",
-            badgeTextColor = Color.WHITE,
-            badgeBackgroundColor = Color.BLUE,
-        ) {}
+        val browserAction =
+            Action(
+                title = "title",
+                loadIcon = { icon },
+                enabled = true,
+                badgeText = "badgeText",
+                badgeTextColor = Color.WHITE,
+                badgeBackgroundColor = Color.BLUE,
+            ) {}
 
         val item = WebExtensionBrowserMenuItem(browserAction, {})
 
@@ -260,14 +265,15 @@ class WebExtensionBrowserMenuItemTest {
         verify(labelView).text = "title"
         verify(badgeView).text = "badgeText"
 
-        val browserActionOverride = Action(
-            title = "override",
-            loadIcon = { icon },
-            enabled = true,
-            badgeText = "overrideBadge",
-            badgeTextColor = Color.WHITE,
-            badgeBackgroundColor = Color.BLUE,
-        ) {}
+        val browserActionOverride =
+            Action(
+                title = "override",
+                loadIcon = { icon },
+                enabled = true,
+                badgeText = "overrideBadge",
+                badgeTextColor = Color.WHITE,
+                badgeBackgroundColor = Color.BLUE,
+            ) {}
 
         item.action = browserActionOverride
         item.invalidate(view)
@@ -336,11 +342,12 @@ class WebExtensionBrowserMenuItemTest {
         val imageViewCaptor = argumentCaptor<ImageView>()
         val tintCaptor = argumentCaptor<Int>()
 
-        verify(webExtMenuItem).setupIcon(
-            viewCaptor.capture(),
-            imageViewCaptor.capture(),
-            tintCaptor.capture(),
-        )
+        verify(webExtMenuItem)
+            .setupIcon(
+                viewCaptor.capture(),
+                imageViewCaptor.capture(),
+                tintCaptor.capture(),
+            )
 
         assertEquals(view, viewCaptor.value)
         assertEquals(imageView, imageViewCaptor.value)

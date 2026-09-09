@@ -1,0 +1,19 @@
+{
+  "label": "youtube.com background video playback",
+  "bugs": {
+    "2060611": {
+      "issue": "broken-videos",
+      "matches": ["*://m.youtube.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "only_channels": ["nightly"],
+      "content_scripts": {
+        "isolated": true,
+        "js": ["bug2060611-youtube.com-background-video-playback.js"]
+      }
+    }
+  ]
+}

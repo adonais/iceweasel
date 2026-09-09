@@ -5,6 +5,7 @@
 #include "ShutdownTracker.h"
 
 #include "mozilla/Services.h"
+#include "nsCOMPtr.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
 

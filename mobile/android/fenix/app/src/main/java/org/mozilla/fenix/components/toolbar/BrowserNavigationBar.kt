@@ -26,8 +26,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
 
 /**
- * A wrapper over the [NavigationBar] composable that provides enhanced customization and
- * lifecycle-aware integration.
+ * A wrapper over the [NavigationBar] composable that provides enhanced customization and lifecycle-aware integration.
  *
  * @param context [Context] used to access resources and other application-level operations.
  * @param container [ViewGroup] which will serve as parent of this View.
@@ -41,18 +40,20 @@ class BrowserNavigationBar(
     private val toolbarStore: BrowserToolbarStore,
     private val settings: Settings,
     private val hideWhenKeyboardShown: Boolean,
-    ) {
-    val layout = NavigationBarComposeView(context) {
-        DefaultNavigationBarContent()
-    }.apply {
-        id = R.id.navigation_bar
-        addToParent(this)
-        setNavbarDynamicBehavior(this)
-    }
+) {
+    val layout =
+        NavigationBarComposeView(context) {
+                DefaultNavigationBarContent()
+            }
+            .apply {
+                id = R.id.navigation_bar
+                addToParent(this)
+                setNavbarDynamicBehavior(this)
+            }
 
     /**
-     * Returns a [Composable] function that renders the default navigation bar content and ensures
-     * that the associated view-based layout is removed from its parent to prevent UI overlap.
+     * Returns a [Composable] function that renders the default navigation bar content and ensures that the associated
+     * view-based layout is removed from its parent to prevent UI overlap.
      */
     fun asComposable(): @Composable () -> Unit = {
         val removed = remember { mutableStateOf(false) }
@@ -78,18 +79,20 @@ class BrowserNavigationBar(
     @Composable
     private fun DefaultNavigationBarContent() {
         val uiState by toolbarStore.stateFlow.collectAsState()
-        val toolbarGravity = remember(settings) {
-            when (settings.shouldUseBottomToolbar) {
-                true -> Bottom
-                false -> Top
+        val toolbarGravity =
+            remember(settings) {
+                when (settings.shouldUseBottomToolbar) {
+                    true -> Bottom
+                    false -> Top
+                }
             }
-        }
-        val isKeyboardVisible = if (hideWhenKeyboardShown) {
-            val keyboardState by keyboardAsState()
-            keyboardState == KeyboardState.Opened
-        } else {
-            false
-        }
+        val isKeyboardVisible =
+            if (hideWhenKeyboardShown) {
+                val keyboardState by keyboardAsState()
+                keyboardState == KeyboardState.Opened
+            } else {
+                false
+            }
 
         if (uiState.displayState.navigationActions.isNotEmpty() && !isKeyboardVisible) {
             FirefoxTheme {
@@ -106,11 +109,12 @@ class BrowserNavigationBar(
         container.addView(
             view,
             LayoutParams(
-                LayoutParams.MATCH_PARENT,
-                LayoutParams.WRAP_CONTENT,
-            ).apply {
-                gravity = Gravity.BOTTOM
-            },
+                    LayoutParams.MATCH_PARENT,
+                    LayoutParams.WRAP_CONTENT,
+                )
+                .apply {
+                    gravity = Gravity.BOTTOM
+                },
         )
     }
 

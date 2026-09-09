@@ -501,7 +501,8 @@ function OnLDBLoad() {
   try {
     ChromeUtils.registerWindowActor("LayoutDebug", {
       child: {
-        esModuleURI: "resource://gre/actors/LayoutDebugChild.sys.mjs",
+        esModuleURI:
+          "moz-src:///layout/tools/layout-debug/LayoutDebugChild.sys.mjs",
       },
       allFrames: true,
       safeForUntrustedWebProcess: true,

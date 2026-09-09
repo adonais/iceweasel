@@ -12,29 +12,29 @@ import mozilla.components.feature.ipprotection.auth.fxa.IPProtectionActivityAuth
 import org.mozilla.fenix.customtabs.ExternalAppBrowserActivity
 import org.mozilla.fenix.ext.components
 
-/**
- * A special custom tab for signing into a Firefox Account. The activity is closed once the user is signed in.
- */
+/** A special custom tab for signing into a Firefox Account. The activity is closed once the user is signed in. */
 class AuthCustomTabActivity : ExternalAppBrowserActivity() {
 
-    private val ipProtectionActivityAuthFlowObserver = IPProtectionActivityAuthFlowObserver(
-        lazy { components.ipProtection.store },
-        lazy { intent.getBooleanExtra(INTENT_ON_COMPLETE, false) },
-    )
+    private val ipProtectionActivityAuthFlowObserver =
+        IPProtectionActivityAuthFlowObserver(
+            lazy { components.ipProtection.store },
+            lazy { intent.getBooleanExtra(INTENT_ON_COMPLETE, false) },
+        )
 
-    private val accountStateObserver = object : AccountObserver {
-        /**
-         * Navigate away from this activity when we have successful authentication
-         */
-        override fun onAuthenticated(account: OAuthAccount, authType: AuthType) {
-            // N.B: This is no where close to perfect because we need to know when authentication is complete for our
-            // specific scope, but we don't have this capability today.
-            // We've tried doing this in the `FxaAccountStoreSync` but because our AuthCustomTabActivity extends from
-            // `HomeActivity` those observes experience an "Authentication" event immediately that resets the state
-            // machine.
-            finish()
+    private val accountStateObserver =
+        object : AccountObserver {
+            /** Navigate away from this activity when we have successful authentication */
+            override fun onAuthenticated(account: OAuthAccount, authType: AuthType) {
+                // N.B: This is no where close to perfect because we need to know when authentication is complete for
+                // our
+                // specific scope, but we don't have this capability today.
+                // We've tried doing this in the `FxaAccountStoreSync` but because our AuthCustomTabActivity extends
+                // from
+                // `HomeActivity` those observes experience an "Authentication" event immediately that resets the state
+                // machine.
+                finish()
+            }
         }
-    }
 
     override fun onResume() {
         super.onResume()

@@ -71,7 +71,7 @@ Three tasks run once a day on mozilla-central, through the
 | `DTbc(release)` | latest Firefox Release |
 
 They will be scheduled in regular mozilla-central jobs. You can look for
-previous runs via https://treeherder.mozilla.org/jobs?repo=mozilla-central&searchStr=DTbc
+previous runs by [filtering on devtools-compat](https://treeherder.mozilla.org/jobs?repo=mozilla-central&searchStr=devtools-compat).
 
 ## Manual Try push
 

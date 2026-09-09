@@ -6,6 +6,8 @@
 
 #include "mozilla/AppShutdown.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/dom/AbstractRange.h"
+#include "mozilla/dom/DirectionalityUtils.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLSlotElementBinding.h"
@@ -308,7 +310,7 @@ void HTMLSlotElement::InsertAssignedNode(uint32_t aIndex, nsIContent& aNode) {
   mAssignedNodes.InsertElementAt(aIndex, &aNode);
   aNode.SetAssignedSlot(this);
   RecalculateHasSlottedState();
-  SlotAssignedNodeAdded(this, aNode);
+  AddedAssignedNode(aNode);
 }
 
 void HTMLSlotElement::AppendAssignedNode(nsIContent& aNode) {
@@ -316,7 +318,23 @@ void HTMLSlotElement::AppendAssignedNode(nsIContent& aNode) {
   mAssignedNodes.AppendElement(&aNode);
   aNode.SetAssignedSlot(this);
   RecalculateHasSlottedState();
-  SlotAssignedNodeAdded(this, aNode);
+  AddedAssignedNode(aNode);
+}
+
+void HTMLSlotElement::AddedAssignedNode(nsIContent& aNode) {
+  if (IsMaybeSelected()) {
+    // Normally it's nsRange::ContentAppended's responsibility to
+    // mark new descendants, however this doesn't work for slotted
+    // content because nsRange observes the common ancestor of
+    // start/end, whereas slotted element may not have the same
+    // ancestor as them.
+    dom::AbstractRange::UpdateDescendantsInFlattenedTree(
+        aNode, true /* aMarkDesendants*/);
+  }
+  SlotAssignedNodeAddedForDir(this, aNode);
+  if (StaticPrefs::dom_headingoffset_enabled()) {
+    aNode.UpdateHeadingElementsOffsetChange();
+  }
 }
 
 void HTMLSlotElement::RecalculateHasSlottedState() {
@@ -351,14 +369,14 @@ void HTMLSlotElement::RemoveAssignedNode(nsIContent& aNode) {
   aNode.SetAssignedSlot(nullptr);
 
   RecalculateHasSlottedState();
-  SlotAssignedNodeRemoved(this, aNode);
-  if (StaticPrefs::dom_headingoffset_enabled()) {
-    aNode.AsContent()->UpdateHeadingElementsOffsetChange();
-  }
+  RemovedAssignedNode(aNode);
 }
 
 void HTMLSlotElement::ClearAssignedNodes() {
-  for (RefPtr<nsINode>& node : mAssignedNodes.AsSpan()) {
+  FastFrontRemovableArray<RefPtr<nsINode>> assignedNodes =
+      std::move(mAssignedNodes);
+
+  for (RefPtr<nsINode>& node : assignedNodes.AsSpan()) {
     MOZ_ASSERT(!node->AsContent()->GetAssignedSlot() ||
                    node->AsContent()->GetAssignedSlot() == this,
                "How exactly?");
@@ -366,10 +384,25 @@ void HTMLSlotElement::ClearAssignedNodes() {
     if (StaticPrefs::dom_headingoffset_enabled()) {
       node->AsContent()->UpdateHeadingElementsOffsetChange();
     }
+    RemovedAssignedNode(*node->AsContent());
   }
 
-  mAssignedNodes.Clear();
   RecalculateHasSlottedState();
+}
+
+void HTMLSlotElement::RemovedAssignedNode(nsIContent& aNode) {
+  if (aNode.IsMaybeSelected()) {
+    // Normally, this shouldn't happen because nsRange::ContentRemoved
+    // should be called for content removal, and then
+    // AbstractRange::UnmarkDescendants will be used to clear the flags.
+    // Though this doesn't work for slotted element because nsRange
+    // observers the common ancestor of start/end, whereas slotted element
+    // may not have the same ancestor as them, so we have to clear
+    // the flags manually here.
+    dom::AbstractRange::UpdateDescendantsInFlattenedTree(
+        aNode, false /* aMarkDesendants*/);
+  }
+  SlotAssignedNodeRemovedForDir(this, aNode);
 }
 
 void HTMLSlotElement::EnqueueSlotChangeEvent() {
@@ -393,8 +426,8 @@ void HTMLSlotElement::EnqueueSlotChangeEvent() {
 }
 
 void HTMLSlotElement::FireSlotChangeEvent() {
-  nsContentUtils::DispatchTrustedEvent(OwnerDoc(), this, u"slotchange"_ns,
-                                       CanBubble::eYes, Cancelable::eNo);
+  nsContentUtils::DispatchTrustedEvent(this, u"slotchange"_ns, CanBubble::eYes,
+                                       Cancelable::eNo);
 }
 
 void HTMLSlotElement::RemoveManuallyAssignedNode(nsIContent& aNode) {

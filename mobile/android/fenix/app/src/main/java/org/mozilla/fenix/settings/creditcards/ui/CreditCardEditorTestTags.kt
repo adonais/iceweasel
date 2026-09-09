@@ -4,9 +4,7 @@
 
 package org.mozilla.fenix.settings.creditcards.ui
 
-/**
- * Test tags for the credit card editor screen.
- */
+/** Test tags for the credit card editor screen. */
 object CreditCardEditorTestTags {
 
     /** Test tag for the card number input field. */

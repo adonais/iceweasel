@@ -1255,9 +1255,9 @@ nsresult IOSView::GetInitData(JSContext* aCx,
     mWindow = nullptr;
   }
 
-  if (mOuterWindow) {
-    mOuterWindow->ForceClose();
-    mOuterWindow = nullptr;
+  if (const nsCOMPtr<nsPIDOMWindowOuter> outerWin = std::move(mOuterWindow)) {
+    MOZ_ASSERT(!mOuterWindow);
+    outerWin->ForceClose();
   }
 }
 @end
@@ -1284,7 +1284,7 @@ id<GeckoViewWindow> GeckoViewOpenWindow(NSString* aId,
   iosView->mEventDispatcher->Attach(aDispatcher);
   iosView->mInitData.AssignUnderGetRule((CFDictionaryRef)aInitData);
 
-  nsAutoCString chromeFlags("chrome,dialog=0,remote,resizable,scrollbars");
+  nsAutoCString chromeFlags("chrome,dialog=0,remote,resizable");
   if (aPrivateMode) {
     chromeFlags += ",private";
   }

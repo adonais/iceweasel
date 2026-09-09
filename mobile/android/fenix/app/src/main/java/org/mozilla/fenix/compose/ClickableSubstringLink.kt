@@ -78,11 +78,9 @@ fun ClickableSubstringLink(
         text = annotatedText,
         style = textStyle,
         onClick = {
-            annotatedText
-                .getStringAnnotations("link", it, it)
-                .firstOrNull()?.let {
-                    onClick()
-                }
+            annotatedText.getStringAnnotations("link", it, it).firstOrNull()?.let {
+                onClick()
+            }
         },
     )
 }

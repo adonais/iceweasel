@@ -20,8 +20,8 @@ import mozilla.components.concept.menu.candidate.NestedMenuCandidate
 import mozilla.components.concept.menu.candidate.TextStyle
 
 /**
- * A parent menu item for displaying text and an image icon with a nested sub menu.
- * It handles back pressing if the sub menu contains a [BackPressMenuItem].
+ * A parent menu item for displaying text and an image icon with a nested sub menu. It handles back pressing if the sub
+ * menu contains a [BackPressMenuItem].
  *
  * @param label The visible label of this menu item.
  * @param imageResource ID of a drawable resource to be shown as icon.
@@ -29,10 +29,10 @@ import mozilla.components.concept.menu.candidate.TextStyle
  * @param textColorResource Optional ID of color resource to tint the text.
  * @property subMenu Target sub menu to be shown when this menu item is clicked.
  * @param isCollapsingMenuLimit Whether this menu item can serve as the limit of a collapsing menu.
- * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards
- * depending on the menu position).
- * @param endOfMenuAlwaysVisible when is set to true makes sure the bottom of the menu is always visible
- * otherwise, the top of the menu is always visible.
+ * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards depending on the menu
+ *   position).
+ * @param endOfMenuAlwaysVisible when is set to true makes sure the bottom of the menu is always visible otherwise, the
+ *   top of the menu is always visible.
  */
 class ParentBrowserMenuItem(
     internal val label: String,
@@ -46,6 +46,7 @@ class ParentBrowserMenuItem(
 ) : AbstractParentBrowserMenuItem(subMenu, isCollapsingMenuLimit, endOfMenuAlwaysVisible) {
 
     override var visible: () -> Boolean = { true }
+
     override fun getLayoutResource() = R.layout.mozac_browser_menu_item_parent_menu
 
     override fun bind(menu: BrowserMenu, view: View) {
@@ -76,8 +77,7 @@ class ParentBrowserMenuItem(
     }
 
     private fun bindBackPress(menu: BrowserMenu, view: View) {
-        val backPressMenuItem =
-            subMenu.adapter.visibleItems.find { it is BackPressMenuItem } as? BackPressMenuItem
+        val backPressMenuItem = subMenu.adapter.visibleItems.find { it is BackPressMenuItem } as? BackPressMenuItem
         backPressMenuItem?.let {
             backPressMenuItem.setListener {
                 onBackPressed(menu, view)
@@ -85,18 +85,23 @@ class ParentBrowserMenuItem(
         }
     }
 
-    override fun asCandidate(context: Context) = NestedMenuCandidate(
-        id = hashCode(),
-        text = label,
-        start = DrawableMenuIcon(
-            context,
-            resource = imageResource,
-            tint = if (iconTintColorResource == NO_ID) null else ContextCompat.getColor(context, iconTintColorResource),
-        ),
-        subMenuItems = subMenu.adapter.visibleItems.asCandidateList(context),
-        textStyle = TextStyle(
-            color = if (textColorResource == NO_ID) null else ContextCompat.getColor(context, textColorResource),
-        ),
-        containerStyle = ContainerStyle(isVisible = visible()),
-    )
+    override fun asCandidate(context: Context) =
+        NestedMenuCandidate(
+            id = hashCode(),
+            text = label,
+            start =
+                DrawableMenuIcon(
+                    context,
+                    resource = imageResource,
+                    tint =
+                        if (iconTintColorResource == NO_ID) null
+                        else ContextCompat.getColor(context, iconTintColorResource),
+                ),
+            subMenuItems = subMenu.adapter.visibleItems.asCandidateList(context),
+            textStyle =
+                TextStyle(
+                    color = if (textColorResource == NO_ID) null else ContextCompat.getColor(context, textColorResource)
+                ),
+            containerStyle = ContainerStyle(isVisible = visible()),
+        )
 }

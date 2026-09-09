@@ -121,6 +121,10 @@ nsresult AppendAppNotesToCrashReport(const nsACString& data) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
+nsresult RecordPlatformAnnotations() { return NS_ERROR_NOT_IMPLEMENTED; }
+
+nsresult RecordXPCOMPlatformAnnotations() { return NS_ERROR_NOT_IMPLEMENTED; }
+
 bool GetAnnotation(const nsACString& key, nsACString& data) { return false; }
 
 nsresult RegisterAppMemory(void* ptr, size_t length) {

@@ -32,9 +32,7 @@ class TrackingProtectionFragmentTest {
         val settingsFragment = TrackingProtectionFragment()
         val activity = Robolectric.buildActivity(FragmentActivity::class.java).create().get()
 
-        activity.supportFragmentManager.beginTransaction()
-            .add(settingsFragment, "settingsFragment")
-            .commitNow()
+        activity.supportFragmentManager.beginTransaction().add(settingsFragment, "settingsFragment").commitNow()
 
         val customCookiesCheckBox = settingsFragment.customCookies.isChecked
         val customCookiesCheckBoxSettings = settings.blockCookiesInCustomTrackingProtection
@@ -61,7 +59,8 @@ class TrackingProtectionFragmentTest {
         val customSuspectedFingerprintersSetting = settings.blockSuspectedFingerprintersInCustomTrackingProtection
 
         val customSuspectedFingerprintersSelect = settingsFragment.customSuspectedFingerprintersSelect.value
-        val customSuspectedFingerprintersSelectSetting = settings.blockSuspectedFingerprintersSelectionInCustomTrackingProtection
+        val customSuspectedFingerprintersSelectSetting =
+            settings.blockSuspectedFingerprintersSelectionInCustomTrackingProtection
 
         assertEquals(customCookiesCheckBoxSettings, customCookiesCheckBox)
         assertEquals(customCookiesSelectSettings, customCookiesSelect)
@@ -83,9 +82,7 @@ class TrackingProtectionFragmentTest {
 
         val settingsFragment = TrackingProtectionFragment()
         val activity = Robolectric.buildActivity(FragmentActivity::class.java).create().get()
-        activity.supportFragmentManager.beginTransaction()
-            .add(settingsFragment, "settingsFragment")
-            .commitNow()
+        activity.supportFragmentManager.beginTransaction().add(settingsFragment, "settingsFragment").commitNow()
 
         settings.strictAllowListBaselineTrackingProtection = true
         val baselineCheckbox = settingsFragment.strictAllowListBaselineTrackingProtection
@@ -109,9 +106,7 @@ class TrackingProtectionFragmentTest {
         val activity = Robolectric.buildActivity(FragmentActivity::class.java).create().get()
 
         // Properly attach the fragment to initialize lateinit properties
-        activity.supportFragmentManager.beginTransaction()
-            .add(settingsFragment, "settingsFragment")
-            .commitNow()
+        activity.supportFragmentManager.beginTransaction().add(settingsFragment, "settingsFragment").commitNow()
 
         val fragmentSpy = spyk(settingsFragment)
         val dialog = mockk<AlertDialog>(relaxed = true)
@@ -133,9 +128,7 @@ class TrackingProtectionFragmentTest {
         val activity = Robolectric.buildActivity(FragmentActivity::class.java).create().get()
 
         // Properly attach the fragment to initialize lateinit properties
-        activity.supportFragmentManager.beginTransaction()
-            .add(settingsFragment, "settingsFragment")
-            .commitNow()
+        activity.supportFragmentManager.beginTransaction().add(settingsFragment, "settingsFragment").commitNow()
 
         val fragmentSpy = spyk(settingsFragment)
         val dialog = mockk<AlertDialog>(relaxed = true)

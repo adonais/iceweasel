@@ -30,7 +30,7 @@ class RequestInterceptorTest {
     @Test
     fun `interceptor has default methods`() {
         val engineSession = mock(EngineSession::class.java)
-        val interceptor = object : RequestInterceptor { }
+        val interceptor = object : RequestInterceptor {}
         interceptor.onLoadRequest(engineSession, "url", null, false, false, false, false, false)
         interceptor.onErrorRequest(engineSession, ErrorType.ERROR_UNKNOWN_SOCKET_TYPE, null)
     }

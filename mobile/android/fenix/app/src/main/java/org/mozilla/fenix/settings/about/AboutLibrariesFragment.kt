@@ -9,15 +9,14 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.showToolbar
 
-/**
- * Displays the licenses of all the libraries used by Fenix.
- */
+/** Displays the licenses of all the libraries used by Fenix. */
 class AboutLibrariesFragment : LibrariesListFragment(), SystemInsetsPaddedFragment {
 
-    override val licenseData = LicenseData(
-        licenses = R.raw.third_party_licenses,
-        metadata = R.raw.third_party_license_metadata,
-    )
+    override val licenseData =
+        LicenseData(
+            licenses = R.raw.third_party_licenses,
+            metadata = R.raw.third_party_license_metadata,
+        )
 
     override fun onResume() {
         super.onResume()

@@ -9,9 +9,7 @@ import android.security.KeyChain
 import mozilla.components.concept.engine.prompt.PromptRequest.CertificateRequest
 import mozilla.components.feature.prompts.PromptContainer
 
-internal class CertificatePicker(
-    private val container: PromptContainer,
-) {
+internal class CertificatePicker(private val container: PromptContainer) {
     fun handleCertificateRequest(promptRequest: CertificateRequest) {
         // This API creates a dialog populated with any available client
         // authentication certificates and asks the user to select one.  It

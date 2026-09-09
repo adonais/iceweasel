@@ -7,7 +7,10 @@
  * It is also used to register and unregister open tabs.
  */
 
-import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import {
+  UrlbarProvider,
+  UrlbarUtils,
+} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -316,7 +319,9 @@ export class UrlbarProviderOpenTabs extends UrlbarProvider {
             source: lazy.UrlbarShared.RESULT_SOURCE.TABS,
             payload: {
               url: row.getResultByName("url"),
-              userContextId: row.getResultByName("userContextId"),
+              userContext: UrlbarUtils.getUserContextData(
+                row.getResultByName("userContextId")
+              ),
               tabGroup: row.getResultByName("groupId"),
             },
           })

@@ -6,43 +6,32 @@ package mozilla.components.concept.engine.activity
 
 import android.content.pm.ActivityInfo
 
-/**
- * Notifies applications or other components of engine orientation lock events.
- */
+/** Notifies applications or other components of engine orientation lock events. */
 interface OrientationDelegate {
-    /**
-     * The result of an orientation lock request.
-     */
+    /** The result of an orientation lock request. */
     enum class LockResult {
-        /**
-         * The orientation lock request was successful.
-         */
+        /** The orientation lock request was successful. */
         SUCCESS,
 
-        /**
-         * The orientation lock request was rejected.
-         */
+        /** The orientation lock request was rejected. */
         REJECTED,
 
-        /**
-         * The orientation lock request is not supported by the platform.
-         */
+        /** The orientation lock request is not supported by the platform. */
         NOT_SUPPORTED,
     }
 
     /**
      * Request to force a certain screen orientation on the current activity.
      *
-     * @param requestedOrientation The screen orientation which should be set.
-     * Values can be any of screen orientation values defined in [ActivityInfo].
-     *
+     * @param requestedOrientation The screen orientation which should be set. Values can be any of screen orientation
+     *   values defined in [ActivityInfo].
      * @return The [LockResult] of the orientation lock request.
      */
     fun onOrientationLock(requestedOrientation: Int): LockResult = LockResult.SUCCESS
 
     /**
-     * Request to restore the natural device orientation, what it was before [onOrientationLock].
-     * Implementers should usually set [ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED].
+     * Request to restore the natural device orientation, what it was before [onOrientationLock]. Implementers should
+     * usually set [ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED].
      */
     fun onOrientationUnlock() = Unit
 }

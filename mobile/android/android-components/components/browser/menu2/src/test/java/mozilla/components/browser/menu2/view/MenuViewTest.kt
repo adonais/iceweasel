@@ -11,6 +11,7 @@ import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.browser.menu2.R
 import mozilla.components.concept.menu.MenuStyle
 import mozilla.components.concept.menu.Side
@@ -27,15 +28,15 @@ import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.robolectric.annotation.Config
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class MenuViewTest {
 
-    private val items = listOf(
-        DecorativeTextMenuCandidate("Hello"),
-        DecorativeTextMenuCandidate("World"),
-    )
+    private val items =
+        listOf(
+            DecorativeTextMenuCandidate("Hello"),
+            DecorativeTextMenuCandidate("World"),
+        )
     private lateinit var menuView: MenuView
     private lateinit var cardView: CardView
     private lateinit var recyclerView: RecyclerView

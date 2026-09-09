@@ -637,6 +637,7 @@ export class SidebarBookmarks extends SidebarPage {
       );
       this.topWindow.openTrustedLinkIn(this.triggerNode.url, "tab", {
         userContextId,
+        eventDetail: { containerSource: "sidebar_bookmarks_context_menu" },
       });
       Glean.browserUiInteraction.sidebarBookmarks.open_in_new_container_tab.add(
         1

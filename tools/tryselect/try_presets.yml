@@ -54,6 +54,7 @@ android-components:
 
 android-fenix:
     selector: fuzzy
+    full: true
     description: >-
         Run Fenix builds and tests.
     query:
@@ -63,15 +64,17 @@ android-fenix:
         - "'signing-apk-fenix-android-test-debug"
         - "'test-apk-fenix-debug"
         - "'ui-test-apk-fenix-arm-debug"
+        - "'ui-test-apk-fenix-tae-arm-debug"
         - "^source-test 'fenix"
         - "'generate-baseline-profile-firebase-fenix-simulation"
 
 android-frontend:
     selector: fuzzy
+    full: true
     description: >-
         Run android-components, Focus, and Fenix builds and tests.
     query:
-        - "'build-components"
+        - "'build-components !nightly- !beta- !release-"
         - "'test-components"
         - "'build-apk-fenix-debug"
         - "'signing-apk-fenix-debug"
@@ -79,6 +82,7 @@ android-frontend:
         - "'signing-apk-fenix-android-test-debug"
         - "'test-apk-fenix-debug"
         - "'ui-test-apk-fenix-arm-debug"
+        - "'ui-test-apk-fenix-tae-arm-debug"
         - "'build-apk-focus-debug"
         - "'signing-apk-focus-debug"
         - "'build-apk-focus-android-test-debug"
@@ -119,6 +123,7 @@ android-fullstack:
         - "'signing-apk-fenix-android-test-debug"
         - "'test-apk-fenix-debug"
         - "'ui-test-apk-fenix-arm-debug"
+        - "'ui-test-apk-fenix-tae-arm-debug"
         - "'build-apk-focus-debug"
         - "'signing-apk-focus-debug"
         - "'build-apk-focus-android-test-debug"
@@ -404,6 +409,16 @@ media-full:
         - "'gtest"
     intersect_query:
         - "'debug | '-asan | '-tsan"
+
+ml-perf:
+    selector: fuzzy
+    description: >-
+        Run the ml-* perftests on every desktop platform, rather than Linux
+        only like "ai-perf". ONNX tests run as one job per backend
+        (-native/-wasm task variants).
+    query:
+        - "^perftest 'ml-"
+    full: true
 
 mochitest-bc:
     description: >-

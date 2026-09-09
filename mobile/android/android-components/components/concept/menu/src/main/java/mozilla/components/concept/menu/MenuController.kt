@@ -9,16 +9,13 @@ import android.widget.PopupWindow
 import mozilla.components.concept.menu.candidate.MenuCandidate
 import mozilla.components.support.base.observer.Observable
 
-/**
- * Controls a popup menu composed of MenuCandidate objects.
- */
+/** Controls a popup menu composed of MenuCandidate objects. */
 interface MenuController : Observable<MenuController.Observer> {
 
     /**
      * @param anchor The view on which to pin the popup window.
      * @param orientation The preferred orientation to show the popup window.
-     * @param autoDismiss True if the popup window should be dismissed when the device orientation
-     * is changed.
+     * @param autoDismiss True if the popup window should be dismissed when the device orientation is changed.
      */
     fun show(
         anchor: View,
@@ -26,28 +23,18 @@ interface MenuController : Observable<MenuController.Observer> {
         autoDismiss: Boolean = true,
     ): PopupWindow
 
-    /**
-     * Dismiss the menu popup if the menu is visible.
-     */
+    /** Dismiss the menu popup if the menu is visible. */
     fun dismiss()
 
-    /**
-     * Changes the contents of the menu.
-     */
+    /** Changes the contents of the menu. */
     fun submitList(list: List<MenuCandidate>)
 
-    /**
-     * Observer for the menu controller.
-     */
+    /** Observer for the menu controller. */
     interface Observer {
-        /**
-         * Called when the menu contents have changed.
-         */
+        /** Called when the menu contents have changed. */
         fun onMenuListSubmit(list: List<MenuCandidate>) = Unit
 
-        /**
-         * Called when the menu has been dismissed.
-         */
+        /** Called when the menu has been dismissed. */
         fun onDismiss() = Unit
     }
 }

@@ -28,24 +28,22 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import mozilla.components.compose.base.button.IconButton
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.focus.R
 import org.mozilla.focus.ext.hideToolbar
 import org.mozilla.focus.ui.theme.FocusTheme
 import org.mozilla.focus.ui.theme.focusColors
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Fragment acting as a wrapper over a [Composable] which will be shown below a [TopAppBar].
  *
- * Useful for Fragments shown in otherwise fullscreen Activities such that they would be shown
- * beneath the status bar not below it.
+ * Useful for Fragments shown in otherwise fullscreen Activities such that they would be shown beneath the status bar
+ * not below it.
  *
  * Classes extending this are expected to provide the [Composable] content and toolbar title.
  */
 abstract class BaseComposeFragment : Fragment() {
-    /**
-     * Screen title shown in toolbar.
-     */
+    /** Screen title shown in toolbar. */
     open val titleRes: Int? = null
 
     open val titleText: String? = null
@@ -54,18 +52,13 @@ abstract class BaseComposeFragment : Fragment() {
 
     private lateinit var composeView: ComposeView
 
-    /**
-     * Callback for the up navigation button shown in toolbar.
-     */
+    /** Callback for the up navigation button shown in toolbar. */
     open fun onNavigateUp(): () -> Unit = {
         activity?.onBackPressedDispatcher?.onBackPressed()
     }
 
-    /**
-     * content of the screen in compose. That will be shown below Toolbar
-     */
-    @Composable
-    abstract fun Content()
+    /** content of the screen in compose. That will be shown below Toolbar */
+    @Composable abstract fun Content()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -80,7 +73,7 @@ abstract class BaseComposeFragment : Fragment() {
                 ContextCompat.getColor(
                     requireContext(),
                     backgroundColorResource,
-                ),
+                )
             )
         }
     }
@@ -102,9 +95,8 @@ abstract class BaseComposeFragment : Fragment() {
                     },
                 ) { paddingValues ->
                     Column(
-                        modifier = Modifier
-                            .background(colorResource(id = backgroundColorResource))
-                            .padding(paddingValues),
+                        modifier =
+                            Modifier.background(colorResource(id = backgroundColorResource)).padding(paddingValues)
                     ) {
                         this@BaseComposeFragment.Content()
                     }
@@ -130,9 +122,7 @@ private fun FocusTopAppBar(
 ) {
     TopAppBar(
         title = {
-            Text(
-                text = title,
-            )
+            Text(text = title)
         },
         modifier = modifier,
         navigationIcon = {
@@ -146,11 +136,12 @@ private fun FocusTopAppBar(
                 )
             }
         },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = colorResource(R.color.settings_background),
-            scrolledContainerColor = colorResource(R.color.settings_background),
-            navigationIconContentColor = focusColors.toolbarColor,
-            titleContentColor = focusColors.toolbarColor,
-        ),
+        colors =
+            TopAppBarDefaults.topAppBarColors(
+                containerColor = colorResource(R.color.settings_background),
+                scrolledContainerColor = colorResource(R.color.settings_background),
+                navigationIconContentColor = focusColors.toolbarColor,
+                titleContentColor = focusColors.toolbarColor,
+            ),
     )
 }

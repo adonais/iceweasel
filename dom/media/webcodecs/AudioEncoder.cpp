@@ -50,7 +50,8 @@ namespace mozilla::dom {
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(AudioEncoder, DOMEventTargetHelper,
                                    mErrorCallback, mOutputCallback,
-                                   mPendingFlushPromises)
+                                   mPendingFlushPromises,
+                                   mPendingDebugInfoPromises)
 NS_IMPL_ADDREF_INHERITED(AudioEncoder, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(AudioEncoder, DOMEventTargetHelper)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(AudioEncoder)

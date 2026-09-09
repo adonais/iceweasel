@@ -103,16 +103,17 @@ fun TranslationSettings(
                         Spacer(modifier = Modifier.size(32.dp))
                         Text(
                             text = stringResource(id = R.string.translation_settings_translation_preference),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(
-                                    horizontal = FirefoxTheme.layout.space.dynamic200,
-                                    vertical = FirefoxTheme.layout.space.static100,
-                                )
-                                .semantics { heading() },
-                            color = MaterialTheme.colorScheme.onSurface.copy(
-                                alpha = if (state.translationsEnabled) 1.0f else 0.3f,
-                            ),
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .padding(
+                                        horizontal = FirefoxTheme.layout.space.dynamic200,
+                                        vertical = FirefoxTheme.layout.space.static100,
+                                    )
+                                    .semantics { heading() },
+                            color =
+                                MaterialTheme.colorScheme.onSurface.copy(
+                                    alpha = if (state.translationsEnabled) 1.0f else 0.3f
+                                ),
                             style = FirefoxTheme.typography.headline8,
                         )
                     }
@@ -123,10 +124,7 @@ fun TranslationSettings(
                         TextListItem(
                             label = stringResource(id = R.string.translation_settings_automatic_translation),
                             enabled = state.translationsEnabled,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .defaultMinSize(minHeight = 56.dp)
-                                .wrapContentHeight(),
+                            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).wrapContentHeight(),
                             onClick = { onAutomaticTranslationClicked() },
                         )
                     }
@@ -137,10 +135,7 @@ fun TranslationSettings(
                         TextListItem(
                             label = stringResource(id = R.string.translation_settings_automatic_never_translate_sites),
                             enabled = state.translationsEnabled,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .defaultMinSize(minHeight = 56.dp)
-                                .wrapContentHeight(),
+                            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).wrapContentHeight(),
                             onClick = { onNeverTranslationClicked() },
                         )
                     }
@@ -151,10 +146,7 @@ fun TranslationSettings(
                         TextListItem(
                             label = stringResource(id = R.string.translation_settings_download_language),
                             enabled = state.translationsEnabled,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .defaultMinSize(minHeight = 56.dp)
-                                .wrapContentHeight(),
+                            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).wrapContentHeight(),
                             onClick = { onDownloadLanguageClicked() },
                         )
                     }
@@ -180,29 +172,26 @@ private fun TranslationsControlSwitchItem(
         onClick = onFeatureControlToggled,
     )
     Box(
-        modifier = Modifier
-            .heightIn(min = 32.dp)
-            .fillMaxWidth()
-            .padding(horizontal = FirefoxTheme.layout.space.dynamic200),
+        modifier =
+            Modifier.heightIn(min = 32.dp).fillMaxWidth().padding(horizontal = FirefoxTheme.layout.space.dynamic200)
     ) {
         LinkText(
             text = stringResource(R.string.translation_settings_control_learn_more),
-            linkTextStates = listOf(
-                LinkTextState(
-                    text = stringResource(R.string.translation_settings_control_learn_more),
-                    url = resolveTranslationsSumoUrl(),
-                    onClick = onNavigateToUrl,
+            linkTextStates =
+                listOf(
+                    LinkTextState(
+                        text = stringResource(R.string.translation_settings_control_learn_more),
+                        url = resolveTranslationsSumoUrl(),
+                        onClick = onNavigateToUrl,
+                    )
                 ),
-            ),
             textAlign = TextAlign.Start,
             linkTextDecoration = TextDecoration.Underline,
         )
     }
 }
 
-/**
- * Resolves a [SupportUtils.SumoTopic] to a url
- */
+/** Resolves a [SupportUtils.SumoTopic] to a url */
 @Composable
 private fun resolveTranslationsSumoUrl(): String {
     return SupportUtils.getSumoURLForTopic(LocalContext.current, SupportUtils.SumoTopic.TRANSLATIONS)
@@ -210,11 +199,11 @@ private fun resolveTranslationsSumoUrl(): String {
 
 @Composable
 private fun TranslationPageSettingsErrorWarning() {
-    val modifier = Modifier
-        .fillMaxWidth()
-        .padding(start = 72.dp, end = 16.dp, bottom = 16.dp, top = 16.dp)
-        .defaultMinSize(minHeight = 56.dp)
-        .wrapContentHeight()
+    val modifier =
+        Modifier.fillMaxWidth()
+            .padding(start = 72.dp, end = 16.dp, bottom = 16.dp, top = 16.dp)
+            .defaultMinSize(minHeight = 56.dp)
+            .wrapContentHeight()
 
     InfoCard(
         description = stringResource(id = R.string.translation_option_bottom_sheet_error_warning_text),
@@ -224,9 +213,7 @@ private fun TranslationPageSettingsErrorWarning() {
     )
 }
 
-/**
- * Return a list of Translation option switch list item.
- */
+/** Return a list of Translation option switch list item. */
 @Composable
 internal fun getTranslationSettingsSwitchList(): List<TranslationSwitchItem> {
     return mutableListOf<TranslationSwitchItem>().apply {
@@ -237,7 +224,7 @@ internal fun getTranslationSettingsSwitchList(): List<TranslationSwitchItem> {
                 isChecked = true,
                 isEnabled = true,
                 onStateChange = { _, _ -> },
-            ),
+            )
         )
         add(
             TranslationSwitchItem(
@@ -246,25 +233,24 @@ internal fun getTranslationSettingsSwitchList(): List<TranslationSwitchItem> {
                 isChecked = false,
                 isEnabled = true,
                 onStateChange = { _, _ -> },
-            ),
+            )
         )
     }
 }
 
 @Preview
 @Composable
-private fun TranslationSettingsPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun TranslationSettingsPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         TranslationSettings(
-            state = TranslationsSettingsState(
-                showAutomaticTranslations = true,
-                showNeverTranslate = true,
-                showDownloads = true,
-                translationsEnabled = true,
-                switchItems = getTranslationSettingsSwitchList(),
-            ),
+            state =
+                TranslationsSettingsState(
+                    showAutomaticTranslations = true,
+                    showNeverTranslate = true,
+                    showDownloads = true,
+                    translationsEnabled = true,
+                    switchItems = getTranslationSettingsSwitchList(),
+                ),
             onAutomaticTranslationClicked = {},
             onDownloadLanguageClicked = {},
             onNeverTranslationClicked = {},

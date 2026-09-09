@@ -224,6 +224,72 @@ bool ModuleLoader::LoadRejected(JSContext* cx, HandleValue hostDefined,
   return true;
 }
 
+// The arguments needed to finish a dynamic import, passed as the |hostDefined|
+// value of LoadRequestedModules so that they are available when the requested
+// modules have finished loading.
+enum DynamicImportClosureSlot {
+  ClosureReferrerSlot = 0,
+  ClosureModuleRequestSlot,
+  ClosurePayloadSlot,
+  ClosureModuleSlot,
+  DynamicImportClosureSlotCount
+};
+
+static const JSClass DynamicImportClosureClass = {
+    "DynamicImportClosure",
+    JSCLASS_HAS_RESERVED_SLOTS(DynamicImportClosureSlotCount)};
+
+static JSObject* CreateDynamicImportClosure(JSContext* cx,
+                                            Handle<JSScript*> referrer,
+                                            HandleObject moduleRequest,
+                                            HandleValue payload,
+                                            HandleObject module) {
+  RootedObject closure(
+      cx, JS_NewObjectWithGivenProto(cx, &DynamicImportClosureClass, nullptr));
+  if (!closure) {
+    return nullptr;
+  }
+
+  JS_SetReservedSlot(
+      closure, ClosureReferrerSlot,
+      referrer ? PrivateGCThingValue(referrer) : UndefinedValue());
+  JS_SetReservedSlot(closure, ClosureModuleRequestSlot,
+                     ObjectValue(*moduleRequest));
+  JS_SetReservedSlot(closure, ClosurePayloadSlot, payload);
+  JS_SetReservedSlot(closure, ClosureModuleSlot, ObjectValue(*module));
+  return closure;
+}
+
+/* static */
+bool ModuleLoader::DynamicImportLoadResolved(JSContext* cx,
+                                             HandleValue hostDefined) {
+  RootedObject closure(cx, &hostDefined.toObject());
+
+  Value referrerValue = JS::GetReservedSlot(closure, ClosureReferrerSlot);
+  RootedScript referrer(cx);
+  if (!referrerValue.isUndefined()) {
+    referrer = static_cast<JSScript*>(referrerValue.toGCThing());
+  }
+
+  RootedObject moduleRequest(
+      cx, &JS::GetReservedSlot(closure, ClosureModuleRequestSlot).toObject());
+  RootedValue payload(cx, JS::GetReservedSlot(closure, ClosurePayloadSlot));
+  RootedObject module(
+      cx, &JS::GetReservedSlot(closure, ClosureModuleSlot).toObject());
+
+  return JS::FinishLoadingImportedModule(cx, referrer, moduleRequest, payload,
+                                         module, /* usePromise = */ true);
+}
+
+/* static */
+bool ModuleLoader::DynamicImportLoadRejected(JSContext* cx,
+                                             HandleValue hostDefined,
+                                             HandleValue error) {
+  RootedObject closure(cx, &hostDefined.toObject());
+  RootedValue payload(cx, JS::GetReservedSlot(closure, ClosurePayloadSlot));
+  return JS::FinishLoadingImportedModuleFailed(cx, payload, error);
+}
+
 // See https://github.com/tc39/test262/blob/main/INTERPRETING.md#modules
 JSObject* ModuleLoader::getOrCreateTest262ModuleSourceModule(JSContext* cx) {
   RootedString key(cx, JS_NewStringCopyZ(cx, "<module source>"));
@@ -262,42 +328,61 @@ JSObject* ModuleLoader::getOrCreateTest262ModuleSourceModule(JSContext* cx) {
   return module;
 }
 
-bool ModuleLoader::loadImportedModule(JSContext* cx,
-                                      JS::Handle<JSScript*> referrer,
-                                      JS::Handle<JSObject*> moduleRequest,
-                                      JS::HandleValue payload) {
-  // TODO: Bug 1968904: Update HostLoadImportedModule
-  if (payload.isObject() && payload.toObject().is<PromiseObject>()) {
-    // This is a dynamic import.
-    return dynamicImport(cx, referrer, moduleRequest, payload);
-  }
+static bool IsDynamicImport(HandleValue payload) {
+  return payload.isObject() && payload.toObject().is<PromiseObject>();
+}
 
-  if (JS::Prefs::experimental_source_phase_imports_test262_module_source()) {
-    js::ImportPhase phase = moduleRequest->as<ModuleRequestObject>().phase();
-    JSAtom* specifier = moduleRequest->as<ModuleRequestObject>().specifier();
-    if (phase == ImportPhase::Source &&
-        StringEquals(specifier, u"<module source>")) {
-      RootedObject module(cx, getOrCreateTest262ModuleSourceModule(cx));
-      if (!module) {
-        return false;
-      }
-      return JS::FinishLoadingImportedModule(cx, referrer, moduleRequest,
-                                             payload, module, false);
-    }
+JSObject* ModuleLoader::getOrLoadModule(
+    JSContext* cx, JS::Handle<JSScript*> referrer,
+    JS::Handle<JSObject*> moduleRequestArg) {
+  Rooted<ModuleRequestObject*> moduleRequest(
+      cx, &moduleRequestArg->as<ModuleRequestObject>());
+
+  if (moduleRequest->phase() == ImportPhase::Source &&
+      JS::Prefs::experimental_source_phase_imports_test262_module_source() &&
+      StringEquals(moduleRequest->specifier(), u"<module source>")) {
+    return getOrCreateTest262ModuleSourceModule(cx);
   }
 
   Rooted<JSLinearString*> path(cx, resolve(cx, moduleRequest, referrer));
   if (!path) {
-    return false;
+    return nullptr;
   }
 
-  RootedObject module(cx, loadAndParse(cx, path, moduleRequest));
+  return loadAndParse(cx, path, moduleRequest);
+}
+
+bool ModuleLoader::loadImportedModule(JSContext* cx,
+                                      JS::Handle<JSScript*> referrer,
+                                      JS::Handle<JSObject*> moduleRequest,
+                                      JS::HandleValue payload) {
+  RootedObject module(cx, getOrLoadModule(cx, referrer, moduleRequest));
   if (!module) {
     return false;
   }
 
+  // TODO, Bug 1990416: Align the loading descendants behavior of dynamic import
+  js::ImportPhase phase = moduleRequest->as<ModuleRequestObject>().phase();
+  if (IsDynamicImport(payload) && phase != ImportPhase::Source) {
+    RootedObject closure(cx, CreateDynamicImportClosure(
+                                 cx, referrer, moduleRequest, payload, module));
+    if (!closure) {
+      return false;
+    }
+
+    RootedValue hostDefined(cx, ObjectValue(*closure));
+    if (!JS::LoadRequestedModules(cx, module, hostDefined,
+                                  DynamicImportLoadResolved,
+                                  DynamicImportLoadRejected)) {
+      return false;
+    }
+
+    MOZ_ASSERT(!JS_IsExceptionPending(cx));
+    return true;
+  }
+
   return JS::FinishLoadingImportedModule(cx, referrer, moduleRequest, payload,
-                                         module, false);
+                                         module, /* usePromise = */ true);
 }
 
 bool ModuleLoader::populateImportMeta(JSContext* cx,
@@ -348,142 +433,6 @@ bool ModuleLoader::importMetaResolve(JSContext* cx,
 
   urlOut.set(path);
   return true;
-}
-
-bool ModuleLoader::dynamicImport(JSContext* cx, JS::HandleScript referrer,
-                                 JS::HandleObject moduleRequest,
-                                 JS::HandleValue payload) {
-  // To make this more realistic, use a promise to delay the import and make it
-  // happen asynchronously. This method packages up the arguments and creates a
-  // resolved promise, which on fullfillment calls doDynamicImport with the
-  // original arguments.
-
-  RootedValue moduleRequestValue(cx, ObjectValue(*moduleRequest));
-  RootedObject closure(cx, JS_NewObjectWithGivenProto(cx, nullptr, nullptr));
-  RootedValue referrerValue(cx);
-  if (referrer) {
-    referrerValue = PrivateGCThingValue(referrer);
-  } else {
-    RootedScript script(cx);
-    const char* filename;
-    uint32_t lineno;
-    uint32_t pcOffset;
-    bool mutedErrors;
-    DescribeScriptedCallerForCompilation(cx, &script, &filename, &lineno,
-                                         &pcOffset, &mutedErrors);
-    MOZ_ASSERT(script);
-    referrerValue = PrivateGCThingValue(script);
-  }
-  MOZ_ASSERT(!referrerValue.isUndefined());
-
-  if (!closure ||
-      !JS_DefineProperty(cx, closure, "referrer", referrerValue,
-                         JSPROP_ENUMERATE) ||
-      !JS_DefineProperty(cx, closure, "moduleRequest", moduleRequestValue,
-                         JSPROP_ENUMERATE) ||
-      !JS_DefineProperty(cx, closure, "payload", payload, JSPROP_ENUMERATE)) {
-    return false;
-  }
-
-  RootedFunction onResolved(
-      cx, NewNativeFunction(cx, DynamicImportDelayFulfilled, 1, nullptr));
-  if (!onResolved) {
-    return false;
-  }
-
-  RootedFunction onRejected(
-      cx, NewNativeFunction(cx, DynamicImportDelayRejected, 1, nullptr));
-  if (!onRejected) {
-    return false;
-  }
-
-  RootedObject delayPromise(cx);
-  RootedValue closureValue(cx, ObjectValue(*closure));
-  delayPromise = PromiseObject::unforgeableResolve(cx, closureValue);
-  if (!delayPromise) {
-    return false;
-  }
-
-  return JS::AddPromiseReactions(cx, delayPromise, onResolved, onRejected);
-}
-
-bool ModuleLoader::DynamicImportDelayFulfilled(JSContext* cx, unsigned argc,
-                                               Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  RootedObject closure(cx, &args[0].toObject());
-
-  RootedValue referrerValue(cx);
-  RootedValue moduleRequestValue(cx);
-  RootedValue payload(cx);
-  if (!JS_GetProperty(cx, closure, "referrer", &referrerValue) ||
-      !JS_GetProperty(cx, closure, "moduleRequest", &moduleRequestValue) ||
-      !JS_GetProperty(cx, closure, "payload", &payload)) {
-    return false;
-  }
-
-  RootedObject moduleRequest(cx, &moduleRequestValue.toObject());
-  RootedScript referrer(cx, static_cast<JSScript*>(referrerValue.toGCThing()));
-
-  ShellContext* scx = GetShellContext(cx);
-  return scx->moduleLoader->doDynamicImport(cx, referrer, moduleRequest,
-                                            payload);
-}
-
-bool ModuleLoader::DynamicImportDelayRejected(JSContext* cx, unsigned argc,
-                                              Value* vp) {
-  MOZ_CRASH("This promise should never be rejected");
-}
-
-bool ModuleLoader::doDynamicImport(JSContext* cx, JS::HandleScript referrer,
-                                   JS::HandleObject moduleRequest,
-                                   JS::HandleValue payload) {
-  // Exceptions during dynamic import are handled by calling
-  // FinishLoadingImportedModule with a pending exception on the context.
-  js::ImportPhase phase = moduleRequest->as<ModuleRequestObject>().phase();
-  if (JS::Prefs::experimental_source_phase_imports() &&
-      phase == ImportPhase::Source) {
-    if (JS::Prefs::experimental_source_phase_imports_test262_module_source()) {
-      JSAtom* specifier = moduleRequest->as<ModuleRequestObject>().specifier();
-      if (StringEquals(specifier, u"<module source>")) {
-        RootedObject module(cx, getOrCreateTest262ModuleSourceModule(cx));
-        if (!module) {
-          return JS::FinishLoadingImportedModuleFailedWithPendingException(
-              cx, payload);
-        }
-        return JS::FinishLoadingImportedModule(cx, nullptr, moduleRequest,
-                                               payload, module, false);
-      }
-    }
-  }
-
-  Rooted<JSLinearString*> path(cx, resolve(cx, moduleRequest, referrer));
-  if (!path) {
-    return JS::FinishLoadingImportedModuleFailedWithPendingException(cx,
-                                                                     payload);
-  }
-
-  RootedObject module(cx, loadAndParse(cx, path, moduleRequest));
-  if (!module) {
-    return JS::FinishLoadingImportedModuleFailedWithPendingException(cx,
-                                                                     payload);
-  }
-
-  if (phase != ImportPhase::Source) {
-    RootedValue hostDefined(cx, ObjectValue(*module));
-    if (!JS::LoadRequestedModules(cx, module, hostDefined, LoadResolved,
-                                  LoadRejected)) {
-      return JS::FinishLoadingImportedModuleFailedWithPendingException(cx,
-                                                                       payload);
-    }
-  }
-
-  if (JS_IsExceptionPending(cx)) {
-    return JS::FinishLoadingImportedModuleFailedWithPendingException(cx,
-                                                                     payload);
-  }
-
-  return JS::FinishLoadingImportedModule(cx, nullptr, moduleRequest, payload,
-                                         module, false);
 }
 
 JSLinearString* ModuleLoader::resolve(JSContext* cx,

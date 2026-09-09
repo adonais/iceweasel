@@ -89,6 +89,9 @@ if CONFIG["MOZ_JXL"]:
 if CONFIG["MOZ_BUILD_APP"] == "browser" and CONFIG["OS_ARCH"] == "WINNT":
     gkrust_features += ["shell_windows"]
 
+if CONFIG["MOZ_BACKGROUNDTASKS"] and CONFIG["OS_ARCH"] == "WINNT":
+    gkrust_features += ["backgroundtaskregistrar"]
+
 if CONFIG["ENABLE_TESTS"]:
     gkrust_features += ["enable_tests"]
 

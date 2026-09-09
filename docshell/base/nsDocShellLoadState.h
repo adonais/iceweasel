@@ -675,8 +675,7 @@ class nsDocShellLoadState final {
   // When set, this is the Source Browsing Context for the navigation.
   MaybeDiscarded<BrowsingContext> mSourceBrowsingContext;
 
-  // Used for srcdoc loads to give view-source knowledge of the load's base URI
-  // as this information isn't embedded in the load's URI.
+  // BaseURI for the load, used when this information isn't clear from the URI.
   nsCOMPtr<nsIURI> mBaseURI;
 
   // Set of Load Flags, taken from nsDocShellLoadTypes.h and nsIWebNavigation

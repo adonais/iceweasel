@@ -22,12 +22,10 @@ fun Uri.containsQueryParameters(searchParameters: String): Boolean {
     val params = searchParameters.split("=")
     return when (params.size) {
         1 -> {
-            this.queryParameterNames.contains(params.first()) &&
-                this.getQueryParameter(params.first()).isNullOrBlank()
+            this.queryParameterNames.contains(params.first()) && this.getQueryParameter(params.first()).isNullOrBlank()
         }
         2 -> {
-            this.queryParameterNames.contains(params.first()) &&
-                this.getQueryParameter(params.first()) == params.last()
+            this.queryParameterNames.contains(params.first()) && this.getQueryParameter(params.first()) == params.last()
         }
         else -> false
     }

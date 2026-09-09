@@ -54,9 +54,10 @@ class OpenSpecificTabIntentProcessorTest {
 
     @Test
     fun `GIVEN an intent with wrong action WHEN it is processed THEN nothing should happen`() {
-        val intent = Intent().apply {
-            action = TEST_WRONG_ACTION
-        }
+        val intent =
+            Intent().apply {
+                action = TEST_WRONG_ACTION
+            }
 
         assertFalse(processor.process(intent, navController, out, settings))
 
@@ -67,11 +68,13 @@ class OpenSpecificTabIntentProcessorTest {
 
     @Test
     fun `GIVEN an intent with null extra string WHEN it is processed THEN openToBrowser should not be called`() {
-        val intent = Intent().apply {
-            action = AbstractMediaSessionService.Companion.ACTION_SWITCH_TAB
-        }
+        val intent =
+            Intent().apply {
+                action = AbstractMediaSessionService.Companion.ACTION_SWITCH_TAB
+            }
 
-        val store = BrowserStore(BrowserState(tabs = listOf(createTab(id = TEST_SESSION_ID, url = "https:mozilla.org"))))
+        val store =
+            BrowserStore(BrowserState(tabs = listOf(createTab(id = TEST_SESSION_ID, url = "https:mozilla.org"))))
         val tabUseCases: TabsUseCases = mockk(relaxed = true)
         every { activity.components.core.store } returns store
         every { activity.components.useCases.tabsUseCases } returns tabUseCases
@@ -85,11 +88,13 @@ class OpenSpecificTabIntentProcessorTest {
 
     @Test
     fun `GIVEN an intent with correct action and extra string WHEN it is processed THEN session should be selected and openToBrowser should be called`() {
-        val intent = Intent().apply {
-            action = AbstractMediaSessionService.Companion.ACTION_SWITCH_TAB
-            putExtra(AbstractMediaSessionService.Companion.EXTRA_TAB_ID, TEST_SESSION_ID)
-        }
-        val store = BrowserStore(BrowserState(tabs = listOf(createTab(id = TEST_SESSION_ID, url = "https:mozilla.org"))))
+        val intent =
+            Intent().apply {
+                action = AbstractMediaSessionService.Companion.ACTION_SWITCH_TAB
+                putExtra(AbstractMediaSessionService.Companion.EXTRA_TAB_ID, TEST_SESSION_ID)
+            }
+        val store =
+            BrowserStore(BrowserState(tabs = listOf(createTab(id = TEST_SESSION_ID, url = "https:mozilla.org"))))
         val tabUseCases: TabsUseCases = mockk(relaxed = true)
         every { activity.components.core.store } returns store
         every { activity.components.useCases.tabsUseCases } returns tabUseCases

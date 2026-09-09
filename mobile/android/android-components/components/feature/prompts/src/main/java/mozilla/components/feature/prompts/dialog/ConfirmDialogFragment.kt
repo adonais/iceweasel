@@ -15,10 +15,9 @@ internal const val KEY_POSITIVE_BUTTON = "KEY_POSITIVE_BUTTON"
 internal const val KEY_NEGATIVE_BUTTON = "KEY_NEGATIVE_BUTTON"
 
 /**
- * [android.support.v4.app.DialogFragment] implementation for a confirm dialog.
- * The user has two possible options, allow the request or
- * deny it (Positive and Negative buttons]. When the positive button is pressed the
- * feature.onConfirm function will be called otherwise the feature.onCancel function will be called.
+ * [android.support.v4.app.DialogFragment] implementation for a confirm dialog. The user has two possible options, allow
+ * the request or deny it (Positive and Negative buttons]. When the positive button is pressed the feature.onConfirm
+ * function will be called otherwise the feature.onCancel function will be called.
  */
 internal class ConfirmDialogFragment : AbstractPromptTextDialogFragment() {
 
@@ -29,18 +28,17 @@ internal class ConfirmDialogFragment : AbstractPromptTextDialogFragment() {
     internal val negativeButtonText: String by lazy { safeArguments.getString(KEY_NEGATIVE_BUTTON)!! }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val builder = MaterialAlertDialogBuilder(requireContext())
-            .setCancelable(false)
-            .setTitle(title)
-            .setNegativeButton(negativeButtonText) { _, _ ->
-                feature?.onCancel(sessionId, promptRequestUID, userSelectionNoMoreDialogs)
-            }
-            .setPositiveButton(positiveButtonText) { _, _ ->
-                onPositiveClickAction()
-            }
-        return setCustomMessageView(builder)
-            .create()
-            .withCenterAlignedButtons()
+        val builder =
+            MaterialAlertDialogBuilder(requireContext())
+                .setCancelable(false)
+                .setTitle(title)
+                .setNegativeButton(negativeButtonText) { _, _ ->
+                    feature?.onCancel(sessionId, promptRequestUID, userSelectionNoMoreDialogs)
+                }
+                .setPositiveButton(positiveButtonText) { _, _ ->
+                    onPositiveClickAction()
+                }
+        return setCustomMessageView(builder).create().withCenterAlignedButtons()
     }
 
     override fun onCancel(dialog: DialogInterface) {

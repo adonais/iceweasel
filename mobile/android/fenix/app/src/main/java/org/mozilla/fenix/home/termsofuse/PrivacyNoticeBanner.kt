@@ -42,35 +42,37 @@ fun PrivacyNoticeBanner(
         modifier = modifier,
         message = {
             LinkText(
-                text = stringResource(
-                    R.string.privacy_notice_updated_homepage_message,
-                    stringResource(R.string.privacy_notice_updated_homepage_message_privacy_notice),
-                    stringResource(R.string.privacy_notice_updated_homepage_message_learn_more),
-                ),
-                linkTextStates = listOf(
-                    LinkTextState(
-                        text = stringResource(R.string.privacy_notice_updated_homepage_message_privacy_notice),
-                        url = SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVACY_NOTICE_NEXT),
-                        onClick = { url ->
-                            interactor.onPrivacyNoticeBannerPrivacyNoticeClicked()
-                            SupportUtils.launchSandboxCustomTab(
-                                context = context,
-                                url = url,
-                            )
-                        },
+                text =
+                    stringResource(
+                        R.string.privacy_notice_updated_homepage_message,
+                        stringResource(R.string.privacy_notice_updated_homepage_message_privacy_notice),
+                        stringResource(R.string.privacy_notice_updated_homepage_message_learn_more),
                     ),
-                    LinkTextState(
-                        text = stringResource(R.string.privacy_notice_updated_homepage_message_learn_more),
-                        url = SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVACY_NOTICE_UPDATE),
-                        onClick = { url ->
-                            interactor.onPrivacyNoticeBannerLearnMoreClicked()
-                            SupportUtils.launchSandboxCustomTab(
-                                context = context,
-                                url = url,
-                            )
-                        },
+                linkTextStates =
+                    listOf(
+                        LinkTextState(
+                            text = stringResource(R.string.privacy_notice_updated_homepage_message_privacy_notice),
+                            url = SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVACY_NOTICE_NEXT),
+                            onClick = { url ->
+                                interactor.onPrivacyNoticeBannerPrivacyNoticeClicked()
+                                SupportUtils.launchSandboxCustomTab(
+                                    context = context,
+                                    url = url,
+                                )
+                            },
+                        ),
+                        LinkTextState(
+                            text = stringResource(R.string.privacy_notice_updated_homepage_message_learn_more),
+                            url = SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVACY_NOTICE_UPDATE),
+                            onClick = { url ->
+                                interactor.onPrivacyNoticeBannerLearnMoreClicked()
+                                SupportUtils.launchSandboxCustomTab(
+                                    context = context,
+                                    url = url,
+                                )
+                            },
+                        ),
                     ),
-                ),
                 textAlign = TextAlign.Start,
                 linkTextDecoration = TextDecoration.Underline,
             )
@@ -84,8 +86,6 @@ fun PrivacyNoticeBanner(
 @PreviewLightDark
 private fun PrivacyNoticeBannerPreview() {
     FirefoxTheme {
-        PrivacyNoticeBanner(
-            interactor = PrivacyNoticeBannerInteractorNoOp,
-        )
+        PrivacyNoticeBanner(interactor = PrivacyNoticeBannerInteractorNoOp)
     }
 }

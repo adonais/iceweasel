@@ -86,12 +86,15 @@ class TParseContext : angle::NonCopyable
     void *getScanner() const { return mScanner; }
     void setScanner(void *scanner) { mScanner = scanner; }
     int getShaderVersion() const { return mShaderVersion; }
-    void onShaderVersionDeclared(int version);
+    void onShaderVersionDeclared(const TSourceLoc &loc, int version);
+    bool checkShaderVersion(const TSourceLoc &loc);
+    bool checkCanUseShaderType(const TSourceLoc &loc);
     sh::GLenum getShaderType() const { return mShaderType; }
     ShShaderSpec getShaderSpec() const { return mShaderSpec; }
     int numErrors() const { return mDiagnostics->numErrors(); }
     void error(const TSourceLoc &loc, const char *reason, const char *token);
     void error(const TSourceLoc &loc, const char *reason, const ImmutableString &token);
+    void fatal(const TSourceLoc &loc, const char *reason);
     void warning(const TSourceLoc &loc, const char *reason, const char *token);
 
     // If isError is false, a warning will be reported instead.
@@ -213,6 +216,11 @@ class TParseContext : angle::NonCopyable
     bool checkWorkGroupSizeIsNotSpecified(const TSourceLoc &location,
                                           const TLayoutQualifier &layoutQualifier);
     void functionCallRValueLValueErrorCheck(const TFunction *fnCandidate, TIntermAggregate *fnCall);
+    void checkClipCullDistanceWholeArrayUse(const TSourceLoc &location,
+                                            TIntermTyped *node,
+                                            const char *message);
+    void functionCallClipCullDistanceCheck(const TFunction *fnCandidate, TIntermAggregate *fnCall);
+    void functionCallFragDataCheck(const TFunction *fnCandidate, TIntermAggregate *fnCall);
     void checkInvariantVariableQualifier(bool invariant,
                                          const TQualifier qualifier,
                                          const TSourceLoc &invariantLocation);
@@ -610,6 +618,7 @@ class TParseContext : angle::NonCopyable
                          const TType *type,
                          GeomTessArray sized,
                          TVariable **variable);
+    void addAndCheckOutputVaryings(const TVariable &variable, const TSourceLoc &line);
 
     void checkNestingLevel(const TSourceLoc &line);
     bool checkCase(const TSourceLoc &line, int64_t caseValue, const char *caseOrDefault);
@@ -761,6 +770,8 @@ class TParseContext : angle::NonCopyable
     void checkVariableLocations(const TSourceLoc &line, const TVariable *variable);
     void postParseValidateFragmentOutputLocations();
 
+    void prependPendingStructDeclarations();
+
     void sizeUnsizedArrayTypes(uint32_t arraySize);
 
     enum class ControlFlowType
@@ -890,6 +901,9 @@ class TParseContext : angle::NonCopyable
     // Current count of declared uniform blocks.
     unsigned int mNumUniformBlocks;
 
+    // Current count of declared output varying components.
+    unsigned int mNumOutputVaryingComponents;
+
     // Keeps track of whether any of the built-ins that can be redeclared (see
     // IsRedeclarableBuiltIn()) has been marked as invariant/precise before the possible
     // redeclaration.
@@ -912,6 +926,8 @@ class TParseContext : angle::NonCopyable
     // Keeps track of the total size of shader-private variables, if validating that this size
     // should not exceed a sensible threshold.
     angle::base::CheckedNumeric<size_t> mTotalPrivateVariablesSize;
+    // Tracks if a type has been validated as safe in checkVariableSize.
+    TMap<TType, size_t> mValidatedVariableTypeSizes;
 
     // Track state related to control flow, used for various validation:
     //
@@ -967,6 +983,13 @@ class TParseContext : angle::NonCopyable
     // Potential errors to generate immediately upon encountering a pixel local storage uniform.
     std::vector<std::tuple<const TSourceLoc, PLSIllegalOperations>> mPLSPotentialErrors;
 
+    // Some transformations might need to create helper functions that reference a function local
+    // struct.  For this reason, local structs are promoted to global scope.  To avoid naming
+    // collisions, global structs are suffixed by |_0| and function-local structs are suffixed by
+    // |_uniqueId|.
+    TVector<TStructure *> mGlobalNamedStructs;
+    TVector<TStructure *> mFunctionLocalNamedStructs;
+
     // Track the locations used by input and output varyings to detect conflicts.
     LocationValidationMap mInputVaryingLocations;
     LocationValidationMap mOutputVaryingLocations;
@@ -977,6 +1000,7 @@ class TParseContext : angle::NonCopyable
     TVector<VariableAndLocation> mFragmentOutputsYuv;
     bool mFragmentOutputIndex1Used;
     bool mFragmentOutputFragDepthUsed;
+    int mMaxFragDataArrayIndexUsed;
 
     // Track the geometry shader global parameters declared in layout.
     TLayoutPrimitiveType mGeometryShaderInputPrimitiveType;

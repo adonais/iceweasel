@@ -16,12 +16,12 @@ enum class AssertionKind {
 }
 
 enum class AssertionTarget {
-    CREATED_ENTITY,
+    CREATED_ENTITY
 }
 
 /**
- * Generic behavior pattern that can be applied to any feature/entity pair with
- * matching capabilities and selector templates.
+ * Generic behavior pattern that can be applied to any feature/entity pair with matching capabilities and selector
+ * templates.
  */
 data class BehaviorTemplate(
     val id: String,
@@ -31,12 +31,10 @@ data class BehaviorTemplate(
     val assertionKind: AssertionKind,
     val assertionTarget: AssertionTarget = AssertionTarget.CREATED_ENTITY,
 ) {
-    fun title(feature: String, entity: String): String = titlePattern
-        .replace("{feature}", feature.toDisplayName())
-        .replace("{entity}", entity.toDisplayName())
+    fun title(feature: String, entity: String): String =
+        titlePattern.replace("{feature}", feature.toDisplayName()).replace("{entity}", entity.toDisplayName())
 
-    fun automationId(feature: String, entity: String): String =
-        "$feature.$entity.$automationSuffix"
+    fun automationId(feature: String, entity: String): String = "$feature.$entity.$automationSuffix"
 
     private fun String.toDisplayName(): String =
         split(".", "_", "-")
@@ -47,33 +45,36 @@ data class BehaviorTemplate(
 }
 
 object BehaviorTemplateCatalog {
-    val all: List<BehaviorTemplate> = listOf(
-        BehaviorTemplate(
-            id = "entity.create.visible",
-            automationSuffix = "create.visible",
-            titlePattern = "{feature} - created {entity} is visible",
-            requiredOperations = listOf(BehaviorOperation.CREATE),
-            assertionKind = AssertionKind.PRESENT,
-        ),
-        BehaviorTemplate(
-            id = "entity.delete.cancel.preservesEntity",
-            automationSuffix = "delete.cancel.preserves",
-            titlePattern = "{feature} - cancel delete preserves {entity}",
-            requiredOperations = listOf(
-                BehaviorOperation.CREATE,
-                BehaviorOperation.CANCEL_DELETE,
+    val all: List<BehaviorTemplate> =
+        listOf(
+            BehaviorTemplate(
+                id = "entity.create.visible",
+                automationSuffix = "create.visible",
+                titlePattern = "{feature} - created {entity} is visible",
+                requiredOperations = listOf(BehaviorOperation.CREATE),
+                assertionKind = AssertionKind.PRESENT,
             ),
-            assertionKind = AssertionKind.PRESENT,
-        ),
-        BehaviorTemplate(
-            id = "entity.delete.absent",
-            automationSuffix = "delete.absent",
-            titlePattern = "{feature} - deleted {entity} is absent",
-            requiredOperations = listOf(
-                BehaviorOperation.CREATE,
-                BehaviorOperation.DELETE,
+            BehaviorTemplate(
+                id = "entity.delete.cancel.preservesEntity",
+                automationSuffix = "delete.cancel.preserves",
+                titlePattern = "{feature} - cancel delete preserves {entity}",
+                requiredOperations =
+                    listOf(
+                        BehaviorOperation.CREATE,
+                        BehaviorOperation.CANCEL_DELETE,
+                    ),
+                assertionKind = AssertionKind.PRESENT,
             ),
-            assertionKind = AssertionKind.ABSENT,
-        ),
-    )
+            BehaviorTemplate(
+                id = "entity.delete.absent",
+                automationSuffix = "delete.absent",
+                titlePattern = "{feature} - deleted {entity} is absent",
+                requiredOperations =
+                    listOf(
+                        BehaviorOperation.CREATE,
+                        BehaviorOperation.DELETE,
+                    ),
+                assertionKind = AssertionKind.ABSENT,
+            ),
+        )
 }

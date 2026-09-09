@@ -11,7 +11,7 @@
       'target_name': 'pk11_gtest',
       'type': 'executable',
       'sources': [
-        'json_reader.cc',
+        '<(DEPTH)/gtests/common/json_reader.cc',
         'pk11_aes_cmac_unittest.cc',
         'pk11_aes_gcm_unittest.cc',
         'pk11_aeskeywrap_unittest.cc',
@@ -40,6 +40,7 @@
         'pk11_kem_unittest.cc',
         'pk11_key_unittest.cc',
         'pk11_keygen.cc',
+        'pk11_mldsa_unittest.cc',
         'pk11_module_unittest.cc',
         'pk11_uri_unittest.cc',
         'pk11_pbe_unittest.cc',

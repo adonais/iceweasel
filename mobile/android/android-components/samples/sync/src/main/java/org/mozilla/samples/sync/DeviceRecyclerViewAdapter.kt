@@ -16,29 +16,28 @@ import org.mozilla.samples.sync.DeviceFragment.OnDeviceListInteractionListener
 import org.mozilla.samples.sync.databinding.FragmentDeviceBinding
 
 /**
- * [RecyclerView.Adapter] that can display a [DummyItem] and makes a call to the
- * specified [OnDeviceListInteractionListener].
+ * [RecyclerView.Adapter] that can display a [DummyItem] and makes a call to the specified
+ * [OnDeviceListInteractionListener].
  */
-class DeviceRecyclerViewAdapter(
-    var onDeviceClickedListener: OnDeviceListInteractionListener? = null,
-) : ListAdapter<Device, DeviceRecyclerViewAdapter.ViewHolder>(DeviceDiffCallback) {
+class DeviceRecyclerViewAdapter(var onDeviceClickedListener: OnDeviceListInteractionListener? = null) :
+    ListAdapter<Device, DeviceRecyclerViewAdapter.ViewHolder>(DeviceDiffCallback) {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = FragmentDeviceBinding
-            .inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = FragmentDeviceBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return ViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = getItem(position)
         holder.nameView.text = item.displayName
-        holder.typeView.text = when (item.deviceType) {
-            DeviceType.DESKTOP -> "Desktop"
-            DeviceType.MOBILE -> "Mobile"
-            DeviceType.TABLET -> "Tablet"
-            DeviceType.TV -> "TV"
-            DeviceType.VR -> "VR"
-            DeviceType.UNKNOWN -> "Unknown"
-        }
+        holder.typeView.text =
+            when (item.deviceType) {
+                DeviceType.DESKTOP -> "Desktop"
+                DeviceType.MOBILE -> "Mobile"
+                DeviceType.TABLET -> "Tablet"
+                DeviceType.TV -> "TV"
+                DeviceType.VR -> "VR"
+                DeviceType.UNKNOWN -> "Unknown"
+            }
 
         holder.itemView.setOnClickListener {
             onDeviceClickedListener?.onDeviceInteraction(item)
@@ -51,10 +50,8 @@ class DeviceRecyclerViewAdapter(
     }
 
     private object DeviceDiffCallback : DiffUtil.ItemCallback<Device>() {
-        override fun areItemsTheSame(oldItem: Device, newItem: Device) =
-            oldItem.id == newItem.id
+        override fun areItemsTheSame(oldItem: Device, newItem: Device) = oldItem.id == newItem.id
 
-        override fun areContentsTheSame(oldItem: Device, newItem: Device) =
-            oldItem == newItem
+        override fun areContentsTheSame(oldItem: Device, newItem: Device) = oldItem == newItem
     }
 }

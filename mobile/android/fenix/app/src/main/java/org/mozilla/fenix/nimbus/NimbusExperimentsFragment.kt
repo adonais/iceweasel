@@ -25,9 +25,7 @@ import org.mozilla.fenix.nimbus.view.NimbusExperimentItem
 import org.mozilla.fenix.nimbus.view.NimbusExperiments
 import org.mozilla.fenix.theme.FirefoxTheme
 
-/**
- * Fragment use for managing Nimbus experiments.
- */
+/** Fragment use for managing Nimbus experiments. */
 class NimbusExperimentsFragment : Fragment(), SystemInsetsPaddedFragment {
 
     override fun onResume() {

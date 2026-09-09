@@ -23,10 +23,11 @@ class DownloadsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
         NavigationRegistry.register(
             from = "HomePage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
-                NavigationStep.Click(MainMenuSelectors.DOWNLOADS_BUTTON),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
+                    NavigationStep.Click(MainMenuSelectors.DOWNLOADS_BUTTON),
+                ),
         )
 
         // The downloads manager is also reachable from the browser's own three-dot menu, which is how
@@ -34,18 +35,17 @@ class DownloadsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
         NavigationRegistry.register(
             from = "BrowserPage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(BrowserPageSelectors.MAIN_MENU_BUTTON),
-                NavigationStep.Click(MainMenuSelectors.DOWNLOADS_BUTTON),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.Click(BrowserPageSelectors.MAIN_MENU_BUTTON),
+                    NavigationStep.Click(MainMenuSelectors.DOWNLOADS_BUTTON),
+                ),
         )
 
         NavigationRegistry.register(
             from = pageName,
             to = "BrowserPage",
-            steps = listOf(
-                NavigationStep.Click(DownloadsSelectors.NAVIGATE_BACK_TOOLBAR_BUTTON),
-            ),
+            steps = listOf(NavigationStep.Click(DownloadsSelectors.NAVIGATE_BACK_TOOLBAR_BUTTON)),
         )
     }
 

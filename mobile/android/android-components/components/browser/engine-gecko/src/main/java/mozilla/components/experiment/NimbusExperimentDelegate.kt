@@ -13,9 +13,7 @@ import org.mozilla.geckoview.ExperimentDelegate.ExperimentException
 import org.mozilla.geckoview.ExperimentDelegate.ExperimentException.ERROR_FEATURE_NOT_FOUND
 import org.mozilla.geckoview.GeckoResult
 
-/**
- * Default Nimbus [ExperimentDelegate] implementation to communicate with mobile Gecko and GeckoView.
- */
+/** Default Nimbus [ExperimentDelegate] implementation to communicate with mobile Gecko and GeckoView. */
 class NimbusExperimentDelegate : ExperimentDelegate {
 
     private val logger = Logger(NimbusExperimentDelegate::javaClass.name)
@@ -49,8 +47,8 @@ class NimbusExperimentDelegate : ExperimentDelegate {
     }
 
     /**
-     * Records that an exposure event occurred with the feature, in a given experiment.
-     * Note: See [onRecordExposureEvent] if no slug is known or needed
+     * Records that an exposure event occurred with the feature, in a given experiment. Note: See
+     * [onRecordExposureEvent] if no slug is known or needed
      *
      * @param feature Nimbus feature to record information about
      * @param slug Nimbus experiment slug to record information about

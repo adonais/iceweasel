@@ -33,11 +33,12 @@ class AddonsLoadingIdlingResource(val fragmentManager: FragmentManager) : Idling
     }
 
     private fun addonsFinishedLoading(): Boolean {
-        val progressbar = fragmentManager.findFragmentById(R.id.container)?.let {
-            val addonsManagementFragment =
-                it.childFragmentManager.fragments.first { it is AddonsManagementFragment }
-            addonsManagementFragment.view?.findViewById<View>(R.id.add_ons_progress_bar)
-        } ?: return true
+        val progressbar =
+            fragmentManager.findFragmentById(R.id.container)?.let {
+                val addonsManagementFragment =
+                    it.childFragmentManager.fragments.first { it is AddonsManagementFragment }
+                addonsManagementFragment.view?.findViewById<View>(R.id.add_ons_progress_bar)
+            } ?: return true
 
         if (progressbar.visibility == VISIBLE) {
             return false

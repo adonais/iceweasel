@@ -598,6 +598,7 @@ support-files = [
   "red-48x46.mp4",
   "red-48x46.mp4^headers^",
   "redirect.sjs",
+  "redirect_media_error.sjs",
   "referer.sjs",
   "resolution-change.webm",
   "resolution-change.webm^headers^",
@@ -847,6 +848,8 @@ skip-if = [
 scheme = "https"
 
 ["test_invalid_reject_play.html"]
+
+["test_media_error_redirect_redaction.html"]
 
 ["test_media_selection.html"]
 

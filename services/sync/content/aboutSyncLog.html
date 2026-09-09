@@ -1,0 +1,129 @@
+<!doctype html>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width; initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src chrome:; object-src 'none'"
+    />
+    <meta name="color-scheme" content="light dark" />
+    <title data-l10n-id="about-sync-log-title"></title>
+    <link rel="stylesheet" href="chrome://global/skin/in-content/common.css" />
+    <link rel="stylesheet" href="chrome://global/content/aboutSyncLog.css" />
+    <link rel="localization" href="services/aboutSyncLog.ftl" />
+    <script
+      type="module"
+      src="chrome://global/content/aboutSyncLog.mjs"
+    ></script>
+  </head>
+  <body>
+    <main class="main-content">
+      <moz-page-header
+        headinglevel="1"
+        data-l10n-id="about-sync-log-page-header"
+      ></moz-page-header>
+
+      <div class="toolbar">
+        <moz-radio-group
+          id="filter-type"
+          name="type"
+          orientation="horizontal"
+          value="all"
+          data-l10n-id="about-sync-log-filter-type"
+        >
+          <moz-radio
+            value="all"
+            data-l10n-id="about-sync-log-filter-type-all"
+          ></moz-radio>
+          <moz-radio
+            value="success"
+            data-l10n-id="about-sync-log-filter-type-success"
+          ></moz-radio>
+          <moz-radio
+            value="error"
+            data-l10n-id="about-sync-log-filter-type-error"
+          ></moz-radio>
+        </moz-radio-group>
+
+        <moz-select
+          id="filter-date"
+          value="all"
+          data-l10n-id="about-sync-log-filter-date"
+        >
+          <moz-option
+            value="all"
+            data-l10n-id="about-sync-log-filter-date-all"
+          ></moz-option>
+          <moz-option
+            value="today"
+            data-l10n-id="about-sync-log-filter-date-today"
+          ></moz-option>
+          <moz-option
+            value="7"
+            data-l10n-id="about-sync-log-filter-date-7days"
+          ></moz-option>
+          <moz-option
+            value="30"
+            data-l10n-id="about-sync-log-filter-date-30days"
+          ></moz-option>
+        </moz-select>
+
+        <moz-input-search
+          class="filter-search"
+          id="filter-search"
+          data-l10n-id="about-sync-log-search-input"
+        ></moz-input-search>
+
+        <moz-button-group class="toolbar-actions">
+          <moz-button
+            id="refresh-button"
+            data-l10n-id="about-sync-log-refresh-button"
+          ></moz-button>
+          <moz-button
+            id="download-button"
+            data-l10n-id="about-sync-log-download-button"
+          ></moz-button>
+          <moz-button
+            id="clear-button"
+            type="destructive"
+            data-l10n-id="about-sync-log-clear-button"
+          ></moz-button>
+        </moz-button-group>
+      </div>
+
+      <p id="log-count" class="log-count"></p>
+
+      <ul id="log-list" class="log-list"></ul>
+
+      <p
+        id="empty-state"
+        class="empty-state"
+        hidden
+        data-l10n-id="about-sync-log-empty"
+      ></p>
+    </main>
+
+    <template id="log-row-template">
+      <li class="log-row">
+        <details class="log-row-details">
+          <summary class="log-row-header">
+            <span class="log-badge"></span>
+            <span class="log-date"></span>
+            <span class="log-size"></span>
+            <moz-button
+              class="log-open-raw"
+              type="ghost"
+              size="small"
+              data-l10n-id="about-sync-log-open-raw"
+            ></moz-button>
+          </summary>
+          <pre class="log-contents"></pre>
+        </details>
+      </li>
+    </template>
+  </body>
+</html>

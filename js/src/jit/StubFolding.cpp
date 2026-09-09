@@ -23,8 +23,7 @@ using namespace js;
 using namespace js::jit;
 
 static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
-                                  JSScript* script, ICScript* icScript,
-                                  gc::AutoMarkingLock& lock) {
+                                  JSScript* script, ICScript* icScript) {
   // Try folding similar stubs with GuardShapes
   // into GuardMultipleShapes or GuardMultipleShapesToOffset
 
@@ -434,10 +433,10 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
   }
 
   // Replace the existing stubs with the new folded stub.
-  fallback->discardStubs(cx->zone(), icEntry, lock);
-
+  MaybeMarkingLock lock;
   ICAttachResult result = AttachBaselineCacheIRStubLocked(
-      cx, writer, cacheKind, script, icScript, fallback, "StubFold", lock);
+      cx, writer, cacheKind, script, icScript, fallback,
+      DiscardExistingStubs::Yes, "StubFold", lock);
   if (result == ICAttachResult::OOM) {
     ReportOutOfMemory(cx);
     return false;
@@ -475,13 +474,6 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
 
 bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
                               JSScript* script, ICScript* icScript) {
-  gc::AutoMarkingLock lock(cx->zone(), icScript->markingLock());
-  return TryFoldingStubsLocked(cx, fallback, script, icScript, lock);
-}
-
-bool js::jit::TryFoldingStubsLocked(JSContext* cx, ICFallbackStub* fallback,
-                                    JSScript* script, ICScript* icScript,
-                                    gc::AutoMarkingLock& lock) {
   ICEntry* icEntry = icScript->icEntryForStub(fallback);
   ICStub* entryStub = icEntry->firstStub();
 
@@ -499,16 +491,11 @@ bool js::jit::TryFoldingStubsLocked(JSContext* cx, ICFallbackStub* fallback,
     return true;
   }
 
-  if (!TryFoldingGuardShapes(cx, fallback, script, icScript, lock)) {
-    return false;
-  }
-
-  return true;
+  return TryFoldingGuardShapes(cx, fallback, script, icScript);
 }
 
 bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
-                              ICScript* icScript, ICFallbackStub* fallback,
-                              const gc::AutoMarkingLock& lock) {
+                              ICScript* icScript, ICFallbackStub* fallback) {
   ICEntry* icEntry = icScript->icEntryForStub(fallback);
   ICStub* entryStub = icEntry->firstStub();
 
@@ -752,6 +739,7 @@ bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
                          ? ShapeListWithOffsetsObject::MaxLength
                          : ShapeListObject::MaxLength;
   if (numShapes == maxLength) {
+    gc::AutoMarkingLock lock(cx->zone(), icScript->markingLock());
     MOZ_ASSERT(fallback->state().mode() != ICState::Mode::Generic);
     fallback->state().forceTransition();
     fallback->discardStubs(cx->zone(), icEntry, lock);

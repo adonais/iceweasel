@@ -34,7 +34,7 @@ class AppIconMiddleware(
                         SystemAction.UpdateFailed(
                             oldIcon = action.oldIcon,
                             newIcon = action.newIcon,
-                        ),
+                        )
                     )
                 }
             }
@@ -45,17 +45,14 @@ class AppIconMiddleware(
             is SystemAction.DialogDismissed,
             is SystemAction.SnackbarDismissed,
             is SystemAction.SnackbarShown,
-            is SystemAction.UpdateFailed,
-                -> {
+            is SystemAction.UpdateFailed -> {
                 // no-op
             }
         }
     }
 }
 
-/**
- * An interface for applying a new app icon.
- */
+/** An interface for applying a new app icon. */
 fun interface AppIconUpdater : (AppIcon, AppIcon) -> Boolean {
     override fun invoke(old: AppIcon, new: AppIcon): Boolean
 }

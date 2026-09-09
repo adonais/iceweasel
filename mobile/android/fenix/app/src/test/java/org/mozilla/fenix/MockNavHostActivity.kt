@@ -21,28 +21,20 @@ class MockNavHostActivity : AppCompatActivity(), NavHostActivity {
 /**
  * Set up an added [Fragment] to a [FragmentActivity] that has been initialized to a resumed state.
  *
- * Variant of [mozilla.components.support.test.robolectric.createAddedTestFragment] that uses
- * a custom Fenix activity to hold the fragment.
+ * Variant of [mozilla.components.support.test.robolectric.createAddedTestFragment] that uses a custom Fenix activity to
+ * hold the fragment.
  *
  * @param fragmentTag the name that will be used to tag the fragment inside the [FragmentManager].
  * @param fragmentFactory a lambda function that returns a Fragment that will be added to the Activity.
- *
- * @return The same [Fragment] that was returned from [fragmentFactory] after it got added to the
- * Activity.
+ * @return The same [Fragment] that was returned from [fragmentFactory] after it got added to the Activity.
  */
 inline fun <T : Fragment> createAddedTestFragmentInNavHostActivity(
     fragmentTag: String = "test",
     fragmentFactory: () -> T,
 ): T {
-    val activity = Robolectric.buildActivity(MockNavHostActivity::class.java)
-        .create()
-        .start()
-        .resume()
-        .get()
+    val activity = Robolectric.buildActivity(MockNavHostActivity::class.java).create().start().resume().get()
 
     return fragmentFactory().also {
-        activity.supportFragmentManager.beginTransaction()
-            .add(it, fragmentTag)
-            .commitNow()
+        activity.supportFragmentManager.beginTransaction().add(it, fragmentTag).commitNow()
     }
 }

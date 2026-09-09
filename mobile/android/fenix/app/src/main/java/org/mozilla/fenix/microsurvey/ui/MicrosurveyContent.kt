@@ -33,12 +33,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.RadioButtonListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * The microsurvey content UI to hold question and answer data.
@@ -67,20 +67,17 @@ fun MicrosurveyContent(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         shape = MaterialTheme.shapes.small,
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        modifier = Modifier
-            .wrapContentHeight()
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier = Modifier.wrapContentHeight().fillMaxWidth().padding(horizontal = 16.dp),
     ) {
         Column {
             Header(icon, iconTint, question)
 
             Column(
-                modifier = Modifier
-                    .wrapContentHeight()
-                    .selectableGroup()
-                    .nestedScroll(rememberNestedScrollInteropConnection())
-                    .verticalScroll(rememberScrollState()),
+                modifier =
+                    Modifier.wrapContentHeight()
+                        .selectableGroup()
+                        .nestedScroll(rememberNestedScrollInteropConnection())
+                        .verticalScroll(rememberScrollState())
             ) {
                 answers.forEach {
                     RadioButtonListItem(
@@ -121,20 +118,19 @@ private fun Header(icon: Int, iconTint: Color?, question: String) {
 
 @FlexibleWindowPreview
 @Composable
-private fun MicrosurveyContentPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun MicrosurveyContentPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         MicrosurveyContent(
             question = "How satisfied are you with printing in Firefox?",
             icon = iconsR.drawable.mozac_ic_print_24,
-            answers = listOf(
-                stringResource(id = R.string.likert_scale_option_1),
-                stringResource(id = R.string.likert_scale_option_2),
-                stringResource(id = R.string.likert_scale_option_3),
-                stringResource(id = R.string.likert_scale_option_4),
-                stringResource(id = R.string.likert_scale_option_5),
-            ),
+            answers =
+                listOf(
+                    stringResource(id = R.string.likert_scale_option_1),
+                    stringResource(id = R.string.likert_scale_option_2),
+                    stringResource(id = R.string.likert_scale_option_3),
+                    stringResource(id = R.string.likert_scale_option_4),
+                    stringResource(id = R.string.likert_scale_option_5),
+                ),
             onSelectionChange = {},
         )
     }

@@ -40,11 +40,7 @@ class HomeScreenRobot {
     fun clickOnboardingFinishButton() = finishButton.clickAndWaitForNewWindow(waitingTimeShort)
 
     fun verifyPageShortcutExists(title: String) {
-        assertTrue(
-            topSitesList
-                .getChild(UiSelector().textContains(title))
-                .waitForExists(waitingTime),
-        )
+        assertTrue(topSitesList.getChild(UiSelector().textContains(title)).waitForExists(waitingTime))
     }
 
     fun longTapPageShortcut(title: String) {
@@ -52,11 +48,10 @@ class HomeScreenRobot {
     }
 
     fun clickRenameShortcut() {
-        mDevice.findObject(UiSelector().text("Rename"))
-            .also {
-                it.waitForExists(waitingTimeShort)
-                it.click()
-            }
+        mDevice.findObject(UiSelector().text("Rename")).also {
+            it.waitForExists(waitingTimeShort)
+            it.click()
+        }
     }
 
     fun renameShortcutAndSave(newTitle: String) {
@@ -99,9 +94,7 @@ class HomeScreenRobot {
     class Transition {
         fun openMainMenu(interact: ThreeDotMainMenuRobot.() -> Unit): ThreeDotMainMenuRobot.Transition {
             editURLBar.waitForExists(waitingTime)
-            mainMenu
-                .check(matches(isDisplayed()))
-                .perform(click())
+            mainMenu.check(matches(isDisplayed())).perform(click())
 
             ThreeDotMainMenuRobot().interact()
             return ThreeDotMainMenuRobot.Transition()
@@ -131,13 +124,11 @@ fun homeScreen(interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition
 }
 
 private val editURLBar =
-    mDevice.findObject(
-        UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_edit_url_view"),
-    )
+    mDevice.findObject(UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_edit_url_view"))
 
 private val mainMenu = onView(withId(R.id.menuView))
 
-/********* First Run Locators  */
+/** ******* First Run Locators */
 private val firstSlideTitle =
     mDevice.findObject(UiSelector().textContains(getStringResource(R.string.firstrun_defaultbrowser_title)))
 
@@ -150,85 +141,54 @@ private val thirdSlideTitle =
 private val lastSlide =
     mDevice.findObject(UiSelector().textContains(getStringResource(R.string.firstrun_privacy_title)))
 
-private val nextButton = mDevice.findObject(
-    UiSelector()
-        .resourceId("$packageName:id/next")
-        .enabled(true),
-)
+private val nextButton = mDevice.findObject(UiSelector().resourceId("$packageName:id/next").enabled(true))
 
-private val finishButton = mDevice.findObject(
-    UiSelector()
-        .resourceId("$packageName:id/finish")
-        .enabled(true),
-)
+private val finishButton = mDevice.findObject(UiSelector().resourceId("$packageName:id/finish").enabled(true))
 
 private val topSitesList = mDevice.findObject(UiSelector().resourceId("$packageName:id/topSites"))
 
-/** New onboarding elements **/
-
+/** New onboarding elements * */
 private val onboardingLogo =
-    mDevice.findObject(
-        UiSelector()
-            .className("android.widget.ImageView")
-            .descriptionContains(appName),
-    )
+    mDevice.findObject(UiSelector().className("android.widget.ImageView").descriptionContains(appName))
 
 private val onboardingFirstScreenTitle =
-    mDevice.findObject(
-        UiSelector()
-            .textContains(getStringResource(R.string.onboarding_first_screen_title)),
-    )
+    mDevice.findObject(UiSelector().textContains(getStringResource(R.string.onboarding_first_screen_title)))
 
 private val onboardingSecondScreenTitle =
     mDevice.findObject(
-        UiSelector()
-            .textContains(getStringResource(R.string.onboarding_short_app_name) + " isn’t like other browsers"),
+        UiSelector().textContains(getStringResource(R.string.onboarding_short_app_name) + " isn’t like other browsers")
     )
 
 private val onboardingFirstScreenSubtitle =
-    mDevice.findObject(
-        UiSelector()
-            .textContains(getStringResource(R.string.onboarding_first_screen_subtitle)),
-    )
+    mDevice.findObject(UiSelector().textContains(getStringResource(R.string.onboarding_first_screen_subtitle)))
 
 private val onboardingSecondScreenFirstSubtitle =
-    mDevice.findObject(
-        UiSelector()
-            .textContains(getStringResource(R.string.onboarding_second_screen_subtitle_one)),
-    )
+    mDevice.findObject(UiSelector().textContains(getStringResource(R.string.onboarding_second_screen_subtitle_one)))
 
 private val onboardingSecondScreenSecondSubtitle =
     mDevice.findObject(
         UiSelector()
             .textContains(
-                "Make " + getStringResource(R.string.onboarding_short_app_name) +
-                    " your default to protect your data with every link you open.",
-            ),
+                "Make " +
+                    getStringResource(R.string.onboarding_short_app_name) +
+                    " your default to protect your data with every link you open."
+            )
     )
 
 private val onboardingFirstScreenTermsOfUse =
-    mDevice.findObject(
-        UiSelector()
-            .descriptionContains("By continuing, you agree to the Firefox Terms of Use."),
-    )
+    mDevice.findObject(UiSelector().descriptionContains("By continuing, you agree to the Firefox Terms of Use."))
 
 private val onboardingFirstScreenPrivacyNotice =
     mDevice.findObject(
-        UiSelector()
-            .descriptionContains("Firefox cares about your privacy. Learn more in our Privacy Notice."),
+        UiSelector().descriptionContains("Firefox cares about your privacy. Learn more in our Privacy Notice.")
     )
 
-private val onboardingAgreeAndContinueButton =
-    mDevice.findObject(UiSelector().textContains("Continue"))
+private val onboardingAgreeAndContinueButton = mDevice.findObject(UiSelector().textContains("Continue"))
 
 private val onboardingSetAsDefaultBrowserButton =
     mDevice.findObject(
-        UiSelector()
-            .textContains(getStringResource(R.string.onboarding_second_screen_default_browser_button_text)),
+        UiSelector().textContains(getStringResource(R.string.onboarding_second_screen_default_browser_button_text))
     )
 
 private val onboardingSkipButton =
-    mDevice.findObject(
-        UiSelector()
-            .textContains(getStringResource(R.string.onboarding_second_screen_skip_button_text)),
-    )
+    mDevice.findObject(UiSelector().textContains(getStringResource(R.string.onboarding_second_screen_skip_button_text)))

@@ -11,9 +11,7 @@ import androidx.compose.ui.res.stringResource
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 
-/**
- * Value class representing the possible themes for Tab Groups.
- **/
+/** Value class representing the possible themes for Tab Groups. */
 enum class TabGroupTheme {
     Yellow {
         override val primary: Color
@@ -25,7 +23,6 @@ enum class TabGroupTheme {
         override val contentLabel: String
             @ReadOnlyComposable @Composable get() = stringResource(id = R.string.tab_group_color_yellow)
     },
-
     Orange {
         override val primary: Color
             @ReadOnlyComposable @Composable get() = FirefoxTheme.tabGroupColors.orange.primary
@@ -36,7 +33,6 @@ enum class TabGroupTheme {
         override val contentLabel: String
             @ReadOnlyComposable @Composable get() = stringResource(id = R.string.tab_group_color_orange)
     },
-
     Red {
         override val primary: Color
             @ReadOnlyComposable @Composable get() = FirefoxTheme.tabGroupColors.red.primary
@@ -47,7 +43,6 @@ enum class TabGroupTheme {
         override val contentLabel: String
             @ReadOnlyComposable @Composable get() = stringResource(id = R.string.tab_group_color_red)
     },
-
     Pink {
         override val primary: Color
             @ReadOnlyComposable @Composable get() = FirefoxTheme.tabGroupColors.pink.primary
@@ -58,7 +53,6 @@ enum class TabGroupTheme {
         override val contentLabel: String
             @ReadOnlyComposable @Composable get() = stringResource(id = R.string.tab_group_color_pink)
     },
-
     Purple {
         override val primary: Color
             @Composable get() = FirefoxTheme.tabGroupColors.purple.primary
@@ -69,7 +63,6 @@ enum class TabGroupTheme {
         override val contentLabel: String
             @Composable get() = stringResource(id = R.string.tab_group_color_purple)
     },
-
     Blue {
         override val primary: Color
             @ReadOnlyComposable @Composable get() = FirefoxTheme.tabGroupColors.blue.primary
@@ -80,7 +73,6 @@ enum class TabGroupTheme {
         override val contentLabel: String
             @ReadOnlyComposable @Composable get() = stringResource(id = R.string.tab_group_color_blue)
     },
-
     Cyan {
         override val primary: Color
             @ReadOnlyComposable @Composable get() = FirefoxTheme.tabGroupColors.cyan.primary
@@ -91,7 +83,6 @@ enum class TabGroupTheme {
         override val contentLabel: String
             @Composable get() = stringResource(id = R.string.tab_group_color_cyan)
     },
-
     Green {
         override val primary: Color
             @ReadOnlyComposable @Composable get() = FirefoxTheme.tabGroupColors.green.primary
@@ -102,7 +93,6 @@ enum class TabGroupTheme {
         override val contentLabel: String
             @ReadOnlyComposable @Composable get() = stringResource(id = R.string.tab_group_color_green)
     },
-
     Grey {
         override val primary: Color
             @ReadOnlyComposable @Composable get() = FirefoxTheme.tabGroupColors.grey.primary
@@ -112,44 +102,25 @@ enum class TabGroupTheme {
 
         override val contentLabel: String
             @ReadOnlyComposable @Composable get() = stringResource(id = R.string.tab_group_color_grey)
-    },
-    ;
+    };
 
-    /**
-     * The primary color of the tab group.
-     **/
-    @get:Composable
-    @get:ReadOnlyComposable
-    abstract val primary: Color
+    /** The primary color of the tab group. */
+    @get:Composable @get:ReadOnlyComposable abstract val primary: Color
 
-    /**
-     * The color of content displayed on top of [primary].
-     **/
-    @get:Composable
-    @get:ReadOnlyComposable
-    abstract val onPrimary: Color
+    /** The color of content displayed on top of [primary]. */
+    @get:Composable @get:ReadOnlyComposable abstract val onPrimary: Color
 
-    /**
-     * The accessibility label for this theme.
-     * //todo replace with localized text
-     */
-    @get:Composable
-    @get:ReadOnlyComposable
-    abstract val contentLabel: String
+    /** The accessibility label for this theme. //todo replace with localized text */
+    @get:Composable @get:ReadOnlyComposable abstract val contentLabel: String
 
-    /**
-     * Returns the next [TabGroupTheme] in the list, cycling back to the start
-     * if the current theme is the last one.
-     */
+    /** Returns the next [TabGroupTheme] in the list, cycling back to the start if the current theme is the last one. */
     fun next(): TabGroupTheme {
         val themes = TabGroupTheme.entries
         return themes[(ordinal + 1) % themes.size]
     }
 
     companion object {
-        /**
-         * The color of content displayed on top of [primary].
-         **/
+        /** The color of content displayed on top of [primary]. */
         val default: TabGroupTheme = Yellow
     }
 }

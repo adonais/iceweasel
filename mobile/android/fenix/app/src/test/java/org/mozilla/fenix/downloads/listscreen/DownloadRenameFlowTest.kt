@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.downloads.listscreen
 
 import androidx.compose.runtime.mutableStateOf
@@ -21,96 +25,104 @@ import org.mozilla.fenix.downloads.listscreen.store.RenameFileError
 
 @RunWith(AndroidJUnit4::class)
 class DownloadRenameFlowTest {
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun `GIVEN changed filename WHEN checking confirm button THEN button is enabled`() {
-        val result = enableConfirmButton(
-            originalFileName = "document.pdf",
-            newFileName = "new_document.pdf",
-        )
+        val result =
+            enableConfirmButton(
+                originalFileName = "document.pdf",
+                newFileName = "new_document.pdf",
+            )
 
         assertTrue(result)
     }
 
     @Test
     fun `GIVEN only extension changed WHEN checking confirm button THEN button is enabled`() {
-        val result = enableConfirmButton(
-            originalFileName = "document.pdf",
-            newFileName = "document.txt",
-        )
+        val result =
+            enableConfirmButton(
+                originalFileName = "document.pdf",
+                newFileName = "document.txt",
+            )
 
         assertTrue(result)
     }
 
     @Test
     fun `GIVEN unchanged filename WHEN checking confirm button THEN button is disabled`() {
-        val result = enableConfirmButton(
-            originalFileName = "document.pdf",
-            newFileName = "document.pdf",
-        )
+        val result =
+            enableConfirmButton(
+                originalFileName = "document.pdf",
+                newFileName = "document.pdf",
+            )
 
         assertFalse(result)
     }
 
     @Test
     fun `GIVEN blank filename WHEN checking confirm button THEN button is disabled`() {
-        val result = enableConfirmButton(
-            originalFileName = "document.pdf",
-            newFileName = "",
-        )
+        val result =
+            enableConfirmButton(
+                originalFileName = "document.pdf",
+                newFileName = "",
+            )
 
         assertFalse(result)
     }
 
     @Test
     fun `GIVEN whitespace only filename WHEN checking confirm button THEN button is disabled`() {
-        val result = enableConfirmButton(
-            originalFileName = "document.pdf",
-            newFileName = "   ",
-        )
+        val result =
+            enableConfirmButton(
+                originalFileName = "document.pdf",
+                newFileName = "   ",
+            )
 
         assertFalse(result)
     }
 
     @Test
     fun `GIVEN blank base name with extension WHEN checking confirm button THEN button is disabled`() {
-        val result = enableConfirmButton(
-            originalFileName = "document.pdf",
-            newFileName = ".pdf",
-        )
+        val result =
+            enableConfirmButton(
+                originalFileName = "document.pdf",
+                newFileName = ".pdf",
+            )
 
         assertFalse(result)
     }
 
     @Test
     fun `GIVEN filename containing slash WHEN checking confirm button THEN button is disabled`() {
-        val result = enableConfirmButton(
-            originalFileName = "document.pdf",
-            newFileName = "doc/ument.pdf",
-        )
+        val result =
+            enableConfirmButton(
+                originalFileName = "document.pdf",
+                newFileName = "doc/ument.pdf",
+            )
 
         assertFalse(result)
     }
 
     @Test
     fun `GIVEN filename containing NUL WHEN checking confirm button THEN button is disabled`() {
-        val result = enableConfirmButton(
-            originalFileName = "document.pdf",
-            newFileName = "doc\u0000ument.pdf",
-        )
+        val result =
+            enableConfirmButton(
+                originalFileName = "document.pdf",
+                newFileName = "doc\u0000ument.pdf",
+            )
 
         assertFalse(result)
     }
 
     @Test
     fun `GIVEN there is an error WHEN checking confirm button THEN button is disabled`() {
-        val result = enableConfirmButton(
-            originalFileName = "document.pdf",
-            newFileName = "   ",
-            currentError = RenameFileError.CannotRename,
-        )
+        val result =
+            enableConfirmButton(
+                originalFileName = "document.pdf",
+                newFileName = "   ",
+                currentError = RenameFileError.CannotRename,
+            )
 
         assertFalse(result)
     }
@@ -165,9 +177,7 @@ class DownloadRenameFlowTest {
             )
         }
 
-        composeTestRule
-            .onNodeWithTag(DownloadsListTestTag.RENAME_DIALOG_CANCEL_BUTTON)
-            .performClick()
+        composeTestRule.onNodeWithTag(DownloadsListTestTag.RENAME_DIALOG_CANCEL_BUTTON).performClick()
 
         composeTestRule.runOnIdle {
             assertTrue(cancelled)
@@ -189,9 +199,7 @@ class DownloadRenameFlowTest {
             )
         }
 
-        composeTestRule
-            .onNodeWithTag(DownloadsListTestTag.RENAME_DIALOG_TEXT_FIELD)
-            .performTextReplacement("bad/name")
+        composeTestRule.onNodeWithTag(DownloadsListTestTag.RENAME_DIALOG_TEXT_FIELD).performTextReplacement("bad/name")
 
         composeTestRule.waitForIdle()
 

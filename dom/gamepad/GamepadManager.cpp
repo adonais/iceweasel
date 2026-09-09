@@ -477,7 +477,7 @@ void GamepadManager::Update(const GamepadChangeEvent& aEvent) {
 
   const GamepadHandle handle = aEvent.handle();
 
-  GamepadChangeEventBody body = aEvent.body();
+  const GamepadChangeEventBody& body = aEvent.body();
 
   if (body.type() == GamepadChangeEventBody::TGamepadAdded) {
     const GamepadAdded& a = body.get_GamepadAdded();

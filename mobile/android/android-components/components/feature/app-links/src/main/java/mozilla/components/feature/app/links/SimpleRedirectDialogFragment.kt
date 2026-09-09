@@ -23,21 +23,17 @@ import mozilla.components.ui.widgets.withCenterAlignedButtons
 /**
  * This is the default implementation of the [RedirectDialogFragment].
  *
- * It provides an [MaterialAlertDialogBuilder] giving the user the choice to allow or deny the opening of a
- * third party app.
+ * It provides an [MaterialAlertDialogBuilder] giving the user the choice to allow or deny the opening of a third party
+ * app.
  *
  * Intents passed are guaranteed to be openable by a non-browser app.
  */
-class SimpleRedirectDialogFragment(
-    maxSuccessiveDialogMillisLimit: Int = TIME_SHOWN_OFFSET_MILLIS,
-) : RedirectDialogFragment() {
+class SimpleRedirectDialogFragment(maxSuccessiveDialogMillisLimit: Int = TIME_SHOWN_OFFSET_MILLIS) :
+    RedirectDialogFragment() {
 
-    @VisibleForTesting
-    internal var promptAbuserDetector =
-        PromptAbuserDetector(maxSuccessiveDialogMillisLimit)
+    @VisibleForTesting internal var promptAbuserDetector = PromptAbuserDetector(maxSuccessiveDialogMillisLimit)
 
-    @VisibleForTesting
-    internal var testingContext: Context? = null
+    @VisibleForTesting internal var testingContext: Context? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         fun getBuilder(themeID: Int): MaterialAlertDialogBuilder {
@@ -52,10 +48,11 @@ class SimpleRedirectDialogFragment(
         promptAbuserDetector.updateJSDialogAbusedState()
 
         return with(requireBundle()) {
-            val dialogTitleString = getString(
-                KEY_TITLE_STRING,
-                getString(R.string.mozac_feature_applinks_normal_confirm_dialog_title),
-            )
+            val dialogTitleString =
+                getString(
+                    KEY_TITLE_STRING,
+                    getString(R.string.mozac_feature_applinks_normal_confirm_dialog_title),
+                )
             val dialogMessageString = getString(KEY_MESSAGE_STRING, "")
             val positiveButtonText = getInt(KEY_POSITIVE_TEXT, R.string.mozac_feature_applinks_confirm_dialog_confirm)
             val negativeButtonText = getInt(KEY_NEGATIVE_TEXT, R.string.mozac_feature_applinks_confirm_dialog_deny)
@@ -64,32 +61,35 @@ class SimpleRedirectDialogFragment(
             val cancelable = getBoolean(KEY_CANCELABLE, false)
             val showCheckbox = getBoolean(KEY_CHECKBOX, false)
 
-            val checkbox = CheckBox(requireContext()).apply {
-                layoutParams = ViewGroup.MarginLayoutParams(
-                    ViewGroup.MarginLayoutParams.WRAP_CONTENT,
-                    ViewGroup.MarginLayoutParams.WRAP_CONTENT,
-                )
-                id = VIEW_ID
-                setText(checkboxText)
-                val verticalPadding =
-                    pixelSizeFor(
-                        R.dimen.mozac_feature_applinks_confirm_dialog_checkbox_vertical_padding,
-                    )
-                setPadding(0, verticalPadding, 0, verticalPadding)
-            }
+            val checkbox =
+                CheckBox(requireContext()).apply {
+                    layoutParams =
+                        ViewGroup.MarginLayoutParams(
+                            ViewGroup.MarginLayoutParams.WRAP_CONTENT,
+                            ViewGroup.MarginLayoutParams.WRAP_CONTENT,
+                        )
+                    id = VIEW_ID
+                    setText(checkboxText)
+                    val verticalPadding =
+                        pixelSizeFor(R.dimen.mozac_feature_applinks_confirm_dialog_checkbox_vertical_padding)
+                    setPadding(0, verticalPadding, 0, verticalPadding)
+                }
 
-            val dialog = getBuilder(themeResId).apply {
-                if (showCheckbox) {
-                    setView(getLayout(checkbox))
-                }
-                setTitle(dialogTitleString)
-                setMessage(dialogMessageString)
-                setPositiveButton(positiveButtonText) { _, _ -> }
-                setNegativeButton(negativeButtonText) { _, _ ->
-                    onCancelRedirect()
-                }
-                setCancelable(cancelable)
-            }.create()
+            val dialog =
+                getBuilder(themeResId)
+                    .apply {
+                        if (showCheckbox) {
+                            setView(getLayout(checkbox))
+                        }
+                        setTitle(dialogTitleString)
+                        setMessage(dialogMessageString)
+                        setPositiveButton(positiveButtonText) { _, _ -> }
+                        setNegativeButton(negativeButtonText) { _, _ ->
+                            onCancelRedirect()
+                        }
+                        setCancelable(cancelable)
+                    }
+                    .create()
 
             dialog.withCenterAlignedButtons()
             dialog.setOnShowListener {
@@ -109,17 +109,17 @@ class SimpleRedirectDialogFragment(
         }
     }
 
-    private fun getLayout(view: View) = FrameLayout(requireContext()).apply {
-        val leftPadding = resources.getDimension(R.dimen.mozac_feature_applinks_confirm_dialog_checkbox_margin).toInt()
+    private fun getLayout(view: View) =
+        FrameLayout(requireContext()).apply {
+            val leftPadding =
+                resources.getDimension(R.dimen.mozac_feature_applinks_confirm_dialog_checkbox_margin).toInt()
 
-        setPadding(leftPadding, 0, 0, 0)
-        addView(view)
-    }
+            setPadding(leftPadding, 0, 0, 0)
+            addView(view)
+        }
 
     companion object {
-        /**
-         * A builder method for creating a [SimpleRedirectDialogFragment]
-         */
+        /** A builder method for creating a [SimpleRedirectDialogFragment] */
         fun newInstance(
             dialogTitleString: String,
             dialogMessageString: String = "",

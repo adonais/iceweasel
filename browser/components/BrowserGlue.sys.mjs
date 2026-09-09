@@ -39,6 +39,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionsUI: "resource:///modules/ExtensionsUI.sys.mjs",
   FormAutofillUtils: "resource://gre/modules/shared/FormAutofillUtils.sys.mjs",
   Interactions: "moz-src:///browser/components/places/Interactions.sys.mjs",
+  LaunchOnLogin: "resource://gre/modules/LaunchOnLogin.sys.mjs",
   LoginBreaches: "resource:///modules/LoginBreaches.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
   MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
@@ -63,8 +64,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchSERPTelemetry:
     "moz-src:///browser/components/search/SearchSERPTelemetry.sys.mjs",
-  SessionStartup: "resource:///modules/sessionstore/SessionStartup.sys.mjs",
-  SessionWindowUI: "resource:///modules/sessionstore/SessionWindowUI.sys.mjs",
+  SessionStartup:
+    "moz-src:///browser/components/sessionstore/SessionStartup.sys.mjs",
+  SessionWindowUI:
+    "moz-src:///browser/components/sessionstore/SessionWindowUI.sys.mjs",
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
@@ -100,6 +103,11 @@ if (AppConstants.ENABLE_WEBDRIVER) {
     "@mozilla.org/remote/agent;1",
     Ci.nsIRemoteAgent
   );
+
+  ChromeUtils.defineESModuleGetters(lazy, {
+    RemoteControlBanner:
+      "moz-src:///browser/components/remotecontrol/RemoteControlBanner.sys.mjs",
+  });
 } else {
   lazy.Marionette = { running: false };
   lazy.RemoteAgent = { running: false };
@@ -324,7 +332,7 @@ BrowserGlue.prototype = {
           "os-autostart",
           false
         );
-        if (AppConstants.platform == "win") {
+        if (lazy.LaunchOnLogin.isSupported()) {
           lazy.StartupOSIntegration.checkForLaunchOnLogin();
         }
         break;
@@ -684,9 +692,7 @@ BrowserGlue.prototype = {
       return;
     }
 
-    let browserWindowFeatures =
-      "chrome,all,dialog=no,extrachrome,menubar,resizable,scrollbars,status," +
-      "location,toolbar,personalbar";
+    let browserWindowFeatures = "chrome,all,dialog=no,resizable,toolbar";
     // This needs to be set when opening the window to ensure that the AppUserModelID
     // is set correctly on Windows. Without it, initial launches with `-private-window`
     // will show up under the regular Firefox taskbar icon first, and then switch
@@ -966,6 +972,10 @@ BrowserGlue.prototype = {
         "resource://gre/modules/AsanReporter.sys.mjs"
       );
       AsanReporter.init();
+    }
+
+    if (AppConstants.ENABLE_WEBDRIVER) {
+      lazy.RemoteControlBanner.init();
     }
 
     lazy.Sanitizer.onStartup();
@@ -1613,7 +1623,7 @@ BrowserGlue.prototype = {
     // Use an increasing number to keep track of the current state of the user's
     // profile, so we can move data around as needed as the browser evolves.
     // Completely unrelated to the current Firefox release number.
-    const APP_DATA_VERSION = 179;
+    const APP_DATA_VERSION = 181;
     const PREF = "browser.migration.version";
 
     let profileDataVersion = Services.prefs.getIntPref(PREF, -1);

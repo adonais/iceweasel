@@ -20,8 +20,7 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class StoreLifecycleObserverTest {
-    @get:Rule
-    val gleanRule = FenixGleanTestRule(ApplicationProvider.getApplicationContext())
+    @get:Rule val gleanRule = FenixGleanTestRule(ApplicationProvider.getApplicationContext())
 
     @Test
     fun `WHEN onStart is called THEN dispatch StartAction`() {

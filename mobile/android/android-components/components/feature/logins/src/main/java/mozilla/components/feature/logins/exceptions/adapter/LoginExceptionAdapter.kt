@@ -7,9 +7,7 @@ package mozilla.components.feature.logins.exceptions.adapter
 import mozilla.components.feature.logins.exceptions.LoginException
 import mozilla.components.feature.logins.exceptions.db.LoginExceptionEntity
 
-internal class LoginExceptionAdapter(
-    internal val entity: LoginExceptionEntity,
-) : LoginException {
+internal class LoginExceptionAdapter(internal val entity: LoginExceptionEntity) : LoginException {
     override val id: Long
         get() = entity.id!!
 

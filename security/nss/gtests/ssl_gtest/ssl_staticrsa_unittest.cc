@@ -104,13 +104,13 @@ TEST_P(TlsConnectStreamPre13,
 // Replace the server certificate with one that uses 8193-bit RSA.
 class TooLargeRSACertFilter : public TlsHandshakeFilter {
  public:
-  TooLargeRSACertFilter(const std::shared_ptr<TlsAgent> &server)
+  TooLargeRSACertFilter(const std::shared_ptr<TlsAgent>& server)
       : TlsHandshakeFilter(server, {kTlsHandshakeCertificate}) {}
 
  protected:
-  virtual PacketFilter::Action FilterHandshake(const HandshakeHeader &header,
-                                               const DataBuffer &input,
-                                               DataBuffer *output) {
+  virtual PacketFilter::Action FilterHandshake(const HandshakeHeader& header,
+                                               const DataBuffer& input,
+                                               DataBuffer* output) {
     const uint32_t cert_len = sizeof(rsa8193);
     const uint32_t outer_len = cert_len + 3;
     size_t offset = 0;

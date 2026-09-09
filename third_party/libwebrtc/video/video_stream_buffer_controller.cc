@@ -172,6 +172,8 @@ std::optional<int64_t> VideoStreamBufferController::InsertFrame(
       TRACE_EVENT2("webrtc",
                    "VideoStreamBufferController::InsertFrame Frame Complete",
                    "remote_ssrc", ssrc, "frame_id", frameId);
+      timing_->OnContinuousTemporalUnits(buffer_->NewContinuousTemporalUnits(),
+                                         clock_->CurrentTime());
       stats_proxy_->OnCompleteFrame(metadata.is_keyframe, metadata.size,
                                     metadata.contentType);
       MaybeScheduleFrameForRelease();
@@ -183,7 +185,7 @@ std::optional<int64_t> VideoStreamBufferController::InsertFrame(
 
 void VideoStreamBufferController::UpdateRtt(int64_t max_rtt_ms) {
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
-  timing_->UpdateRtt(TimeDelta::Millis(max_rtt_ms));
+  timing_->OnNetworkUpdate({.rtt = TimeDelta::Millis(max_rtt_ms)});
 }
 
 void VideoStreamBufferController::SetMaxWaits(TimeDelta max_wait_for_keyframe,
@@ -248,9 +250,11 @@ void VideoStreamBufferController::OnFrameReady(
     superframe_size += DataSize::Bytes(frame->size());
   }
 
-  timing_->OnDecodableTemporalUnit(first_frame.RtpTimestamp(), superframe_size,
-                                   max_receive_time,
-                                   superframe_delayed_by_retransmission);
+  timing_->OnDecodableTemporalUnit(
+      {.rtp_timestamp = first_frame.RtpTimestamp(),
+       .size = superframe_size,
+       .time = max_receive_time,
+       .was_retransmitted = superframe_delayed_by_retransmission});
   if (!superframe_delayed_by_retransmission) {
     timing_->UpdateCurrentDelay(render_time, now);
   }
@@ -266,7 +270,12 @@ void VideoStreamBufferController::OnFrameReady(
   decode_timing_.SetLastDecodeScheduledTimestamp(now);
 
   decoder_ready_for_new_frame_ = false;
-  receiver_->OnEncodedFrame(std::move(frame));
+  if (frame) {
+    receiver_->OnEncodedFrame(std::move(frame));
+  } else {
+    // Failed to assemble frame - request an immediate keyframe.
+    receiver_->OnDecodableFrameTimeout(TimeDelta::Zero());
+  }
 }
 
 void VideoStreamBufferController::OnTimeout(TimeDelta delay) {

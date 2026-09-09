@@ -9,8 +9,8 @@ origin:
   name: protobuf
   description: Protocol Buffers - Google's data interchange format
   url: https://protobuf.dev/
-  release: v35.0 (2026-05-19T12:53:03-07:00).
-  revision: v35.0
+  release: v36.0 (2026-08-20T02:32:56-07:00).
+  revision: v36.0
   license: BSD-3-Clause
 
 vendoring:
@@ -35,10 +35,14 @@ vendoring:
     - src/google/protobuf/compiler
     - src/google/protobuf/json
     - src/google/protobuf/util
+    - src/google/protobuf/cpp_file_options.pb.cc
+    - src/google/protobuf/cpp_file_options.pb.h
     - src/google/protobuf/cpp_file_options.proto
     - src/google/protobuf/cpp_options.proto
     - src/google/protobuf/fully_verify_message_sets_opt_out.cc
     - src/google/protobuf/internal_options.proto
+    - src/google/protobuf/json_enumvalue_options.pb.cc
+    - src/google/protobuf/json_enumvalue_options.pb.h
     - src/google/protobuf/json_enumvalue_options.proto
     - src/google/protobuf/json_options.proto
     - src/google/protobuf/io/package_info.h

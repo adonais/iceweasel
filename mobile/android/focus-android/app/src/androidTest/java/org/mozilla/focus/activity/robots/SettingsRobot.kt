@@ -41,7 +41,7 @@ class SettingsRobot {
         }
 
         fun openPrivacySettingsMenu(
-            interact: SettingsPrivacyMenuRobot.() -> Unit,
+            interact: SettingsPrivacyMenuRobot.() -> Unit
         ): SettingsPrivacyMenuRobot.Transition {
             privacySettingsMenu.waitForExists(waitingTime)
             privacySettingsMenu.click()
@@ -51,7 +51,7 @@ class SettingsRobot {
         }
 
         fun openAdvancedSettingsMenu(
-            interact: SettingsAdvancedMenuRobot.() -> Unit,
+            interact: SettingsAdvancedMenuRobot.() -> Unit
         ): SettingsAdvancedMenuRobot.Transition {
             advancedSettingsMenu.waitForExists(waitingTime)
             advancedSettingsMenu.click()
@@ -61,7 +61,7 @@ class SettingsRobot {
         }
 
         fun openMozillaSettingsMenu(
-            interact: SettingsMozillaMenuRobot.() -> Unit,
+            interact: SettingsMozillaMenuRobot.() -> Unit
         ): SettingsMozillaMenuRobot.Transition {
             mozillaSettingsMenu.waitForExists(waitingTime)
             mozillaSettingsMenu.click()
@@ -70,9 +70,7 @@ class SettingsRobot {
             return SettingsMozillaMenuRobot.Transition()
         }
 
-        fun goBackToHomeScreen(
-            interact: SearchRobot.() -> Unit,
-        ): SearchRobot.Transition {
+        fun goBackToHomeScreen(interact: SearchRobot.() -> Unit): SearchRobot.Transition {
             mDevice.pressBack()
 
             SearchRobot().interact()
@@ -82,27 +80,16 @@ class SettingsRobot {
 }
 
 private fun generalSettingsMenu(localizedText: String = getStringResource(R.string.preference_category_general)) =
-    mDevice.findObject(
-        UiSelector()
-            .text(localizedText),
-    )
+    mDevice.findObject(UiSelector().text(localizedText))
 
-private val searchSettingsMenu = mDevice.findObject(
-    UiSelector()
-        .text(getStringResource(R.string.preference_category_search)),
-)
+private val searchSettingsMenu =
+    mDevice.findObject(UiSelector().text(getStringResource(R.string.preference_category_search)))
 
-private val privacySettingsMenu = mDevice.findObject(
-    UiSelector()
-        .text(getStringResource(R.string.preference_privacy_and_security_header)),
-)
+private val privacySettingsMenu =
+    mDevice.findObject(UiSelector().text(getStringResource(R.string.preference_privacy_and_security_header)))
 
-private val advancedSettingsMenu = mDevice.findObject(
-    UiSelector()
-        .text(getStringResource(R.string.preference_category_advanced)),
-)
+private val advancedSettingsMenu =
+    mDevice.findObject(UiSelector().text(getStringResource(R.string.preference_category_advanced)))
 
-private val mozillaSettingsMenu = mDevice.findObject(
-    UiSelector()
-        .text(getStringResource(R.string.preference_category_mozilla)),
-)
+private val mozillaSettingsMenu =
+    mDevice.findObject(UiSelector().text(getStringResource(R.string.preference_category_mozilla)))

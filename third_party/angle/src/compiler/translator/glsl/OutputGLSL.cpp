@@ -4,21 +4,33 @@
 // found in the LICENSE file.
 //
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "compiler/translator/glsl/OutputGLSL.h"
+#include "common/unsafe_buffers.h"
 
 #include "compiler/translator/Compiler.h"
 
 namespace sh
 {
+bool RemoveInvariant(sh::GLenum shaderType,
+                     int shaderVersion,
+                     ShShaderOutput outputType,
+                     const ShCompileOptions &compileOptions)
+{
+    return (shaderType == GL_FRAGMENT_SHADER && IsGLSL420OrNewer(outputType)) ||
+           (shaderType == GL_VERTEX_SHADER && compileOptions.removeInvariantAndCentroidForESSL3 &&
+            shaderVersion >= 300);
+}
 
 TOutputGLSL::TOutputGLSL(TCompiler *compiler,
                          TInfoSinkBase &objSink,
                          const ShCompileOptions &compileOptions)
-    : TOutputGLSLBase(compiler, objSink, compileOptions)
+    : TOutputGLSLBase(compiler,
+                      objSink,
+                      compileOptions,
+                      RemoveInvariant(compiler->getShaderType(),
+                                      compiler->getShaderVersion(),
+                                      compiler->getOutputType(),
+                                      compileOptions))
 {}
 
 bool TOutputGLSL::writeVariablePrecision(TPrecision)
@@ -70,24 +82,6 @@ void TOutputGLSL::visitSymbol(TIntermSymbol *node)
 ImmutableString TOutputGLSL::translateTextureFunction(const ImmutableString &name,
                                                       const ShCompileOptions &option)
 {
-    // Check WEBGL_video_texture invocation first.
-    if (name == "textureVideoWEBGL")
-    {
-        if (option.takeVideoTextureAsExternalOES)
-        {
-            // TODO(http://anglebug.com/42262534): Implement external image situation.
-            UNIMPLEMENTED();
-            return ImmutableString("");
-        }
-        else
-        {
-            // Use "texture" instead of "texture2D" to match the translation
-            // of samplerVideoWEBGL to sampler2D and the GLSL version's texture function naming.
-            ASSERT(sh::IsGLSL150OrNewer(getShaderOutput()));
-            return ImmutableString("texture");
-        }
-    }
-
     ASSERT(sh::IsGLSL150OrNewer(getShaderOutput()));
     static const char *legacyToCoreRename[] = {
         "texture2D", "texture", "texture2DProj", "textureProj", "texture2DLod", "textureLod",
@@ -101,11 +95,11 @@ ImmutableString TOutputGLSL::translateTextureFunction(const ImmutableString &nam
         "textureProjLod", "shadow2DEXT", "texture", "shadow2DProjEXT", "textureProj", nullptr,
         nullptr};
 
-    for (int i = 0; legacyToCoreRename[i] != nullptr; i += 2)
+    for (int i = 0; ANGLE_UNSAFE_TODO(legacyToCoreRename[i]) != nullptr; i += 2)
     {
-        if (name == legacyToCoreRename[i])
+        if (name == ANGLE_UNSAFE_TODO(legacyToCoreRename[i]))
         {
-            return ImmutableString(legacyToCoreRename[i + 1]);
+            return ImmutableString(ANGLE_UNSAFE_TODO(legacyToCoreRename[i + 1]));
         }
     }
 

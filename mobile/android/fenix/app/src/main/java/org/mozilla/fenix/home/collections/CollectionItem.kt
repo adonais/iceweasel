@@ -31,28 +31,25 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import mozilla.components.feature.tab.collections.Tab
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R.string
 import org.mozilla.fenix.compose.DismissibleItemBackground
 import org.mozilla.fenix.compose.list.FaviconListItem
 import org.mozilla.fenix.ext.toShortUrl
 import org.mozilla.fenix.home.fake.FakeHomepagePreview
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
-/**
- * Rectangular shape with only right angles used to display a middle tab.
- */
+/** Rectangular shape with only right angles used to display a middle tab. */
 private val MIDDLE_TAB_SHAPE = RectangleShape
 
-/**
- * Shape with only the bottom corners rounded used to display the last tab in a collection.
- */
+/** Shape with only the bottom corners rounded used to display the last tab in a collection. */
 private val BOTTOM_TAB_SHAPE: Shape
     @Composable
-    get() = MaterialTheme.shapes.small.copy(
-        topStart = CornerSize(0.dp),
-        topEnd = CornerSize(0.dp),
-    )
+    get() =
+        MaterialTheme.shapes.small.copy(
+            topStart = CornerSize(0.dp),
+            topEnd = CornerSize(0.dp),
+        )
 
 /**
  * Display an individual [Tab] as part of a collection.
@@ -75,7 +72,8 @@ fun CollectionItem(
     LaunchedEffect(dismissState.currentValue) {
         val value = dismissState.currentValue
         when (value) {
-            SwipeToDismissBoxValue.StartToEnd, SwipeToDismissBoxValue.EndToStart -> {
+            SwipeToDismissBoxValue.StartToEnd,
+            SwipeToDismissBoxValue.EndToStart -> {
                 onRemove(true)
             }
             SwipeToDismissBoxValue.Settled -> {} // no-op
@@ -108,8 +106,7 @@ fun CollectionItem(
         }
 
         Card(
-            modifier = clippingModifier
-                .fillMaxWidth(),
+            modifier = clippingModifier.fillMaxWidth(),
             shape = if (isLastInCollection) BOTTOM_TAB_SHAPE else MIDDLE_TAB_SHAPE,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceBright),
             elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
@@ -127,22 +124,21 @@ fun CollectionItem(
     }
 }
 
-/**
- * Clips the Composable this applies to such that it cannot draw content / shadows outside it's top bound.
- */
-private fun Modifier.clipTop() = this.then(
-    Modifier.drawWithContent {
-        val paddingPx = Constraints.Infinity.toFloat()
-        clipRect(
-            left = 0f - paddingPx,
-            top = 0f,
-            right = size.width + paddingPx,
-            bottom = size.height + paddingPx,
-        ) {
-            this@drawWithContent.drawContent()
+/** Clips the Composable this applies to such that it cannot draw content / shadows outside it's top bound. */
+private fun Modifier.clipTop() =
+    this.then(
+        Modifier.drawWithContent {
+            val paddingPx = Constraints.Infinity.toFloat()
+            clipRect(
+                left = 0f - paddingPx,
+                top = 0f,
+                right = size.width + paddingPx,
+                bottom = size.height + paddingPx,
+            ) {
+                this@drawWithContent.drawContent()
+            }
         }
-    },
-)
+    )
 
 @Composable
 @PreviewLightDark

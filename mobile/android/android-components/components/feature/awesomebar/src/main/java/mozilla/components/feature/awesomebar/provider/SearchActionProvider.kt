@@ -15,8 +15,8 @@ import mozilla.components.feature.search.SearchUseCases
 private const val FIXED_ID = "@@@search.action.provider.fixed.id@@"
 
 /**
- * An [AwesomeBar.SuggestionProvider] implementation that returns a suggestion that mirrors the
- * entered text and invokes a search with the given [SearchEngine] if clicked.
+ * An [AwesomeBar.SuggestionProvider] implementation that returns a suggestion that mirrors the entered text and invokes
+ * a search with the given [SearchEngine] if clicked.
  */
 class SearchActionProvider(
     private val store: BrowserStore,
@@ -37,8 +37,7 @@ class SearchActionProvider(
             return emptyList()
         }
 
-        val searchEngine = searchEngine ?: store.state.search.selectedOrDefaultSearchEngine
-            ?: return emptyList()
+        val searchEngine = searchEngine ?: store.state.search.selectedOrDefaultSearchEngine ?: return emptyList()
 
         return listOf(
             AwesomeBar.Suggestion(
@@ -53,7 +52,7 @@ class SearchActionProvider(
                     searchUseCase.invoke(text)
                     emitSearchActionClickedFact()
                 },
-            ),
+            )
         )
     }
 }

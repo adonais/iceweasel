@@ -17,50 +17,55 @@ import org.mozilla.fenix.ui.efficiency.selectors.SettingsPasswordsSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSavedPasswordsSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
 
-class SettingsSavedPasswordsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
+class SettingsSavedPasswordsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) :
+    BasePage(composeRule) {
     override val pageName = "SettingsSavedPasswordsPage"
 
     init {
         NavigationRegistry.register(
             from = "HomePage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
-                NavigationStep.Click(MainMenuSelectors.SETTINGS_BUTTON),
-                NavigationStep.Click(SettingsSelectors.PASSWORDS_BUTTON),
-                NavigationStep.Click(SettingsPasswordsSelectors.SAVED_PASSWORDS_OPTION),
-                NavigationStep.ClickIfPresent(SettingsSavedPasswordsSelectors.LOGINS_SECURITY_DIALOG_LATER_BUTTON),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
+                    NavigationStep.Click(MainMenuSelectors.SETTINGS_BUTTON),
+                    NavigationStep.Click(SettingsSelectors.PASSWORDS_BUTTON),
+                    NavigationStep.Click(SettingsPasswordsSelectors.SAVED_PASSWORDS_OPTION),
+                    NavigationStep.ClickIfPresent(SettingsSavedPasswordsSelectors.LOGINS_SECURITY_DIALOG_LATER_BUTTON),
+                ),
         )
 
         NavigationRegistry.register(
             from = "HomePage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
-                NavigationStep.Click(MainMenuSelectors.PASSWORDS_BUTTON),
-                NavigationStep.ClickIfPresent(SettingsSavedPasswordsSelectors.LOGINS_SECURITY_DIALOG_LATER_BUTTON),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
+                    NavigationStep.Click(MainMenuSelectors.PASSWORDS_BUTTON),
+                    NavigationStep.ClickIfPresent(SettingsSavedPasswordsSelectors.LOGINS_SECURITY_DIALOG_LATER_BUTTON),
+                ),
         )
 
         NavigationRegistry.register(
             from = "BrowserPage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(BrowserPageSelectors.MAIN_MENU_BUTTON),
-                NavigationStep.Click(MainMenuSelectors.PASSWORDS_BUTTON),
-                NavigationStep.ClickIfPresent(SettingsSavedPasswordsSelectors.LOGINS_SECURITY_DIALOG_LATER_BUTTON),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.Click(BrowserPageSelectors.MAIN_MENU_BUTTON),
+                    NavigationStep.Click(MainMenuSelectors.PASSWORDS_BUTTON),
+                    NavigationStep.ClickIfPresent(SettingsSavedPasswordsSelectors.LOGINS_SECURITY_DIALOG_LATER_BUTTON),
+                ),
         )
 
         NavigationRegistry.register(
             from = pageName,
             to = "BrowserPage",
-            steps = listOf(
-                NavigationStep.Click(SettingsSavedPasswordsSelectors.GO_BACK_BUTTON),
-                NavigationStep.ClickIfPresent(SettingsPasswordsSelectors.GO_BACK_BUTTON),
-                NavigationStep.ClickIfPresent(SettingsSelectors.GO_BACK_BUTTON),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.Click(SettingsSavedPasswordsSelectors.GO_BACK_BUTTON),
+                    NavigationStep.ClickIfPresent(SettingsPasswordsSelectors.GO_BACK_BUTTON),
+                    NavigationStep.ClickIfPresent(SettingsSelectors.GO_BACK_BUTTON),
+                ),
         )
     }
 

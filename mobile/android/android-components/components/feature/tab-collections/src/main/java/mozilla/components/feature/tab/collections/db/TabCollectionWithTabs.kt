@@ -7,12 +7,9 @@ package mozilla.components.feature.tab.collections.db
 import androidx.room.Embedded
 import androidx.room.Relation
 
-/**
- * Class representing a [TabCollectionEntity] joined with its [TabEntity] instances.
- */
+/** Class representing a [TabCollectionEntity] joined with its [TabEntity] instances. */
 internal class TabCollectionWithTabs {
-    @Embedded
-    lateinit var collection: TabCollectionEntity
+    @Embedded lateinit var collection: TabCollectionEntity
 
     @Relation(parentColumn = "id", entityColumn = "tab_collection_id", entity = TabEntity::class)
     lateinit var tabs: List<TabEntity>

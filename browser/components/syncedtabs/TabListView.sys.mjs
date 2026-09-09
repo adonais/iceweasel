@@ -367,6 +367,7 @@ TabListView.prototype = {
     if (item) {
       this.props.onOpenTab(item.dataset.url, "tab", {
         userContextId: parseInt(event.target?.dataset.usercontextid),
+        eventDetail: { containerSource: "synced_tabs_context_menu" },
       });
     }
   },

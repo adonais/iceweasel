@@ -10,19 +10,13 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import org.mozilla.fenix.utils.Settings
 
-/**
- * Interface providing access to IP Protection related [android.content.SharedPreferences].
- */
+/** Interface providing access to IP Protection related [android.content.SharedPreferences]. */
 interface IPProtectionRepository {
     var hasAlreadyUsedVpn: Boolean
 }
 
-/**
- * The default implementation of [IPProtectionRepository] proxying calls to global Fenix [Settings].
- */
-class DefaultIPProtectionRepository(
-    private val settings: Settings,
-) : IPProtectionRepository {
+/** The default implementation of [IPProtectionRepository] proxying calls to global Fenix [Settings]. */
+class DefaultIPProtectionRepository(private val settings: Settings) : IPProtectionRepository {
     override var hasAlreadyUsedVpn: Boolean
         get() = settings.hasAlreadyUsedVpn
         set(value) {
@@ -30,13 +24,10 @@ class DefaultIPProtectionRepository(
         }
 }
 
-/**
- * [Middleware] responsible for intercepting a toggle action and persistently recording the initial VPN interaction.
- */
+/** [Middleware] responsible for intercepting a toggle action and persistently recording the initial VPN interaction. */
 @OptIn(mozilla.components.ExperimentalAndroidComponentsApi::class)
-internal class IPProtectionPreferencesMiddleware(
-    private val preferences: IPProtectionRepository,
-) : Middleware<IPProtectionState, IPProtectionAction> {
+internal class IPProtectionPreferencesMiddleware(private val preferences: IPProtectionRepository) :
+    Middleware<IPProtectionState, IPProtectionAction> {
 
     override fun invoke(
         store: Store<IPProtectionState, IPProtectionAction>,

@@ -10,23 +10,15 @@ package mozilla.components.concept.engine.translate
  * See [TranslationPageSettings] for the corresponding data model
  */
 enum class TranslationPageSettingOperation {
-    /**
-     * The system should offer a translation on a page.
-     */
+    /** The system should offer a translation on a page. */
     UPDATE_ALWAYS_OFFER_POPUP,
 
-    /**
-     * The page's always translate language setting.
-     */
+    /** The page's always translate language setting. */
     UPDATE_ALWAYS_TRANSLATE_LANGUAGE,
 
-    /**
-     * The page's never translate language setting.
-     */
+    /** The page's never translate language setting. */
     UPDATE_NEVER_TRANSLATE_LANGUAGE,
 
-    /**
-     *  The page's never translate site setting.
-     */
+    /** The page's never translate site setting. */
     UPDATE_NEVER_TRANSLATE_SITE,
 }

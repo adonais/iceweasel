@@ -14,8 +14,8 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.perf.ProfilerMarkers.MEASURE_LAYOUT_DRAW_MARKER_NAME
 
 /**
- * A [LinearLayout] that adds profiler markers for various methods. This is intended to be used on
- * the root view of [HomeActivity]'s view hierarchy to understand global measure/layout events.
+ * A [LinearLayout] that adds profiler markers for various methods. This is intended to be used on the root view of
+ * [HomeActivity]'s view hierarchy to understand global measure/layout events.
  */
 class HomeActivityRootLinearLayout(context: Context, attrs: AttributeSet) : LinearLayout(context, attrs) {
 

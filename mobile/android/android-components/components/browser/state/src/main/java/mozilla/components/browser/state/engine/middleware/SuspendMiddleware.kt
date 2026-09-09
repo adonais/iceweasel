@@ -19,14 +19,11 @@ import mozilla.components.lib.state.Store
 /**
  * [Middleware] implementation responsible for suspending an [EngineSession].
  *
- * Suspending an [EngineSession] means that we will take the last [EngineSessionState], attach that
- * to [EngineState] and then clear the [EngineSession] reference and close it. The next time we
- * need an [EngineSession] for this tab we will create a new instance and restore the attached
- * [EngineSessionState].
+ * Suspending an [EngineSession] means that we will take the last [EngineSessionState], attach that to [EngineState] and
+ * then clear the [EngineSession] reference and close it. The next time we need an [EngineSession] for this tab we will
+ * create a new instance and restore the attached [EngineSessionState].
  */
-internal class SuspendMiddleware(
-    private val scope: CoroutineScope,
-) : Middleware<BrowserState, BrowserAction> {
+internal class SuspendMiddleware(private val scope: CoroutineScope) : Middleware<BrowserState, BrowserAction> {
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,
@@ -49,11 +46,7 @@ internal class SuspendMiddleware(
         val tab = store.state.findTabOrCustomTab(sessionId) ?: return
 
         // First we unlink (which clearsEngineSession and state)
-        store.dispatch(
-            EngineAction.UnlinkEngineSessionAction(
-                tab.id,
-            ),
-        )
+        store.dispatch(EngineAction.UnlinkEngineSessionAction(tab.id))
 
         // Now we can close the unlinked EngineSession (on the main thread).
         scope.launch {

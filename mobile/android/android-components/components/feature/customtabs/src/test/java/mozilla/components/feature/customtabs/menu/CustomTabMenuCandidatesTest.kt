@@ -27,10 +27,11 @@ class CustomTabMenuCandidatesTest {
 
     @Test
     fun `return an empty list if there are no menu items`() {
-        val customTabSessionState = createCustomTab(
-            url = "https://mozilla.org",
-            config = CustomTabConfig(menuItems = emptyList()),
-        )
+        val customTabSessionState =
+            createCustomTab(
+                url = "https://mozilla.org",
+                config = CustomTabConfig(menuItems = emptyList()),
+            )
 
         assertEquals(
             emptyList<MenuCandidate>(),
@@ -42,21 +43,24 @@ class CustomTabMenuCandidatesTest {
     fun `create a candidate for each menu item`() {
         val pendingIntent1 = mock<PendingIntent>()
         val pendingIntent2 = mock<PendingIntent>()
-        val customTabSessionState = createCustomTab(
-            url = "https://mozilla.org",
-            config = CustomTabConfig(
-                menuItems = listOf(
-                    CustomTabMenuItem(
-                        name = "item1",
-                        pendingIntent = pendingIntent1,
+        val customTabSessionState =
+            createCustomTab(
+                url = "https://mozilla.org",
+                config =
+                    CustomTabConfig(
+                        menuItems =
+                            listOf(
+                                CustomTabMenuItem(
+                                    name = "item1",
+                                    pendingIntent = pendingIntent1,
+                                ),
+                                CustomTabMenuItem(
+                                    name = "item2",
+                                    pendingIntent = pendingIntent2,
+                                ),
+                            )
                     ),
-                    CustomTabMenuItem(
-                        name = "item2",
-                        pendingIntent = pendingIntent2,
-                    ),
-                ),
-            ),
-        )
+            )
 
         val context = mock<Context>()
         val intent = argumentCaptor<Intent>()

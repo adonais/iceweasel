@@ -1092,8 +1092,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(CanvasRenderingContext2D)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-CanvasRenderingContext2D::ContextState::ContextState() = default;
-
 CanvasRenderingContext2D::ContextState::ContextState(const ContextState& aOther)
     : fontGroup(aOther.fontGroup),
       fontFont(aOther.fontFont),
@@ -1101,7 +1099,8 @@ CanvasRenderingContext2D::ContextState::ContextState(const ContextState& aOther)
       gradientStyles(aOther.gradientStyles),
       patternStyles(aOther.patternStyles),
       colorStyles(aOther.colorStyles),
-      font(aOther.font),
+      specifiedFont(aOther.specifiedFont),
+      resolvedFont(aOther.resolvedFont),
       textAlign(aOther.textAlign),
       textBaseline(aOther.textBaseline),
       textDirection(aOther.textDirection),
@@ -1113,6 +1112,8 @@ CanvasRenderingContext2D::ContextState::ContextState(const ContextState& aOther)
       wordSpacing(aOther.wordSpacing),
       letterSpacingStr(aOther.letterSpacingStr),
       wordSpacingStr(aOther.wordSpacingStr),
+      lang(aOther.lang),
+      resolvedFontLang(aOther.resolvedFontLang),
       shadowColor(aOther.shadowColor),
       transform(aOther.transform),
       shadowOffset(aOther.shadowOffset),
@@ -1132,9 +1133,8 @@ CanvasRenderingContext2D::ContextState::ContextState(const ContextState& aOther)
       filter(aOther.filter),
       filterAdditionalImages(aOther.filterAdditionalImages.Clone()),
       filterSourceGraphicTainted(aOther.filterSourceGraphicTainted),
-      imageSmoothingEnabled(aOther.imageSmoothingEnabled) {}
-
-CanvasRenderingContext2D::ContextState::~ContextState() = default;
+      imageSmoothingEnabled(aOther.imageSmoothingEnabled),
+      explicitLang(aOther.explicitLang) {}
 
 void CanvasRenderingContext2D::ContextState::SetColorStyle(Style aWhichStyle,
                                                            nscolor aColor) {
@@ -1415,7 +1415,8 @@ void CanvasRenderingContext2D::OnRemoteCanvasLost() {
   // We dispatch because it isn't safe to call into the script event handlers,
   // and we don't want to mutate our state in CanvasShutdownManager.
   NS_DispatchToCurrentThread(NS_NewCancelableRunnableFunction(
-      "CanvasRenderingContext2D::OnRemoteCanvasLost", [self = RefPtr{this}] {
+      "CanvasRenderingContext2D::OnRemoteCanvasLost",
+      [self = RefPtr{this}]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
         // 4. Let shouldRestore be the result of firing an event named
         // contextlost at canvas, with the cancelable attribute initialized to
         // true.
@@ -1438,7 +1439,7 @@ void CanvasRenderingContext2D::OnRemoteCanvasRestored() {
   // and we don't want to mutate our state in CanvasShutdownManager.
   NS_DispatchToCurrentThread(NS_NewCancelableRunnableFunction(
       "CanvasRenderingContext2D::OnRemoteCanvasRestored",
-      [self = RefPtr{this}] {
+      [self = RefPtr{this}]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
         // 5. If shouldRestore is false, then abort these steps.
         if (!self->mHasShutdown && self->mIsContextLost &&
             self->mAllowContextRestore) {
@@ -2977,6 +2978,9 @@ void CanvasRenderingContext2D::SetFilter(const nsACString& aFilter,
     CurrentState().filterString = aFilter;
     CurrentState().filterChain = std::move(filterChain);
     if (mCanvasElement) {
+      if (CurrentState().autoSVGFiltersObserver) {
+        CurrentState().autoSVGFiltersObserver->Detach();
+      }
       CurrentState().autoSVGFiltersObserver =
           SVGObserverUtils::ObserveFiltersForCanvasContext(
               this, mCanvasElement, CurrentState().filterChain.AsSpan());
@@ -4219,10 +4223,14 @@ bool CanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
     return SetFontInternalDisconnected(aFont, aError);
   }
 
+  if (!mFontStyleCache) {
+    mFontStyleCache = MakeUnique<FontStyleCache>();
+  }
+
   nsPresContext* c = presShell->GetPresContext();
   FontStyleCacheKey key{aFont, CurrentState().resolvedFontLang,
                         c->RestyleManager()->GetRestyleGeneration()};
-  auto entry = mFontStyleCache.Lookup(key);
+  auto entry = mFontStyleCache->Lookup(key);
   if (!entry) {
     FontStyleData newData;
     newData.mKey = key;
@@ -4347,7 +4355,8 @@ bool CanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
   gfxFontGroup* newFontGroup = metrics->GetThebesFontGroup();
   CurrentState().fontGroup = newFontGroup;
   NS_ASSERTION(CurrentState().fontGroup, "Could not get font group");
-  CurrentState().font = data.mUsedFont;
+  CurrentState().specifiedFont = aFont;
+  CurrentState().resolvedFont = data.mUsedFont;
   CurrentState().fontFont = fontStyle->mFont;
   CurrentState().fontFont.size = fontStyle->mSize;
   CurrentState().fontComputedStyle = data.mStyle;
@@ -4396,6 +4405,21 @@ static void SerializeFontForCanvas(const StyleFontFamilyList& aList,
   aUsedFont.Append(FamilyListToString(aList));
 }
 
+bool CanvasRenderingContext2D::FontIsUnchanged(const nsACString& aFont,
+                                               gfxUserFontSet* aFontSet) {
+  // Return true if:
+  // - we have an existing fontGroup
+  // - the specified font shorthand is the same as current
+  // - the user font set hasn't been rebuilt
+  // Note that if font-affecting attributes like fontWidth, fontKerning,
+  // fontVariantCaps, or language have changed, their setters will have
+  // cleared the current fontGroup, so we don't need to check them here.
+  const ContextState& state = CurrentState();
+  return state.fontGroup && state.specifiedFont == aFont &&
+         (!aFontSet || aFontSet->GetRebuildGeneration() ==
+                           state.fontGroup->GetRebuildGeneration());
+}
+
 bool CanvasRenderingContext2D::SetFontInternalDisconnected(
     const nsACString& aFont, ErrorResult& aError) {
   FontFaceSet* fontFaceSet = nullptr;
@@ -4423,6 +4447,35 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
     fontFaceSetImpl->FlushUserFontSet();
   }
 
+  // Try to short-circuit the case where the exact same font is being re-
+  // specified, and no other relevant properties have changed.
+  if (FontIsUnchanged(aFont, fontFaceSetImpl)) {
+    return true;
+  }
+
+  // Do we have a cached fontgroup that corresponds to this `font` value?
+  if (!mFontGroupCache) {
+    mFontGroupCache = MakeUnique<FontGroupCache>();
+  }
+
+  auto& state = CurrentState();
+  FontGroupCacheKey key(
+      aFont, state.resolvedFontLang, state.fontWidth, state.fontVariantCaps,
+      state.fontKerning,
+      fontFaceSetImpl ? fontFaceSetImpl->GetRebuildGeneration() : 0);
+  auto entry = mFontGroupCache->Lookup(key);
+  if (entry) {
+    const auto& data = entry.Data();
+    if (data.mFontGroup) {
+      state.fontGroup = data.mFontGroup;
+      state.specifiedFont = data.mKey.mSpecifiedFont;
+      state.resolvedFont = data.mResolvedFont;
+      state.fontFont = data.mFont;
+      state.fontComputedStyle = nullptr;
+      return true;
+    }
+  }
+
   // In the OffscreenCanvas case we don't have the context necessary to call
   // GetFontStyleForServo(), as we do in the main-thread canvas context, so
   // instead we borrow ParseFontShorthandForMatching to parse the attribute.
@@ -4441,7 +4494,7 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
   fontStyle.allowForceGDIClassic = false;
 #endif
 
-  switch (CurrentState().fontWidth) {
+  switch (state.fontWidth) {
     case CanvasFontStretch::Normal:
       // Leave whatever the shorthand set.
       break;
@@ -4479,7 +4532,7 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
   // XXX(jfkthame) The interaction between the shorthand and the separate attr
   // here is not clearly spec'd, and we may want to reconsider it (or revise
   // the available values); see https://github.com/whatwg/html/issues/8103.
-  switch (CurrentState().fontVariantCaps) {
+  switch (state.fontVariantCaps) {
     case CanvasFontVariantCaps::Normal:
       fontStyle.variantCaps = smallCaps ? NS_FONT_VARIANT_CAPS_SMALL_CAPS
                                         : NS_FONT_VARIANT_CAPS_NORMAL;
@@ -4512,7 +4565,7 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
 
   // Set the kerning feature, if required by the fontKerning attribute.
   gfxFontFeature setting{TRUETYPE_TAG('k', 'e', 'r', 'n'), 0};
-  switch (CurrentState().fontKerning) {
+  switch (state.fontKerning) {
     case CanvasFontKerning::None:
       setting.mValue = 0;
       fontStyle.featureSettings.AppendElement(setting);
@@ -4526,23 +4579,34 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
       break;
   }
 
-  // TODO: Cache fontGroups in the Worker (use an nsFontCache?)
-  gfxFontGroup* fontGroup = new gfxFontGroup(
-      mOffscreenCanvas,  // aFontVisibilityProvider
-      list,              // aFontFamilyList
-      &fontStyle,        // aStyle
-      CurrentState().resolvedFontLang, CurrentState().explicitLang,
-      nullptr,          // aTextPerf
-      fontFaceSetImpl,  // aUserFontSet
-      1.0,              // aDevToCssSize
-      StyleFontVariantEmoji::Normal);
-  auto& state = CurrentState();
-  state.fontGroup = fontGroup;
-  SerializeFontForCanvas(list, fontStyle, state.font);
-  state.fontFont = nsFont(StyleFontFamily{list, false, false},
-                          StyleCSSPixelLength::FromPixels(size));
-  state.fontFont.variantCaps = fontStyle.variantCaps;
-  state.fontComputedStyle = nullptr;
+  nsAutoCString newFont;
+  SerializeFontForCanvas(list, fontStyle, newFont);
+  // TODO: Cache fontGroups in the Worker (use an nsFontCache?). For now, we
+  // just try to re-use the current fontGroup if possible.
+  if (!state.fontGroup || state.resolvedFont != newFont ||
+      (fontFaceSetImpl && fontFaceSetImpl->GetRebuildGeneration() !=
+                              state.fontGroup->GetRebuildGeneration())) {
+    state.fontGroup = MakeRefPtr<gfxFontGroup>(
+        mOffscreenCanvas,  // aFontVisibilityProvider
+        list,              // aFontFamilyList
+        &fontStyle,        // aStyle
+        CurrentState().resolvedFontLang, CurrentState().explicitLang,
+        nullptr,          // aTextPerf
+        fontFaceSetImpl,  // aUserFontSet
+        1.0,              // aDevToCssSize
+        StyleFontVariantEmoji::Normal);
+    state.specifiedFont = aFont;
+    state.resolvedFont = newFont;
+    state.fontFont = nsFont(StyleFontFamily{list, false, false},
+                            StyleCSSPixelLength::FromPixels(size));
+    state.fontFont.variantCaps = fontStyle.variantCaps;
+    state.fontComputedStyle = nullptr;
+  }
+
+  FontGroupCacheData data(key, state.fontGroup, state.resolvedFont,
+                          state.fontFont);
+  entry.Set(std::move(data));
+
   return true;
 }
 
@@ -5448,10 +5512,10 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
   // If the font has already been set, we're re-creating the fontGroup
   // and should re-use the existing font attribute; if not, we initialize
   // it to the canvas default.
-  // We make a local copy of CurrentState().font because SetFontInternal
+  // We make a local copy of CurrentState().resolvedFont because SetFontInternal
   // may cause a flush and could invalidate any reference to the string in
   // the CurrentState() record.
-  nsAutoCString currentFont(CurrentState().font);
+  nsAutoCString currentFont(CurrentState().resolvedFont);
   if (currentFont.IsEmpty()) {
     currentFont = kDefaultFontStyle;
   }
@@ -5467,12 +5531,12 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
     gfxFloat devToCssSize = gfxFloat(perDevPixel) / gfxFloat(perCSSPixel);
     const auto* sans =
         Servo_FontFamily_Generic(StyleGenericFontFamily::SansSerif);
-    CurrentState().fontGroup = new gfxFontGroup(
+    CurrentState().fontGroup = MakeRefPtr<gfxFontGroup>(
         visProvider, sans->families, &style, language, explicitLanguage,
         presContext ? presContext->GetTextPerfMetrics() : nullptr, nullptr,
         devToCssSize, StyleFontVariantEmoji::Normal);
     if (CurrentState().fontGroup) {
-      CurrentState().font = kDefaultFontStyle;
+      CurrentState().resolvedFont = kDefaultFontStyle;
     } else {
       NS_ERROR("Default canvas font is invalid");
     }
@@ -6258,8 +6322,8 @@ void CanvasRenderingContext2D::DrawDirectlyToCanvas(
   uint32_t modifiedFlags = aImage.mDrawingFlags | imgIContainer::FLAG_CLAMP;
 
   // XXX hmm is scaledImageSize really in CSS pixels?
-  CSSIntSize sz(scaledImageSize.width, scaledImageSize.height);
-  SVGImageContext svgContext(Some(sz));
+  SVGImageContext svgContext(
+      Some(CSSSize(scaledImageSize.width, scaledImageSize.height)));
 
   if (mContextProperties != CanvasContextProperties::None &&
       aImage.mImgContainer->GetType() == imgIContainer::TYPE_VECTOR) {

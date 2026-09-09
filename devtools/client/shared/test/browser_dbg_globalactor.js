@@ -13,26 +13,16 @@ var {
 var {
   ActorRegistry,
 } = require("resource://devtools/server/actors/utils/actor-registry.js");
-var {
-  DevToolsClient,
-} = require("resource://devtools/client/devtools-client.js");
 
 const ACTORS_URL = EXAMPLE_URL + "testactors.js";
 
 add_task(async function () {
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
-
   ActorRegistry.registerModule(ACTORS_URL, {
     prefix: "testOne",
     constructor: "TestActor1",
     type: { global: true },
   });
-
-  const transport = DevToolsServer.connectPipe();
-  const client = new DevToolsClient(transport);
-  const [type] = await client.connect();
-  is(type, "browser", "Root actor should identify itself as a browser.");
+  const client = await createLocalClientForTests();
 
   let response = await client.mainRoot.rootForm;
   const globalActor = response.testOneActor;

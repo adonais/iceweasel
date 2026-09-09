@@ -62,9 +62,6 @@ class BrowserScreenMiddlewareTest {
         captureActionsMiddleware.assertLastAction(CancelPrivateDownloadsOnPrivateTabsClosedAccepted::class) {}
     }
 
-    private fun buildStore(
-        middlewares: List<Middleware<BrowserScreenState, BrowserScreenAction>> = emptyList(),
-    ) = BrowserScreenStore(
-        middleware = middlewares,
-    )
+    private fun buildStore(middlewares: List<Middleware<BrowserScreenState, BrowserScreenAction>> = emptyList()) =
+        BrowserScreenStore(middleware = middlewares)
 }

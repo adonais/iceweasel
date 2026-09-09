@@ -45,8 +45,7 @@ class SitePermissionsWifiIntegrationTest {
 
     @Test
     fun `GIVEN auto play is not set to allow only on wifi WHEN the feature starts THEN will not listen for wifi changes`() {
-        val autoPlaySettings =
-            listOf(AUTOPLAY_BLOCK_ALL, AUTOPLAY_BLOCK_AUDIBLE, AUTOPLAY_ALLOW_ALL)
+        val autoPlaySettings = listOf(AUTOPLAY_BLOCK_ALL, AUTOPLAY_BLOCK_AUDIBLE, AUTOPLAY_ALLOW_ALL)
 
         autoPlaySettings.forEach { autoPlaySetting ->
             every { settings.getAutoplayUserSetting() } returns autoPlaySetting

@@ -12,15 +12,15 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Base64
 import androidx.core.content.ContextCompat
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import mozilla.components.concept.fetch.MutableHeaders
 import mozilla.components.concept.fetch.Request
 import mozilla.components.concept.fetch.Response
 import org.json.JSONObject
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
 
 private const val PROFILER_API = "https://api.profiler.firefox.com/compressed-store"
 private const val PROFILER_SERVER_HEADER = "application/vnd.firefox-profiler+json;version=1.0"
@@ -30,118 +30,141 @@ private const val PROFILER_DATA_URL = "https://profiler.firefox.com/public/"
 // IMPORTANT NOTE: Please keep the profiler presets in sync with their Firefox Desktop counterparts:
 // https://searchfox.org/mozilla-central/rev/c130c69b7b863d5e28ab9524b65c27c7a9507c48/devtools/client/performance-new/shared/background.jsm.js#121
 
-private val firefox_features = arrayOf(
-    "screenshots",
-    "js",
-    "stackwalk",
-    "java",
-    "processcpu",
-    "ipcmessages",
-    "memory",
-)
-private val firefox_threads = arrayOf(
-    "GeckoMain",
-    "Compositor",
-    "Renderer",
-    "SwComposite",
-    "DOM Worker",
-)
+private val firefox_features =
+    arrayOf(
+        "screenshots",
+        "js",
+        "stackwalk",
+        "java",
+        "processcpu",
+        "ipcmessages",
+        "memory",
+    )
+private val firefox_threads =
+    arrayOf(
+        "GeckoMain",
+        "Compositor",
+        "Renderer",
+        "SwComposite",
+        "DOM Worker",
+    )
 
-private val graphics_features =
-    arrayOf("stackwalk", "js", "java", "processcpu", "ipcmessages", "memory")
-private val graphics_threads = arrayOf(
-    "GeckoMain",
-    "Compositor",
-    "Renderer",
-    "SwComposite",
-    "RenderBackend",
-    "GlyphRasterizer",
-    "SceneBuilder",
-    "WrWorker",
-    "CanvasWorkers",
-    "TextureUpdate",
-)
+private val graphics_features = arrayOf("stackwalk", "js", "java", "processcpu", "ipcmessages", "memory")
+private val graphics_threads =
+    arrayOf(
+        "GeckoMain",
+        "Compositor",
+        "Renderer",
+        "SwComposite",
+        "RenderBackend",
+        "GlyphRasterizer",
+        "SceneBuilder",
+        "WrWorker",
+        "CanvasWorkers",
+        "TextureUpdate",
+    )
 
-private val media_features = arrayOf(
-    "js",
-    "stackwalk",
-    "audiocallbacktracing",
-    "ipcmessages",
-    "processcpu",
-    "java",
-    "memory",
-)
-private val media_threads = arrayOf(
-    "cubeb", "audio", "BackgroundThreadPool", "camera", "capture", "Compositor", "decoder", "GeckoMain", "gmp",
-    "graph", "grph", "InotifyEventThread", "IPDL Background", "media", "ModuleProcessThread", "PacerThread",
-    "RemVidChild", "RenderBackend", "Renderer", "Socket Thread", "SwComposite",
-    "webrtc", "TextureUpdate",
-)
+private val media_features =
+    arrayOf(
+        "js",
+        "stackwalk",
+        "audiocallbacktracing",
+        "ipcmessages",
+        "processcpu",
+        "java",
+        "memory",
+    )
+private val media_threads =
+    arrayOf(
+        "cubeb",
+        "audio",
+        "BackgroundThreadPool",
+        "camera",
+        "capture",
+        "Compositor",
+        "decoder",
+        "GeckoMain",
+        "gmp",
+        "graph",
+        "grph",
+        "InotifyEventThread",
+        "IPDL Background",
+        "media",
+        "ModuleProcessThread",
+        "PacerThread",
+        "RemVidChild",
+        "RenderBackend",
+        "Renderer",
+        "Socket Thread",
+        "SwComposite",
+        "webrtc",
+        "TextureUpdate",
+    )
 
-private val networking_features = arrayOf(
-    "screenshots",
-    "js",
-    "stackwalk",
-    "java",
-    "processcpu",
-    "bandwidth",
-    "ipcmessages",
-    "memory",
-)
+private val networking_features =
+    arrayOf(
+        "screenshots",
+        "js",
+        "stackwalk",
+        "java",
+        "processcpu",
+        "bandwidth",
+        "ipcmessages",
+        "memory",
+    )
 
-private val networking_threads = arrayOf(
-    "Compositor",
-    "DNS Resolver",
-    "DOM Worker",
-    "GeckoMain",
-    "Renderer",
-    "Socket Thread",
-    "StreamTrans",
-    "SwComposite",
-    "TRR Background",
-)
+private val networking_threads =
+    arrayOf(
+        "Compositor",
+        "DNS Resolver",
+        "DOM Worker",
+        "GeckoMain",
+        "Renderer",
+        "Socket Thread",
+        "StreamTrans",
+        "SwComposite",
+        "TRR Background",
+    )
 
-private val debug_features = arrayOf(
-    "java",
-    "ipcmessages",
-    "js",
-    "markersallthreads",
-    "processcpu",
-    "samplingallthreads",
-    "stackwalk",
-    "unregisteredthreads",
-    "flows",
-)
+private val debug_features =
+    arrayOf(
+        "java",
+        "ipcmessages",
+        "js",
+        "markersallthreads",
+        "processcpu",
+        "samplingallthreads",
+        "stackwalk",
+        "unregisteredthreads",
+        "flows",
+    )
 
-private val debug_threads = arrayOf(
-    "*",
-)
+private val debug_threads = arrayOf("*")
 
-private val web_compat_features = arrayOf(
-    "java",
-    "screenshots",
-    "js",
-    "stackwalk",
-    "nostacksampling",
-    "tracing",
-)
+private val web_compat_features =
+    arrayOf(
+        "java",
+        "screenshots",
+        "js",
+        "stackwalk",
+        "nostacksampling",
+        "tracing",
+    )
 
-private val web_compat_threads = arrayOf(
-    "GeckoMain",
-    "DOM Worker",
-)
+private val web_compat_threads =
+    arrayOf(
+        "GeckoMain",
+        "DOM Worker",
+    )
 
-/**
- * Profiler settings enum for grouping features and settings together
- */
+/** Profiler settings enum for grouping features and settings together */
 enum class ProfilerSettings(val threads: Array<String>, val features: Array<String>) {
     Firefox(firefox_threads, firefox_features),
     Graphics(graphics_threads, graphics_features),
     Media(media_threads, media_features),
     Networking(networking_threads, networking_features),
     Debug(debug_threads, debug_features),
-    WebCompat(web_compat_threads, web_compat_features),
-    ;
+    WebCompat(web_compat_threads, web_compat_features);
 
     init {
         require(features.contains("java")) {
@@ -150,9 +173,7 @@ enum class ProfilerSettings(val threads: Array<String>, val features: Array<Stri
     }
 }
 
-/**
- * Collection of functionality to parse and save the profile returned by GeckoView.
- */
+/** Collection of functionality to parse and save the profile returned by GeckoView. */
 object ProfilerUtils {
 
     /**
@@ -201,15 +222,14 @@ object ProfilerUtils {
     }
 
     private fun networkCallToProfilerServer(outputFile: File, context: Context): Response {
-        val request = Request(
-            url = PROFILER_API,
-            method = Request.Method.POST,
-            headers = MutableHeaders(
-                "Accept" to PROFILER_SERVER_HEADER,
-            ),
-            body = Request.Body.fromFile(outputFile),
-            conservative = true,
-        )
+        val request =
+            Request(
+                url = PROFILER_API,
+                method = Request.Method.POST,
+                headers = MutableHeaders("Accept" to PROFILER_SERVER_HEADER),
+                body = Request.Body.fromFile(outputFile),
+                conservative = true,
+            )
         return context.components.core.client.fetch(request)
     }
 
@@ -229,8 +249,8 @@ object ProfilerUtils {
     /**
      * Checks if the app has notification permission on Android 13+ (API level 33+).
      *
-     * This permission check is required for profiler notifications on newer Android versions.
-     * On older versions, notification permission is granted by default.
+     * This permission check is required for profiler notifications on newer Android versions. On older versions,
+     * notification permission is granted by default.
      *
      * @param context Android context for permission checking
      * @return true if notification permission is granted or not required, false otherwise

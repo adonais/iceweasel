@@ -22,10 +22,10 @@ data class BehaviorCase(
     val state: String,
     val missingRequirements: List<String> = emptyList(),
 ) {
-    val isRunnable: Boolean get() = missingRequirements.isEmpty()
+    val isRunnable: Boolean
+        get() = missingRequirements.isEmpty()
 
-    override fun toString(): String =
-        "$label ($testRailId)${if (state.isNotBlank()) " — $state" else ""}"
+    override fun toString(): String = "$label ($testRailId)${if (state.isNotBlank()) " — $state" else ""}"
 }
 
 data class ResolvedBehaviorAssertion(

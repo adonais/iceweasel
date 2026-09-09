@@ -17,16 +17,14 @@ import org.junit.runner.RunWith
  * - Comment out @Ignore: DO NOT COMMIT THIS!
  * - See run instructions in app/benchmark.gradle
  *
- * See https://developer.android.com/studio/profile/benchmark#write-benchmark for how to write a
- * real benchmark, including testing UI code. See
- * https://developer.android.com/studio/profile/benchmark#what-to-benchmark for when jetpack
- * microbenchmark is a good fit.
+ * See https://developer.android.com/studio/profile/benchmark#write-benchmark for how to write a real benchmark,
+ * including testing UI code. See https://developer.android.com/studio/profile/benchmark#what-to-benchmark for when
+ * jetpack microbenchmark is a good fit.
  */
 @Ignore("This is a sample: we don't want it to run when we run all the tests")
 @RunWith(AndroidJUnit4::class)
 class SampleBenchmark {
-    @get:Rule
-    val benchmarkRule = BenchmarkRule()
+    @get:Rule val benchmarkRule = BenchmarkRule()
 
     @Test
     fun additionBenchmark() = benchmarkRule.measureRepeated {

@@ -205,9 +205,7 @@ struct ScriptSourceChunk {
 
   bool valid() const { return sourceData != nullptr; }
 
-  bool operator==(const ScriptSourceChunk& other) const {
-    return sourceData == other.sourceData && chunk == other.chunk;
-  }
+  bool operator==(const ScriptSourceChunk& other) const = default;
 };
 
 struct ScriptSourceChunkHasher {

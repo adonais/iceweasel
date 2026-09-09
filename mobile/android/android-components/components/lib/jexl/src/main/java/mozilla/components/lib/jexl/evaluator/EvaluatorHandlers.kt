@@ -31,27 +31,27 @@ import mozilla.components.lib.jexl.value.JexlValue
  */
 internal object EvaluatorHandlers {
 
-    internal fun evaluateWith(evaluator: Evaluator, node: AstNode): JexlValue = when (node) {
-        is Literal -> evaluateLiteral(node)
-        is BinaryExpression -> evaluateBinaryExpression(evaluator, node)
-        is Identifier -> evaluateIdentifier(evaluator, node)
-        is ObjectLiteral -> evaluateObjectLiteral(evaluator, node)
-        is ArrayLiteral -> evaluateArrayLiteral(evaluator, node)
-        is ConditionalExpression -> evaluateConditionalExpression(evaluator, node)
-        is Transformation -> evaluateTransformation(evaluator, node)
-        is FilterExpression -> evaluateFilterExpression(evaluator, node)
-        is UnaryExpression -> throw JexlException(
-            message = "Unary expression evaluation can't be validated",
-        )
-    }
+    internal fun evaluateWith(evaluator: Evaluator, node: AstNode): JexlValue =
+        when (node) {
+            is Literal -> evaluateLiteral(node)
+            is BinaryExpression -> evaluateBinaryExpression(evaluator, node)
+            is Identifier -> evaluateIdentifier(evaluator, node)
+            is ObjectLiteral -> evaluateObjectLiteral(evaluator, node)
+            is ArrayLiteral -> evaluateArrayLiteral(evaluator, node)
+            is ConditionalExpression -> evaluateConditionalExpression(evaluator, node)
+            is Transformation -> evaluateTransformation(evaluator, node)
+            is FilterExpression -> evaluateFilterExpression(evaluator, node)
+            is UnaryExpression -> throw JexlException(message = "Unary expression evaluation can't be validated")
+        }
 
-    private fun evaluateLiteral(node: Literal): JexlValue = when (val value = node.value) {
-        is String -> JexlString(value)
-        is Double -> JexlDouble(value)
-        is Int -> JexlInteger(value)
-        is Boolean -> JexlBoolean(value)
-        else -> throw EvaluatorException("Unknown value type: ${value!!::class}")
-    }
+    private fun evaluateLiteral(node: Literal): JexlValue =
+        when (val value = node.value) {
+            is String -> JexlString(value)
+            is Double -> JexlDouble(value)
+            is Int -> JexlInteger(value)
+            is Boolean -> JexlBoolean(value)
+            else -> throw EvaluatorException("Unknown value type: ${value!!::class}")
+        }
 
     private fun evaluateBinaryExpression(evaluator: Evaluator, node: BinaryExpression): JexlValue {
         val left = evaluator.evaluate(node.left!!)
@@ -77,23 +77,21 @@ internal object EvaluatorHandlers {
                 when (obj) {
                     is JexlUndefined -> obj
 
-                    is JexlObject -> obj.value[node.value.toString()]
-                        ?: throw EvaluatorException("${node.value} is undefined")
+                    is JexlObject ->
+                        obj.value[node.value.toString()] ?: throw EvaluatorException("${node.value} is undefined")
 
                     else -> throw EvaluatorException("$obj is not an object")
                 }
             }
 
-            is JexlObject -> subContext.value[node.value.toString()]
-                ?: JexlUndefined()
+            is JexlObject -> subContext.value[node.value.toString()] ?: JexlUndefined()
 
             else -> JexlUndefined()
         }
 
     private fun evaluateIdentifierWithoutScope(evaluator: Evaluator, node: Identifier): JexlValue =
         if (node.relative) {
-            evaluator.relativeContext.value[(node.value.toString())]
-                ?: JexlUndefined()
+            evaluator.relativeContext.value[(node.value.toString())] ?: JexlUndefined()
         } else {
             evaluator.context.get(node.value.toString())
         }
@@ -104,8 +102,7 @@ internal object EvaluatorHandlers {
     }
 
     private fun evaluateArrayLiteral(evaluator: Evaluator, node: ArrayLiteral): JexlValue {
-        @Suppress("UNCHECKED_CAST")
-        val values = evaluator.evaluateArray(node.values as List<AstNode>)
+        @Suppress("UNCHECKED_CAST") val values = evaluator.evaluateArray(node.values as List<AstNode>)
         return JexlArray(values)
     }
 
@@ -124,8 +121,7 @@ internal object EvaluatorHandlers {
     }
 
     private fun evaluateTransformation(evaluator: Evaluator, node: Transformation): JexlValue {
-        val transform = evaluator.transforms[node.name]
-            ?: throw EvaluatorException("Unknown transform ${node.name}")
+        val transform = evaluator.transforms[node.name] ?: throw EvaluatorException("Unknown transform ${node.name}")
 
         if (node.subject == null) {
             throw EvaluatorException("Missing subject for transform")

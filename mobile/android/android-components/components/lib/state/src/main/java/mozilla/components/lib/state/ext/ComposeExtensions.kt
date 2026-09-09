@@ -6,6 +6,7 @@ package mozilla.components.lib.state.ext
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.State as ComposeState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.lifecycle.Lifecycle
@@ -14,16 +15,15 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
-import androidx.compose.runtime.State as ComposeState
 
 /**
  * Starts observing this [Store] and represents the mapped state (using [map]) via [ComposeState].
  *
- * Every time the mapped [Store] state changes, the returned [ComposeState] will be updated causing
- * recomposition of every [ComposeState.value] usage.
+ * Every time the mapped [Store] state changes, the returned [ComposeState] will be updated causing recomposition of
+ * every [ComposeState.value] usage.
  *
- * The [Store] observer will automatically be removed when this composable disposes or the current
- * [LifecycleOwner] moves to the [Lifecycle.State.DESTROYED] state.
+ * The [Store] observer will automatically be removed when this composable disposes or the current [LifecycleOwner]
+ * moves to the [Lifecycle.State.DESTROYED] state.
  */
 @Composable
 fun <S : State, A : Action, R> Store<S, A>.observeAsComposableState(map: (S) -> R): ComposeState<R> {
@@ -31,9 +31,10 @@ fun <S : State, A : Action, R> Store<S, A>.observeAsComposableState(map: (S) -> 
     val state = remember { mutableStateOf(map(state)) }
 
     DisposableEffect(this, lifecycleOwner) {
-        val subscription = observe(lifecycleOwner) { browserState ->
-            state.value = map(browserState)
-        }
+        val subscription =
+            observe(lifecycleOwner) { browserState ->
+                state.value = map(browserState)
+            }
         onDispose { subscription?.unsubscribe() }
     }
 
@@ -43,12 +44,11 @@ fun <S : State, A : Action, R> Store<S, A>.observeAsComposableState(map: (S) -> 
 /**
  * Starts observing this [Store] and represents the mapped state (using [map]) via [ComposeState].
  *
- * Everytime the [Store] state changes and the result of the [observe] function changes for this
- * state, the returned [ComposeState] will be updated causing recomposition of every
- * [ComposeState.value] usage.
+ * Everytime the [Store] state changes and the result of the [observe] function changes for this state, the returned
+ * [ComposeState] will be updated causing recomposition of every [ComposeState.value] usage.
  *
- * The [Store] observer will automatically be removed when this composable disposes or the current
- * [LifecycleOwner] moves to the [Lifecycle.State.DESTROYED] state.
+ * The [Store] observer will automatically be removed when this composable disposes or the current [LifecycleOwner]
+ * moves to the [Lifecycle.State.DESTROYED] state.
  */
 @Composable
 fun <S : State, A : Action, O, R> Store<S, A>.observeAsComposableState(
@@ -60,13 +60,14 @@ fun <S : State, A : Action, O, R> Store<S, A>.observeAsComposableState(
     val state = remember { mutableStateOf<R?>(map(state)) }
 
     DisposableEffect(this, lifecycleOwner) {
-        val subscription = observe(lifecycleOwner) { browserState ->
-            val newValue = observe(browserState)
-            if (newValue != lastValue) {
-                state.value = map(browserState)
-                lastValue = newValue
+        val subscription =
+            observe(lifecycleOwner) { browserState ->
+                val newValue = observe(browserState)
+                if (newValue != lastValue) {
+                    state.value = map(browserState)
+                    lastValue = newValue
+                }
             }
-        }
         onDispose { subscription?.unsubscribe() }
     }
 

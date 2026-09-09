@@ -7,6 +7,9 @@ package org.mozilla.fenix.messaging
 import android.content.Context
 import android.os.Build
 import androidx.core.app.NotificationManagerCompat
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 import mozilla.components.service.nimbus.messaging.JexlAttributeProvider
 import mozilla.components.support.base.ext.areNotificationsEnabledSafe
 import mozilla.components.support.base.ext.isNotificationChannelEnabled
@@ -20,31 +23,24 @@ import org.mozilla.fenix.components.metrics.UTMParams.Companion.UTM_TERM
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.onboarding.MARKETING_CHANNEL_ID
 import org.mozilla.fenix.utils.isLargeScreenSize
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 
-/**
- * Custom attributes that the messaging framework will use to evaluate if message is eligible
- * to be shown.
- */
+/** Custom attributes that the messaging framework will use to evaluate if message is eligible to be shown. */
 object CustomAttributeProvider : JexlAttributeProvider {
     private val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
     /**
      * Return a [JSONObject] of custom attributes used for experiment targeting.
      *
-     * These are only evaluated right at the beginning of start up, so any first run experiments needing
-     * targeting attributes which aren't set until after startup e.g. are_notifications_enabled
-     * will unlikely to targeted as expected.
+     * These are only evaluated right at the beginning of start up, so any first run experiments needing targeting
+     * attributes which aren't set until after startup e.g. are_notifications_enabled will unlikely to targeted as
+     * expected.
      *
-     * IMPORTANT: Attributes added here is specifically for advanced targeting purposes within an
-     * experiment.  Any modifications made here must also be reflected on the experimenter side
-     * to ensure that the experimenter dashboard accurately displays the updated advanced targeting
-     * options.
+     * IMPORTANT: Attributes added here is specifically for advanced targeting purposes within an experiment. Any
+     * modifications made here must also be reflected on the experimenter side to ensure that the experimenter dashboard
+     * accurately displays the updated advanced targeting options.
      *
-     * WARNING: Attributes not initialized during the first startup cannot be used to target
-     * first-run experiments. These target attributes will only become active after the second startup.
+     * WARNING: Attributes not initialized during the first startup cannot be used to target first-run experiments.
+     * These target attributes will only become active after the second startup.
      */
     fun getCustomTargetingAttributes(context: Context): JSONObject {
         val settings = context.components.settings
@@ -65,13 +61,12 @@ object CustomAttributeProvider : JexlAttributeProvider {
                 "isFirstRun" to isFirstRun.toString(),
                 "device_manufacturer" to Build.MANUFACTURER,
                 "device_model" to Build.MODEL,
-            ),
+            )
         )
     }
 
     /**
-     * Returns a [JSONObject] that contains all the custom attributes, evaluated when the function
-     * was called.
+     * Returns a [JSONObject] that contains all the custom attributes, evaluated when the function was called.
      *
      * This is used to drive display triggers of messages.
      *
@@ -94,18 +89,15 @@ object CustomAttributeProvider : JexlAttributeProvider {
                 UTM_CAMPAIGN to settings.utmCampaign,
                 UTM_TERM to settings.utmTerm,
                 UTM_CONTENT to settings.utmContent,
-                "are_notifications_enabled" to NotificationManagerCompat.from(context)
-                    .areNotificationsEnabledSafe(),
-                "are_marketing_notifications_enabled" to NotificationManagerCompat.from(context)
-                    .isNotificationChannelEnabled(MARKETING_CHANNEL_ID),
+                "are_notifications_enabled" to NotificationManagerCompat.from(context).areNotificationsEnabledSafe(),
+                "are_marketing_notifications_enabled" to
+                    NotificationManagerCompat.from(context).isNotificationChannelEnabled(MARKETING_CHANNEL_ID),
                 "search_widget_is_installed" to settings.searchWidgetInstalled,
                 "android_version" to android.os.Build.VERSION.SDK_INT,
                 "is_fxa_signed_in" to settings.signedInFxaAccount,
-                "fxa_connected_devices" to (
-                    context.components.backgroundServices.syncStore.state
-                        .constellationState?.otherDevices?.size ?: 0
-                    ),
-            ),
+                "fxa_connected_devices" to
+                    (context.components.backgroundServices.syncStore.state.constellationState?.otherDevices?.size ?: 0),
+            )
         )
     }
 }

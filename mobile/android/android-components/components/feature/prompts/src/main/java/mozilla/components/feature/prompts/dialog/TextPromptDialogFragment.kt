@@ -25,8 +25,8 @@ private const val KEY_DEFAULT_INPUT_VALUE = "KEY_DEFAULT_INPUT_VALUE"
 private const val KEY_PRIVATE = "KEY_PRIVATE"
 
 /**
- * [androidx.fragment.app.DialogFragment] implementation to display a
- * <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/prompt">Window.prompt()</a> with native dialogs.
+ * [androidx.fragment.app.DialogFragment] implementation to display a <a
+ * href="https://developer.mozilla.org/en-US/docs/Web/API/Window/prompt">Window.prompt()</a> with native dialogs.
  */
 internal class TextPromptDialogFragment : AbstractPromptTextDialogFragment(), TextWatcher {
     /**
@@ -41,9 +41,7 @@ internal class TextPromptDialogFragment : AbstractPromptTextDialogFragment(), Te
      */
     internal val labelInput: String? by lazy { safeArguments.getString(KEY_LABEL_INPUT) }
 
-    /**
-     * Tells if the Dialog is shown from private browsing
-     */
+    /** Tells if the Dialog is shown from private browsing */
     internal val private: Boolean? by lazy { safeArguments.getBoolean(KEY_PRIVATE) }
 
     private var userSelectionEditText: String
@@ -53,10 +51,10 @@ internal class TextPromptDialogFragment : AbstractPromptTextDialogFragment(), Te
         }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val builder = MaterialAlertDialogBuilder(requireContext())
-            .setTitle(title)
-            .setCancelable(true)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
+        val builder =
+            MaterialAlertDialogBuilder(requireContext()).setTitle(title).setCancelable(true).setPositiveButton(
+                android.R.string.ok
+            ) { _, _ ->
                 onPositiveClickAction()
             }
         return addLayout(builder).create().withCenterAlignedButtons()
@@ -87,9 +85,7 @@ internal class TextPromptDialogFragment : AbstractPromptTextDialogFragment(), Te
         return builder.setView(view)
     }
 
-    /**
-     * Truncates text to prevent ANR during text measurement.
-     */
+    /** Truncates text to prevent ANR during text measurement. */
     private fun truncateText(text: String?): String {
         if (text == null) return ""
         return if (text.length > Truncation.MAX_MESSAGE_LENGTH) {
@@ -110,16 +106,17 @@ internal class TextPromptDialogFragment : AbstractPromptTextDialogFragment(), Te
     companion object {
         /**
          * A builder method for creating a [TextPromptDialogFragment]
+         *
          * @param sessionId to create the dialog.
          * @param promptRequestUID identifier of the [PromptRequest] for which this dialog is shown.
-         * @param shouldDismissOnLoad whether or not the dialog should automatically be dismissed
-         * when a new page is loaded.
+         * @param shouldDismissOnLoad whether or not the dialog should automatically be dismissed when a new page is
+         *   loaded.
          * @param title the title of the dialog.
          * @param inputLabel
          * @param defaultInputValue
-         * @param hasShownManyDialogs tells if this [sessionId] has shown many dialogs
-         * in a short period of time, if is true a checkbox will be part of the dialog, for the user
-         * to choose if wants to prevent this [sessionId] continuing showing dialogs.
+         * @param hasShownManyDialogs tells if this [sessionId] has shown many dialogs in a short period of time, if is
+         *   true a checkbox will be part of the dialog, for the user to choose if wants to prevent this [sessionId]
+         *   continuing showing dialogs.
          * @param private tells if this dialog is triggered from private browsing
          */
         @Suppress("complexity:LongParameterList")

@@ -37,41 +37,43 @@ class OpenInFirefoxBindingTest {
     }
 
     @Test
-    fun `WHEN open in Firefox is requested THEN open in Firefox`() = runTest(testDispatcher) {
-        val appStore = AppStore()
+    fun `WHEN open in Firefox is requested THEN open in Firefox`() =
+        runTest(testDispatcher) {
+            val appStore = AppStore()
 
-        val binding = OpenInFirefoxBinding(
-            activity = activity,
-            appStore = appStore,
-            customTabSessionId = "",
-            customTabsUseCases = customTabsUseCases,
-            openInFenixIntent = openInFenixIntent,
-            sessionFeature = sessionFeature,
-            mainDispatcher = testDispatcher,
-        )
+            val binding =
+                OpenInFirefoxBinding(
+                    activity = activity,
+                    appStore = appStore,
+                    customTabSessionId = "",
+                    customTabsUseCases = customTabsUseCases,
+                    openInFenixIntent = openInFenixIntent,
+                    sessionFeature = sessionFeature,
+                    mainDispatcher = testDispatcher,
+                )
 
-        val getSessionFeature: SessionFeature = mockk(relaxUnitFun = true)
-        every { sessionFeature.get() } returns getSessionFeature
+            val getSessionFeature: SessionFeature = mockk(relaxUnitFun = true)
+            every { sessionFeature.get() } returns getSessionFeature
 
-        val migrateCustomTabsUseCases: CustomTabsUseCases.MigrateCustomTabUseCase = mockk(relaxed = true)
-        every { customTabsUseCases.migrate } returns migrateCustomTabsUseCases
+            val migrateCustomTabsUseCases: CustomTabsUseCases.MigrateCustomTabUseCase = mockk(relaxed = true)
+            every { customTabsUseCases.migrate } returns migrateCustomTabsUseCases
 
-        binding.start()
+            binding.start()
 
-        appStore.dispatch(AppAction.OpenInFirefoxStarted)
+            appStore.dispatch(AppAction.OpenInFirefoxStarted)
 
-        testDispatcher.scheduler.advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify { getSessionFeature.release() }
-        verify { migrateCustomTabsUseCases.invoke("", select = true) }
-        verify { activity.startActivity(openInFenixIntent) }
-        verify {
-            openInFenixIntent.apply {
-                flags = flags or Intent.FLAG_ACTIVITY_NEW_TASK
+            verify { getSessionFeature.release() }
+            verify { migrateCustomTabsUseCases.invoke("", select = true) }
+            verify { activity.startActivity(openInFenixIntent) }
+            verify {
+                openInFenixIntent.apply {
+                    flags = flags or Intent.FLAG_ACTIVITY_NEW_TASK
+                }
             }
-        }
-        verify { activity.finishAndRemoveTask() }
+            verify { activity.finishAndRemoveTask() }
 
-        assertFalse(appStore.state.openInFirefoxRequested)
-    }
+            assertFalse(appStore.state.openInFirefoxRequested)
+        }
 }

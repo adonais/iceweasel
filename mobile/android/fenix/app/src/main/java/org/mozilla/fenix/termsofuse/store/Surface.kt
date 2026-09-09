@@ -5,16 +5,15 @@
 package org.mozilla.fenix.termsofuse.store
 
 /**
- * The 'surface' that the Terms of Use (ToU) was displayed on,
- * e.g. during onboarding, on the homepage or within the browser.
+ * The 'surface' that the Terms of Use (ToU) was displayed on, e.g. during onboarding, on the homepage or within the
+ * browser.
  *
  * This may refer to the ToU onboarding page or an in-app prompt.
  */
 enum class Surface {
     ONBOARDING,
     HOMEPAGE_NEW_TAB,
-    BROWSER,
-    ;
+    BROWSER;
 
     val metricLabel = name.lowercase()
 }

@@ -83,10 +83,12 @@ export class UserCharacteristicsPageService {
     lazy.console.debug("Registering actor");
     ChromeUtils.registerWindowActor("UserCharacteristics", {
       parent: {
-        esModuleURI: "resource://gre/actors/UserCharacteristicsParent.sys.mjs",
+        esModuleURI:
+          "moz-src:///toolkit/actors/UserCharacteristicsParent.sys.mjs",
       },
       child: {
-        esModuleURI: "resource://gre/actors/UserCharacteristicsChild.sys.mjs",
+        esModuleURI:
+          "moz-src:///toolkit/actors/UserCharacteristicsChild.sys.mjs",
         events: {
           UserCharacteristicsDataDone: { wantUntrusted: true },
         },
@@ -313,11 +315,12 @@ export class UserCharacteristicsPageService {
     const actorName = "UserCharacteristicsWindowInfo";
     ChromeUtils.registerWindowActor(actorName, {
       parent: {
-        esModuleURI: "resource://gre/actors/UserCharacteristicsParent.sys.mjs",
+        esModuleURI:
+          "moz-src:///toolkit/actors/UserCharacteristicsParent.sys.mjs",
       },
       child: {
         esModuleURI:
-          "resource://gre/actors/UserCharacteristicsWindowInfoChild.sys.mjs",
+          "moz-src:///toolkit/actors/UserCharacteristicsWindowInfoChild.sys.mjs",
         events: {
           DOMContentLoaded: {},
         },
@@ -683,11 +686,12 @@ export class UserCharacteristicsPageService {
     const actorName = "UserCharacteristicsCanvasRendering";
     ChromeUtils.registerWindowActor(actorName, {
       parent: {
-        esModuleURI: "resource://gre/actors/UserCharacteristicsParent.sys.mjs",
+        esModuleURI:
+          "moz-src:///toolkit/actors/UserCharacteristicsParent.sys.mjs",
       },
       child: {
         esModuleURI:
-          "resource://gre/actors/UserCharacteristicsCanvasRenderingChild.sys.mjs",
+          "moz-src:///toolkit/actors/UserCharacteristicsCanvasRenderingChild.sys.mjs",
       },
       safeForUntrustedWebProcess: true,
     });

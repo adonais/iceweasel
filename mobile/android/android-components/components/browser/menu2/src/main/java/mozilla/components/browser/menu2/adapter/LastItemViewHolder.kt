@@ -8,12 +8,10 @@ import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 
 /**
- * View holders that extend this base class are passed both the new value and last value
- * when [bind] is called. Use this information to diff the changes between the two values.
+ * View holders that extend this base class are passed both the new value and last value when [bind] is called. Use this
+ * information to diff the changes between the two values.
  */
-internal abstract class LastItemViewHolder<T>(
-    itemView: View,
-) : RecyclerView.ViewHolder(itemView) {
+internal abstract class LastItemViewHolder<T>(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
     protected var lastCandidate: T? = null
 
@@ -21,8 +19,7 @@ internal abstract class LastItemViewHolder<T>(
      * Updates the held view to reflect changes in the menu option.
      *
      * @param newCandidate New value to use.
-     * @param oldCandidate Previously set value.
-     * If this is the first time [bind] was called, null is passed.
+     * @param oldCandidate Previously set value. If this is the first time [bind] was called, null is passed.
      */
     protected abstract fun bind(newCandidate: T, oldCandidate: T?)
 

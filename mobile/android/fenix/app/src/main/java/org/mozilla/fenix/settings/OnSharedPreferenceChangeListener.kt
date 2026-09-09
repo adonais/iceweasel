@@ -27,9 +27,7 @@ class OnSharedPreferenceChangeListener(
     }
 }
 
-/**
- * Registers a [OnSharedPreferenceChangeListener] as a [LifecycleObserver] for a preference.
- */
+/** Registers a [OnSharedPreferenceChangeListener] as a [LifecycleObserver] for a preference. */
 fun SharedPreferences.registerOnSharedPreferenceChangeListener(
     owner: LifecycleOwner,
     listener: (SharedPreferences, String?) -> Unit,

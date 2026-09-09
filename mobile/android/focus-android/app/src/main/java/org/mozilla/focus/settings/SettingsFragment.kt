@@ -10,11 +10,10 @@ import org.mozilla.focus.ext.requireComponents
 import org.mozilla.focus.state.AppAction
 
 /**
- * A fragment that displays the main settings screen.
- * It uses Jetpack Compose to render its UI.
+ * A fragment that displays the main settings screen. It uses Jetpack Compose to render its UI.
  *
- * When a user interacts with a setting that requires navigating to a sub-page (e.g., "Search"),
- * this fragment dispatches an [AppAction.OpenSettings] action to handle the navigation logic.
+ * When a user interacts with a setting that requires navigating to a sub-page (e.g., "Search"), this fragment
+ * dispatches an [AppAction.OpenSettings] action to handle the navigation logic.
  */
 class SettingsFragment : BaseComposeFragment() {
     override val titleRes: Int = R.string.menu_settings

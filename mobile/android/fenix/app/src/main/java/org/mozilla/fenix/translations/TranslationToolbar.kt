@@ -25,24 +25,25 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.IconButton
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 private val ROUNDED_CORNER_SHAPE: Shape
     @Composable
-    get() = MaterialTheme.shapes.extraSmall.copy(
-        bottomStart = CornerSize(0.dp),
-        bottomEnd = CornerSize(0.dp),
-    )
+    get() =
+        MaterialTheme.shapes.extraSmall.copy(
+            bottomStart = CornerSize(0.dp),
+            bottomEnd = CornerSize(0.dp),
+        )
 
 /**
  * A translation toolbar for browsers.
  *
- * @param label Translation toolbar label that is displayed when the current page has been
- * translated by the translation feature.
+ * @param label Translation toolbar label that is displayed when the current page has been translated by the translation
+ *   feature.
  * @param onExpand Invoked when user wants to expand the translations controls..
  * @param onClose Invoked when user wants to close the translation toolbar.
  */
@@ -53,17 +54,12 @@ fun TranslationToolbar(
     onClose: () -> Unit = {},
 ) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(40.dp)
-            .clip(ROUNDED_CORNER_SHAPE),
+        modifier = Modifier.fillMaxWidth().height(40.dp).clip(ROUNDED_CORNER_SHAPE),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.87f),
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 2.dp),
+            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -74,9 +70,7 @@ fun TranslationToolbar(
 
             Text(
                 text = label,
-                modifier = Modifier
-                    .padding(start = 8.dp)
-                    .weight(1f),
+                modifier = Modifier.padding(start = 8.dp).weight(1f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = FirefoxTheme.typography.body2,
@@ -107,12 +101,8 @@ fun TranslationToolbar(
 
 @Preview
 @Composable
-private fun TranslationToolbarPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun TranslationToolbarPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
-        TranslationToolbar(
-            label = "Translated from French to English",
-        )
+        TranslationToolbar(label = "Translated from French to English")
     }
 }

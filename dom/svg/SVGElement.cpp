@@ -1180,8 +1180,8 @@ bool SVGElement::UpdateDeclarationBlockFromTransform(
                                              ? aTransform->GetAnimValue()
                                              : aTransform->GetBaseValue();
     // TODO: Maybe make SVGTransform use StyleTransformOperation directly?
-    for (size_t i = 0, len = transforms.Length(); i < len; ++i) {
-      SVGTransformToCSS(transforms[i], operations);
+    for (const auto& transform : transforms) {
+      SVGTransformToCSS(transform, operations);
     }
   }
   Servo_DeclarationBlock_SetTransform(&aBlock, eCSSProperty_transform,

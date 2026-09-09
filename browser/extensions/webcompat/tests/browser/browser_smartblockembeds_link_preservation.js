@@ -108,6 +108,66 @@ add_task(async function test_smartblock_preserves_links_and_text() {
   BrowserTestUtils.removeTab(tab);
 });
 
+add_task(
+  async function test_smartblock_preserves_link_when_container_is_link() {
+    const tab = await BrowserTestUtils.openNewForegroundTab({
+      gBrowser,
+      waitForLoad: true,
+    });
+
+    await loadSmartblockPageOnTab(
+      tab,
+      TEST_PAGE_WITH_SMARTBLOCK_LINK_CONTAINER_EMBED
+    );
+
+    await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+      await ContentTaskUtils.waitForCondition(() => {
+        const placeholder = content.document.querySelector(
+          ".shimmed-embedded-content"
+        );
+        return placeholder !== null;
+      }, "Waiting for SmartBlock placeholder to appear");
+    });
+
+    const preservedContent = await SpecialPowers.spawn(
+      tab.linkedBrowser,
+      [],
+      async function () {
+        const wrapper = content.document.querySelector(
+          ".shimmed-embedded-content"
+        ).parentElement;
+
+        const safeContentContainer = wrapper.querySelector("div:nth-child(2)");
+        if (!safeContentContainer) {
+          return { found: false };
+        }
+
+        const link = safeContentContainer.querySelector("a");
+
+        return {
+          found: true,
+          linkHref: link ? link.href : null,
+          linkText: link ? link.textContent.trim() : null,
+        };
+      }
+    );
+
+    ok(preservedContent.found, "Preserved content container should exist");
+    is(
+      preservedContent.linkHref,
+      "https://example.com/profile/testuser",
+      "Link href should be preserved when the matched element is itself the <a>"
+    );
+    is(
+      preservedContent.linkText,
+      "View profile",
+      "Link text should be preserved when the matched element is itself the <a>"
+    );
+
+    BrowserTestUtils.removeTab(tab);
+  }
+);
+
 add_task(async function test_smartblock_link_attributes() {
   const tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,

@@ -22,13 +22,11 @@ import org.mozilla.fenix.theme.FirefoxTheme
 /**
  * Renders the app image placeholder while the image is still getting loaded.
  *
- * @param placeholder [Composable] composable used during loading.
- * By default, set to [DefaultImagePlaceholder] in [org.mozilla.fenix.compose.Image].
+ * @param placeholder [Composable] composable used during loading. By default, set to [DefaultImagePlaceholder] in
+ *   [org.mozilla.fenix.compose.Image].
  */
 @Composable
-internal fun ImageLoaderScope.WithPlaceholder(
-    placeholder: @Composable () -> Unit,
-) {
+internal fun ImageLoaderScope.WithPlaceholder(placeholder: @Composable () -> Unit) {
     Placeholder {
         placeholder()
     }
@@ -37,13 +35,11 @@ internal fun ImageLoaderScope.WithPlaceholder(
 /**
  * Renders the app image placeholder if loading image failed.
  *
- * @param fallback [Painter] composable used if loading failed.
- * By default, set to [DefaultImagePlaceholder] in [org.mozilla.fenix.compose.Image].
+ * @param fallback [Painter] composable used if loading failed. By default, set to [DefaultImagePlaceholder] in
+ *   [org.mozilla.fenix.compose.Image].
  */
 @Composable
-internal fun ImageLoaderScope.WithFallback(
-    fallback: @Composable () -> Unit,
-) {
+internal fun ImageLoaderScope.WithFallback(fallback: @Composable () -> Unit) {
     Fallback {
         fallback()
     }
@@ -53,9 +49,8 @@ internal fun ImageLoaderScope.WithFallback(
  * Application default image placeholder.
  *
  * @param modifier [Modifier] allowing to control among others the dimensions and shape of the image.
- * @param contentDescription Text provided to accessibility services to describe what this image represents.
- * Defaults to [null] suited for an image used only for decorative purposes and not to be read by
- * accessibility services.
+ * @param contentDescription Text provided to accessibility services to describe what this image represents. Defaults to
+ *   [null] suited for an image used only for decorative purposes and not to be read by accessibility services.
  */
 @Composable
 internal fun DefaultImagePlaceholder(
@@ -73,10 +68,6 @@ internal fun DefaultImagePlaceholder(
 @PreviewLightDark
 private fun DefaultImagePlaceholderPreview() {
     FirefoxTheme {
-        DefaultImagePlaceholder(
-            modifier = Modifier
-                .size(200.dp, 100.dp)
-                .clip(MaterialTheme.shapes.small),
-        )
+        DefaultImagePlaceholder(modifier = Modifier.size(200.dp, 100.dp).clip(MaterialTheme.shapes.small))
     }
 }

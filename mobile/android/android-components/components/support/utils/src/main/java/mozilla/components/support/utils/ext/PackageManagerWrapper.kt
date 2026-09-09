@@ -15,54 +15,41 @@ import androidx.annotation.RequiresApi
 /**
  * Wrapper for [PackageManager] APIs.
  *
- * See the linked documentation for full details of each API function.
- * This is not exhaustive of all available public APIs.
+ * See the linked documentation for full details of each API function. This is not exhaustive of all available public
+ * APIs.
  */
 interface PackageManagerWrapper {
-    /**
-     * @see [PackageManager.queryIntentActivities].
-     */
+    /** @see [PackageManager.queryIntentActivities]. */
     fun queryIntentActivities(
         intent: Intent,
         flags: PackageManager.ResolveInfoFlags,
     ): List<ResolveInfo>
 
-    /**
-     * @see [PackageManager.queryIntentActivities].
-     */
+    /** @see [PackageManager.queryIntentActivities]. */
     fun queryIntentActivities(intent: Intent, flags: Int): List<ResolveInfo>
 
-    /**
-     * @see [PackageManager.resolveActivity].
-     */
+    /** @see [PackageManager.resolveActivity]. */
     fun resolveActivity(intent: Intent, flags: PackageManager.ResolveInfoFlags): ResolveInfo?
 
-    /**
-     * @see [PackageManager.resolveActivity].
-     */
+    /** @see [PackageManager.resolveActivity]. */
     fun resolveActivity(intent: Intent, flags: Int): ResolveInfo?
 
     /**
      * @throws PackageManager.NameNotFoundException if the package for [packageName] is not installed.
-     * @throws UnsupportedOperationException if [PackageManager.getPackageInfo] is not implemented
-     * in subclass.
-     *
+     * @throws UnsupportedOperationException if [PackageManager.getPackageInfo] is not implemented in subclass.
      * @see [PackageManager.getPackageInfo].
      */
     fun getPackageInfo(packageName: String, flags: PackageManager.PackageInfoFlags): PackageInfo
 
     /**
      * @throws PackageManager.NameNotFoundException if the package for [packageName] is not installed.
-     *
      * @see [PackageManager.getPackageInfo].
      */
     fun getPackageInfo(packageName: String, flags: Int): PackageInfo
 
     /**
      * @throws PackageManager.NameNotFoundException if the package for [packageName] is not installed.
-     * @throws UnsupportedOperationException if [PackageManager.getApplicationInfo] is not
-     * implemented in subclass.
-     *
+     * @throws UnsupportedOperationException if [PackageManager.getApplicationInfo] is not implemented in subclass.
      * @see [PackageManager.getApplicationInfo].
      */
     fun getApplicationInfo(
@@ -71,9 +58,7 @@ interface PackageManagerWrapper {
     ): ApplicationInfo
 
     /**
-     * @throws PackageManager.NameNotFoundException if a package with the given name cannot be
-     * found on the system.
-     *
+     * @throws PackageManager.NameNotFoundException if a package with the given name cannot be found on the system.
      * @see [PackageManager.getApplicationInfo].
      */
     fun getApplicationInfo(packageName: String, flags: Int): ApplicationInfo
@@ -82,7 +67,6 @@ interface PackageManagerWrapper {
      * Returns a list of all installed packages.
      *
      * @param flags Optional flags to modify the data returned.
-     *
      * @return A list of [PackageInfo] objects, one for each installed package.
      */
     fun getInstalledPackages(flags: Int): List<PackageInfo>
@@ -93,9 +77,7 @@ interface PackageManagerWrapper {
  *
  * @param packageManager [PackageManager] to wrap.
  */
-class DefaultPackageManagerWrapper(
-    private val packageManager: PackageManager,
-) : PackageManagerWrapper {
+class DefaultPackageManagerWrapper(private val packageManager: PackageManager) : PackageManagerWrapper {
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun queryIntentActivities(
@@ -141,6 +123,5 @@ class DefaultPackageManagerWrapper(
         flags: Int,
     ): ApplicationInfo = packageManager.getApplicationInfo(packageName, flags)
 
-    override fun getInstalledPackages(flags: Int): List<PackageInfo> =
-        packageManager.getInstalledPackages(flags)
+    override fun getInstalledPackages(flags: Int): List<PackageInfo> = packageManager.getInstalledPackages(flags)
 }

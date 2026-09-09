@@ -172,6 +172,10 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   mozilla::dom::Performance* GetPerformance();
 
+  mozilla::dom::Performance* GetPerformanceIfExists() const {
+    return mPerformance;
+  }
+
   void QueuePerformanceNavigationTiming();
 
   /**
@@ -401,7 +405,8 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   // Fire any DOM notification events related to things that happened while
   // the window was frozen.
-  virtual nsresult FireDelayedDOMEvents(bool aIncludeSubWindows) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult FireDelayedDOMEvents(
+      bool aIncludeSubWindows) = 0;
 
   /**
    * Get the docshell in this window.
@@ -586,8 +591,10 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   virtual nsresult GetControllers(nsIControllers** aControllers) = 0;
 
-  MOZ_CAN_RUN_SCRIPT virtual nsresult GetInnerWidth(double* aWidth) = 0;
-  MOZ_CAN_RUN_SCRIPT virtual nsresult GetInnerHeight(double* aHeight) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult GetInnerWidth(
+      mozilla::dom::CallerType aCallerType, double* aWidth) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult GetInnerHeight(
+      mozilla::dom::CallerType aCallerType, double* aHeight) = 0;
 
   virtual already_AddRefed<nsDOMCSSDeclaration> GetComputedStyle(
       mozilla::dom::Element& aElt, const nsAString& aPseudoElt,
@@ -596,7 +603,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   virtual bool GetFullScreen() = 0;
 
   virtual nsresult Focus(mozilla::dom::CallerType aCallerType) = 0;
-  virtual nsresult Close() = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult Close() = 0;
 
   mozilla::dom::DocGroup* GetDocGroup() const;
 
@@ -886,7 +893,8 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   // Fire any DOM notification events related to things that happened while
   // the window was frozen.
-  virtual nsresult FireDelayedDOMEvents(bool aIncludeSubWindows) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult FireDelayedDOMEvents(
+      bool aIncludeSubWindows) = 0;
 
   /**
    * Get the docshell in this window.
@@ -911,7 +919,7 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
    *
    * aDocument must not be null.
    */
-  virtual nsresult SetNewDocument(
+  MOZ_CAN_RUN_SCRIPT virtual nsresult SetNewDocument(
       Document* aDocument, nsISupports* aState, bool aForceReuseInnerWindow,
       mozilla::dom::WindowGlobalChild* aActor = nullptr) = 0;
 
@@ -941,15 +949,15 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   virtual void LeaveModalState() = 0;
 
   virtual bool CanClose() = 0;
-  virtual void ForceClose() = 0;
+  MOZ_CAN_RUN_SCRIPT virtual void ForceClose() = 0;
 
   /**
    * Moves the top-level window into fullscreen mode if aIsFullScreen is true,
    * otherwise exits fullscreen.
    */
-  virtual nsresult SetFullscreenInternal(FullscreenReason aReason,
-                                         bool aIsFullscreen) = 0;
-  virtual void FullscreenWillChange(bool aIsFullscreen) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult SetFullscreenInternal(
+      FullscreenReason aReason, bool aIsFullscreen) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual void FullscreenWillChange(bool aIsFullscreen) = 0;
   /**
    * This function should be called when the fullscreen state is flipped.
    * If no widget is involved the fullscreen change, this method is called
@@ -958,7 +966,8 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
    *
    * @param aIsFullscreen indicates whether the widget is in fullscreen.
    */
-  virtual void FinishFullscreenChange(bool aIsFullscreen) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual void FinishFullscreenChange(
+      bool aIsFullscreen) = 0;
 
   virtual void ForceFullScreenInWidget() = 0;
 
@@ -1032,7 +1041,7 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
    *
    * Outer windows only.
    */
-  virtual bool DispatchCustomEvent(
+  MOZ_CAN_RUN_SCRIPT virtual bool DispatchCustomEvent(
       const nsAString& aEventName,
       mozilla::ChromeOnlyDispatch aChromeOnlyDispatch =
           mozilla::ChromeOnlyDispatch::eNo) = 0;
@@ -1088,17 +1097,14 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
                               const nsAString& aOptions, nsIArray* aArguments,
                               mozilla::dom::BrowsingContext** _retval) = 0;
 
-  MOZ_CAN_RUN_SCRIPT virtual nsresult GetInnerWidth(double* aWidth) = 0;
-  MOZ_CAN_RUN_SCRIPT virtual nsresult GetInnerHeight(double* aHeight) = 0;
-
   virtual mozilla::dom::Element* GetFrameElement() = 0;
 
   virtual bool Closed() = 0;
   virtual bool GetFullScreen() = 0;
-  virtual nsresult SetFullScreen(bool aFullscreen) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult SetFullScreen(bool aFullscreen) = 0;
 
   virtual nsresult Focus(mozilla::dom::CallerType aCallerType) = 0;
-  virtual nsresult Close() = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult Close() = 0;
 
   virtual nsresult MoveBy(int32_t aXDif, int32_t aYDif) = 0;
 

@@ -6,25 +6,27 @@ package mozilla.components.browser.engine.gecko.util
 
 import mozilla.components.concept.engine.DownloadDelegate
 
-/**
- * A fake implementation of [DownloadDelegate] for testing purposes.
- */
+/** A fake implementation of [DownloadDelegate] for testing purposes. */
 class FakeEngineDownloadDelegate(
-    private val guessFileName: (
-        contentDisposition: String?,
-        url: String?,
-        mimeType: String?,
-    ) -> String = { _, _, _ -> "fileName" },
+    private val guessFileName:
+        (
+            contentDisposition: String?,
+            url: String?,
+            mimeType: String?,
+        ) -> String =
+        { _, _, _ ->
+            "fileName"
+        }
 ) : DownloadDelegate {
     override fun guessFileName(
         contentDisposition: String?,
         url: String?,
         mimeType: String?,
     ): String {
-       return guessFileName.invoke(
-           contentDisposition,
-           url,
-           mimeType,
-       )
+        return guessFileName.invoke(
+            contentDisposition,
+            url,
+            mimeType,
+        )
     }
 }

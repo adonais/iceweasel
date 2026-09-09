@@ -10,17 +10,15 @@ import android.util.Size
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.VisibleForTesting.Companion.PRIVATE
 import androidx.core.graphics.scale
-import mozilla.components.support.base.log.logger.Logger
-import mozilla.components.support.images.DesiredSize
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import mozilla.components.support.base.log.logger.Logger
+import mozilla.components.support.images.DesiredSize
 
 private const val MAX_TRIES = 10
 
-/**
- * An interface for scaling a [Bitmap]
- */
+/** An interface for scaling a [Bitmap] */
 fun interface BitmapScaler {
 
     /**
@@ -38,9 +36,7 @@ fun interface BitmapScaler {
  *
  * @param scaler a [BitmapScaler] used to scale down the produced bitmap
  */
-class AndroidImageDecoder(
-    private val scaler: BitmapScaler = BitmapScaler { b, w, h -> b.scale(w, h) },
-) : ImageDecoder {
+class AndroidImageDecoder(private val scaler: BitmapScaler = BitmapScaler { b, w, h -> b.scale(w, h) }) : ImageDecoder {
     private val logger = Logger("AndroidImageDecoder")
 
     override fun decode(data: ByteArray, desiredSize: DesiredSize): Bitmap? {
@@ -83,14 +79,13 @@ class AndroidImageDecoder(
         }
     }
 
-    /**
-     * Decodes the width and height of a bitmap without loading it into memory.
-     */
+    /** Decodes the width and height of a bitmap without loading it into memory. */
     @VisibleForTesting(otherwise = PRIVATE)
     internal fun decodeBitmapBounds(data: ByteArray): Size {
-        val options = BitmapFactory.Options().apply {
-            inJustDecodeBounds = true
-        }
+        val options =
+            BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
         BitmapFactory.decodeByteArray(data, 0, data.size, options)
         return Size(options.outWidth, options.outHeight)
     }
@@ -103,9 +98,10 @@ class AndroidImageDecoder(
      */
     @VisibleForTesting(otherwise = PRIVATE)
     internal fun decodeBitmap(data: ByteArray, sampleSize: Int): Bitmap? {
-        val options = BitmapFactory.Options().apply {
-            inSampleSize = sampleSize.coerceAtLeast(1)
-        }
+        val options =
+            BitmapFactory.Options().apply {
+                inSampleSize = sampleSize.coerceAtLeast(1)
+            }
         return BitmapFactory.decodeByteArray(data, 0, data.size, options)
     }
 
@@ -127,13 +123,14 @@ class AndroidImageDecoder(
             return 1
         }
 
-        val sample = generateSequence(1) { it * 2 }
-            // Keep only those sample sizes where scaling down still leaves
-            // the longest side >= the desired target size.
-            // We will use bitmap scaling to go the rest of the way.
-            .takeWhile { (maxBoundLength / it) >= desiredSize.targetSize }
-            .take(MAX_TRIES)
-            .last()
+        val sample =
+            generateSequence(1) { it * 2 }
+                // Keep only those sample sizes where scaling down still leaves
+                // the longest side >= the desired target size.
+                // We will use bitmap scaling to go the rest of the way.
+                .takeWhile { (maxBoundLength / it) >= desiredSize.targetSize }
+                .take(MAX_TRIES)
+                .last()
 
         return sample
     }

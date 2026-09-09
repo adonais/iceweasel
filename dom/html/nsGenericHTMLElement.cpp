@@ -57,6 +57,7 @@
 #include "mozilla/dom/InputEvent.h"
 #include "mozilla/dom/Link.h"
 #include "mozilla/dom/MouseEventBinding.h"
+#include "mozilla/dom/PerformanceContainerTiming.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "mozilla/dom/ToggleEvent.h"
@@ -793,13 +794,32 @@ void nsGenericHTMLElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
       SetEventHandler(GetEventNameForAttr(aName),
                       nsAttrValueOrString(aValue).String());
     } else if (aNotify && aName == nsGkAtoms::spellcheck) {
-      SyncEditorsOnSubtree(this);
+      SyncSpellCheckerStateOfExtantEditorsOnSubtree(*this);
     } else if (aName == nsGkAtoms::popover) {
       nsContentUtils::AddScriptRunner(
           NewRunnableMethod("nsGenericHTMLElement::AfterSetPopoverAttr", this,
                             &nsGenericHTMLElement::AfterSetPopoverAttr));
     } else if (aName == nsGkAtoms::popovertarget) {
       ClearExplicitlySetAttrElement(aName);
+    } else if (aName == nsGkAtoms::containertiming ||
+               aName == nsGkAtoms::containerTimingIgnore) {
+      // Changing these attributes changes the cached container-timing root of
+      // this element's entire subtree.
+      if (StaticPrefs::dom_enable_container_timing()) {
+        if (aValue) {
+          OwnerDoc()->SetMayHaveContainerTimingAttributes();
+        }
+        if (IsInUncomposedDoc()) {
+          RecomputeContainerTimingRootForSubtree();
+          // Removing containertiming unregisters this element as a container
+          // root; drop its accumulated painted region so the record can't
+          // outlive the registration (and dangle), or be inherited if the
+          // attribute is added back later.
+          if (aName == nsGkAtoms::containertiming && !aValue) {
+            ContainerTimingHelpers::DropRecordForContainerRoot(this);
+          }
+        }
+      }
     } else if (aName == nsGkAtoms::dir) {
       auto dir = Directionality::Ltr;
       // A boolean tracking whether we need to recompute our directionality.
@@ -1881,9 +1901,6 @@ void nsGenericHTMLFormElement::ClearForm(bool aRemoveFromForm,
   MOZ_ASSERT(IsFormAssociatedElement());
 
   HTMLFormElement* form = GetFormInternal();
-  NS_ASSERTION((form != nullptr) == HasFlag(ADDED_TO_FORM),
-               "Form control should have had flag set correctly");
-
   if (!form) {
     return;
   }
@@ -1923,10 +1940,9 @@ nsresult nsGenericHTMLFormElement::BindToTree(BindContext& aContext,
     if (HasAttr(nsGkAtoms::form) ? IsInComposedDoc() : aParent.IsContent()) {
       UpdateFormOwner(true, nullptr);
     }
+    // Set parent fieldset which should be used for the disabled state.
+    UpdateFieldSet(false);
   }
-
-  // Set parent fieldset which should be used for the disabled state.
-  UpdateFieldSet(false);
   return NS_OK;
 }
 
@@ -1934,7 +1950,8 @@ void nsGenericHTMLFormElement::UnbindFromTree(UnbindContext& aContext) {
   // Save state before doing anything else.
   SaveState();
 
-  if (IsFormAssociatedElement()) {
+  const bool formAssociated = IsFormAssociatedElement();
+  if (formAssociated) {
     if (HTMLFormElement* form = GetFormInternal()) {
       // Might need to unset form
       if (aContext.IsUnbindRoot(this)) {
@@ -1960,8 +1977,10 @@ void nsGenericHTMLFormElement::UnbindFromTree(UnbindContext& aContext) {
 
   nsGenericHTMLElement::UnbindFromTree(aContext);
 
-  // The element might not have a fieldset anymore.
-  UpdateFieldSet(false);
+  if (formAssociated) {
+    // The element might not have a fieldset anymore.
+    UpdateFieldSet(false);
+  }
 }
 
 void nsGenericHTMLFormElement::BeforeSetAttr(int32_t aNameSpaceID,
@@ -2237,43 +2256,47 @@ void nsGenericHTMLFormElement::UpdateFormOwner(bool aBindToTree,
 }
 
 void nsGenericHTMLFormElement::UpdateFieldSet(bool aNotify) {
-  if (IsInNativeAnonymousSubtree() || !IsFormAssociatedElement()) {
-    MOZ_ASSERT_IF(IsFormAssociatedElement(), !GetFieldSetInternal());
+  MOZ_ASSERT(IsFormAssociatedElement());
+  if (IsInNativeAnonymousSubtree()) {
+    MOZ_ASSERT(!GetFieldSetInternal());
     return;
   }
+  if (IsFormAssociatedCustomElement() &&
+      GetCustomElementData()->mState != CustomElementData::State::eCustom) {
+    MOZ_ASSERT(!GetFieldSetInternal());
+    return;
+  }
+  auto* oldFieldSet = GetFieldSetInternal();
+  auto* newFieldSet = FirstAncestorOfType<HTMLFieldSetElement>();
+  if (newFieldSet == oldFieldSet) {
+    // We already have the right fieldset;
+    return;
+  }
+  if (oldFieldSet) {
+    oldFieldSet->RemoveElement(this);
+  }
+  SetFieldSetInternal(newFieldSet);
+  if (newFieldSet) {
+    newFieldSet->AddElement(this);
+  }
+  // The disabled state may have changed
+  FieldSetDisabledChanged(aNotify);
+}
 
-  nsIContent* parent = nullptr;
-  nsIContent* prev = nullptr;
-  HTMLFieldSetElement* fieldset = GetFieldSetInternal();
-
-  for (parent = GetParent(); parent;
-       prev = parent, parent = parent->GetParent()) {
-    HTMLFieldSetElement* parentFieldset = HTMLFieldSetElement::FromNode(parent);
-    if (parentFieldset && (!prev || parentFieldset->GetFirstLegend() != prev)) {
-      if (fieldset == parentFieldset) {
-        // We already have the right fieldset;
-        return;
-      }
-
-      if (fieldset) {
-        fieldset->RemoveElement(this);
-      }
-      SetFieldSetInternal(parentFieldset);
-      parentFieldset->AddElement(this);
-
-      // The disabled state may have changed
-      FieldSetDisabledChanged(aNotify);
-      return;
+// https://html.spec.whatwg.org/#concept-fe-disabled
+bool nsGenericHTMLFormElement::IsDisabledByAncestorFieldSet() const {
+  for (auto* fieldset = GetFieldSetInternal(); fieldset;
+       fieldset = fieldset->GetFieldSet()) {
+    if (!fieldset->IsDisabled()) {
+      continue;
     }
+    const nsIContent* legend = fieldset->GetFirstLegend();
+    if (legend && IsInclusiveDescendantOf(legend)) {
+      continue;
+    }
+    return true;
   }
-
-  // No fieldset found.
-  if (fieldset) {
-    fieldset->RemoveElement(this);
-    SetFieldSetInternal(nullptr);
-    // The disabled state may have changed
-    FieldSetDisabledChanged(aNotify);
-  }
+  return false;
 }
 
 void nsGenericHTMLFormElement::UpdateDisabledState(bool aNotify) {
@@ -2281,9 +2304,8 @@ void nsGenericHTMLFormElement::UpdateDisabledState(bool aNotify) {
     return;
   }
 
-  HTMLFieldSetElement* fieldset = GetFieldSetInternal();
   const bool isDisabled =
-      HasAttr(nsGkAtoms::disabled) || (fieldset && fieldset->IsDisabled());
+      HasAttr(nsGkAtoms::disabled) || IsDisabledByAncestorFieldSet();
 
   const ElementState disabledStates =
       isDisabled ? ElementState::DISABLED : ElementState::ENABLED;
@@ -2533,28 +2555,55 @@ nsresult nsGenericHTMLElement::DispatchSimulatedClick(
   return EventDispatcher::Dispatch(aElement, aPresContext, &event);
 }
 
-already_AddRefed<EditorBase> nsGenericHTMLElement::GetAssociatedEditor() {
+EditorBase* nsGenericHTMLElement::GetAssociatedExtantEditor() const {
+  if (IsHTMLElement(nsGkAtoms::body)) {
+    // Make sure this is the actual body of the document
+    if (this != OwnerDoc()->GetBodyElement()) [[unlikely]] {
+      return nullptr;
+    }
+
+    // For designmode, try to get document's editor
+    nsPresContext* const presContext = GetPresContext(eForComposedDoc);
+    if (!presContext) [[unlikely]] {
+      return nullptr;
+    }
+
+    nsIDocShell* const docShell = presContext->GetDocShell();
+    if (!docShell) [[unlikely]] {
+      return nullptr;
+    }
+
+    return docShell->GetHTMLEditor();
+  }
+
   // If contenteditable is ever implemented, it might need to do something
   // different here?
 
-  RefPtr<TextEditor> textEditor = GetTextEditorInternal();
-  return textEditor.forget();
+  auto* const textControlElement = TextControlElement::FromNode(*this);
+  if (!textControlElement) {
+    return nullptr;
+  }
+
+  return textControlElement->GetExtantTextEditor();
 }
 
 // static
-void nsGenericHTMLElement::SyncEditorsOnSubtree(nsIContent* content) {
+void nsGenericHTMLElement::SyncSpellCheckerStateOfExtantEditorsOnSubtree(
+    nsIContent& aContent) {
   /* Sync this node */
-  nsGenericHTMLElement* element = FromNode(content);
-  if (element) {
-    if (RefPtr<EditorBase> editorBase = element->GetAssociatedEditor()) {
+  if (nsGenericHTMLElement* const element = FromNode(aContent)) {
+    // SyncRealTimeSpell may run chrome script (bug 2065014). So, for now, we
+    // should keep using strong pointer.
+    if (const RefPtr<EditorBase> editorBase =
+            element->GetAssociatedExtantEditor()) {
       editorBase->SyncRealTimeSpell();
     }
   }
 
   /* Sync all children */
-  for (nsIContent* child = content->GetFirstChild(); child;
+  for (nsIContent* child = aContent.GetFirstChild(); child;
        child = child->GetNextSibling()) {
-    SyncEditorsOnSubtree(child);
+    SyncSpellCheckerStateOfExtantEditorsOnSubtree(*child);
   }
 }
 
@@ -2634,8 +2683,12 @@ nsGenericHTMLFormControlElement::~nsGenericHTMLFormControlElement() {
   NS_ASSERTION(!mForm, "mForm should be null at this point!");
 }
 
-NS_IMPL_ISUPPORTS_INHERITED(nsGenericHTMLFormControlElement,
-                            nsGenericHTMLFormElement, nsIFormControl)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(nsGenericHTMLFormControlElement,
+                                   nsGenericHTMLFormElement, mForm)
+
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(nsGenericHTMLFormControlElement,
+                                             nsGenericHTMLFormElement,
+                                             nsIFormControl)
 
 nsINode* nsGenericHTMLFormControlElement::GetScopeChainParent() const {
   return mForm ? mForm : nsGenericHTMLElement::GetScopeChainParent();

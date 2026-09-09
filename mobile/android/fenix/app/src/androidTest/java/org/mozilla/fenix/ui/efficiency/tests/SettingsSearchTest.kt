@@ -44,10 +44,10 @@ class SettingsSearchTest : BaseTest() {
     @Test
     fun verifyTheDefaultSearchEngineCanBeChangedTest() {
         defaultSearchEngineList.forEach {
-            on.settingsSearchDefaultSearchEngine.navigateToPage()
+            on.settingsSearchDefaultSearchEngine
+                .navigateToPage()
                 .mozClick(DEFAULT_SEARCH_ENGINE_OPTION(engineName = it))
-            on.home.navigateToPage()
-                .mozVerify(SEARCH_ENGINE_SELECTOR_ICON(searchEngineName = it))
+            on.home.navigateToPage().mozVerify(SEARCH_ENGINE_SELECTOR_ICON(searchEngineName = it))
         }
     }
 
@@ -55,11 +55,13 @@ class SettingsSearchTest : BaseTest() {
     @SmokeTest
     @Test
     fun verifySearchShortcutChangesAreReflectedInSearchSelectorMenuTest() {
-        on.settingsSearchManageShortcuts.navigateToPage()
+        on.settingsSearchManageShortcuts
+            .navigateToPage()
             .selectSearchShortcut(engineName = "Reddit", checkboxIndex = 10)
             .selectSearchShortcut(engineName = "YouTube", checkboxIndex = 13)
 
-        on.searchBar.navigateToPage()
+        on.searchBar
+            .navigateToPage()
             .mozClick(SearchBarSelectors.SEARCH_ENGINE_SELECTOR)
             .mozVerify(SearchBarSelectors.SEARCH_SELECTOR_MENU_ENGINE(engineName = "YouTube"))
             .mozVerify(SearchBarSelectors.SEARCH_SELECTOR_MENU_ENGINE(engineName = "Reddit"))
@@ -84,7 +86,8 @@ class SettingsSearchTest : BaseTest() {
 
         // Back on the Default search engine list: the new engine is present, exposes an overflow menu,
         // and can be set as the default.
-        on.settingsSearchDefaultSearchEngine.navigateToPage()
+        on.settingsSearchDefaultSearchEngine
+            .navigateToPage()
             .mozVerify(DEFAULT_SEARCH_ENGINE_OPTION(engineName = engineTitle))
             .mozClick(SettingsSearchDefaultSearchEngineSelectors.ENGINE_OVERFLOW_MENU)
             .mozVerify(SettingsSearchDefaultSearchEngineSelectors.OVERFLOW_EDIT_ITEM)
@@ -92,15 +95,20 @@ class SettingsSearchTest : BaseTest() {
             .mozClick(DEFAULT_SEARCH_ENGINE_OPTION(engineName = engineTitle))
 
         // A custom engine set as default is not offered as an alternative search shortcut.
-        on.settingsSearchManageShortcuts.navigateToPage()
-            .mozVerifyElementAbsent(SettingsSearchManageShortcutsSelectors.SEARCH_ENGINE_SHORTCUT(engineName = engineTitle))
+        on.settingsSearchManageShortcuts
+            .navigateToPage()
+            .mozVerifyElementAbsent(
+                SettingsSearchManageShortcutsSelectors.SEARCH_ENGINE_SHORTCUT(engineName = engineTitle)
+            )
 
         // The Settings > Search summary reflects the new default engine.
-        on.settings.navigateToPage()
+        on.settings
+            .navigateToPage()
             .mozVerifyElementHasSiblingWithText(SettingsSelectors.SEARCH_SETTING_ROW, siblingText = engineTitle)
 
         // The search selector shows the custom engine as the default and lists it.
-        on.searchBar.navigateToPage()
+        on.searchBar
+            .navigateToPage()
             .mozVerify(SEARCH_ENGINE_SELECTOR_ICON(searchEngineName = engineTitle))
             .mozClick(SearchBarSelectors.SEARCH_ENGINE_SELECTOR)
             .mozVerify(SearchBarSelectors.SEARCH_SELECTOR_MENU_ENGINE(engineName = engineTitle))
@@ -114,7 +122,8 @@ class SettingsSearchTest : BaseTest() {
     @Test
     fun verifyShowSearchSuggestionsToggleTest() {
         // Suggestions are on by default: typing a term surfaces DuckDuckGo suggestions.
-        on.searchBar.navigateToPage()
+        on.searchBar
+            .navigateToPage()
             .mozClick(SearchBarSelectors.SEARCH_ENGINE_SELECTOR)
             .mozClick(SearchBarSelectors.SEARCH_SELECTOR_MENU_ENGINE(engineName = "DuckDuckGo"))
             .mozClearAndEnterText("mozilla ", SearchBarSelectors.TOOLBAR_IN_EDIT_MODE)
@@ -126,12 +135,12 @@ class SettingsSearchTest : BaseTest() {
         on.home.navigateToPage()
 
         // Turn the Show search suggestions setting off.
-        on.settingsSearch.navigateToPage()
-            .mozClick(SettingsSearchSelectors.SHOW_SEARCH_SUGGESTIONS_TOGGLE)
+        on.settingsSearch.navigateToPage().mozClick(SettingsSearchSelectors.SHOW_SEARCH_SUGGESTIONS_TOGGLE)
 
         // Back to Home, then reopen search: with the setting off the same query surfaces no suggestion.
         on.home.navigateToPage()
-        on.searchBar.navigateToPage()
+        on.searchBar
+            .navigateToPage()
             .mozClick(SearchBarSelectors.SEARCH_ENGINE_SELECTOR)
             .mozClick(SearchBarSelectors.SEARCH_SELECTOR_MENU_ENGINE(engineName = "DuckDuckGo"))
             .mozClearAndEnterText("mozilla", SearchBarSelectors.TOOLBAR_IN_EDIT_MODE)

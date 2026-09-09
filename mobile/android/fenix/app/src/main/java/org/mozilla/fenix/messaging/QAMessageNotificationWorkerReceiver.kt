@@ -21,6 +21,7 @@ private val LOGGER = Logger("QaMessageWorkerReceiver")
  *   adb shell am broadcast -a org.mozilla.fenix.TRIGGER_MESSAGE_WORKER \
  *       -p org.mozilla.fenix
  * ```
+ *
  * `-p org.mozilla.fenix` is the package name, so adjust that value for release/nightly/debug.
  */
 class QAMessageNotificationWorkerReceiver : BroadcastReceiver() {

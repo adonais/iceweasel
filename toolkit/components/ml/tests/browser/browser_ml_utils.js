@@ -20,7 +20,7 @@ const {
 } = ChromeUtils.importESModule("chrome://global/content/ml/Utils.sys.mjs");
 
 const { MLEngine: UtilsMLEngine } = ChromeUtils.importESModule(
-  "resource://gre/actors/MLEngineParent.sys.mjs"
+  "moz-src:///toolkit/components/ml/actors/MLEngineParent.sys.mjs"
 );
 
 const { OPFS: UtilsOPFS } = ChromeUtils.importESModule(

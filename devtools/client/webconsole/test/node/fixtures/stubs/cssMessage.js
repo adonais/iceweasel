@@ -24,7 +24,7 @@ rawPackets.set(`Unknown property ‘such-unknown-property’.  Declaration dropp
     "sourceName": "https://example.com/browser/devtools/client/webconsole/test/browser/test-css-message.html",
     "sourceId": null,
     "lineNumber": 3,
-    "columnNumber": 27,
+    "columnNumber": 5,
     "category": "CSS Parser",
     "innerWindowID": 8589934593,
     "timeStamp": 1572867483805,
@@ -42,13 +42,13 @@ rawPackets.set(`Unknown property ‘such-unknown-property’.  Declaration dropp
   "isAlreadyExistingResource": false
 });
 
-rawPackets.set(`Error in parsing value for ‘padding-top’.  Declaration dropped.`, {
+rawPackets.set(`Error in parsing value for ‘padding-top: invalid value;’.  Declaration dropped.`, {
   "pageError": {
-    "errorMessage": "Error in parsing value for ‘padding-top’.  Declaration dropped.",
+    "errorMessage": "Error in parsing value for ‘padding-top: invalid value;’.  Declaration dropped.",
     "sourceName": "https://example.com/browser/devtools/client/webconsole/test/browser/test-css-message.html",
     "sourceId": null,
     "lineNumber": 3,
-    "columnNumber": 18,
+    "columnNumber": 5,
     "category": "CSS Parser",
     "innerWindowID": 8589934593,
     "timeStamp": 1572867483805,

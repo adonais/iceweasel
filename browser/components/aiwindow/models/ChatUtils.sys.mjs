@@ -181,13 +181,15 @@ export async function constructRealTimeInfoInjectionMessage(
  *
  * @param {string} message                                                  User message to find relevant memories for
  * @param {Array<{id: string, memory_summary: string}>} [previousMemories]  Memories retrieved for the preceding user messages
- * @returns {Promise<null|{message: {role: string, content: string}, relevantMemories: Array<{id: string, memory_summary: string}>}>}
+ * @param {string} model chat model name
+ * @returns {Promise<null|{message: {content: string}, relevantMemories: Array<{id: string, memory_summary: string}>}>}
  *   The context message plus the memories retrieved for `message` alone, or
  *   null if there is nothing to inject
  */
 export async function constructRelevantMemoriesContextMessage(
   message,
-  previousMemories = []
+  previousMemories = [],
+  model
 ) {
   const relevantMemories = (
     await lazy.MemoriesManager.getRelevantMemories(message)
@@ -221,7 +223,8 @@ export async function constructRelevantMemoriesContextMessage(
       })
       .join("\n- ");
   const { prompt: relevantMemoriesContextPrompt } = await lazy.loadPrompt(
-    lazy.MODEL_FEATURES.MEMORIES_RELEVANT_CONTEXT
+    lazy.MODEL_FEATURES.MEMORIES_CONTEXT,
+    { model, module: "relevant-memories" }
   );
   const content = lazy.renderPrompt(relevantMemoriesContextPrompt, {
     relevantMemoriesList,
@@ -229,7 +232,6 @@ export async function constructRelevantMemoriesContextMessage(
 
   return {
     message: {
-      role: "system",
       content,
     },
     relevantMemories,

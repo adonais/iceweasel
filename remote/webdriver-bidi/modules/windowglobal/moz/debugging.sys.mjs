@@ -34,7 +34,7 @@ class DebuggingModule extends WindowGlobalBiDiModule {
   #breakpointHandler;
   #breakpointLocationMap;
   #dbg;
-  #paused;
+  #pausedFrames;
   #previousPauseLocation;
 
   constructor(messageHandler) {
@@ -46,7 +46,7 @@ class DebuggingModule extends WindowGlobalBiDiModule {
     this.#breakpointLocationMap = new Map();
 
     // State flags.
-    this.#paused = false;
+    this.#pausedFrames = [];
 
     this.#dbg = null;
     this.#previousPauseLocation = null;
@@ -54,6 +54,10 @@ class DebuggingModule extends WindowGlobalBiDiModule {
     this.#breakpointHandler = {
       hit: this.#pauseAtFrame,
     };
+  }
+
+  get #paused() {
+    return !!this.#pausedFrames.length;
   }
 
   destroy() {
@@ -186,7 +190,9 @@ class DebuggingModule extends WindowGlobalBiDiModule {
 
     // Remove all debuggees and resume.
     this.#dbg.removeAllDebuggees();
-    this._resume();
+    while (this.#paused) {
+      this._resume();
+    }
 
     this.#dbg.onNewScript = undefined;
     this.#dbg.onDebuggerStatement = undefined;
@@ -364,6 +370,7 @@ class DebuggingModule extends WindowGlobalBiDiModule {
   #pauseAtFrame = frame => {
     const { url, line, column } = this.#getFrameLocation(frame);
     const callFrames = this.#buildCallFrames(frame);
+    const depthAtThisPause = this.#pausedFrames.length + 1;
 
     // Save the current pause location for hasMoved() checks
     this.#previousPauseLocation = { line, column };
@@ -384,16 +391,28 @@ class DebuggingModule extends WindowGlobalBiDiModule {
     });
 
     try {
-      this.#paused = true;
+      this.#pausedFrames.push(frame);
       Services.tm.spinEventLoopUntil("webdriver-bidi-debugging", () => {
-        return !this.#paused;
+        return this.#pausedFrames.length < depthAtThisPause;
       });
     } catch (e) {
-      this.#paused = false;
+      while (this.#pausedFrames.length >= depthAtThisPause) {
+        this.#pausedFrames.pop();
+      }
     }
 
-    // Clear the paused debugger environment when resuming.
-    this.messageHandler.debuggerEnvironment = null;
+    this.emitEvent("moz:debugging.resumed", {
+      context: this.messageHandler.context,
+    });
+
+    if (this.#pausedFrames.length === 0) {
+      this.messageHandler.debuggerEnvironment = null;
+    } else {
+      this.messageHandler.debuggerEnvironment = {
+        frame: this.#pausedFrames[this.#pausedFrames.length - 1],
+        global: this.#dbg.makeGlobalObjectReference(this.messageHandler.window),
+      };
+    }
 
     return undefined;
   };
@@ -673,10 +692,7 @@ class DebuggingModule extends WindowGlobalBiDiModule {
 
       this.#dbg.onEnterFrame = undefined;
 
-      this.#paused = false;
-      this.emitEvent("moz:debugging.resumed", {
-        context: this.messageHandler.context,
-      });
+      this.#pausedFrames.pop();
     }
   }
 
@@ -697,7 +713,7 @@ class DebuggingModule extends WindowGlobalBiDiModule {
         debuggerEnvironment.frame.onPop = onPop;
       }
 
-      this.#paused = false;
+      this.#pausedFrames.pop();
     }
   }
 
@@ -713,7 +729,7 @@ class DebuggingModule extends WindowGlobalBiDiModule {
         debuggerEnvironment.frame.onPop = onPop;
       }
 
-      this.#paused = false;
+      this.#pausedFrames.pop();
     }
   }
 
@@ -730,7 +746,7 @@ class DebuggingModule extends WindowGlobalBiDiModule {
         debuggerEnvironment.frame.onPop = onPop;
       }
 
-      this.#paused = false;
+      this.#pausedFrames.pop();
     }
   }
 }

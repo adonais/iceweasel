@@ -8,10 +8,6 @@
 //    to Metal enums and so on.
 //
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "libANGLE/renderer/metal/mtl_utils.h"
 
 #include <Availability.h>
@@ -21,6 +17,7 @@
 #include "common/MemoryBuffer.h"
 #include "common/string_utils.h"
 #include "common/system_utils.h"
+#include "common/unsafe_buffers.h"
 #include "gpu_info_util/SystemInfo_internal.h"
 #include "libANGLE/histogram_macros.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
@@ -50,7 +47,7 @@ bool IsFrameCaptureEnabled()
     // environment flag is set. Otherwise, it will slow down the rendering. This allows user to
     // finely control whether they want to capture the frame for particular application or not.
     auto var                  = std::getenv("ANGLE_METAL_FRAME_CAPTURE");
-    static const bool enabled = var ? (strcmp(var, "1") == 0) : false;
+    static const bool enabled = var ? ANGLE_UNSAFE_TODO((strcmp(var, "1") == 0)) : false;
 
     return enabled;
 #endif
@@ -102,7 +99,7 @@ bool FrameCaptureDeviceScope()
     return false;
 #else
     auto var                      = std::getenv("ANGLE_METAL_FRAME_CAPTURE_SCOPE");
-    static const bool scopeDevice = var ? (strcmp(var, "device") == 0) : false;
+    static const bool scopeDevice = var ? ANGLE_UNSAFE_TODO((strcmp(var, "device") == 0)) : false;
 
     return scopeDevice;
 #endif
@@ -459,7 +456,8 @@ bool PreferStagedTextureUploads(const gl::Context *context,
 angle::Result InitializeTextureContents(const gl::Context *context,
                                         const TextureRef &texture,
                                         const Format &textureObjFormat,
-                                        const ImageNativeIndex &index)
+                                        const ImageNativeIndex &index,
+                                        bool toNonZero)
 {
     ASSERT(texture && texture->valid());
     // Only one slice can be initialized at a time.
@@ -520,7 +518,8 @@ angle::Result InitializeTextureContents(const gl::Context *context,
             const size_t srcRowPitch = srcFormat.pixelBytes * size.width;
             angle::MemoryBuffer srcRow;
             ANGLE_CHECK_GL_ALLOC(contextMtl, srcRow.resize(srcRowPitch));
-            memset(srcRow.data(), 0, srcRowPitch);
+            uint8_t fillValue = toNonZero ? 0x55 : 0;
+            ANGLE_UNSAFE_TODO(memset(srcRow.data(), fillValue, srcRowPitch));
 
             CopyImageCHROMIUM(srcRow.data(), srcRowPitch, srcFormat.pixelBytes, 0,
                               srcFormat.pixelReadFunction, conversionRow.data(), dstRowPitch,
@@ -547,7 +546,7 @@ angle::Result InitializeTextureContents(const gl::Context *context,
     else
     {
         ANGLE_TRY(InitializeTextureContentsGPU(context, texture, textureObjFormat, index,
-                                               MTLColorWriteMaskAll));
+                                               MTLColorWriteMaskAll, toNonZero));
     }
 
     return angle::Result::Continue;
@@ -557,7 +556,8 @@ angle::Result InitializeTextureContentsGPU(const gl::Context *context,
                                            const TextureRef &texture,
                                            const Format &textureObjFormat,
                                            const ImageNativeIndex &index,
-                                           MTLColorWriteMask channelsToInit)
+                                           MTLColorWriteMask channelsToInit,
+                                           bool toNonZero)
 {
     // Only one slice can be initialized at a time.
     ASSERT(!index.isLayered() || index.getType() == gl::TextureType::_3D);
@@ -569,7 +569,8 @@ angle::Result InitializeTextureContentsGPU(const gl::Context *context,
         {
             ImageNativeIndex depthLayerIndex = ite.next();
             ANGLE_TRY(InitializeTextureContentsGPU(context, texture, textureObjFormat,
-                                                   depthLayerIndex, MTLColorWriteMaskAll));
+                                                   depthLayerIndex, MTLColorWriteMaskAll,
+                                                   toNonZero));
         }
 
         return angle::Result::Continue;
@@ -578,7 +579,8 @@ angle::Result InitializeTextureContentsGPU(const gl::Context *context,
     if (textureObjFormat.hasDepthOrStencilBits())
     {
         // Depth stencil texture needs dedicated function.
-        return InitializeDepthStencilTextureContentsGPU(context, texture, textureObjFormat, index);
+        return InitializeDepthStencilTextureContentsGPU(context, texture, textureObjFormat, index,
+                                                        toNonZero);
     }
 
     ContextMtl *contextMtl = mtl::GetImpl(context);
@@ -599,8 +601,10 @@ angle::Result InitializeTextureContentsGPU(const gl::Context *context,
     if (channelsToInit == MTLColorWriteMaskAll)
     {
         // If all channels will be initialized, use clear loadOp.
-        Optional<MTLClearColor> blackColor = MTLClearColorMake(0, 0, 0, clearAlpha);
-        encoder = contextMtl->getRenderTargetCommandEncoderWithClear(tempRtt, blackColor);
+        double fillValue = toNonZero ? 0.5 : 0.0;
+        Optional<MTLClearColor> clearColor =
+            MTLClearColorMake(fillValue, fillValue, fillValue, clearAlpha);
+        encoder = contextMtl->getRenderTargetCommandEncoderWithClear(tempRtt, clearColor);
     }
     else
     {
@@ -616,17 +620,25 @@ angle::Result InitializeTextureContentsGPU(const gl::Context *context,
 
         ClearRectParams clearParams;
         ClearColorValue clearColor;
+        GLint fillValueInt   = toNonZero ? 85 : 0;  // 0x55
+        GLuint fillValueUInt = toNonZero ? 85 : 0;
+        float fillValueFloat = toNonZero ? 0.5f : 0.0f;
+
+        GLint alphaInt   = clearAlpha;
+        GLuint alphaUInt = clearAlpha;
+        float alphaFloat = static_cast<float>(clearAlpha);
+
         if (angleFormat.isSint())
         {
-            clearColor.setAsInt(0, 0, 0, clearAlpha);
+            clearColor.setAsInt(fillValueInt, fillValueInt, fillValueInt, alphaInt);
         }
         else if (angleFormat.isUint())
         {
-            clearColor.setAsUInt(0, 0, 0, clearAlpha);
+            clearColor.setAsUInt(fillValueUInt, fillValueUInt, fillValueUInt, alphaUInt);
         }
         else
         {
-            clearColor.setAsFloat(0, 0, 0, clearAlpha);
+            clearColor.setAsFloat(fillValueFloat, fillValueFloat, fillValueFloat, alphaFloat);
         }
         clearParams.clearColor     = clearColor;
         clearParams.dstTextureSize = texture->sizeAt0();
@@ -647,7 +659,8 @@ angle::Result InitializeTextureContentsGPU(const gl::Context *context,
 angle::Result InitializeDepthStencilTextureContentsGPU(const gl::Context *context,
                                                        const TextureRef &texture,
                                                        const Format &textureObjFormat,
-                                                       const ImageNativeIndex &index)
+                                                       const ImageNativeIndex &index,
+                                                       bool toNonZero)
 {
     const MipmapNativeLevel &level = index.getNativeLevel();
     // Use clear operation
@@ -662,11 +675,13 @@ angle::Result InitializeDepthStencilTextureContentsGPU(const gl::Context *contex
     {
         rtMTL.toRenderPassAttachmentDesc(&rpDesc.depthAttachment);
         rpDesc.depthAttachment.loadAction = MTLLoadActionClear;
+        rpDesc.depthAttachment.clearDepth = toNonZero ? 0.5 : 1.0;
     }
     if (angleFormat.stencilBits)
     {
         rtMTL.toRenderPassAttachmentDesc(&rpDesc.stencilAttachment);
         rpDesc.stencilAttachment.loadAction = MTLLoadActionClear;
+        rpDesc.stencilAttachment.clearStencil = toNonZero ? 0x55 : 0;
     }
     rpDesc.rasterSampleCount = texture->samples();
 
@@ -1182,13 +1197,6 @@ MTLWinding GetFrontfaceWinding(GLenum frontFaceMode, bool invert)
             UNREACHABLE();
             return MTLWindingClockwise;
     }
-}
-
-MTLPrimitiveTopologyClass GetPrimitiveTopologyClass(gl::PrimitiveMode mode)
-{
-    // NOTE(hqle): Support layered renderring in future.
-    // In non-layered rendering mode, unspecified is enough.
-    return MTLPrimitiveTopologyClassUnspecified;
 }
 
 MTLPrimitiveType GetPrimitiveType(gl::PrimitiveMode mode)

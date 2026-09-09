@@ -101,6 +101,9 @@ struct CompiledCode {
   FuncIonPerfSpewerVector funcIonSpewers;
   FuncBaselinePerfSpewerVector funcBaselineSpewers;
   FeatureUsage featureUsage;
+#ifdef ENABLE_WASM_JSPI
+  ContBaseFrameOffsetMap contBaseFrameOffsets;
+#endif
   CompileStats compileStats;
 
   [[nodiscard]] bool swap(jit::MacroAssembler& masm);
@@ -124,6 +127,9 @@ struct CompiledCode {
     funcBaselineSpewers.clear();
     featureUsage = FeatureUsage::None;
     compileStats.clear();
+#ifdef ENABLE_WASM_JSPI
+    contBaseFrameOffsets.clear();
+#endif
     MOZ_ASSERT(empty());
   }
 
@@ -264,7 +270,7 @@ class MOZ_STACK_CLASS ModuleGenerator {
   uint32_t requestTierUpStubCodeOffset_;
   uint32_t updateCallRefMetricsStubCodeOffset_;
 #ifdef ENABLE_WASM_JSPI
-  uint32_t contBaseFrameOffset_;
+  ContBaseFrameOffsetMap contBaseFrameOffsets_;
 #endif
   CallFarJumpVector callFarJumps_;
   CallSiteTargetVector callSiteTargets_;

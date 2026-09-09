@@ -46,7 +46,7 @@ class SensorSampleTest {
     fun `reused slot reflects new values, not old ones`() {
         val buffer = SampleBuffer(1)
 
-        val original = buffer.request(1f, 2f, 3f, 100L)
+        buffer.request(1f, 2f, 3f, 100L)
         val reused = buffer.request(9f, 8f, 7f, 999L)
 
         assertEquals(9f, reused.xAccel)

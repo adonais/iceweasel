@@ -25,7 +25,8 @@ class PWATest : BaseTest() {
         on.browserPage.navigateToPage(pwaPage)
         on.browserPage.verifyUrl("mozilla-mobile.github.io/testapp/loginForm")
         on.browserPage.verifyPageContentWithReload(pwaPage, "Login Form")
-        on.mainMenu.navigateToPage()
+        on.mainMenu
+            .navigateToPage()
             .mozClick(MainMenuSelectors.MORE_BUTTON)
             .mozClick(MainMenuSelectors.ADD_APP_TO_HOMESCREEN_BUTTON)
         on.addToHomescreen.mozClick(AddToHomeScreenSelectors.SYSTEM_PROMPT_ADD_TO_HOME_SCREEN_BUTTON)

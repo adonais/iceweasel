@@ -20,6 +20,5 @@ linux64-hostutils:
         env:
             TOOLTOOL_MANIFEST: testing/config/tooltool-manifests/linux64/hostutils.manifest
     run:
-        clone-with: hg
         resources:
             - testing/config/tooltool-manifests/linux64/hostutils.manifest

@@ -4,6 +4,11 @@
 
 package mozilla.components.feature.awesomebar.provider
 
+import java.time.LocalDate
+import java.time.ZoneId
+import java.util.Locale
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -22,11 +27,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.verify
-import java.time.LocalDate
-import java.time.ZoneId
-import java.util.Locale
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 private const val ARTIFICIAL_DELAY = 350L
 
@@ -45,13 +45,14 @@ class SportsOnlineSuggestionProviderTest {
     fun setUp() {
         fakeDataSource = FakeCombinedOnlineSuggestionDataSource(sportResults = listOf(sampleSportItem()))
 
-        provider = SportsOnlineSuggestionProvider(
-            icons = mock(),
-            searchUseCase = mock(),
-            dataSource = fakeDataSource,
-            suggestionsHeader = null,
-            maxNumberOfSuggestions = DEFAULT_SPORT_SUGGESTION_LIMIT,
-        )
+        provider =
+            SportsOnlineSuggestionProvider(
+                icons = mock(),
+                searchUseCase = mock(),
+                dataSource = fakeDataSource,
+                suggestionsHeader = null,
+                maxNumberOfSuggestions = DEFAULT_SPORT_SUGGESTION_LIMIT,
+            )
     }
 
     @Test
@@ -80,16 +81,16 @@ class SportsOnlineSuggestionProviderTest {
     @Test
     fun `onSuggestionClicked invokes search use case with query`() = runTest {
         val searchUseCase: SearchUseCase = mock()
-        val localDateSource = FakeCombinedOnlineSuggestionDataSource(
-            sportResults = listOf(sampleSportItem("test query")),
-        )
-        val localProvider = SportsOnlineSuggestionProvider(
-            icons = mock(),
-            searchUseCase = searchUseCase,
-            dataSource = localDateSource,
-            suggestionsHeader = null,
-            maxNumberOfSuggestions = DEFAULT_SPORT_SUGGESTION_LIMIT,
-        )
+        val localDateSource =
+            FakeCombinedOnlineSuggestionDataSource(sportResults = listOf(sampleSportItem("test query")))
+        val localProvider =
+            SportsOnlineSuggestionProvider(
+                icons = mock(),
+                searchUseCase = searchUseCase,
+                dataSource = localDateSource,
+                suggestionsHeader = null,
+                maxNumberOfSuggestions = DEFAULT_SPORT_SUGGESTION_LIMIT,
+            )
 
         val deferred = async { localProvider.onInputChanged("NHL sport") }
         advanceTimeBy(ARTIFICIAL_DELAY)
@@ -104,21 +105,23 @@ class SportsOnlineSuggestionProviderTest {
 
     @Test
     fun `respects maxNumberOfSuggestions`() = runTest {
-        val manyResults = listOf(
-            sampleSportItem(query = "a sport", sport = "A"),
-            sampleSportItem(query = "b sport", sport = "B"),
-            sampleSportItem(query = "c sport", sport = "C"),
-        )
+        val manyResults =
+            listOf(
+                sampleSportItem(query = "a sport", sport = "A"),
+                sampleSportItem(query = "b sport", sport = "B"),
+                sampleSportItem(query = "c sport", sport = "C"),
+            )
 
         val localDataSource = FakeCombinedOnlineSuggestionDataSource(sportResults = manyResults)
 
-        val limitedProvider = SportsOnlineSuggestionProvider(
-            icons = mock(),
-            searchUseCase = mock(),
-            dataSource = localDataSource,
-            suggestionsHeader = null,
-            maxNumberOfSuggestions = 1,
-        )
+        val limitedProvider =
+            SportsOnlineSuggestionProvider(
+                icons = mock(),
+                searchUseCase = mock(),
+                dataSource = localDataSource,
+                suggestionsHeader = null,
+                maxNumberOfSuggestions = 1,
+            )
 
         val deferred = async { limitedProvider.onInputChanged("sport") }
         advanceTimeBy(ARTIFICIAL_DELAY)
@@ -129,13 +132,14 @@ class SportsOnlineSuggestionProviderTest {
 
     @Test
     fun `id is stable per instance`() = runTest {
-        val p = SportsOnlineSuggestionProvider(
-            icons = mock(),
-            searchUseCase = mock(),
-            dataSource = FakeCombinedOnlineSuggestionDataSource(sportResults = listOf(sampleSportItem())),
-            suggestionsHeader = null,
-            maxNumberOfSuggestions = 1,
-        )
+        val p =
+            SportsOnlineSuggestionProvider(
+                icons = mock(),
+                searchUseCase = mock(),
+                dataSource = FakeCombinedOnlineSuggestionDataSource(sportResults = listOf(sampleSportItem())),
+                suggestionsHeader = null,
+                maxNumberOfSuggestions = 1,
+            )
 
         val id1 = p.id
         val deferred = async { p.onInputChanged("sport") }
@@ -149,13 +153,14 @@ class SportsOnlineSuggestionProviderTest {
     @Test
     fun `cancellation before delay prevents data source call`() = runTest {
         val localDataSource = FakeCombinedOnlineSuggestionDataSource(sportResults = listOf(sampleSportItem()))
-        val cancellableProvider = SportsOnlineSuggestionProvider(
-            icons = mock(),
-            searchUseCase = mock(),
-            dataSource = localDataSource,
-            suggestionsHeader = null,
-            maxNumberOfSuggestions = 1,
-        )
+        val cancellableProvider =
+            SportsOnlineSuggestionProvider(
+                icons = mock(),
+                searchUseCase = mock(),
+                dataSource = localDataSource,
+                suggestionsHeader = null,
+                maxNumberOfSuggestions = 1,
+            )
 
         val job = async { cancellableProvider.onInputChanged("sport") }
 
@@ -353,13 +358,14 @@ class SportsOnlineSuggestionProviderTest {
 
     @Test
     fun `parseTeam returns team with name and score`() = runTest {
-        val team = SportItem.Team(
-            key = "MIN",
-            name = "Minnesota Wild",
-            colors = listOf("0E4431"),
-            score = 3,
-            icon = null,
-        )
+        val team =
+            SportItem.Team(
+                key = "MIN",
+                name = "Minnesota Wild",
+                colors = listOf("0E4431"),
+                score = 3,
+                icon = null,
+            )
 
         val result = provider.parseTeam(team)
 
@@ -369,13 +375,14 @@ class SportsOnlineSuggestionProviderTest {
 
     @Test
     fun `parseTeam returns null for blank team name`() = runTest {
-        val team = SportItem.Team(
-            key = "MIN",
-            name = "   ",
-            colors = listOf("0E4431"),
-            score = 3,
-            icon = null,
-        )
+        val team =
+            SportItem.Team(
+                key = "MIN",
+                name = "   ",
+                colors = listOf("0E4431"),
+                score = 3,
+                icon = null,
+            )
 
         assertNull(provider.parseTeam(team))
     }
@@ -436,29 +443,32 @@ private fun sampleSportItem(
     statusType: String = "past",
     homeTeam: SportItem.Team = sampleHomeTeam,
     awayTeam: SportItem.Team = sampleAwayTeam,
-) = SportItem(
-    query = query,
-    sport = sport,
-    sportCategory = sportCategory,
-    date = date,
-    status = status,
-    statusType = statusType,
-    homeTeam = homeTeam,
-    awayTeam = awayTeam,
-    touched = "2025-10-29T12:00:00+00:00",
-)
+) =
+    SportItem(
+        query = query,
+        sport = sport,
+        sportCategory = sportCategory,
+        date = date,
+        status = status,
+        statusType = statusType,
+        homeTeam = homeTeam,
+        awayTeam = awayTeam,
+        touched = "2025-10-29T12:00:00+00:00",
+    )
 
-private val sampleHomeTeam = SportItem.Team(
-    key = "MIN",
-    name = "Minnesota Wild",
-    colors = listOf("0E4431", "AC1A2E", "EAAA00", "DDC9A3"),
-    score = 3,
-    icon = null,
-)
-private val sampleAwayTeam = SportItem.Team(
-    key = "WPG",
-    name = "Winnipeg Jets",
-    colors = listOf("041E42", "004A98", "A2AAAD", "A6192E"),
-    score = 4,
-    icon = null,
-)
+private val sampleHomeTeam =
+    SportItem.Team(
+        key = "MIN",
+        name = "Minnesota Wild",
+        colors = listOf("0E4431", "AC1A2E", "EAAA00", "DDC9A3"),
+        score = 3,
+        icon = null,
+    )
+private val sampleAwayTeam =
+    SportItem.Team(
+        key = "WPG",
+        name = "Winnipeg Jets",
+        colors = listOf("041E42", "004A98", "A2AAAD", "A6192E"),
+        score = 4,
+        icon = null,
+    )

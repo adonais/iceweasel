@@ -7,24 +7,20 @@ package org.mozilla.focus.search
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import java.io.BufferedInputStream
+import java.io.IOException
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.feature.search.ext.parseLegacySearchEngine
 import mozilla.components.feature.search.middleware.SearchMiddleware
 import org.mozilla.focus.ext.settings
 import org.xmlpull.v1.XmlPullParserException
-import java.io.BufferedInputStream
-import java.io.IOException
 
 private const val PREF_FILE_SEARCH_ENGINES = "custom-search-engines"
 private const val PREF_KEY_MIGRATED = "pref_search_migrated"
 private const val PREF_KEY_CUSTOM_SEARCH_ENGINES = "pref_custom_search_engines"
 
-/**
- * Helper class to migrate the search related data in Focus to the "Android Components" implementation.
- */
-class SearchMigration(
-    private val context: Context,
-) : SearchMiddleware.Migration {
+/** Helper class to migrate the search related data in Focus to the "Android Components" implementation. */
+class SearchMigration(private val context: Context) : SearchMiddleware.Migration {
 
     override fun getValuesToMigrate(): SearchMiddleware.Migration.MigrationValues? {
         val preferences = context.getSharedPreferences(PREF_FILE_SEARCH_ENGINES, Context.MODE_PRIVATE)
@@ -33,10 +29,11 @@ class SearchMigration(
         }
 
         @Suppress("DEPRECATION")
-        val values = SearchMiddleware.Migration.MigrationValues(
-            customSearchEngines = loadCustomSearchEngines(preferences),
-            defaultSearchEngineName = context.settings.defaultSearchEngineName,
-        )
+        val values =
+            SearchMiddleware.Migration.MigrationValues(
+                customSearchEngines = loadCustomSearchEngines(preferences),
+                defaultSearchEngineName = context.settings.defaultSearchEngineName,
+            )
 
         preferences.edit {
             putBoolean(PREF_KEY_MIGRATED, true)
@@ -45,15 +42,11 @@ class SearchMigration(
         return values
     }
 
-    private fun loadCustomSearchEngines(
-        preferences: SharedPreferences,
-    ): List<SearchEngine> {
+    private fun loadCustomSearchEngines(preferences: SharedPreferences): List<SearchEngine> {
         val engines = preferences.getStringSet(PREF_KEY_CUSTOM_SEARCH_ENGINES, emptySet())!!
 
         return engines.mapNotNull { engine ->
-            val engineInputStream = preferences.getString(engine, "")!!
-                .byteInputStream()
-                .buffered()
+            val engineInputStream = preferences.getString(engine, "")!!.byteInputStream().buffered()
 
             loadSafely(context, engine, engineInputStream)
         }

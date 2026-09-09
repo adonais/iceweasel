@@ -45,8 +45,7 @@ nsBlockFrame* NS_NewBlockFrame(mozilla::PresShell* aPresShell,
 // Special Generated Content Node. It contains text taken from an
 // attribute of its *grandparent* content node.
 nsresult NS_NewAttributeContent(nsNodeInfoManager* aNodeInfoManager,
-                                int32_t aNameSpaceID, nsAtom* aAttrName,
-                                nsAtom* aFallback, nsIContent** aResult);
+                                nsAtom* aAttrName, nsIContent** aResult);
 
 nsIFrame* NS_NewBRFrame(mozilla::PresShell* aPresShell,
                         mozilla::ComputedStyle* aStyle);

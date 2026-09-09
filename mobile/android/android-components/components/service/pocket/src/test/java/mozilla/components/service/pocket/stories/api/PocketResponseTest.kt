@@ -4,9 +4,9 @@
 
 package mozilla.components.service.pocket.stories.api
 
+import kotlin.test.assertIs
 import org.junit.Assert.assertSame
 import org.junit.Test
-import kotlin.test.assertIs
 
 class PocketResponseTest {
     @Test

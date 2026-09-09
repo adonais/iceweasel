@@ -4,14 +4,6 @@
 
 package mozilla.components.lib.fetch.httpurlconnection
 
-import mozilla.components.concept.fetch.BuildConfig
-import mozilla.components.concept.fetch.Client
-import mozilla.components.concept.fetch.Headers
-import mozilla.components.concept.fetch.MutableHeaders
-import mozilla.components.concept.fetch.Request
-import mozilla.components.concept.fetch.Response
-import mozilla.components.concept.fetch.isDataUri
-import mozilla.components.lib.fetch.httpurlconnection.HttpURLConnectionClient.Companion.getOrCreateCookieManager
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
@@ -20,15 +12,22 @@ import java.net.CookieManager
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.zip.GZIPInputStream
+import mozilla.components.concept.fetch.BuildConfig
+import mozilla.components.concept.fetch.Client
+import mozilla.components.concept.fetch.Headers
+import mozilla.components.concept.fetch.MutableHeaders
+import mozilla.components.concept.fetch.Request
+import mozilla.components.concept.fetch.Response
+import mozilla.components.concept.fetch.isDataUri
+import mozilla.components.lib.fetch.httpurlconnection.HttpURLConnectionClient.Companion.getOrCreateCookieManager
 
-/**
- * [HttpURLConnection] implementation of [Client].
- */
+/** [HttpURLConnection] implementation of [Client]. */
 class HttpURLConnectionClient : Client() {
-    private val defaultHeaders: Headers = MutableHeaders(
-        "User-Agent" to "MozacFetch/${BuildConfig.LIBRARY_VERSION}",
-        "Accept-Encoding" to "gzip",
-    )
+    private val defaultHeaders: Headers =
+        MutableHeaders(
+            "User-Agent" to "MozacFetch/${BuildConfig.LIBRARY_VERSION}",
+            "Accept-Encoding" to "gzip",
+        )
 
     @Throws(IOException::class)
     override fun fetch(request: Request): Response {
@@ -68,9 +67,7 @@ private fun HttpURLConnection.addBodyFrom(request: Request) {
 
         body.useStream { inStream ->
             outputStream.use { outStream ->
-                inStream
-                    .buffered()
-                    .copyTo(outStream)
+                inStream.buffered().copyTo(outStream)
                 outStream.flush()
             }
         }
@@ -104,11 +101,13 @@ internal fun HttpURLConnection.setupWith(request: Request) {
 }
 
 private fun HttpURLConnection.addHeadersFrom(request: Request, defaultHeaders: Headers) {
-    defaultHeaders.filter { header ->
-        request.headers?.contains(header.name) != true
-    }.forEach { header ->
-        setRequestProperty(header.name, header.value)
-    }
+    defaultHeaders
+        .filter { header ->
+            request.headers?.contains(header.name) != true
+        }
+        .forEach { header ->
+            setRequestProperty(header.name, header.value)
+        }
 
     request.headers?.forEach { header ->
         addRequestProperty(header.name, header.value)

@@ -19,17 +19,17 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.ui.icons.R as iconsR
 
 /**
- * Browser menu builder with web extension support. It allows [WebExtensionBrowserMenu] to add
- * web extension browser actions in a nested menu item. If there are no web extensions installed
- * and @param showAddonsInMenu is true the web extension menu item would return an add-on manager menu item instead.
+ * Browser menu builder with web extension support. It allows [WebExtensionBrowserMenu] to add web extension browser
+ * actions in a nested menu item. If there are no web extensions installed and @param showAddonsInMenu is true the web
+ * extension menu item would return an add-on manager menu item instead.
  *
  * @param store [BrowserStore] required to render web extension browser actions
  * @param style Indicates how items should look like.
  * @param onAddonsManagerTapped Callback to be invoked when add-ons manager menu item is selected.
- * @param appendExtensionSubMenuAtStart Used when the menu does not have a [WebExtensionPlaceholderMenuItem]
- * to specify the place the extensions sub-menu should be inserted. True if web extension sub menu
- * appear at the top (start) of the menu, false if web extensions appear at the bottom of the menu.
- * Default to false (bottom). This is also used to decide the back press menu item placement at top or bottom.
+ * @param appendExtensionSubMenuAtStart Used when the menu does not have a [WebExtensionPlaceholderMenuItem] to specify
+ *   the place the extensions sub-menu should be inserted. True if web extension sub menu appear at the top (start) of
+ *   the menu, false if web extensions appear at the bottom of the menu. Default to false (bottom). This is also used to
+ *   decide the back press menu item placement at top or bottom.
  * @param showAddonsInMenu Whether to show the 'Add-ons' item in menu
  */
 class WebExtensionBrowserMenuBuilder(
@@ -43,9 +43,7 @@ class WebExtensionBrowserMenuBuilder(
     private val showAddonsInMenu: Boolean = true,
 ) : BrowserMenuBuilder(items, extras, endOfMenuAlwaysVisible) {
 
-    /**
-     * Builds and returns a browser menu with combination of [items] and web extension browser actions.
-     */
+    /** Builds and returns a browser menu with combination of [items] and web extension browser actions. */
     override fun build(context: Context): BrowserMenu {
         val extensionMenuItems =
             WebExtensionBrowserMenu.getOrUpdateWebExtensionMenuItems(store.state, store.state.selectedTab)
@@ -56,11 +54,12 @@ class WebExtensionBrowserMenuBuilder(
             replaceMenuPlaceholderWithExtensions(finalList, webExtensionBrowserMenuItem)
         }
 
-        val menuItems = if (showAddonsInMenu) {
-            createAddonsMenuItems(context, finalList, filteredExtensionMenuItems)
-        } else {
-            finalList
-        }
+        val menuItems =
+            if (showAddonsInMenu) {
+                createAddonsMenuItems(context, finalList, filteredExtensionMenuItems)
+            } else {
+                finalList
+            }
 
         val adapter = BrowserMenuAdapter(context, menuItems)
         return BrowserMenu(adapter)
@@ -76,9 +75,7 @@ class WebExtensionBrowserMenuBuilder(
         }
         // Replace placeholder with corresponding web extension, and remove it from extensions menu list
         if (index != -1) {
-            menuItem.setIconTint(
-                (items[index] as? WebExtensionPlaceholderMenuItem)?.iconTintColorResource,
-            )
+            menuItem.setIconTint((items[index] as? WebExtensionPlaceholderMenuItem)?.iconTintColorResource)
             items[index] = menuItem
         }
         return index == -1
@@ -89,51 +86,60 @@ class WebExtensionBrowserMenuBuilder(
         items: MutableList<BrowserMenuItem>,
         filteredExtensionMenuItems: List<WebExtensionBrowserMenuItem>,
     ): List<BrowserMenuItem> {
-        val addonsMenuItem = if (filteredExtensionMenuItems.isNotEmpty()) {
-            val backPressMenuItem = BackPressMenuItem(
-                contentDescription = context.getString(R.string.mozac_browser_menu_extensions_content_description),
-                label = context.getString(R.string.mozac_browser_menu_extensions),
-                imageResource = style.backPressMenuItemDrawableRes,
-                iconTintColorResource = style.webExtIconTintColorResource,
-            )
+        val addonsMenuItem =
+            if (filteredExtensionMenuItems.isNotEmpty()) {
+                val backPressMenuItem =
+                    BackPressMenuItem(
+                        contentDescription =
+                            context.getString(R.string.mozac_browser_menu_extensions_content_description),
+                        label = context.getString(R.string.mozac_browser_menu_extensions),
+                        imageResource = style.backPressMenuItemDrawableRes,
+                        iconTintColorResource = style.webExtIconTintColorResource,
+                    )
 
-            val addonsManagerMenuItem = BrowserMenuImageText(
-                label = context.getString(R.string.mozac_browser_menu_extensions_manager),
-                imageResource = style.addonsManagerMenuItemDrawableRes,
-                iconTintColorResource = style.webExtIconTintColorResource,
-            ) {
-                onAddonsManagerTapped.invoke()
-            }
+                val addonsManagerMenuItem =
+                    BrowserMenuImageText(
+                        label = context.getString(R.string.mozac_browser_menu_extensions_manager),
+                        imageResource = style.addonsManagerMenuItemDrawableRes,
+                        iconTintColorResource = style.webExtIconTintColorResource,
+                    ) {
+                        onAddonsManagerTapped.invoke()
+                    }
 
-            val webExtSubMenuItems = if (appendExtensionSubMenuAtStart) {
-                listOf(backPressMenuItem) + BrowserMenuDivider() +
-                    filteredExtensionMenuItems +
-                    BrowserMenuDivider() + addonsManagerMenuItem
+                val webExtSubMenuItems =
+                    if (appendExtensionSubMenuAtStart) {
+                        listOf(backPressMenuItem) +
+                            BrowserMenuDivider() +
+                            filteredExtensionMenuItems +
+                            BrowserMenuDivider() +
+                            addonsManagerMenuItem
+                    } else {
+                        listOf(addonsManagerMenuItem) +
+                            BrowserMenuDivider() +
+                            filteredExtensionMenuItems +
+                            BrowserMenuDivider() +
+                            backPressMenuItem
+                    }
+
+                val webExtBrowserMenuAdapter = BrowserMenuAdapter(context, webExtSubMenuItems)
+                val webExtMenu = WebExtensionBrowserMenu(webExtBrowserMenuAdapter, store)
+
+                ParentBrowserMenuItem(
+                    label = context.getString(R.string.mozac_browser_menu_extensions),
+                    imageResource = style.addonsManagerMenuItemDrawableRes,
+                    iconTintColorResource = style.webExtIconTintColorResource,
+                    subMenu = webExtMenu,
+                    endOfMenuAlwaysVisible = endOfMenuAlwaysVisible,
+                )
             } else {
-                listOf(addonsManagerMenuItem) + BrowserMenuDivider() +
-                    filteredExtensionMenuItems +
-                    BrowserMenuDivider() + backPressMenuItem
+                BrowserMenuImageText(
+                    label = context.getString(R.string.mozac_browser_menu_extensions),
+                    imageResource = style.addonsManagerMenuItemDrawableRes,
+                    iconTintColorResource = style.webExtIconTintColorResource,
+                ) {
+                    onAddonsManagerTapped.invoke()
+                }
             }
-
-            val webExtBrowserMenuAdapter = BrowserMenuAdapter(context, webExtSubMenuItems)
-            val webExtMenu = WebExtensionBrowserMenu(webExtBrowserMenuAdapter, store)
-
-            ParentBrowserMenuItem(
-                label = context.getString(R.string.mozac_browser_menu_extensions),
-                imageResource = style.addonsManagerMenuItemDrawableRes,
-                iconTintColorResource = style.webExtIconTintColorResource,
-                subMenu = webExtMenu,
-                endOfMenuAlwaysVisible = endOfMenuAlwaysVisible,
-            )
-        } else {
-            BrowserMenuImageText(
-                label = context.getString(R.string.mozac_browser_menu_extensions),
-                imageResource = style.addonsManagerMenuItemDrawableRes,
-                iconTintColorResource = style.webExtIconTintColorResource,
-            ) {
-                onAddonsManagerTapped.invoke()
-            }
-        }
         val mainMenuIndex = items.indexOfFirst { browserMenuItem ->
             (browserMenuItem as? WebExtensionPlaceholderMenuItem)?.id ==
                 WebExtensionPlaceholderMenuItem.MAIN_EXTENSIONS_MENU_ID
@@ -152,9 +158,7 @@ class WebExtensionBrowserMenuBuilder(
         }
     }
 
-    /**
-     * Allows to customize how items should look like.
-     */
+    /** Allows to customize how items should look like. */
     data class Style(
         @param:ColorRes val webExtIconTintColorResource: Int = NO_ID,
         @param:DrawableRes val backPressMenuItemDrawableRes: Int = iconsR.drawable.mozac_ic_back_24,

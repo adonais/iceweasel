@@ -11,10 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mozilla.components.service.pocket.GlobalDependencyProvider
 
-/**
- * An implementation of [CoroutineWorker] used to delete any persisted user data for sponsored
- * contents.
- */
+/** An implementation of [CoroutineWorker] used to delete any persisted user data for sponsored contents. */
 internal class DeleteUserWorker(
     context: Context,
     params: WorkerParameters,
@@ -31,7 +28,6 @@ internal class DeleteUserWorker(
     }
 
     internal companion object {
-        const val DELETE_USER_WORK_TAG =
-            "mozilla.components.service.pocket.sponsored.content.delete.work.tag"
+        const val DELETE_USER_WORK_TAG = "mozilla.components.service.pocket.sponsored.content.delete.work.tag"
     }
 }

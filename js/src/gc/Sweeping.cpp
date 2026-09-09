@@ -1726,10 +1726,6 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JS::GCContext* gcx,
     }
   }
 
-#ifdef JS_GC_ZEAL
-  validateIncrementalMarking();
-#endif
-
   AutoSetThreadIsSweeping threadIsSweeping;
 
   // Disable incremental barriers for all zones while we are sweeping/finalizing
@@ -1814,6 +1810,10 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JS::GCContext* gcx,
     updateAtomsBitmap();
     startSweepingAtomsTable();
   }
+
+#ifdef JS_GC_ZEAL
+  validateIncrementalMarking();
+#endif
 
 #ifdef DEBUG
   // Now that the final mark state has been computed check any gray marking

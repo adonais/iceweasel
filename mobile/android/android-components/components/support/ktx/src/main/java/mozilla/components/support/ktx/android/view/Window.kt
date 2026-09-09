@@ -34,19 +34,17 @@ import mozilla.components.support.utils.ext.right
 import mozilla.components.support.utils.ext.top
 
 /**
- * Sets the status bar background color. If the color is light enough, a light navigation bar with
- * dark icons will be used.
+ * Sets the status bar background color. If the color is light enough, a light navigation bar with dark icons will be
+ * used.
  */
-fun Window.setStatusBarTheme(
-    @ColorInt color: Int,
-) {
+fun Window.setStatusBarTheme(@ColorInt color: Int) {
     createWindowInsetsController().isAppearanceLightStatusBars = !isDark(color)
     setStatusBarColorCompat(color)
 }
 
 /**
- * Set the navigation bar background and divider colors. If the color is light enough, a light
- * navigation bar with dark icons will be used.
+ * Set the navigation bar background and divider colors. If the color is light enough, a light navigation bar with dark
+ * icons will be used.
  */
 fun Window.setNavigationBarTheme(
     @ColorInt navBarColor: Int? = null,
@@ -59,9 +57,7 @@ fun Window.setNavigationBarTheme(
     setNavigationBarDividerColorCompat(navBarDividerColor)
 }
 
-/**
- * Creates a {@link WindowInsetsControllerCompat} for the top-level window decor view.
- */
+/** Creates a {@link WindowInsetsControllerCompat} for the top-level window decor view. */
 fun Window.createWindowInsetsController(): WindowInsetsControllerCompat {
     return WindowInsetsControllerCompat(this, this.decorView)
 }
@@ -69,12 +65,10 @@ fun Window.createWindowInsetsController(): WindowInsetsControllerCompat {
 /**
  * Sets the status bar color.
  *
- * @param color The color to set as the status bar color.
- * Note that if edge-to-edge behavior is enabled, the color will be transparent and cannot be changed.
+ * @param color The color to set as the status bar color. Note that if edge-to-edge behavior is enabled, the color will
+ *   be transparent and cannot be changed.
  */
-fun Window.setStatusBarColorCompat(
-    @ColorInt color: Int,
-) {
+fun Window.setStatusBarColorCompat(@ColorInt color: Int) {
     if (context.isEdgeToEdgeDisabled()) {
         @Suppress("DEPRECATION")
         statusBarColor = color
@@ -86,12 +80,10 @@ fun Window.setStatusBarColorCompat(
 /**
  * Sets the navigation bar color.
  *
- * @param color The color to set as the navigation bar color.
- * Note that if edge-to-edge behavior is enabled, the color will be transparent and cannot be changed.
+ * @param color The color to set as the navigation bar color. Note that if edge-to-edge behavior is enabled, the color
+ *   will be transparent and cannot be changed.
  */
-fun Window.setNavigationBarColorCompat(
-    @ColorInt color: Int,
-) {
+fun Window.setNavigationBarColorCompat(@ColorInt color: Int) {
     if (context.isEdgeToEdgeDisabled()) {
         @Suppress("DEPRECATION")
         navigationBarColor = color
@@ -103,12 +95,10 @@ fun Window.setNavigationBarColorCompat(
 /**
  * Sets the navigation bar divider color.
  *
- * @param color The color to set as the navigation bar divider color.
- * Note that if edge-to-edge behavior is enabled, the color will be transparent and cannot be changed.
+ * @param color The color to set as the navigation bar divider color. Note that if edge-to-edge behavior is enabled, the
+ *   color will be transparent and cannot be changed.
  */
-fun Window.setNavigationBarDividerColorCompat(
-    @ColorInt color: Int?,
-) {
+fun Window.setNavigationBarDividerColorCompat(@ColorInt color: Int?) {
     if (SDK_INT >= VERSION_CODES.P && context.isEdgeToEdgeDisabled()) {
         @Suppress("DEPRECATION")
         navigationBarDividerColor = color ?: 0
@@ -118,15 +108,15 @@ fun Window.setNavigationBarDividerColorCompat(
 }
 
 /**
- * Setup handling persistent insets - system bars and display cutouts ourselves instead of the framework.
- * This results in keeping the same behavior for such insets while allowing to separately control the behavior
- * for other dynamic insets.
+ * Setup handling persistent insets - system bars and display cutouts ourselves instead of the framework. This results
+ * in keeping the same behavior for such insets while allowing to separately control the behavior for other dynamic
+ * insets.
  *
- * This only works on Android 13 and above where the insets framework is more reliable.
- * On older versions calling this will result in no-op.
+ * This only works on Android 13 and above where the insets framework is more reliable. On older versions calling this
+ * will result in no-op.
  *
- * @param consumeInsets if true, returns [WindowInsetsCompat.CONSUMED] to notify so other listeners do not
- * consume them as well.
+ * @param consumeInsets if true, returns [WindowInsetsCompat.CONSUMED] to notify so other listeners do not consume them
+ *   as well.
  */
 fun Window.setupPersistentInsets(consumeInsets: Boolean = false) {
     if (SDK_INT < VERSION_CODES.TIRAMISU) return
@@ -148,8 +138,8 @@ fun Window.setupPersistentInsets(consumeInsets: Boolean = false) {
 }
 
 /**
- * Clear any paddings manually added to this window's root view.
- * This will result in showing this [Window] as edge-to-edge.
+ * Clear any paddings manually added to this window's root view. This will result in showing this [Window] as
+ * edge-to-edge.
  */
 fun Window.clearPersistentInsets() {
     if (SDK_INT < VERSION_CODES.TIRAMISU) return
@@ -173,14 +163,15 @@ private fun Window.setPersistentInsets(
     }
     val persistentInsetsTypes = systemBars() or displayCutout()
     val isInImmersiveMode = attributes.flags and WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS != 0
-    val persistentInsets = when (isInImmersiveMode) {
-        true -> {
-            // If we are in immersive mode we need to reset current paddings and avoid setting others.
-            Insets.of(0, 0, 0, 0)
-        }
+    val persistentInsets =
+        when (isInImmersiveMode) {
+            true -> {
+                // If we are in immersive mode we need to reset current paddings and avoid setting others.
+                Insets.of(0, 0, 0, 0)
+            }
 
-        false -> windowInsets.getInsets(persistentInsetsTypes)
-    }
+            false -> windowInsets.getInsets(persistentInsetsTypes)
+        }
 
     rootView.setPadding(
         persistentInsets.left,
@@ -191,12 +182,12 @@ private fun Window.setPersistentInsets(
 }
 
 /**
- * Sets the theme for system's status bar and navigation bar by applying the given colors as window background
- * and automatically set whether the text and icons in these bars should be light or dark to ensure
- * best contrast over the given backgrounds colors.
+ * Sets the theme for system's status bar and navigation bar by applying the given colors as window background and
+ * automatically set whether the text and icons in these bars should be light or dark to ensure best contrast over the
+ * given backgrounds colors.
  *
- * This method is state-less and will style all bars at the same time based on the passed-in parameters.
- * Calling this again with fewer parameters will reset the other values to their defaults.
+ * This method is state-less and will style all bars at the same time based on the passed-in parameters. Calling this
+ * again with fewer parameters will reset the other values to their defaults.
  */
 fun Window.setSystemBarsBackground(
     @ColorInt statusBarColor: Int? = null,
@@ -244,9 +235,9 @@ private fun View.setWindowInsetsBackgroundColors(
     val screenWidth = resources.displayMetrics.widthPixels
     val screenHeight = resources.displayMetrics.heightPixels
 
-    val bitmap = background
-        ?.toBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888)
-        ?: createBitmap(screenWidth, screenHeight)
+    val bitmap =
+        background?.toBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888)
+            ?: createBitmap(screenWidth, screenHeight)
     val canvas = Canvas(bitmap)
 
     statusBarColor.toPaint()?.let {
@@ -285,9 +276,10 @@ private fun View.setWindowInsetsBackgroundColors(
     background = bitmap.toDrawable(resources)
 }
 
-private fun @receiver:ColorInt Int?.toPaint() = this?.let {
-    Paint().apply {
-        style = Paint.Style.FILL
-        color = this@toPaint
+private fun @receiver:ColorInt Int?.toPaint() =
+    this?.let {
+        Paint().apply {
+            style = Paint.Style.FILL
+            color = this@toPaint
+        }
     }
-}

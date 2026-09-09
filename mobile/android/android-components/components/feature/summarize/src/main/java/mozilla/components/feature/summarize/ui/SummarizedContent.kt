@@ -17,8 +17,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.feature.summarize.R
-import mozilla.components.ui.richtext.RichText
 import mozilla.components.ui.icons.R as iconsR
+import mozilla.components.ui.richtext.RichText
 
 @Composable
 internal fun SummarizedContent(
@@ -30,9 +30,7 @@ internal fun SummarizedContent(
         Box(modifier = Modifier.fillMaxWidth()) {
             IconButton(
                 onClick = onSettingsClicked,
-                contentDescription = stringResource(
-                    id = R.string.mozac_summarize_settings_button_content_description,
-                ),
+                contentDescription = stringResource(id = R.string.mozac_summarize_settings_button_content_description),
                 modifier = Modifier.align(Alignment.TopEnd),
             ) {
                 Icon(

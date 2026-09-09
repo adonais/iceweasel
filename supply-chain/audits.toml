@@ -1914,9 +1914,9 @@ notes = "First-party code"
 [[audits.cssparser]]
 who = "Emilio Cobos Álvarez <emilio@crisal.io>"
 criteria = "safe-to-deploy"
-delta = "0.37.0 -> 0.37.0@git:eff8704e994dc54e5df2a936b78b51828ee21464"
+delta = "0.37.0 -> 0.38.0@git:84af7967fc0093c81f44c2d03029fe6db546485e"
 importable = false
-notes = "Unpublished changes all authored or reviewed by me."
+notes = "All changes authored or reviewed by me."
 
 [[audits.cssparser-color]]
 who = "Emilio Cobos Álvarez <emilio@crisal.io>"
@@ -1953,9 +1953,9 @@ notes = "First party code"
 [[audits.cssparser-macros]]
 who = "Emilio Cobos Álvarez <emilio@crisal.io>"
 criteria = "safe-to-deploy"
-delta = "0.7.0 -> 0.7.0@git:eff8704e994dc54e5df2a936b78b51828ee21464"
+delta = "0.7.0 -> 0.7.0@git:84af7967fc0093c81f44c2d03029fe6db546485e"
 importable = false
-notes = "Dependency updates + upstream-reviewed changes."
+notes = "Change authored by me to allow syn 3 and 2."
 
 [[audits.cstr]]
 who = "Emilio Cobos Álvarez <emilio@crisal.io>"
@@ -2304,6 +2304,14 @@ delta = "0.20.1 -> 0.20.10"
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "2.3.2 -> 2.3.3"
+
+[[audits.dbus]]
+who = "Kagami Sascha Rosylight <krosylight@proton.me>"
+criteria = "safe-to-deploy"
+version = "0.9.12"
+notes = """
+Unsafe blocks are to call FFI functions, and to pass strings and callback functions through FFI boundary, which are inherently unsafe.
+"""
 
 [[audits.debug_tree]]
 who = "Benjamin Beurdouche <beurdouche@mozilla.com>"
@@ -4282,6 +4290,17 @@ who = "Dana Keeler <dkeeler@mozilla.com>"
 criteria = "safe-to-deploy"
 version = "0.0.3"
 
+[[audits.libdbus-sys]]
+who = "Kagami Sascha Rosylight <krosylight@proton.me>"
+criteria = "safe-to-deploy"
+version = "0.2.7"
+importable = false
+notes = """
+The crate includes ffi declarations, which are inherently unsafe.
+
+The crate also includes an optional vendored libdbus, but this audit does not cover that.
+"""
+
 [[audits.libloading]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
@@ -5615,6 +5634,11 @@ delta = "0.1.4 -> 0.1.5"
 who = "John M. Schanck <jschanck@mozilla.com>"
 criteria = "safe-to-deploy"
 delta = "0.1.5 -> 0.1.7"
+
+[[audits.pkcs11-bindings]]
+who = "Dana Keeler <dkeeler@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "0.1.7 -> 0.1.8"
 
 [[audits.pkg-config]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
@@ -7872,6 +7896,11 @@ who = "na-g <na-g@nostrum.com>"
 criteria = "safe-to-deploy"
 delta = "0.3.11 -> 0.3.13"
 
+[[audits.webrtc-sdp]]
+who = "Nicolas Grunbaum <ngrunbaum@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "0.3.13 -> 0.3.14"
+
 [[audits.weedle2]]
 who = "Travis Long <tlong@mozilla.com>"
 criteria = "safe-to-deploy"
@@ -9083,31 +9112,31 @@ end = "2024-04-25"
 criteria = "safe-to-deploy"
 user-id = 51017 # Yuki Okushi (JohnTitor)
 start = "2021-06-17"
-end = "2026-01-03"
+end = "2027-08-25"
 
 [[trusted.phf_codegen]]
 criteria = "safe-to-deploy"
 user-id = 51017 # Yuki Okushi (JohnTitor)
 start = "2021-06-17"
-end = "2026-01-03"
+end = "2027-08-25"
 
 [[trusted.phf_generator]]
 criteria = "safe-to-deploy"
 user-id = 51017 # Yuki Okushi (JohnTitor)
 start = "2021-06-17"
-end = "2026-01-03"
+end = "2027-08-25"
 
 [[trusted.phf_macros]]
 criteria = "safe-to-deploy"
 user-id = 51017 # Yuki Okushi (JohnTitor)
 start = "2021-06-17"
-end = "2026-01-03"
+end = "2027-08-25"
 
 [[trusted.phf_shared]]
 criteria = "safe-to-deploy"
 user-id = 51017 # Yuki Okushi (JohnTitor)
 start = "2021-06-17"
-end = "2026-01-03"
+end = "2027-08-25"
 
 [[trusted.proc-macro-hack]]
 criteria = "safe-to-deploy"

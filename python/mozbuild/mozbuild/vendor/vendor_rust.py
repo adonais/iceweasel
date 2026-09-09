@@ -950,6 +950,9 @@ license file's hash.
             checksum_json = package_dir / ".cargo-checksum.json"
             with checksum_json.open(encoding="utf-8") as fh:
                 checksum_data = json.load(fh)
+            # cargo 1.97 additionally started adding a "$comment" field to those
+            # files. Remove it for consistency across versions.
+            checksum_data.pop("$comment", None)
             for path in unlinked:
                 try:
                     del checksum_data["files"][path]

@@ -8,6 +8,11 @@ createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
 
 add_task(async function setup() {
   await promiseStartupManager();
+  const { AMTelemetry } = ChromeUtils.importESModule(
+    "resource://gre/modules/AddonManager.sys.mjs"
+  );
+  Services.obs.notifyObservers(null, "test-load-xpi-database");
+  await AMTelemetry.addonsBuilder._pendingTask;
 });
 
 add_task(async function test_new_addonType() {

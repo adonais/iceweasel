@@ -197,9 +197,6 @@ SSL_ResetHandshake(PRFileDesc *s, PRBool asServer)
     status = ssl_CreateSecurityInfo(ss);
     ssl_ReleaseXmitBufLock(ss);
 
-    ssl_ReleaseSSL3HandshakeLock(ss);
-    ssl_Release1stHandshakeLock(ss);
-
     ssl3_DestroyRemoteExtensions(&ss->ssl3.hs.remoteExtensions);
     ssl3_DestroyRemoteExtensions(&ss->ssl3.hs.echOuterExtensions);
     ssl3_ResetExtensionData(&ss->xtnData, ss);
@@ -222,6 +219,9 @@ SSL_ResetHandshake(PRFileDesc *s, PRBool asServer)
     tls13_ClientGreaseDestroy(ss);
 
     tls_ClientHelloExtensionPermutationDestroy(ss);
+
+    ssl_ReleaseSSL3HandshakeLock(ss);
+    ssl_Release1stHandshakeLock(ss);
 
     if (!ss->TCPconnected)
         ss->TCPconnected = (PR_SUCCESS == ssl_DefGetpeername(ss, &addr));

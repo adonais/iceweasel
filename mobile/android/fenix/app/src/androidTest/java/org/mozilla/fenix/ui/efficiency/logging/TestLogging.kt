@@ -5,28 +5,31 @@
 package org.mozilla.fenix.ui.efficiency.logging
 
 /**
- * TestLogging
+ * Where the harness finds the reporter.
  *
- * Why this is a global holder:
- * - We want logging to be automatic and consistent without polluting test code.
- * - Most helper calls flow through BasePage / BaseTest, and wiring a reporter through every
- *   page object constructor quickly becomes noisy boilerplate.
+ * A global rather than a constructor argument: nearly every helper call flows through BasePage or BaseTest, and
+ * threading a reporter through every page-object constructor is boilerplate that buys nothing. Not pure DI, but this is
+ * instrumentation-test code, and the alternative is friction on every page object anyone writes.
  *
- * Tradeoffs:
- * - A global is not "pure DI", but it's pragmatic for instrumentation tests where:
- *     - execution is already highly environment-dependent,
- *     - we care about minimizing friction for developers writing tests,
- *     - and we want fast iteration on the logging UX.
- *
- * Safety:
- * - reporter is set in BaseTest.setUp() and cleared in tearDown.
- * - The logger should never be allowed to fail a test; it is a debugging aid.
- *
- * Future direction:
- * - Once the logging approach stabilizes, we can replace this with dependency injection
- *   (or a per-test context object) without changing test code.
+ * Never null. BaseTest installs a real reporter in setUp; before that - and in tooling that drives page objects outside
+ * a test, like the inspector - it is [TimedReporter.Silent]. A nullable field put a `?.` on all forty-odd call sites to
+ * express something no caller ever wanted to handle.
  */
 object TestLogging {
-    @Volatile
-    var reporter: TimedReporter? = null
+    @Volatile var reporter: TimedReporter = TimedReporter.Silent
+
+    /**
+     * The reporter, installing a real one first if nothing has yet.
+     *
+     * `reporter` is Silent until BaseTest's @Before runs, and a JUnit TestWatcher's `starting()` fires BEFORE @Before
+     * --- so anything recorded from there went to Silent and was dropped. It only bit the FIRST test of each class,
+     * because the reporter installed for one test is still installed for the next, which made it look like an
+     * occasional gap rather than a rule. Every caller that can run outside a test body should come through here.
+     */
+    fun installed(): TimedReporter {
+        if (reporter === TimedReporter.Silent) {
+            reporter = LoggingBridge.createReporter()
+        }
+        return reporter
+    }
 }

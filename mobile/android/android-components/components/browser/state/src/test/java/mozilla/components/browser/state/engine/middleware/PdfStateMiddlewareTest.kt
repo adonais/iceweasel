@@ -30,105 +30,138 @@ class PdfStateMiddlewareTest {
     private val captureActionsMiddleware = CaptureActionsMiddleware<BrowserState, BrowserAction>()
 
     @Test(expected = AssertionError::class)
-    fun `GIVEN navigating to a pdf in the current normal tab WHEN the page is not fully loaded THEN don't update the pdf status`() = runTest {
-        val store = BrowserStore(
-            initialState = buildState(newPdfStatusForNormalTab = true),
-            middleware = listOf(PdfStateMiddleware(this), captureActionsMiddleware),
-        )
+    fun `GIVEN navigating to a pdf in the current normal tab WHEN the page is not fully loaded THEN don't update the pdf status`() =
+        runTest {
+            val store =
+                BrowserStore(
+                    initialState = buildState(newPdfStatusForNormalTab = true),
+                    middleware = listOf(PdfStateMiddleware(this), captureActionsMiddleware),
+                )
 
-        store.dispatch(ContentAction.UpdateProgressAction(NORMAL_TAB_ID, 10))
-        store.dispatch(ContentAction.UpdateProgressAction(NORMAL_TAB_ID, 50))
-        store.dispatch(ContentAction.UpdateProgressAction(NORMAL_TAB_ID, 99))
+            store.dispatch(ContentAction.UpdateProgressAction(NORMAL_TAB_ID, 10))
+            store.dispatch(ContentAction.UpdateProgressAction(NORMAL_TAB_ID, 50))
+            store.dispatch(ContentAction.UpdateProgressAction(NORMAL_TAB_ID, 99))
 
-        // If the action is not dispatched then the below call would throw an AssertionError.
-        assertNull(captureActionsMiddleware.findLastAction(ContentAction.EnteredPdfViewer::class))
-    }
-
-    @Test
-    fun `GIVEN navigating to a pdf in the current normal tab WHEN the page is fully loaded THEN inform about viewing a pdf`() = runTest {
-        val store = BrowserStore(
-            initialState = buildState(newPdfStatusForNormalTab = true),
-            middleware = listOf(PdfStateMiddleware(this), captureActionsMiddleware),
-        )
-
-        store.dispatch(ContentAction.UpdateProgressAction(NORMAL_TAB_ID, 100))
-        testScheduler.advanceUntilIdle() // wait for the actions dispatched from PdfStateMiddleware to be handled in CaptureActionsMiddleware
-
-        assertTrue(captureActionsMiddleware.findFirstAction(ContentAction.EnteredPdfViewer::class).tabId == NORMAL_TAB_ID)
-    }
+            // If the action is not dispatched then the below call would throw an AssertionError.
+            assertNull(captureActionsMiddleware.findLastAction(ContentAction.EnteredPdfViewer::class))
+        }
 
     @Test
-    fun `GIVEN navigating to a pdf in the custom normal tab WHEN the tab state is processed THEN inform about viewing a pdf`() = runTest {
-        val store = BrowserStore(
-            initialState = buildState(newPdfStatusForCustomTab = true),
-            middleware = listOf(PdfStateMiddleware(this), captureActionsMiddleware),
-        )
+    fun `GIVEN navigating to a pdf in the current normal tab WHEN the page is fully loaded THEN inform about viewing a pdf`() =
+        runTest {
+            val store =
+                BrowserStore(
+                    initialState = buildState(newPdfStatusForNormalTab = true),
+                    middleware = listOf(PdfStateMiddleware(this), captureActionsMiddleware),
+                )
 
-        store.dispatch(ContentAction.UpdateProgressAction(CUSTOM_TAB_ID, 100))
-        testScheduler.advanceUntilIdle() // wait for the actions dispatched from PdfStateMiddleware to be handled in CaptureActionsMiddleware
+            store.dispatch(ContentAction.UpdateProgressAction(NORMAL_TAB_ID, 100))
+            testScheduler.advanceUntilIdle() // wait for the actions dispatched from PdfStateMiddleware to be handled in
+            // CaptureActionsMiddleware
 
-        assertTrue(captureActionsMiddleware.findFirstAction(ContentAction.EnteredPdfViewer::class).tabId == CUSTOM_TAB_ID)
-    }
-
-    @Test
-    fun `GIVEN navigating off from a pdf in the current normal tab WHEN the tab state is processed THEN inform about exiting from a pdf`() = runTest {
-        val store = BrowserStore(
-            initialState = buildState(
-                previousPdfStatusForNormalTab = true,
-                newPdfStatusForNormalTab = false,
-            ),
-            middleware = listOf(PdfStateMiddleware(this), captureActionsMiddleware),
-        )
-
-        store.dispatch(ContentAction.UpdateProgressAction(NORMAL_TAB_ID, 100))
-        testScheduler.advanceUntilIdle() // wait for the actions dispatched from PdfStateMiddleware to be handled in CaptureActionsMiddleware
-
-        assertTrue(captureActionsMiddleware.findFirstAction(ContentAction.ExitedPdfViewer::class).tabId == NORMAL_TAB_ID)
-    }
+            assertTrue(
+                captureActionsMiddleware.findFirstAction(ContentAction.EnteredPdfViewer::class).tabId == NORMAL_TAB_ID
+            )
+        }
 
     @Test
-    fun `GIVEN navigating off from a pdf in the custom normal tab WHEN the tab state is processed THEN inform about exiting from a pdf`() = runTest {
-        val store = BrowserStore(
-            initialState = buildState(
-                previousPdfStatusForCustomTab = true,
-                newPdfStatusForCustomTab = false,
-            ),
-            middleware = listOf(PdfStateMiddleware(this), captureActionsMiddleware),
-        )
+    fun `GIVEN navigating to a pdf in the custom normal tab WHEN the tab state is processed THEN inform about viewing a pdf`() =
+        runTest {
+            val store =
+                BrowserStore(
+                    initialState = buildState(newPdfStatusForCustomTab = true),
+                    middleware = listOf(PdfStateMiddleware(this), captureActionsMiddleware),
+                )
 
-        store.dispatch(ContentAction.UpdateProgressAction(CUSTOM_TAB_ID, 100))
-        testScheduler.advanceUntilIdle() // wait for the actions dispatched from PdfStateMiddleware to be handled in CaptureActionsMiddleware
+            store.dispatch(ContentAction.UpdateProgressAction(CUSTOM_TAB_ID, 100))
+            testScheduler.advanceUntilIdle() // wait for the actions dispatched from PdfStateMiddleware to be handled in
+            // CaptureActionsMiddleware
 
-        assertTrue(captureActionsMiddleware.findFirstAction(ContentAction.ExitedPdfViewer::class).tabId == CUSTOM_TAB_ID)
-    }
+            assertTrue(
+                captureActionsMiddleware.findFirstAction(ContentAction.EnteredPdfViewer::class).tabId == CUSTOM_TAB_ID
+            )
+        }
 
     @Test
-    fun `GIVEN already viewing a pdf and the page is updated WHEN cannot infer whether still viewing a pdf THEN inform about exiting from a pdf`() = runTest {
-        val state = BrowserState(
-            tabs = listOf(
-                TabSessionState(
-                    id = NORMAL_TAB_ID,
-                    engineState = buildEngineState(
-                        isPdf = true,
-                        throwException = true,
-                    ),
-                    content = ContentState(
-                        url = "https://mozilla.org",
-                        isPdf = true,
-                    ),
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            initialState = state,
-            middleware = listOf(PdfStateMiddleware(this), captureActionsMiddleware),
-        )
+    fun `GIVEN navigating off from a pdf in the current normal tab WHEN the tab state is processed THEN inform about exiting from a pdf`() =
+        runTest {
+            val store =
+                BrowserStore(
+                    initialState =
+                        buildState(
+                            previousPdfStatusForNormalTab = true,
+                            newPdfStatusForNormalTab = false,
+                        ),
+                    middleware = listOf(PdfStateMiddleware(this), captureActionsMiddleware),
+                )
 
-        store.dispatch(ContentAction.UpdateProgressAction(NORMAL_TAB_ID, 100))
-        testScheduler.advanceUntilIdle() // wait for the actions dispatched from PdfStateMiddleware to be handled in CaptureActionsMiddleware
+            store.dispatch(ContentAction.UpdateProgressAction(NORMAL_TAB_ID, 100))
+            testScheduler.advanceUntilIdle() // wait for the actions dispatched from PdfStateMiddleware to be handled in
+            // CaptureActionsMiddleware
 
-        assertTrue(captureActionsMiddleware.findFirstAction(ContentAction.ExitedPdfViewer::class).tabId == NORMAL_TAB_ID)
-    }
+            assertTrue(
+                captureActionsMiddleware.findFirstAction(ContentAction.ExitedPdfViewer::class).tabId == NORMAL_TAB_ID
+            )
+        }
+
+    @Test
+    fun `GIVEN navigating off from a pdf in the custom normal tab WHEN the tab state is processed THEN inform about exiting from a pdf`() =
+        runTest {
+            val store =
+                BrowserStore(
+                    initialState =
+                        buildState(
+                            previousPdfStatusForCustomTab = true,
+                            newPdfStatusForCustomTab = false,
+                        ),
+                    middleware = listOf(PdfStateMiddleware(this), captureActionsMiddleware),
+                )
+
+            store.dispatch(ContentAction.UpdateProgressAction(CUSTOM_TAB_ID, 100))
+            testScheduler.advanceUntilIdle() // wait for the actions dispatched from PdfStateMiddleware to be handled in
+            // CaptureActionsMiddleware
+
+            assertTrue(
+                captureActionsMiddleware.findFirstAction(ContentAction.ExitedPdfViewer::class).tabId == CUSTOM_TAB_ID
+            )
+        }
+
+    @Test
+    fun `GIVEN already viewing a pdf and the page is updated WHEN cannot infer whether still viewing a pdf THEN inform about exiting from a pdf`() =
+        runTest {
+            val state =
+                BrowserState(
+                    tabs =
+                        listOf(
+                            TabSessionState(
+                                id = NORMAL_TAB_ID,
+                                engineState =
+                                    buildEngineState(
+                                        isPdf = true,
+                                        throwException = true,
+                                    ),
+                                content =
+                                    ContentState(
+                                        url = "https://mozilla.org",
+                                        isPdf = true,
+                                    ),
+                            )
+                        )
+                )
+            val store =
+                BrowserStore(
+                    initialState = state,
+                    middleware = listOf(PdfStateMiddleware(this), captureActionsMiddleware),
+                )
+
+            store.dispatch(ContentAction.UpdateProgressAction(NORMAL_TAB_ID, 100))
+            testScheduler.advanceUntilIdle() // wait for the actions dispatched from PdfStateMiddleware to be handled in
+            // CaptureActionsMiddleware
+
+            assertTrue(
+                captureActionsMiddleware.findFirstAction(ContentAction.ExitedPdfViewer::class).tabId == NORMAL_TAB_ID
+            )
+        }
 
     private fun buildState(
         tabId: String = NORMAL_TAB_ID,
@@ -138,24 +171,28 @@ class PdfStateMiddlewareTest {
         previousPdfStatusForCustomTab: Boolean = false,
         newPdfStatusForCustomTab: Boolean = false,
     ): BrowserState {
-        val tab = TabSessionState(
-            id = tabId,
-            engineState = buildEngineState(newPdfStatusForNormalTab),
-            content = ContentState(
-                url = "https://mozilla.org",
-                isPdf = previousPdfStatusForNormalTab,
-            ),
-        )
+        val tab =
+            TabSessionState(
+                id = tabId,
+                engineState = buildEngineState(newPdfStatusForNormalTab),
+                content =
+                    ContentState(
+                        url = "https://mozilla.org",
+                        isPdf = previousPdfStatusForNormalTab,
+                    ),
+            )
 
-        val customTab = CustomTabSessionState(
-            id = customTabId,
-            engineState = buildEngineState(newPdfStatusForCustomTab),
-            content = ContentState(
-                url = "https://mozilla.org",
-                isPdf = previousPdfStatusForCustomTab,
-            ),
-            config = mock(),
-        )
+        val customTab =
+            CustomTabSessionState(
+                id = customTabId,
+                engineState = buildEngineState(newPdfStatusForCustomTab),
+                content =
+                    ContentState(
+                        url = "https://mozilla.org",
+                        isPdf = previousPdfStatusForCustomTab,
+                    ),
+                config = mock(),
+            )
 
         return BrowserState(
             tabs = listOf(mock(), tab),
@@ -171,11 +208,13 @@ class PdfStateMiddlewareTest {
         val resultCaptor = argumentCaptor<(Boolean) -> Unit>()
         val exceptionCaptor = argumentCaptor<(Throwable) -> Unit>()
         doAnswer {
-            when (throwException) {
-                true -> exceptionCaptor.value.invoke(Exception())
-                false -> resultCaptor.value.invoke(isPdf)
+                when (throwException) {
+                    true -> exceptionCaptor.value.invoke(Exception())
+                    false -> resultCaptor.value.invoke(isPdf)
+                }
             }
-        }.`when`(session).checkForPdfViewer(resultCaptor.capture(), exceptionCaptor.capture())
+            .`when`(session)
+            .checkForPdfViewer(resultCaptor.capture(), exceptionCaptor.capture())
         val engineState: EngineState = mock()
         doReturn(session).`when`(engineState).engineSession
 

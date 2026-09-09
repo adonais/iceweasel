@@ -25,9 +25,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.IconButton
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * The header UI used for microsurvey.
@@ -43,16 +43,9 @@ fun MicrosurveyHeader(
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
     ) {
-        Row(
-            modifier = Modifier
-                .wrapContentWidth()
-                .weight(1f, fill = false)
-                .padding(start = 32.dp, end = 16.dp),
-        ) {
+        Row(modifier = Modifier.wrapContentWidth().weight(1f, fill = false).padding(start = 32.dp, end = 16.dp)) {
             Image(
                 painter = painterResource(R.drawable.ic_firefox),
                 contentDescription = stringResource(id = R.string.microsurvey_app_icon_content_description),

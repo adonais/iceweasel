@@ -1072,10 +1072,13 @@ export const NimbusTestUtils = {
   },
 
   /**
+   * Return the enrollment from the database, if it exists.
    *
-   * @param {string} slug
+   * @param {string} slug The slug to query for.
    * @param {object} options
    * @param {string} options.profileId
+   * The profile ID to query the enrollment for. Defaults to the current profile
+   * ID.
    */
   async queryEnrollment(slug, { profileId } = {}) {
     const conn = await lazy.ProfilesDatastoreService.getConnection();

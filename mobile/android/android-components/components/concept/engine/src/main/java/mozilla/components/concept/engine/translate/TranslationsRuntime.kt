@@ -8,19 +8,15 @@ import mozilla.components.concept.engine.EngineSession
 
 private var unsupportedError = "Translations support is not available in this engine."
 
-/**
- * Entry point for interacting with runtime translation options.
- */
+/** Entry point for interacting with runtime translation options. */
 interface TranslationsRuntime {
 
     /**
-     * Checks if the translations engine is supported or not. The engine only
-     * supports certain architectures.
+     * Checks if the translations engine is supported or not. The engine only supports certain architectures.
      *
      * An example use case is checking if translations options should ever be displayed.
      *
-     * @param onSuccess Callback invoked when successful with the compatibility status of running
-     * translations.
+     * @param onSuccess Callback invoked when successful with the compatibility status of running translations.
      * @param onError Callback invoked if an issue occurred when determining status.
      */
     fun isTranslationsEngineSupported(
@@ -29,17 +25,15 @@ interface TranslationsRuntime {
     ): Unit = onError(UnsupportedOperationException(unsupportedError))
 
     /**
-     * Queries what language models are downloaded and will return the download size
-     * for the given language pair or else return an error.
+     * Queries what language models are downloaded and will return the download size for the given language pair or else
+     * return an error.
      *
-     * An example use case is checking how large of a download will occur for a given
-     * specifc translation.
+     * An example use case is checking how large of a download will occur for a given specifc translation.
      *
      * @param fromLanguage The language the translations engine will use to translate from.
      * @param toLanguage The language the translations engine will use to translate to.
-     * @param onSuccess Callback invoked if the pair download size was fetched successfully. With
-     * the size in bytes that will be required to complete for the download. Zero bytes indicates
-     * no download is required.
+     * @param onSuccess Callback invoked if the pair download size was fetched successfully. With the size in bytes that
+     *   will be required to complete for the download. Zero bytes indicates no download is required.
      * @param onError Callback invoked if an issue occurred when checking sizes.
      */
     fun getTranslationsPairDownloadSize(
@@ -50,8 +44,8 @@ interface TranslationsRuntime {
     ): Unit = onError(UnsupportedOperationException(unsupportedError))
 
     /**
-     * Aggregates the states of complete models downloaded. Note, this function does not aggregate
-     * the cache or state of incomplete models downloaded.
+     * Aggregates the states of complete models downloaded. Note, this function does not aggregate the cache or state of
+     * incomplete models downloaded.
      *
      * An example use case is listing the current install states of the language models.
      *
@@ -77,9 +71,8 @@ interface TranslationsRuntime {
     ): Unit = onError(UnsupportedOperationException(unsupportedError))
 
     /**
-     * Use to download and delete complete model sets for a given language. Can bulk update all
-     * models, a given language set, or the cache or incomplete models (models that are not a part
-     * of a complete language set).
+     * Use to download and delete complete model sets for a given language. Can bulk update all models, a given language
+     * set, or the cache or incomplete models (models that are not a part of a complete language set).
      *
      * An example use case is for managing deleting and installing model sets.
      *
@@ -96,16 +89,16 @@ interface TranslationsRuntime {
     /**
      * Retrieves the user preferred languages using:
      *
-     *   1. Most recent target languages
-     *   2. Web requested languages
-     *   3. App languages
-     *   4. OS language
+     * 1. Most recent target languages
+     * 2. Web requested languages
+     * 3. App languages
+     * 4. OS language
      *
-     * An example use case is presenting translate "to language" options for the user. Note, the
-     * user's predicted first choice is also available via the state of the translation.
+     * An example use case is presenting translate "to language" options for the user. Note, the user's predicted first
+     * choice is also available via the state of the translation.
      *
-     * @param onSuccess Callback invoked if the operation completed successfully with a list of user
-     * preferred languages.
+     * @param onSuccess Callback invoked if the operation completed successfully with a list of user preferred
+     *   languages.
      * @param onError Callback invoked if an issue occurred.
      */
     fun getUserPreferredLanguages(
@@ -114,31 +107,28 @@ interface TranslationsRuntime {
     ): Unit = onError(UnsupportedOperationException(unsupportedError))
 
     /**
-     * Retrieves the user preference on whether they would like translations to offer to translate
-     * on supported pages.
+     * Retrieves the user preference on whether they would like translations to offer to translate on supported pages.
      *
      * @return The current translation offer preference value.
      */
     fun getTranslationsOfferPopup(): Boolean = throw UnsupportedOperationException(unsupportedError)
 
     /**
-     * Sets the user preference on whether they would like translations to offer to translate
-     * on supported pages.
+     * Sets the user preference on whether they would like translations to offer to translate on supported pages.
      *
-     * @param offer The popup preference. True if the user would like to receive a popup
-     * recommendation to translate. False if they do not want translations suggestions.
+     * @param offer The popup preference. True if the user would like to receive a popup recommendation to translate.
+     *   False if they do not want translations suggestions.
      */
-    fun setTranslationsOfferPopup(offer: Boolean): Unit =
-        throw UnsupportedOperationException(unsupportedError)
+    fun setTranslationsOfferPopup(offer: Boolean): Unit = throw UnsupportedOperationException(unsupportedError)
 
     /**
-     * Gets the user preference on whether to offer, always translate, or never translate for a
-     * given BCP 47 language code. Note, when offer is set, this means the user has not specified
-     * an option or has else opted for default behavior.
+     * Gets the user preference on whether to offer, always translate, or never translate for a given BCP 47 language
+     * code. Note, when offer is set, this means the user has not specified an option or has else opted for default
+     * behavior.
      *
      * @param languageCode The BCP 47 language code to check the preference for.
-     * @param onSuccess Callback invoked if the operation completed successfully with the
-     * corresponding language setting.
+     * @param onSuccess Callback invoked if the operation completed successfully with the corresponding language
+     *   setting.
      * @param onError Callback invoked if an issue occurred.
      */
     fun getLanguageSetting(
@@ -148,13 +138,13 @@ interface TranslationsRuntime {
     ): Unit = onError(UnsupportedOperationException(unsupportedError))
 
     /**
-     * Sets the user preference on whether to offer, always translate, or never translate for a
-     * given BCP 47 language code.
+     * Sets the user preference on whether to offer, always translate, or never translate for a given BCP 47 language
+     * code.
      *
      * @param languageCode The BCP 47 language code to check the preference for.
      * @param languageSetting The language setting for the language.
-     * @param onSuccess Callback invoked if the operation completed successfully with the
-     * corresponding language setting.
+     * @param onSuccess Callback invoked if the operation completed successfully with the corresponding language
+     *   setting.
      * @param onError Callback invoked if an issue occurred.
      */
     fun setLanguageSetting(
@@ -165,13 +155,11 @@ interface TranslationsRuntime {
     ): Unit = onError(UnsupportedOperationException(unsupportedError))
 
     /**
-     * Gets the user preference on whether to offer, always translate, or never translate for all
-     * supported languages. Note, when offer is set, this means the user has not specified
-     * an option or has else opted for default behavior.
+     * Gets the user preference on whether to offer, always translate, or never translate for all supported languages.
+     * Note, when offer is set, this means the user has not specified an option or has else opted for default behavior.
      *
-     * @param onSuccess Callback invoked if the operation completed successfully with the
-     * corresponding setting in a map of key of BCP 47 language code and value of LanguageSetting
-     * preference.
+     * @param onSuccess Callback invoked if the operation completed successfully with the corresponding setting in a map
+     *   of key of BCP 47 language code and value of LanguageSetting preference.
      * @param onError Callback invoked if an issue occurred.
      */
     fun getLanguageSettings(
@@ -182,8 +170,7 @@ interface TranslationsRuntime {
     /**
      * Retrieves the list of sites that a user has specified to never translate.
      *
-     * @param onSuccess Callback invoked if the operation completed successfully with a
-     * display-ready list of URI/URLs.
+     * @param onSuccess Callback invoked if the operation completed successfully with a display-ready list of URI/URLs.
      * @param onError Callback invoked if an issue occurred.
      */
     fun getNeverTranslateSiteList(
@@ -192,21 +179,19 @@ interface TranslationsRuntime {
     ): Unit = onError(UnsupportedOperationException(unsupportedError))
 
     /**
-     * Sets if a given site should be never translated or not. This function is for use when making
-     * global translation settings adjustments to never translate a specified site.
+     * Sets if a given site should be never translated or not. This function is for use when making global translation
+     * settings adjustments to never translate a specified site.
      *
-     * Note, ideally only use results from {@link [getNeverTranslateSiteList]} to set the
-     * siteURL on this function to ensure correct scope.
+     * Note, ideally only use results from {@link [getNeverTranslateSiteList]} to set the siteURL on this function to
+     * ensure correct scope.
      *
-     * For setting the never translate preference on the currently displayed site, the best practice
-     * is to use {@link [EngineSession.setNeverTranslateSiteSetting]}.
+     * For setting the never translate preference on the currently displayed site, the best practice is to use {@link
+     * [EngineSession.setNeverTranslateSiteSetting]}.
      *
-     * @param origin The website's URI/URL to set the never translate preference on. Recommend
-     * only using results from {@link getNeverTranslateSiteList} as this parameter to ensure proper
-     * scope. To set the current site, use instead
-     * {@link [EngineSession.setNeverTranslateSiteSetting]}.
-     * @param setting True if the site should never be translated. False if the site should be
-     * translated.
+     * @param origin The website's URI/URL to set the never translate preference on. Recommend only using results from
+     *   {@link getNeverTranslateSiteList} as this parameter to ensure proper scope. To set the current site, use
+     *   instead {@link [EngineSession.setNeverTranslateSiteSetting]}.
+     * @param setting True if the site should never be translated. False if the site should be translated.
      * @param onSuccess Callback invoked if the operation completed successfully.
      * @param onError Callback invoked if an issue occurred.
      */

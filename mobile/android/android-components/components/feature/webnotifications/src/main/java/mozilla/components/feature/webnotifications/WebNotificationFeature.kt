@@ -10,6 +10,7 @@ import android.app.NotificationManager
 import android.content.Context
 import androidx.annotation.DrawableRes
 import androidx.core.app.NotificationCompat
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -24,7 +25,6 @@ import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.base.ids.SharedIdsHelper
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlin.getOrigin
-import kotlin.coroutines.CoroutineContext
 
 private const val NOTIFICATION_CHANNEL_ID = "mozac.feature.webnotifications.generic.channel"
 private const val PENDING_INTENT_TAG = "mozac.feature.webnotifications.generic.pendingintent"
@@ -34,6 +34,7 @@ internal const val NOTIFICATION_ID = 1
  * Feature implementation for configuring and displaying web notifications to the user.
  *
  * Initialize this feature globally once on app start
+ *
  * ```Kotlin
  * WebNotificationFeature(
  *     applicationContext, engine, icons, R.mipmap.ic_launcher, sitePermissionsStorage, BrowserActivity::class.java
@@ -70,9 +71,7 @@ class WebNotificationFeature(
         }
     }
 
-    override fun onShowNotification(
-        webNotification: WebNotification,
-    ): Deferred<Boolean> {
+    override fun onShowNotification(webNotification: WebNotification): Deferred<Boolean> {
         val deferred = CompletableDeferred<Boolean>()
         CoroutineScope(coroutineContext).launch {
             // Only need to check permissions for notifications from web pages. Permissions for
@@ -80,11 +79,11 @@ class WebNotificationFeature(
             // upon installation.
             if (!webNotification.triggeredByWebExtension) {
                 val origin = webNotification.sourceUrl?.getOrigin() ?: return@launch
-                val permissions = sitePermissionsStorage.findSitePermissionsBy(
-                    origin,
-                    private = webNotification.privateBrowsing,
-                )
-                    ?: return@launch
+                val permissions =
+                    sitePermissionsStorage.findSitePermissionsBy(
+                        origin,
+                        private = webNotification.privateBrowsing,
+                    ) ?: return@launch
 
                 if (!permissions.notification.isAllowed()) {
                     return@launch
@@ -94,13 +93,14 @@ class WebNotificationFeature(
             ensureNotificationGroupAndChannelExists()
             notificationsDelegate.notificationManagerCompat.cancel(webNotification.tag, NOTIFICATION_ID)
 
-            val notification = nativeNotificationBridge.convertToAndroidNotification(
-                webNotification,
-                context,
-                NOTIFICATION_CHANNEL_ID,
-                activityClass,
-                SharedIdsHelper.getNextIdForTag(context, PENDING_INTENT_TAG),
-            )
+            val notification =
+                nativeNotificationBridge.convertToAndroidNotification(
+                    webNotification,
+                    context,
+                    NOTIFICATION_CHANNEL_ID,
+                    activityClass,
+                    SharedIdsHelper.getNextIdForTag(context, PENDING_INTENT_TAG),
+                )
             notificationsDelegate.notify(
                 webNotification.tag,
                 NOTIFICATION_ID,
@@ -121,11 +121,12 @@ class WebNotificationFeature(
     }
 
     private fun ensureNotificationGroupAndChannelExists() {
-        val channel = NotificationChannel(
-            NOTIFICATION_CHANNEL_ID,
-            context.getString(R.string.mozac_feature_notification_channel_name),
-            NotificationManager.IMPORTANCE_DEFAULT,
-        )
+        val channel =
+            NotificationChannel(
+                NOTIFICATION_CHANNEL_ID,
+                context.getString(R.string.mozac_feature_notification_channel_name),
+                NotificationManager.IMPORTANCE_DEFAULT,
+            )
         channel.setShowBadge(true)
         channel.lockscreenVisibility = NotificationCompat.VISIBILITY_PRIVATE
 

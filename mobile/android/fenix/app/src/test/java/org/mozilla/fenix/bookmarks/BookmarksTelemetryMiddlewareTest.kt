@@ -5,6 +5,8 @@
 package org.mozilla.fenix.bookmarks
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlinx.coroutines.test.runTest
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Rule
@@ -12,14 +14,11 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.BookmarksManagement
 import org.mozilla.fenix.bookmarks.importer.FenixBookmarkImporterError
 import org.mozilla.fenix.helpers.FenixGleanTestRule
-import kotlin.test.Test
-import kotlin.test.assertEquals
 
 @RunWith(AndroidJUnit4::class)
 class BookmarksTelemetryMiddlewareTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private val middleware = BookmarksTelemetryMiddleware()
 
@@ -42,64 +41,62 @@ class BookmarksTelemetryMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN import file clicked from menu, an import file button clicked event is recorded`() =
-        runTest {
-            val store = middleware.makeStore()
-
-            store.dispatch(ImportAction.ImportFileClicked.FromMenu)
-
-            testScheduler.advanceUntilIdle()
-
-            val events = BookmarksManagement.importFromFileMenuClick.testGetValue() ?: emptyList()
-
-            assertEquals(1, events.size, "Expected 1 import file menu clicked event, but got ${events.size}")
-        }
-
-    @Test
-    fun `GIVEN import succeeded action is received, an import succeeded event is recorded with the bookmarks count`() = runTest {
+    fun `GIVEN import file clicked from menu, an import file button clicked event is recorded`() = runTest {
         val store = middleware.makeStore()
 
-        store.dispatch(ImportAction.ImportSucceeded(count = 2))
+        store.dispatch(ImportAction.ImportFileClicked.FromMenu)
 
         testScheduler.advanceUntilIdle()
 
-        val events = BookmarksManagement.importSuccessful.testGetValue() ?: emptyList()
+        val events = BookmarksManagement.importFromFileMenuClick.testGetValue() ?: emptyList()
 
-        assertEquals(1, events.size, "Expected 1 import succeeded event, but got ${events.size}")
-        assertEquals(
-            expected = "2",
-            actual = events.first().extra?.get("bookmarks_count"),
-            message = "Expected bookmarks_count extra to be 2",
-        )
+        assertEquals(1, events.size, "Expected 1 import file menu clicked event, but got ${events.size}")
     }
 
     @Test
-    fun `GIVEN import file started, an import file started event is recorded`() =
+    fun `GIVEN import succeeded action is received, an import succeeded event is recorded with the bookmarks count`() =
         runTest {
             val store = middleware.makeStore()
 
-            store.dispatch(ImportAction.ImportStarted)
+            store.dispatch(ImportAction.ImportSucceeded(count = 2))
 
             testScheduler.advanceUntilIdle()
 
-            val events = BookmarksManagement.importStarted.testGetValue() ?: emptyList()
+            val events = BookmarksManagement.importSuccessful.testGetValue() ?: emptyList()
 
-            assertEquals(1, events.size, "Expected 1 import file started event, but got ${events.size}")
+            assertEquals(1, events.size, "Expected 1 import succeeded event, but got ${events.size}")
+            assertEquals(
+                expected = "2",
+                actual = events.first().extra?.get("bookmarks_count"),
+                message = "Expected bookmarks_count extra to be 2",
+            )
         }
 
     @Test
-    fun `GIVEN import file was cancelled, an import file cancelled event is recorded`() =
-        runTest {
-            val store = middleware.makeStore()
+    fun `GIVEN import file started, an import file started event is recorded`() = runTest {
+        val store = middleware.makeStore()
 
-            store.dispatch(ImportAction.ImportCancelled)
+        store.dispatch(ImportAction.ImportStarted)
 
-            testScheduler.advanceUntilIdle()
+        testScheduler.advanceUntilIdle()
 
-            val events = BookmarksManagement.importCancelled.testGetValue() ?: emptyList()
+        val events = BookmarksManagement.importStarted.testGetValue() ?: emptyList()
 
-            assertEquals(1, events.size, "Expected 1 import cancelled event, but got ${events.size}")
-        }
+        assertEquals(1, events.size, "Expected 1 import file started event, but got ${events.size}")
+    }
+
+    @Test
+    fun `GIVEN import file was cancelled, an import file cancelled event is recorded`() = runTest {
+        val store = middleware.makeStore()
+
+        store.dispatch(ImportAction.ImportCancelled)
+
+        testScheduler.advanceUntilIdle()
+
+        val events = BookmarksManagement.importCancelled.testGetValue() ?: emptyList()
+
+        assertEquals(1, events.size, "Expected 1 import cancelled event, but got ${events.size}")
+    }
 
     private fun BookmarksTelemetryMiddleware.makeStore(): BookmarksStore {
         return BookmarksStore(

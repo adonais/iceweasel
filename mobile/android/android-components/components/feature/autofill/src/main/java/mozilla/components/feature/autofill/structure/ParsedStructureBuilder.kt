@@ -7,7 +7,7 @@ package mozilla.components.feature.autofill.structure
 import android.view.View
 
 internal class ParsedStructureBuilder<ViewNode, AutofillId>(
-    private val navigator: AutofillNodeNavigator<ViewNode, AutofillId>,
+    private val navigator: AutofillNodeNavigator<ViewNode, AutofillId>
 ) {
     fun build(): ParsedStructure {
         val formNode = findFocusedForm()
@@ -82,7 +82,7 @@ internal class ParsedStructureBuilder<ViewNode, AutofillId>(
                 val id = navigator.autofillId(currentNode) ?: continue
                 if (
                     (navigator.isEditText(currentNode) || navigator.isHtmlInputField(currentNode)) &&
-                    containsKeywords(prevNode, keywords)
+                        containsKeywords(prevNode, keywords)
                 ) {
                     return@findFirst id
                 }
@@ -102,8 +102,7 @@ internal class ParsedStructureBuilder<ViewNode, AutofillId>(
             val child = childNodes[0]
             val id = navigator.autofillId(child) ?: return@findFirst null
             if (
-                (navigator.isEditText(child) || navigator.isHtmlInputField(child)) &&
-                containsKeywords(node, keywords)
+                (navigator.isEditText(child) || navigator.isHtmlInputField(child)) && containsKeywords(node, keywords)
             ) {
                 return@findFirst id
             }
@@ -113,18 +112,18 @@ internal class ParsedStructureBuilder<ViewNode, AutofillId>(
 
     private fun checkForAdjacentFields(rootNode: ViewNode?): Pair<AutofillId?, AutofillId?>? {
         return navigator.findFirst(rootNode) { node: ViewNode ->
-
             val childNodes = navigator.childNodes(node)
             // XXX we only look at the list of edit texts before the first button.
             // This is because we can see the invisible fields, but not that they are
             // invisible. https://bugzilla.mozilla.org/show_bug.cgi?id=1592047
             val firstButtonIndex = childNodes.indexOfFirst { navigator.isButton(it) }
 
-            val firstFewNodes = if (firstButtonIndex >= 0) {
-                childNodes.subList(0, firstButtonIndex)
-            } else {
-                childNodes
-            }
+            val firstFewNodes =
+                if (firstButtonIndex >= 0) {
+                    childNodes.subList(0, firstButtonIndex)
+                } else {
+                    childNodes
+                }
 
             val inputFields = firstFewNodes.filter {
                 navigator.isEditText(it) && navigator.autofillId(it) != null && navigator.isVisible(it)
@@ -168,9 +167,7 @@ internal class ParsedStructureBuilder<ViewNode, AutofillId>(
     }
 
     private fun isAutoFillableEditText(node: ViewNode, keywords: Collection<String>): Boolean {
-        return navigator.isEditText(node) &&
-            containsKeywords(node, keywords) &&
-            navigator.autofillId(node) != null
+        return navigator.isEditText(node) && containsKeywords(node, keywords) && navigator.autofillId(node) != null
     }
 
     private fun isAutoFillableInputField(node: ViewNode, keywords: Collection<String>): Boolean {
@@ -192,19 +189,18 @@ internal class ParsedStructureBuilder<ViewNode, AutofillId>(
     }
 
     private fun findMatchedNodeAncestors(matcher: (ViewNode) -> Boolean): Iterable<ViewNode>? {
-        navigator.rootNodes
-            .forEach { node ->
-                findMatchedNodeAncestors(node, matcher)?.let { result ->
-                    return result
-                }
+        navigator.rootNodes.forEach { node ->
+            findMatchedNodeAncestors(node, matcher)?.let { result ->
+                return result
             }
+        }
         return null
     }
 
     /**
-     * Depth first search a ViewNode tree. Once a match is found, a list of ancestors all the way to
-     * the top is returned. The first node in the list is the matching node, the last is the root node.
-     * If no match is found, then <code>null</code> is returned.
+     * Depth first search a ViewNode tree. Once a match is found, a list of ancestors all the way to the top is
+     * returned. The first node in the list is the matching node, the last is the root node. If no match is found, then
+     * <code>null</code> is returned.
      *
      * @param node the parent node.
      * @param matcher a closure which returns <code>true</code> if and only if the node is matched.
@@ -215,12 +211,11 @@ internal class ParsedStructureBuilder<ViewNode, AutofillId>(
             return listOf(node)
         }
 
-        navigator.childNodes(node)
-            .forEach { child ->
-                findMatchedNodeAncestors(child, matcher)?.let { list ->
-                    return list + node
-                }
+        navigator.childNodes(node).forEach { child ->
+            findMatchedNodeAncestors(child, matcher)?.let { list ->
+                return list + node
             }
+        }
         return null
     }
 }

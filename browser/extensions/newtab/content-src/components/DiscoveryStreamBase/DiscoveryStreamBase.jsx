@@ -17,6 +17,12 @@ import { selectLayoutRender } from "content-src/lib/selectLayoutRender";
 import { TopSites } from "content-src/components/TopSites/TopSites";
 import { CardSections } from "../DiscoveryStreamComponents/CardSections/CardSections";
 import { Widgets } from "content-src/components/Widgets/Widgets";
+import { Spaces } from "content-src/components/Spaces/Spaces";
+import {
+  isSpacesActive,
+  resolvePopulatedSpaces,
+  SPACE_IDS,
+} from "common/PageLayoutVariants.mjs";
 import {
   ASROUTER_NEWTAB_MESSAGE_POSITIONS,
   shouldShowASRouterNewTabMessage,
@@ -278,6 +284,11 @@ export class _DiscoveryStreamBase extends React.PureComponent {
     };
 
     const privacyLinkComponent = extractComponent("PrivacyLink");
+    // renderLayout always returns a div, so gate on the same condition
+    // Highlights.jsx uses or the side-by-side panel frames an empty box.
+    const hasHighlights = Boolean(
+      this.props.Sections?.find(s => s.id === "highlights")?.enabled
+    );
     let learnMore = {
       link: {
         href: message.header.link_url,
@@ -288,6 +299,87 @@ export class _DiscoveryStreamBase extends React.PureComponent {
     let subTitle = "";
 
     const { DiscoveryStream } = this.props;
+
+    // Widgets, the content feed and Highlights are already three separate boxes
+    // in this band, so spaces navigates between those rather than introducing a
+    // new grouping. Declared here so the flat band and Spaces can each place
+    // them.
+    const widgetsGroup =
+      widgets &&
+      this.renderLayout([
+        {
+          width: 12,
+          components: [{ type: "Widgets" }],
+          sectionType: "widgets",
+        },
+      ]);
+
+    const contentGroup = (
+      <div
+        className={`layout-content-column${
+          layoutRender.length ? " has-feed" : ""
+        }`}
+      >
+        {/* Nova only: the ABOVE_CONTENT_FEED message, built in Base.jsx. This is
+        the widgets/feed boundary, which only exists inside this component. */}
+        {this.props.aboveContentFeed}
+
+        {!!layoutRender.length && (
+          <CollapsibleSection
+            className="ds-layout"
+            collapsed={topStories.pref.collapsed}
+            dispatch={this.props.dispatch}
+            id={topStories.id}
+            isFixed={true}
+            learnMore={learnMore}
+            privacyNoticeURL={topStories.privacyNoticeURL}
+            showPrefName={topStories.pref.feed}
+            title={sectionTitle}
+            subTitle={subTitle}
+            mayHaveTopicsSelection={topicSelectionEnabled}
+            sectionsEnabled={sectionsEnabled}
+            eventSource="CARDGRID"
+          >
+            {this.renderLayout(layoutRender)}
+          </CollapsibleSection>
+        )}
+        {privacyLinkComponent &&
+          this.renderLayout([
+            {
+              width: 12,
+              components: [privacyLinkComponent],
+            },
+          ])}
+      </div>
+    );
+
+    const highlightsGroup = hasHighlights && (
+      <div className="layout-highlights-column">
+        {this.renderLayout([
+          {
+            width: 12,
+            components: [{ type: "Highlights" }],
+          },
+        ])}
+      </div>
+    );
+
+    // Guarded so the ordinary layout does no spaces work at all: isSpacesActive
+    // reads prefs only. resolvePopulatedSpaces then decides which spaces exist
+    // and their tablist order, so the tabs follow the prefs rather than whatever
+    // the feeds have delivered so far.
+    let spaceEntries = [];
+    if (isSpacesActive(this.props.Prefs.values)) {
+      const spaceContent = {
+        [SPACE_IDS.STORIES]: contentGroup,
+        [SPACE_IDS.WIDGETS]: widgetsGroup,
+        [SPACE_IDS.ACTIVITY]: highlightsGroup,
+      };
+      spaceEntries = resolvePopulatedSpaces(this.props.Prefs.values)
+        .map(id => ({ id, content: spaceContent[id] }))
+        .filter(space => space.content);
+    }
+    const spacesActive = spaceEntries.length > 1;
 
     return (
       <React.Fragment>
@@ -333,71 +425,36 @@ export class _DiscoveryStreamBase extends React.PureComponent {
             </ErrorBoundary>
           )}
 
-        {widgets &&
-          this.renderLayout([
+        {spacesActive ? (
+          <Spaces spaces={spaceEntries} dispatch={this.props.dispatch} />
+        ) : (
+          <React.Fragment>
+            {widgetsGroup}
+
             {
-              width: 12,
-              components: [{ type: "Widgets" }],
-              sectionType: "widgets",
-            },
-          ])}
+              //@nova-cleanup(remove-conditional): Remove this entire block; in the Nova layout Base.jsx passes ABOVE_CONTENT_FEED in via the aboveContentFeed prop below. */
+            }
+            {!novaEnabled &&
+              shouldShowASRouterNewTabMessage(
+                this.props.Messages,
+                "ASRouterNewTabMessage",
+                ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_CONTENT_FEED
+              ) && (
+                <ErrorBoundary>
+                  <MessageWrapper dispatch={this.props.dispatch}>
+                    <ExternalComponentWrapper
+                      type="ASROUTER_NEWTAB_MESSAGE"
+                      messageData={this.props.Messages.messageData}
+                      className="asrouter-newtab-message-wrapper"
+                    />
+                  </MessageWrapper>
+                </ErrorBoundary>
+              )}
 
-        {
-          //@nova-cleanup(remove-conditional): Remove this entire block; in the Nova layout Base.jsx passes ABOVE_CONTENT_FEED in via the aboveContentFeed prop below. */
-        }
-        {!novaEnabled &&
-          shouldShowASRouterNewTabMessage(
-            this.props.Messages,
-            "ASRouterNewTabMessage",
-            ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_CONTENT_FEED
-          ) && (
-            <ErrorBoundary>
-              <MessageWrapper dispatch={this.props.dispatch}>
-                <ExternalComponentWrapper
-                  type="ASROUTER_NEWTAB_MESSAGE"
-                  messageData={this.props.Messages.messageData}
-                  className="asrouter-newtab-message-wrapper"
-                />
-              </MessageWrapper>
-            </ErrorBoundary>
-          )}
-
-        {/* Nova only: the ABOVE_CONTENT_FEED message, built in Base.jsx. This is
-        the widgets/feed boundary, which only exists inside this component. */}
-        {this.props.aboveContentFeed}
-
-        {!!layoutRender.length && (
-          <CollapsibleSection
-            className="ds-layout"
-            collapsed={topStories.pref.collapsed}
-            dispatch={this.props.dispatch}
-            id={topStories.id}
-            isFixed={true}
-            learnMore={learnMore}
-            privacyNoticeURL={topStories.privacyNoticeURL}
-            showPrefName={topStories.pref.feed}
-            title={sectionTitle}
-            subTitle={subTitle}
-            mayHaveTopicsSelection={topicSelectionEnabled}
-            sectionsEnabled={sectionsEnabled}
-            eventSource="CARDGRID"
-          >
-            {this.renderLayout(layoutRender)}
-          </CollapsibleSection>
+            {contentGroup}
+            {highlightsGroup}
+          </React.Fragment>
         )}
-        {this.renderLayout([
-          {
-            width: 12,
-            components: [{ type: "Highlights" }],
-          },
-        ])}
-        {privacyLinkComponent &&
-          this.renderLayout([
-            {
-              width: 12,
-              components: [privacyLinkComponent],
-            },
-          ])}
       </React.Fragment>
     );
   }

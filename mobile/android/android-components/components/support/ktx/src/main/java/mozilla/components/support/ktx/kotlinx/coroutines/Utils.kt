@@ -10,10 +10,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- *
- * Returns a function that limits the executions of the [block] function, until the [skipTimeInMs]
- * passes, then the latest value passed to [block] will be used. Any calls before [skipTimeInMs]
- * passes will be ignored. All calls to the returned function must happen on the same thread.
+ * Returns a function that limits the executions of the [block] function, until the [skipTimeInMs] passes, then the
+ * latest value passed to [block] will be used. Any calls before [skipTimeInMs] passes will be ignored. All calls to the
+ * returned function must happen on the same thread.
  *
  * Credit to Terenfear https://gist.github.com/Terenfear/a84863be501d3399889455f391eeefe5
  *

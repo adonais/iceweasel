@@ -28,8 +28,8 @@
  * of text contents that strictly matches the exact index order and length of
  * the requested `url_list` arguments.
  *
- * @param {Array<object>} messages - The cloned conversation history array.
- * @returns {Array<object>} The array with compacted get_page_content payloads.
+ * @param {Array<object>} messages - The caller-owned history array, compacted in place.
+ * @returns {Array<object>} The same array, with compacted get_page_content payloads.
  */
 function deduplicatePageContent(messages) {
   const callIdToUrls = new Map();
@@ -114,16 +114,19 @@ function deduplicatePageContent(messages) {
  * MAIN ENTRY POINT
  * Orchestrates the prompt compaction waterfall.
  *
- * @param {Array<object>} rawMessages - The original conversation history.
+ * Compacts in place: callers must pass a wire-format snapshot they own, such as
+ * the freshly built array from Conversation.getMessagesInChatCompletionsFormat.
+ * Stages may reassign top-level message fields, but values reached *through*
+ * those fields (content objects, tool_calls) still alias live UI state, so they
+ * must be replaced rather than mutated.
+ *
+ * @param {Array<object>} rawMessages - A caller-owned wire-format history array.
  * @returns {Array<object>} The optimized array ready to be sent to the LLM API.
  */
 export function compactMessages(rawMessages) {
   try {
-    // Deep clone to guarantee we never mutate the frontend's active UI state
-    let compactedMessages = structuredClone(rawMessages);
-
     // Stage 1: Deduplication (Always runs, zero semantic loss)
-    compactedMessages = deduplicatePageContent(compactedMessages);
+    let compactedMessages = deduplicatePageContent(rawMessages);
 
     // Future stages (Threshold checking, proportional shaving) will be injected here
 

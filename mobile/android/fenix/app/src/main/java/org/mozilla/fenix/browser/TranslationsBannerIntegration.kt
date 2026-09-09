@@ -42,8 +42,8 @@ import org.mozilla.fenix.utils.Settings
  * @param browserScreenStore [BrowserScreenStore] to sync the current translations status from.
  * @param binding [FragmentBrowserBinding] to inflate the banner into when needed.
  * @param onExpand invoked when user wants to expand the translations controls.
- * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur.
- *                       Defaults to [Dispatchers.Main].
+ * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur. Defaults to
+ *   [Dispatchers.Main].
  */
 class TranslationsBannerIntegration(
     private val settings: Settings,
@@ -65,17 +65,19 @@ class TranslationsBannerIntegration(
     }
 
     override suspend fun onState(flow: Flow<BrowserScreenState>) {
-        flow.distinctUntilChangedBy { it.pageTranslationStatus.isTranslated }
+        flow
+            .distinctUntilChangedBy { it.pageTranslationStatus.isTranslated }
             .collect {
                 if (it.pageTranslationStatus.isTranslated) {
                     observeFullScreenMediaState()
                     getViewOrInflate().let { banner ->
                         banner.isVisible = true
-                        banner.behavior = TranslationsBannerBehavior(
-                            context = banner.context,
-                            isAddressBarAtBottom = settings.shouldUseBottomToolbar,
-                            isNavBarShown = settings.shouldUseExpandedToolbar,
-                        )
+                        banner.behavior =
+                            TranslationsBannerBehavior(
+                                context = banner.context,
+                                isAddressBarAtBottom = settings.shouldUseBottomToolbar,
+                                isNavBarShown = settings.shouldUseExpandedToolbar,
+                            )
                     }
                 } else {
                     closeBrowserFlowScope()
@@ -86,19 +88,21 @@ class TranslationsBannerIntegration(
     }
 
     private fun observeFullScreenMediaState() {
-        browserFlowScope = browserStore.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.map { state -> state.selectedTab?.mediaSessionState }
-                .distinctUntilChangedBy { it?.fullscreen }
-                .collect { mediaSessionState ->
-                    val isInFullScreen = mediaSessionState?.fullscreen == true
-                    translationsBanner?.apply {
+        browserFlowScope =
+            browserStore.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .map { state -> state.selectedTab?.mediaSessionState }
+                    .distinctUntilChangedBy { it?.fullscreen }
+                    .collect { mediaSessionState ->
+                        val isInFullScreen = mediaSessionState?.fullscreen == true
+                        translationsBanner?.apply {
                             isVisible = !isInFullScreen
                             if (!isInFullScreen) {
                                 (behavior as TranslationsBannerBehavior).forceExpand(this)
                             }
                         }
-                }
-        }
+                    }
+            }
     }
 
     private fun closeBrowserFlowScope() {
@@ -116,12 +120,18 @@ class TranslationsBannerIntegration(
 
     @Composable
     private fun TranslationsBannerHost() {
-        val sourceLanguage = browserScreenStore.observeAsComposableState {
-            it.pageTranslationStatus.fromSelectedLanguage?.localizedDisplayName ?: ""
-        }.value
-        val targetLanguage = browserScreenStore.observeAsComposableState {
-            it.pageTranslationStatus.toSelectedLanguage?.localizedDisplayName ?: ""
-        }.value
+        val sourceLanguage =
+            browserScreenStore
+                .observeAsComposableState {
+                    it.pageTranslationStatus.fromSelectedLanguage?.localizedDisplayName ?: ""
+                }
+                .value
+        val targetLanguage =
+            browserScreenStore
+                .observeAsComposableState {
+                    it.pageTranslationStatus.toSelectedLanguage?.localizedDisplayName ?: ""
+                }
+                .value
 
         val keyboardState by keyboardAsState()
         val isKeyboardVisible = keyboardState == KeyboardState.Opened
@@ -129,11 +139,12 @@ class TranslationsBannerIntegration(
         if (!isKeyboardVisible) {
             FirefoxTheme {
                 TranslationToolbar(
-                    label = stringResource(
-                        R.string.translation_toolbar_translated_from_and_to,
-                        sourceLanguage,
-                        targetLanguage,
-                    ),
+                    label =
+                        stringResource(
+                            R.string.translation_toolbar_translated_from_and_to,
+                            sourceLanguage,
+                            targetLanguage,
+                        ),
                     onExpand = onExpand,
                     onClose = {
                         closeBrowserFlowScope()
@@ -144,13 +155,14 @@ class TranslationsBannerIntegration(
         }
     }
 
-    private fun getViewOrInflate() = binding.root.findViewById(R.id.translationsBanner)
-        ?: binding.translationsBannerStub.inflate().also {
-            (it as? ComposeView)?.apply {
-                setContent { TranslationsBannerHost() }
-                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+    private fun getViewOrInflate() =
+        binding.root.findViewById(R.id.translationsBanner)
+            ?: binding.translationsBannerStub.inflate().also {
+                (it as? ComposeView)?.apply {
+                    setContent { TranslationsBannerHost() }
+                    setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                }
             }
-        }
 
     private var View.behavior: CoordinatorLayout.Behavior<View>?
         get() = (layoutParams as? CoordinatorLayout.LayoutParams)?.behavior

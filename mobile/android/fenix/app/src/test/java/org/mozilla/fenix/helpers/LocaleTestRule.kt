@@ -4,14 +4,14 @@
 
 package org.mozilla.fenix.helpers
 
+import java.util.Locale
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
-import java.util.Locale
 
 /**
- * A JUnit [TestRule] that sets the default locale to a given [localeToSet] for the duration of
- * the test and then resets it to the original locale.
+ * A JUnit [TestRule] that sets the default locale to a given [localeToSet] for the duration of the test and then resets
+ * it to the original locale.
  *
  * @param localeToSet The locale to set for the duration of the test.
  */

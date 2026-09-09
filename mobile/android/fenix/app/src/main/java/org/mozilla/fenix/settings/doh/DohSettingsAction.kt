@@ -8,14 +8,10 @@ import mozilla.components.lib.state.Action
 
 internal sealed interface DohSettingsAction : Action
 
-/**
- * The Store is initializing.
- */
+/** The Store is initializing. */
 internal data object Init : DohSettingsAction
 
-/**
- * The user has clicked the back button.
- */
+/** The user has clicked the back button. */
 internal data object BackClicked : DohSettingsAction
 
 /**
@@ -23,13 +19,9 @@ internal data object BackClicked : DohSettingsAction
  *
  * @property url The "Learn More" url.
  */
-internal data class LearnMoreClicked(
-    val url: String,
-) : DohSettingsAction
+internal data class LearnMoreClicked(val url: String) : DohSettingsAction
 
-/**
- * Actions specific to the DoH Settings Root screen.
- */
+/** Actions specific to the DoH Settings Root screen. */
 internal sealed class DohSettingsRootAction : DohSettingsAction {
 
     /**
@@ -49,9 +41,7 @@ internal sealed class DohSettingsRootAction : DohSettingsAction {
         val exceptionsList: List<String>,
     ) : DohSettingsAction
 
-    /**
-     * The user has opened the ExceptionsListScreen.
-     */
+    /** The user has opened the ExceptionsListScreen. */
     data object ExceptionsClicked : DohSettingsRootAction()
 
     /**
@@ -65,29 +55,19 @@ internal sealed class DohSettingsRootAction : DohSettingsAction {
         val provider: Provider?,
     ) : DohSettingsRootAction()
 
-    /**
-     * The user has clicked on a custom provider setting.
-     */
+    /** The user has clicked on a custom provider setting. */
     data object CustomClicked : DohSettingsRootAction()
 
-    /**
-     * The user has clicked to see information about the default DoH level.
-     */
+    /** The user has clicked to see information about the default DoH level. */
     data object DefaultInfoClicked : DohSettingsAction
 
-    /**
-     * The user has clicked to see information about the increased DoH level.
-     */
+    /** The user has clicked to see information about the increased DoH level. */
     data object IncreasedInfoClicked : DohSettingsAction
 
-    /**
-     * The user has clicked to see information about the maximum DoH level.
-     */
+    /** The user has clicked to see information about the maximum DoH level. */
     data object MaxInfoClicked : DohSettingsAction
 
-    /**
-     * Actions specific to handling custom DoH provider dialogs.
-     */
+    /** Actions specific to handling custom DoH provider dialogs. */
     sealed class DohCustomProviderDialogAction : DohSettingsRootAction() {
 
         /**
@@ -101,14 +81,10 @@ internal sealed class DohSettingsRootAction : DohSettingsAction {
             val url: String,
         ) : DohSettingsAction
 
-        /**
-         * A non-HTTPS URL has been detected for the custom DoH provider.
-         */
+        /** A non-HTTPS URL has been detected for the custom DoH provider. */
         data object NonHttpsUrlDetected : DohSettingsAction
 
-        /**
-         * An invalid URL has been detected for the custom DoH provider.
-         */
+        /** An invalid URL has been detected for the custom DoH provider. */
         data object InvalidUrlDetected : DohSettingsAction
 
         /**
@@ -122,17 +98,12 @@ internal sealed class DohSettingsRootAction : DohSettingsAction {
             val url: String,
         ) : DohSettingsAction
 
-        /**
-         * The user has clicked to cancel adding or editing a custom DoH provider.
-         *
-         */
+        /** The user has clicked to cancel adding or editing a custom DoH provider. */
         data object CancelClicked : DohSettingsAction
     }
 }
 
-/**
- * Actions specific to the DoH Settings Exceptions screen.
- */
+/** Actions specific to the DoH Settings Exceptions screen. */
 internal sealed class ExceptionsAction : DohSettingsAction {
 
     /**
@@ -142,14 +113,10 @@ internal sealed class ExceptionsAction : DohSettingsAction {
      */
     data class RemoveClicked(val url: String) : DohSettingsAction
 
-    /**
-     * The user has clicked to remove all exceptions.
-     */
+    /** The user has clicked to remove all exceptions. */
     data object RemoveAllClicked : DohSettingsAction
 
-    /**
-     * The user has clicked to add exceptions to the list.
-     */
+    /** The user has clicked to add exceptions to the list. */
     data object AddExceptionsClicked : DohSettingsAction
 
     /**
@@ -166,8 +133,6 @@ internal sealed class ExceptionsAction : DohSettingsAction {
      */
     data class SaveClicked(val url: String) : DohSettingsAction
 
-    /**
-     * An invalid URL has been detected while adding an exception.
-     */
+    /** An invalid URL has been detected while adding an exception. */
     data object InvalidUrlDetected : DohSettingsAction
 }

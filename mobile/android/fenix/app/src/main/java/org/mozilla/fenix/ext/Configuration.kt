@@ -10,23 +10,20 @@ import mozilla.telemetry.glean.config.Configuration
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.R
 
-/**
- * Get custom Glean server URL if available.
- */
+/** Get custom Glean server URL if available. */
 fun getCustomGleanServerUrlIfAvailable(context: Context): String? {
     return if (BuildConfig.GLEAN_CUSTOM_URL.isNullOrEmpty()) {
-        PreferenceManager.getDefaultSharedPreferences(context).getString(
-            context.getPreferenceKey(R.string.pref_key_custom_glean_server_url),
-            null,
-        )
+        PreferenceManager.getDefaultSharedPreferences(context)
+            .getString(
+                context.getPreferenceKey(R.string.pref_key_custom_glean_server_url),
+                null,
+            )
     } else {
         BuildConfig.GLEAN_CUSTOM_URL
     }
 }
 
-/**
- * Applies the custom Glean server URL to the Configuration if available.
- */
+/** Applies the custom Glean server URL to the Configuration if available. */
 fun Configuration.setCustomEndpointIfAvailable(serverEndpoint: String?): Configuration {
     if (!serverEndpoint.isNullOrEmpty()) {
         return copy(serverEndpoint = serverEndpoint)

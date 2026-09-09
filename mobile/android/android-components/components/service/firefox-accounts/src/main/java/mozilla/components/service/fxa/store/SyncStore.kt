@@ -7,23 +7,19 @@ package mozilla.components.service.fxa.store
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 
-/**
- * [Store] for the global [SyncState]. This should likely be a singleton.
- */
-class SyncStore(
-    middleware: List<Middleware<SyncState, SyncAction>> = emptyList(),
-) : Store<SyncState, SyncAction>(
-    initialState = SyncState(),
-    reducer = ::reduce,
-    middleware = middleware,
-)
+/** [Store] for the global [SyncState]. This should likely be a singleton. */
+class SyncStore(middleware: List<Middleware<SyncState, SyncAction>> = emptyList()) :
+    Store<SyncState, SyncAction>(
+        initialState = SyncState(),
+        reducer = ::reduce,
+        middleware = middleware,
+    )
 
 private fun reduce(syncState: SyncState, syncAction: SyncAction): SyncState {
     return when (syncAction) {
         is SyncAction.UpdateSyncStatus -> syncState.copy(status = syncAction.status)
         is SyncAction.UpdateAccount -> syncState.copy(account = syncAction.account)
         is SyncAction.UpdateAccountState -> syncState.copy(accountState = syncAction.accountState)
-        is SyncAction.UpdateDeviceConstellation ->
-            syncState.copy(constellationState = syncAction.deviceConstellation)
+        is SyncAction.UpdateDeviceConstellation -> syncState.copy(constellationState = syncAction.deviceConstellation)
     }
 }

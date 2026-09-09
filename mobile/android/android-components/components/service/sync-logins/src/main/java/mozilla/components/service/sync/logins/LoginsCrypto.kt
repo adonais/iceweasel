@@ -17,11 +17,11 @@ import mozilla.components.lib.dataprotect.SecureAbove22Preferences
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * A class that knows how to encrypt & decrypt strings, backed by application-services' logins lib.
- * Used for protecting usernames/passwords at rest.
+ * A class that knows how to encrypt & decrypt strings, backed by application-services' logins lib. Used for protecting
+ * usernames/passwords at rest.
  *
- * This class manages creation and storage of the encryption key.
- * It also keeps track of abnormal events, such as managed key going missing or getting corrupted.
+ * This class manages creation and storage of the encryption key. It also keeps track of abnormal events, such as
+ * managed key going missing or getting corrupted.
  *
  * @param context [Context] used for obtaining [SharedPreferences] for managing internal prefs.
  * @param securePrefs A [SecureAbove22Preferences] instance used for storing the managed key.
@@ -35,11 +35,12 @@ class LoginsCrypto(
     private val plaintextPrefs by lazy { context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) }
 
     override suspend fun recoverFromKeyLoss(reason: KeyGenerationReason.RecoveryNeeded) {
-        val telemetryEventReason = when (reason) {
-            is KeyGenerationReason.RecoveryNeeded.Lost -> KeyRegenerationEventReason.Lost
-            is KeyGenerationReason.RecoveryNeeded.Corrupt -> KeyRegenerationEventReason.Corrupt
-            is KeyGenerationReason.RecoveryNeeded.AbnormalState -> KeyRegenerationEventReason.Other
-        }
+        val telemetryEventReason =
+            when (reason) {
+                is KeyGenerationReason.RecoveryNeeded.Lost -> KeyRegenerationEventReason.Lost
+                is KeyGenerationReason.RecoveryNeeded.Corrupt -> KeyRegenerationEventReason.Corrupt
+                is KeyGenerationReason.RecoveryNeeded.AbnormalState -> KeyRegenerationEventReason.Other
+            }
         recordKeyRegenerationEvent(telemetryEventReason)
         try {
             storage.getStorage().wipeLocal()

@@ -38,7 +38,7 @@ class TrackerBucketsTest {
                 google,
                 facebook,
                 TrackerLog("https://mozilla.com"),
-            ),
+            )
         )
 
         assertEquals(google, buckets.buckets.blockedBucketMap[FINGERPRINTERS]!!.first())
@@ -61,20 +61,16 @@ class TrackerBucketsTest {
                 facebook,
                 google,
                 mozilla,
-            ),
+            )
         )
 
         assertEquals(
-            mapOf(
-                SOCIAL_MEDIA_TRACKERS to listOf(facebook),
-            ),
+            mapOf(SOCIAL_MEDIA_TRACKERS to listOf(facebook)),
             buckets.buckets.loadedBucketMap,
         )
 
         assertEquals(
-            mapOf(
-                FINGERPRINTERS to listOf(google),
-            ),
+            mapOf(FINGERPRINTERS to listOf(google)),
             buckets.buckets.blockedBucketMap,
         )
     }
@@ -82,19 +78,21 @@ class TrackerBucketsTest {
     @Test
     fun `GIVEN a tracker matches multiple blocked categories WHEN sorted into buckets THEN only the highest priority blocked bucket gets it`() {
         val buckets = TrackerBuckets()
-        val acCategories = listOf(
-            CRYPTOMINING,
-            MOZILLA_SOCIAL,
-            FINGERPRINTING,
-            SCRIPTS_AND_SUB_RESOURCES,
-        )
+        val acCategories =
+            listOf(
+                CRYPTOMINING,
+                MOZILLA_SOCIAL,
+                FINGERPRINTING,
+                SCRIPTS_AND_SUB_RESOURCES,
+            )
 
-        val trackerLog = TrackerLog(
-            url = "http://facebook.com",
-            cookiesHasBeenBlocked = true,
-            blockedCategories = acCategories,
-            loadedCategories = acCategories,
-        )
+        val trackerLog =
+            TrackerLog(
+                url = "http://facebook.com",
+                cookiesHasBeenBlocked = true,
+                blockedCategories = acCategories,
+                loadedCategories = acCategories,
+            )
         buckets.updateIfNeeded(listOf(trackerLog))
 
         // Even though several blocked categories match, only the highest-priority
@@ -120,11 +118,12 @@ class TrackerBucketsTest {
     @Test
     fun `GIVEN a tracker with no blocked categories and no blocked cookies WHEN sorted into buckets THEN it is not added to any blocked bucket`() {
         val buckets = TrackerBuckets()
-        val tracker = TrackerLog(
-            url = "https://mozilla.org",
-            loadedCategories = listOf(SCRIPTS_AND_SUB_RESOURCES),
-            cookiesHasBeenBlocked = false,
-        )
+        val tracker =
+            TrackerLog(
+                url = "https://mozilla.org",
+                loadedCategories = listOf(SCRIPTS_AND_SUB_RESOURCES),
+                cookiesHasBeenBlocked = false,
+            )
         buckets.updateIfNeeded(listOf(tracker))
 
         assertTrue(buckets.buckets.blockedBucketMap.isEmpty())
@@ -137,10 +136,11 @@ class TrackerBucketsTest {
     @Test
     fun `GIVEN a tracker only has blocked cookies WHEN sorted into buckets THEN it is added to cross-site tracking cookies`() {
         val buckets = TrackerBuckets()
-        val tracker = TrackerLog(
-            url = "https://cookie-only.example",
-            cookiesHasBeenBlocked = true,
-        )
+        val tracker =
+            TrackerLog(
+                url = "https://cookie-only.example",
+                cookiesHasBeenBlocked = true,
+            )
         buckets.updateIfNeeded(listOf(tracker))
 
         assertEquals(
@@ -152,10 +152,11 @@ class TrackerBucketsTest {
     @Test
     fun `GIVEN a tracker only has email blocked WHEN sorted into buckets THEN it is added to tracking content`() {
         val buckets = TrackerBuckets()
-        val tracker = TrackerLog(
-            url = "https://email-tracker.example",
-            blockedCategories = listOf(EMAIL),
-        )
+        val tracker =
+            TrackerLog(
+                url = "https://email-tracker.example",
+                blockedCategories = listOf(EMAIL),
+            )
         buckets.updateIfNeeded(listOf(tracker))
 
         assertEquals(
@@ -167,17 +168,19 @@ class TrackerBucketsTest {
     @Test
     fun `GIVEN a tracker has fingerprinting alongside other blocked categories WHEN sorted into buckets THEN it is added to fingerprinters`() {
         val buckets = TrackerBuckets()
-        val tracker = TrackerLog(
-            url = "https://fp.example",
-            cookiesHasBeenBlocked = true,
-            blockedCategories = listOf(
-                SCRIPTS_AND_SUB_RESOURCES,
-                EMAIL,
-                FINGERPRINTING,
-                CRYPTOMINING,
-                MOZILLA_SOCIAL,
-            ),
-        )
+        val tracker =
+            TrackerLog(
+                url = "https://fp.example",
+                cookiesHasBeenBlocked = true,
+                blockedCategories =
+                    listOf(
+                        SCRIPTS_AND_SUB_RESOURCES,
+                        EMAIL,
+                        FINGERPRINTING,
+                        CRYPTOMINING,
+                        MOZILLA_SOCIAL,
+                    ),
+            )
         buckets.updateIfNeeded(listOf(tracker))
 
         assertEquals(
@@ -189,16 +192,18 @@ class TrackerBucketsTest {
     @Test
     fun `GIVEN a tracker has cryptomining but no fingerprinting WHEN sorted into buckets THEN it is added to cryptominers`() {
         val buckets = TrackerBuckets()
-        val tracker = TrackerLog(
-            url = "https://cm.example",
-            cookiesHasBeenBlocked = true,
-            blockedCategories = listOf(
-                SCRIPTS_AND_SUB_RESOURCES,
-                EMAIL,
-                CRYPTOMINING,
-                MOZILLA_SOCIAL,
-            ),
-        )
+        val tracker =
+            TrackerLog(
+                url = "https://cm.example",
+                cookiesHasBeenBlocked = true,
+                blockedCategories =
+                    listOf(
+                        SCRIPTS_AND_SUB_RESOURCES,
+                        EMAIL,
+                        CRYPTOMINING,
+                        MOZILLA_SOCIAL,
+                    ),
+            )
         buckets.updateIfNeeded(listOf(tracker))
 
         assertEquals(
@@ -210,15 +215,17 @@ class TrackerBucketsTest {
     @Test
     fun `GIVEN a tracker has social but no fingerprinting or cryptomining WHEN sorted into buckets THEN it is added to social media trackers`() {
         val buckets = TrackerBuckets()
-        val tracker = TrackerLog(
-            url = "https://social.example",
-            cookiesHasBeenBlocked = true,
-            blockedCategories = listOf(
-                SCRIPTS_AND_SUB_RESOURCES,
-                EMAIL,
-                MOZILLA_SOCIAL,
-            ),
-        )
+        val tracker =
+            TrackerLog(
+                url = "https://social.example",
+                cookiesHasBeenBlocked = true,
+                blockedCategories =
+                    listOf(
+                        SCRIPTS_AND_SUB_RESOURCES,
+                        EMAIL,
+                        MOZILLA_SOCIAL,
+                    ),
+            )
         buckets.updateIfNeeded(listOf(tracker))
 
         assertEquals(
@@ -230,14 +237,16 @@ class TrackerBucketsTest {
     @Test
     fun `GIVEN a tracker has scripts and email and cookies but no higher priority WHEN sorted into buckets THEN it is added to tracking content`() {
         val buckets = TrackerBuckets()
-        val tracker = TrackerLog(
-            url = "https://content.example",
-            cookiesHasBeenBlocked = true,
-            blockedCategories = listOf(
-                SCRIPTS_AND_SUB_RESOURCES,
-                EMAIL,
-            ),
-        )
+        val tracker =
+            TrackerLog(
+                url = "https://content.example",
+                cookiesHasBeenBlocked = true,
+                blockedCategories =
+                    listOf(
+                        SCRIPTS_AND_SUB_RESOURCES,
+                        EMAIL,
+                    ),
+            )
         buckets.updateIfNeeded(listOf(tracker))
 
         assertEquals(
@@ -249,11 +258,12 @@ class TrackerBucketsTest {
     @Test
     fun `GIVEN a tracker has email and cookies but no other blocked categories WHEN sorted into buckets THEN it is added to tracking content`() {
         val buckets = TrackerBuckets()
-        val tracker = TrackerLog(
-            url = "https://email-cookies.example",
-            cookiesHasBeenBlocked = true,
-            blockedCategories = listOf(EMAIL),
-        )
+        val tracker =
+            TrackerLog(
+                url = "https://email-cookies.example",
+                cookiesHasBeenBlocked = true,
+                blockedCategories = listOf(EMAIL),
+            )
         buckets.updateIfNeeded(listOf(tracker))
 
         assertEquals(
@@ -265,42 +275,47 @@ class TrackerBucketsTest {
     @Test
     fun `GIVEN multiple trackers each matching a different priority level WHEN sorted into buckets THEN per-category sum equals total distinctly blocked trackers`() {
         val buckets = TrackerBuckets()
-        val fp = TrackerLog(
-            url = "https://fp.example",
-            blockedCategories = listOf(FINGERPRINTING, SCRIPTS_AND_SUB_RESOURCES),
-            cookiesHasBeenBlocked = true,
-        )
-        val cm = TrackerLog(
-            url = "https://cm.example",
-            blockedCategories = listOf(CRYPTOMINING, SCRIPTS_AND_SUB_RESOURCES),
-            cookiesHasBeenBlocked = true,
-        )
-        val social = TrackerLog(
-            url = "https://social.example",
-            blockedCategories = listOf(MOZILLA_SOCIAL),
-            cookiesHasBeenBlocked = true,
-        )
-        val content = TrackerLog(
-            url = "https://content.example",
-            blockedCategories = listOf(SCRIPTS_AND_SUB_RESOURCES),
-            cookiesHasBeenBlocked = true,
-        )
-        val email = TrackerLog(
-            url = "https://email.example",
-            blockedCategories = listOf(EMAIL),
-        )
-        val cookiesOnly = TrackerLog(
-            url = "https://cookies.example",
-            cookiesHasBeenBlocked = true,
-        )
-        val onlyLoaded = TrackerLog(
-            url = "https://allowed.example",
-            loadedCategories = listOf(SCRIPTS_AND_SUB_RESOURCES),
-        )
+        val fp =
+            TrackerLog(
+                url = "https://fp.example",
+                blockedCategories = listOf(FINGERPRINTING, SCRIPTS_AND_SUB_RESOURCES),
+                cookiesHasBeenBlocked = true,
+            )
+        val cm =
+            TrackerLog(
+                url = "https://cm.example",
+                blockedCategories = listOf(CRYPTOMINING, SCRIPTS_AND_SUB_RESOURCES),
+                cookiesHasBeenBlocked = true,
+            )
+        val social =
+            TrackerLog(
+                url = "https://social.example",
+                blockedCategories = listOf(MOZILLA_SOCIAL),
+                cookiesHasBeenBlocked = true,
+            )
+        val content =
+            TrackerLog(
+                url = "https://content.example",
+                blockedCategories = listOf(SCRIPTS_AND_SUB_RESOURCES),
+                cookiesHasBeenBlocked = true,
+            )
+        val email =
+            TrackerLog(
+                url = "https://email.example",
+                blockedCategories = listOf(EMAIL),
+            )
+        val cookiesOnly =
+            TrackerLog(
+                url = "https://cookies.example",
+                cookiesHasBeenBlocked = true,
+            )
+        val onlyLoaded =
+            TrackerLog(
+                url = "https://allowed.example",
+                loadedCategories = listOf(SCRIPTS_AND_SUB_RESOURCES),
+            )
 
-        buckets.updateIfNeeded(
-            listOf(fp, cm, social, content, email, cookiesOnly, onlyLoaded),
-        )
+        buckets.updateIfNeeded(listOf(fp, cm, social, content, email, cookiesOnly, onlyLoaded))
 
         // Each blocked tracker lands in exactly one bucket — onlyLoaded does not add to the blocked map.
         assertEquals(listOf(fp), buckets.get(FINGERPRINTERS, blocked = true))
@@ -310,8 +325,7 @@ class TrackerBucketsTest {
         assertEquals(listOf(cookiesOnly), buckets.get(CROSS_SITE_TRACKING_COOKIES, blocked = true))
 
         // Summing per-category ensures no double counting across buckets.
-        val perCategorySum = TrackingProtectionCategory.entries
-            .sumOf { buckets.get(it, blocked = true).size }
+        val perCategorySum = TrackingProtectionCategory.entries.sumOf { buckets.get(it, blocked = true).size }
         assertEquals(6, perCategorySum)
     }
 }

@@ -11,6 +11,11 @@ let icons = [
   "chrome://global/skin/icons/delete.svg",
   "chrome://global/skin/icons/defaultFavicon.svg",
 ];
+let itemL10nIds = {
+  default: n => `control-option${n}`,
+  long: n => `control-long-option${n}`,
+  icon: n => `control-option${n}-icon-only`,
+};
 
 export default {
   title: "UI Widgets/Segmented Control",
@@ -22,6 +27,10 @@ export default {
     },
     size: {
       options: ["default", "small"],
+      control: { type: "radio" },
+    },
+    labels: {
+      options: Object.keys(itemL10nIds),
       control: { type: "radio" },
     },
   },
@@ -40,6 +49,9 @@ control-option2-icon-only =
   .aria-label = Delete view
 control-option3-icon-only =
   .aria-label = Favorites view
+control-long-option1 = Option with long label 1
+control-long-option2 = Option with long label 2
+control-long-option3 = Option with long label 3
 `,
   },
 };
@@ -54,6 +66,7 @@ const Template = ({
   size = "default",
   withDeck = false,
   iconsOnly = false,
+  labels = "default",
 }) => html`
   ${withDeck
     ? html`
@@ -71,6 +84,9 @@ const Template = ({
     .wide {
       width: 100%;
     }
+    .narrow {
+      width: 500px;
+    }
   </style>
   <moz-segmented-control
     class=${className}
@@ -82,9 +98,7 @@ const Template = ({
     ${options.map(
       (option, i) => html`
         <moz-segmented-control-item
-          data-l10n-id=${iconsOnly
-            ? `control-option${i + 1}-icon-only`
-            : `control-option${i + 1}`}
+          data-l10n-id=${itemL10nIds[labels](i + 1)}
           data-l10n-attrs=${iconsOnly ? "aria-label" : "label"}
           value=${option}
           size=${size}
@@ -120,6 +134,7 @@ Default.args = {
   size: "default",
   withDeck: false,
   iconsOnly: false,
+  labels: "default",
 };
 
 export const WithIcons = Template.bind({});
@@ -132,6 +147,7 @@ export const IconsOnly = Template.bind({});
 IconsOnly.args = {
   ...Default.args,
   iconsOnly: true,
+  labels: "icon",
 };
 
 export const SmallSize = Template.bind({});
@@ -163,4 +179,11 @@ export const Wide = Template.bind({});
 Wide.args = {
   ...Default.args,
   className: "wide",
+};
+
+export const WithEllipsizedLabel = Template.bind({});
+WithEllipsizedLabel.args = {
+  ...Default.args,
+  className: "narrow",
+  labels: "long",
 };

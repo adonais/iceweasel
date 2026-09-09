@@ -130,7 +130,7 @@ TIntermSymbol *ReferenceGlobalVariable(const ImmutableString &name,
                                        const TSymbolTable &symbolTable);
 
 TIntermSymbol *ReferenceBuiltInVariable(const ImmutableString &name,
-                                        const TSymbolTable &symbolTable,
+                                        TSymbolTable &symbolTable,
                                         int shaderVersion);
 
 TIntermTyped *CreateBuiltInFunctionCallNode(const char *name,
@@ -171,6 +171,11 @@ bool EndsInBranch(TIntermBlock *block);
 
 // Cast a scalar to the basic type of type. No-ops if scalar is already the right type.
 TIntermNode *CastScalar(const TType &type, TIntermTyped *scalar);
+
+// Called on root, moves declarations before function definitions.  Done so that transformations
+// that need to do something with globals and append code for them in main() don't have to deal with
+// declarations after main.
+void MoveDeclarationsBeforeFunctions(TIntermBlock *root);
 
 }  // namespace sh
 

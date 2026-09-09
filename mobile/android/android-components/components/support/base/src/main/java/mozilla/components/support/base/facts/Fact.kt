@@ -23,7 +23,5 @@ data class Fact(
     val metadata: Map<String, Any>? = null,
 )
 
-/**
- * Collect this fact through the [Facts] singleton.
- */
+/** Collect this fact through the [Facts] singleton. */
 fun Fact.collect() = Facts.collect(this)

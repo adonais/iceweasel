@@ -4,6 +4,7 @@
 
 package mozilla.components.service.pocket
 
+import kotlin.reflect.KVisibility
 import mozilla.components.service.pocket.PocketStory.ContentRecommendation
 import mozilla.components.service.pocket.PocketStory.PocketRecommendedStory
 import mozilla.components.service.pocket.PocketStory.PocketSponsoredStory
@@ -12,7 +13,6 @@ import mozilla.components.service.pocket.helpers.assertConstructorsVisibility
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import kotlin.reflect.KVisibility
 
 class PocketStoryTest {
     @Test
@@ -32,15 +32,16 @@ class PocketStoryTest {
 
     @Test
     fun `GIVEN a PocketRecommendedStory WHEN it's title is accessed from parent THEN it returns the previously set value`() {
-        val pocketRecommendedStory = PocketRecommendedStory(
-            title = "testTitle",
-            url = "",
-            imageUrl = "",
-            publisher = "",
-            category = "",
-            timeToRead = 0,
-            timesShown = 0,
-        )
+        val pocketRecommendedStory =
+            PocketRecommendedStory(
+                title = "testTitle",
+                url = "",
+                imageUrl = "",
+                publisher = "",
+                category = "",
+                timeToRead = 0,
+                timesShown = 0,
+            )
 
         val result = (pocketRecommendedStory as PocketStory).title
 
@@ -49,15 +50,16 @@ class PocketStoryTest {
 
     @Test
     fun `GIVEN a PocketRecommendedStory WHEN it's url is accessed from parent THEN it returns the previously set value`() {
-        val pocketRecommendedStory = PocketRecommendedStory(
-            title = "",
-            url = "testUrl",
-            imageUrl = "",
-            publisher = "",
-            category = "",
-            timeToRead = 0,
-            timesShown = 0,
-        )
+        val pocketRecommendedStory =
+            PocketRecommendedStory(
+                title = "",
+                url = "testUrl",
+                imageUrl = "",
+                publisher = "",
+                category = "",
+                timeToRead = 0,
+                timesShown = 0,
+            )
 
         val result = (pocketRecommendedStory as PocketStory).url
 
@@ -66,16 +68,17 @@ class PocketStoryTest {
 
     @Test
     fun `GIVEN a PocketSponsoredStory WHEN it's title is accessed from parent THEN it returns the previously set value`() {
-        val pocketRecommendedStory = PocketSponsoredStory(
-            id = 1,
-            title = "testTitle",
-            url = "",
-            imageUrl = "",
-            sponsor = "",
-            shim = mock(),
-            priority = 11,
-            caps = mock(),
-        )
+        val pocketRecommendedStory =
+            PocketSponsoredStory(
+                id = 1,
+                title = "testTitle",
+                url = "",
+                imageUrl = "",
+                sponsor = "",
+                shim = mock(),
+                priority = 11,
+                caps = mock(),
+            )
 
         val result = (pocketRecommendedStory as PocketStory).title
 
@@ -84,16 +87,17 @@ class PocketStoryTest {
 
     @Test
     fun `GIVEN a PocketSponsoredStory WHEN it's url is accessed from parent THEN it returns the previously set value`() {
-        val pocketRecommendedStory = PocketSponsoredStory(
-            id = 2,
-            title = "",
-            url = "testUrl",
-            imageUrl = "",
-            sponsor = "",
-            shim = mock(),
-            priority = 33,
-            caps = mock(),
-        )
+        val pocketRecommendedStory =
+            PocketSponsoredStory(
+                id = 2,
+                title = "",
+                url = "testUrl",
+                imageUrl = "",
+                sponsor = "",
+                shim = mock(),
+                priority = 33,
+                caps = mock(),
+            )
 
         val result = (pocketRecommendedStory as PocketStory).url
 
@@ -102,21 +106,22 @@ class PocketStoryTest {
 
     @Test
     fun `GIVEN a ContentRecommendation WHEN the title and url are accessed from parent THEN it returns the previously set value`() {
-        val recommendation = ContentRecommendation(
-            corpusItemId = "0",
-            scheduledCorpusItemId = "1",
-            url = "testUrl",
-            title = "",
-            excerpt = "",
-            topic = "",
-            publisher = "",
-            isTimeSensitive = false,
-            imageUrl = "",
-            tileId = 1,
-            receivedRank = 33,
-            recommendedAt = 0,
-            impressions = 0,
-        )
+        val recommendation =
+            ContentRecommendation(
+                corpusItemId = "0",
+                scheduledCorpusItemId = "1",
+                url = "testUrl",
+                title = "",
+                excerpt = "",
+                topic = "",
+                publisher = "",
+                isTimeSensitive = false,
+                imageUrl = "",
+                tileId = 1,
+                receivedRank = 33,
+                recommendedAt = 0,
+                impressions = 0,
+            )
 
         val title = (recommendation as PocketStory).title
         val url = (recommendation as PocketStory).url

@@ -21,6 +21,7 @@ import mozilla.components.service.pocket.PocketStory.PocketRecommendedStory
 import mozilla.components.service.pocket.PocketStory.SponsoredContent
 import mozilla.components.service.pocket.PocketStory.SponsoredContentCallbacks
 import mozilla.components.service.pocket.PocketStory.SponsoredContentFrequencyCaps
+import mozilla.components.ui.icons.R as iconsR
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -53,7 +54,6 @@ import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryGrou
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryHighlight
 import org.mozilla.fenix.messaging.FenixMessageSurfaceId
 import org.mozilla.fenix.onboarding.FenixOnboarding
-import mozilla.components.ui.icons.R as iconsR
 
 @RunWith(AndroidJUnit4::class)
 class AppStoreTest {
@@ -71,28 +71,30 @@ class AppStoreTest {
         accountManager = mockk(relaxed = true)
         onboarding = mockk(relaxed = true)
         browsingModeManager = mockk(relaxed = true)
-        recentSyncedTabsList = listOf(
-            RecentSyncedTab(
-                deviceDisplayName = "",
-                deviceType = mockk(relaxed = true),
-                title = "",
-                url = "",
-                previewImageUrl = null,
-            ),
-        )
+        recentSyncedTabsList =
+            listOf(
+                RecentSyncedTab(
+                    deviceDisplayName = "",
+                    deviceType = mockk(relaxed = true),
+                    title = "",
+                    url = "",
+                    previewImageUrl = null,
+                )
+            )
 
         every { context.components.backgroundServices.accountManager } returns accountManager
         every { onboarding.userHasBeenOnboarded() } returns true
         every { browsingModeManager.mode } returns BrowsingMode.Normal
 
-        appState = AppState(
-            collections = emptyList(),
-            expandedCollections = emptySet(),
-            mode = browsingModeManager.mode,
-            topSites = emptyList(),
-            recentTabs = emptyList(),
-            recentSyncedTabState = RecentSyncedTabState.Success(recentSyncedTabsList),
-        )
+        appState =
+            AppState(
+                collections = emptyList(),
+                expandedCollections = emptySet(),
+                mode = browsingModeManager.mode,
+                topSites = emptyList(),
+                recentTabs = emptyList(),
+                recentSyncedTabState = RecentSyncedTabState.Success(recentSyncedTabsList),
+            )
 
         appStore = AppStore(appState)
     }
@@ -116,15 +118,16 @@ class AppStoreTest {
         runTest {
             assertTrue(appStore.state.messaging.messageToShow.isEmpty())
 
-            val message = Message(
-                "message",
-                MessageData(surface = FenixMessageSurfaceId.HOMESCREEN),
-                "action",
-                mockk(),
-                emptyList(),
-                emptyList(),
-                mockk(),
-            )
+            val message =
+                Message(
+                    "message",
+                    MessageData(surface = FenixMessageSurfaceId.HOMESCREEN),
+                    "action",
+                    mockk(),
+                    emptyList(),
+                    emptyList(),
+                    mockk(),
+                )
             appStore.dispatch(UpdateMessageToShow(message))
 
             assertFalse(appStore.state.messaging.messageToShow.isEmpty())
@@ -158,11 +161,7 @@ class AppStoreTest {
         val group2 = RecentHistoryGroup(title = "title2")
         val group3 = RecentHistoryGroup(title = "title3")
         val highlight = RecentHistoryHighlight(title = group2.title, "")
-        appStore = AppStore(
-            AppState(
-                recentHistory = listOf(group1, group2, group3, highlight),
-            ),
-        )
+        appStore = AppStore(AppState(recentHistory = listOf(group1, group2, group3, highlight)))
         assertEquals(0, appStore.state.recentTabs.size)
 
         // Add 2 RecentTabs to the AppStore
@@ -176,11 +175,7 @@ class AppStoreTest {
 
     @Test
     fun `GIVEN initial state WHEN recent synced tab state is changed THEN state updated`() = runTest {
-        appStore = AppStore(
-            AppState(
-                recentSyncedTabState = RecentSyncedTabState.None,
-            ),
-        )
+        appStore = AppStore(AppState(recentSyncedTabState = RecentSyncedTabState.None))
 
         val loading = RecentSyncedTabState.Loading
         appStore.dispatch(AppAction.RecentSyncedTabStateChange(loading))
@@ -209,9 +204,7 @@ class AppStoreTest {
         val g2 = RecentHistoryGroup(title = "grup two")
         val h1 = RecentHistoryHighlight(title = "highlight One", url = "url1")
         val h2 = RecentHistoryHighlight(title = "highlight two", url = "url2")
-        val recentHistoryState = AppState(
-            recentHistory = listOf(g1, g2, h1, h2),
-        )
+        val recentHistoryState = AppState(recentHistory = listOf(g1, g2, h1, h2))
         appStore = AppStore(recentHistoryState)
 
         appStore.dispatch(AppAction.RemoveRecentHistoryHighlight("invalid"))
@@ -243,9 +236,10 @@ class AppStoreTest {
 
     @Test
     fun `Test changing the expanded collections in AppStore`() = runTest {
-        val collection: TabCollection = mockk<TabCollection>().apply {
-            every { id } returns 0
-        }
+        val collection: TabCollection =
+            mockk<TabCollection>().apply {
+                every { id } returns 0
+            }
 
         // Expand the given collection.
         appStore.dispatch(AppAction.CollectionsChange(listOf(collection)))
@@ -279,13 +273,14 @@ class AppStoreTest {
             val group3 = RecentHistoryGroup(title = "test two")
             val highlight = RecentHistoryHighlight(group2.title, "")
             val recentHistory: List<RecentlyVisitedItem> = listOf(group1, group2, group3, highlight)
-            val recentSyncedTab = RecentSyncedTab(
-                deviceDisplayName = "device1",
-                deviceType = mockk(relaxed = true),
-                title = "1",
-                url = "",
-                previewImageUrl = null,
-            )
+            val recentSyncedTab =
+                RecentSyncedTab(
+                    deviceDisplayName = "device1",
+                    deviceType = mockk(relaxed = true),
+                    title = "1",
+                    url = "",
+                    previewImageUrl = null,
+                )
             val recentSyncedTabState: RecentSyncedTabState =
                 RecentSyncedTabState.Success(recentSyncedTabsList + recentSyncedTab)
 
@@ -298,7 +293,7 @@ class AppStoreTest {
                     bookmarks = bookmarks,
                     recentHistory = recentHistory,
                     recentSyncedTabState = recentSyncedTabState,
-                ),
+                )
             )
 
             assertEquals(collections, appStore.state.collections)
@@ -318,41 +313,50 @@ class AppStoreTest {
         val otherCategoryName = "other"
         val anotherCategoryName = "another"
 
-        val storyInOtherCategory = mockk<PocketRecommendedStory>(name = "storyInOther").apply {
-            every { title } returns "story_other"
-            every { timesShown } returns 0
-        }
-        val storyInAnotherCategory = mockk<PocketRecommendedStory>(name = "storyInAnother").apply {
-            every { title } returns "story_another"
-            every { timesShown } returns 0
-        }
+        val storyInOtherCategory =
+            mockk<PocketRecommendedStory>(name = "storyInOther").apply {
+                every { title } returns "story_other"
+                every { timesShown } returns 0
+            }
+        val storyInAnotherCategory =
+            mockk<PocketRecommendedStory>(name = "storyInAnother").apply {
+                every { title } returns "story_another"
+                every { timesShown } returns 0
+            }
 
-        val otherStoriesCategory = PocketRecommendedStoriesCategory(
-            name = otherCategoryName,
-            stories = listOf(storyInOtherCategory),
-        )
-        val anotherStoriesCategory = PocketRecommendedStoriesCategory(
-            name = anotherCategoryName,
-            stories = listOf(storyInAnotherCategory),
-        )
+        val otherStoriesCategory =
+            PocketRecommendedStoriesCategory(
+                name = otherCategoryName,
+                stories = listOf(storyInOtherCategory),
+            )
+        val anotherStoriesCategory =
+            PocketRecommendedStoriesCategory(
+                name = anotherCategoryName,
+                stories = listOf(storyInAnotherCategory),
+            )
 
-        appStore = AppStore(
-            AppState(
-                recommendationState = ContentRecommendationsState(
-                    pocketStoriesCategories = listOf(otherStoriesCategory, anotherStoriesCategory),
-                    pocketStoriesCategoriesSelections = listOf(
-                        PocketRecommendedStoriesSelectedCategory(otherStoriesCategory.name),
-                    ),
-                ),
-            ),
-        )
+        appStore =
+            AppStore(
+                AppState(
+                    recommendationState =
+                        ContentRecommendationsState(
+                            pocketStoriesCategories = listOf(otherStoriesCategory, anotherStoriesCategory),
+                            pocketStoriesCategoriesSelections =
+                                listOf(PocketRecommendedStoriesSelectedCategory(otherStoriesCategory.name)),
+                        )
+                )
+            )
 
         appStore.dispatch(ContentRecommendationsAction.SelectPocketStoriesCategory(anotherCategoryName))
 
         val selectedCategoriesState = appStore.state.recommendationState.pocketStoriesCategoriesSelections
         assertEquals("Two categories should now be selected", 2, selectedCategoriesState.size)
         assertEquals("The 'other' category should remain selected", otherCategoryName, selectedCategoriesState[0].name)
-        assertEquals("The 'another' category should also be now selected", anotherCategoryName, selectedCategoriesState[1].name)
+        assertEquals(
+            "The 'another' category should also be now selected",
+            anotherCategoryName,
+            selectedCategoriesState[1].name,
+        )
 
         // using set to compare the stories because the order in list is not deterministic.
         val expectedPocketStories = listOf(storyInOtherCategory, storyInAnotherCategory).toSet()
@@ -369,43 +373,54 @@ class AppStoreTest {
         val otherCategoryName = "other"
         val anotherCategoryName = "another"
 
-        val storyInOtherCategory = mockk<PocketRecommendedStory>(name = "storyInOther").apply {
-            every { title } returns "story_other"
-            every { timesShown } returns 0
-        }
-        val storyInAnotherCategory = mockk<PocketRecommendedStory>(name = "storyInAnother").apply {
-            every { title } returns "story_another"
-            every { timesShown } returns 0
-        }
+        val storyInOtherCategory =
+            mockk<PocketRecommendedStory>(name = "storyInOther").apply {
+                every { title } returns "story_other"
+                every { timesShown } returns 0
+            }
+        val storyInAnotherCategory =
+            mockk<PocketRecommendedStory>(name = "storyInAnother").apply {
+                every { title } returns "story_another"
+                every { timesShown } returns 0
+            }
 
-        val otherStoriesCategory = PocketRecommendedStoriesCategory(
-            name = otherCategoryName,
-            stories = listOf(storyInOtherCategory),
-        )
-        val anotherStoriesCategory = PocketRecommendedStoriesCategory(
-            name = anotherCategoryName,
-            stories = listOf(storyInAnotherCategory),
-        )
+        val otherStoriesCategory =
+            PocketRecommendedStoriesCategory(
+                name = otherCategoryName,
+                stories = listOf(storyInOtherCategory),
+            )
+        val anotherStoriesCategory =
+            PocketRecommendedStoriesCategory(
+                name = anotherCategoryName,
+                stories = listOf(storyInAnotherCategory),
+            )
 
         val expectedPocketStories = listOf(storyInAnotherCategory)
 
-        appStore = AppStore(
-            AppState(
-                recommendationState = ContentRecommendationsState(
-                    pocketStoriesCategories = listOf(otherStoriesCategory, anotherStoriesCategory),
-                    pocketStoriesCategoriesSelections = listOf(
-                        PocketRecommendedStoriesSelectedCategory(otherStoriesCategory.name),
-                        PocketRecommendedStoriesSelectedCategory(anotherStoriesCategory.name),
-                    ),
-                ),
-            ),
-        )
+        appStore =
+            AppStore(
+                AppState(
+                    recommendationState =
+                        ContentRecommendationsState(
+                            pocketStoriesCategories = listOf(otherStoriesCategory, anotherStoriesCategory),
+                            pocketStoriesCategoriesSelections =
+                                listOf(
+                                    PocketRecommendedStoriesSelectedCategory(otherStoriesCategory.name),
+                                    PocketRecommendedStoriesSelectedCategory(anotherStoriesCategory.name),
+                                ),
+                        )
+                )
+            )
 
         appStore.dispatch(ContentRecommendationsAction.DeselectPocketStoriesCategory(otherCategoryName))
 
         val selectedCategoriesState = appStore.state.recommendationState.pocketStoriesCategoriesSelections
         assertEquals("Only one category should remain selected", 1, selectedCategoriesState.size)
-        assertEquals("The 'another' category should be the one remaining selected", anotherCategoryName, selectedCategoriesState[0].name)
+        assertEquals(
+            "The 'another' category should be the one remaining selected",
+            anotherCategoryName,
+            selectedCategoriesState[0].name,
+        )
 
         assertEquals(
             "Pocket stories should match the stories from the 'another' category",
@@ -416,17 +431,19 @@ class AppStoreTest {
 
     @Test
     fun `Test cleaning the list of Pocket stories`() = runTest {
-        appStore = AppStore(
-            AppState(
-                recommendationState = ContentRecommendationsState(
-                    pocketStoriesCategories = listOf(mockk()),
-                    pocketStoriesCategoriesSelections = listOf(mockk()),
-                    pocketStories = listOf(mockk()),
-                    contentRecommendations = listOf(mockk()),
-                    sponsoredContents = listOf(mockk()),
-                ),
-            ),
-        )
+        appStore =
+            AppStore(
+                AppState(
+                    recommendationState =
+                        ContentRecommendationsState(
+                            pocketStoriesCategories = listOf(mockk()),
+                            pocketStoriesCategoriesSelections = listOf(mockk()),
+                            pocketStories = listOf(mockk()),
+                            contentRecommendations = listOf(mockk()),
+                            sponsoredContents = listOf(mockk()),
+                        )
+                )
+            )
 
         appStore.dispatch(ContentRecommendationsAction.PocketStoriesClean)
 
@@ -438,136 +455,145 @@ class AppStoreTest {
     }
 
     @Test
-    fun `GIVEN content recommendations are enabled WHEN updating the list of sponsored contents THEN update the list of stories to show`() = runTest {
-        val baseRecommendation = mockk<ContentRecommendation>(name = "baseRec_277").apply {
-            every { url } returns "http://example.com/rec277"
-            every { title } returns "Base Recommendation Title"
-            every { corpusItemId } returns "corpusId_277"
-            every { scheduledCorpusItemId } returns "scheduledId_277"
-            every { excerpt } returns "This is a base recommendation excerpt."
-            every { topic } returns "Sample Topic"
-            every { publisher } returns "Test Publisher"
-            every { isTimeSensitive } returns false
-            every { imageUrl } returns "http://example.com/image_rec277.jpg"
-            every { tileId } returns 277L
-            every { receivedRank } returns 1
-            every { recommendedAt } returns System.currentTimeMillis() / 1000
-            every { impressions } returns 0L
+    fun `GIVEN content recommendations are enabled WHEN updating the list of sponsored contents THEN update the list of stories to show`() =
+        runTest {
+            val baseRecommendation =
+                mockk<ContentRecommendation>(name = "baseRec_277").apply {
+                    every { url } returns "http://example.com/rec277"
+                    every { title } returns "Base Recommendation Title"
+                    every { corpusItemId } returns "corpusId_277"
+                    every { scheduledCorpusItemId } returns "scheduledId_277"
+                    every { excerpt } returns "This is a base recommendation excerpt."
+                    every { topic } returns "Sample Topic"
+                    every { publisher } returns "Test Publisher"
+                    every { isTimeSensitive } returns false
+                    every { imageUrl } returns "http://example.com/image_rec277.jpg"
+                    every { tileId } returns 277L
+                    every { receivedRank } returns 1
+                    every { recommendedAt } returns System.currentTimeMillis() / 1000
+                    every { impressions } returns 0L
+                }
+
+            val sponsoredContentCallbacks =
+                SponsoredContentCallbacks(
+                    clickUrl = "https://firefox.com/click",
+                    impressionUrl = "https://firefox.com/impression",
+                )
+            // Configure caps to make the content item filtered out
+            val sponsoredContentFrequencyCapsFilterOut =
+                SponsoredContentFrequencyCaps(
+                    currentImpressions = listOf(System.currentTimeMillis() / 1000), // Has one recent impression
+                    flightCount = 1, // Allowed only 1 impression in the period
+                    flightPeriod = 86400, // e.g., 1 day
+                )
+
+            val sponsoredContent1 =
+                SponsoredContent(
+                    url = "https://firefox.com",
+                    title = "Firefox",
+                    callbacks = sponsoredContentCallbacks,
+                    imageUrl = "https://test.com/image1.jpg",
+                    domain = "firefox.com",
+                    excerpt = "Mozilla Firefox",
+                    sponsor = "Mozilla",
+                    blockKey = "sponsoredBlockKey1",
+                    caps = sponsoredContentFrequencyCapsFilterOut,
+                    priority = 3,
+                )
+
+            val sponsoredContent2 =
+                sponsoredContent1.copy(
+                    url = "https://firefox.com/2",
+                    blockKey = "sponsoredBlockKey2",
+                )
+
+            appStore =
+                AppStore(
+                    AppState(
+                        recommendationState =
+                            ContentRecommendationsState(contentRecommendations = listOf(baseRecommendation))
+                    )
+                )
+
+            var currentSponsoredContentsToShow = listOf(sponsoredContent1, sponsoredContent2)
+
+            appStore.dispatch(
+                ContentRecommendationsAction.SponsoredContentsChange(sponsoredContents = currentSponsoredContentsToShow)
+            )
+
+            assertEquals(currentSponsoredContentsToShow, appStore.state.recommendationState.sponsoredContents)
+            assertEquals(
+                "After first dispatch, pocketStories should only contain the base recommendation",
+                listOf<PocketStory>(baseRecommendation),
+                appStore.state.recommendationState.pocketStories,
+            )
+
+            currentSponsoredContentsToShow = listOf(sponsoredContent1)
+
+            appStore.dispatch(
+                ContentRecommendationsAction.SponsoredContentsChange(sponsoredContents = currentSponsoredContentsToShow)
+            )
+
+            assertEquals(currentSponsoredContentsToShow, appStore.state.recommendationState.sponsoredContents)
+            assertEquals(
+                "After second dispatch, pocketStories should still only contain the base recommendation",
+                listOf<PocketStory>(baseRecommendation),
+                appStore.state.recommendationState.pocketStories,
+            )
         }
-
-        val sponsoredContentCallbacks = SponsoredContentCallbacks(
-            clickUrl = "https://firefox.com/click",
-            impressionUrl = "https://firefox.com/impression",
-        )
-        // Configure caps to make the content item filtered out
-        val sponsoredContentFrequencyCapsFilterOut = SponsoredContentFrequencyCaps(
-            currentImpressions = listOf(System.currentTimeMillis() / 1000), // Has one recent impression
-            flightCount = 1, // Allowed only 1 impression in the period
-            flightPeriod = 86400, // e.g., 1 day
-        )
-
-        val sponsoredContent1 = SponsoredContent(
-            url = "https://firefox.com",
-            title = "Firefox",
-            callbacks = sponsoredContentCallbacks,
-            imageUrl = "https://test.com/image1.jpg",
-            domain = "firefox.com",
-            excerpt = "Mozilla Firefox",
-            sponsor = "Mozilla",
-            blockKey = "sponsoredBlockKey1",
-            caps = sponsoredContentFrequencyCapsFilterOut,
-            priority = 3,
-        )
-
-        val sponsoredContent2 = sponsoredContent1.copy(
-            url = "https://firefox.com/2",
-            blockKey = "sponsoredBlockKey2",
-        )
-
-        appStore = AppStore(
-            AppState(
-                recommendationState = ContentRecommendationsState(
-                    contentRecommendations = listOf(baseRecommendation),
-                ),
-            ),
-        )
-
-        var currentSponsoredContentsToShow = listOf(sponsoredContent1, sponsoredContent2)
-
-        appStore.dispatch(
-            ContentRecommendationsAction.SponsoredContentsChange(
-                sponsoredContents = currentSponsoredContentsToShow,
-            ),
-        )
-
-        assertEquals(currentSponsoredContentsToShow, appStore.state.recommendationState.sponsoredContents)
-        assertEquals(
-            "After first dispatch, pocketStories should only contain the base recommendation",
-            listOf<PocketStory>(baseRecommendation),
-            appStore.state.recommendationState.pocketStories,
-        )
-
-        currentSponsoredContentsToShow = listOf(sponsoredContent1)
-
-        appStore.dispatch(
-            ContentRecommendationsAction.SponsoredContentsChange(
-                sponsoredContents = currentSponsoredContentsToShow,
-            ),
-        )
-
-        assertEquals(currentSponsoredContentsToShow, appStore.state.recommendationState.sponsoredContents)
-        assertEquals(
-            "After second dispatch, pocketStories should still only contain the base recommendation",
-            listOf<PocketStory>(baseRecommendation),
-            appStore.state.recommendationState.pocketStories,
-        )
-    }
 
     @Test
     fun `WHEN sponsored contents are shown THEN update the impressions of sponsored contents`() = runTest {
-        val sponsoredContent = SponsoredContent(
-            url = "https://firefox.com",
-            title = "Firefox",
-            callbacks = SponsoredContentCallbacks(
-                clickUrl = "https://firefox.com/click",
-                impressionUrl = "https://firefox.com/impression",
-            ),
-            imageUrl = "https://test.com/image1.jpg",
-            domain = "firefox.com",
-            excerpt = "Mozilla Firefox",
-            sponsor = "Mozilla",
-            blockKey = "1",
-            caps = SponsoredContentFrequencyCaps(
-                currentImpressions = listOf(1, 2),
-                flightCount = 10,
-                flightPeriod = 86400,
-            ),
-            priority = 3,
-        )
+        val sponsoredContent =
+            SponsoredContent(
+                url = "https://firefox.com",
+                title = "Firefox",
+                callbacks =
+                    SponsoredContentCallbacks(
+                        clickUrl = "https://firefox.com/click",
+                        impressionUrl = "https://firefox.com/impression",
+                    ),
+                imageUrl = "https://test.com/image1.jpg",
+                domain = "firefox.com",
+                excerpt = "Mozilla Firefox",
+                sponsor = "Mozilla",
+                blockKey = "1",
+                caps =
+                    SponsoredContentFrequencyCaps(
+                        currentImpressions = listOf(1, 2),
+                        flightCount = 10,
+                        flightPeriod = 86400,
+                    ),
+                priority = 3,
+            )
         val sponsoredContent2 = sponsoredContent.copy(url = "https://firefox.com/2")
         val sponsoredContent3 = sponsoredContent.copy(url = "https://firefox.com/3")
         val sponsoredContent4 = sponsoredContent.copy(url = "https://firefox.com/4")
-        appStore = AppStore(
-            AppState(
-                recommendationState = ContentRecommendationsState(
-                    sponsoredContents = listOf(
-                        sponsoredContent,
-                        sponsoredContent2,
-                        sponsoredContent3,
-                        sponsoredContent4,
-                    ),
-                ),
-            ),
-        )
+        appStore =
+            AppStore(
+                AppState(
+                    recommendationState =
+                        ContentRecommendationsState(
+                            sponsoredContents =
+                                listOf(
+                                    sponsoredContent,
+                                    sponsoredContent2,
+                                    sponsoredContent3,
+                                    sponsoredContent4,
+                                )
+                        )
+                )
+            )
 
         appStore.dispatch(
             ContentRecommendationsAction.PocketStoriesShown(
-                impressions = listOf(
-                    PocketImpression(story = sponsoredContent, position = 0),
-                    PocketImpression(story = sponsoredContent3, position = 2),
-                ),
+                impressions =
+                    listOf(
+                        PocketImpression(story = sponsoredContent, position = 0),
+                        PocketImpression(story = sponsoredContent3, position = 2),
+                    ),
                 source = StoriesImpressionSource.HOMEPAGE,
-            ),
+            )
         )
 
         assertEquals(4, appStore.state.recommendationState.sponsoredContents.size)
@@ -579,37 +605,41 @@ class AppStoreTest {
 
     @Test
     fun `WHEN content recommendations are shown THEN update the impressions of recommendations`() = runTest {
-        val recommendation1 = ContentRecommendation(
-            corpusItemId = "0",
-            scheduledCorpusItemId = "1",
-            url = "testUrl",
-            title = "",
-            excerpt = "",
-            topic = "",
-            publisher = "",
-            isTimeSensitive = false,
-            imageUrl = "",
-            tileId = 1,
-            receivedRank = 33,
-            recommendedAt = 1L,
-            impressions = 0,
-        )
+        val recommendation1 =
+            ContentRecommendation(
+                corpusItemId = "0",
+                scheduledCorpusItemId = "1",
+                url = "testUrl",
+                title = "",
+                excerpt = "",
+                topic = "",
+                publisher = "",
+                isTimeSensitive = false,
+                imageUrl = "",
+                tileId = 1,
+                receivedRank = 33,
+                recommendedAt = 1L,
+                impressions = 0,
+            )
         val recommendation2 = recommendation1.copy(scheduledCorpusItemId = "2")
         val recommendation3 = recommendation1.copy(scheduledCorpusItemId = "3")
         val recommendation4 = recommendation1.copy(scheduledCorpusItemId = "4")
 
-        appStore = AppStore(
-            AppState(
-                recommendationState = ContentRecommendationsState(
-                    contentRecommendations = listOf(
-                        recommendation1,
-                        recommendation2,
-                        recommendation3,
-                        recommendation4,
-                    ),
-                ),
-            ),
-        )
+        appStore =
+            AppStore(
+                AppState(
+                    recommendationState =
+                        ContentRecommendationsState(
+                            contentRecommendations =
+                                listOf(
+                                    recommendation1,
+                                    recommendation2,
+                                    recommendation3,
+                                    recommendation4,
+                                )
+                        )
+                )
+            )
 
         appStore.dispatch(
             ContentRecommendationsAction.PocketStoriesShown(
@@ -618,7 +648,7 @@ class AppStoreTest {
                     PocketImpression(story = recommendation3, position = 2),
                 ),
                 source = StoriesImpressionSource.HOMEPAGE,
-            ),
+            )
         )
 
         assertEquals(4, appStore.state.recommendationState.contentRecommendations.size)
@@ -630,38 +660,37 @@ class AppStoreTest {
 
     @Test
     fun `Test updating the list of Pocket recommendations categories`() = runTest {
-        val storyForDefaultCategory = mockk<PocketRecommendedStory>(name = "storyForDefaultCategory").apply {
-            every { timesShown } returns 0
-        }
-        val storyForYetAnotherCategory = mockk<PocketRecommendedStory>(name = "storyForYetAnotherCategory").apply {
-            every { timesShown } returns 0
-        }
+        val storyForDefaultCategory =
+            mockk<PocketRecommendedStory>(name = "storyForDefaultCategory").apply {
+                every { timesShown } returns 0
+            }
+        val storyForYetAnotherCategory =
+            mockk<PocketRecommendedStory>(name = "storyForYetAnotherCategory").apply {
+                every { timesShown } returns 0
+            }
 
-        val defaultPocketCategoryWithStory = PocketRecommendedStoriesCategory(
-            name = POCKET_STORIES_DEFAULT_CATEGORY_NAME,
-            stories = listOf(storyForDefaultCategory),
-        )
+        val defaultPocketCategoryWithStory =
+            PocketRecommendedStoriesCategory(
+                name = POCKET_STORIES_DEFAULT_CATEGORY_NAME,
+                stories = listOf(storyForDefaultCategory),
+            )
 
-        val anotherPocketCategory = PocketRecommendedStoriesCategory(
-            name = "anotherRandomCategoryName",
-            stories = emptyList(),
-        )
+        val anotherPocketCategory =
+            PocketRecommendedStoriesCategory(
+                name = "anotherRandomCategoryName",
+                stories = emptyList(),
+            )
 
-        val yetAnotherPocketCategory = PocketRecommendedStoriesCategory(
-            name = "yetAnotherUpdatedCategoryName",
-            stories = listOf(storyForYetAnotherCategory),
-        )
+        val yetAnotherPocketCategory =
+            PocketRecommendedStoriesCategory(
+                name = "yetAnotherUpdatedCategoryName",
+                stories = listOf(storyForYetAnotherCategory),
+            )
 
-        appStore = AppStore(
-            AppState(
-                recommendationState = ContentRecommendationsState(),
-            ),
-        )
+        appStore = AppStore(AppState(recommendationState = ContentRecommendationsState()))
 
         val categoriesForFirstDispatch = listOf(defaultPocketCategoryWithStory, anotherPocketCategory)
-        appStore.dispatch(
-            ContentRecommendationsAction.PocketStoriesCategoriesChange(categoriesForFirstDispatch),
-        )
+        appStore.dispatch(ContentRecommendationsAction.PocketStoriesCategoriesChange(categoriesForFirstDispatch))
 
         assertTrue(
             "Available categories should contain the dispatched categories",
@@ -680,9 +709,7 @@ class AppStoreTest {
         )
 
         val categoriesForSecondDispatch = listOf(yetAnotherPocketCategory)
-        appStore.dispatch(
-            ContentRecommendationsAction.PocketStoriesCategoriesChange(categoriesForSecondDispatch),
-        )
+        appStore.dispatch(ContentRecommendationsAction.PocketStoriesCategoriesChange(categoriesForSecondDispatch))
 
         assertTrue(
             "Available categories should contain the newly dispatched categories",
@@ -712,20 +739,16 @@ class AppStoreTest {
             ContentRecommendationsAction.PocketStoriesCategoriesSelectionsChange(
                 storiesCategories = listOf(otherStoriesCategory, anotherStoriesCategory),
                 categoriesSelected = listOf(selectedCategory),
-            ),
+            )
         )
 
         assertTrue(
             appStore.state.recommendationState.pocketStoriesCategories.containsAll(
-                listOf(otherStoriesCategory, anotherStoriesCategory),
-            ),
+                listOf(otherStoriesCategory, anotherStoriesCategory)
+            )
         )
         assertTrue(
-            appStore.state.recommendationState.pocketStoriesCategoriesSelections.containsAll(
-                listOf(
-                    selectedCategory,
-                ),
-            ),
+            appStore.state.recommendationState.pocketStoriesCategoriesSelections.containsAll(listOf(selectedCategory))
         )
     }
 
@@ -747,24 +770,19 @@ class AppStoreTest {
     }
 
     @Test
-    fun `WHEN content recommendations are fetched THEN update the list of content recommendations and pocket stories`() = runTest {
-        val recommendations = listOf(mockk<ContentRecommendation>())
+    fun `WHEN content recommendations are fetched THEN update the list of content recommendations and pocket stories`() =
+        runTest {
+            val recommendations = listOf(mockk<ContentRecommendation>())
 
-        appStore = AppStore(
-            AppState(
-                recommendationState = ContentRecommendationsState(),
-            ),
-        )
+            appStore = AppStore(AppState(recommendationState = ContentRecommendationsState()))
 
-        appStore.dispatch(
-            ContentRecommendationsAction.ContentRecommendationsFetched(
-                recommendations = recommendations,
-            ),
-        )
+            appStore.dispatch(
+                ContentRecommendationsAction.ContentRecommendationsFetched(recommendations = recommendations)
+            )
 
-        assertEquals(recommendations, appStore.state.recommendationState.contentRecommendations)
-        assertEquals(recommendations, appStore.state.recommendationState.pocketStories)
-    }
+            assertEquals(recommendations, appStore.state.recommendationState.contentRecommendations)
+            assertEquals(recommendations, appStore.state.recommendationState.pocketStories)
+        }
 
     @Test
     fun `WHEN init action is dispatched THEN the setup checklist state remains the same`() {
@@ -786,39 +804,46 @@ class AppStoreTest {
 
     @Test
     fun `WHEN a group item is clicked action is dispatched THEN the group's expanded state is updated`() {
-        val expandedGroup = ChecklistItem.Group(
-            title = R.string.setup_checklist_group_essentials,
-            tasks = listOf(
-                ChecklistItem.Task(
-                    type = ChecklistItem.Task.Type.SET_AS_DEFAULT,
-                    title = R.string.setup_checklist_task_default_browser,
-                    icon = iconsR.drawable.mozac_ic_extension_24,
-                    isCompleted = false,
-                ),
-            ),
-            isExpanded = true,
-        )
-        val collapsedGroup = ChecklistItem.Group(
-            title = R.string.setup_checklist_group_essentials,
-            tasks = listOf(
-                ChecklistItem.Task(
-                    type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
-                    title = R.string.setup_checklist_task_search_widget_2,
-                    icon = iconsR.drawable.mozac_ic_extension_24,
-                    isCompleted = false,
-                ),
-            ),
-            isExpanded = false,
-        )
+        val expandedGroup =
+            ChecklistItem.Group(
+                title = R.string.setup_checklist_group_essentials,
+                tasks =
+                    listOf(
+                        ChecklistItem.Task(
+                            type = ChecklistItem.Task.Type.SET_AS_DEFAULT,
+                            title = R.string.setup_checklist_task_default_browser,
+                            icon = iconsR.drawable.mozac_ic_extension_24,
+                            isCompleted = false,
+                        )
+                    ),
+                isExpanded = true,
+            )
+        val collapsedGroup =
+            ChecklistItem.Group(
+                title = R.string.setup_checklist_group_essentials,
+                tasks =
+                    listOf(
+                        ChecklistItem.Task(
+                            type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
+                            title = R.string.setup_checklist_task_search_widget_2,
+                            icon = iconsR.drawable.mozac_ic_extension_24,
+                            isCompleted = false,
+                        )
+                    ),
+                isExpanded = false,
+            )
 
-        val appState = AppState(
-            setupChecklistState = SetupChecklistState(
-                checklistItems = listOf(
-                    expandedGroup,
-                    collapsedGroup,
-                ),
-            ),
-        )
+        val appState =
+            AppState(
+                setupChecklistState =
+                    SetupChecklistState(
+                        checklistItems =
+                            listOf(
+                                expandedGroup,
+                                collapsedGroup,
+                            )
+                    )
+            )
         val store = AppStore(appState)
 
         // Verify that the expanded group is expanded, and the other one is not
@@ -834,15 +859,15 @@ class AppStoreTest {
 
     @Test
     fun `WHEN a task item is clicked action is dispatched THEN the task's completed state is not updated`() {
-        val task = ChecklistItem.Task(
-            type = ChecklistItem.Task.Type.EXPLORE_EXTENSION,
-            title = R.string.setup_checklist_task_default_browser,
-            icon = iconsR.drawable.mozac_ic_extension_24,
-            isCompleted = false,
-        )
+        val task =
+            ChecklistItem.Task(
+                type = ChecklistItem.Task.Type.EXPLORE_EXTENSION,
+                title = R.string.setup_checklist_task_default_browser,
+                icon = iconsR.drawable.mozac_ic_extension_24,
+                isCompleted = false,
+            )
 
-        val appState =
-            AppState(setupChecklistState = SetupChecklistState(checklistItems = listOf(task)))
+        val appState = AppState(setupChecklistState = SetupChecklistState(checklistItems = listOf(task)))
         val store = AppStore(appState)
         store.dispatch(AppAction.SetupChecklistAction.ChecklistItemClicked(task))
 
@@ -851,15 +876,15 @@ class AppStoreTest {
 
     @Test
     fun `WHEN a task preference updated action is dispatched THEN the task's completed state is updated`() {
-        val task = ChecklistItem.Task(
-            type = ChecklistItem.Task.Type.EXPLORE_EXTENSION,
-            title = R.string.setup_checklist_task_default_browser,
-            icon = iconsR.drawable.mozac_ic_extension_24,
-            isCompleted = false,
-        )
+        val task =
+            ChecklistItem.Task(
+                type = ChecklistItem.Task.Type.EXPLORE_EXTENSION,
+                title = R.string.setup_checklist_task_default_browser,
+                icon = iconsR.drawable.mozac_ic_extension_24,
+                isCompleted = false,
+            )
 
-        val appState =
-            AppState(setupChecklistState = SetupChecklistState(checklistItems = listOf(task)))
+        val appState = AppState(setupChecklistState = SetupChecklistState(checklistItems = listOf(task)))
         val store = AppStore(appState)
         store.dispatch(AppAction.SetupChecklistAction.TaskPreferenceUpdated(task.type, true))
 
@@ -872,26 +897,28 @@ class AppStoreTest {
 
     @Test
     fun `WHEN a groups task preference is updated THEN only the updated task's completed state is updated`() {
-        val updatedTask = ChecklistItem.Task(
-            type = ChecklistItem.Task.Type.SET_AS_DEFAULT,
-            title = R.string.setup_checklist_task_default_browser,
-            icon = iconsR.drawable.mozac_ic_extension_24,
-            isCompleted = false,
-        )
-        val nonUpdatedTask = ChecklistItem.Task(
-            type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
-            title = R.string.setup_checklist_task_search_widget_2,
-            icon = iconsR.drawable.mozac_ic_extension_24,
-            isCompleted = false,
-        )
-        val group = ChecklistItem.Group(
-            title = R.string.setup_checklist_group_essentials,
-            tasks = listOf(updatedTask, nonUpdatedTask),
-            isExpanded = true,
-        )
+        val updatedTask =
+            ChecklistItem.Task(
+                type = ChecklistItem.Task.Type.SET_AS_DEFAULT,
+                title = R.string.setup_checklist_task_default_browser,
+                icon = iconsR.drawable.mozac_ic_extension_24,
+                isCompleted = false,
+            )
+        val nonUpdatedTask =
+            ChecklistItem.Task(
+                type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
+                title = R.string.setup_checklist_task_search_widget_2,
+                icon = iconsR.drawable.mozac_ic_extension_24,
+                isCompleted = false,
+            )
+        val group =
+            ChecklistItem.Group(
+                title = R.string.setup_checklist_group_essentials,
+                tasks = listOf(updatedTask, nonUpdatedTask),
+                isExpanded = true,
+            )
 
-        val appState =
-            AppState(setupChecklistState = SetupChecklistState(checklistItems = listOf(group)))
+        val appState = AppState(setupChecklistState = SetupChecklistState(checklistItems = listOf(group)))
         val store = AppStore(appState)
         store.dispatch(AppAction.SetupChecklistAction.TaskPreferenceUpdated(updatedTask.type, true))
 
@@ -902,7 +929,7 @@ class AppStoreTest {
             AppAction.SetupChecklistAction.TaskPreferenceUpdated(
                 updatedTask.type,
                 false,
-            ),
+            )
         )
 
         assertFalse((store.state.setupChecklistState!!.checklistItems[0] as ChecklistItem.Group).tasks[0].isCompleted)

@@ -84,8 +84,8 @@ class ReverseIterator {
  */
 template <typename Iterator, typename Node, typename PreAction,
           typename PostAction>
-static auto ForEachNode(Node aRoot, const PreAction& aPreAction,
-                        const PostAction& aPostAction)
+auto ForEachNode(Node aRoot, const PreAction& aPreAction,
+                 const PostAction& aPostAction)
     -> std::enable_if_t<
         std::is_same_v<decltype(aPreAction(aRoot)), TraversalFlag> &&
             std::is_same_v<decltype(aPostAction(aRoot)), TraversalFlag>,
@@ -125,8 +125,8 @@ static auto ForEachNode(Node aRoot, const PreAction& aPreAction,
  */
 template <typename Iterator, typename Node, typename PreAction,
           typename PostAction>
-static auto ForEachNode(Node aRoot, const PreAction& aPreAction,
-                        const PostAction& aPostAction)
+auto ForEachNode(Node aRoot, const PreAction& aPreAction,
+                 const PostAction& aPostAction)
     -> std::enable_if_t<std::is_same_v<decltype(aPreAction(aRoot)), void> &&
                             std::is_same_v<decltype(aPostAction(aRoot)), void>,
                         void> {

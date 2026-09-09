@@ -4,44 +4,28 @@
 
 package mozilla.components.feature.prompts.concept
 
-/**
- * A prompt that can be toggled between visible and hidden states.
- */
+/** A prompt that can be toggled between visible and hidden states. */
 interface ToggleablePrompt {
-    /**
-     * Listener for when this prompt is shown or hidden.
-     */
+    /** Listener for when this prompt is shown or hidden. */
     var toggleablePromptListener: Listener?
         get() = null
         set(_) {}
 
-    /**
-     * Whether the prompt is currently visible.
-     */
+    /** Whether the prompt is currently visible. */
     val isPromptDisplayed: Boolean
 
-    /**
-     * Shows this prompt.
-     */
+    /** Shows this prompt. */
     fun showPrompt()
 
-    /**
-     * Hide this prompt.
-     */
+    /** Hide this prompt. */
     fun hidePrompt()
 
-    /**
-     * Listener for when this prompt is shown or hidden.
-     */
+    /** Listener for when this prompt is shown or hidden. */
     interface Listener {
-        /**
-         * Informs when the prompt has changed from hidden to visible.
-         */
+        /** Informs when the prompt has changed from hidden to visible. */
         fun onShown()
 
-        /**
-         * Informs when the prompt has changed from visible to hidden.
-         */
+        /** Informs when the prompt has changed from visible to hidden. */
         fun onHidden()
     }
 }

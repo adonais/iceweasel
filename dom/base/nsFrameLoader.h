@@ -161,9 +161,9 @@ class nsFrameLoader final : public nsStubMutationObserver,
   // After the parent document has been fully cloned, a new frameloader will be
   // created for the cloned iframe, and `FinishStaticClone` will be called on
   // it, which will clone the inner document of the source nsFrameLoader.
-  nsresult FinishStaticClone(nsFrameLoader* aStaticCloneOf,
-                             nsIPrintSettings* aPrintSettings,
-                             bool* aOutHasInProcessPrintCallbacks);
+  MOZ_CAN_RUN_SCRIPT nsresult FinishStaticClone(
+      nsFrameLoader* aStaticCloneOf, nsIPrintSettings* aPrintSettings,
+      bool* aOutHasInProcessPrintCallbacks);
 
   nsresult DoRemoteStaticClone(nsFrameLoader* aStaticCloneOf,
                                nsIPrintSettings* aPrintSettings);
@@ -300,9 +300,9 @@ class nsFrameLoader final : public nsStubMutationObserver,
   // The guts of an nsFrameLoaderOwner::SwapFrameLoader implementation.  A
   // frame loader owner needs to call this, and pass in the two references to
   // nsRefPtrs for frame loaders that need to be swapped.
-  nsresult SwapWithOtherLoader(nsFrameLoader* aOther,
-                               nsFrameLoaderOwner* aThisOwner,
-                               nsFrameLoaderOwner* aOtherOwner);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  SwapWithOtherLoader(nsFrameLoader* aOther, nsFrameLoaderOwner* aThisOwner,
+                      nsFrameLoaderOwner* aOtherOwner);
 
   nsresult SwapWithOtherRemoteLoader(nsFrameLoader* aOther,
                                      nsFrameLoaderOwner* aThisOwner,

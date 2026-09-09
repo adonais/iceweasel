@@ -30,9 +30,10 @@ class BrowserMenuCheckboxTest {
                 onCheckedChange = listener,
             ),
             BrowserMenuCheckbox(
-                "Hello",
-                listener = listener,
-            ).asCandidate(mock()),
+                    "Hello",
+                    listener = listener,
+                )
+                .asCandidate(mock()),
         )
     }
 }

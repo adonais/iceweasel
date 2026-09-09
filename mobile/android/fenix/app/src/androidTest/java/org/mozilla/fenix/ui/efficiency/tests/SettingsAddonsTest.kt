@@ -16,7 +16,8 @@ import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
 
 class SettingsAddonsTest : BaseTest() {
 
-    private val mockWebServer get() = fenixTestRule.mockWebServer
+    private val mockWebServer
+        get() = fenixTestRule.mockWebServer
 
     // Converted from legacy SettingsAddonsTest.verifyUBlockWorksInPrivateModeTest
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/561594
@@ -26,12 +27,11 @@ class SettingsAddonsTest : BaseTest() {
         val addonName = "uBlock Origin"
         val webPage = "https://mozilla-mobile.github.io/testapp/"
 
-        on.settingsAddonsManager.navigateToPage()
-            .installAddon(addonName, allowInPrivateBrowsing = true)
+        on.settingsAddonsManager.navigateToPage().installAddon(addonName, allowInPrivateBrowsing = true)
         on.home.navigateToPage()
-        on.browserPage.navigateToPage(webPage)
-            .verifyPageContent("Lets test!")
-        on.mainMenu.navigateToPage()
+        on.browserPage.navigateToPage(webPage).verifyPageContent("Lets test!")
+        on.mainMenu
+            .navigateToPage()
             .mozClick(MainMenuSelectors.EXTENSIONS_BUTTON_UIAUTOMATOR)
             .mozVerify(MainMenuSelectors.EXTENSIONS_BUTTON_WITH_INSTALLED_EXTENSION(addonName))
     }
@@ -48,18 +48,13 @@ class SettingsAddonsTest : BaseTest() {
         val darkReaderAddon = "Dark Reader"
         val trackingProtectionPage = mockWebServer.enhancedTrackingProtectionAsset
 
-        on.settingsAddonsManager.navigateToPage()
-            .installAddon(uBlockAddon)
-            .installAddon(darkReaderAddon)
+        on.settingsAddonsManager.navigateToPage().installAddon(uBlockAddon).installAddon(darkReaderAddon)
         on.home.navigateToPage()
-        on.browserPage.navigateToPage(trackingProtectionPage.url.toString())
-            .verifyUrl(trackingProtectionPage.url.toString())
-        on.home.navigateToPage()
-            .mozClick(HomeSelectors.TOP_SITE_ITEM("Wikipedia"))
         on.browserPage
-            .mozVerify(BrowserPageSelectors.ENGINE_VIEW)
-            .navigateToPage()
-        on.settings.navigateToPage()
-            .mozVerifyElementsByGroup("settingsView")
+            .navigateToPage(trackingProtectionPage.url.toString())
+            .verifyUrl(trackingProtectionPage.url.toString())
+        on.home.navigateToPage().mozClick(HomeSelectors.TOP_SITE_ITEM("Wikipedia"))
+        on.browserPage.mozVerify(BrowserPageSelectors.ENGINE_VIEW).navigateToPage()
+        on.settings.navigateToPage().mozVerifyElementsByGroup("settingsView")
     }
 }

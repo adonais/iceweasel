@@ -15,8 +15,8 @@ import mozilla.components.concept.menu.candidate.MenuIcon
 import mozilla.components.concept.menu.candidate.TextMenuIcon
 
 /**
- * Helper class to manage a [ConstraintLayout] that can contain menu icon views.
- * Different holder classes are used to swap out the child views.
+ * Helper class to manage a [ConstraintLayout] that can contain menu icon views. Different holder classes are used to
+ * swap out the child views.
  */
 internal class MenuIconAdapter(
     private val parent: ConstraintLayout,
@@ -42,10 +42,11 @@ internal class MenuIconAdapter(
     }
 
     @VisibleForTesting
-    internal fun createViewHolder(item: MenuIcon): MenuIconViewHolder<*> = when (item) {
-        is DrawableMenuIcon -> DrawableMenuIconViewHolder(parent, inflater, side)
-        is DrawableButtonMenuIcon -> DrawableButtonMenuIconViewHolder(parent, inflater, side, dismiss)
-        is AsyncDrawableMenuIcon -> AsyncDrawableMenuIconViewHolder(parent, inflater, side)
-        is TextMenuIcon -> TextMenuIconViewHolder(parent, inflater, side)
-    }
+    internal fun createViewHolder(item: MenuIcon): MenuIconViewHolder<*> =
+        when (item) {
+            is DrawableMenuIcon -> DrawableMenuIconViewHolder(parent, inflater, side)
+            is DrawableButtonMenuIcon -> DrawableButtonMenuIconViewHolder(parent, inflater, side, dismiss)
+            is AsyncDrawableMenuIcon -> AsyncDrawableMenuIconViewHolder(parent, inflater, side)
+            is TextMenuIcon -> TextMenuIconViewHolder(parent, inflater, side)
+        }
 }

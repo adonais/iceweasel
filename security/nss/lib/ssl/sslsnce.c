@@ -113,12 +113,12 @@ struct sidCacheEntryStr {
             /*  4 */ PRInt32 srvNameIndex;
             /* 32 */ PRUint8 srvNameHash[SHA256_LENGTH]; /* SHA256 name hash */
             /*  2 */ PRUint16 namedCurve;
-/*100 */} ssl3;
+        /*100 */ } ssl3;
 
-/* force sizeof(sidCacheEntry) to be a multiple of cache line size */
-struct {
-    /*116 */ PRUint8 filler[116]; /* 92+116==208, a multiple of 16 */
-} forceSize;
+        /* force sizeof(sidCacheEntry) to be a multiple of cache line size */
+        struct {
+            /*116 */ PRUint8 filler[116]; /* 92+116==208, a multiple of 16 */
+        } forceSize;
     } u;
 };
 typedef struct sidCacheEntryStr sidCacheEntry;
@@ -129,7 +129,7 @@ struct certCacheEntryStr {
     PRUint16 sessionIDLength;                /*    2 */
     PRUint8 sessionID[SSL3_SESSIONID_BYTES]; /*   32 */
     PRUint8 cert[SSL_MAX_CACHED_CERT_LEN];   /* 4060 */
-};                                           /* total   4096 */
+}; /* total   4096 */
 typedef struct certCacheEntryStr certCacheEntry;
 
 struct sidCacheLockStr {
@@ -241,8 +241,8 @@ static PRBool isMultiProcess = PR_FALSE;
 #define MAX_SID_CACHE_LOCKS 256
 #endif
 
-#define SID_HOWMANY(val, size) (((val) + ((size)-1)) / (size))
-#define SID_ROUNDUP(val, size) ((size)*SID_HOWMANY((val), (size)))
+#define SID_HOWMANY(val, size) (((val) + ((size) - 1)) / (size))
+#define SID_ROUNDUP(val, size) ((size) * SID_HOWMANY((val), (size)))
 
 static sslPID myPid;
 static PRUint32 ssl_max_sid_cache_locks = MAX_SID_CACHE_LOCKS;
@@ -1551,7 +1551,7 @@ LockPoller(void *arg)
                 }
             }
         } /* end of loop over locks */
-    }     /* end of entire polling loop */
+    } /* end of entire polling loop */
 }
 
 /* Launch thread to poll cache for expired locks */

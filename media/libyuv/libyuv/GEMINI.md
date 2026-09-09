@@ -52,13 +52,15 @@ and compiler compatibility.
     only**.
 2.  **Feature Macros**: Use the `HAS_` macros in `include/libyuv/row.h` to
     enable or disable specific AVX512 versions.
+3.  **MSVC Intrinsics (`row_win.cc`)**: When converting `row_gcc.cc` to `row_win.cc`, use `_mm512_permutex2var_epi8`, not `_mm512_permi2var_epi8` intrinsic.
 
-## Changelist (CL) & Commit Guidelines
+## Changelist (CL) Format Guidelines
 
-When generating descriptions, follow the Chromium/Google standard format. Wrap
+When adding new code, remove trailing spaces.
+When generating descriptions, follow the Chromium standard format. Wrap
 commit message text at 72 characters
 
-### Format Example:
+### Changelist (CL) Description Example
 
 \[libyuv] Optimized ARGBToRGB24 for AVX2
 

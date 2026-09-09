@@ -1,6 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.iconpicker
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -9,13 +14,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.AppIconSelection
 import org.mozilla.fenix.helpers.FenixGleanTestRule
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class AppIconTelemetryMiddlewareTest {
 
-    @get:Rule
-    val gleanRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanRule = FenixGleanTestRule(testContext)
 
     @Test
     fun `GIVEN user action Confirmed WHEN telemetry middleware gets invoked THEN record selection confirmed event`() {
@@ -65,12 +68,14 @@ class AppIconTelemetryMiddlewareTest {
     private fun buildStore(
         currentAppIcon: AppIcon = AppIcon.AppDefault,
         userSelectedAppIcon: AppIcon? = AppIcon.AppRetro2004,
-    ) = AppIconStore(
-        initialState = AppIconState(
-            currentAppIcon = currentAppIcon,
-            userSelectedAppIcon = userSelectedAppIcon,
-            groupedIconOptions = mapOf(),
-        ),
-        middleware = listOf(AppIconTelemetryMiddleware()),
-    )
+    ) =
+        AppIconStore(
+            initialState =
+                AppIconState(
+                    currentAppIcon = currentAppIcon,
+                    userSelectedAppIcon = userSelectedAppIcon,
+                    groupedIconOptions = mapOf(),
+                ),
+            middleware = listOf(AppIconTelemetryMiddleware()),
+        )
 }

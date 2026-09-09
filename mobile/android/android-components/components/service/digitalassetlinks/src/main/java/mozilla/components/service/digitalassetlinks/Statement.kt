@@ -4,22 +4,14 @@
 
 package mozilla.components.service.digitalassetlinks
 
-/**
- * Represents a statement that can be found in an assetlinks.json file.
- */
+/** Represents a statement that can be found in an assetlinks.json file. */
 sealed class StatementResult
 
-/**
- * Entry in a Digital Asset Links statement file.
- */
+/** Entry in a Digital Asset Links statement file. */
 data class Statement(
     val relation: Relation,
     val target: AssetDescriptor,
 ) : StatementResult()
 
-/**
- * Include statements point to another Digital Asset Links statement file.
- */
-data class IncludeStatement(
-    val include: String,
-) : StatementResult()
+/** Include statements point to another Digital Asset Links statement file. */
+data class IncludeStatement(val include: String) : StatementResult()

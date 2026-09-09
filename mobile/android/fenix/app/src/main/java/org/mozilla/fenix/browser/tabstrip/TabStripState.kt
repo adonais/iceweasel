@@ -17,8 +17,7 @@ private const val MAX_TABS_WITH_CLOSE_BUTTON_VISIBLE = 7
  *
  * @property tabs The list of [TabStripItem].
  * @property isPrivateMode Whether or not the browser is in private mode.
- * @property tabCounterMenuItems The list of [TabCounterMenuItem]s to be displayed in the tab
- * counter menu.
+ * @property tabCounterMenuItems The list of [TabCounterMenuItem]s to be displayed in the tab counter menu.
  */
 data class TabStripState(
     val tabs: List<TabStripItem>,
@@ -30,11 +29,12 @@ data class TabStripState(
         get() = tabCounterMenuItems.map { it.toMenuItem() }
 
     companion object {
-        val initial = TabStripState(
-            tabs = emptyList(),
-            isPrivateMode = false,
-            tabCounterMenuItems = emptyList(),
-        )
+        val initial =
+            TabStripState(
+                tabs = emptyList(),
+                isPrivateMode = false,
+                tabCounterMenuItems = emptyList(),
+            )
     }
 }
 
@@ -60,9 +60,9 @@ data class TabStripItem(
 )
 
 /**
- * Converts [BrowserState] to [TabStripState] that contains the information needed to render the
- * tabs strip. [TabStripState.isPrivateMode] is determined by the selected tab's privacy state when
- * [isSelectDisabled] is false. Otherwise, the private mode is determined by [isPossiblyPrivateMode].
+ * Converts [BrowserState] to [TabStripState] that contains the information needed to render the tabs strip.
+ * [TabStripState.isPrivateMode] is determined by the selected tab's privacy state when [isSelectDisabled] is false.
+ * Otherwise, the private mode is determined by [isPossiblyPrivateMode].
  *
  * @param isSelectDisabled When true, the tabs will show as unselected.
  * @param isPossiblyPrivateMode Whether or not the browser is in private mode.
@@ -75,17 +75,18 @@ internal fun BrowserState.toTabStripState(
     addTab: () -> Unit,
     closeTab: (isPrivate: Boolean, numberOfTabs: Int) -> Unit,
 ): TabStripState {
-    val isPrivateMode = if (isSelectDisabled) {
-        isPossiblyPrivateMode
-    } else {
-        selectedTab?.content?.private == true
-    }
+    val isPrivateMode =
+        if (isSelectDisabled) {
+            isPossiblyPrivateMode
+        } else {
+            selectedTab?.content?.private == true
+        }
 
     val tabs = getNormalOrPrivateTabs(private = isPrivateMode)
 
     return TabStripState(
-        tabs = tabs
-            .map {
+        tabs =
+            tabs.map {
                 it.toTabStripItem(
                     isSelectDisabled = isSelectDisabled,
                     selectedTabId = selectedTabId,
@@ -93,13 +94,14 @@ internal fun BrowserState.toTabStripState(
                 )
             },
         isPrivateMode = isPrivateMode,
-        tabCounterMenuItems = mapToMenuItems(
-            isSelectEnabled = !isSelectDisabled,
-            isPrivateMode = isPrivateMode,
-            addTab = addTab,
-            closeTab = closeTab,
-            numberOfTabs = tabs.size,
-        ),
+        tabCounterMenuItems =
+            mapToMenuItems(
+                isSelectEnabled = !isSelectDisabled,
+                isPrivateMode = isPrivateMode,
+                addTab = addTab,
+                closeTab = closeTab,
+                numberOfTabs = tabs.size,
+            ),
     )
 }
 
@@ -116,11 +118,7 @@ private fun mapToMenuItems(
 
     if (isSelectEnabled) {
         add(TabCounterMenuItem.Divider)
-        add(
-            TabCounterMenuItem.IconItem.CloseTab(
-                onClick = { closeTab(isPrivateMode, numberOfTabs) },
-            ),
-        )
+        add(TabCounterMenuItem.IconItem.CloseTab(onClick = { closeTab(isPrivateMode, numberOfTabs) }))
     }
 }
 

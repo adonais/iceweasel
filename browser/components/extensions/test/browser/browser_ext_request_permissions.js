@@ -759,3 +759,84 @@ add_task(
     await SpecialPowers.popPrefEnv();
   }
 );
+
+// Regression test for bug 2068184: in a standalone extension window the tab
+// strip is only collapsed (visibility: collapse), so the permission prompt
+// used to be anchored to an invisible tab, which made it hide itself right
+// away and resolve permissions.request() with false.
+add_task(async function testRequestPermissionsInPopupWindow() {
+  const extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      optional_permissions: ["history"],
+    },
+    background() {
+      browser.test.onMessage.addListener(async msg => {
+        if (msg === "open-popup-window") {
+          await browser.windows.create({ url: "extpage.html", type: "popup" });
+          browser.test.sendMessage("popup-window-opened");
+        }
+      });
+    },
+    files: {
+      "extpage.html": `<!DOCTYPE html><script src="extpage.js"></script>`,
+      "extpage.js"() {
+        browser.test.onMessage.addListener(async msg => {
+          if (msg !== "request-perms") {
+            return;
+          }
+          const granted = await new Promise(resolve => {
+            browser.test.withHandlingUserInput(() => {
+              resolve(
+                browser.permissions.request({ permissions: ["history"] })
+              );
+            });
+          });
+          browser.test.sendMessage("perms-requested", granted);
+        });
+        browser.test.sendMessage("extpage:loaded");
+      },
+    },
+  });
+  await extension.startup();
+
+  const promisePopupWindow = BrowserTestUtils.waitForNewWindow();
+  const openedMessage = extension.awaitMessage("popup-window-opened");
+  extension.sendMessage("open-popup-window");
+  await openedMessage;
+  const popupWindow = await promisePopupWindow;
+  await extension.awaitMessage("extpage:loaded");
+
+  const promisePanel = promisePopupNotificationShown(
+    "addon-webext-permissions",
+    popupWindow
+  );
+  extension.sendMessage("request-perms");
+  const panel = await promisePanel;
+
+  Assert.ok(
+    !popupWindow.PopupNotifications.panel.anchorNode,
+    "Expected the prompt not to be anchored"
+  );
+
+  // An anchored panel could be hidden by nsMenuPopupFrame::CheckForAnchorChange
+  // on the next refresh tick, once its anchor is found to be invisible, so make
+  // sure it's still open after a frame.
+  await new Promise(resolve =>
+    popupWindow.requestAnimationFrame(() =>
+      popupWindow.requestAnimationFrame(resolve)
+    )
+  );
+  Assert.ok(
+    popupWindow.PopupNotifications.isPanelOpen,
+    "Expected the prompt to still be open"
+  );
+
+  panel.button.click();
+  Assert.ok(
+    await extension.awaitMessage("perms-requested"),
+    "Expected permissions.request() to resolve with true"
+  );
+
+  await BrowserTestUtils.closeWindow(popupWindow);
+  await extension.unload();
+});

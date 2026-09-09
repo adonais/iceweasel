@@ -5,7 +5,6 @@
 package mozilla.components.service.sync.autofill
 
 import mozilla.components.concept.storage.CreditCardsAddressesStorage
-import mozilla.components.concept.storage.LoginsStorage
 import mozilla.components.support.test.mock
 import org.junit.After
 import org.junit.Assert.assertEquals

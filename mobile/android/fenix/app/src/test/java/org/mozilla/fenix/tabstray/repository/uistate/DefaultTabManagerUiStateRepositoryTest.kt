@@ -10,6 +10,9 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -17,11 +20,9 @@ import mozilla.components.support.test.robolectric.testContext
 import org.junit.After
 import org.junit.runner.RunWith
 import org.mozilla.fenix.tabstray.repository.uistate.data.PersistedUIState
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
-private val Context.testDataStore: DataStore<Preferences> by preferencesDataStore(name = "TabsTrayUIStateRepositoryTest")
+private val Context.testDataStore: DataStore<Preferences> by
+    preferencesDataStore(name = "TabsTrayUIStateRepositoryTest")
 
 @RunWith(AndroidJUnit4::class)
 class DefaultTabManagerUiStateRepositoryTest {
@@ -34,50 +35,57 @@ class DefaultTabManagerUiStateRepositoryTest {
     @Test
     fun `WHEN the repository has initialized THEN the first emission is the initial persisted UI state`() = runTest {
         val repository = createRepository()
-        val expectedInitialState = PersistedUIState(
-            hasUserDismissedTabGroupOnboarding = false,
-            tabGroupOnboardingImpressionCount = 0,
-            hasUserEverHadOneTabGroup = false,
-        )
+        val expectedInitialState =
+            PersistedUIState(
+                hasUserDismissedTabGroupOnboarding = false,
+                tabGroupOnboardingImpressionCount = 0,
+                hasUserEverHadOneTabGroup = false,
+            )
 
         assertEquals(expectedInitialState, repository.uiState.first())
     }
 
     @Test
-    fun `GIVEN the onboarding was previously dismissed WHEN the repository has initialized THEN the first emission contains this state`() = runTest {
-        val expectedInitialState = PersistedUIState(
-            hasUserDismissedTabGroupOnboarding = true,
-            tabGroupOnboardingImpressionCount = 0,
-            hasUserEverHadOneTabGroup = false,
-        )
-        val repository = createRepository(initialPersistedUIState = expectedInitialState)
+    fun `GIVEN the onboarding was previously dismissed WHEN the repository has initialized THEN the first emission contains this state`() =
+        runTest {
+            val expectedInitialState =
+                PersistedUIState(
+                    hasUserDismissedTabGroupOnboarding = true,
+                    tabGroupOnboardingImpressionCount = 0,
+                    hasUserEverHadOneTabGroup = false,
+                )
+            val repository = createRepository(initialPersistedUIState = expectedInitialState)
 
-        assertEquals(expectedInitialState, repository.uiState.first())
-    }
-
-    @Test
-    fun `GIVEN the user has seen the tab group onboarding 3 times WHEN the repository has initialized THEN the first emission contains this state`() = runTest {
-        val expectedInitialState = PersistedUIState(
-            hasUserDismissedTabGroupOnboarding = true,
-            tabGroupOnboardingImpressionCount = 3,
-            hasUserEverHadOneTabGroup = false,
-        )
-        val repository = createRepository(initialPersistedUIState = expectedInitialState)
-
-        assertEquals(expectedInitialState, repository.uiState.first())
-    }
+            assertEquals(expectedInitialState, repository.uiState.first())
+        }
 
     @Test
-    fun `GIVEN the user has previously had a tab group WHEN the repository has initialized THEN the first emission contains this state`() = runTest {
-        val expectedInitialState = PersistedUIState(
-            hasUserDismissedTabGroupOnboarding = false,
-            tabGroupOnboardingImpressionCount = 0,
-            hasUserEverHadOneTabGroup = true,
-        )
-        val repository = createRepository(initialPersistedUIState = expectedInitialState)
+    fun `GIVEN the user has seen the tab group onboarding 3 times WHEN the repository has initialized THEN the first emission contains this state`() =
+        runTest {
+            val expectedInitialState =
+                PersistedUIState(
+                    hasUserDismissedTabGroupOnboarding = true,
+                    tabGroupOnboardingImpressionCount = 3,
+                    hasUserEverHadOneTabGroup = false,
+                )
+            val repository = createRepository(initialPersistedUIState = expectedInitialState)
 
-        assertEquals(expectedInitialState, repository.uiState.first())
-    }
+            assertEquals(expectedInitialState, repository.uiState.first())
+        }
+
+    @Test
+    fun `GIVEN the user has previously had a tab group WHEN the repository has initialized THEN the first emission contains this state`() =
+        runTest {
+            val expectedInitialState =
+                PersistedUIState(
+                    hasUserDismissedTabGroupOnboarding = false,
+                    tabGroupOnboardingImpressionCount = 0,
+                    hasUserEverHadOneTabGroup = true,
+                )
+            val repository = createRepository(initialPersistedUIState = expectedInitialState)
+
+            assertEquals(expectedInitialState, repository.uiState.first())
+        }
 
     @Test
     fun `WHEN the tab group onboarding is dismissed THEN the dismissal is saved to disk`() = runTest {
@@ -104,12 +112,13 @@ class DefaultTabManagerUiStateRepositoryTest {
     }
 
     @Test
-    fun `GIVEN the user has previously viewed the tab groups page WHEN the repository has initialized THEN the first emission contains this state`() = runTest {
-        val expectedInitialState = PersistedUIState(hasViewedTabGroupsPage = true)
-        val repository = createRepository(initialPersistedUIState = expectedInitialState)
+    fun `GIVEN the user has previously viewed the tab groups page WHEN the repository has initialized THEN the first emission contains this state`() =
+        runTest {
+            val expectedInitialState = PersistedUIState(hasViewedTabGroupsPage = true)
+            val repository = createRepository(initialPersistedUIState = expectedInitialState)
 
-        assertEquals(expectedInitialState, repository.uiState.first())
-    }
+            assertEquals(expectedInitialState, repository.uiState.first())
+        }
 
     @Test
     fun `WHEN the tab groups page is viewed THEN the update is saved to disk`() = runTest {
@@ -120,15 +129,18 @@ class DefaultTabManagerUiStateRepositoryTest {
     }
 
     private suspend fun TestScope.createRepository(
-        initialPersistedUIState: PersistedUIState = PersistedUIState(
-            hasUserDismissedTabGroupOnboarding = false,
-            tabGroupOnboardingImpressionCount = 0,
-            hasUserEverHadOneTabGroup = false,
-        ),
-    ) = DefaultTabManagerUiStateRepository(
-        context = testContext,
-        stateFlowScope = backgroundScope,
-    ).apply {
-        initializeDataStore(initialUiState = initialPersistedUIState)
-    }
+        initialPersistedUIState: PersistedUIState =
+            PersistedUIState(
+                hasUserDismissedTabGroupOnboarding = false,
+                tabGroupOnboardingImpressionCount = 0,
+                hasUserEverHadOneTabGroup = false,
+            )
+    ) =
+        DefaultTabManagerUiStateRepository(
+                context = testContext,
+                stateFlowScope = backgroundScope,
+            )
+            .apply {
+                initializeDataStore(initialUiState = initialPersistedUIState)
+            }
 }

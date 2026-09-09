@@ -24,9 +24,8 @@ import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
 /**
  * A feature that adds pull-to-refresh functionality to a browser session.
  *
- * This feature coordinates between a [SwipeRefreshLayout] and the browser's state,
- * ensuring that the refresh animation is synchronized with the actual loading state
- * of the session.
+ * This feature coordinates between a [SwipeRefreshLayout] and the browser's state, ensuring that the refresh animation
+ * is synchronized with the actual loading state of the session.
  *
  * @property store The [BrowserStore] instance for accessing and observing session state.
  * @property reloadUrlUseCase Use case for triggering a page reload.
@@ -41,9 +40,7 @@ class SwipeRefreshFeature(
     private val onRefreshCallback: (() -> Unit)? = null,
     private val tabId: String? = null,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
-) : LifecycleAwareFeature,
-    SwipeRefreshLayout.OnChildScrollUpCallback,
-    SwipeRefreshLayout.OnRefreshListener {
+) : LifecycleAwareFeature, SwipeRefreshLayout.OnChildScrollUpCallback, SwipeRefreshLayout.OnRefreshListener {
     private var scope: CoroutineScope? = null
 
     init {
@@ -51,29 +48,29 @@ class SwipeRefreshFeature(
         swipeRefreshLayout.setOnChildScrollUpCallback(this)
     }
 
-    /**
-     * Start feature: Starts adding pull to refresh behavior for the active session.
-     */
+    /** Start feature: Starts adding pull to refresh behavior for the active session. */
     override fun start() {
-        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.map { state -> state.findTabOrCustomTabOrSelectedTab(tabId) }
-                .ifAnyChanged {
-                    arrayOf(it?.content?.loading, it?.content?.refreshCanceled)
-                }
-                .collect { tab ->
-                    tab?.let {
-                        if (!tab.content.loading || tab.content.refreshCanceled) {
-                            swipeRefreshLayout.isRefreshing = false
-                            if (tab.content.refreshCanceled) {
-                                // In case the user tries to refresh again
-                                // we need to reset refreshCanceled, to be able to
-                                // get a subsequent event.
-                                store.dispatch(UpdateRefreshCanceledStateAction(tab.id, false))
+        scope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .map { state -> state.findTabOrCustomTabOrSelectedTab(tabId) }
+                    .ifAnyChanged {
+                        arrayOf(it?.content?.loading, it?.content?.refreshCanceled)
+                    }
+                    .collect { tab ->
+                        tab?.let {
+                            if (!tab.content.loading || tab.content.refreshCanceled) {
+                                swipeRefreshLayout.isRefreshing = false
+                                if (tab.content.refreshCanceled) {
+                                    // In case the user tries to refresh again
+                                    // we need to reset refreshCanceled, to be able to
+                                    // get a subsequent event.
+                                    store.dispatch(UpdateRefreshCanceledStateAction(tab.id, false))
+                                }
                             }
                         }
                     }
-                }
-        }
+            }
     }
 
     override fun stop() {
@@ -81,9 +78,9 @@ class SwipeRefreshFeature(
     }
 
     /**
-     * Callback that checks whether it is possible for the child view to scroll up.
-     * If the child view cannot scroll up and the scroll event is not handled by the webpage
-     * it means we need to trigger the pull down to refresh functionality.
+     * Callback that checks whether it is possible for the child view to scroll up. If the child view cannot scroll up
+     * and the scroll event is not handled by the webpage it means we need to trigger the pull down to refresh
+     * functionality.
      */
     @Suppress("Deprecation")
     override fun canChildScrollUp(parent: SwipeRefreshLayout, child: View?) =
@@ -93,9 +90,7 @@ class SwipeRefreshFeature(
             true
         }
 
-    /**
-     * Called when a swipe gesture triggers a refresh.
-     */
+    /** Called when a swipe gesture triggers a refresh. */
     override fun onRefresh() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             swipeRefreshLayout.performHapticFeedback(HapticFeedbackConstants.CONFIRM)

@@ -201,6 +201,11 @@ support-files = [
   "redirect_server.sjs",
 ]
 
+["browser_scriptCache_responseHeaders.js"]
+support-files = [
+  "responseHeaders_server.sjs",
+]
+
 ["browser_sessionStorage_navigation.js"]
 support-files = [
   "file_empty.html",

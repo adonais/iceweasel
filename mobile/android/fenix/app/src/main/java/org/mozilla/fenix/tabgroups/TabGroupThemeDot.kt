@@ -21,16 +21,14 @@ import org.mozilla.fenix.tabstray.data.TabGroupTheme
  * @param theme The theme of the tab group to display.
  */
 @Composable
-fun TabGroupThemeDot(
-    theme: TabGroupTheme,
-) {
+fun TabGroupThemeDot(theme: TabGroupTheme) {
     Box(
-        modifier = Modifier
-            .size(18.dp)
-            .background(
-                color = theme.primary,
-                shape = CircleShape,
-            )
-            .testTag(TabsTrayTestTag.BOTTOM_SHEET_CIRCLE),
+        modifier =
+            Modifier.size(18.dp)
+                .background(
+                    color = theme.primary,
+                    shape = CircleShape,
+                )
+                .testTag(TabsTrayTestTag.BOTTOM_SHEET_CIRCLE)
     )
 }

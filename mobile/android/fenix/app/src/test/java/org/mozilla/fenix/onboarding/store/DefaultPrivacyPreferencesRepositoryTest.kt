@@ -87,11 +87,12 @@ class DefaultPrivacyPreferencesRepositoryTest {
         val settings = Settings(testContext)
         val nimbusSdk = FakeNimbusApi()
         val crashTelemetryService = FakeCrashTelemetryService(settings.isTelemetryEnabled)
-        val repository = DefaultPrivacyPreferencesRepository(
-            settings = settings,
-            nimbusSdk = nimbusSdk,
-            crashReporter = createCrashReporter(listOf(crashTelemetryService)),
-        )
+        val repository =
+            DefaultPrivacyPreferencesRepository(
+                settings = settings,
+                nimbusSdk = nimbusSdk,
+                crashReporter = createCrashReporter(listOf(crashTelemetryService)),
+            )
         assertTrue(settings.isTelemetryEnabled)
         assertTrue(settings.isExperimentationEnabled)
         assertTrue(crashTelemetryService.isTelemetryOn)
@@ -119,26 +120,31 @@ class DefaultPrivacyPreferencesRepositoryTest {
 
 private class FakeNimbusApi : TestNimbusApi(testContext) {
     var isTelemetryIdReset = false
+
     override fun resetTelemetryIdentifiers() {
         isTelemetryIdReset = true
     }
 }
 
-private fun TestScope.createCrashReporter(telemetryServices: List<CrashTelemetryService> = emptyList()) = CrashReporter(
-    context = testContext,
-    services = listOf(FakeCrashReporterService()),
-    telemetryServices = telemetryServices,
-    mainDispatcher = StandardTestDispatcher(testScheduler),
-    scope = backgroundScope,
-)
+private fun TestScope.createCrashReporter(telemetryServices: List<CrashTelemetryService> = emptyList()) =
+    CrashReporter(
+        context = testContext,
+        services = listOf(FakeCrashReporterService()),
+        telemetryServices = telemetryServices,
+        mainDispatcher = StandardTestDispatcher(testScheduler),
+        scope = backgroundScope,
+    )
 
 private class FakeCrashReporterService : CrashReporterService {
     override val id = "test"
     override val name = "TestReporter"
 
     override fun createCrashReportUrl(identifier: String) = assertUnused()
+
     override fun report(crash: Crash.UncaughtExceptionCrash) = assertUnused()
+
     override fun report(crash: Crash.NativeCodeCrash) = assertUnused()
+
     override fun report(throwable: Throwable, breadcrumbs: ArrayList<Breadcrumb>) = assertUnused()
 }
 
@@ -148,6 +154,8 @@ private class FakeCrashTelemetryService(var isTelemetryOn: Boolean) : CrashTelem
     }
 
     override fun record(crash: Crash.UncaughtExceptionCrash) = assertUnused()
+
     override fun record(crash: Crash.NativeCodeCrash) = assertUnused()
+
     override fun record(throwable: Throwable) = assertUnused()
 }

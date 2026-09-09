@@ -16,15 +16,18 @@ class GetApplicationInstalledTimeTest {
     fun `WHEN getPackageInfoCompat returns a time THEN getApplicationInstalledTime returns the same time`() {
         val installTime = 12345L
 
-        val result = getApplicationInstalledTime(
-            packageManagerCompatHelper = FakePackageManagerCompatHelper(
-                packageInfo = PackageInfo().apply {
-                    firstInstallTime = installTime
-                },
-            ),
-            packageName = "UNUSED",
-            logger = Logger(),
-        )
+        val result =
+            getApplicationInstalledTime(
+                packageManagerCompatHelper =
+                    FakePackageManagerCompatHelper(
+                        packageInfo =
+                            PackageInfo().apply {
+                                firstInstallTime = installTime
+                            }
+                    ),
+                packageName = "UNUSED",
+                logger = Logger(),
+            )
 
         assertEquals(installTime, result)
     }
@@ -33,16 +36,19 @@ class GetApplicationInstalledTimeTest {
     fun `WHEN getPackageInfoCompat throws NameNotFoundException THEN getApplicationInstalledTime returns 0`() {
         val installTime = 12345L
 
-        val result = getApplicationInstalledTime(
-            packageManagerCompatHelper = FakePackageManagerCompatHelper(
-                packageInfo = PackageInfo().apply {
-                    firstInstallTime = installTime
-                },
-                getPackageInfoThrowable = PackageManager.NameNotFoundException(),
-            ),
-            packageName = "UNUSED",
-            logger = Logger(),
-        )
+        val result =
+            getApplicationInstalledTime(
+                packageManagerCompatHelper =
+                    FakePackageManagerCompatHelper(
+                        packageInfo =
+                            PackageInfo().apply {
+                                firstInstallTime = installTime
+                            },
+                        getPackageInfoThrowable = PackageManager.NameNotFoundException(),
+                    ),
+                packageName = "UNUSED",
+                logger = Logger(),
+            )
 
         assertEquals(0, result)
     }
@@ -51,16 +57,19 @@ class GetApplicationInstalledTimeTest {
     fun `WHEN getPackageInfoCompat throws UnsupportedOperationException THEN getApplicationInstalledTime returns 0`() {
         val installTime = 12345L
 
-        val result = getApplicationInstalledTime(
-            packageManagerCompatHelper = FakePackageManagerCompatHelper(
-                packageInfo = PackageInfo().apply {
-                    firstInstallTime = installTime
-                },
-                getPackageInfoThrowable = UnsupportedOperationException(),
-            ),
-            packageName = "UNUSED",
-            logger = Logger(),
-        )
+        val result =
+            getApplicationInstalledTime(
+                packageManagerCompatHelper =
+                    FakePackageManagerCompatHelper(
+                        packageInfo =
+                            PackageInfo().apply {
+                                firstInstallTime = installTime
+                            },
+                        getPackageInfoThrowable = UnsupportedOperationException(),
+                    ),
+                packageName = "UNUSED",
+                logger = Logger(),
+            )
 
         assertEquals(0, result)
     }

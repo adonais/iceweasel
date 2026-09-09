@@ -21,7 +21,23 @@ const DEFAULT_DESCRIPTION = gSync.fluentStrings.formatValueSync(
 
 add_setup(async () => {
   gSync.init();
+  registerCleanupFunction(closeAvatarMenu);
 });
+
+/**
+ * Closes the avatar menu for the current browser window if it is open, and
+ * returns a Promise that resolves once it has finished closing.
+ */
+async function closeAvatarMenu() {
+  let widgetPanel = document.getElementById("customizationui-widget-panel");
+  // The customizationui-widget-panel is created lazily, and destroyed upon
+  // closing, meaning that if we didn't find it, it's not open.
+  if (widgetPanel) {
+    let panelHidden = BrowserTestUtils.waitForPopupEvent(widgetPanel, "hidden");
+    widgetPanel.hidePopup();
+    await panelHidden;
+  }
+}
 
 /**
  * Closes and re-opens the avatar menu for the current browser window, and
@@ -34,14 +50,7 @@ add_setup(async () => {
  * @returns {Promise<object>}
  */
 async function reopenAvatarMenu() {
-  let widgetPanel = document.getElementById("customizationui-widget-panel");
-  // The customizationui-widget-panel is created lazily, and destroyed upon
-  // closing, meaning that if we didn't find it, it's not open.
-  if (widgetPanel) {
-    let panelHidden = BrowserTestUtils.waitForEvent(widgetPanel, "popuphidden");
-    widgetPanel.hidePopup();
-    await panelHidden;
-  }
+  await closeAvatarMenu();
   let promiseViewShown = BrowserTestUtils.waitForEvent(
     PanelMultiView.getViewNode(document, "PanelUI-fxa"),
     "ViewShown"

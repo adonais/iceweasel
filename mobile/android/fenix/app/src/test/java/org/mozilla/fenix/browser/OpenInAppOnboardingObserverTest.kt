@@ -49,14 +49,13 @@ class OpenInAppOnboardingObserverTest {
 
     @Before
     fun setUp() {
-        store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab(url = "https://www.mozilla.org", id = "1"),
-                ),
-                selectedTabId = "1",
-            ),
-        )
+        store =
+            BrowserStore(
+                BrowserState(
+                    tabs = listOf(createTab(url = "https://www.mozilla.org", id = "1")),
+                    selectedTabId = "1",
+                )
+            )
         lifecycleOwner = MockedLifecycleOwner(Lifecycle.State.STARTED)
         navigationController = mockk(relaxed = true)
         settings = mockk(relaxed = true)
@@ -64,19 +63,20 @@ class OpenInAppOnboardingObserverTest {
         container = mockk(relaxed = true)
         context = mockk(relaxed = true)
         infoBanner = mockk(relaxed = true)
-        openInAppOnboardingObserver = spyk(
-            OpenInAppOnboardingObserver(
-                context = context,
-                store = store,
-                lifecycleOwner = lifecycleOwner,
-                navController = navigationController,
-                settings = settings,
-                appLinksUseCases = appLinksUseCases,
-                container = container,
-                shouldScrollWithTopToolbar = true,
-                mainDispatcher = testDispatcher,
-            ),
-        )
+        openInAppOnboardingObserver =
+            spyk(
+                OpenInAppOnboardingObserver(
+                    context = context,
+                    store = store,
+                    lifecycleOwner = lifecycleOwner,
+                    navController = navigationController,
+                    settings = settings,
+                    appLinksUseCases = appLinksUseCases,
+                    container = container,
+                    shouldScrollWithTopToolbar = true,
+                    mainDispatcher = testDispatcher,
+                )
+            )
         every { openInAppOnboardingObserver.createInfoBanner() } returns infoBanner
     }
 
@@ -86,155 +86,165 @@ class OpenInAppOnboardingObserverTest {
     }
 
     @Test
-    fun `GIVEN user configured to open links in external app WHEN page finishes loading THEN do not show banner`() = runTest(testDispatcher) {
-        every { settings.shouldOpenLinksInApp() } returns true
-        every { settings.shouldShowOpenInAppCfr } returns true
-        every { appLinksUseCases.appLinkRedirect.invoke(any()).hasExternalApp() } returns true
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", true))
+    fun `GIVEN user configured to open links in external app WHEN page finishes loading THEN do not show banner`() =
+        runTest(testDispatcher) {
+            every { settings.shouldOpenLinksInApp() } returns true
+            every { settings.shouldShowOpenInAppCfr } returns true
+            every { appLinksUseCases.appLinkRedirect.invoke(any()).hasExternalApp() } returns true
+            store.dispatch(ContentAction.UpdateLoadingStateAction("1", true))
 
-        openInAppOnboardingObserver.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+            openInAppOnboardingObserver.start()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", false))
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(ContentAction.UpdateLoadingStateAction("1", false))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(exactly = 0) { infoBanner.showBanner() }
-    }
-
-    @Test
-    fun `GIVEN user has not configured to open links in external app WHEN page finishes loading THEN show banner`() = runTest(testDispatcher) {
-        every { settings.inAppMessagesEnabled } returns true
-        every { settings.shouldOpenLinksInApp() } returns false
-        every { settings.shouldShowOpenInAppCfr } returns true
-        every { appLinksUseCases.appLinkRedirect.invoke(any()).hasExternalApp() } returns true
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", true))
-
-        openInAppOnboardingObserver.start()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", false))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        verify(exactly = 1) { infoBanner.showBanner() }
-    }
+            verify(exactly = 0) { infoBanner.showBanner() }
+        }
 
     @Test
-    fun `GIVEN in-app messages are disabled WHEN page finishes loading THEN do not show banner`() = runTest(testDispatcher) {
-        every { settings.inAppMessagesEnabled } returns false
-        every { settings.shouldOpenLinksInApp() } returns false
-        every { settings.shouldShowOpenInAppCfr } returns true
-        every { appLinksUseCases.appLinkRedirect.invoke(any()).hasExternalApp() } returns true
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", true))
+    fun `GIVEN user has not configured to open links in external app WHEN page finishes loading THEN show banner`() =
+        runTest(testDispatcher) {
+            every { settings.inAppMessagesEnabled } returns true
+            every { settings.shouldOpenLinksInApp() } returns false
+            every { settings.shouldShowOpenInAppCfr } returns true
+            every { appLinksUseCases.appLinkRedirect.invoke(any()).hasExternalApp() } returns true
+            store.dispatch(ContentAction.UpdateLoadingStateAction("1", true))
 
-        openInAppOnboardingObserver.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+            openInAppOnboardingObserver.start()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", false))
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(ContentAction.UpdateLoadingStateAction("1", false))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(exactly = 0) { infoBanner.showBanner() }
-    }
-
-    @Test
-    fun `GIVEN banner was already displayed WHEN page finishes loading THEN do not show banner`() = runTest(testDispatcher) {
-        every { settings.openLinksInExternalApp } returns "never"
-        every { settings.shouldShowOpenInAppCfr } returns false
-        every { appLinksUseCases.appLinkRedirect.invoke(any()).hasExternalApp() } returns true
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", true))
-
-        openInAppOnboardingObserver.start()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", false))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        verify(exactly = 0) { infoBanner.showBanner() }
-    }
+            verify(exactly = 1) { infoBanner.showBanner() }
+        }
 
     @Test
-    fun `GIVEN banner should be displayed WHEN no application found THEN do not show banner`() = runTest(testDispatcher) {
-        every { settings.openLinksInExternalApp } returns "never"
-        every { settings.shouldShowOpenInAppCfr } returns true
-        every { appLinksUseCases.appLinkRedirect.invoke(any()).hasExternalApp() } returns false
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", true))
+    fun `GIVEN in-app messages are disabled WHEN page finishes loading THEN do not show banner`() =
+        runTest(testDispatcher) {
+            every { settings.inAppMessagesEnabled } returns false
+            every { settings.shouldOpenLinksInApp() } returns false
+            every { settings.shouldShowOpenInAppCfr } returns true
+            every { appLinksUseCases.appLinkRedirect.invoke(any()).hasExternalApp() } returns true
+            store.dispatch(ContentAction.UpdateLoadingStateAction("1", true))
 
-        openInAppOnboardingObserver.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+            openInAppOnboardingObserver.start()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", false))
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(ContentAction.UpdateLoadingStateAction("1", false))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(exactly = 0) { infoBanner.showBanner() }
-    }
-
-    @Test
-    fun `GIVEN banner is displayed WHEN user navigates to different domain THEN banner is dismissed`() = runTest(testDispatcher) {
-        every { settings.inAppMessagesEnabled } returns true
-        every { settings.openLinksInExternalApp } returns "never"
-        every { settings.shouldShowOpenInAppCfr } returns true
-        every { appLinksUseCases.appLinkRedirect.invoke(any()).hasExternalApp() } returns true
-
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", true))
-
-        openInAppOnboardingObserver.start()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", false))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        verify(exactly = 1) { infoBanner.showBanner() }
-        verify(exactly = 0) { infoBanner.dismiss() }
-
-        store.dispatch(ContentAction.UpdateUrlAction("1", "https://www.mozilla.org/en-US/"))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        verify(exactly = 0) { infoBanner.dismiss() }
-
-        store.dispatch(ContentAction.UpdateUrlAction("1", "https://www.firefox.com"))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        verify(exactly = 1) { infoBanner.dismiss() }
-    }
+            verify(exactly = 0) { infoBanner.showBanner() }
+        }
 
     @Test
-    fun `GIVEN a observer WHEN createInfoBanner() THEN the scrollWithTopToolbar is passed to the DynamicInfoBanner`() = runTest(testDispatcher) {
-        // Mockk currently doesn't support verifying constructor parameters
-        // But we can check the values found in the constructed objects
+    fun `GIVEN banner was already displayed WHEN page finishes loading THEN do not show banner`() =
+        runTest(testDispatcher) {
+            every { settings.openLinksInExternalApp } returns "never"
+            every { settings.shouldShowOpenInAppCfr } returns false
+            every { appLinksUseCases.appLinkRedirect.invoke(any()).hasExternalApp() } returns true
+            store.dispatch(ContentAction.UpdateLoadingStateAction("1", true))
 
-        openInAppOnboardingObserver = spyk(
-            OpenInAppOnboardingObserver(
-                testContext,
-                BrowserStore(),
-                mockk(),
-                mockk(),
-                mockk(),
-                mockk(),
-                FrameLayout(testContext),
-                shouldScrollWithTopToolbar = true,
-            ),
-        )
-        val banner1 = openInAppOnboardingObserver.createInfoBanner()
-        assertTrue(banner1.shouldScrollWithTopToolbar)
+            openInAppOnboardingObserver.start()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        openInAppOnboardingObserver = spyk(
-            OpenInAppOnboardingObserver(
-                testContext,
-                BrowserStore(),
-                mockk(),
-                mockk(),
-                mockk(),
-                mockk(),
-                FrameLayout(testContext),
-                shouldScrollWithTopToolbar = false,
-            ),
-        )
-        val banner2 = openInAppOnboardingObserver.createInfoBanner()
-        assertFalse(banner2.shouldScrollWithTopToolbar)
-    }
+            store.dispatch(ContentAction.UpdateLoadingStateAction("1", false))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { infoBanner.showBanner() }
+        }
+
+    @Test
+    fun `GIVEN banner should be displayed WHEN no application found THEN do not show banner`() =
+        runTest(testDispatcher) {
+            every { settings.openLinksInExternalApp } returns "never"
+            every { settings.shouldShowOpenInAppCfr } returns true
+            every { appLinksUseCases.appLinkRedirect.invoke(any()).hasExternalApp() } returns false
+            store.dispatch(ContentAction.UpdateLoadingStateAction("1", true))
+
+            openInAppOnboardingObserver.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            store.dispatch(ContentAction.UpdateLoadingStateAction("1", false))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { infoBanner.showBanner() }
+        }
+
+    @Test
+    fun `GIVEN banner is displayed WHEN user navigates to different domain THEN banner is dismissed`() =
+        runTest(testDispatcher) {
+            every { settings.inAppMessagesEnabled } returns true
+            every { settings.openLinksInExternalApp } returns "never"
+            every { settings.shouldShowOpenInAppCfr } returns true
+            every { appLinksUseCases.appLinkRedirect.invoke(any()).hasExternalApp() } returns true
+
+            store.dispatch(ContentAction.UpdateLoadingStateAction("1", true))
+
+            openInAppOnboardingObserver.start()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            store.dispatch(ContentAction.UpdateLoadingStateAction("1", false))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 1) { infoBanner.showBanner() }
+            verify(exactly = 0) { infoBanner.dismiss() }
+
+            store.dispatch(ContentAction.UpdateUrlAction("1", "https://www.mozilla.org/en-US/"))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { infoBanner.dismiss() }
+
+            store.dispatch(ContentAction.UpdateUrlAction("1", "https://www.firefox.com"))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify(exactly = 1) { infoBanner.dismiss() }
+        }
+
+    @Test
+    fun `GIVEN a observer WHEN createInfoBanner() THEN the scrollWithTopToolbar is passed to the DynamicInfoBanner`() =
+        runTest(testDispatcher) {
+            // Mockk currently doesn't support verifying constructor parameters
+            // But we can check the values found in the constructed objects
+
+            openInAppOnboardingObserver =
+                spyk(
+                    OpenInAppOnboardingObserver(
+                        testContext,
+                        BrowserStore(),
+                        mockk(),
+                        mockk(),
+                        mockk(),
+                        mockk(),
+                        FrameLayout(testContext),
+                        shouldScrollWithTopToolbar = true,
+                    )
+                )
+            val banner1 = openInAppOnboardingObserver.createInfoBanner()
+            assertTrue(banner1.shouldScrollWithTopToolbar)
+
+            openInAppOnboardingObserver =
+                spyk(
+                    OpenInAppOnboardingObserver(
+                        testContext,
+                        BrowserStore(),
+                        mockk(),
+                        mockk(),
+                        mockk(),
+                        mockk(),
+                        FrameLayout(testContext),
+                        shouldScrollWithTopToolbar = false,
+                    )
+                )
+            val banner2 = openInAppOnboardingObserver.createInfoBanner()
+            assertFalse(banner2.shouldScrollWithTopToolbar)
+        }
 
     internal class MockedLifecycleOwner(initialState: Lifecycle.State) : LifecycleOwner {
-        override val lifecycle: Lifecycle = LifecycleRegistry(this).apply {
-            currentState = initialState
-        }
+        override val lifecycle: Lifecycle =
+            LifecycleRegistry(this).apply {
+                currentState = initialState
+            }
     }
 }

@@ -1,5 +1,12 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.reviewprompt
 
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import mozilla.components.support.test.assertUnused
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.telemetry.glean.private.EventMetricType
@@ -15,36 +22,32 @@ import org.mozilla.fenix.nimbus.RecordEventMode.Cancel
 import org.mozilla.fenix.nimbus.RecordEventMode.CompleteSuccessfully
 import org.mozilla.fenix.nimbus.RecordEventMode.ThrowException
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 
-/**
- * [ReviewPromptMiddleware] tests that use [FenixGleanTestRule].
- */
+/** [ReviewPromptMiddleware] tests that use [FenixGleanTestRule]. */
 @RunWith(RobolectricTestRunner::class)
 class ReviewPromptMiddlewareGleanTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private val eventStore = FakeNimbusEventStore()
 
-    private val store = AppStore(
-        middlewares = listOf(
-            ReviewPromptMiddleware(
-                shouldShowCustomPrompt = { assertUnused() },
-                disableCustomPrompt = {
-                    // This is called, but there's nothing to do in these tests.
-                    // [ReviewPromptMiddlewareTest] verifies this behaves as expected.
-                },
-                createJexlHelper = { assertUnused() },
-                buildTriggerMainCriteria = { assertUnused() },
-                buildTriggerSubCriteria = { assertUnused() },
-                nimbusEventStore = eventStore,
-            ),
-        ),
-    )
+    private val store =
+        AppStore(
+            middlewares =
+                listOf(
+                    ReviewPromptMiddleware(
+                        shouldShowCustomPrompt = { assertUnused() },
+                        disableCustomPrompt = {
+                            // This is called, but there's nothing to do in these tests.
+                            // [ReviewPromptMiddlewareTest] verifies this behaves as expected.
+                        },
+                        createJexlHelper = { assertUnused() },
+                        buildTriggerMainCriteria = { assertUnused() },
+                        buildTriggerSubCriteria = { assertUnused() },
+                        nimbusEventStore = eventStore,
+                    )
+                )
+        )
 
     @Test
     fun `WHEN recordEvent succeeds THEN it is recorded`() {

@@ -15,6 +15,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.edit
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import mozilla.components.lib.crash.Crash
 import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.lib.crash.R
@@ -22,12 +24,8 @@ import mozilla.components.lib.crash.databinding.MozacLibCrashCrashreporterBindin
 import mozilla.components.lib.crash.notification.CrashNotification
 import mozilla.components.lib.crash.notification.NOTIFICATION_ID
 import mozilla.components.lib.crash.notification.NOTIFICATION_TAG
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
 
-/**
- * Activity showing the crash reporter prompt asking the user for confirmation before submitting a crash report.
- */
+/** Activity showing the crash reporter prompt asking the user for confirmation before submitting a crash report. */
 class CrashReporterActivity : AppCompatActivity() {
 
     private val crashReporter: CrashReporter by lazy { CrashReporter.requireInstance }
@@ -36,14 +34,11 @@ class CrashReporterActivity : AppCompatActivity() {
         getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
     }
 
-    /**
-     * Coroutine context for crash reporter operations. Can be used to setup dispatcher for tests.
-     */
+    /** Coroutine context for crash reporter operations. Can be used to setup dispatcher for tests. */
     @VisibleForTesting(otherwise = PRIVATE)
     internal var reporterCoroutineContext: CoroutineContext = EmptyCoroutineContext
 
-    @VisibleForTesting(otherwise = PRIVATE)
-    internal lateinit var binding: MozacLibCrashCrashreporterBinding
+    @VisibleForTesting(otherwise = PRIVATE) internal lateinit var binding: MozacLibCrashCrashreporterBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // if the activity is started by user tapping on the crash notification's report button,
@@ -58,13 +53,14 @@ class CrashReporterActivity : AppCompatActivity() {
 
         onBackPressedDispatcher.addCallback(
             owner = this,
-            onBackPressedCallback = object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    sendCrashReportIfNeeded {
-                        finish()
+            onBackPressedCallback =
+                object : OnBackPressedCallback(true) {
+                    override fun handleOnBackPressed() {
+                        sendCrashReportIfNeeded {
+                            finish()
+                        }
                     }
-                }
-            },
+                },
         )
 
         binding = MozacLibCrashCrashreporterBinding.inflate(layoutInflater)
@@ -77,13 +73,15 @@ class CrashReporterActivity : AppCompatActivity() {
         val appName = crashReporter.promptConfiguration.appName
         val organizationName = crashReporter.promptConfiguration.organizationName
 
-        binding.titleView.text = when (isRecoverableBackgroundCrash(crash)) {
-            true -> getString(
-                R.string.mozac_lib_crash_background_process_notification_title,
-                appName,
-            )
-            false -> getString(R.string.mozac_lib_crash_dialog_title, appName)
-        }
+        binding.titleView.text =
+            when (isRecoverableBackgroundCrash(crash)) {
+                true ->
+                    getString(
+                        R.string.mozac_lib_crash_background_process_notification_title,
+                        appName,
+                    )
+                false -> getString(R.string.mozac_lib_crash_dialog_title, appName)
+            }
 
         binding.sendCheckbox.text = getString(R.string.mozac_lib_crash_dialog_checkbox, organizationName)
         binding.sendCheckbox.isChecked = sharedPreferences.getBoolean(PREFERENCE_KEY_SEND_REPORT, true)
@@ -158,10 +156,8 @@ class CrashReporterActivity : AppCompatActivity() {
 
     companion object {
 
-        @VisibleForTesting(otherwise = PRIVATE)
-        internal const val SHARED_PREFERENCES_NAME = "mozac_lib_crash_settings"
+        @VisibleForTesting(otherwise = PRIVATE) internal const val SHARED_PREFERENCES_NAME = "mozac_lib_crash_settings"
 
-        @VisibleForTesting(otherwise = PRIVATE)
-        internal const val PREFERENCE_KEY_SEND_REPORT = "sendCrashReport"
+        @VisibleForTesting(otherwise = PRIVATE) internal const val PREFERENCE_KEY_SEND_REPORT = "sendCrashReport"
     }
 }

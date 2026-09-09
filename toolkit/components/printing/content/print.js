@@ -1689,7 +1689,8 @@ class PrintUIForm extends PrintUIControlMixin(HTMLFormElement) {
       // Find the invalid element
       let invalidElement;
       for (let element of this.elements) {
-        if (!element.checkValidity()) {
+        // Form-associated custom elements may not expose checkValidity.
+        if (element.checkValidity && !element.checkValidity()) {
           invalidElement = element;
           break;
         }
@@ -1706,7 +1707,7 @@ class PrintUIForm extends PrintUIControlMixin(HTMLFormElement) {
         element.disabled =
           element.hasAttribute("disallowed") ||
           (!isValid &&
-            element.validity.valid &&
+            (element.validity?.valid ?? true) &&
             element.name != "cancel" &&
             element.closest(".section-block") != this._printerDestination &&
             element.closest(".section-block") != section);
@@ -1974,6 +1975,7 @@ class OrientationInput extends PrintUIControlMixin(HTMLElement) {
   initialize() {
     super.initialize();
     document.addEventListener("hide-orientation", this);
+    this.addEventListener("keydown", this);
   }
 
   get templateId() {
@@ -1981,14 +1983,22 @@ class OrientationInput extends PrintUIControlMixin(HTMLElement) {
   }
 
   update(settings) {
-    for (let input of this.querySelectorAll("input")) {
-      input.checked = settings.orientation == input.value;
-    }
+    let segmentedControl = this.querySelector("moz-segmented-control");
+    segmentedControl.value = String(settings.orientation);
   }
 
   handleEvent(e) {
     if (e.type == "hide-orientation") {
       document.getElementById("orientation").hidden = true;
+      return;
+    }
+    if (e.type == "keydown") {
+      // The segmented control's buttons would otherwise consume Enter.
+      if (e.key == "Enter") {
+        e.preventDefault();
+        let form = this.closest("form");
+        form.requestSubmit(form.querySelector("button[name='print']"));
+      }
       return;
     }
     this.dispatchSettingsChange({

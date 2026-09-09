@@ -18,9 +18,7 @@ data class DebugInfoItem(
     val value: DebugInfoValue,
 )
 
-/**
- * The display content of a [DebugInfoItem].
- */
+/** The display content of a [DebugInfoItem]. */
 sealed interface DebugInfoValue {
     /**
      * The text value of the debug info item.
@@ -37,15 +35,13 @@ sealed interface DebugInfoValue {
     data class State(val enabled: Boolean) : DebugInfoValue
 }
 
-/**
- * Returns the display text for the current [DebugInfoValue].
- */
-fun DebugInfoValue.displayText(context: Context): String = when (this) {
-    is DebugInfoValue.Text -> text
-    is DebugInfoValue.State -> context.getString(
-        if (enabled) R.string.debug_info_enabled else R.string.debug_info_disabled,
-    )
-}
+/** Returns the display text for the current [DebugInfoValue]. */
+fun DebugInfoValue.displayText(context: Context): String =
+    when (this) {
+        is DebugInfoValue.Text -> text
+        is DebugInfoValue.State ->
+            context.getString(if (enabled) R.string.debug_info_enabled else R.string.debug_info_disabled)
+    }
 
 /**
  * A group of [DebugInfoItem]s categorized by [title].

@@ -29,20 +29,22 @@ class BrowserStoreTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun `Initial state is validated and rejected if selected tab does not exist`() {
-        val initialState = BrowserState(
-            tabs = listOf(createTab("https://www.mozilla.org")),
-            selectedTabId = "invalid",
-        )
+        val initialState =
+            BrowserState(
+                tabs = listOf(createTab("https://www.mozilla.org")),
+                selectedTabId = "invalid",
+            )
         BrowserStore(initialState)
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun `Initial state is validated and rejected if it contains duplicate tabs`() {
-        val tabs = listOf(
-            createTab(id = "1", url = "https://www.mozilla.org"),
-            createTab(id = "2", url = "https://www.getpocket.com"),
-            createTab(id = "1", url = "https://www.mozilla.org"),
-        )
+        val tabs =
+            listOf(
+                createTab(id = "1", url = "https://www.mozilla.org"),
+                createTab(id = "2", url = "https://www.getpocket.com"),
+                createTab(id = "1", url = "https://www.mozilla.org"),
+            )
         val initialState = BrowserState(tabs)
         BrowserStore(initialState)
     }

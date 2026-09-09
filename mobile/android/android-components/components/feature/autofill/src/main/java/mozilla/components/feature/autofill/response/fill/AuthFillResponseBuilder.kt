@@ -18,12 +18,12 @@ import android.service.autofill.Presentations
 import android.view.autofill.AutofillId
 import android.widget.RemoteViews
 import android.widget.inline.InlinePresentationSpec
+import androidx.biometric.R as biometricR
 import mozilla.components.feature.autofill.AutofillConfiguration
 import mozilla.components.feature.autofill.R
 import mozilla.components.feature.autofill.response.dataset.createInlinePresentation
 import mozilla.components.feature.autofill.structure.ParsedStructure
 import mozilla.components.feature.autofill.ui.AbstractAutofillUnlockActivity
-import androidx.biometric.R as biometricR
 
 internal data class AuthFillResponseBuilder(
     private val parsedStructure: ParsedStructure,
@@ -40,17 +40,19 @@ internal data class AuthFillResponseBuilder(
 
         val autofillIds = listOfNotNull(parsedStructure.usernameId, parsedStructure.passwordId)
 
-        val title = context.getString(
-            R.string.mozac_feature_autofill_popup_unlock_application,
-            configuration.applicationName,
-        )
-
-        val authPresentation = RemoteViews(context.packageName, android.R.layout.simple_list_item_1).apply {
-            setTextViewText(
-                android.R.id.text1,
-                title,
+        val title =
+            context.getString(
+                R.string.mozac_feature_autofill_popup_unlock_application,
+                configuration.applicationName,
             )
-        }
+
+        val authPresentation =
+            RemoteViews(context.packageName, android.R.layout.simple_list_item_1).apply {
+                setTextViewText(
+                    android.R.id.text1,
+                    title,
+                )
+            }
 
         val authIntent = Intent(context, configuration.unlockActivity)
 
@@ -73,18 +75,20 @@ internal data class AuthFillResponseBuilder(
             AbstractAutofillUnlockActivity.EXTRA_MAX_SUGGESTION_COUNT,
             maxSuggestionCount,
         )
-        val authPendingIntent = PendingIntent.getActivity(
-            context,
-            configuration.activityRequestCode,
-            authIntent,
-            PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE,
-        )
+        val authPendingIntent =
+            PendingIntent.getActivity(
+                context,
+                configuration.activityRequestCode,
+                authIntent,
+                PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE,
+            )
         val intentSender: IntentSender = authPendingIntent.intentSender
 
-        val icon: Icon = Icon.createWithResource(
-            context,
-            biometricR.drawable.fingerprint_dialog_fp_icon,
-        )
+        val icon: Icon =
+            Icon.createWithResource(
+                context,
+                biometricR.drawable.fingerprint_dialog_fp_icon,
+            )
         val authInlinePresentation = createInlinePresentation(authPendingIntent, imeSpec, title, icon)
         builder.setAuthentication(
             autofillIds.toTypedArray(),
@@ -113,10 +117,8 @@ internal fun FillResponse.Builder.setAuthentication(
         }
         setAuthentication(ids, authentication, presentations.build())
     } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        @Suppress("DEPRECATION")
-        setAuthentication(ids, authentication, presentation, inlinePresentation)
+        @Suppress("DEPRECATION") setAuthentication(ids, authentication, presentation, inlinePresentation)
     } else {
-        @Suppress("DEPRECATION")
-        setAuthentication(ids, authentication, presentation)
+        @Suppress("DEPRECATION") setAuthentication(ids, authentication, presentation)
     }
 }

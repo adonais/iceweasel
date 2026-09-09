@@ -4,6 +4,7 @@
 
 package mozilla.components.lib.llm.mlpa.service
 
+import java.io.IOException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -21,14 +22,12 @@ import mozilla.components.concept.fetch.isClientError
 import mozilla.components.concept.llm.Llm
 import mozilla.components.lib.llm.mlpa.service.ext.contentFlow
 import mozilla.components.lib.llm.mlpa.service.ext.rateLimitDetailedError
-import java.io.IOException
 
 /**
  * Default [MlpaService] implementation backed by a generic HTTP [Client].
  *
- * This service communicates with the MLPA backend using JSON over HTTP.
- * It serializes requests using kotlinx.serialization and deserializes
- * successful responses into strongly typed service models.
+ * This service communicates with the MLPA backend using JSON over HTTP. It serializes requests using
+ * kotlinx.serialization and deserializes successful responses into strongly typed service models.
  *
  * @param client The HTTP client used to execute network requests.
  * @param config Configuration containing the base URL for MLPA endpoints.
@@ -49,102 +48,115 @@ class FetchClientMlpaService(
      * Calls the `/verify/play` endpoint to verify an authentication request.
      *
      * @param request the required properties of this request as an [AuthenticationService.Request]
-     * @return [Result.success] with the parsed response on success containing a [AuthenticationService.Response],
-     * or [Result.failure] if the HTTP call is not successful.
+     * @return [Result.success] with the parsed response on success containing a [AuthenticationService.Response], or
+     *   [Result.failure] if the HTTP call is not successful.
      */
-    override suspend fun verify(
-        request: AuthenticationService.Request,
-    ): Result<AuthenticationService.Response> = withContext(dispatcher) {
-        val fetchRequest = Request(
-            url = "${config.baseUrl}/verify/play",
-            method = Request.Method.POST,
-            headers = MutableHeaders(
-                "content-type" to "application/json",
-            ),
-            body = Request.Body.fromString(json.encodeToString(request)),
-        )
+    override suspend fun verify(request: AuthenticationService.Request): Result<AuthenticationService.Response> =
+        withContext(dispatcher) {
+            val fetchRequest =
+                Request(
+                    url = "${config.baseUrl}/verify/play",
+                    method = Request.Method.POST,
+                    headers = MutableHeaders("content-type" to "application/json"),
+                    body = Request.Body.fromString(json.encodeToString(request)),
+                )
 
-        return@withContext Result.runCatching {
-            client.fetch(fetchRequest).use { httpResponse ->
-                if (httpResponse.isClientError) {
-                    throw VerificationServiceFailed("Received status code ${httpResponse.status}")
+            return@withContext Result.runCatching {
+                    client.fetch(fetchRequest).use { httpResponse ->
+                        if (httpResponse.isClientError) {
+                            throw VerificationServiceFailed("Received status code ${httpResponse.status}")
+                        }
+                        json.decodeFromString<AuthenticationService.Response>(httpResponse.body.string(Charsets.UTF_8))
+                    }
                 }
-                json.decodeFromString<AuthenticationService.Response>(httpResponse.body.string(Charsets.UTF_8))
-            }
-        }.recoverCatching { e ->
-            throw when (e) {
-                is IOException -> VerificationNetworkError(e)
-                is SerializationException -> VerificationResponseParseError(e)
-                else -> e
-            }
+                .recoverCatching { e ->
+                    throw when (e) {
+                        is IOException -> VerificationNetworkError(e)
+                        is SerializationException -> VerificationResponseParseError(e)
+                        else -> e
+                    }
+                }
         }
-    }
 
     /**
      * Calls the `/chat/completions` endpoint to request a chat completion.
      *
      * @param authorizationToken the authorizationToken to include in the request headers.
      * @param request the required properties of this request as an [ChatService.Request]
-     * @return [Result.success] with the parsed response on success containing a [ChatService.Response],
-     * or [Result.failure] if the HTTP call is not successful.
+     * @return [Result.success] with the parsed response on success containing a [ChatService.Response], or
+     *   [Result.failure] if the HTTP call is not successful.
      */
     override fun completion(
         authorizationToken: AuthorizationToken,
         request: ChatService.Request,
     ): Flow<String> {
         val bodyString = json.encodeToString(request)
-        val fetchRequest = Request(
-            url = "${config.baseUrl}/v1/chat/completions",
-            method = Request.Method.POST,
-            headers = MutableHeaders(
-                "authorization" to "Bearer ${authorizationToken.value}",
-                "content-type" to "application/json",
-                "service-type" to "s2s-android",
-            ).apply {
-                if (authorizationToken is AuthorizationToken.Integrity) {
-                    set("use-play-integrity", "true")
-                }
-            },
-            body = Request.Body.fromString(bodyString),
-        )
+        val fetchRequest =
+            Request(
+                url = "${config.baseUrl}/v1/chat/completions",
+                method = Request.Method.POST,
+                headers =
+                    MutableHeaders(
+                            "authorization" to "Bearer ${authorizationToken.value}",
+                            "content-type" to "application/json",
+                            "service-type" to "s2s-android",
+                        )
+                        .apply {
+                            if (authorizationToken is AuthorizationToken.Integrity) {
+                                set("use-play-integrity", "true")
+                            }
+                        },
+                body = Request.Body.fromString(bodyString),
+            )
 
         return flow {
-            val httpResponse = try {
-                client.fetch(fetchRequest)
-            } catch (e: IOException) {
-                throw ChatNetworkError(e)
-            }
-            httpResponse.use {
-                it.error?.also { error -> throw error }
+                val httpResponse =
+                    try {
+                        client.fetch(fetchRequest)
+                    } catch (e: IOException) {
+                        throw ChatNetworkError(e)
+                    }
+                httpResponse.use {
+                    it.error?.also { error -> throw error }
 
-                if (request.stream) {
-                    emitAll(it.contentFlow(it.retryAfter))
-                } else {
-                    emit(it.nonStreamedResponse)
+                    if (request.stream) {
+                        emitAll(it.contentFlow(it.retryAfter))
+                    } else {
+                        emit(it.nonStreamedResponse)
+                    }
                 }
             }
-        }.flowOn(dispatcher)
+            .flowOn(dispatcher)
     }
 
-    private val Response.nonStreamedResponse get() = try {
-        json.decodeFromString<ChatService.Response>(bodyString).choices.first().message.content
-    } catch (e: SerializationException) {
-        throw ResponseParseError(e)
-    }
+    private val Response.nonStreamedResponse
+        get() =
+            try {
+                json.decodeFromString<ChatService.Response>(bodyString).choices.first().message.content
+            } catch (e: SerializationException) {
+                throw ResponseParseError(e)
+            }
 
-    private val Response.bodyString get() = use { body.string(Charsets.UTF_8) }
-    private val Response.retryAfter: Long? get() = headers["Retry-After"]?.toLongOrNull()
-    private val Response.error: Llm.Exception? get() = when (status) {
-        in 200..299 -> null
-        401 -> InvalidToken()
-        403 -> UserBlocked()
-        413 -> RequestTooLarge()
-        429 -> json.rateLimitDetailedError(bodyString, retryAfter)
-        502 -> try {
-            UpstreamError(json.decodeFromString<ChatService.ResponseErrorReason>(bodyString).error)
-        } catch (e: SerializationException) {
-            UpstreamResponseParseError(e)
-        }
-        else -> ServerError(status)
-    }
+    private val Response.bodyString
+        get() = use { body.string(Charsets.UTF_8) }
+
+    private val Response.retryAfter: Long?
+        get() = headers["Retry-After"]?.toLongOrNull()
+
+    private val Response.error: Llm.Exception?
+        get() =
+            when (status) {
+                in 200..299 -> null
+                401 -> InvalidToken()
+                403 -> UserBlocked()
+                413 -> RequestTooLarge()
+                429 -> json.rateLimitDetailedError(bodyString, retryAfter)
+                502 ->
+                    try {
+                        UpstreamError(json.decodeFromString<ChatService.ResponseErrorReason>(bodyString).error)
+                    } catch (e: SerializationException) {
+                        UpstreamResponseParseError(e)
+                    }
+                else -> ServerError(status)
+            }
 }

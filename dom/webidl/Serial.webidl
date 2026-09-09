@@ -30,7 +30,8 @@ interface Serial : EventTarget {
   [Pref="dom.webserial.testing.enabled", Throws]
   Promise<undefined> simulateDeviceConnection(DOMString deviceId, DOMString devicePath,
                                               optional unsigned short vendorId = 0,
-                                              optional unsigned short productId = 0);
+                                              optional unsigned short productId = 0,
+                                              optional DOMString bluetoothServiceClassId = "");
 
   [Pref="dom.webserial.testing.enabled", Throws]
   Promise<undefined> simulateDeviceDisconnection(DOMString deviceId);

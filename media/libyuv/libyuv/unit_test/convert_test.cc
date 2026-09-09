@@ -59,7 +59,7 @@ namespace libyuv {
 
 #define TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X,         \
                        SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC,             \
-                       DST_SUBSAMP_X, DST_SUBSAMP_Y, W1280, N, NEG, OFF,      \
+                       DST_SUBSAMP_X, DST_SUBSAMP_Y, W1280, N, NEG, OFF, DOY, \
                        SRC_DEPTH)                                             \
   TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {              \
     static_assert(SRC_BPC == 1 || SRC_BPC == 2, "SRC BPC unsupported");       \
@@ -113,7 +113,7 @@ namespace libyuv {
     MaskCpuFlags(disable_cpu_flags_);                                         \
     SRC_FMT_PLANAR##To##FMT_PLANAR(                                           \
         src_y_p, kWidth, src_u_p, kSrcHalfWidth, src_v_p, kSrcHalfWidth,      \
-        reinterpret_cast<DST_T*>(dst_y_c), kWidth,                            \
+        DOY ? reinterpret_cast<DST_T*>(dst_y_c) : NULL, kWidth,               \
         reinterpret_cast<DST_T*>(dst_u_c), kDstHalfWidth,                     \
         reinterpret_cast<DST_T*>(dst_v_c), kDstHalfWidth, kWidth,             \
         NEG kHeight);                                                         \
@@ -121,13 +121,15 @@ namespace libyuv {
     for (int i = 0; i < benchmark_iterations_; ++i) {                         \
       SRC_FMT_PLANAR##To##FMT_PLANAR(                                         \
           src_y_p, kWidth, src_u_p, kSrcHalfWidth, src_v_p, kSrcHalfWidth,    \
-          reinterpret_cast<DST_T*>(dst_y_opt), kWidth,                        \
+          DOY ? reinterpret_cast<DST_T*>(dst_y_opt) : NULL, kWidth,           \
           reinterpret_cast<DST_T*>(dst_u_opt), kDstHalfWidth,                 \
           reinterpret_cast<DST_T*>(dst_v_opt), kDstHalfWidth, kWidth,         \
           NEG kHeight);                                                       \
     }                                                                         \
-    for (int i = 0; i < kHeight * kWidth * DST_BPC; ++i) {                    \
-      ASSERT_EQ(dst_y_c[i], dst_y_opt[i]);                                    \
+    if (DOY) {                                                                \
+      for (int i = 0; i < kHeight * kWidth * DST_BPC; ++i) {                  \
+        ASSERT_EQ(dst_y_c[i], dst_y_opt[i]);                                  \
+      }                                                                       \
     }                                                                         \
     for (int i = 0; i < kDstHalfWidth * kDstHalfHeight * DST_BPC; ++i) {      \
       ASSERT_EQ(dst_u_c[i], dst_u_opt[i]);                                    \
@@ -150,23 +152,29 @@ namespace libyuv {
                       DST_SUBSAMP_X, DST_SUBSAMP_Y, SRC_DEPTH)                 \
   TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X, SRC_SUBSAMP_Y, \
                  FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,     \
-                 benchmark_width_ + 1, _Any, +, 0, SRC_DEPTH)                  \
+                 benchmark_width_ + 1, _Any, +, 0, 1, SRC_DEPTH)               \
   TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X, SRC_SUBSAMP_Y, \
                  FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,     \
-                 benchmark_width_, _Unaligned, +, 2, SRC_DEPTH)                \
+                 benchmark_width_, _Unaligned, +, 2, 1, SRC_DEPTH)             \
   TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X, SRC_SUBSAMP_Y, \
                  FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,     \
-                 benchmark_width_, _Invert, -, 0, SRC_DEPTH)                   \
+                 benchmark_width_, _Invert, -, 0, 1, SRC_DEPTH)                \
   TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X, SRC_SUBSAMP_Y, \
                  FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,     \
-                 benchmark_width_, _Opt, +, 0, SRC_DEPTH)
+                 benchmark_width_, _Opt, +, 0, 1, SRC_DEPTH)                   \
+  TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X, SRC_SUBSAMP_Y, \
+                 FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,     \
+                 benchmark_width_, _NullY, +, 0, 0, SRC_DEPTH)
 #else
 #define TESTPLANARTOP(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X,           \
                       SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC,               \
                       DST_SUBSAMP_X, DST_SUBSAMP_Y, SRC_DEPTH)                 \
   TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X, SRC_SUBSAMP_Y, \
                  FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,     \
-                 benchmark_width_, _Opt, +, 0, SRC_DEPTH)
+                 benchmark_width_, _NullY, +, 0, 0, SRC_DEPTH)                 \
+  TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_T, SRC_BPC, SRC_SUBSAMP_X, SRC_SUBSAMP_Y, \
+                 FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,     \
+                 benchmark_width_, _Opt, +, 0, 1, SRC_DEPTH)
 #endif
 
 TESTPLANARTOP(I420, uint8_t, 1, 2, 2, I420, uint8_t, 1, 2, 2, 8)
@@ -2176,6 +2184,242 @@ TEST_F(LibYUVConvertTest, TestABGRToI420Matrix) {
   free_aligned_buffer_page_end(ref_v);
 }
 
+TEST_F(LibYUVConvertTest, TestRAWToI420) {
+  const int kWidth = 16;
+  const int kHeight = 16;
+  align_buffer_page_end(src_raw, kWidth * kHeight * 3);
+  align_buffer_page_end(dst_y, kWidth * kHeight);
+  align_buffer_page_end(dst_u, kWidth / 2 * kHeight / 2);
+  align_buffer_page_end(dst_v, kWidth / 2 * kHeight / 2);
+  align_buffer_page_end(src_argb, kWidth * kHeight * 4);
+  align_buffer_page_end(ref_y, kWidth * kHeight);
+  align_buffer_page_end(ref_u, kWidth / 2 * kHeight / 2);
+  align_buffer_page_end(ref_v, kWidth / 2 * kHeight / 2);
+
+  MemRandomize(src_raw, kWidth * kHeight * 3);
+
+  RAWToI420(src_raw, kWidth * 3, dst_y, kWidth, dst_u, kWidth / 2, dst_v,
+            kWidth / 2, kWidth, kHeight);
+
+  // Verify against RAWToARGB + ARGBToI420
+  RAWToARGB(src_raw, kWidth * 3, src_argb, kWidth * 4, kWidth, kHeight);
+  ARGBToI420(src_argb, kWidth * 4, ref_y, kWidth, ref_u, kWidth / 2, ref_v,
+             kWidth / 2, kWidth, kHeight);
+
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    ASSERT_EQ(dst_y[i], ref_y[i]);
+  }
+  for (int i = 0; i < kWidth / 2 * kHeight / 2; ++i) {
+    ASSERT_EQ(dst_u[i], ref_u[i]);
+    ASSERT_EQ(dst_v[i], ref_v[i]);
+  }
+
+  free_aligned_buffer_page_end(src_raw);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_u);
+  free_aligned_buffer_page_end(dst_v);
+  free_aligned_buffer_page_end(src_argb);
+  free_aligned_buffer_page_end(ref_y);
+  free_aligned_buffer_page_end(ref_u);
+  free_aligned_buffer_page_end(ref_v);
+}
+
+TEST_F(LibYUVConvertTest, TestRAWToI444) {
+  const int kWidth = 16;
+  const int kHeight = 16;
+  align_buffer_page_end(src_raw, kWidth * kHeight * 3);
+  align_buffer_page_end(dst_y, kWidth * kHeight);
+  align_buffer_page_end(dst_u, kWidth * kHeight);
+  align_buffer_page_end(dst_v, kWidth * kHeight);
+  align_buffer_page_end(src_argb, kWidth * kHeight * 4);
+  align_buffer_page_end(ref_y, kWidth * kHeight);
+  align_buffer_page_end(ref_u, kWidth * kHeight);
+  align_buffer_page_end(ref_v, kWidth * kHeight);
+
+  MemRandomize(src_raw, kWidth * kHeight * 3);
+
+  RAWToI444(src_raw, kWidth * 3, dst_y, kWidth, dst_u, kWidth, dst_v, kWidth,
+            kWidth, kHeight);
+
+  // Verify against RAWToARGB + ARGBToI444
+  RAWToARGB(src_raw, kWidth * 3, src_argb, kWidth * 4, kWidth, kHeight);
+  ARGBToI444(src_argb, kWidth * 4, ref_y, kWidth, ref_u, kWidth, ref_v, kWidth,
+             kWidth, kHeight);
+
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    ASSERT_EQ(dst_y[i], ref_y[i]);
+    ASSERT_EQ(dst_u[i], ref_u[i]);
+    ASSERT_EQ(dst_v[i], ref_v[i]);
+  }
+
+  free_aligned_buffer_page_end(src_raw);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_u);
+  free_aligned_buffer_page_end(dst_v);
+  free_aligned_buffer_page_end(src_argb);
+  free_aligned_buffer_page_end(ref_y);
+  free_aligned_buffer_page_end(ref_u);
+  free_aligned_buffer_page_end(ref_v);
+}
+
+TEST_F(LibYUVConvertTest, TestRAWToJ444) {
+  const int kWidth = 16;
+  const int kHeight = 16;
+  align_buffer_page_end(src_raw, kWidth * kHeight * 3);
+  align_buffer_page_end(dst_y, kWidth * kHeight);
+  align_buffer_page_end(dst_u, kWidth * kHeight);
+  align_buffer_page_end(dst_v, kWidth * kHeight);
+  align_buffer_page_end(src_argb, kWidth * kHeight * 4);
+  align_buffer_page_end(ref_y, kWidth * kHeight);
+  align_buffer_page_end(ref_u, kWidth * kHeight);
+  align_buffer_page_end(ref_v, kWidth * kHeight);
+
+  MemRandomize(src_raw, kWidth * kHeight * 3);
+
+  RAWToJ444(src_raw, kWidth * 3, dst_y, kWidth, dst_u, kWidth, dst_v, kWidth,
+            kWidth, kHeight);
+
+  // Verify against RAWToARGB + ARGBToJ444
+  RAWToARGB(src_raw, kWidth * 3, src_argb, kWidth * 4, kWidth, kHeight);
+  ARGBToJ444(src_argb, kWidth * 4, ref_y, kWidth, ref_u, kWidth, ref_v, kWidth,
+             kWidth, kHeight);
+
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    ASSERT_EQ(dst_y[i], ref_y[i]);
+    ASSERT_EQ(dst_u[i], ref_u[i]);
+    ASSERT_EQ(dst_v[i], ref_v[i]);
+  }
+
+  free_aligned_buffer_page_end(src_raw);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_u);
+  free_aligned_buffer_page_end(dst_v);
+  free_aligned_buffer_page_end(src_argb);
+  free_aligned_buffer_page_end(ref_y);
+  free_aligned_buffer_page_end(ref_u);
+  free_aligned_buffer_page_end(ref_v);
+}
+
+TEST_F(LibYUVConvertTest, TestRAWToNV21) {
+  const int kWidth = 16;
+  const int kHeight = 16;
+  align_buffer_page_end(src_raw, kWidth * kHeight * 3);
+  align_buffer_page_end(dst_y, kWidth * kHeight);
+  align_buffer_page_end(dst_vu, kWidth * kHeight / 2);
+  align_buffer_page_end(ref_y, kWidth * kHeight);
+  align_buffer_page_end(ref_u, kWidth / 2 * kHeight / 2);
+  align_buffer_page_end(ref_v, kWidth / 2 * kHeight / 2);
+  align_buffer_page_end(ref_vu, kWidth * kHeight / 2);
+
+  MemRandomize(src_raw, kWidth * kHeight * 3);
+
+  RAWToNV21(src_raw, kWidth * 3, dst_y, kWidth, dst_vu, kWidth, kWidth,
+            kHeight);
+
+  // Verify against RAWToI420 + interleaving V and U
+  RAWToI420(src_raw, kWidth * 3, ref_y, kWidth, ref_u, kWidth / 2, ref_v,
+            kWidth / 2, kWidth, kHeight);
+  for (int i = 0; i < kWidth / 2 * kHeight / 2; ++i) {
+    ref_vu[i * 2] = ref_v[i];
+    ref_vu[i * 2 + 1] = ref_u[i];
+  }
+
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    ASSERT_EQ(dst_y[i], ref_y[i]);
+  }
+  for (int i = 0; i < kWidth * kHeight / 2; ++i) {
+    ASSERT_EQ(dst_vu[i], ref_vu[i]);
+  }
+
+  free_aligned_buffer_page_end(src_raw);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_vu);
+  free_aligned_buffer_page_end(ref_y);
+  free_aligned_buffer_page_end(ref_u);
+  free_aligned_buffer_page_end(ref_v);
+  free_aligned_buffer_page_end(ref_vu);
+}
+
+TEST_F(LibYUVConvertTest, TestRAWToJNV21) {
+  const int kWidth = 16;
+  const int kHeight = 16;
+  align_buffer_page_end(src_raw, kWidth * kHeight * 3);
+  align_buffer_page_end(dst_y, kWidth * kHeight);
+  align_buffer_page_end(dst_vu, kWidth * kHeight / 2);
+  align_buffer_page_end(ref_y, kWidth * kHeight);
+  align_buffer_page_end(ref_u, kWidth / 2 * kHeight / 2);
+  align_buffer_page_end(ref_v, kWidth / 2 * kHeight / 2);
+  align_buffer_page_end(ref_vu, kWidth * kHeight / 2);
+
+  MemRandomize(src_raw, kWidth * kHeight * 3);
+
+  RAWToJNV21(src_raw, kWidth * 3, dst_y, kWidth, dst_vu, kWidth, kWidth,
+             kHeight);
+
+  // Verify against RAWToJ420 + interleaving V and U
+  RAWToJ420(src_raw, kWidth * 3, ref_y, kWidth, ref_u, kWidth / 2, ref_v,
+            kWidth / 2, kWidth, kHeight);
+  for (int i = 0; i < kWidth / 2 * kHeight / 2; ++i) {
+    ref_vu[i * 2] = ref_v[i];
+    ref_vu[i * 2 + 1] = ref_u[i];
+  }
+
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    ASSERT_EQ(dst_y[i], ref_y[i]);
+  }
+  for (int i = 0; i < kWidth * kHeight / 2; ++i) {
+    ASSERT_EQ(dst_vu[i], ref_vu[i]);
+  }
+
+  free_aligned_buffer_page_end(src_raw);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_vu);
+  free_aligned_buffer_page_end(ref_y);
+  free_aligned_buffer_page_end(ref_u);
+  free_aligned_buffer_page_end(ref_v);
+  free_aligned_buffer_page_end(ref_vu);
+}
+
+TEST_F(LibYUVConvertTest, TestRGB24ToNV12) {
+  const int kWidth = 16;
+  const int kHeight = 16;
+  align_buffer_page_end(src_rgb24, kWidth * kHeight * 3);
+  align_buffer_page_end(dst_y, kWidth * kHeight);
+  align_buffer_page_end(dst_uv, kWidth * kHeight / 2);
+  align_buffer_page_end(ref_y, kWidth * kHeight);
+  align_buffer_page_end(ref_u, kWidth / 2 * kHeight / 2);
+  align_buffer_page_end(ref_v, kWidth / 2 * kHeight / 2);
+  align_buffer_page_end(ref_uv, kWidth * kHeight / 2);
+
+  MemRandomize(src_rgb24, kWidth * kHeight * 3);
+
+  RGB24ToNV12(src_rgb24, kWidth * 3, dst_y, kWidth, dst_uv, kWidth, kWidth,
+              kHeight);
+
+  // Verify against RGB24ToI420 + interleaving U and V
+  RGB24ToI420(src_rgb24, kWidth * 3, ref_y, kWidth, ref_u, kWidth / 2, ref_v,
+              kWidth / 2, kWidth, kHeight);
+  for (int i = 0; i < kWidth / 2 * kHeight / 2; ++i) {
+    ref_uv[i * 2] = ref_u[i];
+    ref_uv[i * 2 + 1] = ref_v[i];
+  }
+
+  for (int i = 0; i < kWidth * kHeight; ++i) {
+    ASSERT_EQ(dst_y[i], ref_y[i]);
+  }
+  for (int i = 0; i < kWidth * kHeight / 2; ++i) {
+    ASSERT_EQ(dst_uv[i], ref_uv[i]);
+  }
+
+  free_aligned_buffer_page_end(src_rgb24);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_uv);
+  free_aligned_buffer_page_end(ref_y);
+  free_aligned_buffer_page_end(ref_u);
+  free_aligned_buffer_page_end(ref_v);
+  free_aligned_buffer_page_end(ref_uv);
+}
+
 TEST_F(LibYUVConvertTest, TestARGBToNV12Matrix) {
   const int kWidth = 16;
   const int kHeight = 16;
@@ -2551,6 +2795,76 @@ TEST_F(LibYUVConvertTest, ABGRToI420_Check) {
                 benchmark_cpu_info_);
   TestRGBToI420(ABGRToI420, ABGRToARGB, 1280, 720, disable_cpu_flags_,
                 benchmark_cpu_info_);
+}
+
+// I210ToI420/I212ToI420 funnel through I21xToI420, which scales chroma
+// vertically. Verify oversize heights do not overflow a signed int.
+TEST_F(LibYUVConvertTest, I21xToI420NoHeightOverflow) {
+  int width = 4;
+  int height = 40000;
+  int half_width = (width + 1) / 2;
+  int half_height = (height + 1) / 2;
+  // I21x: 16-bit 4:2:2
+  align_buffer_page_end_16(src_y, width * height);
+  align_buffer_page_end_16(src_u, half_width * height);
+  align_buffer_page_end_16(src_v, half_width * height);
+  // I420: 8-bit 4:2:0
+  align_buffer_page_end(dst_y, width * height);
+  align_buffer_page_end(dst_u, half_width * half_height);
+  align_buffer_page_end(dst_v, half_width * half_height);
+
+  memset(src_y, 0, width * height * sizeof(uint16_t));
+  memset(src_u, 0, half_width * height * sizeof(uint16_t));
+  memset(src_v, 0, half_width * height * sizeof(uint16_t));
+
+  EXPECT_EQ(0, I210ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, 32767));
+  EXPECT_EQ(0, I210ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, 32768));
+  EXPECT_EQ(0, I210ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, 32769));
+  EXPECT_EQ(0, I210ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, -32767));
+  EXPECT_EQ(0, I210ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, -32768));
+  EXPECT_EQ(0, I210ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, -32769));
+  EXPECT_EQ(0, I212ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, 32767));
+  EXPECT_EQ(0, I212ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, 32768));
+  EXPECT_EQ(0, I212ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, 32769));
+  EXPECT_EQ(0, I212ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, -32767));
+  EXPECT_EQ(0, I212ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, -32768));
+  EXPECT_EQ(0, I212ToI420(src_y, 4, src_u, 2, src_v, 2, dst_y, 4, dst_u, 2,
+                          dst_v, 2, 4, -32769));
+
+  free_aligned_buffer_page_end_16(src_y);
+  free_aligned_buffer_page_end_16(src_u);
+  free_aligned_buffer_page_end_16(src_v);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_u);
+  free_aligned_buffer_page_end(dst_v);
+}
+
+// Call YUY2ToNV12() with a width that is not a multiple of 32. Verify there is
+// no stack buffer overflow in YUY2ToNVUVRow_Any_AVX2().
+TEST_F(LibYUVConvertTest, YUY2ToNV12Overflow) {
+  int width = 40 * 32 + 30;  // 1310
+  int height = 4;
+  int src_stride_yuy2 = width * 2;
+  align_buffer_page_end(src_yuy2, src_stride_yuy2 * height);
+  align_buffer_page_end(dst_y, width * height);
+  align_buffer_page_end(dst_uv, width * ((height + 1) / 2));
+  memset(src_yuy2, 0xA5, src_stride_yuy2 * height);
+  EXPECT_EQ(0, YUY2ToNV12(src_yuy2, src_stride_yuy2, dst_y, width, dst_uv,
+                          width, width, height));
+  free_aligned_buffer_page_end(src_yuy2);
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_uv);
 }
 
 #endif  // !defined(LEAN_TESTS)

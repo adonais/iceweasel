@@ -37,13 +37,14 @@ fun WallpaperBackground(
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     LaunchedEffect(wallpaper.name, orientation) {
-        bitmap = if (Wallpaper.isLocalWallpaper(wallpaper.name)) {
-            null
-        } else {
-            loadBitmap(wallpaper, orientation).also { result ->
-                if (result == null) onLoadFailed()
+        bitmap =
+            if (Wallpaper.isLocalWallpaper(wallpaper.name)) {
+                null
+            } else {
+                loadBitmap(wallpaper, orientation).also { result ->
+                    if (result == null) onLoadFailed()
+                }
             }
-        }
     }
 
     bitmap?.let {

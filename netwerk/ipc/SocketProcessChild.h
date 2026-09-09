@@ -44,7 +44,7 @@ class SocketProcessChild final : public PSocketProcessChild {
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
   mozilla::ipc::IPCResult RecvInit(
-      const SocketPorcessInitAttributes& aAttributes);
+      const SocketProcessInitAttributes& aAttributes);
   mozilla::ipc::IPCResult RecvPreferenceUpdate(const Pref& aPref);
   mozilla::ipc::IPCResult RecvRequestMemoryReport(
       const uint32_t& generation, const bool& anonymize,
@@ -146,7 +146,8 @@ class SocketProcessChild final : public PSocketProcessChild {
 
   mozilla::ipc::IPCResult RecvFlushFOGData(FlushFOGDataResolver&& aResolver);
 
-  mozilla::ipc::IPCResult RecvLoadSSLTokensCache(ByteBuf&& aBuf);
+  mozilla::ipc::IPCResult RecvLoadSSLTokensCache(
+      nsTArray<SSLTokensCacheRecordInfo>&& aRecords);
   mozilla::ipc::IPCResult RecvFlushSSLTokensCache(
       FlushSSLTokensCacheResolver&& aResolver);
 

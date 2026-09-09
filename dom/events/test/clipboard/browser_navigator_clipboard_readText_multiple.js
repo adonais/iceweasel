@@ -14,7 +14,7 @@ async function waitForPasteContextMenu() {
     pasteButton,
     { attributeFilter: ["disabled"] },
     () => !pasteButton.disabled,
-    "Wait for paste button enabled"
+    { msg: "Wait for paste button enabled" }
   );
 }
 

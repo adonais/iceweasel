@@ -10,6 +10,7 @@ import android.view.ViewTreeObserver
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager.INVALID_OFFSET
 import androidx.recyclerview.widget.RecyclerView
+import kotlin.test.assertIs
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.eq
@@ -28,7 +29,6 @@ import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import kotlin.test.assertIs
 
 class StickyItemsLinearLayoutManagerTest {
     // For shorter test names "StickyItemsLinearLayoutManager" is referred to as SILLM.
@@ -71,11 +71,12 @@ class StickyItemsLinearLayoutManagerTest {
 
     @Test
     fun `GIVEN a SILLM WHEN onRestoreInstanceState is called with a new state THEN it updates scrollPosition and scrollOffset`() {
-        val newState = SavedState(
-            null,
-            scrollPosition = 222,
-            scrollOffset = 221,
-        )
+        val newState =
+            SavedState(
+                null,
+                scrollPosition = 222,
+                scrollOffset = 221,
+            )
 
         manager.onRestoreInstanceState(newState)
 
@@ -584,11 +585,12 @@ class StickyItemsLinearLayoutManagerTest {
 
     @Test
     fun `WHEN get is called for a reversed StickyItemPlacement#TOP layout manager THEN a StickyHeaderLinearLayoutManager is returned`() {
-        val result = StickyItemsLinearLayoutManager.get<FakeStickyItemsAdapter>(
-            mock(),
-            StickyItemPlacement.TOP,
-            true,
-        )
+        val result =
+            StickyItemsLinearLayoutManager.get<FakeStickyItemsAdapter>(
+                mock(),
+                StickyItemPlacement.TOP,
+                true,
+            )
 
         assertIs<StickyHeaderLinearLayoutManager<*>>(result)
         assertTrue(result.reverseLayout)
@@ -596,11 +598,12 @@ class StickyItemsLinearLayoutManagerTest {
 
     @Test
     fun `WHEN get is called for a not reversed StickyItemPlacement#TOP layout manager THEN a StickyHeaderLinearLayoutManager is returned`() {
-        val result = StickyItemsLinearLayoutManager.get<FakeStickyItemsAdapter>(
-            mock(),
-            StickyItemPlacement.TOP,
-            false,
-        )
+        val result =
+            StickyItemsLinearLayoutManager.get<FakeStickyItemsAdapter>(
+                mock(),
+                StickyItemPlacement.TOP,
+                false,
+            )
 
         assertIs<StickyHeaderLinearLayoutManager<*>>(result)
         assertFalse(result.reverseLayout)
@@ -608,11 +611,12 @@ class StickyItemsLinearLayoutManagerTest {
 
     @Test
     fun `WHEN get is called for a reversed StickyItemPlacement#BOTTOM layout manager THEN a StickyFooterLinearLayoutManager is returned`() {
-        val result = StickyItemsLinearLayoutManager.get<FakeStickyItemsAdapter>(
-            mock(),
-            StickyItemPlacement.BOTTOM,
-            true,
-        )
+        val result =
+            StickyItemsLinearLayoutManager.get<FakeStickyItemsAdapter>(
+                mock(),
+                StickyItemPlacement.BOTTOM,
+                true,
+            )
 
         assertIs<StickyFooterLinearLayoutManager<*>>(result)
         assertTrue(result.reverseLayout)
@@ -620,11 +624,12 @@ class StickyItemsLinearLayoutManagerTest {
 
     @Test
     fun `WHEN get is called for a not reversed StickyItemPlacement#BOTTOM layout manager THEN a StickyFooterLinearLayoutManager is returned`() {
-        val result = StickyItemsLinearLayoutManager.get<FakeStickyItemsAdapter>(
-            mock(),
-            StickyItemPlacement.BOTTOM,
-            false,
-        )
+        val result =
+            StickyItemsLinearLayoutManager.get<FakeStickyItemsAdapter>(
+                mock(),
+                StickyItemPlacement.BOTTOM,
+                false,
+            )
 
         assertIs<StickyFooterLinearLayoutManager<*>>(result)
         assertFalse(result.reverseLayout)

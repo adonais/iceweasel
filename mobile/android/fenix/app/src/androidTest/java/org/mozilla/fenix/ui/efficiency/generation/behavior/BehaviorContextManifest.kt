@@ -32,9 +32,7 @@ enum class BehaviorContextApplicationMode {
 /**
  * One allowed value for a context axis.
  *
- * Example:
- *   key=BrowserMode, value=Default
- *   key=BrowserMode, value=Private
+ * Example: key=BrowserMode, value=Default key=BrowserMode, value=Private
  */
 data class BehaviorContextValueSpec(
     val key: String,
@@ -43,90 +41,95 @@ data class BehaviorContextValueSpec(
     val applicationMode: BehaviorContextApplicationMode,
     val reason: String,
 ) {
-    val id: String get() = "$key=$value"
+    val id: String
+        get() = "$key=$value"
 }
 
 /**
  * Manifest of context values we care about.
  *
- * This is intentionally broader than what is runnable today.
- * It is both a roadmap and a source of explanations when generated cases are skipped.
+ * This is intentionally broader than what is runnable today. It is both a roadmap and a source of explanations when
+ * generated cases are skipped.
  */
 object BehaviorContextManifest {
 
-    val all: List<BehaviorContextValueSpec> = listOf(
-        BehaviorContextValueSpec(
-            key = "BrowserMode",
-            value = "Default",
-            status = BehaviorContextStatus.IMPLEMENTED,
-            applicationMode = BehaviorContextApplicationMode.IMPLICIT_DEFAULT,
-            reason = "Default app/browser mode is created by the normal BaseTest launch path.",
-        ),
-        BehaviorContextValueSpec(
-            key = "BrowserMode",
-            value = "Private",
-            status = BehaviorContextStatus.TODO,
-            applicationMode = BehaviorContextApplicationMode.RUNTIME_SETUP,
-            reason = "Needs a Behavior runtime setup capability that opens or verifies private browsing mode.",
-        ),
-        BehaviorContextValueSpec(
-            key = "PocketEnabled",
-            value = "false",
-            status = BehaviorContextStatus.TODO,
-            applicationMode = BehaviorContextApplicationMode.BASE_TEST_CONSTRUCTOR,
-            reason = "BaseTest has a constructor flag, but Behavior shards do not yet derive BaseTest config from context.",
-        ),
-        BehaviorContextValueSpec(
-            key = "RecentlyVisitedEnabled",
-            value = "false",
-            status = BehaviorContextStatus.TODO,
-            applicationMode = BehaviorContextApplicationMode.BASE_TEST_CONSTRUCTOR,
-            reason = "BaseTest has a constructor flag, but Behavior shards do not yet derive BaseTest config from context.",
-        ),
-        BehaviorContextValueSpec(
-            key = "UnifiedTrustPanelEnabled",
-            value = "false",
-            status = BehaviorContextStatus.TODO,
-            applicationMode = BehaviorContextApplicationMode.BASE_TEST_CONSTRUCTOR,
-            reason = "BaseTest has a constructor flag, but Behavior shards do not yet derive BaseTest config from context.",
-        ),
-        BehaviorContextValueSpec(
-            key = "Account",
-            value = "SignedOut",
-            status = BehaviorContextStatus.TODO,
-            applicationMode = BehaviorContextApplicationMode.PRESEEDED_DATA,
-            reason = "Signed-out is probably the default, but the Behavior context layer does not yet own account-state validation.",
-        ),
-        BehaviorContextValueSpec(
-            key = "Account",
-            value = "SignedIn",
-            status = BehaviorContextStatus.TODO,
-            applicationMode = BehaviorContextApplicationMode.PRESEEDED_DATA,
-            reason = "Needs account setup or mock account/session support.",
-        ),
-        BehaviorContextValueSpec(
-            key = "DeviceClass",
-            value = "Phone",
-            status = BehaviorContextStatus.TODO,
-            applicationMode = BehaviorContextApplicationMode.CI_DEVICE_SELECTION,
-            reason = "Device class should be selected by CI/device pool, not toggled inside the test.",
-        ),
-        BehaviorContextValueSpec(
-            key = "DeviceClass",
-            value = "Tablet",
-            status = BehaviorContextStatus.TODO,
-            applicationMode = BehaviorContextApplicationMode.CI_DEVICE_SELECTION,
-            reason = "Device class should be selected by CI/device pool, not toggled inside the test.",
-        ),
-    )
+    val all: List<BehaviorContextValueSpec> =
+        listOf(
+            BehaviorContextValueSpec(
+                key = "BrowserMode",
+                value = "Default",
+                status = BehaviorContextStatus.IMPLEMENTED,
+                applicationMode = BehaviorContextApplicationMode.IMPLICIT_DEFAULT,
+                reason = "Default app/browser mode is created by the normal BaseTest launch path.",
+            ),
+            BehaviorContextValueSpec(
+                key = "BrowserMode",
+                value = "Private",
+                status = BehaviorContextStatus.TODO,
+                applicationMode = BehaviorContextApplicationMode.RUNTIME_SETUP,
+                reason = "Needs a Behavior runtime setup capability that opens or verifies private browsing mode.",
+            ),
+            BehaviorContextValueSpec(
+                key = "PocketEnabled",
+                value = "false",
+                status = BehaviorContextStatus.TODO,
+                applicationMode = BehaviorContextApplicationMode.BASE_TEST_CONSTRUCTOR,
+                reason =
+                    "BaseTest has a constructor flag, but Behavior shards do not yet derive BaseTest config from context.",
+            ),
+            BehaviorContextValueSpec(
+                key = "RecentlyVisitedEnabled",
+                value = "false",
+                status = BehaviorContextStatus.TODO,
+                applicationMode = BehaviorContextApplicationMode.BASE_TEST_CONSTRUCTOR,
+                reason =
+                    "BaseTest has a constructor flag, but Behavior shards do not yet derive BaseTest config from context.",
+            ),
+            BehaviorContextValueSpec(
+                key = "UnifiedTrustPanelEnabled",
+                value = "false",
+                status = BehaviorContextStatus.TODO,
+                applicationMode = BehaviorContextApplicationMode.BASE_TEST_CONSTRUCTOR,
+                reason =
+                    "BaseTest has a constructor flag, but Behavior shards do not yet derive BaseTest config from context.",
+            ),
+            BehaviorContextValueSpec(
+                key = "Account",
+                value = "SignedOut",
+                status = BehaviorContextStatus.TODO,
+                applicationMode = BehaviorContextApplicationMode.PRESEEDED_DATA,
+                reason =
+                    "Signed-out is probably the default, but the Behavior context layer does not yet own account-state validation.",
+            ),
+            BehaviorContextValueSpec(
+                key = "Account",
+                value = "SignedIn",
+                status = BehaviorContextStatus.TODO,
+                applicationMode = BehaviorContextApplicationMode.PRESEEDED_DATA,
+                reason = "Needs account setup or mock account/session support.",
+            ),
+            BehaviorContextValueSpec(
+                key = "DeviceClass",
+                value = "Phone",
+                status = BehaviorContextStatus.TODO,
+                applicationMode = BehaviorContextApplicationMode.CI_DEVICE_SELECTION,
+                reason = "Device class should be selected by CI/device pool, not toggled inside the test.",
+            ),
+            BehaviorContextValueSpec(
+                key = "DeviceClass",
+                value = "Tablet",
+                status = BehaviorContextStatus.TODO,
+                applicationMode = BehaviorContextApplicationMode.CI_DEVICE_SELECTION,
+                reason = "Device class should be selected by CI/device pool, not toggled inside the test.",
+            ),
+        )
 
     fun find(
         key: String,
         value: String,
     ): BehaviorContextValueSpec? {
         return all.firstOrNull {
-            it.key.equals(key, ignoreCase = true) &&
-                it.value.equals(value, ignoreCase = true)
+            it.key.equals(key, ignoreCase = true) && it.value.equals(value, ignoreCase = true)
         }
     }
 }

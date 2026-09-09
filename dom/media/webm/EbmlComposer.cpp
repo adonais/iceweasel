@@ -4,10 +4,11 @@
 
 #include "EbmlComposer.h"
 
+#include <limits>
+
 #include "libmkv/EbmlIDs.h"
 #include "libmkv/EbmlWriter.h"
 #include "libmkv/WebMElement.h"
-#include "limits.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/UniquePtr.h"
 #include "prtime.h"
@@ -18,8 +19,15 @@ namespace mozilla {
 constexpr unsigned long TIME_CODE_SCALE = 1000000;
 // The WebM header size without audio CodecPrivateData
 constexpr int32_t DEFAULT_HEADER_SIZE = 1024;
-// Number of milliseconds after which we flush audio-only clusters
-constexpr int32_t FLUSH_AUDIO_ONLY_AFTER_MS = 1000;
+// A SimpleBlock's timecode is serialized relative to the start of its cluster
+// as a signed 16-bit number of TIME_CODE_SCALE units, i.e. milliseconds.
+constexpr int64_t MAX_BLOCK_TIMECODE_MS = std::numeric_limits<int16_t>::max();
+// Start a new cluster once a frame is this far past the start of the current
+// one. Keyframes start clusters too, but nothing guarantees that they keep
+// coming: a video track can stall, and an audio-only stream has none at all.
+constexpr int64_t NEW_CLUSTER_AFTER_MS = 1000;
+static_assert(NEW_CLUSTER_AFTER_MS <= MAX_BLOCK_TIMECODE_MS,
+              "A cluster must not span more than a block timecode can hold");
 
 void EbmlComposer::GenerateHeader() {
   MOZ_RELEASE_ASSERT(!mMetadataFinished);
@@ -98,12 +106,12 @@ nsresult EbmlComposer::WriteSimpleBlock(EncodedFrame* aFrame) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  int64_t timeCode = aFrame->mTime.ToMicroseconds() / PR_USEC_PER_MSEC -
-                     mCurrentClusterTimecode;
+  const int64_t frameTimecode = aFrame->mTime.ToMilliseconds();
+  int64_t timeCode =
+      frameTimecode - static_cast<int64_t>(mCurrentClusterTimecode);
 
   const bool needClusterHeader =
-      !mHasWrittenCluster ||
-      (!mHasVideo && timeCode >= FLUSH_AUDIO_ONLY_AFTER_MS) || isVP8IFrame;
+      !mHasWrittenCluster || timeCode >= NEW_CLUSTER_AFTER_MS || isVP8IFrame;
 
   auto block = mBuffer.AppendElement();
   block->SetLength(aFrame->mFrameData->Length() + DEFAULT_HEADER_SIZE);
@@ -123,22 +131,17 @@ nsresult EbmlComposer::WriteSimpleBlock(EncodedFrame* aFrame) {
     // allows us to stream the muxed data with much lower latency than if we
     // would have to wait for clusters to end.
     Ebml_StartSubElement(&ebml, &ebmlLoc, Cluster);
-    // if timeCode didn't under/overflow before, it shouldn't after this
-    mCurrentClusterTimecode = aFrame->mTime.ToMicroseconds() / PR_USEC_PER_MSEC;
+    mCurrentClusterTimecode = frameTimecode;
     Ebml_SerializeUnsigned(&ebml, Timecode, mCurrentClusterTimecode);
 
-    // Can't under-/overflow now
     timeCode = 0;
   }
 
-  if (MOZ_UNLIKELY(timeCode < SHRT_MIN || timeCode > SHRT_MAX)) {
-    MOZ_CRASH_UNSAFE_PRINTF(
-        "Invalid cluster timecode! audio=%d, video=%d, timeCode=%" PRId64
-        "ms, currentClusterTimecode=%" PRIu64 "ms",
-        mHasAudio, mHasVideo, timeCode, mCurrentClusterTimecode);
-  }
+  // Guaranteed by the cluster handling above, as long as callers write frames
+  // in non-decreasing time order.
+  MOZ_ASSERT(timeCode >= 0 && timeCode < NEW_CLUSTER_AFTER_MS);
 
-  writeSimpleBlock(&ebml, isOpus ? 0x2 : 0x1, static_cast<short>(timeCode),
+  writeSimpleBlock(&ebml, isOpus ? 0x2 : 0x1, static_cast<int16_t>(timeCode),
                    isVP8IFrame, 0, 0,
                    (unsigned char*)aFrame->mFrameData->Elements(),
                    aFrame->mFrameData->Length());

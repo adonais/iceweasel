@@ -27,15 +27,24 @@ class DownloaderAppAdapterTest {
     fun `bind apps`() {
         val nameLabel = spy(TextView(testContext))
         val iconImage = spy(ImageView(testContext))
-        val ourApp = DownloaderApp(name = "app", packageName = "thridparty.app", resolver = mock(), activityName = "", url = "", contentType = null)
+        val ourApp =
+            DownloaderApp(
+                name = "app",
+                packageName = "thridparty.app",
+                resolver = mock(),
+                activityName = "",
+                url = "",
+                contentType = null,
+            )
         val apps = listOf(ourApp)
         val view = View(testContext)
         var appSelected = false
         val viewHolder = DownloaderAppViewHolder(view, nameLabel, iconImage)
 
-        val adapter = DownloaderAppAdapter(testContext, apps) {
-            appSelected = true
-        }
+        val adapter =
+            DownloaderAppAdapter(testContext, apps) {
+                appSelected = true
+            }
 
         adapter.onBindViewHolder(viewHolder, 0)
         view.performClick()

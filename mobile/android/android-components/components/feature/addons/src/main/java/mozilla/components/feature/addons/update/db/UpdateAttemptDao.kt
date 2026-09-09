@@ -9,17 +9,13 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 
-/**
- * Internal dao for accessing and modifying add-on update requests in the database.
- */
+/** Internal dao for accessing and modifying add-on update requests in the database. */
 @Dao
 internal interface UpdateAttemptDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertOrUpdate(entity: UpdateAttemptEntity): Long
+    @Insert(onConflict = OnConflictStrategy.REPLACE) fun insertOrUpdate(entity: UpdateAttemptEntity): Long
 
     @Query("SELECT * FROM update_attempts where addon_id =:addonId")
     fun getUpdateAttemptFor(addonId: String): UpdateAttemptEntity?
 
-    @Query("DELETE FROM update_attempts where addon_id =:addonId")
-    fun deleteUpdateAttempt(addonId: String)
+    @Query("DELETE FROM update_attempts where addon_id =:addonId") fun deleteUpdateAttempt(addonId: String)
 }

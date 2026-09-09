@@ -14,8 +14,8 @@ import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
 /**
- * A composite JUnit [TestRule] that bundles the standard Focus test prerequisites:
- * notification permission grant, environment setup, and mock web server lifecycle.
+ * A composite JUnit [TestRule] that bundles the standard Focus test prerequisites: notification permission grant,
+ * environment setup, and mock web server lifecycle.
  *
  * Declare it as the outermost rule in each test class:
  * ```
@@ -29,15 +29,12 @@ class FocusTestRule : TestRule {
     val mockWebServerRule = MockWebServerRule()
 
     override fun apply(base: Statement, description: Description): Statement =
-        RuleChain
-            .outerRule(
+        RuleChain.outerRule(
                 if (Build.VERSION.SDK_INT >= 33) {
-                    GrantPermissionRule.grant(
-                        Manifest.permission.POST_NOTIFICATIONS,
-                    )
+                    GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS)
                 } else {
                     GrantPermissionRule.grant()
-                },
+                }
             )
             .around(testSetupRule)
             .around(mockWebServerRule)

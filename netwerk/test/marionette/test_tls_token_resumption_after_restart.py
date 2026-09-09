@@ -12,6 +12,11 @@ from pathlib import Path
 
 from marionette_harness import MarionetteTestCase
 
+# add this directory to the path
+sys.path.append(os.path.dirname(__file__))
+
+from ssl_tokens_cache_mixin import SSLTokensCacheMixin
+
 HOST = "0rtt-accept-h1.example.com"
 PORT = 8443
 URL = f"https://{HOST}:{PORT}/"
@@ -69,7 +74,7 @@ _BASE_PREFS = {
 }
 
 
-class TLSTokenResumptionTestCase(MarionetteTestCase):
+class TLSTokenResumptionTestCase(SSLTokensCacheMixin, MarionetteTestCase):
     def setUp(self):
         super().setUp()
 
@@ -121,9 +126,9 @@ class TLSTokenResumptionTestCase(MarionetteTestCase):
             self.fail("ZeroRttAcceptServer did not start in time")
 
         # set_prefs() takes effect immediately: persistence=true fires
-        # SSLTokensCache.ReconcilePersistence() which sets up mBackingFile.
+        # SSLTokensCache.ReconcilePersistence() which opens the DB connection.
         self.marionette.set_prefs(_BASE_PREFS)
-        self.cache_file = Path(self.marionette.profile_path) / "ssl_tokens_cache.bin"
+        self.cache_file = Path(self.marionette.profile_path) / "ssl_tokens_cache.sqlite"
         self._import_ca_cert()
 
     def tearDown(self):
@@ -226,13 +231,14 @@ class TLSTokenResumptionTestCase(MarionetteTestCase):
         self.marionette.restart(in_app=True, clean=False)
 
         # 4. Re-apply prefs so ReconcilePersistence() fires in the new session
-        #    and calls DispatchLoad() to reload tokens from the file on disk.
+        #    and dispatches the DB open + reload of tokens from disk.
         self.marionette.set_prefs(_BASE_PREFS)
 
-        # 5. The cache file must have been written at shutdown.
-        self.assertTrue(
-            self.cache_file.exists(),
-            "ssl_tokens_cache.bin must exist after shutdown",
+        # 5. The cache file must contain the persisted token after shutdown.
+        self.assertGreaterEqual(
+            self.wait_for_cache_rows(self.cache_file, 1),
+            1,
+            "ssl_tokens_cache.sqlite must contain a row after shutdown",
         )
 
         # 6. Wait for the async disk-load to finish.
@@ -259,7 +265,7 @@ class TLSTokenResumptionTestCase(MarionetteTestCase):
 
     def test_no_resumption_without_persistence(self):
         """Negative control: disabling persistence means no resumption after restart."""
-        # ReconcilePersistence() tears down mBackingFile immediately when the
+        # ReconcilePersistence() closes the DB connection immediately when the
         # pref changes to false, so no file is written at the next shutdown.
         self.marionette.set_pref("network.ssl_tokens_cache_persistence", False)
 
@@ -280,7 +286,7 @@ class TLSTokenResumptionTestCase(MarionetteTestCase):
 
         self.assertFalse(
             self.cache_file.exists(),
-            "ssl_tokens_cache.bin must NOT exist when persistence is disabled",
+            "ssl_tokens_cache.sqlite must NOT exist when persistence is disabled",
         )
         self.assertEqual(
             self._token_count(),

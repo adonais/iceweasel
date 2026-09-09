@@ -41,14 +41,15 @@ fun BottomSheetHandle(
     color: Color = MaterialTheme.colorScheme.outline,
 ) {
     Surface(
-        modifier = modifier.semantics(mergeDescendants = true) {
-            role = Role.Button
-            this.contentDescription = contentDescription
-            onClick {
-                onRequestDismiss()
-                true
-            }
-        },
+        modifier =
+            modifier.semantics(mergeDescendants = true) {
+                role = Role.Button
+                this.contentDescription = contentDescription
+                onClick {
+                    onRequestDismiss()
+                    true
+                }
+            },
         shape = CircleShape,
         color = color,
     ) {

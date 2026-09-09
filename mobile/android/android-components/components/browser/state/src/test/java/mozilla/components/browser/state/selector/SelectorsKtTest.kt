@@ -4,6 +4,7 @@
 
 package mozilla.components.browser.state.selector
 
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.action.CustomTabListAction
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.BrowserState
@@ -16,7 +17,6 @@ import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import kotlin.test.assertNotNull
 
 class SelectorsKtTest {
     @Test
@@ -26,9 +26,7 @@ class SelectorsKtTest {
 
         assertNull(store.state.selectedTab)
 
-        store.dispatch(
-            CustomTabListAction.AddCustomTabAction(createCustomTab("https://www.mozilla.org")),
-        )
+        store.dispatch(CustomTabListAction.AddCustomTabAction(createCustomTab("https://www.mozilla.org")))
 
         assertNull(store.state.selectedTab)
 
@@ -53,9 +51,7 @@ class SelectorsKtTest {
         val tabLastAccessTimeStamp = 123L
         assertNull(store.state.selectedNormalTab)
 
-        store.dispatch(
-            CustomTabListAction.AddCustomTabAction(createCustomTab("https://www.mozilla.org")),
-        )
+        store.dispatch(CustomTabListAction.AddCustomTabAction(createCustomTab("https://www.mozilla.org")))
 
         assertNull(store.state.selectedNormalTab)
 
@@ -73,18 +69,14 @@ class SelectorsKtTest {
 
     @Test
     fun `selectedTab extension property - ignores unknown id`() {
-        val state = BrowserState(
-            selectedTabId = "no valid id",
-        )
+        val state = BrowserState(selectedTabId = "no valid id")
 
         assertNull(state.selectedTab)
     }
 
     @Test
     fun `selectedNormalTab extension property - ignores unknown id`() {
-        val state = BrowserState(
-            selectedTabId = "no valid id",
-        )
+        val state = BrowserState(selectedTabId = "no valid id")
 
         assertNull(state.selectedNormalTab)
     }
@@ -95,10 +87,11 @@ class SelectorsKtTest {
         val otherTab = createTab("https://getpocket.com")
         val customTab = createCustomTab("https://www.mozilla.org")
 
-        val state = BrowserState(
-            tabs = listOf(tab, otherTab),
-            customTabs = listOf(customTab),
-        )
+        val state =
+            BrowserState(
+                tabs = listOf(tab, otherTab),
+                customTabs = listOf(customTab),
+            )
 
         assertEquals(tab, state.findTab(tab.id))
         assertEquals(otherTab, state.findTab(otherTab.id))
@@ -112,10 +105,11 @@ class SelectorsKtTest {
         val otherTab = createTab("https://getpocket.com")
         val customTab = createCustomTab("https://www.mozilla.org")
 
-        val state = BrowserState(
-            tabs = listOf(tab, otherTab),
-            customTabs = listOf(customTab),
-        )
+        val state =
+            BrowserState(
+                tabs = listOf(tab, otherTab),
+                customTabs = listOf(customTab),
+            )
 
         assertEquals(tab, state.findTab(mockEngineSession))
     }
@@ -126,10 +120,11 @@ class SelectorsKtTest {
         val normalTab = createTab("https://getpocket.com")
         val customTab = createCustomTab("https://www.mozilla.org")
 
-        val state = BrowserState(
-            tabs = listOf(privateTab, normalTab),
-            customTabs = listOf(customTab),
-        )
+        val state =
+            BrowserState(
+                tabs = listOf(privateTab, normalTab),
+                customTabs = listOf(customTab),
+            )
 
         assertEquals(normalTab, state.findNormalTab(normalTab.id))
         assertNull(state.findNormalTab(privateTab.id))
@@ -142,10 +137,11 @@ class SelectorsKtTest {
         val otherTab = createTab("https://getpocket.com")
         val customTab = createCustomTab("https://www.mozilla.org")
 
-        val state = BrowserState(
-            tabs = listOf(tab, otherTab),
-            customTabs = listOf(customTab),
-        )
+        val state =
+            BrowserState(
+                tabs = listOf(tab, otherTab),
+                customTabs = listOf(customTab),
+            )
 
         assertNull(state.findCustomTab(tab.id))
         assertNull(state.findCustomTab(otherTab.id))
@@ -159,10 +155,11 @@ class SelectorsKtTest {
         val otherTab = createTab("https://getpocket.com")
         val customTab = createCustomTab("https://www.mozilla.org", engineSession = mockEngineSession)
 
-        val state = BrowserState(
-            tabs = listOf(tab, otherTab),
-            customTabs = listOf(customTab),
-        )
+        val state =
+            BrowserState(
+                tabs = listOf(tab, otherTab),
+                customTabs = listOf(customTab),
+            )
 
         assertEquals(customTab, state.findCustomTab(mockEngineSession))
     }
@@ -173,11 +170,12 @@ class SelectorsKtTest {
         val otherTab = createTab("https://getpocket.com")
         val customTab = createCustomTab("https://www.mozilla.org")
 
-        val state = BrowserState(
-            tabs = listOf(tab, otherTab),
-            customTabs = listOf(customTab),
-            selectedTabId = tab.id,
-        )
+        val state =
+            BrowserState(
+                tabs = listOf(tab, otherTab),
+                customTabs = listOf(customTab),
+                selectedTabId = tab.id,
+            )
 
         assertEquals(tab, state.findCustomTabOrSelectedTab())
         assertEquals(tab, state.findCustomTabOrSelectedTab(null))
@@ -192,11 +190,12 @@ class SelectorsKtTest {
         val otherTab = createTab("https://getpocket.com")
         val customTab = createCustomTab("https://www.mozilla.org")
 
-        val state = BrowserState(
-            tabs = listOf(tab, otherTab),
-            customTabs = listOf(customTab),
-            selectedTabId = tab.id,
-        )
+        val state =
+            BrowserState(
+                tabs = listOf(tab, otherTab),
+                customTabs = listOf(customTab),
+                selectedTabId = tab.id,
+            )
 
         assertEquals(tab, state.findTabOrCustomTabOrSelectedTab())
         assertEquals(tab, state.findTabOrCustomTabOrSelectedTab(null))
@@ -212,10 +211,11 @@ class SelectorsKtTest {
         val privateTab1 = createTab("https://getpocket.com", private = true)
         val privateTab2 = createTab("https://www.example.org", private = true)
 
-        val state = BrowserState(
-            tabs = listOf(tab1, privateTab1, tab2, privateTab2),
-            customTabs = listOf(createCustomTab("https://www.google.com")),
-        )
+        val state =
+            BrowserState(
+                tabs = listOf(tab1, privateTab1, tab2, privateTab2),
+                customTabs = listOf(createCustomTab("https://www.google.com")),
+            )
 
         assertEquals(listOf(tab1, tab2), state.getNormalOrPrivateTabs(private = false))
         assertEquals(listOf(privateTab1, privateTab2), state.getNormalOrPrivateTabs(private = true))
@@ -231,10 +231,11 @@ class SelectorsKtTest {
         val privateTab1 = createTab("https://getpocket.com", private = true)
         val privateTab2 = createTab("https://www.example.org", private = true)
 
-        val state = BrowserState(
-            tabs = listOf(tab1, privateTab1, tab2, privateTab2),
-            customTabs = listOf(createCustomTab("https://www.google.com")),
-        )
+        val state =
+            BrowserState(
+                tabs = listOf(tab1, privateTab1, tab2, privateTab2),
+                customTabs = listOf(createCustomTab("https://www.google.com")),
+            )
 
         assertEquals(listOf(tab1, tab2), state.normalTabs)
         assertEquals(listOf(privateTab1, privateTab2), state.privateTabs)
@@ -245,9 +246,7 @@ class SelectorsKtTest {
 
     @Test
     fun `findTabOrCustomTab finds normal and custom tabs`() {
-        BrowserState(
-            tabs = listOf(createTab("https://www.mozilla.org", id = "test-id")),
-        ).also { state ->
+        BrowserState(tabs = listOf(createTab("https://www.mozilla.org", id = "test-id"))).also { state ->
             assertNotNull(state.findTabOrCustomTab("test-id"))
             assertEquals(
                 "https://www.mozilla.org",
@@ -255,9 +254,7 @@ class SelectorsKtTest {
             )
         }
 
-        BrowserState(
-            customTabs = listOf(createCustomTab("https://www.mozilla.org", id = "test-id")),
-        ).also { state ->
+        BrowserState(customTabs = listOf(createCustomTab("https://www.mozilla.org", id = "test-id"))).also { state ->
             assertNotNull(state.findTabOrCustomTab("test-id"))
             assertEquals(
                 "https://www.mozilla.org",
@@ -269,9 +266,8 @@ class SelectorsKtTest {
     @Test
     fun `WHEN findTabOrCustomTab WITH engine session THEN correct tab is returned`() {
         val mockEngineSession: EngineSession = mock()
-        BrowserState(
-            tabs = listOf(createTab("https://www.mozilla.org", engineSession = mockEngineSession)),
-        ).also { state ->
+        BrowserState(tabs = listOf(createTab("https://www.mozilla.org", engineSession = mockEngineSession))).also {
+            state ->
             assertNotNull(state.findTabOrCustomTab(mockEngineSession))
             assertEquals(
                 "https://www.mozilla.org",
@@ -279,22 +275,20 @@ class SelectorsKtTest {
             )
         }
 
-        BrowserState(
-            customTabs = listOf(createCustomTab("https://www.mozilla.org", engineSession = mockEngineSession)),
-        ).also { state ->
-            assertNotNull(state.findTabOrCustomTab(mockEngineSession))
-            assertEquals(
-                "https://www.mozilla.org",
-                state.findTabOrCustomTab(mockEngineSession)!!.content.url,
-            )
-        }
+        BrowserState(customTabs = listOf(createCustomTab("https://www.mozilla.org", engineSession = mockEngineSession)))
+            .also { state ->
+                assertNotNull(state.findTabOrCustomTab(mockEngineSession))
+                assertEquals(
+                    "https://www.mozilla.org",
+                    state.findTabOrCustomTab(mockEngineSession)!!.content.url,
+                )
+            }
     }
 
     @Test
     fun `findNormalOrPrivateTabByUrl finds a matching normal tab`() {
-        BrowserState(
-            tabs = listOf(createTab("https://www.mozilla.org", id = "test-id", private = false)),
-        ).also { state ->
+        BrowserState(tabs = listOf(createTab("https://www.mozilla.org", id = "test-id", private = false))).also { state
+            ->
             assertNotNull(state.findNormalOrPrivateTabByUrl("https://www.mozilla.org", false))
             assertEquals(
                 "https://www.mozilla.org",
@@ -309,18 +303,16 @@ class SelectorsKtTest {
 
     @Test
     fun `findNormalOrPrivateTabByUrl finds no matching normal tab`() {
-        BrowserState(
-            tabs = listOf(createTab("https://www.mozilla.org", id = "test-id", private = true)),
-        ).also { state ->
+        BrowserState(tabs = listOf(createTab("https://www.mozilla.org", id = "test-id", private = true))).also { state
+            ->
             assertNull(state.findNormalOrPrivateTabByUrl("https://www.mozilla.org", false))
         }
     }
 
     @Test
     fun `findNormalOrPrivateTabByUrl finds a matching private tab`() {
-        BrowserState(
-            tabs = listOf(createTab("https://www.mozilla.org", id = "test-id", private = true)),
-        ).also { state ->
+        BrowserState(tabs = listOf(createTab("https://www.mozilla.org", id = "test-id", private = true))).also { state
+            ->
             assertNotNull(state.findNormalOrPrivateTabByUrl("https://www.mozilla.org", true))
             assertEquals(
                 "https://www.mozilla.org",
@@ -335,9 +327,8 @@ class SelectorsKtTest {
 
     @Test
     fun `findNormalOrPrivateTabByUrl finds no matching private tab`() {
-        BrowserState(
-            tabs = listOf(createTab("https://www.mozilla.org", id = "test-id", private = false)),
-        ).also { state ->
+        BrowserState(tabs = listOf(createTab("https://www.mozilla.org", id = "test-id", private = false))).also { state
+            ->
             assertNull(state.findNormalOrPrivateTabByUrl("https://www.mozilla.org", true))
         }
     }
@@ -345,17 +336,49 @@ class SelectorsKtTest {
     @Test
     fun `findNormalOrPrivateTabByUrlIgnoringFragment extension function`() {
         val tab1 = createTab("https://www.firefox.com/query?isMorning=yes#hello", private = false)
-        val tab2 = createTab("moz-extension://4d1a24b3-bdd1-4763-a766-b5a8c1a0012c/dashboard.html#settings.html", private = false)
+        val tab2 =
+            createTab(
+                "moz-extension://4d1a24b3-bdd1-4763-a766-b5a8c1a0012c/dashboard.html#settings.html",
+                private = false,
+            )
         val privateTab1 = createTab("https://getpocket.com", private = true)
         val privateTab2 = createTab("https://mozilla.org", private = true)
         val state = BrowserState(tabs = listOf(tab1, privateTab1, tab2, privateTab2))
 
-        assertEquals(tab1, state.findNormalOrPrivateTabByUrlIgnoringFragment("https://www.firefox.com/query?isMorning=yes", private = false))
-        assertEquals(tab1, state.findNormalOrPrivateTabByUrlIgnoringFragment("https://www.firefox.com/query?isMorning=yes#bye", private = false))
-        assertEquals(tab2, state.findNormalOrPrivateTabByUrlIgnoringFragment("moz-extension://4d1a24b3-bdd1-4763-a766-b5a8c1a0012c/dashboard.html", private = false))
-        assertEquals(privateTab2, state.findNormalOrPrivateTabByUrlIgnoringFragment("https://mozilla.org/", private = true))
-        assertNull(state.findNormalOrPrivateTabByUrlIgnoringFragment("https://firefox.com/query?isMorning=yes", private = false))
+        assertEquals(
+            tab1,
+            state.findNormalOrPrivateTabByUrlIgnoringFragment(
+                "https://www.firefox.com/query?isMorning=yes",
+                private = false,
+            ),
+        )
+        assertEquals(
+            tab1,
+            state.findNormalOrPrivateTabByUrlIgnoringFragment(
+                "https://www.firefox.com/query?isMorning=yes#bye",
+                private = false,
+            ),
+        )
+        assertEquals(
+            tab2,
+            state.findNormalOrPrivateTabByUrlIgnoringFragment(
+                "moz-extension://4d1a24b3-bdd1-4763-a766-b5a8c1a0012c/dashboard.html",
+                private = false,
+            ),
+        )
+        assertEquals(
+            privateTab2,
+            state.findNormalOrPrivateTabByUrlIgnoringFragment("https://mozilla.org/", private = true),
+        )
+        assertNull(
+            state.findNormalOrPrivateTabByUrlIgnoringFragment(
+                "https://firefox.com/query?isMorning=yes",
+                private = false,
+            )
+        )
         // This asserts that the function doesn't throw if an illegal url is checked
-        assertNull(state.findNormalOrPrivateTabByUrlIgnoringFragment("https://getpocket.com/#/private#now", private = true))
+        assertNull(
+            state.findNormalOrPrivateTabByUrlIgnoringFragment("https://getpocket.com/#/private#now", private = true)
+        )
     }
 }

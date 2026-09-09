@@ -8,8 +8,8 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
 /**
- * Represents data to share for the Web Share and Web Share Target APIs.
- * https://w3c.github.io/web-share/
+ * Represents data to share for the Web Share and Web Share Target APIs. https://w3c.github.io/web-share/
+ *
  * @property title Title for the share request.
  * @property text Text for the share request.
  * @property url URL for the share request.
@@ -19,4 +19,5 @@ data class ShareData(
     val title: String? = null,
     val text: String? = null,
     val url: String? = null,
+    val private: Boolean,
 ) : Parcelable

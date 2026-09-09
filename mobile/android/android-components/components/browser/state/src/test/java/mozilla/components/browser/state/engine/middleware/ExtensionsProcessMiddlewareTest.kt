@@ -19,10 +19,11 @@ class ExtensionsProcessMiddlewareTest {
     @Before
     fun setUp() {
         engine = Mockito.mock()
-        store = BrowserStore(
-            middleware = listOf(ExtensionsProcessMiddleware(engine)),
-            initialState = BrowserState(),
-        )
+        store =
+            BrowserStore(
+                middleware = listOf(ExtensionsProcessMiddleware(engine)),
+                initialState = BrowserState(),
+            )
     }
 
     @Test

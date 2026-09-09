@@ -16,9 +16,7 @@ import org.mozilla.fenix.components.appstate.AppState
  *
  * @param crashMiddleware A middleware for handling side-effects related to [CrashAction]s.
  */
-class CrashReportingAppMiddleware(
-    private val crashMiddleware: CrashMiddleware,
-) : Middleware<AppState, AppAction> {
+class CrashReportingAppMiddleware(private val crashMiddleware: CrashMiddleware) : Middleware<AppState, AppAction> {
     override fun invoke(
         store: Store<AppState, AppAction>,
         next: (AppAction) -> Unit,

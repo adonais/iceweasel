@@ -22,13 +22,9 @@ data class PageTranslationStatus(
     val fromSelectedLanguage: Language? = null,
     val toSelectedLanguage: Language? = null,
 ) {
-    /**
-     * Static configuration and properties of [PageTranslationStatus].
-     */
+    /** Static configuration and properties of [PageTranslationStatus]. */
     companion object {
-        /**
-         * [PageTranslationStatus] for when translating the current page is not possible.
-         */
+        /** [PageTranslationStatus] for when translating the current page is not possible. */
         val NOT_POSSIBLE = PageTranslationStatus(false, false, false)
     }
 }

@@ -32,7 +32,6 @@ win32-mingwclang/opt:
             PERFHERDER_EXTRA_OPTIONS: "opt 32 clang"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
     run:
-        clone-with: hg
         config:
             - builds/releng_base_firefox.py
             - builds/releng_base_windows_32_mingw_builds.py
@@ -74,7 +73,6 @@ win32-mingwclang/debug:
             PERFHERDER_EXTRA_OPTIONS: "debug 32 clang"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
     run:
-        clone-with: hg
         config:
             - builds/releng_base_firefox.py
             - builds/releng_base_windows_32_mingw_builds.py
@@ -116,7 +114,6 @@ win64-mingwclang/opt:
             PERFHERDER_EXTRA_OPTIONS: "opt 64 clang"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
     run:
-        clone-with: hg
         config:
             - builds/releng_base_firefox.py
             - builds/releng_base_windows_64_mingw_builds.py
@@ -158,7 +155,6 @@ win64-mingwclang/debug:
             PERFHERDER_EXTRA_OPTIONS: "debug 64 clang"
             MOZ_AUTOMATION_PACKAGE_TESTS: "1"
     run:
-        clone-with: hg
         config:
             - builds/releng_base_firefox.py
             - builds/releng_base_windows_64_mingw_builds.py

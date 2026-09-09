@@ -22,5 +22,6 @@ void PutSamples(soundtouch::SoundTouch* mTimeStretcher,
                 const soundtouch::SAMPLETYPE* samples, uint numSamples);
 uint ReceiveSamples(soundtouch::SoundTouch* mTimeStretcher,
                     soundtouch::SAMPLETYPE* output, uint maxSamples);
+void Clear(soundtouch::SoundTouch* mTimeStretcher);
 void Flush(soundtouch::SoundTouch* mTimeStretcher);
 }

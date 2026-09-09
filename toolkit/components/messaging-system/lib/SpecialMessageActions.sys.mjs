@@ -66,14 +66,15 @@ ChromeUtils.defineESModuleGetters(lazy, {
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
   SelectableProfileService:
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
-  SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
+  SessionStore:
+    "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
   Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
   TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
   UITour: "moz-src:///browser/components/uitour/UITour.sys.mjs",
-  WindowsLaunchOnLogin: "resource://gre/modules/WindowsLaunchOnLogin.sys.mjs",
+  LaunchOnLogin: "resource://gre/modules/LaunchOnLogin.sys.mjs",
 });
 
 export const SpecialMessageActions = {
@@ -257,6 +258,18 @@ export const SpecialMessageActions = {
   },
 
   /**
+   * Set browser as the OS default browser via the "Open with" picker
+   * (IOpenWithLauncher), guaranteeing an OS-level prompt. Claiming the https
+   * protocol handler this way sets the whole web-browser default (http and
+   * https) with a single picker. Windows only.
+   *
+   * @param {Window} window Reference to a window object
+   */
+  async setDefaultBrowserViaOpenWith(window) {
+    await window.getShellService().setAsDefaultProtocolHandler("https");
+  },
+
+  /**
    * Reset browser homepage and newtab to default with a certain section configuration
    *
    * @param {"default"|null} home Value to set for browser homepage
@@ -398,7 +411,6 @@ export const SpecialMessageActions = {
       "browser.shell.setDefaultGuidanceNotifications",
       "browser.startup.homepage",
       "browser.startup.page",
-      "browser.startup.windowsLaunchOnLogin.disableLaunchOnLoginPrompt",
       "browser.privateWindowSeparation.enabled",
       "browser.firefox-view.feature-tour",
       "browser.pdfjs.feature-tour",
@@ -520,10 +532,15 @@ export const SpecialMessageActions = {
     }
     // In practice, all FxA signin flows will have a "service", because that param dictates the
     // UI shown by FxA. But to be extra cautious, this code treats it as optional.
-    let neededService = data?.extraParams?.service;
+    let extraParams = data?.extraParams;
+    let neededService = extraParams?.service;
+    if (neededService) {
+      delete extraParams.service;
+    }
     const url = await lazy.FxAccounts.config.promiseConnectAccountURI(
+      neededService || "sync",
       data?.entrypoint || "activity-stream-firstrun",
-      data?.extraParams || {}
+      extraParams || {}
     );
 
     let window = browser.documentGlobal;
@@ -943,6 +960,9 @@ export const SpecialMessageActions = {
       case "SET_DEFAULT_BROWSER":
         await this.setDefaultBrowser(window);
         break;
+      case "SET_DEFAULT_BROWSER_OPEN_WITH":
+        await this.setDefaultBrowserViaOpenWith(window);
+        break;
       case "SET_DEFAULT_PDF_HANDLER":
         await this.setDefaultPDFHandler(
           window,
@@ -965,10 +985,10 @@ export const SpecialMessageActions = {
         );
         break;
       case "CONFIRM_LAUNCH_ON_LOGIN":
-        await lazy.WindowsLaunchOnLogin.createLaunchOnLogin();
+        await lazy.LaunchOnLogin.enable();
         break;
       case "REMOVE_LAUNCH_ON_LOGIN":
-        await lazy.WindowsLaunchOnLogin.removeLaunchOnLogin();
+        await lazy.LaunchOnLogin.disable();
         break;
       case "CREATE_GROUP_FROM_CURRENT_TAB": {
         let tab =
@@ -1016,7 +1036,12 @@ export const SpecialMessageActions = {
           break;
         }
         const data = action.data;
+        const service = data?.extraParams?.service;
+        if (service) {
+          delete data.extraParams.service;
+        }
         const url = await lazy.FxAccounts.config.promiseConnectAccountURI(
+          service || "sync",
           data && data.entrypoint,
           (data && data.extraParams) || {}
         );
@@ -1033,7 +1058,11 @@ export const SpecialMessageActions = {
         return this.fxaSignInFlow(action.data, browser);
       case "FXA_AIWINDOW_SIGNIN_FLOW":
         /** @returns {Promise<boolean>} */
-        return lazy.AIWindow.launchWindow(browser);
+        return lazy.AIWindow.launchWindow(
+          browser,
+          false,
+          action.data?.source ?? "asrouter"
+        );
       case "OPEN_PROTECTION_PANEL": {
         let { gProtectionsHandler } = window;
         gProtectionsHandler.showProtectionsPopup({});

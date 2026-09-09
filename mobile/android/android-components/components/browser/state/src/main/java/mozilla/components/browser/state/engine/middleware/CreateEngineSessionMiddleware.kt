@@ -115,20 +115,22 @@ private fun createEngineSession(
     tab: SessionState,
     includeParent: Boolean,
 ): EngineSession {
-    val engineSession = engine.createSession(tab.content.private, tab.contextId).apply {
-        // The engineSession's desktopMode needs to be updated based on the tab's desktopMode value,
-        // because the tab's desktopMode value can be different from the Browser-wide desktopMode
-        // settings, which is stored in defaultSettings and used to create the EngineSession.
-        toggleDesktopMode(enable = tab.content.desktopMode, reload = false)
-    }
+    val engineSession =
+        engine.createSession(tab.content.private, tab.contextId).apply {
+            // The engineSession's desktopMode needs to be updated based on the tab's desktopMode value,
+            // because the tab's desktopMode value can be different from the Browser-wide desktopMode
+            // settings, which is stored in defaultSettings and used to create the EngineSession.
+            toggleDesktopMode(enable = tab.content.desktopMode, reload = false)
+        }
     logger.debug("Created engine session for tab ${tab.id}")
 
     val engineSessionState = tab.engineState.engineSessionState
-    val skipLoading = if (engineSessionState != null) {
-        engineSession.restoreState(engineSessionState)
-    } else {
-        false
-    }
+    val skipLoading =
+        if (engineSessionState != null) {
+            engineSession.restoreState(engineSessionState)
+        } else {
+            false
+        }
 
     store.dispatch(
         EngineAction.LinkEngineSessionAction(
@@ -136,7 +138,7 @@ private fun createEngineSession(
             engineSession,
             skipLoading = skipLoading,
             includeParent = includeParent,
-        ),
+        )
     )
 
     return engineSession

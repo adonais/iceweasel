@@ -60,10 +60,11 @@ class SimpleBrowserMenuItem(
     }
 
     override fun asCandidate(context: Context): MenuCandidate {
-        val textStyle = TextStyle(
-            size = if (textSize == NO_ID.toFloat()) null else textSize,
-            color = if (textColorResource == NO_ID) null else getColor(context, textColorResource),
-        )
+        val textStyle =
+            TextStyle(
+                size = if (textSize == NO_ID.toFloat()) null else textSize,
+                color = if (textColorResource == NO_ID) null else getColor(context, textColorResource),
+            )
         val containerStyle = ContainerStyle(isVisible = visible())
         return if (listener != null) {
             TextMenuCandidate(

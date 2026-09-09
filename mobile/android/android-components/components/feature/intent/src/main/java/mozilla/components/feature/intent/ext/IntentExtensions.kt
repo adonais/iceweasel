@@ -13,16 +13,14 @@ const val EXTRA_SESSION_ID = "activeSessionId"
 /**
  * Retrieves [mozilla.components.browser.session.Session] ID from the intent.
  *
- * @return The session ID previously added with [putSessionId],
- * or null if no ID was found.
+ * @return The session ID previously added with [putSessionId], or null if no ID was found.
  */
 fun Intent.getSessionId(): String? = getStringExtra(EXTRA_SESSION_ID)
 
 /**
  * Retrieves [mozilla.components.browser.session.Session] ID from the intent.
  *
- * @return The session ID previously added with [putSessionId],
- * or null if no ID was found.
+ * @return The session ID previously added with [putSessionId], or null if no ID was found.
  */
 fun SafeIntent.getSessionId(): String? = getStringExtra(EXTRA_SESSION_ID)
 
@@ -30,10 +28,7 @@ fun SafeIntent.getSessionId(): String? = getStringExtra(EXTRA_SESSION_ID)
  * Add [mozilla.components.browser.session.Session] ID to the intent.
  *
  * @param sessionId The session ID data value.
- *
- * @return Returns the same Intent object, for chaining multiple calls
- * into a single statement.
- *
+ * @return Returns the same Intent object, for chaining multiple calls into a single statement.
  * @see [getSessionId]
  */
 fun Intent.putSessionId(sessionId: String?): Intent {
@@ -41,7 +36,7 @@ fun Intent.putSessionId(sessionId: String?): Intent {
 }
 
 /**
- * Sanitizes the intent.  If the intent cannot be unparcelled, all extras are removed.
+ * Sanitizes the intent. If the intent cannot be unparcelled, all extras are removed.
  * https://developer.android.com/guide/components/activities/parcelables-and-bundles
  *
  * @return Returns the sanitized Intent object.

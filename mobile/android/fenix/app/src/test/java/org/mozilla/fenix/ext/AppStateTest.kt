@@ -6,6 +6,8 @@ package org.mozilla.fenix.ext
 
 import io.mockk.every
 import io.mockk.mockk
+import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 import mozilla.components.service.pocket.PocketStory
 import mozilla.components.service.pocket.PocketStory.PocketRecommendedStory
 import mozilla.components.service.pocket.PocketStory.SponsoredContent
@@ -25,55 +27,59 @@ import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesCategory
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesSelectedCategory
 import org.mozilla.fenix.home.recentsyncedtabs.RecentSyncedTabState
 import org.mozilla.fenix.utils.Settings
-import java.util.concurrent.TimeUnit
-import kotlin.random.Random
 
 class AppStateTest {
-    private val otherStoriesCategory =
-        PocketRecommendedStoriesCategory("other", getFakePocketStories(3, "other"))
-    private val anotherStoriesCategory =
-        PocketRecommendedStoriesCategory("another", getFakePocketStories(3, "another"))
-    private val defaultStoriesCategory = PocketRecommendedStoriesCategory(
-        POCKET_STORIES_DEFAULT_CATEGORY_NAME,
-        getFakePocketStories(3),
-    )
+    private val otherStoriesCategory = PocketRecommendedStoriesCategory("other", getFakePocketStories(3, "other"))
+    private val anotherStoriesCategory = PocketRecommendedStoriesCategory("another", getFakePocketStories(3, "another"))
+    private val defaultStoriesCategory =
+        PocketRecommendedStoriesCategory(
+            POCKET_STORIES_DEFAULT_CATEGORY_NAME,
+            getFakePocketStories(3),
+        )
 
     @Test
     fun `GIVEN no category is selected and no sponsored stories are available WHEN getFilteredStories is called THEN only Pocket stories from the default category are returned`() {
-        val state = AppState(
-            recommendationState = ContentRecommendationsState(
-                pocketStoriesCategories = listOf(
-                    otherStoriesCategory,
-                    anotherStoriesCategory,
-                    defaultStoriesCategory,
-                ),
-            ),
-        )
+        val state =
+            AppState(
+                recommendationState =
+                    ContentRecommendationsState(
+                        pocketStoriesCategories =
+                            listOf(
+                                otherStoriesCategory,
+                                anotherStoriesCategory,
+                                defaultStoriesCategory,
+                            )
+                    )
+            )
 
         val result = state.getFilteredStories()
 
         assertNull(
             result.firstOrNull {
                 it is PocketRecommendedStory && it.category != POCKET_STORIES_DEFAULT_CATEGORY_NAME
-            },
+            }
         )
     }
 
     @Test
     fun `GIVEN no category is selected and no sponsored stories are available WHEN getFilteredStories is called THEN no more than the default stories number are returned from the default category`() {
-        val defaultStoriesCategoryWithManyStories = PocketRecommendedStoriesCategory(
-            POCKET_STORIES_DEFAULT_CATEGORY_NAME,
-            getFakePocketStories(TOTAL_CONTENT_RECOMMENDATIONS_TO_SHOW_COUNT + 2),
-        )
-        val state = AppState(
-            recommendationState = ContentRecommendationsState(
-                pocketStoriesCategories = listOf(
-                    otherStoriesCategory,
-                    anotherStoriesCategory,
-                    defaultStoriesCategoryWithManyStories,
-                ),
-            ),
-        )
+        val defaultStoriesCategoryWithManyStories =
+            PocketRecommendedStoriesCategory(
+                POCKET_STORIES_DEFAULT_CATEGORY_NAME,
+                getFakePocketStories(TOTAL_CONTENT_RECOMMENDATIONS_TO_SHOW_COUNT + 2),
+            )
+        val state =
+            AppState(
+                recommendationState =
+                    ContentRecommendationsState(
+                        pocketStoriesCategories =
+                            listOf(
+                                otherStoriesCategory,
+                                anotherStoriesCategory,
+                                defaultStoriesCategoryWithManyStories,
+                            )
+                    )
+            )
 
         val result = state.getFilteredStories()
 
@@ -82,21 +88,25 @@ class AppStateTest {
 
     @Test
     fun `GIVEN no category is selected and sponsored contents are available WHEN getFilteredStories is called THEN return stories from the default category combined with the sponsored contents`() {
-        val defaultStoriesCategoryWithManyStories = PocketRecommendedStoriesCategory(
-            POCKET_STORIES_DEFAULT_CATEGORY_NAME,
-            getFakePocketStories(TOTAL_CONTENT_RECOMMENDATIONS_TO_SHOW_COUNT),
-        )
+        val defaultStoriesCategoryWithManyStories =
+            PocketRecommendedStoriesCategory(
+                POCKET_STORIES_DEFAULT_CATEGORY_NAME,
+                getFakePocketStories(TOTAL_CONTENT_RECOMMENDATIONS_TO_SHOW_COUNT),
+            )
         val sponsoredContents = getFakeSponsoredContents(4)
-        val state = AppState(
-            recommendationState = ContentRecommendationsState(
-                pocketStoriesCategories = listOf(
-                    otherStoriesCategory,
-                    anotherStoriesCategory,
-                    defaultStoriesCategoryWithManyStories,
-                ),
-                sponsoredContents = sponsoredContents,
-            ),
-        )
+        val state =
+            AppState(
+                recommendationState =
+                    ContentRecommendationsState(
+                        pocketStoriesCategories =
+                            listOf(
+                                otherStoriesCategory,
+                                anotherStoriesCategory,
+                                defaultStoriesCategoryWithManyStories,
+                            ),
+                        sponsoredContents = sponsoredContents,
+                    )
+            )
 
         var result = state.getFilteredStories().toMutableList()
 
@@ -109,15 +119,16 @@ class AppStateTest {
         assertNull(
             result.firstOrNull {
                 it is PocketRecommendedStory && it.category != POCKET_STORIES_DEFAULT_CATEGORY_NAME
-            },
+            }
         )
     }
 
     @Test
     fun `WHEN filtering the sponsored contents THEN return the list of sponsored contents sorted by descending priority`() {
-        val sponsoredContents = getFakeSponsoredContents(4).mapIndexed { index, sponsoredContent ->
-            sponsoredContent.copy(priority = index)
-        }
+        val sponsoredContents =
+            getFakeSponsoredContents(4).mapIndexed { index, sponsoredContent ->
+                sponsoredContent.copy(priority = index)
+            }
         val result = getFilteredSponsoredContents(sponsoredContents, 10)
 
         assertEquals(4, result.size)
@@ -126,21 +137,25 @@ class AppStateTest {
 
     @Test
     fun `WHEN filtering the sponsored contents THEN return the list of sponsored content excluding entries that have reached flight impressions limit`() {
-        val sponsoredContents = getFakeSponsoredContents(4).mapIndexed { index, sponsoredContent ->
-            when (index % 2 == 0) {
-                true -> sponsoredContent
-                false -> sponsoredContent.copy(
-                    caps = sponsoredContent.caps.copy(
-                        currentImpressions = listOf(
-                            TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()),
-                            TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()),
-                            TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()),
-                        ),
-                        flightCount = 3,
-                    ),
-                )
+        val sponsoredContents =
+            getFakeSponsoredContents(4).mapIndexed { index, sponsoredContent ->
+                when (index % 2 == 0) {
+                    true -> sponsoredContent
+                    false ->
+                        sponsoredContent.copy(
+                            caps =
+                                sponsoredContent.caps.copy(
+                                    currentImpressions =
+                                        listOf(
+                                            TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()),
+                                            TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()),
+                                            TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()),
+                                        ),
+                                    flightCount = 3,
+                                )
+                        )
+                }
             }
-        }
         val result = getFilteredSponsoredContents(sponsoredContents, 10)
 
         assertEquals(2, result.size)
@@ -163,18 +178,20 @@ class AppStateTest {
                 "other",
                 getFakePocketStories(TOTAL_CONTENT_RECOMMENDATIONS_TO_SHOW_COUNT + 2, "other"),
             )
-        val state = AppState(
-            recommendationState = ContentRecommendationsState(
-                pocketStoriesCategories =
-                listOf(
-                    otherStoriesCategoryWithManyStories,
-                    anotherStoriesCategory,
-                    defaultStoriesCategory,
-                ),
-                pocketStoriesCategoriesSelections =
-                listOf(PocketRecommendedStoriesSelectedCategory(otherStoriesCategoryWithManyStories.name)),
-            ),
-        )
+        val state =
+            AppState(
+                recommendationState =
+                    ContentRecommendationsState(
+                        pocketStoriesCategories =
+                            listOf(
+                                otherStoriesCategoryWithManyStories,
+                                anotherStoriesCategory,
+                                defaultStoriesCategory,
+                            ),
+                        pocketStoriesCategoriesSelections =
+                            listOf(PocketRecommendedStoriesSelectedCategory(otherStoriesCategoryWithManyStories.name)),
+                    )
+            )
 
         val result = state.getFilteredStories()
 
@@ -183,19 +200,23 @@ class AppStateTest {
 
     @Test
     fun `GIVEN two categories are selected WHEN getFilteredStories is called THEN only stories from those categories are returned`() {
-        val state = AppState(
-            recommendationState = ContentRecommendationsState(
-                pocketStoriesCategories = listOf(
-                    otherStoriesCategory,
-                    anotherStoriesCategory,
-                    defaultStoriesCategory,
-                ),
-                pocketStoriesCategoriesSelections = listOf(
-                    PocketRecommendedStoriesSelectedCategory(otherStoriesCategory.name),
-                    PocketRecommendedStoriesSelectedCategory(anotherStoriesCategory.name),
-                ),
-            ),
-        )
+        val state =
+            AppState(
+                recommendationState =
+                    ContentRecommendationsState(
+                        pocketStoriesCategories =
+                            listOf(
+                                otherStoriesCategory,
+                                anotherStoriesCategory,
+                                defaultStoriesCategory,
+                            ),
+                        pocketStoriesCategoriesSelections =
+                            listOf(
+                                PocketRecommendedStoriesSelectedCategory(otherStoriesCategory.name),
+                                PocketRecommendedStoriesSelectedCategory(anotherStoriesCategory.name),
+                            ),
+                    )
+            )
 
         val result = state.getFilteredStories()
         assertEquals(6, result.size)
@@ -204,7 +225,7 @@ class AppStateTest {
                 it is PocketRecommendedStory &&
                     it.category != otherStoriesCategory.name &&
                     it.category != anotherStoriesCategory.name
-            },
+            }
         )
     }
 
@@ -245,8 +266,8 @@ class AppStateTest {
                 listOf(
                     otherStoriesCategory.name,
                     anotherStoriesCategory.name,
-                ),
-            ),
+                )
+            )
         )
         assertEquals(1, result[otherStoriesCategory.name])
         assertEquals(1, result[anotherStoriesCategory.name])
@@ -258,8 +279,8 @@ class AppStateTest {
                 listOf(
                     otherStoriesCategory.name,
                     anotherStoriesCategory.name,
-                ),
-            ),
+                )
+            )
         )
         assertEquals(3, result[otherStoriesCategory.name])
         assertEquals(3, result[anotherStoriesCategory.name])
@@ -274,8 +295,8 @@ class AppStateTest {
                 listOf(
                     otherStoriesCategory.name,
                     anotherStoriesCategory.name,
-                ),
-            ),
+                )
+            )
         )
         assertEquals(3, result[otherStoriesCategory.name])
         assertEquals(3, result[anotherStoriesCategory.name])
@@ -290,8 +311,8 @@ class AppStateTest {
                 listOf(
                     otherStoriesCategory.name,
                     anotherStoriesCategory.name,
-                ),
-            ),
+                )
+            )
         )
         assertEquals(3, result[otherStoriesCategory.name])
         assertEquals(2, result[anotherStoriesCategory.name])
@@ -299,54 +320,63 @@ class AppStateTest {
 
     @Test
     fun `GIVEN two categories selected with more than needed stories WHEN getFilteredStories is called THEN the results are sorted in the order of least shown`() {
-        val firstCategory = PocketRecommendedStoriesCategory(
-            "first",
-            getFakePocketStories(3, "first"),
-        ).run {
-            // Avoid the first item also being the oldest to eliminate a potential bug in code
-            // that would still get the expected result.
-            copy(
-                stories = stories.mapIndexed { index, story ->
-                    when (index) {
-                        0 -> story.copy(timesShown = 333)
-                        1 -> story.copy(timesShown = 0)
-                        else -> story.copy(timesShown = 345)
-                    }
-                },
-            )
-        }
-        val secondCategory = PocketRecommendedStoriesCategory(
-            "second",
-            getFakePocketStories(3, "second"),
-        ).run {
-            // Avoid the first item also being the oldest to eliminate a potential bug in code
-            // that would still get the expected result.
-            copy(
-                stories = stories.mapIndexed { index, story ->
-                    when (index) {
-                        0 -> story.copy(timesShown = 222)
-                        1 -> story.copy(timesShown = 111)
-                        else -> story.copy(timesShown = 11)
-                    }
-                },
-            )
-        }
+        val firstCategory =
+            PocketRecommendedStoriesCategory(
+                    "first",
+                    getFakePocketStories(3, "first"),
+                )
+                .run {
+                    // Avoid the first item also being the oldest to eliminate a potential bug in code
+                    // that would still get the expected result.
+                    copy(
+                        stories =
+                            stories.mapIndexed { index, story ->
+                                when (index) {
+                                    0 -> story.copy(timesShown = 333)
+                                    1 -> story.copy(timesShown = 0)
+                                    else -> story.copy(timesShown = 345)
+                                }
+                            }
+                    )
+                }
+        val secondCategory =
+            PocketRecommendedStoriesCategory(
+                    "second",
+                    getFakePocketStories(3, "second"),
+                )
+                .run {
+                    // Avoid the first item also being the oldest to eliminate a potential bug in code
+                    // that would still get the expected result.
+                    copy(
+                        stories =
+                            stories.mapIndexed { index, story ->
+                                when (index) {
+                                    0 -> story.copy(timesShown = 222)
+                                    1 -> story.copy(timesShown = 111)
+                                    else -> story.copy(timesShown = 11)
+                                }
+                            }
+                    )
+                }
 
-        val state = AppState(
-            recommendationState = ContentRecommendationsState(
-                pocketStoriesCategories = listOf(firstCategory, secondCategory),
-                pocketStoriesCategoriesSelections = listOf(
-                    PocketRecommendedStoriesSelectedCategory(
-                        firstCategory.name,
-                        selectionTimestamp = 0,
-                    ),
-                    PocketRecommendedStoriesSelectedCategory(
-                        secondCategory.name,
-                        selectionTimestamp = 222,
-                    ),
-                ),
-            ),
-        )
+        val state =
+            AppState(
+                recommendationState =
+                    ContentRecommendationsState(
+                        pocketStoriesCategories = listOf(firstCategory, secondCategory),
+                        pocketStoriesCategoriesSelections =
+                            listOf(
+                                PocketRecommendedStoriesSelectedCategory(
+                                    firstCategory.name,
+                                    selectionTimestamp = 0,
+                                ),
+                                PocketRecommendedStoriesSelectedCategory(
+                                    secondCategory.name,
+                                    selectionTimestamp = 222,
+                                ),
+                            ),
+                    )
+            )
 
         val result = state.getFilteredStories()
 
@@ -361,19 +391,23 @@ class AppStateTest {
 
     @Test
     fun `GIVEN old selections of categories which do not exist anymore WHEN getFilteredStories is called THEN ignore not found selections`() {
-        val state = AppState(
-            recommendationState = ContentRecommendationsState(
-                pocketStoriesCategories = listOf(
-                    otherStoriesCategory,
-                    anotherStoriesCategory,
-                    defaultStoriesCategory,
-                ),
-                pocketStoriesCategoriesSelections = listOf(
-                    PocketRecommendedStoriesSelectedCategory("unexistent"),
-                    PocketRecommendedStoriesSelectedCategory(anotherStoriesCategory.name),
-                ),
-            ),
-        )
+        val state =
+            AppState(
+                recommendationState =
+                    ContentRecommendationsState(
+                        pocketStoriesCategories =
+                            listOf(
+                                otherStoriesCategory,
+                                anotherStoriesCategory,
+                                defaultStoriesCategory,
+                            ),
+                        pocketStoriesCategoriesSelections =
+                            listOf(
+                                PocketRecommendedStoriesSelectedCategory("unexistent"),
+                                PocketRecommendedStoriesSelectedCategory(anotherStoriesCategory.name),
+                            ),
+                    )
+            )
 
         val result = state.getFilteredStories()
 
@@ -381,18 +415,20 @@ class AppStateTest {
         assertNull(
             result.firstOrNull {
                 it is PocketRecommendedStory && it.category != anotherStoriesCategory.name
-            },
+            }
         )
     }
 
     @Test
     fun `GIVEN content recommendations with no sponsored stories WHEN getStories is called THEN return a list of content recommendations to displayed sorted by the number of impressions`() {
         val recommendations = getFakeContentRecommendations(40)
-        val state = AppState(
-            recommendationState = ContentRecommendationsState(
-                contentRecommendations = recommendations.sortedByDescending { it.impressions },
-            ),
-        )
+        val state =
+            AppState(
+                recommendationState =
+                    ContentRecommendationsState(
+                        contentRecommendations = recommendations.sortedByDescending { it.impressions }
+                    )
+            )
 
         val result = state.getStories()
 
@@ -408,12 +444,14 @@ class AppStateTest {
     fun `GIVEN content recommendations and sponsored contents WHEN getStories is called THEN return a list of 40 stories with sponsored contents at position 2 and 9`() {
         val recommendations = getFakeContentRecommendations(40)
         val sponsoredContents = getFakeSponsoredContents(4)
-        val state = AppState(
-            recommendationState = ContentRecommendationsState(
-                contentRecommendations = recommendations,
-                sponsoredContents = sponsoredContents,
-            ),
-        )
+        val state =
+            AppState(
+                recommendationState =
+                    ContentRecommendationsState(
+                        contentRecommendations = recommendations,
+                        sponsoredContents = sponsoredContents,
+                    )
+            )
 
         val result = state.getStories()
 
@@ -429,12 +467,14 @@ class AppStateTest {
     fun `GIVEN content recommendations and 1 sponsored content WHEN getStories is called THEN return a list of stories with sponsored content at position 2`() {
         val recommendations = getFakeContentRecommendations(4)
         val sponsoredContents = getFakeSponsoredContents(1)
-        val state = AppState(
-            recommendationState = ContentRecommendationsState(
-                contentRecommendations = recommendations,
-                sponsoredContents = sponsoredContents,
-            ),
-        )
+        val state =
+            AppState(
+                recommendationState =
+                    ContentRecommendationsState(
+                        contentRecommendations = recommendations,
+                        sponsoredContents = sponsoredContents,
+                    )
+            )
 
         val result = state.getStories()
 
@@ -450,12 +490,14 @@ class AppStateTest {
     fun `GIVEN content recommendations and 2 sponsored contents WHEN getStories is called THEN return a list of stories with sponsored contents at position 2 and 6`() {
         val recommendations = getFakeContentRecommendations(4)
         val sponsoredContents = getFakeSponsoredContents(2)
-        val state = AppState(
-            recommendationState = ContentRecommendationsState(
-                contentRecommendations = recommendations,
-                sponsoredContents = sponsoredContents,
-            ),
-        )
+        val state =
+            AppState(
+                recommendationState =
+                    ContentRecommendationsState(
+                        contentRecommendations = recommendations,
+                        sponsoredContents = sponsoredContents,
+                    )
+            )
 
         val result = state.getStories()
 
@@ -470,9 +512,10 @@ class AppStateTest {
 
     @Test
     fun `GIVEN recent tabs disabled in settings WHEN checking to show tabs THEN section should not be shown`() {
-        val settings = mockk<Settings> {
-            every { showRecentTabsFeature } returns false
-        }
+        val settings =
+            mockk<Settings> {
+                every { showRecentTabsFeature } returns false
+            }
 
         val state = AppState()
 
@@ -481,9 +524,10 @@ class AppStateTest {
 
     @Test
     fun `GIVEN only local tabs WHEN checking to show tabs THEN section should be shown`() {
-        val settings = mockk<Settings> {
-            every { showRecentTabsFeature } returns true
-        }
+        val settings =
+            mockk<Settings> {
+                every { showRecentTabsFeature } returns true
+            }
 
         val state = AppState(recentTabs = listOf(mockk()))
 
@@ -492,9 +536,10 @@ class AppStateTest {
 
     @Test
     fun `GIVEN only remote tabs WHEN checking to show tabs THEN section should be shown`() {
-        val settings = mockk<Settings> {
-            every { showRecentTabsFeature } returns true
-        }
+        val settings =
+            mockk<Settings> {
+                every { showRecentTabsFeature } returns true
+            }
 
         val state = AppState(recentSyncedTabState = RecentSyncedTabState.Success(emptyList()))
 
@@ -503,14 +548,16 @@ class AppStateTest {
 
     @Test
     fun `GIVEN local and remote tabs WHEN checking to show tabs THEN section should be shown`() {
-        val settings = mockk<Settings> {
-            every { showRecentTabsFeature } returns true
-        }
+        val settings =
+            mockk<Settings> {
+                every { showRecentTabsFeature } returns true
+            }
 
-        val state = AppState(
-            recentTabs = listOf(mockk()),
-            recentSyncedTabState = RecentSyncedTabState.Success(emptyList()),
-        )
+        val state =
+            AppState(
+                recentTabs = listOf(mockk()),
+                recentSyncedTabState = RecentSyncedTabState.Success(emptyList()),
+            )
 
         assertTrue(state.shouldShowRecentTabs(settings))
     }
@@ -531,7 +578,9 @@ class AppStateTest {
             assertEquals(sponsoredStories[sponsoredStoriesIndexes[0]], result[1])
         }
 
-        for (i in 2..7) { assertEquals(recommendedStories[recommendedStoriesIndex++], result[i]) }
+        for (i in 2..7) {
+            assertEquals(recommendedStories[recommendedStoriesIndex++], result[i])
+        }
 
         if (sponsoredStories.size > 1) {
             assertEquals(sponsoredStories[sponsoredStoriesIndexes[1]], result[8])
@@ -539,7 +588,9 @@ class AppStateTest {
             assertEquals(recommendedStories[recommendedStoriesIndex++], result[8])
         }
 
-        for (i in 9..29) { assertEquals(recommendedStories[recommendedStoriesIndex++], result[i]) }
+        for (i in 9..29) {
+            assertEquals(recommendedStories[recommendedStoriesIndex++], result[i])
+        }
     }
 }
 
@@ -560,33 +611,36 @@ private fun getFakePocketStories(
                     timeToRead = randomNumber,
                     category = category,
                     timesShown = index.toLong(),
-                ),
+                )
             )
         }
     }
 }
 
-private fun getFakeSponsoredContents(limit: Int) = mutableListOf<SponsoredContent>().apply {
-    for (index in 0 until limit) {
-        add(
-            SponsoredContent(
-                url = "https://sponsored.story",
-                title = "Story title $index",
-                callbacks = SponsoredContentCallbacks(
-                    clickUrl = "https://mozilla.com/click$index",
-                    impressionUrl = "https://mozilla.com/impression$index",
-                ),
-                imageUrl = "https://sponsored.image",
-                domain = "Domain $index",
-                excerpt = "Excerpt $index",
-                sponsor = "Sponsor $index",
-                blockKey = "Block key $index",
-                caps = SponsoredContentFrequencyCaps(
-                    flightCount = 1 + index * 2,
-                    flightPeriod = 1 + index * 3,
-                ),
-                priority = 2 + index % 2,
-            ),
-        )
+private fun getFakeSponsoredContents(limit: Int) =
+    mutableListOf<SponsoredContent>().apply {
+        for (index in 0 until limit) {
+            add(
+                SponsoredContent(
+                    url = "https://sponsored.story",
+                    title = "Story title $index",
+                    callbacks =
+                        SponsoredContentCallbacks(
+                            clickUrl = "https://mozilla.com/click$index",
+                            impressionUrl = "https://mozilla.com/impression$index",
+                        ),
+                    imageUrl = "https://sponsored.image",
+                    domain = "Domain $index",
+                    excerpt = "Excerpt $index",
+                    sponsor = "Sponsor $index",
+                    blockKey = "Block key $index",
+                    caps =
+                        SponsoredContentFrequencyCaps(
+                            flightCount = 1 + index * 2,
+                            flightPeriod = 1 + index * 3,
+                        ),
+                    priority = 2 + index % 2,
+                )
+            )
+        }
     }
-}

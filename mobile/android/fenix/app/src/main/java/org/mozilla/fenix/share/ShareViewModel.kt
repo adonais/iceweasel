@@ -80,17 +80,18 @@ class ShareViewModel(
     val uiState: StateFlow<ShareUiState> = _uiState.asStateFlow()
 
     private var isNetworkCallbackRegistered = false
-    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
-        override fun onLost(network: Network) = refreshDevices(network)
-        override fun onAvailable(network: Network) = refreshDevices(network)
-    }
+    private val networkCallback =
+        object : ConnectivityManager.NetworkCallback() {
+            override fun onLost(network: Network) = refreshDevices(network)
+
+            override fun onAvailable(network: Network) = refreshDevices(network)
+        }
 
     /**
      * Initializes the data loading process for the share sheet.
      *
-     * Once the data is retrieved, it updates the [_uiState] with the recent apps, other available
-     * apps, and synchronized devices, and sets the loading state to false.
-     *
+     * Once the data is retrieved, it updates the [_uiState] with the recent apps, other available apps, and
+     * synchronized devices, and sets the loading state to false.
      */
     internal fun initDataLoad() {
         if (!isNetworkCallbackRegistered) {
@@ -117,9 +118,10 @@ class ShareViewModel(
     }
 
     private suspend fun loadAppsWorkflow(): Pair<List<AppShareOption>, List<AppShareOption>> {
-        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-        }
+        val shareIntent =
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+            }
 
         val resolveInfos = getIntentActivities(shareIntent)
         val allApps = buildAppsList(resolveInfos)
@@ -130,10 +132,11 @@ class ShareViewModel(
         val recentNames = recentApps.map { it.activityName }.toSet()
 
         // Filter out recents and prepend Copy action
-        val otherApps = mutableListOf<AppShareOption>().apply {
-            getCopyApp()?.let { add(it) }
-            addAll(allApps.filterNot { it.activityName in recentNames })
-        }
+        val otherApps =
+            mutableListOf<AppShareOption>().apply {
+                getCopyApp()?.let { add(it) }
+                addAll(allApps.filterNot { it.activityName in recentNames })
+            }
 
         return Pair(recentApps, otherApps)
     }
@@ -141,23 +144,21 @@ class ShareViewModel(
     private fun refreshDevices(network: Network?) {
         viewModelScope.launch {
             // Trigger FxA refresh
-            fxaAccountManager.authenticatedAccount()
-                ?.deviceConstellation()
-                ?.refreshDevices()
+            fxaAccountManager.authenticatedAccount()?.deviceConstellation()?.refreshDevices()
 
             val devices = buildDeviceList(network)
             _uiState.update { it.copy(devices = devices) }
         }
     }
 
-    private suspend fun updateRecentAppsStorage(apps: List<AppShareOption>) = withContext(ioDispatcher) {
-        recentAppsStorage.updateDatabaseWithNewApps(apps.map { it.activityName })
-    }
+    private suspend fun updateRecentAppsStorage(apps: List<AppShareOption>) =
+        withContext(ioDispatcher) {
+            recentAppsStorage.updateDatabaseWithNewApps(apps.map { it.activityName })
+        }
 
     private suspend fun fetchRecentApps(allApps: List<AppShareOption>): List<AppShareOption> =
         withContext(ioDispatcher) {
-            val recentActivityNames = recentAppsStorage.getRecentAppsUpTo(RECENT_APPS_LIMIT)
-                .map { it.activityName }
+            val recentActivityNames = recentAppsStorage.getRecentAppsUpTo(RECENT_APPS_LIMIT).map { it.activityName }
 
             allApps.filter { it.activityName in recentActivityNames }
         }
@@ -168,11 +169,10 @@ class ShareViewModel(
         }
     }
 
-    internal suspend fun getIntentActivities(
-        shareIntent: Intent,
-    ): List<ResolveInfo> = withContext(ioDispatcher) {
-        queryIntentActivitiesCompat(shareIntent)
-    }
+    internal suspend fun getIntentActivities(shareIntent: Intent): List<ResolveInfo> =
+        withContext(ioDispatcher) {
+            queryIntentActivitiesCompat(shareIntent)
+        }
 
     /**
      * Returns a list of apps that can be shared to.
@@ -180,25 +180,23 @@ class ShareViewModel(
      * @param intentActivities List of activities from [getIntentActivities].
      */
     @VisibleForTesting
-    internal suspend fun buildAppsList(
-        intentActivities: List<ResolveInfo>,
-    ): List<AppShareOption> = withContext(ioDispatcher) {
-        intentActivities
-            .filter { it.activityInfo.packageName != packageName }
-            .map { resolveInfo ->
-                AppShareOption(
-                    resolveInfo.loadLabel(packageManager).toString(),
-                    resolveInfo.loadIcon(packageManager),
-                    resolveInfo.activityInfo.packageName,
-                    resolveInfo.activityInfo.name,
-                )
-            }
-    }
+    internal suspend fun buildAppsList(intentActivities: List<ResolveInfo>): List<AppShareOption> =
+        withContext(ioDispatcher) {
+            intentActivities
+                .filter { it.activityInfo.packageName != packageName }
+                .map { resolveInfo ->
+                    AppShareOption(
+                        resolveInfo.loadLabel(packageManager).toString(),
+                        resolveInfo.loadIcon(packageManager),
+                        resolveInfo.activityInfo.packageName,
+                        resolveInfo.activityInfo.name,
+                    )
+                }
+        }
 
     /**
-     * Builds list of options to display in the top row of the share sheet.
-     * This will primarily include devices that tabs can be sent to, but also options
-     * for reconnecting the account or sending to all devices.
+     * Builds list of options to display in the top row of the share sheet. This will primarily include devices that
+     * tabs can be sent to, but also options for reconnecting the account or sending to all devices.
      */
     @VisibleForTesting
     internal suspend fun buildDeviceList(network: Network? = null): List<SyncShareOption> =
@@ -213,11 +211,14 @@ class ShareViewModel(
                 fxaAccountManager.accountNeedsReauth() -> listOf(SyncShareOption.Reconnect)
                 // Signed in
                 else -> {
-                    val shareableDevices = account.deviceConstellation().state()
-                        ?.otherDevices
-                        .orEmpty()
-                        .filter { it.capabilities.contains(DeviceCapability.SEND_TAB) }
-                        .sortedByDescending { it.lastAccessTime }
+                    val shareableDevices =
+                        account
+                            .deviceConstellation()
+                            .state()
+                            ?.otherDevices
+                            .orEmpty()
+                            .filter { it.capabilities.contains(DeviceCapability.SEND_TAB) }
+                            .sortedByDescending { it.lastAccessTime }
 
                     val list = mutableListOf<SyncShareOption>()
                     if (shareableDevices.isEmpty()) {
@@ -240,10 +241,9 @@ class ShareViewModel(
      * Checks if the network is offline.
      *
      * @param network The network to check. If null, the default active network is checked.
-     * @return `true` if `connectivityManager` is null (unable to determine network state) or if
-     *   `isOnline(network)` returns false (explicitly offline).
+     * @return `true` if `connectivityManager` is null (unable to determine network state) or if `isOnline(network)`
+     *   returns false (explicitly offline).
      */
     @VisibleForTesting
-    internal fun isOffline(network: Network?): Boolean =
-        connectivityManager?.isOnline(network) != true
+    internal fun isOffline(network: Network?): Boolean = connectivityManager?.isOnline(network) != true
 }

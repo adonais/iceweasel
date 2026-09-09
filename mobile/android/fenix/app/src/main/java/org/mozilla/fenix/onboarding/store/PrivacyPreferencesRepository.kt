@@ -10,9 +10,7 @@ import mozilla.components.service.nimbus.NimbusApi
 import org.mozilla.fenix.crashes.crashReportOption
 import org.mozilla.fenix.utils.Settings
 
-/**
- * The repository for managing user privacy preferences set during onboarding.
- */
+/** The repository for managing user privacy preferences set during onboarding. */
 interface PrivacyPreferencesRepository {
 
     /**
@@ -32,11 +30,10 @@ interface PrivacyPreferencesRepository {
     fun setPreference(type: PreferenceType, enabled: Boolean)
 }
 
-/**
- * Enum representing the types of privacy preferences available.
- */
+/** Enum representing the types of privacy preferences available. */
 enum class PreferenceType {
-    CrashReporting, UsageData,
+    CrashReporting,
+    UsageData,
 }
 
 /**

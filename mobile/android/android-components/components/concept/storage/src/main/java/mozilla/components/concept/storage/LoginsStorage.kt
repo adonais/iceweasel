@@ -6,9 +6,7 @@ package mozilla.components.concept.storage
 
 import kotlinx.coroutines.Deferred
 
-/**
- * Hint types that provide context in which a login entry was created or presented.
- */
+/** Hint types that provide context in which a login entry was created or presented. */
 enum class LoginHint {
     /** No hint specified. */
     NONE,
@@ -29,97 +27,69 @@ enum class LoginHint {
     EMAIL_MASK,
 }
 
-/**
- * A login stored in the database
- */
+/** A login stored in the database */
 data class Login(
-    /**
-     * The unique identifier for this login entry.
-     */
+    /** The unique identifier for this login entry. */
     val guid: String,
-    /**
-     * The username for this login entry.
-     */
+    /** The username for this login entry. */
     val username: String,
-    /**
-     * The password for this login entry.
-     */
+    /** The password for this login entry. */
     val password: String,
-    /**
-     * The origin this login entry applies to.
-     */
+    /** The origin this login entry applies to. */
     val origin: String,
     /**
-     * The origin this login entry was submitted to.
-     * This only applies to form-based login entries.
-     * It's derived from the action attribute set on the form element.
+     * The origin this login entry was submitted to. This only applies to form-based login entries. It's derived from
+     * the action attribute set on the form element.
      */
     val formActionOrigin: String? = null,
     /**
-     * The HTTP realm this login entry was requested for.
-     * This only applies to non-form-based login entries.
-     * It's derived from the WWW-Authenticate header set in a HTTP 401
-     * response, see RFC2617 for details.
+     * The HTTP realm this login entry was requested for. This only applies to non-form-based login entries. It's
+     * derived from the WWW-Authenticate header set in a HTTP 401 response, see RFC2617 for details.
      */
     val httpRealm: String? = null,
-    /**
-     * HTML field associated with the [username].
-     */
+    /** HTML field associated with the [username]. */
     val usernameField: String = "",
-    /**
-     * HTML field associated with the [password].
-     */
+    /** HTML field associated with the [password]. */
     val passwordField: String = "",
-    /**
-     * Number of times this password has been used.
-     */
+    /** Number of times this password has been used. */
     val timesUsed: Long = 0L,
-    /**
-     * Time of creation in milliseconds from the unix epoch.
-     */
+    /** Time of creation in milliseconds from the unix epoch. */
     val timeCreated: Long = 0L,
-    /**
-     * Time of last use in milliseconds from the unix epoch.
-     */
+    /** Time of last use in milliseconds from the unix epoch. */
     val timeLastUsed: Long = 0L,
-    /**
-     * Time of last password change in milliseconds from the unix epoch.
-     */
+    /** Time of last password change in milliseconds from the unix epoch. */
     val timePasswordChanged: Long = 0L,
     /**
-     * Time of last breach alert dismissal in milliseconds from the unix epoch.
-     * This field is set on Desktop when a user discards the warning message of the breach.
+     * Time of last breach alert dismissal in milliseconds from the unix epoch. This field is set on Desktop when a user
+     * discards the warning message of the breach.
      */
     val timeLastBreachAlertDismissed: Long? = null,
     /**
-     * A hint provides context in which this item was created. For example, [LoginHint.GENERATED]
-     * tells a consumer that the password was generated.
+     * A hint provides context in which this item was created. For example, [LoginHint.GENERATED] tells a consumer that
+     * the password was generated.
      */
     val hint: LoginHint = LoginHint.NONE,
 ) {
-    /**
-     * Converts [Login] into a [LoginEntry].
-     */
-    fun toEntry() = LoginEntry(
-        origin = origin,
-        formActionOrigin = formActionOrigin,
-        httpRealm = httpRealm,
-        usernameField = usernameField,
-        passwordField = passwordField,
-        username = username,
-        password = password,
-    )
+    /** Converts [Login] into a [LoginEntry]. */
+    fun toEntry() =
+        LoginEntry(
+            origin = origin,
+            formActionOrigin = formActionOrigin,
+            httpRealm = httpRealm,
+            usernameField = usernameField,
+            passwordField = passwordField,
+            username = username,
+            password = password,
+        )
 }
 
 /**
  * Login autofill entry
  *
- * This contains the data needed to handle autofill but not the data related to
- * the DB record.  [LoginsStorage] methods that save data typically input
- * [LoginEntry] instances.  This allows the storage backend handle
- * dupe-checking issues like determining which login record should be updated
- * for a given [LoginEntry].  [LoginEntry] also represents the login data
- * that's editable in the API.
+ * This contains the data needed to handle autofill but not the data related to the DB record. [LoginsStorage] methods
+ * that save data typically input [LoginEntry] instances. This allows the storage backend handle dupe-checking issues
+ * like determining which login record should be updated for a given [LoginEntry]. [LoginEntry] also represents the
+ * login data that's editable in the API.
  *
  * All fields have the same meaning as in [Login].
  */
@@ -152,13 +122,9 @@ data class EncryptedLogin(
     val secFields: String,
 )
 
-/**
- * An interface describing a storage layer for logins/passwords.
- */
+/** An interface describing a storage layer for logins/passwords. */
 interface LoginsStorage : Storage, StorageMaintenanceRegistry, AutoCloseable {
-    /**
-     * Clears out all local state, bringing us back to the state before the first write (or sync).
-     */
+    /** Clears out all local state, bringing us back to the state before the first write (or sync). */
     suspend fun wipeLocal()
 
     /**
@@ -200,8 +166,7 @@ interface LoginsStorage : Storage, StorageMaintenanceRegistry, AutoCloseable {
     /**
      * Calculate how we should save a login
      *
-     * For a [LoginEntry] to save find an existing [Login] to be update (if
-     * any).
+     * For a [LoginEntry] to save find an existing [Login] to be update (if any).
      *
      * @param entry [LoginEntry] being saved
      * @return [Login] that should be updated, or null if the login should be added
@@ -210,10 +175,9 @@ interface LoginsStorage : Storage, StorageMaintenanceRegistry, AutoCloseable {
 
     /**
      * Inserts the provided login into the database
-
-     * This will return an error result if the provided record is invalid
-     * (missing password, origin, or doesn't have exactly one of formSubmitURL
-     * and httpRealm).
+     *
+     * This will return an error result if the provided record is invalid (missing password, origin, or doesn't have
+     * exactly one of formSubmitURL and httpRealm).
      *
      * @param entry [LoginEntry] to add.
      * @return [EncryptedLogin] that was added
@@ -223,11 +187,9 @@ interface LoginsStorage : Storage, StorageMaintenanceRegistry, AutoCloseable {
     /**
      * Inserts the provided logins into the database.
      *
-     * Each entry is processed independently: the returned list contains one
-     * [Result] per input entry, in the same order as [entries]. A failed
-     * [Result] indicates the corresponding entry was invalid (missing password,
-     * origin, or doesn't have exactly one of formSubmitURL and httpRealm) and
-     * was not inserted; other entries are still inserted.
+     * Each entry is processed independently: the returned list contains one [Result] per input entry, in the same order
+     * as [entries]. A failed [Result] indicates the corresponding entry was invalid (missing password, origin, or
+     * doesn't have exactly one of formSubmitURL and httpRealm) and was not inserted; other entries are still inserted.
      *
      * @param entries [List] of [LoginEntry] to add.
      * @return [List] of [Result] containing the [Login] that was added for each entry.
@@ -237,9 +199,8 @@ interface LoginsStorage : Storage, StorageMaintenanceRegistry, AutoCloseable {
     /**
      * Updates an existing login in the database
      *
-     * This will throw if `guid` does not refer to a record that exists in the
-     * database, or if the provided record is invalid (missing password,
-     * origin, or doesn't have exactly one of formSubmitURL and httpRealm).
+     * This will throw if `guid` does not refer to a record that exists in the database, or if the provided record is
+     * invalid (missing password, origin, or doesn't have exactly one of formSubmitURL and httpRealm).
      *
      * @param guid Unique identifier for the record
      * @param login [LoginEntry] to add.
@@ -250,8 +211,8 @@ interface LoginsStorage : Storage, StorageMaintenanceRegistry, AutoCloseable {
     /**
      * Checks if a record exists for a [LoginEntry] and calls either add() or update()
      *
-     * This will throw if the provided record is invalid (missing password,
-     * origin, or doesn't have exactly one of formSubmitURL and httpRealm).
+     * This will throw if the provided record is invalid (missing password, origin, or doesn't have exactly one of
+     * formSubmitURL and httpRealm).
      *
      * @param login [LoginEntry] to add or update.
      * @return [EncryptedLogin] that was added
@@ -267,7 +228,7 @@ interface LoginsStorage : Storage, StorageMaintenanceRegistry, AutoCloseable {
     suspend fun getByBaseDomain(origin: String): List<Login>
 
     override fun registerStorageMaintenanceWorker() {
-       // Implemented by concrete implementation of `LoginsStorage`
+        // Implemented by concrete implementation of `LoginsStorage`
     }
 
     override fun unregisterStorageMaintenanceWorker(uniqueWorkName: String) {
@@ -284,30 +245,29 @@ interface LoginsStorage : Storage, StorageMaintenanceRegistry, AutoCloseable {
 }
 
 /**
- * Validates a [LoginEntry] that will be saved and calculates if saving it
- * would update an existing [Login] or create a new one.
+ * Validates a [LoginEntry] that will be saved and calculates if saving it would update an existing [Login] or create a
+ * new one.
  */
 interface LoginValidationDelegate {
     /**
-     * The result of validating a given [Login] against currently stored [Login]s.  This will
-     * include whether it can be created, updated, or neither, along with an explanation of any errors.
+     * The result of validating a given [Login] against currently stored [Login]s. This will include whether it can be
+     * created, updated, or neither, along with an explanation of any errors.
      */
     sealed class Result {
         /**
-         * Indicates that the [Login] does not currently exist in the storage, and a new entry
-         * with its information can be made.
+         * Indicates that the [Login] does not currently exist in the storage, and a new entry with its information can
+         * be made.
          */
         object CanBeCreated : Result()
 
         /**
-         * Indicates that a matching [Login] was found in storage, and the [Login] can be used
-         * to update its information.
+         * Indicates that a matching [Login] was found in storage, and the [Login] can be used to update its
+         * information.
          */
         data class CanBeUpdated(val foundLogin: Login) : Result()
     }
 
     /**
-     *
      * Checks whether a [login] should be saved or updated.
      *
      * @returns a [Result], detailing whether a [login] should be saved or updated.
@@ -316,13 +276,11 @@ interface LoginValidationDelegate {
 }
 
 /**
- * Used to handle [Login] storage so that the underlying engine doesn't have to. An instance of
- * this should be attached to the Gecko runtime in order to be used.
+ * Used to handle [Login] storage so that the underlying engine doesn't have to. An instance of this should be attached
+ * to the Gecko runtime in order to be used.
  */
 interface LoginStorageDelegate {
-    /**
-     * Called after a [login] has been autofilled into web content.
-     */
+    /** Called after a [login] has been autofilled into web content. */
     fun onLoginUsed(login: Login)
 
     /**
@@ -332,8 +290,6 @@ interface LoginStorageDelegate {
      */
     fun onLoginFetch(domain: String): Deferred<List<Login>>
 
-    /**
-     * Called when a [LogenEntry] should be added or updated.
-     */
+    /** Called when a [LogenEntry] should be added or updated. */
     fun onLoginSave(login: LoginEntry)
 }

@@ -133,6 +133,12 @@ run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.
 ["marFileLockedStageFailurePartial_win.js"]
 run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.
 
+["marPostUpdateDesktopLauncher.js"]
+run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.
+
+["marPostUpdateTarget.js"]
+run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.
+
 ["marRMRFDirFileInUseStageFailureComplete_win.js"]
 run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.
 
@@ -163,6 +169,9 @@ run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.
 ["marStageSuccessPartial.js"]
 run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.
 
+["marStageSuccessPartialStaleDraft.js"]
+run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.
+
 ["marStageSuccessPartialZucchini.js"]
 run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.
 
@@ -170,6 +179,9 @@ run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.
 run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.
 
 ["marSuccessPartial.js"]
+run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.
+
+["marSuccessPartialStaleDraft.js"]
 run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.
 
 ["marSuccessPartialZucchini.js"]

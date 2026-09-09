@@ -855,7 +855,7 @@ function Lists({
           menuId="lists-panel"
           type="ghost"
         />
-        <panel-list id="lists-panel">
+        <panel-list className="panel-list-no-icons" id="lists-panel">
           <panel-item
             data-l10n-id="newtab-widget-lists-menu-edit"
             onClick={() => setIsEditing(true)}
@@ -1111,7 +1111,7 @@ function ListItem({
         menuId={`panel-task-${task.id}`}
         type="ghost"
       />
-      <panel-list id={`panel-task-${task.id}`}>
+      <panel-list className="panel-list-no-icons" id={`panel-task-${task.id}`}>
         {!isCompleted && (
           <>
             {task.isUrl && (

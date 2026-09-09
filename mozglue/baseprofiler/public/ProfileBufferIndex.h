@@ -41,24 +41,8 @@ class ProfileBufferBlockIndex {
 
   // Comparison operators. Default `ProfileBufferBlockIndex{}` value is always
   // the lowest.
-  [[nodiscard]] bool operator==(const ProfileBufferBlockIndex& aRhs) const {
-    return mBlockIndex == aRhs.mBlockIndex;
-  }
-  [[nodiscard]] bool operator!=(const ProfileBufferBlockIndex& aRhs) const {
-    return mBlockIndex != aRhs.mBlockIndex;
-  }
-  [[nodiscard]] bool operator<(const ProfileBufferBlockIndex& aRhs) const {
-    return mBlockIndex < aRhs.mBlockIndex;
-  }
-  [[nodiscard]] bool operator<=(const ProfileBufferBlockIndex& aRhs) const {
-    return mBlockIndex <= aRhs.mBlockIndex;
-  }
-  [[nodiscard]] bool operator>(const ProfileBufferBlockIndex& aRhs) const {
-    return mBlockIndex > aRhs.mBlockIndex;
-  }
-  [[nodiscard]] bool operator>=(const ProfileBufferBlockIndex& aRhs) const {
-    return mBlockIndex >= aRhs.mBlockIndex;
-  }
+  [[nodiscard]] auto operator<=>(const ProfileBufferBlockIndex& aRhs) const =
+      default;
 
   // Explicit conversion to ProfileBufferIndex, mostly used by internal Profile
   // buffer code.

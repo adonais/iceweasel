@@ -11,10 +11,8 @@ import androidx.recyclerview.widget.ListAdapter
 import mozilla.components.browser.state.state.recover.TabState
 import org.mozilla.fenix.selection.SelectionHolder
 
-class RecentlyClosedAdapter(
-    private val interactor: RecentlyClosedFragmentInteractor,
-) : ListAdapter<TabState, RecentlyClosedItemViewHolder>(DiffCallback),
-    SelectionHolder<TabState> {
+class RecentlyClosedAdapter(private val interactor: RecentlyClosedFragmentInteractor) :
+    ListAdapter<TabState, RecentlyClosedItemViewHolder>(DiffCallback), SelectionHolder<TabState> {
 
     private var selectedTabs: Set<TabState> = emptySet()
 
@@ -22,8 +20,7 @@ class RecentlyClosedAdapter(
         parent: ViewGroup,
         viewType: Int,
     ): RecentlyClosedItemViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(RecentlyClosedItemViewHolder.LAYOUT_ID, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(RecentlyClosedItemViewHolder.LAYOUT_ID, parent, false)
         return RecentlyClosedItemViewHolder(view, interactor, this)
     }
 
@@ -41,10 +38,8 @@ class RecentlyClosedAdapter(
     }
 
     private object DiffCallback : DiffUtil.ItemCallback<TabState>() {
-        override fun areItemsTheSame(oldItem: TabState, newItem: TabState) =
-            oldItem.id == newItem.id
+        override fun areItemsTheSame(oldItem: TabState, newItem: TabState) = oldItem.id == newItem.id
 
-        override fun areContentsTheSame(oldItem: TabState, newItem: TabState) =
-            oldItem == newItem
+        override fun areContentsTheSame(oldItem: TabState, newItem: TabState) = oldItem == newItem
     }
 }

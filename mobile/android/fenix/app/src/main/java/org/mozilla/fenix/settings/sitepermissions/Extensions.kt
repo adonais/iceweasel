@@ -13,10 +13,8 @@ import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.settings.PhoneFeature
 
 /**
- * Reloads the last used tab matching the provided origin. For performance
- * reasons we don't want to reload all matching tabs. Reloading the last used
- * tab is a good compromise as it's likely the reason for a change in site
- * permissions.
+ * Reloads the last used tab matching the provided origin. For performance reasons we don't want to reload all matching
+ * tabs. Reloading the last used tab is a good compromise as it's likely the reason for a change in site permissions.
  *
  * @param origin The origin of the tab to reload.
  */
@@ -35,10 +33,11 @@ internal fun initBlockedByAndroidView(phoneFeature: PhoneFeature, blockedByAndro
         blockedByAndroidView.visibility = View.VISIBLE
 
         val descriptionLabel = blockedByAndroidView.findViewById<TextView>(R.id.blocked_by_android_feature_label)
-        val descriptionText = context.getString(
-            R.string.phone_feature_blocked_step_feature,
-            phoneFeature.getLabel(context),
-        )
+        val descriptionText =
+            context.getString(
+                R.string.phone_feature_blocked_step_feature,
+                phoneFeature.getLabel(context),
+            )
         descriptionLabel.text = HtmlCompat.fromHtml(descriptionText, HtmlCompat.FROM_HTML_MODE_COMPACT)
 
         val permissionsLabel = blockedByAndroidView.findViewById<TextView>(R.id.blocked_by_android_permissions_label)

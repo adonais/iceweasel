@@ -15,6 +15,8 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat.getColor
 import androidx.core.view.isVisible
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import mozilla.components.browser.menu.BrowserMenu
 import mozilla.components.browser.menu.BrowserMenuHighlight
 import mozilla.components.browser.menu.R
@@ -24,6 +26,7 @@ import mozilla.components.concept.menu.candidate.LowPriorityHighlightEffect
 import mozilla.components.concept.menu.candidate.TextMenuCandidate
 import mozilla.components.concept.menu.candidate.TextStyle
 import mozilla.components.support.test.robolectric.testContext
+import mozilla.components.ui.colors.R as colorsR
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -33,9 +36,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 import org.robolectric.Shadows
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
-import mozilla.components.ui.colors.R as colorsR
 
 @RunWith(AndroidJUnit4::class)
 class BrowserMenuHighlightableItemTest {
@@ -46,19 +46,21 @@ class BrowserMenuHighlightableItemTest {
     @Test
     fun `browser menu highlightable item should be inflated`() {
         var onClickWasPress = false
-        val item = BrowserMenuHighlightableItem(
-            "label",
-            imageResource = android.R.drawable.ic_menu_report_image,
-            iconTintColorResource = android.R.color.black,
-            textColorResource = android.R.color.black,
-            highlight = BrowserMenuHighlightableItem.Highlight(
-                endImageResource = android.R.drawable.ic_menu_report_image,
-                backgroundResource = colorId,
-                colorResource = colorId,
-            ),
-        ) {
-            onClickWasPress = true
-        }
+        val item =
+            BrowserMenuHighlightableItem(
+                "label",
+                imageResource = android.R.drawable.ic_menu_report_image,
+                iconTintColorResource = android.R.color.black,
+                textColorResource = android.R.color.black,
+                highlight =
+                    BrowserMenuHighlightableItem.Highlight(
+                        endImageResource = android.R.drawable.ic_menu_report_image,
+                        backgroundResource = colorId,
+                        colorResource = colorId,
+                    ),
+            ) {
+                onClickWasPress = true
+            }
 
         val view = inflate(item)
 
@@ -70,19 +72,21 @@ class BrowserMenuHighlightableItemTest {
     @Test
     fun `browser menu highlightable item should properly handle classic highlighting`() {
         var shouldHighlight = false
-        val item = BrowserMenuHighlightableItem(
-            label = "label",
-            startImageResource = android.R.drawable.ic_menu_report_image,
-            iconTintColorResource = android.R.color.black,
-            textColorResource = android.R.color.black,
-            highlight = BrowserMenuHighlightableItem.Highlight(
-                startImageResource = android.R.drawable.ic_menu_camera,
-                endImageResource = android.R.drawable.ic_menu_add,
-                backgroundResource = colorId,
-                colorResource = colorId,
-            ),
-            isHighlighted = { shouldHighlight },
-        )
+        val item =
+            BrowserMenuHighlightableItem(
+                label = "label",
+                startImageResource = android.R.drawable.ic_menu_report_image,
+                iconTintColorResource = android.R.color.black,
+                textColorResource = android.R.color.black,
+                highlight =
+                    BrowserMenuHighlightableItem.Highlight(
+                        startImageResource = android.R.drawable.ic_menu_camera,
+                        endImageResource = android.R.drawable.ic_menu_add,
+                        backgroundResource = colorId,
+                        colorResource = colorId,
+                    ),
+                isHighlighted = { shouldHighlight },
+            )
 
         val view = inflate(item)
 
@@ -108,18 +112,20 @@ class BrowserMenuHighlightableItemTest {
     @Test
     fun `browser menu highlightable item should properly handle high priority highlighting`() {
         var shouldHighlight = false
-        val item = BrowserMenuHighlightableItem(
-            label = "label",
-            startImageResource = android.R.drawable.ic_menu_report_image,
-            iconTintColorResource = android.R.color.black,
-            textColorResource = android.R.color.black,
-            highlight = BrowserMenuHighlight.HighPriority(
-                endImageResource = android.R.drawable.ic_menu_add,
-                backgroundTint = Color.RED,
-                label = "highlight",
-            ),
-            isHighlighted = { shouldHighlight },
-        )
+        val item =
+            BrowserMenuHighlightableItem(
+                label = "label",
+                startImageResource = android.R.drawable.ic_menu_report_image,
+                iconTintColorResource = android.R.color.black,
+                textColorResource = android.R.color.black,
+                highlight =
+                    BrowserMenuHighlight.HighPriority(
+                        endImageResource = android.R.drawable.ic_menu_add,
+                        backgroundTint = Color.RED,
+                        label = "highlight",
+                    ),
+                isHighlighted = { shouldHighlight },
+            )
 
         val view = inflate(item)
 
@@ -127,7 +133,10 @@ class BrowserMenuHighlightableItemTest {
         assertEquals("highlight", view.highlightedTextView.text)
 
         // Highlight should not exist before set
-        assertEquals(android.R.drawable.ic_menu_report_image, Shadows.shadowOf(view.startImageView.drawable).createdFromResId)
+        assertEquals(
+            android.R.drawable.ic_menu_report_image,
+            Shadows.shadowOf(view.startImageView.drawable).createdFromResId,
+        )
         assertFalse(view.highlightedTextView.isVisible)
         assertFalse(view.endImageView.isVisible)
 
@@ -136,7 +145,10 @@ class BrowserMenuHighlightableItemTest {
 
         // Highlight should now exist
         assertTrue(view.highlightedTextView.isVisible)
-        assertEquals(android.R.drawable.ic_menu_report_image, Shadows.shadowOf(view.startImageView.drawable).createdFromResId)
+        assertEquals(
+            android.R.drawable.ic_menu_report_image,
+            Shadows.shadowOf(view.startImageView.drawable).createdFromResId,
+        )
         assertEquals(android.R.drawable.ic_menu_add, Shadows.shadowOf(view.endImageView.drawable).createdFromResId)
         assertNotNull(view.endImageView.imageTintList)
         assertTrue(view.endImageView.isVisible)
@@ -145,17 +157,19 @@ class BrowserMenuHighlightableItemTest {
     @Test
     fun `browser menu highlightable item should properly handle low priority highlighting`() {
         var shouldHighlight = false
-        val item = BrowserMenuHighlightableItem(
-            label = "label",
-            startImageResource = android.R.drawable.ic_menu_report_image,
-            iconTintColorResource = android.R.color.black,
-            textColorResource = android.R.color.black,
-            highlight = BrowserMenuHighlight.LowPriority(
-                notificationTint = Color.RED,
-                label = "highlight",
-            ),
-            isHighlighted = { shouldHighlight },
-        )
+        val item =
+            BrowserMenuHighlightableItem(
+                label = "label",
+                startImageResource = android.R.drawable.ic_menu_report_image,
+                iconTintColorResource = android.R.color.black,
+                textColorResource = android.R.color.black,
+                highlight =
+                    BrowserMenuHighlight.LowPriority(
+                        notificationTint = Color.RED,
+                        label = "highlight",
+                    ),
+                isHighlighted = { shouldHighlight },
+            )
 
         val view = inflate(item)
 
@@ -166,7 +180,10 @@ class BrowserMenuHighlightableItemTest {
         val highlightImageView = view.findViewById<AppCompatImageView>(R.id.end_image)
 
         // Highlight should not exist before set
-        assertEquals(android.R.drawable.ic_menu_report_image, Shadows.shadowOf(startImageView.drawable).createdFromResId)
+        assertEquals(
+            android.R.drawable.ic_menu_report_image,
+            Shadows.shadowOf(startImageView.drawable).createdFromResId,
+        )
         assertFalse(view.highlightedTextView.isVisible)
         assertFalse(highlightImageView.isVisible)
 
@@ -181,14 +198,16 @@ class BrowserMenuHighlightableItemTest {
 
     @Test
     fun `browser menu highlightable item with with no iconTintColorResource must not have a tinted icon`() {
-        val item = BrowserMenuHighlightableItem(
-            "label",
-            startImageResource = android.R.drawable.ic_menu_report_image,
-            highlight = BrowserMenuHighlight.HighPriority(
-                endImageResource = android.R.drawable.ic_menu_report_image,
-                backgroundTint = Color.RED,
-            ),
-        )
+        val item =
+            BrowserMenuHighlightableItem(
+                "label",
+                startImageResource = android.R.drawable.ic_menu_report_image,
+                highlight =
+                    BrowserMenuHighlight.HighPriority(
+                        endImageResource = android.R.drawable.ic_menu_report_image,
+                        backgroundTint = Color.RED,
+                    ),
+            )
 
         val view = inflate(item)
 
@@ -199,13 +218,12 @@ class BrowserMenuHighlightableItemTest {
 
     @Test
     fun `bind highlightable item with with default high priority`() {
-        val item = BrowserMenuHighlightableItem(
-            "label",
-            startImageResource = android.R.drawable.ic_menu_report_image,
-            highlight = BrowserMenuHighlight.HighPriority(
-                backgroundTint = Color.RED,
-            ),
-        )
+        val item =
+            BrowserMenuHighlightableItem(
+                "label",
+                startImageResource = android.R.drawable.ic_menu_report_image,
+                highlight = BrowserMenuHighlight.HighPriority(backgroundTint = Color.RED),
+            )
 
         val view = inflate(item)
 
@@ -219,11 +237,12 @@ class BrowserMenuHighlightableItemTest {
     @Suppress("Deprecation")
     @Test
     fun `browser menu highlightable item with with no highlight must not have highlightImageView visible`() {
-        val item = BrowserMenuHighlightableItem(
-            "label",
-            android.R.drawable.ic_menu_report_image,
-            highlight = null,
-        )
+        val item =
+            BrowserMenuHighlightableItem(
+                "label",
+                android.R.drawable.ic_menu_report_image,
+                highlight = null,
+            )
 
         val view = inflate(item)
         val endImageView = view.findViewById<AppCompatImageView>(R.id.end_image)
@@ -237,30 +256,31 @@ class BrowserMenuHighlightableItemTest {
         val listener = {}
 
         var shouldHighlight = false
-        val highPriorityItem = BrowserMenuHighlightableItem(
-            label = "label",
-            startImageResource = android.R.drawable.ic_menu_report_image,
-            iconTintColorResource = android.R.color.black,
-            textColorResource = android.R.color.black,
-            highlight = BrowserMenuHighlight.HighPriority(
-                endImageResource = android.R.drawable.ic_menu_add,
-                backgroundTint = Color.RED,
-                label = "highlight",
-            ),
-            isHighlighted = { shouldHighlight },
-            listener = listener,
-        )
+        val highPriorityItem =
+            BrowserMenuHighlightableItem(
+                label = "label",
+                startImageResource = android.R.drawable.ic_menu_report_image,
+                iconTintColorResource = android.R.color.black,
+                textColorResource = android.R.color.black,
+                highlight =
+                    BrowserMenuHighlight.HighPriority(
+                        endImageResource = android.R.drawable.ic_menu_add,
+                        backgroundTint = Color.RED,
+                        label = "highlight",
+                    ),
+                isHighlighted = { shouldHighlight },
+                listener = listener,
+            )
 
         assertEquals(
             TextMenuCandidate(
                 "label",
-                start = DrawableMenuIcon(
-                    null,
-                    tint = getColor(testContext, android.R.color.black),
-                ),
-                textStyle = TextStyle(
-                    color = getColor(testContext, android.R.color.black),
-                ),
+                start =
+                    DrawableMenuIcon(
+                        null,
+                        tint = getColor(testContext, android.R.color.black),
+                    ),
+                textStyle = TextStyle(color = getColor(testContext, android.R.color.black)),
                 onClick = listener,
             ),
             highPriorityItem.asCandidate(testContext).removeDrawables(),
@@ -270,17 +290,14 @@ class BrowserMenuHighlightableItemTest {
         assertEquals(
             TextMenuCandidate(
                 "highlight",
-                start = DrawableMenuIcon(
-                    null,
-                    tint = getColor(testContext, android.R.color.black),
-                ),
+                start =
+                    DrawableMenuIcon(
+                        null,
+                        tint = getColor(testContext, android.R.color.black),
+                    ),
                 end = DrawableMenuIcon(null),
-                textStyle = TextStyle(
-                    color = getColor(testContext, android.R.color.black),
-                ),
-                effect = HighPriorityHighlightEffect(
-                    backgroundTint = Color.RED,
-                ),
+                textStyle = TextStyle(color = getColor(testContext, android.R.color.black)),
+                effect = HighPriorityHighlightEffect(backgroundTint = Color.RED),
                 onClick = listener,
             ),
             highPriorityItem.asCandidate(testContext).removeDrawables(),
@@ -289,30 +306,30 @@ class BrowserMenuHighlightableItemTest {
         assertEquals(
             TextMenuCandidate(
                 "highlight",
-                start = DrawableMenuIcon(
-                    null,
-                    tint = getColor(testContext, android.R.color.black),
-                    effect = LowPriorityHighlightEffect(
-                        notificationTint = Color.RED,
+                start =
+                    DrawableMenuIcon(
+                        null,
+                        tint = getColor(testContext, android.R.color.black),
+                        effect = LowPriorityHighlightEffect(notificationTint = Color.RED),
                     ),
-                ),
-                textStyle = TextStyle(
-                    color = getColor(testContext, android.R.color.black),
-                ),
+                textStyle = TextStyle(color = getColor(testContext, android.R.color.black)),
                 onClick = listener,
             ),
             BrowserMenuHighlightableItem(
-                label = "label",
-                startImageResource = android.R.drawable.ic_menu_report_image,
-                iconTintColorResource = android.R.color.black,
-                textColorResource = android.R.color.black,
-                highlight = BrowserMenuHighlight.LowPriority(
-                    notificationTint = Color.RED,
-                    label = "highlight",
-                ),
-                isHighlighted = { true },
-                listener = listener,
-            ).asCandidate(testContext).removeDrawables(),
+                    label = "label",
+                    startImageResource = android.R.drawable.ic_menu_report_image,
+                    iconTintColorResource = android.R.color.black,
+                    textColorResource = android.R.color.black,
+                    highlight =
+                        BrowserMenuHighlight.LowPriority(
+                            notificationTint = Color.RED,
+                            label = "highlight",
+                        ),
+                    isHighlighted = { true },
+                    listener = listener,
+                )
+                .asCandidate(testContext)
+                .removeDrawables(),
         )
     }
 
@@ -323,13 +340,21 @@ class BrowserMenuHighlightableItemTest {
         return view as ConstraintLayout
     }
 
-    private val ConstraintLayout.startImageView: ImageView get() = findViewById(R.id.image)
-    private val ConstraintLayout.endImageView: ImageView get() = findViewById(R.id.end_image)
-    private val ConstraintLayout.textView: TextView get() = findViewById(R.id.text)
-    private val ConstraintLayout.highlightedTextView: TextView get() = findViewById(R.id.highlight_text)
+    private val ConstraintLayout.startImageView: ImageView
+        get() = findViewById(R.id.image)
 
-    private fun TextMenuCandidate.removeDrawables() = copy(
-        start = (start as? DrawableMenuIcon)?.copy(drawable = null),
-        end = (end as? DrawableMenuIcon)?.copy(drawable = null),
-    )
+    private val ConstraintLayout.endImageView: ImageView
+        get() = findViewById(R.id.end_image)
+
+    private val ConstraintLayout.textView: TextView
+        get() = findViewById(R.id.text)
+
+    private val ConstraintLayout.highlightedTextView: TextView
+        get() = findViewById(R.id.highlight_text)
+
+    private fun TextMenuCandidate.removeDrawables() =
+        copy(
+            start = (start as? DrawableMenuIcon)?.copy(drawable = null),
+            end = (end as? DrawableMenuIcon)?.copy(drawable = null),
+        )
 }

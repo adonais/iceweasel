@@ -15,19 +15,18 @@ import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_ALLOW_ALL
 import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_BLOCK_ALL
 import org.mozilla.fenix.utils.Settings
 
-/**
- * The [Store] for holding the [TrustPanelState] and applying [TrustPanelAction]s.
- */
+/** The [Store] for holding the [TrustPanelState] and applying [TrustPanelAction]s. */
 class TrustPanelStore(
     initialState: TrustPanelState = TrustPanelState(),
     middleware: List<Middleware<TrustPanelState, TrustPanelAction>> = emptyList(),
-) : Store<TrustPanelState, TrustPanelAction>(
-    initialState = initialState,
-    reducer = ::reducer,
-    middleware = middleware,
-) {
+) :
+    Store<TrustPanelState, TrustPanelAction>(
+        initialState = initialState,
+        reducer = ::reducer,
+        middleware = middleware,
+    ) {
     @Suppress("LongParameterList")
-    constructor (
+    constructor(
         isTrackingProtectionEnabled: Boolean,
         websiteInfoState: WebsiteInfoState,
         sessionState: SessionState?,
@@ -37,36 +36,35 @@ class TrustPanelStore(
         isPermissionBlockedByAndroid: (PhoneFeature) -> Boolean,
         middleware: List<Middleware<TrustPanelState, TrustPanelAction>> = emptyList(),
     ) : this(
-        initialState = TrustPanelState(
-            isTrackingProtectionEnabled = isTrackingProtectionEnabled,
-            numberOfTrackersBlocked = sessionState?.trackingProtection?.blockedTrackers?.size ?: 0,
-            sessionState = sessionState,
-            sitePermissions = sitePermissions,
-            websiteInfoState = websiteInfoState,
-            websitePermissionsState = createWebsitePermissionState(
-                settings = settings,
+        initialState =
+            TrustPanelState(
+                isTrackingProtectionEnabled = isTrackingProtectionEnabled,
+                numberOfTrackersBlocked = sessionState?.trackingProtection?.blockedTrackers?.size ?: 0,
+                sessionState = sessionState,
                 sitePermissions = sitePermissions,
-                permissionHighlights = permissionHighlights,
-                isPermissionBlockedByAndroid = isPermissionBlockedByAndroid,
+                websiteInfoState = websiteInfoState,
+                websitePermissionsState =
+                    createWebsitePermissionState(
+                        settings = settings,
+                        sitePermissions = sitePermissions,
+                        permissionHighlights = permissionHighlights,
+                        isPermissionBlockedByAndroid = isPermissionBlockedByAndroid,
+                    ),
             ),
-        ),
         middleware = middleware,
     )
 
-    /**
-     * Companion containing methods for creating initial [WebsitePermissionsState] and autoplay values.
-     */
+    /** Companion containing methods for creating initial [WebsitePermissionsState] and autoplay values. */
     companion object {
         /**
-         * Construct an initial [WebsitePermissionsState] to be rendered by the Protection Panel
-         * containing the permissions requested by the current website.
+         * Construct an initial [WebsitePermissionsState] to be rendered by the Protection Panel containing the
+         * permissions requested by the current website.
          *
          * @param settings The application [Settings].
          * @param sitePermissions [SitePermissions]? list of website permissions and their status.
-         * @param permissionHighlights [PermissionHighlightsState] used to determine whether a permission
-         * should be brought to the user's attention.
-         * @param isPermissionBlockedByAndroid Callback invoked to determine whether a permission is blocked
-         * by Android.
+         * @param permissionHighlights [PermissionHighlightsState] used to determine whether a permission should be
+         *   brought to the user's attention.
+         * @param isPermissionBlockedByAndroid Callback invoked to determine whether a permission is blocked by Android.
          */
         @VisibleForTesting
         fun createWebsitePermissionState(
@@ -74,53 +72,54 @@ class TrustPanelStore(
             sitePermissions: SitePermissions?,
             permissionHighlights: PermissionHighlightsState,
             isPermissionBlockedByAndroid: (PhoneFeature) -> Boolean,
-        ) = PhoneFeature.entries
-            .filterNot { it == PhoneFeature.AUTOPLAY_AUDIBLE || it == PhoneFeature.AUTOPLAY_INAUDIBLE }
-            .associateWith { phoneFeature ->
-                when (phoneFeature) {
-                    PhoneFeature.AUTOPLAY -> {
-                        WebsitePermission.Autoplay(
-                            autoplayValue = sitePermissions.toAutoplayValue(settings),
-                            isVisible = sitePermissions != null || permissionHighlights.isAutoPlayBlocking,
-                            deviceFeature = phoneFeature,
-                        )
-                    }
-                    PhoneFeature.LOCAL_NETWORK_ACCESS,
-                    PhoneFeature.LOCAL_DEVICE_ACCESS,
-                    -> {
-                        val status = phoneFeature.getStatus(sitePermissions, settings)
-                        WebsitePermission.Toggleable(
-                            isEnabled = status.isAllowed(),
-                            isBlockedByAndroid = false,
-                            isVisible = settings.isLnaFeatureEnabled && sitePermissions != null &&
-                                    status.doNotAskAgain(),
-                            deviceFeature = phoneFeature,
-                        )
-                    }
-                    else -> {
-                        val status = phoneFeature.getStatus(sitePermissions, settings)
-                        WebsitePermission.Toggleable(
-                            isEnabled = status.isAllowed(),
-                            isBlockedByAndroid = isPermissionBlockedByAndroid(phoneFeature),
-                            isVisible = sitePermissions != null && status.doNotAskAgain(),
-                            deviceFeature = phoneFeature,
-                        )
+        ) =
+            PhoneFeature.entries
+                .filterNot { it == PhoneFeature.AUTOPLAY_AUDIBLE || it == PhoneFeature.AUTOPLAY_INAUDIBLE }
+                .associateWith { phoneFeature ->
+                    when (phoneFeature) {
+                        PhoneFeature.AUTOPLAY -> {
+                            WebsitePermission.Autoplay(
+                                autoplayValue = sitePermissions.toAutoplayValue(settings),
+                                isVisible = sitePermissions != null || permissionHighlights.isAutoPlayBlocking,
+                                deviceFeature = phoneFeature,
+                            )
+                        }
+                        PhoneFeature.LOCAL_NETWORK_ACCESS,
+                        PhoneFeature.LOCAL_DEVICE_ACCESS -> {
+                            val status = phoneFeature.getStatus(sitePermissions, settings)
+                            WebsitePermission.Toggleable(
+                                isEnabled = status.isAllowed(),
+                                isBlockedByAndroid = false,
+                                isVisible =
+                                    settings.isLnaFeatureEnabled && sitePermissions != null && status.doNotAskAgain(),
+                                deviceFeature = phoneFeature,
+                            )
+                        }
+                        else -> {
+                            val status = phoneFeature.getStatus(sitePermissions, settings)
+                            WebsitePermission.Toggleable(
+                                isEnabled = status.isAllowed(),
+                                isBlockedByAndroid = isPermissionBlockedByAndroid(phoneFeature),
+                                isVisible = sitePermissions != null && status.doNotAskAgain(),
+                                deviceFeature = phoneFeature,
+                            )
+                        }
                     }
                 }
-            }
 
         private fun SitePermissions?.toAutoplayValue(settings: Settings): AutoplayValue =
             this?.let { sitePermissions ->
                 AutoplayValue.entries.find {
                     it.autoplayAudibleStatus == sitePermissions.autoplayAudible &&
-                            it.autoplayInaudibleStatus == sitePermissions.autoplayInaudible
+                        it.autoplayInaudibleStatus == sitePermissions.autoplayInaudible
                 }
-            } ?: when (settings.getAutoplayUserSetting()) {
-                AUTOPLAY_ALLOW_ALL -> AutoplayValue.AUTOPLAY_ALLOW_ALL
-                AUTOPLAY_BLOCK_ALL -> AutoplayValue.AUTOPLAY_BLOCK_ALL
-                // Fallback for AUTOPLAY_ALLOW_ON_WIFI
-                else -> AutoplayValue.AUTOPLAY_BLOCK_AUDIBLE
             }
+                ?: when (settings.getAutoplayUserSetting()) {
+                    AUTOPLAY_ALLOW_ALL -> AutoplayValue.AUTOPLAY_ALLOW_ALL
+                    AUTOPLAY_BLOCK_ALL -> AutoplayValue.AUTOPLAY_BLOCK_ALL
+                    // Fallback for AUTOPLAY_ALLOW_ON_WIFI
+                    else -> AutoplayValue.AUTOPLAY_BLOCK_AUDIBLE
+                }
     }
 }
 
@@ -132,47 +131,34 @@ private fun reducer(state: TrustPanelState, action: TrustPanelAction): TrustPane
         is TrustPanelAction.UpdateTrackersBlocked,
         is TrustPanelAction.TogglePermission,
         is TrustPanelAction.UpdateAutoplayValue,
-        is TrustPanelAction.RequestQWAC,
-        -> state
+        is TrustPanelAction.RequestQWAC -> state
 
-        is TrustPanelAction.UpdateIPProtectionMenuState -> state.copy(
-            ipProtectionMenuState = action.state,
-        )
+        is TrustPanelAction.UpdateIPProtectionMenuState -> state.copy(ipProtectionMenuState = action.state)
 
-        is TrustPanelAction.WebsitePermissionAction -> state.copy(
-            websitePermissionsState = WebsitePermissionsStateReducer.reduce(
-                state.websitePermissionsState,
-                action,
-            ),
-        )
+        is TrustPanelAction.WebsitePermissionAction ->
+            state.copy(
+                websitePermissionsState =
+                    WebsitePermissionsStateReducer.reduce(
+                        state.websitePermissionsState,
+                        action,
+                    )
+            )
 
-        is TrustPanelAction.UpdateDetailedTrackerCategory -> state.copy(
-            detailedTrackerCategory = action.detailedTrackerCategory,
-        )
-        is TrustPanelAction.UpdateBaseDomain -> state.copy(
-            baseDomain = action.baseDomain,
-        )
-        is TrustPanelAction.ToggleTrackingProtection -> state.copy(
-            isTrackingProtectionEnabled = !state.isTrackingProtectionEnabled,
-        )
-        is TrustPanelAction.UpdateNumberOfTrackersBlocked -> state.copy(
-            numberOfTrackersBlocked = action.newNumberOfTrackersBlocked,
-        )
-        is TrustPanelAction.UpdateSitePermissions -> state.copy(
-            sitePermissions = action.sitePermissions,
-        )
-        is TrustPanelAction.UpdateQWAC -> state.copy(
-            websiteInfoState = state.websiteInfoState.copy(
-                qwac = action.qwac,
-            ),
-        )
+        is TrustPanelAction.UpdateDetailedTrackerCategory ->
+            state.copy(detailedTrackerCategory = action.detailedTrackerCategory)
+        is TrustPanelAction.UpdateBaseDomain -> state.copy(baseDomain = action.baseDomain)
+        is TrustPanelAction.ToggleTrackingProtection ->
+            state.copy(isTrackingProtectionEnabled = !state.isTrackingProtectionEnabled)
+        is TrustPanelAction.UpdateNumberOfTrackersBlocked ->
+            state.copy(numberOfTrackersBlocked = action.newNumberOfTrackersBlocked)
+        is TrustPanelAction.UpdateSitePermissions -> state.copy(sitePermissions = action.sitePermissions)
+        is TrustPanelAction.UpdateQWAC -> state.copy(websiteInfoState = state.websiteInfoState.copy(qwac = action.qwac))
     }
 }
 
 private object WebsitePermissionsStateReducer {
     /**
-     * Handles creating a new [WebsitePermissionsState] based on the
-     * specific [TrustPanelAction.WebsitePermissionAction]
+     * Handles creating a new [WebsitePermissionsState] based on the specific [TrustPanelAction.WebsitePermissionAction]
      */
     fun reduce(
         state: WebsitePermissionsState,
@@ -184,25 +170,19 @@ private object WebsitePermissionsStateReducer {
         return when (action) {
             is TrustPanelAction.WebsitePermissionAction.GrantPermissionBlockedByAndroid -> {
                 val toggleable = value as WebsitePermission.Toggleable
-                val newWebsitePermission = toggleable.copy(
-                    isBlockedByAndroid = false,
-                )
+                val newWebsitePermission = toggleable.copy(isBlockedByAndroid = false)
 
                 state + Pair(key, newWebsitePermission)
             }
             is TrustPanelAction.WebsitePermissionAction.TogglePermission -> {
                 val toggleable = value as WebsitePermission.Toggleable
-                val newWebsitePermission = toggleable.copy(
-                    isEnabled = !value.isEnabled,
-                )
+                val newWebsitePermission = toggleable.copy(isEnabled = !value.isEnabled)
 
                 state + Pair(key, newWebsitePermission)
             }
             is TrustPanelAction.WebsitePermissionAction.ChangeAutoplay -> {
                 val autoplay = value as WebsitePermission.Autoplay
-                val newWebsitePermission = autoplay.copy(
-                    autoplayValue = action.autoplayValue,
-                )
+                val newWebsitePermission = autoplay.copy(autoplayValue = action.autoplayValue)
                 state + Pair(key, newWebsitePermission)
             }
         }

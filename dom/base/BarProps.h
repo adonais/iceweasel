@@ -39,7 +39,7 @@ class BarProp : public nsISupports, public nsWrapperCache {
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) final;
 
   virtual bool GetVisible(CallerType aCallerType, ErrorResult& aRv) = 0;
-  void SetVisible(bool, CallerType, ErrorResult&) {}
+  void SetVisible(bool, CallerType, ErrorResult&);
 
  protected:
   virtual ~BarProp();

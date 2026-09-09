@@ -18,21 +18,8 @@ export class ShieldFrameParent extends JSWindowActorParent {
       case "Shield:RemoveFromWeakSet":
         aboutStudies.removeFromWeakSet(this.browsingContext);
         break;
-      case "Shield:GetAddonStudyList":
-        return aboutStudies.getAddonStudyList();
-      case "Shield:GetPreferenceStudyList":
-        return aboutStudies.getPreferenceStudyList();
       case "Shield:GetMessagingSystemList":
         return aboutStudies.getMessagingSystemList();
-      case "Shield:RemoveAddonStudy":
-        aboutStudies.removeAddonStudy(msg.data.recipeId, msg.data.reason);
-        break;
-      case "Shield:RemovePreferenceStudy":
-        aboutStudies.removePreferenceStudy(
-          msg.data.experimentName,
-          msg.data.reason
-        );
-        break;
       case "Shield:RemoveMessagingSystemExperiment":
         aboutStudies.removeMessagingSystemExperiment(msg.data.slug);
         break;

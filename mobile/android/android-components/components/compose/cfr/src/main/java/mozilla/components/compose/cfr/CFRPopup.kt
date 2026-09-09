@@ -13,47 +13,42 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import java.lang.ref.WeakReference
 import mozilla.components.compose.cfr.CFRPopup.IndicatorDirection
 import mozilla.components.compose.cfr.CFRPopup.PopupAlignment
-import java.lang.ref.WeakReference
 
-/**
- * The background painted in the [CFRPopup].
- */
+/** The background painted in the [CFRPopup]. */
 sealed interface CFRPopupBackground {
 
-    /**
-     * One or more [colors] painted as a linear gradient. A single color renders as a solid fill.
-     */
+    /** One or more [colors] painted as a linear gradient. A single color renders as a solid fill. */
     data class Colors(val colors: List<Int>) : CFRPopupBackground
 
-    /**
-     * A [brush] painted directly as the background.
-     */
+    /** A [brush] painted directly as the background. */
     data class Gradient(val brush: Brush) : CFRPopupBackground
 }
 
 /**
  * Properties used to customize the behavior of a [CFRPopup].
  *
- * @property popupWidth Width of the popup. Defaults to [CFRPopup.DEFAULT_WIDTH]. To be used as maximum
- * width when alignment is set to [PopupAlignment.BODY_CENTERED_IN_SCREEN].
+ * @property popupWidth Width of the popup. Defaults to [CFRPopup.DEFAULT_WIDTH]. To be used as maximum width when
+ *   alignment is set to [PopupAlignment.BODY_CENTERED_IN_SCREEN].
  * @property popupAlignment Where in relation to it's anchor should the popup be placed.
  * @property popupBodyColors The [CFRPopupBackground] painted in the popup.
- * @property popupVerticalOffset Vertical distance between the indicator arrow and the anchor.
- * This only applies if [overlapAnchor] is `false`.
+ * @property popupVerticalOffset Vertical distance between the indicator arrow and the anchor. This only applies if
+ *   [overlapAnchor] is `false`.
  * @property dismissButtonColor The tint color that should be applied to the dismiss button.
- * @property dismissOnBackPress Whether the popup can be dismissed by pressing the back button.
- * If true, pressing the back button will also call onDismiss().
- * @property dismissOnClickOutside Whether the popup can be dismissed by clicking outside the
- * popup's bounds. If true, clicking outside the popup will call onDismiss().
+ * @property dismissOnBackPress Whether the popup can be dismissed by pressing the back button. If true, pressing the
+ *   back button will also call onDismiss().
+ * @property dismissOnClickOutside Whether the popup can be dismissed by clicking outside the popup's bounds. If true,
+ *   clicking outside the popup will call onDismiss().
  * @property overlapAnchor How the popup's indicator will be shown in relation to the anchor:
- *   - true - indicator will be shown exactly in the middle horizontally and vertically
- *   - false - indicator will be shown horizontally in the middle of the anchor but immediately below or above it
+ *     - true - indicator will be shown exactly in the middle horizontally and vertically
+ *     - false - indicator will be shown horizontally in the middle of the anchor but immediately below or above it
+ *
  * @property indicatorDirection The direction the indicator arrow is pointing.
- * @property indicatorArrowStartOffset Maximum distance between the popup start and the indicator arrow.
- * If there isn't enough space this could automatically be overridden up to 0 such that
- * the indicator arrow will be pointing to the middle of the anchor.
+ * @property indicatorArrowStartOffset Maximum distance between the popup start and the indicator arrow. If there isn't
+ *   enough space this could automatically be overridden up to 0 such that the indicator arrow will be pointing to the
+ *   middle of the anchor.
  * @property popupStartOffset Maximum distance between the popup and anchor start.
  */
 class CFRPopupProperties(
@@ -74,11 +69,10 @@ class CFRPopupProperties(
 /**
  * CFR - Contextual Feature Recommendation popup.
  *
- * @param anchor [View] that will serve as the anchor of the popup and serve as lifecycle owner
- * for this popup also.
+ * @param anchor [View] that will serve as the anchor of the popup and serve as lifecycle owner for this popup also.
  * @param properties [CFRPopupProperties] allowing to customize the popup appearance and behavior.
- * @param onDismiss Callback for when the popup is dismissed indicating also if the dismissal
- * was explicit - by tapping the "X" button or not.
+ * @param onDismiss Callback for when the popup is dismissed indicating also if the dismissal was explicit - by tapping
+ *   the "X" button or not.
  * @param title Optional [Text] composable to show just above the popup text.
  * @param text [Text] already styled and ready to be shown in the popup.
  * @param action Optional other composable to show just below the popup text.
@@ -93,13 +87,11 @@ class CFRPopup(
 ) {
     // This is just a facade for the CFRPopupFullScreenLayout composable offering a cleaner API.
 
-    @VisibleForTesting
-    internal var popup: WeakReference<CFRPopupFullscreenLayout>? = null
+    @VisibleForTesting internal var popup: WeakReference<CFRPopupFullscreenLayout>? = null
 
     /**
-     * Construct and display a styled CFR popup shown at the coordinates of [anchor].
-     * This popup will be dismissed when the user clicks on the "x" button or based on other user actions
-     * with such behavior set in [CFRPopupProperties].
+     * Construct and display a styled CFR popup shown at the coordinates of [anchor]. This popup will be dismissed when
+     * the user clicks on the "x" button or based on other user actions with such behavior set in [CFRPopupProperties].
      */
     fun show() {
         anchor.post {
@@ -117,110 +109,92 @@ class CFRPopup(
             }
 
             CFRPopupFullscreenLayout(
-                anchor = anchor,
-                properties = properties,
-                onDismiss = onDismiss,
-                title = title,
-                text = text,
-                action = action,
-            ).apply {
-                this.show()
-                popup = WeakReference(this)
-            }
+                    anchor = anchor,
+                    properties = properties,
+                    onDismiss = onDismiss,
+                    title = title,
+                    text = text,
+                    action = action,
+                )
+                .apply {
+                    this.show()
+                    popup = WeakReference(this)
+                }
         }
     }
 
-    /**
-     * Immediately dismiss this CFR popup.
-     * The [onDismiss] callback won't be fired.
-     */
+    /** Immediately dismiss this CFR popup. The [onDismiss] callback won't be fired. */
     fun dismiss() {
         popup?.get()?.dismiss()
     }
 
     /**
-     * Possible direction for the arrow indicator of a CFR popup.
-     * The direction is expressed in relation with the popup body containing the text.
+     * Possible direction for the arrow indicator of a CFR popup. The direction is expressed in relation with the popup
+     * body containing the text.
      */
     enum class IndicatorDirection {
         UP,
         DOWN,
     }
 
-    /**
-     * Possible alignments of the popup in relation to it's anchor.
-     */
+    /** Possible alignments of the popup in relation to it's anchor. */
     enum class PopupAlignment {
         /**
-         * The popup body will be centered in the space occupied by the anchor.
-         * Recommended to be used when the anchor is wider than the popup.
+         * The popup body will be centered in the space occupied by the anchor. Recommended to be used when the anchor
+         * is wider than the popup.
          */
         BODY_TO_ANCHOR_CENTER,
 
-        /**
-         * The popup body will be shown aligned to exactly the anchor start.
-         */
+        /** The popup body will be shown aligned to exactly the anchor start. */
         BODY_TO_ANCHOR_START,
 
-        /**
-         * The popup body will be shown aligned to exactly the anchor start with offset.
-         */
+        /** The popup body will be shown aligned to exactly the anchor start with offset. */
         BODY_TO_ANCHOR_START_WITH_OFFSET,
 
         /**
          * The popup will be aligned such that the indicator arrow will point to exactly the middle of the anchor.
-         * Recommended to be used when there are multiple widgets displayed horizontally so that this will allow
-         * to indicate exactly which widget the popup refers to.
+         * Recommended to be used when there are multiple widgets displayed horizontally so that this will allow to
+         * indicate exactly which widget the popup refers to.
          */
         INDICATOR_CENTERED_IN_ANCHOR,
 
         /**
-         * If the popup doesn't have enough space to expand to its full [CFRPopupProperties.popupWidth],
-         * it will be centred in the screen.
-         * If the popup does have enough space, it defaults to [INDICATOR_CENTERED_IN_ANCHOR].
+         * If the popup doesn't have enough space to expand to its full [CFRPopupProperties.popupWidth], it will be
+         * centred in the screen. If the popup does have enough space, it defaults to [INDICATOR_CENTERED_IN_ANCHOR].
          * Recommended to be used when the popup text is very long.
          */
         BODY_CENTERED_IN_SCREEN,
     }
 
     companion object {
-        /**
-         * Default width for all CFRs.
-         */
+        /** Default width for all CFRs. */
         internal const val DEFAULT_WIDTH = 335
 
         /**
-         * Fixed horizontal padding.
-         * Allows the close button to extend with 10dp more to the end and intercept touches to
-         * a bit outside of the popup to ensure it respects a11y recommendations of 48dp size while
-         * also offer a bit more space to the text.
+         * Fixed horizontal padding. Allows the close button to extend with 10dp more to the end and intercept touches
+         * to a bit outside of the popup to ensure it respects a11y recommendations of 48dp size while also offer a bit
+         * more space to the text.
          */
         internal const val DEFAULT_EXTRA_HORIZONTAL_PADDING = 10
 
         /**
-         * How tall the indicator arrow should be.
-         * This will also affect the width of the indicator's base which is double the height value.
+         * How tall the indicator arrow should be. This will also affect the width of the indicator's base which is
+         * double the height value.
          */
         internal const val DEFAULT_INDICATOR_HEIGHT = 7
 
-        /**
-         * Maximum distance between the popup start and the indicator.
-         */
+        /** Maximum distance between the popup start and the indicator. */
         internal const val DEFAULT_INDICATOR_START_OFFSET = 30
 
-        /**
-         * Corner radius for the popup body.
-         */
+        /** Corner radius for the popup body. */
         internal const val DEFAULT_CORNER_RADIUS = 12
 
-        /**
-         * Vertical distance between the indicator arrow and the anchor.
-         */
+        /** Vertical distance between the indicator arrow and the anchor. */
         internal const val DEFAULT_VERTICAL_OFFSET = 9
 
         /**
-         * Horizontal margin between the popup and viewport edges used to center the popup when alignment
-         * is set to [PopupAlignment.BODY_CENTERED_IN_SCREEN].
+         * Horizontal margin between the popup and viewport edges used to center the popup when alignment is set to
+         * [PopupAlignment.BODY_CENTERED_IN_SCREEN].
          */
         internal const val DEFAULT_HORIZONTAL_VIEWPORT_MARGIN_DP = 16
     }

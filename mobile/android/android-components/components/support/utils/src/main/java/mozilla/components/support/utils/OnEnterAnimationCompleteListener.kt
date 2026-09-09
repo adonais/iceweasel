@@ -5,12 +5,10 @@
 package mozilla.components.support.utils
 
 /**
- * Allows forwarding [android.app.Activity.onEnterAnimationComplete] to other classes
- * (e.g. fragments) that want to participate in handling it.
+ * Allows forwarding [android.app.Activity.onEnterAnimationComplete] to other classes (e.g. fragments) that want to
+ * participate in handling it.
  */
 interface OnEnterAnimationCompleteListener {
-    /**
-     * Called when the Activity's entering animation has completed.
-     */
+    /** Called when the Activity's entering animation has completed. */
     fun onEnterAnimationComplete()
 }

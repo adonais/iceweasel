@@ -6,17 +6,14 @@ package mozilla.components.feature.sitepermissions
 
 import mozilla.components.concept.engine.permission.Permission
 
-/**
- * Provider to get the learn more url for a given permission.
- */
+/** Provider to get the learn more url for a given permission. */
 interface SitePermissionsLearnMoreUrlProvider {
 
     /**
      * Get the learn more url for a given permission.
-     * @param permission the permission to get the learn more link for.
      *
-     * @return the learn more url for the given permission, or null, if the permission is not
-     * supported.
+     * @param permission the permission to get the learn more link for.
+     * @return the learn more url for the given permission, or null, if the permission is not supported.
      */
     fun getUrl(permission: Permission): String?
 }

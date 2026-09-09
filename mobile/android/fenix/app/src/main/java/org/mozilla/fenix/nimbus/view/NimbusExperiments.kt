@@ -32,38 +32,33 @@ fun NimbusExperiments(
     experiments: List<NimbusExperimentItem> = listOf(),
     onExperimentClick: (AvailableExperiment) -> Unit,
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-    ) {
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
         items(experiments) { item ->
             when (item) {
                 is NimbusExperimentItem.Header -> NimbusExperimentHeader(titleResourceId = item.title)
-                is NimbusExperimentItem.Experiment -> TextListItem(
-                    label = item.experiment.userFacingName,
-                    description = item.experiment.userFacingDescription,
-                    maxDescriptionLines = Int.MAX_VALUE,
-                    onClick = {
-                        onExperimentClick(item.experiment)
-                    },
-                )
+                is NimbusExperimentItem.Experiment ->
+                    TextListItem(
+                        label = item.experiment.userFacingName,
+                        description = item.experiment.userFacingDescription,
+                        maxDescriptionLines = Int.MAX_VALUE,
+                        onClick = {
+                            onExperimentClick(item.experiment)
+                        },
+                    )
                 is NimbusExperimentItem.EmptyState -> NimbusExperimentEmptyState(text = item.text)
             }
         }
     }
 }
 
-/**
- * Item types for the list of experiments to be displayed.
- */
+/** Item types for the list of experiments to be displayed. */
 sealed class NimbusExperimentItem {
     /**
      * Title header for an experiment section. Typically, for "enrolled" or "unenrolled" sections.
      *
      * @property title the title to display.
      */
-    data class Header(
-        @param:StringRes val title: Int,
-    ) : NimbusExperimentItem()
+    data class Header(@param:StringRes val title: Int) : NimbusExperimentItem()
 
     /**
      * An experiment item.
@@ -77,65 +72,63 @@ sealed class NimbusExperimentItem {
      *
      * @property text the string to show when we have an empty state.
      */
-    data class EmptyState(
-        @param:StringRes val text: Int,
-    ) : NimbusExperimentItem()
+    data class EmptyState(@param:StringRes val text: Int) : NimbusExperimentItem()
 }
 
 @Composable
-private fun NimbusExperimentHeader(
-    @StringRes titleResourceId: Int,
-) {
+private fun NimbusExperimentHeader(@StringRes titleResourceId: Int) {
     Text(
         text = stringResource(titleResourceId),
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(
-            start = 16.dp,
-            end = 16.dp,
-            top = 16.dp,
-            bottom = 8.dp,
-        ),
+        modifier =
+            Modifier.padding(
+                start = 16.dp,
+                end = 16.dp,
+                top = 16.dp,
+                bottom = 8.dp,
+            ),
     )
 }
 
 @Composable
-private fun NimbusExperimentEmptyState(
-    @StringRes text: Int,
-) {
+private fun NimbusExperimentEmptyState(@StringRes text: Int) {
     Text(
         text = stringResource(text),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.secondary,
-        modifier = Modifier.padding(
-            start = 16.dp,
-            end = 16.dp,
-            top = 8.dp,
-            bottom = 8.dp,
-        ),
+        modifier =
+            Modifier.padding(
+                start = 16.dp,
+                end = 16.dp,
+                top = 8.dp,
+                bottom = 8.dp,
+            ),
     )
 }
 
 @Composable
 @PreviewLightDark
 private fun NimbusExperimentsPreview() {
-    val testExperiment = AvailableExperiment(
-        userFacingName = "Name",
-        userFacingDescription = "Description",
-        slug = "slug",
-        branches = emptyList(),
-        referenceBranch = null,
-    )
+    val testExperiment =
+        AvailableExperiment(
+            userFacingName = "Name",
+            userFacingDescription = "Description",
+            slug = "slug",
+            branches = emptyList(),
+            referenceBranch = null,
+        )
 
     FirefoxTheme {
         NimbusExperiments(
-            experiments = listOf(
-                NimbusExperimentItem.Header(R.string.preferences_nimbus_experiments_active),
-                NimbusExperimentItem.EmptyState(R.string.preferences_nimbus_experiments_no_items),
-                NimbusExperimentItem.Header(R.string.preferences_nimbus_experiments_inactive),
-                NimbusExperimentItem.Experiment(testExperiment),
-                NimbusExperimentItem.Experiment(testExperiment),
-            ),
+            experiments =
+                listOf(
+                    NimbusExperimentItem.Header(R.string.preferences_nimbus_experiments_active),
+                    NimbusExperimentItem.EmptyState(R.string.preferences_nimbus_experiments_no_items),
+                    NimbusExperimentItem.Header(R.string.preferences_nimbus_experiments_inactive),
+                    NimbusExperimentItem.Experiment(testExperiment),
+                    NimbusExperimentItem.Experiment(testExperiment),
+                ),
             onExperimentClick = {},
         )
     }

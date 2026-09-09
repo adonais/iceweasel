@@ -10,16 +10,13 @@ import androidx.annotation.LayoutRes
 import mozilla.components.browser.menu2.R
 import mozilla.components.concept.menu.candidate.DividerMenuCandidate
 
-/**
- * View holder that displays a divider.
- */
+/** View holder that displays a divider. */
 internal class DividerMenuCandidateViewHolder(
     itemView: View,
     inflater: LayoutInflater,
 ) : MenuCandidateViewHolder<DividerMenuCandidate>(itemView, inflater) {
 
     companion object {
-        @LayoutRes
-        val layoutResource = R.layout.mozac_browser_menu2_candidate_divider
+        @LayoutRes val layoutResource = R.layout.mozac_browser_menu2_candidate_divider
     }
 }

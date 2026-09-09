@@ -23,11 +23,12 @@ class AddressTest {
 
     @Test
     fun `WHEN any address properties are missing THEN label only includes only properties that are available`() {
-        val address = generateAddress(
-            addressLevel3 = "",
-            organization = "",
-            email = "",
-        )
+        val address =
+            generateAddress(
+                addressLevel3 = "",
+                organization = "",
+                email = "",
+            )
         val expected =
             "${address.name}, ${address.streetAddress}, ${address.addressLevel2}, ${address.addressLevel1}, " +
                 "${address.country}, ${address.postalCode}, ${address.tel}"
@@ -37,29 +38,32 @@ class AddressTest {
 
     @Test
     fun `WHEN no address properties are present THEN label is the empty string`() {
-        val address = generateAddress(
-            name = "",
-            organization = "",
-            streetAddress = "",
-            addressLevel3 = "",
-            addressLevel2 = "",
-            addressLevel1 = "",
-            postalCode = "",
-            country = "",
-            tel = "",
-            email = "",
-        )
+        val address =
+            generateAddress(
+                name = "",
+                organization = "",
+                streetAddress = "",
+                addressLevel3 = "",
+                addressLevel2 = "",
+                addressLevel1 = "",
+                postalCode = "",
+                country = "",
+                tel = "",
+                email = "",
+            )
 
         assertEquals("", address.addressLabel)
     }
 
     @Test
     fun `GIVEN multiline street address WHEN one line address is called THEN an one line address is returned`() {
-        val streetAddress = """
+        val streetAddress =
+            """
             line1
             line2
             line3
-        """.trimIndent()
+            """
+                .trimIndent()
 
         assertEquals("line1 line2 line3", streetAddress.toOneLineAddress())
     }
@@ -76,17 +80,18 @@ class AddressTest {
         country: String = "country",
         tel: String = "tel",
         email: String = "email",
-    ) = Address(
-        guid = guid,
-        name = name,
-        organization = organization,
-        streetAddress = streetAddress,
-        addressLevel3 = addressLevel3,
-        addressLevel2 = addressLevel2,
-        addressLevel1 = addressLevel1,
-        postalCode = postalCode,
-        country = country,
-        tel = tel,
-        email = email,
-    )
+    ) =
+        Address(
+            guid = guid,
+            name = name,
+            organization = organization,
+            streetAddress = streetAddress,
+            addressLevel3 = addressLevel3,
+            addressLevel2 = addressLevel2,
+            addressLevel1 = addressLevel1,
+            postalCode = postalCode,
+            country = country,
+            tel = tel,
+            email = email,
+        )
 }

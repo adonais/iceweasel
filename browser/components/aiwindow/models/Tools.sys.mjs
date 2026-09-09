@@ -18,7 +18,6 @@ import {
   manageTabsAction,
   TAB_ACTIONS,
 } from "moz-src:///browser/components/aiwindow/models/ManageTabs.sys.mjs";
-import { WCSMerinoClient } from "moz-src:///browser/components/aiwindow/models/WCSMerinoClient.sys.mjs";
 import { PageExtractorParent } from "resource://gre/actors/PageExtractorParent.sys.mjs";
 import {
   ChatStore,
@@ -35,9 +34,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
+  AITab: "moz-src:///browser/components/aiwindow/models/aitab/AITab.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   MemoriesManager:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
+  SessionStore:
+    "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
   SmartWindowNavigationInfo:
     "moz-src:///browser/components/aiwindow/models/SmartWindowNavigationInfo.sys.mjs",
   ToolUITelemetry:
@@ -96,20 +98,19 @@ const MAX_HISTORY_RESULTS = 15;
 export const GET_OPEN_TABS = "get_open_tabs";
 export const SEARCH_BROWSING_HISTORY = "search_browsing_history";
 export const GET_PAGE_CONTENT = "get_page_content";
+export const GENERATE_AITAB = "generate_aitab";
 export const RUN_SEARCH = "run_search";
 export const SEARCH_THE_WEB = "search_the_web";
 export const GET_USER_MEMORIES = "get_user_memories";
 export const GET_NAVIGATION_INFO = "get_navigation_info";
 export const MANAGE_TABS = "manage_tabs";
 export const GET_SKILL = "get_skill";
-export const WORLD_CUP_MATCHES = "world_cup_matches";
-export const WORLD_CUP_LIVE = "world_cup_live";
 export const ADD_MEMORY = "add_memory";
 
 // Tools gated behind a feature pref. Filtered out of the model's tool list
 // in Chat.sys.mjs when the pref is off.
-export const WORLD_CUP_TOOLS = new Set([WORLD_CUP_MATCHES, WORLD_CUP_LIVE]);
-export const WORLD_CUP_PREF = "browser.smartwindow.worldcup.enabled";
+export const AITAB_PREF = "browser.smartwindow.aitab.enabled";
+export const AITAB_TOOLS = new Set([GENERATE_AITAB]);
 export const SEARCH_QUERY_ENDPOINT_PREF =
   "browser.smartwindow.searchQuery.endpointURL";
 export const SEARCH_QUERY_APIKEY_PREF =
@@ -127,11 +128,10 @@ export const TOOLS = [
   GET_USER_MEMORIES,
   GET_NAVIGATION_INFO,
   MANAGE_TABS,
-  WORLD_CUP_MATCHES,
-  WORLD_CUP_LIVE,
   ADD_MEMORY,
   SEARCH_THE_WEB,
   GET_SKILL,
+  GENERATE_AITAB,
 ];
 
 export const RUN_SEARCH_VERBATIM_QUERY_DESCRIPTION =
@@ -244,7 +244,8 @@ export const toolsConfig = [
       name: GET_OPEN_TABS,
       description:
         `Access the user's browser and return up to ${MAX_TABS} currently open tabs, ` +
-        "ordered by most recently viewed.",
+        "ordered by most recently viewed. Tabs sharing a `windowId` are in the same " +
+        "browser window.",
       parameters: {
         type: "object",
         properties: {},
@@ -308,6 +309,35 @@ export const toolsConfig = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: GENERATE_AITAB,
+      description: "Design a custom web page with user content",
+      parameters: {
+        type: "object",
+        properties: {
+          focus: {
+            type: "string",
+            description:
+              "The focus on what information the user wants in the generated AITab.",
+          },
+          url_list: {
+            type: "array",
+            items: {
+              type: "string",
+              description:
+                "A URL token that appeared in the conversation, formatted as §url_token: DOMAIN_TLD_PATH_n§. " +
+                "Do NOT fabricate tokens. Only use tokens from user messages and tool results.",
+            },
+            minItems: 1,
+            description: "List of URL tokens to fetch content from.",
+          },
+        },
+        required: ["url_list"],
+      },
+    },
+  },
   SEARCH_THE_WEB_TOOL_CONFIG,
   {
     type: "function",
@@ -340,62 +370,6 @@ export const toolsConfig = [
       parameters: {
         type: "object",
         properties: {},
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: WORLD_CUP_MATCHES,
-      description:
-        "Retrieve World Cup soccer matches in a 14-day window centered on a date. " +
-        "Returns matches grouped into previous (older), current (on the date), and " +
-        "next (newer). Use this for questions about results, fixtures, schedules, " +
-        "scores from a recent or upcoming day, or how a specific team is doing. " +
-        "Prefer this over a web search for World Cup match data.",
-      parameters: {
-        type: "object",
-        properties: {
-          date: {
-            type: "string",
-            description:
-              "Center of the +/-7 day window as RFC date 'YYYY-MM-DD'. " +
-              "Omit to default to today (UTC).",
-          },
-          teams: {
-            type: "string",
-            description:
-              "Comma-separated 3-letter team keys to filter on, e.g. 'BRA,ARG'. " +
-              "Omit to include all teams.",
-          },
-          limit: {
-            type: "integer",
-            description:
-              "Maximum number of matches to return across the three buckets. " +
-              "Omit unless the user asks for a small number.",
-          },
-        },
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: WORLD_CUP_LIVE,
-      description:
-        "Retrieve World Cup soccer matches that are currently in progress. " +
-        "Use this when the user asks what's playing now, the live score, or " +
-        "what's happening right now in the World Cup.",
-      parameters: {
-        type: "object",
-        properties: {
-          teams: {
-            type: "string",
-            description:
-              "Comma-separated 3-letter team keys to filter on, e.g. 'BRA,ARG'. " +
-              "Omit to include all live matches.",
-          },
-        },
       },
     },
   },
@@ -515,6 +489,7 @@ export function getTabList(amount = MAX_TABS) {
     }
 
     if (!win.closed && win.gBrowser) {
+      const windowId = lazy.SessionStore.getWindowId(win);
       for (const tab of win.gBrowser.tabs) {
         const browser = tab.linkedBrowser;
         const url = browser?.currentURI?.spec;
@@ -525,6 +500,7 @@ export function getTabList(amount = MAX_TABS) {
             url,
             title: sanitizeUntrustedContent(title),
             lastAccessed: tab.lastAccessed,
+            windowId,
           });
         }
       }
@@ -543,6 +519,7 @@ export function getTabList(amount = MAX_TABS) {
  * @property {string} url - The url of the tab.
  * @property {string} title - Title of the tab.
  * @property {number} lastAccessed - When the tab was last accessed in milliseconds.
+ * @property {string|null} windowId - SessionStore ID of the browser window.
  */
 
 /**
@@ -926,6 +903,30 @@ export class GetPageContent {
    *  with a descriptive header, or an error message if extraction fails.
    */
   static async getPageContent({ url_list, signal }, conversation) {
+    // Sanitize the inputs from the language model:
+    if (!Array.isArray(url_list)) {
+      return "Error: the url_list argument must be an array of strings.";
+    }
+
+    const results = await GetPageContent.getPageContentResults(
+      { url_list, signal },
+      conversation
+    );
+    return results.map(result => result.content);
+  }
+
+  /**
+   * Like getPageContent, but returns one structured result per URL so callers
+   * can tell failed extractions apart from actual page content. Used by the
+   * monitor agent to report "couldn't check" instead of "no match".
+   *
+   * @param {object} toolParams
+   * @param {string[]} toolParams.url_list
+   * @param {AbortSignal} [toolParams.signal]
+   * @param {ChatConversation} conversation
+   * @returns {Promise<Array<{url: string, ok: boolean, content: string}>>}
+   */
+  static async getPageContentResults({ url_list, signal }, conversation) {
     // This is a decision table for allowing and blocking fetches on the configuration of the
     // SecurityProperties and the URLs. Tab URLs don't do any new page loads. Mention urls
     // have been added by the user so they should be allowed. SERP urls came from a
@@ -938,11 +939,6 @@ export class GetPageContent {
     // │ Untrusted only      │ ALLOW    │ ALLOW        │ ALLOW              │ ALLOW    │
     // │ Private + Untrusted │ ALLOW    │ ALLOW        │ ALLOW (anonymous)  │ BLOCK    │
 
-    // Sanitize the inputs from the language model:
-    if (!Array.isArray(url_list)) {
-      return "Error: the url_list argument must be an array of strings.";
-    }
-
     // Collect these one time before the loop below since it must iterate through
     // all of the conversations and collect a new Set of mentions.
     const mentionedUrls = conversation.getAllMentionURLs();
@@ -950,32 +946,45 @@ export class GetPageContent {
     const results = await Promise.all(
       url_list.map(async (url, index) => {
         if (!isAllowedURL(url)) {
-          return "This URL is not allowed: " + url;
+          return { url, ok: false, content: "This URL is not allowed: " + url };
         }
         const startTime = ChromeUtils.now();
         try {
-          const text = await GetPageContent.#getPageContentsForSingleURL(
-            url,
-            mentionedUrls,
-            conversation,
-            signal
-          );
+          const { ok, content } =
+            await GetPageContent.#getPageContentsForSingleURL(
+              url,
+              mentionedUrls,
+              conversation,
+              signal
+            );
           ChromeUtils.addProfilerMarker(
             "SmartWindow",
             { startTime },
             `Tool:get_page_content(${url})`
           );
-          return text;
+          return { url, ok, content };
         } catch (error) {
           if (signal?.aborted) {
-            return `Content from ${url_list[index]}:\n\n(Page read canceled after a timeout — answer using the results you have.)`;
+            return {
+              url,
+              ok: false,
+              content: `Content from ${url_list[index]}:\n\n(Page read canceled after a timeout — answer using the results you have.)`,
+            };
           }
           if (error?.name === "TimeoutError") {
             lazy.console.log("[Tool] getPageContent timed out", error);
-            return `The page at ${url_list[index]} did not finish loading in time, so its content is unavailable. Do not retry it.`;
+            return {
+              url,
+              ok: false,
+              content: `The page at ${url_list[index]} did not finish loading in time, so its content is unavailable. Do not retry it.`,
+            };
           }
           console.error(error);
-          return `Could not retrieve the content for the page: ${url_list[index]}`;
+          return {
+            url,
+            ok: false,
+            content: `Could not retrieve the content for the page: ${url_list[index]}`,
+          };
         }
       })
     );
@@ -1013,7 +1022,8 @@ export class GetPageContent {
    * @param {AbortSignal} [signal] - Cancels the extraction (and tears down any
    *   headless browser) when it aborts.
    *
-   * @returns {Promise<string>}
+   * @returns {Promise<{ok: boolean, content: string}>}
+   *   ok is false when content is a failure description rather than page text.
    */
   static async #getPageContentsForSingleURL(
     url,
@@ -1034,7 +1044,10 @@ export class GetPageContent {
         tab.linkedBrowser.browsingContext?.currentWindowContext;
 
       if (!currentWindowContext) {
-        return `Cannot access content from the following webpage:\n - Title: ${sanitizeUntrustedContent(tab.label)}\n - URL: ${url}.`;
+        return {
+          ok: false,
+          content: `Cannot access content from the following webpage:\n - Title: ${sanitizeUntrustedContent(tab.label)}\n - URL: ${url}.`,
+        };
       }
 
       // Extract page content using PageExtractor
@@ -1076,10 +1089,12 @@ export class GetPageContent {
           anonymousFetch: true,
         });
       }
-      return (
-        `Access is not allowed for ${url} because of untrusted and private content ` +
-        "in the conversation."
-      );
+      return {
+        ok: false,
+        content:
+          `Access is not allowed for ${url} because of untrusted and private content ` +
+          "in the conversation.",
+      };
     }
 
     return PageExtractorParent.getHeadlessExtractor({
@@ -1105,9 +1120,10 @@ export class GetPageContent {
    * @param {string} sourceUrl
    * @param {AbortSignal} [signal] - Rejects the extraction early if it aborts,
    *   which lets the headless browser hosting the read be torn down promptly.
-   * @returns {Promise<string>}
+   * @returns {Promise<{ok: boolean, content: string}>}
    *  A promise resolving to a formatted string containing the page content
-   *  with mode and label information, or an error message if no content is available.
+   *  with mode and label information, or (with ok false) a failure message
+   *  if no content is available.
    */
   static async #runExtraction(
     pageExtractor,
@@ -1127,7 +1143,10 @@ export class GetPageContent {
     );
 
     if (!extraction) {
-      return `get_page_content returned no content for ${label}.`;
+      return {
+        ok: false,
+        content: `get_page_content returned no content for ${label}.`,
+      };
     }
 
     const { text, links } = extraction;
@@ -1139,7 +1158,14 @@ export class GetPageContent {
     conversation.securityProperties.setPrivateData();
     conversation.securityProperties.setUntrustedInput();
 
-    return `Content from ${label}:\n\n${text}`;
+    if (!text?.trim()) {
+      return {
+        ok: false,
+        content: `get_page_content returned no content for ${label}.`,
+      };
+    }
+
+    return { ok: true, content: `Content from ${label}:\n\n${text}` };
   }
 }
 
@@ -1222,99 +1248,41 @@ export async function addMemory(
 }
 
 /**
- * Strips fields the language model doesn't need (icons, colors) from a
- * single match payload.
- *
- * @param {object} match
- * @returns {object}
- */
-function trimWorldCupMatch(match) {
-  if (!match || typeof match !== "object") {
-    return match;
-  }
-  const trim = team => {
-    if (!team || typeof team !== "object") {
-      return team;
-    }
-    const out = { ...team };
-    delete out.icon_url;
-    delete out.colors;
-    return out;
-  };
-  return {
-    ...match,
-    home_team: trim(match.home_team),
-    away_team: trim(match.away_team),
-  };
-}
-
-/**
- * Tool entrypoint for world_cup_matches. Returns the matches grouped by
- * previous/current/next. Trims UI-only fields. On failure, returns an
- * `{error}` object so the model can recover gracefully.
- *
  * @param {object} toolParams
- * @param {string} [toolParams.date]
- * @param {string} [toolParams.teams]
- * @param {number} [toolParams.limit]
+ * @param {string[]} [toolParams.url_list]
+ * @param {string} [toolParams.focus]
  * @param {ChatConversation} conversation
- * @returns {Promise<object>}
+ * @param {AbortSignal} [signal] - Cancels in-flight page extractions.
  */
-export async function worldCupMatches(toolParams, conversation) {
-  const params = toolParams && typeof toolParams === "object" ? toolParams : {};
-  const { date, teams, limit } = params;
-
-  let result;
-  try {
-    result = await WCSMerinoClient.fetchMatches({ date, teams, limit });
-  } catch (error) {
-    lazy.console.log("[Tool] worldCupMatches error", error);
-    return { error: `Failed to retrieve World Cup matches: ${error.message}` };
+export async function createAITab({ url_list, focus }, conversation, signal) {
+  lazy.console.log("[Tool] aiTab", JSON.stringify({ url_list, focus }));
+  const viewerBase = lazy.AITab.getViewerBaseURL();
+  if (!viewerBase) {
+    return (
+      "The page could not be created: the AITab viewer URL is not configured " +
+      "(set the browser.smartwindow.aitab.viewerURL preference)."
+    );
+  }
+  const result = await lazy.AITab.generateAITab(
+    { urlList: url_list, focus, signal },
+    conversation
+  );
+  if (result.error) {
+    return `The page could not be created: ${result.error}.`;
   }
 
-  const trimmed = {
-    previous: (result.previous || []).map(trimWorldCupMatch),
-    current: (result.current || []).map(trimWorldCupMatch),
-    next: (result.next || []).map(trimWorldCupMatch),
-  };
-
-  // Match data is public, server-provided, and not user data. We still
-  // mark it as untrusted because the response strings (team names, status
-  // text) flow into the model context.
-  conversation.securityProperties.setUntrustedInput();
-  lazy.console.log("[Tool] worldCupMatches", trimmed);
-  return trimmed;
-}
-
-/**
- * Tool entrypoint for world_cup_live. Returns matches currently in play.
- *
- * @param {object} toolParams
- * @param {string} [toolParams.teams]
- * @param {ChatConversation} conversation
- * @returns {Promise<object>}
- */
-export async function worldCupLive(toolParams, conversation) {
-  const params = toolParams && typeof toolParams === "object" ? toolParams : {};
-  const { teams } = params;
-
-  let result;
-  try {
-    result = await WCSMerinoClient.fetchLive({ teams });
-  } catch (error) {
-    lazy.console.log("[Tool] worldCupLive error", error);
-    return {
-      error: `Failed to retrieve live World Cup matches: ${error.message}`,
-    };
-  }
-
-  const trimmed = {
-    matches: (result.matches || []).map(trimWorldCupMatch),
-  };
-
-  conversation.securityProperties.setUntrustedInput();
-  lazy.console.log("[Tool] worldCupLive", trimmed);
-  return trimmed;
+  const viewerURL = lazy.AITab.buildViewerURL(viewerBase, result.page);
+  // Mark the viewer URL as seen so the chat renders it as a trusted, labeled
+  // link. Unseen links are unfurled as "label (full URL)" for disclosure, and
+  // this URL's hash carries the whole page config, so the full URL is very long.
+  conversation.addSeenUrls([viewerURL]);
+  // Register the URL as a token so the model echoes the short token, never the
+  // long URL (which it would otherwise truncate); expandUrlTokens restores the
+  // exact URL when rendering the assistant's reply.
+  const token = conversation.convertUrlToToken(viewerURL);
+  // Strip characters that would break the markdown link text and expose the URL.
+  const title = (result.metadata?.title || "the page").replace(/[[\]]/g, "");
+  return `The page was created. Link the user to it as [${title}](§url_token: ${token}§).`;
 }
 
 // No securityProperties / trust flags: skill prompts are Remote Settings
@@ -1479,8 +1447,7 @@ export const toolFns = {
   searchBrowsingHistory,
   getUserMemories,
   getNavigationInfo,
-  worldCupMatches,
-  worldCupLive,
+  createAITab,
   manageTabs,
   addMemory,
   getSkill,

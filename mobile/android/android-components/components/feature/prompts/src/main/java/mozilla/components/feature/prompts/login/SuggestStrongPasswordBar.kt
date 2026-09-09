@@ -12,10 +12,10 @@ import androidx.core.view.isVisible
 import mozilla.components.feature.prompts.concept.PasswordPromptView
 import mozilla.components.feature.prompts.concept.ToggleablePrompt
 
-/**
- * A prompt bar implementing [PasswordPromptView] to display the strong generated password.
- */
-class SuggestStrongPasswordBar @JvmOverloads constructor(
+/** A prompt bar implementing [PasswordPromptView] to display the strong generated password. */
+class SuggestStrongPasswordBar
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,

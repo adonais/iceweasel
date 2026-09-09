@@ -15,6 +15,7 @@ import androidx.test.uiautomator.UiObject
 import androidx.test.uiautomator.UiScrollable
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
+import kotlin.AssertionError
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
 import org.mozilla.fenix.helpers.Constants.TAG
@@ -31,7 +32,6 @@ import org.mozilla.fenix.helpers.TestHelper
 import org.mozilla.fenix.helpers.TestHelper.appName
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
-import kotlin.AssertionError
 
 class NotificationRobot {
 
@@ -40,10 +40,16 @@ class NotificationRobot {
         var notificationFound = mDevice.findObject(notification).waitForExists(waitingTime)
 
         while (!notificationFound) {
-            Log.i(TAG, "verifySystemNotificationExists: Waiting for $waitingTime ms for notification: $notification to exist")
+            Log.i(
+                TAG,
+                "verifySystemNotificationExists: Waiting for $waitingTime ms for notification: $notification to exist",
+            )
             scrollToEnd()
             notificationFound = mDevice.findObject(notification).waitForExists(waitingTime)
-            Log.i(TAG, "verifySystemNotificationExists: Waited for $waitingTime ms for notification: $notification to exist")
+            Log.i(
+                TAG,
+                "verifySystemNotificationExists: Waited for $waitingTime ms for notification: $notification to exist",
+            )
         }
 
         assertUIObjectExists(itemWithText(notificationMessage))
@@ -94,9 +100,15 @@ class NotificationRobot {
     }
 
     fun clickMediaNotificationControlButton(action: String) {
-        Log.i(TAG, "clickMediaNotificationControlButton: Waiting for $waitingTime ms for the system media control button: $action to exist")
+        Log.i(
+            TAG,
+            "clickMediaNotificationControlButton: Waiting for $waitingTime ms for the system media control button: $action to exist",
+        )
         mediaSystemNotificationButton(action).waitForExists(waitingTime)
-        Log.i(TAG, "clickMediaNotificationControlButton: Waited for $waitingTime ms for the system media control button: $action to exist")
+        Log.i(
+            TAG,
+            "clickMediaNotificationControlButton: Waited for $waitingTime ms for the system media control button: $action to exist",
+        )
         Log.i(TAG, "clickMediaNotificationControlButton: Trying to click the system media control button: $action")
         mediaSystemNotificationButton(action).click()
         Log.i(TAG, "clickMediaNotificationControlButton: Clicked the system media control button: $action")
@@ -107,9 +119,15 @@ class NotificationRobot {
             Log.i(TAG, "clickDownloadNotificationControlButton: Started try #$i")
             try {
                 assertUIObjectExists(downloadSystemNotificationButton(action))
-                Log.i(TAG, "clickDownloadNotificationControlButton: Trying to click the download system notification: $action button and wait for $waitingTimeShort ms for a new window")
+                Log.i(
+                    TAG,
+                    "clickDownloadNotificationControlButton: Trying to click the download system notification: $action button and wait for $waitingTimeShort ms for a new window",
+                )
                 downloadSystemNotificationButton(action).clickAndWaitForNewWindow(waitingTimeShort)
-                Log.i(TAG, "clickDownloadNotificationControlButton: Clicked the download system notification: $action button and waited for $waitingTimeShort ms for a new window")
+                Log.i(
+                    TAG,
+                    "clickDownloadNotificationControlButton: Clicked the download system notification: $action button and waited for $waitingTimeShort ms for a new window",
+                )
                 assertUIObjectExists(
                     downloadSystemNotificationButton(action),
                     exists = false,
@@ -121,9 +139,15 @@ class NotificationRobot {
                 if (i == RETRY_COUNT) {
                     throw e
                 }
-                Log.i(TAG, "clickDownloadNotificationControlButton: Waiting for $waitingTimeShort ms for $packageName window to be updated")
+                Log.i(
+                    TAG,
+                    "clickDownloadNotificationControlButton: Waiting for $waitingTimeShort ms for $packageName window to be updated",
+                )
                 mDevice.waitForWindowUpdate(packageName, waitingTimeShort)
-                Log.i(TAG, "clickDownloadNotificationControlButton: Waited for $waitingTimeShort ms for $packageName window to be updated")
+                Log.i(
+                    TAG,
+                    "clickDownloadNotificationControlButton: Waited for $waitingTimeShort ms for $packageName window to be updated",
+                )
             }
         }
     }
@@ -133,14 +157,20 @@ class NotificationRobot {
 
     fun expandNotificationMessage(notificationItem: String = "") {
         if (SDK_INT == Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            Log.i(TAG, "expandNotificationMessage: Trying to expand notification: $notificationItem using a swipe down action")
-            mDevice.findObject(
-                UiSelector().resourceId("android:id/status_bar_latest_event_content")
-                    .childSelector(UiSelector().resourceId("android:id/notification_headerless_view_row"))
-                    .childSelector(UiSelector().resourceId("android:id/notification_headerless_view_column"))
-                    .childSelector(UiSelector().resourceId("android:id/notification_top_line"))
-                    .childSelector(UiSelector().textContains(notificationItem)),
-            ).swipeDown(10)
+            Log.i(
+                TAG,
+                "expandNotificationMessage: Trying to expand notification: $notificationItem using a swipe down action",
+            )
+            mDevice
+                .findObject(
+                    UiSelector()
+                        .resourceId("android:id/status_bar_latest_event_content")
+                        .childSelector(UiSelector().resourceId("android:id/notification_headerless_view_row"))
+                        .childSelector(UiSelector().resourceId("android:id/notification_headerless_view_column"))
+                        .childSelector(UiSelector().resourceId("android:id/notification_top_line"))
+                        .childSelector(UiSelector().textContains(notificationItem))
+                )
+                .swipeDown(10)
             Log.i(TAG, "expandNotificationMessage: Expanded notification: $notificationItem using a swipe down action")
         } else {
             verifySystemNotificationExists(appName)
@@ -153,10 +183,9 @@ class NotificationRobot {
             notificationHeader().click()
             Log.i(TAG, "expandNotificationMessage: Clicked $appName notification")
 
-            // double check if notification actions are viewable by checking for action existence; otherwise scroll again
-            while (!mDevice.findObject(UiSelector().resourceId("android:id/action0"))
-                    .exists()
-            ) {
+            // double check if notification actions are viewable by checking for action existence; otherwise scroll
+            // again
+            while (!mDevice.findObject(UiSelector().resourceId("android:id/action0")).exists()) {
                 Log.i(TAG, "expandNotificationMessage: App notification action buttons do not exist")
                 scrollToEnd()
             }
@@ -164,9 +193,15 @@ class NotificationRobot {
     }
 
     fun expandMultipleDownloadNotification(notificationItem: String) {
-        Log.i(TAG, "expandMultipleDownloadNotification: Trying to expand notification: $notificationItem using a swipe down action")
+        Log.i(
+            TAG,
+            "expandMultipleDownloadNotification: Trying to expand notification: $notificationItem using a swipe down action",
+        )
         itemWithResIdContainingText("com.android.systemui:id/notification_title", notificationItem).swipeDown(10)
-        Log.i(TAG, "expandMultipleDownloadNotification: Expanded notification: $notificationItem using a swipe down action")
+        Log.i(
+            TAG,
+            "expandMultipleDownloadNotification: Expanded notification: $notificationItem using a swipe down action",
+        )
     }
 
     // Performs swipe action on download system notifications
@@ -188,48 +223,85 @@ class NotificationRobot {
 
                 var retries = 0
                 while (itemContainingText(appName).exists() && retries++ < 3) {
-                    Log.i(TAG, "swipeDownloadNotification: Started try #$retries to swipe $direction the download notification")
+                    Log.i(
+                        TAG,
+                        "swipeDownloadNotification: Started try #$retries to swipe $direction the download notification",
+                    )
                     // Swipe left the download system notification
                     if (direction == "Left") {
-                        itemContainingText(appName)
-                            .also {
-                                Log.i(TAG, "swipeDownloadNotification: Waiting for $waitingTime ms for $appName notification to exist")
-                                it.waitForExists(waitingTime)
-                                Log.i(TAG, "swipeDownloadNotification: Waited for $waitingTime ms for $appName notification to exist")
-                                Log.i(TAG, "swipeDownloadNotification: Trying to perform swipe left action on $appName notification")
-                                it.swipeLeft(3)
-                                Log.i(TAG, "swipeDownloadNotification: Performed swipe left action on $appName notification")
-                            }
+                        itemContainingText(appName).also {
+                            Log.i(
+                                TAG,
+                                "swipeDownloadNotification: Waiting for $waitingTime ms for $appName notification to exist",
+                            )
+                            it.waitForExists(waitingTime)
+                            Log.i(
+                                TAG,
+                                "swipeDownloadNotification: Waited for $waitingTime ms for $appName notification to exist",
+                            )
+                            Log.i(
+                                TAG,
+                                "swipeDownloadNotification: Trying to perform swipe left action on $appName notification",
+                            )
+                            it.swipeLeft(3)
+                            Log.i(
+                                TAG,
+                                "swipeDownloadNotification: Performed swipe left action on $appName notification",
+                            )
+                        }
                     } else {
                         // Swipe right the download system notification
-                        itemContainingText(appName)
-                            .also {
-                                Log.i(TAG, "swipeDownloadNotification: Waiting for $waitingTime ms for $appName notification to exist")
-                                it.waitForExists(waitingTime)
-                                Log.i(TAG, "swipeDownloadNotification: Waited for $waitingTime ms for $appName notification to exist")
-                                Log.i(TAG, "swipeDownloadNotification: Trying to perform swipe right action on $appName notification")
-                                it.swipeRight(3)
-                                Log.i(TAG, "swipeDownloadNotification: Performed swipe right action on $appName notification")
-                            }
+                        itemContainingText(appName).also {
+                            Log.i(
+                                TAG,
+                                "swipeDownloadNotification: Waiting for $waitingTime ms for $appName notification to exist",
+                            )
+                            it.waitForExists(waitingTime)
+                            Log.i(
+                                TAG,
+                                "swipeDownloadNotification: Waited for $waitingTime ms for $appName notification to exist",
+                            )
+                            Log.i(
+                                TAG,
+                                "swipeDownloadNotification: Trying to perform swipe right action on $appName notification",
+                            )
+                            it.swipeRight(3)
+                            Log.i(
+                                TAG,
+                                "swipeDownloadNotification: Performed swipe right action on $appName notification",
+                            )
+                        }
                     }
                 }
                 // Not all download related system notifications can be dismissed
                 if (shouldDismissNotification) {
                     if (SDK_INT == Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                        Log.i(TAG, "swipeDownloadNotification: $notificationItem notification can be dismissed: $shouldDismissNotification")
+                        Log.i(
+                            TAG,
+                            "swipeDownloadNotification: $notificationItem notification can be dismissed: $shouldDismissNotification",
+                        )
                         assertUIObjectIsGone(itemContainingText(notificationItem), waitingTime = waitingTimeShort)
                         assertUIObjectExists(itemContainingText(notificationItem), exists = false)
                     } else {
-                        Log.i(TAG, "swipeDownloadNotification: $appName notification can be dismissed: $shouldDismissNotification")
+                        Log.i(
+                            TAG,
+                            "swipeDownloadNotification: $appName notification can be dismissed: $shouldDismissNotification",
+                        )
                         assertUIObjectExists(itemContainingText(appName), exists = false)
                     }
                 } else {
                     if (SDK_INT == Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                        Log.i(TAG, "swipeDownloadNotification: $notificationItem notification can't be dismissed: $shouldDismissNotification")
+                        Log.i(
+                            TAG,
+                            "swipeDownloadNotification: $notificationItem notification can't be dismissed: $shouldDismissNotification",
+                        )
                         assertUIObjectExists(itemContainingText(appName), exists = false)
                         assertUIObjectExists(itemContainingText(notificationItem))
                     } else {
-                        Log.i(TAG, "swipeDownloadNotification: $appName notification can't be dismissed: $shouldDismissNotification")
+                        Log.i(
+                            TAG,
+                            "swipeDownloadNotification: $appName notification can't be dismissed: $shouldDismissNotification",
+                        )
                         assertUIObjectExists(itemContainingText(appName))
                     }
                 }
@@ -240,22 +312,29 @@ class NotificationRobot {
                 if (i == RETRY_COUNT) {
                     throw e
                 } else {
-                    notificationShade {
-                    }.closeNotificationTray(composeTestRule) {
-                    }.openNotificationShade {
-                        // The download complete system notification can't be expanded
-                        if (canExpandNotification) {
-                            Log.i(TAG, "swipeDownloadNotification: $appName notification can be expanded: $canExpandNotification")
-                            if (SDK_INT != Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                                verifySystemNotificationExists(appName)
-                                expandNotificationMessage()
+                    notificationShade {}
+                        .closeNotificationTray(composeTestRule) {}
+                        .openNotificationShade {
+                            // The download complete system notification can't be expanded
+                            if (canExpandNotification) {
+                                Log.i(
+                                    TAG,
+                                    "swipeDownloadNotification: $appName notification can be expanded: $canExpandNotification",
+                                )
+                                if (SDK_INT != Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                                    verifySystemNotificationExists(appName)
+                                    expandNotificationMessage()
+                                }
+                            } else {
+                                Log.i(
+                                    TAG,
+                                    "swipeDownloadNotification: $appName notification can't be expanded: $canExpandNotification",
+                                )
+                                // Using the download completed system notification summary to bring in to view an
+                                // properly verify it
+                                verifySystemNotificationExists("Download completed")
                             }
-                        } else {
-                            Log.i(TAG, "swipeDownloadNotification: $appName notification can't be expanded: $canExpandNotification")
-                            // Using the download completed system notification summary to bring in to view an properly verify it
-                            verifySystemNotificationExists("Download completed")
                         }
-                    }
                 }
             }
         }
@@ -263,23 +342,39 @@ class NotificationRobot {
 
     fun clickNotification(notificationMessage: String) {
         Log.i(TAG, "clickNotification: Waiting for $waitingTime ms for $notificationMessage notification to exist")
-        val notification = mDevice.wait(Until.findObject(By.text(notificationMessage)), waitingTime)
-            ?: throw AssertionError("Notification \"$notificationMessage\" not found after $waitingTime ms")
+        val notification =
+            mDevice.wait(Until.findObject(By.text(notificationMessage)), waitingTime)
+                ?: throw AssertionError("Notification \"$notificationMessage\" not found after $waitingTime ms")
         Log.i(TAG, "clickNotification: Waited for $waitingTime ms for $notificationMessage notification to exist")
-        Log.i(TAG, "clickNotification: Trying to click the $notificationMessage notification and wait for $waitingTimeShort ms for a new window")
+        Log.i(
+            TAG,
+            "clickNotification: Trying to click the $notificationMessage notification and wait for $waitingTimeShort ms for a new window",
+        )
         notification.clickAndWait(Until.newWindow(), waitingTimeShort)
-        Log.i(TAG, "clickNotification: Clicked the $notificationMessage notification and waited for $waitingTimeShort ms for a new window")
+        Log.i(
+            TAG,
+            "clickNotification: Clicked the $notificationMessage notification and waited for $waitingTimeShort ms for a new window",
+        )
     }
 
-    class Transition() {
+    class Transition {
 
-        fun clickClosePrivateTabsNotification(composeTestRule: ComposeTestRule, interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
+        fun clickClosePrivateTabsNotification(
+            composeTestRule: ComposeTestRule,
+            interact: HomeScreenRobot.() -> Unit,
+        ): HomeScreenRobot.Transition {
             try {
                 assertUIObjectExists(closePrivateTabsNotification())
             } catch (e: AssertionError) {
-                Log.i(TAG, "clickClosePrivateTabsNotification: Trying to perform fling action to the end of the notification tray")
+                Log.i(
+                    TAG,
+                    "clickClosePrivateTabsNotification: Trying to perform fling action to the end of the notification tray",
+                )
                 notificationTray().flingToEnd(1)
-                Log.i(TAG, "clickClosePrivateTabsNotification: Performed fling action to the end of the notification tray")
+                Log.i(
+                    TAG,
+                    "clickClosePrivateTabsNotification: Performed fling action to the end of the notification tray",
+                )
             }
             Log.i(TAG, "clickClosePrivateTabsNotification: Trying to click the close private tabs notification")
             closePrivateTabsNotification().click()
@@ -289,7 +384,10 @@ class NotificationRobot {
             return HomeScreenRobot.Transition(composeTestRule)
         }
 
-        fun closeNotificationTray(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+        fun closeNotificationTray(
+            composeTestRule: ComposeTestRule,
+            interact: BrowserRobot.() -> Unit,
+        ): BrowserRobot.Transition {
             Log.i(TAG, "closeNotificationTray: Trying to click device back button")
             mDevice.pressBack()
             Log.i(TAG, "closeNotificationTray: Clicked device back button")
@@ -315,24 +413,14 @@ private fun closePrivateTabsNotification(): UiObject {
 }
 
 private fun downloadSystemNotificationButton(action: String) =
-    mDevice.findObject(
-        UiSelector()
-            .resourceId("android:id/action0")
-            .textContains(action),
-    )
+    mDevice.findObject(UiSelector().resourceId("android:id/action0").textContains(action))
 
 private fun mediaSystemNotificationButton(action: String) = itemWithDescription(action)
 
-private fun notificationTray() = UiScrollable(
-    UiSelector().resourceId("com.android.systemui:id/notification_stack_scroller"),
-).setAsVerticalList()
+private fun notificationTray() =
+    UiScrollable(UiSelector().resourceId("com.android.systemui:id/notification_stack_scroller")).setAsVerticalList()
 
-private fun notificationHeader() =
-    mDevice.findObject(
-        UiSelector()
-            .resourceId("android:id/app_name_text")
-            .text(appName),
-    )
+private fun notificationHeader() = mDevice.findObject(UiSelector().resourceId("android:id/app_name_text").text(appName))
 
 private fun scrollToEnd() {
     Log.i(TAG, "scrollToEnd: Trying to perform scroll to the end of the notification tray action")

@@ -26,9 +26,7 @@ import org.mozilla.fenix.nimbus.ToolbarType
 
 class OnboardingMapperTest {
 
-    @get:Rule
-    val activityTestRule =
-        HomeActivityIntentTestRule.withDefaultSettingsOverrides()
+    @get:Rule val activityTestRule = HomeActivityIntentTestRule.withDefaultSettingsOverrides()
 
     private lateinit var junoOnboardingFeature: JunoOnboarding
     private lateinit var jexlConditions: Map<String, String>
@@ -113,12 +111,13 @@ class OnboardingMapperTest {
 
     @Test
     fun showToolbarPageFalse_showNotificationTrue_and_showAddWidgetTrue_pagesToDisplay_returnsSortedListOfConvertedPages() {
-        val expected = listOf(
-            defaultBrowserPageUiData,
-            addSearchWidgetPageUiData,
-            syncPageUiData,
-            notificationPageUiData,
-        )
+        val expected =
+            listOf(
+                defaultBrowserPageUiData,
+                addSearchWidgetPageUiData,
+                syncPageUiData,
+                notificationPageUiData,
+            )
         assertEquals(
             expected,
             unsortedAllKnownCardData.toPageUiData(
@@ -134,13 +133,14 @@ class OnboardingMapperTest {
 
     @Test
     fun showToolbarPageTrue_showNotificationTrue_and_showAddWidgetTrue_pagesToDisplay_returnsSortedListOfConvertedPages() {
-        val expected = listOf(
-            defaultBrowserPageUiData,
-            addSearchWidgetPageUiData,
-            syncPageUiData,
-            notificationPageUiData,
-            toolbarPageUiData,
-        )
+        val expected =
+            listOf(
+                defaultBrowserPageUiData,
+                addSearchWidgetPageUiData,
+                syncPageUiData,
+                notificationPageUiData,
+                toolbarPageUiData,
+            )
         assertEquals(
             expected,
             unsortedAllKnownCardData.toPageUiData(
@@ -167,60 +167,65 @@ class OnboardingMapperTest {
         val lineTwoText = "Firefox cares about your privacy. Learn more in our %1\$s."
         val lineTwoLinkText = "Privacy Notice"
         val lineTwoLinkUrl = "LinkTwo"
-        val lineThreeText = "To help improve the browser, Firefox sends diagnostic and interaction data to Mozilla. %1\$s"
+        val lineThreeText =
+            "To help improve the browser, Firefox sends diagnostic and interaction data to Mozilla. %1\$s"
         val lineThreeLinkText = "Manage"
 
-        val expected = OnboardingPageUiData(
-            type = OnboardingPageUiData.Type.TERMS_OF_SERVICE,
-            imageRes = imageRes,
-            title = title,
-            description = description,
-            primaryButtonLabel = primaryButtonLabel,
-            termsOfService = OnboardingTermsOfService(
-                lineOneText = lineOneText,
-                lineOneLinkText = lineOneLinkText,
-                lineOneLinkUrl = lineOneLinkUrl,
-                lineTwoText = lineTwoText,
-                lineTwoLinkText = lineTwoLinkText,
-                lineTwoLinkUrl = lineTwoLinkUrl,
-                lineThreeText = lineThreeText,
-                lineThreeLinkText = lineThreeLinkText,
-            ),
-        )
+        val expected =
+            OnboardingPageUiData(
+                type = OnboardingPageUiData.Type.TERMS_OF_SERVICE,
+                imageRes = imageRes,
+                title = title,
+                description = description,
+                primaryButtonLabel = primaryButtonLabel,
+                termsOfService =
+                    OnboardingTermsOfService(
+                        lineOneText = lineOneText,
+                        lineOneLinkText = lineOneLinkText,
+                        lineOneLinkUrl = lineOneLinkUrl,
+                        lineTwoText = lineTwoText,
+                        lineTwoLinkText = lineTwoLinkText,
+                        lineTwoLinkUrl = lineTwoLinkUrl,
+                        lineThreeText = lineThreeText,
+                        lineThreeLinkText = lineThreeLinkText,
+                    ),
+            )
 
-        val nimbusTermsOfServiceData = TermsOfServiceData(
-            lineOneText = StringHolder(R.string.onboarding_term_of_service_line_one_2, ""),
-            lineOneLinkText = StringHolder(R.string.onboarding_term_of_service_line_one_link_text_2, ""),
-            lineOneLinkUrl = StringHolder(null, lineOneLinkUrl),
-            lineTwoText = StringHolder(R.string.onboarding_term_of_service_line_two_2, ""),
-            lineTwoLinkText = StringHolder(R.string.onboarding_term_of_service_line_two_link_text, ""),
-            lineTwoLinkUrl = StringHolder(null, lineTwoLinkUrl),
-            lineThreeText = StringHolder(R.string.onboarding_term_of_service_line_three, ""),
-            lineThreeLinkText = StringHolder(R.string.onboarding_term_of_service_line_three_link_text, ""),
-        )
+        val nimbusTermsOfServiceData =
+            TermsOfServiceData(
+                lineOneText = StringHolder(R.string.onboarding_term_of_service_line_one_2, ""),
+                lineOneLinkText = StringHolder(R.string.onboarding_term_of_service_line_one_link_text_2, ""),
+                lineOneLinkUrl = StringHolder(null, lineOneLinkUrl),
+                lineTwoText = StringHolder(R.string.onboarding_term_of_service_line_two_2, ""),
+                lineTwoLinkText = StringHolder(R.string.onboarding_term_of_service_line_two_link_text, ""),
+                lineTwoLinkUrl = StringHolder(null, lineTwoLinkUrl),
+                lineThreeText = StringHolder(R.string.onboarding_term_of_service_line_three, ""),
+                lineThreeLinkText = StringHolder(R.string.onboarding_term_of_service_line_three_link_text, ""),
+            )
 
-        val termsOfServiceCardData = OnboardingCardData(
-            cardType = OnboardingCardType.TERMS_OF_SERVICE,
-            imageRes = imageRes,
-            title = StringHolder(null, title),
-            body = StringHolder(null, description),
-            primaryButtonLabel = StringHolder(null, primaryButtonLabel),
-            ordering = 30,
-            extraData = ExtraCardData(
-                termOfServiceData = nimbusTermsOfServiceData,
-            ),
-        )
+        val termsOfServiceCardData =
+            OnboardingCardData(
+                cardType = OnboardingCardType.TERMS_OF_SERVICE,
+                imageRes = imageRes,
+                title = StringHolder(null, title),
+                body = StringHolder(null, description),
+                primaryButtonLabel = StringHolder(null, primaryButtonLabel),
+                ordering = 30,
+                extraData = ExtraCardData(termOfServiceData = nimbusTermsOfServiceData),
+            )
 
         assertEquals(
             expected,
-            listOf(defaultBrowserCardData, termsOfServiceCardData).toPageUiData(
-                showDefaultBrowserPage = true,
-                showNotificationPage = false,
-                showAddWidgetPage = false,
-                showToolbarPage = false,
-                jexlConditions = jexlConditions,
-                jexlEvaluator = evalFunction,
-            ).last(),
+            listOf(defaultBrowserCardData, termsOfServiceCardData)
+                .toPageUiData(
+                    showDefaultBrowserPage = true,
+                    showNotificationPage = false,
+                    showAddWidgetPage = false,
+                    showToolbarPage = false,
+                    jexlConditions = jexlConditions,
+                    jexlEvaluator = evalFunction,
+                )
+                .last(),
         )
     }
 
@@ -231,14 +236,15 @@ class OnboardingMapperTest {
 
         assertEquals(
             expected,
-            listOf(defaultBrowserCardData).toPageUiData(
-                showDefaultBrowserPage = true,
-                showNotificationPage = false,
-                showAddWidgetPage = false,
-                showToolbarPage = false,
-                jexlConditions = jexlConditions,
-                jexlEvaluator = evalFunction,
-            ),
+            listOf(defaultBrowserCardData)
+                .toPageUiData(
+                    showDefaultBrowserPage = true,
+                    showNotificationPage = false,
+                    showAddWidgetPage = false,
+                    showToolbarPage = false,
+                    jexlConditions = jexlConditions,
+                    jexlEvaluator = evalFunction,
+                ),
         )
     }
 
@@ -249,14 +255,15 @@ class OnboardingMapperTest {
 
         assertEquals(
             expected,
-            listOf(addSearchWidgetCardDataNoConditions).toPageUiData(
-                showDefaultBrowserPage = true,
-                showNotificationPage = false,
-                showAddWidgetPage = false,
-                showToolbarPage = false,
-                jexlConditions = jexlConditions,
-                jexlEvaluator = evalFunction,
-            ),
+            listOf(addSearchWidgetCardDataNoConditions)
+                .toPageUiData(
+                    showDefaultBrowserPage = true,
+                    showNotificationPage = false,
+                    showAddWidgetPage = false,
+                    showToolbarPage = false,
+                    jexlConditions = jexlConditions,
+                    jexlEvaluator = evalFunction,
+                ),
         )
     }
 
@@ -267,14 +274,15 @@ class OnboardingMapperTest {
 
         assertEquals(
             expected,
-            listOf(defaultBrowserCardData).toPageUiData(
-                showDefaultBrowserPage = true,
-                showNotificationPage = false,
-                showAddWidgetPage = false,
-                showToolbarPage = false,
-                jexlConditions = jexlConditions,
-                jexlEvaluator = evalFunction,
-            ),
+            listOf(defaultBrowserCardData)
+                .toPageUiData(
+                    showDefaultBrowserPage = true,
+                    showNotificationPage = false,
+                    showAddWidgetPage = false,
+                    showToolbarPage = false,
+                    jexlConditions = jexlConditions,
+                    jexlEvaluator = evalFunction,
+                ),
         )
     }
 
@@ -285,14 +293,15 @@ class OnboardingMapperTest {
 
         assertEquals(
             expected,
-            listOf(defaultBrowserCardData).toPageUiData(
-                showDefaultBrowserPage = true,
-                showNotificationPage = false,
-                showAddWidgetPage = false,
-                showToolbarPage = false,
-                jexlConditions = jexlConditions,
-                jexlEvaluator = evalFunction,
-            ),
+            listOf(defaultBrowserCardData)
+                .toPageUiData(
+                    showDefaultBrowserPage = true,
+                    showNotificationPage = false,
+                    showAddWidgetPage = false,
+                    showToolbarPage = false,
+                    jexlConditions = jexlConditions,
+                    jexlEvaluator = evalFunction,
+                ),
         )
     }
 
@@ -303,14 +312,15 @@ class OnboardingMapperTest {
 
         assertEquals(
             expected,
-            listOf(defaultBrowserCardData).toPageUiData(
-                showDefaultBrowserPage = true,
-                showNotificationPage = false,
-                showAddWidgetPage = false,
-                showToolbarPage = false,
-                jexlConditions = jexlConditions,
-                jexlEvaluator = evalFunction,
-            ),
+            listOf(defaultBrowserCardData)
+                .toPageUiData(
+                    showDefaultBrowserPage = true,
+                    showNotificationPage = false,
+                    showAddWidgetPage = false,
+                    showToolbarPage = false,
+                    jexlConditions = jexlConditions,
+                    jexlEvaluator = evalFunction,
+                ),
         )
     }
 
@@ -321,14 +331,15 @@ class OnboardingMapperTest {
 
         assertEquals(
             expected,
-            listOf(addSearchWidgetCardDataNoConditions).toPageUiData(
-                showDefaultBrowserPage = true,
-                showNotificationPage = false,
-                showAddWidgetPage = false,
-                showToolbarPage = false,
-                jexlConditions = jexlConditions,
-                jexlEvaluator = evalFunction,
-            ),
+            listOf(addSearchWidgetCardDataNoConditions)
+                .toPageUiData(
+                    showDefaultBrowserPage = true,
+                    showNotificationPage = false,
+                    showAddWidgetPage = false,
+                    showToolbarPage = false,
+                    jexlConditions = jexlConditions,
+                    jexlEvaluator = evalFunction,
+                ),
         )
     }
 
@@ -339,14 +350,15 @@ class OnboardingMapperTest {
 
         assertEquals(
             expected,
-            listOf(defaultBrowserCardDataNoDisqualifiers).toPageUiData(
-                showDefaultBrowserPage = true,
-                showNotificationPage = false,
-                showAddWidgetPage = false,
-                showToolbarPage = false,
-                jexlConditions = jexlConditions,
-                jexlEvaluator = evalFunction,
-            ),
+            listOf(defaultBrowserCardDataNoDisqualifiers)
+                .toPageUiData(
+                    showDefaultBrowserPage = true,
+                    showNotificationPage = false,
+                    showAddWidgetPage = false,
+                    showToolbarPage = false,
+                    jexlConditions = jexlConditions,
+                    jexlEvaluator = evalFunction,
+                ),
         )
     }
 
@@ -357,14 +369,15 @@ class OnboardingMapperTest {
 
         assertEquals(
             expected,
-            listOf(syncCardData).toPageUiData(
-                showDefaultBrowserPage = true,
-                showNotificationPage = false,
-                showAddWidgetPage = false,
-                showToolbarPage = false,
-                jexlConditions = jexlConditions,
-                jexlEvaluator = evalFunction,
-            ),
+            listOf(syncCardData)
+                .toPageUiData(
+                    showDefaultBrowserPage = true,
+                    showNotificationPage = false,
+                    showAddWidgetPage = false,
+                    showToolbarPage = false,
+                    jexlConditions = jexlConditions,
+                    jexlEvaluator = evalFunction,
+                ),
         )
     }
 
@@ -375,14 +388,15 @@ class OnboardingMapperTest {
 
         assertEquals(
             expected,
-            listOf(notificationCardData).toPageUiData(
-                showDefaultBrowserPage = true,
-                showNotificationPage = false,
-                showAddWidgetPage = false,
-                showToolbarPage = false,
-                jexlConditions = jexlConditions,
-                jexlEvaluator = evalFunction,
-            ),
+            listOf(notificationCardData)
+                .toPageUiData(
+                    showDefaultBrowserPage = true,
+                    showNotificationPage = false,
+                    showAddWidgetPage = false,
+                    showToolbarPage = false,
+                    jexlConditions = jexlConditions,
+                    jexlEvaluator = evalFunction,
+                ),
         )
     }
 
@@ -393,26 +407,28 @@ class OnboardingMapperTest {
 
         assertEquals(
             expected,
-            listOf(syncCardData).toPageUiData(
-                showDefaultBrowserPage = true,
-                showNotificationPage = false,
-                showAddWidgetPage = false,
-                showToolbarPage = false,
-                jexlConditions = jexlConditions,
-                jexlEvaluator = evalFunction,
-            ),
+            listOf(syncCardData)
+                .toPageUiData(
+                    showDefaultBrowserPage = true,
+                    showNotificationPage = false,
+                    showAddWidgetPage = false,
+                    showToolbarPage = false,
+                    jexlConditions = jexlConditions,
+                    jexlEvaluator = evalFunction,
+                ),
         )
     }
 
     // WHEN the manufacturer is not Xiaomi THEN do not filter out the add search widget card
     @Test
     fun whenManufacturerIsNotXiaomi_thenDoNotFilterOutAddSearchWidgetCard() {
-        val expected = listOf(
-            defaultBrowserPageUiData,
-            addSearchWidgetPageUiData,
-            syncPageUiData,
-            notificationPageUiData,
-        )
+        val expected =
+            listOf(
+                defaultBrowserPageUiData,
+                addSearchWidgetPageUiData,
+                syncPageUiData,
+                notificationPageUiData,
+            )
         assertEquals(
             expected,
             unsortedAllKnownCardData.toPageUiData(
@@ -425,151 +441,199 @@ class OnboardingMapperTest {
             ),
         )
     }
+
+    @Test
+    fun givenANullType_whenConvertingToPageUiData_thenCardIsDiscarded() {
+        // When a config contains an unsupported card type, Nimbus builds a OnboardingCardData
+        // with a null type.
+        val cardDataWithoutType =
+            OnboardingCardData(
+                cardType = null,
+                imageRes = R.drawable.ic_onboarding_search_widget,
+                title = StringHolder(null, "add search widget title"),
+                body = StringHolder(null, "add search widget body"),
+                primaryButtonLabel = StringHolder(null, "add search widget primary button text"),
+                secondaryButtonLabel = StringHolder(null, "add search widget secondary button text"),
+                ordering = 15,
+                prerequisites = listOf(),
+                disqualifiers = listOf(),
+            )
+
+        val expected = listOf(defaultBrowserPageUiData)
+        val cardData = listOf(defaultBrowserCardData, cardDataWithoutType)
+        assertEquals(
+            expected,
+            cardData.toPageUiData(
+                showDefaultBrowserPage = true,
+                showNotificationPage = true,
+                showAddWidgetPage = true,
+                showToolbarPage = false,
+                jexlConditions = jexlConditions,
+                jexlEvaluator = evalFunction,
+            ),
+        )
+    }
 }
 
-private val defaultBrowserPageUiData = OnboardingPageUiData(
-    type = OnboardingPageUiData.Type.DEFAULT_BROWSER,
-    imageRes = R.drawable.ic_onboarding_welcome,
-    title = "default browser title",
-    description = "default browser body",
-    primaryButtonLabel = "default browser primary button text",
-    secondaryButtonLabel = "default browser secondary button text",
-)
-private val addSearchWidgetPageUiData = OnboardingPageUiData(
-    type = OnboardingPageUiData.Type.ADD_SEARCH_WIDGET,
-    imageRes = R.drawable.ic_onboarding_search_widget,
-    title = "add search widget title",
-    description = "add search widget body",
-    primaryButtonLabel = "add search widget primary button text",
-    secondaryButtonLabel = "add search widget secondary button text",
-)
-private val syncPageUiData = OnboardingPageUiData(
-    type = OnboardingPageUiData.Type.SYNC_SIGN_IN,
-    imageRes = R.drawable.ic_onboarding_sync,
-    title = "sync title",
-    description = "sync body",
-    primaryButtonLabel = "sync primary button text",
-    secondaryButtonLabel = "sync secondary button text",
-)
-private val toolbarPageUiData = OnboardingPageUiData(
-    type = OnboardingPageUiData.Type.TOOLBAR_PLACEMENT,
-    imageRes = R.drawable.ic_onboarding_customize_toolbar,
-    title = "toolbar title",
-    description = "toolbar body",
-    primaryButtonLabel = "toolbar primary button text",
-    secondaryButtonLabel = "toolbar secondary button text",
-    toolbarOptions = listOf(
-        ToolbarOption(
-            label = "Toolbar placement",
-            imageRes = R.drawable.ic_onboarding_top_toolbar,
-            toolbarType = ToolbarOptionType.TOOLBAR_TOP,
-        ),
-    ),
-)
-private val notificationPageUiData = OnboardingPageUiData(
-    type = OnboardingPageUiData.Type.NOTIFICATION_PERMISSION,
-    imageRes = R.drawable.ic_notification_permission,
-    title = "notification title",
-    description = "notification body",
-    primaryButtonLabel = "notification primary button text",
-    secondaryButtonLabel = "notification secondary button text",
-)
-
-private val defaultBrowserCardData = OnboardingCardData(
-    cardType = OnboardingCardType.DEFAULT_BROWSER,
-    imageRes = R.drawable.ic_onboarding_welcome,
-    title = StringHolder(null, "default browser title"),
-    body = StringHolder(null, "default browser body"),
-    primaryButtonLabel = StringHolder(null, "default browser primary button text"),
-    secondaryButtonLabel = StringHolder(null, "default browser secondary button text"),
-    ordering = 10,
-    prerequisites = listOf("ALWAYS"),
-    disqualifiers = listOf("NEVER"),
-)
-
-private val defaultBrowserCardDataNoDisqualifiers = OnboardingCardData(
-    cardType = OnboardingCardType.DEFAULT_BROWSER,
-    imageRes = R.drawable.ic_onboarding_welcome,
-    title = StringHolder(null, "default browser title"),
-    body = StringHolder(null, "default browser body"),
-    primaryButtonLabel = StringHolder(null, "default browser primary button text"),
-    secondaryButtonLabel = StringHolder(null, "default browser secondary button text"),
-    ordering = 10,
-    prerequisites = listOf("ALWAYS"),
-    disqualifiers = listOf(),
-)
-
-private val addSearchWidgetCardDataNoConditions = OnboardingCardData(
-    cardType = OnboardingCardType.ADD_SEARCH_WIDGET,
-    imageRes = R.drawable.ic_onboarding_search_widget,
-    title = StringHolder(null, "add search widget title"),
-    body = StringHolder(null, "add search widget body"),
-    primaryButtonLabel = StringHolder(null, "add search widget primary button text"),
-    secondaryButtonLabel = StringHolder(null, "add search widget secondary button text"),
-    ordering = 15,
-    prerequisites = listOf(),
-    disqualifiers = listOf(),
-)
-
-private val addSearchWidgetCardData = OnboardingCardData(
-    cardType = OnboardingCardType.ADD_SEARCH_WIDGET,
-    imageRes = R.drawable.ic_onboarding_search_widget,
-    title = StringHolder(null, "add search widget title"),
-    body = StringHolder(null, "add search widget body"),
-    primaryButtonLabel = StringHolder(null, "add search widget primary button text"),
-    secondaryButtonLabel = StringHolder(null, "add search widget secondary button text"),
-    ordering = 15,
-)
-
-private val syncCardData = OnboardingCardData(
-    cardType = OnboardingCardType.SYNC_SIGN_IN,
-    imageRes = R.drawable.ic_onboarding_sync,
-    title = StringHolder(null, "sync title"),
-    body = StringHolder(null, "sync body"),
-    primaryButtonLabel = StringHolder(null, "sync primary button text"),
-    secondaryButtonLabel = StringHolder(null, "sync secondary button text"),
-    ordering = 20,
-    prerequisites = listOf(),
-    disqualifiers = listOf("NEVER"),
-)
-
-private val notificationCardData = OnboardingCardData(
-    cardType = OnboardingCardType.NOTIFICATION_PERMISSION,
-    imageRes = R.drawable.ic_notification_permission,
-    title = StringHolder(null, "notification title"),
-    body = StringHolder(null, "notification body"),
-    primaryButtonLabel = StringHolder(null, "notification primary button text"),
-    secondaryButtonLabel = StringHolder(null, "notification secondary button text"),
-    ordering = 30,
-    prerequisites = listOf(),
-    disqualifiers = listOf("NEVER", "OTHER"),
-)
-
-private val toolbarCardData = OnboardingCardData(
-    cardType = OnboardingCardType.TOOLBAR_PLACEMENT,
-    imageRes = R.drawable.ic_onboarding_customize_toolbar,
-    title = StringHolder(null, "toolbar title"),
-    body = StringHolder(null, "toolbar body"),
-    primaryButtonLabel = StringHolder(null, "toolbar primary button text"),
-    secondaryButtonLabel = StringHolder(null, "toolbar secondary button text"),
-    ordering = 40,
-    extraData = ExtraCardData(
-        customizationToolbarData = listOf(
-            CustomizationToolbarData(
-                label = StringHolder(null, "Toolbar placement"),
-                imageRes = R.drawable.ic_onboarding_top_toolbar,
-                toolbarType = ToolbarType.TOOLBAR_TOP,
+private val defaultBrowserPageUiData =
+    OnboardingPageUiData(
+        type = OnboardingPageUiData.Type.DEFAULT_BROWSER,
+        imageRes = R.drawable.ic_onboarding_welcome,
+        title = "default browser title",
+        description = "default browser body",
+        primaryButtonLabel = "default browser primary button text",
+        secondaryButtonLabel = "default browser secondary button text",
+    )
+private val addSearchWidgetPageUiData =
+    OnboardingPageUiData(
+        type = OnboardingPageUiData.Type.ADD_SEARCH_WIDGET,
+        imageRes = R.drawable.ic_onboarding_search_widget,
+        title = "add search widget title",
+        description = "add search widget body",
+        primaryButtonLabel = "add search widget primary button text",
+        secondaryButtonLabel = "add search widget secondary button text",
+    )
+private val syncPageUiData =
+    OnboardingPageUiData(
+        type = OnboardingPageUiData.Type.SYNC_SIGN_IN,
+        imageRes = R.drawable.ic_onboarding_sync,
+        title = "sync title",
+        description = "sync body",
+        primaryButtonLabel = "sync primary button text",
+        secondaryButtonLabel = "sync secondary button text",
+    )
+private val toolbarPageUiData =
+    OnboardingPageUiData(
+        type = OnboardingPageUiData.Type.TOOLBAR_PLACEMENT,
+        imageRes = R.drawable.ic_onboarding_customize_toolbar,
+        title = "toolbar title",
+        description = "toolbar body",
+        primaryButtonLabel = "toolbar primary button text",
+        secondaryButtonLabel = "toolbar secondary button text",
+        toolbarOptions =
+            listOf(
+                ToolbarOption(
+                    label = "Toolbar placement",
+                    imageRes = R.drawable.ic_onboarding_top_toolbar,
+                    toolbarType = ToolbarOptionType.TOOLBAR_TOP,
+                )
             ),
-        ),
-    ),
-    prerequisites = listOf(),
-    disqualifiers = listOf("NEVER"),
-)
+    )
+private val notificationPageUiData =
+    OnboardingPageUiData(
+        type = OnboardingPageUiData.Type.NOTIFICATION_PERMISSION,
+        imageRes = R.drawable.ic_notification_permission,
+        title = "notification title",
+        description = "notification body",
+        primaryButtonLabel = "notification primary button text",
+        secondaryButtonLabel = "notification secondary button text",
+    )
 
-private val unsortedAllKnownCardData = listOf(
-    syncCardData,
-    notificationCardData,
-    defaultBrowserCardData,
-    addSearchWidgetCardData,
-    toolbarCardData,
-)
+private val defaultBrowserCardData =
+    OnboardingCardData(
+        cardType = OnboardingCardType.DEFAULT_BROWSER,
+        imageRes = R.drawable.ic_onboarding_welcome,
+        title = StringHolder(null, "default browser title"),
+        body = StringHolder(null, "default browser body"),
+        primaryButtonLabel = StringHolder(null, "default browser primary button text"),
+        secondaryButtonLabel = StringHolder(null, "default browser secondary button text"),
+        ordering = 10,
+        prerequisites = listOf("ALWAYS"),
+        disqualifiers = listOf("NEVER"),
+    )
+
+private val defaultBrowserCardDataNoDisqualifiers =
+    OnboardingCardData(
+        cardType = OnboardingCardType.DEFAULT_BROWSER,
+        imageRes = R.drawable.ic_onboarding_welcome,
+        title = StringHolder(null, "default browser title"),
+        body = StringHolder(null, "default browser body"),
+        primaryButtonLabel = StringHolder(null, "default browser primary button text"),
+        secondaryButtonLabel = StringHolder(null, "default browser secondary button text"),
+        ordering = 10,
+        prerequisites = listOf("ALWAYS"),
+        disqualifiers = listOf(),
+    )
+
+private val addSearchWidgetCardDataNoConditions =
+    OnboardingCardData(
+        cardType = OnboardingCardType.ADD_SEARCH_WIDGET,
+        imageRes = R.drawable.ic_onboarding_search_widget,
+        title = StringHolder(null, "add search widget title"),
+        body = StringHolder(null, "add search widget body"),
+        primaryButtonLabel = StringHolder(null, "add search widget primary button text"),
+        secondaryButtonLabel = StringHolder(null, "add search widget secondary button text"),
+        ordering = 15,
+        prerequisites = listOf(),
+        disqualifiers = listOf(),
+    )
+
+private val addSearchWidgetCardData =
+    OnboardingCardData(
+        cardType = OnboardingCardType.ADD_SEARCH_WIDGET,
+        imageRes = R.drawable.ic_onboarding_search_widget,
+        title = StringHolder(null, "add search widget title"),
+        body = StringHolder(null, "add search widget body"),
+        primaryButtonLabel = StringHolder(null, "add search widget primary button text"),
+        secondaryButtonLabel = StringHolder(null, "add search widget secondary button text"),
+        ordering = 15,
+    )
+
+private val syncCardData =
+    OnboardingCardData(
+        cardType = OnboardingCardType.SYNC_SIGN_IN,
+        imageRes = R.drawable.ic_onboarding_sync,
+        title = StringHolder(null, "sync title"),
+        body = StringHolder(null, "sync body"),
+        primaryButtonLabel = StringHolder(null, "sync primary button text"),
+        secondaryButtonLabel = StringHolder(null, "sync secondary button text"),
+        ordering = 20,
+        prerequisites = listOf(),
+        disqualifiers = listOf("NEVER"),
+    )
+
+private val notificationCardData =
+    OnboardingCardData(
+        cardType = OnboardingCardType.NOTIFICATION_PERMISSION,
+        imageRes = R.drawable.ic_notification_permission,
+        title = StringHolder(null, "notification title"),
+        body = StringHolder(null, "notification body"),
+        primaryButtonLabel = StringHolder(null, "notification primary button text"),
+        secondaryButtonLabel = StringHolder(null, "notification secondary button text"),
+        ordering = 30,
+        prerequisites = listOf(),
+        disqualifiers = listOf("NEVER", "OTHER"),
+    )
+
+private val toolbarCardData =
+    OnboardingCardData(
+        cardType = OnboardingCardType.TOOLBAR_PLACEMENT,
+        imageRes = R.drawable.ic_onboarding_customize_toolbar,
+        title = StringHolder(null, "toolbar title"),
+        body = StringHolder(null, "toolbar body"),
+        primaryButtonLabel = StringHolder(null, "toolbar primary button text"),
+        secondaryButtonLabel = StringHolder(null, "toolbar secondary button text"),
+        ordering = 40,
+        extraData =
+            ExtraCardData(
+                customizationToolbarData =
+                    listOf(
+                        CustomizationToolbarData(
+                            label = StringHolder(null, "Toolbar placement"),
+                            imageRes = R.drawable.ic_onboarding_top_toolbar,
+                            toolbarType = ToolbarType.TOOLBAR_TOP,
+                        )
+                    )
+            ),
+        prerequisites = listOf(),
+        disqualifiers = listOf("NEVER"),
+    )
+
+private val unsortedAllKnownCardData =
+    listOf(
+        syncCardData,
+        notificationCardData,
+        defaultBrowserCardData,
+        addSearchWidgetCardData,
+        toolbarCardData,
+    )

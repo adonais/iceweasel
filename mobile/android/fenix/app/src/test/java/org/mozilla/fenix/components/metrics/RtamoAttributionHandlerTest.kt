@@ -10,6 +10,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -27,7 +28,6 @@ import org.mozilla.fenix.GleanMetrics.Addons
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
-import java.io.IOException
 
 private const val ADDON_GUID_BASE64 = "ezU4YzMyYWM0LTBkNmMtNGQ2Zi1hZTJjLTk2YWFmOGZmY2I2Nn0"
 private const val ADDON_RTA_TOKEN = "rta%3A$ADDON_GUID_BASE64"
@@ -39,8 +39,7 @@ private const val ADDON_DOWNLOAD_URL =
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class RtamoAttributionHandlerTest {
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private val settings: Settings = mockk(relaxed = true)
     private val addonsProvider: AddonsProvider = mockk(relaxed = true)
@@ -51,27 +50,29 @@ class RtamoAttributionHandlerTest {
     }
 
     @Test
-    fun `GIVEN a valid RTAMO referrer WHEN handleReferrer is called THEN the addon details are stored in settings`() = runTest {
-        coEvery { addonsProvider.getAddonByID(ADDON_RTA_TOKEN) } returns Addon(
-            id = "test",
-            downloadUrl = ADDON_DOWNLOAD_URL,
-            translatableName = mapOf("en" to ADDON_NAME),
-            iconUrl = ADDON_ICON_URL,
-        )
-        val handler = buildRtamoAttributionHandler(scope = this)
+    fun `GIVEN a valid RTAMO referrer WHEN handleReferrer is called THEN the addon details are stored in settings`() =
+        runTest {
+            coEvery { addonsProvider.getAddonByID(ADDON_RTA_TOKEN) } returns
+                Addon(
+                    id = "test",
+                    downloadUrl = ADDON_DOWNLOAD_URL,
+                    translatableName = mapOf("en" to ADDON_NAME),
+                    iconUrl = ADDON_ICON_URL,
+                )
+            val handler = buildRtamoAttributionHandler(scope = this)
 
-        handler.handleReferrer(rtamoReferrer())
-        advanceUntilIdle()
+            handler.handleReferrer(rtamoReferrer())
+            advanceUntilIdle()
 
-        coVerify { addonsProvider.getAddonByID(ADDON_RTA_TOKEN) }
-        verify { settings.rtamoAddonDownloadUrl = ADDON_DOWNLOAD_URL }
-        verify { settings.rtamoAddonName = ADDON_NAME }
-        verify { settings.rtamoAddonImageUrl = ADDON_ICON_URL }
-        assertEquals(
-            ADDON_DOWNLOAD_URL,
-            Addons.rtamoIdentified.testGetValue()?.last()?.extra?.get("addon_download_url"),
-        )
-    }
+            coVerify { addonsProvider.getAddonByID(ADDON_RTA_TOKEN) }
+            verify { settings.rtamoAddonDownloadUrl = ADDON_DOWNLOAD_URL }
+            verify { settings.rtamoAddonName = ADDON_NAME }
+            verify { settings.rtamoAddonImageUrl = ADDON_ICON_URL }
+            assertEquals(
+                ADDON_DOWNLOAD_URL,
+                Addons.rtamoIdentified.testGetValue()?.last()?.extra?.get("addon_download_url"),
+            )
+        }
 
     @Test
     fun `GIVEN a null referrer WHEN handleReferrer is called THEN settings are not modified`() = runTest {
@@ -102,19 +103,20 @@ class RtamoAttributionHandlerTest {
     }
 
     @Test
-    fun `GIVEN a referrer with AMO source but no rta content WHEN handleReferrer is called THEN settings are not modified`() = runTest {
-        val handler = buildRtamoAttributionHandler(scope = this)
+    fun `GIVEN a referrer with AMO source but no rta content WHEN handleReferrer is called THEN settings are not modified`() =
+        runTest {
+            val handler = buildRtamoAttributionHandler(scope = this)
 
-        handler.handleReferrer(rtamoReferrer(rtaUTM = ""))
-        advanceUntilIdle()
+            handler.handleReferrer(rtamoReferrer(rtaUTM = ""))
+            advanceUntilIdle()
 
-        coVerify(exactly = 0) { addonsProvider.getAddonByID(any()) }
-        verify(exactly = 0) { settings.rtamoAddonDownloadUrl = any() }
-        verify(exactly = 0) { settings.rtamoAddonName = any() }
-        verify(exactly = 0) { settings.rtamoAddonImageUrl = any() }
-        assertEquals("invalid_id", Addons.rtamoFailed.testGetValue()?.last()?.extra?.get("reason"))
-        assertNull(Addons.rtamoIdentified.testGetValue())
-    }
+            coVerify(exactly = 0) { addonsProvider.getAddonByID(any()) }
+            verify(exactly = 0) { settings.rtamoAddonDownloadUrl = any() }
+            verify(exactly = 0) { settings.rtamoAddonName = any() }
+            verify(exactly = 0) { settings.rtamoAddonImageUrl = any() }
+            assertEquals("invalid_id", Addons.rtamoFailed.testGetValue()?.last()?.extra?.get("reason"))
+            assertNull(Addons.rtamoIdentified.testGetValue())
+        }
 
     @Test
     fun `GIVEN AMO returns null WHEN handleReferrer is called THEN settings are not modified`() = runTest {

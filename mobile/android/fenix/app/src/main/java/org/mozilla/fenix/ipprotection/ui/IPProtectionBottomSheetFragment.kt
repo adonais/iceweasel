@@ -13,7 +13,9 @@ import android.view.ViewGroup
 import androidx.fragment.compose.content
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import com.google.android.material.R as materialR
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import java.time.LocalDate
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import org.mozilla.fenix.R
@@ -30,29 +32,27 @@ import org.mozilla.fenix.ipprotection.store.IPProtectionPromptTelemetryMiddlewar
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.theme.FirefoxTheme
-import java.time.LocalDate
-import com.google.android.material.R as materialR
 
-/**
- * [BottomSheetDialogFragment] wrapper for the compose [IPProtectionBottomSheet].
- */
+/** [BottomSheetDialogFragment] wrapper for the compose [IPProtectionBottomSheet]. */
 class IPProtectionBottomSheetFragment : BottomSheetDialogFragment() {
 
     private val args by navArgs<IPProtectionBottomSheetFragmentArgs>()
 
     private var isAlreadyShowing: Boolean = false
 
-    private val ipProtectionPromptStore by fragmentStore(IPProtectionPromptState) {
-        IPProtectionPromptStore(
-            initialState = it,
-            middleware = listOf(
-                IPProtectionPromptPreferencesMiddleware(
-                    repository = requireComponents.ipProtectionPromptRepository,
-                ),
-                IPProtectionPromptTelemetryMiddleware(),
-            ),
-        )
-    }
+    private val ipProtectionPromptStore by
+        fragmentStore(IPProtectionPromptState) {
+            IPProtectionPromptStore(
+                initialState = it,
+                middleware =
+                    listOf(
+                        IPProtectionPromptPreferencesMiddleware(
+                            repository = requireComponents.ipProtectionPromptRepository
+                        ),
+                        IPProtectionPromptTelemetryMiddleware(),
+                    ),
+            )
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,11 +87,12 @@ class IPProtectionBottomSheetFragment : BottomSheetDialogFragment() {
         isAlreadyShowing = savedInstanceState?.getBoolean(IS_ALREADY_SHOW_KEY) ?: false
         ipProtectionPromptStore.dispatch(IPProtectionPromptAction.OnPromptCreated)
         val maxGib = FxNimbus.features.ipProtection.value().dataLimitGigabyte
-        val formattedPromoDate = FxNimbus.features.ipProtection.value().promoDeadline.let { promoDate ->
-            IsoPromoDeadline(promoDate)
-                .formatPromoDateOrCatch { requireComponents.analytics.crashReporter.submitCaughtException(it) }
-                ?.takeIf { LocalDate.now() <= LocalDate.parse(promoDate) }
-        }
+        val formattedPromoDate =
+            FxNimbus.features.ipProtection.value().promoDeadline.let { promoDate ->
+                IsoPromoDeadline(promoDate)
+                    .formatPromoDateOrCatch { requireComponents.analytics.crashReporter.submitCaughtException(it) }
+                    ?.takeIf { LocalDate.now() <= LocalDate.parse(promoDate) }
+            }
         return content {
             FirefoxTheme {
                 IPProtectionBottomSheet(
@@ -100,27 +101,26 @@ class IPProtectionBottomSheetFragment : BottomSheetDialogFragment() {
                     onDismiss = { dismiss() },
                     onDismissRequest = {
                         ipProtectionPromptStore.dispatch(
-                            IPProtectionPromptAction.OnPromptManuallyDismissed(args.surface),
+                            IPProtectionPromptAction.OnPromptManuallyDismissed(args.surface)
                         )
                         dismiss()
                     },
                     onGetStartedClicked = {
-                        ipProtectionPromptStore.dispatch(
-                            IPProtectionPromptAction.OnGetStartedClicked(args.surface),
-                        )
-                        findNavController().nav(
-                            R.id.ipProtectionOnboardingDialogFragment,
-                            IPProtectionBottomSheetFragmentDirections
-                                .actionIpProtectionOnboardingDialogFragmentToIpProtectionFragment(
-                                    startAuthFlow = true,
-                                    entrypoint = FenixFxAEntryPoint.IPProtectionOnboarding,
-                                ),
-                        )
+                        ipProtectionPromptStore.dispatch(IPProtectionPromptAction.OnGetStartedClicked(args.surface))
+                        findNavController()
+                            .nav(
+                                R.id.ipProtectionOnboardingDialogFragment,
+                                IPProtectionBottomSheetFragmentDirections
+                                    .actionIpProtectionOnboardingDialogFragmentToIpProtectionFragment(
+                                        startAuthFlow = true,
+                                        entrypoint = FenixFxAEntryPoint.IPProtectionOnboarding,
+                                    ),
+                            )
                         dismiss()
                     },
                     onLearnMoreClicked = {
                         ipProtectionPromptStore.dispatch(
-                            IPProtectionPromptAction.OnBrowseWithExtraProtectionClicked(args.surface),
+                            IPProtectionPromptAction.OnBrowseWithExtraProtectionClicked(args.surface)
                         )
                         SupportUtils.launchSandboxCustomTab(
                             requireActivity(),
@@ -132,9 +132,7 @@ class IPProtectionBottomSheetFragment : BottomSheetDialogFragment() {
                         )
                     },
                     onNotNowClicked = {
-                        ipProtectionPromptStore.dispatch(
-                            IPProtectionPromptAction.OnNotNowClicked(args.surface),
-                        )
+                        ipProtectionPromptStore.dispatch(IPProtectionPromptAction.OnNotNowClicked(args.surface))
                     },
                 )
             }

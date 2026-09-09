@@ -35,6 +35,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
@@ -45,10 +49,6 @@ import org.mozilla.fenix.perf.ProcessExitRecord
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
 private const val DATE_PREFIX_LENGTH = 10
 private const val TIME_SUFFIX_LENGTH = 8
@@ -68,7 +68,7 @@ private val defaultProcessExitsProvider: suspend (Context) -> List<ProcessExitRe
 
 @Composable
 internal fun TabProcessTools(
-    processExitsProvider: suspend (Context) -> List<ProcessExitRecord> = defaultProcessExitsProvider,
+    processExitsProvider: suspend (Context) -> List<ProcessExitRecord> = defaultProcessExitsProvider
 ) {
     val context = LocalContext.current
     var exits by remember { mutableStateOf<List<ProcessExitRecord>?>(null) }
@@ -79,45 +79,47 @@ internal fun TabProcessTools(
         }
     }
 
-    val availableTypes = remember(exits) {
-        exits?.map { it.processType }?.distinct()?.sorted() ?: emptyList()
-    }
+    val availableTypes =
+        remember(exits) {
+            exits?.map { it.processType }?.distinct()?.sorted() ?: emptyList()
+        }
     var selectedTypes by remember { mutableStateOf<Set<String>>(emptySet()) }
     LaunchedEffect(availableTypes) {
         if (availableTypes.isNotEmpty()) selectedTypes = availableTypes.toSet()
     }
 
-    val filteredExits = remember(exits, selectedTypes) {
-        exits?.filter { it.processType in selectedTypes } ?: emptyList()
-    }
+    val filteredExits =
+        remember(exits, selectedTypes) {
+            exits?.filter { it.processType in selectedTypes } ?: emptyList()
+        }
 
     Surface {
-        Column(
-            modifier = Modifier
-                .padding(all = 16.dp)
-                .verticalScroll(rememberScrollState()),
-        ) {
+        Column(modifier = Modifier.padding(all = 16.dp).verticalScroll(rememberScrollState())) {
             when {
-                Build.VERSION.SDK_INT < Build.VERSION_CODES.R -> Text(
-                    text = stringResource(R.string.debug_drawer_tab_process_tools_unsupported),
-                    style = FirefoxTheme.typography.body2,
-                )
-                exits == null -> Text(
-                    text = stringResource(R.string.debug_drawer_tab_process_tools_empty),
-                    style = FirefoxTheme.typography.body2,
-                )
-                else -> ProcessExitsContent(
-                    availableTypes = availableTypes,
-                    selectedTypes = selectedTypes,
-                    filteredExits = filteredExits,
-                    onTypeToggled = { type ->
-                        selectedTypes = if (type in selectedTypes) {
-                            selectedTypes - type
-                        } else {
-                            selectedTypes + type
-                        }
-                    },
-                )
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.R ->
+                    Text(
+                        text = stringResource(R.string.debug_drawer_tab_process_tools_unsupported),
+                        style = FirefoxTheme.typography.body2,
+                    )
+                exits == null ->
+                    Text(
+                        text = stringResource(R.string.debug_drawer_tab_process_tools_empty),
+                        style = FirefoxTheme.typography.body2,
+                    )
+                else ->
+                    ProcessExitsContent(
+                        availableTypes = availableTypes,
+                        selectedTypes = selectedTypes,
+                        filteredExits = filteredExits,
+                        onTypeToggled = { type ->
+                            selectedTypes =
+                                if (type in selectedTypes) {
+                                    selectedTypes - type
+                                } else {
+                                    selectedTypes + type
+                                }
+                        },
+                    )
             }
         }
     }
@@ -162,11 +164,12 @@ private fun ProcessTypeFilter(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    val label = when {
-        selectedTypes.size == availableTypes.size -> "All types"
-        selectedTypes.isEmpty() -> "No types"
-        else -> selectedTypes.sorted().joinToString(", ")
-    }
+    val label =
+        when {
+            selectedTypes.size == availableTypes.size -> "All types"
+            selectedTypes.isEmpty() -> "No types"
+            else -> selectedTypes.sorted().joinToString(", ")
+        }
 
     Box {
         OutlinedButton(
@@ -199,31 +202,36 @@ private fun ProcessTypeFilter(
 private fun groupExitsByDate(exits: List<ProcessExitRecord>): List<Pair<String, List<ProcessExitRecord>>> {
     val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     val today = dateFormat.format(Date())
-    val yesterday = Calendar.getInstance().apply {
-        add(Calendar.DAY_OF_YEAR, -1)
-    }.let { dateFormat.format(it.time) }
+    val yesterday =
+        Calendar.getInstance()
+            .apply {
+                add(Calendar.DAY_OF_YEAR, -1)
+            }
+            .let { dateFormat.format(it.time) }
 
     return exits
         .groupBy { it.date.take(DATE_PREFIX_LENGTH) }
         .map { (dateKey, records) ->
-            val sectionTitle = when (dateKey) {
-                today -> "Today"
-                yesterday -> "Yesterday"
-                else -> dateKey
-            }
+            val sectionTitle =
+                when (dateKey) {
+                    today -> "Today"
+                    yesterday -> "Yesterday"
+                    else -> dateKey
+                }
             sectionTitle to records
         }
 }
 
-private fun exitReasonBackgroundColor(reason: String): Color = when (reason) {
-    "crash" -> Color(COLOR_CRASH)
-    "crash_native" -> Color(COLOR_CRASH_NATIVE)
-    "anr" -> Color(COLOR_ANR)
-    "low_memory" -> Color(COLOR_LOW_MEMORY)
-    "excessive_resource" -> Color(COLOR_EXCESSIVE_RESOURCE)
-    "signaled" -> Color(COLOR_SIGNALED)
-    else -> Color(COLOR_OTHER)
-}
+private fun exitReasonBackgroundColor(reason: String): Color =
+    when (reason) {
+        "crash" -> Color(COLOR_CRASH)
+        "crash_native" -> Color(COLOR_CRASH_NATIVE)
+        "anr" -> Color(COLOR_ANR)
+        "low_memory" -> Color(COLOR_LOW_MEMORY)
+        "excessive_resource" -> Color(COLOR_EXCESSIVE_RESOURCE)
+        "signaled" -> Color(COLOR_SIGNALED)
+        else -> Color(COLOR_OTHER)
+    }
 
 @Composable
 private fun ProcessExitSectionHeader(title: String) {
@@ -240,10 +248,10 @@ private fun ProcessExitItem(exit: ProcessExitRecord) {
     // when a LazyColumn sits inside an unsized Column.
     // Performance trade-off is irrelevant here due to the process exits' ring buffer cap.
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(exitReasonBackgroundColor(exit.reason))
-            .padding(vertical = 8.dp, horizontal = 8.dp),
+        modifier =
+            Modifier.fillMaxWidth()
+                .background(exitReasonBackgroundColor(exit.reason))
+                .padding(vertical = 8.dp, horizontal = 8.dp)
     ) {
         Text(
             text = exit.date.takeLast(TIME_SUFFIX_LENGTH),
@@ -270,65 +278,67 @@ private fun ProcessExitItem(exit: ProcessExitRecord) {
 
 @FlexibleWindowPreview
 @Composable
-private fun TabProcessToolsPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun TabProcessToolsPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     val today = dateFormat.format(Date())
-    val yesterday = Calendar.getInstance().apply {
-        add(Calendar.DAY_OF_YEAR, -1)
-    }.let { dateFormat.format(it.time) }
+    val yesterday =
+        Calendar.getInstance()
+            .apply {
+                add(Calendar.DAY_OF_YEAR, -1)
+            }
+            .let { dateFormat.format(it.time) }
 
-    val fakeExits = listOf(
-        ProcessExitRecord(
-            date = "$today 09:12:44",
-            reason = "crash_native",
-            processType = "content",
-            importance = "cached",
-            pssInMb = 312,
-            rssInMb = 445,
-        ),
-        ProcessExitRecord(
-            date = "$today 08:03:11",
-            reason = "crash",
-            processType = "content",
-            importance = "cached",
-            pssInMb = 198,
-            rssInMb = 260,
-        ),
-        ProcessExitRecord(
-            date = "$today 07:48:19",
-            reason = "low_memory",
-            processType = "content",
-            importance = "cached",
-            pssInMb = 275,
-            rssInMb = 398,
-        ),
-        ProcessExitRecord(
-            date = "$yesterday 22:47:01",
-            reason = "excessive_resource",
-            processType = "content",
-            importance = "perceptible",
-            pssInMb = 489,
-            rssInMb = 601,
-        ),
-        ProcessExitRecord(
-            date = "$yesterday 18:30:55",
-            reason = "signaled",
-            processType = "gpu",
-            importance = "foreground_service",
-            pssInMb = 120,
-            rssInMb = 155,
-        ),
-        ProcessExitRecord(
-            date = "2024-11-01 14:05:30",
-            reason = "anr",
-            processType = "parent",
-            importance = "foreground",
-            pssInMb = 540,
-            rssInMb = 712,
-        ),
-    )
+    val fakeExits =
+        listOf(
+            ProcessExitRecord(
+                date = "$today 09:12:44",
+                reason = "crash_native",
+                processType = "content",
+                importance = "cached",
+                pssInMb = 312,
+                rssInMb = 445,
+            ),
+            ProcessExitRecord(
+                date = "$today 08:03:11",
+                reason = "crash",
+                processType = "content",
+                importance = "cached",
+                pssInMb = 198,
+                rssInMb = 260,
+            ),
+            ProcessExitRecord(
+                date = "$today 07:48:19",
+                reason = "low_memory",
+                processType = "content",
+                importance = "cached",
+                pssInMb = 275,
+                rssInMb = 398,
+            ),
+            ProcessExitRecord(
+                date = "$yesterday 22:47:01",
+                reason = "excessive_resource",
+                processType = "content",
+                importance = "perceptible",
+                pssInMb = 489,
+                rssInMb = 601,
+            ),
+            ProcessExitRecord(
+                date = "$yesterday 18:30:55",
+                reason = "signaled",
+                processType = "gpu",
+                importance = "foreground_service",
+                pssInMb = 120,
+                rssInMb = 155,
+            ),
+            ProcessExitRecord(
+                date = "2024-11-01 14:05:30",
+                reason = "anr",
+                processType = "parent",
+                importance = "foreground",
+                pssInMb = 540,
+                rssInMb = 712,
+            ),
+        )
     FirefoxTheme(theme) {
         TabProcessTools(processExitsProvider = { fakeExits })
     }

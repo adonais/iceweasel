@@ -135,6 +135,16 @@ module.exports = function (config) {
                 branches: 0,
               },
             /**
+             * CardCarousel.jsx is tested via Jest (see test/jest/content-src/components/DiscoveryStreamComponents/CardCarousel.test.jsx).
+             */
+            "content-src/components/DiscoveryStreamComponents/CardCarousel/CardCarousel.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            /**
              * ErrorBoundary.jsx is tested via Jest (see test/jest/content-src/components/ErrorBoundary.test.jsx).
              */
             "content-src/components/ErrorBoundary/ErrorBoundary.jsx": {
@@ -428,13 +438,6 @@ module.exports = function (config) {
                 lines: 84,
                 functions: 83,
               },
-            "content-src/components/DiscoveryStreamComponents/BriefingCard/BriefingCard.jsx":
-              {
-                statements: 92.31,
-                branches: 66.67,
-                functions: 90,
-                lines: 94.59,
-              },
             /**
              * PromoCard currently has no functionality and is a placeholder component
              */
@@ -525,6 +528,22 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/PanelListItems.test.jsx)
+            "content-src/components/LinkMenu/PanelListItems.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/ContextMenu/ContextMenuButton.test.jsx).
+            // The karma suite only reached it through the topsites and story-card
+            // menu tests, which this stack moves to panel-list.
+            "content-src/components/ContextMenu/ContextMenuButton.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
             // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/Clocks.test.jsx)
             "content-src/components/Widgets/Clocks/Clocks.jsx": {
               statements: 0,
@@ -567,8 +586,30 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/StockSearch.test.jsx)
+            "content-src/components/Widgets/Stocks/StockSearch.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this hook lives in Jest (test/jest/content-src/components/Widgets/useStockSearch.test.jsx)
+            "content-src/components/Widgets/Stocks/useStockSearch.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
             // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/PictureOfTheDay.test.jsx)
             "content-src/components/Widgets/PictureOfTheDay/PictureOfTheDay.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/RecentSearches.test.jsx)
+            "content-src/components/Widgets/RecentSearches/RecentSearches.jsx":
               {
                 statements: 0,
                 lines: 0,
@@ -598,6 +639,21 @@ module.exports = function (config) {
             },
             // Coverage for this module lives in Jest (test/jest/content-src/components/Widgets/ClocksHelpers.test.jsx)
             "content-src/components/Widgets/Clocks/ClocksHelpers.mjs": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Static registry data; the Fluent pairing it relies on is checked
+            // in Jest (test/jest/content-src/components/Widgets/ClockCityRegistry.test.jsx)
+            "content-src/components/Widgets/Clocks/ClockCityRegistry.mjs": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this hook lives in Jest (test/jest/content-src/components/Widgets/useCuratedCityNames.test.jsx)
+            "content-src/components/Widgets/Clocks/useCuratedCityNames.jsx": {
               statements: 0,
               lines: 0,
               functions: 0,
@@ -782,6 +838,13 @@ module.exports = function (config) {
               branches: 0,
             },
             "content-src/lib/useReorderFlip.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this module lives in Jest (test/jest/content-src/lib/panel-list-utils.test.jsx)
+            "content-src/lib/panel-list-utils.jsx": {
               statements: 0,
               lines: 0,
               functions: 0,

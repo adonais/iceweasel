@@ -28,3 +28,19 @@ fx-accounts:
       The baseline ping is being sent on dirty startup.
     inactive: |
       The baseline ping is being sent on inactive.
+
+fx-accounts-client-info:
+  description: |
+    A ping for indicating certain personalization attributes related to Mozilla Account Usage.
+    Manually submitted in 'idle-daily' notificiations, but only if a user is signed in to fxa.
+  include_client_id: false
+  send_if_empty: false
+  metadata:
+    follows_collection_enabled: false
+    # no `ping_schedule` metadata, we submit this ping manually.
+  bugs:
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2049938
+  data_reviews:
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2049938
+  notification_emails:
+    - lifecycle-marketing@mozilla.com

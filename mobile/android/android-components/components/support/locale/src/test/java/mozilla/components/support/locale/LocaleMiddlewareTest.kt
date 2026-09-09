@@ -29,57 +29,63 @@ class LocaleMiddlewareTest {
 
     @Test
     @Config(qualifiers = "en-rUS")
-    fun `GIVEN a locale has been chosen in the app WHEN we restore state THEN locale is retrieved from storage`() = runTest(testDispatcher) {
-        val localeManager = LocaleManager
-        val currentLocale = localeManager.getCurrentLocale(testContext)
-        assertNull(currentLocale)
+    fun `GIVEN a locale has been chosen in the app WHEN we restore state THEN locale is retrieved from storage`() =
+        runTest(testDispatcher) {
+            val localeManager = LocaleManager
+            val currentLocale = localeManager.getCurrentLocale(testContext)
+            assertNull(currentLocale)
 
-        val localeMiddleware = LocaleMiddleware(
-            testContext,
-            coroutineContext = testDispatcher,
-            localeManager = localeManager,
-        )
+            val localeMiddleware =
+                LocaleMiddleware(
+                    testContext,
+                    coroutineContext = testDispatcher,
+                    localeManager = localeManager,
+                )
 
-        val store = BrowserStore(
-            initialState = BrowserState(),
-            middleware = listOf(localeMiddleware),
-        )
+            val store =
+                BrowserStore(
+                    initialState = BrowserState(),
+                    middleware = listOf(localeMiddleware),
+                )
 
-        assertEquals(store.state.locale, null)
+            assertEquals(store.state.locale, null)
 
-        store.dispatch(LocaleAction.RestoreLocaleStateAction)
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(LocaleAction.RestoreLocaleStateAction)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertEquals(store.state.locale, currentLocale)
-    }
+            assertEquals(store.state.locale, currentLocale)
+        }
 
     @Test
     @Config(qualifiers = "en-rUS")
-    fun `WHEN we update the locale THEN the locale manager is updated`() = runTest(testDispatcher) {
-        val localeManager = LocaleManager
-        val currentLocale = localeManager.getCurrentLocale(testContext)
-        assertNull(currentLocale)
+    fun `WHEN we update the locale THEN the locale manager is updated`() =
+        runTest(testDispatcher) {
+            val localeManager = LocaleManager
+            val currentLocale = localeManager.getCurrentLocale(testContext)
+            assertNull(currentLocale)
 
-        val localeMiddleware = LocaleMiddleware(
-            testContext,
-            coroutineContext = testDispatcher,
-            localeManager = localeManager,
-        )
+            val localeMiddleware =
+                LocaleMiddleware(
+                    testContext,
+                    coroutineContext = testDispatcher,
+                    localeManager = localeManager,
+                )
 
-        val store = BrowserStore(
-            initialState = BrowserState(),
-            middleware = listOf(localeMiddleware),
-        )
+            val store =
+                BrowserStore(
+                    initialState = BrowserState(),
+                    middleware = listOf(localeMiddleware),
+                )
 
-        assertEquals(store.state.locale, null)
+            assertEquals(store.state.locale, null)
 
-        val newLocale = "es".toLocale()
-        store.dispatch(LocaleAction.UpdateLocaleAction(newLocale))
-        testDispatcher.scheduler.advanceUntilIdle()
+            val newLocale = "es".toLocale()
+            store.dispatch(LocaleAction.UpdateLocaleAction(newLocale))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        val locale = localeManager.getCurrentLocale(testContext)
-        assertEquals(locale, newLocale)
+            val locale = localeManager.getCurrentLocale(testContext)
+            assertEquals(locale, newLocale)
 
-        assertEquals(store.state.locale, newLocale)
-    }
+            assertEquals(store.state.locale, newLocale)
+        }
 }

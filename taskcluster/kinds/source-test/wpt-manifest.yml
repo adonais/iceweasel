@@ -21,7 +21,6 @@ upload:
         job-name: manifest-upload
         rank: build_date
     run:
-        clone-with: hg
         using: run-task
         cwd: '{checkout}'
         command: >

@@ -18,7 +18,6 @@ linux64-rust-size:
     treeherder:
         symbol: TL(rust-size)
     run:
-        clone-with: hg
         arguments: ['x86_64-unknown-linux-gnu']
         toolchain-artifact: public/build/rust-size.tar.zst
     fetches:
@@ -31,7 +30,6 @@ win64-rust-size:
     treeherder:
         symbol: TW64(rust-size)
     run:
-        clone-with: hg
         arguments: ['x86_64-pc-windows-msvc']
         toolchain-artifact: public/build/rust-size.tar.zst
     fetches:

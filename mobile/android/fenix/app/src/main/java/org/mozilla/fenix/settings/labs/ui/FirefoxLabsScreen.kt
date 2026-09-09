@@ -52,6 +52,7 @@ import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.theme.layout.AcornWindowSize
 import mozilla.components.compose.base.utils.BackInvokedHandler
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.SwitchListItem
 import org.mozilla.fenix.settings.labs.LabsItem
@@ -64,15 +65,14 @@ import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.theme.ThemedValue
 import org.mozilla.fenix.theme.ThemedValueProvider
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Firefox Labs screen that displays a list of experimental items that can be opted into.
  *
  * @param store The [LabsStore] used to observe the screen state and dispatch actions.
  * @param onNavigationIconClick Callback invoked when the navigation icon is clicked.
- * @param onShareFeedbackClick Callback invoked when an item's "Share feedback" link is clicked,
- * with the [LabsItem] whose link was tapped as the argument.
+ * @param onShareFeedbackClick Callback invoked when an item's "Share feedback" link is clicked, with the [LabsItem]
+ *   whose link was tapped as the argument.
  */
 @Composable
 fun FirefoxLabsScreen(
@@ -80,7 +80,9 @@ fun FirefoxLabsScreen(
     onNavigationIconClick: () -> Unit,
     onShareFeedbackClick: (LabsItem) -> Unit,
 ) {
-    val labsItems by remember { store.stateFlow.map { state -> state.labsItems } }
+    val labsItems by remember {
+        store.stateFlow.map { state -> state.labsItems }
+    }
         .collectAsState(initial = store.state.labsItems)
 
     BackInvokedHandler {
@@ -89,10 +91,8 @@ fun FirefoxLabsScreen(
 
     Scaffold(
         topBar = {
-            FirefoxLabsTopAppBar(
-                onNavigationIconClick = onNavigationIconClick,
-            )
-        },
+            FirefoxLabsTopAppBar(onNavigationIconClick = onNavigationIconClick)
+        }
     ) { paddingValues ->
         if (labsItems.isEmpty()) {
             EmptyState(modifier = Modifier.padding(paddingValues))
@@ -130,11 +130,7 @@ private fun FirefoxLabsScreenContent(
     onRestoreDefaultsButtonClick: () -> Unit,
     onShareFeedbackClick: (LabsItem) -> Unit,
 ) {
-    LazyColumn(
-        modifier = Modifier
-            .padding(paddingValues)
-            .fillMaxSize(),
-    ) {
+    LazyColumn(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
         item {
             FirefoxLabsBanner()
         }
@@ -151,13 +147,13 @@ private fun FirefoxLabsScreenContent(
             val isWideScreen = AcornWindowSize.getWindowSize().isNotSmall()
             FilledButton(
                 text = stringResource(R.string.firefox_labs_restore_default_button_text),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .thenConditional(
-                        modifier = Modifier.wrapContentWidth(Alignment.CenterHorizontally),
-                        predicate = { isWideScreen },
-                    )
-                    .padding(horizontal = 16.dp, vertical = 24.dp),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .thenConditional(
+                            modifier = Modifier.wrapContentWidth(Alignment.CenterHorizontally),
+                            predicate = { isWideScreen },
+                        )
+                        .padding(horizontal = 16.dp, vertical = 24.dp),
                 enabled = labsItems.any { it.enrolled },
                 onClick = onRestoreDefaultsButtonClick,
             )
@@ -209,19 +205,21 @@ private fun LabsShareFeedbackLink(
     onShareFeedbackClick: (LabsItem) -> Unit,
 ) {
     val shareFeedbackText = stringResource(R.string.firefox_labs_share_feedback)
-    val shareFeedbackContentDescription = stringResource(
-        R.string.firefox_labs_share_feedback_content_description,
-        itemTitle,
-    )
+    val shareFeedbackContentDescription =
+        stringResource(
+            R.string.firefox_labs_share_feedback_content_description,
+            itemTitle,
+        )
     LinkText(
         text = shareFeedbackText,
-        linkTextStates = listOf(
-            LinkTextState(
-                text = shareFeedbackText,
-                url = url,
-                onClick = { _ -> onShareFeedbackClick(item) },
+        linkTextStates =
+            listOf(
+                LinkTextState(
+                    text = shareFeedbackText,
+                    url = url,
+                    onClick = { _ -> onShareFeedbackClick(item) },
+                )
             ),
-        ),
         linkTextDecoration = TextDecoration.Underline,
         contentDescription = shareFeedbackContentDescription,
     )
@@ -230,26 +228,25 @@ private fun LabsShareFeedbackLink(
 @Composable
 private fun FirefoxLabsBanner() {
     PromoCard(
-        modifier = Modifier
-            .padding(
-                horizontal = FirefoxTheme.layout.space.dynamic200,
-                vertical = FirefoxTheme.layout.space.static100,
-            )
-            .height(IntrinsicSize.Min),
+        modifier =
+            Modifier.padding(
+                    horizontal = FirefoxTheme.layout.space.dynamic200,
+                    vertical = FirefoxTheme.layout.space.static100,
+                )
+                .height(IntrinsicSize.Min),
         title = { Text(text = stringResource(R.string.firefox_labs_banner_title_2)) },
         message = {
             Text(
-                text = String.format(
-                    stringResource(R.string.firefox_labs_experimental_description),
-                    stringResource(R.string.app_name),
-                ),
+                text =
+                    String.format(
+                        stringResource(R.string.firefox_labs_experimental_description),
+                        stringResource(R.string.app_name),
+                    )
             )
         },
         illustration = {
             Image(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .padding(top = FirefoxTheme.layout.space.static150),
+                modifier = Modifier.fillMaxHeight().padding(top = FirefoxTheme.layout.space.static150),
                 painter = painterResource(R.drawable.kit_expressive_full),
                 contentDescription = null,
                 contentScale = ContentScale.FillHeight,
@@ -279,10 +276,11 @@ private fun FirefoxLabsTopAppBar(onNavigationIconClick: () -> Unit) {
                 )
             }
         },
-        windowInsets = WindowInsets(
-            top = 0.dp,
-            bottom = 0.dp,
-        ),
+        windowInsets =
+            WindowInsets(
+                top = 0.dp,
+                bottom = 0.dp,
+            ),
     )
 }
 
@@ -290,19 +288,18 @@ private fun FirefoxLabsTopAppBar(onNavigationIconClick: () -> Unit) {
 private fun EmptyState(modifier: Modifier = Modifier) {
     val isWideScreen = AcornWindowSize.getWindowSize().isNotSmall()
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .wrapContentSize()
-            .thenConditional(
-                modifier = Modifier.width(IntrinsicSize.Min),
-                predicate = { !isWideScreen },
-            ),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .wrapContentSize()
+                .thenConditional(
+                    modifier = Modifier.width(IntrinsicSize.Min),
+                    predicate = { !isWideScreen },
+                ),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image(
-            modifier = Modifier
-                .width(180.dp)
-                .height(103.dp),
+            modifier = Modifier.width(180.dp).height(103.dp),
             painter = painterResource(R.drawable.kit_sleeping_under_laptop),
             contentDescription = null,
         )
@@ -320,7 +317,9 @@ private fun EmptyState(modifier: Modifier = Modifier) {
 
 @Composable
 private fun FirefoxLabsDialog(store: LabsStore) {
-    val dialogState by remember { store.stateFlow.map { state -> state.dialogState } }
+    val dialogState by remember {
+        store.stateFlow.map { state -> state.dialogState }
+    }
         .collectAsState(initial = store.state.dialogState)
 
     when (val currentDialog = dialogState) {
@@ -379,17 +378,18 @@ private fun ToggleLabsItemDialog(
         },
         text = {
             Text(
-                text = if (itemEnrolled) {
-                    String.format(
-                        stringResource(R.string.firefox_labs_feature_disable_dialog_message),
-                        stringResource(R.string.app_name),
-                    )
-                } else {
-                    String.format(
-                        stringResource(R.string.firefox_labs_feature_enable_dialog_message),
-                        stringResource(R.string.app_name),
-                    )
-                },
+                text =
+                    if (itemEnrolled) {
+                        String.format(
+                            stringResource(R.string.firefox_labs_feature_disable_dialog_message),
+                            stringResource(R.string.app_name),
+                        )
+                    } else {
+                        String.format(
+                            stringResource(R.string.firefox_labs_feature_enable_dialog_message),
+                            stringResource(R.string.app_name),
+                        )
+                    },
                 style = FirefoxTheme.typography.body2,
             )
         },
@@ -423,60 +423,64 @@ private fun RestoreDefaultsDialog(
         },
         text = {
             Text(
-                text = String.format(
-                    stringResource(R.string.firefox_labs_restore_defaults_dialog_message),
-                    stringResource(R.string.app_name),
-                ),
+                text =
+                    String.format(
+                        stringResource(R.string.firefox_labs_restore_defaults_dialog_message),
+                        stringResource(R.string.app_name),
+                    ),
                 style = FirefoxTheme.typography.body2,
             )
         },
     )
 }
 
-private class FirefoxLabsScreenPreviewProvider : ThemedValueProvider<List<LabsItem>>(
-    sequenceOf(
-        listOf(
-            LabsItem(
-                slug = "preview-lab-one",
-                title = "Preview lab one",
-                description = "Sample Labs item one for previews.",
-                enrolled = true,
-                requiresRestart = true,
+private class FirefoxLabsScreenPreviewProvider :
+    ThemedValueProvider<List<LabsItem>>(
+        sequenceOf(
+            listOf(
+                LabsItem(
+                    slug = "preview-lab-one",
+                    title = "Preview lab one",
+                    description = "Sample Labs item one for previews.",
+                    enrolled = true,
+                    requiresRestart = true,
+                ),
+                LabsItem(
+                    slug = "preview-lab-two",
+                    title = "Preview lab two",
+                    description = "Sample Labs item two for previews.",
+                    enrolled = false,
+                    feedbackUrl = "https://connect.mozilla.org/",
+                    requiresRestart = true,
+                ),
+                LabsItem(
+                    slug = "preview-lab-three",
+                    title = "Preview lab three",
+                    description = "Sample Labs item three for previews.",
+                    enrolled = false,
+                    requiresRestart = true,
+                    available = false,
+                ),
             ),
-            LabsItem(
-                slug = "preview-lab-two",
-                title = "Preview lab two",
-                description = "Sample Labs item two for previews.",
-                enrolled = false,
-                feedbackUrl = "https://connect.mozilla.org/",
-                requiresRestart = true,
-            ),
-            LabsItem(
-                slug = "preview-lab-three",
-                title = "Preview lab three",
-                description = "Sample Labs item three for previews.",
-                enrolled = false,
-                requiresRestart = true,
-                available = false,
-            ),
-        ),
-        emptyList(),
-    ),
-)
+            emptyList(),
+        )
+    )
 
 @Composable
 @FlexibleWindowLightDarkPreview
 private fun FirefoxLabsScreenPreview(
-    @PreviewParameter(FirefoxLabsScreenPreviewProvider::class) state: ThemedValue<List<LabsItem>>,
+    @PreviewParameter(FirefoxLabsScreenPreviewProvider::class) state: ThemedValue<List<LabsItem>>
 ) {
     FirefoxTheme(state.theme) {
         FirefoxLabsScreen(
-            store = LabsStore(
-                initialState = LabsState(
-                    labsItems = state.value,
-                    dialogState = DialogState.Closed,
+            store =
+                LabsStore(
+                    initialState =
+                        LabsState(
+                            labsItems = state.value,
+                            dialogState = DialogState.Closed,
+                        )
                 ),
-            ),
             onNavigationIconClick = {},
             onShareFeedbackClick = {},
         )
@@ -485,20 +489,19 @@ private fun FirefoxLabsScreenPreview(
 
 @Preview
 @Composable
-private fun LabsItemRowUnavailablePreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun LabsItemRowUnavailablePreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         LabsItemRow(
-            item = LabsItem(
-                slug = "preview-lab-unavailable",
-                title = "Preview lab",
-                description = "Sample deactivated Labs item for previews.",
-                enrolled = false,
-                requiresRestart = true,
-                feedbackUrl = "https://connect.mozilla.org/",
-                available = false,
-            ),
+            item =
+                LabsItem(
+                    slug = "preview-lab-unavailable",
+                    title = "Preview lab",
+                    description = "Sample deactivated Labs item for previews.",
+                    enrolled = false,
+                    requiresRestart = true,
+                    feedbackUrl = "https://connect.mozilla.org/",
+                    available = false,
+                ),
             onToggle = {},
             onShareFeedbackClick = {},
         )
@@ -507,9 +510,7 @@ private fun LabsItemRowUnavailablePreview(
 
 @Preview
 @Composable
-private fun ToggleLabsItemDialogPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun ToggleLabsItemDialogPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         ToggleLabsItemDialog(
             itemEnrolled = true,
@@ -529,9 +530,7 @@ private fun EmptyStatePreview() {
 
 @Preview
 @Composable
-private fun RestoreDefaultsDialogPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun RestoreDefaultsDialogPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         RestoreDefaultsDialog(
             onConfirm = {},

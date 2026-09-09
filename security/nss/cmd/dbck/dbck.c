@@ -493,9 +493,9 @@ mapSubjectEntries(certDBArray *dbArray)
                             }
                         }
                     } /* end for */
-                }     /* endif (emailAddr[0]) */
-            }         /* end for */
-        }             /* endif (subjectEntry->emailAddrs) */
+                } /* endif (emailAddr[0]) */
+            } /* end for */
+        } /* endif (subjectEntry->emailAddrs) */
     }
     return SECSuccess;
 }

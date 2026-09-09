@@ -5,6 +5,7 @@
 package mozilla.components.browser.icons.utils
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
 import mozilla.components.browser.icons.Icon
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.browser.icons.loader.IconLoader
@@ -17,7 +18,6 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertIs
 
 @RunWith(AndroidJUnit4::class)
 class IconMemoryCacheTest {
@@ -31,10 +31,11 @@ class IconMemoryCacheTest {
         val processor = MemoryIconProcessor(cache)
 
         val icon = Icon(bitmap = mock(), source = Icon.Source.DOWNLOAD)
-        val resource = IconRequest.Resource(
-            url = "https://www.mozilla.org/favicon64.ico",
-            type = IconRequest.Resource.Type.FAVICON,
-        )
+        val resource =
+            IconRequest.Resource(
+                url = "https://www.mozilla.org/favicon64.ico",
+                type = IconRequest.Resource.Type.FAVICON,
+            )
         val request = IconRequest("https://www.mozilla.org", resources = listOf(resource))
 
         assertEquals(IconLoader.Result.NoResult, loader.load(mock(), request, resource))

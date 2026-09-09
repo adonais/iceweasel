@@ -6,7 +6,7 @@
 function assertTabIndexesMatch(tabsWithIndexes) {
   tabsWithIndexes.forEach(([tab, expectedTabIndex], tabIndex) => {
     Assert.equal(
-      tab._tPos,
+      tab.index,
       expectedTabIndex,
       `tab${tabIndex} should be at index ${expectedTabIndex}`
     );

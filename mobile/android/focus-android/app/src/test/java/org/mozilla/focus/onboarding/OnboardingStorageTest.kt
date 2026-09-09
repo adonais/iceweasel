@@ -30,7 +30,8 @@ class OnboardingStorageTest {
     @Test
     fun `GIVEN at the first onboarding step WHEN querying the current onboarding step from storage THEN get the first step`() {
         doReturn(testContext.getString(R.string.pref_key_first_screen))
-            .`when`(onBoardingStorage).getCurrentOnboardingStepFromSharedPref()
+            .`when`(onBoardingStorage)
+            .getCurrentOnboardingStepFromSharedPref()
 
         assertEquals(
             OnboardingStep.ON_BOARDING_FIRST_SCREEN,
@@ -41,7 +42,8 @@ class OnboardingStorageTest {
     @Test
     fun `GIVEN at the second onboarding step WHEN querying the current onboarding step from storage THEN get the second step`() {
         doReturn(testContext.getString(R.string.pref_key_second_screen))
-            .`when`(onBoardingStorage).getCurrentOnboardingStepFromSharedPref()
+            .`when`(onBoardingStorage)
+            .getCurrentOnboardingStepFromSharedPref()
 
         assertEquals(
             OnboardingStep.ON_BOARDING_SECOND_SCREEN,
@@ -61,19 +63,23 @@ class OnboardingStorageTest {
     fun `GIVEN saveCurrentOnBoardingStepInSharePref is called WHEN ONBOARDING_FIRST_SCREEN is saved, THEN value for pref_key_onboarding_step is pref_key_first_screen`() {
         onBoardingStorage.saveCurrentOnboardingStepInSharePref(OnboardingStep.ON_BOARDING_FIRST_SCREEN)
 
-        val prefManager =
-            PreferenceManager.getDefaultSharedPreferences(ApplicationProvider.getApplicationContext())
+        val prefManager = PreferenceManager.getDefaultSharedPreferences(ApplicationProvider.getApplicationContext())
 
-        assertEquals(testContext.getString(OnboardingStep.ON_BOARDING_FIRST_SCREEN.prefId), prefManager.getString(testContext.getString(R.string.pref_key_onboarding_step), ""))
+        assertEquals(
+            testContext.getString(OnboardingStep.ON_BOARDING_FIRST_SCREEN.prefId),
+            prefManager.getString(testContext.getString(R.string.pref_key_onboarding_step), ""),
+        )
     }
 
     @Test
     fun `GIVEN saveCurrentOnBoardingStepInSharePref is called WHEN ONBOARDING_SECOND_SCREEN is saved, THEN value for pref_key_onboarding_step is pref_key_second_screen`() {
         onBoardingStorage.saveCurrentOnboardingStepInSharePref(OnboardingStep.ON_BOARDING_SECOND_SCREEN)
 
-        val prefManager =
-            PreferenceManager.getDefaultSharedPreferences(ApplicationProvider.getApplicationContext())
+        val prefManager = PreferenceManager.getDefaultSharedPreferences(ApplicationProvider.getApplicationContext())
 
-        assertEquals(testContext.getString(OnboardingStep.ON_BOARDING_SECOND_SCREEN.prefId), prefManager.getString(testContext.getString(R.string.pref_key_onboarding_step), ""))
+        assertEquals(
+            testContext.getString(OnboardingStep.ON_BOARDING_SECOND_SCREEN.prefId),
+            prefManager.getString(testContext.getString(R.string.pref_key_onboarding_step), ""),
+        )
     }
 }

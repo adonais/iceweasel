@@ -23,6 +23,7 @@ class PromptMiddlewareTest {
     private lateinit var store: BrowserStore
 
     private val tabId = "test-tab"
+
     private fun tab(): TabSessionState? {
         return store.state.tabs.find { it.id == tabId }
     }
@@ -31,22 +32,21 @@ class PromptMiddlewareTest {
 
     @Before
     fun setUp() {
-        store = BrowserStore(
-            BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = tabId),
+        store =
+            BrowserStore(
+                BrowserState(
+                    tabs = listOf(createTab("https://www.mozilla.org", id = tabId)),
+                    selectedTabId = tabId,
                 ),
-                selectedTabId = tabId,
-            ),
-            middleware = listOf(PromptMiddleware(testScope)),
-        )
+                middleware = listOf(PromptMiddleware(testScope)),
+            )
     }
 
     @Test
     fun `Process only one popup prompt request at a time`() = testScope.runTest {
         var onDenyCalled = false
         val onDeny = { onDenyCalled = true }
-        val popupPrompt1 = PromptRequest.Popup("https://firefox.com", onAllow = { }, onDeny = onDeny)
+        val popupPrompt1 = PromptRequest.Popup("https://firefox.com", onAllow = {}, onDeny = onDeny)
         store.dispatch(ContentAction.UpdatePromptRequestAction(tabId, popupPrompt1))
         testScope.testScheduler.advanceUntilIdle()
 
@@ -54,7 +54,7 @@ class PromptMiddlewareTest {
         assertEquals(popupPrompt1, tab()!!.content.promptRequests[0])
         assertFalse(onDenyCalled)
 
-        val popupPrompt2 = PromptRequest.Popup("https://firefox.com", onAllow = { }, onDeny = onDeny)
+        val popupPrompt2 = PromptRequest.Popup("https://firefox.com", onAllow = {}, onDeny = onDeny)
         store.dispatch(ContentAction.UpdatePromptRequestAction(tabId, popupPrompt2))
         testScope.testScheduler.advanceUntilIdle()
 
@@ -67,7 +67,7 @@ class PromptMiddlewareTest {
     fun `Process popup followed by other prompt request`() = testScope.runTest {
         var onDenyCalled = false
         val onDeny = { onDenyCalled = true }
-        val popupPrompt = PromptRequest.Popup("https://firefox.com", onAllow = { }, onDeny = onDeny)
+        val popupPrompt = PromptRequest.Popup("https://firefox.com", onAllow = {}, onDeny = onDeny)
         store.dispatch(ContentAction.UpdatePromptRequestAction(tabId, popupPrompt))
         testScope.testScheduler.advanceUntilIdle()
 
@@ -75,7 +75,7 @@ class PromptMiddlewareTest {
         assertEquals(popupPrompt, tab()!!.content.promptRequests[0])
         assertFalse(onDenyCalled)
 
-        val alert = PromptRequest.Alert("title", "message", false, { }, { })
+        val alert = PromptRequest.Alert("title", "message", false, {}, {})
         store.dispatch(ContentAction.UpdatePromptRequestAction(tabId, alert))
         testScope.testScheduler.advanceUntilIdle()
 
@@ -86,7 +86,7 @@ class PromptMiddlewareTest {
 
     @Test
     fun `Process popup after other prompt request`() = testScope.runTest {
-        val alert = PromptRequest.Alert("title", "message", false, { }, { })
+        val alert = PromptRequest.Alert("title", "message", false, {}, {})
         store.dispatch(ContentAction.UpdatePromptRequestAction(tabId, alert))
         testScope.testScheduler.advanceUntilIdle()
 
@@ -95,7 +95,7 @@ class PromptMiddlewareTest {
 
         var onDenyCalled = false
         val onDeny = { onDenyCalled = true }
-        val popupPrompt = PromptRequest.Popup("https://firefox.com", onAllow = { }, onDeny = onDeny)
+        val popupPrompt = PromptRequest.Popup("https://firefox.com", onAllow = {}, onDeny = onDeny)
         store.dispatch(ContentAction.UpdatePromptRequestAction(tabId, popupPrompt))
         testScope.testScheduler.advanceUntilIdle()
 
@@ -107,14 +107,14 @@ class PromptMiddlewareTest {
 
     @Test
     fun `Process other prompt requests`() = testScope.runTest {
-        val alert = PromptRequest.Alert("title", "message", false, { }, { })
+        val alert = PromptRequest.Alert("title", "message", false, {}, {})
         store.dispatch(ContentAction.UpdatePromptRequestAction(tabId, alert))
         testScope.testScheduler.advanceUntilIdle()
 
         assertEquals(1, tab()!!.content.promptRequests.size)
         assertEquals(alert, tab()!!.content.promptRequests[0])
 
-        val beforeUnloadPrompt = PromptRequest.BeforeUnload("title", onLeave = { }, onStay = { }, onDismiss = { })
+        val beforeUnloadPrompt = PromptRequest.BeforeUnload("title", onLeave = {}, onStay = {}, onDismiss = {})
         store.dispatch(ContentAction.UpdatePromptRequestAction(tabId, beforeUnloadPrompt))
         testScope.testScheduler.advanceUntilIdle()
 

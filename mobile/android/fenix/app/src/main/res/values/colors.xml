@@ -35,12 +35,15 @@
     <color name="fx_mobile_on_information_container">@color/novaVioletDesaturated90</color>
     <color name="fx_mobile_success">@color/novaGreen50</color>
     <color name="fx_mobile_on_success">@color/novaWhite</color>
+    <color name="fx_mobile_success_container">@color/novaGreen10</color>
+    <color name="fx_mobile_on_success_container">@color/novaVioletDesaturated90</color>
     <color name="fx_mobile_warning">@color/novaYellow50</color>
     <color name="fx_mobile_on_warning">@color/novaWhite</color>
     <color name="fx_mobile_warning_container">@color/novaYellow10</color>
     <color name="fx_mobile_on_warning_container">@color/novaVioletDesaturated90</color>
     <color name="fx_mobile_outline">@color/novaGray45</color>
     <color name="fx_mobile_outline_variant">@color/novaGray15</color>
+    <color name="fx_mobile_sheet_outline">@color/novaGray5</color>
     <color name="fx_mobile_surface_bright">@color/novaWhite</color>
     <color name="fx_mobile_surface_dim">@color/novaGray15</color>
     <color name="fx_mobile_surface_container">@color/novaGray5</color>
@@ -48,6 +51,7 @@
     <color name="fx_mobile_surface_container_highest">@color/novaGray15</color>
     <color name="fx_mobile_surface_container_low">@color/novaGray0</color>
     <color name="fx_mobile_surface_container_lowest">@color/novaWhite</color>
+    <color name="fx_mobile_surface_container_selected">@color/novaGray25</color>
     <color name="fx_mobile_autofill_text">@color/novaVioletDesaturated30</color>
     <color name="fx_mobile_selected_text">@color/novaGray35</color>
     <color name="fx_mobile_icon_private">@color/novaViolet50</color>
@@ -122,12 +126,15 @@
     <color name="fx_mobile_private_on_information_container">@color/novaVioletDesaturated0</color>
     <color name="fx_mobile_private_success">@color/novaGreen30</color>
     <color name="fx_mobile_private_on_success">@color/novaGray80</color>
+    <color name="fx_mobile_private_success_container">@color/novaGreen70</color>
+    <color name="fx_mobile_private_on_success_container">@color/novaVioletDesaturated0</color>
     <color name="fx_mobile_private_warning">@color/novaYellow30</color>
     <color name="fx_mobile_private_on_warning">@color/novaGray80</color>
     <color name="fx_mobile_private_warning_container">@color/novaYellow70</color>
     <color name="fx_mobile_private_on_warning_container">@color/novaVioletDesaturated0</color>
     <color name="fx_mobile_private_outline">@color/novaGray45</color>
     <color name="fx_mobile_private_outline_variant">#FF332752</color>
+    <color name="fx_mobile_private_sheet_outline">@color/novaVioletDesaturated90</color>
     <color name="fx_mobile_private_surface_bright">@color/novaVioletDesaturated80</color>
     <color name="fx_mobile_private_surface_dim">#FF0D0321</color>
     <color name="fx_mobile_private_surface_container">@color/novaVioletDesaturated90</color>
@@ -135,6 +142,7 @@
     <color name="fx_mobile_private_surface_container_highest">@color/novaVioletDesaturated80</color>
     <color name="fx_mobile_private_surface_container_low">#FF11042B</color>
     <color name="fx_mobile_private_surface_container_lowest">#FF0D0321</color>
+    <color name="fx_mobile_private_surface_container_selected">@color/novaVioletDesaturated60</color>
     <color name="fx_mobile_private_autofill_text">@color/novaVioletDesaturated30A55</color>
     <color name="fx_mobile_private_selected_text">@color/novaGray45A81</color>
     <color name="fx_mobile_private_icon_private">@color/novaViolet50</color>

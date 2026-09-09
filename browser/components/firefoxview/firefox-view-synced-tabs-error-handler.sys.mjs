@@ -206,9 +206,9 @@ export const SyncedTabsErrorHandler = {
       buttonLabel: "firefoxview-tabpickup-network-offline-primarybutton",
     },
     [ErrorType.SYNC_DISCONNECTED]: {
-      header: "firefoxview-tabpickup-sync-error-header-2",
-      description: "firefoxview-tabpickup-generic-sync-error-description-2",
-      buttonLabel: "firefoxview-tabpickup-sync-error-primarybutton",
+      header: "firefoxview-syncedtabs-synctabs-header-2",
+      description: "firefoxview-syncedtabs-synctabs-description-2",
+      buttonLabel: "firefoxview-tabpickup-synctabs-primarybutton-2",
     },
     [ErrorType.PASSWORD_LOCKED]: {
       header: "firefoxview-tabpickup-password-locked-header-2",

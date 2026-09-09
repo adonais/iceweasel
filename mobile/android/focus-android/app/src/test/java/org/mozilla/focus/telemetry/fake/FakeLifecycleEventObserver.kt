@@ -8,12 +8,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 
-/**
- * Allows tests to insert their own version of a LifecycleEventObserver
- * and make assertions against it
- */
+/** Allows tests to insert their own version of a LifecycleEventObserver and make assertions against it */
 class FakeLifecycleEventObserver : LifecycleEventObserver {
     var lastEvent: Lifecycle.Event? = null
+
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         lastEvent = event
     }

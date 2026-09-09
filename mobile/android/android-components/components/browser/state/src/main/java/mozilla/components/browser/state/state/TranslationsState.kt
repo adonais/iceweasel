@@ -14,17 +14,15 @@ import mozilla.components.concept.engine.translate.TranslationPageSettings
  *
  * @property isExpectedTranslate Expect the user to be interested in translating the page.
  * @property isOfferTranslate Offer translating the page to the user.
- * @property translationEngineState The state and expectations of the translation engine for the
- * page.
+ * @property translationEngineState The state and expectations of the translation engine for the page.
  * @property isTranslated The page is currently translated.
  * @property isTranslateProcessing The page is currently attempting a translation.
  * @property isRestoreProcessing The page is currently attempting a restoration.
- * @property translationDownloadSize The download size for the given to/from translation pair. The
- * translation engine requires the pair's ML models to be present on the device to complete a
- * translation.
+ * @property translationDownloadSize The download size for the given to/from translation pair. The translation engine
+ *   requires the pair's ML models to be present on the device to complete a translation.
  * @property pageSettings The translation engine settings that relate to the current page.
- * @property translationError Type of error that occurred when acquiring resources, translating, or
- * restoring a translation.
+ * @property translationError Type of error that occurred when acquiring resources, translating, or restoring a
+ *   translation.
  * @property settingsError Type of error that occurred when acquiring resources or setting preferences.
  */
 data class TranslationsState(

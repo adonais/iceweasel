@@ -5,6 +5,7 @@
 package mozilla.components.compose.browser.toolbar.store
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.random.Random
 import mozilla.components.compose.browser.toolbar.BrowserToolbarCFR
 import mozilla.components.compose.browser.toolbar.R
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
@@ -26,7 +27,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.random.Random
 
 @RunWith(AndroidJUnit4::class)
 class BrowserToolbarStoreTest {
@@ -60,14 +60,14 @@ class BrowserToolbarStoreTest {
 
     @Test
     fun `WHEN exit edit mode action is dispatched THEN mode is updated and query is cleared`() {
-        val store = BrowserToolbarStore(
-            initialState = BrowserToolbarState(
-                mode = Mode.EDIT,
-                editState = EditState(
-                    query = BrowserToolbarQuery("Mozilla"),
-                ),
-            ),
-        )
+        val store =
+            BrowserToolbarStore(
+                initialState =
+                    BrowserToolbarState(
+                        mode = Mode.EDIT,
+                        editState = EditState(query = BrowserToolbarQuery("Mozilla")),
+                    )
+            )
 
         assertEquals(Mode.EDIT, store.state.mode)
 
@@ -79,39 +79,42 @@ class BrowserToolbarStoreTest {
 
     @Test
     fun `WHEN non-prefilled query is updated during edit THEN queryWasPrefilled is not changed`() {
-        val store = BrowserToolbarStore(
-            initialState = BrowserToolbarState(mode = Mode.EDIT),
-        )
+        val store = BrowserToolbarStore(initialState = BrowserToolbarState(mode = Mode.EDIT))
 
         assertFalse(store.state.editState.queryWasPrefilled)
 
-        store.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(query = BrowserToolbarQuery("M"), isQueryPrefilled = false))
+        store.dispatch(
+            BrowserEditToolbarAction.SearchQueryUpdated(query = BrowserToolbarQuery("M"), isQueryPrefilled = false)
+        )
 
         assertFalse(store.state.editState.queryWasPrefilled)
     }
 
     @Test
     fun `WHEN prefilled non-empty query is set THEN queryWasPrefilled becomes true`() {
-        val store = BrowserToolbarStore(
-            initialState = BrowserToolbarState(mode = Mode.EDIT),
-        )
+        val store = BrowserToolbarStore(initialState = BrowserToolbarState(mode = Mode.EDIT))
 
         assertFalse(store.state.editState.queryWasPrefilled)
 
-        store.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(query = BrowserToolbarQuery("https://mozilla.org"), isQueryPrefilled = true))
+        store.dispatch(
+            BrowserEditToolbarAction.SearchQueryUpdated(
+                query = BrowserToolbarQuery("https://mozilla.org"),
+                isQueryPrefilled = true,
+            )
+        )
 
         assertTrue(store.state.editState.queryWasPrefilled)
     }
 
     @Test
     fun `WHEN prefilled empty query is set THEN queryWasPrefilled is not changed`() {
-        val store = BrowserToolbarStore(
-            initialState = BrowserToolbarState(mode = Mode.EDIT),
-        )
+        val store = BrowserToolbarStore(initialState = BrowserToolbarState(mode = Mode.EDIT))
 
         assertFalse(store.state.editState.queryWasPrefilled)
 
-        store.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(query = BrowserToolbarQuery(""), isQueryPrefilled = true))
+        store.dispatch(
+            BrowserEditToolbarAction.SearchQueryUpdated(query = BrowserToolbarQuery(""), isQueryPrefilled = true)
+        )
 
         assertFalse(store.state.editState.queryWasPrefilled)
     }
@@ -121,23 +124,33 @@ class BrowserToolbarStoreTest {
         val store = BrowserToolbarStore()
 
         store.dispatch(BrowserToolbarAction.EnterEditMode(false))
-        store.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(query = BrowserToolbarQuery("https://mozilla.org"), isQueryPrefilled = true))
-        store.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(query = BrowserToolbarQuery(""), isQueryPrefilled = false))
+        store.dispatch(
+            BrowserEditToolbarAction.SearchQueryUpdated(
+                query = BrowserToolbarQuery("https://mozilla.org"),
+                isQueryPrefilled = true,
+            )
+        )
+        store.dispatch(
+            BrowserEditToolbarAction.SearchQueryUpdated(query = BrowserToolbarQuery(""), isQueryPrefilled = false)
+        )
 
         assertTrue(store.state.editState.queryWasPrefilled)
     }
 
     @Test
     fun `GIVEN queryWasPrefilled is true WHEN query is cleared THEN queryWasPrefilled remains true`() {
-        val store = BrowserToolbarStore(
-            initialState = BrowserToolbarState(
-                mode = Mode.EDIT,
-                editState = EditState(
-                    query = BrowserToolbarQuery("Mozilla"),
-                    queryWasPrefilled = true,
-                ),
-            ),
-        )
+        val store =
+            BrowserToolbarStore(
+                initialState =
+                    BrowserToolbarState(
+                        mode = Mode.EDIT,
+                        editState =
+                            EditState(
+                                query = BrowserToolbarQuery("Mozilla"),
+                                queryWasPrefilled = true,
+                            ),
+                    )
+            )
 
         store.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(query = BrowserToolbarQuery("")))
 
@@ -146,15 +159,18 @@ class BrowserToolbarStoreTest {
 
     @Test
     fun `WHEN exiting edit mode THEN queryWasPrefilled is reset to false`() {
-        val store = BrowserToolbarStore(
-            initialState = BrowserToolbarState(
-                mode = Mode.EDIT,
-                editState = EditState(
-                    query = BrowserToolbarQuery("Mozilla"),
-                    queryWasPrefilled = true,
-                ),
-            ),
-        )
+        val store =
+            BrowserToolbarStore(
+                initialState =
+                    BrowserToolbarState(
+                        mode = Mode.EDIT,
+                        editState =
+                            EditState(
+                                query = BrowserToolbarQuery("Mozilla"),
+                                queryWasPrefilled = true,
+                            ),
+                    )
+            )
 
         store.dispatch(BrowserToolbarAction.ExitEditMode)
 
@@ -163,21 +179,25 @@ class BrowserToolbarStoreTest {
 
     @Test
     fun `WHEN exiting edit mode THEN existing autocomplete suggestion is removed`() {
-        val store = BrowserToolbarStore(
-            initialState = BrowserToolbarState(
-                mode = Mode.EDIT,
-                editState = EditState(
-                    query = BrowserToolbarQuery("moz"),
-                    suggestion = AutocompleteResult(
-                        input = "moz",
-                        text = "mozilla.com",
-                        url = "https://mozilla.com",
-                        source = "test",
-                        totalItems = 1,
-                    ),
-                ),
-            ),
-        )
+        val store =
+            BrowserToolbarStore(
+                initialState =
+                    BrowserToolbarState(
+                        mode = Mode.EDIT,
+                        editState =
+                            EditState(
+                                query = BrowserToolbarQuery("moz"),
+                                suggestion =
+                                    AutocompleteResult(
+                                        input = "moz",
+                                        text = "mozilla.com",
+                                        url = "https://mozilla.com",
+                                        source = "test",
+                                        totalItems = 1,
+                                    ),
+                            ),
+                    )
+            )
 
         store.dispatch(BrowserToolbarAction.ExitEditMode)
 
@@ -290,19 +310,21 @@ class BrowserToolbarStoreTest {
     @Test
     fun `WHEN updating the page origin details THEN replace the old details with the new ones`() {
         val store = BrowserToolbarStore()
-        val defaultPageDetails = PageOrigin(
-            hint = R.string.mozac_browser_toolbar_search_hint,
-            title = null,
-            url = null,
-            onClick = object : BrowserToolbarEvent {},
-        )
-        val newPageDetails = PageOrigin(
-            hint = Random.nextInt(),
-            title = "test",
-            url = "https://firefox.com",
-            onClick = object : BrowserToolbarEvent {},
-            onLongClick = object : BrowserToolbarEvent {},
-        )
+        val defaultPageDetails =
+            PageOrigin(
+                hint = R.string.mozac_browser_toolbar_search_hint,
+                title = null,
+                url = null,
+                onClick = object : BrowserToolbarEvent {},
+            )
+        val newPageDetails =
+            PageOrigin(
+                hint = Random.nextInt(),
+                title = "test",
+                url = "https://firefox.com",
+                onClick = object : BrowserToolbarEvent {},
+                onLongClick = object : BrowserToolbarEvent {},
+            )
         assertPageOriginEquals(defaultPageDetails, store.state.displayState.pageOrigin)
 
         store.dispatch(PageOriginUpdated(newPageDetails))
@@ -340,12 +362,13 @@ class BrowserToolbarStoreTest {
         val store = BrowserToolbarStore()
         assertNull(store.state.displayState.cfr)
 
-        val cfr = BrowserToolbarCFR(
-            tag = "test-cfr",
-            enabled = true,
-            title = 1,
-            description = 2,
-        )
+        val cfr =
+            BrowserToolbarCFR(
+                tag = "test-cfr",
+                enabled = true,
+                title = 1,
+                description = 2,
+            )
 
         store.dispatch(BrowserDisplayToolbarAction.ToolbarCFRShown(cfr))
 
@@ -354,17 +377,14 @@ class BrowserToolbarStoreTest {
 
     @Test
     fun `WHEN a toolbar CFR is removed THEN the display state CFR is set to null`() {
-        val cfr = BrowserToolbarCFR(
-            tag = "test-cfr",
-            enabled = true,
-            title = 1,
-            description = 2,
-        )
-        val store = BrowserToolbarStore(
-            initialState = BrowserToolbarState(
-                displayState = DisplayState(cfr = cfr),
-            ),
-        )
+        val cfr =
+            BrowserToolbarCFR(
+                tag = "test-cfr",
+                enabled = true,
+                title = 1,
+                description = 2,
+            )
+        val store = BrowserToolbarStore(initialState = BrowserToolbarState(displayState = DisplayState(cfr = cfr)))
         assertEquals(cfr, store.state.displayState.cfr)
 
         store.dispatch(BrowserDisplayToolbarAction.ToolbarCFRDismissed("test-cfr"))
@@ -372,11 +392,12 @@ class BrowserToolbarStoreTest {
         assertNull(store.state.displayState.cfr)
     }
 
-    private fun fakeActionButton() = ActionButtonRes(
-        drawableResId = Random.nextInt(),
-        contentDescription = Random.nextInt(),
-        onClick = object : BrowserToolbarEvent {},
-    )
+    private fun fakeActionButton() =
+        ActionButtonRes(
+            drawableResId = Random.nextInt(),
+            contentDescription = Random.nextInt(),
+            onClick = object : BrowserToolbarEvent {},
+        )
 
     private fun assertPageOriginEquals(expected: PageOrigin, actual: PageOrigin) {
         assertEquals(expected.hint, actual.hint)

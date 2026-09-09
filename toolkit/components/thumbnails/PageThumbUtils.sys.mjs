@@ -225,17 +225,6 @@ export var PageThumbUtils = {
         aDestCanvas.width = contentWidth;
         aDestCanvas.height = contentHeight;
       }
-    } else if (contentHeight && aArgs.preserveAspectRatio) {
-      // Calculate the thumbnail height based on thumbnail width
-      // and content aspect ratio
-      if (aArgs.targetWidth) {
-        thumbnailWidth = aArgs.targetWidth;
-      }
-      thumbnailHeight = thumbnailWidth / (contentWidth / contentHeight);
-      if (aDestCanvas) {
-        aDestCanvas.width = thumbnailWidth;
-        aDestCanvas.height = thumbnailHeight;
-      }
     }
 
     let intermediateWidth = thumbnailWidth * 2;
@@ -267,17 +256,13 @@ export var PageThumbUtils = {
     // content dims.
     // Also by default, canvas does not draw the scrollbars, so no need to
     // remove the scrollbar sizes.
-    let targetScale;
-    if (aArgs.preserveAspectRatio) {
-      // always scale based on width, as we resize height to accommodate
-      targetScale = intermediateWidth / contentWidth;
-    } else {
-      targetScale = Math.max(
+    let scale = Math.min(
+      Math.max(
         intermediateWidth / contentWidth,
         intermediateHeight / contentHeight
-      );
-    }
-    let scale = Math.min(targetScale, 1);
+      ),
+      1
+    );
 
     let snapshotCtx = snapshotCanvas.getContext("2d");
     snapshotCtx.save();

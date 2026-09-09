@@ -142,7 +142,7 @@ notes = "Patched version of upstream"
 
 [policy.jxl_simd]
 audit-as-crates-io = true
-notes = "Upstream 0.5.1 with a local Mac/x86_64 workaround patched in (see bug 2043090) and path-sourced via a [patch.crates-io] entry in the root Cargo.toml."
+notes = "Upstream 0.6.0 with a local Mac/x86_64 workaround patched in (see bug 2043090) and path-sourced via a [patch.crates-io] entry in the root Cargo.toml."
 
 [policy."khronos_api:3.1.0@git:71c792dbfe0ec5caeb242fc90937e19098386342"]
 audit-as-crates-io = true
@@ -155,6 +155,10 @@ notes = "This crate has two testing-only dependencies which are specified as reg
 [policy.libcrux-traits]
 audit-as-crates-io = true
 notes = "Patched version of upstream to avoid unnecessary unused dependencies and conflicts."
+
+[policy.libdbus-sys]
+audit-as-crates-io = true
+notes = "Patched version of upstream to avoid vendoring unnecessary massive libdbus source."
 
 [policy.libudev-sys]
 audit-as-crates-io = false
@@ -466,10 +470,6 @@ criteria = "safe-to-deploy"
 version = "2.3.2"
 criteria = "safe-to-deploy"
 
-[[exemptions.dbus]]
-version = "0.6.5"
-criteria = "safe-to-deploy"
-
 [[exemptions.devd-rs]]
 version = "0.3.4"
 criteria = "safe-to-deploy"
@@ -564,10 +564,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.khronos_api]]
 version = "3.1.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.libdbus-sys]]
-version = "0.2.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.libloading]]

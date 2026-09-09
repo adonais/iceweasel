@@ -33,8 +33,7 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class DefaultPrivateBrowsingControllerTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private val appStore: AppStore = mockk(relaxed = true)
     private val navController: NavController = mockk(relaxed = true)
@@ -48,23 +47,26 @@ class DefaultPrivateBrowsingControllerTest {
     @Before
     fun setup() {
         store = BrowserStore()
-        controller = DefaultPrivateBrowsingController(
-            navController = navController,
-            browsingModeManager = browsingModeManager,
-            fenixBrowserUseCases = fenixBrowserUseCases,
-            settings = settings,
-        )
+        controller =
+            DefaultPrivateBrowsingController(
+                navController = navController,
+                browsingModeManager = browsingModeManager,
+                fenixBrowserUseCases = fenixBrowserUseCases,
+                settings = settings,
+            )
 
         every { appStore.state } returns AppState()
 
-        every { navController.currentDestination } returns mockk {
-            every { id } returns R.id.homeFragment
-        }
+        every { navController.currentDestination } returns
+            mockk {
+                every { id } returns R.id.homeFragment
+            }
     }
 
     @Test
     fun `WHEN private browsing learn more link is clicked THEN open support page in browser`() {
-        val learnMoreURL = "https://support.mozilla.org/en-US/kb/common-myths-about-private-browsing?as=u&utm_source=inproduct"
+        val learnMoreURL =
+            "https://support.mozilla.org/en-US/kb/common-myths-about-private-browsing?as=u&utm_source=inproduct"
 
         controller.handleLearnMoreClicked()
 
@@ -82,7 +84,8 @@ class DefaultPrivateBrowsingControllerTest {
     fun `GIVEN homepage as a new tab is enabled  WHEN private browsing learn more link is clicked THEN open support page in browser`() {
         every { settings.enableHomepageAsNewTab } returns true
 
-        val learnMoreURL = "https://support.mozilla.org/en-US/kb/common-myths-about-private-browsing?as=u&utm_source=inproduct"
+        val learnMoreURL =
+            "https://support.mozilla.org/en-US/kb/common-myths-about-private-browsing?as=u&utm_source=inproduct"
 
         controller.handleLearnMoreClicked()
 
@@ -98,9 +101,10 @@ class DefaultPrivateBrowsingControllerTest {
 
     @Test
     fun `WHEN private mode button is selected from home THEN handle mode change`() {
-        every { navController.currentDestination } returns mockk {
-            every { id } returns R.id.homeFragment
-        }
+        every { navController.currentDestination } returns
+            mockk {
+                every { id } returns R.id.homeFragment
+            }
 
         every { settings.incrementNumTimesPrivateModeOpened() } just Runs
 
@@ -121,9 +125,10 @@ class DefaultPrivateBrowsingControllerTest {
 
     @Test
     fun `GIVEN normal browsing mode and homepage as a new tab is enabled WHEN private mode button is selected from home THEN open a new homepage tab in private browsing mode`() {
-        every { navController.currentDestination } returns mockk {
-            every { id } returns R.id.homeFragment
-        }
+        every { navController.currentDestination } returns
+            mockk {
+                every { id } returns R.id.homeFragment
+            }
         every { settings.enableHomepageAsNewTab } returns true
         every { settings.incrementNumTimesPrivateModeOpened() } just Runs
 
@@ -144,9 +149,10 @@ class DefaultPrivateBrowsingControllerTest {
 
     @Test
     fun `GIVEN private browsing mode and homepage as a new tab is enabled WHEN private mode button is selected from home THEN open a new homepage tab in normal browsing mode`() {
-        every { navController.currentDestination } returns mockk {
-            every { id } returns R.id.homeFragment
-        }
+        every { navController.currentDestination } returns
+            mockk {
+                every { id } returns R.id.homeFragment
+            }
         every { settings.enableHomepageAsNewTab } returns true
         every { settings.incrementNumTimesPrivateModeOpened() } just Runs
 

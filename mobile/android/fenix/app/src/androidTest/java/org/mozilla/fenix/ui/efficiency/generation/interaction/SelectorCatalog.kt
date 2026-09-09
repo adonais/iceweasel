@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.ui.efficiency.generation.interaction
 
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
@@ -11,11 +15,12 @@ data class SelectorRef(
 
 object SelectorCatalog {
 
-    private val registry: Map<String, List<SelectorRef>> = mapOf(
-        "bookmarks" to buildRefs("bookmarks", BookmarksSelectors.all),
-        // "home" to buildRefs("home", HomeSelectors.all),
-        // "browserPage" to buildRefs("browserPage", BrowserSelectors.all),
-    )
+    private val registry: Map<String, List<SelectorRef>> =
+        mapOf(
+            "bookmarks" to buildRefs("bookmarks", BookmarksSelectors.all)
+            // "home" to buildRefs("home", HomeSelectors.all),
+            // "browserPage" to buildRefs("browserPage", BrowserSelectors.all),
+        )
 
     fun discoverSelectorsForPage(pagePropertyName: String): List<SelectorRef> {
         return registry[normalize(pagePropertyName)] ?: emptyList()
@@ -38,14 +43,8 @@ object SelectorCatalog {
         return name.removeSuffix("Page").lowercase()
     }
 
-    /**
-     * TEMP: name inference
-     * Replace this later with a proper field-name capture (see below).
-     */
+    /** TEMP: name inference Replace this later with a proper field-name capture (see below). */
     private fun inferName(selector: Selector): String {
-        return selector.description
-            .uppercase()
-            .replace(" ", "_")
-            .replace("[^A-Z0-9_]".toRegex(), "")
+        return selector.description.uppercase().replace(" ", "_").replace("[^A-Z0-9_]".toRegex(), "")
     }
 }

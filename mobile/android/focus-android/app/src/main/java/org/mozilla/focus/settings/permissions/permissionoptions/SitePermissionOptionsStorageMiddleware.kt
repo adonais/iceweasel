@@ -7,14 +7,11 @@ package org.mozilla.focus.settings.permissions.permissionoptions
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 
-/**
- * Middleware that handles persistence for site permission options.
- */
+/** Middleware that handles persistence for site permission options. */
 class SitePermissionOptionsStorageMiddleware(
     val sitePermission: SitePermission,
     val storage: SitePermissionOptionsStorage,
-) :
-    Middleware<SitePermissionOptionsScreenState, SitePermissionOptionsScreenAction> {
+) : Middleware<SitePermissionOptionsScreenState, SitePermissionOptionsScreenAction> {
 
     override fun invoke(
         store: Store<SitePermissionOptionsScreenState, SitePermissionOptionsScreenAction>,
@@ -36,7 +33,7 @@ class SitePermissionOptionsStorageMiddleware(
                         storage.permissionSelectedOption(sitePermission),
                         storage.getSitePermissionLabel(sitePermission),
                         storage.isAndroidPermissionGranted(sitePermission),
-                    ),
+                    )
                 )
             }
             else -> {

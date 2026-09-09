@@ -213,7 +213,8 @@ class SitePermissionOptionsStorageTest {
     @Test
     fun `GIVEN get permission selected option is called WHEN pref_key_allowed is saved in SharedPreferences THEN site permission Allowed is return`() {
         doReturn(testContext.getString(R.string.pref_key_allowed))
-            .`when`(storage).permissionSelectedOptionByKey(R.string.pref_key_phone_feature_camera)
+            .`when`(storage)
+            .permissionSelectedOptionByKey(R.string.pref_key_phone_feature_camera)
 
         assertEquals(
             SitePermissionOption.Allowed(),
@@ -224,7 +225,8 @@ class SitePermissionOptionsStorageTest {
     @Test
     fun `GIVEN get permission selected option is called WHEN pref_key_allow_autoplay_audio_video is saved in SharedPreferences THEN site permission Allow Audio and Video is return`() {
         doReturn(testContext.getString(R.string.pref_key_allow_autoplay_audio_video))
-            .`when`(storage).permissionSelectedOptionByKey(R.string.pref_key_phone_feature_camera)
+            .`when`(storage)
+            .permissionSelectedOptionByKey(R.string.pref_key_phone_feature_camera)
 
         assertEquals(
             AutoplayOption.AllowAudioVideo(),
@@ -235,7 +237,8 @@ class SitePermissionOptionsStorageTest {
     @Test
     fun `GIVEN get permission selected option is called WHEN pref_key_block_autoplay_audio_video is saved in SharedPreferences THEN site permission Block Audio and Video is return`() {
         doReturn(testContext.getString(R.string.pref_key_block_autoplay_audio_video))
-            .`when`(storage).permissionSelectedOptionByKey(R.string.pref_key_phone_feature_camera)
+            .`when`(storage)
+            .permissionSelectedOptionByKey(R.string.pref_key_phone_feature_camera)
 
         assertEquals(
             AutoplayOption.BlockAudioVideo(),
@@ -246,7 +249,8 @@ class SitePermissionOptionsStorageTest {
     @Test
     fun `GIVEN get permission selected option is called WHEN pref_key_blocked is saved in SharedPreferences THEN site permission Blocked is return`() {
         doReturn(testContext.getString(R.string.pref_key_blocked))
-            .`when`(storage).permissionSelectedOptionByKey(R.string.pref_key_phone_feature_camera)
+            .`when`(storage)
+            .permissionSelectedOptionByKey(R.string.pref_key_phone_feature_camera)
 
         assertEquals(
             SitePermissionOption.Blocked(),
@@ -257,7 +261,8 @@ class SitePermissionOptionsStorageTest {
     @Test
     fun `GIVEN get permission selected option is called WHEN pref_key_ask_to_allow is saved in SharedPreferences THEN site permission Ask to allow is return`() {
         doReturn(testContext.getString(R.string.pref_key_ask_to_allow))
-            .`when`(storage).permissionSelectedOptionByKey(R.string.pref_key_phone_feature_camera)
+            .`when`(storage)
+            .permissionSelectedOptionByKey(R.string.pref_key_phone_feature_camera)
 
         assertEquals(
             SitePermissionOption.AskToAllow(),
@@ -268,7 +273,8 @@ class SitePermissionOptionsStorageTest {
     @Test
     fun `GIVEN get permission selected option is called WHEN pref_key_block_autoplay_audio_only is saved in SharedPreferences THEN site permission Block Audio only is return`() {
         doReturn(testContext.getString(R.string.pref_key_block_autoplay_audio_only))
-            .`when`(storage).permissionSelectedOptionByKey(R.string.pref_key_phone_feature_camera)
+            .`when`(storage)
+            .permissionSelectedOptionByKey(R.string.pref_key_phone_feature_camera)
 
         assertEquals(
             AutoplayOption.BlockAudioOnly(),

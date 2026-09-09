@@ -17,7 +17,7 @@ struct InnerSequenceItem {
 };
 
 struct OuterSequence {
-  InnerSequenceItem *item;
+  InnerSequenceItem* item;
 };
 
 static const SEC_ASN1Template InnerSequenceTemplate[] = {
@@ -30,8 +30,8 @@ static const SEC_ASN1Template OuterSequenceTemplate[] = {
      sizeof(OuterSequence)}};
 
 TEST_F(SECASN1DTest, IndefiniteSequenceInIndefiniteGroup) {
-  PLArenaPool *arena = PORT_NewArena(4096);
-  OuterSequence *outer = nullptr;
+  PLArenaPool* arena = PORT_NewArena(4096);
+  OuterSequence* outer = nullptr;
   SECStatus rv;
 
   // echo "SEQUENCE indefinite {

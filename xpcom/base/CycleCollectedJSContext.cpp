@@ -73,6 +73,9 @@ CycleCollectedJSContext::CycleCollectedJSContext()
 
 CycleCollectedJSContext::~CycleCollectedJSContext() {
   MOZ_COUNT_DTOR(CycleCollectedJSContext);
+  MOZ_ASSERT(mWebTaskSchedulingStateCount == 0,
+             "A global leaked a WebTaskSchedulingState, which would have "
+             "permanently disabled the getHostDefinedData fast path");
   // If the allocation failed, here we are.
   if (!mJSContext) {
     return;
@@ -243,7 +246,13 @@ bool CycleCollectedJSContext::getHostDefinedData(
 
   // A performance note: On promise heavy benchmarks the allocation of an
   // object can be heavy, which is why this is conditional on the existence
-  // of schedulingState.
+  // of schedulingState. Checking the count first avoids walking the script
+  // settings stack (and the principal check in GetEntryGlobal) when no global
+  // on this thread has a scheduling state at all.
+  if (!MayHaveWebTaskSchedulingState()) {
+    return true;
+  }
+
   mozilla::dom::WebTaskSchedulingState* schedulingState =
       mozilla::dom::GetWebTaskSchedulingState();
   if (!schedulingState) {

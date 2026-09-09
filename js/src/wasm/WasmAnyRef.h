@@ -269,10 +269,8 @@ class AnyRef {
   // Box a JS Value that needs boxing.
   static JSObject* boxValue(JSContext* cx, JS::HandleValue value);
 
-  bool operator==(const AnyRef& rhs) const {
-    return this->value_ == rhs.value_;
-  }
-  bool operator!=(const AnyRef& rhs) const { return !(*this == rhs); }
+  bool operator==(const AnyRef& rhs) const = default;
+  bool operator!=(const AnyRef& rhs) const = default;
 
   // Check if this AnyRef is the invalid value.
   bool isInvalid() const { return *this == AnyRef::invalid(); }

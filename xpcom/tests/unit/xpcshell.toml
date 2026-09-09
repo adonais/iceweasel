@@ -8,6 +8,8 @@ generated-files = "xpcomtest.xpt"
 
 ["test_KeyedUUIDMapper.js"]
 
+["test_binarystream_systemprincipal.js"]
+
 ["test_bug121341.js"]
 
 ["test_bug325418.js"]
@@ -42,6 +44,8 @@ fail-if = [
 ]
 
 ["test_bug1434856.js"]
+
+["test_create_single.js"]
 
 ["test_debugger_malloc_size_of.js"]
 

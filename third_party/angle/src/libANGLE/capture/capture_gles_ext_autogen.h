@@ -254,8 +254,6 @@ angle::CallCapture CaptureLogicOpANGLE(const State &glState,
                                        bool isCallValid,
                                        LogicalOperation opcodePacked);
 
-// GL_ANGLE_lossy_etc_decode
-
 // GL_ANGLE_memory_object_flags
 angle::CallCapture CaptureTexStorageMemFlags2DANGLE(const State &glState,
                                                     bool isCallValid,
@@ -815,21 +813,6 @@ angle::CallCapture CaptureGetFramebufferPixelLocalStorageParameteruivANGLE(
 // GL_ANGLE_texture_compression_dxt3
 
 // GL_ANGLE_texture_compression_dxt5
-
-// GL_ANGLE_texture_external_update
-angle::CallCapture CaptureTexImage2DExternalANGLE(const State &glState,
-                                                  bool isCallValid,
-                                                  TextureTarget targetPacked,
-                                                  GLint level,
-                                                  GLint internalformat,
-                                                  GLsizei width,
-                                                  GLsizei height,
-                                                  GLint border,
-                                                  GLenum format,
-                                                  GLenum type);
-angle::CallCapture CaptureInvalidateTextureANGLE(const State &glState,
-                                                 bool isCallValid,
-                                                 TextureType targetPacked);
 
 // GL_ANGLE_texture_multisample
 angle::CallCapture CaptureTexStorage2DMultisampleANGLE(const State &glState,
@@ -1927,6 +1910,8 @@ angle::CallCapture CaptureTexBufferRangeEXT(const State &glState,
 
 // GL_EXT_texture_format_sRGB_override
 
+// GL_EXT_texture_lod_bias
+
 // GL_EXT_texture_mirror_clamp_to_edge
 
 // GL_EXT_texture_norm16
@@ -1963,7 +1948,7 @@ angle::CallCapture CaptureTexStorage3DEXT(const State &glState,
 // GL_EXT_texture_storage_compression
 angle::CallCapture CaptureTexStorageAttribs2DEXT(const State &glState,
                                                  bool isCallValid,
-                                                 GLenum target,
+                                                 TextureType targetPacked,
                                                  GLsizei levels,
                                                  GLenum internalformat,
                                                  GLsizei width,
@@ -1971,7 +1956,7 @@ angle::CallCapture CaptureTexStorageAttribs2DEXT(const State &glState,
                                                  const GLint *attrib_list);
 angle::CallCapture CaptureTexStorageAttribs3DEXT(const State &glState,
                                                  bool isCallValid,
-                                                 GLenum target,
+                                                 TextureType targetPacked,
                                                  GLsizei levels,
                                                  GLenum internalformat,
                                                  GLsizei width,
@@ -2112,12 +2097,12 @@ angle::CallCapture CaptureReadnPixelsKHR(const State &glState,
 angle::CallCapture CaptureFramebufferParameteriMESA(const State &glState,
                                                     bool isCallValid,
                                                     GLenum target,
-                                                    GLenum pname,
+                                                    FramebufferParameter pnamePacked,
                                                     GLint param);
 angle::CallCapture CaptureGetFramebufferParameterivMESA(const State &glState,
                                                         bool isCallValid,
                                                         GLenum target,
-                                                        GLenum pname,
+                                                        FramebufferParameter pnamePacked,
                                                         GLint *params);
 
 // GL_NV_fence
@@ -2813,6 +2798,8 @@ angle::CallCapture CaptureTextureFoveationParametersQCOM(const State &glState,
                                                          GLfloat gainX,
                                                          GLfloat gainY,
                                                          GLfloat foveaArea);
+
+// GL_QCOM_texture_lod_bias
 
 // GL_QCOM_tiled_rendering
 angle::CallCapture CaptureEndTilingQCOM(const State &glState,
@@ -4512,7 +4499,7 @@ void CaptureTexParameterIuivEXT_params(const State &glState,
                                        const GLuint *params,
                                        angle::ParamCapture *paramCapture);
 void CaptureTexStorageAttribs2DEXT_attrib_list(const State &glState,
-                                               GLenum target,
+                                               TextureType targetPacked,
                                                GLsizei levels,
                                                GLenum internalformat,
                                                GLsizei width,
@@ -4520,7 +4507,7 @@ void CaptureTexStorageAttribs2DEXT_attrib_list(const State &glState,
                                                const GLint *attrib_list,
                                                angle::ParamCapture *paramCapture);
 void CaptureTexStorageAttribs3DEXT_attrib_list(const State &glState,
-                                               GLenum target,
+                                               TextureType targetPacked,
                                                GLsizei levels,
                                                GLenum internalformat,
                                                GLsizei width,
@@ -4696,7 +4683,7 @@ void CaptureReadnPixelsKHR_data(const State &glState,
                                 angle::ParamCapture *paramCapture);
 void CaptureGetFramebufferParameterivMESA_params(const State &glState,
                                                  GLenum target,
-                                                 GLenum pname,
+                                                 FramebufferParameter pnamePacked,
                                                  GLint *params,
                                                  angle::ParamCapture *paramCapture);
 void CaptureDeleteFencesNV_fencesPacked(const State &glState,

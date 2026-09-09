@@ -6,6 +6,7 @@
 
 const {
   createFactory,
+  createRef,
   PureComponent,
 } = require("resource://devtools/client/shared/vendor/react.mjs");
 const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
@@ -24,6 +25,8 @@ const {
 } = require("resource://devtools/client/aboutdebugging/src/constants.js");
 const Types = require("resource://devtools/client/aboutdebugging/src/types/index.js");
 
+const NETWORK_LOCATION_FORM_ERROR_ID = "network-location-form-error";
+
 class NetworkLocationsForm extends PureComponent {
   static get propTypes() {
     return {
@@ -34,6 +37,7 @@ class NetworkLocationsForm extends PureComponent {
 
   constructor(props) {
     super(props);
+    this.inputRef = createRef();
     this.state = {
       errorHostValue: null,
       errorMessageId: null,
@@ -45,11 +49,20 @@ class NetworkLocationsForm extends PureComponent {
   }
 
   setError(value, errorMessageId) {
-    this.setState(prevState => ({
-      errorHostValue: value,
-      errorMessageId,
-      errorCount: prevState.errorCount + 1,
-    }));
+    this.setState(
+      prevState => ({
+        errorHostValue: value,
+        errorMessageId,
+        errorCount: prevState.errorCount + 1,
+      }),
+      () => {
+        const input = this.inputRef.current;
+        if (input) {
+          // Focus the input so the user can fix the value.
+          input.focus();
+        }
+      }
+    );
   }
 
   onSubmit(e) {
@@ -91,6 +104,7 @@ class NetworkLocationsForm extends PureComponent {
         level: MESSAGE_LEVEL.ERROR,
         isCloseable: true,
         messageId: `${errorMessageId}-${errorCount}`,
+        role: "alert",
       },
       Localized(
         {
@@ -100,6 +114,7 @@ class NetworkLocationsForm extends PureComponent {
         dom.p(
           {
             className: "technical-text",
+            id: NETWORK_LOCATION_FORM_ERROR_ID,
           },
           errorMessageId
         )
@@ -131,6 +146,8 @@ class NetworkLocationsForm extends PureComponent {
         placeholder: "localhost:6080",
         type: "text",
         value: this.state.value,
+        ref: this.inputRef,
+        "aria-describedby": NETWORK_LOCATION_FORM_ERROR_ID,
         onChange: e => {
           const value = e.target.value;
           this.setState({ value });

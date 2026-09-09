@@ -5,18 +5,20 @@
 package mozilla.components.tooling.detekt
 
 import io.gitlab.arturbosch.detekt.test.lint
+import kotlin.test.assertEquals
 import mozilla.components.tooling.detekt.acorn.MaterialButtonUsageRule
 import org.junit.Test
-import kotlin.test.assertEquals
 
 class MaterialButtonUsageRuleTest {
 
     @Test
     fun `WHEN the M3 Button is imported THEN it is flagged`() {
-        val code = """
+        val code =
+            """
             package com.example
             import androidx.compose.material3.Button
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = MaterialButtonUsageRule().lint(code)
 
@@ -29,10 +31,12 @@ class MaterialButtonUsageRuleTest {
 
     @Test
     fun `WHEN the M3 Button is imported with an alias THEN it is flagged`() {
-        val code = """
+        val code =
+            """
             package com.example
             import androidx.compose.material3.Button as M3Button
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = MaterialButtonUsageRule().lint(code)
 
@@ -41,13 +45,15 @@ class MaterialButtonUsageRuleTest {
 
     @Test
     fun `WHEN the fully qualified M3 Button is referenced THEN it is flagged`() {
-        val code = """
+        val code =
+            """
             package com.example
             @Composable
             fun Button() {
                 androidx.compose.material3.Button(onClick = {}) {}
             }
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = MaterialButtonUsageRule().lint(code)
 
@@ -60,13 +66,15 @@ class MaterialButtonUsageRuleTest {
 
     @Test
     fun `WHEN the compose-base FilledButton, ButtonDefaults and ButtonColors are imported THEN they are not flagged`() {
-        val code = """
+        val code =
+            """
             package com.example
             import mozilla.components.compose.base.button.FilledButton
             import androidx.compose.material3.ButtonDefaults
             import androidx.compose.material3.ButtonColors
             val colors = androidx.compose.material3.ButtonDefaults.buttonColors()
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = MaterialButtonUsageRule().lint(code)
 
@@ -75,14 +83,16 @@ class MaterialButtonUsageRuleTest {
 
     @Test
     fun `WHEN the M3 Button is used multiple times THEN each usage is flagged`() {
-        val code = """
+        val code =
+            """
             package com.example
             import androidx.compose.material3.Button
             @Composable
             fun Content() {
                 androidx.compose.material3.Button(onClick = {}) {}
             }
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = MaterialButtonUsageRule().lint(code)
 

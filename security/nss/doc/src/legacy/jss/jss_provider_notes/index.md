@@ -9,20 +9,20 @@ This page has been moved to <http://www.dogtagpki.org/wiki/JSS_Provider>.
 :::
 ::::
 
-## [The Mozilla-JSS JCA Provider](#the_mozilla-jss_jca_provider)
+## The Mozilla-JSS JCA Provider
 
 :::{container}
 Newsgroup: [mozilla.dev.tech.crypto](news://news.mozilla.org/mozilla.dev.tech.crypto)
 :::
 
-### [Overview](#overview)
+### Overview
 
 :::{container}
 This document describes the JCA Provider shipped with JSS. The provider's name is "Mozilla-JSS".
 It implements cryptographic operations in native code using the [NSS](../nss) libraries.
 :::
 
-### [Contents](#contents)
+### Contents
 
 :::{container}
 
@@ -33,7 +33,7 @@ It implements cryptographic operations in native code using the [NSS](../nss) li
 - [What's Not Supported](#not-supported)
 :::
 
-### [Signed JAR file](#signed_jar_file)
+### Signed JAR file
 
 :::{container}
 
@@ -57,7 +57,7 @@ It implements cryptographic operations in native code using the [NSS](../nss) li
      Then you can sign your own JSS JAR file.
 :::
 
-### [Installing the Provider](#installing_the_provider)
+### Installing the Provider
 
 :::{container}
 
@@ -70,7 +70,7 @@ It implements cryptographic operations in native code using the [NSS](../nss) li
   `CryptoManager.initialize()`.
 :::
 
-### [Specifying the CryptoToken](#specifying_the_cryptotoken)
+### Specifying the CryptoToken
 
 :::{container}
 
@@ -123,7 +123,7 @@ It implements cryptographic operations in native code using the [NSS](../nss) li
 
 :::
 
-### [Supported Classes](#supported_classes)
+### Supported Classes
 
 :::{container}
 
@@ -241,23 +241,23 @@ It implements cryptographic operations in native code using the [NSS](../nss) li
   >   `generatePrivate()`:
 
   ```{eval-rst}
-  +----------------------------------------------+----------------------------------------------+
-  | From                                         | To                                           |
-  +----------------------------------------------+----------------------------------------------+
-  | ``RSAPublicKeySpec``                         | ``RSAPublicKey``                             |
-  +----------------------------------------------+----------------------------------------------+
-  | ``DSAPublicKeySpec``                         | ``DSAPublicKey``                             |
-  +----------------------------------------------+----------------------------------------------+
-  | ``X509EncodedKeySpec``                       | ``RSAPublicKey``                             |
-  |                                              | ``DSAPublicKey``                             |
-  +----------------------------------------------+----------------------------------------------+
-  | ``RSAPrivateCrtKeySpec``                     | ``RSAPrivateKey``                            |
-  +----------------------------------------------+----------------------------------------------+
-  | ``DSAPrivateKeySpec``                        | ``DSAPrivateKey``                            |
-  +----------------------------------------------+----------------------------------------------+
-  | ``PKCS8EncodedKeySpec``                      | ``RSAPrivateKey``                            |
-  |                                              | ``DSAPrivateKey``                            |
-  +----------------------------------------------+----------------------------------------------+
+  +--------------------------+-------------------------------------+
+  | From                     | To                                  |
+  +--------------------------+-------------------------------------+
+  | ``RSAPublicKeySpec``     | ``RSAPublicKey``                    |
+  +--------------------------+-------------------------------------+
+  | ``DSAPublicKeySpec``     | ``DSAPublicKey``                    |
+  +--------------------------+-------------------------------------+
+  | ``X509EncodedKeySpec``   | ``RSAPublicKey`` ``DSAPublicKey``   |
+  |                          |                                     |
+  +--------------------------+-------------------------------------+
+  | ``RSAPrivateCrtKeySpec`` | ``RSAPrivateKey``                   |
+  +--------------------------+-------------------------------------+
+  | ``DSAPrivateKeySpec``    | ``DSAPrivateKey``                   |
+  +--------------------------+-------------------------------------+
+  | ``PKCS8EncodedKeySpec``  | ``RSAPrivateKey`` ``DSAPrivateKey`` |
+  |                          |                                     |
+  +--------------------------+-------------------------------------+
   ```
 
   > - `getKeySpec()` is not supported. This method exports key material in plaintext and is

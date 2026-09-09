@@ -159,3 +159,43 @@ Function getUninstallKey
   ; Return the result on the stack and restore $0
   Exch $3
 FunctionEnd
+
+; Determines whether the postupdate should run for the installation or the
+; current user.
+;
+; Usually, this is determined by the /PostUpdateTarget:[...] command-line
+; argument. However, if that isn't available, it'll attempt to guess based on
+; whether it can access a file in the installation directory.
+Function GetPostUpdateTarget
+  Push $0
+
+  ${GetParameters} $0
+  ${GetOptions} $0 "/PostUpdateTarget:" $0
+  ${IfNot} ${Errors}
+    Exch $0
+    Return
+  ${EndIf}
+
+  ; The updater doesn't know about /PostUpdateTarget, so guess. (This should
+  ; only happen once, when the first update with this code arrives, but it
+  ; could also happen for people who run `.\uninstall\helper /postupdate`
+  ; manually for testing.)
+  ;
+  ; If we have access to the install directory, run Installation, otherwise
+  ; run CurrentUser.
+  Push $1
+
+  ClearErrors
+  GetTempFileName $1 "$INSTDIR"
+  FileOpen $0 "$1" a
+  FileClose $0
+  Delete $1
+
+  Pop $1
+  ${If} ${Errors}
+    StrCpy $0 "CurrentUser"
+  ${Else}
+    StrCpy $0 "Installation"
+  ${EndIf}
+  Exch $0
+FunctionEnd

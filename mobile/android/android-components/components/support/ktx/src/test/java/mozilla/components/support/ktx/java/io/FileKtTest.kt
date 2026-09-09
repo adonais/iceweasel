@@ -4,11 +4,11 @@
 
 package mozilla.components.support.ktx.java.io
 
+import java.io.File
+import java.util.UUID
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File
-import java.util.UUID
 
 class FileKtTest {
 

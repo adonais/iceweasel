@@ -18,6 +18,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/Components.h"
 #include "mozilla/Compression.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/EndianUtils.h"
@@ -25,7 +26,6 @@
 #include "mozilla/FileUtils.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ResultExtensions.h"
-#include "mozilla/Services.h"
 #include "mozilla/Span.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TextUtils.h"
@@ -2464,7 +2464,7 @@ nsresult IOUtils::EventQueue::SetShutdownHooks() {
   constexpr static auto STACK = u"IOUtils::EventQueue::SetShutdownHooks"_ns;
   constexpr static auto FILE = NS_LITERAL_STRING_FROM_CSTRING(__FILE__);
 
-  nsCOMPtr<nsIAsyncShutdownService> svc = services::GetAsyncShutdownService();
+  nsCOMPtr<nsIAsyncShutdownService> svc = components::AsyncShutdown::Service();
   if (!svc) {
     return NS_ERROR_NOT_AVAILABLE;
   }

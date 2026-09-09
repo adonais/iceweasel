@@ -77,6 +77,13 @@ $ds-width: 936px;
   }
 }
 
+// The feed and Highlights, each grouped so the side-by-side layouts have one element
+// to place and frame (see _Grid.scss). No box otherwise. "layout" here is the page
+// layout (PageLayoutVariants.mjs), not the .ds-layout kind.
+:is(.layout-content-column, .layout-highlights-column) {
+  display: contents;
+}
+
 // Nova Grid Overrides
 // @nova-cleanup(remove-conditional): Remove .nova-enabled selector and display: contents wrappers
 .nova-enabled :is(.content, .content-full-width) .ds-layout:not(.discovery-stream) {

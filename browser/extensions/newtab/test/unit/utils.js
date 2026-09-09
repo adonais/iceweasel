@@ -210,6 +210,9 @@ export class FakePrefs extends FakensIPrefBranch {
   }
   observeBranch(_listener) {}
   ignoreBranch(_listener) {}
+  locked(prefName) {
+    return this.prefIsLocked(prefName);
+  }
   set(prefName, value) {
     this.prefs.set(prefName, value);
 

@@ -632,7 +632,6 @@ HttpObserverManager = {
   beforeConnectInitialized: false,
   examineInitialized: false,
   redirectInitialized: false,
-  needTracing: false,
   hasRedirects: false,
 
   getWrapper(nativeChannel) {
@@ -691,14 +690,14 @@ HttpObserverManager = {
       Array.from(listeners.values()).some(listener => listener.blockingAllowed)
     );
 
-    this.needTracing =
+    let needTracing =
       this.listeners.onResponseStarted.size ||
       this.listeners.onErrorOccurred.size ||
       this.listeners.onCompleted.size ||
       haveBlocking;
 
     let needExamine =
-      this.needTracing ||
+      needTracing ||
       this.listeners.onHeadersReceived.size ||
       this.listeners.onAuthRequired.size ||
       this.dnrActive;

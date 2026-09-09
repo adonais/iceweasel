@@ -25,7 +25,7 @@ class IdentityProvider : public nsWrapperCache {
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
-  static void Close(const GlobalObject& aGlobal);
+  MOZ_CAN_RUN_SCRIPT static void Close(const GlobalObject& aGlobal);
   static already_AddRefed<Promise> Resolve(
       const GlobalObject& aGlobal, const nsACString& aToken,
       const IdentityResolveOptions& aOptions, ErrorResult& aRv);

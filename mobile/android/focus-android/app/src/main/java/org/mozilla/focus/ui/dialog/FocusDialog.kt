@@ -27,8 +27,8 @@ import org.mozilla.focus.ui.theme.focusTypography
  * @param dialogTitle Text displayed as the dialog title.
  * @param dialogTextComposable Optional composable for the dialog's main content area.
  * @param dialogText Text displayed in the dialog's main content area if [dialogTextComposable] is null.
- * @param onDismissRequest Action to perform when the dialog is dismissed
- *                         (e.g., by tapping outside or pressing the back button).
+ * @param onDismissRequest Action to perform when the dialog is dismissed (e.g., by tapping outside or pressing the back
+ *   button).
  * @param confirmButtonConfig Optional configuration for the confirm button. If null, the button is not shown.
  * @param dismissButtonConfig Optional configuration for the dismiss button. If null, the button is not shown.
  * @param dialogContainerColor Background color for the dialog. Defaults to `focusColors.secondary`.
@@ -48,11 +48,13 @@ fun FocusDialog(
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = { DialogTitle(text = dialogTitle) },
-        text = dialogTextComposable ?: {
-            if (dialogText.isNotEmpty()) {
-                DialogText(text = dialogText)
-            }
-        },
+        text =
+            dialogTextComposable
+                ?: {
+                    if (dialogText.isNotEmpty()) {
+                        DialogText(text = dialogText)
+                    }
+                },
         confirmButton = {
             confirmButtonConfig?.let { config ->
                 if (config.visible) {
@@ -95,9 +97,7 @@ data class DialogButtonConfig(
     val visible: Boolean = true,
 )
 
-/**
- * Reusable composable for a dialog title.
- */
+/** Reusable composable for a dialog title. */
 @Composable
 fun DialogTitle(
     modifier: Modifier = Modifier,
@@ -111,9 +111,7 @@ fun DialogTitle(
     )
 }
 
-/**
- * Reusable composable for a dialog text.
- */
+/** Reusable composable for a dialog text. */
 @Composable
 fun DialogText(
     modifier: Modifier = Modifier,
@@ -127,9 +125,7 @@ fun DialogText(
     )
 }
 
-/**
- * Reusable composable for a dialog button with text.
- */
+/** Reusable composable for a dialog button with text. */
 @Composable
 fun DialogTextButton(
     text: String,
@@ -145,20 +141,19 @@ fun DialogTextButton(
     ) {
         Text(
             modifier = modifier,
-            color = if (enabled) {
-                focusColors.dialogActiveControls
-            } else {
-                focusColors.dialogActiveControls.copy(alpha = 0.5f)
-            },
+            color =
+                if (enabled) {
+                    focusColors.dialogActiveControls
+                } else {
+                    focusColors.dialogActiveControls.copy(alpha = 0.5f)
+                },
             text = text,
             style = MaterialTheme.typography.labelLarge,
         )
     }
 }
 
-/**
- * Reusable composable for a dialog input field.
- */
+/** Reusable composable for a dialog input field. */
 @Composable
 fun DialogInputField(
     modifier: Modifier = Modifier,
@@ -167,22 +162,22 @@ fun DialogInputField(
     onValueChange: (String) -> Unit,
 ) {
     TextField(
-        modifier = modifier
-            .wrapContentHeight(),
+        modifier = modifier.wrapContentHeight(),
         value = text,
         placeholder = placeholder,
         onValueChange = onValueChange,
         textStyle = focusTypography.dialogInput,
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = focusColors.secondary,
-            unfocusedContainerColor = focusColors.secondary,
-            disabledContainerColor = focusColors.secondary,
-            focusedTextColor = focusColors.onSecondary,
-            unfocusedTextColor = focusColors.onSecondary,
-            cursorColor = focusColors.onPrimary,
-            focusedIndicatorColor = focusColors.dialogActiveControls,
-            unfocusedIndicatorColor = focusColors.dialogActiveControls,
-        ),
+        colors =
+            TextFieldDefaults.colors(
+                focusedContainerColor = focusColors.secondary,
+                unfocusedContainerColor = focusColors.secondary,
+                disabledContainerColor = focusColors.secondary,
+                focusedTextColor = focusColors.onSecondary,
+                unfocusedTextColor = focusColors.onSecondary,
+                cursorColor = focusColors.onPrimary,
+                focusedIndicatorColor = focusColors.dialogActiveControls,
+                unfocusedIndicatorColor = focusColors.dialogActiveControls,
+            ),
         singleLine = true,
         shape = MaterialTheme.shapes.extraSmall,
     )
@@ -220,14 +215,16 @@ private fun FocusDialogSample() {
         dialogTitle = "Sample dialog",
         dialogText = "Sample dialog text using DialogButtonConfig.",
         onDismissRequest = { /* Preview: Dialog dismissed (e.g. tap outside) */ },
-        confirmButtonConfig = DialogButtonConfig(
-            text = "CONFIRM",
-            onClick = { /* Preview: Confirm clicked */ },
-        ),
-        dismissButtonConfig = DialogButtonConfig(
-            text = "CANCEL",
-            onClick = { /* Preview: Cancel clicked */ },
-            enabled = true,
-        ),
+        confirmButtonConfig =
+            DialogButtonConfig(
+                text = "CONFIRM",
+                onClick = { /* Preview: Confirm clicked */ },
+            ),
+        dismissButtonConfig =
+            DialogButtonConfig(
+                text = "CANCEL",
+                onClick = { /* Preview: Cancel clicked */ },
+                enabled = true,
+            ),
     )
 }

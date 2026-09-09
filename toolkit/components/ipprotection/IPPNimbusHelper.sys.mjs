@@ -33,11 +33,12 @@ class IPPNimbusHelperSingleton {
   }
 
   /**
-   * Check that this device is not in the control branch of an experiment.
+   * Veto hook consulted by the service state machine. Hides the feature when
+   * the device is in the control branch of the experiment.
    *
-   * @returns {boolean}
+   * @returns {boolean} true when the device is not eligible.
    */
-  get isEligible() {
+  hidesFeature() {
     let inExperiment = lazy.NimbusFeatures.ipProtection.getEnrollmentMetadata();
 
     if (inExperiment) {
@@ -45,10 +46,10 @@ class IPPNimbusHelperSingleton {
         once: true,
       });
 
-      return inExperiment.branch !== "control";
+      return inExperiment.branch === "control";
     }
 
-    return true;
+    return false;
   }
 }
 

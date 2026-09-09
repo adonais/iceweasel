@@ -129,16 +129,6 @@ void LIRGenerator::visitUnbox(MUnbox* unbox) {
   }
 }
 
-void LIRGenerator::visitReturnImpl(MDefinition* opd, bool isGenerator) {
-  MOZ_ASSERT(opd->type() == MIRType::Value);
-
-  LReturn* ins = new (alloc()) LReturn(isGenerator);
-  ins->setOperand(0, LUse(JSReturnReg_Type));
-  ins->setOperand(1, LUse(JSReturnReg_Data));
-  fillBoxUses(ins, 0, opd);
-  add(ins);
-}
-
 void LIRGeneratorX86::lowerUntypedPhiInput(MPhi* phi, uint32_t inputPosition,
                                            LBlock* block, size_t lirIndex) {
   MDefinition* operand = phi->getOperand(inputPosition);

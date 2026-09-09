@@ -7,9 +7,7 @@ package mozilla.components.concept.engine.ipprotection
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.concept.engine.Engine
 
-/**
- * Engine-to-app callbacks for IP protection state changes. Passed to [Engine.registerIPProtectionDelegate].
- */
+/** Engine-to-app callbacks for IP protection state changes. Passed to [Engine.registerIPProtectionDelegate]. */
 @ExperimentalAndroidComponentsApi
 interface IPProtectionDelegate {
     /**

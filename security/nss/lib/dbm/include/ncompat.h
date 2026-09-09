@@ -83,7 +83,7 @@ typedef unsigned int  sigset_t;
 #define sigfillset(set) (*(set) = ~(sigset_t)0, 0)
 #define sigaddset(set, signo) (*(set) |= sigmask(signo), 0)
 #define sigdelset(set, signo) (*(set) &= ~sigmask(signo), 0)
-#define sigismember(set, signo) ((*(set)&sigmask(signo)) != 0)
+#define sigismember(set, signo) ((*(set) & sigmask(signo)) != 0)
 
 #define SIG_BLOCK 1
 #define SIG_UNBLOCK 2

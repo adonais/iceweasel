@@ -6,12 +6,10 @@ package mozilla.components.support.ktx.kotlin
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import mozilla.components.support.base.log.logger.Logger
 import java.security.MessageDigest
+import mozilla.components.support.base.log.logger.Logger
 
-/**
- * Checks whether the given [test] byte sequence exists at the [offset] of this [ByteArray]
- */
+/** Checks whether the given [test] byte sequence exists at the [offset] of this [ByteArray] */
 fun ByteArray.containsAtOffset(offset: Int, test: ByteArray): Boolean {
     if (size - offset < test.size) {
         return false
@@ -60,16 +58,12 @@ fun ByteArray.toSha256Digest(): ByteArray {
     return MessageDigest.getInstance("SHA-256").digest(this)
 }
 
-/**
- * @return A SHA-1 digest.
- */
+/** @return A SHA-1 digest. */
 fun ByteArray.toSha1Digest(): ByteArray {
     return MessageDigest.getInstance("SHA-1").digest(this)
 }
 
-/**
- * @return An unpadded byte array, according to PKCS#7.
- */
+/** @return An unpadded byte array, according to PKCS#7. */
 @Suppress("MagicNumber")
 fun ByteArray.pkcs7unpad(): ByteArray {
     // Last byte tells us the padding length.

@@ -15,6 +15,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.robolectric.createAddedTestFragment
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
@@ -27,7 +28,6 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.settings.biometric.ext.isBiometricHardwareAvailable
 import org.mozilla.fenix.settings.biometric.ext.isEnrolled
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class BiometricPromptFeatureTest {

@@ -11,20 +11,13 @@ import mozilla.components.browser.state.state.ContainerState
 import mozilla.components.browser.state.state.ContainerState.Color
 import mozilla.components.browser.state.state.ContainerState.Icon
 
-/**
- * Internal entity representing a container (contextual identity).
- */
+/** Internal entity representing a container (contextual identity). */
 @Entity(tableName = "containers")
 internal data class ContainerEntity(
-    @PrimaryKey
-    @ColumnInfo(name = "context_id")
-    var contextId: String,
-    @ColumnInfo(name = "name")
-    var name: String,
-    @ColumnInfo(name = "color")
-    var color: Color,
-    @ColumnInfo(name = "icon")
-    var icon: Icon,
+    @PrimaryKey @ColumnInfo(name = "context_id") var contextId: String,
+    @ColumnInfo(name = "name") var name: String,
+    @ColumnInfo(name = "color") var color: Color,
+    @ColumnInfo(name = "icon") var icon: Icon,
 ) {
     internal fun toContainer(): ContainerState {
         return ContainerState(

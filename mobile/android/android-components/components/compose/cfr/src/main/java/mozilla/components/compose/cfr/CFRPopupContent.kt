@@ -40,19 +40,19 @@ import mozilla.components.compose.cfr.CFRPopup.IndicatorDirection.UP
 import mozilla.components.ui.icons.R as iconsR
 
 /**
- * Complete content of the popup.
- * [CFRPopupShape] with a gradient background containing [text] and a dismiss ("X") button.
+ * Complete content of the popup. [CFRPopupShape] with a gradient background containing [text] and a dismiss ("X")
+ * button.
  *
  * @param popupBodyColors The [CFRPopupBackground] painted in the popup.
  * @param showDismissButton Whether to show the dismiss button in the popup.
  * @param dismissButtonColor The tint color that should be applied to the dismiss button.
  * @param indicatorDirection The direction the indicator arrow is pointing to.
- * @param indicatorArrowStartOffset Maximum distance between the popup start and the indicator arrow.
- * If there isn't enough space this could automatically be overridden up to 0.
- * @param onDismiss  Callback for when the popup is dismissed indicating also if the dismissal
- * was explicit - by tapping the "X" button or not.
- * @param popupWidth Width of the popup. Defaults to [CFRPopup.DEFAULT_WIDTH]. To be used as maximum
- * width when alignment is set to [PopupAlignment.BODY_CENTERED_IN_SCREEN].
+ * @param indicatorArrowStartOffset Maximum distance between the popup start and the indicator arrow. If there isn't
+ *   enough space this could automatically be overridden up to 0.
+ * @param onDismiss Callback for when the popup is dismissed indicating also if the dismissal was explicit - by tapping
+ *   the "X" button or not.
+ * @param popupWidth Width of the popup. Defaults to [CFRPopup.DEFAULT_WIDTH]. To be used as maximum width when
+ *   alignment is set to [PopupAlignment.BODY_CENTERED_IN_SCREEN].
  * @param title Optional [Text] composable to show just above the popup text.
  * @param text [Text] already styled and ready to be shown in the popup.
  * @param action Optional other composable to show just below the popup text.
@@ -71,58 +71,65 @@ fun CFRPopupContent(
     text: @Composable (() -> Unit),
     action: @Composable (() -> Unit) = {},
 ) {
-    val popupShape = CFRPopupShape(
-        indicatorDirection,
-        indicatorArrowStartOffset,
-        CFRPopup.DEFAULT_INDICATOR_HEIGHT.dp,
-        CFRPopup.DEFAULT_CORNER_RADIUS.dp,
-    )
-
-    val brush = when (popupBodyColors) {
-        is CFRPopupBackground.Gradient -> popupBodyColors.brush
-        is CFRPopupBackground.Colors -> Brush.linearGradient(
-            colors = popupBodyColors.colors.map { Color(it) },
-            end = Offset(0f, Float.POSITIVE_INFINITY),
-            start = Offset(Float.POSITIVE_INFINITY, 0f),
+    val popupShape =
+        CFRPopupShape(
+            indicatorDirection,
+            indicatorArrowStartOffset,
+            CFRPopup.DEFAULT_INDICATOR_HEIGHT.dp,
+            CFRPopup.DEFAULT_CORNER_RADIUS.dp,
         )
-    }
+
+    val brush =
+        when (popupBodyColors) {
+            is CFRPopupBackground.Gradient -> popupBodyColors.brush
+            is CFRPopupBackground.Colors ->
+                Brush.linearGradient(
+                    colors = popupBodyColors.colors.map { Color(it) },
+                    end = Offset(0f, Float.POSITIVE_INFINITY),
+                    start = Offset(Float.POSITIVE_INFINITY, 0f),
+                )
+        }
 
     Box(modifier = Modifier.width(popupWidth + CFRPopup.DEFAULT_EXTRA_HORIZONTAL_PADDING.dp)) {
         Surface(
             color = Color.Transparent,
             // Need to override the default RectangleShape to avoid casting shadows for that shape.
             shape = popupShape,
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .background(
-                    shape = popupShape,
-                    brush = brush,
-                )
-                .wrapContentHeight()
-                .width(popupWidth),
+            modifier =
+                Modifier.align(Alignment.CenterStart)
+                    .background(
+                        shape = popupShape,
+                        brush = brush,
+                    )
+                    .wrapContentHeight()
+                    .width(popupWidth),
         ) {
             Column(
-                modifier = Modifier
-                    .padding(
+                modifier =
+                    Modifier.padding(
                         start = 16.dp,
-                        top = 16.dp + if (indicatorDirection == CFRPopup.IndicatorDirection.UP) {
-                            CFRPopup.DEFAULT_INDICATOR_HEIGHT.dp
-                        } else {
-                            0.dp
-                        },
+                        top =
+                            16.dp +
+                                if (indicatorDirection == CFRPopup.IndicatorDirection.UP) {
+                                    CFRPopup.DEFAULT_INDICATOR_HEIGHT.dp
+                                } else {
+                                    0.dp
+                                },
                         end = 16.dp,
-                        bottom = 16.dp +
-                            if (indicatorDirection == CFRPopup.IndicatorDirection.DOWN) {
-                                CFRPopup.DEFAULT_INDICATOR_HEIGHT.dp
-                            } else {
-                                0.dp
-                            },
-                    ),
+                        bottom =
+                            16.dp +
+                                if (indicatorDirection == CFRPopup.IndicatorDirection.DOWN) {
+                                    CFRPopup.DEFAULT_INDICATOR_HEIGHT.dp
+                                } else {
+                                    0.dp
+                                },
+                    )
             ) {
                 Box(
-                    modifier = Modifier.padding(
-                        end = if (showDismissButton) 24.dp else 16.dp, // 8.dp extra padding to the "X" icon
-                    ),
+                    modifier =
+                        Modifier.padding(
+                            end = if (showDismissButton) 24.dp else 16.dp // 8.dp extra padding to the "X" icon
+                        )
                 ) {
                     Column {
                         title?.let {
@@ -143,13 +150,8 @@ fun CFRPopupContent(
             IconButton(
                 onClick = { onDismiss(true) },
                 contentDescription = stringResource(R.string.mozac_cfr_dismiss_button_content_description),
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(
-                        end = 6.dp,
-                    )
-                    .size(48.dp)
-                    .semantics {
+                modifier =
+                    Modifier.align(Alignment.TopEnd).padding(end = 6.dp).size(48.dp).semantics {
                         testTagsAsResourceId = true
                         testTag = "cfr.dismiss"
                     },
@@ -157,13 +159,12 @@ fun CFRPopupContent(
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_cross_20),
                     contentDescription = null,
-                    modifier = Modifier
-                        // Following alignment and padding are intended to visually align the middle
-                        // of the "X" button with the top of the text.
-                        .align(Alignment.Center)
-                        .padding(
-                            top = if (indicatorDirection == CFRPopup.IndicatorDirection.UP) 9.dp else 0.dp,
-                        ),
+                    modifier =
+                        Modifier
+                            // Following alignment and padding are intended to visually align the middle
+                            // of the "X" button with the top of the text.
+                            .align(Alignment.Center)
+                            .padding(top = if (indicatorDirection == CFRPopup.IndicatorDirection.UP) 9.dp else 0.dp),
                     tint = Color(dismissButtonColor),
                 )
             }
@@ -183,7 +184,7 @@ private fun CFRPopupAbovePreview() {
         dismissButtonColor = Color.Black.toArgb(),
         indicatorDirection = DOWN,
         indicatorArrowStartOffset = CFRPopup.DEFAULT_INDICATOR_START_OFFSET.dp,
-        onDismiss = { },
+        onDismiss = {},
         text = { Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod") },
     )
 }
@@ -200,7 +201,7 @@ private fun CFRPopupBelowPreview() {
         dismissButtonColor = Color.Black.toArgb(),
         indicatorDirection = UP,
         indicatorArrowStartOffset = CFRPopup.DEFAULT_INDICATOR_START_OFFSET.dp,
-        onDismiss = { },
+        onDismiss = {},
         text = { Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod") },
     )
 }
@@ -217,7 +218,7 @@ private fun CFRPopupBelowPreviewWithTitle() {
         dismissButtonColor = Color.Black.toArgb(),
         indicatorDirection = UP,
         indicatorArrowStartOffset = CFRPopup.DEFAULT_INDICATOR_START_OFFSET.dp,
-        onDismiss = { },
+        onDismiss = {},
         title = {
             Text(
                 text = "This is the title",
@@ -242,7 +243,7 @@ private fun CFRPopupGradient() {
         dismissButtonColor = Color.White.toArgb(),
         indicatorDirection = UP,
         indicatorArrowStartOffset = CFRPopup.DEFAULT_INDICATOR_START_OFFSET.dp,
-        onDismiss = { },
+        onDismiss = {},
         title = {
             Text(
                 text = "This is the title",

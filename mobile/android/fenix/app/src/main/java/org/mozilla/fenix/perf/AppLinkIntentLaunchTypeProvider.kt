@@ -8,30 +8,25 @@ import android.app.Activity
 import android.app.Application
 import android.os.Bundle
 import androidx.annotation.VisibleForTesting
-import mozilla.components.concept.engine.EngineSession
-import org.mozilla.fenix.android.DefaultActivityLifecycleCallbacks
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import mozilla.components.concept.engine.EngineSession
+import org.mozilla.fenix.android.DefaultActivityLifecycleCallbacks
 
 /**
- * Tracks and provides the type of the [Application] instance's launch.
- * See [EngineSession.LoadUrlFlags] for more details about the types.
+ * Tracks and provides the type of the [Application] instance's launch. See [EngineSession.LoadUrlFlags] for more
+ * details about the types.
  *
  * [registerInAppOnCreate] must be called for this object to work correctly.
  *
  * This class relies on specific lifecycle method call orders for the app process and the activities.
  */
-class AppLinkIntentLaunchTypeProvider(
-    private val startReasonProvider: AppStartReasonProvider,
-) {
+class AppLinkIntentLaunchTypeProvider(private val startReasonProvider: AppStartReasonProvider) {
     private val hasAnyActivityBeenCreated = AtomicBoolean(false)
     private val liveActivityCounts = ConcurrentHashMap<Class<out Activity>, AtomicInteger>()
 
-    /**
-     * Registers the handlers needed by this object: this is expected to be called from
-     * [Application.onCreate].
-     */
+    /** Registers the handlers needed by this object: this is expected to be called from [Application.onCreate]. */
     fun registerInAppOnCreate(app: Application) {
         app.registerActivityLifecycleCallbacks(
             object : DefaultActivityLifecycleCallbacks {
@@ -44,26 +39,23 @@ class AppLinkIntentLaunchTypeProvider(
                     super.onActivityDestroyed(activity)
                     liveActivityCounts[activity.javaClass]?.updateAndGet { count -> maxOf(0, count - 1) }
                 }
-            },
+            }
         )
     }
 
     /**
      * Classifies an external intent’s launch type at the moment it arrives.
      *
-     * - COLD: The process and the first activity are created from scratch
-     *   (no activity has ever been created in this process).
+     * - COLD: The process and the first activity are created from scratch (no activity has ever been created in this
+     *   process).
      *
-     * - WARM: The process is alive but the target activity will be created fresh.
-     *   Example: a WorkManager job started the process (NON_ACTIVITY) without
-     *   creating any activity; later an app-link arrives. At this point,
-     *   GeckoRuntime may already be initialized via
-     * [mozilla.components.concept.engine.Engine.warmUp]
-     *   in [org.mozilla.fenix.FenixApplication.onCreate] and Gecko libraries may
-     *   have begun loading.
+     * - WARM: The process is alive but the target activity will be created fresh. Example: a WorkManager job started
+     *   the process (NON_ACTIVITY) without creating any activity; later an app-link arrives. At this point,
+     *   GeckoRuntime may already be initialized via [mozilla.components.concept.engine.Engine.warmUp] in
+     *   [org.mozilla.fenix.FenixApplication.onCreate] and Gecko libraries may have begun loading.
      *
-     * - HOT: The process is alive and an existing instance of the target activity
-     *   is reused (no new activity instance is created).
+     * - HOT: The process is alive and an existing instance of the target activity is reused (no new activity instance
+     *   is created).
      */
     fun getExternalIntentLaunchType(target: Class<out Activity>?): Int {
         val headless = isHeadlessLaunch()
@@ -72,28 +64,22 @@ class AppLinkIntentLaunchTypeProvider(
 
         return when {
             // Target instance already exists -> HOT
-            targetLive ->
-                EngineSession.LoadUrlFlags.APP_LINK_LAUNCH_TYPE_HOT
+            targetLive -> EngineSession.LoadUrlFlags.APP_LINK_LAUNCH_TYPE_HOT
 
             // Headless (NON_ACTIVITY) start and we won't reuse the target -> WARM
-            headless ->
-                EngineSession.LoadUrlFlags.APP_LINK_LAUNCH_TYPE_WARM
+            headless -> EngineSession.LoadUrlFlags.APP_LINK_LAUNCH_TYPE_WARM
 
             // No activity has ever been created in this process -> COLD
-            !anyActivityCreated ->
-                EngineSession.LoadUrlFlags.APP_LINK_LAUNCH_TYPE_COLD
+            !anyActivityCreated -> EngineSession.LoadUrlFlags.APP_LINK_LAUNCH_TYPE_COLD
 
             // Process alive, target not live -> WARM
-            else ->
-                EngineSession.LoadUrlFlags.APP_LINK_LAUNCH_TYPE_WARM
+            else -> EngineSession.LoadUrlFlags.APP_LINK_LAUNCH_TYPE_WARM
         }
     }
 
-    private fun isHeadlessLaunch() =
-        startReasonProvider.reason == AppStartReasonProvider.StartReason.NON_ACTIVITY
+    private fun isHeadlessLaunch() = startReasonProvider.reason == AppStartReasonProvider.StartReason.NON_ACTIVITY
 
-    private fun hasLiveTargetActivity(target: Class<out Activity>?) =
-        (liveActivityCounts[target]?.get() ?: 0) > 0
+    private fun hasLiveTargetActivity(target: Class<out Activity>?) = (liveActivityCounts[target]?.get() ?: 0) > 0
 
     @VisibleForTesting
     internal fun resetForTests() {

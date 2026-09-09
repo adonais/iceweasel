@@ -3,10 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 plugins {
-    kotlin("jvm") version embeddedKotlinVersion
-    `maven-publish`
-    `java-gradle-plugin`
+    `kotlin-dsl`
 }
+
+val mozconfig = gradle.extra["mozconfig"] as Map<*, *>
+val topobjdir = mozconfig["topobjdir"] as String
+
+layout.buildDirectory.set(
+    file("$topobjdir/gradle/build/mobile/android/gradle/plugins/nimbus-gradle-plugin"),
+)
 
 gradlePlugin {
     plugins.register("org.mozilla.nimbus-gradle-plugin") {
@@ -22,7 +27,6 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 }
 
 dependencies {
-    implementation(gradleApi())
     compileOnly("org.mozilla:conventions")
     compileOnly(libs.android.gradle.plugin)
 }

@@ -73,6 +73,7 @@ export class PageExtractorChild extends JSWindowActorChild {
             wordCount,
             language,
             isReaderable: true,
+            isGated: false,
           };
         }
         return this.getPageMetadata();
@@ -128,12 +129,13 @@ export class PageExtractorChild extends JSWindowActorChild {
       );
     }
 
-    const structuredDataTypes = this.#extractStructuredDataTypes(document);
+    const { types: structuredDataTypes, isGated } =
+      this.#extractStructuredData(document);
     const language = this.#detectLanguage(document);
     const wordCount = this.#getWordCount(language, document.body.innerText);
     const isReaderable = lazy.isProbablyReaderable(document);
 
-    return { structuredDataTypes, wordCount, language, isReaderable };
+    return { structuredDataTypes, wordCount, language, isReaderable, isGated };
   }
 
   /**
@@ -157,16 +159,52 @@ export class PageExtractorChild extends JSWindowActorChild {
   }
 
   /**
-   * This extracts various `@type` values within the JSON-LD structured data markup of a page.
+   * Normalizes a schema.org Boolean, which may be an actual boolean, the strings
+   * "true"/"false", or a schema.org URL such as "https://schema.org/False".
+   *
+   * @param {unknown} value
+   * @returns {boolean | null} null when the value is absent or unrecognized.
+   */
+  #parseSchemaBoolean(value) {
+    if (typeof value === "boolean") {
+      return value;
+    }
+    if (typeof value !== "string") {
+      return null;
+    }
+    switch (value.toLowerCase()) {
+      case "true":
+      case "http://schema.org/true":
+      case "https://schema.org/true":
+        return true;
+
+      case "false":
+      case "http://schema.org/false":
+      case "https://schema.org/false":
+        return false;
+
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * This extracts various `@type` values within the JSON-LD structured data markup
+   * of a page, along with whether the page declares its content to be gated.
+   *
+   * Publishers mark gated content with schema.org `isAccessibleForFree: false`,
+   * either on the item itself or on the `hasPart` entry describing the gated
+   * region. Pages without the markup are reported as not gated.
    *
    * @param {Document} document
-   * @returns {string[]}
+   * @returns {{ types: string[], isGated: boolean }}
    */
-  #extractStructuredDataTypes(document) {
+  #extractStructuredData(document) {
     const scripts = document.querySelectorAll(
       'script[type="application/ld+json" i]'
     );
     const types = new Set();
+    let isGated = false;
 
     const asArray = value => {
       if (Array.isArray(value)) {
@@ -203,9 +241,19 @@ export class PageExtractorChild extends JSWindowActorChild {
           }
         }
       }
+
+      // Unlike `@type`, the gating marker is also honored on a wrapper object that
+      // carries an `@graph`, since publishers place it at either level.
+      for (const item of [...topLevelItems, ...graphItems]) {
+        for (const part of [item, ...asArray(item?.hasPart)]) {
+          if (this.#parseSchemaBoolean(part?.isAccessibleForFree) === false) {
+            isGated = true;
+          }
+        }
+      }
     }
 
-    return Array.from(types);
+    return { types: Array.from(types), isGated };
   }
 
   /**

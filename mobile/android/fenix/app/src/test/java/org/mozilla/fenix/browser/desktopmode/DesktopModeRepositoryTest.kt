@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.browser.desktopmode
 
 import android.content.Context
@@ -29,9 +33,7 @@ class DesktopModeRepositoryTest {
     @Test
     fun `GIVEN desktop mode defaults to true WHEN the repository is read for the first time THEN desktop mode should be enabled`() =
         runTest {
-            val repository = createRepository(
-                initialDesktopMode = true,
-            )
+            val repository = createRepository(initialDesktopMode = true)
 
             assertTrue(repository.getDesktopBrowsingEnabled())
         }
@@ -39,9 +41,7 @@ class DesktopModeRepositoryTest {
     @Test
     fun `GIVEN desktop mode defaults to false WHEN the repository is read for the first time THEN desktop mode should be disabled`() =
         runTest {
-            val repository = createRepository(
-                initialDesktopMode = false,
-            )
+            val repository = createRepository(initialDesktopMode = false)
 
             assertFalse(repository.getDesktopBrowsingEnabled())
         }
@@ -65,25 +65,24 @@ class DesktopModeRepositoryTest {
         }
 
     @Test
-    fun `WHEN the repository is written to THEN the preference is updated`() =
-        runTest {
-            val repository = createRepository()
+    fun `WHEN the repository is written to THEN the preference is updated`() = runTest {
+        val repository = createRepository()
 
-            repository.setDesktopBrowsingEnabled(enabled = true)
-            assertTrue(repository.getDesktopBrowsingEnabled())
+        repository.setDesktopBrowsingEnabled(enabled = true)
+        assertTrue(repository.getDesktopBrowsingEnabled())
 
-            repository.setDesktopBrowsingEnabled(enabled = false)
-            assertFalse(repository.getDesktopBrowsingEnabled())
-        }
-
-    private suspend fun createRepository(
-        initialDesktopMode: Boolean? = null,
-    ) = DefaultDesktopModeRepository(
-        context = testContext,
-        dataStore = testContext.testDataStore,
-    ).apply {
-        initialDesktopMode?.let {
-            setDesktopBrowsingEnabled(enabled = it)
-        }
+        repository.setDesktopBrowsingEnabled(enabled = false)
+        assertFalse(repository.getDesktopBrowsingEnabled())
     }
+
+    private suspend fun createRepository(initialDesktopMode: Boolean? = null) =
+        DefaultDesktopModeRepository(
+                context = testContext,
+                dataStore = testContext.testDataStore,
+            )
+            .apply {
+                initialDesktopMode?.let {
+                    setDesktopBrowsingEnabled(enabled = it)
+                }
+            }
 }

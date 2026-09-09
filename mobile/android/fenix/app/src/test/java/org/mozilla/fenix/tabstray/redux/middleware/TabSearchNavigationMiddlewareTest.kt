@@ -21,16 +21,18 @@ class TabSearchNavigationMiddlewareTest {
 
         val clickedTab = TabsTrayItem.Tab(tab = createTab(url = "https://mozilla.org"))
 
-        val store = TabsTrayStore(
-            initialState = TabsTrayState(),
-            middlewares = listOf(
-                TabSearchNavigationMiddleware(
-                    onSearchResultClicked = { tab ->
-                        receivedTab = tab
-                    },
-                ),
-            ),
-        )
+        val store =
+            TabsTrayStore(
+                initialState = TabsTrayState(),
+                middlewares =
+                    listOf(
+                        TabSearchNavigationMiddleware(
+                            onSearchResultClicked = { tab ->
+                                receivedTab = tab
+                            }
+                        )
+                    ),
+            )
 
         store.dispatch(TabSearchAction.SearchResultClicked(clickedTab))
 

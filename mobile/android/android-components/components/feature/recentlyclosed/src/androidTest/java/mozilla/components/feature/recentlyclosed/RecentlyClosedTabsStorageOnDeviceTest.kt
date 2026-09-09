@@ -23,29 +23,34 @@ import org.junit.Test
 
 class RecentlyClosedTabsStorageOnDeviceTest {
     private val engineState = FakeEngineSessionState("testId")
-    private val storage = RecentlyClosedTabsStorage(
-        context = ApplicationProvider.getApplicationContext(),
-        engine = FakeEngine(),
-        crashReporting = FakeCrashReporting(),
-        engineStateStorage = FakeEngineSessionStateStorage(),
-    )
+    private val storage =
+        RecentlyClosedTabsStorage(
+            context = ApplicationProvider.getApplicationContext(),
+            engine = FakeEngine(),
+            crashReporting = FakeCrashReporting(),
+            engineStateStorage = FakeEngineSessionStateStorage(),
+        )
 
     @Test
     fun testRowTooBigExceptionCaughtAndStorageCleared() = runBlocking {
-        val closedTab1 = RecoverableTab(
-            engineSessionState = engineState,
-            state = TabState(
-                id = "test",
-                title = "Pocket",
-                url = "test",
-                lastAccess = System.currentTimeMillis(),
-            ),
-        )
-        val closedTab2 = closedTab1.copy(
-            state = closedTab1.state.copy(
-                url = "test".repeat(1_000_000), // much more than 2MB of data. Just to be sure.
-            ),
-        )
+        val closedTab1 =
+            RecoverableTab(
+                engineSessionState = engineState,
+                state =
+                    TabState(
+                        id = "test",
+                        title = "Pocket",
+                        url = "test",
+                        lastAccess = System.currentTimeMillis(),
+                    ),
+            )
+        val closedTab2 =
+            closedTab1.copy(
+                state =
+                    closedTab1.state.copy(
+                        url = "test".repeat(1_000_000) // much more than 2MB of data. Just to be sure.
+                    )
+            )
 
         // First check what happens if too large tabs are persisted and then asked for
         storage.addTabsToCollectionWithMax(listOf(closedTab1, closedTab2), 2)
@@ -55,15 +60,17 @@ class RecentlyClosedTabsStorageOnDeviceTest {
         assertTrue((storage.engineStateStorage() as FakeEngineSessionStateStorage).data.isEmpty())
 
         // Then check that new data is persisted and queried successfully
-        val closedTab3 = RecoverableTab(
-            engineSessionState = engineState,
-            state = TabState(
-                id = "test2",
-                title = "Pocket2",
-                url = "test2",
-                lastAccess = System.currentTimeMillis(),
-            ),
-        )
+        val closedTab3 =
+            RecoverableTab(
+                engineSessionState = engineState,
+                state =
+                    TabState(
+                        id = "test2",
+                        title = "Pocket2",
+                        url = "test2",
+                        lastAccess = System.currentTimeMillis(),
+                    ),
+            )
         storage.addTabState(closedTab3)
         val recentlyClosedTabsResult = storage.getTabs().first()
         assertEquals(listOf(closedTab3.state), recentlyClosedTabsResult)

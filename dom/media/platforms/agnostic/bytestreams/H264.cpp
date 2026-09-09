@@ -111,12 +111,6 @@ static void scaling_list(BitReader& aBr, uint8_t (&aScalingList)[N],
   detail::scaling_list(aBr, aScalingList, N, aDefaultList, aFallbackList);
 }
 
-template <size_t N>
-static void scaling_list(BitReader& aBr, uint8_t (&aScalingList)[N],
-                         const uint8_t (&aDefaultList)[N]) {
-  detail::scaling_list(aBr, aScalingList, N, aDefaultList, nullptr);
-}
-
 SPSData::SPSData() {
   PodZero(this);
   // Default values when they aren't defined as per ITU-T H.264 (2014/02).

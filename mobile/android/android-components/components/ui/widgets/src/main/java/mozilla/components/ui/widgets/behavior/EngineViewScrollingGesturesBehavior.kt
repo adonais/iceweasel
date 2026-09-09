@@ -14,8 +14,8 @@ import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.concept.engine.EngineView
 
 /**
- * A [CoordinatorLayout.Behavior] implementation to be used for moving [dependency] up/down
- * depending on scroll events in [engineView].
+ * A [CoordinatorLayout.Behavior] implementation to be used for moving [dependency] up/down depending on scroll events
+ * in [engineView].
  *
  * This is safe to use even if [dependency] has it's visibility modified.
  *
@@ -32,11 +32,9 @@ class EngineViewScrollingGesturesBehavior(
     // This implementation is heavily based on this blog article:
     // https://android.jlelse.eu/scroll-your-bottom-navigation-view-away-with-10-lines-of-code-346f1ed40e9e
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal var shouldSnapAfterScroll: Boolean = false
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal var shouldSnapAfterScroll: Boolean = false
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal var startedScroll = false
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal var startedScroll = false
 
     /**
      * Depending on how user's touch was consumed by EngineView / current website,
@@ -50,9 +48,10 @@ class EngineViewScrollingGesturesBehavior(
      */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal val shouldScroll: Boolean
-        get() = engineView.getInputResultDetail().let {
-            (it.canScrollToBottom() || it.canScrollToTop()) && isScrollEnabled
-        }
+        get() =
+            engineView.getInputResultDetail().let {
+                (it.canScrollToBottom() || it.canScrollToTop()) && isScrollEnabled
+            }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal var gesturesDetector: BrowserGestureDetector = createGestureDetector()
@@ -64,10 +63,11 @@ class EngineViewScrollingGesturesBehavior(
         target: View,
         axes: Int,
         type: Int,
-    ): Boolean = when (dependency.isVisible) {
-        true -> startNestedScroll(axes, type)
-        false -> false // not interested in subsequent scroll events
-    }
+    ): Boolean =
+        when (dependency.isVisible) {
+            true -> startNestedScroll(axes, type)
+            false -> false // not interested in subsequent scroll events
+        }
 
     override fun onStopNestedScroll(
         coordinatorLayout: CoordinatorLayout,

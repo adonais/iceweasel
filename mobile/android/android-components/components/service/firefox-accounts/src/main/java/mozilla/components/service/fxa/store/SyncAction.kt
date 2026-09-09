@@ -8,27 +8,17 @@ import mozilla.components.concept.sync.ConstellationState
 import mozilla.components.lib.state.Action
 import mozilla.components.service.fxa.manager.AccountState
 
-/**
- * Actions for updating the global [SyncState] via [SyncStore].
- */
+/** Actions for updating the global [SyncState] via [SyncStore]. */
 sealed class SyncAction : Action {
-    /**
-     * Update the [SyncState.status] of the [SyncStore].
-     */
+    /** Update the [SyncState.status] of the [SyncStore]. */
     data class UpdateSyncStatus(val status: SyncStatus) : SyncAction()
 
-    /**
-     * Update the [SyncState.account] of the [SyncStore].
-     */
+    /** Update the [SyncState.account] of the [SyncStore]. */
     data class UpdateAccount(val account: Account?) : SyncAction()
 
-    /**
-     * Update the [SyncState.accountState] of the [SyncStore].
-     */
+    /** Update the [SyncState.accountState] of the [SyncStore]. */
     data class UpdateAccountState(val accountState: AccountState) : SyncAction()
 
-    /**
-     * Update the [SyncState.constellationState] of the [SyncStore].
-     */
+    /** Update the [SyncState.constellationState] of the [SyncStore]. */
     data class UpdateDeviceConstellation(val deviceConstellation: ConstellationState) : SyncAction()
 }

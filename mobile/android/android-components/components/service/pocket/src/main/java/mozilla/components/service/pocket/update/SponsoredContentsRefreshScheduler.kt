@@ -26,17 +26,14 @@ import mozilla.components.support.base.worker.Frequency
  *
  * @property config Configuration for how sponsored contents should be refreshed.
  */
-class SponsoredContentsRefreshScheduler(
-    private val config: PocketStoriesConfig,
-) {
+class SponsoredContentsRefreshScheduler(private val config: PocketStoriesConfig) {
     internal fun startPeriodicRefreshes(context: Context) {
-        getWorkManager(context).enqueueUniquePeriodicWork(
-            REFRESH_WORK_TAG,
-            ExistingPeriodicWorkPolicy.KEEP,
-            createPeriodicRefreshWorkRequest(
-                frequency = config.sponsoredStoriesRefreshFrequency,
-            ),
-        )
+        getWorkManager(context)
+            .enqueueUniquePeriodicWork(
+                REFRESH_WORK_TAG,
+                ExistingPeriodicWorkPolicy.KEEP,
+                createPeriodicRefreshWorkRequest(frequency = config.sponsoredStoriesRefreshFrequency),
+            )
 
         logger.info("Started periodic refreshes of sponsored contents")
     }
@@ -48,26 +45,27 @@ class SponsoredContentsRefreshScheduler(
     }
 
     @VisibleForTesting
-    internal fun createPeriodicRefreshWorkRequest(
-        frequency: Frequency,
-    ): PeriodicWorkRequest {
+    internal fun createPeriodicRefreshWorkRequest(frequency: Frequency): PeriodicWorkRequest {
         val constraints = getWorkerConstraints()
 
         return PeriodicWorkRequestBuilder<SponsoredContentsRefreshWorker>(
-            frequency.repeatInterval,
-            frequency.repeatIntervalTimeUnit,
-        ).apply {
-            setConstraints(constraints)
-            addTag(REFRESH_WORK_TAG)
-        }.build()
+                frequency.repeatInterval,
+                frequency.repeatIntervalTimeUnit,
+            )
+            .apply {
+                setConstraints(constraints)
+                addTag(REFRESH_WORK_TAG)
+            }
+            .build()
     }
 
     internal fun scheduleUserDeletion(context: Context) {
-        getWorkManager(context).enqueueUniqueWork(
-            DELETE_USER_WORK_TAG,
-            ExistingWorkPolicy.KEEP,
-            createOneTimeDeleteUserWorkerRequest(),
-        )
+        getWorkManager(context)
+            .enqueueUniqueWork(
+                DELETE_USER_WORK_TAG,
+                ExistingWorkPolicy.KEEP,
+                createOneTimeDeleteUserWorkerRequest(),
+            )
 
         logger.info("Scheduling sponsored content user deletion")
     }
@@ -89,10 +87,7 @@ class SponsoredContentsRefreshScheduler(
     }
 
     @VisibleForTesting
-    internal fun getWorkerConstraints() = Constraints.Builder()
-        .setRequiredNetworkType(NetworkType.CONNECTED)
-        .build()
+    internal fun getWorkerConstraints() = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
-    @VisibleForTesting
-    internal fun getWorkManager(context: Context) = WorkManager.getInstance(context)
+    @VisibleForTesting internal fun getWorkManager(context: Context) = WorkManager.getInstance(context)
 }

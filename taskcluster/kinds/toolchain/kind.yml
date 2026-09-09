@@ -62,6 +62,7 @@ tasks-from:
     - python.yml
     - python-wheels.yml
     - rust.yml
+    - rust-analyzer.yml
     - rust-size.yml
     - samply.yml
     - sccache.yml

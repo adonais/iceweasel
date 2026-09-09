@@ -21,8 +21,7 @@ import mozilla.components.support.ktx.util.PromptAbuserDetector
 import mozilla.components.ui.icons.R as iconsR
 
 /**
- * Reusable composable for a permission dialog.
- * Includes a [PromptAbuserDetector] to better control dialog abuse.
+ * Reusable composable for a permission dialog. Includes a [PromptAbuserDetector] to better control dialog abuse.
  *
  * @param title Text displayed as the dialog title.
  * @param message The message text providing additional information.
@@ -44,8 +43,7 @@ fun PermissionDialog(
     onConfirmRequest: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val promptAbuserDetector =
-        PromptAbuserDetector(dialogAbuseMillisLimit)
+    val promptAbuserDetector = PromptAbuserDetector(dialogAbuseMillisLimit)
 
     LaunchedEffect(Unit) {
         promptAbuserDetector.updateJSDialogAbusedState()

@@ -11,6 +11,7 @@ AllowCompilerWarnings()
 
 CXXFLAGS += [
     "-Wno-comma",
+    "-Wno-unused-template",
     "-Wno-tautological-type-limit-compare"
 ]
 

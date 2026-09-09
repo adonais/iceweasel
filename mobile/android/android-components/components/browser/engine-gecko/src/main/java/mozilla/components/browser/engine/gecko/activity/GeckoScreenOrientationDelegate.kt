@@ -13,21 +13,18 @@ import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.OrientationController
 
 /**
- * Default [OrientationController.OrientationDelegate] implementation that delegates both the behavior
- * and the returned value to a [OrientationDelegate].
+ * Default [OrientationController.OrientationDelegate] implementation that delegates both the behavior and the returned
+ * value to a [OrientationDelegate].
  */
-internal class GeckoScreenOrientationDelegate(
-    private val delegate: OrientationDelegate,
-) : OrientationController.OrientationDelegate {
+internal class GeckoScreenOrientationDelegate(private val delegate: OrientationDelegate) :
+    OrientationController.OrientationDelegate {
     override fun onOrientationLock(requestedOrientation: Int): GeckoResult<AllowOrDeny> {
         val result = GeckoResult<AllowOrDeny>()
 
         when (delegate.onOrientationLock(requestedOrientation)) {
             LockResult.SUCCESS -> result.complete(ALLOW)
             LockResult.REJECTED -> result.complete(DENY)
-            LockResult.NOT_SUPPORTED -> result.completeExceptionally(
-                UnsupportedOperationException("Not supported"),
-            )
+            LockResult.NOT_SUPPORTED -> result.completeExceptionally(UnsupportedOperationException("Not supported"))
         }
 
         return result

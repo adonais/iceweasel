@@ -19,6 +19,8 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDirections
 import androidx.navigation.findNavController
+import com.google.android.material.R as materialR
+import java.security.InvalidParameterException
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.feature.intent.ext.getSessionId
@@ -61,33 +63,31 @@ import org.mozilla.fenix.tabstray.ui.TabManagementFragmentDirections
 import org.mozilla.fenix.translations.TranslationsDialogFragmentDirections
 import org.mozilla.fenix.translations.preferences.downloadlanguages.DownloadLanguagesPreferenceFragmentDirections
 import org.mozilla.fenix.webcompat.ui.WebCompatReporterFragmentDirections
-import java.security.InvalidParameterException
-import com.google.android.material.R as materialR
 
 /**
  * Attempts to call immersive mode using the View to hide the status bar and navigation buttons.
  *
- * We don't use the equivalent function from Android Components because the stable flag messes
- * with the toolbar. See #1998 and #3272.
+ * We don't use the equivalent function from Android Components because the stable flag messes with the toolbar.
+ * See #1998 and #3272.
  */
 @Deprecated(
     message = "Use the Android Component implementation instead.",
-    replaceWith = ReplaceWith(
-        "enterToImmersiveMode()",
-        "mozilla.components.support.ktx.android.view.enterToImmersiveMode",
-    ),
+    replaceWith =
+        ReplaceWith(
+            "enterToImmersiveMode()",
+            "mozilla.components.support.ktx.android.view.enterToImmersiveMode",
+        ),
 )
 fun Activity.enterToImmersiveMode() {
     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     // This will be addressed on https://github.com/mozilla-mobile/fenix/issues/17804
     @Suppress("DEPRECATION")
-    window.decorView.systemUiVisibility = (
-        View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-            or View.SYSTEM_UI_FLAG_FULLSCREEN
-            or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-        )
+    window.decorView.systemUiVisibility =
+        (View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+            View.SYSTEM_UI_FLAG_FULLSCREEN or
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
 }
 
 fun Activity.breadcrumb(
@@ -98,17 +98,15 @@ fun Activity.breadcrumb(
         Breadcrumb(
             category = this::class.java.simpleName,
             message = message,
-            data = data + mapOf(
-                "instance" to this.hashCode().toString(),
-            ),
+            data = data + mapOf("instance" to this.hashCode().toString()),
             level = Breadcrumb.Level.INFO,
-        ),
+        )
     )
 }
 
 /**
- * Opens Android's Manage Default Apps Settings if possible.
- * Otherwise navigates to the Sumo article indicating why it couldn't open it.
+ * Opens Android's Manage Default Apps Settings if possible. Otherwise navigates to the Sumo article indicating why it
+ * couldn't open it.
  *
  * @param from fallback direction in case, couldn't open the setting.
  * @param flags fallback flags for when opening the Sumo article page.
@@ -122,10 +120,7 @@ fun Activity.openSetDefaultBrowserOption(
     when {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> {
             getSystemService(RoleManager::class.java).also {
-                if (it.isRoleAvailable(RoleManager.ROLE_BROWSER) && !it.isRoleHeld(
-                        RoleManager.ROLE_BROWSER,
-                    )
-                ) {
+                if (it.isRoleAvailable(RoleManager.ROLE_BROWSER) && !it.isRoleHeld(RoleManager.ROLE_BROWSER)) {
                     startActivityForResult(
                         it.createRequestRoleIntent(RoleManager.ROLE_BROWSER),
                         REQUEST_CODE_BROWSER_ROLE,
@@ -152,17 +147,14 @@ fun Activity.openSetDefaultBrowserOption(
 /**
  * Checks if the app can prompt the user to set it as the default browser.
  *
- * From Android 10, a new method to prompt the user to set default apps has been introduced.
- * This method checks if the app can prompt the user to set it as the default browser
- * based on the Android version and the availability of the ROLE_BROWSER.
+ * From Android 10, a new method to prompt the user to set default apps has been introduced. This method checks if the
+ * app can prompt the user to set it as the default browser based on the Android version and the availability of the
+ * ROLE_BROWSER.
  */
 fun Context.isDefaultBrowserPromptSupported(): Boolean {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         getSystemService(RoleManager::class.java).also {
-            if (it.isRoleAvailable(RoleManager.ROLE_BROWSER) && !it.isRoleHeld(
-                    RoleManager.ROLE_BROWSER,
-                )
-            ) {
+            if (it.isRoleAvailable(RoleManager.ROLE_BROWSER) && !it.isRoleHeld(RoleManager.ROLE_BROWSER)) {
                 return true
             }
         }
@@ -175,13 +167,14 @@ private fun Activity.navigateToDefaultBrowserAppsSettings(
     flags: EngineSession.LoadUrlFlags,
     useCustomTab: Boolean,
 ) {
-    val intent = Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS).apply {
-        putExtra(SETTINGS_SELECT_OPTION_KEY, DEFAULT_BROWSER_APP_OPTION)
-        putExtra(
-            SETTINGS_SHOW_FRAGMENT_ARGS,
-            Bundle().apply { putString(SETTINGS_SELECT_OPTION_KEY, DEFAULT_BROWSER_APP_OPTION) },
-        )
-    }
+    val intent =
+        Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS).apply {
+            putExtra(SETTINGS_SELECT_OPTION_KEY, DEFAULT_BROWSER_APP_OPTION)
+            putExtra(
+                SETTINGS_SHOW_FRAGMENT_ARGS,
+                Bundle().apply { putString(SETTINGS_SELECT_OPTION_KEY, DEFAULT_BROWSER_APP_OPTION) },
+            )
+        }
     startExternalActivitySafe(
         intent = intent,
         onActivityNotPresent = {
@@ -195,9 +188,8 @@ private fun Activity.openDefaultBrowserSumoPage(
     from: BrowserDirection,
     flags: EngineSession.LoadUrlFlags,
 ) {
-    val sumoDefaultBrowserUrl = SupportUtils.getGenericSumoURLForTopic(
-        topic = SupportUtils.SumoTopic.SET_AS_DEFAULT_BROWSER,
-    )
+    val sumoDefaultBrowserUrl =
+        SupportUtils.getGenericSumoURLForTopic(topic = SupportUtils.SumoTopic.SET_AS_DEFAULT_BROWSER)
     if (useCustomTab) {
         SupportUtils.launchSandboxCustomTab(
             context = this,
@@ -222,16 +214,16 @@ private fun Activity.openDefaultBrowserSumoPage(
 
 /**
  * Sets the icon for the back (up) navigation button.
+ *
  * @param icon The resource id of the icon.
  */
-fun Activity.setNavigationIcon(
-    @DrawableRes icon: Int,
-) {
+fun Activity.setNavigationIcon(@DrawableRes icon: Int) {
     (this as? AppCompatActivity)?.supportActionBar?.let {
         it.setDisplayHomeAsUpEnabled(true)
-        val navigationIcon = AppCompatResources.getDrawable(this, icon)?.apply {
-            setTint(getColorFromAttr(materialR.attr.colorOnSurface))
-        }
+        val navigationIcon =
+            AppCompatResources.getDrawable(this, icon)?.apply {
+                setTint(getColorFromAttr(materialR.attr.colorOnSurface))
+            }
         it.setHomeAsUpIndicator(navigationIcon)
         it.setHomeActionContentDescription(R.string.action_bar_up_description)
     }
@@ -242,18 +234,18 @@ fun Activity.setNavigationIcon(
  *
  * @param from The [BrowserDirection] to indicate which fragment the browser is being opened from.
  * @param customTabSessionId Optional custom tab session ID if navigating from a custom tab.
- *
  * @return the [NavDirections] for the given [Activity].
  * @throws IllegalArgumentException if the given [Activity] is not supported.
  */
 fun Activity.getNavDirections(
     from: BrowserDirection,
     customTabSessionId: String? = null,
-): NavDirections? = when (this) {
-    is ExternalAppBrowserActivity -> getExternalAppBrowserNavDirections(from, customTabSessionId)
-    is HomeActivity -> getHomeNavDirections(from)
-    else -> throw IllegalArgumentException("$this is not supported")
-}
+): NavDirections? =
+    when (this) {
+        is ExternalAppBrowserActivity -> getExternalAppBrowserNavDirections(from, customTabSessionId)
+        is HomeActivity -> getHomeNavDirections(from)
+        else -> throw IllegalArgumentException("$this is not supported")
+    }
 
 private fun Activity.getExternalAppBrowserNavDirections(
     from: BrowserDirection,
@@ -272,73 +264,69 @@ private fun Activity.getExternalAppBrowserNavDirections(
                 isSandboxCustomTab = intent.getBooleanExtra(EXTRA_IS_SANDBOX_CUSTOM_TAB, false),
             )
 
-        else -> throw InvalidParameterException(
-            "Tried to navigate to ExternalAppBrowserFragment from $from",
-        )
+        else -> throw InvalidParameterException("Tried to navigate to ExternalAppBrowserFragment from $from")
     }
 }
 
-private fun getHomeNavDirections(
-    from: BrowserDirection,
-): NavDirections = when (from) {
-    BrowserDirection.FromGlobal -> NavGraphDirections.actionGlobalBrowser()
+private fun getHomeNavDirections(from: BrowserDirection): NavDirections =
+    when (from) {
+        BrowserDirection.FromGlobal -> NavGraphDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromHome -> HomeFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromHome -> HomeFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromWallpaper -> WallpaperSettingsFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromWallpaper -> WallpaperSettingsFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromSettings -> SettingsFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromSettings -> SettingsFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromBookmarks -> BookmarkFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromBookmarks -> BookmarkFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromHistory -> HistoryFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromHistory -> HistoryFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromGleanDebugToolsFragment -> GleanDebugToolsFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromGleanDebugToolsFragment -> GleanDebugToolsFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromHistoryMetadataGroup -> HistoryMetadataGroupFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromHistoryMetadataGroup -> HistoryMetadataGroupFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromTrackingProtectionExceptions ->
-        TrackingProtectionExceptionsFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromTrackingProtectionExceptions ->
+            TrackingProtectionExceptionsFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromHttpsOnlyMode -> HttpsOnlyFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromHttpsOnlyMode -> HttpsOnlyFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromDnsOverHttps -> DohSettingsFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromDnsOverHttps -> DohSettingsFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromAbout -> AboutFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromAbout -> AboutFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromTrackingProtection -> TrackingProtectionFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromTrackingProtection -> TrackingProtectionFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromSavedLoginsFragment -> SavedLoginsAuthFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromSavedLoginsFragment -> SavedLoginsAuthFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromAddNewDeviceFragment -> AddNewDeviceFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromAddNewDeviceFragment -> AddNewDeviceFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromSearchEngineFragment -> SearchEngineFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromSearchEngineFragment -> SearchEngineFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromSaveSearchEngineFragment -> SaveSearchEngineFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromSaveSearchEngineFragment -> SaveSearchEngineFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromAddonDetailsFragment -> AddonDetailsFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromAddonDetailsFragment -> AddonDetailsFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromAddonPermissionsDetailsFragment ->
-        AddonPermissionsDetailsFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromAddonPermissionsDetailsFragment ->
+            AddonPermissionsDetailsFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromTabManager -> TabManagementFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromTabManager -> TabManagementFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromRecentlyClosed -> RecentlyClosedFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromRecentlyClosed -> RecentlyClosedFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromStudiesFragment -> StudiesFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromStudiesFragment -> StudiesFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromAddonsManagementFragment -> AddonsManagementFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromAddonsManagementFragment -> AddonsManagementFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromTranslationsDialogFragment -> TranslationsDialogFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromTranslationsDialogFragment -> TranslationsDialogFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromMenuDialogFragment -> MenuDialogFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromMenuDialogFragment -> MenuDialogFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromDownloadLanguagesPreferenceFragment ->
-        DownloadLanguagesPreferenceFragmentDirections.actionGlobalBrowser()
+        BrowserDirection.FromDownloadLanguagesPreferenceFragment ->
+            DownloadLanguagesPreferenceFragmentDirections.actionGlobalBrowser()
 
-    BrowserDirection.FromWebCompatReporterFragment ->
-        WebCompatReporterFragmentDirections.actionGlobalBrowser()
-}
+        BrowserDirection.FromWebCompatReporterFragment -> WebCompatReporterFragmentDirections.actionGlobalBrowser()
+    }
 
 const val REQUEST_CODE_BROWSER_ROLE = 1
 const val SETTINGS_SELECT_OPTION_KEY = ":settings:fragment_args_key"
@@ -352,11 +340,12 @@ const val EXTERNAL_APP_BROWSER_INTENT_SOURCE = "CUSTOM_TAB"
  * @param intent the [SafeIntent] to derive the source from.
  * @throws IllegalArgumentException if the given [Activity] is not supported.
  */
-fun Activity.getIntentSource(intent: SafeIntent): String? = when (this) {
-    is ExternalAppBrowserActivity -> EXTERNAL_APP_BROWSER_INTENT_SOURCE
-    is HomeActivity -> getHomeIntentSource(intent)
-    else -> throw IllegalArgumentException("$this is not supported")
-}
+fun Activity.getIntentSource(intent: SafeIntent): String? =
+    when (this) {
+        is ExternalAppBrowserActivity -> EXTERNAL_APP_BROWSER_INTENT_SOURCE
+        is HomeActivity -> getHomeIntentSource(intent)
+        else -> throw IllegalArgumentException("$this is not supported")
+    }
 
 private fun getHomeIntentSource(intent: SafeIntent): String? {
     return when {
@@ -367,8 +356,8 @@ private fun getHomeIntentSource(intent: SafeIntent): String? {
 }
 
 /**
- * Check if the intent is coming from within this application itself or from an external one
- * when processed through the `InternalReceiverActivity`.
+ * Check if the intent is coming from within this application itself or from an external one when processed through the
+ * `InternalReceiverActivity`.
  */
 fun Activity.isIntentInternal(): Boolean {
     val safeIntent = SafeIntent(intent)
@@ -381,11 +370,12 @@ fun Activity.isIntentInternal(): Boolean {
  * @param intent the [SafeIntent] to derive the session ID from.
  * @throws IllegalArgumentException if the given [Activity] is not supported.
  */
-fun Activity.getIntentSessionId(intent: SafeIntent): String? = when (this) {
-    is ExternalAppBrowserActivity -> getExternalAppBrowserIntentSessionId(intent)
-    is HomeActivity -> null
-    else -> throw IllegalArgumentException("$this is not supported")
-}
+fun Activity.getIntentSessionId(intent: SafeIntent): String? =
+    when (this) {
+        is ExternalAppBrowserActivity -> getExternalAppBrowserIntentSessionId(intent)
+        is HomeActivity -> null
+        else -> throw IllegalArgumentException("$this is not supported")
+    }
 
 private fun getExternalAppBrowserIntentSessionId(intent: SafeIntent) = intent.getSessionId()
 
@@ -395,11 +385,12 @@ private fun getExternalAppBrowserIntentSessionId(intent: SafeIntent) = intent.ge
  * @param destination the [NavDestination] required to provide the destination ID.
  * @throws IllegalArgumentException if the given [Activity] is not supported.
  */
-fun Activity.getBreadcrumbMessage(destination: NavDestination): String = when (this) {
-    is ExternalAppBrowserActivity -> getExternalAppBrowserBreadcrumbMessage(destination.id)
-    is HomeActivity -> getHomeBreadcrumbMessage(destination.id)
-    else -> throw IllegalArgumentException("$this is not supported")
-}
+fun Activity.getBreadcrumbMessage(destination: NavDestination): String =
+    when (this) {
+        is ExternalAppBrowserActivity -> getExternalAppBrowserBreadcrumbMessage(destination.id)
+        is HomeActivity -> getHomeBreadcrumbMessage(destination.id)
+        else -> throw IllegalArgumentException("$this is not supported")
+    }
 
 private fun Activity.getExternalAppBrowserBreadcrumbMessage(destinationId: Int): String {
     val fragmentName = resources.getResourceEntryName(destinationId)

@@ -30,9 +30,7 @@ internal data class DohSettingsState(
     val customProviderErrorState: CustomProviderErrorState = CustomProviderErrorState.Valid,
 ) : State
 
-/**
- * Represents the protection level for DoH settings.
- */
+/** Represents the protection level for DoH settings. */
 internal sealed class ProtectionLevel {
     abstract fun toDohSettingsMode(): Engine.DohSettingsMode
 
@@ -74,27 +72,17 @@ internal sealed class Provider {
      *
      * @property url The custom built-in DoH provider's endpoint URL.
      */
-    data class Custom(
-        override val url: String,
-    ) : Provider()
+    data class Custom(override val url: String) : Provider()
 }
 
-/**
- * Represents the validation state for a custom provider URL.
- */
+/** Represents the validation state for a custom provider URL. */
 internal enum class CustomProviderErrorState {
-    /**
-     * The URL is non-HTTPS.
-     */
+    /** The URL is non-HTTPS. */
     NonHttps,
 
-    /**
-     * The URL is invalid or cannot be parsed correctly).
-     */
+    /** The URL is invalid or cannot be parsed correctly). */
     Invalid,
 
-    /**
-     * The URL is valid.
-     */
+    /** The URL is valid. */
     Valid,
 }

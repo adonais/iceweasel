@@ -7,13 +7,8 @@ package mozilla.components.feature.fxsuggest.dto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/**
- * Top-level response payload from the Sports suggestion API.
- */
-@Serializable
-data class SportsPayloadDto(
-    val values: List<SportEventDto> = emptyList(),
-)
+/** Top-level response payload from the Sports suggestion API. */
+@Serializable data class SportsPayloadDto(val values: List<SportEventDto> = emptyList())
 
 /**
  * A single sport entry returned by the Sports API.

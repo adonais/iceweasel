@@ -8,6 +8,7 @@ import android.view.View
 import androidx.annotation.LayoutRes
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.HistoryMetadataGroupListItemBinding
 import org.mozilla.fenix.ext.hideAndDisable
@@ -15,11 +16,8 @@ import org.mozilla.fenix.ext.showAndEnable
 import org.mozilla.fenix.library.history.History
 import org.mozilla.fenix.library.historymetadata.interactor.HistoryMetadataGroupInteractor
 import org.mozilla.fenix.selection.SelectionHolder
-import mozilla.components.ui.icons.R as iconsR
 
-/**
- * View holder for a history metadata list item.
- */
+/** View holder for a history metadata list item. */
 class HistoryMetadataGroupItemViewHolder(
     view: View,
     private val interactor: HistoryMetadataGroupInteractor,
@@ -69,7 +67,6 @@ class HistoryMetadataGroupItemViewHolder(
     }
 
     companion object {
-        @LayoutRes
-        val LAYOUT_ID = R.layout.history_metadata_group_list_item
+        @LayoutRes val LAYOUT_ID = R.layout.history_metadata_group_list_item
     }
 }

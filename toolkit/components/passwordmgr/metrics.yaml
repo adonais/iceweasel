@@ -1105,9 +1105,6 @@ pwmgr:
       submit; 1: safe page & unsafe submit; 2: safe page & unknown submit; 3:
       unsafe page & safe submit; 4: unsafe page & unsafe submit; 5: unsafe page
       & unknown submit)
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram PWMGR_LOGIN_PAGE_SAFETY.
     range_min: 0
     range_max: 8
     bucket_count: 9
@@ -1115,6 +1112,7 @@ pwmgr:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1340021
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1545172
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061373
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1340021
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1545172
@@ -1122,7 +1120,6 @@ pwmgr:
       - seceng-telemetry@mozilla.com
       - loines@mozilla.com
     expires: never
-    telemetry_mirror: PWMGR_LOGIN_PAGE_SAFETY
     send_in_pings:
       - metrics
       - sync

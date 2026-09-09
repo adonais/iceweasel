@@ -92,9 +92,11 @@ add_task(async function test_spinner_month_keyboard_arrows() {
     () => {
       return monthYearEl.textContent == DATE_FORMAT(new Date(nextMonthValue));
     },
-    `Should change to January 2022, instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to January 2022, instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
 
   Assert.equal(
@@ -122,9 +124,11 @@ add_task(async function test_spinner_month_keyboard_arrows() {
     () => {
       return monthYearEl.textContent == DATE_FORMAT(new Date(inputValue));
     },
-    `Should change to December 2022, instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to December 2022, instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
 
   Assert.equal(
@@ -185,9 +189,11 @@ add_task(async function test_spinner_month_keyboard_pageup_pagedown() {
         monthYearEl.textContent == DATE_FORMAT(new Date(nextFifthMonthValue))
       );
     },
-    `Should change to May 2022, instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to May 2022, instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
 
   Assert.equal(
@@ -215,9 +221,11 @@ add_task(async function test_spinner_month_keyboard_pageup_pagedown() {
     () => {
       return monthYearEl.textContent == DATE_FORMAT(new Date(inputValue));
     },
-    `Should change to December 2022, instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to December 2022, instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
 
   Assert.equal(
@@ -274,9 +282,11 @@ add_task(async function test_spinner_month_keyboard_home_end() {
     () => {
       return monthYearEl.textContent == DATE_FORMAT(new Date(firstMonthValue));
     },
-    `Should change to January 2022, instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to January 2022, instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
 
   Assert.equal(
@@ -304,9 +314,11 @@ add_task(async function test_spinner_month_keyboard_home_end() {
     () => {
       return monthYearEl.textContent == DATE_FORMAT(new Date(inputValue));
     },
-    `Should change to December 2022, instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to December 2022, instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
 
   Assert.equal(
@@ -383,9 +395,11 @@ add_task(async function test_spinner_year_keyboard_arrows() {
     () => {
       return monthYearEl.textContent == DATE_FORMAT(new Date(nextYearValue));
     },
-    `Should change to December 2023, instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to December 2023, instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
 
   Assert.equal(
@@ -413,9 +427,11 @@ add_task(async function test_spinner_year_keyboard_arrows() {
     () => {
       return monthYearEl.textContent == DATE_FORMAT(new Date(inputValue));
     },
-    `Should change to December 2022, instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to December 2022, instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
 
   Assert.equal(
@@ -476,9 +492,11 @@ add_task(async function test_spinner_year_keyboard_pageup_pagedown() {
         monthYearEl.textContent == DATE_FORMAT(new Date(nextFifthYearValue))
       );
     },
-    `Should change to December 2027, instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to December 2027, instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
 
   Assert.equal(
@@ -506,9 +524,11 @@ add_task(async function test_spinner_year_keyboard_pageup_pagedown() {
     () => {
       return monthYearEl.textContent == DATE_FORMAT(new Date(inputValue));
     },
-    `Should change to December 2022, instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to December 2022, instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
 
   Assert.equal(
@@ -567,9 +587,11 @@ add_task(async function test_spinner_year_keyboard_home_end() {
     () => {
       return monthYearEl.textContent == DATE_FORMAT(new Date(minYearValue));
     },
-    `Should change to December 2020, instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to December 2020, instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
 
   Assert.equal(
@@ -597,9 +619,11 @@ add_task(async function test_spinner_year_keyboard_home_end() {
     () => {
       return monthYearEl.textContent == DATE_FORMAT(new Date(maxYearValue));
     },
-    `Should change to December 2030, instead got ${
-      helper.getElement(MONTH_YEAR).textContent
-    }`
+    {
+      msg: `Should change to December 2030, instead got ${
+        helper.getElement(MONTH_YEAR).textContent
+      }`,
+    }
   );
 
   Assert.equal(

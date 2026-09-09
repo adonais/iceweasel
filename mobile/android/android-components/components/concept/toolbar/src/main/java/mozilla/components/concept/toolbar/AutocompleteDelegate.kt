@@ -5,20 +5,17 @@
 package mozilla.components.concept.toolbar
 
 /**
- * Describes an object to which a [AutocompleteResult] may be applied.
- * Usually, this will delegate to a specific text view.
+ * Describes an object to which a [AutocompleteResult] may be applied. Usually, this will delegate to a specific text
+ * view.
  */
 interface AutocompleteDelegate {
     /**
      * @param result Apply result of autocompletion.
-     * @param onApplied a lambda/callback invoked if (and only if) the result has been
-     * applied. A result may be discarded by implementations because it is stale or
-     * the autocomplete request has been cancelled.
+     * @param onApplied a lambda/callback invoked if (and only if) the result has been applied. A result may be
+     *   discarded by implementations because it is stale or the autocomplete request has been cancelled.
      */
-    fun applyAutocompleteResult(result: AutocompleteResult, onApplied: () -> Unit = { })
+    fun applyAutocompleteResult(result: AutocompleteResult, onApplied: () -> Unit = {})
 
-    /**
-     * Autocompletion was invoked and no match was returned.
-     */
+    /** Autocompletion was invoked and no match was returned. */
     fun noAutocompleteResult(input: String)
 }

@@ -120,7 +120,7 @@ class AutoPushObserverTest {
                     publicKey = "p256dh",
                     authKey = "auth",
                     appServerKey = null,
-                ),
+                )
             )
         }
     }

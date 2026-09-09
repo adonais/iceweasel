@@ -15,8 +15,7 @@ import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 
 /**
- * An [AbstractBinding] that invokes the [onSyncNow] callback when the [TabsTrayState.syncing] is
- * set.
+ * An [AbstractBinding] that invokes the [onSyncNow] callback when the [TabsTrayState.syncing] is set.
  *
  * This binding is useful for connecting with [SyncedTabsView.Listener].
  */
@@ -26,7 +25,8 @@ class SyncButtonBinding(
     private val onSyncNow: () -> Unit,
 ) : AbstractBinding<TabsTrayState>(tabsTrayStore, mainDispatcher) {
     override suspend fun onState(flow: Flow<TabsTrayState>) {
-        flow.map { it.sync.isSyncing }
+        flow
+            .map { it.sync.isSyncing }
             .distinctUntilChanged()
             .collect { syncingNow ->
                 if (syncingNow) {

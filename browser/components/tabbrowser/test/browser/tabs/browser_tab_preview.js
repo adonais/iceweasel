@@ -16,7 +16,7 @@ const { sinon } = ChromeUtils.importESModule(
 );
 
 const { TabStateFlusher } = ChromeUtils.importESModule(
-  "resource:///modules/sessionstore/TabStateFlusher.sys.mjs"
+  "moz-src:///browser/components/sessionstore/TabStateFlusher.sys.mjs"
 );
 
 const TabHoverPanelSet = ChromeUtils.importESModule(
@@ -29,6 +29,18 @@ const { TabNotes } = ChromeUtils.importESModule(
 
 const TAB_PREVIEW_PANEL_ID = "tab-preview-panel";
 const TAB_GROUP_PREVIEW_PANEL_ID = "tabgroup-preview-panel";
+
+async function parkNativePointer(win = window) {
+  const browserEl = win.gBrowser.selectedBrowser;
+  const { width, height } = browserEl.getBoundingClientRect();
+  await EventUtils.promiseNativeMouseEvent({
+    type: "mousemove",
+    target: browserEl,
+    offsetX: width - 10,
+    offsetY: height - 10,
+    win,
+  });
+}
 
 async function openTabPreview(tab, win = window) {
   const panel = win.document.getElementById(TAB_PREVIEW_PANEL_ID);
@@ -188,6 +200,18 @@ add_setup(async function () {
       ["test.wait300msAfterTabSwitch", true],
       ["ui.tooltip.delay_ms", 0],
     ],
+  });
+
+  // The hover states in these tests are controlled by synthesized events. There
+  // has been a history of problems in these tests caused by improper
+  // interaction between the synthesized event and the position of the OS
+  // pointer. To resolve this, disable all non test events and ensure the OS
+  // pointer is not positioned over the browser chrome at the start of each
+  // test.
+  await parkNativePointer();
+  EventUtils.disableNonTestMouseEvents(true);
+  registerCleanupFunction(() => {
+    EventUtils.disableNonTestMouseEvents(false);
   });
 
   await resetState();
@@ -1389,7 +1413,7 @@ add_task(async function tabGroupPanelUpdatesTests() {
   info("Test that moving tabs within the group updates the panel");
   let tabMoveEvent = BrowserTestUtils.waitForEvent(group, "TabMove");
   let tabToMove = group.tabs[1];
-  gBrowser.moveTabTo(tabToMove, { tabIndex: tabToMove._tPos - 1 });
+  gBrowser.moveTabTo(tabToMove, { tabIndex: tabToMove.index - 1 });
   await tabMoveEvent;
 
   Assert.equal(

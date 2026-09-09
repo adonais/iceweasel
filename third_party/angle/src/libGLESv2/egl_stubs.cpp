@@ -6,10 +6,7 @@
 // egl_stubs.cpp: Stubs for EGL entry points.
 //
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
+#include "common/unsafe_buffers.h"
 #include "libGLESv2/egl_stubs_autogen.h"
 
 #include "common/angle_version_info.h"
@@ -38,7 +35,7 @@ void ClipConfigs(const std::vector<const Config *> &filteredConfigs,
         resultSize = std::max(std::min(resultSize, configSize), 0);
         for (EGLint i = 0; i < resultSize; i++)
         {
-            outputConfigs[i] = const_cast<Config *>(filteredConfigs[i]);
+            ANGLE_UNSAFE_TODO(outputConfigs[i]) = const_cast<Config *>(filteredConfigs[i]);
         }
     }
     *numConfigs = resultSize;
@@ -100,18 +97,17 @@ EGLint ClientWaitSync(Thread *thread,
     Sync *syncObject            = display->getSync(syncID);
     ANGLE_EGL_TRY_RETURN(
         thread, syncObject->clientWait(display, currentContext, flags, timeout, &syncStatus),
-        "eglClientWaitSync", GetSyncIfValid(display, syncID), EGL_FALSE);
+        "eglClientWaitSync", syncObject, EGL_FALSE);
 
     // When performing CPU wait through UnlockedTailCall we need to handle any error conditions
     if (egl::Display::GetCurrentThreadUnlockedTailCall()->any())
     {
-        auto handleErrorStatus = [thread, display, syncID](void *result) {
+        auto handleErrorStatus = [thread, syncObject](void *result) {
             EGLint *eglResult = static_cast<EGLint *>(result);
             ASSERT(eglResult);
             if (*eglResult == EGL_FALSE)
             {
-                thread->setError(egl::Error(EGL_BAD_ALLOC), "eglClientWaitSync",
-                                 GetSyncIfValid(display, syncID));
+                thread->setError(egl::Error(EGL_BAD_ALLOC), "eglClientWaitSync", syncObject);
             }
             else
             {
@@ -599,9 +595,7 @@ const char *QueryString(Thread *thread, Display *display, EGLint name)
             break;
         case EGL_VERSION:
         {
-            static const char *sVersionString =
-                MakeStaticString(std::string("1.5 (ANGLE ") + angle::GetANGLEVersionString() + ")");
-            result = sVersionString;
+            result = angle::GetANGLEEGLVersionString();
             break;
         }
         default:

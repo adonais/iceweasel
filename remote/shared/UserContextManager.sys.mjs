@@ -32,6 +32,8 @@ const DEFAULT_INTERNAL_ID = 0;
  * @fires UserContextManagerClass#"user-context-deleted"
  *      - {string} userContextId
  *            The UUID of the user context which was just deleted.
+ *      - {number} internalId
+ *            The internal platform id of the user context.
  */
 export class UserContextManagerClass {
   #contextualIdentityListener;
@@ -250,9 +252,10 @@ export class UserContextManagerClass {
   };
 
   #onIdentityDeleted = (eventName, data) => {
-    const userContextId = this.#userContextIds.get(data.identity.userContextId);
-    this.#userContextIds.delete(data.identity.userContextId);
-    this.emit("user-context-deleted", { userContextId });
+    const internalId = data.identity.userContextId;
+    const userContextId = this.#userContextIds.get(internalId);
+    this.#userContextIds.delete(internalId);
+    this.emit("user-context-deleted", { userContextId, internalId });
   };
 
   #registerIdentity(identity) {

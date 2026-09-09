@@ -10,4 +10,3 @@ There are some clarification on how to test your Nimbus implementation:
 2. The experiment in <https://stage.experimenter.nonprod.webservices.mozgcp.net/nimbus/> does not have to be live for the test. In preview is sufficient.
 3. Example of a test is [here](https://stage.experimenter.nonprod.webservices.mozgcp.net/nimbus/unified-search-test).
 4. Make sure you archive the test after you're done with it.
-5. In your PR, make sure to submit the change for .experimenter.yaml as well.

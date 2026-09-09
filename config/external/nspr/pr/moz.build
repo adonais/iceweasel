@@ -114,7 +114,6 @@ LOCAL_INCLUDES += [
 ]
 
 SOURCES += [
-    "/nsprpub/pr/src/io/prpolevt.c",  # conflicting definition of PRFilePrivate
     "/nsprpub/pr/src/misc/praton.c",  # duplicate definition of index_hex
 ]
 
@@ -150,11 +149,20 @@ UNIFIED_SOURCES += [
     "/nsprpub/pr/src/misc/prrng.c",
     "/nsprpub/pr/src/misc/prsystem.c",
     "/nsprpub/pr/src/misc/prtime.c",
-    "/nsprpub/pr/src/misc/prtpool.c",
     "/nsprpub/pr/src/threads/prcmon.c",
     "/nsprpub/pr/src/threads/prrwlock.c",
     "/nsprpub/pr/src/threads/prtpd.c",
 ]
+
+# Unused in Firefox and NSS, but when libs aren't folded, system libraries we
+# load may resolve these symbols against libnspr4.so.
+if not CONFIG["MOZ_FOLD_LIBS"]:
+    SOURCES += [
+        "/nsprpub/pr/src/io/prpolevt.c",  # conflicting definition of PRFilePrivate
+    ]
+    UNIFIED_SOURCES += [
+        "/nsprpub/pr/src/misc/prtpool.c",
+    ]
 
 if CONFIG["OS_TARGET"] != "WINNT":
     DEFINES["_PR_PTHREADS"] = True
@@ -203,7 +211,6 @@ else:
         "/nsprpub/pr/src/threads/combined/prustack.c",
         "/nsprpub/pr/src/threads/combined/pruthr.c",
         "/nsprpub/pr/src/threads/prcthr.c",
-        "/nsprpub/pr/src/threads/prdump.c",
         "/nsprpub/pr/src/threads/prmon.c",
         "/nsprpub/pr/src/threads/prsem.c",
     ]

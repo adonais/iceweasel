@@ -5,6 +5,8 @@
 package mozilla.components.feature.search.storage
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.Locale
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.search.RegionState
 import mozilla.components.browser.state.search.SearchEngine
@@ -14,8 +16,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.Locale
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class BundledSearchEnginesStorageTest {
@@ -57,7 +57,8 @@ class BundledSearchEnginesStorageTest {
         // With region
         run {
             val storage = BundledSearchEnginesStorage(testContext)
-            val engines = storage.load(RegionState("US", "US"), Locale.Builder().setLanguage("de").setRegion("DE").build())
+            val engines =
+                storage.load(RegionState("US", "US"), Locale.Builder().setLanguage("de").setRegion("DE").build())
             val searchEngines = engines.list
 
             assertEquals(7, searchEngines.size)
@@ -81,7 +82,8 @@ class BundledSearchEnginesStorageTest {
         // With region
         run {
             val storage = BundledSearchEnginesStorage(testContext)
-            val engines = storage.load(RegionState("RU", "RU"), Locale.Builder().setLanguage("en").setRegion("US").build())
+            val engines =
+                storage.load(RegionState("RU", "RU"), Locale.Builder().setLanguage("en").setRegion("US").build())
             val searchEngines = engines.list
 
             println("searchEngines = $searchEngines")
@@ -196,12 +198,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for vivo-001 distributions in US`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "US",
-            localeLang = "en",
-            localeCountry = "US",
-            distribution = "vivo-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "US",
+                localeLang = "en",
+                localeCountry = "US",
+                distribution = "vivo-001",
+            )
 
         assertEquals(
             listOf("google-b-vv", "bing-vivo", "ddg", "ebay", "wikipedia"),
@@ -211,12 +214,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for vivo-001 distributions in Austria`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "AT",
-            localeLang = "de",
-            localeCountry = "AT",
-            distribution = "vivo-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "AT",
+                localeLang = "de",
+                localeCountry = "AT",
+                distribution = "vivo-001",
+            )
 
         assertEquals(
             listOf(
@@ -234,12 +238,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for vivo-001 distributions in Spain`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "ES",
-            localeLang = "es",
-            localeCountry = "ES",
-            distribution = "vivo-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "ES",
+                localeLang = "es",
+                localeCountry = "ES",
+                distribution = "vivo-001",
+            )
 
         assertEquals(
             listOf("google-b-vv", "bing-vivo", "ddg", "wikipedia-es", "ebay-es"),
@@ -249,12 +254,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for vivo-001 distributions in Italy`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "IT",
-            localeLang = "it",
-            localeCountry = "IT",
-            distribution = "vivo-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "IT",
+                localeLang = "it",
+                localeCountry = "IT",
+                distribution = "vivo-001",
+            )
 
         assertEquals(
             listOf("google-b-vv", "bing-vivo", "ddg", "wikipedia-it", "ebay-it"),
@@ -264,12 +270,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for vivo-001 distributions in Germany`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "DE",
-            localeLang = "de",
-            localeCountry = "DE",
-            distribution = "vivo-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "DE",
+                localeLang = "de",
+                localeCountry = "DE",
+                distribution = "vivo-001",
+            )
 
         assertEquals(
             listOf(
@@ -287,12 +294,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for vivo-001 distributions in France`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "FR",
-            localeLang = "fr",
-            localeCountry = "FR",
-            distribution = "vivo-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "FR",
+                localeLang = "fr",
+                localeCountry = "FR",
+                distribution = "vivo-001",
+            )
 
         assertEquals(
             listOf(
@@ -309,12 +317,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for vivo-001 distributions in Mexico`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "MX",
-            localeLang = "es",
-            localeCountry = "MX",
-            distribution = "vivo-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "MX",
+                localeLang = "es",
+                localeCountry = "MX",
+                distribution = "vivo-001",
+            )
 
         assertEquals(
             listOf(
@@ -330,12 +339,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for vivo-001 distributions in Colombia`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "CO",
-            localeLang = "es",
-            localeCountry = "CO",
-            distribution = "vivo-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "CO",
+                localeLang = "es",
+                localeCountry = "CO",
+                distribution = "vivo-001",
+            )
 
         assertEquals(
             listOf("google-b-vv", "bing-vivo", "ddg", "wikipedia"),
@@ -345,12 +355,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for vivo-001 distributions in an unknown country and language`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "MEEP",
-            localeLang = "beepbeep",
-            localeCountry = "MEEP",
-            distribution = "vivo-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "MEEP",
+                localeLang = "beepbeep",
+                localeCountry = "MEEP",
+                distribution = "vivo-001",
+            )
 
         assertEquals(
             listOf("google-b-vv", "bing-vivo", "ddg", "wikipedia"),
@@ -360,12 +371,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for vivo-001 distributions in Russia in russian`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "RU",
-            localeLang = "ru",
-            localeCountry = "RU",
-            distribution = "vivo-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "RU",
+                localeLang = "ru",
+                localeCountry = "RU",
+                distribution = "vivo-001",
+            )
 
         assertEquals(
             listOf("google-com-nocodes", "ddg", "wikipedia-ru"),
@@ -375,12 +387,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for vivo-001 distributions in USA in russian`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "US",
-            localeLang = "ru",
-            localeCountry = "US",
-            distribution = "vivo-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "US",
+                localeLang = "ru",
+                localeCountry = "US",
+                distribution = "vivo-001",
+            )
 
         assertEquals(
             listOf("google-b-vv", "ddg", "wikipedia-ru"),
@@ -390,12 +403,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for mozilla distribution in USA`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "US",
-            localeLang = "en",
-            localeCountry = "US",
-            distribution = "Mozilla",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "US",
+                localeLang = "en",
+                localeCountry = "US",
+                distribution = "Mozilla",
+            )
 
         assertEquals(
             listOf("google-b-1-m", "bing", "ddg", "ebay", "wikipedia"),
@@ -405,12 +419,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for mozilla distribution in Germany in german`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "DE",
-            localeLang = "de",
-            localeCountry = "DE",
-            distribution = "Mozilla",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "DE",
+                localeLang = "de",
+                localeCountry = "DE",
+                distribution = "Mozilla",
+            )
 
         assertEquals(
             listOf(
@@ -428,12 +443,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for mozilla distribution in Russia in russian`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "RU",
-            localeLang = "ru",
-            localeCountry = "RU",
-            distribution = "Mozilla",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "RU",
+                localeLang = "ru",
+                localeCountry = "RU",
+                distribution = "Mozilla",
+            )
 
         assertEquals(
             listOf("google-com-nocodes", "ddg", "wikipedia-ru"),
@@ -443,12 +459,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for mozilla distribution in Germany in russian`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "DE",
-            localeLang = "ru",
-            localeCountry = "DE",
-            distribution = "Mozilla",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "DE",
+                localeLang = "ru",
+                localeCountry = "DE",
+                distribution = "Mozilla",
+            )
 
         assertEquals(
             listOf("google-b-m", "ddg", "wikipedia-ru"),
@@ -458,12 +475,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for mozilla distribution in USA in russian`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "US",
-            localeLang = "ru",
-            localeCountry = "US",
-            distribution = "Mozilla",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "US",
+                localeLang = "ru",
+                localeCountry = "US",
+                distribution = "Mozilla",
+            )
 
         assertEquals(
             listOf("google-b-1-m", "ddg", "wikipedia-ru"),
@@ -473,12 +491,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for unknown distribution in USA`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "US",
-            localeLang = "en",
-            localeCountry = "US",
-            distribution = "unknown",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "US",
+                localeLang = "en",
+                localeCountry = "US",
+                distribution = "unknown",
+            )
 
         assertEquals(
             listOf(
@@ -494,12 +513,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for unknown distribution in an unknown country and language`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "MEEP",
-            localeLang = "beepbeep",
-            localeCountry = "MEEP",
-            distribution = "unknown",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "MEEP",
+                localeLang = "beepbeep",
+                localeCountry = "MEEP",
+                distribution = "unknown",
+            )
 
         assertEquals(
             listOf("google-b-m", "bing", "ddg", "wikipedia"),
@@ -509,12 +529,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-001 distributions in US`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "US",
-            localeLang = "en",
-            localeCountry = "US",
-            distribution = "dt-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "US",
+                localeLang = "en",
+                localeCountry = "US",
+                distribution = "dt-001",
+            )
 
         assertEquals(
             listOf("google-b-tf", "bing-dt-tele", "ddg", "ebay", "wikipedia"),
@@ -524,12 +545,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-001 distributions in Austria`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "AT",
-            localeLang = "de",
-            localeCountry = "AT",
-            distribution = "dt-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "AT",
+                localeLang = "de",
+                localeCountry = "AT",
+                distribution = "dt-001",
+            )
 
         assertEquals(
             listOf(
@@ -547,12 +569,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-001 distributions in Spain`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "ES",
-            localeLang = "es",
-            localeCountry = "ES",
-            distribution = "dt-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "ES",
+                localeLang = "es",
+                localeCountry = "ES",
+                distribution = "dt-001",
+            )
 
         assertEquals(
             listOf("google-b-tf", "bing-dt-tele", "ddg", "wikipedia-es", "ebay-es"),
@@ -562,12 +585,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-001 distributions in Italy`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "IT",
-            localeLang = "it",
-            localeCountry = "IT",
-            distribution = "dt-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "IT",
+                localeLang = "it",
+                localeCountry = "IT",
+                distribution = "dt-001",
+            )
 
         assertEquals(
             listOf("google-b-tf", "bing-dt-tele", "ddg", "wikipedia-it", "ebay-it"),
@@ -577,12 +601,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-001 distributions in Germany`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "DE",
-            localeLang = "de",
-            localeCountry = "DE",
-            distribution = "dt-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "DE",
+                localeLang = "de",
+                localeCountry = "DE",
+                distribution = "dt-001",
+            )
 
         assertEquals(
             listOf(
@@ -600,12 +625,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-001 distributions in France`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "FR",
-            localeLang = "fr",
-            localeCountry = "FR",
-            distribution = "dt-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "FR",
+                localeLang = "fr",
+                localeCountry = "FR",
+                distribution = "dt-001",
+            )
 
         assertEquals(
             listOf(
@@ -622,12 +648,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-001 distributions in Mexico`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "MX",
-            localeLang = "es",
-            localeCountry = "MX",
-            distribution = "dt-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "MX",
+                localeLang = "es",
+                localeCountry = "MX",
+                distribution = "dt-001",
+            )
 
         assertEquals(
             listOf(
@@ -643,12 +670,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-001 distributions in Colombia`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "CO",
-            localeLang = "es",
-            localeCountry = "CO",
-            distribution = "dt-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "CO",
+                localeLang = "es",
+                localeCountry = "CO",
+                distribution = "dt-001",
+            )
 
         assertEquals(
             listOf("google-b-tf", "bing-dt-tele", "ddg", "wikipedia"),
@@ -658,12 +686,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-001 distributions in an unknown country and language`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "MEEP",
-            localeLang = "beepbeep",
-            localeCountry = "MEEP",
-            distribution = "dt-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "MEEP",
+                localeLang = "beepbeep",
+                localeCountry = "MEEP",
+                distribution = "dt-001",
+            )
 
         assertEquals(
             listOf("google-b-tf", "bing-dt-tele", "ddg", "wikipedia"),
@@ -673,12 +702,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-001 distributions in Russia in russian`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "RU",
-            localeLang = "ru",
-            localeCountry = "RU",
-            distribution = "dt-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "RU",
+                localeLang = "ru",
+                localeCountry = "RU",
+                distribution = "dt-001",
+            )
 
         assertEquals(
             listOf("google-com-nocodes", "ddg", "wikipedia-ru"),
@@ -688,12 +718,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-001 distributions in USA in russian`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "US",
-            localeLang = "ru",
-            localeCountry = "US",
-            distribution = "dt-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "US",
+                localeLang = "ru",
+                localeCountry = "US",
+                distribution = "dt-001",
+            )
 
         assertEquals(
             listOf("google-b-tf", "ddg", "wikipedia-ru"),
@@ -703,12 +734,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-002 distributions in US`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "US",
-            localeLang = "en",
-            localeCountry = "US",
-            distribution = "dt-002",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "US",
+                localeLang = "en",
+                localeCountry = "US",
+                distribution = "dt-002",
+            )
 
         assertEquals(
             listOf("google-b-1-dt", "bing", "ddg", "ebay", "wikipedia"),
@@ -718,12 +750,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-002 distributions in Austria`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "AT",
-            localeLang = "de",
-            localeCountry = "AT",
-            distribution = "dt-002",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "AT",
+                localeLang = "de",
+                localeCountry = "AT",
+                distribution = "dt-002",
+            )
 
         assertEquals(
             listOf(
@@ -741,12 +774,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-002 distributions in Spain`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "ES",
-            localeLang = "es",
-            localeCountry = "ES",
-            distribution = "dt-002",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "ES",
+                localeLang = "es",
+                localeCountry = "ES",
+                distribution = "dt-002",
+            )
 
         assertEquals(
             listOf("google-b-1-dt", "bing", "ddg", "wikipedia-es", "ebay-es"),
@@ -756,12 +790,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-002 distributions in Italy`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "IT",
-            localeLang = "it",
-            localeCountry = "IT",
-            distribution = "dt-002",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "IT",
+                localeLang = "it",
+                localeCountry = "IT",
+                distribution = "dt-002",
+            )
 
         assertEquals(
             listOf("google-b-1-dt", "bing", "ddg", "wikipedia-it", "ebay-it"),
@@ -771,12 +806,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-002 distributions in Germany`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "DE",
-            localeLang = "de",
-            localeCountry = "DE",
-            distribution = "dt-002",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "DE",
+                localeLang = "de",
+                localeCountry = "DE",
+                distribution = "dt-002",
+            )
 
         assertEquals(
             listOf(
@@ -794,12 +830,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-002 distributions in France`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "FR",
-            localeLang = "fr",
-            localeCountry = "FR",
-            distribution = "dt-002",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "FR",
+                localeLang = "fr",
+                localeCountry = "FR",
+                distribution = "dt-002",
+            )
 
         assertEquals(
             listOf(
@@ -816,12 +853,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-002 distributions in Mexico`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "MX",
-            localeLang = "es",
-            localeCountry = "MX",
-            distribution = "dt-002",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "MX",
+                localeLang = "es",
+                localeCountry = "MX",
+                distribution = "dt-002",
+            )
 
         assertEquals(
             listOf(
@@ -837,12 +875,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-002 distributions in Colombia`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "CO",
-            localeLang = "es",
-            localeCountry = "CO",
-            distribution = "dt-002",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "CO",
+                localeLang = "es",
+                localeCountry = "CO",
+                distribution = "dt-002",
+            )
 
         assertEquals(
             listOf("google-b-1-dt", "bing", "ddg", "wikipedia"),
@@ -852,12 +891,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-002 distributions in an unknown country and language`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "MEEP",
-            localeLang = "beepbeep",
-            localeCountry = "MEEP",
-            distribution = "dt-002",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "MEEP",
+                localeLang = "beepbeep",
+                localeCountry = "MEEP",
+                distribution = "dt-002",
+            )
 
         assertEquals(
             listOf("google-b-1-dt", "bing", "ddg", "wikipedia"),
@@ -867,12 +907,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-002 distributions in Russia in russian`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "RU",
-            localeLang = "ru",
-            localeCountry = "RU",
-            distribution = "dt-002",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "RU",
+                localeLang = "ru",
+                localeCountry = "RU",
+                distribution = "dt-002",
+            )
 
         assertEquals(
             listOf("google-com-nocodes", "ddg", "wikipedia-ru"),
@@ -882,12 +923,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-002 distributions in USA in russian`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "US",
-            localeLang = "ru",
-            localeCountry = "US",
-            distribution = "dt-002",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "US",
+                localeLang = "ru",
+                localeCountry = "US",
+                distribution = "dt-002",
+            )
 
         assertEquals(
             listOf("google-b-1-dt", "ddg", "wikipedia-ru"),
@@ -897,12 +939,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-003 distributions in US`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "US",
-            localeLang = "en",
-            localeCountry = "US",
-            distribution = "dt-003",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "US",
+                localeLang = "en",
+                localeCountry = "US",
+                distribution = "dt-003",
+            )
 
         assertEquals(
             listOf("google-b-dt", "bing", "ddg", "ebay", "wikipedia"),
@@ -912,12 +955,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-003 distributions in Austria`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "AT",
-            localeLang = "de",
-            localeCountry = "AT",
-            distribution = "dt-003",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "AT",
+                localeLang = "de",
+                localeCountry = "AT",
+                distribution = "dt-003",
+            )
 
         assertEquals(
             listOf(
@@ -935,12 +979,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-003 distributions in Spain`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "ES",
-            localeLang = "es",
-            localeCountry = "ES",
-            distribution = "dt-003",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "ES",
+                localeLang = "es",
+                localeCountry = "ES",
+                distribution = "dt-003",
+            )
 
         assertEquals(
             listOf("google-b-dt", "bing", "ddg", "wikipedia-es", "ebay-es"),
@@ -950,12 +995,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-003 distributions in Italy`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "IT",
-            localeLang = "it",
-            localeCountry = "IT",
-            distribution = "dt-003",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "IT",
+                localeLang = "it",
+                localeCountry = "IT",
+                distribution = "dt-003",
+            )
 
         assertEquals(
             listOf("google-b-dt", "bing", "ddg", "wikipedia-it", "ebay-it"),
@@ -965,12 +1011,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-003 distributions in Germany`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "DE",
-            localeLang = "de",
-            localeCountry = "DE",
-            distribution = "dt-003",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "DE",
+                localeLang = "de",
+                localeCountry = "DE",
+                distribution = "dt-003",
+            )
 
         assertEquals(
             listOf(
@@ -988,12 +1035,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-003 distributions in France`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "FR",
-            localeLang = "fr",
-            localeCountry = "FR",
-            distribution = "dt-003",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "FR",
+                localeLang = "fr",
+                localeCountry = "FR",
+                distribution = "dt-003",
+            )
 
         assertEquals(
             listOf(
@@ -1010,12 +1058,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-003 distributions in Mexico`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "MX",
-            localeLang = "es",
-            localeCountry = "MX",
-            distribution = "dt-003",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "MX",
+                localeLang = "es",
+                localeCountry = "MX",
+                distribution = "dt-003",
+            )
 
         assertEquals(
             listOf(
@@ -1031,12 +1080,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-003 distributions in Colombia`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "CO",
-            localeLang = "es",
-            localeCountry = "CO",
-            distribution = "dt-003",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "CO",
+                localeLang = "es",
+                localeCountry = "CO",
+                distribution = "dt-003",
+            )
 
         assertEquals(
             listOf("google-b-dt", "bing", "ddg", "wikipedia"),
@@ -1046,12 +1096,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-003 distributions in an unknown country and language`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "MEEP",
-            localeLang = "beepbeep",
-            localeCountry = "MEEP",
-            distribution = "dt-003",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "MEEP",
+                localeLang = "beepbeep",
+                localeCountry = "MEEP",
+                distribution = "dt-003",
+            )
 
         assertEquals(
             listOf("google-b-dt", "bing", "ddg", "wikipedia"),
@@ -1061,12 +1112,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-003 distributions in Russia in russian`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "RU",
-            localeLang = "ru",
-            localeCountry = "RU",
-            distribution = "dt-003",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "RU",
+                localeLang = "ru",
+                localeCountry = "RU",
+                distribution = "dt-003",
+            )
 
         assertEquals(
             listOf("google-com-nocodes", "ddg", "wikipedia-ru"),
@@ -1076,12 +1128,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for dt-003 distributions in USA in russian`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "US",
-            localeLang = "ru",
-            localeCountry = "US",
-            distribution = "dt-003",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "US",
+                localeLang = "ru",
+                localeCountry = "US",
+                distribution = "dt-003",
+            )
 
         assertEquals(
             listOf("google-b-dt", "ddg", "wikipedia-ru"),
@@ -1091,12 +1144,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for aura-001 distributions in US`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "US",
-            localeLang = "en",
-            localeCountry = "US",
-            distribution = "aura-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "US",
+                localeLang = "en",
+                localeCountry = "US",
+                distribution = "aura-001",
+            )
 
         assertEquals(
             listOf("google-b-1-ar", "bing", "ddg", "ebay", "wikipedia"),
@@ -1106,12 +1160,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for aura-001 distributions in Austria`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "AT",
-            localeLang = "de",
-            localeCountry = "AT",
-            distribution = "aura-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "AT",
+                localeLang = "de",
+                localeCountry = "AT",
+                distribution = "aura-001",
+            )
 
         assertEquals(
             listOf(
@@ -1129,12 +1184,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for aura-001 distributions in Spain`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "ES",
-            localeLang = "es",
-            localeCountry = "ES",
-            distribution = "aura-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "ES",
+                localeLang = "es",
+                localeCountry = "ES",
+                distribution = "aura-001",
+            )
 
         assertEquals(
             listOf("google-b-ar", "bing", "ddg", "wikipedia-es", "ebay-es"),
@@ -1144,12 +1200,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for aura-001 distributions in Italy`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "IT",
-            localeLang = "it",
-            localeCountry = "IT",
-            distribution = "aura-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "IT",
+                localeLang = "it",
+                localeCountry = "IT",
+                distribution = "aura-001",
+            )
 
         assertEquals(
             listOf("google-b-ar", "bing", "ddg", "wikipedia-it", "ebay-it"),
@@ -1159,12 +1216,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for aura-001 distributions in Germany`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "DE",
-            localeLang = "de",
-            localeCountry = "DE",
-            distribution = "aura-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "DE",
+                localeLang = "de",
+                localeCountry = "DE",
+                distribution = "aura-001",
+            )
 
         assertEquals(
             listOf(
@@ -1182,12 +1240,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for aura-001 distributions in France`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "FR",
-            localeLang = "fr",
-            localeCountry = "FR",
-            distribution = "aura-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "FR",
+                localeLang = "fr",
+                localeCountry = "FR",
+                distribution = "aura-001",
+            )
 
         assertEquals(
             listOf(
@@ -1204,12 +1263,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for aura-001 distributions in Mexico`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "MX",
-            localeLang = "es",
-            localeCountry = "MX",
-            distribution = "aura-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "MX",
+                localeLang = "es",
+                localeCountry = "MX",
+                distribution = "aura-001",
+            )
 
         assertEquals(
             listOf(
@@ -1225,12 +1285,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for aura-001 distributions in Colombia`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "CO",
-            localeLang = "es",
-            localeCountry = "CO",
-            distribution = "aura-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "CO",
+                localeLang = "es",
+                localeCountry = "CO",
+                distribution = "aura-001",
+            )
 
         assertEquals(
             listOf("google-b-ar", "bing", "ddg", "wikipedia"),
@@ -1240,12 +1301,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for aura-001 distributions in an unknown country and language`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "MEEP",
-            localeLang = "beepbeep",
-            localeCountry = "MEEP",
-            distribution = "aura-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "MEEP",
+                localeLang = "beepbeep",
+                localeCountry = "MEEP",
+                distribution = "aura-001",
+            )
 
         assertEquals(
             listOf("google-b-ar", "bing", "ddg", "wikipedia"),
@@ -1255,12 +1317,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for aura-001 distributions in Russia in russian`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "RU",
-            localeLang = "ru",
-            localeCountry = "RU",
-            distribution = "aura-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "RU",
+                localeLang = "ru",
+                localeCountry = "RU",
+                distribution = "aura-001",
+            )
 
         assertEquals(
             listOf("google-com-nocodes", "ddg", "wikipedia-ru"),
@@ -1270,12 +1333,13 @@ class BundledSearchEnginesStorageTest {
 
     @Test
     fun `Verify search engines for aura-001 distributions in USA in russian`() = runTest {
-        val searchEngines = loadSearchEngines(
-            region = "US",
-            localeLang = "ru",
-            localeCountry = "US",
-            distribution = "aura-001",
-        )
+        val searchEngines =
+            loadSearchEngines(
+                region = "US",
+                localeLang = "ru",
+                localeCountry = "US",
+                distribution = "aura-001",
+            )
 
         assertEquals(
             listOf("google-b-1-ar", "ddg", "wikipedia-ru"),
@@ -1290,11 +1354,12 @@ class BundledSearchEnginesStorageTest {
         distribution: String,
     ): List<String> {
         val storage = BundledSearchEnginesStorage(testContext)
-        val engines = storage.load(
-            region = RegionState(region, region),
-            locale = Locale.forLanguageTag("$localeLang-$localeCountry"),
-            distribution = distribution,
-        )
+        val engines =
+            storage.load(
+                region = RegionState(region, region),
+                locale = Locale.forLanguageTag("$localeLang-$localeCountry"),
+                distribution = distribution,
+            )
         return engines.list.map { it.id }
     }
 }

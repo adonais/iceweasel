@@ -59,16 +59,16 @@ private val sheetMaxWidth = 450.dp
  * The IP Protection onboarding prompt.
  *
  * @param maxGib The total monthly allowance in GB for unpaid users.
- * @param formattedPromoDate Locale-formatted end date for the promo copy shown when [maxGib] is 0.
- * `null` means the promo cannot be rendered (e.g. Nimbus shipped a malformed date) and the sheet
- * should fall back to the standard onboarding copy.
+ * @param formattedPromoDate Locale-formatted end date for the promo copy shown when [maxGib] is 0. `null` means the
+ *   promo cannot be rendered (e.g. Nimbus shipped a malformed date) and the sheet should fall back to the standard
+ *   onboarding copy.
  * @param onDismiss The callback to invoke when the prompt is dismissed.
- * @param onDismissRequest The callback to invoke when the user clicks outside of the bottom sheet,
- * after sheet animates to Hidden. See [ModalBottomSheet].
- * @param onLearnMoreClicked The callback to invoke when user clicks on the hyperlink that points to
- * an article about VPN on Firefox.
- * @param onGetStartedClicked The callback to invoke when user clicks on "Get started" to
- * start the VPN authentication or authorization process.
+ * @param onDismissRequest The callback to invoke when the user clicks outside of the bottom sheet, after sheet animates
+ *   to Hidden. See [ModalBottomSheet].
+ * @param onLearnMoreClicked The callback to invoke when user clicks on the hyperlink that points to an article about
+ *   VPN on Firefox.
+ * @param onGetStartedClicked The callback to invoke when user clicks on "Get started" to start the VPN authentication
+ *   or authorization process.
  * @param onNotNowClicked The callback to invoke when user clicks on "Not now" to dismiss the prompt.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -144,25 +144,19 @@ private fun BottomSheetContent(
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
-    Column(
-        modifier = Modifier
-            .padding(bottom = 16.dp, start = 16.dp, end = 16.dp),
-    ) {
-        Box(
-            modifier = Modifier.weight(1f, fill = false),
-        ) {
-            Column(
-                modifier = Modifier.verticalScroll(state = scrollState, reverseScrolling = true),
-            ) {
+    Column(modifier = Modifier.padding(bottom = 16.dp, start = 16.dp, end = 16.dp)) {
+        Box(modifier = Modifier.weight(1f, fill = false)) {
+            Column(modifier = Modifier.verticalScroll(state = scrollState, reverseScrolling = true)) {
                 PromoBannerCard()
 
                 Spacer(Modifier.height(32.dp))
 
                 Text(
-                    text = stringResource(
-                        R.string.ip_protection_onboarding_card_headline,
-                        stringResource(R.string.firefox),
-                    ),
+                    text =
+                        stringResource(
+                            R.string.ip_protection_onboarding_card_headline,
+                            stringResource(R.string.firefox),
+                        ),
                     style = MaterialTheme.typography.bodyLarge,
                 )
 
@@ -191,19 +185,23 @@ private fun BottomSheetContent(
         IPProtectionButtons(
             onNotNowClicked = {
                 onNotNowClicked()
-                coroutineScope.launch {
-                    sheetState.hide()
-                }.invokeOnCompletion {
-                    onDismiss()
-                }
+                coroutineScope
+                    .launch {
+                        sheetState.hide()
+                    }
+                    .invokeOnCompletion {
+                        onDismiss()
+                    }
             },
             onGetStartedClicked = {
                 onGetStartedClicked()
-                coroutineScope.launch {
-                    sheetState.hide()
-                }.invokeOnCompletion {
-                    onDismiss()
-                }
+                coroutineScope
+                    .launch {
+                        sheetState.hide()
+                    }
+                    .invokeOnCompletion {
+                        onDismiss()
+                    }
             },
         )
     }
@@ -217,16 +215,15 @@ private fun IPProtectionPromoContent(
     val learnMoreText = stringResource(R.string.ip_protection_onboarding_body_link_promo)
     LinkText(
         text = stringResource(id = R.string.ip_protection_onboarding_body_promo, formattedDate, learnMoreText),
-        linkTextStates = listOf(
-            LinkTextState(
-                text = learnMoreText,
-                url = "",
-                onClick = { onLearnMoreClicked() },
+        linkTextStates =
+            listOf(
+                LinkTextState(
+                    text = learnMoreText,
+                    url = "",
+                    onClick = { onLearnMoreClicked() },
+                )
             ),
-        ),
-        style = FirefoxTheme.typography.body2.copy(
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
+        style = FirefoxTheme.typography.body2.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
         linkTextDecoration = TextDecoration.Underline,
     )
 }
@@ -239,21 +236,21 @@ private fun IPProtectionContent(
     val learnMoreText = stringResource(R.string.ip_protection_onboarding_body_link)
 
     LinkText(
-        text = stringResource(
-            id = R.string.ip_protection_onboarding_body,
-            learnMoreText,
-            maxGib,
-        ),
-        linkTextStates = listOf(
-            LinkTextState(
-                text = learnMoreText,
-                url = "",
-                onClick = { onLearnMoreClicked() },
+        text =
+            stringResource(
+                id = R.string.ip_protection_onboarding_body,
+                learnMoreText,
+                maxGib,
             ),
-        ),
-        style = FirefoxTheme.typography.body2.copy(
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
+        linkTextStates =
+            listOf(
+                LinkTextState(
+                    text = learnMoreText,
+                    url = "",
+                    onClick = { onLearnMoreClicked() },
+                )
+            ),
+        style = FirefoxTheme.typography.body2.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
         linkTextDecoration = TextDecoration.Underline,
     )
 }
@@ -288,11 +285,11 @@ private fun PromoBannerCard() {
         contentAlignment = Alignment.Center,
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(sheetMaxHeight)
-                .clip(MaterialTheme.shapes.large)
-                .background(MaterialTheme.colorScheme.primaryContainer),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(sheetMaxHeight)
+                    .clip(MaterialTheme.shapes.large)
+                    .background(MaterialTheme.colorScheme.primaryContainer)
         ) {
             BetaBadge()
         }
@@ -300,9 +297,7 @@ private fun PromoBannerCard() {
         Image(
             painter = painterResource(id = R.drawable.ic_kit_shield_on_state),
             contentDescription = null,
-            modifier = Modifier
-                .size(bannerImageSize)
-                .offset(y = 16.dp),
+            modifier = Modifier.size(bannerImageSize).offset(y = 16.dp),
         )
     }
 }
@@ -328,9 +323,7 @@ private fun BetaBadge() {
 @OptIn(ExperimentalMaterial3Api::class)
 @FlexibleWindowPreview
 @Composable
-private fun IPProtectionBottomSheetPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun IPProtectionBottomSheetPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme = theme) {
         IPProtectionBottomSheet(
             maxGib = 50,

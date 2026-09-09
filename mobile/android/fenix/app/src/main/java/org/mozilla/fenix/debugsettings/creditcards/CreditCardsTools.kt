@@ -28,21 +28,17 @@ import kotlinx.coroutines.launch
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.concept.storage.CreditCard
 import mozilla.components.concept.storage.CreditCardsAddressesStorage
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.debugsettings.addresses.FakeCreditCardsAddressesStorage
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
-/**
- * CreditCards UI for the debug drawer that displays various creditCards related tools.
- */
+/** CreditCards UI for the debug drawer that displays various creditCards related tools. */
 @Composable
-fun CreditCardsTools(
-    creditCardsAddressesStorage: CreditCardsAddressesStorage,
-) {
+fun CreditCardsTools(creditCardsAddressesStorage: CreditCardsAddressesStorage) {
     val scope = rememberCoroutineScope()
     var creditCards by remember { mutableStateOf(listOf<CreditCard>()) }
     LaunchedEffect(Unit) {
@@ -126,12 +122,8 @@ private fun CreditCardsContent(
 
 @Preview
 @Composable
-private fun CreditCardsScreenPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun CreditCardsScreenPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
-        CreditCardsTools(
-            creditCardsAddressesStorage = FakeCreditCardsAddressesStorage(),
-        )
+        CreditCardsTools(creditCardsAddressesStorage = FakeCreditCardsAddressesStorage())
     }
 }

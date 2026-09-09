@@ -559,9 +559,9 @@ class nsDocShell final : public nsDocLoader,
       bool aTryToSaveOldPresentation = true, bool aCheckPermitUnload = true,
       mozilla::dom::WindowGlobalChild* aActor = nullptr);
 
-  nsresult CreateDocumentViewer(const nsACString& aContentType,
-                                nsIRequest* aRequest,
-                                nsIStreamListener** aContentHandler);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  CreateDocumentViewer(const nsACString& aContentType, nsIRequest* aRequest,
+                       nsIStreamListener** aContentHandler);
 
   nsresult NewDocumentViewerObj(const nsACString& aContentType,
                                 nsIRequest* aRequest, nsILoadGroup* aLoadGroup,
@@ -570,9 +570,9 @@ class nsDocShell final : public nsDocLoader,
 
   already_AddRefed<nsILoadURIDelegate> GetLoadURIDelegate();
 
-  nsresult SetupNewViewer(
-      nsIDocumentViewer* aNewViewer,
-      mozilla::dom::WindowGlobalChild* aWindowActor = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  SetupNewViewer(nsIDocumentViewer* aNewViewer,
+                 mozilla::dom::WindowGlobalChild* aWindowActor = nullptr);
 
   // Finds the target browsing context for this load according to
   // aLoadState->Target() and sets aLoadState->TargetBrowsingContext() to it.
@@ -960,10 +960,10 @@ class nsDocShell final : public nsDocLoader,
   nsresult EnsureCommandHandler();
   nsresult RefreshURIFromQueue();
   void RefreshURIToQueue();
-  nsresult Embed(nsIDocumentViewer* aDocumentViewer,
-                 mozilla::dom::WindowGlobalChild* aWindowActor,
-                 bool aIsTransientAboutBlank, nsIRequest* aRequest,
-                 nsIURI* aPreviousURI);
+  MOZ_CAN_RUN_SCRIPT nsresult Embed(
+      nsIDocumentViewer* aDocumentViewer,
+      mozilla::dom::WindowGlobalChild* aWindowActor,
+      bool aIsTransientAboutBlank, nsIRequest* aRequest, nsIURI* aPreviousURI);
   nsPresContext* GetEldestPresContext();
   nsresult CheckLoadingPermissions();
 

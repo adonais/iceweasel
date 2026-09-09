@@ -11,10 +11,6 @@
 #ifndef LIBANGLE_RENDERER_METAL_COMMANDENBUFFERMTL_H_
 #define LIBANGLE_RENDERER_METAL_COMMANDENBUFFERMTL_H_
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
 #include <cstdint>
@@ -27,6 +23,7 @@
 
 #include "common/FixedVector.h"
 #include "common/angleutils.h"
+#include "common/unsafe_buffers.h"
 #include "libANGLE/renderer/metal/mtl_common.h"
 #include "libANGLE/renderer/metal/mtl_resources.h"
 #include "libANGLE/renderer/metal/mtl_state_cache.h"
@@ -320,13 +317,13 @@ class IntermediateCommandStream
     inline IntermediateCommandStream &push(const T &val)
     {
         auto ptr = reinterpret_cast<const uint8_t *>(&val);
-        mBuffer.insert(mBuffer.end(), ptr, ptr + sizeof(T));
+        ANGLE_UNSAFE_TODO(mBuffer.insert(mBuffer.end(), ptr, ptr + sizeof(T)));
         return *this;
     }
 
     inline IntermediateCommandStream &push(const uint8_t *bytes, size_t len)
     {
-        mBuffer.insert(mBuffer.end(), bytes, bytes + len);
+        ANGLE_UNSAFE_TODO(mBuffer.insert(mBuffer.end(), bytes, bytes + len));
         return *this;
     }
 
@@ -336,7 +333,8 @@ class IntermediateCommandStream
         ASSERT(mReadPtr <= mBuffer.size() - sizeof(T));
         T re;
         auto ptr = reinterpret_cast<uint8_t *>(&re);
-        std::copy(mBuffer.data() + mReadPtr, mBuffer.data() + mReadPtr + sizeof(T), ptr);
+        ANGLE_UNSAFE_TODO(
+            std::copy(mBuffer.data() + mReadPtr, mBuffer.data() + mReadPtr + sizeof(T), ptr));
         return re;
     }
 
@@ -353,7 +351,7 @@ class IntermediateCommandStream
         ASSERT(mReadPtr <= mBuffer.size() - bytes);
         auto cur = mReadPtr;
         mReadPtr += bytes;
-        return mBuffer.data() + cur;
+        return ANGLE_UNSAFE_TODO(mBuffer.data() + cur);
     }
 
     inline void clear()
@@ -383,7 +381,7 @@ struct RenderCommandEncoderShaderStates
     void reset();
 
     std::array<id<MTLBuffer>, kMaxShaderBuffers> buffers;
-    std::array<uint32_t, kMaxShaderBuffers> bufferOffsets;
+    std::array<size_t, kMaxShaderBuffers> bufferOffsets;
     std::array<id<MTLSamplerState>, kMaxShaderSamplers> samplers;
     std::array<Optional<std::pair<float, float>>, kMaxShaderSamplers> samplerLodClamps;
     std::array<id<MTLTexture>, kMaxShaderSamplers> textures;
@@ -454,7 +452,7 @@ class RenderCommandEncoder final : public CommandEncoder
 
     RenderCommandEncoder &setBlendColor(float r, float g, float b, float a);
 
-    RenderCommandEncoder &setVertexBuffer(const BufferRef &buffer, uint32_t offset, uint32_t index)
+    RenderCommandEncoder &setVertexBuffer(const BufferRef &buffer, size_t offset, uint32_t index)
     {
         return setBuffer(gl::ShaderType::Vertex, buffer, offset, index);
     }
@@ -479,9 +477,7 @@ class RenderCommandEncoder final : public CommandEncoder
         return setTexture(gl::ShaderType::Vertex, texture, index);
     }
 
-    RenderCommandEncoder &setFragmentBuffer(const BufferRef &buffer,
-                                            uint32_t offset,
-                                            uint32_t index)
+    RenderCommandEncoder &setFragmentBuffer(const BufferRef &buffer, size_t offset, uint32_t index)
     {
         return setBuffer(gl::ShaderType::Fragment, buffer, offset, index);
     }
@@ -508,11 +504,11 @@ class RenderCommandEncoder final : public CommandEncoder
 
     RenderCommandEncoder &setBuffer(gl::ShaderType shaderType,
                                     const BufferRef &buffer,
-                                    uint32_t offset,
+                                    size_t offset,
                                     uint32_t index);
     RenderCommandEncoder &setBufferForWrite(gl::ShaderType shaderType,
                                             const BufferRef &buffer,
-                                            uint32_t offset,
+                                            size_t offset,
                                             uint32_t index);
     RenderCommandEncoder &setBytes(gl::ShaderType shaderType,
                                    const void *bytes,
@@ -562,7 +558,7 @@ class RenderCommandEncoder final : public CommandEncoder
                                                                      const BufferRef &indexBuffer,
                                                                      size_t bufferOffset,
                                                                      uint32_t instances,
-                                                                     uint32_t baseVertex,
+                                                                     int32_t baseVertex,
                                                                      uint32_t baseInstance);
 
     RenderCommandEncoder &setVisibilityResultMode(MTLVisibilityResultMode mode, size_t offset);
@@ -630,7 +626,7 @@ class RenderCommandEncoder final : public CommandEncoder
 
     RenderCommandEncoder &commonSetBuffer(gl::ShaderType shaderType,
                                           id<MTLBuffer> mtlBuffer,
-                                          uint32_t offset,
+                                          size_t offset,
                                           uint32_t index);
 
     RenderPassDesc mRenderPassDesc;
@@ -732,9 +728,9 @@ class ComputeCommandEncoder final : public CommandEncoder
 
     ComputeCommandEncoder &setComputePipelineState(id<MTLComputePipelineState> state);
 
-    ComputeCommandEncoder &setBuffer(const BufferRef &buffer, uint32_t offset, uint32_t index);
+    ComputeCommandEncoder &setBuffer(const BufferRef &buffer, size_t offset, uint32_t index);
     ComputeCommandEncoder &setBufferForWrite(const BufferRef &buffer,
-                                             uint32_t offset,
+                                             size_t offset,
                                              uint32_t index);
     ComputeCommandEncoder &setBytes(const void *bytes, size_t size, uint32_t index);
     template <typename T>

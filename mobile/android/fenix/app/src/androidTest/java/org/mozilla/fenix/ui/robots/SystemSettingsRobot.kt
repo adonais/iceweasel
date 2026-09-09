@@ -34,36 +34,81 @@ class SystemSettingsRobot {
 
     fun verifyAllSystemNotificationsToggleState(enabled: Boolean) {
         if (enabled) {
-            Log.i(TAG, "verifyAllSystemNotificationsToggleState: Trying to verify that the system settings \"All Fenix notifications\" toggle is checked")
-            assertTrue("$TAG: The system settings \"Show notifications\" toggle is not checked", systemSettingsAllFenixNotificationsToggle().isChecked)
-            Log.i(TAG, "verifyAllSystemNotificationsToggleState: Verified that the system settings \"Show notifications\" toggle is checked")
+            Log.i(
+                TAG,
+                "verifyAllSystemNotificationsToggleState: Trying to verify that the system settings \"All Fenix notifications\" toggle is checked",
+            )
+            assertTrue(
+                "$TAG: The system settings \"Show notifications\" toggle is not checked",
+                systemSettingsAllFenixNotificationsToggle().isChecked,
+            )
+            Log.i(
+                TAG,
+                "verifyAllSystemNotificationsToggleState: Verified that the system settings \"Show notifications\" toggle is checked",
+            )
         } else {
-            Log.i(TAG, "verifyAllSystemNotificationsToggleState: Trying to verify that the system settings \"All Fenix notifications\" toggle is not checked")
-            assertFalse("$TAG: The system settings \"Show notifications\" toggle is checked", systemSettingsAllFenixNotificationsToggle().isChecked)
-            Log.i(TAG, "verifyAllSystemNotificationsToggleState: Verified that the system settings \"Show notifications\" toggle is not checked")
+            Log.i(
+                TAG,
+                "verifyAllSystemNotificationsToggleState: Trying to verify that the system settings \"All Fenix notifications\" toggle is not checked",
+            )
+            assertFalse(
+                "$TAG: The system settings \"Show notifications\" toggle is checked",
+                systemSettingsAllFenixNotificationsToggle().isChecked,
+            )
+            Log.i(
+                TAG,
+                "verifyAllSystemNotificationsToggleState: Verified that the system settings \"Show notifications\" toggle is not checked",
+            )
         }
     }
 
     fun verifyPrivateBrowsingSystemNotificationsToggleState(enabled: Boolean) {
         if (enabled) {
-            Log.i(TAG, "verifyPrivateBrowsingSystemNotificationsToggleState: Trying to verify that the system settings \"Private browsing session\" toggle is checked")
-            assertTrue("$TAG: The system settings \"Private browsing sessio\" toggle is not checked", privateBrowsingSystemSettingsNotificationsToggle().isChecked)
-            Log.i(TAG, "verifyPrivateBrowsingSystemNotificationsToggleState: Verified that the system settings \"Private browsing session\" toggle is checked")
+            Log.i(
+                TAG,
+                "verifyPrivateBrowsingSystemNotificationsToggleState: Trying to verify that the system settings \"Private browsing session\" toggle is checked",
+            )
+            assertTrue(
+                "$TAG: The system settings \"Private browsing sessio\" toggle is not checked",
+                privateBrowsingSystemSettingsNotificationsToggle().isChecked,
+            )
+            Log.i(
+                TAG,
+                "verifyPrivateBrowsingSystemNotificationsToggleState: Verified that the system settings \"Private browsing session\" toggle is checked",
+            )
         } else {
-            Log.i(TAG, "verifyPrivateBrowsingSystemNotificationsToggleState: Trying to verify that the system settings \"Private browsing session\" toggle is not checked")
-            assertFalse("$TAG: The system settings \"Private browsing session\" toggle is checked", privateBrowsingSystemSettingsNotificationsToggle().isChecked)
-            Log.i(TAG, "verifyPrivateBrowsingSystemNotificationsToggleState: Verified that the system settings \"Private browsing session\" toggle is not checked")
+            Log.i(
+                TAG,
+                "verifyPrivateBrowsingSystemNotificationsToggleState: Trying to verify that the system settings \"Private browsing session\" toggle is not checked",
+            )
+            assertFalse(
+                "$TAG: The system settings \"Private browsing session\" toggle is checked",
+                privateBrowsingSystemSettingsNotificationsToggle().isChecked,
+            )
+            Log.i(
+                TAG,
+                "verifyPrivateBrowsingSystemNotificationsToggleState: Verified that the system settings \"Private browsing session\" toggle is not checked",
+            )
         }
     }
 
     fun clickPrivateBrowsingSystemNotificationsToggle() {
-        Log.i(TAG, "clickPrivateBrowsingSystemNotificationsToggle: Trying to click the system settings \"Private browsing session\" toggle")
+        Log.i(
+            TAG,
+            "clickPrivateBrowsingSystemNotificationsToggle: Trying to click the system settings \"Private browsing session\" toggle",
+        )
         privateBrowsingSystemSettingsNotificationsToggle().click()
-        Log.i(TAG, "clickPrivateBrowsingSystemNotificationsToggle: Clicked the system settings \"Private browsing session\" toggle")
+        Log.i(
+            TAG,
+            "clickPrivateBrowsingSystemNotificationsToggle: Clicked the system settings \"Private browsing session\" toggle",
+        )
     }
 
     fun clickAllSystemNotificationsToggle() {
-        Log.i(TAG, "clickAllSystemNotificationsToggle: Trying to click the system settings \"Show notifications\" toggle")
+        Log.i(
+            TAG,
+            "clickAllSystemNotificationsToggle: Trying to click the system settings \"Show notifications\" toggle",
+        )
         systemSettingsAllFenixNotificationsToggle().click()
         Log.i(TAG, "clickAllSystemNotificationsToggle: Clicked the system settings \"Show notifications\" toggle")
     }
@@ -87,9 +132,9 @@ fun systemSettings(interact: SystemSettingsRobot.() -> Unit): SystemSettingsRobo
 }
 
 private fun systemSettingsAllFenixNotificationsToggle() =
-    mDevice.findObject(
-        UiSelector().text("All $appName notifications"),
-    ).getFromParent(UiSelector().resourceId("android:id/switch_widget"))
+    mDevice
+        .findObject(UiSelector().text("All $appName notifications"))
+        .getFromParent(UiSelector().resourceId("android:id/switch_widget"))
 
 private fun privateBrowsingSystemSettingsNotificationsToggle() =
     itemWithResIdAndDescription("com.android.settings:id/switchWidget", "Private browsing session")

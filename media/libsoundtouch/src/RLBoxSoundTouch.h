@@ -74,6 +74,8 @@ class RLBoxSoundTouch {
   RLBOX_SOUNDTOUCH_API
   uint receiveSamples(mozilla::AudioDataValue* aOutput, uint aMaxSamples);
   RLBOX_SOUNDTOUCH_API
+  void clear();
+  RLBOX_SOUNDTOUCH_API
   void flush();
 
   RLBOX_SOUNDTOUCH_API

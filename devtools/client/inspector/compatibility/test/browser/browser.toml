@@ -1,5 +1,5 @@
 [DEFAULT]
-tags = "devtools devtools-compat-data"
+tags = "devtools"
 subsuite = "devtools"
 support-files = [
   "head.js",
@@ -30,6 +30,9 @@ support-files = [
 ["browser_compatibility_event_top-level-target-change.js"]
 
 ["browser_compatibility_issue-node.js"]
+
+["browser_compatibility_live-data.js"]
+tags = "devtools devtools-compat-data"
 
 ["browser_compatibility_settings.js"]
 

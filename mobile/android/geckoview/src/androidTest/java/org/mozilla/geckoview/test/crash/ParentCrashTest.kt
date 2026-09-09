@@ -29,11 +29,12 @@ class ParentCrashTest : BaseSessionTest() {
         assertTrue(client.connect(timeout))
         client.setEvalNextCrashDump(GeckoRuntime.CRASHED_PROCESS_VISIBILITY_MAIN, "main", null)
 
-        val runtime = TestRuntimeService.RuntimeInstance.start(
-            targetContext,
-            RuntimeCrashTestService::class.java,
-            temporaryProfile.get(),
-        )
+        val runtime =
+            TestRuntimeService.RuntimeInstance.start(
+                targetContext,
+                RuntimeCrashTestService::class.java,
+                temporaryProfile.get(),
+            )
         runtime.loadUri("about:crashparent")
 
         val evalResult = client.getEvalResult(timeout)

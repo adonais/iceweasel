@@ -17,9 +17,7 @@ import mozilla.components.feature.tabs.CustomTabsUseCases
 import mozilla.components.support.utils.SafeIntent
 import mozilla.components.support.utils.toSafeIntent
 
-/**
- * Processor for intents which trigger actions related to custom tabs.
- */
+/** Processor for intents which trigger actions related to custom tabs. */
 class CustomTabIntentProcessor(
     private val addCustomTabUseCase: CustomTabsUseCases.AddCustomTabUseCase,
     private val resources: Resources,
@@ -58,13 +56,14 @@ class CustomTabIntentProcessor(
         return if (!url.isNullOrEmpty() && matches(intent)) {
             val config = createCustomTabConfigFromIntent(intent, resources)
             val caller = safeIntent.externalPackage()
-            val customTabId = addCustomTabUseCase(
-                url,
-                config,
-                isPrivate,
-                getAdditionalHeaders(safeIntent),
-                source = SessionState.Source.External.CustomTab(caller),
-            )
+            val customTabId =
+                addCustomTabUseCase(
+                    url,
+                    config,
+                    isPrivate,
+                    getAdditionalHeaders(safeIntent),
+                    source = SessionState.Source.External.CustomTab(caller),
+                )
             intent.putSessionId(customTabId)
 
             true

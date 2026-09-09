@@ -19,19 +19,14 @@ interface SyncController {
     fun handleCameraPermissionsNeeded()
 }
 
-/**
- * Controller for handling [DefaultSyncInteractor] requests.
- */
-class DefaultSyncController(
-    private val activity: HomeActivity,
-) : SyncController {
+/** Controller for handling [DefaultSyncInteractor] requests. */
+class DefaultSyncController(private val activity: HomeActivity) : SyncController {
 
     /**
      * Creates and shows an [AlertDialog] when camera permissions are needed.
      *
-     * In versions above M, [AlertDialog.BUTTON_POSITIVE] takes the user to the app settings. This
-     * intent only exists in M and above. Below M, [AlertDialog.BUTTON_POSITIVE] routes to a SUMO
-     * help page to find the app settings.
+     * In versions above M, [AlertDialog.BUTTON_POSITIVE] takes the user to the app settings. This intent only exists in
+     * M and above. Below M, [AlertDialog.BUTTON_POSITIVE] routes to a SUMO help page to find the app settings.
      *
      * [AlertDialog.BUTTON_NEGATIVE] dismisses the dialog.
      */
@@ -40,15 +35,12 @@ class DefaultSyncController(
         dialog.show()
     }
 
-    /**
-     * Builds a [MaterialAlertDialogBuilder] to inform the user that camera permissions are needed.
-    */
+    /** Builds a [MaterialAlertDialogBuilder] to inform the user that camera permissions are needed. */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     fun buildDialog(): MaterialAlertDialogBuilder {
         return MaterialAlertDialogBuilder(activity).apply {
-            val spannableText = SpannableString(
-                activity.resources.getString(R.string.camera_permissions_needed_message),
-            )
+            val spannableText =
+                SpannableString(activity.resources.getString(R.string.camera_permissions_needed_message))
             setMessage(spannableText)
             setNegativeButton(R.string.camera_permissions_needed_negative_button_text) { dialog: DialogInterface, _ ->
                 dialog.cancel()

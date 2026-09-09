@@ -9,6 +9,9 @@ import androidx.navigation.NavDirections
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.io.File
+import java.lang.ref.WeakReference
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.TestScope
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.search.SearchEngine
@@ -21,6 +24,7 @@ import mozilla.components.browser.state.state.recover.TabState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine
 import mozilla.components.feature.session.SessionUseCases
+import mozilla.components.feature.tab.collections.Tab as ComponentTab
 import mozilla.components.feature.tab.collections.TabCollection
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.service.nimbus.messaging.Message
@@ -61,20 +65,13 @@ import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.wallpapers.Wallpaper
 import org.mozilla.fenix.wallpapers.WallpaperState
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
-import java.io.File
-import java.lang.ref.WeakReference
-import kotlin.test.assertNotNull
-import mozilla.components.feature.tab.collections.Tab as ComponentTab
 
 @RunWith(RobolectricTestRunner::class) // For gleanTestRule
 class DefaultSessionControlControllerTest {
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+    @get:Rule val temporaryFolder = TemporaryFolder()
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private val activity: HomeActivity = mockk(relaxed = true)
 
@@ -90,13 +87,14 @@ class DefaultSessionControlControllerTest {
     private val fenixBrowserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
     private val settings: Settings = mockk(relaxed = true)
     private val shareUseCases: ShareUseCases = mockk(relaxed = true)
-    private val searchEngine = SearchEngine(
-        id = "test",
-        name = "Test Engine",
-        icon = mockk(relaxed = true),
-        type = SearchEngine.Type.BUNDLED,
-        resultUrls = listOf("https://example.org/?q={searchTerms}"),
-    )
+    private val searchEngine =
+        SearchEngine(
+            id = "test",
+            name = "Test Engine",
+            icon = mockk(relaxed = true),
+            type = SearchEngine.Type.BUNDLED,
+            resultUrls = listOf("https://example.org/?q={searchTerms}"),
+        )
 
     private lateinit var store: BrowserStore
     private val appState: AppState = mockk(relaxed = true)
@@ -106,26 +104,22 @@ class DefaultSessionControlControllerTest {
     @Before
     fun setup() {
         showAddSearchWidgetPromptCalled = false
-        store = BrowserStore(
-            BrowserState(
-                search = SearchState(
-                    regionSearchEngines = listOf(searchEngine),
-                ),
-            ),
-        )
+        store = BrowserStore(BrowserState(search = SearchState(regionSearchEngines = listOf(searchEngine))))
 
-        every { appStore.state } returns AppState(
-            collections = emptyList(),
-            expandedCollections = emptySet(),
-            mode = BrowsingMode.Normal,
-            topSites = emptyList(),
-            recentTabs = emptyList(),
-            bookmarks = emptyList(),
-        )
+        every { appStore.state } returns
+            AppState(
+                collections = emptyList(),
+                expandedCollections = emptySet(),
+                mode = BrowsingMode.Normal,
+                topSites = emptyList(),
+                recentTabs = emptyList(),
+                bookmarks = emptyList(),
+            )
 
-        every { navController.currentDestination } returns mockk {
-            every { id } returns R.id.homeFragment
-        }
+        every { navController.currentDestination } returns
+            mockk {
+                every { id } returns R.id.homeFragment
+            }
         every { activity.components.settings } returns settings
         every { activity.components.settings } returns settings
         every { activity.filesDir } returns filesDir
@@ -133,9 +127,10 @@ class DefaultSessionControlControllerTest {
 
     @Test
     fun handleCollectionAddTabTapped() {
-        val collection = mockk<TabCollection> {
-            every { id } returns 12L
-        }
+        val collection =
+            mockk<TabCollection> {
+                every { id } returns 12L
+            }
         createController().handleCollectionAddTabTapped(collection)
 
         assertNotNull(Collections.addTabButton.testGetValue())
@@ -157,10 +152,11 @@ class DefaultSessionControlControllerTest {
     fun `GIVEN browsing mode is private and collection tab cannot be restored WHEN a collection tab is opened THEN open collection in a new private tab`() {
         every { appStore.state.mode } returns BrowsingMode.Private
 
-        val tab = mockk<ComponentTab> {
-            every { url } returns "https://mozilla.org"
-            every { restore(filesDir, engine, restoreSessionId = false) } returns null
-        }
+        val tab =
+            mockk<ComponentTab> {
+                every { url } returns "https://mozilla.org"
+                every { restore(filesDir, engine, restoreSessionId = false) } returns null
+            }
         createController().handleCollectionOpenTabClicked(tab)
 
         assertNotNull(Collections.tabRestored.testGetValue())
@@ -182,10 +178,11 @@ class DefaultSessionControlControllerTest {
     fun `GIVEN homepage as a new tab is enabled and collection tab cannot be restored WHEN a collection tab is opened THEN open collection tab in existing tab`() {
         every { settings.enableHomepageAsNewTab } returns true
 
-        val tab = mockk<ComponentTab> {
-            every { url } returns "https://mozilla.org"
-            every { restore(filesDir, engine, restoreSessionId = false) } returns null
-        }
+        val tab =
+            mockk<ComponentTab> {
+                every { url } returns "https://mozilla.org"
+                every { restore(filesDir, engine, restoreSessionId = false) } returns null
+            }
         createController().handleCollectionOpenTabClicked(tab)
 
         assertNotNull(Collections.tabRestored.testGetValue())
@@ -205,23 +202,26 @@ class DefaultSessionControlControllerTest {
 
     @Test
     fun `handleCollectionOpenTabClicked with existing selected tab`() {
-        val recoverableTab = RecoverableTab(
-            engineSessionState = null,
-            state = TabState(
-                id = "test",
-                parentId = null,
-                url = "https://www.mozilla.org",
-                title = "Mozilla",
-                contextId = null,
-                readerState = ReaderState(),
-                lastAccess = 0,
-                private = false,
-            ),
-        )
+        val recoverableTab =
+            RecoverableTab(
+                engineSessionState = null,
+                state =
+                    TabState(
+                        id = "test",
+                        parentId = null,
+                        url = "https://www.mozilla.org",
+                        title = "Mozilla",
+                        contextId = null,
+                        readerState = ReaderState(),
+                        lastAccess = 0,
+                        private = false,
+                    ),
+            )
 
-        val tab = mockk<ComponentTab> {
-            every { restore(filesDir, engine, restoreSessionId = false) } returns recoverableTab
-        }
+        val tab =
+            mockk<ComponentTab> {
+                every { restore(filesDir, engine, restoreSessionId = false) } returns recoverableTab
+            }
 
         val restoredTab = createTab(id = recoverableTab.state.id, url = recoverableTab.state.url)
         val otherTab = createTab(id = "otherTab", url = "https://mozilla.org")
@@ -243,23 +243,26 @@ class DefaultSessionControlControllerTest {
 
     @Test
     fun `handleCollectionOpenTabClicked without existing selected tab`() {
-        val recoverableTab = RecoverableTab(
-            engineSessionState = null,
-            state = TabState(
-                id = "test",
-                parentId = null,
-                url = "https://www.mozilla.org",
-                title = "Mozilla",
-                contextId = null,
-                readerState = ReaderState(),
-                lastAccess = 0,
-                private = false,
-            ),
-        )
+        val recoverableTab =
+            RecoverableTab(
+                engineSessionState = null,
+                state =
+                    TabState(
+                        id = "test",
+                        parentId = null,
+                        url = "https://www.mozilla.org",
+                        title = "Mozilla",
+                        contextId = null,
+                        readerState = ReaderState(),
+                        lastAccess = 0,
+                        private = false,
+                    ),
+            )
 
-        val tab = mockk<ComponentTab> {
-            every { restore(filesDir, engine, restoreSessionId = false) } returns recoverableTab
-        }
+        val tab =
+            mockk<ComponentTab> {
+                every { restore(filesDir, engine, restoreSessionId = false) } returns recoverableTab
+            }
 
         val restoredTab = createTab(id = recoverableTab.state.id, url = recoverableTab.state.url)
         store.dispatch(TabListAction.AddTabAction(restoredTab))
@@ -278,9 +281,10 @@ class DefaultSessionControlControllerTest {
 
     @Test
     fun handleCollectionOpenTabsTapped() {
-        val collection = mockk<TabCollection> {
-            every { tabs } returns emptyList()
-        }
+        val collection =
+            mockk<TabCollection> {
+                every { tabs } returns emptyList()
+            }
         createController().handleCollectionOpenTabsTapped(collection)
 
         assertNotNull(Collections.allTabsRestored.testGetValue())
@@ -293,19 +297,21 @@ class DefaultSessionControlControllerTest {
     fun `handleCollectionRemoveTab one tab`() {
         val tab = mockk<ComponentTab>()
 
-        val expectedCollection = mockk<TabCollection> {
-            every { id } returns 123L
-            every { tabs } returns listOf(tab)
-        }
+        val expectedCollection =
+            mockk<TabCollection> {
+                every { id } returns 123L
+                every { tabs } returns listOf(tab)
+            }
 
         var actualCollection: TabCollection? = null
         every { tabCollectionStorage.cachedTabCollections } returns listOf(expectedCollection)
 
         createController(
-            removeCollectionWithUndo = { collection ->
-                actualCollection = collection
-            },
-        ).handleCollectionRemoveTab(expectedCollection, tab)
+                removeCollectionWithUndo = { collection ->
+                    actualCollection = collection
+                }
+            )
+            .handleCollectionRemoveTab(expectedCollection, tab)
 
         assertNotNull(Collections.tabRemoved.testGetValue())
         val recordedEvents = Collections.tabRemoved.testGetValue()!!
@@ -330,10 +336,11 @@ class DefaultSessionControlControllerTest {
     @Test
     fun `WHEN handleCollectionShareTabsClicked is called THEN share use case is invoked with the collection items and title as subject`() {
         val collectionTitle = "Reading list"
-        val collection = mockk<TabCollection> {
-            every { tabs } returns emptyList()
-            every { title } returns collectionTitle
-        }
+        val collection =
+            mockk<TabCollection> {
+                every { tabs } returns emptyList()
+                every { title } returns collectionTitle
+            }
 
         createController().handleCollectionShareTabsClicked(collection)
 
@@ -354,9 +361,10 @@ class DefaultSessionControlControllerTest {
 
     @Test
     fun handleDeleteCollectionTapped() {
-        val expectedCollection = mockk<TabCollection> {
-            every { title } returns "Collection"
-        }
+        val expectedCollection =
+            mockk<TabCollection> {
+                every { title } returns "Collection"
+            }
         every {
             activity.resources.getString(R.string.tab_collection_dialog_message, "Collection")
         } returns "Are you sure you want to delete Collection?"
@@ -364,10 +372,11 @@ class DefaultSessionControlControllerTest {
         var actualCollection: TabCollection? = null
 
         createController(
-            removeCollectionWithUndo = { collection ->
-                actualCollection = collection
-            },
-        ).handleDeleteCollectionTapped(expectedCollection)
+                removeCollectionWithUndo = { collection ->
+                    actualCollection = collection
+                }
+            )
+            .handleDeleteCollectionTapped(expectedCollection)
 
         assertEquals(expectedCollection, actualCollection)
         assertNotNull(Collections.removed.testGetValue())
@@ -378,9 +387,10 @@ class DefaultSessionControlControllerTest {
 
     @Test
     fun handleRenameCollectionTapped() {
-        val collection = mockk<TabCollection> {
-            every { id } returns 3L
-        }
+        val collection =
+            mockk<TabCollection> {
+                every { id } returns 3L
+            }
         createController().handleRenameCollectionTapped(collection)
 
         assertNotNull(Collections.renameButton.testGetValue())
@@ -398,56 +408,66 @@ class DefaultSessionControlControllerTest {
 
     @Test
     fun `GIVEN exactly the required amount of downloaded thumbnails with no errors WHEN handling wallpaper dialog THEN dialog is shown`() {
-        val wallpaperState = WallpaperState.default.copy(
-            availableWallpapers = makeFakeRemoteWallpapers(
-                THUMBNAILS_SELECTION_COUNT,
-                false,
-            ),
-        )
+        val wallpaperState =
+            WallpaperState.default.copy(
+                availableWallpapers =
+                    makeFakeRemoteWallpapers(
+                        THUMBNAILS_SELECTION_COUNT,
+                        false,
+                    )
+            )
         assertTrue(createController().handleShowWallpapersOnboardingDialog(wallpaperState))
     }
 
     @Test
     fun `GIVEN more than required amount of downloaded thumbnails with no errors WHEN handling wallpaper dialog THEN dialog is shown`() {
-        val wallpaperState = WallpaperState.default.copy(
-            availableWallpapers = makeFakeRemoteWallpapers(
-                THUMBNAILS_SELECTION_COUNT,
-                false,
-            ),
-        )
+        val wallpaperState =
+            WallpaperState.default.copy(
+                availableWallpapers =
+                    makeFakeRemoteWallpapers(
+                        THUMBNAILS_SELECTION_COUNT,
+                        false,
+                    )
+            )
         assertTrue(createController().handleShowWallpapersOnboardingDialog(wallpaperState))
     }
 
     @Test
     fun `GIVEN more than required amount of downloaded thumbnails with some errors WHEN handling wallpaper dialog THEN dialog is shown`() {
-        val wallpaperState = WallpaperState.default.copy(
-            availableWallpapers = makeFakeRemoteWallpapers(
-                THUMBNAILS_SELECTION_COUNT + 2,
-                true,
-            ),
-        )
+        val wallpaperState =
+            WallpaperState.default.copy(
+                availableWallpapers =
+                    makeFakeRemoteWallpapers(
+                        THUMBNAILS_SELECTION_COUNT + 2,
+                        true,
+                    )
+            )
         assertTrue(createController().handleShowWallpapersOnboardingDialog(wallpaperState))
     }
 
     @Test
     fun `GIVEN fewer than the required amount of downloaded thumbnails WHEN handling wallpaper dialog THEN the dialog is not shown`() {
-        val wallpaperState = WallpaperState.default.copy(
-            availableWallpapers = makeFakeRemoteWallpapers(
-                THUMBNAILS_SELECTION_COUNT - 1,
-                false,
-            ),
-        )
+        val wallpaperState =
+            WallpaperState.default.copy(
+                availableWallpapers =
+                    makeFakeRemoteWallpapers(
+                        THUMBNAILS_SELECTION_COUNT - 1,
+                        false,
+                    )
+            )
         assertFalse(createController().handleShowWallpapersOnboardingDialog(wallpaperState))
     }
 
     @Test
     fun `GIVEN exactly the required amount of downloaded thumbnails with errors WHEN handling wallpaper dialog THEN the dialog is not shown`() {
-        val wallpaperState = WallpaperState.default.copy(
-            availableWallpapers = makeFakeRemoteWallpapers(
-                THUMBNAILS_SELECTION_COUNT,
-                true,
-            ),
-        )
+        val wallpaperState =
+            WallpaperState.default.copy(
+                availableWallpapers =
+                    makeFakeRemoteWallpapers(
+                        THUMBNAILS_SELECTION_COUNT,
+                        true,
+                    )
+            )
         assertFalse(createController().handleShowWallpapersOnboardingDialog(wallpaperState))
     }
 
@@ -455,12 +475,14 @@ class DefaultSessionControlControllerTest {
     fun `GIVEN app is in private browsing mode WHEN handling wallpaper dialog THEN the dialog is not shown`() {
         every { appStore.state } returns AppState(mode = BrowsingMode.Private)
 
-        val wallpaperState = WallpaperState.default.copy(
-            availableWallpapers = makeFakeRemoteWallpapers(
-                THUMBNAILS_SELECTION_COUNT,
-                false,
-            ),
-        )
+        val wallpaperState =
+            WallpaperState.default.copy(
+                availableWallpapers =
+                    makeFakeRemoteWallpapers(
+                        THUMBNAILS_SELECTION_COUNT,
+                        false,
+                    )
+            )
 
         assertFalse(createController().handleShowWallpapersOnboardingDialog(wallpaperState))
     }
@@ -585,9 +607,10 @@ class DefaultSessionControlControllerTest {
         val controller = createController()
         val task = mockk<ChecklistItem.Task>()
         every { task.type } returns ChecklistItem.Task.Type.SIGN_IN
-        every { navController.currentDestination } returns mockk {
-            every { id } returns R.id.homeFragment
-        }
+        every { navController.currentDestination } returns
+            mockk {
+                every { id } returns R.id.homeFragment
+            }
 
         controller.navigationActionFor(task)
 
@@ -604,9 +627,10 @@ class DefaultSessionControlControllerTest {
         val controller = createController()
         val task = mockk<ChecklistItem.Task>()
         every { task.type } returns ChecklistItem.Task.Type.SELECT_THEME
-        every { navController.currentDestination } returns mockk {
-            every { id } returns R.id.homeFragment
-        }
+        every { navController.currentDestination } returns
+            mockk {
+                every { id } returns R.id.homeFragment
+            }
 
         controller.navigationActionFor(task)
 
@@ -623,9 +647,10 @@ class DefaultSessionControlControllerTest {
         val controller = createController()
         val task = mockk<ChecklistItem.Task>()
         every { task.type } returns ChecklistItem.Task.Type.CHANGE_TOOLBAR_PLACEMENT
-        every { navController.currentDestination } returns mockk {
-            every { id } returns R.id.homeFragment
-        }
+        every { navController.currentDestination } returns
+            mockk {
+                every { id } returns R.id.homeFragment
+            }
 
         controller.navigationActionFor(task)
 
@@ -654,9 +679,10 @@ class DefaultSessionControlControllerTest {
         val controller = createController()
         val task = mockk<ChecklistItem.Task>()
         every { task.type } returns ChecklistItem.Task.Type.EXPLORE_EXTENSION
-        every { navController.currentDestination } returns mockk {
-            every { id } returns R.id.homeFragment
-        }
+        every { navController.currentDestination } returns
+            mockk {
+                every { id } returns R.id.homeFragment
+            }
 
         controller.navigationActionFor(task)
 
@@ -678,43 +704,46 @@ class DefaultSessionControlControllerTest {
     }
 
     private fun createController(
-        registerCollectionStorageObserver: () -> Unit = { },
-        showTabTray: () -> Unit = { },
-        removeCollectionWithUndo: (tabCollection: TabCollection) -> Unit = { },
+        registerCollectionStorageObserver: () -> Unit = {},
+        showTabTray: () -> Unit = {},
+        removeCollectionWithUndo: (tabCollection: TabCollection) -> Unit = {},
     ): DefaultSessionControlController {
         return DefaultSessionControlController(
-            activityRef = WeakReference(activity),
-            settings = settings,
-            engine = engine,
-            store = store,
-            messageController = messageController,
-            tabCollectionStorage = tabCollectionStorage,
-            addTabUseCase = tabsUseCases.addTab,
-            restoreUseCase = mockk(relaxed = true),
-            selectTabUseCase = selectTabUseCase.selectTab,
-            reloadUrlUseCase = reloadUrlUseCase.reload,
-            fenixBrowserUseCases = fenixBrowserUseCases,
-            appStore = appStore,
-            navControllerRef = WeakReference(navController),
-            viewLifecycleScope = TestScope(),
-            shareUseCases = shareUseCases,
-            showAddSearchWidgetPrompt = { showAddSearchWidgetPromptCalled = true },
-            requestSetDefaultBrowserPrompt = { requestSetDefaultBrowserPromptCalled = true },
-        ).apply {
-            registerCallback(object : SessionControlControllerCallback {
-                override fun registerCollectionStorageObserver() {
-                    registerCollectionStorageObserver()
-                }
+                activityRef = WeakReference(activity),
+                settings = settings,
+                engine = engine,
+                store = store,
+                messageController = messageController,
+                tabCollectionStorage = tabCollectionStorage,
+                addTabUseCase = tabsUseCases.addTab,
+                restoreUseCase = mockk(relaxed = true),
+                selectTabUseCase = selectTabUseCase.selectTab,
+                reloadUrlUseCase = reloadUrlUseCase.reload,
+                fenixBrowserUseCases = fenixBrowserUseCases,
+                appStore = appStore,
+                navControllerRef = WeakReference(navController),
+                viewLifecycleScope = TestScope(),
+                shareUseCases = shareUseCases,
+                showAddSearchWidgetPrompt = { showAddSearchWidgetPromptCalled = true },
+                requestSetDefaultBrowserPrompt = { requestSetDefaultBrowserPromptCalled = true },
+            )
+            .apply {
+                registerCallback(
+                    object : SessionControlControllerCallback {
+                        override fun registerCollectionStorageObserver() {
+                            registerCollectionStorageObserver()
+                        }
 
-                override fun removeCollection(tabCollection: TabCollection) {
-                    removeCollectionWithUndo(tabCollection)
-                }
+                        override fun removeCollection(tabCollection: TabCollection) {
+                            removeCollectionWithUndo(tabCollection)
+                        }
 
-                override fun showTabTray() {
-                    showTabTray()
-                }
-            })
-        }
+                        override fun showTabTray() {
+                            showTabTray()
+                        }
+                    }
+                )
+            }
     }
 
     private fun makeFakeRemoteWallpapers(size: Int, hasError: Boolean): List<Wallpaper> {
@@ -730,22 +759,24 @@ class DefaultSessionControlControllerTest {
     }
 
     private fun makeFakeRemoteWallpaper(
-        thumbnailFileState: Wallpaper.ImageFileState = Wallpaper.ImageFileState.Unavailable,
-    ) = Wallpaper(
-        name = "name",
-        collection = Wallpaper.Collection(
-            name = Wallpaper.FIREFOX_COLLECTION,
-            heading = null,
-            description = null,
-            availableLocales = null,
-            startDate = null,
-            endDate = null,
-            learnMoreUrl = null,
-        ),
-        textColor = null,
-        cardColorLight = null,
-        cardColorDark = null,
-        thumbnailFileState = thumbnailFileState,
-        assetsFileState = Wallpaper.ImageFileState.Unavailable,
-    )
+        thumbnailFileState: Wallpaper.ImageFileState = Wallpaper.ImageFileState.Unavailable
+    ) =
+        Wallpaper(
+            name = "name",
+            collection =
+                Wallpaper.Collection(
+                    name = Wallpaper.FIREFOX_COLLECTION,
+                    heading = null,
+                    description = null,
+                    availableLocales = null,
+                    startDate = null,
+                    endDate = null,
+                    learnMoreUrl = null,
+                ),
+            textColor = null,
+            cardColorLight = null,
+            cardColorDark = null,
+            thumbnailFileState = thumbnailFileState,
+            assetsFileState = Wallpaper.ImageFileState.Unavailable,
+        )
 }

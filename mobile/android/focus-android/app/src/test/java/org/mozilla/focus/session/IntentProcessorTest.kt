@@ -28,21 +28,23 @@ class IntentProcessorTest {
     @Before
     fun setup() {
         context = testContext
-        intentProcessor = IntentProcessor(
-            context,
-            context.components.tabsUseCases,
-            context.components.customTabsUseCases,
-            context.components.searchUseCases,
-        )
+        intentProcessor =
+            IntentProcessor(
+                context,
+                context.components.tabsUseCases,
+                context.components.customTabsUseCases,
+                context.components.searchUseCases,
+            )
     }
 
     @Test
     fun `GIVEN an ACTION_VIEW intent WHEN handling the intent THEN create a tab with LoadUrlFlags EXTERNAL`() {
         val browserStore = context.components.store
         val url = "https://mozilla.org"
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = android.net.Uri.parse(url)
-        }
+        val intent =
+            Intent(Intent.ACTION_VIEW).apply {
+                data = android.net.Uri.parse(url)
+            }
 
         intentProcessor.handleIntent(intent.toSafeIntent(), null)
 
@@ -58,9 +60,10 @@ class IntentProcessorTest {
     fun `GIVEN an ACTION_SEND intent WHEN handling the intent THEN create a tab with LoadUrlFlags EXTERNAL`() {
         val browserStore = context.components.store
         val url = "https://mozilla.org"
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            putExtra(Intent.EXTRA_TEXT, url)
-        }
+        val intent =
+            Intent(Intent.ACTION_SEND).apply {
+                putExtra(Intent.EXTRA_TEXT, url)
+            }
 
         intentProcessor.handleIntent(intent.toSafeIntent(), null)
 

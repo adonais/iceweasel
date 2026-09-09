@@ -9,6 +9,7 @@ import android.widget.FrameLayout
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import io.mockk.mockk
+import kotlin.test.assertIs
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -17,7 +18,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertIs
 
 @RunWith(RobolectricTestRunner::class)
 class LoginExceptionsViewTest {
@@ -30,10 +30,11 @@ class LoginExceptionsViewTest {
     fun setup() {
         parent = FrameLayout(testContext)
         interactor = mockk()
-        view = LoginExceptionsView(
-            parent,
-            interactor,
-        )
+        view =
+            LoginExceptionsView(
+                parent,
+                interactor,
+            )
     }
 
     @Test

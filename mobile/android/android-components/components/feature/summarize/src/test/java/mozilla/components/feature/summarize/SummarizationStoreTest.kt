@@ -4,6 +4,8 @@
 
 package mozilla.components.feature.summarize
 
+import kotlin.test.assertIs
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.awaitCancellation
@@ -15,11 +17,13 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.llm.AttestationFailure
 import mozilla.components.concept.llm.AuthenticationRequired
 import mozilla.components.concept.llm.CloudLlmProvider
 import mozilla.components.concept.llm.Llm
+import mozilla.components.concept.llm.LlmProvider
 import mozilla.components.concept.llm.Prompt
 import mozilla.components.feature.summarize.SummarizationState.Error
 import mozilla.components.feature.summarize.SummarizationState.Finished
@@ -31,21 +35,27 @@ import mozilla.components.feature.summarize.SummarizationState.Summarizing
 import mozilla.components.feature.summarize.content.Content
 import mozilla.components.feature.summarize.content.ContentProvider
 import mozilla.components.feature.summarize.content.PageMetadata
+import mozilla.components.feature.summarize.content.PaywalledContentException
 import mozilla.components.feature.summarize.ext.defaultInstructions
 import mozilla.components.feature.summarize.ext.recipeInstructions
 import mozilla.components.feature.summarize.fakes.FakeCloudProvider
 import mozilla.components.feature.summarize.fakes.FakeLlm
+import mozilla.components.feature.summarize.settings.LearnMoreClicked
+import mozilla.components.feature.summarize.settings.LearnMoreHandled
 import mozilla.components.feature.summarize.settings.SummarizationSettings
+import mozilla.components.feature.summarize.settings.SummarizePagesPreferenceToggled
+import mozilla.components.feature.summarize.settings.SummarizeSettingsMiddleware
+import mozilla.components.feature.summarize.settings.SummarizeSettingsState
+import mozilla.components.ui.richtext.ir.RichDocument
 import mozilla.components.ui.richtext.parsing.Parser
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertIs
-import kotlin.time.Duration.Companion.seconds
 
 private class FakeAttestationFailure : Llm.Exception("attestation failed"), AttestationFailure
+
 private class FakeAuthenticationRequired : Llm.Exception("sign in required"), AuthenticationRequired
 
 class SummarizationStoreTest {
@@ -61,25 +71,104 @@ class SummarizationStoreTest {
     }
 
     @Test
+    fun `test that the embedded settings learn more request is set and cleared`() {
+        val store =
+            SummarizationStore(
+                initialState =
+                    SummarizationState.Settings(
+                        info = LlmProvider.Info(nameRes = 0),
+                        document = RichDocument(listOf()),
+                        settingsState = SummarizeSettingsState(),
+                    ),
+                reducer = ::summarizationReducer,
+            )
+
+        store.dispatch(SummarizeSettingsActionWrapper(LearnMoreClicked))
+        assertTrue(assertIs<SummarizationState.Settings>(store.state).settingsState.isLearnMoreRequested)
+
+        store.dispatch(SummarizeSettingsActionWrapper(LearnMoreHandled))
+        assertFalse(assertIs<SummarizationState.Settings>(store.state).settingsState.isLearnMoreRequested)
+    }
+
+    @Test
+    fun `test that a wrapped settings action is persisted through the embedding store`() = runTest {
+        val settings = SummarizationSettings.inMemory(isFeatureEnabled = false)
+        val store =
+            SummarizationStore(
+                initialState =
+                    SummarizationState.Settings(
+                        info = LlmProvider.Info(nameRes = 0),
+                        document = RichDocument(listOf()),
+                        settingsState = SummarizeSettingsState(),
+                    ),
+                reducer = ::summarizationReducer,
+                middleware =
+                    listOf(
+                        SummarizationSettingsWrapperMiddleware(
+                            settingsMiddleware =
+                                SummarizeSettingsMiddleware(
+                                    settings = settings,
+                                    scope = backgroundScope,
+                                ),
+                            fetchInitialSettings = { SummarizeSettingsState() },
+                        )
+                    ),
+            )
+
+        store.dispatch(SummarizeSettingsActionWrapper(SummarizePagesPreferenceToggled))
+        testScheduler.runCurrent()
+
+        assertTrue(assertIs<SummarizationState.Settings>(store.state).settingsState.isFeatureEnabled)
+        assertTrue(settings.getFeatureEnabledUserStatus().first() == true)
+    }
+
+    @Test
+    fun `test that the settings screen is opened with the persisted preferences`() = runTest {
+        val persisted = SummarizeSettingsState(isFeatureEnabled = true, isGestureEnabled = true)
+        val store =
+            SummarizationStore(
+                initialState = Summarized(LlmProvider.Info(nameRes = 0), RichDocument(listOf())),
+                reducer = ::summarizationReducer,
+                middleware =
+                    listOf(
+                        SummarizationSettingsWrapperMiddleware(
+                            settingsMiddleware =
+                                SummarizeSettingsMiddleware(
+                                    settings = SummarizationSettings.inMemory(),
+                                    scope = backgroundScope,
+                                ),
+                            fetchInitialSettings = { persisted },
+                        )
+                    ),
+            )
+
+        store.dispatch(SettingsClicked)
+
+        assertEquals(persisted, assertIs<SummarizationState.Settings>(store.state).settingsState)
+    }
+
+    @Test
     fun `test that we can consent to shake`() = runTest {
         val settings = SummarizationSettings.inMemory()
         val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful))
         val pageTitle = "Article Headline"
-        val store = SummarizationStore(
-            initialState = Inert(true),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = MutableStateFlow(false),
-                    settings = settings,
-                    llmProvider = provider,
-                    contentProvider = { Result.success(Content(PageMetadata(pageTitle = pageTitle))) },
-                    errorReporter = noopReporter,
-                    scope = backgroundScope,
-                    dispatcher = StandardTestDispatcher(testScheduler),
-                ),
-            ),
-        )
+        val store =
+            SummarizationStore(
+                initialState = Inert(true),
+                reducer = ::summarizationReducer,
+                middleware =
+                    listOf(
+                        SummarizationMiddleware(
+                            isPageLoadingFlow = MutableStateFlow(false),
+                            settings = settings,
+                            llmProvider = provider,
+                            contentProvider = { Result.success(Content(PageMetadata(pageTitle = pageTitle))) },
+                            errorReporter = noopReporter,
+                            scope = backgroundScope,
+                            dispatcher = StandardTestDispatcher(testScheduler),
+                        )
+                    ),
+            )
 
         val states = mutableListOf<SummarizationState>()
         backgroundScope.launch {
@@ -91,15 +180,29 @@ class SummarizationStoreTest {
         store.dispatch(OffDeviceSummarizationShakeConsentAction.AllowClicked)
         testScheduler.advanceTimeBy(15.seconds)
 
-        val expected = listOf<SummarizationState>(
-            Inert(true),
-            ShakeConsentRequired,
-            Loading(provider.info),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n")),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
-            Summarized(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
-        )
+        val expected =
+            listOf<SummarizationState>(
+                Inert(true),
+                ShakeConsentRequired,
+                Loading(provider.info),
+                Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
+                Summarizing(
+                    provider.info,
+                    parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n"),
+                ),
+                Summarizing(
+                    provider.info,
+                    parser.parse(
+                        "# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n"
+                    ),
+                ),
+                Summarized(
+                    provider.info,
+                    parser.parse(
+                        "# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n"
+                    ),
+                ),
+            )
 
         assertEquals(expected, states)
         assertTrue(settings.getHasConsentedToShake().first())
@@ -109,21 +212,24 @@ class SummarizationStoreTest {
     fun `test that we can decline consenting to shake`() = runTest {
         val settings = SummarizationSettings.inMemory()
 
-        val store = SummarizationStore(
-            initialState = Inert(true),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = MutableStateFlow(false),
-                    settings = settings,
-                    llmProvider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful)),
-                    contentProvider = { Result.success(Content()) },
-                    errorReporter = noopReporter,
-                    scope = backgroundScope,
-                    dispatcher = StandardTestDispatcher(testScheduler),
-                ),
-            ),
-        )
+        val store =
+            SummarizationStore(
+                initialState = Inert(true),
+                reducer = ::summarizationReducer,
+                middleware =
+                    listOf(
+                        SummarizationMiddleware(
+                            isPageLoadingFlow = MutableStateFlow(false),
+                            settings = settings,
+                            llmProvider =
+                                FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful)),
+                            contentProvider = { Result.success(Content()) },
+                            errorReporter = noopReporter,
+                            scope = backgroundScope,
+                            dispatcher = StandardTestDispatcher(testScheduler),
+                        )
+                    ),
+            )
 
         val states = mutableListOf<SummarizationState>()
         backgroundScope.launch {
@@ -137,11 +243,12 @@ class SummarizationStoreTest {
         store.dispatch(OffDeviceSummarizationShakeConsentAction.CancelClicked)
         testScheduler.advanceTimeBy(1.seconds)
 
-        val expected = listOf<SummarizationState>(
-            Inert(true),
-            ShakeConsentRequired,
-            Finished.Cancelled,
-        )
+        val expected =
+            listOf<SummarizationState>(
+                Inert(true),
+                ShakeConsentRequired,
+                Finished.Cancelled,
+            )
 
         assertEquals(expected, states)
         assertFalse(settings.getHasConsentedToShake().first())
@@ -153,21 +260,27 @@ class SummarizationStoreTest {
         val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(llm))
         val content = "this is expected content."
         val pageTitle = "Article Headline"
-        val store = SummarizationStore(
-            initialState = Inert(true),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = MutableStateFlow(false),
-                    llmProvider = provider,
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
-                    contentProvider = { Result.success(Content(PageMetadata(listOf("Article"), 0, "en", pageTitle = pageTitle), content)) },
-                    errorReporter = noopReporter,
-                    scope = backgroundScope,
-                    dispatcher = StandardTestDispatcher(testScheduler),
-                ),
-            ),
-        )
+        val store =
+            SummarizationStore(
+                initialState = Inert(true),
+                reducer = ::summarizationReducer,
+                middleware =
+                    listOf(
+                        SummarizationMiddleware(
+                            isPageLoadingFlow = MutableStateFlow(false),
+                            llmProvider = provider,
+                            settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                            contentProvider = {
+                                Result.success(
+                                    Content(PageMetadata(listOf("Article"), 0, "en", pageTitle = pageTitle), content)
+                                )
+                            },
+                            errorReporter = noopReporter,
+                            scope = backgroundScope,
+                            dispatcher = StandardTestDispatcher(testScheduler),
+                        )
+                    ),
+            )
 
         val states = mutableListOf<SummarizationState>()
         backgroundScope.launch {
@@ -178,14 +291,28 @@ class SummarizationStoreTest {
         store.dispatch(ViewAppeared)
         testScheduler.advanceTimeBy(15.seconds)
 
-        val expected = listOf<SummarizationState>(
-            Inert(true),
-            Loading(provider.info),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n")),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
-            Summarized(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
-        )
+        val expected =
+            listOf<SummarizationState>(
+                Inert(true),
+                Loading(provider.info),
+                Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
+                Summarizing(
+                    provider.info,
+                    parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n"),
+                ),
+                Summarizing(
+                    provider.info,
+                    parser.parse(
+                        "# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n"
+                    ),
+                ),
+                Summarized(
+                    provider.info,
+                    parser.parse(
+                        "# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n"
+                    ),
+                ),
+            )
 
         assertEquals(expected, states)
         assertEquals(Prompt(content, defaultInstructions("en")), llm.lastPrompt)
@@ -198,21 +325,30 @@ class SummarizationStoreTest {
         val content = "this is expected content."
         val pageTitle = "Article Headline"
         val language = "de"
-        val store = SummarizationStore(
-            initialState = Inert(true),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = MutableStateFlow(false),
-                    llmProvider = provider,
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
-                    contentProvider = { Result.success(Content(PageMetadata(listOf("Article"), 0, language, pageTitle = pageTitle), content)) },
-                    errorReporter = noopReporter,
-                    scope = backgroundScope,
-                    dispatcher = StandardTestDispatcher(testScheduler),
-                ),
-            ),
-        )
+        val store =
+            SummarizationStore(
+                initialState = Inert(true),
+                reducer = ::summarizationReducer,
+                middleware =
+                    listOf(
+                        SummarizationMiddleware(
+                            isPageLoadingFlow = MutableStateFlow(false),
+                            llmProvider = provider,
+                            settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                            contentProvider = {
+                                Result.success(
+                                    Content(
+                                        PageMetadata(listOf("Article"), 0, language, pageTitle = pageTitle),
+                                        content,
+                                    )
+                                )
+                            },
+                            errorReporter = noopReporter,
+                            scope = backgroundScope,
+                            dispatcher = StandardTestDispatcher(testScheduler),
+                        )
+                    ),
+            )
 
         val states = mutableListOf<SummarizationState>()
         backgroundScope.launch {
@@ -223,14 +359,28 @@ class SummarizationStoreTest {
         store.dispatch(ViewAppeared)
         testScheduler.advanceTimeBy(15.seconds)
 
-        val expected = listOf<SummarizationState>(
-            Inert(true),
-            Loading(provider.info),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n")),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
-            Summarized(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
-        )
+        val expected =
+            listOf<SummarizationState>(
+                Inert(true),
+                Loading(provider.info),
+                Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
+                Summarizing(
+                    provider.info,
+                    parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n"),
+                ),
+                Summarizing(
+                    provider.info,
+                    parser.parse(
+                        "# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n"
+                    ),
+                ),
+                Summarized(
+                    provider.info,
+                    parser.parse(
+                        "# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n"
+                    ),
+                ),
+            )
 
         assertEquals(expected, states)
         assertEquals(Prompt(content, defaultInstructions(language)), llm.lastPrompt)
@@ -243,21 +393,27 @@ class SummarizationStoreTest {
         val content = "this is expected content."
         val pageTitle = "Article Headline"
         val language = "de"
-        val store = SummarizationStore(
-            initialState = Inert(true),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = MutableStateFlow(false),
-                    llmProvider = provider,
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
-                    contentProvider = { Result.success(Content(PageMetadata(listOf("Recipe"), 0, language, pageTitle = pageTitle), content)) },
-                    errorReporter = noopReporter,
-                    scope = backgroundScope,
-                    dispatcher = StandardTestDispatcher(testScheduler),
-                ),
-            ),
-        )
+        val store =
+            SummarizationStore(
+                initialState = Inert(true),
+                reducer = ::summarizationReducer,
+                middleware =
+                    listOf(
+                        SummarizationMiddleware(
+                            isPageLoadingFlow = MutableStateFlow(false),
+                            llmProvider = provider,
+                            settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                            contentProvider = {
+                                Result.success(
+                                    Content(PageMetadata(listOf("Recipe"), 0, language, pageTitle = pageTitle), content)
+                                )
+                            },
+                            errorReporter = noopReporter,
+                            scope = backgroundScope,
+                            dispatcher = StandardTestDispatcher(testScheduler),
+                        )
+                    ),
+            )
 
         val states = mutableListOf<SummarizationState>()
         backgroundScope.launch {
@@ -268,14 +424,28 @@ class SummarizationStoreTest {
         store.dispatch(ViewAppeared)
         testScheduler.advanceTimeBy(15.seconds)
 
-        val expected = listOf<SummarizationState>(
-            Inert(true),
-            Loading(provider.info),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n")),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
-            Summarized(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
-        )
+        val expected =
+            listOf<SummarizationState>(
+                Inert(true),
+                Loading(provider.info),
+                Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
+                Summarizing(
+                    provider.info,
+                    parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n"),
+                ),
+                Summarizing(
+                    provider.info,
+                    parser.parse(
+                        "# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n"
+                    ),
+                ),
+                Summarized(
+                    provider.info,
+                    parser.parse(
+                        "# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n"
+                    ),
+                ),
+            )
 
         assertEquals(expected, states)
         assertEquals(Prompt(content, recipeInstructions(language)), llm.lastPrompt)
@@ -285,21 +455,23 @@ class SummarizationStoreTest {
     fun `if the page extractor fails, the failure is forwarded as a summarization failure`() = runTest {
         val failureThrowable = NullPointerException("extractor failed")
         val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful))
-        val store = SummarizationStore(
-            initialState = Inert(true),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = MutableStateFlow(false),
-                    llmProvider = provider,
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
-                    contentProvider = { Result.failure(failureThrowable) },
-                    errorReporter = errorReporter,
-                    scope = backgroundScope,
-                    dispatcher = StandardTestDispatcher(testScheduler),
-                ),
-            ),
-        )
+        val store =
+            SummarizationStore(
+                initialState = Inert(true),
+                reducer = ::summarizationReducer,
+                middleware =
+                    listOf(
+                        SummarizationMiddleware(
+                            isPageLoadingFlow = MutableStateFlow(false),
+                            llmProvider = provider,
+                            settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                            contentProvider = { Result.failure(failureThrowable) },
+                            errorReporter = errorReporter,
+                            scope = backgroundScope,
+                            dispatcher = StandardTestDispatcher(testScheduler),
+                        )
+                    ),
+            )
 
         val states = mutableListOf<SummarizationState>()
         backgroundScope.launch {
@@ -310,109 +482,142 @@ class SummarizationStoreTest {
         store.dispatch(ViewAppeared)
         testScheduler.advanceTimeBy(15.seconds)
 
-        val expected = listOf<SummarizationState>(
-            Inert(true),
-            Loading(provider.info),
-            SummarizationState.Error(SummarizationError.SummarizationFailed(failureThrowable)),
-        )
+        val expected =
+            listOf<SummarizationState>(
+                Inert(true),
+                Loading(provider.info),
+                SummarizationState.Error(SummarizationError.SummarizationFailed(failureThrowable)),
+            )
 
         assertEquals(expected, states)
         assertEquals(listOf(failureThrowable), reportedErrors)
     }
 
     @Test
-    fun `if the llm stream hangs past the timeout, a summarization failure with a TimeoutCancellationException cause is reported`() = runTest {
-        val hangingLlm = object : Llm {
-            override suspend fun prompt(prompt: Prompt): Flow<String> = flow { awaitCancellation() }
+    fun `if the llm stream hangs past the timeout, a summarization failure with a TimeoutCancellationException cause is reported`() =
+        runTest {
+            val hangingLlm =
+                object : Llm {
+                    override suspend fun prompt(prompt: Prompt): Flow<String> = flow { awaitCancellation() }
+                }
+            val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(hangingLlm))
+            val pageTitle = "Article Headline"
+            val store =
+                SummarizationStore(
+                    initialState = Inert(false),
+                    reducer = ::summarizationReducer,
+                    middleware =
+                        listOf(
+                            SummarizationMiddleware(
+                                isPageLoadingFlow = MutableStateFlow(true),
+                                llmProvider = provider,
+                                settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                                contentProvider = {
+                                    Result.success(Content(PageMetadata(pageTitle = pageTitle), "body"))
+                                },
+                                errorReporter = errorReporter,
+                                scope = backgroundScope,
+                                dispatcher = StandardTestDispatcher(testScheduler),
+                            )
+                        ),
+                )
+
+            val states = mutableListOf<SummarizationState>()
+            backgroundScope.launch {
+                store.stateFlow.toList(states)
+            }
+
+            store.dispatch(ViewAppeared)
+            testScheduler.advanceTimeBy(65.seconds)
+
+            val terminal = states.last() as Error
+            val failure = terminal.error as SummarizationError.SummarizationFailed
+            assertIs<TimeoutCancellationException>(failure.exception.cause)
+
+            assertEquals(1, reportedErrors.size)
+            assertIs<TimeoutCancellationException>(reportedErrors.single().cause)
         }
-        val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(hangingLlm))
-        val pageTitle = "Article Headline"
-        val store = SummarizationStore(
-            initialState = Inert(false),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = MutableStateFlow(true),
-                    llmProvider = provider,
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
-                    contentProvider = { Result.success(Content(PageMetadata(pageTitle = pageTitle), "body")) },
-                    errorReporter = errorReporter,
-                    scope = backgroundScope,
-                    dispatcher = StandardTestDispatcher(testScheduler),
-                ),
-            ),
-        )
-
-        val states = mutableListOf<SummarizationState>()
-        backgroundScope.launch {
-            store.stateFlow.toList(states)
-        }
-
-        store.dispatch(ViewAppeared)
-        testScheduler.advanceTimeBy(65.seconds)
-
-        val terminal = states.last() as Error
-        val failure = terminal.error as SummarizationError.SummarizationFailed
-        assertIs<TimeoutCancellationException>(failure.exception.cause)
-
-        assertEquals(1, reportedErrors.size)
-        assertIs<TimeoutCancellationException>(reportedErrors.single().cause)
-    }
 
     @Test
-    fun `if the page metadata indicates a recipe, the llm is prompted with the recipe instructions even if the content is readerable`() = runTest {
-        val llm = FakeLlm.successful
-        val content = "this is expected content."
-        val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(llm))
-        var usingReaderContent = true
-        val pageTitle = "Article Headline"
-        val store = SummarizationStore(
-            initialState = Inert(true),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = MutableStateFlow(false),
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
-                    llmProvider = provider,
-                    contentProvider = ContentProvider.fromPage(
-                        pageTitle = pageTitle,
-                        pageMetadataExtractor = {
-                            Result.success(PageMetadata(listOf("Recipe"), 0, "en", isReaderable = true, pageTitle = pageTitle))
-                        },
-                        pageContentExtractor = { options ->
-                            usingReaderContent = options.shouldUseReaderModeContent
-                            Result.success(content)
-                        },
+    fun `if the page metadata indicates a recipe, the llm is prompted with the recipe instructions even if the content is readerable`() =
+        runTest {
+            val llm = FakeLlm.successful
+            val content = "this is expected content."
+            val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(llm))
+            var usingReaderContent = true
+            val pageTitle = "Article Headline"
+            val store =
+                SummarizationStore(
+                    initialState = Inert(true),
+                    reducer = ::summarizationReducer,
+                    middleware =
+                        listOf(
+                            SummarizationMiddleware(
+                                isPageLoadingFlow = MutableStateFlow(false),
+                                settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                                llmProvider = provider,
+                                contentProvider =
+                                    ContentProvider.fromPage(
+                                        pageTitle = pageTitle,
+                                        pageMetadataExtractor = {
+                                            Result.success(
+                                                PageMetadata(
+                                                    listOf("Recipe"),
+                                                    0,
+                                                    "en",
+                                                    isReaderable = true,
+                                                    pageTitle = pageTitle,
+                                                )
+                                            )
+                                        },
+                                        pageContentExtractor = { options ->
+                                            usingReaderContent = options.shouldUseReaderModeContent
+                                            Result.success(content)
+                                        },
+                                    ),
+                                errorReporter = noopReporter,
+                                scope = backgroundScope,
+                                dispatcher = StandardTestDispatcher(testScheduler),
+                            )
+                        ),
+                )
+
+            val states = mutableListOf<SummarizationState>()
+            backgroundScope.launch {
+                store.stateFlow.toList(states)
+            }
+            testScheduler.advanceTimeBy(1.seconds)
+
+            store.dispatch(ViewAppeared)
+            testScheduler.advanceTimeBy(15.seconds)
+
+            val expected =
+                listOf<SummarizationState>(
+                    Inert(true),
+                    Loading(provider.info),
+                    Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
+                    Summarizing(
+                        provider.info,
+                        parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n"),
                     ),
-                    errorReporter = noopReporter,
-                    scope = backgroundScope,
-                    dispatcher = StandardTestDispatcher(testScheduler),
-                ),
-            ),
-        )
+                    Summarizing(
+                        provider.info,
+                        parser.parse(
+                            "# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n"
+                        ),
+                    ),
+                    Summarized(
+                        provider.info,
+                        parser.parse(
+                            "# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n"
+                        ),
+                    ),
+                )
 
-        val states = mutableListOf<SummarizationState>()
-        backgroundScope.launch {
-            store.stateFlow.toList(states)
+            assertFalse(usingReaderContent)
+            assertEquals(expected, states)
+            assertEquals(Prompt(content, recipeInstructions("en")), llm.lastPrompt)
         }
-        testScheduler.advanceTimeBy(1.seconds)
-
-        store.dispatch(ViewAppeared)
-        testScheduler.advanceTimeBy(15.seconds)
-
-        val expected = listOf<SummarizationState>(
-            Inert(true),
-            Loading(provider.info),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n")),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
-            Summarized(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
-        )
-
-        assertFalse(usingReaderContent)
-        assertEquals(expected, states)
-        assertEquals(Prompt(content, recipeInstructions("en")), llm.lastPrompt)
-    }
 
     @Test
     fun `if the page metadata indicates readerable, we use readermode content`() = runTest {
@@ -421,30 +626,33 @@ class SummarizationStoreTest {
         val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(llm))
         val pageTitle = "Article Headline"
         var usingReaderContent = false
-        val store = SummarizationStore(
-            initialState = Inert(true),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = MutableStateFlow(false),
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
-                    llmProvider = provider,
-                    contentProvider = ContentProvider.fromPage(
-                        pageTitle = pageTitle,
-                        pageMetadataExtractor = {
-                            Result.success(PageMetadata(listOf("Article"), 0, "en", isReaderable = true))
-                        },
-                        pageContentExtractor = { options ->
-                            usingReaderContent = options.shouldUseReaderModeContent
-                            Result.success(content)
-                        },
+        val store =
+            SummarizationStore(
+                initialState = Inert(true),
+                reducer = ::summarizationReducer,
+                middleware =
+                    listOf(
+                        SummarizationMiddleware(
+                            isPageLoadingFlow = MutableStateFlow(false),
+                            settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                            llmProvider = provider,
+                            contentProvider =
+                                ContentProvider.fromPage(
+                                    pageTitle = pageTitle,
+                                    pageMetadataExtractor = {
+                                        Result.success(PageMetadata(listOf("Article"), 0, "en", isReaderable = true))
+                                    },
+                                    pageContentExtractor = { options ->
+                                        usingReaderContent = options.shouldUseReaderModeContent
+                                        Result.success(content)
+                                    },
+                                ),
+                            errorReporter = noopReporter,
+                            scope = backgroundScope,
+                            dispatcher = StandardTestDispatcher(testScheduler),
+                        )
                     ),
-                    errorReporter = noopReporter,
-                    scope = backgroundScope,
-                    dispatcher = StandardTestDispatcher(testScheduler),
-                ),
-            ),
-        )
+            )
 
         val states = mutableListOf<SummarizationState>()
         backgroundScope.launch {
@@ -455,14 +663,28 @@ class SummarizationStoreTest {
         store.dispatch(ViewAppeared)
         testScheduler.advanceTimeBy(15.seconds)
 
-        val expected = listOf<SummarizationState>(
-            Inert(true),
-            Loading(provider.info),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n")),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
-            Summarized(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
-        )
+        val expected =
+            listOf<SummarizationState>(
+                Inert(true),
+                Loading(provider.info),
+                Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
+                Summarizing(
+                    provider.info,
+                    parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n"),
+                ),
+                Summarizing(
+                    provider.info,
+                    parser.parse(
+                        "# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n"
+                    ),
+                ),
+                Summarized(
+                    provider.info,
+                    parser.parse(
+                        "# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n"
+                    ),
+                ),
+            )
 
         assertTrue(usingReaderContent)
         assertEquals(expected, states)
@@ -470,34 +692,96 @@ class SummarizationStoreTest {
     }
 
     @Test
+    fun `if the page metadata indicates gated content, the content is never extracted and the gated error is shown`() =
+        runTest {
+            val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful))
+            val pageTitle = "Article Headline"
+            var extractedContent = false
+            val store =
+                SummarizationStore(
+                    initialState = Inert(true),
+                    reducer = ::summarizationReducer,
+                    middleware =
+                        listOf(
+                            SummarizationMiddleware(
+                                isPageLoadingFlow = MutableStateFlow(false),
+                                settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                                llmProvider = provider,
+                                contentProvider =
+                                    ContentProvider.fromPage(
+                                        pageTitle = pageTitle,
+                                        pageMetadataExtractor = {
+                                            Result.success(
+                                                PageMetadata(
+                                                    listOf("NewsArticle"),
+                                                    0,
+                                                    "en",
+                                                    isReaderable = true,
+                                                    isGated = true,
+                                                )
+                                            )
+                                        },
+                                        pageContentExtractor = {
+                                            extractedContent = true
+                                            Result.success("this body should never be requested")
+                                        },
+                                    ),
+                                errorReporter = errorReporter,
+                                scope = backgroundScope,
+                                dispatcher = StandardTestDispatcher(testScheduler),
+                            )
+                        ),
+                )
+
+            val states = mutableListOf<SummarizationState>()
+            backgroundScope.launch {
+                store.stateFlow.toList(states)
+            }
+            testScheduler.advanceTimeBy(1.seconds)
+
+            store.dispatch(ViewAppeared)
+            testScheduler.advanceTimeBy(15.seconds)
+
+            assertEquals(listOf(Inert(true), Loading(provider.info)), states.dropLast(1))
+
+            val failure = (states.last() as Error).error as SummarizationError.SummarizationFailed
+            assertIs<PaywalledContentException>(failure.exception)
+            assertFalse("Expected the body extraction to be skipped for a gated page", extractedContent)
+            assertIs<PaywalledContentException>(reportedErrors.single())
+        }
+
+    @Test
     fun `dismissing an error screen transitions to the ErrorDismissed finished state`() = runTest {
         val failureThrowable = NullPointerException("extractor failed")
         val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful))
-        val store = SummarizationStore(
-            initialState = Inert(true),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = MutableStateFlow(false),
-                    llmProvider = provider,
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
-                    contentProvider = { Result.failure(failureThrowable) },
-                    errorReporter = noopReporter,
-                    scope = backgroundScope,
-                ),
-            ),
-        )
+        val store =
+            SummarizationStore(
+                initialState = Inert(true),
+                reducer = ::summarizationReducer,
+                middleware =
+                    listOf(
+                        SummarizationMiddleware(
+                            isPageLoadingFlow = MutableStateFlow(false),
+                            llmProvider = provider,
+                            settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                            contentProvider = { Result.failure(failureThrowable) },
+                            errorReporter = noopReporter,
+                            scope = backgroundScope,
+                        )
+                    ),
+            )
 
         val states = mutableListOf<SummarizationState>()
         backgroundScope.launch {
             store.stateFlow.toList(states)
         }
 
-        val errorScreenExpected = listOf(
-            Inert(true),
-            Loading(provider.info),
-            Error(SummarizationError.SummarizationFailed(failureThrowable)),
-        )
+        val errorScreenExpected =
+            listOf(
+                Inert(true),
+                Loading(provider.info),
+                Error(SummarizationError.SummarizationFailed(failureThrowable)),
+            )
 
         store.dispatch(ViewAppeared)
         testScheduler.advanceTimeBy(15.seconds)
@@ -507,12 +791,13 @@ class SummarizationStoreTest {
         store.dispatch(ErrorAction.ErrorDismissed)
         testScheduler.advanceTimeBy(1.seconds)
 
-        val expected = listOf(
-            Inert(true),
-            Loading(provider.info),
-            Error(SummarizationError.SummarizationFailed(failureThrowable)),
-            Finished.ErrorDismissed,
-        )
+        val expected =
+            listOf(
+                Inert(true),
+                Loading(provider.info),
+                Error(SummarizationError.SummarizationFailed(failureThrowable)),
+                Finished.ErrorDismissed,
+            )
 
         assertEquals(expected, states)
     }
@@ -523,33 +808,35 @@ class SummarizationStoreTest {
         val content = "this is expected content."
         val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(llm))
         val pageTitle = "Article Headline"
-        val store = SummarizationStore(
-            initialState = Inert(true),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = MutableStateFlow(false),
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
-                    llmProvider = provider,
-                    contentProvider = {
-                        Result.success(
-                            Content(
-                                PageMetadata(
-                                    listOf("Recipe"),
-                                    0,
-                                    "es",
-                                    pageTitle = pageTitle,
-                                ),
-                                    content,
-                            ),
+        val store =
+            SummarizationStore(
+                initialState = Inert(true),
+                reducer = ::summarizationReducer,
+                middleware =
+                    listOf(
+                        SummarizationMiddleware(
+                            isPageLoadingFlow = MutableStateFlow(false),
+                            settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                            llmProvider = provider,
+                            contentProvider = {
+                                Result.success(
+                                    Content(
+                                        PageMetadata(
+                                            listOf("Recipe"),
+                                            0,
+                                            "es",
+                                            pageTitle = pageTitle,
+                                        ),
+                                        content,
+                                    )
+                                )
+                            },
+                            errorReporter = noopReporter,
+                            scope = backgroundScope,
+                            dispatcher = StandardTestDispatcher(testScheduler),
                         )
-                    },
-                    errorReporter = noopReporter,
-                    scope = backgroundScope,
-                    dispatcher = StandardTestDispatcher(testScheduler),
-                ),
-            ),
-        )
+                    ),
+            )
 
         val states = mutableListOf<SummarizationState>()
         backgroundScope.launch {
@@ -560,14 +847,28 @@ class SummarizationStoreTest {
         store.dispatch(ViewAppeared)
         testScheduler.advanceTimeBy(15.seconds)
 
-        val expected = listOf<SummarizationState>(
-            Inert(true),
-            Loading(provider.info),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n")),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
-            Summarized(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
-        )
+        val expected =
+            listOf<SummarizationState>(
+                Inert(true),
+                Loading(provider.info),
+                Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
+                Summarizing(
+                    provider.info,
+                    parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n"),
+                ),
+                Summarizing(
+                    provider.info,
+                    parser.parse(
+                        "# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n"
+                    ),
+                ),
+                Summarized(
+                    provider.info,
+                    parser.parse(
+                        "# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n"
+                    ),
+                ),
+            )
 
         assertEquals(expected, states)
         assertEquals(Prompt(content, recipeInstructions("es")), llm.lastPrompt)
@@ -578,21 +879,25 @@ class SummarizationStoreTest {
         val llm = FakeLlm.successful
         val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(llm))
         val content = "this is expected content."
-        val store = SummarizationStore(
-            initialState = Inert(true),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = MutableStateFlow(false),
-                    llmProvider = provider,
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
-                    contentProvider = { Result.success(Content(PageMetadata(listOf("Article"), 0, "en"), content)) },
-                    errorReporter = noopReporter,
-                    scope = backgroundScope,
-                    dispatcher = StandardTestDispatcher(testScheduler),
-                ),
-            ),
-        )
+        val store =
+            SummarizationStore(
+                initialState = Inert(true),
+                reducer = ::summarizationReducer,
+                middleware =
+                    listOf(
+                        SummarizationMiddleware(
+                            isPageLoadingFlow = MutableStateFlow(false),
+                            llmProvider = provider,
+                            settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                            contentProvider = {
+                                Result.success(Content(PageMetadata(listOf("Article"), 0, "en"), content))
+                            },
+                            errorReporter = noopReporter,
+                            scope = backgroundScope,
+                            dispatcher = StandardTestDispatcher(testScheduler),
+                        )
+                    ),
+            )
 
         val states = mutableListOf<SummarizationState>()
         backgroundScope.launch {
@@ -603,14 +908,21 @@ class SummarizationStoreTest {
         store.dispatch(ViewAppeared)
         testScheduler.advanceTimeBy(15.seconds)
 
-        val expected = listOf<SummarizationState>(
-            Inert(true),
-            Loading(provider.info),
-            Summarizing(provider.info, parser.parse("This is the article\n")),
-            Summarizing(provider.info, parser.parse("This is the article\nThis is some content...\n")),
-            Summarizing(provider.info, parser.parse("This is the article\nThis is some content...\nThis is some *bold* content.\n")),
-            Summarized(provider.info, parser.parse("This is the article\nThis is some content...\nThis is some *bold* content.\n")),
-        )
+        val expected =
+            listOf<SummarizationState>(
+                Inert(true),
+                Loading(provider.info),
+                Summarizing(provider.info, parser.parse("This is the article\n")),
+                Summarizing(provider.info, parser.parse("This is the article\nThis is some content...\n")),
+                Summarizing(
+                    provider.info,
+                    parser.parse("This is the article\nThis is some content...\nThis is some *bold* content.\n"),
+                ),
+                Summarized(
+                    provider.info,
+                    parser.parse("This is the article\nThis is some content...\nThis is some *bold* content.\n"),
+                ),
+            )
 
         assertEquals(expected, states)
         assertEquals(Prompt(content, defaultInstructions("en")), llm.lastPrompt)
@@ -622,21 +934,23 @@ class SummarizationStoreTest {
         val message = "cloud not clouding"
         val exception = Llm.Exception(message)
         val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Unavailable(exception))
-        val store = SummarizationStore(
-            initialState = Inert(true),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = MutableStateFlow(false),
-                    llmProvider = provider,
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
-                    contentProvider = { Result.failure(IllegalStateException()) },
-                    errorReporter = errorReporter,
-                    scope = backgroundScope,
-                    dispatcher = StandardTestDispatcher(testScheduler),
-                ),
-            ),
-        )
+        val store =
+            SummarizationStore(
+                initialState = Inert(true),
+                reducer = ::summarizationReducer,
+                middleware =
+                    listOf(
+                        SummarizationMiddleware(
+                            isPageLoadingFlow = MutableStateFlow(false),
+                            llmProvider = provider,
+                            settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                            contentProvider = { Result.failure(IllegalStateException()) },
+                            errorReporter = errorReporter,
+                            scope = backgroundScope,
+                            dispatcher = StandardTestDispatcher(testScheduler),
+                        )
+                    ),
+            )
 
         val states = mutableListOf<SummarizationState>()
         backgroundScope.launch {
@@ -648,20 +962,22 @@ class SummarizationStoreTest {
         store.dispatch(ViewAppeared)
         testScheduler.runCurrent()
 
-        val expected = listOf<SummarizationState>(
-            Inert(true),
-            Error(SummarizationError.SummarizationFailed(exception)),
-        )
+        val expected =
+            listOf<SummarizationState>(
+                Inert(true),
+                Error(SummarizationError.SummarizationFailed(exception)),
+            )
         assertEquals(expected, states)
     }
 
     @Test
     fun `WHEN the page is loading THEN this is reflected in the state`() {
-        val store = SummarizationStore(
-            initialState = Inert(true),
-            reducer = ::summarizationReducer,
-            middleware = listOf(),
-        )
+        val store =
+            SummarizationStore(
+                initialState = Inert(true),
+                reducer = ::summarizationReducer,
+                middleware = listOf(),
+            )
 
         assertFalse(store.state.isPageLoading)
 
@@ -671,68 +987,87 @@ class SummarizationStoreTest {
     }
 
     @Test
-    fun `WHEN the page has finished loading THEN the state transitions to loading, followed by summarization states`() = runTest {
-        val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful))
-        val pageTitle = "Article Headline"
-        val isPageLoadingMutableFlow = MutableStateFlow(true)
-        val isPageLoadingFlow = isPageLoadingMutableFlow.asStateFlow()
-        val store = SummarizationStore(
-            initialState = Inert(true),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = isPageLoadingFlow,
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
-                    llmProvider = provider,
-                    contentProvider = { Result.success(Content(PageMetadata(pageTitle = pageTitle))) },
-                    errorReporter = noopReporter,
-                    scope = backgroundScope,
-                    dispatcher = StandardTestDispatcher(testScheduler),
-                ),
-            ),
-        )
+    fun `WHEN the page has finished loading THEN the state transitions to loading, followed by summarization states`() =
+        runTest {
+            val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful))
+            val pageTitle = "Article Headline"
+            val isPageLoadingMutableFlow = MutableStateFlow(true)
+            val isPageLoadingFlow = isPageLoadingMutableFlow.asStateFlow()
+            val store =
+                SummarizationStore(
+                    initialState = Inert(true),
+                    reducer = ::summarizationReducer,
+                    middleware =
+                        listOf(
+                            SummarizationMiddleware(
+                                isPageLoadingFlow = isPageLoadingFlow,
+                                settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                                llmProvider = provider,
+                                contentProvider = { Result.success(Content(PageMetadata(pageTitle = pageTitle))) },
+                                errorReporter = noopReporter,
+                                scope = backgroundScope,
+                                dispatcher = StandardTestDispatcher(testScheduler),
+                            )
+                        ),
+                )
 
-        val states = mutableListOf<SummarizationState>()
-        backgroundScope.launch {
-            store.stateFlow.toList(states)
+            val states = mutableListOf<SummarizationState>()
+            backgroundScope.launch {
+                store.stateFlow.toList(states)
+            }
+
+            store.dispatch(ViewAppeared)
+            testScheduler.advanceTimeBy(15.seconds)
+            isPageLoadingMutableFlow.emit(false)
+            testScheduler.advanceTimeBy(15.seconds)
+
+            val expected =
+                listOf<SummarizationState>(
+                    Inert(true),
+                    SummarizationState.PageLoading,
+                    Loading(provider.info),
+                    Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
+                    Summarizing(
+                        provider.info,
+                        parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n"),
+                    ),
+                    Summarizing(
+                        provider.info,
+                        parser.parse(
+                            "# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n"
+                        ),
+                    ),
+                    Summarized(
+                        provider.info,
+                        parser.parse(
+                            "# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n"
+                        ),
+                    ),
+                )
+
+            assertEquals(expected, states)
         }
-
-        store.dispatch(ViewAppeared)
-        testScheduler.advanceTimeBy(15.seconds)
-        isPageLoadingMutableFlow.emit(false)
-        testScheduler.advanceTimeBy(15.seconds)
-
-        val expected = listOf<SummarizationState>(
-            Inert(true),
-            SummarizationState.PageLoading,
-            Loading(provider.info),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n")),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
-            Summarized(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
-        )
-
-        assertEquals(expected, states)
-    }
 
     @Test
     fun `clicking sign in navigates to sign in and finishes the flow`() = runTest {
         val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful))
-        val store = SummarizationStore(
-            initialState = Inert(false),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = MutableStateFlow(false),
-                    settings = SummarizationSettings.inMemory(),
-                    llmProvider = provider,
-                    contentProvider = { Result.success(Content()) },
-                    errorReporter = noopReporter,
-                    scope = backgroundScope,
-                    dispatcher = StandardTestDispatcher(testScheduler),
-                ),
-            ),
-        )
+        val store =
+            SummarizationStore(
+                initialState = Inert(false),
+                reducer = ::summarizationReducer,
+                middleware =
+                    listOf(
+                        SummarizationMiddleware(
+                            isPageLoadingFlow = MutableStateFlow(false),
+                            settings = SummarizationSettings.inMemory(),
+                            llmProvider = provider,
+                            contentProvider = { Result.success(Content()) },
+                            errorReporter = noopReporter,
+                            scope = backgroundScope,
+                            dispatcher = StandardTestDispatcher(testScheduler),
+                        )
+                    ),
+            )
 
         val states = mutableListOf<SummarizationState>()
         backgroundScope.launch {
@@ -749,21 +1084,23 @@ class SummarizationStoreTest {
     @Test
     fun `dismissing the sign in content cancels the flow`() = runTest {
         val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful))
-        val store = SummarizationStore(
-            initialState = Inert(false),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = MutableStateFlow(false),
-                    settings = SummarizationSettings.inMemory(),
-                    llmProvider = provider,
-                    contentProvider = { Result.success(Content()) },
-                    errorReporter = noopReporter,
-                    scope = backgroundScope,
-                    dispatcher = StandardTestDispatcher(testScheduler),
-                ),
-            ),
-        )
+        val store =
+            SummarizationStore(
+                initialState = Inert(false),
+                reducer = ::summarizationReducer,
+                middleware =
+                    listOf(
+                        SummarizationMiddleware(
+                            isPageLoadingFlow = MutableStateFlow(false),
+                            settings = SummarizationSettings.inMemory(),
+                            llmProvider = provider,
+                            contentProvider = { Result.success(Content()) },
+                            errorReporter = noopReporter,
+                            scope = backgroundScope,
+                            dispatcher = StandardTestDispatcher(testScheduler),
+                        )
+                    ),
+            )
 
         val states = mutableListOf<SummarizationState>()
         backgroundScope.launch {
@@ -780,21 +1117,23 @@ class SummarizationStoreTest {
     @Test
     fun `clicking learn more on the sign in content requests the cloud supported features page`() = runTest {
         val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful))
-        val store = SummarizationStore(
-            initialState = Inert(false),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = MutableStateFlow(false),
-                    settings = SummarizationSettings.inMemory(),
-                    llmProvider = provider,
-                    contentProvider = { Result.success(Content()) },
-                    errorReporter = noopReporter,
-                    scope = backgroundScope,
-                    dispatcher = StandardTestDispatcher(testScheduler),
-                ),
-            ),
-        )
+        val store =
+            SummarizationStore(
+                initialState = Inert(false),
+                reducer = ::summarizationReducer,
+                middleware =
+                    listOf(
+                        SummarizationMiddleware(
+                            isPageLoadingFlow = MutableStateFlow(false),
+                            settings = SummarizationSettings.inMemory(),
+                            llmProvider = provider,
+                            contentProvider = { Result.success(Content()) },
+                            errorReporter = noopReporter,
+                            scope = backgroundScope,
+                            dispatcher = StandardTestDispatcher(testScheduler),
+                        )
+                    ),
+            )
 
         val states = mutableListOf<SummarizationState>()
         backgroundScope.launch {
@@ -812,73 +1151,99 @@ class SummarizationStoreTest {
     }
 
     @Test
-    fun `if the provider is unavailable due to an attestation failure, the provider is re-prepared and summarization proceeds`() = runTest {
-        val llm = FakeLlm.successful
-        val content = "this is expected content."
-        val pageTitle = "Article Headline"
-        val provider = FakeCloudProvider(
-            state = MutableStateFlow(CloudLlmProvider.State.Unavailable(FakeAttestationFailure())),
-            preparedState = CloudLlmProvider.State.Ready(llm),
-        )
-        val store = SummarizationStore(
-            initialState = Inert(false),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = MutableStateFlow(false),
-                    settings = SummarizationSettings.inMemory(),
-                    llmProvider = provider,
-                    contentProvider = { Result.success(Content(PageMetadata(listOf("Article"), 0, "en", pageTitle = pageTitle), content)) },
-                    errorReporter = noopReporter,
-                    scope = backgroundScope,
-                    dispatcher = StandardTestDispatcher(testScheduler),
-                ),
-            ),
-        )
+    fun `if the provider is unavailable due to an attestation failure, the provider is re-prepared and summarization proceeds`() =
+        runTest {
+            val llm = FakeLlm.successful
+            val content = "this is expected content."
+            val pageTitle = "Article Headline"
+            val provider =
+                FakeCloudProvider(
+                    state = MutableStateFlow(CloudLlmProvider.State.Unavailable(FakeAttestationFailure())),
+                    preparedState = CloudLlmProvider.State.Ready(llm),
+                )
+            val store =
+                SummarizationStore(
+                    initialState = Inert(false),
+                    reducer = ::summarizationReducer,
+                    middleware =
+                        listOf(
+                            SummarizationMiddleware(
+                                isPageLoadingFlow = MutableStateFlow(false),
+                                settings = SummarizationSettings.inMemory(),
+                                llmProvider = provider,
+                                contentProvider = {
+                                    Result.success(
+                                        Content(
+                                            PageMetadata(listOf("Article"), 0, "en", pageTitle = pageTitle),
+                                            content,
+                                        )
+                                    )
+                                },
+                                errorReporter = noopReporter,
+                                scope = backgroundScope,
+                                dispatcher = StandardTestDispatcher(testScheduler),
+                            )
+                        ),
+                )
 
-        val states = mutableListOf<SummarizationState>()
-        backgroundScope.launch {
-            store.stateFlow.toList(states)
+            val states = mutableListOf<SummarizationState>()
+            backgroundScope.launch {
+                store.stateFlow.toList(states)
+            }
+            testScheduler.advanceTimeBy(1.seconds)
+
+            store.dispatch(ViewAppeared)
+            testScheduler.advanceTimeBy(15.seconds)
+
+            val expected =
+                listOf<SummarizationState>(
+                    Inert(false),
+                    Loading(provider.info),
+                    Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
+                    Summarizing(
+                        provider.info,
+                        parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n"),
+                    ),
+                    Summarizing(
+                        provider.info,
+                        parser.parse(
+                            "# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n"
+                        ),
+                    ),
+                    Summarized(
+                        provider.info,
+                        parser.parse(
+                            "# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n"
+                        ),
+                    ),
+                )
+
+            assertEquals(expected, states)
+            assertIs<CloudLlmProvider.State.Ready>(provider.state.value)
         }
-        testScheduler.advanceTimeBy(1.seconds)
-
-        store.dispatch(ViewAppeared)
-        testScheduler.advanceTimeBy(15.seconds)
-
-        val expected = listOf<SummarizationState>(
-            Inert(false),
-            Loading(provider.info),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n")),
-            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
-            Summarized(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
-        )
-
-        assertEquals(expected, states)
-        assertIs<CloudLlmProvider.State.Ready>(provider.state.value)
-    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `if preparing fails because authentication is required, the sign-in screen is shown`() = runTest {
-        val provider = FakeCloudProvider(
-            preparedState = CloudLlmProvider.State.Unavailable(FakeAuthenticationRequired()),
-        )
-        val store = SummarizationStore(
-            initialState = Inert(true),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    isPageLoadingFlow = MutableStateFlow(false),
-                    llmProvider = provider,
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
-                    contentProvider = { Result.success(Content()) },
-                    errorReporter = errorReporter,
-                    scope = backgroundScope,
-                    dispatcher = StandardTestDispatcher(testScheduler),
-                ),
-            ),
-        )
+        val provider =
+            FakeCloudProvider(preparedState = CloudLlmProvider.State.Unavailable(FakeAuthenticationRequired()))
+        val store =
+            SummarizationStore(
+                initialState = Inert(true),
+                reducer = ::summarizationReducer,
+                middleware =
+                    listOf(
+                        SummarizationMiddleware(
+                            isPageLoadingFlow = MutableStateFlow(false),
+                            llmProvider = provider,
+                            settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                            contentProvider = { Result.success(Content()) },
+                            errorReporter = errorReporter,
+                            scope = backgroundScope,
+                            dispatcher = StandardTestDispatcher(testScheduler),
+                        )
+                    ),
+            )
 
         val states = mutableListOf<SummarizationState>()
         backgroundScope.launch {
@@ -888,11 +1253,124 @@ class SummarizationStoreTest {
         store.dispatch(ViewAppeared)
         testScheduler.runCurrent()
 
-        val expected = listOf<SummarizationState>(
-            Inert(true),
-            SummarizationState.SignInRequired,
-        )
+        val expected =
+            listOf<SummarizationState>(
+                Inert(true),
+                SummarizationState.SignInRequired,
+            )
         assertEquals(expected, states)
         assertTrue(reportedErrors.isEmpty())
     }
+
+    @Test
+    fun `when feedback is provided on a summary, it is stored`() = runTest {
+        val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful))
+        val pageTitle = "Article Headline"
+        val store = summarizedStore(provider, pageTitle)
+
+        val states = mutableListOf<SummarizationState>()
+        backgroundScope.launch {
+            store.stateFlow.toList(states)
+        }
+
+        store.dispatch(ViewAppeared)
+        testScheduler.advanceTimeBy(15.seconds)
+        store.dispatch(SummaryFeedbackProvided(SummaryFeedback.GOOD))
+        testScheduler.advanceTimeBy(1.seconds)
+
+        val document =
+            parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")
+        assertEquals(Summarized(provider.info, document, SummaryFeedback.GOOD), states.last())
+    }
+
+    @Test
+    fun `when feedback has already been provided, providing it again replaces it`() = runTest {
+        val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful))
+        val pageTitle = "Article Headline"
+        val store = summarizedStore(provider, pageTitle)
+
+        val states = mutableListOf<SummarizationState>()
+        backgroundScope.launch {
+            store.stateFlow.toList(states)
+        }
+
+        store.dispatch(ViewAppeared)
+        testScheduler.advanceTimeBy(15.seconds)
+        store.dispatch(SummaryFeedbackProvided(SummaryFeedback.GOOD))
+        testScheduler.advanceTimeBy(1.seconds)
+        store.dispatch(SummaryFeedbackProvided(SummaryFeedback.BAD))
+        testScheduler.advanceTimeBy(1.seconds)
+
+        val document =
+            parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")
+        assertEquals(Summarized(provider.info, document, SummaryFeedback.BAD), states.last())
+    }
+
+    @Test
+    fun `when feedback is provided before a summary is ready, the state is unchanged`() = runTest {
+        val hangingLlm =
+            object : Llm {
+                override suspend fun prompt(prompt: Prompt): Flow<String> = flow { awaitCancellation() }
+            }
+        val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(hangingLlm))
+        val store = summarizedStore(provider, "Article Headline")
+
+        val states = mutableListOf<SummarizationState>()
+        backgroundScope.launch {
+            store.stateFlow.toList(states)
+        }
+
+        store.dispatch(ViewAppeared)
+        testScheduler.advanceTimeBy(1.seconds)
+        store.dispatch(SummaryFeedbackProvided(SummaryFeedback.GOOD))
+        testScheduler.advanceTimeBy(1.seconds)
+
+        assertEquals(Loading(provider.info), states.last())
+    }
+
+    @Test
+    fun `feedback is preserved when navigating to settings and back`() = runTest {
+        val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful))
+        val pageTitle = "Article Headline"
+        val store = summarizedStore(provider, pageTitle)
+
+        val states = mutableListOf<SummarizationState>()
+        backgroundScope.launch {
+            store.stateFlow.toList(states)
+        }
+
+        store.dispatch(ViewAppeared)
+        testScheduler.advanceTimeBy(15.seconds)
+        store.dispatch(SummaryFeedbackProvided(SummaryFeedback.BAD))
+        testScheduler.advanceTimeBy(1.seconds)
+        store.dispatch(SettingsClicked)
+        testScheduler.advanceTimeBy(1.seconds)
+        store.dispatch(SettingsBackClicked)
+        testScheduler.advanceTimeBy(1.seconds)
+
+        val document =
+            parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")
+        assertEquals(Summarized(provider.info, document, SummaryFeedback.BAD), states.last())
+    }
+
+    private fun TestScope.summarizedStore(
+        provider: FakeCloudProvider,
+        pageTitle: String,
+    ) =
+        SummarizationStore(
+            initialState = Inert(true),
+            reducer = ::summarizationReducer,
+            middleware =
+                listOf(
+                    SummarizationMiddleware(
+                        isPageLoadingFlow = MutableStateFlow(false),
+                        llmProvider = provider,
+                        settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                        contentProvider = { Result.success(Content(PageMetadata(pageTitle = pageTitle))) },
+                        errorReporter = noopReporter,
+                        scope = backgroundScope,
+                        dispatcher = StandardTestDispatcher(testScheduler),
+                    )
+                ),
+        )
 }

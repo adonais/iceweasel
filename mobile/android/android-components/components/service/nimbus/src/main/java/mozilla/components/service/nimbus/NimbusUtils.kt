@@ -9,12 +9,12 @@ import org.mozilla.experiments.nimbus.internal.NimbusException
 
 /**
  * Extension method that returns true when the condition is evaluated to true, and false otherwise
+ *
  * @param condition The condition given as String.
  */
-fun NimbusMessagingHelperInterface.evalJexlSafe(
-    condition: String,
-) = try {
-    evalJexl(condition)
-} catch (e: NimbusException.EvaluationException) {
-    false
-}
+fun NimbusMessagingHelperInterface.evalJexlSafe(condition: String) =
+    try {
+        evalJexl(condition)
+    } catch (e: NimbusException.EvaluationException) {
+        false
+    }

@@ -21,18 +21,18 @@ import mozilla.components.lib.state.Store
 import mozilla.components.support.webextensions.BuiltInWebExtensionController
 
 /**
- * [Middleware] implementation for translating [BrowserAction]s to
- * [ReaderAction]s (e.g. if the URL is updated a new "readerable"
- * check should be executed.)
+ * [Middleware] implementation for translating [BrowserAction]s to [ReaderAction]s (e.g. if the URL is updated a new
+ * "readerable" check should be executed.)
  */
 class ReaderViewMiddleware : Middleware<BrowserState, BrowserAction> {
 
     @VisibleForTesting
-    internal var extensionController = BuiltInWebExtensionController(
-        READER_VIEW_EXTENSION_ID,
-        READER_VIEW_EXTENSION_URL,
-        READER_VIEW_CONTENT_PORT,
-    )
+    internal var extensionController =
+        BuiltInWebExtensionController(
+            READER_VIEW_EXTENSION_ID,
+            READER_VIEW_EXTENSION_URL,
+            READER_VIEW_CONTENT_PORT,
+        )
 
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,
@@ -82,10 +82,11 @@ class ReaderViewMiddleware : Middleware<BrowserState, BrowserAction> {
                 // https://bugzilla.mozilla.org/show_bug.cgi?id=1970308
                 val tab = store.state.findTab(action.sessionId)
                 if (isReaderUrl(tab, action.url)) {
-                    val urlReplaced = tab?.readerState?.activeUrl?.let { activeUrl ->
-                        store.dispatch(ContentAction.UpdateUrlAction(action.sessionId, activeUrl))
-                        true
-                    } ?: false
+                    val urlReplaced =
+                        tab?.readerState?.activeUrl?.let { activeUrl ->
+                            store.dispatch(ContentAction.UpdateUrlAction(action.sessionId, activeUrl))
+                            true
+                        } ?: false
                     store.dispatch(ReaderAction.UpdateReaderActiveAction(action.sessionId, true))
                     !urlReplaced
                 } else {

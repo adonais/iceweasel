@@ -639,10 +639,14 @@ class TestInfoReport(TestInfo):
             show_summary = True
 
         trunk = False
-        if os.environ.get("GECKO_HEAD_REPOSITORY", "") in [
-            "https://hg.mozilla.org/mozilla-central",
-            "https://hg.mozilla.org/try",
-        ]:
+        if (
+            os.environ.get("GECKO_HEAD_REPOSITORY", "")
+            in [
+                "https://hg.mozilla.org/mozilla-central",
+                "https://hg.mozilla.org/try",
+            ]
+            or os.environ.get("GECKO_HEAD_REF", "") == "refs/heads/main"
+        ):
             trunk = True
         else:
             show_testruns = False

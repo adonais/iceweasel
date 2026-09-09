@@ -8,6 +8,7 @@ import mozilla.components.feature.readerview.ReaderViewFeature
 import mozilla.components.feature.readerview.view.ReaderViewControlsView
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.whenever
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoMoreInteractions
@@ -17,7 +18,7 @@ class ReaderViewControlsInteractorTest {
     @Test
     fun `interactor assigns listener to self`() {
         val view = mock<ReaderViewControlsView>()
-        val interactor = ReaderViewControlsInteractor(view, mock())
+        val interactor = ReaderViewControlsInteractor(view, mock()) {}
 
         interactor.start()
 
@@ -28,7 +29,7 @@ class ReaderViewControlsInteractorTest {
     @Test
     fun `interactor un-assigns self from listener`() {
         val view = mock<ReaderViewControlsView>()
-        val interactor = ReaderViewControlsInteractor(view, mock())
+        val interactor = ReaderViewControlsInteractor(view, mock()) {}
 
         interactor.stop()
 
@@ -39,7 +40,7 @@ class ReaderViewControlsInteractorTest {
     @Test
     fun `update config on change`() {
         val config: ReaderViewConfig = mock()
-        val interactor = ReaderViewControlsInteractor(mock(), config)
+        val interactor = ReaderViewControlsInteractor(mock(), config) {}
 
         interactor.onFontChanged(ReaderViewFeature.FontType.SANSSERIF)
 
@@ -53,7 +54,7 @@ class ReaderViewControlsInteractorTest {
     @Test
     fun `update config when font size increased`() {
         val config: ReaderViewConfig = mock()
-        val interactor = ReaderViewControlsInteractor(mock(), config)
+        val interactor = ReaderViewControlsInteractor(mock(), config) {}
 
         whenever(config.fontSize).thenReturn(7)
         interactor.onFontSizeIncreased()
@@ -72,7 +73,7 @@ class ReaderViewControlsInteractorTest {
     @Test
     fun `update config when font size decreased`() {
         val config: ReaderViewConfig = mock()
-        val interactor = ReaderViewControlsInteractor(mock(), config)
+        val interactor = ReaderViewControlsInteractor(mock(), config) {}
 
         whenever(config.fontSize).thenReturn(3)
         interactor.onFontSizeDecreased()
@@ -86,5 +87,18 @@ class ReaderViewControlsInteractorTest {
         whenever(config.fontSize).thenReturn(1)
         interactor.onFontSizeDecreased()
         verify(config).fontSize = 1
+    }
+
+    @Test
+    fun `onListenClicked invokes callback`() {
+        var callbackInvoked = false
+        val interactor =
+            ReaderViewControlsInteractor(mock(), mock()) {
+                callbackInvoked = true
+            }
+
+        interactor.onListenClicked()
+
+        assertTrue(callbackInvoked)
     }
 }

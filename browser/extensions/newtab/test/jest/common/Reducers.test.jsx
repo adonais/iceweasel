@@ -5,7 +5,7 @@
 import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
 import { actionTypes as at } from "common/Actions.mjs";
 
-const { PrivacyWidget } = reducers;
+const { PrivacyWidget, RecentSearches } = reducers;
 
 describe("PrivacyWidget reducer", () => {
   it("defaults to an uninitialized state", () => {
@@ -26,5 +26,26 @@ describe("PrivacyWidget reducer", () => {
   it("returns the prior state for unrelated actions", () => {
     const prev = INITIAL_STATE.PrivacyWidget;
     expect(PrivacyWidget(prev, { type: "SOME_OTHER_ACTION" })).toBe(prev);
+  });
+});
+
+describe("RecentSearches reducer", () => {
+  it("defaults to an uninitialized state with no searches", () => {
+    expect(INITIAL_STATE.RecentSearches.initialized).toBe(false);
+    expect(INITIAL_STATE.RecentSearches.searches).toEqual([]);
+  });
+
+  it("stores the searches and flips initialized on WIDGETS_RECENT_SEARCHES_UPDATE", () => {
+    const next = RecentSearches(INITIAL_STATE.RecentSearches, {
+      type: at.WIDGETS_RECENT_SEARCHES_UPDATE,
+      data: { searches: ["alpha", "beta"] },
+    });
+    expect(next.initialized).toBe(true);
+    expect(next.searches).toEqual(["alpha", "beta"]);
+  });
+
+  it("returns the prior state for unrelated actions", () => {
+    const prev = INITIAL_STATE.RecentSearches;
+    expect(RecentSearches(prev, { type: "SOME_OTHER_ACTION" })).toBe(prev);
   });
 });

@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use byteorder::{NativeEndian, WriteBytesExt};
+use digest::typenum::Unsigned;
 use digest::{Digest, DynDigest};
 use pkcs11_bindings::*;
 use rand::rngs::OsRng;
@@ -30,20 +30,6 @@ pub unsafe fn char_ptr_to_slice<'a>(ptr: CK_UTF8CHAR_PTR, len: CK_ULONG) -> &'a 
     } else {
         std::slice::from_raw_parts(ptr, len as usize)
     }
-}
-
-// This is a helper function to take a value and lay it out in memory how
-// PKCS#11 is expecting it.
-pub fn serialize_uint<T: TryInto<u64>>(value: T) -> Result<Vec<u8>, Error> {
-    let value_size = std::mem::size_of::<T>();
-    let mut value_buf = Vec::with_capacity(value_size);
-    let value_as_u64 = value
-        .try_into()
-        .map_err(|_| error_here!(ErrorType::ValueTooLarge))?;
-    value_buf
-        .write_uint::<NativeEndian>(value_as_u64, value_size)
-        .map_err(|_| error_here!(ErrorType::LibraryFailure))?;
-    Ok(value_buf)
 }
 
 fn make_hasher(params: &CK_RSA_PKCS_PSS_PARAMS) -> Result<Box<dyn DynDigest>, Error> {
@@ -190,12 +176,12 @@ pub fn emsa_pss_encode(
 #[derive(Clone)]
 pub struct CryptokiCert {
     /// PKCS #11 object class. Will be `CKO_CERTIFICATE`.
-    class: Vec<u8>,
+    class: [u8; size_of::<CK_OBJECT_CLASS>()],
     /// Whether or not this is on a token. Will be `CK_TRUE`.
-    token: Vec<u8>,
+    token: [u8; size_of::<CK_BBOOL>()],
     /// An identifier unique to this certificate. This must be the same as the ID for the private
     /// key, so for simplicity, this will be the sha256 hash of the bytes of the certificate.
-    id: Vec<u8>,
+    id: [u8; <sha2::Sha256 as digest::OutputSizeUser>::OutputSize::USIZE],
     /// The bytes of a human-readable label for this certificate.
     label: Vec<u8>,
     /// The DER bytes of the certificate.
@@ -210,12 +196,12 @@ pub struct CryptokiCert {
 
 impl CryptokiCert {
     pub fn new(der: Vec<u8>, label: Vec<u8>) -> Result<CryptokiCert, Error> {
-        let id = sha2::Sha256::digest(&der).to_vec();
+        let id = sha2::Sha256::digest(&der);
         let (serial_number, issuer, subject) = read_encoded_certificate_identifiers(&der)?;
         Ok(CryptokiCert {
-            class: serialize_uint(CKO_CERTIFICATE)?,
-            token: serialize_uint(CK_TRUE)?,
-            id,
+            class: CKO_CERTIFICATE.to_ne_bytes(),
+            token: CK_TRUE.to_ne_bytes(),
+            id: id.into(),
             label,
             value: der,
             issuer,
@@ -229,10 +215,10 @@ impl CryptokiObject for CryptokiCert {
     fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
         for (attr_type, attr_value) in attrs {
             let comparison = match *attr_type {
-                CKA_CLASS => &self.class,
-                CKA_TOKEN => &self.token,
+                CKA_CLASS => self.class.as_slice(),
+                CKA_TOKEN => self.token.as_slice(),
                 CKA_LABEL => &self.label,
-                CKA_ID => &self.id,
+                CKA_ID => self.id.as_slice(),
                 CKA_VALUE => &self.value,
                 CKA_ISSUER => &self.issuer,
                 CKA_SERIAL_NUMBER => &self.serial_number,
@@ -248,10 +234,10 @@ impl CryptokiObject for CryptokiCert {
 
     fn get_attribute(&self, attribute: CK_ATTRIBUTE_TYPE) -> Option<&[u8]> {
         let result = match attribute {
-            CKA_CLASS => &self.class,
-            CKA_TOKEN => &self.token,
+            CKA_CLASS => self.class.as_slice(),
+            CKA_TOKEN => self.token.as_slice(),
             CKA_LABEL => &self.label,
-            CKA_ID => &self.id,
+            CKA_ID => self.id.as_slice(),
             CKA_VALUE => &self.value,
             CKA_ISSUER => &self.issuer,
             CKA_SERIAL_NUMBER => &self.serial_number,
@@ -274,18 +260,18 @@ pub enum KeyType {
 #[derive(Clone)]
 pub struct CryptokiKey {
     /// PKCS #11 object class. Will be `CKO_PRIVATE_KEY`.
-    class: Vec<u8>,
+    class: [u8; size_of::<CK_OBJECT_CLASS>()],
     /// Whether or not this is on a token. Will be `CK_TRUE`.
-    token: Vec<u8>,
+    token: [u8; size_of::<CK_BBOOL>()],
     /// An identifier unique to this key. This must be the same as the ID for a corresponding
     /// certificate, so for simplicity, this will be the sha256 hash of the bytes of the
     /// certificate.
-    id: Vec<u8>,
+    id: [u8; <sha2::Sha256 as digest::OutputSizeUser>::OutputSize::USIZE],
     /// Whether or not this key is "private" (can it be exported?). Will be CK_TRUE (it can't be
     /// exported).
-    private: Vec<u8>,
+    private: [u8; size_of::<CK_BBOOL>()],
     /// PKCS #11 key type. Will be `CKK_EC` for EC, and `CKK_RSA` for RSA.
-    key_type_attribute: Vec<u8>,
+    key_type_attribute: [u8; size_of::<CK_KEY_TYPE>()],
     /// If this is an RSA key, this is the value of the modulus as an unsigned integer.
     modulus: Option<Vec<u8>>,
     /// If this is an EC key, this is the DER bytes of the OID identifying the curve the key is on.
@@ -314,13 +300,13 @@ impl CryptokiKey {
         } else {
             return Err(error_here!(ErrorType::LibraryFailure));
         };
-        let id = sha2::Sha256::digest(cert).to_vec();
+        let id = sha2::Sha256::digest(cert);
         Ok(CryptokiKey {
-            class: serialize_uint(CKO_PRIVATE_KEY)?,
-            token: serialize_uint(CK_TRUE)?,
-            id,
-            private: serialize_uint(CK_TRUE)?,
-            key_type_attribute: serialize_uint(key_type_attribute)?,
+            class: CKO_PRIVATE_KEY.to_ne_bytes(),
+            token: CK_TRUE.to_ne_bytes(),
+            id: id.into(),
+            private: CK_TRUE.to_ne_bytes(),
+            key_type_attribute: key_type_attribute.to_ne_bytes(),
             modulus,
             ec_params,
             key_type,
@@ -344,11 +330,11 @@ impl CryptokiObject for CryptokiKey {
     fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
         for (attr_type, attr_value) in attrs {
             let comparison = match *attr_type {
-                CKA_CLASS => &self.class,
-                CKA_TOKEN => &self.token,
-                CKA_ID => &self.id,
-                CKA_PRIVATE => &self.private,
-                CKA_KEY_TYPE => &self.key_type_attribute,
+                CKA_CLASS => self.class.as_slice(),
+                CKA_TOKEN => self.token.as_slice(),
+                CKA_ID => self.id.as_slice(),
+                CKA_PRIVATE => self.private.as_slice(),
+                CKA_KEY_TYPE => self.key_type_attribute.as_slice(),
                 CKA_MODULUS => {
                     if let Some(modulus) = &self.modulus {
                         modulus
@@ -374,11 +360,11 @@ impl CryptokiObject for CryptokiKey {
 
     fn get_attribute(&self, attribute: CK_ATTRIBUTE_TYPE) -> Option<&[u8]> {
         match attribute {
-            CKA_CLASS => Some(&self.class),
-            CKA_TOKEN => Some(&self.token),
-            CKA_ID => Some(&self.id),
-            CKA_PRIVATE => Some(&self.private),
-            CKA_KEY_TYPE => Some(&self.key_type_attribute),
+            CKA_CLASS => Some(self.class.as_slice()),
+            CKA_TOKEN => Some(self.token.as_slice()),
+            CKA_ID => Some(self.id.as_slice()),
+            CKA_PRIVATE => Some(self.private.as_slice()),
+            CKA_KEY_TYPE => Some(self.key_type_attribute.as_slice()),
             CKA_MODULUS => match &self.modulus {
                 Some(modulus) => Some(modulus.as_slice()),
                 None => None,
@@ -387,6 +373,110 @@ impl CryptokiObject for CryptokiKey {
                 Some(ec_params) => Some(ec_params.as_slice()),
                 None => None,
             },
+            _ => None,
+        }
+    }
+}
+
+/// A `CryptokiTrust` holds all relevant information for a `CryptokiObject` with class `CKO_TRUST`.
+#[derive(Clone)]
+pub struct CryptokiTrust {
+    /// PKCS #11 object class. Will be `CKO_TRUST`.
+    class: [u8; size_of::<CK_OBJECT_CLASS>()],
+    /// Whether or not this is on a token. Will be `CK_TRUE`.
+    token: [u8; size_of::<CK_BBOOL>()],
+    /// The bytes of a human-readable label for the corresponding certificate.
+    label: Vec<u8>,
+    /// The sha-256 hash of the corresponding certificate.
+    hash_of_certificate: [u8; <sha2::Sha256 as digest::OutputSizeUser>::OutputSize::USIZE],
+    /// CK_MECHANISM_TYPE for sha-256, namely CKM_SHA265.
+    name_hash_algorithm: [u8; size_of::<CK_MECHANISM_TYPE>()],
+    /// The DER bytes of the issuer distinguished name of the corresponding certificate.
+    issuer: Vec<u8>,
+    /// The DER bytes of the serial number of the corresponding certificate.
+    serial_number: Vec<u8>,
+    /// The DER bytes of the subject distinguished name of the corresponding certificate.
+    subject: Vec<u8>,
+    /// Trust for server authentication. Will be CKT_TRUST_ANCHOR for trust anchors, and
+    /// CKT_TRUST_UNKNOWN otherwise.
+    trust_server_auth: [u8; size_of::<CK_TRUST>()],
+    /// Trust for client authentication. Will be CKT_TRUST_UNKNOWN.
+    trust_client_auth: [u8; size_of::<CK_TRUST>()],
+    /// Trust for email protection. Will be CKT_TRUST_UNKNOWN.
+    trust_email_protection: [u8; size_of::<CK_TRUST>()],
+    /// Trust for code signing. Will be CKT_TRUST_UNKNOWN.
+    trust_code_signing: [u8; size_of::<CK_TRUST>()],
+}
+
+impl CryptokiTrust {
+    pub fn new(
+        cert: &[u8],
+        label: Vec<u8>,
+        server_auth_trust_anchor: bool,
+    ) -> Result<CryptokiTrust, Error> {
+        let hash_of_certificate = sha2::Sha256::digest(cert);
+        let (serial_number, issuer, subject) = read_encoded_certificate_identifiers(cert)?;
+        Ok(CryptokiTrust {
+            class: CKO_TRUST.to_ne_bytes(),
+            token: CK_TRUE.to_ne_bytes(),
+            label,
+            hash_of_certificate: hash_of_certificate.into(),
+            name_hash_algorithm: CKM_SHA256.to_ne_bytes(),
+            issuer,
+            serial_number,
+            subject,
+            trust_server_auth: if server_auth_trust_anchor {
+                CKT_TRUST_ANCHOR
+            } else {
+                CKT_TRUST_UNKNOWN
+            }
+            .to_ne_bytes(),
+            trust_client_auth: CKT_TRUST_UNKNOWN.to_ne_bytes(),
+            trust_email_protection: CKT_TRUST_UNKNOWN.to_ne_bytes(),
+            trust_code_signing: CKT_TRUST_UNKNOWN.to_ne_bytes(),
+        })
+    }
+}
+
+impl CryptokiObject for CryptokiTrust {
+    fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
+        for (attr_type, attr_value) in attrs {
+            let comparison = match *attr_type {
+                CKA_CLASS => self.class.as_slice(),
+                CKA_TOKEN => self.token.as_slice(),
+                CKA_LABEL => &self.label,
+                CKA_HASH_OF_CERTIFICATE => self.hash_of_certificate.as_slice(),
+                CKA_NAME_HASH_ALGORITHM => self.name_hash_algorithm.as_slice(),
+                CKA_ISSUER => &self.issuer,
+                CKA_SERIAL_NUMBER => &self.serial_number,
+                CKA_SUBJECT => &self.subject,
+                nss::CKA_PKCS_TRUST_SERVER_AUTH => self.trust_server_auth.as_slice(),
+                nss::CKA_PKCS_TRUST_CLIENT_AUTH => self.trust_client_auth.as_slice(),
+                nss::CKA_PKCS_TRUST_EMAIL_PROTECTION => self.trust_email_protection.as_slice(),
+                nss::CKA_PKCS_TRUST_CODE_SIGNING => self.trust_code_signing.as_slice(),
+                _ => return false,
+            };
+            if attr_value.as_slice() != comparison {
+                return false;
+            }
+        }
+        true
+    }
+
+    fn get_attribute(&self, attribute: CK_ATTRIBUTE_TYPE) -> Option<&[u8]> {
+        match attribute {
+            CKA_CLASS => Some(self.class.as_slice()),
+            CKA_TOKEN => Some(self.token.as_slice()),
+            CKA_LABEL => Some(&self.label),
+            CKA_HASH_OF_CERTIFICATE => Some(self.hash_of_certificate.as_slice()),
+            CKA_NAME_HASH_ALGORITHM => Some(self.name_hash_algorithm.as_slice()),
+            CKA_ISSUER => Some(&self.issuer),
+            CKA_SERIAL_NUMBER => Some(&self.serial_number),
+            CKA_SUBJECT => Some(&self.subject),
+            nss::CKA_PKCS_TRUST_SERVER_AUTH => Some(self.trust_server_auth.as_slice()),
+            nss::CKA_PKCS_TRUST_CLIENT_AUTH => Some(self.trust_client_auth.as_slice()),
+            nss::CKA_PKCS_TRUST_EMAIL_PROTECTION => Some(self.trust_email_protection.as_slice()),
+            nss::CKA_PKCS_TRUST_CODE_SIGNING => Some(self.trust_code_signing.as_slice()),
             _ => None,
         }
     }

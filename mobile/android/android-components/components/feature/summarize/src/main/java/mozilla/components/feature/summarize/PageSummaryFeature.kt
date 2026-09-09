@@ -12,16 +12,13 @@ import mozilla.components.concept.ai.controls.AIFeatureState
 import mozilla.components.feature.summarize.settings.SummarizationSettings
 import mozilla.components.ui.icons.R as iconsR
 
-/**
- * The feature that ties AI Controls to page summaries/shake to summarize.
- */
-class PageSummaryFeature(
-    private val settings: SummarizationSettings,
-) : AIControllableFeature, AIFeatureMetadata by Companion {
+/** The feature that ties AI Controls to page summaries/shake to summarize. */
+class PageSummaryFeature(private val settings: SummarizationSettings) :
+    AIControllableFeature, AIFeatureMetadata by Companion {
 
     override val featureState: Flow<AIFeatureState>
-        get() = settings.getFeatureEnabledUserStatus()
-            .map { enabledState ->
+        get() =
+            settings.getFeatureEnabledUserStatus().map { enabledState ->
                 when {
                     enabledState == null -> AIFeatureState.Unknown
                     enabledState -> AIFeatureState.Enabled
@@ -36,10 +33,11 @@ class PageSummaryFeature(
     companion object : AIFeatureMetadata {
         override val id = AIFeatureMetadata.FeatureId("pageSummaries")
 
-        override val description = AIFeatureMetadata.Description(
-            titleRes = R.string.mozac_ai_controls_page_summary_title,
-            descriptionRes = R.string.mozac_ai_controls_page_summary_description,
-            iconRes = iconsR.drawable.mozac_ic_lightning_24,
-        )
+        override val description =
+            AIFeatureMetadata.Description(
+                titleRes = R.string.mozac_ai_controls_page_summary_title,
+                descriptionRes = R.string.mozac_ai_controls_page_summary_description,
+                iconRes = iconsR.drawable.mozac_ic_lightning_24,
+            )
     }
 }

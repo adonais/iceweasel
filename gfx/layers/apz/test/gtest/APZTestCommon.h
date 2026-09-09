@@ -68,11 +68,11 @@ inline SingleTouchData CreateSingleTouchData(int32_t aIdentifier,
 
 inline PinchGestureInput CreatePinchGestureInput(
     PinchGestureInput::PinchGestureType aType, const ScreenPoint& aFocus,
-    float aCurrentSpan, float aPreviousSpan, TimeStamp timestamp) {
+    float aCurrentSpan, float aPreviousSpan, TimeStamp timestamp,
+    PinchGestureInput::PinchGestureSource aSource = PinchGestureInput::TOUCH) {
   ParentLayerPoint localFocus(aFocus.x, aFocus.y);
-  PinchGestureInput result(aType, PinchGestureInput::UNKNOWN, timestamp,
-                           ExternalPoint(0, 0), aFocus, aCurrentSpan,
-                           aPreviousSpan, 0);
+  PinchGestureInput result(aType, aSource, timestamp, ExternalPoint(0, 0),
+                           aFocus, aCurrentSpan, aPreviousSpan, 0);
   return result;
 }
 
@@ -484,6 +484,11 @@ class TestAsyncPanZoomController : public AsyncPanZoomController {
 
 class APZCTesterBase : public ::testing::Test {
  public:
+  // Convenience aliases so that derived classes can refer to these names
+  // without qualification.
+  using ViewID = ScrollableLayerGuid::ViewID;
+  static constexpr auto START_SCROLL_ID = ScrollableLayerGuid::START_SCROLL_ID;
+
   APZCTesterBase() { mcc = new NiceMock<MockContentControllerDelayed>(); }
 
   void SetUp() override {
@@ -1061,25 +1066,26 @@ void APZCTesterBase::PinchWithPinchInput(
       TimeDuration::FromMilliseconds(50);
 
   auto event = CreatePinchGestureInput(PinchGestureInput::PINCHGESTURE_START,
-                                       aFocus, 10.0, 10.0, mcc->Time());
+                                       aFocus, 10.0, 10.0, mcc->Time(),
+                                       PinchGestureInput::UNKNOWN);
   APZEventResult actual = aTarget->ReceiveInputEvent(event);
   if (aOutEventStatuses) {
     (*aOutEventStatuses)[0] = actual.GetStatus();
   }
   mcc->AdvanceBy(TIME_BETWEEN_PINCH_INPUT);
 
-  event =
-      CreatePinchGestureInput(PinchGestureInput::PINCHGESTURE_SCALE,
-                              aSecondFocus, 10.0 * aScale, 10.0, mcc->Time());
+  event = CreatePinchGestureInput(PinchGestureInput::PINCHGESTURE_SCALE,
+                                  aSecondFocus, 10.0 * aScale, 10.0,
+                                  mcc->Time(), PinchGestureInput::UNKNOWN);
   actual = aTarget->ReceiveInputEvent(event);
   if (aOutEventStatuses) {
     (*aOutEventStatuses)[1] = actual.GetStatus();
   }
   mcc->AdvanceBy(TIME_BETWEEN_PINCH_INPUT);
 
-  event =
-      CreatePinchGestureInput(PinchGestureInput::PINCHGESTURE_END, aSecondFocus,
-                              10.0 * aScale, 10.0 * aScale, mcc->Time());
+  event = CreatePinchGestureInput(PinchGestureInput::PINCHGESTURE_END,
+                                  aSecondFocus, 10.0 * aScale, 10.0 * aScale,
+                                  mcc->Time(), PinchGestureInput::UNKNOWN);
   actual = aTarget->ReceiveInputEvent(event);
   if (aOutEventStatuses) {
     (*aOutEventStatuses)[2] = actual.GetStatus();

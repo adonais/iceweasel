@@ -2614,6 +2614,7 @@ filters:
   - target_tasks_method
 head_git_repository: https://github.com/mozilla-firefox/firefox
 head_git_rev: ef76ed5b20062173274397a5aeeca1ce47114d81
+head_git_ref: refs/heads/beta
 head_ref: f0a0beee64e4d7c59661174f1678b1da77e32a23
 head_repository: https://hg.mozilla.org/releases/mozilla-beta
 head_rev: f0a0beee64e4d7c59661174f1678b1da77e32a23

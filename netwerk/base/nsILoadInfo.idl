@@ -732,6 +732,13 @@ interface nsILoadInfo : nsISupports
   [infallible] attribute boolean isMetaRefresh;
 
   /**
+   * True if this navigation was served from a completed navigational prefetch.
+   * Diagnostics only (profiler network markers); don't gate behaviour on it.
+   * https://wicg.github.io/nav-speculation/prefetch.html
+   */
+  [infallible] attribute boolean activatedFromNavigationalPrefetch;
+
+  /**
    * If forceInheritPrincipal is true, the data coming from the channel should
    * inherit its principal, even when the data is loaded over http:// or another
    * protocol that would normally use a URI-based principal.

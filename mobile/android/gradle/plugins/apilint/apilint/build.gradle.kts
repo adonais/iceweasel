@@ -8,7 +8,6 @@ plugins {
 }
 
 val mozconfig = gradle.extra["mozconfig"] as Map<*, *>
-val topsrcdir = mozconfig["topsrcdir"] as String
 val topobjdir = mozconfig["topobjdir"] as String
 
 layout.buildDirectory.set(file("$topobjdir/gradle/build/mobile/android/gradle/plugins/apilint/apilint"))
@@ -16,8 +15,9 @@ layout.buildDirectory.set(file("$topobjdir/gradle/build/mobile/android/gradle/pl
 spotless {
     lineEndings = com.diffplug.spotless.LineEnding.UNIX
     kotlin {
-        ktlint(libs.versions.ktlint.get())
-            .setEditorConfigPath("$topsrcdir/mobile/android/geckoview/.editorconfig")
+        ktfmt(libs.versions.ktfmt.get()).kotlinlangStyle().configure {
+            it.setMaxWidth(120)
+        }
     }
 }
 

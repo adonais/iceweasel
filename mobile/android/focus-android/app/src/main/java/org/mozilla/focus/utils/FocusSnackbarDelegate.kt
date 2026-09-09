@@ -8,9 +8,7 @@ import android.view.View
 import androidx.compose.ui.text.style.TextOverflow
 import mozilla.components.ui.widgets.SnackbarDelegate
 
-/**
- * A [SnackbarDelegate] implementation that uses [FocusSnackbar].
- */
+/** A [SnackbarDelegate] implementation that uses [FocusSnackbar]. */
 class FocusSnackbarDelegate(private val view: View) : SnackbarDelegate {
 
     override fun show(
@@ -23,15 +21,16 @@ class FocusSnackbarDelegate(private val view: View) : SnackbarDelegate {
         action: Int,
         withDismissAction: Boolean,
         listener: ((View) -> Unit)?,
-    ) = show(
-        snackBarParentView = snackBarParentView,
-        text = snackBarParentView.context.getString(text),
-        subText = subText,
-        duration = duration,
-        action = if (action == 0) null else snackBarParentView.context.getString(action),
-        withDismissAction = withDismissAction,
-        listener = listener,
-    )
+    ) =
+        show(
+            snackBarParentView = snackBarParentView,
+            text = snackBarParentView.context.getString(text),
+            subText = subText,
+            duration = duration,
+            action = if (action == 0) null else snackBarParentView.context.getString(action),
+            withDismissAction = withDismissAction,
+            listener = listener,
+        )
 
     override fun show(
         snackBarParentView: View,
@@ -46,17 +45,17 @@ class FocusSnackbarDelegate(private val view: View) : SnackbarDelegate {
     ) {
         if (listener != null && action != null) {
             FocusSnackbar.make(
-                view = view,
-                duration = FocusSnackbar.LENGTH_LONG,
-            )
+                    view = view,
+                    duration = FocusSnackbar.LENGTH_LONG,
+                )
                 .setText(text)
                 .setAction(action) { listener.invoke(view) }
                 .show()
         } else {
             FocusSnackbar.make(
-                view,
-                duration = FocusSnackbar.LENGTH_SHORT,
-            )
+                    view,
+                    duration = FocusSnackbar.LENGTH_SHORT,
+                )
                 .setText(text)
                 .show()
         }

@@ -28,6 +28,7 @@ export class SmartWindowTasksParent extends JSWindowActorParent {
     ["SmartWindowTasks:RunMonitor", this.#handleRunMonitor.bind(this)],
     ["SmartWindowTasks:PauseMonitor", this.#handlePauseMonitor.bind(this)],
     ["SmartWindowTasks:GetConstants", this.#handleGetConstants.bind(this)],
+    ["SmartWindowTasks:OpenUrl", this.#handleOpenUrl.bind(this)],
   ]);
 
   async receiveMessage({ data, name }) {
@@ -44,6 +45,13 @@ export class SmartWindowTasksParent extends JSWindowActorParent {
   async #handleListMonitors() {
     try {
       const monitors = await lazy.MonitorAgent.listMonitors();
+      // Resolve page titles
+      await Promise.all(
+        monitors.map(async monitor => {
+          monitor.watchUrlTitles =
+            await lazy.MonitorUIUtils.resolveWatchUrlTitles(monitor.watchUrls);
+        })
+      );
       return { success: true, monitors };
     } catch (error) {
       console.error("Failed to list monitors:", error);
@@ -102,6 +110,13 @@ export class SmartWindowTasksParent extends JSWindowActorParent {
       console.error("Failed to pause monitor:", error);
       return { success: false, error: error.message };
     }
+  }
+
+  #handleOpenUrl(data) {
+    return lazy.MonitorUIUtils.openMonitorUrl(
+      this.browsingContext.topChromeWindow,
+      data?.url
+    );
   }
 
   #handleGetConstants() {

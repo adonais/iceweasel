@@ -34,17 +34,14 @@ class DownloadFileTest {
     private val downloadTestPage = "https://storage.googleapis.com/mobile_test_assets/test_app/downloads.html"
     private var downloadFileName: String = ""
 
-    @get:Rule(order = 0)
-    val focusTestRule: FocusTestRule = FocusTestRule()
+    @get:Rule(order = 0) val focusTestRule: FocusTestRule = FocusTestRule()
 
-    private val webServerRule get() = focusTestRule.mockWebServerRule
+    private val webServerRule
+        get() = focusTestRule.mockWebServerRule
 
-    @get:Rule
-    val mActivityTestRule = MainActivityIntentsTestRule(showFirstRun = false)
+    @get:Rule val mActivityTestRule = MainActivityIntentsTestRule(showFirstRun = false)
 
-    @Rule
-    @JvmField
-    val retryTestRule = RetryTestRule(3)
+    @Rule @JvmField val retryTestRule = RetryTestRule(3)
 
     @Before
     fun setUp() {
@@ -69,8 +66,7 @@ class DownloadFileTest {
         }
 
         // Load website with service worker
-        searchScreen {
-        }.loadPage(downloadPageUrl) { }
+        searchScreen {}.loadPage(downloadPageUrl) {}
 
         downloadRobot {
             clickDownloadIconAsset()
@@ -93,8 +89,7 @@ class DownloadFileTest {
     fun cancelDownloadTest() {
         val downloadPageUrl = webServerRule.server.imageTestAsset.url
 
-        searchScreen {
-        }.loadPage(downloadPageUrl) { }
+        searchScreen {}.loadPage(downloadPageUrl) {}
 
         downloadRobot {
             clickDownloadIconAsset()
@@ -114,8 +109,7 @@ class DownloadFileTest {
         downloadFileName = "download.jpg"
 
         // Load website with service worker
-        searchScreen {
-        }.loadPage(downloadPageUrl) { }
+        searchScreen {}.loadPage(downloadPageUrl) {}
 
         downloadRobot {
             clickDownloadIconAsset()
@@ -136,11 +130,11 @@ class DownloadFileTest {
     fun downloadAndOpenWebmFileTest() {
         downloadFileName = "videoSample.webm"
 
-        searchScreen {
-        }.loadPage(downloadTestPage) {
-            progressBar.waitUntilGone(waitingTime)
-            clickLinkMatchingText(downloadFileName)
-        }
+        searchScreen {}
+            .loadPage(downloadTestPage) {
+                progressBar.waitUntilGone(waitingTime)
+                clickLinkMatchingText(downloadFileName)
+            }
         // If permission dialog appears on devices with API<30, grant it
         if (permAllowBtn.waitForExists(waitingTime)) {
             permAllowBtn.click()
@@ -159,11 +153,11 @@ class DownloadFileTest {
     fun verifyDownloadedFileOnStorageTest() {
         downloadFileName = "textfile.txt"
 
-        searchScreen {
-        }.loadPage(downloadTestPage) {
-            progressBar.waitUntilGone(waitingTime)
-            clickLinkMatchingText(downloadFileName)
-        }
+        searchScreen {}
+            .loadPage(downloadTestPage) {
+                progressBar.waitUntilGone(waitingTime)
+                clickLinkMatchingText(downloadFileName)
+            }
         // If permission dialog appears on devices with API<30, grant it
         if (permAllowBtn.waitForExists(waitingTime)) {
             permAllowBtn.click()

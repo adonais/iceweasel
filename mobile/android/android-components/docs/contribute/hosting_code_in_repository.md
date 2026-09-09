@@ -56,7 +56,7 @@ The *Android components* team evaluates, integrates and maintains tools that run
 
 Currently we are using:
 * [Android Lint](https://developer.android.com/studio/write/lint) - *"Android Lint is a tool which scans Android project sources for potential bugs."*
-* [ktlint](https://github.com/shyiko/ktlint) - *"An anti-bikeshedding Kotlin linter with built-in formatter"*
+* [ktfmt](https://github.com/Kotlin/ktfmt) - *"A pretty printer for the Kotlin programming language"*
 * [detekt](https://github.com/arturbosch/detekt) - *"A static code analysis tool for the Kotlin programming language"*
 
 In addition to that the *Android components* team started to write [custom lint rules](https://github.com/mozilla-mobile/firefox-android/tree/main/android-components/components/tooling/lint) that enforce component related rules (e.g. "Use the provided logging class in components instead of android.util.Log").

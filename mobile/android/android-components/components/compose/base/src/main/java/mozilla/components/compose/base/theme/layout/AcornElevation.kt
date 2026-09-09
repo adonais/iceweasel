@@ -23,39 +23,25 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.AcornTheme
 
-/**
- * A palette of tokens defining the elevation of visual elements styled by the Acorn Design System.
- */
+/** A palette of tokens defining the elevation of visual elements styled by the Acorn Design System. */
 object AcornElevation {
 
-    /**
-     * Use when distinct tonal values create surface separation or in conjunction with a scrim
-     */
+    /** Use when distinct tonal values create surface separation or in conjunction with a scrim */
     val level0: Dp = 0.dp
 
-    /**
-     * Lowest resting level elevation for cards, etc.
-     */
+    /** Lowest resting level elevation for cards, etc. */
     val level1: Dp = 1.dp
 
-    /**
-     * Mid-level resting elevation for tooltips, menus, etc.
-     */
+    /** Mid-level resting elevation for tooltips, menus, etc. */
     val level2: Dp = 3.dp
 
-    /**
-     * Highest resting level elevation for sheets, FABs, etc.
-     */
+    /** Highest resting level elevation for sheets, FABs, etc. */
     val level3: Dp = 6.dp
 
-    /**
-     * (not assigned as resting level)
-     */
+    /** (not assigned as resting level) */
     val level4: Dp = 8.dp
 
-    /**
-     * (not assigned as resting level)
-     */
+    /** (not assigned as resting level) */
     val level5: Dp = 12.dp
 }
 
@@ -72,21 +58,20 @@ private fun ElevationSample(
         Text(
             text = tokenName,
             style = AcornTheme.typography.headline5,
-            modifier = Modifier
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    shape = MaterialTheme.shapes.large,
-                )
-                .padding(horizontal = 16.dp, vertical = 4.dp),
+            modifier =
+                Modifier.background(
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        shape = MaterialTheme.shapes.large,
+                    )
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
         )
 
         Card(
-            modifier = Modifier
-                .size(80.dp),
+            modifier = Modifier.size(80.dp),
             shape = MaterialTheme.shapes.extraLarge,
             elevation = CardDefaults.cardElevation(defaultElevation = elevation),
             colors = CardDefaults.cardColors().copy(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-            content = { },
+            content = {},
         )
     }
 }

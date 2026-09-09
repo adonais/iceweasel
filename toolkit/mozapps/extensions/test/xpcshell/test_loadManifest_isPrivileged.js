@@ -16,9 +16,6 @@ const {
   },
 } = XPIExports;
 
-AddonTestUtils.init(this);
-AddonTestUtils.overrideCertDB();
-
 // Disable "xpc::IsInAutomation()", since it would override the behavior
 // we're testing for.
 Services.prefs.setBoolPref(

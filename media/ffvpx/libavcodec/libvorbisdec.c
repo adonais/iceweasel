@@ -25,6 +25,7 @@
 #include "bytestream.h"
 #include "codec_internal.h"
 #include "decode.h"
+#include "vorbis_data.h"
 
 typedef struct OggVorbisDecContext {
     vorbis_info vi;                     /**< vorbis_info used during init   */
@@ -121,9 +122,22 @@ static av_cold int oggvorbis_decode_init(AVCodecContext *avccontext)
         goto error;
     }
 
+    if (context->vi.channels <= 0) {
+        av_log(avccontext, AV_LOG_ERROR, "vorbis channel count is invalid\n");
+        ret = AVERROR_INVALIDDATA;
+        goto error;
+    }
+
     av_channel_layout_uninit(&avccontext->ch_layout);
-    avccontext->ch_layout.order       = AV_CHANNEL_ORDER_UNSPEC;
-    avccontext->ch_layout.nb_channels = context->vi.channels;
+    if (context->vi.channels <= 8) {
+        ret = av_channel_layout_copy(&avccontext->ch_layout,
+                                     &ff_vorbis_ch_layouts[context->vi.channels - 1]);
+        if (ret < 0)
+            goto error;
+    } else {
+        avccontext->ch_layout.order       = AV_CHANNEL_ORDER_UNSPEC;
+        avccontext->ch_layout.nb_channels = context->vi.channels;
+    }
     avccontext->sample_rate = context->vi.rate;
     avccontext->sample_fmt = AV_SAMPLE_FMT_FLTP;
     avccontext->time_base= (AVRational){1, avccontext->sample_rate};
@@ -147,6 +161,11 @@ static int oggvorbis_decode_frame(AVCodecContext *avccontext, AVFrame *frame,
     ogg_packet *op= &context->op;
     int samples, total_samples;
     int ret;
+    const int channels = context->vi.channels;
+    /* libvorbis emits the Vorbis I spec 4.3.9 channel order; map it to the
+     * layout declared in oggvorbis_decode_init(). */
+    const uint8_t *ch_map = channels <= 8 ?
+                            ff_vorbis_channel_layout_offsets[channels - 1] : NULL;
 
     if(!avpkt->size){
     //FIXME flush
@@ -172,8 +191,9 @@ static int oggvorbis_decode_frame(AVCodecContext *avccontext, AVFrame *frame,
     total_samples = 0 ;
 
     while((samples = vorbis_synthesis_pcmout(&context->vd, &pcm)) > 0) {
-        for (int ch = 0; ch < context->vi.channels; ch++)
-            memcpy((float *)frame->extended_data[ch] + total_samples, pcm[ch], samples * sizeof(float));
+        for (int ch = 0; ch < channels; ch++)
+            memcpy((float *)frame->extended_data[ch] + total_samples,
+                   pcm[ch_map ? ch_map[ch] : ch], samples * sizeof(float));
         total_samples += samples ;
         vorbis_synthesis_read(&context->vd, samples) ;
     }

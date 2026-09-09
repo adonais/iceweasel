@@ -21,29 +21,20 @@ internal fun BaseBrowserFragment.handleOnDownloadFinished(
     // If the download is just paused, don't show any in-app notification
     if (shouldShowCompletedDownloadDialog(downloadState, downloadJobStatus)) {
         if (downloadState.openInApp && downloadJobStatus == Status.COMPLETED) {
-            val fileWasOpened = downloadFileUtils.openFile(
-                fileName = downloadState.fileName,
-                directoryPath = downloadState.directoryPath,
-                contentType = downloadState.contentType,
-            )
-            if (!fileWasOpened) {
-                appStore.dispatch(
-                    AppAction.DownloadAction.CannotOpenFile(downloadState = downloadState),
+            val fileWasOpened =
+                downloadFileUtils.openFile(
+                    fileName = downloadState.fileName,
+                    directoryPath = downloadState.directoryPath,
+                    contentType = downloadState.contentType,
                 )
+            if (!fileWasOpened) {
+                appStore.dispatch(AppAction.DownloadAction.CannotOpenFile(downloadState = downloadState))
             }
         } else {
             if (downloadJobStatus == Status.FAILED) {
-                appStore.dispatch(
-                    AppAction.DownloadAction.DownloadFailed(
-                        downloadState.fileName,
-                    ),
-                )
+                appStore.dispatch(AppAction.DownloadAction.DownloadFailed(downloadState.fileName))
             } else {
-                appStore.dispatch(
-                    AppAction.DownloadAction.DownloadCompleted(
-                        downloadState,
-                    ),
-                )
+                appStore.dispatch(AppAction.DownloadAction.DownloadCompleted(downloadState))
             }
 
             browserToolbars.forEach { it.expand() }

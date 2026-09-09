@@ -14,8 +14,8 @@ import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.FactProcessor
 
 /**
- * A fact processor that adds Gecko profiler markers for [Fact]s matching a specific format.
- * We look for the following format:
+ * A fact processor that adds Gecko profiler markers for [Fact]s matching a specific format. We look for the following
+ * format:
  * ```
  * Fact(
  *     action = Action.IMPLEMENTATION_DETAIL
@@ -23,24 +23,22 @@ import mozilla.components.support.base.facts.FactProcessor
  * )
  * ```
  *
- * This allows us to add profiler markers from android-components code. Using the Fact API for this
- * purpose, rather than calling [Profiler.addMarker] directly inside components, has trade-offs. Its
- * downsides are that it is less explicit and tooling does not work as well on it. However, we felt
- * it was worthwhile because:
+ * This allows us to add profiler markers from android-components code. Using the Fact API for this purpose, rather than
+ * calling [Profiler.addMarker] directly inside components, has trade-offs. Its downsides are that it is less explicit
+ * and tooling does not work as well on it. However, we felt it was worthwhile because:
  *
- * 1. we don't know what profiler markers are useful so we want to be able to iterate quickly.
- * Adding dependencies on the Profiler and landing these changes across two repos hinders that
- * 2. we want to instrument the code as close to specific method calls as possible (e.g.
- * GeckoSession.loadUrl) but it's not always easy to do so (e.g. in the previous example, passing a
- * Profiler reference to GeckoEngineSession is difficult because GES is not a global dependency)
- * 3. we can only add Profiler markers from the main thread so adding markers will become more
- * difficult if we have to understand the threading needs of each Profiler call site
+ * 1. we don't know what profiler markers are useful so we want to be able to iterate quickly. Adding dependencies on
+ *    the Profiler and landing these changes across two repos hinders that
+ * 2. we want to instrument the code as close to specific method calls as possible (e.g. GeckoSession.loadUrl) but it's
+ *    not always easy to do so (e.g. in the previous example, passing a Profiler reference to GeckoEngineSession is
+ *    difficult because GES is not a global dependency)
+ * 3. we can only add Profiler markers from the main thread so adding markers will become more difficult if we have to
+ *    understand the threading needs of each Profiler call site
  *
- * An additional benefit with having this infrastructure is that it's easy to add Profiler markers
- * for local debugging.
+ * An additional benefit with having this infrastructure is that it's easy to add Profiler markers for local debugging.
  *
- * That being said, if we find a location where it would be valuable to have a long term Profiler
- * marker, we should consider instrumenting it via the [Profiler] API.
+ * That being said, if we find a location where it would be valuable to have a long term Profiler marker, we should
+ * consider instrumenting it via the [Profiler] API.
  */
 class ProfilerMarkerFactProcessor
 @VisibleForTesting(otherwise = PRIVATE)

@@ -14,19 +14,17 @@ import mozilla.components.concept.storage.HistoryMetadataKey
 import mozilla.components.support.ktx.kotlin.isContentUrl
 
 /**
- * A tab that is no longer open and in the list of tabs, but that can be restored (recovered) at
- * any time if it's combined with an [EngineSessionState] to form a [RecoverableTab].
+ * A tab that is no longer open and in the list of tabs, but that can be restored (recovered) at any time if it's
+ * combined with an [EngineSessionState] to form a [RecoverableTab].
  *
- * The values of this data class are usually filled with the values of a [TabSessionState] when
- * getting closed.
+ * The values of this data class are usually filled with the values of a [TabSessionState] when getting closed.
  *
  * @property id Unique ID identifying this tab.
  * @property url The last URL of this tab.
- * @property parentId The unique ID of the parent tab if this tab was opened from another tab (e.g. via
- * the context menu).
+ * @property parentId The unique ID of the parent tab if this tab was opened from another tab (e.g. via the context
+ *   menu).
  * @property title The last title of this tab (or an empty String).
- * @property searchTerm The last used search terms, or an empty string if no
- * search was executed for this session.
+ * @property searchTerm The last used search terms, or an empty string if no search was executed for this session.
  * @property contextId The context ID ("container") this tab used (or null).
  * @property readerState The last [ReaderState] of the tab.
  * @property lastAccess The last time this tab was selected.
@@ -69,64 +67,58 @@ data class RecoverableTab(
     val state: TabState,
 )
 
-/**
- * Creates a [RecoverableTab] from this [TabSessionState].
- */
+/** Creates a [RecoverableTab] from this [TabSessionState]. */
 fun TabSessionState.toRecoverableTab(index: Int = -1): RecoverableTab {
     return RecoverableTab(
         engineSessionState = engineState.engineSessionState,
-        state = TabState(
-            id = id,
-            parentId = parentId,
-            url = content.url,
-            title = content.title,
-            searchTerm = content.searchTerms,
-            contextId = contextId,
-            readerState = readerState,
-            lastAccess = lastAccess,
-            createdAt = createdAt,
-            lastVisibleAt = lastVisibleAt,
-            lastMediaAccessState = lastMediaAccessState,
-            private = content.private,
-            historyMetadata = historyMetadata,
-            source = source,
-            index = index,
-            hasFormData = content.hasFormData,
-            desktopMode = content.desktopMode,
-        ),
+        state =
+            TabState(
+                id = id,
+                parentId = parentId,
+                url = content.url,
+                title = content.title,
+                searchTerm = content.searchTerms,
+                contextId = contextId,
+                readerState = readerState,
+                lastAccess = lastAccess,
+                createdAt = createdAt,
+                lastVisibleAt = lastVisibleAt,
+                lastMediaAccessState = lastMediaAccessState,
+                private = content.private,
+                historyMetadata = historyMetadata,
+                source = source,
+                index = index,
+                hasFormData = content.hasFormData,
+                desktopMode = content.desktopMode,
+            ),
     )
 }
 
-/**
- * Creates a [TabSessionState] from this [RecoverableTab].
- */
-fun RecoverableTab.toTabSessionState() = createTab(
-    id = state.id,
-    url = state.url,
-    parentId = state.parentId,
-    title = state.title,
-    searchTerms = state.searchTerm,
-    contextId = state.contextId,
-    engineSessionState = engineSessionState,
-    readerState = state.readerState,
-    lastAccess = state.lastAccess,
-    createdAt = state.createdAt,
-    lastVisibleAt = state.lastVisibleAt,
-    lastMediaAccessState = state.lastMediaAccessState,
-    private = state.private,
-    historyMetadata = state.historyMetadata,
-    source = state.source,
-    restored = true,
-    hasFormData = state.hasFormData,
-    desktopMode = state.desktopMode,
-)
+/** Creates a [TabSessionState] from this [RecoverableTab]. */
+fun RecoverableTab.toTabSessionState() =
+    createTab(
+        id = state.id,
+        url = state.url,
+        parentId = state.parentId,
+        title = state.title,
+        searchTerms = state.searchTerm,
+        contextId = state.contextId,
+        engineSessionState = engineSessionState,
+        readerState = state.readerState,
+        lastAccess = state.lastAccess,
+        createdAt = state.createdAt,
+        lastVisibleAt = state.lastVisibleAt,
+        lastMediaAccessState = state.lastMediaAccessState,
+        private = state.private,
+        historyMetadata = state.historyMetadata,
+        source = state.source,
+        restored = true,
+        hasFormData = state.hasFormData,
+        desktopMode = state.desktopMode,
+    )
 
-/**
- * Creates a list of [TabSessionState]s from a List of [RecoverableTab]s.
- */
+/** Creates a list of [TabSessionState]s from a List of [RecoverableTab]s. */
 fun List<RecoverableTab>.toTabSessionStates() = map { it.toTabSessionState() }
 
-/**
- * Check if this [RecoverableTab] is a content URI.
- */
+/** Check if this [RecoverableTab] is a content URI. */
 fun RecoverableTab.isContentUri(): Boolean = this.state.url.isContentUrl()

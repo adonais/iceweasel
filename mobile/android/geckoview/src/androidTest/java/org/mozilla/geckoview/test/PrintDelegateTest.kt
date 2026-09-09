@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -17,6 +17,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
+import kotlin.math.roundToInt
 import org.hamcrest.CoreMatchers.containsString
 import org.junit.After
 import org.junit.Assert.assertTrue
@@ -35,7 +36,6 @@ import org.mozilla.geckoview.GeckoView.ActivityContextDelegate
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.NullDelegate
-import kotlin.math.roundToInt
 
 @RunWith(AndroidJUnit4::class)
 @LargeTest
@@ -48,8 +48,7 @@ class PrintDelegateTest : BaseSessionTest() {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val uiAutomation = instrumentation.getUiAutomation(FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES)
 
-    @get:Rule
-    override val rules: RuleChain = RuleChain.outerRule(activityRule).around(sessionRule)
+    @get:Rule override val rules: RuleChain = RuleChain.outerRule(activityRule).around(sessionRule)
 
     @Before
     fun setup() {
@@ -79,12 +78,14 @@ class PrintDelegateTest : BaseSessionTest() {
     fun printDelegateTest() {
         activityRule.scenario.onActivity {
             var delegateCalled = 0
-            sessionRule.delegateUntilTestEnd(object : PrintDelegate {
-                @AssertCalled(count = 1)
-                override fun onPrint(session: GeckoSession) {
-                    delegateCalled++
+            sessionRule.delegateUntilTestEnd(
+                object : PrintDelegate {
+                    @AssertCalled(count = 1)
+                    override fun onPrint(session: GeckoSession) {
+                        delegateCalled++
+                    }
                 }
-            })
+            )
             mainSession.loadTestPath(COLOR_ORANGE_BACKGROUND_HTML_PATH)
             mainSession.waitForPageStop()
             mainSession.printPageContent()
@@ -108,16 +109,18 @@ class PrintDelegateTest : BaseSessionTest() {
         val pixelResult = GeckoResult<Int>()
         // Listening for Android Print Activity
         uiAutomation.setOnAccessibilityEventListener { event ->
-            if (event.packageName == "com.android.printspooler" &&
-                event.eventType == TYPE_VIEW_SCROLLED
-            ) {
+            if (event.packageName == "com.android.printspooler" && event.eventType == TYPE_VIEW_SCROLLED) {
                 uiAutomation.setOnAccessibilityEventListener {}
                 // Delaying the screenshot to give time for preview to load
-                Handler(Looper.getMainLooper()).postDelayed({
-                    val bitmap = uiAutomation.takeScreenshot()
-                    val scaled = bitmap.scale(scaledWidth, scaledHeight, filter = false)
-                    pixelResult.complete(scaled[scaledWidth / 2, scaledHeight / 2])
-                }, 1500)
+                Handler(Looper.getMainLooper())
+                    .postDelayed(
+                        {
+                            val bitmap = uiAutomation.takeScreenshot()
+                            val scaled = bitmap.scale(scaledWidth, scaledHeight, filter = false)
+                            pixelResult.complete(scaled[scaledWidth / 2, scaledHeight / 2])
+                        },
+                        1500,
+                    )
             }
         }
         return pixelResult
@@ -190,14 +193,21 @@ class PrintDelegateTest : BaseSessionTest() {
             mainSession.loadTestPath(PRINT_CONTENT_CHANGE)
             mainSession.waitForPageStop()
             mainSession.printDelegate = null
-            val result = mainSession.didPrintPageContent().accept {
-                assertTrue("Should not be able to print.", false)
-            }.exceptionally(
-                GeckoResult.OnExceptionListener<Throwable> { error: Throwable ->
-                    assertTrue("Should receive a missing print delegate exception.", (error as GeckoPrintException).code == GeckoPrintException.ERROR_NO_PRINT_DELEGATE)
-                    fromException(error)
-                },
-            )
+            val result =
+                mainSession
+                    .didPrintPageContent()
+                    .accept {
+                        assertTrue("Should not be able to print.", false)
+                    }
+                    .exceptionally(
+                        GeckoResult.OnExceptionListener<Throwable> { error: Throwable ->
+                            assertTrue(
+                                "Should receive a missing print delegate exception.",
+                                (error as GeckoPrintException).code == GeckoPrintException.ERROR_NO_PRINT_DELEGATE,
+                            )
+                            fromException(error)
+                        }
+                    )
             try {
                 sessionRule.waitForResult(result)
             } catch (e: Exception) {
@@ -288,10 +298,15 @@ class PrintDelegateTest : BaseSessionTest() {
             mainSession.printDelegate = activity.view.printDelegate
             // iframe window.print button
             val centerPixelIframe = printCenterPixelColor()
-            mainSession.evaluateJS("document.getElementById('iframe').contentDocument.getElementById('print-button').click();")
+            mainSession.evaluateJS(
+                "document.getElementById('iframe').contentDocument.getElementById('print-button').click();"
+            )
             val orange = rgb(255, 113, 57)
             sessionRule.waitForResult(centerPixelIframe).let { it ->
-                assertTrue("The iframe should not print green. (Printed containing page instead of iframe.)", it != Color.GREEN)
+                assertTrue(
+                    "The iframe should not print green. (Printed containing page instead of iframe.)",
+                    it != Color.GREEN,
+                )
                 assertTrue("Printed the iframe correctly.", it == orange)
             }
         }
@@ -310,7 +325,10 @@ class PrintDelegateTest : BaseSessionTest() {
             // Main page window.print button
             val centerPixelContent = printCenterPixelColor()
             mainSession.evaluateJS("document.getElementById('print-button-page').click();")
-            assertTrue("Printed the main content correctly.", sessionRule.waitForResult(centerPixelContent) == Color.GREEN)
+            assertTrue(
+                "Printed the main content correctly.",
+                sessionRule.waitForResult(centerPixelContent) == Color.GREEN,
+            )
         }
     }
 

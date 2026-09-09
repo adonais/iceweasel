@@ -32,18 +32,20 @@ class DefaultDohSettingsProviderTest {
 
     @Before
     fun setUp() {
-        settingsProvider = DefaultDohSettingsProvider(
-            engine = fakeEngine,
-            settings = appSettings,
-        )
+        settingsProvider =
+            DefaultDohSettingsProvider(
+                engine = fakeEngine,
+                settings = appSettings,
+            )
         every { appSettings.getDohSettingsMode() } returns Engine.DohSettingsMode.INCREASED
         every { appSettings.dohProviderUrl } returns DefaultDohSettingsProvider.nextDnsUri
         every { appSettings.dohDefaultProviderUrl } returns DefaultDohSettingsProvider.cloudflareUri
-        every { appSettings.dohExceptionsList } returns setOf(
-            "example.com",
-            "example2.com",
-            "example3.com",
-        )
+        every { appSettings.dohExceptionsList } returns
+            setOf(
+                "example.com",
+                "example2.com",
+                "example3.com",
+            )
     }
 
     @Test
@@ -194,9 +196,7 @@ class DefaultDohSettingsProviderTest {
     fun `WHEN setCustomProvider is called with a url, the app layer and engine's DoH provider url is also updated`() {
         // When setCustomProvider is called with a url
         val customUrl = "https://foo.bar"
-        settingsProvider.setCustomProvider(
-            url = customUrl,
-        )
+        settingsProvider.setCustomProvider(url = customUrl)
 
         // Then verify that the engine DoH provider url is also updated in the app layer
         verify { appSettings.dohProviderUrl = customUrl }
@@ -212,9 +212,7 @@ class DefaultDohSettingsProviderTest {
     fun `WHEN exceptions are set, the app layer and engine's DoH settings exceptions are also updated`() {
         // When excepts are set
         val dohExceptions = listOf("foo.bar", "foo2.bar", "foo3.bar", "foo4.bar", "foo5.bar")
-        settingsProvider.setExceptions(
-            exceptions = dohExceptions,
-        )
+        settingsProvider.setExceptions(exceptions = dohExceptions)
 
         // Then verify that the engine DoH settings exceptions are also updated in the app layer
         verify { appSettings.dohExceptionsList = dohExceptions.toSet() }

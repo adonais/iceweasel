@@ -89,6 +89,12 @@ bool ForInEmitter::emitInitialize() {
 #endif
   MOZ_ASSERT(loopDepth_ >= 2);
 
+  // A non-local exit through this loop has to leave the stack like this for the
+  // JSOp::EndIter it emits.
+  //
+  //                [stack] ITER ITERVAL
+  loopInfo_->setNonLocalExitStackDepth(bce_->bytecodeSection().stackDepth());
+
 #ifdef DEBUG
   state_ = State::Initialize;
 #endif

@@ -14,6 +14,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,12 +38,13 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
-import kotlinx.coroutines.delay
-import mozilla.components.compose.base.utils.toFraction
 import kotlin.math.max
 import kotlin.math.min
+import kotlinx.coroutines.delay
+import mozilla.components.compose.base.utils.toFraction
 
 /**
  * Add a dashed border around the current composable.
@@ -59,32 +61,34 @@ fun Modifier.dashedBorder(
     dashHeight: Dp,
     dashWidth: Dp,
     dashGap: Dp = dashWidth,
-) = this.then(
-    Modifier.drawBehind {
-        val cornerRadiusPx = cornerRadius.toPx()
-        val borderHeightPx = dashHeight.toPx()
-        val dashWidthPx = dashWidth.toPx()
-        val dashGapPx = dashGap.toPx()
+) =
+    this.then(
+        Modifier.drawBehind {
+            val cornerRadiusPx = cornerRadius.toPx()
+            val borderHeightPx = dashHeight.toPx()
+            val dashWidthPx = dashWidth.toPx()
+            val dashGapPx = dashGap.toPx()
 
-        val dashedStroke = Stroke(
-            width = borderHeightPx,
-            pathEffect = PathEffect.dashPathEffect(
-                floatArrayOf(dashWidthPx, dashGapPx),
-                0f,
-            ),
-        )
+            val dashedStroke =
+                Stroke(
+                    width = borderHeightPx,
+                    pathEffect =
+                        PathEffect.dashPathEffect(
+                            floatArrayOf(dashWidthPx, dashGapPx),
+                            0f,
+                        ),
+                )
 
-        drawRoundRect(
-            color = color,
-            cornerRadius = CornerRadius(cornerRadiusPx),
-            style = dashedStroke,
-        )
-    },
-)
+            drawRoundRect(
+                color = color,
+                cornerRadius = CornerRadius(cornerRadiusPx),
+                style = dashedStroke,
+            )
+        }
+    )
 
 /**
- * Used when clickable needs to be debounced to prevent rapid successive clicks
- * from calling the onClick function.
+ * Used when clickable needs to be debounced to prevent rapid successive clicks from calling the onClick function.
  *
  * @param debounceInterval The length of time to wait between click events in milliseconds
  * @param onClick Callback for when item this modifier effects is clicked
@@ -103,8 +107,43 @@ fun Modifier.debouncedClickable(
                     onClick()
                     lastClickTime = currentSystemTime
                 }
+            }
+        )
+    )
+}
+
+/**
+ * Used when toggleable needs to be debounced to prevent rapid successive toggles from calling the `onValueChange`
+ * function.
+ *
+ * @param value Whether the underlying element is toggled on or off.
+ * @param enabled Whether the underlying element will handle input events.
+ * @param role The type of user interface element (used by accessibility services).
+ * @param debounceInterval The length of time to wait between toggle events in milliseconds
+ * @param onValueChange Callback for when item this modifier effects is toggled
+ */
+fun Modifier.debouncedToggleable(
+    value: Boolean,
+    enabled: Boolean = true,
+    role: Role? = null,
+    debounceInterval: Long = 1000L,
+    onValueChange: (Boolean) -> Unit,
+) = composed {
+    var lastToggleTime: Long by remember { mutableLongStateOf(0) }
+
+    this.then(
+        Modifier.toggleable(
+            value = value,
+            enabled = enabled,
+            role = role,
+            onValueChange = { newValue ->
+                val currentSystemTime = SystemClock.elapsedRealtime()
+                if (currentSystemTime - lastToggleTime > debounceInterval) {
+                    onValueChange(newValue)
+                    lastToggleTime = currentSystemTime
+                }
             },
-        ),
+        )
     )
 }
 
@@ -113,7 +152,6 @@ fun Modifier.debouncedClickable(
  *
  * @param modifier The [Modifier] to return if the [predicate] is satisfied.
  * @param predicate The predicate used to determine which [Modifier] to return.
- *
  * @return the appropriate [Modifier] given the [predicate].
  */
 fun Modifier.thenConditional(
@@ -127,17 +165,16 @@ fun Modifier.thenConditional(
     }
 
 /**
- * The Composable this modifier is tied to may appear first and be fully constructed to then be pushed downwards
- * when other elements appear. This can lead to over-counting impressions with multiple such events
- * being possible without the user actually having time to see the UI or scrolling to it.
+ * The Composable this modifier is tied to may appear first and be fully constructed to then be pushed downwards when
+ * other elements appear. This can lead to over-counting impressions with multiple such events being possible without
+ * the user actually having time to see the UI or scrolling to it.
  */
 private const val MINIMUM_TIME_TO_SETTLE_MS = 1000
 
 /**
- * Add a callback for when this Composable is "shown" on the screen.
- * This checks whether the composable has at least [threshold] ratio of it's total area drawn inside
- * the screen bounds.
- * Does not account for other Views / Windows covering it.
+ * Add a callback for when this Composable is "shown" on the screen. This checks whether the composable has at least
+ * [threshold] ratio of it's total area drawn inside the screen bounds. Does not account for other Views / Windows
+ * covering it.
  *
  * @param threshold The ratio of the total area to be within the screen bounds to trigger [onVisible].
  * @param settleTime The amount of time to wait before calling [onVisible].
@@ -184,10 +221,7 @@ fun Modifier.onShown(
     }
 }
 
-/**
- * Return whether this has at least [threshold] ratio of it's total area drawn inside
- * the screen bounds.
- */
+/** Return whether this has at least [threshold] ratio of it's total area drawn inside the screen bounds. */
 private fun LayoutCoordinates.isVisible(
     visibleRect: Rect,
     @FloatRange(from = 0.0, to = 1.0) threshold: Float,
@@ -196,11 +230,12 @@ private fun LayoutCoordinates.isVisible(
 
     val boundsInWindow = boundsInWindow()
     return Rect(
-        boundsInWindow.left.toInt(),
-        boundsInWindow.top.toInt(),
-        boundsInWindow.right.toInt(),
-        boundsInWindow.bottom.toInt(),
-    ).getIntersectPercentage(size, visibleRect) >= threshold
+            boundsInWindow.left.toInt(),
+            boundsInWindow.top.toInt(),
+            boundsInWindow.right.toInt(),
+            boundsInWindow.bottom.toInt(),
+        )
+        .getIntersectPercentage(size, visibleRect) >= threshold
 }
 
 /**
@@ -208,7 +243,6 @@ private fun LayoutCoordinates.isVisible(
  *
  * @param realSize [IntSize] containing the true height and width of the composable.
  * @param other Other [Rect] for which to check the intersection area.
- *
  * @return A `0..1` float range for how much this [Rect] intersects with other.
  */
 @FloatRange(from = 0.0, to = 1.0)
@@ -221,9 +255,7 @@ private fun Rect.getIntersectPercentage(realSize: IntSize, other: Rect): Float {
     return (intersectionArea.toFloat() / composableArea)
 }
 
-/**
- * Default values for [Modifier.horizontalFadeGradient]
- */
+/** Default values for [Modifier.horizontalFadeGradient] */
 const val DEFAULT_FADE_ALPHA = .99f
 const val DEFAULT_FADE_LEFT_START = 0f
 const val DEFAULT_FADE_RIGHT_START = 1F
@@ -239,43 +271,43 @@ fun Modifier.horizontalFadeGradient(
     fadeLength: Dp,
     fadeAlpha: Float = DEFAULT_FADE_ALPHA,
     fadeDirection: FadeDirection,
-): Modifier = this.then(
-    Modifier.graphicsLayer { alpha = fadeAlpha }
-        .drawWithContent {
-            drawContent()
-            val fraction = fadeLength.toFraction(totalWidth = this.size.width.toDp())
+): Modifier =
+    this.then(
+        Modifier.graphicsLayer { alpha = fadeAlpha }
+            .drawWithContent {
+                drawContent()
+                val fraction = fadeLength.toFraction(totalWidth = this.size.width.toDp())
 
-            val brush = if (fadeDirection == FadeDirection.LEFT) {
-                Brush.horizontalGradient(
-                    DEFAULT_FADE_LEFT_START to Color.Transparent,
-                    fraction to Color.Black,
-                )
-            } else {
-                val fadeStartPercent = DEFAULT_FADE_RIGHT_START - fraction
+                val brush =
+                    if (fadeDirection == FadeDirection.LEFT) {
+                        Brush.horizontalGradient(
+                            DEFAULT_FADE_LEFT_START to Color.Transparent,
+                            fraction to Color.Black,
+                        )
+                    } else {
+                        val fadeStartPercent = DEFAULT_FADE_RIGHT_START - fraction
 
-                Brush.horizontalGradient(
-                    fadeStartPercent to Color.Black,
-                    DEFAULT_FADE_RIGHT_START to Color.Transparent,
+                        Brush.horizontalGradient(
+                            fadeStartPercent to Color.Black,
+                            DEFAULT_FADE_RIGHT_START to Color.Transparent,
+                        )
+                    }
+
+                drawRect(
+                    brush = brush,
+                    blendMode = BlendMode.DstIn,
                 )
             }
-
-            drawRect(
-                brush = brush,
-                blendMode = BlendMode.DstIn,
-            )
-        },
-)
+    )
 
 /**
  * Applies a shimmering skeleton loading effect to the current [Modifier].
  *
  * This can be used as a placeholder for UI elements while their content is loading.
  *
- * @param durationMillis The duration in milliseconds of the shimmer animation cycle.
- * Defaults to `1000`.
+ * @param durationMillis The duration in milliseconds of the shimmer animation cycle. Defaults to `1000`.
  * @param initialColor The starting color of the gradient animation. Defaults to [Color.LightGray].
  * @param targetColor The ending color of the gradient animation. Defaults to [Color.White].
- *
  * @return A [Modifier] that displays a skeleton loader effect.
  */
 @Composable
@@ -286,24 +318,24 @@ fun Modifier.skeletonLoader(
 ): Modifier {
     val transition = rememberInfiniteTransition(label = "infinite")
 
-    val color by transition.animateColor(
-        initialValue = initialColor,
-        targetValue = targetColor,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "color",
-    )
+    val color by
+        transition.animateColor(
+            initialValue = initialColor,
+            targetValue = targetColor,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(durationMillis, easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+            label = "color",
+        )
 
     return drawBehind {
         drawRect(color = color)
     }
 }
 
-/**
- * Describes the direction of fade for [Modifier.horizontalFadeGradient].
- */
+/** Describes the direction of fade for [Modifier.horizontalFadeGradient]. */
 enum class FadeDirection {
     LEFT,
     RIGHT,

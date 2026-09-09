@@ -11,7 +11,6 @@ add_task(async function () {
       ["layout.css.attr.enabled", true],
       ["layout.css.backdrop-filter.enabled", true],
       ["layout.css.color-mix-multi-color.enabled", true],
-      ["layout.css.relative-color-syntax.enabled", true],
       ["security.allow_unsafe_parent_loads", true],
     ],
   });

@@ -68,9 +68,7 @@ fun OnBoardingFirstScreenCompose(
     buttonOnClick: () -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .gradientBackground(),
+        modifier = Modifier.fillMaxSize().gradientBackground(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -79,15 +77,15 @@ fun OnBoardingFirstScreenCompose(
         Image(
             painter = painterResource(R.drawable.onboarding_logo),
             contentDescription = stringResource(R.string.app_name),
-            modifier = Modifier
-                .size(150.dp, 150.dp)
-                .then(
-                    if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                        Modifier.weight(1f, false)
-                    } else {
-                        Modifier
-                    },
-                ),
+            modifier =
+                Modifier.size(150.dp, 150.dp)
+                    .then(
+                        if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                            Modifier.weight(1f, false)
+                        } else {
+                            Modifier
+                        }
+                    ),
         )
 
         TitleContent()
@@ -95,19 +93,21 @@ fun OnBoardingFirstScreenCompose(
         Spacer(Modifier.weight(MIDDLE_SPACER_WEIGHT))
 
         LinkText(
-            text = stringResource(
-                R.string.onboarding_first_screen_terms_of_use_text_2,
-                stringResource(R.string.onboarding_first_screen_terms_of_use_link_2),
-            ),
+            text =
+                stringResource(
+                    R.string.onboarding_first_screen_terms_of_use_text_2,
+                    stringResource(R.string.onboarding_first_screen_terms_of_use_link_2),
+                ),
             linkText = stringResource(R.string.onboarding_first_screen_terms_of_use_link_2),
             onClick = termsOfServiceOnClick,
         )
 
         LinkText(
-            text = stringResource(
-                R.string.onboarding_first_screen_privacy_notice_text_2,
-                stringResource(R.string.onboarding_first_screen_privacy_notice_link_2),
-            ),
+            text =
+                stringResource(
+                    R.string.onboarding_first_screen_privacy_notice_text_2,
+                    stringResource(R.string.onboarding_first_screen_privacy_notice_link_2),
+                ),
             linkText = stringResource(R.string.onboarding_first_screen_privacy_notice_link_2),
             onClick = privacyNoticeOnClick,
         )
@@ -119,28 +119,29 @@ fun OnBoardingFirstScreenCompose(
 @Composable
 private fun TitleContent() {
     Text(
-        text = stringResource(
-            R.string.onboarding_first_screen_title,
-            stringResource(R.string.app_name),
-        ),
-        modifier = Modifier.padding(
-            top = focusDimensions.paddingExtraLarge,
-            start = focusDimensions.paddingDefault,
-            end = focusDimensions.paddingDefault,
-        ),
+        text =
+            stringResource(
+                R.string.onboarding_first_screen_title,
+                stringResource(R.string.app_name),
+            ),
+        modifier =
+            Modifier.padding(
+                top = focusDimensions.paddingExtraLarge,
+                start = focusDimensions.paddingDefault,
+                end = focusDimensions.paddingDefault,
+            ),
         textAlign = TextAlign.Center,
         style = focusTypography.onboardingTitle,
     )
 
     Text(
-        text = stringResource(
-            R.string.onboarding_first_screen_subtitle,
-        ),
-        modifier = Modifier.padding(
-            top = focusDimensions.paddingDefault,
-            start = focusDimensions.paddingDefault,
-            end = focusDimensions.paddingDefault,
-        ),
+        text = stringResource(R.string.onboarding_first_screen_subtitle),
+        modifier =
+            Modifier.padding(
+                top = focusDimensions.paddingDefault,
+                start = focusDimensions.paddingDefault,
+                end = focusDimensions.paddingDefault,
+            ),
         textAlign = TextAlign.Center,
         style = focusTypography.onboardingSubtitle,
     )
@@ -151,36 +152,40 @@ private fun LinkText(text: String, linkText: String, onClick: () -> Unit) {
     val textWithClickableLink = buildAnnotatedString {
         append(text)
 
-        val textWithLink = LinkAnnotation.Clickable(
-            tag = URL_TAG,
-            styles = TextLinkStyles(SpanStyle(color = colorResource(R.color.preference_learn_more_link))),
-            linkInteractionListener = {
-                onClick()
-            },
-        )
+        val textWithLink =
+            LinkAnnotation.Clickable(
+                tag = URL_TAG,
+                styles = TextLinkStyles(SpanStyle(color = colorResource(R.color.preference_learn_more_link))),
+                linkInteractionListener = {
+                    onClick()
+                },
+            )
 
-        text.indexOf(linkText).takeIf { it >= 0 }?.let { startIndex ->
-            val endIndex = startIndex + linkText.length
-            addLink(textWithLink, startIndex, endIndex)
-        }
+        text
+            .indexOf(linkText)
+            .takeIf { it >= 0 }
+            ?.let { startIndex ->
+                val endIndex = startIndex + linkText.length
+                addLink(textWithLink, startIndex, endIndex)
+            }
     }
 
     val linkAvailableText = stringResource(id = R.string.a11y_link_available)
 
     Text(
         text = textWithClickableLink,
-        modifier = Modifier
-            .clearAndSetSemantics {
-                onClick {
-                    onClick()
+        modifier =
+            Modifier.clearAndSetSemantics {
+                    onClick {
+                        onClick()
 
-                    return@onClick true
+                        return@onClick true
+                    }
+
+                    contentDescription = "$textWithClickableLink $linkAvailableText"
                 }
-
-                contentDescription = "$textWithClickableLink $linkAvailableText"
-            }
-            .padding(horizontal = focusDimensions.paddingDefault)
-            .minimumInteractiveComponentSize(),
+                .padding(horizontal = focusDimensions.paddingDefault)
+                .minimumInteractiveComponentSize(),
         textAlign = TextAlign.Center,
         style = focusTypography.onboardingDescription,
     )
@@ -190,17 +195,15 @@ private fun LinkText(text: String, linkText: String, onClick: () -> Unit) {
 private fun ComponentGoToOnBoardingSecondScreen(goToOnBoardingSecondScreen: () -> Unit) {
     Button(
         onClick = goToOnBoardingSecondScreen,
-        modifier = Modifier
-            .padding(
-                top = focusDimensions.paddingDefault,
-                start = focusDimensions.paddingDefault,
-                end = focusDimensions.paddingDefault,
-                bottom = focusDimensions.paddingOnboardingBottom,
-            )
-            .fillMaxWidth(),
-        colors = ButtonDefaults.textButtonColors(
-            containerColor = colorResource(R.color.onboardingButtonOneColor),
-        ),
+        modifier =
+            Modifier.padding(
+                    top = focusDimensions.paddingDefault,
+                    start = focusDimensions.paddingDefault,
+                    end = focusDimensions.paddingDefault,
+                    bottom = focusDimensions.paddingOnboardingBottom,
+                )
+                .fillMaxWidth(),
+        colors = ButtonDefaults.textButtonColors(containerColor = colorResource(R.color.onboardingButtonOneColor)),
     ) {
         Text(
             text = AnnotatedString(stringResource(id = R.string.onboarding_first_screen_button_agree_and_continue_2)),

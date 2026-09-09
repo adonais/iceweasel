@@ -8,9 +8,7 @@ import android.content.Intent
 import mozilla.components.feature.intent.processing.IntentProcessor
 import org.mozilla.fenix.BuildConfig
 
-/**
- * Process public deep links that are coming from external apps.
- */
+/** Process public deep links that are coming from external apps. */
 class ExternalDeepLinkIntentProcessor : IntentProcessor {
     /**
      * Processes the given [Intent] verifying if it is an external deeplink.

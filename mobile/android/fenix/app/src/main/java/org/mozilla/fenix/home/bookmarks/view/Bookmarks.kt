@@ -56,9 +56,8 @@ private val imageWidth = 126.dp
 private val imageHeight = 82.dp
 
 @Composable
-private fun Modifier.getImageModifier(): Modifier = this
-    .size(width = imageWidth, height = imageHeight)
-    .clip(homepageCardImageShape)
+private fun Modifier.getImageModifier(): Modifier =
+    this.size(width = imageWidth, height = imageHeight).clip(homepageCardImageShape)
 
 /**
  * A list of bookmarks.
@@ -76,9 +75,8 @@ fun Bookmarks(
     onBookmarkClick: (Bookmark) -> Unit = {},
 ) {
     LazyRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .semantics {
+        modifier =
+            Modifier.fillMaxWidth().semantics {
                 testTagsAsResourceId = true
                 testTag = "bookmarks"
             },
@@ -115,24 +113,24 @@ private fun BookmarkItem(
     var isMenuExpanded by remember { mutableStateOf(false) }
 
     HomepageCard(
-        modifier = Modifier
-            .width(134.dp)
-            .combinedClickable(
-                enabled = true,
-                onClick = { onBookmarkClick(bookmark) },
-                onLongClick = { isMenuExpanded = true },
-            ),
+        modifier =
+            Modifier.width(134.dp)
+                .combinedClickable(
+                    enabled = true,
+                    onClick = { onBookmarkClick(bookmark) },
+                    onLongClick = { isMenuExpanded = true },
+                ),
         backgroundColor = backgroundColor,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    top = FirefoxTheme.layout.space.static50,
-                    bottom = FirefoxTheme.layout.space.static100,
-                    start = FirefoxTheme.layout.space.static50,
-                    end = FirefoxTheme.layout.space.static50,
-                ),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .padding(
+                        top = FirefoxTheme.layout.space.static50,
+                        bottom = FirefoxTheme.layout.space.static100,
+                        start = FirefoxTheme.layout.space.static50,
+                        end = FirefoxTheme.layout.space.static50,
+                    )
         ) {
             BookmarkImage(bookmark)
 
@@ -140,9 +138,8 @@ private fun BookmarkItem(
 
             Text(
                 text = bookmark.title ?: bookmark.url ?: "",
-                modifier = Modifier
-                    .padding(horizontal = FirefoxTheme.layout.space.static50)
-                    .semantics {
+                modifier =
+                    Modifier.padding(horizontal = FirefoxTheme.layout.space.static50).semantics {
                         testTagsAsResourceId = true
                         testTag = "bookmark.title"
                     },
@@ -155,10 +152,11 @@ private fun BookmarkItem(
                 showMenu = isMenuExpanded,
                 onDismissRequest = { isMenuExpanded = false },
                 menuItems = menuItems.map { item -> MenuItem(item.title) { item.onClick(bookmark) } },
-                modifier = Modifier.semantics {
-                    testTagsAsResourceId = true
-                    testTag = "bookmark.menu"
-                },
+                modifier =
+                    Modifier.semantics {
+                        testTagsAsResourceId = true
+                        testTag = "bookmark.menu"
+                    },
             )
         }
     }
@@ -197,21 +195,13 @@ private fun BookmarkImage(bookmark: Bookmark) {
 
 @Composable
 private fun PlaceholderBookmarkImage() {
-    Box(
-        modifier = Modifier.getImageModifier().background(
-            color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        ),
-    )
+    Box(modifier = Modifier.getImageModifier().background(color = MaterialTheme.colorScheme.surfaceContainerHighest))
 }
 
 @Composable
-private fun FallbackBookmarkFaviconImage(
-    url: String,
-) {
+private fun FallbackBookmarkFaviconImage(url: String) {
     Box(
-        modifier = Modifier.getImageModifier().background(
-            color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        ),
+        modifier = Modifier.getImageModifier().background(color = MaterialTheme.colorScheme.surfaceContainerLowest),
         contentAlignment = Alignment.Center,
     ) {
         Favicon(url = url, size = 36.dp)

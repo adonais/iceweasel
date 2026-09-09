@@ -17,6 +17,7 @@ import androidx.annotation.DimenRes
 import androidx.annotation.MainThread
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import java.lang.ref.WeakReference
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,23 +25,16 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import mozilla.components.support.base.android.Padding
 import mozilla.components.support.ktx.android.util.dpToPx
-import java.lang.ref.WeakReference
 
-/**
- * Is the horizontal layout direction of this view from Right to Left?
- */
+/** Is the horizontal layout direction of this view from Right to Left? */
 val View.isRTL: Boolean
     get() = layoutDirection == View.LAYOUT_DIRECTION_RTL
 
-/**
- * Is the horizontal layout direction of this view from Left to Right?
- */
+/** Is the horizontal layout direction of this view from Left to Right? */
 val View.isLTR: Boolean
     get() = layoutDirection == View.LAYOUT_DIRECTION_LTR
 
-/**
- * Tries to focus this view and show the soft input window for it.
- */
+/** Tries to focus this view and show the soft input window for it. */
 fun View.showKeyboard() {
     ShowKeyboard(this).post()
 }
@@ -48,9 +42,8 @@ fun View.showKeyboard() {
 /**
  * Hides the soft input window.
  *
- * Note: this is a no-op when the view is not hosted in an Activity (e.g. a view attached to an
- * application-context window such as a PopupWindow), since no Activity Window is reachable from
- * which to obtain an InsetsController.
+ * Note: this is a no-op when the view is not hosted in an Activity (e.g. a view attached to an application-context
+ * window such as a PopupWindow), since no Activity Window is reachable from which to obtain an InsetsController.
  */
 fun View.hideKeyboard() {
     findWindow()?.let { window ->
@@ -73,9 +66,7 @@ fun View.getRectWithViewLocation(): Rect {
     )
 }
 
-/**
- * Set a padding using [Padding] object.
- */
+/** Set a padding using [Padding] object. */
 fun View.setPadding(padding: Padding) {
     with(resources) {
         setPadding(
@@ -88,14 +79,14 @@ fun View.setPadding(padding: Padding) {
 }
 
 /**
- * Creates a [CoroutineScope] that is active as long as this [View] is attached. Once this [View]
- * gets detached this [CoroutineScope] gets cancelled automatically.
+ * Creates a [CoroutineScope] that is active as long as this [View] is attached. Once this [View] gets detached this
+ * [CoroutineScope] gets cancelled automatically.
  *
- * @param mainDispatcher The [CoroutineDispatcher] to be used for the scope. Defaults to [Dispatchers.Main].
- * By default, coroutines dispatched on the created [CoroutineScope] run on the main dispatcher.
+ * @param mainDispatcher The [CoroutineDispatcher] to be used for the scope. Defaults to [Dispatchers.Main]. By default,
+ *   coroutines dispatched on the created [CoroutineScope] run on the main dispatcher.
  *
- * Note: This scope gets only cancelled if the [View] gets detached. In cases where the [View] never
- * gets attached this may create a scope that never gets cancelled!
+ * Note: This scope gets only cancelled if the [View] gets detached. In cases where the [View] never gets attached this
+ * may create a scope that never gets cancelled!
  */
 @MainThread
 fun View.toScope(mainDispatcher: CoroutineDispatcher = Dispatchers.Main): CoroutineScope {
@@ -109,15 +100,13 @@ fun View.toScope(mainDispatcher: CoroutineDispatcher = Dispatchers.Main): Corout
                 scope.cancel()
                 view.removeOnAttachStateChangeListener(this)
             }
-        },
+        }
     )
 
     return scope
 }
 
-/**
- * Finds the first a view in the hierarchy, for which the provided predicate is true.
- */
+/** Finds the first a view in the hierarchy, for which the provided predicate is true. */
 fun View.findViewInHierarchy(predicate: (View) -> Boolean): View? {
     if (predicate(this)) return this
 
@@ -132,8 +121,8 @@ fun View.findViewInHierarchy(predicate: (View) -> Boolean): View? {
 }
 
 /**
- * Registers a one-time callback to be invoked when the global layout state
- * or the visibility of views within the view tree changes.
+ * Registers a one-time callback to be invoked when the global layout state or the visibility of views within the view
+ * tree changes.
  */
 inline fun View.onNextGlobalLayout(crossinline callback: () -> Unit) {
     var listener: ViewTreeObserver.OnGlobalLayoutListener? = null
@@ -147,16 +136,14 @@ inline fun View.onNextGlobalLayout(crossinline callback: () -> Unit) {
 /**
  * Returns the pixel size for the given dimension resource ID.
  *
- * This is a wrapper around `resources.getDimensionPixelSize`, reducing verbosity when accessing
- * dimension values from a [View].
+ * This is a wrapper around `resources.getDimensionPixelSize`, reducing verbosity when accessing dimension values from a
+ * [View].
  *
  * @param resId Resource ID of the dimension.
  * @return The pixel size corresponding to the given dimension resource.
  */
 @Suppress("Resources.GetDimensionPixelSizeInsteadOfPixelSizeFor")
-fun View.pixelSizeFor(
-    @DimenRes resId: Int,
-) = resources.getDimensionPixelSize(resId)
+fun View.pixelSizeFor(@DimenRes resId: Int) = resources.getDimensionPixelSize(resId)
 
 private fun View.findWindow(): Window? {
     var ctx = context

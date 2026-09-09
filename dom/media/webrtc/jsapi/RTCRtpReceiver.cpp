@@ -839,7 +839,7 @@ void RTCRtpReceiver::UpdateVideoConduit() {
     if (GetJsepTransceiver().HasBundleLevel() &&
         (!GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails() ||
          !GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails()->GetExt(
-             webrtc::RtpExtension::kMidUri))) {
+             nsLiteralCString(webrtc::RtpExtension::kMidUri)))) {
       mCallThread->Dispatch(
           NewRunnableMethod("VideoSessionConduit::DisableSsrcChanges", conduit,
                             &VideoSessionConduit::DisableSsrcChanges));
@@ -897,7 +897,7 @@ void RTCRtpReceiver::UpdateAudioConduit() {
     if (GetJsepTransceiver().HasBundleLevel() &&
         (!GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails() ||
          !GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails()->GetExt(
-             webrtc::RtpExtension::kMidUri))) {
+             nsLiteralCString(webrtc::RtpExtension::kMidUri)))) {
       mCallThread->Dispatch(
           NewRunnableMethod("AudioSessionConduit::DisableSsrcChanges", conduit,
                             &AudioSessionConduit::DisableSsrcChanges));
@@ -1003,7 +1003,7 @@ void RTCRtpReceiver::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
 }
 
 void RTCRtpReceiver::SyncToJsep(JsepTransceiver& aJsepTransceiver) const {
-  if (!mTransceiver->GetPreferredCodecs().empty()) {
+  if (!mTransceiver->GetPreferredCodecs().IsEmpty()) {
     aJsepTransceiver.mRecvTrack.PopulateCodecs(
         mTransceiver->GetPreferredCodecs(),
         mTransceiver->GetPreferredCodecsInUse());

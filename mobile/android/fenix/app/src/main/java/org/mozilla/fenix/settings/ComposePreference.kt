@@ -14,10 +14,10 @@ import androidx.preference.PreferenceViewHolder
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 
-/**
- * Base class for [Preference]s rendered via Jetpack Compose.
- */
-abstract class ComposePreference @JvmOverloads constructor(
+/** Base class for [Preference]s rendered via Jetpack Compose. */
+abstract class ComposePreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
@@ -38,9 +38,6 @@ abstract class ComposePreference @JvmOverloads constructor(
         }
     }
 
-    /**
-     * Compose content rendered by this preference.
-     */
-    @Composable
-    protected abstract fun Content()
+    /** Compose content rendered by this preference. */
+    @Composable protected abstract fun Content()
 }

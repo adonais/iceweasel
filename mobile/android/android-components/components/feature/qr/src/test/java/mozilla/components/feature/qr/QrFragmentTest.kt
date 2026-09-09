@@ -39,6 +39,9 @@ import com.google.zxing.LuminanceSource
 import com.google.zxing.MultiFormatReader
 import com.google.zxing.NotFoundException
 import com.google.zxing.PlanarYUVLuminanceSource
+import java.nio.ByteBuffer
+import java.util.concurrent.ExecutorService
+import kotlin.test.assertNotNull
 import mozilla.components.feature.qr.QrFragment.Companion.chooseOptimalSize
 import mozilla.components.feature.qr.views.AutoFitTextureView
 import mozilla.components.feature.qr.views.CustomViewFinder
@@ -67,9 +70,6 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
-import java.nio.ByteBuffer
-import java.util.concurrent.ExecutorService
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class QrFragmentTest {
@@ -101,7 +101,8 @@ class QrFragmentTest {
         val qrFragment = spy(QrFragment.newInstance(scanCompleteListener))
         val context: Context = mock()
         doReturn(PackageManager.PERMISSION_GRANTED)
-            .`when`(context).checkPermission(eq(permission.CAMERA), anyInt(), anyInt())
+            .`when`(context)
+            .checkPermission(eq(permission.CAMERA), anyInt(), anyInt())
         doReturn(context).`when`(qrFragment).context
         doNothing().`when`(qrFragment).startScanning()
 
@@ -116,7 +117,8 @@ class QrFragmentTest {
         val qrFragment = spy(QrFragment.newInstance(scanCompleteListener))
         val context: Context = mock()
         doReturn(PackageManager.PERMISSION_DENIED)
-            .`when`(context).checkPermission(eq(permission.CAMERA), anyInt(), anyInt())
+            .`when`(context)
+            .checkPermission(eq(permission.CAMERA), anyInt(), anyInt())
         doReturn(context).`when`(qrFragment).context
         doNothing().`when`(qrFragment).startScanning()
 
@@ -338,7 +340,8 @@ class QrFragmentTest {
         val qrFragment = spy(QrFragment.newInstance(scanCompleteListener))
 
         val camera: CameraDevice = mock()
-        whenever(camera.createCaptureRequest(anyInt())).thenThrow(IllegalStateException("CameraDevice was already closed"))
+        whenever(camera.createCaptureRequest(anyInt()))
+            .thenThrow(IllegalStateException("CameraDevice was already closed"))
         qrFragment.cameraDevice = camera
 
         val textureView: AutoFitTextureView = mock()
@@ -358,7 +361,7 @@ class QrFragmentTest {
     fun `catches and handles CameraAccessException when opening camera`() {
         val scanCompleteListener = mock<QrFragment.OnScanCompleteListener>()
         val qrFragment = spy(QrFragment.newInstance(scanCompleteListener))
-        whenever(qrFragment.setUpCameraOutputs(anyInt(), anyInt())).then { }
+        whenever(qrFragment.setUpCameraOutputs(anyInt(), anyInt())).then {}
 
         val cameraManager: CameraManager = mock()
         whenever(cameraManager.openCamera(anyString(), any<CameraDevice.StateCallback>(), any()))
@@ -380,7 +383,7 @@ class QrFragmentTest {
     fun `throws exception on device without camera`() {
         val scanCompleteListener = mock<QrFragment.OnScanCompleteListener>()
         val qrFragment = spy(QrFragment.newInstance(scanCompleteListener))
-        whenever(qrFragment.setUpCameraOutputs(anyInt(), anyInt())).then { }
+        whenever(qrFragment.setUpCameraOutputs(anyInt(), anyInt())).then {}
 
         val cameraManager: CameraManager = mock()
         val activity: FragmentActivity = mock()
@@ -398,62 +401,67 @@ class QrFragmentTest {
 
     @Test
     fun `choose optimal size`() {
-        var size = chooseOptimalSize(
-            arrayOf(Size(640, 480), Size(1024, 768)),
-            640,
-            480,
-            QrFragment.MAX_PREVIEW_WIDTH,
-            QrFragment.MAX_PREVIEW_HEIGHT,
-            Size(16, 9),
-        )
+        var size =
+            chooseOptimalSize(
+                arrayOf(Size(640, 480), Size(1024, 768)),
+                640,
+                480,
+                QrFragment.MAX_PREVIEW_WIDTH,
+                QrFragment.MAX_PREVIEW_HEIGHT,
+                Size(16, 9),
+            )
 
         assertEquals(640, size.width)
         assertEquals(480, size.height)
 
-        size = chooseOptimalSize(
-            arrayOf(Size(1024, 768), Size(640, 480)),
-            1024,
-            768,
-            QrFragment.MAX_PREVIEW_WIDTH,
-            QrFragment.MAX_PREVIEW_HEIGHT,
-            Size(4, 3),
-        )
+        size =
+            chooseOptimalSize(
+                arrayOf(Size(1024, 768), Size(640, 480)),
+                1024,
+                768,
+                QrFragment.MAX_PREVIEW_WIDTH,
+                QrFragment.MAX_PREVIEW_HEIGHT,
+                Size(4, 3),
+            )
 
         assertEquals(640, size.width)
         assertEquals(480, size.height)
 
-        size = chooseOptimalSize(
-            arrayOf(Size(1024, 768), Size(640, 480), Size(320, 240)),
-            2048,
-            768,
-            QrFragment.MAX_PREVIEW_WIDTH,
-            QrFragment.MAX_PREVIEW_HEIGHT,
-            Size(4, 3),
-        )
+        size =
+            chooseOptimalSize(
+                arrayOf(Size(1024, 768), Size(640, 480), Size(320, 240)),
+                2048,
+                768,
+                QrFragment.MAX_PREVIEW_WIDTH,
+                QrFragment.MAX_PREVIEW_HEIGHT,
+                Size(4, 3),
+            )
 
         assertEquals(640, size.width)
         assertEquals(480, size.height)
 
-        size = chooseOptimalSize(
-            arrayOf(Size(1024, 768), Size(640, 480), Size(320, 240)),
-            1024,
-            1024,
-            QrFragment.MAX_PREVIEW_WIDTH,
-            QrFragment.MAX_PREVIEW_HEIGHT,
-            Size(4, 3),
-        )
+        size =
+            chooseOptimalSize(
+                arrayOf(Size(1024, 768), Size(640, 480), Size(320, 240)),
+                1024,
+                1024,
+                QrFragment.MAX_PREVIEW_WIDTH,
+                QrFragment.MAX_PREVIEW_HEIGHT,
+                Size(4, 3),
+            )
 
         assertEquals(640, size.width)
         assertEquals(480, size.height)
 
-        size = chooseOptimalSize(
-            arrayOf(Size(1024, 768), Size(786, 480), Size(320, 240)),
-            2048,
-            1024,
-            QrFragment.MAX_PREVIEW_WIDTH,
-            QrFragment.MAX_PREVIEW_HEIGHT,
-            Size(16, 9),
-        )
+        size =
+            chooseOptimalSize(
+                arrayOf(Size(1024, 768), Size(786, 480), Size(320, 240)),
+                2048,
+                1024,
+                QrFragment.MAX_PREVIEW_WIDTH,
+                QrFragment.MAX_PREVIEW_HEIGHT,
+                Size(16, 9),
+            )
 
         assertEquals(1024, size.width)
         assertEquals(768, size.height)
@@ -492,27 +500,29 @@ class QrFragmentTest {
         val textureView: AutoFitTextureView = mock()
         qrFragment.textureView = textureView
 
-        var optimalSize = chooseOptimalSize(
-            arrayOf(Size(640, 480), Size(1024, 768)),
-            640,
-            480,
-            QrFragment.MAX_PREVIEW_WIDTH,
-            QrFragment.MAX_PREVIEW_HEIGHT,
-            Size(16, 9),
-        )
+        var optimalSize =
+            chooseOptimalSize(
+                arrayOf(Size(640, 480), Size(1024, 768)),
+                640,
+                480,
+                QrFragment.MAX_PREVIEW_WIDTH,
+                QrFragment.MAX_PREVIEW_HEIGHT,
+                Size(16, 9),
+            )
         qrFragment.adjustPreviewSize(optimalSize)
         verify(textureView).setAspectRatio(480, 480)
         assertEquals(480, qrFragment.previewSize?.width)
         assertEquals(480, qrFragment.previewSize?.height)
 
-        optimalSize = chooseOptimalSize(
-            arrayOf(Size(1024, 768), Size(640, 480), Size(320, 240)),
-            2048,
-            1024,
-            QrFragment.MAX_PREVIEW_WIDTH,
-            QrFragment.MAX_PREVIEW_HEIGHT,
-            Size(16, 9),
-        )
+        optimalSize =
+            chooseOptimalSize(
+                arrayOf(Size(1024, 768), Size(640, 480), Size(320, 240)),
+                2048,
+                1024,
+                QrFragment.MAX_PREVIEW_WIDTH,
+                QrFragment.MAX_PREVIEW_HEIGHT,
+                Size(16, 9),
+            )
         qrFragment.adjustPreviewSize(optimalSize)
         verify(textureView).setAspectRatio(768, 768)
         assertEquals(768, qrFragment.previewSize?.width)
@@ -553,7 +563,7 @@ class QrFragmentTest {
     fun `tryOpenCamera displays error message if camera throws exception`() {
         val scanCompleteListener = mock<QrFragment.OnScanCompleteListener>()
         val qrFragment = spy(QrFragment.newInstance(scanCompleteListener))
-        whenever(qrFragment.setUpCameraOutputs(anyInt(), anyInt())).then { }
+        whenever(qrFragment.setUpCameraOutputs(anyInt(), anyInt())).then {}
 
         qrFragment.textureView = mock()
         qrFragment.cameraErrorView = mock()
@@ -711,7 +721,7 @@ class QrFragmentTest {
 
         whenever(mockActivity.windowManager).thenReturn(mockManager)
         whenever(mockManager.defaultDisplay).thenReturn(mockDisplay)
-        whenever(mockDisplay.getSize(any())).then { }
+        whenever(mockDisplay.getSize(any())).then {}
 
         mockManager.getDisplaySize()
 
@@ -729,10 +739,11 @@ class QrFragmentTest {
 
         val mockWindowInsets: WindowInsets = mock()
         whenever(
-            mockWindowInsets.getInsetsIgnoringVisibility(
-                WindowInsetsCompat.Type.navigationBars() or WindowInsetsCompat.Type.displayCutout(),
-            ),
-        ).thenReturn(insets)
+                mockWindowInsets.getInsetsIgnoringVisibility(
+                    WindowInsetsCompat.Type.navigationBars() or WindowInsetsCompat.Type.displayCutout()
+                )
+            )
+            .thenReturn(insets)
 
         whenever(mockManager.currentWindowMetrics).thenReturn(mockWindowMetrics)
         whenever(mockWindowMetrics.windowInsets).thenReturn(mockWindowInsets)
@@ -746,9 +757,10 @@ class QrFragmentTest {
     @Test
     fun `maybeStartBackgroundThread does nothing if the thread already exists`() {
         val qrFragment = QrFragment()
-        val existingBackgroundThread = HandlerThread("test").apply {
-            start() // need the thread to be "alive"
-        }
+        val existingBackgroundThread =
+            HandlerThread("test").apply {
+                start() // need the thread to be "alive"
+            }
         val existingBackgroundHandler: Handler = mock()
         qrFragment.backgroundThread = existingBackgroundThread
         qrFragment.backgroundHandler = existingBackgroundHandler
@@ -797,10 +809,11 @@ class QrFragmentTest {
     fun `startScanning opens camera, starts background thread and starts executor service`() {
         val scanCompleteListener = mock<QrFragment.OnScanCompleteListener>()
         val qrFragment = spy(QrFragment.newInstance(scanCompleteListener))
-        whenever(qrFragment.setUpCameraOutputs(anyInt(), anyInt())).then { }
+        whenever(qrFragment.setUpCameraOutputs(anyInt(), anyInt())).then {}
         val context: Context = mock()
         doReturn(PackageManager.PERMISSION_GRANTED)
-            .`when`(context).checkPermission(eq(permission.CAMERA), anyInt(), anyInt())
+            .`when`(context)
+            .checkPermission(eq(permission.CAMERA), anyInt(), anyInt())
         doReturn(context).`when`(qrFragment).context
 
         qrFragment.textureView = mock()

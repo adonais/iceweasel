@@ -10,17 +10,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
-import mozilla.components.concept.base.crash.Breadcrumb
-import mozilla.components.lib.crash.Crash
-import mozilla.components.lib.crash.service.CrashReport.Annotation
-import mozilla.components.lib.crash.service.CrashReporterService
-import mozilla.components.lib.crash.service.LIB_CRASH_INFO_PREFIX
-import mozilla.components.support.base.ext.getStacktraceAsJsonString
-import mozilla.components.support.base.ext.getStacktraceAsString
-import mozilla.components.support.base.log.logger.Logger
-import mozilla.components.support.utils.ext.packageManagerCompatHelper
-import org.json.JSONException
-import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileInputStream
@@ -36,12 +25,22 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 import java.util.zip.GZIPOutputStream
 import kotlin.random.Random
+import mozilla.components.concept.base.crash.Breadcrumb
+import mozilla.components.lib.crash.Crash
+import mozilla.components.lib.crash.service.CrashReport.Annotation
+import mozilla.components.lib.crash.service.CrashReporterService
+import mozilla.components.lib.crash.service.LIB_CRASH_INFO_PREFIX
+import mozilla.components.support.base.ext.getStacktraceAsJsonString
+import mozilla.components.support.base.ext.getStacktraceAsString
+import mozilla.components.support.base.log.logger.Logger
+import mozilla.components.support.utils.ext.packageManagerCompatHelper
+import org.json.JSONException
+import org.json.JSONObject
 
 // This ID is used for all Mozilla products.  Setting as default if no ID is passed in
 private const val MOZILLA_PRODUCT_ID = "{eeb82917-e434-4870-8148-5c03d4caa81b}"
 
-@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-internal const val CAUGHT_EXCEPTION_TYPE = "caught exception"
+@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal const val CAUGHT_EXCEPTION_TYPE = "caught exception"
 internal const val UNCAUGHT_EXCEPTION_TYPE = "uncaught exception"
 internal const val FATAL_NATIVE_CRASH_TYPE = "fatal native crash"
 internal const val NON_FATAL_NATIVE_CRASH_TYPE = "non-fatal native crash"
@@ -59,19 +58,19 @@ private const val FILE_REGEX = "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}
 /**
  * A [CrashReporterService] implementation uploading crash reports to crash-stats.mozilla.com.
  *
- * IMPORTANT: This is a duplicate of [mozilla.components.lib.crash.service.MozillaSocorroService],
- * as part of releasing the new crash reporter [Bug 1987661](https://bugzilla.mozilla.org/show_bug.cgi?id=1987661)
- * was filed which required us change where we found the metadata to attach to the Socorro crash report.
+ * IMPORTANT: This is a duplicate of [mozilla.components.lib.crash.service.MozillaSocorroService], as part of releasing
+ * the new crash reporter [Bug 1987661](https://bugzilla.mozilla.org/show_bug.cgi?id=1987661) was filed which required
+ * us change where we found the metadata to attach to the Socorro crash report.
  *
- * To minimize the chance of causing a regression in other applications that may be using this service
- * we decided the best path forward would be to duplicate the class to use in Fenix. Both of these classes
- * will be deprecated with Bug 1989492.
+ * To minimize the chance of causing a regression in other applications that may be using this service we decided the
+ * best path forward would be to duplicate the class to use in Fenix. Both of these classes will be deprecated with
+ * Bug 1989492.
  *
  * @param applicationContext The application [Context].
- * @param appName A human-readable app name. This name is used on crash-stats.mozilla.com to filter crashes by app.
- *                The name needs to be safelisted for the server to accept the crash.
- *                [File a bug](https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro) if you would like to get your
- *                app added to the safelist.
+ * @param appName A human-readable app name. This name is used on crash-stats.mozilla.com to filter crashes by app. The
+ *   name needs to be safelisted for the server to accept the crash.
+ *   [File a bug](https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro) if you would like to get your app added to
+ *   the safelist.
  * @param appId The application ID assigned by Socorro server.
  * @param vendor The application vendor name.
  * @param serverUrl The URL of the server.
@@ -84,8 +83,7 @@ class MozillaSocorroService(
     private val appName: String,
     private val appId: String = MOZILLA_PRODUCT_ID,
     private val vendor: String = DEFAULT_VENDOR,
-    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal val serverUrl: String? = null,
+    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal val serverUrl: String? = null,
     private val releaseChannel: String = DEFAULT_RELEASE_CHANNEL,
     private val distributionId: String = DEFAULT_DISTRIBUTION_ID,
 ) : CrashReporterService {
@@ -114,9 +112,7 @@ class MozillaSocorroService(
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal fun sendReport(
-        crash: Crash,
-    ): String? {
+    internal fun sendReport(crash: Crash): String? {
         val url = URL(serverUrl ?: buildServerUrl(crash))
         val boundary = generateBoundary()
         var conn: HttpURLConnection? = null
@@ -276,9 +272,7 @@ class MozillaSocorroService(
     ) {
         private val nameSet: MutableSet<String> = mutableSetOf()
 
-        internal inner class AdditionalMinidumps(
-            extrasMap: HashMap<String, String>,
-        ) {
+        internal inner class AdditionalMinidumps(extrasMap: HashMap<String, String>) {
             private val names = extrasMap[Annotation.additional_minidumps.toString()]?.split(',') ?: listOf()
 
             fun send(baseMinidumpPath: String) {
@@ -309,10 +303,7 @@ class MozillaSocorroService(
 
             try {
                 os.write(
-                    (
-                        "--$boundary\r\nContent-Disposition: form-data; " +
-                            "name=$name\r\n\r\n$data\r\n"
-                        ).toByteArray(),
+                    ("--$boundary\r\nContent-Disposition: form-data; " + "name=$name\r\n\r\n$data\r\n").toByteArray()
                 )
             } catch (e: IOException) {
                 logger.error("Exception when sending $name", e)
@@ -342,12 +333,11 @@ class MozillaSocorroService(
 
             try {
                 os.write(
-                    (
-                        "--${boundary}\r\n" +
+                    ("--${boundary}\r\n" +
                             "Content-Disposition: form-data; name=\"$name\"; " +
                             "filename=\"${file.getName()}\"\r\n" +
-                            "Content-Type: application/octet-stream\r\n\r\n"
-                        ).toByteArray(),
+                            "Content-Type: application/octet-stream\r\n\r\n")
+                        .toByteArray()
                 )
             } catch (e: IOException) {
                 logger.error("failed to write boundary", e)
@@ -373,10 +363,12 @@ class MozillaSocorroService(
         fun sendProcessName(applicationContext: Context) {
             val pid = android.os.Process.myPid()
             val manager = applicationContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-            manager.runningAppProcesses.filter { it.pid == pid }.forEach {
-                sendAnnotation(Annotation.Android_ProcessName, it.processName)
-                return
-            }
+            manager.runningAppProcesses
+                .filter { it.pid == pid }
+                .forEach {
+                    sendAnnotation(Annotation.Android_ProcessName, it.processName)
+                    return
+                }
         }
 
         fun sendPackageInstallTime(applicationContext: Context) {
@@ -385,9 +377,7 @@ class MozillaSocorroService(
                 val packageInfo = packageManager.getPackageInfoCompat(applicationContext.packageName, 0)
                 sendAnnotation(
                     Annotation.InstallTime,
-                    TimeUnit.MILLISECONDS.toSeconds(
-                        packageInfo.lastUpdateTime,
-                    ).toString(),
+                    TimeUnit.MILLISECONDS.toSeconds(packageInfo.lastUpdateTime).toString(),
                 )
             } catch (e: PackageManager.NameNotFoundException) {
                 logger.error("Error getting package info", e)
@@ -456,8 +446,7 @@ class MozillaSocorroService(
 
         try {
             FileReader(file).use { fileReader ->
-                val input = fileReader.readLines().firstOrNull()
-                    ?: throw JSONException("failed to read json file")
+                val input = fileReader.readLines().firstOrNull() ?: throw JSONException("failed to read json file")
 
                 val jsonObject = JSONObject(input)
                 for (key in jsonObject.keys()) {
@@ -496,18 +485,21 @@ class MozillaSocorroService(
     }
 
     internal fun buildServerUrl(crash: Crash): String =
-        "https://crash-reports.mozilla.com/submit".toUri()
+        "https://crash-reports.mozilla.com/submit"
+            .toUri()
             .buildUpon()
             .appendQueryParameter("id", appId)
             .appendQueryParameter("version", crash.versionName)
             .appendQueryParameter("android_component_version", crash.acVersion)
-            .build().toString()
+            .build()
+            .toString()
 
     internal val Crash.crashType: String
-        get() = when {
-            isNativeCodeCrash && isFatalCrash -> FATAL_NATIVE_CRASH_TYPE
-            isNativeCodeCrash -> NON_FATAL_NATIVE_CRASH_TYPE
-            isFatalCrash -> UNCAUGHT_EXCEPTION_TYPE
-            else -> CAUGHT_EXCEPTION_TYPE
-        }
+        get() =
+            when {
+                isNativeCodeCrash && isFatalCrash -> FATAL_NATIVE_CRASH_TYPE
+                isNativeCodeCrash -> NON_FATAL_NATIVE_CRASH_TYPE
+                isFatalCrash -> UNCAUGHT_EXCEPTION_TYPE
+                else -> CAUGHT_EXCEPTION_TYPE
+            }
 }

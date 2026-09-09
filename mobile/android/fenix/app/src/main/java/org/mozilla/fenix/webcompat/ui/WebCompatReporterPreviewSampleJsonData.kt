@@ -3,12 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mozilla.fenix.webcompat.ui
 
-/**
- * Sample WebCompat Json data used to display in the previews of [WebCompatReporterPreviewSheet]
- */
+/** Sample WebCompat Json data used to display in the previews of [WebCompatReporterPreviewSheet] */
 internal object WebCompatReporterPreviewSampleJsonData {
 
-    const val SAMPLE_WEBCOMPAT_JSON_DATA = "{\"browser_info\":{\"app\":{\"app_default_locales\"" +
+    const val SAMPLE_WEBCOMPAT_JSON_DATA =
+        "{\"browser_info\":{\"app\":{\"app_default_locales\"" +
             ":[\"fr\",\"en-US\"],\"default_useragent_string\":\"Mozilla/5.0 (Windows NT 10.0; " +
             "Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0\",\"fission_enabled\":true}," +
             "\"graphics\":{\"device_pixel_ratio\":\"1\",\"devices_json\":\"[{\\\"vendorID\\\":" +

@@ -101,9 +101,9 @@ interface nsIWebBrowserPrint : nsISupports
    *
    * @note To cancel, close the window of the document that is being printed.
    */
-  [noscript] void print(in nsIPrintSettings aThePrintSettings,
-                        in RemotePrintJobChildPtr aRemotePrintJob,
-                        in nsIWebProgressListener aWPListener);
+  [noscript,can_run_script] void print(in nsIPrintSettings aThePrintSettings,
+                                       in RemotePrintJobChildPtr aRemotePrintJob,
+                                       in nsIWebProgressListener aWPListener);
 
   /**
    * Print Preview the specified DOM window
@@ -115,9 +115,9 @@ interface nsIWebBrowserPrint : nsISupports
    *
    * @note To cancel, close the print preview document's window.
    */
-  [noscript] void printPreview(in nsIPrintSettings aThePrintSettings,
-                               in nsIWebProgressListener aWPListener,
-                               in PrintPreviewResolver aCallback);
+  [noscript,can_run_script] void printPreview(in nsIPrintSettings aThePrintSettings,
+                                              in nsIWebProgressListener aWPListener,
+                                              in PrintPreviewResolver aCallback);
 
   /**
    * @param aNavType - navigation enum

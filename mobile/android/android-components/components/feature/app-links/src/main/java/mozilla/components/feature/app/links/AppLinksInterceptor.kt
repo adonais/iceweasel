@@ -25,38 +25,38 @@ private const val MOBILE = "mobile."
 private const val MAPS = "maps."
 
 // List of URL schemes that are allowed to open an external application in subframe.
-private val ALLOWED_SCHEMES_IN_SUBFRAME: List<String> = listOf(
-    "msteams", // Microsoft Teams
-)
+private val ALLOWED_SCHEMES_IN_SUBFRAME: List<String> =
+    listOf(
+        "msteams" // Microsoft Teams
+    )
 
 /**
- * This feature implements use cases for detecting and handling redirects to external apps. The user
- * is asked to confirm her intention before leaving the app. These include the Android Intents,
- * custom schemes and support for [Intent.CATEGORY_BROWSABLE] `http(s)` URLs.
+ * This feature implements use cases for detecting and handling redirects to external apps. The user is asked to confirm
+ * her intention before leaving the app. These include the Android Intents, custom schemes and support for
+ * [Intent.CATEGORY_BROWSABLE] `http(s)` URLs.
  *
- * In the case of Android Intents that are not installed, and with no fallback, the user is prompted
- * to search the installed market place.
+ * In the case of Android Intents that are not installed, and with no fallback, the user is prompted to search the
+ * installed market place.
  *
- * If an app link is used for external app authentication, it will be redirected to the external
- * application.
+ * If an app link is used for external app authentication, it will be redirected to the external application.
  *
  * It provides use cases to detect and open links openable in third party non-browser apps.
  *
  * It requires: a [Context].
  *
- * A [Boolean] flag is provided at construction to allow the feature and use cases to be landed without
- * adjoining UI. The UI will be activated in https://github.com/mozilla-mobile/android-components/issues/2974
- * and https://github.com/mozilla-mobile/android-components/issues/2975.
+ * A [Boolean] flag is provided at construction to allow the feature and use cases to be landed without adjoining UI.
+ * The UI will be activated in https://github.com/mozilla-mobile/android-components/issues/2974 and
+ * https://github.com/mozilla-mobile/android-components/issues/2975.
  *
  * @param context Context the feature is associated with.
  * @param engineSupportedSchemes List of schemes that the engine supports.
  * @param alwaysDeniedSchemes List of schemes that will never be opened in a third-party app
- * @param launchInApp If {true} then launch app links in third party app(s). Default to false because
- * of security concerns.
- * @param useCases These use cases allow for the detection of, and opening of links that other apps
- * have registered to open.
- * @param launchFromInterceptor If {true} then the interceptor will launch the link in third-party
- * apps if available, without prompt. When using [AppLinksFeature], set this to false.
+ * @param launchInApp If {true} then launch app links in third party app(s). Default to false because of security
+ *   concerns.
+ * @param useCases These use cases allow for the detection of, and opening of links that other apps have registered to
+ *   open.
+ * @param launchFromInterceptor If {true} then the interceptor will launch the link in third-party apps if available,
+ *   without prompt. When using [AppLinksFeature], set this to false.
  * @param store [BrowserStore] containing the information about the currently open tabs.
  */
 class AppLinksInterceptor(
@@ -64,11 +64,12 @@ class AppLinksInterceptor(
     private val engineSupportedSchemes: Set<String> = ENGINE_SUPPORTED_SCHEMES,
     private val alwaysDeniedSchemes: AlwaysDeniedSchemes = AlwaysDeniedSchemes(ALWAYS_DENY_SCHEMES),
     private var launchInApp: () -> Boolean = { false },
-    private val useCases: AppLinksUseCases = AppLinksUseCases(
-        context,
-        launchInApp,
-        alwaysDeniedSchemes = alwaysDeniedSchemes,
-    ),
+    private val useCases: AppLinksUseCases =
+        AppLinksUseCases(
+            context,
+            launchInApp,
+            alwaysDeniedSchemes = alwaysDeniedSchemes,
+        ),
     private val launchFromInterceptor: Boolean = false,
     private val store: BrowserStore? = null,
 ) : RequestInterceptor {
@@ -92,23 +93,24 @@ class AppLinksInterceptor(
         val isIntentionalNavigation = hasUserGesture || isAllowedRedirect || isDirectNavigation
         val isSameDomainNavigation = isSameDomain(lastUri, uri)
 
-        val doNotIntercept = when {
-            uriScheme == null -> true
-            // A subframe request not triggered by the user and not in allow list should not go to
-            // an external app.
-            (!hasUserGesture && isSubframeRequest && !isSubframeAllowed(uriScheme)) -> true
-            // Avoid external app interception when the navigation is unintentional
-            engineSupportsScheme && !isIntentionalNavigation -> true
-            // Avoid external app interception when on the same domain (outside authentication flows),
-            // as these should continue in the browser.
-            engineSupportsScheme && isSameDomainNavigation && !isPossibleAuthentication(tabSessionState) -> true
+        val doNotIntercept =
+            when {
+                uriScheme == null -> true
+                // A subframe request not triggered by the user and not in allow list should not go to
+                // an external app.
+                (!hasUserGesture && isSubframeRequest && !isSubframeAllowed(uriScheme)) -> true
+                // Avoid external app interception when the navigation is unintentional
+                engineSupportsScheme && !isIntentionalNavigation -> true
+                // Avoid external app interception when on the same domain (outside authentication flows),
+                // as these should continue in the browser.
+                engineSupportsScheme && isSameDomainNavigation && !isPossibleAuthentication(tabSessionState) -> true
 
-            // If scheme not in supported list then follow user preference
-            !launchInApp() && !isPossibleAuthentication(tabSessionState) && engineSupportsScheme -> true
-            // Never go to an external app when scheme is in blocklist
-            alwaysDeniedSchemes.shouldDeny(uriScheme) -> true
-            else -> false
-        }
+                // If scheme not in supported list then follow user preference
+                !launchInApp() && !isPossibleAuthentication(tabSessionState) && engineSupportsScheme -> true
+                // Never go to an external app when scheme is in blocklist
+                alwaysDeniedSchemes.shouldDeny(uriScheme) -> true
+                else -> false
+            }
 
         if (doNotIntercept) {
             return null
@@ -133,8 +135,9 @@ class AppLinksInterceptor(
 
         if (redirect.hasExternalApp()) {
             if (
-                lastApplinksPackageWithTimestamp.first == packageName && lastApplinksPackageWithTimestamp.second +
-                APP_LINKS_DO_NOT_INTERCEPT_INTERVAL > SystemClock.elapsedRealtime()
+                lastApplinksPackageWithTimestamp.first == packageName &&
+                    lastApplinksPackageWithTimestamp.second + APP_LINKS_DO_NOT_INTERCEPT_INTERVAL >
+                        SystemClock.elapsedRealtime()
             ) {
                 return null
             }
@@ -143,8 +146,9 @@ class AppLinksInterceptor(
         }
 
         if (redirect.isRedirect()) {
-            if ((launchFromInterceptor || isAuthenticationFlow) &&
-                result is RequestInterceptor.InterceptionResponse.AppIntent
+            if (
+                (launchFromInterceptor || isAuthenticationFlow) &&
+                    result is RequestInterceptor.InterceptionResponse.AppIntent
             ) {
                 useCases.openAppLink(result.appIntent, clearTop = isAuthenticationFlow)
 
@@ -252,8 +256,7 @@ class AppLinksInterceptor(
             val cacheTimeStamp = userDoNotInterceptCache[cacheKey]
             val currentTimeStamp = SystemClock.elapsedRealtime()
 
-            return cacheTimeStamp != null &&
-                currentTimeStamp <= (cacheTimeStamp + APP_LINKS_DO_NOT_OPEN_CACHE_INTERVAL)
+            return cacheTimeStamp != null && currentTimeStamp <= (cacheTimeStamp + APP_LINKS_DO_NOT_OPEN_CACHE_INTERVAL)
         }
 
         internal fun addUserDoNotIntercept(url: String, appIntent: Intent?, tabId: String?) {
@@ -278,7 +281,6 @@ class AppLinksInterceptor(
          * Determines whether a given tab session is being used for authentication purposes.
          *
          * @param sessionState The current [SessionState], representing the tab session to inspect.
-         *
          * @return `true` if the tab session is possible authentication flow, `false` otherwise.
          */
         @VisibleForTesting
@@ -286,8 +288,7 @@ class AppLinksInterceptor(
             return when (sessionState?.source) {
                 // CustomTab and ActionView can be used for authentication
                 is SessionState.Source.External.CustomTab,
-                is SessionState.Source.External.ActionView,
-                    -> true
+                is SessionState.Source.External.ActionView -> true
                 else -> false
             }
         }
@@ -297,7 +298,6 @@ class AppLinksInterceptor(
          *
          * @param sessionState The current [SessionState], representing the tab session to inspect.
          * @param packageName The target package name used to match with the caller's package name.
-         *
          * @return `true` if the tab session is an authentication flow from the same app, `false` otherwise.
          */
         @VisibleForTesting
@@ -306,12 +306,10 @@ class AppLinksInterceptor(
         }
 
         /**
-         * Determines whether the redirect target is the same app that launched the current
-         * external session.
+         * Determines whether the redirect target is the same app that launched the current external session.
          *
          * @param sessionState The current [SessionState], representing the tab session to inspect.
          * @param packageName The target package name used to match with the caller's package name.
-         *
          * @return `true` if the target package matches the caller's package, `false` otherwise.
          */
         @VisibleForTesting
@@ -320,8 +318,7 @@ class AppLinksInterceptor(
                 return false
             }
 
-            val callerPackageId =
-                (sessionState?.source as? SessionState.Source.External)?.caller?.packageId
+            val callerPackageId = (sessionState?.source as? SessionState.Source.External)?.caller?.packageId
 
             return callerPackageId == packageName
         }

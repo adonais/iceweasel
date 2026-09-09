@@ -4,10 +4,15 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 
 // Latency test for the ML Autofill model.
 //
-// Two field classifiers are exercised:
-//   1. LEGACY: the single-model `text-classification` classifier
+// Both field classifiers are exercised unconditionally, so the two are tracked
+// side by side in perfherder while the two-engine one is being evaluated. Which
+// one production actually uses is decided at runtime by
+// `extensions.formautofill.useml.twoHead`, but this test drives the engines
+// directly and so does not read that pref.
+//
+//   1. DEFAULT: the single-model `text-classification` classifier
 //      (Mozilla/tinybert-address-autofill) -- `test_ml_generic_pipeline`.
-//   2. NEW ("Approach 3"): a triple-encoder deployed as TWO engines
+//   2. OPT-IN (two-head): a triple-encoder deployed as TWO engines
 //      (see toolkit/components/formautofill/shared/FormAutofillML.sys.mjs) --
 //      `test_ml_autofill_two_engine_pipeline`:
 //        - ENCODER: a stock `feature-extraction` model that turns each field's
@@ -39,8 +44,8 @@ const FIELD_TOKENS = [
 ];
 const NUM_FIELDS = FIELD_TOKENS.length;
 
-// NEW model (encoder): the unique section strings the encoder embeds once per
-// form -- each field's own tokens plus the empty boundary section. Neighbor
+// Two-head model (encoder): the unique section strings the encoder embeds once
+// per form -- each field's own tokens plus the empty boundary section. Neighbor
 // sections are other fields' own tokens, already present in this set.
 const ENCODER_INPUTS = [...FIELD_TOKENS, ""];
 
@@ -54,12 +59,12 @@ function prefixTokens(tokens, prefix) {
     .join(" ");
 }
 
-// LEGACY model input: one combined string PER FIELD -- own tokens + the previous
+// Single-model input: one combined string PER FIELD -- own tokens + the previous
 // field's tokens ("bb"-prefixed) + the next field's tokens ("aa"-prefixed) --
 // exactly the `mlData` the single text-classification model receives in
 // production. The whole form is classified in ONE batched engine.run, matching
-// the old FormAutofillML.detectFields (`args: [inputData]`).
-const LEGACY_INPUTS = FIELD_TOKENS.map((own, i) => {
+// FormAutofillML's default path (`args: [inputData]`).
+const SINGLE_MODEL_INPUTS = FIELD_TOKENS.map((own, i) => {
   const parts = [own];
   if (i > 0) {
     parts.push(prefixTokens(FIELD_TOKENS[i - 1], "bb"));
@@ -120,27 +125,24 @@ const ENGINES = {
   },
 };
 
-// End-to-end per-form latency: one encoder run + one head run.
-// Distinct from the legacy task's auto-generated AUTOFILL-e2e-run-latency
-// (perfTest name "autofill") so the two don't collide in perfherder.
-const E2E_RUN_LATENCY_METRIC = "AUTOFILL-two-engine-e2e-run-latency";
-// Wall-clock to initialize BOTH engines concurrently (Promise.all) -- the real
-// one-time first-use startup cost, matching FormAutofillML.#ensureEngines.
-const CONCURRENT_INIT_LATENCY_METRIC = "AUTOFILL-concurrent-init-latency";
-// Memory of the two-engine pipeline. Distinct name from the legacy
-// AUTOFILL-total-memory-usage so both are tracked independently in perfherder.
-const TWO_ENGINE_MEMORY_METRIC = "AUTOFILL-two-engine-total-memory-usage";
+// "two-engine" keeps these apart from the runMLPerfTest("autofill") series
+// in perfherder.
+const e2eRunLatencyMetric = tag => `AUTOFILL-two-engine-e2e-run-latency-${tag}`;
+const concurrentInitLatencyMetric = tag =>
+  `AUTOFILL-two-engine-concurrent-init-latency-${tag}`;
+const twoEngineMemoryMetric = tag =>
+  `AUTOFILL-two-engine-total-memory-usage-${tag}`;
 
 const perfMetadata = {
   owner: "GenAI Team",
   name: "browser_ml_autofill_perf.js",
   description:
-    "Latency for the ML Autofill model (legacy single-model and new two-engine)",
+    "Latency for the ML Autofill model (default single-model and opt-in two-engine)",
   options: {
     default: {
       perfherder: true,
       perfherder_metrics: [
-        // Legacy single text-classification model (test_ml_generic_pipeline).
+        // Default single text-classification model (test_ml_generic_pipeline).
         {
           name: "AUTOFILL-pipeline-ready-latency",
           unit: "ms",
@@ -173,15 +175,15 @@ const perfMetadata = {
           shouldAlert: false,
           lowerIsBetter: false,
         },
-        // New two-engine (encoder + head) architecture
+        // Opt-in two-engine (encoder + head) architecture
         // (test_ml_autofill_two_engine_pipeline). Uppercase "AUTOFILL-" prefix
-        // to match the legacy metrics above.
+        // to match the single-model metrics above.
         // NOTE: these must be string LITERALS -- the mozperftest static parser
         // (mozperftest/script.py) reads this object and rejects identifiers /
         // expressions. Keep them in sync with the *_METRIC constants and the
         // engine metricPrefix values used below.
         {
-          name: "AUTOFILL-concurrent-init-latency",
+          name: "AUTOFILL-two-engine-concurrent-init-latency",
           unit: "ms",
           shouldAlert: false,
         },
@@ -195,8 +197,8 @@ const perfMetadata = {
           unit: "MiB",
           shouldAlert: false,
         },
-        // Per-engine latencies (encoder + head). Literals so the mozperftest
-        // static parser records the SAME names the runtime reports.
+        // Per-engine latencies (encoder + head). The runtime appends the
+        // backend tag; these match as substrings.
         {
           name: "AUTOFILL-encoder-pipeline-ready-latency",
           unit: "ms",
@@ -239,12 +241,12 @@ const perfMetadata = {
 requestLongerTimeout(10);
 
 /**
- * LEGACY: single-model text-classification autofill classifier.
+ * DEFAULT: single-model text-classification autofill classifier.
  *
  * Classifies the WHOLE form in one batched run (one string per field, each
- * carrying its own tokens plus the aa/bb neighbor context), exactly as the old
- * FormAutofillML.detectFields did -- so `AUTOFILL-model-run-latency` is a
- * per-form cost directly comparable to the new pipeline's
+ * carrying its own tokens plus the aa/bb neighbor context), exactly as
+ * FormAutofillML's default path does -- so `AUTOFILL-model-run-latency` is a
+ * per-form cost directly comparable to the two-engine pipeline's
  * `AUTOFILL-two-engine-e2e-run-latency`.
  */
 add_task(async function test_ml_generic_pipeline() {
@@ -261,11 +263,11 @@ add_task(async function test_ml_generic_pipeline() {
   });
 
   const request = {
-    args: [LEGACY_INPUTS],
+    args: [SINGLE_MODEL_INPUTS],
     options: { pooling: "mean", normalize: true },
   };
 
-  await perfTest({ name: "autofill", options, request });
+  await runMLPerfTest({ name: "autofill", options, request });
 });
 
 /**
@@ -273,13 +275,13 @@ add_task(async function test_ml_generic_pipeline() {
  * latency metrics, prefixed with the engine's `metricPrefix` (e.g.
  * "AUTOFILL-encoder").
  */
-async function runEngineWithMetrics(engine, engineConfig, iterations) {
+async function runEngineWithMetrics(engine, engineConfig, iterations, tag) {
   const journal = {};
   for (let i = 0; i < iterations; i++) {
     const res = await engine.run(engineConfig.request);
     const metrics = fetchMetrics(res.metrics);
     for (const [metricName, metricVal] of Object.entries(metrics)) {
-      const key = `${engineConfig.metricPrefix}-${metricName}`;
+      const key = `${engineConfig.metricPrefix}-${metricName}-${tag}`;
       (journal[key] = journal[key] || []).push(metricVal);
     }
   }
@@ -287,10 +289,17 @@ async function runEngineWithMetrics(engine, engineConfig, iterations) {
 }
 
 /**
- * NEW: two-engine (encoder + head) ML Autofill pipeline -- per-engine latency
+ * OPT-IN: two-engine (encoder + head) ML Autofill pipeline -- per-engine latency
  * plus the end-to-end per-form cost (encode -> head).
  */
 add_task(async function test_ml_autofill_two_engine_pipeline() {
+  await runMLPerfTestForEachBackend({
+    name: "AUTOFILL-TWO-ENGINE",
+    run: runTwoEnginePipeline,
+  });
+});
+
+async function runTwoEnginePipeline({ backend, tag }) {
   const configs = Object.values(ENGINES);
 
   // Initialize both engines CONCURRENTLY, matching FormAutofillML.#ensureEngines
@@ -299,7 +308,7 @@ add_task(async function test_ml_autofill_two_engine_pipeline() {
     Promise.all(
       configs.map(async cfg => {
         const { cleanup, engine } = await initializeEngine(
-          new PipelineOptions({ timeoutMS: -1, ...cfg })
+          new PipelineOptions({ timeoutMS: -1, ...cfg, backend })
         );
         return { cleanup, engine, cfg };
       })
@@ -315,11 +324,11 @@ add_task(async function test_ml_autofill_two_engine_pipeline() {
   // Concurrent init wall-clock (Promise.all over both engines): the real
   // one-time first-use startup cost. Measured across ITERATIONS for a median,
   // tearing both engines down between runs so each is a fresh init.
-  combined[CONCURRENT_INIT_LATENCY_METRIC] = [];
+  combined[concurrentInitLatencyMetric(tag)] = [];
   for (let i = 0; i < ITERATIONS; i++) {
     const t0 = performance.now();
     const insts = await initBoth();
-    combined[CONCURRENT_INIT_LATENCY_METRIC].push(performance.now() - t0);
+    combined[concurrentInitLatencyMetric(tag)].push(performance.now() - t0);
     await EngineProcess.destroyMLEngine();
     for (const { cleanup } of insts) {
       await cleanup();
@@ -330,31 +339,36 @@ add_task(async function test_ml_autofill_two_engine_pipeline() {
   const instances = await initBoth();
   info("Encoder and head engines initialized");
 
-  // Per-engine latency (encoder, then head).
-  for (const { engine, cfg } of instances) {
-    merge(await runEngineWithMetrics(engine, cfg, ITERATIONS));
-  }
+  try {
+    // Per-engine latency (encoder, then head).
+    for (const { engine, cfg } of instances) {
+      merge(await runEngineWithMetrics(engine, cfg, ITERATIONS, tag));
+    }
 
-  // End-to-end per-form latency: encode once, then score once -- the real flow.
-  const encoder = instances[0];
-  const head = instances[1];
-  for (let i = 0; i < ITERATIONS; i++) {
-    const start = performance.now();
-    await encoder.engine.run(encoder.cfg.request);
-    await head.engine.run(head.cfg.request);
-    (combined[E2E_RUN_LATENCY_METRIC] =
-      combined[E2E_RUN_LATENCY_METRIC] || []).push(performance.now() - start);
-  }
+    // End-to-end per-form latency: encode once, then score once -- the real flow.
+    const encoder = instances[0];
+    const head = instances[1];
+    for (let i = 0; i < ITERATIONS; i++) {
+      const start = performance.now();
+      await encoder.engine.run(encoder.cfg.request);
+      await head.engine.run(head.cfg.request);
+      (combined[e2eRunLatencyMetric(tag)] =
+        combined[e2eRunLatencyMetric(tag)] || []).push(
+        performance.now() - start
+      );
+    }
 
-  const memUsage = await getTotalMemoryUsage();
-  (combined[TWO_ENGINE_MEMORY_METRIC] =
-    combined[TWO_ENGINE_MEMORY_METRIC] || []).push(memUsage);
+    const memUsage = await getTotalMemoryUsage();
+    (combined[twoEngineMemoryMetric(tag)] =
+      combined[twoEngineMemoryMetric(tag)] || []).push(memUsage);
+  } finally {
+    // The next backend in the matrix starts from a clean engine process.
+    await EngineProcess.destroyMLEngine();
+    for (const { cleanup } of instances) {
+      await cleanup();
+    }
+  }
 
   Assert.ok(true);
   reportMetrics(combined);
-
-  await EngineProcess.destroyMLEngine();
-  for (const { cleanup } of instances) {
-    await cleanup();
-  }
-});
+}

@@ -9,9 +9,6 @@
  * MOZ_WM_* messages
  ****************************************************************************/
 
-// accessibility priming
-#define MOZ_WM_STARTA11Y (WM_APP + 0x0302)
-
 // From Firefox 5 (2011) to Firefox 137 (2025), these were internal messages for
 // WM_MOUSEWHEEL, WM_MOUSEHWHEEL, WM_VSCROLL, and WM_HSCROLL, used to work
 // around issues with out-of-process NPAPI plugins.

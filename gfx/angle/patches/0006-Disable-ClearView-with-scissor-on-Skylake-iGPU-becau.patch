@@ -1,4 +1,4 @@
-From e8407590dcd8432d77dbe5a54dd3b0328484f7ea Mon Sep 17 00:00:00 2001
+From f5bb199386a6b42ba05e9e70e2fa842174382854 Mon Sep 17 00:00:00 2001
 From: Ashley Hale <ahale@mozilla.com>
 Date: Wed, 1 Mar 2023 18:03:04 -0800
 Subject: [PATCH] Disable ClearView with scissor on Skylake iGPU because of
@@ -14,10 +14,10 @@ Subject: [PATCH] Disable ClearView with scissor on Skylake iGPU because of
  6 files changed, 25 insertions(+)
 
 diff --git a/include/platform/autogen/FeaturesD3D_autogen.h b/include/platform/autogen/FeaturesD3D_autogen.h
-index 0dd1015cbe..271a40eab7 100644
+index 6305080..4141d6b 100644
 --- a/include/platform/autogen/FeaturesD3D_autogen.h
 +++ b/include/platform/autogen/FeaturesD3D_autogen.h
-@@ -116,6 +116,12 @@ struct FeaturesD3D : FeatureSetBase
+@@ -104,6 +104,12 @@ struct FeaturesD3D : FeatureSetBase
          &members,
      };
  
@@ -31,10 +31,10 @@ index 0dd1015cbe..271a40eab7 100644
          "useSystemMemoryForConstantBuffers",
          FeatureCategory::D3DWorkarounds,
 diff --git a/include/platform/d3d_features.json b/include/platform/d3d_features.json
-index 941918c8d0..daebb529fc 100644
+index 7eb7385..60117c7 100644
 --- a/include/platform/d3d_features.json
 +++ b/include/platform/d3d_features.json
-@@ -128,6 +128,14 @@
+@@ -114,6 +114,14 @@
              ],
              "issue": "https://bugzilla.mozilla.org/show_bug.cgi?id=1633628"
          },
@@ -50,10 +50,10 @@ index 941918c8d0..daebb529fc 100644
              "name": "use_system_memory_for_constant_buffers",
              "category": "Workarounds",
 diff --git a/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp b/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp
-index 764349c3d0..ccedcf99d3 100644
+index f3c5ae5..7d7553b 100644
 --- a/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp
 +++ b/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp
-@@ -510,6 +510,11 @@ angle::Result Clear11::clearFramebuffer(const gl::Context *context,
+@@ -462,6 +462,11 @@ angle::Result Clear11::clearFramebuffer(const gl::Context *context,
              }
          }
  
@@ -66,10 +66,10 @@ index 764349c3d0..ccedcf99d3 100644
              (formatInfo.redBits > 0 && !r) || (formatInfo.greenBits > 0 && !g) ||
              (formatInfo.blueBits > 0 && !b) || (formatInfo.alphaBits > 0 && !a))
 diff --git a/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp b/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
-index af7969dcf0..f410161ff6 100644
+index 6fae418..63bbe58 100644
 --- a/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
 +++ b/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
-@@ -2467,6 +2467,10 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
+@@ -2175,6 +2175,10 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
      ANGLE_FEATURE_CONDITION(features, preAddTexelFetchOffsets, isIntel);
      ANGLE_FEATURE_CONDITION(features, useSystemMemoryForConstantBuffers, isIntel);
  
@@ -81,10 +81,10 @@ index af7969dcf0..f410161ff6 100644
                              isIntel && isSkylake && capsVersion >= angle::VersionTriple(16, 0, 0) &&
                                  capsVersion < angle::VersionTriple(16, 4771, 0));
 diff --git a/util/autogen/angle_features_autogen.cpp b/util/autogen/angle_features_autogen.cpp
-index 49e00dcb3a..47958dd246 100644
+index e75541b..d8ad61d 100644
 --- a/util/autogen/angle_features_autogen.cpp
 +++ b/util/autogen/angle_features_autogen.cpp
-@@ -305,6 +305,7 @@ constexpr PackedEnumMap<Feature, const char *> kFeatureNames = {{
+@@ -321,6 +321,7 @@ constexpr PackedEnumMap<Feature, const char *> kFeatureNames = {{
      {Feature::RoundOutputAfterDithering, "roundOutputAfterDithering"},
      {Feature::SanitizeAMDGPURendererString, "sanitizeAMDGPURendererString"},
      {Feature::ScalarizeVecAndMatConstructorArgs, "scalarizeVecAndMatConstructorArgs"},
@@ -93,10 +93,10 @@ index 49e00dcb3a..47958dd246 100644
      {Feature::SetDataFasterThanImageUpload, "setDataFasterThanImageUpload"},
      {Feature::SetDataFasterThanImageUploadOn128bitFormats, "setDataFasterThanImageUploadOn128bitFormats"},
 diff --git a/util/autogen/angle_features_autogen.h b/util/autogen/angle_features_autogen.h
-index e916dc0807..74b0fc4cbc 100644
+index 3ecac9d..770e468 100644
 --- a/util/autogen/angle_features_autogen.h
 +++ b/util/autogen/angle_features_autogen.h
-@@ -305,6 +305,7 @@ enum class Feature
+@@ -321,6 +321,7 @@ enum class Feature
      RoundOutputAfterDithering,
      SanitizeAMDGPURendererString,
      ScalarizeVecAndMatConstructorArgs,
@@ -105,5 +105,5 @@ index e916dc0807..74b0fc4cbc 100644
      SetDataFasterThanImageUpload,
      SetDataFasterThanImageUploadOn128bitFormats,
 -- 
-2.54.0
+2.43.0
 

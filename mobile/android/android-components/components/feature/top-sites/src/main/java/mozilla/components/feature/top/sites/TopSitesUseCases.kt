@@ -4,13 +4,9 @@
 
 package mozilla.components.feature.top.sites
 
-/**
- * Contains use cases related to the top sites feature.
- */
+/** Contains use cases related to the top sites feature. */
 class TopSitesUseCases(topSitesStorage: TopSitesStorage) {
-    /**
-     * Add a pinned site use case.
-     */
+    /** Add a pinned site use case. */
     class AddPinnedSiteUseCase internal constructor(private val storage: TopSitesStorage) {
         /**
          * Adds a new [PinnedSite].
@@ -22,9 +18,7 @@ class TopSitesUseCases(topSitesStorage: TopSitesStorage) {
             storage.addTopSite(title, url, isDefault)
     }
 
-    /**
-     * Remove a top site use case.
-     */
+    /** Remove a top site use case. */
     class RemoveTopSiteUseCase internal constructor(private val storage: TopSitesStorage) {
         /**
          * Removes the given [TopSite].
@@ -34,9 +28,7 @@ class TopSitesUseCases(topSitesStorage: TopSitesStorage) {
         suspend operator fun invoke(topSite: TopSite) = storage.removeTopSite(topSite)
     }
 
-    /**
-     * Update a top site use case.
-     */
+    /** Update a top site use case. */
     class UpdateTopSiteUseCase internal constructor(private val storage: TopSitesStorage) {
         /**
          * Updates the given [TopSite].

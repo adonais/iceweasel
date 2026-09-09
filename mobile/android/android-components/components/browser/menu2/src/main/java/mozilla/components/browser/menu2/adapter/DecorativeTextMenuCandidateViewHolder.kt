@@ -19,7 +19,8 @@ internal class DecorativeTextMenuCandidateViewHolder(
     inflater: LayoutInflater,
 ) : MenuCandidateViewHolder<DecorativeTextMenuCandidate>(itemView, inflater) {
 
-    private val textView: TextView get() = itemView as TextView
+    private val textView: TextView
+        get() = itemView as TextView
 
     override fun bind(
         newCandidate: DecorativeTextMenuCandidate,
@@ -35,15 +36,13 @@ internal class DecorativeTextMenuCandidateViewHolder(
     private fun applyHeight(newHeight: Int?, oldHeight: Int?) {
         if (newHeight != oldHeight) {
             textView.updateLayoutParams {
-                height = newHeight ?: itemView.pixelSizeFor(
-                    R.dimen.mozac_browser_menu2_candidate_container_layout_height,
-                )
+                height =
+                    newHeight ?: itemView.pixelSizeFor(R.dimen.mozac_browser_menu2_candidate_container_layout_height)
             }
         }
     }
 
     companion object {
-        @LayoutRes
-        val layoutResource = R.layout.mozac_browser_menu2_candidate_decorative_text
+        @LayoutRes val layoutResource = R.layout.mozac_browser_menu2_candidate_decorative_text
     }
 }

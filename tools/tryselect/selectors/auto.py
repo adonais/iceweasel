@@ -27,6 +27,7 @@ class AutoParser(BaseTryParser):
         "env",
         "chemspill-prio",
         "disable-pgo",
+        "pushdate",
         "worker-overrides",
     ]
     arguments = [

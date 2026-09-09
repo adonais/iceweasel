@@ -1655,7 +1655,7 @@ void CanonicalBrowsingContext::NavigationTraverse(
   MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug, "Traverse navigation to {}",
               aKey.ToString().get());
   nsSHistory* shistory = static_cast<nsSHistory*>(GetSessionHistory());
-  if (!shistory) {
+  if (!shistory || !mActiveEntry) {
     return aResolver(NS_ERROR_DOM_INVALID_STATE_ERR);
   }
   RefPtr<SessionHistoryEntry> targetEntry;

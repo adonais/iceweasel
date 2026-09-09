@@ -54,7 +54,6 @@ tasks:
                 LD_LIBRARY_PATH: /builds/worker/checkouts/gecko/clang/lib
                 PERFHERDER_EXTRA_OPTIONS: static-analysis-autotest
         run:
-            clone-with: hg
             config:
                 - builds/releng_base_firefox.py
                 - builds/releng_sub_linux_configs/64_stat_and_debug.py
@@ -83,7 +82,6 @@ tasks:
             tier: 2
         worker-type: b-win2022
         run:
-            clone-with: hg
             config:
                 - builds/releng_base_firefox.py
                 - builds/taskcluster_base_windows.py

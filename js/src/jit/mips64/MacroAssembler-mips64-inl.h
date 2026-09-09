@@ -367,6 +367,11 @@ void MacroAssembler::lshift64(Imm32 imm, Register64 dest) {
   ma_dsll(dest.reg, dest.reg, imm);
 }
 
+void MacroAssembler::lshift64(Imm32 imm, Register64 src, Register64 dest) {
+  MOZ_ASSERT(0 <= imm.value && imm.value < 64);
+  ma_dsll(dest.reg, src.reg, imm);
+}
+
 void MacroAssembler::lshift64(Register shift, Register64 dest) {
   ma_dsll(dest.reg, dest.reg, shift);
 }
@@ -387,6 +392,11 @@ void MacroAssembler::rshiftPtr(Register shift, Register dest) {
 void MacroAssembler::rshift64(Imm32 imm, Register64 dest) {
   MOZ_ASSERT(0 <= imm.value && imm.value < 64);
   ma_dsrl(dest.reg, dest.reg, imm);
+}
+
+void MacroAssembler::rshift64(Imm32 imm, Register64 src, Register64 dest) {
+  MOZ_ASSERT(0 <= imm.value && imm.value < 64);
+  ma_dsrl(dest.reg, src.reg, imm);
 }
 
 void MacroAssembler::rshift64(Register shift, Register64 dest) {
@@ -410,6 +420,12 @@ void MacroAssembler::rshiftPtrArithmetic(Register shift, Register dest) {
 void MacroAssembler::rshift64Arithmetic(Imm32 imm, Register64 dest) {
   MOZ_ASSERT(0 <= imm.value && imm.value < 64);
   ma_dsra(dest.reg, dest.reg, imm);
+}
+
+void MacroAssembler::rshift64Arithmetic(Imm32 imm, Register64 src,
+                                        Register64 dest) {
+  MOZ_ASSERT(0 <= imm.value && imm.value < 64);
+  ma_dsra(dest.reg, src.reg, imm);
 }
 
 void MacroAssembler::rshift64Arithmetic(Register shift, Register64 dest) {

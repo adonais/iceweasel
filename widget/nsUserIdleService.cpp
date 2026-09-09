@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include "mozilla/AppShutdown.h"
+#include "mozilla/Components.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
@@ -392,7 +393,7 @@ nsUserIdleService::nsUserIdleService()
     mDailyIdle = new nsUserIdleServiceDaily(this);
     mDailyIdle->Init();
   }
-  nsCOMPtr<nsIAsyncShutdownService> svc = services::GetAsyncShutdownService();
+  nsCOMPtr<nsIAsyncShutdownService> svc = components::AsyncShutdown::Service();
   MOZ_ASSERT(svc);
   nsCOMPtr<nsIAsyncShutdownClient> client;
   auto rv = svc->GetAppShutdownConfirmed(getter_AddRefs(client));

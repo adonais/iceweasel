@@ -35,8 +35,8 @@ class ECLTest : public ::testing::Test {
     }
     return s.str();
   }
-  void ecName2params(const std::string curve, SECItem *params) {
-    SECOidData *oidData = nullptr;
+  void ecName2params(const std::string curve, SECItem* params) {
+    SECOidData* oidData = nullptr;
 
     switch (GetCurveName(curve)) {
       case ECCurve_NIST_P256:

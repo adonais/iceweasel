@@ -31,8 +31,7 @@ internal class Evaluator(
 ) {
 
     @Throws(EvaluatorException::class)
-    fun evaluate(node: AstNode): JexlValue =
-        EvaluatorHandlers.evaluateWith(this, node)
+    fun evaluate(node: AstNode): JexlValue = EvaluatorHandlers.evaluateWith(this, node)
 
     internal fun evaluateArray(nodes: List<AstNode>): List<JexlValue> {
         return nodes.map { evaluate(it) }
@@ -45,17 +44,16 @@ internal class Evaluator(
     }
 
     fun filterRelative(subject: JexlValue, expression: AstNode): JexlValue {
-        val filterSubject = subject as? JexlArray ?: JexlArray(
-            subject,
-        )
+        val filterSubject = subject as? JexlArray ?: JexlArray(subject)
 
-        val values = filterSubject.value.filter { element ->
-            val subContext = element as? JexlObject ?: JexlObject()
-            val evaluator = Evaluator(context, grammar, transforms, subContext)
-            val value = evaluator.evaluate(expression)
+        val values =
+            filterSubject.value.filter { element ->
+                val subContext = element as? JexlObject ?: JexlObject()
+                val evaluator = Evaluator(context, grammar, transforms, subContext)
+                val value = evaluator.evaluate(expression)
 
-            value.value as Boolean
-        }
+                value.value as Boolean
+            }
 
         return JexlArray(values)
     }
@@ -64,21 +62,22 @@ internal class Evaluator(
         val result = evaluate(expression)
 
         return when {
-            result is JexlBoolean -> if (result.value) { subject } else {
-                JexlUndefined()
-            }
+            result is JexlBoolean ->
+                if (result.value) {
+                    subject
+                } else {
+                    JexlUndefined()
+                }
 
             subject is JexlUndefined -> subject
 
-            subject is JexlObject && result is JexlString -> subject.value[result.value]
-                ?: JexlUndefined()
+            subject is JexlObject && result is JexlString -> subject.value[result.value] ?: JexlUndefined()
 
-            subject is JexlArray && result is JexlInteger -> subject.value.getOrNull(result.value)
-                ?: JexlUndefined()
+            subject is JexlArray && result is JexlInteger -> subject.value.getOrNull(result.value) ?: JexlUndefined()
 
             // We just convert a double to int here .. hoping for the best!
-            subject is JexlArray && result is JexlDouble -> subject.value.getOrNull(result.value.toInt())
-                ?: JexlUndefined()
+            subject is JexlArray && result is JexlDouble ->
+                subject.value.getOrNull(result.value.toInt()) ?: JexlUndefined()
 
             else -> throw EvaluatorException("Cannot filter $subject by $result")
         }

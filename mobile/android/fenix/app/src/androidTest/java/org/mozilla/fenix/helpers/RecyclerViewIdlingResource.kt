@@ -9,15 +9,20 @@ import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.IdlingResource.ResourceCallback
 import org.mozilla.fenix.helpers.Constants.TAG
 
-class RecyclerViewIdlingResource(private val recycler: androidx.recyclerview.widget.RecyclerView, val minItemCount: Int = 0) :
-    IdlingResource {
+class RecyclerViewIdlingResource(
+    private val recycler: androidx.recyclerview.widget.RecyclerView,
+    val minItemCount: Int = 0,
+) : IdlingResource {
 
     private var callback: ResourceCallback? = null
 
     override fun isIdleNow(): Boolean {
         if (recycler.adapter != null && recycler.adapter!!.itemCount >= minItemCount) {
             if (callback != null) {
-                Log.i(TAG, "RecyclerViewIdlingResource: Trying to verify that the resource transitioned from busy to idle")
+                Log.i(
+                    TAG,
+                    "RecyclerViewIdlingResource: Trying to verify that the resource transitioned from busy to idle",
+                )
                 callback!!.onTransitionToIdle()
                 Log.i(TAG, "RecyclerViewIdlingResource: The resource transitioned to idle")
             }
@@ -28,11 +33,17 @@ class RecyclerViewIdlingResource(private val recycler: androidx.recyclerview.wid
 
     override fun registerIdleTransitionCallback(callback: ResourceCallback) {
         this.callback = callback
-        Log.i(TAG, "RecyclerViewIdlingResource: Notified asynchronously that the resource is transitioning from busy to idle")
+        Log.i(
+            TAG,
+            "RecyclerViewIdlingResource: Notified asynchronously that the resource is transitioning from busy to idle",
+        )
     }
 
     override fun getName(): String {
-        Log.i(TAG, "RecyclerViewIdlingResource: Trying to return the the name of the resource: ${RecyclerViewIdlingResource::class.java.name + ":" + recycler.id}")
+        Log.i(
+            TAG,
+            "RecyclerViewIdlingResource: Trying to return the the name of the resource: ${RecyclerViewIdlingResource::class.java.name + ":" + recycler.id}",
+        )
         return RecyclerViewIdlingResource::class.java.name + ":" + recycler.id
     }
 }

@@ -1604,9 +1604,6 @@ class gfxFont {
     return mFUnitsConvFactor;
   }
 
-  // check whether this is an sfnt we can potentially use with harfbuzz
-  bool FontCanSupportHarfBuzz() const { return mFontEntry->HasCmapTable(); }
-
   // check whether this is an sfnt we can potentially use with Graphite
   bool FontCanSupportGraphite() const {
     return mFontEntry->HasGraphiteTables();
@@ -2405,6 +2402,12 @@ class gfxFont {
   // Returns FALSE if the font does not appear to be an sfnt at all,
   // and should be handled (if possible) using other APIs.
   bool InitMetricsFromSfntTables(Metrics& aMetrics);
+
+#if MOZ_FONTATIONS
+  // Initialize metrics using the font entry's Skrifa font reference.
+  // Returns false if unsuccessful (e.g. the entry has no Skrifa font).
+  bool InitMetricsFromSkrifa(Metrics& aMetrics);
+#endif
 
   // Helper to calculate various derived metrics from the results of
   // InitMetricsFromSfntTables or equivalent platform code

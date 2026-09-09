@@ -17,17 +17,18 @@ import mozilla.components.lib.state.Store
 /**
  * The [TranslationsDialogStore] holds the [TranslationsDialogState] (state tree).
  *
- * The only way to change the [TranslationsDialogState] inside
- * [TranslationsDialogStore] is to dispatch an [Action] on it.
+ * The only way to change the [TranslationsDialogState] inside [TranslationsDialogStore] is to dispatch an [Action] on
+ * it.
  */
 class TranslationsDialogStore(
     initialState: TranslationsDialogState,
     middlewares: List<Middleware<TranslationsDialogState, TranslationsDialogAction>> = emptyList(),
-) : Store<TranslationsDialogState, TranslationsDialogAction>(
-    initialState,
-    TranslationsDialogReducer::reduce,
-    middlewares,
-) {
+) :
+    Store<TranslationsDialogState, TranslationsDialogAction>(
+        initialState,
+        TranslationsDialogReducer::reduce,
+        middlewares,
+    ) {
     init {
         dispatch(TranslationsDialogAction.FetchPageSettings)
     }
@@ -39,11 +40,11 @@ class TranslationsDialogStore(
  * @property isTranslated The page is currently translated.
  * @property isTranslationInProgress The page is currently attempting a translation.
  * @property positiveButtonType Can be enabled,disabled or in progress.
- * @property translationDownloadSize A data class to contain information
- * related to the download size required for a given translation to/from pair.
+ * @property translationDownloadSize A data class to contain information related to the download size required for a
+ *   given translation to/from pair.
  * @property error An error that can occur during the translation process.
- * @property documentLangDisplayName Language name to display in
- * case [TranslationError.LanguageNotSupportedError] appears.
+ * @property documentLangDisplayName Language name to display in case [TranslationError.LanguageNotSupportedError]
+ *   appears.
  * @property dismissDialogState Whether the dialog bottom sheet should be dismissed.
  * @property initialFrom Initial "from" language, based on the translation state and page state.
  * @property initialTo Initial "to" language, based on the translation state and page state.
@@ -66,155 +67,93 @@ data class TranslationsDialogState(
     val translatedPageTitle: String? = null,
 ) : State
 
-/**
- * Action to dispatch through the `TranslationsStore` to modify `TranslationsDialogState` through the reducer.
- */
+/** Action to dispatch through the `TranslationsStore` to modify `TranslationsDialogState` through the reducer. */
 sealed class TranslationsDialogAction : Action {
-    /**
-     * Invoked when the [TranslationsDialogStore] is added to the fragment.
-     */
+    /** Invoked when the [TranslationsDialogStore] is added to the fragment. */
     data object InitTranslationsDialog : TranslationsDialogAction()
 
     /**
-     * When FetchSupportedLanguages is dispatched, an [TranslationOperation.FETCH_SUPPORTED_LANGUAGES]
-     * will be dispatched to the [BrowserStore].
-     * This action should be used when an [UpdateTranslationError] appears and the user presses the "Try Again" button
-     * from the [TranslationsDialogBottomSheet].
+     * When FetchSupportedLanguages is dispatched, an [TranslationOperation.FETCH_SUPPORTED_LANGUAGES] will be
+     * dispatched to the [BrowserStore]. This action should be used when an [UpdateTranslationError] appears and the
+     * user presses the "Try Again" button from the [TranslationsDialogBottomSheet].
      */
     data object FetchSupportedLanguages : TranslationsDialogAction()
 
     /**
-     * When FetchPageSettings is dispatched, an [TranslationOperation.FETCH_PAGE_SETTINGS]
-     * will be dispatched to the [BrowserStore].
-     * This action should be used when [TranslationsDialogStore] gets initialised.
+     * When FetchPageSettings is dispatched, an [TranslationOperation.FETCH_PAGE_SETTINGS] will be dispatched to the
+     * [BrowserStore]. This action should be used when [TranslationsDialogStore] gets initialised.
      */
     data object FetchPageSettings : TranslationsDialogAction()
 
-    /**
-     * Invoked when the user wants to translate a website.
-     */
+    /** Invoked when the user wants to translate a website. */
     data object TranslateAction : TranslationsDialogAction()
 
-    /**
-     * Invoked when the user wants to restore the website to its original pre-translated content.
-     */
+    /** Invoked when the user wants to restore the website to its original pre-translated content. */
     data object RestoreTranslation : TranslationsDialogAction()
 
-    /**
-     * Invoked when a translation error occurs during the translation process.
-     */
+    /** Invoked when a translation error occurs during the translation process. */
     data class UpdateTranslationError(
         val translationError: TranslationError? = null,
         val documentLangDisplayName: String? = null,
     ) : TranslationsDialogAction()
 
-    /**
-     * Updates translate from languages list.
-     */
-    data class UpdateTranslateFromLanguages(
-        val translateFromLanguages: List<Language>,
-    ) : TranslationsDialogAction()
+    /** Updates translate from languages list. */
+    data class UpdateTranslateFromLanguages(val translateFromLanguages: List<Language>) : TranslationsDialogAction()
 
-    /**
-     * Updates translate to languages list.
-     */
-    data class UpdateTranslateToLanguages(
-        val translateToLanguages: List<Language>,
-    ) : TranslationsDialogAction()
+    /** Updates translate to languages list. */
+    data class UpdateTranslateToLanguages(val translateToLanguages: List<Language>) : TranslationsDialogAction()
 
-    /**
-     * Updates to the current selected language from the "translateFromLanguages" list.
-     */
-    data class UpdateFromSelectedLanguage(
-        val language: Language,
-    ) : TranslationsDialogAction()
+    /** Updates to the current selected language from the "translateFromLanguages" list. */
+    data class UpdateFromSelectedLanguage(val language: Language) : TranslationsDialogAction()
 
-    /**
-     * Updates to the current selected language from the "translateToLanguages" list.
-     */
-    data class UpdateToSelectedLanguage(
-        val language: Language,
-    ) : TranslationsDialogAction()
+    /** Updates to the current selected language from the "translateToLanguages" list. */
+    data class UpdateToSelectedLanguage(val language: Language) : TranslationsDialogAction()
 
-    /**
-     * Dismiss the translation dialog fragment.
-     */
-    data class DismissDialog(
-        val dismissDialogState: DismissDialogState,
-    ) : TranslationsDialogAction()
+    /** Dismiss the translation dialog fragment. */
+    data class DismissDialog(val dismissDialogState: DismissDialogState) : TranslationsDialogAction()
 
-    /**
-     * Updates the dialog content to translation in progress status.
-     */
-    data class UpdateTranslationInProgress(
-        val inProgress: Boolean,
-    ) : TranslationsDialogAction()
+    /** Updates the dialog content to translation in progress status. */
+    data class UpdateTranslationInProgress(val inProgress: Boolean) : TranslationsDialogAction()
 
-    /**
-     * Updates the dialog content to translated status.
-     */
-    data class UpdateTranslated(
-        val isTranslated: Boolean,
-    ) : TranslationsDialogAction()
+    /** Updates the dialog content to translated status. */
+    data class UpdateTranslated(val isTranslated: Boolean) : TranslationsDialogAction()
 
-    /**
-     * Updates the dialog title if the page was translated.
-     */
+    /** Updates the dialog title if the page was translated. */
     data class UpdateTranslatedPageTitle(val title: String) : TranslationsDialogAction()
 
-    /**
-     * Invoked when the user wants to update a PageSettings value.
-     */
+    /** Invoked when the user wants to update a PageSettings value. */
     data class UpdatePageSettingsValue(
         val type: TranslationPageSettingsOption,
         val checkValue: Boolean,
     ) : TranslationsDialogAction()
 
-    /**
-     * Updates the translation download file size.
-     */
+    /** Updates the translation download file size. */
     data class UpdateDownloadTranslationDownloadSize(val translationDownloadSize: TranslationDownloadSize? = null) :
         TranslationsDialogAction()
 
-    /**
-     * Fetch the translation download file size.
-     */
+    /** Fetch the translation download file size. */
     data class FetchDownloadFileSizeAction(val toLanguage: Language, val fromLanguage: Language) :
         TranslationsDialogAction()
 }
 
-/**
- * Positive button type from the translation bottom sheet.
- */
+/** Positive button type from the translation bottom sheet. */
 sealed class PositiveButtonType {
-    /**
-     * The translating indicator will appear.
-     */
+    /** The translating indicator will appear. */
     data object InProgress : PositiveButtonType()
 
-    /**
-     * The button is in a disabled state.
-     */
+    /** The button is in a disabled state. */
     data object Disabled : PositiveButtonType()
 
-    /**
-     * The button is in a enabled state.
-     */
+    /** The button is in a enabled state. */
     data object Enabled : PositiveButtonType()
 }
 
-/**
- * Dismiss translation bottom sheet type.
- */
+/** Dismiss translation bottom sheet type. */
 sealed class DismissDialogState {
-    /**
-     * The dialog should be dismissed.
-     */
+    /** The dialog should be dismissed. */
     data object Dismiss : DismissDialogState()
 
-    /**
-     * This is the step when translation is in progress and the dialog is waiting to be dismissed.
-     */
+    /** This is the step when translation is in progress and the dialog is waiting to be dismissed. */
     data object WaitingToBeDismissed : DismissDialogState()
 }
 
@@ -235,22 +174,24 @@ internal object TranslationsDialogReducer {
             is TranslationsDialogAction.UpdateFromSelectedLanguage -> {
                 state.copy(
                     initialFrom = action.language,
-                    positiveButtonType = if (state.initialTo != null && action.language != state.initialTo) {
-                        PositiveButtonType.Enabled
-                    } else {
-                        PositiveButtonType.Disabled
-                    },
+                    positiveButtonType =
+                        if (state.initialTo != null && action.language != state.initialTo) {
+                            PositiveButtonType.Enabled
+                        } else {
+                            PositiveButtonType.Disabled
+                        },
                 )
             }
 
             is TranslationsDialogAction.UpdateToSelectedLanguage -> {
                 state.copy(
                     initialTo = action.language,
-                    positiveButtonType = if (state.initialFrom != null && action.language != state.initialFrom) {
-                        PositiveButtonType.Enabled
-                    } else {
-                        PositiveButtonType.Disabled
-                    },
+                    positiveButtonType =
+                        if (state.initialFrom != null && action.language != state.initialFrom) {
+                            PositiveButtonType.Enabled
+                        } else {
+                            PositiveButtonType.Disabled
+                        },
                 )
             }
 
@@ -269,15 +210,16 @@ internal object TranslationsDialogReducer {
             is TranslationsDialogAction.UpdateTranslationInProgress -> {
                 state.copy(
                     isTranslationInProgress = action.inProgress,
-                    positiveButtonType = if (action.inProgress) {
-                        PositiveButtonType.InProgress
-                    } else {
-                        if (state.positiveButtonType == PositiveButtonType.InProgress) {
-                            PositiveButtonType.Enabled
+                    positiveButtonType =
+                        if (action.inProgress) {
+                            PositiveButtonType.InProgress
                         } else {
-                            state.positiveButtonType
-                        }
-                    },
+                            if (state.positiveButtonType == PositiveButtonType.InProgress) {
+                                PositiveButtonType.Enabled
+                            } else {
+                                state.positiveButtonType
+                            }
+                        },
                 )
             }
 
@@ -301,15 +243,16 @@ internal object TranslationsDialogReducer {
 
             is TranslationsDialogAction.UpdateDownloadTranslationDownloadSize -> {
                 state.copy(
-                    translationDownloadSize = if (
-                        action.translationDownloadSize?.fromLanguage == state.initialFrom &&
-                        action.translationDownloadSize?.toLanguage == state.initialTo &&
-                        isTranslationDownloadSizeValid(action.translationDownloadSize)
-                    ) {
-                        action.translationDownloadSize
-                    } else {
-                        null
-                    },
+                    translationDownloadSize =
+                        if (
+                            action.translationDownloadSize?.fromLanguage == state.initialFrom &&
+                                action.translationDownloadSize?.toLanguage == state.initialTo &&
+                                isTranslationDownloadSizeValid(action.translationDownloadSize)
+                        ) {
+                            action.translationDownloadSize
+                        } else {
+                            null
+                        }
                 )
             }
 
@@ -320,8 +263,7 @@ internal object TranslationsDialogReducer {
             TranslationsDialogAction.FetchPageSettings,
             TranslationsDialogAction.FetchSupportedLanguages,
             TranslationsDialogAction.RestoreTranslation,
-            is TranslationsDialogAction.FetchDownloadFileSizeAction,
-            -> {
+            is TranslationsDialogAction.FetchDownloadFileSizeAction -> {
                 // handled by [TranslationsDialogMiddleware]
                 state
             }
@@ -329,6 +271,5 @@ internal object TranslationsDialogReducer {
     }
 
     private fun isTranslationDownloadSizeValid(translationDownloadSize: TranslationDownloadSize?) =
-        translationDownloadSize?.size != 0L &&
-            translationDownloadSize?.error == null
+        translationDownloadSize?.size != 0L && translationDownloadSize?.error == null
 }

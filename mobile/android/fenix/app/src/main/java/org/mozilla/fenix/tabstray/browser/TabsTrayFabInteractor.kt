@@ -6,22 +6,14 @@ package org.mozilla.fenix.tabstray.browser
 
 import org.mozilla.fenix.tabstray.redux.state.Page
 
-/**
- * Interactor for all things related to the floating action button in the tabs tray.
- */
+/** Interactor for all things related to the floating action button in the tabs tray. */
 interface TabsTrayFabInteractor {
-    /**
-     * Invoked when the fab is clicked in [Page.NormalTabs].
-     */
+    /** Invoked when the fab is clicked in [Page.NormalTabs]. */
     fun onNormalTabsFabClicked()
 
-    /**
-     * Invoked when the fab is clicked in [Page.PrivateTabs].
-     */
+    /** Invoked when the fab is clicked in [Page.PrivateTabs]. */
     fun onPrivateTabsFabClicked()
 
-    /**
-     * Invoked when the fab is clicked in [Page.SyncedTabs].
-     */
+    /** Invoked when the fab is clicked in [Page.SyncedTabs]. */
     fun onSyncedTabsFabClicked()
 }

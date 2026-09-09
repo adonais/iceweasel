@@ -4,8 +4,8 @@
 const { PdfJsTelemetry } = ChromeUtils.importESModule(
   "resource://pdf.js/PdfJsTelemetry.sys.mjs"
 );
-const { PdfjsParent } = ChromeUtils.importESModule(
-  "resource://pdf.js/PdfjsParent.sys.mjs"
+const { PdfJsParent } = ChromeUtils.importESModule(
+  "resource://pdf.js/PdfJsParent.sys.mjs"
 );
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
@@ -25,7 +25,7 @@ sandbox.stub(PdfJsTelemetry, "report").callsFake(aData => {
   }
   original(aData);
 });
-sandbox.stub(PdfjsParent.prototype, "_saveURL");
+sandbox.stub(PdfJsParent.prototype, "_saveURL");
 
 function getPromise(action) {
   const resolver = Promise.withResolvers();

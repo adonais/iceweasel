@@ -24,40 +24,45 @@ const dbsReady = Promise.all([
   secureClient.db.importChanges({}, Date.now(), [], {}),
 ]);
 
+const TEST_MESSAGE_IDS = ["nimbus-update-test-1", "nimbus-update-test-2"];
+
 const TEST_MESSAGE_CONTENT = {
   id: "NIMBUS_UPDATE_TEST_MESSAGE",
-  template: "cfr_doorhanger",
+  template: "infobar",
   content: {
-    bucket_id: "NIMBUS_UPDATE_TEST_MESSAGE",
-    anchor_id: "PanelUI-menu-button",
-    layout: "icon_and_message",
-    icon: "chrome://activity-stream/content/data/content/assets/glyph-webextension-16.svg",
-    icon_dark_theme:
-      "chrome://activity-stream/content/data/content/assets/glyph-webextension-16.svg",
-    icon_class: "cfr-doorhanger-small-icon",
-    heading_text: "Heading",
+    type: "tab",
     text: "Text",
-    buttons: {
-      primary: {
-        label: { value: "Primary CTA", attributes: { accesskey: "P" } },
-        action: { navigate: true },
+    buttons: [
+      {
+        label: "Primary CTA",
+        primary: true,
+        accessKey: "P",
+        action: { type: "CANCEL" },
       },
-      secondary: [
-        {
-          label: { value: "Secondary CTA", attributes: { accesskey: "S" } },
-          action: { type: "CANCEL" },
-        },
-      ],
-    },
-    skip_address_bar_notifier: true,
+    ],
   },
   targeting: "true",
   trigger: { id: "nimbusUpdate" },
 };
 
+/**
+ * The trigger routes to a real infobar, which would otherwise persist into
+ * subsequent tests in this run.
+ */
+function removeTestInfobars() {
+  const box = gBrowser.getNotificationBox(gBrowser.selectedBrowser);
+  for (const id of TEST_MESSAGE_IDS) {
+    const node = box.getNotificationWithValue(id);
+    if (node) {
+      box.removeNotification(node);
+    }
+  }
+}
+
 add_setup(async function () {
   await dbsReady;
   registerCleanupFunction(async () => {
+    removeTestInfobars();
     await client.db.clear();
     await secureClient.db.clear();
   });
@@ -130,8 +135,7 @@ add_task(async function test_nimbusUpdate_reach_experiment() {
     "ExperimentAPI should return an experiment"
   );
 
-  const filterFn = m =>
-    ["nimbus-update-test-1", "nimbus-update-test-2"].includes(m?.id);
+  const filterFn = m => TEST_MESSAGE_IDS.includes(m?.id);
   await TestUtils.waitForCondition(
     () => ASRouter.state.messages.filter(filterFn).length > 1,
     "Should load the test messages"

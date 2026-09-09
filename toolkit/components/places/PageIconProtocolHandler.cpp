@@ -12,6 +12,8 @@
 #include "nsFaviconService.h"
 #include "nsStringStream.h"
 #include "nsStreamUtils.h"
+#include "nsBaseChannel.h"
+#include "nsInputStreamPump.h"
 #include "nsIChannel.h"
 #include "nsIFaviconService.h"
 #include "nsIIOService.h"
@@ -47,7 +49,7 @@ static nsresult GetFaviconMetadata(
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  nsCOMPtr<nsIFavicon> favicon = aResult.ResolveValue();
+  const nsCOMPtr<nsIFavicon>& favicon = aResult.ResolveValue();
   if (!favicon) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -167,6 +169,120 @@ static nsresult StreamDefaultFavicon(nsIURI* aURI, nsILoadInfo* aLoadInfo,
   return NS_OK;
 }
 
+namespace {
+
+class FaviconLoader final : public nsICancelable {
+ public:
+  NS_DECL_ISUPPORTS
+
+  static already_AddRefed<FaviconLoader> Start(RefPtr<FaviconPromise> aPromise,
+                                               nsIStreamListener* aListener,
+                                               nsIChannel* aChannel,
+                                               nsIURI* aPageIconURI) {
+    auto loader = MakeRefPtr<FaviconLoader>();
+    aPromise->Then(GetMainThreadSerialEventTarget(), __func__,
+                   [loader, listener = nsCOMPtr{aListener},
+                    channel = nsCOMPtr{aChannel}, uri = nsCOMPtr{aPageIconURI}](
+                       const FaviconPromise::ResolveOrRejectValue& aResult) {
+                     loader->OnFaviconData(aResult, listener, channel, uri);
+                   });
+    return loader.forget();
+  }
+
+  FaviconLoader() = default;
+
+  NS_IMETHOD Cancel(nsresult aStatus) override {
+    mCanceled = true;
+    mStatus = aStatus;
+    if (mPump) {
+      mPump->Cancel(aStatus);
+      mPump = nullptr;
+    }
+    return NS_OK;
+  }
+
+ private:
+  ~FaviconLoader() = default;
+
+  // SimpleChannel's listener requires OnStartRequest before OnStopRequest to
+  // properly finalize the channel and release internal state. Must be called
+  // for all error/cancel paths that don't go through the pump.
+  void FinishWithStatus(nsIStreamListener* aListener, nsIChannel* aChannel,
+                        nsresult aStatus) {
+    aListener->OnStartRequest(aChannel);
+    aListener->OnStopRequest(aChannel, aStatus);
+  }
+
+  void OnFaviconData(const FaviconPromise::ResolveOrRejectValue& aResult,
+                     nsIStreamListener* aListener, nsIChannel* aChannel,
+                     nsIURI* aPageIconURI) {
+    if (mCanceled) {
+      FinishWithStatus(aListener, aChannel, mStatus);
+      return;
+    }
+    FaviconMetadata metadata;
+    if (NS_SUCCEEDED(GetFaviconMetadata(aResult, metadata))) {
+      aChannel->SetContentType(metadata.mContentType);
+      aChannel->SetContentLength(metadata.mContentLength);
+
+      nsresult rv =
+          nsInputStreamPump::Create(getter_AddRefs(mPump), metadata.mStream, 0,
+                                    0, true, GetMainThreadSerialEventTarget());
+      if (NS_WARN_IF(NS_FAILED(rv)) ||
+          NS_WARN_IF(NS_FAILED(rv = mPump->AsyncRead(aListener)))) {
+        mPump = nullptr;
+        FinishWithStatus(aListener, aChannel, rv);
+        return;
+      }
+      RecordIconSizeTelemetry(aPageIconURI, metadata);
+    } else {
+      // aChannel is always a SimpleChannel which inherits nsBaseChannel.
+      auto* simpleChannel = static_cast<nsBaseChannel*>(aChannel);
+      nsCOMPtr<nsIStreamListener> outerListener =
+          simpleChannel->StreamListener();
+      nsCOMPtr<nsILoadInfo> loadInfo = simpleChannel->LoadInfo();
+      nsCOMPtr<nsIChannel> defaultIconChannel;
+      nsresult rv = MakeDefaultFaviconChannel(
+          aPageIconURI, loadInfo, getter_AddRefs(defaultIconChannel));
+      if (NS_SUCCEEDED(rv)) {
+        // Propagate properties from the original channel.
+        nsCOMPtr<nsILoadGroup> loadGroup;
+        aChannel->GetLoadGroup(getter_AddRefs(loadGroup));
+        defaultIconChannel->SetLoadGroup(loadGroup);
+        nsCOMPtr<nsIInterfaceRequestor> callbacks;
+        aChannel->GetNotificationCallbacks(getter_AddRefs(callbacks));
+        defaultIconChannel->SetNotificationCallbacks(callbacks);
+        nsLoadFlags loadFlags = 0;
+        aChannel->GetLoadFlags(&loadFlags);
+        defaultIconChannel->SetLoadFlags(loadFlags | nsIChannel::LOAD_REPLACE);
+        // Open the default icon channel directly with the outer listener,
+        // rather than via Redirect(), so that:
+        // - The image loader receives OnStartRequest from the chrome://
+        //   channel (required for -moz-pref() evaluation in SVGs).
+        // - No async runnables are queued that could outlive a test
+        //   shutdown and cause FaviconLoader to leak.
+        // Clear SimpleChannel's listener first so the FinishWithStatus
+        // call below does not forward a duplicate OnStart/OnStop to the
+        // outer listener.
+        simpleChannel->SetStreamListener(nullptr);
+        rv = defaultIconChannel->AsyncOpen(outerListener);
+        if (NS_FAILED(rv)) {
+          simpleChannel->SetStreamListener(outerListener);
+        }
+      }
+      FinishWithStatus(aListener, aChannel, NS_SUCCEEDED(rv) ? NS_OK : rv);
+    }
+  }
+
+  RefPtr<nsInputStreamPump> mPump;
+  nsresult mStatus = NS_OK;
+  bool mCanceled = false;
+};
+
+NS_IMPL_ISUPPORTS(FaviconLoader, nsICancelable)
+
+}  // namespace
+
 NS_IMPL_ISUPPORTS(PageIconProtocolHandler, nsIProtocolHandler,
                   nsISupportsWeakReference);
 
@@ -217,53 +333,18 @@ Result<Ok, nsresult> PageIconProtocolHandler::SubstituteRemoteChannel(
 nsresult PageIconProtocolHandler::NewChannelInternal(nsIURI* aURI,
                                                      nsILoadInfo* aLoadInfo,
                                                      nsIChannel** aOutChannel) {
-  // Create a pipe that will give us an output stream that we can use once
-  // we got all the favicon data.
-  nsCOMPtr<nsIAsyncInputStream> pipeIn;
-  nsCOMPtr<nsIAsyncOutputStream> pipeOut;
-  GetStreams(getter_AddRefs(pipeIn), getter_AddRefs(pipeOut));
-
-  // Create our channel.
-  nsCOMPtr<nsIChannel> channel;
-  nsresult rv = NS_NewInputStreamChannelInternal(
-      getter_AddRefs(channel), aURI, pipeIn.forget(), /* aContentType */ ""_ns,
-      /* aContentCharset */ ""_ns, aLoadInfo);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  GetFaviconData(aURI)->Then(
-      GetMainThreadSerialEventTarget(), __func__,
-      [pipeOut, channel, uri = nsCOMPtr{aURI}, loadInfo = nsCOMPtr{aLoadInfo}](
-          const FaviconPromise::ResolveOrRejectValue& aResult) {
-        FaviconMetadata metadata;
-        if (NS_SUCCEEDED(GetFaviconMetadata(aResult, metadata))) {
-          channel->SetContentType(metadata.mContentType);
-          channel->SetContentLength(metadata.mContentLength);
-
-          nsresult rv;
-          const nsCOMPtr<nsIEventTarget> target =
-              do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            channel->CancelWithReason(NS_BINDING_ABORTED,
-                                      "GetFaviconData failed"_ns);
-            return;
-          }
-
-          rv = NS_AsyncCopy(metadata.mStream, pipeOut, target);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return;
-          }
-          RecordIconSizeTelemetry(uri, metadata);
-        } else {
-          // There are a few reasons why this might fail. For example, one
-          // reason is that the URI might not actually be properly parsable.
-          // In that case, we'll try one last time to stream the default
-          // favicon before giving up.
-          channel->SetContentType(nsLiteralCString(FAVICON_DEFAULT_MIMETYPE));
-          channel->SetContentLength(-1);
-          (void)StreamDefaultFavicon(uri, loadInfo, pipeOut);
-        }
+  nsCOMPtr<nsIChannel> channel = NS_NewSimpleChannel(
+      aURI, aLoadInfo, this,
+      [](nsIStreamListener* aListener, nsIChannel* aChannel,
+         PageIconProtocolHandler* aSelf) -> RequestOrReason {
+        nsCOMPtr<nsIURI> uri;
+        aChannel->GetURI(getter_AddRefs(uri));
+        RefPtr<FaviconLoader> loader = FaviconLoader::Start(
+            aSelf->GetFaviconData(uri), aListener, aChannel, uri);
+        nsCOMPtr<nsICancelable> cancelable(loader.forget());
+        return RequestOrCancelable(WrapNotNull(cancelable));
       });
-
+  NS_ENSURE_TRUE(channel, NS_ERROR_OUT_OF_MEMORY);
   channel.forget(aOutChannel);
   return NS_OK;
 }

@@ -10,11 +10,19 @@
 #include "EncryptedRandomAccessBlockView.h"
 #include "EncryptedRandomAccessStream.h"
 #include "ErrorList.h"
+#include "NSSRandomAccessCipherStrategy.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EndianUtils.h"
+#include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultExtensions.h"
+#include "mozilla/dom/quota/QuotaCommon.h"
+#include "mozilla/dom/quota/ResultExtensions.h"
+#include "mozilla/ipc/FileDescriptor.h"
+#include "mozilla/ipc/RandomAccessStreamParams.h"
+#include "mozilla/ipc/RandomAccessStreamUtils.h"
 #include "nsError.h"
 #include "nsIRandomAccessStream.h"
 #include "nsISeekableStream.h"
@@ -242,6 +250,99 @@ nsresult EncryptedRandomAccessStream<CipherStrategy>::SaveCurrentBlock() {
   mBlockDirty = false;
 
   return NS_OK;
+}
+
+template <typename CipherStrategy>
+mozilla::ipc::RandomAccessStreamParams
+EncryptedRandomAccessStream<CipherStrategy>::Serialize(nsIInterfaceRequestor*) {
+  MOZ_ASSERT_UNREACHABLE(
+      "Only |EncryptedRandomAccessStream<NSSRandomAccessCipherStrategy>| can "
+      "be serialized.");
+  // In an opt build, the above macro becomes a no-op. So it's necessary to add
+  // a return statement in order to prevent a build error.
+  return mozilla::ipc::RandomAccessStreamParams();
+}
+
+template <>
+inline mozilla::ipc::RandomAccessStreamParams
+EncryptedRandomAccessStream<NSSRandomAccessCipherStrategy>::Serialize(
+    nsIInterfaceRequestor* aCallbacks) {
+  MOZ_ASSERT(!mClosed);
+
+  mozilla::ipc::NSSEncryptedRandomAccessStreamParams params;
+
+  const auto rv = SaveCurrentBlock();
+  if (NS_FAILED(rv)) {
+    // |Serialize| cannot fail, so a failure is expressed as params the peer
+    // rejects, i.e. an invalid file descriptor and an empty master key.
+    // |baseStreamParams| still needs to be assigned a value, otherwise a fatal
+    // IPC error happens.
+    NS_WARNING(
+        "Failed to save the current block, so sending invalid parameters to "
+        "the other process!");
+
+    params.baseStreamParams() = mozilla::ipc::FileRandomAccessStreamParams(
+        mozilla::ipc::FileDescriptor(), /* behaviorFlags */ 0);
+    // We are already on the failure path, so there's nothing else we can do
+    // here.
+    mBaseStream->InputStream()->Close();
+    mClosed = true;
+
+    return params;
+  }
+
+  MovingNotNull<nsCOMPtr<nsIRandomAccessStream>> baseStream = mBaseStream;
+  auto baseStreamParams = mozilla::ipc::SerializeRandomAccessStream(
+      std::move(baseStream), aCallbacks);
+  params.baseStreamParams() = std::move(baseStreamParams);
+
+  params.masterKey().AppendElements(
+      NSSRandomAccessCipherStrategy::SerializeKey(mMasterKey));
+
+  // |Close()| can't be used here: it would fail flushing the base stream that
+  // the base stream's own |Serialize| has already closed.
+  mClosed = true;
+
+  return params;
+}
+
+template <typename CipherStrategy>
+Result<RefPtr<EncryptedRandomAccessStream<CipherStrategy>>, nsresult>
+EncryptedRandomAccessStream<CipherStrategy>::CreateFromParams(
+    mozilla::ipc::RandomAccessStreamParams&) {
+  MOZ_ASSERT_UNREACHABLE(
+      "Only |EncryptedRandomAccessStream<NSSRandomAccessCipherStrategy>| can "
+      "be deserialized.");
+  // In an opt build, the above macro becomes a no-op. So it's necessary to add
+  // a return statement in order to prevent a build error.
+  return Err(NS_ERROR_NOT_IMPLEMENTED);
+}
+
+template <>
+inline Result<
+    RefPtr<EncryptedRandomAccessStream<NSSRandomAccessCipherStrategy>>,
+    nsresult>
+EncryptedRandomAccessStream<NSSRandomAccessCipherStrategy>::CreateFromParams(
+    mozilla::ipc::RandomAccessStreamParams& aParams) {
+  NSSRandomAccessCipherStrategy strategy;
+  QM_TRY(MOZ_TO_RESULT(strategy.Init()));
+
+  auto& params = aParams.get_NSSEncryptedRandomAccessStreamParams();
+
+  auto masterKeyRes =
+      NSSRandomAccessCipherStrategy::DeserializeKey(params.masterKey());
+  if (masterKeyRes.isNothing()) {
+    // The failure of serialization on the other process ends up here.
+    return Err(NS_ERROR_FAILURE);
+  }
+  auto masterKey = masterKeyRes.value();
+
+  QM_TRY_UNWRAP(MovingNotNull<nsCOMPtr<nsIRandomAccessStream>> baseStream,
+                DeserializeRandomAccessStream(params.baseStreamParams()),
+                Err(NS_ERROR_FAILURE));
+
+  return EncryptedRandomAccessStream<NSSRandomAccessCipherStrategy>::Create(
+      strategy, std::move(baseStream), masterKey);
 }
 
 }  // namespace mozilla::dom::quota

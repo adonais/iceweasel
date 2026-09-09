@@ -15,12 +15,12 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 
 /**
- * [CoordinatorLayout.Behavior] to be used by a snackbar that want to ensure it it always positioned
- * such that it will be shown on top (vertically) of other siblings that may obstruct it's view.
+ * [CoordinatorLayout.Behavior] to be used by a snackbar that want to ensure it it always positioned such that it will
+ * be shown on top (vertically) of other siblings that may obstruct it's view.
  *
  * @param context [Context] used for various system interactions.
- * @property toolbarPosition Where the toolbar is positioned on the screen.
- * Depending on it's position (top / bottom) the snackbar will be shown below / above the toolbar.
+ * @property toolbarPosition Where the toolbar is positioned on the screen. Depending on it's position (top / bottom)
+ *   the snackbar will be shown below / above the toolbar.
  * @param shouldUseExpandedToolbar Whether the expanded toolbar layout should be used.
  */
 class SnackbarBehavior<V : View>(
@@ -39,7 +39,7 @@ class SnackbarBehavior<V : View>(
         add(R.id.navigation_bar)
         if (
             toolbarPosition == ToolbarPosition.BOTTOM ||
-            (toolbarPosition == ToolbarPosition.TOP && shouldUseExpandedToolbar)
+                (toolbarPosition == ToolbarPosition.TOP && shouldUseExpandedToolbar)
         ) {
             add(R.id.toolbar)
             add(R.id.composable_toolbar)
@@ -53,9 +53,8 @@ class SnackbarBehavior<V : View>(
         child: V,
         dependency: View,
     ): Boolean {
-        val anchorId = dependenciesIds
-            .intersect(parent.children.filter { it.isVisible }.map { it.id }.toSet())
-            .firstOrNull()
+        val anchorId =
+            dependenciesIds.intersect(parent.children.filter { it.isVisible }.map { it.id }.toSet()).firstOrNull()
 
         // It is possible that previous anchor's visibility is changed.
         // The layout is updated and layoutDependsOn is called but onDependentViewChanged not.

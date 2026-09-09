@@ -17,7 +17,6 @@ class TopSitesFactsTest {
     @Test
     fun `Emits facts for current state`() {
         CollectionProcessor.withFactCollection { facts ->
-
             assertEquals(0, facts.size)
 
             emitTopSitesCountFact(5)

@@ -437,7 +437,7 @@
         "primary": {
           "Light": "{color/violet/50}",
           "Dark": "{color/violet/30}",
-          "HCM": "{Highlight}",
+          "HCM": "{ButtonText}",
           "Private": "{color/violet/30}",
           "deemphasized": {
             "Light": "rgba(117, 41, 232, 0.10000000149011612)",
@@ -684,7 +684,7 @@
           "selected": {
             "Light": "{button/background/color/active}",
             "Dark": "{button/background/color/active}",
-            "HCM": "{button/background/color/active}",
+            "HCM": "{SelectedItem}",
             "Private": "{button/background/color/active}",
             "Smart Light (WIP)": "{button/background/color/active}"
           },
@@ -1213,7 +1213,7 @@
             "disabled": {
               "Light": "{button/text/color/ghost/disabled}",
               "Dark": "{button/text/color/disabled}",
-              "HCM": "{button/text/color/primary/disabled}",
+              "HCM": "{button/text/color/disabled}",
               "Private": "{button/text/color/disabled}",
               "Smart Light (WIP)": "{button/text/color/ghost/disabled}"
             },
@@ -1260,6 +1260,19 @@
               "HCM": "{button/text/color/ghost/active}",
               "Private": "{button/text/color/ghost/active}",
               "Smart Light (WIP)": "{button/text/color/muted/active}"
+            }
+          }
+        }
+      },
+      "split": {
+        "separator": {
+          "background": {
+            "color": {
+              "Light": "{button/border/color}",
+              "Dark": "{button/border/color}",
+              "HCM": "{button/border/color}",
+              "Private": "{button/border/color}",
+              "Smart Light (WIP)": "{button/border/color}"
             }
           }
         }
@@ -3914,7 +3927,10 @@
           "Value": "{border/radius/xlarge}"
         },
         "width": {
-          "Value": "{border/width}"
+          "Value": "{border/width}",
+          "split": {
+            "Value": 0
+          }
         }
       },
       "min-height": {
@@ -3930,7 +3946,7 @@
         "icon": {
           "Value": "{button/min-height}",
           "small": {
-            "Value": "{size/item/medium}"
+            "Value": "{button/min-height/small}"
           },
           "lage": {
             "Value": "{size/item/large}"
@@ -3949,6 +3965,11 @@
         },
         "block": {
           "Value": "{space/xsmall}"
+        }
+      },
+      "gap": {
+        "split": {
+          "Value": 0
         }
       }
     },

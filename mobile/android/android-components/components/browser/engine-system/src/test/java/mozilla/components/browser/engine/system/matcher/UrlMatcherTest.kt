@@ -6,6 +6,7 @@ package mozilla.components.browser.engine.system.matcher
 
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.StringReader
 import mozilla.components.browser.engine.system.matcher.UrlMatcher.Companion.ADVERTISING
 import mozilla.components.browser.engine.system.matcher.UrlMatcher.Companion.ANALYTICS
 import mozilla.components.browser.engine.system.matcher.UrlMatcher.Companion.CONTENT
@@ -21,7 +22,6 @@ import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import java.io.StringReader
 
 @RunWith(AndroidJUnit4::class)
 class UrlMatcherTest {
@@ -51,9 +51,9 @@ class UrlMatcherTest {
     }
 
     /**
-     * Tests that category enabling/disabling works correctly. We test this by creating
-     * 4 categories, each with only one domain. We then iterate over all permutations of categories,
-     * and test that only the expected domains are actually blocked.
+     * Tests that category enabling/disabling works correctly. We test this by creating 4 categories, each with only one
+     * domain. We then iterate over all permutations of categories, and test that only the expected domains are actually
+     * blocked.
      */
     @Test
     fun enableDisableCategories() {
@@ -114,7 +114,8 @@ class UrlMatcherTest {
         }
     }
 
-    val blockListJson = """{
+    val blockListJson =
+        """{
       "license": "test-license",
       "categories": {
         "Advertising": [
@@ -185,7 +186,8 @@ class UrlMatcherTest {
     }
     """
 
-    val safeListJson = """{
+    val safeListJson =
+        """{
       "SocialTest1": {
         "properties": [
           "www.socialtest1.com"
@@ -198,10 +200,11 @@ class UrlMatcherTest {
 
     @Test
     fun createMatcher() {
-        val matcher = UrlMatcher.createMatcher(
-            StringReader(blockListJson),
-            StringReader(safeListJson),
-        )
+        val matcher =
+            UrlMatcher.createMatcher(
+                StringReader(blockListJson),
+                StringReader(safeListJson),
+            )
 
         // Check returns correct category
         val (matchesAds, categoryAds) = matcher.matches("http://adtest1.com", "http://www.adtest1.com")
@@ -214,26 +217,29 @@ class UrlMatcherTest {
         assertTrue(matchesAds2)
         assertEquals(categoryAd2, ADVERTISING)
 
-        val (matchesSocial, categorySocial) = matcher.matches(
-            "http://socialtest1.com/",
-            "http://www.socialtest1.com/",
-        )
+        val (matchesSocial, categorySocial) =
+            matcher.matches(
+                "http://socialtest1.com/",
+                "http://www.socialtest1.com/",
+            )
 
         assertTrue(matchesSocial)
         assertEquals(categorySocial, SOCIAL)
 
-        val (matchesContent, categoryContent) = matcher.matches(
-            "http://contenttest1.com/",
-            "http://www.contenttest1.com/",
-        )
+        val (matchesContent, categoryContent) =
+            matcher.matches(
+                "http://contenttest1.com/",
+                "http://www.contenttest1.com/",
+            )
 
         assertTrue(matchesContent)
         assertEquals(categoryContent, CONTENT)
 
-        val (matchesAnalytics, categoryAnalytics) = matcher.matches(
-            "http://analyticsTest1.com/",
-            "http://www.analyticsTest1.com/",
-        )
+        val (matchesAnalytics, categoryAnalytics) =
+            matcher.matches(
+                "http://analyticsTest1.com/",
+                "http://www.analyticsTest1.com/",
+            )
 
         assertTrue(matchesAnalytics)
         assertEquals(categoryAnalytics, ANALYTICS)
@@ -260,13 +266,14 @@ class UrlMatcherTest {
 
     @Test
     fun setCategoriesEnabled() {
-        val matcher = spy(
-            UrlMatcher.createMatcher(
-                StringReader(blockListJson),
-                StringReader(safeListJson),
-                setOf("Advertising", "Analytics"),
-            ),
-        )
+        val matcher =
+            spy(
+                UrlMatcher.createMatcher(
+                    StringReader(blockListJson),
+                    StringReader(safeListJson),
+                    setOf("Advertising", "Analytics"),
+                )
+            )
 
         matcher.setCategoriesEnabled(setOf("Advertising", "Analytics"))
         verify(matcher, never()).setCategoryEnabled(any(), anyBoolean())
@@ -279,17 +286,20 @@ class UrlMatcherTest {
 
     @Test
     fun webFontsNotBlockedByDefault() {
-        val matcher = UrlMatcher.createMatcher(
-            StringReader(blockListJson),
-            StringReader(safeListJson),
-            setOf(UrlMatcher.ADVERTISING, UrlMatcher.ANALYTICS, UrlMatcher.SOCIAL, UrlMatcher.CONTENT),
-        )
+        val matcher =
+            UrlMatcher.createMatcher(
+                StringReader(blockListJson),
+                StringReader(safeListJson),
+                setOf(UrlMatcher.ADVERTISING, UrlMatcher.ANALYTICS, UrlMatcher.SOCIAL, UrlMatcher.CONTENT),
+            )
 
         assertFalse(
-            matcher.matches(
-                "http://mozilla.org/fonts/test.woff2",
-                "http://mozilla.org",
-            ).first,
+            matcher
+                .matches(
+                    "http://mozilla.org/fonts/test.woff2",
+                    "http://mozilla.org",
+                )
+                .first
         )
     }
 }

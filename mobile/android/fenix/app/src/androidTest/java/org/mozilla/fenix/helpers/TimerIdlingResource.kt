@@ -22,7 +22,10 @@ class TimerIdlingResource(private val timeout: Long) : IdlingResource {
         val elapsed = System.currentTimeMillis() - startTime
         // Determine if the elapsed time is greater than or equal to the timeout
         val idle = elapsed >= timeout
-        Log.i(TAG, "TimerIdlingResource: Checking if the resource is idle. Elapsed time: $elapsed ms, Timeout: $timeout ms, Is idle: $idle")
+        Log.i(
+            TAG,
+            "TimerIdlingResource: Checking if the resource is idle. Elapsed time: $elapsed ms, Timeout: $timeout ms, Is idle: $idle",
+        )
         // If idle, notify the callback
         if (idle) {
             resourceCallback?.onTransitionToIdle()

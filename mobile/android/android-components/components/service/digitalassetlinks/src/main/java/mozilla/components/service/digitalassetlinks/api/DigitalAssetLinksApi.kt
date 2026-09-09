@@ -21,9 +21,9 @@ import mozilla.components.support.ktx.kotlin.sanitizeURL
 import org.json.JSONObject
 
 /**
- * Digital Asset Links allows any caller to check pre declared relationships between
- * two assets which can be either web domains or native applications.
- * This class checks for a specific relationship declared by two assets via the online API.
+ * Digital Asset Links allows any caller to check pre declared relationships between two assets which can be either web
+ * domains or native applications. This class checks for a specific relationship declared by two assets via the online
+ * API.
  */
 class DigitalAssetLinksApi(
     private val httpClient: Client,
@@ -52,14 +52,16 @@ class DigitalAssetLinksApi(
         return parsed?.statements.orEmpty().asSequence()
     }
 
-    private fun apiUrlBuilder(path: String) = BASE_URL.toUri().buildUpon()
-        .encodedPath(path)
-        .appendQueryParameter("prettyPrint", false.toString())
-        .appendQueryParameter("key", apiKey)
+    private fun apiUrlBuilder(path: String) =
+        BASE_URL.toUri()
+            .buildUpon()
+            .encodedPath(path)
+            .appendQueryParameter("prettyPrint", false.toString())
+            .appendQueryParameter("key", apiKey)
 
     /**
-     * Returns a [Request] used to check whether the specified (directional) relationship exists
-     * between the specified source and target assets.
+     * Returns a [Request] used to check whether the specified (directional) relationship exists between the specified
+     * source and target assets.
      *
      * https://developers.google.com/digital-asset-links/reference/rest/v1/assetlinks/check
      */
@@ -69,8 +71,7 @@ class DigitalAssetLinksApi(
         relation: Relation,
         target: AssetDescriptor,
     ): Request {
-        val uriBuilder = apiUrlBuilder(CHECK_PATH)
-            .appendQueryParameter("relation", relation.kindAndDetail)
+        val uriBuilder = apiUrlBuilder(CHECK_PATH).appendQueryParameter("relation", relation.kindAndDetail)
 
         // source and target follow the same format, so re-use the query logic for both.
         uriBuilder.appendAssetAsQuery(source, "source")

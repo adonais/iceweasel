@@ -69,9 +69,9 @@ class IDTracker {
    *   property (that is, we're creating a reference an "image element", which
    *   is subject to the document's mozSetImageElement overriding mechanism).
    */
-  void ResetToURIWithFragmentID(Element& aFrom, nsIURI* aURI,
-                                nsIReferrerInfo* aReferrerInfo,
-                                bool aReferenceImage = false);
+  MOZ_CAN_RUN_SCRIPT void ResetToURIWithFragmentID(
+      Element& aFrom, nsIURI* aURI, nsIReferrerInfo* aReferrerInfo,
+      bool aReferenceImage = false);
 
   /**
    * A variation on ResetToURIWithFragmentID() to set up a reference that
@@ -87,10 +87,9 @@ class IDTracker {
    *   the referenced element is in an external resource document.
    * @param aReferenceImage See above.
    */
-  void ResetToLocalFragmentID(Element& aFrom, const nsAString& aLocalRef,
-                              nsIURI* aBaseURI = nullptr,
-                              nsIReferrerInfo* aReferrerInfo = nullptr,
-                              bool aReferenceImage = false);
+  MOZ_CAN_RUN_SCRIPT void ResetToLocalFragmentID(
+      Element& aFrom, const nsAString& aLocalRef, nsIURI* aBaseURI = nullptr,
+      nsIReferrerInfo* aReferrerInfo = nullptr, bool aReferenceImage = false);
 
   /**
    * A variation on ResetToURIWithFragmentID() to set up a reference that
@@ -113,9 +112,9 @@ class IDTracker {
 
  protected:
   /** Requests and maybe watches an external resource doc. */
-  void ResetToExternalResource(nsIURI* aURI, nsIReferrerInfo* aReferrerInfo,
-                               nsAtom* aRef, Element& aFrom,
-                               bool aReferenceImage);
+  MOZ_CAN_RUN_SCRIPT void ResetToExternalResource(
+      nsIURI* aURI, nsIReferrerInfo* aReferrerInfo, nsAtom* aRef,
+      Element& aFrom, bool aReferenceImage);
 
   /**
    * Override this to be notified of element changes. Don't forget

@@ -473,11 +473,11 @@ add_task(async function test_corrupted_idb_key() {
     [
       {
         addon_id: extension.id,
-        reason: "RejectedClear:UnknownError",
+        reason: "RejectedClear:NotReadableError",
         is_addon_active: "true",
       },
     ],
-    "Got the expected telemetry event recorded when the UnknownError is being hit by storage.local.clear API calls"
+    "Got the expected telemetry event recorded when the NotReadableError is being hit by storage.local.clear API calls"
   );
 
   await extension.unload();

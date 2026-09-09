@@ -338,6 +338,7 @@ describe("SmartFormFillModel", () => {
       Assert.equal(responseFormat.json_schema.name, "SmartFormFillFormValues");
       Assert.deepEqual(responseFormat.json_schema.schema.required, [
         "memories_used",
+        "tabs_used",
         "fields",
       ]);
 
@@ -363,6 +364,8 @@ describe("SmartFormFillModel", () => {
 
       Assert.deepEqual(await requestPromise, {
         memories_used: [],
+        // Absent from the answer above, so the merged result reports it empty.
+        tabs_used: [],
         fields: [
           {
             id: "field-email",
@@ -377,6 +380,8 @@ describe("SmartFormFillModel", () => {
             confidence: "high",
           },
         ],
+        // One batch, because the form fits in a single request.
+        batches: { total: 1, failed: 0 },
       });
     });
   });

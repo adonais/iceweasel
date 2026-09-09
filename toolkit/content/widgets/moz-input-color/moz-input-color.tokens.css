@@ -7,9 +7,9 @@
 
 @layer tokens-foundation, tokens-browser-theme, tokens-foundation-brand, tokens-foundation-nova, tokens-browser-theme-nova, tokens-foundation-brand-nova, tokens-prefers-contrast, tokens-prefers-contrast-nova, tokens-forced-colors, tokens-forced-colors-nova;
 
-@layer tokens-foundation {
-  :root,
-  :host {
+:root,
+:host {
+  @layer tokens-foundation {
     --input-color-background-color: var(--button-background-color-ghost);
     --input-color-background-color-hover: var(--button-background-color-ghost-hover);
     --input-color-background-color-active: var(--button-background-color-ghost-active);
@@ -27,12 +27,9 @@
     --input-color-text-color-hover: var(--button-text-color-hover);
     --input-color-text-color-active: var(--button-text-color-active);
   }
-}
 
-@media -moz-pref("browser.nova.enabled") {
-  @layer tokens-foundation-nova {
-    :root,
-    :host {
+  @media -moz-pref("browser.nova.enabled") {
+    @layer tokens-foundation-nova {
       --input-color-background-color: var(--button-background-color);
       --input-color-background-color-hover: var(--button-background-color-hover);
       --input-color-background-color-active: var(--button-background-color-active);

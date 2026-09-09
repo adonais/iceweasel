@@ -251,12 +251,12 @@ async function testMessages() {
   );
   await checkUniqueMessageExists(
     hud,
-    "Expected color but found ‘rainbow’",
+    "Error in parsing value for ‘background-color: rainbow’.  Declaration dropped.",
     ".warn"
   );
   await checkUniqueMessageExists(
     hud,
-    "Expected color but found ‘bled’",
+    "Error in parsing value for ‘color: bled;’.  Declaration dropped.",
     ".warn"
   );
 

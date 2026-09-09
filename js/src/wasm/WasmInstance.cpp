@@ -1863,7 +1863,8 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
 
 #ifdef ENABLE_WASM_JSPI
 
-/* static */ void* Instance::contNew(Instance* instance, void* funcRef) {
+/* static */ void* Instance::contNew(Instance* instance, void* funcRef,
+                                     void* baseFrameStub) {
   MOZ_ASSERT(SASigContNew.failureMode == FailureMode::FailOnNullPtr);
   JSContext* cx = instance->cx();
   Rooted<JSFunction*> target(cx, static_cast<JSFunction*>(funcRef));
@@ -1874,9 +1875,8 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   MOZ_ASSERT(target->isWasm());
 
   const Code& creatorCode = instance->code();
-  void* stub =
-      creatorCode.sharedStubs().codeBase + creatorCode.contBaseFrameOffset();
-  ContObject* cont = ContObject::create(cx, target, stub, &creatorCode);
+  ContObject* cont =
+      ContObject::create(cx, target, baseFrameStub, &creatorCode);
   return AnyRef::fromJSObjectOrNull(cont).forCompiledCode();
 }
 
@@ -2619,7 +2619,9 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
     }
 #ifdef ENABLE_WASM_JSPI
     else if (typeDef.kind() == TypeDefKind::Cont) {
-      // Nothing to do; the default values are OK.
+      mozilla::Maybe<uint32_t> offset = code().contBaseFrameOffset(typeIndex);
+      typeDefData->cached.cont.baseFrameStub =
+          code().sharedStubs().codeBase + *offset;
     }
 #endif
     else {

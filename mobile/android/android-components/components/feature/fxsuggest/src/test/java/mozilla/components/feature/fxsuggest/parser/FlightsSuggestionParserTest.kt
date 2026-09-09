@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package mozilla.components.feature.fxsuggest.parser
 
 import mozilla.components.feature.fxsuggest.dto.AirlineDto
@@ -13,34 +17,39 @@ class FlightsSuggestionParserTest {
 
     @Test
     fun `WHEN payload has values THEN maps each flight item`() {
-        val payload = FlightAwarePayloadDto(
-            values = listOf(
-                FlightDto(
-                    flightNumber = "UA1",
-                    destination = AirportDto(code = "DEN", city = "Denver"),
-                    origin = AirportDto(code = "SFO", city = "San Francisco"),
-                    departure = FlightTimeDto(
-                        scheduledTime = "2026-04-10T09:00:00-07:00",
-                        estimatedTime = null,
-                    ),
-                    arrival = FlightTimeDto(
-                        scheduledTime = "2026-04-10T12:30:00-06:00",
-                        estimatedTime = "2026-04-10T12:45:00-06:00",
-                    ),
-                    status = "En Route",
-                    progressPercent = 68,
-                    timeLeftMinutes = 52,
-                    delayed = true,
-                    url = "https://flightaware.com/live/flight/UAL1",
-                    airline = AirlineDto(
-                        code = "UAL",
-                        name = "United Airlines",
-                        icon = "https://example.com/ua.png",
-                        color = "#005DAA",
-                    ),
-                ),
-            ),
-        )
+        val payload =
+            FlightAwarePayloadDto(
+                values =
+                    listOf(
+                        FlightDto(
+                            flightNumber = "UA1",
+                            destination = AirportDto(code = "DEN", city = "Denver"),
+                            origin = AirportDto(code = "SFO", city = "San Francisco"),
+                            departure =
+                                FlightTimeDto(
+                                    scheduledTime = "2026-04-10T09:00:00-07:00",
+                                    estimatedTime = null,
+                                ),
+                            arrival =
+                                FlightTimeDto(
+                                    scheduledTime = "2026-04-10T12:30:00-06:00",
+                                    estimatedTime = "2026-04-10T12:45:00-06:00",
+                                ),
+                            status = "En Route",
+                            progressPercent = 68,
+                            timeLeftMinutes = 52,
+                            delayed = true,
+                            url = "https://flightaware.com/live/flight/UAL1",
+                            airline =
+                                AirlineDto(
+                                    code = "UAL",
+                                    name = "United Airlines",
+                                    icon = "https://example.com/ua.png",
+                                    color = "#005DAA",
+                                ),
+                        )
+                    )
+            )
 
         val result = parser.parse(payload)
 

@@ -4,11 +4,11 @@
 
 package mozilla.components.service.digitalassetlinks.ext
 
+import java.io.IOException
 import mozilla.components.concept.fetch.Client
 import mozilla.components.concept.fetch.Request
 import mozilla.components.concept.fetch.Response
 import mozilla.components.concept.fetch.Response.Companion.SUCCESS
-import java.io.IOException
 
 internal fun Client.safeFetch(request: Request): Response? {
     return try {

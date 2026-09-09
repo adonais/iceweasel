@@ -305,6 +305,8 @@ skip-if = [
 
 ["test_input_modify_by_wheel.html"]
 
+["test_input_value_set_preserve_undo.html"]
+
 ["test_inputmode.html"]
 
 ["test_li_attributes_reflection.html"]

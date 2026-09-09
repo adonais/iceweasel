@@ -16,9 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import mozilla.components.support.utils.ext.isKeyboardVisible
 
-/**
- * Detects if the keyboard is opened or closed and returns as a [KeyboardState].
- */
+/** Detects if the keyboard is opened or closed and returns as a [KeyboardState]. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun keyboardAsState(): State<KeyboardState> {
@@ -30,11 +28,12 @@ fun keyboardAsState(): State<KeyboardState> {
         val contentView: View? = currentActivity?.findViewById(android.R.id.content)
 
         layoutListener = ViewTreeObserver.OnGlobalLayoutListener {
-            keyboardState.value = if (contentView?.isKeyboardVisible() == true) {
-                KeyboardState.Opened
-            } else {
-                KeyboardState.Closed
-            }
+            keyboardState.value =
+                if (contentView?.isKeyboardVisible() == true) {
+                    KeyboardState.Opened
+                } else {
+                    KeyboardState.Closed
+                }
         }
         contentView?.viewTreeObserver?.addOnGlobalLayoutListener(layoutListener)
 
@@ -46,9 +45,8 @@ fun keyboardAsState(): State<KeyboardState> {
     return keyboardState
 }
 
-/**
- * Represents the current state of the keyboard, opened or closed.
- */
+/** Represents the current state of the keyboard, opened or closed. */
 enum class KeyboardState {
-    Opened, Closed
+    Opened,
+    Closed,
 }

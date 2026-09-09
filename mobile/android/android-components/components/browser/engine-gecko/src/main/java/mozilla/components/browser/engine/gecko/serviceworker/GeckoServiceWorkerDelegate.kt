@@ -27,12 +27,13 @@ class GeckoServiceWorkerDelegate(
     internal val engineSettings: Settings?,
 ) : GeckoRuntime.ServiceWorkerDelegate {
     override fun onOpenWindow(url: String): GeckoResult<GeckoSession> {
-        val newEngineSession = GeckoEngineSession(
-            runtime = runtime,
-            privateMode = false,
-            defaultSettings = engineSettings,
-            openGeckoSession = false,
-        )
+        val newEngineSession =
+            GeckoEngineSession(
+                runtime = runtime,
+                privateMode = false,
+                defaultSettings = engineSettings,
+                openGeckoSession = false,
+            )
 
         return when (delegate.addNewTab(newEngineSession)) {
             true -> GeckoResult.fromValue(newEngineSession.geckoSession)

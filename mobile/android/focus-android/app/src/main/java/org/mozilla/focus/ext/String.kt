@@ -7,9 +7,9 @@ package org.mozilla.focus.ext
 import androidx.compose.ui.graphics.Color
 import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
+import kotlin.text.append
 import mozilla.components.support.ktx.android.net.hostWithoutCommonPrefixes
 import mozilla.components.support.ktx.util.URLStringUtils
-import kotlin.text.append
 
 // Extension functions for the String class
 
@@ -46,29 +46,30 @@ fun String.beautifyUrl(): String {
     // And then append (only) the first query parameter
 
     val query = uri.query
-    query?.takeIf { it.isNotEmpty() }?.let {
-        beautifulUrl.append("?").append(it.split("&").first())
-    }
+    query
+        ?.takeIf { it.isNotEmpty() }
+        ?.let {
+            beautifulUrl.append("?").append(it.split("&").first())
+        }
 
     // We always append a fragment if there's one
 
-    uri.fragment?.takeIf { it.isNotEmpty() }?.let {
-        beautifulUrl.append("#").append(it)
-    }
+    uri.fragment
+        ?.takeIf { it.isNotEmpty() }
+        ?.let {
+            beautifulUrl.append("#").append(it)
+        }
 
     return beautifulUrl.toString()
 }
 
-/**
- * Tries to parse and get root domain part if [String] is a valid URL.
- */
+/** Tries to parse and get root domain part if [String] is a valid URL. */
 val String.tryGetRootDomain: String
     get() =
-        this.toUri().hostWithoutCommonPrefixes?.replaceAfter(".", "")?.removeSuffix(".")
-            ?.replaceFirstChar { it.uppercase() } ?: this
+        this.toUri().hostWithoutCommonPrefixes?.replaceAfter(".", "")?.removeSuffix(".")?.replaceFirstChar {
+            it.uppercase()
+        } ?: this
 
-/**
- * Tries to parse a color string and return a [Color]
- */
+/** Tries to parse a color string and return a [Color] */
 val String.color: Color
     get() = Color(this.toColorInt())

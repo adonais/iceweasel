@@ -6,19 +6,17 @@ package org.mozilla.fenix.settings.creditcards.view
 
 import android.view.View
 import androidx.annotation.LayoutRes
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 import mozilla.components.concept.storage.CreditCard
 import mozilla.components.support.utils.creditCardIssuerNetwork
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.CreditCardListItemBinding
 import org.mozilla.fenix.settings.creditcards.interactor.CreditCardsManagementInteractor
 import org.mozilla.fenix.utils.view.ViewHolder
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 
-/**
- * View holder for a credit card list item.
- */
+/** View holder for a credit card list item. */
 class CreditCardItemViewHolder(
     private val view: View,
     private val interactor: CreditCardsManagementInteractor,
@@ -38,9 +36,7 @@ class CreditCardItemViewHolder(
         }
     }
 
-    /**
-     * Set the credit card expiry date formatted according to the locale.
-     */
+    /** Set the credit card expiry date formatted according to the locale. */
     private fun bindCreditCardExpiryDate(
         creditCard: CreditCard,
         binding: CreditCardListItemBinding,
@@ -57,8 +53,7 @@ class CreditCardItemViewHolder(
     }
 
     companion object {
-        @LayoutRes
-        val LAYOUT_ID = R.layout.credit_card_list_item
+        @LayoutRes val LAYOUT_ID = R.layout.credit_card_list_item
 
         // Date format pattern for the credit card expiry date.
         private const val DATE_PATTERN = "MM/yyyy"

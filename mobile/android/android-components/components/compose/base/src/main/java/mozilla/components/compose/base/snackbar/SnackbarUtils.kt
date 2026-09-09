@@ -34,14 +34,15 @@ suspend fun SnackbarHostState.displaySnackbar(
     timeout: SnackbarTimeout = if (actionLabel != null) SnackbarTimeout.Action else SnackbarTimeout.Default,
     onActionPerformed: suspend () -> Unit = {},
     onDismissPerformed: suspend () -> Unit = {},
-) = withDismiss(timeout, onActionPerformed, onDismissPerformed) {
-    showSnackbar(
-        message = message,
-        actionLabel = actionLabel,
-        withDismissAction = withDismissAction,
-        duration = SnackbarDuration.Indefinite,
-    )
-}
+) =
+    withDismiss(timeout, onActionPerformed, onDismissPerformed) {
+        showSnackbar(
+            message = message,
+            actionLabel = actionLabel,
+            withDismissAction = withDismissAction,
+            duration = SnackbarDuration.Indefinite,
+        )
+    }
 
 /**
  * Displays a Snackbar, given SnackbarVisuals, with an optional action for a timeout duration.
@@ -57,9 +58,10 @@ suspend fun SnackbarHostState.displaySnackbar(
     timeout: SnackbarTimeout = visuals.toSnackbarTimeout(),
     onActionPerformed: suspend () -> Unit = {},
     onDismissPerformed: suspend () -> Unit = {},
-) = withDismiss(timeout, onActionPerformed, onDismissPerformed) {
-    showSnackbar(visuals = visuals.copy(duration = SnackbarDuration.Indefinite))
-}
+) =
+    withDismiss(timeout, onActionPerformed, onDismissPerformed) {
+        showSnackbar(visuals = visuals.copy(duration = SnackbarDuration.Indefinite))
+    }
 
 /**
  * Helper function that displays a Snackbar via [displaySnackbar] and dismisses it after [timeout].
@@ -105,24 +107,16 @@ private suspend fun SnackbarHostState.withDismiss(
  * @property value The actual timeout duration.
  */
 sealed class SnackbarTimeout(open val value: Long) {
-    /**
-     * The standard timeout for most users if no Snackbar action is available.
-     */
+    /** The standard timeout for most users if no Snackbar action is available. */
     data object Default : SnackbarTimeout(DEFAULT_SNACKBAR_TIMEOUT)
 
-    /**
-     * The standard timeout if a Snackbar action is available.
-     */
+    /** The standard timeout if a Snackbar action is available. */
     data object Action : SnackbarTimeout(DEFAULT_SNACKBAR_WITH_ACTION_TIMEOUT)
 
-    /**
-     * A longer timeout used when accessibility services are enabled.
-     */
+    /** A longer timeout used when accessibility services are enabled. */
     data object Accessible : SnackbarTimeout(ACCESSIBLE_SNACKBAR_TIMEOUT)
 
-    /**
-     * Display the Snackbar indefinitely until explicitly dismissed or action is clicked.
-     */
+    /** Display the Snackbar indefinitely until explicitly dismissed or action is clicked. */
     data object Indefinite : SnackbarTimeout(Long.MAX_VALUE)
 
     /**
@@ -130,9 +124,7 @@ sealed class SnackbarTimeout(open val value: Long) {
      *
      * @param value The requested timeout duration.
      */
-    class Custom(value: Long) : SnackbarTimeout(
-        if (value < Default.value) Default.value else value,
-    )
+    class Custom(value: Long) : SnackbarTimeout(if (value < Default.value) Default.value else value)
 }
 
 /**
@@ -140,8 +132,9 @@ sealed class SnackbarTimeout(open val value: Long) {
  *
  * @return A [SnackbarTimeout] representing the desired dismissal behavior.
  */
-fun SnackbarVisuals.toSnackbarTimeout(): SnackbarTimeout = when {
-    duration == SnackbarDuration.Short || duration == SnackbarDuration.Long ->
-        if (actionLabel != null) SnackbarTimeout.Action else SnackbarTimeout.Default
-    else -> SnackbarTimeout.Indefinite
-}
+fun SnackbarVisuals.toSnackbarTimeout(): SnackbarTimeout =
+    when {
+        duration == SnackbarDuration.Short || duration == SnackbarDuration.Long ->
+            if (actionLabel != null) SnackbarTimeout.Action else SnackbarTimeout.Default
+        else -> SnackbarTimeout.Indefinite
+    }

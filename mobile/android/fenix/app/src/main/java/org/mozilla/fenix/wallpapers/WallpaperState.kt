@@ -22,10 +22,11 @@ data class WallpaperState(
     val availableWallpapers: List<Wallpaper>,
 ) {
     companion object {
-        val default = WallpaperState(
-            currentWallpaper = Wallpaper.Default,
-            availableWallpapers = listOf(),
-        )
+        val default =
+            WallpaperState(
+                currentWallpaper = Wallpaper.Default,
+                availableWallpapers = listOf(),
+            )
     }
 
     /**
@@ -36,55 +37,48 @@ data class WallpaperState(
     val cardBackgroundColor: Color
         @Composable
         @ReadOnlyComposable
-        get() = when {
-            currentWallpaper.cardColorLight != null && currentWallpaper.cardColorDark != null -> {
-                if (isSystemInDarkTheme()) {
-                    Color(currentWallpaper.cardColorDark)
-                } else {
-                    Color(currentWallpaper.cardColorLight)
+        get() =
+            when {
+                currentWallpaper.cardColorLight != null && currentWallpaper.cardColorDark != null -> {
+                    if (isSystemInDarkTheme()) {
+                        Color(currentWallpaper.cardColorDark)
+                    } else {
+                        Color(currentWallpaper.cardColorLight)
+                    }
                 }
+                else -> MaterialTheme.colorScheme.surfaceBright
             }
-            else -> MaterialTheme.colorScheme.surfaceBright
-        }
 
-    /**
-     * [Color] to use for a button background color on the current wallpaper.
-     */
+    /** [Color] to use for a button background color on the current wallpaper. */
     val buttonBackgroundColor: Color
         @Composable
-        get() = if (isCurrentWallpaperDefault()) {
-            ButtonDefaults.buttonColors().containerColor
-        } else {
-            MaterialTheme.colorScheme.surface
-        }
+        get() =
+            if (isCurrentWallpaperDefault()) {
+                ButtonDefaults.buttonColors().containerColor
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
 
-    /**
-     * [Color] to use for button text on the current wallpaper.
-     */
+    /** [Color] to use for button text on the current wallpaper. */
     val buttonTextColor: Color
         @Composable
-        get() = if (isCurrentWallpaperDefault()) {
-            ButtonDefaults.buttonColors().contentColor
-        } else {
-            MaterialTheme.colorScheme.onSurface
-        }
+        get() =
+            if (isCurrentWallpaperDefault()) {
+                ButtonDefaults.buttonColors().contentColor
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            }
 
-    /**
-     * [Color] to use for text on the current wallpaper.
-     */
+    /** [Color] to use for text on the current wallpaper. */
     val textColor: Color
-        @Composable
-        get() = currentWallpaper.textColor?.let { Color(it) }
-            ?: MaterialTheme.colorScheme.onSurface
+        @Composable get() = currentWallpaper.textColor?.let { Color(it) } ?: MaterialTheme.colorScheme.onSurface
 
     private fun isCurrentWallpaperDefault(): Boolean = Wallpaper.nameIsDefault(currentWallpaper.name)
 
-    /**
-     * Run the Composable [run] block only if the current wallpaper's card colors are available.
-     */
+    /** Run the Composable [run] block only if the current wallpaper's card colors are available. */
     @Composable
     fun ComposeRunIfWallpaperCardColorsAreAvailable(
-        run: @Composable (cardColorLight: Color, cardColorDark: Color) -> Unit,
+        run: @Composable (cardColorLight: Color, cardColorDark: Color) -> Unit
     ) {
         if (currentWallpaper.cardColorLight != null && currentWallpaper.cardColorDark != null) {
             run(Color(currentWallpaper.cardColorLight), Color(currentWallpaper.cardColorDark))

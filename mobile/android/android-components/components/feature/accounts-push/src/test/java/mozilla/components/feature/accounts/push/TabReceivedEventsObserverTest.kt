@@ -20,13 +20,16 @@ class TabReceivedEventsObserverTest {
     fun `events are delivered successfully`() {
         val callback: (Device?, List<TabData>) -> Unit = mock()
         val observer = TabReceivedEventsObserver(callback)
-        val events = listOf(AccountEvent.DeviceCommandIncoming(command = DeviceCommandIncoming.TabReceived(mock(), mock())))
+        val events =
+            listOf(AccountEvent.DeviceCommandIncoming(command = DeviceCommandIncoming.TabReceived(mock(), mock())))
 
         observer.onEvents(events)
 
         verify(callback).invoke(any(), any())
 
-        observer.onEvents(listOf(AccountEvent.DeviceCommandIncoming(command = DeviceCommandIncoming.TabReceived(null, mock()))))
+        observer.onEvents(
+            listOf(AccountEvent.DeviceCommandIncoming(command = DeviceCommandIncoming.TabReceived(null, mock())))
+        )
 
         verify(callback).invoke(eq(null), any())
     }
@@ -35,11 +38,12 @@ class TabReceivedEventsObserverTest {
     fun `only TabReceived commands are delivered`() {
         val callback: (Device?, List<TabData>) -> Unit = mock()
         val observer = TabReceivedEventsObserver(callback)
-        val events = listOf(
-            AccountEvent.ProfileUpdated,
-            AccountEvent.DeviceCommandIncoming(command = DeviceCommandIncoming.TabReceived(mock(), mock())),
-            AccountEvent.DeviceCommandIncoming(command = DeviceCommandIncoming.TabReceived(mock(), mock())),
-        )
+        val events =
+            listOf(
+                AccountEvent.ProfileUpdated,
+                AccountEvent.DeviceCommandIncoming(command = DeviceCommandIncoming.TabReceived(mock(), mock())),
+                AccountEvent.DeviceCommandIncoming(command = DeviceCommandIncoming.TabReceived(mock(), mock())),
+            )
 
         observer.onEvents(events)
 

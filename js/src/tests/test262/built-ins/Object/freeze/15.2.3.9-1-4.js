@@ -8,6 +8,6 @@ description: >
     string primitive
 ---*/
 
-Object.freeze("abc");
+assert.sameValue(Object.freeze("abc"), "abc");
 
 reportCompare(0, 0);

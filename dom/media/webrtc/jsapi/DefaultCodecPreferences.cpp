@@ -4,10 +4,10 @@
 
 #include "DefaultCodecPreferences.h"
 
-#include "PeerConnectionImpl.h"
 #include "gmp/GMPUtils.h"
 #include "libwebrtcglue/VideoConduit.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 
@@ -113,61 +113,43 @@ bool DefaultCodecPreferences::RedUlpfecEnabledStatic() {
 }
 
 void EnumerateDefaultVideoCodecs(
-    nsTArray<UniquePtr<JsepCodecDescription>>& aSupportedCodecs,
-    const OverrideRtxPreference aOverrideRtxPreference) {
-  const DefaultCodecPreferences prefs(aOverrideRtxPreference);
-  EnumerateDefaultVideoCodecs(aSupportedCodecs, prefs);
-}
-
-void EnumerateDefaultVideoCodecs(
-    nsTArray<UniquePtr<JsepCodecDescription>>& aSupportedCodecs,
+    nsTArray<UniquePtr<JsepCodecDescription>>* aSupportedCodecs,
     const JsepCodecPreferences& aPrefs) {
+  MOZ_ASSERT(aSupportedCodecs);
   // Supported video codecs.
   // Note: order here implies priority for building offers!
-  aSupportedCodecs.AppendElement(
-      JsepVideoCodecDescription::CreateDefaultVP8(aPrefs));
-  aSupportedCodecs.AppendElement(
-      JsepVideoCodecDescription::CreateDefaultVP9(aPrefs));
-  aSupportedCodecs.AppendElement(
-      JsepVideoCodecDescription::CreateDefaultH264_1(aPrefs));
-  aSupportedCodecs.AppendElement(
-      JsepVideoCodecDescription::CreateDefaultH264_0(aPrefs));
-  aSupportedCodecs.AppendElement(
+  AutoTArray<UniquePtr<JsepCodecDescription>, 10> codecs;
+  codecs.AppendElement(JsepVideoCodecDescription::CreateDefaultVP8(aPrefs));
+  codecs.AppendElement(JsepVideoCodecDescription::CreateDefaultVP9(aPrefs));
+  codecs.AppendElement(JsepVideoCodecDescription::CreateDefaultH264_1(aPrefs));
+  codecs.AppendElement(JsepVideoCodecDescription::CreateDefaultH264_0(aPrefs));
+  codecs.AppendElement(
       JsepVideoCodecDescription::CreateDefaultH264Baseline_1(aPrefs));
-  aSupportedCodecs.AppendElement(
+  codecs.AppendElement(
       JsepVideoCodecDescription::CreateDefaultH264Baseline_0(aPrefs));
-  aSupportedCodecs.AppendElement(
-      JsepVideoCodecDescription::CreateDefaultAV1(aPrefs));
-  aSupportedCodecs.AppendElement(
-      JsepVideoCodecDescription::CreateDefaultUlpFec(aPrefs));
-  aSupportedCodecs.AppendElement(
-      JsepApplicationCodecDescription::CreateDefault());
-  aSupportedCodecs.AppendElement(
-      JsepVideoCodecDescription::CreateDefaultRed(aPrefs));
+  codecs.AppendElement(JsepVideoCodecDescription::CreateDefaultAV1(aPrefs));
+  codecs.AppendElement(JsepVideoCodecDescription::CreateDefaultUlpFec(aPrefs));
+  codecs.AppendElement(JsepApplicationCodecDescription::CreateDefault());
+  codecs.AppendElement(JsepVideoCodecDescription::CreateDefaultRed(aPrefs));
 
   CompareCodecPriority comparator;
-  std::stable_sort(aSupportedCodecs.begin(), aSupportedCodecs.end(),
-                   comparator);
+  std::stable_sort(codecs.begin(), codecs.end(), comparator);
+
+  aSupportedCodecs->AppendElements(std::move(codecs));
 }
 
 void EnumerateDefaultAudioCodecs(
-    nsTArray<UniquePtr<JsepCodecDescription>>& aSupportedCodecs) {
-  const auto prefs = PeerConnectionImpl::GetDefaultCodecPreferences();
-  EnumerateDefaultAudioCodecs(aSupportedCodecs, prefs);
-}
-
-void EnumerateDefaultAudioCodecs(
-    nsTArray<UniquePtr<JsepCodecDescription>>& aSupportedCodecs,
+    nsTArray<UniquePtr<JsepCodecDescription>>* aSupportedCodecs,
     const JsepCodecPreferences& aPrefs) {
-  aSupportedCodecs.AppendElement(
+  aSupportedCodecs->AppendElement(
       JsepAudioCodecDescription::CreateDefaultOpus(aPrefs));
-  aSupportedCodecs.AppendElement(
+  aSupportedCodecs->AppendElement(
       JsepAudioCodecDescription::CreateDefaultG722(aPrefs));
-  aSupportedCodecs.AppendElement(
+  aSupportedCodecs->AppendElement(
       JsepAudioCodecDescription::CreateDefaultPCMU(aPrefs));
-  aSupportedCodecs.AppendElement(
+  aSupportedCodecs->AppendElement(
       JsepAudioCodecDescription::CreateDefaultPCMA(aPrefs));
-  aSupportedCodecs.AppendElement(
+  aSupportedCodecs->AppendElement(
       JsepAudioCodecDescription::CreateDefaultTelephoneEvent());
 }
 

@@ -16,6 +16,7 @@ const TEST_URI = `
     text-box-edge: text;
     user-modify: read-only;
     stroke-color: red;
+    -moz-orient: horizontal;
   }
   div {
     overflow-anchor: auto;
@@ -50,7 +51,13 @@ const TEST_DATA_SELECTED = [
     deprecated: false,
     experimental: true,
   },
-  // TODO: Write a test for it when we have a property with no MDN url nor spec url Bug 1840910
+  {
+    type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY,
+    property: "-moz-orient",
+    // Neither MDN url nor spec url, so the property is not rendered as a link
+    deprecated: false,
+    experimental: false,
+  },
 ];
 
 const TEST_DATA_ALL = [
@@ -67,13 +74,10 @@ const TEST_DATA_ALL = [
 add_task(async function () {
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
 
+  // This test relies on the mock dataset, see
+  // devtools/shared/compatibility/dataset/mock-css-properties.json
   const { allElementsPane, selectedElementPane } =
     await openCompatibilityView();
-
-  // If the test fail because the properties used are no longer in the dataset, or they
-  // now have mdn/spec url although we expected them not to, uncomment the next line
-  // to get all the properties in the dataset that don't have a MDN url.
-  // logCssCompatDataPropertiesWithoutMDNUrl()
 
   info("Check the content of the issue list on the selected element");
   await assertIssueList(selectedElementPane, TEST_DATA_SELECTED);

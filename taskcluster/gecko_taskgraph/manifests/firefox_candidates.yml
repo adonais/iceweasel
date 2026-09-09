@@ -405,6 +405,21 @@ mapping:
             - repackage-deb
         update_balrog_manifest: false
         expiry: "1 year"
+    RPM-KEY:
+        <<: *default
+        description: "Public GPG Key used to sign the .rpm packages, without the revoked subkeys that rpm chokes on"
+        locale_prefix: ''
+        only_for_platforms:
+            - linux64-shippable
+            - linux64-aarch64-shippable
+            - linux64-devedition
+            - linux64-aarch64-devedition
+        pretty_name: RPM-KEY
+        checksums_path: RPM-KEY
+        from:
+            - repackage-rpm-signing
+        destinations:
+            - ${version}-candidates/build${build_number}
     target.rpm:
         <<: *default
         description: "Firefox as a .rpm package"

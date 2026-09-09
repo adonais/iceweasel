@@ -7,7 +7,6 @@ const TRACKING_PAGE =
   // eslint-disable-next-line sdl/no-insecure-url
   "http://example.org/browser/browser/base/content/test/protectionsUI/trackingPage.html";
 const CM_PROTECTION_PREF = "privacy.trackingprotection.cryptomining.enabled";
-let cmHistogram;
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
@@ -26,16 +25,13 @@ add_setup(async function () {
       ["urlclassifier.features.fingerprinting.annotate.blacklistHosts", ""],
     ],
   });
-  cmHistogram = Services.telemetry.getHistogramById(
-    "CRYPTOMINERS_BLOCKED_COUNT"
-  );
   registerCleanupFunction(() => {
-    cmHistogram.clear();
+    Services.fog.testResetFOG();
   });
 });
 
 async function testIdentityState(hasException) {
-  cmHistogram.clear();
+  Services.fog.testResetFOG();
   let promise = BrowserTestUtils.openNewForegroundTab({
     url: TRACKING_PAGE,
     gBrowser,
@@ -103,7 +99,7 @@ async function testIdentityState(hasException) {
 }
 
 async function testSubview(hasException) {
-  cmHistogram.clear();
+  Services.fog.testResetFOG();
   let promise = BrowserTestUtils.openNewForegroundTab({
     url: TRACKING_PAGE,
     gBrowser,
@@ -275,16 +271,22 @@ async function testCategoryItem() {
   BrowserTestUtils.removeTab(tab);
 }
 
+// testGetValue() returns null rather than 0 for a label that never recorded, so
+// coalesce to keep a miscount reported as a number rather than a TypeError.
+function assertLabelCount(label, expectedCount, message) {
+  let count =
+    Glean.contentblocking.cryptominersBlockedCount[label].testGetValue();
+  Assert.equal(count ?? 0, expectedCount, message);
+}
+
 function testTelemetry(pagesVisited, pagesWithBlockableContent, hasException) {
-  let results = cmHistogram.snapshot();
-  Assert.equal(
-    results.values[0],
+  assertLabelCount(
+    "pageLoad",
     pagesVisited,
     "The correct number of page loads have been recorded"
   );
-  let expectedValue = hasException ? 2 : 1;
-  Assert.equal(
-    results.values[expectedValue],
+  assertLabelCount(
+    hasException ? "allowed" : "blocked",
     pagesWithBlockableContent,
     "The correct number of cryptominers have been recorded as blocked or allowed."
   );

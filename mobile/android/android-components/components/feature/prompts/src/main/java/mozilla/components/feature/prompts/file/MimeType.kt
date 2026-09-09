@@ -25,11 +25,11 @@ import android.provider.MediaStore.Audio.Media.RECORD_SOUND_ACTION
 import android.provider.MediaStore.EXTRA_OUTPUT
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider.getUriForFile
-import mozilla.components.concept.engine.prompt.PromptRequest.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale.US
+import mozilla.components.concept.engine.prompt.PromptRequest.File
 
 internal sealed class MimeType(
     private val type: String,
@@ -40,75 +40,80 @@ internal sealed class MimeType(
     data class Image(
         private val getUri: (Context, String, java.io.File) -> Uri = { context, authority, file ->
             getUriForFile(context, authority, file)
-        },
-    ) : MimeType(
-        "image/",
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            listOf(READ_MEDIA_VISUAL_USER_SELECTED)
-        } else {
-            emptyList()
-        },
-        capturePermission = CAMERA,
-    ) {
+        }
+    ) :
+        MimeType(
+            "image/",
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                listOf(READ_MEDIA_VISUAL_USER_SELECTED)
+            } else {
+                emptyList()
+            },
+            capturePermission = CAMERA,
+        ) {
         /**
-         * Build an image capture intent using the application FileProvider.
-         * A FileProvider must be defined in your AndroidManifest.xml, see
-         * https://developer.android.com/training/camera/photobasics#TaskPath
+         * Build an image capture intent using the application FileProvider. A FileProvider must be defined in your
+         * AndroidManifest.xml, see https://developer.android.com/training/camera/photobasics#TaskPath
          */
         override fun buildCaptureIntent(context: Context, request: File): Intent? {
             val intent = Intent(ACTION_IMAGE_CAPTURE).withDeviceSupport(context) ?: return null
 
-            val photoFile = try {
-                val filename = SimpleDateFormat("yyyy-MM-ddHH.mm.ss", US).format(Date())
-                java.io.File.createTempFile(filename, ".jpg", context.cacheDir)
-            } catch (e: IOException) {
-                return null
-            }
+            val photoFile =
+                try {
+                    val filename = SimpleDateFormat("yyyy-MM-ddHH.mm.ss", US).format(Date())
+                    java.io.File.createTempFile(filename, ".jpg", context.cacheDir)
+                } catch (e: IOException) {
+                    return null
+                }
 
             val photoUri = getUri(context, "${context.packageName}.feature.prompts.fileprovider", photoFile)
 
-            return intent.apply {
-                putExtra(EXTRA_OUTPUT, photoUri)
-                addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }.addCaptureHint(request.captureMode)
+            return intent
+                .apply {
+                    putExtra(EXTRA_OUTPUT, photoUri)
+                    addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                .addCaptureHint(request.captureMode)
         }
     }
 
-    object Video : MimeType(
-        "video/",
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            listOf(READ_MEDIA_VISUAL_USER_SELECTED)
-        } else {
-            emptyList()
-        },
-        capturePermission = CAMERA,
-    ) {
+    object Video :
+        MimeType(
+            "video/",
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                listOf(READ_MEDIA_VISUAL_USER_SELECTED)
+            } else {
+                emptyList()
+            },
+            capturePermission = CAMERA,
+        ) {
         override fun buildCaptureIntent(context: Context, request: File) =
-            Intent(ACTION_VIDEO_CAPTURE).withDeviceSupport(context)
-                ?.addCaptureHint(request.captureMode)
+            Intent(ACTION_VIDEO_CAPTURE).withDeviceSupport(context)?.addCaptureHint(request.captureMode)
     }
 
-    object Audio : MimeType(
-        "audio/",
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            listOf(READ_MEDIA_AUDIO)
-        } else {
-            emptyList()
-        },
-        capturePermission = RECORD_AUDIO,
-    ) {
+    object Audio :
+        MimeType(
+            "audio/",
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                listOf(READ_MEDIA_AUDIO)
+            } else {
+                emptyList()
+            },
+            capturePermission = RECORD_AUDIO,
+        ) {
         override fun buildCaptureIntent(context: Context, request: File) =
             Intent(RECORD_SOUND_ACTION).withDeviceSupport(context)
     }
 
-    object Wildcard : MimeType(
-        "*/",
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            emptyList()
-        } else {
-            listOf(READ_EXTERNAL_STORAGE)
-        },
-    ) {
+    object Wildcard :
+        MimeType(
+            "*/",
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                emptyList()
+            } else {
+                listOf(READ_EXTERNAL_STORAGE)
+            },
+        ) {
         private val mimeTypeMap = MimeTypeMap.getSingleton()
 
         override fun matches(mimeTypes: Array<out String>) = true
@@ -121,15 +126,16 @@ internal sealed class MimeType(
                 addCategory(CATEGORY_OPENABLE)
                 putExtra(EXTRA_LOCAL_ONLY, true)
                 if (request.mimeTypes.isNotEmpty()) {
-                    val types = request.mimeTypes
-                        .map {
-                            if (it.contains("/")) {
-                                it
-                            } else {
-                                mimeTypeMap.getMimeTypeFromExtension(it) ?: "*/*"
+                    val types =
+                        request.mimeTypes
+                            .map {
+                                if (it.contains("/")) {
+                                    it
+                                } else {
+                                    mimeTypeMap.getMimeTypeFromExtension(it) ?: "*/*"
+                                }
                             }
-                        }
-                        .toTypedArray()
+                            .toTypedArray()
                     putExtra(EXTRA_MIME_TYPES, types)
                 }
                 putExtra(EXTRA_ALLOW_MULTIPLE, request.isMultipleFilesSelection)
@@ -137,24 +143,19 @@ internal sealed class MimeType(
     }
 
     /**
-     * True if any of the given mime values match this type. If no values are specified, then
-     * there will not be a match.
+     * True if any of the given mime values match this type. If no values are specified, then there will not be a match.
      */
-    open fun matches(mimeTypes: Array<out String>) =
-        mimeTypes.isEmpty() || mimeTypes.any { it.startsWith(type) }
+    open fun matches(mimeTypes: Array<out String>) = mimeTypes.isEmpty() || mimeTypes.any { it.startsWith(type) }
 
     open fun shouldCapture(mimeTypes: Array<out String>, capture: File.FacingMode) =
-        capture != File.FacingMode.NONE &&
-            mimeTypes.isNotEmpty() &&
-            mimeTypes.all { it.startsWith(type) }
+        capture != File.FacingMode.NONE && mimeTypes.isNotEmpty() && mimeTypes.all { it.startsWith(type) }
 
     open fun buildIntent(context: Context, request: File): Intent? = null
+
     open fun buildCaptureIntent(context: Context, request: File): Intent? = null
 
     companion object {
-        /**
-         * List of all MimeTypes that can be iterated
-         */
+        /** List of all MimeTypes that can be iterated */
         fun values() = listOf(Image(), Video, Audio, Wildcard)
 
         const val CAMERA_FACING = "android.intent.extras.CAMERA_FACING"
@@ -165,17 +166,12 @@ internal sealed class MimeType(
     }
 }
 
-/**
- * Return the intent only if its type has any corresponding apps on the device.
- */
+/** Return the intent only if its type has any corresponding apps on the device. */
 @SuppressLint("QueryPermissionsNeeded") // We expect our browsers to have the QUERY_ALL_PACKAGES permission
 private fun Intent.withDeviceSupport(context: Context) =
     if (resolveActivity(context.packageManager) != null) this else null
 
-/**
- * Hacky request for specific camera orientation
- * https://stackoverflow.com/questions/43841738
- */
+/** Hacky request for specific camera orientation https://stackoverflow.com/questions/43841738 */
 private fun Intent.addCaptureHint(capture: File.FacingMode): Intent? {
     if (capture == File.FacingMode.FRONT_CAMERA) {
         putExtra(MimeType.CAMERA_FACING, 1)

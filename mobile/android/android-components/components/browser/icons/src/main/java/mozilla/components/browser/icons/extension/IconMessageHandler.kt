@@ -17,9 +17,7 @@ import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.webextension.MessageHandler
 import org.json.JSONObject
 
-/**
- * [MessageHandler] implementation that receives messages from the icons web extensions and performs icon loads.
- */
+/** [MessageHandler] implementation that receives messages from the icons web extensions and performs icon loads. */
 internal class IconMessageHandler(
     private val store: BrowserStore,
     private val sessionId: String,

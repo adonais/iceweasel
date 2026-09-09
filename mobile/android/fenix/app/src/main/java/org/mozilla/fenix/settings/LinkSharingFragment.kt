@@ -14,9 +14,7 @@ import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.showToolbar
 
-/**
- * Lets the user customize link sharing feature.
- */
+/** Lets the user customize link sharing feature. */
 class LinkSharingFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -25,26 +23,27 @@ class LinkSharingFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragme
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_link_sharing).apply {
             isChecked = context.components.settings.whatsappLinkSharingEnabled
 
-            onPreferenceChangeListener = object : SharedPreferenceUpdater() {
-                override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
-                    SentFromFirefox.settingsToggled.record(
-                        SentFromFirefox.SettingsToggledExtra(
-                            enabled = newValue as Boolean,
-                        ),
-                    )
+            onPreferenceChangeListener =
+                object : SharedPreferenceUpdater() {
+                    override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
+                        SentFromFirefox.settingsToggled.record(
+                            SentFromFirefox.SettingsToggledExtra(enabled = newValue as Boolean)
+                        )
 
-                    return super.onPreferenceChange(preference, newValue)
+                        return super.onPreferenceChange(preference, newValue)
+                    }
                 }
-            }
 
-            title = getString(
-                R.string.link_sharing_toggle_body,
-                getString(R.string.firefox),
-            )
-            summary = getString(
-                R.string.link_sharing_toggle_title,
-                getString(R.string.firefox),
-            )
+            title =
+                getString(
+                    R.string.link_sharing_toggle_body,
+                    getString(R.string.firefox),
+                )
+            summary =
+                getString(
+                    R.string.link_sharing_toggle_title,
+                    getString(R.string.firefox),
+                )
         }
     }
 

@@ -5,13 +5,13 @@ package mozilla.components.service.fxa
 
 import android.content.Context
 import android.content.SharedPreferences
+import java.lang.IllegalArgumentException
+import java.lang.IllegalStateException
 import mozilla.appservices.sync15.DeviceType
 import mozilla.appservices.syncmanager.DeviceSettings
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.utils.SharedPreferencesCache
 import org.json.JSONObject
-import java.lang.IllegalArgumentException
-import java.lang.IllegalStateException
 
 private const val CACHE_NAME = "FxaDeviceSettingsCache"
 private const val CACHE_KEY = CACHE_NAME
@@ -45,9 +45,7 @@ class FxaDeviceSettingsCache(context: Context) : SharedPreferencesCache<DeviceSe
         )
     }
 
-    /**
-     * @param name New device name to write into the cache.
-     */
+    /** @param name New device name to write into the cache. */
     fun updateCachedName(name: String) {
         val cached = getCached() ?: throw IllegalStateException("Trying to update cached value in an empty cache")
         setToCache(cached.copy(name = name))

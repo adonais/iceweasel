@@ -40,16 +40,18 @@ class BrowserThumbnailsTest {
 
     @Before
     fun setup() {
-        store = BrowserStore(
-            BrowserState(
-                tabs = listOf(tab),
-                selectedTabId = tabId,
-            ),
-            middleware = listOf(
-                captureActionsMiddleware,
-                ThumbnailsMiddleware(mock()),
-            ),
-        )
+        store =
+            BrowserStore(
+                BrowserState(
+                    tabs = listOf(tab),
+                    selectedTabId = tabId,
+                ),
+                middleware =
+                    listOf(
+                        captureActionsMiddleware,
+                        ThumbnailsMiddleware(mock()),
+                    ),
+            )
         engineView = mock()
         thumbnails = BrowserThumbnails(testContext, engineView, store, testDispatcher)
     }
@@ -75,11 +77,10 @@ class BrowserThumbnailsTest {
         thumbnails.start()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        `when`(engineView.captureThumbnail(any()))
-            .thenAnswer {
-                // if engineView responds with a bitmap
-                (it.arguments[0] as (Bitmap?) -> Unit).invoke(bitmap)
-            }
+        `when`(engineView.captureThumbnail(any())).thenAnswer {
+            // if engineView responds with a bitmap
+            (it.arguments[0] as (Bitmap?) -> Unit).invoke(bitmap)
+        }
 
         captureActionsMiddleware.assertNotDispatched(ContentAction.UpdateThumbnailAction::class)
 
@@ -104,11 +105,10 @@ class BrowserThumbnailsTest {
         val engineView: EngineView = mock()
         val feature = BrowserThumbnails(testContext, engineView, store)
 
-        `when`(engineView.captureThumbnail(any()))
-            .thenAnswer {
-                // if engineView responds with a bitmap
-                (it.arguments[0] as (Bitmap?) -> Unit).invoke(null)
-            }
+        `when`(engineView.captureThumbnail(any())).thenAnswer {
+            // if engineView responds with a bitmap
+            (it.arguments[0] as (Bitmap?) -> Unit).invoke(null)
+        }
 
         feature.requestScreenshot()
 
@@ -118,26 +118,27 @@ class BrowserThumbnailsTest {
     @Suppress("UNCHECKED_CAST")
     @Test
     fun `feature never updates the store if there is no tab ID`() {
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(tab),
-                selectedTabId = tabId,
-            ),
-            middleware = listOf(
-                captureActionsMiddleware,
-                ThumbnailsMiddleware(mock()),
-            ),
-        )
+        val store =
+            BrowserStore(
+                BrowserState(
+                    tabs = listOf(tab),
+                    selectedTabId = tabId,
+                ),
+                middleware =
+                    listOf(
+                        captureActionsMiddleware,
+                        ThumbnailsMiddleware(mock()),
+                    ),
+            )
 
         val engineView: EngineView = mock()
         val feature = BrowserThumbnails(testContext, engineView, store)
         val bitmap: Bitmap = mock()
 
-        `when`(engineView.captureThumbnail(any()))
-            .thenAnswer {
-                // if engineView responds with a bitmap
-                (it.arguments[0] as (Bitmap?) -> Unit).invoke(bitmap)
-            }
+        `when`(engineView.captureThumbnail(any())).thenAnswer {
+            // if engineView responds with a bitmap
+            (it.arguments[0] as (Bitmap?) -> Unit).invoke(bitmap)
+        }
 
         feature.requestScreenshot()
 

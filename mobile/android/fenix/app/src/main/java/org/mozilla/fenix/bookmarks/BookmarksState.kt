@@ -18,9 +18,11 @@ internal sealed class BookmarksListSortOrder {
             get() = "created-$ascending"
 
         override val comparator: Comparator<BookmarkItem>
-            get() = compareBy<BookmarkItem> { it.dateAdded }.let {
-                if (ascending) it.reversed() else it
-            }
+            get() =
+                compareBy<BookmarkItem> { it.dateAdded }
+                    .let {
+                        if (ascending) it.reversed() else it
+                    }
     }
 
     data class Alphabetical(val ascending: Boolean) : BookmarksListSortOrder() {
@@ -28,9 +30,11 @@ internal sealed class BookmarksListSortOrder {
             get() = "alphabetical-$ascending"
 
         override val comparator: Comparator<BookmarkItem>
-            get() = compareByDescending<BookmarkItem> { it.title.lowercase() }.let {
-                if (ascending) it.reversed() else it
-            }
+            get() =
+                compareByDescending<BookmarkItem> { it.title.lowercase() }
+                    .let {
+                        if (ascending) it.reversed() else it
+                    }
     }
 
     data object Positional : BookmarksListSortOrder() {
@@ -109,37 +113,38 @@ internal data class BookmarksState(
         get() = !isLoading && !isSearching && bookmarkItems.isNotEmpty()
 
     val showNewFolderButton: Boolean
-        get() = bookmarksSelectFolderState?.innerSelectionGuid == null &&
-            bookmarksAddFolderState == null && bookmarksEditFolderState == null
+        get() =
+            bookmarksSelectFolderState?.innerSelectionGuid == null &&
+                bookmarksAddFolderState == null &&
+                bookmarksEditFolderState == null
 
     companion object {
-        val default: BookmarksState = BookmarksState(
-            bookmarkItems = listOf(),
-            selectedItems = listOf(),
-            rootMenuShown = false,
-            showBookmarksImport = true,
-            sortMenuShown = false,
-            sortOrder = BookmarksListSortOrder.default,
-            recursiveSelectedCount = null,
-            currentFolder = BookmarkItem.Folder("", "", null),
-            isSignedIntoSync = false,
-            openTabsConfirmationDialog = OpenTabsConfirmationDialog.None,
-            bookmarksSnackbarState = BookmarksSnackbarState.None,
-            bookmarksDeletionDialogState = DeletionDialogState.None,
-            bookmarksAddFolderState = null,
-            bookmarksEditBookmarkState = null,
-            bookmarksSelectFolderState = null,
-            bookmarksEditFolderState = null,
-            bookmarksMultiselectMoveState = null,
-            isLoading = true,
-            searchState = null,
-        )
+        val default: BookmarksState =
+            BookmarksState(
+                bookmarkItems = listOf(),
+                selectedItems = listOf(),
+                rootMenuShown = false,
+                showBookmarksImport = true,
+                sortMenuShown = false,
+                sortOrder = BookmarksListSortOrder.default,
+                recursiveSelectedCount = null,
+                currentFolder = BookmarkItem.Folder("", "", null),
+                isSignedIntoSync = false,
+                openTabsConfirmationDialog = OpenTabsConfirmationDialog.None,
+                bookmarksSnackbarState = BookmarksSnackbarState.None,
+                bookmarksDeletionDialogState = DeletionDialogState.None,
+                bookmarksAddFolderState = null,
+                bookmarksEditBookmarkState = null,
+                bookmarksSelectFolderState = null,
+                bookmarksEditFolderState = null,
+                bookmarksMultiselectMoveState = null,
+                isLoading = true,
+                searchState = null,
+            )
     }
 }
 
-internal data class SearchState(
-    val searchQuery: String = "",
-)
+internal data class SearchState(val searchQuery: String = "")
 
 internal fun BookmarksState.isGuidBeingMoved(guid: String): Boolean {
     return bookmarksMultiselectMoveState?.guidsToMove?.contains(guid) ?: false ||
@@ -153,7 +158,9 @@ internal data class MultiselectMoveState(
 
 internal sealed class DeletionDialogState {
     data object None : DeletionDialogState()
+
     data class LoadingCount(val guidsToDelete: List<String>) : DeletionDialogState()
+
     data class Presenting(
         val guidsToDelete: List<String>,
         val recursiveCount: Int,
@@ -162,6 +169,7 @@ internal sealed class DeletionDialogState {
 
 internal sealed class OpenTabsConfirmationDialog {
     data object None : OpenTabsConfirmationDialog()
+
     data class Presenting(
         val guidToOpen: String,
         val numberOfTabs: Int,
@@ -173,17 +181,22 @@ internal val DeletionDialogState.Presenting.count
     get() = guidsToDelete.size + recursiveCount
 
 internal val DeletionDialogState.guidsToDelete: List<String>
-    get() = when (this) {
-        DeletionDialogState.None -> listOf()
-        is DeletionDialogState.LoadingCount -> guidsToDelete
-        is DeletionDialogState.Presenting -> guidsToDelete
-    }
+    get() =
+        when (this) {
+            DeletionDialogState.None -> listOf()
+            is DeletionDialogState.LoadingCount -> guidsToDelete
+            is DeletionDialogState.Presenting -> guidsToDelete
+        }
 
 internal sealed class BookmarksSnackbarState {
     data object None : BookmarksSnackbarState()
+
     data object CantEditDesktopFolders : BookmarksSnackbarState()
+
     data class BookmarkMoved(val from: String, val to: String) : BookmarksSnackbarState()
+
     data object SelectFolderFailed : BookmarksSnackbarState()
+
     data object ImportFailed : BookmarksSnackbarState()
 }
 
@@ -205,7 +218,9 @@ internal data class BookmarksEditFolderState(
 
 internal sealed class SelectFolderExpansionState {
     data object None : SelectFolderExpansionState()
+
     data object Closed : SelectFolderExpansionState()
+
     data class Open(val children: List<SelectFolderItem>) : SelectFolderExpansionState()
 }
 
@@ -232,21 +247,20 @@ internal fun List<SelectFolderItem>.flattenToList(): List<SelectFolderItem> =
         emptyList()
     } else {
         map {
-            listOf(it) + (
-                (it.expansionState as? SelectFolderExpansionState.Open)
-                ?.children?.flattenToList() ?: listOf()
-            )
-        }.flatten()
+            listOf(it) +
+                ((it.expansionState as? SelectFolderExpansionState.Open)?.children?.flattenToList() ?: listOf())
+        }
+            .flatten()
     }
 
 /**
  * State representing the select folder subscreen.
  *
- * @property outerSelectionGuid The currently selected folder guid for the initial select folder screen.
- * Required since there is always at least this property active while the screen is visible.
- * @property innerSelectionGuid If in the select folder -> add folder -> select folder flow,
- * this represents the selection GUID for the nest select screen where the newly added folder is being
- * placed. Optional since this screen may never be displayed.
+ * @property outerSelectionGuid The currently selected folder guid for the initial select folder screen. Required since
+ *   there is always at least this property active while the screen is visible.
+ * @property innerSelectionGuid If in the select folder -> add folder -> select folder flow, this represents the
+ *   selection GUID for the nest select screen where the newly added folder is being placed. Optional since this screen
+ *   may never be displayed.
  * @property folders The folders to display.
  * @property filteredFolders The currently filtered collection of [folders]
  * @property searchQuery The term used to filter the folders displayed.
@@ -261,26 +275,28 @@ internal data class BookmarksSelectFolderState(
     val searchQuery: String = "",
     val isLoading: Boolean = true,
     val isSearching: Boolean = false,
-    ) {
+) {
     val visibleFolders: List<SelectFolderItem>
-        get() = if (isSearching) {
-            filteredFolders.map { it.copy(indentation = 0) }
-        } else {
-            folders
-        }
+        get() =
+            if (isSearching) {
+                filteredFolders.map { it.copy(indentation = 0) }
+            } else {
+                folders
+            }
+
     val selectedGuid: String
         get() = innerSelectionGuid ?: outerSelectionGuid
 }
 
 internal val BookmarkItem.Folder.isDesktopFolder: Boolean
-    get() = when (guid) {
-        BookmarkRoot.Root.id,
-        BookmarkRoot.Menu.id,
-        BookmarkRoot.Toolbar.id,
-        BookmarkRoot.Unfiled.id,
-        -> true
-        else -> false
-    }
+    get() =
+        when (guid) {
+            BookmarkRoot.Root.id,
+            BookmarkRoot.Menu.id,
+            BookmarkRoot.Toolbar.id,
+            BookmarkRoot.Unfiled.id -> true
+            else -> false
+        }
 
 internal val BookmarkItem.Folder.isMobileRoot: Boolean
     get() = guid == BookmarkRoot.Mobile.id

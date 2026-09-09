@@ -1,9 +1,13 @@
-commit defaaf1571cd13b183e3f505c6a06e8db316e593
-Author: Kevin Gibbons <bakkot@gmail.com>
-Date:   Mon Jul 27 15:45:06 2026 -0700
+commit 3655e7464de3d52643ecddd4b5f9f4f3e7f62398
+Author: Philip Chimento <pchimento@igalia.com>
+Date:   Mon Aug 3 14:35:30 2026 -0700
 
-    tests for Iterator.prototype.join (#4768)
+    CI: Run tests of tools only when the tools are changed
     
-    Fixes https://github.com/tc39/test262/issues/4697.
+    This was what I intended from the start, but I used a wrong JSON
+    key ("files" instead of "paths"). But this would never have worked as
+    intended anyway, because jobs that are skipped apparently cannot be
+    required for PRs to pass, and we would like the tools tests to be
+    required.
     
-    Tested against [a polyfill](https://github.com/tc39/proposal-iterator-join/blob/c1498da49d963972b5f6bd286e17f129193485e4/polyfill.js).
+    LLM disclosure: The diff was drafted using a bot.

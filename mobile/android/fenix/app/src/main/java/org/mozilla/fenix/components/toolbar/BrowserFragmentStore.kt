@@ -16,9 +16,7 @@ import mozilla.components.lib.state.Store
 class BrowserFragmentStore(initialState: BrowserFragmentState) :
     Store<BrowserFragmentState, BrowserFragmentAction>(initialState, ::browserStateReducer)
 
-/**
- * The state for the Browser Screen
- */
+/** The state for the Browser Screen */
 class BrowserFragmentState : State
 
 sealed class BrowserFragmentAction : Action
@@ -26,8 +24,8 @@ sealed class BrowserFragmentAction : Action
 /**
  * Reducers for [BrowserFragmentStore].
  *
- * A top level reducer that receives the current [BrowserFragmentState] and an [Action] and then
- * delegates to the proper child
+ * A top level reducer that receives the current [BrowserFragmentState] and an [Action] and then delegates to the proper
+ * child
  */
 private fun browserStateReducer(
     state: BrowserFragmentState,

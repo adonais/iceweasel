@@ -12,10 +12,7 @@ import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.webextensions.BuiltInWebExtensionController
 import org.json.JSONObject
 
-/**
- * A feature that enables users to report site issues to Mozilla's Web Compatibility team for
- * further diagnosis.
- */
+/** A feature that enables users to report site issues to Mozilla's Web Compatibility team for further diagnosis. */
 object WebCompatReporterFeature {
     private val logger = Logger("mozac-webcompat-reporter")
 
@@ -25,16 +22,17 @@ object WebCompatReporterFeature {
 
     @VisibleForTesting
     // This is an internal var to make it mutable for unit testing purposes only
-    internal var extensionController = BuiltInWebExtensionController(
-        WEBCOMPAT_REPORTER_EXTENSION_ID,
-        WEBCOMPAT_REPORTER_EXTENSION_URL,
-        WEBCOMPAT_REPORTER_MESSAGING_ID,
-    )
+    internal var extensionController =
+        BuiltInWebExtensionController(
+            WEBCOMPAT_REPORTER_EXTENSION_ID,
+            WEBCOMPAT_REPORTER_EXTENSION_URL,
+            WEBCOMPAT_REPORTER_MESSAGING_ID,
+        )
 
     private class WebcompatReporterBackgroundMessageHandler(
         // This information will be provided as a browser-XXX label to the reporting backend, allowing
         // us to differentiate different android-components based products.
-        private val productName: String,
+        private val productName: String
     ) : MessageHandler {
         override fun onPortConnected(port: Port) {
             port.postMessage(JSONObject().put("productName", productName))
@@ -45,13 +43,10 @@ object WebCompatReporterFeature {
      * Installs the web extension in the runtime through the WebExtensionRuntime install method
      *
      * @param runtime a WebExtensionRuntime.
-     * @param productName a custom product name used to automatically label reports. Defaults to
-     * "android-components".
+     * @param productName a custom product name used to automatically label reports. Defaults to "android-components".
      */
     fun install(runtime: WebExtensionRuntime, productName: String = "android-components") {
-        extensionController.registerBackgroundMessageHandler(
-            WebcompatReporterBackgroundMessageHandler(productName),
-        )
+        extensionController.registerBackgroundMessageHandler(WebcompatReporterBackgroundMessageHandler(productName))
         extensionController.install(
             runtime,
             onSuccess = {

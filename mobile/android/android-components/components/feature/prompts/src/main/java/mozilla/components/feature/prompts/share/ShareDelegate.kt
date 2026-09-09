@@ -8,9 +8,7 @@ import android.content.Context
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.support.ktx.android.content.share
 
-/**
- * Delegate to display a share prompt.
- */
+/** Delegate to display a share prompt. */
 interface ShareDelegate {
 
     /**
@@ -18,8 +16,8 @@ interface ShareDelegate {
      *
      * @param context Reference to context.
      * @param shareData Data to share.
-     * @param onDismiss Callback to be invoked if the share sheet is dismissed and nothing
-     * is selected, or if it fails to load.
+     * @param onDismiss Callback to be invoked if the share sheet is dismissed and nothing is selected, or if it fails
+     *   to load.
      * @param onSuccess Callback to be invoked if the data is successfully shared.
      */
     fun showShareSheet(
@@ -30,9 +28,7 @@ interface ShareDelegate {
     )
 }
 
-/**
- * Default [ShareDelegate] implementation that displays the native share sheet.
- */
+/** Default [ShareDelegate] implementation that displays the native share sheet. */
 class DefaultShareDelegate : ShareDelegate {
 
     override fun showShareSheet(
@@ -41,10 +37,11 @@ class DefaultShareDelegate : ShareDelegate {
         onDismiss: () -> Unit,
         onSuccess: () -> Unit,
     ) {
-        val shareSucceeded = context.share(
-            text = listOfNotNull(shareData.url, shareData.text).joinToString(" "),
-            subject = shareData.title.orEmpty(),
-        )
+        val shareSucceeded =
+            context.share(
+                text = listOfNotNull(shareData.url, shareData.text).joinToString(" "),
+                subject = shareData.title.orEmpty(),
+            )
 
         if (shareSucceeded) onSuccess() else onDismiss()
     }

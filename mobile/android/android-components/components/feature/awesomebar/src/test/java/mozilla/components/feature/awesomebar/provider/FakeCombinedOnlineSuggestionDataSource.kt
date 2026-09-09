@@ -9,10 +9,7 @@ import mozilla.components.feature.awesomebar.optimizedsuggestions.FlightItem
 import mozilla.components.feature.awesomebar.optimizedsuggestions.SportItem
 import mozilla.components.feature.awesomebar.optimizedsuggestions.StockItem
 
-/**
- * Simple fake data source used for unit tests.
- * Records calls and returns the specified results.
- */
+/** Simple fake data source used for unit tests. Records calls and returns the specified results. */
 class FakeCombinedOnlineSuggestionDataSource(
     private val stockResults: List<StockItem> = emptyList(),
     private val sportResults: List<SportItem> = emptyList(),

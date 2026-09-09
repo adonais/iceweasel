@@ -8,6 +8,6 @@ description: >
     undefined
 ---*/
 
-Object.freeze(undefined);
+assert.sameValue(Object.freeze(undefined), undefined);
 
 reportCompare(0, 0);

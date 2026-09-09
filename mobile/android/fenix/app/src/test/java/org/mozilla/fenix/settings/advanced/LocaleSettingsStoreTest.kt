@@ -4,11 +4,11 @@
 
 package org.mozilla.fenix.settings.advanced
 
+import java.util.Locale
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import java.util.Locale
 
 class LocaleSettingsStoreTest {
 
@@ -18,14 +18,14 @@ class LocaleSettingsStoreTest {
 
     @Before
     fun setup() {
-        val localeList = listOf(
-            Locale.Builder().setLanguage("fr").build(), // default
-            otherLocale,
-            selectedLocale,
-        )
+        val localeList =
+            listOf(
+                Locale.Builder().setLanguage("fr").build(), // default
+                otherLocale,
+                selectedLocale,
+            )
 
-        localeSettingsStore =
-            LocaleSettingsStore(LocaleSettingsState(localeList, localeList, selectedLocale))
+        localeSettingsStore = LocaleSettingsStore(LocaleSettingsState(localeList, localeList, selectedLocale))
     }
 
     @Test

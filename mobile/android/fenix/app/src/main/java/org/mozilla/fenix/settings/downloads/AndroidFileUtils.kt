@@ -7,28 +7,18 @@ package org.mozilla.fenix.settings.downloads
 import android.net.Uri
 import java.io.File
 
-/**
- * An interface for interacting with Android's file and document static helpers.
- */
+/** An interface for interacting with Android's file and document static helpers. */
 interface AndroidFileUtils {
-    /**
-     * Returns the primary shared/external storage directory.
-     */
+    /** Returns the primary shared/external storage directory. */
     val externalStorageDirectory: File
 
-    /**
-     * Returns the standard public directory for storing downloaded files.
-     */
+    /** Returns the standard public directory for storing downloaded files. */
     val externalStoragePublicDownloadsDirectory: File
 
-    /**
-     * Checks if the given URI represents a directory tree.
-     */
+    /** Checks if the given URI represents a directory tree. */
     fun isTreeUri(uri: Uri): Boolean
 
-    /**
-     * Extracts the document ID from a tree URI, which represents the path of the directory.
-     */
+    /** Extracts the document ID from a tree URI, which represents the path of the directory. */
     fun getTreeDocumentId(uri: Uri): String?
 
     /**
@@ -46,8 +36,6 @@ interface AndroidFileUtils {
      */
     fun hasUriPermission(uri: Uri): Boolean
 
-    /**
-     * Resolves a user-visible volume label for an external storage volume ID.
-     */
+    /** Resolves a user-visible volume label for an external storage volume ID. */
     fun getExternalStorageVolumeName(volumeId: String): String?
 }

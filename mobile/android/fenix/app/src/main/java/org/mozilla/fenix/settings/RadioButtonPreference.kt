@@ -15,14 +15,16 @@ import androidx.core.content.withStyledAttributes
 import androidx.core.text.HtmlCompat
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
+import androidx.preference.R as preferenceR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.utils.view.GroupableRadioButton
 import org.mozilla.fenix.utils.view.uncheckAll
-import androidx.preference.R as preferenceR
 
 @Suppress("RestrictedApi")
-open class RadioButtonPreference @JvmOverloads constructor(
+open class RadioButtonPreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : Preference(context, attrs), GroupableRadioButton {
@@ -50,21 +52,22 @@ open class RadioButtonPreference @JvmOverloads constructor(
             ),
             0,
         ) {
-            defaultValue = when {
-                hasValue(R.styleable.RadioButtonPreference_defaultValue) ->
-                    getBoolean(R.styleable.RadioButtonPreference_defaultValue, false)
-                hasValue(R.styleable.RadioButtonPreference_android_defaultValue) ->
-                    getBoolean(R.styleable.RadioButtonPreference_android_defaultValue, false)
-                else -> false
-            }
+            defaultValue =
+                when {
+                    hasValue(R.styleable.RadioButtonPreference_defaultValue) ->
+                        getBoolean(R.styleable.RadioButtonPreference_defaultValue, false)
+                    hasValue(R.styleable.RadioButtonPreference_android_defaultValue) ->
+                        getBoolean(R.styleable.RadioButtonPreference_android_defaultValue, false)
+                    else -> false
+                }
         }
     }
 
     /**
      * Sets the default checked state used when no persisted value exists for this key.
      *
-     * This only updates the fallback used by `preferences.getBoolean(key, defaultValue)`.
-     * It does not persist a value or notify listeners.
+     * This only updates the fallback used by `preferences.getBoolean(key, defaultValue)`. It does not persist a value
+     * or notify listeners.
      *
      * @param defaultValue `true` to make the radio button checked by default, `false` otherwise.
      */
@@ -148,11 +151,12 @@ open class RadioButtonPreference @JvmOverloads constructor(
         summaryView?.alpha = if (isEnabled) FULL_ALPHA else HALF_ALPHA
         summaryView?.let {
             if (!summary.isNullOrEmpty()) {
-                it.text = if (shouldSummaryBeParsedAsHtmlContent) {
-                    HtmlCompat.fromHtml(summary.toString(), HtmlCompat.FROM_HTML_MODE_COMPACT)
-                } else {
-                    summary
-                }
+                it.text =
+                    if (shouldSummaryBeParsedAsHtmlContent) {
+                        HtmlCompat.fromHtml(summary.toString(), HtmlCompat.FROM_HTML_MODE_COMPACT)
+                    } else {
+                        summary
+                    }
 
                 it.visibility = View.VISIBLE
             } else {

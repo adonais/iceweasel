@@ -22,7 +22,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 
 /**
- *  A helper class to add a bottom toolbar container view to the given [parent].
+ * A helper class to add a bottom toolbar container view to the given [parent].
  *
  * @param context The [Context] the view is running in.
  * @param parent The [ViewGroup] into which the composable will be added.
@@ -36,41 +36,45 @@ class BottomToolbarContainerView(
     private val content: @Composable () -> Unit,
 ) {
 
-    val toolbarContainerView = ToolbarContainerView(context).apply {
-        id = R.id.navigation_bar
-    }
-    private val composeView = ComposeView(context).apply {
-        setContent {
-            content()
+    val toolbarContainerView =
+        ToolbarContainerView(context).apply {
+            id = R.id.navigation_bar
         }
-        toolbarContainerView.addView(this)
-        toolbarContainerView.isClickable = true
-    }
+    private val composeView =
+        ComposeView(context).apply {
+            setContent {
+                content()
+            }
+            toolbarContainerView.addView(this)
+            toolbarContainerView.isClickable = true
+        }
 
     init {
-        toolbarContainerView.layoutParams = CoordinatorLayout.LayoutParams(
-            CoordinatorLayout.LayoutParams.MATCH_PARENT,
-            CoordinatorLayout.LayoutParams.WRAP_CONTENT,
-        ).apply {
-            gravity = Gravity.BOTTOM
-            val engineView = parent.findViewInHierarchy { it is EngineView } as? EngineView
-            if (hideOnScroll && engineView != null) {
-                behavior = EngineViewScrollingBehaviorFactory(
-                    useScrollData = context.components.settings.useNewDynamicToolbarBehaviour,
-                ).build(
-                    engineView = engineView,
-                    dependency = toolbarContainerView,
-                    dependencyGravity = Bottom,
+        toolbarContainerView.layoutParams =
+            CoordinatorLayout.LayoutParams(
+                    CoordinatorLayout.LayoutParams.MATCH_PARENT,
+                    CoordinatorLayout.LayoutParams.WRAP_CONTENT,
                 )
-            }
-        }
+                .apply {
+                    gravity = Gravity.BOTTOM
+                    val engineView = parent.findViewInHierarchy { it is EngineView } as? EngineView
+                    if (hideOnScroll && engineView != null) {
+                        behavior =
+                            EngineViewScrollingBehaviorFactory(
+                                    useScrollData = context.components.settings.useNewDynamicToolbarBehaviour
+                                )
+                                .build(
+                                    engineView = engineView,
+                                    dependency = toolbarContainerView,
+                                    dependencyGravity = Bottom,
+                                )
+                    }
+                }
 
         parent.addView(toolbarContainerView)
     }
 
-    /**
-     * Updates the Composable content of the [composeView].
-     */
+    /** Updates the Composable content of the [composeView]. */
     fun updateContent(content: @Composable () -> Unit) {
         composeView.setContent {
             content()
@@ -78,11 +82,10 @@ class BottomToolbarContainerView(
     }
 }
 
-/**
- * A container view that hosts a navigation bar and, possibly, a toolbar.
- * Facilitates hide-on-scroll behavior.
- */
-class ToolbarContainerView @JvmOverloads constructor(
+/** A container view that hosts a navigation bar and, possibly, a toolbar. Facilitates hide-on-scroll behavior. */
+class ToolbarContainerView
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,

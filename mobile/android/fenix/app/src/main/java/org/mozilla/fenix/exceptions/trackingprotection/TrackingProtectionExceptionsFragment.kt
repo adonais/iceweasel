@@ -19,10 +19,7 @@ import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 
-/**
- * Displays a list of sites that are exempted from Tracking Protection,
- * along with controls to remove the exception.
- */
+/** Displays a list of sites that are exempted from Tracking Protection, along with controls to remove the exception. */
 class TrackingProtectionExceptionsFragment : Fragment(), SystemInsetsPaddedFragment {
 
     private lateinit var exceptionsStore: ExceptionsFragmentStore
@@ -39,30 +36,35 @@ class TrackingProtectionExceptionsFragment : Fragment(), SystemInsetsPaddedFragm
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        val binding = FragmentExceptionsBinding.inflate(
-            inflater,
-            container,
-            false,
-        )
-        exceptionsStore = fragmentStore(ExceptionsFragmentState(items = emptyList())) {
-            ExceptionsFragmentStore(it)
-        }.value
+        val binding =
+            FragmentExceptionsBinding.inflate(
+                inflater,
+                container,
+                false,
+            )
+        exceptionsStore =
+            fragmentStore(ExceptionsFragmentState(items = emptyList())) {
+                    ExceptionsFragmentStore(it)
+                }
+                .value
 
-        exceptionsInteractor = DefaultTrackingProtectionExceptionsInteractor(
-            exceptionsStore = exceptionsStore,
-            trackingProtectionUseCases = requireComponents.useCases.trackingProtectionUseCases,
-            openLearnMorePage = { url ->
-                findNavController().openToBrowser()
-                requireComponents.useCases.fenixBrowserUseCases.loadUrlOrSearch(
-                    searchTermOrURL = url,
-                    newTab = true,
-                )
-            },
-        )
-        exceptionsView = TrackingProtectionExceptionsView(
-            binding.exceptionsLayout,
-            exceptionsInteractor,
-        )
+        exceptionsInteractor =
+            DefaultTrackingProtectionExceptionsInteractor(
+                exceptionsStore = exceptionsStore,
+                trackingProtectionUseCases = requireComponents.useCases.trackingProtectionUseCases,
+                openLearnMorePage = { url ->
+                    findNavController().openToBrowser()
+                    requireComponents.useCases.fenixBrowserUseCases.loadUrlOrSearch(
+                        searchTermOrURL = url,
+                        newTab = true,
+                    )
+                },
+            )
+        exceptionsView =
+            TrackingProtectionExceptionsView(
+                binding.exceptionsLayout,
+                exceptionsInteractor,
+            )
         exceptionsInteractor.reloadExceptions()
         return binding.root
     }

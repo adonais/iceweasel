@@ -32,6 +32,11 @@ support-files = [
 ]
 
 ["browser_contextualsearch.js"]
+support-files = [
+  "../browser/POSTSearchEngine.xml",
+  "../browser/post_search_engine.html",
+  "../browser/print_postdata.sjs",
+]
 
 ["browser_contextualsearch_install.js"]
 

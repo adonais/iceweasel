@@ -78,6 +78,7 @@ async def test_breakpoint_with_column(
     assert_pause_and_resume,
     set_breakpoint,
     wait_for_event,
+    wait_for_future_safe,
 ):
     await subscribe_events([PAUSED_EVENT, RESUMED_EVENT])
 
@@ -117,7 +118,7 @@ function bar() {
             await_promise=False,
         )
     )
-    paused_event = await on_paused
+    paused_event = await wait_for_future_safe(on_paused)
     assert paused_event["context"] == new_tab["context"]
     assert paused_event["line"] == 6
     assert paused_event["column"] == 5
@@ -147,7 +148,7 @@ function bar() {
     # Resume
     on_paused = wait_for_event(PAUSED_EVENT)
     await bidi_session.moz.debugging.resume(context=new_tab["context"])
-    paused_event = await on_paused
+    paused_event = await wait_for_future_safe(on_paused)
 
     # Expect to hit column 13 now
     assert paused_event["context"] == new_tab["context"]

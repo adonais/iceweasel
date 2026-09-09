@@ -17,6 +17,7 @@ import org.mozilla.fenix.debugsettings.addons.ui.AddonsDebugToolsScreen
 import org.mozilla.fenix.debugsettings.addresses.AddressesDebugRegionRepository
 import org.mozilla.fenix.debugsettings.addresses.AddressesTools
 import org.mozilla.fenix.debugsettings.autofill.AutofillTools
+import org.mozilla.fenix.debugsettings.cfrs.CfrTools as CfrToolsScreen
 import org.mozilla.fenix.debugsettings.cfrs.CfrToolsState
 import org.mozilla.fenix.debugsettings.cfrs.CfrToolsStore
 import org.mozilla.fenix.debugsettings.crashtools.CrashTools
@@ -31,24 +32,21 @@ import org.mozilla.fenix.debugsettings.store.DebugDrawerAction
 import org.mozilla.fenix.debugsettings.store.DebugDrawerStore
 import org.mozilla.fenix.debugsettings.tabprocesstools.TabProcessTools
 import org.mozilla.fenix.debugsettings.tabs.TabGroupTools
-import org.mozilla.fenix.tabgroups.storage.repository.TabGroupRepository
-import org.mozilla.fenix.debugsettings.cfrs.CfrTools as CfrToolsScreen
 import org.mozilla.fenix.debugsettings.tabs.TabTools as TabToolsScreen
+import org.mozilla.fenix.tabgroups.storage.repository.TabGroupRepository
 
 /**
  * The navigation routes for screens within the Debug Drawer.
  *
- * @property route The unique route used to navigate to the destination. This string can also contain
- * optional parameters for arguments or deep linking.
+ * @property route The unique route used to navigate to the destination. This string can also contain optional
+ *   parameters for arguments or deep linking.
  * @property title The string ID of the destination's title.
  */
 enum class DebugDrawerRoute(
     val route: String,
     @param:StringRes val title: Int,
 ) {
-    /**
-     * The navigation route for [TabToolsScreen].
-     */
+    /** The navigation route for [TabToolsScreen]. */
     TabTools(
         route = "tab_tools",
         title = R.string.debug_drawer_tab_tools_title,
@@ -104,8 +102,7 @@ enum class DebugDrawerRoute(
     DistributionTools(
         route = "distribution_tools",
         title = R.string.debug_drawer_distribution_tools_title,
-    ),
-    ;
+    );
 
     companion object {
         /**
@@ -136,165 +133,158 @@ enum class DebugDrawerRoute(
             integrityClient: IntegrityClient,
             inactiveTabsEnabled: Boolean,
             tabGroupRepository: TabGroupRepository,
-        ): List<DebugDrawerDestination> =
-            entries.map { debugDrawerRoute ->
-                var isChildDestination: Boolean = false
-                val onClick: () -> Unit
-                val content: @Composable () -> Unit
-                when (debugDrawerRoute) {
-                    TabTools -> {
-                        onClick = {
-                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.TabTools)
-                        }
-                        content = {
-                            TabToolsScreen(
-                                store = browserStore,
-                                inactiveTabsEnabled = inactiveTabsEnabled,
-                            )
-                        }
+        ): List<DebugDrawerDestination> = entries.map { debugDrawerRoute ->
+            var isChildDestination: Boolean = false
+            val onClick: () -> Unit
+            val content: @Composable () -> Unit
+            when (debugDrawerRoute) {
+                TabTools -> {
+                    onClick = {
+                        debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.TabTools)
                     }
-
-                    Logins -> {
-                        isChildDestination = true
-                        onClick = {
-                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.Logins)
-                        }
-                        content = {
-                            LoginsTools(
-                                browserStore = browserStore,
-                                loginsStorage = loginsStorage,
-                            )
-                        }
-                    }
-
-                    Addresses -> {
-                        isChildDestination = true
-                        onClick = {
-                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.Addresses)
-                        }
-                        content = {
-                            AddressesTools(
-                                debugRegionRepository = addressesDebugRegionRepository,
-                                creditCardsAddressesStorage = creditCardsAddressesStorage,
-                            )
-                        }
-                    }
-
-                    CreditCards -> {
-                        isChildDestination = true
-                        onClick = {
-                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.CreditCards)
-                        }
-                        content = {
-                            CreditCardsTools(
-                                creditCardsAddressesStorage = creditCardsAddressesStorage,
-                            )
-                        }
-                    }
-                    Autofill -> {
-                        onClick = {
-                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.Autofill)
-                        }
-                        content = {
-                            AutofillTools(
-                                debugDrawerStore = debugDrawerStore,
-                            )
-                        }
-                    }
-
-                    CfrTools -> {
-                        onClick = {
-                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.CfrTools)
-                        }
-                        content = {
-                            CfrToolsScreen(cfrToolsStore = cfrToolsStore)
-                        }
-                    }
-
-                    GleanDebugTools -> {
-                        onClick = {
-                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.GleanDebugTools)
-                        }
-                        content = {
-                            GleanDebugToolsScreen(gleanDebugToolsStore = gleanDebugToolsStore)
-                        }
-                    }
-
-                    RegionDebugTools -> {
-                        onClick = {
-                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.RegionDebugTools)
-                        }
-                        content = {
-                            RegionTools(
-                                browserStore = browserStore,
-                            )
-                        }
-                    }
-
-                    AddonsDebugTools -> {
-                        onClick = {
-                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.AddonsDebugTools)
-                        }
-                        content = {
-                            AddonsDebugToolsScreen()
-                        }
-                    }
-
-                    CrashDebugTools -> {
-                        onClick = {
-                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.CrashDebugTools)
-                        }
-                        content = {
-                            CrashTools()
-                        }
-                    }
-                    IntegrityTools -> {
-                        onClick = {
-                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.IntegrityDebugTools)
-                        }
-                        content = {
-                            IntegrityTools(clientUUID, integrityClient)
-                        }
-                    }
-
-                    TabGroupTools -> {
-                        onClick = {
-                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.TabGroupDebugTools)
-                        }
-                        content = {
-                            TabGroupTools(
-                                tabGroupRepository = tabGroupRepository,
-                                browserStore = browserStore,
-                            )
-                        }
-                    }
-
-                    TabProcessTools -> {
-                        onClick = {
-                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.TabProcessTools)
-                        }
-                        content = {
-                            TabProcessTools()
-                        }
-                    }
-
-                    DistributionTools -> {
-                        onClick = {
-                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.DistributionTools)
-                        }
-                        content = {
-                            DistributionTools()
-                        }
+                    content = {
+                        TabToolsScreen(
+                            store = browserStore,
+                            inactiveTabsEnabled = inactiveTabsEnabled,
+                        )
                     }
                 }
 
-                DebugDrawerDestination(
-                    route = debugDrawerRoute.route,
-                    title = debugDrawerRoute.title,
-                    isChildDestination = isChildDestination,
-                    onClick = onClick,
-                    content = content,
-                )
+                Logins -> {
+                    isChildDestination = true
+                    onClick = {
+                        debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.Logins)
+                    }
+                    content = {
+                        LoginsTools(
+                            browserStore = browserStore,
+                            loginsStorage = loginsStorage,
+                        )
+                    }
+                }
+
+                Addresses -> {
+                    isChildDestination = true
+                    onClick = {
+                        debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.Addresses)
+                    }
+                    content = {
+                        AddressesTools(
+                            debugRegionRepository = addressesDebugRegionRepository,
+                            creditCardsAddressesStorage = creditCardsAddressesStorage,
+                        )
+                    }
+                }
+
+                CreditCards -> {
+                    isChildDestination = true
+                    onClick = {
+                        debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.CreditCards)
+                    }
+                    content = {
+                        CreditCardsTools(creditCardsAddressesStorage = creditCardsAddressesStorage)
+                    }
+                }
+                Autofill -> {
+                    onClick = {
+                        debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.Autofill)
+                    }
+                    content = {
+                        AutofillTools(debugDrawerStore = debugDrawerStore)
+                    }
+                }
+
+                CfrTools -> {
+                    onClick = {
+                        debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.CfrTools)
+                    }
+                    content = {
+                        CfrToolsScreen(cfrToolsStore = cfrToolsStore)
+                    }
+                }
+
+                GleanDebugTools -> {
+                    onClick = {
+                        debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.GleanDebugTools)
+                    }
+                    content = {
+                        GleanDebugToolsScreen(gleanDebugToolsStore = gleanDebugToolsStore)
+                    }
+                }
+
+                RegionDebugTools -> {
+                    onClick = {
+                        debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.RegionDebugTools)
+                    }
+                    content = {
+                        RegionTools(browserStore = browserStore)
+                    }
+                }
+
+                AddonsDebugTools -> {
+                    onClick = {
+                        debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.AddonsDebugTools)
+                    }
+                    content = {
+                        AddonsDebugToolsScreen()
+                    }
+                }
+
+                CrashDebugTools -> {
+                    onClick = {
+                        debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.CrashDebugTools)
+                    }
+                    content = {
+                        CrashTools()
+                    }
+                }
+                IntegrityTools -> {
+                    onClick = {
+                        debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.IntegrityDebugTools)
+                    }
+                    content = {
+                        IntegrityTools(clientUUID, integrityClient)
+                    }
+                }
+
+                TabGroupTools -> {
+                    onClick = {
+                        debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.TabGroupDebugTools)
+                    }
+                    content = {
+                        TabGroupTools(
+                            tabGroupRepository = tabGroupRepository,
+                            browserStore = browserStore,
+                        )
+                    }
+                }
+
+                TabProcessTools -> {
+                    onClick = {
+                        debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.TabProcessTools)
+                    }
+                    content = {
+                        TabProcessTools()
+                    }
+                }
+
+                DistributionTools -> {
+                    onClick = {
+                        debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.DistributionTools)
+                    }
+                    content = {
+                        DistributionTools()
+                    }
+                }
             }
+
+            DebugDrawerDestination(
+                route = debugDrawerRoute.route,
+                title = debugDrawerRoute.title,
+                isChildDestination = isChildDestination,
+                onClick = onClick,
+                content = content,
+            )
+        }
     }
 }

@@ -1833,7 +1833,7 @@ export const LoginHelper = {
       // disabled, and if so use the opener window. But if the window
       // has been used to visit other pages (ie, has a history),
       // assume it'll stick around and *don't* use the opener.
-      if (chromeDoc.getAttribute("chromehidden") && !browser.canGoBack) {
+      if (chromeDoc.hasAttribute("popup-window") && !browser.canGoBack) {
         lazy.log.debug("Using opener window for prompt.");
         return openerBrowser;
       }

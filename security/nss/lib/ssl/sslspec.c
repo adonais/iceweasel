@@ -208,9 +208,12 @@ void
 ssl_DestroyKeyMaterial(ssl3KeyMaterial *keyMaterial)
 {
     PK11_FreeSymKey(keyMaterial->key);
+    keyMaterial->key = NULL;
     PK11_FreeSymKey(keyMaterial->macKey);
+    keyMaterial->macKey = NULL;
     if (keyMaterial->macContext != NULL) {
         PK11_DestroyContext(keyMaterial->macContext, PR_TRUE);
+        keyMaterial->macContext = NULL;
     }
 }
 

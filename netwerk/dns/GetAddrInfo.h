@@ -75,20 +75,31 @@ nsresult ResolveHTTPSRecord(const nsACString& aHost,
                             TypeRecordResultType& aResult, uint32_t& aTTL);
 
 /**
+ * A target name that could not be resolved within the same response, along with
+ * whether it was reached through an HTTPS AliasMode (SvcPriority 0) record.
+ * Only an AliasMode TargetName has to be chased by the client (RFC 9460); a
+ * plain CNAME target is already resolved by the recursive resolver, so a target
+ * without an HTTPS record means there is no HTTPS RR at all.
+ */
+struct HTTPSAliasTarget {
+  nsCString mName;
+  bool mFromAliasMode = false;
+};
+
+/**
  * The platform specific implementation of HTTPS resolution.
  *
- * If the record for aHost is an HTTPS AliasMode (SvcPriority 0) record whose
- * target could not be resolved within the same response, aAliasName is set to
- * the target so the caller can issue a fresh lookup for it.
+ * If the record for aHost could not be resolved within the same response,
+ * aAlias is set to the target name so the caller can issue a fresh lookup.
  */
 nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
                                 nsIDNSService::DNSFlags aFlags,
                                 TypeRecordResultType& aResult, uint32_t& aTTL,
-                                nsACString& aAliasName);
+                                HTTPSAliasTarget& aAlias);
 
 nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
                           TypeRecordResultType& aResult, uint32_t& aTTL,
-                          nsACString& aAliasName);
+                          HTTPSAliasTarget& aAlias);
 
 // Use the provided aHost to create a mock HTTPS record.
 nsresult CreateAndResolveMockHTTPSRecord(const nsACString& aHost,
@@ -119,7 +130,7 @@ class NativeDNSResolverOverride : public nsINativeDNSResolverOverride {
                                AddrInfo** aAddrInfo);
   friend bool FindHTTPSRecordOverride(const nsACString& aHost,
                                       TypeRecordResultType& aResult,
-                                      nsACString& aAliasName);
+                                      HTTPSAliasTarget& aAlias);
 };
 
 }  // namespace net

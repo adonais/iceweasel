@@ -12,7 +12,6 @@ import androidx.test.espresso.intent.rule.IntentsTestRule
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.ActivityTestRule
 import androidx.test.uiautomator.UiDevice
-import kotlinx.coroutines.runBlocking
 import mozilla.components.support.utils.ThreadUtils
 import org.mozilla.focus.activity.MainActivity
 import org.mozilla.focus.ext.components
@@ -25,7 +24,6 @@ import org.mozilla.focus.state.Screen
 open class MainActivityFirstrunTestRule(
     launchActivity: Boolean = true,
     private val showFirstRun: Boolean,
-    private val showNewOnboarding: Boolean = true,
     private val showStartBrowsingCfrVisibility: Boolean = false,
 ) : ActivityTestRule<MainActivity>(MainActivity::class.java, launchActivity) {
     private val longTapUserPreference = getLongPressTimeout()
@@ -43,8 +41,7 @@ open class MainActivityFirstrunTestRule(
         super.afterActivityFinished()
 
         ThreadUtils.postToMainThread {
-            InstrumentationRegistry
-                .getInstrumentation()
+            InstrumentationRegistry.getInstrumentation()
                 .targetContext
                 .applicationContext
                 .components
@@ -62,8 +59,7 @@ open class MainActivityIntentsTestRule(
     launchActivity: Boolean = true,
     private val showFirstRun: Boolean,
     private val showStartBrowsingCfrVisibility: Boolean = false,
-) :
-    IntentsTestRule<MainActivity>(MainActivity::class.java, launchActivity) {
+) : IntentsTestRule<MainActivity>(MainActivity::class.java, launchActivity) {
     private val longTapUserPreference = getLongPressTimeout()
     private val featureSettingsHelper = FeatureSettingsHelper()
 
@@ -79,8 +75,7 @@ open class MainActivityIntentsTestRule(
     override fun afterActivityFinished() {
         super.afterActivityFinished()
         ThreadUtils.postToMainThread {
-            InstrumentationRegistry
-                .getInstrumentation()
+            InstrumentationRegistry.getInstrumentation()
                 .targetContext
                 .applicationContext
                 .components
@@ -93,9 +88,7 @@ open class MainActivityIntentsTestRule(
 }
 
 private fun updateFirstRun(showFirstRun: Boolean) {
-    val appContext = InstrumentationRegistry.getInstrumentation()
-        .targetContext
-        .applicationContext
+    val appContext = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
 
     val appStore = appContext.components.appStore
     if (appStore.state.screen is Screen.FirstRun && !showFirstRun) {
@@ -107,15 +100,11 @@ private fun updateFirstRun(showFirstRun: Boolean) {
 }
 
 private fun showFirstRun(appStore: AppStore) {
-    appStore.dispatch(
-        AppAction.ShowFirstRun,
-    )
+    appStore.dispatch(AppAction.ShowFirstRun)
 }
 
 private fun hideFirstRun(appStore: AppStore) {
-    appStore.dispatch(
-        AppAction.FinishFirstRun(tabId = null),
-    )
+    appStore.dispatch(AppAction.FinishFirstRun(tabId = null))
 }
 
 // changing the device preference for Touch and Hold delay, to avoid long-clicks instead of a single-click

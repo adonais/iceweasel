@@ -1,7 +1,6 @@
 import { mount } from "enzyme";
 import { DSLinkMenu } from "content-src/components/DiscoveryStreamComponents/DSLinkMenu/DSLinkMenu";
-import { ContextMenuButton } from "content-src/components/ContextMenu/ContextMenuButton";
-import { LinkMenu } from "content-src/components/LinkMenu/LinkMenu";
+import { PanelListItems } from "content-src/components/LinkMenu/PanelListItems";
 import React from "react";
 import { Provider } from "react-redux";
 import { combineReducers, createStore } from "redux";
@@ -11,138 +10,73 @@ describe("<DSLinkMenu>", () => {
   let wrapper;
   let store;
 
+  beforeEach(() => {
+    store = createStore(combineReducers(reducers), INITIAL_STATE);
+  });
+
+  afterEach(() => {
+    wrapper?.unmount();
+  });
+
+  const mountMenu = props =>
+    mount(
+      <Provider store={store}>
+        <DSLinkMenu {...props} />
+      </Provider>
+    );
+
   describe("DS link menu actions", () => {
-    beforeEach(() => {
-      store = createStore(combineReducers(reducers), INITIAL_STATE);
-      wrapper = mount(
-        <Provider store={store}>
-          <DSLinkMenu />
-        </Provider>
-      );
-    });
-
-    afterEach(() => {
-      wrapper.unmount();
-    });
-
-    it("should parse args for fluent correctly ", () => {
+    it("should parse args for fluent correctly", () => {
       const title = '"fluent"';
-      wrapper = mount(
-        <Provider store={store}>
-          <DSLinkMenu title={title} />
-        </Provider>
-      );
-
+      wrapper = mountMenu({ title });
       const button = wrapper.find(
-        "button[data-l10n-id='newtab-menu-content-tooltip']"
+        "moz-button[data-l10n-id='newtab-menu-content-tooltip']"
       );
       assert.equal(button.prop("data-l10n-args"), JSON.stringify({ title }));
     });
   });
 
   describe("DS context menu options", () => {
-    const ValidDSLinkMenuProps = {
-      site: {},
-      card_type: "organic",
-    };
+    const ValidDSLinkMenuProps = { card_type: "organic" };
 
-    beforeEach(() => {
-      wrapper = mount(
-        <Provider store={store}>
-          <DSLinkMenu {...ValidDSLinkMenuProps} />
-        </Provider>
-      );
+    // getLinkMenuOptions maps each option key to one option object, so the
+    // length of PanelListItems' options reflects the selected option keys.
+    const optionCount = w => w.find(PanelListItems).prop("options").length;
+
+    it("should render a moz-button trigger paired to a panel-list", () => {
+      wrapper = mountMenu(ValidDSLinkMenuProps);
+      const button = wrapper.find("moz-button");
+      const panelList = wrapper.find("panel-list");
+      assert.equal(button.length, 1);
+      assert.equal(panelList.length, 1);
+      // moz-button opens the panel-list via the shared menuId.
+      assert.equal(button.prop("menuId"), panelList.prop("id"));
     });
 
-    afterEach(() => {
-      wrapper.unmount();
+    it("should render the built menu options via PanelListItems", () => {
+      wrapper = mountMenu(ValidDSLinkMenuProps);
+      assert.isArray(wrapper.find(PanelListItems).prop("options"));
     });
 
-    it("should render a context menu button", () => {
-      assert.ok(wrapper.exists());
-      assert.ok(
-        wrapper.find(ContextMenuButton).exists(),
-        "context menu button exists"
-      );
+    it("should build the correct menu options for recommended stories", () => {
+      // CheckBookmark, Separator, OpenInNewWindow, OpenInPrivateWindow,
+      // Separator, BlockUrl
+      wrapper = mountMenu(ValidDSLinkMenuProps);
+      assert.equal(optionCount(wrapper), 6);
     });
 
-    it("should render LinkMenu when context menu button is clicked", () => {
-      let button = wrapper.find(ContextMenuButton);
-      button.simulate("click", { preventDefault: () => {} });
-      assert.equal(wrapper.find(LinkMenu).length, 1);
+    it("should add ReportContent when a section is defined", () => {
+      wrapper = mountMenu({ ...ValidDSLinkMenuProps, section: "abc" });
+      assert.equal(optionCount(wrapper), 7);
     });
 
-    it("should pass dispatch, onShow, site, options, shouldSendImpressionStats, source and index to LinkMenu", () => {
-      wrapper
-        .find(ContextMenuButton)
-        .simulate("click", { preventDefault: () => {} });
-      const linkMenuProps = wrapper.find(LinkMenu).props();
-      [
-        "dispatch",
-        "onShow",
-        "site",
-        "index",
-        "options",
-        "source",
-        "shouldSendImpressionStats",
-      ].forEach(prop => assert.property(linkMenuProps, prop));
+    it("should build the correct menu options for SPOCs", () => {
+      // BlockUrl, ManageSponsoredContent, OurSponsorsAndYourPrivacy
+      wrapper = mountMenu({ ...ValidDSLinkMenuProps, card_type: "spoc" });
+      assert.equal(optionCount(wrapper), 3);
     });
 
-    it("should pass through the correct menu options to LinkMenu for recommended stories", () => {
-      wrapper
-        .find(ContextMenuButton)
-        .simulate("click", { preventDefault: () => {} });
-      const linkMenuProps = wrapper.find(LinkMenu).props();
-      assert.deepEqual(linkMenuProps.options, [
-        "CheckBookmark",
-        "Separator",
-        "OpenInNewWindow",
-        "OpenInPrivateWindow",
-        "Separator",
-        "BlockUrl",
-      ]);
-    });
-
-    it("should pass through ReportContent as a link menu option when section is defined", () => {
-      wrapper = mount(
-        <Provider store={store}>
-          <DSLinkMenu {...ValidDSLinkMenuProps} section="abc" />
-        </Provider>
-      );
-
-      wrapper
-        .find(ContextMenuButton)
-        .simulate("click", { preventDefault: () => {} });
-      const linkMenuProps = wrapper.find(LinkMenu).props();
-      assert.deepEqual(linkMenuProps.options, [
-        "CheckBookmark",
-        "Separator",
-        "OpenInNewWindow",
-        "OpenInPrivateWindow",
-        "Separator",
-        "BlockUrl",
-        "ReportContent",
-      ]);
-    });
-
-    it("should pass through the correct menu options to LinkMenu for SPOCs", () => {
-      wrapper = mount(
-        <Provider store={store}>
-          <DSLinkMenu {...ValidDSLinkMenuProps} card_type="spoc" />
-        </Provider>
-      );
-      wrapper
-        .find(ContextMenuButton)
-        .simulate("click", { preventDefault: () => {} });
-      const linkMenuProps = wrapper.find(LinkMenu).props();
-      assert.deepEqual(linkMenuProps.options, [
-        "BlockUrl",
-        "ManageSponsoredContent",
-        "OurSponsorsAndYourPrivacy",
-      ]);
-    });
-
-    it("should pass through the correct menu options to LinkMenu for SPOCs when ReportAds enabled", () => {
+    it("should add ReportAd for SPOCs when ad reporting is enabled", () => {
       const stateWithReporting = {
         ...INITIAL_STATE,
         Prefs: {
@@ -153,28 +87,14 @@ describe("<DSLinkMenu>", () => {
           },
         },
       };
-
       store = createStore(combineReducers(reducers), stateWithReporting);
-
-      wrapper = mount(
-        <Provider store={store}>
-          <DSLinkMenu
-            {...ValidDSLinkMenuProps}
-            card_type="spoc"
-            shim={{ report: {} }}
-          />
-        </Provider>
-      );
-      wrapper
-        .find(ContextMenuButton)
-        .simulate("click", { preventDefault: () => {} });
-      const linkMenuProps = wrapper.find(LinkMenu).props();
-      assert.deepEqual(linkMenuProps.options, [
-        "BlockUrl",
-        "ReportAd",
-        "ManageSponsoredContent",
-        "OurSponsorsAndYourPrivacy",
-      ]);
+      wrapper = mountMenu({
+        ...ValidDSLinkMenuProps,
+        card_type: "spoc",
+        shim: { report: {} },
+      });
+      // BlockUrl, ReportAd, ManageSponsoredContent, OurSponsorsAndYourPrivacy
+      assert.equal(optionCount(wrapper), 4);
     });
   });
 });

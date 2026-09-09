@@ -24,24 +24,22 @@ import org.json.JSONObject
  * Implemented as a browser extension based on the WebExtension API:
  * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions
  */
-class AdsTelemetry(
-    mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
-) : BaseSearchTelemetry(mainDispatcher) {
+class AdsTelemetry(mainDispatcher: CoroutineDispatcher = Dispatchers.Main) : BaseSearchTelemetry(mainDispatcher) {
 
     // SERP cached cookies used to check whether an ad was clicked.
-    @VisibleForTesting
-    internal var cachedCookies = listOf<JSONObject>()
+    @VisibleForTesting internal var cachedCookies = listOf<JSONObject>()
 
     override suspend fun install(
         engine: Engine,
         store: BrowserStore,
         providerList: List<SearchProviderModel>,
     ) {
-        val info = ExtensionInfo(
-            id = ADS_EXTENSION_ID,
-            resourceUrl = ADS_EXTENSION_RESOURCE_URL,
-            messageId = ADS_MESSAGE_ID,
-        )
+        val info =
+            ExtensionInfo(
+                id = ADS_EXTENSION_ID,
+                resourceUrl = ADS_EXTENSION_RESOURCE_URL,
+                messageId = ADS_MESSAGE_ID,
+            )
         installWebExtension(engine, store, info)
         setProviderList(providerList)
     }
@@ -67,11 +65,11 @@ class AdsTelemetry(
     /**
      * To be called when the browser is navigating to a new URL, which may be a search ad.
      *
-     * @param url The URL of the page before the search ad was clicked.
-     * This will be used to determine the originating search provider.
-     * @param urlPath A list of the URLs and load requests collected in between location changes.
-     * Clicking on a search ad generates a list of redirects from the originating search provider
-     * to the ad source. This is used to determine if there was an ad click.
+     * @param url The URL of the page before the search ad was clicked. This will be used to determine the originating
+     *   search provider.
+     * @param urlPath A list of the URLs and load requests collected in between location changes. Clicking on a search
+     *   ad generates a list of redirects from the originating search provider to the ad source. This is used to
+     *   determine if there was an ad click.
      */
     @Suppress("ReturnCount")
     fun checkIfAddWasClicked(url: String?, urlPath: List<String>) {
@@ -97,32 +95,24 @@ class AdsTelemetry(
 
     companion object {
         /**
-         * [Fact] property indicating the user open a Search Engine Result Page
-         * of one of our search providers which contains ads.
+         * [Fact] property indicating the user open a Search Engine Result Page of one of our search providers which
+         * contains ads.
          */
         const val SERP_SHOWN_WITH_ADDS = "SERP shown with adds"
 
-        /**
-         * [Fact] property indicating that an ad was clicked in a Search Engine Result Page.
-         */
+        /** [Fact] property indicating that an ad was clicked in a Search Engine Result Page. */
         const val SERP_ADD_CLICKED = "SERP add clicked"
 
-        @VisibleForTesting
-        internal const val ADS_EXTENSION_ID = "ads@mozac.org"
+        @VisibleForTesting internal const val ADS_EXTENSION_ID = "ads@mozac.org"
 
-        @VisibleForTesting
-        internal const val ADS_EXTENSION_RESOURCE_URL = "resource://android/assets/extensions/ads/"
+        @VisibleForTesting internal const val ADS_EXTENSION_RESOURCE_URL = "resource://android/assets/extensions/ads/"
 
-        @VisibleForTesting
-        internal const val ADS_MESSAGE_SESSION_URL_KEY = "url"
+        @VisibleForTesting internal const val ADS_MESSAGE_SESSION_URL_KEY = "url"
 
-        @VisibleForTesting
-        internal const val ADS_MESSAGE_DOCUMENT_URLS_KEY = "urls"
+        @VisibleForTesting internal const val ADS_MESSAGE_DOCUMENT_URLS_KEY = "urls"
 
-        @VisibleForTesting
-        internal const val ADS_MESSAGE_COOKIES_KEY = "cookies"
+        @VisibleForTesting internal const val ADS_MESSAGE_COOKIES_KEY = "cookies"
 
-        @VisibleForTesting
-        internal const val ADS_MESSAGE_ID = "MozacBrowserAdsMessage"
+        @VisibleForTesting internal const val ADS_MESSAGE_ID = "MozacBrowserAdsMessage"
     }
 }

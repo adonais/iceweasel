@@ -1,5 +1,9 @@
 "use strict";
 
+const { SmartFormFillAutocomplete } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillAutocomplete.sys.mjs"
+);
+
 const URL = BASE_URL + "autocomplete_basic.html";
 
 const l10n = new Localization(["toolkit/formautofill/formAutofill.ftl"], true);
@@ -42,6 +46,106 @@ add_task(async function test_footer_has_correct_button_text_on_address() {
   );
 });
 
+add_task(async function test_smart_form_fill_with_address_results() {
+  const source = {
+    label: "Source tab",
+    favicon: "page-icon:https://example.com/",
+  };
+  const item = {
+    style: "smartFormFill",
+    value: "",
+    image: "chrome://browser/content/aiwindow/assets/sff-autofill-icon.svg",
+    label: "Smart Form Fill",
+    comment: JSON.stringify({
+      type: "smartFormFill",
+      sources: [source],
+      sourcesLabel: "Sources:",
+      ariaLabel: "Smart Form Fill",
+      loading: false,
+      loadingLabel: "Loading...",
+      emptySourcesLabel: null,
+      fillMessageName: "SmartFormFill:Start",
+      fillMessageData: {},
+      secondaryAction: {
+        type: "edit",
+        fillMessageName: "FormAutofill:EditSmartFormFillSources",
+        fillMessageData: {},
+      },
+    }),
+  };
+  const autocompleteStub = sinon
+    .stub(SmartFormFillAutocomplete, "autocompleteItemsAsync")
+    .resolves([item]);
+
+  try {
+    await BrowserTestUtils.withNewTab(
+      { gBrowser, url: URL },
+      async function (browser) {
+        try {
+          await openPopupOn(browser, "#organization");
+
+          const addressItems = getDisplayedPopupItems(
+            browser,
+            '[originaltype="autofill"]'
+          );
+          Assert.greater(
+            addressItems.length,
+            0,
+            "Address autofill rows remain in the popup"
+          );
+
+          const smartFormFillItems = getDisplayedPopupItems(
+            browser,
+            '[originaltype="smartFormFill"]'
+          );
+          Assert.equal(
+            smartFormFillItems.length,
+            1,
+            "The Smart Form Fill row is present"
+          );
+
+          const displayedItems = getDisplayedPopupItems(browser);
+          const footer = displayedItems.find(candidate =>
+            candidate.hasAttribute("footer")
+          );
+          Assert.ok(footer, "The Manage addresses footer is present");
+          Assert.less(
+            displayedItems.indexOf(addressItems.at(-1)),
+            displayedItems.indexOf(smartFormFillItems[0]),
+            "The Smart Form Fill row comes after the address rows"
+          );
+          Assert.less(
+            displayedItems.indexOf(smartFormFillItems[0]),
+            displayedItems.indexOf(footer),
+            "The Smart Form Fill row comes before the footer"
+          );
+
+          const row = smartFormFillItems[0].querySelector(
+            "autocomplete-row-item"
+          );
+          await row.updateComplete;
+
+          Assert.equal(
+            row.type,
+            "smartFormFill",
+            "The specialized row type is preserved"
+          );
+          Assert.equal(row.label, item.label, "The row label is preserved");
+          Assert.deepEqual(
+            row.sources,
+            [source],
+            "The row sources are preserved"
+          );
+        } finally {
+          await closePopup(browser);
+        }
+      }
+    );
+  } finally {
+    autocompleteStub.restore();
+  }
+});
+
 add_task(async function test_footer_has_correct_button_text_on_credit_card() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: CREDITCARD_FORM_URL },
@@ -65,14 +169,10 @@ add_task(async function test_press_enter_on_footer() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: URL },
     async function (browser) {
-      const {
-        autoCompletePopup: { richlistbox: itemsBox },
-      } = browser;
-
       await openPopupOn(browser, "#organization");
 
       // Navigate to the footer and press enter.
-      const listItemElems = itemsBox.querySelectorAll(".autocomplete-row-item");
+      const listItemElems = getDisplayedPopupItems(browser);
       const prefTabPromise = BrowserTestUtils.waitForNewTab(
         gBrowser,
         PRIVACY_PREF_URL,

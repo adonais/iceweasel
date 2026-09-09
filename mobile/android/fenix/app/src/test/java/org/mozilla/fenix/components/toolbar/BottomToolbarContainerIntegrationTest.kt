@@ -15,13 +15,15 @@ class BottomToolbarContainerIntegrationTest {
 
     @Before
     fun setup() {
-        feature = BottomToolbarContainerIntegration(
-            toolbar = mockk(),
-            store = BrowserStore(),
-            sessionId = null,
-        ).apply {
-            toolbarController = mockk(relaxed = true)
-        }
+        feature =
+            BottomToolbarContainerIntegration(
+                    toolbar = mockk(),
+                    store = BrowserStore(),
+                    sessionId = null,
+                )
+                .apply {
+                    toolbarController = mockk(relaxed = true)
+                }
     }
 
     @Test

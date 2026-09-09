@@ -12,9 +12,8 @@ import mozilla.components.lib.state.Store
  *
  * @param repository The repository for the Privacy Notice banner.
  */
-class PrivacyNoticeBannerMiddleware(
-    private val repository: PrivacyNoticeBannerRepository,
-) : Middleware<PrivacyNoticeBannerState, PrivacyNoticeBannerAction> {
+class PrivacyNoticeBannerMiddleware(private val repository: PrivacyNoticeBannerRepository) :
+    Middleware<PrivacyNoticeBannerState, PrivacyNoticeBannerAction> {
 
     override fun invoke(
         store: Store<PrivacyNoticeBannerState, PrivacyNoticeBannerAction>,
@@ -22,16 +21,13 @@ class PrivacyNoticeBannerMiddleware(
         action: PrivacyNoticeBannerAction,
     ) {
         when (action) {
-            is PrivacyNoticeBannerAction.OnBannerDisplayed ->
-                repository.updatePrivacyNoticeBannerDisplayedPreference()
+            is PrivacyNoticeBannerAction.OnBannerDisplayed -> repository.updatePrivacyNoticeBannerDisplayedPreference()
 
             // no-ops
             is PrivacyNoticeBannerAction.OnPrivacyNoticeClicked,
             is PrivacyNoticeBannerAction.OnLearnMoreClicked,
             is PrivacyNoticeBannerAction.OnCloseClicked,
-            is PrivacyNoticeBannerAction.OnNavigatedAwayFromHome,
-                -> {
-            }
+            is PrivacyNoticeBannerAction.OnNavigatedAwayFromHome -> {}
         }
 
         next(action)

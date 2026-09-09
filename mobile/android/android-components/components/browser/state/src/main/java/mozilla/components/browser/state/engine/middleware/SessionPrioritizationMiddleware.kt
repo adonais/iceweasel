@@ -23,12 +23,12 @@ import mozilla.components.concept.engine.EngineSession.SessionPriority.DEFAULT
 import mozilla.components.concept.engine.EngineSession.SessionPriority.HIGH
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
-import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.coroutines.Dispatchers as MozillaDispatchers
+import mozilla.components.support.base.log.logger.Logger
 
 /**
- * [Middleware] implementation responsible for updating the priority of the selected [EngineSession]
- * to [HIGH] and the rest to [DEFAULT].
+ * [Middleware] implementation responsible for updating the priority of the selected [EngineSession] to [HIGH] and the
+ * rest to [DEFAULT].
  *
  * @property updatePriorityAfterMillis Update priority to default after timeout.
  */
@@ -41,8 +41,7 @@ class SessionPrioritizationMiddleware(
     private val logger = Logger("SessionPrioritizationMiddleware")
     private var updatePriorityToDefaultJobs = mutableMapOf<String, Job>()
 
-    @VisibleForTesting
-    internal var previousHighestPriorityTabId = ""
+    @VisibleForTesting internal var previousHighestPriorityTabId = ""
 
     @Suppress("NestedBlockDepth")
     override fun invoke(
@@ -85,9 +84,7 @@ class SessionPrioritizationMiddleware(
             is AppLifecycleAction.PauseAction -> {
                 // Check for form data for the selected tab when the app is backgrounded.
                 mainScope.launch {
-                    store.state.selectedTab?.engineState?.engineSession?.checkForFormData(
-                        adjustPriority = false,
-                    )
+                    store.state.selectedTab?.engineState?.engineSession?.checkForFormData(adjustPriority = false)
                 }
             }
             else -> {
@@ -99,8 +96,7 @@ class SessionPrioritizationMiddleware(
 
         when (action) {
             is TabListAction,
-            is EngineAction.LinkEngineSessionAction,
-            -> {
+            is EngineAction.LinkEngineSessionAction -> {
                 // if it exists in the map of high priority tabs to be cleared, cancel the job and remove it
                 val state = store.state
                 updatePriorityToDefaultJobs[state.selectedTabId]?.cancel()

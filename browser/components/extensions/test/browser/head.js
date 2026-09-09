@@ -268,6 +268,14 @@ function promisePopupNotificationShown(name, win = window) {
       if (!notification) {
         return;
       }
+      // Don't use PopupNotifications.isPanelOpen here: it also returns true
+      // while the panel is still in the "showing" state, in which case the
+      // popup frame isn't open yet and its contents aren't focusable.
+      let panelState = win.PopupNotifications.panel.state;
+      if (panelState != "open") {
+        info(`Ignoring popupshown for ${name}, panel state: ${panelState}`);
+        return;
+      }
 
       ok(notification, `${name} notification shown`);
       ok(win.PopupNotifications.isPanelOpen, "notification panel open");

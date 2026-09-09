@@ -339,7 +339,10 @@ void CodeGenerator::callVMInternal(VMFunctionId id, LInstruction* ins) {
     // disallowArbitraryCode_ flag so we can assert this VMFunction doesn't call
     // RunScript. Whitelist MInterruptCheck and MCheckOverRecursed because
     // interrupt callbacks can call JS (chrome JS or shell testing functions).
-    bool isWhitelisted = mir->isInterruptCheck() || mir->isCheckOverRecursed();
+    // MCheckOverRecursed for a generator resume doesn't check for interrupts.
+    bool isWhitelisted = mir->isInterruptCheck() ||
+                         (mir->isCheckOverRecursed() &&
+                          !mir->toCheckOverRecursed()->isResumingGenerator());
     if (!mir->hasDefaultAliasSet() && !isWhitelisted) {
       const void* addr = gen->jitRuntime()->addressOfDisallowArbitraryCode();
       masm.move32(Imm32(1), ReturnReg);
@@ -2593,8 +2596,7 @@ static void EmitInitDependentStringBase(MacroAssembler& masm,
     //
     //   flags |= ~(flags | ~ATOM_BIT) << (DEPENDED_ON_BIT - ATOM_BIT)
     //
-    masm.or32(Imm32(~StringFlags::ATOM_BIT), temp1, temp2);
-    masm.not32(temp2);
+    masm.nor32(Imm32(~StringFlags::ATOM_BIT), temp1, temp2);
     ShiftFlag32<StringFlags::ATOM_BIT, StringFlags::DEPENDED_ON_BIT>(masm,
                                                                      temp2);
     masm.or32(temp2, temp1);
@@ -3938,8 +3940,15 @@ void CodeGenerator::visitGoto(LGoto* lir) {
   // CodeGenerator is (indirectly) a child class of CodeGeneratorShared.
   //
   // See CodeGeneratorShared::jumpToBlock(MBasicBlock*) as reference.
-  uint32_t numMoveGroupsCloned = 0;
+
+  // If we can fall through to the target, don't bother cloning MoveGroups
+  // because this would turn the fallthrough into an explicit jump.
   MBasicBlock* target = lir->target();
+  if (isNextBlock(target->lir())) {
+    return;
+  }
+
+  uint32_t numMoveGroupsCloned = 0;
   while (true) {
     LBlock* targetLBlock = target->lir();
     LBlock* nextLBlock = targetLBlock->isMoveGroupsThenGoto();
@@ -4070,10 +4079,7 @@ void CodeGenerator::visitReturn(LReturn* lir) {
 #endif
   // Don't emit a jump to the return label if this is the last block, as
   // it'll fall through to the epilogue.
-  //
-  // This is -not- true however for a Generator-return, which may appear in the
-  // middle of the last block, so we should always emit the jump there.
-  if (current->mir() != *gen->graph().poBegin() || lir->isGenerator()) {
+  if (current->mir() != *gen->graph().poBegin()) {
     masm.jump(&returnLabel_);
   }
 }
@@ -8278,15 +8284,25 @@ void CodeGenerator::visitCheckOverRecursed(LCheckOverRecursed* lir) {
     saveLive(lir);
 
     using Fn = bool (*)(JSContext*);
-    callVM<Fn, CheckOverRecursed>(lir);
+    if (lir->mir()->isResumingGenerator()) {
+      callVM<Fn, CheckOverRecursedResumingGenerator>(lir);
+    } else {
+      callVM<Fn, CheckOverRecursed>(lir);
+    }
 
     restoreLive(lir);
     masm.jump(ool.rejoin());
   });
   addOutOfLineCode(ool, lir->mir());
 
+  // When resuming a generator we check the no-interrupt limit, because the VM
+  // function must not handle interrupts for a half-initialized frame.
+  const void* limitAddr =
+      lir->mir()->isResumingGenerator()
+          ? gen->runtime->addressOfJitStackLimitNoInterrupt()
+          : gen->runtime->addressOfJitStackLimit();
+
   // Conditional forward (unlikely) branch to failure.
-  const void* limitAddr = gen->runtime->addressOfJitStackLimit();
   masm.branchStackPtrRhs(Assembler::AboveOrEqual, AbsoluteAddress(limitAddr),
                          ool->entry());
   masm.bind(ool->rejoin());
@@ -9688,9 +9704,15 @@ void CodeGenerator::visitCreateThis(LCreateThis* lir) {
 }
 
 void CodeGenerator::visitCreateArgumentsObject(LCreateArgumentsObject* lir) {
+#ifdef DEBUG
   // This should be getting constructed in the first block only, and not any OSR
-  // entry blocks.
-  MOZ_ASSERT(lir->mir()->block()->id() == 0);
+  // entry blocks. Warp builds it in block 0 except in a generator or async
+  // function, where block 0 forks between the fresh call and a resume.
+  MBasicBlock* block = lir->mir()->block();
+  JSScript* script = block->info().script();
+  MOZ_ASSERT(block != block->graph().osrBlock());
+  MOZ_ASSERT_IF(!script->isGenerator() && !script->isAsync(), block->id() == 0);
+#endif
 
   Register callObj = ToRegister(lir->callObject());
   Register temp0 = ToRegister(lir->temp0());
@@ -10612,12 +10634,14 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
   MOZ_ASSERT(lir->safepoint()->wasmSafepointKind() ==
              WasmSafepointKind::LirCall);
 
-  // Note the assembler offset and framePushed for use by the adjunct
-  // LSafePoint, see visitor for LWasmCallIndirectAdjunctSafepoint below.
+  // Indirect calls (WasmTable/FuncRef) emit two call instructions (fast and
+  // slow path) with two distinct return offsets. The two paths are mutually
+  // exclusive and rejoin with the same live references and frame layout, so a
+  // single stackmap serves both: register this call's LSafepoint a second time
+  // at the slow-path return offset.
   if (callee.which() == wasm::CalleeDesc::WasmTable ||
       callee.which() == wasm::CalleeDesc::FuncRef) {
-    lir->adjunctSafepoint()->recordSafepointInfo(secondRetOffset,
-                                                 framePushedAtStackMapBase);
+    markSafepointAt(secondRetOffset.offset(), lir);
   }
 
   if (reloadInstance) {
@@ -10661,12 +10685,10 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       tryNote.setTryBodyEnd(masm.currentOffset());
     }
 
-    // This instruction or the adjunct safepoint must be the last instruction
-    // in the block. No other instructions may be inserted.
+    // This instruction must be the last instruction in the block. No other
+    // instructions may be inserted.
     LBlock* block = lir->block();
-    MOZ_RELEASE_ASSERT(*block->rbegin() == lir ||
-                       (block->rbegin()->isWasmCallIndirectAdjunctSafepoint() &&
-                        *(++block->rbegin()) == lir));
+    MOZ_RELEASE_ASSERT(*block->rbegin() == lir);
 
     // Jump to the fallthrough block
     jumpToBlock(lir->mirCatchable()->getSuccessor(
@@ -10704,11 +10726,14 @@ void CodeGenerator::visitWasmSuspend(LWasmSuspend* lir) {
   Register scratch2 = ToRegister(lir->temp1());
   Register scratch3 = ToRegister(lir->temp2());
 
+  uint32_t suspendResultsAreaBase =
+      lir->mir()->suspendResultsArea()->toWasmStackResultArea()->base();
+
   CodeOffset suspendedCodeOffset;
   uint32_t suspendedFramePushed;
   wasm::EmitSuspend(masm, instance, suspendedCont, handler, scratch1, scratch2,
                     scratch3, lir->mir()->callSiteDesc(), &suspendedCodeOffset,
-                    &suspendedFramePushed);
+                    &suspendedFramePushed, suspendResultsAreaBase);
 
   if (masm.oom()) {
     return;
@@ -10719,25 +10744,35 @@ void CodeGenerator::visitWasmSuspend(LWasmSuspend* lir) {
   lir->safepoint()->setWasmSafepointKind(WasmSafepointKind::StackSwitch);
 }
 
-void CodeGenerator::visitWasmResume(LWasmResume* lir) {
-  // This is a call instruction, all other registers should be spilled
-  // We're not passing params either, so we can just let registers be free
-  MWasmResume* mir = lir->mir();
-  wasm::TrapSiteDesc trapSiteDesc = mir->callSiteDesc().toTrapSiteDesc();
-  Register instance = ToRegister(lir->instance());
+void CodeGenerator::visitWasmPrepareResume(LWasmPrepareResume* lir) {
+  MWasmPrepareResume* mir = lir->mir();
   Register cont = ToRegister(lir->cont());
-  Register handlersParamsArea = lir->handlersParamsArea()->isBogus()
-                                    ? Register::Invalid()
-                                    : ToRegister(lir->handlersParamsArea());
+  Register output = ToRegister(lir->output());
   Register scratch1 = ToRegister(lir->temp0());
   Register scratch2 = ToRegister(lir->temp1());
-  Register scratch3 = ToRegister(lir->temp2());
+  uint32_t resumeParamsAreaBase =
+      mir->resumeParamsArea()->toWasmStackResultArea()->base();
+  wasm::TrapSiteDesc trapSiteDesc = mir->trapSiteDesc();
 
   auto* ool = new (alloc())
       LambdaOutOfLineCode([this, trapSiteDesc](OutOfLineCode& ool) {
         masm.wasmTrap(wasm::Trap::NullPointerDereference, trapSiteDesc);
       });
   addOutOfLineCode(ool, (const BytecodeSite*)nullptr);
+
+  wasm::EmitPrepareResume(masm, cont, resumeParamsAreaBase, output, scratch1,
+                          scratch2, ool->entry());
+}
+
+void CodeGenerator::visitWasmResume(LWasmResume* lir) {
+  MWasmResume* mir = lir->mir();
+  Register instance = ToRegister(lir->instance());
+  Register cont = ToRegister(lir->cont());
+  uint32_t handlersParamsAreaBase = mir->handlersParamsArea()->base();
+  uint32_t contResultsAreaBase = mir->contResultsArea()->base();
+  Register scratch1 = ToRegister(lir->temp0());
+  Register scratch2 = ToRegister(lir->temp1());
+  Register scratch3 = ToRegister(lir->temp2());
 
   // If this resume is in a wasm try code block, initialise a wasm::TryNote for
   // this resume.
@@ -10760,9 +10795,10 @@ void CodeGenerator::visitWasmResume(LWasmResume* lir) {
 
   CodeOffset resumeCodeOffset;
   uint32_t resumeFramePushed;
-  wasm::EmitResume(masm, instance, cont, handlersParamsArea, scratch1, scratch2,
-                   scratch3, ool->entry(), mir->handlers(), handlerLabels,
-                   mir->callSiteDesc(), &resumeCodeOffset, &resumeFramePushed);
+  wasm::EmitResume(masm, instance, cont, handlersParamsAreaBase, scratch1,
+                   scratch2, scratch3, mir->handlers(), handlerLabels,
+                   mir->callSiteDesc(), &resumeCodeOffset, &resumeFramePushed,
+                   contResultsAreaBase);
 
   if (masm.oom()) {
     return;
@@ -10819,13 +10855,6 @@ void CodeGenerator::visitWasmCallLandingPrePad(LWasmCallLandingPrePad* lir) {
   // block. The above assertions (and assertions in visitWasmCall) guarantee
   // that we are not skipping over instructions that should be executed.
   tryNote.setLandingPad(block->label()->offset(), masm.framePushed());
-}
-
-void CodeGenerator::visitWasmCallIndirectAdjunctSafepoint(
-    LWasmCallIndirectAdjunctSafepoint* lir) {
-  markSafepointAt(lir->safepointLocation().offset(), lir);
-  lir->safepoint()->setFramePushedAtStackMapBase(
-      lir->framePushedAtStackMapBase());
 }
 
 template <typename InstructionWithMaybeTrapSite>
@@ -21870,11 +21899,14 @@ void CodeGenerator::visitGeneratorResume(LGeneratorResume* lir) {
                             /* hasInlined = */ false,
                             /* isResumingGenerator = */ true));
 
-  // Load the code to call. We can't use jitCodeRaw unconditionally because it
-  // may point to Ion code and the Ion prologue doesn't support resuming a
-  // generator.
+  // Load the code to call. Throw currently always resumes in Baseline.
+  // See MaybeEnterJit.
   Register code = callee;
-  masm.loadJitCodeRawNoIon(callee, code, scratch);
+  if (resumeKind != int32_t(GeneratorResumeKind::Throw)) {
+    masm.loadJitCodeRaw(callee, code);
+  } else {
+    masm.loadJitCodeRawNoIon(callee, code, scratch);
+  }
 
   masm.switchToObjectRealm(genObj, scratch);
 
@@ -21894,6 +21926,64 @@ void CodeGenerator::visitGeneratorResume(LGeneratorResume* lir) {
 
   masm.setFramePushed(frameSize());
   emitRestoreStackPointerFromFP();
+}
+
+// The offset of a ResumeFrameArgs slot from the frame pointer.
+static size_t OffsetOfResumeFrameArg(MIRGenerator* gen, uint32_t slot) {
+  JSScript* script = gen->outerInfo().script();
+  size_t base =
+      script->isFunction()
+          ? JitFrameLayout::offsetOfActualArg(script->function()->nargs())
+          : JitFrameLayout::offsetOfModuleResumeArgs();
+  return base + ResumeFrameArgs::offsetOfSlot(slot);
+}
+
+static Address AddressOfFrameDescriptor() {
+  return Address(FramePointer, CommonFrameLayout::offsetOfDescriptor());
+}
+
+void CodeGenerator::visitResumeFrameArg(LResumeFrameArg* lir) {
+#ifdef DEBUG
+  // The slots are only valid and traced on GC while this frame is mid-resume.
+  Label ok;
+  masm.branchTest32(Assembler::NonZero, AddressOfFrameDescriptor(),
+                    Imm32(FrameDescriptor::IsResumingGenerator), &ok);
+  masm.assumeUnreachable("ResumeFrameArgs read outside a generator resume");
+  masm.bind(&ok);
+#endif
+  ValueOperand output = ToOutValue(lir);
+  masm.loadValue(
+      Address(FramePointer, OffsetOfResumeFrameArg(gen, lir->mir()->slot())),
+      output);
+}
+
+void CodeGenerator::visitIsResumingGenerator(LIsResumingGenerator* lir) {
+  Register output = ToRegister(lir->output());
+  Label isResuming, done;
+  masm.branchTest32(Assembler::NonZero, AddressOfFrameDescriptor(),
+                    Imm32(FrameDescriptor::IsResumingGenerator), &isResuming);
+  masm.move32(Imm32(0), output);
+  masm.jump(&done);
+  masm.bind(&isResuming);
+  masm.move32(Imm32(1), output);
+  masm.bind(&done);
+}
+
+void CodeGenerator::visitIsResumingGeneratorAndBranch(
+    LIsResumingGeneratorAndBranch* lir) {
+  Label* ifTrue = getJumpLabelForBranch(lir->ifTrue());
+  Label* ifFalse = getJumpLabelForBranch(lir->ifFalse());
+  masm.branchTest32(Assembler::NonZero, AddressOfFrameDescriptor(),
+                    Imm32(FrameDescriptor::IsResumingGenerator), ifTrue);
+  if (!isNextBlock(lir->ifFalse()->lir())) {
+    masm.jump(ifFalse);
+  }
+}
+
+void CodeGenerator::visitClearResumingGeneratorFlag(
+    LClearResumingGeneratorFlag* lir) {
+  masm.andPtr(Imm32(~int32_t(FrameDescriptor::IsResumingGenerator)),
+              AddressOfFrameDescriptor());
 }
 
 void CodeGenerator::visitCanSkipAwait(LCanSkipAwait* lir) {

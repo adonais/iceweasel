@@ -20,13 +20,14 @@ class Logic {
 
   /**
    * Test whether the element has the keyword in its attributes.
-   * The tested attributes include id, name, className, and placeholder.
+   * The tested attributes include id, name, className, ariaLabel and placeholder.
    */
   static elementAttrsMatchRegex(element, regex) {
     if (
       regex.test(element.id) ||
       regex.test(element.name) ||
-      regex.test(element.className)
+      regex.test(element.className) ||
+      regex.test(element.ariaLabel ?? "")
     ) {
       return true;
     }

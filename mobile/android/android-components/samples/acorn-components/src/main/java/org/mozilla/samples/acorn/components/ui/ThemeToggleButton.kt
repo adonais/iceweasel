@@ -12,9 +12,7 @@ import androidx.compose.ui.res.painterResource
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.ui.icons.R as iconsR
 
-/**
- * A toggle button for switching between light and dark theme.
- */
+/** A toggle button for switching between light and dark theme. */
 @Composable
 fun ThemeToggleButton() {
     val isDarkMode = isSystemInDarkTheme()
@@ -26,19 +24,20 @@ fun ThemeToggleButton() {
                     AppCompatDelegate.MODE_NIGHT_NO
                 } else {
                     AppCompatDelegate.MODE_NIGHT_YES
-                },
+                }
             )
         },
         contentDescription = if (isDarkMode) "Switch to light theme" else "Switch to dark theme",
     ) {
         Icon(
-            painter = painterResource(
-                if (isDarkMode) {
-                    iconsR.drawable.mozac_ic_night_mode_fill_24
-                } else {
-                    iconsR.drawable.mozac_ic_night_mode_24
-                },
-            ),
+            painter =
+                painterResource(
+                    if (isDarkMode) {
+                        iconsR.drawable.mozac_ic_night_mode_fill_24
+                    } else {
+                        iconsR.drawable.mozac_ic_night_mode_24
+                    }
+                ),
             contentDescription = null,
         )
     }

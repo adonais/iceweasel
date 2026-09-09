@@ -101,16 +101,15 @@ class SVGGeometryElement : public SVGGeometryElementBase {
    * non-scaling-stroke space.  (When all transforms involved are rectilinear
    * the bounds of the image of |aBounds| in non-scaling-stroke space will be
    * tight, but if there are non-rectilinear transforms involved then that may
-   * be impossible and this method will return false).
+   * be impossible and this method will return Nothing()).
    *
    * If |aToNonScalingStrokeSpace| is non-null then |*aToNonScalingStrokeSpace|
    * must be non-singular.
    */
-  virtual bool GetGeometryBounds(
-      Rect* aBounds, const StrokeOptions& aStrokeOptions,
-      const Matrix& aToBoundsSpace,
+  virtual Maybe<Rect> GetGeometryBounds(
+      const StrokeOptions& aStrokeOptions, const Matrix& aToBoundsSpace,
       const Matrix* aToNonScalingStrokeSpace = nullptr) {
-    return false;
+    return Nothing();
   }
 
   /**
@@ -192,6 +191,28 @@ class SVGGeometryElement : public SVGGeometryElementBase {
    * this element. May return nullptr if there is no [valid] path.
    */
   virtual already_AddRefed<Path> BuildPath(PathBuilder* aBuilder) = 0;
+
+  /**
+   * Returns the bounds of this element's path, mapped into bounds
+   * space or Nothing() if no path could be built.
+   *
+   * aPathInUserSpace must be a Path for this element in its own user space.
+   * aPathTransform is applied to it.
+   */
+  Maybe<Rect> GetBounds(const Matrix& aPathTransform);
+
+  /**
+   * Returns the bounds of this element's stroked path, mapped into bounds
+   * space by aPathToBounds, or Nothing() if no path could be built.
+   *
+   * aPathTransform is applied to the path before stroking (the identity matrix
+   * unless the element has non-scaling-stroke, in which case it is the
+   * transform to the space the stroke is defined in), and aPathToBounds maps
+   * from that space to bounds space.
+   */
+  Maybe<Rect> GetStrokedBounds(const StrokeOptions& aStrokeOptions,
+                               const Matrix& aPathTransform,
+                               const Matrix& aPathToBounds);
 
   /**
    * Get the distances from the origin of the path segments.
@@ -280,6 +301,8 @@ class SVGGeometryElement : public SVGGeometryElementBase {
 
  private:
   already_AddRefed<Path> GetOrBuildPathForHitTest();
+
+  already_AddRefed<Path> GetTransformedPath(const Matrix& aPathTransform);
 
   float GetTotalLength();
 };

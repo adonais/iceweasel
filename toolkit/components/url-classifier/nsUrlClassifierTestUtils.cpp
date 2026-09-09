@@ -69,6 +69,34 @@ nsUrlClassifierTestUtils::MakeUpdateResponseV5(const nsACString& aName,
 }
 
 NS_IMETHODIMP
+nsUrlClassifierTestUtils::MakeUpdateResponseV5WithWaitDurations(
+    const nsTArray<nsCString>& aNames, const nsTArray<uint32_t>& aWaitSeconds,
+    nsACString& aResponse) {
+  if (NS_WARN_IF(aNames.IsEmpty()) ||
+      NS_WARN_IF(aNames.Length() != aWaitSeconds.Length())) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  v5::BatchGetHashListsResponse response;
+
+  for (size_t i = 0; i < aNames.Length(); i++) {
+    v5::HashList* hashList = response.add_hash_lists();
+
+    hashList->set_name(aNames[i].get());
+    hashList->set_partial_update(false);
+    hashList->set_version("\x00\x00\x00\x01");
+    hashList->mutable_minimum_wait_duration()->set_seconds(aWaitSeconds[i]);
+  }
+
+  std::string s;
+  (void)response.SerializeToString(&s);
+
+  aResponse = nsCString(s.c_str(), s.size());
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsUrlClassifierTestUtils::MakeUpdateResponseV5_32b(const nsACString& aName,
                                                    const nsACString& aFullHash,
                                                    nsACString& aResponse) {

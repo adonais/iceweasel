@@ -5,6 +5,7 @@
 package mozilla.components.support.base.log.sink
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.PrintWriter
 import mozilla.components.support.base.log.Log
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -13,7 +14,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLog
-import java.io.PrintWriter
 
 @RunWith(AndroidJUnit4::class)
 class AndroidLogSinkTest {

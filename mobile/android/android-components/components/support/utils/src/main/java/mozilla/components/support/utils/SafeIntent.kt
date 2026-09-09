@@ -8,15 +8,14 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Parcelable
+import java.util.ArrayList
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.ext.getParcelableArrayListExtraCompat
 import mozilla.components.support.utils.ext.getParcelableExtraCompat
-import java.util.ArrayList
 
 /**
- * External applications can pass values into Intents that can cause us to crash: in defense,
- * we wrap [Intent] and catch the exceptions they may force us to throw. See bug 1090385
- * for more.
+ * External applications can pass values into Intents that can cause us to crash: in defense, we wrap [Intent] and catch
+ * the exceptions they may force us to throw. See bug 1090385 for more.
  */
 class SafeIntent(val unsafe: Intent) {
 
@@ -41,17 +40,20 @@ class SafeIntent(val unsafe: Intent) {
     val categories: Set<String>?
         get() = safeAccess { unsafe.categories }
 
-    fun hasExtra(name: String): Boolean = safeAccess(false) {
-        unsafe.hasExtra(name)
-    }!!
+    fun hasExtra(name: String): Boolean =
+        safeAccess(false) {
+            unsafe.hasExtra(name)
+        }!!
 
-    fun getBooleanExtra(name: String, defaultValue: Boolean): Boolean = safeAccess(defaultValue) {
-        unsafe.getBooleanExtra(name, defaultValue)
-    }!!
+    fun getBooleanExtra(name: String, defaultValue: Boolean): Boolean =
+        safeAccess(defaultValue) {
+            unsafe.getBooleanExtra(name, defaultValue)
+        }!!
 
-    fun getIntExtra(name: String, defaultValue: Int): Int = safeAccess(defaultValue) {
-        unsafe.getIntExtra(name, defaultValue)
-    }!!
+    fun getIntExtra(name: String, defaultValue: Int): Int =
+        safeAccess(defaultValue) {
+            unsafe.getIntExtra(name, defaultValue)
+        }!!
 
     fun getStringExtra(name: String): String? = safeAccess {
         unsafe.getStringExtra(name)
@@ -66,8 +68,8 @@ class SafeIntent(val unsafe: Intent) {
     }
 
     /**
-     * Returns the value of an item previously added with putExtra()
-     * or null if no Parcelable value was found.
+     * Returns the value of an item previously added with putExtra() or null if no Parcelable value was found.
+     *
      * @param name the key name.
      * @param clazz the desired class of the object .
      */
@@ -76,8 +78,9 @@ class SafeIntent(val unsafe: Intent) {
     }
 
     /**
-     * Returns     the value of an item previously added with putParcelableArrayListExtra(),
-     * or null if no ArrayList value was found.
+     * Returns the value of an item previously added with putParcelableArrayListExtra(), or null if no ArrayList value
+     * was found.
+     *
      * @param name the key name.
      * @param clazz the desired class of the object .
      */
@@ -106,9 +109,7 @@ class SafeIntent(val unsafe: Intent) {
     }
 }
 
-/**
- * Returns a [SafeIntent] for the given [Intent].
- */
+/** Returns a [SafeIntent] for the given [Intent]. */
 fun Intent.toSafeIntent(): SafeIntent = SafeIntent(this)
 
 const val EXTRA_ACTIVITY_REFERRER_PACKAGE = "activity_referrer_package"

@@ -16,6 +16,10 @@ const { BlockListManager } = ChromeUtils.importESModule(
   "chrome://global/content/ml/Utils.sys.mjs"
 );
 
+// Required before any Glean testGetValue call below.
+do_get_profile();
+Services.fog.initializeFOG();
+
 /**
  * Test that text is processed for ai.
  */
@@ -351,4 +355,95 @@ add_task(function test_sentence_post_processor_limits() {
     "no more sentences"
   );
   Services.prefs.clearUserPref("browser.ml.linkPreview.outputSentences");
+});
+
+/**
+ * The smoke test reuses the engine that just served the user's preview. When
+ * generateTextAI breaks out of its loop early the engine's run is still in
+ * flight, and the llama.cpp backend rejects a second generation while one is
+ * active, so the smoke test must be skipped on that path. Counting runs on the
+ * mocked engine distinguishes "skipped" from "never called at all".
+ */
+add_task(async function test_smoke_test_skipped_when_generation_abandoned() {
+  const SMOKE_MODEL_ID = "HuggingFaceTB/SmolLM2-360M-Instruct-GGUF";
+  const LAST_BUILD_ID_PREF = "browser.ml.linkPreview.smokeTest.lastBuildID";
+
+  function mockEngine(preview) {
+    const engine = {
+      runCount: 0,
+      pipelineOptions: {
+        backend: "llama.cpp",
+        modelId: SMOKE_MODEL_ID,
+        modelRevision: "main",
+      },
+      telemetry: { flowId: "test-flow-id" },
+      async *runWithGenerator() {
+        engine.runCount++;
+        for (const text of preview) {
+          yield { text };
+        }
+      },
+      terminate() {},
+    };
+    return engine;
+  }
+
+  Services.prefs.setBoolPref("browser.ml.linkPreview.blockListEnabled", false);
+  Services.prefs.clearUserPref(LAST_BUILD_ID_PREF);
+  Services.fog.testResetFOG();
+
+  // Four sentences against the default limit of three, so the loop aborts
+  // with the generation still running.
+  const abandoned = mockEngine(
+    "One sentence here. Two sentences here. Three sentences here. Four here."
+  );
+  let createEngineStub = sinon
+    .stub(LinkPreviewModel, "createEngine")
+    .returns(abandoned);
+  await LinkPreviewModel.generateTextAI("This is the big article to preview.");
+  Assert.equal(
+    abandoned.runCount,
+    1,
+    "smoke test is skipped when the generation was abandoned early"
+  );
+  Assert.equal(
+    Glean.genaiLinkpreview.smokeTest.testGetValue(),
+    null,
+    "no smoke_test event is recorded when the smoke test is skipped"
+  );
+  createEngineStub.restore();
+
+  // Two sentences, under the limit, so the generator finishes on its own and
+  // the engine is idle by the time the smoke test reuses it.
+  const completed = mockEngine("One sentence here. Two sentences here.");
+  createEngineStub = sinon
+    .stub(LinkPreviewModel, "createEngine")
+    .returns(completed);
+  await LinkPreviewModel.generateTextAI("This is the big article to preview.");
+  Assert.equal(
+    completed.runCount,
+    2,
+    "smoke test reuses the engine when the generation ended on its own"
+  );
+  // runSmokeTest swallows every exception, so a started-but-failed run would
+  // still leave runCount at 2. The recorded event is emitted after the
+  // generation and the hashing, so its presence is what shows the run
+  // finished rather than merely started. The lastBuildID pref is written
+  // after it, but Services.appinfo.appBuildID is undefined under xpcshell,
+  // which writes the pref's default and leaves no user value to assert on.
+  const events = Glean.genaiLinkpreview.smokeTest.testGetValue();
+  Assert.equal(events?.length, 1, "one smoke_test event was recorded");
+  Assert.equal(
+    events[0].extra.model_id,
+    "HuggingFaceTB/SmolLM2-360M-Instruct-GGUF",
+    "the event carries the pinned model identifier"
+  );
+  Assert.ok(
+    events[0].extra.output_hash,
+    "the event carries an output hash, so hashing completed"
+  );
+  createEngineStub.restore();
+
+  Services.prefs.clearUserPref("browser.ml.linkPreview.blockListEnabled");
+  Services.prefs.clearUserPref(LAST_BUILD_ID_PREF);
 });

@@ -19,8 +19,8 @@ import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 
 /**
- * Container toolbar implementation that updates the toolbar with the container page action
- * whenever the selected tab changes.
+ * Container toolbar implementation that updates the toolbar with the container page action whenever the selected tab
+ * changes.
  */
 class ContainerToolbarFeature(
     private val toolbar: Toolbar,
@@ -35,12 +35,14 @@ class ContainerToolbarFeature(
     }
 
     override fun start() {
-        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.distinctUntilChangedBy { it.selectedTab }
-                .collect { state ->
-                    renderContainerAction(state, state.selectedTab)
-                }
-        }
+        scope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .distinctUntilChangedBy { it.selectedTab }
+                    .collect { state ->
+                        renderContainerAction(state, state.selectedTab)
+                    }
+            }
     }
 
     override fun stop() {
@@ -72,9 +74,10 @@ class ContainerToolbarFeature(
             containerPageAction = null
         }
 
-        containerPageAction = ContainerToolbarAction(containerState).also { action ->
-            toolbar.addPageAction(action)
-            toolbar.invalidateActions()
-        }
+        containerPageAction =
+            ContainerToolbarAction(containerState).also { action ->
+                toolbar.addPageAction(action)
+                toolbar.invalidateActions()
+            }
     }
 }

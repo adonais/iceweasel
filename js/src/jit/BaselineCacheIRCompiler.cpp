@@ -2158,19 +2158,9 @@ static bool LookupOrCompileStub(JSContext* cx, CacheKind kind,
   return true;
 }
 
-ICAttachResult js::jit::AttachBaselineCacheIRStub(
+static ICAttachResult CompileBaselineCacheIRStub(
     JSContext* cx, const CacheIRWriter& writer, CacheKind kind,
-    JSScript* outerScript, ICScript* icScript, ICFallbackStub* stub,
-    const char* name) {
-  gc::AutoMarkingLock lock(cx->zone(), icScript->markingLock());
-  return AttachBaselineCacheIRStubLocked(cx, writer, kind, outerScript,
-                                         icScript, stub, name, lock);
-}
-
-ICAttachResult js::jit::AttachBaselineCacheIRStubLocked(
-    JSContext* cx, const CacheIRWriter& writer, CacheKind kind,
-    JSScript* outerScript, ICScript* icScript, ICFallbackStub* stub,
-    const char* name, const gc::AutoMarkingLock& lock) {
+    const char* name, CacheIRStubInfo** stubInfo, JitCode** codeOut) {
   // We shouldn't GC or report OOM (or any other exception) here.
   AutoAssertNoPendingException aanpe(cx);
   JS::AutoCheckCannotGC nogc;
@@ -2185,6 +2175,30 @@ ICAttachResult js::jit::AttachBaselineCacheIRStubLocked(
   }
   MOZ_ASSERT(!writer.failed());
 
+  // Check if we already have JitCode for this stub.
+  if (!LookupOrCompileStub(cx, kind, writer, *stubInfo, *codeOut, name,
+                           /* isAOTFill = */ false, cx->zone()->jitZone())) {
+    return ICAttachResult::OOM;
+  }
+
+  return ICAttachResult::Attached;
+}
+
+ICAttachResult js::jit::AttachBaselineCacheIRStub(
+    JSContext* cx, const CacheIRWriter& writer, CacheKind kind,
+    JSScript* outerScript, ICScript* icScript, ICFallbackStub* stub,
+    const char* name) {
+  MaybeMarkingLock lock;
+  return AttachBaselineCacheIRStubLocked(cx, writer, kind, outerScript,
+                                         icScript, stub,
+                                         DiscardExistingStubs::No, name, lock);
+}
+
+ICAttachResult js::jit::AttachBaselineCacheIRStubLocked(
+    JSContext* cx, const CacheIRWriter& writer, CacheKind kind,
+    JSScript* outerScript, ICScript* icScript, ICFallbackStub* stub,
+    DiscardExistingStubs discardFallbackStubs, const char* name,
+    MaybeMarkingLock& lock) {
   // Just a sanity check: the caller should ensure we don't attach an
   // unlimited number of stubs.
 #ifdef DEBUG
@@ -2192,91 +2206,98 @@ ICAttachResult js::jit::AttachBaselineCacheIRStubLocked(
   MOZ_ASSERT(stub->numOptimizedStubs() < MaxOptimizedCacheIRStubs);
 #endif
 
-  // Check if we already have JitCode for this stub.
   CacheIRStubInfo* stubInfo;
-  JitCode* code;
-
-  if (!LookupOrCompileStub(cx, kind, writer, stubInfo, code, name,
-                           /* isAOTFill = */ false, cx->zone()->jitZone())) {
-    return ICAttachResult::OOM;
+  JitCode* code = nullptr;
+  ICAttachResult result =
+      CompileBaselineCacheIRStub(cx, writer, kind, name, &stubInfo, &code);
+  if (result != ICAttachResult::Attached) {
+    return result;
   }
+
+  // We shouldn't GC or report OOM (or any other exception) here.
+  AutoAssertNoPendingException aanpe(cx);
+  JS::AutoCheckCannotGC nogc;
 
   ICEntry* icEntry = icScript->icEntryForStub(stub);
 
-  // Ensure we don't attach duplicate stubs. This can happen if a stub failed
-  // for some reason and the IR generator doesn't check for exactly the same
-  // conditions.
-  for (ICStub* iter = icEntry->firstStub(); iter != stub;
-       iter = iter->toCacheIRStub()->next()) {
-    auto otherStub = iter->toCacheIRStub();
-    if (otherStub->stubInfo() != stubInfo) {
-      continue;
-    }
-    if (!writer.stubDataEquals(otherStub->stubDataStart())) {
-      continue;
-    }
-
-    // We found a stub that's exactly the same as the stub we're about to
-    // attach. Just return nullptr, the caller should do nothing in this
-    // case.
-    JitSpew(JitSpew_BaselineICFallback,
-            "Tried attaching identical stub for (%s:%u:%u)",
-            outerScript->filename(), outerScript->lineno(),
-            outerScript->column().oneOriginValue());
-    return ICAttachResult::DuplicateStub;
-  }
-
-  // Try including this case in an existing folded stub.
-  if (stub->mayHaveFoldedStub() &&
-      AddToFoldedStub(cx, writer, icScript, stub, lock)) {
-    JitSpew(JitSpew_StubFolding,
-            "Added to folded stub at offset %u (icScript: %p) (%s:%u:%u)",
-            stub->pcOffset(), icScript, outerScript->filename(),
-            outerScript->lineno(), outerScript->column().oneOriginValue());
-
-    // Instead of adding a new stub, we have added a new case to an existing
-    // folded stub. For invalidating Warp code, there are two cases to consider:
-    //
-    // (1) If we used MGuardShapeList, we need to invalidate Warp code because
-    //     it bakes in the old shape list.
-    //
-    // (2) If we used MGuardMultipleShapes, we do not need to invalidate Warp,
-    //     because the ShapeListObject that stores the cases is shared between
-    //     Baseline and Warp.
-    //
-    // If we have stub folding bailout data stored in the JitZone for this
-    // script, this must be case (2). In this case we reset the bailout counter
-    // if we have already been transpiled.
-    //
-    // In both cases we reset the entered count for the fallback stub so that we
-    // can still transpile.
-    stub->resetEnteredCount();
-    JSScript* owningScript = nullptr;
-    bool hadGuardMultipleShapesBailout = false;
-    if (cx->zone()->jitZone()->hasStubFoldingBailoutData(outerScript)) {
-      owningScript = cx->zone()->jitZone()->stubFoldingBailoutOuter();
-      hadGuardMultipleShapesBailout = true;
-      JitSpew(JitSpew_StubFolding, "Found stub folding bailout outer: %s:%u:%u",
-              owningScript->filename(), owningScript->lineno(),
-              owningScript->column().oneOriginValue());
-    } else {
-      owningScript = icScript->isInlined()
-                         ? icScript->inliningRoot()->owningScript()
-                         : outerScript;
-    }
-    cx->zone()->jitZone()->clearStubFoldingBailoutData();
-    if (stub->usedByTranspiler() && hadGuardMultipleShapesBailout) {
-      if (owningScript->hasIonScript()) {
-        owningScript->ionScript()->resetNumFixableBailouts();
-      } else if (owningScript->hasJitScript()) {
-        owningScript->jitScript()->clearFailedICHash();
+  if (discardFallbackStubs == DiscardExistingStubs::No) {
+    // Ensure we don't attach duplicate stubs. This can happen if a stub failed
+    // for some reason and the IR generator doesn't check for exactly the same
+    // conditions.
+    for (ICStub* iter = icEntry->firstStub(); iter != stub;
+         iter = iter->toCacheIRStub()->next()) {
+      auto otherStub = iter->toCacheIRStub();
+      if (otherStub->stubInfo() != stubInfo) {
+        continue;
       }
-    } else {
-      // Update the last IC counter if this is not a GuardMultipleShapes bailout
-      // from Ion.
-      owningScript->updateLastICStubCounter();
+      if (!writer.stubDataEquals(otherStub->stubDataStart())) {
+        continue;
+      }
+
+      // We found a stub that's exactly the same as the stub we're about to
+      // attach. Just return nullptr, the caller should do nothing in this
+      // case.
+      JitSpew(JitSpew_BaselineICFallback,
+              "Tried attaching identical stub for (%s:%u:%u)",
+              outerScript->filename(), outerScript->lineno(),
+              outerScript->column().oneOriginValue());
+      return ICAttachResult::DuplicateStub;
     }
-    return ICAttachResult::Attached;
+
+    // Try including this case in an existing folded stub.
+    if (stub->mayHaveFoldedStub() &&
+        AddToFoldedStub(cx, writer, icScript, stub)) {
+      JitSpew(JitSpew_StubFolding,
+              "Added to folded stub at offset %u (icScript: %p) (%s:%u:%u)",
+              stub->pcOffset(), icScript, outerScript->filename(),
+              outerScript->lineno(), outerScript->column().oneOriginValue());
+
+      // Instead of adding a new stub, we have added a new case to an existing
+      // folded stub. For invalidating Warp code, there are two cases to
+      // consider:
+      //
+      // (1) If we used MGuardShapeList, we need to invalidate Warp code because
+      //     it bakes in the old shape list.
+      //
+      // (2) If we used MGuardMultipleShapes, we do not need to invalidate Warp,
+      //     because the ShapeListObject that stores the cases is shared between
+      //     Baseline and Warp.
+      //
+      // If we have stub folding bailout data stored in the JitZone for this
+      // script, this must be case (2). In this case we reset the bailout
+      // counter if we have already been transpiled.
+      //
+      // In both cases we reset the entered count for the fallback stub so that
+      // we can still transpile.
+      stub->resetEnteredCount();
+      JSScript* owningScript = nullptr;
+      bool hadGuardMultipleShapesBailout = false;
+      if (cx->zone()->jitZone()->hasStubFoldingBailoutData(outerScript)) {
+        owningScript = cx->zone()->jitZone()->stubFoldingBailoutOuter();
+        hadGuardMultipleShapesBailout = true;
+        JitSpew(JitSpew_StubFolding,
+                "Found stub folding bailout outer: %s:%u:%u",
+                owningScript->filename(), owningScript->lineno(),
+                owningScript->column().oneOriginValue());
+      } else {
+        owningScript = icScript->isInlined()
+                           ? icScript->inliningRoot()->owningScript()
+                           : outerScript;
+      }
+      cx->zone()->jitZone()->clearStubFoldingBailoutData();
+      if (stub->usedByTranspiler() && hadGuardMultipleShapesBailout) {
+        if (owningScript->hasIonScript()) {
+          owningScript->ionScript()->resetNumFixableBailouts();
+        } else if (owningScript->hasJitScript()) {
+          owningScript->jitScript()->clearFailedICHash();
+        }
+      } else {
+        // Update the last IC counter if this is not a GuardMultipleShapes
+        // bailout from Ion.
+        owningScript->updateLastICStubCounter();
+      }
+      return ICAttachResult::Attached;
+    }
   }
 
   // Time to allocate and attach a new stub.
@@ -2286,6 +2307,22 @@ ICAttachResult js::jit::AttachBaselineCacheIRStubLocked(
   void* newStubMem = cx->zone()->jitZone()->stubSpace()->alloc(bytesNeeded);
   if (!newStubMem) {
     return ICAttachResult::OOM;
+  }
+
+  auto newStub = new (newStubMem) ICCacheIRStub(code, stubInfo);
+  writer.copyStubData(newStub->stubDataStart());
+  newStub->setTypeData(writer.typeData());
+
+#ifdef ENABLE_PORTABLE_BASELINE_INTERP
+  newStub->updateRawJitCode(pbl::GetICInterpreter());
+#endif
+
+  if (!lock.isSome()) {
+    lock.emplace(cx->zone(), icScript->markingLock());
+  }
+
+  if (discardFallbackStubs == DiscardExistingStubs::Yes) {
+    stub->discardStubs(cx->zone(), icEntry, *lock);
   }
 
   // Resetting the entered counts on the IC chain makes subsequent reasoning
@@ -2303,20 +2340,12 @@ ICAttachResult js::jit::AttachBaselineCacheIRStubLocked(
     case TrialInliningState::Inlined:
       stub->setTrialInliningState(TrialInliningState::Failure);
       // Ensure we stop using the callee's trial inlining ICScript.
-      stub->discardStubs(cx->zone(), icEntry, lock);
+      stub->discardStubs(cx->zone(), icEntry, *lock);
       icScript->removeInlinedChild(stub->pcOffset());
       break;
     case TrialInliningState::Failure:
       break;
   }
-
-  auto newStub = new (newStubMem) ICCacheIRStub(code, stubInfo);
-  writer.copyStubData(newStub->stubDataStart());
-  newStub->setTypeData(writer.typeData());
-
-#ifdef ENABLE_PORTABLE_BASELINE_INTERP
-  newStub->updateRawJitCode(pbl::GetICInterpreter());
-#endif
 
   stub->addNewStub(icEntry, newStub);
 
@@ -3539,11 +3568,9 @@ bool BaselineCacheIRCompiler::emitCallScriptedProxyGetByValueResult(
 }
 #endif
 
-bool BaselineCacheIRCompiler::emitCallBoundScriptedFunction(
+bool BaselineCacheIRCompiler::emitCallBoundScriptedFunctionShared(
     ObjOperandId calleeId, ObjOperandId targetId, Int32OperandId argcId,
-    CallFlags flags, uint32_t numBoundArgs) {
-  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-
+    CallFlags flags, uint32_t numBoundArgs, Maybe<uint32_t> icScriptOffset) {
   AutoOutputRegister output(*this);
   AutoScratchRegister scratch(allocator, masm);
   AutoScratchRegisterMaybeOutput scratch2(allocator, masm, output);
@@ -3551,6 +3578,8 @@ bool BaselineCacheIRCompiler::emitCallBoundScriptedFunction(
 
   Register calleeReg = allocator.useRegister(masm, calleeId);
   Register argcReg = allocator.useRegister(masm, argcId);
+
+  bool isInlined = icScriptOffset.isSome();
 
   bool isConstructing = flags.isConstructing();
   bool isSameRealm = flags.isSameRealm();
@@ -3560,6 +3589,10 @@ bool BaselineCacheIRCompiler::emitCallBoundScriptedFunction(
   // Push a stub frame so that we can perform a non-tail call.
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, scratch);
+
+  if (isInlined) {
+    stubFrame.pushInlinedICScript(masm, stubAddress(*icScriptOffset));
+  }
 
   // Push all arguments, including |this|.
   pushBoundFunctionArguments(argcReg, calleeReg, scratch, scratch2, flags,
@@ -3583,12 +3616,17 @@ bool BaselineCacheIRCompiler::emitCallBoundScriptedFunction(
 
   // Load the start of the target JitCode.
   Register code = scratch2;
-  masm.loadJitCodeRaw(calleeReg, code);
+  if (isInlined) {
+    masm.loadJitCodeRawNoIon(calleeReg, code, scratch);
+  } else {
+    masm.loadJitCodeRaw(calleeReg, code);
+  }
 
   // Note that we use Push, not push, so that callJit will align the stack
   // properly on ARM.
   masm.PushCalleeToken(calleeReg, isConstructing);
-  masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub, argcReg, scratch);
+  masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub, argcReg, scratch,
+                                     isInlined);
 
   masm.callJit(code);
 
@@ -3603,6 +3641,23 @@ bool BaselineCacheIRCompiler::emitCallBoundScriptedFunction(
   }
 
   return true;
+}
+
+bool BaselineCacheIRCompiler::emitCallBoundScriptedFunction(
+    ObjOperandId calleeId, ObjOperandId targetId, Int32OperandId argcId,
+    CallFlags flags, uint32_t numBoundArgs) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+  return emitCallBoundScriptedFunctionShared(calleeId, targetId, argcId, flags,
+                                             numBoundArgs, mozilla::Nothing());
+}
+
+bool BaselineCacheIRCompiler::emitCallInlinedBoundFunction(
+    ObjOperandId calleeId, ObjOperandId targetId, Int32OperandId argcId,
+    CallFlags flags, uint32_t icScriptOffset, uint32_t numBoundArgs) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+  return emitCallBoundScriptedFunctionShared(calleeId, targetId, argcId, flags,
+                                             numBoundArgs,
+                                             mozilla::Some(icScriptOffset));
 }
 
 bool BaselineCacheIRCompiler::emitNewArrayObjectResult(uint32_t arrayLength,

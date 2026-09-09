@@ -14,12 +14,13 @@ namespace mozilla {
 
 struct FFmpegLibWrapper;
 
-// Holds a single shared AVHWDeviceContext (VkDevice) for all Vulkan video
-// decoders in the RDD process. Mirrors VADisplayHolder for VA-API.
+// Holds a shared AVHWDeviceContext (VkDevice) per FFmpegLibWrapper in the RDD
+// process. Mirrors VADisplayHolder for VA-API.
 //
-// The first decoder to call GetOrCreate() pays vkCreateDevice; subsequent
-// decoders receive av_buffer_ref() on the same context. The device is
-// destroyed (vkDestroyDevice) when the last decoder drops its reference.
+// The first decoder for a given lib+device pays vkCreateDevice; subsequent
+// decoders on the same lib receive av_buffer_ref() on that context. System
+// FFmpeg and ffvpx each keep their own cached device (layouts/buffer ops
+// differ). Destroyed when the last decoder drops its reference.
 class VulkanDeviceHolder final
     : public SupportsThreadSafeWeakPtr<VulkanDeviceHolder> {
  public:
@@ -39,6 +40,8 @@ class VulkanDeviceHolder final
   // anything keyed by VkInstance (e.g. function pointers) should fold
   // this generation into the key to guard against that.
   uint64_t Generation() const { return mGeneration; }
+
+  const char* DeviceName() const { return mDeviceName; }
 
   ~VulkanDeviceHolder();
 

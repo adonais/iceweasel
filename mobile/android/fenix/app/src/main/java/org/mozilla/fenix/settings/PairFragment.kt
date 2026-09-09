@@ -25,9 +25,7 @@ import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 
-/**
- * Settings screen allowing users log into their Firefox Account.
- */
+/** Settings screen allowing users log into their Firefox Account. */
 class PairFragment : Fragment(R.layout.fragment_pair), UserInteractionHandler, SystemInsetsPaddedFragment {
     private val args by navArgs<PairFragmentArgs>()
 
@@ -49,10 +47,11 @@ class PairFragment : Fragment(R.layout.fragment_pair), UserInteractionHandler, S
                     // By the time we get a scan result, we may not be attached to the context anymore.
                     // See https://github.com/mozilla-mobile/fenix/issues/15812
                     if (context == null) {
-                        findNavController().popBackStack(
-                            R.id.turnOnSyncFragment,
-                            false,
-                        )
+                        findNavController()
+                            .popBackStack(
+                                R.id.turnOnSyncFragment,
+                                false,
+                            )
                         return@QrFeature
                     }
                     requireComponents.services.accountsAuthFeature.beginPairingAuthentication(
@@ -66,12 +65,13 @@ class PairFragment : Fragment(R.layout.fragment_pair), UserInteractionHandler, S
                         VibrationEffect.createOneShot(
                             VIBRATE_LENGTH,
                             VibrationEffect.DEFAULT_AMPLITUDE,
-                        ),
+                        )
                     )
-                    findNavController().popBackStack(
-                        R.id.turnOnSyncFragment,
-                        false,
-                    )
+                    findNavController()
+                        .popBackStack(
+                            R.id.turnOnSyncFragment,
+                            false,
+                        )
                 },
                 scanMessage = R.string.pair_instructions_2,
             ),
@@ -109,7 +109,8 @@ class PairFragment : Fragment(R.layout.fragment_pair), UserInteractionHandler, S
     ) {
         when (requestCode) {
             REQUEST_CODE_CAMERA_PERMISSIONS -> {
-                if (ContextCompat.checkSelfPermission(
+                if (
+                    ContextCompat.checkSelfPermission(
                         requireContext(),
                         android.Manifest.permission.CAMERA,
                     ) == PackageManager.PERMISSION_GRANTED

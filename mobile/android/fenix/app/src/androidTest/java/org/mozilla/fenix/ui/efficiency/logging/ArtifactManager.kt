@@ -9,9 +9,8 @@ import java.io.File
 /**
  * Centralized accessor for the **current run's artifact root**.
  *
- * Factories and utilities (e.g., [ScreenshotTaker]) rely on this to know
- * *where* to write files. The directory is initialized by [LoggerFactory.create]
- * and remains valid for the lifetime of the test process.
+ * Factories and utilities (e.g., [ScreenshotTaker]) rely on this to know *where* to write files. The directory is
+ * initialized by [LoggerFactory.create] and remains valid for the lifetime of the test process.
  *
  * Directory layout:
  * ```
@@ -30,9 +29,7 @@ import java.io.File
 object ArtifactManager {
     @Volatile private var baseDir: File? = null
 
-    /**
-     * Sets the artifacts base directory (called exactly once in [LoggerFactory.create]).
-     */
+    /** Sets the artifacts base directory (called exactly once in [LoggerFactory.create]). */
     fun init(root: File) {
         check(baseDir == null) { "ArtifactManager already initialized." }
         if (!root.exists()) root.mkdirs()
@@ -44,16 +41,16 @@ object ArtifactManager {
      *
      * @throws IllegalStateException if [init] has not been called yet.
      */
-    fun base(): File = requireNotNull(baseDir) {
-        "ArtifactManager not initialized. Call LoggerFactory.create() first."
-    }
+    fun base(): File =
+        requireNotNull(baseDir) {
+            "ArtifactManager not initialized. Call LoggerFactory.create() first."
+        }
 
     /** Ensures and returns `artifacts/<run-id>/<testId>/`. */
     fun dirForTest(testId: String): File = File(base(), sanitize(testId)).apply { mkdirs() }
 
     /** Ensures and returns `artifacts/<run-id>/<testId>/<leaf>/`. */
-    fun dirForTest(testId: String, leaf: String): File =
-        File(dirForTest(testId), sanitize(leaf)).apply { mkdirs() }
+    fun dirForTest(testId: String, leaf: String): File = File(dirForTest(testId), sanitize(leaf)).apply { mkdirs() }
 
     /** Replaces characters that are unsafe for file/dir names with underscores. */
     private fun sanitize(s: String) = s.replace("""[^\w.\-]+""".toRegex(), "_")

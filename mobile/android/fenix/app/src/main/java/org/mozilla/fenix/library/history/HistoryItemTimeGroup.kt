@@ -5,20 +5,25 @@
 package org.mozilla.fenix.library.history
 
 import android.content.Context
-import org.mozilla.fenix.R
 import java.util.Calendar
 import java.util.Date
+import org.mozilla.fenix.R
 
 enum class HistoryItemTimeGroup {
-    Today, Yesterday, ThisWeek, ThisMonth, Older;
+    Today,
+    Yesterday,
+    ThisWeek,
+    ThisMonth,
+    Older;
 
-    fun humanReadable(context: Context): String = when (this) {
-        Today -> context.getString(R.string.history_today)
-        Yesterday -> context.getString(R.string.history_yesterday)
-        ThisWeek -> context.getString(R.string.history_7_days)
-        ThisMonth -> context.getString(R.string.history_30_days)
-        Older -> context.getString(R.string.history_older)
-    }
+    fun humanReadable(context: Context): String =
+        when (this) {
+            Today -> context.getString(R.string.history_today)
+            Yesterday -> context.getString(R.string.history_yesterday)
+            ThisWeek -> context.getString(R.string.history_7_days)
+            ThisMonth -> context.getString(R.string.history_30_days)
+            Older -> context.getString(R.string.history_older)
+        }
 
     companion object {
         private const val ZERO_DAYS = 0
@@ -35,13 +40,15 @@ enum class HistoryItemTimeGroup {
         private val lastMonthRange = LongRange(thirtyDaysAgo, sevenDaysAgo)
 
         private fun getDaysAgo(daysAgo: Int): Date {
-            return Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-                add(Calendar.DAY_OF_YEAR, -daysAgo)
-            }.time
+            return Calendar.getInstance()
+                .apply {
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                    add(Calendar.DAY_OF_YEAR, -daysAgo)
+                }
+                .time
         }
 
         internal fun timeGroupForTimestamp(timestamp: Long): HistoryItemTimeGroup {

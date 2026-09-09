@@ -19,9 +19,7 @@ import mozilla.components.support.base.log.logger.Logger
 // The number of tabs we keep active and do not suspend (in addition to the selected tab)
 private const val MIN_ACTIVE_TABS = 3
 
-/**
- * [Middleware] responsible for suspending [EngineSession] instances on low memory.
- */
+/** [Middleware] responsible for suspending [EngineSession] instances on low memory. */
 internal class TrimMemoryMiddleware : Middleware<BrowserState, BrowserAction> {
     private val logger = Logger("TrimMemoryMiddleware")
 
@@ -56,24 +54,26 @@ internal class TrimMemoryMiddleware : Middleware<BrowserState, BrowserAction> {
         }
     }
 
-    private fun determineTabsToSuspend(
-        state: BrowserState,
-    ): List<SessionState> {
-        return state.allTabs.filter { tab ->
-            // We never suspend the currently selected tab
-            tab.id != state.selectedTabId
-        }.filter { tab ->
-            // Only tabs with an engine session can get suspended
-            tab.engineState.engineSession != null
-        }.sortedByDescending { tab ->
-            if (tab is TabSessionState) {
-                // We want to suspend the tabs that haven't been accessed for a while first
-                tab.lastAccess
-            } else {
-                // We are more aggressive with custom tabs an always consider them for suspension
-                0
+    private fun determineTabsToSuspend(state: BrowserState): List<SessionState> {
+        return state.allTabs
+            .filter { tab ->
+                // We never suspend the currently selected tab
+                tab.id != state.selectedTabId
             }
-        }.drop(MIN_ACTIVE_TABS) // Keep n [MIN_ACTIVE_TABS] most recently accessed tabs.
+            .filter { tab ->
+                // Only tabs with an engine session can get suspended
+                tab.engineState.engineSession != null
+            }
+            .sortedByDescending { tab ->
+                if (tab is TabSessionState) {
+                    // We want to suspend the tabs that haven't been accessed for a while first
+                    tab.lastAccess
+                } else {
+                    // We are more aggressive with custom tabs an always consider them for suspension
+                    0
+                }
+            }
+            .drop(MIN_ACTIVE_TABS) // Keep n [MIN_ACTIVE_TABS] most recently accessed tabs.
     }
 }
 

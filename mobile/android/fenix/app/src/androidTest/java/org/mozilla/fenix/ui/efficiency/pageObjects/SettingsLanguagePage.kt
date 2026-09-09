@@ -26,12 +26,13 @@ class SettingsLanguagePage(composeRule: AndroidComposeTestRule<HomeActivityInten
         NavigationRegistry.register(
             from = "HomePage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
-                NavigationStep.Click(MainMenuSelectors.SETTINGS_BUTTON),
-                NavigationStep.Swipe(SettingsSelectors.LANGUAGE_BUTTON),
-                NavigationStep.Click(SettingsSelectors.LANGUAGE_BUTTON),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
+                    NavigationStep.Click(MainMenuSelectors.SETTINGS_BUTTON),
+                    NavigationStep.Swipe(SettingsSelectors.LANGUAGE_BUTTON),
+                    NavigationStep.Click(SettingsSelectors.LANGUAGE_BUTTON),
+                ),
         )
     }
 
@@ -40,9 +41,7 @@ class SettingsLanguagePage(composeRule: AndroidComposeTestRule<HomeActivityInten
     }
 
     fun selectLanguage(language: String): SettingsLanguagePage {
-        languagesList()
-            .getChildByText(UiSelector().text(language), language)
-            .click()
+        languagesList().getChildByText(UiSelector().text(language), language).click()
 
         return this
     }
@@ -54,15 +53,10 @@ class SettingsLanguagePage(composeRule: AndroidComposeTestRule<HomeActivityInten
                 value = translatedLanguage,
                 description = "Translated language setting header",
                 groups = listOf(),
-            ),
+            )
         )
         return this
     }
 
-    private fun languagesList() =
-        UiScrollable(
-            UiSelector()
-                .resourceId("$packageName:id/locale_list")
-                .scrollable(true),
-        )
+    private fun languagesList() = UiScrollable(UiSelector().resourceId("$packageName:id/locale_list").scrollable(true))
 }

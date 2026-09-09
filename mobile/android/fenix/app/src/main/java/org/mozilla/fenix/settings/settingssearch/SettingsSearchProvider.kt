@@ -6,9 +6,7 @@ package org.mozilla.fenix.settings.settingssearch
 
 import android.content.Context
 
-/**
- * Provider of [SettingsSearchItem]s from sources that are not backed by an XML preference file.
- */
+/** Provider of [SettingsSearchItem]s from sources that are not backed by an XML preference file. */
 interface SettingsSearchProvider {
     /**
      * Get the list of [SettingsSearchItem]s to be included in the settings search index.

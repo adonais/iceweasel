@@ -40,8 +40,6 @@ TextureType TextureTargetToType(TextureTarget target)
             return TextureType::_2DMultisampleArray;
         case TextureTarget::_3D:
             return TextureType::_3D;
-        case TextureTarget::VideoImage:
-            return TextureType::VideoImage;
         case TextureTarget::Buffer:
             return TextureType::Buffer;
         case TextureTarget::InvalidEnum:
@@ -77,8 +75,6 @@ TextureTarget NonCubeTextureTypeToTarget(TextureType type)
             return TextureTarget::_3D;
         case TextureType::CubeMapArray:
             return TextureTarget::CubeMapArray;
-        case TextureType::VideoImage:
-            return TextureTarget::VideoImage;
         case TextureType::Buffer:
             return TextureTarget::Buffer;
         default:
@@ -175,9 +171,6 @@ TextureType SamplerTypeToTextureType(GLenum samplerType)
 
         case GL_SAMPLER_2D_RECT_ANGLE:
             return TextureType::Rectangle;
-
-        case GL_SAMPLER_VIDEO_IMAGE_WEBGL:
-            return TextureType::VideoImage;
 
         default:
             UNREACHABLE();
@@ -484,6 +477,50 @@ std::ostream &operator<<(std::ostream &os, BlendFactorType value)
             break;
     }
 
+    return os;
+}
+
+std::ostream &operator<<(std::ostream &os, PackUnpackParameter value)
+{
+    switch (value)
+    {
+        case PackUnpackParameter::UnpackRowLength:
+            os << "GL_UNPACK_ROW_LENGTH";
+            break;
+        case PackUnpackParameter::UnpackSkipRows:
+            os << "GL_UNPACK_SKIP_ROWS";
+            break;
+        case PackUnpackParameter::UnpackSkipPixels:
+            os << "GL_UNPACK_SKIP_PIXELS";
+            break;
+        case PackUnpackParameter::UnpackAlignment:
+            os << "GL_UNPACK_ALIGNMENT";
+            break;
+        case PackUnpackParameter::PackRowLength:
+            os << "GL_PACK_ROW_LENGTH";
+            break;
+        case PackUnpackParameter::PackSkipRows:
+            os << "GL_PACK_SKIP_ROWS";
+            break;
+        case PackUnpackParameter::PackSkipPixels:
+            os << "GL_PACK_SKIP_PIXELS";
+            break;
+        case PackUnpackParameter::PackAlignment:
+            os << "GL_PACK_ALIGNMENT";
+            break;
+        case PackUnpackParameter::UnpackSkipImages:
+            os << "GL_UNPACK_SKIP_IMAGES";
+            break;
+        case PackUnpackParameter::UnpackImageHeight:
+            os << "GL_UNPACK_IMAGE_HEIGHT";
+            break;
+        case PackUnpackParameter::PackReverseRowOrder:
+            os << "GL_PACK_REVERSE_ROW_ORDER_ANGLE";
+            break;
+        default:
+            os << "GL_INVALID_ENUM";
+            break;
+    }
     return os;
 }
 

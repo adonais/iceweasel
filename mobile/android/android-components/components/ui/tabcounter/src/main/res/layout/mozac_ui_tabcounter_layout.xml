@@ -23,7 +23,7 @@
             android:contentDescription="@string/mozac_tab_counter_content_description"
             android:importantForAccessibility="no"
             android:layout_gravity="center"
-            app:srcCompat="@drawable/mozac_ui_tabcounter_box" />
+            app:srcCompat="@drawable/mozac_ic_tab_24" />
 
         <TextView
             android:id="@+id/counter_text"

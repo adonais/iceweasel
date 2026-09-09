@@ -28,14 +28,16 @@ import org.jetbrains.uast.UElement
 /**
  * Custom Lint detector that flags [System.currentTimeMillis] usage that can't be injected in tests.
  *
- * The only permitted use is as a default value of a parameter on a function that is not declared
- * inside a class or object, OR as a default value of a parameter on a class. For example:
+ * The only permitted use is as a default value of a parameter on a function that is not declared inside a class or
+ * object, OR as a default value of a parameter on a class. For example:
  * ```
  * class Class(
  *     private val currentTimeProvider: () -> Long = { System.currentTimeMillis() }
  * )
  * ```
+ *
  * or
+ *
  * ```
  * fun topLevelFunction(currentTimeProvider: () -> Long = { System.currentTimeMillis() } ) { ... }
  * ```
@@ -65,8 +67,7 @@ class NoSystemCurrentTimeMillisDetector : Detector(), SourceCodeScanner {
         )
     }
 
-    override fun getApplicableUastTypes(): List<Class<out UElement>> =
-        listOf(UCallableReferenceExpression::class.java)
+    override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UCallableReferenceExpression::class.java)
 
     override fun createUastHandler(context: JavaContext): UElementHandler =
         object : UElementHandler() {
@@ -99,14 +100,12 @@ class NoSystemCurrentTimeMillisDetector : Detector(), SourceCodeScanner {
         }
 
     /**
-     * Not the only valid fix (any injectable default parameter satisfies the rule, see
-     * `isInjectableDefaultParameter`), but `DateTimeProvider` is the convention already used
-     * elsewhere in the codebase, so link it as one example rather than force it as the fix.
+     * Not the only valid fix (any injectable default parameter satisfies the rule, see `isInjectableDefaultParameter`),
+     * but `DateTimeProvider` is the convention already used elsewhere in the codebase, so link it as one example rather
+     * than force it as the fix.
      */
-    private fun dateTimeProviderQuickFix(): LintFix = fix()
-        .name("See DateTimeProvider for one way to make this injectable")
-        .url(DATE_TIME_PROVIDER_URL)
-        .build()
+    private fun dateTimeProviderQuickFix(): LintFix =
+        fix().name("See DateTimeProvider for one way to make this injectable").url(DATE_TIME_PROVIDER_URL).build()
 
     @Suppress("ReturnCount")
     private fun isInjectableDefaultParameter(sourcePsi: PsiElement?): Boolean {
@@ -116,8 +115,7 @@ class NoSystemCurrentTimeMillisDetector : Detector(), SourceCodeScanner {
 
         // Look for an enclosing Kotlin parameter. Java has no default parameter values, so a
         // Java call site will never have a `KtParameter` ancestor and is always flagged.
-        val parameter =
-            PsiTreeUtil.getParentOfType(sourcePsi, KtParameter::class.java) ?: return false
+        val parameter = PsiTreeUtil.getParentOfType(sourcePsi, KtParameter::class.java) ?: return false
 
         // A parameter without a default value isn't the injectable case we permit; the caller
         // is then forced to pass the system clock at every call site.
@@ -130,7 +128,8 @@ class NoSystemCurrentTimeMillisDetector : Detector(), SourceCodeScanner {
         return when (val owner = parameter.ownerFunction) {
             // Constructor parameters always belong to a class: Kotlin objects can't declare
             // constructor parameters, so reaching here implies a class.
-            is KtPrimaryConstructor, is KtSecondaryConstructor -> true
+            is KtPrimaryConstructor,
+            is KtSecondaryConstructor -> true
             // Restrict to top-level functions: methods on classes/objects and local functions
             // are not injectable from outside.
             is KtNamedFunction -> owner.isTopLevel
@@ -151,28 +150,32 @@ class NoSystemCurrentTimeMillisDetector : Detector(), SourceCodeScanner {
                 "linked fix), but any injectable default parameter satisfies this rule."
 
         @JvmField
-        val ISSUE_NO_SYSTEM_CURRENT_TIME_MILLIS: Issue = Issue.create(
-            id = "NoSystemCurrentTimeMillis",
-            briefDescription = "`System.currentTimeMillis()` must be injectable.",
-            explanation = """
-                `System.currentTimeMillis()` relies on global state which is hard to control in
-                tests. Restrict its use to default parameter values so callers can inject a fake
-                clock. The only permitted call sites are:
-                  - as a default value of a parameter on a function that is not declared inside a
-                    class or object; or
-                  - as a default value of a parameter on a class.
+        val ISSUE_NO_SYSTEM_CURRENT_TIME_MILLIS: Issue =
+            Issue.create(
+                id = "NoSystemCurrentTimeMillis",
+                briefDescription = "`System.currentTimeMillis()` must be injectable.",
+                explanation =
+                    """
+                    `System.currentTimeMillis()` relies on global state which is hard to control in
+                    tests. Restrict its use to default parameter values so callers can inject a fake
+                    clock. The only permitted call sites are:
+                      - as a default value of a parameter on a function that is not declared inside a
+                        class or object; or
+                      - as a default value of a parameter on a class.
 
-                `DateTimeProvider` is one existing convention in this codebase for injecting time,
-                but it isn't the only way to satisfy this rule: any injectable default parameter
-                works, including a plain `() -> Long` lambda.
-            """.trimIndent(),
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.WARNING,
-            implementation = Implementation(
-                NoSystemCurrentTimeMillisDetector::class.java,
-                Scope.JAVA_FILE_SCOPE,
-            ),
-        )
+                    `DateTimeProvider` is one existing convention in this codebase for injecting time,
+                    but it isn't the only way to satisfy this rule: any injectable default parameter
+                    works, including a plain `() -> Long` lambda.
+                    """
+                        .trimIndent(),
+                category = Category.CORRECTNESS,
+                priority = 6,
+                severity = Severity.WARNING,
+                implementation =
+                    Implementation(
+                        NoSystemCurrentTimeMillisDetector::class.java,
+                        Scope.JAVA_FILE_SCOPE,
+                    ),
+            )
     }
 }

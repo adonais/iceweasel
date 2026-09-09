@@ -6,9 +6,7 @@ package mozilla.components.support.base.log.sink
 
 import mozilla.components.support.base.log.Log
 
-/**
- * Common interface for log sinks.
- */
+/** Common interface for log sinks. */
 interface LogSink {
 
     /**

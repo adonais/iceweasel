@@ -149,7 +149,7 @@ export class UrlbarProviderInputHistory extends UrlbarProvider {
             url,
             title: resultTitle,
             icon: lazy.UrlbarShared.getIconForUrl(url),
-            userContextId,
+            userContext: UrlbarUtils.getUserContextData(userContextId),
             lastVisit,
             action: lazy.UrlbarPrefs.get("secondaryActions.switchToTab")
               ? UrlbarUtils.createTabSwitchSecondaryAction(userContextId)

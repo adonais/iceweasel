@@ -14,18 +14,15 @@ import mozilla.components.concept.ai.controls.AIFeatureMetadata
 import mozilla.components.concept.ai.controls.AIFeatureRegistry
 import mozilla.components.concept.ai.controls.AIFeatureState
 
-/**
- * Creates the implementation of [AIFeatureRegistry], which enforces unique feature IDs.
- */
+/** Creates the implementation of [AIFeatureRegistry], which enforces unique feature IDs. */
 fun AIFeatureRegistry.Companion.default(
     scope: CoroutineScope,
     context: Context,
-): AIFeatureRegistry =
-    DefaultAIFeatureRegistry(scope, AIFeatureBlockStorage.dataStore(context))
+): AIFeatureRegistry = DefaultAIFeatureRegistry(scope, AIFeatureBlockStorage.dataStore(context))
 
 /**
- * Default implementation of [AIFeatureRegistry] that enforces unique feature IDs and
- * initializes feature states based on the block status stored in [AIFeatureBlockStorage].
+ * Default implementation of [AIFeatureRegistry] that enforces unique feature IDs and initializes feature states based
+ * on the block status stored in [AIFeatureBlockStorage].
  */
 internal class DefaultAIFeatureRegistry(
     private val scope: CoroutineScope,

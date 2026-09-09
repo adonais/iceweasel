@@ -4,12 +4,12 @@
 
 package mozilla.components.feature.awesomebar.optimizedsuggestions
 
+import java.util.UUID
 import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion
 import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion.Flag
 import mozilla.components.concept.awesomebar.AwesomeBar.SuggestionItem
 import mozilla.components.concept.awesomebar.AwesomeBar.SuggestionProvider
-import java.util.UUID
 
 /**
  * [FlightSuggestion] to be displayed by an [AwesomeBar] implementation for flight information.
@@ -55,17 +55,20 @@ data class FlightData(
     val date: String,
 )
 
-/**
- * Represents the flight status type used by the Flight Suggestion.
- */
-enum class FlightSuggestionStatus { ON_TIME, IN_FLIGHT, DELAYED, CANCELLED, ARRIVED }
+/** Represents the flight status type used by the Flight Suggestion. */
+enum class FlightSuggestionStatus {
+    ON_TIME,
+    IN_FLIGHT,
+    DELAYED,
+    CANCELLED,
+    ARRIVED,
+}
 
 /**
  * Domain model representing a single flight suggestion result.
  *
- * This model is independent of UI classes and is used as an intermediate
- * data representation before being mapped into an AwesomeBar-specific
- * suggestion type (e.g. [AwesomeBar.FlightSuggestion]).
+ * This model is independent of UI classes and is used as an intermediate data representation before being mapped into
+ * an AwesomeBar-specific suggestion type (e.g. [AwesomeBar.FlightSuggestion]).
  *
  * @property flightNumber The IATA flight designator (e.g., "AA123").
  * @property destination The arrival airport information.
@@ -92,9 +95,7 @@ data class FlightItem(
     val url: String,
     val airline: Airline,
 ) {
-    /**
-     * Represents an airport in a flight suggestion.
-     */
+    /** Represents an airport in a flight suggestion. */
     data class Airport(
         val code: String,
         val city: String,
@@ -103,17 +104,15 @@ data class FlightItem(
     /**
      * Represents the departure and arrival times in a flight suggestion.
      *
-     * Both scheduled and estimated times are in local airport time.
-     * Estimated time is used when the flight is delayed. Otherwise, scheduled time is used.
+     * Both scheduled and estimated times are in local airport time. Estimated time is used when the flight is delayed.
+     * Otherwise, scheduled time is used.
      */
     data class Timing(
         val scheduledTime: String,
         val estimatedTime: String?,
     )
 
-    /**
-     * Represents an airline in a flight suggestion.
-     */
+    /** Represents an airline in a flight suggestion. */
     data class Airline(
         val code: String?,
         val name: String?,

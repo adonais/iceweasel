@@ -5,6 +5,8 @@
 package mozilla.components.feature.containers
 
 import android.content.Context
+import java.util.UUID
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -16,12 +18,10 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.ContainerState
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
-import java.util.UUID
-import kotlin.coroutines.CoroutineContext
 
 /**
- * [Middleware] implementation for handling [ContainerAction] and syncing the containers in
- * [BrowserState.containers] with the [ContainerStorage].
+ * [Middleware] implementation for handling [ContainerAction] and syncing the containers in [BrowserState.containers]
+ * with the [ContainerStorage].
  */
 class ContainerMiddleware(
     applicationContext: Context,
@@ -48,17 +48,13 @@ class ContainerMiddleware(
         next(action)
     }
 
-    private fun initializeContainers(
-        store: Store<BrowserState, BrowserAction>,
-    ) = scope.launch {
+    private fun initializeContainers(store: Store<BrowserState, BrowserAction>) = scope.launch {
         containerStorage.getContainers().collect { containers ->
             store.dispatch(ContainerAction.AddContainersAction(containers))
         }
     }
 
-    private fun addContainer(
-        action: ContainerAction.AddContainerAction,
-    ) = scope.launch {
+    private fun addContainer(action: ContainerAction.AddContainerAction) = scope.launch {
         containerStorage.addContainer(
             contextId = action.container.contextId,
             name = action.container.name,
@@ -79,18 +75,12 @@ class ContainerMiddleware(
         }
     }
 
-    /**
-     * Interface for a storage to be passed to the middleware.
-     */
+    /** Interface for a storage to be passed to the middleware. */
     interface Storage {
-        /**
-         * Returns a [Flow] list of all the [ContainerState] instances.
-         */
+        /** Returns a [Flow] list of all the [ContainerState] instances. */
         fun getContainers(): Flow<List<ContainerState>>
 
-        /**
-         * Adds a new [ContainerState].
-         */
+        /** Adds a new [ContainerState]. */
         suspend fun addContainer(
             contextId: String = UUID.randomUUID().toString(),
             name: String,
@@ -98,9 +88,7 @@ class ContainerMiddleware(
             icon: ContainerState.Icon,
         )
 
-        /**
-         * Removes the given [ContainerState].
-         */
+        /** Removes the given [ContainerState]. */
         suspend fun removeContainer(container: ContainerState)
     }
 }

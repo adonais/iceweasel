@@ -23,13 +23,11 @@ import mozilla.components.support.ktx.android.content.isOSOnLowMemory
 typealias RequestHomepageScreenshot = (Bitmap) -> Unit
 
 /**
- * Feature implementation for automatically taking thumbnails of homepage.
- * The feature will take a screenshot when the page finishes loading,
- * and will add it to the [ContentState.thumbnail] property.
+ * Feature implementation for automatically taking thumbnails of homepage. The feature will take a screenshot when the
+ * page finishes loading, and will add it to the [ContentState.thumbnail] property.
  *
- * If the OS is under low memory conditions, the screenshot will be not taken.
- * Ideally, this should be used in conjunction with `SessionManager.onLowMemory` to allow
- * free up some [ContentState.thumbnail] from memory.
+ * If the OS is under low memory conditions, the screenshot will be not taken. Ideally, this should be used in
+ * conjunction with `SessionManager.onLowMemory` to allow free up some [ContentState.thumbnail] from memory.
  */
 class HomepageThumbnails(
     private val context: Context,
@@ -40,7 +38,8 @@ class HomepageThumbnails(
 ) : AbstractBinding<BrowserState>(store, mainDispatcher) {
 
     override suspend fun onState(flow: Flow<BrowserState>) {
-        flow.map { it.selectedTab }
+        flow
+            .map { it.selectedTab }
             .distinctUntilChanged()
             .collect { state ->
                 if (state?.content?.url == homepageUrl) {
@@ -56,8 +55,7 @@ class HomepageThumbnails(
         }
     }
 
-    @VisibleForTesting
-    internal var testLowMemory = false
+    @VisibleForTesting internal var testLowMemory = false
 
     private fun isLowOnMemory() = testLowMemory || context.isOSOnLowMemory()
 }

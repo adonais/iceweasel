@@ -1,3 +1,5 @@
+(how-to-submit-a-patch)=
+
 # How to submit a patch
 
 Submitting a patch, getting it reviewed, and committed to the Firefox
@@ -69,13 +71,8 @@ new user interface (UI review), functions (API review), or testcases for
 the proposed change.
 
 If module ownership is not clear, ask on the newsgroups or [on
-Matrix](https://chat.mozilla.org). The revision log for the relevant
-file might also be helpful. For example, see the change log for
-`browser/base/content/browser.js`, by clicking the "Git Log"
-link at the top of [Searchfox](https://searchfox.org/firefox-main/source/), or
-by running `git log browser/base/content/browser.js`. The corresponding
-checkin message will contain something like "r=nickname", identifying
-active code submissions, and potential code reviewers.
+Matrix](https://chat.mozilla.org). See {ref}`Getting reviews` for the other
+ways of identifying a suitable reviewer or review group.
 
 ## Working on a patch
 
@@ -141,6 +138,12 @@ Make sure you rebase your patch on top of the latest build before you
 submit to prevent any merge conflicts.
 :::
 
+Review your own patch before requesting a peer review: read the full diff
+as if it were someone else's, and make sure you can explain every change.
+If you used AI tools, this step is mandatory, and running an AI review
+locally to catch issues you may have missed is also recommended. See the
+{doc}`AI Coding Policy <ai-coding>` for the full expectations.
+
 Mozilla uses Phabricator for code review. See the [Mozilla Phabricator
 User
 Guide](https://moz-conduit.readthedocs.io/en/latest/phabricator-user.html)
@@ -154,6 +157,8 @@ some code.
 ## Getting reviews for my patch
 
 See the dedicated page {ref}`Getting reviews`
+
+(addressing-review-comments)=
 
 ## Addressing review comments
 
@@ -179,7 +184,7 @@ non-invasive, post an updated version of the patch. For all non-trivial
 changes, another review is necessary.
 
 If at any point the review process stalls for more than two weeks, see
-the previous 'Getting attention' section.
+{ref}`getting-attention`.
 
 In many open source projects, developers will accept patches in an
 unfinished state, finish them, and apply the completed code. In
@@ -221,5 +226,5 @@ mean the tests you ran before checking in are not comprehensive enough.
 A resubmitted patch, or a patch to fix the regression, should be
 accompanied by appropriate tests.
 
-After authoring a few patches, consider [getting commit access to
-Mozilla source code](https://www.mozilla.org/about/governance/policies/commit/).
+After authoring a few patches, consider requesting commit access to the
+Mozilla source code. See {ref}`Levelling up`.

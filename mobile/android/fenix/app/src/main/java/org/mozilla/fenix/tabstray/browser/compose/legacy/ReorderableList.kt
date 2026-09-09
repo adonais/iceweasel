@@ -30,9 +30,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.zIndex
+import kotlin.math.abs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlin.math.abs
 
 /**
  * Remember the reordering state for reordering list items.
@@ -54,18 +54,19 @@ fun createListReorderState(
     val scope = rememberCoroutineScope()
     val touchSlop = LocalViewConfiguration.current.touchSlop
     val hapticFeedback = LocalHapticFeedback.current
-    val state = remember(listState) {
-        ListReorderState(
-            listState = listState,
-            onMove = onMove,
-            scope = scope,
-            touchSlop = touchSlop,
-            hapticFeedback = hapticFeedback,
-            ignoredItems = ignoredItems,
-            onLongPress = onLongPress,
-            onExitLongPress = onExitLongPress,
-        )
-    }
+    val state =
+        remember(listState) {
+            ListReorderState(
+                listState = listState,
+                onMove = onMove,
+                scope = scope,
+                touchSlop = touchSlop,
+                hapticFeedback = hapticFeedback,
+                ignoredItems = ignoredItems,
+                onLongPress = onLongPress,
+                onExitLongPress = onExitLongPress,
+            )
+        }
     return state
 }
 
@@ -82,7 +83,8 @@ fun createListReorderState(
  * @param onExitLongPress Optional callback to be invoked when the item is dragged after long press.
  */
 @Suppress("LongParameterList")
-class ListReorderState internal constructor(
+class ListReorderState
+internal constructor(
     private val listState: LazyListState,
     private val scope: CoroutineScope,
     private val hapticFeedback: HapticFeedback,
@@ -99,13 +101,15 @@ class ListReorderState internal constructor(
     private var draggingItemInitialOffset by mutableFloatStateOf(0f)
     internal var moved by mutableStateOf(false)
     private val draggingItemOffset: Float
-        get() = draggingItemLayoutInfo?.let { item ->
-            draggingItemInitialOffset + draggingItemCumulatedOffset - item.offset
-        } ?: 0f
+        get() =
+            draggingItemLayoutInfo?.let { item ->
+                draggingItemInitialOffset + draggingItemCumulatedOffset - item.offset
+            } ?: 0f
 
     internal fun computeItemOffset(index: Int): Float {
-        val itemAtIndex = listState.layoutInfo.visibleItemsInfo.firstOrNull { info -> info.index == index }
-            ?: return draggingItemOffset
+        val itemAtIndex =
+            listState.layoutInfo.visibleItemsInfo.firstOrNull { info -> info.index == index }
+                ?: return draggingItemOffset
         return draggingItemInitialOffset + draggingItemCumulatedOffset - itemAtIndex.offset
     }
 
@@ -114,6 +118,7 @@ class ListReorderState internal constructor(
 
     internal var previousKeyOfDraggedItem by mutableStateOf<Any?>(null)
         private set
+
     internal var previousItemOffset = Animatable(0f)
         private set
 
@@ -169,13 +174,15 @@ class ListReorderState internal constructor(
         val endOffset = startOffset + draggingItem.size
         val middleOffset = startOffset + (endOffset - startOffset) / 2f
 
-        val targetItem = listState.layoutInfo.visibleItemsInfo.find { item ->
-            middleOffset.toInt() in item.offset..item.endOffset && draggingItemKey != item.key
-        }
+        val targetItem =
+            listState.layoutInfo.visibleItemsInfo.find { item ->
+                middleOffset.toInt() in item.offset..item.endOffset && draggingItemKey != item.key
+            }
 
         if (targetItem != null && targetItem.key !in ignoredItems) {
-            if (draggingItem.index == listState.firstVisibleItemIndex ||
-                targetItem.index == listState.firstVisibleItemIndex
+            if (
+                draggingItem.index == listState.firstVisibleItemIndex ||
+                    targetItem.index == listState.firstVisibleItemIndex
             ) {
                 scope.launch {
                     onMove.invoke(draggingItem, targetItem)
@@ -185,15 +192,16 @@ class ListReorderState internal constructor(
                 onMove.invoke(draggingItem, targetItem)
             }
         } else {
-            val overscroll = when {
-                draggingItemCumulatedOffset > 0 ->
-                    (endOffset - listState.layoutInfo.viewportEndOffset).coerceAtLeast(0f)
+            val overscroll =
+                when {
+                    draggingItemCumulatedOffset > 0 ->
+                        (endOffset - listState.layoutInfo.viewportEndOffset).coerceAtLeast(0f)
 
-                draggingItemCumulatedOffset < 0 ->
-                    (startOffset - listState.layoutInfo.viewportStartOffset).coerceAtMost(0f)
+                    draggingItemCumulatedOffset < 0 ->
+                        (startOffset - listState.layoutInfo.viewportStartOffset).coerceAtMost(0f)
 
-                else -> 0f
-            }
+                    else -> 0f
+                }
             if (overscroll != 0f) {
                 scope.launch {
                     listState.scrollBy(overscroll)
@@ -218,43 +226,36 @@ fun LazyItemScope.ReorderableDragItemContainer(
     position: Int,
     content: @Composable () -> Unit,
 ) {
-    val modifier = when (key) {
-        state.draggingItemKey -> {
-            Modifier
-                .zIndex(1f)
-                .graphicsLayer {
+    val modifier =
+        when (key) {
+            state.draggingItemKey -> {
+                Modifier.zIndex(1f).graphicsLayer {
                     when (state.orientation) {
                         Orientation.Vertical -> translationY = state.computeItemOffset(position)
                         Orientation.Horizontal -> translationX = state.computeItemOffset(position)
                     }
                 }
-        }
+            }
 
-        state.previousKeyOfDraggedItem -> {
-            Modifier
-                .zIndex(1f)
-                .graphicsLayer {
+            state.previousKeyOfDraggedItem -> {
+                Modifier.zIndex(1f).graphicsLayer {
                     when (state.orientation) {
                         Orientation.Vertical -> translationY = state.previousItemOffset.value
                         Orientation.Horizontal -> translationX = state.previousItemOffset.value
                     }
                 }
-        }
+            }
 
-        else -> {
-            Modifier
-                .zIndex(0f)
-                .animateItem(tween())
+            else -> {
+                Modifier.zIndex(0f).animateItem(tween())
+            }
         }
-    }
     Box(modifier = modifier, propagateMinConstraints = true) {
         content()
     }
 }
 
-/**
- * Calculates the offset of an item taking its height into account.
- */
+/** Calculates the offset of an item taking its height into account. */
 private val LazyListItemInfo.endOffset: Int
     get() = offset + size
 
@@ -279,26 +280,30 @@ fun Modifier.detectListPressAndDrag(
     listState: LazyListState,
     reorderState: ListReorderState,
     shouldLongPressToDrag: Boolean,
-): Modifier = this then Modifier.pointerInput(listState, shouldLongPressToDrag) {
-    if (shouldLongPressToDrag) {
-        detectDragGesturesAfterLongPress(
-            onDragStart = { offset ->
-                val offsetInOrientation = when (listState.layoutInfo.orientation) {
-                    Orientation.Vertical -> offset.y
-                    Orientation.Horizontal -> offset.x
-                }
-                reorderState.onTouchSlopPassed(offsetInOrientation, true)
-            },
-            onDrag = { change, dragAmount ->
-                change.consume()
-                val dragOffset = when (listState.layoutInfo.orientation) {
-                    Orientation.Vertical -> dragAmount.y
-                    Orientation.Horizontal -> dragAmount.x
-                }
-                reorderState.onDrag(dragOffset)
-            },
-            onDragEnd = reorderState::onDragInterrupted,
-            onDragCancel = reorderState::onDragInterrupted,
-        )
-    }
-}
+): Modifier =
+    this then
+        Modifier.pointerInput(listState, shouldLongPressToDrag) {
+            if (shouldLongPressToDrag) {
+                detectDragGesturesAfterLongPress(
+                    onDragStart = { offset ->
+                        val offsetInOrientation =
+                            when (listState.layoutInfo.orientation) {
+                                Orientation.Vertical -> offset.y
+                                Orientation.Horizontal -> offset.x
+                            }
+                        reorderState.onTouchSlopPassed(offsetInOrientation, true)
+                    },
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        val dragOffset =
+                            when (listState.layoutInfo.orientation) {
+                                Orientation.Vertical -> dragAmount.y
+                                Orientation.Horizontal -> dragAmount.x
+                            }
+                        reorderState.onDrag(dragOffset)
+                    },
+                    onDragEnd = reorderState::onDragInterrupted,
+                    onDragCancel = reorderState::onDragInterrupted,
+                )
+            }
+        }

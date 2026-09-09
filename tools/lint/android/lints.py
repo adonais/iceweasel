@@ -103,39 +103,33 @@ def format(_paths, config, fix=None, **lintargs):
         extra_args=lintargs.get("extra_args") or [],
     )
 
+    message = "Formatting error, please run ./mach lint -l android-format --fix"
     results = []
     for path in lintargs["substs"]["GRADLE_ANDROID_FORMAT_LINT_FOLDERS"]:
-        for outdir in ("spotless-clean", "spotless-lints"):
-            folder = os.path.join(
-                topobjdir, "gradle", "build", path, outdir, "spotlessJava"
+        results.extend(
+            parse_spotless_results(
+                config,
+                path,
+                "spotlessJava",
+                "java",
+                "spotless-java",
+                message,
+                topsrcdir=topsrcdir,
+                topobjdir=topobjdir,
             )
-            for filename in glob.iglob(folder + "/**/*.java", recursive=True):
-                err = {
-                    "rule": "spotless-java",
-                    "path": os.path.join(
-                        topsrcdir, path, mozpath.relpath(filename, folder)
-                    ),
-                    "lineno": 0,
-                    "column": 0,
-                    "message": "Formatting error, please run ./mach lint -l android-format --fix",
-                    "level": "error",
-                }
-                results.append(result.from_config(config, **err))
-            folder = os.path.join(
-                topobjdir, "gradle", "build", path, outdir, "spotlessKotlin"
+        )
+        results.extend(
+            parse_spotless_results(
+                config,
+                path,
+                "spotlessKotlin",
+                "kt",
+                "spotless-kt",
+                message,
+                topsrcdir=topsrcdir,
+                topobjdir=topobjdir,
             )
-            for filename in glob.iglob(folder + "/**/*.kt", recursive=True):
-                err = {
-                    "rule": "spotless-kt",
-                    "path": os.path.join(
-                        topsrcdir, path, mozpath.relpath(filename, folder)
-                    ),
-                    "lineno": 0,
-                    "column": 0,
-                    "message": "Formatting error, please run ./mach lint -l android-format --fix",
-                    "level": "error",
-                }
-                results.append(result.from_config(config, **err))
+        )
 
     if len(results) == 0 and ret != 0:
         # spotless seems to hit unfixed error.
@@ -203,10 +197,10 @@ def report_gradlew(
     topobjdir = lintargs["topobjdir"]
 
     if fix:
-        ktlint_task = f":{project_name}:ktlintFormat"
+        ktfmt_task = f":{project_name}:ktfmtFormat"
     else:
-        ktlint_task = f":{project_name}:ktlint"
-    tasks = [ktlint_task, f":{project_name}:detekt"] + list(lint_tasks)
+        ktfmt_task = f":{project_name}:ktfmtCheck"
+    tasks = [ktfmt_task, f":{project_name}:detekt"] + list(lint_tasks)
 
     extra_args = lintargs.get("extra_args") or []
     if disable_android_components_tasks:
@@ -267,39 +261,73 @@ def report_gradlew(
         print(f"Could not read detekt report: '{detekt_report}'")
         pass
 
-    ktlint_file = "ktlint.json"
-    if fix:
-        ktlint_file = "ktlintFormat.json"
-
-    ktlint_report = os.path.join(reports, "ktlint", ktlint_file)
-    if not os.path.exists(ktlint_report):
-        ktlint_report = os.path.join(
-            topsrcdir, subdir, "app", "build", "reports", "ktlint", ktlint_file
+    if not fix:
+        results.extend(
+            parse_ktfmt_results(
+                config,
+                subdir,
+                topsrcdir=topsrcdir,
+                topobjdir=topobjdir,
+            )
         )
-    try:
-        issues = json.load(open(ktlint_report))
 
-        for issue in issues:
-            name = issue["file"]
-            if is_excluded_file(topsrcdir, excludes, name):
-                continue
-            for error in issue["errors"]:
-                err = {
-                    "rule": error["rule"],
-                    "path": name,
-                    "lineno": error["line"],
-                    "column": error["column"],
-                    "message": error["message"],
-                    "level": "error",
-                }
-                results.append(result.from_config(config, **err))
-    except FileNotFoundError:
-        print(f"Could not read ktlint report: `{ktlint_report}`")
-        pass
+    results.extend(parse_lint_report(config, subdir, **lintargs))
 
-    return results + parse_lint_report(
-        config, subdir, tasks=lint_tasks, ret=ret, **lintargs
-    )
+    if ret != 0 and not results:
+        # One of the tasks failed without emitting anything we could parse.
+        err = {
+            "level": "error",
+            "rule": "build-failure",
+            "message": f"Build Failed running {tasks} - Please check logs for more information",
+            "path": os.path.join(topsrcdir, subdir),
+            "lineno": 0,
+        }
+        results.append(result.from_config(config, **err))
+
+    return results
+
+
+def parse_spotless_results(
+    config, project_dir, spotless_task, extension, rule, message, topsrcdir, topobjdir
+):
+    """Parse all files spotless reported need formatting"""
+    results = []
+    build_dir = os.path.join(topobjdir, "gradle", "build", project_dir)
+    for outdir in ("spotless-clean", "spotless-lints"):
+        folder = os.path.join(build_dir, outdir, spotless_task)
+        for filename in glob.iglob(f"{folder}/**/*.{extension}", recursive=True):
+            err = {
+                "rule": rule,
+                "path": os.path.join(
+                    topsrcdir, project_dir, mozpath.relpath(filename, folder)
+                ),
+                "lineno": 0,
+                "column": 0,
+                "message": message,
+                "level": "error",
+            }
+            results.append(result.from_config(config, **err))
+    return results
+
+
+def parse_ktfmt_results(config, subdir, topsrcdir=None, topobjdir=None):
+    results = []
+    # :fenix and :focus-android are rooted at <subdir>/app, :android-components
+    # at <subdir> itself.
+    for project_dir in (subdir, os.path.join(subdir, "app")):
+        results.extend(
+            parse_spotless_results(
+                config,
+                project_dir,
+                "spotlessKotlin",
+                "kt",
+                "ktfmt",
+                "Formatting error, please run ./mach lint --fix or ./mach gradle ktfmtFormat",
+                topsrcdir=topsrcdir,
+                topobjdir=topobjdir,
+            )
+        )
+    return results
 
 
 def is_excluded_file(topsrcdir, excludes, file):
@@ -445,7 +473,7 @@ def lint(_paths, config, **lintargs):
     return results
 
 
-def parse_lint_report(config, subdir, tasks=[], ret=0, **lintargs):
+def parse_lint_report(config, subdir, **lintargs):
     topsrcdir = lintargs["root"]
 
     reports = os.path.join(topsrcdir, subdir, "build", "reports")
@@ -524,15 +552,6 @@ def parse_lint_report(config, subdir, tasks=[], ret=0, **lintargs):
                 }
                 results.append(result.from_config(config, **err))
 
-        if ret != 0 and results == []:
-            err = {
-                "level": "error",
-                "rule": "build-failure",
-                "message": f"Build Failed running {tasks} - Please check logs for more information",
-                "path": os.path.join(topsrcdir, subdir),
-                "lineno": 0,
-            }
-            results.append(result.from_config(config, **err))
         return results
     except FileNotFoundError:
         err = {

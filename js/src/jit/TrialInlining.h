@@ -118,6 +118,13 @@ class InlinableCallData : public InlinableOpData {
  public:
   ObjOperandId calleeOperand;
   CallFlags callFlags;
+
+  // For bound function calls, |calleeOperand| is the bound function and
+  // |boundTargetOperand| is the target we're inlining. numBoundArgs is
+  // currently always 0: see updateCallInfoForInlinedBoundCall.
+  bool isBound = false;
+  ObjOperandId boundTargetOperand;
+  uint32_t numBoundArgs = 0;
 };
 
 class InlinableGetterData : public InlinableOpData {
@@ -188,9 +195,6 @@ class MOZ_RAII TrialInliner {
   JSContext* cx_;
   HandleScript script_;
   ICScript* icScript_;
-
-  // Take a lock during concurrent marking.
-  gc::AutoMarkingLock lock_;
 };
 
 bool DoTrialInlining(JSContext* cx, BaselineFrame* frame);

@@ -13,9 +13,7 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.DrawableCompat
 
 object DrawableUtils {
-    /**
-     * Return a tinted drawable object associated with a particular resource ID.
-     */
+    /** Return a tinted drawable object associated with a particular resource ID. */
     fun loadAndTintDrawable(
         context: Context,
         @DrawableRes resourceId: Int,
@@ -27,9 +25,7 @@ object DrawableUtils {
         return wrapped
     }
 
-    /**
-     * Return a color state tinted drawable object associated with a particular resource ID.
-     */
+    /** Return a color state tinted drawable object associated with a particular resource ID. */
     fun loadAndTintDrawable(
         context: Context,
         @DrawableRes resourceId: Int,

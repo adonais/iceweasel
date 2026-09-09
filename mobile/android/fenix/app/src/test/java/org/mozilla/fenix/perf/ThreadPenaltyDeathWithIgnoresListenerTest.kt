@@ -120,8 +120,7 @@ class ThreadPenaltyDeathWithIgnoresListenerTest {
         listener.onThreadViolation(null)
     }
 
-    private fun getIdsControllerStackTrace() =
-        StackTraces.getStackTraceFromLogcat("IdsControllerLogcat.txt")
+    private fun getIdsControllerStackTrace() = StackTraces.getStackTraceFromLogcat("IdsControllerLogcat.txt")
 
     private fun getEdmStorageProviderStackTrace() =
         StackTraces.getStackTraceFromLogcat("EdmStorageProviderBaseLogcat.txt")

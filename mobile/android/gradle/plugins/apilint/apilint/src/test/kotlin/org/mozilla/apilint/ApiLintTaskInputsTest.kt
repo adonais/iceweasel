@@ -12,8 +12,8 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * The lint tasks read these settings while they run, so Gradle only knows a configuration change
- * should re-run them if they are declared as inputs too.
+ * The lint tasks read these settings while they run, so Gradle only knows a configuration change should re-run them if
+ * they are declared as inputs too.
  */
 class ApiLintTaskInputsTest {
     private lateinit var project: Project

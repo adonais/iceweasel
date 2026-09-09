@@ -10,12 +10,19 @@ import org.mozilla.fenix.utils.Settings
 
 internal interface DohSettingsProvider {
     fun getProtectionLevels(): List<ProtectionLevel>
+
     fun getDefaultProviders(): List<Provider>
+
     fun getSelectedProtectionLevel(): ProtectionLevel
+
     fun getSelectedProvider(): Provider?
+
     fun getExceptions(): List<String>
+
     fun setProtectionLevel(protectionLevel: ProtectionLevel, provider: Provider?)
+
     fun setCustomProvider(url: String)
+
     fun setExceptions(exceptions: List<String>)
 }
 
@@ -35,30 +42,35 @@ internal class DefaultDohSettingsProvider(
     // Bug 1946867 - Load DoH Provider List from Gecko instead of hardcoding
     private val dohDefaultProviderUrl = settings.dohDefaultProviderUrl
 
-    private val cloudflare = Provider.BuiltIn(
-        url = cloudflareUri,
-        name = "Cloudflare",
-        default = dohDefaultProviderUrl.isBlank() || dohDefaultProviderUrl == cloudflareUri,
-    )
-    private val nextDns = Provider.BuiltIn(
-        url = nextDnsUri,
-        name = "NextDNS",
-        default = dohDefaultProviderUrl == nextDnsUri,
-    )
+    private val cloudflare =
+        Provider.BuiltIn(
+            url = cloudflareUri,
+            name = "Cloudflare",
+            default = dohDefaultProviderUrl.isBlank() || dohDefaultProviderUrl == cloudflareUri,
+        )
+    private val nextDns =
+        Provider.BuiltIn(
+            url = nextDnsUri,
+            name = "NextDNS",
+            default = dohDefaultProviderUrl == nextDnsUri,
+        )
     private val providerUrl = settings.dohProviderUrl
-    private val custom = Provider.Custom(
-        url = if (providerUrl != cloudflareUri && providerUrl != nextDnsUri) {
-            providerUrl
-        } else {
-            ""
-        },
-    )
+    private val custom =
+        Provider.Custom(
+            url =
+                if (providerUrl != cloudflareUri && providerUrl != nextDnsUri) {
+                    providerUrl
+                } else {
+                    ""
+                }
+        )
 
-    override fun getDefaultProviders(): List<Provider> = listOf(
-        cloudflare,
-        nextDns,
-        custom,
-    )
+    override fun getDefaultProviders(): List<Provider> =
+        listOf(
+            cloudflare,
+            nextDns,
+            custom,
+        )
 
     override fun getSelectedProtectionLevel(): ProtectionLevel {
         return when (settings.getDohSettingsMode()) {
@@ -71,7 +83,8 @@ internal class DefaultDohSettingsProvider(
 
     override fun getSelectedProvider(): Provider? {
         return when (settings.getDohSettingsMode()) {
-            Engine.DohSettingsMode.OFF, Engine.DohSettingsMode.DEFAULT -> {
+            Engine.DohSettingsMode.OFF,
+            Engine.DohSettingsMode.DEFAULT -> {
                 null
             }
 
@@ -117,10 +130,8 @@ internal class DefaultDohSettingsProvider(
     }
 
     companion object {
-        @VisibleForTesting
-        val cloudflareUri = "https://mozilla.cloudflare-dns.com/dns-query"
+        @VisibleForTesting val cloudflareUri = "https://mozilla.cloudflare-dns.com/dns-query"
 
-        @VisibleForTesting
-        val nextDnsUri = "https://firefox.dns.nextdns.io/"
+        @VisibleForTesting val nextDnsUri = "https://firefox.dns.nextdns.io/"
     }
 }

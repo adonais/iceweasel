@@ -4,16 +4,14 @@
 
 package mozilla.components.feature.tab.collections.adapter
 
+import java.io.File
 import mozilla.components.browser.session.storage.serialize.BrowserStateReader
 import mozilla.components.browser.state.state.recover.RecoverableTab
 import mozilla.components.concept.engine.Engine
 import mozilla.components.feature.tab.collections.Tab
 import mozilla.components.feature.tab.collections.db.TabEntity
-import java.io.File
 
-internal class TabAdapter(
-    val entity: TabEntity,
-) : Tab {
+internal class TabAdapter(val entity: TabEntity) : Tab {
     override val id: Long
         get() = entity.id!!
 

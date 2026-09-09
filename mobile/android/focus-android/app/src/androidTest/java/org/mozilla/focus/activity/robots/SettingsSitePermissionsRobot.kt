@@ -79,15 +79,10 @@ class SettingsSitePermissionsRobot {
     class Transition
 }
 
-private val autoplaySettings =
-    mDevice.findObject(
-        UiSelector().text(getStringResource(R.string.preference_autoplay)),
-    )
+private val autoplaySettings = mDevice.findObject(UiSelector().text(getStringResource(R.string.preference_autoplay)))
 
 private val autoplayDefaultValue =
-    mDevice.findObject(
-        UiSelector().text(getStringResource(R.string.preference_block_autoplay_audio_only)),
-    )
+    mDevice.findObject(UiSelector().text(getStringResource(R.string.preference_block_autoplay_audio_only)))
 
 private val autoplayAllowAudioAndVideoOption =
     mDevice.findObject(UiSelector().text(getStringResource(R.string.preference_allow_audio_video_autoplay)))
@@ -103,64 +98,42 @@ private val blockAudioAndVideoOption =
 
 private fun assertBlockAudioOnlyIsChecked() {
     // the childSelector doesn't work anymore, so we are unable to find it by text
-    val radioButton =
-        mDevice.findObject(
-            UiSelector()
-                .checkable(true)
-                .index(1),
-        )
+    val radioButton = mDevice.findObject(UiSelector().checkable(true).index(1))
     assertTrue(radioButton.isChecked)
 }
 
-private val locationPermissionsSettings =
-    mDevice.findObject(UiSelector().text("Location"))
+private val locationPermissionsSettings = mDevice.findObject(UiSelector().text("Location"))
 
 private val locationDefaultValue =
-    mDevice.findObject(UiSelector().text("Location"))
-        .getFromParent(UiSelector().text("Blocked by Android"))
+    mDevice.findObject(UiSelector().text("Location")).getFromParent(UiSelector().text("Blocked by Android"))
 
-private val cameraPermissionsSettings =
-    mDevice.findObject(UiSelector().text("Camera"))
+private val cameraPermissionsSettings = mDevice.findObject(UiSelector().text("Camera"))
 
 private val cameraDefaultValue =
-    mDevice.findObject(UiSelector().text("Camera"))
-        .getFromParent(UiSelector().text("Blocked by Android"))
+    mDevice.findObject(UiSelector().text("Camera")).getFromParent(UiSelector().text("Blocked by Android"))
 
-private val microphonePermissionsSettings =
-    mDevice.findObject(UiSelector().text("Microphone"))
+private val microphonePermissionsSettings = mDevice.findObject(UiSelector().text("Microphone"))
 
 private val microphoneDefaultValue =
-    mDevice.findObject(UiSelector().text("Microphone"))
-        .getFromParent(UiSelector().text("Blocked by Android"))
+    mDevice.findObject(UiSelector().text("Microphone")).getFromParent(UiSelector().text("Blocked by Android"))
 
-private val notificationPermissionsSettings =
-    mDevice.findObject(UiSelector().text("Notification"))
+private val notificationPermissionsSettings = mDevice.findObject(UiSelector().text("Notification"))
 
 private val notificationDefaultValue =
-    mDevice.findObject(UiSelector().text("Notification"))
-        .getFromParent(UiSelector().text("Ask to allow"))
+    mDevice.findObject(UiSelector().text("Notification")).getFromParent(UiSelector().text("Ask to allow"))
 
-private val DRMContentPermissionsSettings =
-    mDevice.findObject(UiSelector().text("DRM-controlled content"))
+private val DRMContentPermissionsSettings = mDevice.findObject(UiSelector().text("DRM-controlled content"))
 
 private val DRMContentDefaultValue =
-    mDevice.findObject(UiSelector().text("DRM-controlled content"))
-        .getFromParent(UiSelector().text("Ask to allow"))
+    mDevice.findObject(UiSelector().text("DRM-controlled content")).getFromParent(UiSelector().text("Ask to allow"))
 
 private val askToAllowRadioButton =
     // the childSelector doesn't work anymore, so we are unable to find it by text
-    mDevice.findObject(
-        UiSelector()
-            .checkable(true)
-            .index(0),
-    )
+    mDevice.findObject(UiSelector().checkable(true).index(0))
 
 private val blockedRadioButton =
-    mDevice.findObject(UiSelector().text("Blocked"))
-        .getFromParent(UiSelector().className("android.widget.RadioButton"))
+    mDevice.findObject(UiSelector().text("Blocked")).getFromParent(UiSelector().className("android.widget.RadioButton"))
 
-private val blockedByAndroidInfo =
-    mDevice.findObject(UiSelector().text("Blocked by Android"))
+private val blockedByAndroidInfo = mDevice.findObject(UiSelector().text("Blocked by Android"))
 
-private val goToSettingsButton =
-    mDevice.findObject(UiSelector().text("Go to Settings"))
+private val goToSettingsButton = mDevice.findObject(UiSelector().text("Go to Settings"))

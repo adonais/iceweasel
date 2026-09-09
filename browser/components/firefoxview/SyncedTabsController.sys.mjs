@@ -129,7 +129,11 @@ export class SyncedTabsController {
           const win = event.target.documentGlobal;
           const { switchToTabHavingURI } =
             win.docShell.chromeEventHandler.documentGlobal;
-          switchToTabHavingURI("about:preferences#sync", true, {});
+          switchToTabHavingURI(
+            "about:preferences?action=choose-what-to-sync#sync",
+            true,
+            {}
+          );
           break;
         }
       }
@@ -198,11 +202,13 @@ export class SyncedTabsController {
 
   novaActionMappings = {
     "sign-in": {
+      asset: "chrome://browser/skin/sidebar/kit-tabs-devices.svg",
       header: "firefoxview-syncedtabs-signin-header-3",
       description: "firefoxview-syncedtabs-signin-description-3",
       buttonLabel: "firefoxview-syncedtabs-signin-primarybutton-2",
     },
     "add-device": {
+      asset: "chrome://browser/skin/sidebar/kit-qr-tabs-devices-empty.svg",
       header: "firefoxview-syncedtabs-adddevice-header-3",
       description: "firefoxview-syncedtabs-adddevice-description-3",
       descriptionLink: {
@@ -211,6 +217,7 @@ export class SyncedTabsController {
       },
     },
     "sync-tabs-disabled": {
+      asset: "chrome://browser/skin/sidebar/kit-tabs-devices.svg",
       header: "firefoxview-syncedtabs-synctabs-header-2",
       description: "firefoxview-syncedtabs-synctabs-description-2",
       buttonLabel: "firefoxview-tabpickup-synctabs-primarybutton-2",
@@ -250,7 +257,7 @@ export class SyncedTabsController {
       buttonLabel = mappings[action].buttonLabel;
       descriptionLink = mappings[action].descriptionLink;
       mainImageUrl = nova
-        ? "chrome://browser/skin/sidebar/kit-tabs-devices.svg"
+        ? mappings[action].asset
         : "chrome://browser/content/firefoxview/synced-tabs-empty.svg";
       descriptionArray = [description];
     }

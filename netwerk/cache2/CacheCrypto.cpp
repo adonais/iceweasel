@@ -4,12 +4,14 @@
 
 #include "CacheCrypto.h"
 
+#include "CacheFileIOManager.h"
+#include "CacheIOThread.h"
 #include "CacheLog.h"
 #include "CacheObserver.h"
+#include "LockstoreService.h"
 #include "ScopedNSSTypes.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/Base64.h"
-#include "mozilla/Preferences.h"
+#include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPtr.h"
 #include "nsTArray.h"
@@ -21,19 +23,25 @@
 namespace mozilla {
 namespace net {
 
-// The base64-encoded master key. Stored as a string pref (mirror: never), so it
-// is read via the Preferences API rather than a StaticPrefs accessor.
-static const char kKeyPref[] = "browser.cache.disk.encryption.key";
+using mozilla::security::lockstore::LockstoreService;
 
-// Set on the main thread (Init/Shutdown) at lifecycle boundaries and read on
-// the cache I/O thread (GetInstanceOrNull). The object is
-// threadsafe-refcounted, so GetInstanceOrNull() hands out a strong reference
-// that keeps it alive while in use even if Shutdown() drops this one.
-static StaticRefPtr<CacheCrypto> gCacheCrypto;
+// Name of the disk cache's data encryption key in the profile keystore, and
+// the identifier of the "local" KEK wrapping it.
+static constexpr auto kDekName = "httpcache"_ns;
+static constexpr auto kKekIdentifier = "profileEncryption"_ns;
+
+// Written on the cache I/O thread when the key load finishes, and on the main
+// thread at lifecycle boundaries (InitForTesting/Shutdown), so every access
+// goes through gCacheCryptoMutex. The object is threadsafe-refcounted, so
+// GetInstanceOrNull() hands out a strong reference that keeps it alive while
+// in use even if Shutdown() drops this one; the mutex is not held across any
+// cipher operation.
+static StaticMutex gCacheCryptoMutex;
+static StaticRefPtr<CacheCrypto> gCacheCrypto MOZ_GUARDED_BY(gCacheCryptoMutex);
 
 // Mirrors "a usable gCacheCrypto exists" so callers can cheaply test whether
-// encryption is active without taking a strong reference. Kept in sync with
-// gCacheCrypto under the same main-thread Init/Shutdown lifecycle.
+// encryption is active without taking a strong reference or the mutex. Kept in
+// sync with gCacheCrypto by Publish()/Shutdown().
 static Atomic<bool> gCacheCryptoActive(false);
 
 // Whether disk cache encryption is enabled. IsEnabled() caches the pref value
@@ -115,97 +123,180 @@ static nsresult AesGcmOp(const uint8_t* aKey, uint64_t aBlockNumber,
 void CacheCrypto::Init() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (gCacheCrypto) {
+  if (IsActive() || !IsEnabled()) {
+    LOG(("CacheCrypto::Init() - nothing to load, disk cache encryption %s",
+         IsActive() ? "already initialized" : "disabled"));
     return;
   }
 
-  if (!IsEnabled()) {
-    LOG(("CacheCrypto::Init() - disk cache encryption disabled"));
+  // The cipher needs NSS, here and later on the cache I/O thread.
+  if (!EnsureNSSInitializedChromeOrContent()) {
+    LOG(("CacheCrypto::Init() - NSS not available"));
     return;
   }
 
-  InitInternal();
+  // Resolve the service on the main thread even though it is used off it:
+  // creating it is what caches its profile path, which LockstoreService only
+  // does on the main thread. We are inside profile-do-change, so the profile
+  // is available by now.
+  RefPtr<LockstoreService> lockstore = LockstoreService::GetSingleton();
+  RefPtr<CacheIOThread> ioThread = CacheFileIOManager::IOThread();
+  if (!lockstore || !ioThread) {
+    LOG(("CacheCrypto::Init() - no keystore or no cache I/O thread"));
+    return;
+  }
+
+  // The load runs on the cache I/O thread because Lockstore's synchronous tier
+  // must not run on the main thread, and it both loads and publishes there so
+  // that the key is in place before anything that consults it.
+  //
+  // OPEN_PRIORITY is what orders this against the rest of the cache. It is the
+  // highest level queue, and this is dispatched before OnProfile() queues any
+  // work, so every consumer of the key runs after it:
+  //   - entry opens go to OPEN_PRIORITY/OPEN (CacheFileIOManager::OpenFile),
+  //     and CacheFile::SetupEncryption only runs from their completions;
+  //   - the index rebuild, which reads entry metadata via SyncReadMetadata,
+  //     goes to the INDEX level.
+  // Events dispatched to the thread's XPCOM level do jump ahead of the level
+  // queues (see CacheIOThread::ThreadFunc), but the only ones queued this
+  // early are index writes, which need IsEnabled() -- a pref read -- and not
+  // the key.
+  nsresult rv = ioThread->Dispatch(
+      NS_NewRunnableFunction(
+          "CacheCrypto::LoadFromKeystore",
+          [lockstore]() { Publish(LoadFromKeystore(lockstore)); }),
+      CacheIOThread::OPEN_PRIORITY);
+
+  if (NS_FAILED(rv)) {
+    LOG(("CacheCrypto::Init() - failed to dispatch the key load"));
+  }
 }
 
 // static
 void CacheCrypto::InitForTesting() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (gCacheCrypto) {
+  if (IsActive()) {
     return;
   }
 
-  // Skip the pref gate so gtests can set up a usable cipher directly,
-  // regardless of the enabled pref.
-  InitInternal();
-}
-
-// static
-void CacheCrypto::InitInternal() {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!gCacheCrypto);
-
-  // The cipher needs NSS (here and later on the cache I/O thread). Leaving
-  // gCacheCrypto null lets a later Init() call retry.
   if (!EnsureNSSInitializedChromeOrContent()) {
-    LOG(("CacheCrypto::InitInternal() - NSS not available"));
+    LOG(("CacheCrypto::InitForTesting() - NSS not available"));
     return;
   }
 
+  // A throwaway key, so gtests need neither the enabled pref nor a keystore.
   RefPtr<CacheCrypto> crypto = new CacheCrypto();
-
-  nsAutoCString encoded;
-  nsresult rv = Preferences::GetCString(kKeyPref, encoded);
-  if (NS_SUCCEEDED(rv) && !encoded.IsEmpty()) {
-    nsAutoCString raw;
-    rv = Base64Decode(encoded, raw);
-    if (NS_FAILED(rv) || raw.Length() != kKeyLength) {
-      // A malformed key means we cannot read any entry written with the real
-      // key, so disable encryption for the session rather than write plaintext
-      // or corrupt data. gCacheCrypto stays null.
-      LOG(
-          ("CacheCrypto::InitInternal() - malformed key pref, encryption "
-           "disabled"));
-      return;
-    }
-    memcpy(crypto->mKeyBytes, raw.BeginReading(), kKeyLength);
-  } else {
-    // No key yet: generate one and persist it so the cache survives restarts.
-    UniquePK11SlotInfo slot(PK11_GetInternalSlot());
-    if (!slot ||
-        PK11_GenerateRandom(crypto->mKeyBytes, kKeyLength) != SECSuccess) {
-      LOG(("CacheCrypto::InitInternal() - key generation failed"));
-      return;
-    }
-    nsAutoCString toStore;
-    rv = Base64Encode(
-        nsDependentCSubstring(reinterpret_cast<const char*>(crypto->mKeyBytes),
-                              kKeyLength),
-        toStore);
-    if (NS_FAILED(rv) ||
-        NS_FAILED(Preferences::SetCString(kKeyPref, toStore))) {
-      LOG(("CacheCrypto::InitInternal() - failed to persist generated key"));
-      return;
-    }
+  if (PK11_GenerateRandom(crypto->mKeyBytes, kKeyLength) != SECSuccess) {
+    LOG(("CacheCrypto::InitForTesting() - key generation failed"));
+    return;
   }
 
   crypto->mUsable = true;
-  gCacheCrypto = crypto.forget();
-  gCacheCryptoActive = true;
-  LOG(("CacheCrypto::InitInternal() - disk cache encryption ready"));
+  Publish(crypto.forget());
+}
+
+// static
+already_AddRefed<CacheCrypto> CacheCrypto::LoadFromKeystore(
+    LockstoreService* aLockstore) {
+  MOZ_ASSERT(!NS_IsMainThread());
+
+  // A non-empty identifier makes this a deterministic get-or-create, so the
+  // kekRef does not have to be persisted anywhere.
+  auto kekRef = aLockstore->DoCreateKek("local"_ns, kKekIdentifier, ""_ns, 0);
+  if (kekRef.isErr()) {
+    LOG(
+        ("CacheCrypto::LoadFromKeystore() - could not obtain the KEK "
+         "[rv=%" PRIx32 "]",
+         static_cast<uint32_t>(kekRef.unwrapErr())));
+    return nullptr;
+  }
+
+  // Mint the DEK on first use only: asking for one that already exists is an
+  // error the keystore logs, and after the first run that would be every
+  // startup.
+  auto deks = aLockstore->DoListDeks();
+  if (deks.isErr()) {
+    LOG(("CacheCrypto::LoadFromKeystore() - could not list DEKs [rv=%" PRIx32
+         "]",
+         static_cast<uint32_t>(deks.unwrapErr())));
+    return nullptr;
+  }
+
+  if (!deks.inspect().Contains(kDekName)) {
+    // Extractable: the cache does its own AES-GCM per block, binding the block
+    // number as AAD, which the keystore's blob-oriented encrypt() cannot
+    // express.
+    nsresult rv = aLockstore->DoCreateDek(kDekName, kekRef.inspect(),
+                                          /* aExtractable */ true, kKeyLength);
+    if (NS_FAILED(rv)) {
+      LOG(
+          ("CacheCrypto::LoadFromKeystore() - could not mint the DEK "
+           "[rv=%" PRIx32 "]",
+           static_cast<uint32_t>(rv)));
+      return nullptr;
+    }
+  }
+
+  auto dek = aLockstore->DoGetDek(kDekName, kekRef.inspect());
+  if (dek.isErr()) {
+    LOG(("CacheCrypto::LoadFromKeystore() - could not read the DEK [rv=%" PRIx32
+         "]",
+         static_cast<uint32_t>(dek.unwrapErr())));
+    return nullptr;
+  }
+
+  nsTArray<uint8_t> keyBytes = dek.unwrap();
+  if (keyBytes.Length() != kKeyLength) {
+    LOG(("CacheCrypto::LoadFromKeystore() - DEK is %zu bytes, expected %u",
+         keyBytes.Length(), kKeyLength));
+    SecureZero(keyBytes.Elements(), keyBytes.Length());
+    return nullptr;
+  }
+
+  RefPtr<CacheCrypto> crypto = new CacheCrypto();
+  memcpy(crypto->mKeyBytes, keyBytes.Elements(), kKeyLength);
+  SecureZero(keyBytes.Elements(), keyBytes.Length());
+  crypto->mUsable = true;
+  return crypto.forget();
+}
+
+// static
+void CacheCrypto::Publish(already_AddRefed<CacheCrypto> aCrypto) {
+  RefPtr<CacheCrypto> crypto = aCrypto;
+  if (!crypto) {
+    // Encryption stays inactive. CacheFile::SetupEncryption() then fails new
+    // entries closed rather than writing them as plaintext, because
+    // IsEnabled() is still true.
+    LOG(("CacheCrypto::Publish() - no cipher, disk cache encryption inactive"));
+    return;
+  }
+
+  {
+    StaticMutexAutoLock lock(gCacheCryptoMutex);
+    gCacheCrypto = crypto.forget();
+    // Set after gCacheCrypto so that IsActive() never reports a cipher that
+    // GetInstanceOrNull() cannot yet hand out.
+    gCacheCryptoActive = true;
+  }
+  LOG(("CacheCrypto::Publish() - disk cache encryption ready"));
 }
 
 // static
 void CacheCrypto::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
-  gCacheCryptoActive = false;
-  gCacheCrypto = nullptr;
+  {
+    StaticMutexAutoLock lock(gCacheCryptoMutex);
+    gCacheCryptoActive = false;
+    gCacheCrypto = nullptr;
+  }
   // gCacheCryptoEnabled is intentionally left cached: it reflects the pref as
   // of the first IsEnabled() call and is meant to be stable for the process.
 }
 
 // static
 already_AddRefed<CacheCrypto> CacheCrypto::GetInstanceOrNull() {
+  StaticMutexAutoLock lock(gCacheCryptoMutex);
   RefPtr<CacheCrypto> crypto = gCacheCrypto;
   if (crypto && crypto->mUsable) {
     return crypto.forget();

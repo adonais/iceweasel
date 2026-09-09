@@ -7,7 +7,7 @@
     }
   },
   "css": {
-    "fix_clipped_tables": "@supports not (interpolate-size: allow-keywords) { .css-111nrmg-button-standard-button-primary-UserContent-styles-root .toggle.expanded .toggle-content-wrapper { max-height: none; height: auto; } }"
+    "fix_clipped_tables": "@supports not (interpolate-size: allow-keywords) { [class$=button-standard-button-primary-UserContent-styles-root] .toggle.expanded .toggle-content-wrapper { max-height: none; height: auto; } }"
   },
   "interventions": [
     {

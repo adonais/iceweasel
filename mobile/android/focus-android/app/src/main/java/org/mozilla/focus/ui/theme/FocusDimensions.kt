@@ -7,9 +7,7 @@ package org.mozilla.focus.ui.theme
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 
-/**
- * Custom Focus dimensions
- */
+/** Custom Focus dimensions */
 data class FocusDimensions(
     val onboardingTitle: TextUnit,
     val onboardingSubtitleOne: TextUnit,

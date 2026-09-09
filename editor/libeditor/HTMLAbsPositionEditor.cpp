@@ -281,12 +281,14 @@ bool HTMLEditor::CreateGrabberInternal(nsIContent& aParentContent) {
     return false;
   }
 
+  // <span> won't create a UA shadow, so, CreateAnonymousElement() won't run
+  // script actually. (This method asserts that.)
   mGrabber = CreateAnonymousElement(nsGkAtoms::span, aParentContent,
                                     u"mozGrabber"_ns, false);
 
   // mGrabber may be destroyed during creation due to there may be
   // mutation event listener.
-  if (!mGrabber) {
+  if (!mGrabber) [[unlikely]] {
     NS_WARNING(
         "HTMLEditor::CreateAnonymousElement(nsGkAtoms::span, mozGrabber) "
         "failed");

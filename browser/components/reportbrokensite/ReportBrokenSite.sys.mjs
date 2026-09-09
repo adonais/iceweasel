@@ -855,7 +855,7 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
 
     const { documentGlobal } = target;
     const { gBrowser } = documentGlobal;
-    await this.#sendReportAsGleanPing(gBrowser._selectedBrowser, state);
+    await this.#sendReportAsGleanPing(gBrowser.selectedBrowser, state);
 
     multiview.showSubView("report-broken-site-popup-reportSentView");
     state.reset();

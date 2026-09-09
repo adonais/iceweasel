@@ -7,10 +7,10 @@ package mozilla.components.browser.engine.gecko.fetch.geckoview
 import androidx.test.annotation.UiThreadTest
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
+import kotlin.test.assertIs
 import mozilla.components.browser.engine.gecko.fetch.GeckoViewFetchClient
 import mozilla.components.concept.fetch.Client
 import org.junit.Test
-import kotlin.test.assertIs
 
 @MediumTest
 class GeckoViewFetchTestCases : mozilla.components.tooling.fetch.tests.FetchTestCases() {

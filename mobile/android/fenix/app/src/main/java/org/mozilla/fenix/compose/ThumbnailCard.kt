@@ -30,15 +30,14 @@ private const val THUMBNAIL_SIZE = 108
 private const val FALLBACK_ICON_SIZE = 36
 
 /**
- * Card which will display a thumbnail. If a thumbnail is not available for [url], the favicon
- * will be displayed until the thumbnail is loaded.
+ * Card which will display a thumbnail. If a thumbnail is not available for [url], the favicon will be displayed until
+ * the thumbnail is loaded.
  *
  * @param url Url to display thumbnail for.
  * @param request [ImageLoadRequest] used to fetch the thumbnail bitmap.
  * @param modifier [Modifier] used to draw the image content.
  * @param backgroundColor [Color] used for the background of the favicon.
- * @param contentDescription Text used by accessibility services
- * to describe what this image represents.
+ * @param contentDescription Text used by accessibility services to describe what this image represents.
  * @param contentScale [ContentScale] used to draw image content.
  * @param alignment [Alignment] used to draw the image content.
  */
@@ -67,20 +66,14 @@ fun ThumbnailCard(
             ) {
                 components.core.icons.Loader(url) {
                     Placeholder {
-                        Box(
-                            modifier = Modifier.background(
-                                color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            ),
-                        )
+                        Box(modifier = Modifier.background(color = MaterialTheme.colorScheme.surfaceContainerHighest))
                     }
 
                     WithIcon { icon ->
                         Image(
                             painter = icon.painter,
                             contentDescription = contentDescription,
-                            modifier = Modifier
-                                .size(FALLBACK_ICON_SIZE.dp)
-                                .clip(MaterialTheme.shapes.small),
+                            modifier = Modifier.size(FALLBACK_ICON_SIZE.dp).clip(MaterialTheme.shapes.small),
                             contentScale = contentScale,
                         )
                     }
@@ -97,9 +90,7 @@ private fun ThumbnailCardPreview() {
         ThumbnailCard(
             url = "https://mozilla.com",
             request = ImageLoadRequest("123", THUMBNAIL_SIZE, false),
-            modifier = Modifier
-                .size(THUMBNAIL_SIZE.dp)
-                .clip(MaterialTheme.shapes.small),
+            modifier = Modifier.size(THUMBNAIL_SIZE.dp).clip(MaterialTheme.shapes.small),
         )
     }
 }

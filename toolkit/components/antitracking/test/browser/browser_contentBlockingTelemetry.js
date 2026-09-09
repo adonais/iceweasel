@@ -4,9 +4,6 @@
 
 "use strict";
 
-const { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
 const LABEL_STORAGE_GRANTED = 0;
 const LABEL_STORAGE_ACCESS_API = 1;
 const LABEL_OPENER_AFTER_UI = 2;
@@ -17,8 +14,10 @@ const LABEL_NAVIGATION = 6;
 const LABEL_CT_OFFSET = 7;
 
 function clearTelemetry() {
+  // STORAGE_ACCESS_GRANTED_COUNT is still a Legacy Telemetry probe, see
+  // bug 2061972, so its snapshot still needs clearing here.
   Services.telemetry.getSnapshotForHistograms("main", true /* clear */);
-  Services.telemetry.getHistogramById("STORAGE_ACCESS_REMAINING_DAYS").clear();
+  Services.fog.testResetFOG();
 }
 
 async function cleanup() {
@@ -108,14 +107,14 @@ async function testTelemetry(
     "There should be one reason count in telemetry."
   );
 
-  let storageAccessRemainingDaysHistogram = Services.telemetry.getHistogramById(
-    "STORAGE_ACCESS_REMAINING_DAYS"
-  );
-
-  TelemetryTestUtils.assertHistogram(
-    storageAccessRemainingDaysHistogram,
-    aExpectedIdx,
-    1
+  // The metric is a linear custom distribution over 0..60 with a bucket per
+  // day, so the expected day count is also its bucket.
+  let remainingDays =
+    Glean.contentblocking.storageAccessRemainingDays.testGetValue();
+  is(
+    remainingDays?.values[aExpectedIdx] ?? 0,
+    1,
+    "There should be one sample for the expected remaining days."
   );
 
   // Clear telemetry probes

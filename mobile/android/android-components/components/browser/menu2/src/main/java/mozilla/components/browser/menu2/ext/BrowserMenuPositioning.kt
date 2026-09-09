@@ -10,11 +10,11 @@ import androidx.annotation.Px
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.RecyclerView
+import kotlin.math.roundToInt
 import mozilla.components.browser.menu2.R
 import mozilla.components.concept.menu.MenuStyle
 import mozilla.components.concept.menu.Orientation
 import mozilla.components.support.ktx.android.view.isRTL
-import kotlin.math.roundToInt
 
 const val HALF_MENU_ITEM = 0.5
 
@@ -30,15 +30,20 @@ internal fun inferMenuPositioningData(
     containerView.measure(spec, spec)
 
     val recyclerView = containerView.findViewById<RecyclerView>(R.id.mozac_browser_menu_recyclerView)
-    val recyclerViewAdapter = recyclerView.adapter ?: run {
-        // We might want to track how often and in what circumstances the menu gets called without
-        // valid parameters once we have a system for that.
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=1814816
-        return null
-    }
+    val recyclerViewAdapter =
+        recyclerView.adapter
+            ?: run {
+                // We might want to track how often and in what circumstances the menu gets called without
+                // valid parameters once we have a system for that.
+                // https://bugzilla.mozilla.org/show_bug.cgi?id=1814816
+                return null
+            }
 
-    val hasViewInitializedCorrectly = containerView.measuredHeight > 0 && containerView.measuredWidth > 0 &&
-        recyclerView.measuredHeight > 0 && recyclerViewAdapter.itemCount > 0
+    val hasViewInitializedCorrectly =
+        containerView.measuredHeight > 0 &&
+            containerView.measuredWidth > 0 &&
+            recyclerView.measuredHeight > 0 &&
+            recyclerViewAdapter.itemCount > 0
     if (!hasViewInitializedCorrectly) {
         // Same as above: https://bugzilla.mozilla.org/show_bug.cgi?id=1814816
         return null
@@ -60,13 +65,14 @@ internal fun inferMenuPositioningData(
 
     // The menu height might be adjusted: if there is not enough space to show all the items,
     // it will crop the last visible item in half, to give the user a hint that it is scrollable.
-    val containerViewHeight = calculateContainerHeight(
-        recyclerView.measuredHeight,
-        recyclerViewAdapter.itemCount,
-        containerView.measuredHeight,
-        style?.verticalOffset ?: 0,
-        anchor,
-    )
+    val containerViewHeight =
+        calculateContainerHeight(
+            recyclerView.measuredHeight,
+            recyclerViewAdapter.itemCount,
+            containerView.measuredHeight,
+            style?.verticalOffset ?: 0,
+            anchor,
+        )
 
     val (availableHeightToTop, availableHeightToBottom) = getMaxAvailableHeightToTopAndBottom(anchor)
     val (availableWidthToLeft, availableWidthToRight) = getMaxAvailableWidthToLeftAndRight(anchor)
@@ -78,11 +84,12 @@ internal fun inferMenuPositioningData(
 
     val notEnoughHorizontalSpace = !fitsRight && !fitsLeft
     val fitsBothHorizontalDirections = fitsRight && fitsLeft
-    val drawingLeft = if (notEnoughHorizontalSpace || fitsBothHorizontalDirections) {
-        anchor.isRTL
-    } else {
-        !fitsRight
-    }
+    val drawingLeft =
+        if (notEnoughHorizontalSpace || fitsBothHorizontalDirections) {
+            anchor.isRTL
+        } else {
+            !fitsRight
+        }
 
     val anchorPosition = IntArray(2)
     anchor.getLocationInWindow(anchorPosition)
@@ -141,12 +148,10 @@ private fun getMaxAvailableWidthToLeftAndRight(anchor: View): Pair<Int, Int> {
 }
 
 /**
- * Determine whether the container view can display all menu items (without scrolling) within
- * the available height.
+ * Determine whether the container view can display all menu items (without scrolling) within the available height.
  *
- * @return The original container height if the container view can display all menu items
- * (without scrolling), else calculate the maximum available container height for a scrollable
- * view with a half menu item.
+ * @return The original container height if the container view can display all menu items (without scrolling), else
+ *   calculate the maximum available container height for a scrollable view with a half menu item.
  */
 private fun calculateContainerHeight(
     recyclerViewHeight: Int,
@@ -161,8 +166,7 @@ private fun calculateContainerHeight(
     // Note: We cannot use getWindowVisibleDisplayFrame() as the height is dynamic based on whether
     // the keyboard is open.
     // Get any displayed system bars e.g. top status bar, bottom navigation bar or soft buttons bar.
-    val systemBars =
-        ViewCompat.getRootWindowInsets(anchor)?.getInsets(WindowInsetsCompat.Type.systemBars())
+    val systemBars = ViewCompat.getRootWindowInsets(anchor)?.getInsets(WindowInsetsCompat.Type.systemBars())
     // Store the vertical status bars.
     val topSystemBarHeight = systemBars?.top ?: 0
     val bottomSystemBarHeight = systemBars?.bottom ?: 0
@@ -180,8 +184,7 @@ private fun calculateContainerHeight(
     // The number of menu items that can fit exactly (no cropping) within the max app height.
     // Round the number of items to the closet Int value to ensure the max space available is utilized.
     // E.g if 6.9 items fit, round to 7 so the calculation below will show 6.5 items instead of 5.5 .
-    val numberOfItemsFitExactly =
-        (maxAvailableHeightForRecyclerView.toFloat() / menuItemHeight.toFloat()).roundToInt()
+    val numberOfItemsFitExactly = (maxAvailableHeightForRecyclerView.toFloat() / menuItemHeight.toFloat()).roundToInt()
 
     val itemsAlreadyFitContainerHeight = recyclerViewItemCount <= numberOfItemsFitExactly
 
@@ -200,21 +203,24 @@ private fun getAnimation(
 ): Int {
     val isUpOrientation = orientation == Orientation.UP
     return when {
-        isUpOrientation && fitsUp -> if (drawingLeft) {
-            R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightBottom
-        } else {
-            R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftBottom
-        }
-        fitsDown -> if (drawingLeft) {
-            R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightTop
-        } else {
-            R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop
-        }
-        else -> if (drawingLeft) {
-            R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRight
-        } else {
-            R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeft
-        }
+        isUpOrientation && fitsUp ->
+            if (drawingLeft) {
+                R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightBottom
+            } else {
+                R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftBottom
+            }
+        fitsDown ->
+            if (drawingLeft) {
+                R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRightTop
+            } else {
+                R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop
+            }
+        else ->
+            if (drawingLeft) {
+                R.style.Mozac_Browser_Menu2_Animation_OverflowMenuRight
+            } else {
+                R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeft
+            }
     }
 }
 
@@ -230,28 +236,16 @@ private fun getCroppedMenuContainerHeight(
     return updatedRecyclerViewHeight + containerPadding
 }
 
-/**
- * Data needed for menu positioning.
- */
+/** Data needed for menu positioning. */
 data class MenuPositioningData(
-    /**
-     * Android View that the PopupWindow should be anchored to.
-     */
+    /** Android View that the PopupWindow should be anchored to. */
     val anchor: View,
-    /**
-     * [WindowManager#LayoutParams#x] of params the menu will be added with.
-     */
+    /** [WindowManager#LayoutParams#x] of params the menu will be added with. */
     @param:Px val x: Int = 0,
-    /**
-     * [WindowManager#LayoutParams#y] of params the menu will be added with.
-     */
+    /** [WindowManager#LayoutParams#y] of params the menu will be added with. */
     @param:Px val y: Int = 0,
-    /**
-     * [View#measuredHeight] of the menu.
-     */
+    /** [View#measuredHeight] of the menu. */
     @param:Px val containerHeight: Int = 0,
-    /**
-     * [PopupWindow#animationStyle] of the menu.
-     */
+    /** [PopupWindow#animationStyle] of the menu. */
     val animation: Int,
 )

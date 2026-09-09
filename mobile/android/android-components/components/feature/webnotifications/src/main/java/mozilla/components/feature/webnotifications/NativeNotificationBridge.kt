@@ -27,9 +27,7 @@ internal class NativeNotificationBridge(
         internal const val EXTRA_ON_CLICK = "mozac.feature.webnotifications.generic.onclick"
     }
 
-    /**
-     * Create a system [Notification] from this [WebNotification].
-     */
+    /** Create a system [Notification] from this [WebNotification]. */
     suspend fun convertToAndroidNotification(
         notification: WebNotification,
         context: Context,
@@ -41,16 +39,18 @@ internal class NativeNotificationBridge(
 
         with(notification) {
             activityClass?.let {
-                val intent = Intent(context, activityClass).apply {
-                    putExtra(EXTRA_ON_CLICK, notification.engineNotification)
-                }
+                val intent =
+                    Intent(context, activityClass).apply {
+                        putExtra(EXTRA_ON_CLICK, notification.engineNotification)
+                    }
 
                 PendingIntent.getActivity(context, requestId, intent, PendingIntent.FLAG_IMMUTABLE).apply {
                     builder.setContentIntent(this)
                 }
             }
 
-            builder.setSmallIcon(smallIcon)
+            builder
+                .setSmallIcon(smallIcon)
                 .setContentTitle(title)
                 .setShowWhen(true)
                 .setWhen(timestamp)
@@ -58,16 +58,18 @@ internal class NativeNotificationBridge(
                 .setSilent(notification.silent)
 
             for (browserAction in actions) {
-                val intent = Intent(context, activityClass).apply {
-                    putExtra(EXTRA_ON_CLICK, notification.engineNotification)
-                    action = browserAction.name
-                }
-                val pendingIntent = PendingIntent.getActivity(
-                    context,
-                    requestId,
-                    intent,
-                    PendingIntent.FLAG_IMMUTABLE,
-                )
+                val intent =
+                    Intent(context, activityClass).apply {
+                        putExtra(EXTRA_ON_CLICK, notification.engineNotification)
+                        action = browserAction.name
+                    }
+                val pendingIntent =
+                    PendingIntent.getActivity(
+                        context,
+                        requestId,
+                        intent,
+                        PendingIntent.FLAG_IMMUTABLE,
+                    )
                 val actionBuilder = NotificationCompat.Action.Builder(0, browserAction.title, pendingIntent)
                 builder.addAction(actionBuilder.build())
             }
@@ -77,8 +79,7 @@ internal class NativeNotificationBridge(
             }
 
             body?.let {
-                builder.setContentText(body)
-                    .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+                builder.setContentText(body).setStyle(NotificationCompat.BigTextStyle().bigText(body))
             }
 
             loadIcon(sourceUrl, iconUrl, Size.DEFAULT, true)?.let { iconBitmap ->
@@ -89,25 +90,27 @@ internal class NativeNotificationBridge(
         return builder.build()
     }
 
-    /**
-     * Load an icon for a notification.
-     */
+    /** Load an icon for a notification. */
     private suspend fun loadIcon(url: String?, iconUrl: String?, size: Size, isPrivate: Boolean): Bitmap? {
         url ?: return null
         iconUrl ?: return null
-        val icon = icons.loadIcon(
-            IconRequest(
-                url = url,
-                size = size,
-                resources = listOf(
-                    IconRequest.Resource(
-                        url = iconUrl,
-                        type = IconRequest.Resource.Type.MANIFEST_ICON,
-                    ),
-                ),
-                isPrivate = isPrivate,
-            ),
-        ).await()
+        val icon =
+            icons
+                .loadIcon(
+                    IconRequest(
+                        url = url,
+                        size = size,
+                        resources =
+                            listOf(
+                                IconRequest.Resource(
+                                    url = iconUrl,
+                                    type = IconRequest.Resource.Type.MANIFEST_ICON,
+                                )
+                            ),
+                        isPrivate = isPrivate,
+                    )
+                )
+                .await()
 
         return if (icon.source == Source.GENERATOR) null else icon.bitmap
     }

@@ -264,6 +264,18 @@ main.newtab-main {
   color: var(--newtab-text-primary-color);
   min-height: 100vh;
   padding-block-start: var(--space-xlarge);
+
+  // The attribution is positioned against #root, so the page needs clear space
+  // at the bottom for it. Classic gets that from .outer-wrapper's all-round
+  // padding; .nova-outer-wrapper only pads block-start. Sized to clear the
+  // attribution's own inset plus a line of text.
+  // @nova-cleanup(remove-conditional): Delete this &:has() block only when
+  // .nova-outer-wrapper merges into .outer-wrapper AND the merged rule keeps a
+  // block-end padding at least this large. If that merge is deferred to its own
+  // bug, leave this block alone.
+  &:has(.wallpaper-attribution) {
+    padding-block-end: calc(var(--space-large) + var(--space-xxlarge));
+  }
 }
 
 .asrouter-multistage-message-wrapper {

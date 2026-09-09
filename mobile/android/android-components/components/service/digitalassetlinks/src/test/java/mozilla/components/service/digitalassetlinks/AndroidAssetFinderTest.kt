@@ -61,11 +61,11 @@ class AndroidAssetFinderTest {
     @Test
     fun `test getAndroidAppAsset returns empty list if name not found`() {
         `when`(
-            packageManager.getPackageInfoCompat(
-                anyString(),
-                anyInt(),
-            ),
-        )
+                packageManager.getPackageInfoCompat(
+                    anyString(),
+                    anyInt(),
+                )
+            )
             .thenThrow(PackageManager.NameNotFoundException::class.java)
 
         assertEquals(

@@ -5,6 +5,10 @@
 package mozilla.components.browser.icons.loader
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.IOException
+import java.io.InputStream
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -34,10 +38,6 @@ import org.mockito.Mockito.never
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoMoreInteractions
-import java.io.IOException
-import java.io.InputStream
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class NonBlockingHttpIconLoaderTest {
@@ -51,60 +51,65 @@ class NonBlockingHttpIconLoaderTest {
     }
 
     @Test
-    fun `Loader will return IconLoader#Result#NoResult for a load request and respond with the result through a callback`() = runTest {
-        val clients = listOf(
-            HttpURLConnectionClient(),
-            OkHttpClient(),
-        )
-
-        clients.forEach { client ->
-
-            val server = MockWebServer()
-
-            server.enqueue(
-                MockResponse(
-                    body = javaClass.getResourceAsStream("/misc/test.txt")!!
-                        .bufferedReader()
-                        .use { it.readText() },
-                ),
-            )
-
-            server.start()
-
-            try {
-                var callbackIconRequest: IconRequest? = null
-                var callbackResource: IconRequest.Resource? = null
-                var callbackIcon: IconLoader.Result? = null
-                val loader = NonBlockingHttpIconLoader(client, FakeMemoryInfoProvider(defaultAvailMem), scope) { request, resource, icon ->
-                    callbackIconRequest = request
-                    callbackResource = resource
-                    callbackIcon = icon
-                }
-                val iconRequest: IconRequest = mock()
-
-                val result = loader.load(
-                    mock(),
-                    iconRequest,
-                    IconRequest.Resource(
-                        url = server.url("/some/path").toString(),
-                        type = IconRequest.Resource.Type.APPLE_TOUCH_ICON,
-                    ),
+    fun `Loader will return IconLoader#Result#NoResult for a load request and respond with the result through a callback`() =
+        runTest {
+            val clients =
+                listOf(
+                    HttpURLConnectionClient(),
+                    OkHttpClient(),
                 )
 
-                scheduler.advanceUntilIdle()
+            clients.forEach { client ->
+                val server = MockWebServer()
 
-                assertIs<IconLoader.Result.NoResult>(result)
-                val downloadedResource = String(((callbackIcon as IconLoader.Result.BytesResult).bytes), Charsets.UTF_8)
-                assertEquals("Hello World!", downloadedResource)
-                assertSame(Icon.Source.DOWNLOAD, ((callbackIcon as IconLoader.Result.BytesResult).source))
-                assertTrue(callbackResource!!.url.endsWith("/some/path"))
-                assertSame(IconRequest.Resource.Type.APPLE_TOUCH_ICON, callbackResource.type)
-                assertSame(iconRequest, callbackIconRequest)
-            } finally {
-                server.close()
+                server.enqueue(
+                    MockResponse(
+                        body = javaClass.getResourceAsStream("/misc/test.txt")!!.bufferedReader().use { it.readText() }
+                    )
+                )
+
+                server.start()
+
+                try {
+                    var callbackIconRequest: IconRequest? = null
+                    var callbackResource: IconRequest.Resource? = null
+                    var callbackIcon: IconLoader.Result? = null
+                    val loader =
+                        NonBlockingHttpIconLoader(client, FakeMemoryInfoProvider(defaultAvailMem), scope) {
+                            request,
+                            resource,
+                            icon ->
+                            callbackIconRequest = request
+                            callbackResource = resource
+                            callbackIcon = icon
+                        }
+                    val iconRequest: IconRequest = mock()
+
+                    val result =
+                        loader.load(
+                            mock(),
+                            iconRequest,
+                            IconRequest.Resource(
+                                url = server.url("/some/path").toString(),
+                                type = IconRequest.Resource.Type.APPLE_TOUCH_ICON,
+                            ),
+                        )
+
+                    scheduler.advanceUntilIdle()
+
+                    assertIs<IconLoader.Result.NoResult>(result)
+                    val downloadedResource =
+                        String(((callbackIcon as IconLoader.Result.BytesResult).bytes), Charsets.UTF_8)
+                    assertEquals("Hello World!", downloadedResource)
+                    assertSame(Icon.Source.DOWNLOAD, ((callbackIcon as IconLoader.Result.BytesResult).source))
+                    assertTrue(callbackResource!!.url.endsWith("/some/path"))
+                    assertSame(IconRequest.Resource.Type.APPLE_TOUCH_ICON, callbackResource.type)
+                    assertSame(iconRequest, callbackIconRequest)
+                } finally {
+                    server.close()
+                }
             }
         }
-    }
 
     @Test
     fun `Loader will not perform any requests for data uris`() = runTest {
@@ -112,21 +117,25 @@ class NonBlockingHttpIconLoaderTest {
         var callbackIconRequest: IconRequest? = null
         var callbackResource: IconRequest.Resource? = null
         var callbackIcon: IconLoader.Result? = null
-        val loader = NonBlockingHttpIconLoader(client, FakeMemoryInfoProvider(defaultAvailMem), scope) { request, resource, icon ->
-            callbackIconRequest = request
-            callbackResource = resource
-            callbackIcon = icon
-        }
+        val loader =
+            NonBlockingHttpIconLoader(client, FakeMemoryInfoProvider(defaultAvailMem), scope) { request, resource, icon
+                ->
+                callbackIconRequest = request
+                callbackResource = resource
+                callbackIcon = icon
+            }
 
-        val result = loader.load(
-            mock(),
-            mock(),
-            IconRequest.Resource(
-                url = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAA" +
-                    "AAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-                type = IconRequest.Resource.Type.FAVICON,
-            ),
-        )
+        val result =
+            loader.load(
+                mock(),
+                mock(),
+                IconRequest.Resource(
+                    url =
+                        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAA" +
+                            "AAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+                    type = IconRequest.Resource.Type.FAVICON,
+                ),
+            )
 
         scheduler.advanceUntilIdle()
 
@@ -142,13 +151,15 @@ class NonBlockingHttpIconLoaderTest {
         val client: Client = mock()
         val loader = NonBlockingHttpIconLoader(client, FakeMemoryInfoProvider(defaultAvailMem), scope) { _, _, _ -> }
         doReturn(
-            Response(
-                url = "https://www.example.org",
-                headers = MutableHeaders(),
-                status = 404,
-                body = Response.Body.empty(),
-            ),
-        ).`when`(client).fetch(any())
+                Response(
+                    url = "https://www.example.org",
+                    headers = MutableHeaders(),
+                    status = 404,
+                    body = Response.Body.empty(),
+                )
+            )
+            .`when`(client)
+            .fetch(any())
 
         loader.load(
             mock(),
@@ -175,28 +186,33 @@ class NonBlockingHttpIconLoaderTest {
         var callbackIconRequest: IconRequest? = null
         var callbackResource: IconRequest.Resource? = null
         var callbackIcon: IconLoader.Result? = null
-        val loader = NonBlockingHttpIconLoader(client, FakeMemoryInfoProvider(defaultAvailMem), scope) { request, resource, icon ->
-            callbackIconRequest = request
-            callbackResource = resource
-            callbackIcon = icon
-        }
+        val loader =
+            NonBlockingHttpIconLoader(client, FakeMemoryInfoProvider(defaultAvailMem), scope) { request, resource, icon
+                ->
+                callbackIconRequest = request
+                callbackResource = resource
+                callbackIcon = icon
+            }
         doReturn(
-            Response(
-                url = "https://www.example.org",
-                headers = MutableHeaders(),
-                status = 404,
-                body = Response.Body.empty(),
-            ),
-        ).`when`(client).fetch(any())
+                Response(
+                    url = "https://www.example.org",
+                    headers = MutableHeaders(),
+                    status = 404,
+                    body = Response.Body.empty(),
+                )
+            )
+            .`when`(client)
+            .fetch(any())
 
-        val result = loader.load(
-            mock(),
-            mock(),
-            IconRequest.Resource(
-                url = "https://www.example.org",
-                type = IconRequest.Resource.Type.APPLE_TOUCH_ICON,
-            ),
-        )
+        val result =
+            loader.load(
+                mock(),
+                mock(),
+                IconRequest.Resource(
+                    url = "https://www.example.org",
+                    type = IconRequest.Resource.Type.APPLE_TOUCH_ICON,
+                ),
+            )
 
         scheduler.advanceUntilIdle()
 
@@ -212,17 +228,20 @@ class NonBlockingHttpIconLoaderTest {
         val client: Client = mock()
         val loader = NonBlockingHttpIconLoader(client, FakeMemoryInfoProvider(defaultAvailMem), scope) { _, _, _ -> }
         doReturn(
-            Response(
+                Response(
+                    url = "https://www.example.org",
+                    headers = MutableHeaders(),
+                    status = 404,
+                    body = Response.Body.empty(),
+                )
+            )
+            .`when`(client)
+            .fetch(any())
+        val resource =
+            IconRequest.Resource(
                 url = "https://www.example.org",
-                headers = MutableHeaders(),
-                status = 404,
-                body = Response.Body.empty(),
-            ),
-        ).`when`(client).fetch(any())
-        val resource = IconRequest.Resource(
-            url = "https://www.example.org",
-            type = IconRequest.Resource.Type.APPLE_TOUCH_ICON,
-        )
+                type = IconRequest.Resource.Type.APPLE_TOUCH_ICON,
+            )
 
         val result = loader.load(mock(), mock(), resource)
         scheduler.advanceUntilIdle()
@@ -244,16 +263,19 @@ class NonBlockingHttpIconLoaderTest {
         var callbackIconRequest: IconRequest? = null
         var callbackResource: IconRequest.Resource? = null
         var callbackIcon: IconLoader.Result? = null
-        val loader = NonBlockingHttpIconLoader(client, FakeMemoryInfoProvider(defaultAvailMem), scope) { request, resource, icon ->
-            callbackIconRequest = request
-            callbackResource = resource
-            callbackIcon = icon
-        }
+        val loader =
+            NonBlockingHttpIconLoader(client, FakeMemoryInfoProvider(defaultAvailMem), scope) { request, resource, icon
+                ->
+                callbackIconRequest = request
+                callbackResource = resource
+                callbackIcon = icon
+            }
 
-        val resource = IconRequest.Resource(
-            url = "https://www.example.org",
-            type = IconRequest.Resource.Type.APPLE_TOUCH_ICON,
-        )
+        val resource =
+            IconRequest.Resource(
+                url = "https://www.example.org",
+                type = IconRequest.Resource.Type.APPLE_TOUCH_ICON,
+            )
 
         val result = loader.load(testContext, mock(), resource)
         scheduler.advanceUntilIdle()
@@ -271,28 +293,34 @@ class NonBlockingHttpIconLoaderTest {
         var callbackIconRequest: IconRequest? = null
         var callbackResource: IconRequest.Resource? = null
         var callbackIcon: IconLoader.Result? = null
-        val loader = NonBlockingHttpIconLoader(client, FakeMemoryInfoProvider(defaultAvailMem), scope) { request, resource, icon ->
-            callbackIconRequest = request
-            callbackResource = resource
-            callbackIcon = icon
-        }
-        val failingStream: InputStream = object : InputStream() {
-            override fun read(): Int {
-                throw IOException("Kaboom")
+        val loader =
+            NonBlockingHttpIconLoader(client, FakeMemoryInfoProvider(defaultAvailMem), scope) { request, resource, icon
+                ->
+                callbackIconRequest = request
+                callbackResource = resource
+                callbackIcon = icon
             }
-        }
+        val failingStream: InputStream =
+            object : InputStream() {
+                override fun read(): Int {
+                    throw IOException("Kaboom")
+                }
+            }
         doReturn(
-            Response(
+                Response(
+                    url = "https://www.example.org",
+                    headers = MutableHeaders(),
+                    status = 200,
+                    body = Response.Body(failingStream),
+                )
+            )
+            .`when`(client)
+            .fetch(any())
+        val resource =
+            IconRequest.Resource(
                 url = "https://www.example.org",
-                headers = MutableHeaders(),
-                status = 200,
-                body = Response.Body(failingStream),
-            ),
-        ).`when`(client).fetch(any())
-        val resource = IconRequest.Resource(
-            url = "https://www.example.org",
-            type = IconRequest.Resource.Type.APPLE_TOUCH_ICON,
-        )
+                type = IconRequest.Resource.Type.APPLE_TOUCH_ICON,
+            )
 
         val result = loader.load(testContext, mock(), resource)
         scheduler.advanceUntilIdle()
@@ -310,13 +338,15 @@ class NonBlockingHttpIconLoaderTest {
         val captor = argumentCaptor<Request>()
         val loader = NonBlockingHttpIconLoader(client, FakeMemoryInfoProvider(defaultAvailMem), scope) { _, _, _ -> }
         doReturn(
-            Response(
-                url = "https://www.example.org",
-                headers = MutableHeaders(),
-                status = 404,
-                body = Response.Body.empty(),
-            ),
-        ).`when`(client).fetch(any())
+                Response(
+                    url = "https://www.example.org",
+                    headers = MutableHeaders(),
+                    status = 404,
+                    body = Response.Body.empty(),
+                )
+            )
+            .`when`(client)
+            .fetch(any())
 
         loader.load(
             mock(),

@@ -41,16 +41,18 @@ internal class FakeGenerativeModel(
         }
 
         val responseTextParts = responseMap[prompt]!!
-        return responseTextParts.mapIndexed { idx, text ->
-            val mockCandidate: Candidate = mock()
-            `when`(mockCandidate.text).thenReturn(text)
-            if (idx == responseTextParts.size - 1) {
-                `when`(mockCandidate.finishReason).thenReturn(Candidate.FinishReason.STOP)
+        return responseTextParts
+            .mapIndexed { idx, text ->
+                val mockCandidate: Candidate = mock()
+                `when`(mockCandidate.text).thenReturn(text)
+                if (idx == responseTextParts.size - 1) {
+                    `when`(mockCandidate.finishReason).thenReturn(Candidate.FinishReason.STOP)
+                }
+                val mockResponse = mock<GenerateContentResponse>()
+                `when`(mockResponse.candidates).thenReturn(listOf(mockCandidate))
+                mockResponse
             }
-            val mockResponse = mock<GenerateContentResponse>()
-            `when`(mockResponse.candidates).thenReturn(listOf(mockCandidate))
-            mockResponse
-        }.asFlow()
+            .asFlow()
     }
 
     override suspend fun generateContent(prompt: String): GenerateContentResponse {
@@ -84,7 +86,7 @@ internal class FakeGenerativeModel(
     }
 
     override suspend fun <T : Any> generateContent(
-        request: GenerateTypedContentRequest<T>,
+        request: GenerateTypedContentRequest<T>
     ): GenerateTypedContentResponse<T> {
         TODO("Not yet implemented")
     }

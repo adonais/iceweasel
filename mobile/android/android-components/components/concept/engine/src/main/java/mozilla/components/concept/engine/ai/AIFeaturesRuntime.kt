@@ -6,9 +6,7 @@ package mozilla.components.concept.engine.ai
 
 private const val UNSUPPORTED_ERROR = "AI Feature support is not available in this engine."
 
-/**
- * Entry point for interacting with runtime AI features.
- */
+/** Entry point for interacting with runtime AI features. */
 interface AIFeaturesRuntime {
 
     /**
@@ -40,8 +38,7 @@ interface AIFeaturesRuntime {
     /**
      * Makes the given AI feature available (resets to default state).
      *
-     * @param featureId The identifier of the AI feature.
-     * May be found through [listFeatures].
+     * @param featureId The identifier of the AI feature. May be found through [listFeatures].
      * @param onSuccess Callback invoked on successful call.
      * @param onError Callback invoked if an issue occurred.
      */

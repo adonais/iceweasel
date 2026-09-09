@@ -60,7 +60,7 @@ class BrowserMenuControllerTest {
                 }
 
                 override fun onDismiss() = Unit
-            },
+            }
         )
 
         assertNull(submitted)
@@ -82,7 +82,7 @@ class BrowserMenuControllerTest {
                 }
 
                 override fun onMenuListSubmit(list: List<MenuCandidate>) = Unit
-            },
+            }
         )
 
         menu.dismiss()
@@ -109,24 +109,26 @@ class BrowserMenuControllerTest {
         val anchor = createAnchor(x, y)
 
         val (targetX, targetY) = getTargetCoordinates(x, y, containerView, anchor)
-        val positioningData = MenuPositioningData(
-            anchor = anchor,
-            x = targetX,
-            y = targetY,
-            containerHeight = containerView.measuredHeight,
-            animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
-        )
+        val positioningData =
+            MenuPositioningData(
+                anchor = anchor,
+                x = targetX,
+                y = targetY,
+                containerHeight = containerView.measuredHeight,
+                animation = R.style.Mozac_Browser_Menu2_Animation_OverflowMenuLeftTop,
+            )
 
         popupWindow.displayPopup(positioningData)
 
         assertEquals(containerView.measuredHeight, popupWindow.height)
         assertEquals(positioningData.animation, popupWindow.animationStyle)
 
-        Mockito.verify(popupWindow).showAtLocation(
-            positioningData.anchor,
-            Gravity.NO_GRAVITY,
-            positioningData.x,
-            positioningData.y,
-        )
+        Mockito.verify(popupWindow)
+            .showAtLocation(
+                positioningData.anchor,
+                Gravity.NO_GRAVITY,
+                positioningData.x,
+                positioningData.y,
+            )
     }
 }

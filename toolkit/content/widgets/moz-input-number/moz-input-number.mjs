@@ -17,6 +17,7 @@ import MozInputText from "chrome://global/content/elements/moz-input-text.mjs";
  * @property {string} description - The text for the description element that helps describe the input control
  * @property {string} supportPage - Name of the SUMO support page to link to.
  * @property {string} placeholder - Text to display when the input has no value.
+ * @property {string} title - The title attribute, mapped onto the inner input.
  */
 export default class MozInputNumber extends MozInputText {
   inputTemplate() {

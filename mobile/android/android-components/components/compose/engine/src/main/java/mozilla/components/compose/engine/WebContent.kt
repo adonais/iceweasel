@@ -15,8 +15,8 @@ import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineView
 
 /**
- * Composes an [EngineView] obtained from the given [Engine] and renders the web content of the
- * [target] from the [store] on it.
+ * Composes an [EngineView] obtained from the given [Engine] and renders the web content of the [target] from the
+ * [store] on it.
  */
 @Composable
 fun WebContent(
@@ -24,18 +24,19 @@ fun WebContent(
     store: BrowserStore,
     target: Target,
 ) {
-    val selectedTab = target.observeAsComposableStateFrom(
-        store = store,
-        observe = { tab ->
-            // Render if the tab itself changed or when the state of the linked engine session changes
-            arrayOf(
-                tab?.id,
-                tab?.engineState?.engineSession,
-                tab?.engineState?.crashed,
-                tab?.content?.firstContentfulPaint,
-            )
-        },
-    )
+    val selectedTab =
+        target.observeAsComposableStateFrom(
+            store = store,
+            observe = { tab ->
+                // Render if the tab itself changed or when the state of the linked engine session changes
+                arrayOf(
+                    tab?.id,
+                    tab?.engineState?.engineSession,
+                    tab?.engineState?.crashed,
+                    tab?.content?.firstContentfulPaint,
+                )
+            },
+        )
 
     AndroidView(
         modifier = Modifier.fillMaxSize(),

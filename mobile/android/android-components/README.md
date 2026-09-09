@@ -292,12 +292,12 @@ If your build fails, you may find you get more instructive error messages by att
 # Coding Standards #
 
 ## Style ##
-We follow the style enforced by [ktlint](https://ktlint.github.io/) and [detekt](https://github.com/detekt/detekt). See [how to configure Android Studio appropriately](https://pinterest.github.io/ktlint/latest/install/setup/).
+We follow the style enforced by [ktfmt](https://github.com/Kotlin/ktfmt) and [detekt](https://github.com/detekt/detekt). See [how to configure Android Studio appropriately](https://github.com/Kotlin/ktfmt#intellij-android-studio-and-other-jetbrains-ides).
 
 To check your style, run:
 
 ```
-./gradlew ktlint
+./gradlew ktfmtCheck
 ./gradlew detekt
 ```
 

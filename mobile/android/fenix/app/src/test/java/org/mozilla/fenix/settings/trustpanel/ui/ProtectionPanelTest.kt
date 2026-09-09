@@ -24,11 +24,14 @@ import org.mozilla.fenix.theme.Theme
 
 @RunWith(AndroidJUnit4::class)
 class ProtectionPanelTest {
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
-    private val resources get() = ApplicationProvider.getApplicationContext<Context>().resources
-    private val appName get() = resources.getString(R.string.app_name_firefox)
+    private val resources
+        get() = ApplicationProvider.getApplicationContext<Context>().resources
+
+    private val appName
+        get() = resources.getString(R.string.app_name_firefox)
+
     private val protectedOnGuardTitle
         get() = resources.getString(R.string.protection_panel_banner_protected_title, appName)
 
@@ -44,13 +47,9 @@ class ProtectionPanelTest {
 
     @Test
     fun `WHEN multiple trackers were blocked THEN plural banner is shown`() {
-        setProtectionPanel(
-            numberOfTrackersBlocked = 5,
-        )
+        setProtectionPanel(numberOfTrackersBlocked = 5)
 
-        composeTestRule
-            .onNodeWithContentDescription(gradientBannerContentDescription(5))
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(gradientBannerContentDescription(5)).assertIsDisplayed()
         composeTestRule
             .onNodeWithText(resources.getString(R.string.protection_panel_num_trackers_blocked, 5))
             .assertDoesNotExist()
@@ -70,20 +69,14 @@ class ProtectionPanelTest {
 
     @Test
     fun `WHEN a single tracker was blocked THEN singular banner is shown`() {
-        setProtectionPanel(
-            numberOfTrackersBlocked = 1,
-        )
+        setProtectionPanel(numberOfTrackersBlocked = 1)
 
-        composeTestRule
-            .onNodeWithContentDescription(gradientBannerContentDescription(1))
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(gradientBannerContentDescription(1)).assertIsDisplayed()
     }
 
     @Test
     fun `WHEN no trackers were blocked THEN gradient banner is shown with no-blocked-trackers description`() {
-        setProtectionPanel(
-            numberOfTrackersBlocked = 0,
-        )
+        setProtectionPanel(numberOfTrackersBlocked = 0)
 
         composeTestRule.onNodeWithContentDescription(protectedOnGuardTitle, substring = true).assertIsDisplayed()
         composeTestRule
@@ -123,12 +116,13 @@ class ProtectionPanelTest {
         composeTestRule.setContent {
             FirefoxTheme(theme = Theme.Light) {
                 ProtectionPanel(
-                    websiteInfoState = WebsiteInfoState(
-                        isSecured = true,
-                        websiteUrl = "https://www.mozilla.org",
-                        websiteTitle = "Mozilla",
-                        certificate = null,
-                    ),
+                    websiteInfoState =
+                        WebsiteInfoState(
+                            isSecured = true,
+                            websiteUrl = "https://www.mozilla.org",
+                            websiteTitle = "Mozilla",
+                            certificate = null,
+                        ),
                     ipProtectionMenuState = IPProtectionMenuState(),
                     icon = null,
                     isTrackingProtectionEnabled = true,

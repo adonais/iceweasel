@@ -5,12 +5,12 @@
 package org.mozilla.fenix.settings.pagesummaries
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertEquals
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.settings.summarize.FakeSummarizationFeatureConfiguration
-import kotlin.test.assertEquals
 
 @RunWith(AndroidJUnit4::class)
 class PageSummariesSettingsSearchProviderTest {
@@ -21,9 +21,10 @@ class PageSummariesSettingsSearchProviderTest {
 
     @Before
     fun setUp() {
-        provider = PageSummariesSettingsSearchProvider(
-            summarizationFeatureConfiguration = fakeSummarizationFeatureConfiguration,
-        )
+        provider =
+            PageSummariesSettingsSearchProvider(
+                summarizationFeatureConfiguration = fakeSummarizationFeatureConfiguration
+            )
     }
 
     @Test
@@ -53,10 +54,11 @@ class PageSummariesSettingsSearchProviderTest {
 
         // Then assert the keys represent the items returned
         assertEquals(
-            expected = listOf(
-                "PAGE_SUMMARIES_FEATURE",
-                "PAGE_SUMMARIES_GESTURES",
-            ),
+            expected =
+                listOf(
+                    "PAGE_SUMMARIES_FEATURE",
+                    "PAGE_SUMMARIES_GESTURES",
+                ),
             actual = keys,
             message = "Expected the search items to match the page summaries settings",
         )

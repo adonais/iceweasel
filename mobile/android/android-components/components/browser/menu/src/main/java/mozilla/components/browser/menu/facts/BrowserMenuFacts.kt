@@ -9,13 +9,9 @@ import mozilla.components.support.base.facts.Action
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.collect
 
-/**
- * Facts emitted for telemetry related to [BrowserMenu].
- */
+/** Facts emitted for telemetry related to [BrowserMenu]. */
 class BrowserMenuFacts {
-    /**
-     * Items that specify which portion of the [BrowserMenu] was interacted with.
-     */
+    /** Items that specify which portion of the [BrowserMenu] was interacted with. */
     object Items {
         const val WEB_EXTENSION_MENU_ITEM = "web_extension_menu_item"
     }
@@ -28,12 +24,13 @@ private fun emitMenuFact(
     metadata: Map<String, Any>? = null,
 ) {
     Fact(
-        Component.BROWSER_MENU,
-        action,
-        item,
-        value,
-        metadata,
-    ).collect()
+            Component.BROWSER_MENU,
+            action,
+            item,
+            value,
+            metadata,
+        )
+        .collect()
 }
 
 internal fun emitOpenMenuItemFact(extensionId: String) {

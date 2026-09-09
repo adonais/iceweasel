@@ -6,13 +6,9 @@ package mozilla.components
 
 import mozilla.components.support.base.BuildConfig
 
-/**
- * Information about the current Android Components build.
- */
+/** Information about the current Android Components build. */
 object Build {
-    /**
-     * The version name of this Android Components release (e.g. 0.54.0 or 0.55.0-SNAPSHOT).
-     */
+    /** The version name of this Android Components release (e.g. 0.54.0 or 0.55.0-SNAPSHOT). */
     const val VERSION: String = BuildConfig.LIBRARY_VERSION
 
     /**
@@ -22,9 +18,7 @@ object Build {
      */
     const val APPLICATION_SERVICES_VERSION: String = BuildConfig.APPLICATION_SERVICES_VERSION
 
-    /**
-     * The version of the "Glean SDK" library this version was *build* against.
-     */
+    /** The version of the "Glean SDK" library this version was *build* against. */
     const val GLEAN_SDK_VERSION: String = BuildConfig.GLEAN_SDK_VERSION
 
     /**

@@ -81,12 +81,13 @@ class ExperimentsListNimbusApiTest {
         val enrolledExperiment2 = createEnrolledExperiment("active2")
 
         val nimbusApi = mockk<NimbusApi>()
-        every { nimbusApi.getAvailableExperiments() } returns listOf(
-            activeExperiment1,
-            inactiveExperiment1,
-            activeExperiment2,
-            inactiveExperiment2,
-        )
+        every { nimbusApi.getAvailableExperiments() } returns
+            listOf(
+                activeExperiment1,
+                inactiveExperiment1,
+                activeExperiment2,
+                inactiveExperiment2,
+            )
         every { nimbusApi.getActiveExperiments() } returns listOf(enrolledExperiment1, enrolledExperiment2)
 
         val result = nimbusApi.partitionedExperimentLists()
@@ -117,20 +118,22 @@ class ExperimentsListNimbusApiTest {
         assertEquals(NimbusExperimentItem.Experiment(experiment), result[3])
     }
 
-    private fun createAvailableExperiment(slug: String) = AvailableExperiment(
-        slug = slug,
-        userFacingName = "Experiment $slug",
-        userFacingDescription = "Description for $slug",
-        branches = emptyList(),
-        referenceBranch = null,
-    )
+    private fun createAvailableExperiment(slug: String) =
+        AvailableExperiment(
+            slug = slug,
+            userFacingName = "Experiment $slug",
+            userFacingDescription = "Description for $slug",
+            branches = emptyList(),
+            referenceBranch = null,
+        )
 
-    private fun createEnrolledExperiment(slug: String) = EnrolledExperiment(
-        featureIds = emptyList(),
-        slug = slug,
-        userFacingName = "Enrolled $slug",
-        userFacingDescription = "Enrolled description for $slug",
-        branchSlug = "control",
-        isRollout = false,
-    )
+    private fun createEnrolledExperiment(slug: String) =
+        EnrolledExperiment(
+            featureIds = emptyList(),
+            slug = slug,
+            userFacingName = "Enrolled $slug",
+            userFacingDescription = "Enrolled description for $slug",
+            branchSlug = "control",
+            isRollout = false,
+        )
 }

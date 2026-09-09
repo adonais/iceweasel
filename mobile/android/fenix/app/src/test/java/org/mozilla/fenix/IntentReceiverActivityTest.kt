@@ -16,6 +16,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.feature.intent.processing.IntentProcessor
 import mozilla.components.support.test.robolectric.testContext
@@ -39,7 +40,6 @@ import org.mozilla.fenix.utils.Settings
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class IntentReceiverActivityTest {
@@ -47,8 +47,7 @@ class IntentReceiverActivityTest {
     private lateinit var settings: Settings
     private lateinit var intentProcessors: IntentProcessors
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     @Before
     fun setup() {
@@ -88,26 +87,24 @@ class IntentReceiverActivityTest {
     }
 
     @Test
-    fun `GIVEN a deeplink intent WHEN processing the intent THEN add the className HomeActivity`() =
-        runTest {
-            val uri = "${BuildConfig.DEEP_LINK_SCHEME}://settings_wallpapers".toUri()
-            val intent = Intent("", uri)
-            assertNull(Events.openedLink.testGetValue())
+    fun `GIVEN a deeplink intent WHEN processing the intent THEN add the className HomeActivity`() = runTest {
+        val uri = "${BuildConfig.DEEP_LINK_SCHEME}://settings_wallpapers".toUri()
+        val intent = Intent("", uri)
+        assertNull(Events.openedLink.testGetValue())
 
-            coEvery { intentProcessors.intentProcessor.process(any()) } returns false
-            coEvery { intentProcessors.externalDeepLinkIntentProcessor.process(any()) } returns true
+        coEvery { intentProcessors.intentProcessor.process(any()) } returns false
+        coEvery { intentProcessors.externalDeepLinkIntentProcessor.process(any()) } returns true
 
-            val activity =
-                Robolectric.buildActivity(IntentReceiverActivity::class.java, intent).get()
-            attachMocks(activity)
-            activity.processIntent(intent)
+        val activity = Robolectric.buildActivity(IntentReceiverActivity::class.java, intent).get()
+        attachMocks(activity)
+        activity.processIntent(intent)
 
-            val shadow = shadowOf(activity)
-            val actualIntent = shadow.peekNextStartedActivity()
+        val shadow = shadowOf(activity)
+        val actualIntent = shadow.peekNextStartedActivity()
 
-            assertNotNull(Events.openedLink.testGetValue())
-            assertEquals(HomeActivity::class.java.name, actualIntent.component?.className)
-        }
+        assertNotNull(Events.openedLink.testGetValue())
+        assertEquals(HomeActivity::class.java.name, actualIntent.component?.className)
+    }
 
     @Test
     fun `process intent with action OPEN_PRIVATE_TAB`() = runTest {

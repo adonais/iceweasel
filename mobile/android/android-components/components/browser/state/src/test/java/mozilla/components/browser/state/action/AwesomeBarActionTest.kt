@@ -4,6 +4,7 @@
 
 package mozilla.components.browser.state.action
 
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.reducer.BrowserStateReducer
 import mozilla.components.browser.state.state.AwesomeBarState
 import mozilla.components.browser.state.state.BrowserState
@@ -14,7 +15,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertNotNull
 
 class AwesomeBarActionTest {
     private lateinit var state: BrowserState
@@ -33,17 +33,19 @@ class AwesomeBarActionTest {
         val providerGroup = AwesomeBar.SuggestionProviderGroup(listOf(provider))
         val providerGroupSuggestions = listOf(AwesomeBar.Suggestion(provider))
 
-        state = BrowserStateReducer.reduce(
-            state,
-            AwesomeBarAction.VisibilityStateUpdated(
-                AwesomeBar.VisibilityState(
-                    visibleProviderGroups = mapOf(providerGroup to providerGroupSuggestions),
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                AwesomeBarAction.VisibilityStateUpdated(
+                    AwesomeBar.VisibilityState(visibleProviderGroups = mapOf(providerGroup to providerGroupSuggestions))
                 ),
-            ),
-        )
+            )
 
         assertEquals(1, state.awesomeBarState.visibilityState.visibleProviderGroups.size)
-        assertEquals(providerGroupSuggestions, state.awesomeBarState.visibilityState.visibleProviderGroups[providerGroup])
+        assertEquals(
+            providerGroupSuggestions,
+            state.awesomeBarState.visibilityState.visibleProviderGroups[providerGroup],
+        )
         assertNull(state.awesomeBarState.clickedSuggestion)
     }
 
@@ -67,14 +69,17 @@ class AwesomeBarActionTest {
         val suggestion = AwesomeBar.Suggestion(provider)
         val providerGroup = AwesomeBar.SuggestionProviderGroup(listOf(provider))
         val providerGroupSuggestions = listOf(suggestion)
-        state = BrowserState(
-            awesomeBarState = AwesomeBarState(
-                visibilityState = AwesomeBar.VisibilityState(
-                    visibleProviderGroups = mapOf(providerGroup to providerGroupSuggestions),
-                ),
-                clickedSuggestion = suggestion,
-            ),
-        )
+        state =
+            BrowserState(
+                awesomeBarState =
+                    AwesomeBarState(
+                        visibilityState =
+                            AwesomeBar.VisibilityState(
+                                visibleProviderGroups = mapOf(providerGroup to providerGroupSuggestions)
+                            ),
+                        clickedSuggestion = suggestion,
+                    )
+            )
 
         assertTrue(state.awesomeBarState.visibilityState.visibleProviderGroups.isNotEmpty())
         assertNotNull(state.awesomeBarState.clickedSuggestion)
@@ -91,14 +96,17 @@ class AwesomeBarActionTest {
         val suggestion = AwesomeBar.Suggestion(provider)
         val providerGroup = AwesomeBar.SuggestionProviderGroup(listOf(provider))
         val providerGroupSuggestions = listOf(suggestion)
-        state = BrowserState(
-            awesomeBarState = AwesomeBarState(
-                visibilityState = AwesomeBar.VisibilityState(
-                    visibleProviderGroups = mapOf(providerGroup to providerGroupSuggestions),
-                ),
-                clickedSuggestion = suggestion,
-            ),
-        )
+        state =
+            BrowserState(
+                awesomeBarState =
+                    AwesomeBarState(
+                        visibilityState =
+                            AwesomeBar.VisibilityState(
+                                visibleProviderGroups = mapOf(providerGroup to providerGroupSuggestions)
+                            ),
+                        clickedSuggestion = suggestion,
+                    )
+            )
 
         assertTrue(state.awesomeBarState.visibilityState.visibleProviderGroups.isNotEmpty())
         assertNotNull(state.awesomeBarState.clickedSuggestion)

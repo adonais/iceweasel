@@ -337,17 +337,20 @@ class UrlClassifierUpdateObserverProxy final
    public:
     UpdateSuccessRunnable(
         const nsMainThreadPtrHandle<nsIUrlClassifierUpdateObserver>& aTarget,
-        uint32_t aRequestedTimeout)
+        const nsTArray<nsCString>& aTables,
+        const nsTArray<uint32_t>& aWaitSeconds)
         : mozilla::Runnable(
               "UrlClassifierUpdateObserverProxy::UpdateSuccessRunnable"),
           mTarget(aTarget),
-          mRequestedTimeout(aRequestedTimeout) {}
+          mTables(aTables.Clone()),
+          mWaitSeconds(aWaitSeconds.Clone()) {}
 
     NS_DECL_NSIRUNNABLE
 
    private:
     const nsMainThreadPtrHandle<nsIUrlClassifierUpdateObserver> mTarget;
-    const uint32_t mRequestedTimeout;
+    const nsTArray<nsCString> mTables;
+    const nsTArray<uint32_t> mWaitSeconds;
   };
 
  private:

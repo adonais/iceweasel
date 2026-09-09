@@ -334,18 +334,22 @@ add_task(async function test_getPageContent_empty_content() {
 
     setupBrowserWindowTracker(sb, createFakeWindow([tab]));
 
-    const result_array = await GetPageContent.getPageContent(
+    const result_array = await GetPageContent.getPageContentResults(
       { url_list: [targetUrl] },
       makeConversation()
     );
 
     const result = result_array[0];
 
-    Assert.ok(
-      result.includes("Content from"),
-      "Should return content result even for whitespace-only content"
+    Assert.equal(
+      result.ok,
+      false,
+      "Whitespace-only extractions are reported as failed reads"
     );
-    Assert.ok(result.includes("Empty Page"), "Should include tab label");
+    Assert.ok(
+      result.content.includes("Empty Page"),
+      "Should include tab label"
+    );
   } finally {
     sb.restore();
   }

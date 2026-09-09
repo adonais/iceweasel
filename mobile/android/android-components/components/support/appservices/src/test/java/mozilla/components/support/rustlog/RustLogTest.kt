@@ -5,17 +5,11 @@
 package mozilla.components.support.rustlog
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.Job
 import mozilla.appservices.rust_log_forwarder.Level
-import mozilla.components.concept.base.crash.Breadcrumb
-import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.support.base.log.Log
-import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
-import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertIs
 
 @RunWith(AndroidJUnit4::class)
 class RustLogTest {
@@ -47,25 +41,5 @@ class RustLogTest {
 
         assertEquals(Level.ERROR, Log.Priority.ERROR.asLevel(false))
         assertEquals(Level.ERROR, Log.Priority.ERROR.asLevel(true))
-    }
-
-    private class TestCrashReporter :
-        CrashReporting {
-        val exceptions: MutableList<Throwable> = mutableListOf()
-
-        override fun submitCaughtException(throwable: Throwable): Job {
-            exceptions.add(throwable)
-            return mock()
-        }
-
-        override fun recordCrashBreadcrumb(breadcrumb: Breadcrumb) {
-            fail()
-        }
-
-        fun assertLastException(expectedCount: Int, msg: String) {
-            assertEquals(expectedCount, exceptions.size)
-            assertIs<RustErrorException>(exceptions.last())
-            assertEquals(msg, exceptions.last().message)
-        }
     }
 }

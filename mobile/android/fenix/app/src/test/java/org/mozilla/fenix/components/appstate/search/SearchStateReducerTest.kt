@@ -45,14 +45,16 @@ class SearchStateReducerTest {
 
     @Test
     fun `WHEN the search is ended THEN reset the search state in the app state`() {
-        val initialState = AppState(
-            searchState = SearchState(
-                isSearchActive = true,
-                selectedSearchEngine = mockk(),
-                sourceTabId = "test",
-                searchAccessPoint = MetricsUtils.Source.ACTION,
-            ),
-        )
+        val initialState =
+            AppState(
+                searchState =
+                    SearchState(
+                        isSearchActive = true,
+                        selectedSearchEngine = mockk(),
+                        sourceTabId = "test",
+                        searchAccessPoint = MetricsUtils.Source.ACTION,
+                    )
+            )
 
         val finalState = AppStoreReducer.reduce(initialState, SearchEnded)
 

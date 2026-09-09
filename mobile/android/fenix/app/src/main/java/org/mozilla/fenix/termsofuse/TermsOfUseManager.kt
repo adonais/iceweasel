@@ -20,15 +20,10 @@ class TermsOfUseManager(
 
     private var isFirstCheckSinceAppStart: Boolean = false
 
-    /**
-     * Determines whether the Terms of Use bottom sheet should be shown on the homepage.
-     */
-    fun shouldShowTermsOfUsePromptOnHomepage() =
-        shouldShowTermsOfUsePrompt(ignoreFirstCheckSinceAppStart = true)
+    /** Determines whether the Terms of Use bottom sheet should be shown on the homepage. */
+    fun shouldShowTermsOfUsePromptOnHomepage() = shouldShowTermsOfUsePrompt(ignoreFirstCheckSinceAppStart = true)
 
-    /**
-     * Determines whether the Terms of Use bottom sheet should be shown in the browser fragment.
-     */
+    /** Determines whether the Terms of Use bottom sheet should be shown in the browser fragment. */
     fun shouldShowTermsOfUsePromptOnBrowserFragment() = shouldShowTermsOfUsePrompt()
 
     /**
@@ -36,20 +31,20 @@ class TermsOfUseManager(
      *
      * @param ignoreFirstCheckSinceAppStart Used to check whether the app start check is required.
      * @param currentTimeInMillis The current time in milliseconds.
-     *
      * @return `true` if the Terms of Use bottom sheet should be shown; otherwise, `false`.
      */
     @VisibleForTesting
     internal fun shouldShowTermsOfUsePrompt(
         ignoreFirstCheckSinceAppStart: Boolean = false,
         currentTimeInMillis: Long = currentTimeMillis(),
-    ): Boolean = repository.canShowTermsOfUsePrompt() &&
+    ): Boolean =
+        repository.canShowTermsOfUsePrompt() &&
             !repository.userPostponedAndWithinCooldownPeriod(currentTimeInMillis) &&
             isFirstCheckFromAppStart(ignoreFirstCheckSinceAppStart)
 
     /**
-     * This is the first time checking to see if we should show the prompt since starting the app
-     * OR the [ignore] flag is true (we should ignore this when checking from homepage).
+     * This is the first time checking to see if we should show the prompt since starting the app OR the [ignore] flag
+     * is true (we should ignore this when checking from homepage).
      */
     private fun isFirstCheckFromAppStart(ignore: Boolean): Boolean {
         val isFirstCheck = isFirstCheckSinceAppStart
@@ -58,8 +53,7 @@ class TermsOfUseManager(
     }
 
     /**
-     * Called from the [org.mozilla.fenix.HomeActivity]'s onStart. Used to track the first check
-     * since starting the app.
+     * Called from the [org.mozilla.fenix.HomeActivity]'s onStart. Used to track the first check since starting the app.
      */
     fun onStart() {
         isFirstCheckSinceAppStart = true

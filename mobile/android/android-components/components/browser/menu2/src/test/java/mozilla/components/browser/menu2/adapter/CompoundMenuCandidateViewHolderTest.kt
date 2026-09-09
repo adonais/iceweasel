@@ -29,11 +29,12 @@ import org.mockito.Mockito.verify
 
 class CompoundMenuCandidateViewHolderTest {
 
-    private val baseCandidate = CompoundMenuCandidate(
-        "hello",
-        isChecked = false,
-        end = CompoundMenuCandidate.ButtonType.CHECKBOX,
-    )
+    private val baseCandidate =
+        CompoundMenuCandidate(
+            "hello",
+            isChecked = false,
+            end = CompoundMenuCandidate.ButtonType.CHECKBOX,
+        )
     private lateinit var view: ConstraintLayout
     private lateinit var compoundButton: CompoundButton
 

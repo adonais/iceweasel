@@ -2,7 +2,7 @@ schema: 1
 
 bugzilla:
   product: Core
-  component: Networking
+  component: "WebRTC: Networking"
 
 origin:
   name: sctp
@@ -51,8 +51,9 @@ vendoring:
       cwd: '{yaml_dir}'
 
   patches:
-    - win32-rands.patch
-    - win32-free.patch
+    - tsn-gap-check.patch
+    - flush-before-process-init.patch
+    - interleaving-supported-define.patch
 
 updatebot:
   maintainer-phab: "#webrtc-reviewers"

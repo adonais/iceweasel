@@ -30,21 +30,15 @@ namespace a11y {
 struct FontSize {
   int32_t mValue;
 
-  bool operator==(const FontSize& aOther) const {
-    return mValue == aOther.mValue;
-  }
-
-  bool operator!=(const FontSize& aOther) const {
-    return mValue != aOther.mValue;
-  }
+  bool operator==(const FontSize& aOther) const = default;
+  bool operator!=(const FontSize& aOther) const = default;
 };
 
 struct Color {
   nscolor mValue;
 
-  bool operator==(const Color& aOther) const { return mValue == aOther.mValue; }
-
-  bool operator!=(const Color& aOther) const { return mValue != aOther.mValue; }
+  bool operator==(const Color& aOther) const = default;
+  bool operator!=(const Color& aOther) const = default;
 };
 
 // A special type. If an entry has a value of this type, it instructs the
@@ -54,7 +48,6 @@ struct DeleteEntry {
   bool mValue;
 
   bool operator==(const DeleteEntry& aOther) const { return true; }
-
   bool operator!=(const DeleteEntry& aOther) const { return false; }
 };
 

@@ -110,8 +110,7 @@ internal class DrawableMenuIconViewHolder(
     }
 
     companion object {
-        @LayoutRes
-        val layoutResource = R.layout.mozac_browser_menu2_icon_drawable
+        @LayoutRes val layoutResource = R.layout.mozac_browser_menu2_icon_drawable
         val notificationDotLayoutResource = R.layout.mozac_browser_menu2_icon_notification_dot
     }
 }
@@ -142,8 +141,7 @@ internal class DrawableButtonMenuIconViewHolder(
     }
 
     companion object {
-        @LayoutRes
-        val layoutResource = R.layout.mozac_browser_menu2_icon_button
+        @LayoutRes val layoutResource = R.layout.mozac_browser_menu2_icon_button
     }
 }
 
@@ -153,7 +151,7 @@ internal class AsyncDrawableMenuIconViewHolder(
     side: Side,
     private val logger: Logger = Logger("mozac-menu2-AsyncDrawableMenuIconViewHolder"),
     private val scope: CoroutineScope = MainScope(),
-    ) : MenuIconWithDrawableViewHolder<AsyncDrawableMenuIcon>(parent, inflater) {
+) : MenuIconWithDrawableViewHolder<AsyncDrawableMenuIcon>(parent, inflater) {
 
     override val imageView: ImageView = inflate(layoutResource).findViewById(R.id.icon)
     private var effectView: ImageView? = null
@@ -187,15 +185,16 @@ internal class AsyncDrawableMenuIconViewHolder(
         loadDrawable: suspend (width: Int, height: Int) -> Drawable?,
         fallback: Drawable?,
     ) {
-        val drawable = try {
-            loadDrawable(imageView.measuredWidth, imageView.measuredHeight)
-        } catch (throwable: Throwable) {
-            logger.error(
-                message = "Failed to load browser action icon, falling back to default.",
-                throwable = throwable,
-            )
-            fallback
-        }
+        val drawable =
+            try {
+                loadDrawable(imageView.measuredWidth, imageView.measuredHeight)
+            } catch (throwable: Throwable) {
+                logger.error(
+                    message = "Failed to load browser action icon, falling back to default.",
+                    throwable = throwable,
+                )
+                fallback
+            }
         imageView.setImageDrawable(drawable)
     }
 
@@ -218,8 +217,7 @@ internal class AsyncDrawableMenuIconViewHolder(
     }
 
     companion object {
-        @LayoutRes
-        val layoutResource = R.layout.mozac_browser_menu2_icon_drawable
+        @LayoutRes val layoutResource = R.layout.mozac_browser_menu2_icon_drawable
         val notificationDotLayoutResource = R.layout.mozac_browser_menu2_icon_notification_dot
     }
 }

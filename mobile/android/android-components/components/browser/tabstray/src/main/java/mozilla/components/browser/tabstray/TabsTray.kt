@@ -4,32 +4,21 @@
 
 package mozilla.components.browser.tabstray
 
-import mozilla.components.browser.state.state.TabPartition
 import mozilla.components.browser.state.state.TabSessionState
 
-/**
- * An interface to display a list of tabs.
- */
+/** An interface to display a list of tabs. */
 interface TabsTray {
 
-    /**
-     * Interface to be implemented by classes that want to observe or react to the interactions on the tabs list.
-     */
+    /** Interface to be implemented by classes that want to observe or react to the interactions on the tabs list. */
     interface Delegate {
 
-        /**
-         * A new tab has been selected.
-         */
+        /** A new tab has been selected. */
         fun onTabSelected(tab: TabSessionState, source: String? = null)
 
-        /**
-         * A tab has been closed.
-         */
+        /** A tab has been closed. */
         fun onTabClosed(tab: TabSessionState, source: String? = null)
     }
 
-    /**
-     * Called when the list of tabs are updated.
-     */
-    fun updateTabs(tabs: List<TabSessionState>, tabPartition: TabPartition?, selectedTabId: String?)
+    /** Called when the list of tabs are updated. */
+    fun updateTabs(tabs: List<TabSessionState>, selectedTabId: String?)
 }

@@ -24,7 +24,7 @@ double ExtractHighWaterMark(const QueuingStrategy& aStrategy,
 // Step 2 and 3 of https://streams.spec.whatwg.org/#writablestream-set-up
 // Step 5 and 6 of https://streams.spec.whatwg.org/#transformstream-set-up
 template <typename T>
-MOZ_CAN_RUN_SCRIPT static already_AddRefed<Promise> PromisifyAlgorithm(
+MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> PromisifyAlgorithm(
     nsIGlobalObject* aGlobal, T aFunc, mozilla::ErrorResult& aRv) {
   // Step 1. Let result be the result of running (algorithm). If this throws an
   // exception e, return a promise rejected with e.

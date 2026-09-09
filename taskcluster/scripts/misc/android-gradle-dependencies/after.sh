@@ -31,6 +31,12 @@ cp -R ${NEXUS_WORK}/storage/gradle-plugins android-gradle-dependencies
 # a mozconfig.
 cp -a ${GRADLE_USER_HOME}/wrapper/dists/gradle-*-*/*/gradle-*/ android-gradle-dependencies/gradle-dist
 
+# Uploaded before the check below, so that a failure ships the evidence for it.
+cp -R "$DEPENDENCY_INVENTORIES" /builds/worker/artifacts/
+mkdir -p /builds/worker/artifacts/nexus-logs
+cp -R ${NEXUS_WORK}/logs/* /builds/worker/artifacts/nexus-logs/ || true
+ls -l /builds/worker/artifacts/nexus-logs/
+
 # Catch an incomplete artifact here rather than downstream, where it surfaces
 # much later as a confusing resolution failure. Checked before the packaging
 # below so that a failure doesn't pay for compressing the artifact first.

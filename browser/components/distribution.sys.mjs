@@ -619,12 +619,23 @@ export let DistributionManagement = {
     return FOLDER_GUID_PREFIX;
   },
 
+  /**
+   * Lazily creates the DistributionCustomizer and returns it.
+   *
+   * Callers should use the returned reference rather than
+   * `this._distributionCustomizer`: calling into the customizer can
+   * synchronously notify DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC, and our
+   * own observer for that topic clears `_distributionCustomizer`, so holding
+   * the reference is the safer bet.
+   *
+   * @returns {DistributionCustomizer}
+   */
   _ensureCustomizer() {
-    if (this._distributionCustomizer) {
-      return;
+    if (!this._distributionCustomizer) {
+      this._distributionCustomizer = new DistributionCustomizer();
+      Services.obs.addObserver(this, DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC);
     }
-    this._distributionCustomizer = new DistributionCustomizer();
-    Services.obs.addObserver(this, DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC);
+    return this._distributionCustomizer;
   },
 
   observe(_subject, topic) {
@@ -640,19 +651,23 @@ export let DistributionManagement = {
   },
 
   applyCustomizations() {
-    this._ensureCustomizer();
-    this._distributionCustomizer.applyCustomizations();
-    let localizablePreferences =
-      this._distributionCustomizer._localizablePreferences;
+    let customizer = this._ensureCustomizer();
+    customizer.applyCustomizations();
+    let localizablePreferences = customizer._localizablePreferences;
     if (localizablePreferences?.size) {
       this._localizablePreferences = localizablePreferences;
       Services.obs.addObserver(this, "intl:requested-locales-changed");
     }
   },
 
+  /**
+   * Applies the distribution's bookmarks.
+   *
+   * @returns {Promise<void>}
+   *   Resolves once the bookmarks have been applied.
+   */
   applyBookmarks() {
-    this._ensureCustomizer();
-    this._distributionCustomizer.applyBookmarks();
+    return this._ensureCustomizer().applyBookmarks();
   },
 
   QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),

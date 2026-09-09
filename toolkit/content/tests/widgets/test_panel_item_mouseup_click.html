@@ -43,8 +43,7 @@
         anchorButton.addEventListener("click", e => panelList.toggle(e));
       });
 
-      add_task(async function test_nonComboboxAnchor() {
-        anchorButton.role = "menu";
+      add_task(async function test_withoutClickOnMouseup() {
         anchorButton.click();
         await BrowserTestUtils.waitForEvent(panelList, "shown");
 
@@ -55,15 +54,15 @@
 
         synthesizeMouseAtCenter(item1, { type: "mouseup" });
 
-        is(clicks, 0, "No click event on mouseup with non-combobox anchor");
-        is(mouseups, 1, "Mouseup fires normally with non-combobox anchor");
+        is(clicks, 0, "No click event on mouseup without click-on-mouseup");
+        is(mouseups, 1, "Mouseup fires normally without click-on-mouseup");
 
         anchorButton.click();
         await BrowserTestUtils.waitForEvent(panelList, "hidden");
       });
 
       add_task(async function test_eventCounts() {
-        anchorButton.role = "combobox";
+        panelList.clickOnMouseup = true;
 
         let clicks = 0;
         let mouseups = 0;
@@ -101,7 +100,7 @@
       });
 
       add_task(async function test_eventData() {
-        anchorButton.role = "combobox";
+        panelList.clickOnMouseup = true;
 
         await doTest("Testing without shift key", () => {
           item1.addEventListener(

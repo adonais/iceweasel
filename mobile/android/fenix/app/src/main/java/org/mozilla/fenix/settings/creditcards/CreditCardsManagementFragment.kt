@@ -29,9 +29,7 @@ import org.mozilla.fenix.settings.creditcards.interactor.CreditCardsManagementIn
 import org.mozilla.fenix.settings.creditcards.interactor.DefaultCreditCardsManagementInteractor
 import org.mozilla.fenix.settings.creditcards.view.CreditCardsManagementView
 
-/**
- * Displays a list of saved credit cards.
- */
+/** Displays a list of saved credit cards. */
 class CreditCardsManagementFragment : SecureFragment(), SystemInsetsPaddedFragment {
 
     private lateinit var store: AutofillFragmentStore
@@ -49,11 +47,10 @@ class CreditCardsManagementFragment : SecureFragment(), SystemInsetsPaddedFragme
             AutofillFragmentStore(restoredState ?: AutofillFragmentState())
         }
 
-        interactor = DefaultCreditCardsManagementInteractor(
-            controller = DefaultCreditCardsManagementController(
-                navController = findNavController(),
-            ),
-        )
+        interactor =
+            DefaultCreditCardsManagementInteractor(
+                controller = DefaultCreditCardsManagementController(navController = findNavController())
+            )
         val binding = ComponentCreditCardsBinding.bind(view)
 
         creditCardsView = CreditCardsManagementView(binding, interactor)
@@ -79,9 +76,7 @@ class CreditCardsManagementFragment : SecureFragment(), SystemInsetsPaddedFragme
         showToolbar(getString(R.string.credit_cards_saved_cards))
     }
 
-    /**
-     * When the fragment is paused, navigate back to the settings page to reauthenticate.
-     */
+    /** When the fragment is paused, navigate back to the settings page to reauthenticate. */
     override fun onPause() {
         // Don't redirect if the user is navigating to the credit card editor fragment.
         redirectToReAuth(
@@ -94,8 +89,8 @@ class CreditCardsManagementFragment : SecureFragment(), SystemInsetsPaddedFragme
     }
 
     /**
-     * Fetches all the credit cards from the autofill storage and updates the
-     * [AutofillFragmentStore] with the list of credit cards.
+     * Fetches all the credit cards from the autofill storage and updates the [AutofillFragmentStore] with the list of
+     * credit cards.
      */
     private fun loadCreditCards() {
         lifecycleScope.launch(Dispatchers.IO) {

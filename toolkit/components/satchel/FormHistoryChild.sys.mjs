@@ -11,7 +11,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FormHistoryAutoCompleteResult:
     "resource://gre/modules/FormHistoryAutoComplete.sys.mjs",
   FormScenarios: "resource://gre/modules/FormScenarios.sys.mjs",
-  GenericAutocompleteItem: "resource://gre/modules/FillHelpers.sys.mjs",
+  adaptExternalAutocompleteItem: "resource://gre/modules/FillHelpers.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
@@ -142,7 +142,7 @@ export class FormHistoryChild extends JSWindowActorChild {
       ? "SignUpFormScenario"
       : "";
 
-    return { inputName, scenarioName };
+    return { inputName, inputType: input.type, scenarioName };
   }
 
   /**
@@ -207,16 +207,7 @@ export class FormHistoryChild extends JSWindowActorChild {
     }
 
     acResult.externalEntries.push(
-      ...externalEntries.map(
-        entry =>
-          new lazy.GenericAutocompleteItem(
-            entry.image,
-            entry.label,
-            entry.secondary,
-            entry.fillMessageName,
-            entry.fillMessageData
-          )
-      )
+      ...externalEntries.map(lazy.adaptExternalAutocompleteItem)
     );
 
     acResult.removeDuplicateHistoryEntries();

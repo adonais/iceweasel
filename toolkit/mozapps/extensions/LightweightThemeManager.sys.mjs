@@ -153,6 +153,10 @@ function loadProperties(properties, styles, experiment, logger) {
     }
 
     switch (property) {
+      case "backgrounds_area": {
+        styles.backgroundsArea = val;
+        break;
+      }
       case "additional_backgrounds_alignment": {
         if (!assertValidAdditionalBackgrounds(property, val.length)) {
           break;

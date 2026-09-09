@@ -32,6 +32,7 @@
   _(WasmCodeProtected, 450)             \
                                         \
   _(WasmInitBuiltinThunks, 451)         \
+                                        \
   _(StringsCache, 500)                  \
   _(FutexThread, 500)                   \
   _(ProtectedRegionTree, 500)           \
@@ -61,7 +62,9 @@
   _(GCDelayedMarkingLock, 500)          \
   _(BufferAllocator, 500)               \
   _(GeckoProfilerScriptSources, 500)    \
-  _(GCLightLock, 500)                   \
+  _(GCMarkingLock, 500)                 \
+                                        \
+  _(GCAtomRefLock, 550)                 \
                                         \
   _(SharedImmutableStringsCache, 600)   \
   _(IrregexpLazyStatic, 600)            \
@@ -70,7 +73,8 @@
   _(WasmInliningBudget, 600)            \
   _(VTuneLock, 600)                     \
   _(ShellTelemetry, 600)                \
-  _(ShellUseCounters, 600)
+  _(ShellUseCounters, 600)              \
+  _(GCLightLock, 600)
 
 namespace js {
 namespace mutexid {

@@ -141,6 +141,8 @@ reason = "Update directory migration is currently Windows only"
 
 ["updateManagerXML.js"]
 
+["updateManagerXMLReader.js"]
+
 ["updateSyncManager.js"]
 
 ["urlConstruction.js"]

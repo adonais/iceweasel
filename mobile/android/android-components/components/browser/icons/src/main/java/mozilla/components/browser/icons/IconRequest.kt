@@ -16,8 +16,8 @@ import mozilla.components.concept.engine.manifest.Size as HtmlSize
  * @property resources An optional list of icon resources to load the icon from.
  * @property color The suggested dominant color of the icon.
  * @property isPrivate Whether this request for this icon came from a private session.
- * @property waitOnNetworkLoad Whether client code should wait on the resource being loaded or
- * loading can continue in background.
+ * @property waitOnNetworkLoad Whether client code should wait on the resource being loaded or loading can continue in
+ *   background.
  */
 data class IconRequest(
     val url: String,
@@ -33,9 +33,7 @@ data class IconRequest(
      *
      * We are trying to limit the supported sizes in order to optimize our caching strategy.
      */
-    enum class Size(
-        @param:DimenRes val dimen: Int,
-    ) {
+    enum class Size(@param:DimenRes val dimen: Int) {
         DEFAULT(R.dimen.mozac_browser_icons_size_default),
         LAUNCHER(R.dimen.mozac_browser_icons_size_launcher),
         LAUNCHER_ADAPTIVE(R.dimen.mozac_browser_icons_size_launcher_adaptive),
@@ -57,9 +55,7 @@ data class IconRequest(
         val mimeType: String? = null,
         val maskable: Boolean = false,
     ) {
-        /**
-         * An icon resource type.
-         */
+        /** An icon resource type. */
         enum class Type {
             /**
              * A favicon ("icon" or "shortcut icon").
@@ -80,8 +76,7 @@ data class IconRequest(
             /**
              * A "fluid" icon.
              *
-             * Fluid is a macOS application that wraps website to look and behave like native desktop
-             * applications.
+             * Fluid is a macOS application that wraps website to look and behave like native desktop applications.
              *
              * https://fluidapp.com/
              */
@@ -90,8 +85,8 @@ data class IconRequest(
             /**
              * An "image_src" icon.
              *
-             * Yahoo and Facebook used this icon for previewing web content. Since then Facebook seems to use
-             * OpenGraph instead. However website still define "image_src" icons.
+             * Yahoo and Facebook used this icon for previewing web content. Since then Facebook seems to use OpenGraph
+             * instead. However website still define "image_src" icons.
              *
              * https://www.niallkennedy.com/blog/2009/03/enhanced-social-share.html
              */

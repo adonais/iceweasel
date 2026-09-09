@@ -16,14 +16,14 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.B
 import mozilla.components.support.utils.ClipboardHandler
 
 /**
- * Build a list of [BrowserToolbarMenuButton] with options based on device's clipboard content
- * depending on what options are allowed.
+ * Build a list of [BrowserToolbarMenuButton] with options based on device's clipboard content depending on what options
+ * are allowed.
  */
 internal object PageOriginContextualMenuBuilder {
 
     /**
-     * Build a list of [BrowserToolbarMenuButton] with options based on device's clipboard content
-     * depending on what options are allowed.
+     * Build a list of [BrowserToolbarMenuButton] with options based on device's clipboard content depending on what
+     * options are allowed.
      *
      * @param clipboard The [ClipboardHandler] to use for querying the device's clipboard.
      * @param allowedMenuOptions The list of [ContextualMenuOption] that should be shown if possible.
@@ -46,11 +46,10 @@ internal object PageOriginContextualMenuBuilder {
                             BrowserToolbarMenuButton(
                                 icon = null,
                                 text = StringResText(R.string.mozac_browser_toolbar_long_press_popup_copy),
-                                contentDescription = StringResContentDescription(
-                                    R.string.mozac_browser_toolbar_long_press_popup_copy,
-                                ),
+                                contentDescription =
+                                    StringResContentDescription(R.string.mozac_browser_toolbar_long_press_popup_copy),
                                 onClick = option.event,
-                            ),
+                            )
                         )
                     }
                     PasteFromClipboard -> {
@@ -59,11 +58,12 @@ internal object PageOriginContextualMenuBuilder {
                                 BrowserToolbarMenuButton(
                                     icon = null,
                                     text = StringResText(R.string.mozac_browser_toolbar_long_press_popup_paste),
-                                    contentDescription = StringResContentDescription(
-                                        R.string.mozac_browser_toolbar_long_press_popup_paste,
-                                    ),
+                                    contentDescription =
+                                        StringResContentDescription(
+                                            R.string.mozac_browser_toolbar_long_press_popup_paste
+                                        ),
                                     onClick = option.event,
-                                ),
+                                )
                             )
                         }
                     }
@@ -72,14 +72,13 @@ internal object PageOriginContextualMenuBuilder {
                             add(
                                 BrowserToolbarMenuButton(
                                     icon = null,
-                                    text = StringResText(
-                                        R.string.mozac_browser_toolbar_long_press_popup_paste_and_go,
-                                    ),
-                                    contentDescription = StringResContentDescription(
-                                        R.string.mozac_browser_toolbar_long_press_popup_paste_and_go,
-                                    ),
+                                    text = StringResText(R.string.mozac_browser_toolbar_long_press_popup_paste_and_go),
+                                    contentDescription =
+                                        StringResContentDescription(
+                                            R.string.mozac_browser_toolbar_long_press_popup_paste_and_go
+                                        ),
                                     onClick = option.event,
-                                ),
+                                )
                             )
                         }
                     }

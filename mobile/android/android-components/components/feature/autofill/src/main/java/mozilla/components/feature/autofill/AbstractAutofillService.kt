@@ -20,9 +20,7 @@ import mozilla.components.feature.autofill.handler.FillRequestHandler
 import mozilla.components.feature.autofill.handler.MAX_LOGINS
 import mozilla.components.feature.autofill.structure.toRawStructure
 
-/**
- * Service responsible for implementing Android's Autofill framework.
- */
+/** Service responsible for implementing Android's Autofill framework. */
 abstract class AbstractAutofillService : AutofillService() {
     abstract val configuration: AutofillConfiguration
 
@@ -44,15 +42,17 @@ abstract class AbstractAutofillService : AutofillService() {
             // inspect their data. So we create these intermediate objects that we can create and
             // inspect in unit tests.
             val structure = request.fillContexts.last().structure.toRawStructure()
-            val responseBuilder = fillHandler.handle(
-                structure,
-                maxSuggestionCount = request.getMaxSuggestionCount(),
-            )
-            val response = responseBuilder?.build(
-                this@AbstractAutofillService,
-                configuration,
-                request.getInlinePresentationSpec(),
-            )
+            val responseBuilder =
+                fillHandler.handle(
+                    structure,
+                    maxSuggestionCount = request.getMaxSuggestionCount(),
+                )
+            val response =
+                responseBuilder?.build(
+                    this@AbstractAutofillService,
+                    configuration,
+                    request.getInlinePresentationSpec(),
+                )
             callback.onSuccess(response)
         }
     }
@@ -74,8 +74,9 @@ internal fun FillRequest.getInlinePresentationSpec(): InlinePresentationSpec? {
     }
 }
 
-internal fun FillRequest.getMaxSuggestionCount() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-    (inlineSuggestionsRequest?.maxSuggestionCount ?: 1) - 1 // space for search chip
-} else {
-    MAX_LOGINS
-}
+internal fun FillRequest.getMaxSuggestionCount() =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        (inlineSuggestionsRequest?.maxSuggestionCount ?: 1) - 1 // space for search chip
+    } else {
+        MAX_LOGINS
+    }

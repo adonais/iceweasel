@@ -8,6 +8,8 @@ with Files("*"):
 MOCHITEST_MANIFESTS += ["test/mochitest.toml"]
 CRASHTEST_MANIFESTS += ["crashtests/crashtests.list"]
 
+TEST_DIRS += ["gtest"]
+
 # For mozilla/layers/ImageBridgeChild.h
 LOCAL_INCLUDES += [
     "!/ipc/ipdl/_ipdlheaders",

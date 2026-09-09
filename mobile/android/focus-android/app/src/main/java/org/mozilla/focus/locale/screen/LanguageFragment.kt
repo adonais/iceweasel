@@ -22,9 +22,7 @@ import org.mozilla.focus.R
 import org.mozilla.focus.ext.components
 import org.mozilla.focus.settings.BaseComposeFragment
 
-/**
- * A [BaseComposeFragment] responsible for displaying and managing the language selection screen.
- */
+/** A [BaseComposeFragment] responsible for displaying and managing the language selection screen. */
 class LanguageFragment : BaseComposeFragment() {
     private lateinit var browserStore: BrowserStore
     private lateinit var localeUseCases: LocaleUseCases
@@ -35,22 +33,21 @@ class LanguageFragment : BaseComposeFragment() {
         super.onCreate(savedInstanceState)
         browserStore = requireContext().components.store
         localeUseCases = LocaleUseCases(browserStore)
-        languageScreenStore = LanguageScreenStore(
-            LanguageScreenState(),
-            listOf(
-                LanguageMiddleware(
-                    activity = requireActivity(),
-                    localeUseCase = localeUseCases,
-                    storage = LanguageStorage(requireContext()),
-                    getSystemDefault = { LocaleManager.getSystemDefault() },
+        languageScreenStore =
+            LanguageScreenStore(
+                LanguageScreenState(),
+                listOf(
+                    LanguageMiddleware(
+                        activity = requireActivity(),
+                        localeUseCase = localeUseCases,
+                        storage = LanguageStorage(requireContext()),
+                        getSystemDefault = { LocaleManager.getSystemDefault() },
+                    )
                 ),
-            ),
-        )
+            )
         languageScreenStore.state.languageList
 
-        defaultLanguageScreenInteractor = DefaultLanguageScreenInteractor(
-            languageScreenStore = languageScreenStore,
-        )
+        defaultLanguageScreenInteractor = DefaultLanguageScreenInteractor(languageScreenStore = languageScreenStore)
     }
 
     override val titleRes: Int

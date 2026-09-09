@@ -4,6 +4,7 @@
 
 package mozilla.components.browser.state.action
 
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.reducer.BrowserStateReducer
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.content.DownloadState
@@ -13,7 +14,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlin.test.assertNotNull
 
 class DownloadActionTest {
 
@@ -21,20 +21,22 @@ class DownloadActionTest {
     fun `AddDownloadAction adds download`() {
         var state = BrowserState()
 
-        val download1 = DownloadState(
-            "https://mozilla.org/download1",
-            directoryPath = "",
-        )
+        val download1 =
+            DownloadState(
+                "https://mozilla.org/download1",
+                directoryPath = "",
+            )
 
         state = BrowserStateReducer.reduce(state, DownloadAction.AddDownloadAction(download1))
 
         assertEquals(download1, state.downloads[download1.id])
         assertEquals(1, state.downloads.size)
 
-        val download2 = DownloadState(
-            "https://mozilla.org/download2",
-            directoryPath = "",
-        )
+        val download2 =
+            DownloadState(
+                "https://mozilla.org/download2",
+                directoryPath = "",
+            )
 
         state = BrowserStateReducer.reduce(state, DownloadAction.AddDownloadAction(download2))
 
@@ -46,11 +48,12 @@ class DownloadActionTest {
     fun `WHEN DismissDownloadNotificationAction is dispatched THEN notificationId is set to null`() {
         var state = BrowserState()
 
-        val download = DownloadState(
-            "https://mozilla.org/download1",
-            directoryPath = "",
-            notificationId = 100,
-        )
+        val download =
+            DownloadState(
+                "https://mozilla.org/download1",
+                directoryPath = "",
+                notificationId = 100,
+            )
         state = BrowserStateReducer.reduce(state, DownloadAction.AddDownloadAction(download))
         assertNotNull(state.downloads[download.id]!!.notificationId)
 
@@ -62,11 +65,12 @@ class DownloadActionTest {
     fun `WHEN DismissDownloadNotificationAction is dispatched with an invalid downloadId THEN the state must not change`() {
         var state = BrowserState()
 
-        val download = DownloadState(
-            "https://mozilla.org/download1",
-            directoryPath = "",
-            notificationId = 100,
-        )
+        val download =
+            DownloadState(
+                "https://mozilla.org/download1",
+                directoryPath = "",
+                notificationId = 100,
+            )
         state = BrowserStateReducer.reduce(state, DownloadAction.AddDownloadAction(download))
         assertNotNull(state.downloads[download.id]!!.notificationId)
         assertEquals(1, state.downloads.size)

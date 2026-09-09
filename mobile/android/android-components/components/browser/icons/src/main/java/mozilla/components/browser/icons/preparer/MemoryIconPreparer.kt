@@ -11,9 +11,7 @@ import mozilla.components.browser.icons.IconRequest
  * An [IconPreprarer] implementation that will add known resource URLs (from an in-memory cache) to the request if the
  * request doesn't contain a list of resources yet.
  */
-class MemoryIconPreparer(
-    private val cache: PreparerMemoryCache,
-) : IconPreprarer {
+class MemoryIconPreparer(private val cache: PreparerMemoryCache) : IconPreprarer {
     interface PreparerMemoryCache {
         fun getResources(request: IconRequest): List<IconRequest.Resource>
     }

@@ -9,7 +9,7 @@
  * its own copy of the module).
  */
 
-import UrlbarContentURIUtils from "chrome://browser/content/urlbar/UrlbarContentURIUtils.mjs";
+import * as UrlbarContentUtils from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
 import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs";
 
 /**
@@ -33,6 +33,30 @@ import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs"
  */
 
 /**
+ * @typedef {object} UrlLoad
+ *   A direct URL load.
+ * @property {string} url
+ *   The url to load.
+ * @property {?string} postData
+ *   The post data, or null for a GET.
+ */
+
+/**
+ * @typedef {object} EngineSearchLoad
+ *   A search to submit to an engine.
+ * @property {string} engineName
+ *   The name of the search engine.
+ * @property {string} query
+ *   The query.
+ */
+
+/**
+ * @typedef {{urlLoad: UrlLoad, engineSearch?: never} |
+ *           {engineSearch: EngineSearchLoad, urlLoad?: never}} UrlbarLoadRequest
+ *  Either a URL or an engine search.
+ */
+
+/**
  * @typedef {object} URIFixupPrimitives
  *   The parts of an `nsIURIFixupInfo` that survive the actor boundary, so a
  *   content-realm consumer never holds an XPCOM object. Produced by
@@ -49,7 +73,41 @@ import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs"
 // windows. Real container ids are non-negative, so -1 is a safe sentinel.
 const PRIVATE_USER_CONTEXT_ID = -1;
 
+// `nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID`, which a content realm has
+// no `Ci` to read it from.
+const DEFAULT_USER_CONTEXT_ID = 0;
+
 export const UrlbarShared = {
+  /**
+   * Measures an element without flushing layout where that is possible.
+   * `windowUtils` is chrome-only, so a content realm takes the flushing path.
+   *
+   * @param {Element} element
+   *   The element to measure.
+   * @returns {DOMRect}
+   */
+  getBoundsWithoutFlushing:
+    typeof ChromeUtils != "undefined"
+      ? element =>
+          element.documentGlobal.windowUtils.getBoundsWithoutFlushing(element)
+      : element => element.getBoundingClientRect(),
+
+  /**
+   * Checks whether a value implements a DOM interface. `isInstance` is
+   * chrome-only, and unlike `instanceof` it holds for a value from another
+   * global; a content realm compares against its own interface object.
+   *
+   * @param {any} value
+   *   The value to check.
+   * @param {object} iface
+   *   The interface, e.g. `KeyboardEvent`.
+   * @returns {boolean}
+   */
+  isInstance:
+    typeof ChromeUtils != "undefined"
+      ? (value, iface) => iface.isInstance(value)
+      : (value, iface) => value instanceof iface,
+
   // REGEXP_ constants are duplicated from UrlUtils.sys.mjs
   // Regex matching on whitespaces.
   REGEXP_SPACES: /\s+/,
@@ -168,7 +226,7 @@ export const UrlbarShared = {
   }),
 
   // Results are categorized into groups to help the muxer compose them.  See
-  // UrlbarUtils.getResultGroup.  Since result groups are stored in result
+  // getResultGroup.  Since result groups are stored in result
   // groups and result groups are stored in prefs, additions and changes to
   // result groups may require adding UI migrations to BrowserGlue.  Be careful
   // about making trivial changes to existing groups, like renaming them,
@@ -434,7 +492,7 @@ export const UrlbarShared = {
       this.getUserContextIdForOpenPagesTable(
         userContextId,
         isInPrivateWindow
-      ) || Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID
+      ) || DEFAULT_USER_CONTEXT_ID
     );
   },
 
@@ -467,10 +525,13 @@ export const UrlbarShared = {
    * @param {object} [options]
    * @param {string} [options.prefix]
    *   Prefix to use for the logged messages.
+   * @param {string} [options.maxLogLevelPref]
+   *   The pref holding the maximum log level. It has to be known to
+   *   `UrlbarPrefs`, which is how the logger reads it outside chrome.
    * @returns {Console}
    *   The console logger.
    */
-  getLogger({ prefix = "" } = {}) {
+  getLogger({ prefix = "", maxLogLevelPref = "browser.urlbar.loglevel" } = {}) {
     let logger = loggers.get(prefix);
     if (logger) {
       return logger;
@@ -478,12 +539,53 @@ export const UrlbarShared = {
 
     let fullPrefix = `URLBar${prefix ? " - " + prefix : ""}`;
     if (console.createInstance) {
-      logger = createLoggerChrome(fullPrefix);
+      logger = createLoggerChrome(fullPrefix, maxLogLevelPref);
     } else {
-      logger = createLoggerContent(fullPrefix);
+      logger = createLoggerContent(fullPrefix, maxLogLevelPref);
     }
     loggers.set(prefix, logger);
     return logger;
+  },
+
+  /**
+   * Extracts the URL from a result.
+   *
+   * @param {UrlbarResult} result
+   *   The result to extract from.
+   * @param {object} options
+   *   Options object.
+   * @param {HTMLElement} [options.element]
+   *   The element associated with the result that was selected or picked, if
+   *   available. For results that have multiple selectable children, the URL
+   *   may be taken from a child element rather than the result.
+   * @returns {?UrlbarLoadRequest}
+   *   Null if the result has nothing to load.
+   */
+  getLoadRequestFromResult(result, { element = null } = {}) {
+    if (
+      result.payload.engine &&
+      (result.type == UrlbarShared.RESULT_TYPE.SEARCH ||
+        result.type == UrlbarShared.RESULT_TYPE.DYNAMIC)
+    ) {
+      let query =
+        element?.dataset.query ||
+        result.payload.suggestion ||
+        result.payload.query;
+      if (query) {
+        return { engineSearch: { query, engineName: result.payload.engine } };
+      }
+    }
+
+    if (!result.payload.url) {
+      return null;
+    }
+
+    return {
+      urlLoad: {
+        url: result.payload.url,
+        postData: result.payload.postData ?? null,
+      },
+    };
   },
 
   /**
@@ -548,6 +650,34 @@ export const UrlbarShared = {
   },
 
   /**
+   * Whether a SAP is an input dedicated to querying a search engine -- the
+   * toolbar search bar and New Tab's -- as opposed to the address bar and its
+   * variants, whose search also covers history and bookmarks.
+   *
+   * @param {string} sapName
+   *   The SAP name to check.
+   * @returns {boolean}
+   *   Whether the SAP is dedicated to search-engine queries.
+   */
+  isSearchbarSAP(sapName) {
+    return sapName == "searchbar" || sapName == "newtab_searchbar";
+  },
+
+  /**
+   * Whether a string that isn't a URL may be searched for. `keyword.enabled`
+   * disambiguates input in a bar that also takes an address, so a search bar
+   * searches whatever the pref says.
+   *
+   * @param {string} sapName
+   *   The SAP name to check.
+   * @returns {boolean}
+   *   Whether a keyword search is enabled.
+   */
+  keywordEnabled(sapName) {
+    return this.isSearchbarSAP(sapName) || UrlbarPrefs.get("keyword.enabled");
+  },
+
+  /**
    * Gets a default icon for a URL.
    *
    * @param {string|URL} url
@@ -561,7 +691,7 @@ export const UrlbarShared = {
         : this.ICON.DEFAULT;
     }
     if (
-      URL.isInstance(url) &&
+      this.isInstance(url, URL) &&
       this.PROTOCOLS_WITH_ICONS.includes(url.protocol)
     ) {
       return "page-icon:" + url.href;
@@ -660,7 +790,7 @@ export const UrlbarShared = {
   unEscapeURIForUI(uri) {
     return uri.length > this.MAX_TEXT_LENGTH
       ? uri
-      : UrlbarContentURIUtils.unEscapeURIForUI(uri);
+      : UrlbarContentUtils.unEscapeURIForUI(uri);
   },
 
   /**
@@ -679,7 +809,7 @@ export const UrlbarShared = {
     // the url in utf-8. If the url can't be parsed we fall back to using the
     // string as-is.
     let spec = typeof url == "string" ? url : url.href;
-    let displayString = UrlbarContentURIUtils.getDisplaySpec(spec) ?? spec;
+    let displayString = UrlbarContentUtils.getDisplaySpec(spec) ?? spec;
 
     if (displayString) {
       if (schemeless) {
@@ -796,7 +926,7 @@ export const UrlbarShared = {
    *   Fixup info for `clipboardData`, or null if it couldn't be fixed up. URI
    *   fixup is parent-only, so the caller supplies it, either from
    *   `UrlbarUtils.getFixupPrimitives()` or, from an input, from
-   *   `controller.getFixupPrimitives()`.
+   *   `UrlbarContentUtils.getFixupPrimitives()`.
    * @returns {string}
    *   The sanitized paste data, ready to use.
    */
@@ -869,6 +999,197 @@ export const UrlbarShared = {
         return 3;
     }
     return 1;
+  },
+
+  /**
+   * Returns the group for a result.
+   *
+   * @param {UrlbarResult} result
+   *   The result.
+   * @returns {Values<typeof UrlbarShared.RESULT_GROUP>}
+   *   The result's group.
+   */
+  getResultGroup(result) {
+    // Used for test_suggestedIndexRelativeToGroup.js to make it simpler
+    if (result.group) {
+      return result.group;
+    }
+
+    if (result.hasSuggestedIndex && !result.isSuggestedIndexRelativeToGroup) {
+      return UrlbarShared.RESULT_GROUP.SUGGESTED_INDEX;
+    }
+    if (result.heuristic) {
+      switch (result.providerName) {
+        case "UrlbarProviderAiChat":
+          return UrlbarShared.RESULT_GROUP.HEURISTIC_AI_CHAT;
+        case "UrlbarProviderAliasEngines":
+          return UrlbarShared.RESULT_GROUP.HEURISTIC_ENGINE_ALIAS;
+        case "UrlbarProviderAutofill":
+          return UrlbarShared.RESULT_GROUP.HEURISTIC_AUTOFILL;
+        case "UrlbarProviderBookmarkKeywords":
+          return UrlbarShared.RESULT_GROUP.HEURISTIC_BOOKMARK_KEYWORD;
+        case "UrlbarProviderHeuristicFallback":
+          return UrlbarShared.RESULT_GROUP.HEURISTIC_FALLBACK;
+        case "UrlbarProviderHistoryUrlHeuristic":
+          return UrlbarShared.RESULT_GROUP.HEURISTIC_HISTORY_URL;
+        case "UrlbarProviderOmnibox":
+          return UrlbarShared.RESULT_GROUP.HEURISTIC_OMNIBOX;
+        case "UrlbarProviderRestrictKeywordsAutofill":
+          return UrlbarShared.RESULT_GROUP.HEURISTIC_RESTRICT_KEYWORD_AUTOFILL;
+        case "UrlbarProviderTokenAliasEngines":
+          return UrlbarShared.RESULT_GROUP.HEURISTIC_TOKEN_ALIAS_ENGINE;
+        case "UrlbarProviderSearchTips":
+          return UrlbarShared.RESULT_GROUP.HEURISTIC_SEARCH_TIP;
+        default:
+          if (result.providerName.startsWith("TestProvider")) {
+            return UrlbarShared.RESULT_GROUP.HEURISTIC_TEST;
+          }
+          break;
+      }
+      if (result.providerType == UrlbarShared.PROVIDER_TYPE.EXTENSION) {
+        return UrlbarShared.RESULT_GROUP.HEURISTIC_EXTENSION;
+      }
+      console.error(
+        "Returning HEURISTIC_FALLBACK for unrecognized heuristic result: ",
+        result
+      );
+      return UrlbarShared.RESULT_GROUP.HEURISTIC_FALLBACK;
+    }
+
+    switch (result.providerName) {
+      case "UrlbarProviderAboutPages":
+        return UrlbarShared.RESULT_GROUP.ABOUT_PAGES;
+      case "UrlbarProviderInputHistory":
+        return UrlbarShared.RESULT_GROUP.INPUT_HISTORY;
+      case "UrlbarProviderQuickSuggest":
+        return UrlbarShared.RESULT_GROUP.GENERAL_PARENT;
+      default:
+        break;
+    }
+
+    switch (result.type) {
+      case UrlbarShared.RESULT_TYPE.SEARCH:
+        if (result.source == UrlbarShared.RESULT_SOURCE.HISTORY) {
+          return result.providerName == "UrlbarProviderRecentSearches"
+            ? UrlbarShared.RESULT_GROUP.RECENT_SEARCH
+            : UrlbarShared.RESULT_GROUP.FORM_HISTORY;
+        }
+        if (result.payload.tail && !result.isRichSuggestion) {
+          return UrlbarShared.RESULT_GROUP.TAIL_SUGGESTION;
+        }
+        if (result.payload.suggestion) {
+          return UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION;
+        }
+        break;
+      case UrlbarShared.RESULT_TYPE.OMNIBOX:
+        return UrlbarShared.RESULT_GROUP.OMNIBOX;
+      case UrlbarShared.RESULT_TYPE.REMOTE_TAB:
+        return UrlbarShared.RESULT_GROUP.REMOTE_TAB;
+      case UrlbarShared.RESULT_TYPE.RESTRICT:
+        return UrlbarShared.RESULT_GROUP.RESTRICT_SEARCH_KEYWORD;
+      case UrlbarShared.RESULT_TYPE.AI_CHAT:
+        return UrlbarShared.RESULT_GROUP.AI;
+    }
+    // When enabled, semantic history results (both history URLs and
+    // switch-to-tab results) get their own group so they fill only the space
+    // left after, and never evict, the plain (non-semantic) results that would
+    // otherwise share the general group.
+    if (
+      result.providerName == "UrlbarProviderSemanticHistorySearch" &&
+      UrlbarPrefs.get("suggest.semanticHistory.separateGroup")
+    ) {
+      return UrlbarShared.RESULT_GROUP.SEMANTIC_HISTORY;
+    }
+    return UrlbarShared.RESULT_GROUP.GENERAL;
+  },
+
+  /**
+   * Extracts a group for search engagement telemetry from a result.
+   *
+   * @param {UrlbarResult} result The result to analyze.
+   * @returns {string} Group name as string.
+   */
+  searchEngagementTelemetryGroup(result) {
+    if (!result) {
+      return "unknown";
+    }
+    if (result.isBestMatch) {
+      return "top_pick";
+    }
+    if (result.providerName === "UrlbarProviderTopSites") {
+      return "top_site";
+    }
+
+    switch (this.getResultGroup(result)) {
+      case UrlbarShared.RESULT_GROUP.INPUT_HISTORY: {
+        return "adaptive_history";
+      }
+      case UrlbarShared.RESULT_GROUP.RECENT_SEARCH: {
+        return "recent_search";
+      }
+      case UrlbarShared.RESULT_GROUP.FORM_HISTORY: {
+        return "search_history";
+      }
+      case UrlbarShared.RESULT_GROUP.TAIL_SUGGESTION:
+      case UrlbarShared.RESULT_GROUP.REMOTE_SUGGESTION: {
+        let group = result.payload.trending
+          ? "trending_search"
+          : "search_suggest";
+        if (result.isRichSuggestion) {
+          group += "_rich";
+        }
+        return group;
+      }
+      case UrlbarShared.RESULT_GROUP.REMOTE_TAB: {
+        return "remote_tab";
+      }
+      case UrlbarShared.RESULT_GROUP.HEURISTIC_EXTENSION:
+      case UrlbarShared.RESULT_GROUP.HEURISTIC_OMNIBOX:
+      case UrlbarShared.RESULT_GROUP.OMNIBOX: {
+        return "addon";
+      }
+      // Semantic history results have their own group for sorting purposes but
+      // are reported as "general" results, as they were before the group split.
+      case UrlbarShared.RESULT_GROUP.GENERAL:
+      case UrlbarShared.RESULT_GROUP.SEMANTIC_HISTORY: {
+        return "general";
+      }
+      // Group of UrlbarProviderQuickSuggest is GENERAL_PARENT.
+      case UrlbarShared.RESULT_GROUP.GENERAL_PARENT: {
+        return "suggest";
+      }
+      case UrlbarShared.RESULT_GROUP.ABOUT_PAGES: {
+        return "about_page";
+      }
+      case UrlbarShared.RESULT_GROUP.SUGGESTED_INDEX: {
+        return "suggested_index";
+      }
+      case UrlbarShared.RESULT_GROUP.RESTRICT_SEARCH_KEYWORD: {
+        return "restrict_keyword";
+      }
+      case UrlbarShared.RESULT_GROUP.AI: {
+        return "ai";
+      }
+    }
+
+    return result.heuristic ? "heuristic" : "unknown";
+  },
+
+  /**
+   * Extracts an action for search engagement telemetry from a result.
+   *
+   * @param {UrlbarResult} result The result to analyze.
+   * @param {string} [pickedActionKey] The key of the action the user picked.
+   * @returns {string} Action key, or a comma-separated list of the keys offered.
+   */
+  searchEngagementTelemetryAction(result, pickedActionKey = null) {
+    if (result.providerName != "UrlbarProviderGlobalActions") {
+      return result.payload.action?.key ?? "none";
+    }
+    if (pickedActionKey) {
+      return pickedActionKey;
+    }
+    return result.payload.actionsResults.map(({ key }) => key).join(",");
   },
 
   /**
@@ -1052,7 +1373,7 @@ export const UrlbarShared = {
    *
    * @param {Array} tokens The tokens to search for.
    * @param {string} str The string to match against.
-   * @param {Values<typeof UrlbarShared.HIGHLIGHT>} highlightType
+   * @param {Values<typeof this.HIGHLIGHT>} highlightType
    *   One of the HIGHLIGHT values:
    *     TYPED: match ranges matching the tokens; or
    *     SUGGESTED: match ranges for words not matching the tokens and the
@@ -1449,7 +1770,7 @@ export const UrlbarShared = {
     // generate "{n} weeks ago" UI strings, which aren't very precise anyway.
     if (this.__firstDayOfWeek === undefined) {
       this.__firstDayOfWeek = new Intl.Locale(
-        Services.locale.appLocaleAsBCP47
+        Intl.DateTimeFormat().resolvedOptions().locale
       ).getWeekInfo().firstDay;
 
       // Make sure we always have a valid value in case the locale doesn't
@@ -1464,13 +1785,11 @@ export const UrlbarShared = {
  * Create a logger that uses `console.createInstance`.
  *
  * @param {string} prefix
+ * @param {string} maxLogLevelPref
  * @returns {Console}
  */
-function createLoggerChrome(prefix) {
-  let logger = console.createInstance({
-    prefix,
-    maxLogLevelPref: "browser.urlbar.loglevel",
-  });
+function createLoggerChrome(prefix, maxLogLevelPref) {
+  let logger = console.createInstance({ prefix, maxLogLevelPref });
   // Casting from ConsoleInstance to Console. Note that it is technically not a
   // `Console` because it is missing the chrome-only property `createInstance`.
   return /** @type {Console} */ (/** @type {unknown} */ (logger));
@@ -1480,9 +1799,10 @@ function createLoggerChrome(prefix) {
  * Create a logger that uses the global `console`.
  *
  * @param {string} prefix
+ * @param {string} maxLogLevelPref
  * @returns {Console}
  */
-function createLoggerContent(prefix) {
+function createLoggerContent(prefix, maxLogLevelPref) {
   let tag = `[${prefix}]`;
   const LEVEL_NUMBERS = {
     all: 0,
@@ -1496,9 +1816,12 @@ function createLoggerContent(prefix) {
   };
   const LEVELS = ["debug", "log", "info", "trace", "warn", "error"];
 
+  // UrlbarPrefs names prefs in the `browser.urlbar.` branch relative to it.
+  let levelPref = maxLogLevelPref.replace(/^browser\.urlbar\./, "");
+
   let shouldLog = level => {
     let maxLevel =
-      LEVEL_NUMBERS[UrlbarPrefs.get("loglevel").toLowerCase()] ??
+      LEVEL_NUMBERS[UrlbarPrefs.get(levelPref).toLowerCase()] ??
       LEVEL_NUMBERS.warn;
     return maxLevel <= LEVEL_NUMBERS[level];
   };

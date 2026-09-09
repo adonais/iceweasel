@@ -21,18 +21,15 @@ private const val MIME_TYPE_TEXT_URL = "text/x-moz-url"
 
 private const val PERFORMANCE_LOGTAG = "ACPerf"
 
-/**
- * A clipboard utility class that allows copying and pasting links/text to & from the clipboard
- */
+/** A clipboard utility class that allows copying and pasting links/text to & from the clipboard */
 class ClipboardHandler(val context: Context) {
     private val clipboard = context.getSystemService<ClipboardManager>()!!
 
     /**
-     * Provides access to the current content of the clipboard, be aware this is a sensitive
-     * API as from Android 12 and above, accessing it will trigger a notification letting the user
-     * know the app has accessed the clipboard, make sure when you call this API that users are
-     * completely aware that we are accessing the clipboard.
-     * See for more details https://github.com/mozilla-mobile/fenix/issues/22271.
+     * Provides access to the current content of the clipboard, be aware this is a sensitive API as from Android 12 and
+     * above, accessing it will trigger a notification letting the user know the app has accessed the clipboard, make
+     * sure when you call this API that users are completely aware that we are accessing the clipboard. See for more
+     * details https://github.com/mozilla-mobile/fenix/issues/22271.
      */
     var text: String?
         get() {
@@ -47,20 +44,19 @@ class ClipboardHandler(val context: Context) {
         set(value) {
             val clipData = ClipData.newPlainText("Text", value)
             clipData.apply {
-                description.extras = PersistableBundle().apply {
-                    putBoolean("android.content.extra.IS_SENSITIVE", false)
-                }
+                description.extras =
+                    PersistableBundle().apply {
+                        putBoolean("android.content.extra.IS_SENSITIVE", false)
+                    }
             }
             clipboard.setPrimaryClip(clipData)
         }
 
     /**
-     * Provides access to the sensitive content of the clipboard, be aware this is a sensitive
-     * API as from Android 12 and above, accessing it will trigger a notification letting the user
-     * know the app has accessed the clipboard, make sure when you call this API that users are
-     * completely aware that we are accessing the clipboard.
-     * See for more details https://github.com/mozilla-mobile/fenix/issues/22271.
-     *
+     * Provides access to the sensitive content of the clipboard, be aware this is a sensitive API as from Android 12
+     * and above, accessing it will trigger a notification letting the user know the app has accessed the clipboard,
+     * make sure when you call this API that users are completely aware that we are accessing the clipboard. See for
+     * more details https://github.com/mozilla-mobile/fenix/issues/22271.
      */
     var sensitiveText: String?
         get() {
@@ -69,19 +65,19 @@ class ClipboardHandler(val context: Context) {
         set(value) {
             val clipData = ClipData.newPlainText("Text", value)
             clipData.apply {
-                description.extras = PersistableBundle().apply {
-                    putBoolean("android.content.extra.IS_SENSITIVE", true)
-                }
+                description.extras =
+                    PersistableBundle().apply {
+                        putBoolean("android.content.extra.IS_SENSITIVE", true)
+                    }
             }
             clipboard.setPrimaryClip(clipData)
         }
 
     /**
-     * Returns a possible URL from the actual content of the clipboard, be aware this is a sensitive
-     * API as from Android 12 and above, accessing it will trigger a notification letting the user
-     * know the app has accessed the clipboard, make sure when you call this API that users are
-     * completely aware that we are accessing the clipboard.
-     * See for more details https://github.com/mozilla-mobile/fenix/issues/22271.
+     * Returns a possible URL from the actual content of the clipboard, be aware this is a sensitive API as from Android
+     * 12 and above, accessing it will trigger a notification letting the user know the app has accessed the clipboard,
+     * make sure when you call this API that users are completely aware that we are accessing the clipboard. See for
+     * more details https://github.com/mozilla-mobile/fenix/issues/22271.
      */
     fun extractURL(): String? {
         return text?.let {
@@ -95,8 +91,8 @@ class ClipboardHandler(val context: Context) {
     }
 
     /**
-     * Returns whether or not the clipboard data contains text.
-     * We cannot rely on `isPrimaryClipEmpty()` since it triggers a clipboard access system notification.
+     * Returns whether or not the clipboard data contains text. We cannot rely on `isPrimaryClipEmpty()` since it
+     * triggers a clipboard access system notification.
      */
     fun containsText(): Boolean {
         return clipboard.isPrimaryClipHtmlText() ||
@@ -136,30 +132,31 @@ class ClipboardHandler(val context: Context) {
         primaryClipDescription?.hasMimeType(MIME_TYPE_TEXT_URL) ?: false
 
     /**
-     * Returns whether or not the clipboard has any clip data.
-     * Reads the clip data, be aware this is a sensitive API as from Android 12 and above,
-     * accessing it will trigger a notification letting the user know the app has accessed the clipboard,
-     * make sure when you call this API that users are completely aware that we are accessing the clipboard.
-     * See https://github.com/mozilla-mobile/fenix/issues/22271 for more details.
+     * Returns whether or not the clipboard has any clip data. Reads the clip data, be aware this is a sensitive API as
+     * from Android 12 and above, accessing it will trigger a notification letting the user know the app has accessed
+     * the clipboard, make sure when you call this API that users are completely aware that we are accessing the
+     * clipboard. See https://github.com/mozilla-mobile/fenix/issues/22271 for more details.
      */
     private fun ClipboardManager.isPrimaryClipEmpty() = primaryClip?.itemCount == 0
 
     /**
      * Returns a [ClipData.Item] from the Android clipboard.
-     * @return a string representation of the first item on the clipboard, if
-     * the clipboard currently has an item or null if it does not.
      *
-     * Note: this can throw a [android.os.DeadSystemException] if the clipboard content is too large,
-     * or various exceptions for certain vendors, due to modifications made to the Android clipboard code.
+     * @return a string representation of the first item on the clipboard, if the clipboard currently has an item or
+     *   null if it does not.
+     *
+     * Note: this can throw a [android.os.DeadSystemException] if the clipboard content is too large, or various
+     * exceptions for certain vendors, due to modifications made to the Android clipboard code.
      */
     @Suppress("TooGenericExceptionCaught")
     private val ClipboardManager.firstPrimaryClipItem: ClipData.Item?
-        get() = try {
-            primaryClip?.getItemAt(0)
-        } catch (exception: Exception) {
-            Logger(PERFORMANCE_LOGTAG).error("Fetching clipboard content failed with: $exception")
-            null
-        }
+        get() =
+            try {
+                primaryClip?.getItemAt(0)
+            } catch (exception: Exception) {
+                Logger(PERFORMANCE_LOGTAG).error("Fetching clipboard content failed with: $exception")
+                null
+            }
 
     @VisibleForTesting
     internal val firstSafePrimaryClipItemText: String?

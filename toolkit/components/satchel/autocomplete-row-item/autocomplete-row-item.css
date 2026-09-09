@@ -55,6 +55,7 @@
 .secondary-action {
   visibility: hidden;
   margin-inline-start: auto;
+  --button-background-color-ghost-hover: var(--button-background-color-active);
 
   &.selected {
     visibility: visible;
@@ -66,4 +67,57 @@
   outline: var(--focus-outline);
   outline-offset: var(--focus-outline-offset);
   border-radius: var(--button-border-radius);
+}
+
+/**
+ * Smart Form Fill styles
+ */
+
+.smart-form-fill-sources {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xsmall);
+  min-width: 0;
+}
+
+.sources-label {
+  flex: none;
+  color: var(--text-color-deemphasized);
+}
+
+.sources-value {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sources-list {
+  display: flex;
+  gap: var(--space-xsmall);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.source-pill {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  /* stylelint-disable-next-line -- Figma style */
+  max-width: 170px;
+  padding: var(--space-xsmall) var(--space-small);
+  border-radius: var(--border-radius-large);
+  /* stylelint-disable-next-line -- TODO: Bug 2061059 */
+  background-color: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-60));
+  white-space: nowrap;
+}
+
+.source-favicon {
+  flex: none;
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+}
+
+.source-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

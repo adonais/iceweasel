@@ -16,9 +16,7 @@ import org.mozilla.focus.settings.BaseSettingsFragment
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.state.Screen
 
-/**
- * Settings UI for configuring autocomplete.
- */
+/** Settings UI for configuring autocomplete. */
 class AutocompleteSettingsFragment : BaseSettingsFragment(), SharedPreferences.OnSharedPreferenceChangeListener {
 
     private lateinit var topSitesAutocomplete: AutocompleteDefaultDomainsPreference
@@ -30,13 +28,11 @@ class AutocompleteSettingsFragment : BaseSettingsFragment(), SharedPreferences.O
 
         topSitesAutocomplete =
             requirePreference<AutocompleteDefaultDomainsPreference>(R.string.pref_key_autocomplete_preinstalled).apply {
-                summary =
-                    context.getString(R.string.preference_autocomplete_topsite_summary2, appName)
+                summary = context.getString(R.string.preference_autocomplete_topsite_summary2, appName)
             }
         favoriteSitesAutocomplete =
             requirePreference<AutocompleteCustomDomainsPreference>(R.string.pref_key_autocomplete_custom).apply {
-                summary =
-                    context.getString(R.string.preference_autocomplete_user_list_summary2, appName)
+                summary = context.getString(R.string.preference_autocomplete_user_list_summary2, appName)
             }
     }
 
@@ -57,7 +53,7 @@ class AutocompleteSettingsFragment : BaseSettingsFragment(), SharedPreferences.O
     override fun onPreferenceTreeClick(preference: Preference): Boolean {
         if (preference.key == getString(R.string.pref_key_screen_custom_domains)) {
             requireComponents.appStore.dispatch(
-                AppAction.OpenSettings(page = Screen.Settings.Page.SearchAutocompleteList),
+                AppAction.OpenSettings(page = Screen.Settings.Page.SearchAutocompleteList)
             )
         }
 
@@ -72,12 +68,12 @@ class AutocompleteSettingsFragment : BaseSettingsFragment(), SharedPreferences.O
         when (key) {
             topSitesAutocomplete.key ->
                 Autocomplete.topSitesSettingChanged.record(
-                    Autocomplete.TopSitesSettingChangedExtra(sharedPreferences.all[key] as Boolean),
+                    Autocomplete.TopSitesSettingChangedExtra(sharedPreferences.all[key] as Boolean)
                 )
 
             favoriteSitesAutocomplete.key ->
                 Autocomplete.favoriteSitesSettingChanged.record(
-                    Autocomplete.FavoriteSitesSettingChangedExtra(sharedPreferences.all[key] as Boolean),
+                    Autocomplete.FavoriteSitesSettingChangedExtra(sharedPreferences.all[key] as Boolean)
                 )
         }
     }

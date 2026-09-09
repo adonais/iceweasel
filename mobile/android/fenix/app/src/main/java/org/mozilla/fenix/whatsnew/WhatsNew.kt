@@ -11,18 +11,18 @@ import org.mozilla.fenix.ext.components
 // This file is a modified port from Focus Android
 
 /**
- * Helper class tracking whether the application was recently updated in order to show "What's new"
- * menu items and indicators in the application UI.
+ * Helper class tracking whether the application was recently updated in order to show "What's new" menu items and
+ * indicators in the application UI.
  *
- * The application is considered updated when the application's version name changes (versionName
- * in the manifest). The applications version code would be a good candidates too, but it might
- * change more often (RC builds) without the application actually changing from the user's point
- * of view.
+ * The application is considered updated when the application's version name changes (versionName in the manifest). The
+ * applications version code would be a good candidates too, but it might change more often (RC builds) without the
+ * application actually changing from the user's point of view.
  *
- * Whenever the application was updated we still consider the application to be "recently updated"
- * for the next few days.
+ * Whenever the application was updated we still consider the application to be "recently updated" for the next few
+ * days.
  */
-class WhatsNew private constructor(
+class WhatsNew
+private constructor(
     private val storage: WhatsNewStorage,
     private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
 ) {
@@ -31,9 +31,7 @@ class WhatsNew private constructor(
         val lastKnownAppVersion = storage.getVersion()
 
         // Update the version and date if *just* updated
-        if (lastKnownAppVersion == null ||
-            currentVersion.majorVersionNumber > lastKnownAppVersion.majorVersionNumber
-        ) {
+        if (lastKnownAppVersion == null || currentVersion.majorVersionNumber > lastKnownAppVersion.majorVersionNumber) {
             storage.setVersion(currentVersion)
             storage.setDateOfUpdate(currentTimeMillis())
             return true
@@ -43,9 +41,7 @@ class WhatsNew private constructor(
     }
 
     companion object {
-        /**
-         * How many days do we consider the app to be updated?
-         */
+        /** How many days do we consider the app to be updated? */
         private const val DAYS_PER_UPDATE = 3
 
         internal var wasUpdatedRecently: Boolean? = null
@@ -53,9 +49,8 @@ class WhatsNew private constructor(
         /**
          * Should we highlight the "What's new" menu item because this app been updated recently?
          *
-         * This method returns true either if this is the first start of the application since it
-         * was updated or this is a later start but still recent enough to consider the app to be
-         * updated recently.
+         * This method returns true either if this is the first start of the application since it was updated or this is
+         * a later start but still recent enough to consider the app to be updated recently.
          */
         @JvmStatic
         fun shouldHighlightWhatsNew(currentVersion: WhatsNewVersion, storage: WhatsNewStorage): Boolean {
@@ -68,9 +63,7 @@ class WhatsNew private constructor(
             return wasUpdatedRecently!!
         }
 
-        /**
-         * Convenience function to run from the context.
-         */
+        /** Convenience function to run from the context. */
         fun shouldHighlightWhatsNew(context: Context): Boolean {
             return shouldHighlightWhatsNew(
                 ContextWhatsNewVersion(context),
@@ -80,25 +73,17 @@ class WhatsNew private constructor(
             )
         }
 
-        /**
-         * Reset the "updated" state and continue as if the app was not updated recently.
-         */
+        /** Reset the "updated" state and continue as if the app was not updated recently. */
         @JvmStatic
         private fun userViewedWhatsNew(storage: WhatsNewStorage) {
             wasUpdatedRecently = false
             storage.setWhatsNewHasBeenCleared(true)
         }
 
-        /**
-         * Convenience function to run from the context.
-         */
+        /** Convenience function to run from the context. */
         @JvmStatic
         fun userViewedWhatsNew(context: Context) {
-            userViewedWhatsNew(
-                SharedPreferenceWhatsNewStorage(
-                    context,
-                ),
-            )
+            userViewedWhatsNew(SharedPreferenceWhatsNewStorage(context))
         }
     }
 }

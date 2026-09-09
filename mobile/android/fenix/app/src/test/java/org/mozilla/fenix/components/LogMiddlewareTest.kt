@@ -16,33 +16,37 @@ import org.junit.Test
 class LogMiddlewareTest {
 
     data object SState : State
+
     data class AAction(val arg: String = "") : Action
 
     @Test
-    fun `WHEN including detailed data THEN middleware logs actions and their properties that are dispatched to store`() = runTest {
-        val logger = mockk<Logger>(relaxed = true)
-        val store = Store<SState, AAction>(
-            initialState = SState,
-            reducer = { state, _ -> state },
-            middleware = listOf(LogMiddleware(logger = logger, shouldIncludeDetailedData = { true })),
-        )
+    fun `WHEN including detailed data THEN middleware logs actions and their properties that are dispatched to store`() =
+        runTest {
+            val logger = mockk<Logger>(relaxed = true)
+            val store =
+                Store<SState, AAction>(
+                    initialState = SState,
+                    reducer = { state, _ -> state },
+                    middleware = listOf(LogMiddleware(logger = logger, shouldIncludeDetailedData = { true })),
+                )
 
-        val actionMessages = listOf("one!", "two!", "buckle my shoe!")
-        actionMessages.forEach { message ->
-            val action = AAction(message)
-            store.dispatch(action)
-            verify { logger.info(action.toString()) }
+            val actionMessages = listOf("one!", "two!", "buckle my shoe!")
+            actionMessages.forEach { message ->
+                val action = AAction(message)
+                store.dispatch(action)
+                verify { logger.info(action.toString()) }
+            }
         }
-    }
 
     @Test
     fun `WHEN excluding detailed data THEN middleware only logs actions that are dispatched to store`() = runTest {
         val logger = mockk<Logger>(relaxed = true)
-        val store = Store<SState, AAction>(
-            initialState = SState,
-            reducer = { state, _ -> state },
-            middleware = listOf(LogMiddleware(logger = logger, shouldIncludeDetailedData = { false })),
-        )
+        val store =
+            Store<SState, AAction>(
+                initialState = SState,
+                reducer = { state, _ -> state },
+                middleware = listOf(LogMiddleware(logger = logger, shouldIncludeDetailedData = { false })),
+            )
 
         val actionMessages = listOf("one!", "two!", "buckle my shoe!")
         actionMessages.forEach { message ->

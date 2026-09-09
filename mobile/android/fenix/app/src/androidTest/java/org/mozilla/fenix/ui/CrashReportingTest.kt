@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.ui
 
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 import androidx.core.net.toUri
 import org.junit.Rule
 import org.junit.Test
@@ -17,36 +18,36 @@ import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.clickPageObject
-import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
-import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 class CrashReportingTest {
-    @get:Rule(order = 0)
-    val fenixTestRule: FenixTestRule = FenixTestRule()
+    @get:Rule(order = 0) val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    private val mockWebServer get() = fenixTestRule.mockWebServer
+    private val mockWebServer
+        get() = fenixTestRule.mockWebServer
 
     @get:Rule(order = 1)
-    val composeTestRule = AndroidComposeTestRuleV2(
-        HomeActivityIntentTestRule(
-            isPocketEnabled = false,
-            isWallpaperOnboardingEnabled = false,
-        ),
-    ) { it.activity }
+    val composeTestRule =
+        AndroidComposeTestRuleV2(
+            HomeActivityIntentTestRule(
+                isPocketEnabled = false,
+                isWallpaperOnboardingEnabled = false,
+            )
+        ) {
+            it.activity
+        }
 
-    @get:Rule(order = 2)
-    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
+    @get:Rule(order = 2) val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/308906
     @Test
     fun closeTabFromCrashedTabReporterTest() {
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser("about:crashcontent".toUri()) {
-        }.clickTabCrashedCloseButton {
-        }.openTabDrawer {
-            verifyNoOpenTabsInNormalBrowsing()
-        }
+        navigationToolbar(composeTestRule) {}
+            .enterURLAndEnterToBrowser("about:crashcontent".toUri()) {}
+            .clickTabCrashedCloseButton {}
+            .openTabDrawer {
+                verifyNoOpenTabsInNormalBrowsing()
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2336134
@@ -54,15 +55,13 @@ class CrashReportingTest {
     fun restoreTabFromTabCrashedReporterTest() {
         val website = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser(website.url) {
-        }
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser("about:crashcontent".toUri()) {
-            verifyTabCrashReporterView()
-            clickPageObject(composeTestRule, itemWithResId("$packageName:id/restoreTabButton"))
-            verifyPageContent(website.content)
-        }
+        navigationToolbar(composeTestRule) {}.enterURLAndEnterToBrowser(website.url) {}
+        navigationToolbar(composeTestRule) {}
+            .enterURLAndEnterToBrowser("about:crashcontent".toUri()) {
+                verifyTabCrashReporterView()
+                clickPageObject(composeTestRule, itemWithResId("$packageName:id/restoreTabButton"))
+                verifyPageContent(website.content)
+            }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1681928
@@ -77,26 +76,30 @@ class CrashReportingTest {
         val firstWebPage = mockWebServer.getGenericAsset(1)
         val secondWebPage = mockWebServer.getGenericAsset(2)
 
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser(firstWebPage.url) {
-            mDevice.waitForIdle()
-        }.openTabDrawer(composeTestRule) {
-        }.openNewTab {
-        }.submitQuery(secondWebPage.url.toString()) {
-            waitForPageToLoad()
-        }
+        navigationToolbar(composeTestRule) {}
+            .enterURLAndEnterToBrowser(firstWebPage.url) {
+                mDevice.waitForIdle()
+            }
+            .openTabDrawer(composeTestRule) {}
+            .openNewTab {}
+            .submitQuery(secondWebPage.url.toString()) {
+                waitForPageToLoad()
+            }
 
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser("about:crashcontent".toUri()) {
-            verifyTabCrashReporterView()
-        }.openTabDrawer(composeTestRule) {
-            verifyExistingOpenTabs(firstWebPage.title)
-            verifyExistingOpenTabs(secondWebPage.title)
-        }.closeTabDrawer {
-        }.goToHomescreen {
-            verifyExistingTopSitesList()
-        }.openThreeDotMenu {
-            verifySettingsButton()
-        }
+        navigationToolbar(composeTestRule) {}
+            .enterURLAndEnterToBrowser("about:crashcontent".toUri()) {
+                verifyTabCrashReporterView()
+            }
+            .openTabDrawer(composeTestRule) {
+                verifyExistingOpenTabs(firstWebPage.title)
+                verifyExistingOpenTabs(secondWebPage.title)
+            }
+            .closeTabDrawer {}
+            .goToHomescreen {
+                verifyExistingTopSitesList()
+            }
+            .openThreeDotMenu {
+                verifySettingsButton()
+            }
     }
 }

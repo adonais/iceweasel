@@ -20,10 +20,10 @@ import mozilla.components.browser.toolbar.R
 import mozilla.components.concept.toolbar.Toolbar
 import mozilla.components.support.utils.DebouncedQueue
 
-/**
- * A container [View] for displaying [Toolbar.Action] objects.
- */
-internal class ActionContainer @JvmOverloads constructor(
+/** A container [View] for displaying [Toolbar.Action] objects. */
+internal class ActionContainer
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
@@ -66,23 +66,24 @@ internal class ActionContainer @JvmOverloads constructor(
     }
 
     /**
-     * Essentially calculates the index of an action on toolbar based on a
-     * map [visibleActionIndicesWithWeights] that holds the order
-     * of visible action indices to their weights sorted by weights.
-     * An index is now calculated by finding the immediate next larger weight
-     * compared to the new action's weight. Index of this find becomes the index of the new action.
-     * If not found, action is appended at the end.
+     * Essentially calculates the index of an action on toolbar based on a map [visibleActionIndicesWithWeights] that
+     * holds the order of visible action indices to their weights sorted by weights. An index is now calculated by
+     * finding the immediate next larger weight compared to the new action's weight. Index of this find becomes the
+     * index of the new action. If not found, action is appended at the end.
      */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun calculateInsertionIndex(newAction: Toolbar.Action): Int {
         if (newAction.weight() == -1) {
             return -1
         }
-        val visibleActionIndicesWithWeights = actions.filter { it.actual.visible() }
-            .mapNotNull { actionWrapper ->
-                val index = indexOfChild(actionWrapper.view)
-                if (index != -1) index to actionWrapper.actual.weight() else null
-            }.sortedBy { it.second }
+        val visibleActionIndicesWithWeights =
+            actions
+                .filter { it.actual.visible() }
+                .mapNotNull { actionWrapper ->
+                    val index = indexOfChild(actionWrapper.view)
+                    if (index != -1) index to actionWrapper.actual.weight() else null
+                }
+                .sortedBy { it.second }
 
         val insertionIndex = visibleActionIndicesWithWeights.firstOrNull { it.second > newAction.weight() }?.first
 
@@ -90,10 +91,12 @@ internal class ActionContainer @JvmOverloads constructor(
     }
 
     fun removeAction(action: Toolbar.Action) {
-        actions.find { it.actual == action }?.let {
-            actions.remove(it)
-            removeView(it.view)
-        }
+        actions
+            .find { it.actual == action }
+            ?.let {
+                actions.remove(it)
+                removeView(it.view)
+            }
     }
 
     fun invalidateActions() {

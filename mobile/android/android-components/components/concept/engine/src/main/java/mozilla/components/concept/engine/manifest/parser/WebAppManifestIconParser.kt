@@ -4,6 +4,7 @@
 
 package mozilla.components.concept.engine.manifest.parser
 
+import java.util.Locale
 import mozilla.components.concept.engine.manifest.Size
 import mozilla.components.concept.engine.manifest.WebAppManifest
 import mozilla.components.support.ktx.android.org.json.asSequence
@@ -11,22 +12,20 @@ import mozilla.components.support.ktx.android.org.json.tryGet
 import mozilla.components.support.ktx.android.org.json.tryGetString
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.Locale
 
 private val whitespace = "\\s+".toRegex()
 
-/**
- * Parses the icons array from a web app manifest.
- */
+/** Parses the icons array from a web app manifest. */
 internal fun parseIcons(json: JSONObject): List<WebAppManifest.Icon> {
     val array = json.optJSONArray("icons") ?: return emptyList()
 
     return array
         .asSequence { i -> getJSONObject(i) }
         .mapNotNull { obj ->
-            val purpose = parsePurposes(obj).ifEmpty {
-                return@mapNotNull null
-            }
+            val purpose =
+                parsePurposes(obj).ifEmpty {
+                    return@mapNotNull null
+                }
             WebAppManifest.Icon(
                 src = obj.getString("src"),
                 sizes = parseIconSizes(obj),
@@ -42,22 +41,21 @@ internal fun parseIcons(json: JSONObject): List<WebAppManifest.Icon> {
  *
  * Gecko returns a JSONArray to represent the intermediate infra type for some properties.
  */
-private fun parseStringSet(set: Any?): Sequence<String>? = when (set) {
-    is String -> set.split(whitespace).asSequence()
-    is JSONArray -> set.asSequence { i -> getString(i) }
-    else -> null
-}
+private fun parseStringSet(set: Any?): Sequence<String>? =
+    when (set) {
+        is String -> set.split(whitespace).asSequence()
+        is JSONArray -> set.asSequence { i -> getString(i) }
+        else -> null
+    }
 
 private fun parseIconSizes(json: JSONObject): List<Size> {
-    val sizes = parseStringSet(json.tryGet("sizes"))
-        ?: return emptyList()
+    val sizes = parseStringSet(json.tryGet("sizes")) ?: return emptyList()
 
     return sizes.mapNotNull { Size.parse(it) }.toList()
 }
 
 private fun parsePurposes(json: JSONObject): Set<WebAppManifest.Icon.Purpose> {
-    val purpose = parseStringSet(json.tryGet("purpose"))
-        ?: return setOf(WebAppManifest.Icon.Purpose.ANY)
+    val purpose = parseStringSet(json.tryGet("purpose")) ?: return setOf(WebAppManifest.Icon.Purpose.ANY)
 
     return purpose
         .mapNotNull {

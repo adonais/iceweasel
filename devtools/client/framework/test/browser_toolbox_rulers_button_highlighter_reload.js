@@ -122,7 +122,7 @@ add_task(async function testToolboxDestroy() {
   await waitFor(async () => {
     if (
       (await isRulersHighlighterVisible()) &&
-      (await isRulersHighlighterVisible())
+      (await isViewportSizeHighlighterVisible())
     ) {
       return true;
     }
@@ -147,6 +147,62 @@ add_task(async function testToolboxDestroy() {
     false,
     "ViewportSize highlighter is not shown anymore after toolbox is destroyed"
   );
+});
+
+/**
+ * Bug 2063982. Check that disabling the ruler highlighter destroys the
+ * highlighter whether the inspector was started or not.
+ */
+add_task(async function testRulerDisabled() {
+  for (const toolId of ["inspector", "webconsole"]) {
+    await pushPref("devtools.command-button-rulers.enabled", true);
+    const tab = await addTab(TEST_URL);
+    const toolbox = await gDevTools.showToolboxForTab(tab, { toolId });
+
+    // Sanity check
+    is(
+      await isRulersHighlighterVisible(),
+      false,
+      "Rulers highlighter is not shown at first"
+    );
+    is(
+      await isViewportSizeHighlighterVisible(),
+      false,
+      "ViewportSize highlighter is not shown at first"
+    );
+
+    info("Show the rulers");
+    await clickRulersButton(toolbox, true);
+
+    info("Wait for the rulers highlighters to be visible");
+    await waitFor(async () => {
+      if (
+        (await isRulersHighlighterVisible()) &&
+        (await isViewportSizeHighlighterVisible())
+      ) {
+        return true;
+      }
+      return false;
+    }, "Ruler highlighters are both visible");
+
+    // Go to the options panel and disable the highlighter
+    const { panelDoc } = await toolbox.selectTool("options");
+    const cbx = panelDoc.getElementById("command-button-rulers");
+    cbx.click();
+
+    info("Wait for the rulers highlighters to be hidden");
+    await waitFor(async () => {
+      if (
+        (await isRulersHighlighterVisible()) ||
+        (await isViewportSizeHighlighterVisible())
+      ) {
+        return false;
+      }
+      return true;
+    }, "Ruler highlighters are both hidden");
+
+    await toolbox.destroy();
+  }
 });
 
 function getRulersButton(toolbox) {

@@ -4,37 +4,28 @@
 
 package org.mozilla.fenix.home.termsofuse
 
-/**
- * Interface for interactions with the privacy notice banner.
- */
+/** Interface for interactions with the privacy notice banner. */
 interface PrivacyNoticeBannerInteractor {
-    /**
-     * Called when the user clicks the close button.
-     */
+    /** Called when the user clicks the close button. */
     fun onPrivacyNoticeBannerCloseClicked()
 
-    /**
-     * Called when the user clicks the Privacy Notice link.
-     */
+    /** Called when the user clicks the Privacy Notice link. */
     fun onPrivacyNoticeBannerPrivacyNoticeClicked()
 
-    /**
-     * Called when the user clicks the Learn more link.
-     */
+    /** Called when the user clicks the Learn more link. */
     fun onPrivacyNoticeBannerLearnMoreClicked()
 
-    /**
-     * Called when the banner is displayed.
-     */
+    /** Called when the banner is displayed. */
     fun onPrivacyNoticeBannerDisplayed()
 }
 
-/**
- * NoOp implementation for compose previews.
- */
+/** NoOp implementation for compose previews. */
 object PrivacyNoticeBannerInteractorNoOp : PrivacyNoticeBannerInteractor {
     override fun onPrivacyNoticeBannerCloseClicked() = Unit
+
     override fun onPrivacyNoticeBannerPrivacyNoticeClicked() = Unit
+
     override fun onPrivacyNoticeBannerLearnMoreClicked() = Unit
+
     override fun onPrivacyNoticeBannerDisplayed() = Unit
 }

@@ -33,45 +33,33 @@ import org.mozilla.fenix.theme.Theme
 /**
  * CFR Tools UI that allows for the CFR states to be reset.
  *
- * @param cfrToolsStore [CfrToolsStore] used to access [CfrToolsState].
- * CFR toggles will be shown or not.
+ * @param cfrToolsStore [CfrToolsStore] used to access [CfrToolsState]. CFR toggles will be shown or not.
  */
 @Composable
-fun CfrTools(
-    cfrToolsStore: CfrToolsStore,
-) {
+fun CfrTools(cfrToolsStore: CfrToolsStore) {
     Surface {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(vertical = FirefoxTheme.layout.space.dynamic400),
+            modifier =
+                Modifier.fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(vertical = FirefoxTheme.layout.space.dynamic400),
             verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.dynamic400),
         ) {
-            ResetCfrTool(
-                cfrToolsStore = cfrToolsStore,
-            )
+            ResetCfrTool(cfrToolsStore = cfrToolsStore)
         }
     }
 }
 
 @Suppress("LongMethod")
 @Composable
-private fun ResetCfrTool(
-    cfrToolsStore: CfrToolsStore,
-) {
+private fun ResetCfrTool(cfrToolsStore: CfrToolsStore) {
     val cfrPreferences by cfrToolsStore.stateFlow.collectAsState()
 
     Column(
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.dynamic400),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = FirefoxTheme.layout.space.dynamic400),
-        ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = FirefoxTheme.layout.space.dynamic400)) {
             Text(
                 text = stringResource(R.string.debug_drawer_cfr_tools_reset_cfr_title),
                 style = FirefoxTheme.typography.headline5,
@@ -98,9 +86,7 @@ private fun ResetCfrTool(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.dynamic150),
         ) {
-            CfrSectionTitle(
-                text = stringResource(R.string.debug_drawer_cfr_tools_tabs_tray_cfr_title),
-            )
+            CfrSectionTitle(text = stringResource(R.string.debug_drawer_cfr_tools_tabs_tray_cfr_title))
 
             CfrToggle(
                 title = stringResource(R.string.debug_drawer_cfr_tools_inactive_tabs_title),
@@ -125,18 +111,14 @@ private fun ResetCfrTool(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.dynamic150),
         ) {
-            CfrSectionTitle(
-                text = stringResource(R.string.debug_drawer_cfr_tools_toolbar_cfr_title),
-            )
+            CfrSectionTitle(text = stringResource(R.string.debug_drawer_cfr_tools_toolbar_cfr_title))
         }
 
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.dynamic150),
         ) {
-            CfrSectionTitle(
-                text = stringResource(R.string.debug_drawer_cfr_tools_other_cfr_title),
-            )
+            CfrSectionTitle(text = stringResource(R.string.debug_drawer_cfr_tools_other_cfr_title))
 
             CfrToggle(
                 title = stringResource(R.string.debug_drawer_cfr_tools_open_in_app_title),
@@ -189,9 +171,7 @@ private fun CfrToggle(
  * @param text The text for a section of CFRs.
  */
 @Composable
-private fun CfrSectionTitle(
-    text: String,
-) {
+private fun CfrSectionTitle(text: String) {
     Text(
         text = text,
         modifier = Modifier.padding(horizontal = FirefoxTheme.layout.space.dynamic400),
@@ -202,12 +182,8 @@ private fun CfrSectionTitle(
 
 @Composable
 @FlexibleWindowPreview
-private fun CfrToolsPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun CfrToolsPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
-        CfrTools(
-            cfrToolsStore = CfrToolsStore(),
-        )
+        CfrTools(cfrToolsStore = CfrToolsStore())
     }
 }

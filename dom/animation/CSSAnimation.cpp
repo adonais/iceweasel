@@ -5,6 +5,7 @@
 #include "CSSAnimation.h"
 
 #include "mozilla/AnimationEventDispatcher.h"
+#include "mozilla/KeyframeUtils.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/CSSAnimationBinding.h"
 #include "mozilla/dom/KeyframeEffectBinding.h"
@@ -342,16 +343,28 @@ void CSSAnimationKeyframeEffect::UpdateTiming(
 void CSSAnimationKeyframeEffect::SetKeyframes(JSContext* aContext,
                                               JS::Handle<JSObject*> aKeyframes,
                                               ErrorResult& aRv) {
-  // SetKeyframes will trigger the keyframe generation (for missing 0% and
-  // 100%), so we set this flag to avoid generating the keyframes if they come
-  // from JS.
-  mIgnoreKeyframesGeneration = true;
-  KeyframeEffect::SetKeyframes(aContext, aKeyframes, aRv);
-
+  nsTArray<Keyframe> keyframes = KeyframeUtils::GetKeyframesFromObject(
+      aContext, mDocument, aKeyframes, "KeyframeEffect.setKeyframes", aRv);
   if (aRv.Failed()) {
-    mIgnoreKeyframesGeneration = false;
     return;
   }
+
+  // SetKeyframes below will trigger the keyframe generation (for missing 0% and
+  // 100%), so we set this flag to avoid generating the keyframes if they come
+  // from JS.
+  // Note that this is different from CSSAnimationProperties::Keyframes below
+  // because we have to avoid generating keyframes even if we don't have
+  // animation, i.e. this is a keyframe-effect-specific flag for keyframes
+  // generation.
+  mIgnoreKeyframesGeneration = true;
+
+  // This is from the JS API, so we use the associated animation's timeline and
+  // range if any.
+  RefPtr<const ComputedStyle> style = GetTargetComputedStyle(Flush::None);
+  KeyframeEffect::SetKeyframes(
+      std::move(keyframes), style,
+      mAnimation ? mAnimation->GetTimeline() : nullptr,
+      mAnimation ? &mAnimation->GetTimelineRange() : nullptr);
 
   if (CSSAnimation* cssAnimation = GetOwningCSSAnimation()) {
     cssAnimation->PropertiesWillSetFromJS(CSSAnimationProperties::Keyframes);
@@ -492,8 +505,8 @@ static Keyframe* GetOrCreateInitialOrFinalComputedKeyframe(
 // https://drafts.csswg.org/web-animations-1/#computed-keyframes
 bool CSSAnimationKeyframeEffect::GetComputedKeyframes(
     nsTArray<Keyframe>& aKeyframes) const {
-  // Check if we do need to do this. If it is overrideen by JS, we should skip
-  // this function and the caller should just use the specified keyframes.
+  // Check if we do need to do this. This flag is set if the keyframes come from
+  // the JS API.
   if (mIgnoreKeyframesGeneration) {
     return false;
   }
@@ -528,6 +541,11 @@ bool CSSAnimationKeyframeEffect::GetComputedKeyframes(
 
     AnimatedPropertyIDSet currentProperties;
     for (const auto& pair : keyframe.mPropertyValues) {
+      MOZ_ASSERT(
+          !pair.mProperty.IsShorthand(),
+          "The shorthands should be expanded already for CSS Animations");
+      MOZ_ASSERT(KeyframeUtils::IsAnimatableProperty(pair.mProperty),
+                 "It should be animatable for CSS Animations");
       currentProperties.AddProperty(pair.mProperty);
     }
     allProperties.AddProperties(currentProperties);

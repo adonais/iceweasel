@@ -9,22 +9,16 @@ import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import mozilla.components.support.utils.ext.packageManagerCompatHelper
 
-/**
- * Utility for detecting if Fenix (Firefox for Android) products are installed.
- */
+/** Utility for detecting if Fenix (Firefox for Android) products are installed. */
 object FenixProductDetector {
-    /**
-     * Known Fenix versions and their package names.
-     */
+    /** Known Fenix versions and their package names. */
     enum class FenixVersion(val packageName: String) {
         FIREFOX("org.mozilla.firefox"),
         FIREFOX_NIGHTLY("org.mozilla.fenix"),
         FIREFOX_BETA("org.mozilla.firefox_beta"),
     }
 
-    /**
-     * Returns a list of package names for installed Fenix versions.
-     */
+    /** Returns a list of package names for installed Fenix versions. */
     fun getInstalledFenixVersions(context: Context): List<String> {
         val fenixVersions = mutableListOf<String>()
 
@@ -37,9 +31,7 @@ object FenixProductDetector {
         return fenixVersions
     }
 
-    /**
-     * Checks if the given [defaultBrowser] activity info belongs to a Fenix product.
-     */
+    /** Checks if the given [defaultBrowser] activity info belongs to a Fenix product. */
     fun isFenixDefaultBrowser(defaultBrowser: ActivityInfo?): Boolean {
         if (defaultBrowser == null) return false
 

@@ -6,6 +6,7 @@ package org.mozilla.fenix.home.topsites
 
 import io.mockk.every
 import io.mockk.mockk
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.SearchState
@@ -24,17 +25,13 @@ import org.mozilla.fenix.home.topsites.TopSitesConfigConstants.TOP_SITES_PROVIDE
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.nimbus.HomepageHideFrecentTopSites
 import org.mozilla.fenix.utils.Settings
-import kotlin.test.assertNotNull
 
-/**
- * Tests the top-level function [getTopSitesConfig] we use to create [TopSitesConfig]
- */
+/** Tests the top-level function [getTopSitesConfig] we use to create [TopSitesConfig] */
 class TopSitesConfigCreatorTest {
     private lateinit var settings: Settings
 
-    private val browserStore = BrowserStore(
-        initialState = BrowserState(search = SearchState(regionSearchEngines = listOf())),
-    )
+    private val browserStore =
+        BrowserStore(initialState = BrowserState(search = SearchState(regionSearchEngines = listOf())))
 
     @Before
     fun setUp() {
@@ -44,11 +41,7 @@ class TopSitesConfigCreatorTest {
 
     @Test
     fun `WHEN hide top sites flag is not enabled THEN it returns TopSitesConfig with non-null frequencyConfig`() {
-        FxNimbus.features.homepageHideFrecentTopSites.withCachedValue(
-            HomepageHideFrecentTopSites(
-                enabled = false,
-            ),
-        )
+        FxNimbus.features.homepageHideFrecentTopSites.withCachedValue(HomepageHideFrecentTopSites(enabled = false))
 
         val topSitesConfig = getTopSitesConfig(settings = settings, store = browserStore).invoke()
 
@@ -57,9 +50,7 @@ class TopSitesConfigCreatorTest {
 
     @Test
     fun `WHEN hide top sites flag is enabled THEN it returns TopSitesConfig with null frequencyConfig`() {
-        FxNimbus.features.homepageHideFrecentTopSites.withCachedValue(
-            HomepageHideFrecentTopSites(enabled = true),
-        )
+        FxNimbus.features.homepageHideFrecentTopSites.withCachedValue(HomepageHideFrecentTopSites(enabled = true))
 
         val topSitesConfig = getTopSitesConfig(settings = settings, store = browserStore).invoke()
 
@@ -79,19 +70,13 @@ class TopSitesConfigCreatorTest {
     @Test
     fun `GIVEN the selected search engine is set to eBay THEN providerFilter filters the eBay provided top sites`() {
         val searchEngine: SearchEngine = mockk()
-        val browserStore = BrowserStore(
-            initialState = BrowserState(
-                search = SearchState(
-                    regionSearchEngines = listOf(searchEngine),
-                ),
-            ),
-        )
+        val browserStore =
+            BrowserStore(initialState = BrowserState(search = SearchState(regionSearchEngines = listOf(searchEngine))))
 
         every { searchEngine.name } returns EBAY_SPONSORED_TITLE
 
         val eBayTopSite = TopSite.Provided(1L, EBAY_SPONSORED_TITLE, "eBay.com", "", "", "", 0L)
-        val amazonTopSite =
-            TopSite.Provided(2L, AMAZON_SPONSORED_TITLE, "Amazon.com", "", "", "", 0L)
+        val amazonTopSite = TopSite.Provided(2L, AMAZON_SPONSORED_TITLE, "Amazon.com", "", "", "", 0L)
         val firefoxTopSite = TopSite.Provided(3L, "Firefox", "mozilla.org", "", "", "", 0L)
         val providedTopSites = listOf(eBayTopSite, amazonTopSite, firefoxTopSite)
 
@@ -108,10 +93,12 @@ class TopSitesConfigCreatorTest {
     fun `WHEN suppressSponsoredTopSitesEnabled is true THEN providerConfig limit is 0`() {
         every { settings.suppressSponsoredTopSitesEnabled } returns true
 
-        val topSitesConfig = getTopSitesConfig(
-            settings = settings,
-            store = browserStore,
-        ).invoke()
+        val topSitesConfig =
+            getTopSitesConfig(
+                    settings = settings,
+                    store = browserStore,
+                )
+                .invoke()
 
         assertNotNull(topSitesConfig.providerConfig)
         assertEquals(0, topSitesConfig.providerConfig?.limit)
@@ -121,10 +108,12 @@ class TopSitesConfigCreatorTest {
     fun `WHEN suppressSponsoredTopSitesEnabled is false THEN providerConfig limit is TOP_SITES_PROVIDER_LIMIT`() {
         every { settings.suppressSponsoredTopSitesEnabled } returns false
 
-        val topSitesConfig = getTopSitesConfig(
-            settings = settings,
-            store = browserStore,
-        ).invoke()
+        val topSitesConfig =
+            getTopSitesConfig(
+                    settings = settings,
+                    store = browserStore,
+                )
+                .invoke()
 
         assertNotNull(topSitesConfig.providerConfig)
         assertEquals(TOP_SITES_PROVIDER_LIMIT, topSitesConfig.providerConfig?.limit)

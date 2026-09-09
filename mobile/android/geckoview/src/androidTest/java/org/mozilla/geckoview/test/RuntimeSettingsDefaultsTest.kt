@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -19,13 +19,11 @@ class RuntimeSettingsDefaultsTest : BaseSessionTest() {
         mainSession.waitForPageStop()
 
         val geckoRuntimeSettings = sessionRule.runtime.settings
-        val globalPrivacyControl =
-            (sessionRule.getPrefs("privacy.globalprivacycontrol.enabled").get(0)) as Boolean
+        val globalPrivacyControl = (sessionRule.getPrefs("privacy.globalprivacycontrol.enabled").get(0)) as Boolean
         val globalPrivacyControlPrivateMode =
             (sessionRule.getPrefs("privacy.globalprivacycontrol.pbmode.enabled").get(0)) as Boolean
-        val globalPrivacyControlFunctionality = (
-            sessionRule.getPrefs("privacy.globalprivacycontrol.functionality.enabled").get(0)
-            ) as Boolean
+        val globalPrivacyControlFunctionality =
+            (sessionRule.getPrefs("privacy.globalprivacycontrol.functionality.enabled").get(0)) as Boolean
 
         assertThat(
             "Global Privacy Control runtime settings should be disabled by default in normal tabs",
@@ -57,9 +55,7 @@ class RuntimeSettingsDefaultsTest : BaseSessionTest() {
             equalTo(true),
         )
 
-        val gpcValue = mainSession.evaluateJS(
-            "window.navigator.globalPrivacyControl",
-        )
+        val gpcValue = mainSession.evaluateJS("window.navigator.globalPrivacyControl")
 
         assertThat(
             "Global Privacy Control should be disabled in normal mode",
@@ -75,15 +71,11 @@ class RuntimeSettingsDefaultsTest : BaseSessionTest() {
         mainSession.waitForPageStop()
 
         val geckoRuntimeSettings = sessionRule.runtime.settings
-        val globalPrivacyControl =
-            (sessionRule.getPrefs("privacy.globalprivacycontrol.enabled").get(0)) as Boolean
+        val globalPrivacyControl = (sessionRule.getPrefs("privacy.globalprivacycontrol.enabled").get(0)) as Boolean
         val globalPrivacyControlPrivateMode =
             (sessionRule.getPrefs("privacy.globalprivacycontrol.pbmode.enabled").get(0)) as Boolean
         val globalPrivacyControlFunctionality =
-            (
-                sessionRule.getPrefs("privacy.globalprivacycontrol.functionality.enabled")
-                    .get(0)
-                ) as Boolean
+            (sessionRule.getPrefs("privacy.globalprivacycontrol.functionality.enabled").get(0)) as Boolean
 
         assertThat(
             "Global Privacy Control runtime settings should be disabled by default in normal tabs",
@@ -115,9 +107,7 @@ class RuntimeSettingsDefaultsTest : BaseSessionTest() {
             equalTo(true),
         )
 
-        val gpcValue = mainSession.evaluateJS(
-            "window.navigator.globalPrivacyControl",
-        )
+        val gpcValue = mainSession.evaluateJS("window.navigator.globalPrivacyControl")
 
         assertThat(
             "Global Privacy Control should be disabled in private mode",
@@ -128,8 +118,7 @@ class RuntimeSettingsDefaultsTest : BaseSessionTest() {
 
     @Test
     fun fingerprintProtectionsDefaults() {
-        val fingerprintingProtection =
-            (sessionRule.getPrefs("privacy.fingerprintingProtection").get(0)) as Boolean
+        val fingerprintingProtection = (sessionRule.getPrefs("privacy.fingerprintingProtection").get(0)) as Boolean
         val fingerprintingProtectionPrivateBrowsing =
             (sessionRule.getPrefs("privacy.fingerprintingProtection.pbmode").get(0)) as Boolean
 

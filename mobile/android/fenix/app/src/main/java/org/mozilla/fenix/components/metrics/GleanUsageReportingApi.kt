@@ -4,40 +4,35 @@
 
 package org.mozilla.fenix.components.metrics
 
-/**
- * Defines the possible interactions with the Glean usage-reporting ping.
- */
+/** Defines the possible interactions with the Glean usage-reporting ping. */
 interface GleanUsageReportingApi {
 
-    /**
-     * This marks whether the ping is being activated or inactivated.
-     */
-    enum class UsageReason { ACTIVE, INACTIVE }
+    /** This marks whether the ping is being activated or inactivated. */
+    enum class UsageReason {
+        ACTIVE,
+        INACTIVE,
+    }
 
-    /**
-     * This allows the ping to be switched on or off from the settings screen.
-     */
+    /** This allows the ping to be switched on or off from the settings screen. */
     fun setEnabled(enabled: Boolean)
 
     /**
      * The usage reason should be set here before the ping is sent.
+     *
      * @param usageReason the new reason state of the usage ping.
      */
     fun setUsageReason(usageReason: UsageReason)
 
     /**
      * The duration should be set here before the ping is sent.
+     *
      * @param durationMillis the duration in milliseconds of the last foreground session
      */
     fun setDuration(durationMillis: Long)
 
-    /**
-     * Send the ping to Glean.
-     */
+    /** Send the ping to Glean. */
     fun submitPing()
 
-    /**
-     * Allows the user to request that all collected usage reporting data be deleted.
-     */
+    /** Allows the user to request that all collected usage reporting data be deleted. */
     fun requestDataDeletion()
 }

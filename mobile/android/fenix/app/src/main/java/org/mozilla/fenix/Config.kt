@@ -8,21 +8,20 @@ enum class ReleaseChannel {
     Debug,
     Nightly,
     Beta,
-    Release,
-    ;
+    Release;
 
     val isReleased: Boolean
-        get() = when (this) {
-            Debug -> false
-            else -> true
-        }
+        get() =
+            when (this) {
+                Debug -> false
+                else -> true
+            }
 
     /**
      * True if this is a debug release channel, false otherwise.
      *
-     * This constant should often be used instead of [BuildConfig.DEBUG], which indicates
-     * if the `debuggable` flag is set which can be true even on released channel builds
-     * (e.g. performance).
+     * This constant should often be used instead of [BuildConfig.DEBUG], which indicates if the `debuggable` flag is
+     * set which can be true even on released channel builds (e.g. performance).
      */
     val isDebug: Boolean
         get() = !this.isReleased
@@ -31,10 +30,11 @@ enum class ReleaseChannel {
         get() = this == Release || this == Beta
 
     val isRelease: Boolean
-        get() = when (this) {
-            Release -> true
-            else -> false
-        }
+        get() =
+            when (this) {
+                Release -> true
+                else -> false
+            }
 
     val isBeta: Boolean
         get() = this == Beta
@@ -44,13 +44,15 @@ enum class ReleaseChannel {
 }
 
 object Config {
-    val channel = when (BuildConfig.BUILD_TYPE) {
-        "debug" -> ReleaseChannel.Debug
-        "nightly", "benchmark" -> ReleaseChannel.Nightly
-        "beta" -> ReleaseChannel.Beta
-        "release" -> ReleaseChannel.Release
-        else -> {
-            throw IllegalStateException("Unknown build type: ${BuildConfig.BUILD_TYPE}")
+    val channel =
+        when (BuildConfig.BUILD_TYPE) {
+            "debug" -> ReleaseChannel.Debug
+            "nightly",
+            "benchmark" -> ReleaseChannel.Nightly
+            "beta" -> ReleaseChannel.Beta
+            "release" -> ReleaseChannel.Release
+            else -> {
+                throw IllegalStateException("Unknown build type: ${BuildConfig.BUILD_TYPE}")
+            }
         }
-    }
 }

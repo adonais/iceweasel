@@ -17,7 +17,9 @@ import org.mozilla.fenix.nimbus.FxNimbus
 
 const val TAB_STRIP_TOOLBAR_TYPE = "tab_strip"
 
-internal class ToolbarTabStripShortcutPreference @JvmOverloads constructor(
+internal class ToolbarTabStripShortcutPreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : ToolbarShortcutPreference(context, attrs) {
@@ -33,9 +35,7 @@ internal class ToolbarTabStripShortcutPreference @JvmOverloads constructor(
     override fun isOptionEnabled(option: ShortcutOption): Boolean =
         option.key != ShortcutType.SUMMARIZE || isBrowsingInNormalMode
 
-    /**
-     * Optional callback for when a new shortcut option is selected.
-     */
+    /** Optional callback for when a new shortcut option is selected. */
     var optionChangedListener: ((ShortcutOption?) -> Unit)? = null
 
     override fun readSelectedKey(): String = context.components.settings.toolbarTabStripShortcutKey

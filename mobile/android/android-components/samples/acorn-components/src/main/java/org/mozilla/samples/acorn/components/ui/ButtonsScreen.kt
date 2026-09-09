@@ -36,9 +36,7 @@ import mozilla.components.compose.base.textfield.TextField
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.ui.icons.R as iconsR
 
-/**
- * Displays demos of the Acorn button components.
- */
+/** Displays demos of the Acorn button components. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ButtonsScreen(onNavigateUp: () -> Unit = {}) {
@@ -66,14 +64,14 @@ fun ButtonsScreen(onNavigateUp: () -> Unit = {}) {
                 },
                 actions = { ThemeToggleButton() },
             )
-        },
+        }
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(vertical = 16.dp),
+            modifier =
+                Modifier.fillMaxSize()
+                    .padding(innerPadding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             TextField(

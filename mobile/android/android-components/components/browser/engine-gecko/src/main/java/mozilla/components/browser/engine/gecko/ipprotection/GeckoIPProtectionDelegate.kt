@@ -14,13 +14,12 @@ import org.mozilla.geckoview.IPProtectionController as GeckoViewIPProtectionCont
 
 @OptIn(ExperimentalGeckoViewApi::class)
 @kotlin.OptIn(ExperimentalAndroidComponentsApi::class)
-internal class GeckoIPProtectionDelegate(
-    private val delegate: IPProtectionDelegate,
-) : GeckoViewIPProtectionController.Delegate {
+internal class GeckoIPProtectionDelegate(private val delegate: IPProtectionDelegate) :
+    GeckoViewIPProtectionController.Delegate {
 
     /**
-     * FIXME(IPP) We are keeping a copy of state info that needs to be in-sync to reduce the delegate calls.
-     *  If we notify the delegate separately. The single source of truth there will not be poisoned.
+     * FIXME(IPP) We are keeping a copy of state info that needs to be in-sync to reduce the delegate calls. If we
+     * notify the delegate separately. The single source of truth there will not be poisoned.
      */
     private var stateInfo = IPProtectionHandler.StateInfo()
 
@@ -30,22 +29,24 @@ internal class GeckoIPProtectionDelegate(
     }
 
     override fun onProxyStateChanged(state: GeckoViewIPProtectionController.ProxyState) {
-        stateInfo = stateInfo.copy(
-            // FIXME(IPP) this is a footgun waiting to happen. We are relying on the int values from
-            //  org.mozilla.geckoview.IPProtectionController.ProxyState to continue matching with
-            //  mozilla.components.concept.engine.ipprotection.IPProtectionHandler.StateInfo.PROXY_STATE_* values.
-            proxyState = state.state,
-            lastError = state.errorType,
-        )
+        stateInfo =
+            stateInfo.copy(
+                // FIXME(IPP) this is a footgun waiting to happen. We are relying on the int values from
+                //  org.mozilla.geckoview.IPProtectionController.ProxyState to continue matching with
+                //  mozilla.components.concept.engine.ipprotection.IPProtectionHandler.StateInfo.PROXY_STATE_* values.
+                proxyState = state.state,
+                lastError = state.errorType,
+            )
         delegate.onStateChanged(stateInfo)
     }
 
     override fun onUsageChanged(info: GeckoViewIPProtectionController.UsageInfo) {
-        stateInfo = stateInfo.copy(
-            remaining = info.remaining,
-            max = info.max,
-            resetTime = info.resetTime,
-        )
+        stateInfo =
+            stateInfo.copy(
+                remaining = info.remaining,
+                max = info.max,
+                resetTime = info.resetTime,
+            )
         delegate.onStateChanged(stateInfo)
     }
 
@@ -53,25 +54,21 @@ internal class GeckoIPProtectionDelegate(
         delegate.onCountryListChanged(
             countries.map {
                 IPProtectionHandler.Country(code = it.code, available = it.available)
-            },
+            }
         )
     }
 }
 
 @OptIn(ExperimentalGeckoViewApi::class)
 @kotlin.OptIn(ExperimentalAndroidComponentsApi::class)
-internal fun Int.toServiceState(): ServiceState = when (this) {
-    GeckoViewIPProtectionController.SERVICE_STATE_UNINITIALIZED ->
-        ServiceState.Uninitialized
-    GeckoViewIPProtectionController.SERVICE_STATE_UNAVAILABLE ->
-        ServiceState.Unavailable
-    GeckoViewIPProtectionController.SERVICE_STATE_UNAUTHENTICATED ->
-        ServiceState.Unauthenticated
-    GeckoViewIPProtectionController.SERVICE_STATE_READY ->
-        ServiceState.Ready
-    GeckoViewIPProtectionController.SERVICE_STATE_OPTED_OUT ->
-        ServiceState.OptedOut
-    else -> {
-        ServiceState.Unavailable
+internal fun Int.toServiceState(): ServiceState =
+    when (this) {
+        GeckoViewIPProtectionController.SERVICE_STATE_UNINITIALIZED -> ServiceState.Uninitialized
+        GeckoViewIPProtectionController.SERVICE_STATE_UNAVAILABLE -> ServiceState.Unavailable
+        GeckoViewIPProtectionController.SERVICE_STATE_UNAUTHENTICATED -> ServiceState.Unauthenticated
+        GeckoViewIPProtectionController.SERVICE_STATE_READY -> ServiceState.Ready
+        GeckoViewIPProtectionController.SERVICE_STATE_OPTED_OUT -> ServiceState.OptedOut
+        else -> {
+            ServiceState.Unavailable
+        }
     }
-}

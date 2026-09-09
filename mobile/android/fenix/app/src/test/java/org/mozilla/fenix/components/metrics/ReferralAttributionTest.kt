@@ -22,8 +22,7 @@ private const val REFERRAL_CODE = "0123456789ABCXYZ"
 @RunWith(RobolectricTestRunner::class)
 class ReferralAttributionTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     @Test
     fun `GIVEN a referral utm_content WHEN extracting THEN the code after the preamble is returned`() {
@@ -78,7 +77,7 @@ class ReferralAttributionTest {
         assertEquals(
             "utm_source=SOURCE&utm_term=TERM",
             ReferralAttribution.redact(
-                "utm_source=SOURCE&utm_content=$REFERRAL_UTM_CONTENT_PREFIX$REFERRAL_CODE&utm_term=TERM",
+                "utm_source=SOURCE&utm_content=$REFERRAL_UTM_CONTENT_PREFIX$REFERRAL_CODE&utm_term=TERM"
             ),
         )
     }
@@ -95,9 +94,7 @@ class ReferralAttributionTest {
     fun `GIVEN a referrer repeating utm_content WHEN redacting THEN every referral occurrence is removed`() {
         assertEquals(
             "utm_content=CONTENT",
-            ReferralAttribution.redact(
-                "utm_content=$REFERRAL_UTM_CONTENT_PREFIX$REFERRAL_CODE&utm_content=CONTENT",
-            ),
+            ReferralAttribution.redact("utm_content=$REFERRAL_UTM_CONTENT_PREFIX$REFERRAL_CODE&utm_content=CONTENT"),
         )
     }
 
@@ -118,14 +115,16 @@ class ReferralAttributionTest {
     @Test
     fun `WHEN submitting a referral code THEN it is sent on the referrals ping and the profile is marked as submitted`() {
         val settings = Settings(testContext)
-        val job = Pings.referrals.testBeforeNextSubmit {
-            assertEquals(REFERRAL_CODE, Referrals.code.testGetValue())
-        }
+        val job =
+            Pings.referrals.testBeforeNextSubmit {
+                assertEquals(REFERRAL_CODE, Referrals.code.testGetValue())
+            }
 
         ReferralAttribution.submit(REFERRAL_CODE, settings)
 
         job.join()
         assertTrue(settings.referralPingSubmitted)
+        assertEquals(REFERRAL_CODE, settings.referralCode)
     }
 
     @Test
@@ -136,5 +135,16 @@ class ReferralAttributionTest {
         ReferralAttribution.submit(REFERRAL_CODE, settings)
 
         assertNull(Referrals.code.testGetValue())
+    }
+
+    @Test
+    fun `GIVEN the ping was already submitted WHEN submitting THEN the code is still recorded locally`() {
+        // Recording is gated on Config.channel.isNightlyOrDebug, which holds under the debug test variant.
+        val settings = Settings(testContext)
+        settings.referralPingSubmitted = true
+
+        ReferralAttribution.submit(REFERRAL_CODE, settings)
+
+        assertEquals(REFERRAL_CODE, settings.referralCode)
     }
 }

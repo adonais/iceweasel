@@ -116,7 +116,8 @@ class BitmapTest {
         assertEquals(expected, scaledBitmapSize)
     }
 
-    private fun createBitmap(size: Size) = with(size) {
-        Bitmap.createBitmap(IntArray(width * height), width, height, Bitmap.Config.ARGB_8888)
-    }
+    private fun createBitmap(size: Size) =
+        with(size) {
+            Bitmap.createBitmap(IntArray(width * height), width, height, Bitmap.Config.ARGB_8888)
+        }
 }

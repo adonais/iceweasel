@@ -8,9 +8,7 @@ import org.mozilla.fenix.library.history.History
 import org.mozilla.fenix.library.historymetadata.controller.HistoryMetadataGroupController
 import org.mozilla.fenix.selection.SelectionInteractor
 
-/**
- * Interface for history metadata group related actions in the History view.
- */
+/** Interface for history metadata group related actions in the History view. */
 interface HistoryMetadataGroupInteractor : SelectionInteractor<History.Metadata> {
 
     /**
@@ -21,38 +19,30 @@ interface HistoryMetadataGroupInteractor : SelectionInteractor<History.Metadata>
     fun onBackPressed(items: Set<History.Metadata>): Boolean
 
     /**
-     * Deletes the given set of history metadata [items]. Called when a user clicks on the
-     * "Delete" menu item or the "x" button associated with a history metadata item.
+     * Deletes the given set of history metadata [items]. Called when a user clicks on the "Delete" menu item or the "x"
+     * button associated with a history metadata item.
      *
      * @param items The set of [History]s to delete.
      */
     fun onDelete(items: Set<History.Metadata>)
 
-    /**
-     * Called when a user clicks on the "Delete history" menu item.
-     */
+    /** Called when a user clicks on the "Delete history" menu item. */
     fun onDeleteAll()
 
-    /**
-     * Called when a user has confirmed the deletion of the group.
-     */
+    /** Called when a user has confirmed the deletion of the group. */
     fun onDeleteAllConfirmed()
 
     /**
-     * Opens the share sheet for a set of history [items]. Called when a user clicks on the
-     * "Share" menu item.
+     * Opens the share sheet for a set of history [items]. Called when a user clicks on the "Share" menu item.
      *
      * @param items The set of [History]s to share.
      */
     fun onShareMenuItem(items: Set<History.Metadata>)
 }
 
-/**
- * The default implementation of [HistoryMetadataGroupInteractor].
- */
-class DefaultHistoryMetadataGroupInteractor(
-    private val controller: HistoryMetadataGroupController,
-) : HistoryMetadataGroupInteractor {
+/** The default implementation of [HistoryMetadataGroupInteractor]. */
+class DefaultHistoryMetadataGroupInteractor(private val controller: HistoryMetadataGroupController) :
+    HistoryMetadataGroupInteractor {
 
     override fun open(item: History.Metadata) {
         controller.handleOpen(item)

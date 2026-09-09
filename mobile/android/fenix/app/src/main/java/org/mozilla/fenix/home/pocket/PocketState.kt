@@ -32,9 +32,7 @@ data class PocketState(
     val linkTextColor: Color,
 ) {
 
-    /**
-     * Companion object for building [PocketState].
-     */
+    /** Companion object for building [PocketState]. */
     companion object {
 
         /**
@@ -43,27 +41,28 @@ data class PocketState(
          * @param appState State to build the [PocketState] from.
          */
         @Composable
-        internal fun build(appState: AppState) = with(appState) {
-            var textColor = MaterialTheme.colorScheme.onSurface
-            var linkTextColor = MaterialTheme.colorScheme.tertiary
+        internal fun build(appState: AppState) =
+            with(appState) {
+                var textColor = MaterialTheme.colorScheme.onSurface
+                var linkTextColor = MaterialTheme.colorScheme.tertiary
 
-            wallpaperState.currentWallpaper.let { currentWallpaper ->
-                currentWallpaper.textColor?.let {
-                    val wallpaperAdaptedTextColor = Color(it)
-                    textColor = wallpaperAdaptedTextColor
-                    linkTextColor = wallpaperAdaptedTextColor
+                wallpaperState.currentWallpaper.let { currentWallpaper ->
+                    currentWallpaper.textColor?.let {
+                        val wallpaperAdaptedTextColor = Color(it)
+                        textColor = wallpaperAdaptedTextColor
+                        linkTextColor = wallpaperAdaptedTextColor
+                    }
                 }
-            }
 
-            PocketState(
-                stories = recommendationState.pocketStories,
-                categories = recommendationState.pocketStoriesCategories,
-                categoriesSelections = recommendationState.pocketStoriesCategoriesSelections,
-                categoryColors = getSelectableChipColors(),
-                textColor = textColor,
-                linkTextColor = linkTextColor,
-            )
-        }
+                PocketState(
+                    stories = recommendationState.pocketStories,
+                    categories = recommendationState.pocketStoriesCategories,
+                    categoriesSelections = recommendationState.pocketStoriesCategoriesSelections,
+                    categoryColors = getSelectableChipColors(),
+                    textColor = textColor,
+                    linkTextColor = linkTextColor,
+                )
+            }
     }
 }
 

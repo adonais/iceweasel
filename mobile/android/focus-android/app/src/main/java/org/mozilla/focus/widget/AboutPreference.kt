@@ -9,10 +9,10 @@ import android.util.AttributeSet
 import androidx.preference.Preference
 import org.mozilla.focus.R
 
-/**
- * Custom preference used to display "About Firefox Focus" in Mozilla settings screen.
- */
-class AboutPreference @JvmOverloads constructor(
+/** Custom preference used to display "About Firefox Focus" in Mozilla settings screen. */
+class AboutPreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet,
     defStyleAttr: Int = 0,

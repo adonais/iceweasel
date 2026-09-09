@@ -31,6 +31,7 @@ class CallbackFunction;
 class CustomElementCallback;
 class CustomElementReaction;
 class DocGroup;
+class Document;
 class Promise;
 
 enum class ElementCallbackType {
@@ -469,6 +470,9 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
   static void RemoveScopedRegistry(nsINode&);
   static bool IsInScopedRegistryMap(nsINode&);
 
+  // https://html.spec.whatwg.org/#scoped-document-set
+  void AddToScopedDocumentSet(Document* aDoc);
+
   void TraceDefinitions(JSTracer* aTrc);
 
  private:
@@ -527,6 +531,12 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
   // Used to check when the registry has been constructed via script
   // https://html.spec.whatwg.org/#is-scoped
   bool mIsScoped;
+
+  // https://html.spec.whatwg.org/#scoped-document-set
+  // Ordered set of documents whose elements are associated with this scoped
+  // registry. Used to determine upgrade order across documents when define()
+  // is called.
+  nsTArray<nsWeakPtr> mScopedDocumentSet;
 
  private:
   int32_t InferNamespace(JSContext* aCx, JS::Handle<JSObject*> constructor);

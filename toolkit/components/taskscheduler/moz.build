@@ -9,14 +9,21 @@ XPCSHELL_TESTS_MANIFESTS += ["tests/xpcshell/xpcshell.toml"]
 
 EXTRA_JS_MODULES += ["TaskScheduler.sys.mjs"]
 
-# This whole component is currently Windows-only, but a Mac implementation is planned.
-# Only the Windows C++ interface is an XPCOM component.
 if CONFIG["OS_TARGET"] == "WINNT":
-    EXTRA_JS_MODULES += ["TaskSchedulerWinImpl.sys.mjs"]
+    EXTRA_JS_MODULES += [
+        "TaskSchedulerWinImpl.sys.mjs",
+        "TaskSchedulerWinMSIXImpl.sys.mjs",
+    ]
     XPCOM_MANIFESTS += ["components.conf"]
     XPIDL_MODULE = "taskscheduler"
-    XPIDL_SOURCES += ["nsIWinTaskSchedulerService.idl"]
-    EXPORTS += ["nsWinTaskScheduler.h"]
+    XPIDL_SOURCES += [
+        "nsIWinBackgroundTaskRegistrar.idl",
+        "nsIWinTaskSchedulerService.idl",
+    ]
+    EXPORTS += [
+        "nsWinTaskScheduler.h",
+        "rust/src/WinBackgroundTaskRegistrar.h",
+    ]
     SOURCES += ["nsWinTaskScheduler.cpp"]
     OS_LIBS += ["taskschd"]
     DEFINES["UNICODE"] = True

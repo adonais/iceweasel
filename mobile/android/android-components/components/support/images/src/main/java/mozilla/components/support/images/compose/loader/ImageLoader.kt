@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import java.io.IOException
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mozilla.components.concept.fetch.Client
@@ -20,31 +22,28 @@ import mozilla.components.concept.fetch.Request
 import mozilla.components.concept.fetch.isSuccess
 import mozilla.components.support.images.DesiredSize
 import mozilla.components.support.images.decoder.AndroidImageDecoder
-import java.io.IOException
-import java.util.concurrent.TimeUnit
 
 /**
  * Loads an image from [url] using [Client] and makes it available in the inner [ImageLoaderScope].
  *
- * The loaded image will be available via the [WithImage] composable. While the image is still
- * loading [Placeholder] will get rendered. If loading or decoding the image failed then [Fallback]
- * will get rendered.
+ * The loaded image will be available via the [WithImage] composable. While the image is still loading [Placeholder]
+ * will get rendered. If loading or decoding the image failed then [Fallback] will get rendered.
  *
  * @param client The [Client] implementation that should be used for loading the image.
  * @param url The URL of the image that should get loaded.
- * @param private Whether or not this is a private request. Like in private browsing mode, private
- * requests will not cache anything on disk and not send any cookies shared with the browser.
- * @param connectTimeout A timeout to be used when connecting to the remote server. If the timeout
- * expires before the connection can be established then [Fallback] will get rendered.
- * @param readTimeout A timeout to be used when reading from the remote server. If the timeout
- * expires before there is data available for read then [Fallback] will get rendered.
+ * @param private Whether or not this is a private request. Like in private browsing mode, private requests will not
+ *   cache anything on disk and not send any cookies shared with the browser.
+ * @param connectTimeout A timeout to be used when connecting to the remote server. If the timeout expires before the
+ *   connection can be established then [Fallback] will get rendered.
+ * @param readTimeout A timeout to be used when reading from the remote server. If the timeout expires before there is
+ *   data available for read then [Fallback] will get rendered.
  * @param targetSize The target image size, the loaded image should be scaled to.
- * @param minSize The minimum size before an image will be considered too small and [Fallback] will
- * get rendered instead.
- * @param maxSize The maximum size before an image will be considered too large and [Fallback] will
- * get rendered instead.
- * @param maxScaleFactor The maximum factor a loaded image will be scaled up or down by until
- * [Fallback] will get rendered.
+ * @param minSize The minimum size before an image will be considered too small and [Fallback] will get rendered
+ *   instead.
+ * @param maxSize The maximum size before an image will be considered too large and [Fallback] will get rendered
+ *   instead.
+ * @param maxScaleFactor The maximum factor a loaded image will be scaled up or down by until [Fallback] will get
+ *   rendered.
  */
 @Composable
 fun ImageLoader(
@@ -59,25 +58,27 @@ fun ImageLoader(
     maxScaleFactor: Float = DEFAULT_MAXIMUM_SCALE_FACTOR,
     content: @Composable ImageLoaderScope.() -> Unit,
 ) {
-    val desiredSize = with(LocalDensity.current) {
-        DesiredSize(
-            targetSize = targetSize.roundToPx(),
-            minSize = minSize.roundToPx(),
-            maxSize = maxSize.roundToPx(),
-            maxScaleFactor = maxScaleFactor,
-        )
-    }
+    val desiredSize =
+        with(LocalDensity.current) {
+            DesiredSize(
+                targetSize = targetSize.roundToPx(),
+                minSize = minSize.roundToPx(),
+                maxSize = maxSize.roundToPx(),
+                maxScaleFactor = maxScaleFactor,
+            )
+        }
 
-    val scope = remember(url) {
-        InternalImageLoaderScope(
-            client,
-            url,
-            private,
-            connectTimeout,
-            readTimeout,
-            desiredSize,
-        )
-    }
+    val scope =
+        remember(url) {
+            InternalImageLoaderScope(
+                client,
+                url,
+                private,
+                connectTimeout,
+                readTimeout,
+                desiredSize,
+            )
+        }
 
     LaunchedEffect(scope.url) {
         scope.load()
@@ -87,16 +88,17 @@ fun ImageLoader(
 }
 
 private suspend fun InternalImageLoaderScope.load() {
-    val bitmap = withContext(Dispatchers.IO) {
-        fetchAndDecode(
-            client,
-            url,
-            private,
-            connectTimeout,
-            readTimeout,
-            desiredSize,
-        )
-    }
+    val bitmap =
+        withContext(Dispatchers.IO) {
+            fetchAndDecode(
+                client,
+                url,
+                private,
+                connectTimeout,
+                readTimeout,
+                desiredSize,
+            )
+        }
 
     if (bitmap != null) {
         loaderState.value = ImageLoaderState.Image(BitmapPainter(bitmap.asImageBitmap()))
@@ -112,19 +114,21 @@ private suspend fun fetchAndDecode(
     connectTimeout: Pair<Long, TimeUnit>,
     readTimeout: Pair<Long, TimeUnit>,
     desiredSize: DesiredSize,
-): Bitmap? = withContext(Dispatchers.IO) {
-    val data = fetch(
-        client,
-        url,
-        private,
-        connectTimeout,
-        readTimeout,
-    ) ?: return@withContext null
+): Bitmap? =
+    withContext(Dispatchers.IO) {
+        val data =
+            fetch(
+                client,
+                url,
+                private,
+                connectTimeout,
+                readTimeout,
+            ) ?: return@withContext null
 
-    decoders.firstNotNullOfOrNull { decoder ->
-        decoder.decode(data, desiredSize)
+        decoders.firstNotNullOfOrNull { decoder ->
+            decoder.decode(data, desiredSize)
+        }
     }
-}
 
 private fun fetch(
     client: Client,
@@ -133,21 +137,23 @@ private fun fetch(
     connectTimeout: Pair<Long, TimeUnit>,
     readTimeout: Pair<Long, TimeUnit>,
 ): ByteArray? {
-    val request = Request(
-        url = url.trim(),
-        method = Request.Method.GET,
-        cookiePolicy = if (private) {
-            Request.CookiePolicy.OMIT
-        } else {
-            Request.CookiePolicy.INCLUDE
-        },
-        connectTimeout = connectTimeout,
-        readTimeout = readTimeout,
-        redirect = Request.Redirect.FOLLOW,
-        useCaches = true,
-        private = private,
-        conservative = true,
-    )
+    val request =
+        Request(
+            url = url.trim(),
+            method = Request.Method.GET,
+            cookiePolicy =
+                if (private) {
+                    Request.CookiePolicy.OMIT
+                } else {
+                    Request.CookiePolicy.INCLUDE
+                },
+            connectTimeout = connectTimeout,
+            readTimeout = readTimeout,
+            redirect = Request.Redirect.FOLLOW,
+            useCaches = true,
+            private = private,
+            conservative = true,
+        )
 
     return try {
         val response = client.fetch(request)
@@ -169,6 +175,4 @@ private const val DEFAULT_MIN_MAX_MULTIPLIER = 3
 
 private val defaultTargetSize = 100.dp
 
-private val decoders = listOf(
-    AndroidImageDecoder(),
-)
+private val decoders = listOf(AndroidImageDecoder())

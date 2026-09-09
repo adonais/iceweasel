@@ -36,11 +36,11 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.BottomSheetHandle
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 private const val BOTTOM_SHEET_HANDLE_WIDTH_PERCENT = 0.1f
 
@@ -68,28 +68,29 @@ fun MicrosurveyBottomSheet(
     var selectedAnswer by remember { mutableStateOf<String?>(null) }
     var isSubmitted by remember { mutableStateOf(false) }
 
-    val cornerShape: Shape = MaterialTheme.shapes.large.copy(
-        bottomStart = CornerSize(0.dp),
-        bottomEnd = CornerSize(0.dp),
-    )
+    val cornerShape: Shape =
+        MaterialTheme.shapes.large.copy(
+            bottomStart = CornerSize(0.dp),
+            bottomEnd = CornerSize(0.dp),
+        )
 
     Surface(shape = cornerShape) {
         Scaffold(
             topBar = {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .padding(top = 8.dp)
-                        .nestedScroll(rememberNestedScrollInteropConnection())
-                        .verticalScroll(rememberScrollState()),
+                    modifier =
+                        Modifier.padding(top = 8.dp)
+                            .nestedScroll(rememberNestedScrollInteropConnection())
+                            .verticalScroll(rememberScrollState()),
                 ) {
                     BottomSheetHandle(
                         onRequestDismiss = {},
                         contentDescription = stringResource(R.string.microsurvey_close_handle_content_description),
-                        modifier = Modifier
-                            .padding(bottom = 2.dp)
-                            .fillMaxWidth(BOTTOM_SHEET_HANDLE_WIDTH_PERCENT)
-                            .semantics { traversalIndex = -1f },
+                        modifier =
+                            Modifier.padding(bottom = 2.dp).fillMaxWidth(BOTTOM_SHEET_HANDLE_WIDTH_PERCENT).semantics {
+                                traversalIndex = -1f
+                            },
                     )
 
                     MicrosurveyHeader(title = stringResource(id = R.string.micro_survey_survey_header_2)) {
@@ -98,10 +99,7 @@ fun MicrosurveyBottomSheet(
                 }
             },
             bottomBar = {
-                Column(
-                    modifier = Modifier
-                        .padding(bottom = 8.dp),
-                ) {
+                Column(modifier = Modifier.padding(bottom = 8.dp)) {
                     Spacer(Modifier.height(FirefoxTheme.layout.space.static300))
 
                     MicrosurveyFooter(
@@ -121,9 +119,7 @@ fun MicrosurveyBottomSheet(
             },
         ) { innerPadding ->
             Surface(
-                modifier = Modifier
-                    .wrapContentHeight()
-                    .padding(innerPadding),
+                modifier = Modifier.wrapContentHeight().padding(innerPadding),
                 shape = cornerShape,
             ) {
                 if (isSubmitted) {
@@ -149,9 +145,7 @@ fun MicrosurveyBottomSheet(
     fontScale = 2.0f,
 )
 @Composable
-private fun MicrosurveyBottomSheetPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun MicrosurveyBottomSheetPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         val padding = 16.dp
         Box(modifier = Modifier.padding(padding)) {
@@ -161,14 +155,15 @@ private fun MicrosurveyBottomSheetPreview(
                 onPrivacyPolicyLinkClick = {},
                 onCloseButtonClicked = {},
                 onSubmitButtonClicked = {},
-                answers = listOf(
-                    stringResource(id = R.string.likert_scale_option_1),
-                    stringResource(id = R.string.likert_scale_option_2),
-                    stringResource(id = R.string.likert_scale_option_3),
-                    stringResource(id = R.string.likert_scale_option_4),
-                    stringResource(id = R.string.likert_scale_option_5),
-                    stringResource(id = R.string.likert_scale_option_6),
-                ),
+                answers =
+                    listOf(
+                        stringResource(id = R.string.likert_scale_option_1),
+                        stringResource(id = R.string.likert_scale_option_2),
+                        stringResource(id = R.string.likert_scale_option_3),
+                        stringResource(id = R.string.likert_scale_option_4),
+                        stringResource(id = R.string.likert_scale_option_5),
+                        stringResource(id = R.string.likert_scale_option_6),
+                    ),
             )
         }
     }

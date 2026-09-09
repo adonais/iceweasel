@@ -7,13 +7,12 @@ package mozilla.components.browser.session.storage.serialize
 import android.util.AtomicFile
 import android.util.JsonReader
 import android.util.JsonToken
+import java.util.UUID
 import mozilla.components.browser.session.storage.RecoverableBrowserState
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.LastMediaAccessState
 import mozilla.components.browser.state.state.ReaderState
 import mozilla.components.browser.state.state.SessionState
-import mozilla.components.browser.state.state.TabGroup
-import mozilla.components.browser.state.state.TabPartition
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.recover.RecoverableTab
 import mozilla.components.browser.state.state.recover.TabState
@@ -24,11 +23,10 @@ import mozilla.components.support.ktx.android.util.nextBooleanOrNull
 import mozilla.components.support.ktx.android.util.nextIntOrNull
 import mozilla.components.support.ktx.android.util.nextStringOrNull
 import mozilla.components.support.ktx.util.readJSON
-import java.util.UUID
 
 /**
- * Reads a [RecoverableBrowserState] (partial, serialized [BrowserState]) or a single [RecoverableTab]
- * (partial, serialized [TabSessionState]) from disk.
+ * Reads a [RecoverableBrowserState] (partial, serialized [BrowserState]) or a single [RecoverableTab] (partial,
+ * serialized [TabSessionState]) from disk.
  */
 class BrowserStateReader {
     /**
@@ -57,10 +55,10 @@ class BrowserStateReader {
      * Reads a single [RecoverableTab] from the given [file].
      *
      * @param engine The [Engine] implementation for restoring the engine state.
-     * @param restoreSessionId Whether the original tab ID should be restored or whether a new ID
-     * should be generated for the tab.
-     * @param restoreParentId Whether the original parent tab ID should be restored or whether it
-     * should be set to `null`.
+     * @param restoreSessionId Whether the original tab ID should be restored or whether a new ID should be generated
+     *   for the tab.
+     * @param restoreParentId Whether the original parent tab ID should be restored or whether it should be set to
+     *   `null`.
      */
     fun readTab(
         engine: Engine,
@@ -82,7 +80,6 @@ private fun JsonReader.browsingSession(
 
     var version = 1 // Initially we didn't save a version. If there's none then we assume it is version 1.
     var tabs: List<RecoverableTab>? = null
-    var tabPartitions: Map<String, TabPartition> = emptyMap()
     var selectedIndex: Int? = null
     var selectedTabId: String? = null
     var isTranslationsEngineSupported: Boolean? = null
@@ -94,7 +91,7 @@ private fun JsonReader.browsingSession(
             Keys.SELECTED_TAB_ID_KEY -> selectedTabId = nextStringOrNull()
             Keys.TRANSLATIONS_ENGINE_IS_SUPPORTED_KEY -> isTranslationsEngineSupported = nextBooleanOrNull()
             Keys.SESSION_STATE_TUPLES_KEY -> tabs = tabs(engine, restoreSessionId, restoreParentId, predicate)
-            Keys.TAB_PARTITIONS_KEY -> tabPartitions = tabPartitions()
+            else -> skipValue()
         }
     }
 
@@ -114,7 +111,7 @@ private fun JsonReader.browsingSession(
             selectedTabId = tabs.sortedByDescending { it.state.lastAccess }.first().state.id
         }
 
-        RecoverableBrowserState(tabs, selectedTabId, tabPartitions, isTranslationsEngineSupported)
+        RecoverableBrowserState(tabs, selectedTabId, isTranslationsEngineSupported)
     } else {
         null
     }
@@ -155,6 +152,7 @@ private fun JsonReader.tab(
         when (nextName()) {
             Keys.SESSION_KEY -> tab = tabSession()
             Keys.ENGINE_SESSION_KEY -> engineSessionState = engine.createSessionStateFrom(this)
+            else -> skipValue()
         }
     }
 
@@ -162,10 +160,11 @@ private fun JsonReader.tab(
 
     return tab?.copy(
         engineSessionState = engineSessionState,
-        state = tab.state.copy(
-            id = if (restoreSessionId) tab.state.id else UUID.randomUUID().toString(),
-            parentId = if (restoreParentId) tab.state.parentId else null,
-        ),
+        state =
+            tab.state.copy(
+                id = if (restoreSessionId) tab.state.id else UUID.randomUUID().toString(),
+                parentId = if (restoreParentId) tab.state.parentId else null,
+            ),
     )
 }
 
@@ -201,7 +200,7 @@ private fun JsonReader.tabSession(): RecoverableTab {
     beginObject()
 
     while (hasNext()) {
-        when (val name = nextName()) {
+        when (nextName()) {
             Keys.SESSION_URL_KEY -> url = nextString()
             Keys.SESSION_UUID_KEY -> id = nextString()
             Keys.SESSION_CONTEXT_ID_KEY -> contextId = nextStringOrNull()
@@ -225,7 +224,7 @@ private fun JsonReader.tabSession(): RecoverableTab {
             Keys.SESSION_EXTERNAL_SOURCE_PACKAGE_CATEGORY -> externalSourceCategory = nextIntOrNull()
             Keys.SESSION_DEPRECATED_SOURCE_KEY -> nextString()
             Keys.SESSION_DESKTOP_MODE -> desktopMode = nextBoolean()
-            else -> throw IllegalArgumentException("Unknown session key: $name")
+            else -> skipValue()
         }
     }
 
@@ -233,113 +232,42 @@ private fun JsonReader.tabSession(): RecoverableTab {
 
     return RecoverableTab(
         engineSessionState = null, // This will be deserialized and added separately
-        state = TabState(
-            id = requireNotNull(id),
-            parentId = parentId,
-            url = requireNotNull(url),
-            title = requireNotNull(title),
-            searchTerm = requireNotNull(searchTerm),
-            contextId = contextId,
-            readerState = ReaderState(
-                active = readerStateActive ?: false,
-                activeUrl = readerActiveUrl,
-                scrollY = readerScrollY,
+        state =
+            TabState(
+                id = requireNotNull(id),
+                parentId = parentId,
+                url = requireNotNull(url),
+                title = requireNotNull(title),
+                searchTerm = requireNotNull(searchTerm),
+                contextId = contextId,
+                readerState =
+                    ReaderState(
+                        active = readerStateActive ?: false,
+                        activeUrl = readerActiveUrl,
+                        scrollY = readerScrollY,
+                    ),
+                historyMetadata =
+                    if (historyMetadataUrl != null) {
+                        HistoryMetadataKey(
+                            historyMetadataUrl,
+                            historyMetadataSearchTerm,
+                            historyMetadataReferrerUrl,
+                        )
+                    } else {
+                        null
+                    },
+                private = false, // We never serialize private sessions
+                lastAccess = lastAccess ?: 0,
+                createdAt = createdAt ?: 0,
+                lastVisibleAt = lastVisibleAt ?: 0,
+                lastMediaAccessState =
+                    LastMediaAccessState(
+                        lastMediaUrl ?: "",
+                        lastMediaAccess = lastMediaAccess ?: 0,
+                        mediaSessionActive = mediaSessionActive ?: false,
+                    ),
+                source = SessionState.Source.restore(sourceId, externalSourcePackageId, externalSourceCategory),
+                desktopMode = desktopMode ?: false,
             ),
-            historyMetadata = if (historyMetadataUrl != null) {
-                HistoryMetadataKey(
-                    historyMetadataUrl,
-                    historyMetadataSearchTerm,
-                    historyMetadataReferrerUrl,
-                )
-            } else {
-                null
-            },
-            private = false, // We never serialize private sessions
-            lastAccess = lastAccess ?: 0,
-            createdAt = createdAt ?: 0,
-            lastVisibleAt = lastVisibleAt ?: 0,
-            lastMediaAccessState = LastMediaAccessState(
-                lastMediaUrl ?: "",
-                lastMediaAccess = lastMediaAccess ?: 0,
-                mediaSessionActive = mediaSessionActive ?: false,
-            ),
-            source = SessionState.Source.restore(sourceId, externalSourcePackageId, externalSourceCategory),
-            desktopMode = desktopMode ?: false,
-        ),
-    )
-}
-
-private fun JsonReader.tabPartitions(): Map<String, TabPartition> {
-    beginArray()
-
-    val tabPartitions = mutableMapOf<String, TabPartition>()
-    while (peek() != JsonToken.END_ARRAY) {
-        val tabPartition = tabPartition()
-        tabPartitions[tabPartition.id] = tabPartition
-    }
-
-    endArray()
-
-    return tabPartitions
-}
-
-private fun JsonReader.tabPartition(): TabPartition {
-    beginObject()
-
-    var id: String? = null
-    var tabGroups: List<TabGroup> = emptyList()
-
-    while (hasNext()) {
-        when (nextName()) {
-            Keys.TAB_PARTITION_ID_KEY -> id = nextString()
-            Keys.TAB_PARTITION_GROUPS_KEY -> {
-                val groups = mutableListOf<TabGroup>()
-                beginArray()
-                while (peek() != JsonToken.END_ARRAY) {
-                    groups.add(group())
-                }
-                endArray()
-                tabGroups = groups
-            }
-        }
-    }
-
-    endObject()
-
-    return TabPartition(
-        id = requireNotNull(id),
-        tabGroups = tabGroups,
-    )
-}
-
-private fun JsonReader.group(): TabGroup {
-    beginObject()
-
-    var id: String? = null
-    var name: String? = null
-    val tabIds = mutableSetOf<String>()
-
-    while (hasNext()) {
-        when (nextName()) {
-            Keys.TAB_GROUP_ID_KEY -> id = nextString()
-            Keys.TAB_GROUP_NAME_KEY -> name = nextString()
-            Keys.TAB_GROUP_TAB_IDS_KEY -> {
-                beginArray()
-
-                while (peek() != JsonToken.END_ARRAY) {
-                    tabIds.add(nextString())
-                }
-
-                endArray()
-            }
-        }
-    }
-
-    endObject()
-
-    return TabGroup(
-        id = requireNotNull(id),
-        name = requireNotNull(name),
-        tabIds = tabIds,
     )
 }

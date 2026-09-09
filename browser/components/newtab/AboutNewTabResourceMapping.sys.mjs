@@ -58,7 +58,6 @@ const lazy = XPCOMUtils.declareLazy({
   AddonSettings: "resource://gre/modules/addons/AddonSettings.sys.mjs",
   Langpack: "resource://gre/modules/Extension.sys.mjs",
   AboutHomeStartupCache: "resource:///modules/AboutHomeStartupCache.sys.mjs",
-  AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   NewTabGleanUtils: "resource://newtab/lib/NewTabGleanUtils.sys.mjs",
@@ -700,6 +699,22 @@ export var AboutNewTabResourceMapping = {
     lazy.NewTabGleanUtils.registerMetricsAndPings(metricsPath);
   },
 
+  /**
+   * Returns true once the application has started to shut down.
+   *
+   * Train-hop installs must not be started or continued past this point.
+   *
+   * @returns {boolean}
+   */
+  _isAppShuttingDown() {
+    return (
+      Services.startup.attemptingQuit ||
+      Services.startup.isInOrBeyondShutdownPhase(
+        Ci.nsIAppStartup.SHUTDOWN_PHASE_APPSHUTDOWNCONFIRMED
+      )
+    );
+  },
+
   scheduleUpdateTrainhopAddonState() {
     if (!this._updateAddonStateDeferredTask) {
       this.logger.debug("creating _updateAddonStateDeferredTask");
@@ -707,13 +722,9 @@ export var AboutNewTabResourceMapping = {
       const idleTimeoutMs = lazy.trainhopAddonScheduledUpdateTimeout;
       this._updateAddonStateDeferredTask = new lazy.DeferredTask(
         async () => {
-          const isPastShutdownConfirmed =
-            Services.startup.isInOrBeyondShutdownPhase(
-              Ci.nsIAppStartup.SHUTDOWN_PHASE_APPSHUTDOWNCONFIRMED
-            );
-          if (isPastShutdownConfirmed) {
-            this.logger.debug(
-              "updateAddonStateDeferredTask cancelled after appShutdownConfirmed barrier"
+          if (this._isAppShuttingDown()) {
+            this.logger.warn(
+              "updateAddonStateDeferredTask cancelled on application shutdown"
             );
             return;
           }
@@ -725,10 +736,6 @@ export var AboutNewTabResourceMapping = {
         },
         delayMs,
         idleTimeoutMs
-      );
-      lazy.AsyncShutdown.appShutdownConfirmed.addBlocker(
-        `${TRAINHOP_NIMBUS_FEATURE_ID} scheduleUpdateTrainhopAddonState shutting down`,
-        () => this._updateAddonStateDeferredTask.finalize()
       );
       for (const featureId of TRAINHOP_NIMBUS_FEATURE_IDS) {
         lazy.NimbusFeatures[featureId].onUpdate(() =>
@@ -1013,6 +1020,12 @@ export var AboutNewTabResourceMapping = {
       `downloading train-hop add-on version ${trainhopAddonVersion} from ${xpiDownloadURL}`
     );
     try {
+      if (this._isAppShuttingDown()) {
+        this.logger.warn(
+          "cancel xpi download on application shutdown already initiated"
+        );
+        return;
+      }
       let newInstall = await lazy.AddonManager.getInstallForURL(
         xpiDownloadURL,
         {
@@ -1057,14 +1070,21 @@ export var AboutNewTabResourceMapping = {
         },
         onInstallPostponed: () => {
           this.logger.debug("Train-hop install postponed, as expected");
-          if (forceRestartlessInstall && !this.initialized) {
+          const isAppShuttingDown = this._isAppShuttingDown();
+          if (
+            forceRestartlessInstall &&
+            !this.initialized &&
+            !isAppShuttingDown
+          ) {
             this.logger.debug("Forcing restartless install of train-hop");
             newInstall.continuePostponedInstall();
           } else {
             this.logger.debug("Not forcing restartless install");
             if (forceRestartlessInstall) {
-              this.logger.debug(
-                "We must have initialized before the XPI finished downloading."
+              this.logger.warn(
+                isAppShuttingDown
+                  ? "Application shutdown already initiated, leaving the train-hop install staged."
+                  : "We must have initialized before the XPI finished downloading."
               );
             }
             deferred.resolve();

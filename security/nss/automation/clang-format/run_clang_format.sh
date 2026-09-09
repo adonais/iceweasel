@@ -8,6 +8,20 @@ fi
 
 set -e
 
+# The clang-format version CI formats the tree with. Keep this in sync with
+# CLANG_VERSION in taskcluster/docker/clang-format/Dockerfile. It is not
+# packaged by any distribution -- see that directory's llvm.sources for the
+# apt repo, or just use `./mach clang-format`, which runs the same image.
+expected_version=22
+
+# Warn, but don't stop: a wrong-version run is still more useful than no run,
+# and the versions mostly agree. If the diff below looks surprising, start here.
+found_version=$(clang-format --version 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)+' | head -1 | cut -d. -f1)
+if [[ "$found_version" != "$expected_version" ]]; then
+    echo "warning: found clang-format ${found_version:-of unknown version}, but CI uses clang-format ${expected_version}." 1>&2
+    echo "warning: formatting may differ from what the CI check expects." 1>&2
+fi
+
 # Apply clang-format on the provided folder and verify that this doesn't change any file.
 # If any file differs after formatting, the script eventually exits with 1.
 # Any differences between formatted and unformatted files is printed to stdout to give a hint what's wrong.

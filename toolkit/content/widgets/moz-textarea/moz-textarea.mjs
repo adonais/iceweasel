@@ -20,6 +20,7 @@ import MozInputText from "chrome://global/content/elements/moz-input-text.mjs";
  * @property {string} iconSrc - The src for an optional icon.
  * @property {string} ariaLabel - The aria-label text when there is no visible label.
  * @property {string} ariaDescription - The aria-description text when there is no visible description.
+ * @property {string} title - The title attribute, mapped onto the inner textarea.
  * @property {number} rows - The number of visible text rows.
  */
 export default class MozTextarea extends MozInputText {
@@ -59,6 +60,7 @@ export default class MozTextarea extends MozInputText {
         aria-description=${ifDefined(
           this.hasDescription ? undefined : this.ariaDescription
         )}
+        title=${ifDefined(this.title)}
         @input=${this.handleInput}
         @change=${this.redispatchEvent}
       ></textarea>

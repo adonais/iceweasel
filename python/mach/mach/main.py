@@ -233,6 +233,8 @@ To see more help for a specific command, run:
         Returns the integer exit code that should be used. 0 means success. All
         other values indicate failure.
         """
+        from mozversioncontrol import StaleWorkspaceError
+
         sentry = NoopErrorReporter()
 
         stdin = sys.stdin if stdin is None else stdin
@@ -268,6 +270,14 @@ To see more help for a specific command, run:
             print("mach interrupted by signal or user action. Stopping.")
             return 1
 
+        except StaleWorkspaceError as e:
+            print(str(e), file=stderr)
+            print(
+                "\nmach cannot proceed until the jj workspace is updated.",
+                file=stderr,
+            )
+            return 1
+
         except Exception:
             # _run swallows exceptions in invoked handlers and converts them to
             # a proper exit code. So, the only scenario where we should get an
@@ -296,6 +306,8 @@ To see more help for a specific command, run:
             sys.stderr = orig_stderr
 
     def _run(self, argv):
+        from mozversioncontrol import StaleWorkspaceError
+
         if self.populate_context_handler:
             topsrcdir = Path(self.populate_context_handler("topdir"))
             from .sentry import register_sentry
@@ -421,8 +433,8 @@ To see more help for a specific command, run:
                 profile_command=args.profile_command,
                 **vars(args.command_args),
             )
-        except KeyboardInterrupt as ki:
-            raise ki
+        except (KeyboardInterrupt, StaleWorkspaceError):
+            raise
         except FailedCommandError as e:
             print(e)
             return e.exit_code
@@ -535,13 +547,13 @@ To see more help for a specific command, run:
 
             machrc, .machrc
         """
-        valid_names = ("machrc", ".machrc")
+        from mach.util import MACHRC_NAMES
 
         def find_in_dir(base: Path):
             if base.is_file():
                 return base
 
-            for name in valid_names:
+            for name in MACHRC_NAMES:
                 path = base / name
                 if path.is_file():
                     return path

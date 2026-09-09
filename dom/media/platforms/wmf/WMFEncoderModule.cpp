@@ -39,6 +39,12 @@ EncodeSupportSet WMFEncoderModule::Supports(
   if (aConfig.IsAudio()) {
     return EncodeSupportSet{};
   }
+  // Declining here rather than failing per frame lets PEMFactory fall through
+  // to an encoder that can produce the requested size. Matters for VP8 and VP9,
+  // which can express an odd width; H.264 cannot and is declined above.
+  if (!IsFrameSizeSupportedForNV12Input(aConfig.mSize)) {
+    return EncodeSupportSet{};
+  }
   if (aConfig.mScalabilityMode != ScalabilityMode::None &&
       aConfig.mCodec != CodecType::H264) {
     return EncodeSupportSet{};

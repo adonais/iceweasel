@@ -24,7 +24,9 @@ internal class NestedMenuCandidateViewHolder(
 ) : MenuCandidateViewHolder<NestedMenuCandidate>(itemView, inflater), View.OnClickListener {
 
     private val layout = itemView as ConstraintLayout
-    private val textView: TextView get() = itemView.findViewById(R.id.label)
+    private val textView: TextView
+        get() = itemView.findViewById(R.id.label)
+
     private val startIcon = MenuIconAdapter(layout, inflater, Side.START, dismiss)
     private val endIcon = MenuIconAdapter(layout, inflater, Side.END, dismiss)
 
@@ -47,7 +49,6 @@ internal class NestedMenuCandidateViewHolder(
     }
 
     companion object {
-        @LayoutRes
-        val layoutResource = R.layout.mozac_browser_menu2_candidate_nested
+        @LayoutRes val layoutResource = R.layout.mozac_browser_menu2_candidate_nested
     }
 }

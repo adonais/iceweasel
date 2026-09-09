@@ -19,27 +19,23 @@ class TermsOfUseAdvancedTargetingHelper(
     private val termsOfUseDataProvider: TermsOfUseDataProvider,
     private val systemLanguageTag: String,
 ) {
-    /**
-     * Gets the users 'points' for Advanced Targeting.
-     */
+    /** Gets the users 'points' for Advanced Targeting. */
     fun getTouPoints() = privacySettingsPoints().plus(sponsoredContentPoints())
 
     @VisibleForTesting
-    internal fun privacySettingsPoints() = with(termsOfUseDataProvider) {
-        val enabledEtpStrictMode = useStrictTrackingProtection
-        val enabledGpc = shouldEnableGlobalPrivacyControl
-        val enabledIncreasedDohProtection = isIncreasedDohProtectionEnabled()
-        val enabledHttpsOnlyMode = enabledHttpsOnlyMode()
+    internal fun privacySettingsPoints() =
+        with(termsOfUseDataProvider) {
+            val enabledEtpStrictMode = useStrictTrackingProtection
+            val enabledGpc = shouldEnableGlobalPrivacyControl
+            val enabledIncreasedDohProtection = isIncreasedDohProtectionEnabled()
+            val enabledHttpsOnlyMode = enabledHttpsOnlyMode()
 
-        when {
-            enabledEtpStrictMode ||
-                    enabledGpc ||
-                    enabledIncreasedDohProtection ||
-                    enabledHttpsOnlyMode -> 1
+            when {
+                enabledEtpStrictMode || enabledGpc || enabledIncreasedDohProtection || enabledHttpsOnlyMode -> 1
 
-            else -> 0
+                else -> 0
+            }
         }
-    }
 
     @VisibleForTesting
     internal fun sponsoredContentPoints(
@@ -53,20 +49,20 @@ class TermsOfUseAdvancedTargetingHelper(
         }
 
     @VisibleForTesting
-    internal fun hasEligibleUserOptedOutOfSponsoredShortcuts() = with(termsOfUseDataProvider) {
-        regionSupportsSponsoredShortcuts() && (!showSponsoredShortcuts || !showShortcutsFeature)
-    }
+    internal fun hasEligibleUserOptedOutOfSponsoredShortcuts() =
+        with(termsOfUseDataProvider) {
+            regionSupportsSponsoredShortcuts() && (!showSponsoredShortcuts || !showShortcutsFeature)
+        }
 
     @VisibleForTesting
-    internal fun hasEligibleUserOptedOutOfSponsoredStories() = with(termsOfUseDataProvider) {
-        regionSupportsSponsoredStories() && (!showSponsoredStories || !showStoriesFeature)
-    }
+    internal fun hasEligibleUserOptedOutOfSponsoredStories() =
+        with(termsOfUseDataProvider) {
+            regionSupportsSponsoredStories() && (!showSponsoredStories || !showStoriesFeature)
+        }
 
     @VisibleForTesting
-    internal fun regionSupportsSponsoredShortcuts() =
-        supportedSponsoredShortcutsLocales.contains(systemLanguageTag)
+    internal fun regionSupportsSponsoredShortcuts() = supportedSponsoredShortcutsLocales.contains(systemLanguageTag)
 
     @VisibleForTesting
-    internal fun regionSupportsSponsoredStories() =
-        supportedSponsoredStoriesLocales.contains(systemLanguageTag)
+    internal fun regionSupportsSponsoredStories() = supportedSponsoredStoriesLocales.contains(systemLanguageTag)
 }

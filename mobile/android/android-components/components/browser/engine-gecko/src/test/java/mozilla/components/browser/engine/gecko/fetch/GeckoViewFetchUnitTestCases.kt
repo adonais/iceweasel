@@ -5,6 +5,10 @@
 package mozilla.components.browser.engine.gecko.fetch
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.IOException
+import java.nio.charset.Charset
+import java.util.concurrent.TimeoutException
+import kotlin.test.assertIs
 import mockwebserver3.MockWebServer
 import mockwebserver3.RecordedRequest
 import mozilla.components.concept.fetch.Client
@@ -31,18 +35,12 @@ import org.mozilla.geckoview.GeckoWebExecutor
 import org.mozilla.geckoview.WebRequest
 import org.mozilla.geckoview.WebRequestError
 import org.mozilla.geckoview.WebResponse
-import java.io.IOException
-import java.nio.charset.Charset
-import java.util.concurrent.TimeoutException
-import kotlin.test.assertIs
 
 /**
- * We can't run standard JVM unit tests for GWE. Therefore, we provide both
- * instrumented tests as well as these unit tests which mock both requests
- * and responses. While these tests guard our logic to map responses to our
- * concept-fetch abstractions, they are not sufficient to guard the full
- * functionality of [GeckoViewFetchClient]. That's why end-to-end tests are
- * provided in instrumented tests.
+ * We can't run standard JVM unit tests for GWE. Therefore, we provide both instrumented tests as well as these unit
+ * tests which mock both requests and responses. While these tests guard our logic to map responses to our concept-fetch
+ * abstractions, they are not sufficient to guard the full functionality of [GeckoViewFetchClient]. That's why
+ * end-to-end tests are provided in instrumented tests.
  */
 @RunWith(AndroidJUnit4::class)
 class GeckoViewFetchUnitTestCases : FetchTestCases() {
@@ -81,10 +79,11 @@ class GeckoViewFetchUnitTestCases : FetchTestCases() {
 
     @Test
     override fun get200WithDuplicatedCacheControlResponseHeaders() {
-        val responseHeaderMap = mapOf(
-            "Cache-Control" to "no-cache, no-store",
-            "Content-Length" to "16",
-        )
+        val responseHeaderMap =
+            mapOf(
+                "Cache-Control" to "no-cache, no-store",
+                "Content-Length" to "16",
+            )
         mockResponse(200, responseHeaderMap)
 
         super.get200WithDuplicatedCacheControlResponseHeaders()
@@ -92,12 +91,13 @@ class GeckoViewFetchUnitTestCases : FetchTestCases() {
 
     @Test
     override fun get200OverridingDefaultHeaders() {
-        val headerMap = mapOf(
-            "Accept" to "text/html",
-            "Accept-Encoding" to "deflate",
-            "User-Agent" to "SuperBrowser/1.0",
-            "Connection" to "close",
-        )
+        val headerMap =
+            mapOf(
+                "Accept" to "text/html",
+                "Accept-Encoding" to "deflate",
+                "User-Agent" to "SuperBrowser/1.0",
+                "Connection" to "close",
+            )
         mockRequest(headerMap)
         mockResponse(200)
 
@@ -115,13 +115,14 @@ class GeckoViewFetchUnitTestCases : FetchTestCases() {
 
     @Test
     override fun get200WithHeaders() {
-        val requestHeaders = mapOf(
-            "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Encoding" to "gzip, deflate",
-            "Accept-Language" to "en-US,en;q=0.9",
-            "Connection" to "keep-alive",
-            "User-Agent" to "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:65.0) Gecko/20100101 Firefox/65.0",
-        )
+        val requestHeaders =
+            mapOf(
+                "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Encoding" to "gzip, deflate",
+                "Accept-Language" to "en-US,en;q=0.9",
+                "Connection" to "keep-alive",
+                "User-Agent" to "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:65.0) Gecko/20100101 Firefox/65.0",
+            )
         mockRequest(requestHeaders)
         mockResponse(200)
 
@@ -281,7 +282,10 @@ class GeckoViewFetchUnitTestCases : FetchTestCases() {
 
     @Test
     fun toResponseMustReturn200ForBlobUrls() {
-        val builder = WebResponse.Builder("blob:https://mdn.mozillademos.org/d518464c-5075-9046-aef2-9c313214ed53").statusCode(0).build()
+        val builder =
+            WebResponse.Builder("blob:https://mdn.mozillademos.org/d518464c-5075-9046-aef2-9c313214ed53")
+                .statusCode(0)
+                .build()
         assertEquals(Response.SUCCESS, builder.toResponse().status)
     }
 

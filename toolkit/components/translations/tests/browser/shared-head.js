@@ -5083,6 +5083,91 @@ async function destroyTranslationsEngine() {
   await EngineProcess.destroyTranslationsEngine();
 }
 
+/**
+ * A short engine idle timeout suitable for browser tests.
+ *
+ * @type {number}
+ */
+const TRANSLATIONS_ENGINE_CACHE_TIMEOUT_MS = 300;
+
+/** Test utility functions for translations engine lifetime. */
+class TranslationsEngineTestUtils {
+  /**
+   * Waits for the translations engine process to exit after its idle timeout.
+   *
+   * @param {LanguagePair} languagePair
+   * @returns {Promise<void>}
+   */
+  static async waitForIdleTimeout(languagePair) {
+    const engineParent = await EngineProcess.getTranslationsEngineParent();
+    const processShutdown = TestUtils.topicObserved(
+      "ipc:content-shutdown",
+      subject =>
+        subject instanceof Ci.nsIPropertyBag2 &&
+        subject.get("childID") === engineParent.childID
+    );
+
+    await engineParent.waitForEngineIdleTimeoutForTests(
+      languagePair,
+      TRANSLATIONS_ENGINE_CACHE_TIMEOUT_MS
+    );
+    await processShutdown;
+
+    ok(
+      EngineProcess.areAllEnginesTerminated(),
+      "The inference process exits after the translations engine expires."
+    );
+  }
+
+  /**
+   * Waits for a translations engine to expire while the inference process
+   * remains alive.
+   *
+   * @param {TranslationsEngineParent} engineParent
+   * @param {LanguagePair} languagePair
+   * @returns {Promise<void>}
+   */
+  static async waitForIdleTimeoutWithProcessAlive(engineParent, languagePair) {
+    await engineParent.waitForEngineIdleTimeoutForTests(
+      languagePair,
+      TRANSLATIONS_ENGINE_CACHE_TIMEOUT_MS
+    );
+
+    ok(
+      !EngineProcess.areAllEnginesTerminated(),
+      "The inference process remains alive after the translations engine expires."
+    );
+  }
+
+  /**
+   * Keeps the inference process alive independently of the translations engine.
+   *
+   * @returns {Promise<{
+   *   engineParent: TranslationsEngineParent,
+   *   release: () => Promise<void>,
+   * }>}
+   */
+  static async keepInferenceProcessAlive() {
+    const mlEngineParent = await EngineProcess.getMLEngineParent();
+    const engineParent = await EngineProcess.getTranslationsEngineParent();
+
+    ok(
+      !EngineProcess.areAllEnginesTerminated(),
+      "The independent engine actor keeps the inference process alive."
+    );
+    is(
+      engineParent.childID,
+      mlEngineParent.childID,
+      "Both engine actors use the same inference process."
+    );
+
+    return {
+      engineParent,
+      release: () => EngineProcess.destroyMLEngine(),
+    };
+  }
+}
+
 class AboutTranslationsTestUtils {
   /**
    * A collection of custom events that the about:translations document may dispatch.
@@ -5356,6 +5441,144 @@ class AboutTranslationsTestUtils {
     this.#resolveDownloads = resolveDownloads;
     this.#rejectDownloads = rejectDownloads;
     this.#autoDownloadFromRemoteSettings = autoDownloadFromRemoteSettings;
+  }
+
+  /**
+   * Verifies that about:translations can translate additional source text after
+   * its engine shuts down.
+   *
+   * @param {object} options
+   * @param {boolean} [options.keepProcessAlive=false]
+   * @param {Array<[string, any]>} [options.prefs]
+   * @param {(engineParent?: TranslationsEngineParent) => Promise<void>}
+   *   options.shutdownEngine
+   * @returns {Promise<void>}
+   */
+  static async assertTranslationAfterEngineShutdown({
+    keepProcessAlive = false,
+    prefs,
+    shutdownEngine,
+  }) {
+    const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations(
+      {
+        languagePairs: [
+          { fromLang: "en", toLang: "fr" },
+          { fromLang: "fr", toLang: "en" },
+        ],
+        prefs,
+      }
+    );
+    let processKeepAlive = null;
+
+    try {
+      processKeepAlive = keepProcessAlive
+        ? await TranslationsEngineTestUtils.keepInferenceProcessAlive()
+        : null;
+
+      const initialSourceText = "Hello world";
+
+      await aboutTranslationsTestUtils.assertEvents(
+        {
+          expected: [
+            [
+              AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
+              { sourceText: initialSourceText },
+            ],
+            [
+              AboutTranslationsTestUtils.Events.TranslationRequested,
+              { translationId: 1 },
+            ],
+            [AboutTranslationsTestUtils.Events.ShowTranslatingPlaceholder],
+          ],
+        },
+        async () => {
+          await aboutTranslationsTestUtils.setSourceLanguageSelectorValue("en");
+          await aboutTranslationsTestUtils.setTargetLanguageSelectorValue("fr");
+          await aboutTranslationsTestUtils.setSourceTextAreaValue(
+            initialSourceText
+          );
+        }
+      );
+
+      await aboutTranslationsTestUtils.assertEvents(
+        {
+          expected: [
+            [
+              AboutTranslationsTestUtils.Events.TranslationComplete,
+              { translationId: 1 },
+            ],
+          ],
+        },
+        async () => {
+          await aboutTranslationsTestUtils.resolveDownloads(1);
+        }
+      );
+
+      await aboutTranslationsTestUtils.assertTranslatedText({
+        sourceLanguage: "en",
+        targetLanguage: "fr",
+        sourceText: initialSourceText,
+      });
+
+      await shutdownEngine(processKeepAlive?.engineParent);
+
+      const updatedSourceText = "Hello again";
+
+      info("Update the source text to trigger a new translation.");
+      await aboutTranslationsTestUtils.assertEvents(
+        {
+          expected: [
+            [
+              AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
+              { sourceText: updatedSourceText },
+            ],
+            [
+              AboutTranslationsTestUtils.Events.URLUpdatedFromUI,
+              {
+                sourceLanguage: "en",
+                targetLanguage: "fr",
+                sourceText: updatedSourceText,
+              },
+            ],
+            [
+              AboutTranslationsTestUtils.Events.TranslationRequested,
+              { translationId: 2 },
+            ],
+          ],
+        },
+        async () => {
+          await aboutTranslationsTestUtils.setSourceTextAreaValue(
+            updatedSourceText
+          );
+        }
+      );
+
+      await aboutTranslationsTestUtils.assertEvents(
+        {
+          expected: [
+            [
+              AboutTranslationsTestUtils.Events.TranslationComplete,
+              { translationId: 2 },
+            ],
+          ],
+        },
+        async () => {
+          await aboutTranslationsTestUtils.resolveDownloads(1);
+        }
+      );
+
+      await aboutTranslationsTestUtils.assertTranslatedText({
+        sourceLanguage: "en",
+        targetLanguage: "fr",
+        sourceText: updatedSourceText,
+      });
+    } finally {
+      try {
+        await processKeepAlive?.release();
+      } finally {
+        await cleanup();
+      }
+    }
   }
 
   /**

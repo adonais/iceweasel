@@ -35,6 +35,11 @@ class nsFrameLoader;
 
 namespace mozilla {
 
+namespace a11y {
+class DocAccessibleParent;
+class PDocAccessibleParent;
+}  // namespace a11y
+
 namespace gfx {
 class CrossProcessPaint;
 }  // namespace gfx
@@ -423,6 +428,14 @@ class WindowGlobalParent final : public WindowContext,
 
   already_AddRefed<dom::PDigitalCredentialParent>
   AllocPDigitalCredentialParent();
+
+#ifdef ACCESSIBILITY
+  already_AddRefed<a11y::PDocAccessibleParent> AllocPDocAccessibleParent(
+      const uint64_t&, const bool&);
+  mozilla::ipc::IPCResult RecvPDocAccessibleConstructor(
+      a11y::PDocAccessibleParent* aDoc, const uint64_t& aParentID,
+      const bool& aIsPrintDoc) override;
+#endif
 
   // Spec: https://wicg.github.io/nav-speculation/prefetch.html#prefetch-record
   already_AddRefed<dom::PPrefetchRecordParent> AllocPPrefetchRecordParent(

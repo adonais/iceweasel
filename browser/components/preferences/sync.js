@@ -107,7 +107,7 @@ var gSyncPane = {
     });
 
     FxAccounts.config
-      .promiseConnectDeviceURI(SyncHelpers.getEntryPoint())
+      .promiseConnectDeviceURI("sync", SyncHelpers.getEntryPoint())
       .then(connectURI => {
         document
           .getElementById("connect-another-device")

@@ -59,7 +59,13 @@ skip-if = [
 
 ["browser_history_sidebar_glean.js"]
 
+["browser_launcher_dividers.js"]
+tags = "vertical-tabs"
+
 ["browser_launcher_hidden_restore.js"]
+tags = "vertical-tabs"
+
+["browser_launcher_splitter_expand_on_hover.js"]
 tags = "vertical-tabs"
 
 ["browser_launcher_splitter_visibility.js"]
@@ -74,6 +80,8 @@ skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1946263
 ]
 
+["browser_sidebar_animation.js"]
+
 ["browser_sidebar_collapsed_close_tab_button.js"]
 
 ["browser_sidebar_context_menu.js"]
@@ -81,6 +89,8 @@ skip-if = [
 ["browser_sidebar_escape_collapse.js"]
 
 ["browser_sidebar_expand_on_hover.js"]
+
+["browser_sidebar_focus_ring.js"]
 
 ["browser_sidebar_macmenu.js"]
 run-if = [

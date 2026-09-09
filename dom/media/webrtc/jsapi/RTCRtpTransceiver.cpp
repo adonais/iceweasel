@@ -980,8 +980,7 @@ void RTCRtpTransceiver::ToDomHeaderExtensions(
   aDetails.ForEachRTPHeaderExtension(
       [&](const SdpExtmapAttributeList::Extmap& aExtmap) {
         RTCRtpHeaderExtensionParameters ext;
-        ext.mUri.Construct(
-            NS_ConvertUTF8toUTF16(aExtmap.extensionname.c_str()));
+        ext.mUri.Construct(NS_ConvertUTF8toUTF16(aExtmap.extensionname));
         ext.mId.Construct(aExtmap.entry);
         // We do not negotiate RFC 6904 encrypted header extensions. When we do,
         // this should report encrypted=true with the inner (unwrapped) URI.
@@ -1009,7 +1008,6 @@ void RTCRtpTransceiver::SetCodecPreferences(
   nsTArray<RTCRtpCodec> aCodecsFiltered;
   OverrideRtxPreference rtxOverride =
       OverrideRtxPreference::OverrideWithDisabled;
-  ;
   bool useableCodecs = false;
 
   // kind = transciever's kind.
@@ -1076,13 +1074,17 @@ void RTCRtpTransceiver::SetCodecPreferences(
   // If we passed an empty list, we should restore the default list, including
   // RTX
 
-  mPreferredCodecs.clear();
-  std::vector<UniquePtr<JsepCodecDescription>> defaultCodecs;
+  mPreferredCodecs.Clear();
+  AutoTArray<UniquePtr<JsepCodecDescription>, 16> defaultCodecs;
 
   if (kind.EqualsLiteral("video")) {
-    PeerConnectionImpl::GetDefaultVideoCodecs(defaultCodecs, rtxOverride);
+    EnumerateDefaultVideoCodecs(
+        &defaultCodecs,
+        DefaultCodecPreferencesWithRtxOverride(mPc->mPrefs, rtxOverride));
   } else if (kind.EqualsLiteral("audio")) {
-    PeerConnectionImpl::GetDefaultAudioCodecs(defaultCodecs);
+    EnumerateDefaultAudioCodecs(
+        &defaultCodecs,
+        DefaultCodecPreferencesWithRtxOverride(mPc->mPrefs, rtxOverride));
   }
 
   if (!aCodecsFiltered.IsEmpty()) {
@@ -1122,13 +1124,13 @@ void RTCRtpTransceiver::SetCodecPreferences(
         if ((mimeType.Find(defaultCodec->mName) != kNotFound) &&
             (inputCodec.mClockRate == defaultCodec->mClock) && channelsMatch &&
             sdpFmtpLinesMatch) {
-          mPreferredCodecs.emplace_back(defaultCodec->Clone());
+          mPreferredCodecs.EmplaceBack(defaultCodec->Clone());
           break;
         }
       }
     }
   } else {
-    mPreferredCodecs.swap(defaultCodecs);
+    mPreferredCodecs = std::move(defaultCodecs);
     mPreferredCodecsInUse = false;
   }
 }

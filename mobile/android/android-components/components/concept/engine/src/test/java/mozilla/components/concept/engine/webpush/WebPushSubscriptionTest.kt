@@ -15,13 +15,14 @@ class WebPushSubscriptionTest {
         val appServerKey = byteArrayOf(10, 2, 15, 11)
         val publicKey = byteArrayOf(11, 10, 2, 15)
         val authSecret = byteArrayOf(15, 11, 10, 2)
-        val sub = WebPushSubscription(
-            scope,
-            endpoint,
-            appServerKey,
-            publicKey,
-            authSecret,
-        )
+        val sub =
+            WebPushSubscription(
+                scope,
+                endpoint,
+                appServerKey,
+                publicKey,
+                authSecret,
+            )
 
         assert(scope == sub.scope)
         assert(endpoint == sub.endpoint)
@@ -32,51 +33,56 @@ class WebPushSubscriptionTest {
 
     @Test
     fun `WebPushSubscription equals`() {
-        val sub1 = WebPushSubscription(
-            "https://mozilla.org",
-            "https://pushendpoint.mozilla.org/send/message/here",
-            byteArrayOf(10, 2, 15, 11),
-            byteArrayOf(11, 10, 2, 15),
-            byteArrayOf(15, 11, 10, 2),
-        )
-        val sub2 = WebPushSubscription(
-            "https://mozilla.org",
-            "https://pushendpoint.mozilla.org/send/message/here",
-            byteArrayOf(10, 2, 15, 11),
-            byteArrayOf(11, 10, 2, 15),
-            byteArrayOf(15, 11, 10, 2),
-        )
+        val sub1 =
+            WebPushSubscription(
+                "https://mozilla.org",
+                "https://pushendpoint.mozilla.org/send/message/here",
+                byteArrayOf(10, 2, 15, 11),
+                byteArrayOf(11, 10, 2, 15),
+                byteArrayOf(15, 11, 10, 2),
+            )
+        val sub2 =
+            WebPushSubscription(
+                "https://mozilla.org",
+                "https://pushendpoint.mozilla.org/send/message/here",
+                byteArrayOf(10, 2, 15, 11),
+                byteArrayOf(11, 10, 2, 15),
+                byteArrayOf(15, 11, 10, 2),
+            )
 
         assert(sub1 == sub2)
     }
 
     @Test
     fun `WebPushSubscription equals with optional`() {
-        val sub1 = WebPushSubscription(
-            "https://mozilla.org",
-            "https://pushendpoint.mozilla.org/send/message/here",
-            byteArrayOf(10, 2, 15, 11),
-            byteArrayOf(11, 10, 2, 15),
-            byteArrayOf(15, 11, 10, 2),
-        )
+        val sub1 =
+            WebPushSubscription(
+                "https://mozilla.org",
+                "https://pushendpoint.mozilla.org/send/message/here",
+                byteArrayOf(10, 2, 15, 11),
+                byteArrayOf(11, 10, 2, 15),
+                byteArrayOf(15, 11, 10, 2),
+            )
 
-        val sub2 = WebPushSubscription(
-            "https://mozilla.org",
-            "https://pushendpoint.mozilla.org/send/message/here",
-            null,
-            byteArrayOf(11, 10, 2, 15),
-            byteArrayOf(15, 11, 10, 2),
-        )
+        val sub2 =
+            WebPushSubscription(
+                "https://mozilla.org",
+                "https://pushendpoint.mozilla.org/send/message/here",
+                null,
+                byteArrayOf(11, 10, 2, 15),
+                byteArrayOf(15, 11, 10, 2),
+            )
 
         assert(sub1 != sub2)
 
-        val sub3 = WebPushSubscription(
-            "https://mozilla.org",
-            "https://pushendpoint.mozilla.org/send/message/here",
-            byteArrayOf(10, 2, 15),
-            byteArrayOf(11, 10, 2, 15),
-            byteArrayOf(15, 11, 10, 2),
-        )
+        val sub3 =
+            WebPushSubscription(
+                "https://mozilla.org",
+                "https://pushendpoint.mozilla.org/send/message/here",
+                byteArrayOf(10, 2, 15),
+                byteArrayOf(11, 10, 2, 15),
+                byteArrayOf(15, 11, 10, 2),
+            )
 
         val notSub = "notSub"
 
@@ -90,21 +96,23 @@ class WebPushSubscriptionTest {
 
     @Test
     fun `hashCode is generated consistently from the class data`() {
-        val sub1 = WebPushSubscription(
-            "https://mozilla.org",
-            "https://pushendpoint.mozilla.org/send/message/here",
-            byteArrayOf(10, 2, 15, 11),
-            byteArrayOf(11, 10, 2, 15),
-            byteArrayOf(15, 11, 10, 2),
-        )
+        val sub1 =
+            WebPushSubscription(
+                "https://mozilla.org",
+                "https://pushendpoint.mozilla.org/send/message/here",
+                byteArrayOf(10, 2, 15, 11),
+                byteArrayOf(11, 10, 2, 15),
+                byteArrayOf(15, 11, 10, 2),
+            )
 
-        val sub2 = WebPushSubscription(
-            "https://mozilla.org",
-            "https://pushendpoint.mozilla.org/send/message/here",
-            null,
-            byteArrayOf(11, 10, 2, 15),
-            byteArrayOf(15, 11, 10, 2),
-        )
+        val sub2 =
+            WebPushSubscription(
+                "https://mozilla.org",
+                "https://pushendpoint.mozilla.org/send/message/here",
+                null,
+                byteArrayOf(11, 10, 2, 15),
+                byteArrayOf(15, 11, 10, 2),
+            )
 
         assert(sub1.hashCode() == sub1.hashCode())
         assert(sub1.hashCode() != sub2.hashCode())

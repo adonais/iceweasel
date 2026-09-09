@@ -7,6 +7,7 @@ DEPTH      = ../..
 MODULE = nss
 
 CPPSRCS = \
+      cryptohi_mldsa_unittest.cc \
       cryptohi_unittest.cc \
       $(NULL)
 
@@ -14,7 +15,7 @@ INCLUDES += -I$(CORE_DEPTH)/gtests/google_test/gtest/include \
             -I$(CORE_DEPTH)/gtests/common \
             -I$(CORE_DEPTH)/cpputil
 
-REQUIRES = nspr gtest
+REQUIRES = nspr nss gtest cpputil
 
 PROGRAM = cryptohi_gtest
 

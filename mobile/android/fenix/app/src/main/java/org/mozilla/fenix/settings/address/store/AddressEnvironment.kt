@@ -26,15 +26,16 @@ data class AddressEnvironment(
     val getAddressStructure: suspend (countryCode: String) -> AddressStructure,
     val submitCaughtException: (Throwable) -> Unit,
 ) {
-        internal companion object {
-            val empty: AddressEnvironment
-                get() = AddressEnvironment(
-                    navigateBack = { },
+    internal companion object {
+        val empty: AddressEnvironment
+            get() =
+                AddressEnvironment(
+                    navigateBack = {},
                     createAddress = { "empty-guid" },
                     updateAddress = { _, _ -> },
-                    deleteAddress = { },
+                    deleteAddress = {},
                     getAddressStructure = { AddressStructure(listOf()) },
                     submitCaughtException = { _ -> },
                 )
-        }
     }
+}

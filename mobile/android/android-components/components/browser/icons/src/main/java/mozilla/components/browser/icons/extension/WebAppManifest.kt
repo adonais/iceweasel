@@ -11,29 +11,24 @@ import mozilla.components.browser.icons.IconRequest.Size.LAUNCHER_ADAPTIVE
 import mozilla.components.concept.engine.manifest.WebAppManifest
 import mozilla.components.concept.engine.manifest.WebAppManifest.Icon.Purpose
 
-/**
- * Creates an [IconRequest] for retrieving the icon specified in the manifest.
- */
-fun WebAppManifest.toIconRequest() = IconRequest(
-    url = startUrl,
-    size = LAUNCHER_ADAPTIVE,
-    resources = icons
-        .filter { Purpose.MASKABLE in it.purpose || Purpose.ANY in it.purpose }
-        .map { it.toIconResource() },
-    color = backgroundColor,
-)
+/** Creates an [IconRequest] for retrieving the icon specified in the manifest. */
+fun WebAppManifest.toIconRequest() =
+    IconRequest(
+        url = startUrl,
+        size = LAUNCHER_ADAPTIVE,
+        resources =
+            icons.filter { Purpose.MASKABLE in it.purpose || Purpose.ANY in it.purpose }.map { it.toIconResource() },
+        color = backgroundColor,
+    )
 
-/**
- * Creates an [IconRequest] for retrieving a monochrome icon specified in the manifest.
- */
-fun WebAppManifest.toMonochromeIconRequest() = IconRequest(
-    url = startUrl,
-    size = IconRequest.Size.DEFAULT,
-    resources = icons
-        .filter { Purpose.MONOCHROME in it.purpose }
-        .map { it.toIconResource() },
-    color = Color.WHITE,
-)
+/** Creates an [IconRequest] for retrieving a monochrome icon specified in the manifest. */
+fun WebAppManifest.toMonochromeIconRequest() =
+    IconRequest(
+        url = startUrl,
+        size = IconRequest.Size.DEFAULT,
+        resources = icons.filter { Purpose.MONOCHROME in it.purpose }.map { it.toIconResource() },
+        color = Color.WHITE,
+    )
 
 private fun WebAppManifest.Icon.toIconResource(): IconRequest.Resource {
     return IconRequest.Resource(

@@ -10,9 +10,6 @@ const { XPIExports } = ChromeUtils.importESModule(
 const { setTimeout } = ChromeUtils.importESModule(
   "resource://gre/modules/Timer.sys.mjs"
 );
-const { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
 
 AddonTestUtils.init(this);
 setupTestCommon();
@@ -49,20 +46,13 @@ function mockLangpackUpdate() {
 }
 
 add_setup(async function () {
-  // Thunderbird doesn't have one or more of the probes used in this test.
-  // Ensure the data is collected anyway.
-  Services.prefs.setBoolPref(
-    "toolkit.telemetry.testing.overrideProductsCheck",
-    true
-  );
+  Services.fog.initializeFOG();
 
   await AddonTestUtils.promiseStartupManager();
 });
 
 add_task(async function testLangpackUpdateSuccess() {
-  let histogram = TelemetryTestUtils.getAndClearHistogram(
-    "UPDATE_LANGPACK_OVERTIME"
-  );
+  Services.fog.testResetFOG();
 
   let updateDownloadNotified = false;
   let notified = waitForEvent("update-downloaded").then(
@@ -100,9 +90,9 @@ add_task(async function testLangpackUpdateSuccess() {
 
   // Because we resolved the lang pack call after the download completed a value
   // should have been recorded in telemetry.
-  let snapshot = histogram.snapshot();
-  Assert.ok(
-    !Object.values(snapshot.values).every(val => val == 0),
+  Assert.greater(
+    Glean.update.langpackOvertime.testGetValue()?.count ?? 0,
+    0,
     "Should have recorded a time"
   );
 
@@ -204,9 +194,7 @@ add_task(async function testRedownload() {
   // download the complete mar. We should only call the add-ons manager to stage
   // language packs once in this case.
   Services.prefs.setBoolPref(PREF_APP_UPDATE_STAGING_ENABLED, false);
-  let histogram = TelemetryTestUtils.getAndClearHistogram(
-    "UPDATE_LANGPACK_OVERTIME"
-  );
+  Services.fog.testResetFOG();
 
   let partialPatch = getRemotePatchString({
     type: "partial",
@@ -263,10 +251,10 @@ add_task(async function testRedownload() {
 
   // Because we resolved the lang pack call before the download completed a value
   // should not have been recorded in telemetry.
-  let snapshot = histogram.snapshot();
-  Assert.ok(
-    Object.values(snapshot.values).every(val => val == 0),
-    "Should have recorded a time"
+  Assert.equal(
+    Glean.update.langpackOvertime.testGetValue()?.count ?? 0,
+    0,
+    "Should not have recorded a time"
   );
 
   // Reload the update manager so that we can download the same update again

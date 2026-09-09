@@ -15,7 +15,8 @@ class ExtensionsTest {
     fun `GIVEN wallpapers that include the default WHEN grouped by collection THEN default will be added to classic firefox`() {
         val seasonalCollection = getSeasonalCollection("finally fall")
         val classicFirefoxWallpapers = (0..5).map { generateClassicFirefoxWallpaper("firefox$it") }
-        val seasonalWallpapers = (0..5).map { generateSeasonalWallpaper("${seasonalCollection.name}$it", seasonalCollection.name) }
+        val seasonalWallpapers =
+            (0..5).map { generateSeasonalWallpaper("${seasonalCollection.name}$it", seasonalCollection.name) }
         val allWallpapers = listOf(Wallpaper.Default) + classicFirefoxWallpapers + seasonalWallpapers
 
         val result = allWallpapers.groupByDisplayableCollection()
@@ -37,15 +38,21 @@ class ExtensionsTest {
     fun `GIVEN wallpapers with thumbnails that have not downloaded WHEN grouped by collection THEN wallpapers without thumbnails will not be included`() {
         val seasonalCollection = getSeasonalCollection("finally fall")
         val classicFirefoxWallpapers = (0..5).map { generateClassicFirefoxWallpaper("firefox$it") }
-        val downloadedSeasonalWallpapers = (0..5).map { generateSeasonalWallpaper("${seasonalCollection.name}$it", seasonalCollection.name) }
-        val nonDownloadedSeasonalWallpapers = (0..5).map {
-            generateSeasonalWallpaper(
-                "${seasonalCollection.name}$it",
-                seasonalCollection.name,
-                Wallpaper.ImageFileState.Error,
-            )
-        }
-        val allWallpapers = listOf(Wallpaper.Default) + classicFirefoxWallpapers + downloadedSeasonalWallpapers + nonDownloadedSeasonalWallpapers
+        val downloadedSeasonalWallpapers =
+            (0..5).map { generateSeasonalWallpaper("${seasonalCollection.name}$it", seasonalCollection.name) }
+        val nonDownloadedSeasonalWallpapers =
+            (0..5).map {
+                generateSeasonalWallpaper(
+                    "${seasonalCollection.name}$it",
+                    seasonalCollection.name,
+                    Wallpaper.ImageFileState.Error,
+                )
+            }
+        val allWallpapers =
+            listOf(Wallpaper.Default) +
+                classicFirefoxWallpapers +
+                downloadedSeasonalWallpapers +
+                nonDownloadedSeasonalWallpapers
 
         val result = allWallpapers.groupByDisplayableCollection()
 
@@ -57,12 +64,13 @@ class ExtensionsTest {
     @Test
     fun `GIVEN that classic firefox thumbnails fail to download WHEN grouped by collection THEN default is still available`() {
         val seasonalCollection = getSeasonalCollection("finally fall")
-        val downloadedSeasonalWallpapers = (0..5).map {
-            generateSeasonalWallpaper(
-                "${seasonalCollection.name}$it",
-                seasonalCollection.name,
-            )
-        }
+        val downloadedSeasonalWallpapers =
+            (0..5).map {
+                generateSeasonalWallpaper(
+                    "${seasonalCollection.name}$it",
+                    seasonalCollection.name,
+                )
+            }
         val allWallpapers = listOf(Wallpaper.Default) + downloadedSeasonalWallpapers
 
         val result = allWallpapers.groupByDisplayableCollection()
@@ -75,19 +83,22 @@ class ExtensionsTest {
     @Test
     fun `GIVEN two collections of appropriate size WHEN fetched for onboarding THEN result contains 3 seasonal and 1 classic`() {
         val seasonalCollectionName = "finally fall"
-        val seasonalWallpapers = (0..5).map { generateSeasonalWallpaper("${seasonalCollectionName}$it", seasonalCollectionName) }
+        val seasonalWallpapers =
+            (0..5).map { generateSeasonalWallpaper("${seasonalCollectionName}$it", seasonalCollectionName) }
         val classicFirefoxWallpapers = (0..5).map { generateClassicFirefoxWallpaper("firefox$it") }
-        val allWallpapers = listOf(Wallpaper.EdgeToEdge, Wallpaper.Default) + classicFirefoxWallpapers + seasonalWallpapers
+        val allWallpapers =
+            listOf(Wallpaper.EdgeToEdge, Wallpaper.Default) + classicFirefoxWallpapers + seasonalWallpapers
 
         val result = allWallpapers.getWallpapersForOnboarding()
-        val expected = listOf(
-            Wallpaper.EdgeToEdge,
-            Wallpaper.Default,
-            generateSeasonalWallpaper("finally fall0", "finally fall"),
-            generateSeasonalWallpaper("finally fall1", "finally fall"),
-            generateSeasonalWallpaper("finally fall2", "finally fall"),
-            generateClassicFirefoxWallpaper("firefox0"),
-        )
+        val expected =
+            listOf(
+                Wallpaper.EdgeToEdge,
+                Wallpaper.Default,
+                generateSeasonalWallpaper("finally fall0", "finally fall"),
+                generateSeasonalWallpaper("finally fall1", "finally fall"),
+                generateSeasonalWallpaper("finally fall2", "finally fall"),
+                generateClassicFirefoxWallpaper("firefox0"),
+            )
 
         assertEquals(expected, result)
     }
@@ -106,19 +117,26 @@ class ExtensionsTest {
         val seasonalWallpapersE = generateSeasonalWallpaper("${seasonalCollectionEName}0", seasonalCollectionEName)
 
         val classicFirefoxWallpapers = (0..5).map { generateClassicFirefoxWallpaper("firefox$it") }
-        val allWallpapers = listOf(Wallpaper.EdgeToEdge, Wallpaper.Default) + classicFirefoxWallpapers + seasonalWallpapers +
-            seasonalWallpaperB + seasonalWallpapersC + seasonalWallpaperD + seasonalWallpapersE
+        val allWallpapers =
+            listOf(Wallpaper.EdgeToEdge, Wallpaper.Default) +
+                classicFirefoxWallpapers +
+                seasonalWallpapers +
+                seasonalWallpaperB +
+                seasonalWallpapersC +
+                seasonalWallpaperD +
+                seasonalWallpapersE
 
         val result = allWallpapers.getWallpapersForOnboarding()
 
-        val expected = listOf(
-            Wallpaper.EdgeToEdge,
-            Wallpaper.Default,
-            generateSeasonalWallpaper("finally winter0", "finally winter"),
-            generateSeasonalWallpaper("finally spring0", "finally spring"),
-            generateSeasonalWallpaper("finally summer0", "finally summer"),
-            generateClassicFirefoxWallpaper("firefox0"),
-        )
+        val expected =
+            listOf(
+                Wallpaper.EdgeToEdge,
+                Wallpaper.Default,
+                generateSeasonalWallpaper("finally winter0", "finally winter"),
+                generateSeasonalWallpaper("finally spring0", "finally spring"),
+                generateSeasonalWallpaper("finally summer0", "finally summer"),
+                generateClassicFirefoxWallpaper("firefox0"),
+            )
 
         assertEquals(expected, result)
     }
@@ -128,18 +146,20 @@ class ExtensionsTest {
         val seasonalCollectionName = "finally fall"
         val seasonalWallpaper = generateSeasonalWallpaper("${seasonalCollectionName}0", seasonalCollectionName)
         val classicFirefoxWallpapers = (0..5).map { generateClassicFirefoxWallpaper("firefox$it") }
-        val allWallpapers = listOf(Wallpaper.EdgeToEdge, Wallpaper.Default) + classicFirefoxWallpapers + seasonalWallpaper
+        val allWallpapers =
+            listOf(Wallpaper.EdgeToEdge, Wallpaper.Default) + classicFirefoxWallpapers + seasonalWallpaper
 
         val result = allWallpapers.getWallpapersForOnboarding()
 
-        val expected = listOf(
-            Wallpaper.EdgeToEdge,
-            Wallpaper.Default,
-            generateSeasonalWallpaper("finally fall0", "finally fall"),
-            generateClassicFirefoxWallpaper("firefox0"),
-            generateClassicFirefoxWallpaper("firefox1"),
-            generateClassicFirefoxWallpaper("firefox2"),
-        )
+        val expected =
+            listOf(
+                Wallpaper.EdgeToEdge,
+                Wallpaper.Default,
+                generateSeasonalWallpaper("finally fall0", "finally fall"),
+                generateClassicFirefoxWallpaper("firefox0"),
+                generateClassicFirefoxWallpaper("firefox1"),
+                generateClassicFirefoxWallpaper("firefox2"),
+            )
 
         assertEquals(expected, result)
     }
@@ -151,14 +171,15 @@ class ExtensionsTest {
 
         val result = allWallpapers.getWallpapersForOnboarding()
 
-        val expected = listOf(
-            Wallpaper.EdgeToEdge,
-            Wallpaper.Default,
-            generateClassicFirefoxWallpaper("firefox0"),
-            generateClassicFirefoxWallpaper("firefox1"),
-            generateClassicFirefoxWallpaper("firefox2"),
-            generateClassicFirefoxWallpaper("firefox3"),
-        )
+        val expected =
+            listOf(
+                Wallpaper.EdgeToEdge,
+                Wallpaper.Default,
+                generateClassicFirefoxWallpaper("firefox0"),
+                generateClassicFirefoxWallpaper("firefox1"),
+                generateClassicFirefoxWallpaper("firefox2"),
+                generateClassicFirefoxWallpaper("firefox3"),
+            )
         assertEquals(expected, result)
     }
 
@@ -176,19 +197,21 @@ class ExtensionsTest {
     @Test
     fun `GIVEN no items in classic collection and some seasonal WHEN grouped for onboarding THEN result contains all seasonal`() {
         val seasonalCollectionName = "finally fall"
-        val seasonalWallpapers = (0..5).map { generateSeasonalWallpaper("${seasonalCollectionName}$it", seasonalCollectionName) }
+        val seasonalWallpapers =
+            (0..5).map { generateSeasonalWallpaper("${seasonalCollectionName}$it", seasonalCollectionName) }
         val allWallpapers = listOf(Wallpaper.EdgeToEdge, Wallpaper.Default) + seasonalWallpapers
 
         val result = allWallpapers.getWallpapersForOnboarding()
 
-        val expected = listOf(
-            Wallpaper.EdgeToEdge,
-            Wallpaper.Default,
-            generateSeasonalWallpaper("finally fall0", "finally fall"),
-            generateSeasonalWallpaper("finally fall1", "finally fall"),
-            generateSeasonalWallpaper("finally fall2", "finally fall"),
-            generateSeasonalWallpaper("finally fall3", "finally fall"),
-        )
+        val expected =
+            listOf(
+                Wallpaper.EdgeToEdge,
+                Wallpaper.Default,
+                generateSeasonalWallpaper("finally fall0", "finally fall"),
+                generateSeasonalWallpaper("finally fall1", "finally fall"),
+                generateSeasonalWallpaper("finally fall2", "finally fall"),
+                generateSeasonalWallpaper("finally fall3", "finally fall"),
+            )
 
         assertEquals(expected, result)
     }
@@ -206,54 +229,59 @@ class ExtensionsTest {
     @Test
     fun `GIVEN edge-to-edge is not in available wallpapers WHEN grouped for onboarding THEN edge-to-edge is not in result`() {
         val seasonalCollectionName = "finally fall"
-        val seasonalWallpapers = (0..5).map { generateSeasonalWallpaper("${seasonalCollectionName}$it", seasonalCollectionName) }
+        val seasonalWallpapers =
+            (0..5).map { generateSeasonalWallpaper("${seasonalCollectionName}$it", seasonalCollectionName) }
         val classicFirefoxWallpapers = (0..5).map { generateClassicFirefoxWallpaper("firefox$it") }
         val allWallpapers = listOf(Wallpaper.Default) + classicFirefoxWallpapers + seasonalWallpapers
 
-        val expected = listOf(
-            Wallpaper.Default,
-            generateSeasonalWallpaper("finally fall0", "finally fall"),
-            generateSeasonalWallpaper("finally fall1", "finally fall"),
-            generateSeasonalWallpaper("finally fall2", "finally fall"),
-            generateClassicFirefoxWallpaper("firefox0"),
-            generateClassicFirefoxWallpaper("firefox1"),
-        )
+        val expected =
+            listOf(
+                Wallpaper.Default,
+                generateSeasonalWallpaper("finally fall0", "finally fall"),
+                generateSeasonalWallpaper("finally fall1", "finally fall"),
+                generateSeasonalWallpaper("finally fall2", "finally fall"),
+                generateClassicFirefoxWallpaper("firefox0"),
+                generateClassicFirefoxWallpaper("firefox1"),
+            )
 
         val result = allWallpapers.getWallpapersForOnboarding()
         assertEquals(expected, result)
     }
 
-    private fun generateClassicFirefoxWallpaper(name: String) = Wallpaper(
-        name = name,
-        textColor = 0L,
-        cardColorLight = 0L,
-        cardColorDark = 0L,
-        thumbnailFileState = Wallpaper.ImageFileState.Downloaded,
-        assetsFileState = Wallpaper.ImageFileState.Downloaded,
-        collection = classicCollection,
-    )
+    private fun generateClassicFirefoxWallpaper(name: String) =
+        Wallpaper(
+            name = name,
+            textColor = 0L,
+            cardColorLight = 0L,
+            cardColorDark = 0L,
+            thumbnailFileState = Wallpaper.ImageFileState.Downloaded,
+            assetsFileState = Wallpaper.ImageFileState.Downloaded,
+            collection = classicCollection,
+        )
 
-    private fun getSeasonalCollection(name: String) = Wallpaper.Collection(
-        name = name,
-        heading = null,
-        description = null,
-        learnMoreUrl = null,
-        availableLocales = null,
-        startDate = null,
-        endDate = null,
-    )
+    private fun getSeasonalCollection(name: String) =
+        Wallpaper.Collection(
+            name = name,
+            heading = null,
+            description = null,
+            learnMoreUrl = null,
+            availableLocales = null,
+            startDate = null,
+            endDate = null,
+        )
 
     private fun generateSeasonalWallpaper(
         wallpaperName: String,
         collectionName: String,
         thumbnailState: Wallpaper.ImageFileState = Wallpaper.ImageFileState.Downloaded,
-    ) = Wallpaper(
-        name = wallpaperName,
-        textColor = 0L,
-        cardColorLight = 0L,
-        cardColorDark = 0L,
-        thumbnailFileState = thumbnailState,
-        assetsFileState = Wallpaper.ImageFileState.Downloaded,
-        collection = getSeasonalCollection(collectionName),
-    )
+    ) =
+        Wallpaper(
+            name = wallpaperName,
+            textColor = 0L,
+            cardColorLight = 0L,
+            cardColorDark = 0L,
+            thumbnailFileState = thumbnailState,
+            assetsFileState = Wallpaper.ImageFileState.Downloaded,
+            collection = getSeasonalCollection(collectionName),
+        )
 }

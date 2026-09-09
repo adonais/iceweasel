@@ -35,6 +35,10 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import java.io.File
+import java.nio.ByteBuffer
+import java.util.concurrent.ExecutorService
+import kotlin.test.assertNotNull
 import mozilla.components.feature.qr.QrAnalyzer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -47,10 +51,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
-import java.io.File
-import java.nio.ByteBuffer
-import java.util.concurrent.ExecutorService
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class LensCameraFragmentTest {
@@ -311,14 +311,15 @@ class LensCameraFragmentTest {
 
     @Test
     fun `GIVEN big-enough sizes with matching aspect ratio WHEN chooseOptimalSize is called THEN smallest matching size is returned`() {
-        val size = LensCameraFragment.chooseOptimalSize(
-            arrayOf(Size(640, 480), Size(1024, 768)),
-            640,
-            480,
-            1920,
-            1080,
-            Size(4, 3),
-        )
+        val size =
+            LensCameraFragment.chooseOptimalSize(
+                arrayOf(Size(640, 480), Size(1024, 768)),
+                640,
+                480,
+                1920,
+                1080,
+                Size(4, 3),
+            )
 
         assertEquals(640, size.width)
         assertEquals(480, size.height)
@@ -326,14 +327,15 @@ class LensCameraFragmentTest {
 
     @Test
     fun `GIVEN no big-enough sizes WHEN chooseOptimalSize is called THEN largest not-big-enough size is returned`() {
-        val size = LensCameraFragment.chooseOptimalSize(
-            arrayOf(Size(320, 240), Size(640, 480)),
-            1024,
-            768,
-            1920,
-            1080,
-            Size(4, 3),
-        )
+        val size =
+            LensCameraFragment.chooseOptimalSize(
+                arrayOf(Size(320, 240), Size(640, 480)),
+                1024,
+                768,
+                1920,
+                1080,
+                Size(4, 3),
+            )
 
         assertEquals(640, size.width)
         assertEquals(480, size.height)
@@ -341,14 +343,15 @@ class LensCameraFragmentTest {
 
     @Test
     fun `GIVEN no aspect ratio match WHEN chooseOptimalSize is called THEN first choice is returned`() {
-        val size = LensCameraFragment.chooseOptimalSize(
-            arrayOf(Size(1024, 768), Size(786, 480)),
-            2048,
-            1024,
-            1920,
-            1080,
-            Size(16, 9),
-        )
+        val size =
+            LensCameraFragment.chooseOptimalSize(
+                arrayOf(Size(1024, 768), Size(786, 480)),
+                2048,
+                1024,
+                1920,
+                1080,
+                Size(16, 9),
+            )
 
         assertEquals(1024, size.width)
         assertEquals(768, size.height)
@@ -356,14 +359,15 @@ class LensCameraFragmentTest {
 
     @Test
     fun `GIVEN sizes exceeding max dimensions WHEN chooseOptimalSize is called THEN oversized entries are filtered out`() {
-        val size = LensCameraFragment.chooseOptimalSize(
-            arrayOf(Size(2560, 1920), Size(1024, 768), Size(640, 480)),
-            640,
-            480,
-            1920,
-            1080,
-            Size(4, 3),
-        )
+        val size =
+            LensCameraFragment.chooseOptimalSize(
+                arrayOf(Size(2560, 1920), Size(1024, 768), Size(640, 480)),
+                640,
+                480,
+                1920,
+                1080,
+                Size(4, 3),
+            )
 
         assertEquals(640, size.width)
         assertEquals(480, size.height)
@@ -373,9 +377,8 @@ class LensCameraFragmentTest {
 
     @Test
     fun `GIVEN sizes within MAX_CAPTURE_DIMENSION WHEN chooseCaptureSizeFromList is called THEN largest valid size is returned`() {
-        val size = LensCameraFragment.chooseCaptureSizeFromList(
-            arrayOf(Size(3264, 2448), Size(1920, 1080), Size(640, 480)),
-        )
+        val size =
+            LensCameraFragment.chooseCaptureSizeFromList(arrayOf(Size(3264, 2448), Size(1920, 1080), Size(640, 480)))
 
         assertEquals(3264, size.width)
         assertEquals(2448, size.height)
@@ -383,9 +386,7 @@ class LensCameraFragmentTest {
 
     @Test
     fun `GIVEN sizes exceeding MAX_CAPTURE_DIMENSION WHEN chooseCaptureSizeFromList is called THEN oversized entries are filtered out`() {
-        val size = LensCameraFragment.chooseCaptureSizeFromList(
-            arrayOf(Size(5000, 4000), Size(3264, 2448)),
-        )
+        val size = LensCameraFragment.chooseCaptureSizeFromList(arrayOf(Size(5000, 4000), Size(3264, 2448)))
 
         assertEquals(3264, size.width)
         assertEquals(2448, size.height)
@@ -398,9 +399,7 @@ class LensCameraFragmentTest {
 
     @Test
     fun `GIVEN all sizes exceed MAX_CAPTURE_DIMENSION WHEN chooseCaptureSizeFromList is called THEN first element is returned as fallback`() {
-        val size = LensCameraFragment.chooseCaptureSizeFromList(
-            arrayOf(Size(5000, 5000), Size(4500, 4500)),
-        )
+        val size = LensCameraFragment.chooseCaptureSizeFromList(arrayOf(Size(5000, 5000), Size(4500, 4500)))
 
         assertEquals(5000, size.width)
         assertEquals(5000, size.height)
@@ -435,7 +434,7 @@ class LensCameraFragmentTest {
         val mockWindowInsets: WindowInsets = mockk()
         every {
             mockWindowInsets.getInsetsIgnoringVisibility(
-                WindowInsetsCompat.Type.navigationBars() or WindowInsetsCompat.Type.displayCutout(),
+                WindowInsetsCompat.Type.navigationBars() or WindowInsetsCompat.Type.displayCutout()
             )
         } returns insets
 

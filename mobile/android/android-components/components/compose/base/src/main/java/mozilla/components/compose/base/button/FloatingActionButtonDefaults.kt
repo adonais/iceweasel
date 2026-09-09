@@ -9,36 +9,32 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 
-/**
- * Contains the default values used by Acorn FloatingActionButtons.
- */
+/** Contains the default values used by Acorn FloatingActionButtons. */
 object FloatingActionButtonDefaults {
 
-    /**
-     * Returns the colors for a Primary FAB.
-     */
+    /** Returns the colors for a Primary FAB. */
     @Composable
     @ReadOnlyComposable
     fun colorsPrimary(
         containerColor: Color = MaterialTheme.colorScheme.primaryContainer,
         contentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
-    ) = FloatingActionButtonColors(
-        containerColor = containerColor,
-        contentColor = contentColor,
-    )
+    ) =
+        FloatingActionButtonColors(
+            containerColor = containerColor,
+            contentColor = contentColor,
+        )
 
-    /**
-     * Returns the colors for a FAB that is disabled.
-     */
+    /** Returns the colors for a FAB that is disabled. */
     @Composable
     @ReadOnlyComposable
     fun colorsDisabled(
         containerColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
         contentColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-    ) = FloatingActionButtonColors(
-        containerColor = containerColor,
-        contentColor = contentColor,
-    )
+    ) =
+        FloatingActionButtonColors(
+            containerColor = containerColor,
+            contentColor = contentColor,
+        )
 }
 
 /**

@@ -9,7 +9,6 @@ import mozilla.components.browser.tabstray.TabsTray
 import mozilla.components.concept.engine.mediasession.MediaSession
 
 /**
- *
  * An internal only data class that is used for collecting the values to observe in the [TabsTray].
  *
  * @property id Unique ID of the tab.
@@ -21,8 +20,8 @@ import mozilla.components.concept.engine.mediasession.MediaSession
  * @property controller Current media session controller for the tab (or null)
  * @property lastAccess The last time this tab was selected.
  * @property createdAt When the tab was first created.
- * @property searchTerm the last used search term for this tab or from the originating tab, or an
- * empty string if no search was executed.
+ * @property searchTerm the last used search term for this tab or from the originating tab, or an empty string if no
+ *   search was executed.
  */
 internal data class Tab(
     val id: String,

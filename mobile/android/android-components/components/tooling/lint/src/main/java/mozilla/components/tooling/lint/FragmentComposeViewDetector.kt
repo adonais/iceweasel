@@ -15,6 +15,8 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.TextFormat
 import com.intellij.psi.PsiQualifiedNamedElement
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 import org.jetbrains.uast.UBlockExpression
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
@@ -27,62 +29,71 @@ import org.jetbrains.uast.UastCallKind
 import org.jetbrains.uast.skipParenthesizedExprDown
 import org.jetbrains.uast.tryResolve
 import org.jetbrains.uast.visitor.AbstractUastVisitor
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.contract
 
 /**
- * Detects when `Fragment.onCreateView` directly returns a `ComposeView` and suggests
- * using `Fragment.content {}` from `androidx.fragment:fragment-compose` instead.
+ * Detects when `Fragment.onCreateView` directly returns a `ComposeView` and suggests using `Fragment.content {}` from
+ * `androidx.fragment:fragment-compose` instead.
  *
- * In the simple case where it can detect that the required `ViewCompositionStrategy`
- * isn't missing, it only reports a warning (i.e. you won't get backed out).
- * If it's more complicated or the `ViewCompositionStrategy` is actually missing, it's an error.
+ * In the simple case where it can detect that the required `ViewCompositionStrategy` isn't missing, it only reports a
+ * warning (i.e. you won't get backed out). If it's more complicated or the `ViewCompositionStrategy` is actually
+ * missing, it's an error.
  */
 class FragmentComposeViewDetector : Detector(), SourceCodeScanner {
 
     companion object {
-        private val Implementation = Implementation(
-            FragmentComposeViewDetector::class.java,
-            Scope.JAVA_FILE_SCOPE,
-        )
+        private val Implementation =
+            Implementation(
+                FragmentComposeViewDetector::class.java,
+                Scope.JAVA_FILE_SCOPE,
+            )
 
-        private val ISSUE_MISSING_VIEW_COMPOSITION_STRATEGY: Issue = Issue.create(
-            id = "MissingViewCompositionStrategy",
-            briefDescription = """
-                Use `content {}` to avoid a memory leak caused by missing \
-                `setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)`.
-            """.trimIndent(),
-            explanation = """
-                When a `ComposeView` is returned from `onCreateView()` without calling \
-                `setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)`, \
-                the composition is not disposed when the `Fragment`'s view is destroyed, \
-                which can leak memory. Prefer `Fragment.content {}` from \
-                `androidx.fragment:fragment-compose`, which sets the correct strategy \
-                automatically.
-            """.trimIndent(),
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            implementation = Implementation,
-        )
+        private val ISSUE_MISSING_VIEW_COMPOSITION_STRATEGY: Issue =
+            Issue.create(
+                id = "MissingViewCompositionStrategy",
+                briefDescription =
+                    """
+                    Use `content {}` to avoid a memory leak caused by missing \
+                    `setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)`.
+                    """
+                        .trimIndent(),
+                explanation =
+                    """
+                    When a `ComposeView` is returned from `onCreateView()` without calling \
+                    `setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)`, \
+                    the composition is not disposed when the `Fragment`'s view is destroyed, \
+                    which can leak memory. Prefer `Fragment.content {}` from \
+                    `androidx.fragment:fragment-compose`, which sets the correct strategy \
+                    automatically.
+                    """
+                        .trimIndent(),
+                category = Category.CORRECTNESS,
+                priority = 6,
+                severity = Severity.ERROR,
+                implementation = Implementation,
+            )
 
-        private val ISSUE_USE_FRAGMENT_CONTENT: Issue = Issue.create(
-            id = "UseFragmentContent",
-            briefDescription = """
-                Prefer `content {}` instead of manually constructing a `ComposeView` \
-                in `onCreateView()`.
-            """.trimIndent(),
-            explanation = """
-                Manually creating a `ComposeView` requires boilerplate, e.g setting the correct \
-                `ViewCompositionStrategy`. Forgetting it can result in memory leaks. \
-                `Fragment.content {}` extension function from `androidx.fragment:fragment-compose` \
-                is less verbose and helps to avoid this foot-gun.
-            """.trimIndent(),
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.WARNING,
-            implementation = Implementation,
-        )
+        private val ISSUE_USE_FRAGMENT_CONTENT: Issue =
+            Issue.create(
+                id = "UseFragmentContent",
+                briefDescription =
+                    """
+                    Prefer `content {}` instead of manually constructing a `ComposeView` \
+                    in `onCreateView()`.
+                    """
+                        .trimIndent(),
+                explanation =
+                    """
+                    Manually creating a `ComposeView` requires boilerplate, e.g setting the correct \
+                    `ViewCompositionStrategy`. Forgetting it can result in memory leaks. \
+                    `Fragment.content {}` extension function from `androidx.fragment:fragment-compose` \
+                    is less verbose and helps to avoid this foot-gun.
+                    """
+                        .trimIndent(),
+                category = Category.CORRECTNESS,
+                priority = 6,
+                severity = Severity.WARNING,
+                implementation = Implementation,
+            )
 
         val ISSUES = listOf(ISSUE_MISSING_VIEW_COMPOSITION_STRATEGY, ISSUE_USE_FRAGMENT_CONTENT)
     }
@@ -92,8 +103,9 @@ class FragmentComposeViewDetector : Detector(), SourceCodeScanner {
     override fun createUastHandler(context: JavaContext): UElementHandler {
         return object : UElementHandler() {
             override fun visitMethod(node: UMethod) {
-                if (node.name == "onCreateView" &&
-                    context.evaluator.isMemberInSubClassOf(node, "androidx.fragment.app.Fragment")
+                if (
+                    node.name == "onCreateView" &&
+                        context.evaluator.isMemberInSubClassOf(node, "androidx.fragment.app.Fragment")
                 ) {
                     node.uastBody?.accept(OnCreateViewVisitor(context))
                 }
@@ -111,9 +123,11 @@ class FragmentComposeViewDetector : Detector(), SourceCodeScanner {
                 composeViewConstructor = returned
                 missingViewCompositionStrategy = true
             } else {
-                val receiver = (returned as? UQualifiedReferenceExpression)?.receiver
-                    ?.skipParenthesizedExprDown()
-                    ?.skipQualifiedName()
+                val receiver =
+                    (returned as? UQualifiedReferenceExpression)
+                        ?.receiver
+                        ?.skipParenthesizedExprDown()
+                        ?.skipQualifiedName()
                 val selector = (returned as? UQualifiedReferenceExpression)?.selector
                 if (receiver.isComposeViewConstructor() && selector.isApply()) {
                     composeViewConstructor = receiver
@@ -125,19 +139,21 @@ class FragmentComposeViewDetector : Detector(), SourceCodeScanner {
             }
 
             if (composeViewConstructor != null) {
-                val issue = if (missingViewCompositionStrategy) {
-                    ISSUE_MISSING_VIEW_COMPOSITION_STRATEGY
-                } else {
-                    ISSUE_USE_FRAGMENT_CONTENT
-                }
+                val issue =
+                    if (missingViewCompositionStrategy) {
+                        ISSUE_MISSING_VIEW_COMPOSITION_STRATEGY
+                    } else {
+                        ISSUE_USE_FRAGMENT_CONTENT
+                    }
                 context.report(
                     issue = issue,
                     scope = composeViewConstructor,
-                    location = context.getCallLocation(
-                        call = composeViewConstructor,
-                        includeReceiver = false,
-                        includeArguments = false,
-                    ),
+                    location =
+                        context.getCallLocation(
+                            call = composeViewConstructor,
+                            includeReceiver = false,
+                            includeArguments = false,
+                        ),
                     message = issue.getBriefDescription(TextFormat.TEXT),
                 )
             }
@@ -173,7 +189,9 @@ class FragmentComposeViewDetector : Detector(), SourceCodeScanner {
         private fun UCallExpression.hasCorrectViewCompositionStrategy(): Boolean {
             val lambda = valueArguments.lastOrNull() as? ULambdaExpression
             val body = lambda?.body as? UBlockExpression
-            return body?.expressions.orEmpty()
+            return body
+                ?.expressions
+                .orEmpty()
                 .map { it.skipParenthesizedExprDown().skipQualifiedName().skipReturn() }
                 .filterIsInstance<UCallExpression>()
                 .any { it.isCorrectSetViewCompositionStrategy() }
@@ -186,8 +204,8 @@ class FragmentComposeViewDetector : Detector(), SourceCodeScanner {
         }
 
         /**
-         * `DisposeOnViewTreeLifecycleDestroyed` is a Kotlin `object`, so any reference to
-         * it has the singleton class itself as its expression type.
+         * `DisposeOnViewTreeLifecycleDestroyed` is a Kotlin `object`, so any reference to it has the singleton class
+         * itself as its expression type.
          */
         private fun UExpression.isDisposeOnViewTreeLifecycleDestroyed(): Boolean {
             return getExpressionType()?.canonicalText ==
@@ -195,9 +213,7 @@ class FragmentComposeViewDetector : Detector(), SourceCodeScanner {
         }
 
         private fun UExpression.skipQualifiedName(): UExpression {
-            return if (this is UQualifiedReferenceExpression &&
-                receiver.tryResolve() is PsiQualifiedNamedElement
-            ) {
+            return if (this is UQualifiedReferenceExpression && receiver.tryResolve() is PsiQualifiedNamedElement) {
                 selector
             } else {
                 this

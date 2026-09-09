@@ -35,11 +35,13 @@ fun CollectionsMigrationPromoCard(
         description = stringResource(R.string.collections_migration_homepage_card_message),
         modifier = modifier,
         title = stringResource(R.string.collections_migration_homepage_banner_title),
-        footer = linkText to LinkTextState(
-            text = linkText,
-            url = "",
-            onClick = { onClick() },
-        ),
+        footer =
+            linkText to
+                LinkTextState(
+                    text = linkText,
+                    url = "",
+                    onClick = { onClick() },
+                ),
         illustration = {
             Image(
                 painter = painterResource(R.drawable.mozac_ic_kit_tab_groups),
@@ -47,10 +49,11 @@ fun CollectionsMigrationPromoCard(
             )
         },
         verticalAlignment = Alignment.CenterVertically,
-        colors = PromoCardColors.promoCardColors(
-            backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-            actionsTextColor = MaterialTheme.colorScheme.tertiary,
-        ),
+        colors =
+            PromoCardColors.promoCardColors(
+                backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+                actionsTextColor = MaterialTheme.colorScheme.tertiary,
+            ),
     )
 }
 
@@ -58,8 +61,6 @@ fun CollectionsMigrationPromoCard(
 @PreviewLightDark
 private fun CollectionsMigrationPromoCardPreview() {
     FirefoxTheme {
-        CollectionsMigrationPromoCard(
-            onClick = {},
-        )
+        CollectionsMigrationPromoCard(onClick = {})
     }
 }

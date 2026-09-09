@@ -4,18 +4,18 @@
 
 package mozilla.components.feature.downloads.filewriter
 
-import mozilla.components.browser.state.state.content.DownloadState
 import java.io.OutputStream
+import mozilla.components.browser.state.state.content.DownloadState
 
 /**
- * Interface for handling the creation of [OutputStream]s for downloads,
- * abstracting the differences between Scoped Storage and Legacy storage.
+ * Interface for handling the creation of [OutputStream]s for downloads, abstracting the differences between Scoped
+ * Storage and Legacy storage.
  */
 interface DownloadFileWriter {
 
     /**
-     * Creates an output stream on the local filesystem, then informs the system that a download
-     * is complete after [block] is run.
+     * Creates an output stream on the local filesystem, then informs the system that a download is complete after
+     * [block] is run.
      *
      * Encapsulates different behaviour depending on the SDK version.
      *

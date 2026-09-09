@@ -88,8 +88,9 @@ add_task(async function test_profiler_icon_button() {
     "the Profiler image button can be focused"
   );
 
-  // Skip the rest if the profiler was already active when this test started:
-  if (!Services.profiler.IsActive()) {
+  // Skip the rest if the profiler was already active when this test started, or
+  // on TSan where starting the profiler deadlocks (bug 1885381).
+  if (!Services.profiler.IsActive() && !AppConstants.TSAN) {
     let waitForPressed = BrowserTestUtils.waitForMutationCondition(
       profilerButton,
       { attributeFilter: ["aria-pressed"] },

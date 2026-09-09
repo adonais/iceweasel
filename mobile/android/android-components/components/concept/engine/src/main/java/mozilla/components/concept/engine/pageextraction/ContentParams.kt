@@ -7,9 +7,12 @@ package mozilla.components.concept.engine.pageextraction
 /**
  * Options for controlling how text is extracted from a page.
  *
- * @property removeBoilerplate When true, attempts to remove boilerplate content from the page
- *   using reader mode.
+ * @property removeBoilerplate When true, attempts to remove boilerplate content from the page using reader mode.
+ * @property useSimpleText When true, returns plain prose instead of the default markdown-annotated text. Links
+ *   contribute their text but not their target, and whitespace within a paragraph is collapsed, while the breaks
+ *   between paragraphs are kept.
  */
 data class ContentParams(
     val removeBoilerplate: Boolean = false,
+    val useSimpleText: Boolean = false,
 )

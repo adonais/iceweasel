@@ -37,19 +37,20 @@ class AddressSelectBarTest {
 
     private lateinit var addressSelectBar: AddressSelectBar
 
-    private val address = Address(
-        guid = "1",
-        name = "Jane Marie Doe",
-        organization = "Mozilla",
-        streetAddress = "1230 Main st",
-        addressLevel3 = "Location3",
-        addressLevel2 = "Location2",
-        addressLevel1 = "Location1",
-        postalCode = "90237",
-        country = "USA",
-        tel = "00",
-        email = "email",
-    )
+    private val address =
+        Address(
+            guid = "1",
+            name = "Jane Marie Doe",
+            organization = "Mozilla",
+            streetAddress = "1230 Main st",
+            addressLevel3 = "Location3",
+            addressLevel2 = "Location2",
+            addressLevel1 = "Location1",
+            postalCode = "90237",
+            country = "USA",
+            tel = "00",
+            email = "email",
+        )
 
     @Before
     fun setup() {
@@ -81,7 +82,7 @@ class AddressSelectBarTest {
                 override fun process(fact: Fact) {
                     facts.add(fact)
                 }
-            },
+            }
         )
 
         addressSelectBar.showPrompt()
@@ -119,7 +120,7 @@ class AddressSelectBarTest {
                 override fun process(fact: Fact) {
                     facts.add(fact)
                 }
-            },
+            }
         )
 
         addressSelectBar.showPrompt()

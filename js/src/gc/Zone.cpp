@@ -249,22 +249,6 @@ void Zone::changeGCState(GCRuntime* gc, GCState prev, GCState next) {
   setNeedsMarkingBarrier(gc, isGCMarkingOrVerifyingPreBarriers());
 }
 
-template <class Pred>
-static void EraseIf(js::gc::EphemeronEdgeVector& entries, Pred pred) {
-  auto* begin = entries.begin();
-  auto* const end = entries.end();
-
-  auto* newEnd = begin;
-  for (auto* p = begin; p != end; p++) {
-    if (!pred(*p)) {
-      *newEnd++ = *p;
-    }
-  }
-
-  size_t removed = end - newEnd;
-  entries.shrinkBy(removed);
-}
-
 void Zone::sweepAfterMinorGC(JSTracer* trc) {
   crossZoneStringWrappers().sweepAfterMinorGC(trc);
 

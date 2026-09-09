@@ -11,8 +11,10 @@
       'target_name': 'cryptohi_gtest',
       'type': 'executable',
       'sources': [
+        'cryptohi_mldsa_unittest.cc',
         'cryptohi_unittest.cc',
-        '<(DEPTH)/gtests/common/gtests.cc'
+        '<(DEPTH)/gtests/common/gtests.cc',
+        '<(DEPTH)/gtests/common/json_reader.cc'
       ],
       'dependencies': [
         '<(DEPTH)/exports.gyp:nss_exports',

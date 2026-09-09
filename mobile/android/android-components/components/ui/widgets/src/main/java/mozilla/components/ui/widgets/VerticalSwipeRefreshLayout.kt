@@ -22,29 +22,26 @@ import kotlin.math.abs
  * - a scale in/out gesture
  * - a quick scale gesture
  *
- * To control responding to scrolls and showing the pull to refresh throbber or not
- * use the [View.isEnabled] property.
+ * To control responding to scrolls and showing the pull to refresh throbber or not use the [View.isEnabled] property.
  */
-class VerticalSwipeRefreshLayout @JvmOverloads constructor(
+class VerticalSwipeRefreshLayout
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : SwipeRefreshLayout(context, attrs) {
-    @VisibleForTesting
-    internal var isQuickScaleInProgress = false
+    @VisibleForTesting internal var isQuickScaleInProgress = false
 
-    @VisibleForTesting
-    internal var quickScaleEvents = QuickScaleEvents()
+    @VisibleForTesting internal var quickScaleEvents = QuickScaleEvents()
     private var previousX = 0f
     private var previousY = 0f
     private val doubleTapTimeout = ViewConfiguration.getDoubleTapTimeout()
     private val doubleTapSlop = ViewConfiguration.get(context).scaledDoubleTapSlop
     private val doubleTapSlopSquare = doubleTapSlop * doubleTapSlop
 
-    @VisibleForTesting
-    internal var hadMultiTouch: Boolean = false
+    @VisibleForTesting internal var hadMultiTouch: Boolean = false
 
-    @VisibleForTesting
-    internal var disallowInterceptTouchEvent = false
+    @VisibleForTesting internal var disallowInterceptTouchEvent = false
 
     @Suppress("ReturnCount")
     override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
@@ -70,8 +67,8 @@ class VerticalSwipeRefreshLayout @JvmOverloads constructor(
         val eventAction = event.action
 
         // Cleanup if the gesture has been aborted or quick scale just ended/
-        if (MotionEvent.ACTION_CANCEL == eventAction ||
-            (MotionEvent.ACTION_UP == eventAction && isQuickScaleInProgress)
+        if (
+            MotionEvent.ACTION_CANCEL == eventAction || (MotionEvent.ACTION_UP == eventAction && isQuickScaleInProgress)
         ) {
             forgetQuickScaleEvents()
             return callSuperOnInterceptTouchEvent(event)
@@ -193,8 +190,7 @@ class VerticalSwipeRefreshLayout @JvmOverloads constructor(
     }
 
     @VisibleForTesting
-    internal fun callSuperOnInterceptTouchEvent(event: MotionEvent) =
-        super.onInterceptTouchEvent(event)
+    internal fun callSuperOnInterceptTouchEvent(event: MotionEvent) = super.onInterceptTouchEvent(event)
 
     @VisibleForTesting
     internal fun callSuperOnStartNestedScroll(child: View, target: View, nestedScrollAxes: Int) =
@@ -204,9 +200,7 @@ class VerticalSwipeRefreshLayout @JvmOverloads constructor(
         return firstDownEvent != null && upEvent != null && secondDownEvent != null
     }
 
-    /**
-     * Wrapper over the MotionEvents that compose a quickScale gesture.
-     */
+    /** Wrapper over the MotionEvents that compose a quickScale gesture. */
     @VisibleForTesting
     internal data class QuickScaleEvents(
         var firstDownEvent: MotionEvent? = null,

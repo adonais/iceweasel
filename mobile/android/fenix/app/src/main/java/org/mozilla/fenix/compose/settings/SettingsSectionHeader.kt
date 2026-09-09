@@ -38,9 +38,7 @@ fun SettingsSectionHeader(
 
 @Preview
 @Composable
-private fun SettingsSectionHeaderPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun SettingsSectionHeaderPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         Surface {
             SettingsSectionHeader("Settings")

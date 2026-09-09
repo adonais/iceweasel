@@ -43,13 +43,13 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.badge.BADGE_SIZE_SMALL
 import mozilla.components.compose.base.badge.BadgedIcon
 import mozilla.components.compose.base.theme.information
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
- * A [Surface]-backed menu item used in the library menu group, displaying an icon above a label
- * and automatically adapting its background, icon tint, and text color according to [MenuItemState].
+ * A [Surface]-backed menu item used in the library menu group, displaying an icon above a label and automatically
+ * adapting its background, icon tint, and text color according to [MenuItemState].
  *
  * @param modifier Modifier to apply to the root Surface container.
  * @param isHighlighted Whether this item should display a notification icon.
@@ -74,21 +74,22 @@ fun LibraryMenuItem(
     val contentDescription = stringResource(labelRes)
 
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .clickable(enabled = state != MenuItemState.DISABLED, onClick = onClick)
-            .clearAndSetSemantics {
-                collectionItemInfo =
-                    CollectionItemInfo(
-                        rowIndex = 0,
-                        rowSpan = 1,
-                        columnIndex = index,
-                        columnSpan = 1,
-                    )
-                this.contentDescription = contentDescription
-                role = Role.Button
-            },
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(shape)
+                .clickable(enabled = state != MenuItemState.DISABLED, onClick = onClick)
+                .clearAndSetSemantics {
+                    collectionItemInfo =
+                        CollectionItemInfo(
+                            rowIndex = 0,
+                            rowSpan = 1,
+                            columnIndex = index,
+                            columnSpan = 1,
+                        )
+                    this.contentDescription = contentDescription
+                    role = Role.Button
+                },
         color = MaterialTheme.colorScheme.surfaceBright,
         shape = shape,
     ) {
@@ -109,11 +110,8 @@ fun LibraryMenuItem(
 
             Text(
                 text = stringResource(labelRes),
-                style = FirefoxTheme.typography.caption.copy(
-                    hyphens = Hyphens.Auto,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth(),
+                style = FirefoxTheme.typography.caption.copy(hyphens = Hyphens.Auto),
+                modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
                 maxLines = 2,
                 softWrap = true,
@@ -126,24 +124,25 @@ fun LibraryMenuItem(
 @PreviewLightDark
 @Composable
 private fun LibraryMenuItemPreview(
-    @PreviewParameter(HighlightedItemPreviewParameterProvider::class) isHighlighted: Boolean,
+    @PreviewParameter(HighlightedItemPreviewParameterProvider::class) isHighlighted: Boolean
 ) {
     val spacerWidth = 2.dp
 
-    val leftShape = MaterialTheme.shapes.extraLarge.copy(
-        topEnd = MaterialTheme.shapes.extraSmall.topEnd,
-        bottomEnd = MaterialTheme.shapes.extraSmall.bottomEnd,
-    )
+    val leftShape =
+        MaterialTheme.shapes.extraLarge.copy(
+            topEnd = MaterialTheme.shapes.extraSmall.topEnd,
+            bottomEnd = MaterialTheme.shapes.extraSmall.bottomEnd,
+        )
     val middleShape = MaterialTheme.shapes.extraSmall
-    val rightShape = MaterialTheme.shapes.extraLarge.copy(
-        topStart = MaterialTheme.shapes.extraSmall.topStart,
-        bottomStart = MaterialTheme.shapes.extraSmall.bottomStart,
-    )
+    val rightShape =
+        MaterialTheme.shapes.extraLarge.copy(
+            topStart = MaterialTheme.shapes.extraSmall.topStart,
+            bottomStart = MaterialTheme.shapes.extraSmall.bottomStart,
+        )
 
     FirefoxTheme {
         Row(
-            Modifier
-                .background(color = MaterialTheme.colorScheme.surface)
+            Modifier.background(color = MaterialTheme.colorScheme.surface)
                 .fillMaxWidth()
                 .height(IntrinsicSize.Min)
                 .padding(all = FirefoxTheme.layout.space.static100),
@@ -151,9 +150,7 @@ private fun LibraryMenuItemPreview(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             LibraryMenuItem(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
+                modifier = Modifier.weight(1f).fillMaxHeight(),
                 isHighlighted = isHighlighted,
                 iconRes = iconsR.drawable.mozac_ic_history_24,
                 labelRes = R.string.library_history,
@@ -164,9 +161,7 @@ private fun LibraryMenuItemPreview(
             Spacer(Modifier.width(spacerWidth))
 
             LibraryMenuItem(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
+                modifier = Modifier.weight(1f).fillMaxHeight(),
                 isHighlighted = isHighlighted,
                 iconRes = iconsR.drawable.mozac_ic_bookmark_tray_fill_24,
                 labelRes = R.string.library_bookmarks,
@@ -177,9 +172,7 @@ private fun LibraryMenuItemPreview(
             Spacer(Modifier.width(spacerWidth))
 
             LibraryMenuItem(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
+                modifier = Modifier.weight(1f).fillMaxHeight(),
                 isHighlighted = isHighlighted,
                 iconRes = iconsR.drawable.mozac_ic_download_24,
                 labelRes = R.string.library_downloads,
@@ -190,9 +183,7 @@ private fun LibraryMenuItemPreview(
             Spacer(Modifier.width(spacerWidth))
 
             LibraryMenuItem(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
+                modifier = Modifier.weight(1f).fillMaxHeight(),
                 isHighlighted = isHighlighted,
                 iconRes = iconsR.drawable.mozac_ic_login_24,
                 labelRes = R.string.browser_menu_passwords,
@@ -204,8 +195,7 @@ private fun LibraryMenuItemPreview(
 }
 
 /**
- * A [PreviewParameterProvider] implementation that provides boolean values
- * representing the loading state of a site.
+ * A [PreviewParameterProvider] implementation that provides boolean values representing the loading state of a site.
  */
 class HighlightedItemPreviewParameterProvider : PreviewParameterProvider<Boolean> {
     override val values = sequenceOf(true, false)

@@ -4,9 +4,7 @@
 
 package mozilla.components.lib.jexl.lexer
 
-/**
- * A token emitted by the [Lexer].
- */
+/** A token emitted by the [Lexer]. */
 data class Token(
     val type: Type,
     val raw: String,

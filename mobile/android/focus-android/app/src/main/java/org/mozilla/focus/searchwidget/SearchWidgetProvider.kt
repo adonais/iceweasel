@@ -12,16 +12,14 @@ import androidx.annotation.VisibleForTesting
 import mozilla.components.feature.search.widget.AppSearchWidgetProvider
 import mozilla.components.feature.search.widget.BaseVoiceSearchActivity
 import mozilla.components.feature.search.widget.SearchWidgetConfig
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.focus.R
 import org.mozilla.focus.activity.IntentReceiverActivity
 import org.mozilla.focus.ext.components
 import org.mozilla.focus.session.VisibilityLifeCycleCallback
 import org.mozilla.focus.state.AppAction
-import mozilla.components.ui.icons.R as iconsR
 
-/**
- * Widget provider implementation for the Focus search widget.
- */
+/** Widget provider implementation for the Focus search widget. */
 class SearchWidgetProvider : AppSearchWidgetProvider() {
 
     override fun onEnabled(context: Context) {
@@ -45,8 +43,8 @@ class SearchWidgetProvider : AppSearchWidgetProvider() {
         )
 
     override fun createTextSearchIntent(context: Context): PendingIntent {
-        val textSearchIntent = Intent(context, IntentReceiverActivity::class.java)
-            .apply {
+        val textSearchIntent =
+            Intent(context, IntentReceiverActivity::class.java).apply {
                 this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 this.putExtra(IntentReceiverActivity.SEARCH_WIDGET_EXTRA, true)
             }
@@ -54,8 +52,7 @@ class SearchWidgetProvider : AppSearchWidgetProvider() {
             context,
             REQUEST_CODE_NEW_TAB,
             textSearchIntent,
-            PendingIntent.FLAG_IMMUTABLE or
-                PendingIntent.FLAG_UPDATE_CURRENT,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
     }
 
@@ -69,7 +66,6 @@ class SearchWidgetProvider : AppSearchWidgetProvider() {
     }
 
     companion object {
-        @VisibleForTesting
-        const val REQUEST_CODE_NEW_TAB = 0
+        @VisibleForTesting const val REQUEST_CODE_NEW_TAB = 0
     }
 }

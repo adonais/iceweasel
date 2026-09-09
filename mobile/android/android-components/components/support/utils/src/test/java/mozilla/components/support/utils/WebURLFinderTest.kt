@@ -97,7 +97,7 @@ class WebURLFinderTest {
                     "noschemefirst.com",
                     "http://test.com/inner#test",
                     "http://second.org/fark",
-                ),
+                )
             ),
         )
         assertEquals(
@@ -177,14 +177,15 @@ class WebURLFinderTest {
         assertFalse(isURLLike("www.c-c-  "))
         assertFalse(isURLLike("3-3 "))
 
-        val validIPv6Literals = listOf(
-            "[::]",
-            "[::1]",
-            "[1::]",
-            "[1:2:3:4:5:6:7:8]",
-            "[2001:db8::1.2.3.4]",
-            "[::1]:8080",
-        )
+        val validIPv6Literals =
+            listOf(
+                "[::]",
+                "[::1]",
+                "[1::]",
+                "[1:2:3:4:5:6:7:8]",
+                "[2001:db8::1.2.3.4]",
+                "[::1]:8080",
+            )
 
         validIPv6Literals.forEach { url ->
             // These cases differ from the original isUrlLike test because

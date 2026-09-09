@@ -9,6 +9,7 @@ import androidx.browser.customtabs.CustomTabsService.RELATION_USE_AS_ORIGIN
 import androidx.browser.customtabs.CustomTabsSessionToken
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.feature.customtabs.store.CustomTabState
 import mozilla.components.feature.customtabs.store.CustomTabsServiceStore
@@ -29,7 +30,6 @@ import org.mockito.Mockito.anyString
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class OriginVerifierFeatureTest {
@@ -45,14 +45,16 @@ class OriginVerifierFeatureTest {
     fun `verify returns existing relationship`() = runTest {
         val feature = OriginVerifierFeature(mock(), mock(), mock())
         val origin = "https://example.com".toUri()
-        val state = CustomTabState(
-            creatorPackageName = "com.example.twa",
-            relationships = mapOf(
-                OriginRelationPair(origin, RELATION_HANDLE_ALL_URLS) to SUCCESS,
-                OriginRelationPair(origin, RELATION_USE_AS_ORIGIN) to FAILURE,
-                OriginRelationPair("https://sample.com".toUri(), RELATION_HANDLE_ALL_URLS) to PENDING,
-            ),
-        )
+        val state =
+            CustomTabState(
+                creatorPackageName = "com.example.twa",
+                relationships =
+                    mapOf(
+                        OriginRelationPair(origin, RELATION_HANDLE_ALL_URLS) to SUCCESS,
+                        OriginRelationPair(origin, RELATION_USE_AS_ORIGIN) to FAILURE,
+                        OriginRelationPair("https://sample.com".toUri(), RELATION_HANDLE_ALL_URLS) to PENDING,
+                    ),
+            )
 
         assertTrue(feature.verify(state, mock(), RELATION_HANDLE_ALL_URLS, origin))
         assertFalse(feature.verify(state, mock(), RELATION_USE_AS_ORIGIN, origin))

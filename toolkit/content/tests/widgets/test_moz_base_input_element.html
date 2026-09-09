@@ -29,7 +29,11 @@
         class ExampleElement extends MozBaseInputElement {
           inputTemplate() {
             return html`
-              <input id="input" accesskey=${ifDefined(this.accessKey)} />
+              <input
+                id="input"
+                accesskey=${ifDefined(this.accessKey)}
+                title=${ifDefined(this.title)}
+              />
             `;
           }
         }
@@ -44,7 +48,7 @@
         renderTarget = document.getElementById("render");
 
         defaultTemplate = html`
-        <example-input-element label="Example label!" description="With a description too." accesskey="x"></example-element>
+        <example-input-element label="Example label!" description="With a description too." accesskey="x" title="Example title"></example-element>
       `;
         defineExampleElement();
       });
@@ -67,6 +71,12 @@
 
         is(el.accessKey, "x", "Accesskey is set on host");
         is(inputEl.accessKey, "x", "Accesskey is set on input");
+        ok(!el.hasAttribute("title"), "title is not set on the host");
+        is(
+          inputEl.getAttribute("title"),
+          "Example title",
+          "title is set on input"
+        );
 
         let iconEl = el.shadowRoot.querySelector("img");
         let supportLinkEl = el.shadowRoot.querySelector("a");

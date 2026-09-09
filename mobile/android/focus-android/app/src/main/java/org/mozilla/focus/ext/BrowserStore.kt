@@ -8,9 +8,7 @@ import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 
-/**
- * Returns the default search engine name or "custom" string if the engine is added by the user.
- */
+/** Returns the default search engine name or "custom" string if the engine is added by the user. */
 fun BrowserStore.defaultSearchEngineName(): String {
     val defaultSearchEngine = state.search.selectedOrDefaultSearchEngine
     return if (defaultSearchEngine?.type == SearchEngine.Type.CUSTOM) {

@@ -30,14 +30,11 @@ class StartupReportFullyDrawnTest {
 
     @MockK private lateinit var activity: HomeActivity
 
-    @RelaxedMockK
-    private lateinit var rootContainer: LinearLayout
+    @RelaxedMockK private lateinit var rootContainer: LinearLayout
 
-    @RelaxedMockK
-    private lateinit var holderItemView: View
+    @RelaxedMockK private lateinit var holderItemView: View
 
-    @RelaxedMockK
-    private lateinit var viewTreeObserver: ViewTreeObserver
+    @RelaxedMockK private lateinit var viewTreeObserver: ViewTreeObserver
     private lateinit var fullyDrawn: StartupReportFullyDrawn
 
     @Before

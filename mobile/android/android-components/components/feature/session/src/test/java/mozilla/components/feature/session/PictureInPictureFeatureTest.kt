@@ -46,8 +46,7 @@ class PictureInPictureFeatureTest {
 
     @Before
     fun setUp() {
-        whenever(activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE))
-            .thenReturn(true)
+        whenever(activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)).thenReturn(true)
     }
 
     @Test
@@ -59,11 +58,9 @@ class PictureInPictureFeatureTest {
         // clear InitAction
         captureActionsMiddleware.reset()
 
-        whenever(activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE))
-            .thenReturn(false)
+        whenever(activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)).thenReturn(false)
 
-        val pictureInPictureFeature =
-            spy(PictureInPictureFeature(store, activity, crashReporting))
+        val pictureInPictureFeature = spy(PictureInPictureFeature(store, activity, crashReporting))
 
         assertFalse(pictureInPictureFeature.onHomePressed())
 
@@ -76,8 +73,7 @@ class PictureInPictureFeatureTest {
     @Test
     fun `on home pressed without a selected session`() {
         val store = BrowserStore()
-        val pictureInPictureFeature =
-            spy(PictureInPictureFeature(store, activity, crashReporting))
+        val pictureInPictureFeature = spy(PictureInPictureFeature(store, activity, crashReporting))
 
         assertFalse(pictureInPictureFeature.onHomePressed())
         verify(activity.packageManager).hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
@@ -87,14 +83,14 @@ class PictureInPictureFeatureTest {
     @Test
     fun `on home pressed with a selected session without a fullscreen mode`() {
         val selectedSession = createTab("https://mozilla.org").copyWithFullScreen(false)
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(selectedSession),
-                selectedTabId = selectedSession.id,
-            ),
-        )
-        val pictureInPictureFeature =
-            spy(PictureInPictureFeature(store, activity, crashReporting))
+        val store =
+            BrowserStore(
+                BrowserState(
+                    tabs = listOf(selectedSession),
+                    selectedTabId = selectedSession.id,
+                )
+            )
+        val pictureInPictureFeature = spy(PictureInPictureFeature(store, activity, crashReporting))
 
         assertFalse(selectedSession.content.fullScreen)
         assertFalse(pictureInPictureFeature.onHomePressed())
@@ -104,21 +100,24 @@ class PictureInPictureFeatureTest {
     @Test
     fun `on home pressed with a selected session in fullscreen without media playing and without pip mode`() {
         val controller = mock<MediaSession.Controller>()
-        val selectedSession = createTab(
-            url = "https://mozilla.org",
-            mediaSessionState = MediaSessionState(
-                playbackState = MediaSession.PlaybackState.UNKNOWN,
-                controller = controller,
-            ),
-        ).copyWithFullScreen(true)
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(selectedSession),
-                selectedTabId = selectedSession.id,
-            ),
-        )
-        val pictureInPictureFeature =
-            spy(PictureInPictureFeature(store, activity, crashReporting))
+        val selectedSession =
+            createTab(
+                    url = "https://mozilla.org",
+                    mediaSessionState =
+                        MediaSessionState(
+                            playbackState = MediaSession.PlaybackState.UNKNOWN,
+                            controller = controller,
+                        ),
+                )
+                .copyWithFullScreen(true)
+        val store =
+            BrowserStore(
+                BrowserState(
+                    tabs = listOf(selectedSession),
+                    selectedTabId = selectedSession.id,
+                )
+            )
+        val pictureInPictureFeature = spy(PictureInPictureFeature(store, activity, crashReporting))
 
         doReturn(false).`when`(pictureInPictureFeature).enterPipModeCompat()
 
@@ -130,21 +129,24 @@ class PictureInPictureFeatureTest {
     @Test
     fun `on home pressed with a selected session in fullscreen with media playing and without pip mode`() {
         val controller = mock<MediaSession.Controller>()
-        val selectedSession = createTab(
-            url = "https://mozilla.org",
-            mediaSessionState = MediaSessionState(
-                playbackState = MediaSession.PlaybackState.PLAYING,
-                controller = controller,
-            ),
-        ).copyWithFullScreen(true)
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(selectedSession),
-                selectedTabId = selectedSession.id,
-            ),
-        )
-        val pictureInPictureFeature =
-            spy(PictureInPictureFeature(store, activity, crashReporting))
+        val selectedSession =
+            createTab(
+                    url = "https://mozilla.org",
+                    mediaSessionState =
+                        MediaSessionState(
+                            playbackState = MediaSession.PlaybackState.PLAYING,
+                            controller = controller,
+                        ),
+                )
+                .copyWithFullScreen(true)
+        val store =
+            BrowserStore(
+                BrowserState(
+                    tabs = listOf(selectedSession),
+                    selectedTabId = selectedSession.id,
+                )
+            )
+        val pictureInPictureFeature = spy(PictureInPictureFeature(store, activity, crashReporting))
 
         doReturn(false).`when`(pictureInPictureFeature).enterPipModeCompat()
 
@@ -156,21 +158,24 @@ class PictureInPictureFeatureTest {
     @Test
     fun `on home pressed with a selected session in fullscreen without media playing and with pip mode`() {
         val controller = mock<MediaSession.Controller>()
-        val selectedSession = createTab(
-            url = "https://mozilla.org",
-            mediaSessionState = MediaSessionState(
-                playbackState = MediaSession.PlaybackState.UNKNOWN,
-                controller = controller,
-            ),
-        ).copyWithFullScreen(true)
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(selectedSession),
-                selectedTabId = selectedSession.id,
-            ),
-        )
-        val pictureInPictureFeature =
-            spy(PictureInPictureFeature(store, activity, crashReporting))
+        val selectedSession =
+            createTab(
+                    url = "https://mozilla.org",
+                    mediaSessionState =
+                        MediaSessionState(
+                            playbackState = MediaSession.PlaybackState.UNKNOWN,
+                            controller = controller,
+                        ),
+                )
+                .copyWithFullScreen(true)
+        val store =
+            BrowserStore(
+                BrowserState(
+                    tabs = listOf(selectedSession),
+                    selectedTabId = selectedSession.id,
+                )
+            )
+        val pictureInPictureFeature = spy(PictureInPictureFeature(store, activity, crashReporting))
 
         doReturn(true).`when`(pictureInPictureFeature).enterPipModeCompat()
 
@@ -182,21 +187,24 @@ class PictureInPictureFeatureTest {
     @Test
     fun `on home pressed with a selected session in fullscreen with media playing and with pip mode`() {
         val controller = mock<MediaSession.Controller>()
-        val selectedSession = createTab(
-            url = "https://mozilla.org",
-            mediaSessionState = MediaSessionState(
-                playbackState = MediaSession.PlaybackState.PLAYING,
-                controller = controller,
-            ),
-        ).copyWithFullScreen(true)
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(selectedSession),
-                selectedTabId = selectedSession.id,
-            ),
-        )
-        val pictureInPictureFeature =
-            spy(PictureInPictureFeature(store, activity, crashReporting))
+        val selectedSession =
+            createTab(
+                    url = "https://mozilla.org",
+                    mediaSessionState =
+                        MediaSessionState(
+                            playbackState = MediaSession.PlaybackState.PLAYING,
+                            controller = controller,
+                        ),
+                )
+                .copyWithFullScreen(true)
+        val store =
+            BrowserStore(
+                BrowserState(
+                    tabs = listOf(selectedSession),
+                    selectedTabId = selectedSession.id,
+                )
+            )
+        val pictureInPictureFeature = spy(PictureInPictureFeature(store, activity, crashReporting))
 
         doReturn(true).`when`(pictureInPictureFeature).enterPipModeCompat()
 
@@ -208,11 +216,9 @@ class PictureInPictureFeatureTest {
     @Test
     @Config(sdk = [Build.VERSION_CODES.O])
     fun `enter pip mode compat without system feature on android o`() {
-        whenever(activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE))
-            .thenReturn(false)
+        whenever(activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)).thenReturn(false)
 
-        val pictureInPictureFeature =
-            PictureInPictureFeature(BrowserStore(), activity, crashReporting)
+        val pictureInPictureFeature = PictureInPictureFeature(BrowserStore(), activity, crashReporting)
 
         assertFalse(pictureInPictureFeature.enterPipModeCompat())
         verify(activity, never()).enterPictureInPictureMode(any())
@@ -223,26 +229,28 @@ class PictureInPictureFeatureTest {
     @Config(sdk = [Build.VERSION_CODES.O])
     fun `enter pip mode compat with system feature on android o but entering throws exception`() {
         val controller = mock<MediaSession.Controller>()
-        val selectedSession = createTab(
-            url = "https://mozilla.org",
-            mediaSessionState = MediaSessionState(
-                playbackState = MediaSession.PlaybackState.PLAYING,
-                controller = controller,
-            ),
-        ).copyWithFullScreen(true)
-        val store = BrowserStore(
-            BrowserState(
-                tabs = listOf(selectedSession),
-                selectedTabId = selectedSession.id,
-            ),
-        )
+        val selectedSession =
+            createTab(
+                    url = "https://mozilla.org",
+                    mediaSessionState =
+                        MediaSessionState(
+                            playbackState = MediaSession.PlaybackState.PLAYING,
+                            controller = controller,
+                        ),
+                )
+                .copyWithFullScreen(true)
+        val store =
+            BrowserStore(
+                BrowserState(
+                    tabs = listOf(selectedSession),
+                    selectedTabId = selectedSession.id,
+                )
+            )
 
-        whenever(activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE))
-            .thenReturn(true)
+        whenever(activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)).thenReturn(true)
         whenever(activity.enterPictureInPictureMode(any())).thenThrow(IllegalStateException())
 
-        val pictureInPictureFeature =
-            PictureInPictureFeature(store, activity, crashReporting)
+        val pictureInPictureFeature = PictureInPictureFeature(store, activity, crashReporting)
         assertFalse(pictureInPictureFeature.onHomePressed())
         verify(crashReporting).submitCaughtException(any<IllegalStateException>())
     }
@@ -250,8 +258,7 @@ class PictureInPictureFeatureTest {
     @Test
     @Config(sdk = [Build.VERSION_CODES.O])
     fun `enter pip mode compat on android o and above`() {
-        val pictureInPictureFeature =
-            PictureInPictureFeature(BrowserStore(), activity, crashReporting)
+        val pictureInPictureFeature = PictureInPictureFeature(BrowserStore(), activity, crashReporting)
 
         whenever(activity.enterPictureInPictureMode(any())).thenReturn(true)
 
@@ -263,20 +270,24 @@ class PictureInPictureFeatureTest {
     fun `on pip mode changed`() {
         val captureActionsMiddleware = CaptureActionsMiddleware<BrowserState, BrowserAction>()
 
-        val store = BrowserStore(
-            initialState = BrowserState(),
-            middleware = listOf(captureActionsMiddleware) + EngineMiddleware.create(
-                engine = mock(),
-                TestScope(),
-            ),
-        )
+        val store =
+            BrowserStore(
+                initialState = BrowserState(),
+                middleware =
+                    listOf(captureActionsMiddleware) +
+                        EngineMiddleware.create(
+                            engine = mock(),
+                            TestScope(),
+                        ),
+            )
 
-        val pipFeature = PictureInPictureFeature(
-            store,
-            activity,
-            crashReporting,
-            tabId = "tab-id",
-        )
+        val pipFeature =
+            PictureInPictureFeature(
+                store,
+                activity,
+                crashReporting,
+                tabId = "tab-id",
+            )
 
         pipFeature.onPictureInPictureModeChanged(isInPipMode = true)
         captureActionsMiddleware.assertFirstAction(ContentAction.PictureInPictureChangedAction::class) { action ->

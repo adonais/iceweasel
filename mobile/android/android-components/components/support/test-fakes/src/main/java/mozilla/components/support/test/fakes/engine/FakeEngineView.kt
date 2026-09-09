@@ -7,19 +7,14 @@ package mozilla.components.support.test.fakes.engine
 import android.content.Context
 import android.graphics.Bitmap
 import android.view.View
+import androidx.core.view.OnApplyWindowInsetsListener as AndroidxOnApplyWindowInsetsListener
 import kotlinx.coroutines.flow.flowOf
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.concept.engine.selection.SelectionActionDelegate
-import androidx.core.view.OnApplyWindowInsetsListener as AndroidxOnApplyWindowInsetsListener
 
-/**
- * A fake [EngineView] to be used in tests.
- */
-class FakeEngineView(
-    context: Context,
-) : View(context),
-    EngineView {
+/** A fake [EngineView] to be used in tests. */
+class FakeEngineView(context: Context) : View(context), EngineView {
 
     override val verticalScrollPosition = flowOf(0f)
     override val verticalScrollDelta = flowOf(0f)

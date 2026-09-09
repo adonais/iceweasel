@@ -64,18 +64,20 @@ internal class FirstSessionMetricsServiceTest {
         val mockedContext: Context = mockk(relaxed = true)
         every { mockedContext.applicationContext } returns mockedApplication
 
-        val result = installSourcePackage(
-            sdk = Build.VERSION_CODES.R,
-            packageManager = mockedContext.application.packageManager,
-            packageName = mockedContext.application.packageName,
-        )
+        val result =
+            installSourcePackage(
+                sdk = Build.VERSION_CODES.R,
+                packageManager = mockedContext.application.packageManager,
+                packageName = mockedContext.application.packageName,
+            )
         assertEquals(testPackageName, result)
     }
 
     @Test
     fun `GIVEN packageManager throws an exception WHEN build version is R THEN installSourcePackage returns an empty string`() {
         val mockedPackageManager: PackageManager = mockk(relaxed = true)
-        every { mockedPackageManager.getInstallSourceInfo(any()).installingPackageName } throws PackageManager.NameNotFoundException()
+        every { mockedPackageManager.getInstallSourceInfo(any()).installingPackageName } throws
+            PackageManager.NameNotFoundException()
 
         val mockedApplication: FenixApplication = mockk(relaxed = true)
         every { mockedApplication.packageManager } returns mockedPackageManager
@@ -83,11 +85,12 @@ internal class FirstSessionMetricsServiceTest {
         val mockedContext: Context = mockk(relaxed = true)
         every { mockedContext.applicationContext } returns mockedApplication
 
-        val result = installSourcePackage(
-            sdk = Build.VERSION_CODES.R,
-            packageManager = mockedContext.application.packageManager,
-            packageName = mockedContext.application.packageName,
-        )
+        val result =
+            installSourcePackage(
+                sdk = Build.VERSION_CODES.R,
+                packageManager = mockedContext.application.packageManager,
+                packageName = mockedContext.application.packageName,
+            )
         assertEquals("", result)
     }
 
@@ -103,18 +106,20 @@ internal class FirstSessionMetricsServiceTest {
         val mockedContext: Context = mockk(relaxed = true)
         every { mockedContext.applicationContext } returns mockedApplication
 
-        val result = installSourcePackage(
-            sdk = Build.VERSION_CODES.R.plus(1),
-            packageManager = mockedContext.application.packageManager,
-            packageName = mockedContext.application.packageName,
-        )
+        val result =
+            installSourcePackage(
+                sdk = Build.VERSION_CODES.R.plus(1),
+                packageManager = mockedContext.application.packageManager,
+                packageName = mockedContext.application.packageName,
+            )
         assertEquals(testPackageName, result)
     }
 
     @Test
     fun `GIVEN packageManager throws an exception WHEN build version is more than R THEN installSourcePackage returns an empty string`() {
         val mockedPackageManager: PackageManager = mockk(relaxed = true)
-        every { mockedPackageManager.getInstallSourceInfo(any()).installingPackageName } throws PackageManager.NameNotFoundException()
+        every { mockedPackageManager.getInstallSourceInfo(any()).installingPackageName } throws
+            PackageManager.NameNotFoundException()
 
         val mockedApplication: FenixApplication = mockk(relaxed = true)
         every { mockedApplication.packageManager } returns mockedPackageManager
@@ -122,11 +127,12 @@ internal class FirstSessionMetricsServiceTest {
         val mockedContext: Context = mockk(relaxed = true)
         every { mockedContext.applicationContext } returns mockedApplication
 
-        val result = installSourcePackage(
-            sdk = Build.VERSION_CODES.R.plus(1),
-            packageManager = mockedContext.application.packageManager,
-            packageName = mockedContext.application.packageName,
-        )
+        val result =
+            installSourcePackage(
+                sdk = Build.VERSION_CODES.R.plus(1),
+                packageManager = mockedContext.application.packageManager,
+                packageName = mockedContext.application.packageName,
+            )
         assertEquals("", result)
     }
 
@@ -142,11 +148,12 @@ internal class FirstSessionMetricsServiceTest {
         val mockedContext: Context = mockk(relaxed = true)
         every { mockedContext.applicationContext } returns mockedApplication
 
-        val result = installSourcePackage(
-            sdk = Build.VERSION_CODES.R.minus(1),
-            packageManager = mockedContext.application.packageManager,
-            packageName = mockedContext.application.packageName,
-        )
+        val result =
+            installSourcePackage(
+                sdk = Build.VERSION_CODES.R.minus(1),
+                packageManager = mockedContext.application.packageManager,
+                packageName = mockedContext.application.packageName,
+            )
         assertEquals(testPackageName, result)
     }
 
@@ -162,11 +169,12 @@ internal class FirstSessionMetricsServiceTest {
         val mockedContext: Context = mockk(relaxed = true)
         every { mockedContext.applicationContext } returns mockedApplication
 
-        val result = installSourcePackage(
-            sdk = Build.VERSION_CODES.R.minus(1),
-            packageManager = mockedContext.application.packageManager,
-            packageName = mockedContext.application.packageName,
-        )
+        val result =
+            installSourcePackage(
+                sdk = Build.VERSION_CODES.R.minus(1),
+                packageManager = mockedContext.application.packageManager,
+                packageName = mockedContext.application.packageName,
+            )
         assertEquals("", result)
     }
 }

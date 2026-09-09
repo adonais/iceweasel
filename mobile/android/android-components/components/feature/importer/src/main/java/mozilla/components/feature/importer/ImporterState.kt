@@ -7,9 +7,7 @@ package mozilla.components.feature.importer
 import mozilla.components.concept.bookmarks.file.BookmarksImporterError
 import mozilla.components.lib.state.State
 
-/**
- * State for the bookmark importer feature.
- */
+/** State for the bookmark importer feature. */
 sealed interface ImporterState : State {
     /** The importer has not yet been triggered. */
     object Inert : ImporterState
@@ -28,9 +26,7 @@ sealed interface ImporterState : State {
     data class Finished(val result: ImporterEvent) : ImporterState
 }
 
-/**
- * Represents a discrete event emitted by the importer during the import lifecycle.
- */
+/** Represents a discrete event emitted by the importer during the import lifecycle. */
 sealed interface ImporterEvent {
     /** The import process has started. */
     data object Started : ImporterEvent

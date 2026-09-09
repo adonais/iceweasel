@@ -19,6 +19,7 @@ DEFINES["ANGLE_PLATFORM_EXPORT"] = ""
 DEFINES["ANGLE_SKIP_DXGI_1_2_CHECK"] = True
 DEFINES["EGL_EGLEXT_PROTOTYPES"] = True
 DEFINES["EGL_EGL_PROTOTYPES"] = "1"
+DEFINES["EGL_NO_X11"] = True
 DEFINES["GL_GLES_PROTOTYPES"] = "1"
 DEFINES["GL_GLEXT_PROTOTYPES"] = True
 DEFINES["LIBANGLE_IMPLEMENTATION"] = True
@@ -97,7 +98,6 @@ if CONFIG["OS_TARGET"] == "WINNT":
 
 
     DEFINES["ANGLE_ENABLE_D3D11"] = True
-    DEFINES["ANGLE_ENABLE_D3D9"] = True
     DEFINES["ANGLE_IS_WIN"] = True
     DEFINES["ANGLE_PRELOADED_D3DCOMPILER_MODULE_NAMES"] = "{ \"d3dcompiler_47.dll\", \"d3dcompiler_46.dll\", \"d3dcompiler_43.dll\" }"
     DEFINES["CERT_CHAIN_PARA_HAS_EXTRA_FIELDS"] = True
@@ -129,7 +129,6 @@ if CONFIG["OS_TARGET"] == "WINNT":
     OS_LIBS += [
         "advapi32",
         "comdlg32",
-        "d3d9",
         "dbghelp",
         "delayimp",
         "dnsapi",

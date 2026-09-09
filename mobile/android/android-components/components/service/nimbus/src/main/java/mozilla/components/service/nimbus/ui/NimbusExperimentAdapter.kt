@@ -12,9 +12,7 @@ import androidx.recyclerview.widget.ListAdapter
 import mozilla.components.service.nimbus.R
 import org.mozilla.experiments.nimbus.AvailableExperiment
 
-/**
- * An adapter for displaying nimbus experiment items.
- */
+/** An adapter for displaying nimbus experiment items. */
 class NimbusExperimentAdapter(
     private val nimbusExperimentsDelegate: NimbusExperimentsAdapterDelegate,
     experiments: List<AvailableExperiment>,
@@ -28,8 +26,8 @@ class NimbusExperimentAdapter(
         parent: ViewGroup,
         viewType: Int,
     ): NimbusExperimentItemViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.mozac_service_nimbus_experiment_item, parent, false)
+        val view =
+            LayoutInflater.from(parent.context).inflate(R.layout.mozac_service_nimbus_experiment_item, parent, false)
         val titleView: TextView = view.findViewById(R.id.nimbus_experiment_name)
         val summaryView: TextView = view.findViewById(R.id.nimbus_experiment_description)
         return NimbusExperimentItemViewHolder(view, nimbusExperimentsDelegate, titleView, summaryView)
@@ -40,8 +38,7 @@ class NimbusExperimentAdapter(
     }
 
     private object DiffCallback : DiffUtil.ItemCallback<AvailableExperiment>() {
-        override fun areContentsTheSame(oldItem: AvailableExperiment, newItem: AvailableExperiment) =
-            oldItem == newItem
+        override fun areContentsTheSame(oldItem: AvailableExperiment, newItem: AvailableExperiment) = oldItem == newItem
 
         override fun areItemsTheSame(oldItem: AvailableExperiment, newItem: AvailableExperiment) =
             oldItem.slug == newItem.slug

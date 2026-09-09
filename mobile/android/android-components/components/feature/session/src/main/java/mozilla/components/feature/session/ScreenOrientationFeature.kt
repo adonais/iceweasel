@@ -12,9 +12,7 @@ import mozilla.components.concept.engine.activity.OrientationDelegate
 import mozilla.components.concept.engine.activity.OrientationDelegate.LockResult
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 
-/**
- * Feature that automatically reacts to [Engine] requests of updating the app's screen orientation.
- */
+/** Feature that automatically reacts to [Engine] requests of updating the app's screen orientation. */
 class ScreenOrientationFeature(
     private val engine: Engine,
     private val activity: Activity,

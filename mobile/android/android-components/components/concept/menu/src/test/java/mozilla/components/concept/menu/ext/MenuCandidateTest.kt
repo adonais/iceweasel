@@ -25,9 +25,10 @@ class MenuCandidateTest {
         assertEquals(
             HighPriorityHighlightEffect(Color.BLACK),
             sequenceOf(
-                LowPriorityHighlightEffect(Color.BLUE),
-                HighPriorityHighlightEffect(Color.BLACK),
-            ).max(),
+                    LowPriorityHighlightEffect(Color.BLUE),
+                    HighPriorityHighlightEffect(Color.BLACK),
+                )
+                .max(),
         )
     }
 
@@ -36,9 +37,10 @@ class MenuCandidateTest {
         assertEquals(
             LowPriorityHighlightEffect(Color.BLUE),
             sequenceOf(
-                LowPriorityHighlightEffect(Color.BLUE),
-                LowPriorityHighlightEffect(Color.YELLOW),
-            ).max(),
+                    LowPriorityHighlightEffect(Color.BLUE),
+                    LowPriorityHighlightEffect(Color.YELLOW),
+                )
+                .max(),
         )
     }
 
@@ -50,41 +52,47 @@ class MenuCandidateTest {
                 LowPriorityHighlightEffect(Color.YELLOW),
             ),
             listOf(
-                RowMenuCandidate(
-                    listOf(
-                        SmallMenuCandidate(
-                            "",
-                            icon = DrawableMenuIcon(
-                                null,
-                                effect = LowPriorityHighlightEffect(Color.BLUE),
+                    RowMenuCandidate(
+                        listOf(
+                            SmallMenuCandidate(
+                                "",
+                                icon =
+                                    DrawableMenuIcon(
+                                        null,
+                                        effect = LowPriorityHighlightEffect(Color.BLUE),
+                                    ),
                             ),
-                        ),
-                        SmallMenuCandidate(
-                            "",
-                            icon = DrawableMenuIcon(
-                                null,
-                                effect = LowPriorityHighlightEffect(Color.RED),
+                            SmallMenuCandidate(
+                                "",
+                                icon =
+                                    DrawableMenuIcon(
+                                        null,
+                                        effect = LowPriorityHighlightEffect(Color.RED),
+                                    ),
+                                containerStyle = ContainerStyle(isVisible = false),
                             ),
-                            containerStyle = ContainerStyle(isVisible = false),
-                        ),
-                        SmallMenuCandidate(
-                            "",
-                            icon = DrawableMenuIcon(
-                                null,
-                                effect = LowPriorityHighlightEffect(Color.RED),
+                            SmallMenuCandidate(
+                                "",
+                                icon =
+                                    DrawableMenuIcon(
+                                        null,
+                                        effect = LowPriorityHighlightEffect(Color.RED),
+                                    ),
+                                containerStyle = ContainerStyle(isEnabled = false),
                             ),
-                            containerStyle = ContainerStyle(isEnabled = false),
-                        ),
-                        SmallMenuCandidate(
-                            "",
-                            icon = DrawableMenuIcon(
-                                null,
-                                effect = LowPriorityHighlightEffect(Color.YELLOW),
+                            SmallMenuCandidate(
+                                "",
+                                icon =
+                                    DrawableMenuIcon(
+                                        null,
+                                        effect = LowPriorityHighlightEffect(Color.YELLOW),
+                                    ),
                             ),
-                        ),
-                    ),
-                ),
-            ).effects().toList(),
+                        )
+                    )
+                )
+                .effects()
+                .toList(),
         )
     }
 
@@ -99,35 +107,39 @@ class MenuCandidateTest {
                 LowPriorityHighlightEffect(Color.RED),
             ),
             listOf(
-                TextMenuCandidate(
-                    "",
-                    start = DrawableMenuIcon(
-                        null,
-                        effect = LowPriorityHighlightEffect(Color.YELLOW),
+                    TextMenuCandidate(
+                        "",
+                        start =
+                            DrawableMenuIcon(
+                                null,
+                                effect = LowPriorityHighlightEffect(Color.YELLOW),
+                            ),
+                        effect = HighPriorityHighlightEffect(Color.BLUE),
                     ),
-                    effect = HighPriorityHighlightEffect(Color.BLUE),
-                ),
-                DecorativeTextMenuCandidate(""),
-                TextMenuCandidate(""),
-                DividerMenuCandidate(),
-                TextMenuCandidate(
-                    "",
-                    effect = HighPriorityHighlightEffect(Color.BLACK),
-                ),
-                TextMenuCandidate(
-                    "",
-                    containerStyle = ContainerStyle(isVisible = false),
-                    effect = HighPriorityHighlightEffect(Color.BLACK),
-                ),
-                TextMenuCandidate(
-                    "",
-                    end = DrawableMenuIcon(
-                        null,
-                        effect = LowPriorityHighlightEffect(Color.RED),
+                    DecorativeTextMenuCandidate(""),
+                    TextMenuCandidate(""),
+                    DividerMenuCandidate(),
+                    TextMenuCandidate(
+                        "",
+                        effect = HighPriorityHighlightEffect(Color.BLACK),
                     ),
-                    effect = HighPriorityHighlightEffect(Color.BLUE),
-                ),
-            ).effects().toList(),
+                    TextMenuCandidate(
+                        "",
+                        containerStyle = ContainerStyle(isVisible = false),
+                        effect = HighPriorityHighlightEffect(Color.BLACK),
+                    ),
+                    TextMenuCandidate(
+                        "",
+                        end =
+                            DrawableMenuIcon(
+                                null,
+                                effect = LowPriorityHighlightEffect(Color.RED),
+                            ),
+                        effect = HighPriorityHighlightEffect(Color.BLUE),
+                    ),
+                )
+                .effects()
+                .toList(),
         )
     }
 
@@ -141,39 +153,43 @@ class MenuCandidateTest {
                 LowPriorityHighlightEffect(Color.RED),
             ),
             listOf(
-                CompoundMenuCandidate(
-                    "",
-                    isChecked = true,
-                    start = DrawableMenuIcon(
-                        null,
-                        effect = LowPriorityHighlightEffect(Color.YELLOW),
+                    CompoundMenuCandidate(
+                        "",
+                        isChecked = true,
+                        start =
+                            DrawableMenuIcon(
+                                null,
+                                effect = LowPriorityHighlightEffect(Color.YELLOW),
+                            ),
+                        end = CompoundMenuCandidate.ButtonType.CHECKBOX,
+                        effect = HighPriorityHighlightEffect(Color.BLUE),
                     ),
-                    end = CompoundMenuCandidate.ButtonType.CHECKBOX,
-                    effect = HighPriorityHighlightEffect(Color.BLUE),
-                ),
-                CompoundMenuCandidate(
-                    "",
-                    isChecked = false,
-                    end = CompoundMenuCandidate.ButtonType.SWITCH,
-                    effect = HighPriorityHighlightEffect(Color.BLACK),
-                ),
-                CompoundMenuCandidate(
-                    "",
-                    isChecked = false,
-                    end = CompoundMenuCandidate.ButtonType.SWITCH,
-                    containerStyle = ContainerStyle(isEnabled = false),
-                    effect = HighPriorityHighlightEffect(Color.BLACK),
-                ),
-                CompoundMenuCandidate(
-                    "",
-                    isChecked = true,
-                    start = DrawableMenuIcon(
-                        null,
-                        effect = LowPriorityHighlightEffect(Color.RED),
+                    CompoundMenuCandidate(
+                        "",
+                        isChecked = false,
+                        end = CompoundMenuCandidate.ButtonType.SWITCH,
+                        effect = HighPriorityHighlightEffect(Color.BLACK),
                     ),
-                    end = CompoundMenuCandidate.ButtonType.CHECKBOX,
-                ),
-            ).effects().toList(),
+                    CompoundMenuCandidate(
+                        "",
+                        isChecked = false,
+                        end = CompoundMenuCandidate.ButtonType.SWITCH,
+                        containerStyle = ContainerStyle(isEnabled = false),
+                        effect = HighPriorityHighlightEffect(Color.BLACK),
+                    ),
+                    CompoundMenuCandidate(
+                        "",
+                        isChecked = true,
+                        start =
+                            DrawableMenuIcon(
+                                null,
+                                effect = LowPriorityHighlightEffect(Color.RED),
+                            ),
+                        end = CompoundMenuCandidate.ButtonType.CHECKBOX,
+                    ),
+                )
+                .effects()
+                .toList(),
         )
     }
 }

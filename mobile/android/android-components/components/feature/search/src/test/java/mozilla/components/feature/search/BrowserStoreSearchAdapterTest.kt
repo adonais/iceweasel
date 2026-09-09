@@ -22,11 +22,19 @@ private const val CUSTOM_TAB_ID = "2"
 
 class BrowserStoreSearchAdapterTest {
 
-    private val state = BrowserState(
-        tabs = listOf(createTab(id = SELECTED_TAB_ID, url = "https://mozilla.org", private = true)),
-        customTabs = listOf(createCustomTab(id = CUSTOM_TAB_ID, url = "https://firefox.com", source = SessionState.Source.Internal.CustomTab)),
-        selectedTabId = SELECTED_TAB_ID,
-    )
+    private val state =
+        BrowserState(
+            tabs = listOf(createTab(id = SELECTED_TAB_ID, url = "https://mozilla.org", private = true)),
+            customTabs =
+                listOf(
+                    createCustomTab(
+                        id = CUSTOM_TAB_ID,
+                        url = "https://firefox.com",
+                        source = SessionState.Source.Internal.CustomTab,
+                    )
+                ),
+            selectedTabId = SELECTED_TAB_ID,
+        )
 
     @Test
     fun `adapter does nothing with null tab`() {

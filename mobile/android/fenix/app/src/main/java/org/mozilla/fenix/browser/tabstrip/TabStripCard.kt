@@ -60,10 +60,7 @@ private fun TabStripCardPreview() {
     FirefoxTheme {
         TabStripCard {
             Box(
-                modifier = Modifier
-                    .height(56.dp)
-                    .width(200.dp)
-                    .padding(8.dp),
+                modifier = Modifier.height(56.dp).width(200.dp).padding(8.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(

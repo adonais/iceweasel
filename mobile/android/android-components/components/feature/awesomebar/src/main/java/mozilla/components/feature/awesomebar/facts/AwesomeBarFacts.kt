@@ -9,13 +9,9 @@ import mozilla.components.support.base.facts.Action
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.collect
 
-/**
- * Facts emitted for telemetry related to the AwesomeBar feature.
- */
+/** Facts emitted for telemetry related to the AwesomeBar feature. */
 class AwesomeBarFacts {
-    /**
-     * Specific types of telemetry items.
-     */
+    /** Specific types of telemetry items. */
     object Items {
         const val BOOKMARK_SUGGESTION_CLICKED = "bookmark_suggestion_clicked"
         const val CLIPBOARD_SUGGESTION_CLICKED = "clipboard_suggestion_clicked"
@@ -44,12 +40,13 @@ private fun emitAwesomebarFact(
     metadata: Map<String, Any>? = null,
 ) {
     Fact(
-        Component.FEATURE_AWESOMEBAR,
-        action,
-        item,
-        value,
-        metadata,
-    ).collect()
+            Component.FEATURE_AWESOMEBAR,
+            action,
+            item,
+            value,
+            metadata,
+        )
+        .collect()
 }
 
 internal fun emitBookmarkSuggestionClickedFact() {
@@ -94,9 +91,7 @@ internal fun emitSearchSuggestionClickedFact() {
     )
 }
 
-internal fun emitTrendingSearchSuggestionClickedFact(
-    position: Int,
-) {
+internal fun emitTrendingSearchSuggestionClickedFact(position: Int) {
     emitAwesomebarFact(
         Action.INTERACTION,
         AwesomeBarFacts.Items.TRENDING_SEARCH_SUGGESTION_CLICKED,
@@ -104,9 +99,7 @@ internal fun emitTrendingSearchSuggestionClickedFact(
     )
 }
 
-internal fun emitTopSiteSuggestionClickedFact(
-    position: Int,
-) {
+internal fun emitTopSiteSuggestionClickedFact(position: Int) {
     emitAwesomebarFact(
         Action.INTERACTION,
         AwesomeBarFacts.Items.TOP_SITE_SUGGESTION_CLICKED,
@@ -114,9 +107,7 @@ internal fun emitTopSiteSuggestionClickedFact(
     )
 }
 
-internal fun emitRecentSearchSuggestionClickedFact(
-    position: Int,
-) {
+internal fun emitRecentSearchSuggestionClickedFact(position: Int) {
     emitAwesomebarFact(
         Action.INTERACTION,
         AwesomeBarFacts.Items.RECENT_SEARCH_SUGGESTION_CLICKED,
@@ -138,9 +129,7 @@ internal fun emitSearchTermSuggestionClickedFact() {
     )
 }
 
-internal fun emitTrendingSearchSuggestionsDisplayedFact(
-    numberOfSuggestions: Int,
-) {
+internal fun emitTrendingSearchSuggestionsDisplayedFact(numberOfSuggestions: Int) {
     emitAwesomebarFact(
         Action.INTERACTION,
         AwesomeBarFacts.Items.TRENDING_SEARCH_SUGGESTIONS_DISPLAYED,
@@ -148,9 +137,7 @@ internal fun emitTrendingSearchSuggestionsDisplayedFact(
     )
 }
 
-internal fun emitTopSiteSuggestionsDisplayedFact(
-    numberOfSuggestions: Int,
-) {
+internal fun emitTopSiteSuggestionsDisplayedFact(numberOfSuggestions: Int) {
     emitAwesomebarFact(
         Action.INTERACTION,
         AwesomeBarFacts.Items.TOP_SITE_SUGGESTIONS_DISPLAYED,
@@ -158,9 +145,7 @@ internal fun emitTopSiteSuggestionsDisplayedFact(
     )
 }
 
-internal fun emitRecentSearchSuggestionsDisplayedFact(
-    numberOfSuggestions: Int,
-) {
+internal fun emitRecentSearchSuggestionsDisplayedFact(numberOfSuggestions: Int) {
     emitAwesomebarFact(
         Action.INTERACTION,
         AwesomeBarFacts.Items.RECENT_SEARCH_SUGGESTIONS_DISPLAYED,

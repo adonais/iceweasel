@@ -5,6 +5,7 @@
 
 #include "gc/Pretenuring.h"
 
+#include "mozilla/glue/Debug.h"
 #include "mozilla/Sprintf.h"
 
 #include "gc/GCInternals.h"
@@ -161,8 +162,8 @@ size_t PretenuringNursery::doPretenuring(GCRuntime* gc, JS::GCReason reason,
     AllocSite::printInfoFooter(allocSitesCreated, sitesActive, sitesPretenured,
                                sitesInvalidated);
     if (zonesWithHighNurserySurvival) {
-      fprintf(stderr, "  %zu zones with high nursery survival rate\n",
-              zonesWithHighNurserySurvival);
+      printf_stderr("  %zu zones with high nursery survival rate\n",
+                    zonesWithHighNurserySurvival);
     }
   }
 
@@ -454,14 +455,14 @@ static const char* AllocSiteKindName(AllocSite::Kind kind) {
 /* static */
 void AllocSite::printInfoHeader(GCRuntime* gc, JS::GCReason reason,
                                 double promotionRate) {
-  fprintf(stderr,
-          "Pretenuring info after minor GC %zu for %s reason with promotion "
-          "rate %4.1f%%:\n",
-          size_t(gc->minorGCCount()), ExplainGCReason(reason),
-          promotionRate * 100.0);
-  fprintf(stderr, "  %-16s %-16s %-20s %-12s %-9s %-9s %-8s %-8s %-6s %-10s\n",
-          "Site", "Zone", "Location", "BytecodeOp", "SiteKind", "TraceKind",
-          "NAllocs", "Promotes", "PRate", "State");
+  printf_stderr(
+      "Pretenuring info after minor GC %zu for %s reason with promotion "
+      "rate %4.1f%%:\n",
+      size_t(gc->minorGCCount()), ExplainGCReason(reason),
+      promotionRate * 100.0);
+  printf_stderr("  %-16s %-16s %-20s %-12s %-9s %-9s %-8s %-8s %-6s %-10s\n",
+                "Site", "Zone", "Location", "BytecodeOp", "SiteKind",
+                "TraceKind", "NAllocs", "Promotes", "PRate", "State");
 }
 
 static const char* FindBaseName(const char* filename) {
@@ -481,9 +482,6 @@ static const char* FindBaseName(const char* filename) {
 
 void AllocSite::printInfo(bool hasPromotionRate, double promotionRate,
                           bool wasInvalidated) const {
-  // Zone.
-  fprintf(stderr, "  %16p %16p", this, zone());
-
   // Location and bytecode op (not present for catch-all sites).
   char location[21] = {'\0'};
   char opName[13] = {'\0'};
@@ -494,58 +492,49 @@ void AllocSite::printInfo(bool hasPromotionRate, double promotionRate,
     BytecodeLocation location = script()->offsetToLocation(pcOffset());
     SprintfLiteral(opName, "%s", CodeName(location.getOp()));
   }
-  fprintf(stderr, " %-20s %-12s", location, opName);
 
   // Which kind of site this is.
-  fprintf(stderr, " %-9s", AllocSiteKindName(kind()));
+  const char* siteKind = AllocSiteKindName(kind());
 
   // Trace kind, except for optimized sites.
   const char* traceKindName = "";
   if (!isOptimized()) {
     traceKindName = JS::GCTraceKindToAscii(traceKind());
   }
-  fprintf(stderr, " %-9s", traceKindName);
 
   // Nursery allocation count, missing for optimized sites.
-  char buffer[16] = {'\0'};
+  char allocCountBuffer[16] = {'\0'};
   if (!isOptimized()) {
-    SprintfLiteral(buffer, "%8" PRIu32, nurseryAllocCount);
+    SprintfLiteral(allocCountBuffer, "%8" PRIu32, nurseryAllocCount);
   }
-  fprintf(stderr, " %8s", buffer);
-
-  // Nursery promotion count.
-  fprintf(stderr, " %8" PRIu32, nurseryPromotedCount);
 
   // Promotion rate, if there were enough allocations.
-  buffer[0] = '\0';
+  char rateBuffer[16] = {'\0'};
   if (hasPromotionRate) {
-    SprintfLiteral(buffer, "%5.1f%%", std::min(1.0, promotionRate) * 100);
+    SprintfLiteral(rateBuffer, "%5.1f%%", std::min(1.0, promotionRate) * 100);
   }
-  fprintf(stderr, " %6s", buffer);
 
   // Current state where applicable.
   const char* state = "";
   if (!isOptimized()) {
     state = stateName();
   }
-  fprintf(stderr, " %-10s", state);
 
-  // Whether the associated script was invalidated.
-  if (wasInvalidated) {
-    fprintf(stderr, " invalidated");
-  }
-
-  fprintf(stderr, "\n");
+  printf_stderr("  %16p %16p %-20s %-12s %-9s %-9s %8s %8" PRIu32
+                " %6s %-10s%s\n",
+                this, zone(), location, opName, siteKind, traceKindName,
+                allocCountBuffer, nurseryPromotedCount, rateBuffer, state,
+                wasInvalidated ? " invalidated" : "");
 }
 
 /* static */
 void AllocSite::printInfoFooter(size_t sitesCreated, size_t sitesActive,
                                 size_t sitesPretenured,
                                 size_t sitesInvalidated) {
-  fprintf(stderr,
-          "  %zu alloc sites created, %zu active, %zu pretenured, %zu "
-          "invalidated\n",
-          sitesCreated, sitesActive, sitesPretenured, sitesInvalidated);
+  printf_stderr(
+      "  %zu alloc sites created, %zu active, %zu pretenured, %zu "
+      "invalidated\n",
+      sitesCreated, sitesActive, sitesPretenured, sitesInvalidated);
 }
 
 const char* AllocSite::stateName() const {

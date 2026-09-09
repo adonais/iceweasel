@@ -342,9 +342,6 @@ let customFileHeader = ({ surface, platform, componentName = "" }) => {
   ];
 };
 
-const NEST_MEDIA_QUERIES_COMMENT = `/* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */`;
-
 const MEDIA_QUERY_PROPERTY_MAP = {
   "forced-colors": "forcedColors",
   "browser-theme": "browserTheme",
@@ -381,71 +378,61 @@ function formatBaseTokenNames(str) {
 const createDesktopFormat =
   ({ surface, componentName = "" } = {}) =>
   args => {
-    let contents =
-      customFileHeader({ surface, componentName }) +
-      formatTokens({
-        surface,
-        args,
-        componentName,
-      }) +
-      formatTokens({
-        mediaQuery: "prefers-contrast",
-        surface,
-        args,
-        componentName,
-      }) +
-      formatTokens({
-        mediaQuery: "forced-colors",
-        surface,
-        args,
-        componentName,
-      }) +
-      formatTokens({
-        mediaQuery: "browser-theme",
-        surface,
-        args,
-        componentName,
+    // Layer blocks that share the same selector, in cascade order. `undefined`
+    // is the foundation pass, which has no media query.
+    const sharedMediaQueries = [undefined, "prefers-contrast", "forced-colors"];
+
+    // Builds every @layer block that belongs inside a single selector, both the
+    // default tokens and the pref-gated overrides.
+    const buildLayers = mediaQueries => {
+      let layers = mediaQueries
+        .map(mediaQuery =>
+          formatTokens({ mediaQuery, surface, args, componentName })
+        )
+        .join("");
+
+      OVERRIDE_IDENTIFIERS.forEach(({ name, pref }) => {
+        const overrideLayers = mediaQueries
+          .map(mediaQuery =>
+            formatTokens({
+              mediaQuery,
+              surface,
+              args,
+              overrideIdentifier: name,
+              componentName,
+            })
+          )
+          .join("");
+        if (!overrideLayers) {
+          return;
+        }
+
+        layers += `
+  @media -moz-pref("${pref}") {${overrideLayers}  }
+`;
       });
 
-    OVERRIDE_IDENTIFIERS.forEach(({ name, pref }) => {
-      const overrideContents =
-        formatTokens({
-          surface,
-          args,
-          overrideIdentifier: name,
-          componentName,
-        }) +
-        formatTokens({
-          mediaQuery: "prefers-contrast",
-          surface,
-          args,
-          overrideIdentifier: name,
-          componentName,
-        }) +
-        formatTokens({
-          mediaQuery: "forced-colors",
-          surface,
-          args,
-          overrideIdentifier: name,
-          componentName,
-        }) +
-        formatTokens({
-          mediaQuery: "browser-theme",
-          surface,
-          args,
-          overrideIdentifier: name,
-          componentName,
-        });
-      if (!overrideContents) {
-        return;
-      }
+      return layers;
+    };
 
-      contents += `
-@media -moz-pref("${pref}") {
-${overrideContents}
-}
+    let contents = customFileHeader({ surface, componentName });
+
+    const sharedLayers = buildLayers(sharedMediaQueries);
+    if (sharedLayers) {
+      contents += `:root,
+:host${componentName ? "" : "(.anonymous-content-host)"} {${sharedLayers}}
 `;
-    });
+    }
+
+    // The browser theme tokens only apply to browser windows, so they need
+    // their own selector rather than sharing the one above.
+    const browserThemeLayers = buildLayers(["browser-theme"]);
+    if (browserThemeLayers) {
+      contents += `
+:root:is([theme-in-app], :not([lwtheme])),
+:host(.anonymous-content-host) {${browserThemeLayers}}
+`;
+    }
 
     return contents;
   };
@@ -681,10 +668,10 @@ function formatTokens({
   }
 
   dictionary.allTokens = dictionary.allProperties = tokens;
-  let indentation = mediaQuery ? "      " : "    ";
-  if (overrideIdentifier) {
-    indentation += "  ";
-  }
+  // Layer blocks sit inside a selector, and pref-gated overrides add another
+  // level for their media query.
+  let layerIndentation = overrideIdentifier ? "    " : "  ";
+  let indentation = layerIndentation + (mediaQuery ? "    " : "  ");
 
   let formattedVars = formatVariables({
     format: "css",
@@ -702,37 +689,27 @@ function formatTokens({
   // Weird spacing below is unfortunately necessary for formatting the built CSS.
   if (mediaQuery === "browser-theme") {
     return `
-${NEST_MEDIA_QUERIES_COMMENT}
-@layer ${layer} {
-  @media not ((forced-colors) or (-moz-native-theme)) {
-    :root:is([theme-in-app], :not([lwtheme])),
-    :host(.anonymous-content-host) {
+${layerIndentation}@layer ${layer} {
+${layerIndentation}  @media not ((forced-colors) or (-moz-native-theme)) {
 ${formattedVars}
-    }
-  }
-}
+${layerIndentation}  }
+${layerIndentation}}
 `;
   }
   if (mediaQuery) {
     return `
-${NEST_MEDIA_QUERIES_COMMENT}
-@layer ${layer} {
-  @media (${mediaQuery}) {
-    :root,
-    :host${componentName ? "" : "(.anonymous-content-host)"} {
+${layerIndentation}@layer ${layer} {
+${layerIndentation}  @media (${mediaQuery}) {
 ${formattedVars}
-    }
-  }
-}
+${layerIndentation}  }
+${layerIndentation}}
 `;
   }
 
-  return `@layer ${layer} {
-  :root,
-  :host${componentName ? "" : "(.anonymous-content-host)"} {
+  return `
+${layerIndentation}@layer ${layer} {
 ${formattedVars}
-  }
-}
+${layerIndentation}}
 `;
 }
 

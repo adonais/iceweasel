@@ -67,7 +67,7 @@ To change a URI the consumer must call `nsIURI.mutate()` which returns a `nsIMut
 - [nsStandardURL](https://searchfox.org/firefox-main/source/netwerk/base/nsStandardURL.h)
 - [SubstitutingURL](https://searchfox.org/firefox-main/source/netwerk/protocol/res/SubstitutingURL.h)
     - overrides nsStandardURL::GetFile to provide nsIFile resolution.
-    - This allows us to map URLs such as `resource://gre/actors/RemotePageChild.sys.mjs` to the actual file on the disk.
+    - This allows us to map URLs such as `moz-src:///toolkit/actors/RemotePageChild.sys.mjs` to the actual file on the disk.
 - [nsMozIconURI](https://searchfox.org/firefox-main/source/image/decoders/icon/nsIconURI.h)
     - Used to represent icon URLs
 - [nsSimpleURI](https://searchfox.org/firefox-main/source/netwerk/base/nsSimpleURI.h)

@@ -39,28 +39,18 @@ data class SearchEngine(
     val isOptional: Boolean = false,
     val telemetrySuffix: String? = null,
 ) {
-    /**
-     * A enum class representing a search engine type.
-     */
+    /** A enum class representing a search engine type. */
     enum class Type {
-        /**
-         * A bundled search engine.
-         */
+        /** A bundled search engine. */
         BUNDLED,
 
-        /**
-         * A bundled search engine that was loaded additionally, requested by the application.
-         */
+        /** A bundled search engine that was loaded additionally, requested by the application. */
         BUNDLED_ADDITIONAL,
 
-        /**
-         * A custom search engine added by the user.
-         */
+        /** A custom search engine added by the user. */
         CUSTOM,
 
-        /**
-         * A search engine add by the application.
-         */
+        /** A search engine add by the application. */
         APPLICATION,
     }
 

@@ -30,6 +30,7 @@ import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.textfield.TextField
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.bookmarks.AlertDialogDeletionWarning
 import org.mozilla.fenix.bookmarks.BackClicked
@@ -46,11 +47,8 @@ import org.mozilla.fenix.bookmarks.EditFolderAction
 import org.mozilla.fenix.bookmarks.OpenTabsConfirmationDialog
 import org.mozilla.fenix.compose.list.IconListItem
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
-/**
- * Top-level composable for the "Edit folder" screen
- */
+/** Top-level composable for the "Edit folder" screen */
 @Composable
 internal fun EditFolderScreen(
     modifier: Modifier = Modifier,
@@ -77,14 +75,10 @@ internal fun EditFolderScreen(
         },
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxWidth(),
+            modifier = Modifier.padding(paddingValues).fillMaxWidth(),
             contentAlignment = Alignment.TopCenter,
         ) {
-            Column(
-                modifier = Modifier.width(FirefoxTheme.layout.size.containerMaxWidth),
-            ) {
+            Column(modifier = Modifier.width(FirefoxTheme.layout.size.containerMaxWidth)) {
                 TextField(
                     value = editState.folder.title,
                     onValueChange = { newText ->
@@ -92,11 +86,12 @@ internal fun EditFolderScreen(
                     },
                     placeholder = "",
                     errorText = "",
-                    modifier = Modifier.padding(
-                        start = 16.dp,
-                        end = 16.dp,
-                        top = 32.dp,
-                    ),
+                    modifier =
+                        Modifier.padding(
+                            start = 16.dp,
+                            end = 16.dp,
+                            top = 32.dp,
+                        ),
                     label = stringResource(R.string.bookmark_name_label_normal_case),
                 )
 
@@ -155,63 +150,72 @@ private fun EditFolderTopBar(
                 )
             }
         },
-        windowInsets = WindowInsets(
-            top = 0.dp,
-            bottom = 0.dp,
-        ),
+        windowInsets =
+            WindowInsets(
+                top = 0.dp,
+                bottom = 0.dp,
+            ),
     )
 }
 
 @Composable
 @FlexibleWindowLightDarkPreview
 private fun EditFolderScreenPreview() {
-    val store = BookmarksStore(
-        initialState = BookmarksState(
-            bookmarkItems = listOf(),
-            selectedItems = listOf(),
-            rootMenuShown = false,
-            showBookmarksImport = true,
-            sortMenuShown = false,
-            sortOrder = BookmarksListSortOrder.default,
-            recursiveSelectedCount = null,
-            currentFolder = BookmarkItem.Folder(
-                guid = BookmarkRoot.Mobile.id,
-                title = "Bookmarks",
-                position = null,
-            ),
-            isSignedIntoSync = true,
-            openTabsConfirmationDialog = OpenTabsConfirmationDialog.None,
-            bookmarksDeletionDialogState = DeletionDialogState.None,
-            bookmarksSnackbarState = BookmarksSnackbarState.None,
-            bookmarksAddFolderState = null,
-            bookmarksEditBookmarkState = BookmarksEditBookmarkState(
-                bookmark = BookmarkItem.Bookmark(
-                    url = "https://www.whoevenmakeswebaddressesthislonglikeseriously1.com",
-                    title = "this is a very long bookmark title that should overflow 1",
-                    previewImageUrl = "",
-                    guid = "1",
-                    position = null,
-                ),
-                folder = BookmarkItem.Folder("folder 1", guid = "1", position = null),
-            ),
-            bookmarksSelectFolderState = null,
-            bookmarksEditFolderState = BookmarksEditFolderState(
-                parent = BookmarkItem.Folder(
-                    guid = BookmarkRoot.Mobile.id,
-                    title = "Bookmarks",
-                    position = null,
-                ),
-                folder = BookmarkItem.Folder(
-                    guid = BookmarkRoot.Mobile.id,
-                    title = "New folder",
-                    position = null,
-                ),
-            ),
-            bookmarksMultiselectMoveState = null,
-            isLoading = false,
-            searchState = null,
-        ),
-    )
+    val store =
+        BookmarksStore(
+            initialState =
+                BookmarksState(
+                    bookmarkItems = listOf(),
+                    selectedItems = listOf(),
+                    rootMenuShown = false,
+                    showBookmarksImport = true,
+                    sortMenuShown = false,
+                    sortOrder = BookmarksListSortOrder.default,
+                    recursiveSelectedCount = null,
+                    currentFolder =
+                        BookmarkItem.Folder(
+                            guid = BookmarkRoot.Mobile.id,
+                            title = "Bookmarks",
+                            position = null,
+                        ),
+                    isSignedIntoSync = true,
+                    openTabsConfirmationDialog = OpenTabsConfirmationDialog.None,
+                    bookmarksDeletionDialogState = DeletionDialogState.None,
+                    bookmarksSnackbarState = BookmarksSnackbarState.None,
+                    bookmarksAddFolderState = null,
+                    bookmarksEditBookmarkState =
+                        BookmarksEditBookmarkState(
+                            bookmark =
+                                BookmarkItem.Bookmark(
+                                    url = "https://www.whoevenmakeswebaddressesthislonglikeseriously1.com",
+                                    title = "this is a very long bookmark title that should overflow 1",
+                                    previewImageUrl = "",
+                                    guid = "1",
+                                    position = null,
+                                ),
+                            folder = BookmarkItem.Folder("folder 1", guid = "1", position = null),
+                        ),
+                    bookmarksSelectFolderState = null,
+                    bookmarksEditFolderState =
+                        BookmarksEditFolderState(
+                            parent =
+                                BookmarkItem.Folder(
+                                    guid = BookmarkRoot.Mobile.id,
+                                    title = "Bookmarks",
+                                    position = null,
+                                ),
+                            folder =
+                                BookmarkItem.Folder(
+                                    guid = BookmarkRoot.Mobile.id,
+                                    title = "New folder",
+                                    position = null,
+                                ),
+                        ),
+                    bookmarksMultiselectMoveState = null,
+                    isLoading = false,
+                    searchState = null,
+                )
+        )
 
     FirefoxTheme {
         EditFolderScreen(store = store)

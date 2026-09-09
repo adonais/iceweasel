@@ -9,6 +9,7 @@ import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.sync.TabData
 import org.mozilla.fenix.bookmarks.BookmarksGlobalResultReport
+import org.mozilla.fenix.ipprotection.ui.IPProtectionSnackbarBinding
 
 /**
  * The state of the snackbar to display.
@@ -21,9 +22,7 @@ sealed class SnackbarState {
      *
      * @property previous The previous displayed snackbar, if any.
      */
-    data class None(
-        val previous: SnackbarState? = null,
-    ) : SnackbarState()
+    data class None(val previous: SnackbarState? = null) : SnackbarState()
 
     /**
      * Display a generic snackbar with a custom title.
@@ -41,18 +40,12 @@ sealed class SnackbarState {
      *
      * @property previous The previous displayed snackbar, if any.
      */
-    data class Dismiss(
-        val previous: SnackbarState? = null,
-    ) : SnackbarState()
+    data class Dismiss(val previous: SnackbarState? = null) : SnackbarState()
 
-    /**
-     * Display a snackbar of the newly added shortcut.
-     */
+    /** Display a snackbar of the newly added shortcut. */
     data object ShortcutAdded : SnackbarState()
 
-    /**
-     * Display a snackbar when deleting browsing data before quitting.
-     */
+    /** Display a snackbar when deleting browsing data before quitting. */
     data object DeletingBrowserDataInProgress : SnackbarState()
 
     /**
@@ -74,8 +67,8 @@ sealed class SnackbarState {
     data class BookmarkDeleted(val title: String?) : SnackbarState()
 
     /**
-     * Display a snackbar informing of the result of an operation in the bookmarks
-     * feature that must be reported globally.
+     * Display a snackbar informing of the result of an operation in the bookmarks feature that must be reported
+     * globally.
      */
     data class BookmarkOperationResultReported(val result: BookmarksGlobalResultReport) : SnackbarState()
 
@@ -86,19 +79,13 @@ sealed class SnackbarState {
      */
     data class TranslationInProgress(val sessionId: String?) : SnackbarState()
 
-    /**
-     * Display a snackbar when the user's account is authenticated.
-     */
+    /** Display a snackbar when the user's account is authenticated. */
     data object UserAccountAuthenticated : SnackbarState()
 
-    /**
-     * Display a snackbar when sharing to another application failed.
-     */
+    /** Display a snackbar when sharing to another application failed. */
     data object ShareToAppFailed : SnackbarState()
 
-    /**
-     * Display a snackbar after sharing to whatsapp for the first time
-     */
+    /** Display a snackbar after sharing to whatsapp for the first time */
     data object ShareToWhatsApp : SnackbarState()
 
     /**
@@ -123,24 +110,16 @@ sealed class SnackbarState {
         val tabs: List<TabData>,
     ) : SnackbarState()
 
-    /**
-     * Display a snackbar when copying a link to the clipboard.
-     */
+    /** Display a snackbar when copying a link to the clipboard. */
     data object CopyLinkToClipboard : SnackbarState()
 
-    /**
-     * Display a snackbar when a crash report is sent
-     */
+    /** Display a snackbar when a crash report is sent */
     data object ReportSent : SnackbarState()
 
-    /**
-     * Display a snackbar when an URL has been copied to the clipboard.
-     */
+    /** Display a snackbar when an URL has been copied to the clipboard. */
     data object URLCopiedToClipboard : SnackbarState()
 
-    /**
-     * Display a snackbar when the WebCompat report has been successfully submitted.
-     */
+    /** Display a snackbar when the WebCompat report has been successfully submitted. */
     data object WebCompatReportSent : SnackbarState()
 
     /**
@@ -148,9 +127,7 @@ sealed class SnackbarState {
      *
      * @property isPrivate Whether closed tab was private or not.
      */
-    data class CurrentTabClosed(
-        val isPrivate: Boolean,
-    ) : SnackbarState()
+    data class CurrentTabClosed(val isPrivate: Boolean) : SnackbarState()
 
     /**
      * Display a snackbar when a download is in progress.
@@ -181,17 +158,19 @@ sealed class SnackbarState {
     data class CannotOpenFileError(val downloadState: DownloadState) : SnackbarState()
 
     /**
-     * Display a snackbar when there is a connection error.
-     *
-     * @property title The title to display in the snackbar.
-     */
-    data class IPProtectionConnectionError(val title: String) : SnackbarState()
-
-    /**
-     * Display a snackbar when the IP protection monthly data limit has been reached, offering an
-     * action to navigate to the VPN settings screen.
+     * Display a snackbar when the IP protection monthly data limit has been reached, offering an action to navigate to
+     * the VPN settings screen.
      *
      * @property title The title to display in the snackbar.
      */
     data class IPProtectionDataLimitReached(val title: String) : SnackbarState()
+
+    /**
+     * Display a text only snackbar related to the IP Protection feature. Unlike the general [ShowSnackbar], this state
+     * is also consumed by [IPProtectionSnackbarBinding], which lets the snackbar be drawn on top of menus and to avoid
+     * double invocation, depending on which binding has focus.
+     *
+     * @property title The title to display in the snackbar.
+     */
+    data class IPProtectionShowSnackbar(val title: String) : SnackbarState()
 }

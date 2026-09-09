@@ -30,6 +30,16 @@ user_pref("browser.preonboarding.enabled", false);
 // Tell the search service we are running in the US.  This also has the desired
 // side-effect of preventing our geoip lookup.
 user_pref("browser.search.region", "US");
+// The shipped doh-config dump enables the DoH rollout in the US, so without
+// this tests would run heuristics and possibly switch to TRR mode 2 midway.
+// This pref takes priority over the Remote Settings config. DoH's own tests
+// clear it and drive the config themselves.
+user_pref("doh-rollout.enabled", false);
+// The shipped doh-providers dump marks Cloudflare as http3First, so on Nightly
+// TRR would attempt HTTP/3 against the DoH endpoint. Tests that exercise TRR
+// override that endpoint to a local address where nothing speaks HTTP/3, and
+// the attempt only ends when the request times out.
+user_pref("network.trr.allow_default_http3_first", false);
 // disable infobar for tests
 user_pref("browser.search.removeEngineInfobar.enabled", false);
 // We do not wish to display datareporting policy notifications as it might

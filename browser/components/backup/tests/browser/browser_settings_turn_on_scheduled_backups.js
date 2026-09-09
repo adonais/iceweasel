@@ -575,7 +575,7 @@ add_task(async function test_embedded_component_persistent_data_filepicker() {
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     await waitInitialRequestStateSettled();
     let sandbox = sinon.createSandbox();
-    sandbox
+    let probeStub = sandbox
       .stub(BackupService.prototype, "probeDefaultDirAccess")
       .resolves(true);
 
@@ -637,6 +637,11 @@ add_task(async function test_embedded_component_persistent_data_filepicker() {
 
     await promise;
     await settings.updateComplete;
+
+    Assert.ok(
+      probeStub.calledWith(mockCustomParentDir),
+      "probeDefaultDirAccess should be called with the persisted path"
+    );
 
     sandbox.restore();
   });

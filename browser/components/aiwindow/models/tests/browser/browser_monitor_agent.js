@@ -122,8 +122,7 @@ add_task(async function test_run_single_url_monitor() {
   const mockEngineManager = new MockEngineManager();
 
   // serve a simple HTML page with a price in the body
-  const { html } = MLTestUtils.serveHTML();
-  const { url, cleanup: stopServing } = html`
+  const { url, server } = serveHTML(`
     <!DOCTYPE html>
     <html>
       <head>
@@ -134,7 +133,7 @@ add_task(async function test_run_single_url_monitor() {
         <div>The price is $299</div>
       </body>
     </html>
-  `;
+  `);
 
   try {
     // create a monitor that watches the page and runs every hour
@@ -199,7 +198,7 @@ add_task(async function test_run_single_url_monitor() {
       "The product was below $300, so the condition was met."
     );
   } finally {
-    await stopServing();
+    await new Promise(resolve => server.stop(resolve));
     mockEngineManager.cleanupMocks();
     await resetMonitorAgentForTesting();
   }
@@ -210,8 +209,7 @@ add_task(async function test_run_multiple_urls_monitor() {
   const mockEngineManager = new MockEngineManager();
 
   // serve two simple HTML pages with prices in the body
-  const { html } = MLTestUtils.serveHTML();
-  const { url: url1, cleanup: stopServing1 } = html`
+  const { url: url1, server: server1 } = serveHTML(`
     <!DOCTYPE html>
     <html>
       <head>
@@ -222,8 +220,8 @@ add_task(async function test_run_multiple_urls_monitor() {
         <div>The price is $299</div>
       </body>
     </html>
-  `;
-  const { url: url2, cleanup: stopServing2 } = html`
+  `);
+  const { url: url2, server: server2 } = serveHTML(`
     <!DOCTYPE html>
     <html>
       <head>
@@ -234,7 +232,7 @@ add_task(async function test_run_multiple_urls_monitor() {
         <div>The price is $399</div>
       </body>
     </html>
-  `;
+  `);
 
   try {
     // create a monitor that watches both pages and runs every hour
@@ -308,8 +306,8 @@ add_task(async function test_run_multiple_urls_monitor() {
       "The first product was below $300, so the condition was met."
     );
   } finally {
-    await stopServing1();
-    await stopServing2();
+    await new Promise(resolve => server1.stop(resolve));
+    await new Promise(resolve => server2.stop(resolve));
     mockEngineManager.cleanupMocks();
     await resetMonitorAgentForTesting();
   }
@@ -318,8 +316,7 @@ add_task(async function test_run_multiple_urls_monitor() {
 add_task(
   async function test_monitor_run_parses_fenced_json_and_records_not_met() {
     const mockEngineManager = new MockEngineManager();
-    const { html } = MLTestUtils.serveHTML();
-    const { url, cleanup: stopServing } = html`
+    const { url, server } = serveHTML(`
       <article>
         <h1>Widget Store</h1>
         <p>
@@ -331,7 +328,7 @@ add_task(
           and there is no indication of an upcoming discount.
         </p>
       </article>
-    `;
+    `);
     try {
       const monitor = await createMonitorWatching(
         [url],
@@ -367,7 +364,7 @@ add_task(
         "The explanation was extracted from the fenced JSON."
       );
     } finally {
-      await stopServing();
+      await new Promise(resolve => server.stop(resolve));
       mockEngineManager.cleanupMocks();
       await resetMonitorAgentForTesting();
     }
@@ -618,6 +615,7 @@ add_task(function test_Monitor_fromJSON_normalizes_loaded_history() {
         status: "error",
         resultExplanation: "Monitor check was interrupted before it finished.",
         conditionMet: false,
+        errorCode: "interrupted",
       },
     ],
     "A running history entry is converted to an interrupted error."
@@ -728,6 +726,45 @@ add_task(function test_categorizeError() {
     categorizeError("API endpoint not found"),
     "model_error",
     "API errors are categorized as model errors"
+  );
+
+  // Test status-based categorization (MLPA errors carry a status or encode
+  // it in the message instead of descriptive text)
+  const withStatus = (msg, status) => Object.assign(new Error(msg), { status });
+  Assert.equal(
+    categorizeError(withStatus("MLPA request failed", 429)),
+    "rate_limit",
+    "429 status is categorized as rate limit regardless of message"
+  );
+  Assert.equal(
+    categorizeError(new Error("Request failed: 429 status code")),
+    "rate_limit",
+    "A 429 encoded in the message text is categorized as rate limit"
+  );
+  Assert.equal(
+    categorizeError(withStatus("MLPA request failed", 401)),
+    "auth_error",
+    "401 status is categorized as an auth error"
+  );
+  Assert.equal(
+    categorizeError(withStatus("MLPA request failed", 403)),
+    "auth_error",
+    "403 status is categorized as an auth error"
+  );
+  Assert.equal(
+    categorizeError(withStatus("MLPA request failed", 408)),
+    "timeout",
+    "408 status is categorized as a timeout"
+  );
+  Assert.equal(
+    categorizeError(new Error("Request failed: 503 status code")),
+    "model_error",
+    "A server error encoded in the message is categorized as a model error"
+  );
+  Assert.equal(
+    categorizeError(withStatus("Internal server error", 500)),
+    "model_error",
+    "5xx status is categorized as a model error"
   );
 
   // Test unknown errors
@@ -868,8 +905,7 @@ add_task(async function test_limit_number_of_monitors() {
 
 add_task(async function test_monitor_only_watches_http_urls() {
   const mockEngineManager = new MockEngineManager();
-  const { html } = MLTestUtils.serveHTML();
-  const { url, cleanup: stopServing } = html`
+  const { url, server } = serveHTML(`
     <article>
       <h1>Store</h1>
       <p>
@@ -877,7 +913,7 @@ add_task(async function test_monitor_only_watches_http_urls() {
         watched threshold and should trigger a notification.
       </p>
     </article>
-  `;
+  `);
 
   try {
     // Mix a valid http URL with disallowed schemes that could reach local or
@@ -927,7 +963,7 @@ add_task(async function test_monitor_only_watches_http_urls() {
     respond(JSON.stringify({ explanation: "5 dollars.", conditionMet: false }));
     await runPromise;
   } finally {
-    await stopServing();
+    await new Promise(resolve => server.stop(resolve));
     mockEngineManager.cleanupMocks();
     await MonitorAgent._resetForTesting();
   }
@@ -1431,5 +1467,310 @@ add_task(async function test_notification_dismiss_action_mutes_notifications() {
   } finally {
     alertsMock.cleanup();
     await MonitorAgent._resetForTesting();
+  }
+});
+
+add_task(
+  async function test_initial_snapshot_captured_and_persisted_on_create() {
+    const mockEngineManager = new MockEngineManager();
+    const { MonitorStore } = ChromeUtils.importESModule(
+      "moz-src:///browser/components/aiwindow/models/agents/MonitorStore.sys.mjs"
+    );
+
+    const { html } = MLTestUtils.serveHTML();
+    const { url, cleanup: stopServing } = html`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Product Page</title>
+        </head>
+        <body>
+          <div>The price is $299</div>
+        </body>
+      </html>
+    `;
+
+    try {
+      await resetMonitorAgentForTesting();
+      await createMonitorWatching([url], "Tell me when the price drops.");
+
+      // the capture runs in the background after creation, poll the store so
+      // both the capture and its persistence are covered
+      const stored = await TestUtils.waitForCondition(async () => {
+        const [record] = await MonitorStore.listMonitors();
+        return record?.initialSnapshot ?? null;
+      }, "The initial snapshot is captured and persisted after creation");
+
+      Assert.ok(
+        stored.pageContent.includes("The price is $299"),
+        "The persisted snapshot contains the extracted page content"
+      );
+      Assert.ok(
+        !Number.isNaN(Date.parse(stored.capturedAt)),
+        "The persisted snapshot has a valid capture timestamp"
+      );
+
+      const [monitor] = await MonitorAgent.listMonitors();
+      Assert.deepEqual(
+        monitor.initialSnapshot,
+        stored,
+        "The in-memory monitor exposes the same snapshot as the store"
+      );
+    } finally {
+      await stopServing();
+      mockEngineManager.cleanupMocks();
+      await resetMonitorAgentForTesting();
+    }
+  }
+);
+
+add_task(async function test_initial_snapshot_refresh_on_definition_edit() {
+  const mockEngineManager = new MockEngineManager();
+  const { MonitorStore } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/models/agents/MonitorStore.sys.mjs"
+  );
+
+  // the first page is captured more than once (creation + same-URL edit),
+  // so serve it from head.js's persistent server instead of the one-shot
+  // MLTestUtils one
+  const { url: url1, server: server1 } = serveHTML(
+    `<!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Product Page 1</title>
+        </head>
+        <body>
+          <div>The price is $299</div>
+        </body>
+      </html>`
+  );
+  const { html } = MLTestUtils.serveHTML();
+  const { url: url2, cleanup: stopServing2 } = html`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Product Page 2</title>
+      </head>
+      <body>
+        <div>The price is $399</div>
+      </body>
+    </html>
+  `;
+
+  try {
+    await resetMonitorAgentForTesting();
+    const { id } = await createMonitorWatching(
+      [url1],
+      "Tell me when the price drops."
+    );
+
+    const firstSnapshot = await TestUtils.waitForCondition(async () => {
+      const [record] = await MonitorStore.listMonitors();
+      return record?.initialSnapshot ?? null;
+    }, "The initial snapshot is captured after creation");
+    Assert.ok(
+      firstSnapshot.pageContent.includes("The price is $299"),
+      "The initial snapshot is the first page's content"
+    );
+
+    // pause/resume is not an edit and must keep the baseline snapshot
+    await MonitorAgent.updateMonitor(id, { enabled: false });
+    await MonitorAgent.updateMonitor(id, { enabled: true });
+    let [monitor] = await MonitorAgent.listMonitors();
+    Assert.deepEqual(
+      monitor.initialSnapshot,
+      firstSnapshot,
+      "Pause and resume keep the existing snapshot"
+    );
+
+    // any definition edit replaces the baseline with one captured at edit
+    // time, even when the watch URLs are unchanged
+    await MonitorAgent.updateMonitor(id, {
+      title: "New title",
+      monitorPrompt: "Tell me when the price drops below $200.",
+    });
+    const editSnapshot = await TestUtils.waitForCondition(async () => {
+      const [record] = await MonitorStore.listMonitors();
+      return record?.initialSnapshot &&
+        record.initialSnapshot.capturedAt !== firstSnapshot.capturedAt
+        ? record.initialSnapshot
+        : null;
+    }, "A title/prompt edit re-captures the snapshot");
+    Assert.ok(
+      editSnapshot.pageContent.includes("The price is $299"),
+      "The edit-time snapshot is of the same, unchanged watch URL"
+    );
+
+    // changing the watch URLs invalidates and re-captures the snapshot
+    await MonitorAgent.updateMonitor(id, { watchUrls: [url2] });
+    const secondSnapshot = await TestUtils.waitForCondition(async () => {
+      const [record] = await MonitorStore.listMonitors();
+      return record?.initialSnapshot?.pageContent.includes("The price is $399")
+        ? record.initialSnapshot
+        : null;
+    }, "The snapshot is re-captured for the new watch URL");
+    Assert.ok(
+      !secondSnapshot.pageContent.includes("The price is $299"),
+      "The re-captured snapshot no longer contains the old page's content"
+    );
+  } finally {
+    await new Promise(resolve => server1.stop(resolve));
+    await stopServing2();
+    mockEngineManager.cleanupMocks();
+    await resetMonitorAgentForTesting();
+  }
+});
+
+add_task(async function test_mid_capture_url_edit_cancels_stale_snapshot() {
+  const mockEngineManager = new MockEngineManager();
+  const { MonitorStore } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/models/agents/MonitorStore.sys.mjs"
+  );
+
+  // a page that accepts the request and never answers, so the creation-time
+  // capture is reliably still in flight when the edit lands
+  const { url: stalledUrl, cleanup: releaseStalled } =
+    MLTestUtils.serveStalledPage();
+  const { html } = MLTestUtils.serveHTML();
+  const { url: editedUrl, cleanup: stopServing } = html`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Product Page</title>
+      </head>
+      <body>
+        <div>The price is $399</div>
+      </body>
+    </html>
+  `;
+
+  try {
+    await resetMonitorAgentForTesting();
+    const { id } = await createMonitorWatching(
+      [stalledUrl],
+      "Tell me when the price drops."
+    );
+
+    // edit the watch URLs while the first capture is still hanging
+    await MonitorAgent.updateMonitor(id, { watchUrls: [editedUrl] });
+
+    const snapshot = await TestUtils.waitForCondition(async () => {
+      const [record] = await MonitorStore.listMonitors();
+      return record?.initialSnapshot?.pageContent.includes("The price is $399")
+        ? record.initialSnapshot
+        : null;
+    }, "The snapshot captured after the edit is of the new watch URL");
+
+    // release the stalled request; the canceled first capture must not
+    // replace the baseline that belongs to the edited URLs
+    await releaseStalled();
+    await TestUtils.waitForTick();
+    const [monitor] = await MonitorAgent.listMonitors();
+    Assert.deepEqual(
+      monitor.initialSnapshot,
+      snapshot,
+      "The pre-edit capture does not overwrite the edited monitor's baseline"
+    );
+  } finally {
+    await stopServing();
+    mockEngineManager.cleanupMocks();
+    await resetMonitorAgentForTesting();
+  }
+});
+
+add_task(async function test_run_backfills_missing_snapshot_into_prompt() {
+  const mockEngineManager = new MockEngineManager();
+  const { MonitorStore } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/models/agents/MonitorStore.sys.mjs"
+  );
+
+  const { url, server } = serveHTML(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Product Page</title>
+      </head>
+      <body>
+        <div>The price is $299</div>
+      </body>
+    </html>
+  `);
+
+  try {
+    await resetMonitorAgentForTesting();
+
+    // a monitor stored before snapshots existed
+    await MonitorStore.saveMonitor({
+      id: "legacy-monitor",
+      title: "Legacy monitor",
+      monitorPrompt: "Tell me when the price drops.",
+      watchUrls: [url],
+      schedule: { type: "interval", hours: 1 },
+      enabled: true,
+      createdAt: "2026-06-23T12:00:00.000Z",
+      updatedAt: "2026-06-23T12:00:00.000Z",
+      lastRunTime: "2026-06-23T12:00:00.000Z",
+      nextRunTime: "2026-06-23T13:00:00.000Z",
+      history: [],
+      initialSnapshot: null,
+    });
+    MonitorAgent._unloadForTesting();
+
+    const [loaded] = await MonitorAgent.listMonitors();
+    Assert.equal(
+      loaded.initialSnapshot,
+      null,
+      "The legacy monitor loads without a snapshot"
+    );
+
+    const runPromise = MonitorAgent.runNow("legacy-monitor");
+    const { request, respond } = await mockEngineManager.captureRequest({
+      purpose: PURPOSES.MONITOR,
+    });
+
+    const serializedRequest = JSON.stringify(request.args);
+    Assert.ok(
+      serializedRequest.includes("<initial_page_snapshot>"),
+      "The monitor model request includes the snapshot section"
+    );
+    Assert.ok(
+      !serializedRequest.includes("No initial snapshot is available"),
+      "The backfilled snapshot replaces the missing-snapshot fallback"
+    );
+    Assert.ok(
+      !serializedRequest.includes("{snapshotContent}"),
+      "The snapshot placeholders are rendered"
+    );
+
+    respond(
+      JSON.stringify({
+        explanation: "The price did not drop.",
+        conditionMet: false,
+      })
+    );
+    await runPromise;
+
+    const [record] = await MonitorStore.listMonitors();
+    Assert.ok(
+      record.initialSnapshot,
+      "The backfilled snapshot is persisted after the run"
+    );
+    Assert.ok(
+      record.initialSnapshot.pageContent.includes("The price is $299"),
+      "The backfilled snapshot holds the extracted page content"
+    );
+    Assert.ok(
+      serializedRequest.includes(record.initialSnapshot.capturedAt),
+      "The prompt carried the captured snapshot timestamp"
+    );
+  } finally {
+    await new Promise(resolve => server.stop(resolve));
+    mockEngineManager.cleanupMocks();
+    await resetMonitorAgentForTesting();
   }
 });

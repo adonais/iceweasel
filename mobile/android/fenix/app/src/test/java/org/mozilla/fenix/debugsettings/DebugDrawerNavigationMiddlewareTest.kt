@@ -28,16 +28,19 @@ class DebugDrawerNavigationMiddlewareTest {
     private lateinit var store: DebugDrawerStore
 
     @Before
-    fun setup() = runTest(testDispatcher) {
-        store = DebugDrawerStore(
-            middlewares = listOf(
-                DebugDrawerNavigationMiddleware(
-                    navController = navController,
-                    scope = testCoroutineScope,
-                ),
-            ),
-        )
-    }
+    fun setup() =
+        runTest(testDispatcher) {
+            store =
+                DebugDrawerStore(
+                    middlewares =
+                        listOf(
+                            DebugDrawerNavigationMiddleware(
+                                navController = navController,
+                                scope = testCoroutineScope,
+                            )
+                        )
+                )
+        }
 
     @Test
     fun `WHEN home is the next destination THEN the back stack is cleared and the user is returned to home`() =

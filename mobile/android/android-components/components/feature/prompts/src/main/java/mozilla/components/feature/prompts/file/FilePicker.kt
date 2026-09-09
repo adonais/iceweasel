@@ -36,39 +36,32 @@ import mozilla.components.support.ktx.android.net.isUnderPrivateAppDirectory
 import mozilla.components.support.utils.ext.getParcelableExtraCompat
 
 /**
- * The image capture intent doesn't return the URI where the image is saved,
- * so we track it here.
+ * The image capture intent doesn't return the URI where the image is saved, so we track it here.
  *
  * Top-level scoped to survive activity recreation in the "Don't keep activities" scenario.
  */
-@VisibleForTesting
-internal var captureUri: Uri? = null
+@VisibleForTesting internal var captureUri: Uri? = null
 
 /**
  * @property container The [Activity] or [Fragment] which hosts the file picker.
  * @property store The [BrowserStore] this feature should subscribe to.
  * @property fileUploadsDirCleaner a [FileUploadsDirCleaner] to clean up temporary file uploads.
- * @property onNeedToRequestPermissions a callback invoked when permissions
- * need to be requested before a prompt (e.g. a file picker) can be displayed.
- * Once the request is completed, [onPermissionsResult] needs to be invoked.
+ * @property onNeedToRequestPermissions a callback invoked when permissions need to be requested before a prompt (e.g. a
+ *   file picker) can be displayed. Once the request is completed, [onPermissionsResult] needs to be invoked.
  */
 internal class FilePicker(
     private val container: PromptContainer,
     private val store: BrowserStore,
     private var sessionId: String? = null,
     private var fileUploadsDirCleaner: FileUploadsDirCleaner,
-    @get:VisibleForTesting
-    internal var androidPhotoPicker: AndroidPhotoPicker? = null,
+    @get:VisibleForTesting internal var androidPhotoPicker: AndroidPhotoPicker? = null,
     override val onNeedToRequestPermissions: OnNeedToRequestPermissions,
 ) : PermissionsFeature {
 
     private val logger = Logger("FilePicker")
 
-    /**
-     * Cache of the current request to be used after permission is granted.
-     */
-    @VisibleForTesting
-    internal var currentRequest: PromptRequest? = null
+    /** Cache of the current request to be used after permission is granted. */
+    @VisibleForTesting internal var currentRequest: PromptRequest? = null
 
     /**
      * Handles the file request by building the appropriate intents and starting the file picker.
@@ -113,7 +106,8 @@ internal class FilePicker(
                 permissions.addAll(mimeType.filePermissions)
                 mimeType.capturePermission?.let { permissions.add(it) }
                 permissions
-            }.toSet()
+            }
+            .toSet()
     }
 
     /**
@@ -127,9 +121,10 @@ internal class FilePicker(
             // Combine the intents together using a chooser.
             val lastIntent = intents.removeAt(intents.lastIndex)
 
-            val chooser = Intent.createChooser(lastIntent, null).apply {
-                putExtra(EXTRA_INITIAL_INTENTS, intents.toTypedArray())
-            }
+            val chooser =
+                Intent.createChooser(lastIntent, null).apply {
+                    putExtra(EXTRA_INITIAL_INTENTS, intents.toTypedArray())
+                }
 
             container.startActivityForResult(chooser, FILE_PICKER_ACTIVITY_REQUEST_CODE)
         }
@@ -149,18 +144,19 @@ internal class FilePicker(
         // Compare the accepted values against image/*, video/*, and audio/*
         for (type in MimeType.values()) {
             if (type.matches(promptRequest.mimeTypes)) {
-                val hasCapturePermission = type.capturePermission?.let {
-                    container.context.isPermissionGranted(
-                        it,
-                    )
-                } ?: false
+                val hasCapturePermission =
+                    type.capturePermission?.let {
+                        container.context.isPermissionGranted(it)
+                    } ?: false
 
                 // The captureMode attribute can be used if the accepted types are exactly for
                 // image/*, video/*, or audio/*.
-                if (hasCapturePermission && type.shouldCapture(
-                        promptRequest.mimeTypes,
-                        promptRequest.captureMode,
-                    )
+                if (
+                    hasCapturePermission &&
+                        type.shouldCapture(
+                            promptRequest.mimeTypes,
+                            promptRequest.captureMode,
+                        )
                 ) {
                     type.buildIntent(container.context, promptRequest)?.also {
                         saveCaptureUriIfPresent(it)
@@ -190,8 +186,7 @@ internal class FilePicker(
     }
 
     /**
-     * Notifies the feature of intent results for prompt requests handled by
-     * other apps like file chooser requests.
+     * Notifies the feature of intent results for prompt requests handled by other apps like file chooser requests.
      *
      * @param requestCode The code of the app that requested the intent.
      * @param intent The result of the request.
@@ -231,8 +226,8 @@ internal class FilePicker(
         }
 
     /**
-     * Notifies the feature that the permissions request was completed. It will then
-     * either process or dismiss the prompt request.
+     * Notifies the feature that the permissions request was completed. It will then either process or dismiss the
+     * prompt request.
      *
      * @param permissions List of permission requested.
      * @param grantResults The grant results for the corresponding permissions
@@ -250,12 +245,10 @@ internal class FilePicker(
     }
 
     /**
-     * Used in conjunction with [onNeedToRequestPermissions], to notify the feature
-     * that all the required permissions have been granted, and the pending [PromptRequest]
-     * can be performed.
+     * Used in conjunction with [onNeedToRequestPermissions], to notify the feature that all the required permissions
+     * have been granted, and the pending [PromptRequest] can be performed.
      *
-     * If the required permission has not been granted
-     * [onNeedToRequestPermissions] will be called.
+     * If the required permission has not been granted [onNeedToRequestPermissions] will be called.
      */
     @VisibleForTesting
     internal fun onPermissionsGranted(promptRequest: File) {
@@ -264,8 +257,8 @@ internal class FilePicker(
     }
 
     /**
-     * Used in conjunction with [onNeedToRequestPermissions] to notify the feature that one
-     * or more required permissions have been denied.
+     * Used in conjunction with [onNeedToRequestPermissions] to notify the feature that one or more required permissions
+     * have been denied.
      */
     @VisibleForTesting
     internal fun onPermissionsDenied() {
@@ -297,34 +290,25 @@ internal class FilePicker(
         val isVideoRequest = request.isVideoRequest()
 
         if (mimeTypes.size == 1 && (isPhotoRequest || isVideoRequest)) {
-            return ActivityResultContracts.PickVisualMedia.SingleMimeType(
-                mimeTypes[0],
-            )
+            return ActivityResultContracts.PickVisualMedia.SingleMimeType(mimeTypes[0])
         }
 
         return when {
             isPhotoRequest && isVideoRequest -> ActivityResultContracts.PickVisualMedia.ImageAndVideo
             isPhotoRequest -> ActivityResultContracts.PickVisualMedia.ImageOnly
             isVideoRequest -> ActivityResultContracts.PickVisualMedia.VideoOnly
-            else -> throw IllegalStateException(
-                "Unexpected state: getVisualMediaType should only be called if isPhotoOrVideoRequest is true",
-            )
+            else ->
+                throw IllegalStateException(
+                    "Unexpected state: getVisualMediaType should only be called if isPhotoOrVideoRequest is true"
+                )
         }
     }
 
     private fun launchAndroidPhotoPicker() {
         if ((currentRequest as File).isMultipleFilesSelection) {
-            androidPhotoPicker?.multipleMediaPicker?.launch(
-                PickVisualMediaRequest(
-                    getVisualMediaType(currentRequest),
-                ),
-            )
+            androidPhotoPicker?.multipleMediaPicker?.launch(PickVisualMediaRequest(getVisualMediaType(currentRequest)))
         } else {
-            androidPhotoPicker?.singleMediaPicker?.launch(
-                PickVisualMediaRequest(
-                    getVisualMediaType(currentRequest),
-                ),
-            )
+            androidPhotoPicker?.singleMediaPicker?.launch(PickVisualMediaRequest(getVisualMediaType(currentRequest)))
         }
     }
 

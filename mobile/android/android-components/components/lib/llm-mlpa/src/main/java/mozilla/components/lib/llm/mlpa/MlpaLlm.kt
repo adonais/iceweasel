@@ -18,17 +18,20 @@ internal class MlpaLlm(
     val authorizationToken: AuthorizationToken,
     val modelID: ModelID,
 ) : Llm {
-    override suspend fun prompt(prompt: Prompt): Flow<String> = chatService.completion(
-        authorizationToken,
-        request = prompt.toRequest(modelID),
-    )
+    override suspend fun prompt(prompt: Prompt): Flow<String> =
+        chatService.completion(
+            authorizationToken,
+            request = prompt.toRequest(modelID),
+        )
 }
 
-internal fun Prompt.toRequest(model: ModelID) = Request(
-    model = model,
-    messages = buildList {
-        systemPrompt?.let { add(Message.system(it)) }
-        add(Message.user(userPrompt))
-    },
-    stream = true,
-)
+internal fun Prompt.toRequest(model: ModelID) =
+    Request(
+        model = model,
+        messages =
+            buildList {
+                systemPrompt?.let { add(Message.system(it)) }
+                add(Message.user(userPrompt))
+            },
+        stream = true,
+    )

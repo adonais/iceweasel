@@ -189,7 +189,7 @@ CSSPoint SmoothScrollAnimation::GetViewportOffset(
 bool SmoothScrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
                                      const TimeDuration& aDelta) {
   TimeStamp now = mApzc.GetFrameTime().Time();
-  CSSToParentLayerScale zoom(aFrameMetrics.GetZoom());
+  const CSSToParentLayerScale& zoom = aFrameMetrics.GetZoom();
   if (zoom == CSSToParentLayerScale(0)) {
     return false;
   }

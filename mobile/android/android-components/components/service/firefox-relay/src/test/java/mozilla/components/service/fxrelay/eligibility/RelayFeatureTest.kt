@@ -77,14 +77,15 @@ class RelayFeatureTest {
 
     // stop() tests
     @Test
-    fun `GIVEN started WHEN stop THEN observer is unregistered`() = runTest(testDispatcher) {
-        val feature = createFeature()
-        feature.start()
+    fun `GIVEN started WHEN stop THEN observer is unregistered`() =
+        runTest(testDispatcher) {
+            val feature = createFeature()
+            feature.start()
 
-        feature.stop()
+            feature.stop()
 
-        assertEquals(1, accountManager.unregisterCallCount)
-    }
+            assertEquals(1, accountManager.unregisterCallCount)
+        }
 
     @Test
     fun `GIVEN not started WHEN stop THEN observer is not unregistered`() {
@@ -125,12 +126,13 @@ class RelayFeatureTest {
             val feature = createFeature()
             feature.start()
 
-            val fakeProfile = Profile(
-                uid = "testUID",
-                email = "test@example.com",
-                avatar = null,
-                displayName = null,
-            )
+            val fakeProfile =
+                Profile(
+                    uid = "testUID",
+                    email = "test@example.com",
+                    avatar = null,
+                    displayName = null,
+                )
             accountManager.observers.first().onProfileUpdated(fakeProfile)
 
             assertEquals(Ineligible.FirefoxAccountNotLoggedIn, store.state.eligibilityState)
@@ -259,19 +261,22 @@ class RelayFeatureTest {
             fakeFxRelay.accountDetails = RelayAccountDetails(RelayPlanTier.FREE, 1)
             accountManager.account = FakeOAuthAccount(listOf(createRelayAttachedClient()))
             val recentCheckTimeStamp = System.currentTimeMillis()
-            val localStore = RelayEligibilityStore(
-                initialState = RelayState(
-                    eligibilityState = Ineligible.NoRelay,
-                    lastEntitlementCheckMs = recentCheckTimeStamp,
-                ),
-            )
-            val feature = RelayFeature(
-                accountManager = accountManager,
-                store = localStore,
-                fetchTimeoutMs = FETCH_TIMEOUT_MS,
-                mainDispatcher = testDispatcher,
-                fxRelayFactory = { fakeFxRelay },
-            )
+            val localStore =
+                RelayEligibilityStore(
+                    initialState =
+                        RelayState(
+                            eligibilityState = Ineligible.NoRelay,
+                            lastEntitlementCheckMs = recentCheckTimeStamp,
+                        )
+                )
+            val feature =
+                RelayFeature(
+                    accountManager = accountManager,
+                    store = localStore,
+                    fetchTimeoutMs = FETCH_TIMEOUT_MS,
+                    mainDispatcher = testDispatcher,
+                    fxRelayFactory = { fakeFxRelay },
+                )
 
             feature.start()
             testDispatcher.scheduler.advanceUntilIdle()
@@ -279,28 +284,28 @@ class RelayFeatureTest {
             assertEquals(recentCheckTimeStamp, localStore.state.lastEntitlementCheckMs)
         }
 
-    private fun createFeature() = RelayFeature(
-        accountManager = accountManager,
-        store = store,
-        mainDispatcher = testDispatcher,
-        fxRelayFactory = { fakeFxRelay },
-        extractHostUrl = { it },
-    )
+    private fun createFeature() =
+        RelayFeature(
+            accountManager = accountManager,
+            store = store,
+            mainDispatcher = testDispatcher,
+            fxRelayFactory = { fakeFxRelay },
+            extractHostUrl = { it },
+        )
 
-    private fun createRelayAttachedClient() = AttachedClient(
-        clientId = ServiceClientId.Production.id,
-        deviceId = "device-id",
-        deviceType = DeviceType.MOBILE,
-        isCurrentSession = false,
-        name = "Relay",
-        createdTime = null,
-        lastAccessTime = null,
-        scope = null,
-    )
+    private fun createRelayAttachedClient() =
+        AttachedClient(
+            clientId = ServiceClientId.Production.id,
+            deviceId = "device-id",
+            deviceType = DeviceType.MOBILE,
+            isCurrentSession = false,
+            name = "Relay",
+            createdTime = null,
+            lastAccessTime = null,
+            scope = null,
+        )
 
-    private class FakeAccountManagerDelegate(
-        var account: OAuthAccount? = null,
-    ) : FxaAccountManagerDelegate {
+    private class FakeAccountManagerDelegate(var account: OAuthAccount? = null) : FxaAccountManagerDelegate {
         val observers = mutableListOf<AccountObserver>()
         var registerCallCount = 0
         var unregisterCallCount = 0
@@ -316,29 +321,43 @@ class RelayFeatureTest {
         }
 
         override fun authenticatedAccount() = account
+
         override fun connectedAccount() = account
     }
 
-    private class FakeOAuthAccount(
-        private val attachedClients: List<AttachedClient> = emptyList(),
-    ) : OAuthAccount {
+    private class FakeOAuthAccount(private val attachedClients: List<AttachedClient> = emptyList()) : OAuthAccount {
         override suspend fun getAttachedClient() = attachedClients
+
         override fun getCurrentDeviceId(): String? = null
+
         override suspend fun handleWebChannelLogin(jsonPayload: String) = Unit
+
         override fun getSignedInUserForWebChannel(): String? = null
+
         override suspend fun getProfile(ignoreCache: Boolean): Profile? = null
+
         override suspend fun getAccessToken(singleScope: String): AccessTokenInfo? = null
+
         override fun authErrorDetected() = Unit
+
         override suspend fun checkAuthorizationStatus(singleScope: String): Boolean? = null
+
         override suspend fun getTokenServerEndpointURL(): String? = null
+
         override suspend fun getManageAccountURL(entryPoint: FxAEntryPoint): String? = null
+
         override fun getPairingAuthorityURL() = ""
+
         override fun registerPersistenceCallback(callback: StatePersistenceCallback) = Unit
-        override fun deviceConstellation(): DeviceConstellation =
-            throw UnsupportedOperationException()
+
+        override fun deviceConstellation(): DeviceConstellation = throw UnsupportedOperationException()
+
+        override fun hasScope(scope: String): Boolean = false
 
         override suspend fun disconnect() = false
+
         override fun toJSONString() = ""
+
         override fun close() = Unit
     }
 
@@ -348,8 +367,9 @@ class RelayFeatureTest {
         var createdMask: EmailMask? = null,
     ) : FxRelay {
         override suspend fun fetchEmailMasks() = emailMasks
+
         override suspend fun fetchAccountDetails() = accountDetails
-        override suspend fun createEmailMask(generatedForHostUrl: String, descriptionHostUrl: String) =
-            createdMask
+
+        override suspend fun createEmailMask(generatedForHostUrl: String, descriptionHostUrl: String) = createdMask
     }
 }

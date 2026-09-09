@@ -4,9 +4,7 @@
 
 package mozilla.components.lib.jexl.ast
 
-/**
- * A node of the abstract syntax tree.
- */
+/** A node of the abstract syntax tree. */
 sealed class AstNode {
 
     var parent: AstNode? = null
@@ -24,9 +22,7 @@ internal interface BranchNode {
 
 // node types
 
-internal data class Literal(
-    val value: Any?,
-) : AstNode() {
+internal data class Literal(val value: Any?) : AstNode() {
 
     override fun toString(level: Int, isTopLevel: Boolean) =
         buildNodeDescription("< $value >", "LITERAL", level, isTopLevel)
@@ -82,9 +78,7 @@ internal data class Identifier(
     override fun toString() = toString(level = 0)
 }
 
-internal data class ObjectLiteral(
-    val properties: Map<String, AstNode>,
-) : AstNode() {
+internal data class ObjectLiteral(val properties: Map<String, AstNode>) : AstNode() {
 
     constructor(vararg properties: Pair<String, AstNode>) : this(properties.toMap())
 
@@ -112,9 +106,7 @@ internal data class ConditionalExpression(
     override fun toString() = toString(level = 0)
 }
 
-internal data class ArrayLiteral(
-    val values: MutableList<Any?>,
-) : AstNode() {
+internal data class ArrayLiteral(val values: MutableList<Any?>) : AstNode() {
 
     constructor(vararg values: Any?) : this(values.toMutableList())
 
@@ -209,11 +201,12 @@ private fun StringBuilder.appendNodeListValues(node: ArrayLiteral, level: Int) {
     array.withIndex().forEach { (i, child) ->
         appendLevelPad(level)
 
-        val value = if (child is AstNode) {
-            child.toString(level, isTopLevel = false)
-        } else {
-            child.toString()
-        }
+        val value =
+            if (child is AstNode) {
+                child.toString(level, isTopLevel = false)
+            } else {
+                child.toString()
+            }
 
         append("$i : $value")
     }

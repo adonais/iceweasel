@@ -496,6 +496,9 @@ class ContStackAllocator {
   // How many stacks to put in an arena. Computed once at the first allocation,
   // like stackSize_.
   uint32_t arenaCapacity_ = 0;
+  // The most arenas we will map, derived from the virtual memory cap. Computed
+  // once at the first allocation, like stackSize_.
+  size_t maxArenas_ = 0;
   // The pool of arenas. These are sorted by base address and don't overlap,
   // which allows us to binary search to find an arena for a given SP.
   ContStackArenaVector arenas_;
@@ -621,13 +624,18 @@ void EmitFindHandler(jit::MacroAssembler& masm, jit::Register instance,
 // Does not return. After the stack switch, execution resumes at
 // *suspendCodeOffset with only InstanceReg live.
 //
+// suspendResultsAreaBase is the FP relative offset of the suspend results
+// area (0 when no tag results). Its address is advertised into the resume
+// SwitchTarget's paramsArea so the next resumer writes the tag results
+// straight into this area; the suspender then reads them back from here.
+//
 // Clobbers scratch1, scratch2, scratch3, and suspendedCont.
 void EmitSuspend(jit::MacroAssembler& masm, jit::Register instance,
                  jit::Register suspendedCont, jit::Register handler,
                  jit::Register scratch1, jit::Register scratch2,
                  jit::Register scratch3, const CallSiteDesc& callSiteDesc,
                  jit::CodeOffset* suspendCodeOffset,
-                 uint32_t* suspendFramePushed);
+                 uint32_t* suspendFramePushed, uint32_t suspendResultsAreaBase);
 
 // Offsets used when initializing a handler for a resume.
 struct HandlerJitOffsets {
@@ -635,21 +643,52 @@ struct HandlerJitOffsets {
   uint32_t resultsAreaOffset = UINT32_MAX;
 };
 
+// Validates the continuation (null/resumable checks, branching to fail on
+// failure) and computes into `output` the destination paramsArea pointer that
+// the resume params should be written to.
+//
+// For a fresh continuation the destination is the resumer's own
+// resumeParamsArea (FP - resumeParamsAreaBase), which is also advertised into
+// initialResumeTarget.paramsArea for the base frame stub. For a suspended
+// continuation the destination is the paramsArea the suspender already
+// advertised (its suspendResultsArea), so the params are written straight into
+// the suspender's frame.
+//
+// Only used when the continuation takes params (resumeParamsAreaBase != 0).
+//
+// Clobbers scratch1, scratch2; preserves cont.
+void EmitPrepareResume(jit::MacroAssembler& masm, jit::Register cont,
+                       uint32_t resumeParamsAreaBase, jit::Register output,
+                       jit::Register scratch1, jit::Register scratch2,
+                       jit::Label* fail);
+
 // Resume a suspended continuation with the given handlers.
 //
 // Does not return. After the resumed stack returns, execution continues at
 // *resumeCodeOffset with only InstanceReg live. Each handler landing pad
 // jumps to the corresponding handlerLabels entry with only InstanceReg live.
 //
+// handlersParamsAreaBase: FP relative offset of the handlers params area;
+//   each handler's target.paramsArea is set to FP - base + resultsAreaOffset
+//   (0 only when there are no handlers; the continuation is always passed, so a
+//   handler with no tag params still has a non-empty area).
+// contResultsAreaBase: FP relative offset of the cont results area whose
+//   address is written into returnTarget.paramsArea so the typed base frame
+//   stub can store cont results (0 when there are no cont results).
+//
+// The resume params are written by EmitPrepareResume before this is called, so
+// EmitResume no longer touches resumeTarget.paramsArea.
+//
 // Clobbers scratch1, scratch2, scratch3, and cont.
 void EmitResume(jit::MacroAssembler& masm, jit::Register instance,
-                jit::Register cont, jit::Register handlersResultArea,
+                jit::Register cont, uint32_t handlersParamsAreaBase,
                 jit::Register scratch1, jit::Register scratch2,
-                jit::Register scratch3, jit::Label* fail,
+                jit::Register scratch3,
                 mozilla::Span<HandlerJitOffsets> handlerOffsets,
                 mozilla::Span<jit::Label*> handlerLabels,
                 const CallSiteDesc& callSiteDesc,
-                jit::CodeOffset* resumeCodeOffset, uint32_t* resumeFramePushed);
+                jit::CodeOffset* resumeCodeOffset, uint32_t* resumeFramePushed,
+                uint32_t contResultsAreaBase);
 
 #endif  // ENABLE_WASM_JSPI
 

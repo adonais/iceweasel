@@ -7,19 +7,13 @@ package mozilla.components.support.base.feature
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 
-/**
- * An interface for all entry points to feature components to implement in order to make them lifecycle aware.
- */
+/** An interface for all entry points to feature components to implement in order to make them lifecycle aware. */
 interface LifecycleAwareFeature : DefaultLifecycleObserver {
 
-    /**
-     * Method that is called after ON_START event occurred.
-     */
+    /** Method that is called after ON_START event occurred. */
     fun start()
 
-    /**
-     * Method that is called after ON_STOP event occurred.
-     */
+    /** Method that is called after ON_STOP event occurred. */
     fun stop()
 
     override fun onStart(owner: LifecycleOwner) {

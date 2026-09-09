@@ -7,9 +7,7 @@ package mozilla.components.concept.engine.translate
 /**
  * Translation options that map to the Gecko Translations Options.
  *
- * @property downloadModel If the necessary models should be downloaded on request. If false, then
- * the translation will not complete and throw an exception if the models are not already available.
+ * @property downloadModel If the necessary models should be downloaded on request. If false, then the translation will
+ *   not complete and throw an exception if the models are not already available.
  */
-data class TranslationOptions(
-    val downloadModel: Boolean = true,
-)
+data class TranslationOptions(val downloadModel: Boolean = true)

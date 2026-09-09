@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.trackingprotection
 
+import java.util.EnumMap
 import mozilla.components.concept.engine.EngineSession.TrackingProtectionPolicy.TrackingCategory
 import mozilla.components.concept.engine.content.blocking.Tracker
 import mozilla.components.concept.engine.content.blocking.TrackerLog
@@ -12,13 +13,10 @@ import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory.CRYPTOMIN
 import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory.FINGERPRINTERS
 import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory.SOCIAL_MEDIA_TRACKERS
 import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory.TRACKING_CONTENT
-import java.util.EnumMap
 
 typealias BucketMap = Map<TrackingProtectionCategory, List<TrackerLog>>
 
-/**
- * Sorts [Tracker]s into different buckets and exposes them as a map.
- */
+/** Sorts [Tracker]s into different buckets and exposes them as a map. */
 class TrackerBuckets {
 
     private var trackers = emptyList<TrackerLog>()
@@ -28,10 +26,7 @@ class TrackerBuckets {
     var buckets: BucketedTrackerLog = BucketedTrackerLog(emptyMap(), emptyMap())
         private set
 
-    /**
-     * If [newTrackers] has changed since the last call,
-     * update [buckets] based on the new tracker log list.
-     */
+    /** If [newTrackers] has changed since the last call, update [buckets] based on the new tracker log list. */
     fun updateIfNeeded(newTrackers: List<TrackerLog>) {
         if (newTrackers != trackers) {
             trackers = newTrackers
@@ -39,19 +34,13 @@ class TrackerBuckets {
         }
     }
 
-    /**
-     * Returns true if there are no trackers being blocked.
-     */
+    /** Returns true if there are no trackers being blocked. */
     fun blockedIsEmpty() = buckets.blockedBucketMap.isEmpty()
 
-    /**
-     * Returns true if there are no trackers loaded.
-     */
+    /** Returns true if there are no trackers loaded. */
     fun loadedIsEmpty() = buckets.loadedBucketMap.isEmpty()
 
-    /**
-     * Gets the tracker URLs for a given category.
-     */
+    /** Gets the tracker URLs for a given category. */
     fun get(key: TrackingProtectionCategory, blocked: Boolean) =
         if (blocked) buckets.blockedBucketMap[key].orEmpty() else buckets.loadedBucketMap[key].orEmpty()
 
@@ -71,45 +60,43 @@ class TrackerBuckets {
             return BucketedTrackerLog(blockedMap, loadedMap)
         }
 
-        private fun primaryBlockedBucket(item: TrackerLog): TrackingProtectionCategory? = when {
-            TrackingCategory.FINGERPRINTING in item.blockedCategories -> FINGERPRINTERS
-            TrackingCategory.CRYPTOMINING in item.blockedCategories -> CRYPTOMINERS
-            TrackingCategory.MOZILLA_SOCIAL in item.blockedCategories -> SOCIAL_MEDIA_TRACKERS
-            TrackingCategory.SCRIPTS_AND_SUB_RESOURCES in item.blockedCategories -> TRACKING_CONTENT
-            TrackingCategory.EMAIL in item.blockedCategories -> TRACKING_CONTENT
-            item.cookiesHasBeenBlocked -> CROSS_SITE_TRACKING_COOKIES
-            else -> null
-        }
+        private fun primaryBlockedBucket(item: TrackerLog): TrackingProtectionCategory? =
+            when {
+                TrackingCategory.FINGERPRINTING in item.blockedCategories -> FINGERPRINTERS
+                TrackingCategory.CRYPTOMINING in item.blockedCategories -> CRYPTOMINERS
+                TrackingCategory.MOZILLA_SOCIAL in item.blockedCategories -> SOCIAL_MEDIA_TRACKERS
+                TrackingCategory.SCRIPTS_AND_SUB_RESOURCES in item.blockedCategories -> TRACKING_CONTENT
+                TrackingCategory.EMAIL in item.blockedCategories -> TRACKING_CONTENT
+                item.cookiesHasBeenBlocked -> CROSS_SITE_TRACKING_COOKIES
+                else -> null
+            }
 
-        /**
-         * Create an empty mutable map of [TrackingProtectionCategory] to hostnames.
-         */
+        /** Create an empty mutable map of [TrackingProtectionCategory] to hostnames. */
         private fun createMap() =
             EnumMap<TrackingProtectionCategory, MutableList<TrackerLog>>(TrackingProtectionCategory::class.java)
 
         /**
-         * Add the hostname of the [TrackerLog.url] into the map for the given category
-         * from Android Components. The category is transformed into a corresponding Fenix bucket,
-         * and the item is discarded if the category doesn't have a match.
+         * Add the hostname of the [TrackerLog.url] into the map for the given category from Android Components. The
+         * category is transformed into a corresponding Fenix bucket, and the item is discarded if the category doesn't
+         * have a match.
          */
         private fun MutableMap<TrackingProtectionCategory, MutableList<TrackerLog>>.addTrackerHost(
             category: TrackingCategory,
             tracker: TrackerLog,
         ) {
-            val key = when (category) {
-                TrackingCategory.CRYPTOMINING -> CRYPTOMINERS
-                TrackingCategory.FINGERPRINTING -> FINGERPRINTERS
-                TrackingCategory.MOZILLA_SOCIAL -> SOCIAL_MEDIA_TRACKERS
-                TrackingCategory.SCRIPTS_AND_SUB_RESOURCES -> TRACKING_CONTENT
-                TrackingCategory.EMAIL -> TRACKING_CONTENT
-                else -> return
-            }
+            val key =
+                when (category) {
+                    TrackingCategory.CRYPTOMINING -> CRYPTOMINERS
+                    TrackingCategory.FINGERPRINTING -> FINGERPRINTERS
+                    TrackingCategory.MOZILLA_SOCIAL -> SOCIAL_MEDIA_TRACKERS
+                    TrackingCategory.SCRIPTS_AND_SUB_RESOURCES -> TRACKING_CONTENT
+                    TrackingCategory.EMAIL -> TRACKING_CONTENT
+                    else -> return
+                }
             addTrackerHost(key, tracker)
         }
 
-        /**
-         * Add the hostname of the [TrackerLog] into the map for the given [TrackingProtectionCategory].
-         */
+        /** Add the hostname of the [TrackerLog] into the map for the given [TrackingProtectionCategory]. */
         private fun MutableMap<TrackingProtectionCategory, MutableList<TrackerLog>>.addTrackerHost(
             key: TrackingProtectionCategory,
             tracker: TrackerLog,

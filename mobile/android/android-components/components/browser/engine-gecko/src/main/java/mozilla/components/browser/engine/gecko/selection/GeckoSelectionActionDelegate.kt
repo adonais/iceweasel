@@ -18,14 +18,13 @@ import org.mozilla.geckoview.BasicSelectionActionDelegate
  */
 open class GeckoSelectionActionDelegate(
     activity: Activity,
-    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal val customDelegate: SelectionActionDelegate,
+    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal val customDelegate: SelectionActionDelegate,
 ) : BasicSelectionActionDelegate(activity) {
 
     companion object {
         /**
-         * @returns a [GeckoSelectionActionDelegate] if [customDelegate] is non-null and [context]
-         * is an instance of [Activity]. Otherwise, returns null.
+         * @returns a [GeckoSelectionActionDelegate] if [customDelegate] is non-null and [context] is an instance of
+         *   [Activity]. Otherwise, returns null.
          */
         fun maybeCreate(context: Context, customDelegate: SelectionActionDelegate?): GeckoSelectionActionDelegate? {
             return if (context is Activity && customDelegate != null) {
@@ -43,16 +42,14 @@ open class GeckoSelectionActionDelegate(
     override fun isActionAvailable(id: String): Boolean {
         val selectedText = mSelection?.text
 
-        val customActionIsAvailable = !selectedText.isNullOrEmpty() &&
-            customDelegate.isActionAvailable(id, selectedText)
+        val customActionIsAvailable =
+            !selectedText.isNullOrEmpty() && customDelegate.isActionAvailable(id, selectedText)
 
-        return customActionIsAvailable ||
-            super.isActionAvailable(id)
+        return customActionIsAvailable || super.isActionAvailable(id)
     }
 
     override fun prepareAction(id: String, item: MenuItem) {
-        val title = customDelegate.getActionTitle(id)
-            ?: return super.prepareAction(id, item)
+        val title = customDelegate.getActionTitle(id) ?: return super.prepareAction(id, item)
 
         item.title = title
     }

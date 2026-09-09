@@ -20,21 +20,24 @@ class ProxyConfigLookup final : public nsIProtocolProxyCallback {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPROTOCOLPROXYCALLBACK
 
+  // aIsTRRServiceChannel marks the channel this lookup resolves against as a
+  // TRR service channel, so that proxy filters can tell DoH traffic apart.
   static nsresult Create(
       std::function<void(nsIProxyInfo*, nsresult)>&& aCallback, nsIURI* aURI,
-      uint32_t aProxyResolveFlags,
+      uint32_t aProxyResolveFlags, bool aIsTRRServiceChannel = false,
       nsICancelable** aLookupCancellable = nullptr);
 
  private:
   explicit ProxyConfigLookup(
       std::function<void(nsIProxyInfo*, nsresult)>&& aCallback, nsIURI* aURI,
-      uint32_t aProxyResolveFlags);
+      uint32_t aProxyResolveFlags, bool aIsTRRServiceChannel);
   virtual ~ProxyConfigLookup();
   nsresult DoProxyResolve(nsICancelable** aLookupCancellable);
 
   std::function<void(nsIProxyInfo*, nsresult)> mCallback;
   nsCOMPtr<nsIURI> mURI;
   uint32_t mProxyResolveFlags;
+  bool mIsTRRServiceChannel;
 };
 
 }  // namespace net

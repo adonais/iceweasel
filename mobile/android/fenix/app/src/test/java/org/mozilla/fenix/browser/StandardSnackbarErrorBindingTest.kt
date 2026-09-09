@@ -45,54 +45,50 @@ class StandardSnackbarErrorBindingTest {
     }
 
     @Test
-    fun `WHEN show standard snackbar error action dispatched THEN snackbar should appear`() = runTest(testDispatcher) {
-        val appStore = AppStore()
-        val standardSnackbarError = StandardSnackbarErrorBinding(
-            snackbarContainer,
-            appStore,
-            snackbarFactory,
-            "Dismiss",
-            testDispatcher,
-        )
+    fun `WHEN show standard snackbar error action dispatched THEN snackbar should appear`() =
+        runTest(testDispatcher) {
+            val appStore = AppStore()
+            val standardSnackbarError =
+                StandardSnackbarErrorBinding(
+                    snackbarContainer,
+                    appStore,
+                    snackbarFactory,
+                    "Dismiss",
+                    testDispatcher,
+                )
 
-        standardSnackbarError.start()
-        appStore.dispatch(
-            AppAction.UpdateStandardSnackbarErrorAction(
-                StandardSnackbarError(
-                    "Unable to generate PDF",
-                ),
-            ),
-        )
-        testDispatcher.scheduler.advanceUntilIdle()
+            standardSnackbarError.start()
+            appStore.dispatch(
+                AppAction.UpdateStandardSnackbarErrorAction(StandardSnackbarError("Unable to generate PDF"))
+            )
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify { snackbar.show() }
-    }
+            verify { snackbar.show() }
+        }
 
     @Test
-    fun `WHEN show standard snackbar error action dispatched and binding is stopped THEN snackbar should appear when binding is again started`() = runTest(testDispatcher) {
-        val appStore = AppStore()
-        val standardSnackbarError = StandardSnackbarErrorBinding(
-            snackbarContainer,
-            appStore,
-            snackbarFactory,
-            "Dismiss",
-            testDispatcher,
-        )
+    fun `WHEN show standard snackbar error action dispatched and binding is stopped THEN snackbar should appear when binding is again started`() =
+        runTest(testDispatcher) {
+            val appStore = AppStore()
+            val standardSnackbarError =
+                StandardSnackbarErrorBinding(
+                    snackbarContainer,
+                    appStore,
+                    snackbarFactory,
+                    "Dismiss",
+                    testDispatcher,
+                )
 
-        standardSnackbarError.start()
-        appStore.dispatch(
-            AppAction.UpdateStandardSnackbarErrorAction(
-                StandardSnackbarError(
-                    "Unable to generate PDF",
-                ),
-            ),
-        )
-        testDispatcher.scheduler.advanceUntilIdle()
+            standardSnackbarError.start()
+            appStore.dispatch(
+                AppAction.UpdateStandardSnackbarErrorAction(StandardSnackbarError("Unable to generate PDF"))
+            )
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        standardSnackbarError.stop()
+            standardSnackbarError.stop()
 
-        standardSnackbarError.start()
+            standardSnackbarError.start()
 
-        verify { snackbar.show() }
-    }
+            verify { snackbar.show() }
+        }
 }

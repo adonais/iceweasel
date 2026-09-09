@@ -17,25 +17,29 @@ class ParsedStructureTest {
     fun `Given a ParsedStructure WHEN parcelling and unparcelling it THEN get the same object`() {
         // AutofillId constructor is private but it can be constructed from a parcel.
         // Use this route instead of mocking to avoid errors like below:
-        // org.robolectric.shadows.ShadowParcel$UnreliableBehaviorError: Looking for Integer at position 72, found String
-        val usernameIdAutofillIdParcel = Parcel.obtain().apply {
-            writeInt(1) // viewId
-            writeInt(3) // flags
-            writeInt(78) // virtualIntId
-            setDataPosition(0) // be a good citizen
-        }
-        val passwordIdAutofillParcel = Parcel.obtain().apply {
-            writeInt(11) // viewId
-            writeInt(31) // flags
-            writeInt(781) // virtualIntId
-            setDataPosition(0) // be a good citizen
-        }
-        val parsedStructure = ParsedStructure(
-            usernameId = AutofillId.CREATOR.createFromParcel(usernameIdAutofillIdParcel),
-            passwordId = AutofillId.CREATOR.createFromParcel(passwordIdAutofillParcel),
-            packageName = "test",
-            webDomain = "https://mozilla.org",
-        )
+        // org.robolectric.shadows.ShadowParcel$UnreliableBehaviorError: Looking for Integer at position 72, found
+        // String
+        val usernameIdAutofillIdParcel =
+            Parcel.obtain().apply {
+                writeInt(1) // viewId
+                writeInt(3) // flags
+                writeInt(78) // virtualIntId
+                setDataPosition(0) // be a good citizen
+            }
+        val passwordIdAutofillParcel =
+            Parcel.obtain().apply {
+                writeInt(11) // viewId
+                writeInt(31) // flags
+                writeInt(781) // virtualIntId
+                setDataPosition(0) // be a good citizen
+            }
+        val parsedStructure =
+            ParsedStructure(
+                usernameId = AutofillId.CREATOR.createFromParcel(usernameIdAutofillIdParcel),
+                passwordId = AutofillId.CREATOR.createFromParcel(passwordIdAutofillParcel),
+                packageName = "test",
+                webDomain = "https://mozilla.org",
+            )
 
         // Write the object in a new Parcel.
         val parcel = Parcel.obtain()

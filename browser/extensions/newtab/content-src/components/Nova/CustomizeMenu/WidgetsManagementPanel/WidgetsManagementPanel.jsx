@@ -26,6 +26,7 @@ function WidgetsManagementPanel({
   mayHaveCrosswordWidget,
   mayHaveStocksWidget,
   mayHavePictureOfTheDayWidget,
+  mayHaveRecentSearchesWidget,
   setPref,
 }) {
   const prefs = useSelector(state => state.Prefs.values);
@@ -86,6 +87,9 @@ function WidgetsManagementPanel({
         case "WIDGET_PICTURE_OF_THE_DAY":
           widgetName = "picture_of_the_day";
           break;
+        case "WIDGET_RECENT_SEARCHES":
+          widgetName = "recent_searches";
+          break;
       }
 
       if (widgetName) {
@@ -121,6 +125,7 @@ function WidgetsManagementPanel({
     crosswordEnabled,
     stocksEnabled,
     pictureOfTheDayEnabled,
+    recentSearchesEnabled,
   } = enabledWidgets;
   const isRTL = typeof document !== "undefined" && document.dir === "rtl";
   const arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
@@ -257,6 +262,18 @@ function WidgetsManagementPanel({
                     data-preference="widgets.pictureOfTheDay.enabled"
                     data-event-source="WIDGET_PICTURE_OF_THE_DAY"
                     data-l10n-id="newtab-custom-widget-picture-toggle"
+                  />
+                </div>
+              )}
+              {mayHaveRecentSearchesWidget && (
+                <div id="recent-searches-widget-section" className="section">
+                  <moz-toggle
+                    id="recent-searches-toggle"
+                    pressed={recentSearchesEnabled || null}
+                    ontoggle={onToggleWidget}
+                    data-preference="widgets.recentSearches.enabled"
+                    data-event-source="WIDGET_RECENT_SEARCHES"
+                    data-l10n-id="newtab-custom-widget-recent-searches-toggle"
                   />
                 </div>
               )}

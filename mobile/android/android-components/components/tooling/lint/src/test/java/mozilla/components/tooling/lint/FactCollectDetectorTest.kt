@@ -10,14 +10,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-/**
- * Tests for the [FactCollectDetector] custom lint check.
- */
+/** Tests for the [FactCollectDetector] custom lint check. */
 @RunWith(JUnit4::class)
 class FactCollectDetectorTest {
 
-    private val factClassfileStub = kotlin(
-        """
+    private val factClassfileStub =
+        kotlin(
+                """
         package mozilla.components.support.base.facts
 
         data class Fact(
@@ -29,15 +28,16 @@ class FactCollectDetectorTest {
         )
 
         fun Fact.collect() = Facts.collect(this)
-        """,
-    ).indented()
+        """
+            )
+            .indented()
 
     @Test
     fun `should report when collect is not invoked on Fact instance`() {
         lint()
             .files(
                 kotlin(
-                    """
+                        """
                     package test
 
                     import mozilla.components.support.base.facts.Fact
@@ -57,8 +57,9 @@ class FactCollectDetectorTest {
                             metadata
                         )
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
                 factClassfileStub,
             )
             .issues(FactCollectDetector.ISSUE_FACT_COLLECT_CALLED)
@@ -69,7 +70,8 @@ class FactCollectDetectorTest {
                     Fact(
                     ~~~~
                 1 errors, 0 warnings
-                """.trimIndent(),
+                """
+                    .trimIndent()
             )
     }
 
@@ -78,7 +80,7 @@ class FactCollectDetectorTest {
         lint()
             .files(
                 kotlin(
-                    """
+                        """
                     package test
 
                     import mozilla.components.support.base.facts.Fact
@@ -98,8 +100,9 @@ class FactCollectDetectorTest {
                             metadata
                         ).collect()
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
                 factClassfileStub,
             )
             .issues(FactCollectDetector.ISSUE_FACT_COLLECT_CALLED)
@@ -112,7 +115,7 @@ class FactCollectDetectorTest {
         lint()
             .files(
                 kotlin(
-                    """
+                        """
                     package test
 
                     import mozilla.components.support.base.facts.Fact
@@ -132,8 +135,9 @@ class FactCollectDetectorTest {
                             metadata
                         )
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
                 factClassfileStub,
             )
             .issues(FactCollectDetector.ISSUE_FACT_COLLECT_CALLED)
@@ -146,7 +150,7 @@ class FactCollectDetectorTest {
         lint()
             .files(
                 kotlin(
-                    """
+                        """
                     package test
 
                     import mozilla.components.support.base.facts.Fact
@@ -171,8 +175,9 @@ class FactCollectDetectorTest {
                     private fun method(parameter: Fact) {
 
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
                 factClassfileStub,
             )
             .issues(FactCollectDetector.ISSUE_FACT_COLLECT_CALLED)
@@ -185,7 +190,7 @@ class FactCollectDetectorTest {
         lint()
             .files(
                 kotlin(
-                    """
+                        """
                     package test
 
                     import mozilla.components.support.base.facts.Fact
@@ -209,8 +214,9 @@ class FactCollectDetectorTest {
                             )
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
                 factClassfileStub,
             )
             .issues(FactCollectDetector.ISSUE_FACT_COLLECT_CALLED)

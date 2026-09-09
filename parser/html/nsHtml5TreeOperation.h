@@ -617,8 +617,8 @@ class nsHtml5TreeOperation final {
   static void SetHTMLElementAttributes(mozilla::dom::Element* aElement,
                                        nsHtml5HtmlAttributes* aAttributes);
 
-  static void SetHTMLElementAttributesFast(mozilla::dom::Element* aElement,
-                                           nsHtml5HtmlAttributes* aAttributes);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void SetHTMLElementAttributesFast(
+      mozilla::dom::Element* aElement, nsHtml5HtmlAttributes* aAttributes);
 
   static nsIContent* CreateHTMLElement(
       nsAtom* aName, nsHtml5HtmlAttributes* aAttributes,

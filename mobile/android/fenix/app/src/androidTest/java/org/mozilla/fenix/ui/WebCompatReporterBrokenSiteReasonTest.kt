@@ -26,8 +26,7 @@ import org.mozilla.fenix.webcompat.ui.WebCompatReporter
 @RunWith(AndroidJUnit4::class)
 class WebCompatReporterBrokenSiteReasonTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun selectedReasonClickedClearsReasonSelectionTest() {
@@ -39,12 +38,14 @@ class WebCompatReporterBrokenSiteReasonTest {
 
         val clearIconDescription = context.getString(R.string.webcompat_reporter_clear_reason_content_description)
 
-        val store = WebCompatReporterStore(
-            initialState = WebCompatReporterState(
-                enteredUrl = "https://www.example.com",
-                reason = selectedReason,
-            ),
-        )
+        val store =
+            WebCompatReporterStore(
+                initialState =
+                    WebCompatReporterState(
+                        enteredUrl = "https://www.example.com",
+                        reason = selectedReason,
+                    )
+            )
 
         composeTestRule.setContent {
             FirefoxTheme {
@@ -52,10 +53,7 @@ class WebCompatReporterBrokenSiteReasonTest {
             }
         }
 
-        composeTestRule
-            .onNodeWithContentDescription(clearIconDescription)
-            .assertExists()
-            .performClick()
+        composeTestRule.onNodeWithContentDescription(clearIconDescription).assertExists().performClick()
 
         assertNull(store.state.reason)
 
@@ -63,9 +61,7 @@ class WebCompatReporterBrokenSiteReasonTest {
             .onNodeWithTag(BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_SELECTED_REASON)
             .assertDoesNotExist()
 
-        composeTestRule
-            .onNodeWithTag(selectedReasonListItemTag)
-            .assertExists()
+        composeTestRule.onNodeWithTag(selectedReasonListItemTag).assertExists()
     }
 
     @Test
@@ -73,17 +69,19 @@ class WebCompatReporterBrokenSiteReasonTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val reasonToSelect = BrokenSiteReason.Slow
         val reasonToSelectText = context.getString(reasonToSelect.displayStringId)
-        val reasonListItemTag =
-            "${BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_REASON_OPTION}-$reasonToSelectText"
+        val reasonListItemTag = "${BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_REASON_OPTION}-$reasonToSelectText"
 
-        val clearIconDescription = context.getString(org.mozilla.fenix.R.string.webcompat_reporter_clear_reason_content_description)
+        val clearIconDescription =
+            context.getString(org.mozilla.fenix.R.string.webcompat_reporter_clear_reason_content_description)
 
-        val store = WebCompatReporterStore(
-            initialState = WebCompatReporterState(
-                enteredUrl = "https://www.example.com",
-                reason = null,
-            ),
-        )
+        val store =
+            WebCompatReporterStore(
+                initialState =
+                    WebCompatReporterState(
+                        enteredUrl = "https://www.example.com",
+                        reason = null,
+                    )
+            )
 
         composeTestRule.setContent {
             FirefoxTheme {
@@ -95,17 +93,11 @@ class WebCompatReporterBrokenSiteReasonTest {
             .onNodeWithTag(BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_DESCRIPTION_INPUT)
             .assertDoesNotExist()
 
-        composeTestRule
-            .onNodeWithTag(reasonListItemTag)
-            .performClick()
+        composeTestRule.onNodeWithTag(reasonListItemTag).performClick()
 
-        composeTestRule
-            .onNodeWithTag(BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_DESCRIPTION_INPUT)
-            .assertExists()
+        composeTestRule.onNodeWithTag(BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_DESCRIPTION_INPUT).assertExists()
 
-        composeTestRule
-            .onNodeWithContentDescription(clearIconDescription)
-            .performClick()
+        composeTestRule.onNodeWithContentDescription(clearIconDescription).performClick()
 
         composeTestRule
             .onNodeWithTag(BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_DESCRIPTION_INPUT)

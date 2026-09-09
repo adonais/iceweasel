@@ -13,8 +13,8 @@ import mozilla.appservices.viaduct.configureOhttpChannel
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * A client for fetching suggestions from the Merino suggest endpoint.
- * This interface allows for swapping out the underlying implementation for testing.
+ * A client for fetching suggestions from the Merino suggest endpoint. This interface allows for swapping out the
+ * underlying implementation for testing.
  */
 interface MerinoClient {
     /**
@@ -27,9 +27,8 @@ interface MerinoClient {
 }
 
 /**
- * An implementation of [MerinoClient] that uses the Application Services [SuggestClient]
- * to fetch suggestions. This client configures the OHTTP channel and handles potential
- * [MerinoSuggestApiException]s, logging them appropriately.
+ * An implementation of [MerinoClient] that uses the Application Services [SuggestClient] to fetch suggestions. This
+ * client configures the OHTTP channel and handles potential [MerinoSuggestApiException]s, logging them appropriately.
  */
 class SuggestMerinoClient : MerinoClient {
     private val logger = Logger("SuggestMerinoClient")
@@ -42,32 +41,33 @@ class SuggestMerinoClient : MerinoClient {
         )
     }
 
-    override fun makeRequest(query: String): String? = try {
-        suggestClient.getSuggestions(
-            query = query,
-            options = SuggestOptions(
-                providers = listOf(PROVIDERS),
-                source = null,
-                country = null,
-                region = null,
-                city = null,
-                clientVariants = null,
-                requestType = null,
-                acceptLanguage = null,
-            ),
-        )
-    } catch (e: MerinoSuggestApiException) {
-        when (e) {
-            is MerinoSuggestApiException.Network -> logger.error(message = "$NETWORK_ERROR_MESSAGE - ${e.message}")
-            is MerinoSuggestApiException.Other -> logger.error(message = "$UNEXPECTED_ERROR_MESSAGE - ${e.message}")
+    override fun makeRequest(query: String): String? =
+        try {
+            suggestClient.getSuggestions(
+                query = query,
+                options =
+                    SuggestOptions(
+                        providers = listOf(PROVIDERS),
+                        source = null,
+                        country = null,
+                        region = null,
+                        city = null,
+                        clientVariants = null,
+                        requestType = null,
+                        acceptLanguage = null,
+                    ),
+            )
+        } catch (e: MerinoSuggestApiException) {
+            when (e) {
+                is MerinoSuggestApiException.Network -> logger.error(message = "$NETWORK_ERROR_MESSAGE - ${e.message}")
+                is MerinoSuggestApiException.Other -> logger.error(message = "$UNEXPECTED_ERROR_MESSAGE - ${e.message}")
+            }
+            null
         }
-        null
-    }
 
     companion object {
         private const val NETWORK_ERROR_MESSAGE = "Network error when fetching Online Suggestions"
-        private const val UNEXPECTED_ERROR_MESSAGE =
-            "Unexpected error when fetching Online Suggestions"
+        private const val UNEXPECTED_ERROR_MESSAGE = "Unexpected error when fetching Online Suggestions"
         private const val PROVIDERS = "flightaware,polygon,sports"
         private const val MERINO = "merino"
         private const val RELAY_URL = "https://ohttp-merino.mozilla.fastly-edge.com"

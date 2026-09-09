@@ -42,12 +42,13 @@ class StrongPasswordPromptViewListenerTest {
     private var onDismissWasCalled = false
     private var confirmedLogin: Login? = null
 
-    private val request = PromptRequest.SelectLoginPrompt(
-        logins = listOf(login, login2),
-        generatedPassword = suggestedPassword,
-        onConfirm = { confirmedLogin = it },
-        onDismiss = { onDismissWasCalled = true },
-    )
+    private val request =
+        PromptRequest.SelectLoginPrompt(
+            logins = listOf(login, login2),
+            generatedPassword = suggestedPassword,
+            onConfirm = { confirmedLogin = it },
+            onDismiss = { onDismissWasCalled = true },
+        )
 
     private lateinit var store: BrowserStore
     private lateinit var state: BrowserState
@@ -70,12 +71,13 @@ class StrongPasswordPromptViewListenerTest {
     fun `StrongPasswordGenerator shows the suggest strong password bar on a custom tab`() {
         val customTabContent: ContentState = mock()
         whenever(customTabContent.promptRequests).thenReturn(listOf(request))
-        val customTab = CustomTabSessionState(
-            id = "custom-tab",
-            content = customTabContent,
-            trackingProtection = mock(),
-            config = mock(),
-        )
+        val customTab =
+            CustomTabSessionState(
+                id = "custom-tab",
+                content = customTabContent,
+                trackingProtection = mock(),
+                config = mock(),
+            )
 
         whenever(state.customTabs).thenReturn(listOf(customTab))
 

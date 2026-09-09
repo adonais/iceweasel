@@ -14,8 +14,8 @@ import org.mozilla.fenix.tabgroups.storage.repository.TabGroupRepository
 /**
  * Important Note: This is used for TESTING and COMPOSE PREVIEWS only.
  *
- * This is a fake implementation of [TabGroupRepository] designed exclusively
- * for unit tests and Compose previews. Do NOT use this in production UI code.
+ * This is a fake implementation of [TabGroupRepository] designed exclusively for unit tests and Compose previews. Do
+ * NOT use this in production UI code.
  */
 @VisibleForTesting
 @Suppress("EmptyFunctionBlock")
@@ -43,54 +43,55 @@ class FakeTabGroupRepository(
             mutableTabGroupFlow.value.copy(
                 tabGroups = mutableTabGroupFlow.value.tabGroups + tabGroup,
                 tabGroupAssignments = updatedAssignments,
-            ),
+            )
         )
     }
 
     override suspend fun addNewTabGroup(tabGroup: TabGroup) {
         mutableTabGroupFlow.emit(
-            mutableTabGroupFlow.value.copy(
-                tabGroups = mutableTabGroupFlow.value.tabGroups + tabGroup,
-            ),
+            mutableTabGroupFlow.value.copy(tabGroups = mutableTabGroupFlow.value.tabGroups + tabGroup)
         )
     }
 
     override suspend fun updateTabGroup(tabGroup: TabGroup) {
-        val updatedList = mutableTabGroupFlow.value.tabGroups.map {
-            if (it.id == tabGroup.id) {
-                tabGroup
-            } else {
-                it
+        val updatedList =
+            mutableTabGroupFlow.value.tabGroups.map {
+                if (it.id == tabGroup.id) {
+                    tabGroup
+                } else {
+                    it
+                }
             }
-        }
         mutableTabGroupFlow.emit(mutableTabGroupFlow.value.copy(tabGroups = updatedList))
     }
 
     override suspend fun closeTabGroup(tabGroupId: String) {
         mutableTabGroupFlow.emit(
             mutableTabGroupFlow.value.copy(
-                tabGroups = mutableTabGroupFlow.value.tabGroups.map { group ->
-                    if (group.id == tabGroupId) {
-                        group.copy(closed = true)
-                    } else {
-                        group
+                tabGroups =
+                    mutableTabGroupFlow.value.tabGroups.map { group ->
+                        if (group.id == tabGroupId) {
+                            group.copy(closed = true)
+                        } else {
+                            group
+                        }
                     }
-                },
-            ),
+            )
         )
     }
 
     override suspend fun openTabGroup(tabGroupId: String) {
         mutableTabGroupFlow.emit(
             mutableTabGroupFlow.value.copy(
-                tabGroups = mutableTabGroupFlow.value.tabGroups.map { group ->
-                    if (group.id == tabGroupId) {
-                        group.copy(closed = false)
-                    } else {
-                        group
+                tabGroups =
+                    mutableTabGroupFlow.value.tabGroups.map { group ->
+                        if (group.id == tabGroupId) {
+                            group.copy(closed = false)
+                        } else {
+                            group
+                        }
                     }
-                },
-            ),
+            )
         )
     }
 
@@ -111,7 +112,7 @@ class FakeTabGroupRepository(
             mutableTabGroupFlow.value.copy(
                 tabGroups = mutableTabGroupFlow.value.tabGroups.filterNot { it.id in ids },
                 tabGroupAssignments = prunedAssignments,
-            ),
+            )
         )
     }
 

@@ -25,7 +25,7 @@
         android:layout_height="match_parent"
         android:layout_marginStart="9dp"
         android:layout_toEndOf="@id/button_search_widget_new_tab_icon"
-        android:layout_alignEnd="@id/button_search_widget_voice"
+        android:layout_toStartOf="@id/button_search_widget_lens"
         android:gravity="start|center_vertical"
         android:letterSpacing="-0.025"
         android:textAlignment="viewStart"
@@ -44,6 +44,19 @@
         android:contentDescription="@string/search_widget_voice"
         android:scaleType="centerInside"
         android:src="@drawable/mozac_ic_microphone_24"
+        android:tint="@color/fx_mobile_on_surface"
+        tools:ignore="AndroidSrcXmlDetector,UseAppTint" />
+
+    <ImageButton
+        android:id="@+id/button_search_widget_lens"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_centerVertical="true"
+        android:layout_toStartOf="@id/button_search_widget_voice"
+        android:background="@android:color/transparent"
+        android:contentDescription="@string/lens_search_content_description"
+        android:scaleType="centerInside"
+        android:src="@drawable/mozac_ic_logo_google_lens_24"
         android:tint="@color/fx_mobile_on_surface"
         tools:ignore="AndroidSrcXmlDetector,UseAppTint" />
 </RelativeLayout>

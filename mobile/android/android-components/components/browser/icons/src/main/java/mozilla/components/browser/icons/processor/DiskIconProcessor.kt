@@ -10,21 +10,13 @@ import mozilla.components.browser.icons.Icon.Source
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.support.images.DesiredSize
 
-/**
- * [IconProcessor] implementation that saves icons in the disk cache.
- */
-class DiskIconProcessor(
-    private val cache: ProcessorDiskCache,
-) : IconProcessor {
+/** [IconProcessor] implementation that saves icons in the disk cache. */
+class DiskIconProcessor(private val cache: ProcessorDiskCache) : IconProcessor {
     interface ProcessorDiskCache {
-        /**
-         * Saves icon resources to cache.
-         * */
+        /** Saves icon resources to cache. */
         fun putResources(context: Context, request: IconRequest)
 
-        /**
-         * Saves icon bitmap to cache.
-         * */
+        /** Saves icon bitmap to cache. */
         fun putIcon(context: Context, resource: IconRequest.Resource, icon: Icon)
     }
 
@@ -46,7 +38,11 @@ class DiskIconProcessor(
 }
 
 private val Icon.shouldCacheOnDisk: Boolean
-    get() = when (source) {
-        Source.DOWNLOAD, Source.INLINE -> true
-        Source.GENERATOR, Source.MEMORY, Source.DISK -> false
-    }
+    get() =
+        when (source) {
+            Source.DOWNLOAD,
+            Source.INLINE -> true
+            Source.GENERATOR,
+            Source.MEMORY,
+            Source.DISK -> false
+        }

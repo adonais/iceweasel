@@ -10,26 +10,25 @@ import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.Upd
 import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateTrackersBlockedThisWeek
 import org.mozilla.fenix.components.appstate.AppState
 
-/**
- * [AppState] reducer of updates related to blocked trackers.
- */
+/** [AppState] reducer of updates related to blocked trackers. */
 object BlockedTrackersStateReducer {
-    /**
-     * [AppState] reducer of [BlockedTrackersAction]s.
-     */
-    fun reduce(state: AppState, action: BlockedTrackersAction): AppState = when (action) {
-        is UpdateTrackersBlockedThisWeek -> state.updateBlockedTrackersState {
-            copy(trackersBlockedThisWeek = action.blockedTrackerCategories)
+    /** [AppState] reducer of [BlockedTrackersAction]s. */
+    fun reduce(state: AppState, action: BlockedTrackersAction): AppState =
+        when (action) {
+            is UpdateTrackersBlockedThisWeek ->
+                state.updateBlockedTrackersState {
+                    copy(trackersBlockedThisWeek = action.blockedTrackerCategories)
+                }
+            is UpdateTrackersBlockedCount ->
+                state.updateBlockedTrackersState {
+                    copy(trackersBlockedCount = action.count)
+                }
+            is UpdateEarliestTrackingDate ->
+                state.updateBlockedTrackersState {
+                    copy(earliestTrackingDate = action.date)
+                }
         }
-        is UpdateTrackersBlockedCount -> state.updateBlockedTrackersState {
-            copy(trackersBlockedCount = action.count)
-        }
-        is UpdateEarliestTrackingDate -> state.updateBlockedTrackersState {
-            copy(earliestTrackingDate = action.date)
-        }
-    }
 
-    private fun AppState.updateBlockedTrackersState(update: BlockedTrackersState.() -> BlockedTrackersState) = copy(
-        blockedTrackersState = blockedTrackersState.update(),
-    )
+    private fun AppState.updateBlockedTrackersState(update: BlockedTrackersState.() -> BlockedTrackersState) =
+        copy(blockedTrackersState = blockedTrackersState.update())
 }

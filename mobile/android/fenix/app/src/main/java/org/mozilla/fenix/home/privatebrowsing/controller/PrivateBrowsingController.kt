@@ -15,24 +15,16 @@ import org.mozilla.fenix.home.privatebrowsing.interactor.PrivateBrowsingInteract
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.utils.Settings
 
-/**
- * An interface that handles the view manipulation of the private browsing mode.
- */
+/** An interface that handles the view manipulation of the private browsing mode. */
 interface PrivateBrowsingController {
-    /**
-     * @see [PrivateBrowsingInteractor.onLearnMoreClicked]
-     */
+    /** @see [PrivateBrowsingInteractor.onLearnMoreClicked] */
     fun handleLearnMoreClicked()
 
-    /**
-     * @see [PrivateBrowsingInteractor.onPrivateModeButtonClicked]
-     */
+    /** @see [PrivateBrowsingInteractor.onPrivateModeButtonClicked] */
     fun handlePrivateModeButtonClicked(newMode: BrowsingMode)
 }
 
-/**
- * The default implementation of [PrivateBrowsingController].
- */
+/** The default implementation of [PrivateBrowsingController]. */
 class DefaultPrivateBrowsingController(
     private val navController: NavController,
     private val browsingModeManager: BrowsingModeManager,
@@ -41,8 +33,9 @@ class DefaultPrivateBrowsingController(
 ) : PrivateBrowsingController {
 
     override fun handleLearnMoreClicked() {
-        val learnMoreURL = SupportUtils.getGenericSumoURLForTopic(SupportUtils.SumoTopic.PRIVATE_BROWSING_MYTHS) +
-            "?as=u&utm_source=inproduct"
+        val learnMoreURL =
+            SupportUtils.getGenericSumoURLForTopic(SupportUtils.SumoTopic.PRIVATE_BROWSING_MYTHS) +
+                "?as=u&utm_source=inproduct"
         val newTab = settings.enableHomepageAsNewTab.not()
 
         navController.navigate(R.id.browserFragment)

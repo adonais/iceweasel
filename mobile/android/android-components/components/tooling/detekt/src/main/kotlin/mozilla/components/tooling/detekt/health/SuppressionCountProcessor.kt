@@ -16,9 +16,7 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtStringTemplateExpression
 import org.jetbrains.kotlin.resolve.BindingContext
 
-/**
- * Detekt processor to track the rules that we suppress.
- */
+/** Detekt processor to track the rules that we suppress. */
 internal class SuppressionCountProcessor : FileProcessListener {
 
     override fun onProcess(file: KtFile, bindingContext: BindingContext) {
@@ -37,16 +35,13 @@ internal class SuppressionCountProcessor : FileProcessListener {
             }
         }
 
-        val output = merged.entries
-            .sortedByDescending { it.value }
-            .associate { it.toPair() }
+        val output = merged.entries.sortedByDescending { it.value }.associate { it.toPair() }
 
         result.addData(suppressionKey, output)
     }
 
     companion object {
-        internal val suppressionKey: Key<Map<String, Int>> =
-            Key<Map<String, Int>>("file_suppressions")
+        internal val suppressionKey: Key<Map<String, Int>> = Key<Map<String, Int>>("file_suppressions")
     }
 
     class AnnotationVisitor : DetektVisitor() {
@@ -61,10 +56,12 @@ internal class SuppressionCountProcessor : FileProcessListener {
             val supportedAnnotations = setOf("Suppress", "SuppressWarnings")
             if (annotation !in supportedAnnotations) return
 
-            val args = annotationEntry.valueArguments.mapNotNull { arg ->
-                arg.getArgumentExpression()
-                    ?.getArguments()
-            }.flatten()
+            val args =
+                annotationEntry.valueArguments
+                    .mapNotNull { arg ->
+                        arg.getArgumentExpression()?.getArguments()
+                    }
+                    .flatten()
 
             args.forEach { argument: String ->
                 annotationsData[argument] = (annotationsData[argument] ?: 0) + 1
@@ -74,7 +71,9 @@ internal class SuppressionCountProcessor : FileProcessListener {
         private fun KtExpression.getArguments(): List<String>? {
             return when (this) {
                 is KtStringTemplateExpression -> {
-                    this.entries.mapNotNull { it.text }.joinToString("")
+                    this.entries
+                        .mapNotNull { it.text }
+                        .joinToString("")
                         .removeSurrounding("\"")
                         .split(",")
                         .map { it.trim() }
@@ -86,9 +85,11 @@ internal class SuppressionCountProcessor : FileProcessListener {
                 }
 
                 is KtCallExpression -> {
-                    valueArguments.mapNotNull { callArgument ->
-                        callArgument.getArgumentExpression()?.getArguments()
-                    }.flatten()
+                    valueArguments
+                        .mapNotNull { callArgument ->
+                            callArgument.getArgumentExpression()?.getArguments()
+                        }
+                        .flatten()
                 }
 
                 else -> null

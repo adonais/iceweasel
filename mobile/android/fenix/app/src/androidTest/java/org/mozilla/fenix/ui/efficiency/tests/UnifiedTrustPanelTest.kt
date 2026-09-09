@@ -15,7 +15,8 @@ import org.mozilla.fenix.ui.efficiency.selectors.UnifiedTrustPanelSelectors.CLEA
 
 class UnifiedTrustPanelTest : BaseTest() {
 
-    private val mockWebServer get() = fenixTestRule.mockWebServer
+    private val mockWebServer
+        get() = fenixTestRule.mockWebServer
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3186723
     @SmokeTest
@@ -25,10 +26,8 @@ class UnifiedTrustPanelTest : BaseTest() {
         val originWebsite = "mozilla-mobile.github.io"
 
         on.browserPage.navigateToPage(loginPage)
-        on.unifiedTrustPanel.navigateToPage()
-            .mozClick(CLEAR_COOKIES_AND_SITE_DATA_BUTTON)
-        on.unifiedTrustPanel
-            .verifyTheClearCookiesAndSiteDataDialog(originWebsite)
+        on.unifiedTrustPanel.navigateToPage().mozClick(CLEAR_COOKIES_AND_SITE_DATA_BUTTON)
+        on.unifiedTrustPanel.verifyTheClearCookiesAndSiteDataDialog(originWebsite)
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3186718
@@ -114,13 +113,13 @@ class UnifiedTrustPanelTest : BaseTest() {
 
         on.customTabs.launchCustomTab(customTabPage)
         // Opens the trust panel from the custom-tab "Site information" button (CustomTabsPage -> panel edge).
-        on.unifiedTrustPanel.navigateToPage()
-            .mozClick(CLEAR_COOKIES_AND_SITE_DATA_BUTTON)
+        on.unifiedTrustPanel.navigateToPage().mozClick(CLEAR_COOKIES_AND_SITE_DATA_BUTTON)
         on.unifiedTrustPanel.verifyTheClearCookiesAndSiteDataDialog(originWebsite)
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3186711
-    // Converted from legacy UnifiedTrustPanelTest.verifyInsecurePageConnectionFromQuickSettingsWithNoTrackersInCustomTabsTest
+    // Converted from legacy
+    // UnifiedTrustPanelTest.verifyInsecurePageConnectionFromQuickSettingsWithNoTrackersInCustomTabsTest
     @SmokeTest
     @Test
     fun verifyInsecurePageConnectionFromQuickSettingsWithNoTrackersInCustomTabsTest() {

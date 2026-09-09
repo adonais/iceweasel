@@ -7,6 +7,7 @@ package mozilla.components.service.merino.manifest
 import android.content.res.AssetManager
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.support.ktx.android.net.hostWithoutCommonPrefixes
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
@@ -16,12 +17,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.doReturn
-import kotlin.test.assertNotNull
 
-private val TEST_JSON = MerinoManifestProviderTest::class.java.classLoader!!
-    .getResourceAsStream(ASSET_FILE_PATH)!!
-    .bufferedReader()
-    .readText()
+private val TEST_JSON =
+    MerinoManifestProviderTest::class
+        .java
+        .classLoader!!
+        .getResourceAsStream(ASSET_FILE_PATH)!!
+        .bufferedReader()
+        .readText()
 
 @RunWith(AndroidJUnit4::class)
 class MerinoManifestProviderTest {
@@ -46,9 +49,10 @@ class MerinoManifestProviderTest {
 
     @Test
     fun `GIVEN host has a blank icon WHEN the icon URL is fetched THEN return null`() {
-        val provider = providerWith(
-            """{"domains":[{"rank":1,"domain":"example","categories":[],"serp_categories":[],"url":"https://example.com/","title":"Example","icon":""}]}""",
-        )
+        val provider =
+            providerWith(
+                """{"domains":[{"rank":1,"domain":"example","categories":[],"serp_categories":[],"url":"https://example.com/","title":"Example","icon":""}]}"""
+            )
         assertNull(provider.getIconUrl("example.com"))
     }
 

@@ -11,17 +11,6 @@ import android.os.Build
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.net.toUri
-import mozilla.components.concept.base.crash.Breadcrumb
-import mozilla.components.lib.crash.Crash
-import mozilla.components.lib.crash.RuntimeTag
-import mozilla.components.lib.crash.service.CrashReport.Annotation
-import mozilla.components.support.base.ext.getStacktraceAsJsonString
-import mozilla.components.support.base.ext.getStacktraceAsString
-import mozilla.components.support.base.log.logger.Logger
-import mozilla.components.support.utils.ext.packageManagerCompatHelper
-import org.json.JSONArray
-import org.json.JSONException
-import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileInputStream
@@ -38,12 +27,22 @@ import java.util.concurrent.TimeUnit
 import java.util.zip.GZIPOutputStream
 import kotlin.random.Random
 import mozilla.components.Build as AcBuild
+import mozilla.components.concept.base.crash.Breadcrumb
+import mozilla.components.lib.crash.Crash
+import mozilla.components.lib.crash.RuntimeTag
+import mozilla.components.lib.crash.service.CrashReport.Annotation
+import mozilla.components.support.base.ext.getStacktraceAsJsonString
+import mozilla.components.support.base.ext.getStacktraceAsString
+import mozilla.components.support.base.log.logger.Logger
+import mozilla.components.support.utils.ext.packageManagerCompatHelper
+import org.json.JSONArray
+import org.json.JSONException
+import org.json.JSONObject
 
 // This ID is used for all Mozilla products.  Setting as default if no ID is passed in
 private const val MOZILLA_PRODUCT_ID = "{eeb82917-e434-4870-8148-5c03d4caa81b}"
 
-@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-internal const val CAUGHT_EXCEPTION_TYPE = "caught exception"
+@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal const val CAUGHT_EXCEPTION_TYPE = "caught exception"
 internal const val UNCAUGHT_EXCEPTION_TYPE = "uncaught exception"
 internal const val FATAL_NATIVE_CRASH_TYPE = "fatal native crash"
 internal const val NON_FATAL_NATIVE_CRASH_TYPE = "non-fatal native crash"
@@ -66,10 +65,10 @@ private const val FILE_REGEX = "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}
  * A [CrashReporterService] implementation uploading crash reports to crash-stats.mozilla.com.
  *
  * @param applicationContext The application [Context].
- * @param appName A human-readable app name. This name is used on crash-stats.mozilla.com to filter crashes by app.
- *                The name needs to be safelisted for the server to accept the crash.
- *                [File a bug](https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro) if you would like to get your
- *                app added to the safelist.
+ * @param appName A human-readable app name. This name is used on crash-stats.mozilla.com to filter crashes by app. The
+ *   name needs to be safelisted for the server to accept the crash.
+ *   [File a bug](https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro) if you would like to get your app added to
+ *   the safelist.
  * @param appId The application ID assigned by Socorro server.
  * @param version The engine version.
  * @param buildId The engine build ID.
@@ -89,8 +88,7 @@ class MozillaSocorroService(
     private val version: String = DEFAULT_VERSION,
     private val buildId: String = DEFAULT_BUILD_ID,
     private val vendor: String = DEFAULT_VENDOR,
-    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal val serverUrl: String? = null,
+    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal val serverUrl: String? = null,
     private var versionName: String = DEFAULT_VERSION_NAME,
     private var versionCode: String = DEFAULT_VERSION_CODE,
     private val releaseChannel: String = DEFAULT_RELEASE_CHANNEL,
@@ -109,15 +107,16 @@ class MozillaSocorroService(
     }
 
     init {
-        val packageInfo = try {
-            applicationContext.packageManagerCompatHelper.getPackageInfoCompat(
-                applicationContext.packageName,
-                0,
-            )
-        } catch (e: PackageManager.NameNotFoundException) {
-            logger.error("package name not found, failed to get application version")
-            null
-        }
+        val packageInfo =
+            try {
+                applicationContext.packageManagerCompatHelper.getPackageInfoCompat(
+                    applicationContext.packageName,
+                    0,
+                )
+            } catch (e: PackageManager.NameNotFoundException) {
+                logger.error("package name not found, failed to get application version")
+                null
+            }
 
         packageInfo?.let {
             if (versionName == DEFAULT_VERSION_NAME) {
@@ -280,25 +279,29 @@ class MozillaSocorroService(
         formDataWriter.sendAnnotation(Annotation.DistributionID, distributionId)
 
         var additionalDumps: FormDataWriter.AdditionalMinidumps? = null
-        var hasCrashEventId = false
+        var extrasFileKeys = setOf<String>()
 
         extrasFilePath?.let {
             val regex = "$FILE_REGEX$EXTRAS_FILE_EXT".toRegex()
             if (regex.matchEntire(it.substringAfterLast("/")) != null) {
                 val extrasFile = File(it)
                 val extrasMap = readExtrasFromFile(extrasFile)
+                extrasFileKeys = extrasMap.keys
                 for (key in extrasMap.keys) {
                     formDataWriter.sendPart(key, extrasMap[key])
                 }
-                hasCrashEventId = extrasMap.containsKey(Annotation.CrashEventID.toString())
                 additionalDumps = formDataWriter.AdditionalMinidumps(extrasMap)
                 extrasFile.delete()
             }
         }
 
-        if (!hasCrashEventId) {
-            formDataWriter.sendAnnotation(Annotation.CrashEventID, crashEventId)
+        val sendIfMissing = { a: Annotation, value: () -> String ->
+            if (!extrasFileKeys.contains(a.toString())) {
+                formDataWriter.sendAnnotation(a, value())
+            }
         }
+
+        sendIfMissing(Annotation.CrashEventID) { crashEventId }
 
         if (throwable?.stackTrace?.isEmpty() == false) {
             formDataWriter.sendAnnotation(
@@ -360,6 +363,9 @@ class MozillaSocorroService(
                 formDataWriter.sendAnnotation(Annotation.Android_CPU_ABI2, Build.SUPPORTED_ABIS[1])
             }
         }
+        sendIfMissing(Annotation.OS) { "Android" }
+        sendIfMissing(Annotation.OSVersion) { "${Build.VERSION.SDK_INT}" }
+        sendIfMissing(Annotation.CPUArchitecture) { Crash.CPU_ARCH }
 
         formDataWriter.finish()
     }
@@ -378,9 +384,7 @@ class MozillaSocorroService(
     ) {
         private val nameSet: MutableSet<String> = mutableSetOf()
 
-        internal inner class AdditionalMinidumps(
-            extrasMap: HashMap<String, String>,
-        ) {
+        internal inner class AdditionalMinidumps(extrasMap: HashMap<String, String>) {
             private val names = extrasMap[Annotation.additional_minidumps.toString()]?.split(',') ?: listOf()
 
             fun send(baseMinidumpPath: String) {
@@ -411,10 +415,7 @@ class MozillaSocorroService(
 
             try {
                 os.write(
-                    (
-                        "--$boundary\r\nContent-Disposition: form-data; " +
-                            "name=$name\r\n\r\n$data\r\n"
-                        ).toByteArray(),
+                    ("--$boundary\r\nContent-Disposition: form-data; " + "name=$name\r\n\r\n$data\r\n").toByteArray()
                 )
             } catch (e: IOException) {
                 logger.error("Exception when sending $name", e)
@@ -444,12 +445,11 @@ class MozillaSocorroService(
 
             try {
                 os.write(
-                    (
-                        "--${boundary}\r\n" +
+                    ("--${boundary}\r\n" +
                             "Content-Disposition: form-data; name=\"$name\"; " +
                             "filename=\"${file.getName()}\"\r\n" +
-                            "Content-Type: application/octet-stream\r\n\r\n"
-                        ).toByteArray(),
+                            "Content-Type: application/octet-stream\r\n\r\n")
+                        .toByteArray()
                 )
             } catch (e: IOException) {
                 logger.error("failed to write boundary", e)
@@ -475,10 +475,12 @@ class MozillaSocorroService(
         fun sendProcessName(applicationContext: Context) {
             val pid = android.os.Process.myPid()
             val manager = applicationContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-            manager.runningAppProcesses.filter { it.pid == pid }.forEach {
-                sendAnnotation(Annotation.Android_ProcessName, it.processName)
-                return
-            }
+            manager.runningAppProcesses
+                .filter { it.pid == pid }
+                .forEach {
+                    sendAnnotation(Annotation.Android_ProcessName, it.processName)
+                    return
+                }
         }
 
         fun sendPackageInstallTime(applicationContext: Context) {
@@ -487,9 +489,7 @@ class MozillaSocorroService(
                 val packageInfo = packageManager.getPackageInfoCompat(applicationContext.packageName, 0)
                 sendAnnotation(
                     Annotation.InstallTime,
-                    TimeUnit.MILLISECONDS.toSeconds(
-                        packageInfo.lastUpdateTime,
-                    ).toString(),
+                    TimeUnit.MILLISECONDS.toSeconds(packageInfo.lastUpdateTime).toString(),
                 )
             } catch (e: PackageManager.NameNotFoundException) {
                 logger.error("Error getting package info", e)
@@ -558,8 +558,7 @@ class MozillaSocorroService(
 
         try {
             FileReader(file).use { fileReader ->
-                val input = fileReader.readLines().firstOrNull()
-                    ?: throw JSONException("failed to read json file")
+                val input = fileReader.readLines().firstOrNull() ?: throw JSONException("failed to read json file")
 
                 val jsonObject = JSONObject(input)
                 for (key in jsonObject.keys()) {
@@ -598,10 +597,12 @@ class MozillaSocorroService(
     }
 
     internal fun buildServerUrl(versionName: String): String =
-        "https://crash-reports.mozilla.com/submit".toUri()
+        "https://crash-reports.mozilla.com/submit"
+            .toUri()
             .buildUpon()
             .appendQueryParameter("id", appId)
             .appendQueryParameter("version", versionName)
             .appendQueryParameter("android_component_version", AcBuild.VERSION)
-            .build().toString()
+            .build()
+            .toString()
 }

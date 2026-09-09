@@ -9,20 +9,20 @@ import android.util.AttributeSet
 import android.view.View
 import androidx.annotation.VisibleForTesting
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import mozilla.components.concept.engine.EngineView
-import mozilla.components.concept.toolbar.ScrollableToolbar
-import mozilla.components.support.ktx.android.view.findViewInHierarchy
 import kotlin.let
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import mozilla.components.concept.engine.EngineView
+import mozilla.components.concept.toolbar.ScrollableToolbar
+import mozilla.components.support.ktx.android.view.findViewInHierarchy
 
 /**
  * A modification of [mozilla.components.ui.widgets.behavior.EngineViewClippingBehavior] that supports two toolbars.
  *
- * This behavior adjusts the top margin of the [EngineView] parent to ensure that tab content is displayed
- * right below the top toolbar when it is translating upwards. Additionally, it modifies the
- * [EngineView.setVerticalClipping] when the bottom toolbar is translating downwards, ensuring that page content, like
- * banners or webpage toolbars, is displayed right above the app toolbar.
+ * This behavior adjusts the top margin of the [EngineView] parent to ensure that tab content is displayed right below
+ * the top toolbar when it is translating upwards. Additionally, it modifies the [EngineView.setVerticalClipping] when
+ * the bottom toolbar is translating downwards, ensuring that page content, like banners or webpage toolbars, is
+ * displayed right above the app toolbar.
  *
  * This class could be a candidate to replace the original and be integrated into A-C:
  * https://bugzilla.mozilla.org/show_bug.cgi?id=1884835
@@ -33,7 +33,6 @@ import kotlin.math.roundToInt
  * @param topToolbarHeight The height of a [ScrollableToolbar] placed above the [EngineView].
  * @param bottomToolbarHeight The height of a [ScrollableToolbar] placed below the [EngineView].
  */
-
 class EngineViewClippingBehavior(
     context: Context,
     attrs: AttributeSet?,
@@ -47,11 +46,15 @@ class EngineViewClippingBehavior(
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal var recentBottomToolbarTranslation: Float = 0f
-        set(value) { field = value.coerceIn(0f, bottomToolbarHeight.toFloat()) }
+        set(value) {
+            field = value.coerceIn(0f, bottomToolbarHeight.toFloat())
+        }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal var recentTopToolbarTranslation: Float = 0f
-        set(value) { field = value.coerceIn(-topToolbarHeight.toFloat(), 0f) }
+        set(value) {
+            field = value.coerceIn(-topToolbarHeight.toFloat(), 0f)
+        }
 
     private val hasTopToolbar = topToolbarHeight > 0
     private val dynamicToolbarMaxHeight = topToolbarHeight + bottomToolbarHeight
@@ -107,12 +110,13 @@ class EngineViewClippingBehavior(
             // the values should be negative because the baseline
             // for clipping is bottom toolbar height.
             val contentBottomClipping = (recentTopToolbarTranslation - recentBottomToolbarTranslation).roundToInt()
-            val safeVerticalClipping = when {
-                // Consider toolbars almost fully hidden as fully hidden.
-                // See bug 2005988 for context.
-                abs(dynamicToolbarMaxHeight + contentBottomClipping) in 0..2 -> -dynamicToolbarMaxHeight
-                else -> contentBottomClipping
-            }
+            val safeVerticalClipping =
+                when {
+                    // Consider toolbars almost fully hidden as fully hidden.
+                    // See bug 2005988 for context.
+                    abs(dynamicToolbarMaxHeight + contentBottomClipping) in 0..2 -> -dynamicToolbarMaxHeight
+                    else -> contentBottomClipping
+                }
             it.setVerticalClipping(safeVerticalClipping)
         }
     }

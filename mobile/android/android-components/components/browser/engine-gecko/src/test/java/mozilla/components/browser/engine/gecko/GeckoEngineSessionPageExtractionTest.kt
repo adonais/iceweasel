@@ -6,8 +6,11 @@ package mozilla.components.browser.engine.gecko
 
 import android.os.Looper.getMainLooper
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
+import mozilla.components.concept.engine.pageextraction.ContentParams
 import mozilla.components.concept.engine.pageextraction.PageExtractionError
 import mozilla.components.support.test.any
+import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.whenever
 import org.junit.Assert.assertEquals
@@ -16,8 +19,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.verify
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
+import org.mozilla.geckoview.PageExtractionController.ContentParams as GeckoViewContentParams
 import org.mozilla.geckoview.PageExtractionController.PageExtractionException
 import org.mozilla.geckoview.PageExtractionController.PageExtractionException.ERROR_MALFORMED_RESULT
 import org.mozilla.geckoview.PageExtractionController.PageExtractionException.ERROR_NULL_RESULT
@@ -25,11 +30,8 @@ import org.mozilla.geckoview.PageExtractionController.PageExtractionException.ER
 import org.mozilla.geckoview.PageExtractionController.PageMetadata
 import org.mozilla.geckoview.PageExtractionController.SessionPageExtractor
 import org.robolectric.Shadows.shadowOf
-import kotlin.test.assertIs
 
-/**
- * Test cases for the "Page Extraction" feature of [GeckoEngineSession]
- */
+/** Test cases for the "Page Extraction" feature of [GeckoEngineSession] */
 @RunWith(AndroidJUnit4::class)
 class GeckoEngineSessionPageExtractionTest {
 
@@ -43,22 +45,54 @@ class GeckoEngineSessionPageExtractionTest {
         val mockedGeckoSession: GeckoSession = mock()
         whenever(mockedGeckoSession.sessionPageExtractor).thenReturn(mockedSessionPageExtractor)
 
-        engineSession = GeckoEngineSession(
-            runtime = mock(),
-            geckoSessionProvider = { mockedGeckoSession },
+        engineSession =
+            GeckoEngineSession(
+                runtime = mock(),
+                geckoSessionProvider = { mockedGeckoSession },
+            )
+    }
+
+    @Test
+    fun `given content params, then they are forwarded to the GeckoView page extractor`() {
+        val captor = argumentCaptor<GeckoViewContentParams>()
+        whenever(mockedSessionPageExtractor.getPageContent(any())).thenReturn(GeckoResult.fromValue("content"))
+
+        engineSession.getPageContent(
+            options = ContentParams(removeBoilerplate = true, useSimpleText = true),
+            onResult = {},
+            onException = {},
         )
+
+        shadowOf(getMainLooper()).idle()
+
+        verify(mockedSessionPageExtractor).getPageContent(captor.capture())
+        assertTrue("Expected removeBoilerplate to be forwarded", captor.value.removeBoilerplate)
+        assertTrue("Expected useSimpleText to be forwarded", captor.value.useSimpleText)
+    }
+
+    @Test
+    fun `given default content params, then neither extraction option is enabled`() {
+        val captor = argumentCaptor<GeckoViewContentParams>()
+        whenever(mockedSessionPageExtractor.getPageContent(any())).thenReturn(GeckoResult.fromValue("content"))
+
+        engineSession.getPageContent(onResult = {}, onException = {})
+
+        shadowOf(getMainLooper()).idle()
+
+        verify(mockedSessionPageExtractor).getPageContent(captor.capture())
+        assertEquals(false, captor.value.removeBoilerplate)
+        assertEquals(false, captor.value.useSimpleText)
     }
 
     @Test
     fun `given page extractor returns successfully but null result, then an unexpected null error is returned`() {
         // given that page extractor returns null content
-        whenever(mockedSessionPageExtractor.getPageContent(any()))
-            .thenReturn(GeckoResult.fromValue(null))
+        whenever(mockedSessionPageExtractor.getPageContent(any())).thenReturn(GeckoResult.fromValue(null))
 
         // when we attempt to get page content
         var resultError: Throwable? = null
         engineSession.getPageContent(
-            onResult = { },
+            onResult = {},
             onException = { resultError = it },
         )
 
@@ -78,7 +112,7 @@ class GeckoEngineSessionPageExtractionTest {
         // when we attempt to get page content
         var resultError: Throwable? = null
         engineSession.getPageContent(
-            onResult = { },
+            onResult = {},
             onException = { resultError = it },
         )
 
@@ -98,7 +132,7 @@ class GeckoEngineSessionPageExtractionTest {
         // when we attempt to get page content
         var resultError: Throwable? = null
         engineSession.getPageContent(
-            onResult = { },
+            onResult = {},
             onException = { resultError = it },
         )
 
@@ -118,7 +152,7 @@ class GeckoEngineSessionPageExtractionTest {
         // when we attempt to get page content
         var resultError: Throwable? = null
         engineSession.getPageContent(
-            onResult = { },
+            onResult = {},
             onException = { resultError = it },
         )
 
@@ -153,12 +187,11 @@ class GeckoEngineSessionPageExtractionTest {
 
     @Test
     fun `given page metadata extractor returns successfully but null result, then an unexpected null error is returned`() {
-        whenever(mockedSessionPageExtractor.pageMetadata)
-            .thenReturn(GeckoResult.fromValue(null))
+        whenever(mockedSessionPageExtractor.pageMetadata).thenReturn(GeckoResult.fromValue(null))
 
         var resultError: Throwable? = null
         engineSession.getPageMetadata(
-            onResult = { },
+            onResult = {},
             onException = { resultError = it },
         )
 
@@ -174,7 +207,7 @@ class GeckoEngineSessionPageExtractionTest {
 
         var resultError: Throwable? = null
         engineSession.getPageMetadata(
-            onResult = { },
+            onResult = {},
             onException = { resultError = it },
         )
 
@@ -190,7 +223,7 @@ class GeckoEngineSessionPageExtractionTest {
 
         var resultError: Throwable? = null
         engineSession.getPageMetadata(
-            onResult = { },
+            onResult = {},
             onException = { resultError = it },
         )
 
@@ -206,7 +239,7 @@ class GeckoEngineSessionPageExtractionTest {
 
         var resultError: Throwable? = null
         engineSession.getPageMetadata(
-            onResult = { },
+            onResult = {},
             onException = { resultError = it },
         )
 
@@ -218,7 +251,7 @@ class GeckoEngineSessionPageExtractionTest {
     @Test
     fun `given page metadata extractor returns metadata successfully, then the result is returned without error`() {
         whenever(mockedSessionPageExtractor.pageMetadata)
-            .thenReturn(GeckoResult.fromValue(PageMetadata(arrayOf("Article"), 42, "en", true)))
+            .thenReturn(GeckoResult.fromValue(PageMetadata(arrayOf("Article"), 42, "en", true, false)))
 
         var resultMetadata: mozilla.components.concept.engine.pageextraction.PageMetadata? = null
         var resultError: Throwable? = null
@@ -234,5 +267,23 @@ class GeckoEngineSessionPageExtractionTest {
         assertEquals(42, resultMetadata?.wordCount)
         assertEquals("en", resultMetadata?.language)
         assertTrue("Expected isReaderable to be true", resultMetadata?.isReaderable == true)
+        assertEquals(false, resultMetadata?.isGated)
+    }
+
+    @Test
+    fun `given page metadata reports gated content, then isGated is mapped through`() {
+        whenever(mockedSessionPageExtractor.pageMetadata)
+            .thenReturn(GeckoResult.fromValue(PageMetadata(arrayOf("NewsArticle"), 42, "en", false, true)))
+
+        var resultMetadata: mozilla.components.concept.engine.pageextraction.PageMetadata? = null
+        engineSession.getPageMetadata(
+            onResult = { resultMetadata = it },
+            onException = {},
+        )
+
+        shadowOf(getMainLooper()).idle()
+
+        assertEquals(true, resultMetadata?.isGated)
+        assertEquals(false, resultMetadata?.isReaderable)
     }
 }

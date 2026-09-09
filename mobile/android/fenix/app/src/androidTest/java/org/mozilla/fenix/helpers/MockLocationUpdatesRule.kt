@@ -11,21 +11,20 @@ import android.os.Build
 import android.os.SystemClock
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
+import java.util.Date
+import kotlin.random.Random
 import org.junit.rules.ExternalResource
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.TestHelper.mDevice
-import java.util.Date
-import kotlin.random.Random
 
 private const val MOCK_PROVIDER_NAME = LocationManager.GPS_PROVIDER
 
 /**
- * Rule that sets up a mock location provider that can inject location samples
- * straight to the device that the test is running on.
+ * Rule that sets up a mock location provider that can inject location samples straight to the device that the test is
+ * running on.
  *
  * Credit to the mapbox team
  * https://github.com/mapbox/mapbox-navigation-android/blob/87fab7ea1152b29533ee121eaf6c05bc202adf02/libtesting-ui/src/main/java/com/mapbox/navigation/testing/ui/MockLocationUpdatesRule.kt
- *
  */
 class MockLocationUpdatesRule : ExternalResource() {
     private val appContext = (ApplicationProvider.getApplicationContext() as Context)
@@ -41,13 +40,15 @@ class MockLocationUpdatesRule : ExternalResource() {
         /* ADB command to enable the mock location setting on the device.
          * Will not be turned back off due to limitations on knowing its initial state.
          */
-        Log.i(TAG, "MockLocationUpdatesRule: Trying to execute cmd \"appops set ${appContext.packageName} android:mock_location allow\"")
-        mDevice.executeShellCommand(
-            "appops set " +
-                appContext.packageName +
-                " android:mock_location allow",
+        Log.i(
+            TAG,
+            "MockLocationUpdatesRule: Trying to execute cmd \"appops set ${appContext.packageName} android:mock_location allow\"",
         )
-        Log.i(TAG, "MockLocationUpdatesRule: Executed cmd \"appops set ${appContext.packageName} android:mock_location allow\"")
+        mDevice.executeShellCommand("appops set " + appContext.packageName + " android:mock_location allow")
+        Log.i(
+            TAG,
+            "MockLocationUpdatesRule: Executed cmd \"appops set ${appContext.packageName} android:mock_location allow\"",
+        )
         // To mock locations we need a location provider, so we generate and set it here.
         try {
             locationManager.addTestProvider(

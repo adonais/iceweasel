@@ -21,14 +21,13 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import kotlin.math.ceil
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.theme.AcornTheme
-import kotlin.math.ceil
 import mozilla.components.ui.icons.R as iconsR
 
 /**
- * Default animation duration in milliseconds.
- * If it is set to a low number, the speed of the rotation will be higher.
+ * Default animation duration in milliseconds. If it is set to a low number, the speed of the rotation will be higher.
  */
 private const val DEFAULT_ANIMATION_DURATION_MS = 2000
 
@@ -39,8 +38,8 @@ private const val HALF_ROTATION = 180f
 /**
  * Adds a rotation animation to a composable, which can be toggled on and off.
  *
- * @param animate When true, the rotation animation is active. When it becomes false, the rotation
- * smoothly animates to the nearest 180-degree angle.
+ * @param animate When true, the rotation animation is active. When it becomes false, the rotation smoothly animates to
+ *   the nearest 180-degree angle.
  * @param durationMillis Duration of one full rotation in milliseconds. Default is [DEFAULT_ANIMATION_DURATION_MS].
  */
 fun Modifier.animateRotation(
@@ -53,10 +52,11 @@ fun Modifier.animateRotation(
         if (animate) {
             rotation.animateTo(
                 targetValue = rotation.value + FULL_ROTATION,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(durationMillis, easing = LinearEasing),
-                    repeatMode = RepeatMode.Restart,
-                ),
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(durationMillis, easing = LinearEasing),
+                        repeatMode = RepeatMode.Restart,
+                    ),
             )
         } else {
             // When stopping the animation, we want to smoothly animate to the nearest 180-degree angle.
@@ -68,10 +68,11 @@ fun Modifier.animateRotation(
                 val remainingTime = leftover * durationMillis / FULL_ROTATION
                 rotation.animateTo(
                     targetValue = targetRotation,
-                    animationSpec = tween(
-                        durationMillis = remainingTime.toInt(),
-                        easing = LinearEasing,
-                    ),
+                    animationSpec =
+                        tween(
+                            durationMillis = remainingTime.toInt(),
+                            easing = LinearEasing,
+                        ),
                 )
             }
         }
@@ -85,15 +86,11 @@ fun Modifier.animateRotation(
 private fun AnimateRotationPreview() {
     var syncing by remember { mutableStateOf(false) }
     AcornTheme {
-        FilledButton(
-            onClick = { syncing = !syncing },
-        ) {
+        FilledButton(onClick = { syncing = !syncing }) {
             Icon(
                 painter = painterResource(id = iconsR.drawable.mozac_ic_sync_24),
                 contentDescription = null,
-                modifier = Modifier.animateRotation(
-                    animate = syncing,
-                ),
+                modifier = Modifier.animateRotation(animate = syncing),
             )
         }
     }

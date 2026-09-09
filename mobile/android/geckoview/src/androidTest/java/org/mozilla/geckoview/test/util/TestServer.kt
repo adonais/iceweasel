@@ -9,15 +9,17 @@ import com.koushikdutta.async.http.server.AsyncHttpServerRequest
 import com.koushikdutta.async.http.server.AsyncHttpServerResponse
 import com.koushikdutta.async.http.server.HttpServerRequestCallback
 import com.koushikdutta.async.util.TaggedList
-import org.json.JSONObject
 import java.io.FileNotFoundException
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.util.Locale
 import java.util.Random
 import java.util.Vector
+import org.json.JSONObject
 
-class TestServer @JvmOverloads constructor(
+class TestServer
+@JvmOverloads
+constructor(
     context: Context,
     private val customHeaders: Map<String, String>? = null,
     private val responseModifiers: Map<String, ResponseModifier>? = null,
@@ -58,25 +60,28 @@ class TestServer @JvmOverloads constructor(
                 val asset = assets.open(fileName).readBytes()
 
                 val extension = fileName.substringAfterLast('.', "")
-                val mimeType = when (extension.lowercase(Locale.ROOT)) {
-                    "html", "htm" -> "text/html"
-                    "js" -> "application/javascript"
-                    "css" -> "text/css"
-                    "json" -> "application/json"
-                    "webmanifest" -> "application/manifest+json"
-                    "png" -> "image/png"
-                    "jpg", "jpeg" -> "image/jpeg"
-                    "gif" -> "image/gif"
-                    "webp" -> "image/webp"
-                    "svg" -> "image/svg+xml"
-                    "ico" -> "image/x-icon"
-                    "mp4" -> "video/mp4"
-                    "webm" -> "video/webm"
-                    "mp3" -> "audio/mpeg"
-                    "pdf" -> "application/pdf"
-                    "sjs" -> "application/javascript"
-                    else -> "application/octet-stream"
-                }
+                val mimeType =
+                    when (extension.lowercase(Locale.ROOT)) {
+                        "html",
+                        "htm" -> "text/html"
+                        "js" -> "application/javascript"
+                        "css" -> "text/css"
+                        "json" -> "application/json"
+                        "webmanifest" -> "application/manifest+json"
+                        "png" -> "image/png"
+                        "jpg",
+                        "jpeg" -> "image/jpeg"
+                        "gif" -> "image/gif"
+                        "webp" -> "image/webp"
+                        "svg" -> "image/svg+xml"
+                        "ico" -> "image/x-icon"
+                        "mp4" -> "video/mp4"
+                        "webm" -> "video/webm"
+                        "mp3" -> "audio/mpeg"
+                        "pdf" -> "application/pdf"
+                        "sjs" -> "application/javascript"
+                        else -> "application/octet-stream"
+                    }
 
                 response.headers.set("Content-Type", mimeType)
 

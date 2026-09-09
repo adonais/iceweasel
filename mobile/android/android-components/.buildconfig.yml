@@ -798,6 +798,12 @@ projects:
     - components:ui-colors
     - components:ui-icons
     - components:ui-widgets
+  components:feature-automotive:
+    description: Component adding support for Android Automotive OS.
+    path: components/feature/automotive
+    publish: true
+    upstream_dependencies:
+    - components:tooling-lint
   components:feature-awesomebar:
     description: Component connecting a concept-toolbar with a concept-awesomebar.
     path: components/feature/awesomebar
@@ -1179,6 +1185,30 @@ projects:
     - components:ui-icons
     - components:ui-tabcounter
     - components:ui-widgets
+  components:feature-listentopage:
+    description: A feature that handles listening to a page.
+    path: components/feature/listentopage
+    publish: true
+    upstream_dependencies:
+    - components:browser-errorpages
+    - components:browser-state
+    - components:compose-base
+    - components:concept-awesomebar
+    - components:concept-base
+    - components:concept-engine
+    - components:concept-fetch
+    - components:concept-storage
+    - components:concept-storage-bookmarks
+    - components:lib-publicsuffixlist
+    - components:lib-state
+    - components:support-base
+    - components:support-ktx
+    - components:support-test
+    - components:support-test-libstate
+    - components:support-utils
+    - components:tooling-lint
+    - components:ui-colors
+    - components:ui-icons
   components:feature-logins:
     description: Feature component for logins related features.
     path: components/feature/logins

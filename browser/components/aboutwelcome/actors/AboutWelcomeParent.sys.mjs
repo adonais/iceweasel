@@ -45,6 +45,8 @@ ChromeUtils.defineLazyGetter(
 const DID_SEE_ABOUT_WELCOME_PREF = "trailhead.firstrun.didSeeAboutWelcome";
 const DID_HANDLE_CAMAPAIGN_ACTION_PREF =
   "trailhead.firstrun.didHandleCampaignAction";
+const CHECK_DEFAULT_BROWSER_PREF = "browser.shell.checkDefaultBrowser";
+const SET_DEFAULT_CAMPAIGN_ACTIONS = ["SET_DEFAULT_BROWSER", "PIN_AND_DEFAULT"];
 const EXPERIMENTS_GATE_PREF = "browser.aboutwelcome.experimentsGate.enabled";
 const EXPERIMENTS_GATE_MAX_MS_PREF =
   "browser.aboutwelcome.experimentsGate.maxDisplayMs";
@@ -382,6 +384,12 @@ export class AboutWelcomeParent extends JSWindowActorParent {
         if (
           !Services.prefs.getBoolPref(DID_HANDLE_CAMAPAIGN_ACTION_PREF, false)
         ) {
+          if (
+            SET_DEFAULT_CAMPAIGN_ACTIONS.includes(data) &&
+            !Services.prefs.getBoolPref(CHECK_DEFAULT_BROWSER_PREF, true)
+          ) {
+            break;
+          }
           lazy.SpecialMessageActions.handleAction({ type: data }, browser);
           try {
             Services.prefs.setBoolPref(DID_HANDLE_CAMAPAIGN_ACTION_PREF, true);

@@ -73,6 +73,7 @@ class CoverageParser(BaseTryParser):
         "rebuild",
         "chemspill-prio",
         "disable-pgo",
+        "pushdate",
         "worker-overrides",
     ]
 

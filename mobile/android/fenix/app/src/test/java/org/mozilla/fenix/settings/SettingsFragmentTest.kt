@@ -9,6 +9,8 @@ import androidx.preference.Preference
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.io.IOException
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -35,8 +37,7 @@ import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
-import java.io.IOException
-import kotlin.test.assertNotNull
+
 @RunWith(RobolectricTestRunner::class)
 class SettingsFragmentTest {
     private val settingsFragment = SettingsFragment()
@@ -56,9 +57,7 @@ class SettingsFragmentTest {
         every { testContext.components.backgroundServices } returns mockk(relaxed = true)
 
         val activity = Robolectric.buildActivity(FragmentActivity::class.java).create().get()
-        activity.supportFragmentManager.beginTransaction()
-            .add(settingsFragment, "test")
-            .commitNow()
+        activity.supportFragmentManager.beginTransaction().add(settingsFragment, "test").commitNow()
     }
 
     @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
@@ -67,15 +66,14 @@ class SettingsFragmentTest {
         val settingsFragment = SettingsFragment()
         val activity = Robolectric.buildActivity(FragmentActivity::class.java).create().get()
 
-        activity.supportFragmentManager.beginTransaction()
-            .add(settingsFragment, "test")
-            .commitNow()
+        activity.supportFragmentManager.beginTransaction().add(settingsFragment, "test").commitNow()
 
         advanceUntilIdle()
 
-        val preferenceAmoCollectionOverride = settingsFragment.findPreference<Preference>(
-            settingsFragment.getPreferenceKey(R.string.pref_key_override_amo_collection),
-        )
+        val preferenceAmoCollectionOverride =
+            settingsFragment.findPreference<Preference>(
+                settingsFragment.getPreferenceKey(R.string.pref_key_override_amo_collection)
+            )
 
         settingsFragment.setupAmoCollectionOverridePreference(
             mockk(relaxed = true),
@@ -99,15 +97,14 @@ class SettingsFragmentTest {
         val settingsFragment = SettingsFragment()
         val activity = Robolectric.buildActivity(FragmentActivity::class.java).create().get()
 
-        activity.supportFragmentManager.beginTransaction()
-            .add(settingsFragment, "test")
-            .commitNow()
+        activity.supportFragmentManager.beginTransaction().add(settingsFragment, "test").commitNow()
 
         advanceUntilIdle()
 
-        val preference = settingsFragment.findPreference<Preference>(
-            settingsFragment.getPreferenceKey(R.string.pref_key_install_local_addon),
-        )
+        val preference =
+            settingsFragment.findPreference<Preference>(
+                settingsFragment.getPreferenceKey(R.string.pref_key_install_local_addon)
+            )
 
         settingsFragment.setupInstallAddonFromFilePreference(mockk(relaxed = true))
         assertNotNull(preference)
@@ -126,15 +123,14 @@ class SettingsFragmentTest {
         val settingsFragment = SettingsFragment()
         val activity = Robolectric.buildActivity(FragmentActivity::class.java).create().get()
 
-        activity.supportFragmentManager.beginTransaction()
-            .add(settingsFragment, "test")
-            .commitNow()
+        activity.supportFragmentManager.beginTransaction().add(settingsFragment, "test").commitNow()
 
         advanceUntilIdle()
 
-        val preferenceAmoCollectionOverride = settingsFragment.findPreference<Preference>(
-            settingsFragment.getPreferenceKey(R.string.pref_key_override_amo_collection),
-        )
+        val preferenceAmoCollectionOverride =
+            settingsFragment.findPreference<Preference>(
+                settingsFragment.getPreferenceKey(R.string.pref_key_override_amo_collection)
+            )
 
         settingsFragment.setupAmoCollectionOverridePreference(
             mockk(relaxed = true),
@@ -167,15 +163,14 @@ class SettingsFragmentTest {
         val settingsFragment = SettingsFragment()
         val activity = Robolectric.buildActivity(FragmentActivity::class.java).create().get()
 
-        activity.supportFragmentManager.beginTransaction()
-            .add(settingsFragment, "test")
-            .commitNow()
+        activity.supportFragmentManager.beginTransaction().add(settingsFragment, "test").commitNow()
 
         advanceUntilIdle()
 
-        val preferenceAmoCollectionOverride = settingsFragment.findPreference<Preference>(
-            settingsFragment.getPreferenceKey(R.string.pref_key_override_amo_collection),
-        )
+        val preferenceAmoCollectionOverride =
+            settingsFragment.findPreference<Preference>(
+                settingsFragment.getPreferenceKey(R.string.pref_key_override_amo_collection)
+            )
 
         val settings: Settings = mockk(relaxed = true)
         settingsFragment.setupAmoCollectionOverridePreference(
@@ -196,9 +191,7 @@ class SettingsFragmentTest {
 
     @Test
     fun `GIVEN notifications are not allowed THEN set the appropriate summary to notification preferences`() {
-        val notificationPreference = settingsFragment.requirePreference<Preference>(
-            R.string.pref_key_notifications,
-        )
+        val notificationPreference = settingsFragment.requirePreference<Preference>(R.string.pref_key_notifications)
         val summary = testContext.getString(R.string.notifications_not_allowed_summary)
 
         assertTrue(notificationPreference.summary.isNullOrEmpty())
@@ -210,9 +203,7 @@ class SettingsFragmentTest {
 
     @Test
     fun `GIVEN notifications are allowed THEN set the appropriate summary to notification preferences`() {
-        val notificationPreference = settingsFragment.requirePreference<Preference>(
-            R.string.pref_key_notifications,
-        )
+        val notificationPreference = settingsFragment.requirePreference<Preference>(R.string.pref_key_notifications)
         val summary = testContext.getString(R.string.notifications_allowed_summary)
 
         assertTrue(notificationPreference.summary.isNullOrEmpty())
@@ -224,15 +215,12 @@ class SettingsFragmentTest {
 
     @Test
     fun `GIVEN the opening screen setting is set to homepage after four hours THEN set the appropriate summary to homepage preference`() {
-        val homepagePreference = settingsFragment.requirePreference<Preference>(
-            R.string.pref_key_home,
-        )
+        val homepagePreference = settingsFragment.requirePreference<Preference>(R.string.pref_key_home)
         every { testContext.components.settings.alwaysOpenTheHomepageWhenOpeningTheApp } returns false
         every { testContext.components.settings.openHomepageAfterFourHoursOfInactivity } returns true
         every { testContext.components.settings.alwaysOpenTheLastTabWhenOpeningTheApp } returns false
         assertTrue(homepagePreference.summary.isNullOrEmpty())
-        val summary =
-            testContext.getString(R.string.opening_screen_after_four_hours_of_inactivity_summary)
+        val summary = testContext.getString(R.string.opening_screen_after_four_hours_of_inactivity_summary)
 
         settingsFragment.setupHomepagePreference(testContext.components.settings)
 
@@ -241,9 +229,7 @@ class SettingsFragmentTest {
 
     @Test
     fun `GIVEN the opening screen setting is set to last tab THEN set the appropriate summary to homepage preference`() {
-        val homepagePreference = settingsFragment.requirePreference<Preference>(
-            R.string.pref_key_home,
-        )
+        val homepagePreference = settingsFragment.requirePreference<Preference>(R.string.pref_key_home)
         every { testContext.components.settings.alwaysOpenTheHomepageWhenOpeningTheApp } returns false
         every { testContext.components.settings.openHomepageAfterFourHoursOfInactivity } returns false
         every { testContext.components.settings.alwaysOpenTheLastTabWhenOpeningTheApp } returns true
@@ -257,9 +243,7 @@ class SettingsFragmentTest {
 
     @Test
     fun `GIVEN the opening screen setting is set to homepage THEN set the appropriate summary to homepage preference`() {
-        val homepagePreference = settingsFragment.requirePreference<Preference>(
-            R.string.pref_key_home,
-        )
+        val homepagePreference = settingsFragment.requirePreference<Preference>(R.string.pref_key_home)
         every { testContext.components.settings.alwaysOpenTheHomepageWhenOpeningTheApp } returns true
         every { testContext.components.settings.openHomepageAfterFourHoursOfInactivity } returns false
         every { testContext.components.settings.alwaysOpenTheLastTabWhenOpeningTheApp } returns false
@@ -274,9 +258,7 @@ class SettingsFragmentTest {
     @Test
     fun `WHEN a custom search engine is set as default THEN it's name is set as summary for search preference`() {
         val searchEngineName = "MySearchEngine"
-        val searchPreference = settingsFragment.requirePreference<Preference>(
-            R.string.pref_key_search_settings,
-        )
+        val searchPreference = settingsFragment.requirePreference<Preference>(R.string.pref_key_search_settings)
 
         assertTrue(searchPreference.summary.isNullOrEmpty())
 
@@ -287,9 +269,8 @@ class SettingsFragmentTest {
 
     @Test
     fun `GIVEN the tracking protection preference is set to custom THEN set the appropriate summary`() {
-        val trackingProtectionPreference = settingsFragment.requirePreference<Preference>(
-            R.string.pref_key_tracking_protection_settings,
-        )
+        val trackingProtectionPreference =
+            settingsFragment.requirePreference<Preference>(R.string.pref_key_tracking_protection_settings)
         every { testContext.components.settings.shouldUseTrackingProtection } returns true
         every { testContext.components.settings.useStandardTrackingProtection } returns false
         every { testContext.components.settings.useStrictTrackingProtection } returns false
@@ -304,9 +285,8 @@ class SettingsFragmentTest {
 
     @Test
     fun `GIVEN the tracking protection preference is set to strict THEN set the appropriate summary`() {
-        val trackingProtectionPreference = settingsFragment.requirePreference<Preference>(
-            R.string.pref_key_tracking_protection_settings,
-        )
+        val trackingProtectionPreference =
+            settingsFragment.requirePreference<Preference>(R.string.pref_key_tracking_protection_settings)
         every { testContext.components.settings.shouldUseTrackingProtection } returns true
         every { testContext.components.settings.useStandardTrackingProtection } returns false
         every { testContext.components.settings.useStrictTrackingProtection } returns true
@@ -321,9 +301,8 @@ class SettingsFragmentTest {
 
     @Test
     fun `GIVEN the tracking protection preference is set to standard THEN set the appropriate summary`() {
-        val trackingProtectionPreference = settingsFragment.requirePreference<Preference>(
-            R.string.pref_key_tracking_protection_settings,
-        )
+        val trackingProtectionPreference =
+            settingsFragment.requirePreference<Preference>(R.string.pref_key_tracking_protection_settings)
         every { testContext.components.settings.shouldUseTrackingProtection } returns true
         every { testContext.components.settings.useStandardTrackingProtection } returns true
         every { testContext.components.settings.useStrictTrackingProtection } returns false
@@ -338,9 +317,8 @@ class SettingsFragmentTest {
 
     @Test
     fun `GIVEN the tracking protection preference is disabled THEN set the appropriate summary`() {
-        val trackingProtectionPreference = settingsFragment.requirePreference<Preference>(
-            R.string.pref_key_tracking_protection_settings,
-        )
+        val trackingProtectionPreference =
+            settingsFragment.requirePreference<Preference>(R.string.pref_key_tracking_protection_settings)
         every { testContext.components.settings.shouldUseTrackingProtection } returns false
         assertTrue(trackingProtectionPreference.summary.isNullOrEmpty())
         val summary = testContext.getString(R.string.tracking_protection_off)
@@ -352,9 +330,10 @@ class SettingsFragmentTest {
 
     @Test
     fun `GIVEN the HttpsOnly is set to private tabs THEN set the appropriate preference summary`() {
-        val httpsOnlyPreference = settingsFragment.findPreference<Preference>(
-            settingsFragment.getPreferenceKey(R.string.pref_key_https_only_settings),
-        )!!
+        val httpsOnlyPreference =
+            settingsFragment.findPreference<Preference>(
+                settingsFragment.getPreferenceKey(R.string.pref_key_https_only_settings)
+            )!!
         every { testContext.components.settings.shouldUseHttpsOnly } returns true
         every { testContext.components.settings.shouldUseHttpsOnlyInPrivateTabsOnly } returns true
         every { testContext.components.settings.shouldUseHttpsOnlyInAllTabs } returns false
@@ -368,9 +347,10 @@ class SettingsFragmentTest {
 
     @Test
     fun `GIVEN the HttpsOnly is set to all tabs THEN set the appropriate preference summary`() {
-        val httpsOnlyPreference = settingsFragment.findPreference<Preference>(
-            settingsFragment.getPreferenceKey(R.string.pref_key_https_only_settings),
-        )!!
+        val httpsOnlyPreference =
+            settingsFragment.findPreference<Preference>(
+                settingsFragment.getPreferenceKey(R.string.pref_key_https_only_settings)
+            )!!
         every { testContext.components.settings.shouldUseHttpsOnly } returns true
         every { testContext.components.settings.shouldUseHttpsOnlyInAllTabs } returns true
         every { testContext.components.settings.shouldUseHttpsOnlyInPrivateTabsOnly } returns false
@@ -384,9 +364,10 @@ class SettingsFragmentTest {
 
     @Test
     fun `GIVEN the HttpsOnly is disabled THEN set the appropriate preference summary`() {
-        val httpsOnlyPreference = settingsFragment.findPreference<Preference>(
-            settingsFragment.getPreferenceKey(R.string.pref_key_https_only_settings),
-        )!!
+        val httpsOnlyPreference =
+            settingsFragment.findPreference<Preference>(
+                settingsFragment.getPreferenceKey(R.string.pref_key_https_only_settings)
+            )!!
         every { testContext.components.settings.shouldUseHttpsOnly } returns false
         assertTrue(httpsOnlyPreference.summary.isNullOrEmpty())
         val summary = testContext.getString(R.string.preferences_https_only_off)
@@ -418,11 +399,10 @@ class SettingsFragmentTest {
 
     @Test
     fun `GIVEN email mask feature is available for the user WHEN relay eligibility is Eligible THEN preference is visible`() {
-        val preference = settingsFragment.requirePreference<Preference>(
-            R.string.pref_key_email_masks,
-        )
+        val preference = settingsFragment.requirePreference<Preference>(R.string.pref_key_email_masks)
         every { testContext.components.settings.isEmailMaskFeatureEnabled } returns true
-        every { testContext.components.relayEligibilityStore } returns RelayEligibilityStore(RelayState(Eligible.Premium))
+        every { testContext.components.relayEligibilityStore } returns
+            RelayEligibilityStore(RelayState(Eligible.Premium))
 
         settingsFragment.setupEmailMaskPreference(testContext.components.settings, testContext.components)
 
@@ -431,11 +411,10 @@ class SettingsFragmentTest {
 
     @Test
     fun `GIVEN email mask feature is available for the user WHEN relay eligibility is Ineligible THEN preference is hidden`() {
-        val preference = settingsFragment.requirePreference<Preference>(
-            R.string.pref_key_email_masks,
-        )
+        val preference = settingsFragment.requirePreference<Preference>(R.string.pref_key_email_masks)
         every { testContext.components.settings.isEmailMaskFeatureEnabled } returns true
-        every { testContext.components.relayEligibilityStore } returns RelayEligibilityStore(RelayState(Ineligible.FirefoxAccountNotLoggedIn))
+        every { testContext.components.relayEligibilityStore } returns
+            RelayEligibilityStore(RelayState(Ineligible.FirefoxAccountNotLoggedIn))
 
         settingsFragment.setupEmailMaskPreference(testContext.components.settings, testContext.components)
 
@@ -444,11 +423,10 @@ class SettingsFragmentTest {
 
     @Test
     fun `GIVEN email mask feature is not available for the user WHEN relay eligibility is Eligible THEN preference is hidden`() {
-        val preference = settingsFragment.requirePreference<Preference>(
-            R.string.pref_key_email_masks,
-        )
+        val preference = settingsFragment.requirePreference<Preference>(R.string.pref_key_email_masks)
         every { testContext.components.settings.isEmailMaskFeatureEnabled } returns false
-        every { testContext.components.relayEligibilityStore } returns RelayEligibilityStore(RelayState(Eligible.Premium))
+        every { testContext.components.relayEligibilityStore } returns
+            RelayEligibilityStore(RelayState(Eligible.Premium))
 
         settingsFragment.setupEmailMaskPreference(testContext.components.settings, testContext.components)
 
@@ -457,11 +435,10 @@ class SettingsFragmentTest {
 
     @Test
     fun `GIVEN email mask feature is not available for the user WHEN relay eligibility is Ineligible THEN preference is hidden`() {
-        val preference = settingsFragment.requirePreference<Preference>(
-            R.string.pref_key_email_masks,
-        )
+        val preference = settingsFragment.requirePreference<Preference>(R.string.pref_key_email_masks)
         every { testContext.components.settings.isEmailMaskFeatureEnabled } returns false
-        every { testContext.components.relayEligibilityStore } returns RelayEligibilityStore(RelayState(Ineligible.FirefoxAccountNotLoggedIn))
+        every { testContext.components.relayEligibilityStore } returns
+            RelayEligibilityStore(RelayState(Ineligible.FirefoxAccountNotLoggedIn))
 
         settingsFragment.setupEmailMaskPreference(testContext.components.settings, testContext.components)
 
@@ -471,14 +448,10 @@ class SettingsFragmentTest {
     @OptIn(ExperimentalAndroidComponentsApi::class)
     @Test
     fun `WHEN ip protection feature is available for the user THEN preference is visible`() {
-        val preference = settingsFragment.requirePreference<Preference>(
-            R.string.pref_key_ip_protection_settings,
-        )
+        val preference = settingsFragment.requirePreference<Preference>(R.string.pref_key_ip_protection_settings)
 
         settingsFragment.setupIPProtectionPreferences(
-            ipProtectionStore = IPProtectionStore(
-                initialState = IPProtectionState(EligibilityStatus.Eligible),
-            ),
+            ipProtectionStore = IPProtectionStore(initialState = IPProtectionState(EligibilityStatus.Eligible))
         )
 
         assertTrue(preference.isVisible)
@@ -487,14 +460,10 @@ class SettingsFragmentTest {
     @OptIn(ExperimentalAndroidComponentsApi::class)
     @Test
     fun `WHEN ip protection feature is not available for the user THEN preference is hidden`() {
-        val preference = settingsFragment.requirePreference<Preference>(
-            R.string.pref_key_ip_protection_settings,
-        )
+        val preference = settingsFragment.requirePreference<Preference>(R.string.pref_key_ip_protection_settings)
 
         settingsFragment.setupIPProtectionPreferences(
-            ipProtectionStore = IPProtectionStore(
-                initialState = IPProtectionState(EligibilityStatus.UnsupportedRegion),
-            ),
+            ipProtectionStore = IPProtectionStore(initialState = IPProtectionState(EligibilityStatus.UnsupportedRegion))
         )
 
         assertFalse(preference.isVisible)

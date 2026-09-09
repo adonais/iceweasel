@@ -134,6 +134,15 @@ tools_init()
   cp ${QADIR}/tools/openssl-ml-kem-1024-seed.p12 ${TOOLSDIR}/data
   cp ${QADIR}/tools/openssl-ml-kem-1024-priv.p12 ${TOOLSDIR}/data
   cp ${QADIR}/tools/openssl-ml-kem-1024-both.p12 ${TOOLSDIR}/data
+  cp ${QADIR}/tools/ietf-ml-dsa-44-both.p12 ${TOOLSDIR}/data
+  cp ${QADIR}/tools/ietf-ml-dsa-44-key.p12 ${TOOLSDIR}/data
+  cp ${QADIR}/tools/ietf-ml-dsa-65-both.p12 ${TOOLSDIR}/data
+  cp ${QADIR}/tools/ietf-ml-dsa-65-key.p12 ${TOOLSDIR}/data
+  cp ${QADIR}/tools/ietf-ml-dsa-87-both.p12 ${TOOLSDIR}/data
+  cp ${QADIR}/tools/ietf-ml-dsa-87-key.p12 ${TOOLSDIR}/data
+  cp ${QADIR}/tools/openssl-ml-dsa-44.p12 ${TOOLSDIR}/data
+  cp ${QADIR}/tools/openssl-ml-dsa-65.p12 ${TOOLSDIR}/data
+  cp ${QADIR}/tools/openssl-ml-dsa-87.p12 ${TOOLSDIR}/data
 
 
   cd ${TOOLSDIR}
@@ -488,6 +497,30 @@ tools_p12_export_list_import_with_default_ciphers()
   ret=$?
   html_msg $ret 0 "Listing Alice's pk12 EC file with long pw (pk12util -l)"
   check_tmpfile
+
+  echo "$SCRIPTNAME: Exporting Alice's ML-DSA cert & key---------------"
+  echo "pk12util -o Alice-mldsa.p12 -n \"Alice-ml-dsa-44\" -d ${P_R_ALICEDIR} -k ${R_PWFILE} \\"
+  echo "         -w ${R_PWFILE}"
+  ${BINDIR}/pk12util -o Alice-mldsa.p12 -n "Alice-ml-dsa-44" -d ${P_R_ALICEDIR} -k ${R_PWFILE} \
+       -w ${R_PWFILE} 2>&1
+  ret=$?
+  html_msg $ret 0 "Exporting Alice's ML-DSA cert & key (pk12util -o)"
+  check_tmpfile
+  verify_p12 Alice-mldsa.p12 "default" "default" "default"
+
+ echo "$SCRIPTNAME: Importing Alice's ML-DSA cert & key --------------"
+  echo "pk12util -i Alice-mldsa.p12 -d ${P_R_COPYDIR} -k ${R_PWFILE} -w ${R_PWFILE}"
+  ${BINDIR}/pk12util -i Alice-mldsa.p12 -d ${P_R_COPYDIR} -k ${R_PWFILE} -w ${R_PWFILE} 2>&1
+  ret=$?
+  html_msg $ret 0 "Importing Alice's ML-DSA cert & key (pk12util -i)"
+  check_tmpfile
+
+  echo "$SCRIPTNAME: Listing Alice's pk12 ML-DSA file -----------------"
+  echo "pk12util -l Alice-mldsa.p12 -w ${R_PWFILE}"
+  ${BINDIR}/pk12util -l Alice-mldsa.p12 -w ${R_PWFILE} 2>&1
+  ret=$?
+  html_msg $ret 0 "Listing Alice's pk12 ML-DSA file (pk12util -l)"
+  check_tmpfile
 }
 
 tools_p12_import_old_files()
@@ -552,6 +585,33 @@ tools_p12_ml_kem_import()
   done
 }
 
+tools_p12_ml_dsa_import()
+{
+  echo "$SCRIPTNAME: Testing ml-dsa compatibility with pkcs12 --------------"
+  for i in 44 65 87
+  do
+    echo "${BINDIR}/pk12util -i ${TOOLSDIR}/data/openssl-ml-dsa-$i.p12 -d ${P_R_COPYDIR} -k ${R_PWFILE} -W 'test' 2>&1"
+    ${BINDIR}/pk12util -i ${TOOLSDIR}/data/openssl-ml-dsa-$i.p12 -d ${P_R_COPYDIR} -k ${R_PWFILE} -W 'test' 2>&1
+    ret=$?
+    html_msg $ret 0 "Importing openssl encoded ml-dsa-$i private key from PKCS#12 file"
+    check_tmpfile
+    for j in 'key' 'both'
+    do
+       echo "${BINDIR}/pk12util -i ${TOOLSDIR}/data/ietf-ml-dsa-$i-$j.p12 -d ${P_R_COPYDIR} -k ${R_PWFILE} -W 'test' 2>&1"
+       ${BINDIR}/pk12util -i ${TOOLSDIR}/data/ietf-ml-dsa-$i-$j.p12 -d ${P_R_COPYDIR} -k ${R_PWFILE} -W 'test' 2>&1
+       ret=$?
+       html_msg $ret 0 "Importing openssl encoded ml-dsa-$i private key from PKCS#12 file"
+       check_tmpfile
+       html_msg $ret 0 "Importing ietf sample ml-dsa-$i-$j private key from PKCS#12 file"
+
+       # each cert has the same issuer/sn, so we can't hold more than one in
+       # the data base
+       echo "${BINDIR}/certutil -F -n "ietf ml-dsa-$i-$j sample" -d ${P_R_COPYDIR} -f ${R_PWFILE}"
+       ${BINDIR}/certutil -F -n "ietf ml-dsa-$i-$j sample" -d ${P_R_COPYDIR} -f ${R_PWFILE}
+    done
+  done
+}
+
 tools_p12_import_pbmac1_samples()
 {
   echo "$SCRIPTNAME: Importing private key pbmac1 PKCS#12 file --------------"
@@ -606,7 +666,7 @@ tools_p12()
   # we can run.
   iteration_count=$(pp -t p12 -i Alice-ec.p12 | grep "Iterations: " | sed -e 's;.*Iterations: ;;' -e 's;(.*).*;;')
   echo "Iteration count=${iteration_count}"
-  if [ -n "${iteration_count}" -a  ${iteration_count} -le 10000 ]; then
+  if [-z "${NSS_PK12_SHORT_TESTS}" -a  -n "${iteration_count}" -a  ${iteration_count} -le 10000 ]; then
       tools_p12_export_list_import_all_pkcs5v2_ciphers
       tools_p12_export_list_import_all_pkcs12v2pbe_ciphers
   else
@@ -616,9 +676,10 @@ tools_p12()
   tools_p12_export_with_invalid_ciphers
   tools_p12_import_old_files
   tools_p12_import_pbmac1_samples
-  tools_p12_ml_kem_import
   if using_sql; then
     tools_p12_import_rsa_pss_private_key
+    tools_p12_ml_kem_import
+    tools_p12_ml_dsa_import
     tools_p12_policy
   fi
 }

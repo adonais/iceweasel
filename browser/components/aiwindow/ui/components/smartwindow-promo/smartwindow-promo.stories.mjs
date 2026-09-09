@@ -25,6 +25,9 @@ export default {
       options: ["cover", "padded"],
       control: { type: "radio" },
     },
+    dismissable: {
+      control: { type: "boolean" },
+    },
   },
   parameters: {
     status: "in-development",
@@ -47,6 +50,7 @@ const Template = ({
   imageDisplay,
   primaryActionText,
   secondaryActionText,
+  dismissable,
 }) => html`
   <div style="width: 360px; padding: 16px;">
     <smartwindow-promo
@@ -60,6 +64,7 @@ const Template = ({
         imageDisplay,
         primaryActionText,
         secondaryActionText,
+        dismissable,
       }}
       @SmartWindowPromo:PrimaryAction=${() =>
         // eslint-disable-next-line no-console
@@ -67,6 +72,9 @@ const Template = ({
       @SmartWindowPromo:Close=${() =>
         // eslint-disable-next-line no-console
         console.log("SmartWindowPromo:Close")}
+      @SmartWindowPromo:Dismiss=${() =>
+        // eslint-disable-next-line no-console
+        console.log("SmartWindowPromo:Dismiss")}
       @SmartWindowPromo:Impression=${() =>
         // eslint-disable-next-line no-console
         console.log("SmartWindowPromo:Impression")}
@@ -86,12 +94,19 @@ Default.args = {
   imageDisplay: "padded",
   primaryActionText: "Set as default",
   secondaryActionText: "Not now",
+  dismissable: true,
 };
 
 export const PrimaryActionOnly = Template.bind({});
 PrimaryActionOnly.args = {
   ...Default.args,
   secondaryActionText: "",
+};
+
+export const NoDismissButton = Template.bind({});
+NoDismissButton.args = {
+  ...Default.args,
+  dismissable: false,
 };
 
 export const NoImage = Template.bind({});

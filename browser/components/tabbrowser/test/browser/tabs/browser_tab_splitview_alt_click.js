@@ -31,7 +31,7 @@ add_task(async function test_alt_click_creates_split_view() {
     tabContainer,
     { childList: true },
     () => tab1.splitview && tab2.splitview,
-    "Both tabs are in a split view"
+    { msg: "Both tabs are in a split view" }
   );
 
   Assert.ok(tab1.splitview, "tab1 is in a split view");

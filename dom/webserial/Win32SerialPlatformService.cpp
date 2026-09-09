@@ -16,12 +16,14 @@
 #include <ntddser.h>
 #include <setupapi.h>
 
+#include "Serial.h"
 #include "SerialLogging.h"
 #include "Win32SerialParityCheckStream.h"
 #include "mozilla/AsyncPlatformPipes.h"
 #include "mozilla/ScopeExit.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
+#include "nsUnicharUtils.h"
 
 namespace mozilla::dom {
 
@@ -29,6 +31,28 @@ namespace {
 constexpr size_t kPropertyBufferSize = 256;
 constexpr unsigned int kDeviceChangeDelayMs = 200;
 constexpr wchar_t kDevicePathPrefix[] = L"\\\\.\\";
+
+// Extract the Bluetooth service class UUID from a Windows hardware ID of the
+// form "BTHENUM\{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}_...". Returns the class
+// UUID if the hardware ID identifies a Bluetooth port or, if parsing the UUID
+// portion fails, to the SPP fallback.
+// See
+// https://learn.microsoft.com/en-us/windows-hardware/drivers/bluetooth/installing-a-bluetooth-device#plug-and-play-ids
+Maybe<nsString> ExtractBluetoothServiceClassId(const wchar_t* aHardwareId) {
+  if (!aHardwareId || _wcsnicmp(aHardwareId, L"BTHENUM\\", 8) != 0) {
+    return Nothing();
+  }
+  const wchar_t* openBrace = wcschr(aHardwareId, L'{');
+  const wchar_t* closeBrace = openBrace ? wcschr(openBrace, L'}') : nullptr;
+  if (openBrace && closeBrace && (closeBrace - openBrace) == 37) {
+    nsString candidate(openBrace + 1, 36);
+    ToLowerCase(candidate);
+    if (Serial::IsValidBluetoothUUID(candidate)) {
+      return Some(candidate);
+    }
+  }
+  return Some(nsString(kBluetoothSerialPortProfileUUID));
+}
 }  // namespace
 
 Win32SerialPlatformService::Win32SerialPlatformService()
@@ -166,12 +190,18 @@ nsresult EnumeratePortsWin32(SerialPortList& aPorts) {
       info.usbProductId() = Some(productId);
     }
 
-    MOZ_LOG(gWebSerialLog, LogLevel::Debug,
-            ("Win32SerialPlatformService::EnumeratePorts found port '%s' (%s) "
-             "VID:0x%04x PID:0x%04x",
-             NS_ConvertUTF16toUTF8(info.id()).get(),
-             NS_ConvertUTF16toUTF8(info.friendlyName()).get(), vendorId,
-             productId));
+    info.bluetoothServiceClassId() = ExtractBluetoothServiceClassId(hardwareId);
+
+    MOZ_LOG(
+        gWebSerialLog, LogLevel::Debug,
+        ("Win32SerialPlatformService::EnumeratePorts found port '%s' (%s) "
+         "VID:0x%04x PID:0x%04x BT:%s",
+         NS_ConvertUTF16toUTF8(info.id()).get(),
+         NS_ConvertUTF16toUTF8(info.friendlyName()).get(), vendorId, productId,
+         info.bluetoothServiceClassId().isSome()
+             ? NS_ConvertUTF16toUTF8(info.bluetoothServiceClassId().value())
+                   .get()
+             : "none"));
     aPorts.AppendElement(info);
   }
 

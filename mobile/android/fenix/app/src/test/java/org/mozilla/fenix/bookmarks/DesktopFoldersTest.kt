@@ -27,17 +27,18 @@ class DesktopFoldersTest {
 
     private lateinit var context: Context
 
-    private val basicNode = BookmarkNode(
-        type = BookmarkNodeType.FOLDER,
-        guid = BookmarkRoot.Root.id,
-        parentGuid = null,
-        title = BookmarkRoot.Root.name,
-        position = 0u,
-        url = null,
-        dateAdded = 0,
-        lastModified = 0,
-        children = null,
-    )
+    private val basicNode =
+        BookmarkNode(
+            type = BookmarkNodeType.FOLDER,
+            guid = BookmarkRoot.Root.id,
+            parentGuid = null,
+            title = BookmarkRoot.Root.name,
+            position = 0u,
+            url = null,
+            dateAdded = 0,
+            lastModified = 0,
+            children = null,
+        )
 
     @Before
     fun setup() {

@@ -49,16 +49,8 @@ class NimbusGeckoPrefHandlerTest {
     fun `test nimbusGeckoPreferences has appropriate values`() {
         val handler = makeHandler()
         assertNotNull(handler.nimbusGeckoPreferences["gecko-nimbus-validation"])
-        assertNotNull(
-            handler.nimbusGeckoPreferences["gecko-nimbus-validation"]?.get(
-                "test-preference",
-            ),
-        )
-        assertNotNull(
-            handler.nimbusGeckoPreferences["gecko-nimbus-validation"]?.get(
-                "test-preference-2",
-            ),
-        )
+        assertNotNull(handler.nimbusGeckoPreferences["gecko-nimbus-validation"]?.get("test-preference"))
+        assertNotNull(handler.nimbusGeckoPreferences["gecko-nimbus-validation"]?.get("test-preference-2"))
     }
 
     @Test
@@ -68,40 +60,43 @@ class NimbusGeckoPrefHandlerTest {
     }
 
     @Test
-    fun `WHEN getPreferenceStateFromGecko is successful THEN getBrowserPrefs is called AND it returns true`() = runTest {
-        val mockPrefResult =
-            listOf(
-                BrowserPreference(
-                pref = TEST_PREF,
-                defaultValue = "testValue",
-                hasUserChangedValue = false,
-                prefType = BrowserPrefType.STRING,
-            ),
-            )
-        mockEngine.apply {
-            every { getBrowserPrefs(any(), any(), any()) } answers {
-                val onSuccess = secondArg<(List<BrowserPreference<*>>) -> Unit>()
-                onSuccess(mockPrefResult)
+    fun `WHEN getPreferenceStateFromGecko is successful THEN getBrowserPrefs is called AND it returns true`() =
+        runTest {
+            val mockPrefResult =
+                listOf(
+                    BrowserPreference(
+                        pref = TEST_PREF,
+                        defaultValue = "testValue",
+                        hasUserChangedValue = false,
+                        prefType = BrowserPrefType.STRING,
+                    )
+                )
+            mockEngine.apply {
+                every { getBrowserPrefs(any(), any(), any()) } answers
+                    {
+                        val onSuccess = secondArg<(List<BrowserPreference<*>>) -> Unit>()
+                        onSuccess(mockPrefResult)
+                    }
             }
+            val handler = makeHandler(geckoScope = this)
+            assertEquals(null, handler.getPreferenceState(TEST_PREF)?.geckoValue)
+
+            val result = handler.getPreferenceStateFromGecko()
+            testScheduler.advanceUntilIdle()
+            verify { mockEngine.getBrowserPrefs(any(), any(), any()) }
+            assertTrue(result.await())
+
+            assertEquals(mockPrefResult[0].defaultValue, handler.getPreferenceState(TEST_PREF)?.geckoValue)
+            assertEquals(mockPrefResult[0].prefType, handler.preferenceTypes[TEST_PREF])
         }
-        val handler = makeHandler(geckoScope = this)
-        assertEquals(null, handler.getPreferenceState(TEST_PREF)?.geckoValue)
-
-        val result = handler.getPreferenceStateFromGecko()
-        testScheduler.advanceUntilIdle()
-        verify { mockEngine.getBrowserPrefs(any(), any(), any()) }
-        assertTrue(result.await())
-
-        assertEquals(mockPrefResult[0].defaultValue, handler.getPreferenceState(TEST_PREF)?.geckoValue)
-        assertEquals(mockPrefResult[0].prefType, handler.preferenceTypes[TEST_PREF])
-    }
 
     @Test
     fun `WHEN getPreferenceStateFromGecko is fails THEN getBrowserPrefs is called AND it returns false`() = runTest {
-        every { mockEngine.getBrowserPrefs(any(), any(), any()) } answers {
-            val onError = thirdArg<(Throwable) -> Unit>()
-            onError(Throwable("error"))
-        }
+        every { mockEngine.getBrowserPrefs(any(), any(), any()) } answers
+            {
+                val onError = thirdArg<(Throwable) -> Unit>()
+                onError(Throwable("error"))
+            }
 
         val handler = makeHandler(engine = mockEngine, geckoScope = this)
         val result = handler.getPreferenceStateFromGecko()
@@ -117,25 +112,38 @@ class NimbusGeckoPrefHandlerTest {
         handler.start()
         handler.preferenceTypes[TEST_PREF] = BrowserPrefType.STRING
 
-        val prefState = GeckoPrefState(
-            geckoPref = GeckoPref(pref = TEST_PREF, branch = PrefBranch.USER),
-            geckoValue = null,
-            enrollmentValue = PrefEnrollmentData(
-                experimentSlug = "test-experiment",
-                prefValue = "test-value",
-                featureId = "gecko-nimbus-validation",
-                variable = "test-preference",
-            ),
-            isUserSet = false,
-        )
-        every { mockEngine.getBrowserPrefs(any(), any(), any()) } answers {
-            val onSuccess = secondArg<(List<BrowserPreference<*>>) -> Unit>()
-            onSuccess(listOf(BrowserPreference<String>(pref = TEST_PREF, defaultValue = "original-value", hasUserChangedValue = false, prefType = BrowserPrefType.STRING)))
-        }
-        every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers {
-            val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
-            onSuccess(mapOf(TEST_PREF to true))
-        }
+        val prefState =
+            GeckoPrefState(
+                geckoPref = GeckoPref(pref = TEST_PREF, branch = PrefBranch.USER),
+                geckoValue = null,
+                enrollmentValue =
+                    PrefEnrollmentData(
+                        experimentSlug = "test-experiment",
+                        prefValue = "test-value",
+                        featureId = "gecko-nimbus-validation",
+                        variable = "test-preference",
+                    ),
+                isUserSet = false,
+            )
+        every { mockEngine.getBrowserPrefs(any(), any(), any()) } answers
+            {
+                val onSuccess = secondArg<(List<BrowserPreference<*>>) -> Unit>()
+                onSuccess(
+                    listOf(
+                        BrowserPreference<String>(
+                            pref = TEST_PREF,
+                            defaultValue = "original-value",
+                            hasUserChangedValue = false,
+                            prefType = BrowserPrefType.STRING,
+                        )
+                    )
+                )
+            }
+        every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers
+            {
+                val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
+                onSuccess(mapOf(TEST_PREF to true))
+            }
 
         handler.setGeckoPrefsState(listOf(prefState))
         testScheduler.advanceUntilIdle()
@@ -149,26 +157,39 @@ class NimbusGeckoPrefHandlerTest {
         handler.start()
         handler.preferenceTypes[TEST_PREF] = BrowserPrefType.STRING
 
-        val prefState = GeckoPrefState(
-            geckoPref = GeckoPref(pref = TEST_PREF, branch = PrefBranch.USER),
-            geckoValue = null,
-            enrollmentValue = PrefEnrollmentData(
-                experimentSlug = "test-experiment",
-                prefValue = "test-value",
-                featureId = "gecko-nimbus-validation",
-                variable = "test-preference",
-            ),
-            isUserSet = false,
-        )
-        every { mockEngine.getBrowserPrefs(any(), any(), any()) } answers {
-            val onSuccess = secondArg<(List<BrowserPreference<*>>) -> Unit>()
-            onSuccess(listOf(BrowserPreference<String>(pref = TEST_PREF, defaultValue = "original-value", hasUserChangedValue = false, prefType = BrowserPrefType.STRING)))
-        }
-        every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers {
-            val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
-            // Failed to set
-            onSuccess(mapOf(TEST_PREF to false))
-        }
+        val prefState =
+            GeckoPrefState(
+                geckoPref = GeckoPref(pref = TEST_PREF, branch = PrefBranch.USER),
+                geckoValue = null,
+                enrollmentValue =
+                    PrefEnrollmentData(
+                        experimentSlug = "test-experiment",
+                        prefValue = "test-value",
+                        featureId = "gecko-nimbus-validation",
+                        variable = "test-preference",
+                    ),
+                isUserSet = false,
+            )
+        every { mockEngine.getBrowserPrefs(any(), any(), any()) } answers
+            {
+                val onSuccess = secondArg<(List<BrowserPreference<*>>) -> Unit>()
+                onSuccess(
+                    listOf(
+                        BrowserPreference<String>(
+                            pref = TEST_PREF,
+                            defaultValue = "original-value",
+                            hasUserChangedValue = false,
+                            prefType = BrowserPrefType.STRING,
+                        )
+                    )
+                )
+            }
+        every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers
+            {
+                val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
+                // Failed to set
+                onSuccess(mapOf(TEST_PREF to false))
+            }
 
         val capturedPrefState = slot<GeckoPrefState>()
         val capturedReason = slot<PrefUnenrollReason>()
@@ -177,7 +198,13 @@ class NimbusGeckoPrefHandlerTest {
         handler.setGeckoPrefsState(listOf(prefState))
         testScheduler.advanceUntilIdle()
 
-        verify { mockEngine.unregisterPrefsForObservation(match { it.containsAll(listOf(TEST_PREF, SECOND_TEST_PREF)) }, any(), any()) }
+        verify {
+            mockEngine.unregisterPrefsForObservation(
+                match { it.containsAll(listOf(TEST_PREF, SECOND_TEST_PREF)) },
+                any(),
+                any(),
+            )
+        }
         verify { mockNimbusApi.unenrollForGeckoPref(any(), any()) }
 
         assertEquals(TEST_PREF, capturedPrefState.captured.prefString())
@@ -190,22 +217,34 @@ class NimbusGeckoPrefHandlerTest {
         handler.start()
         handler.preferenceTypes[TEST_PREF] = BrowserPrefType.STRING
         // Cannot make a setter when there is no enrollmentValue
-        val prefState = GeckoPrefState(
-            geckoPref = GeckoPref(pref = TEST_PREF, branch = PrefBranch.USER),
-            geckoValue = null,
-            enrollmentValue = null,
-            isUserSet = false,
-        )
+        val prefState =
+            GeckoPrefState(
+                geckoPref = GeckoPref(pref = TEST_PREF, branch = PrefBranch.USER),
+                geckoValue = null,
+                enrollmentValue = null,
+                isUserSet = false,
+            )
 
-        every { mockEngine.getBrowserPrefs(any(), any(), any()) } answers {
-            val onSuccess = secondArg<(List<BrowserPreference<*>>) -> Unit>()
-            onSuccess(listOf(BrowserPreference<String>(pref = TEST_PREF, defaultValue = "original-value", hasUserChangedValue = false, prefType = BrowserPrefType.STRING)))
-        }
-        every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers {
-            val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
-            // No other valid items to set
-            onSuccess(emptyMap())
-        }
+        every { mockEngine.getBrowserPrefs(any(), any(), any()) } answers
+            {
+                val onSuccess = secondArg<(List<BrowserPreference<*>>) -> Unit>()
+                onSuccess(
+                    listOf(
+                        BrowserPreference<String>(
+                            pref = TEST_PREF,
+                            defaultValue = "original-value",
+                            hasUserChangedValue = false,
+                            prefType = BrowserPrefType.STRING,
+                        )
+                    )
+                )
+            }
+        every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers
+            {
+                val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
+                // No other valid items to set
+                onSuccess(emptyMap())
+            }
 
         val capturedPrefState = slot<GeckoPrefState>()
         val capturedReason = slot<PrefUnenrollReason>()
@@ -214,7 +253,13 @@ class NimbusGeckoPrefHandlerTest {
         handler.setGeckoPrefsState(listOf(prefState))
         testScheduler.advanceUntilIdle()
 
-        verify { mockEngine.unregisterPrefsForObservation(match { it.containsAll(listOf(TEST_PREF, SECOND_TEST_PREF)) }, any(), any()) }
+        verify {
+            mockEngine.unregisterPrefsForObservation(
+                match { it.containsAll(listOf(TEST_PREF, SECOND_TEST_PREF)) },
+                any(),
+                any(),
+            )
+        }
         verify { mockNimbusApi.unenrollForGeckoPref(any(), any()) }
 
         assertEquals(TEST_PREF, capturedPrefState.captured.prefString())
@@ -222,52 +267,59 @@ class NimbusGeckoPrefHandlerTest {
     }
 
     @Test
-    fun `WHEN setGeckoPrefsOriginalValues is successful on a known value THEN prefs are unregistered from observation before setBrowserPrefs is called`() = runTest {
-        val handler = makeHandler(engine = mockEngine, geckoScope = this)
-        handler.preferenceTypes[TEST_PREF] = BrowserPrefType.STRING
-        val originalPref = OriginalGeckoPref(
-            pref = TEST_PREF,
-            branch = PrefBranch.USER,
-            value = "original-value",
-        )
-        every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers {
-            val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
-            onSuccess(mapOf(TEST_PREF to true))
-        }
+    fun `WHEN setGeckoPrefsOriginalValues is successful on a known value THEN prefs are unregistered from observation before setBrowserPrefs is called`() =
+        runTest {
+            val handler = makeHandler(engine = mockEngine, geckoScope = this)
+            handler.preferenceTypes[TEST_PREF] = BrowserPrefType.STRING
+            val originalPref =
+                OriginalGeckoPref(
+                    pref = TEST_PREF,
+                    branch = PrefBranch.USER,
+                    value = "original-value",
+                )
+            every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers
+                {
+                    val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
+                    onSuccess(mapOf(TEST_PREF to true))
+                }
 
-        handler.setGeckoPrefsOriginalValues(listOf(originalPref))
-        testScheduler.advanceUntilIdle()
+            handler.setGeckoPrefsOriginalValues(listOf(originalPref))
+            testScheduler.advanceUntilIdle()
 
-        verifyOrder {
-            mockEngine.unregisterPrefsForObservation(match { it.contains(TEST_PREF) }, any(), any())
-            mockEngine.setBrowserPrefs(any(), any(), any())
+            verifyOrder {
+                mockEngine.unregisterPrefsForObservation(match { it.contains(TEST_PREF) }, any(), any())
+                mockEngine.setBrowserPrefs(any(), any(), any())
+            }
         }
-    }
 
     @Test
-    fun `WHEN setGeckoPrefsOriginalValues is successful on an unknown value THEN clearBrowserUserPref is called`() = runTest {
-        val handler = makeHandler(engine = mockEngine, geckoScope = this)
-        val originalPref = OriginalGeckoPref(
-            pref = TEST_PREF,
-            branch = PrefBranch.USER,
-            value = null,
-        )
-        handler.preferenceTypes[TEST_PREF] = BrowserPrefType.STRING
+    fun `WHEN setGeckoPrefsOriginalValues is successful on an unknown value THEN clearBrowserUserPref is called`() =
+        runTest {
+            val handler = makeHandler(engine = mockEngine, geckoScope = this)
+            val originalPref =
+                OriginalGeckoPref(
+                    pref = TEST_PREF,
+                    branch = PrefBranch.USER,
+                    value = null,
+                )
+            handler.preferenceTypes[TEST_PREF] = BrowserPrefType.STRING
 
-        every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers {
-            val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
-            onSuccess(emptyMap())
+            every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers
+                {
+                    val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
+                    onSuccess(emptyMap())
+                }
+            every { mockEngine.clearBrowserUserPref(any(), any(), any()) } answers
+                {
+                    val onSuccess = secondArg<() -> Unit>()
+                    onSuccess()
+                }
+
+            handler.setGeckoPrefsOriginalValues(listOf(originalPref))
+            testScheduler.advanceUntilIdle()
+
+            verify { mockEngine.clearBrowserUserPref(eq(TEST_PREF), any(), any()) }
         }
-        every { mockEngine.clearBrowserUserPref(any(), any(), any()) } answers {
-            val onSuccess = secondArg<() -> Unit>()
-            onSuccess()
-        }
-
-        handler.setGeckoPrefsOriginalValues(listOf(originalPref))
-        testScheduler.advanceUntilIdle()
-
-        verify { mockEngine.clearBrowserUserPref(eq(TEST_PREF), any(), any()) }
-    }
 
     @Test
     fun `WHEN getSetterPairsFromOriginalGeckoPrefs is called THEN the correct list is formed`() = runTest {
@@ -279,14 +331,16 @@ class NimbusGeckoPrefHandlerTest {
         handler.preferenceTypes[TEST_PREF] = BrowserPrefType.STRING
         handler.preferenceTypes[otherPref] = BrowserPrefType.STRING
 
-        every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers {
-            val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
-            onSuccess(mapOf(TEST_PREF to true))
-        }
-        every { mockEngine.clearBrowserUserPref(any(), any(), any()) } answers {
-            val onSuccess = secondArg<() -> Unit>()
-            onSuccess()
-        }
+        every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers
+            {
+                val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
+                onSuccess(mapOf(TEST_PREF to true))
+            }
+        every { mockEngine.clearBrowserUserPref(any(), any(), any()) } answers
+            {
+                val onSuccess = secondArg<() -> Unit>()
+                onSuccess()
+            }
 
         handler.setGeckoPrefsOriginalValues(listOf(prefWithValue, prefWithoutValue))
         testScheduler.advanceUntilIdle()
@@ -301,59 +355,88 @@ class NimbusGeckoPrefHandlerTest {
         handler.start()
 
         handler.onPreferenceChange(
-            BrowserPreference<String>(pref = TEST_PREF, hasUserChangedValue = false, prefType = BrowserPrefType.STRING),
+            BrowserPreference<String>(pref = TEST_PREF, hasUserChangedValue = false, prefType = BrowserPrefType.STRING)
         )
 
-        verify { mockEngine.unregisterPrefsForObservation(match { it.containsAll(listOf(TEST_PREF, SECOND_TEST_PREF)) }, any(), any()) }
+        verify {
+            mockEngine.unregisterPrefsForObservation(
+                match { it.containsAll(listOf(TEST_PREF, SECOND_TEST_PREF)) },
+                any(),
+                any(),
+            )
+        }
         verify { mockNimbusApi.unenrollForGeckoPref(any(), eq(PrefUnenrollReason.CHANGED)) }
     }
 
     @Test
-    fun `WHEN setGeckoPrefsState is called with prefs not in preferenceTypes THEN getBrowserPrefs is called and preferenceTypes is populated`() = runTest {
-        val handler = makeHandler(engine = mockEngine, geckoScope = this)
+    fun `WHEN setGeckoPrefsState is called with prefs not in preferenceTypes THEN getBrowserPrefs is called and preferenceTypes is populated`() =
+        runTest {
+            val handler = makeHandler(engine = mockEngine, geckoScope = this)
 
-        every { mockEngine.getBrowserPrefs(any(), any(), any()) } answers {
-            val onSuccess = secondArg<(List<BrowserPreference<*>>) -> Unit>()
-            onSuccess(listOf(BrowserPreference<String>(pref = TEST_PREF, hasUserChangedValue = false, prefType = BrowserPrefType.STRING)))
+            every { mockEngine.getBrowserPrefs(any(), any(), any()) } answers
+                {
+                    val onSuccess = secondArg<(List<BrowserPreference<*>>) -> Unit>()
+                    onSuccess(
+                        listOf(
+                            BrowserPreference<String>(
+                                pref = TEST_PREF,
+                                hasUserChangedValue = false,
+                                prefType = BrowserPrefType.STRING,
+                            )
+                        )
+                    )
+                }
+            every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers
+                {
+                    val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
+                    onSuccess(emptyMap())
+                }
+
+            val prefState =
+                GeckoPrefState(
+                    geckoPref = GeckoPref(pref = TEST_PREF, branch = PrefBranch.USER),
+                    geckoValue = null,
+                    enrollmentValue =
+                        PrefEnrollmentData(
+                            experimentSlug = "test-experiment",
+                            prefValue = "test-value",
+                            featureId = "gecko-nimbus-validation",
+                            variable = "test-preference",
+                        ),
+                    isUserSet = false,
+                )
+
+            handler.setGeckoPrefsState(listOf(prefState))
+            testScheduler.advanceUntilIdle()
+
+            verify { mockEngine.getBrowserPrefs(any(), any(), any()) }
+            assertEquals(BrowserPrefType.STRING, handler.preferenceTypes[TEST_PREF])
         }
-        every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers {
-            val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
-            onSuccess(emptyMap())
-        }
-
-        val prefState = GeckoPrefState(
-            geckoPref = GeckoPref(pref = TEST_PREF, branch = PrefBranch.USER),
-            geckoValue = null,
-            enrollmentValue = PrefEnrollmentData(
-                experimentSlug = "test-experiment",
-                prefValue = "test-value",
-                featureId = "gecko-nimbus-validation",
-                variable = "test-preference",
-            ),
-            isUserSet = false,
-        )
-
-        handler.setGeckoPrefsState(listOf(prefState))
-        testScheduler.advanceUntilIdle()
-
-        verify { mockEngine.getBrowserPrefs(any(), any(), any()) }
-        assertEquals(BrowserPrefType.STRING, handler.preferenceTypes[TEST_PREF])
-    }
 
     @Test
     fun `WHEN handleErrors is called with errors from the same multi-pref experiment THEN unenrollForGeckoPref is only called once`() {
         val handler = makeHandler()
         handler.enrollmentErrors.add(
             Pair(
-                GeckoPrefState(geckoPref = GeckoPref(pref = TEST_PREF, branch = PrefBranch.DEFAULT), geckoValue = null, enrollmentValue = null, isUserSet = false),
+                GeckoPrefState(
+                    geckoPref = GeckoPref(pref = TEST_PREF, branch = PrefBranch.DEFAULT),
+                    geckoValue = null,
+                    enrollmentValue = null,
+                    isUserSet = false,
+                ),
                 null,
-            ),
+            )
         )
         handler.enrollmentErrors.add(
             Pair(
-                GeckoPrefState(geckoPref = GeckoPref(pref = SECOND_TEST_PREF, branch = PrefBranch.DEFAULT), geckoValue = null, enrollmentValue = null, isUserSet = false),
+                GeckoPrefState(
+                    geckoPref = GeckoPref(pref = SECOND_TEST_PREF, branch = PrefBranch.DEFAULT),
+                    geckoValue = null,
+                    enrollmentValue = null,
+                    isUserSet = false,
+                ),
                 null,
-            ),
+            )
         )
 
         handler.handleErrors()
@@ -362,76 +445,80 @@ class NimbusGeckoPrefHandlerTest {
     }
 
     @Test
-    fun `WHEN getPreferenceStateFromGecko is called twice concurrently with different preferenceList THEN getBrowserPrefs is called twice`() = runTest {
-        // getBrowserPrefs never calls onSuccess, leaving the first fetch in-flight
-        val capturedPrefs = mutableListOf<List<String>>()
-        every { mockEngine.getBrowserPrefs(any(), any(), any()) } answers { capturedPrefs.add(firstArg()) }
+    fun `WHEN getPreferenceStateFromGecko is called twice concurrently with different preferenceList THEN getBrowserPrefs is called twice`() =
+        runTest {
+            // getBrowserPrefs never calls onSuccess, leaving the first fetch in-flight
+            val capturedPrefs = mutableListOf<List<String>>()
+            every { mockEngine.getBrowserPrefs(any(), any(), any()) } answers { capturedPrefs.add(firstArg()) }
 
-        val handler = makeHandler(geckoScope = this)
-        handler.getPreferenceStateFromGecko()
+            val handler = makeHandler(geckoScope = this)
+            handler.getPreferenceStateFromGecko()
 
-        // First request is now in-flight
-        testScheduler.advanceUntilIdle()
+            // First request is now in-flight
+            testScheduler.advanceUntilIdle()
 
-        // Change the pref list to simulate a different set of prefs being requested
-        handler.preferenceList = listOf("browser.some.other.pref")
-        handler.getPreferenceStateFromGecko()
+            // Change the pref list to simulate a different set of prefs being requested
+            handler.preferenceList = listOf("browser.some.other.pref")
+            handler.getPreferenceStateFromGecko()
 
-        testScheduler.advanceUntilIdle()
+            testScheduler.advanceUntilIdle()
 
-        // Checking that the engine received two distinct requests
-        verify(exactly = 2) { mockEngine.getBrowserPrefs(any(), any(), any()) }
-        assertTrue(capturedPrefs[0].containsAll(listOf(TEST_PREF, SECOND_TEST_PREF)))
-        assertEquals(listOf("browser.some.other.pref"), capturedPrefs[1])
-    }
-
-    @Test
-    fun `WHEN getPreferenceStateFromGecko is called twice concurrently THEN getBrowserPrefs is only called once and both results are true`() = runTest {
-        var pendingOnSuccess: ((List<BrowserPreference<*>>) -> Unit)? = null
-        every { mockEngine.getBrowserPrefs(any(), any(), any()) } answers {
-            pendingOnSuccess = secondArg()
+            // Checking that the engine received two distinct requests
+            verify(exactly = 2) { mockEngine.getBrowserPrefs(any(), any(), any()) }
+            assertTrue(capturedPrefs[0].containsAll(listOf(TEST_PREF, SECOND_TEST_PREF)))
+            assertEquals(listOf("browser.some.other.pref"), capturedPrefs[1])
         }
 
-        val handler = makeHandler(geckoScope = this)
-        val result1 = handler.getPreferenceStateFromGecko()
-        val result2 = handler.getPreferenceStateFromGecko()
+    @Test
+    fun `WHEN getPreferenceStateFromGecko is called twice concurrently THEN getBrowserPrefs is only called once and both results are true`() =
+        runTest {
+            var pendingOnSuccess: ((List<BrowserPreference<*>>) -> Unit)? = null
+            every { mockEngine.getBrowserPrefs(any(), any(), any()) } answers
+                {
+                    pendingOnSuccess = secondArg()
+                }
 
-        testScheduler.advanceUntilIdle()
+            val handler = makeHandler(geckoScope = this)
+            val result1 = handler.getPreferenceStateFromGecko()
+            val result2 = handler.getPreferenceStateFromGecko()
 
-        assertNotNull(handler.fetchingGeckoPrefState)
+            testScheduler.advanceUntilIdle()
 
-        // Both should have shared the same fetch request
-        verify(exactly = 1) { mockEngine.getBrowserPrefs(any(), any(), any()) }
-        assertEquals(handler.preferenceList, handler.fetchingGeckoPrefState!!.first)
+            assertNotNull(handler.fetchingGeckoPrefState)
 
-        // Deliver the Gecko response
-        pendingOnSuccess!!(
-            listOf(
-                BrowserPreference(
-                    pref = TEST_PREF,
-                    defaultValue = "value",
-                    hasUserChangedValue = false,
-                    prefType = BrowserPrefType.STRING,
-                ),
-            ),
-        )
-        testScheduler.advanceUntilIdle()
+            // Both should have shared the same fetch request
+            verify(exactly = 1) { mockEngine.getBrowserPrefs(any(), any(), any()) }
+            assertEquals(handler.preferenceList, handler.fetchingGeckoPrefState!!.first)
 
-        assertNull(handler.fetchingGeckoPrefState)
-        assertTrue(result1.await())
-        assertTrue(result2.await())
-    }
+            // Deliver the Gecko response
+            pendingOnSuccess!!(
+                listOf(
+                    BrowserPreference(
+                        pref = TEST_PREF,
+                        defaultValue = "value",
+                        hasUserChangedValue = false,
+                        prefType = BrowserPrefType.STRING,
+                    )
+                )
+            )
+            testScheduler.advanceUntilIdle()
+
+            assertNull(handler.fetchingGeckoPrefState)
+            assertTrue(result1.await())
+            assertTrue(result2.await())
+        }
 
     @Test
     fun `WHEN allExperimentPrefs is called with an unknown pref THEN only that pref is returned`() {
         val unknownPref = "some.unknown.pref"
         val handler = makeHandler()
-        val prefState = GeckoPrefState(
-            geckoPref = GeckoPref(pref = unknownPref, branch = PrefBranch.DEFAULT),
-            geckoValue = null,
-            enrollmentValue = null,
-            isUserSet = false,
-        )
+        val prefState =
+            GeckoPrefState(
+                geckoPref = GeckoPref(pref = unknownPref, branch = PrefBranch.DEFAULT),
+                geckoValue = null,
+                enrollmentValue = null,
+                isUserSet = false,
+            )
 
         assertEquals(listOf(unknownPref), handler.allExperimentPrefs(prefState))
     }
@@ -439,12 +526,13 @@ class NimbusGeckoPrefHandlerTest {
     @Test
     fun `WHEN allExperimentPrefs is called with a pref in a multi-pref feature THEN all prefs in the feature are returned`() {
         val handler = makeHandler()
-        val prefState = GeckoPrefState(
-            geckoPref = GeckoPref(pref = TEST_PREF, branch = PrefBranch.DEFAULT),
-            geckoValue = null,
-            enrollmentValue = null,
-            isUserSet = false,
-        )
+        val prefState =
+            GeckoPrefState(
+                geckoPref = GeckoPref(pref = TEST_PREF, branch = PrefBranch.DEFAULT),
+                geckoValue = null,
+                enrollmentValue = null,
+                isUserSet = false,
+            )
 
         val result = handler.allExperimentPrefs(prefState)
 
@@ -456,80 +544,85 @@ class NimbusGeckoPrefHandlerTest {
     // immediately enrolls the same pref, the rollout must not inherit the stale experiment
     // Gecko value as its original Gecko state. The rollout should use the original post-restore Gecko value instead.
     @Test
-    fun `WHEN experiment unenrolls and rollout immediately enrolls the same pref THEN the rollout registers the pre-experiment value as its original not the experiment value`() = runTest {
-        val handler = makeHandler(engine = mockEngine, geckoScope = this)
-        handler.start()
-        handler.preferenceTypes[TEST_PREF] = BrowserPrefType.STRING
+    fun `WHEN experiment unenrolls and rollout immediately enrolls the same pref THEN the rollout registers the pre-experiment value as its original not the experiment value`() =
+        runTest {
+            val handler = makeHandler(engine = mockEngine, geckoScope = this)
+            handler.start()
+            handler.preferenceTypes[TEST_PREF] = BrowserPrefType.STRING
 
-        // Simulate a pref that was set by an enrolled experiment
-        handler.getPreferenceState(TEST_PREF)?.let { state ->
-            state.geckoValue = "experiment-value"
-            state.isUserSet = true
-            state.enrollmentValue = PrefEnrollmentData(
-                experimentSlug = "experiment-slug",
-                prefValue = "experiment-value",
-                featureId = "gecko-nimbus-validation",
-                variable = "test-preference",
-            )
-        }
-
-        // Mock setting a pref
-        every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers {
-            val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
-            onSuccess(mapOf(TEST_PREF to true))
-        }
-
-        // Mock getting the default value
-        every { mockEngine.getBrowserPrefs(any(), any(), any()) } answers {
-            val onSuccess = secondArg<(List<BrowserPreference<*>>) -> Unit>()
-            onSuccess(
-                listOf(
-                    BrowserPreference<String>(
-                        pref = TEST_PREF,
-                        defaultValue = "default-value",
-                        hasUserChangedValue = false,
-                        prefType = BrowserPrefType.STRING,
-                    ),
-                ),
-            )
-        }
-
-        // Capture registrations back to Nimbus of original values
-        val capturedStates = slot<List<GeckoPrefState>>()
-        every { mockNimbusApi.registerPreviousGeckoPrefStates(capture(capturedStates)) } answers { }
-
-        // Experiment unenrolls
-        handler.setGeckoPrefsOriginalValues(
-            listOf(OriginalGeckoPref(pref = TEST_PREF, branch = PrefBranch.USER, value = "default-value")),
-        )
-        // Rollout enrolls immediately
-        handler.setGeckoPrefsState(
-            listOf(
-                GeckoPrefState(
-                    geckoPref = GeckoPref(pref = TEST_PREF, branch = PrefBranch.USER),
-                    // Stale value
-                    geckoValue = "experiment-value",
-                    enrollmentValue = PrefEnrollmentData(
-                        experimentSlug = "rollout-slug",
-                        prefValue = "rollout-value",
+            // Simulate a pref that was set by an enrolled experiment
+            handler.getPreferenceState(TEST_PREF)?.let { state ->
+                state.geckoValue = "experiment-value"
+                state.isUserSet = true
+                state.enrollmentValue =
+                    PrefEnrollmentData(
+                        experimentSlug = "experiment-slug",
+                        prefValue = "experiment-value",
                         featureId = "gecko-nimbus-validation",
                         variable = "test-preference",
-                    ),
-                    isUserSet = true,
-                ),
-            ),
-        )
-        testScheduler.advanceUntilIdle()
+                    )
+            }
 
-        // The stale Gecko value should have been cleared, which will force a fresh Gecko fetch.
-        verify { mockEngine.getBrowserPrefs(any(), any(), any()) }
+            // Mock setting a pref
+            every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers
+                {
+                    val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
+                    onSuccess(mapOf(TEST_PREF to true))
+                }
 
-        // The original registered for the rollout must not be the stale experiment value.
-        verify { mockNimbusApi.registerPreviousGeckoPrefStates(any()) }
-        val registeredState = capturedStates.captured.firstOrNull { it.prefString() == TEST_PREF }
-        assertNotNull(registeredState)
-        Assert.assertNotEquals("experiment-value", registeredState?.geckoValue)
-    }
+            // Mock getting the default value
+            every { mockEngine.getBrowserPrefs(any(), any(), any()) } answers
+                {
+                    val onSuccess = secondArg<(List<BrowserPreference<*>>) -> Unit>()
+                    onSuccess(
+                        listOf(
+                            BrowserPreference<String>(
+                                pref = TEST_PREF,
+                                defaultValue = "default-value",
+                                hasUserChangedValue = false,
+                                prefType = BrowserPrefType.STRING,
+                            )
+                        )
+                    )
+                }
+
+            // Capture registrations back to Nimbus of original values
+            val capturedStates = slot<List<GeckoPrefState>>()
+            every { mockNimbusApi.registerPreviousGeckoPrefStates(capture(capturedStates)) } answers {}
+
+            // Experiment unenrolls
+            handler.setGeckoPrefsOriginalValues(
+                listOf(OriginalGeckoPref(pref = TEST_PREF, branch = PrefBranch.USER, value = "default-value"))
+            )
+            // Rollout enrolls immediately
+            handler.setGeckoPrefsState(
+                listOf(
+                    GeckoPrefState(
+                        geckoPref = GeckoPref(pref = TEST_PREF, branch = PrefBranch.USER),
+                        // Stale value
+                        geckoValue = "experiment-value",
+                        enrollmentValue =
+                            PrefEnrollmentData(
+                                experimentSlug = "rollout-slug",
+                                prefValue = "rollout-value",
+                                featureId = "gecko-nimbus-validation",
+                                variable = "test-preference",
+                            ),
+                        isUserSet = true,
+                    )
+                )
+            )
+            testScheduler.advanceUntilIdle()
+
+            // The stale Gecko value should have been cleared, which will force a fresh Gecko fetch.
+            verify { mockEngine.getBrowserPrefs(any(), any(), any()) }
+
+            // The original registered for the rollout must not be the stale experiment value.
+            verify { mockNimbusApi.registerPreviousGeckoPrefStates(any()) }
+            val registeredState = capturedStates.captured.firstOrNull { it.prefString() == TEST_PREF }
+            assertNotNull(registeredState)
+            Assert.assertNotEquals("experiment-value", registeredState?.geckoValue)
+        }
 
     // Test for Bug 2033772: When a rollout unenrolls and an experiment is active and
     // re-evaluates the same pref, then the experiment should not try to fetch the Gecko value a second time
@@ -544,18 +637,20 @@ class NimbusGeckoPrefHandlerTest {
         handler.getPreferenceState(TEST_PREF)?.let { state ->
             state.geckoValue = "experiment-value"
             state.isUserSet = false
-            state.enrollmentValue = PrefEnrollmentData(
-                experimentSlug = "experiment-slug",
-                prefValue = "experiment-value",
-                featureId = "gecko-nimbus-validation",
-                variable = "test-preference",
-            )
+            state.enrollmentValue =
+                PrefEnrollmentData(
+                    experimentSlug = "experiment-slug",
+                    prefValue = "experiment-value",
+                    featureId = "gecko-nimbus-validation",
+                    variable = "test-preference",
+                )
         }
 
-        every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers {
-            val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
-            onSuccess(mapOf(TEST_PREF to true))
-        }
+        every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers
+            {
+                val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
+                onSuccess(mapOf(TEST_PREF to true))
+            }
 
         // Nimbus re-evaluates the same experiment after the rollout is removed
         handler.setGeckoPrefsState(
@@ -563,15 +658,16 @@ class NimbusGeckoPrefHandlerTest {
                 GeckoPrefState(
                     geckoPref = GeckoPref(pref = TEST_PREF, branch = PrefBranch.USER),
                     geckoValue = "experiment-value",
-                    enrollmentValue = PrefEnrollmentData(
-                        experimentSlug = "experiment-slug",
-                        prefValue = "experiment-value",
-                        featureId = "gecko-nimbus-validation",
-                        variable = "test-preference",
-                    ),
+                    enrollmentValue =
+                        PrefEnrollmentData(
+                            experimentSlug = "experiment-slug",
+                            prefValue = "experiment-value",
+                            featureId = "gecko-nimbus-validation",
+                            variable = "test-preference",
+                        ),
                     isUserSet = false,
-                ),
-            ),
+                )
+            )
         )
         testScheduler.advanceUntilIdle()
 

@@ -34,9 +34,7 @@ import org.mozilla.fenix.utils.ShortcutsUpdaterDefault
 import org.mozilla.fenix.utils.changeAppLauncherIcon
 import org.mozilla.gecko.search.SearchWidgetProvider
 
-/**
- * Fragment that displays a list of alternative app icons.
- */
+/** Fragment that displays a list of alternative app icons. */
 class AppIconSelectionFragment : Fragment(), UserInteractionHandler, SystemInsetsPaddedFragment {
 
     private val appIconRepository: AppIconRepository by lazy {
@@ -53,21 +51,25 @@ class AppIconSelectionFragment : Fragment(), UserInteractionHandler, SystemInset
     ) = content {
         FirefoxTheme {
             AppIconSelection(
-                store = storeProvider.get { restoredState ->
-                    AppIconStore(
-                        initialState = restoredState ?: AppIconState(
-                            currentAppIcon = appIconRepository.selectedAppIcon,
-                            groupedIconOptions = appIconRepository.groupedAppIcons,
-                        ),
-                        middleware = listOf(
-                            AppIconMiddleware(
-                                updateAppIcon = updateAppIcon(),
-                                updateSearchWidgets = updateSearchWidgets(),
-                            ),
-                            AppIconTelemetryMiddleware(),
-                        ),
-                    )
-                },
+                store =
+                    storeProvider.get { restoredState ->
+                        AppIconStore(
+                            initialState =
+                                restoredState
+                                    ?: AppIconState(
+                                        currentAppIcon = appIconRepository.selectedAppIcon,
+                                        groupedIconOptions = appIconRepository.groupedAppIcons,
+                                    ),
+                            middleware =
+                                listOf(
+                                    AppIconMiddleware(
+                                        updateAppIcon = updateAppIcon(),
+                                        updateSearchWidgets = updateSearchWidgets(),
+                                    ),
+                                    AppIconTelemetryMiddleware(),
+                                ),
+                        )
+                    },
                 shortcutRemovalWarning = { shouldWarnAboutShortcutRemoval() },
             )
         }

@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material3.FloatingActionButton as M3FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults as M3FloatingActionButtonDefaults
 import androidx.compose.material3.FloatingActionButtonElevation
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -28,8 +30,6 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.modifier.animateRotation
 import mozilla.components.compose.base.theme.AcornTheme
-import androidx.compose.material3.FloatingActionButton as M3FloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults as M3FloatingActionButtonDefaults
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -40,8 +40,8 @@ import mozilla.components.ui.icons.R as iconsR
  * @param contentDescription The content description to describe the icon.
  * @param label Text to be displayed next to the icon.
  * @param colors The [FloatingActionButtonColors] used to color this FAB.
- * @param elevation [FloatingActionButtonElevation] used to resolve the elevation for this FAB in
- * different states. This controls the size of the shadow below the FAB.
+ * @param elevation [FloatingActionButtonElevation] used to resolve the elevation for this FAB in different states. This
+ *   controls the size of the shadow below the FAB.
  * @param onClick Invoked when the button is clicked.
  */
 @Composable
@@ -76,8 +76,8 @@ fun FloatingActionButton(
  * @param icon [Composable] icon to be displayed inside the action button.
  * @param label Text to be displayed next to the icon.
  * @param colors The [FloatingActionButtonColors] used to color this FAB.
- * @param elevation [FloatingActionButtonElevation] used to resolve the elevation for this FAB in
- * different states. This controls the size of the shadow below the FAB.
+ * @param elevation [FloatingActionButtonElevation] used to resolve the elevation for this FAB in different states. This
+ *   controls the size of the shadow below the FAB.
  * @param onClick Invoked when the button is clicked.
  */
 @Composable
@@ -97,10 +97,7 @@ fun FloatingActionButton(
         elevation = elevation,
     ) {
         Row(
-            modifier = Modifier
-                .wrapContentSize()
-                .padding(16.dp)
-                .animateContentSize(),
+            modifier = Modifier.wrapContentSize().padding(16.dp).animateContentSize(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             icon()
@@ -146,10 +143,11 @@ private fun CustomFloatingActionButtonPreview() {
             FloatingActionButton(
                 label = label,
                 icon = painterResource(iconsR.drawable.mozac_ic_plus_24),
-                colors = FloatingActionButtonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                    contentColor = MaterialTheme.colorScheme.onSecondary,
-                ),
+                colors =
+                    FloatingActionButtonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary,
+                        contentColor = MaterialTheme.colorScheme.onSecondary,
+                    ),
                 onClick = {
                     label = if (label == null) "LABEL" else null
                 },

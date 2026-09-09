@@ -28,13 +28,14 @@ class TabHistoryPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestR
         NavigationRegistry.register(
             from = "BrowserPage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(ToolbarSelectors.TOOLBAR_URL_BOX_UIAUTOMATOR),
-                NavigationStep.EnterTextValue(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE, "example.org"),
-                NavigationStep.PressEnter(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE),
-                NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON_UIAUTOMATOR),
-                NavigationStep.LongClick(MainMenuSelectors.BACK_BUTTON),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.Click(ToolbarSelectors.TOOLBAR_URL_BOX_UIAUTOMATOR),
+                    NavigationStep.EnterTextValue(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE, "example.org"),
+                    NavigationStep.PressEnter(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE),
+                    NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON_UIAUTOMATOR),
+                    NavigationStep.LongClick(MainMenuSelectors.BACK_BUTTON),
+                ),
         )
     }
 
@@ -46,13 +47,13 @@ class TabHistoryPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestR
     /**
      * Dismisses the tab-history bottom sheet.
      *
-     * Call this at the end of any test that opens it. The sheet is app UI the test deliberately opened,
-     * so it is the test's to clean up — not something OverlayRegistry should handle, since that is for
-     * system surfaces the test never asked for and only fires on a locate miss.
+     * Call this at the end of any test that opens it. The sheet is app UI the test deliberately opened, so it is the
+     * test's to clean up — not something OverlayRegistry should handle, since that is for system surfaces the test
+     * never asked for and only fires on a locate miss.
      *
-     * This keeps the test self-contained rather than handing the next one an open sheet. Note it was NOT
-     * the cause of the CustomTabsTest retry-pass on verifyDownloadInACustomTabTest: adding this left the
-     * class result byte-identical, so that leak is still unidentified. Do not read this as the fix for it.
+     * This keeps the test self-contained rather than handing the next one an open sheet. Note it was NOT the cause of
+     * the CustomTabsTest retry-pass on verifyDownloadInACustomTabTest: adding this left the class result
+     * byte-identical, so that leak is still unidentified. Do not read this as the fix for it.
      */
     fun dismissTabHistorySheet(): TabHistoryPage {
         mDevice.pressBack()

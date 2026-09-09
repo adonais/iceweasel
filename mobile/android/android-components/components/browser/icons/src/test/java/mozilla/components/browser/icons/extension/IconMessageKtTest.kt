@@ -16,25 +16,26 @@ class IconMessageKtTest {
 
     @Test
     fun `Serializing and deserializing icon resources`() {
-        val resources = listOf(
-            IconRequest.Resource(
-                url = "https://www.mozilla.org/icon64.png",
-                sizes = listOf(Size(64, 64)),
-                mimeType = "image/png",
-                type = IconRequest.Resource.Type.FAVICON,
-            ),
-            IconRequest.Resource(
-                url = "https://www.mozilla.org/icon128.png",
-                sizes = listOf(Size(128, 128)),
-                mimeType = "image/png",
-                type = IconRequest.Resource.Type.FAVICON,
-            ),
-            IconRequest.Resource(
-                url = "https://www.mozilla.org/icon128.png",
-                sizes = listOf(Size(180, 180)),
-                type = IconRequest.Resource.Type.APPLE_TOUCH_ICON,
-            ),
-        )
+        val resources =
+            listOf(
+                IconRequest.Resource(
+                    url = "https://www.mozilla.org/icon64.png",
+                    sizes = listOf(Size(64, 64)),
+                    mimeType = "image/png",
+                    type = IconRequest.Resource.Type.FAVICON,
+                ),
+                IconRequest.Resource(
+                    url = "https://www.mozilla.org/icon128.png",
+                    sizes = listOf(Size(128, 128)),
+                    mimeType = "image/png",
+                    type = IconRequest.Resource.Type.FAVICON,
+                ),
+                IconRequest.Resource(
+                    url = "https://www.mozilla.org/icon128.png",
+                    sizes = listOf(Size(180, 180)),
+                    type = IconRequest.Resource.Type.APPLE_TOUCH_ICON,
+                ),
+            )
 
         val json = resources.toJSON()
         assertEquals(3, json.length())
@@ -45,16 +46,17 @@ class IconMessageKtTest {
 
     @Test
     fun `GIVEN resource type is from merino manifest WHEN resources are serialized THEN merino manifest resource type is not serialized`() {
-        val resources = listOf(
-            IconRequest.Resource(
-                url = "https://www.mozilla.org/icon64.png",
-                type = IconRequest.Resource.Type.FAVICON,
-            ),
-            IconRequest.Resource(
-                url = "https://merino.example/icon.png",
-                type = IconRequest.Resource.Type.MERINO_MANIFEST,
-            ),
-        )
+        val resources =
+            listOf(
+                IconRequest.Resource(
+                    url = "https://www.mozilla.org/icon64.png",
+                    type = IconRequest.Resource.Type.FAVICON,
+                ),
+                IconRequest.Resource(
+                    url = "https://merino.example/icon.png",
+                    type = IconRequest.Resource.Type.MERINO_MANIFEST,
+                ),
+            )
 
         val json = resources.toJSON()
         assertEquals(1, json.length())
@@ -65,14 +67,15 @@ class IconMessageKtTest {
 
     @Test
     fun `Url must be sanitized`() {
-        val resources = listOf(
-            IconRequest.Resource(
-                url = "\nhttps://www.mozilla.org/icon64.png\n",
-                sizes = listOf(Size(64, 64)),
-                mimeType = "image/png",
-                type = IconRequest.Resource.Type.FAVICON,
-            ),
-        )
+        val resources =
+            listOf(
+                IconRequest.Resource(
+                    url = "\nhttps://www.mozilla.org/icon64.png\n",
+                    sizes = listOf(Size(64, 64)),
+                    mimeType = "image/png",
+                    type = IconRequest.Resource.Type.FAVICON,
+                )
+            )
 
         val json = resources.toJSON()
 

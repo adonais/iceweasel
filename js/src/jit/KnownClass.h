@@ -19,6 +19,7 @@ enum class KnownClass {
   Array,
   Function,
   RegExp,
+  Date,
   ArrayIterator,
   StringIterator,
   RegExpStringIterator,

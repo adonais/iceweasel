@@ -118,7 +118,7 @@ class ProviderQuickActions extends ActionsProvider {
     return this.#actions.get(key);
   }
 
-  onPick(queryContext, controller, actionResult) {
+  onPick(queryContext, controller, actionResult, _details) {
     this.pickAction(
       queryContext,
       controller,

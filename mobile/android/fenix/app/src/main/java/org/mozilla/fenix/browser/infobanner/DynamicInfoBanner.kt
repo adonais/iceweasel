@@ -10,8 +10,8 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import org.mozilla.fenix.ext.components
 
 /**
- * [InfoBanner] that will automatically scroll with the top [BrowserToolbar].
- * Only to be used with [BrowserToolbar]s placed at the top of the screen.
+ * [InfoBanner] that will automatically scroll with the top [BrowserToolbar]. Only to be used with [BrowserToolbar]s
+ * placed at the top of the screen.
  *
  * @param context A [Context] for accessing system resources.
  * @param container The layout where the banner will be shown.
@@ -20,7 +20,7 @@ import org.mozilla.fenix.ext.components
  * @param dismissText The text on the dismiss button.
  * @param actionText The text on the action to perform button.
  * @param dismissByHiding Whether or not to hide the banner when dismissed.
- * @param dismissAction  Optional callback invoked when the user dismisses the banner.
+ * @param dismissAction Optional callback invoked when the user dismisses the banner.
  * @param actionToPerform The action to be performed on action button press.
  */
 class DynamicInfoBanner(
@@ -33,25 +33,27 @@ class DynamicInfoBanner(
     dismissByHiding: Boolean = false,
     dismissAction: (() -> Unit)? = null,
     actionToPerform: (() -> Unit)? = null,
-) : InfoBanner(
-    context,
-    context.components.settings,
-    container,
-    message,
-    dismissText,
-    actionText,
-    dismissByHiding,
-    dismissAction,
-    actionToPerform,
-) {
+) :
+    InfoBanner(
+        context,
+        context.components.settings,
+        container,
+        message,
+        dismissText,
+        actionText,
+        dismissByHiding,
+        dismissAction,
+        actionToPerform,
+    ) {
     override fun showBanner() {
         super.showBanner()
 
         if (shouldScrollWithTopToolbar) {
-            (binding.root.layoutParams as CoordinatorLayout.LayoutParams).behavior = DynamicInfoBannerBehavior(
-                context,
-                null,
-            )
+            (binding.root.layoutParams as CoordinatorLayout.LayoutParams).behavior =
+                DynamicInfoBannerBehavior(
+                    context,
+                    null,
+                )
         }
     }
 }

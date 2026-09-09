@@ -890,5 +890,60 @@ TEST(ScreamControllerTest, AlrRecoversDuringPeriodicPadding) {
   EXPECT_GE(target_rate, DataRate::KilobitsPerSec(9800));
 }
 
+TEST(ScreamControllerTest, CwndReduceRatioSetWhenPacerQueueGrowsAndShrinks) {
+  SimulatedClock clock(Timestamp::Seconds(1'234));
+  Environment env = CreateTestEnvironment({.time = &clock});
+  NetworkControllerConfig config(env);
+  config.constraints.starting_rate = DataRate::KilobitsPerSec(1000);
+  ScreamNetworkController scream_controller(config);
+
+  scream_controller.OnNetworkAvailability(
+      {.at_time = clock.CurrentTime(), .network_available = true});
+
+  // Starting rate is 1000 kbps, so pacing rate = 1.1 * 1000 kbps = 1100 kbps
+  // (137,500 bytes/sec). Pacer queue of 41250 bytes gives (41250/137500) =
+  // 300ms pacing delay. Expected ratio: (300ms - 100ms) / (500ms - 100ms) = 200
+  // / 400 = 0.5.
+  ProcessInterval msg1;
+  msg1.at_time = clock.CurrentTime();
+  msg1.pacer_queue = DataSize::Bytes(41250);
+
+  NetworkControlUpdate update1 = scream_controller.OnProcessInterval(msg1);
+  ASSERT_TRUE(update1.target_rate.has_value());
+  EXPECT_NEAR(update1.target_rate->cwnd_reduce_ratio, 0.5, 0.05);
+
+  // Send ProcessInterval with empty pacer queue -> cwnd_reduce_ratio drops back
+  // to 0.0.
+  clock.AdvanceTime(TimeDelta::Millis(100));
+  ProcessInterval msg2;
+  msg2.at_time = clock.CurrentTime();
+  msg2.pacer_queue = DataSize::Zero();
+
+  NetworkControlUpdate update2 = scream_controller.OnProcessInterval(msg2);
+  ASSERT_TRUE(update2.target_rate.has_value());
+  EXPECT_EQ(update2.target_rate->cwnd_reduce_ratio, 0.0);
+}
+
+TEST(ScreamControllerTest, CwndReduceRatioSetToOneWhenCongestionWindowIsFull) {
+  SimulatedClock clock(Timestamp::Seconds(1'234));
+  Environment env = CreateTestEnvironment({.time = &clock});
+  NetworkControllerConfig config(env);
+  config.constraints.starting_rate = DataRate::KilobitsPerSec(1000);
+  ScreamNetworkController scream_controller(config);
+
+  scream_controller.OnNetworkAvailability(
+      {.at_time = clock.CurrentTime(), .network_available = true});
+
+  // Send a packet where data_in_flight (12000 bytes) exceeds max_data_in_flight
+  // (~10000 bytes).
+  SentPacket sent_packet;
+  sent_packet.send_time = clock.CurrentTime();
+  sent_packet.data_in_flight = DataSize::Bytes(12000);
+
+  NetworkControlUpdate update = scream_controller.OnSentPacket(sent_packet);
+  ASSERT_TRUE(update.target_rate.has_value());
+  EXPECT_EQ(update.target_rate->cwnd_reduce_ratio, 1.0);
+}
+
 }  // namespace
 }  // namespace webrtc

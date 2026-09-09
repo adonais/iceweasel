@@ -30,14 +30,16 @@ class DesktopModeReducerTest {
 
     @Test
     fun `WHEN DesktopModeDefaultUpdated is dispatched THEN desktop mode is updated`() {
-        val resultTrue = DesktopModeReducer.reduce(
-            state = BrowserState(),
-            action = DefaultDesktopModeAction.DesktopModeUpdated(newValue = true),
-        )
-        val resultFalse = DesktopModeReducer.reduce(
-            state = BrowserState(),
-            action = DefaultDesktopModeAction.DesktopModeUpdated(newValue = false),
-        )
+        val resultTrue =
+            DesktopModeReducer.reduce(
+                state = BrowserState(),
+                action = DefaultDesktopModeAction.DesktopModeUpdated(newValue = true),
+            )
+        val resultFalse =
+            DesktopModeReducer.reduce(
+                state = BrowserState(),
+                action = DefaultDesktopModeAction.DesktopModeUpdated(newValue = false),
+            )
 
         assertTrue(resultTrue.desktopMode)
         assertFalse(resultFalse.desktopMode)

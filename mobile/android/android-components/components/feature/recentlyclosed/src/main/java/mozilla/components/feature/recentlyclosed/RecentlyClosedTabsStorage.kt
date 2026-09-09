@@ -22,15 +22,12 @@ import mozilla.components.feature.recentlyclosed.db.toRecentlyClosedTabEntity
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * Wraps exceptions that are caught by [RecentlyClosedTabsStorage].
- * Instances of this class are submitted via [CrashReporting]. This wrapping helps easily identify
- * exceptions related to [RecentlyClosedTabsStorage].
+ * Wraps exceptions that are caught by [RecentlyClosedTabsStorage]. Instances of this class are submitted via
+ * [CrashReporting]. This wrapping helps easily identify exceptions related to [RecentlyClosedTabsStorage].
  */
 private class RecentlyClosedTabsStorageException(e: Throwable) : Throwable(e)
 
-/**
- * A storage implementation that saves snapshots of recently closed tabs / sessions.
- */
+/** A storage implementation that saves snapshots of recently closed tabs / sessions. */
 class RecentlyClosedTabsStorage(
     context: Context,
     engine: Engine,
@@ -40,15 +37,14 @@ class RecentlyClosedTabsStorage(
     private val logger = Logger("RecentlyClosedTabsStorage")
 
     @VisibleForTesting
-    internal var database: Lazy<RecentlyClosedTabsDatabase> =
-        lazy { RecentlyClosedTabsDatabase.get(context) }
+    internal var database: Lazy<RecentlyClosedTabsDatabase> = lazy { RecentlyClosedTabsDatabase.get(context) }
 
-    /**
-     * Returns an observable list of [TabState]s.
-     */
+    /** Returns an observable list of [TabState]s. */
     @Suppress("TooGenericExceptionCaught")
     override suspend fun getTabs(): Flow<List<TabState>> {
-        return database.value.recentlyClosedTabDao().getTabs()
+        return database.value
+            .recentlyClosedTabDao()
+            .getTabs()
             .catch { exception ->
                 crashReporting.submitCaughtException(RecentlyClosedTabsStorageException(exception))
                 // If the database is "corrupted" then we clean the database and also the file storage
@@ -63,18 +59,14 @@ class RecentlyClosedTabsStorage(
             }
     }
 
-    /**
-     * Removes the given [TabState].
-     */
+    /** Removes the given [TabState]. */
     override suspend fun removeTab(recentlyClosedTab: TabState) {
         val entity = recentlyClosedTab.toRecentlyClosedTabEntity()
         engineStateStorage.delete(entity.uuid)
         database.value.recentlyClosedTabDao().deleteTab(entity)
     }
 
-    /**
-     * Removes all [TabState]s.
-     */
+    /** Removes all [TabState]s. */
     override suspend fun removeAllTabs() {
         engineStateStorage.deleteAll()
         database.value.recentlyClosedTabDao().removeAllTabs()
@@ -96,9 +88,7 @@ class RecentlyClosedTabsStorage(
         }
     }
 
-    /**
-     * @return An [EngineSessionStateStorage] instance used to persist engine state of tabs.
-     */
+    /** @return An [EngineSessionStateStorage] instance used to persist engine state of tabs. */
     fun engineStateStorage(): EngineSessionStateStorage {
         return engineStateStorage
     }

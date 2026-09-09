@@ -18,13 +18,14 @@ import org.mozilla.experiments.nimbus.AvailableExperiment
 @RunWith(AndroidJUnit4::class)
 class NimbusExperimentItemViewHolderTest {
 
-    private val experiment = AvailableExperiment(
-        slug = "secure-gold",
-        userFacingDescription = "This is a test experiment for diagnostic purposes.",
-        userFacingName = "Diagnostic test experiment",
-        branches = emptyList(),
-        referenceBranch = null,
-    )
+    private val experiment =
+        AvailableExperiment(
+            slug = "secure-gold",
+            userFacingDescription = "This is a test experiment for diagnostic purposes.",
+            userFacingName = "Diagnostic test experiment",
+            branches = emptyList(),
+            referenceBranch = null,
+        )
 
     private lateinit var nimbusExperimentsDelegate: NimbusExperimentsAdapterDelegate
     private lateinit var titleView: TextView
@@ -40,8 +41,7 @@ class NimbusExperimentItemViewHolderTest {
     @Test
     fun `GIVEN a experiment WHEN bind is called THEN title and summary text is set`() {
         val view = View(testContext)
-        val holder =
-            NimbusExperimentItemViewHolder(view, nimbusExperimentsDelegate, titleView, summaryView)
+        val holder = NimbusExperimentItemViewHolder(view, nimbusExperimentsDelegate, titleView, summaryView)
 
         holder.bind(experiment)
         verify(titleView).text = experiment.userFacingName
@@ -51,8 +51,7 @@ class NimbusExperimentItemViewHolderTest {
     @Test
     fun `WHEN item is clicked THEN delegate is called`() {
         val view = View(testContext)
-        val holder =
-            NimbusExperimentItemViewHolder(view, nimbusExperimentsDelegate, titleView, summaryView)
+        val holder = NimbusExperimentItemViewHolder(view, nimbusExperimentsDelegate, titleView, summaryView)
 
         holder.bind(experiment)
         holder.itemView.performClick()

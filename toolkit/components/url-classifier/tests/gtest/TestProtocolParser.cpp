@@ -81,9 +81,51 @@ TEST(UrlClassifierProtocolParser, UpdateWait)
   DumpBinary(nsCString(s.c_str(), s.length()));
 
   ProtocolParser* p = new ProtocolParserProtobuf();
+  nsTArray<nsCString> requestedTables = {"googpub-phish-proto"_ns};
+  p->SetRequestedTables(requestedTables);
   p->AppendStream(nsCString(s.c_str(), s.length()));
   p->End();
-  ASSERT_EQ(p->UpdateWaitSec(), 9u);
+
+  // V4 carries a single response-level duration, which is reported for every
+  // requested table.
+  nsTArray<TableWaitDuration> waits = p->TakeUpdateWaits();
+  ASSERT_EQ(waits.Length(), 1u);
+  ASSERT_TRUE(waits[0].mTable.EqualsLiteral("googpub-phish-proto"));
+  ASSERT_EQ(waits[0].mWaitSec, 9u);
+  delete p;
+}
+
+TEST(UrlClassifierProtocolParser, UpdateWaitPerList)
+{
+  // V5 carries a wait duration per hash list, so one batched response can ask
+  // for a different cadence for each list it holds.
+  v5::BatchGetHashListsResponse response;
+
+  auto* first = response.add_hash_lists();
+  first->set_name("test-4b");
+  first->set_partial_update(false);
+  first->set_version("\x00\x00\x00\x01");
+  first->mutable_minimum_wait_duration()->set_seconds(1800);
+
+  auto* second = response.add_hash_lists();
+  second->set_name("test-32b");
+  second->set_partial_update(false);
+  second->set_version("\x00\x00\x00\x01");
+  second->mutable_minimum_wait_duration()->set_seconds(21600);
+
+  std::string s;
+  (void)response.SerializeToString(&s);
+
+  ProtocolParser* p = new ProtocolParserProtobufV5();
+  p->AppendStream(nsCString(s.c_str(), s.length()));
+  p->End();
+
+  nsTArray<TableWaitDuration> waits = p->TakeUpdateWaits();
+  ASSERT_EQ(waits.Length(), 2u);
+  ASSERT_TRUE(waits[0].mTable.EqualsLiteral("test-google5-malware-proto"));
+  ASSERT_EQ(waits[0].mWaitSec, 1800u);
+  ASSERT_TRUE(waits[1].mTable.EqualsLiteral("test-globalcache-proto"));
+  ASSERT_EQ(waits[1].mWaitSec, 21600u);
   delete p;
 }
 

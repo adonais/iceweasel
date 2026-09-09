@@ -14,47 +14,6 @@ class TabStripStateTest {
     @Test
     fun `WHEN browser state tabs is empty THEN tabs strip state tabs is empty`() {
         val browserState = BrowserState(tabs = emptyList())
-        val actual = browserState.toTabStripState(
-            isSelectDisabled = false,
-            isPossiblyPrivateMode = false,
-            addTab = {},
-            closeTab = { _, _ -> },
-        )
-
-        val expected = TabStripState(
-            tabs = emptyList(),
-            isPrivateMode = false,
-            tabCounterMenuItems = allMenuItems,
-        )
-
-        expected isSameAs actual
-    }
-
-    @Test
-    fun `WHEN private mode is off THEN tabs strip state tabs should include only non private tabs`() {
-        val browserState = BrowserState(
-            tabs = listOf(
-                createTab(
-                    url = "https://example.com",
-                    title = "Example 1",
-                    private = false,
-                    id = "1",
-                ),
-                createTab(
-                    url = "https://example2.com",
-                    title = "Example 2",
-                    private = true,
-                    id = "2",
-                ),
-                createTab(
-                    url = "https://example3.com",
-                    title = "Example 3",
-                    private = false,
-                    id = "3",
-                ),
-            ),
-            selectedTabId = "1",
-        )
         val actual =
             browserState.toTabStripState(
                 isSelectDisabled = false,
@@ -63,336 +22,413 @@ class TabStripStateTest {
                 closeTab = { _, _ -> },
             )
 
-        val expected = TabStripState(
-            tabs = listOf(
-                TabStripItem(
-                    id = "1",
-                    title = "Example 1",
-                    url = "https://example.com",
-                    isSelected = true,
-                    isPrivate = false,
-                ),
-                TabStripItem(
-                    id = "3",
-                    title = "Example 3",
-                    url = "https://example3.com",
-                    isSelected = false,
-                    isPrivate = false,
-                ),
-            ),
-            isPrivateMode = false,
-            tabCounterMenuItems = allMenuItems,
-        )
+        val expected =
+            TabStripState(
+                tabs = emptyList(),
+                isPrivateMode = false,
+                tabCounterMenuItems = allMenuItems,
+            )
+
+        expected isSameAs actual
+    }
+
+    @Test
+    fun `WHEN private mode is off THEN tabs strip state tabs should include only non private tabs`() {
+        val browserState =
+            BrowserState(
+                tabs =
+                    listOf(
+                        createTab(
+                            url = "https://example.com",
+                            title = "Example 1",
+                            private = false,
+                            id = "1",
+                        ),
+                        createTab(
+                            url = "https://example2.com",
+                            title = "Example 2",
+                            private = true,
+                            id = "2",
+                        ),
+                        createTab(
+                            url = "https://example3.com",
+                            title = "Example 3",
+                            private = false,
+                            id = "3",
+                        ),
+                    ),
+                selectedTabId = "1",
+            )
+        val actual =
+            browserState.toTabStripState(
+                isSelectDisabled = false,
+                isPossiblyPrivateMode = false,
+                addTab = {},
+                closeTab = { _, _ -> },
+            )
+
+        val expected =
+            TabStripState(
+                tabs =
+                    listOf(
+                        TabStripItem(
+                            id = "1",
+                            title = "Example 1",
+                            url = "https://example.com",
+                            isSelected = true,
+                            isPrivate = false,
+                        ),
+                        TabStripItem(
+                            id = "3",
+                            title = "Example 3",
+                            url = "https://example3.com",
+                            isSelected = false,
+                            isPrivate = false,
+                        ),
+                    ),
+                isPrivateMode = false,
+                tabCounterMenuItems = allMenuItems,
+            )
 
         expected isSameAs actual
     }
 
     @Test
     fun `WHEN private mode is possibly on THEN tabs strip state tabs should include only private tabs`() {
-        val browserState = BrowserState(
-            tabs = listOf(
-                createTab(
-                    url = "https://example.com",
-                    title = "Example",
-                    private = false,
-                    id = "1",
-                ),
-                createTab(
-                    url = "https://example2.com",
-                    title = "Private Example",
-                    private = true,
-                    id = "2",
-                ),
-                createTab(
-                    url = "https://example3.com",
-                    title = "Example 3",
-                    private = true,
-                    id = "3",
-                ),
-            ),
-        )
-        val actual = browserState.toTabStripState(
-            isSelectDisabled = true,
-            isPossiblyPrivateMode = true,
-            addTab = {},
-            closeTab = { _, _ -> },
-        )
+        val browserState =
+            BrowserState(
+                tabs =
+                    listOf(
+                        createTab(
+                            url = "https://example.com",
+                            title = "Example",
+                            private = false,
+                            id = "1",
+                        ),
+                        createTab(
+                            url = "https://example2.com",
+                            title = "Private Example",
+                            private = true,
+                            id = "2",
+                        ),
+                        createTab(
+                            url = "https://example3.com",
+                            title = "Example 3",
+                            private = true,
+                            id = "3",
+                        ),
+                    )
+            )
+        val actual =
+            browserState.toTabStripState(
+                isSelectDisabled = true,
+                isPossiblyPrivateMode = true,
+                addTab = {},
+                closeTab = { _, _ -> },
+            )
 
-        val expected = TabStripState(
-            tabs = listOf(
-                TabStripItem(
-                    id = "2",
-                    title = "Private Example",
-                    url = "https://example2.com",
-                    isSelected = false,
-                    isPrivate = true,
-                ),
-                TabStripItem(
-                    id = "3",
-                    title = "Example 3",
-                    url = "https://example3.com",
-                    isSelected = false,
-                    isPrivate = true,
-                ),
-            ),
-            isPrivateMode = true,
-            tabCounterMenuItems = noTabSelectedPrivateModeMenuItems,
-        )
+        val expected =
+            TabStripState(
+                tabs =
+                    listOf(
+                        TabStripItem(
+                            id = "2",
+                            title = "Private Example",
+                            url = "https://example2.com",
+                            isSelected = false,
+                            isPrivate = true,
+                        ),
+                        TabStripItem(
+                            id = "3",
+                            title = "Example 3",
+                            url = "https://example3.com",
+                            isSelected = false,
+                            isPrivate = true,
+                        ),
+                    ),
+                isPrivateMode = true,
+                tabCounterMenuItems = noTabSelectedPrivateModeMenuItems,
+            )
 
         expected isSameAs actual
     }
 
     @Test
     fun `GIVEN private mode is possibly on and select is not disabled WHEN selected tab is normal THEN tabs strip state tabs should include only normal tabs`() {
-        val browserState = BrowserState(
-            tabs = listOf(
-                createTab(
-                    url = "https://example.com",
-                    title = "Example",
-                    private = false,
-                    id = "1",
-                ),
-                createTab(
-                    url = "https://example2.com",
-                    title = "Private Example",
-                    private = true,
-                    id = "2",
-                ),
-                createTab(
-                    url = "https://example3.com",
-                    title = "Example 3",
-                    private = true,
-                    id = "3",
-                ),
-            ),
-            selectedTabId = "1",
-        )
-        val actual = browserState.toTabStripState(
-            isSelectDisabled = false,
-            isPossiblyPrivateMode = true,
-            addTab = {},
-            closeTab = { _, _ -> },
-        )
+        val browserState =
+            BrowserState(
+                tabs =
+                    listOf(
+                        createTab(
+                            url = "https://example.com",
+                            title = "Example",
+                            private = false,
+                            id = "1",
+                        ),
+                        createTab(
+                            url = "https://example2.com",
+                            title = "Private Example",
+                            private = true,
+                            id = "2",
+                        ),
+                        createTab(
+                            url = "https://example3.com",
+                            title = "Example 3",
+                            private = true,
+                            id = "3",
+                        ),
+                    ),
+                selectedTabId = "1",
+            )
+        val actual =
+            browserState.toTabStripState(
+                isSelectDisabled = false,
+                isPossiblyPrivateMode = true,
+                addTab = {},
+                closeTab = { _, _ -> },
+            )
 
-        val expected = TabStripState(
-            tabs = listOf(
-                TabStripItem(
-                    id = "1",
-                    title = "Example",
-                    url = "https://example.com",
-                    isSelected = true,
-                    isPrivate = false,
-                ),
-            ),
-            isPrivateMode = false,
-            tabCounterMenuItems = allMenuItems,
-        )
+        val expected =
+            TabStripState(
+                tabs =
+                    listOf(
+                        TabStripItem(
+                            id = "1",
+                            title = "Example",
+                            url = "https://example.com",
+                            isSelected = true,
+                            isPrivate = false,
+                        )
+                    ),
+                isPrivateMode = false,
+                tabCounterMenuItems = allMenuItems,
+            )
 
         expected isSameAs actual
     }
 
     @Test
     fun `WHEN isSelectDisabled is false THEN tabs strip state tabs should have a selected tab`() {
-        val browserState = BrowserState(
-            tabs = listOf(
-                createTab(
-                    url = "https://example.com",
-                    title = "Example 1",
-                    private = false,
-                    id = "1",
-                ),
-                createTab(
-                    url = "https://example2.com",
-                    title = "Example 2",
-                    private = false,
-                    id = "2",
-                ),
-            ),
-            selectedTabId = "2",
-        )
-        val actual = browserState.toTabStripState(
-            isSelectDisabled = false,
-            isPossiblyPrivateMode = false,
-            addTab = {},
-            closeTab = { _, _ -> },
-        )
+        val browserState =
+            BrowserState(
+                tabs =
+                    listOf(
+                        createTab(
+                            url = "https://example.com",
+                            title = "Example 1",
+                            private = false,
+                            id = "1",
+                        ),
+                        createTab(
+                            url = "https://example2.com",
+                            title = "Example 2",
+                            private = false,
+                            id = "2",
+                        ),
+                    ),
+                selectedTabId = "2",
+            )
+        val actual =
+            browserState.toTabStripState(
+                isSelectDisabled = false,
+                isPossiblyPrivateMode = false,
+                addTab = {},
+                closeTab = { _, _ -> },
+            )
 
-        val expected = TabStripState(
-            tabs = listOf(
-                TabStripItem(
-                    id = "1",
-                    title = "Example 1",
-                    url = "https://example.com",
-                    isSelected = false,
-                    isPrivate = false,
-                ),
-                TabStripItem(
-                    id = "2",
-                    title = "Example 2",
-                    url = "https://example2.com",
-                    isSelected = true,
-                    isPrivate = false,
-                ),
-            ),
-            isPrivateMode = false,
-            tabCounterMenuItems = allMenuItems,
-        )
+        val expected =
+            TabStripState(
+                tabs =
+                    listOf(
+                        TabStripItem(
+                            id = "1",
+                            title = "Example 1",
+                            url = "https://example.com",
+                            isSelected = false,
+                            isPrivate = false,
+                        ),
+                        TabStripItem(
+                            id = "2",
+                            title = "Example 2",
+                            url = "https://example2.com",
+                            isSelected = true,
+                            isPrivate = false,
+                        ),
+                    ),
+                isPrivateMode = false,
+                tabCounterMenuItems = allMenuItems,
+            )
 
         expected isSameAs actual
     }
 
     @Test
     fun `WHEN isSelectDisabled is false and selected tab is private THEN tabs strip state tabs should have private tabs including the selected tab`() {
-        val browserState = BrowserState(
-            tabs = listOf(
-                createTab(
-                    url = "https://example.com",
-                    title = "Example 1",
-                    private = false,
-                    id = "1",
-                ),
-                createTab(
-                    url = "https://example2.com",
-                    title = "Example 2",
-                    private = true,
-                    id = "2",
-                ),
-                createTab(
-                    url = "https://example3.com",
-                    title = "Example 3",
-                    private = true,
-                    id = "3",
-                ),
-            ),
-            selectedTabId = "2",
-        )
-        val actual = browserState.toTabStripState(
-            isSelectDisabled = false,
-            isPossiblyPrivateMode = false,
-            addTab = {},
-            closeTab = { _, _ -> },
-        )
+        val browserState =
+            BrowserState(
+                tabs =
+                    listOf(
+                        createTab(
+                            url = "https://example.com",
+                            title = "Example 1",
+                            private = false,
+                            id = "1",
+                        ),
+                        createTab(
+                            url = "https://example2.com",
+                            title = "Example 2",
+                            private = true,
+                            id = "2",
+                        ),
+                        createTab(
+                            url = "https://example3.com",
+                            title = "Example 3",
+                            private = true,
+                            id = "3",
+                        ),
+                    ),
+                selectedTabId = "2",
+            )
+        val actual =
+            browserState.toTabStripState(
+                isSelectDisabled = false,
+                isPossiblyPrivateMode = false,
+                addTab = {},
+                closeTab = { _, _ -> },
+            )
 
-        val expected = TabStripState(
-            tabs = listOf(
-                TabStripItem(
-                    id = "2",
-                    title = "Example 2",
-                    url = "https://example2.com",
-                    isSelected = true,
-                    isPrivate = true,
-                ),
-                TabStripItem(
-                    id = "3",
-                    title = "Example 3",
-                    url = "https://example3.com",
-                    isSelected = false,
-                    isPrivate = true,
-                ),
-            ),
-            isPrivateMode = true,
-            tabCounterMenuItems = allMenuItems,
-        )
+        val expected =
+            TabStripState(
+                tabs =
+                    listOf(
+                        TabStripItem(
+                            id = "2",
+                            title = "Example 2",
+                            url = "https://example2.com",
+                            isSelected = true,
+                            isPrivate = true,
+                        ),
+                        TabStripItem(
+                            id = "3",
+                            title = "Example 3",
+                            url = "https://example3.com",
+                            isSelected = false,
+                            isPrivate = true,
+                        ),
+                    ),
+                isPrivateMode = true,
+                tabCounterMenuItems = allMenuItems,
+            )
 
         expected isSameAs actual
     }
 
     @Test
     fun `WHEN isSelectDisabled is true THEN tabs strip state tabs should not have a selected tab`() {
-        val browserState = BrowserState(
-            tabs = listOf(
-                createTab(
-                    url = "https://example.com",
-                    title = "Example 1",
-                    private = false,
-                    id = "1",
-                ),
-                createTab(
-                    url = "https://example2.com",
-                    title = "Example 2",
-                    private = false,
-                    id = "2",
-                ),
-            ),
-            selectedTabId = "2",
-        )
-        val actual = browserState.toTabStripState(
-            isSelectDisabled = true,
-            isPossiblyPrivateMode = false,
-            addTab = {},
-            closeTab = { _, _ -> },
-        )
+        val browserState =
+            BrowserState(
+                tabs =
+                    listOf(
+                        createTab(
+                            url = "https://example.com",
+                            title = "Example 1",
+                            private = false,
+                            id = "1",
+                        ),
+                        createTab(
+                            url = "https://example2.com",
+                            title = "Example 2",
+                            private = false,
+                            id = "2",
+                        ),
+                    ),
+                selectedTabId = "2",
+            )
+        val actual =
+            browserState.toTabStripState(
+                isSelectDisabled = true,
+                isPossiblyPrivateMode = false,
+                addTab = {},
+                closeTab = { _, _ -> },
+            )
 
-        val expected = TabStripState(
-            tabs = listOf(
-                TabStripItem(
-                    id = "1",
-                    title = "Example 1",
-                    url = "https://example.com",
-                    isSelected = false,
-                    isPrivate = false,
-                ),
-                TabStripItem(
-                    id = "2",
-                    title = "Example 2",
-                    url = "https://example2.com",
-                    isSelected = false,
-                    isPrivate = false,
-                ),
-            ),
-            isPrivateMode = false,
-            tabCounterMenuItems = noTabSelectedNormalModeMenuItems,
-        )
+        val expected =
+            TabStripState(
+                tabs =
+                    listOf(
+                        TabStripItem(
+                            id = "1",
+                            title = "Example 1",
+                            url = "https://example.com",
+                            isSelected = false,
+                            isPrivate = false,
+                        ),
+                        TabStripItem(
+                            id = "2",
+                            title = "Example 2",
+                            url = "https://example2.com",
+                            isSelected = false,
+                            isPrivate = false,
+                        ),
+                    ),
+                isPrivateMode = false,
+                tabCounterMenuItems = noTabSelectedNormalModeMenuItems,
+            )
 
         expected isSameAs actual
     }
 
     @Test
     fun `WHEN a tab does not have a title THEN tabs strip should display the url`() {
-        val browserState = BrowserState(
-            tabs = listOf(
-                createTab(
-                    url = "https://example.com",
-                    title = "Example 1",
-                    private = false,
-                    id = "1",
-                ),
-                createTab(
-                    url = "https://example2.com",
-                    title = "",
-                    private = false,
-                    id = "2",
-                ),
-            ),
-            selectedTabId = "2",
-        )
-        val actual = browserState.toTabStripState(
-            isSelectDisabled = false,
-            isPossiblyPrivateMode = false,
-            addTab = {},
-            closeTab = { _, _ -> },
-        )
+        val browserState =
+            BrowserState(
+                tabs =
+                    listOf(
+                        createTab(
+                            url = "https://example.com",
+                            title = "Example 1",
+                            private = false,
+                            id = "1",
+                        ),
+                        createTab(
+                            url = "https://example2.com",
+                            title = "",
+                            private = false,
+                            id = "2",
+                        ),
+                    ),
+                selectedTabId = "2",
+            )
+        val actual =
+            browserState.toTabStripState(
+                isSelectDisabled = false,
+                isPossiblyPrivateMode = false,
+                addTab = {},
+                closeTab = { _, _ -> },
+            )
 
-        val expected = TabStripState(
-            tabs = listOf(
-                TabStripItem(
-                    id = "1",
-                    title = "Example 1",
-                    url = "https://example.com",
-                    isSelected = false,
-                    isPrivate = false,
-                ),
-                TabStripItem(
-                    id = "2",
-                    title = "https://example2.com",
-                    url = "https://example2.com",
-                    isSelected = true,
-                    isPrivate = false,
-                ),
-            ),
-            isPrivateMode = false,
-            tabCounterMenuItems = allMenuItems,
-        )
+        val expected =
+            TabStripState(
+                tabs =
+                    listOf(
+                        TabStripItem(
+                            id = "1",
+                            title = "Example 1",
+                            url = "https://example.com",
+                            isSelected = false,
+                            isPrivate = false,
+                        ),
+                        TabStripItem(
+                            id = "2",
+                            title = "https://example2.com",
+                            url = "https://example2.com",
+                            isSelected = true,
+                            isPrivate = false,
+                        ),
+                    ),
+                isPrivateMode = false,
+                tabCounterMenuItems = allMenuItems,
+            )
 
         expected isSameAs actual
     }
@@ -402,23 +438,25 @@ class TabStripStateTest {
         var addTabClicked = false
         var closeTabClicked = false
         var closTabParams: Pair<Boolean, Int>? = null
-        val browserState = BrowserState(
-            tabs = listOf(
-                createTab(
-                    url = "https://example.com",
-                    title = "Example 1",
-                    private = false,
-                    id = "1",
-                ),
-                createTab(
-                    url = "https://example2.com",
-                    title = "",
-                    private = false,
-                    id = "2",
-                ),
-            ),
-            selectedTabId = "2",
-        )
+        val browserState =
+            BrowserState(
+                tabs =
+                    listOf(
+                        createTab(
+                            url = "https://example.com",
+                            title = "Example 1",
+                            private = false,
+                            id = "1",
+                        ),
+                        createTab(
+                            url = "https://example2.com",
+                            title = "",
+                            private = false,
+                            id = "2",
+                        ),
+                    ),
+                selectedTabId = "2",
+            )
         val addTab = {
             addTabClicked = true
         }
@@ -426,39 +464,43 @@ class TabStripStateTest {
             closeTabClicked = true
             closTabParams = Pair(isPrivate, numberOfTabs)
         }
-        val actual = browserState.toTabStripState(
-            isSelectDisabled = false,
-            isPossiblyPrivateMode = false,
-            addTab = addTab,
-            closeTab = closeTab,
-        )
+        val actual =
+            browserState.toTabStripState(
+                isSelectDisabled = false,
+                isPossiblyPrivateMode = false,
+                addTab = addTab,
+                closeTab = closeTab,
+            )
 
         val newTab = TabCounterMenuItem.IconItem.NewTab(onClick = addTab)
         val closeTabItem = TabCounterMenuItem.IconItem.CloseTab(onClick = { closeTab(false, 2) })
-        val expected = TabStripState(
-            tabs = listOf(
-                TabStripItem(
-                    id = "1",
-                    title = "Example 1",
-                    url = "https://example.com",
-                    isSelected = false,
-                    isPrivate = false,
-                ),
-                TabStripItem(
-                    id = "2",
-                    title = "https://example2.com",
-                    url = "https://example2.com",
-                    isSelected = true,
-                    isPrivate = false,
-                ),
-            ),
-            isPrivateMode = false,
-            tabCounterMenuItems = listOf(
-                newTab,
-                TabCounterMenuItem.Divider,
-                closeTabItem,
-            ),
-        )
+        val expected =
+            TabStripState(
+                tabs =
+                    listOf(
+                        TabStripItem(
+                            id = "1",
+                            title = "Example 1",
+                            url = "https://example.com",
+                            isSelected = false,
+                            isPrivate = false,
+                        ),
+                        TabStripItem(
+                            id = "2",
+                            title = "https://example2.com",
+                            url = "https://example2.com",
+                            isSelected = true,
+                            isPrivate = false,
+                        ),
+                    ),
+                isPrivateMode = false,
+                tabCounterMenuItems =
+                    listOf(
+                        newTab,
+                        TabCounterMenuItem.Divider,
+                        closeTabItem,
+                    ),
+            )
 
         expected isSameAs actual
 
@@ -471,21 +513,24 @@ class TabStripStateTest {
 
     @Test
     fun `WHEN more than 7 tabs are present THEN close button should only be visible for the selected tab`() {
-        val tab = createTab(
-            url = "https://example.com",
-            title = "Example",
-            private = false,
-            id = "1",
-        )
+        val tab =
+            createTab(
+                url = "https://example.com",
+                title = "Example",
+                private = false,
+                id = "1",
+            )
 
-        val tabs = List(8) {
-            tab.copy(id = it.toString())
-        }
+        val tabs =
+            List(8) {
+                tab.copy(id = it.toString())
+            }
 
-        val browserState = BrowserState(
-            tabs = tabs,
-            selectedTabId = "1",
-        )
+        val browserState =
+            BrowserState(
+                tabs = tabs,
+                selectedTabId = "1",
+            )
         val actual =
             browserState.toTabStripState(
                 isSelectDisabled = false,
@@ -494,44 +539,47 @@ class TabStripStateTest {
                 closeTab = { _, _ -> },
             )
 
-        val tabStripItem = TabStripItem(
-            id = "0",
-            title = "Example",
-            url = "https://example.com",
-            isSelected = false,
-            isPrivate = false,
-            isCloseButtonVisible = false,
-        )
+        val tabStripItem =
+            TabStripItem(
+                id = "0",
+                title = "Example",
+                url = "https://example.com",
+                isSelected = false,
+                isPrivate = false,
+                isCloseButtonVisible = false,
+            )
 
-        val expected = TabStripState(
-            tabs = listOf(
-                tabStripItem,
-                TabStripItem(
-                    id = "1",
-                    title = "Example",
-                    url = "https://example.com",
-                    isSelected = true,
-                    isPrivate = false,
-                    isCloseButtonVisible = true,
-                ),
-                tabStripItem.copy(id = "2"),
-                tabStripItem.copy(id = "3"),
-                tabStripItem.copy(id = "4"),
-                tabStripItem.copy(id = "5"),
-                tabStripItem.copy(id = "6"),
-                tabStripItem.copy(id = "7"),
-            ),
-            isPrivateMode = false,
-            tabCounterMenuItems = allMenuItems,
-        )
+        val expected =
+            TabStripState(
+                tabs =
+                    listOf(
+                        tabStripItem,
+                        TabStripItem(
+                            id = "1",
+                            title = "Example",
+                            url = "https://example.com",
+                            isSelected = true,
+                            isPrivate = false,
+                            isCloseButtonVisible = true,
+                        ),
+                        tabStripItem.copy(id = "2"),
+                        tabStripItem.copy(id = "3"),
+                        tabStripItem.copy(id = "4"),
+                        tabStripItem.copy(id = "5"),
+                        tabStripItem.copy(id = "6"),
+                        tabStripItem.copy(id = "7"),
+                    ),
+                isPrivateMode = false,
+                tabCounterMenuItems = allMenuItems,
+            )
 
         expected isSameAs actual
     }
 
     /**
-     * Asserts that the [TabStripState] is the same as the [other] [TabStripState] by comparing
-     * their properties as assertEquals does. This ignores the lambda references in the
-     * [TabCounterMenuItem.IconItem]s as asserting them is not straightforward.
+     * Asserts that the [TabStripState] is the same as the [other] [TabStripState] by comparing their properties as
+     * assertEquals does. This ignores the lambda references in the [TabCounterMenuItem.IconItem]s as asserting them is
+     * not straightforward.
      */
     private infix fun TabStripState.isSameAs(other: TabStripState) {
         assertEquals(tabs, other.tabs)
@@ -542,15 +590,14 @@ class TabStripStateTest {
         )
     }
 
-    private val allMenuItems = listOf(
-        TabCounterMenuItem.IconItem.NewTab(onClick = {}),
-        TabCounterMenuItem.Divider,
-        TabCounterMenuItem.IconItem.CloseTab(onClick = {}),
-    )
+    private val allMenuItems =
+        listOf(
+            TabCounterMenuItem.IconItem.NewTab(onClick = {}),
+            TabCounterMenuItem.Divider,
+            TabCounterMenuItem.IconItem.CloseTab(onClick = {}),
+        )
 
     private val noTabSelectedNormalModeMenuItems: List<TabCounterMenuItem> = emptyList()
 
-    private val noTabSelectedPrivateModeMenuItems = listOf(
-        TabCounterMenuItem.IconItem.NewTab(onClick = {}),
-    )
+    private val noTabSelectedPrivateModeMenuItems = listOf(TabCounterMenuItem.IconItem.NewTab(onClick = {}))
 }

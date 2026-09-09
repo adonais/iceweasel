@@ -106,8 +106,6 @@ namespace {
 
 const int64_t LATENCY_NOT_AVAILABLE_YET = -1;
 
-const DWORD DEVICE_CHANGE_DEBOUNCE_MS = 250;
-
 struct com_heap_ptr_deleter {
   void operator()(void * ptr) const noexcept { CoTaskMemFree(ptr); }
 };
@@ -395,10 +393,6 @@ struct cubeb_stream {
   com_ptr<IAudioClient> output_client;
   /* Interface pointer to use the event-driven interface. */
   com_ptr<IAudioRenderClient> render_client;
-#ifdef CUBEB_WASAPI_USE_IAUDIOSTREAMVOLUME
-  /* Interface pointer to use the volume facilities. */
-  com_ptr<IAudioStreamVolume> audio_stream_volume;
-#endif
   /* Interface pointer to use the stream audio clock. */
   com_ptr<IAudioClock> audio_clock;
   /* Frames written to the stream since it was opened. Reset on device
@@ -764,8 +758,7 @@ public:
   }
 
   wasapi_endpoint_notification_client(HANDLE event, ERole role)
-      : ref_count(1), reconfigure_event(event), role(role),
-        last_device_change(timeGetTime())
+      : ref_count(1), reconfigure_event(event), role(role)
   {
   }
 
@@ -783,25 +776,11 @@ public:
       return S_OK;
     }
 
-    DWORD last_change_ms = timeGetTime() - last_device_change;
-    bool same_device = default_device_id && device_id &&
-                       wcscmp(default_device_id.get(), device_id) == 0;
-    LOG("endpoint: Audio device default changed last_change=%lu same_device=%d",
-        last_change_ms, same_device);
-    if (last_change_ms > DEVICE_CHANGE_DEBOUNCE_MS || !same_device) {
-      if (device_id) {
-        wchar_t * new_device_id = new wchar_t[wcslen(device_id) + 1];
-        wcscpy(new_device_id, device_id);
-        default_device_id.reset(new_device_id);
-      } else {
-        default_device_id.reset();
-      }
-      BOOL ok = SetEvent(reconfigure_event);
-      LOG("endpoint: Audio device default changed: trigger reconfig");
-      if (!ok) {
-        LOG("endpoint: SetEvent on reconfigure_event failed: %lx",
-            GetLastError());
-      }
+    BOOL ok = SetEvent(reconfigure_event);
+    LOG("endpoint: Audio device default changed: trigger reconfig");
+    if (!ok) {
+      LOG("endpoint: SetEvent on reconfigure_event failed: %lx",
+          GetLastError());
     }
 
     return S_OK;
@@ -840,8 +819,6 @@ private:
   LONG ref_count;
   HANDLE reconfigure_event;
   ERole role;
-  std::unique_ptr<const wchar_t[]> default_device_id;
-  DWORD last_device_change;
 };
 
 class wasapi_session_notification_client : public IAudioSessionEvents {
@@ -1087,7 +1064,6 @@ refill(cubeb_stream * stm, void * input_buffer, long input_frames_count,
   XASSERT(out_frames == output_frames_needed || stm->draining ||
           !has_output(stm) || stm->has_dummy_output);
 
-#ifndef CUBEB_WASAPI_USE_IAUDIOSTREAMVOLUME
   if (has_output(stm) && !stm->has_dummy_output && volume != 1.0) {
     // Adjust the output volume.
     // Note: This could be integrated with the remixing below.
@@ -1115,7 +1091,6 @@ refill(cubeb_stream * stm, void * input_buffer, long input_frames_count,
       }
     }
   }
-#endif
 
   // We don't bother mixing dummy output as it will be silenced, otherwise mix
   // output if needed
@@ -1819,43 +1794,6 @@ current_stream_delay(cubeb_stream * stm)
 
   return delay;
 }
-
-#ifdef CUBEB_WASAPI_USE_IAUDIOSTREAMVOLUME
-int
-stream_set_volume(cubeb_stream * stm, float volume)
-{
-  stm->stream_reset_lock.assert_current_thread_owns();
-
-  if (!stm->audio_stream_volume) {
-    return CUBEB_ERROR;
-  }
-
-  uint32_t channels;
-  HRESULT hr = stm->audio_stream_volume->GetChannelCount(&channels);
-  if (FAILED(hr)) {
-    LOG("could not get the channel count: %lx", hr);
-    return CUBEB_ERROR;
-  }
-
-  /* up to 9.1 for now */
-  if (channels > 10) {
-    return CUBEB_ERROR_NOT_SUPPORTED;
-  }
-
-  float volumes[10];
-  for (uint32_t i = 0; i < channels; i++) {
-    volumes[i] = volume;
-  }
-
-  hr = stm->audio_stream_volume->SetAllVolumes(channels, volumes);
-  if (FAILED(hr)) {
-    LOG("could not set the channels volume: %lx", hr);
-    return CUBEB_ERROR;
-  }
-
-  return CUBEB_OK;
-}
-#endif
 } // namespace
 
 extern "C" {
@@ -2732,15 +2670,6 @@ setup_wasapi_stream(cubeb_stream * stm)
     }
 
     HRESULT hr = 0;
-#ifdef CUBEB_WASAPI_USE_IAUDIOSTREAMVOLUME
-    hr = stm->output_client->GetService(__uuidof(IAudioStreamVolume),
-                                        stm->audio_stream_volume.receive_vpp());
-    if (FAILED(hr)) {
-      LOG("Could not get the IAudioStreamVolume: %lx", hr);
-      return CUBEB_ERROR;
-    }
-#endif
-
     XASSERT(stm->frames_written == 0);
     hr = stm->output_client->GetService(__uuidof(IAudioClock),
                                         stm->audio_clock.receive_vpp());
@@ -2764,14 +2693,6 @@ setup_wasapi_stream(cubeb_stream * stm)
     } else {
       LOG("Could not get the IAudioSessionControl: %lx", hr);
     }
-
-#ifdef CUBEB_WASAPI_USE_IAUDIOSTREAMVOLUME
-    /* Restore the stream volume over a device change. */
-    if (stream_set_volume(stm, stm->volume) != CUBEB_OK) {
-      LOG("Could not set the volume.");
-      return CUBEB_ERROR;
-    }
-#endif
   }
 
   /* If we have both input and output, we resample to
@@ -3042,9 +2963,6 @@ close_wasapi_stream(cubeb_stream * stm)
     stm->session_control = nullptr;
   }
 
-#ifdef CUBEB_WASAPI_USE_IAUDIOSTREAMVOLUME
-  stm->audio_stream_volume = nullptr;
-#endif
   stm->audio_clock = nullptr;
   stm->render_client = nullptr;
   stm->output_client = nullptr;
@@ -3334,12 +3252,6 @@ wasapi_stream_set_volume(cubeb_stream * stm, float volume)
   if (!has_output(stm)) {
     return CUBEB_ERROR;
   }
-
-#ifdef CUBEB_WASAPI_USE_IAUDIOSTREAMVOLUME
-  if (stream_set_volume(stm, volume) != CUBEB_OK) {
-    return CUBEB_ERROR;
-  }
-#endif
 
   stm->volume = volume;
 

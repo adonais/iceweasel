@@ -16,9 +16,7 @@ import mozilla.components.lib.state.Store
  *
  * @property engine An [Engine] instance used for handling extension process spawning.
  */
-internal class ExtensionsProcessMiddleware(
-    private val engine: Engine,
-) : Middleware<BrowserState, BrowserAction> {
+internal class ExtensionsProcessMiddleware(private val engine: Engine) : Middleware<BrowserState, BrowserAction> {
 
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,

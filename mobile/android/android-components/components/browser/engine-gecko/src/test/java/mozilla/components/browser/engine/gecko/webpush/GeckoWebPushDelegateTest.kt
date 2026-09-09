@@ -45,21 +45,23 @@ class GeckoWebPushDelegateTest {
 
     @Test
     fun `onGetSubscription result is completed`() {
-        var subscription: WebPushSubscription? = WebPushSubscription(
-            "test",
-            "https://example.com",
-            null,
-            ByteArray(65),
-            ByteArray(16),
-        )
-        val delegate: WebPushDelegate = object : WebPushDelegate {
-            override fun onGetSubscription(
-                scope: String,
-                onSubscription: (WebPushSubscription?) -> Unit,
-            ) {
-                onSubscription(subscription)
+        var subscription: WebPushSubscription? =
+            WebPushSubscription(
+                "test",
+                "https://example.com",
+                null,
+                ByteArray(65),
+                ByteArray(16),
+            )
+        val delegate: WebPushDelegate =
+            object : WebPushDelegate {
+                override fun onGetSubscription(
+                    scope: String,
+                    onSubscription: (WebPushSubscription?) -> Unit,
+                ) {
+                    onSubscription(subscription)
+                }
             }
-        }
 
         val geckoDelegate = GeckoWebPushDelegate(delegate)
         val result = geckoDelegate.onGetSubscription("test")
@@ -79,22 +81,24 @@ class GeckoWebPushDelegateTest {
 
     @Test
     fun `onSubscribe result is completed`() {
-        var subscription: WebPushSubscription? = WebPushSubscription(
-            "test",
-            "https://example.com",
-            null,
-            ByteArray(65),
-            ByteArray(16),
-        )
-        val delegate: WebPushDelegate = object : WebPushDelegate {
-            override fun onSubscribe(
-                scope: String,
-                serverKey: ByteArray?,
-                onSubscribe: (WebPushSubscription?) -> Unit,
-            ) {
-                onSubscribe(subscription)
+        var subscription: WebPushSubscription? =
+            WebPushSubscription(
+                "test",
+                "https://example.com",
+                null,
+                ByteArray(65),
+                ByteArray(16),
+            )
+        val delegate: WebPushDelegate =
+            object : WebPushDelegate {
+                override fun onSubscribe(
+                    scope: String,
+                    serverKey: ByteArray?,
+                    onSubscribe: (WebPushSubscription?) -> Unit,
+                ) {
+                    onSubscribe(subscription)
+                }
             }
-        }
 
         val geckoDelegate = GeckoWebPushDelegate(delegate)
         val result = geckoDelegate.onSubscribe("test", null)
@@ -114,14 +118,15 @@ class GeckoWebPushDelegateTest {
 
     @Test
     fun `onUnsubscribe result is completed successfully`() {
-        val delegate: WebPushDelegate = object : WebPushDelegate {
-            override fun onUnsubscribe(
-                scope: String,
-                onUnsubscribe: (Boolean) -> Unit,
-            ) {
-                onUnsubscribe(true)
+        val delegate: WebPushDelegate =
+            object : WebPushDelegate {
+                override fun onUnsubscribe(
+                    scope: String,
+                    onUnsubscribe: (Boolean) -> Unit,
+                ) {
+                    onUnsubscribe(true)
+                }
             }
-        }
 
         val geckoDelegate = GeckoWebPushDelegate(delegate)
         val result = geckoDelegate.onUnsubscribe("test")
@@ -133,14 +138,15 @@ class GeckoWebPushDelegateTest {
 
     @Test
     fun `onUnsubscribe result receives throwable when unsuccessful`() {
-        val delegate: WebPushDelegate = object : WebPushDelegate {
-            override fun onUnsubscribe(
-                scope: String,
-                onUnsubscribe: (Boolean) -> Unit,
-            ) {
-                onUnsubscribe(false)
+        val delegate: WebPushDelegate =
+            object : WebPushDelegate {
+                override fun onUnsubscribe(
+                    scope: String,
+                    onUnsubscribe: (Boolean) -> Unit,
+                ) {
+                    onUnsubscribe(false)
+                }
             }
-        }
 
         val geckoDelegate = GeckoWebPushDelegate(delegate)
 

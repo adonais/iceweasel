@@ -39,7 +39,7 @@ const static uint8_t kCannedTls13ClientHello[] = {
     0x05, 0x08, 0x06, 0x04, 0x01, 0x05, 0x01, 0x06, 0x01, 0x02, 0x01, 0x04,
     0x02, 0x05, 0x02, 0x06, 0x02, 0x02, 0x02};
 static const size_t kFirstFragmentSize = 20;
-static const char *k0RttData = "ABCDEF";
+static const char* k0RttData = "ABCDEF";
 
 TEST_P(TlsAgentTest, EarlyFinished) {
   DataBuffer buffer;
@@ -197,7 +197,7 @@ TEST_F(TlsAgentStreamTestClient, Set0RttOptionThenRead) {
   agent_->Set0RttEnabled(true);
   DataBuffer buffer;
   MakeRecord(ssl_ct_application_data, SSL_LIBRARY_VERSION_TLS_1_3,
-             reinterpret_cast<const uint8_t *>(k0RttData), strlen(k0RttData),
+             reinterpret_cast<const uint8_t*>(k0RttData), strlen(k0RttData),
              &buffer);
   ExpectAlert(kTlsAlertUnexpectedMessage);
   ProcessMessage(buffer, TlsAgent::STATE_ERROR,
@@ -218,7 +218,7 @@ TEST_F(TlsAgentStreamTestServer, Set0RttOptionClientHelloThenRead) {
              kCannedTls13ClientHello, sizeof(kCannedTls13ClientHello), &buffer);
   ProcessMessage(buffer, TlsAgent::STATE_CONNECTING);
   MakeRecord(ssl_ct_application_data, SSL_LIBRARY_VERSION_TLS_1_3,
-             reinterpret_cast<const uint8_t *>(k0RttData), strlen(k0RttData),
+             reinterpret_cast<const uint8_t*>(k0RttData), strlen(k0RttData),
              &buffer);
   ExpectAlert(kTlsAlertBadRecordMac);
   ProcessMessage(buffer, TlsAgent::STATE_ERROR, SSL_ERROR_BAD_MAC_READ);

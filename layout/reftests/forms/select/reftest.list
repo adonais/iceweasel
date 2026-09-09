@@ -1,6 +1,17 @@
 fuzzy-if(Android,0-4,0-12) == out-of-bounds-selectedindex.html out-of-bounds-selectedindex-ref.html # test for bug 471741
 == multiple.html multiple-ref.html
 == option-children.html option-children-ref.html
+# The <option>s of a <select> must be found and rendered whether or not the
+# customizable select pref is enabled: the parser keeps the wrapper <div> in the
+# tree either way.
+#
+# ::picker(select) only renders with base appearance, so the picker of a
+# non-base <select> is covered by browser_selectpopup_option_in_div.js instead.
+test-pref(dom.select.customizable_select.enabled,true) ref-pref(dom.select.customizable_select.enabled,true) == option-in-div.html option-in-div-ref.html
+# Guards the test above against passing because no picker rendered at all.
+test-pref(dom.select.customizable_select.enabled,true) ref-pref(dom.select.customizable_select.enabled,true) != option-in-div.html option-in-div-notref.html
+test-pref(dom.select.customizable_select.enabled,false) ref-pref(dom.select.customizable_select.enabled,false) == option-in-div-multiple.html option-in-div-multiple-ref.html
+test-pref(dom.select.customizable_select.enabled,true) ref-pref(dom.select.customizable_select.enabled,true) == option-in-div-multiple.html option-in-div-multiple-ref.html
 fuzzy(0-1,0-4) == padding-button-placement.html padding-button-placement-ref.html
 == vertical-centering.html vertical-centering-ref.html
 == 997709-2.html 997709-2-ref.html

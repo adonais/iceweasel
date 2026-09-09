@@ -37,11 +37,14 @@ const SEMANTIC_HISTORY_PROVIDER_NAME = "UrlbarProviderSemanticHistorySearch";
  * @returns {string} map key
  */
 function makeMapKeyForTabResult(result) {
+  let userContextId =
+    result.type == lazy.UrlbarShared.RESULT_TYPE.TAB_SWITCH
+      ? result.payload.userContext?.id
+      : undefined;
   return UrlbarUtils.tupleString(
     result.payload.url,
-    result.type == lazy.UrlbarShared.RESULT_TYPE.TAB_SWITCH &&
-      lazy.UrlbarShared.isNonPrivateUserContextId(result.payload.userContextId)
-      ? result.payload.userContextId
+    lazy.UrlbarShared.isNonPrivateUserContextId(userContextId)
+      ? userContextId
       : undefined
   );
 }
@@ -143,7 +146,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     // This maps groups to { sortingField, start, length } objects.
     let indicesToSort = new Map();
     for (let i = 0; i < unsortedResults.length; ++i) {
-      let group = UrlbarUtils.getResultGroup(unsortedResults[i]);
+      let group = lazy.UrlbarShared.getResultGroup(unsortedResults[i]);
       let groupObj = this.#getGroupAsObject(rootGroup, group);
       let sortingField = groupObj?.orderBy;
       if (sortingField) {
@@ -185,7 +188,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     // Do the first pass over all results to build some state.
     for (let result of unsortedResults) {
       // Add each result to the appropriate `resultsByGroup` map.
-      let group = UrlbarUtils.getResultGroup(result);
+      let group = lazy.UrlbarShared.getResultGroup(result);
       let resultsByGroup =
         result.hasSuggestedIndex && result.isSuggestedIndexRelativeToGroup
           ? state.suggestedIndexResultsByGroup

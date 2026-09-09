@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
+import mozilla.components.service.nimbus.R as nimbusR
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.core.Action
@@ -28,11 +29,8 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.nimbus.controller.NimbusBranchesController
 import org.mozilla.fenix.nimbus.view.NimbusBranchesView
-import mozilla.components.service.nimbus.R as nimbusR
 
-/**
- * A fragment to show the branches of a Nimbus experiment.
- */
+/** A fragment to show the branches of a Nimbus experiment. */
 class NimbusBranchesFragment : Fragment(), SystemInsetsPaddedFragment {
 
     private lateinit var nimbusBranchesStore: NimbusBranchesStore
@@ -50,18 +48,21 @@ class NimbusBranchesFragment : Fragment(), SystemInsetsPaddedFragment {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        nimbusBranchesStore = fragmentStore(NimbusBranchesState(branches = emptyList())) {
-            NimbusBranchesStore(it)
-        }.value
+        nimbusBranchesStore =
+            fragmentStore(NimbusBranchesState(branches = emptyList())) {
+                    NimbusBranchesStore(it)
+                }
+                .value
 
-        controller = NimbusBranchesController(
-            isTelemetryEnabled = { requireComponents.settings.isTelemetryEnabled },
-            isExperimentationEnabled = { requireComponents.settings.isExperimentationEnabled },
-            nimbusBranchesStore = nimbusBranchesStore,
-            experiments = requireContext().components.nimbus.sdk,
-            experimentId = args.experimentId,
-            notifyUserToEnableExperiments = showSnackbarToEnableExperiments(view.rootView),
-        )
+        controller =
+            NimbusBranchesController(
+                isTelemetryEnabled = { requireComponents.settings.isTelemetryEnabled },
+                isExperimentationEnabled = { requireComponents.settings.isExperimentationEnabled },
+                nimbusBranchesStore = nimbusBranchesStore,
+                experiments = requireContext().components.nimbus.sdk,
+                experimentId = args.experimentId,
+                notifyUserToEnableExperiments = showSnackbarToEnableExperiments(view.rootView),
+            )
 
         nimbusBranchesView =
             NimbusBranchesView(view.findViewById(nimbusR.id.nimbus_experiment_branches_list), controller)
@@ -74,8 +75,8 @@ class NimbusBranchesFragment : Fragment(), SystemInsetsPaddedFragment {
     }
 
     /**
-     * Shows a snackbar to inform the user that experiments are disabled and provides an action
-     * to navigate to the data choices fragment to enable them.
+     * Shows a snackbar to inform the user that experiments are disabled and provides an action to navigate to the data
+     * choices fragment to enable them.
      *
      * @param rootView The [View] to embed the Snackbar in.
      * @return A lambda function that, when invoked, will display the snackbar.
@@ -85,24 +86,29 @@ class NimbusBranchesFragment : Fragment(), SystemInsetsPaddedFragment {
         val actionLabel = getString(R.string.experiments_snackbar_button)
 
         Snackbar.make(
-            snackBarParentView = rootView,
-            snackbarState = SnackbarState(
-                message = message,
-                duration = SnackbarState.Duration.Preset.Long,
-                action = Action(
-                    label = actionLabel,
-                    onClick = {
-                        findNavController().navigateWithBreadcrumb(
-                            directions = NimbusBranchesFragmentDirections
-                                .actionNimbusBranchesFragmentToDataChoicesFragment(),
-                            navigateFrom = "NimbusBranchesController",
-                            navigateTo = "ActionNimbusBranchesFragmentToDataChoicesFragment",
-                            crashReporter = requireContext().components.analytics.crashReporter,
-                        )
-                    },
-                ),
-            ),
-        ).show()
+                snackBarParentView = rootView,
+                snackbarState =
+                    SnackbarState(
+                        message = message,
+                        duration = SnackbarState.Duration.Preset.Long,
+                        action =
+                            Action(
+                                label = actionLabel,
+                                onClick = {
+                                    findNavController()
+                                        .navigateWithBreadcrumb(
+                                            directions =
+                                                NimbusBranchesFragmentDirections
+                                                    .actionNimbusBranchesFragmentToDataChoicesFragment(),
+                                            navigateFrom = "NimbusBranchesController",
+                                            navigateTo = "ActionNimbusBranchesFragmentToDataChoicesFragment",
+                                            crashReporter = requireContext().components.analytics.crashReporter,
+                                        )
+                                },
+                            ),
+                    ),
+            )
+            .show()
     }
 
     override fun onResume() {
@@ -122,7 +128,7 @@ class NimbusBranchesFragment : Fragment(), SystemInsetsPaddedFragment {
                     NimbusBranchesAction.UpdateBranches(
                         branches,
                         selectedBranch,
-                    ),
+                    )
                 )
             } catch (e: Throwable) {
                 Logger.error("Failed to getActiveExperiments()", e)

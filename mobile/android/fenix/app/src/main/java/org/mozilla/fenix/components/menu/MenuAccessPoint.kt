@@ -6,37 +6,25 @@ package org.mozilla.fenix.components.menu
 
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 
-/**
- * The origin access points that was used to navigate to the Menu dialog.
- */
+/** The origin access points that was used to navigate to the Menu dialog. */
 enum class MenuAccessPoint {
-    /**
-     * Menu was accessed from the browser.
-     */
+    /** Menu was accessed from the browser. */
     Browser,
 
-    /**
-     * Menu was accessed from an external app (e.g. custom tab).
-     */
+    /** Menu was accessed from an external app (e.g. custom tab). */
     External,
 
-    /**
-     * Menu was accessed from the home screen.
-     */
+    /** Menu was accessed from the home screen. */
     Home,
 }
 
-/**
- * Menu navigation destination.
- */
+/** Menu navigation destination. */
 enum class Route {
     MainMenu,
     CustomTabMenu,
 }
 
-/**
- * Returns the [FenixFxAEntryPoint] equivalent from the given [MenuAccessPoint].
- */
+/** Returns the [FenixFxAEntryPoint] equivalent from the given [MenuAccessPoint]. */
 internal fun MenuAccessPoint.toFenixFxAEntryPoint(): FenixFxAEntryPoint {
     return when (this) {
         MenuAccessPoint.Browser -> FenixFxAEntryPoint.BrowserToolbar

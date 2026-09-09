@@ -29,9 +29,8 @@ import mozilla.components.support.utils.ext.getParcelableExtraCompat
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 
 /**
- * Activity responsible for asking the user to confirm before autofilling a third-party app. It is
- * shown in situations where the authenticity of an application could not be confirmed automatically
- * with "Digital Asset Links".
+ * Activity responsible for asking the user to confirm before autofilling a third-party app. It is shown in situations
+ * where the authenticity of an application could not be confirmed automatically with "Digital Asset Links".
  */
 abstract class AbstractAutofillConfirmActivity : FragmentActivity() {
     abstract val configuration: AutofillConfiguration
@@ -42,10 +41,11 @@ abstract class AbstractAutofillConfirmActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val structure: AssistStructure? = intent.getParcelableExtraCompat(
-            AutofillManager.EXTRA_ASSIST_STRUCTURE,
-            AssistStructure::class.java,
-        )
+        val structure: AssistStructure? =
+            intent.getParcelableExtraCompat(
+                AutofillManager.EXTRA_ASSIST_STRUCTURE,
+                AssistStructure::class.java,
+            )
         val loginId = intent.getStringExtra(EXTRA_LOGIN_ID)
         if (loginId == null) {
             cancel()
@@ -55,10 +55,11 @@ abstract class AbstractAutofillConfirmActivity : FragmentActivity() {
         // While the user is asked to confirm, we already try to build the fill response asynchronously.
         val rawStructure = structure?.toRawStructure()
         if (rawStructure != null) {
-            dataset = lifecycleScope.async(Dispatchers.IO) {
-                val builder = fillHandler.handleConfirmation(rawStructure, loginId)
-                builder?.build(this@AbstractAutofillConfirmActivity, configuration, imeSpec)
-            }
+            dataset =
+                lifecycleScope.async(Dispatchers.IO) {
+                    val builder = fillHandler.handleConfirmation(rawStructure, loginId)
+                    builder?.build(this@AbstractAutofillConfirmActivity, configuration, imeSpec)
+                }
         }
 
         if (savedInstanceState == null) {
@@ -67,15 +68,14 @@ abstract class AbstractAutofillConfirmActivity : FragmentActivity() {
         }
     }
 
-    /**
-     * Confirms the autofill request and returns the credentials to the autofill framework.
-     */
+    /** Confirms the autofill request and returns the credentials to the autofill framework. */
     internal fun confirm() {
-        val replyIntent = Intent().apply {
-            // At this point it should be safe to block since the fill response should be ready once
-            // the user has authenticated.
-            runBlocking { putExtra(AutofillManager.EXTRA_AUTHENTICATION_RESULT, dataset?.await()) }
-        }
+        val replyIntent =
+            Intent().apply {
+                // At this point it should be safe to block since the fill response should be ready once
+                // the user has authenticated.
+                runBlocking { putExtra(AutofillManager.EXTRA_AUTHENTICATION_RESULT, dataset?.await()) }
+            }
 
         emitAutofillConfirmationFact(confirmed = true)
 
@@ -83,9 +83,7 @@ abstract class AbstractAutofillConfirmActivity : FragmentActivity() {
         finish()
     }
 
-    /**
-     * Cancels the autofill request.
-     */
+    /** Cancels the autofill request. */
     internal fun cancel() {
         dataset?.cancel()
 
@@ -102,11 +100,9 @@ internal class AutofillConfirmFragment : DialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return MaterialAlertDialogBuilder(requireContext())
-            .setTitle(
-                getString(R.string.mozac_feature_autofill_confirmation_title),
-            )
+            .setTitle(getString(R.string.mozac_feature_autofill_confirmation_title))
             .setMessage(
-                getString(R.string.mozac_feature_autofill_confirmation_authenticity, configuration.applicationName),
+                getString(R.string.mozac_feature_autofill_confirmation_authenticity, configuration.applicationName)
             )
             .setPositiveButton(R.string.mozac_feature_autofill_confirmation_yes) { _, _ -> confirmRequest() }
             .setNegativeButton(R.string.mozac_feature_autofill_confirmation_no) { _, _ -> cancelRequest() }
@@ -120,13 +116,11 @@ internal class AutofillConfirmFragment : DialogFragment() {
     }
 
     private fun confirmRequest() {
-        getConfirmActivity()
-            .confirm()
+        getConfirmActivity().confirm()
     }
 
     private fun cancelRequest() {
-        getConfirmActivity()
-            .cancel()
+        getConfirmActivity().cancel()
     }
 
     private fun getConfirmActivity(): AbstractAutofillConfirmActivity {

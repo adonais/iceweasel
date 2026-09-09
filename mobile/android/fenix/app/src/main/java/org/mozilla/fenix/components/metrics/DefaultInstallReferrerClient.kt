@@ -8,9 +8,7 @@ import android.content.Context
 import com.android.installreferrer.api.InstallReferrerClient
 import com.android.installreferrer.api.InstallReferrerStateListener
 
-/**
- * Default implementation that wraps the actual InstallReferrerClient.
- */
+/** Default implementation that wraps the actual InstallReferrerClient. */
 class DefaultInstallReferrerClient(context: Context) : InstallReferrerClientWrapper {
     private val client = InstallReferrerClient.newBuilder(context).build()
 

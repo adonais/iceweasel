@@ -5,6 +5,9 @@
 package mozilla.components.feature.awesomebar.provider
 
 import android.graphics.Bitmap
+import java.io.IOException
+import java.util.UUID
+import java.util.concurrent.TimeUnit
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.awesomebar.AwesomeBar
@@ -19,19 +22,17 @@ import mozilla.components.feature.search.ext.buildSearchUrl
 import mozilla.components.feature.search.trendingsearches.TrendingSearchClient
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlin.sanitizeURL
-import java.io.IOException
-import java.util.UUID
-import java.util.concurrent.TimeUnit
 
 // Number of trending searches to display by default.
 const val DEFAULT_TRENDING_SEARCHES_LIMIT = 5
 const val TRENDING_SEARCHES_MAXIMUM_ALLOWED_SUGGESTIONS_LIMIT: Int = 1000
 
 /**
- * A [AwesomeBar.SuggestionProvider] implementation that provides trending search suggestions from
- * the passed in [SearchEngine].
+ * A [AwesomeBar.SuggestionProvider] implementation that provides trending search suggestions from the passed in
+ * [SearchEngine].
  */
-class TrendingSearchProvider private constructor(
+class TrendingSearchProvider
+private constructor(
     internal val client: TrendingSearchClient,
     private val searchUseCase: SearchUseCases.SearchUseCase,
     private val limit: Int = DEFAULT_TRENDING_SEARCHES_LIMIT,
@@ -47,15 +48,14 @@ class TrendingSearchProvider private constructor(
     }
 
     /**
-     * Creates a [TrendingSearchProvider] using the default engine as provided by the given
-     * [BrowserStore].
+     * Creates a [TrendingSearchProvider] using the default engine as provided by the given [BrowserStore].
      *
      * @param fetchClient The HTTP client for requesting suggestions from the search engine.
      * @param privateMode When set to `true` then all requests to search engines will be made in private mode.
      * @param searchUseCase The use case to invoke for searches.
      * @param limit The maximum number of suggestions that should be returned. It needs to be >= 1.
-     * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the
-     * highest scored search suggestion URL.
+     * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the highest scored search
+     *   suggestion URL.
      * @param icon The image to display next to the result. If not specified, the engine icon is used.
      * @param suggestionsHeader Optional suggestions header to display.
      */
@@ -67,7 +67,7 @@ class TrendingSearchProvider private constructor(
         engine: Engine? = null,
         icon: Bitmap? = null,
         suggestionsHeader: String? = null,
-    ) : this (
+    ) : this(
         TrendingSearchClient { url -> fetch(fetchClient, url, privateMode) },
         searchUseCase,
         limit,
@@ -128,28 +128,27 @@ class TrendingSearchProvider private constructor(
         }
     }
 
-    private fun List<String>?.toAwesomebarSuggestions(): List<AwesomeBar.Suggestion> = this?.let {
-        this.distinct().take(limit).mapIndexed { index, item ->
-            AwesomeBar.Suggestion(
-                provider = this@TrendingSearchProvider,
-                id = item,
-                title = item,
-                editSuggestion = item,
-                icon = icon ?: client.getSearchEngine()?.icon,
-                // Reducing MAX_VALUE to allow other providers to go above these suggestions,
-                // for which they need additional spots to be available.
-                score = Int.MAX_VALUE - (index + TRENDING_SEARCHES_MAXIMUM_ALLOWED_SUGGESTIONS_LIMIT + 2),
-                onSuggestionClicked = {
-                    searchUseCase.invoke(item)
-                    emitTrendingSearchSuggestionClickedFact(index)
-                },
-            )
-        }
-    } ?: emptyList()
+    private fun List<String>?.toAwesomebarSuggestions(): List<AwesomeBar.Suggestion> =
+        this?.let {
+            this.distinct().take(limit).mapIndexed { index, item ->
+                AwesomeBar.Suggestion(
+                    provider = this@TrendingSearchProvider,
+                    id = item,
+                    title = item,
+                    editSuggestion = item,
+                    icon = icon ?: client.getSearchEngine()?.icon,
+                    // Reducing MAX_VALUE to allow other providers to go above these suggestions,
+                    // for which they need additional spots to be available.
+                    score = Int.MAX_VALUE - (index + TRENDING_SEARCHES_MAXIMUM_ALLOWED_SUGGESTIONS_LIMIT + 2),
+                    onSuggestionClicked = {
+                        searchUseCase.invoke(item)
+                        emitTrendingSearchSuggestionClickedFact(index)
+                    },
+                )
+            }
+        } ?: emptyList()
 
-    /**
-     * Companion containing method and constants used to fetch suggestions
-     */
+    /** Companion containing method and constants used to fetch suggestions */
     companion object {
         // Timeout to be used when reading from a resource.
         private const val READ_TIMEOUT_IN_MS = 2000L
@@ -167,14 +166,15 @@ class TrendingSearchProvider private constructor(
         @Suppress("ReturnCount", "TooGenericExceptionCaught")
         private fun fetch(fetchClient: Client, url: String, privateMode: Boolean): String? {
             try {
-                val request = Request(
-                    url = url.sanitizeURL(),
-                    readTimeout = Pair(READ_TIMEOUT_IN_MS, TimeUnit.MILLISECONDS),
-                    connectTimeout = Pair(CONNECT_TIMEOUT_IN_MS, TimeUnit.MILLISECONDS),
-                    private = privateMode,
-                    cookiePolicy = Request.CookiePolicy.OMIT,
-                    useCaches = false,
-                )
+                val request =
+                    Request(
+                        url = url.sanitizeURL(),
+                        readTimeout = Pair(READ_TIMEOUT_IN_MS, TimeUnit.MILLISECONDS),
+                        connectTimeout = Pair(CONNECT_TIMEOUT_IN_MS, TimeUnit.MILLISECONDS),
+                        private = privateMode,
+                        cookiePolicy = Request.CookiePolicy.OMIT,
+                        useCaches = false,
+                    )
 
                 val response = fetchClient.fetch(request)
                 if (!response.isSuccess) {

@@ -7,9 +7,9 @@
 
 @layer tokens-foundation, tokens-browser-theme, tokens-foundation-brand, tokens-foundation-nova, tokens-browser-theme-nova, tokens-foundation-brand-nova, tokens-prefers-contrast, tokens-prefers-contrast-nova, tokens-forced-colors, tokens-forced-colors-nova;
 
-@layer tokens-foundation {
-  :root,
-  :host {
+:root,
+:host {
+  @layer tokens-foundation {
     --page-nav-border-color: var(--border-color-transparent);
     --page-nav-button-background-color: var(--button-background-color-ghost);
     --page-nav-button-background-color-hover: var(--button-background-color-ghost-hover);
@@ -37,12 +37,9 @@
     --page-nav-margin-block-start: var(--page-space-block-start);
     --page-nav-margin-inline-start: 40px;
   }
-}
 
-@media -moz-pref("browser.nova.enabled") {
-  @layer tokens-foundation-nova {
-    :root,
-    :host {
+  @media -moz-pref("browser.nova.enabled") {
+    @layer tokens-foundation-nova {
       --page-nav-button-background-color-hover: var(--button-background-color-hover);
       --page-nav-button-background-color-active: var(--button-background-color-active);
       --page-nav-button-background-color-selected: var(--color-accent-primary);
@@ -58,14 +55,9 @@
       --page-nav-focus-padding: calc(var(--focus-outline-offset) + var(--focus-outline-width));
       --page-nav-hr-background-color: var(--border-color-deemphasized);
     }
-  }
 
-  /* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-  @layer tokens-forced-colors-nova {
-    @media (forced-colors) {
-      :root,
-      :host {
+    @layer tokens-forced-colors-nova {
+      @media (forced-colors) {
         --page-nav-button-border-color: ButtonText;
       }
     }

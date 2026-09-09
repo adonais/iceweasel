@@ -59,13 +59,15 @@ function getItemByL10nId(popup, l10nId) {
 }
 
 add_task(async function test_add_container_opens_container_popup() {
+  Services.fog.testResetFOG();
+
   let library = await promiseLibrary("AllBookmarks");
   let containerPopup = await openContainerMenuInLibrary(library);
 
   let panel = document.getElementById("containerCreation-panel");
   let promisePanel = BrowserTestUtils.waitForEvent(panel, "popupshown");
   let tabCount = gBrowser.tabs.length;
-  containerPopup.activateItem(
+  await BrowserTestUtils.activateMenuItem(
     getItemByL10nId(containerPopup, "user-context-add-container")
   );
   // Ensure the panel is opened, on the browser window rather than the Library.
@@ -77,13 +79,53 @@ add_task(async function test_add_container_opens_container_popup() {
     "The bookmark was not opened in a tab"
   );
 
+  let clickedEvent = Glean.containers.addContainerClicked.testGetValue();
+  Assert.equal(clickedEvent.length, 1, "One add_container_clicked event");
+  Assert.equal(
+    clickedEvent[0].extra.source,
+    "places_context_menu",
+    "add_container_clicked reports the places source"
+  );
+
   let promiseHidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
   panel.hidePopup();
   await promiseHidden;
   await promiseLibraryClosed(library);
 });
 
+add_task(async function test_open_bookmark_in_container_tab() {
+  Services.fog.testResetFOG();
+
+  let library = await promiseLibrary("AllBookmarks");
+  let containerPopup = await openContainerMenuInLibrary(library);
+
+  let promiseTab = BrowserTestUtils.waitForNewTab(gBrowser, TEST_URL, true);
+  await BrowserTestUtils.activateMenuItem(
+    containerPopup.querySelector('menuitem[data-usercontextid="1"]')
+  );
+  let tab = await promiseTab;
+
+  Assert.equal(
+    tab.getAttribute("usercontextid"),
+    "1",
+    "The bookmark was opened in the container"
+  );
+
+  let openedEvent = Glean.containers.containerTabOpened.testGetValue();
+  Assert.equal(openedEvent.length, 1, "One container_tab_opened event");
+  Assert.equal(
+    openedEvent[0].extra.source,
+    "places_context_menu",
+    "container_tab_opened reports the places source"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  await promiseLibraryClosed(library);
+});
+
 add_task(async function test_manage_containers_opens_preferences() {
+  Services.fog.testResetFOG();
+
   // The preferences pane replaces the selected tab when it is empty, so keep a
   // loaded tab selected to always get a new one.
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
@@ -95,15 +137,23 @@ add_task(async function test_manage_containers_opens_preferences() {
     url => url.startsWith("about:preferences"),
     true
   );
-  containerPopup.activateItem(
+  await BrowserTestUtils.activateMenuItem(
     getItemByL10nId(containerPopup, "user-context-manage-containers")
   );
   let prefsTab = await promisePrefsTab;
 
   Assert.equal(
     prefsTab.linkedBrowser.currentURI.spec,
-    "about:preferences#containers",
-    "The containers pane was opened"
+    "about:preferences?entrypoint=places_context_menu#containers",
+    "The containers pane was opened, with the entry point"
+  );
+
+  let openedEvent = Glean.containers.manageContainersOpened.testGetValue();
+  Assert.equal(openedEvent.length, 1, "One manage_containers_opened event");
+  Assert.equal(
+    openedEvent[0].extra.source,
+    "places_context_menu",
+    "manage_containers_opened reports the places source"
   );
 
   BrowserTestUtils.removeTab(prefsTab);

@@ -6,6 +6,8 @@ package mozilla.components.feature.pwa.feature
 
 import android.app.Activity
 import android.content.pm.ActivityInfo
+import android.content.pm.ApplicationInfo
+import android.os.Build.VERSION_CODES
 import android.os.Looper.getMainLooper
 import android.view.View
 import android.view.Window
@@ -18,6 +20,7 @@ import mozilla.components.browser.icons.Icon
 import mozilla.components.concept.engine.manifest.WebAppManifest
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
+import mozilla.components.support.test.robolectric.testContext
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -51,22 +54,26 @@ class WebAppActivityFeatureTest {
         `when`(window.decorView).thenReturn(decorView)
         `when`(window.attributes).thenReturn(layoutParams)
 
+        // Reads behind isEdgeToEdgeDisabled(), used when entering immersive mode.
+        `when`(activity.applicationInfo)
+            .thenReturn(ApplicationInfo().apply { targetSdkVersion = VERSION_CODES.VANILLA_ICE_CREAM })
+        `when`(activity.theme).thenReturn(testContext.theme)
+
         `when`(icons.loadIcon(any())).thenReturn(CompletableDeferred(mock<Icon>()))
     }
 
     @Test
     @Config(sdk = [28])
     fun `enters immersive mode only when display mode is fullscreen on SDK 28`() {
-        val basicManifest = WebAppManifest(
-            name = "Demo",
-            startUrl = "https://mozilla.com",
-            display = WebAppManifest.DisplayMode.STANDALONE,
-        )
+        val basicManifest =
+            WebAppManifest(
+                name = "Demo",
+                startUrl = "https://mozilla.com",
+                display = WebAppManifest.DisplayMode.STANDALONE,
+            )
         WebAppActivityFeature(activity, icons, basicManifest).onResume(mock())
 
-        val fullscreenManifest = basicManifest.copy(
-            display = WebAppManifest.DisplayMode.FULLSCREEN,
-        )
+        val fullscreenManifest = basicManifest.copy(display = WebAppManifest.DisplayMode.FULLSCREEN)
         WebAppActivityFeature(activity, icons, fullscreenManifest).onResume(mock())
     }
 
@@ -74,26 +81,26 @@ class WebAppActivityFeatureTest {
     fun `enters immersive mode only when display mode is fullscreen`() {
         `when`(window.insetsController).thenReturn(insetsController)
 
-        val basicManifest = WebAppManifest(
-            name = "Demo",
-            startUrl = "https://mozilla.com",
-            display = WebAppManifest.DisplayMode.STANDALONE,
-        )
+        val basicManifest =
+            WebAppManifest(
+                name = "Demo",
+                startUrl = "https://mozilla.com",
+                display = WebAppManifest.DisplayMode.STANDALONE,
+            )
         WebAppActivityFeature(activity, icons, basicManifest).onResume(mock())
 
-        val fullscreenManifest = basicManifest.copy(
-            display = WebAppManifest.DisplayMode.FULLSCREEN,
-        )
+        val fullscreenManifest = basicManifest.copy(display = WebAppManifest.DisplayMode.FULLSCREEN)
         WebAppActivityFeature(activity, icons, fullscreenManifest).onResume(mock())
     }
 
     @Test
     fun `applies orientation`() {
-        val manifest = WebAppManifest(
-            name = "Test Manifest",
-            startUrl = "/",
-            orientation = WebAppManifest.Orientation.LANDSCAPE,
-        )
+        val manifest =
+            WebAppManifest(
+                name = "Test Manifest",
+                startUrl = "/",
+                orientation = WebAppManifest.Orientation.LANDSCAPE,
+            )
 
         WebAppActivityFeature(activity, icons, manifest).onResume(mock())
 
@@ -102,10 +109,11 @@ class WebAppActivityFeatureTest {
 
     @Test
     fun `sets task description`() {
-        val manifest = WebAppManifest(
-            name = "Test Manifest",
-            startUrl = "/",
-        )
+        val manifest =
+            WebAppManifest(
+                name = "Test Manifest",
+                startUrl = "/",
+            )
         val icon = Icon(mock(), source = Icon.Source.GENERATOR)
         `when`(icons.loadIcon(any())).thenReturn(CompletableDeferred(icon))
 

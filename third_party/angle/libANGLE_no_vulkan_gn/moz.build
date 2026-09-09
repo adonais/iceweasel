@@ -16,6 +16,7 @@ DEFINES["ANGLE_ENABLE_KEYEDMUTEX"] = True
 DEFINES["ANGLE_ENABLE_SHARE_CONTEXT_LOCK"] = "1"
 DEFINES["ANGLE_PLATFORM_EXPORT"] = ""
 DEFINES["ANGLE_SKIP_DXGI_1_2_CHECK"] = True
+DEFINES["EGL_NO_X11"] = True
 DEFINES["LIBANGLE_IMPLEMENTATION"] = True
 
 LOCAL_INCLUDES += [
@@ -34,9 +35,6 @@ SOURCES += [
     "/third_party/angle/src/libANGLE/Context_gles_1_0.cpp",
     "/third_party/angle/src/libANGLE/Device.cpp",
     "/third_party/angle/src/libANGLE/Display.cpp",
-    "/third_party/angle/src/libANGLE/Overlay.cpp",
-    "/third_party/angle/src/libANGLE/Overlay_autogen.cpp",
-    "/third_party/angle/src/libANGLE/OverlayWidgets.cpp",
     "/third_party/angle/src/libANGLE/validationES2.cpp",
     "/third_party/angle/src/libANGLE/validationESEXT.cpp"
 ]
@@ -72,7 +70,6 @@ UNIFIED_SOURCES += [
     "/third_party/angle/src/libANGLE/MemoryProgramCache.cpp",
     "/third_party/angle/src/libANGLE/MemoryShaderCache.cpp",
     "/third_party/angle/src/libANGLE/Observer.cpp",
-    "/third_party/angle/src/libANGLE/Overlay_font_autogen.cpp",
     "/third_party/angle/src/libANGLE/PixelLocalStorage.cpp",
     "/third_party/angle/src/libANGLE/Platform.cpp",
     "/third_party/angle/src/libANGLE/Program.cpp",
@@ -182,7 +179,6 @@ if CONFIG["OS_TARGET"] == "Darwin":
 if CONFIG["OS_TARGET"] == "WINNT":
 
     DEFINES["ANGLE_ENABLE_D3D11"] = True
-    DEFINES["ANGLE_ENABLE_D3D9"] = True
     DEFINES["ANGLE_IS_WIN"] = True
     DEFINES["ANGLE_PRELOADED_D3DCOMPILER_MODULE_NAMES"] = "{ \"d3dcompiler_47.dll\", \"d3dcompiler_46.dll\", \"d3dcompiler_43.dll\" }"
     DEFINES["CERT_CHAIN_PARA_HAS_EXTRA_FIELDS"] = True
@@ -210,8 +206,6 @@ if CONFIG["OS_TARGET"] == "WINNT":
     DEFINES["__STD_C"] = True
 
     OS_LIBS += [
-        "d3d9",
-        "delayimp",
         "dxgi",
         "dxguid",
         "gdi32",
@@ -221,8 +215,7 @@ if CONFIG["OS_TARGET"] == "WINNT":
     ]
 
     USE_LIBS += [
-        "angle_d3d11_backend_gn",
-        "angle_d3d9_backend_gn"
+        "angle_d3d11_backend_gn"
     ]
 
 if CONFIG["TARGET_CPU"] == "aarch64":

@@ -4222,19 +4222,50 @@ function checkFilesAfterUpdateCommon(aStageDirExists, aToBeDeletedDirExists) {
   }
 
   debugDump(
-    "testing backup files should not be left behind in the " +
+    "testing temporary files should not be left behind in the " +
       "application directory"
   );
   let applyToDir = getApplyDirFile();
-  checkFilesInDirRecursive(applyToDir, checkForBackupFiles);
+  checkFilesInDirRecursive(applyToDir, checkForTemporaryFiles);
 
   if (stageDir.exists()) {
     debugDump(
-      "testing backup files should not be left behind in the " +
+      "testing temporary files should not be left behind in the " +
         "staging directory"
     );
-    checkFilesInDirRecursive(stageDir, checkForBackupFiles);
+    checkFilesInDirRecursive(stageDir, checkForTemporaryFiles);
   }
+}
+
+/**
+ * Asserts that the tobedeleted directory contains exactly aExpectedCount
+ * relocated files (files whose names start with "moz").
+ *
+ * @param   aExpectedCount
+ *          The number of relocated files that the directory should contain.
+ * @returns
+ *          The relocated files as an array of nsIFile. Relocated files are
+ *          named after a UUID, so this is the only way for a caller to check
+ *          which files were relocated, for instance by comparing contents.
+ */
+function checkToBeDeletedFileCount(aExpectedCount) {
+  let toBeDeletedDir = getApplyDirFile(DIR_TOBEDELETED);
+  let relocatedFiles = [];
+  let dirEntries = toBeDeletedDir.directoryEntries;
+  while (dirEntries.hasMoreElements()) {
+    let entry = dirEntries.nextFile;
+    if (entry.isFile() && entry.leafName.startsWith("moz")) {
+      relocatedFiles.push(entry);
+    }
+  }
+  Assert.equal(
+    relocatedFiles.length,
+    aExpectedCount,
+    "the tobedeleted directory should contain " +
+      aExpectedCount +
+      " relocated file(s)"
+  );
+  return relocatedFiles;
 }
 
 /**
@@ -4426,18 +4457,22 @@ async function waitForFilesInUse() {
 }
 
 /**
- * Helper function for updater binary tests for verifying there are no update
- * backup files left behind after an update.
+ * Helper function for updater binary tests for verifying there are no temporary
+ * update files left behind after an update.
  *
  * @param   aFile
- *          An nsIFile to check if it has moz-backup for its extension.
+ *          An nsIFile to check if it has moz-backup or moz-draft for its
+ *          extension.
  */
-function checkForBackupFiles(aFile) {
-  Assert.notEqual(
-    getFileExtension(aFile),
-    "moz-backup",
-    "the file's extension should not equal moz-backup" + getMsgPath(aFile.path)
-  );
+function checkForTemporaryFiles(aFile) {
+  for (const extension of ["moz-backup", "moz-draft"]) {
+    Assert.notEqual(
+      getFileExtension(aFile),
+      extension,
+      `the file's extension should not equal ${extension}` +
+        getMsgPath(aFile.path)
+    );
+  }
 }
 
 /**

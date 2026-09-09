@@ -46,30 +46,28 @@ internal fun ProtectionPanelHeader(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         ProtectionPanelIcon(url = websiteInfoState.websiteUrl, icon = icon)
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        Column(
-            modifier = Modifier.weight(1f),
-        ) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = websiteInfoState.websiteTitle.ifEmpty {
-                    websiteInfoState.websiteUrl.tryGetHostFromUrl()
-                },
+                text =
+                    websiteInfoState.websiteTitle.ifEmpty {
+                        websiteInfoState.websiteUrl.tryGetHostFromUrl()
+                    },
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 style = FirefoxTheme.typography.headline7,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.semantics {
-                    testTagsAsResourceId = true
-                    testTag = "unified.trust.panel.website"
-                },
+                modifier =
+                    Modifier.semantics {
+                        testTagsAsResourceId = true
+                        testTag = "unified.trust.panel.website"
+                    },
             )
 
             if (websiteInfoState.websiteTitle.isNotEmpty()) {
@@ -77,10 +75,11 @@ internal fun ProtectionPanelHeader(
                     text = websiteInfoState.websiteUrl.tryGetHostFromUrl(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = FirefoxTheme.typography.body2,
-                    modifier = Modifier.semantics {
-                        testTagsAsResourceId = true
-                        testTag = "unified.trust.panel.website.url"
-                    },
+                    modifier =
+                        Modifier.semantics {
+                            testTagsAsResourceId = true
+                            testTag = "unified.trust.panel.website.url"
+                        },
                 )
             }
         }
@@ -96,23 +95,23 @@ private fun ProtectionPanelIcon(
         Image(
             bitmap = icon.asImageBitmap(),
             contentDescription = null,
-            modifier = Modifier
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                    shape = MaterialTheme.shapes.extraSmall,
-                )
-                .padding(all = ICON_PADDING)
-                .size(ICON_SIZE),
+            modifier =
+                Modifier.background(
+                        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                        shape = MaterialTheme.shapes.extraSmall,
+                    )
+                    .padding(all = ICON_PADDING)
+                    .size(ICON_SIZE),
         )
     } else {
         Favicon(
             url = url,
-            modifier = Modifier
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                    shape = MaterialTheme.shapes.extraSmall,
-                )
-                .padding(all = ICON_PADDING),
+            modifier =
+                Modifier.background(
+                        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                        shape = MaterialTheme.shapes.extraSmall,
+                    )
+                    .padding(all = ICON_PADDING),
             size = ICON_SIZE,
             shape = INNER_ICON_SHAPE,
         )
@@ -121,17 +120,16 @@ private fun ProtectionPanelIcon(
 
 @Preview
 @Composable
-private fun ProtectionPanelHeaderPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun ProtectionPanelHeaderPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         ProtectionPanelHeader(
-            websiteInfoState = WebsiteInfoState(
-                isSecured = true,
-                websiteUrl = "https://www.mozilla.org",
-                websiteTitle = "Mozilla",
-                certificate = null,
-            ),
+            websiteInfoState =
+                WebsiteInfoState(
+                    isSecured = true,
+                    websiteUrl = "https://www.mozilla.org",
+                    websiteTitle = "Mozilla",
+                    certificate = null,
+                ),
             icon = null,
             modifier = Modifier.background(color = MaterialTheme.colorScheme.surface),
         )
@@ -140,17 +138,16 @@ private fun ProtectionPanelHeaderPreview(
 
 @Preview
 @Composable
-private fun ProtectionPanelHeaderUrlAsTitlePreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun ProtectionPanelHeaderUrlAsTitlePreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         ProtectionPanelHeader(
-            websiteInfoState = WebsiteInfoState(
-                isSecured = true,
-                websiteUrl = "https://www.mozilla.org",
-                websiteTitle = "",
-                certificate = null,
-            ),
+            websiteInfoState =
+                WebsiteInfoState(
+                    isSecured = true,
+                    websiteUrl = "https://www.mozilla.org",
+                    websiteTitle = "",
+                    certificate = null,
+                ),
             icon = null,
             modifier = Modifier.background(color = MaterialTheme.colorScheme.surface),
         )

@@ -111,6 +111,7 @@ class _SidebarTestUtils {
     let { promiseInitialized, sidebarContainer } = win.SidebarController;
     await promiseInitialized;
     let hidden = !visible;
+
     if (sidebarContainer.hidden !== hidden) {
       // The command handler for the sidebar-button sets up the sidebar and button
       // state we want. But we can't always guarantee the sidebar-button is present,
@@ -119,7 +120,10 @@ class _SidebarTestUtils {
       await BrowserTestUtils.waitForMutationCondition(
         sidebarContainer,
         { attributes: true, attributeFilter: ["hidden"] },
-        () => sidebarContainer.hidden === hidden
+        () => sidebarContainer.hidden === hidden,
+        {
+          msg: `Button clicked, waiting for sidebarContainer.hidden to be ${hidden}`,
+        }
       );
       await win.SidebarController.waitUntilStable();
     }
@@ -131,6 +135,10 @@ class _SidebarTestUtils {
    * @param {ChromeWindow} win
    */
   async ensureLauncherVisible(win, message = "Sidebar launcher is visible") {
+    if (!win.SidebarController.sidebarRevampEnabled) {
+      // there is no launcher when revamp is false
+      return;
+    }
     await this._ensureLauncherShowing(win, true);
     Assert.ok(
       BrowserTestUtils.isVisible(win.SidebarController.sidebarContainer),

@@ -83,10 +83,6 @@ abstract class NimbusAssembleToolsTask : DefaultTask() {
     @get:Internal
     abstract val readTimeout: Property<Int>
 
-    /** The cache root directory */
-    @get:Internal
-    abstract val cacheRoot: Property<File>
-
     init {
         platform.convention(detectPlatform(providers))
         connectTimeout.convention(30000)
@@ -201,16 +197,16 @@ abstract class NimbusAssembleToolsTask : DefaultTask() {
         val binaryFile = fmlBinary.get().asFile
         val zipTree = archiveOperations.zipTree(archiveFileObj)
         val visitedFilePaths = mutableListOf<String>()
-        zipTree.matching { patterns ->
-            patterns.include(unzipSpec.includePatterns.get())
-        }.visit { details: FileVisitDetails ->
-            if (!details.isDirectory) {
+        zipTree.matching {
+            include(unzipSpec.includePatterns.get())
+        }.visit {
+            if (!isDirectory) {
                 if (visitedFilePaths.isEmpty()) {
                     binaryFile.parentFile?.mkdirs()
-                    details.copyTo(binaryFile)
+                    copyTo(binaryFile)
                     binaryFile.setExecutable(true)
                 }
-                visitedFilePaths.add(details.relativePath.toString())
+                visitedFilePaths.add(relativePath.toString())
             }
         }
 

@@ -26,11 +26,12 @@ class TimePrecisionPickerTest {
 
     @Test
     fun `WHEN picker widget THEN initial values must be displayed`() {
-        val timePicker = TimePrecisionPicker(
-            context = testContext,
-            selectedTime = initialTime,
-            stepValue = stepValue,
-        )
+        val timePicker =
+            TimePrecisionPicker(
+                context = testContext,
+                selectedTime = initialTime,
+                stepValue = stepValue,
+            )
 
         assertEquals(initialTime.hour, timePicker.hourView.value)
         assertEquals(initialTime.minute, timePicker.minuteView.value)
@@ -39,13 +40,14 @@ class TimePrecisionPickerTest {
     @Test
     fun `WHEN selectedTime is outside the bounds of min and max time THEN the displayed time is minTime`() {
         minTime = "14:30".toDate("HH:mm").toCalendar()
-        val timePicker = TimePrecisionPicker(
-            context = testContext,
-            selectedTime = initialTime,
-            minTime = minTime,
-            maxTime = maxTime,
-            stepValue = stepValue,
-        )
+        val timePicker =
+            TimePrecisionPicker(
+                context = testContext,
+                selectedTime = initialTime,
+                minTime = minTime,
+                maxTime = maxTime,
+                stepValue = stepValue,
+            )
 
         assertEquals(minTime.hour, timePicker.hourView.value)
         assertEquals(minTime.minute, timePicker.minuteView.value)
@@ -55,13 +57,14 @@ class TimePrecisionPickerTest {
     fun `WHEN minTime and maxTime are in illogical order AND selectedTime is outside limits THEN the min and max limits are ignored when initializing the time`() {
         minTime = "15:30".toDate("HH:mm").toCalendar()
         maxTime = "09:30".toDate("HH:mm").toCalendar()
-        val timePicker = TimePrecisionPicker(
-            context = testContext,
-            selectedTime = initialTime,
-            minTime = minTime,
-            maxTime = maxTime,
-            stepValue = stepValue,
-        )
+        val timePicker =
+            TimePrecisionPicker(
+                context = testContext,
+                selectedTime = initialTime,
+                minTime = minTime,
+                maxTime = maxTime,
+                stepValue = stepValue,
+            )
 
         assertEquals(initialTime.hour, timePicker.hourView.value)
         assertEquals(initialTime.minute, timePicker.minuteView.value)
@@ -71,27 +74,29 @@ class TimePrecisionPickerTest {
     fun `WHEN changing the selected time THEN timeSetListener MUST be notified`() {
         val updatedTime = now()
 
-        val timePicker = TimePrecisionPicker(
-            context = testContext,
-            selectedTime = initialTime,
-            minTime = minTime,
-            maxTime = maxTime,
-            stepValue = stepValue,
-            timeSetListener = object : TimePrecisionPicker.OnTimeSetListener {
-                override fun onTimeSet(
-                    picker: TimePrecisionPicker,
-                    hour: Int,
-                    minute: Int,
-                    second: Int,
-                    millisecond: Int,
-                ) {
-                    updatedTime.hour = hour
-                    updatedTime.minute = minute
-                    updatedTime.second = second
-                    updatedTime.millisecond = millisecond
-                }
-            },
-        )
+        val timePicker =
+            TimePrecisionPicker(
+                context = testContext,
+                selectedTime = initialTime,
+                minTime = minTime,
+                maxTime = maxTime,
+                stepValue = stepValue,
+                timeSetListener =
+                    object : TimePrecisionPicker.OnTimeSetListener {
+                        override fun onTimeSet(
+                            picker: TimePrecisionPicker,
+                            hour: Int,
+                            minute: Int,
+                            second: Int,
+                            millisecond: Int,
+                        ) {
+                            updatedTime.hour = hour
+                            updatedTime.minute = minute
+                            updatedTime.second = second
+                            updatedTime.millisecond = millisecond
+                        }
+                    },
+            )
 
         timePicker.onValueChange(timePicker.hourView, initialTime.hour, 13)
         timePicker.onValueChange(timePicker.minuteView, initialTime.minute, 20)

@@ -21,14 +21,15 @@ class MlpaLlmTest {
     @Test
     fun `GIVEN a successful response from the mlpa client WHEN prompt THEN I get a valid response`() = runTest {
         var expectedToken: AuthorizationToken? = null
-        val llm = MlpaLlm(
-            chatService = { token, request ->
-                expectedToken = token
-                successChatService.completion(token, request)
-            },
-            authorizationToken = AuthorizationToken.Integrity("my-test-token"),
-            modelID = LlmProvider.ModelID.mozSummarization,
-        )
+        val llm =
+            MlpaLlm(
+                chatService = { token, request ->
+                    expectedToken = token
+                    successChatService.completion(token, request)
+                },
+                authorizationToken = AuthorizationToken.Integrity("my-test-token"),
+                modelID = LlmProvider.ModelID.mozSummarization,
+            )
 
         val actual = llm.prompt(Prompt("This is my prompt")).toList()
         val expected = listOf("Hello World!")
@@ -41,15 +42,14 @@ class MlpaLlmTest {
     fun `GIVEN a failure response from the mlpa client WHEN prompt THEN I get a valid response`() = runTest {
         var threw = false
 
-        val llm = MlpaLlm(
-            chatService = failureChatService,
-            authorizationToken = AuthorizationToken.Integrity("my-test-token"),
-            modelID = LlmProvider.ModelID.mozSummarization,
-        )
+        val llm =
+            MlpaLlm(
+                chatService = failureChatService,
+                authorizationToken = AuthorizationToken.Integrity("my-test-token"),
+                modelID = LlmProvider.ModelID.mozSummarization,
+            )
 
-        llm.prompt(Prompt("This is my prompt"))
-            .catch { threw = true }
-            .toList()
+        llm.prompt(Prompt("This is my prompt")).catch { threw = true }.toList()
 
         assertTrue(threw)
     }
@@ -57,21 +57,23 @@ class MlpaLlmTest {
     @Test
     fun `that we attach the system prompt to the request if present`() = runTest {
         var acutalRequest: ChatService.Request? = null
-        val llm = MlpaLlm(
-            chatService = { token, request ->
-                acutalRequest = request
-                successChatService.completion(token, request)
-            },
-            authorizationToken = AuthorizationToken.Integrity("my-test-token"),
-            modelID = LlmProvider.ModelID.mozSummarization,
-        )
+        val llm =
+            MlpaLlm(
+                chatService = { token, request ->
+                    acutalRequest = request
+                    successChatService.completion(token, request)
+                },
+                authorizationToken = AuthorizationToken.Integrity("my-test-token"),
+                modelID = LlmProvider.ModelID.mozSummarization,
+            )
 
         llm.prompt(Prompt("user prompt", "system prompt")).toList()
 
-        val expected = listOf(
-            ChatService.Request.Message.system("system prompt"),
-            ChatService.Request.Message.user("user prompt"),
-        )
+        val expected =
+            listOf(
+                ChatService.Request.Message.system("system prompt"),
+                ChatService.Request.Message.user("user prompt"),
+            )
 
         assertEquals(expected, acutalRequest?.messages)
     }
@@ -79,20 +81,19 @@ class MlpaLlmTest {
     @Test
     fun `that system response is not attached to request if null`() = runTest {
         var acutalRequest: ChatService.Request? = null
-        val llm = MlpaLlm(
-            chatService = { token, request ->
-                acutalRequest = request
-                successChatService.completion(token, request)
-            },
-            authorizationToken = AuthorizationToken.Integrity("my-test-token"),
-            modelID = LlmProvider.ModelID.mozSummarization,
-        )
+        val llm =
+            MlpaLlm(
+                chatService = { token, request ->
+                    acutalRequest = request
+                    successChatService.completion(token, request)
+                },
+                authorizationToken = AuthorizationToken.Integrity("my-test-token"),
+                modelID = LlmProvider.ModelID.mozSummarization,
+            )
 
         llm.prompt(Prompt("user prompt", null)).toList()
 
-        val expected = listOf(
-            ChatService.Request.Message.user("user prompt"),
-        )
+        val expected = listOf(ChatService.Request.Message.user("user prompt"))
 
         assertEquals(expected, acutalRequest?.messages)
     }

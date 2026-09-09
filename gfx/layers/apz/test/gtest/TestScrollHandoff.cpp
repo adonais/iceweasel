@@ -16,10 +16,8 @@ class APZScrollHandoffTester : public APZCTreeManagerTester {
     LayerIntRect layerVisibleRect[] = {LayerIntRect(0, 0, 100, 100),
                                        LayerIntRect(0, 50, 100, 50)};
     CreateScrollData(treeShape, layerVisibleRect);
-    SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
-                              CSSRect(0, 0, 200, 200));
-    SetScrollableFrameMetrics(layers[1],
-                              ScrollableLayerGuid::START_SCROLL_ID + 1,
+    SetScrollableFrameMetrics(root, START_SCROLL_ID, CSSRect(0, 0, 200, 200));
+    SetScrollableFrameMetrics(layers[1], START_SCROLL_ID + 1,
                               CSSRect(0, 0, 100, 100));
     SetScrollHandoff(layers[1], root);
     registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
@@ -35,13 +33,10 @@ class APZScrollHandoffTester : public APZCTreeManagerTester {
                                        LayerIntRect(0, 0, 100, 100),
                                        LayerIntRect(0, 50, 100, 50)};
     CreateScrollData(treeShape, layerVisibleRect);
-    SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
-                              CSSRect(0, 0, 200, 200));
-    SetScrollableFrameMetrics(layers[1],
-                              ScrollableLayerGuid::START_SCROLL_ID + 2,
+    SetScrollableFrameMetrics(root, START_SCROLL_ID, CSSRect(0, 0, 200, 200));
+    SetScrollableFrameMetrics(layers[1], START_SCROLL_ID + 2,
                               CSSRect(-100, -100, 200, 200));
-    SetScrollableFrameMetrics(layers[2],
-                              ScrollableLayerGuid::START_SCROLL_ID + 1,
+    SetScrollableFrameMetrics(layers[2], START_SCROLL_ID + 1,
                               CSSRect(0, 0, 100, 100));
     SetScrollHandoff(layers[1], root);
     SetScrollHandoff(layers[2], layers[1]);
@@ -62,19 +57,15 @@ class APZScrollHandoffTester : public APZCTreeManagerTester {
         LayerIntRect(0, 50, 100, 50)   // scrolling child 2
     };
     CreateScrollData(treeShape, layerVisibleRect);
-    SetScrollableFrameMetrics(layers[0], ScrollableLayerGuid::START_SCROLL_ID,
+    SetScrollableFrameMetrics(layers[0], START_SCROLL_ID,
                               CSSRect(0, 0, 100, 100));
-    SetScrollableFrameMetrics(layers[1],
-                              ScrollableLayerGuid::START_SCROLL_ID + 1,
+    SetScrollableFrameMetrics(layers[1], START_SCROLL_ID + 1,
                               CSSRect(0, 0, 100, 100));
-    SetScrollableFrameMetrics(layers[2],
-                              ScrollableLayerGuid::START_SCROLL_ID + 2,
+    SetScrollableFrameMetrics(layers[2], START_SCROLL_ID + 2,
                               CSSRect(0, 0, 100, 100));
-    SetScrollableFrameMetrics(layers[3],
-                              ScrollableLayerGuid::START_SCROLL_ID + 3,
+    SetScrollableFrameMetrics(layers[3], START_SCROLL_ID + 3,
                               CSSRect(0, 50, 100, 100));
-    SetScrollableFrameMetrics(layers[4],
-                              ScrollableLayerGuid::START_SCROLL_ID + 4,
+    SetScrollableFrameMetrics(layers[4], START_SCROLL_ID + 4,
                               CSSRect(0, 50, 100, 100));
     SetScrollHandoff(layers[1], layers[0]);
     SetScrollHandoff(layers[3], layers[0]);
@@ -91,10 +82,8 @@ class APZScrollHandoffTester : public APZCTreeManagerTester {
     LayerIntRect layerVisibleRect[] = {LayerIntRect(0, 0, 100, 100),
                                        LayerIntRect(0, 0, 100, 100)};
     CreateScrollData(treeShape, layerVisibleRect);
-    SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
-                              CSSRect(0, 0, 200, 100));
-    SetScrollableFrameMetrics(layers[1],
-                              ScrollableLayerGuid::START_SCROLL_ID + 1,
+    SetScrollableFrameMetrics(root, START_SCROLL_ID, CSSRect(0, 0, 200, 100));
+    SetScrollableFrameMetrics(layers[1], START_SCROLL_ID + 1,
                               CSSRect(0, 0, 100, 200));
     SetScrollHandoff(layers[1], root);
     registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
@@ -111,10 +100,8 @@ class APZScrollHandoffTester : public APZCTreeManagerTester {
         LayerIntRect(0, 50, 100, 50)   // scrolling child
     };
     CreateScrollData(treeShape, layerVisibleRect);
-    SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
-                              CSSRect(0, 0, 100, 100));
-    SetScrollableFrameMetrics(layers[1],
-                              ScrollableLayerGuid::START_SCROLL_ID + 1,
+    SetScrollableFrameMetrics(root, START_SCROLL_ID, CSSRect(0, 0, 100, 100));
+    SetScrollableFrameMetrics(layers[1], START_SCROLL_ID + 1,
                               CSSRect(0, 0, 100, 200));
     SetScrollHandoff(layers[1], root);
     registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
@@ -129,10 +116,8 @@ class APZScrollHandoffTester : public APZCTreeManagerTester {
     LayerIntRect layerVisibleRect[] = {LayerIntRect(0, 0, 100, 100),
                                        LayerIntRect(0, 0, 100, 1000)};
     CreateScrollData(treeShape, layerVisibleRect);
-    SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
-                              CSSRect(0, 0, 100, 1000));
-    SetScrollableFrameMetrics(layers[1],
-                              ScrollableLayerGuid::START_SCROLL_ID + 1,
+    SetScrollableFrameMetrics(root, START_SCROLL_ID, CSSRect(0, 0, 100, 1000));
+    SetScrollableFrameMetrics(layers[1], START_SCROLL_ID + 1,
                               CSSRect(0, 0, 200, 1000));
     SetScrollHandoff(layers[1], root);
     registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
@@ -171,10 +156,8 @@ class APZCNestedFlingScrollHandoffTester : public APZCTreeManagerTester {
 
     CreateScrollData(treeShape, layerVisibleRect);
 
-    SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
-                              CSSRect(0, 0, 800, 50000));
-    SetScrollableFrameMetrics(layers[1],
-                              ScrollableLayerGuid::START_SCROLL_ID + 1,
+    SetScrollableFrameMetrics(root, START_SCROLL_ID, CSSRect(0, 0, 800, 50000));
+    SetScrollableFrameMetrics(layers[1], START_SCROLL_ID + 1,
                               CSSRect(0, 0, 800, 100));
 
     SetScrollHandoff(layers[1], root);
@@ -242,6 +225,205 @@ class APZCNestedFlingScrollHandoffTester : public APZCTreeManagerTester {
   RefPtr<TestAsyncPanZoomController> subframeApzc;
   UniquePtr<ScopedLayerTreeRegistration> registration;
 };
+
+// Android uses WidgetOverscrollEffect, which swallows residual deltas
+// instead of returning them to the handoff chain.
+#ifndef MOZ_WIDGET_ANDROID
+// Scenario from Bug 2046702 (mirrored vertically so the residual delta is
+// positive): The subframe sits at its top, the root near its bottom extent.
+// Panning down pins the subframe at its top and hands the delta off to the
+// root, making the root the input block's "scrolled APZC". Reversing the pan
+// within the same touch block drives the root back into its bottom extent;
+// the root can consume neither the residual delta (overscroll-behavior: none)
+// nor hand it off further, so the residual flows back to the subframe. The
+// subframe is not scrolled to the edge the residual overscroll belongs to (it
+// sits at its top, while the residual is a downward overscroll), and it is not
+// downchain of the scrolled APZC, so applying the residual as a local
+// overscroll effect there triggered the debug assertion in Axis::OverscrollBy
+// ("composition end is not equal (within error) to page end").
+// Additionally, CallDispatchScroll left aEndPoint stale when the
+// handoff target scrolled, inflating that residual.
+TEST_F(APZScrollHandoffTesterMock, OverscrollDropsDelta_Bug2046702) {
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
+  SCOPED_GFX_PREF_FLOAT("apz.touch_start_tolerance", 0.0f);
+  SCOPED_GFX_PREF_FLOAT("apz.touch_move_tolerance", 0.0f);
+
+  // Both the root and the subframe are tall vertical-only scrollers,
+  // so the subframe can scroll to its extent and hand the remaining delta
+  // off to the root. The root has overscroll-behavior: none,
+  // so it can scroll but can neither hand off nor show a local overscroll
+  // effect; residual deltas it cannot consume flow back to the subframe.
+  const char* treeShape = "x(x)";
+  LayerIntRect layerVisibleRect[] = {LayerIntRect(0, 0, 100, 100),
+                                     LayerIntRect(0, 0, 100, 100)};
+  CreateScrollData(treeShape, layerVisibleRect);
+  SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
+                            CSSRect(0, 0, 100, 1000));
+  SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID + 1,
+                            CSSRect(0, 0, 100, 1000));
+  SetScrollHandoff(layers[1], root);
+  ModifyFrameMetrics(root, [](ScrollMetadata& aSm, FrameMetrics&) {
+    OverscrollBehaviorInfo behavior;
+    behavior.mBehaviorX = OverscrollBehavior::None;
+    behavior.mBehaviorY = OverscrollBehavior::None;
+    aSm.SetOverscrollBehavior(behavior);
+  });
+  registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
+  UpdateHitTestingTree();
+  rootApzc = ApzcOf(root);
+  rootApzc->GetFrameMetrics().SetIsRootContent(true);
+
+  RefPtr<TestAsyncPanZoomController> child = ApzcOf(layers[1]);
+
+  // Scroll the root near its bottom extent, leaving a small amount of room.
+  rootApzc->GetFrameMetrics().SetVisualScrollOffset(CSSPoint(0, 890));
+
+  // The child stays scrolled all the way to its top.
+  EXPECT_EQ(child->GetFrameMetrics().GetVisualScrollOffset().y, 0);
+
+  ScrollableLayerGuid::ViewID subframeScrollId =
+      ScrollableLayerGuid::START_SCROLL_ID + 1;
+
+  QueueMockHitResult(subframeScrollId);
+  APZEventResult result = TouchDown(manager, {10, 20}, mcc->Time());
+  SetDefaultAllowedTouchBehavior(manager, result.mInputBlockId);
+
+  // Move the finger down (content scrolls up): the child is pinned at its
+  // top, so the delta hands off to the root, which scrolls 890 -> 810 and
+  // becomes the block's scrolled APZC.
+  for (int y = 40; y <= 100; y += 20) {
+    mcc->AdvanceByMillis(16);
+    TouchMove(manager, {10, y}, mcc->Time());
+  }
+  EXPECT_EQ(child->GetFrameMetrics().GetVisualScrollOffset().y, 0);
+  EXPECT_LT(rootApzc->GetFrameMetrics().GetVisualScrollOffset().y, 890);
+
+  // Reverse the motion within the same touch block, by more than the room
+  // the root has left. The child stays frozen (it is not downchain of the
+  // scrolled APZC), the root scrolls back down and hits its extent, and the
+  // residual delta flows back to the child. Before the fix, the child then
+  // applies the residual as a local overscroll effect while not scrolled to
+  // its end, firing the assertion.
+  for (int y = 80; y >= 0; y -= 20) {
+    mcc->AdvanceByMillis(16);
+    TouchMove(manager, {10, y}, mcc->Time());
+  }
+
+  // With the fix, the residual delta is dropped: the child never moved or
+  // overscrolled, and the root is pinned at its extent without an overscroll
+  // effect (overscroll-behavior: none).
+  EXPECT_EQ(child->GetFrameMetrics().GetVisualScrollOffset().y, 0);
+  EXPECT_EQ(rootApzc->GetFrameMetrics().GetVisualScrollOffset().y, 900);
+  EXPECT_FALSE(child->IsOverscrolled());
+  EXPECT_FALSE(rootApzc->IsOverscrolled());
+
+  // Release and let animations settle; nothing should remain overscrolled.
+  mcc->AdvanceByMillis(16);
+  TouchUp(manager, {10, 0}, mcc->Time());
+
+  child->AdvanceAnimationsUntilEnd();
+  rootApzc->AdvanceAnimationsUntilEnd();
+
+  EXPECT_FALSE(child->IsOverscrolled());
+  EXPECT_FALSE(rootApzc->IsOverscrolled());
+}
+
+// Models the reproducer page attached to Bug 2046702 (attachment 9596335) as
+// closely as a layer tree allows, because the test above does not exercise the
+// same code: it relies on overscroll-behavior: none to stop the root absorbing
+// the residual, while the page has no overscroll-behavior at all. Unlike the
+// test above, this one is oriented the same way round as the page.
+//
+// The subframe sits at its bottom and the root a little below its top. Panning
+// the finger up pins the subframe at its bottom and hands the delta off to the
+// root, making the root the input block's scrolled APZC. Reversing the pan
+// within the same touch block drives the root back into its top extent, and
+// the residual delta flows back to the subframe, which is at the opposite edge
+// from the one that residual belongs to.
+TEST_F(APZScrollHandoffTesterMock, OverscrollDropsDelta_Bug2046702_Reproducer) {
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
+  SCOPED_GFX_PREF_FLOAT("apz.touch_start_tolerance", 0.0f);
+  SCOPED_GFX_PREF_FLOAT("apz.touch_move_tolerance", 0.0f);
+
+  const char* treeShape = "x(x)";
+  LayerIntRect layerVisibleRect[] = {LayerIntRect(0, 0, 400, 1000),
+                                     LayerIntRect(0, 400, 400, 400)};
+  CreateScrollData(treeShape, layerVisibleRect);
+  SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
+                            CSSRect(0, 0, 400, 4000));
+  SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID + 1,
+                            CSSRect(0, 0, 400, 1600));
+  SetScrollHandoff(layers[1], root);
+  registration = MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, mcc);
+  UpdateHitTestingTree();
+  rootApzc = ApzcOf(root);
+  rootApzc->GetFrameMetrics().SetIsRootContent(true);
+
+  RefPtr<TestAsyncPanZoomController> subframe = ApzcOf(layers[1]);
+
+  // Scroll/pan the parent scroller by a small amount such that it is not
+  // scrolled all the way to the top.
+  rootApzc->GetFrameMetrics().SetVisualScrollOffset(CSSPoint(0, 20));
+
+  // Scroll the child element all the way to the bottom.
+  subframe->GetFrameMetrics().SetVisualScrollOffset(CSSPoint(0, 1200));
+
+  ScrollableLayerGuid::ViewID subframeScrollId =
+      ScrollableLayerGuid::START_SCROLL_ID + 1;
+
+  // The pan drifts sideways as a hand-driven drag does. This is load-bearing,
+  // not incidental: neither scroller has any horizontal scroll range, so
+  // horizontal is absent from GetOverscrollableDirections() and
+  // GenericOverscrollEffect::ConsumeOverscroll leaves the x component of the
+  // residual alone. That keeps IsZero(overscroll) false, so the root reports
+  // the delta as not consumed and the vertical remainder travels back to the
+  // subframe. With a perfectly vertical pan the root zeroes the whole residual,
+  // reports "consumed", and nothing ever reaches the subframe.
+  int x = 200;
+  QueueMockHitResult(subframeScrollId);
+  APZEventResult result = TouchDown(manager, {x, 700}, mcc->Time());
+  SetDefaultAllowedTouchBehavior(manager, result.mInputBlockId);
+
+  // Do a panning motion (moving the mouse cursor up) such that the child
+  // element keeps hitting the bottom and handing off scrolling to the parent.
+  // The subframe is pinned at its bottom, so the root scrolls 20 -> 220 and
+  // becomes the block's scrolled APZC.
+  for (int y = 650; y >= 500; y -= 50) {
+    mcc->AdvanceByMillis(16);
+    x -= 4;
+    TouchMove(manager, {x, y}, mcc->Time());
+  }
+  EXPECT_EQ(subframe->GetFrameMetrics().GetVisualScrollOffset().y, 1200);
+  EXPECT_GT(rootApzc->GetFrameMetrics().GetVisualScrollOffset().y, 20);
+
+  // "Once scroll-handoff to the parent happened and the parent began to
+  // scroll, reverse the motion (moving the mouse cursor down)", by more than
+  // the room the root has left.
+  for (int y = 550; y <= 800; y += 50) {
+    mcc->AdvanceByMillis(16);
+    x -= 4;
+    TouchMove(manager, {x, y}, mcc->Time());
+  }
+
+  // The subframe never moved and never overscrolled; the root is pinned at its
+  // top extent. The root is allowed a local overscroll effect there, so its
+  // overscroll state is not asserted on until the block has settled.
+  EXPECT_EQ(subframe->GetFrameMetrics().GetVisualScrollOffset().y, 1200);
+  EXPECT_EQ(rootApzc->GetFrameMetrics().GetVisualScrollOffset().y, 0);
+  EXPECT_FALSE(subframe->IsOverscrolled());
+
+  // Release and let animations settle; nothing should remain overscrolled.
+  mcc->AdvanceByMillis(16);
+  TouchUp(manager, {x, 800}, mcc->Time());
+
+  subframe->AdvanceAnimationsUntilEnd();
+  rootApzc->AdvanceAnimationsUntilEnd();
+
+  EXPECT_FALSE(subframe->IsOverscrolled());
+  EXPECT_FALSE(rootApzc->IsOverscrolled());
+}
+#endif
+
 #ifndef MOZ_WIDGET_ANDROID  // Currently fails on Android
 // Here we test that if the processing of a touch block is deferred while we
 // wait for content to send a prevent-default message, overscroll is still
@@ -340,7 +522,7 @@ TEST_F(APZScrollHandoffTesterMock, StuckInOverscroll_Bug1073250) {
   TestAsyncPanZoomController* child = ApzcOf(layers[1]);
 
   // Pan, causing the parent APZC to overscroll.
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
+  QueueMockHitResult(START_SCROLL_ID);
   Pan(manager, 10, 40, PanOptions::KeepFingerDown);
   EXPECT_FALSE(child->IsOverscrolled());
   EXPECT_TRUE(rootApzc->IsOverscrolled());
@@ -385,7 +567,7 @@ TEST_F(APZScrollHandoffTesterMock, StuckInOverscroll_Bug1231228) {
   TestAsyncPanZoomController* child = ApzcOf(layers[1]);
 
   // Pan, causing the parent APZC to overscroll.
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
+  QueueMockHitResult(START_SCROLL_ID + 1);
   Pan(manager, 60, 90, PanOptions::KeepFingerDown);
   EXPECT_FALSE(child->IsOverscrolled());
   EXPECT_TRUE(rootApzc->IsOverscrolled());
@@ -461,7 +643,7 @@ TEST_F(APZScrollHandoffTesterMock, StuckInOverscroll_Bug1240202b) {
   TestAsyncPanZoomController* child = ApzcOf(layers[1]);
 
   // Pan, causing the parent APZC to overscroll.
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
+  QueueMockHitResult(START_SCROLL_ID + 1);
   Pan(manager, 60, 90, PanOptions::KeepFingerDown);
   EXPECT_FALSE(child->IsOverscrolled());
   EXPECT_TRUE(rootApzc->IsOverscrolled());
@@ -472,7 +654,7 @@ TEST_F(APZScrollHandoffTesterMock, StuckInOverscroll_Bug1240202b) {
 
   // Put the finger down again, interrupting the animation
   // and entering the TOUCHING state.
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
+  QueueMockHitResult(START_SCROLL_ID + 1);
   TouchDown(manager, ScreenIntPoint(10, 90), mcc->Time());
 
   // Put a second finger down. Since we're in the TOUCHING state,
@@ -487,8 +669,8 @@ TEST_F(APZScrollHandoffTesterMock, StuckInOverscroll_Bug1240202b) {
       SingleTouchData(0, ScreenIntPoint(10, 90), ScreenSize(0, 0), 0, 0));
   secondFingerDown.mTouches.AppendElement(
       SingleTouchData(1, ScreenIntPoint(10, 80), ScreenSize(0, 0), 0, 0));
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
+  QueueMockHitResult(START_SCROLL_ID + 1);
+  QueueMockHitResult(START_SCROLL_ID + 1);
   manager->ReceiveInputEvent(secondFingerDown);
 
   // Release the fingers.
@@ -535,7 +717,7 @@ TEST_F(APZScrollHandoffTesterMock, DiagonalFlingNoHandoff) {
 
   // Fling up and to the left. The child APZC has room to scroll up, but not
   // to the left.
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
+  QueueMockHitResult(START_SCROLL_ID + 1);
   Pan(manager, ScreenIntPoint(90, 90), ScreenIntPoint(55, 55));
 
   RefPtr<TestAsyncPanZoomController> parent = ApzcOf(layers[0]);
@@ -676,7 +858,7 @@ TEST_F(APZScrollHandoffTesterMock, WheelHandoffAfterDirectionReversal) {
 
   // First wheel upwards. This will have no effect because we're already
   // scrolled to the top.
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
+  QueueMockHitResult(START_SCROLL_ID + 1);
   Wheel(manager, cursorLocation, upwardDelta, mcc->Time());
   EXPECT_EQ(0, rootMetrics.GetVisualScrollOffset().y);
   EXPECT_EQ(0, childMetrics.GetVisualScrollOffset().y);
@@ -685,7 +867,7 @@ TEST_F(APZScrollHandoffTesterMock, WheelHandoffAfterDirectionReversal) {
   // to the bottom of its 50px scroll range.
   for (size_t i = 0; i < 6; ++i) {
     mcc->AdvanceByMillis(100);
-    QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
+    QueueMockHitResult(START_SCROLL_ID + 1);
     Wheel(manager, cursorLocation, downwardDelta, mcc->Time());
   }
   EXPECT_EQ(0, rootMetrics.GetVisualScrollOffset().y);
@@ -696,7 +878,7 @@ TEST_F(APZScrollHandoffTesterMock, WheelHandoffAfterDirectionReversal) {
   // and start scrolling the root.
   for (size_t i = 0; i < 16; ++i) {
     mcc->AdvanceByMillis(100);
-    QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
+    QueueMockHitResult(START_SCROLL_ID + 1);
     Wheel(manager, cursorLocation, downwardDelta, mcc->Time());
   }
   EXPECT_EQ(childScrollRange.YMost(), childMetrics.GetVisualScrollOffset().y);
@@ -719,7 +901,7 @@ TEST_F(APZScrollHandoffTesterMock, WheelHandoffNonscrollable) {
   ScreenIntPoint scrollableLocation(40, 60);
 
   // Start the wheel transaction on a nonscrollable parent frame.
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
+  QueueMockHitResult(START_SCROLL_ID);
   Wheel(manager, nonscrollableLocation, downwardDelta, mcc->Time());
   EXPECT_EQ(0, childMetrics.GetVisualScrollOffset().y);
 
@@ -730,12 +912,12 @@ TEST_F(APZScrollHandoffTesterMock, WheelHandoffNonscrollable) {
                         scrollableLocation, mcc->Time(), 0);
   WidgetMouseEvent mouseEvent =
       mouseInput.ToWidgetEvent<WidgetMouseEvent>(nullptr);
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
+  QueueMockHitResult(START_SCROLL_ID + 1);
   ((APZInputBridge*)manager.get())->ReceiveInputEvent(mouseEvent);
 
   // Wheel downward should scroll the subframe.
   mcc->AdvanceByMillis(100);
-  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
+  QueueMockHitResult(START_SCROLL_ID + 1);
   Wheel(manager, scrollableLocation, downwardDelta, mcc->Time());
   EXPECT_GT(childMetrics.GetVisualScrollOffset().y, 0);
 }
@@ -814,7 +996,7 @@ TEST_F(APZScrollHandoffTesterMock, ScrollJump_Bug1812227) {
     // the touch start tolerance.
 
     mcc->AdvanceByMillis(16);
-    QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
+    QueueMockHitResult(START_SCROLL_ID + 1);
     TouchDown(manager, {30, 30}, mcc->Time());
     SampleScrollPosition();
 

@@ -99,8 +99,7 @@ class BrowserBridgeParent : public PBrowserBridgeParent {
       const StyleImageRendering& aImageRendering);
 
 #ifdef ACCESSIBILITY
-  mozilla::ipc::IPCResult RecvSetEmbedderAccessible(PDocAccessibleParent* aDoc,
-                                                    uint64_t aID);
+  mozilla::ipc::IPCResult RecvSetEmbedderAccessible(uint64_t aID);
 #endif
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
@@ -110,7 +109,6 @@ class BrowserBridgeParent : public PBrowserBridgeParent {
 
   RefPtr<BrowserParent> mBrowserParent;
 #ifdef ACCESSIBILITY
-  RefPtr<a11y::DocAccessibleParent> mEmbedderAccessibleDoc;
   uint64_t mEmbedderAccessibleID = 0;
 #endif  // ACCESSIBILITY
 };

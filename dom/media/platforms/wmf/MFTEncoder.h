@@ -17,6 +17,8 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ResultVariant.h"
+#include "mozilla/StaticMutex.h"
+#include "mozilla/StaticPtr.h"
 #include "nsDeque.h"
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"
@@ -97,7 +99,10 @@ class MFTEncoder final {
 
   ~MFTEncoder() { Destroy(); };
 
-  static nsTArray<Info>& Infos();
+  static inline StaticMutex sInfoMutex;
+  static inline StaticAutoPtr<nsTArray<Info>> sInfos MOZ_GUARDED_BY(sInfoMutex);
+
+  static nsTArray<Info>* Infos() MOZ_REQUIRES(sInfoMutex);
   static nsTArray<Info> Enumerate();
   static Maybe<Info> GetInfo(const GUID& aSubtype);
 
@@ -123,8 +128,9 @@ class MFTEncoder final {
   RefPtr<EncodePromise> DrainWithAsyncCallback();
   RefPtr<EncodePromise> PrepareForDrain();
   RefPtr<EncodePromise> StartDraining();
+  bool MaybeArmTimer();
   void EventHandler(MediaEventType aEventType, HRESULT aStatus);
-  void MaybeResolveOrRejectEncodePromise();
+  void MaybeResolveOrRejectEncodePromise(bool aResolveAll = false);
   void MaybeResolveOrRejectDrainPromise();
   void MaybeResolveOrRejectPreDrainPromise();
   void MaybeResolveOrRejectAnyPendingPromise(
@@ -213,8 +219,8 @@ class MFTEncoder final {
 
   // The following members are used only for realtime asynchronous processing
   // model.
+  std::deque<RefPtr<EncodePromise::Private>> mEncodePromises;
   MediaResult mPendingError;
-  MozPromiseHolder<EncodePromise> mEncodePromise;
   MozPromiseHolder<EncodePromise> mDrainPromise;
   MozPromiseHolder<EncodePromise> mPreDrainPromise;
   // Use to resolve the encode promise if mAsyncEventSource doesn't response in

@@ -6,11 +6,8 @@ package org.mozilla.fenix.downloads.listscreen.middleware
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.mockk.every
-import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import mozilla.components.lib.state.Store
@@ -40,14 +37,16 @@ class DownloadUIShareMiddlewareTest {
     fun `WHEN ShareUrlClicked is dispatched THEN share the URL`() {
         downloadFileUtils = FakeDownloadFileUtils(findShareableDownloadFileUri = { _, _ -> "file.txt".toUri() })
 
-        middleware = DownloadUIShareMiddleware(
-            applicationContext = context,
-            downloadFileUtils = downloadFileUtils,
-        )
-        store = DownloadUIStore(
-            initialState = DownloadUIState.INITIAL,
-            middleware = listOf(middleware),
-        )
+        middleware =
+            DownloadUIShareMiddleware(
+                applicationContext = context,
+                downloadFileUtils = downloadFileUtils,
+            )
+        store =
+            DownloadUIStore(
+                initialState = DownloadUIState.INITIAL,
+                middleware = listOf(middleware),
+            )
 
         val url = "https://mozilla.org"
 
@@ -64,14 +63,16 @@ class DownloadUIShareMiddlewareTest {
 
         downloadFileUtils = FakeDownloadFileUtils(findShareableDownloadFileUri = { _, _ -> fileName.toUri() })
 
-        middleware = DownloadUIShareMiddleware(
-            applicationContext = context,
-            downloadFileUtils = downloadFileUtils,
-        )
-        store = DownloadUIStore(
-            initialState = DownloadUIState.INITIAL,
-            middleware = listOf(middleware),
-        )
+        middleware =
+            DownloadUIShareMiddleware(
+                applicationContext = context,
+                downloadFileUtils = downloadFileUtils,
+            )
+        store =
+            DownloadUIStore(
+                initialState = DownloadUIState.INITIAL,
+                middleware = listOf(middleware),
+            )
 
         store.dispatch(DownloadUIAction.ShareFileClicked(directoryPath, fileName, contentType))
 
@@ -85,15 +86,17 @@ class DownloadUIShareMiddlewareTest {
         val contentType = "text/plain"
         downloadFileUtils = FakeDownloadFileUtils(findShareableDownloadFileUri = { _, _ -> null })
 
-        middleware = DownloadUIShareMiddleware(
-            applicationContext = context,
-            downloadFileUtils = downloadFileUtils,
-        )
+        middleware =
+            DownloadUIShareMiddleware(
+                applicationContext = context,
+                downloadFileUtils = downloadFileUtils,
+            )
 
-        store = DownloadUIStore(
-            initialState = DownloadUIState.INITIAL,
-            middleware = listOf(middleware),
-        )
+        store =
+            DownloadUIStore(
+                initialState = DownloadUIState.INITIAL,
+                middleware = listOf(middleware),
+            )
         store.dispatch(DownloadUIAction.ShareFileClicked(directoryPath, fileName, contentType))
 
         verify(exactly = 0) { context.startActivity(any()) }

@@ -26,6 +26,18 @@ SCHTASKS_POLL_TIMEOUT = 450
 SCHTASKS_RUN_TIMEOUT = 30
 SAMPLY_TIMEOUT = 900
 
+# Stock Chrome ships without PDBs, so its native frames can only be symbolicated
+# from Google's symbol server. Locally built Chromium (custom-car) keeps its
+# PDBs next to the binary instead.
+CHROME_SYMBOL_SERVER = (
+    "https://chromium-browser-symsrv.commondatastorage.googleapis.com"
+)
+
+# symbols.mozilla.org only includes user-mode system libraries so the kernel
+# and driver frames that a system-wide ETW trace picks up have to come from
+# Microsoft directly.
+MICROSOFT_SYMBOL_SERVER = "https://msdl.microsoft.com/download/symbols"
+
 
 class ETWProfile(RaptorProfiling):
     """Record kernel ETW traces (.etl) using xperf (via pre-configured
@@ -61,7 +73,7 @@ class ETWProfile(RaptorProfiling):
         )
         self.upload_dir = Path(self.upload_dir)
         self.profile = (
-            self.upload_dir / f"profile_etw_{self.test_name}_unprocessed.json.gz"
+            self.upload_dir / f"profile_etw_{self.test_name}_unprocessed.jslb.gz"
         )
 
         # Temporary working directory for intermediate files
@@ -181,15 +193,17 @@ class ETWProfile(RaptorProfiling):
             "--presymbolicate",
             "--breakpad-symbol-server",
             "https://symbols.mozilla.org/",
+            "--windows-symbol-server",
+            MICROSOFT_SYMBOL_SERVER,
         ]
 
         moz_fetch = Path(os.environ["MOZ_FETCHES_DIR"])
-        if (
-            self.raptor_config.get("app", "") == "custom-car"
-            and (moz_fetch / "chromium" / "Default").exists()
-        ):
+        app = self.raptor_config.get("app", "")
+        if app == "custom-car" and (moz_fetch / "chromium" / "Default").exists():
             symbol_dir = moz_fetch / "chromium" / "Default"
             samply_cmd.extend(["--symbol-dir", str(symbol_dir)])
+        elif app == "chrome":
+            samply_cmd.extend(["--windows-symbol-server", CHROME_SYMBOL_SERVER])
         elif (moz_fetch / "target.crashreporter-symbols.zip").exists():
             symbol_dir = self.temp_dir / "target.crashreporter-symbols"
             breakpad_symbol_zip = moz_fetch / "target.crashreporter-symbols.zip"

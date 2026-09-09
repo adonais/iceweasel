@@ -18,6 +18,7 @@
 #include "compiler/translator/msl/SymbolEnv.h"
 #include "compiler/translator/msl/ToposortStructs.h"
 #include "compiler/translator/msl/UtilsMSL.h"
+#include "compiler/translator/tree_ops/AddDefaultReturnStatements.h"
 #include "compiler/translator/tree_ops/InitializeVariables.h"
 #include "compiler/translator/tree_ops/MonomorphizeUnsupportedFunctions.h"
 #include "compiler/translator/tree_ops/PreTransformTextureCubeGradDerivatives.h"
@@ -50,7 +51,6 @@
 #include "compiler/translator/tree_util/ReplaceVariable.h"
 #include "compiler/translator/tree_util/RunAtTheBeginningOfShader.h"
 #include "compiler/translator/tree_util/RunAtTheEndOfShader.h"
-#include "compiler/translator/tree_util/SpecializationConstant.h"
 #include "compiler/translator/util.h"
 
 namespace sh
@@ -873,13 +873,17 @@ bool TranslatorMSL::translateImpl(TInfoSinkBase &sink,
                                   TIntermBlock *root,
                                   const ShCompileOptions &compileOptions,
                                   PerformanceDiagnostics * /*perfDiagnostics*/,
-                                  SpecConst *specConst,
                                   DriverUniformMetal *driverUniforms)
 {
     TSymbolTable &symbolTable = getSymbolTable();
     IdGen idGen;
     ProgramPreludeConfig ppc(metalShaderTypeFromGLSL(getShaderType()));
     ppc.usesDerivatives = usesDerivatives();
+
+    if (!sh::AddDefaultReturnStatements(this, root))
+    {
+        return false;
+    }
 
     if (!WrapMain(*this, idGen, *root))
     {
@@ -1075,7 +1079,7 @@ bool TranslatorMSL::translateImpl(TInfoSinkBase &sink,
         bool usesFragDepth             = false;
         bool usesFragDepthEXT          = false;
         bool usesSecondaryFragColorEXT = false;
-        bool usesSecondaryFragDataEXT  = false;
+        bool usesSecondaryFragDataEXT  = symbolTable.isSecondaryFragDataUsed();
         for (const ShaderVariable &outputVarying : mOutputVariables)
         {
             if (outputVarying.isBuiltIn())
@@ -1099,10 +1103,6 @@ bool TranslatorMSL::translateImpl(TInfoSinkBase &sink,
                 else if (outputVarying.name == "gl_SecondaryFragColorEXT")
                 {
                     usesSecondaryFragColorEXT = true;
-                }
-                else if (outputVarying.name == "gl_SecondaryFragDataEXT")
-                {
-                    usesSecondaryFragDataEXT = true;
                 }
                 else if (outputVarying.name == "gl_SampleMask")
                 {
@@ -1249,12 +1249,21 @@ bool TranslatorMSL::translateImpl(TInfoSinkBase &sink,
     else if (getShaderType() == GL_VERTEX_SHADER)
     {
         DeclareRightBeforeMain(*root, *BuiltInVariable::gl_Position());
-
-        if (FindSymbolNode(root, BuiltInVariable::gl_PointSize()->name()))
+        // Always declare gl_PointSize to get [[point_size]] defined in case
+        // client draws with GL_POINTS.
         {
-            const TVariable *pointSize = static_cast<const TVariable *>(
-                getSymbolTable().findBuiltIn(ImmutableString("gl_PointSize"), getShaderVersion()));
+
+            const TVariable *pointSize = getShaderVersion() >= 300
+                                             ? BuiltInVariable::gl_PointSize300()
+                                             : BuiltInVariable::gl_PointSize();
             DeclareRightBeforeMain(*root, *pointSize);
+            TIntermBinary *defaultPointSize =
+                new TIntermBinary(TOperator::EOpAssign, new TIntermSymbol(pointSize),
+                                  CreateFloatNode(1.0f, pointSize->getType().getPrecision()));
+            if (!RunAtTheBeginningOfShader(this, root, defaultPointSize))
+            {
+                return false;
+            }
         }
 
         // Append a macro for transform feedback substitution prior to modifying depth.
@@ -1423,9 +1432,8 @@ bool TranslatorMSL::translate(TIntermBlock *root,
     mValidateASTOptions.validatePrecision = false;
 
     TInfoSinkBase &sink = getInfoSink().obj;
-    SpecConst specConst(&getSymbolTable(), getShaderType());
     DriverUniformMetal driverUniforms(DriverUniformMode::Structure);
-    if (!translateImpl(sink, root, compileOptions, perfDiagnostics, &specConst, &driverUniforms))
+    if (!translateImpl(sink, root, compileOptions, perfDiagnostics, &driverUniforms))
     {
         return false;
     }

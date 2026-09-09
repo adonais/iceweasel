@@ -102,6 +102,7 @@ const Template = ({
   accesskeys,
   supportPage,
   groupSupportPage,
+  title,
   hasSlottedSupportLinks,
   groupSlottedSupportLink,
   nestedFields,
@@ -130,6 +131,7 @@ const Template = ({
           iconSrc=${ifDefined(showIcons ? icons[i] : "")}
           accesskey=${ifDefined(showAccesskeys ? accesskeys[i] : "")}
           support-page=${ifDefined(supportPage)}
+          title=${ifDefined(title || null)}
           class=${classMap({ "text-truncated-ellipsis": ellipsized })}
         >
           ${hasSlottedSupportLinks
@@ -164,6 +166,7 @@ Default.args = {
   accesskeys: accesskeyOptions,
   supportPage: "",
   groupSupportPage: "",
+  title: "",
   hasSlottedSupportLinks: false,
   groupSlottedSupportLink: false,
   headingLevel: "",

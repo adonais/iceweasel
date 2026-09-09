@@ -34,9 +34,7 @@ class SharedPreferencesBooleanTest {
 
     @Test
     fun `GIVEN boolean does not exist and asked to persist the default WHEN asked for it THEN persist the default and return it`() {
-        preferencesHolder = BooleanTestPreferenceHolder(
-            persistDefaultIfNotExists = true,
-        )
+        preferencesHolder = BooleanTestPreferenceHolder(persistDefaultIfNotExists = true)
 
         val result = preferencesHolder.boolean
 
@@ -46,9 +44,7 @@ class SharedPreferencesBooleanTest {
 
     @Test
     fun `GIVEN boolean does not exist and not asked to persist the default WHEN asked for it THEN return the default but not persist it`() {
-        preferencesHolder = BooleanTestPreferenceHolder(
-            persistDefaultIfNotExists = false,
-        )
+        preferencesHolder = BooleanTestPreferenceHolder(persistDefaultIfNotExists = false)
 
         val result = preferencesHolder.boolean
 
@@ -59,9 +55,7 @@ class SharedPreferencesBooleanTest {
     @Test
     fun `GIVEN boolean exists and asked to persist the default WHEN asked for it THEN return the existing boolean and don't persist the default`() {
         testPreferences.edit().putBoolean(key, !defaultValue).apply()
-        preferencesHolder = BooleanTestPreferenceHolder(
-            persistDefaultIfNotExists = true,
-        )
+        preferencesHolder = BooleanTestPreferenceHolder(persistDefaultIfNotExists = true)
 
         val result = preferencesHolder.boolean
 
@@ -71,9 +65,7 @@ class SharedPreferencesBooleanTest {
     @Test
     fun `GIVEN boolean exists and not asked to persist the default WHEN asked for it THEN return the existing boolean and don't persist the default`() {
         testPreferences.edit().putBoolean(key, !defaultValue).apply()
-        preferencesHolder = BooleanTestPreferenceHolder(
-            persistDefaultIfNotExists = false,
-        )
+        preferencesHolder = BooleanTestPreferenceHolder(persistDefaultIfNotExists = false)
 
         val result = preferencesHolder.boolean
 
@@ -96,14 +88,15 @@ class SharedPreferencesBooleanTest {
 
         class MockPreferencesHolder : PreferencesHolder {
             override val preferences = testPreferences
-            var boolean by booleanPreference(
-                "boolean",
-                default = {
-                    initialized = true
-                    true
-                },
-                persistDefaultIfNotExists = false,
-            )
+            var boolean by
+                booleanPreference(
+                    "boolean",
+                    default = {
+                        initialized = true
+                        true
+                    },
+                    persistDefaultIfNotExists = false,
+                )
         }
 
         val holder = MockPreferencesHolder()
@@ -125,9 +118,7 @@ class SharedPreferencesBooleanTest {
         assertTrue(testPreferences.getBoolean(key, defaultValue))
     }
 
-    private inner class BooleanTestPreferenceHolder(
-        persistDefaultIfNotExists: Boolean = false,
-    ) : PreferencesHolder {
+    private inner class BooleanTestPreferenceHolder(persistDefaultIfNotExists: Boolean = false) : PreferencesHolder {
         override val preferences = testPreferences
 
         var boolean by booleanPreference(key, { defaultValue }, persistDefaultIfNotExists)

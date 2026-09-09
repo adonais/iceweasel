@@ -8,6 +8,7 @@ import android.content.Context
 import android.os.Build
 import androidx.annotation.VisibleForTesting
 import androidx.core.app.NotificationManagerCompat
+import java.io.File
 import kotlinx.coroutines.flow.first
 import mozilla.components.support.base.ext.areNotificationsEnabledSafe
 import mozilla.components.support.base.ext.isNotificationChannelEnabled
@@ -29,27 +30,20 @@ import org.mozilla.fenix.perf.runBlockingIncrement
 import org.mozilla.fenix.termsofuse.experimentation.TermsOfUseAdvancedTargetingHelper
 import org.mozilla.fenix.termsofuse.experimentation.utils.DefaultTermsOfUseDataProvider
 import org.mozilla.fenix.utils.Settings
-import java.io.File
 
-/**
- * The following constants are string constants of the keys that appear in the [EVENT_QUERIES] map.
- */
+/** The following constants are string constants of the keys that appear in the [EVENT_QUERIES] map. */
 const val DAYS_OPENED_IN_LAST_28 = "days_opened_in_last_28"
 
-/**
- * [EVENT_QUERIES] is a map of keys to Nimbus SDK EventStore queries.
- */
-private val EVENT_QUERIES = mapOf(
-    DAYS_OPENED_IN_LAST_28 to "'events.app_opened'|eventCountNonZero('Days', 28, 0)",
-)
+/** [EVENT_QUERIES] is a map of keys to Nimbus SDK EventStore queries. */
+private val EVENT_QUERIES = mapOf(DAYS_OPENED_IN_LAST_28 to "'events.app_opened'|eventCountNonZero('Days', 28, 0)")
 
 /**
- * The RecordedNimbusContext class inherits from an internal Nimbus interface that provides methods
- * for obtaining a JSON value for the object and recording the object's value to Glean. Its JSON
- * value is loaded into the Nimbus targeting context.
+ * The RecordedNimbusContext class inherits from an internal Nimbus interface that provides methods for obtaining a JSON
+ * value for the object and recording the object's value to Glean. Its JSON value is loaded into the Nimbus targeting
+ * context.
  *
- * The value recorded to Glean is used to automate population sizing. Any additions to this object
- * require a new data review for the `nimbus_system.recorded_nimbus_context` metric.
+ * The value recorded to Glean is used to automate population sizing. Any additions to this object require a new data
+ * review for the `nimbus_system.recorded_nimbus_context` metric.
  */
 @Suppress("complexity:LongParameterList")
 class RecordedNimbusContext(
@@ -79,8 +73,8 @@ class RecordedNimbusContext(
     val areMarketingNotificationsEnabled: Boolean,
 ) : RecordedContext {
     /**
-     * [getEventQueries] is called by the Nimbus SDK Rust code to retrieve the map of event
-     * queries. The are then executed against the Nimbus SDK's EventStore to retrieve their values.
+     * [getEventQueries] is called by the Nimbus SDK Rust code to retrieve the map of event queries. The are then
+     * executed against the Nimbus SDK's EventStore to retrieve their values.
      *
      * @return Map<String, String>
      */
@@ -89,14 +83,14 @@ class RecordedNimbusContext(
     }
 
     /**
-     * [record] is called when experiment enrollments are evolved. It should apply the
-     * [RecordedNimbusContext]'s values to a [NimbusSystem.RecordedNimbusContextObject] instance,
-     * and use that instance to record the values to Glean.
+     * [record] is called when experiment enrollments are evolved. It should apply the [RecordedNimbusContext]'s values
+     * to a [NimbusSystem.RecordedNimbusContextObject] instance, and use that instance to record the values to Glean.
      */
     override fun record() {
-        val eventQueryValuesObject = NimbusSystem.RecordedNimbusContextObjectItemEventQueryValuesObject(
-            daysOpenedInLast28 = eventQueryValues[DAYS_OPENED_IN_LAST_28]?.toInt(),
-        )
+        val eventQueryValuesObject =
+            NimbusSystem.RecordedNimbusContextObjectItemEventQueryValuesObject(
+                daysOpenedInLast28 = eventQueryValues[DAYS_OPENED_IN_LAST_28]?.toInt()
+            )
         NimbusSystem.recordedNimbusContext.set(
             NimbusSystem.RecordedNimbusContextObject(
                 isFirstRun = isFirstRun,
@@ -122,68 +116,65 @@ class RecordedNimbusContext(
                 userDisabledAi = userDisabledAi,
                 areNotificationsEnabled = areNotificationsEnabled,
                 areMarketingNotificationsEnabled = areMarketingNotificationsEnabled,
-            ),
+            )
         )
     }
 
     /**
-     * [setEventQueryValues] is called by the Nimbus SDK Rust code after the event queries have been
-     * executed. The [eventQueryValues] should be written back to the Kotlin object.
+     * [setEventQueryValues] is called by the Nimbus SDK Rust code after the event queries have been executed. The
+     * [eventQueryValues] should be written back to the Kotlin object.
      *
-     * @param [eventQueryValues] The values for each query after they have been executed in the
-     * Nimbus SDK Rust environment.
+     * @param [eventQueryValues] The values for each query after they have been executed in the Nimbus SDK Rust
+     *   environment.
      */
     override fun setEventQueryValues(eventQueryValues: Map<String, Double>) {
         this.eventQueryValues = eventQueryValues
     }
 
     /**
-     * [toJson] is called by the Nimbus SDK Rust code after the event queries have been executed,
-     * and before experiment enrollments have been evolved. The value returned from this method
-     * will be applied directly to the Nimbus targeting context, and its keys/values take
-     * precedence over those in the main Nimbus targeting context.
+     * [toJson] is called by the Nimbus SDK Rust code after the event queries have been executed, and before experiment
+     * enrollments have been evolved. The value returned from this method will be applied directly to the Nimbus
+     * targeting context, and its keys/values take precedence over those in the main Nimbus targeting context.
      *
      * @return JSONObject
      */
     override fun toJson(): JsonObject {
-        val obj = JSONObject(
-            mapOf(
-                "is_first_run" to isFirstRun,
-                "events" to JSONObject(eventQueryValues),
-                "install_referrer_response_utm_source" to utmSource,
-                "install_referrer_response_utm_medium" to utmMedium,
-                "install_referrer_response_utm_campaign" to utmCampaign,
-                "install_referrer_response_utm_term" to utmTerm,
-                "install_referrer_response_utm_content" to utmContent,
-                "android_sdk_version" to androidSdkVersion,
-                "app_version" to appVersion,
-                "locale" to locale,
-                "days_since_install" to daysSinceInstall,
-                "days_since_update" to daysSinceUpdate,
-                "language" to language,
-                "region" to region,
-                "device_manufacturer" to deviceManufacturer,
-                "device_model" to deviceModel,
-                "user_accepted_tou" to userAcceptedTou,
-                "no_shortcuts_or_stories_opt_outs" to noShortcutsOrStoriesOptOuts,
-                "addon_ids" to JSONArray(addonIds),
-                "tou_points" to touPoints,
-                "user_disabled_ai" to userDisabledAi,
-                "are_notifications_enabled" to areNotificationsEnabled,
-                "are_marketing_notifications_enabled" to areMarketingNotificationsEnabled,
-            ),
-        )
+        val obj =
+            JSONObject(
+                mapOf(
+                    "is_first_run" to isFirstRun,
+                    "events" to JSONObject(eventQueryValues),
+                    "install_referrer_response_utm_source" to utmSource,
+                    "install_referrer_response_utm_medium" to utmMedium,
+                    "install_referrer_response_utm_campaign" to utmCampaign,
+                    "install_referrer_response_utm_term" to utmTerm,
+                    "install_referrer_response_utm_content" to utmContent,
+                    "android_sdk_version" to androidSdkVersion,
+                    "app_version" to appVersion,
+                    "locale" to locale,
+                    "days_since_install" to daysSinceInstall,
+                    "days_since_update" to daysSinceUpdate,
+                    "language" to language,
+                    "region" to region,
+                    "device_manufacturer" to deviceManufacturer,
+                    "device_model" to deviceModel,
+                    "user_accepted_tou" to userAcceptedTou,
+                    "no_shortcuts_or_stories_opt_outs" to noShortcutsOrStoriesOptOuts,
+                    "addon_ids" to JSONArray(addonIds),
+                    "tou_points" to touPoints,
+                    "user_disabled_ai" to userDisabledAi,
+                    "are_notifications_enabled" to areNotificationsEnabled,
+                    "are_marketing_notifications_enabled" to areMarketingNotificationsEnabled,
+                )
+            )
         return obj
     }
 
-    /**
-     * Companion object for RecordedNimbusContext
-     */
+    /** Companion object for RecordedNimbusContext */
     companion object {
 
         /**
-         * Creates a RecordedNimbusContext instance, populated with the application-defined
-         * eventQueries
+         * Creates a RecordedNimbusContext instance, populated with the application-defined eventQueries
          *
          * @return RecordedNimbusContext
          */
@@ -192,22 +183,22 @@ class RecordedNimbusContext(
             isFirstRun: Boolean,
         ): RecordedNimbusContext {
             val settings = context.components.settings
-            val langTag = LocaleManager.getCurrentLocale(context)
-                ?.toLanguageTag() ?: getSystemDefault().toLanguageTag()
-            val termsOfUseAdvancedTargetingHelper = TermsOfUseAdvancedTargetingHelper(
-                DefaultTermsOfUseDataProvider(settings),
-                langTag,
-            )
+            val langTag = LocaleManager.getCurrentLocale(context)?.toLanguageTag() ?: getSystemDefault().toLanguageTag()
+            val termsOfUseAdvancedTargetingHelper =
+                TermsOfUseAdvancedTargetingHelper(
+                    DefaultTermsOfUseDataProvider(settings),
+                    langTag,
+                )
 
-            val packageInfo =
-                context.packageManagerCompatHelper.getPackageInfoCompat(context.packageName, 0)
+            val packageInfo = context.packageManagerCompatHelper.getPackageInfoCompat(context.packageName, 0)
             val deviceInfo = NimbusDeviceInfo.default()
             val db = File(context.applicationInfo.dataDir, NIMBUS_DATA_DIR)
-            val calculatedAttributes = getCalculatedAttributes(
-                packageInfo.firstInstallTime,
-                db.path,
-                deviceInfo.localeTag,
-            )
+            val calculatedAttributes =
+                getCalculatedAttributes(
+                    packageInfo.firstInstallTime,
+                    db.path,
+                    deviceInfo.localeTag,
+                )
 
             val isAiBlocked = runBlockingIncrement { context.components.aiFeatureBlockStorage.isBlocked.first() }
             val notificationManager = NotificationManagerCompat.from(context)
@@ -232,8 +223,8 @@ class RecordedNimbusContext(
                 touPoints = termsOfUseAdvancedTargetingHelper.getTouPoints(),
                 userDisabledAi = isAiBlocked,
                 areNotificationsEnabled = notificationManager.areNotificationsEnabledSafe(),
-                areMarketingNotificationsEnabled = notificationManager
-                    .isNotificationChannelEnabled(MARKETING_CHANNEL_ID),
+                areMarketingNotificationsEnabled =
+                    notificationManager.isNotificationChannelEnabled(MARKETING_CHANNEL_ID),
             )
         }
 
@@ -244,8 +235,7 @@ class RecordedNimbusContext(
         /**
          * Checks whether an eligible user has opted out of any sponsored top sites or stories.
          *
-         *  @return `true` if the user has opted out of any sponsored top sites or stories,
-         * `false` otherwise.
+         * @return `true` if the user has opted out of any sponsored top sites or stories, `false` otherwise.
          */
         private fun Settings.noShortcutsOrStoriesOptOuts(context: Context) =
             !optedOutOfSponsoredTopSites() && !optedOutOfSponsoredStories(context)
@@ -253,12 +243,11 @@ class RecordedNimbusContext(
         /**
          * Checks whether an eligible user has opted out of the sponsored top sites feature.
          *
-         * This is not entirely self evident from the API descriptions, please note:
-         * [Settings.showContileFeature] indicates whether the sponsored shortcuts are shown.
-         * [Settings.showTopSitesFeature] indicates whether the feature should be shown at all.
+         * This is not entirely self evident from the API descriptions, please note: [Settings.showContileFeature]
+         * indicates whether the sponsored shortcuts are shown. [Settings.showTopSitesFeature] indicates whether the
+         * feature should be shown at all.
          */
-        private fun Settings.optedOutOfSponsoredTopSites() =
-            !showContileFeature || !showTopSitesFeature
+        private fun Settings.optedOutOfSponsoredTopSites() = !showContileFeature || !showTopSitesFeature
 
         private fun Settings.optedOutOfSponsoredStories(context: Context) =
             isEligibleForStories(context) && (!showPocketSponsoredStories || !showPocketRecommendationsFeature)

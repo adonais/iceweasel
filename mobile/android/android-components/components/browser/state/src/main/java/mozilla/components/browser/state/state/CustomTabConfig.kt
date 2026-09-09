@@ -45,28 +45,20 @@ data class CustomTabConfig(
     val externalAppType: ExternalAppType = ExternalAppType.CUSTOM_TAB,
 )
 
-/**
- * Represents different contexts that a custom tab session can be displayed in.
- */
+/** Represents different contexts that a custom tab session can be displayed in. */
 enum class ExternalAppType {
-    /**
-     * Custom tab is displayed as a normal custom tab with toolbar.
-     */
+    /** Custom tab is displayed as a normal custom tab with toolbar. */
     CUSTOM_TAB,
 
-    /**
-     * Custom tab toolbar is hidden inside a Progressive Web App created by the browser.
-     */
+    /** Custom tab toolbar is hidden inside a Progressive Web App created by the browser. */
     PROGRESSIVE_WEB_APP,
 
-    /**
-     * Custom tab is displayed fullscreen inside a Trusted Web Activity from an external app.
-     */
+    /** Custom tab is displayed fullscreen inside a Trusted Web Activity from an external app. */
     TRUSTED_WEB_ACTIVITY,
 
     /**
-     * Custom tab that is displayed during onboarding. It has limited options to prevent users from
-     * bypassing the onboarding flow.
+     * Custom tab that is displayed during onboarding. It has limited options to prevent users from bypassing the
+     * onboarding flow.
      */
     ONBOARDING_CUSTOM_TAB,
 }

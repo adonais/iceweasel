@@ -29,23 +29,26 @@ class CustomTabColorsDelegateTest {
     private lateinit var browserScreenStore: BrowserScreenStore
     private lateinit var customTab: CustomTabSessionState
 
-    private val defaultColorSchemeParams = ColorSchemeParams(
-        toolbarColor = Color.CYAN,
-        navigationBarColor = Color.WHITE,
-        navigationBarDividerColor = Color.MAGENTA,
-    )
+    private val defaultColorSchemeParams =
+        ColorSchemeParams(
+            toolbarColor = Color.CYAN,
+            navigationBarColor = Color.WHITE,
+            navigationBarDividerColor = Color.MAGENTA,
+        )
 
-    private val lightColorSchemeParams = ColorSchemeParams(
-        toolbarColor = Color.BLACK,
-        navigationBarColor = Color.BLUE,
-        navigationBarDividerColor = Color.YELLOW,
-    )
+    private val lightColorSchemeParams =
+        ColorSchemeParams(
+            toolbarColor = Color.BLACK,
+            navigationBarColor = Color.BLUE,
+            navigationBarDividerColor = Color.YELLOW,
+        )
 
-    private val darkColorSchemeParams = ColorSchemeParams(
-        toolbarColor = Color.DKGRAY,
-        navigationBarColor = Color.GRAY,
-        navigationBarDividerColor = Color.WHITE,
-    )
+    private val darkColorSchemeParams =
+        ColorSchemeParams(
+            toolbarColor = Color.DKGRAY,
+            navigationBarColor = Color.GRAY,
+            navigationBarDividerColor = Color.WHITE,
+        )
 
     @Test
     fun `GIVEN no configured colors WHEN computing the color scheme THEN return null`() {
@@ -56,11 +59,7 @@ class CustomTabColorsDelegateTest {
 
     @Test
     fun `GIVEN only default colors scheme configured WHEN computing the color scheme THEN use the default`() {
-        updateCustomColorsConfiguration(
-            ColorSchemes(
-                defaultColorSchemeParams = defaultColorSchemeParams,
-            ),
-        )
+        updateCustomColorsConfiguration(ColorSchemes(defaultColorSchemeParams = defaultColorSchemeParams))
 
         assertEquals(
             CustomTabColors(
@@ -69,9 +68,10 @@ class CustomTabColorsDelegateTest {
                 navigationBarColor = defaultColorSchemeParams.navigationBarColor,
                 navigationBarDividerColor = defaultColorSchemeParams.navigationBarDividerColor,
                 readableColor = Color.BLACK,
-                secondaryReadableColor = defaultColorSchemeParams.toolbarColor?.let {
-                    ColorUtils.getSecondaryReadableTextColor(it)
-                },
+                secondaryReadableColor =
+                    defaultColorSchemeParams.toolbarColor?.let {
+                        ColorUtils.getSecondaryReadableTextColor(it)
+                    },
             ),
             browserScreenStore.state.customTabColors,
         )
@@ -80,11 +80,7 @@ class CustomTabColorsDelegateTest {
     @Test
     fun `GIVEN no navigation bar color configured WHEN computing the color scheme THEN use the toolbar color for the navigation bar also`() {
         updateCustomColorsConfiguration(
-            ColorSchemes(
-                defaultColorSchemeParams = defaultColorSchemeParams.copy(
-                    navigationBarColor = null,
-                ),
-            ),
+            ColorSchemes(defaultColorSchemeParams = defaultColorSchemeParams.copy(navigationBarColor = null))
         )
 
         assertEquals(
@@ -94,9 +90,10 @@ class CustomTabColorsDelegateTest {
                 navigationBarColor = defaultColorSchemeParams.toolbarColor,
                 navigationBarDividerColor = defaultColorSchemeParams.navigationBarDividerColor,
                 readableColor = Color.BLACK,
-                secondaryReadableColor = defaultColorSchemeParams.toolbarColor?.let {
-                    ColorUtils.getSecondaryReadableTextColor(it)
-                },
+                secondaryReadableColor =
+                    defaultColorSchemeParams.toolbarColor?.let {
+                        ColorUtils.getSecondaryReadableTextColor(it)
+                    },
             ),
             browserScreenStore.state.customTabColors,
         )
@@ -105,11 +102,12 @@ class CustomTabColorsDelegateTest {
     @Test
     fun `GIVEN following light system theme WHEN computing the color scheme THEN use the light color scheme`() {
         updateCustomColorsConfiguration(
-            customTabColorSchemes = ColorSchemes(
-                defaultColorSchemeParams = defaultColorSchemeParams,
-                lightColorSchemeParams = lightColorSchemeParams,
-                darkColorSchemeParams = darkColorSchemeParams,
-            ),
+            customTabColorSchemes =
+                ColorSchemes(
+                    defaultColorSchemeParams = defaultColorSchemeParams,
+                    lightColorSchemeParams = lightColorSchemeParams,
+                    darkColorSchemeParams = darkColorSchemeParams,
+                ),
             deviceUiMode = UI_MODE_NIGHT_NO,
             shouldFollowDeviceTheme = true,
             shouldUseLightTheme = true,
@@ -122,9 +120,10 @@ class CustomTabColorsDelegateTest {
                 navigationBarColor = lightColorSchemeParams.navigationBarColor,
                 navigationBarDividerColor = lightColorSchemeParams.navigationBarDividerColor,
                 readableColor = Color.WHITE,
-                secondaryReadableColor = lightColorSchemeParams.toolbarColor?.let {
-                    ColorUtils.getSecondaryReadableTextColor(it)
-                },
+                secondaryReadableColor =
+                    lightColorSchemeParams.toolbarColor?.let {
+                        ColorUtils.getSecondaryReadableTextColor(it)
+                    },
             ),
             browserScreenStore.state.customTabColors,
         )
@@ -133,10 +132,11 @@ class CustomTabColorsDelegateTest {
     @Test
     fun `GIVEN following light system theme but no light color scheme configured WHEN computing the color scheme THEN use the default color scheme`() {
         updateCustomColorsConfiguration(
-            customTabColorSchemes = ColorSchemes(
-                defaultColorSchemeParams = defaultColorSchemeParams,
-                darkColorSchemeParams = darkColorSchemeParams,
-            ),
+            customTabColorSchemes =
+                ColorSchemes(
+                    defaultColorSchemeParams = defaultColorSchemeParams,
+                    darkColorSchemeParams = darkColorSchemeParams,
+                ),
             deviceUiMode = UI_MODE_NIGHT_NO,
             shouldFollowDeviceTheme = true,
             shouldUseLightTheme = true,
@@ -149,9 +149,10 @@ class CustomTabColorsDelegateTest {
                 navigationBarColor = defaultColorSchemeParams.navigationBarColor,
                 navigationBarDividerColor = defaultColorSchemeParams.navigationBarDividerColor,
                 readableColor = Color.BLACK,
-                secondaryReadableColor = defaultColorSchemeParams.toolbarColor?.let {
-                    ColorUtils.getSecondaryReadableTextColor(it)
-                },
+                secondaryReadableColor =
+                    defaultColorSchemeParams.toolbarColor?.let {
+                        ColorUtils.getSecondaryReadableTextColor(it)
+                    },
             ),
             browserScreenStore.state.customTabColors,
         )
@@ -160,11 +161,12 @@ class CustomTabColorsDelegateTest {
     @Test
     fun `GIVEN following dark system theme WHEN computing the color scheme THEN use the dark color scheme`() {
         updateCustomColorsConfiguration(
-            customTabColorSchemes = ColorSchemes(
-                defaultColorSchemeParams = defaultColorSchemeParams,
-                lightColorSchemeParams = lightColorSchemeParams,
-                darkColorSchemeParams = darkColorSchemeParams,
-            ),
+            customTabColorSchemes =
+                ColorSchemes(
+                    defaultColorSchemeParams = defaultColorSchemeParams,
+                    lightColorSchemeParams = lightColorSchemeParams,
+                    darkColorSchemeParams = darkColorSchemeParams,
+                ),
             deviceUiMode = UI_MODE_NIGHT_YES,
             shouldFollowDeviceTheme = true,
             shouldUseLightTheme = false,
@@ -177,9 +179,10 @@ class CustomTabColorsDelegateTest {
                 navigationBarColor = darkColorSchemeParams.navigationBarColor,
                 navigationBarDividerColor = darkColorSchemeParams.navigationBarDividerColor,
                 readableColor = Color.WHITE,
-                secondaryReadableColor = darkColorSchemeParams.toolbarColor?.let {
-                    ColorUtils.getSecondaryReadableTextColor(it)
-                },
+                secondaryReadableColor =
+                    darkColorSchemeParams.toolbarColor?.let {
+                        ColorUtils.getSecondaryReadableTextColor(it)
+                    },
             ),
             browserScreenStore.state.customTabColors,
         )
@@ -188,10 +191,11 @@ class CustomTabColorsDelegateTest {
     @Test
     fun `GIVEN following dark system theme but no dark color scheme configured WHEN computing the color scheme THEN use the default color scheme`() {
         updateCustomColorsConfiguration(
-            customTabColorSchemes = ColorSchemes(
-                defaultColorSchemeParams = defaultColorSchemeParams,
-                lightColorSchemeParams = lightColorSchemeParams,
-            ),
+            customTabColorSchemes =
+                ColorSchemes(
+                    defaultColorSchemeParams = defaultColorSchemeParams,
+                    lightColorSchemeParams = lightColorSchemeParams,
+                ),
             deviceUiMode = UI_MODE_NIGHT_YES,
             shouldFollowDeviceTheme = true,
             shouldUseLightTheme = false,
@@ -204,9 +208,10 @@ class CustomTabColorsDelegateTest {
                 navigationBarColor = defaultColorSchemeParams.navigationBarColor,
                 navigationBarDividerColor = defaultColorSchemeParams.navigationBarDividerColor,
                 readableColor = Color.BLACK,
-                secondaryReadableColor = defaultColorSchemeParams.toolbarColor?.let {
-                    ColorUtils.getSecondaryReadableTextColor(it)
-                },
+                secondaryReadableColor =
+                    defaultColorSchemeParams.toolbarColor?.let {
+                        ColorUtils.getSecondaryReadableTextColor(it)
+                    },
             ),
             browserScreenStore.state.customTabColors,
         )
@@ -215,11 +220,12 @@ class CustomTabColorsDelegateTest {
     @Test
     fun `GIVEN device light theme WHEN computing the color scheme THEN use the light color scheme`() {
         updateCustomColorsConfiguration(
-            customTabColorSchemes = ColorSchemes(
-                defaultColorSchemeParams = defaultColorSchemeParams,
-                lightColorSchemeParams = lightColorSchemeParams,
-                darkColorSchemeParams = darkColorSchemeParams,
-            ),
+            customTabColorSchemes =
+                ColorSchemes(
+                    defaultColorSchemeParams = defaultColorSchemeParams,
+                    lightColorSchemeParams = lightColorSchemeParams,
+                    darkColorSchemeParams = darkColorSchemeParams,
+                ),
             shouldFollowDeviceTheme = false,
             shouldUseLightTheme = true,
         )
@@ -231,9 +237,10 @@ class CustomTabColorsDelegateTest {
                 navigationBarColor = lightColorSchemeParams.navigationBarColor,
                 navigationBarDividerColor = lightColorSchemeParams.navigationBarDividerColor,
                 readableColor = Color.WHITE,
-                secondaryReadableColor = lightColorSchemeParams.toolbarColor?.let {
-                    ColorUtils.getSecondaryReadableTextColor(it)
-                },
+                secondaryReadableColor =
+                    lightColorSchemeParams.toolbarColor?.let {
+                        ColorUtils.getSecondaryReadableTextColor(it)
+                    },
             ),
             browserScreenStore.state.customTabColors,
         )
@@ -242,11 +249,12 @@ class CustomTabColorsDelegateTest {
     @Test
     fun `GIVEN device dark theme WHEN computing the color scheme THEN use the dark color scheme`() {
         updateCustomColorsConfiguration(
-            customTabColorSchemes = ColorSchemes(
-                defaultColorSchemeParams = defaultColorSchemeParams,
-                lightColorSchemeParams = lightColorSchemeParams,
-                darkColorSchemeParams = darkColorSchemeParams,
-            ),
+            customTabColorSchemes =
+                ColorSchemes(
+                    defaultColorSchemeParams = defaultColorSchemeParams,
+                    lightColorSchemeParams = lightColorSchemeParams,
+                    darkColorSchemeParams = darkColorSchemeParams,
+                ),
             shouldFollowDeviceTheme = false,
             shouldUseLightTheme = false,
         )
@@ -258,9 +266,10 @@ class CustomTabColorsDelegateTest {
                 navigationBarColor = darkColorSchemeParams.navigationBarColor,
                 navigationBarDividerColor = darkColorSchemeParams.navigationBarDividerColor,
                 readableColor = Color.WHITE,
-                secondaryReadableColor = darkColorSchemeParams.toolbarColor?.let {
-                    ColorUtils.getSecondaryReadableTextColor(it)
-                },
+                secondaryReadableColor =
+                    darkColorSchemeParams.toolbarColor?.let {
+                        ColorUtils.getSecondaryReadableTextColor(it)
+                    },
             ),
             browserScreenStore.state.customTabColors,
         )
@@ -272,13 +281,12 @@ class CustomTabColorsDelegateTest {
         shouldFollowDeviceTheme: Boolean = true,
         shouldUseLightTheme: Boolean = false,
     ) {
-        customTab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                colorSchemes = customTabColorSchemes,
-            ),
-        )
+        customTab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(colorSchemes = customTabColorSchemes),
+            )
         browserScreenStore = BrowserScreenStore()
         browserScreenStore.updateCustomTabsColors(
             context = testContext,

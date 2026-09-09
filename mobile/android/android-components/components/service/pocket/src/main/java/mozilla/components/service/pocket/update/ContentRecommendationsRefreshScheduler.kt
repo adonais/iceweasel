@@ -22,17 +22,14 @@ import mozilla.components.support.base.worker.Frequency
  *
  * @property config Configuration for how content recommendations should be refreshed.
  */
-class ContentRecommendationsRefreshScheduler(
-    private val config: PocketStoriesConfig,
-) {
+class ContentRecommendationsRefreshScheduler(private val config: PocketStoriesConfig) {
     internal fun startPeriodicWork(context: Context) {
-        getWorkManager(context).enqueueUniquePeriodicWork(
-            REFRESH_WORK_TAG,
-            ExistingPeriodicWorkPolicy.KEEP,
-            createPeriodicWorkRequest(
-                frequency = config.contentRecommendationsRefreshFrequency,
-            ),
-        )
+        getWorkManager(context)
+            .enqueueUniquePeriodicWork(
+                REFRESH_WORK_TAG,
+                ExistingPeriodicWorkPolicy.KEEP,
+                createPeriodicWorkRequest(frequency = config.contentRecommendationsRefreshFrequency),
+            )
 
         logger.info("Started periodic work to refresh content recommendations")
     }
@@ -44,25 +41,22 @@ class ContentRecommendationsRefreshScheduler(
     }
 
     @VisibleForTesting
-    internal fun createPeriodicWorkRequest(
-        frequency: Frequency,
-    ): PeriodicWorkRequest {
+    internal fun createPeriodicWorkRequest(frequency: Frequency): PeriodicWorkRequest {
         val constraints = getWorkerConstraints()
 
         return PeriodicWorkRequestBuilder<ContentRecommendationsRefreshWorker>(
-            frequency.repeatInterval,
-            frequency.repeatIntervalTimeUnit,
-        ).apply {
-            setConstraints(constraints)
-            addTag(REFRESH_WORK_TAG)
-        }.build()
+                frequency.repeatInterval,
+                frequency.repeatIntervalTimeUnit,
+            )
+            .apply {
+                setConstraints(constraints)
+                addTag(REFRESH_WORK_TAG)
+            }
+            .build()
     }
 
     @VisibleForTesting
-    internal fun getWorkerConstraints() = Constraints.Builder()
-        .setRequiredNetworkType(NetworkType.CONNECTED)
-        .build()
+    internal fun getWorkerConstraints() = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
-    @VisibleForTesting
-    internal fun getWorkManager(context: Context) = WorkManager.getInstance(context)
+    @VisibleForTesting internal fun getWorkManager(context: Context) = WorkManager.getInstance(context)
 }

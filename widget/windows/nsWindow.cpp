@@ -1259,14 +1259,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   mDefaultIMC.Init(this);
   IMEHandler::InitInputContext(this, mInputContext);
 
-  static bool a11yPrimed = false;
-  if (!a11yPrimed && mWindowType == WindowType::TopLevel) {
-    a11yPrimed = true;
-    if (Preferences::GetInt("accessibility.force_disabled", 0) == -1) {
-      ::PostMessage(mWnd, MOZ_WM_STARTA11Y, 0, 0);
-    }
-  }
-
   RecreateDirectManipulationIfNeeded();
 
   return NS_OK;
@@ -1411,13 +1403,6 @@ static DWORD WindowStylesRemovedForBorderStyle(BorderStyle aStyle) {
   }
   if (!(aStyle & BorderStyle::Title)) {
     toRemove |= WS_DLGFRAME;
-  }
-  if (!(aStyle & (BorderStyle::Menu | BorderStyle::Close))) {
-    // Looks like getting rid of the system menu also does away with the close
-    // box. So, we only get rid of the system menu and the close box if you
-    // want neither. How does the Windows "Dialog" window class get just
-    // closebox and no sysmenu? Who knows.
-    toRemove |= WS_SYSMENU;
   }
   if (!(aStyle & BorderStyle::ResizeH)) {
     toRemove |= WS_THICKFRAME;
@@ -1575,6 +1560,12 @@ static int32_t RoundDown(double aDouble) {
                      : static_cast<int32_t>(ceil(aDouble));
 }
 
+// This reports Windows' logical DPI (96 times the display scale the user
+// selected), whereas the nsIWidget default reports the display's physical DPI.
+// As a result, AppUnitsPerPhysicalInch matches AppUnitsPerCSSInch here but not
+// on other platforms.
+// FIXME: It's unclear whether this divergence is intentional. If it isn't,
+// this override should be removed in favour of the default implementation.
 float nsWindow::GetDPI() { return GetDefaultScaleInternal() * 96.0f; }
 
 double nsWindow::GetDefaultScaleInternal() {
@@ -1669,17 +1660,6 @@ void nsWindow::Show(bool aState) {
       ::NotifyWinEvent(EVENT_OBJECT_FOCUS, mWnd, OBJID_CLIENT, CHILDID_SELF);
     }
 #endif  // defined(ACCESSIBILITY)
-
-    // A window that took over the pre-XUL skeleton UI was born in its size mode
-    // rather than transitioning into it, so
-    // TaskbarConcealer::OnWindowMaximized() was never called and Windows may
-    // misdetect the maximized window as fullscreen. BrowserGlue applies the
-    // custom titlebar before showing the window, so mCustomNonClient is already
-    // accurate here.
-    if (mCustomNonClient &&
-        mFrameState->GetSizeMode() == nsSizeMode_Maximized) {
-      TaskbarConcealer::OnWindowMaximized(this, /* aForce = */ true);
-    }
   }
 #  endif
 
@@ -1849,6 +1829,16 @@ void nsWindow::Show(bool aState) {
                            SWP_NOACTIVATE);
       }
     }
+  }
+
+  if (aState && mWnd) {
+    // Windows may misdetect a maximized window with a custom non-client area as
+    // fullscreen, which stops an auto-hiding taskbar from appearing. It makes
+    // that determination when the window is shown, so the not-fullscreen state
+    // has to be re-asserted here: marking it any earlier (when the size mode
+    // was set, while the window was still hidden) happens too soon to take
+    // effect. See bug 1957069 and bug 2064534.
+    TaskbarConcealer::OnWindowShown(this);
   }
 
   if (!wasVisible && aState) {
@@ -2856,6 +2846,15 @@ void nsWindow::SetCustomTitlebar(bool aCustomTitlebar) {
   }
   if (ShouldAssociateWithWinAppSDK()) {
     WindowsUIUtils::SetIsTitlebarCollapsed(mWnd, mCustomNonClient);
+  }
+
+  if (mCustomNonClient && mIsVisible &&
+      mFrameState->GetSizeMode() == nsSizeMode_Maximized) {
+    // Acquiring a custom non-client area is what makes Windows liable to
+    // misdetect this maximized window as fullscreen, so re-assert the
+    // not-fullscreen state if that happens after the window is already up. See
+    // bug 1957069 and bug 2064534.
+    TaskbarConcealer::OnWindowMaximized(this, /* aForce = */ true);
   }
 }
 
@@ -4091,7 +4090,7 @@ void nsWindow::DispatchPendingEvents() {
 
 void nsWindow::DispatchCustomEvent(const nsString& eventName) {
   if (Document* doc = GetDocument()) {
-    if (nsPIDOMWindowOuter* win = doc->GetWindow()) {
+    if (const nsCOMPtr<nsPIDOMWindowOuter> win = doc->GetWindow()) {
       win->DispatchCustomEvent(eventName, ChromeOnlyDispatch::eYes);
     }
   }
@@ -4693,7 +4692,9 @@ LRESULT CALLBACK nsWindow::WindowProcInternal(HWND hWnd, UINT msg,
   // Hold the window for the life of this method, in case it gets
   // destroyed during processing, unless we're in the dtor already.
   nsCOMPtr<nsIWidget> kungFuDeathGrip;
-  if (!targetWindow->mInDtor) kungFuDeathGrip = targetWindow;
+  if (!targetWindow->mInDtor) {
+    kungFuDeathGrip = targetWindow;
+  }
 
   targetWindow->IPCWindowProcHandler(msg, wParam, lParam);
 
@@ -4708,7 +4709,8 @@ LRESULT CALLBACK nsWindow::WindowProcInternal(HWND hWnd, UINT msg,
 
   // Call ProcessMessage
   LRESULT retValue;
-  if (targetWindow->ProcessMessage(msg, wParam, lParam, &retValue)) {
+  if (MOZ_KnownLive(targetWindow)
+          ->ProcessMessage(msg, wParam, lParam, &retValue)) {
     return retValue;
   }
 
@@ -4815,15 +4817,6 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       *aRetValue = !shouldCancelQuit;
       result = true;
     } break;
-
-    case MOZ_WM_STARTA11Y:
-#if defined(ACCESSIBILITY)
-      (void)GetAccessible();
-      result = true;
-#else
-      result = false;
-#endif
-      break;
 
     case WM_ENDSESSION: {
       // For WM_ENDSESSION, wParam indicates whether we need to shutdown

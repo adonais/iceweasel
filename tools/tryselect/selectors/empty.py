@@ -18,6 +18,7 @@ class EmptyParser(BaseTryParser):
         "extensions",
         "gecko-profile",
         "pernosco",
+        "pushdate",
         "routes",
         "target-tasks-method",
         "worker-overrides",

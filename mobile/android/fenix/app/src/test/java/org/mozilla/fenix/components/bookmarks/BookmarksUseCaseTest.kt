@@ -9,6 +9,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -30,22 +31,21 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.home.bookmarks.Bookmark
-import java.util.concurrent.TimeUnit
-import kotlin.test.assertNotNull
 
 class BookmarksUseCaseTest {
 
-    private fun folder(guid: String, title: String = "Folder $guid") = BookmarkNode(
-        type = BookmarkNodeType.FOLDER,
-        guid = guid,
-        parentGuid = null,
-        position = 0u,
-        title = title,
-        url = null,
-        dateAdded = 0,
-        lastModified = 0,
-        children = emptyList(),
-    )
+    private fun folder(guid: String, title: String = "Folder $guid") =
+        BookmarkNode(
+            type = BookmarkNodeType.FOLDER,
+            guid = guid,
+            parentGuid = null,
+            position = 0u,
+            title = title,
+            url = null,
+            dateAdded = 0,
+            lastModified = 0,
+            children = emptyList(),
+        )
 
     @Test
     fun `WHEN adding existing bookmark THEN no new item is stored`() = runTest {
@@ -68,68 +68,74 @@ class BookmarksUseCaseTest {
     }
 
     @Test
-    fun `GIVEN cache is empty WHEN adding bookmark THEN new item is stored under Mobile root and cache is untouched`() = runTest {
-        val bookmarksStorage = mockk<BookmarksStorage>()
-        val historyStorage = mockk<HistoryStorage>(relaxed = true)
-        val lastSavedFolderCache = mockk<LastSavedFolderCache>(relaxed = true)
-        val mobileRoot = folder(BookmarkRoot.Mobile.id)
-        val useCase = BookmarksUseCase(bookmarksStorage, historyStorage, lastSavedFolderCache)
+    fun `GIVEN cache is empty WHEN adding bookmark THEN new item is stored under Mobile root and cache is untouched`() =
+        runTest {
+            val bookmarksStorage = mockk<BookmarksStorage>()
+            val historyStorage = mockk<HistoryStorage>(relaxed = true)
+            val lastSavedFolderCache = mockk<LastSavedFolderCache>(relaxed = true)
+            val mobileRoot = folder(BookmarkRoot.Mobile.id)
+            val useCase = BookmarksUseCase(bookmarksStorage, historyStorage, lastSavedFolderCache)
 
-        coEvery { lastSavedFolderCache.getGuid() } returns null
-        coEvery { bookmarksStorage.getBookmark(BookmarkRoot.Mobile.id) } returns Result.success(mobileRoot)
-        coEvery { bookmarksStorage.getBookmarksWithUrl(eq("https://mozilla.org")) }.coAnswers { Result.success(listOf()) }
-        coEvery { bookmarksStorage.addItem(any(), any(), any(), any()) } returns Result.success("id")
+            coEvery { lastSavedFolderCache.getGuid() } returns null
+            coEvery { bookmarksStorage.getBookmark(BookmarkRoot.Mobile.id) } returns Result.success(mobileRoot)
+            coEvery { bookmarksStorage.getBookmarksWithUrl(eq("https://mozilla.org")) }
+                .coAnswers { Result.success(listOf()) }
+            coEvery { bookmarksStorage.addItem(any(), any(), any(), any()) } returns Result.success("id")
 
-        val result = useCase.addBookmark("https://mozilla.org", "Mozilla")
+            val result = useCase.addBookmark("https://mozilla.org", "Mozilla")
 
-        assertEquals("id", result.guidToEdit)
-        assertSame(mobileRoot, result.parentNode)
-        coVerify { bookmarksStorage.addItem(BookmarkRoot.Mobile.id, "https://mozilla.org", "Mozilla", null) }
-        coVerify(exactly = 0) { lastSavedFolderCache.setGuid(any()) }
-    }
-
-    @Test
-    fun `GIVEN cache holds a valid folder WHEN adding bookmark THEN new item is stored under that folder and cache is untouched`() = runTest {
-        val bookmarksStorage = mockk<BookmarksStorage>()
-        val historyStorage = mockk<HistoryStorage>(relaxed = true)
-        val lastSavedFolderCache = mockk<LastSavedFolderCache>(relaxed = true)
-        val cachedFolder = folder("cached-folder", "Cached")
-        val useCase = BookmarksUseCase(bookmarksStorage, historyStorage, lastSavedFolderCache)
-
-        coEvery { lastSavedFolderCache.getGuid() } returns "cached-folder"
-        coEvery { bookmarksStorage.getBookmark("cached-folder") } returns Result.success(cachedFolder)
-        coEvery { bookmarksStorage.getBookmarksWithUrl(eq("https://mozilla.org")) }.coAnswers { Result.success(listOf()) }
-        coEvery { bookmarksStorage.addItem(any(), any(), any(), any()) } returns Result.success("id")
-
-        val result = useCase.addBookmark("https://mozilla.org", "Mozilla")
-
-        assertEquals("id", result.guidToEdit)
-        assertSame(cachedFolder, result.parentNode)
-        coVerify { bookmarksStorage.addItem("cached-folder", "https://mozilla.org", "Mozilla", null) }
-        coVerify(exactly = 0) { lastSavedFolderCache.setGuid(any()) }
-    }
+            assertEquals("id", result.guidToEdit)
+            assertSame(mobileRoot, result.parentNode)
+            coVerify { bookmarksStorage.addItem(BookmarkRoot.Mobile.id, "https://mozilla.org", "Mozilla", null) }
+            coVerify(exactly = 0) { lastSavedFolderCache.setGuid(any()) }
+        }
 
     @Test
-    fun `GIVEN cache holds a folder that no longer exists WHEN adding bookmark THEN falls back to Mobile root and cache is cleared`() = runTest {
-        val bookmarksStorage = mockk<BookmarksStorage>()
-        val historyStorage = mockk<HistoryStorage>(relaxed = true)
-        val lastSavedFolderCache = mockk<LastSavedFolderCache>(relaxed = true)
-        val mobileRoot = folder(BookmarkRoot.Mobile.id)
-        val useCase = BookmarksUseCase(bookmarksStorage, historyStorage, lastSavedFolderCache)
+    fun `GIVEN cache holds a valid folder WHEN adding bookmark THEN new item is stored under that folder and cache is untouched`() =
+        runTest {
+            val bookmarksStorage = mockk<BookmarksStorage>()
+            val historyStorage = mockk<HistoryStorage>(relaxed = true)
+            val lastSavedFolderCache = mockk<LastSavedFolderCache>(relaxed = true)
+            val cachedFolder = folder("cached-folder", "Cached")
+            val useCase = BookmarksUseCase(bookmarksStorage, historyStorage, lastSavedFolderCache)
 
-        coEvery { lastSavedFolderCache.getGuid() } returns "stale-folder"
-        coEvery { bookmarksStorage.getBookmark("stale-folder") } returns Result.success(null)
-        coEvery { bookmarksStorage.getBookmark(BookmarkRoot.Mobile.id) } returns Result.success(mobileRoot)
-        coEvery { bookmarksStorage.getBookmarksWithUrl(eq("https://mozilla.org")) }.coAnswers { Result.success(listOf()) }
-        coEvery { bookmarksStorage.addItem(any(), any(), any(), any()) } returns Result.success("id")
+            coEvery { lastSavedFolderCache.getGuid() } returns "cached-folder"
+            coEvery { bookmarksStorage.getBookmark("cached-folder") } returns Result.success(cachedFolder)
+            coEvery { bookmarksStorage.getBookmarksWithUrl(eq("https://mozilla.org")) }
+                .coAnswers { Result.success(listOf()) }
+            coEvery { bookmarksStorage.addItem(any(), any(), any(), any()) } returns Result.success("id")
 
-        val result = useCase.addBookmark("https://mozilla.org", "Mozilla")
+            val result = useCase.addBookmark("https://mozilla.org", "Mozilla")
 
-        assertEquals("id", result.guidToEdit)
-        assertSame(mobileRoot, result.parentNode)
-        coVerify { bookmarksStorage.addItem(BookmarkRoot.Mobile.id, "https://mozilla.org", "Mozilla", null) }
-        coVerify(exactly = 1) { lastSavedFolderCache.setGuid(null) }
-    }
+            assertEquals("id", result.guidToEdit)
+            assertSame(cachedFolder, result.parentNode)
+            coVerify { bookmarksStorage.addItem("cached-folder", "https://mozilla.org", "Mozilla", null) }
+            coVerify(exactly = 0) { lastSavedFolderCache.setGuid(any()) }
+        }
+
+    @Test
+    fun `GIVEN cache holds a folder that no longer exists WHEN adding bookmark THEN falls back to Mobile root and cache is cleared`() =
+        runTest {
+            val bookmarksStorage = mockk<BookmarksStorage>()
+            val historyStorage = mockk<HistoryStorage>(relaxed = true)
+            val lastSavedFolderCache = mockk<LastSavedFolderCache>(relaxed = true)
+            val mobileRoot = folder(BookmarkRoot.Mobile.id)
+            val useCase = BookmarksUseCase(bookmarksStorage, historyStorage, lastSavedFolderCache)
+
+            coEvery { lastSavedFolderCache.getGuid() } returns "stale-folder"
+            coEvery { bookmarksStorage.getBookmark("stale-folder") } returns Result.success(null)
+            coEvery { bookmarksStorage.getBookmark(BookmarkRoot.Mobile.id) } returns Result.success(mobileRoot)
+            coEvery { bookmarksStorage.getBookmarksWithUrl(eq("https://mozilla.org")) }
+                .coAnswers { Result.success(listOf()) }
+            coEvery { bookmarksStorage.addItem(any(), any(), any(), any()) } returns Result.success("id")
+
+            val result = useCase.addBookmark("https://mozilla.org", "Mozilla")
+
+            assertEquals("id", result.guidToEdit)
+            assertSame(mobileRoot, result.parentNode)
+            coVerify { bookmarksStorage.addItem(BookmarkRoot.Mobile.id, "https://mozilla.org", "Mozilla", null) }
+            coVerify(exactly = 1) { lastSavedFolderCache.setGuid(null) }
+        }
 
     @Test
     fun `GIVEN explicit parentGuid WHEN adding bookmark THEN parent is honored and cache is untouched`() = runTest {
@@ -140,7 +146,8 @@ class BookmarksUseCaseTest {
         val useCase = BookmarksUseCase(bookmarksStorage, historyStorage, lastSavedFolderCache)
 
         coEvery { bookmarksStorage.getBookmark("explicit") } returns Result.success(explicitFolder)
-        coEvery { bookmarksStorage.getBookmarksWithUrl(eq("https://mozilla.org")) }.coAnswers { Result.success(listOf()) }
+        coEvery { bookmarksStorage.getBookmarksWithUrl(eq("https://mozilla.org")) }
+            .coAnswers { Result.success(listOf()) }
         coEvery { bookmarksStorage.addItem(any(), any(), any(), any()) } returns Result.success("id")
 
         val result = useCase.addBookmark("https://mozilla.org", "Mozilla", parentGuid = "explicit")
@@ -153,19 +160,20 @@ class BookmarksUseCaseTest {
     }
 
     @Test
-    fun `GIVEN edited is true and update succeeds WHEN editing a bookmark THEN cache is updated to the new parent`() = runTest {
-        val bookmarksStorage = mockk<BookmarksStorage>()
-        val lastSavedFolderCache = mockk<LastSavedFolderCache>(relaxed = true)
-        val info = BookmarkInfo(parentGuid = "new-folder", position = null, title = "t", url = "u")
-        val useCase = BookmarksUseCase.EditBookmarkUseCase(bookmarksStorage, lastSavedFolderCache)
+    fun `GIVEN edited is true and update succeeds WHEN editing a bookmark THEN cache is updated to the new parent`() =
+        runTest {
+            val bookmarksStorage = mockk<BookmarksStorage>()
+            val lastSavedFolderCache = mockk<LastSavedFolderCache>(relaxed = true)
+            val info = BookmarkInfo(parentGuid = "new-folder", position = null, title = "t", url = "u")
+            val useCase = BookmarksUseCase.EditBookmarkUseCase(bookmarksStorage, lastSavedFolderCache)
 
-        coEvery { bookmarksStorage.updateNode("bm", info) } returns Result.success(Unit)
+            coEvery { bookmarksStorage.updateNode("bm", info) } returns Result.success(Unit)
 
-        val success = useCase(guid = "bm", info = info, edited = true)
+            val success = useCase(guid = "bm", info = info, edited = true)
 
-        assertTrue(success)
-        coVerify(exactly = 1) { lastSavedFolderCache.setGuid("new-folder") }
-    }
+            assertTrue(success)
+            coVerify(exactly = 1) { lastSavedFolderCache.setGuid("new-folder") }
+        }
 
     @Test
     fun `GIVEN edited is false WHEN editing a bookmark THEN cache is not touched`() = runTest {
@@ -205,11 +213,12 @@ class BookmarksUseCaseTest {
 
         val updateStarted = CompletableDeferred<Unit>()
         val updateGate = CompletableDeferred<Unit>()
-        coEvery { bookmarksStorage.updateNode("bm", info) } coAnswers {
-            updateStarted.complete(Unit)
-            updateGate.await()
-            Result.success(Unit)
-        }
+        coEvery { bookmarksStorage.updateNode("bm", info) } coAnswers
+            {
+                updateStarted.complete(Unit)
+                updateGate.await()
+                Result.success(Unit)
+            }
 
         val callerScope = CoroutineScope(coroutineContext + Job())
         val deferred = callerScope.async { useCase(guid = "bm", info = info, edited = true) }
@@ -232,36 +241,40 @@ class BookmarksUseCaseTest {
         val useCase = BookmarksUseCase(bookmarksStorage, historyStorage, lastSavedFolderCache)
         val historyTimeFrameSlot = slot<Long>()
 
-        val visitInfo = VisitInfo(
-            url = "https://www.firefox.com",
-            title = "firefox",
-            visitTime = 2,
-            visitType = VisitType.LINK,
-            previewImageUrl = "http://firefox.com/image1",
-            isRemote = false,
-        )
-        val bookmarkNode = BookmarkNode(
-            BookmarkNodeType.ITEM,
-            "987",
-            "123",
-            2u,
-            "Firefox",
-            "https://www.firefox.com",
-            0,
-            0,
-            null,
-        )
+        val visitInfo =
+            VisitInfo(
+                url = "https://www.firefox.com",
+                title = "firefox",
+                visitTime = 2,
+                visitType = VisitType.LINK,
+                previewImageUrl = "http://firefox.com/image1",
+                isRemote = false,
+            )
+        val bookmarkNode =
+            BookmarkNode(
+                BookmarkNodeType.ITEM,
+                "987",
+                "123",
+                2u,
+                "Firefox",
+                "https://www.firefox.com",
+                0,
+                0,
+                null,
+            )
 
         coEvery {
             historyStorage.getDetailedVisits(capture(historyTimeFrameSlot), any())
-        }.coAnswers { listOf(visitInfo) }
+        }
+            .coAnswers { listOf(visitInfo) }
 
         coEvery {
             bookmarksStorage.getRecentBookmarks(
                 any(),
                 any(),
             )
-        }.coAnswers { Result.success(listOf(bookmarkNode)) }
+        }
+            .coAnswers { Result.success(listOf(bookmarkNode)) }
 
         val result = useCase.retrieveRecentBookmarks(BookmarksUseCase.DEFAULT_BOOKMARKS_TO_RETRIEVE)
 
@@ -271,7 +284,7 @@ class BookmarksUseCaseTest {
                     title = bookmarkNode.title,
                     url = bookmarkNode.url,
                     previewImageUrl = visitInfo.previewImageUrl,
-                ),
+                )
             ),
             result,
         )

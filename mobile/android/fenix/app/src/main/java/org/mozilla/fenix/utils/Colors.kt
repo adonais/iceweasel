@@ -4,7 +4,5 @@
 
 package org.mozilla.fenix.utils
 
-/**
- * Converts a string of hexadecimal characters to a Long color value.
- */
+/** Converts a string of hexadecimal characters to a Long color value. */
 fun String.toHexColor() = toLong(radix = 16)

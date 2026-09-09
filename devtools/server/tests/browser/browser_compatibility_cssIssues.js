@@ -110,6 +110,8 @@ async function testNodeCssIssues(selector, walker, compatibility, expected) {
 }
 
 add_task(async function () {
+  await setMockCompatibilityDataset();
+
   const { inspector, walker, target } = await initInspectorFront(URL);
   const compatibility = await inspector.getCompatibilityFront();
 

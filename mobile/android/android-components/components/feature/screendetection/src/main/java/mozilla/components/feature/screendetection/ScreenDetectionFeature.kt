@@ -13,52 +13,37 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import mozilla.components.support.base.log.logger.Logger
 import java.util.function.Consumer
+import mozilla.components.support.base.log.logger.Logger
 
-/**
- * Represents the different modes for detecting screen capture events.
- */
+/** Represents the different modes for detecting screen capture events. */
 enum class DetectionMode {
-    /**
-     * Detects a screen capture.
-     */
+    /** Detects a screen capture. */
     SCREEN_CAPTURE,
 
-    /**
-     * Detects when the screen is being recorded.
-     */
+    /** Detects when the screen is being recorded. */
     SCREEN_RECORDING,
 
-    /**
-     * Detects both screenshots and screen recordings.
-     */
+    /** Detects both screenshots and screen recordings. */
     ALL,
 }
 
-/**
- * Default callback for screen recording state changes.
- * Logs whether the app window is being recorded.
- */
-private val defaultScreenRecordingCallback = Consumer<Int> { state ->
-    if (state == WindowManager.SCREEN_RECORDING_STATE_VISIBLE) {
-        Logger.info("ScreenDetectionFeature: App window is being recorded")
-    } else {
-        Logger.info("ScreenDetectionFeature: App window is not being recorded")
+/** Default callback for screen recording state changes. Logs whether the app window is being recorded. */
+private val defaultScreenRecordingCallback =
+    Consumer<Int> { state ->
+        if (state == WindowManager.SCREEN_RECORDING_STATE_VISIBLE) {
+            Logger.info("ScreenDetectionFeature: App window is being recorded")
+        } else {
+            Logger.info("ScreenDetectionFeature: App window is not being recorded")
+        }
     }
-}
 
-/**
- * Default callback for screen capture events.
- * Logs when a screenshot is taken.
- */
+/** Default callback for screen capture events. Logs when a screenshot is taken. */
 private val defaultScreenCaptureCallback = ScreenCaptureCallback {
     Logger.info("ScreenDetectionFeature: A screenshot was taken")
 }
 
-/**
- * Helper object to check the SDK version for feature support.
- */
+/** Helper object to check the SDK version for feature support. */
 object ScreenDetectionSdkVersionHelper {
     /**
      * Checks if the device supports screen recording detection.
@@ -66,8 +51,7 @@ object ScreenDetectionSdkVersionHelper {
      * @return `true` if the device's SDK version is at least Vanilla Ice Cream, `false` otherwise.
      */
     @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.VANILLA_ICE_CREAM)
-    fun isScreenRecordingDetectionSupported(): Boolean =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM
+    fun isScreenRecordingDetectionSupported(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM
 
     /**
      * Checks if the device supports screenshot detection.
@@ -75,8 +59,7 @@ object ScreenDetectionSdkVersionHelper {
      * @return `true` if the device's SDK version is at least Upside Down Cake, `false` otherwise.
      */
     @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    fun isScreenCaptureDetectionSupported(): Boolean =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+    fun isScreenCaptureDetectionSupported(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
 }
 
 /**
@@ -103,8 +86,9 @@ class ScreenDetectionFeature(
             return
         }
 
-        if (screenDetectionSdkVersionHelper.isScreenRecordingDetectionSupported() &&
-            (detectionMode == DetectionMode.SCREEN_RECORDING || detectionMode == DetectionMode.ALL)
+        if (
+            screenDetectionSdkVersionHelper.isScreenRecordingDetectionSupported() &&
+                (detectionMode == DetectionMode.SCREEN_RECORDING || detectionMode == DetectionMode.ALL)
         ) {
             registerScreenRecordingCallback()
         }
@@ -120,9 +104,7 @@ class ScreenDetectionFeature(
         }
 
         if (screenDetectionSdkVersionHelper.isScreenRecordingDetectionSupported()) {
-            activity.windowManager.removeScreenRecordingCallback(
-                screenRecordingCallback,
-            )
+            activity.windowManager.removeScreenRecordingCallback(screenRecordingCallback)
         }
 
         activity.unregisterScreenCaptureCallback(screenCaptureCallback)

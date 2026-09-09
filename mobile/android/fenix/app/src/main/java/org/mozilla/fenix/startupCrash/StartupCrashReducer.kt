@@ -4,16 +4,18 @@
 
 package org.mozilla.fenix.startupCrash
 
-internal fun startupCrashReducer(state: StartupCrashState, action: StartupCrashAction) = when (action) {
-    is NoTapped -> {
-        state.copy(uiState = UiState.Finished)
+internal fun startupCrashReducer(state: StartupCrashState, action: StartupCrashAction) =
+    when (action) {
+        is NoTapped -> {
+            state.copy(uiState = UiState.Finished)
+        }
+        is ReportTapped -> {
+            state.copy(uiState = UiState.Loading)
+        }
+        is CrashReportCompleted -> {
+            state.copy(uiState = UiState.Finished)
+        }
+        is ReopenTapped -> {
+            state
+        }
     }
-    is ReportTapped -> {
-        state.copy(uiState = UiState.Loading)
-    }
-    is CrashReportCompleted -> {
-        state.copy(uiState = UiState.Finished)
-    }
-    is ReopenTapped,
-    -> { state }
-}

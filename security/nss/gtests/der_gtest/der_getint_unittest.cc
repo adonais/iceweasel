@@ -16,20 +16,20 @@ namespace nss_test {
 
 class DERIntegerDecodingTest : public ::testing::Test {
  public:
-  void TestGetInteger(long number, unsigned char *der_number,
+  void TestGetInteger(long number, unsigned char* der_number,
                       unsigned int len) {
     SECItem input = {siBuffer, der_number, len};
     EXPECT_EQ(number, DER_GetInteger(&input));
   }
 
-  void GetDerLongMax(unsigned char *der_number, unsigned int len) {
+  void GetDerLongMax(unsigned char* der_number, unsigned int len) {
     der_number[0] = 0x7F;
     for (unsigned int i = 1; i < len; ++i) {
       der_number[i] = 0xFF;
     }
   }
 
-  void GetDerLongMin(unsigned char *der_number, unsigned int len) {
+  void GetDerLongMin(unsigned char* der_number, unsigned int len) {
     der_number[0] = 0x80;
     for (unsigned int i = 1; i < len; ++i) {
       der_number[i] = 0x00;

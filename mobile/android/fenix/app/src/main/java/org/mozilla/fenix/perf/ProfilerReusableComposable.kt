@@ -82,9 +82,7 @@ fun ProfilerLabeledRadioButton(
  * @param message String resource ID for the message to display above the spinner
  */
 @Composable
-fun WaitForProfilerDialog(
-    @StringRes message: Int,
-) {
+fun WaitForProfilerDialog(@StringRes message: Int) {
     ProfilerDialogueCard {
         Column(
             modifier = Modifier.padding(8.dp),
@@ -127,9 +125,7 @@ fun BaseProfilerDialogContent(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     ProfilerDialogueCard {
-        Column(
-            modifier = modifier.padding(16.dp),
-        ) {
+        Column(modifier = modifier.padding(16.dp)) {
             Text(
                 text = titleText,
                 fontWeight = FontWeight.ExtraBold,
@@ -196,9 +192,7 @@ fun ProfilerErrorDialog(
 
 @Preview
 @Composable
-private fun ProfilerDialogueCardPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun ProfilerDialogueCardPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     val radioOptions = listOf("Firefox", "Graphics", "Media", "Networking")
     val selectedOption = remember { mutableStateOf("Firefox") }
 

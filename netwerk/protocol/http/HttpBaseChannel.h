@@ -617,6 +617,12 @@ class HttpBaseChannel : public nsHashPropertyBag,
   }
 
  protected:
+  nsCString GetSecPurpose() const {
+    nsCString secPurpose;
+    (void)mRequestHead.GetHeader(nsHttp::Sec_Purpose, secPurpose);
+    return secPurpose;
+  }
+
   nsresult GetTopWindowURI(nsIURI* aURIBeingLoaded, nsIURI** aTopWindowURI);
 
   // Handle notifying listener, removing from loadgroup if request failed.
@@ -1208,7 +1214,7 @@ nsresult HttpAsyncAborter<T>::AsyncCall(void (T::*funcPtr)(),
 
   RefPtr<nsRunnableMethod<T>> event =
       NewRunnableMethod("net::HttpAsyncAborter::AsyncCall", mThis, funcPtr);
-  rv = NS_DispatchToCurrentThread(event);
+  rv = DispatchToCurrent(event);
   if (NS_SUCCEEDED(rv) && retval) {
     *retval = event;
   }

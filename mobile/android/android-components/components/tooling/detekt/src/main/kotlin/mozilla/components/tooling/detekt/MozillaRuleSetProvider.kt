@@ -9,18 +9,17 @@ import io.gitlab.arturbosch.detekt.api.RuleSet
 import io.gitlab.arturbosch.detekt.api.RuleSetProvider
 import mozilla.components.tooling.detekt.naming.ClassAcronymCasingRule
 
-/**
- * Set of custom Mozilla rules to be loaded in detekt utility.
- */
+/** Set of custom Mozilla rules to be loaded in detekt utility. */
 class MozillaRuleSetProvider : RuleSetProvider {
 
     override val ruleSetId = "mozilla-rules"
 
-    override fun instance(config: Config) = RuleSet(
-        ruleSetId,
-        listOf(
-            ProjectLicenseRule(config),
-            ClassAcronymCasingRule(config),
-        ),
-    )
+    override fun instance(config: Config) =
+        RuleSet(
+            ruleSetId,
+            listOf(
+                ProjectLicenseRule(config),
+                ClassAcronymCasingRule(config),
+            ),
+        )
 }

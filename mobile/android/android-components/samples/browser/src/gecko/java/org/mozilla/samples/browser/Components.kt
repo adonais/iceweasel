@@ -16,9 +16,7 @@ import mozilla.components.support.base.log.Log
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoRuntimeSettings
 
-/**
- * Helper class for lazily instantiating components needed by the application.
- */
+/** Helper class for lazily instantiating components needed by the application. */
 class Components(private val applicationContext: Context) : DefaultComponents(applicationContext) {
     private val runtime by lazy {
         // Allow for exfiltrating Gecko metrics through the Glean SDK.

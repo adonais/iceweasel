@@ -182,10 +182,10 @@ class SVGContentUtils {
    *        space to the space in which non-scaling stroke should be applied.
    *        Must be rectilinear.
    */
-  static void RectilinearGetStrokeBounds(const Rect& aRect,
+  static Rect RectilinearGetStrokeBounds(const Rect& aRect,
                                          const Matrix& aToBoundsSpace,
                                          const Matrix& aToNonScalingStrokeSpace,
-                                         float aStrokeWidth, Rect* aBounds);
+                                         float aStrokeWidth);
 
   static dom::SVGViewportElement* GetNearestViewportElement(
       const nsIContent* aContent);

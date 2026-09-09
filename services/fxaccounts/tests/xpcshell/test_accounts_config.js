@@ -137,7 +137,9 @@ add_task(async function test_promise_account_service_param() {
     "https://accounts.firefox.com/"
   );
 
-  let url = new URL(await FxAccounts.config.promiseConnectAccountURI("test"));
+  let url = new URL(
+    await FxAccounts.config.promiseConnectAccountURI("sync", "test")
+  );
   Assert.equal(url.searchParams.get("context"), "oauth_webchannel_v1");
   Assert.equal(
     url.searchParams.get("client_id"),
@@ -146,9 +148,7 @@ add_task(async function test_promise_account_service_param() {
   Assert.equal(url.searchParams.get("service"), "sync");
 
   let url2 = new URL(
-    await FxAccounts.config.promiseConnectAccountURI("test", {
-      service: "custom-service",
-    })
+    await FxAccounts.config.promiseConnectAccountURI("custom-service", "test")
   );
   Assert.equal(url2.searchParams.get("context"), "oauth_webchannel_v1");
   Assert.equal(
@@ -157,4 +157,24 @@ add_task(async function test_promise_account_service_param() {
   );
 
   Assert.equal(url2.searchParams.get("service"), "custom-service");
+});
+
+add_task(async function test_misc() {
+  Assert.equal(
+    await FxAccounts.config.promiseMetricsFlowURI("ep"),
+    "https://accounts.firefox.com/metrics-flow?entrypoint=ep"
+  );
+  Assert.equal(
+    await FxAccounts.config.promiseMetricsFlowURI("ep", { foo: "bar" }),
+    "https://accounts.firefox.com/metrics-flow?entrypoint=ep&foo=bar"
+  );
+
+  Assert.equal(
+    await FxAccounts.config.promisePairingURI(),
+    "https://accounts.firefox.com/pair"
+  );
+  Assert.equal(
+    await FxAccounts.config.promisePairingURI({ foo: "bar" }),
+    "https://accounts.firefox.com/pair?foo=bar"
+  );
 });

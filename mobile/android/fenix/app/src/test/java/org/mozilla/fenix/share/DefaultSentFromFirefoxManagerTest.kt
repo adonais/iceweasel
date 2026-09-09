@@ -87,11 +87,12 @@ class DefaultSentFromFirefoxManagerTest {
 
     @Test
     fun `GIVEN feature and snackbar are enabled, snackbar has not been shown WHEN shared message is appended THEN we should show snackbar`() {
-        val testedFeature = buildDefaultFeature(
-            isFeatureEnabled = true,
-            isSnackbarEnabled = true,
-            isLinkSharingSettingsSnackbarShown = false,
-        )
+        val testedFeature =
+            buildDefaultFeature(
+                isFeatureEnabled = true,
+                isSnackbarEnabled = true,
+                isLinkSharingSettingsSnackbarShown = false,
+            )
 
         testedFeature.maybeAppendShareText(WHATSAPP_PACKAGE_NAME, SHARE_MESSAGE)
 
@@ -105,14 +106,16 @@ class DefaultSentFromFirefoxManagerTest {
         templateMessage: String = TEMPLATE_MESSAGE,
         appName: String = APP_NAME,
         downloadLink: String = DOWNLOAD_LINK,
-    ) = DefaultSentFromFirefoxManager(
-        snackbarEnabled = isSnackbarEnabled,
-        templateMessage = templateMessage,
-        appName = appName,
-        downloadLink = downloadLink,
-        storage = object : SentFromStorage {
-            override var isLinkSharingSettingsSnackbarShown = isLinkSharingSettingsSnackbarShown
-            override val featureEnabled: Boolean = isFeatureEnabled
-        },
-    )
+    ) =
+        DefaultSentFromFirefoxManager(
+            snackbarEnabled = isSnackbarEnabled,
+            templateMessage = templateMessage,
+            appName = appName,
+            downloadLink = downloadLink,
+            storage =
+                object : SentFromStorage {
+                    override var isLinkSharingSettingsSnackbarShown = isLinkSharingSettingsSnackbarShown
+                    override val featureEnabled: Boolean = isFeatureEnabled
+                },
+        )
 }

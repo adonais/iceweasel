@@ -141,6 +141,8 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(NodeIterator)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(NodeIterator)
   if (tmp->mRoot) tmp->mRoot->RemoveMutationObserver(tmp);
+  tmp->mPointer.Clear();
+  tmp->mWorkingPointer.Clear();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mRoot)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFilter)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END

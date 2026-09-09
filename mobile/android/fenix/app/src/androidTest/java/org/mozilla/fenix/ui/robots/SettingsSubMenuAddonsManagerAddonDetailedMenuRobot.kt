@@ -25,10 +25,7 @@ import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.ViewVisibilityIdlingResource
 import org.mozilla.fenix.helpers.click
 
-/**
- * Implementation of Robot Pattern for a single Addon inside of the Addons Management Settings.
- */
-
+/** Implementation of Robot Pattern for a single Addon inside of the Addons Management Settings. */
 class SettingsSubMenuAddonsManagerAddonDetailedMenuRobot {
 
     fun disableExtension() {
@@ -45,7 +42,9 @@ class SettingsSubMenuAddonsManagerAddonDetailedMenuRobot {
     }
 
     class Transition(private val composeTestRule: ComposeTestRule) {
-        fun goBack(interact: SettingsSubMenuAddonsManagerRobot.() -> Unit): SettingsSubMenuAddonsManagerRobot.Transition {
+        fun goBack(
+            interact: SettingsSubMenuAddonsManagerRobot.() -> Unit
+        ): SettingsSubMenuAddonsManagerRobot.Transition {
             Log.i(TAG, "goBack: Trying to click the navigate up button")
             onView(allOf(withContentDescription("Navigate up"))).click()
             Log.i(TAG, "goBack: Clicked the navigate up button")
@@ -54,12 +53,15 @@ class SettingsSubMenuAddonsManagerAddonDetailedMenuRobot {
             return SettingsSubMenuAddonsManagerRobot.Transition(composeTestRule)
         }
 
-        fun removeAddon(activityTestRule: ActivityTestRule<HomeActivity>, interact: SettingsSubMenuAddonsManagerRobot.() -> Unit): SettingsSubMenuAddonsManagerRobot.Transition {
+        fun removeAddon(
+            activityTestRule: ActivityTestRule<HomeActivity>,
+            interact: SettingsSubMenuAddonsManagerRobot.() -> Unit,
+        ): SettingsSubMenuAddonsManagerRobot.Transition {
             registerAndCleanupIdlingResources(
                 ViewVisibilityIdlingResource(
                     activityTestRule.activity.findViewById(R.id.addon_container),
                     View.VISIBLE,
-                ),
+                )
             ) {
                 Log.i(TAG, "removeAddon: Trying to verify that the remove add-on button is visible")
                 removeAddonButton().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
@@ -75,7 +77,6 @@ class SettingsSubMenuAddonsManagerAddonDetailedMenuRobot {
     }
 }
 
-private fun removeAddonButton() =
-    onView(withId(R.id.remove_add_on))
+private fun removeAddonButton() = onView(withId(R.id.remove_add_on))
 
 private fun enableOrDisableExtensionToggle() = itemWithResId("$packageName:id/enable_switch")

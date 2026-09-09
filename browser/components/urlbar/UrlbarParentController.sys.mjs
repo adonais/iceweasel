@@ -10,8 +10,9 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
  * @import {SearchEngine} from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
  * @import {SapLocation, SmartbarInput} from "moz-src:///browser/components/urlbar/content/SmartbarInput.mjs"
  * @import {UrlbarView} from "chrome://browser/content/urlbar/UrlbarView.mjs"
- * @import {WindowMode} from "moz-src:///browser/components/urlbar/content/UrlbarInput.mjs"
+ * @import {WindowMode} from "moz-src:///browser/components/urlbar/content/UrlbarInputBase.mjs"
  * @import {SearchEngineInfo} from "chrome://browser/content/urlbar/SearchEngineStore.mjs"
+ * @import {UrlbarLoadRequest} from "chrome://browser/content/urlbar/UrlbarShared.mjs"
  */
 
 const lazy = {};
@@ -154,6 +155,7 @@ export class UrlbarParentController {
 
     this.engagementEvent = new TelemetryEvent(this);
     lazy.UrlbarProviderTopSites.addTopSitesListener(this.#topSitesListener);
+    Services.obs.addObserver(this, "intl:app-locales-changed", true);
   }
 
   /**
@@ -187,6 +189,17 @@ export class UrlbarParentController {
   }
 
   /**
+   * Whether the view showing these results renders in a content process, which
+   * decodes what it displays itself. For an in-page urlbar that is the
+   * privileged about process.
+   *
+   * @type {boolean}
+   */
+  get rendersInContentProcess() {
+    return !!this.#actor?.browsingContext?.isContent;
+  }
+
+  /**
    * Resolves the `<browser>` a `browserId` refers to. A content sender always
    * targets its own tab, so its `browserId` is ignored; only a chrome sender
    * resolves a pinned id globally.
@@ -217,31 +230,14 @@ export class UrlbarParentController {
   }
 
   /**
-   * Returns the view update a dynamic result's provider produces for the
-   * given node ids. Mediates the view's access to the (parent-process)
-   * provider.
-   *
-   * @param {UrlbarResult} result The dynamic result.
-   * @param {object} idsByName A map from node names to element ids.
-   * @returns {Promise<object>} The view update.
-   */
-  getViewUpdate(result, idsByName) {
-    // On the message path this round-trips asynchronously, so the provider can
-    // be unregistered by the time it runs. In practice this only happens in
-    // tests, which unregister providers mid-run while a superseded query's row
-    // is still tearing down. The update is then moot; return nothing and let
-    // the view skip it.
-    return this.manager
-      .getProvider(result.providerName)
-      ?.getViewUpdate(result, idsByName);
-  }
-
-  /**
    * Notifies a result's provider that the result is about to be selected.
    * Mediates the view's access to the (parent-process) provider.
    *
-   * @param {UrlbarResult} result The result being selected.
-   * @param {Element} element The selected element.
+   * @param {UrlbarResult} result
+   *   The result being selected.
+   * @param {Element} [element]
+   *   The selected element. Undefined in the message path.
+   *   New providers should not use this parameter!
    */
   onBeforeSelection(result, element) {
     this.manager
@@ -254,12 +250,11 @@ export class UrlbarParentController {
    * view's access to the (parent-process) provider.
    *
    * @param {UrlbarResult} result The selected result.
-   * @param {Element} element The selected element.
    */
-  onSelection(result, element) {
+  onSelection(result) {
     this.manager
       .getProvider(result?.providerName)
-      ?.tryMethod("onSelection", result, element);
+      ?.tryMethod("onSelection", result);
   }
 
   /**
@@ -299,8 +294,9 @@ export class UrlbarParentController {
    *   The id of the browser committed at Enter; its per-tab data and navigation
    *   epoch are read here, defaulting to the selected browser.
    * @returns {Promise<object>}
-   *   `{ heuristicResult }` to pick, `{ fixup: { url, postData, keywordAsSent } }`
-   *   to load, or `{}` when the browser navigated in the meanwhile.
+   *   `{ heuristicResult }` to pick,
+   *   `{ fixup: { url, postData: ?string, keywordAsSent } }` to load, or `{}`
+   *   when the browser navigated in the meanwhile.
    */
   async resolveFallbackNavigation({
     searchString,
@@ -371,7 +367,16 @@ export class UrlbarParentController {
           Services.uriFixup.getFixupURIInfo(searchString, flags);
         return navigated()
           ? {}
-          : { fixup: { url: preferredURI.spec, postData, keywordAsSent } };
+          : {
+              fixup: {
+                url: preferredURI.spec,
+                // Post data only happens if the default engine is POST (rare)
+                postData: postData
+                  ? lazy.UrlbarUtils.getPostDataString(postData)
+                  : null,
+                keywordAsSent,
+              },
+            };
       } catch (fixupEx) {
         // uriFixup can throw; swallow it so the resolve never rejects.
         console.error(fixupEx);
@@ -914,7 +919,7 @@ export class UrlbarParentController {
             // Speculative connect only if search suggestions are enabled.
             if (
               (lazy.UrlbarPrefs.get("suggest.searches") ||
-                context.sapName == "searchbar") &&
+                context.isSearchbarSAP) &&
               lazy.UrlbarPrefs.get("browser.search.suggest.enabled")
             ) {
               let engine = lazy.SearchService.getEngineByName(
@@ -965,8 +970,8 @@ export class UrlbarParentController {
    * revert the input.
    *
    * @param {object} loadData
-   * @param {string} loadData.url
-   *   The URL to load.
+   * @param {UrlbarLoadRequest} loadData.loadRequest
+   *   What to load.
    * @param {string} loadData.where
    *   Where to open, per `openTrustedLinkIn`.
    * @param {object} loadData.params
@@ -983,10 +988,16 @@ export class UrlbarParentController {
    *   browser to hand `focusBrowser` on the deferred-Enter keyup -- a
    *   content-process input can't resolve the selected browser itself.
    */
-  loadURL({ url, where, params, browserId, userTypedValue }) {
+  loadURL({ loadRequest, where, params, browserId, userTypedValue }) {
     let browser =
       this.resolveTargetBrowser(browserId) ||
       this.browserWindow.gBrowser.selectedBrowser;
+
+    let { url, postData } = lazy.UrlbarUtils.loadRequestToUrl(loadRequest);
+    if (!url) {
+      return { reverted: true, browserId: browser.browserId };
+    }
+    params.postData = postData;
 
     if (this.#isAddressbar) {
       this.#prepareAddressbarLoad({
@@ -1279,6 +1290,7 @@ export class UrlbarParentController {
       Services.obs.removeObserver(this, "browser-search-engine-modified");
       this.#engineObserverRegistered = false;
     }
+    Services.obs.removeObserver(this, "intl:app-locales-changed");
   }
 
   /**
@@ -1343,11 +1355,29 @@ export class UrlbarParentController {
   ]);
 
   /**
-   * @param {{wrappedJSObject: SearchEngine}} subject
-   * @param {"browser-search-engine-modified"} _topic
+   * @param {nsISupports} subject
+   * @param {"browser-search-engine-modified"|"intl:app-locales-changed"} topic
    * @param {string} data
    */
-  observe = (subject, _topic, data) => {
+  observe = (subject, topic, data) => {
+    switch (topic) {
+      case "browser-search-engine-modified":
+        this.#onSearchEngineModified(
+          /** @type {{wrappedJSObject: SearchEngine}} */ (subject),
+          data
+        );
+        break;
+      case "intl:app-locales-changed":
+        this.view.clearL10nCache();
+        break;
+    }
+  };
+
+  /**
+   * @param {{wrappedJSObject: SearchEngine}} subject
+   * @param {string} data
+   */
+  #onSearchEngineModified(subject, data) {
     let engine = subject.wrappedJSObject;
     let sortedEngines = lazy.SearchService.visibleEngines;
     let index = sortedEngines.findIndex(e => e == engine);
@@ -1383,7 +1413,7 @@ export class UrlbarParentController {
         }
         break;
     }
-  };
+  }
 }
 
 /**
@@ -1476,7 +1506,7 @@ export class TelemetryEvent {
     }
 
     this._startEventInfo = {
-      timeStamp: event.timeStamp || ChromeUtils.now(),
+      timeStamp: event.timeStamp,
       interactionType:
         interactionType ||
         lazy.UrlbarTelemetryUtils.startInteractionType(event, searchString),
@@ -1645,7 +1675,7 @@ export class TelemetryEvent {
    *
    * @param {string} searchSource
    *   The search source string to convert.
-   * @returns {null|"urlbar"|"searchbar"|"smartbar"|"handoff"|"urlbar_newtab"|"urlbar_addonpage"}
+   * @returns {null|"urlbar"|"newtab_searchbar"|"searchbar"|"smartbar"|"handoff"|"urlbar_newtab"|"urlbar_addonpage"}
    *   The sap value for urlbar.* telemetry or null if the browser window
    *   already started closing. In that case, no telemetry should be recorded.
    */
@@ -1656,6 +1686,9 @@ export class TelemetryEvent {
     // TODO (bug 2024630): Ideally, we would not add every new SAP here.
     if (searchSource === "searchbar") {
       return "searchbar";
+    }
+    if (searchSource === "newtab_searchbar") {
+      return "newtab_searchbar";
     }
     if (searchSource === "smartbar") {
       return "smartbar";

@@ -9,10 +9,13 @@ import mozilla.appservices.fxaclient.AccessTokenInfo
 import mozilla.appservices.fxaclient.AccountEvent
 import mozilla.appservices.fxaclient.AttachedClient
 import mozilla.appservices.fxaclient.Device
+import mozilla.appservices.fxaclient.DeviceCapability as RustDeviceCapability
+import mozilla.appservices.fxaclient.DevicePushSubscription as RustDevicePushSubscription
 import mozilla.appservices.fxaclient.IncomingDeviceCommand
 import mozilla.appservices.fxaclient.Profile
 import mozilla.appservices.fxaclient.ScopedKey
 import mozilla.appservices.fxaclient.TabHistoryEntry
+import mozilla.appservices.sync15.DeviceType as RustDeviceType
 import mozilla.components.concept.sync.AuthType
 import mozilla.components.concept.sync.Avatar
 import mozilla.components.concept.sync.DeviceCapability
@@ -20,13 +23,10 @@ import mozilla.components.concept.sync.DeviceType
 import mozilla.components.concept.sync.OAuthScopedKey
 import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.concept.sync.TabPrivacy
-import mozilla.appservices.fxaclient.DeviceCapability as RustDeviceCapability
-import mozilla.appservices.fxaclient.DevicePushSubscription as RustDevicePushSubscription
-import mozilla.appservices.sync15.DeviceType as RustDeviceType
 
 /**
- * Converts a raw 'action' string into an [AuthType] instance.
- * Actions come to us from FxA during an OAuth login, either over the WebChannel or via the redirect URL.
+ * Converts a raw 'action' string into an [AuthType] instance. Actions come to us from FxA during an OAuth login, either
+ * over the WebChannel or via the redirect URL.
  */
 fun String?.toAuthType(): AuthType {
     return when (this) {
@@ -41,11 +41,12 @@ fun String?.toAuthType(): AuthType {
 
 /**
  * Captures basic OAuth authentication data (code, state) and any additional data FxA passes along.
+ *
  * @property authType Type of authentication which caused this object to be created.
  * @property code OAuth code.
  * @property state OAuth state.
- * @property declinedEngines An optional list of [mozilla.components.concept.sync.SyncEngine]s
- * that user declined to sync.
+ * @property declinedEngines An optional list of [mozilla.components.concept.sync.SyncEngine]s that user declined to
+ *   sync.
  */
 data class FxaAuthData(
     val authType: AuthType,
@@ -72,9 +73,7 @@ fun AccessTokenInfo.into(): mozilla.components.concept.sync.AccessTokenInfo {
     )
 }
 
-/**
- * Converts from rust data type to the [mozilla.components.concept.sync.AttachedClient].
- */
+/** Converts from rust data type to the [mozilla.components.concept.sync.AttachedClient]. */
 fun AttachedClient.into(): mozilla.components.concept.sync.AttachedClient {
     return mozilla.components.concept.sync.AttachedClient(
         clientId = this.clientId,
@@ -96,12 +95,13 @@ fun Profile.into(): mozilla.components.concept.sync.Profile {
     return mozilla.components.concept.sync.Profile(
         uid = this.uid,
         email = this.email,
-        avatar = this.avatar.let {
-            Avatar(
-                url = it,
-                isDefault = this.isDefaultAvatar,
-            )
-        },
+        avatar =
+            this.avatar.let {
+                Avatar(
+                    url = it,
+                    isDefault = this.isDefaultAvatar,
+                )
+            },
         displayName = this.displayName,
     )
 }
@@ -117,10 +117,7 @@ internal fun RustDeviceType.into(): DeviceType {
     }
 }
 
-/**
- * Convert between the native-code DeviceType data class
- * and the one from the corresponding a-c concept.
- */
+/** Convert between the native-code DeviceType data class and the one from the corresponding a-c concept. */
 fun DeviceType.into(): RustDeviceType {
     return when (this) {
         DeviceType.DESKTOP -> RustDeviceType.DESKTOP
@@ -132,10 +129,7 @@ fun DeviceType.into(): RustDeviceType {
     }
 }
 
-/**
- * Convert between the native-code DeviceCapability data class
- * and the one from the corresponding a-c concept.
- */
+/** Convert between the native-code DeviceCapability data class and the one from the corresponding a-c concept. */
 fun DeviceCapability.into(): RustDeviceCapability {
     return when (this) {
         DeviceCapability.SEND_TAB -> RustDeviceCapability.SEND_TAB
@@ -144,8 +138,7 @@ fun DeviceCapability.into(): RustDeviceCapability {
 }
 
 /**
- * Convert between the a-c concept DeviceCapability class and the corresponding
- * native-code DeviceCapability data class.
+ * Convert between the a-c concept DeviceCapability class and the corresponding native-code DeviceCapability data class.
  */
 fun RustDeviceCapability.into(): DeviceCapability {
     return when (this) {
@@ -155,8 +148,8 @@ fun RustDeviceCapability.into(): DeviceCapability {
 }
 
 /**
- * Convert between the a-c concept DevicePushSubscription class and the corresponding
- * native-code DevicePushSubscription data class.
+ * Convert between the a-c concept DevicePushSubscription class and the corresponding native-code DevicePushSubscription
+ * data class.
  */
 fun mozilla.components.concept.sync.DevicePushSubscription.into(): RustDevicePushSubscription {
     return RustDevicePushSubscription(
@@ -166,10 +159,7 @@ fun mozilla.components.concept.sync.DevicePushSubscription.into(): RustDevicePus
     )
 }
 
-/**
- * Convert between the native-code DevicePushSubscription data class
- * and the one from the corresponding a-c concept.
- */
+/** Convert between the native-code DevicePushSubscription data class and the one from the corresponding a-c concept. */
 fun RustDevicePushSubscription.into(): mozilla.components.concept.sync.DevicePushSubscription {
     return mozilla.components.concept.sync.DevicePushSubscription(
         endpoint = this.endpoint,
@@ -224,12 +214,9 @@ fun AccountEvent.into(): mozilla.components.concept.sync.AccountEvent {
     return when (this) {
         is AccountEvent.CommandReceived ->
             mozilla.components.concept.sync.AccountEvent.DeviceCommandIncoming(command = this.command.into())
-        is AccountEvent.ProfileUpdated ->
-            mozilla.components.concept.sync.AccountEvent.ProfileUpdated
-        is AccountEvent.AccountAuthStateChanged ->
-            mozilla.components.concept.sync.AccountEvent.AccountAuthStateChanged
-        is AccountEvent.AccountDestroyed ->
-            mozilla.components.concept.sync.AccountEvent.AccountDestroyed
+        is AccountEvent.ProfileUpdated -> mozilla.components.concept.sync.AccountEvent.ProfileUpdated
+        is AccountEvent.AccountAuthStateChanged -> mozilla.components.concept.sync.AccountEvent.AccountAuthStateChanged
+        is AccountEvent.AccountDestroyed -> mozilla.components.concept.sync.AccountEvent.AccountDestroyed
         is AccountEvent.DeviceConnected ->
             mozilla.components.concept.sync.AccountEvent.DeviceConnected(deviceName = this.deviceName)
         is AccountEvent.DeviceDisconnected ->

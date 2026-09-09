@@ -20,11 +20,12 @@ class TabThumbnailView(context: Context, attrs: AttributeSet?) : AppCompatImageV
         val result = super.setFrame(l, t, r, b)
 
         val matrix = imageMatrix
-        val scaleFactor = if (drawable != null) {
-            width / drawable.intrinsicWidth.toFloat()
-        } else {
-            1F
-        }
+        val scaleFactor =
+            if (drawable != null) {
+                width / drawable.intrinsicWidth.toFloat()
+            } else {
+                1F
+            }
         matrix.setScale(scaleFactor, scaleFactor, 0f, 0f)
         imageMatrix = matrix
 

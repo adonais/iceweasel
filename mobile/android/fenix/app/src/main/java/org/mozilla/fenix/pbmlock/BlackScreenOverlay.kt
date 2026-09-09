@@ -13,16 +13,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import org.mozilla.fenix.theme.FirefoxTheme
 
-/**
- * A full-screen black overlay used to obscure private browsing content.
- */
+/** A full-screen black overlay used to obscure private browsing content. */
 @Composable
 fun BlackScreenOverlay() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black),
-    )
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black))
 }
 
 @Preview

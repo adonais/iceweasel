@@ -8,28 +8,18 @@ import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction.TabsStorageAction
 
-/**
- *[TabsTrayAction]'s that represent user interactions for the Tab Group feature.
- */
+/** [TabsTrayAction]'s that represent user interactions for the Tab Group feature. */
 sealed interface TabGroupAction : TabsTrayAction {
-    /**
-     * Fired when the user clicks on adding tab(s) to a tab group.
-     */
+    /** Fired when the user clicks on adding tab(s) to a tab group. */
     data object AddToTabGroup : TabGroupAction
 
-    /**
-     * Fired when the user clicks on adding tab(s) to a new tab group.
-     */
+    /** Fired when the user clicks on adding tab(s) to a new tab group. */
     data object AddToNewTabGroup : TabGroupAction
 
-    /**
-     * Fired when the user clicks the Tab Groups page FAB to create a starter tab group.
-     */
+    /** Fired when the user clicks the Tab Groups page FAB to create a starter tab group. */
     data object NewTabGroupFabClicked : TabGroupAction
 
-    /**
-     * Fired when the user clicks the normal tabs menu item to create a starter tab group.
-     */
+    /** Fired when the user clicks the normal tabs menu item to create a starter tab group. */
     data object NewTabGroupMenuClicked : TabGroupAction
 
     /**
@@ -39,14 +29,10 @@ sealed interface TabGroupAction : TabsTrayAction {
      */
     data class OpenCreatedTabGroup(val group: TabsTrayItem.TabGroup) : TabGroupAction
 
-    /**
-     * Fired when the user drags a tab onto another to create a new tab group.
-     */
+    /** Fired when the user drags a tab onto another to create a new tab group. */
     data class DragAndDropTwoTabs(val sourceTabId: String, val destinationTabId: String) : TabGroupAction
 
-    /**
-     * Fired when the drag and drop handling is complete.
-     */
+    /** Fired when the drag and drop handling is complete. */
     data object DragAndDropProcessed : TabGroupAction
 
     /**
@@ -56,9 +42,7 @@ sealed interface TabGroupAction : TabsTrayAction {
      */
     data class NameChanged(val name: String) : TabGroupAction
 
-    /**
-     * Confirms the save of a tab group.
-     */
+    /** Confirms the save of a tab group. */
     data object SaveClicked : TabGroupAction, TabsStorageAction
 
     /**
@@ -97,8 +81,8 @@ sealed interface TabGroupAction : TabsTrayAction {
     data class NewGroupCreated(val id: String) : TabGroupAction
 
     /**
-     * Fired when the user performs an action to add the current collection of
-     * multiselected items to an existing Tab Group.
+     * Fired when the user performs an action to add the current collection of multiselected items to an existing Tab
+     * Group.
      *
      * @property groupId The ID of the group the tabs are being added into.
      */
@@ -159,18 +143,12 @@ sealed interface TabGroupAction : TabsTrayAction {
         val group: TabsTrayItem.TabGroup,
     ) : TabGroupAction, TabsStorageAction
 
-    /**
-     * Invoked when the user dismisses the tab group onboarding card.
-     */
+    /** Invoked when the user dismisses the tab group onboarding card. */
     data object OnboardingDismissed : TabGroupAction, TabManagerUiStateStorageAction
 
-    /**
-     * Invoked when the tab group onboarding card is shown to the user.
-     */
+    /** Invoked when the tab group onboarding card is shown to the user. */
     data object OnboardingShown : TabGroupAction, TabManagerUiStateStorageAction
 
-    /**
-     * Invoked when a new group's animation is played.
-     */
+    /** Invoked when a new group's animation is played. */
     data object NewGroupAnimationFinished : TabGroupAction
 }

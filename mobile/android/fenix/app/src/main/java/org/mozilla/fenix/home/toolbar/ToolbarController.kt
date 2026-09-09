@@ -8,22 +8,14 @@ import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
 
-/**
- * An interface that handles the view manipulation of the home screen toolbar.
- */
+/** An interface that handles the view manipulation of the home screen toolbar. */
 interface ToolbarController {
-    /**
-     * @see [ToolbarInteractor.onNavigateSearch]
-     */
+    /** @see [ToolbarInteractor.onNavigateSearch] */
     fun handleNavigateSearch()
 }
 
-/**
- * The default implementation of [ToolbarController].
- */
-class DefaultToolbarController(
-    private val appStore: AppStore,
-) : ToolbarController {
+/** The default implementation of [ToolbarController]. */
+class DefaultToolbarController(private val appStore: AppStore) : ToolbarController {
     override fun handleNavigateSearch() {
         appStore.dispatch(SearchStarted())
         Events.searchBarTapped.record(Events.SearchBarTappedExtra("HOME"))

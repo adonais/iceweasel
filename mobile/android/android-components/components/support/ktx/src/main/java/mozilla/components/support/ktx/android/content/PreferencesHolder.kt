@@ -11,9 +11,7 @@ import androidx.core.content.edit
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-/**
- * Represents a class that holds a reference to [SharedPreferences].
- */
+/** Represents a class that holds a reference to [SharedPreferences]. */
 interface PreferencesHolder {
     val preferences: SharedPreferences
 }
@@ -111,8 +109,8 @@ private class StringSetPreference(
 }
 
 /**
- * Property delegate for getting and setting a boolean shared preference.
- * Optionally this will persist the default value if one is not already persisted.
+ * Property delegate for getting and setting a boolean shared preference. Optionally this will persist the default value
+ * if one is not already persisted.
  *
  * Example usage:
  * ```
@@ -130,12 +128,11 @@ fun booleanPreference(
     key: String,
     default: Boolean,
     persistDefaultIfNotExists: Boolean = false,
-): ReadWriteProperty<PreferencesHolder, Boolean> =
-    BooleanPreference(key, { default }, persistDefaultIfNotExists)
+): ReadWriteProperty<PreferencesHolder, Boolean> = BooleanPreference(key, { default }, persistDefaultIfNotExists)
 
 /**
- * Property delegate for getting and setting a boolean shared preference.
- * Optionally this will persist the default value if one is not already persisted.
+ * Property delegate for getting and setting a boolean shared preference. Optionally this will persist the default value
+ * if one is not already persisted.
  *
  * The default lambda is not called until the property is read for the first time.
  *
@@ -155,8 +152,7 @@ fun booleanPreference(
     key: String,
     default: () -> Boolean,
     persistDefaultIfNotExists: Boolean = false,
-): ReadWriteProperty<PreferencesHolder, Boolean> =
-    BooleanPreference(key, default, persistDefaultIfNotExists)
+): ReadWriteProperty<PreferencesHolder, Boolean> = BooleanPreference(key, default, persistDefaultIfNotExists)
 
 /**
  * Property delegate for getting and setting a float number shared preference.
@@ -223,7 +219,7 @@ fun intPreference(key: String, default: Int): ReadWriteProperty<PreferencesHolde
  *     var widgetNumInvocations by intPreference(
  *         "widget_number_of_invocations",
  *         default = { 0 },
-*      )
+ *      )
  * }
  * ```
  */
@@ -261,8 +257,8 @@ fun longPreference(key: String, default: () -> Long): ReadWriteProperty<Preferen
     LongPreference(key, default)
 
 /**
- * Property delegate for getting and setting a string shared preference.
- * Optionally this will persist the default value if one is not already persisted.
+ * Property delegate for getting and setting a string shared preference. Optionally this will persist the default value
+ * if one is not already persisted.
  *
  * Example usage:
  * ```
@@ -280,12 +276,11 @@ fun stringPreference(
     key: String,
     default: String,
     persistDefaultIfNotExists: Boolean = false,
-): ReadWriteProperty<PreferencesHolder, String> =
-    StringPreference(key, { default }, persistDefaultIfNotExists)
+): ReadWriteProperty<PreferencesHolder, String> = StringPreference(key, { default }, persistDefaultIfNotExists)
 
 /**
- * Property delegate for getting and setting a string shared preference.
- * Optionally this will persist the default value if one is not already persisted.
+ * Property delegate for getting and setting a string shared preference. Optionally this will persist the default value
+ * if one is not already persisted.
  *
  * The default lambda is not called until the property is read for the first time.
  *
@@ -305,8 +300,7 @@ fun stringPreference(
     key: String,
     default: () -> String,
     persistDefaultIfNotExists: Boolean = false,
-): ReadWriteProperty<PreferencesHolder, String> =
-    StringPreference(key, default, persistDefaultIfNotExists)
+): ReadWriteProperty<PreferencesHolder, String> = StringPreference(key, default, persistDefaultIfNotExists)
 
 /**
  * Property delegate for getting and setting a string set shared preference.
@@ -322,8 +316,7 @@ fun stringPreference(
 fun stringSetPreference(
     key: String,
     default: Set<String>,
-): ReadWriteProperty<PreferencesHolder, Set<String>> =
-    StringSetPreference(key, { default })
+): ReadWriteProperty<PreferencesHolder, Set<String>> = StringSetPreference(key, { default })
 
 /**
  * Property delegate for getting and setting a string set shared preference.
@@ -341,5 +334,4 @@ fun stringSetPreference(
 fun stringSetPreference(
     key: String,
     default: () -> Set<String>,
-): ReadWriteProperty<PreferencesHolder, Set<String>> =
-    StringSetPreference(key, default)
+): ReadWriteProperty<PreferencesHolder, Set<String>> = StringSetPreference(key, default)

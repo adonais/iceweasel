@@ -12,6 +12,8 @@ import androidx.compose.ui.platform.InterceptPlatformTextInput
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.random.Random
 import kotlinx.coroutines.awaitCancellation
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_SEARCH_BOX
 import mozilla.components.concept.toolbar.AutocompleteResult
@@ -19,15 +21,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import java.util.concurrent.atomic.AtomicReference
-import kotlin.random.Random
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @RunWith(RobolectricTestRunner::class)
 class OutputTransformationCrashTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun `WHEN deleteSurroundingText follows commitText in the same batch THEN it does not crash`() {
@@ -82,17 +81,16 @@ class OutputTransformationCrashTest {
         }
     }
 
-    private fun setUpInlineAutocompleteField(
-        query: String = INITIAL_QUERY,
-    ): InputConnection {
+    private fun setUpInlineAutocompleteField(query: String = INITIAL_QUERY): InputConnection {
         val captured = AtomicReference<InputConnection?>(null)
-        val suggestion = AutocompleteResult(
-            input = query,
-            text = query + "x".repeat(SUGGESTION_SUFFIX_LENGTH),
-            url = "",
-            source = "test",
-            totalItems = 1,
-        )
+        val suggestion =
+            AutocompleteResult(
+                input = query,
+                text = query + "x".repeat(SUGGESTION_SUFFIX_LENGTH),
+                url = "",
+                source = "test",
+                totalItems = 1,
+            )
         composeTestRule.setContent {
             InterceptPlatformTextInput(
                 interceptor = { request, _ ->
@@ -101,7 +99,7 @@ class OutputTransformationCrashTest {
                     // to keep the input session live; it cancels cleanly at test teardown.
                     captured.set(request.createInputConnection(EditorInfo()))
                     awaitCancellation()
-                },
+                }
             ) {
                 InlineAutocompleteTextField(
                     query = query,

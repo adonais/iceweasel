@@ -45,7 +45,7 @@ class FilePickerParent : public PFilePickerParent {
       const nsTArray<BlobImplOrString>& aData,
       const nsTArray<RefPtr<BlobImpl>>& aFilesInWebKitDirectory);
 
-  mozilla::ipc::IPCResult RecvOpen(
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult RecvOpen(
       const int16_t& aSelectedType, const bool& aAddToRecentDocs,
       const nsString& aDefaultFile, const nsString& aDefaultExtension,
       nsTArray<nsString>&& aFilters, nsTArray<nsString>&& aFilterNames,

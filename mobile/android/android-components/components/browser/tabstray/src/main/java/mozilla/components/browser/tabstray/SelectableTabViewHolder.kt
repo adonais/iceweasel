@@ -6,12 +6,8 @@ package mozilla.components.browser.tabstray
 
 import android.view.View
 
-/**
- * A contract for selectable ViewHolders for "tab" items.
- */
+/** A contract for selectable ViewHolders for "tab" items. */
 abstract class SelectableTabViewHolder(view: View) : TabViewHolder(view) {
-    /**
-     * Indicates the multi select state of tab item has changed based on [isSelected] .
-     */
+    /** Indicates the multi select state of tab item has changed based on [isSelected] . */
     abstract fun showTabIsMultiSelectEnabled(selectedMaskView: View?, isSelected: Boolean)
 }

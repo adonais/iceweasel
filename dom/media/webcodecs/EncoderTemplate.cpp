@@ -84,6 +84,11 @@ EncoderTemplate<EncoderType>::FlushMessage::FlushMessage(
     WebCodecsId aConfigureId)
     : ControlMessage(aConfigureId) {}
 
+template <typename EncoderType>
+EncoderTemplate<EncoderType>::DebugInfoMessage::DebugInfoMessage(
+    WebCodecsId aConfigureId)
+    : ControlMessage(aConfigureId) {}
+
 /*
  * Below are EncoderTemplate implementation
  */
@@ -258,6 +263,37 @@ void EncoderTemplate<EncoderType>::Close(ErrorResult& aRv) {
 }
 
 template <typename EncoderType>
+already_AddRefed<Promise> EncoderTemplate<EncoderType>::MozRequestDebugInfo(
+    ErrorResult& aRv) {
+  AssertIsOnOwningThread();
+
+  LOG("{}::MozRequestDebugInfo {}", EncoderType::Name.get(), fmt::ptr(this));
+
+  if (mState != CodecState::Configured) {
+    LOG("{} {}, wrong state!", EncoderType::Name.get(), fmt::ptr(this));
+    aRv.ThrowInvalidStateError("Encoder must be configured first");
+    return nullptr;
+  }
+
+  RefPtr<Promise> p = Promise::Create(GetParentObject(), aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return p.forget();
+  }
+
+  auto msg = MakeRefPtr<DebugInfoMessage>(mLatestConfigureId);
+  const auto debugInfoPromiseId = static_cast<int64_t>(msg->mMessageId);
+  MOZ_ASSERT(!mPendingDebugInfoPromises.Contains(debugInfoPromiseId));
+  mPendingDebugInfoPromises.Insert(debugInfoPromiseId, p);
+
+  mControlMessageQueue.emplace(std::move(msg));
+
+  LOG("{} {} enqueues {}", EncoderType::Name.get(), fmt::ptr(this),
+      mControlMessageQueue.back()->ToString().get());
+  ProcessControlMessageQueue();
+  return p.forget();
+}
+
+template <typename EncoderType>
 Result<Ok, nsresult> EncoderTemplate<EncoderType>::ResetInternal(
     const nsresult& aResult) {
   AssertIsOnOwningThread();
@@ -272,7 +308,7 @@ Result<Ok, nsresult> EncoderTemplate<EncoderType>::ResetInternal(
   mEncodeCounter = 0;
   mFlushCounter = 0;
 
-  CancelPendingControlMessagesAndFlushPromises(aResult);
+  CancelPendingControlMessagesAndPromises(aResult);
   DestroyEncoderAgentIfAny();
 
   if (mEncodeQueueSize > 0) {
@@ -521,9 +557,14 @@ void EncoderTemplate<EncoderType>::ProcessControlMessageQueue() {
           MessageProcessedResult::NotProcessed) {
         break;
       }
-    } else {
-      MOZ_ASSERT(msg->AsFlushMessage());
+    } else if (msg->AsFlushMessage()) {
       if (ProcessFlushMessage(msg->AsFlushMessage()) ==
+          MessageProcessedResult::NotProcessed) {
+        break;
+      }
+    } else {
+      MOZ_ASSERT(msg->AsDebugInfoMessage());
+      if (ProcessDebugInfoMessage(msg->AsDebugInfoMessage()) ==
           MessageProcessedResult::NotProcessed) {
         break;
       }
@@ -532,7 +573,7 @@ void EncoderTemplate<EncoderType>::ProcessControlMessageQueue() {
 }
 
 template <typename EncoderType>
-void EncoderTemplate<EncoderType>::CancelPendingControlMessagesAndFlushPromises(
+void EncoderTemplate<EncoderType>::CancelPendingControlMessagesAndPromises(
     const nsresult& aResult) {
   AssertIsOnOwningThread();
 
@@ -556,12 +597,28 @@ void EncoderTemplate<EncoderType>::CancelPendingControlMessagesAndFlushPromises(
     mControlMessageQueue.pop();
   }
 
+  CancelPendingPromises(aResult);
+}
+
+template <typename EncoderType>
+void EncoderTemplate<EncoderType>::CancelPendingPromises(
+    const nsresult& aResult) {
+  AssertIsOnOwningThread();
+
   // If there are pending flush promises, reject them.
   mPendingFlushPromises.Clear([&](const int64_t& id, const RefPtr<Promise>& p) {
     LOG("{} {}, reject the promise for flush {}", EncoderType::Name.get(),
         fmt::ptr(this), id);
     p->MaybeReject(aResult);
   });
+
+  // If there are pending debug info promises, reject them.
+  mPendingDebugInfoPromises.Clear(
+      [&](const int64_t& id, const RefPtr<Promise>& p) {
+        LOG("{} {}, reject the promise for debug info {}",
+            EncoderType::Name.get(), fmt::ptr(this), id);
+        p->MaybeReject(aResult);
+      });
 }
 
 template <typename EncoderType>
@@ -988,12 +1045,12 @@ MessageProcessedResult EncoderTemplate<EncoderType>::ProcessFlushMessage(
   LOG("{} {} starts processing {}", EncoderType::Name.get(), fmt::ptr(this),
       aMessage->ToString().get());
 
-  // No agent, no thing to do. The promise has been rejected with the
-  // appropriate error in ResetInternal already.
+  // No agent, shouldn't happen.
   if (!mAgent) {
-    LOGE("{} {} no agent, nothing to do", EncoderType::Name.get(),
+    LOGE("{} {} no agent, reject promises", EncoderType::Name.get(),
          fmt::ptr(this));
     mProcessingMessage = nullptr;
+    CancelPendingPromises(NS_ERROR_DOM_ABORT_ERR);
     return MessageProcessedResult::Processed;
   }
 
@@ -1084,6 +1141,97 @@ MessageProcessedResult EncoderTemplate<EncoderType>::ProcessFlushMessage(
                        p.value()->MaybeResolveWithUndefined();
                      }
                    });
+               self->mProcessingMessage = nullptr;
+               self->ProcessControlMessageQueue();
+             })
+      ->Track(aMessage->Request());
+
+  return MessageProcessedResult::Processed;
+}
+
+template <typename EncoderType>
+MessageProcessedResult EncoderTemplate<EncoderType>::ProcessDebugInfoMessage(
+    RefPtr<DebugInfoMessage> aMessage) {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(mState == CodecState::Configured);
+  MOZ_ASSERT(aMessage->AsDebugInfoMessage());
+
+  AUTO_ENCODER_MARKER(marker, ".debug");
+
+  if (mProcessingMessage) {
+    return MessageProcessedResult::NotProcessed;
+  }
+
+  mProcessingMessage = aMessage;
+  mControlMessageQueue.pop();
+
+  LOG("{} {} starts processing {}", EncoderType::Name.get(), fmt::ptr(this),
+      aMessage->ToString().get());
+
+  // No agent, shouldn't happen.
+  if (!mAgent) {
+    LOGE("{} {} no agent, reject promises", EncoderType::Name.get(),
+         fmt::ptr(this));
+    mProcessingMessage = nullptr;
+    CancelPendingPromises(NS_ERROR_DOM_ABORT_ERR);
+    return MessageProcessedResult::Processed;
+  }
+
+  mAgent->RequestDebugInfo()
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [self = RefPtr{this}, id = mAgent->mId, aMessage,
+              m = std::move(marker)](
+                 EncoderAgent::DebugInfoPromise::ResolveOrRejectValue&&
+                     aResult) mutable {
+               MOZ_ASSERT(self->mProcessingMessage);
+               MOZ_ASSERT(self->mProcessingMessage->AsDebugInfoMessage());
+               MOZ_ASSERT(self->mState == CodecState::Configured);
+               MOZ_ASSERT(self->mAgent);
+               MOZ_ASSERT(id == self->mAgent->mId);
+               MOZ_ASSERT(self->mActiveConfig);
+
+               LOG("{} {}, EncoderAgent #{} {} has been {}",
+                   EncoderType::Name.get(), fmt::ptr(self.get()), id,
+                   aMessage->ToString().get(),
+                   aResult.IsResolve() ? "resolved" : "rejected");
+
+               aMessage->Complete();
+
+               const auto debugInfoPromiseId =
+                   static_cast<int64_t>(aMessage->mMessageId);
+
+               m.End();
+               AUTO_ENCODER_MARKER(outMarker, ".debug-output");
+
+               self->QueueATask(
+                   "DebugInfo: output debug info task",
+                   [self = RefPtr{self}, result = std::move(aResult),
+                    debugInfoPromiseId, om = std::move(outMarker)]()
+                       MOZ_CAN_RUN_SCRIPT_BOUNDARY mutable {
+                         // If Reset() was invoked before this task executes, or
+                         // during the output callback above in the execution of
+                         // this task, the promise in mPendingDebugInfoPromises
+                         // is handled there. Otherwise, the promise is resolved
+                         // here.
+                         Maybe<RefPtr<Promise>> p =
+                             self->mPendingDebugInfoPromises.Take(
+                                 debugInfoPromiseId);
+                         if (!p) {
+                           return;
+                         }
+
+                         if (result.IsResolve()) {
+                           LOG("{} {}, resolving the promise for debug info {}",
+                               EncoderType::Name.get(), fmt::ptr(self.get()),
+                               debugInfoPromiseId);
+                           p.value()->MaybeResolve(result.ResolveValue());
+                         } else {
+                           LOG("{} {}, rejecting the promise for debug info {}",
+                               EncoderType::Name.get(), fmt::ptr(self.get()),
+                               debugInfoPromiseId);
+                           result.RejectValue().RejectTo(p.value().get());
+                         }
+                       });
                self->mProcessingMessage = nullptr;
                self->ProcessControlMessageQueue();
              })

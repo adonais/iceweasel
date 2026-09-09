@@ -104,6 +104,171 @@ add_task(async function test_mock_play_pause_button() {
 });
 
 /**
+ * Tests that native WebVTT captions take priority over site-wrapper captions.
+ */
+add_task(async function test_mock_native_caption_priority() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "media.videocontrols.picture-in-picture.display-text-tracks.enabled",
+        true,
+      ],
+    ],
+  });
+
+  await BrowserTestUtils.withNewTab(TEST_URL, async browser => {
+    await ensureVideosReady(browser);
+    let videoID = "mock-video-controls";
+
+    await SpecialPowers.spawn(browser, [videoID], async id => {
+      content.document.getElementById(id).textTracks[0].mode = "disabled";
+    });
+
+    let pipWin = await triggerPictureInPicture(browser, videoID);
+    ok(pipWin, "Got Picture-in-Picture window.");
+    let pipBrowser = pipWin.document.getElementById("browser");
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      content.document.querySelector(
+        "#player .captions-container"
+      ).textContent = "wrapper caption";
+    });
+    await SpecialPowers.spawn(pipBrowser, [], async () => {
+      let textTracks = content.document.getElementById("texttracks");
+      await ContentTaskUtils.waitForCondition(
+        () => textTracks.textContent === "wrapper caption",
+        `Waiting for the wrapper caption. Got ${textTracks.textContent}`
+      );
+    });
+
+    await SpecialPowers.spawn(browser, [videoID], async id => {
+      let video = content.document.getElementById(id);
+      let track = video.textTracks[0];
+      track.mode = "showing";
+      let seeked = ContentTaskUtils.waitForEvent(video, "seeked");
+      video.currentTime = 2.5;
+      await seeked;
+      await ContentTaskUtils.waitForCondition(
+        () => track.activeCues?.length,
+        "Waiting for an active native cue"
+      );
+    });
+    await SpecialPowers.spawn(pipBrowser, [], async () => {
+      let textTracks = content.document.getElementById("texttracks");
+      await ContentTaskUtils.waitForCondition(
+        () => textTracks.textContent.includes("track 1"),
+        `Waiting for the native caption. Got ${textTracks.textContent}`
+      );
+    });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      content.document.querySelector(
+        "#player .captions-container"
+      ).textContent = "stale wrapper caption";
+    });
+    await SpecialPowers.spawn(pipBrowser, [], async () => {
+      let textTracks = content.document.getElementById("texttracks");
+      ok(
+        textTracks.textContent.includes("track 1"),
+        "The native caption has priority over the wrapper callback"
+      );
+    });
+
+    await SpecialPowers.spawn(browser, [videoID], async id => {
+      content.document.getElementById(id).textTracks[0].mode = "disabled";
+    });
+    await SpecialPowers.spawn(pipBrowser, [], async () => {
+      let textTracks = content.document.getElementById("texttracks");
+      await ContentTaskUtils.waitForCondition(
+        () => !textTracks.textContent,
+        `Waiting for the native caption to clear. Got ${textTracks.textContent}`
+      );
+    });
+    await SpecialPowers.spawn(browser, [], async () => {
+      content.document.querySelector(
+        "#player .captions-container"
+      ).textContent = "wrapper caption restored";
+    });
+    await SpecialPowers.spawn(pipBrowser, [], async () => {
+      let textTracks = content.document.getElementById("texttracks");
+      await ContentTaskUtils.waitForCondition(
+        () => textTracks.textContent === "wrapper caption restored",
+        `Waiting for the restored wrapper caption. Got ${textTracks.textContent}`
+      );
+    });
+  });
+});
+
+/**
+ * Tests that site-wrapper captions become available when a native WebVTT track
+ * that was active when Picture-in-Picture opened is disabled.
+ */
+add_task(async function test_mock_native_caption_fallback_after_open() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "media.videocontrols.picture-in-picture.display-text-tracks.enabled",
+        true,
+      ],
+    ],
+  });
+
+  await BrowserTestUtils.withNewTab(TEST_URL, async browser => {
+    await ensureVideosReady(browser);
+    let videoID = "mock-video-controls";
+
+    await SpecialPowers.spawn(browser, [videoID], async id => {
+      let video = content.document.getElementById(id);
+      let track = video.textTracks[0];
+      track.mode = "showing";
+      let seeked = ContentTaskUtils.waitForEvent(video, "seeked");
+      video.currentTime = 2.5;
+      await seeked;
+      await ContentTaskUtils.waitForCondition(
+        () => track.activeCues?.length,
+        "Waiting for an active native cue"
+      );
+    });
+
+    let pipWin = await triggerPictureInPicture(browser, videoID);
+    ok(pipWin, "Got Picture-in-Picture window.");
+    let pipBrowser = pipWin.document.getElementById("browser");
+
+    await SpecialPowers.spawn(pipBrowser, [], async () => {
+      let textTracks = content.document.getElementById("texttracks");
+      await ContentTaskUtils.waitForCondition(
+        () => textTracks.textContent.includes("track 1"),
+        `Waiting for the native caption. Got ${textTracks.textContent}`
+      );
+    });
+
+    await SpecialPowers.spawn(browser, [videoID], async id => {
+      content.document.getElementById(id).textTracks[0].mode = "disabled";
+    });
+    await SpecialPowers.spawn(pipBrowser, [], async () => {
+      let textTracks = content.document.getElementById("texttracks");
+      await ContentTaskUtils.waitForCondition(
+        () => !textTracks.textContent,
+        `Waiting for the native caption to clear. Got ${textTracks.textContent}`
+      );
+    });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      content.document.querySelector(
+        "#player .captions-container"
+      ).textContent = "wrapper caption restored";
+    });
+    await SpecialPowers.spawn(pipBrowser, [], async () => {
+      let textTracks = content.document.getElementById("texttracks");
+      await ContentTaskUtils.waitForCondition(
+        () => textTracks.textContent === "wrapper caption restored",
+        `Waiting for the restored wrapper caption. Got ${textTracks.textContent}`
+      );
+    });
+  });
+});
+
+/**
  * Tests the mock-wrapper.js video wrapper script does not toggle mute/umute
  * state when increasing/decreasing the volume using the arrow keys.
  */

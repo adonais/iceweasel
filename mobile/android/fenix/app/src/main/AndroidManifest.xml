@@ -527,6 +527,7 @@
                 <data android:host="install_search_widget"/>
                 <data android:host="make_default_browser"/>
                 <data android:host="open"/>
+                <data android:host="privacy_report"/>
                 <data android:host="settings"/>
                 <data android:host="settings_accessibility"/>
                 <data android:host="settings_addon_manager"/>
@@ -665,6 +666,13 @@
             android:excludeFromRecents="true"
             />
 
+        <activity android:name=".widget.LensSearchActivity"
+            android:theme="@style/Theme.LensCamera"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:exported="false"
+            />
+
         <activity android:name="mozilla.components.feature.qr.QrScanActivity"
             android:theme="@style/Theme.AppCompat.Translucent"
             android:exported="false"
@@ -759,6 +767,10 @@
                 <action android:name="org.mozilla.fenix.onboarding.WidgetPinnedReceiver.widgetPinned"/>
             </intent-filter>
         </receiver>
+
+        <receiver
+            android:name=".privacyreport.PrivacyReportNotificationReceiver"
+            android:exported="false" />
 
         <service
             android:name=".session.PrivateNotificationService"

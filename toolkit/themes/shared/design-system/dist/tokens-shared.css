@@ -7,9 +7,9 @@
 
 @layer tokens-foundation, tokens-browser-theme, tokens-foundation-brand, tokens-foundation-nova, tokens-browser-theme-nova, tokens-foundation-brand-nova, tokens-prefers-contrast, tokens-prefers-contrast-nova, tokens-forced-colors, tokens-forced-colors-nova;
 
-@layer tokens-foundation {
-  :root,
-  :host(.anonymous-content-host) {
+:root,
+:host(.anonymous-content-host) {
+  @layer tokens-foundation {
     /** background-color **/
     --background-color-box: light-dark(var(--color-white), var(--color-gray-80));
     --background-color-critical: light-dark(var(--color-red-0), var(--color-red-90));
@@ -602,14 +602,9 @@
     --toolbox-text-color: light-dark(var(--color-gray-100), var(--color-gray-0));
     --toolbox-text-color-inactive: var(--toolbox-text-color);
   }
-}
 
-/* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-@layer tokens-prefers-contrast {
-  @media (prefers-contrast) {
-    :root,
-    :host(.anonymous-content-host) {
+  @layer tokens-prefers-contrast {
+    @media (prefers-contrast) {
       /** background-color **/
       --background-color-box: var(--background-color-canvas);
       --background-color-box-info: var(--background-color-canvas);
@@ -680,14 +675,9 @@
       --toolbarbutton-outline-color-active: currentColor;
     }
   }
-}
 
-/* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-@layer tokens-forced-colors {
-  @media (forced-colors) {
-    :root,
-    :host(.anonymous-content-host) {
+  @layer tokens-forced-colors {
+    @media (forced-colors) {
       /** border **/
       --border-color-deemphasized: ButtonText;
       --border-color-interactive: ButtonText;
@@ -710,6 +700,9 @@
       --button-background-color-menu-hover: var(--button-background-color-primary);
       --button-background-color-menu-active: var(--button-background-color-primary);
       --button-background-color-menu-selected: var(--button-background-color-primary-selected);
+      --button-background-color-primary: ButtonText;
+      --button-background-color-primary-hover: SelectedItem;
+      --button-background-color-primary-active: var(--button-background-color-primary-hover);
       --button-background-color-primary-disabled: var(--button-text-color-disabled);
       --button-border-color: var(--border-color-interactive);
       --button-border-color-hover: var(--border-color-interactive-hover);
@@ -784,18 +777,17 @@
       --text-color-accent-primary-selected: SelectedItemText;
 
       /** toolbarbutton **/
+      --toolbarbutton-background-color-hover: var(--button-background-color-hover);
+      --toolbarbutton-background-color-active: var(--button-background-color-active);
       --toolbarbutton-outline-color: ButtonText;
       --toolbarbutton-outline-color-hover: SelectedItem;
       --toolbarbutton-outline-color-active: ButtonText;
       --toolbarbutton-outline-color-selected: SelectedItem;
     }
   }
-}
 
-@media -moz-pref("browser.nova.enabled") {
-  @layer tokens-foundation-nova {
-    :root,
-    :host(.anonymous-content-host) {
+  @media -moz-pref("browser.nova.enabled") {
+    @layer tokens-foundation-nova {
       /** background-color **/
       --background-color-box: light-dark(var(--color-white), var(--color-gray-70));
       --background-color-box-info: light-dark(var(--color-gray-15), var(--color-gray-65));
@@ -843,7 +835,11 @@
       --button-background-color-muted-active: light-dark(var(--color-gray-40), var(--color-gray-35));
       --button-background-color-muted-disabled: var(--button-background-color-muted);
       --button-background-color-muted-selected: var(--button-background-color-muted-active);
+      --button-background-color-primary: var(--color-accent-primary);
+      --button-background-color-primary-hover: var(--color-accent-primary-hover);
+      --button-background-color-primary-active: var(--color-accent-primary-active);
       --button-background-color-primary-disabled: light-dark(var(--color-violet-desaturated-50), var(--color-violet-desaturated-40));
+      --button-background-color-selected: var(--button-background-color-active);
       --button-border-color: var(--color-accent-primary);
       --button-border-color-destructive: var(--button-border-color-ghost);
       --button-border-color-destructive-selected: var(--button-border-color-destructive);
@@ -865,7 +861,6 @@
       --button-gap-split: 0;
       --button-opacity-disabled: 0.7;
       --button-padding-inline-small: var(--space-medium);
-      --button-size-icon-small: var(--size-item-medium);
       --button-split-separator-background-color: var(--button-border-color);
       --button-text-color: light-dark(var(--color-violet-90), var(--color-gray-0));
       --button-text-color-destructive: light-dark(var(--color-white), var(--button-text-color-primary));
@@ -1103,14 +1098,9 @@
       );
       --toolbox-text-color: var(--text-color);
     }
-  }
 
-  /* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-  @layer tokens-prefers-contrast-nova {
-    @media (prefers-contrast) {
-      :root,
-      :host(.anonymous-content-host) {
+    @layer tokens-prefers-contrast-nova {
+      @media (prefers-contrast) {
         /** text-color **/
         --text-color: CanvasText;
         --text-color-error: inherit;
@@ -1119,14 +1109,9 @@
         --toolbar-field-border-color-focus: var(--focus-outline-color);
       }
     }
-  }
 
-  /* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-  @layer tokens-forced-colors-nova {
-    @media (forced-colors) {
-      :root,
-      :host(.anonymous-content-host) {
+    @layer tokens-forced-colors-nova {
+      @media (forced-colors) {
         /** background-color **/
         --background-color-box: var(--background-color-canvas);
         --background-color-box-info: var(--background-color-canvas);
@@ -1196,7 +1181,7 @@
         --button-text-color-ghost-disabled: GrayText;
         --button-text-color-menu-hover: var(--button-text-color-primary);
         --button-text-color-menu-active: var(--button-text-color-primary-active);
-        --button-text-color-menu-disabled: var(--button-text-color-primary-disabled);
+        --button-text-color-menu-disabled: var(--button-text-color-disabled);
         --button-text-color-menu-selected: var(--button-text-color-primary-selected);
         --button-text-color-muted: ButtonText;
         --button-text-color-muted-hover: var(--button-text-color-ghost-active);
@@ -1213,7 +1198,7 @@
 
         /** color **/
         --color-accent-attention: AccentColor;
-        --color-accent-primary: AccentColor;
+        --color-accent-primary: ButtonText;
         --color-accent-primary-hover: SelectedItem;
         --color-accent-primary-active: var(--color-accent-primary-hover);
         --color-accent-primary-selected: SelectedItem;

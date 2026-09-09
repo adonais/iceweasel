@@ -180,6 +180,12 @@ bool ForOfEmitter::emitInitialize(uint32_t forPos) {
     return false;
   }
 
+  // A non-local exit through this loop has to leave the stack like this for the
+  // iterator close code.
+  //
+  //                [stack] NEXT ITER VALUE
+  loopInfo_->setNonLocalExitStackDepth(bce_->bytecodeSection().stackDepth());
+
 #ifdef DEBUG
   state_ = State::Initialize;
 #endif

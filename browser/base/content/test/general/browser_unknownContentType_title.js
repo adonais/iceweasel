@@ -84,5 +84,15 @@ add_task(async function unknownContentType_title_with_pref_disabled() {
   is(panelShown, "panel-shown", "The downloads panel is shown");
   is(gBrowser.contentTitle, "Test Page", "Should still have the right title.");
 
+  // isPanelShowing is already true while the panel is still opening, so wait
+  // for the popup to be fully open before closing it.
+  await BrowserTestUtils.waitForPopupEvent(DownloadsPanel.panel, "shown");
+  let panelHidden = BrowserTestUtils.waitForPopupEvent(
+    DownloadsPanel.panel,
+    "hidden"
+  );
+  DownloadsPanel.hidePanel();
+  await panelHidden;
+
   gBrowser.removeCurrentTab();
 });

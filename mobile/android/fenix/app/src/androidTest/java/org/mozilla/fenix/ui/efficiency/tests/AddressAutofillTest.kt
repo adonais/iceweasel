@@ -12,7 +12,8 @@ import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsAutofillSelectors
 
 class AddressAutofillTest : BaseTest() {
-    private val mockWebServer get() = fenixTestRule.mockWebServer
+    private val mockWebServer
+        get() = fenixTestRule.mockWebServer
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3205329
     @SmokeTest
@@ -21,10 +22,10 @@ class AddressAutofillTest : BaseTest() {
         val addressFormPage = mockWebServer.addressFormAsset
         val address = AddressTestData.FIRST
 
-        on.settingsAutofill.navigateToPage()
-            .fillAndSaveAddress(address)
+        on.settingsAutofill.navigateToPage().fillAndSaveAddress(address)
 
-        on.browserPage.navigateToPage(addressFormPage.url.toString())
+        on.browserPage
+            .navigateToPage(addressFormPage.url.toString())
             .clickAddressFormStreetField()
             .clickSelectAddressButton()
             .clickAddressSuggestion(address.streetAddress)
@@ -37,7 +38,8 @@ class AddressAutofillTest : BaseTest() {
     fun deleteSavedAddressTest() {
         val address = AddressTestData.FIRST
 
-        on.settingsAutofill.navigateToPage()
+        on.settingsAutofill
+            .navigateToPage()
             .fillAndSaveAddress(address)
             .mozClick(SettingsAutofillSelectors.MANAGE_ADDRESSES_BUTTON)
             .mozVerify(SettingsAutofillSelectors.SAVED_ADDRESS(address.name))

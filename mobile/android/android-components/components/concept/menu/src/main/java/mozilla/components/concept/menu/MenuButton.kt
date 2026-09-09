@@ -15,35 +15,21 @@ import mozilla.components.support.base.observer.Observable
  */
 interface MenuButton : Observable<MenuButton.Observer> {
 
-    /**
-     * Sets a [MenuController] that will be used to create a menu when this button is clicked.
-     */
+    /** Sets a [MenuController] that will be used to create a menu when this button is clicked. */
     var menuController: MenuController?
 
-    /**
-     * Show the indicator for a browser menu effect.
-     */
+    /** Show the indicator for a browser menu effect. */
     fun setEffect(effect: MenuEffect?)
 
-    /**
-     * Sets the tint of the 3-dot menu icon.
-     */
-    fun setColorFilter(
-        @ColorInt color: Int,
-    )
+    /** Sets the tint of the 3-dot menu icon. */
+    fun setColorFilter(@ColorInt color: Int)
 
-    /**
-     * Observer for the menu button.
-     */
+    /** Observer for the menu button. */
     interface Observer {
-        /**
-         * Listener called when the menu is shown.
-         */
+        /** Listener called when the menu is shown. */
         fun onShow() = Unit
 
-        /**
-         * Listener called when the menu is dismissed.
-         */
+        /** Listener called when the menu is dismissed. */
         fun onDismiss() = Unit
     }
 }

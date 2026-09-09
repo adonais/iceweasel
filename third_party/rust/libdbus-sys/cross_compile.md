@@ -13,6 +13,20 @@ The examples below all assume you're trying to compile for Raspberry Pi 2 or 3 r
 Cross compiling using rust-embedded/cross
 =========================================
 
+The `vendored` feature is the current recommended way to cross compile dbus-rs:
+
+```
+dbus = {version = "0.9.7", features = ["vendored"]}
+```
+
+Then simply build your project with cross:
+
+```
+cross build --target arm-unknown-linux-musleabihf
+```
+
+#### Legacy Instructions:
+
 Thanks to [jobale](https://github.com/jobale) for providing these instructions
 (taken from [issue 292](https://github.com/diwic/dbus-rs/issues/292)).
 
@@ -136,3 +150,46 @@ Finally
 If we are all set up, you should be able to successfully compile with:
 
 `cargo build --target=armv7-unknown-linux-gnueabihf`
+
+
+Docker compose
+==============
+
+Dockerfile
+```docker
+FROM rust:1.64.0-slim-bullseye 
+ 
+RUN apt update && apt upgrade -y 
+RUN apt install -y g++-arm-linux-gnueabihf libc6-dev-armhf-cross
+
+RUN rustup target add armv7-unknown-linux-gnueabihf 
+RUN rustup toolchain install stable-armv7-unknown-linux-gnueabihf 
+ 
+RUN dpkg --add-architecture armhf 
+RUN apt update
+RUN apt install --assume-yes libdbus-1-dev libdbus-1-dev:armhf pkg-config
+
+WORKDIR /app 
+ 
+ENV CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER=arm-linux-gnueabihf-gcc 
+ENV CC_armv7_unknown_Linux_gnueabihf=arm-linux-gnueabihf-gcc 
+ENV CXX_armv7_unknown_linux_gnueabihf=arm-linux-gnueabihf-g++
+ENV CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER=/usr/bin/arm-linux-gnueabihf-gcc
+ENV PKG_CONFIG_ALLOW_CROSS="true"
+ENV PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig"
+ENV RUSTFLAGS="-L /usr/arm-linux-gnueabihf/lib/ -L /usr/lib/arm-linux-gnueabihf/" 
+```
+
+docker-compose.yml
+```yaml
+version: "3"
+
+services:
+  compilation: 
+    build: .
+    volumes:
+      - ./:/app
+    command: "cargo build --release --target=armv7-unknown-linux-gnueabihf"
+```
+
+You just have to add these two files to your project root and run `docker-compose up`.

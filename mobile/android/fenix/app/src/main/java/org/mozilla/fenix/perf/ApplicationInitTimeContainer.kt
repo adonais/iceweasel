@@ -6,16 +6,14 @@ package org.mozilla.fenix.perf
 
 import android.os.SystemClock
 
-/**
- *  A class to store the application initialization time.
- *  Time is stores in elapsed real time nano seconds
- */
+/** A class to store the application initialization time. Time is stores in elapsed real time nano seconds */
 internal class ApplicationInitTimeContainer(
-    private val getElapsedRealtimeNanos: () -> Long = SystemClock::elapsedRealtimeNanos,
+    private val getElapsedRealtimeNanos: () -> Long = SystemClock::elapsedRealtimeNanos
 ) {
 
     var applicationInitNanos = -1L
         private set
+
     private var isApplicationInitCalled = false
 
     fun onApplicationInit() {

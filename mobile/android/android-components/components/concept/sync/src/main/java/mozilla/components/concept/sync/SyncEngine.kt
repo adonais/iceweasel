@@ -9,13 +9,14 @@ import org.jetbrains.annotations.ApiStatus
 /**
  * Describes possible sync engines that device can support.
  *
- * @property nativeName Internally, Rust SyncManager represents engines as strings. Forward-compatibility
- * with new engines is one of the reasons for this. E.g. during any sync, an engine may appear that we
- * do not know about. At the public API level, we expose a concrete [SyncEngine] type to allow for more
- * robust integrations. We do not expose "unknown" engines via our public API, but do handle them
- * internally (by persisting their enabled/disabled status).
+ * @property nativeName Internally, Rust SyncManager represents engines as strings. Forward-compatibility with new
+ *   engines is one of the reasons for this. E.g. during any sync, an engine may appear that we do not know about. At
+ *   the public API level, we expose a concrete [SyncEngine] type to allow for more robust integrations. We do not
+ *   expose "unknown" engines via our public API, but do handle them internally (by persisting their enabled/disabled
+ *   status).
  *
- * [nativeName] must match engine strings defined in the sync15 crate, e.g. https://github.com/mozilla/application-services/blob/main/components/sync15/src/state.rs#L23-L38
+ * [nativeName] must match engine strings defined in the sync15 crate, e.g.
+ * https://github.com/mozilla/application-services/blob/main/components/sync15/src/state.rs#L23-L38
  *
  * @property nativeName Name of the corresponding Sync1.5 collection.
  */
@@ -23,45 +24,30 @@ sealed class SyncEngine(val nativeName: String) {
     // NB: When adding new types, make sure to think through implications for the SyncManager.
     // See https://github.com/mozilla-mobile/android-components/issues/4557
 
-    /**
-     * A history engine.
-     */
+    /** A history engine. */
     object History : SyncEngine("history")
 
-    /**
-     * A bookmarks engine.
-     */
+    /** A bookmarks engine. */
     object Bookmarks : SyncEngine("bookmarks")
 
-    /**
-     * A 'logins/passwords' engine.
-     */
+    /** A 'logins/passwords' engine. */
     object Passwords : SyncEngine("passwords")
 
-    /**
-     * A remote tabs engine.
-     */
+    /** A remote tabs engine. */
     object Tabs : SyncEngine("tabs")
 
-    /**
-     * A credit cards engine.
-     */
+    /** A credit cards engine. */
     object CreditCards : SyncEngine("creditcards")
 
-    /**
-     * An addresses engine.
-     */
+    /** An addresses engine. */
     object Addresses : SyncEngine("addresses")
 
-    /**
-     * An engine that's none of the above, described by [name].
-     */
+    /** An engine that's none of the above, described by [name]. */
     data class Other(val name: String) : SyncEngine(name)
 
     /**
-     * This engine is used internally, but hidden from the public API because we don't fully support
-     * this data type right now.
+     * This engine is used internally, but hidden from the public API because we don't fully support this data type
+     * right now.
      */
-    @ApiStatus.Internal
-    object Forms : SyncEngine("forms")
+    @ApiStatus.Internal object Forms : SyncEngine("forms")
 }

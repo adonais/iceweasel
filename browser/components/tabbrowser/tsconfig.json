@@ -1,0 +1,22 @@
+{
+  "include": ["*.sys.mjs", "types/*.ts"],
+  "exclude": [
+    "GroupsList.sys.mjs",
+    "SmartTabGrouping.sys.mjs",
+    "Tabbrowser.sys.mjs",
+    "TabsList.sys.mjs"
+  ],
+  "extends": "../../../tools/@types/tsconfig.json",
+  "compilerOptions": {
+    "checkJs": true,
+    "strict": true,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "plugins": [
+      {
+        "transform": "../../../tools/ts/plugins/checkRootOnly.js",
+        "transformProgram": true
+      }
+    ]
+  }
+}

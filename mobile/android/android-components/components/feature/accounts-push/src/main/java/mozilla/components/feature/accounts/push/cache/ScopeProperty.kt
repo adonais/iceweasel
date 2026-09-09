@@ -6,13 +6,9 @@ package mozilla.components.feature.accounts.push.cache
 
 import mozilla.components.feature.push.PushScope
 
-/**
- * A [ScopeProperty] implementation generates and holds the [PushScope].
- */
+/** A [ScopeProperty] implementation generates and holds the [PushScope]. */
 interface ScopeProperty {
 
-    /**
-     * Returns the [PushScope] value.
-     */
+    /** Returns the [PushScope] value. */
     suspend fun value(): PushScope
 }

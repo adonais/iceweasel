@@ -74,10 +74,10 @@ objects:
     description: An object to describe a user facing onboarding card.
     fields:
       card-type:
-        type: OnboardingCardType
+        type: Option<OnboardingCardType>
         description: The type of the card.
-        # This should never be defaulted.
-        default: default-browser
+        # A missing or unrecognized card type defaults to null. A card with a null type is discarded.
+        default: null
       enabled:
         type: Boolean
         description: If true, this card is shown to the user.

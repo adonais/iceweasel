@@ -14,8 +14,8 @@
     <ImageView
         android:id="@android:id/icon"
         android:importantForAccessibility="no"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="@dimen/preference_icon_drawable_size"
+        android:layout_height="@dimen/preference_icon_drawable_size"
         android:layout_gravity="center"
         android:scaleType="fitCenter" />
 

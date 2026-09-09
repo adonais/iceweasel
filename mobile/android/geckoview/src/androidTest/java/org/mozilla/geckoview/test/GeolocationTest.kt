@@ -1,7 +1,8 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
+
 import android.content.Context
 import android.location.LocationManager
 import android.os.Handler
@@ -40,8 +41,7 @@ class GeolocationTest : BaseSessionTest() {
     private lateinit var mockNetworkProvider: MockLocationProvider
     private lateinit var mockFusedProvider: MockLocationProvider
 
-    @get:Rule
-    override val rules: RuleChain = RuleChain.outerRule(activityRule).around(sessionRule)
+    @get:Rule override val rules: RuleChain = RuleChain.outerRule(activityRule).around(sessionRule)
 
     @Before
     fun setup() {
@@ -51,8 +51,10 @@ class GeolocationTest : BaseSessionTest() {
             sessionRule.setPrefsUntilTestEnd(mapOf("geo.provider.testing" to false))
             locManager = activity.getSystemService(Context.LOCATION_SERVICE) as LocationManager
             mockGpsProvider = sessionRule.MockLocationProvider(locManager, LocationManager.GPS_PROVIDER, 0.0, 0.0, true)
-            mockNetworkProvider = sessionRule.MockLocationProvider(locManager, LocationManager.NETWORK_PROVIDER, 0.0, 0.0, true)
-            mockFusedProvider = sessionRule.MockLocationProvider(locManager, LocationManager.FUSED_PROVIDER, 0.0, 0.0, true)
+            mockNetworkProvider =
+                sessionRule.MockLocationProvider(locManager, LocationManager.NETWORK_PROVIDER, 0.0, 0.0, true)
+            mockFusedProvider =
+                sessionRule.MockLocationProvider(locManager, LocationManager.FUSED_PROVIDER, 0.0, 0.0, true)
         }
     }
 
@@ -65,8 +67,7 @@ class GeolocationTest : BaseSessionTest() {
             mockGpsProvider.removeMockLocationProvider()
             mockNetworkProvider.removeMockLocationProvider()
             mockFusedProvider.removeMockLocationProvider()
-        } catch (e: Exception) {
-        }
+        } catch (e: Exception) {}
     }
 
     private fun setEnableLocationPermissions() {
@@ -75,7 +76,8 @@ class GeolocationTest : BaseSessionTest() {
                 override fun onContentPermissionRequest(
                     session: GeckoSession,
                     perm: GeckoSession.PermissionDelegate.ContentPermission,
-                ): GeckoResult<Int> = GeckoResult.fromValue(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
+                ): GeckoResult<Int> =
+                    GeckoResult.fromValue(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
 
                 override fun onAndroidPermissionsRequest(
                     session: GeckoSession,
@@ -84,7 +86,7 @@ class GeolocationTest : BaseSessionTest() {
                 ) {
                     callback.grant()
                 }
-            },
+            }
         )
     }
 
@@ -105,8 +107,9 @@ class GeolocationTest : BaseSessionTest() {
                         error => reject(error.code),
                         {maximumAge: $maximumAge,
                          timeout: $timeout,
-                         enableHighAccuracy: $enableHighAccuracy }))""",
-            ).value as JSONObject
+                         enableHighAccuracy: $enableHighAccuracy }))"""
+            )
+            .value as JSONObject
 
     private fun getCurrentPositionJSWithWait(): JSONObject =
         mainSession
@@ -118,8 +121,9 @@ class GeolocationTest : BaseSessionTest() {
                         position => resolve(
                             {latitude: position.coords.latitude, longitude:  position.coords.longitude})),
                         error => reject(error.code)
-                }, "750"))""",
-            ).value as JSONObject
+                }, "750"))"""
+            )
+            .value as JSONObject
 
     @GeckoSessionTestRule.NullDelegate(Autofill.Delegate::class)
     // General test that location can be requested from JS and that the mock provider is providing location
@@ -178,8 +182,16 @@ class GeolocationTest : BaseSessionTest() {
         Thread.sleep(6001)
         mockNetworkProvider.postLocation()
         val inaccuratePosition = getCurrentPositionJS(0, 3000, false)
-        assertThat("Lower accuracy latitude is expected.", inaccuratePosition["latitude"] as Number, equalTo(lowMockLat))
-        assertThat("Lower accuracy longitude is expected.", inaccuratePosition["longitude"] as Number, equalTo(lowMockLon))
+        assertThat(
+            "Lower accuracy latitude is expected.",
+            inaccuratePosition["latitude"] as Number,
+            equalTo(lowMockLat),
+        )
+        assertThat(
+            "Lower accuracy longitude is expected.",
+            inaccuratePosition["longitude"] as Number,
+            equalTo(lowMockLon),
+        )
     }
 
     @GeckoSessionTestRule.NullDelegate(Autofill.Delegate::class)
@@ -211,8 +223,16 @@ class GeolocationTest : BaseSessionTest() {
         mockGpsProvider.stopPostingLocation()
         mockNetworkProvider.stopPostingLocation()
 
-        assertThat("High accuracy latitude is expected.", highAccuracyPosition["latitude"] as Number, equalTo(latHighAcc))
-        assertThat("High accuracy longitude is expected.", highAccuracyPosition["longitude"] as Number, equalTo(lonHighAcc))
+        assertThat(
+            "High accuracy latitude is expected.",
+            highAccuracyPosition["latitude"] as Number,
+            equalTo(latHighAcc),
+        )
+        assertThat(
+            "High accuracy longitude is expected.",
+            highAccuracyPosition["longitude"] as Number,
+            equalTo(lonHighAcc),
+        )
     }
 
     @GeckoSessionTestRule.NullDelegate(Autofill.Delegate::class)
@@ -233,68 +253,82 @@ class GeolocationTest : BaseSessionTest() {
         var actualPauseCount = 0
 
         // Monitor lifecycle changes
-        ProcessLifecycleOwner.get().lifecycle.addObserver(
-            object : DefaultLifecycleObserver {
-                override fun onResume(owner: LifecycleOwner) {
-                    Log.i(logTag, "onResume Event")
-                    actualResumeCount++
-                    super.onResume(owner)
-                    try {
-                        mainSession.setActive(true)
-                        // onResume is also called when starting too
-                        if (actualResumeCount > 1) {
-                            // Ensures the location has had time to post
-                            Thread.sleep(3001)
-                            val onResumeFromPausePosition = getCurrentPositionJS()
-                            assertThat(
-                                "Latitude after onPause matches.",
-                                onResumeFromPausePosition["latitude"] as Number,
-                                equalTo(afterPauseLat),
-                            )
-                            assertThat(
-                                "Longitude after onPause matches.",
-                                onResumeFromPausePosition["longitude"] as Number,
-                                equalTo(afterPauseLon),
-                            )
-                        }
-                    } catch (e: Exception) {
-                        // Intermittent CI test issue where Activity is gone after resume occurs
-                        assertThat("onResume count matches.", actualResumeCount, equalTo(2))
-                        assertThat("onPause count matches.", actualPauseCount, equalTo(1))
+        ProcessLifecycleOwner.get()
+            .lifecycle
+            .addObserver(
+                object : DefaultLifecycleObserver {
+                    override fun onResume(owner: LifecycleOwner) {
+                        Log.i(logTag, "onResume Event")
+                        actualResumeCount++
+                        super.onResume(owner)
                         try {
-                            mockGpsProvider.removeMockLocationProvider()
+                            mainSession.setActive(true)
+                            // onResume is also called when starting too
+                            if (actualResumeCount > 1) {
+                                // Ensures the location has had time to post
+                                Thread.sleep(3001)
+                                val onResumeFromPausePosition = getCurrentPositionJS()
+                                assertThat(
+                                    "Latitude after onPause matches.",
+                                    onResumeFromPausePosition["latitude"] as Number,
+                                    equalTo(afterPauseLat),
+                                )
+                                assertThat(
+                                    "Longitude after onPause matches.",
+                                    onResumeFromPausePosition["longitude"] as Number,
+                                    equalTo(afterPauseLon),
+                                )
+                            }
                         } catch (e: Exception) {
-                            // Cleanup could have already occurred
+                            // Intermittent CI test issue where Activity is gone after resume occurs
+                            assertThat("onResume count matches.", actualResumeCount, equalTo(2))
+                            assertThat("onPause count matches.", actualPauseCount, equalTo(1))
+                            try {
+                                mockGpsProvider.removeMockLocationProvider()
+                            } catch (e: Exception) {
+                                // Cleanup could have already occurred
+                            }
+                        }
+                    }
+
+                    override fun onPause(owner: LifecycleOwner) {
+                        Log.i(logTag, "onPause Event")
+                        actualPauseCount++
+                        super.onPause(owner)
+                        try {
+                            mockGpsProvider.setMockLocation(afterPauseLat, afterPauseLon)
+                            mockGpsProvider.postLocation()
+                        } catch (e: Exception) {
+                            Log.w(logTag, "onPause was called too late.")
+                            // Potential situation where onPause is called too late
                         }
                     }
                 }
-
-                override fun onPause(owner: LifecycleOwner) {
-                    Log.i(logTag, "onPause Event")
-                    actualPauseCount++
-                    super.onPause(owner)
-                    try {
-                        mockGpsProvider.setMockLocation(afterPauseLat, afterPauseLon)
-                        mockGpsProvider.postLocation()
-                    } catch (e: Exception) {
-                        Log.w(logTag, "onPause was called too late.")
-                        // Potential situation where onPause is called too late
-                    }
-                }
-            },
-        )
+            )
 
         // Before onPause Event
         mockGpsProvider.setMockLocation(beforePauseLat, beforePauseLon)
         mockGpsProvider.postLocation()
         val beforeOnPausePosition = getCurrentPositionJS()
-        assertThat("Latitude before onPause matches.", beforeOnPausePosition["latitude"] as Number, equalTo(beforePauseLat))
-        assertThat("Longitude before onPause matches.", beforeOnPausePosition["longitude"] as Number, equalTo(beforePauseLon))
+        assertThat(
+            "Latitude before onPause matches.",
+            beforeOnPausePosition["latitude"] as Number,
+            equalTo(beforePauseLat),
+        )
+        assertThat(
+            "Longitude before onPause matches.",
+            beforeOnPausePosition["longitude"] as Number,
+            equalTo(beforePauseLon),
+        )
 
         // Ensures a return to the foreground
-        Handler(Looper.getMainLooper()).postDelayed({
-            sessionRule.requestActivityToForeground(context)
-        }, 1500)
+        Handler(Looper.getMainLooper())
+            .postDelayed(
+                {
+                    sessionRule.requestActivityToForeground(context)
+                },
+                1500,
+            )
 
         // Will cause onPause event to occur
         sessionRule.simulatePressHome(context)
@@ -302,8 +336,16 @@ class GeolocationTest : BaseSessionTest() {
         // After/During onPause Event
         val whilePausingPosition = getCurrentPositionJSWithWait()
         mockGpsProvider.stopPostingLocation()
-        assertThat("Latitude after/during onPause matches.", whilePausingPosition["latitude"] as Number, equalTo(afterPauseLat))
-        assertThat("Longitude after/during onPause matches.", whilePausingPosition["longitude"] as Number, equalTo(afterPauseLon))
+        assertThat(
+            "Latitude after/during onPause matches.",
+            whilePausingPosition["latitude"] as Number,
+            equalTo(afterPauseLat),
+        )
+        assertThat(
+            "Longitude after/during onPause matches.",
+            whilePausingPosition["longitude"] as Number,
+            equalTo(afterPauseLon),
+        )
 
         assertThat("onResume count matches.", actualResumeCount, equalTo(2))
         assertThat("onPause count matches.", actualPauseCount, equalTo(1))
@@ -324,22 +366,26 @@ class GeolocationTest : BaseSessionTest() {
         // Ensures a return to the foreground
         val handled = GeckoResult<Void>()
         var result = false
-        Handler(Looper.getMainLooper()).postDelayed({
-            mainSession.setActive(true)
-            val promise =
-                mainSession.evaluatePromiseJS(
-                    """
+        Handler(Looper.getMainLooper())
+            .postDelayed(
+                {
+                    mainSession.setActive(true)
+                    val promise =
+                        mainSession.evaluatePromiseJS(
+                            """
                 new Promise(resolve => {
                     window.navigator.geolocation.watchPosition(
                         position => resolve(true),
                         error => resolve(false))
                 })
-                """,
-                )
-            sessionRule.requestActivityToForeground(context)
-            result = promise.value as Boolean
-            handled.complete(null)
-        }, 1500)
+                """
+                        )
+                    sessionRule.requestActivityToForeground(context)
+                    result = promise.value as Boolean
+                    handled.complete(null)
+                },
+                1500,
+            )
 
         // Will cause onPause event to occur
         sessionRule.simulatePressHome(context)

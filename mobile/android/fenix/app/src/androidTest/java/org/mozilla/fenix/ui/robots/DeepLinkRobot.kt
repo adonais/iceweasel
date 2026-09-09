@@ -14,12 +14,13 @@ import org.mozilla.fenix.BuildConfig.DEEP_LINK_SCHEME
 class DeepLinkRobot(private val composeTestRule: ComposeTestRule) {
     private fun openDeepLink(url: String) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val intent = Intent().apply {
-            action = Intent.ACTION_VIEW
-            data = "$DEEP_LINK_SCHEME://$url".toUri()
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            addCategory(Intent.CATEGORY_BROWSABLE)
-        }
+        val intent =
+            Intent().apply {
+                action = Intent.ACTION_VIEW
+                data = "$DEEP_LINK_SCHEME://$url".toUri()
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                addCategory(Intent.CATEGORY_BROWSABLE)
+            }
         try {
             context.startActivity(intent)
         } catch (ex: ActivityNotFoundException) {
@@ -29,11 +30,7 @@ class DeepLinkRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     fun openURL(url: String, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-        val deepLink = "open".toUri()
-            .buildUpon()
-            .appendQueryParameter("url", url)
-            .build()
-            .toString()
+        val deepLink = "open".toUri().buildUpon().appendQueryParameter("url", url).build().toString()
         openDeepLink(deepLink)
         return browserScreen(composeTestRule, interact)
     }
@@ -50,8 +47,7 @@ class DeepLinkRobot(private val composeTestRule: ComposeTestRule) {
     fun openCollections(interact: HomeScreenRobot.() -> Unit) =
         openDeepLink("home_collections").run { homeScreen(composeTestRule, interact) }
 
-    fun openSettings(interact: SettingsRobot.() -> Unit) =
-        openDeepLink("settings").run { settings(interact) }
+    fun openSettings(interact: SettingsRobot.() -> Unit) = openDeepLink("settings").run { settings(interact) }
 
     fun openSettingsAIControls(interact: SettingsSubMenuAIControlsRobot.() -> Unit) =
         openDeepLink("settings_ai_controls").run {
@@ -82,5 +78,4 @@ class DeepLinkRobot(private val composeTestRule: ComposeTestRule) {
         openDeepLink("make_default_browser").run { systemSettings(interact) }
 }
 
-private fun settings(interact: SettingsRobot.() -> Unit) =
-    SettingsRobot().interact().run { SettingsRobot.Transition() }
+private fun settings(interact: SettingsRobot.() -> Unit) = SettingsRobot().interact().run { SettingsRobot.Transition() }

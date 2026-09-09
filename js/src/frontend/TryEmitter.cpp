@@ -55,6 +55,12 @@ bool TryEmitter::emitTry() {
   // uses this depth to properly unwind the stack and the scope chain.
   depth_ = bce_->bytecodeSection().stackDepth();
 
+  if (controlInfo_ && hasFinally()) {
+    // A non-local exit through the try-block jumps to the finally-block, which
+    // expects the stack at the try note's depth.
+    controlInfo_->setNonLocalExitStackDepth(depth_);
+  }
+
   tryOpOffset_ = bce_->bytecodeSection().offset();
   if (!bce_->emit1(JSOp::Try)) {
     return false;

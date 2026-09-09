@@ -65,6 +65,7 @@ abstract class TopobjdirValueSource implements ValueSource<String, TopobjdirValu
 
         // Compute hash of all inputs for local caching
         def inputs = new StringBuilder()
+        inputs.append("topsrcdir=${topsrcdir}\n")
         inputs.append("MOZCONFIG=${parameters.mozconfigEnv.get()}\n")
         inputs.append("MOZ_OBJDIR=${parameters.mozObjdirEnv.get()}\n")
         inputs.append("mozconfigContents=${parameters.mozconfigContents.get().hashCode()}\n")

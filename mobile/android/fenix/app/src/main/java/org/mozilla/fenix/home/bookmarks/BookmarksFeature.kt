@@ -17,8 +17,7 @@ import org.mozilla.fenix.components.bookmarks.BookmarksUseCase
 import org.mozilla.fenix.home.HomeFragment
 
 /**
- * Lifecycle-aware feature that retrieves a list of [BookmarkNode]s and dispatches
- * updates to the [AppStore].
+ * Lifecycle-aware feature that retrieves a list of [BookmarkNode]s and dispatches updates to the [AppStore].
  *
  * @param appStore the [AppStore] that holds the state of the [HomeFragment].
  * @param bookmarksUseCase the [BookmarksUseCase] for retrieving the list of bookmarks from storage.
@@ -34,10 +33,11 @@ class BookmarksFeature(
     private var job: Job? = null
 
     override fun start() {
-        job = scope.launch(ioDispatcher) {
-            val bookmarks = bookmarksUseCase.retrieveRecentBookmarks()
-            appStore.dispatch(AppAction.BookmarksChange(bookmarks))
-        }
+        job =
+            scope.launch(ioDispatcher) {
+                val bookmarks = bookmarksUseCase.retrieveRecentBookmarks()
+                appStore.dispatch(AppAction.BookmarksChange(bookmarks))
+            }
     }
 
     override fun stop() {

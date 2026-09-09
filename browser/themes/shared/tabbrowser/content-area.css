@@ -30,48 +30,12 @@
   #navigator-toolbox {
     will-change: background-color;
     transition: background-color var(--inactive-window-transition);
-    margin-block-start: var(--chrome-window-gap);
-    margin-block-end: var(--chrome-window-gap);
-    margin-inline: var(--chrome-window-gap);
     overflow: clip;
-
-    /* Both the #browser and #navigator-toolbox (when it's showing) should sit flush
-       against the window edge in fullscreen. */
-    :root:is([inFullscreen], [inDOMFullscreen]) & {
-      margin: 0;
-    }
-
-    /* A maximized window has no outer padding, but keeps the gap below the
-       toolbox that separates it from the blocks in #browser. */
-    :root[sizemode="maximized"] & {
-      margin-block-start: 0;
-      margin-inline: 0;
-    }
   }
 
   #browser {
     display: flex;
     box-sizing: border-box;
-    gap: var(--chrome-window-gap);
-  }
-
-  /* Removed padding around the content area in fullscreen. */
-  :root:not([inFullscreen], [inDOMFullscreen]) #browser {
-    padding: var(--chrome-window-gap);
-    padding-block-start: 0;
-    gap: var(--chrome-window-gap);
-
-    :root[uidensity="compact"] & {
-      padding-block-start: 2px;
-      gap: 2px;
-    }
-  }
-
-  /* Keep the gap between blocks, but drop the outer padding so they sit flush
-     against the edges of a maximized window. */
-  :root[sizemode="maximized"] #browser {
-    padding-inline: 0;
-    padding-block-end: 0;
   }
 
   #tabbrowser-tabbox {
@@ -84,59 +48,26 @@
    * dissolved, and the suspended state — where #tabbrowser-tabpanels still
    * has [splitview] (because suspended split-view panels remain in the
    * tabbox) but the currently-selected tab is a non-split-view one. Without
-   * this, the visible tab loses its rounded corners until split-view is
-   * fully dissolved. */
+   * this, the visible tab would keep the split-view panel decoration until
+   * split-view is fully dissolved. */
   #tabbrowser-tabpanels > :not(.split-view-panel) .browserContainer {
-    border-radius: var(--chrome-block-radius);
-    overflow: clip;
     outline: none;
     box-shadow: none;
-    border: 1px solid var(--chrome-content-separator-color);
+    border-block-start: var(--border-width) solid var(--chrome-content-separator-color);
 
-    /* Remove the border and rounded corners against the screen edge in
-     * DOM fullscreen. */
+    :root:not([inDOMFullscreen], [inFullscreen]) #tabbrowser-tabbox:is([sidebar-shown], [sidebar-panel-open]):not([sidebar-positionend]) & {
+      border-inline-start: var(--border-width) solid var(--chrome-content-separator-color);
+      border-start-start-radius: var(--border-radius-medium);
+    }
+
+    :root:not([inDOMFullscreen], [inFullscreen]) #tabbrowser-tabbox:is([sidebar-positionend]:is([sidebar-shown], [sidebar-panel-open]), [ai-window-open]) & {
+      border-inline-end: var(--border-width) solid var(--chrome-content-separator-color);
+      border-start-end-radius: var(--border-radius-medium);
+    }
+
+    /* Nothing to separate from once the content covers the window. */
     :root:is([inDOMFullscreen], [inFullscreen]) & {
-      border-radius: 0;
       border: none;
-    }
-
-    :root[uidensity="compact"] & {
-      border-radius: 0;
-      border-start-start-radius: var(--chrome-block-radius);
-    }
-
-    /* When the sidebar is positioned at the inline-end the content area sits at
-     * the inline-start, so round its inline-end corner instead. */
-    :root[uidensity="compact"] #tabbrowser-tabbox[sidebar-positionend] & {
-      border-start-start-radius: 0;
-      border-start-end-radius: var(--chrome-block-radius);
-    }
-
-    @media not -moz-pref("sidebar.verticalTabs") {
-      :root[uidensity="compact"] #sidebar-container[hidden] ~ #tabbrowser-tabbox & {
-        border-radius: 0;
-      }
-    }
-
-    /* Maximized: zero the outer corners & borders that meet the bottom window edge. */
-    :root[sizemode="maximized"] & {
-      border-end-start-radius: 0;
-      border-end-end-radius: 0;
-      border-block-end: none;
-    }
-
-    /* Maximized: when there's no sidebar docked on the inline-start edge,
-       remove those borders & corners. */
-    :root[sizemode="maximized"] #tabbrowser-tabbox:not([sidebar-shown]) &,
-    :root[sizemode="maximized"] #tabbrowser-tabbox[sidebar-shown][sidebar-positionend] & {
-      border-start-start-radius: 0;
-      border-inline-start: none;
-    }
-
-    /* If there's no sidebar docked on the inline-end edge, remove those borders & corners. */
-    :root[sizemode="maximized"] #tabbrowser-tabbox:not([sidebar-positionend], [ai-window-open]) & {
-      border-start-end-radius: 0;
-      border-inline-end: none;
     }
   }
 
@@ -185,12 +116,8 @@
     border-bottom-color: var(--toolbar-background-color);
   }
 
-  @media -moz-pref("sidebar.verticalTabs") {
+  @media -moz-pref("sidebar.verticalTabs") or -moz-pref("browser.nova.enabled") {
     border-bottom-style: none;
-  }
-
-  @media -moz-pref("browser.nova.enabled") {
-    border-bottom: 1px solid var(--chrome-content-separator-color);
   }
 }
 
@@ -208,7 +135,7 @@
   min-height: 0;
 }
 
-@media (not -moz-pref("sidebar.verticalTabs")) and (not -moz-pref("browser.nova.enabled")) {
+@media (not -moz-pref("sidebar.verticalTabs")) {
   #browser {
     background-color: var(--toolbar-background-color);
     color: var(--toolbar-text-color);
@@ -320,6 +247,7 @@
   /* DevTools docked to the left */
   & > .devtools-toolbox-iframe.docked-left {
     grid-area: devtools-side-start;
+    anchor-name: --devtools-left-host;
 
     /* The grid-area follows logical direction, so in rtl, the layout is mirrored.
        But the DevTools toolbox is placed physically: docking it to the right will put
@@ -352,6 +280,7 @@
   & > .devtools-toolbox-iframe.docked-right {
     grid-area: devtools-side-end;
     min-height: 100%;
+    anchor-name: --devtools-right-host;
 
     &:dir(rtl) {
       grid-area: devtools-side-start;
@@ -366,6 +295,7 @@
   & > .devtools-toolbox-iframe.bottom-host {
     grid-area: devtools-bottom;
     min-width: 100%;
+    anchor-name: --devtools-bottom-host;
   }
 
   @media -moz-pref("sidebar.revamp") {
@@ -461,10 +391,6 @@
       margin: var(--space-xsmall);
       position: relative;
       width: unset;
-
-      @media -moz-pref("browser.nova.enabled") and -moz-pref("sidebar.revamp") {
-        margin: var(--chrome-window-gap);
-      }
     }
 
     /* Ensure any dialogs are clipped in an inactive/not-selected panel. */
@@ -512,32 +438,6 @@
       @media not (-moz-platform: macos) {
         z-index: 1;
       }
-
-      @media -moz-pref("browser.nova.enabled") {
-        /* Outer (inline-start) edge faces the window: the panel carries the
-         * full 2px gap, plus 2px for the selected panel's focus outline. */
-        :root[uidensity="compact"] & {
-          margin-inline-start: 2px;
-        }
-
-        :root[uidensity="compact"] &.deck-selected {
-          margin-inline-start: 4px;
-        }
-
-        #tabbrowser-tabbox:is([sidebar-shown], [sidebar-panel-open]) & {
-          margin-inline-start: 0;
-        }
-
-        /* With the sidebar shown the #browser gap supplies the 2px, so only
-         * the selected panel needs margin for its outline. */
-        :root[uidensity="compact"] #tabbrowser-tabbox:is([sidebar-shown], [sidebar-panel-open]) & {
-          margin-inline-start: 0;
-        }
-
-        :root[uidensity="compact"] #tabbrowser-tabbox:is([sidebar-shown], [sidebar-panel-open]) &.deck-selected {
-          margin-inline-start: 2px;
-        }
-      }
     }
 
     .split-view-splitter {
@@ -554,18 +454,6 @@
     .split-view-panel[column="1"] {
       order: 2;
       margin-inline-start: 0;
-
-      @media -moz-pref("browser.nova.enabled") {
-        /* Outer (inline-end) edge faces the window: the panel carries the
-         * full 2px gap, plus 2px for the selected panel's focus outline. */
-        :root[uidensity="compact"] & {
-          margin-inline-end: 2px;
-        }
-
-        :root[uidensity="compact"] &.deck-selected {
-          margin-inline-end: 4px;
-        }
-      }
     }
 
     /* Panels with a custom width shouldn't grow. */
@@ -598,24 +486,6 @@
 
   #tabbrowser-tabpanels[splitview] .split-view-panel:not(.deck-selected) > .browserContainer {
     border: var(--border-width) solid var(--chrome-content-separator-color);
-  }
-
-  /* Align split-view panels with the sidebar's block edges. The surrounding
-   * #browser already supplies --chrome-window-gap of padding on the
-   * top/bottom, so the panel itself shouldn't add more. */
-  #tabbrowser-tabpanels[splitview] .split-view-panel.split-view-panel-active {
-    margin-block: 0;
-
-    /* Compact: 2px gap around panels. #browser already supplies the gap above
-     * the panels, so only the block-end needs a margin. */
-    :root[uidensity="compact"] & {
-      margin-block-end: 2px;
-    }
-
-    :root[uidensity="compact"] &.deck-selected {
-      margin-block-start: 2px;
-      margin-block-end: 4px;
-    }
   }
 
   /* In split view the notification box is inside the panel's browserContainer.
@@ -866,13 +736,21 @@ split-view-footer {
 .dialogStack {
   z-index: var(--browser-stack-z-index-dialog-stack);
   position: absolute;
-  inset: 0;
+
   /* --browser-with-dialog set on browser[tabDialogShowing], we want to position the overlay
      only on the top of the <browser> element so it doesn't overlap the DevTools toolbox */
-  position-anchor: --browser-with-dialog;
-  position-area: center;
-  width: 100%;
-  height: 100%;
+  top: anchor(--browser-with-dialog top);
+
+  /* For the left, right and bottom property we also need to make sure the dialog doesn't
+     go over DevTools when Responsive Design Mode is enabled, so we use the --devtools-*-host
+     to constrain the element position.
+     The --devtools-*-host anchors are set on .devtools-toolbox-iframe; they won't
+     be defined when DevTools is not visible/docked to a different position so we need
+     to provide meaningful fallback in those cases.
+  */
+  left: max(anchor(--browser-with-dialog left), anchor(--devtools-left-host right, 0));
+  right: max(anchor(--browser-with-dialog right), anchor(--devtools-right-host left, 0));
+  bottom: max(anchor(--browser-with-dialog bottom), anchor(--devtools-bottom-host top, 0));
 
   /* Hide tab-modal dialogs when a window-modal one is up. */
   :root[window-modal-open] .browserStack > &,
@@ -1019,9 +897,6 @@ split-view-footer {
 
 /* Radius the backdrop so it doesnt occlude the radiused .browserContainer below it */
 @media not -moz-pref("browser.nova.enabled") {
-  /* The border radius on those dialog is set in the next top-level rule (`.dialogOverlay[topmost="true"]`),
-     and uses the --chrome-block-radius, which is only set when Nova is enabled.
-     So here we only need to handle the case where Nova isn't enabled */
   :root:not([inDOMFullscreen]) #tabbrowser-tabbox[sidebar-shown] .browserSidebarContainer:not(.responsive-mode) .dialogOverlay[topmost="true"] {
     border-start-end-radius: var(--border-radius-medium);
 
@@ -1035,28 +910,6 @@ split-view-footer {
 .dialogOverlay[topmost="true"],
 #window-modal-dialog::backdrop {
   background-color: var(--background-color-overlay);
-  border-radius: var(--chrome-block-radius);
-
-  .browserSidebarContainer.responsive-mode & {
-    border-radius: 0;
-  }
-
-  .browserSidebarContainer:not(.responsive-mode)[devtools-host-type="bottom"] > .dialogStack > & {
-    border-end-start-radius: 0;
-    border-end-end-radius: 0;
-  }
-
-  .browserSidebarContainer:not(.responsive-mode)[devtools-host-type="right"] > .dialogStack > & {
-    /* Use physical properties as devtools docking side is physical (left/right), and not logical */
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-  }
-
-  .browserSidebarContainer:not(.responsive-mode)[devtools-host-type="left"] > .dialogStack > & {
-    /* Use physical properties as devtools docking side is physical (left/right), and not logical */
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-  }
 }
 
 .dialogOverlay[hideContent="true"][topmost="true"] {

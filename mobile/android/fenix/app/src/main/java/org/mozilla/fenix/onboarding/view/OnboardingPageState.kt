@@ -34,17 +34,13 @@ data class OnboardingPageState(
     val isSmallDevice: Boolean = false,
 )
 
-/**
- * Model containing text and action for a button.
- */
+/** Model containing text and action for a button. */
 data class Action(
     val text: String,
     val onClick: () -> Unit,
 )
 
-/**
- * Model containing data for a toolbar placement.
- */
+/** Model containing data for a toolbar placement. */
 data class ToolbarOption(
     val toolbarType: ToolbarOptionType,
     @param:DrawableRes val imageRes: Int,
@@ -57,20 +53,14 @@ data class ToolbarOption(
  * @property id Identifier for the toolbar option type, used in telemetry.
  */
 enum class ToolbarOptionType(val id: String) {
-    /**
-     * Sets the toolbar placement to the top.
-     */
+    /** Sets the toolbar placement to the top. */
     TOOLBAR_TOP("toolbar_top"),
 
-    /**
-     * Sets the toolbar placement to the bottom.
-     */
+    /** Sets the toolbar placement to the bottom. */
     TOOLBAR_BOTTOM("toolbar_bottom"),
 }
 
-/**
- * Model containing data for the terms of service page during onboarding.
- */
+/** Model containing data for the terms of service page during onboarding. */
 data class OnboardingTermsOfService(
     val subheaderOneText: String? = null,
     val subheaderTwoText: String? = null,
@@ -85,9 +75,7 @@ data class OnboardingTermsOfService(
     val lineThreeLinkText: String,
 )
 
-/**
- * Model containing data for the marketing data page during onboarding.
- */
+/** Model containing data for the marketing data page during onboarding. */
 data class OnboardingMarketingData(
     val marketingCardVariant: MarketingCardVariant,
     val bodyOneText: String,
@@ -96,28 +84,18 @@ data class OnboardingMarketingData(
     val bodyThreeText: String? = null,
 )
 
-/**
- * Contains all the events which can happen in terms of service onboarding page.
- */
+/** Contains all the events which can happen in terms of service onboarding page. */
 interface OnboardingTermsOfServiceEventHandler {
 
-    /**
-     * Invoked when the terms of service link is clicked.
-     */
+    /** Invoked when the terms of service link is clicked. */
     fun onTermsOfServiceLinkClicked(url: String) = Unit
 
-    /**
-     * Invoked when the privacy notice link is clicked.
-     */
+    /** Invoked when the privacy notice link is clicked. */
     fun onPrivacyNoticeLinkClicked(url: String) = Unit
 
-    /**
-     * Invoked when the manage privacy preferences link is clicked.
-     */
+    /** Invoked when the manage privacy preferences link is clicked. */
     fun onManagePrivacyPreferencesLinkClicked() = Unit
 
-    /**
-     * Invoked when the accept button is clicked.
-     */
+    /** Invoked when the accept button is clicked. */
     fun onAcceptTermsButtonClicked() = Unit
 }

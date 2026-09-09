@@ -155,7 +155,7 @@ index 06e33f6160..38408eb0ab 100644
    return ss.Release();
  }
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index 84a3059c40..128ec02b80 100644
+index 04df52f20a..e4861797af 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
 @@ -22,6 +22,7 @@
@@ -166,7 +166,7 @@ index 84a3059c40..128ec02b80 100644
  #include "api/crypto/crypto_options.h"
  #include "api/crypto/frame_decryptor_interface.h"
  #include "api/frame_transformer_interface.h"
-@@ -272,6 +273,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
+@@ -277,6 +278,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
        // meta data is expected to be present in generic frame descriptor
        // RTP header extension).
        std::set<int> raw_payload_types;
@@ -269,7 +269,7 @@ index 05f4885e26..30fd8b0aef 100644
  
      VideoBitrateAllocationObserver* bitrate_allocation_observer = nullptr;
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index 4536dca8e1..bf7dfad998 100644
+index fe40f715d8..d3d111cee6 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
 @@ -127,6 +127,7 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(

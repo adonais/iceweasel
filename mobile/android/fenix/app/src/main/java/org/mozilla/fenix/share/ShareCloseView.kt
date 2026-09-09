@@ -14,9 +14,7 @@ import mozilla.components.concept.engine.prompt.ShareData
 import org.mozilla.fenix.databinding.ShareCloseBinding
 import org.mozilla.fenix.share.listadapters.ShareTabsAdapter
 
-/**
- * Callbacks for possible user interactions on the [ShareCloseView]
- */
+/** Callbacks for possible user interactions on the [ShareCloseView] */
 interface ShareCloseInteractor {
     fun onShareClosed()
 }
@@ -28,11 +26,12 @@ class ShareCloseView(
 
     val adapter = ShareTabsAdapter()
 
-    private val binding = ShareCloseBinding.inflate(
-        LayoutInflater.from(containerView.context),
-        containerView,
-        true,
-    )
+    private val binding =
+        ShareCloseBinding.inflate(
+            LayoutInflater.from(containerView.context),
+            containerView,
+            true,
+        )
 
     init {
         binding.closeButton.setOnClickListener { interactor.onShareClosed() }
@@ -58,9 +57,10 @@ class ShareCloseView(
         title ?: return
         binding.title.text = title
         binding.groupDot.isVisible = true
-        binding.groupDot.background = GradientDrawable().apply {
-            shape = GradientDrawable.OVAL
-            setColor(color)
-        }
+        binding.groupDot.background =
+            GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(color)
+            }
     }
 }

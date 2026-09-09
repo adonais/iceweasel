@@ -7,21 +7,14 @@ package org.mozilla.samples.glean.library
 import mozilla.samples.glean.library.GleanMetrics.SampleMetrics
 import mozilla.telemetry.glean.Glean
 
-/**
- * These are just simple functions to test calling the Glean API
- * from a third-party library.
- */
+/** These are just simple functions to test calling the Glean API from a third-party library. */
 object SamplesGleanLibrary {
-    /**
-     * Record to a metric defined in *this* library's metrics.yaml file.
-     */
+    /** Record to a metric defined in *this* library's metrics.yaml file. */
     fun recordMetric() {
         SampleMetrics.test.add()
     }
 
-    /**
-     * Notate an active experiment.
-     */
+    /** Notate an active experiment. */
     fun recordExperiment() {
         Glean.setExperimentActive(
             "third_party_library",

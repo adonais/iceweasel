@@ -62,15 +62,17 @@ class AddonUpdaterWorkerTest {
     private fun createWorker(addonId: String): AddonUpdaterWorker {
         return TestListenableWorkerBuilder<AddonUpdaterWorker>(testContext)
             .setInputData(AddonUpdaterWorker.createWorkerData(addonId))
-            .setWorkerFactory(object : WorkerFactory() {
-                override fun createWorker(
-                    appContext: Context,
-                    workerClassName: String,
-                    workerParameters: WorkerParameters,
-                ): ListenableWorker {
-                    return spy(AddonUpdaterWorker(appContext, workerParameters, testDispatcher))
+            .setWorkerFactory(
+                object : WorkerFactory() {
+                    override fun createWorker(
+                        appContext: Context,
+                        workerClassName: String,
+                        workerParameters: WorkerParameters,
+                    ): ListenableWorker {
+                        return spy(AddonUpdaterWorker(appContext, workerParameters, testDispatcher))
+                    }
                 }
-            })
+            )
             .build()
     }
 
@@ -80,109 +82,114 @@ class AddonUpdaterWorkerTest {
     }
 
     @Test
-    fun `doWork - will return Result_success when SuccessfullyUpdated`() = runTest(testDispatcher) {
-        val updateAttemptStorage = mock<DefaultAddonUpdater.UpdateAttemptStorage>()
-        val addonId = "addonId"
-        val onFinishCaptor = argumentCaptor<((AddonUpdater.Status) -> Unit)>()
-        val addonManager = mock<AddonManager>()
-        val worker = createWorker(addonId)
+    fun `doWork - will return Result_success when SuccessfullyUpdated`() =
+        runTest(testDispatcher) {
+            val updateAttemptStorage = mock<DefaultAddonUpdater.UpdateAttemptStorage>()
+            val addonId = "addonId"
+            val onFinishCaptor = argumentCaptor<((AddonUpdater.Status) -> Unit)>()
+            val addonManager = mock<AddonManager>()
+            val worker = createWorker(addonId)
 
-        doReturn(updateAttemptStorage).`when`(worker).updateAttemptStorage
-        GlobalAddonDependencyProvider.initialize(addonManager, mock())
+            doReturn(updateAttemptStorage).`when`(worker).updateAttemptStorage
+            GlobalAddonDependencyProvider.initialize(addonManager, mock())
 
-        whenever(addonManager.updateAddon(anyString(), onFinishCaptor.capture())).then {
-            onFinishCaptor.value.invoke(AddonUpdater.Status.SuccessfullyUpdated)
+            whenever(addonManager.updateAddon(anyString(), onFinishCaptor.capture())).then {
+                onFinishCaptor.value.invoke(AddonUpdater.Status.SuccessfullyUpdated)
+            }
+
+            doReturn(this).`when`(worker).attemptScope
+
+            val result = worker.startWork().await()
+
+            assertEquals(ListenableWorker.Result.success(), result)
+            verify(worker).saveUpdateAttempt(addonId, AddonUpdater.Status.SuccessfullyUpdated)
         }
-
-        doReturn(this).`when`(worker).attemptScope
-
-        val result = worker.startWork().await()
-
-        assertEquals(ListenableWorker.Result.success(), result)
-        verify(worker).saveUpdateAttempt(addonId, AddonUpdater.Status.SuccessfullyUpdated)
-    }
 
     @Test
-    fun `doWork - will return Result_success when NoUpdateAvailable`() = runTest(testDispatcher) {
-        val addonId = "addonId"
-        val onFinishCaptor = argumentCaptor<((AddonUpdater.Status) -> Unit)>()
-        val addonManager = mock<AddonManager>()
-        val worker = createWorker(addonId)
+    fun `doWork - will return Result_success when NoUpdateAvailable`() =
+        runTest(testDispatcher) {
+            val addonId = "addonId"
+            val onFinishCaptor = argumentCaptor<((AddonUpdater.Status) -> Unit)>()
+            val addonManager = mock<AddonManager>()
+            val worker = createWorker(addonId)
 
-        GlobalAddonDependencyProvider.initialize(addonManager, mock())
+            GlobalAddonDependencyProvider.initialize(addonManager, mock())
 
-        whenever(addonManager.updateAddon(anyString(), onFinishCaptor.capture())).then {
-            onFinishCaptor.value.invoke(AddonUpdater.Status.NoUpdateAvailable)
+            whenever(addonManager.updateAddon(anyString(), onFinishCaptor.capture())).then {
+                onFinishCaptor.value.invoke(AddonUpdater.Status.NoUpdateAvailable)
+            }
+
+            val result = worker.startWork().await()
+
+            assertEquals(ListenableWorker.Result.success(), result)
         }
-
-        val result = worker.startWork().await()
-
-        assertEquals(ListenableWorker.Result.success(), result)
-    }
 
     @Test
-    fun `doWork - will return Result_failure when NotInstalled`() = runTest(testDispatcher) {
-        val addonId = "addonId"
-        val onFinishCaptor = argumentCaptor<((AddonUpdater.Status) -> Unit)>()
-        val addonManager = mock<AddonManager>()
-        val worker = createWorker(addonId)
+    fun `doWork - will return Result_failure when NotInstalled`() =
+        runTest(testDispatcher) {
+            val addonId = "addonId"
+            val onFinishCaptor = argumentCaptor<((AddonUpdater.Status) -> Unit)>()
+            val addonManager = mock<AddonManager>()
+            val worker = createWorker(addonId)
 
-        GlobalAddonDependencyProvider.initialize(addonManager, mock())
+            GlobalAddonDependencyProvider.initialize(addonManager, mock())
 
-        whenever(addonManager.updateAddon(anyString(), onFinishCaptor.capture())).then {
-            onFinishCaptor.value.invoke(AddonUpdater.Status.NotInstalled)
+            whenever(addonManager.updateAddon(anyString(), onFinishCaptor.capture())).then {
+                onFinishCaptor.value.invoke(AddonUpdater.Status.NotInstalled)
+            }
+
+            val result = worker.startWork().await()
+
+            assertEquals(ListenableWorker.Result.failure(), result)
         }
-
-        val result = worker.startWork().await()
-
-        assertEquals(ListenableWorker.Result.failure(), result)
-    }
 
     @Test
-    fun `doWork - will return Result_failure when an Error happens`() = runTest(testDispatcher) {
-        val updateAttemptStorage = mock<DefaultAddonUpdater.UpdateAttemptStorage>()
-        val addonId = "addonId"
-        val onFinishCaptor = argumentCaptor<((AddonUpdater.Status) -> Unit)>()
-        val addonManager = mock<AddonManager>()
-        val worker = createWorker(addonId)
+    fun `doWork - will return Result_failure when an Error happens`() =
+        runTest(testDispatcher) {
+            val updateAttemptStorage = mock<DefaultAddonUpdater.UpdateAttemptStorage>()
+            val addonId = "addonId"
+            val onFinishCaptor = argumentCaptor<((AddonUpdater.Status) -> Unit)>()
+            val addonManager = mock<AddonManager>()
+            val worker = createWorker(addonId)
 
-        val exception = WebExtensionException(Exception())
-        worker.updateAttemptStorage = updateAttemptStorage
+            val exception = WebExtensionException(Exception())
+            worker.updateAttemptStorage = updateAttemptStorage
 
-        GlobalAddonDependencyProvider.initialize(addonManager, mock())
+            GlobalAddonDependencyProvider.initialize(addonManager, mock())
 
-        whenever(addonManager.updateAddon(anyString(), onFinishCaptor.capture())).then {
-            onFinishCaptor.value.invoke(AddonUpdater.Status.Error("error", exception))
+            whenever(addonManager.updateAddon(anyString(), onFinishCaptor.capture())).then {
+                onFinishCaptor.value.invoke(AddonUpdater.Status.Error("error", exception))
+            }
+
+            val result = worker.startWork().await()
+
+            assertEquals(ListenableWorker.Result.failure(), result)
+            updateAttemptStorage.saveOrUpdate(any())
         }
-
-        val result = worker.startWork().await()
-
-        assertEquals(ListenableWorker.Result.failure(), result)
-        updateAttemptStorage.saveOrUpdate(any())
-    }
 
     @Test
-    fun `doWork - will try pass any exceptions to the crashReporter`() = runTest(testDispatcher) {
-        val addonId = "addonId"
-        val onFinishCaptor = argumentCaptor<((AddonUpdater.Status) -> Unit)>()
-        val addonManager = mock<AddonManager>()
-        val worker = createWorker(addonId)
+    fun `doWork - will try pass any exceptions to the crashReporter`() =
+        runTest(testDispatcher) {
+            val addonId = "addonId"
+            val onFinishCaptor = argumentCaptor<((AddonUpdater.Status) -> Unit)>()
+            val addonManager = mock<AddonManager>()
+            val worker = createWorker(addonId)
 
-        var crashWasReported = false
-        val crashReporter: ((Throwable) -> Unit) = { _ ->
-            crashWasReported = true
+            var crashWasReported = false
+            val crashReporter: ((Throwable) -> Unit) = { _ ->
+                crashWasReported = true
+            }
+
+            GlobalAddonDependencyProvider.initialize(addonManager, mock(), crashReporter)
+            GlobalAddonDependencyProvider.addonManager = null
+
+            whenever(addonManager.updateAddon(anyString(), onFinishCaptor.capture())).then {
+                onFinishCaptor.value.invoke(AddonUpdater.Status.Error("error", Exception()))
+            }
+
+            val result = worker.startWork().await()
+
+            assertEquals(ListenableWorker.Result.failure(), result)
+            assertTrue(crashWasReported)
         }
-
-        GlobalAddonDependencyProvider.initialize(addonManager, mock(), crashReporter)
-        GlobalAddonDependencyProvider.addonManager = null
-
-        whenever(addonManager.updateAddon(anyString(), onFinishCaptor.capture())).then {
-            onFinishCaptor.value.invoke(AddonUpdater.Status.Error("error", Exception()))
-        }
-
-        val result = worker.startWork().await()
-
-        assertEquals(ListenableWorker.Result.failure(), result)
-        assertTrue(crashWasReported)
-    }
 }

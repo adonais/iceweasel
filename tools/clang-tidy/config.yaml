@@ -19,7 +19,7 @@ platforms:
 # Minimum clang-tidy version that is required for all the following checkers
 # to work properly.
 # This is also used by 'mach lint -l clang-format'
-package_version: "21.1.8"
+package_version: "22.1.8"
 
 # Header file that are platform dependant and generate false positive, we don't
 # want to analyze them.
@@ -61,6 +61,8 @@ clang_checkers:
     reliability: high
   - name: bugprone-redundant-branch-condition
     reliability: high
+  - name: bugprone-bitwise-pointer-cast
+    reliability: high
   - name: misc-definitions-in-headers
     reliability: high
   - name: performance-for-range-copy
@@ -68,6 +70,11 @@ clang_checkers:
     config:
       - key: AllowedTypes
         value: (mozilla::)?RefPtr
+  - name: performance-unnecessary-copy-initialization
+    reliability: high
+    config:
+      - key: AllowedTypes
+        value: (mozilla::)?(nsCOM|Ref)Ptr
   - name: performance-inefficient-string-concatenation
     reliability: high
   - name: performance-inefficient-vector-operation

@@ -441,33 +441,6 @@ add_task(async function () {
   });
 });
 
-add_task(async function checkStyleQueryWithoutModernAttrSupport() {
-  await pushPref("layout.css.style-queries.enabled", true);
-  // explicitely disable modern attr() support
-  await pushPref("layout.css.attr.enabled", false);
-  await addTab(
-    "https://example.com/document-builder.sjs?html=" +
-      encodeURIComponent(TEST_URI)
-  );
-  const { inspector, view } = await openRuleView();
-
-  await selectNode("h5", inspector);
-  await assertQueryContainerTooltip({
-    inspector,
-    view,
-    ruleIndex: 1,
-    conditionIndex: 6,
-    expectedConditionText:
-      "style((attr(data-x type(<length>)) < 10px) or (attr(data-y px, 10px) < 100px) or (attr(data-z px) < 1000px))",
-    expectedHeaderText: "<article>",
-    // doesn't contain the attributes referenced in the query
-    expectedBodyText: ["container-name: post", "container-type: inline-size"],
-    expectedSelectedNodeAfterClick: "article",
-    // doesn't match as attr() is not supported in style() when the pref is set to false
-    unmatched: true,
-  });
-});
-
 function assertContainerQueryData(view, expectedRules) {
   const rulesInView = Array.from(
     view.element.querySelectorAll(".ruleview-rule")

@@ -58,7 +58,6 @@ tasks:
             env:
                 MOZ_ARTIFACT_TASK: {task-reference: '<linux64-opt>'}
         run:
-            clone-with: hg
             config:
                 - builds/releng_base_linux_64_builds.py
         dependencies:
@@ -77,7 +76,6 @@ tasks:
             env:
                 MOZ_ARTIFACT_TASK: {task-reference: '<linux64-debug>'}
         run:
-            clone-with: hg
             config:
                 - builds/releng_base_linux_64_builds.py
             custom-build-variant-cfg: debug
@@ -99,7 +97,6 @@ tasks:
             env:
                 MOZ_ARTIFACT_TASK: {task-reference: '<macosx64-opt>'}
         run:
-            clone-with: hg
             config:
                 - builds/releng_base_mac_64_cross_builds.py
         dependencies:
@@ -120,7 +117,6 @@ tasks:
             env:
                 MOZ_ARTIFACT_TASK: {task-reference: '<macosx64-debug>'}
         run:
-            clone-with: hg
             config:
                 - builds/releng_base_mac_64_cross_builds.py
             custom-build-variant-cfg: cross-debug
@@ -147,7 +143,6 @@ tasks:
             env:
                 MOZ_ARTIFACT_TASK: {task-reference: '<win64-opt>'}
         run:
-            clone-with: hg
             config:
                 - builds/releng_base_linux_64_builds.py
             extra-config:
@@ -175,7 +170,6 @@ tasks:
             env:
                 MOZ_ARTIFACT_TASK: {task-reference: '<win64-debug>'}
         run:
-            clone-with: hg
             config:
                 - builds/releng_base_linux_64_builds.py
                 - builds/taskcluster_sub_win64/debug.py

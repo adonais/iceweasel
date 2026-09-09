@@ -10,27 +10,23 @@ import mozilla.components.concept.menu.candidate.HighPriorityHighlightEffect
 import mozilla.components.concept.menu.candidate.LowPriorityHighlightEffect
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
+import mozilla.components.ui.colors.R as colorsR
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
-import mozilla.components.ui.colors.R as colorsR
 
 @RunWith(AndroidJUnit4::class)
 class BrowserMenuHighlightTest {
 
     @Test
     fun `low priority effect keeps notification tint`() {
-        val highlight = BrowserMenuHighlight.LowPriority(
-            notificationTint = Color.RED,
-        )
+        val highlight = BrowserMenuHighlight.LowPriority(notificationTint = Color.RED)
         assertEquals(LowPriorityHighlightEffect(Color.RED), highlight.asEffect(mock()))
     }
 
     @Test
     fun `high priority effect keeps background tint`() {
-        val highlight = BrowserMenuHighlight.HighPriority(
-            backgroundTint = Color.RED,
-        )
+        val highlight = BrowserMenuHighlight.HighPriority(backgroundTint = Color.RED)
         assertEquals(HighPriorityHighlightEffect(Color.RED), highlight.asEffect(mock()))
     }
 
@@ -38,12 +34,13 @@ class BrowserMenuHighlightTest {
     @Test
     fun `classic highlight effect converts background tint`() {
         val colorId = colorsR.color.photonRed50
-        val highlight = BrowserMenuHighlight.ClassicHighlight(
-            startImageResource = 0,
-            endImageResource = 0,
-            backgroundResource = 0,
-            colorResource = colorId,
-        )
+        val highlight =
+            BrowserMenuHighlight.ClassicHighlight(
+                startImageResource = 0,
+                endImageResource = 0,
+                backgroundResource = 0,
+                colorResource = colorId,
+            )
         assertEquals(HighPriorityHighlightEffect(testContext.getColor(colorId)), highlight.asEffect(testContext))
     }
 }

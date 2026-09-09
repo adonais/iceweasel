@@ -4,10 +4,10 @@
 
 package org.mozilla.fenix.library.history
 
-import org.junit.Assert
-import org.junit.Test
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
+import org.junit.Assert
+import org.junit.Test
 
 class RemoveTimeFrameTest {
 
@@ -39,13 +39,16 @@ class RemoveTimeFrameTest {
     @Test
     fun `WHEN TodayAndYesterday is calculated THEN first timeStamp is the start of the previous day`() {
         val todayAndYesterdayRange = RemoveTimeFrame.TodayAndYesterday.toLongRange()
-        val yesterdayStartMillis = Calendar.getInstance().apply {
-            add(Calendar.DAY_OF_YEAR, -1)
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
+        val yesterdayStartMillis =
+            Calendar.getInstance()
+                .apply {
+                    add(Calendar.DAY_OF_YEAR, -1)
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                .timeInMillis
         Assert.assertEquals(yesterdayStartMillis, todayAndYesterdayRange.first)
     }
 

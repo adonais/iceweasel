@@ -9,11 +9,11 @@ import android.view.View
 import androidx.annotation.DrawableRes
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.widget.SwitchCompat
+import java.lang.reflect.Modifier
 import mozilla.components.browser.menu.BrowserMenu
 import mozilla.components.browser.menu.R
 import mozilla.components.concept.menu.candidate.CompoundMenuCandidate
 import mozilla.components.concept.menu.candidate.DrawableMenuIcon
-import java.lang.reflect.Modifier
 
 /**
  * A simple browser menu switch.
@@ -21,14 +21,13 @@ import java.lang.reflect.Modifier
  * @param imageResource ID of a drawable resource to be shown as icon.
  * @param label The visible label of this menu item.
  * @param isCollapsingMenuLimit Whether this menu item can serve as the limit of a collapsing menu.
- * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards
- * depending on the menu position).
+ * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards depending on the menu
+ *   position).
  * @param initialState The initial value the checkbox should have.
  * @param listener Callback to be invoked when this menu item is checked.
  */
 class BrowserMenuImageSwitch(
-    @get:VisibleForTesting(otherwise = Modifier.PRIVATE)
-    @param:DrawableRes val imageResource: Int,
+    @get:VisibleForTesting(otherwise = Modifier.PRIVATE) @param:DrawableRes val imageResource: Int,
     label: String,
     override val isCollapsingMenuLimit: Boolean = false,
     override val isSticky: Boolean = false,
@@ -51,8 +50,10 @@ class BrowserMenuImageSwitch(
         )
     }
 
-    override fun asCandidate(context: Context) = super.asCandidate(context).copy(
-        start = DrawableMenuIcon(context, imageResource),
-        end = CompoundMenuCandidate.ButtonType.SWITCH,
-    )
+    override fun asCandidate(context: Context) =
+        super.asCandidate(context)
+            .copy(
+                start = DrawableMenuIcon(context, imageResource),
+                end = CompoundMenuCandidate.ButtonType.SWITCH,
+            )
 }

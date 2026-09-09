@@ -22,10 +22,11 @@ import org.mockito.Mockito.verify
 @RunWith(AndroidJUnit4::class)
 class WebAppLauncherActivityTest {
 
-    private val baseManifest = WebAppManifest(
-        name = "Test",
-        startUrl = "https://www.mozilla.org",
-    )
+    private val baseManifest =
+        WebAppManifest(
+            name = "Test",
+            startUrl = "https://www.mozilla.org",
+        )
 
     @Test
     fun `DisplayMode-Browser launches browser`() {

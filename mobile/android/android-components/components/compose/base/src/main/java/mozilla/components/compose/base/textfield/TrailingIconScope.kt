@@ -31,36 +31,32 @@ import mozilla.components.compose.base.theme.acornPrivateColorScheme
 import mozilla.components.compose.base.theme.privateColorPalette
 import mozilla.components.ui.icons.R as iconsR
 
-/**
- * Scope for [TextField] trailing icons.
- */
+/** Scope for [TextField] trailing icons. */
 class TrailingIconScope(rowScope: RowScope) : RowScope by rowScope {
 
-    /**
-     * An eye [TextField] trailing icon.
-     */
+    /** An eye [TextField] trailing icon. */
     @Composable
     fun EyeTextFieldButton(
         contentDescription: Text? = Text.Resource(R.string.text_field_eye_trailing_icon_default_content_description),
         onTrailingIconClick: () -> Unit,
-    ) = TrailingIconButton(
-        iconId = iconsR.drawable.mozac_ic_eye_24,
-        contentDescription = contentDescription,
-        onTrailingIconClick = onTrailingIconClick,
-    )
+    ) =
+        TrailingIconButton(
+            iconId = iconsR.drawable.mozac_ic_eye_24,
+            contentDescription = contentDescription,
+            onTrailingIconClick = onTrailingIconClick,
+        )
 
-    /**
-     * A cross [TextField] trailing icon.
-     */
+    /** A cross [TextField] trailing icon. */
     @Composable
     fun CrossTextFieldButton(
         contentDescription: Text? = Text.Resource(R.string.text_field_cross_trailing_icon_default_content_description),
         onTrailingIconClick: () -> Unit,
-    ) = TrailingIconButton(
-        iconId = iconsR.drawable.mozac_ic_cross_circle_fill_24,
-        contentDescription = contentDescription,
-        onTrailingIconClick = onTrailingIconClick,
-    )
+    ) =
+        TrailingIconButton(
+            iconId = iconsR.drawable.mozac_ic_cross_circle_fill_24,
+            contentDescription = contentDescription,
+            onTrailingIconClick = onTrailingIconClick,
+        )
 
     @Composable
     private fun TrailingIconButton(
@@ -69,8 +65,8 @@ class TrailingIconScope(rowScope: RowScope) : RowScope by rowScope {
         onTrailingIconClick: () -> Unit,
     ) {
         IconButton(
-          onClick = onTrailingIconClick,
-          contentDescription = contentDescription?.value ?: "",
+            onClick = onTrailingIconClick,
+            contentDescription = contentDescription?.value ?: "",
         ) {
             Icon(
                 painter = painterResource(id = iconId),
@@ -95,16 +91,15 @@ private fun EyeTextFieldButtonPreview() {
                 },
                 placeholder = "",
                 errorText = "",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
                 label = "Eye",
                 trailingIcon = { EyeTextFieldButton { isPasswordVisible = !isPasswordVisible } },
-                visualTransformation = if (isPasswordVisible) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
+                visualTransformation =
+                    if (isPasswordVisible) {
+                        VisualTransformation.None
+                    } else {
+                        PasswordVisualTransformation()
+                    },
             )
         }
     }
@@ -128,16 +123,15 @@ private fun EyeTextFieldButtonPrivatePreview() {
                 },
                 placeholder = "",
                 errorText = "",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
                 label = "Eye",
                 trailingIcon = { EyeTextFieldButton { isPasswordVisible = !isPasswordVisible } },
-                visualTransformation = if (isPasswordVisible) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
+                visualTransformation =
+                    if (isPasswordVisible) {
+                        VisualTransformation.None
+                    } else {
+                        PasswordVisualTransformation()
+                    },
             )
         }
     }
@@ -157,9 +151,7 @@ private fun CrossTextFieldButtonPreview() {
                 },
                 placeholder = "",
                 errorText = "",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
                 label = "Cross",
                 trailingIcon = { CrossTextFieldButton { textFieldInput = "" } },
             )
@@ -184,9 +176,7 @@ private fun CrossTextFieldButtonPrivatePreview() {
                 },
                 placeholder = "",
                 errorText = "",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
                 label = "Cross",
                 trailingIcon = { CrossTextFieldButton { textFieldInput = "" } },
             )

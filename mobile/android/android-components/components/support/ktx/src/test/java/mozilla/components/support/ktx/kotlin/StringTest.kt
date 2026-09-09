@@ -5,6 +5,9 @@
 package mozilla.components.support.ktx.kotlin
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.Calendar
+import java.util.Calendar.MILLISECOND
+import kotlin.test.assertNotNull
 import mozilla.components.lib.publicsuffixlist.PublicSuffixList
 import mozilla.components.support.ktx.helpers.ShadowInetAddresses
 import mozilla.components.support.test.robolectric.testContext
@@ -18,9 +21,6 @@ import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
-import java.util.Calendar
-import java.util.Calendar.MILLISECOND
-import kotlin.test.assertNotNull
 
 const val PUNYCODE = "xn--kpry57d"
 const val IDN = "台灣"
@@ -243,63 +243,66 @@ class StringTest {
 
     @Test
     fun sanitizeFileName() {
-        val testCases = listOf(
-            "/../../../../../../../../../../directory/file.......txt" to "file.txt",
-            "/root/directory/file.txt" to "file.txt",
-            "file" to "file",
-            "file.." to "file",
-            "file." to "file",
-            ".file" to "file",
-            "test.2020.12.01.txt" to "test.2020.12.01.txt",
-            "\u0000filename" to "_filename",
-            "file\u0001name" to "file_name",
-            "data\u0002stream" to "data_stream",
-            "end\u0003text" to "end_text",
-            "trans\u0004mission" to "trans_mission",
-            "query\u0005result" to "query_result",
-            "acknowledge\u0006signal" to "acknowledge_signal",
-            "bell\u0007sound" to "bell_sound",
-            "back\u0008space" to "back_space",
-            "horizontal\u0009tab" to "horizontal tab",
-            "new\u000Aline" to "new line",
-            "vertical\u000Btab" to "vertical tab",
-            "form\u000Cfeed" to "form feed",
-            "return\u000Dcarriage" to "return carriage",
-            "shift\u000Eout" to "shift_out",
-            "shift\u000Fin" to "shift_in",
-            "escape\u0010data" to "escape_data",
-            "device\u0011control1" to "device_control1",
-            "device\u0012control2" to "device_control2",
-            "device\u0013control3" to "device_control3",
-            "less<than" to "less_than",
-            "greater>than" to "greater_than",
-            "asterisk*" to "asterisk_",
-            "quotation\"mark" to "quotation_mark",
-            "colon:" to "colon_",
-            "question?mark" to "question_mark",
-            "back\\slash" to "back_slash",
-            "vertical|bar" to "vertical_bar",
-            "This\u00A0is\u00A0no-break space" to "This is no-break space",
-            "This\u1680is\u1680ogham space mark" to "This is ogham space mark",
-            "This\u2000is\u2000en quad" to "This is en quad",
-            "This\u2001is\u2001em quad" to "This is em quad",
-            "This\u2002is\u2002en space" to "This is en space",
-            "This\u2003is\u2003em space" to "This is em space",
-            "This\u2004is\u2004three-per-em space" to "This is three-per-em space",
-            "This\u2005is\u2005four-per-em space" to "This is four-per-em space",
-            "This\u2006is\u2006six-per-em space" to "This is six-per-em space",
-            "This\u2007is\u2007figure space" to "This is figure space",
-            "This\u2008is\u2008punctuation space" to "This is punctuation space",
-            "This\u2009is\u2009thin space" to "This is thin space",
-            "This\u200Ais\u200Ahair space" to "This is hair space",
-            "This\u2028is\u2028line separator" to "This is line separator",
-            "This\u2029is\u2029paragraph separator" to "This is paragraph separator",
-            "This\u202Fis\u202Fnarrow no-break space" to "This is narrow no-break space",
-            "This\u205Fis\u205Fmedium mathematical space" to "This is medium mathematical space",
-            "This\u3000is\u3000ideographic space" to "This is ideographic space",
-            "This   is    a    text   with multiple   spaces.\nAnd  tabs\tand newlines\n\n" to "This is a text with multiple spaces. And tabs and newlines",
-            "This\u00A0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u2028\u2029\u202F\u205F\u3000is a mix of different spaces" to "This is a mix of different spaces",
-        )
+        val testCases =
+            listOf(
+                "/../../../../../../../../../../directory/file.......txt" to "file.txt",
+                "/root/directory/file.txt" to "file.txt",
+                "file" to "file",
+                "file.." to "file",
+                "file." to "file",
+                ".file" to "file",
+                "test.2020.12.01.txt" to "test.2020.12.01.txt",
+                "\u0000filename" to "_filename",
+                "file\u0001name" to "file_name",
+                "data\u0002stream" to "data_stream",
+                "end\u0003text" to "end_text",
+                "trans\u0004mission" to "trans_mission",
+                "query\u0005result" to "query_result",
+                "acknowledge\u0006signal" to "acknowledge_signal",
+                "bell\u0007sound" to "bell_sound",
+                "back\u0008space" to "back_space",
+                "horizontal\u0009tab" to "horizontal tab",
+                "new\u000Aline" to "new line",
+                "vertical\u000Btab" to "vertical tab",
+                "form\u000Cfeed" to "form feed",
+                "return\u000Dcarriage" to "return carriage",
+                "shift\u000Eout" to "shift_out",
+                "shift\u000Fin" to "shift_in",
+                "escape\u0010data" to "escape_data",
+                "device\u0011control1" to "device_control1",
+                "device\u0012control2" to "device_control2",
+                "device\u0013control3" to "device_control3",
+                "less<than" to "less_than",
+                "greater>than" to "greater_than",
+                "asterisk*" to "asterisk_",
+                "quotation\"mark" to "quotation_mark",
+                "colon:" to "colon_",
+                "question?mark" to "question_mark",
+                "back\\slash" to "back_slash",
+                "vertical|bar" to "vertical_bar",
+                "This\u00A0is\u00A0no-break space" to "This is no-break space",
+                "This\u1680is\u1680ogham space mark" to "This is ogham space mark",
+                "This\u2000is\u2000en quad" to "This is en quad",
+                "This\u2001is\u2001em quad" to "This is em quad",
+                "This\u2002is\u2002en space" to "This is en space",
+                "This\u2003is\u2003em space" to "This is em space",
+                "This\u2004is\u2004three-per-em space" to "This is three-per-em space",
+                "This\u2005is\u2005four-per-em space" to "This is four-per-em space",
+                "This\u2006is\u2006six-per-em space" to "This is six-per-em space",
+                "This\u2007is\u2007figure space" to "This is figure space",
+                "This\u2008is\u2008punctuation space" to "This is punctuation space",
+                "This\u2009is\u2009thin space" to "This is thin space",
+                "This\u200Ais\u200Ahair space" to "This is hair space",
+                "This\u2028is\u2028line separator" to "This is line separator",
+                "This\u2029is\u2029paragraph separator" to "This is paragraph separator",
+                "This\u202Fis\u202Fnarrow no-break space" to "This is narrow no-break space",
+                "This\u205Fis\u205Fmedium mathematical space" to "This is medium mathematical space",
+                "This\u3000is\u3000ideographic space" to "This is ideographic space",
+                "This   is    a    text   with multiple   spaces.\nAnd  tabs\tand newlines\n\n" to
+                    "This is a text with multiple spaces. And tabs and newlines",
+                "This\u00A0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u2028\u2029\u202F\u205F\u3000is a mix of different spaces" to
+                    "This is a mix of different spaces",
+            )
 
         testCases.forEach { (raw, escaped) ->
             assertEquals(escaped, raw.sanitizeFileName())
@@ -309,38 +312,39 @@ class StringTest {
     @Test
     fun `WHEN a string contains utf 8 encoded characters or illegal filename characters decode decodes it`() {
         // List of pairs of encoded strings or illegal filename characters and their expected decoded results
-        val testCases = listOf(
-            "hello%20world" to "hello world",
-            "wow%21amazing" to "wow!amazing",
-            "quote%22here%22" to "quote\"here\"",
-            "hash%23tag" to "hash#tag",
-            "save%24money" to "save\$money",
-            "100%25complete" to "100%complete",
-            "you%26me" to "you&me",
-            "it%27s%20easy" to "it's easy",
-            "open%28now%29" to "open(now)",
-            "star%2Ashine" to "star*shine",
-            "add%2Bmore" to "add+more",
-            "comma%2Cseparated" to "comma,separated",
-            "dash%2Dbetween" to "dash-between",
-            "end%2Eperiod" to "end.period",
-            "path%2Fto%2Ffile" to "path/to/file",
-            "time%3A12%3A00" to "time:12:00",
-            "wait%3Bplease" to "wait;please",
-            "less%3Cthan" to "less<than",
-            "equals%3Dsign" to "equals=sign",
-            "greater%3Ethan" to "greater>than",
-            "what%3Fwhere" to "what?where",
-            "email%40domain.com" to "email@domain.com",
-            "bracket%5Bopen%5D" to "bracket[open]",
-            "escape%5Cbackslash" to "escape\\backslash",
-            "bracket%5Dclose%5D" to "bracket]close]",
-            "high%5Efive" to "high^five",
-            "accent%60grave" to "accent`grave",
-            "brace%7Bopenclose%7D" to "brace{openclose}",
-            "pipe%7Csymbol" to "pipe|symbol",
-            "tilde%7Ewave" to "tilde~wave",
-        )
+        val testCases =
+            listOf(
+                "hello%20world" to "hello world",
+                "wow%21amazing" to "wow!amazing",
+                "quote%22here%22" to "quote\"here\"",
+                "hash%23tag" to "hash#tag",
+                "save%24money" to "save\$money",
+                "100%25complete" to "100%complete",
+                "you%26me" to "you&me",
+                "it%27s%20easy" to "it's easy",
+                "open%28now%29" to "open(now)",
+                "star%2Ashine" to "star*shine",
+                "add%2Bmore" to "add+more",
+                "comma%2Cseparated" to "comma,separated",
+                "dash%2Dbetween" to "dash-between",
+                "end%2Eperiod" to "end.period",
+                "path%2Fto%2Ffile" to "path/to/file",
+                "time%3A12%3A00" to "time:12:00",
+                "wait%3Bplease" to "wait;please",
+                "less%3Cthan" to "less<than",
+                "equals%3Dsign" to "equals=sign",
+                "greater%3Ethan" to "greater>than",
+                "what%3Fwhere" to "what?where",
+                "email%40domain.com" to "email@domain.com",
+                "bracket%5Bopen%5D" to "bracket[open]",
+                "escape%5Cbackslash" to "escape\\backslash",
+                "bracket%5Dclose%5D" to "bracket]close]",
+                "high%5Efive" to "high^five",
+                "accent%60grave" to "accent`grave",
+                "brace%7Bopenclose%7D" to "brace{openclose}",
+                "pipe%7Csymbol" to "pipe|symbol",
+                "tilde%7Ewave" to "tilde~wave",
+            )
 
         testCases.forEach { (encoded, decoded) ->
             assertEquals(decoded, encoded.decode())
@@ -446,17 +450,18 @@ class StringTest {
     @Test
     fun `when the full hostname cannot be displayed, elide labels starting from the front`() {
         // See https://url.spec.whatwg.org/#url-rendering-elision
-        // See https://chromium.googlesource.com/chromium/src/+/master/docs/security/url_display_guidelines/url_display_guidelines.md#eliding-urls
+        // See
+        // https://chromium.googlesource.com/chromium/src/+/master/docs/security/url_display_guidelines/url_display_guidelines.md#eliding-urls
 
-        val display = "http://1.2.3.4.5.6.7.8.9.10.11.12.13.14.15.16.17.18.19.20.21.22.23.24.25.com"
-            .shortened()
+        val display = "http://1.2.3.4.5.6.7.8.9.10.11.12.13.14.15.16.17.18.19.20.21.22.23.24.25.com".shortened()
 
         val split = display.split(".")
 
         // If the list ends with 25.com...
         assertEquals("25", split.dropLast(1).last())
         // ...and each value is 1 larger than the last...
-        split.dropLast(1)
+        split
+            .dropLast(1)
             .map { it.toInt() }
             .windowed(2, 1)
             .forEach { (prev, next) ->
@@ -468,19 +473,22 @@ class StringTest {
     @Test
     fun `the registrable domain is always displayed`() {
         // https://url.spec.whatwg.org/#url-rendering-elision
-        // See https://chromium.googlesource.com/chromium/src/+/master/docs/security/url_display_guidelines/url_display_guidelines.md#eliding-urls
+        // See
+        // https://chromium.googlesource.com/chromium/src/+/master/docs/security/url_display_guidelines/url_display_guidelines.md#eliding-urls
 
         val bigRegistrableDomain = "evil-but-also-shockingly-long-registrable-domain.com"
         assertTrue(
-            "https://login.your-bank.com.$bigRegistrableDomain/enter/your/password".shortened()
-                .contains(bigRegistrableDomain),
+            "https://login.your-bank.com.$bigRegistrableDomain/enter/your/password"
+                .shortened()
+                .contains(bigRegistrableDomain)
         )
     }
 
     @Test
     fun `url username and password fields should not be displayed`() {
         // See https://url.spec.whatwg.org/#url-rendering-simplification
-        // See https://chromium.googlesource.com/chromium/src/+/master/docs/security/url_display_guidelines/url_display_guidelines.md#simplify
+        // See
+        // https://chromium.googlesource.com/chromium/src/+/master/docs/security/url_display_guidelines/url_display_guidelines.md#simplify
 
         assertFalse("https://examplecorp.com@attacker.example/".shortened().contains("examplecorp"))
         assertFalse("https://examplecorp.com@attacker.example/".shortened().contains("com"))
@@ -611,6 +619,7 @@ class StringTest {
     fun `should fall back to full url as a last resort`() {
         "about:" shortenedShouldBecome "about:"
     }
+
     // END test cases borrowed from desktop
 
     // BEGIN test cases borrowed from FFTV
@@ -660,6 +669,7 @@ class StringTest {
         assertFalse("8.8.8.8".isIpv6())
         assertFalse("63.245.215.20".isIpv6())
     }
+
     // END test cases borrowed from FFTV
 
     @Test
@@ -674,13 +684,13 @@ class StringTest {
     @Test
     fun `GIVEN an invalid base64 image string WHEN converting it into bitmap THEN the result is null`() {
         val invalidBase64BitmapString = "aa"
-        assertNull(invalidBase64BitmapString.base64ToBitmap())
+        assertNull(invalidBase64BitmapString.base64ToBitmap(ICON_PX, ICON_PX))
     }
 
     @Test
     fun `GIVEN a valid base64 png string WHEN converting it into bitmap THEN the result is not null and no exception is thrown`() {
         val validBase64BitmapString = "data:image/png;base64,R0lGODlhAQABAIAAAP///wAAACwAAAAAAQABAAACAkQBADs="
-        assertNotNull(validBase64BitmapString.base64ToBitmap())
+        assertNotNull(validBase64BitmapString.base64ToBitmap(ICON_PX, ICON_PX))
     }
 
     @Test
@@ -688,9 +698,9 @@ class StringTest {
         val validBase64JpegString = "data:image/jpeg;base64,R0lGODlhAQABAIAAAP///wAAACwAAAAAAQABAAACAkQBADs="
         val validBase64JpgString = "data:image/jpg;base64,R0lGODlhAQABAIAAAP///wAAACwAAAAAAQABAAACAkQBADs="
         val validBase64AnythingString = "data:image/anything;base64,R0lGODlhAQABAIAAAP///wAAACwAAAAAAQABAAACAkQBADs="
-        assertNotNull(validBase64JpegString.base64ToBitmap())
-        assertNotNull(validBase64JpgString.base64ToBitmap())
-        assertNotNull(validBase64AnythingString.base64ToBitmap())
+        assertNotNull(validBase64JpegString.base64ToBitmap(ICON_PX, ICON_PX))
+        assertNotNull(validBase64JpgString.base64ToBitmap(ICON_PX, ICON_PX))
+        assertNotNull(validBase64AnythingString.base64ToBitmap(ICON_PX, ICON_PX))
     }
 
     @Test
@@ -698,9 +708,33 @@ class StringTest {
         val invalidBase64String = "R0lGODlhAQABAIAAAP///wAAACwAAAAAAQABAAACAkQBADs="
         val invalidBase64String2 = "data:image/jpg;base64;R0lGODlhAQABAIAAAP///wAAACwAAAAAAQABAAACAkQBADs="
         val invalidBase64String3 = "image/jpg;base64,R0lGODlhAQABAIAAAP///wAAACwAAAAAAQABAAACAkQBADs="
-        assertNull(invalidBase64String.base64ToBitmap())
-        assertNull(invalidBase64String2.base64ToBitmap())
-        assertNull(invalidBase64String3.base64ToBitmap())
+        assertNull(invalidBase64String.base64ToBitmap(ICON_PX, ICON_PX))
+        assertNull(invalidBase64String2.base64ToBitmap(ICON_PX, ICON_PX))
+        assertNull(invalidBase64String3.base64ToBitmap(ICON_PX, ICON_PX))
+    }
+
+    @Test
+    fun `GIVEN a base64 image larger than the target WHEN converting it into a bitmap THEN it is subsampled`() {
+        val bitmap = FOUR_BY_FOUR_PNG.base64ToBitmap(targetWidth = 1, targetHeight = 1)
+
+        assertNotNull(bitmap)
+        assertEquals(1, bitmap.width)
+        assertEquals(1, bitmap.height)
+    }
+
+    @Test
+    fun `GIVEN a data URI whose payload is not base64 WHEN converting it into a bitmap THEN null is returned`() {
+        // The other invalid cases here are rejected by the data URI pattern, so they never reach the decode.
+        assertNull("data:image/png;base64,!!!!not-base64!!!!".base64ToBitmap(ICON_PX, ICON_PX))
+    }
+
+    @Test
+    fun `GIVEN a base64 image smaller than the target WHEN converting it into a bitmap THEN it is decoded whole`() {
+        val bitmap = FOUR_BY_FOUR_PNG.base64ToBitmap(targetWidth = 64, targetHeight = 64)
+
+        assertNotNull(bitmap)
+        assertEquals(4, bitmap.width)
+        assertEquals(4, bitmap.height)
     }
 
     @Test
@@ -742,3 +776,9 @@ class StringTest {
 
     private fun String.shortened() = this.toShortUrl(publicSuffixList)
 }
+
+private const val ICON_PX = 32
+
+// A 4x4 PNG, small enough to inline but large enough to subsample.
+private const val FOUR_BY_FOUR_PNG =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR42mMQVDKGIwbiOACj1AZhWTrROwAAAABJRU5ErkJggg=="

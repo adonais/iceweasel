@@ -1160,8 +1160,10 @@ PrintSyntax()
         "\t\t [-z noisefile] [-d certdir] [-P dbprefix]\n", progName);
     FPS "\t%s -G [-h token-name] -k ec -q curve [-f pwfile]\n"
         "\t\t [-z noisefile] [-d certdir] [-P dbprefix]\n", progName);
-    FPS "\t%s -K [-n key-name] [-h token-name] [-k dsa|ec|rsa|all]\n",
-        progName);
+    FPS "\t%s -G [-h token-name] -k mldsa -q paramset [-f pwfile]\n"
+        "\t\t [-z noisefile] [-d certdir] [-P dbprefix]\n", progName);
+    FPS "\t%s -K [-n key-name] [-h token-name] [-k dsa|ec|rsa|mldsa|all]\n",
+         progName);
     FPS "\t\t [-f pwfile] [-X] [-d certdir] [-P dbprefix]\n");
     FPS "\t%s --upgrade-merge --source-dir upgradeDir --upgrade-id uniqueID\n",
         progName);
@@ -1394,6 +1396,9 @@ luG(enum usage_level ul, const char *command)
     FPS "%-20s c2tnb359w1, c2pnb368w1, c2tnb431r1, secp112r1, \n", "");
     FPS "%-20s secp112r2, secp128r1, secp128r2, sect113r1, sect113r2\n", "");
     FPS "%-20s sect131r1, sect131r2\n", "");
+    FPS "%-20s ML-DSA parameter set (mldsa only)\n",
+        "   -q paramset");
+    FPS "%-20s valid values are ml-dsa-44,  ml-dsa-65, ml-dsa-87:\n", "");
     FPS "%-20s Key database directory (default is ~/.netscape)\n",
         "   -d keydir");
     FPS "%-20s Cert & Key database prefix\n",
@@ -1486,6 +1491,7 @@ luK(enum usage_level ul, const char *command)
 
     FPS "%-20s Key type (\"all\" (default), \"dsa\","
                                                     " \"ec\","
+                                                    " \"mldsa\","
                                                     " \"rsa\")\n",
         "   -k key-type");
     FPS "%-20s The nickname of the key or associated certificate\n",
@@ -1644,6 +1650,10 @@ luR(enum usage_level ul, const char *command)
         "   -q pqgfile");
     FPS "%-20s Elliptic curve name (ec only)\n",
         "   -q curve-name");
+    FPS "%-20s See the \"-G\" option for a full list of supported names.\n",
+        "");
+    FPS "%-20s ML-DSA parameter set (mldsa only)\n",
+        "   -q paramset");
     FPS "%-20s See the \"-G\" option for a full list of supported names.\n",
         "");
     FPS "%-20s Specify the password file\n",
@@ -1824,6 +1834,10 @@ luS(enum usage_level ul, const char *command)
         "   -q pqgfile");
     FPS "%-20s Elliptic curve name (ec only)\n",
         "   -q curve-name");
+    FPS "%-20s See the \"-G\" option for a full list of supported names.\n",
+        "");
+    FPS "%-20s ML-DSA parameter set (mldsa only)\n",
+        "   -q paramset");
     FPS "%-20s See the \"-G\" option for a full list of supported names.\n",
         "");
     FPS "%-20s Self sign\n",
@@ -2778,9 +2792,34 @@ certutil_main(int argc, char **argv, PRBool initialize)
     if (certutil.options[opt_UpgradeTokenName].activated)
         upgradeTokenName = certutil.options[opt_UpgradeTokenName].arg;
 
+    /* must be before opt_KeySize! */
+    /*  -k key type  */
+    if (certutil.options[opt_KeyType].activated) {
+        char *arg = certutil.options[opt_KeyType].arg;
+        if (PL_strcmp(arg, "rsa") == 0) {
+            keytype = rsaKey;
+        } else if (PL_strcmp(arg, "dsa") == 0) {
+            keytype = dsaKey;
+        } else if (PL_strcmp(arg, "ec") == 0) {
+            keytype = ecKey;
+        } else if (PL_strcmp(arg, "mldsa") == 0) {
+            keytype = mldsaKey;
+        } else if (PL_strcmp(arg, "all") == 0) {
+            keytype = nullKey;
+        } else {
+            /* use an existing private/public key pair */
+            keysource = arg;
+        }
+    } else if (certutil.commands[cmd_ListKeys].activated) {
+        keytype = nullKey;
+    }
+
     if (certutil.options[opt_KeySize].activated) {
         keysize = PORT_Atoi(certutil.options[opt_KeySize].arg);
-        if ((keysize < MIN_KEY_BITS) || (keysize > MAX_KEY_BITS)) {
+        /* mldsa limits are much different that rsa and dsa, don't
+         * do the check here */
+        if ((keytype != mldsaKey) &&
+            ((keysize < MIN_KEY_BITS) || (keysize > MAX_KEY_BITS))) {
             PR_fprintf(PR_STDERR,
                        "%s -g:  Keysize must be between %d and %d.\n",
                        progName, MIN_KEY_BITS, MAX_KEY_BITS);
@@ -2809,25 +2848,6 @@ certutil_main(int argc, char **argv, PRBool initialize)
                        progName, arg);
             return 255;
         }
-    }
-
-    /*  -k key type  */
-    if (certutil.options[opt_KeyType].activated) {
-        char *arg = certutil.options[opt_KeyType].arg;
-        if (PL_strcmp(arg, "rsa") == 0) {
-            keytype = rsaKey;
-        } else if (PL_strcmp(arg, "dsa") == 0) {
-            keytype = dsaKey;
-        } else if (PL_strcmp(arg, "ec") == 0) {
-            keytype = ecKey;
-        } else if (PL_strcmp(arg, "all") == 0) {
-            keytype = nullKey;
-        } else {
-            /* use an existing private/public key pair */
-            keysource = arg;
-        }
-    } else if (certutil.commands[cmd_ListKeys].activated) {
-        keytype = nullKey;
     }
 
     if (certutil.options[opt_KeyOpFlagsOn].activated) {
@@ -2872,9 +2892,12 @@ certutil_main(int argc, char **argv, PRBool initialize)
 
     /*  -q PQG file or curve name */
     if (certutil.options[opt_PQGFile].activated) {
-        if ((keytype != dsaKey) && (keytype != ecKey)) {
+        if ((keytype != dsaKey) && (keytype != ecKey) &&
+            (keytype != mldsaKey)) {
             PR_fprintf(PR_STDERR, "%s -q: specifies a PQG file for DSA keys"
-                                  " (-k dsa) or a named curve for EC keys (-k ec)\n)",
+                                  " (-k dsa)\n"
+                                  " or a named curve for EC keys (-k ec)\n"
+                                  " or a parameter set for ML-DSA keys (-k mldsa)\n",
                        progName);
             return 255;
         }

@@ -63,6 +63,7 @@ DOM4_MSG_DEF(VersionError, "The operation failed because the stored database is 
 DOM4_MSG_DEF(NotFoundError, "The operation failed because the requested database object could not be found. For example, an object store did not exist but was being opened.", NS_ERROR_DOM_INDEXEDDB_NOT_FOUND_ERR)
 DOM4_MSG_DEF(InvalidStateError, "A mutation operation was attempted on a database that did not allow mutations.", NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR)
 DOM4_MSG_DEF(AbortError, "A request was aborted, for example through a call to IDBTransaction.abort.", NS_ERROR_DOM_INDEXEDDB_ABORT_ERR)
+DOM4_MSG_DEF(NotReadableError, "The operation failed because the underlying storage containing the requested data could not be read.", NS_ERROR_DOM_INDEXEDDB_NOT_READABLE_ERR)
 DOM4_MSG_DEF(QuotaExceededError, "The current transaction exceeded its quota limitations.", NS_ERROR_DOM_INDEXEDDB_QUOTA_ERR)
 
 /* FileSystem DOM errors. */

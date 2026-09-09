@@ -27,7 +27,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_CHECK_NO_UPDATE_EXTERNAL
 
   check_no_update_notify:
     type: counter
@@ -45,7 +44,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_CHECK_NO_UPDATE_NOTIFY
 
   check_no_update_subsequent:
     type: counter
@@ -63,7 +61,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_CHECK_NO_UPDATE_SUBSEQUENT
 
   check_code_external:
     type: custom_distribution
@@ -85,7 +82,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_CHECK_CODE_EXTERNAL
 
   check_code_notify:
     type: custom_distribution
@@ -107,7 +103,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_CHECK_CODE_NOTIFY
 
   check_code_subsequent:
     type: custom_distribution
@@ -131,7 +126,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_CHECK_CODE_SUBSEQUENT
 
   check_extended_error_external:
     type: labeled_counter
@@ -149,7 +143,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_CHECK_EXTENDED_ERROR_EXTERNAL
 
   check_extended_error_notify:
     type: labeled_counter
@@ -167,7 +160,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_CHECK_EXTENDED_ERROR_NOTIFY
 
   check_extended_error_subsequent:
     type: labeled_counter
@@ -185,7 +177,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_CHECK_EXTENDED_ERROR_SUBSEQUENT
 
   invalid_lastupdatetime_external:
     type: counter
@@ -203,7 +194,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_INVALID_LASTUPDATETIME_EXTERNAL
 
   invalid_lastupdatetime_notify:
     type: counter
@@ -221,7 +211,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_INVALID_LASTUPDATETIME_NOTIFY
 
   invalid_lastupdatetime_subsequent:
     type: counter
@@ -239,7 +228,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_INVALID_LASTUPDATETIME_SUBSEQUENT
 
   last_notify_interval_days_external:
     type: timing_distribution
@@ -258,7 +246,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_LAST_NOTIFY_INTERVAL_DAYS_EXTERNAL
 
   last_notify_interval_days_notify:
     type: timing_distribution
@@ -277,7 +264,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_LAST_NOTIFY_INTERVAL_DAYS_NOTIFY
 
   last_notify_interval_days_subsequent:
     type: timing_distribution
@@ -296,7 +282,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_LAST_NOTIFY_INTERVAL_DAYS_SUBSEQUENT
 
   ping_count_external:
     type: counter
@@ -314,7 +299,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_PING_COUNT_EXTERNAL
 
   ping_count_notify:
     type: counter
@@ -332,7 +316,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_PING_COUNT_NOTIFY
 
   ping_count_subsequent:
     type: counter
@@ -350,7 +333,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_PING_COUNT_SUBSEQUENT
 
   service_installed_external:
     type: labeled_counter
@@ -370,7 +352,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_SERVICE_INSTALLED_EXTERNAL
 
   service_installed_notify:
     type: labeled_counter
@@ -390,7 +371,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_SERVICE_INSTALLED_NOTIFY
 
   service_installed_subsequent:
     type: labeled_counter
@@ -411,7 +391,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_SERVICE_INSTALLED_SUBSEQUENT
 
   service_manually_uninstalled_external:
     type: counter
@@ -429,7 +408,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_SERVICE_MANUALLY_UNINSTALLED_EXTERNAL
 
   service_manually_uninstalled_notify:
     type: counter
@@ -447,7 +425,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_SERVICE_MANUALLY_UNINSTALLED_NOTIFY
 
   service_manually_uninstalled_subsequent:
     type: counter
@@ -465,7 +442,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_SERVICE_MANUALLY_UNINSTALLED_SUBSEQUENT
 
   state_write_failure:
     type: counter
@@ -496,7 +472,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_UNABLE_TO_APPLY_EXTERNAL
 
   unable_to_apply_notify:
     type: counter
@@ -513,7 +488,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_UNABLE_TO_APPLY_NOTIFY
 
   unable_to_apply_subsequent:
     type: counter
@@ -530,7 +504,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_UNABLE_TO_APPLY_SUBSEQUENT
 
   cannot_stage_external:
     type: counter
@@ -547,7 +520,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_CANNOT_STAGE_EXTERNAL
 
   cannot_stage_notify:
     type: counter
@@ -564,7 +536,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_CANNOT_STAGE_NOTIFY
 
   cannot_stage_subsequent:
     type: counter
@@ -581,7 +552,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_CANNOT_STAGE_SUBSEQUENT
 
   pref_update_cancelations_external:
     type: custom_distribution
@@ -603,7 +573,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_PREF_UPDATE_CANCELATIONS_EXTERNAL
 
   pref_update_cancelations_notify:
     type: custom_distribution
@@ -625,7 +594,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_PREF_UPDATE_CANCELATIONS_NOTIFY
 
   pref_update_cancelations_subsequent:
     type: custom_distribution
@@ -647,7 +615,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_PREF_UPDATE_CANCELATIONS_SUBSEQUENT
 
   pref_service_errors_external:
     type: custom_distribution
@@ -669,7 +636,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_PREF_SERVICE_ERRORS_EXTERNAL
 
   pref_service_errors_notify:
     type: custom_distribution
@@ -691,7 +657,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_PREF_SERVICE_ERRORS_NOTIFY
 
   pref_service_errors_subsequent:
     type: custom_distribution
@@ -713,7 +678,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_PREF_SERVICE_ERRORS_SUBSEQUENT
 
   not_pref_update_auto_external:
     type: counter
@@ -731,7 +695,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_NOT_PREF_UPDATE_AUTO_EXTERNAL
 
   not_pref_update_auto_notify:
     type: counter
@@ -749,7 +712,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_NOT_PREF_UPDATE_AUTO_NOTIFY
 
   not_pref_update_auto_subsequent:
     type: counter
@@ -767,7 +729,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_NOT_PREF_UPDATE_AUTO_SUBSEQUENT
 
   not_pref_update_staging_enabled_external:
     type: counter
@@ -785,7 +746,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_NOT_PREF_UPDATE_STAGING_ENABLED_EXTERNAL
 
   not_pref_update_staging_enabled_notify:
     type: counter
@@ -803,7 +763,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_NOT_PREF_UPDATE_STAGING_ENABLED_NOTIFY
 
   not_pref_update_staging_enabled_subsequent:
     type: counter
@@ -821,7 +780,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_NOT_PREF_UPDATE_STAGING_ENABLED_SUBSEQUENT
 
   not_pref_update_service_enabled_external:
     type: counter
@@ -839,7 +797,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_NOT_PREF_UPDATE_SERVICE_ENABLED_EXTERNAL
 
   not_pref_update_service_enabled_notify:
     type: counter
@@ -857,7 +814,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_NOT_PREF_UPDATE_SERVICE_ENABLED_NOTIFY
 
   not_pref_update_service_enabled_subsequent:
     type: counter
@@ -875,7 +831,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_NOT_PREF_UPDATE_SERVICE_ENABLED_SUBSEQUENT
 
   can_use_bits_external:
     type: labeled_counter
@@ -904,7 +859,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_CAN_USE_BITS_EXTERNAL
 
   can_use_bits_notify:
     type: labeled_counter
@@ -932,7 +886,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_CAN_USE_BITS_NOTIFY
 
   can_use_bits_subsequent:
     type: labeled_counter
@@ -963,7 +916,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_CAN_USE_BITS_SUBSEQUENT
 
   download_code_complete:
     type: custom_distribution
@@ -984,7 +936,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_DOWNLOAD_CODE_COMPLETE
 
   download_code_partial:
     type: custom_distribution
@@ -1005,7 +956,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_DOWNLOAD_CODE_PARTIAL
 
   download_code_unknown:
     type: custom_distribution
@@ -1026,7 +976,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_DOWNLOAD_CODE_UNKNOWN
 
   state_code_complete_startup:
     type: custom_distribution
@@ -1047,7 +996,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_STATE_CODE_COMPLETE_STARTUP
 
   state_code_partial_startup:
     type: custom_distribution
@@ -1068,7 +1016,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_STATE_CODE_PARTIAL_STARTUP
 
   state_code_unknown_startup:
     type: custom_distribution
@@ -1089,7 +1036,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_STATE_CODE_UNKNOWN_STARTUP
 
   state_code_complete_stage:
     type: custom_distribution
@@ -1111,7 +1057,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_STATE_CODE_COMPLETE_STAGE
 
   state_code_partial_stage:
     type: custom_distribution
@@ -1133,7 +1078,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_STATE_CODE_PARTIAL_STAGE
 
   state_code_unknown_stage:
     type: custom_distribution
@@ -1155,7 +1099,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_STATE_CODE_UNKNOWN_STAGE
 
   status_error_code_complete_startup:
     type: custom_distribution
@@ -1177,7 +1120,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_STATUS_ERROR_CODE_COMPLETE_STARTUP
 
   status_error_code_partial_startup:
     type: custom_distribution
@@ -1199,7 +1141,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_STATUS_ERROR_CODE_PARTIAL_STARTUP
 
   status_error_code_unknown_startup:
     type: custom_distribution
@@ -1221,7 +1162,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_STATUS_ERROR_CODE_UNKNOWN_STARTUP
 
   status_error_code_complete_stage:
     type: custom_distribution
@@ -1243,7 +1183,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_STATUS_ERROR_CODE_COMPLETE_STAGE
 
   status_error_code_partial_stage:
     type: custom_distribution
@@ -1265,7 +1204,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_STATUS_ERROR_CODE_PARTIAL_STAGE
 
   status_error_code_unknown_stage:
     type: custom_distribution
@@ -1287,7 +1225,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_STATUS_ERROR_CODE_UNKNOWN_STAGE
 
   bits_result_complete:
     type: custom_distribution
@@ -1312,7 +1249,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_BITS_RESULT_COMPLETE
 
   bits_result_partial:
     type: custom_distribution
@@ -1337,7 +1273,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_BITS_RESULT_PARTIAL
 
   notification_shown:
     type: labeled_counter
@@ -1364,7 +1299,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_NOTIFICATION_SHOWN
 
   notification_badge_shown:
     type: labeled_counter
@@ -1393,7 +1327,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_NOTIFICATION_BADGE_SHOWN
 
   notification_dismissed:
     type: labeled_counter
@@ -1421,7 +1354,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_NOTIFICATION_DISMISSED
 
   notification_main_action_doorhanger:
     type: labeled_counter
@@ -1449,7 +1381,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_NOTIFICATION_MAIN_ACTION_DOORHANGER
 
   notification_main_action_menu:
     type: labeled_counter
@@ -1477,7 +1408,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - bytesized@mozilla.com
     expires: never
-    telemetry_mirror: h#UPDATE_NOTIFICATION_MAIN_ACTION_MENU
 
   langpack_overtime:
     type: timing_distribution
@@ -1496,7 +1426,6 @@ update:
       - application-update-telemetry-alerts@mozilla.com
       - dtownsend@mozilla.com
     expires: never
-    telemetry_mirror: UPDATE_LANGPACK_OVERTIME
 
   target_channel:
     type: string
@@ -1635,6 +1564,86 @@ update:
     notification_emails:
       - application-update-telemetry-alerts@mozilla.com
     expires: never
+
+  update_outcome:
+    type: event
+    description: >
+      Event recording the outcome of an attempted update.
+    extra_keys:
+      is_success:
+        description: >
+          Did the update complete successfully?
+        type: boolean
+      can_stage:
+        description: >
+          Is this process allowed to using staging updates?
+        type: boolean
+      is_background:
+        description: >
+          Was this a background update?
+        type: boolean
+      is_patch:
+        description: >
+          Is this a partial (patch) MAR? true if so. false if it was a full MAR.
+        type: boolean
+      target_version:
+        description: >
+          The version that we are trying to update to.
+        type: string
+      previous_version:
+        description: >
+          The version that was previously installed. For a successful update, this
+          may be different than what is reported in client_info.app_display_version.
+        type: string
+      total_retries:
+        description: >
+          The total count of retries for this update.
+        type: quantity
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2058359
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2058359
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - cdupuis@mozilla.com
+      - application-update-telemetry-alerts@mozilla.com
+    expires: never
+
+  auto_disable_staged_updates:
+    type: event
+    description: >
+      Event occurs when the count of failed attempts at a staged updates has exceeded the
+      maximum, and the updater decides that only unstaged updates are possible for
+      this profile.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2058359
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2058359
+    data_sensitivity:
+      - technical
+
+    notification_emails:
+      - cdupuis@mozilla.com
+      - application-update-telemetry-alerts@mozilla.com
+    expires: never
+
+  auto_reenable_staged_updates:
+    type: event
+    description: >
+      Event occurs when staged updates had previously been auto-disabled and an updater change has
+      been deployed to address a blocker for staged updates.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2058359
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2058359
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - cdupuis@mozilla.com
+      - application-update-telemetry-alerts@mozilla.com
+    expires: never
+
 
 updater:
   available:

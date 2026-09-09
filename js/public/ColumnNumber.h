@@ -78,13 +78,9 @@ struct ColumnNumberOffset {
 
   static constexpr ColumnNumberOffset zero() { return ColumnNumberOffset(); }
 
-  bool operator==(const ColumnNumberOffset& rhs) const {
-    return value_ == rhs.value_;
-  }
+  bool operator==(const ColumnNumberOffset& rhs) const = default;
 
-  bool operator!=(const ColumnNumberOffset& rhs) const {
-    return !(*this == rhs);
-  }
+  bool operator!=(const ColumnNumberOffset& rhs) const = default;
 
   int32_t value() const { return value_; }
 };
@@ -116,13 +112,9 @@ struct ColumnNumberUnsignedOffset {
     return *this;
   }
 
-  bool operator==(const ColumnNumberUnsignedOffset& rhs) const {
-    return value_ == rhs.value_;
-  }
+  bool operator==(const ColumnNumberUnsignedOffset& rhs) const = default;
 
-  bool operator!=(const ColumnNumberUnsignedOffset& rhs) const {
-    return !(*this == rhs);
-  }
+  bool operator!=(const ColumnNumberUnsignedOffset& rhs) const = default;
 
   uint32_t value() const { return value_; }
 
@@ -156,13 +148,11 @@ struct MaybeLimitedColumnNumber {
     MOZ_ASSERT(valid());
   }
 
-  bool operator==(const MaybeLimitedColumnNumber<LimitValue>& rhs) const {
-    return value_ == rhs.value_;
-  }
+  bool operator==(const MaybeLimitedColumnNumber<LimitValue>& rhs) const =
+      default;
 
-  bool operator!=(const MaybeLimitedColumnNumber<LimitValue>& rhs) const {
-    return !(*this == rhs);
-  }
+  bool operator!=(const MaybeLimitedColumnNumber<LimitValue>& rhs) const =
+      default;
 
   MaybeLimitedColumnNumber<LimitValue> operator+(
       const ColumnNumberOffset& offset) const {
@@ -379,13 +369,9 @@ struct TaggedColumnNumberOneOrigin {
     return TaggedColumnNumberOneOrigin(LimitedColumnNumberOneOrigin());
   }
 
-  bool operator==(const TaggedColumnNumberOneOrigin& rhs) const {
-    return value_ == rhs.value_;
-  }
+  bool operator==(const TaggedColumnNumberOneOrigin& rhs) const = default;
 
-  bool operator!=(const TaggedColumnNumberOneOrigin& rhs) const {
-    return !(*this == rhs);
-  }
+  bool operator!=(const TaggedColumnNumberOneOrigin& rhs) const = default;
 
   bool isLimitedColumnNumber() const { return !isWasmFunctionIndex(); }
 

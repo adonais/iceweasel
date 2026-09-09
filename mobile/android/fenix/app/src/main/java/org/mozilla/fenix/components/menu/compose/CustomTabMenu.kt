@@ -34,15 +34,17 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.browser.state.state.CustomTabMenuItem
 import mozilla.components.feature.addons.Addon
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuAccessPoint
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_OFF
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_ON
+import org.mozilla.fenix.components.menu.store.SummarizationMenuState
+import org.mozilla.fenix.components.menu.store.TranslationInfo
 import org.mozilla.fenix.components.menu.store.WebExtensionMenuItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Wrapper column containing the main menu items.
@@ -64,8 +66,7 @@ import mozilla.components.ui.icons.R as iconsR
  * @param customTabMenuItems Additional [CustomTabMenuItem]s to be displayed to the custom tab menu.
  * @param onCustomMenuItemClick Invoked when the user clicks on [CustomTabMenuItem]s.
  * @param scrollState The [ScrollState] used for vertical scrolling.
- * @param onSwitchToDesktopSiteMenuClick Invoked when the user clicks on the switch to desktop site
- * menu toggle.
+ * @param onSwitchToDesktopSiteMenuClick Invoked when the user clicks on the switch to desktop site menu toggle.
  * @param onBookmarkPageMenuClick Invoked when the user clicks on the bookmark page menu item.
  * @param onEditBookmarkMenuClick Invoked when the user clicks on the edit bookmark menu item.
  * @param onFindInPageMenuClick Invoked when the user clicks on the find in page menu item.
@@ -77,6 +78,11 @@ import mozilla.components.ui.icons.R as iconsR
  * @param onShareButtonClick Invoked when the user clicks on the share button.
  * @param onExtensionsMenuClick Invoked when the user clicks on the extensions menu item.
  * @param extensionSubmenu The submenu content to be shown when the extensions menu item is expanded
+ * @param translationInfo Translation information and configuration.
+ * @param isReaderViewActive Whether the reader view is active.
+ * @param summarizationMenuState The state of the summarization menu.
+ * @param onSummarizePageMenuExposed Invoked when the user sees the summarization dialog.
+ * @param onSummarizePageClick Invoked when the user clicks on the summarize page menu item.
  */
 @Suppress("LongParameterList", "LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
 @Composable
@@ -110,10 +116,15 @@ internal fun CustomTabMenu(
     onShareButtonClick: () -> Unit,
     onExtensionsMenuClick: () -> Unit,
     extensionSubmenu: @Composable () -> Unit,
+    translationInfo: TranslationInfo,
+    isReaderViewActive: Boolean,
+    summarizationMenuState: SummarizationMenuState,
+    onSummarizePageMenuExposed: () -> Unit,
+    onSummarizePageClick: () -> Unit,
 ) {
     MenuFrame(
-        contentModifier = Modifier
-            .padding(
+        contentModifier =
+            Modifier.padding(
                 start = 8.dp,
                 top = if (isBottomToolbar) 0.dp else 8.dp,
                 end = 8.dp,
@@ -162,9 +173,7 @@ internal fun CustomTabMenu(
         },
     ) {
         if (isBottomToolbar) {
-            PoweredByFirefoxItem(
-                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
-            )
+            PoweredByFirefoxItem(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
         }
 
         MenuGroup {
@@ -180,17 +189,19 @@ internal fun CustomTabMenu(
             }
 
             MenuItem(
-                label = stringResource(
-                    id = R.string.browser_menu_open_in_fenix,
-                    stringResource(id = R.string.app_name),
-                ),
+                label =
+                    stringResource(
+                        id = R.string.browser_menu_open_in_fenix,
+                        stringResource(id = R.string.app_name),
+                    ),
                 beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_external_link_24),
                 onClick = onOpenInFirefoxMenuClick,
-                state = if (isSandboxCustomTab) {
-                    MenuItemState.DISABLED
-                } else {
-                    MenuItemState.ENABLED
-                },
+                state =
+                    if (isSandboxCustomTab) {
+                        MenuItemState.DISABLED
+                    } else {
+                        MenuItemState.ENABLED
+                    },
             )
 
             if (isBookmarked) {
@@ -217,13 +228,15 @@ internal fun CustomTabMenu(
             )
 
             MenuItem(
-                modifier = Modifier.semantics {
-                    testTagsAsResourceId = true
-                    testTag = when (menuItemState) {
-                        MenuItemState.ACTIVE -> DESKTOP_SITE_ON
-                        else -> DESKTOP_SITE_OFF
-                    }
-                },
+                modifier =
+                    Modifier.semantics {
+                        testTagsAsResourceId = true
+                        testTag =
+                            when (menuItemState) {
+                                MenuItemState.ACTIVE -> DESKTOP_SITE_ON
+                                else -> DESKTOP_SITE_OFF
+                            }
+                    },
                 label = stringResource(id = R.string.browser_menu_desktop_site),
                 beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_device_desktop_24),
                 state = menuItemState,
@@ -251,6 +264,17 @@ internal fun CustomTabMenu(
                     extensionSubmenu = extensionSubmenu,
                 )
             }
+
+            TranslationMenuItem(
+                translationInfo = translationInfo,
+                isReaderViewActive = isReaderViewActive,
+            )
+
+            SummarizationMenuItem(
+                summarizationMenuState = summarizationMenuState,
+                onSummarizePageMenuExposed = onSummarizePageMenuExposed,
+                onSummarizePageClick = onSummarizePageClick,
+            )
         }
 
         if (!customTabMenuItems.isNullOrEmpty()) {
@@ -265,9 +289,7 @@ internal fun CustomTabMenu(
         }
 
         if (!isBottomToolbar) {
-            PoweredByFirefoxItem(
-                modifier = Modifier.padding(top = 4.dp),
-            )
+            PoweredByFirefoxItem(modifier = Modifier.padding(top = 4.dp))
         }
     }
 }
@@ -277,9 +299,7 @@ internal fun CustomTabAddons(
     webExtensionMenuItems: Map<WebExtensionMenuItem, Addon?>,
     onWebExtensionMenuItemClick: () -> Unit,
 ) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         if (webExtensionMenuItems.isNotEmpty()) {
             WebExtensionMenuItems(
                 accessPoint = MenuAccessPoint.External,
@@ -305,18 +325,17 @@ private fun PoweredByFirefoxItem(modifier: Modifier = Modifier) {
         Image(
             painter = painterResource(id = R.drawable.ic_firefox),
             contentDescription = null,
-            modifier = Modifier
-                .size(16.dp)
-                .align(Alignment.CenterVertically),
+            modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
         )
 
         Spacer(Modifier.width(4.dp))
 
         Text(
-            text = stringResource(
-                id = R.string.browser_menu_powered_by2,
-                stringResource(id = R.string.app_name),
-            ),
+            text =
+                stringResource(
+                    id = R.string.browser_menu_powered_by2,
+                    stringResource(id = R.string.app_name),
+                ),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = FirefoxTheme.typography.caption,
         )
@@ -325,14 +344,12 @@ private fun PoweredByFirefoxItem(modifier: Modifier = Modifier) {
 
 @Preview
 @Composable
-private fun CustomTabMenuPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun CustomTabMenuPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         Column(
-            modifier = Modifier
-                .background(color = MaterialTheme.colorScheme.surface)
-                .padding(all = FirefoxTheme.layout.space.static200),
+            modifier =
+                Modifier.background(color = MaterialTheme.colorScheme.surface)
+                    .padding(all = FirefoxTheme.layout.space.static200)
         ) {
             CustomTabMenu(
                 canGoBack = true,
@@ -364,6 +381,11 @@ private fun CustomTabMenuPreview(
                 onShareButtonClick = {},
                 onExtensionsMenuClick = {},
                 extensionSubmenu = {},
+                translationInfo = TranslationInfo(false, false, false, "") {},
+                isReaderViewActive = false,
+                summarizationMenuState = SummarizationMenuState.Default,
+                onSummarizePageMenuExposed = {},
+                onSummarizePageClick = {},
             )
         }
     }
@@ -371,14 +393,12 @@ private fun CustomTabMenuPreview(
 
 @Preview
 @Composable
-private fun CustomTabMenuDisabledButtonsPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun CustomTabMenuDisabledButtonsPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         Column(
-            modifier = Modifier
-                .background(color = MaterialTheme.colorScheme.surface)
-                .padding(all = FirefoxTheme.layout.space.static200),
+            modifier =
+                Modifier.background(color = MaterialTheme.colorScheme.surface)
+                    .padding(all = FirefoxTheme.layout.space.static200)
         ) {
             CustomTabMenu(
                 canGoBack = false,
@@ -410,6 +430,11 @@ private fun CustomTabMenuDisabledButtonsPreview(
                 onShareButtonClick = {},
                 onExtensionsMenuClick = {},
                 extensionSubmenu = {},
+                translationInfo = TranslationInfo(false, false, false, "") {},
+                isReaderViewActive = false,
+                summarizationMenuState = SummarizationMenuState.Default,
+                onSummarizePageMenuExposed = {},
+                onSummarizePageClick = {},
             )
         }
     }

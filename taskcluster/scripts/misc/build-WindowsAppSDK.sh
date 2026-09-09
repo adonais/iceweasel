@@ -20,6 +20,8 @@ cp Microsoft.UI.Composition.OSSupport.dll $target_folder_name
 cp Microsoft.UI.Input.dll $target_folder_name
 cp Microsoft.UI.Windowing.Core.dll $target_folder_name
 cp Microsoft.UI.Windowing.dll $target_folder_name
+cp Microsoft.WindowsAppRuntime.dll $target_folder_name
+cp Microsoft.WindowsAppRuntime.Insights.Resource.dll $target_folder_name
 
 mkdir -p $UPLOAD_DIR
 

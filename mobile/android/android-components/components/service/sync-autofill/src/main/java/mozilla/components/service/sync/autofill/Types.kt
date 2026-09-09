@@ -13,9 +13,7 @@ import mozilla.components.concept.storage.UpdatableCreditCardFields
 // We have type definitions at the concept level, and "external" types defined within Autofill.
 // In practice these two types are largely the same, and this file is the conversion point.
 
-/**
- * Conversion from a generic [UpdatableAddressFields] into its richer comrade within the 'autofill' lib.
- */
+/** Conversion from a generic [UpdatableAddressFields] into its richer comrade within the 'autofill' lib. */
 internal fun UpdatableAddressFields.into(): mozilla.appservices.autofill.UpdatableAddressFields {
     return mozilla.appservices.autofill.UpdatableAddressFields(
         name = this.name,
@@ -31,14 +29,13 @@ internal fun UpdatableAddressFields.into(): mozilla.appservices.autofill.Updatab
     )
 }
 
-/**
- * Conversion from a generic [UpdatableCreditCardFields] into its comrade within the 'autofill' lib.
- */
+/** Conversion from a generic [UpdatableCreditCardFields] into its comrade within the 'autofill' lib. */
 internal fun UpdatableCreditCardFields.into(): mozilla.appservices.autofill.UpdatableCreditCardFields {
-    val encryptedCardNumber = when (this.cardNumber) {
-        is CreditCardNumber.Encrypted -> this.cardNumber.number
-        is CreditCardNumber.Plaintext -> throw AutofillStorageException.TriedToPersistPlaintextCardNumber()
-    }
+    val encryptedCardNumber =
+        when (this.cardNumber) {
+            is CreditCardNumber.Encrypted -> this.cardNumber.number
+            is CreditCardNumber.Plaintext -> throw AutofillStorageException.TriedToPersistPlaintextCardNumber()
+        }
     return mozilla.appservices.autofill.UpdatableCreditCardFields(
         ccName = this.billingName,
         ccNumberEnc = encryptedCardNumber,
@@ -49,9 +46,7 @@ internal fun UpdatableCreditCardFields.into(): mozilla.appservices.autofill.Upda
     )
 }
 
-/**
- * Conversion from a "native" autofill [Address] into its generic comrade.
- */
+/** Conversion from a "native" autofill [Address] into its generic comrade. */
 internal fun mozilla.appservices.autofill.Address.into(): Address {
     return Address(
         guid = this.guid,
@@ -72,9 +67,7 @@ internal fun mozilla.appservices.autofill.Address.into(): Address {
     )
 }
 
-/**
- * Conversion from a "native" autofill [CreditCard] into its generic comrade.
- */
+/** Conversion from a "native" autofill [CreditCard] into its generic comrade. */
 internal fun mozilla.appservices.autofill.CreditCard.into(): CreditCard {
     return CreditCard(
         guid = this.guid,

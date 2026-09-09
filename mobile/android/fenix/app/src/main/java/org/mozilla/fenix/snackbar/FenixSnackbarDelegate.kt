@@ -20,10 +20,11 @@ import org.mozilla.fenix.compose.snackbar.Snackbar
 import org.mozilla.fenix.compose.snackbar.SnackbarState
 import org.mozilla.fenix.compose.snackbar.toSnackbarDuration
 
-typealias SnackbarFactory = (
-    parentView: View,
-    state: SnackbarState,
-) -> Snackbar
+typealias SnackbarFactory =
+    (
+        parentView: View,
+        state: SnackbarState,
+    ) -> Snackbar
 
 /**
  * An implementation of [SnackbarDelegate] used to display the snackbar.
@@ -46,8 +47,7 @@ class FenixSnackbarDelegate(
     private var context: Context? = null
 
     /**
-     * Creates a Compose-aware snackbar delegate that uses [SnackbarHostState] instead of View-based
-     * snackbars.
+     * Creates a Compose-aware snackbar delegate that uses [SnackbarHostState] instead of View-based snackbars.
      *
      * @param snackbarHostState The [SnackbarHostState] to display snackbars in.
      * @param scope The [CoroutineScope] used to launch snackbar display coroutines.
@@ -73,10 +73,10 @@ class FenixSnackbarDelegate(
      * @param duration How long to display the message.
      * @param isError Whether the snackbar should be styled as an error.
      * @param action Optional String resource to display for the action.
-     * @param withDismissAction Whether to display a dismiss button.
-     * The [listener] must also be provided to show an action button.
-     * @param listener Optional callback to be invoked when the action is clicked.
-     * An [action] must also be provided to show an action button.
+     * @param withDismissAction Whether to display a dismiss button. The [listener] must also be provided to show an
+     *   action button.
+     * @param listener Optional callback to be invoked when the action is clicked. An [action] must also be provided to
+     *   show an action button.
      */
     fun show(
         @StringRes text: Int,
@@ -105,11 +105,11 @@ class FenixSnackbarDelegate(
      * @param subTextOverflow Defines how visual overflow of the [subText] should be handled.
      * @param duration How long to display the message.
      * @param isError Whether the snackbar should be styled as an error.
-     * @param action Optional String to display for the action.
-     * The [listener] must also be provided to show an action button.
+     * @param action Optional String to display for the action. The [listener] must also be provided to show an action
+     *   button.
      * @param withDismissAction Whether to display a dismiss button.
-     * @param listener Optional callback to be invoked when the action is clicked.
-     * An [action] must also be provided to show an action button.
+     * @param listener Optional callback to be invoked when the action is clicked. An [action] must also be provided to
+     *   show an action button.
      */
     fun show(
         text: String,
@@ -120,17 +120,18 @@ class FenixSnackbarDelegate(
         action: String? = null,
         withDismissAction: Boolean = false,
         listener: ((v: View) -> Unit)? = null,
-    ) = show(
-        snackBarParentView = view,
-        text = text,
-        subText = subText,
-        subTextOverflow = subTextOverflow,
-        duration = duration,
-        isError = isError,
-        action = action,
-        withDismissAction = withDismissAction,
-        listener = listener,
-    )
+    ) =
+        show(
+            snackBarParentView = view,
+            text = text,
+            subText = subText,
+            subTextOverflow = subTextOverflow,
+            duration = duration,
+            isError = isError,
+            action = action,
+            withDismissAction = withDismissAction,
+            listener = listener,
+        )
 
     override fun show(
         snackBarParentView: View,
@@ -168,17 +169,18 @@ class FenixSnackbarDelegate(
         withDismissAction: Boolean,
         listener: ((v: View) -> Unit)?,
     ) {
-        val state = makeSnackbarState(
-            snackBarParentView = snackBarParentView,
-            text = text,
-            subText = subText,
-            subTextOverflow = subTextOverflow,
-            duration = duration,
-            isError = isError,
-            actionText = action,
-            withDismissAction = withDismissAction,
-            listener = listener,
-        )
+        val state =
+            makeSnackbarState(
+                snackBarParentView = snackBarParentView,
+                text = text,
+                subText = subText,
+                subTextOverflow = subTextOverflow,
+                duration = duration,
+                isError = isError,
+                actionText = action,
+                withDismissAction = withDismissAction,
+                listener = listener,
+            )
         val hostState = snackbarHostState
         val coroutineScope = scope
 
@@ -202,9 +204,7 @@ class FenixSnackbarDelegate(
         }
     }
 
-    /**
-     * Dismiss the existing snackbar.
-     */
+    /** Dismiss the existing snackbar. */
     fun dismiss() {
         val hostState = snackbarHostState
         if (hostState != null) {
@@ -226,16 +226,17 @@ class FenixSnackbarDelegate(
         withDismissAction: Boolean,
         listener: ((v: View) -> Unit)?,
     ): SnackbarState {
-        val action: Action? = if (actionText != null && listener != null) {
-            Action(
-                label = actionText,
-                onClick = {
-                    listener.invoke(snackBarParentView)
-                },
-            )
-        } else {
-            null
-        }
+        val action: Action? =
+            if (actionText != null && listener != null) {
+                Action(
+                    label = actionText,
+                    onClick = {
+                        listener.invoke(snackBarParentView)
+                    },
+                )
+            } else {
+                null
+            }
 
         val subMessage = subText?.let {
             SnackbarState.SubMessage(
@@ -248,11 +249,12 @@ class FenixSnackbarDelegate(
             message = text,
             subMessage = subMessage,
             duration = duration.toSnackbarDuration(),
-            type = if (isError) {
-                SnackbarState.Type.Warning
-            } else {
-                SnackbarState.Type.Default
-            },
+            type =
+                if (isError) {
+                    SnackbarState.Type.Warning
+                } else {
+                    SnackbarState.Type.Default
+                },
             action = action,
             withDismissAction = withDismissAction,
             onDismiss = { dismiss() },

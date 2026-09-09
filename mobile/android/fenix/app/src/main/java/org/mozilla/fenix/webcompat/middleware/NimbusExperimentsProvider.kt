@@ -7,14 +7,10 @@ package org.mozilla.fenix.webcompat.middleware
 import mozilla.components.service.nimbus.NimbusApi
 import org.mozilla.experiments.nimbus.internal.EnrolledExperiment
 
-/**
- * Provides active experiments and branch information for experiments.
- */
+/** Provides active experiments and branch information for experiments. */
 interface NimbusExperimentsProvider {
 
-    /**
-     * Get the list of currently enrolled experiments
-     */
+    /** Get the list of currently enrolled experiments */
     val activeExperiments: List<EnrolledExperiment>
 
     /**
@@ -31,13 +27,9 @@ interface NimbusExperimentsProvider {
  *
  * @param nimbusApi A [NimbusApi] with which to get active experiments.
  */
-class DefaultNimbusExperimentsProvider(
-    private val nimbusApi: NimbusApi,
-) : NimbusExperimentsProvider {
+class DefaultNimbusExperimentsProvider(private val nimbusApi: NimbusApi) : NimbusExperimentsProvider {
 
-    /**
-     * Get the list of currently enrolled experiments
-     */
+    /** Get the list of currently enrolled experiments */
     override val activeExperiments: List<EnrolledExperiment>
         get() = nimbusApi.getActiveExperiments()
 
@@ -47,6 +39,5 @@ class DefaultNimbusExperimentsProvider(
      * @param experimentId The string experiment-id or "slug" for which to retrieve the branch
      * @return A String representing the branch-id or "slug"
      */
-    override fun getExperimentBranch(experimentId: String): String? =
-        nimbusApi.getExperimentBranch(experimentId)
+    override fun getExperimentBranch(experimentId: String): String? = nimbusApi.getExperimentBranch(experimentId)
 }

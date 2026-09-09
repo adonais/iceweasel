@@ -19,6 +19,7 @@
 #include "ProgressTracker.h"
 #include "SourceBuffer.h"
 #include "imgIContainer.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/gfx/2D.h"
@@ -430,6 +431,36 @@ static void CheckDownscaleDuringDecode(const ImageTestCase& aTestCase) {
       });
 }
 
+static void CheckExifOrientationDownscale(const ImageTestCase& aTestCase) {
+  // An EXIF-rotated JPEG decoded to a non-aspect-preserving output size with
+  // libjpeg-turbo IDCT downscaling must still decode. The scale factor has to
+  // be computed in the same unoriented space as the downscaling filter, or the
+  // decode hard-fails.
+  bool oldValue = false;
+  Preferences::GetBool("image.jpeg.dct-scaling.enabled", &oldValue);
+  Preferences::SetBool("image.jpeg.dct-scaling.enabled", true);
+  auto resetPref = MakeScopeExit([&] {
+    Preferences::SetBool("image.jpeg.dct-scaling.enabled", oldValue);
+  });
+
+  WithSingleChunkDecode(
+      aTestCase, Some(aTestCase.mOutputSize), /* aUseDecodePool */ false,
+      [&](image::Decoder* aDecoder) {
+        // The decode must not fail: prior to the fix the surface pipe was
+        // rejected here and the decoder ended in an error state.
+        ASSERT_FALSE(aDecoder->HasError());
+        EXPECT_TRUE(aDecoder->GetDecodeDone());
+
+        RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+        ASSERT_TRUE(bool(currentFrame));
+        RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
+        ASSERT_TRUE(surface != nullptr);
+
+        EXPECT_EQ(aTestCase.mOutputSize, surface->GetSize());
+        EXPECT_TRUE(IsSolidColor(surface, aTestCase.Color(), aTestCase.Fuzz()));
+      });
+}
+
 static void CheckAnimationDecoderResults(const ImageTestCase& aTestCase,
                                          AnimationSurfaceProvider* aProvider,
                                          image::Decoder* aDecoder) {
@@ -820,6 +851,10 @@ IMAGE_GTEST_DECODER_BASE_F(JXL)
 
 TEST_F(ImageDecoders, ICOWithANDMaskDownscaleDuringDecode) {
   CheckDownscaleDuringDecode(DownscaledTransparentICOWithANDMaskTestCase());
+}
+
+TEST_F(ImageDecoders, JPGExifOrientationDctDownscale) {
+  CheckExifOrientationDownscale(ExifOrientationDownscaleJPGTestCase());
 }
 
 TEST_F(ImageDecoders, WebPLargeMultiChunk) {
@@ -1473,4 +1508,53 @@ TEST_F(ImageDecoders, MultipleSizesICOSingleChunk) {
 TEST_F(ImageDecoders, ExifResolutionEven) {
   RefPtr<Image> image = TestCaseToDecodedImage(ExifResolutionTestCase());
   EXPECT_EQ(image->GetResolution(), Resolution(2.0, 2.0));
+}
+
+TEST_F(ImageDecoders, AVIFConcurrentFilmGrainDecode) {
+  // Route AVIF through libaom instead of dav1d to hit the vulnerable path.
+  nsresult rv = Preferences::SetBool("image.avif.use-dav1d", false);
+  ASSERT_NS_SUCCEEDED(rv);
+  auto cleanup =
+      MakeScopeExit([] { Preferences::SetBool("image.avif.use-dav1d", true); });
+
+  ImageTestCase testCase420("avif_420_film_grain.avif", "image/avif",
+                            IntSize(128, 128), TEST_CASE_IGNORE_OUTPUT);
+  ImageTestCase testCase444("avif_444_film_grain.avif", "image/avif",
+                            IntSize(128, 128), TEST_CASE_IGNORE_OUTPUT);
+
+  const int kIterations = 50;
+  nsTArray<RefPtr<MonitorAnonymousDecodingTask>> tasks;
+
+  for (int i = 0; i < kIterations; ++i) {
+    const ImageTestCase& tc = (i % 2 == 0) ? testCase420 : testCase444;
+
+    nsCOMPtr<nsIInputStream> inputStream = LoadFile(tc.mPath);
+    ASSERT_TRUE(inputStream != nullptr);
+
+    uint64_t length;
+    rv = inputStream->Available(&length);
+    ASSERT_NS_SUCCEEDED(rv);
+
+    auto sourceBuffer = MakeNotNull<RefPtr<SourceBuffer>>();
+    sourceBuffer->ExpectLength(length);
+    rv = sourceBuffer->AppendFromInputStream(inputStream, length);
+    ASSERT_NS_SUCCEEDED(rv);
+    sourceBuffer->Complete(NS_OK);
+
+    DecoderType decoderType = DecoderFactory::GetDecoderType(tc.mMimeType);
+    RefPtr<image::Decoder> decoder = DecoderFactory::CreateAnonymousDecoder(
+        decoderType, sourceBuffer, Nothing(),
+        DefaultDecoderFlags() | DecoderFlags::FIRST_FRAME_ONLY,
+        tc.mSurfaceFlags);
+    ASSERT_TRUE(decoder != nullptr);
+
+    RefPtr<MonitorAnonymousDecodingTask> task =
+        new MonitorAnonymousDecodingTask(WrapNotNull(decoder), false);
+    tasks.AppendElement(task);
+    DecodePool::Singleton()->AsyncRun(task.get());
+  }
+
+  for (auto& task : tasks) {
+    task->WaitUntilFinished();
+  }
 }

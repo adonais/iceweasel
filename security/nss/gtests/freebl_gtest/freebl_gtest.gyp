@@ -36,11 +36,13 @@
         'ecl_unittest.cc',
         'ghash_unittest.cc',
         'kyber_unittest.cc',
+        'mldsa_unittest.cc',
         'mpi_unittest.cc',
         'prng_kat_unittest.cc',
         'rsa_unittest.cc',
         'ed25519_unittest.cc',
-        '<(DEPTH)/gtests/common/gtests.cc'
+        '<(DEPTH)/gtests/common/gtests.cc',
+        '<(DEPTH)/gtests/common/json_reader.cc'
       ],
       'dependencies': [
         'freebl_gtest_deps',

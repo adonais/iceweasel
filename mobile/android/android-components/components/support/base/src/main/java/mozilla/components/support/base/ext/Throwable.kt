@@ -4,21 +4,19 @@
 
 package mozilla.components.support.base.ext
 
+import java.io.PrintWriter
+import java.io.StringWriter
+import kotlin.collections.HashSet
 import mozilla.components.support.base.log.logger.Logger
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
-import java.io.PrintWriter
-import java.io.StringWriter
-import kotlin.collections.HashSet
 
 private const val STACK_TRACE_INITIAL_BUFFER_SIZE = 256
 private const val STACK_TRACE_MAX_LENGTH = 100000
 private const val STACK_TRACE_MAX_FRAME = 50
 
-/**
- * Returns a formatted string of the [Throwable.stackTrace].
- */
+/** Returns a formatted string of the [Throwable.stackTrace]. */
 fun Throwable.getStacktraceAsString(stackTraceMaxLength: Int = STACK_TRACE_MAX_LENGTH): String {
     val sw = StringWriter(STACK_TRACE_INITIAL_BUFFER_SIZE)
     val pw = PrintWriter(sw, false)
@@ -27,9 +25,7 @@ fun Throwable.getStacktraceAsString(stackTraceMaxLength: Int = STACK_TRACE_MAX_L
     return sw.toString().take(stackTraceMaxLength)
 }
 
-/**
- * Returns a formatted JSON string of the [Throwable.stackTrace].
- */
+/** Returns a formatted JSON string of the [Throwable.stackTrace]. */
 @Suppress("NestedBlockDepth")
 fun Throwable.getStacktraceAsJsonString(maxFrame: Int = STACK_TRACE_MAX_FRAME): String {
     val throwableList = extractThrowableList()

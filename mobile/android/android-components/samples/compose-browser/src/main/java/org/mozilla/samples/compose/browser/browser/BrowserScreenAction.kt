@@ -6,17 +6,11 @@ package org.mozilla.samples.compose.browser.browser
 
 import mozilla.components.lib.state.Action
 
-/**
- * Actions for updating the [BrowserScreenState] via [BrowserScreenStore].
- */
+/** Actions for updating the [BrowserScreenState] via [BrowserScreenStore]. */
 sealed class BrowserScreenAction : Action {
-    /**
-     * Shows the list of tabs on top of the web content.
-     */
+    /** Shows the list of tabs on top of the web content. */
     object ShowTabs : BrowserScreenAction()
 
-    /**
-     * Hides the list of tabs.
-     */
+    /** Hides the list of tabs. */
     object HideTabs : BrowserScreenAction()
 }

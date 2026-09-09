@@ -21,6 +21,18 @@ Before submitting for review, run our internal tests:
 - `./mach xpcshell-test --tag devtools-compat-data`
 - `./mach mochitest --subsuite devtools --tag devtools-compat-data`
 
+## Tests and the mock dataset
+
+Only the tests tagged `devtools-compat-data` use this dataset, and they avoid asserting on
+values which can change, so a failure there means the data or its structure changed.
+
+All the other tests use `dataset/mock-css-properties.json`, which has real CSS property names
+but mocked compatibility data. To opt in, call `setMockCompatibilityDataset()` (from
+`devtools/client/shared/test/shared-head.js`) before opening the toolbox. If you
+need an issue the mock dataset doesn't cover, add the property to it. Try to stay
+as close as possible to the real data, and avoid changing anything but the values
+ot the compatibility properties.
+
 ## Reviewing browser data updates (RemoteSettings)
 
 The browsers data are stored in a RemoteSettings collection, and updates are handled by a script in https://github.com/firefox-devtools/remote-settings-mdn-browser-compat-data .

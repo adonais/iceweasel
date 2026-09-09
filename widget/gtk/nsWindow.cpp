@@ -648,15 +648,6 @@ void nsWindow::Destroy() {
   OnDestroy();
 }
 
-float nsWindow::GetDPI() {
-  float dpi = 96.0f;
-  nsCOMPtr<nsIScreen> screen = GetWidgetScreen();
-  if (screen) {
-    screen->GetDpi(&dpi);
-  }
-  return dpi;
-}
-
 double nsWindow::GetDefaultScaleInternal() { return FractionalScaleFactor(); }
 
 DesktopToLayoutDeviceScale nsWindow::GetDesktopToDeviceScale() const {
@@ -3640,23 +3631,15 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
     ForceTitlebarRedraw();
   }
 
-  // We don't care about anything but changes in the maximized/icon/fullscreen
-  // states but we need a workaround for bug in Wayland:
+  // We don't care about anything but changes in the
+  // maximized/icon/fullscreen/tiled/resizable states.
+  constexpr auto kInterestingStates =
+      GDK_WINDOW_STATE_ICONIFIED | GDK_WINDOW_STATE_MAXIMIZED |
+      GDK_WINDOW_STATE_FULLSCREEN | kTiledStates | kResizableStates;
+
+  // states. Note that Wayland never gets iconified, see:
   // https://gitlab.gnome.org/GNOME/gtk/issues/67
-  // Under wayland the gtk_window_iconify implementation does NOT synthetize
-  // window_state_event where the GDK_WINDOW_STATE_ICONIFIED is set.
-  // During restore we  won't get aEvent->changed_mask with
-  // the GDK_WINDOW_STATE_ICONIFIED so to detect that change we use the stored
-  // mSizeMode and obtaining a focus.
-  bool waylandWasIconified =
-      (GdkIsWaylandDisplay() &&
-       aEvent->changed_mask & GDK_WINDOW_STATE_FOCUSED &&
-       aEvent->new_window_state & GDK_WINDOW_STATE_FOCUSED &&
-       mSizeMode == nsSizeMode_Minimized);
-  if (!waylandWasIconified &&
-      (aEvent->changed_mask &
-       (GDK_WINDOW_STATE_ICONIFIED | GDK_WINDOW_STATE_MAXIMIZED | kTiledStates |
-        kResizableStates | GDK_WINDOW_STATE_FULLSCREEN)) == 0) {
+  if (!(aEvent->changed_mask & kInterestingStates)) {
     LOG("\tearly return because no interesting bits changed\n");
     return;
   }
@@ -5140,7 +5123,6 @@ gint nsWindow::ConvertBorderStyles(BorderStyle aStyle) {
     return -1;
   }
 
-  // note that we don't handle BorderStyle::Close yet
   if (aStyle & BorderStyle::All) w |= GDK_DECOR_ALL;
   if (aStyle & BorderStyle::Border) w |= GDK_DECOR_BORDER;
   if (aStyle & BorderStyle::ResizeH) w |= GDK_DECOR_RESIZEH;

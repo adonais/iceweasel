@@ -26,10 +26,15 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/urlbar/SmartbarMentionsPanelSearch.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
-  SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
-  SessionWindowUI: "resource:///modules/sessionstore/SessionWindowUI.sys.mjs",
+  SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
+  SessionStore:
+    "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
+  SessionWindowUI:
+    "moz-src:///browser/components/sessionstore/SessionWindowUI.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
+
+SearchTestUtils.init(this);
 
 const { _setLoadPromptForTesting } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
@@ -82,7 +87,6 @@ const MOCK_RS_RECORDS = [
   ["memories-quality-filter-user", 1],
   ["memories-message-classification-system", 1],
   ["memories-message-classification-user", 1],
-  ["memories-relevant-context", 2],
   ["search-answer-generation", 1],
 ]
   .map(([feature, major]) => ({
@@ -99,17 +103,6 @@ const MOCK_RS_RECORDS = [
     version: `v${major}.0`,
     is_default: true,
   }))
-  // The memories relevant context prompt renders the retrieved memory list, so
-  // it needs the placeholder the real prompt has.
-  .map(record =>
-    record.feature === "memories-relevant-context"
-      ? {
-          ...record,
-          prompts:
-            "# Existing Memories\n\n## Existing Memories\n{relevantMemoriesList}",
-        }
-      : record
-  )
   // Chat resolves model+params from v2 kind:"params" records (one generic
   // fallback + one per model choice).
   .concat([
@@ -244,6 +237,29 @@ const MOCK_RS_RECORDS = [
       parameters: {},
       version: "v11.0",
     },
+    // The relevant-memories module is loaded for the chat model, so it resolves
+    // via the "generic" fallback rather than is_default like the v1 records.
+    {
+      kind: "params",
+      feature: "memories-context",
+      model: "generic",
+      service_type: "memories",
+      parameters: {},
+      is_default: true,
+      modules: [{ name: "relevant-memories", version: "1.0" }],
+      version: "v1.0",
+    },
+    {
+      kind: "module",
+      feature: "memories-context",
+      module: "relevant-memories",
+      model: "generic",
+      // The prompt renders the retrieved memory list, so it needs the
+      // placeholder the real prompt has.
+      prompts:
+        "# Existing Memories\n\n## Existing Memories\n{relevantMemoriesList}",
+      version: "v1.0",
+    },
     // tab-group-naming resolves through the v2 modular path: a params manifest
     // plus one module record per prompt module (system-instructions, user-data).
     {
@@ -287,6 +303,20 @@ add_setup(async function () {
       ["browser.smartwindow.chat.interactionCount", 0],
     ],
   });
+
+  // The smartbar submits a real SERP navigation whenever it resolves to the
+  // "search" action, which no amount of engine stubbing prevents. Point the
+  // default engine at a local host so a stray search can never reach the
+  // network and crash the harness (bug 2050017).
+  await SearchTestUtils.installSearchExtension(
+    {
+      name: "AIWindowTestEngine",
+      search_url: "https://example.org/aiwindow-test-serp/",
+      search_url_get_params: "?q={searchTerms}",
+      favicon_url: "https://example.com/favicon.ico",
+    },
+    { setAsDefault: true }
+  );
 
   // Stub intent engine so it doesn't attempt network requests
   const fakeIntentEngine = {
@@ -978,9 +1008,9 @@ async function stubLoadURL(browser, { captureURL = false } = {}) {
     if (capture) {
       content._stubLoadURLCalled = false;
       content._stubLoadedURL = null;
-      smartbar.controller.loadURL = ({ url }) => {
+      smartbar.controller.loadURL = ({ loadRequest }) => {
         content._stubLoadURLCalled = true;
-        content._stubLoadedURL = url;
+        content._stubLoadedURL = loadRequest.urlLoad?.url ?? null;
         return {};
       };
     } else {
@@ -1428,40 +1458,6 @@ async function getSidebarChatMessages(sidebarBrowser) {
 const RENDER_TIMEOUT_MS = 15000;
 
 /**
- * Bounded wrapper around BrowserTestUtils.waitForMutationCondition, which on its
- * own never rejects. Races the (event-driven) mutation wait against a timeout so
- * a missing element fails fast with a clear message instead of hanging until the
- * harness aborts the task.
- *
- * @param {Node} target - The node on which to observe mutations
- * @param {MutationObserverInit} options - Options for MutationObserver.observe()
- * @param {Function} checkFn - Returns the awaited value once it is truthy
- * @param {string} label - Description used in the timeout error message
- * @param {number} [timeoutMs=RENDER_TIMEOUT_MS]
- *
- * @returns {Promise<any>} The value returned by checkFn
- */
-function waitForMutationBounded(
-  target,
-  options,
-  checkFn,
-  label,
-  timeoutMs = RENDER_TIMEOUT_MS
-) {
-  let timer;
-  const timeout = new Promise((_, reject) => {
-    timer = setTimeout(
-      () => reject(new Error(`Timed out waiting for: ${label}`)),
-      timeoutMs
-    );
-  });
-  return Promise.race([
-    BrowserTestUtils.waitForMutationCondition(target, options, checkFn),
-    timeout,
-  ]).finally(() => clearTimeout(timer));
-}
-
-/**
  * Resolves the #aichat-browser frame for the AI Window hosted in the given
  * browser. By the time the post-response helpers below run, both ai-window and
  * #aichat-browser already exist, so the check resolves immediately; the bound
@@ -1472,14 +1468,14 @@ function waitForMutationBounded(
  * @returns {Promise<MozBrowser>} The #aichat-browser frame
  */
 function getAIChatBrowser(browser) {
-  return waitForMutationBounded(
+  return BrowserTestUtils.waitForMutationCondition(
     browser.contentDocument.documentElement,
     { childList: true, subtree: true },
     () =>
       browser.contentDocument
         ?.querySelector("ai-window")
         ?.shadowRoot?.querySelector("#aichat-browser"),
-    "ai-window #aichat-browser"
+    { msg: "ai-window #aichat-browser", timeout: RENDER_TIMEOUT_MS }
   );
 }
 

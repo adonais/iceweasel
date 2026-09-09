@@ -847,6 +847,10 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     return storePtr(scratch, address);
   }
   void storePtr(ImmPtr imm, const Address& address) {
+    if (imm.value == nullptr) {
+      Str(vixl::xzr, toMemOperand(address));
+      return;
+    }
     vixl::UseScratchRegisterScope temps(this);
     const ARMRegister scratch64 = temps.AcquireX();
     MOZ_ASSERT(scratch64.asUnsized() != address.base);
@@ -1897,18 +1901,6 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     return testGCThing(cond, scratch);
   }
 
-  Condition testInt32Truthy(bool truthy, const ValueOperand& operand) {
-    ARMRegister payload32(operand.valueReg(), 32);
-    Tst(payload32, payload32);
-    return truthy ? NonZero : Zero;
-  }
-
-  Condition testBooleanTruthy(bool truthy, const ValueOperand& operand) {
-    ARMRegister payload32(operand.valueReg(), 32);
-    Tst(payload32, payload32);
-    return truthy ? NonZero : Zero;
-  }
-
   Condition testBigIntTruthy(bool truthy, const ValueOperand& value);
   Condition testStringTruthy(bool truthy, const ValueOperand& value);
 
@@ -1981,12 +1973,20 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   }
 
   void computeEffectiveAddress(const Address& address, Register dest) {
-    Add(ARMRegister(dest, 64), toARMRegister(address.base, 64),
-        Operand(address.offset));
+    if (address.offset == 0) {
+      Mov(ARMRegister(dest, 64), toARMRegister(address.base, 64));
+    } else {
+      Add(ARMRegister(dest, 64), toARMRegister(address.base, 64),
+          Operand(address.offset));
+    }
   }
   void computeEffectiveAddress(const Address& address, RegisterOrSP dest) {
-    Add(toARMRegister(dest, 64), toARMRegister(address.base, 64),
-        Operand(address.offset));
+    if (address.offset == 0) {
+      Mov(toARMRegister(dest, 64), toARMRegister(address.base, 64));
+    } else {
+      Add(toARMRegister(dest, 64), toARMRegister(address.base, 64),
+          Operand(address.offset));
+    }
   }
   void computeEffectiveAddress(const BaseIndex& address, Register dest) {
     ARMRegister dest64(dest, 64);

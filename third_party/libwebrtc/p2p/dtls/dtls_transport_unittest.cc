@@ -181,6 +181,7 @@ class DtlsTestClient {
   }
 
   DtlsTransportInternalImpl* dtls_transport() { return dtls_transport_.get(); }
+  void ResetDtlsTransport() { dtls_transport_ = nullptr; }
 
   // Simulate fake ICE transports connecting.
   bool Connect(DtlsTestClient* peer, bool asymmetric) {
@@ -831,6 +832,22 @@ TEST_F(DtlsTransportInternalImplTest, TestSendSrtpBypassPacketWithOptions) {
   // Now check the sent packet info on client1.
   EXPECT_EQ(kFakePacketId, client1_.sent_packet().packet_id);
   EXPECT_GE(client1_.sent_packet().send_time_ms, 0);
+}
+
+TEST_F(DtlsTransportInternalImplTest,
+       DestructionDeregistersCallbacksFromIceTransport) {
+  PrepareDtls(KT_DEFAULT);
+  ASSERT_TRUE(Connect());
+  client1_.ResetDtlsTransport();
+  client1_.fake_ice_transport()->NotifyWritableState(
+      client1_.fake_ice_transport());
+  client1_.fake_ice_transport()->NotifyReceivingState(
+      client1_.fake_ice_transport());
+  client1_.fake_ice_transport()->NotifyReadyToSend(
+      client1_.fake_ice_transport());
+  client1_.fake_ice_transport()->NotifySentPacket(client1_.fake_ice_transport(),
+                                                  SentPacketInfo(0, 0));
+  client1_.fake_ice_transport()->NotifyNetworkRouteChanged(std::nullopt);
 }
 
 TEST_F(DtlsTransportInternalImplTest, TestWriteError) {

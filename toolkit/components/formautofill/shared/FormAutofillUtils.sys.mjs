@@ -1582,6 +1582,24 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+// Opt-in (Nimbus-controlled): use the two-engine encoder + fusion head field
+// classifier instead of the single text-classification model.
+XPCOMUtils.defineLazyPreferenceGetter(
+  FormAutofillUtils,
+  "enableMLAutofillTwoHead",
+  "extensions.formautofill.useml.twoHead",
+  false
+);
+
+// How long an idle ML autofill engine is kept alive, in milliseconds. Applies to
+// every engine the active classifier creates. -1 means never time out.
+XPCOMUtils.defineLazyPreferenceGetter(
+  FormAutofillUtils,
+  "mlEngineTimeoutMS",
+  "extensions.formautofill.useml.timeoutMS",
+  2 * 60 * 1000
+);
+
 XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofillUtils,
   "isMLUsedAlready",

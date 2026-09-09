@@ -79,6 +79,10 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && socketprocess_networking", # Bug 1945649
 ]
 
+["browser_newtab_side_by_side_layout.js"]
+
+["browser_newtab_spaces.js"]
+
 ["browser_newtab_sticky_search.js"]
 
 ["browser_newtab_towindow.js"]
@@ -99,5 +103,6 @@ run-if = [
 ["browser_topsites_contextMenu_options.js"]
 
 ["browser_topsites_section.js"]
+tags = "urlbar"
 
 ["browser_topsites_sponsored.js"]

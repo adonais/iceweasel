@@ -35,6 +35,7 @@ import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.textfield.TextField
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.bookmarks.AddFolderAction
 import org.mozilla.fenix.bookmarks.BackClicked
@@ -49,17 +50,16 @@ import org.mozilla.fenix.bookmarks.DeletionDialogState
 import org.mozilla.fenix.bookmarks.OpenTabsConfirmationDialog
 import org.mozilla.fenix.compose.list.IconListItem
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
-/**
- * Top-level composable for the "Add folder" screen
- */
+/** Top-level composable for the "Add folder" screen */
 @Composable
 internal fun AddFolderScreen(
     modifier: Modifier = Modifier,
     store: BookmarksStore,
 ) {
-    val state by remember { store.stateFlow.map { it.bookmarksAddFolderState } }
+    val state by remember {
+        store.stateFlow.map { it.bookmarksAddFolderState }
+    }
         .collectAsState(initial = store.state.bookmarksAddFolderState)
 
     Scaffold(
@@ -67,29 +67,25 @@ internal fun AddFolderScreen(
         topBar = { AddFolderTopBar(onBackClick = { store.dispatch(BackClicked) }) },
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxWidth(),
+            modifier = Modifier.padding(paddingValues).fillMaxWidth(),
             contentAlignment = Alignment.TopCenter,
         ) {
-            Column(
-                modifier = Modifier.width(FirefoxTheme.layout.size.containerMaxWidth),
-            ) {
+            Column(modifier = Modifier.width(FirefoxTheme.layout.size.containerMaxWidth)) {
                 TextField(
                     value = state?.folderBeingAddedTitle ?: "",
                     onValueChange = { newText -> store.dispatch(AddFolderAction.TitleChanged(newText)) },
                     placeholder = "",
                     errorText = "",
-                    modifier = Modifier
-                        .padding(
-                            start = 16.dp,
-                            end = 16.dp,
-                            top = 32.dp,
-                        )
-                        .semantics {
-                            testTagsAsResourceId = true
-                            testTag = BookmarksTestTag.ADD_BOOKMARK_FOLDER_NAME_TEXT_FIELD
-                        },
+                    modifier =
+                        Modifier.padding(
+                                start = 16.dp,
+                                end = 16.dp,
+                                top = 32.dp,
+                            )
+                            .semantics {
+                                testTagsAsResourceId = true
+                                testTag = BookmarksTestTag.ADD_BOOKMARK_FOLDER_NAME_TEXT_FIELD
+                            },
                     label = stringResource(R.string.bookmark_name_label_normal_case),
                 )
 
@@ -133,50 +129,56 @@ private fun AddFolderTopBar(onBackClick: () -> Unit) {
                 )
             }
         },
-        windowInsets = WindowInsets(
-            top = 0.dp,
-            bottom = 0.dp,
-        ),
+        windowInsets =
+            WindowInsets(
+                top = 0.dp,
+                bottom = 0.dp,
+            ),
     )
 }
 
 @FlexibleWindowLightDarkPreview
 @Composable
 private fun AddFolderPreview() {
-    val store = BookmarksStore(
-        initialState = BookmarksState(
-            bookmarkItems = listOf(),
-            selectedItems = listOf(),
-            rootMenuShown = false,
-            showBookmarksImport = true,
-            sortMenuShown = false,
-            sortOrder = BookmarksListSortOrder.default,
-            recursiveSelectedCount = null,
-            currentFolder = BookmarkItem.Folder(
-                guid = BookmarkRoot.Mobile.id,
-                title = "Bookmarks",
-                position = null,
-            ),
-            isSignedIntoSync = false,
-            openTabsConfirmationDialog = OpenTabsConfirmationDialog.None,
-            bookmarksDeletionDialogState = DeletionDialogState.None,
-            bookmarksSnackbarState = BookmarksSnackbarState.None,
-            bookmarksEditBookmarkState = null,
-            bookmarksAddFolderState = BookmarksAddFolderState(
-                parent = BookmarkItem.Folder(
-                    guid = BookmarkRoot.Mobile.id,
-                    title = "Bookmarks",
-                    position = null,
-                ),
-                folderBeingAddedTitle = "Edit me!",
-            ),
-            bookmarksSelectFolderState = null,
-            bookmarksEditFolderState = null,
-            bookmarksMultiselectMoveState = null,
-            isLoading = false,
-            searchState = null,
-        ),
-    )
+    val store =
+        BookmarksStore(
+            initialState =
+                BookmarksState(
+                    bookmarkItems = listOf(),
+                    selectedItems = listOf(),
+                    rootMenuShown = false,
+                    showBookmarksImport = true,
+                    sortMenuShown = false,
+                    sortOrder = BookmarksListSortOrder.default,
+                    recursiveSelectedCount = null,
+                    currentFolder =
+                        BookmarkItem.Folder(
+                            guid = BookmarkRoot.Mobile.id,
+                            title = "Bookmarks",
+                            position = null,
+                        ),
+                    isSignedIntoSync = false,
+                    openTabsConfirmationDialog = OpenTabsConfirmationDialog.None,
+                    bookmarksDeletionDialogState = DeletionDialogState.None,
+                    bookmarksSnackbarState = BookmarksSnackbarState.None,
+                    bookmarksEditBookmarkState = null,
+                    bookmarksAddFolderState =
+                        BookmarksAddFolderState(
+                            parent =
+                                BookmarkItem.Folder(
+                                    guid = BookmarkRoot.Mobile.id,
+                                    title = "Bookmarks",
+                                    position = null,
+                                ),
+                            folderBeingAddedTitle = "Edit me!",
+                        ),
+                    bookmarksSelectFolderState = null,
+                    bookmarksEditFolderState = null,
+                    bookmarksMultiselectMoveState = null,
+                    isLoading = false,
+                    searchState = null,
+                )
+        )
     FirefoxTheme {
         AddFolderScreen(modifier = Modifier, store = store)
     }

@@ -598,7 +598,12 @@ nsIWidget* nsIWidget::GetTopLevelWidget() {
   return cur;
 }
 
-float nsIWidget::GetDPI() { return 96.0f; }
+float nsIWidget::GetDPI() {
+  if (RefPtr<Screen> screen = GetWidgetScreen()) {
+    return screen->GetDPI();
+  }
+  return GetFallbackDPI();
+}
 
 void nsIWidget::NotifyAPZOfDPIChange() {
   if (mAPZC) {

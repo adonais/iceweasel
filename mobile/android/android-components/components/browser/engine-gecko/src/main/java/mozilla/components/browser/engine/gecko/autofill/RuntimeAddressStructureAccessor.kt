@@ -8,12 +8,10 @@ import mozilla.components.browser.engine.gecko.asCancellableOperation
 import mozilla.components.concept.engine.CancellableOperation
 import mozilla.components.concept.engine.autofill.AddressStructure
 import mozilla.components.concept.engine.autofill.UnexpectedNullError
-import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.Autocomplete.AddressStructure as GeckoAddressStructure
+import org.mozilla.geckoview.GeckoResult
 
-/**
- * Interface for fetching the address structure for a given country.
- */
+/** Interface for fetching the address structure for a given country. */
 fun interface RuntimeAddressStructureAccessor {
     /**
      * Fetch the address structure for a given country.
@@ -32,7 +30,7 @@ fun interface RuntimeAddressStructureAccessor {
 internal class DefaultRuntimeAddressStructureAccessor(
     private val getGeckoAddressStructure: (String) -> GeckoResult<List<GeckoAddressStructure.Field>> = {
         GeckoAddressStructure.getAddressStructure(it)
-    },
+    }
 ) : RuntimeAddressStructureAccessor {
     override fun getAddressStructure(
         countryCode: String,
@@ -78,22 +76,25 @@ internal class DefaultRuntimeAddressStructureAccessor(
             val id = AddressStructure.Field.ID.from(result.id)
             val localizationKey = AddressStructure.Field.LocalizationKey.from(result.localizationKey)
             when (result) {
-                is GeckoAddressStructure.Field.SelectField -> AddressStructure.Field.SelectField(
-                    id = id,
-                    localizationKey = localizationKey,
-                    defaultSelectionKey = result.defaultValue,
-                    options = result.options.map { option ->
-                        AddressStructure.Field.SelectField.Option(
-                            key = option.key,
-                            value = option.value,
-                        )
-                    },
-                )
+                is GeckoAddressStructure.Field.SelectField ->
+                    AddressStructure.Field.SelectField(
+                        id = id,
+                        localizationKey = localizationKey,
+                        defaultSelectionKey = result.defaultValue,
+                        options =
+                            result.options.map { option ->
+                                AddressStructure.Field.SelectField.Option(
+                                    key = option.key,
+                                    value = option.value,
+                                )
+                            },
+                    )
 
-                is GeckoAddressStructure.Field.TextField -> AddressStructure.Field.TextField(
-                    id = id,
-                    localizationKey = localizationKey,
-                )
+                is GeckoAddressStructure.Field.TextField ->
+                    AddressStructure.Field.TextField(
+                        id = id,
+                        localizationKey = localizationKey,
+                    )
 
                 else -> null
             }

@@ -102,15 +102,15 @@ interface HTMLMediaElement : HTMLElement {
 
 // Mozilla extensions:
 partial interface HTMLMediaElement {
-  [Func="HasDebuggerOrTabsPrivilege"]
+  [Func="MediaUtils::HasDebuggerOrTabsPrivilege"]
   readonly attribute MediaSource? mozMediaSourceObject;
 
-  [Func="HasDebuggerOrTabsPrivilege", NewObject]
+  [Func="MediaUtils::HasDebuggerOrTabsPrivilege", NewObject]
   Promise<HTMLMediaElementDebugInfo> mozRequestDebugInfo();
 
-  [Func="HasDebuggerOrTabsPrivilege", NewObject]
+  [Func="MediaUtils::HasDebuggerOrTabsPrivilege", NewObject]
   static undefined mozEnableDebugLog();
-  [Func="HasDebuggerOrTabsPrivilege", NewObject]
+  [Func="MediaUtils::HasDebuggerOrTabsPrivilege", NewObject]
   Promise<DOMString> mozRequestDebugLog();
 
   attribute MediaStream? srcObject;

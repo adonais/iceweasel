@@ -20,6 +20,63 @@ using namespace js::jit;
 namespace js {
 namespace wasm {
 
+// ====================================================================
+// === InstructionBytes
+
+// A virtual base class that provides instruction bytes for
+// SummarizeTrapInstruction to examine.  The object is conceptually
+// regarded as "pointing" at the first byte of the instruction.
+class InstructionBytes {
+ public:
+  // Get the byte at `offset` from the first byte of the instruction
+  virtual uint8_t get(size_t offset) const = 0;
+  // Convenience function.  Check whether the first byte of the instruction
+  // would be 32-bit aligned.  In case of doubt, return `true`.
+  virtual bool isU32aligned() const = 0;
+  // Convenience function.  Fetch a U32, little-endianly.
+  uint32_t getU32LittleEndian(size_t offset) const {
+    MOZ_ASSERT((offset & 3) == 0);
+    uint32_t word = 0;
+    for (uint32_t i = 0; i < 4; i++) {
+      word = (word << 8) | uint32_t(get(offset + (3 - i)));
+    }
+    return word;
+  }
+};
+
+// An InstructionBytes source that pulls bytes out of arbitrary memory.
+class InstructionBytesAbsolute : public InstructionBytes {
+  const uint8_t* insn_ = nullptr;
+
+ public:
+  explicit InstructionBytesAbsolute(const uint8_t* insn) : insn_(insn) {}
+  bool isU32aligned() const override { return (uintptr_t(insn_) & 3) == 0; }
+  uint8_t get(size_t offset) const override {
+    MOZ_ASSERT(offset < 16);
+    return insn_[offset];
+  }
+};
+
+// An InstructionBytes source that reads bytes from an assembler buffer.
+class InstructionBytesFromMasm : public wasm::InstructionBytes {
+  const MacroAssembler& masm_;
+  uint32_t baseOffset_ = 0;
+
+ public:
+  explicit InstructionBytesFromMasm(const MacroAssembler& masm,
+                                    uint32_t baseOffset)
+      : masm_(masm), baseOffset_(baseOffset) {
+    MOZ_ASSERT(baseOffset < masm.readableSize());
+  }
+  bool isU32aligned() const override { return (baseOffset_ & 3) == 0; }
+  uint8_t get(size_t offset) const override {
+    return masm_.getByteAtOffset(size_t(baseOffset_) + offset);
+  }
+};
+
+// ====================================================================
+// === SummarizeTrapInstruction
+
 // Sources of documentation of instruction-set encoding:
 //
 // Documentation for the ARM instruction sets can be found at
@@ -182,7 +239,7 @@ static uint8_t ImmediateSizeFromOperationSize(uint8_t opSizeInBytes) {
   }
 }
 
-SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
+static SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
   // A note on computing instruction lengths.  Almost all instructions include
   // a so-called ModR/M (modrm) byte.  If the modrm byte has been determined
   // to be at `delta + N` then the length of the instruction as a whole is
@@ -1012,7 +1069,7 @@ SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
 
 #elif defined(JS_CODEGEN_ARM64)
 
-SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
+static SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
   // Check instruction alignment.
   MOZ_ASSERT(insn.isU32aligned());
 
@@ -1362,7 +1419,7 @@ SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
 
 #elif defined(JS_CODEGEN_ARM)
 
-SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
+static SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
   // Almost all AArch32 instructions that use the ARM encoding (not Thumb) use
   // bits 31:28 as the guarding condition.  Since we do not expect to
   // encounter conditional loads or stores, most of the following is hardcoded
@@ -1560,7 +1617,7 @@ SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
 
 #elif defined(JS_CODEGEN_RISCV64)
 
-SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
+static SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
   // Check instruction alignment.
   MOZ_ASSERT(insn.isU32aligned());
 
@@ -2151,7 +2208,7 @@ SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
 
 #elif defined(JS_CODEGEN_NONE)
 
-SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
+static SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
   MOZ_CRASH();
 }
 
@@ -2163,10 +2220,16 @@ SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
 
 #endif  // defined(JS_CODEGEN_*)
 
-// Convenience function that calls the above.
+// External interface
 SummarizeResult SummarizeTrapInstruction(const uint8_t* insn) {
   const InstructionBytesAbsolute iba(insn);
   return SummarizeTrapInstruction(iba);
+}
+
+SummarizeResult SummarizeTrapInstruction(const MacroAssembler& masm,
+                                         uint32_t offset) {
+  const InstructionBytesFromMasm ibfm(masm, offset);
+  return SummarizeTrapInstruction(ibfm);
 }
 
 }  // namespace wasm

@@ -7,38 +7,37 @@ package mozilla.components.feature.accounts.push.cache
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.withContext
 import mozilla.components.feature.accounts.push.FxaPushSupportFeature
 import mozilla.components.feature.accounts.push.PREF_FXA_SCOPE
 import mozilla.components.feature.accounts.push.preference
 import mozilla.components.feature.push.PushScope
-import java.util.UUID
 
-/**
- * An implementation of a [ScopeProperty] that generates and stores a scope in [SharedPreferences].
- */
+/** An implementation of a [ScopeProperty] that generates and stores a scope in [SharedPreferences]. */
 internal class PushScopeProperty(
     private val context: Context,
     private val coroutineScope: CoroutineScope,
 ) : ScopeProperty {
 
-    override suspend fun value(): PushScope = withContext(coroutineScope.coroutineContext) {
-        val prefs = preference(context)
+    override suspend fun value(): PushScope =
+        withContext(coroutineScope.coroutineContext) {
+            val prefs = preference(context)
 
-        // Generate a unique scope if one doesn't exist.
-        val randomUuid = UUID.randomUUID().toString().replace("-", "")
+            // Generate a unique scope if one doesn't exist.
+            val randomUuid = UUID.randomUUID().toString().replace("-", "")
 
-        // Return a scope in the format example: "fxa_push_scope_a62d5f27c9d74af4996d057f0e0e9c38"
-        val scope = FxaPushSupportFeature.PUSH_SCOPE_PREFIX + randomUuid
+            // Return a scope in the format example: "fxa_push_scope_a62d5f27c9d74af4996d057f0e0e9c38"
+            val scope = FxaPushSupportFeature.PUSH_SCOPE_PREFIX + randomUuid
 
-        if (!prefs.contains(PREF_FXA_SCOPE)) {
-            prefs.edit { putString(PREF_FXA_SCOPE, scope) }
+            if (!prefs.contains(PREF_FXA_SCOPE)) {
+                prefs.edit { putString(PREF_FXA_SCOPE, scope) }
 
-            return@withContext scope
+                return@withContext scope
+            }
+
+            // The default string is non-null, so we can safely cast.
+            prefs.getString(PREF_FXA_SCOPE, scope) as String
         }
-
-        // The default string is non-null, so we can safely cast.
-        prefs.getString(PREF_FXA_SCOPE, scope) as String
-    }
 }

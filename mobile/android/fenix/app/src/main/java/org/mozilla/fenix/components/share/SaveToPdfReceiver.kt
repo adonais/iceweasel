@@ -11,9 +11,7 @@ import android.widget.Toast
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 
-/**
- * A BroadcastReceiver to handle the "Save to PDF" action.
- */
+/** A BroadcastReceiver to handle the "Save to PDF" action. */
 class SaveToPdfReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val saveToPdfUseCase = context.components.useCases.sessionUseCases.saveToPdf

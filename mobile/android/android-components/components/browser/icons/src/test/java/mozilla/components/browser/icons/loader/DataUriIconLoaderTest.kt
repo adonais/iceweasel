@@ -5,14 +5,14 @@
 package mozilla.components.browser.icons.loader
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import mozilla.components.browser.icons.Icon
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class DataUriIconLoaderTest {
@@ -50,15 +50,17 @@ class DataUriIconLoaderTest {
     fun `Loader returns bytes for data uri containing png`() {
         val loader = DataUriIconLoader()
 
-        val result = loader.load(
-            mock(),
-            mock(),
-            IconRequest.Resource(
-                url = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91Jpz" +
-                    "AAAAEklEQVR4AWP4z8AAxCDiP8N/AB3wBPxcBee7AAAAAElFTkSuQmCC",
-                type = IconRequest.Resource.Type.FAVICON,
-            ),
-        )
+        val result =
+            loader.load(
+                mock(),
+                mock(),
+                IconRequest.Resource(
+                    url =
+                        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91Jpz" +
+                            "AAAAEklEQVR4AWP4z8AAxCDiP8N/AB3wBPxcBee7AAAAAElFTkSuQmCC",
+                    type = IconRequest.Resource.Type.FAVICON,
+                ),
+            )
 
         assertIs<IconLoader.Result.BytesResult>(result)
 
@@ -73,14 +75,15 @@ class DataUriIconLoaderTest {
     fun `Loader returns base64 decoded data`() {
         val loader = DataUriIconLoader()
 
-        val result = loader.load(
-            mock(),
-            mock(),
-            IconRequest.Resource(
-                url = "data:image/png;base64,dGhpcyBpcyBhIHRlc3Q=",
-                type = IconRequest.Resource.Type.FAVICON,
-            ),
-        )
+        val result =
+            loader.load(
+                mock(),
+                mock(),
+                IconRequest.Resource(
+                    url = "data:image/png;base64,dGhpcyBpcyBhIHRlc3Q=",
+                    type = IconRequest.Resource.Type.FAVICON,
+                ),
+            )
 
         assertIs<IconLoader.Result.BytesResult>(result)
 

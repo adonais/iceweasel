@@ -13,6 +13,14 @@ class BaseProfilerCount;
 void profiler_add_sampled_counter(BaseProfilerCount* aCounter);
 void profiler_remove_sampled_counter(BaseProfilerCount* aCounter);
 
+namespace mozilla {
+class ChromeProfilerCounter;
+}
+void profiler_add_sampled_chrome_counter(
+    mozilla::ChromeProfilerCounter* aCounter);
+void profiler_remove_sampled_chrome_counter(
+    mozilla::ChromeProfilerCounter* aCounter);
+
 typedef mozilla::Atomic<int64_t, mozilla::MemoryOrdering::Relaxed>
     ProfilerAtomicSigned;
 typedef mozilla::Atomic<uint64_t, mozilla::MemoryOrdering::Relaxed>

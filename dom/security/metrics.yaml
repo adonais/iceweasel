@@ -485,31 +485,6 @@ security:
     expires: never
     telemetry_mirror: HTTPS_ONLY_MODE_UPGRADE_TYPE
 
-  referrer_policy_count:
-    type: custom_distribution
-    description: >
-      The counter of each referrer policy which has been computed for a
-      referrer. The buckets (0-8) are for same-site requests and buckets (9-17)
-      are for cross-site requests. Note that the index matches to the order in
-      ReferrerPolicy.webidl
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram REFERRER_POLICY_COUNT.
-    range_min: 0
-    range_max: 18
-    bucket_count: 19
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1720869
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1720869
-    notification_emails:
-      - tihuang@mozilla.com
-      - ckerschbaumer@mozilla.com
-      - seceng-telemetry@mozilla.com
-    expires: never
-    telemetry_mirror: REFERRER_POLICY_COUNT
-
 mixed_content:
   page_load:
     type: custom_distribution
@@ -531,27 +506,6 @@ mixed_content:
       - seceng-telemetry@mozilla.com
     expires: never
     telemetry_mirror: MIXED_CONTENT_PAGE_LOAD
-
-  unblock_counter:
-    type: custom_distribution
-    description: >
-      A simple counter of daily mixed-content unblock operations and top
-      documents loaded
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram MIXED_CONTENT_UNBLOCK_COUNTER.
-    range_min: 0
-    range_max: 3
-    bucket_count: 4
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    notification_emails:
-      - seceng-telemetry@mozilla.com
-    expires: never
-    telemetry_mirror: MIXED_CONTENT_UNBLOCK_COUNTER
 
   hsts:
     type: custom_distribution

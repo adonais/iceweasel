@@ -1,0 +1,71 @@
+<!doctype html>
+<!-- Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/ -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Test Panel List Context Menu</title>
+    <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+    <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
+    <link
+      rel="stylesheet"
+      href="chrome://mochikit/content/tests/SimpleTest/test.css"
+    />
+  </head>
+  <body>
+    <p id="display"></p>
+    <div id="content">
+      <button id="anchor-button">Anchor</button>
+      <panel-list id="panel-list">
+        <panel-item>one</panel-item>
+        <panel-item>two</panel-item>
+      </panel-list>
+    </div>
+    <script class="testbody" type="application/javascript">
+      const { BrowserTestUtils } = ChromeUtils.importESModule(
+        "resource://testing-common/BrowserTestUtils.sys.mjs"
+      );
+      let anchorButton, panelList;
+
+      add_setup(async function setup() {
+        await customElements.whenDefined("panel-list");
+        await customElements.whenDefined("panel-item");
+        panelList = document.getElementById("panel-list");
+        anchorButton = document.getElementById("anchor-button");
+        anchorButton.addEventListener("contextmenu", e => panelList.show(e));
+      });
+
+      // A contextmenu event is dispatched during the button press on most
+      // platforms, so the panel opens between the pointerdown and the pointerup.
+      // An auto popover would be light dismissed by that pointerup, since the
+      // pointer is still outside the panel.
+      add_task(async function testContextMenuSurvivesTriggeringMouseUp() {
+        let shown = BrowserTestUtils.waitForEvent(panelList, "shown");
+        // Press near the anchor's top left, which the panel opening below it
+        // won't cover, so the release lands outside the panel.
+        synthesizeMouse(anchorButton, 2, 2, { type: "mousedown", button: 2 });
+        synthesizeMouse(anchorButton, 2, 2, { type: "contextmenu" });
+        await shown;
+
+        is(
+          panelList.getAttribute("popover"),
+          "manual",
+          "A contextmenu-triggered panel should not be light dismissable"
+        );
+        ok(panelList.matches(":popover-open"), "Panel should be open");
+
+        synthesizeMouse(anchorButton, 2, 2, { type: "mouseup", button: 2 });
+        // Let light dismiss run for the mouseup before asserting.
+        await new Promise(resolve =>
+          requestAnimationFrame(() => setTimeout(resolve, 0))
+        );
+
+        ok(
+          panelList.matches(":popover-open"),
+          "Panel should still be open after the triggering mouseup"
+        );
+        ok(panelList.open, "Panel open attribute should still be true");
+      });
+    </script>
+  </body>
+</html>

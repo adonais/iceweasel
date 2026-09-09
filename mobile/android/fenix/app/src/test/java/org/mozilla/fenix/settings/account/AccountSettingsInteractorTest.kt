@@ -22,12 +22,13 @@ class AccountSettingsInteractorTest {
     fun onSyncNow() {
         var ranSyncNow = false
 
-        val interactor = AccountSettingsInteractor(
-            mockk(),
-            { ranSyncNow = true },
-            { false },
-            mockk(),
-        )
+        val interactor =
+            AccountSettingsInteractor(
+                mockk(),
+                { ranSyncNow = true },
+                { false },
+                mockk(),
+            )
 
         interactor.onSyncNow()
 
@@ -40,12 +41,13 @@ class AccountSettingsInteractorTest {
         var invalidResponseInvoked = false
         val invalidNameResponse = { invalidResponseInvoked = true }
 
-        val interactor = AccountSettingsInteractor(
-            mockk(),
-            { },
-            { true },
-            store,
-        )
+        val interactor =
+            AccountSettingsInteractor(
+                mockk(),
+                {},
+                { true },
+                store,
+            )
 
         assertTrue(interactor.onChangeDeviceName("New Name", invalidNameResponse))
 
@@ -59,12 +61,13 @@ class AccountSettingsInteractorTest {
         var invalidResponseInvoked = false
         val invalidNameResponse = { invalidResponseInvoked = true }
 
-        val interactor = AccountSettingsInteractor(
-            mockk(),
-            { },
-            { false },
-            store,
-        )
+        val interactor =
+            AccountSettingsInteractor(
+                mockk(),
+                {},
+                { false },
+                store,
+            )
 
         assertFalse(interactor.onChangeDeviceName("New Name", invalidNameResponse))
 
@@ -75,14 +78,16 @@ class AccountSettingsInteractorTest {
     @Test
     fun onSignOut() {
         val navController: NavController = mockk(relaxed = true)
-        every { navController.currentDestination } returns NavDestination("").apply { id = R.id.accountSettingsFragment }
+        every { navController.currentDestination } returns
+            NavDestination("").apply { id = R.id.accountSettingsFragment }
 
-        val interactor = AccountSettingsInteractor(
-            navController,
-            { },
-            { false },
-            mockk(),
-        )
+        val interactor =
+            AccountSettingsInteractor(
+                navController,
+                {},
+                { false },
+                mockk(),
+            )
 
         interactor.onSignOut()
 

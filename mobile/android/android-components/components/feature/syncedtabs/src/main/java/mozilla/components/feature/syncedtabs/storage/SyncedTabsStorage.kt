@@ -29,8 +29,8 @@ import mozilla.components.service.fxa.manager.ext.withConstellationIfExists
 import mozilla.components.service.fxa.sync.SyncReason
 
 /**
- * A storage that listens to the [BrowserStore] changes to synchronize the local tabs state
- * with [RemoteTabsStorage] and then synchronize with [accountManager].
+ * A storage that listens to the [BrowserStore] changes to synchronize the local tabs state with [RemoteTabsStorage] and
+ * then synchronize with [accountManager].
  *
  * @param accountManager Account manager used to retrieve synced tabs.
  * @param store Browser store to observe for state changes.
@@ -47,46 +47,45 @@ class SyncedTabsStorage(
 ) : SyncedTabsProvider {
     private var scope: CoroutineScope? = null
 
-    /**
-     * Start listening to browser store changes.
-     */
+    /** Start listening to browser store changes. */
     @OptIn(FlowPreview::class)
     fun start() {
-        scope = store.flowScoped(dispatcher = dispatcher) { flow ->
-            flow.distinctUntilChangedBy { it.toSyncTabState() }
-                .map { state ->
-                    // TO-DO: https://github.com/mozilla-mobile/android-components/issues/5179
-                    val iconUrl = null
-                    state.tabs.filter { !it.content.private && !it.content.loading }.map { tab ->
-                        val history = listOf(TabEntry(tab.content.title, tab.content.url, iconUrl))
-                        Tab(history, 0, tab.lastAccess, !tab.isActive(maxActiveTime))
+        scope =
+            store.flowScoped(dispatcher = dispatcher) { flow ->
+                flow
+                    .distinctUntilChangedBy { it.toSyncTabState() }
+                    .map { state ->
+                        // TO-DO: https://github.com/mozilla-mobile/android-components/issues/5179
+                        val iconUrl = null
+                        state.tabs
+                            .filter { !it.content.private && !it.content.loading }
+                            .map { tab ->
+                                val history = listOf(TabEntry(tab.content.title, tab.content.url, iconUrl))
+                                Tab(history, 0, tab.lastAccess, !tab.isActive(maxActiveTime))
+                            }
                     }
-                }
-                .debounce(debounceMillis)
-                .collect { tabs ->
-                    tabsStorage.store(tabs)
-                    accountManager.syncNow(
-                        reason = SyncReason.User,
-                        customEngineSubset = listOf(SyncEngine.Tabs),
-                        debounce = true,
-                    )
-                }
-        }
+                    .debounce(debounceMillis)
+                    .collect { tabs ->
+                        tabsStorage.store(tabs)
+                        accountManager.syncNow(
+                            reason = SyncReason.User,
+                            customEngineSubset = listOf(SyncEngine.Tabs),
+                            debounce = true,
+                        )
+                    }
+            }
     }
 
-    /**
-     * Stop listening to browser store changes.
-     */
+    /** Stop listening to browser store changes. */
     fun stop() {
         scope?.cancel()
     }
 
-    /**
-     * See [SyncedTabsProvider.getSyncedDeviceTabs].
-     */
+    /** See [SyncedTabsProvider.getSyncedDeviceTabs]. */
     override suspend fun getSyncedDeviceTabs(): List<SyncedDeviceTabs> {
         val otherDevices = syncClients() ?: return emptyList()
-        return tabsStorage.getAll()
+        return tabsStorage
+            .getAll()
             .mapNotNull { (client, tabs) ->
                 val fxaDevice = otherDevices.find { it.id == client.id }
 
@@ -97,9 +96,7 @@ class SyncedTabsStorage(
             }
     }
 
-    /**
-     * List of synced devices.
-     */
+    /** List of synced devices. */
     @VisibleForTesting
     internal fun syncClients(): List<Device>? {
         accountManager.withConstellationIfExists {
@@ -114,9 +111,10 @@ class SyncedTabsStorage(
         val loadedTabs: List<TabSessionState>,
     )
 
-    private fun BrowserState.toSyncTabState() = SyncComponents(
-        selectedId = selectedTabId,
-        lastAccessed = tabs.map { it.lastAccess },
-        loadedTabs = tabs.filter { it.content.loading },
-    )
+    private fun BrowserState.toSyncTabState() =
+        SyncComponents(
+            selectedId = selectedTabId,
+            lastAccessed = tabs.map { it.lastAccess },
+            loadedTabs = tabs.filter { it.content.loading },
+        )
 }

@@ -4,24 +4,15 @@
 
 package mozilla.components.concept.engine.translate
 
-/**
- * The operations that can be performed on a language model.
- */
+/** The operations that can be performed on a language model. */
 enum class ModelOperation(val operation: String) {
-    /**
-     * Download the model(s).
-     */
+    /** Download the model(s). */
     DOWNLOAD("download"),
 
-    /**
-     * Delete the model(s).
-     */
-    DELETE("delete"),
-    ;
+    /** Delete the model(s). */
+    DELETE("delete");
 
-    /**
-     * The operation will use the string literal on the engine.
-     */
+    /** The operation will use the string literal on the engine. */
     override fun toString(): String {
         return operation
     }

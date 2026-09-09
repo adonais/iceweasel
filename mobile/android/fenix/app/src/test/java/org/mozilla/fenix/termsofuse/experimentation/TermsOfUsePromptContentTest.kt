@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.termsofuse.experimentation
 
 import mozilla.components.support.test.robolectric.testContext
@@ -47,10 +51,12 @@ class TermsOfUsePromptContentTest {
     @Test
     fun `WHEN TermsOfUsePromptContentOption is VALUE_0 THEN getTermsOfUsePromptContent title is as expected`() {
         val expectedTitle = "We’ve got an update"
-        val result = getTermsOfUsePromptContent(
-            testContext,
-            TermsOfUsePromptContentOption.VALUE_0.name,
-        ) {}.title
+        val result =
+            getTermsOfUsePromptContent(
+                    testContext,
+                    TermsOfUsePromptContentOption.VALUE_0.name,
+                ) {}
+                .title
 
         assertEquals(expectedTitle, result)
     }
@@ -58,10 +64,12 @@ class TermsOfUsePromptContentTest {
     @Test
     fun `WHEN TermsOfUsePromptContentOption is VALUE_1 THEN getTermsOfUsePromptContent title is as expected`() {
         val expectedTitle = "Terms of Use"
-        val result = getTermsOfUsePromptContent(
-            testContext,
-            TermsOfUsePromptContentOption.VALUE_1.name,
-        ) {}.title
+        val result =
+            getTermsOfUsePromptContent(
+                    testContext,
+                    TermsOfUsePromptContentOption.VALUE_1.name,
+                ) {}
+                .title
 
         assertEquals(expectedTitle, result)
     }
@@ -69,10 +77,12 @@ class TermsOfUsePromptContentTest {
     @Test
     fun `WHEN TermsOfUsePromptContentOption is VALUE_2 THEN getTermsOfUsePromptContent title is as expected`() {
         val expectedTitle = "A note from Firefox"
-        val result = getTermsOfUsePromptContent(
-            testContext,
-            TermsOfUsePromptContentOption.VALUE_2.name,
-        ) {}.title
+        val result =
+            getTermsOfUsePromptContent(
+                    testContext,
+                    TermsOfUsePromptContentOption.VALUE_2.name,
+                ) {}
+                .title
 
         assertEquals(expectedTitle, result)
     }

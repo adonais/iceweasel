@@ -24,8 +24,7 @@ import org.mozilla.fenix.helpers.FenixGleanTestRule
 @RunWith(AndroidJUnit4::class)
 internal class FxAccountsPingTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private lateinit var mockAccount: Account
     private lateinit var syncStore: SyncStore
@@ -51,11 +50,7 @@ internal class FxAccountsPingTest {
         val job = fxAccounts.testBeforeNextSubmit {
             validatorRun = true
         }
-        syncStore.dispatch(
-            SyncAction.UpdateAccount(
-                account = mockAccount,
-            ),
-        )
+        syncStore.dispatch(SyncAction.UpdateAccount(account = mockAccount))
 
         job.join()
         assertEquals("123", syncStore.state.account?.uid)
@@ -67,20 +62,12 @@ internal class FxAccountsPingTest {
         assertEquals(null, syncStore.state.account?.uid)
         var validatorRun = false
         syncStore.dispatch(SyncAction.UpdateSyncStatus(SyncStatus.Idle))
-        syncStore.dispatch(
-            SyncAction.UpdateAccount(
-                account = mockAccount,
-            ),
-        )
+        syncStore.dispatch(SyncAction.UpdateAccount(account = mockAccount))
         assertEquals(syncStore.state.account?.uid, "123")
         val job = fxAccounts.testBeforeNextSubmit {
             validatorRun = true
         }
-        syncStore.dispatch(
-            SyncAction.UpdateAccount(
-                account = mockAccount.copy(uid = null),
-            ),
-        )
+        syncStore.dispatch(SyncAction.UpdateAccount(account = mockAccount.copy(uid = null)))
 
         try {
             job.join()
@@ -96,21 +83,13 @@ internal class FxAccountsPingTest {
         assertEquals(null, syncStore.state.account?.uid)
         var validatorRun = false
         syncStore.dispatch(SyncAction.UpdateSyncStatus(SyncStatus.Idle))
-        syncStore.dispatch(
-            SyncAction.UpdateAccount(
-                account = mockAccount,
-            ),
-        )
+        syncStore.dispatch(SyncAction.UpdateAccount(account = mockAccount))
         assertEquals("123", syncStore.state.account?.uid)
         val job = fxAccounts.testBeforeNextSubmit {
             validatorRun = true
             assertEquals(false, true)
         }
-        syncStore.dispatch(
-            SyncAction.UpdateAccount(
-                account = mockAccount.copy(email = "newEmail@email.com"),
-            ),
-        )
+        syncStore.dispatch(SyncAction.UpdateAccount(account = mockAccount.copy(email = "newEmail@email.com")))
 
         try {
             job.join()

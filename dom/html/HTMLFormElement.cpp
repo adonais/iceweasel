@@ -442,7 +442,8 @@ static void CollectOrphans(
       const auto* fc = nsIFormControl::FromNode(node);
       MOZ_ASSERT(fc);
       HTMLFormElement* form = fc->GetFormInternal();
-      NS_ASSERTION(form == aThisForm, "How did that happen?");
+      // form may be null if this is called during CC after node is unlinked.
+      NS_ASSERTION(!form || form == aThisForm, "How did that happen?");
     }
 #endif /* DEBUG */
   }
@@ -481,7 +482,8 @@ static void CollectOrphans(nsINode* aRemovalRoot,
 #ifdef DEBUG
     if (!removed) {
       HTMLFormElement* form = node->GetFormInternal();
-      NS_ASSERTION(form == aThisForm, "How did that happen?");
+      // form may be null if this is called during CC after node is unlinked.
+      NS_ASSERTION(!form || form == aThisForm, "How did that happen?");
     }
 #endif /* DEBUG */
   }
@@ -1048,8 +1050,8 @@ nsresult HTMLFormElement::DispatchBeforeSubmitChromeOnlyEvent(
     bool* aCancelSubmit) {
   bool defaultAction = true;
   nsresult rv = nsContentUtils::DispatchEventOnlyToChrome(
-      OwnerDoc(), static_cast<nsINode*>(this), u"DOMFormBeforeSubmit"_ns,
-      CanBubble::eYes, Cancelable::eYes, &defaultAction);
+      static_cast<nsINode*>(this), u"DOMFormBeforeSubmit"_ns, CanBubble::eYes,
+      Cancelable::eYes, &defaultAction);
   *aCancelSubmit = !defaultAction;
   if (*aCancelSubmit) {
     return NS_OK;
@@ -1673,7 +1675,8 @@ bool HTMLFormElement::CheckFormValidity(
     nsCOMPtr<nsIConstraintValidation> cvElmt =
         do_QueryObject(sortedControls[i]);
     bool defaultAction = true;
-    if (cvElmt && !cvElmt->CheckValidity(*sortedControls[i], &defaultAction)) {
+    if (cvElmt && !cvElmt->CheckValidity(MOZ_KnownLive(*sortedControls[i]),
+                                         &defaultAction)) {
       ret = false;
 
       // Add all unhandled invalid controls to aInvalidElements if the caller

@@ -499,6 +499,16 @@ export const AIWindowUI = {
   },
 
   /**
+   * Toggle the monitor creation panel anchored to its toolbar button.
+   *
+   * @param {Window} _win
+   */
+  toggleMonitorPanel(_win) {
+    // TODO(bug https://bugzilla.mozilla.org/show_bug.cgi?id=2062112): Open the monitor panel.
+    console.warn("TODO open panel");
+  },
+
+  /**
    * Toggle the AI Window sidebar
    *
    * @param {Window} win

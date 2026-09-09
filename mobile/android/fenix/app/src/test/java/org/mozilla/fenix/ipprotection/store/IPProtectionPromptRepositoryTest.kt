@@ -56,16 +56,19 @@ class IPProtectionPromptRepositoryTest {
 
     @Test
     fun `WHEN the IP Protection feature is not available THEN do not show the prompt`() {
-        val hardcodedNimbus = HardcodedNimbusFeatures(
-            testContext,
-            "ip-protection" to JSONObject(
-                """
-                {
-                    "enabled": false
-                }
-                """.trimIndent(),
-            ),
-        )
+        val hardcodedNimbus =
+            HardcodedNimbusFeatures(
+                testContext,
+                "ip-protection" to
+                    JSONObject(
+                        """
+                        {
+                            "enabled": false
+                        }
+                        """
+                            .trimIndent()
+                    ),
+            )
         hardcodedNimbus.connectWith(FxNimbus)
         settings.isIPProtectionEnabled = false
         repository.isShowingPrompt = false

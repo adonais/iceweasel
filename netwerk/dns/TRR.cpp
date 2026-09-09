@@ -693,6 +693,11 @@ bool TRR::HasUsableResponse() {
 nsresult TRR::FollowCname(nsIChannel* aChannel) {
   nsresult rv = NS_OK;
   nsAutoCString cname;
+  // True when at least one link of the chain we are following is an HTTPS
+  // AliasMode TargetName rather than a plain CNAME. Only then does RFC 9460
+  // require us to chase the target ourselves.
+  bool aliasFollow =
+      mHTTPSAliasFollow || GetOrCreateDNSPacket()->CnameIsHTTPSAlias();
   while (NS_SUCCEEDED(rv) && mDNS.mAddresses.IsEmpty() && !mCname.IsEmpty() &&
          mCnameLoop > 0) {
     mCnameLoop--;
@@ -711,6 +716,8 @@ nsresult TRR::FollowCname(nsIChannel* aChannel) {
       LOG(("TRR::FollowCname DohDecode %x\n", (int)rv));
       HandleDecodeError(rv);
     }
+    aliasFollow = aliasFollow || (!mCname.IsEmpty() &&
+                                  GetOrCreateDNSPacket()->CnameIsHTTPSAlias());
   }
 
   // restore mCname as DohDecode() change it
@@ -722,10 +729,10 @@ nsresult TRR::FollowCname(nsIChannel* aChannel) {
 
   bool ra = mPacket && mPacket->RecursionAvailable().unwrapOr(false);
   LOG(("ra = %d", ra));
-  if (rv == NS_ERROR_UNKNOWN_HOST && ra && mType != TRRTYPE_HTTPSSVC) {
+  if (rv == NS_ERROR_UNKNOWN_HOST && ra && !aliasFollow) {
     // If recursion is available, but no addresses have been returned,
     // we can just return a failure here.
-    // This optimization is only valid for A/AAAA CNAME chains: a recursive
+    // This optimization is only valid for CNAME chains: a recursive
     // resolver that follows a CNAME already inlines the target's addresses.
     // It does not hold for HTTPS AliasMode, since recursive resolvers do not
     // chase the SVCB/HTTPS alias, so we must query the TargetName ourselves.
@@ -746,10 +753,10 @@ nsresult TRR::FollowCname(nsIChannel* aChannel) {
   trr->SetPurpose(mPurpose);
   // Recursive resolvers do not chase HTTPS AliasMode targets, so following the
   // TargetName is an HTTPS alias follow. Remember this so that a target with no
-  // HTTPS record still yields an AliasMode record instead of failing.
-  if (mType == TRRTYPE_HTTPSSVC) {
-    trr->mHTTPSAliasFollow = true;
-  }
+  // HTTPS record still yields an AliasMode record instead of failing. A plain
+  // CNAME is not an alias follow: a target without an HTTPS record simply has
+  // no HTTPS RR.
+  trr->mHTTPSAliasFollow = aliasFollow;
   if (!TRRService::Get()) {
     return NS_ERROR_FAILURE;
   }

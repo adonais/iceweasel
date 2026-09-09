@@ -17,6 +17,7 @@
 #include "libANGLE/Error.h"
 #include "libANGLE/FramebufferAttachment.h"
 #include "libANGLE/RefCountObject.h"
+#include "libANGLE/angletypes.h"
 #include "libANGLE/formatutils.h"
 
 namespace rx
@@ -35,6 +36,22 @@ namespace egl
 class Image;
 class Display;
 class ContextMutex;
+
+// Attributes of the image source that siblings might care about.
+struct ImageSourceAttributes
+{
+    // Corresponding to |target| in |eglCreateImage|
+    gl::TextureType type = gl::TextureType::InvalidEnum;
+    // Corresponding to |EGL_GL_TEXTURE_LEVEL| value in attributes of |eglCreateImage|
+    uint32_t level = 0;
+    // Corresponding to |EGL_GL_TEXTURE_ZOFFSET| value in attributes of |eglCreateImage|
+    uint32_t zoffset = 0;
+
+    gl::SourceImageIndex toSourceIndex(const gl::OwnImageIndex &ownIndex) const;
+    gl::SourceLevel toSourceLevel(gl::OwnLevel ownLevel) const;
+    gl::SourceLayer toSourceLayer(gl::OwnLayer ownLayer) const;
+    gl::SourceLayer toSourceDepth(const gl::Offset &offset) const;
+};
 
 // Only currently Renderbuffers and Textures can be bound with images. This makes the relationship
 // explicit, and also ensures that an image sibling can determine if it's been initialized or not,
@@ -67,7 +84,9 @@ class ImageSibling : public gl::FramebufferAttachmentObject
 
     const UnorderedSetSiblingSource &getSiblingSourcesOf() const { return mSourcesOf; }
     // Set the image target of this sibling
-    void setTargetImage(const gl::Context *context, egl::Image *imageTarget);
+    void setTargetImage(const gl::Context *context,
+                        egl::Image *imageTarget,
+                        ImageSourceAttributes *attributesOut);
 
     // Orphan all EGL image sources and targets
     angle::Result orphanImages(const gl::Context *context,

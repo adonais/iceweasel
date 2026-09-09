@@ -1030,7 +1030,7 @@
           !(
             (isTab(child) && child.visible) ||
             isTabGroup(child) ||
-            isSplitViewWrapper(child)
+            (isSplitViewWrapper(child) && child.visible)
           )
         ) {
           continue;
@@ -1408,7 +1408,7 @@
         return;
       }
 
-      let isEndTab = aClosingTab && aClosingTab._tPos > tabs.at(-1)._tPos;
+      let isEndTab = aClosingTab && aClosingTab.index > tabs.at(-1).index;
 
       if (!this._tabDefaultMaxWidth) {
         this._tabDefaultMaxWidth = parseFloat(
@@ -1653,8 +1653,8 @@
         return this.tabbox.tabpanels.firstElementChild;
       }
 
-      // If the tab's browser is lazy, we need to `_insertBrowser` in order
-      // to have a linkedPanel.  This will also serve to bind the browser
+      // If the tab's browser is lazy, we need to call `insertBrowser()` in
+      // order to have a linkedPanel.  This will also serve to bind the browser
       // and make it ready to use. We only do this if the tab is selected
       // because otherwise, callers might end up unintentionally binding the
       // browser for lazy background tabs.
@@ -1662,7 +1662,7 @@
         if (!aTab.selected) {
           return null;
         }
-        gBrowser._insertBrowser(aTab);
+        gBrowser.insertBrowser(aTab);
       }
       return document.getElementById(aTab.linkedPanel);
     }

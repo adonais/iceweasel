@@ -10,26 +10,25 @@ import androidx.core.graphics.drawable.toDrawable
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.search.SearchEngine.Type.APPLICATION
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction
+import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction.ContentDescription as SearchSelectorDescription
+import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction.Icon as SearchSelectorIcon
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarMenu
-import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.ContentDescription as MenuItemDescription
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.Icon as MenuItemIcon
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.Text as MenuItemText
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuDivider
+import mozilla.components.ui.icons.R as iconsR
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.mozilla.fenix.R
 import org.mozilla.fenix.search.SearchSelectorEvents.SearchSelectorClicked
 import org.mozilla.fenix.search.SearchSelectorEvents.SearchSelectorItemClicked
 import org.mozilla.fenix.search.SearchSelectorEvents.SearchSettingsItemClicked
-import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction.ContentDescription as SearchSelectorDescription
-import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction.Icon as SearchSelectorIcon
-import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.ContentDescription as MenuItemDescription
-import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.Icon as MenuItemIcon
-import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.Text as MenuItemText
-import mozilla.components.ui.icons.R as iconsR
 
 /**
- * Assert the [expected] search selector (and its menu items) is the same as [actual]
- * with special support for verifying the icons are the same.
+ * Assert the [expected] search selector (and its menu items) is the same as [actual] with special support for verifying
+ * the icons are the same.
  */
 fun assertSearchSelectorEquals(
     expected: SearchSelectorAction,
@@ -118,17 +117,20 @@ fun buildExpectedSearchSelector(
     defaultOrSelectedSearchEngine: SearchEngine,
     searchEngineShortcuts: List<SearchEngine>,
     resources: Resources,
-) = SearchSelectorAction(
-    icon = SearchSelectorIcon.DrawableIcon(
-        drawable = defaultOrSelectedSearchEngine.icon.toDrawable(resources),
-        shouldTint = defaultOrSelectedSearchEngine.type == APPLICATION,
-    ),
-    contentDescription = SearchSelectorDescription.StringContentDescription(
-        "${defaultOrSelectedSearchEngine.name}: search engine selector",
-    ),
-    menu = BrowserToolbarMenu { buildExpectedSearchSelectorMenuItems(searchEngineShortcuts, resources) },
-    onClick = SearchSelectorClicked,
-)
+) =
+    SearchSelectorAction(
+        icon =
+            SearchSelectorIcon.DrawableIcon(
+                drawable = defaultOrSelectedSearchEngine.icon.toDrawable(resources),
+                shouldTint = defaultOrSelectedSearchEngine.type == APPLICATION,
+            ),
+        contentDescription =
+            SearchSelectorDescription.StringContentDescription(
+                "${defaultOrSelectedSearchEngine.name}: search engine selector"
+            ),
+        menu = BrowserToolbarMenu { buildExpectedSearchSelectorMenuItems(searchEngineShortcuts, resources) },
+        onClick = SearchSelectorClicked,
+    )
 
 fun buildExpectedSearchSelectorMenuItems(
     searchEnginesShortcuts: List<SearchEngine>,
@@ -140,7 +142,7 @@ fun buildExpectedSearchSelectorMenuItems(
             text = MenuItemText.StringResText(R.string.search_header_menu_item_2),
             contentDescription = MenuItemDescription.StringResContentDescription(R.string.search_header_menu_item_2),
             onClick = null,
-        ),
+        )
     )
 
     val searchEngines = searchEnginesShortcuts.filter { it.type != APPLICATION }
@@ -148,15 +150,16 @@ fun buildExpectedSearchSelectorMenuItems(
         addAll(
             searchEngines.map { searchEngine ->
                 BrowserToolbarMenuButton(
-                    icon = MenuItemIcon.DrawableIcon(
-                        drawable = searchEngine.icon.toDrawable(resources),
-                        shouldTint = searchEngine.type == APPLICATION,
-                    ),
+                    icon =
+                        MenuItemIcon.DrawableIcon(
+                            drawable = searchEngine.icon.toDrawable(resources),
+                            shouldTint = searchEngine.type == APPLICATION,
+                        ),
                     text = MenuItemText.StringText(searchEngine.name),
                     contentDescription = MenuItemDescription.StringContentDescription(searchEngine.name),
                     onClick = SearchSelectorItemClicked(searchEngine),
                 )
-            },
+            }
         )
         add(BrowserToolbarMenuDivider)
     }
@@ -166,15 +169,16 @@ fun buildExpectedSearchSelectorMenuItems(
         addAll(
             applicationSearchEngines.map { searchEngine ->
                 BrowserToolbarMenuButton(
-                    icon = MenuItemIcon.DrawableIcon(
-                        drawable = searchEngine.icon.toDrawable(resources),
-                        shouldTint = searchEngine.type == APPLICATION,
-                    ),
+                    icon =
+                        MenuItemIcon.DrawableIcon(
+                            drawable = searchEngine.icon.toDrawable(resources),
+                            shouldTint = searchEngine.type == APPLICATION,
+                        ),
                     text = MenuItemText.StringText(searchEngine.name),
                     contentDescription = MenuItemDescription.StringContentDescription(searchEngine.name),
                     onClick = SearchSelectorItemClicked(searchEngine),
                 )
-            },
+            }
         )
         add(BrowserToolbarMenuDivider)
     }
@@ -184,6 +188,6 @@ fun buildExpectedSearchSelectorMenuItems(
             text = MenuItemText.StringResText(R.string.search_settings_menu_item),
             contentDescription = MenuItemDescription.StringResContentDescription(R.string.search_settings_menu_item),
             onClick = SearchSettingsItemClicked,
-        ),
+        )
     )
 }

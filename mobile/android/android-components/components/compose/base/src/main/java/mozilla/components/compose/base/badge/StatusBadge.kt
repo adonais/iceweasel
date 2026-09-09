@@ -46,9 +46,10 @@ fun StatusBadge(
     status: @Composable () -> Unit,
 ) {
     Box(
-        modifier = modifier
-            .background(color = containerColor, shape = shape)
-            .padding(horizontal = AcornTheme.layout.space.static100),
+        modifier =
+            modifier
+                .background(color = containerColor, shape = shape)
+                .padding(horizontal = AcornTheme.layout.space.static100),
         contentAlignment = Alignment.Center,
     ) {
         ProvideTextStyle(AcornTheme.typography.subtitle2.merge(color = contentColor)) {
@@ -100,9 +101,8 @@ fun StatusBadge(
 private fun StatusBadgePreview() {
     AcornTheme {
         Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.background)
-                .padding(AcornTheme.layout.space.static200),
+            modifier =
+                Modifier.background(MaterialTheme.colorScheme.background).padding(AcornTheme.layout.space.static200),
             verticalArrangement = Arrangement.spacedBy(AcornTheme.layout.space.static100),
         ) {
             StatusPreviewParameter.values().forEach { param ->

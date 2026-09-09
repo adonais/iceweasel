@@ -81,7 +81,8 @@ class GPUParent final : public PGPUParent {
       const BatteryInformation& aBatteryInfo);
   mozilla::ipc::IPCResult RecvNewContentCompositorManager(
       Endpoint<PCompositorManagerParent>&& aEndpoint,
-      const ContentParentId& aChildId, uint32_t aNamespace);
+      const ContentParentId& aChildId, uint32_t aNamespace,
+      uint32_t aContentBridgeNamespace);
   mozilla::ipc::IPCResult RecvNewContentImageBridge(
       Endpoint<PImageBridgeParent>&& aEndpoint, const ContentParentId& aChildId,
       uint32_t aNamespace);

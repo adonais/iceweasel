@@ -37,15 +37,16 @@ import org.mockito.Mockito.verify
 
 @RunWith(AndroidJUnit4::class)
 class HistoryMetadataSuggestionProviderTest {
-    private val historyEntry = HistoryMetadata(
-        key = HistoryMetadataKey("http://www.mozilla.com", null, null),
-        title = "mozilla",
-        createdAt = System.currentTimeMillis(),
-        updatedAt = System.currentTimeMillis(),
-        totalViewTime = 10,
-        documentType = DocumentType.Regular,
-        previewImageUrl = null,
-    )
+    private val historyEntry =
+        HistoryMetadata(
+            key = HistoryMetadataKey("http://www.mozilla.com", null, null),
+            title = "mozilla",
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis(),
+            totalViewTime = 10,
+            documentType = DocumentType.Regular,
+            previewImageUrl = null,
+        )
 
     @Before
     fun setup() {
@@ -71,24 +72,26 @@ class HistoryMetadataSuggestionProviderTest {
     }
 
     @Test
-    fun `WHEN onInputChanged is called with non empty text THEN cancel all previous read operations with the same input`() = runTest {
-        val storage: HistoryMetadataStorage = mock()
-        doReturn(listOf(historyEntry)).`when`(storage).queryHistoryMetadata(anyString(), anyInt())
-        val provider = HistoryMetadataSuggestionProvider(storage, mock())
-        val orderVerifier = inOrder(storage)
+    fun `WHEN onInputChanged is called with non empty text THEN cancel all previous read operations with the same input`() =
+        runTest {
+            val storage: HistoryMetadataStorage = mock()
+            doReturn(listOf(historyEntry)).`when`(storage).queryHistoryMetadata(anyString(), anyInt())
+            val provider = HistoryMetadataSuggestionProvider(storage, mock())
+            val orderVerifier = inOrder(storage)
 
-        provider.onInputChanged("moz")
+            provider.onInputChanged("moz")
 
-        orderVerifier.verify(provider.historyStorage, never()).cancelReads()
-        orderVerifier.verify(provider.historyStorage).cancelReads("moz")
-        orderVerifier.verify(provider.historyStorage).queryHistoryMetadata(eq("moz"), anyInt())
-    }
+            orderVerifier.verify(provider.historyStorage, never()).cancelReads()
+            orderVerifier.verify(provider.historyStorage).cancelReads("moz")
+            orderVerifier.verify(provider.historyStorage).queryHistoryMetadata(eq("moz"), anyInt())
+        }
 
     @Test
     fun `provider returns suggestions from configured history storage`() = runTest {
         val storage: HistoryMetadataStorage = mock()
 
-        whenever(storage.queryHistoryMetadata("moz", DEFAULT_METADATA_SUGGESTION_LIMIT)).thenReturn(listOf(historyEntry))
+        whenever(storage.queryHistoryMetadata("moz", DEFAULT_METADATA_SUGGESTION_LIMIT))
+            .thenReturn(listOf(historyEntry))
 
         val provider = HistoryMetadataSuggestionProvider(storage, mock())
         val suggestions = provider.onInputChanged("moz")
@@ -112,11 +115,12 @@ class HistoryMetadataSuggestionProviderTest {
     fun `provider allows lowering the number of returned suggestions beneath the default`() = runTest {
         val storage: HistoryMetadataStorage = mock()
         doReturn(emptyList<HistoryMetadata>()).`when`(storage).queryHistoryMetadata(anyString(), anyInt())
-        val provider = HistoryMetadataSuggestionProvider(
-            historyStorage = storage,
-            loadUrlUseCase = mock(),
-            maxNumberOfSuggestions = 2,
-        )
+        val provider =
+            HistoryMetadataSuggestionProvider(
+                historyStorage = storage,
+                loadUrlUseCase = mock(),
+                maxNumberOfSuggestions = 2,
+            )
 
         provider.onInputChanged("moz")
 
@@ -127,11 +131,12 @@ class HistoryMetadataSuggestionProviderTest {
     fun `provider allows increasing the number of returned suggestions above the default`() = runTest {
         val storage: HistoryMetadataStorage = mock()
         doReturn(emptyList<HistoryMetadata>()).`when`(storage).queryHistoryMetadata(anyString(), anyInt())
-        val provider = HistoryMetadataSuggestionProvider(
-            historyStorage = storage,
-            loadUrlUseCase = mock(),
-            maxNumberOfSuggestions = 8,
-        )
+        val provider =
+            HistoryMetadataSuggestionProvider(
+                historyStorage = storage,
+                loadUrlUseCase = mock(),
+                maxNumberOfSuggestions = 8,
+            )
 
         provider.onInputChanged("moz")
 
@@ -141,10 +146,11 @@ class HistoryMetadataSuggestionProviderTest {
     @Test
     fun `provider only as suggestions pages on which users actually spent some time`() = runTest {
         val storage: HistoryMetadataStorage = mock()
-        val historyEntries = mutableListOf<HistoryMetadata>().apply {
-            add(historyEntry)
-            add(historyEntry.copy(totalViewTime = 0))
-        }
+        val historyEntries =
+            mutableListOf<HistoryMetadata>().apply {
+                add(historyEntry)
+                add(historyEntry.copy(totalViewTime = 0))
+            }
         whenever(storage.queryHistoryMetadata("moz", DEFAULT_METADATA_SUGGESTION_LIMIT)).thenReturn(historyEntries)
         val provider = HistoryMetadataSuggestionProvider(storage, mock())
 
@@ -162,7 +168,8 @@ class HistoryMetadataSuggestionProviderTest {
         assertTrue(suggestions.isEmpty())
         verify(engine, never()).speculativeConnect(anyString())
 
-        whenever(storage.queryHistoryMetadata("moz", DEFAULT_METADATA_SUGGESTION_LIMIT)).thenReturn(listOf(historyEntry))
+        whenever(storage.queryHistoryMetadata("moz", DEFAULT_METADATA_SUGGESTION_LIMIT))
+            .thenReturn(listOf(historyEntry))
 
         suggestions = provider.onInputChanged("moz")
         assertEquals(1, suggestions.size)
@@ -179,7 +186,8 @@ class HistoryMetadataSuggestionProviderTest {
         assertTrue(suggestions.isEmpty())
         verify(engine, never()).speculativeConnect(anyString())
 
-        whenever(storage.queryHistoryMetadata("moz", DEFAULT_METADATA_SUGGESTION_LIMIT)).thenReturn(listOf(historyEntry))
+        whenever(storage.queryHistoryMetadata("moz", DEFAULT_METADATA_SUGGESTION_LIMIT))
+            .thenReturn(listOf(historyEntry))
 
         suggestions = provider.onInputChanged("moz")
         assertEquals(1, suggestions.size)
@@ -190,7 +198,7 @@ class HistoryMetadataSuggestionProviderTest {
                 override fun process(fact: Fact) {
                     emittedFacts.add(fact)
                 }
-            },
+            }
         )
 
         suggestions[0].onSuggestionClicked?.invoke()
@@ -209,7 +217,8 @@ class HistoryMetadataSuggestionProviderTest {
     fun `WHEN provider is set to not show edit suggestions THEN edit suggestion is set to null`() = runTest {
         val storage: HistoryMetadataStorage = mock()
 
-        whenever(storage.queryHistoryMetadata("moz", DEFAULT_METADATA_SUGGESTION_LIMIT)).thenReturn(listOf(historyEntry))
+        whenever(storage.queryHistoryMetadata("moz", DEFAULT_METADATA_SUGGESTION_LIMIT))
+            .thenReturn(listOf(historyEntry))
 
         val provider = HistoryMetadataSuggestionProvider(storage, mock(), showEditSuggestion = false)
         val suggestions = provider.onInputChanged("moz")
@@ -231,87 +240,96 @@ class HistoryMetadataSuggestionProviderTest {
     }
 
     @Test
-    fun `GIVEN a results host filter WHEN querying history THEN query more than the usual default results for the host url`() = runTest {
-        val storage: HistoryMetadataStorage = mock()
-        doReturn(emptyList<HistoryMetadata>()).`when`(storage).queryHistoryMetadata(anyString(), anyInt())
-        val expectedQueryCount = 2 * HISTORY_METADATA_RESULTS_TO_FILTER_SCALE_FACTOR
+    fun `GIVEN a results host filter WHEN querying history THEN query more than the usual default results for the host url`() =
+        runTest {
+            val storage: HistoryMetadataStorage = mock()
+            doReturn(emptyList<HistoryMetadata>()).`when`(storage).queryHistoryMetadata(anyString(), anyInt())
+            val expectedQueryCount = 2 * HISTORY_METADATA_RESULTS_TO_FILTER_SCALE_FACTOR
 
-        val provider = HistoryMetadataSuggestionProvider(
-            historyStorage = storage,
-            loadUrlUseCase = mock(),
-            maxNumberOfSuggestions = 2,
-            resultsUriFilter = "test".toUri(),
-        )
+            val provider =
+                HistoryMetadataSuggestionProvider(
+                    historyStorage = storage,
+                    loadUrlUseCase = mock(),
+                    maxNumberOfSuggestions = 2,
+                    resultsUriFilter = "test".toUri(),
+                )
 
-        provider.onInputChanged("moz")
+            provider.onInputChanged("moz")
 
-        verify(storage).queryHistoryMetadata("moz", expectedQueryCount)
-    }
-
-    @Test
-    fun `GIVEN a results host filter WHEN querying history THEN return only the results that pass through the filter`() = runTest {
-        val storage: HistoryMetadataStorage = mock()
-        val metadataKey2 = HistoryMetadataKey("https://mozilla.com/firefox", null, null)
-        val historyEntry2 = HistoryMetadata(
-            key = metadataKey2,
-            title = "mozilla",
-            createdAt = System.currentTimeMillis(),
-            updatedAt = System.currentTimeMillis(),
-            totalViewTime = 10,
-            documentType = DocumentType.Regular,
-            previewImageUrl = null,
-        )
-        doReturn(listOf(historyEntry, historyEntry2)).`when`(storage).queryHistoryMetadata(anyString(), anyInt())
-
-        val provider = HistoryMetadataSuggestionProvider(
-            historyStorage = storage,
-            loadUrlUseCase = mock(),
-            resultsUriFilter = "https://mozilla.com".toUri(),
-        )
-
-        val suggestions = provider.onInputChanged("moz")
-
-        assertEquals(2, suggestions.size)
-        assertTrue(suggestions.map { it.description }.contains("https://mozilla.com/firefox"))
-        assertTrue(suggestions.map { it.description }.contains("http://www.mozilla.com"))
-    }
+            verify(storage).queryHistoryMetadata("moz", expectedQueryCount)
+        }
 
     @Test
-    fun `GIVEN a results host filter WHEN querying history THEN return results containing mobile subdomains`() = runTest {
-        val storage: HistoryMetadataStorage = mock()
-        val metadataKey1 = HistoryMetadataKey("https://m.mozilla.com/firefox", null, null)
-        val historyEntry1 = HistoryMetadata(
-            key = metadataKey1,
-            title = "mozilla",
-            createdAt = System.currentTimeMillis(),
-            updatedAt = System.currentTimeMillis(),
-            totalViewTime = 10,
-            documentType = DocumentType.Regular,
-            previewImageUrl = null,
-        )
+    fun `GIVEN a results host filter WHEN querying history THEN return only the results that pass through the filter`() =
+        runTest {
+            val storage: HistoryMetadataStorage = mock()
+            val metadataKey2 = HistoryMetadataKey("https://mozilla.com/firefox", null, null)
+            val historyEntry2 =
+                HistoryMetadata(
+                    key = metadataKey2,
+                    title = "mozilla",
+                    createdAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis(),
+                    totalViewTime = 10,
+                    documentType = DocumentType.Regular,
+                    previewImageUrl = null,
+                )
+            doReturn(listOf(historyEntry, historyEntry2)).`when`(storage).queryHistoryMetadata(anyString(), anyInt())
 
-        val metadataKey2 = HistoryMetadataKey("http://www.mobile.mozilla.com/firefox", null, null)
-        val historyEntry2 = HistoryMetadata(
-            key = metadataKey2,
-            title = "mozilla",
-            createdAt = System.currentTimeMillis(),
-            updatedAt = System.currentTimeMillis(),
-            totalViewTime = 10,
-            documentType = DocumentType.Regular,
-            previewImageUrl = null,
-        )
-        doReturn(listOf(historyEntry1, historyEntry2)).`when`(storage).queryHistoryMetadata(anyString(), anyInt())
+            val provider =
+                HistoryMetadataSuggestionProvider(
+                    historyStorage = storage,
+                    loadUrlUseCase = mock(),
+                    resultsUriFilter = "https://mozilla.com".toUri(),
+                )
 
-        val provider = HistoryMetadataSuggestionProvider(
-            historyStorage = storage,
-            loadUrlUseCase = mock(),
-            resultsUriFilter = "https://mozilla.com".toUri(),
-        )
+            val suggestions = provider.onInputChanged("moz")
 
-        val suggestions = provider.onInputChanged("moz")
+            assertEquals(2, suggestions.size)
+            assertTrue(suggestions.map { it.description }.contains("https://mozilla.com/firefox"))
+            assertTrue(suggestions.map { it.description }.contains("http://www.mozilla.com"))
+        }
 
-        assertEquals(2, suggestions.size)
-        assertTrue(suggestions.map { it.description }.contains("http://www.mobile.mozilla.com/firefox"))
-        assertTrue(suggestions.map { it.description }.contains("https://m.mozilla.com/firefox"))
-    }
+    @Test
+    fun `GIVEN a results host filter WHEN querying history THEN return results containing mobile subdomains`() =
+        runTest {
+            val storage: HistoryMetadataStorage = mock()
+            val metadataKey1 = HistoryMetadataKey("https://m.mozilla.com/firefox", null, null)
+            val historyEntry1 =
+                HistoryMetadata(
+                    key = metadataKey1,
+                    title = "mozilla",
+                    createdAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis(),
+                    totalViewTime = 10,
+                    documentType = DocumentType.Regular,
+                    previewImageUrl = null,
+                )
+
+            val metadataKey2 = HistoryMetadataKey("http://www.mobile.mozilla.com/firefox", null, null)
+            val historyEntry2 =
+                HistoryMetadata(
+                    key = metadataKey2,
+                    title = "mozilla",
+                    createdAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis(),
+                    totalViewTime = 10,
+                    documentType = DocumentType.Regular,
+                    previewImageUrl = null,
+                )
+            doReturn(listOf(historyEntry1, historyEntry2)).`when`(storage).queryHistoryMetadata(anyString(), anyInt())
+
+            val provider =
+                HistoryMetadataSuggestionProvider(
+                    historyStorage = storage,
+                    loadUrlUseCase = mock(),
+                    resultsUriFilter = "https://mozilla.com".toUri(),
+                )
+
+            val suggestions = provider.onInputChanged("moz")
+
+            assertEquals(2, suggestions.size)
+            assertTrue(suggestions.map { it.description }.contains("http://www.mobile.mozilla.com/firefox"))
+            assertTrue(suggestions.map { it.description }.contains("https://m.mozilla.com/firefox"))
+        }
 }

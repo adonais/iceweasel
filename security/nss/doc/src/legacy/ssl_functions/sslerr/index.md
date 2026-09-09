@@ -6,11 +6,11 @@
 
 :::{note}
 
-- This page is part of the {ref}`mozilla_projects_nss_ssl_functions_old_ssl_reference` that
+- This page is part of the {ref}`mozilla-projects-nss-ssl-functions-old-ssl-reference` that
   we are migrating into the format described in the [MDN Style
   Guide](https://developer.mozilla.org/en-US/docs/Project:MDC_style_guide). If you are
   inclined to help with this migration, your help would be very much appreciated.
-- Upgraded documentation may be found in the {ref}`mozilla_projects_nss_reference`
+- Upgraded documentation may be found in the {ref}`mozilla-projects-nss-reference`
 :::
 
 ```{rubric} NSS and SSL Error Codes
@@ -37,7 +37,7 @@ retrieves the error codes described in this chapter.
 
 (ssl-error-codes)=
 
-## [SSL Error Codes](#ssl_error_codes)
+## SSL Error Codes
 
 :::{container}
 **Table 8.1 Error codes defined in sslerr.h**
@@ -863,7 +863,7 @@ retrieves the error codes described in this chapter.
 
 (sec-error-codes)=
 
-## [SEC Error Codes](#sec_error_codes)
+## SEC Error Codes
 
 :::{container}
 **Table 8.2 Security error codes defined in secerr.h**

@@ -11,8 +11,8 @@ namespace nss_test {
 
 class SelectTest : public ::testing::Test {
  protected:
-  void test_select(std::vector<uint8_t> &dest, const std::vector<uint8_t> &src0,
-                   const std::vector<uint8_t> &src1, unsigned char b) {
+  void test_select(std::vector<uint8_t>& dest, const std::vector<uint8_t>& src0,
+                   const std::vector<uint8_t>& src1, unsigned char b) {
     EXPECT_EQ(src0.size(), src1.size());
     EXPECT_GE(dest.size(), src0.size());
     return NSS_SecureSelect(dest.data(), src0.data(), src1.data(), src0.size(),

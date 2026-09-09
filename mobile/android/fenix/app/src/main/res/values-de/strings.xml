@@ -2408,7 +2408,7 @@
   <!-- Send tab to synced devices: Authentication error button - Allows user to re-authenticate -->
   <string name="sync_send_tab_error_auth_button">Anmelden</string>
   <!-- Send tab to synced devices: Authentication error button - Allows user to remove the currently connected account -->
-  <string name="sync_send_tab_error_auth_remove_account">Konto löschen</string>
+  <string name="sync_send_tab_error_auth_remove_account">Konto entfernen</string>
   <!-- Send tab to synced devices: Empty state title - Displayed when the user has no synced devices -->
   <string name="sync_send_tab_empty_state_title">Keine Geräte verbunden</string>
   <!-- Send tab to synced devices: Empty state message - Displayed when the user has no synced devices -->

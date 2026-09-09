@@ -7,13 +7,11 @@
 //    Implements the class methods for BufferMtl.
 //
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "libANGLE/renderer/metal/BufferMtl.h"
 
 #include "common/debug.h"
+#include "common/span.h"
+#include "common/unsafe_buffers.h"
 #include "common/utilities.h"
 #include "libANGLE/ErrorStrings.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
@@ -36,8 +34,10 @@ angle::Result GetFirstLastIndices(const IndexType *indices,
 {
     IndexType first, last;
     // Use memcpy to avoid unaligned memory access crash:
-    memcpy(&first, &indices[0], sizeof(first));
-    memcpy(&last, &indices[count - 1], sizeof(last));
+    ANGLE_UNSAFE_TODO({
+        memcpy(&first, &indices[0], sizeof(first));
+        memcpy(&last, &indices[count - 1], sizeof(last));
+    })
 
     outIndices->first  = first;
     outIndices->second = last;
@@ -57,9 +57,8 @@ bool isOffsetAndSizeMetalBlitCompatible(size_t offset, size_t size)
 ConversionBufferMtl::ConversionBufferMtl(ContextMtl *contextMtl,
                                          size_t initialSize,
                                          size_t alignment)
-    : dirty(true), convertedBuffer(nullptr), convertedOffset(0)
 {
-    data.initialize(contextMtl, initialSize, alignment, 0);
+    bufferPool.initialize(contextMtl, initialSize, alignment, 0);
 }
 
 ConversionBufferMtl::~ConversionBufferMtl() = default;
@@ -77,16 +76,13 @@ IndexConversionBufferMtl::IndexConversionBufferMtl(ContextMtl *context,
       primitiveRestartEnabled(primitiveRestartEnabledIn)
 {}
 
-IndexRange IndexConversionBufferMtl::getRangeForConvertedBuffer(size_t count)
-{
-    return IndexRange{0, count};
-}
-
 // UniformConversionBufferMtl implementation
 UniformConversionBufferMtl::UniformConversionBufferMtl(ContextMtl *context,
+                                                       uint64_t programSerialIdIn,
                                                        std::pair<size_t, size_t> offsetIn,
                                                        size_t uniformBufferBlockSize)
     : ConversionBufferMtl(context, 0, mtl::kUniformBufferSettingOffsetMinAlignment),
+      programSerialId(programSerialIdIn),
       uniformBufferBlockSize(uniformBufferBlockSize),
       offset(offsetIn)
 {}
@@ -127,15 +123,25 @@ angle::Result BufferMtl::setData(const gl::Context *context,
                                  const void *data,
                                  size_t intendedSize,
                                  gl::BufferUsage usage,
-                                 BufferFeedback *feedback)
+                                 BufferFeedback *feedback,
+                                 gl::ZeroFillRequired zeroFillRequired)
 {
+    const void *dataForImpl = data;
+    if (zeroFillRequired == gl::ZeroFillRequired::Yes)
+    {
+        const angle::MemoryBuffer *scratchBuffer = nullptr;
+        ANGLE_CHECK_GL_ALLOC(mtl::GetImpl(context),
+                             context->getZeroFilledBuffer(intendedSize, &scratchBuffer));
+        dataForImpl = scratchBuffer->data();
+    }
+
     ANGLE_TRY(setDataImpl(context, target, intendedSize, usage, feedback));
-    if (data == nullptr || intendedSize == 0)
+    if (dataForImpl == nullptr || intendedSize == 0)
     {
         return angle::Result::Continue;
     }
-    ANGLE_UNSAFE_BUFFERS(
-        angle::Span<const uint8_t> dataSpan(static_cast<const uint8_t *>(data), intendedSize));
+    auto dataSpan = ANGLE_UNSAFE_TODO(
+        angle::Span<const uint8_t>(static_cast<const uint8_t *>(dataForImpl), intendedSize));
     return setSubDataImpl(context, dataSpan, 0, feedback);
 }
 
@@ -147,8 +153,8 @@ angle::Result BufferMtl::setSubData(const gl::Context *context,
                                     BufferFeedback *feedback)
 {
     ASSERT(data != nullptr);
-    ANGLE_UNSAFE_BUFFERS(
-        angle::Span<const uint8_t> dataSpan(static_cast<const uint8_t *>(data), size));
+    auto dataSpan =
+        ANGLE_UNSAFE_TODO(angle::Span<const uint8_t>(static_cast<const uint8_t *>(data), size));
     return setSubDataImpl(context, dataSpan, offset, feedback);
 }
 
@@ -387,7 +393,7 @@ ConversionBufferMtl *BufferMtl::getVertexConversionBuffer(ContextMtl *context,
     mVertexConversionBuffers.emplace_back(context, formatID, stride, offset);
     ConversionBufferMtl *conv        = &mVertexConversionBuffers.back();
     const angle::Format &angleFormat = angle::Format::Get(formatID);
-    conv->data.updateAlignment(context, angleFormat.pixelBytes);
+    conv->bufferPool.updateAlignment(context, angleFormat.pixelBytes);
 
     return conv;
 }
@@ -411,12 +417,14 @@ IndexConversionBufferMtl *BufferMtl::getIndexConversionBuffer(ContextMtl *contex
 }
 
 ConversionBufferMtl *BufferMtl::getUniformConversionBuffer(ContextMtl *context,
+                                                           uint64_t programSerialId,
                                                            std::pair<size_t, size_t> offset,
                                                            size_t stdSize)
 {
     for (UniformConversionBufferMtl &buffer : mUniformConversionBuffers)
     {
-        if (buffer.offset.first == offset.first && buffer.uniformBufferBlockSize == stdSize)
+        if (buffer.programSerialId == programSerialId && buffer.offset.first == offset.first &&
+            buffer.uniformBufferBlockSize == stdSize)
         {
             if (buffer.offset.second <= offset.second &&
                 (offset.second - buffer.offset.second) % buffer.uniformBufferBlockSize == 0)
@@ -424,7 +432,13 @@ ConversionBufferMtl *BufferMtl::getUniformConversionBuffer(ContextMtl *context,
         }
     }
 
-    mUniformConversionBuffers.emplace_back(context, offset, stdSize);
+    constexpr size_t kMaxCacheSize = 32;
+    if (mUniformConversionBuffers.size() >= kMaxCacheSize)
+    {
+        mUniformConversionBuffers.pop_front();
+    }
+
+    mUniformConversionBuffers.emplace_back(context, programSerialId, offset, stdSize);
     return &mUniformConversionBuffers.back();
 }
 
@@ -432,25 +446,22 @@ void BufferMtl::markConversionBuffersDirty()
 {
     for (VertexConversionBufferMtl &buffer : mVertexConversionBuffers)
     {
-        buffer.dirty           = true;
-        buffer.convertedBuffer = nullptr;
-        buffer.convertedOffset = 0;
+        buffer.dirty  = true;
+        buffer.buffer = {};
     }
 
     for (IndexConversionBufferMtl &buffer : mIndexConversionBuffers)
     {
-        buffer.dirty           = true;
-        buffer.convertedBuffer = nullptr;
-        buffer.convertedOffset = 0;
+        buffer.dirty  = true;
+        buffer.buffer = {};
     }
 
     for (UniformConversionBufferMtl &buffer : mUniformConversionBuffers)
     {
-        buffer.dirty           = true;
-        buffer.convertedBuffer = nullptr;
-        buffer.convertedOffset = 0;
+        buffer.dirty  = true;
+        buffer.buffer = {};
     }
-    mRestartRangeCache.reset();
+    mDrawIndexRangeCache.reset();
 }
 
 void BufferMtl::clearConversionBuffers()
@@ -458,81 +469,87 @@ void BufferMtl::clearConversionBuffers()
     mVertexConversionBuffers.clear();
     mIndexConversionBuffers.clear();
     mUniformConversionBuffers.clear();
-    mRestartRangeCache.reset();
+    mDrawIndexRangeCache.reset();
 }
 
 template <typename T>
-static std::vector<IndexRange> calculateRestartRanges(ContextMtl *ctx, mtl::BufferRef idxBuffer)
+static std::vector<DrawIndexRange> CalculateDrawIndexRanges(angle::Span<const uint8_t> data)
 {
-    std::vector<IndexRange> result;
-    angle::Span<const uint8_t> bufferSpan = idxBuffer->mapReadOnly(ctx);
-    const T *bufferData                   = reinterpret_cast<const T *>(bufferSpan.data());
-    const size_t numIndices               = bufferSpan.size() / sizeof(T);
-    constexpr T restartMarker = std::numeric_limits<T>::max();
-    for (size_t i = 0; i < numIndices; ++i)
+    std::vector<DrawIndexRange> result;
+    angle::Span<const T> elements = angle::reinterpret_span<const T>(data);
+    constexpr T restartMarker     = std::numeric_limits<T>::max();
+    const auto begin              = elements.cbegin();
+    const auto end                = elements.cend();
+    auto it                       = begin;
+    while (it != end)
     {
-        // Find the start of the restart range, i.e. first index with value of restart marker.
-        if (bufferData[i] != restartMarker)
+        if (*it == restartMarker)
+        {
+            ANGLE_UNSAFE_TODO(++it);
             continue;
-        size_t restartBegin = i;
-        // Find the end of the restart range, i.e. last index with value of restart marker.
+        }
+        auto rangeBegin = it;
         do
         {
-            ++i;
-        } while (i < numIndices && bufferData[i] == restartMarker);
-        result.emplace_back(restartBegin, i - 1);
+            ANGLE_UNSAFE_TODO(++it);
+        } while (it != end && *it != restartMarker);
+        result.emplace_back(static_cast<size_t>(std::distance(begin, rangeBegin)),
+                            static_cast<size_t>(std::distance(begin, it)) - 1);
     }
-    idxBuffer->unmap(ctx);
     return result;
 }
 
-const std::vector<IndexRange> &BufferMtl::getRestartIndices(ContextMtl *ctx,
-                                                            gl::DrawElementsType indexType)
+const std::vector<DrawIndexRange> &BufferMtl::getDrawIndexRanges(ContextMtl *ctx,
+                                                                 gl::DrawElementsType indexType)
 {
-    if (!mRestartRangeCache || mRestartRangeCache->indexType != indexType)
+    if (!mDrawIndexRangeCache || mDrawIndexRangeCache->indexType != indexType)
     {
-        mRestartRangeCache.reset();
-        std::vector<IndexRange> ranges;
+        mDrawIndexRangeCache.reset();
+        angle::Span<const uint8_t> data = getBufferDataReadOnly(ctx, 0);
+        std::vector<DrawIndexRange> ranges;
         switch (indexType)
         {
             case gl::DrawElementsType::UnsignedByte:
-                ranges = calculateRestartRanges<uint8_t>(ctx, getCurrentBuffer());
+                ranges = CalculateDrawIndexRanges<uint8_t>(data);
                 break;
             case gl::DrawElementsType::UnsignedShort:
-                ranges = calculateRestartRanges<uint16_t>(ctx, getCurrentBuffer());
+                ranges = CalculateDrawIndexRanges<uint16_t>(data);
                 break;
             case gl::DrawElementsType::UnsignedInt:
-                ranges = calculateRestartRanges<uint32_t>(ctx, getCurrentBuffer());
+                ranges = CalculateDrawIndexRanges<uint32_t>(data);
                 break;
             default:
                 ASSERT(false);
         }
-        mRestartRangeCache.emplace(std::move(ranges), indexType);
+        mDrawIndexRangeCache.emplace(std::move(ranges), indexType);
     }
-    return mRestartRangeCache->ranges;
+    return mDrawIndexRangeCache->ranges;
 }
 
-const std::vector<IndexRange> BufferMtl::getRestartIndicesFromClientData(
-    ContextMtl *ctx,
-    gl::DrawElementsType indexType,
-    mtl::BufferRef idxBuffer)
+const std::vector<DrawIndexRange> BufferMtl::GetDrawIndexRangesFromClientData(
+    gl::DrawElementsType type,
+    GLint count,
+    const void *indices)
 {
-    std::vector<IndexRange> restartIndices;
-    switch (indexType)
+    auto data = ANGLE_UNSAFE_TODO(
+        angle::Span<const uint8_t>(static_cast<const uint8_t *>(indices),
+                                   static_cast<size_t>(count) * gl::GetDrawElementsTypeSize(type)));
+    std::vector<DrawIndexRange> ranges;
+    switch (type)
     {
         case gl::DrawElementsType::UnsignedByte:
-            restartIndices = calculateRestartRanges<uint8_t>(ctx, idxBuffer);
+            ranges = CalculateDrawIndexRanges<uint8_t>(data);
             break;
         case gl::DrawElementsType::UnsignedShort:
-            restartIndices = calculateRestartRanges<uint16_t>(ctx, idxBuffer);
+            ranges = CalculateDrawIndexRanges<uint16_t>(data);
             break;
         case gl::DrawElementsType::UnsignedInt:
-            restartIndices = calculateRestartRanges<uint32_t>(ctx, idxBuffer);
+            ranges = CalculateDrawIndexRanges<uint32_t>(data);
             break;
         default:
             ASSERT(false);
     }
-    return restartIndices;
+    return ranges;
 }
 
 angle::Result BufferMtl::allocateNewMetalBuffer(ContextMtl *contextMtl,
@@ -714,7 +731,7 @@ angle::Result BufferMtl::updateShadowCopyThenCopyShadowToNewBuffer(ContextMtl *c
     ensureShadowCopySyncedFromGPU(contextMtl);
 
     // 2. Copy data from client to shadow copy.
-    std::copy(data.begin(), data.end(), mShadowCopy.data() + offset);
+    ANGLE_UNSAFE_TODO(std::copy(data.begin(), data.end(), mShadowCopy.data() + offset));
 
     // 3. Copy data from shadow copy to GPU.
     return commitShadowCopy(contextMtl, feedback);

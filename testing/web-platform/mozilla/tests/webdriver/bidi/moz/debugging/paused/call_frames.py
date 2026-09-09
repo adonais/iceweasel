@@ -15,6 +15,7 @@ async def test_paused_event_includes_call_frames(
     inline,
     subscribe_events,
     wait_for_event,
+    wait_for_future_safe,
     set_breakpoint,
 ):
     await subscribe_events([PAUSED_EVENT, RESUMED_EVENT])
@@ -47,7 +48,7 @@ function calculate() {
         )
     )
 
-    paused_event = await on_paused
+    paused_event = await wait_for_future_safe(on_paused)
 
     assert paused_event["context"] == new_tab["context"]
     assert paused_event["line"] == 7
@@ -108,6 +109,7 @@ async def test_call_frames_nested_functions(
     inline,
     subscribe_events,
     wait_for_event,
+    wait_for_future_safe,
     set_breakpoint,
 ):
     await subscribe_events([PAUSED_EVENT, RESUMED_EVENT])
@@ -143,7 +145,7 @@ function inner(y) {
         )
     )
 
-    paused_event = await on_paused
+    paused_event = await wait_for_future_safe(on_paused)
 
     assert "callFrames" in paused_event
     call_frames = paused_event["callFrames"]

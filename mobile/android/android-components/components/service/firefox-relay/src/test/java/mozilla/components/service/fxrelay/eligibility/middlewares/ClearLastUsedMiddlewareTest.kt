@@ -24,12 +24,11 @@ class ClearLastUsedMiddlewareTest {
 
     @Before
     fun setup() {
-        store = RelayEligibilityStore(
-            initialState = RelayState(
-                eligibilityState = Eligible.Free(totalMasksUsed = 5),
-            ),
-            middleware = listOf(ClearLastUsedMiddleware()),
-        )
+        store =
+            RelayEligibilityStore(
+                initialState = RelayState(eligibilityState = Eligible.Free(totalMasksUsed = 5)),
+                middleware = listOf(ClearLastUsedMiddleware()),
+            )
     }
 
     @Test
@@ -55,12 +54,13 @@ class ClearLastUsedMiddlewareTest {
     @Test
     fun `GIVEN other action WHEN dispatched THEN action passes through normally`() =
         runTest(testDispatcher) {
-            val action = RelayEligibilityAction.RelayStatusResult(
-                fetchSucceeded = true,
-                relayPlanTier = RelayPlanTier.PREMIUM,
-                totalMasksUsed = 0,
-                lastCheckedMs = System.currentTimeMillis(),
-            )
+            val action =
+                RelayEligibilityAction.RelayStatusResult(
+                    fetchSucceeded = true,
+                    relayPlanTier = RelayPlanTier.PREMIUM,
+                    totalMasksUsed = 0,
+                    lastCheckedMs = System.currentTimeMillis(),
+                )
 
             store.dispatch(action)
             testDispatcher.scheduler.advanceUntilIdle()

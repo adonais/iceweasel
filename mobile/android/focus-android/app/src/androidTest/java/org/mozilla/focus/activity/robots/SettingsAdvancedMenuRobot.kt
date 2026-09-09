@@ -4,6 +4,7 @@
 
 package org.mozilla.focus.activity.robots
 
+import androidx.preference.R as preferenceR
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -20,7 +21,6 @@ import org.mozilla.focus.helpers.EspressoHelper.hasCousin
 import org.mozilla.focus.helpers.TestHelper.mDevice
 import org.mozilla.focus.helpers.TestHelper.packageName
 import org.mozilla.focus.helpers.TestHelper.waitingTime
-import androidx.preference.R as preferenceR
 
 class SettingsAdvancedMenuRobot {
     fun verifyAdvancedSettingsItems() {
@@ -33,6 +33,7 @@ class SettingsAdvancedMenuRobot {
     }
 
     fun verifyOpenLinksInAppsSwitchState(enabled: Boolean) = assertOpenLinksInAppsSwitchState(enabled)
+
     fun clickOpenLinksInAppsSwitch() = openLinksInAppsButton().perform(click())
 
     class Transition {
@@ -55,9 +56,9 @@ private fun assertOpenLinksInAppsSwitchState(enabled: Boolean = false) {
                         allOf(
                             withId(android.R.id.switch_widget),
                             isChecked(),
-                        ),
-                    ),
-                ),
+                        )
+                    )
+                )
             )
     } else {
         openLinksInAppsButton()
@@ -67,15 +68,14 @@ private fun assertOpenLinksInAppsSwitchState(enabled: Boolean = false) {
                         allOf(
                             withId(android.R.id.switch_widget),
                             isNotChecked(),
-                        ),
-                    ),
-                ),
+                        )
+                    )
+                )
             )
     }
 }
 
-private val advancedSettingsList =
-    UiScrollable(UiSelector().resourceId("$packageName:id/recycler_view"))
+private val advancedSettingsList = UiScrollable(UiSelector().resourceId("$packageName:id/recycler_view"))
 
 private fun developerToolsHeading() = onView(withText(R.string.preference_advanced_summary))
 
@@ -90,9 +90,9 @@ private fun assertRemoteDebuggingSwitchState(enabled: Boolean = false) {
                         allOf(
                             withId(preferenceR.id.switchWidget),
                             isChecked(),
-                        ),
-                    ),
-                ),
+                        )
+                    )
+                )
             )
     } else {
         remoteDebuggingSwitch()
@@ -102,9 +102,9 @@ private fun assertRemoteDebuggingSwitchState(enabled: Boolean = false) {
                         allOf(
                             withId(android.R.id.switch_widget),
                             isNotChecked(),
-                        ),
-                    ),
-                ),
+                        )
+                    )
+                )
             )
     }
 }

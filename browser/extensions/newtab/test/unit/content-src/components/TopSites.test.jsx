@@ -18,13 +18,12 @@ import {
   TopSiteImpressionWrapper,
 } from "content-src/components/TopSites/TopSiteImpressionWrapper";
 import { A11yLinkButton } from "content-src/components/A11yLinkButton/A11yLinkButton";
-import { LinkMenu } from "content-src/components/LinkMenu/LinkMenu";
+import { PanelListItems } from "content-src/components/LinkMenu/PanelListItems";
 import React from "react";
 import { mount, shallow } from "enzyme";
 import { TopSiteForm } from "content-src/components/TopSites/TopSiteForm";
 import { TopSiteFormInput } from "content-src/components/TopSites/TopSiteFormInput";
 import { _TopSites as TopSites } from "content-src/components/TopSites/TopSites";
-import { ContextMenuButton } from "content-src/components/ContextMenu/ContextMenuButton";
 
 const perfSvc = {
   mark() {},
@@ -696,35 +695,103 @@ describe("<TopSite>", () => {
     wrapper.setState({ showContextMenu: false, activeTile: 1 });
     assert.equal(wrapper.find(TopSiteLink).props().className, "");
   });
-  it("should render a context menu button", () => {
-    const wrapper = shallow(<TopSite link={link} />);
-    assert.equal(wrapper.find(ContextMenuButton).length, 1);
+  it("should render a plain button menu trigger alongside a panel-list", () => {
+    const wrapper = shallow(<TopSite link={link} index={0} />);
+    const button = wrapper.find("button.context-menu-button");
+    const panelList = wrapper.find("panel-list");
+    assert.equal(button.length, 1);
+    assert.equal(panelList.length, 1);
+    assert.equal(button.prop("aria-haspopup"), "menu");
+    // Bug 2062844: a plain button rather than moz-button, so the tile can tell
+    // keyboard focus from pointer focus with :focus-visible.
+    assert.equal(wrapper.find("moz-button").length, 0);
   });
-  it("should render a link menu", () => {
-    const wrapper = shallow(<TopSite link={link} />);
-    assert.equal(wrapper.find(LinkMenu).length, 1);
+  it("should toggle the panel-list from the menu button", () => {
+    const wrapper = shallow(<TopSite link={link} index={0} />);
+    const toggle = sinon.stub();
+    wrapper.instance().panelListRef.current = { toggle };
+
+    // Opens on mousedown, not click: panel-list hides on any document mousedown
+    // outside the panel, so a click-based toggle would reopen it immediately.
+    const mouseEvent = { button: 0, currentTarget: {} };
+    wrapper
+      .find("button.context-menu-button")
+      .simulate("mousedown", mouseEvent);
+    assert.isTrue(toggle.calledOnce, "mousedown toggles the menu");
+
+    // A non-primary button should not open it.
+    wrapper
+      .find("button.context-menu-button")
+      .simulate("mousedown", { button: 2, currentTarget: {} });
+    assert.isTrue(toggle.calledOnce, "right-click does not toggle the menu");
+
+    // Keyboard activation passes the event so panel-list can tell it apart from
+    // a pointer open and focus the first item.
+    const keyEvent = {
+      key: "Enter",
+      preventDefault: sinon.stub(),
+      currentTarget: {},
+    };
+    wrapper.find("button.context-menu-button").simulate("keydown", keyEvent);
+    assert.isTrue(keyEvent.preventDefault.calledOnce);
+    assert.isTrue(toggle.calledTwice, "Enter toggles the menu");
+    assert.equal(toggle.secondCall.args[0], keyEvent);
   });
-  it("should pass onUpdate, site, options, and index to LinkMenu", () => {
-    const wrapper = shallow(<TopSite link={link} />);
-    const linkMenuProps = wrapper.find(LinkMenu).props();
-    ["onUpdate", "site", "index", "options"].forEach(prop =>
-      assert.property(linkMenuProps, prop)
+  it("should register the menu button as the panel-list's popover invoker", () => {
+    const wrapper = mount(<TopSite link={link} index={0} />);
+    const button = wrapper.instance().menuButtonRef.current;
+    const panelList = wrapper.instance().panelListRef.current;
+
+    // panel-list is a popover="auto". Without the invoker relationship the
+    // platform light-dismisses it on pointerup, immediately after our mousedown
+    // opened it, because a click on the trigger counts as a click outside the
+    // popover. This cannot be covered by a synthesizeMouse test: light dismiss
+    // only runs for trusted pointer events.
+    assert.strictEqual(
+      button.popoverTargetElement,
+      panelList,
+      "the trigger points at its panel-list"
     );
   });
-  it("should pass through the correct menu options to LinkMenu", () => {
-    const wrapper = shallow(<TopSite link={link} />);
-    const linkMenuProps = wrapper.find(LinkMenu).props();
-    assert.deepEqual(linkMenuProps.options, [
-      "CheckPinTopSite",
-      "EditTopSite",
-      "AddTopSite",
-      "Separator",
-      "OpenInNewWindow",
-      "OpenInPrivateWindow",
-      "Separator",
-      "BlockUrl",
-      "DeleteUrl",
-    ]);
+  it("should open the menu from a synthetic click", () => {
+    const wrapper = shallow(<TopSite link={link} index={0} />);
+    const toggle = sinon.stub();
+    wrapper.instance().panelListRef.current = { toggle };
+    const button = wrapper.find("button.context-menu-button");
+
+    // A programmatic .click() produces no mousedown and carries detail 0. Tests
+    // and callers rely on it, so it has to open the menu.
+    button.simulate("click", {
+      detail: 0,
+      preventDefault: sinon.stub(),
+      currentTarget: {},
+    });
+    assert.isTrue(toggle.calledOnce, "a detail-0 click toggles the menu");
+
+    // A real mouse click was already handled on mousedown, so the click that
+    // follows it must not toggle the menu back closed.
+    button.simulate("click", {
+      detail: 1,
+      preventDefault: sinon.stub(),
+      currentTarget: {},
+    });
+    assert.isTrue(
+      toggle.calledOnce,
+      "the click following a real mousedown does not toggle again"
+    );
+  });
+  it("should render the menu options via PanelListItems", () => {
+    const wrapper = shallow(<TopSite link={link} index={0} />);
+    const items = wrapper.find(PanelListItems);
+    assert.equal(items.length, 1);
+    assert.isArray(items.prop("options"));
+    assert.isAtLeast(items.prop("options").length, 1);
+  });
+  it("should render the correct menu options for an organic top site", () => {
+    const wrapper = mount(<TopSite link={link} index={0} />);
+    // TOP_SITES_CONTEXT_MENU_OPTIONS has two Separators, rendered as <hr>.
+    assert.equal(wrapper.find("hr").length, 2);
+    assert.isAtLeast(wrapper.find("panel-item").length, 1);
   });
   it("should record impressions for visible organic Top Sites", () => {
     const dispatch = sinon.stub();

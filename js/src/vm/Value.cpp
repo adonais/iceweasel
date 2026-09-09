@@ -80,9 +80,6 @@ void WhyMagicToString(JSWhyMagic why, KnownF known, UnknownF unknown) {
     case JS_NO_ITER_VALUE:
       known("JS_NO_ITER_VALUE");
       break;
-    case JS_GENERATOR_CLOSING:
-      known("JS_GENERATOR_CLOSING");
-      break;
     case JS_ARG_POISON:
       known("JS_ARG_POISON");
       break;

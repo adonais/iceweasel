@@ -19,48 +19,32 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.registerOnSharedPreferenceChangeListener
 import org.mozilla.fenix.utils.Settings
 
-/**
- * Cache for accessing any settings related to CFR visibility.
- */
+/** Cache for accessing any settings related to CFR visibility. */
 interface CfrPreferencesRepository {
 
-    /**
-     * An enum for all CFR pref keys
-     */
-    enum class CfrPreference(
-        @param:StringRes val preferenceKey: Int,
-    ) {
+    /** An enum for all CFR pref keys */
+    enum class CfrPreference(@param:StringRes val preferenceKey: Int) {
         TabAutoCloseBanner(preferenceKey = R.string.pref_key_should_show_auto_close_tabs_banner),
         InactiveTabs(preferenceKey = R.string.pref_key_should_show_inactive_tabs_popup),
         OpenInApp(preferenceKey = R.string.pref_key_should_show_open_in_app_banner),
     }
 
-    /**
-     * An update to a [CfrPreference].
-     */
+    /** An update to a [CfrPreference]. */
     data class CfrPreferenceUpdate(
         val preferenceType: CfrPreference,
         val value: Boolean,
     )
 
-    /**
-     * A [Flow] of [CfrPreferenceUpdate]s.
-     */
+    /** A [Flow] of [CfrPreferenceUpdate]s. */
     val cfrPreferenceUpdates: Flow<CfrPreferenceUpdate>
 
-    /**
-     * Initializes the repository and starts the [SharedPreferences] listener.
-     */
+    /** Initializes the repository and starts the [SharedPreferences] listener. */
     fun init()
 
-    /**
-     * Update [CfrPreferenceUpdate.preferenceType] with [CfrPreferenceUpdate.value].
-     */
+    /** Update [CfrPreferenceUpdate.preferenceType] with [CfrPreferenceUpdate.value]. */
     fun updateCfrPreference(preferenceUpdate: CfrPreferenceUpdate)
 
-    /**
-     * Reset lastCfrShownTimeInMillis to 0.
-     */
+    /** Reset lastCfrShownTimeInMillis to 0. */
     fun resetLastCfrTimestamp()
 }
 
@@ -81,32 +65,31 @@ class DefaultCfrPreferencesRepository(
     private val _cfrPreferenceUpdates = MutableSharedFlow<CfrPreferencesRepository.CfrPreferenceUpdate>()
 
     @VisibleForTesting
-    internal fun submitPreferenceUpdate(
-        cfrPreferenceUpdate: CfrPreferencesRepository.CfrPreferenceUpdate,
-    ) = coroutineScope.launch {
-        _cfrPreferenceUpdates.emit(cfrPreferenceUpdate)
-    }
+    internal fun submitPreferenceUpdate(cfrPreferenceUpdate: CfrPreferencesRepository.CfrPreferenceUpdate) =
+        coroutineScope.launch {
+            _cfrPreferenceUpdates.emit(cfrPreferenceUpdate)
+        }
 
     override val cfrPreferenceUpdates: Flow<CfrPreferencesRepository.CfrPreferenceUpdate>
         get() = _cfrPreferenceUpdates.asSharedFlow()
 
     override fun init() {
         CfrPreferencesRepository.CfrPreference.entries.forEach { preference ->
-            val initialPreferenceValue = when (preference) {
-                CfrPreferencesRepository.CfrPreference.TabAutoCloseBanner ->
-                    settings.shouldShowAutoCloseTabsBanner
-                CfrPreferencesRepository.CfrPreference.InactiveTabs ->
-                    settings.shouldShowInactiveTabsOnboardingPopup
-                CfrPreferencesRepository.CfrPreference.OpenInApp -> {
-                    settings.shouldShowOpenInAppBanner
+            val initialPreferenceValue =
+                when (preference) {
+                    CfrPreferencesRepository.CfrPreference.TabAutoCloseBanner -> settings.shouldShowAutoCloseTabsBanner
+                    CfrPreferencesRepository.CfrPreference.InactiveTabs ->
+                        settings.shouldShowInactiveTabsOnboardingPopup
+                    CfrPreferencesRepository.CfrPreference.OpenInApp -> {
+                        settings.shouldShowOpenInAppBanner
+                    }
                 }
-            }
 
             submitPreferenceUpdate(
                 CfrPreferencesRepository.CfrPreferenceUpdate(
                     preferenceType = preference,
                     value = initialPreferenceValue,
-                ),
+                )
             )
 
             startListener()
@@ -114,9 +97,8 @@ class DefaultCfrPreferencesRepository(
     }
 
     private fun startListener() {
-        settings.preferences.registerOnSharedPreferenceChangeListener(
-            owner = lifecycleOwner,
-        ) { sharedPreferences, key ->
+        settings.preferences.registerOnSharedPreferenceChangeListener(owner = lifecycleOwner) { sharedPreferences, key
+            ->
             onPreferenceChange(sharedPreferences = sharedPreferences, key = key)
         }
     }
@@ -126,9 +108,10 @@ class DefaultCfrPreferencesRepository(
         sharedPreferences: SharedPreferences,
         key: String?,
     ) {
-        val preferenceType = CfrPreferencesRepository.CfrPreference.entries.find {
-            context.getString(it.preferenceKey) == key
-        } ?: return
+        val preferenceType =
+            CfrPreferencesRepository.CfrPreference.entries.find {
+                context.getString(it.preferenceKey) == key
+            } ?: return
 
         val cfrPreference = sharedPreferences.getBoolean(key, false)
 
@@ -136,7 +119,7 @@ class DefaultCfrPreferencesRepository(
             CfrPreferencesRepository.CfrPreferenceUpdate(
                 preferenceType = preferenceType,
                 value = cfrPreference,
-            ),
+            )
         )
     }
 

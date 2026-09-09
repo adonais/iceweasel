@@ -422,6 +422,24 @@ if (is_ios && !build_with_chromium) {
     configs += [ ":test_support_objc_config" ]
   }
 
+  # Entry point for iOS XCTest bundles. rtc_test() adds this to is_xctest
+  # targets instead of test:test_main, whose gtest main() would collide with
+  # this one.
+  rtc_library("test_main_xctest") {
+    testonly = true
+    visibility = [ "*" ]
+    sources = [ "ios/xctest_main.mm" ]
+    frameworks = [
+      "Foundation.framework",
+      "UIKit.framework",
+    ]
+    deps = [
+      ":run_loop",
+      ":test_support_objc",
+      "../rtc_base:threading",
+    ]
+  }
+
   rtc_library("google_test_runner_delegate") {
     sources = [ "ios/google_test_runner_delegate.h" ]
   }
@@ -1676,6 +1694,7 @@ rtc_library("audio_codec_mocks") {
 
   deps = [
     ":test_support",
+    "../api:bitrate_allocation",
     "../api:make_ref_counted",
     "../api:scoped_refptr",
     "../api/audio_codecs:audio_codecs_api",

@@ -56,7 +56,8 @@ class WebGLChild final : public PWebGLChild, public SupportsWeakPtr {
 
  public:
   mozilla::ipc::IPCResult RecvJsWarning(const std::string&) const;
-  mozilla::ipc::IPCResult RecvOnContextLoss(webgl::ContextLossReason) const;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult RecvOnContextLoss(
+      webgl::ContextLossReason) const;
   mozilla::ipc::IPCResult RecvOnSyncComplete(webgl::ObjectId) const;
 };
 

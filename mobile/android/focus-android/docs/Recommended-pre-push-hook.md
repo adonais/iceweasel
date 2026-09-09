@@ -10,7 +10,7 @@ forever to dig through the logs):
 
 ./gradlew -q \
         checkstyle \
-        ktlint \
+        ktfmtCheck \
         pmd \
         detektCheck \
         app:assembleFocusArmDebug

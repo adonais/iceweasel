@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.ui.robots
 
 import android.util.Log
@@ -66,7 +70,10 @@ class ThreeDotMenuBookmarksRobot {
             return BookmarksRobot.Transition(composeTestRule)
         }
 
-        fun clickOpenAllInTabs(composeTestRule: ComposeTestRule, interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
+        fun clickOpenAllInTabs(
+            composeTestRule: ComposeTestRule,
+            interact: TabDrawerRobot.() -> Unit,
+        ): TabDrawerRobot.Transition {
             Log.i(TAG, "clickOpenAllInTabs: Trying to click the \"Open all in new tabs\" button")
             composeTestRule.openAllInTabsButton().performClick()
             Log.i(TAG, "clickOpenAllInTabs: Clicked the \"Open all in new tabs\" button")
@@ -75,7 +82,10 @@ class ThreeDotMenuBookmarksRobot {
             return TabDrawerRobot.Transition(composeTestRule)
         }
 
-        fun clickOpenAllInPrivateTabs(composeTestRule: ComposeTestRule, interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
+        fun clickOpenAllInPrivateTabs(
+            composeTestRule: ComposeTestRule,
+            interact: TabDrawerRobot.() -> Unit,
+        ): TabDrawerRobot.Transition {
             Log.i(TAG, "clickOpenAllInPrivateTabs: Trying to click the \"Open all in private tabs\" button")
             composeTestRule.openAllInPrivateTabsButton().performClick()
             Log.i(TAG, "clickOpenAllInPrivateTabs: Clicked the \"Open all in private tabs\" button")
@@ -85,9 +95,12 @@ class ThreeDotMenuBookmarksRobot {
         }
     }
 }
-private fun ComposeTestRule.openInNewTabButton() = onNodeWithText(getStringResource(R.string.bookmark_menu_open_in_new_tab_button))
 
-private fun ComposeTestRule.openInPrivateTabButton() = onNodeWithText(getStringResource(R.string.bookmark_menu_open_in_private_tab_button))
+private fun ComposeTestRule.openInNewTabButton() =
+    onNodeWithText(getStringResource(R.string.bookmark_menu_open_in_new_tab_button))
+
+private fun ComposeTestRule.openInPrivateTabButton() =
+    onNodeWithText(getStringResource(R.string.bookmark_menu_open_in_private_tab_button))
 
 private fun ComposeTestRule.editButton() = onNodeWithText(getStringResource(R.string.bookmark_menu_edit_button))
 

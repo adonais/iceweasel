@@ -46,9 +46,9 @@ static inline std::vector<uint8_t> hex_string_to_bytes(std::string s) {
 // this implementation.
 class ScopedUniqueDirectory {
  public:
-  explicit ScopedUniqueDirectory(const std::string &prefix) {
+  explicit ScopedUniqueDirectory(const std::string& prefix) {
     std::string path;
-    const char *workingDirectory = PR_GetEnvSecure("NSS_GTEST_WORKDIR");
+    const char* workingDirectory = PR_GetEnvSecure("NSS_GTEST_WORKDIR");
     if (workingDirectory) {
       path.assign(workingDirectory);
     }
@@ -80,13 +80,13 @@ class ScopedUniqueDirectory {
   // NB: the directory must be empty upon destruction
   ~ScopedUniqueDirectory() { assert(rmdir(mPath.c_str()) == 0); }
 
-  const std::string &GetPath() { return mPath; }
-  const std::string &GetUTF8Path() { return mUTF8Path; }
+  const std::string& GetPath() { return mPath; }
+  const std::string& GetUTF8Path() { return mUTF8Path; }
 
  private:
   static const int RETRY_LIMIT = 5;
 
-  static void GenerateRandomName(/*in/out*/ std::string &prefix) {
+  static void GenerateRandomName(/*in/out*/ std::string& prefix) {
     std::stringstream ss;
     ss << prefix;
     // RAND_MAX is at least 32767.
@@ -96,7 +96,7 @@ class ScopedUniqueDirectory {
     ss >> prefix;
   }
 
-  static bool TryMakingDirectory(/*in/out*/ std::string &prefix) {
+  static bool TryMakingDirectory(/*in/out*/ std::string& prefix) {
     GenerateRandomName(prefix);
 #if defined(_WIN32)
     return _mkdir(prefix.c_str()) == 0;

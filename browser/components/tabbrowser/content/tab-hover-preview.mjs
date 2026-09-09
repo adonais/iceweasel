@@ -9,7 +9,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ContextualIdentityService:
     "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
-  PageWireframes: "resource:///modules/sessionstore/PageWireframes.sys.mjs",
+  PageWireframes:
+    "moz-src:///browser/components/sessionstore/PageWireframes.sys.mjs",
   SponsorProtection:
     "moz-src:///browser/components/newtab/SponsorProtection.sys.mjs",
   TabNotes: "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs",
@@ -208,6 +209,25 @@ export default class TabHoverPanelSet {
   }
 
   #doDeactivate(panel) {
+    // Hiding a popup that has not finished showing cancels the in-flight show,
+    // so popupshown never fires. Mark the panel inactive now and complete the
+    // hide once the show settles, unless it gets reactivated in the meantime.
+    if (panel.panelElement.state == "showing") {
+      if (this.#activePanel == panel) {
+        this.#activePanel = null;
+      }
+      panel.panelElement.addEventListener(
+        "popupshown",
+        () => {
+          if (this.#activePanel != panel) {
+            this.#doDeactivate(panel);
+          }
+        },
+        { once: true }
+      );
+      return;
+    }
+
     panel.onBeforeHide();
     panel.panelElement.hidePopup();
     this.panelOpener.clear(panel);

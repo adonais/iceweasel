@@ -90,8 +90,10 @@ CREATE INDEX IF NOT EXISTS tool_result_history_url_idx
   WHERE type = 1;
 `;
 
-export const MESSAGE_ORDINAL_INDEX = `
-CREATE INDEX message_ordinal_idx ON message(ordinal);
+// Dropped in v12: ordinal is only ever ordered by within a single conversation,
+// which conv_id already narrows, so the planner never chose this index.
+export const MESSAGE_ORDINAL_INDEX_DROP = `
+DROP INDEX IF EXISTS message_ordinal_idx;
 `;
 
 // @todo Bug 2005423
@@ -106,6 +108,29 @@ CREATE INDEX message_created_date_idx ON message(created_date);
 
 export const MESSAGE_CONV_ID_INDEX = `
 CREATE INDEX IF NOT EXISTS message_conv_id_idx ON message(conv_id);
+`;
+
+// Serves MESSAGES_BY_DATE_AND_ROLE: role is an equality match and created_date
+// a range, so role must lead for the range to be a seek rather than a filter.
+export const MESSAGE_ROLE_CREATED_DATE_INDEX = `
+CREATE INDEX IF NOT EXISTS message_role_created_date_idx
+  ON message(role, created_date);
+`;
+
+// parent_message_id and revision_root_message_id are ON DELETE CASCADE with no
+// covering index, so SQLite scans all of `message` twice per cascaded row.
+// Partial because neither column is ever read by a SELECT and both are NULL for
+// many rows; SQLite still uses a partial index to enforce the foreign key.
+export const MESSAGE_PARENT_ID_INDEX = `
+CREATE INDEX IF NOT EXISTS message_parent_id_idx
+  ON message(parent_message_id)
+  WHERE parent_message_id IS NOT NULL;
+`;
+
+export const MESSAGE_REVISION_ROOT_INDEX = `
+CREATE INDEX IF NOT EXISTS message_revision_root_idx
+  ON message(revision_root_message_id)
+  WHERE revision_root_message_id IS NOT NULL;
 `;
 
 export const CONVERSATION_INSERT = `
@@ -328,6 +353,13 @@ export function getDeleteMessagesByIdsSql(amount) {
   `;
 }
 
+export function getDeleteConversationsByIdsSql(amount) {
+  return `
+    DELETE FROM conversation
+    WHERE conversation.conv_id IN(${new Array(amount).fill("?").join(",")})
+  `;
+}
+
 export function getDeleteEmptyConversationsSql(amount) {
   return `
     DELETE FROM conversation
@@ -476,14 +508,12 @@ CREATE TABLE IF NOT EXISTS llm_telemetry (
 )
 `;
 
-export const GET_LLM_TELEMETRY_DATA_BY_CONV_ID = `
-SELECT
-  telemetry_prompts,
-  telemetry_probabilities
-FROM llm_telemetry
-WHERE conv_id = :conv_id
-`;
-
+// The incoming values are merged into the stored ones by json_patch rather
+// than by a read-modify-write in JS. Note the argument order differs between
+// the two columns: json_patch's second argument wins, so prompts take the
+// incoming turn index while probabilities keep the value first recorded.
+// The columns are nullable and json_patch propagates NULL, so coalesce keeps
+// a NULL from silently blanking the merged result.
 export const UPSERT_LLM_TELEMETRY = `
 INSERT INTO llm_telemetry (
   conv_id,
@@ -502,8 +532,14 @@ VALUES (
   :processed
 )
 ON CONFLICT(conv_id) DO UPDATE SET
-  telemetry_prompts = excluded.telemetry_prompts,
-  telemetry_probabilities = excluded.telemetry_probabilities,
+  telemetry_prompts = json_patch(
+    coalesce(telemetry_prompts, '{}'),
+    excluded.telemetry_prompts
+  ),
+  telemetry_probabilities = json_patch(
+    excluded.telemetry_probabilities,
+    coalesce(telemetry_probabilities, '{}')
+  ),
   processed_time = excluded.processed_time,
   processed = excluded.processed
 `;
@@ -517,7 +553,10 @@ UPDATE llm_telemetry
 SET
   processed = 1,
   processed_time = :processed_time,
-  telemetry_prompts = :telemetry_prompts
+  telemetry_prompts = json_patch(
+    coalesce(telemetry_prompts, '{}'),
+    :telemetry_prompts
+  )
 WHERE conv_id = :conv_id
 `;
 

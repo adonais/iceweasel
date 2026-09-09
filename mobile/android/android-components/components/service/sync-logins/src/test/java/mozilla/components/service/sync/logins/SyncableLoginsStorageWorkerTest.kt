@@ -7,6 +7,7 @@ package mozilla.components.service.sync.logins
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.ListenableWorker.Result
 import androidx.work.testing.TestListenableWorkerBuilder
+import kotlin.reflect.KVisibility
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.storage.LoginsStorage
@@ -18,7 +19,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import kotlin.reflect.KVisibility
 
 @RunWith(AndroidJUnit4::class)
 class SyncableLoginsStorageWorkerTest {
@@ -29,28 +29,21 @@ class SyncableLoginsStorageWorkerTest {
     }
 
     @Test
-    fun `PlacesHistoryStorage's runMaintenance is called when worker's startWork is called`() =
-        runTest {
-            val loginsStorage = mock<LoginsStorage>()
-            GlobalLoginsDependencyProvider.initialize(lazy { loginsStorage })
-            val worker =
-                TestListenableWorkerBuilder<SyncableLoginsStorageWorker>(
-                    testContext,
-                ).build()
+    fun `PlacesHistoryStorage's runMaintenance is called when worker's startWork is called`() = runTest {
+        val loginsStorage = mock<LoginsStorage>()
+        GlobalLoginsDependencyProvider.initialize(lazy { loginsStorage })
+        val worker = TestListenableWorkerBuilder<SyncableLoginsStorageWorker>(testContext).build()
 
-            worker.doWork()
-            verify(loginsStorage).runMaintenance(SyncableLoginsStorageWorker.DB_SIZE_LIMIT_IN_BYTES.toUInt())
-        }
+        worker.doWork()
+        verify(loginsStorage).runMaintenance(SyncableLoginsStorageWorker.DB_SIZE_LIMIT_IN_BYTES.toUInt())
+    }
 
     @Test
     fun `PlacesHistoryStorage's runMaintenance operation is successful, successful result returned by the worker`() =
         runTest {
             val loginsStorage = mock<LoginsStorage>()
             GlobalLoginsDependencyProvider.initialize(lazy { loginsStorage })
-            val worker =
-                TestListenableWorkerBuilder<SyncableLoginsStorageWorker>(
-                    testContext,
-                ).build()
+            val worker = TestListenableWorkerBuilder<SyncableLoginsStorageWorker>(testContext).build()
 
             val result = worker.doWork()
             assertEquals(Result.success(), result)
@@ -63,10 +56,7 @@ class SyncableLoginsStorageWorkerTest {
             `when`(loginsStorage.runMaintenance(SyncableLoginsStorageWorker.DB_SIZE_LIMIT_IN_BYTES.toUInt()))
                 .thenThrow(CancellationException())
             GlobalLoginsDependencyProvider.initialize(lazy { loginsStorage })
-            val worker =
-                TestListenableWorkerBuilder<SyncableLoginsStorageWorker>(
-                    testContext,
-                ).build()
+            val worker = TestListenableWorkerBuilder<SyncableLoginsStorageWorker>(testContext).build()
 
             val result = worker.doWork()
             assertEquals(Result.failure(), result)
@@ -79,10 +69,7 @@ class SyncableLoginsStorageWorkerTest {
             `when`(loginsStorage.runMaintenance(SyncableLoginsStorageWorker.DB_SIZE_LIMIT_IN_BYTES.toUInt()))
                 .thenThrow(CancellationException())
             GlobalLoginsDependencyProvider.initialize(lazy { loginsStorage })
-            val worker =
-                TestListenableWorkerBuilder<SyncableLoginsStorageWorker>(
-                    testContext,
-                ).build()
+            val worker = TestListenableWorkerBuilder<SyncableLoginsStorageWorker>(testContext).build()
 
             worker.doWork()
             verify(loginsStorage).cancelWrites()

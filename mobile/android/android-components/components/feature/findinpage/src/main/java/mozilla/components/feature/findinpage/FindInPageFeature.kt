@@ -14,9 +14,7 @@ import mozilla.components.feature.findinpage.view.FindInPageView
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 
-/**
- * Feature implementation that will keep a [FindInPageView] in sync with a bound [SessionState].
- */
+/** Feature implementation that will keep a [FindInPageView] in sync with a bound [SessionState]. */
 class FindInPageFeature(
     store: BrowserStore,
     view: FindInPageView,
@@ -40,8 +38,8 @@ class FindInPageFeature(
     }
 
     /**
-     * Binds this feature to the given [SessionState]. Until unbound the [FindInPageView] will be
-     * updated presenting the current "Find in Page" state.
+     * Binds this feature to the given [SessionState]. Until unbound the [FindInPageView] will be updated presenting the
+     * current "Find in Page" state.
      */
     fun bind(session: SessionState) {
         this.session = session
@@ -50,9 +48,7 @@ class FindInPageFeature(
         interactor.bind(session)
     }
 
-    /**
-     * Returns true if the back button press was handled and the feature unbound from a session.
-     */
+    /** Returns true if the back button press was handled and the feature unbound from a session. */
     override fun onBackPressed(): Boolean {
         return if (session != null) {
             unbind()
@@ -63,8 +59,8 @@ class FindInPageFeature(
     }
 
     /**
-     * Unbinds the feature from a previously bound [SessionState]. The [FindInPageView] will be
-     * cleared and not be updated to present the "Find in Page" state anymore.
+     * Unbinds the feature from a previously bound [SessionState]. The [FindInPageView] will be cleared and not be
+     * updated to present the "Find in Page" state anymore.
      */
     fun unbind() {
         session = null

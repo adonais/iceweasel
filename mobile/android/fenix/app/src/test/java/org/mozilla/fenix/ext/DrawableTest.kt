@@ -38,8 +38,11 @@ class DrawableTest {
         }
 
         override fun draw(canvas: Canvas) {}
+
         override fun setAlpha(alpha: Int) {}
+
         override fun setColorFilter(cf: ColorFilter?) {}
+
         override fun onBoundsChange(bounds: Rect) {
             boundsChanged = true
             super.onBoundsChange(bounds)

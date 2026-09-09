@@ -33,7 +33,6 @@ tasks:
             build-fat-aar: build-fat-aar-android-geckoview-fat-aar/opt
         description: 'Focus debug AAB build from source code'
         run:
-            clone-with: hg
             gradle-build-type: debug
             gradle-build-name: focusDebug
             gradle-build: focus
@@ -47,7 +46,6 @@ tasks:
             build-fat-aar: build-fat-aar-android-geckoview-fat-aar/opt
         description: 'Klar debug AAB build from source code'
         run:
-            clone-with: hg
             gradle-build-type: debug
             gradle-build-name: klarDebug
             gradle-build: klar
@@ -61,7 +59,6 @@ tasks:
             build-fat-aar: build-fat-aar-android-geckoview-fat-aar/opt
         description: 'Fenix debug AAB build from source code'
         run:
-            clone-with: hg
             gradle-build-type: debug
             gradle-build-name: debug
             gradle-build: fenix
@@ -81,7 +78,6 @@ tasks:
         include-release-version: true
         run-on-projects: ["mozilla-release"]
         run:
-            clone-with: hg
             gradle-build-type: release
             gradle-build-name: focusRelease
             gradle-build: focus
@@ -102,7 +98,6 @@ tasks:
         include-release-version: true
         run-on-projects: ["mozilla-release"]
         run:
-            clone-with: hg
             gradle-build-type: release
             gradle-build-name: klarRelease
             gradle-build: klar
@@ -128,7 +123,6 @@ tasks:
         include-release-version: true
         run-on-projects: ["mozilla-release"]
         run:
-            clone-with: hg
             gradle-build-type: release
             gradle-build-name: release
             gradle-build: fenix
@@ -147,7 +141,6 @@ tasks:
         include-nightly-version: true
         run-on-projects: ["mozilla-central"]
         run:
-            clone-with: hg
             gradle-build-type: nightly
             gradle-build-name: focusNightly
             gradle-build: focus
@@ -169,7 +162,6 @@ tasks:
         include-nightly-version: true
         run-on-projects: ["mozilla-central"]
         run:
-            clone-with: hg
             gradle-build-type: nightly
             gradle-build-name: nightly
             gradle-build: fenix
@@ -190,7 +182,6 @@ tasks:
         include-release-version: true
         run-on-projects: ["mozilla-beta"]
         run:
-            clone-with: hg
             gradle-build-type: beta
             gradle-build-name: focusBeta
             gradle-build: focus
@@ -216,7 +207,6 @@ tasks:
         include-release-version: true
         run-on-projects: ["mozilla-beta"]
         run:
-            clone-with: hg
             gradle-build-type: beta
             gradle-build-name: beta
             gradle-build: fenix

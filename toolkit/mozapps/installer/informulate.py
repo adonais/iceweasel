@@ -12,21 +12,21 @@ import buildconfig
 import json
 import mozinfo
 import os
+import sys
 
 
-def main():
+def main(argv):
     parser = ArgumentParser()
     parser.add_argument("output_json", help="Output JSON file")
     parser.add_argument("buildhub_json", help="Output buildhub JSON file")
     parser.add_argument("output_txt", help="Output text file")
-    # TODO: Move package-name.mk variables into moz.configure.
-    parser.add_argument("pkg_platform", help="Package platform identifier")
     parser.add_argument(
         "--no-download", action="store_true", help="Do not include download information"
     )
     parser.add_argument("--package", help="Path to application package file")
     parser.add_argument("--installer", help="Path to application installer file")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    pkg_platform = buildconfig.substs["MOZ_PKG_PLATFORM"]
     mozinfo.find_and_update_from_json()
 
     important_substitutions = [
@@ -63,7 +63,7 @@ def main():
         {
             "buildid": build_id,
             "moz_source_stamp": buildconfig.substs["MOZ_SOURCE_CHANGESET"],
-            "moz_pkg_platform": args.pkg_platform,
+            "moz_pkg_platform": pkg_platform,
         }
     )
 
@@ -91,7 +91,7 @@ def main():
                 "revision": s["MOZ_SOURCE_CHANGESET"],
             },
             "target": {
-                "platform": args.pkg_platform,
+                "platform": pkg_platform,
                 "os": mozinfo.info["os"],
                 # This would be easier if the locale was specified at configure time.
                 "locale": os.environ.get("AB_CD", "en-US"),
@@ -125,4 +125,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main(sys.argv[1:]))

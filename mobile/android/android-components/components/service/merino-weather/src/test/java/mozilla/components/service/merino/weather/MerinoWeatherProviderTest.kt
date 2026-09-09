@@ -4,6 +4,8 @@
 
 package mozilla.components.service.merino.weather
 
+import java.io.IOException
+import kotlin.test.assertIs
 import kotlinx.coroutines.Job
 import kotlinx.serialization.SerializationException
 import mozilla.components.concept.base.crash.Breadcrumb
@@ -23,8 +25,6 @@ import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.verify
-import java.io.IOException
-import kotlin.test.assertIs
 
 class MerinoWeatherProviderTest {
 
@@ -113,12 +113,13 @@ class MerinoWeatherProviderTest {
 
     @Test
     fun `GIVEN location and language parameters are provided WHEN the weather forecast is fetched THEN the parameters are added to the request URL and headers`() {
-        MerinoWeatherProvider(client).getWeatherForecast(
-            region = "CA",
-            country = "US",
-            city = "San Francisco",
-            acceptLanguage = "en-US",
-        )
+        MerinoWeatherProvider(client)
+            .getWeatherForecast(
+                region = "CA",
+                country = "US",
+                city = "San Francisco",
+                acceptLanguage = "en-US",
+            )
 
         val request = capturedRequest()
         assertEquals(

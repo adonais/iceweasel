@@ -98,15 +98,8 @@ struct StackMapHeader {
                     (MaxParams * MaxParamSize / sizeof(void*)) + 16,
                 "limited size of the offset field");
 
-  bool operator==(const StackMapHeader& rhs) const {
-    return numMappedWords == rhs.numMappedWords &&
-#ifdef DEBUG
-           numExitStubWords == rhs.numExitStubWords &&
-#endif
-           frameOffsetFromTop == rhs.frameOffsetFromTop &&
-           hasDebugFrameWithLiveRefs == rhs.hasDebugFrameWithLiveRefs;
-  }
-  bool operator!=(const StackMapHeader& rhs) const { return !(*this == rhs); }
+  bool operator==(const StackMapHeader& rhs) const = default;
+  bool operator!=(const StackMapHeader& rhs) const = default;
 };
 
 WASM_DECLARE_CACHEABLE_POD(StackMapHeader);
@@ -622,14 +615,54 @@ void CheckWholeCellLastElementCache(jit::MacroAssembler& masm,
                                     jit::Label* skipBarrier);
 
 #ifdef DEBUG
-// Check (approximately) whether `nextPC` is a valid code address for a
-// stackmap created by this compiler.  This is done by examining the
-// instruction at `nextPC`.  The matching is inexact, so it may err on the
-// side of returning `true` if it doesn't know.  Doing so reduces the
-// effectiveness of the MOZ_ASSERTs that use this function, so at least for
-// the four primary platforms we should keep it as exact as possible.
+// Check (approximately) whether `base + stackmapOffset` is a valid key (code
+// address) for a wasm stackmap.  This is done by examining the instruction
+// immediately preceding `base + stackmapOffset`, since stackmaps are keyed by
+// the address/offset of the first byte of the instruction following the
+// instruction with which the stackmap is associated.
+//
+// The matching is inexact, so it may err on the side of returning `true` if it
+// doesn't know.  Doing so reduces the effectiveness of the MOZ_ASSERTs that use
+// this function, so at least for the four primary platforms we should keep it
+// as exact as possible.
+//
+// The matching is unavoidably inexact at least on x86/x86_64, since we don't
+// know the start point of the previous instruction, and so have to resort to
+// looking backwards from the start point we've been given.  That's problematic
+// because instructions don't parse uniquely "backwards".  For example, we might
+// hope to identify UD2 (which is 0F 0B) by checking
+//
+//   key[-2] == 0x0F && key[-1] == 0B
+//
+// but because constants are stored at the end of instructions,
+//
+//   movl $0x0B0F1234, %eax
+//
+// would also end with 0F 0B.  This introduces some inaccuracy into the process,
+// but it is in the direction of false positives, which we tolerate since this
+// is a debug-only facility we use for identifying obviously-bogus stackmap
+// keys.  Also, the above ambiguity is expected to be rare in practice.
+//
+// In short:
+// * it is OK to claim an invalid key is valid (`true` is returned)
+// * it is not OK to claim a valid key is invalid (`false` returned)
+bool IsPlausibleStackMapKey(const uint8_t* base, uint32_t stackmapOffset);
 
-bool IsPlausibleStackMapKey(const uint8_t* nextPC);
+using TrapSitesFrontierArray =
+    mozilla::EnumeratedArray<Trap, uint32_t, size_t(Trap::Limit)>;
+
+// Check that traps have an associated stack map.  The check is performed only
+// for traps `t` for which `checkThisTrapKind` returns `true`.  For each such
+// `t`, trap site indices to be checked are taken from `trapSitesBefore[t]` to
+// `trapSitesAfter[t] - 1`.  The trap sites and instructions to inspect are to
+// be found in `masm`, and the corresponding stack maps in `stackMaps`.
+//
+// Returns without comment on success; MOZ_ASSERTs on failure.
+void CheckStackMapsForTraps(const jit::MacroAssembler& masm,
+                            const StackMaps& stackMaps,
+                            const TrapSitesFrontierArray& trapSitesBefore,
+                            const TrapSitesFrontierArray& trapSitesAfter,
+                            bool (*checkThisTrapKind)(Trap));
 #endif
 
 }  // namespace wasm

@@ -42,7 +42,9 @@ private val IconSize = 40.dp
 /**
  * User preference showing the currently selected icon and enables the user to navigate to the app icon selection view.
  */
-class AppIconPreference @JvmOverloads constructor(
+class AppIconPreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : ComposePreference(context, attrs) {
@@ -62,9 +64,9 @@ class AppIconPreference @JvmOverloads constructor(
             appIcon = appIconRepository.selectedAppIcon,
             onClick = {
                 CustomizationSettings.appIconSelectionTapped.record()
-                view.findNavController().navigate(
-                    CustomizationFragmentDirections.actionCustomizationFragmentAppIconSelectionFragment(),
-                )
+                view
+                    .findNavController()
+                    .navigate(CustomizationFragmentDirections.actionCustomizationFragmentAppIconSelectionFragment())
             },
         )
     }
@@ -77,13 +79,13 @@ private fun SelectAppIcon(
 ) {
     Surface {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onClick(appIcon) }
-                .padding(
-                    horizontal = FirefoxTheme.layout.space.dynamic200,
-                    vertical = FirefoxTheme.layout.space.static100,
-                ),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .clickable { onClick(appIcon) }
+                    .padding(
+                        horizontal = FirefoxTheme.layout.space.dynamic200,
+                        vertical = FirefoxTheme.layout.space.static100,
+                    ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AppIcon(
@@ -111,9 +113,7 @@ private fun SelectAppIcon(
 
 @FlexibleWindowPreview
 @Composable
-private fun SelectAppIconPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun SelectAppIconPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         SelectAppIcon(AppIcon.AppDefault) {}
     }

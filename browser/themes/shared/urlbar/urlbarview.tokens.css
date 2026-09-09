@@ -7,9 +7,9 @@
 
 @layer tokens-foundation, tokens-browser-theme, tokens-foundation-brand, tokens-foundation-nova, tokens-browser-theme-nova, tokens-foundation-brand-nova, tokens-prefers-contrast, tokens-prefers-contrast-nova, tokens-forced-colors, tokens-forced-colors-nova;
 
-@layer tokens-foundation {
-  :root,
-  :host {
+:root,
+:host {
+  @layer tokens-foundation {
     --urlbarview-action-button-background-color: color-mix(in srgb, var(--urlbarview-background-color-hover) 50%, transparent);
     --urlbarview-action-button-background-color-hover: var(--urlbarview-background-color-hover);
     --urlbarview-background-color-hover: var(--background-color-dimmed);
@@ -23,50 +23,21 @@
     --urlbarview-text-color-secondary: color-mix(in srgb, currentColor 73%, transparent);
     --urlbarview-text-color-selected: SelectedItemText;
   }
-}
 
-/* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-@layer tokens-prefers-contrast {
-  @media (prefers-contrast) {
-    :root,
-    :host {
+  @layer tokens-prefers-contrast {
+    @media (prefers-contrast) {
       --urlbarview-separator-color: color-mix(in srgb, currentColor 86%, transparent);
     }
   }
-}
 
-/* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-@layer tokens-forced-colors {
-  @media (forced-colors) {
-    :root,
-    :host {
+  @layer tokens-forced-colors {
+    @media (forced-colors) {
       --urlbarview-text-color-secondary: currentColor;
     }
   }
-}
 
-/* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-@layer tokens-browser-theme {
-  @media not ((forced-colors) or (-moz-native-theme)) {
-    :root:is([theme-in-app], :not([lwtheme])),
-    :host(.anonymous-content-host) {
-      --urlbarview-background-color-hover: light-dark(rgb(240, 240, 244), var(--background-color-dimmed));
-      --urlbarview-background-color-selected: light-dark(#e0e0e6, rgb(43, 42, 51));
-      --urlbarview-separator-color: light-dark(rgb(240, 240, 244), rgb(82, 82, 94));
-      --urlbarview-text-color-action: light-dark(rgb(91, 91, 102), rgb(191, 191, 201));
-      --urlbarview-text-color-secondary: color-mix(in srgb, currentColor 73%, transparent);
-      --urlbarview-text-color-selected: light-dark(rgb(21, 20, 26), rgb(251, 251, 254));
-    }
-  }
-}
-
-@media -moz-pref("browser.nova.enabled") {
-  @layer tokens-foundation-nova {
-    :root,
-    :host {
+  @media -moz-pref("browser.nova.enabled") {
+    @layer tokens-foundation-nova {
       --urlbarview-action-button-background-color: var(--urlbar-box-background-color);
       --urlbarview-action-button-background-color-hover: var(--urlbar-box-background-color-hover);
       --urlbarview-background-color-hover: var(--background-color-dimmed);
@@ -77,26 +48,32 @@
       --urlbarview-text-color-secondary: color-mix(in srgb, currentColor 73%, transparent);
       --urlbarview-text-color-selected: SelectedItemText;
     }
-  }
 
-  /* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-  @layer tokens-forced-colors-nova {
-    @media (forced-colors) {
-      :root,
-      :host {
+    @layer tokens-forced-colors-nova {
+      @media (forced-colors) {
         --urlbarview-separator-color: #ffffff;
         --urlbarview-text-color-secondary: #ffffff;
       }
     }
   }
+}
 
-  /* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-  @layer tokens-browser-theme-nova {
+:root:is([theme-in-app], :not([lwtheme])),
+:host(.anonymous-content-host) {
+  @layer tokens-browser-theme {
     @media not ((forced-colors) or (-moz-native-theme)) {
-      :root:is([theme-in-app], :not([lwtheme])),
-      :host(.anonymous-content-host) {
+      --urlbarview-background-color-hover: light-dark(rgb(240, 240, 244), var(--background-color-dimmed));
+      --urlbarview-background-color-selected: light-dark(#e0e0e6, rgb(43, 42, 51));
+      --urlbarview-separator-color: light-dark(rgb(240, 240, 244), rgb(82, 82, 94));
+      --urlbarview-text-color-action: light-dark(rgb(91, 91, 102), rgb(191, 191, 201));
+      --urlbarview-text-color-secondary: color-mix(in srgb, currentColor 73%, transparent);
+      --urlbarview-text-color-selected: light-dark(rgb(21, 20, 26), rgb(251, 251, 254));
+    }
+  }
+
+  @media -moz-pref("browser.nova.enabled") {
+    @layer tokens-browser-theme-nova {
+      @media not ((forced-colors) or (-moz-native-theme)) {
         --urlbarview-background-color-hover: var(--toolbarbutton-background-color-hover);
         --urlbarview-background-color-selected: var(--toolbarbutton-background-color-active);
         --urlbarview-separator-color: light-dark(var(--color-gray-20), var(--color-gray-60));

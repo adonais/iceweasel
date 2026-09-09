@@ -8,10 +8,10 @@ import android.view.View
 import androidx.annotation.VisibleForTesting
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
+import java.util.Locale
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.LocaleSettingsItemBinding
 import org.mozilla.fenix.utils.LocaleUtils
-import java.util.Locale
 
 class LocaleViewHolder(
     view: View,
@@ -43,13 +43,11 @@ class LocaleViewHolder(
 
     private fun bindChineseLocale(locale: Locale) {
         if (locale.country == "CN") {
-            binding.localeTitleText.text =
-                Locale.forLanguageTag("zh-Hans").getDisplayName(locale).capitalize(locale)
+            binding.localeTitleText.text = Locale.forLanguageTag("zh-Hans").getDisplayName(locale).capitalize(locale)
             binding.localeSubtitleText.text =
                 Locale.forLanguageTag("zh-Hans").displayName.capitalize(Locale.getDefault())
         } else if (locale.country == "TW") {
-            binding.localeTitleText.text =
-                Locale.forLanguageTag("zh-Hant").getDisplayName(locale).capitalize(locale)
+            binding.localeTitleText.text = Locale.forLanguageTag("zh-Hant").getDisplayName(locale).capitalize(locale)
             binding.localeSubtitleText.text =
                 Locale.forLanguageTag("zh-Hant").displayName.capitalize(Locale.getDefault())
         }
@@ -104,16 +102,12 @@ abstract class BaseLocaleViewHolder(
     abstract fun bind(locale: Locale)
 }
 
-/**
- * Similar to Kotlin's capitalize with locale parameter, but that method is currently experimental
- */
+/** Similar to Kotlin's capitalize with locale parameter, but that method is currently experimental */
 private fun String.capitalize(locale: Locale): String {
     return substring(0, 1).uppercase(locale) + substring(1)
 }
 
-/**
- * Returns the locale in the selected language, with fallback to English name
- */
+/** Returns the locale in the selected language, with fallback to English name */
 private fun Locale.getProperDisplayName(): String {
     val displayName = this.displayName.capitalize(Locale.getDefault())
     if (displayName.equals(this.toString(), ignoreCase = true)) {

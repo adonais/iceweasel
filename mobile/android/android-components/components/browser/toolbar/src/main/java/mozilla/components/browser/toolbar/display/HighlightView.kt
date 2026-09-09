@@ -16,10 +16,10 @@ import mozilla.components.concept.toolbar.Toolbar.Highlight
 import mozilla.components.concept.toolbar.Toolbar.Highlight.NONE
 import mozilla.components.concept.toolbar.Toolbar.Highlight.PERMISSIONS_CHANGED
 
-/**
- * Internal widget to display a dot notification.
- */
-internal class HighlightView @JvmOverloads constructor(
+/** Internal widget to display a dot notification. */
+internal class HighlightView
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
@@ -37,11 +37,9 @@ internal class HighlightView @JvmOverloads constructor(
             }
         }
 
-    @VisibleForTesting
-    internal var highlightTint: Int? = null
+    @VisibleForTesting internal var highlightTint: Int? = null
 
-    private var highlightIcon: Drawable =
-        requireNotNull(AppCompatResources.getDrawable(context, DEFAULT_ICON))
+    private var highlightIcon: Drawable = requireNotNull(AppCompatResources.getDrawable(context, DEFAULT_ICON))
 
     fun setTint(tint: Int) {
         highlightTint = tint
@@ -61,11 +59,12 @@ internal class HighlightView @JvmOverloads constructor(
 
         isVisible = update.visible
 
-        contentDescription = if (update.contentDescription != null) {
-            context.getString(update.contentDescription)
-        } else {
-            null
-        }
+        contentDescription =
+            if (update.contentDescription != null) {
+                context.getString(update.contentDescription)
+            } else {
+                null
+            }
 
         highlightTint?.let { setColorFilter(it) }
         setImageDrawable(update.drawable)
@@ -75,17 +74,20 @@ internal class HighlightView @JvmOverloads constructor(
         val DEFAULT_ICON = R.drawable.mozac_dot_notification
     }
 
-    private fun Highlight.toUpdate(): Update = when (this) {
-        PERMISSIONS_CHANGED -> Update(
-            highlightIcon,
-            R.string.mozac_browser_toolbar_content_description_autoplay_blocked,
-            true,
-        )
+    private fun Highlight.toUpdate(): Update =
+        when (this) {
+            PERMISSIONS_CHANGED ->
+                Update(
+                    highlightIcon,
+                    R.string.mozac_browser_toolbar_content_description_autoplay_blocked,
+                    true,
+                )
 
-        NONE -> Update(
-            null,
-            null,
-            false,
-        )
-    }
+            NONE ->
+                Update(
+                    null,
+                    null,
+                    false,
+                )
+        }
 }

@@ -16,9 +16,7 @@ import mozilla.components.concept.menu.candidate.SmallMenuCandidate
 internal class SmallMenuCandidateViewHolder(
     itemView: View,
     private val dismiss: () -> Unit,
-) : LastItemViewHolder<SmallMenuCandidate>(itemView),
-    View.OnClickListener,
-    View.OnLongClickListener {
+) : LastItemViewHolder<SmallMenuCandidate>(itemView), View.OnClickListener, View.OnLongClickListener {
 
     private val iconView = itemView as AppCompatImageButton
     private var onClickListener: (() -> Unit)? = null
@@ -54,7 +52,6 @@ internal class SmallMenuCandidateViewHolder(
     }
 
     companion object {
-        @LayoutRes
-        val layoutResource = R.layout.mozac_browser_menu2_candidate_row_small_icon
+        @LayoutRes val layoutResource = R.layout.mozac_browser_menu2_candidate_row_small_icon
     }
 }

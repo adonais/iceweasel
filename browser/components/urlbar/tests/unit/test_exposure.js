@@ -6,11 +6,24 @@
 // the exposure event to be recorded on the UrlbarResults.
 
 ChromeUtils.defineESModuleGetters(this, {
+  QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   UrlbarProviderQuickSuggest:
     "moz-src:///browser/components/urlbar/UrlbarProviderQuickSuggest.sys.mjs",
 });
 
 add_setup(async function setup() {
+  // Initializing TelemetryEnvironment in an xpcshell environment requires
+  // jumping through a bunch of hoops (and TelemetryEnvironment initialization
+  // waits for browser-delayed-startup-finished to ensure that the locales
+  // have settled, which would not happen in xpcshell tests unless it is
+  // explicitly mocked, see `fakeIntlReady` test helper defined in
+  // toolkit/components/telemetry/tests/unit/head.js).
+  //
+  // Suggest's use of TelemetryEnvironment is tested in browser tests and so
+  // we explicitly configure QuickSuggest to skip telemetry environment initialization
+  // as browser/components/urlbar/tests/quicksuggest/unit/head.js is also doing.
+  QuickSuggest._testSkipTelemetryEnvironmentInit = true;
+
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     remoteSettingsRecords: [
       {

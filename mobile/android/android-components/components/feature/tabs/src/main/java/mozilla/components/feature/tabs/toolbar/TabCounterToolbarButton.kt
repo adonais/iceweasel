@@ -7,6 +7,7 @@ package mozilla.components.feature.tabs.toolbar
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.LifecycleOwner
+import java.lang.ref.WeakReference
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -26,11 +27,8 @@ import mozilla.components.support.base.facts.collect
 import mozilla.components.support.ktx.android.content.res.resolveAttribute
 import mozilla.components.ui.tabcounter.TabCounterMenu
 import mozilla.components.ui.tabcounter.TabCounterView
-import java.lang.ref.WeakReference
 
-/**
- * A [Toolbar.Action] implementation that shows a [TabCounterView].
- */
+/** A [Toolbar.Action] implementation that shows a [TabCounterView]. */
 open class TabCounterToolbarButton(
     private val lifecycleOwner: LifecycleOwner,
     private val countBasedOnSelectedTabType: Boolean = true,
@@ -47,55 +45,57 @@ open class TabCounterToolbarButton(
 
     override fun createView(parent: ViewGroup): View {
         store.flowScoped(owner = lifecycleOwner, dispatcher = mainDispatcher) { flow ->
-            flow.map { state -> getTabCount(state) }
+            flow
+                .map { state -> getTabCount(state) }
                 .distinctUntilChanged()
                 .collect { tabs ->
                     updateCount(tabs)
                 }
         }
 
-        val tabCounter = TabCounterView(parent.context).apply {
-            reference = WeakReference(this)
-            setOnClickListener {
-                showTabs.invoke()
-                emitTabCounterFact(
-                    action = Action.CLICK,
-                    ToolbarFacts.Items.TOOLBAR,
-                )
-            }
-
-            menu?.let { menu ->
-                setOnLongClickListener {
+        val tabCounter =
+            TabCounterView(parent.context).apply {
+                reference = WeakReference(this)
+                setOnClickListener {
+                    showTabs.invoke()
                     emitTabCounterFact(
-                        action = Action.DISPLAY,
-                        ToolbarFacts.Items.MENU,
+                        action = Action.CLICK,
+                        ToolbarFacts.Items.TOOLBAR,
                     )
-                    menu.menuController.show(anchor = it)
-                    true
                 }
-            }
 
-            addOnAttachStateChangeListener(
-                object : View.OnAttachStateChangeListener {
-                    override fun onViewAttachedToWindow(v: View) {
-                        setCount(getTabCount(store.state))
-                        updateContentDescription(isPrivate(store))
+                menu?.let { menu ->
+                    setOnLongClickListener {
+                        emitTabCounterFact(
+                            action = Action.DISPLAY,
+                            ToolbarFacts.Items.MENU,
+                        )
+                        menu.menuController.show(anchor = it)
+                        true
                     }
+                }
 
-                    override fun onViewDetachedFromWindow(v: View) { /* no-op */ }
-                },
-            )
+                addOnAttachStateChangeListener(
+                    object : View.OnAttachStateChangeListener {
+                        override fun onViewAttachedToWindow(v: View) {
+                            setCount(getTabCount(store.state))
+                            updateContentDescription(isPrivate(store))
+                        }
 
-            contentDescription = parent.context.getString(R.string.mozac_feature_tabs_toolbar_tabs_button)
+                        override fun onViewDetachedFromWindow(v: View) {
+                            /* no-op */
+                        }
+                    }
+                )
 
-            toggleCounterMask(showMaskInPrivateMode && isPrivate(store))
-        }
+                contentDescription = parent.context.getString(R.string.mozac_feature_tabs_toolbar_tabs_button)
+
+                toggleCounterMask(showMaskInPrivateMode && isPrivate(store))
+            }
 
         // Set selectableItemBackgroundBorderless
         tabCounter.setBackgroundResource(
-            parent.context.theme.resolveAttribute(
-                android.R.attr.selectableItemBackgroundBorderless,
-            ),
+            parent.context.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless)
         )
 
         return tabCounter
@@ -118,12 +118,13 @@ open class TabCounterToolbarButton(
         metadata: Map<String, Any>? = null,
     ) {
         Fact(
-            Component.UI_TABCOUNTER,
-            action,
-            item,
-            value,
-            metadata,
-        ).collect()
+                Component.UI_TABCOUNTER,
+                action,
+                item,
+                value,
+                metadata,
+            )
+            .collect()
     }
 
     /**

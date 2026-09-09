@@ -5,7 +5,9 @@
 
 package org.mozilla.fenix.helpers
 
+import android.app.Activity.RESULT_OK
 import android.app.ActivityManager
+import android.app.Instrumentation
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -27,6 +29,8 @@ import androidx.test.espresso.Espresso
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.intent.Intents.intended
+import androidx.test.espresso.intent.Intents.intending
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.toPackage
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.ActivityTestRule
@@ -34,6 +38,9 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiObject
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
+import java.io.File
+import java.util.Locale
+import java.util.regex.Pattern
 import junit.framework.AssertionFailedError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -70,33 +77,36 @@ import org.mozilla.fenix.helpers.ext.waitNotNull
 import org.mozilla.fenix.helpers.idlingresource.NetworkConnectionIdlingResource
 import org.mozilla.fenix.ui.robots.BrowserRobot
 import org.mozilla.gecko.util.ThreadUtils
-import java.io.File
-import java.util.Locale
-import java.util.regex.Pattern
 
 object AppAndSystemHelper {
 
     private val bookmarksStorage = PlacesBookmarksStorage(appContext.applicationContext)
+
     suspend fun bookmarks() = bookmarksStorage.getTree(BookmarkRoot.Mobile.id).getOrNull()?.children
+
     fun getPermissionAllowID(): String {
         Log.i(TAG, "getPermissionAllowID: Trying to get the permission button resource ID based on API.")
         return when (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
             true -> {
-                Log.i(TAG, "getPermissionAllowID: Getting the permission button resource ID for API ${Build.VERSION.SDK_INT}.")
+                Log.i(
+                    TAG,
+                    "getPermissionAllowID: Getting the permission button resource ID for API ${Build.VERSION.SDK_INT}.",
+                )
                 "com.android.permissioncontroller"
             }
             false -> {
-                Log.i(TAG, "getPermissionAllowID: Getting the permission button resource ID for API ${Build.VERSION.SDK_INT}.")
+                Log.i(
+                    TAG,
+                    "getPermissionAllowID: Getting the permission button resource ID for API ${Build.VERSION.SDK_INT}.",
+                )
                 "com.android.packageinstaller"
             }
         }
     }
 
     /**
-     * Checks if a specific download file is inside the device storage and deletes it.
-     * Different implementation needed for newer API levels,
-     * as Environment.getExternalStorageDirectory() is deprecated starting with API 29.
-     *
+     * Checks if a specific download file is inside the device storage and deletes it. Different implementation needed
+     * for newer API levels, as Environment.getExternalStorageDirectory() is deprecated starting with API 29.
      */
     fun deleteDownloadedFileOnStorage(fileName: String) {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
@@ -110,7 +120,10 @@ object AppAndSystemHelper {
                 if (file.exists()) {
                     Log.i(TAG, "deleteDownloadedFileOnStorage: The file exists. Trying to delete $fileName, try 1.")
                     file.delete()
-                    Assert.assertFalse("$TAG deleteDownloadedFileOnStorage: The $fileName file was not deleted", file.exists())
+                    Assert.assertFalse(
+                        "$TAG deleteDownloadedFileOnStorage: The $fileName file was not deleted",
+                        file.exists(),
+                    )
                     Log.i(TAG, "deleteDownloadedFileOnStorage: Verified the $fileName file was deleted.")
                 }
             } catch (e: AssertionError) {
@@ -123,10 +136,11 @@ object AppAndSystemHelper {
         } else {
             runBlocking {
                 Log.i(TAG, "deleteDownloadedFileOnStorage: Trying to delete file from API ${Build.VERSION.SDK_INT}.")
-                val downloadedFile = File(
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                    fileName,
-                )
+                val downloadedFile =
+                    File(
+                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                        fileName,
+                    )
 
                 if (downloadedFile.exists()) {
                     Log.i(TAG, "deleteDownloadedFileOnStorage: The file exists. Trying to delete the file.")
@@ -138,9 +152,8 @@ object AppAndSystemHelper {
     }
 
     /**
-     * Checks if there are download files inside the device storage and deletes all of them.
-     * Different implementation needed for newer API levels, as
-     * Environment.getExternalStorageDirectory() is deprecated starting with API 29.
+     * Checks if there are download files inside the device storage and deletes all of them. Different implementation
+     * needed for newer API levels, as Environment.getExternalStorageDirectory() is deprecated starting with API 29.
      */
     fun clearDownloadsFolder() {
         Log.i(TAG, "clearDownloadsFolder: Detected API ${Build.VERSION.SDK_INT}")
@@ -189,12 +202,11 @@ object AppAndSystemHelper {
         } else {
             runBlocking {
                 Log.i(TAG, "clearDownloadsFolder: Verifying if any download files exist.")
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                    .listFiles()?.forEach {
-                        Log.i(TAG, "clearDownloadsFolder: Trying to delete from storage: $it.")
-                        it.delete()
-                        Log.i(TAG, "clearDownloadsFolder: Download file $it deleted.")
-                    }
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).listFiles()?.forEach {
+                    Log.i(TAG, "clearDownloadsFolder: Trying to delete from storage: $it.")
+                    it.delete()
+                    Log.i(TAG, "clearDownloadsFolder: Download file $it deleted.")
+                }
             }
         }
     }
@@ -276,27 +288,46 @@ object AppAndSystemHelper {
                 Log.i(TAG, "setNetworkEnabled: Waiting for connection to be enabled.")
 
                 // Wait until both idling resources are idle
-                val registered = IdlingRegistry.getInstance().register(
-                    networkConnectedIdlingResource,
-                    enableNetworkTimerIdlingResource,
-                )
-
-                Log.i(TAG, "setNetworkEnabled: Trying to verify that the idling resources for enabling the connection are registered.")
-                if (registered) {
-                    Log.i(TAG, "setNetworkEnabled: Verified that the idling resources for enabling the connection are registered.")
-                    Espresso.onIdle {
-                        // Unregister resources after they become idle
-                        val unregistered = IdlingRegistry.getInstance().unregister(
+                val registered =
+                    IdlingRegistry.getInstance()
+                        .register(
                             networkConnectedIdlingResource,
                             enableNetworkTimerIdlingResource,
                         )
-                        Log.i(TAG, "setNetworkEnabled: Trying to verify that the idling resources for enabling the connection are unregistered.")
+
+                Log.i(
+                    TAG,
+                    "setNetworkEnabled: Trying to verify that the idling resources for enabling the connection are registered.",
+                )
+                if (registered) {
+                    Log.i(
+                        TAG,
+                        "setNetworkEnabled: Verified that the idling resources for enabling the connection are registered.",
+                    )
+                    Espresso.onIdle {
+                        // Unregister resources after they become idle
+                        val unregistered =
+                            IdlingRegistry.getInstance()
+                                .unregister(
+                                    networkConnectedIdlingResource,
+                                    enableNetworkTimerIdlingResource,
+                                )
+                        Log.i(
+                            TAG,
+                            "setNetworkEnabled: Trying to verify that the idling resources for enabling the connection are unregistered.",
+                        )
                         if (unregistered) {
-                            Log.i(TAG, "setNetworkEnabled: Verified that the idling resources for enabling the connection are unregistered.")
+                            Log.i(
+                                TAG,
+                                "setNetworkEnabled: Verified that the idling resources for enabling the connection are unregistered.",
+                            )
                             Log.i(TAG, "setNetworkEnabled: Network connection was enabled.")
                             checkActiveNetworkState(enabled = true)
                         } else {
-                            Log.i(TAG, "setNetworkEnabled: Failed to unregister the idling resources for enabling the connection.")
+                            Log.i(
+                                TAG,
+                                "setNetworkEnabled: Failed to unregister the idling resources for enabling the connection.",
+                            )
                         }
                     }
                 } else {
@@ -314,26 +345,45 @@ object AppAndSystemHelper {
                 // Wait for network connection to be completely disabled
                 Log.i(TAG, "setNetworkEnabled: Waiting for connection to be disabled.")
 
-                val registered = IdlingRegistry.getInstance().register(
-                    networkDisconnectedIdlingResource,
-                    disableNetworkTimerIdlingResource,
-                )
-
-                Log.i(TAG, "setNetworkEnabled: Trying to verify that the idling resources for disabling the connection are registered.")
-                if (registered) {
-                    Log.i(TAG, "setNetworkEnabled: Verified that the idling resources for disabling the connection are registered.")
-                    Espresso.onIdle {
-                        val unregistered = IdlingRegistry.getInstance().unregister(
+                val registered =
+                    IdlingRegistry.getInstance()
+                        .register(
                             networkDisconnectedIdlingResource,
                             disableNetworkTimerIdlingResource,
                         )
-                        Log.i(TAG, "setNetworkEnabled: Trying to verify that the idling resources for disabling the connection are unregistered.")
+
+                Log.i(
+                    TAG,
+                    "setNetworkEnabled: Trying to verify that the idling resources for disabling the connection are registered.",
+                )
+                if (registered) {
+                    Log.i(
+                        TAG,
+                        "setNetworkEnabled: Verified that the idling resources for disabling the connection are registered.",
+                    )
+                    Espresso.onIdle {
+                        val unregistered =
+                            IdlingRegistry.getInstance()
+                                .unregister(
+                                    networkDisconnectedIdlingResource,
+                                    disableNetworkTimerIdlingResource,
+                                )
+                        Log.i(
+                            TAG,
+                            "setNetworkEnabled: Trying to verify that the idling resources for disabling the connection are unregistered.",
+                        )
                         if (unregistered) {
-                            Log.i(TAG, "setNetworkEnabled: Verified that the idling resources for disabling the connection are unregistered.")
+                            Log.i(
+                                TAG,
+                                "setNetworkEnabled: Verified that the idling resources for disabling the connection are unregistered.",
+                            )
                             Log.i(TAG, "setNetworkEnabled: Network connection was disabled.")
                             checkActiveNetworkState(enabled = false)
                         } else {
-                            Log.i(TAG, "setNetworkEnabled: Failed to unregister the idling resources for disabling the connection.")
+                            Log.i(
+                                TAG,
+                                "setNetworkEnabled: Failed to unregister the idling resources for disabling the connection.",
+                            )
                         }
                     }
                 } else {
@@ -404,8 +454,7 @@ object AppAndSystemHelper {
             Log.i(TAG, "assertNativeAppOpens: Trying to match the app package name is matched.")
             Assert.assertTrue(
                 "$TAG $appPackageName not found",
-                mDevice.findObject(UiSelector().packageName(appPackageName))
-                    .waitForExists(waitingTime),
+                mDevice.findObject(UiSelector().packageName(appPackageName)).waitForExists(waitingTime),
             )
             Log.i(TAG, "assertNativeAppOpens: App package name matched.")
 
@@ -453,15 +502,22 @@ object AppAndSystemHelper {
     fun isExternalAppBrowserActivityInCurrentTask(): Boolean {
         val activityManager = appContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
 
-        Log.i(TAG, "isExternalAppBrowserActivityInCurrentTask: Waiting for the device to be idle for $waitingTimeShort ms")
+        Log.i(
+            TAG,
+            "isExternalAppBrowserActivityInCurrentTask: Waiting for the device to be idle for $waitingTimeShort ms",
+        )
         mDevice.waitForIdle(waitingTimeShort)
-        Log.i(TAG, "isExternalAppBrowserActivityInCurrentTask: Waited for the device to be idle for $waitingTimeShort ms")
+        Log.i(
+            TAG,
+            "isExternalAppBrowserActivityInCurrentTask: Waited for the device to be idle for $waitingTimeShort ms",
+        )
 
         Log.i(
             TAG,
             "isExternalAppBrowserActivityInCurrentTask: Trying to verify that the latest activity of the application is used for custom tabs or PWAs",
         )
-        return activityManager.appTasks[0].taskInfo?.topActivity?.className == ExternalAppBrowserActivity::class.java.name
+        return activityManager.appTasks[0].taskInfo?.topActivity?.className ==
+            ExternalAppBrowserActivity::class.java.name
     }
 
     /**
@@ -497,11 +553,7 @@ object AppAndSystemHelper {
             mDevice.findObject(UiSelector().textContains("While using the app"))
 
         val allowPermissionButton: UiObject =
-            mDevice.findObject(
-                UiSelector()
-                    .textContains("Allow")
-                    .className("android.widget.Button"),
-            )
+            mDevice.findObject(UiSelector().textContains("Allow").className("android.widget.Button"))
 
         if (whileUsingTheAppPermissionButton.waitForExists(waitingTimeShort)) {
             Log.i(TAG, "grantSystemPermission: Trying to click the \"While using the app\" button.")
@@ -518,19 +570,41 @@ object AppAndSystemHelper {
     fun denyPermission() {
         Log.i(TAG, "denyPermission: Waiting $waitingTime ms for the negative camera system permission button to exist.")
         itemWithResId("com.android.permissioncontroller:id/permission_deny_button").waitForExists(waitingTime)
-        Log.i(TAG, "denyPermission: Waited for $waitingTime ms for the negative camera system permission button to exist.")
+        Log.i(
+            TAG,
+            "denyPermission: Waited for $waitingTime ms for the negative camera system permission button to exist.",
+        )
         Log.i(TAG, "denyPermission: Trying to click the negative camera system permission button.")
         itemWithResId("com.android.permissioncontroller:id/permission_deny_button").click()
         Log.i(TAG, "denyPermission: Clicked the negative camera system permission button.")
     }
 
     fun denyPermissionAndDontAskAgainButton() {
-        Log.i(TAG, "denyPermissionAndDontAskAgainButton: Waiting $waitingTime ms for the negative camera system permission button to exist.")
-        itemWithResId("com.android.permissioncontroller:id/permission_deny_and_dont_ask_again_button").waitForExists(waitingTime)
-        Log.i(TAG, "denyPermissionAndDontAskAgainButton: Waited for $waitingTime ms for the negative camera system permission button to exist.")
+        Log.i(
+            TAG,
+            "denyPermissionAndDontAskAgainButton: Waiting $waitingTime ms for the negative camera system permission button to exist.",
+        )
+        itemWithResId("com.android.permissioncontroller:id/permission_deny_and_dont_ask_again_button")
+            .waitForExists(waitingTime)
+        Log.i(
+            TAG,
+            "denyPermissionAndDontAskAgainButton: Waited for $waitingTime ms for the negative camera system permission button to exist.",
+        )
         Log.i(TAG, "denyPermissionAndDontAskAgainButton: Trying to click the negative camera system permission button.")
         itemWithResId("com.android.permissioncontroller:id/permission_deny_and_dont_ask_again_button").click()
         Log.i(TAG, "denyPermissionAndDontAskAgainButton: Clicked the negative camera system permission button.")
+    }
+
+    /**
+     * Stubs the system file picker so that [selectedFile] is returned as the picker result, allowing file-picker flows
+     * to run without user interaction. Espresso Intents must be initialized for the stubbing to take effect.
+     *
+     * @param selectedFile The file the stubbed picker should return.
+     * @param action The intent action to intercept. Defaults to [Intent.ACTION_GET_CONTENT].
+     */
+    fun stubFilePickerSelection(selectedFile: File, action: String = Intent.ACTION_GET_CONTENT) {
+        val resultData = Intent().apply { data = selectedFile.toUri() }
+        intending(hasAction(action)).respondWith(Instrumentation.ActivityResult(RESULT_OK, resultData))
     }
 
     fun verifySystemPhotoAndVideoPickerExists() {
@@ -552,30 +626,40 @@ object AppAndSystemHelper {
     }
 
     fun clickAddAutomaticallyButton() {
-        Log.i(TAG, "clickAddAutomaticallyButton: Waiting for $waitingTime ms until finding \"Add automatically\" system dialog button")
+        Log.i(
+            TAG,
+            "clickAddAutomaticallyButton: Waiting for $waitingTime ms until finding \"Add automatically\" system dialog button",
+        )
         mDevice.wait(
-            Until.findObject(
-                By.text(
-                    Pattern.compile("Add Automatically", Pattern.CASE_INSENSITIVE),
-                ),
-            ),
+            Until.findObject(By.text(Pattern.compile("Add Automatically", Pattern.CASE_INSENSITIVE))),
             waitingTime,
         )
-        Log.i(TAG, "clickAddAutomaticallyButton: Waited for $waitingTime ms until \"Add automatically\" system dialog button was found")
+        Log.i(
+            TAG,
+            "clickAddAutomaticallyButton: Waited for $waitingTime ms until \"Add automatically\" system dialog button was found",
+        )
         Log.i(TAG, "clickAddAutomaticallyButton: Trying to click \"Add automatically\" system dialog button")
         itemContainingText("add automatically").click()
         Log.i(TAG, "clickAddAutomaticallyButton: Clicked \"Add automatically\" system dialog button")
     }
 
     fun clickAddToHomeScreenButton() {
-        Log.i(TAG, "clickAddToHomeScreenButton: Waiting for $waitingTimeLong ms for the \"Add to home screen\" system dialog button to appear")
-        val button = mDevice.wait(
-            Until.findObject(By.textContains("Add to home screen")),
-            waitingTimeLong,
-        ) ?: throw AssertionError(
-            "clickAddToHomeScreenButton: \"Add to home screen\" system dialog button did not appear after $waitingTimeLong ms",
+        Log.i(
+            TAG,
+            "clickAddToHomeScreenButton: Waiting for $waitingTimeLong ms for the \"Add to home screen\" system dialog button to appear",
         )
-        Log.i(TAG, "clickAddToHomeScreenButton: Trying to click the \"Add to home screen\" system dialog button and wait for $waitingTimeShort ms for a new window")
+        val button =
+            mDevice.wait(
+                Until.findObject(By.textContains("Add to home screen")),
+                waitingTimeLong,
+            )
+                ?: throw AssertionError(
+                    "clickAddToHomeScreenButton: \"Add to home screen\" system dialog button did not appear after $waitingTimeLong ms"
+                )
+        Log.i(
+            TAG,
+            "clickAddToHomeScreenButton: Trying to click the \"Add to home screen\" system dialog button and wait for $waitingTimeShort ms for a new window",
+        )
         button.clickAndWait(Until.newWindow(), waitingTimeShort)
         Log.i(TAG, "clickAddToHomeScreenButton: Clicked the \"Add to home screen\" system dialog button")
     }
@@ -585,8 +669,7 @@ object AppAndSystemHelper {
     }
 
     /**
-     * Changes the default language of the app, simulating a system locale change.
-     * Runs the test in its testBlock.
+     * Changes the default language of the app, simulating a system locale change. Runs the test in its testBlock.
      * Cleans up and sets the system default locale after it's done.
      */
     fun runWithSystemLocaleChanged(locale: LocaleListCompat, testBlock: () -> Unit) {
@@ -601,11 +684,7 @@ object AppAndSystemHelper {
             testBlock()
             Log.i(TAG, "Test block finished.")
         } catch (e: Exception) {
-            Log.i(
-                TAG,
-                "runWithSystemLocaleChanged: The test block has thrown an exception.${e.message}",
-            )
-            e.printStackTrace()
+            Log.e(TAG, "runWithSystemLocaleChanged: The test block has thrown an exception.", e)
             throw e
         } finally {
             ThreadUtils.runOnUiThread { AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList()) }
@@ -613,9 +692,8 @@ object AppAndSystemHelper {
     }
 
     /**
-     * Changes the app language, different then the system default.
-     * Runs the test in its testBlock.
-     * Cleans up and sets the system locale after it's done.
+     * Changes the app language, different then the system default. Runs the test in its testBlock. Cleans up and sets
+     * the system locale after it's done.
      */
     fun runWithAppLocaleChanged(locale: Locale, testRule: ActivityTestRule<HomeActivity>, testBlock: () -> Unit) {
         val localeUseCases = appContext.components.useCases.localeUseCases
@@ -632,11 +710,13 @@ object AppAndSystemHelper {
             testBlock()
             Log.i(TAG, "runWithAppLocaleChanged: Test block finished.")
         } catch (e: Exception) {
-            Log.i(TAG, "runWithAppLocaleChanged: The test block has thrown an exception.${e.message}")
-            e.printStackTrace()
+            Log.e(TAG, "runWithAppLocaleChanged: The test block has thrown an exception.", e)
             throw e
         } finally {
-            Log.i(TAG, "runWithAppLocaleChanged final block: Trying to reset the locale to system default $defaultLocale.")
+            Log.i(
+                TAG,
+                "runWithAppLocaleChanged final block: Trying to reset the locale to system default $defaultLocale.",
+            )
             resetToSystemDefault(appContext, appContext.components.useCases.localeUseCases)
             Log.i(TAG, "runWithAppLocaleChanged finally block: Recreating the activity to apply the new locale.")
             ThreadUtils.runOnUiThread { testRule.activity.recreate() }
@@ -649,9 +729,7 @@ object AppAndSystemHelper {
         mDevice.pressRecentApps()
         Log.i(TAG, "putAppToBackground: Pressed the device Recent apps button.")
         Log.i(TAG, "putAppToBackground: Waiting for the app to be gone for $waitingTime ms.")
-        mDevice.findObject(UiSelector().resourceId("${TestHelper.packageName}:id/container")).waitUntilGone(
-            waitingTime,
-        )
+        mDevice.findObject(UiSelector().resourceId("${TestHelper.packageName}:id/container")).waitUntilGone(waitingTime)
         Log.i(TAG, "putAppToBackground: Waited for the app to be gone for $waitingTime ms.")
         Log.i(TAG, "putAppToBackground: Trying to press device home button")
         mDevice.pressHome()
@@ -659,18 +737,20 @@ object AppAndSystemHelper {
     }
 
     /**
-     * Brings the app to foregorund by clicking it in the recent apps tray.
-     * The package name is related to the home screen experience for the Pixel phones produced by Google.
-     * The recent apps tray on API 30 will always display only 2 apps, even if previously were opened more.
-     * The index of the most recent opened app will always have index 2, meaning that the previously opened app will have index 1.
+     * Brings the app to foregorund by clicking it in the recent apps tray. The package name is related to the home
+     * screen experience for the Pixel phones produced by Google. The recent apps tray on API 30 will always display
+     * only 2 apps, even if previously were opened more. The index of the most recent opened app will always have index
+     * 2, meaning that the previously opened app will have index 1.
      */
     fun bringAppToForeground() {
         Log.i(TAG, "bringAppToForeground: Trying to press the device Recent apps button.")
         mDevice.pressRecentApps()
         Log.i(TAG, "bringAppToForeground: Pressed the device Recent apps button.")
-        Log.i(TAG, "bringAppToForeground: Trying to select the app from the recent apps tray and wait for $waitingTime ms for a new window")
-        mDevice.findObject(UiSelector().index(2).packageName(PIXEL_LAUNCHER))
-            .clickAndWaitForNewWindow(waitingTimeShort)
+        Log.i(
+            TAG,
+            "bringAppToForeground: Trying to select the app from the recent apps tray and wait for $waitingTime ms for a new window",
+        )
+        mDevice.findObject(UiSelector().index(2).packageName(PIXEL_LAUNCHER)).clickAndWaitForNewWindow(waitingTimeShort)
         Log.i(TAG, "bringAppToForeground: Selected the app from the recent apps tray.")
         Log.i(TAG, "bringAppToForeground: Waiting for $waitingTime ms for $packageName window to be updated")
         mDevice.waitForWindowUpdate(packageName, waitingTime)
@@ -686,9 +766,7 @@ object AppAndSystemHelper {
         assertEquals(
             "Keyboard not shown",
             isExpectedToBeVisible,
-            mDevice
-                .executeShellCommand("dumpsys input_method | grep mInputShown")
-                .contains("mInputShown=true"),
+            mDevice.executeShellCommand("dumpsys input_method | grep mInputShown").contains("mInputShown=true"),
         )
         Log.i(TAG, "verifyKeyboardVisibility: Verified the keyboard is visible.")
     }
@@ -697,10 +775,11 @@ object AppAndSystemHelper {
         composeTestRule: AndroidComposeTestRule<HomeActivityIntentTestRule, HomeActivity>,
         url: String,
     ) {
-        val intent = Intent(Intent.ACTION_VIEW, url.toUri()).apply {
-            `package` = TestHelper.packageName
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
+        val intent =
+            Intent(Intent.ACTION_VIEW, url.toUri()).apply {
+                `package` = TestHelper.packageName
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
 
         try {
             // Case 1: The app is already running and Compose has a host activity.
@@ -712,11 +791,12 @@ object AppAndSystemHelper {
             // Case 2: The host activity was finished (cold start scenario).
             // ComposeTestRule no longer has an activity, so we fall back to
             // launching the intent from the instrumentation context.
-            Log.i(TAG, "openAppFromExternalLink: No host activity found. Launching external intent from instrumentation context.")
+            Log.i(
+                TAG,
+                "openAppFromExternalLink: No host activity found. Launching external intent from instrumentation context.",
+            )
 
-            val context = InstrumentationRegistry
-                .getInstrumentation()
-                .targetContext
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
 
             try {
                 context.startActivity(intent)
@@ -736,8 +816,8 @@ object AppAndSystemHelper {
     }
 
     /**
-     * Wrapper for tests to run only when certain conditions are met.
-     * For example: this method will avoid accidentally running a test on GV versions where the feature is disabled.
+     * Wrapper for tests to run only when certain conditions are met. For example: this method will avoid accidentally
+     * running a test on GV versions where the feature is disabled.
      */
     fun runWithCondition(condition: Boolean, testBlock: () -> Unit) {
         Log.i(TAG, "runWithCondition: Trying to run the test based on condition. The condition is: $condition.")
@@ -749,16 +829,15 @@ object AppAndSystemHelper {
         }
     }
 
-    /**
-     * Wrapper to launch the app using the launcher intent.
-     */
+    /** Wrapper to launch the app using the launcher intent. */
     fun runWithLauncherIntent(
         activityTestRule: HomeActivityIntentTestRule,
         testBlock: () -> Unit,
     ) {
-        val launcherIntent = Intent(Intent.ACTION_MAIN).apply {
-            addCategory(Intent.CATEGORY_LAUNCHER)
-        }
+        val launcherIntent =
+            Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_LAUNCHER)
+            }
 
         Log.i(TAG, "runWithLauncherIntent: Trying to launch the activity from an intent: $launcherIntent.")
         activityTestRule.withIntent(launcherIntent).launchActivity(launcherIntent)
@@ -768,8 +847,7 @@ object AppAndSystemHelper {
             testBlock()
             Log.i(TAG, "runWithLauncherIntent: Finished running the test block.")
         } catch (e: Exception) {
-            Log.i(TAG, "runWithLauncherIntent: Exception caught while running the test block: ${e.message}")
-            e.printStackTrace()
+            Log.e(TAG, "runWithLauncherIntent: Exception caught while running the test block.", e)
         }
     }
 
@@ -786,11 +864,17 @@ object AppAndSystemHelper {
     // By preventing, the quick share or nearby share dialog will not be displayed
     fun allowOrPreventSystemUIFromReadingTheClipboard(allowToReadClipboard: Boolean) {
         if (allowToReadClipboard) {
-            Log.i(TAG, "allowOrPreventSystemUIFromReadingTheClipboard: Trying to allow the System UI from reading the clipboard content")
+            Log.i(
+                TAG,
+                "allowOrPreventSystemUIFromReadingTheClipboard: Trying to allow the System UI from reading the clipboard content",
+            )
             mDevice.executeShellCommand("appops set com.android.systemui READ_CLIPBOARD allow")
             Log.i(TAG, "TestSetupRule: Successfully allowed the System UI from reading the clipboard content")
         } else {
-            Log.i(TAG, "allowOrPreventSystemUIFromReadingTheClipboard: Trying to prevent the System UI from reading the clipboard content")
+            Log.i(
+                TAG,
+                "allowOrPreventSystemUIFromReadingTheClipboard: Trying to prevent the System UI from reading the clipboard content",
+            )
             mDevice.executeShellCommand("appops set com.android.systemui READ_CLIPBOARD deny")
             Log.i(TAG, "TestSetupRule: Successfully prevented the System UI from reading the clipboard content")
         }
@@ -799,25 +883,48 @@ object AppAndSystemHelper {
     // Enable or disable the back gesture from the edge of the screen on the device.
     fun enableOrDisableBackGestureNavigationOnDevice(backGestureNavigationEnabled: Boolean) {
         if (backGestureNavigationEnabled) {
-            Log.i(TAG, "enableOrDisableBackGestureNavigationOnDevice: Trying to enable the back gesture navigation from the right edge of the screen on the device")
+            Log.i(
+                TAG,
+                "enableOrDisableBackGestureNavigationOnDevice: Trying to enable the back gesture navigation from the right edge of the screen on the device",
+            )
             mDevice.executeShellCommand("settings put secure back_gesture_inset_scale_right 1")
-            Log.i(TAG, "enableOrDisableBackGestureNavigationOnDevice: Successfully enabled the back gesture navigation from the right edge of the screen on the device")
-            Log.i(TAG, "enableOrDisableBackGestureNavigationOnDevice: Trying to enable the back gesture navigation from the left edge of the screen on the device")
+            Log.i(
+                TAG,
+                "enableOrDisableBackGestureNavigationOnDevice: Successfully enabled the back gesture navigation from the right edge of the screen on the device",
+            )
+            Log.i(
+                TAG,
+                "enableOrDisableBackGestureNavigationOnDevice: Trying to enable the back gesture navigation from the left edge of the screen on the device",
+            )
             mDevice.executeShellCommand("settings put secure back_gesture_inset_scale_left 1")
-            Log.i(TAG, "enableOrDisableBackGestureNavigationOnDevice: Successfully enabled the back gesture navigation from the left edge of the screen on the device on the device")
+            Log.i(
+                TAG,
+                "enableOrDisableBackGestureNavigationOnDevice: Successfully enabled the back gesture navigation from the left edge of the screen on the device on the device",
+            )
         } else {
-            Log.i(TAG, "enableOrDisableBackGestureNavigationOnDevice: Trying to disable the back gesture navigation from the right edge of the screen on the device")
+            Log.i(
+                TAG,
+                "enableOrDisableBackGestureNavigationOnDevice: Trying to disable the back gesture navigation from the right edge of the screen on the device",
+            )
             mDevice.executeShellCommand("settings put secure back_gesture_inset_scale_right 0")
-            Log.i(TAG, "enableOrDisableBackGestureNavigationOnDevice: Successfully disabled the back gesture navigation from the right edge of the screen on the device")
-            Log.i(TAG, "enableOrDisableBackGestureNavigationOnDevice: Trying to disable the back gesture navigation from the left edge of the screen on the device")
+            Log.i(
+                TAG,
+                "enableOrDisableBackGestureNavigationOnDevice: Successfully disabled the back gesture navigation from the right edge of the screen on the device",
+            )
+            Log.i(
+                TAG,
+                "enableOrDisableBackGestureNavigationOnDevice: Trying to disable the back gesture navigation from the left edge of the screen on the device",
+            )
             mDevice.executeShellCommand("settings put secure back_gesture_inset_scale_left 0")
-            Log.i(TAG, "enableOrDisableBackGestureNavigationOnDevice: Successfully disabled the back gesture navigation from the left edge of the screen on the device on the device")
+            Log.i(
+                TAG,
+                "enableOrDisableBackGestureNavigationOnDevice: Successfully disabled the back gesture navigation from the left edge of the screen on the device on the device",
+            )
         }
     }
 
     fun isNetworkConnected(): Boolean {
-        val connectivityManager =
-            appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val connectivityManager = appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
         val network = connectivityManager.activeNetwork
         val networkCapabilities = connectivityManager.getNetworkCapabilities(network)
@@ -830,9 +937,10 @@ object AppAndSystemHelper {
         return isConnected
     }
 
-    suspend fun disableDebugDrawer() = withContext(Dispatchers.IO) {
-        DefaultDebugSettingsRepository(context = appContext, writeScope = this).setDebugDrawerEnabled(false)
-    }
+    suspend fun disableDebugDrawer() =
+        withContext(Dispatchers.IO) {
+            DefaultDebugSettingsRepository(context = appContext, writeScope = this).setDebugDrawerEnabled(false)
+        }
 
     fun setScreenOrientation(
         composeTestRule: AndroidComposeTestRule<HomeActivityIntentTestRule, HomeActivity>,

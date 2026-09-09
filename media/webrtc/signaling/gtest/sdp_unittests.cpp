@@ -3400,20 +3400,20 @@ TEST_P(NewSdpTest, CheckExtmap) {
 
   ASSERT_EQ(1U, extmaps[0].entry);
   ASSERT_FALSE(extmaps[0].direction_specified);
-  ASSERT_EQ("urn:ietf:params:rtp-hdrext:ssrc-audio-level",
+  ASSERT_EQ("urn:ietf:params:rtp-hdrext:ssrc-audio-level"_ns,
             extmaps[0].extensionname);
-  ASSERT_EQ("", extmaps[0].extensionattributes);
+  ASSERT_EQ(""_ns, extmaps[0].extensionattributes);
 
   ASSERT_EQ(2U, extmaps[1].entry);
   ASSERT_TRUE(extmaps[1].direction_specified);
   ASSERT_EQ(SdpDirectionAttribute::kSendonly, extmaps[1].direction);
-  ASSERT_EQ("some_extension", extmaps[1].extensionname);
-  ASSERT_EQ("", extmaps[1].extensionattributes);
+  ASSERT_EQ("some_extension"_ns, extmaps[1].extensionname);
+  ASSERT_EQ(""_ns, extmaps[1].extensionattributes);
 
   ASSERT_EQ(3U, extmaps[2].entry);
   ASSERT_FALSE(extmaps[2].direction_specified);
-  ASSERT_EQ("some_other_extension", extmaps[2].extensionname);
-  ASSERT_EQ("some_params some more params", extmaps[2].extensionattributes);
+  ASSERT_EQ("some_other_extension"_ns, extmaps[2].extensionname);
+  ASSERT_EQ("some_params some more params"_ns, extmaps[2].extensionattributes);
 }
 
 TEST_P(NewSdpTest, CheckRtcpFb) {

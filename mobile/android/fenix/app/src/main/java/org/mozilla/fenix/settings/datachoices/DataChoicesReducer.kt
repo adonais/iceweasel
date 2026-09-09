@@ -4,41 +4,41 @@
 
 package org.mozilla.fenix.settings.datachoices
 
-internal fun dataChoicesReducer(state: DataChoicesState, action: DataChoicesAction) = when (action) {
-    is ChoiceAction.TelemetryClicked -> {
-        state.copy(
-            telemetryEnabled = !state.telemetryEnabled,
-        )
+internal fun dataChoicesReducer(state: DataChoicesState, action: DataChoicesAction) =
+    when (action) {
+        is ChoiceAction.TelemetryClicked -> {
+            state.copy(telemetryEnabled = !state.telemetryEnabled)
+        }
+        is ChoiceAction.MeasurementDataClicked -> {
+            state.copy(measurementDataEnabled = !state.measurementDataEnabled)
+        }
+        is ChoiceAction.UsagePingClicked -> {
+            state.copy(usagePingEnabled = !state.usagePingEnabled)
+        }
+        is ChoiceAction.ReportOptionClicked -> {
+            state.copy(selectedCrashOption = action.reportOption)
+        }
+        is ChoiceAction.ScrolledToItem -> {
+            state.copy(itemToScrollTo = null)
+        }
+        is SettingsLoaded ->
+            state.copy(
+                telemetryEnabled = action.telemetryEnabled,
+                usagePingEnabled = action.usagePingEnabled,
+                studiesEnabled = action.studiesEnabled,
+                showMeasurementDataSection = action.showMeasurementDataSection,
+                measurementDataEnabled = action.measurementDataEnabled,
+                selectedCrashOption = action.crashReportOption,
+            )
+        is StudiesLoaded -> {
+            state.copy(studiesEnabled = action.newValue)
+        }
+        LearnMore.CrashLearnMoreClicked,
+        LearnMore.MeasurementDataLearnMoreClicked,
+        LearnMore.TelemetryLearnMoreClicked,
+        LearnMore.UsagePingLearnMoreClicked,
+        is ChoiceAction.StudiesClicked,
+        is ViewCreated -> {
+            state
+        }
     }
-    is ChoiceAction.MeasurementDataClicked -> {
-        state.copy(measurementDataEnabled = !state.measurementDataEnabled)
-    }
-    is ChoiceAction.UsagePingClicked -> {
-        state.copy(usagePingEnabled = !state.usagePingEnabled)
-    }
-    is ChoiceAction.ReportOptionClicked -> {
-        state.copy(selectedCrashOption = action.reportOption)
-    }
-    is ChoiceAction.ScrolledToItem -> {
-        state.copy(itemToScrollTo = null)
-    }
-    is SettingsLoaded ->
-        state.copy(
-            telemetryEnabled = action.telemetryEnabled,
-            usagePingEnabled = action.usagePingEnabled,
-            studiesEnabled = action.studiesEnabled,
-            showMeasurementDataSection = action.showMeasurementDataSection,
-            measurementDataEnabled = action.measurementDataEnabled,
-            selectedCrashOption = action.crashReportOption,
-        )
-    is StudiesLoaded -> {
-        state.copy(studiesEnabled = action.newValue)
-    }
-    LearnMore.CrashLearnMoreClicked,
-    LearnMore.MeasurementDataLearnMoreClicked,
-    LearnMore.TelemetryLearnMoreClicked,
-    LearnMore.UsagePingLearnMoreClicked,
-    is ChoiceAction.StudiesClicked,
-    is ViewCreated,
-    -> { state }
-}

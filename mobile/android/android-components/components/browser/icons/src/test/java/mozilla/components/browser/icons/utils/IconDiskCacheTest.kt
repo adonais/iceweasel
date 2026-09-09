@@ -6,6 +6,9 @@ package mozilla.components.browser.icons.utils
 
 import android.graphics.Bitmap
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.File
+import java.io.OutputStream
+import kotlin.test.assertNotNull
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.concept.engine.manifest.Size
 import mozilla.components.support.test.any
@@ -22,9 +25,6 @@ import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.Mockito.`when`
 import org.robolectric.annotation.Config
-import java.io.File
-import java.io.OutputStream
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class IconDiskCacheTest {
@@ -39,12 +39,13 @@ class IconDiskCacheTest {
     @Test
     fun `Resource cache files are stored under noBackupFilesDir, not cacheDir`() {
         val cache = IconDiskCache()
-        val resource = IconRequest.Resource(
-            url = "https://www.mozilla.org/icon64.png",
-            sizes = listOf(Size(64, 64)),
-            mimeType = "image/png",
-            type = IconRequest.Resource.Type.FAVICON,
-        )
+        val resource =
+            IconRequest.Resource(
+                url = "https://www.mozilla.org/icon64.png",
+                sizes = listOf(Size(64, 64)),
+                mimeType = "image/png",
+                type = IconRequest.Resource.Type.FAVICON,
+            )
         cache.putResources(testContext, IconRequest("https://www.mozilla.org", resources = listOf(resource)))
 
         val newParent = File(testContext.noBackupFilesDir, CACHE_PARENT)
@@ -57,10 +58,11 @@ class IconDiskCacheTest {
     @Test
     fun `Icon cache files are stored under noBackupFilesDir, not cacheDir`() {
         val cache = IconDiskCache()
-        val resource = IconRequest.Resource(
-            url = "https://www.mozilla.org/icon64.png",
-            type = IconRequest.Resource.Type.FAVICON,
-        )
+        val resource =
+            IconRequest.Resource(
+                url = "https://www.mozilla.org/icon64.png",
+                type = IconRequest.Resource.Type.FAVICON,
+            )
         val bitmap: Bitmap = mock()
 
         cache.putIconBitmap(testContext, resource, bitmap)
@@ -121,25 +123,26 @@ class IconDiskCacheTest {
     fun `Writing and reading resources`() {
         val cache = IconDiskCache()
 
-        val resources = listOf(
-            IconRequest.Resource(
-                url = "https://www.mozilla.org/icon64.png",
-                sizes = listOf(Size(64, 64)),
-                mimeType = "image/png",
-                type = IconRequest.Resource.Type.FAVICON,
-            ),
-            IconRequest.Resource(
-                url = "https://www.mozilla.org/icon128.png",
-                sizes = listOf(Size(128, 128)),
-                mimeType = "image/png",
-                type = IconRequest.Resource.Type.FAVICON,
-            ),
-            IconRequest.Resource(
-                url = "https://www.mozilla.org/icon128.png",
-                sizes = listOf(Size(180, 180)),
-                type = IconRequest.Resource.Type.APPLE_TOUCH_ICON,
-            ),
-        )
+        val resources =
+            listOf(
+                IconRequest.Resource(
+                    url = "https://www.mozilla.org/icon64.png",
+                    sizes = listOf(Size(64, 64)),
+                    mimeType = "image/png",
+                    type = IconRequest.Resource.Type.FAVICON,
+                ),
+                IconRequest.Resource(
+                    url = "https://www.mozilla.org/icon128.png",
+                    sizes = listOf(Size(128, 128)),
+                    mimeType = "image/png",
+                    type = IconRequest.Resource.Type.FAVICON,
+                ),
+                IconRequest.Resource(
+                    url = "https://www.mozilla.org/icon128.png",
+                    sizes = listOf(Size(180, 180)),
+                    type = IconRequest.Resource.Type.APPLE_TOUCH_ICON,
+                ),
+            )
 
         val request = IconRequest("https://www.mozilla.org", resources = resources)
         cache.putResources(testContext, request)
@@ -154,17 +157,17 @@ class IconDiskCacheTest {
     fun `Writing and reading bitmap bytes on SDK 28`() {
         val cache = IconDiskCache()
 
-        val resource = IconRequest.Resource(
-            url = "https://www.mozilla.org/icon64.png",
-            sizes = listOf(Size(64, 64)),
-            mimeType = "image/png",
-            type = IconRequest.Resource.Type.FAVICON,
-        )
+        val resource =
+            IconRequest.Resource(
+                url = "https://www.mozilla.org/icon64.png",
+                sizes = listOf(Size(64, 64)),
+                mimeType = "image/png",
+                type = IconRequest.Resource.Type.FAVICON,
+            )
 
         val bitmap: Bitmap = mock()
         `when`(bitmap.compress(any(), anyInt(), any())).thenAnswer {
-            @Suppress("DEPRECATION")
-            assertEquals(Bitmap.CompressFormat.WEBP, it.arguments[0] as Bitmap.CompressFormat)
+            @Suppress("DEPRECATION") assertEquals(Bitmap.CompressFormat.WEBP, it.arguments[0] as Bitmap.CompressFormat)
             assertEquals(90, it.arguments[1] as Int) // Quality
 
             val stream = it.arguments[2] as OutputStream
@@ -183,12 +186,13 @@ class IconDiskCacheTest {
     fun `Writing and reading bitmap bytes`() {
         val cache = IconDiskCache()
 
-        val resource = IconRequest.Resource(
-            url = "https://www.mozilla.org/icon64.png",
-            sizes = listOf(Size(64, 64)),
-            mimeType = "image/png",
-            type = IconRequest.Resource.Type.FAVICON,
-        )
+        val resource =
+            IconRequest.Resource(
+                url = "https://www.mozilla.org/icon64.png",
+                sizes = listOf(Size(64, 64)),
+                mimeType = "image/png",
+                type = IconRequest.Resource.Type.FAVICON,
+            )
 
         val bitmap: Bitmap = mock()
         `when`(bitmap.compress(any(), anyInt(), any())).thenAnswer {
@@ -206,9 +210,6 @@ class IconDiskCacheTest {
         assertNotNull(data)
         assertEquals("Hello World", String(data))
     }
-
-    private val cacheParent
-        get() = File(testContext.cacheDir, CACHE_PARENT)
 
     companion object {
         private const val CACHE_PARENT = "mozac_browser_icons"

@@ -34,6 +34,8 @@ import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.findViewTreeSavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import kotlin.math.absoluteValue
+import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -50,23 +52,16 @@ import mozilla.components.compose.cfr.helper.DisplayOrientationListener
 import mozilla.components.compose.cfr.helper.ViewDetachedListener
 import mozilla.components.support.ktx.android.util.dpToPx
 import mozilla.components.support.ktx.android.view.toScope
-import kotlin.math.absoluteValue
-import kotlin.math.roundToInt
 
-@VisibleForTesting
-internal const val SHOW_AFTER_SCREEN_ORIENTATION_CHANGE_DELAY = 500L
+@VisibleForTesting internal const val SHOW_AFTER_SCREEN_ORIENTATION_CHANGE_DELAY = 500L
 
 /**
- * Value class allowing to easily reason about what an `Int` represents.
- * This is compiled to the underlying `Int` type so incurs no performance penalty.
+ * Value class allowing to easily reason about what an `Int` represents. This is compiled to the underlying `Int` type
+ * so incurs no performance penalty.
  */
-@JvmInline
-@VisibleForTesting
-internal value class Pixels(val value: Int)
+@JvmInline @VisibleForTesting internal value class Pixels(val value: Int)
 
-/**
- * Simple wrapper over the absolute x-coordinates of the popup. Includes any paddings.
- */
+/** Simple wrapper over the absolute x-coordinates of the popup. Includes any paddings. */
 @VisibleForTesting
 internal data class PopupHorizontalBounds(
     val startCoord: Pixels,
@@ -74,14 +69,13 @@ internal data class PopupHorizontalBounds(
 )
 
 /**
- * [AbstractComposeView] that can be added or removed dynamically in the current window to display
- * a [Composable] based popup anywhere on the screen.
+ * [AbstractComposeView] that can be added or removed dynamically in the current window to display a [Composable] based
+ * popup anywhere on the screen.
  *
- * @param anchor [View] that will serve as the anchor of the popup and serve as lifecycle owner
- * for this popup also.
+ * @param anchor [View] that will serve as the anchor of the popup and serve as lifecycle owner for this popup also.
  * @param properties [CFRPopupProperties] allowing to customize the popup behavior.
- * @param onDismiss Callback for when the popup is dismissed indicating also if the dismissal
- * was explicit - by tapping the "X" button or not.
+ * @param onDismiss Callback for when the popup is dismissed indicating also if the dismissal was explicit - by tapping
+ *   the "X" button or not.
  * @param title Optional [Text] composable to show just above the popup text.
  * @param text [Text] already styled and ready to be shown in the popup.
  * @param action Optional other composable to show just below the popup text.
@@ -100,10 +94,9 @@ internal class CFRPopupFullscreenLayout(
     private val windowManager = anchor.context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
     /**
-     * Listener for when the anchor is removed from the screen.
-     * Useful in the following situations:
-     *   - lack of purpose - if there is no anchor the context/action to which this popup refers to disappeared
-     *   - leak from WindowManager - if removing the app from task manager while the popup is shown.
+     * Listener for when the anchor is removed from the screen. Useful in the following situations:
+     * - lack of purpose - if there is no anchor the context/action to which this popup refers to disappeared
+     * - leak from WindowManager - if removing the app from task manager while the popup is shown.
      *
      * Will not inform client about this since the user did not expressly dismissed this popup.
      */
@@ -112,28 +105,24 @@ internal class CFRPopupFullscreenLayout(
     }
 
     /**
-     * When the screen is rotated the popup may get improperly anchored
-     * because of the async nature of insets and screen rotation.
-     * To avoid any improper anchorage the popups are automatically dismissed.
+     * When the screen is rotated the popup may get improperly anchored because of the async nature of insets and screen
+     * rotation. To avoid any improper anchorage the popups are automatically dismissed.
      *
      * Will not inform client about this since the user did not expressly dismissed this popup.
      *
      * Since a UX decision has been made here:
-     * [link](https://github.com/mozilla-mobile/fenix/issues/27033#issuecomment-1302363014)
-     * to redisplay any **implicitly** dismissed CFRs, a short delay will be added,
-     * after which the CFR will be shown again.
-     *
+     * [link](https://github.com/mozilla-mobile/fenix/issues/27033#issuecomment-1302363014) to redisplay any
+     * **implicitly** dismissed CFRs, a short delay will be added, after which the CFR will be shown again.
      */
-    @VisibleForTesting
-    internal lateinit var orientationChangeListener: DisplayOrientationListener
+    @VisibleForTesting internal lateinit var orientationChangeListener: DisplayOrientationListener
 
     override var shouldCreateCompositionOnAttachedToWindow: Boolean = false
         private set
 
     /**
-     * Add a new CFR popup to the current window overlaying everything already displayed.
-     * This popup will be dismissed when the user clicks on the "x" button or based on other user actions
-     * with such behavior set in [CFRPopupProperties].
+     * Add a new CFR popup to the current window overlaying everything already displayed. This popup will be dismissed
+     * when the user clicks on the "x" button or based on other user actions with such behavior set in
+     * [CFRPopupProperties].
      */
     fun show() {
         if (!isAttachedToWindow) {
@@ -144,9 +133,10 @@ internal class CFRPopupFullscreenLayout(
                 setViewTreeLifecycleOwner(anchorViewTreeLifecycleOwner)
                 this.setViewTreeSavedStateRegistryOwner(anchorViewTreeSavedStateRegistryOwner)
                 anchor.addOnAttachStateChangeListener(anchorDetachedListener)
-                orientationChangeListener = getDisplayOrientationListener(anchor.context).also {
-                    it.start()
-                }
+                orientationChangeListener =
+                    getDisplayOrientationListener(anchor.context).also {
+                        it.start()
+                    }
                 windowManager.addView(this, createLayoutParams())
             }
         }
@@ -154,40 +144,41 @@ internal class CFRPopupFullscreenLayout(
 
     @Composable
     override fun Content() {
-        val anchorLocation = IntArray(2).apply {
-            anchor.getLocationInWindow(this)
-        }
+        val anchorLocation =
+            IntArray(2).apply {
+                anchor.getLocationInWindow(this)
+            }
 
         val anchorXCoordMiddle = Pixels(anchorLocation.first() + anchor.width / 2)
-        val indicatorArrowHeight = Pixels(
-            CFRPopup.DEFAULT_INDICATOR_HEIGHT.dp.toPx(),
-        )
+        val indicatorArrowHeight = Pixels(CFRPopup.DEFAULT_INDICATOR_HEIGHT.dp.toPx())
 
-        val popupBounds = computePopupHorizontalBounds(
-            anchorMiddleXCoord = anchorXCoordMiddle,
-            arrowIndicatorWidth = Pixels(Companion.getIndicatorBaseWidthForHeight(indicatorArrowHeight.value)),
-            screenWidth = Pixels(LocalWindowInfo.current.containerSize.width),
-            layoutDirection = LocalConfiguration.current.layoutDirection,
-        )
+        val popupBounds =
+            computePopupHorizontalBounds(
+                anchorMiddleXCoord = anchorXCoordMiddle,
+                arrowIndicatorWidth = Pixels(Companion.getIndicatorBaseWidthForHeight(indicatorArrowHeight.value)),
+                screenWidth = Pixels(LocalWindowInfo.current.containerSize.width),
+                layoutDirection = LocalConfiguration.current.layoutDirection,
+            )
 
-        val indicatorOffset = computeIndicatorArrowStartCoord(
-            anchorMiddleXCoord = anchorXCoordMiddle,
-            popupStartCoord = popupBounds.startCoord,
-            arrowIndicatorWidth = Pixels(
-                Companion.getIndicatorBaseWidthForHeight(indicatorArrowHeight.value),
-            ),
-        )
+        val indicatorOffset =
+            computeIndicatorArrowStartCoord(
+                anchorMiddleXCoord = anchorXCoordMiddle,
+                popupStartCoord = popupBounds.startCoord,
+                arrowIndicatorWidth = Pixels(Companion.getIndicatorBaseWidthForHeight(indicatorArrowHeight.value)),
+            )
 
         Popup(
-            popupPositionProvider = getPopupPositionProvider(
-                anchorLocation = anchorLocation,
-                popupBounds = popupBounds,
-            ),
-            properties = PopupProperties(
-                focusable = true,
-                dismissOnBackPress = properties.dismissOnBackPress,
-                dismissOnClickOutside = properties.dismissOnClickOutside,
-            ),
+            popupPositionProvider =
+                getPopupPositionProvider(
+                    anchorLocation = anchorLocation,
+                    popupBounds = popupBounds,
+                ),
+            properties =
+                PopupProperties(
+                    focusable = true,
+                    dismissOnBackPress = properties.dismissOnBackPress,
+                    dismissOnClickOutside = properties.dismissOnClickOutside,
+                ),
             onDismissRequest = {
                 // For when tapping outside the popup.
                 dismiss()
@@ -199,22 +190,24 @@ internal class CFRPopupFullscreenLayout(
                 showDismissButton = properties.showDismissButton,
                 dismissButtonColor = properties.dismissButtonColor,
                 indicatorDirection = properties.indicatorDirection,
-                indicatorArrowStartOffset = with(LocalDensity.current) {
-                    indicatorOffset.value.toDp()
-                },
+                indicatorArrowStartOffset =
+                    with(LocalDensity.current) {
+                        indicatorOffset.value.toDp()
+                    },
                 onDismiss = {
                     // For when tapping the "X" button.
                     dismiss()
                     onDismiss(true)
                 },
-                popupWidth = if (shouldCenterPopup(LocalWindowInfo.current.containerSize.width)) {
-                    with(LocalDensity.current) {
-                        LocalWindowInfo.current.containerSize.width.toDp() -
-                            (2 * CFRPopup.DEFAULT_HORIZONTAL_VIEWPORT_MARGIN_DP).dp
-                    }
-                } else {
-                    properties.popupWidth
-                },
+                popupWidth =
+                    if (shouldCenterPopup(LocalWindowInfo.current.containerSize.width)) {
+                        with(LocalDensity.current) {
+                            LocalWindowInfo.current.containerSize.width.toDp() -
+                                (2 * CFRPopup.DEFAULT_HORIZONTAL_VIEWPORT_MARGIN_DP).dp
+                        }
+                    } else {
+                        properties.popupWidth
+                    },
                 title = title,
                 text = text,
                 action = action,
@@ -253,8 +246,10 @@ internal class CFRPopupFullscreenLayout(
                         DOWN -> {
                             when (properties.overlapAnchor) {
                                 true -> anchorLocation.last() - popupContentSize.height + anchor.height / 2
-                                else -> anchorLocation.last() - popupContentSize.height -
-                                    properties.popupVerticalOffset.toPx()
+                                else ->
+                                    anchorLocation.last() -
+                                        popupContentSize.height -
+                                        properties.popupVerticalOffset.toPx()
                             }
                         }
                     },
@@ -264,21 +259,19 @@ internal class CFRPopupFullscreenLayout(
     }
 
     /**
-     * Whether or not the popup body should be centered in the screen, this is only true if the screen does not
-     * allow the popup to be centered at its maximum width.
+     * Whether or not the popup body should be centered in the screen, this is only true if the screen does not allow
+     * the popup to be centered at its maximum width.
      */
-    private fun shouldCenterPopup(
-        screenWidth: Int,
-    ): Boolean {
-        val maximumPopupWidth = properties.popupWidth.toPx() +
-            2 * CFRPopup.DEFAULT_HORIZONTAL_VIEWPORT_MARGIN_DP.dp.toPx()
+    private fun shouldCenterPopup(screenWidth: Int): Boolean {
+        val maximumPopupWidth =
+            properties.popupWidth.toPx() + 2 * CFRPopup.DEFAULT_HORIZONTAL_VIEWPORT_MARGIN_DP.dp.toPx()
         return properties.popupAlignment == BODY_CENTERED_IN_SCREEN && maximumPopupWidth > screenWidth
     }
 
     /**
-     * Compute the x-coordinates for the absolute start and end position of the popup, including any padding.
-     * This assumes anchoring is indicated with an arrow to the horizontal middle of the anchor with the popup's
-     * body potentially extending to the `start` of the arrow indicator.
+     * Compute the x-coordinates for the absolute start and end position of the popup, including any padding. This
+     * assumes anchoring is indicated with an arrow to the horizontal middle of the anchor with the popup's body
+     * potentially extending to the `start` of the arrow indicator.
      *
      * @param anchorMiddleXCoord x-coordinate for the middle of the anchor.
      * @param arrowIndicatorWidth x-distance the arrow indicator occupies.
@@ -314,78 +307,66 @@ internal class CFRPopupFullscreenLayout(
         val popupPadding = Pixels(CFRPopup.DEFAULT_EXTRA_HORIZONTAL_PADDING.dp.toPx())
         val leftInsets = Pixels(getLeftInsets())
         val popupWidth = Pixels(properties.popupWidth.toPx())
-        val viewportMargin =
-            CFRPopup.DEFAULT_HORIZONTAL_VIEWPORT_MARGIN_DP.dpToPx(anchor.resources.displayMetrics)
-        var startCoord = when (properties.popupAlignment) {
-            BODY_TO_ANCHOR_START -> {
-                Pixels(anchor.x.roundToInt() + leftInsets.value)
-            }
+        val viewportMargin = CFRPopup.DEFAULT_HORIZONTAL_VIEWPORT_MARGIN_DP.dpToPx(anchor.resources.displayMetrics)
+        var startCoord =
+            when (properties.popupAlignment) {
+                BODY_TO_ANCHOR_START -> {
+                    Pixels(anchor.x.roundToInt() + leftInsets.value)
+                }
 
-            BODY_TO_ANCHOR_START_WITH_OFFSET -> {
-                Pixels(anchor.x.roundToInt() + leftInsets.value + properties.popupStartOffset.toPx())
-            }
+                BODY_TO_ANCHOR_START_WITH_OFFSET -> {
+                    Pixels(anchor.x.roundToInt() + leftInsets.value + properties.popupStartOffset.toPx())
+                }
 
-            BODY_TO_ANCHOR_CENTER -> {
-                Pixels(
-                    anchor.x.roundToInt()
-                        .plus((anchor.width - popupWidth.value) / 2)
-                        .plus(leftInsets.value),
-                )
-            }
+                BODY_TO_ANCHOR_CENTER -> {
+                    Pixels(anchor.x.roundToInt().plus((anchor.width - popupWidth.value) / 2).plus(leftInsets.value))
+                }
 
-            INDICATOR_CENTERED_IN_ANCHOR,
-            BODY_CENTERED_IN_SCREEN,
-            -> {
-                if (shouldCenterPopup(screenWidth.value)) {
-                    Pixels(viewportMargin + leftInsets.value)
-                } else {
-                    Pixels(
-                        (anchorStart.value)
-                            .minus(properties.indicatorArrowStartOffset.toPx())
-                            .coerceAtLeast(leftInsets.value),
-                    )
+                INDICATOR_CENTERED_IN_ANCHOR,
+                BODY_CENTERED_IN_SCREEN -> {
+                    if (shouldCenterPopup(screenWidth.value)) {
+                        Pixels(viewportMargin + leftInsets.value)
+                    } else {
+                        Pixels(
+                            (anchorStart.value)
+                                .minus(properties.indicatorArrowStartOffset.toPx())
+                                .coerceAtLeast(leftInsets.value)
+                        )
+                    }
                 }
             }
-        }
 
-        val endCoord = when (properties.popupAlignment) {
-            BODY_CENTERED_IN_SCREEN,
-            INDICATOR_CENTERED_IN_ANCHOR,
-            -> {
-                if (shouldCenterPopup(screenWidth.value)) {
-                    Pixels(screenWidth.value - viewportMargin)
-                } else {
-                    var maybeEndCoord = Pixels(
+        val endCoord =
+            when (properties.popupAlignment) {
+                BODY_CENTERED_IN_SCREEN,
+                INDICATOR_CENTERED_IN_ANCHOR -> {
+                    if (shouldCenterPopup(screenWidth.value)) {
+                        Pixels(screenWidth.value - viewportMargin)
+                    } else {
+                        var maybeEndCoord = Pixels(startCoord.value.plus(popupWidth.value).plus(popupPadding.value))
+                        // Handle the scenario in which the popup would get pass the end of the screen.
+                        // Allow it to only be shown between [0, screenWidth] and if these bounds are surpassed
+                        // translate it horizontally to the start to show as much of it as possible.
+                        val endCoordOverflow = maybeEndCoord.value - screenWidth.value
+                        if (endCoordOverflow > 0) {
+                            startCoord =
+                                Pixels(startCoord.value.minus(endCoordOverflow).coerceAtLeast(leftInsets.value))
+                            maybeEndCoord =
+                                Pixels(maybeEndCoord.value.coerceAtMost(screenWidth.value + leftInsets.value))
+                        }
+                        maybeEndCoord
+                    }
+                }
+
+                else -> {
+                    Pixels(
                         startCoord.value
                             .plus(popupWidth.value)
-                            .plus(popupPadding.value),
+                            .plus(popupPadding.value)
+                            .coerceAtMost(screenWidth.value + leftInsets.value)
                     )
-                    // Handle the scenario in which the popup would get pass the end of the screen.
-                    // Allow it to only be shown between [0, screenWidth] and if these bounds are surpassed
-                    // translate it horizontally to the start to show as much of it as possible.
-                    val endCoordOverflow = maybeEndCoord.value - screenWidth.value
-                    if (endCoordOverflow > 0) {
-                        startCoord = Pixels(
-                            startCoord.value
-                                .minus(endCoordOverflow)
-                                .coerceAtLeast(leftInsets.value),
-                        )
-                        maybeEndCoord =
-                            Pixels(maybeEndCoord.value.coerceAtMost(screenWidth.value + leftInsets.value))
-                    }
-                    maybeEndCoord
                 }
             }
-
-            else -> {
-                Pixels(
-                    startCoord.value
-                        .plus(popupWidth.value)
-                        .plus(popupPadding.value)
-                        .coerceAtMost(screenWidth.value + leftInsets.value),
-                )
-            }
-        }
 
         return PopupHorizontalBounds(
             startCoord = startCoord,
@@ -400,85 +381,76 @@ internal class CFRPopupFullscreenLayout(
         val popupPadding = Pixels(CFRPopup.DEFAULT_EXTRA_HORIZONTAL_PADDING.dp.toPx())
         val leftInsets = Pixels(getLeftInsets())
         val popupWidth = Pixels(properties.popupWidth.toPx())
-        val viewportMargin =
-            CFRPopup.DEFAULT_HORIZONTAL_VIEWPORT_MARGIN_DP.dpToPx(anchor.resources.displayMetrics)
-        var startCoord = when (properties.popupAlignment) {
-            BODY_TO_ANCHOR_START -> {
-                Pixels(anchor.x.roundToInt() + anchor.width + leftInsets.value)
-            }
-            BODY_TO_ANCHOR_START_WITH_OFFSET -> {
-                Pixels(anchor.x.roundToInt() + anchor.width + leftInsets.value + properties.popupStartOffset.toPx())
-            }
-            BODY_TO_ANCHOR_CENTER -> {
-                val anchorEndCoord = anchor.x.roundToInt() + anchor.width
-                Pixels(
-                    anchorEndCoord
-                        .minus((anchor.width - popupWidth.value) / 2)
-                        .plus(leftInsets.value),
-                )
-            }
+        val viewportMargin = CFRPopup.DEFAULT_HORIZONTAL_VIEWPORT_MARGIN_DP.dpToPx(anchor.resources.displayMetrics)
+        var startCoord =
+            when (properties.popupAlignment) {
+                BODY_TO_ANCHOR_START -> {
+                    Pixels(anchor.x.roundToInt() + anchor.width + leftInsets.value)
+                }
+                BODY_TO_ANCHOR_START_WITH_OFFSET -> {
+                    Pixels(anchor.x.roundToInt() + anchor.width + leftInsets.value + properties.popupStartOffset.toPx())
+                }
+                BODY_TO_ANCHOR_CENTER -> {
+                    val anchorEndCoord = anchor.x.roundToInt() + anchor.width
+                    Pixels(anchorEndCoord.minus((anchor.width - popupWidth.value) / 2).plus(leftInsets.value))
+                }
 
-            BODY_CENTERED_IN_SCREEN,
-            INDICATOR_CENTERED_IN_ANCHOR,
-            -> {
-                if (shouldCenterPopup(screenWidth.value)) {
-                    Pixels(screenWidth.value - viewportMargin)
-                } else {
-                    Pixels(
-                        // Push the popup as far to the start (in RTL) as possible.
-                        anchorStart.value
-                            .plus(properties.indicatorArrowStartOffset.toPx())
-                            .coerceAtMost(screenWidth.value + leftInsets.value),
-                    )
+                BODY_CENTERED_IN_SCREEN,
+                INDICATOR_CENTERED_IN_ANCHOR -> {
+                    if (shouldCenterPopup(screenWidth.value)) {
+                        Pixels(screenWidth.value - viewportMargin)
+                    } else {
+                        Pixels(
+                            // Push the popup as far to the start (in RTL) as possible.
+                            anchorStart.value
+                                .plus(properties.indicatorArrowStartOffset.toPx())
+                                .coerceAtMost(screenWidth.value + leftInsets.value)
+                        )
+                    }
                 }
             }
-        }
 
-        val endCoord = when (properties.popupAlignment) {
-            BODY_CENTERED_IN_SCREEN,
-            INDICATOR_CENTERED_IN_ANCHOR,
-            -> {
-                if (shouldCenterPopup(screenWidth.value)) {
-                    Pixels(viewportMargin - leftInsets.value)
-                } else {
-                    var maybeEndCoord = Pixels(
+        val endCoord =
+            when (properties.popupAlignment) {
+                BODY_CENTERED_IN_SCREEN,
+                INDICATOR_CENTERED_IN_ANCHOR -> {
+                    if (shouldCenterPopup(screenWidth.value)) {
+                        Pixels(viewportMargin - leftInsets.value)
+                    } else {
+                        var maybeEndCoord = Pixels(startCoord.value.minus(popupWidth.value).minus(popupPadding.value))
+                        val endCoordOverflow = leftInsets.value - maybeEndCoord.value
+                        // Handle the scenario in which the popup would get pass the end of the screen (in RTL)
+                        // Allow it to only be shown between [0, screenWidth] and if these bounds are surpassed
+                        // translate it horizontally to the start to show as much of it as possible.
+                        if (endCoordOverflow > 0) {
+                            startCoord =
+                                Pixels(
+                                    startCoord.value
+                                        .plus(endCoordOverflow.absoluteValue)
+                                        .coerceAtMost(screenWidth.value + leftInsets.value)
+                                )
+                            maybeEndCoord = Pixels(maybeEndCoord.value.coerceAtLeast(leftInsets.value))
+                        }
+                        maybeEndCoord
+                    }
+                }
+
+                else -> {
+                    Pixels(
                         startCoord.value
                             .minus(popupWidth.value)
-                            .minus(popupPadding.value),
+                            .minus(popupPadding.value)
+                            .coerceAtLeast(leftInsets.value)
                     )
-                    val endCoordOverflow = leftInsets.value - maybeEndCoord.value
-                    // Handle the scenario in which the popup would get pass the end of the screen (in RTL)
-                    // Allow it to only be shown between [0, screenWidth] and if these bounds are surpassed
-                    // translate it horizontally to the start to show as much of it as possible.
-                    if (endCoordOverflow > 0) {
-                        startCoord = Pixels(
-                            startCoord.value
-                                .plus(endCoordOverflow.absoluteValue)
-                                .coerceAtMost(screenWidth.value + leftInsets.value),
-                        )
-                        maybeEndCoord =
-                            Pixels(maybeEndCoord.value.coerceAtLeast(leftInsets.value))
-                    }
-                    maybeEndCoord
                 }
             }
-
-            else -> {
-                Pixels(
-                    startCoord.value
-                        .minus(popupWidth.value)
-                        .minus(popupPadding.value)
-                        .coerceAtLeast(leftInsets.value),
-                )
-            }
-        }
 
         return PopupHorizontalBounds(startCoord, endCoord)
     }
 
     /**
-     * Compute the x-coordinate for where the popup's indicator arrow should start
-     * relative to the available distance between it and the popup's starting x-coordinate.
+     * Compute the x-coordinate for where the popup's indicator arrow should start relative to the available distance
+     * between it and the popup's starting x-coordinate.
      *
      * @param anchorMiddleXCoord x-coordinate for the middle of the anchor.
      * @param popupStartCoord x-coordinate for the popup start
@@ -493,11 +465,9 @@ internal class CFRPopupFullscreenLayout(
         return when (properties.popupAlignment) {
             BODY_TO_ANCHOR_START,
             BODY_TO_ANCHOR_START_WITH_OFFSET,
-            BODY_TO_ANCHOR_CENTER,
-            -> Pixels(properties.indicatorArrowStartOffset.toPx())
+            BODY_TO_ANCHOR_CENTER -> Pixels(properties.indicatorArrowStartOffset.toPx())
             BODY_CENTERED_IN_SCREEN,
-            INDICATOR_CENTERED_IN_ANCHOR,
-            -> {
+            INDICATOR_CENTERED_IN_ANCHOR -> {
                 val arrowIndicatorHalfWidth = arrowIndicatorWidth.value / 2
                 if (LocalConfiguration.current.layoutDirection == View.LAYOUT_DIRECTION_LTR) {
                     Pixels(anchorMiddleXCoord.value - arrowIndicatorHalfWidth - popupStartCoord.value)
@@ -510,8 +480,8 @@ internal class CFRPopupFullscreenLayout(
     }
 
     /**
-     * Cleanup and remove the current popup from the screen.
-     * Clients are not automatically informed about this. Use a separate call to [onDismiss] if needed.
+     * Cleanup and remove the current popup from the screen. Clients are not automatically informed about this. Use a
+     * separate call to [onDismiss] if needed.
      */
     internal fun dismiss() {
         if (isAttachedToWindow) {
@@ -525,8 +495,7 @@ internal class CFRPopupFullscreenLayout(
     }
 
     /**
-     * Create fullscreen translucent layout params.
-     * This will allow placing the visible popup anywhere on the screen.
+     * Create fullscreen translucent layout params. This will allow placing the visible popup anywhere on the screen.
      */
     @VisibleForTesting
     internal fun createLayoutParams(): WindowManager.LayoutParams =
@@ -536,30 +505,29 @@ internal class CFRPopupFullscreenLayout(
             width = WindowManager.LayoutParams.MATCH_PARENT
             height = WindowManager.LayoutParams.MATCH_PARENT
             format = PixelFormat.TRANSLUCENT
-            flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
+            flags =
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
         }
 
-    private fun getDisplayOrientationListener(context: Context) = DisplayOrientationListener(context) {
-        dismiss()
-        anchor.toScope(mainDispatcher = mainDispatcher).launch {
-            delay(SHOW_AFTER_SCREEN_ORIENTATION_CHANGE_DELAY)
-            show()
+    private fun getDisplayOrientationListener(context: Context) =
+        DisplayOrientationListener(context) {
+            dismiss()
+            anchor.toScope(mainDispatcher = mainDispatcher).launch {
+                delay(SHOW_AFTER_SCREEN_ORIENTATION_CHANGE_DELAY)
+                show()
+            }
         }
-    }
 
     /**
-     * Intended to allow querying the insets of the navigation bar.
-     * Value will be `0` except for when the screen is rotated by 90 degrees.
+     * Intended to allow querying the insets of the navigation bar. Value will be `0` except for when the screen is
+     * rotated by 90 degrees.
      */
-    private fun getLeftInsets() = ViewCompat.getRootWindowInsets(anchor)
-        ?.getInsets(WindowInsetsCompat.Type.systemBars())?.left
-        ?: 0.coerceAtLeast(0)
+    private fun getLeftInsets() =
+        ViewCompat.getRootWindowInsets(anchor)?.getInsets(WindowInsetsCompat.Type.systemBars())?.left
+            ?: 0.coerceAtLeast(0)
 
     @Px
     internal fun Dp.toPx(): Int {
-        return this.value
-            .dpToPx(anchor.resources.displayMetrics)
-            .roundToInt()
+        return this.value.dpToPx(anchor.resources.displayMetrics).roundToInt()
     }
 }

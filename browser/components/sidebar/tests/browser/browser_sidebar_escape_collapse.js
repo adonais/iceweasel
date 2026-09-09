@@ -47,7 +47,7 @@ add_task(async function test_escape_collapses_hover_expanded_sidebar() {
           "absolute"
       );
     },
-    "The sidebar launcher is expanded on mouse over"
+    { msg: "The sidebar launcher is expanded on mouse over" }
   );
 
   info("The sidebar launcher is expanded, now pressing Escape");
@@ -67,7 +67,7 @@ add_task(async function test_escape_collapses_hover_expanded_sidebar() {
         !SidebarController._state.launcherExpanded
       );
     },
-    "The sidebar launcher is collapsed after Escape"
+    { msg: "The sidebar launcher is collapsed after Escape" }
   );
 
   ok(

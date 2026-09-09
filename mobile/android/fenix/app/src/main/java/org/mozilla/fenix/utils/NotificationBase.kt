@@ -12,8 +12,8 @@ import androidx.core.content.ContextCompat
 import org.mozilla.fenix.R
 
 /**
- * Create a [Notification] with default behaviour and styling.
- * Optionally applies BigTextStyle for extended text, if specified.
+ * Create a [Notification] with default behaviour and styling. Optionally applies BigTextStyle for extended text, if
+ * specified.
  */
 fun createBaseNotification(
     context: Context,

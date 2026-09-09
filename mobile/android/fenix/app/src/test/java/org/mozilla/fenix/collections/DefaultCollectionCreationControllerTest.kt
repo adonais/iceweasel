@@ -12,6 +12,7 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockk
 import io.mockk.verify
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -31,13 +32,11 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.Collections
 import org.mozilla.fenix.components.TabCollectionStorage
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class) // For gleanTestRule
 class DefaultCollectionCreationControllerTest {
 
-    @get:Rule
-    val gleanTestRule = GleanTestRule(testContext)
+    @get:Rule val gleanTestRule = GleanTestRule(testContext)
 
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
@@ -46,70 +45,70 @@ class DefaultCollectionCreationControllerTest {
     private lateinit var controller: DefaultCollectionCreationController
     private var dismissed = false
 
-    @RelaxedMockK
-    private lateinit var store: CollectionCreationStore
+    @RelaxedMockK private lateinit var store: CollectionCreationStore
 
-    @MockK(relaxUnitFun = true)
-    private lateinit var tabCollectionStorage: TabCollectionStorage
+    @MockK(relaxUnitFun = true) private lateinit var tabCollectionStorage: TabCollectionStorage
     private lateinit var browserStore: BrowserStore
 
     @Before
     fun before() {
         MockKAnnotations.init(this)
 
-        state = CollectionCreationState(
-            tabCollections = emptyList(),
-            tabs = emptyList(),
-        )
+        state =
+            CollectionCreationState(
+                tabCollections = emptyList(),
+                tabs = emptyList(),
+            )
         every { store.state } answers { state }
 
         browserStore = BrowserStore()
 
         dismissed = false
-        controller = DefaultCollectionCreationController(
-            store,
-            browserStore,
-            dismiss = {
-                dismissed = true
-            },
-            tabCollectionStorage,
-            testScope,
-        )
+        controller =
+            DefaultCollectionCreationController(
+                store,
+                browserStore,
+                dismiss = {
+                    dismissed = true
+                },
+                tabCollectionStorage,
+                testScope,
+            )
     }
 
     @Test
-    fun `GIVEN tab list WHEN saveCollectionName is called THEN collection should be created`() = runTest(testDispatcher) {
-        val tab1 = createTab("https://www.mozilla.org", id = "session-1")
-        val tab2 = createTab("https://www.mozilla.org", id = "session-2")
+    fun `GIVEN tab list WHEN saveCollectionName is called THEN collection should be created`() =
+        runTest(testDispatcher) {
+            val tab1 = createTab("https://www.mozilla.org", id = "session-1")
+            val tab2 = createTab("https://www.mozilla.org", id = "session-2")
 
-        browserStore.dispatch(
-            TabListAction.AddMultipleTabsAction(listOf(tab1, tab2)),
-        )
+            browserStore.dispatch(TabListAction.AddMultipleTabsAction(listOf(tab1, tab2)))
 
-        coEvery { tabCollectionStorage.addTabsToCollection(any(), any()) } returns 1L
-        coEvery { tabCollectionStorage.createCollection(any(), any()) } returns 1L
+            coEvery { tabCollectionStorage.addTabsToCollection(any(), any()) } returns 1L
+            coEvery { tabCollectionStorage.createCollection(any(), any()) } returns 1L
 
-        val tabs = listOf(
-            Tab("session-1", "", "", ""),
-            Tab("null-session", "", "", ""),
-        )
+            val tabs =
+                listOf(
+                    Tab("session-1", "", "", ""),
+                    Tab("null-session", "", "", ""),
+                )
 
-        controller.saveCollectionName(tabs, "name")
-        testDispatcher.scheduler.advanceUntilIdle()
+            controller.saveCollectionName(tabs, "name")
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertTrue(dismissed)
-        coVerify { tabCollectionStorage.createCollection("name", listOf(tab1)) }
+            assertTrue(dismissed)
+            coVerify { tabCollectionStorage.createCollection("name", listOf(tab1)) }
 
-        val recordedEvents = Collections.saved.testGetValue()
-        assertNotNull(recordedEvents)
-        assertEquals(1, recordedEvents.size)
-        val eventExtra = recordedEvents.single().extra
-        assertNotNull(eventExtra)
-        assertTrue(eventExtra.containsKey("tabs_open"))
-        assertEquals("2", eventExtra["tabs_open"])
-        assertTrue(eventExtra.containsKey("tabs_selected"))
-        assertEquals("1", eventExtra["tabs_selected"])
-    }
+            val recordedEvents = Collections.saved.testGetValue()
+            assertNotNull(recordedEvents)
+            assertEquals(1, recordedEvents.size)
+            val eventExtra = recordedEvents.single().extra
+            assertNotNull(eventExtra)
+            assertTrue(eventExtra.containsKey("tabs_open"))
+            assertEquals("2", eventExtra["tabs_open"])
+            assertTrue(eventExtra.containsKey("tabs_selected"))
+            assertEquals("1", eventExtra["tabs_selected"])
+        }
 
     @Test
     fun `GIVEN name collection WHEN backPressed is called THEN next step should be dispatched`() {
@@ -147,21 +146,22 @@ class DefaultCollectionCreationControllerTest {
     }
 
     @Test
-    fun `GIVEN collection WHEN renameCollection is called THEN collection should be renamed`() = runTest(testDispatcher) {
-        val collection = mockk<TabCollection>()
+    fun `GIVEN collection WHEN renameCollection is called THEN collection should be renamed`() =
+        runTest(testDispatcher) {
+            val collection = mockk<TabCollection>()
 
-        controller.renameCollection(collection, "name")
-        testDispatcher.scheduler.advanceUntilIdle()
+            controller.renameCollection(collection, "name")
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertTrue(dismissed)
+            assertTrue(dismissed)
 
-        val recordedEvents = Collections.renamed.testGetValue()
-        assertNotNull(recordedEvents)
-        assertEquals(1, recordedEvents.size)
-        assertNull(recordedEvents.single().extra)
+            val recordedEvents = Collections.renamed.testGetValue()
+            assertNotNull(recordedEvents)
+            assertEquals(1, recordedEvents.size)
+            assertNull(recordedEvents.single().extra)
 
-        coVerify { tabCollectionStorage.renameCollection(collection, "name") }
-    }
+            coVerify { tabCollectionStorage.renameCollection(collection, "name") }
+        }
 
     @Test
     fun `WHEN select all is called THEN add all should be dispatched`() {
@@ -187,36 +187,33 @@ class DefaultCollectionCreationControllerTest {
     }
 
     @Test
-    fun `WHEN selectCollection is called THEN add tabs should be added to collection`() = runTest(testDispatcher) {
-        val tab1 = createTab("https://www.mozilla.org", id = "session-1")
-        val tab2 = createTab("https://www.mozilla.org", id = "session-2")
-        browserStore.dispatch(
-            TabListAction.AddMultipleTabsAction(listOf(tab1, tab2)),
-        )
+    fun `WHEN selectCollection is called THEN add tabs should be added to collection`() =
+        runTest(testDispatcher) {
+            val tab1 = createTab("https://www.mozilla.org", id = "session-1")
+            val tab2 = createTab("https://www.mozilla.org", id = "session-2")
+            browserStore.dispatch(TabListAction.AddMultipleTabsAction(listOf(tab1, tab2)))
 
-        val tabs = listOf(
-            Tab("session-1", "", "", ""),
-        )
-        val collection = mockk<TabCollection>()
-        coEvery { tabCollectionStorage.addTabsToCollection(any(), any()) } returns 1L
-        coEvery { tabCollectionStorage.createCollection(any(), any()) } returns 1L
+            val tabs = listOf(Tab("session-1", "", "", ""))
+            val collection = mockk<TabCollection>()
+            coEvery { tabCollectionStorage.addTabsToCollection(any(), any()) } returns 1L
+            coEvery { tabCollectionStorage.createCollection(any(), any()) } returns 1L
 
-        controller.selectCollection(collection, tabs)
-        testDispatcher.scheduler.advanceUntilIdle()
+            controller.selectCollection(collection, tabs)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertTrue(dismissed)
-        coVerify { tabCollectionStorage.addTabsToCollection(collection, listOf(tab1)) }
+            assertTrue(dismissed)
+            coVerify { tabCollectionStorage.addTabsToCollection(collection, listOf(tab1)) }
 
-        val recordedEvents = Collections.tabsAdded.testGetValue()
-        assertNotNull(recordedEvents)
-        assertEquals(1, recordedEvents.size)
-        val eventExtra = recordedEvents.single().extra
-        assertNotNull(eventExtra)
-        assertTrue(eventExtra.containsKey("tabs_open"))
-        assertEquals("2", eventExtra["tabs_open"])
-        assertTrue(eventExtra.containsKey("tabs_selected"))
-        assertEquals("1", eventExtra["tabs_selected"])
-    }
+            val recordedEvents = Collections.tabsAdded.testGetValue()
+            assertNotNull(recordedEvents)
+            assertEquals(1, recordedEvents.size)
+            val eventExtra = recordedEvents.single().extra
+            assertNotNull(eventExtra)
+            assertTrue(eventExtra.containsKey("tabs_open"))
+            assertEquals("2", eventExtra["tabs_open"])
+            assertTrue(eventExtra.containsKey("tabs_selected"))
+            assertEquals("1", eventExtra["tabs_selected"])
+        }
 
     @Test
     fun `GIVEN previous step was SelectTabs or RenameCollection WHEN stepBack is called THEN null should be returned`() {
@@ -278,16 +275,18 @@ class DefaultCollectionCreationControllerTest {
 
     @Test
     fun `GIVEN list of collections WHEN saving tabs to collection THEN dispatch NameCollection step changed`() {
-        state = state.copy(
-            tabCollections = listOf(
-                mockk {
-                    every { title } returns "Collection 1"
-                },
-                mockk {
-                    every { title } returns "Random Collection"
-                },
-            ),
-        )
+        state =
+            state.copy(
+                tabCollections =
+                    listOf(
+                        mockk {
+                            every { title } returns "Collection 1"
+                        },
+                        mockk {
+                            every { title } returns "Random Collection"
+                        },
+                    )
+            )
 
         controller.saveTabsToCollection(ArrayList())
 

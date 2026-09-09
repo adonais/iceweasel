@@ -23,10 +23,11 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class AppShareAdapterTest {
 
-    private val appOptions = mutableListOf(
-        AppShareOption("App 0", mockk(), "package 0", "activity 0"),
-        AppShareOption("App 1", mockk(), "package 1", "activity 1"),
-    )
+    private val appOptions =
+        mutableListOf(
+            AppShareOption("App 0", mockk(), "package 0", "activity 0"),
+            AppShareOption("App 1", mockk(), "package 1", "activity 1"),
+        )
     private val appOptionsEmpty = emptyList<AppShareOption>()
     private val interactor: ShareInteractor = mockk(relaxed = true)
 

@@ -151,6 +151,9 @@ interface nsIXPCComponents_Utils : nsISupports
      *        Optional parameters, valid properties are:
      *        - allowWaivers: {Boolean} Allows the caller to waive Xrays, in case
      *          Xrays were used. Defaults to true.
+     *        - associatedWindow: {Object} Window used for slow-script reporting
+     *          when sandboxPrototype does not provide one. Ignored for
+     *          system-principal scripts.
      *        - discardSource: {Boolean} For certain globals, we know enough about
      *          the code that will run in them that we can discard script source
      *          entirely. A discarded source will be re-read when stringifying

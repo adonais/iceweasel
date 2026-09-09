@@ -19,8 +19,14 @@ export class NewProfileCard extends EditProfileCard {
       return;
     }
 
-    let { currentProfile, profiles, profileCreated, themes, isInAutomation } =
-      await RPMSendQuery("Profiles:GetNewProfileContent");
+    let {
+      currentProfile,
+      profiles,
+      profileCreated,
+      themes,
+      isInAutomation,
+      novaEnabled,
+    } = await RPMSendQuery("Profiles:GetNewProfileContent");
 
     if (isInAutomation) {
       this.updateNameDebouncer.timeout = 50;
@@ -33,6 +39,7 @@ export class NewProfileCard extends EditProfileCard {
     this.setProfile(currentProfile);
     this.profiles = profiles;
     this.themes = themes;
+    this.novaEnabled = novaEnabled;
 
     await Promise.all([
       this.setInitialInput(),
@@ -63,11 +70,24 @@ export class NewProfileCard extends EditProfileCard {
     }
 
     let possibleThemes = this.themes;
-    if (isInAutomation) {
+    if (isInAutomation && !this.novaEnabled) {
       possibleThemes = possibleThemes.filter(t => t.useInAutomation);
     }
     let newTheme =
       possibleThemes[Math.floor(Math.random() * possibleThemes.length)];
+
+    if (this.novaEnabled) {
+      await this.updateComplete;
+      this.themesPicker.dispatchEvent(
+        new CustomEvent("themechange", {
+          bubbles: true,
+          composed: true,
+          detail: { property: "theme", value: newTheme.id },
+        })
+      );
+      return;
+    }
+
     await super.updateTheme(newTheme.id);
   }
 

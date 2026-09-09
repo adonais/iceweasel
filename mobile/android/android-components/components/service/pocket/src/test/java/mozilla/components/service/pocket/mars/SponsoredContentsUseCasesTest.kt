@@ -29,13 +29,14 @@ import org.mockito.Mockito.verify
 class SponsoredContentsUseCasesTest {
 
     private val client: Client = mock()
-    private val useCases = spy(
-        SponsoredContentsUseCases(
-            appContext = testContext,
-            client = client,
-            config = MarsSpocsRequestConfig(),
-        ),
-    )
+    private val useCases =
+        spy(
+            SponsoredContentsUseCases(
+                appContext = testContext,
+                client = client,
+                config = MarsSpocsRequestConfig(),
+            )
+        )
     private val repository: SponsoredContentsRepository = mock()
     private val endPoint: MarsSpocsEndpoint = mock()
 
@@ -46,75 +47,80 @@ class SponsoredContentsUseCasesTest {
     }
 
     @Test
-    fun `WHEN sponsored contents getter is called THEN return the list of sponsored contents from the repository`() = runTest {
-        val sponsoredContents = listOf(PocketTestResources.sponsoredContent)
-        doReturn(sponsoredContents).`when`(repository).getAllSponsoredContent()
+    fun `WHEN sponsored contents getter is called THEN return the list of sponsored contents from the repository`() =
+        runTest {
+            val sponsoredContents = listOf(PocketTestResources.sponsoredContent)
+            doReturn(sponsoredContents).`when`(repository).getAllSponsoredContent()
 
-        val result = useCases.GetSponsoredContents().invoke()
+            val result = useCases.GetSponsoredContents().invoke()
 
-        verify(repository).getAllSponsoredContent()
-        assertEquals(result, sponsoredContents)
-    }
-
-    @Test
-    fun `GIVEN a successful response WHEN sponsored contents are refreshed THEN update the repository with the fetched sponsored contents`() = runTest {
-        val response = getSuccessSponsoredContentResponse()
-        doReturn(response).`when`(endPoint).getSponsoredStories()
-
-        val result = useCases.RefreshSponsoredContents().invoke()
-
-        assertTrue(result)
-        verify(endPoint).getSponsoredStories()
-        verify(repository).addSponsoredContents((response as PocketResponse.Success).data)
-    }
+            verify(repository).getAllSponsoredContent()
+            assertEquals(result, sponsoredContents)
+        }
 
     @Test
-    fun `GIVEN a failed response WHEN sponsored contents are refreshed THEN do not update the sponsored content repository`() = runTest {
-        val response = getFailResponse()
-        doReturn(response).`when`(endPoint).getSponsoredStories()
+    fun `GIVEN a successful response WHEN sponsored contents are refreshed THEN update the repository with the fetched sponsored contents`() =
+        runTest {
+            val response = getSuccessSponsoredContentResponse()
+            doReturn(response).`when`(endPoint).getSponsoredStories()
 
-        val result = useCases.RefreshSponsoredContents().invoke()
+            val result = useCases.RefreshSponsoredContents().invoke()
 
-        assertFalse(result)
-        verify(endPoint).getSponsoredStories()
-        verify(repository, never()).addSponsoredContents(any())
-    }
-
-    @Test
-    fun `WHEN sponsored content impressions are recorded THEN delegate to the repository to update the impressions`() = runTest {
-        val impressions: List<String> = mock()
-
-        useCases.RecordImpressions().invoke(impressions)
-
-        verify(repository).recordImpressions(impressions)
-    }
+            assertTrue(result)
+            verify(endPoint).getSponsoredStories()
+            verify(repository).addSponsoredContents((response as PocketResponse.Success).data)
+        }
 
     @Test
-    fun `GIVEN a successful response WHEN deleting an user THEN delete all sponsored contents from the repository`() = runTest {
-        val response = PocketResponse.wrap(true)
-        doReturn(response).`when`(endPoint).deleteUser()
+    fun `GIVEN a failed response WHEN sponsored contents are refreshed THEN do not update the sponsored content repository`() =
+        runTest {
+            val response = getFailResponse()
+            doReturn(response).`when`(endPoint).getSponsoredStories()
 
-        val result = useCases.DeleteUser().invoke()
+            val result = useCases.RefreshSponsoredContents().invoke()
 
-        assertTrue(result)
-        verify(endPoint).deleteUser()
-        verify(repository).deleteAllSponsoredContents()
-    }
+            assertFalse(result)
+            verify(endPoint).getSponsoredStories()
+            verify(repository, never()).addSponsoredContents(any())
+        }
 
     @Test
-    fun `GIVEN a failed response WHEN deleting an user THEN do not update the sponsored content repository`() = runTest {
-        val response = getFailResponse()
-        doReturn(response).`when`(endPoint).deleteUser()
+    fun `WHEN sponsored content impressions are recorded THEN delegate to the repository to update the impressions`() =
+        runTest {
+            val impressions: List<String> = mock()
 
-        val result = useCases.DeleteUser().invoke()
+            useCases.RecordImpressions().invoke(impressions)
 
-        assertFalse(result)
-        verify(endPoint).deleteUser()
-        verify(repository, never()).addSponsoredContents(any())
-    }
+            verify(repository).recordImpressions(impressions)
+        }
 
-    private fun getSuccessSponsoredContentResponse() =
-        PocketResponse.wrap(PocketTestResources.marsSpocsResponse)
+    @Test
+    fun `GIVEN a successful response WHEN deleting an user THEN delete all sponsored contents from the repository`() =
+        runTest {
+            val response = PocketResponse.wrap(true)
+            doReturn(response).`when`(endPoint).deleteUser()
+
+            val result = useCases.DeleteUser().invoke()
+
+            assertTrue(result)
+            verify(endPoint).deleteUser()
+            verify(repository).deleteAllSponsoredContents()
+        }
+
+    @Test
+    fun `GIVEN a failed response WHEN deleting an user THEN do not update the sponsored content repository`() =
+        runTest {
+            val response = getFailResponse()
+            doReturn(response).`when`(endPoint).deleteUser()
+
+            val result = useCases.DeleteUser().invoke()
+
+            assertFalse(result)
+            verify(endPoint).deleteUser()
+            verify(repository, never()).addSponsoredContents(any())
+        }
+
+    private fun getSuccessSponsoredContentResponse() = PocketResponse.wrap(PocketTestResources.marsSpocsResponse)
 
     private fun getFailResponse() = PocketResponse.wrap(null)
 }

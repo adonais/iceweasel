@@ -16,8 +16,7 @@ import org.json.JSONObject
  *
  * The class is open, so that consumers can override specific functions to customize that behavior.
  */
-open class TestEngineSession(override val settings: Settings = DefaultSettings()) :
-    EngineSession() {
+open class TestEngineSession(override val settings: Settings = DefaultSettings()) : EngineSession() {
 
     override fun loadUrl(
         url: String,

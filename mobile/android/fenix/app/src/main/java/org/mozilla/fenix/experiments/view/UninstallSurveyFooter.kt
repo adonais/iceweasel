@@ -57,13 +57,14 @@ fun UninstallSurveyFooter(
 
         LinkText(
             text = stringResource(id = R.string.micro_survey_privacy_notice_2),
-            linkTextStates = listOf(
-                LinkTextState(
-                    text = stringResource(id = R.string.micro_survey_privacy_notice_2),
-                    url = "",
-                    onClick = { onPrivacyPolicyLinkClick() },
+            linkTextStates =
+                listOf(
+                    LinkTextState(
+                        text = stringResource(id = R.string.micro_survey_privacy_notice_2),
+                        url = "",
+                        onClick = { onPrivacyPolicyLinkClick() },
+                    )
                 ),
-            ),
             style = FirefoxTheme.typography.caption,
             linkTextDecoration = TextDecoration.Underline,
         )

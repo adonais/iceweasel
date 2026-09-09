@@ -10,12 +10,14 @@ import mozilla.components.browser.state.state.BrowserState
 internal object ShareResourceStateReducer {
     fun reduce(state: BrowserState, action: ShareResourceAction): BrowserState {
         return when (action) {
-            is ShareResourceAction.AddShareAction -> updateContentState(state, action.tabId) {
-                it.copy(share = action.resource)
-            }
-            is ShareResourceAction.ConsumeShareAction -> updateContentState(state, action.tabId) {
-                it.copy(share = null)
-            }
+            is ShareResourceAction.AddShareAction ->
+                updateContentState(state, action.tabId) {
+                    it.copy(share = action.resource)
+                }
+            is ShareResourceAction.ConsumeShareAction ->
+                updateContentState(state, action.tabId) {
+                    it.copy(share = null)
+                }
         }
     }
 }

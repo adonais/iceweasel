@@ -18,17 +18,22 @@ class LastAccessActionTest {
     @Before
     fun setUp() {
         val existingTab = createTab("https://www.mozilla.org")
-        state = BrowserState(
-            tabs = listOf(existingTab),
-            selectedTabId = existingTab.id,
-        )
+        state =
+            BrowserState(
+                tabs = listOf(existingTab),
+                selectedTabId = existingTab.id,
+            )
     }
 
     @Test
     fun `UpdateLastAccessAction - updates the timestamp when the tab was last accessed`() {
         val timestamp = System.currentTimeMillis()
 
-        state = BrowserStateReducer.reduce(state, LastAccessAction.UpdateLastAccessAction(state.selectedTab!!.id, timestamp))
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                LastAccessAction.UpdateLastAccessAction(state.selectedTab!!.id, timestamp),
+            )
 
         assertEquals(timestamp, state.selectedTab?.lastAccess)
     }

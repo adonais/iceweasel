@@ -23,11 +23,10 @@ abstract class Client {
      * Starts the process of fetching a resource from the network as described by the [Request] object. This call is
      * synchronous.
      *
-     * A [Response] may keep references to open streams. Therefore it's important to always close the [Response] or
-     * its [Response.Body].
+     * A [Response] may keep references to open streams. Therefore it's important to always close the [Response] or its
+     * [Response.Body].
      *
      * Use the `use()` extension method when performing multiple operations on the [Response] object:
-     *
      * ```Kotlin
      * client.fetch(request).use { response ->
      *     // Use response. Resources will get released automatically at the end of the block.
@@ -39,10 +38,9 @@ abstract class Client {
      * @param request The request to be executed by this [Client].
      * @return The [Response] returned by the server.
      * @throws IOException if the request could not be executed due to cancellation, a connectivity problem or a
-     * timeout.
+     *   timeout.
      */
-    @Throws(IOException::class)
-    abstract fun fetch(request: Request): Response
+    @Throws(IOException::class) abstract fun fetch(request: Request): Response
 
     /**
      * Generates a [Response] based on the provided [Request] for a data URI.
@@ -58,26 +56,29 @@ abstract class Client {
         return try {
             val dataUri = request.url
 
-            val (contentType, bytes) = if (dataUri.contains(DATA_URI_BASE64_EXT)) {
-                dataUri.substringAfter(DATA_URI_SCHEME).substringBefore(DATA_URI_BASE64_EXT) to
-                    Base64.decode(dataUri.substring(dataUri.lastIndexOf(',') + 1), Base64.DEFAULT)
-            } else {
-                val contentType = dataUri.substringAfter(DATA_URI_SCHEME).substringBefore(",")
-                val charset = if (contentType.contains(DATA_URI_CHARSET)) {
-                    Charset.forName(contentType.substringAfter(DATA_URI_CHARSET).substringBefore(","))
+            val (contentType, bytes) =
+                if (dataUri.contains(DATA_URI_BASE64_EXT)) {
+                    dataUri.substringAfter(DATA_URI_SCHEME).substringBefore(DATA_URI_BASE64_EXT) to
+                        Base64.decode(dataUri.substring(dataUri.lastIndexOf(',') + 1), Base64.DEFAULT)
                 } else {
-                    Charsets.UTF_8
+                    val contentType = dataUri.substringAfter(DATA_URI_SCHEME).substringBefore(",")
+                    val charset =
+                        if (contentType.contains(DATA_URI_CHARSET)) {
+                            Charset.forName(contentType.substringAfter(DATA_URI_CHARSET).substringBefore(","))
+                        } else {
+                            Charsets.UTF_8
+                        }
+                    contentType to
+                        URLDecoder.decode(dataUri.substring(dataUri.lastIndexOf(',') + 1), charset.name()).toByteArray()
                 }
-                contentType to
-                    URLDecoder.decode(dataUri.substring(dataUri.lastIndexOf(',') + 1), charset.name()).toByteArray()
-            }
 
-            val headers = MutableHeaders().apply {
-                set(Headers.Names.CONTENT_LENGTH, bytes.size.toString())
-                if (contentType.isNotEmpty()) {
-                    set(Headers.Names.CONTENT_TYPE, contentType)
+            val headers =
+                MutableHeaders().apply {
+                    set(Headers.Names.CONTENT_LENGTH, bytes.size.toString())
+                    if (contentType.isNotEmpty()) {
+                        set(Headers.Names.CONTENT_TYPE, contentType)
+                    }
                 }
-            }
 
             Response(
                 dataUri,

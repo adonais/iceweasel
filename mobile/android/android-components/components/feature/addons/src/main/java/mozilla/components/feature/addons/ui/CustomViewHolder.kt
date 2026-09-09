@@ -10,31 +10,23 @@ import android.widget.RatingBar
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-/**
- * A base view holder.
- */
+/** A base view holder. */
 sealed class CustomViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-    /**
-     * A view holder for displaying section items.
-     */
+    /** A view holder for displaying section items. */
     class SectionViewHolder(
         view: View,
         val titleView: TextView,
         val divider: View,
     ) : CustomViewHolder(view)
 
-    /**
-     * A view holder for displaying Not yet supported section items.
-     */
+    /** A view holder for displaying Not yet supported section items. */
     class UnsupportedSectionViewHolder(
         view: View,
         val titleView: TextView,
         val descriptionView: TextView,
     ) : CustomViewHolder(view)
 
-    /**
-     * A view holder for displaying add-on items.
-     */
+    /** A view holder for displaying add-on items. */
     @Suppress("LongParameterList")
     class AddonViewHolder(
         view: View,
@@ -51,16 +43,12 @@ sealed class CustomViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val messageBarErrorView: View,
     ) : CustomViewHolder(view)
 
-    /**
-     * A view holder for displaying a section above the list of add-ons.
-     */
+    /** A view holder for displaying a section above the list of add-ons. */
     class HeaderViewHolder(
         view: View,
         val restartButton: TextView,
     ) : CustomViewHolder(view)
 
-    /**
-     * A view holder for displaying a section below the list of add-ons.
-     */
+    /** A view holder for displaying a section below the list of add-ons. */
     class FooterViewHolder(view: View) : CustomViewHolder(view)
 }

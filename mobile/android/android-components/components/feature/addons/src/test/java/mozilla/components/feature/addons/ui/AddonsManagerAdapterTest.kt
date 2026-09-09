@@ -12,6 +12,8 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.Locale
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
@@ -34,8 +36,6 @@ import org.mockito.Mockito.argThat
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import java.util.Locale
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class AddonsManagerAdapterTest {
@@ -128,43 +128,50 @@ class AddonsManagerAdapterTest {
         whenever(iconView.context).thenReturn(testContext)
         val messageBarErrorView: View = mock()
         whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_text)).thenReturn(mock())
-        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_learn_more_link)).thenReturn(mock())
-        val addonViewHolder = CustomViewHolder.AddonViewHolder(
-            view = view,
-            contentWrapperView = contentWrapperView,
-            iconView = iconView,
-            titleView = titleView,
-            summaryView = summaryView,
-            ratingView = mock(),
-            ratingAccessibleView = ratingAccessibleView,
-            reviewCountView = reviewCountView,
-            addButton = addButton,
-            allowedInPrivateBrowsingLabel = allowedInPrivateBrowsingLabel,
-            messageBarWarningView = mock(),
-            messageBarErrorView = messageBarErrorView,
-        )
-        val addon = Addon(
-            id = "id",
-            downloadUrl = "downloadUrl",
-            version = "version",
-            permissions = emptyList(),
-            rating = Addon.Rating(4.5f, 1000),
-            createdAt = "",
-            updatedAt = "",
-            translatableName = mapOf(Addon.DEFAULT_LOCALE to "name", "de" to "Name", "es" to "nombre"),
-            translatableDescription = mapOf(Addon.DEFAULT_LOCALE to "description", "de" to "Beschreibung", "es" to "descripción"),
-            translatableSummary = mapOf(Addon.DEFAULT_LOCALE to "summary", "de" to "Kurzfassung", "es" to "resumen"),
-        )
+        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_learn_more_link))
+            .thenReturn(mock())
+        val addonViewHolder =
+            CustomViewHolder.AddonViewHolder(
+                view = view,
+                contentWrapperView = contentWrapperView,
+                iconView = iconView,
+                titleView = titleView,
+                summaryView = summaryView,
+                ratingView = mock(),
+                ratingAccessibleView = ratingAccessibleView,
+                reviewCountView = reviewCountView,
+                addButton = addButton,
+                allowedInPrivateBrowsingLabel = allowedInPrivateBrowsingLabel,
+                messageBarWarningView = mock(),
+                messageBarErrorView = messageBarErrorView,
+            )
+        val addon =
+            Addon(
+                id = "id",
+                downloadUrl = "downloadUrl",
+                version = "version",
+                permissions = emptyList(),
+                rating = Addon.Rating(4.5f, 1000),
+                createdAt = "",
+                updatedAt = "",
+                translatableName = mapOf(Addon.DEFAULT_LOCALE to "name", "de" to "Name", "es" to "nombre"),
+                translatableDescription =
+                    mapOf(Addon.DEFAULT_LOCALE to "description", "de" to "Beschreibung", "es" to "descripción"),
+                translatableSummary =
+                    mapOf(Addon.DEFAULT_LOCALE to "summary", "de" to "Kurzfassung", "es" to "resumen"),
+            )
 
         whenever(titleView.context).thenReturn(testContext)
         whenever(summaryView.context).thenReturn(testContext)
 
-        val style = AddonsManagerAdapter.Style(
-            sectionsTextColor = android.R.color.black,
-            addonNameTextColor = android.R.color.transparent,
-            addonSummaryTextColor = android.R.color.white,
-        )
-        val adapter = AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), style, emptyList(), BrowserStore())
+        val style =
+            AddonsManagerAdapter.Style(
+                sectionsTextColor = android.R.color.black,
+                addonNameTextColor = android.R.color.transparent,
+                addonSummaryTextColor = android.R.color.white,
+            )
+        val adapter =
+            AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), style, emptyList(), BrowserStore())
 
         adapter.bindAddon(addonViewHolder, addon, appName, appVersion)
 
@@ -190,10 +197,11 @@ class AddonsManagerAdapterTest {
 
         whenever(titleView.context).thenReturn(testContext)
 
-        val style = AddonsManagerAdapter.Style(
-            sectionsTextColor = android.R.color.black,
-            sectionsTypeFace = mock(),
-        )
+        val style =
+            AddonsManagerAdapter.Style(
+                sectionsTextColor = android.R.color.black,
+                sectionsTypeFace = mock(),
+            )
         val adapter = AddonsManagerAdapter(mock(), emptyList(), style, emptyList(), BrowserStore())
         // Force-add a Section item in the list.
         adapter.submitList(null)
@@ -228,10 +236,11 @@ class AddonsManagerAdapterTest {
 
         whenever(titleView.context).thenReturn(testContext)
 
-        val style = AddonsManagerAdapter.Style(
-            sectionsTextColor = android.R.color.black,
-            sectionsTypeFace = mock(),
-        )
+        val style =
+            AddonsManagerAdapter.Style(
+                sectionsTextColor = android.R.color.black,
+                sectionsTypeFace = mock(),
+            )
         val adapter = AddonsManagerAdapter(mock(), emptyList(), style, emptyList(), BrowserStore())
 
         adapter.bindSection(addonViewHolder, Section(R.string.mozac_feature_addons_disabled_section), position)
@@ -248,10 +257,11 @@ class AddonsManagerAdapterTest {
 
         whenever(titleView.context).thenReturn(testContext)
 
-        val style = AddonsManagerAdapter.Style(
-            sectionsTextColor = android.R.color.black,
-            sectionsTypeFace = mock(),
-        )
+        val style =
+            AddonsManagerAdapter.Style(
+                sectionsTextColor = android.R.color.black,
+                sectionsTypeFace = mock(),
+            )
         val adapter = AddonsManagerAdapter(mock(), emptyList(), style, emptyList(), BrowserStore())
 
         adapter.bindSection(addonViewHolder, Section(R.string.mozac_feature_addons_disabled_section), position)
@@ -268,11 +278,12 @@ class AddonsManagerAdapterTest {
 
         whenever(titleView.context).thenReturn(testContext)
 
-        val style = AddonsManagerAdapter.Style(
-            sectionsTextColor = android.R.color.black,
-            sectionsTypeFace = mock(),
-            visibleDividers = false,
-        )
+        val style =
+            AddonsManagerAdapter.Style(
+                sectionsTextColor = android.R.color.black,
+                sectionsTypeFace = mock(),
+                visibleDividers = false,
+            )
         val adapter = AddonsManagerAdapter(mock(), emptyList(), style, emptyList(), BrowserStore())
 
         adapter.bindSection(addonViewHolder, Section(R.string.mozac_feature_addons_disabled_section), position)
@@ -293,13 +304,14 @@ class AddonsManagerAdapterTest {
         whenever(divider.context).thenReturn(testContext)
         whenever(divider.layoutParams).thenReturn(mock())
 
-        val style = AddonsManagerAdapter.Style(
-            sectionsTextColor = android.R.color.black,
-            sectionsTypeFace = mock(),
-            visibleDividers = true,
-            dividerColor = dividerColor,
-            dividerHeight = dividerHeight,
-        )
+        val style =
+            AddonsManagerAdapter.Style(
+                sectionsTextColor = android.R.color.black,
+                sectionsTypeFace = mock(),
+                visibleDividers = true,
+                dividerColor = dividerColor,
+                dividerHeight = dividerHeight,
+            )
 
         val adapter = AddonsManagerAdapter(mock(), emptyList(), style, emptyList(), BrowserStore())
 
@@ -322,30 +334,34 @@ class AddonsManagerAdapterTest {
         whenever(iconView.context).thenReturn(testContext)
         val messageBarErrorView: View = mock()
         whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_text)).thenReturn(mock())
-        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_learn_more_link)).thenReturn(mock())
-        val addonViewHolder = CustomViewHolder.AddonViewHolder(
-            view = view,
-            contentWrapperView = mock(),
-            iconView = iconView,
-            titleView = titleView,
-            summaryView = summaryView,
-            ratingView = mock(),
-            ratingAccessibleView = mock(),
-            reviewCountView = mock(),
-            addButton = mock(),
-            allowedInPrivateBrowsingLabel = allowedInPrivateBrowsingLabel,
-            messageBarWarningView = mock(),
-            messageBarErrorView = messageBarErrorView,
-        )
-        val addon = Addon(
-            id = "id",
-            downloadUrl = "downloadUrl",
-            version = "version",
-            permissions = emptyList(),
-            createdAt = "",
-            updatedAt = "",
-        )
-        val adapter = AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
+        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_learn_more_link))
+            .thenReturn(mock())
+        val addonViewHolder =
+            CustomViewHolder.AddonViewHolder(
+                view = view,
+                contentWrapperView = mock(),
+                iconView = iconView,
+                titleView = titleView,
+                summaryView = summaryView,
+                ratingView = mock(),
+                ratingAccessibleView = mock(),
+                reviewCountView = mock(),
+                addButton = mock(),
+                allowedInPrivateBrowsingLabel = allowedInPrivateBrowsingLabel,
+                messageBarWarningView = mock(),
+                messageBarErrorView = messageBarErrorView,
+            )
+        val addon =
+            Addon(
+                id = "id",
+                downloadUrl = "downloadUrl",
+                version = "version",
+                permissions = emptyList(),
+                createdAt = "",
+                updatedAt = "",
+            )
+        val adapter =
+            AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
 
         adapter.bindAddon(addonViewHolder, addon, appName, appVersion)
         verify(titleView).setText("id")
@@ -354,14 +370,15 @@ class AddonsManagerAdapterTest {
 
     @Test
     fun updateAddon() {
-        var addon = Addon(
-            id = "id",
-            downloadUrl = "downloadUrl",
-            version = "version",
-            permissions = emptyList(),
-            createdAt = "",
-            updatedAt = "",
-        )
+        var addon =
+            Addon(
+                id = "id",
+                downloadUrl = "downloadUrl",
+                version = "version",
+                permissions = emptyList(),
+                createdAt = "",
+                updatedAt = "",
+            )
         val adapter = spy(AddonsManagerAdapter(mock(), listOf(addon), mock(), emptyList(), BrowserStore()))
 
         assertEquals(addon, adapter.addonsMap[addon.id])
@@ -379,25 +396,26 @@ class AddonsManagerAdapterTest {
 
     @Test
     fun updateAddons() {
-        var addon1 = Addon(
-            id = "addon1",
-            downloadUrl = "downloadUrl",
-            version = "version",
-            permissions = emptyList(),
-            createdAt = "",
-            updatedAt = "",
-        )
+        var addon1 =
+            Addon(
+                id = "addon1",
+                downloadUrl = "downloadUrl",
+                version = "version",
+                permissions = emptyList(),
+                createdAt = "",
+                updatedAt = "",
+            )
 
-        val addon2 = Addon(
-            id = "addon2",
-            downloadUrl = "downloadUrl",
-            version = "version",
-            permissions = emptyList(),
-            createdAt = "",
-            updatedAt = "",
-        )
-        val adapter =
-            spy(AddonsManagerAdapter(mock(), listOf(addon1, addon2), mock(), emptyList(), BrowserStore()))
+        val addon2 =
+            Addon(
+                id = "addon2",
+                downloadUrl = "downloadUrl",
+                version = "version",
+                permissions = emptyList(),
+                createdAt = "",
+                updatedAt = "",
+            )
+        val adapter = spy(AddonsManagerAdapter(mock(), listOf(addon1, addon2), mock(), emptyList(), BrowserStore()))
 
         assertEquals(addon1, adapter.addonsMap[addon1.id])
         assertEquals(addon2, adapter.addonsMap[addon2.id])
@@ -413,23 +431,25 @@ class AddonsManagerAdapterTest {
 
     @Test
     fun differCallback() {
-        var addon1 = Addon(
-            id = "addon1",
-            downloadUrl = "downloadUrl",
-            version = "version",
-            permissions = emptyList(),
-            createdAt = "",
-            updatedAt = "",
-        )
+        var addon1 =
+            Addon(
+                id = "addon1",
+                downloadUrl = "downloadUrl",
+                version = "version",
+                permissions = emptyList(),
+                createdAt = "",
+                updatedAt = "",
+            )
 
-        var addon2 = Addon(
-            id = "addon1",
-            downloadUrl = "downloadUrl",
-            version = "version",
-            permissions = emptyList(),
-            createdAt = "",
-            updatedAt = "",
-        )
+        var addon2 =
+            Addon(
+                id = "addon1",
+                downloadUrl = "downloadUrl",
+                version = "version",
+                permissions = emptyList(),
+                createdAt = "",
+                updatedAt = "",
+            )
 
         assertTrue(DifferCallback.areItemsTheSame(addon1, addon2))
 
@@ -452,42 +472,52 @@ class AddonsManagerAdapterTest {
         val titleView: TextView = mock()
         val descriptionView: TextView = mock()
         val view = View(testContext)
-        val unsupportedSectionViewHolder = CustomViewHolder.UnsupportedSectionViewHolder(
-            view,
-            titleView,
-            descriptionView,
-        )
-        val unsupportedAddon = Addon(
-            id = "id",
-            installedState = Addon.InstalledState(
+        val unsupportedSectionViewHolder =
+            CustomViewHolder.UnsupportedSectionViewHolder(
+                view,
+                titleView,
+                descriptionView,
+            )
+        val unsupportedAddon =
+            Addon(
                 id = "id",
-                version = "version",
-                optionsPageUrl = "optionsPageUrl",
-                supported = false,
-            ),
-        )
-        val unsupportedAddonTwo = Addon(
-            id = "id2",
-            installedState = Addon.InstalledState(
+                installedState =
+                    Addon.InstalledState(
+                        id = "id",
+                        version = "version",
+                        optionsPageUrl = "optionsPageUrl",
+                        supported = false,
+                    ),
+            )
+        val unsupportedAddonTwo =
+            Addon(
                 id = "id2",
-                version = "version2",
-                optionsPageUrl = "optionsPageUrl2",
-                supported = false,
-            ),
-        )
+                installedState =
+                    Addon.InstalledState(
+                        id = "id2",
+                        version = "version2",
+                        optionsPageUrl = "optionsPageUrl2",
+                        supported = false,
+                    ),
+            )
         val unsupportedAddons = arrayListOf(unsupportedAddon, unsupportedAddonTwo)
-        val adapter = AddonsManagerAdapter(
-            addonsManagerAdapterDelegate,
-            unsupportedAddons,
-            mock(),
-            emptyList(),
-            BrowserStore(),
-        )
+        val adapter =
+            AddonsManagerAdapter(
+                addonsManagerAdapterDelegate,
+                unsupportedAddons,
+                mock(),
+                emptyList(),
+                BrowserStore(),
+            )
 
         adapter.bindNotYetSupportedSection(unsupportedSectionViewHolder, mock())
-        verify(unsupportedSectionViewHolder.descriptionView).setText(
-            testContext.getString(R.string.mozac_feature_addons_unsupported_caption_plural_2, unsupportedAddons.size),
-        )
+        verify(unsupportedSectionViewHolder.descriptionView)
+            .setText(
+                testContext.getString(
+                    R.string.mozac_feature_addons_unsupported_caption_plural_2,
+                    unsupportedAddons.size,
+                )
+            )
 
         unsupportedSectionViewHolder.itemView.performClick()
         verify(addonsManagerAdapterDelegate).onNotYetSupportedSectionClicked(unsupportedAddons)
@@ -496,7 +526,8 @@ class AddonsManagerAdapterTest {
     @Test
     fun bindFooterButton() {
         val addonsManagerAdapterDelegate: AddonsManagerAdapterDelegate = mock()
-        val adapter = AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
+        val adapter =
+            AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
         val view = View(testContext)
         val viewHolder = CustomViewHolder.FooterViewHolder(view)
         // Make sure we have the Footer item in the list.
@@ -523,8 +554,7 @@ class AddonsManagerAdapterTest {
     @Test
     fun bindHeaderButton() = runTest {
         val store = BrowserStore(initialState = BrowserState(extensionsProcessDisabled = true))
-        val adapter =
-            spy(AddonsManagerAdapter(mock(), emptyList(), mock(), emptyList(), store))
+        val adapter = spy(AddonsManagerAdapter(mock(), emptyList(), mock(), emptyList(), store))
 
         val restartButton = TextView(testContext)
         val viewHolder = CustomViewHolder.HeaderViewHolder(View(testContext), restartButton)
@@ -560,7 +590,8 @@ class AddonsManagerAdapterTest {
     fun testFindMoreAddonsButtonIsHidden() {
         val addonsManagerAdapterDelegate: AddonsManagerAdapterDelegate = mock()
         whenever(addonsManagerAdapterDelegate.shouldShowFindMoreAddonsButton()).thenReturn(false)
-        val adapter = AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
+        val adapter =
+            AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
 
         val itemsWithSections = adapter.createListWithSections(emptyList())
         assertTrue(itemsWithSections.isEmpty())
@@ -570,7 +601,8 @@ class AddonsManagerAdapterTest {
     fun testFindMoreAddonsButtonIsVisible() {
         val addonsManagerAdapterDelegate: AddonsManagerAdapterDelegate = mock()
         whenever(addonsManagerAdapterDelegate.shouldShowFindMoreAddonsButton()).thenReturn(true)
-        val adapter = AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
+        val adapter =
+            AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
 
         val itemsWithSections = adapter.createListWithSections(emptyList())
         assertFalse(itemsWithSections.isEmpty())
@@ -588,31 +620,31 @@ class AddonsManagerAdapterTest {
         val messageBarErrorView: View = mock()
         val messageTextView: TextView = mock()
         val learnMoreTextView = TextView(testContext)
-        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_text)).thenReturn(
-            messageTextView,
-        )
-        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_learn_more_link)).thenReturn(
-            learnMoreTextView,
-        )
+        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_text))
+            .thenReturn(messageTextView)
+        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_learn_more_link))
+            .thenReturn(learnMoreTextView)
         val iconView = mock<ImageView>()
         whenever(iconView.context).thenReturn(testContext)
-        val addonViewHolder = CustomViewHolder.AddonViewHolder(
-            view = View(testContext),
-            contentWrapperView = mock(),
-            iconView = iconView,
-            titleView = titleView,
-            summaryView = summaryView,
-            ratingView = mock(),
-            ratingAccessibleView = mock(),
-            reviewCountView = mock(),
-            addButton = mock(),
-            allowedInPrivateBrowsingLabel = mock(),
-            messageBarWarningView = messageBarWarningView,
-            messageBarErrorView = messageBarErrorView,
-        )
+        val addonViewHolder =
+            CustomViewHolder.AddonViewHolder(
+                view = View(testContext),
+                contentWrapperView = mock(),
+                iconView = iconView,
+                titleView = titleView,
+                summaryView = summaryView,
+                ratingView = mock(),
+                ratingAccessibleView = mock(),
+                reviewCountView = mock(),
+                addButton = mock(),
+                allowedInPrivateBrowsingLabel = mock(),
+                messageBarWarningView = messageBarWarningView,
+                messageBarErrorView = messageBarErrorView,
+            )
         val addonName = "some addon name"
         val addon = makeDisabledAddon(Addon.DisabledReason.BLOCKLISTED, addonName)
-        val adapter = AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
+        val adapter =
+            AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
 
         adapter.bindAddon(addonViewHolder, addon, appName, appVersion)
 
@@ -627,10 +659,11 @@ class AddonsManagerAdapterTest {
 
         // Verify that a click on the "learn more" link actually does something.
         learnMoreTextView.performClick()
-        verify(addonsManagerAdapterDelegate).onLearnMoreLinkClicked(
-            AddonsManagerAdapterDelegate.LearnMoreLinks.BLOCKLISTED_ADDON,
-            addon,
-        )
+        verify(addonsManagerAdapterDelegate)
+            .onLearnMoreLinkClicked(
+                AddonsManagerAdapterDelegate.LearnMoreLinks.BLOCKLISTED_ADDON,
+                addon,
+            )
     }
 
     @Test
@@ -644,31 +677,31 @@ class AddonsManagerAdapterTest {
         val messageBarErrorView: View = mock()
         val messageTextView: TextView = mock()
         val learnMoreTextView = TextView(testContext)
-        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_text)).thenReturn(
-            messageTextView,
-        )
-        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_learn_more_link)).thenReturn(
-            learnMoreTextView,
-        )
+        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_text))
+            .thenReturn(messageTextView)
+        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_learn_more_link))
+            .thenReturn(learnMoreTextView)
         val iconView = mock<ImageView>()
         whenever(iconView.context).thenReturn(testContext)
-        val addonViewHolder = CustomViewHolder.AddonViewHolder(
-            view = View(testContext),
-            contentWrapperView = mock(),
-            iconView = iconView,
-            titleView = titleView,
-            summaryView = summaryView,
-            ratingView = mock(),
-            ratingAccessibleView = mock(),
-            reviewCountView = mock(),
-            addButton = mock(),
-            allowedInPrivateBrowsingLabel = mock(),
-            messageBarWarningView = messageBarWarningView,
-            messageBarErrorView = messageBarErrorView,
-        )
+        val addonViewHolder =
+            CustomViewHolder.AddonViewHolder(
+                view = View(testContext),
+                contentWrapperView = mock(),
+                iconView = iconView,
+                titleView = titleView,
+                summaryView = summaryView,
+                ratingView = mock(),
+                ratingAccessibleView = mock(),
+                reviewCountView = mock(),
+                addButton = mock(),
+                allowedInPrivateBrowsingLabel = mock(),
+                messageBarWarningView = messageBarWarningView,
+                messageBarErrorView = messageBarErrorView,
+            )
         val addonName = "some addon name"
         val addon = makeDisabledAddon(Addon.DisabledReason.NOT_CORRECTLY_SIGNED, addonName)
-        val adapter = AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
+        val adapter =
+            AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
 
         adapter.bindAddon(addonViewHolder, addon, appName, appVersion)
 
@@ -679,10 +712,11 @@ class AddonsManagerAdapterTest {
 
         // Verify that a click on the "learn more" link actually does something.
         learnMoreTextView.performClick()
-        verify(addonsManagerAdapterDelegate).onLearnMoreLinkClicked(
-            AddonsManagerAdapterDelegate.LearnMoreLinks.ADDON_NOT_CORRECTLY_SIGNED,
-            addon,
-        )
+        verify(addonsManagerAdapterDelegate)
+            .onLearnMoreLinkClicked(
+                AddonsManagerAdapterDelegate.LearnMoreLinks.ADDON_NOT_CORRECTLY_SIGNED,
+                addon,
+            )
     }
 
     @Test
@@ -695,32 +729,32 @@ class AddonsManagerAdapterTest {
         val messageBarWarningView: View = mock()
         val messageBarErrorView: View = mock()
         val messageTextView: TextView = mock()
-        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_text)).thenReturn(
-            messageTextView,
-        )
-        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_learn_more_link)).thenReturn(
-            mock(),
-        )
+        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_text))
+            .thenReturn(messageTextView)
+        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_learn_more_link))
+            .thenReturn(mock())
 
         val iconView = mock<ImageView>()
         whenever(iconView.context).thenReturn(testContext)
 
-        val addonViewHolder = CustomViewHolder.AddonViewHolder(
-            view = View(testContext),
-            contentWrapperView = mock(),
-            iconView = iconView,
-            titleView = titleView,
-            summaryView = summaryView,
-            ratingView = mock(),
-            ratingAccessibleView = mock(),
-            reviewCountView = mock(),
-            addButton = mock(),
-            allowedInPrivateBrowsingLabel = mock(),
-            messageBarWarningView = messageBarWarningView,
-            messageBarErrorView = messageBarErrorView,
-        )
+        val addonViewHolder =
+            CustomViewHolder.AddonViewHolder(
+                view = View(testContext),
+                contentWrapperView = mock(),
+                iconView = iconView,
+                titleView = titleView,
+                summaryView = summaryView,
+                ratingView = mock(),
+                ratingAccessibleView = mock(),
+                reviewCountView = mock(),
+                addButton = mock(),
+                allowedInPrivateBrowsingLabel = mock(),
+                messageBarWarningView = messageBarWarningView,
+                messageBarErrorView = messageBarErrorView,
+            )
         val addon = makeDisabledAddon(Addon.DisabledReason.NOT_CORRECTLY_SIGNED)
-        val adapter = AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
+        val adapter =
+            AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
 
         adapter.bindAddon(addonViewHolder, addon, appName, appVersion)
 
@@ -740,39 +774,40 @@ class AddonsManagerAdapterTest {
         val messageBarErrorView: View = mock()
         val messageTextView: TextView = mock()
         val learnMoreTextView: TextView = mock()
-        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_text)).thenReturn(
-            messageTextView,
-        )
-        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_learn_more_link)).thenReturn(
-            learnMoreTextView,
-        )
+        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_text))
+            .thenReturn(messageTextView)
+        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_learn_more_link))
+            .thenReturn(learnMoreTextView)
 
         val iconView = mock<ImageView>()
         whenever(iconView.context).thenReturn(testContext)
 
-        val addonViewHolder = CustomViewHolder.AddonViewHolder(
-            view = View(testContext),
-            contentWrapperView = mock(),
-            iconView = iconView,
-            titleView = titleView,
-            summaryView = summaryView,
-            ratingView = mock(),
-            ratingAccessibleView = mock(),
-            reviewCountView = mock(),
-            addButton = mock(),
-            allowedInPrivateBrowsingLabel = mock(),
-            messageBarWarningView = messageBarWarningView,
-            messageBarErrorView = messageBarErrorView,
-        )
+        val addonViewHolder =
+            CustomViewHolder.AddonViewHolder(
+                view = View(testContext),
+                contentWrapperView = mock(),
+                iconView = iconView,
+                titleView = titleView,
+                summaryView = summaryView,
+                ratingView = mock(),
+                ratingAccessibleView = mock(),
+                reviewCountView = mock(),
+                addButton = mock(),
+                allowedInPrivateBrowsingLabel = mock(),
+                messageBarWarningView = messageBarWarningView,
+                messageBarErrorView = messageBarErrorView,
+            )
         val addonName = "some addon name"
         val addon = makeDisabledAddon(Addon.DisabledReason.INCOMPATIBLE, addonName)
-        val adapter = AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
+        val adapter =
+            AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
 
         adapter.bindAddon(addonViewHolder, addon, appName, appVersion)
 
         verify(messageBarWarningView).isVisible = false
         verify(messageBarErrorView).isVisible = true
-        verify(messageTextView).text = "$addonName is not compatible with your version of $appName (version $appVersion)."
+        verify(messageTextView).text =
+            "$addonName is not compatible with your version of $appName (version $appVersion)."
         verify(learnMoreTextView).isVisible = false
     }
 
@@ -787,37 +822,38 @@ class AddonsManagerAdapterTest {
         val messageBarErrorView: View = mock()
         val messageTextView: TextView = mock()
         val learnMoreTextView: TextView = mock()
-        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_text)).thenReturn(
-            messageTextView,
-        )
-        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_learn_more_link)).thenReturn(
-            learnMoreTextView,
-        )
+        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_text))
+            .thenReturn(messageTextView)
+        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_learn_more_link))
+            .thenReturn(learnMoreTextView)
         val iconView = mock<ImageView>()
         whenever(iconView.context).thenReturn(testContext)
 
-        val addonViewHolder = CustomViewHolder.AddonViewHolder(
-            view = View(testContext),
-            contentWrapperView = mock(),
-            iconView = iconView,
-            titleView = titleView,
-            summaryView = summaryView,
-            ratingView = mock(),
-            ratingAccessibleView = mock(),
-            reviewCountView = mock(),
-            addButton = mock(),
-            allowedInPrivateBrowsingLabel = mock(),
-            messageBarWarningView = messageBarWarningView,
-            messageBarErrorView = messageBarErrorView,
-        )
+        val addonViewHolder =
+            CustomViewHolder.AddonViewHolder(
+                view = View(testContext),
+                contentWrapperView = mock(),
+                iconView = iconView,
+                titleView = titleView,
+                summaryView = summaryView,
+                ratingView = mock(),
+                ratingAccessibleView = mock(),
+                reviewCountView = mock(),
+                addButton = mock(),
+                allowedInPrivateBrowsingLabel = mock(),
+                messageBarWarningView = messageBarWarningView,
+                messageBarErrorView = messageBarErrorView,
+            )
         val addon = makeDisabledAddon(Addon.DisabledReason.INCOMPATIBLE)
-        val adapter = AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
+        val adapter =
+            AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
 
         adapter.bindAddon(addonViewHolder, addon, appName, appVersion)
 
         verify(messageBarWarningView).isVisible = false
         verify(messageBarErrorView).isVisible = true
-        verify(messageTextView).text = "${addon.id} is not compatible with your version of $appName (version $appVersion)."
+        verify(messageTextView).text =
+            "${addon.id} is not compatible with your version of $appName (version $appVersion)."
         verify(learnMoreTextView).isVisible = false
     }
 
@@ -849,32 +885,33 @@ class AddonsManagerAdapterTest {
         val messageBarWarningView: View = mock()
         val messageTextView: TextView = mock()
         val learnMoreTextView = TextView(testContext)
-        whenever(messageBarWarningView.findViewById<TextView>(R.id.add_on_messagebar_warning_text)).thenReturn(
-            messageTextView,
-        )
-        whenever(messageBarWarningView.findViewById<TextView>(R.id.add_on_messagebar_warning_learn_more_link)).thenReturn(
-            learnMoreTextView,
-        )
+        whenever(messageBarWarningView.findViewById<TextView>(R.id.add_on_messagebar_warning_text))
+            .thenReturn(messageTextView)
+        whenever(messageBarWarningView.findViewById<TextView>(R.id.add_on_messagebar_warning_learn_more_link))
+            .thenReturn(learnMoreTextView)
         val messageBarErrorView: View = mock()
         whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_text)).thenReturn(mock())
-        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_learn_more_link)).thenReturn(mock())
+        whenever(messageBarErrorView.findViewById<TextView>(R.id.add_on_messagebar_error_learn_more_link))
+            .thenReturn(mock())
         val iconView = mock<ImageView>()
         whenever(iconView.context).thenReturn(testContext)
-        val addonViewHolder = CustomViewHolder.AddonViewHolder(
-            view = View(testContext),
-            contentWrapperView = mock(),
-            iconView = iconView,
-            titleView = titleView,
-            summaryView = summaryView,
-            ratingView = mock(),
-            ratingAccessibleView = mock(),
-            reviewCountView = mock(),
-            addButton = mock(),
-            allowedInPrivateBrowsingLabel = mock(),
-            messageBarWarningView = messageBarWarningView,
-            messageBarErrorView = messageBarErrorView,
-        )
-        val adapter = AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
+        val addonViewHolder =
+            CustomViewHolder.AddonViewHolder(
+                view = View(testContext),
+                contentWrapperView = mock(),
+                iconView = iconView,
+                titleView = titleView,
+                summaryView = summaryView,
+                ratingView = mock(),
+                ratingAccessibleView = mock(),
+                reviewCountView = mock(),
+                addButton = mock(),
+                allowedInPrivateBrowsingLabel = mock(),
+                messageBarWarningView = messageBarWarningView,
+                messageBarErrorView = messageBarErrorView,
+            )
+        val adapter =
+            AddonsManagerAdapter(addonsManagerAdapterDelegate, emptyList(), mock(), emptyList(), BrowserStore())
 
         adapter.bindAddon(addonViewHolder, addon, appName, appVersion)
 
@@ -885,11 +922,12 @@ class AddonsManagerAdapterTest {
 
         // Verify that a click on the "see details" link actually does something.
         learnMoreTextView.performClick()
-        verify(addonsManagerAdapterDelegate).onLearnMoreLinkClicked(
-            // This is the same link for both hard and soft blocked add-ons.
-            AddonsManagerAdapterDelegate.LearnMoreLinks.BLOCKLISTED_ADDON,
-            addon,
-        )
+        verify(addonsManagerAdapterDelegate)
+            .onLearnMoreLinkClicked(
+                // This is the same link for both hard and soft blocked add-ons.
+                AddonsManagerAdapterDelegate.LearnMoreLinks.BLOCKLISTED_ADDON,
+                addon,
+            )
     }
 
     private fun makeDisabledAddon(disabledReason: Addon.DisabledReason, name: String? = null): Addon {
@@ -897,11 +935,12 @@ class AddonsManagerAdapterTest {
         whenever(installedState.disabledReason).thenReturn(disabledReason)
         return Addon(
             id = "@some-addon-id",
-            translatableName = if (name != null) {
-                mapOf(Addon.DEFAULT_LOCALE to name)
-            } else {
-                emptyMap()
-            },
+            translatableName =
+                if (name != null) {
+                    mapOf(Addon.DEFAULT_LOCALE to name)
+                } else {
+                    emptyMap()
+                },
             installedState = installedState,
         )
     }

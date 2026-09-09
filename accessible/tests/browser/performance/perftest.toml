@@ -28,6 +28,9 @@ disabled = "Disabled as we want to run this only as perftest, not regular CI"
 ["browser_implicitRoleARIAExpanded.js"]
 disabled = "Disabled as we want to run this only as perftest, not regular CI"
 
+["browser_panManySVGShapes.js"]
+disabled = "Disabled as we want to run this only as perftest, not regular CI"
+
 ["browser_reflowPseudoelements.js"]
 disabled = "Disabled as we want to run this only as perftest, not regular CI"
 

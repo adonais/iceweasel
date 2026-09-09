@@ -23,9 +23,7 @@ import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations.openMocks
 import org.robolectric.annotation.Config
 
-/**
- * **Note** Tests for isAppearanceLightStatusBars are in WindowKtTest.
- */
+/** **Note** Tests for isAppearanceLightStatusBars are in WindowKtTest. */
 @RunWith(AndroidJUnit4::class)
 class WindowTest {
 
@@ -33,8 +31,7 @@ class WindowTest {
 
     @Mock private lateinit var decorView: View
 
-    @Mock
-    lateinit var windowInsetsController: WindowInsetsController
+    @Mock lateinit var windowInsetsController: WindowInsetsController
 
     @Before
     fun setup() {
@@ -70,7 +67,8 @@ class WindowTest {
     fun `GIVEN Android 8 & has nav bar color WHEN setNavigationBarTheme THEN only the nav bar color is set`() {
         window.setNavigationBarTheme(navBarColor = Color.MAGENTA)
 
-        // We can't verify against the navigationBarDividerColor directly due to using SDK O_MR1 so we'll verify using ordering.
+        // We can't verify against the navigationBarDividerColor directly due to using SDK O_MR1 so we'll verify using
+        // ordering.
         val inOrder = inOrder(window)
         inOrder.verify(window).navigationBarColor = Color.MAGENTA
         // Called for createWindowInsetsController()
@@ -92,7 +90,8 @@ class WindowTest {
     fun `GIVEN Android 8 & all args WHEN setNavigationBarTheme THEN only the nav bar color is set`() {
         window.setNavigationBarTheme(navBarColor = Color.MAGENTA, navBarDividerColor = Color.DKGRAY)
 
-        // We can't verify against the navigationBarDividerColor directly due to using SDK O_MR1 so we'll verify using ordering.
+        // We can't verify against the navigationBarDividerColor directly due to using SDK O_MR1 so we'll verify using
+        // ordering.
         val inOrder = inOrder(window)
         inOrder.verify(window).navigationBarColor = Color.MAGENTA
         // Called for createWindowInsetsController()

@@ -1346,21 +1346,20 @@ void jit::ToggleBaselineProfiling(JSContext* cx, bool enable) {
   }
 }
 
-void BaselineInterpreter::init(JitCode* code, uint32_t interpretOpOffset,
-                               uint32_t interpretOpNoDebugTrapOffset,
-                               uint32_t bailoutPrologueOffset,
-                               uint32_t profilerEnterToggleOffset,
-                               uint32_t profilerExitToggleOffset,
-                               uint32_t debugTrapHandlerOffset,
-                               CodeOffsetVector&& debugInstrumentationOffsets,
-                               CodeOffsetVector&& debugTrapOffsets,
-                               CodeOffsetVector&& codeCoverageOffsets,
-                               ICReturnOffsetVector&& icReturnOffsets,
-                               const CallVMOffsets& callVMOffsets) {
+void BaselineInterpreter::init(
+    JitCode* code, uint32_t interpretOpOffset,
+    uint32_t interpretOpNoDebugTrapOffset, uint32_t bailoutPrologueOffset,
+    uint32_t bailoutResumePrologueOffset, uint32_t profilerEnterToggleOffset,
+    uint32_t profilerExitToggleOffset, uint32_t debugTrapHandlerOffset,
+    CodeOffsetVector&& debugInstrumentationOffsets,
+    CodeOffsetVector&& debugTrapOffsets, CodeOffsetVector&& codeCoverageOffsets,
+    ICReturnOffsetVector&& icReturnOffsets,
+    const CallVMOffsets& callVMOffsets) {
   code_ = code;
   interpretOpOffset_ = interpretOpOffset;
   interpretOpNoDebugTrapOffset_ = interpretOpNoDebugTrapOffset;
   bailoutPrologueOffset_ = bailoutPrologueOffset;
+  bailoutResumePrologueOffset_ = bailoutResumePrologueOffset;
   profilerEnterToggleOffset_ = profilerEnterToggleOffset;
   profilerExitToggleOffset_ = profilerExitToggleOffset;
   debugTrapHandlerOffset_ = debugTrapHandlerOffset;

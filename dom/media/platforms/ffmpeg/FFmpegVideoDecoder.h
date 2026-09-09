@@ -17,7 +17,7 @@
 #include "nsTHashMap.h"
 #if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
 #  include "FFmpegVideoFramePool.h"
-#  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+#  ifdef MOZ_USE_HWDECODE_VULKAN
 #    include "VulkanDeviceHolder.h"
 #  endif
 #endif
@@ -55,7 +55,7 @@ typedef struct _VADRMPRIMESurfaceDescriptor VADRMPRIMESurfaceDescriptor;
 
 struct AVHWFramesContext;
 struct AVFrame;
-#if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+#ifdef MOZ_USE_HWDECODE_VULKAN
 #  include <vulkan/vulkan.h>
 #endif
 
@@ -238,6 +238,7 @@ class FFmpegVideoDecoder<LIBAV_VER>
                                     MediaDataDecoder::DecodedData& aResults);
   bool ReleaseFrameMediaCodec(void* aKey, bool aRender);
   void ReleaseFramesMediaCodec();
+  void ReleaseSurfaceMediaCodec();
   int32_t mTextureAlignment;
   AVBufferRef* mMediaCodecDeviceContext = nullptr;
   // Only used for the SurfaceTexture case
@@ -254,17 +255,14 @@ class FFmpegVideoDecoder<LIBAV_VER>
   bool IsLinuxHDR() const;
   MediaResult InitVAAPIDecoder();
   MediaResult InitV4L2Decoder();
-#  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
-  MediaResult InitVulkanDecoder();
-
+#  ifdef MOZ_USE_HWDECODE_VULKAN
 #    include "FFmpegVulkanVideoDecoder.h"
-#  endif
-  bool CreateVAAPIDeviceContext();
-#  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+  MediaResult InitVulkanDecoder();
   bool CreateVulkanDeviceContext(const StaticMutexAutoLock& aProofOfLock);
   void PrepareVulkanDrmModifiersForSwFormat(int aSwFormat,
                                             VkImageUsageFlags aImageUsages);
 #  endif
+  bool CreateVAAPIDeviceContext();
   bool GetVAAPISurfaceDescriptor(VADRMPRIMESurfaceDescriptor* aVaDesc);
   void AddAcceleratedFormats(nsTArray<AVCodecID>& aCodecList,
                              AVCodecID aCodecID, AVVAAPIHWConfig* hwconfig);
@@ -275,7 +273,7 @@ class FFmpegVideoDecoder<LIBAV_VER>
                                MediaDataDecoder::DecodedData& aResults);
   MediaResult CreateImageV4L2(int64_t aOffset, int64_t aPts, int64_t aDuration,
                               MediaDataDecoder::DecodedData& aResults);
-#  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+#  ifdef MOZ_USE_HWDECODE_VULKAN
  public:
   int ChooseVulkanPixelFormatFromContext(struct AVCodecContext* aCodecContext,
                                          const int* aFormats);
@@ -289,7 +287,7 @@ class FFmpegVideoDecoder<LIBAV_VER>
 
   AVBufferRef* mVAAPIDeviceContext = nullptr;
   AVBufferRef* mVulkanDeviceContext = nullptr;
-#  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+#  ifdef MOZ_USE_HWDECODE_VULKAN
   RefPtr<VulkanDeviceHolder> mVulkanDeviceHolder;
   FFmpegVulkanVideoDecoder mVulkanDecoder;
   VkImageDrmFormatModifierListCreateInfoEXT mVulkanDrmModifierList = {};

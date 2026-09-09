@@ -7,24 +7,15 @@ package mozilla.components.browser.engine.gecko.webpush
 import mozilla.components.concept.engine.webpush.WebPushHandler
 import org.mozilla.geckoview.GeckoRuntime
 
-/**
- * Gecko-based implementation of [WebPushHandler], wrapping the
- * controller object provided by GeckoView.
- */
-internal class GeckoWebPushHandler(
-    private val runtime: GeckoRuntime,
-) : WebPushHandler {
+/** Gecko-based implementation of [WebPushHandler], wrapping the controller object provided by GeckoView. */
+internal class GeckoWebPushHandler(private val runtime: GeckoRuntime) : WebPushHandler {
 
-    /**
-     * See [WebPushHandler].
-     */
+    /** See [WebPushHandler]. */
     override fun onPushMessage(scope: String, message: ByteArray?) {
         runtime.webPushController.onPushEvent(scope, message)
     }
 
-    /**
-     * See [WebPushHandler].
-     */
+    /** See [WebPushHandler]. */
     override fun onSubscriptionChanged(scope: String) {
         runtime.webPushController.onSubscriptionChanged(scope)
     }

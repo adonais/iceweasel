@@ -260,11 +260,11 @@ bool SVGTransformListSMILType::AppendTransforms(const SVGTransformList& aList,
   if (!transforms.SetCapacity(transforms.Length() + aList.Length(), fallible))
     return false;
 
-  for (uint32_t i = 0; i < aList.Length(); ++i) {
+  for (const auto& item : aList) {
     // No need to check the return value below since we have already allocated
     // the necessary space
     MOZ_ALWAYS_TRUE(
-        transforms.AppendElement(SVGTransformSMILData(aList[i]), fallible));
+        transforms.AppendElement(SVGTransformSMILData(item), fallible));
   }
   return true;
 }

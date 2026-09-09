@@ -44,23 +44,21 @@ import mozilla.components.ui.icons.R
  * @param modifier Modifier to be applied to the text field layout.
  * @param supportingText Optional helper text that can be displayed below the input field.
  * @param label Optional text displayed as a header above the input field.
- * @param isError Whether there is an error with the input value. When set to true, error styling
- * will be applied to the text field.
+ * @param isError Whether there is an error with the input value. When set to true, error styling will be applied to the
+ *   text field.
  * @param isEnabled When set to false, the the text field cannot be edited.
- * @param singleLine When set to true, this text field becomes a single horizontally scrolling text
- * field instead of wrapping onto multiple lines. Note that maxLines parameter will be ignored as
- * the maxLines attribute will be automatically set to 1.
+ * @param singleLine When set to true, this text field becomes a single horizontally scrolling text field instead of
+ *   wrapping onto multiple lines. Note that maxLines parameter will be ignored as the maxLines attribute will be
+ *   automatically set to 1.
  * @param maxLines The maximum number of input lines visible to the user at once.
  * @param minLines The minimum number of input lines visible to the user at once.
- * @param trailingIcon The optional composable for adding a trailing icon at the end of the text field
- * container.
+ * @param trailingIcon The optional composable for adding a trailing icon at the end of the text field container.
  * @param colors [TextFieldColors] to use for styling text field colors.
- * @param visualTransformation The visual transformation filter for changing the visual representation
- * of the input. By default no visual transformation is applied.
+ * @param visualTransformation The visual transformation filter for changing the visual representation of the input. By
+ *   default no visual transformation is applied.
  * @param keyboardOptions Software keyboard options that contains configuration such as [KeyboardType] and [ImeAction].
- * @param keyboardActions When the input service emits an IME action, the corresponding callback is
- * called. Note that this IME action may be different from what you specified in
- * [KeyboardOptions.imeAction].
+ * @param keyboardActions When the input service emits an IME action, the corresponding callback is called. Note that
+ *   this IME action may be different from what you specified in [KeyboardOptions.imeAction].
  */
 @Composable
 fun TextField(
@@ -98,19 +96,19 @@ fun TextField(
         )
     }
     val supportingTextComposable: @Composable () -> Unit = {
-            if (isError) {
+        if (isError) {
+            Text(
+                text = errorText,
+                style = AcornTheme.typography.caption,
+            )
+        } else {
+            supportingText?.let {
                 Text(
-                    text = errorText,
+                    text = it,
                     style = AcornTheme.typography.caption,
                 )
-            } else {
-                supportingText?.let {
-                    Text(
-                        text = it,
-                        style = AcornTheme.typography.caption,
-                    )
-                }
             }
+        }
     }
 
     val trailingIconCompose: @Composable () -> Unit = {
@@ -134,8 +132,7 @@ fun TextField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         enabled = isEnabled,
         textStyle = AcornTheme.typography.body1,
         label = labelComposable,
@@ -168,97 +165,95 @@ private data class TextFieldPreviewState(
 
 private class TextFieldParameterProvider : PreviewParameterProvider<TextFieldPreviewState> {
     override val values: Sequence<TextFieldPreviewState>
-        get() = sequenceOf(
-            TextFieldPreviewState(
-                initialText = "",
-                label = "Empty, No error",
-            ),
-            TextFieldPreviewState(
-                initialText = "",
-                label = "Empty, Error",
-                isError = true,
-            ),
-            TextFieldPreviewState(
-                initialText = "Typed",
-                label = "Typed, No error",
-            ),
-            TextFieldPreviewState(
-                initialText = "Typed",
-                label = "Typed, Error",
-                isError = true,
-            ),
-            TextFieldPreviewState(
-                initialText = "",
-                label = "Empty, No error, Minimum lines is 2",
-                singleLine = false,
-                minLines = 2,
-            ),
-            TextFieldPreviewState(
-                initialText = "",
-                label = "Empty, Error, Minimum lines is 2",
-                isError = true,
-                singleLine = false,
-                minLines = 2,
-            ),
-            TextFieldPreviewState(
-                initialText = "",
-                label = "Empty, No error, Maximum lines is 2",
-                singleLine = false,
-                maxLines = 2,
-            ),
-            TextFieldPreviewState(
-                initialText = "",
-                label = "Empty, Error, Maximum lines is 2",
-                isError = true,
-                singleLine = false,
-                maxLines = 2,
-            ),
-            TextFieldPreviewState(
-                initialText = "Typed",
-                label = "Typed, No error, 1 trailing icon",
-                trailingIcon = { CrossTextFieldButton {} },
-            ),
-            TextFieldPreviewState(
-                initialText = "Typed",
-                label = "Typed, No error, 2 trailing icons",
-                trailingIcon = {
-                    EyeTextFieldButton {}
-                    CrossTextFieldButton {}
-                },
-            ),
-            TextFieldPreviewState(
-                initialText = "Typed",
-                label = "Typed, Error, 2 trailing icons",
-                isError = true,
-                trailingIcon = {
-                    EyeTextFieldButton {}
-                    CrossTextFieldButton {}
-                },
-            ),
-            TextFieldPreviewState(
-                initialText = "",
-                label = "Empty, Supporting text, Maximum lines is 2",
-                errorText = "Error text",
-                supportingText = "Supporting text",
-                isError = false,
-                singleLine = false,
-                maxLines = 2,
-            ),
-        )
+        get() =
+            sequenceOf(
+                TextFieldPreviewState(
+                    initialText = "",
+                    label = "Empty, No error",
+                ),
+                TextFieldPreviewState(
+                    initialText = "",
+                    label = "Empty, Error",
+                    isError = true,
+                ),
+                TextFieldPreviewState(
+                    initialText = "Typed",
+                    label = "Typed, No error",
+                ),
+                TextFieldPreviewState(
+                    initialText = "Typed",
+                    label = "Typed, Error",
+                    isError = true,
+                ),
+                TextFieldPreviewState(
+                    initialText = "",
+                    label = "Empty, No error, Minimum lines is 2",
+                    singleLine = false,
+                    minLines = 2,
+                ),
+                TextFieldPreviewState(
+                    initialText = "",
+                    label = "Empty, Error, Minimum lines is 2",
+                    isError = true,
+                    singleLine = false,
+                    minLines = 2,
+                ),
+                TextFieldPreviewState(
+                    initialText = "",
+                    label = "Empty, No error, Maximum lines is 2",
+                    singleLine = false,
+                    maxLines = 2,
+                ),
+                TextFieldPreviewState(
+                    initialText = "",
+                    label = "Empty, Error, Maximum lines is 2",
+                    isError = true,
+                    singleLine = false,
+                    maxLines = 2,
+                ),
+                TextFieldPreviewState(
+                    initialText = "Typed",
+                    label = "Typed, No error, 1 trailing icon",
+                    trailingIcon = { CrossTextFieldButton {} },
+                ),
+                TextFieldPreviewState(
+                    initialText = "Typed",
+                    label = "Typed, No error, 2 trailing icons",
+                    trailingIcon = {
+                        EyeTextFieldButton {}
+                        CrossTextFieldButton {}
+                    },
+                ),
+                TextFieldPreviewState(
+                    initialText = "Typed",
+                    label = "Typed, Error, 2 trailing icons",
+                    isError = true,
+                    trailingIcon = {
+                        EyeTextFieldButton {}
+                        CrossTextFieldButton {}
+                    },
+                ),
+                TextFieldPreviewState(
+                    initialText = "",
+                    label = "Empty, Supporting text, Maximum lines is 2",
+                    errorText = "Error text",
+                    supportingText = "Supporting text",
+                    isError = false,
+                    singleLine = false,
+                    maxLines = 2,
+                ),
+            )
 }
 
 @Preview
 @Composable
 private fun TextFieldPreview(
-    @PreviewParameter(TextFieldParameterProvider::class) textFieldState: TextFieldPreviewState,
+    @PreviewParameter(TextFieldParameterProvider::class) textFieldState: TextFieldPreviewState
 ) {
     var text by remember { mutableStateOf(textFieldState.initialText) }
 
     AcornTheme {
-        Surface(
-            modifier = Modifier
-                .padding(8.dp),
-        ) {
+        Surface(modifier = Modifier.padding(8.dp)) {
             TextField(
                 value = text,
                 onValueChange = { text = it },

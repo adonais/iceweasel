@@ -4,13 +4,13 @@
 
 package mozilla.components.support.android.test.rules
 
+import java.io.IOException
 import mockwebserver3.MockWebServer
 import org.junit.rules.ExternalResource
-import java.io.IOException
 
 /**
- * A JUnit [ExternalResource] that manages the lifecycle of a [MockWebServer] instance backed
- * by an [AndroidAssetDispatcher].
+ * A JUnit [ExternalResource] that manages the lifecycle of a [MockWebServer] instance backed by an
+ * [AndroidAssetDispatcher].
  *
  * The server will be started before each test and closed after each test.
  */
@@ -20,9 +20,10 @@ class MockWebServerRule : ExternalResource() {
         private set
 
     override fun before() {
-        server = MockWebServer().apply {
-            dispatcher = AndroidAssetDispatcher()
-        }
+        server =
+            MockWebServer().apply {
+                dispatcher = AndroidAssetDispatcher()
+            }
         try {
             server.start()
         } catch (e: IOException) {

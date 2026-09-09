@@ -17,8 +17,7 @@ class FenixTabCounterMenu(
     iconColor: Int? = null,
 ) : TabCounterMenu(context, onItemTapped, iconColor) {
 
-    @VisibleForTesting
-    internal fun menuItems(): List<MenuCandidate> = listOf(newTabItem, newPrivateTabItem)
+    @VisibleForTesting internal fun menuItems(): List<MenuCandidate> = listOf(newTabItem, newPrivateTabItem)
 
     @VisibleForTesting
     internal fun menuItems(showOnly: BrowsingMode): List<MenuCandidate> {
@@ -29,15 +28,14 @@ class FenixTabCounterMenu(
     }
 
     @VisibleForTesting
-    internal fun menuItems(
-        toolbarPosition: ToolbarPosition,
-    ): List<MenuCandidate> {
-        val items = listOf(
-            newTabItem,
-            newPrivateTabItem,
-            DividerMenuCandidate(),
-            closeTabItem,
-        )
+    internal fun menuItems(toolbarPosition: ToolbarPosition): List<MenuCandidate> {
+        val items =
+            listOf(
+                newTabItem,
+                newPrivateTabItem,
+                DividerMenuCandidate(),
+                closeTabItem,
+            )
 
         return when (toolbarPosition) {
             ToolbarPosition.BOTTOM -> items.reversed()
@@ -45,9 +43,7 @@ class FenixTabCounterMenu(
         }
     }
 
-    /**
-     * Update the displayed menu items with the new tab and new private tab menu items.
-     */
+    /** Update the displayed menu items with the new tab and new private tab menu items. */
     fun updateMenu() {
         menuController.submitList(menuItems())
     }

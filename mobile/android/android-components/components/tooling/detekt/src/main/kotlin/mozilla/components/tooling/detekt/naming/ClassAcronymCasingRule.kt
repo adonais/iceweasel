@@ -23,15 +23,17 @@ import org.jetbrains.kotlin.psi.KtEnumEntry
  */
 class ClassAcronymCasingRule(config: Config = Config.empty) : Rule(config) {
 
-    override val issue = Issue(
-        id = "ClassAcronymCasing",
-        severity = Severity.Style,
-        description = "Acronym longer than two letters not properly capitalized. " +
-            "Per the Kotlin coding conventions, two-letter acronyms in a class name " +
-            "stay fully uppercase (e.g. `IOStream`), but acronyms longer than two letters " +
-            "capitalize only the first letter (e.g. `XmlFormatter`, `HttpInputStream`).",
-        debt = Debt.FIVE_MINS,
-    )
+    override val issue =
+        Issue(
+            id = "ClassAcronymCasing",
+            severity = Severity.Style,
+            description =
+                "Acronym longer than two letters not properly capitalized. " +
+                    "Per the Kotlin coding conventions, two-letter acronyms in a class name " +
+                    "stay fully uppercase (e.g. `IOStream`), but acronyms longer than two letters " +
+                    "capitalize only the first letter (e.g. `XmlFormatter`, `HttpInputStream`).",
+            debt = Debt.FIVE_MINS,
+        )
 
     override fun visitClassOrObject(classOrObject: KtClassOrObject) {
         super.visitClassOrObject(classOrObject)
@@ -57,36 +59,37 @@ class ClassAcronymCasingRule(config: Config = Config.empty) : Rule(config) {
         // No all-uppercase run longer than ACRONYM_MAX_LENGTH -> nothing to flag.
         val longAcronym = words.firstOrNull(::isLongAcronym) ?: return
 
-        val suggestedName = words.joinToString(separator = "") { word ->
-            if (isLongAcronym(word)) {
-                word.lowercase().replaceFirstChar { it.uppercaseChar() }
-            } else {
-                word
+        val suggestedName =
+            words.joinToString(separator = "") { word ->
+                if (isLongAcronym(word)) {
+                    word.lowercase().replaceFirstChar { it.uppercaseChar() }
+                } else {
+                    word
+                }
             }
-        }
         report(
             CodeSmell(
                 issue = issue,
                 entity = Entity.atName(element),
-                message = "Acronym `$longAcronym` in class name `$name` has more than" +
-                    " two letters and should capitalize only the first letter, e.g. `$suggestedName`.",
-            ),
+                message =
+                    "Acronym `$longAcronym` in class name `$name` has more than" +
+                        " two letters and should capitalize only the first letter, e.g. `$suggestedName`.",
+            )
         )
     }
 }
 
 /**
- * Threshold from the Kotlin convention: two-letter acronyms stay all caps, three or more letters
- * must title-case instead.
+ * Threshold from the Kotlin convention: two-letter acronyms stay all caps, three or more letters must title-case
+ * instead.
  */
 private const val ACRONYM_MAX_LENGTH = 2
 
 /**
- * True if [word] is an all-uppercase run longer than [ACRONYM_MAX_LENGTH] - i.e. the kind of
- * acronym the Kotlin coding convention says should be title-cased instead of all caps.
+ * True if [word] is an all-uppercase run longer than [ACRONYM_MAX_LENGTH] - i.e. the kind of acronym the Kotlin coding
+ * convention says should be title-cased instead of all caps.
  */
-private fun isLongAcronym(word: String): Boolean =
-    word.length > ACRONYM_MAX_LENGTH && word.all(Char::isUpperCase)
+private fun isLongAcronym(word: String): Boolean = word.length > ACRONYM_MAX_LENGTH && word.all(Char::isUpperCase)
 
 /**
  * Splits a PascalCase/camelCase identifier into word-like letter and digit runs.
@@ -130,8 +133,7 @@ private fun isCamelCaseBoundary(name: String, index: Int): Boolean {
         previousLetter.isUpperCase() && currentLetter.isUpperCase() && nextLetter?.isLowerCase() == true
 
     val isLetterDigitBoundary =
-        (previousLetter.isLetter() && currentLetter.isDigit()) ||
-            (previousLetter.isDigit() && currentLetter.isLetter())
+        (previousLetter.isLetter() && currentLetter.isDigit()) || (previousLetter.isDigit() && currentLetter.isLetter())
 
     return isLowerToUpper || isPascalWordStart || isLetterDigitBoundary
 }

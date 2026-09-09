@@ -25,7 +25,7 @@ class ScreenHelperGTK final : public ScreenManager::Helper {
   static gint GetGTKMonitorScaleFactor(gint aMonitorNum = 0);
   static float GetGTKMonitorFractionalScaleFactor(gint aMonitorNum = 0);
   static RefPtr<widget::Screen> GetScreenForWindow(nsWindow* aWindow);
-
+  static RefPtr<widget::Screen> GetScreenForGdkWindow(GdkWindow* aGdkWindow);
   static void RequestRefreshScreens(bool aInitialRefresh = false);
   static int GetLastSerial() { return gLastSerial; }
 #ifdef MOZ_WAYLAND

@@ -20,10 +20,7 @@ import androidx.annotation.VisibleForTesting
 import mozilla.components.feature.search.R
 import mozilla.components.feature.search.widget.BaseVoiceSearchActivity.Companion.SPEECH_PROCESSING
 
-/**
- * An abstract [AppWidgetProvider] that implements core behaviour needed to support a Search Widget
- * on the launcher.
- */
+/** An abstract [AppWidgetProvider] that implements core behaviour needed to support a Search Widget on the launcher. */
 abstract class AppSearchWidgetProvider : AppWidgetProvider() {
 
     override fun onUpdate(
@@ -63,39 +60,30 @@ abstract class AppSearchWidgetProvider : AppWidgetProvider() {
         )
     }
 
-    /**
-     * Builds pending intent that opens the browser and starts a new text search.
-     */
+    /** Builds pending intent that opens the browser and starts a new text search. */
     abstract fun createTextSearchIntent(context: Context): PendingIntent
 
-    /**
-     * If the microphone will appear on the Search Widget and the user can perform a voice search.
-     */
+    /** If the microphone will appear on the Search Widget and the user can perform a voice search. */
     abstract fun shouldShowVoiceSearch(context: Context): Boolean
 
-    /**
-     * Activity that extends BaseVoiceSearchActivity.
-     */
+    /** Activity that extends BaseVoiceSearchActivity. */
     abstract fun voiceSearchActivity(): Class<out BaseVoiceSearchActivity>
 
-    /**
-     * Config that sets the icons and the strings for search widget.
-     */
+    /** Config that sets the icons and the strings for search widget. */
     abstract val config: SearchWidgetConfig
 
-    /**
-     * Builds pending intent that starts a new voice search.
-     */
+    /** Builds pending intent that starts a new voice search. */
     @VisibleForTesting
     internal fun createVoiceSearchIntent(context: Context): PendingIntent? {
         if (!shouldShowVoiceSearch(context)) {
             return null
         }
 
-        val voiceIntent = Intent(context, voiceSearchActivity()).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            putExtra(SPEECH_PROCESSING, true)
-        }
+        val voiceIntent =
+            Intent(context, voiceSearchActivity()).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                putExtra(SPEECH_PROCESSING, true)
+            }
 
         return PendingIntent.getActivity(
             context,
@@ -112,8 +100,7 @@ abstract class AppSearchWidgetProvider : AppWidgetProvider() {
         voiceSearchIntent: PendingIntent?,
         textSearchIntent: PendingIntent,
     ) {
-        val currentWidth =
-            appWidgetManager.getAppWidgetOptions(appWidgetId).getInt(OPTION_APPWIDGET_MIN_WIDTH)
+        val currentWidth = appWidgetManager.getAppWidgetOptions(appWidgetId).getInt(OPTION_APPWIDGET_MIN_WIDTH)
         val layoutSize = getLayoutSize(currentWidth)
         // It's not enough to just hide the microphone on the "small" sized widget due to its design.
         // The "small" widget needs a complete redesign, meaning it needs a new layout file.
@@ -121,8 +108,7 @@ abstract class AppSearchWidgetProvider : AppWidgetProvider() {
         val layout = getLayout(layoutSize, showMic)
         val text = getText(layoutSize, context)
 
-        val views =
-            createRemoteViews(context, layout, textSearchIntent, voiceSearchIntent, text)
+        val views = createRemoteViews(context, layout, textSearchIntent, voiceSearchIntent, text)
         appWidgetManager.updateAppWidget(appWidgetId, views)
     }
 
@@ -139,8 +125,7 @@ abstract class AppSearchWidgetProvider : AppWidgetProvider() {
             when (layout) {
                 R.layout.mozac_search_widget_extra_small_v1,
                 R.layout.mozac_search_widget_extra_small_v2,
-                R.layout.mozac_search_widget_small_no_mic,
-                -> {
+                R.layout.mozac_search_widget_small_no_mic -> {
                     setOnClickPendingIntent(
                         R.id.mozac_button_search_widget_new_tab,
                         textSearchIntent,
@@ -157,8 +142,7 @@ abstract class AppSearchWidgetProvider : AppWidgetProvider() {
                     )
                 }
                 R.layout.mozac_search_widget_medium,
-                R.layout.mozac_search_widget_large,
-                -> {
+                R.layout.mozac_search_widget_large -> {
                     setOnClickPendingIntent(
                         R.id.mozac_button_search_widget_new_tab,
                         textSearchIntent,
@@ -217,71 +201,65 @@ abstract class AppSearchWidgetProvider : AppWidgetProvider() {
         private const val DP_LARGE = 256
         private const val REQUEST_CODE_VOICE = 1
 
-        /**
-         * It updates AppSearchWidgetProvider size and microphone icon visibility.
-         */
+        /** It updates AppSearchWidgetProvider size and microphone icon visibility. */
         fun updateAllWidgets(context: Context, clazz: Class<out AppSearchWidgetProvider>) {
             val widgetManager = AppWidgetManager.getInstance(context)
-            val widgetIds = widgetManager.getAppWidgetIds(
-                ComponentName(
-                    context,
-                    clazz,
-                ),
-            )
+            val widgetIds =
+                widgetManager.getAppWidgetIds(
+                    ComponentName(
+                        context,
+                        clazz,
+                    )
+                )
             if (widgetIds.isNotEmpty()) {
                 context.sendBroadcast(
                     Intent(context, clazz).apply {
                         action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
                         putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, widgetIds)
-                    },
+                    }
                 )
             }
         }
 
         @VisibleForTesting
-        internal fun getLayoutSize(
-            @Dimension(unit = DP) dp: Int,
-        ) = when {
-            dp >= DP_LARGE -> SearchWidgetProviderSize.LARGE
-            dp >= DP_MEDIUM -> SearchWidgetProviderSize.MEDIUM
-            dp >= DP_SMALL -> SearchWidgetProviderSize.SMALL
-            dp >= DP_EXTRA_SMALL -> SearchWidgetProviderSize.EXTRA_SMALL_V2
-            else -> SearchWidgetProviderSize.EXTRA_SMALL_V1
-        }
-
-        /**
-         * Get the layout resource to use for the search widget.
-         */
-        @VisibleForTesting
-        internal fun getLayout(size: SearchWidgetProviderSize, showMic: Boolean) = when (size) {
-            SearchWidgetProviderSize.LARGE -> R.layout.mozac_search_widget_large
-            SearchWidgetProviderSize.MEDIUM -> R.layout.mozac_search_widget_medium
-            SearchWidgetProviderSize.SMALL -> {
-                if (showMic) {
-                    R.layout.mozac_search_widget_small
-                } else {
-                    R.layout.mozac_search_widget_small_no_mic
-                }
+        internal fun getLayoutSize(@Dimension(unit = DP) dp: Int) =
+            when {
+                dp >= DP_LARGE -> SearchWidgetProviderSize.LARGE
+                dp >= DP_MEDIUM -> SearchWidgetProviderSize.MEDIUM
+                dp >= DP_SMALL -> SearchWidgetProviderSize.SMALL
+                dp >= DP_EXTRA_SMALL -> SearchWidgetProviderSize.EXTRA_SMALL_V2
+                else -> SearchWidgetProviderSize.EXTRA_SMALL_V1
             }
-            SearchWidgetProviderSize.EXTRA_SMALL_V2 -> R.layout.mozac_search_widget_extra_small_v2
-            SearchWidgetProviderSize.EXTRA_SMALL_V1 -> R.layout.mozac_search_widget_extra_small_v1
-        }
 
-        /**
-         * Get the text to place in the search widget.
-         */
+        /** Get the layout resource to use for the search widget. */
         @VisibleForTesting
-        internal fun getText(layout: SearchWidgetProviderSize, context: Context) = when (layout) {
-            SearchWidgetProviderSize.MEDIUM -> context.getString(R.string.search_widget_text_short)
-            SearchWidgetProviderSize.LARGE -> context.getString(R.string.search_widget_text_long)
-            else -> null
-        }
+        internal fun getLayout(size: SearchWidgetProviderSize, showMic: Boolean) =
+            when (size) {
+                SearchWidgetProviderSize.LARGE -> R.layout.mozac_search_widget_large
+                SearchWidgetProviderSize.MEDIUM -> R.layout.mozac_search_widget_medium
+                SearchWidgetProviderSize.SMALL -> {
+                    if (showMic) {
+                        R.layout.mozac_search_widget_small
+                    } else {
+                        R.layout.mozac_search_widget_small_no_mic
+                    }
+                }
+                SearchWidgetProviderSize.EXTRA_SMALL_V2 -> R.layout.mozac_search_widget_extra_small_v2
+                SearchWidgetProviderSize.EXTRA_SMALL_V1 -> R.layout.mozac_search_widget_extra_small_v1
+            }
+
+        /** Get the text to place in the search widget. */
+        @VisibleForTesting
+        internal fun getText(layout: SearchWidgetProviderSize, context: Context) =
+            when (layout) {
+                SearchWidgetProviderSize.MEDIUM -> context.getString(R.string.search_widget_text_short)
+                SearchWidgetProviderSize.LARGE -> context.getString(R.string.search_widget_text_long)
+                else -> null
+            }
     }
 }
 
-/**
- * Client App can set from this config icons and the app name for search widget.
- */
+/** Client App can set from this config icons and the app name for search widget. */
 data class SearchWidgetConfig(
     val searchWidgetIconResource: Int,
     val searchWidgetMicrophoneResource: Int,

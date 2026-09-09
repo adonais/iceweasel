@@ -11,37 +11,37 @@
 #include "blapi.h" /* below the line */
 #include "secerr.h"
 
-#define RawHashBase(ctxtype, mmm)                                                        \
-    static void *                                                                        \
-        RawHash_##mmm##_NewContext(void)                                                 \
-    {                                                                                    \
-        ctxtype *ctx = mmm##_NewContext();                                               \
-        return ctx;                                                                      \
-    }                                                                                    \
-    static void                                                                          \
-        RawHash_##mmm##_Begin(void *vctx)                                                \
-    {                                                                                    \
-        ctxtype *ctx = vctx;                                                             \
-        mmm##_Begin(ctx);                                                                \
-    }                                                                                    \
-    static void                                                                          \
-        RawHash_##mmm##_Update(void *vctx, const unsigned char *input, unsigned int len) \
-    {                                                                                    \
-        ctxtype *ctx = vctx;                                                             \
-        mmm##_Update(ctx, input, len);                                                   \
-    }                                                                                    \
-    static void                                                                          \
-        RawHash_##mmm##_End(void *vctx, unsigned char *digest,                           \
-                            unsigned int *len, unsigned int maxLen)                      \
-    {                                                                                    \
-        ctxtype *ctx = vctx;                                                             \
-        mmm##_End(ctx, digest, len, maxLen);                                             \
-    }                                                                                    \
-    static void                                                                          \
-        RawHash_##mmm##_DestroyContext(void *vctx, PRBool freeit)                        \
-    {                                                                                    \
-        ctxtype *ctx = vctx;                                                             \
-        mmm##_DestroyContext(ctx, freeit);                                               \
+#define RawHashBase(ctxtype, mmm)                                                    \
+    static void *                                                                    \
+    RawHash_##mmm##_NewContext(void)                                                 \
+    {                                                                                \
+        ctxtype *ctx = mmm##_NewContext();                                           \
+        return ctx;                                                                  \
+    }                                                                                \
+    static void                                                                      \
+    RawHash_##mmm##_Begin(void *vctx)                                                \
+    {                                                                                \
+        ctxtype *ctx = vctx;                                                         \
+        mmm##_Begin(ctx);                                                            \
+    }                                                                                \
+    static void                                                                      \
+    RawHash_##mmm##_Update(void *vctx, const unsigned char *input, unsigned int len) \
+    {                                                                                \
+        ctxtype *ctx = vctx;                                                         \
+        mmm##_Update(ctx, input, len);                                               \
+    }                                                                                \
+    static void                                                                      \
+    RawHash_##mmm##_End(void *vctx, unsigned char *digest,                           \
+                        unsigned int *len, unsigned int maxLen)                      \
+    {                                                                                \
+        ctxtype *ctx = vctx;                                                         \
+        mmm##_End(ctx, digest, len, maxLen);                                         \
+    }                                                                                \
+    static void                                                                      \
+    RawHash_##mmm##_DestroyContext(void *vctx, PRBool freeit)                        \
+    {                                                                                \
+        ctxtype *ctx = vctx;                                                         \
+        mmm##_DestroyContext(ctx, freeit);                                           \
     }
 
 RawHashBase(MD2Context, MD2);
@@ -56,13 +56,13 @@ RawHashBase(SHA3_256Context, SHA3_256);
 RawHashBase(SHA3_384Context, SHA3_384);
 RawHashBase(SHA3_512Context, SHA3_512);
 
-#define RawHashExtra(ctxtype, mmm)                                     \
-    static void                                                        \
-        RawHash_##mmm##_EndRaw(void *vctx, unsigned char *digest,      \
-                               unsigned int *len, unsigned int maxLen) \
-    {                                                                  \
-        ctxtype *ctx = vctx;                                           \
-        mmm##_EndRaw(ctx, digest, len, maxLen);                        \
+#define RawHashExtra(ctxtype, mmm)                                 \
+    static void                                                    \
+    RawHash_##mmm##_EndRaw(void *vctx, unsigned char *digest,      \
+                           unsigned int *len, unsigned int maxLen) \
+    {                                                              \
+        ctxtype *ctx = vctx;                                       \
+        mmm##_EndRaw(ctx, digest, len, maxLen);                    \
     }
 
 RawHashExtra(MD5Context, MD5);

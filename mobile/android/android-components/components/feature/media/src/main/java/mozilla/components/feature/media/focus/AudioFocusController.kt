@@ -6,13 +6,10 @@ package mozilla.components.feature.media.focus
 
 import mozilla.components.concept.engine.mediasession.MediaSession
 
-/**
- * A controller that knows how to request and abandon audio focus.
- */
+/** A controller that knows how to request and abandon audio focus. */
 internal interface AudioFocusController {
-    /**
-     * Request audio focus shaped for the given audio-session [type].
-     */
+    /** Request audio focus shaped for the given audio-session [type]. */
     fun request(type: MediaSession.AudioSessionType): Int
+
     fun abandon()
 }

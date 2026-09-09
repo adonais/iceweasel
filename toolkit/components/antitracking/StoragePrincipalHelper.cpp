@@ -11,7 +11,6 @@
 #include "mozilla/extensions/WebExtensionPolicy.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StorageAccess.h"
 #include "nsContentUtils.h"
 #include "nsICookieJarSettings.h"
@@ -371,12 +370,6 @@ bool StoragePrincipalHelper::ShouldUsePartitionPrincipalForServiceWorker(
     nsIDocShell* aDocShell) {
   MOZ_ASSERT(aDocShell);
 
-  // We don't use the partitioned principal for service workers if it's
-  // disabled.
-  if (!StaticPrefs::privacy_partition_serviceWorkers()) {
-    return false;
-  }
-
   RefPtr<dom::Document> document = aDocShell->GetExtantDocument();
 
   // If we cannot get the document from the docShell, we turn to get its
@@ -421,12 +414,6 @@ bool StoragePrincipalHelper::ShouldUsePartitionPrincipalForServiceWorker(
 bool StoragePrincipalHelper::ShouldUsePartitionPrincipalForServiceWorker(
     dom::WorkerPrivate* aWorkerPrivate) {
   MOZ_ASSERT(aWorkerPrivate);
-
-  // We don't use the partitioned principal for service workers if it's
-  // disabled.
-  if (!StaticPrefs::privacy_partition_serviceWorkers()) {
-    return false;
-  }
 
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings =
       aWorkerPrivate->CookieJarSettings();

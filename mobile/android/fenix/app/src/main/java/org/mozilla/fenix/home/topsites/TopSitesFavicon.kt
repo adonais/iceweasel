@@ -8,15 +8,13 @@ import androidx.annotation.DrawableRes
 import mozilla.components.feature.top.sites.TopSite
 import org.mozilla.fenix.R
 
-/**
- * Represents the favicon of a top site.
- */
+/** Represents the favicon of a top site. */
 sealed class TopSitesFavicon {
     /**
      * An image URL. Image URL is only available with [TopSite.Provided].
      *
-     * @property imageUrl The URL of the image to use. If empty or null, the favicon will be
-     * fetched using the top site URL.
+     * @property imageUrl The URL of the image to use. If empty or null, the favicon will be fetched using the top site
+     *   URL.
      */
     data class ImageUrl(val imageUrl: String?) : TopSitesFavicon()
 
@@ -25,9 +23,7 @@ sealed class TopSitesFavicon {
      *
      * @property drawableResId The drawable resource ID to use.
      */
-    data class Drawable(
-        @param:DrawableRes val drawableResId: Int,
-    ) : TopSitesFavicon()
+    data class Drawable(@param:DrawableRes val drawableResId: Int) : TopSitesFavicon()
 }
 
 internal fun getTopSitesFavicon(topSite: TopSite): TopSitesFavicon {
@@ -36,8 +32,7 @@ internal fun getTopSitesFavicon(topSite: TopSite): TopSitesFavicon {
     }
 
     return when (topSite.url) {
-        "https://tenki.jp/" ->
-            TopSitesFavicon.ImageUrl(imageUrl = "https://tenki.jp/favicon.ico")
+        "https://tenki.jp/" -> TopSitesFavicon.ImageUrl(imageUrl = "https://tenki.jp/favicon.ico")
         "https://m.yahoo.co.jp/" ->
             TopSitesFavicon.ImageUrl(imageUrl = "https://s.yimg.jp/c/icon/s/bsc/2.0/favicon.ico")
         "https://ameblo.jp/" ->

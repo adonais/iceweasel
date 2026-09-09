@@ -25,7 +25,7 @@ namespace nss_test {
 class SoftokenTest : public ::testing::Test {
  protected:
   SoftokenTest() : mNSSDBDir("SoftokenTest.d-") {}
-  SoftokenTest(const std::string &prefix) : mNSSDBDir(prefix) {}
+  SoftokenTest(const std::string& prefix) : mNSSDBDir(prefix) {}
 
   virtual void SetUp() {
     std::string nssInitArg("sql:");
@@ -36,7 +36,7 @@ class SoftokenTest : public ::testing::Test {
 
   virtual void TearDown() {
     ASSERT_EQ(SECSuccess, NSS_Shutdown());
-    const std::string &nssDBDirPath = mNSSDBDir.GetPath();
+    const std::string& nssDBDirPath = mNSSDBDir.GetPath();
     ASSERT_EQ(0, unlink((nssDBDirPath + "/cert9.db").c_str()));
     ASSERT_EQ(0, unlink((nssDBDirPath + "/key4.db").c_str()));
     ASSERT_EQ(0, unlink((nssDBDirPath + "/pkcs11.txt").c_str()));
@@ -54,18 +54,18 @@ TEST_F(SoftokenTest, CheckDefaultPbkdf2Iterations) {
   // Compare bytes against the expected values to avoid ASN.1 here.
   std::string key_db = mNSSDBDir.GetPath() + "/key4.db";
 
-  sqlite3 *sql_db = NULL;
+  sqlite3* sql_db = NULL;
   ASSERT_EQ(SQLITE_OK, sqlite3_open(key_db.c_str(), &sql_db));
 
-  char *query_str = sqlite3_mprintf("SELECT item2 FROM metaData;");
+  char* query_str = sqlite3_mprintf("SELECT item2 FROM metaData;");
   ASSERT_NE(nullptr, query_str);
 
-  sqlite3_stmt *statement = NULL;
+  sqlite3_stmt* statement = NULL;
   ASSERT_EQ(SQLITE_OK,
             sqlite3_prepare_v2(sql_db, query_str, -1, &statement, NULL));
   ASSERT_EQ(SQLITE_ROW, sqlite3_step(statement));
   unsigned int len = sqlite3_column_bytes(statement, 0);
-  const unsigned char *reader = sqlite3_column_text(statement, 0);
+  const unsigned char* reader = sqlite3_column_text(statement, 0);
 
   ASSERT_NE(nullptr, reader);
   ASSERT_EQ(133U, len);
@@ -123,44 +123,43 @@ static const CK_BBOOL ck_true = CK_TRUE;
 static const CK_TRUST ckt_nss_must_verify_trust = CKT_NSS_MUST_VERIFY_TRUST;
 static const CK_TRUST ckt_nss_trusted_delegator = CKT_NSS_TRUSTED_DELEGATOR;
 static const CK_ATTRIBUTE attributes[] = {
-    {CKA_CLASS, (void *)&cko_nss_trust, (PRUint32)sizeof(CK_OBJECT_CLASS)},
-    {CKA_TOKEN, (void *)&ck_true, (PRUint32)sizeof(CK_BBOOL)},
-    {CKA_PRIVATE, (void *)&ck_false, (PRUint32)sizeof(CK_BBOOL)},
-    {CKA_MODIFIABLE, (void *)&ck_false, (PRUint32)sizeof(CK_BBOOL)},
+    {CKA_CLASS, (void*)&cko_nss_trust, (PRUint32)sizeof(CK_OBJECT_CLASS)},
+    {CKA_TOKEN, (void*)&ck_true, (PRUint32)sizeof(CK_BBOOL)},
+    {CKA_PRIVATE, (void*)&ck_false, (PRUint32)sizeof(CK_BBOOL)},
+    {CKA_MODIFIABLE, (void*)&ck_false, (PRUint32)sizeof(CK_BBOOL)},
     {CKA_LABEL,
-     (void *)"Symantec Class 2 Public Primary Certification Authority - G4",
+     (void*)"Symantec Class 2 Public Primary Certification Authority - G4",
      (PRUint32)61},
     {CKA_CERT_SHA1_HASH,
-     (void *)"\147\044\220\056\110\001\260\042\226\100\020\106\264\261\147\054"
-             "\251\165\375\053",
+     (void*)"\147\044\220\056\110\001\260\042\226\100\020\106\264\261\147\054"
+            "\251\165\375\053",
      (PRUint32)20},
     {CKA_CERT_MD5_HASH,
-     (void *)"\160\325\060\361\332\224\227\324\327\164\337\276\355\150\336\226",
+     (void*)"\160\325\060\361\332\224\227\324\327\164\337\276\355\150\336\226",
      (PRUint32)16},
     {CKA_ISSUER,
-     (void *)"\060\201\224\061\013\060\011\006\003\125\004\006\023\002\125\123"
-             "\061\035\060\033\006\003\125\004\012\023\024\123\171\155\141\156"
-             "\164\145\143\040\103\157\162\160\157\162\141\164\151\157\156\061"
-             "\037\060\035\006\003\125\004\013\023\026\123\171\155\141\156\164"
-             "\145\143\040\124\162\165\163\164\040\116\145\164\167\157\162\153"
-             "\061\105\060\103\006\003\125\004\003\023\074\123\171\155\141\156"
-             "\164\145\143\040\103\154\141\163\163\040\062\040\120\165\142\154"
-             "\151\143\040\120\162\151\155\141\162\171\040\103\145\162\164\151"
-             "\146\151\143\141\164\151\157\156\040\101\165\164\150\157\162\151"
-             "\164\171\040\055\040\107\064",
+     (void*)"\060\201\224\061\013\060\011\006\003\125\004\006\023\002\125\123"
+            "\061\035\060\033\006\003\125\004\012\023\024\123\171\155\141\156"
+            "\164\145\143\040\103\157\162\160\157\162\141\164\151\157\156\061"
+            "\037\060\035\006\003\125\004\013\023\026\123\171\155\141\156\164"
+            "\145\143\040\124\162\165\163\164\040\116\145\164\167\157\162\153"
+            "\061\105\060\103\006\003\125\004\003\023\074\123\171\155\141\156"
+            "\164\145\143\040\103\154\141\163\163\040\062\040\120\165\142\154"
+            "\151\143\040\120\162\151\155\141\162\171\040\103\145\162\164\151"
+            "\146\151\143\141\164\151\157\156\040\101\165\164\150\157\162\151"
+            "\164\171\040\055\040\107\064",
      (PRUint32)151},
     {CKA_SERIAL_NUMBER,
-     (void *)"\002\020\064\027\145\022\100\073\267\126\200\055\200\313\171\125"
-             "\246\036",
+     (void*)"\002\020\064\027\145\022\100\073\267\126\200\055\200\313\171\125"
+            "\246\036",
      (PRUint32)18},
-    {CKA_TRUST_SERVER_AUTH, (void *)&ckt_nss_must_verify_trust,
+    {CKA_TRUST_SERVER_AUTH, (void*)&ckt_nss_must_verify_trust,
      (PRUint32)sizeof(CK_TRUST)},
-    {CKA_TRUST_EMAIL_PROTECTION, (void *)&ckt_nss_trusted_delegator,
+    {CKA_TRUST_EMAIL_PROTECTION, (void*)&ckt_nss_trusted_delegator,
      (PRUint32)sizeof(CK_TRUST)},
-    {CKA_TRUST_CODE_SIGNING, (void *)&ckt_nss_must_verify_trust,
+    {CKA_TRUST_CODE_SIGNING, (void*)&ckt_nss_must_verify_trust,
      (PRUint32)sizeof(CK_TRUST)},
-    {CKA_TRUST_STEP_UP_APPROVED, (void *)&ck_false,
-     (PRUint32)sizeof(CK_BBOOL)}};
+    {CKA_TRUST_STEP_UP_APPROVED, (void*)&ck_false, (PRUint32)sizeof(CK_BBOOL)}};
 
 TEST_F(SoftokenTest, GetInvalidAttribute) {
   ScopedPK11SlotInfo slot(PK11_GetInternalKeySlot());
@@ -576,8 +575,8 @@ static unsigned char certDER[] = {
     0xC1, 0xF5, 0x37, 0xC7, 0xB5, 0xCE, 0x0D};
 
 struct PasswordPair {
-  const char *mInitialPassword;
-  const char *mSecondPassword;
+  const char* mInitialPassword;
+  const char* mSecondPassword;
 };
 
 class SoftokenPasswordChangeTest
@@ -585,7 +584,7 @@ class SoftokenPasswordChangeTest
       public ::testing::WithParamInterface<PasswordPair> {};
 
 TEST_P(SoftokenPasswordChangeTest, KeepTrustAfterPasswordChange) {
-  const PasswordPair &passwords = GetParam();
+  const PasswordPair& passwords = GetParam();
   ScopedPK11SlotInfo slot(PK11_GetInternalKeySlot());
   ASSERT_TRUE(slot);
   // Set a password.
@@ -648,8 +647,8 @@ TEST_F(SoftokenNoDBTest, NeedUserInitNoDB) {
   ASSERT_EQ(SECSuccess, NSS_Shutdown());
 }
 
-SECStatus test_dh_value(const PQGParams *params, const SECItem *pub_key_value,
-                        PRBool genFailOK, time_t *time) {
+SECStatus test_dh_value(const PQGParams* params, const SECItem* pub_key_value,
+                        PRBool genFailOK, time_t* time) {
   SECKEYDHParams dh_params;
   dh_params.base = params->base;
   dh_params.prime = params->prime;
@@ -659,7 +658,7 @@ SECStatus test_dh_value(const PQGParams *params, const SECItem *pub_key_value,
   if (!slot) return SECFailure;
 
   /* create a private/public key pair in with the given params */
-  SECKEYPublicKey *pub_tmp = nullptr;
+  SECKEYPublicKey* pub_tmp = nullptr;
   ScopedSECKEYPrivateKey priv_key(
       PK11_GenerateKeyPair(slot.get(), CKM_DH_PKCS_KEY_PAIR_GEN, &dh_params,
                            &pub_tmp, PR_FALSE, PR_TRUE, nullptr));
@@ -672,14 +671,14 @@ SECStatus test_dh_value(const PQGParams *params, const SECItem *pub_key_value,
   if ((priv_key.get() == nullptr) || (pub_tmp == nullptr)) return SECFailure;
   ScopedSECKEYPublicKey pub_key(pub_tmp);
   ScopedSECKEYPublicKey peer_pub_key_manager(nullptr);
-  SECKEYPublicKey *peer_pub_key = pub_key.get();
+  SECKEYPublicKey* peer_pub_key = pub_key.get();
 
   /* if a subprime has been given set it on the PKCS #11 key */
   if (params->subPrime.data != nullptr) {
     SECStatus rv;
     EXPECT_EQ(SECSuccess, rv = PK11_WriteRawAttribute(
                               PK11_TypePrivKey, priv_key.get(), CKA_SUBPRIME,
-                              (SECItem *)&params->subPrime))
+                              (SECItem*)&params->subPrime))
         << "PK11_WriteRawAttribute failed: "
         << PORT_ErrorToString(PORT_GetError());
     if (rv != SECSuccess) {
@@ -735,9 +734,9 @@ class SoftokenDhTest : public SoftokenTest {
     time_t time;
     for (int i = CLASS_FIRST; i < CLASS_LAST; i++) {
       PQGParams params;
-      params.prime.data = (unsigned char *)reference_prime[i];
+      params.prime.data = (unsigned char*)reference_prime[i];
       params.prime.len = reference_prime_len[i];
-      params.base.data = (unsigned char *)g2;
+      params.base.data = (unsigned char*)g2;
       params.base.len = sizeof(g2);
       params.subPrime.data = nullptr;
       params.subPrime.len = 0;
@@ -748,7 +747,7 @@ class SoftokenDhTest : public SoftokenTest {
   };
 };
 
-const char *param_value(DhParamType param_type) {
+const char* param_value(DhParamType param_type) {
   switch (param_type) {
     case TLS_APPROVED:
       return "TLS_APPROVED";
@@ -770,7 +769,7 @@ const char *param_value(DhParamType param_type) {
   return "**Invalid**";
 }
 
-const char *key_value(DhKeyClass key_class) {
+const char* key_value(DhKeyClass key_class) {
   switch (key_class) {
     case CLASS_1536:
       return "CLASS_1536";
@@ -798,7 +797,7 @@ class SoftokenDhValidate : public SoftokenDhTest,
  * should fail */
 TEST_P(SoftokenDhValidate, DhVectors) {
   const DhTestVector dhTestValues = GetParam();
-  std::string testId = (char *)(dhTestValues.id);
+  std::string testId = (char*)(dhTestValues.id);
   std::string err = "Test(" + testId + ") failed";
   SECStatus rv;
   time_t time;
@@ -854,13 +853,13 @@ INSTANTIATE_TEST_SUITE_P(DhValidateCases, SoftokenDhValidate,
 class SoftokenFipsTest : public SoftokenTest {
  protected:
   SoftokenFipsTest() : SoftokenTest("SoftokenFipsTest.d-") {}
-  SoftokenFipsTest(const std::string &prefix) : SoftokenTest(prefix) {}
+  SoftokenFipsTest(const std::string& prefix) : SoftokenTest(prefix) {}
 
   virtual void SetUp() {
     SoftokenTest::SetUp();
 
     // Turn on FIPS mode (code borrowed from FipsMode in modutil/pk11.c)
-    char *internal_name;
+    char* internal_name;
     ASSERT_FALSE(PK11_IsFIPS());
     internal_name = PR_smprintf("%s", SECMOD_GetInternalModule()->commonName);
     ASSERT_EQ(SECSuccess, SECMOD_DeleteInternalModule(internal_name))
@@ -890,9 +889,9 @@ class SoftokenFipsDhTest : public SoftokenFipsTest {
     time_t time;
     for (int i = CLASS_FIRST; i < CLASS_LAST; i++) {
       PQGParams params;
-      params.prime.data = (unsigned char *)reference_prime[i];
+      params.prime.data = (unsigned char*)reference_prime[i];
       params.prime.len = reference_prime_len[i];
-      params.base.data = (unsigned char *)g2;
+      params.base.data = (unsigned char*)g2;
       params.base.len = sizeof(g2);
       params.subPrime.data = nullptr;
       params.subPrime.len = 0;
@@ -936,7 +935,7 @@ class SoftokenFipsBadPasswordTest
       public ::testing::WithParamInterface<std::vector<std::string>> {};
 
 TEST_P(SoftokenFipsPasswordTest, SetPassword) {
-  const std::vector<std::string> &passwords = GetParam();
+  const std::vector<std::string>& passwords = GetParam();
   ScopedPK11SlotInfo slot(PK11_GetInternalKeySlot());
   ASSERT_TRUE(slot);
 
@@ -950,7 +949,7 @@ TEST_P(SoftokenFipsPasswordTest, SetPassword) {
 }
 
 TEST_P(SoftokenFipsBadPasswordTest, SetBadPassword) {
-  const std::vector<std::string> &passwords = GetParam();
+  const std::vector<std::string>& passwords = GetParam();
   ScopedPK11SlotInfo slot(PK11_GetInternalKeySlot());
   ASSERT_TRUE(slot);
 
@@ -978,7 +977,7 @@ class SoftokenFipsDhValidate
  * subprimes, and all sorts of bad public keys should fail */
 TEST_P(SoftokenFipsDhValidate, DhVectors) {
   const DhTestVector dhTestValues = GetParam();
-  std::string testId = (char *)(dhTestValues.id);
+  std::string testId = (char*)(dhTestValues.id);
   std::string err = "Test(" + testId + ") failed";
   time_t time;
   PRBool genFailOK = PR_FALSE;
@@ -1038,7 +1037,7 @@ INSTANTIATE_TEST_SUITE_P(FipsDhCases, SoftokenFipsDhValidate,
 
 }  // namespace nss_test
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
   return RUN_ALL_TESTS();

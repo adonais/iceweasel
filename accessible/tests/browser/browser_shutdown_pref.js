@@ -70,3 +70,51 @@ add_task(async function testForceDisable() {
   await a11yShutdown;
   ok(!Services.appinfo.accessibilityEnabled, "Accessibility is disabled");
 });
+
+add_task(async function testForceEnable() {
+  ok(
+    !Services.appinfo.accessibilityEnabled,
+    "Accessibility is disabled by default"
+  );
+
+  info("Force enable a11y service via preference while it is off");
+  let [a11yInitObserver, a11yInit] = initAccService();
+  await a11yInitObserver;
+  Services.prefs.setIntPref(PREF_ACCESSIBILITY_FORCE_DISABLED, -1);
+  await a11yInit;
+  ok(Services.appinfo.accessibilityEnabled, "Accessibility is enabled");
+
+  let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
+    Ci.nsIAccessibilityService
+  );
+  ok(
+    JSON.parse(accService.getConsumers()).PlatformAPI,
+    "Accessibility was started for the PlatformAPI consumer"
+  );
+
+  info("Force disable a11y service via preference");
+  let [a11yShutdownObserver, a11yShutdown] = shutdownAccService();
+  await a11yShutdownObserver;
+  Services.prefs.setIntPref(PREF_ACCESSIBILITY_FORCE_DISABLED, 1);
+  await a11yShutdown;
+  ok(!Services.appinfo.accessibilityEnabled, "Accessibility is disabled");
+
+  info(
+    "Force enable a11y service via preference again after a forced shutdown"
+  );
+  [a11yInitObserver, a11yInit] = initAccService();
+  await a11yInitObserver;
+  Services.prefs.setIntPref(PREF_ACCESSIBILITY_FORCE_DISABLED, -1);
+  await a11yInit;
+  ok(Services.appinfo.accessibilityEnabled, "Accessibility is enabled again");
+
+  info(
+    "Force disable a11y service via preference again to leave a11y off for later tests"
+  );
+  [a11yShutdownObserver, a11yShutdown] = shutdownAccService();
+  await a11yShutdownObserver;
+  Services.prefs.setIntPref(PREF_ACCESSIBILITY_FORCE_DISABLED, 1);
+  await a11yShutdown;
+  Services.prefs.clearUserPref(PREF_ACCESSIBILITY_FORCE_DISABLED);
+  ok(!Services.appinfo.accessibilityEnabled, "Accessibility is disabled");
+});

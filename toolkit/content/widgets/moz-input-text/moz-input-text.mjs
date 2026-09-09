@@ -20,6 +20,7 @@ import { MozBaseInputElement } from "../lit-utils.mjs";
  * @property {string} placeholder - Text to display when the input has no value.
  * @property {string} ariaLabel - The aria-label text when there is no visible label.
  * @property {string} ariaDescription - The aria-description text when there is no visible description.
+ * @property {string} title - The title attribute, mapped onto the inner input.
  */
 export default class MozInputText extends MozBaseInputElement {
   static properties = {
@@ -65,6 +66,7 @@ export default class MozInputText extends MozBaseInputElement {
         aria-description=${ifDefined(
           this.hasDescription ? undefined : this.ariaDescription
         )}
+        title=${ifDefined(this.title)}
         @input=${this.handleInput}
         @change=${this.redispatchEvent}
       />

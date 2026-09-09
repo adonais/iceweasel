@@ -10,7 +10,7 @@ const { ChromeProfileMigrator } = ChromeUtils.importESModule(
 /**
  * Tests that if the migration wizard is opened when the
  * MOZ_UNINSTALLER_PROFILE_REFRESH environment variable is defined,
- * that the migration.uninstaller_profile_refresh scalar is set,
+ * that the migration.uninstaller_profile_refresh metric is set,
  * and the environment variable is cleared.
  */
 add_task(async function test_uninstaller_migration() {
@@ -29,11 +29,10 @@ add_task(async function test_uninstaller_migration() {
 
   await BrowserTestUtils.waitForEvent(wizardWin, "MigrationWizard:Ready");
 
-  let scalars = TelemetryTestUtils.getProcessScalars("parent", false, true);
-  TelemetryTestUtils.assertScalar(
-    scalars,
-    "migration.uninstaller_profile_refresh",
-    1
+  Assert.strictEqual(
+    Glean.migration.uninstallerProfileRefresh.testGetValue(),
+    true,
+    "Uninstaller profile refresh telemetry should be set"
   );
 
   Assert.equal(

@@ -52,8 +52,7 @@ private val FallbackIconSize = 36.dp
  * @param thumbnailSizePx The requested size of the thumbnail in pixels.
  * @param alignment [Alignment] used to draw the image content.
  * @param modifier [Modifier] used to draw the image content.
- * @param contentDescription Optional text used by accessibility services to describe what this image
- * represents.
+ * @param contentDescription Optional text used by accessibility services to describe what this image represents.
  */
 @Composable
 fun ThumbnailImage(
@@ -63,11 +62,12 @@ fun ThumbnailImage(
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
 ) {
-    val request = ImageLoadRequest(
-        id = tabThumbnailImageData.tabId,
-        size = thumbnailSizePx,
-        isPrivate = tabThumbnailImageData.isPrivate,
-    )
+    val request =
+        ImageLoadRequest(
+            id = tabThumbnailImageData.tabId,
+            size = thumbnailSizePx,
+            isPrivate = tabThumbnailImageData.isPrivate,
+        )
 
     ThumbnailImage(
         request = request,
@@ -106,8 +106,7 @@ fun ThumbnailImage(
             Image(
                 painter = painterResource(id = R.drawable.ic_japan_onboarding_favicon),
                 contentDescription = null,
-                modifier = modifier
-                    .size(FallbackIconSize),
+                modifier = modifier.size(FallbackIconSize),
                 contentScale = contentScale,
                 alignment = alignment,
             )
@@ -123,10 +122,11 @@ fun ThumbnailImage(
                     scope.launch {
                         val thumbnailBitmap = storage.loadThumbnail(request).await()
                         thumbnailBitmap?.prepareToDraw()
-                        state = ThumbnailImageState(
-                            bitmap = thumbnailBitmap,
-                            hasLoaded = true,
-                        )
+                        state =
+                            ThumbnailImageState(
+                                bitmap = thumbnailBitmap,
+                                hasLoaded = true,
+                            )
                     }
                 }
 
@@ -135,10 +135,11 @@ fun ThumbnailImage(
                     // will bloat the memory. This is a trade-off, however, as the bitmap
                     // will be re-fetched if this Composable is disposed and re-loaded.
                     state.bitmap?.recycle()
-                    state = ThumbnailImageState(
-                        bitmap = null,
-                        hasLoaded = false,
-                    )
+                    state =
+                        ThumbnailImageState(
+                            bitmap = null,
+                            hasLoaded = false,
+                        )
                 }
             }
 
@@ -167,8 +168,7 @@ fun ThumbnailImage(
  * @param tabUrl The tab's URL
  * @param icon Icon used for fallback content
  * @param modifier [Modifier] used to draw the image content.
- * @param contentDescription Optional text used by accessibility services to describe what this content
- * represents.
+ * @param contentDescription Optional text used by accessibility services to describe what this content represents.
  */
 @Composable
 private fun FallbackContent(
@@ -178,9 +178,7 @@ private fun FallbackContent(
     contentDescription: String? = null,
 ) {
     Box(
-        modifier = modifier
-            .background(color = MaterialTheme.colorScheme.surfaceContainerLowest)
-            .fillMaxSize(),
+        modifier = modifier.background(color = MaterialTheme.colorScheme.surfaceContainerLowest).fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
         if (icon != null) {
@@ -191,18 +189,14 @@ private fun FallbackContent(
             Image(
                 bitmap = icon,
                 contentDescription = contentDescription,
-                modifier = Modifier
-                    .size(FallbackIconSize)
-                    .clip(MaterialTheme.shapes.small),
+                modifier = Modifier.size(FallbackIconSize).clip(MaterialTheme.shapes.small),
                 contentScale = ContentScale.FillWidth,
             )
         } else if (tabUrl == ABOUT_HOME_URL) {
             Image(
                 painter = painterResource(id = R.drawable.ic_firefox),
                 contentDescription = null,
-                modifier = Modifier
-                    .size(FallbackIconSize)
-                    .clip(MaterialTheme.shapes.small),
+                modifier = Modifier.size(FallbackIconSize).clip(MaterialTheme.shapes.small),
             )
         } else {
             Favicon(
@@ -213,17 +207,13 @@ private fun FallbackContent(
     }
 }
 
-/**
- * State wrapper for [ThumbnailImage].
- */
+/** State wrapper for [ThumbnailImage]. */
 private data class ThumbnailImageState(
     val bitmap: Bitmap?,
     val hasLoaded: Boolean,
 )
 
-/**
- * This preview does not demo anything. This is to ensure that [ThumbnailImage] does not break other previews.
- */
+/** This preview does not demo anything. This is to ensure that [ThumbnailImage] does not break other previews. */
 @Preview
 @Composable
 private fun ThumbnailImagePreview() {
@@ -238,15 +228,15 @@ private fun ThumbnailImagePreview() {
             )
 
             ThumbnailImage(
-                tabThumbnailImageData = createTab(
-                    url = "www.mozilla.com",
-                    title = "Mozilla",
-                ).thumbnailImageData(),
+                tabThumbnailImageData =
+                    createTab(
+                            url = "www.mozilla.com",
+                            title = "Mozilla",
+                        )
+                        .thumbnailImageData(),
                 thumbnailSizePx = 100,
                 alignment = Alignment.Center,
-                modifier = Modifier
-                    .size(50.dp)
-                    .background(color = MaterialTheme.colorScheme.information),
+                modifier = Modifier.size(50.dp).background(color = MaterialTheme.colorScheme.information),
             )
 
             FallbackContent(

@@ -12,16 +12,12 @@ import androidx.room.Query
 import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 
-/**
- * Internal DAO for accessing [RecentlyClosedTabEntity] instances.
- */
+/** Internal DAO for accessing [RecentlyClosedTabEntity] instances. */
 @Dao
 internal interface RecentlyClosedTabDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertTab(tab: RecentlyClosedTabEntity): Long
+    @Insert(onConflict = OnConflictStrategy.REPLACE) fun insertTab(tab: RecentlyClosedTabEntity): Long
 
-    @Delete
-    fun deleteTab(tab: RecentlyClosedTabEntity)
+    @Delete fun deleteTab(tab: RecentlyClosedTabEntity)
 
     @Transaction
     @Query(
@@ -29,7 +25,7 @@ internal interface RecentlyClosedTabDao {
         SELECT *
         FROM recently_closed_tabs
         ORDER BY created_at DESC
-    """,
+    """
     )
     fun getTabs(): Flow<List<RecentlyClosedTabEntity>>
 
@@ -37,7 +33,7 @@ internal interface RecentlyClosedTabDao {
     @Query(
         """
         DELETE FROM recently_closed_tabs
-    """,
+    """
     )
     fun removeAllTabs()
 }

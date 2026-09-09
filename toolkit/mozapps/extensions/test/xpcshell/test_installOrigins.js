@@ -7,8 +7,6 @@ const { PermissionTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PermissionTestUtils.sys.mjs"
 );
 
-AddonTestUtils.init(this);
-AddonTestUtils.overrideCertDB();
 AddonTestUtils.usePrivilegedSignatures = false;
 AddonTestUtils.createAppInfo(
   "xpcshell@tests.mozilla.org",

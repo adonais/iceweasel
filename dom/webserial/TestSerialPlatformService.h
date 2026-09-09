@@ -29,11 +29,13 @@ class TestSerialPlatformService final : public SerialPlatformService {
   void Shutdown() override;
 
   void AddMockDevice(const nsString& aId, const nsString& aPath,
-                     uint16_t aVendorId = 0, uint16_t aProductId = 0);
+                     uint16_t aVendorId = 0, uint16_t aProductId = 0,
+                     const nsString& aBluetoothServiceClassId = u""_ns);
 
-  void SimulateDeviceConnection(const nsString& aId, const nsString& aPath,
-                                uint16_t aVendorId = 0,
-                                uint16_t aProductId = 0);
+  void SimulateDeviceConnection(
+      const nsString& aId, const nsString& aPath, uint16_t aVendorId = 0,
+      uint16_t aProductId = 0,
+      const nsString& aBluetoothServiceClassId = u""_ns);
 
   void SimulateDeviceDisconnection(const nsString& aId);
 
@@ -66,7 +68,8 @@ class TestSerialPlatformService final : public SerialPlatformService {
   MockSerialPort* FindPort(const nsString& aPortId);
   void RemoveMockDevice(const nsString& aId);
   MockSerialPort CreateMockPort(const nsString& aId, const nsString& aPath,
-                                uint16_t aVendorId, uint16_t aProductId);
+                                uint16_t aVendorId, uint16_t aProductId,
+                                const nsString& aBluetoothServiceClassId);
   void AddDefaultMockPorts();
 
   nsTArray<MockSerialPort> mMockPorts;

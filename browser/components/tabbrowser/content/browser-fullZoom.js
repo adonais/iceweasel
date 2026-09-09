@@ -365,7 +365,7 @@ var FullZoom = {
 
   sendMessageToPDFViewer(browser, name) {
     try {
-      browser.sendMessageToActor(name, {}, "Pdfjs");
+      browser.sendMessageToActor(name, {}, "PdfJs");
     } catch (ex) {
       console.error(ex);
     }

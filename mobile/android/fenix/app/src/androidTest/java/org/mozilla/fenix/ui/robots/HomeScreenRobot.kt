@@ -48,6 +48,8 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiObjectNotFoundException
 import androidx.test.uiautomator.UiScrollable
 import androidx.test.uiautomator.UiSelector
+import mozilla.components.browser.menu.R as menuR
+import mozilla.components.compose.base.R as composeBaseR
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_URL_BOX
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.TABS_COUNTER
 import org.hamcrest.CoreMatchers.allOf
@@ -64,7 +66,6 @@ import org.mozilla.fenix.helpers.MatcherHelper.itemWithDescription
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithIndex
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdAndIndex
-import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdAndText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdContainingText
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
@@ -83,12 +84,8 @@ import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_TEXT
 import org.mozilla.fenix.home.ui.HomepageTestTag.POCKET_STORIES
 import org.mozilla.fenix.home.ui.HomepageTestTag.PRIVATE_BROWSING_HOMEPAGE_BUTTON
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
-import mozilla.components.browser.menu.R as menuR
-import mozilla.components.compose.base.R as composeBaseR
 
-/**
- * Implementation of Robot Pattern for the home screen menu.
- */
+/** Implementation of Robot Pattern for the home screen menu. */
 class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
     fun verifyNavigationToolbar() = assertUIObjectExists(navigationToolbar())
 
@@ -98,23 +95,21 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
         verifyHomeScreenAppBarItems()
         composeTestRule.waitForIdle()
         mDevice.waitForIdle()
-        assertUIObjectExists(
-            itemContainingText(
-                getStringResource(R.string.felt_privacy_desc_card_title),
-            ),
-        )
+        assertUIObjectExists(itemContainingText(getStringResource(R.string.felt_privacy_desc_card_title)))
     }
 
     fun verifyHomeScreenAppBarItems() =
         assertUIObjectExists(homeScreen(), privateBrowsingButton(), homepageWordmarkLogo(), homepageWordmarkText())
 
     fun verifyHomePrivateBrowsingButton() = assertUIObjectExists(privateBrowsingButton())
+
     fun verifyHomeMenuButton() = assertUIObjectExists(menuButton())
 
     fun verifyHomeWordmark() {
         Log.i(TAG, "verifyHomeWordmark: Scrolled 3x to the beginning of the home screen")
         assertUIObjectExists(homepageWordmarkLogo(), homepageWordmarkText())
     }
+
     fun verifyHomeComponent() {
         Log.i(TAG, "verifyHomeComponent: Trying to verify home screen view is visible")
         this@HomeScreenRobot.composeTestRule.onNodeWithTag(HOMEPAGE).assertIsDisplayed()
@@ -124,12 +119,14 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
     fun verifyTabCounter(numberOfOpenTabs: String, isPrivateBrowsingEnabled: Boolean = false) {
         if (isPrivateBrowsingEnabled) {
             Log.i(TAG, "verifyTabCounter: Trying to verify that the number of open private tabs is : $numberOfOpenTabs")
-            composeTestRule.onNodeWithContentDescription("Private Tabs Open: $numberOfOpenTabs. Tap to switch tabs.")
+            composeTestRule
+                .onNodeWithContentDescription("Private Tabs Open: $numberOfOpenTabs. Tap to switch tabs.")
                 .assertIsDisplayed()
             Log.i(TAG, "verifyTabCounter: Verified that the number of open private tabs is : $numberOfOpenTabs")
         } else {
             Log.i(TAG, "verifyTabCounter: Trying to verify that the number of open tabs is : $numberOfOpenTabs")
-            composeTestRule.onNodeWithContentDescription("Non-private Tabs Open: $numberOfOpenTabs. Tap to switch tabs.")
+            composeTestRule
+                .onNodeWithContentDescription("Non-private Tabs Open: $numberOfOpenTabs. Tap to switch tabs.")
                 .assertIsDisplayed()
             Log.i(TAG, "verifyTabCounter: Verified that the number of open tabs is : $numberOfOpenTabs")
         }
@@ -159,7 +156,7 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     fun <A : androidx.activity.ComponentActivity, R : org.junit.rules.TestRule> verifyEdgeToEdgeWallpaperApplied(
-        composeTestRule: AndroidComposeTestRule<R, A>,
+        composeTestRule: AndroidComposeTestRule<R, A>
     ) {
         Log.i(TAG, "verifyEdgeToEdgeWallpaperApplied: Verifying edge-to-edge wallpaper background")
         verifyWindowBackgroundDrawable(composeTestRule, R.drawable.home_background_gradient)
@@ -167,7 +164,7 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     fun <A : androidx.activity.ComponentActivity, R : org.junit.rules.TestRule> verifyDefaultWallpaperApplied(
-        composeTestRule: AndroidComposeTestRule<R, A>,
+        composeTestRule: AndroidComposeTestRule<R, A>
     ) {
         Log.i(TAG, "verifyDefaultWallpaperApplied: Verifying default wallpaper background")
         verifyWindowBackgroundDrawable(composeTestRule, R.color.fx_mobile_surface)
@@ -175,7 +172,7 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     fun <A : androidx.activity.ComponentActivity, R : org.junit.rules.TestRule> verifyPrivateModeBackgroundApplied(
-        composeTestRule: AndroidComposeTestRule<R, A>,
+        composeTestRule: AndroidComposeTestRule<R, A>
     ) {
         Log.i(TAG, "verifyPrivateModeBackgroundApplied: Verifying private mode background is applied")
         verifyWindowBackgroundDrawable(composeTestRule, R.color.fx_mobile_private_surface)
@@ -185,7 +182,10 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
     @OptIn(ExperimentalTestApi::class)
     fun verifyExistingTopSitesList() {
         Log.i(TAG, "verifyExistingTopSitesList: Waiting for $waitingTime ms until the top sites list exists")
-        this@HomeScreenRobot.composeTestRule.waitUntilAtLeastOneExists(hasTestTag(TopSitesTestTag.TOP_SITES), timeoutMillis = waitingTime)
+        this@HomeScreenRobot.composeTestRule.waitUntilAtLeastOneExists(
+            hasTestTag(TopSitesTestTag.TOP_SITES),
+            timeoutMillis = waitingTime,
+        )
         Log.i(TAG, "verifyExistingTopSitesList: Waited for $waitingTime ms until the top sites list to exists")
         Log.i(TAG, "verifyExistingTopSitesList: Trying to verify that the top sites list is displayed")
         this@HomeScreenRobot.composeTestRule.onNodeWithTag(TopSitesTestTag.TOP_SITES).assertIsDisplayed()
@@ -194,9 +194,15 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
 
     fun verifyNotExistingTopSiteItem(vararg titles: String) {
         titles.forEach { title ->
-            Log.i(TAG, "verifyNotExistingTopSiteItem: Waiting for $waitingTime ms for top site with title: $title to disappear")
+            Log.i(
+                TAG,
+                "verifyNotExistingTopSiteItem: Waiting for $waitingTime ms for top site with title: $title to disappear",
+            )
             itemContainingText(title).waitUntilGone(waitingTime)
-            Log.i(TAG, "verifyNotExistingTopSiteItem: Waited for $waitingTime ms for top site with title: $title to disappear")
+            Log.i(
+                TAG,
+                "verifyNotExistingTopSiteItem: Waited for $waitingTime ms for top site with title: $title to disappear",
+            )
             Log.i(TAG, "verifyNotExistingTopSiteItem: Trying to verify that top site with title: $title does not exist")
             this@HomeScreenRobot.composeTestRule.topSiteItem(title).assertDoesNotExist()
             Log.i(TAG, "verifyNotExistingTopSiteItem: Verified that top site with title: $title does not exist")
@@ -206,30 +212,33 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
     fun verifySponsoredShortcutDoesNotExist(sponsoredShortcutTitle: String, position: Int) =
         assertUIObjectExists(
             itemWithResIdAndIndex("$packageName:id/top_site_item", index = position - 1)
-                .getChild(
-                    UiSelector()
-                        .textContains(sponsoredShortcutTitle),
-                ),
+                .getChild(UiSelector().textContains(sponsoredShortcutTitle)),
             exists = false,
         )
+
     fun verifyNotExistingSponsoredTopSitesList() =
         assertUIObjectExists(
-            mDevice.findObject(UiSelector().resourceId("top_sites_list.top_site_item"))
-                .getChild(
-                    UiSelector().textContains(getStringResource(R.string.top_sites_sponsored_label)),
-                ),
+            mDevice
+                .findObject(UiSelector().resourceId("top_sites_list.top_site_item"))
+                .getChild(UiSelector().textContains(getStringResource(R.string.top_sites_sponsored_label))),
             exists = false,
         )
 
     @OptIn(ExperimentalTestApi::class)
     fun verifyExistingTopSitesTabs(vararg titles: String) {
         titles.forEach { title ->
-            Log.i(TAG, "verifyExistingTopSiteItem: Waiting for $waitingTime ms until the top site with title: $title exists")
+            Log.i(
+                TAG,
+                "verifyExistingTopSiteItem: Waiting for $waitingTime ms until the top site with title: $title exists",
+            )
             this@HomeScreenRobot.composeTestRule.waitUntilAtLeastOneExists(
                 hasTestTag(TopSitesTestTag.TOP_SITE_ITEM_ROOT).and(hasAnyChild(hasText(title))),
                 timeoutMillis = waitingTimeLong,
             )
-            Log.i(TAG, "verifyExistingTopSiteItem: Waited for $waitingTimeLong ms until the top site with title: $title exists")
+            Log.i(
+                TAG,
+                "verifyExistingTopSiteItem: Waited for $waitingTimeLong ms until the top site with title: $title exists",
+            )
             Log.i(TAG, "verifyExistingTopSiteItem: Trying to verify that the top site with title: $title exists")
             this@HomeScreenRobot.composeTestRule.topSiteItem(title).assertExists()
             Log.i(TAG, "verifyExistingTopSiteItem: Verified that the top site with title: $title exists")
@@ -239,33 +248,27 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
     fun verifyAddShortcutButtonExists() {
         Log.i(TAG, "verifyAddShortcutButtonExists: Trying to verify that the \"Add shortcut\" button exists")
         this@HomeScreenRobot.composeTestRule.onNodeWithTag(TopSitesTestTag.ADD_SHORTCUT_ROOT).assertExists()
-        this@HomeScreenRobot.composeTestRule.onNodeWithTag(TopSitesTestTag.ADD_SHORTCUT_TITLE, useUnmergedTree = true).assert(hasText("Add shortcut"))
+        this@HomeScreenRobot.composeTestRule
+            .onNodeWithTag(TopSitesTestTag.ADD_SHORTCUT_TITLE, useUnmergedTree = true)
+            .assert(hasText("Add shortcut"))
         Log.i(TAG, "verifyAddShortcutButtonExists: Verified that the \"Add shortcut\" button exists")
     }
 
     fun verifySponsoredShortcutDetails(sponsoredShortcutTitle: String, position: Int) {
         assertUIObjectExists(
             itemWithResIdAndIndex(resourceId = "top_sites_list.top_site_item", index = position - 1)
-                .getChild(
-                    UiSelector()
-                        .resourceId(TOP_SITE_CARD_FAVICON),
-                ),
+                .getChild(UiSelector().resourceId(TOP_SITE_CARD_FAVICON))
         )
         assertUIObjectExists(
             itemWithResIdAndIndex(resourceId = "top_sites_list.top_site_item", index = position - 1)
-                .getChild(
-                    UiSelector()
-                        .textContains(sponsoredShortcutTitle),
-                ),
+                .getChild(UiSelector().textContains(sponsoredShortcutTitle))
         )
         assertUIObjectExists(
             itemWithResIdAndIndex(resourceId = "top_sites_list.top_site_item", index = position - 1)
-                .getChild(
-                    UiSelector()
-                        .textContains(getStringResource(R.string.top_sites_sponsored_label)),
-                ),
+                .getChild(UiSelector().textContains(getStringResource(R.string.top_sites_sponsored_label)))
         )
     }
+
     fun verifyTopSiteContextMenuItems() {
         verifyTopSiteContextMenuOpenInPrivateTabButton()
         verifyTopSiteContextMenuRemoveButton()
@@ -273,9 +276,15 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     fun verifyTopSiteContextMenuOpenInPrivateTabButton() {
-        Log.i(TAG, "verifyTopSiteContextMenuOpenInPrivateTabButton: Trying to verify that the \"Open in private tab\" menu button exists")
+        Log.i(
+            TAG,
+            "verifyTopSiteContextMenuOpenInPrivateTabButton: Trying to verify that the \"Open in private tab\" menu button exists",
+        )
         this@HomeScreenRobot.composeTestRule.contextMenuItemOpenInPrivateTab().assertExists()
-        Log.i(TAG, "verifyTopSiteContextMenuOpenInPrivateTabButton: Verified that the \"Open in private tab\" menu button exists")
+        Log.i(
+            TAG,
+            "verifyTopSiteContextMenuOpenInPrivateTabButton: Verified that the \"Open in private tab\" menu button exists",
+        )
     }
 
     fun verifyTopSiteContextMenuEditButton() {
@@ -294,43 +303,68 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
         assertUIObjectExists(itemContainingText(getStringResource(R.string.top_sites_edit_dialog_url_error)))
     }
 
-    fun verifyJumpBackInSectionIsDisplayed() {
-        assertUIObjectExists(itemContainingText(getStringResource(R.string.recent_tabs_header)))
+    fun verifyContinueSectionIsDisplayed() {
+        assertUIObjectExists(itemContainingText(getStringResource(R.string.recent_tabs_header_2)))
     }
 
-    fun verifyJumpBackInSectionIsNotDisplayed() =
-        this@HomeScreenRobot.composeTestRule.onNodeWithText(getStringResource(R.string.recent_tabs_header)).assertIsNotDisplayed()
+    fun verifyContinueSectionIsNotDisplayed() =
+        this@HomeScreenRobot.composeTestRule
+            .onNodeWithText(getStringResource(R.string.recent_tabs_header_2))
+            .assertIsNotDisplayed()
 
-    fun verifyJumpBackInItemTitle(testRule: ComposeTestRule, itemTitle: String) {
-        Log.i(TAG, "verifyJumpBackInItemTitle: Trying to verify jump back in item with title: $itemTitle")
-        testRule.onNodeWithTag("recent.tab.title", useUnmergedTree = true)
-            .assert(hasText(itemTitle))
-        Log.i(TAG, "verifyJumpBackInItemTitle: Verified jump back in item with title: $itemTitle")
+    fun verifyContinueItemTitle(testRule: ComposeTestRule, itemTitle: String) {
+        Log.i(TAG, "verifyContinueItemTitle: Trying to verify continue item with title: $itemTitle")
+        testRule.onNodeWithTag("recent.tab.title", useUnmergedTree = true).assert(hasText(itemTitle))
+        Log.i(TAG, "verifyContinueItemTitle: Verified continue item with title: $itemTitle")
     }
-    fun verifyJumpBackInItemWithUrl(testRule: ComposeTestRule, itemUrl: String) {
-        Log.i(TAG, "verifyJumpBackInItemWithUrl: Trying to verify jump back in item with URL: $itemUrl")
+
+    fun verifyContinueItemWithUrl(testRule: ComposeTestRule, itemUrl: String) {
+        Log.i(TAG, "verifyContinueItemWithUrl: Trying to verify continue item with URL: $itemUrl")
         testRule.onNodeWithTag("recent.tab.url", useUnmergedTree = true).assert(hasText(itemUrl))
-        Log.i(TAG, "verifyJumpBackInItemWithUrl: Verified jump back in item with URL: $itemUrl")
+        Log.i(TAG, "verifyContinueItemWithUrl: Verified continue item with URL: $itemUrl")
     }
-    fun verifyJumpBackInShowAllButton() = assertUIObjectExists(itemContainingText(getStringResource(R.string.recent_tabs_show_all)))
+
     fun verifyRecentlyVisitedSectionIsDisplayed(exists: Boolean) =
         assertUIObjectExists(itemContainingText(getStringResource(R.string.history_metadata_header_2)), exists = exists)
+
     fun verifyBookmarksSectionIsDisplayed(exists: Boolean) =
         assertUIObjectExists(itemContainingText(getStringResource(R.string.home_bookmarks_title)), exists = exists)
 
     fun verifyRecentlyVisitedSearchGroupDisplayed(shouldBeDisplayed: Boolean, searchTerm: String, groupSize: Int) {
         // checks if the search group exists in the Recently visited section
         if (shouldBeDisplayed) {
-            Log.i(TAG, "verifyRecentlyVisitedSearchGroupDisplayed: Trying to verify that the \"Recently visited\" section is displayed")
+            Log.i(
+                TAG,
+                "verifyRecentlyVisitedSearchGroupDisplayed: Trying to verify that the \"Recently visited\" section is displayed",
+            )
             this@HomeScreenRobot.composeTestRule.onNodeWithText("Recently visited").assertIsDisplayed()
-            Log.i(TAG, "verifyRecentlyVisitedSearchGroupDisplayed: Verified that the \"Recently visited\" section is displayed")
-            Log.i(TAG, "verifyRecentlyVisitedSearchGroupDisplayed: Trying to verify that the search group: $searchTerm has $groupSize pages")
-            this@HomeScreenRobot.composeTestRule.onNodeWithText(searchTerm, useUnmergedTree = true).assert(hasAnySibling(hasText("$groupSize pages")))
-            Log.i(TAG, "verifyRecentlyVisitedSearchGroupDisplayed: Verified that the search group: $searchTerm has $groupSize pages")
+            Log.i(
+                TAG,
+                "verifyRecentlyVisitedSearchGroupDisplayed: Verified that the \"Recently visited\" section is displayed",
+            )
+            Log.i(
+                TAG,
+                "verifyRecentlyVisitedSearchGroupDisplayed: Trying to verify that the search group: $searchTerm has $groupSize pages",
+            )
+            this@HomeScreenRobot.composeTestRule
+                .onNodeWithText(searchTerm, useUnmergedTree = true)
+                .assert(hasAnySibling(hasText("$groupSize pages")))
+            Log.i(
+                TAG,
+                "verifyRecentlyVisitedSearchGroupDisplayed: Verified that the search group: $searchTerm has $groupSize pages",
+            )
         } else {
-            Log.i(TAG, "verifyRecentlyVisitedSearchGroupDisplayed: Trying to verify that the search group: $searchTerm is not displayed")
-            this@HomeScreenRobot.composeTestRule.onNodeWithText(searchTerm, useUnmergedTree = true).assertIsNotDisplayed()
-            Log.i(TAG, "verifyRecentlyVisitedSearchGroupDisplayed: Verified that the search group: $searchTerm is not displayed")
+            Log.i(
+                TAG,
+                "verifyRecentlyVisitedSearchGroupDisplayed: Trying to verify that the search group: $searchTerm is not displayed",
+            )
+            this@HomeScreenRobot.composeTestRule
+                .onNodeWithText(searchTerm, useUnmergedTree = true)
+                .assertIsNotDisplayed()
+            Log.i(
+                TAG,
+                "verifyRecentlyVisitedSearchGroupDisplayed: Verified that the search group: $searchTerm is not displayed",
+            )
         }
     }
 
@@ -338,26 +372,40 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
     @OptIn(ExperimentalTestApi::class)
     fun verifyCollectionIsDisplayed(title: String, collectionExists: Boolean = true) {
         if (collectionExists) {
-            Log.i(TAG, "verifyCollectionIsDisplayed: Waiting for $waitingTime until collection with title: $title exist")
+            Log.i(
+                TAG,
+                "verifyCollectionIsDisplayed: Waiting for $waitingTime until collection with title: $title exist",
+            )
             composeTestRule.waitUntilExactlyOneExists(hasText(title), waitingTime)
             Log.i(TAG, "verifyCollectionIsDisplayed: Waited for $waitingTime until collection with title: $title exist")
         } else {
-            Log.i(TAG, "verifyCollectionIsDisplayed: Waiting for $waitingTime until collection with title: $title does not exist")
+            Log.i(
+                TAG,
+                "verifyCollectionIsDisplayed: Waiting for $waitingTime until collection with title: $title does not exist",
+            )
             composeTestRule.waitUntilDoesNotExist(hasText(title), waitingTime)
-            Log.i(TAG, "verifyCollectionIsDisplayed: Waited for $waitingTime until collection with title: $title does not exist")
+            Log.i(
+                TAG,
+                "verifyCollectionIsDisplayed: Waited for $waitingTime until collection with title: $title does not exist",
+            )
         }
     }
 
     fun togglePrivateBrowsingModeOnOff() {
         Log.i(TAG, "togglePrivateBrowsingModeOnOff: Trying to click private browsing home screen button")
-        this@HomeScreenRobot.composeTestRule.onNodeWithContentDescription(getStringResource(R.string.content_description_private_browsing)).performClick()
+        this@HomeScreenRobot.composeTestRule
+            .onNodeWithContentDescription(getStringResource(R.string.content_description_private_browsing))
+            .performClick()
         Log.i(TAG, "togglePrivateBrowsingModeOnOff: Clicked private browsing home screen button")
     }
 
     @OptIn(ExperimentalTestApi::class)
     fun verifyThoughtProvokingStories(enabled: Boolean) {
         if (enabled) {
-            Log.i(TAG, "verifyThoughtProvokingStories: Trying to wait $waitingTimeLong ms for the \"$POCKET_STORIES\" node to appear in the semantics tree")
+            Log.i(
+                TAG,
+                "verifyThoughtProvokingStories: Trying to wait $waitingTimeLong ms for the \"$POCKET_STORIES\" node to appear in the semantics tree",
+            )
             composeTestRule.waitUntilAtLeastOneExists(hasTestTag(POCKET_STORIES), timeoutMillis = waitingTimeLong)
             Log.i(TAG, "verifyThoughtProvokingStories: The \"$POCKET_STORIES\" node appeared in the semantics tree")
             Log.i(TAG, "verifyThoughtProvokingStories: Trying to scroll to the \"$POCKET_STORIES\" node")
@@ -368,7 +416,10 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
             Log.i(TAG, "verifyThoughtProvokingStories: Verified the Pocket stories header is displayed")
         } else {
             Log.i(TAG, "verifyThoughtProvokingStories: Trying to verify the Pocket stories header does not exist")
-            assertUIObjectExists(itemContainingText(getStringResource(R.string.pocket_stories_header_2)), exists = false)
+            assertUIObjectExists(
+                itemContainingText(getStringResource(R.string.pocket_stories_header_2)),
+                exists = false,
+            )
             Log.i(TAG, "verifyThoughtProvokingStories: Verified the Pocket stories header does not exist")
         }
     }
@@ -378,9 +429,15 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
         this@HomeScreenRobot.composeTestRule.onNodeWithTag(HOMEPAGE).performScrollToNode(hasTestTag(POCKET_STORIES))
         Log.i(TAG, "verifyPocketRecommendedStoriesItems: Scrolled into view the \"Stories\" pocket section")
         for (position in 0..7) {
-            Log.i(TAG, "verifyPocketRecommendedStoriesItems: Trying to scroll into view the featured pocket story from position: $position")
+            Log.i(
+                TAG,
+                "verifyPocketRecommendedStoriesItems: Trying to scroll into view the featured pocket story from position: $position",
+            )
             pocketStoriesList().scrollIntoView(UiSelector().index(position))
-            Log.i(TAG, "verifyPocketRecommendedStoriesItems: Scrolled into view the featured pocket story from position: $position")
+            Log.i(
+                TAG,
+                "verifyPocketRecommendedStoriesItems: Scrolled into view the featured pocket story from position: $position",
+            )
             assertUIObjectExists(itemWithIndex(position))
         }
     }
@@ -418,8 +475,10 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
     fun verifyNimbusMessageCard(title: String, text: String, action: String) {
         for (str in listOf(title, text, action)) {
             composeTestRule.waitUntil(waitingTime) {
-                composeTestRule.onAllNodes(hasText(str), useUnmergedTree = true)
-                    .fetchSemanticsNodes(atLeastOneRootRequired = false).isNotEmpty()
+                composeTestRule
+                    .onAllNodes(hasText(str), useUnmergedTree = true)
+                    .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                    .isNotEmpty()
             }
         }
     }
@@ -446,37 +505,88 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     fun clickTheSetAsDefaultBrowserDialogCancelButton() {
-        Log.i(TAG, "clickTheSetAsDefaultBrowserDialogCancelButton: Trying to click the \"Set as default browser\" \"Cancel\" dialog button")
+        Log.i(
+            TAG,
+            "clickTheSetAsDefaultBrowserDialogCancelButton: Trying to click the \"Set as default browser\" \"Cancel\" dialog button",
+        )
         itemContainingText("Cancel").click()
-        Log.i(TAG, "clickTheSetAsDefaultBrowserDialogCancelButton: Clicked the \"Set as default browser\" \"Cancel\" dialog button")
+        Log.i(
+            TAG,
+            "clickTheSetAsDefaultBrowserDialogCancelButton: Clicked the \"Set as default browser\" \"Cancel\" dialog button",
+        )
     }
 
     @OptIn(ExperimentalTestApi::class)
     fun verifyTheTermsOfUseOnboardingCard() {
-        composeTestRule.waitUntilAtLeastOneExists(hasText(getStringResource(R.string.onboarding_welcome_to_firefox)), waitingTime)
+        composeTestRule.waitUntilAtLeastOneExists(
+            hasText(getStringResource(R.string.onboarding_welcome_to_firefox)),
+            waitingTime,
+        )
         Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Trying to verify the \"Terms of use\" title is displayed")
         composeTestRule.onNodeWithText(getStringResource(R.string.onboarding_welcome_to_firefox)).assertIsDisplayed()
         Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Verified the \"Terms of use\" title is displayed")
         Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Trying to verify the \"Terms of use\" subtitle is displayed")
         composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_tou_subtitle)).assertIsDisplayed()
         Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Verified the \"Terms of use\" subtitle is displayed")
-        Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Trying to verify the \"Terms of use\" first message is displayed")
-        composeTestRule.onNodeWithContentDescription(getStringResource(R.string.nova_onboarding_tou_body_line_1, argument = getStringResource(R.string.nova_onboarding_tou_body_line_1_link_text)) + " " + getStringResource(composeBaseR.string.mozac_compose_base_link_text_links_available), useUnmergedTree = true).assertIsDisplayed()
+        Log.i(
+            TAG,
+            "verifyTheTermsOfUseOnboardingCard: Trying to verify the \"Terms of use\" first message is displayed",
+        )
+        composeTestRule
+            .onNodeWithContentDescription(
+                getStringResource(
+                    R.string.nova_onboarding_tou_body_line_1,
+                    argument = getStringResource(R.string.nova_onboarding_tou_body_line_1_link_text),
+                ) + " " + getStringResource(composeBaseR.string.mozac_compose_base_link_text_links_available),
+                useUnmergedTree = true,
+            )
+            .assertIsDisplayed()
         Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Verified the \"Terms of use\" first message is displayed")
-        Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Trying to verify the \"Terms of use\" second message is displayed")
-        composeTestRule.onNodeWithContentDescription(getStringResource(R.string.nova_onboarding_tou_body_line_2, argument = getStringResource(R.string.nova_onboarding_tou_body_line_2_link_text)) + " " + getStringResource(composeBaseR.string.mozac_compose_base_link_text_links_available), useUnmergedTree = true).assertIsDisplayed()
+        Log.i(
+            TAG,
+            "verifyTheTermsOfUseOnboardingCard: Trying to verify the \"Terms of use\" second message is displayed",
+        )
+        composeTestRule
+            .onNodeWithContentDescription(
+                getStringResource(
+                    R.string.nova_onboarding_tou_body_line_2,
+                    argument = getStringResource(R.string.nova_onboarding_tou_body_line_2_link_text),
+                ) + " " + getStringResource(composeBaseR.string.mozac_compose_base_link_text_links_available),
+                useUnmergedTree = true,
+            )
+            .assertIsDisplayed()
         Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Verified the \"Terms of use\" second message is displayed")
-        Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Trying to verify the \"Terms of use\" third message is displayed")
-        composeTestRule.onNodeWithContentDescription(getStringResource(R.string.nova_onboarding_tou_body_line_3, argument = getStringResource(R.string.nova_onboarding_tou_body_line_3_link_text)) + " " + getStringResource(composeBaseR.string.mozac_compose_base_link_text_links_available), useUnmergedTree = true).assertIsDisplayed()
+        Log.i(
+            TAG,
+            "verifyTheTermsOfUseOnboardingCard: Trying to verify the \"Terms of use\" third message is displayed",
+        )
+        composeTestRule
+            .onNodeWithContentDescription(
+                getStringResource(
+                    R.string.nova_onboarding_tou_body_line_3,
+                    argument = getStringResource(R.string.nova_onboarding_tou_body_line_3_link_text),
+                ) + " " + getStringResource(composeBaseR.string.mozac_compose_base_link_text_links_available),
+                useUnmergedTree = true,
+            )
+            .assertIsDisplayed()
         Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Verified the \"Terms of use\" third message is displayed")
-        Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Trying to verify the \"Terms of use\" \"Continue\" button is displayed")
-        composeTestRule.onAllNodesWithText(getStringResource(R.string.nova_onboarding_continue_button)).onFirst().assertIsDisplayed()
+        Log.i(
+            TAG,
+            "verifyTheTermsOfUseOnboardingCard: Trying to verify the \"Terms of use\" \"Continue\" button is displayed",
+        )
+        composeTestRule
+            .onAllNodesWithText(getStringResource(R.string.nova_onboarding_continue_button))
+            .onFirst()
+            .assertIsDisplayed()
         Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Verified the \"Terms of use\" \"Continue\" button is displayed")
     }
 
     fun clickTheOnboardingCardContinueButton() {
         Log.i(TAG, "clickTheOnboardingCardContinueButton: Trying to click the \"Continue\" button")
-        composeTestRule.onAllNodesWithText(getStringResource(R.string.nova_onboarding_continue_button), useUnmergedTree = true).onFirst().performClick()
+        composeTestRule
+            .onAllNodesWithText(getStringResource(R.string.nova_onboarding_continue_button), useUnmergedTree = true)
+            .onFirst()
+            .performClick()
         Log.i(TAG, "clickTheOnboardingCardContinueButton: Clicked the \"Continue\" button")
         Log.i(TAG, "clickTheOnboardingCardContinueButton: Waiting for compose rule to be idle")
         composeTestRule.waitForIdle()
@@ -485,9 +595,11 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
 
     @OptIn(ExperimentalTestApi::class)
     fun clickContinueIfMarketingCardShown() {
-        val marketingCardExists = composeTestRule.onAllNodes(
-            hasText(getStringResource(R.string.nova_onboarding_marketing_title), substring = true),
-        ).fetchSemanticsNodes().isNotEmpty()
+        val marketingCardExists =
+            composeTestRule
+                .onAllNodes(hasText(getStringResource(R.string.nova_onboarding_marketing_title), substring = true))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
 
         if (marketingCardExists) {
             Log.i(TAG, "Onboarding marketing card shown, clicking continue")
@@ -500,25 +612,64 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
 
     @OptIn(ExperimentalTestApi::class)
     fun verifyTheSetAsDefaultBrowserOnboardingCard() {
-        composeTestRule.waitUntilAtLeastOneExists(hasText(getStringResource(R.string.nova_onboarding_set_to_default_title_2)), waitingTime)
-        Log.i(TAG, "verifyTheSetAsDefaultBrowserOnboardingCard: Trying to verify the \"Set as default browser\" onboarding card title is displayed")
-        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_set_to_default_title_2)).assertIsDisplayed()
-        Log.i(TAG, "verifyTheSetAsDefaultBrowserOnboardingCard: Verified the \"Set as default browser\" onboarding card title is displayed")
-        Log.i(TAG, "verifyTheSetAsDefaultBrowserOnboardingCard: Trying to verify the \"Set as default browser\" onboarding card subtitle is displayed")
-        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_set_to_default_subtitle)).assertIsDisplayed()
-        Log.i(TAG, "verifyTheSetAsDefaultBrowserOnboardingCard: Verified the \"Set as default browser\" onboarding cardsubtitle is displayed")
-        Log.i(TAG, "verifyTheSetAsDefaultBrowserOnboardingCard: Trying to verify the \"Set as default browser\" onboarding card button is displayed")
-        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_set_to_default_button)).assertIsDisplayed()
-        Log.i(TAG, "verifyTheSetAsDefaultBrowserOnboardingCard: Verified the \"Set as default browser\" onboarding card button is displayed")
-        Log.i(TAG, "verifyTheSetAsDefaultBrowserOnboardingCard: Trying to verify the \"Set as default browser\" onboarding card \"Not now\" button is displayed")
+        composeTestRule.waitUntilAtLeastOneExists(
+            hasText(getStringResource(R.string.nova_onboarding_set_to_default_title_2)),
+            waitingTime,
+        )
+        Log.i(
+            TAG,
+            "verifyTheSetAsDefaultBrowserOnboardingCard: Trying to verify the \"Set as default browser\" onboarding card title is displayed",
+        )
+        composeTestRule
+            .onNodeWithText(getStringResource(R.string.nova_onboarding_set_to_default_title_2))
+            .assertIsDisplayed()
+        Log.i(
+            TAG,
+            "verifyTheSetAsDefaultBrowserOnboardingCard: Verified the \"Set as default browser\" onboarding card title is displayed",
+        )
+        Log.i(
+            TAG,
+            "verifyTheSetAsDefaultBrowserOnboardingCard: Trying to verify the \"Set as default browser\" onboarding card subtitle is displayed",
+        )
+        composeTestRule
+            .onNodeWithText(getStringResource(R.string.nova_onboarding_set_to_default_subtitle))
+            .assertIsDisplayed()
+        Log.i(
+            TAG,
+            "verifyTheSetAsDefaultBrowserOnboardingCard: Verified the \"Set as default browser\" onboarding cardsubtitle is displayed",
+        )
+        Log.i(
+            TAG,
+            "verifyTheSetAsDefaultBrowserOnboardingCard: Trying to verify the \"Set as default browser\" onboarding card button is displayed",
+        )
+        composeTestRule
+            .onNodeWithText(getStringResource(R.string.nova_onboarding_set_to_default_button))
+            .assertIsDisplayed()
+        Log.i(
+            TAG,
+            "verifyTheSetAsDefaultBrowserOnboardingCard: Verified the \"Set as default browser\" onboarding card button is displayed",
+        )
+        Log.i(
+            TAG,
+            "verifyTheSetAsDefaultBrowserOnboardingCard: Trying to verify the \"Set as default browser\" onboarding card \"Not now\" button is displayed",
+        )
         assertUIObjectExists(itemContainingText(getStringResource(R.string.nova_onboarding_negative_button)))
-        Log.i(TAG, "verifyTheSetAsDefaultBrowserOnboardingCard: Verified the \"Set as default browser\" onboarding card \"Not now\" button is displayed")
+        Log.i(
+            TAG,
+            "verifyTheSetAsDefaultBrowserOnboardingCard: Verified the \"Set as default browser\" onboarding card \"Not now\" button is displayed",
+        )
     }
 
     fun clickTheSetAsDefaultBrowserOnboardingCardButton() {
-        Log.i(TAG, "clickTheSetAsDefaultBrowserOnboardingCardButton: Trying to click the \"Set as default browser\" onboarding card button")
+        Log.i(
+            TAG,
+            "clickTheSetAsDefaultBrowserOnboardingCardButton: Trying to click the \"Set as default browser\" onboarding card button",
+        )
         composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_set_to_default_button)).performClick()
-        Log.i(TAG, "clickTheSetAsDefaultBrowserOnboardingCardButton: Clicked the \"Set as default browser\" onboarding card button")
+        Log.i(
+            TAG,
+            "clickTheSetAsDefaultBrowserOnboardingCardButton: Clicked the \"Set as default browser\" onboarding card button",
+        )
         Log.i(TAG, "clickTheSetAsDefaultBrowserOnboardingCardButton: Waiting for compose rule to be idle")
         composeTestRule.waitForIdle()
         Log.i(TAG, "clickTheSetAsDefaultBrowserOnboardingCardButton: Waited for compose rule to be idle")
@@ -534,30 +685,54 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     fun verifyTheHelpUsBuildABetterInternetOnboardingCard() {
-        Log.i(TAG, "verifyTheHelpUsBuildABetterInternetOnboardingCard: Trying to verify the \"Help us build a better internet\" onboarding card title is displayed")
+        Log.i(
+            TAG,
+            "verifyTheHelpUsBuildABetterInternetOnboardingCard: Trying to verify the \"Help us build a better internet\" onboarding card title is displayed",
+        )
         composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_marketing_title)).assertIsDisplayed()
-        Log.i(TAG, "verifyTheHelpUsBuildABetterInternetOnboardingCard: Verified the \"Help us build a better internet\" onboarding card title is displayed")
-        Log.i(TAG, "verifyTheHelpUsBuildABetterInternetOnboardingCard: Trying to verify the \"Help us build a better internet\" onboarding card \"Continue\" button is displayed")
-        composeTestRule.onAllNodesWithText(getStringResource(R.string.nova_onboarding_continue_button)).onFirst().assertIsDisplayed()
-        Log.i(TAG, "verifyTheHelpUsBuildABetterInternetOnboardingCard: Verified the \"Help us build a better internet\" onboarding card \"Continue\" button is displayed")
+        Log.i(
+            TAG,
+            "verifyTheHelpUsBuildABetterInternetOnboardingCard: Verified the \"Help us build a better internet\" onboarding card title is displayed",
+        )
+        Log.i(
+            TAG,
+            "verifyTheHelpUsBuildABetterInternetOnboardingCard: Trying to verify the \"Help us build a better internet\" onboarding card \"Continue\" button is displayed",
+        )
+        composeTestRule
+            .onAllNodesWithText(getStringResource(R.string.nova_onboarding_continue_button))
+            .onFirst()
+            .assertIsDisplayed()
+        Log.i(
+            TAG,
+            "verifyTheHelpUsBuildABetterInternetOnboardingCard: Verified the \"Help us build a better internet\" onboarding card \"Continue\" button is displayed",
+        )
     }
 
     fun swipeRightTheTermsOfUseOnboardingCard() {
-        Log.i(TAG, "swipeRightTheTermsOfUseOnboardingCard: Trying to perform swipe right action on the \"Terms of use\" onboarding card")
-        mDevice.findObject(
-            UiSelector().textContains(
-                getStringResource(R.string.onboarding_welcome_to_firefox),
-            ),
-        ).swipeRight(3)
-        Log.i(TAG, "swipeRightTheTermsOfUseOnboardingCard: Performed swipe right action on the \"Terms of use\" onboarding card")
+        Log.i(
+            TAG,
+            "swipeRightTheTermsOfUseOnboardingCard: Trying to perform swipe right action on the \"Terms of use\" onboarding card",
+        )
+        mDevice
+            .findObject(UiSelector().textContains(getStringResource(R.string.onboarding_welcome_to_firefox)))
+            .swipeRight(3)
+        Log.i(
+            TAG,
+            "swipeRightTheTermsOfUseOnboardingCard: Performed swipe right action on the \"Terms of use\" onboarding card",
+        )
     }
 
     @OptIn(ExperimentalTestApi::class)
     fun verifyAddToHomepageBottomSheet() {
-        composeTestRule.waitUntilAtLeastOneExists(hasText(getStringResource(R.string.homepage_shortcuts_add_to_homepage)), waitingTime)
+        composeTestRule.waitUntilAtLeastOneExists(
+            hasText(getStringResource(R.string.homepage_shortcuts_add_to_homepage)),
+            waitingTime,
+        )
 
         Log.i(TAG, "verifyAddToHomepageBottomSheet: Trying to verify the \"Add to homepage\" title is displayed")
-        composeTestRule.onNodeWithText(getStringResource(R.string.homepage_shortcuts_add_to_homepage)).assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText(getStringResource(R.string.homepage_shortcuts_add_to_homepage))
+            .assertIsDisplayed()
         Log.i(TAG, "verifyAddToHomepageBottomSheet: Verified the \"Add to homepage\" title is displayed")
 
         Log.i(TAG, "verifyAddToHomepageBottomSheet: Trying to verify the \"Add website\" option is displayed")
@@ -593,10 +768,9 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
                     throw e
                 } else {
                     Log.i(TAG, "clickOnPopularWebsite: Trying to swipe up the bottom sheet drag handle")
-                    composeTestRule.onNodeWithContentDescription("Drag handle", ignoreCase = true)
-                        .performTouchInput {
-                            swipeUp()
-                        }
+                    composeTestRule.onNodeWithContentDescription("Drag handle", ignoreCase = true).performTouchInput {
+                        swipeUp()
+                    }
                     Log.i(TAG, "clickOnPopularWebsite: Swiped up the bottom sheet drag handle")
 
                     Log.i(TAG, "clickOnPopularWebsite: Waiting for device to be idle")
@@ -609,10 +783,15 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
 
     @OptIn(ExperimentalTestApi::class)
     fun verifyEnterAWebsiteUrlDialog() {
-        composeTestRule.waitUntilAtLeastOneExists(hasText(getStringResource(R.string.homepage_shortcuts_add_website_title)), waitingTime)
+        composeTestRule.waitUntilAtLeastOneExists(
+            hasText(getStringResource(R.string.homepage_shortcuts_add_website_title)),
+            waitingTime,
+        )
 
         Log.i(TAG, "verifyEnterAWebsiteUrlDialog: Trying to verify the \"Enter a Website URL\" title is displayed")
-        composeTestRule.onNodeWithText(getStringResource(R.string.homepage_shortcuts_add_website_title)).assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText(getStringResource(R.string.homepage_shortcuts_add_website_title))
+            .assertIsDisplayed()
         Log.i(TAG, "verifyEnterAWebsiteUrlDialog: Verified the \"Enter a Website URL\" title is displayed")
 
         Log.i(TAG, "verifyEnterAWebsiteUrlDialog: Trying to verify the \"URL\" input field is displayed")
@@ -640,7 +819,8 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
 
     fun enterShortcutName(shortcutName: String) {
         Log.i(TAG, "enterShortcutName: Trying to enter shortcut name '$shortcutName' in Enter a Website URL dialog")
-        composeTestRule.onNodeWithText(getStringResource(R.string.shortcut_name_hint))
+        composeTestRule
+            .onNodeWithText(getStringResource(R.string.shortcut_name_hint))
             .performTextReplacement(shortcutName)
         Log.i(TAG, "enterShortcutName: Successfully entered shortcut name: $shortcutName")
     }
@@ -659,8 +839,7 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
 
     fun verifyInvalidUrlError() {
         Log.i(TAG, "verifyInvalidUrlError: Verifying the invalid URL error message is displayed")
-        composeTestRule.onNodeWithText(getStringResource(R.string.top_sites_edit_dialog_url_error))
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithText(getStringResource(R.string.top_sites_edit_dialog_url_error)).assertIsDisplayed()
         Log.i(TAG, "verifyInvalidUrlError: Verified the invalid URL error message is displayed")
     }
 
@@ -740,7 +919,9 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
 
             Log.i(TAG, "togglePrivateBrowsingMode: Waiting for $waitingTime ms for private browsing button to exist")
             if (!privateBrowsingButton().waitForExists(waitingTime)) {
-                throw AssertionError("togglePrivateBrowsingMode: Private browsing button not found after $waitingTime ms")
+                throw AssertionError(
+                    "togglePrivateBrowsingMode: Private browsing button not found after $waitingTime ms"
+                )
             }
             Log.i(TAG, "togglePrivateBrowsingMode: Waited for $waitingTime ms for private browsing button to exist")
 
@@ -763,15 +944,22 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
             }
         }
 
-        fun triggerPrivateBrowsingShortcutPrompt(interact: AddToHomeScreenRobot.() -> Unit): AddToHomeScreenRobot.Transition {
+        fun triggerPrivateBrowsingShortcutPrompt(
+            interact: AddToHomeScreenRobot.() -> Unit
+        ): AddToHomeScreenRobot.Transition {
             // Loop to press the PB icon for 5 times to display the Add the Private Browsing Shortcut CFR
             for (i in 1..5) {
-                Log.i(TAG, "triggerPrivateBrowsingShortcutPrompt: Waiting for $waitingTime ms for private browsing button to exist")
-                mDevice.findObject(UiSelector().resourceId("$packageName:id/privateBrowsingButton"))
-                    .waitForExists(
-                        waitingTime,
-                    )
-                Log.i(TAG, "triggerPrivateBrowsingShortcutPrompt: Waited for $waitingTime ms for private browsing button to exist")
+                Log.i(
+                    TAG,
+                    "triggerPrivateBrowsingShortcutPrompt: Waiting for $waitingTime ms for private browsing button to exist",
+                )
+                mDevice
+                    .findObject(UiSelector().resourceId("$packageName:id/privateBrowsingButton"))
+                    .waitForExists(waitingTime)
+                Log.i(
+                    TAG,
+                    "triggerPrivateBrowsingShortcutPrompt: Waited for $waitingTime ms for private browsing button to exist",
+                )
                 Log.i(TAG, "triggerPrivateBrowsingShortcutPrompt: Trying to click private browsing button")
                 privateBrowsingButton().click()
                 Log.i(TAG, "triggerPrivateBrowsingShortcutPrompt: Clicked private browsing button")
@@ -825,24 +1013,22 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
             Log.i(TAG, "editTopSite: Trying to click the \"Edit\" menu button")
             composeTestRule.contextMenuItemEdit().performClick()
             Log.i(TAG, "editTopSite: Clicked the \"Edit\" menu button")
-            itemWithResId("$packageName:id/top_site_title")
-                .also {
-                    Log.i(TAG, "editTopSite: Waiting for $waitingTimeShort ms for top site name text box to exist")
-                    it.waitForExists(waitingTimeShort)
-                    Log.i(TAG, "editTopSite: Waited for $waitingTimeShort ms for top site name text box to exist")
-                    Log.i(TAG, "editTopSite: Trying to set top site name text box text to: $title")
-                    it.setText(title)
-                    Log.i(TAG, "editTopSite: Top site name text box text was set to: $title")
-                }
-            itemWithResId("$packageName:id/top_site_url")
-                .also {
-                    Log.i(TAG, "editTopSite: Waiting for $waitingTimeShort ms for top site url text box to exist")
-                    it.waitForExists(waitingTimeShort)
-                    Log.i(TAG, "editTopSite: Waited for $waitingTimeShort ms for top site url text box to exist")
-                    Log.i(TAG, "editTopSite: Trying to set top site url text box text to: $url")
-                    it.setText(url)
-                    Log.i(TAG, "editTopSite: Top site url text box text was set to: $url")
-                }
+            itemWithResId("$packageName:id/top_site_title").also {
+                Log.i(TAG, "editTopSite: Waiting for $waitingTimeShort ms for top site name text box to exist")
+                it.waitForExists(waitingTimeShort)
+                Log.i(TAG, "editTopSite: Waited for $waitingTimeShort ms for top site name text box to exist")
+                Log.i(TAG, "editTopSite: Trying to set top site name text box text to: $title")
+                it.setText(title)
+                Log.i(TAG, "editTopSite: Top site name text box text was set to: $title")
+            }
+            itemWithResId("$packageName:id/top_site_url").also {
+                Log.i(TAG, "editTopSite: Waiting for $waitingTimeShort ms for top site url text box to exist")
+                it.waitForExists(waitingTimeShort)
+                Log.i(TAG, "editTopSite: Waited for $waitingTimeShort ms for top site url text box to exist")
+                Log.i(TAG, "editTopSite: Trying to set top site url text box text to: $url")
+                it.setText(url)
+                Log.i(TAG, "editTopSite: Top site url text box text was set to: $url")
+            }
             Log.i(TAG, "editTopSite: Trying to click the \"Save\" dialog button")
             itemWithResIdContainingText("android:id/button1", "Save").click()
             Log.i(TAG, "editTopSite: Clicked the \"Save\" dialog button")
@@ -864,9 +1050,7 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
             return Transition(composeTestRule)
         }
 
-        fun openTopSiteInPrivateTab(
-            interact: BrowserRobot.() -> Unit,
-        ): BrowserRobot.Transition {
+        fun openTopSiteInPrivateTab(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
             Log.i(TAG, "openTopSiteInPrivateTab: Trying to click the \"Open in private tab\" menu button")
             composeTestRule.contextMenuItemOpenInPrivateTab().performClick()
             Log.i(TAG, "openTopSiteInPrivateTab: Clicked the \"Open in private tab\" menu button")
@@ -877,18 +1061,32 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
         }
 
         fun clickSponsorsAndPrivacyButton(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            Log.i(TAG, "clickSponsorsAndPrivacyButton: Trying to click \"Our sponsors & your privacy\" context menu button and wait for $waitingTime ms for a new window")
+            Log.i(
+                TAG,
+                "clickSponsorsAndPrivacyButton: Trying to click \"Our sponsors & your privacy\" context menu button and wait for $waitingTime ms for a new window",
+            )
             composeTestRule.onNodeWithText(getStringResource(R.string.top_sites_menu_sponsor_privacy)).performClick()
-            Log.i(TAG, "clickSponsorsAndPrivacyButton: Clicked \"Our sponsors & your privacy\" context menu button and waited for $waitingTime ms for a new window")
+            Log.i(
+                TAG,
+                "clickSponsorsAndPrivacyButton: Clicked \"Our sponsors & your privacy\" context menu button and waited for $waitingTime ms for a new window",
+            )
 
             BrowserRobot(composeTestRule).interact()
             return BrowserRobot.Transition(composeTestRule)
         }
 
-        fun clickSponsoredShortcutsSettingsButton(interact: SettingsSubMenuHomepageRobot.() -> Unit): SettingsSubMenuHomepageRobot.Transition {
-            Log.i(TAG, "clickSponsoredShortcutsSettingsButton: Trying to click \"Settings\" context menu button and wait for $waitingTime for a new window")
+        fun clickSponsoredShortcutsSettingsButton(
+            interact: SettingsSubMenuHomepageRobot.() -> Unit
+        ): SettingsSubMenuHomepageRobot.Transition {
+            Log.i(
+                TAG,
+                "clickSponsoredShortcutsSettingsButton: Trying to click \"Settings\" context menu button and wait for $waitingTime for a new window",
+            )
             composeTestRule.onNodeWithText(getStringResource(R.string.top_sites_menu_settings)).performClick()
-            Log.i(TAG, "clickSponsoredShortcutsSettingsButton: Clicked \"Settings\" context menu button and waited for $waitingTime for a new window")
+            Log.i(
+                TAG,
+                "clickSponsoredShortcutsSettingsButton: Clicked \"Settings\" context menu button and waited for $waitingTime for a new window",
+            )
 
             SettingsSubMenuHomepageRobot().interact()
             return SettingsSubMenuHomepageRobot.Transition()
@@ -920,26 +1118,22 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
             return CollectionRobot.Transition(composeTestRule)
         }
 
-        fun openRecentlyVisitedSearchGroupHistoryList(title: String, interact: HistoryRobot.() -> Unit): HistoryRobot.Transition {
-            Log.i(TAG, "openRecentlyVisitedSearchGroupHistoryList: Trying to click recently visited search group with title: $title")
+        fun openRecentlyVisitedSearchGroupHistoryList(
+            title: String,
+            interact: HistoryRobot.() -> Unit,
+        ): HistoryRobot.Transition {
+            Log.i(
+                TAG,
+                "openRecentlyVisitedSearchGroupHistoryList: Trying to click recently visited search group with title: $title",
+            )
             composeTestRule.onNodeWithText(title).performClick()
-            Log.i(TAG, "openRecentlyVisitedSearchGroupHistoryList: Clicked recently visited search group with title: $title")
+            Log.i(
+                TAG,
+                "openRecentlyVisitedSearchGroupHistoryList: Clicked recently visited search group with title: $title",
+            )
 
             HistoryRobot().interact()
             return HistoryRobot.Transition(composeTestRule)
-        }
-
-        fun clickJumpBackInShowAllButton(interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
-            Log.i(TAG, "clickJumpBackInShowAllButton: Trying to click \"Show all\" button and wait for $waitingTime ms for a new window")
-            mDevice
-                .findObject(
-                    UiSelector()
-                        .descriptionContains(getStringResource(R.string.recent_tabs_show_all_content_description_2)),
-                ).clickAndWaitForNewWindow(waitingTime)
-            Log.i(TAG, "clickJumpBackInShowAllButton: Clicked \"Show all\" button and wait for $waitingTime ms for a new window")
-
-            TabDrawerRobot(composeTestRule).interact()
-            return TabDrawerRobot.Transition(composeTestRule)
         }
 
         @OptIn(ExperimentalTestApi::class)
@@ -948,14 +1142,20 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
             composeTestRule.onNodeWithTag(HOMEPAGE).performScrollToNode(hasTestTag(POCKET_STORIES))
             Log.i(TAG, "clickPocketStoryItem: Scrolled to the \"$POCKET_STORIES\" section")
             composeTestRule.waitForIdle()
-            Log.i(TAG, "clickPocketStoryItem: Trying to wait $waitingTimeLong ms for at least one \"$HOMEPAGE_STORY\" node to appear")
+            Log.i(
+                TAG,
+                "clickPocketStoryItem: Trying to wait $waitingTimeLong ms for at least one \"$HOMEPAGE_STORY\" node to appear",
+            )
             composeTestRule.waitUntilAtLeastOneExists(hasTestTag(HOMEPAGE_STORY), timeoutMillis = waitingTimeLong)
             val storyNodes = composeTestRule.onAllNodesWithTag(HOMEPAGE_STORY)
             val storyNodeList = storyNodes.fetchSemanticsNodes()
             check(position in 1..storyNodeList.size) {
                 "clickPocketStoryItem: requested position $position but only ${storyNodeList.size} \"$HOMEPAGE_STORY\" nodes found"
             }
-            Log.i(TAG, "clickPocketStoryItem: \"$HOMEPAGE_STORY\" nodes are present, scrolling item at position $position into view")
+            Log.i(
+                TAG,
+                "clickPocketStoryItem: \"$HOMEPAGE_STORY\" nodes are present, scrolling item at position $position into view",
+            )
             storyNodes[position - 1].performScrollTo()
             composeTestRule.waitForIdle()
             Log.i(TAG, "clickPocketStoryItem: Trying to click pocket story item at position $position")
@@ -968,13 +1168,14 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
             return BrowserRobot.Transition(composeTestRule)
         }
 
-        fun clickSetAsDefaultBrowserOnboardingButton(
-            interact: SettingsRobot.() -> Unit,
-        ): SettingsRobot.Transition {
-            Log.i(TAG, "clickSetAsDefaultBrowserOnboardingButton: Trying to click \"Set as default browser\" onboarding button")
-            composeTestRule.onNodeWithText(
-                getStringResource(R.string.nova_onboarding_set_to_default_button),
-            ).performClick()
+        fun clickSetAsDefaultBrowserOnboardingButton(interact: SettingsRobot.() -> Unit): SettingsRobot.Transition {
+            Log.i(
+                TAG,
+                "clickSetAsDefaultBrowserOnboardingButton: Trying to click \"Set as default browser\" onboarding button",
+            )
+            composeTestRule
+                .onNodeWithText(getStringResource(R.string.nova_onboarding_set_to_default_button))
+                .performClick()
             Log.i(TAG, "clickSetAsDefaultBrowserOnboardingButton: Clicked \"Set as default browser\" onboarding button")
 
             SettingsRobot().interact()
@@ -1008,33 +1209,16 @@ fun homeScreen(composeTestRule: ComposeTestRule, interact: HomeScreenRobot.() ->
     return HomeScreenRobot.Transition(composeTestRule)
 }
 
-private fun homeScreenList() =
-    UiScrollable(
-        UiSelector()
-            .resourceId(HOMEPAGE)
-            .scrollable(true),
-    ).setAsVerticalList()
-
 private fun saveTabsToCollectionButton(composeTestRule: ComposeTestRule) =
     composeTestRule.onNodeWithText(getStringResource(R.string.tabs_menu_save_to_collection1))
 
 private fun tabsCounterFromRedesignedToolbar() = itemWithResId("$packageName:id/counter_box")
 
-private fun tabsCounter() =
-    mDevice.findObject(By.res("$packageName:id/counter_root"))
+private fun tabsCounter() = mDevice.findObject(By.res("$packageName:id/counter_root"))
 
-private fun sponsoredShortcut(sponsoredShortcutTitle: String) =
-    onView(
-        allOf(
-            withId(R.id.top_site_title),
-            withText(sponsoredShortcutTitle),
-        ),
-    )
+private fun homeScreen() = itemWithResId("$packageName:id/homepageView")
 
-private fun homeScreen() =
-    itemWithResId("$packageName:id/homepageView")
-private fun privateBrowsingButton() =
-    itemWithResId(PRIVATE_BROWSING_HOMEPAGE_BUTTON)
+private fun privateBrowsingButton() = itemWithResId(PRIVATE_BROWSING_HOMEPAGE_BUTTON)
 
 private fun isPrivateModeEnabled(): Boolean {
     return try {
@@ -1044,63 +1228,64 @@ private fun isPrivateModeEnabled(): Boolean {
     }
 }
 
-private fun homepageWordmarkLogo() =
-    itemWithResId(HOMEPAGE_WORDMARK_LOGO)
+private fun homepageWordmarkLogo() = itemWithResId(HOMEPAGE_WORDMARK_LOGO)
 
-private fun homepageWordmarkText() =
-    itemWithResId(HOMEPAGE_WORDMARK_TEXT)
+private fun homepageWordmarkText() = itemWithResId(HOMEPAGE_WORDMARK_TEXT)
 
-private fun navigationToolbar() =
-    itemWithResId("$packageName:id/composable_toolbar")
-private fun menuButton() =
-    itemWithDescription(getStringResource(R.string.content_description_menu))
-private fun tabCounter(numberOfOpenTabs: String) =
-    itemWithResIdAndText("$packageName:id/counter_text", numberOfOpenTabs)
+private fun navigationToolbar() = itemWithResId("$packageName:id/composable_toolbar")
+
+private fun menuButton() = itemWithDescription(getStringResource(R.string.content_description_menu))
 
 fun deleteFromHistory() =
     onView(
-        allOf(
-            withId(menuR.id.simple_text),
-            withText(R.string.delete_from_history),
-        ),
-    ).inRoot(RootMatchers.isPlatformPopup())
+            allOf(
+                withId(menuR.id.simple_text),
+                withText(R.string.delete_from_history),
+            )
+        )
+        .inRoot(RootMatchers.isPlatformPopup())
 
-private fun pocketStoriesList() =
-    UiScrollable(UiSelector().resourceId(POCKET_STORIES)).setAsHorizontalList()
+private fun pocketStoriesList() = UiScrollable(UiSelector().resourceId(POCKET_STORIES)).setAsHorizontalList()
 
 private fun firefoxOptionSetAsDefaultBrowserDialogRadioButton() =
     itemWithClassNameAndIndex(
-        className = "android.widget.RadioButton",
-        index = 2,
-    ).getFromParent(
-        UiSelector().className("android.widget.LinearLayout").index(1),
-    )
+            className = "android.widget.RadioButton",
+            index = 2,
+        )
+        .getFromParent(UiSelector().className("android.widget.LinearLayout").index(1))
 
 private fun ComposeTestRule.topSiteItem(title: String) =
     onAllNodesWithTag(TopSitesTestTag.TOP_SITE_ITEM_ROOT).filter(hasAnyChild(hasText(title))).onFirst()
 
-private fun ComposeTestRule.contextMenuItemOpenInPrivateTab() = onAllNodesWithTag(TopSitesTestTag.OPEN_IN_PRIVATE_TAB).onFirst()
+private fun ComposeTestRule.contextMenuItemOpenInPrivateTab() =
+    onAllNodesWithTag(TopSitesTestTag.OPEN_IN_PRIVATE_TAB).onFirst()
 
 private fun ComposeTestRule.contextMenuItemEdit() = onAllNodesWithTag(TopSitesTestTag.EDIT).onFirst()
 
 private fun ComposeTestRule.contextMenuItemRemove() = onAllNodesWithTag(TopSitesTestTag.REMOVE).onFirst()
 
-private fun ComposeTestRule.addWebsiteDialogCancelButton() = onNode(
-    hasText("Cancel").and(
-        hasAnyAncestor(
-            isDialog().and(
-                hasAnyDescendant(hasText(getStringResource(R.string.homepage_shortcuts_add_website_title))),
-            ),
-        ),
-    ),
-)
+private fun ComposeTestRule.addWebsiteDialogCancelButton() =
+    onNode(
+        hasText("Cancel")
+            .and(
+                hasAnyAncestor(
+                    isDialog()
+                        .and(
+                            hasAnyDescendant(hasText(getStringResource(R.string.homepage_shortcuts_add_website_title)))
+                        )
+                )
+            )
+    )
 
-private fun ComposeTestRule.addWebsiteDialogSaveButton() = onNode(
-    hasText("Save").and(
-        hasAnyAncestor(
-            isDialog().and(
-                hasAnyDescendant(hasText(getStringResource(R.string.homepage_shortcuts_add_website_title))),
-            ),
-        ),
-    ),
-)
+private fun ComposeTestRule.addWebsiteDialogSaveButton() =
+    onNode(
+        hasText("Save")
+            .and(
+                hasAnyAncestor(
+                    isDialog()
+                        .and(
+                            hasAnyDescendant(hasText(getStringResource(R.string.homepage_shortcuts_add_website_title)))
+                        )
+                )
+            )
+    )

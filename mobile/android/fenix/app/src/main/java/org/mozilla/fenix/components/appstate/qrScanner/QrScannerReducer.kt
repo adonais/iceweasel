@@ -7,9 +7,7 @@ package org.mozilla.fenix.components.appstate.qrScanner
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 
-/**
- * A [AppAction.QrScannerAction] reducer that updates [AppState.qrScannerState].
- */
+/** A [AppAction.QrScannerAction] reducer that updates [AppState.qrScannerState]. */
 object QrScannerReducer {
 
     /**
@@ -18,21 +16,22 @@ object QrScannerReducer {
      * @param state The current [AppState].
      * @param action The incoming [AppAction.QrScannerAction] to be reduced.
      */
-    fun reduce(state: AppState, action: AppAction.QrScannerAction): AppState = when (action) {
-        AppAction.QrScannerAction.QrScannerRequested -> state.copy(
-            qrScannerState = QrScannerState(isRequesting = true, inProgress = false, lastScanData = null),
-        )
-        AppAction.QrScannerAction.QrScannerRequestConsumed -> state.copy(
-            qrScannerState = QrScannerState(isRequesting = false, inProgress = true, lastScanData = null),
-        )
-        AppAction.QrScannerAction.QrScannerDismissed -> state.copy(
-            qrScannerState = QrScannerState.DEFAULT,
-        )
-        is AppAction.QrScannerAction.QrScannerInputAvailable -> state.copy(
-            qrScannerState = QrScannerState(isRequesting = false, inProgress = false, lastScanData = action.data),
-        )
-        AppAction.QrScannerAction.QrScannerInputConsumed -> state.copy(
-            qrScannerState = QrScannerState.DEFAULT,
-        )
-    }
+    fun reduce(state: AppState, action: AppAction.QrScannerAction): AppState =
+        when (action) {
+            AppAction.QrScannerAction.QrScannerRequested ->
+                state.copy(
+                    qrScannerState = QrScannerState(isRequesting = true, inProgress = false, lastScanData = null)
+                )
+            AppAction.QrScannerAction.QrScannerRequestConsumed ->
+                state.copy(
+                    qrScannerState = QrScannerState(isRequesting = false, inProgress = true, lastScanData = null)
+                )
+            AppAction.QrScannerAction.QrScannerDismissed -> state.copy(qrScannerState = QrScannerState.DEFAULT)
+            is AppAction.QrScannerAction.QrScannerInputAvailable ->
+                state.copy(
+                    qrScannerState =
+                        QrScannerState(isRequesting = false, inProgress = false, lastScanData = action.data)
+                )
+            AppAction.QrScannerAction.QrScannerInputConsumed -> state.copy(qrScannerState = QrScannerState.DEFAULT)
+        }
 }

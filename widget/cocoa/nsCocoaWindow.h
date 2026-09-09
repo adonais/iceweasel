@@ -540,7 +540,7 @@ class nsCocoaWindow final : public nsIWidget {
   CGFloat ComputeBackingScaleFactor() const;
 
   void DoResize(double aX, double aY, double aWidth, double aHeight,
-                bool aRepaint, bool aConstrainToCurrentScreen);
+                bool aRepaint);
 
   // If the window's NSWindow frame doesn't intersect any currently-attached
   // NSScreen, relocate the window onto the main screen so the user can reach

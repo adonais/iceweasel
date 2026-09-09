@@ -118,17 +118,16 @@ already_AddRefed<Path> SVGLineElement::BuildPath(PathBuilder* aBuilder) {
   return aBuilder->Finish();
 }
 
-bool SVGLineElement::GetGeometryBounds(Rect* aBounds,
-                                       const StrokeOptions& aStrokeOptions,
-                                       const Matrix& aToBoundsSpace,
-                                       const Matrix* aToNonScalingStrokeSpace) {
+Maybe<Rect> SVGLineElement::GetGeometryBounds(
+    const StrokeOptions& aStrokeOptions, const Matrix& aToBoundsSpace,
+    const Matrix* aToNonScalingStrokeSpace) {
   float x1, y1, x2, y2;
   GetAnimatedLengthValues(&x1, &y1, &x2, &y2, nullptr);
 
   if (aStrokeOptions.mLineWidth <= 0) {
-    *aBounds = Rect(aToBoundsSpace.TransformPoint(Point(x1, y1)), Size());
-    aBounds->ExpandToEnclose(aToBoundsSpace.TransformPoint(Point(x2, y2)));
-    return true;
+    Rect bounds = Rect(aToBoundsSpace.TransformPoint(Point(x1, y1)), Size());
+    bounds.ExpandToEnclose(aToBoundsSpace.TransformPoint(Point(x2, y2)));
+    return Some(bounds);
   }
 
   // transform from non-scaling-stroke space to the space in which we compute
@@ -145,19 +144,19 @@ bool SVGLineElement::GetGeometryBounds(Rect* aBounds,
         (aToNonScalingStrokeSpace &&
          !aToNonScalingStrokeSpace->IsRectilinear())) {
       // TODO: handle this case.
-      return false;
+      return Nothing();
     }
     Rect bounds(Point(x1, y1), Size());
     bounds.ExpandToEnclose(Point(x2, y2));
     if (aToNonScalingStrokeSpace) {
       bounds = aToNonScalingStrokeSpace->TransformBounds(bounds);
       bounds.Inflate(aStrokeOptions.mLineWidth / 2.f);
-      *aBounds = nonScalingToBounds.TransformBounds(bounds);
+      bounds = nonScalingToBounds.TransformBounds(bounds);
     } else {
       bounds.Inflate(aStrokeOptions.mLineWidth / 2.f);
-      *aBounds = aToBoundsSpace.TransformBounds(bounds);
+      bounds = aToBoundsSpace.TransformBounds(bounds);
     }
-    return true;
+    return Some(bounds);
   }
 
   // Handle butt and square linecap, normal and non-scaling stroke cases
@@ -214,12 +213,12 @@ bool SVGLineElement::GetGeometryBounds(Rect* aBounds,
   const Matrix& toBoundsSpace =
       aToNonScalingStrokeSpace ? nonScalingToBounds : aToBoundsSpace;
 
-  *aBounds = Rect(toBoundsSpace.TransformPoint(points[0]), Size());
+  Rect bounds = Rect(toBoundsSpace.TransformPoint(points[0]), Size());
   for (uint32_t i = 1; i < 4; ++i) {
-    aBounds->ExpandToEnclose(toBoundsSpace.TransformPoint(points[i]));
+    bounds.ExpandToEnclose(toBoundsSpace.TransformPoint(points[i]));
   }
 
-  return true;
+  return Some(bounds);
 }
 
 }  // namespace mozilla::dom

@@ -13,8 +13,8 @@ import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.utils.Settings
 
 /**
- * The [org.mozilla.fenix.IntentReceiverActivity] may set the [HomeActivity.OPEN_TO_BROWSER] flag
- * when the browser should be opened in response to an intent.
+ * The [org.mozilla.fenix.IntentReceiverActivity] may set the [HomeActivity.OPEN_TO_BROWSER] flag when the browser
+ * should be opened in response to an intent.
  */
 class OpenBrowserIntentProcessor(
     private val activity: HomeActivity,

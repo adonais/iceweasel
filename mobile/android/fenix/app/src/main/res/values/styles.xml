@@ -84,6 +84,8 @@
         <item name="colorOnInformationContainer">@color/fx_mobile_on_information_container</item>
         <item name="colorSuccess">@color/fx_mobile_success</item>
         <item name="colorOnSuccess">@color/fx_mobile_on_success</item>
+        <item name="colorSuccessContainer">@color/fx_mobile_success_container</item>
+        <item name="colorOnSuccessContainer">@color/fx_mobile_on_success_container</item>
         <item name="colorWarning">@color/fx_mobile_warning</item>
         <item name="colorOnWarning">@color/fx_mobile_on_warning</item>
         <item name="colorWarningContainer">@color/fx_mobile_warning_container</item>
@@ -97,9 +99,11 @@
         <item name="colorSurfaceContainerHighest">@color/fx_mobile_surface_container_highest</item>
         <item name="colorSurfaceContainerLow">@color/fx_mobile_surface_container_low</item>
         <item name="colorSurfaceContainerLowest">@color/fx_mobile_surface_container_lowest</item>
+        <item name="colorSurfaceContainerSelected">@color/fx_mobile_surface_container_selected</item>
         <item name="colorAutofillText">@color/fx_mobile_autofill_text</item>
         <item name="colorSelectedText">@color/fx_mobile_selected_text</item>
         <item name="colorIconPrivate">@color/fx_mobile_icon_private</item>
+        <item name="colorSheetOutline">@color/fx_mobile_sheet_outline</item>
         <item name="scrim">@color/fx_mobile_scrim</item>
 
         <!-- Design system color attributes -->
@@ -374,6 +378,8 @@
         <item name="colorOnInformationContainer">@color/fx_mobile_private_on_information_container</item>
         <item name="colorSuccess">@color/fx_mobile_private_success</item>
         <item name="colorOnSuccess">@color/fx_mobile_private_on_success</item>
+        <item name="colorSuccessContainer">@color/fx_mobile_private_success_container</item>
+        <item name="colorOnSuccessContainer">@color/fx_mobile_private_on_success_container</item>
         <item name="colorWarning">@color/fx_mobile_private_warning</item>
         <item name="colorOnWarning">@color/fx_mobile_private_on_warning</item>
         <item name="colorWarningContainer">@color/fx_mobile_private_warning_container</item>
@@ -387,9 +393,11 @@
         <item name="colorSurfaceContainerHighest">@color/fx_mobile_private_surface_container_highest</item>
         <item name="colorSurfaceContainerLow">@color/fx_mobile_private_surface_container_low</item>
         <item name="colorSurfaceContainerLowest">@color/fx_mobile_private_surface_container_lowest</item>
+        <item name="colorSurfaceContainerSelected">@color/fx_mobile_private_surface_container_selected</item>
         <item name="colorAutofillText">@color/fx_mobile_private_autofill_text</item>
         <item name="colorSelectedText">@color/fx_mobile_private_selected_text</item>
         <item name="colorIconPrivate">@color/fx_mobile_private_icon_private</item>
+        <item name="colorSheetOutline">@color/fx_mobile_private_sheet_outline</item>
         <item name="scrim">@color/fx_mobile_private_scrim</item>
 
         <!-- Design system color attributes -->

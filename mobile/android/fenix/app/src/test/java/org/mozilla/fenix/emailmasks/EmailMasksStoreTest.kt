@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.emailmasks
 
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -18,10 +17,11 @@ class EmailMasksStoreTest {
     @Test
     fun `GIVEN SuggestEmailMasksDisabled WHEN dispatched THEN updates isSuggestMasksEnabled to false`() {
         val initial = EmailMasksState(isSuggestMasksEnabled = true)
-        val store = EmailMasksStore(
-            initialState = initial,
-            middleware = emptyList(),
-        )
+        val store =
+            EmailMasksStore(
+                initialState = initial,
+                middleware = emptyList(),
+            )
 
         store.dispatch(EmailMasksUserAction.SuggestEmailMasksDisabled)
 
@@ -31,10 +31,11 @@ class EmailMasksStoreTest {
     @Test
     fun `GIVEN SuggestEmailMasksEnabled WHEN dispatched THEN updates isSuggestMasksEnabled to true`() {
         val initial = EmailMasksState(isSuggestMasksEnabled = false)
-        val store = EmailMasksStore(
-            initialState = initial,
-            middleware = emptyList(),
-        )
+        val store =
+            EmailMasksStore(
+                initialState = initial,
+                middleware = emptyList(),
+            )
 
         store.dispatch(EmailMasksUserAction.SuggestEmailMasksEnabled)
 
@@ -44,17 +45,19 @@ class EmailMasksStoreTest {
     @Test
     fun `GIVEN navigation-related actions WHEN dispatched THEN state remains unchanged`() {
         val initial = EmailMasksState(isSuggestMasksEnabled = true)
-        val store = EmailMasksStore(
-            initialState = initial,
-            middleware = emptyList(),
-        )
+        val store =
+            EmailMasksStore(
+                initialState = initial,
+                middleware = emptyList(),
+            )
 
-        val actions = listOf(
-            EmailMasksUserAction.ManageClicked,
-            EmailMasksUserAction.LearnMoreClicked,
-            EmailMasksSystemAction.ManageTabOpened,
-            EmailMasksSystemAction.LearnMoreTabOpened,
-        )
+        val actions =
+            listOf(
+                EmailMasksUserAction.ManageClicked,
+                EmailMasksUserAction.LearnMoreClicked,
+                EmailMasksSystemAction.ManageTabOpened,
+                EmailMasksSystemAction.LearnMoreTabOpened,
+            )
 
         actions.forEach { action ->
             store.dispatch(action)

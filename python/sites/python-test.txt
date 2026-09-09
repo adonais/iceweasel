@@ -3,7 +3,7 @@ pth:testing/manifest
 pypi:Flask==2.1.3
 pypi:Sphinx==7.1.2
 pypi:alabaster==0.7.13
-pypi:codespell==2.4.2
+pypi:codespell==2.4.3
 pypi:dataclasses==0.6
 pypi:docutils==0.18.1
 pypi:fluent.pygments==1.0
@@ -12,7 +12,7 @@ pypi:pytest-mock==3.15.0
 pypi:pytest-taskgraph==0.2.0
 pypi:pytest==8.4.2
 pypi:pytz==2022.7.1
-pypi:ruff==0.16.0
+pypi:ruff==0.16.3
 pypi:rumdl==0.1.91
 pypi:snowballstemmer==2.2.0
 pypi:sphinxcontrib-applehelp==1.0.4

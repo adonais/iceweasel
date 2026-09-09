@@ -249,12 +249,11 @@ class MOZ_RAII AutoPreserveAspectRatioOverride {
       : mRootElem(aRootElem), mDidOverride(false) {
     MOZ_ASSERT(mRootElem, "No SVG/Symbol node to manage?");
 
-    if (aSVGContext.GetPreserveAspectRatio().isSome()) {
+    if (const auto& par = aSVGContext.GetPreserveAspectRatio()) {
       // Override preserveAspectRatio in our helper document.
       // XXXdholbert We should technically be overriding the helper doc's clip
       // and overflow properties here, too. See bug 272288 comment 36.
-      mRootElem->SetImageOverridePreserveAspectRatio(
-          *aSVGContext.GetPreserveAspectRatio());
+      mRootElem->SetImageOverridePreserveAspectRatio(*par);
       mDidOverride = true;
     }
   }

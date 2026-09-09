@@ -55,7 +55,7 @@ impl CrashHelperClient {
         let channel = IPCChannel::new()?;
         let (listener, server_endpoint, client_endpoint) = channel.deconstruct();
 
-        let spawner_thread = std::thread::spawn(move || {
+        let _spawner_thread = std::thread::spawn(move || {
             CrashHelperClient::spawn_crash_helper(
                 program,
                 breakpad_data,
@@ -68,7 +68,6 @@ impl CrashHelperClient {
 
         Ok(CrashHelperClient {
             connector: client_endpoint,
-            spawner_thread: Some(spawner_thread),
             pid: 0, // Unused on Windows
         })
     }

@@ -7,24 +7,11 @@
  * Make sure the listTabs request works as specified.
  */
 
-var {
-  DevToolsServer,
-} = require("resource://devtools/server/devtools-server.js");
-var {
-  DevToolsClient,
-} = require("resource://devtools/client/devtools-client.js");
-
 const TAB1_URL = EXAMPLE_URL + "doc_empty-tab-01.html";
 const TAB2_URL = EXAMPLE_URL + "doc_empty-tab-02.html";
 
 add_task(async function test() {
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
-
-  const transport = DevToolsServer.connectPipe();
-  const client = new DevToolsClient(transport);
-  const [aType] = await client.connect();
-  is(aType, "browser", "Root actor should identify itself as a browser.");
+  const client = await createLocalClientForTests();
 
   const firstTab = await testFirstTab(client);
   const secondTab = await testSecondTab(client, firstTab.front);

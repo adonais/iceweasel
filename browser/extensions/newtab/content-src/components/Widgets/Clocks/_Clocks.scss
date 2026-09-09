@@ -157,7 +157,9 @@
     position: relative;
   }
 
-  .clocks-search-location-input {
+  .clocks-search-location-input,
+  .clocks-custom-city-input,
+  .clocks-custom-timezone-input {
     min-inline-size: 0;
     inline-size: 100%;
   }

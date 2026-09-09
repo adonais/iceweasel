@@ -7,9 +7,7 @@ package mozilla.components.support.test.ext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 
-/**
- * Blocks the current thread until the job is complete.
- */
+/** Blocks the current thread until the job is complete. */
 fun Job.joinBlocking() {
     runBlocking { join() }
 }

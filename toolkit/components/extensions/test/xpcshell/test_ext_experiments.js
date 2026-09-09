@@ -15,7 +15,6 @@ AddonTestUtils.createAppInfo(
 );
 
 add_task(async function setup() {
-  AddonTestUtils.overrideCertDB();
   await ExtensionTestUtils.startAddonManager();
 });
 

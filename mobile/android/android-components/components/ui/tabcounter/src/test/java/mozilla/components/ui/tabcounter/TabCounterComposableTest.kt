@@ -22,8 +22,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class TabCounterComposableTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun verifyNumericTabCount() {
@@ -34,10 +33,8 @@ class TabCounterComposableTest {
             }
         }
 
-        composeTestRule.onNodeWithTag(TAB_COUNTER_TEXT + tabCount.toString())
-            .assertIsDisplayed()
-        composeTestRule.onNodeWithTag(TAB_COUNTER_ICON)
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TAB_COUNTER_TEXT + tabCount.toString()).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TAB_COUNTER_ICON).assertIsDisplayed()
     }
 
     @Test
@@ -49,10 +46,8 @@ class TabCounterComposableTest {
             }
         }
 
-        composeTestRule.onNodeWithTag(TAB_COUNTER_TEXT + tabCount.toString())
-            .assertIsNotDisplayed()
-        composeTestRule.onNodeWithTag(TAB_COUNTER_INFINITY_ICON)
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TAB_COUNTER_TEXT + tabCount.toString()).assertIsNotDisplayed()
+        composeTestRule.onNodeWithTag(TAB_COUNTER_INFINITY_ICON).assertIsDisplayed()
     }
 
     @Test
@@ -63,8 +58,7 @@ class TabCounterComposableTest {
             }
         }
 
-        composeTestRule.onNodeWithTag(PRIVACY_BADGE)
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(PRIVACY_BADGE).assertIsDisplayed()
     }
 
     @Test
@@ -75,8 +69,7 @@ class TabCounterComposableTest {
             }
         }
 
-        composeTestRule.onNodeWithTag(PRIVACY_BADGE)
-            .assertIsNotDisplayed()
+        composeTestRule.onNodeWithTag(PRIVACY_BADGE).assertIsNotDisplayed()
     }
 
     @Test
@@ -88,8 +81,7 @@ class TabCounterComposableTest {
             }
         }
 
-        composeTestRule.onNodeWithTag(TAB_COUNTER_TEXT + tabCount.toString())
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TAB_COUNTER_TEXT + tabCount.toString()).assertIsDisplayed()
     }
 
     @Test
@@ -101,7 +93,6 @@ class TabCounterComposableTest {
             }
         }
 
-        composeTestRule.onNodeWithTag(TAB_COUNTER_TEXT + tabCount.toString())
-            .assertIsNotDisplayed()
+        composeTestRule.onNodeWithTag(TAB_COUNTER_TEXT + tabCount.toString()).assertIsNotDisplayed()
     }
 }

@@ -20,63 +20,57 @@ import org.mozilla.focus.GleanMetrics.BrowserSearch
 import org.mozilla.focus.GleanMetrics.ContextMenu
 import org.mozilla.focus.GleanMetrics.CustomTabsToolbar
 
-/**
- * Processes all [Fact]s emitted from Android Components based on which the appropriate telemetry
- * will be collected.
- */
+/** Processes all [Fact]s emitted from Android Components based on which the appropriate telemetry will be collected. */
 object FactsProcessor {
-    /**
-     * Initializes the [FactsProcessor] and registers it with the [Facts] system.
-     */
+    /** Initializes the [FactsProcessor] and registers it with the [Facts] system. */
     fun initialize() {
         Facts.registerProcessor(
             object : FactProcessor {
                 override fun process(fact: Fact) {
                     fact.process()
                 }
-            },
+            }
         )
     }
 
     @VisibleForTesting
-    internal fun Fact.process() = when (Pair(component, item)) {
-        Component.FEATURE_SEARCH to AdsTelemetry.SERP_ADD_CLICKED -> {
-            BrowserSearch.adClicks[value!!].add()
-        }
-        Component.FEATURE_SEARCH to AdsTelemetry.SERP_SHOWN_WITH_ADDS -> {
-            BrowserSearch.withAds[value!!].add()
-        }
-        Component.FEATURE_SEARCH to InContentTelemetry.IN_CONTENT_SEARCH -> {
-            BrowserSearch.inContent[value!!].add()
-        }
-
-        Component.FEATURE_CUSTOMTABS to CustomTabsFacts.Items.CLOSE -> {
-            CustomTabsToolbar.closeTabTapped.record(NoExtras())
-        }
-
-        Component.FEATURE_CUSTOMTABS to CustomTabsFacts.Items.ACTION_BUTTON -> {
-            CustomTabsToolbar.actionButtonTapped.record(NoExtras())
-        }
-
-        Component.FEATURE_CONTEXTMENU to ContextMenuFacts.Items.ITEM -> {
-            ContextMenu.itemTapped.record(ContextMenu.ItemTappedExtra(toContextMenuExtraKey()))
-        }
-
-        Component.BROWSER_MENU to BrowserMenuFacts.Items.WEB_EXTENSION_MENU_ITEM -> {
-            if (metadata?.get("id") == "webcompat-reporter@mozilla.org") {
-                Browser.reportSiteIssueCounter.add()
-            } else {
-                // other extension action was emitted
+    internal fun Fact.process() =
+        when (Pair(component, item)) {
+            Component.FEATURE_SEARCH to AdsTelemetry.SERP_ADD_CLICKED -> {
+                BrowserSearch.adClicks[value!!].add()
             }
-        }
+            Component.FEATURE_SEARCH to AdsTelemetry.SERP_SHOWN_WITH_ADDS -> {
+                BrowserSearch.withAds[value!!].add()
+            }
+            Component.FEATURE_SEARCH to InContentTelemetry.IN_CONTENT_SEARCH -> {
+                BrowserSearch.inContent[value!!].add()
+            }
 
-        else -> Unit
-    }
+            Component.FEATURE_CUSTOMTABS to CustomTabsFacts.Items.CLOSE -> {
+                CustomTabsToolbar.closeTabTapped.record(NoExtras())
+            }
+
+            Component.FEATURE_CUSTOMTABS to CustomTabsFacts.Items.ACTION_BUTTON -> {
+                CustomTabsToolbar.actionButtonTapped.record(NoExtras())
+            }
+
+            Component.FEATURE_CONTEXTMENU to ContextMenuFacts.Items.ITEM -> {
+                ContextMenu.itemTapped.record(ContextMenu.ItemTappedExtra(toContextMenuExtraKey()))
+            }
+
+            Component.BROWSER_MENU to BrowserMenuFacts.Items.WEB_EXTENSION_MENU_ITEM -> {
+                if (metadata?.get("id") == "webcompat-reporter@mozilla.org") {
+                    Browser.reportSiteIssueCounter.add()
+                } else {
+                    // other extension action was emitted
+                }
+            }
+
+            else -> Unit
+        }
 }
 
-/**
- * Extracts an extraKey from a context menu Fact.
- */
+/** Extracts an extraKey from a context menu Fact. */
 fun Fact.toContextMenuExtraKey(): String {
     require(component == Component.FEATURE_CONTEXTMENU) { "Fact is not a context menu fact" }
     return metadata?.get("item").toString().removePrefix("mozac.feature.contextmenu.")

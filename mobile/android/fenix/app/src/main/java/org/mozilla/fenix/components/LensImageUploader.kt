@@ -12,11 +12,6 @@ import android.net.Uri
 import androidx.annotation.VisibleForTesting
 import androidx.core.graphics.scale
 import androidx.exifinterface.media.ExifInterface
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import mozilla.components.concept.fetch.Client
-import mozilla.components.concept.fetch.MutableHeaders
-import mozilla.components.concept.fetch.Request
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -24,10 +19,13 @@ import java.io.InputStream
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import mozilla.components.concept.fetch.Client
+import mozilla.components.concept.fetch.MutableHeaders
+import mozilla.components.concept.fetch.Request
 
-/**
- * Handles image processing and upload to Google Lens.
- */
+/** Handles image processing and upload to Google Lens. */
 class LensImageUploader(
     private val context: Context,
     private val client: Client,
@@ -39,8 +37,8 @@ class LensImageUploader(
      * The outcome of an image upload to Google Lens.
      *
      * @property resultUrl The Lens results URL on success, or null on failure.
-     * @property httpStatusCode The HTTP status code of the Lens upload request, or null when the
-     * request was never made (for example, the image could not be decoded or downloaded).
+     * @property httpStatusCode The HTTP status code of the Lens upload request, or null when the request was never made
+     *   (for example, the image could not be decoded or downloaded).
      */
     data class UploadResult(
         val resultUrl: String?,
@@ -51,28 +49,26 @@ class LensImageUploader(
      * Decodes, scales, compresses, and uploads the image at [imageUri] to Google Lens.
      *
      * @param imageUri The content URI of the image to upload.
-     * @param isPrivate When true, the upload runs in GeckoView's private cookie context so the
-     * returned Lens session matches the private tab the result is opened in.
+     * @param isPrivate When true, the upload runs in GeckoView's private cookie context so the returned Lens session
+     *   matches the private tab the result is opened in.
      */
-    suspend fun upload(imageUri: Uri, isPrivate: Boolean): UploadResult = withContext(Dispatchers.IO) {
-        val bitmap = decodeBitmap(imageUri) ?: return@withContext UploadResult(resultUrl = null)
-        uploadBitmap(bitmap, isPrivate)
-    }
+    suspend fun upload(imageUri: Uri, isPrivate: Boolean): UploadResult =
+        withContext(Dispatchers.IO) {
+            val bitmap = decodeBitmap(imageUri) ?: return@withContext UploadResult(resultUrl = null)
+            uploadBitmap(bitmap, isPrivate)
+        }
 
     /**
-     * Fetches the image at [imageUrl], then scales, compresses, and uploads it to Google Lens.
-     * The browser's User-Agent and cookies are used to fetch the image, which succeeds for hosts
-     * that block Lens's own server-side fetcher.
+     * Fetches the image at [imageUrl], then scales, compresses, and uploads it to Google Lens. The browser's User-Agent
+     * and cookies are used to fetch the image, which succeeds for hosts that block Lens's own server-side fetcher.
      *
      * @param imageUrl The URL of the image to fetch and upload.
-     * @param isPrivate When true, both the image download and the Lens upload run in GeckoView's
-     * private cookie context so the returned Lens session matches the private tab the result is
-     * opened in.
+     * @param isPrivate When true, both the image download and the Lens upload run in GeckoView's private cookie context
+     *   so the returned Lens session matches the private tab the result is opened in.
      */
     suspend fun uploadFromUrl(imageUrl: String, isPrivate: Boolean): UploadResult =
         withContext(Dispatchers.IO) {
-            val bitmap = fetchBitmap(imageUrl, isPrivate)
-                ?: return@withContext UploadResult(resultUrl = null)
+            val bitmap = fetchBitmap(imageUrl, isPrivate) ?: return@withContext UploadResult(resultUrl = null)
             uploadBitmap(bitmap, isPrivate)
         }
 
@@ -93,61 +89,60 @@ class LensImageUploader(
         val bodyStream = ByteArrayOutputStream()
         bodyStream.write("--$boundary\r\n".toByteArray())
         bodyStream.write(
-            "Content-Disposition: form-data; name=\"encoded_image\"; filename=\"image.jpg\"\r\n"
-                .toByteArray(),
+            "Content-Disposition: form-data; name=\"encoded_image\"; filename=\"image.jpg\"\r\n".toByteArray()
         )
         bodyStream.write("Content-Type: image/jpeg\r\n\r\n".toByteArray())
         bodyStream.write(jpegData)
         bodyStream.write("\r\n".toByteArray())
         bodyStream.write("--$boundary\r\n".toByteArray())
-        bodyStream.write(
-            "Content-Disposition: form-data; name=\"processed_image_dimensions\"\r\n\r\n"
-                .toByteArray(),
-        )
+        bodyStream.write("Content-Disposition: form-data; name=\"processed_image_dimensions\"\r\n\r\n".toByteArray())
         bodyStream.write("$scaledWidth,$scaledHeight\r\n".toByteArray())
         bodyStream.write("--$boundary--\r\n".toByteArray())
         val bodyBytes = bodyStream.toByteArray()
 
-        val request = Request(
-            url = uploadUrl,
-            method = Request.Method.POST,
-            headers = MutableHeaders(
-                "Content-Type" to "multipart/form-data; boundary=$boundary",
-                "User-Agent" to userAgent,
-            ),
-            body = Request.Body(ByteArrayInputStream(bodyBytes)),
-            cookiePolicy = Request.CookiePolicy.INCLUDE,
-            private = isPrivate,
-            connectTimeout = Pair(CONNECT_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS),
-            readTimeout = Pair(READ_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS),
-            useCaches = true,
-        )
+        val request =
+            Request(
+                url = uploadUrl,
+                method = Request.Method.POST,
+                headers =
+                    MutableHeaders(
+                        "Content-Type" to "multipart/form-data; boundary=$boundary",
+                        "User-Agent" to userAgent,
+                    ),
+                body = Request.Body(ByteArrayInputStream(bodyBytes)),
+                cookiePolicy = Request.CookiePolicy.INCLUDE,
+                private = isPrivate,
+                connectTimeout = Pair(CONNECT_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS),
+                readTimeout = Pair(READ_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS),
+                useCaches = true,
+            )
 
         return client.fetch(request).use { response ->
-            val resultUrl = if (response.status in SUCCESS_RANGE && response.url != uploadUrl) {
-                response.url
-            } else {
-                null
-            }
+            val resultUrl =
+                if (response.status in SUCCESS_RANGE && response.url != uploadUrl) {
+                    response.url
+                } else {
+                    null
+                }
             UploadResult(resultUrl = resultUrl, httpStatusCode = response.status)
         }
     }
 
     @VisibleForTesting
     internal fun decodeBitmap(uri: Uri): Bitmap? {
-        val bitmap = context.contentResolver.openInputStream(uri)?.use { input ->
-            BitmapFactory.decodeStream(input)
-        } ?: return null
+        val bitmap = decodeSampledBitmap(uri) ?: return null
 
         // Camera2 writes the capture orientation as an EXIF tag rather than rotating pixels,
         // and BitmapFactory.decodeStream discards EXIF. Re-read the tag from a fresh stream and
         // apply it so the upload reaches Lens upright.
-        val orientation = context.contentResolver.openInputStream(uri)?.use { input ->
-            ExifInterface(input).getAttributeInt(
-                ExifInterface.TAG_ORIENTATION,
-                ExifInterface.ORIENTATION_NORMAL,
-            )
-        } ?: ExifInterface.ORIENTATION_NORMAL
+        val orientation =
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                ExifInterface(input)
+                    .getAttributeInt(
+                        ExifInterface.TAG_ORIENTATION,
+                        ExifInterface.ORIENTATION_NORMAL,
+                    )
+            } ?: ExifInterface.ORIENTATION_NORMAL
 
         return applyExifOrientation(bitmap, orientation)
     }
@@ -177,29 +172,31 @@ class LensImageUploader(
 
     @VisibleForTesting
     internal fun fetchBitmap(imageUrl: String, isPrivate: Boolean): Bitmap? {
-        val request = Request(
-            url = imageUrl,
-            method = Request.Method.GET,
-            headers = MutableHeaders("User-Agent" to userAgent),
-            cookiePolicy = Request.CookiePolicy.INCLUDE,
-            private = isPrivate,
-            connectTimeout = Pair(CONNECT_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS),
-            readTimeout = Pair(READ_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS),
-            useCaches = true,
-        )
+        val request =
+            Request(
+                url = imageUrl,
+                method = Request.Method.GET,
+                headers = MutableHeaders("User-Agent" to userAgent),
+                cookiePolicy = Request.CookiePolicy.INCLUDE,
+                private = isPrivate,
+                connectTimeout = Pair(CONNECT_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS),
+                readTimeout = Pair(READ_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS),
+                useCaches = true,
+            )
 
         return try {
             client.fetch(request).use { response ->
                 if (response.status !in SUCCESS_RANGE) return@use null
-                val bytes = response.body.useStream { readAtMost(it, MAX_DOWNLOAD_BYTES) }
-                    ?: return@use null
+                val bytes = response.body.useStream { readAtMost(it, MAX_DOWNLOAD_BYTES) } ?: return@use null
                 val bitmap = decodeSampledBitmap(bytes) ?: return@use null
                 // BitmapFactory.decodeByteArray discards EXIF the same way decodeStream does;
                 // web JPEGs frequently carry an Orientation tag, so apply it here too.
-                val orientation = ExifInterface(ByteArrayInputStream(bytes)).getAttributeInt(
-                    ExifInterface.TAG_ORIENTATION,
-                    ExifInterface.ORIENTATION_NORMAL,
-                )
+                val orientation =
+                    ExifInterface(ByteArrayInputStream(bytes))
+                        .getAttributeInt(
+                            ExifInterface.TAG_ORIENTATION,
+                            ExifInterface.ORIENTATION_NORMAL,
+                        )
                 applyExifOrientation(bitmap, orientation)
             }
         } catch (_: IOException) {
@@ -208,8 +205,8 @@ class LensImageUploader(
     }
 
     /**
-     * Reads up to [max] bytes from [stream] and returns them, or null if the stream carries more
-     * than [max] bytes. Guards against oversized remote responses before decoding.
+     * Reads up to [max] bytes from [stream] and returns them, or null if the stream carries more than [max] bytes.
+     * Guards against oversized remote responses before decoding.
      */
     private fun readAtMost(stream: InputStream, max: Int): ByteArray? {
         val out = ByteArrayOutputStream()
@@ -225,17 +222,41 @@ class LensImageUploader(
     }
 
     /**
-     * Decodes [bytes] into a Bitmap, subsampling so neither dimension exceeds
-     * [MAX_IMAGE_DIMENSION] and avoiding a full-resolution allocation for oversized images.
+     * Decodes the image at [uri] into a Bitmap, subsampling so neither dimension exceeds [MAX_IMAGE_DIMENSION]. Camera
+     * captures are at full sensor resolution, well beyond what the upload needs. The stream is opened twice because it
+     * cannot be rewound after the bounds have been read.
+     */
+    private fun decodeSampledBitmap(uri: Uri): Bitmap? {
+        val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            BitmapFactory.decodeStream(input, null, boundsOptions)
+        }
+        // A bounds pass always returns a null bitmap, so the decoded dimensions are what tell
+        // us whether the image could be read. They are untouched if the stream could not be opened.
+        if (boundsOptions.outWidth <= 0 || boundsOptions.outHeight <= 0) return null
+
+        val decodeOptions =
+            BitmapFactory.Options().apply {
+                inSampleSize = computeSampleSize(boundsOptions.outWidth, boundsOptions.outHeight)
+            }
+        return context.contentResolver.openInputStream(uri)?.use { input ->
+            BitmapFactory.decodeStream(input, null, decodeOptions)
+        }
+    }
+
+    /**
+     * Decodes [bytes] into a Bitmap, subsampling so neither dimension exceeds [MAX_IMAGE_DIMENSION] and avoiding a
+     * full-resolution allocation for oversized images.
      */
     private fun decodeSampledBitmap(bytes: ByteArray): Bitmap? {
         val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, boundsOptions)
         if (boundsOptions.outWidth <= 0 || boundsOptions.outHeight <= 0) return null
 
-        val decodeOptions = BitmapFactory.Options().apply {
-            inSampleSize = computeSampleSize(boundsOptions.outWidth, boundsOptions.outHeight)
-        }
+        val decodeOptions =
+            BitmapFactory.Options().apply {
+                inSampleSize = computeSampleSize(boundsOptions.outWidth, boundsOptions.outHeight)
+            }
         return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, decodeOptions)
     }
 
@@ -248,8 +269,8 @@ class LensImageUploader(
     }
 
     /**
-     * Builds the query parameters common to both Lens endpoints: language override and the
-     * viewport dimensions and start time used for server-side rendering and latency tracking.
+     * Builds the query parameters common to both Lens endpoints: language override and the viewport dimensions and
+     * start time used for server-side rendering and latency tracking.
      */
     private fun commonParams(): String {
         val metrics = context.resources.displayMetrics
@@ -276,12 +297,10 @@ class LensImageUploader(
     }
 
     companion object {
-        @VisibleForTesting
-        internal const val UPLOAD_ENDPOINT = "https://lens.google.com/upload"
+        @VisibleForTesting internal const val UPLOAD_ENDPOINT = "https://lens.google.com/upload"
 
         // Entry-point identifier assigned to Mozilla by Google for attribution.
-        @VisibleForTesting
-        internal const val EP_BY_BYTES = "fntpubb"
+        @VisibleForTesting internal const val EP_BY_BYTES = "fntpubb"
 
         private const val MAX_IMAGE_DIMENSION = 1000
         private const val JPEG_QUALITY = 40

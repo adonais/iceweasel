@@ -10,9 +10,7 @@ import android.os.Parcelable
 import java.io.Serializable
 import java.util.ArrayList
 
-/**
- * Retrieve extended data from the intent.
- */
+/** Retrieve extended data from the intent. */
 fun <T> Intent.getParcelableExtraCompat(name: String, clazz: Class<T>): T? {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         getParcelableExtra(name, clazz)
@@ -22,26 +20,20 @@ fun <T> Intent.getParcelableExtraCompat(name: String, clazz: Class<T>): T? {
     }
 }
 
-/**
- * Retrieve extended data from the intent.
- */
+/** Retrieve extended data from the intent. */
 fun <T : Parcelable> Intent.getParcelableArrayListExtraCompat(name: String, clazz: Class<T>): ArrayList<T>? {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         getParcelableArrayListExtra(name, clazz)
     } else {
-        @Suppress("DEPRECATION")
-        getParcelableArrayListExtra(name)
+        @Suppress("DEPRECATION") getParcelableArrayListExtra(name)
     }
 }
 
-/**
- * Retrieve extended data from the intent.
- */
+/** Retrieve extended data from the intent. */
 fun <T : Serializable> Intent.getSerializableExtraCompat(name: String, clazz: Class<T>): Serializable? {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         getSerializableExtra(name, clazz)
     } else {
-        @Suppress("DEPRECATION")
-        getSerializableExtra(name)
+        @Suppress("DEPRECATION") getSerializableExtra(name)
     }
 }

@@ -529,7 +529,7 @@ TLSTransportLayer::Close(nsresult aReason) {
 
   if (mOwner) {
     RefPtr<TLSTransportLayer> self = this;
-    (void)NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+    (void)DispatchToCurrent(NS_NewRunnableFunction(
         "TLSTransportLayer::Close", [self{std::move(self)}]() {
           nsCOMPtr<nsIInputStreamCallback> inputCallback =
               std::move(self->mOwner);

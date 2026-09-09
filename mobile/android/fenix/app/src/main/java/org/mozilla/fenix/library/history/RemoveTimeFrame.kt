@@ -8,17 +8,16 @@ import java.util.Calendar
 import java.util.Date
 
 /**
- * A helper class that provides starting and ending timestamps for a set time frame. Is used by
- * [HistoryFragment] to provide timestamps for options inside the delete history dialog.
+ * A helper class that provides starting and ending timestamps for a set time frame. Is used by [HistoryFragment] to
+ * provide timestamps for options inside the delete history dialog.
  */
 enum class RemoveTimeFrame {
     LastHour,
-    TodayAndYesterday,
-    ;
+    TodayAndYesterday;
 
     /**
-     * Provides starting and ending timestamps for a set time frame. Each call is calculated at the
-     * moment of execution, which is different from [HistoryItemTimeGroup] implementation.
+     * Provides starting and ending timestamps for a set time frame. Each call is calculated at the moment of execution,
+     * which is different from [HistoryItemTimeGroup] implementation.
      */
     fun toLongRange(): LongRange {
         return when (this) {
@@ -28,18 +27,22 @@ enum class RemoveTimeFrame {
     }
 
     private fun getHourAgo(hoursAgo: Int): Date {
-        return Calendar.getInstance().apply {
-            add(Calendar.HOUR_OF_DAY, -hoursAgo)
-        }.time
+        return Calendar.getInstance()
+            .apply {
+                add(Calendar.HOUR_OF_DAY, -hoursAgo)
+            }
+            .time
     }
 
     private fun getDaysAgo(daysAgo: Int): Date {
-        return Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-            add(Calendar.DAY_OF_YEAR, -daysAgo)
-        }.time
+        return Calendar.getInstance()
+            .apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+                add(Calendar.DAY_OF_YEAR, -daysAgo)
+            }
+            .time
     }
 }

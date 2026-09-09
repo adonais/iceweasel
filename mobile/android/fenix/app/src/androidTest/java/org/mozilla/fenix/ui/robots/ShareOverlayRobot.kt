@@ -44,8 +44,7 @@ class ShareOverlayRobot {
     // This function verifies the share layout when more than one tab is shared - a list of tabs is shown
     fun verifyShareTabsOverlay(vararg tabsTitles: String) {
         Log.i(TAG, "verifyShareTabsOverlay: Trying to verify that the share overlay site list is displayed")
-        onView(withId(R.id.shared_site_list))
-            .check(matches(isDisplayed()))
+        onView(withId(R.id.shared_site_list)).check(matches(isDisplayed()))
         Log.i(TAG, "verifyShareTabsOverlay: Verified that the share overlay site list is displayed")
         for (tabs in tabsTitles) {
             Log.i(TAG, "verifyShareTabsOverlay: Trying to verify the shared tab: $tabs favicon and url")
@@ -55,8 +54,8 @@ class ShareOverlayRobot {
                         allOf(
                             hasSibling(withId(R.id.share_tab_favicon)),
                             hasSibling(withId(R.id.share_tab_url)),
-                        ),
-                    ),
+                        )
+                    )
                 )
             Log.i(TAG, "verifyShareTabsOverlay: Verified the shared tab: $tabs favicon and url")
         }
@@ -165,11 +164,18 @@ class ShareOverlayRobot {
     }
 
     private fun verifySharedTabsIntent(text: String, subject: String) {
-        Log.i(TAG, "verifySharedTabsIntent: Trying to verify the intent of the shared tab with text: $text, and subject: $subject")
+        Log.i(
+            TAG,
+            "verifySharedTabsIntent: Trying to verify the intent of the shared tab with text: $text, and subject: $subject",
+        )
         val urlMatchers = text.split("\n\n").map { IntentMatchers.hasExtra(Intent.EXTRA_TEXT, containsString(it)) }
-        val subjectMatchers = subject.split(", ").map { IntentMatchers.hasExtra(Intent.EXTRA_SUBJECT, containsString(it)) }
+        val subjectMatchers =
+            subject.split(", ").map { IntentMatchers.hasExtra(Intent.EXTRA_SUBJECT, containsString(it)) }
         Intents.intended(allOf(*(urlMatchers + subjectMatchers).toTypedArray()))
-        Log.i(TAG, "verifySharedTabsIntent: Verified the intent of the shared tab with text: $text, and subject: $subject")
+        Log.i(
+            TAG,
+            "verifySharedTabsIntent: Verified the intent of the shared tab with text: $text, and subject: $subject",
+        )
     }
 
     fun verifyShareLinkIntent(url: Uri) {
@@ -190,18 +196,18 @@ class ShareOverlayRobot {
                                     url.toString(),
                                 ),
                             ),
-                        ),
-                    ),
+                        )
+                    )
                 ),
-            ),
+            )
         )
         Log.i(TAG, "verifyShareLinkIntent: Verified that the share intent for link: $url was launched")
     }
 
     /**
-     * Click the share target for [appName] and wait for the share sheet to dismiss.
-     * Callers must follow up with [assertNativeAppOpens] to verify the target app
-     * foregrounded -- this helper intentionally does not verify the launch itself.
+     * Click the share target for [appName] and wait for the share sheet to dismiss. Callers must follow up with
+     * [assertNativeAppOpens] to verify the target app foregrounded -- this helper intentionally does not verify the
+     * launch itself.
      */
     fun clickSharingApp(appName: String, appPackageName: String) {
         val sharingApp = itemContainingText(appName)
@@ -226,7 +232,10 @@ class ShareOverlayRobot {
     }
 
     class Transition {
-        fun clickSaveAsPDF(composeTestRule: ComposeTestRule, interact: DownloadRobot.() -> Unit): DownloadRobot.Transition {
+        fun clickSaveAsPDF(
+            composeTestRule: ComposeTestRule,
+            interact: DownloadRobot.() -> Unit,
+        ): DownloadRobot.Transition {
             Log.i(TAG, "clickSaveAsPDF: Trying to click the \"SAVE AS PDF\" share overlay button")
             itemContainingText("Save as PDF").click()
             Log.i(TAG, "clickSaveAsPDF: Clicked the \"SAVE AS PDF\" share overlay button")
@@ -235,7 +244,10 @@ class ShareOverlayRobot {
             return DownloadRobot.Transition(composeTestRule)
         }
 
-        fun clickPrintButton(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+        fun clickPrintButton(
+            composeTestRule: ComposeTestRule,
+            interact: BrowserRobot.() -> Unit,
+        ): BrowserRobot.Transition {
             itemWithText("Print").waitForExists(waitingTime)
             Log.i(TAG, "clickPrintButton: Trying to click the \"Print\" share overlay button")
             itemWithText("Print").click()

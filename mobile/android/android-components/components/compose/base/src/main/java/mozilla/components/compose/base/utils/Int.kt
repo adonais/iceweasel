@@ -8,10 +8,6 @@ import androidx.compose.ui.text.intl.Locale
 import java.text.NumberFormat
 import java.util.Locale.Builder
 
-/**
- * Returns a localized string representation of the value.
- */
+/** Returns a localized string representation of the value. */
 fun Int.toLocaleString(): String =
-    NumberFormat.getNumberInstance(
-        Builder().setLanguage(Locale.current.language).build(),
-    ).format(this)
+    NumberFormat.getNumberInstance(Builder().setLanguage(Locale.current.language).build()).format(this)

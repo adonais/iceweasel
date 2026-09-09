@@ -15,9 +15,7 @@ import org.mozilla.samples.glean.GleanMetrics.Test
 import org.mozilla.samples.glean.databinding.ActivityMainBinding
 import org.mozilla.samples.glean.library.SamplesGleanLibrary
 
-/**
- * Main Activity of the glean-sample-app
- */
+/** Main Activity of the glean-sample-app */
 open class MainActivity : AppCompatActivity(), NimbusInterface.Observer {
     private lateinit var binding: ActivityMainBinding
 
@@ -49,7 +47,7 @@ open class MainActivity : AppCompatActivity(), NimbusInterface.Observer {
                 BrowserEngagement.ClickExtra(
                     key1 = "extra_value_1",
                     key2 = "extra_value_2",
-                ),
+                )
             )
         }
 
@@ -66,8 +64,8 @@ open class MainActivity : AppCompatActivity(), NimbusInterface.Observer {
     // Begin Nimbus component specific functions
 
     /**
-     * This sets up the update receiver and sets the onClickListener for the "Update Experiments"
-     * button. This is not relevant to the Glean SDK, but to the Nimbus experiments library.
+     * This sets up the update receiver and sets the onClickListener for the "Update Experiments" button. This is not
+     * relevant to the Glean SDK, but to the Nimbus experiments library.
      */
     private fun setupNimbusExperiments() {
         // Register the main activity as a Nimbus observer
@@ -83,17 +81,15 @@ open class MainActivity : AppCompatActivity(), NimbusInterface.Observer {
         configureButton()
     }
 
-    /**
-     * Event to indicate that the experiments have been fetched from the endpoint
-     */
+    /** Event to indicate that the experiments have been fetched from the endpoint */
     override fun onExperimentsFetched() {
         println("Experiments fetched")
         GleanApplication.nimbus.applyPendingExperiments()
     }
 
     /**
-     * Event to indicate that the experiment enrollments have been applied. Developers normally
-     * shouldn't care to observe this and rather rely on `onExperimentsFetched` and `withExperiment`
+     * Event to indicate that the experiment enrollments have been applied. Developers normally shouldn't care to
+     * observe this and rather rely on `onExperimentsFetched` and `withExperiment`
      */
     override fun onUpdatesApplied(updated: List<EnrolledExperiment>) {
         runOnUiThread {
@@ -106,16 +102,18 @@ open class MainActivity : AppCompatActivity(), NimbusInterface.Observer {
         val nimbus = GleanApplication.nimbus
         val branch = nimbus.getExperimentBranch("sample-experiment-feature")
 
-        val color = when (branch) {
-            "blue" -> Color.BLUE
-            "red" -> Color.RED
-            "control" -> Color.DKGRAY
-            else -> Color.WHITE
-        }
-        val text = when (branch) {
-            null -> getString(R.string.experiment_not_active)
-            else -> getString(R.string.experiment_active_branch, branch)
-        }
+        val color =
+            when (branch) {
+                "blue" -> Color.BLUE
+                "red" -> Color.RED
+                "control" -> Color.DKGRAY
+                else -> Color.WHITE
+            }
+        val text =
+            when (branch) {
+                null -> getString(R.string.experiment_not_active)
+                else -> getString(R.string.experiment_active_branch, branch)
+            }
 
         binding.textViewExperimentStatus.setBackgroundColor(color)
         binding.textViewExperimentStatus.text = text

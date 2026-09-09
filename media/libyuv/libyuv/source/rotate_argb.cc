@@ -122,6 +122,9 @@ static int ARGBRotate180(const uint8_t* src_argb,
       ARGBMirrorRow_C;
   void (*CopyRow)(const uint8_t* src_argb, uint8_t* dst_argb, int width) =
       CopyRow_C;
+  if (width > INT_MAX / 4) {
+    return -1;
+  }
   align_buffer_64(row, width * 4);
   if (!row)
     return 1;
@@ -189,6 +192,11 @@ static int ARGBRotate180(const uint8_t* src_argb,
 #if defined(HAS_COPYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     CopyRow = IS_ALIGNED(width * 4, 32) ? CopyRow_NEON : CopyRow_Any_NEON;
+  }
+#endif
+#if defined(HAS_COPYROW_SVE2)
+  if (TestCpuFlag(kCpuHasSVE2)) {
+    CopyRow = CopyRow_SVE2;
   }
 #endif
 #if defined(HAS_COPYROW_SME)

@@ -135,14 +135,6 @@ StaticRefPtr<nsIFactory> gMockPolicyFactory;
 
 static void RegisterMockPolicyService() {
   MOZ_ASSERT(!gMockPolicyFactory);
-  nsCOMPtr<nsIFactory> existing;
-  if (NS_SUCCEEDED(nsComponentManagerImpl::gComponentManager->GetClassObject(
-          kMOCK_ENTERPRISE_POLICIES_CID, NS_GET_IID(nsIFactory),
-          getter_AddRefs(existing))) &&
-      existing) {
-    (void)nsComponentManagerImpl::gComponentManager->UnregisterFactory(
-        kMOCK_ENTERPRISE_POLICIES_CID, existing);
-  }
   gMockPolicyFactory =
       new mozilla::GenericFactory(ConstructMockEnterprisePolicies);
   MOZ_ALWAYS_SUCCEEDS(

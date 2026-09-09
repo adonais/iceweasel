@@ -74,6 +74,10 @@ add_task(async function test_switch_to_ai_window() {
   button.click();
   await viewShownPromise;
 
+  // The view is shown in a panel CustomizableUI builds for the toolbar widget,
+  // which it tears down once hidden
+  let panel = view.closest("panel");
+
   let aiButton = view.querySelector("#ai-window-switch-ai");
   aiButton.click();
 
@@ -94,7 +98,7 @@ add_task(async function test_switch_to_ai_window() {
   );
 
   await TestUtils.waitForCondition(
-    () => PanelUI.panel.state === "closed",
+    () => panel.state === "closed",
     "Panel should close after switching"
   );
 
@@ -124,6 +128,8 @@ add_task(async function test_switch_to_classic_window() {
   button.click();
   await viewShownPromise;
 
+  let panel = view.closest("panel");
+
   let classicButton = view.querySelector("#ai-window-switch-classic");
   classicButton.click();
 
@@ -144,7 +150,7 @@ add_task(async function test_switch_to_classic_window() {
   );
 
   await TestUtils.waitForCondition(
-    () => PanelUI.panel.state === "closed",
+    () => panel.state === "closed",
     "Panel should close after switching"
   );
 

@@ -7,8 +7,8 @@ package mozilla.components.support.ktx.android.os
 import android.os.Bundle
 
 /**
- * Returns `true` if the two specified bundles are *structurally* equal to one another,
- * i.e. contain the same number of the same elements in the same order.
+ * Returns `true` if the two specified bundles are *structurally* equal to one another, i.e. contain the same number of
+ * the same elements in the same order.
  */
 @Suppress("CyclomaticComplexMethod")
 infix fun Bundle.contentEquals(other: Bundle): Boolean {

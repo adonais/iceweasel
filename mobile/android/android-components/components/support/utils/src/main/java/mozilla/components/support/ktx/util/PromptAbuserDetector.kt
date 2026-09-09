@@ -10,33 +10,25 @@ import java.util.Date
 /**
  * Helper class to identify if a website has shown many dialogs.
  *
- * @param maxSuccessiveDialogMillisLimit Maximum time required
- * between dialogs in seconds before not showing more dialog.
+ * @param maxSuccessiveDialogMillisLimit Maximum time required between dialogs in seconds before not showing more
+ *   dialog.
  */
-class PromptAbuserDetector(
-    private val maxSuccessiveDialogMillisLimit: Int = MAX_SUCCESSIVE_DIALOG_MILLIS_LIMIT,
-) {
+class PromptAbuserDetector(private val maxSuccessiveDialogMillisLimit: Int = MAX_SUCCESSIVE_DIALOG_MILLIS_LIMIT) {
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    var jsAlertCount = 0
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) var jsAlertCount = 0
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    var lastDialogShownAt = Date()
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) var lastDialogShownAt = Date()
 
     var shouldShowMoreDialogs = true
         private set
 
-    /**
-     * Updates internal state for alerts counts.
-     */
+    /** Updates internal state for alerts counts. */
     fun resetJSAlertAbuseState() {
         jsAlertCount = 0
         shouldShowMoreDialogs = true
     }
 
-    /**
-     * Updates internal state for last shown and count of dialogs.
-     */
+    /** Updates internal state for last shown and count of dialogs. */
     fun updateJSDialogAbusedState() {
         if (!areDialogsAbusedByTime()) {
             jsAlertCount = 0
@@ -45,16 +37,12 @@ class PromptAbuserDetector(
         lastDialogShownAt = Date()
     }
 
-    /**
-     * Indicates whether or not user wants to see more dialogs.
-     */
+    /** Indicates whether or not user wants to see more dialogs. */
     fun userWantsMoreDialogs(checkBox: Boolean) {
         shouldShowMoreDialogs = checkBox
     }
 
-    /**
-     * Indicates whether dialogs are being abused or not.
-     */
+    /** Indicates whether dialogs are being abused or not. */
     fun areDialogsBeingAbused(): Boolean {
         return validationsEnabled && (areDialogsAbusedByTime() || areDialogsAbusedByCount())
     }
@@ -84,10 +72,7 @@ class PromptAbuserDetector(
         // Minimum time required between dialogs in milliseconds before enabling the stop dialog.
         internal const val MAX_SUCCESSIVE_DIALOG_MILLIS_LIMIT: Int = 3000
 
-        /**
-         * Only use for testing purpose.
-         */
-        @VisibleForTesting
-        var validationsEnabled = true
+        /** Only use for testing purpose. */
+        @VisibleForTesting var validationsEnabled = true
     }
 }

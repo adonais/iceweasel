@@ -16,12 +16,13 @@ import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UImportStatement
 
 /**
- * Custom lint check that forbids the import of "androidx.compose.material3.IconButton"
- * and instead recommends using "mozilla.components.compose.base.button.IconButton".
+ * Custom lint check that forbids the import of "androidx.compose.material3.IconButton" and instead recommends using
+ * "mozilla.components.compose.base.button.IconButton".
  */
 class ComposeIconButtonDetector : Detector(), Detector.UastScanner {
 
     override fun getApplicableUastTypes() = listOf(UImportStatement::class.java)
+
     override fun createUastHandler(context: JavaContext) = IconButtonImportHandler(context)
 
     /**
@@ -54,21 +55,24 @@ class ComposeIconButtonDetector : Detector(), Detector.UastScanner {
             "Use mozilla.components.compose.base.button.IconButton instead of " +
                 "androidx.compose.material3.IconButton"
 
-        private val IMPLEMENTATION = Implementation(
-            ComposeIconButtonDetector::class.java,
-            Scope.JAVA_FILE_SCOPE,
-        )
+        private val IMPLEMENTATION =
+            Implementation(
+                ComposeIconButtonDetector::class.java,
+                Scope.JAVA_FILE_SCOPE,
+            )
 
-        val ISSUE_ICON_BUTTON_USAGE: Issue = Issue.create(
-            id = "ComposeIconButtonUsage",
-            briefDescription = "Forbidden use of androidx.compose.material3.IconButton",
-            explanation = "The androidx.compose.material3.IconButton should not be used directly. " +
-                "Please use mozilla.components.compose.base.button.IconButton instead, " +
-                "which provides consistent styling and accessibility.",
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            implementation = IMPLEMENTATION,
-        )
+        val ISSUE_ICON_BUTTON_USAGE: Issue =
+            Issue.create(
+                id = "ComposeIconButtonUsage",
+                briefDescription = "Forbidden use of androidx.compose.material3.IconButton",
+                explanation =
+                    "The androidx.compose.material3.IconButton should not be used directly. " +
+                        "Please use mozilla.components.compose.base.button.IconButton instead, " +
+                        "which provides consistent styling and accessibility.",
+                category = Category.CORRECTNESS,
+                priority = 6,
+                severity = Severity.ERROR,
+                implementation = IMPLEMENTATION,
+            )
     }
 }

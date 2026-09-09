@@ -32,9 +32,7 @@ fun IntegrityTools(
     var error by remember { mutableStateOf<String>("Loading") }
 
     LaunchedEffect(Unit) {
-        integrityClient.request()
-            .onSuccess { token = it }
-            .onFailure { error = it.message ?: "Cannot parse error $it" }
+        integrityClient.request().onSuccess { token = it }.onFailure { error = it.message ?: "Cannot parse error $it" }
     }
 
     Column {

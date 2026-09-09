@@ -26,27 +26,29 @@ class CustomTabColorsBindingTest {
     private val binding = CustomTabColorsBinding(store, window, testDispatcher)
 
     @Test
-    fun `WHEN colors for the system bars change THEN apply them to the system bars`() = runTest(testDispatcher) {
-        binding.start()
+    fun `WHEN colors for the system bars change THEN apply them to the system bars`() =
+        runTest(testDispatcher) {
+            binding.start()
 
-        store.dispatch(CustomTabColorsUpdated(CustomTabColors(1, 2, 3, 4, 5)))
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(CustomTabColorsUpdated(CustomTabColors(1, 2, 3, 4, 5)))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify { window.statusBarColor = 2 }
-        verify { window.navigationBarColor = 3 }
-        verify { window.navigationBarDividerColor = 4 }
-    }
+            verify { window.statusBarColor = 2 }
+            verify { window.navigationBarColor = 3 }
+            verify { window.navigationBarDividerColor = 4 }
+        }
 
     @Test
-    fun `WHEN custom colors are not available THEN don't apply any color change`() = runTest(testDispatcher) {
-        val binding = CustomTabColorsBinding(store, window, testDispatcher)
-        binding.start()
+    fun `WHEN custom colors are not available THEN don't apply any color change`() =
+        runTest(testDispatcher) {
+            val binding = CustomTabColorsBinding(store, window, testDispatcher)
+            binding.start()
 
-        store.dispatch(CustomTabColorsUpdated(CustomTabColors(null, null, null, null)))
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(CustomTabColorsUpdated(CustomTabColors(null, null, null, null)))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(exactly = 0) { window.statusBarColor = any<Int>() }
-        verify(exactly = 0) { window.navigationBarColor = any<Int>() }
-        verify(exactly = 0) { window.navigationBarDividerColor = any<Int>() }
-    }
+            verify(exactly = 0) { window.statusBarColor = any<Int>() }
+            verify(exactly = 0) { window.navigationBarColor = any<Int>() }
+            verify(exactly = 0) { window.navigationBarDividerColor = any<Int>() }
+        }
 }

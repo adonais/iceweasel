@@ -9,8 +9,8 @@ import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import org.robolectric.Shadows.shadowOf
 
 /**
- * A helper for working with permission
- * just pass one or more permission that you need to be granted.
+ * A helper for working with permission just pass one or more permission that you need to be granted.
+ *
  * @param permissions list of permissions that you need to be granted.
  */
 fun grantPermission(vararg permissions: String) {

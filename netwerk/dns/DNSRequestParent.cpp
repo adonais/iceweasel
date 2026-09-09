@@ -102,6 +102,7 @@ DNSRequestHandler::OnLookupComplete(nsICancelable* request,
     if (byTypeRec) {
       IPCTypeRecord result;
       byTypeRec->GetResults(&result.mData);
+      byTypeRec->GetFromStaleCache(&result.mFromStaleCache);
       if (nsCOMPtr<nsIDNSHTTPSSVCRecord> rec = do_QueryInterface(aRecord)) {
         rec->GetTtl(&result.mTTL);
         rec->IsTRR(&result.mIsTRR);
@@ -142,11 +143,14 @@ DNSRequestHandler::OnLookupComplete(nsICancelable* request,
     TimeStamp lastUpdate;
     rec->GetLastUpdate(&lastUpdate);
 
+    bool fromStaleCache = false;
+    rec->GetFromStaleCache(&fromStaleCache);
+
     SendLookupCompletedHelper(
         mIPCActor,
-        DNSRequestResponse(DNSRecord(cname, array, trrFetchDuration,
-                                     trrFetchDurationNetworkOnly, isTRR,
-                                     effectiveTRRMode, ttl, lastUpdate)));
+        DNSRequestResponse(DNSRecord(
+            cname, array, trrFetchDuration, trrFetchDurationNetworkOnly, isTRR,
+            effectiveTRRMode, ttl, lastUpdate, fromStaleCache)));
   } else {
     SendLookupCompletedHelper(mIPCActor, DNSRequestResponse(status));
   }

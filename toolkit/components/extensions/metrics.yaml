@@ -517,7 +517,8 @@ extensions.data:
             ObjectStorage name).
           - "RejectedClear:ERROR_NAME": (The storage.local.clear method has hit an unexpected
             error while iterating over the database keys, ERROR_NAME is either a DOMException
-            error name or "OtherError" in case of non-DOMException errors).
+            error name (could be "UnknownError" but also "NotReadableError" since version 156) or
+            "OtherError" in case of non-DOMException errors).
         type: string
       after_reset:
         description: |

@@ -30,16 +30,14 @@ import org.mozilla.focus.testAnnotations.SmokeTest
 class ContextMenusTest {
     private val featureSettingsHelper = FeatureSettingsHelper()
 
-    @get:Rule(order = 0)
-    val focusTestRule: FocusTestRule = FocusTestRule()
+    @get:Rule(order = 0) val focusTestRule: FocusTestRule = FocusTestRule()
 
-    private val webServerRule get() = focusTestRule.mockWebServerRule
+    private val webServerRule
+        get() = focusTestRule.mockWebServerRule
 
-    @get:Rule
-    val mActivityTestRule = MainActivityIntentsTestRule(showFirstRun = false)
+    @get:Rule val mActivityTestRule = MainActivityIntentsTestRule(showFirstRun = false)
 
-    @get:Rule
-    val retryTestRule = RetryTestRule(3)
+    @get:Rule val retryTestRule = RetryTestRule(3)
 
     @Before
     fun setUp() {
@@ -57,11 +55,11 @@ class ContextMenusTest {
         val imagesTestPage = webServerRule.server.imageTestAsset
         val imageAssetUrl = webServerRule.server.url("download.jpg").toString()
 
-        searchScreen {
-        }.loadPage(imagesTestPage.url) {
-            longPressLink("download icon")
-            verifyImageContextMenu(true, imageAssetUrl)
-        }
+        searchScreen {}
+            .loadPage(imagesTestPage.url) {
+                longPressLink("download icon")
+                verifyImageContextMenu(true, imageAssetUrl)
+            }
     }
 
     @SmokeTest
@@ -70,11 +68,11 @@ class ContextMenusTest {
         val imagesTestPage = webServerRule.server.imageTestAsset
         val imageAssetUrl = webServerRule.server.url("rabbit.jpg").toString()
 
-        searchScreen {
-        }.loadPage(imagesTestPage.url) {
-            longPressLink("rabbit.jpg")
-            verifyImageContextMenu(false, imageAssetUrl)
-        }
+        searchScreen {}
+            .loadPage(imagesTestPage.url) {
+                longPressLink("rabbit.jpg")
+                verifyImageContextMenu(false, imageAssetUrl)
+            }
     }
 
     @SmokeTest
@@ -83,12 +81,12 @@ class ContextMenusTest {
         val tab1Page = webServerRule.server.getGenericTabAsset(1)
         val tab2Page = webServerRule.server.getGenericTabAsset(2)
 
-        searchScreen {
-        }.loadPage(tab1Page.url) {
-            verifyPageContent("Tab 1")
-            longPressLink("Tab 2")
-            verifyLinkContextMenu(tab2Page.url)
-        }
+        searchScreen {}
+            .loadPage(tab1Page.url) {
+                verifyPageContent("Tab 1")
+                longPressLink("Tab 2")
+                verifyLinkContextMenu(tab2Page.url)
+            }
     }
 
     @Ignore("Failing, see: https://bugzilla.mozilla.org/show_bug.cgi?id=1819872")
@@ -98,18 +96,20 @@ class ContextMenusTest {
         val tab1Page = webServerRule.server.getGenericTabAsset(1)
         val tab2Page = webServerRule.server.getGenericTabAsset(2)
 
-        searchScreen {
-        }.loadPage(tab1Page.url) {
-            longPressLink("Tab 2")
-            verifyLinkContextMenu(tab2Page.url)
-            clickContextMenuCopyLink()
-        }.openSearchBar {
-            clearSearchBar()
-            longPressSearchBar()
-        }.pasteAndLoadLink {
-            progressBar.waitUntilGone(TestHelper.waitingTime)
-            verifyPageURL(tab2Page.url)
-        }
+        searchScreen {}
+            .loadPage(tab1Page.url) {
+                longPressLink("Tab 2")
+                verifyLinkContextMenu(tab2Page.url)
+                clickContextMenuCopyLink()
+            }
+            .openSearchBar {
+                clearSearchBar()
+                longPressSearchBar()
+            }
+            .pasteAndLoadLink {
+                progressBar.waitUntilGone(TestHelper.waitingTime)
+                verifyPageURL(tab2Page.url)
+            }
     }
 
     @SmokeTest
@@ -118,13 +118,13 @@ class ContextMenusTest {
         val tab1Page = webServerRule.server.getGenericTabAsset(1)
         val tab2Page = webServerRule.server.getGenericTabAsset(2)
 
-        searchScreen {
-        }.loadPage(tab1Page.url) {
-            longPressLink("Tab 2")
-            verifyLinkContextMenu(tab2Page.url)
-            clickShareLink()
-            verifyShareAppsListOpened()
-        }
+        searchScreen {}
+            .loadPage(tab1Page.url) {
+                longPressLink("Tab 2")
+                verifyLinkContextMenu(tab2Page.url)
+                clickShareLink()
+                verifyShareAppsListOpened()
+            }
     }
 
     @Test
@@ -132,18 +132,20 @@ class ContextMenusTest {
         val imagesTestPage = webServerRule.server.imageTestAsset
         val imageAssetUrl = webServerRule.server.url("rabbit.jpg").toString()
 
-        searchScreen {
-        }.loadPage(imagesTestPage.url) {
-            longPressLink("rabbit.jpg")
-            verifyImageContextMenu(false, imageAssetUrl)
-            clickCopyImageLocation()
-        }.openSearchBar {
-            clearSearchBar()
-            longPressSearchBar()
-        }.pasteAndLoadLink {
-            progressBar.waitUntilGone(TestHelper.waitingTime)
-            verifyPageURL(imageAssetUrl)
-        }
+        searchScreen {}
+            .loadPage(imagesTestPage.url) {
+                longPressLink("rabbit.jpg")
+                verifyImageContextMenu(false, imageAssetUrl)
+                clickCopyImageLocation()
+            }
+            .openSearchBar {
+                clearSearchBar()
+                longPressSearchBar()
+            }
+            .pasteAndLoadLink {
+                progressBar.waitUntilGone(TestHelper.waitingTime)
+                verifyPageURL(imageAssetUrl)
+            }
     }
 
     @SmokeTest
@@ -152,18 +154,19 @@ class ContextMenusTest {
         val imagesTestPage = webServerRule.server.imageTestAsset
         val fileName = "rabbit.jpg"
 
-        searchScreen {
-        }.loadPage(imagesTestPage.url) {
-            longPressLink(fileName)
-        }.clickSaveImage {
-            // If permission dialog appears on devices with API<30, grant it
-            if (permAllowBtn.exists()) {
-                permAllowBtn.click()
+        searchScreen {}
+            .loadPage(imagesTestPage.url) {
+                longPressLink(fileName)
             }
-            verifyDownloadConfirmationMessage(fileName)
-            openDownloadedFile()
-            assertNativeAppOpens(StringsHelper.GOOGLE_PHOTOS)
-        }
+            .clickSaveImage {
+                // If permission dialog appears on devices with API<30, grant it
+                if (permAllowBtn.exists()) {
+                    permAllowBtn.click()
+                }
+                verifyDownloadConfirmationMessage(fileName)
+                openDownloadedFile()
+                assertNativeAppOpens(StringsHelper.GOOGLE_PHOTOS)
+            }
         deleteFileUsingDisplayName(
             getTargetContext.applicationContext,
             fileName,
@@ -174,11 +177,11 @@ class ContextMenusTest {
     fun shareImageTest() {
         val imagesTestPage = webServerRule.server.imageTestAsset
 
-        searchScreen {
-        }.loadPage(imagesTestPage.url) {
-            longPressLink("rabbit.jpg")
-            clickShareImage()
-            verifyShareAppsListOpened()
-        }
+        searchScreen {}
+            .loadPage(imagesTestPage.url) {
+                longPressLink("rabbit.jpg")
+                clickShareImage()
+                verifyShareAppsListOpened()
+            }
     }
 }

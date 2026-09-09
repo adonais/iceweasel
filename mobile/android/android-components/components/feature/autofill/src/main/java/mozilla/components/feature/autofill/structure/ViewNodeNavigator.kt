@@ -9,8 +9,8 @@ import android.app.assist.AssistStructure.ViewNode
 import android.text.InputType
 import android.view.View
 import android.view.autofill.AutofillId
-import mozilla.components.feature.autofill.structure.AutofillNodeNavigator.Companion.editTextMask
 import java.util.Locale
+import mozilla.components.feature.autofill.structure.AutofillNodeNavigator.Companion.editTextMask
 
 /**
  * Helper for navigating autofill nodes.
@@ -21,27 +21,40 @@ import java.util.Locale
 internal interface AutofillNodeNavigator<Node, Id> {
     companion object {
         val editTextMask = InputType.TYPE_CLASS_TEXT
-        val passwordMask =
-            InputType.TYPE_TEXT_VARIATION_PASSWORD or
-                InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        val passwordMask = InputType.TYPE_TEXT_VARIATION_PASSWORD or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
     }
 
     val rootNodes: List<Node>
     val activityPackageName: String
+
     fun childNodes(node: Node): List<Node>
+
     fun clues(node: Node): Iterable<CharSequence>
+
     fun autofillId(node: Node): Id?
+
     fun isEditText(node: Node): Boolean
+
     fun isHtmlInputField(node: Node): Boolean
+
     fun isHtmlForm(node: Node): Boolean
+
     fun packageName(node: Node): String?
+
     fun webDomain(node: Node): String?
+
     fun currentText(node: Node): String?
+
     fun inputType(node: Node): Int
+
     fun isPasswordField(node: Node): Boolean = (inputType(node) and passwordMask) > 0
+
     fun isButton(node: Node): Boolean
+
     fun isFocused(node: Node): Boolean
+
     fun isVisible(node: Node): Boolean
+
     fun build(
         usernameId: Id?,
         passwordId: Id?,
@@ -50,12 +63,11 @@ internal interface AutofillNodeNavigator<Node, Id> {
     ): ParsedStructure
 
     private fun <T> findFirstRoots(transform: (Node) -> T?): T? {
-        rootNodes
-            .forEach { node ->
-                findFirst(node, transform)?.let { result ->
-                    return result
-                }
+        rootNodes.forEach { node ->
+            findFirst(node, transform)?.let { result ->
+                return result
             }
+        }
         return null
     }
 
@@ -67,12 +79,11 @@ internal interface AutofillNodeNavigator<Node, Id> {
             return it
         }
 
-        childNodes(node)
-            .forEach { child ->
-                findFirst(child, transform)?.let { result ->
-                    return result
-                }
+        childNodes(node).forEach { child ->
+            findFirst(child, transform)?.let { result ->
+                return result
             }
+        }
         return null
     }
 }
@@ -94,11 +105,12 @@ internal class ViewNodeNavigator(
         node.run { (0 until childCount) }.map { node.getChildAt(it) }
 
     override fun clues(node: ViewNode): Iterable<CharSequence> {
-        val hints = mutableListOf<CharSequence?>(
-            node.text,
-            node.idEntry,
-            node.hint, // This is localized.
-        )
+        val hints =
+            mutableListOf<CharSequence?>(
+                node.text,
+                node.idEntry,
+                node.hint, // This is localized.
+            )
 
         node.autofillOptions?.let {
             hints.addAll(it)
@@ -117,16 +129,13 @@ internal class ViewNodeNavigator(
 
     override fun autofillId(node: ViewNode): AutofillId? = node.autofillId
 
-    override fun isEditText(node: ViewNode) =
-        inputType(node) and editTextMask > 0
+    override fun isEditText(node: ViewNode) = inputType(node) and editTextMask > 0
 
     override fun inputType(node: ViewNode) = node.inputType
 
-    override fun isHtmlInputField(node: ViewNode) =
-        htmlTagName(node) == "input"
+    override fun isHtmlInputField(node: ViewNode) = htmlTagName(node) == "input"
 
-    private fun htmlAttr(node: ViewNode, name: String) =
-        node.htmlInfo?.attributes?.find { name == it.first }?.second
+    private fun htmlAttr(node: ViewNode, name: String) = node.htmlInfo?.attributes?.find { name == it.first }?.second
 
     @Suppress("ReturnCount")
     override fun isButton(node: ViewNode): Boolean {
@@ -148,8 +157,7 @@ internal class ViewNodeNavigator(
         // Use English locale, as the HTML tags are all in English.
         node.htmlInfo?.tag?.lowercase(Locale.ENGLISH)
 
-    override fun isHtmlForm(node: ViewNode) =
-        htmlTagName(node) == "form"
+    override fun isHtmlForm(node: ViewNode) = htmlTagName(node) == "form"
 
     override fun isVisible(node: ViewNode) = node.visibility == View.VISIBLE
 

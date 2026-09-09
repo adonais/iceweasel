@@ -24,7 +24,7 @@ class DocumentPictureInPicture final : public DOMEventTargetHelper,
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-  already_AddRefed<Promise> RequestWindow(
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> RequestWindow(
       const DocumentPictureInPictureOptions& aOptions, ErrorResult& aRv);
 
   // Get the current PiP window, exposed as webidl property

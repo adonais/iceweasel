@@ -23,6 +23,11 @@ tasks-from:
     - android.yml
     - android-emulator.yml
     - linux.yml
+    # Bug 2045109:
+    # macosx.yml (x64) and macosx-aarch64.yml run in parallel during the
+    # regression-detection migration window.
+    # Remove macosx.yml once the aarch64 series has enough history.
+    - macosx-aarch64.yml
     - macosx.yml
     - windows11-24h2.yml
     - windows11-24h2-ref.yml

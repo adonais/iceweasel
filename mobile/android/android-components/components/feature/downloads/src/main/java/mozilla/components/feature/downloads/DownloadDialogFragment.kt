@@ -9,25 +9,21 @@ import androidx.appcompat.app.AppCompatDialogFragment
 import mozilla.components.browser.state.state.content.DownloadState
 
 /**
- * This is a general representation of a dialog meant to be used in collaboration with [DownloadsFeature]
- * to show a dialog before a download is triggered.
- * If [SimpleDownloadDialogFragment] is not flexible enough for your use case you should inherit for this class.
- * Be mindful to call [onStartDownload] when you want to start the download.
+ * This is a general representation of a dialog meant to be used in collaboration with [DownloadsFeature] to show a
+ * dialog before a download is triggered. If [SimpleDownloadDialogFragment] is not flexible enough for your use case you
+ * should inherit for this class. Be mindful to call [onStartDownload] when you want to start the download.
  */
 abstract class DownloadDialogFragment : AppCompatDialogFragment() {
 
     /**
-     * A callback to trigger a download, call it when you are ready to start a download. For instance,
-     * a valid use case can be in confirmation dialog, after the positive button is clicked,
-     * this callback must be called.
+     * A callback to trigger a download, call it when you are ready to start a download. For instance, a valid use case
+     * can be in confirmation dialog, after the positive button is clicked, this callback must be called.
      */
     var onStartDownload: () -> Unit = {}
 
     var onCancelDownload: () -> Unit = {}
 
-    /**
-     * Add the metadata of this download object to the arguments of this fragment.
-     */
+    /** Add the metadata of this download object to the arguments of this fragment. */
     fun setDownload(download: DownloadState, fileName: String) {
         val args = arguments ?: Bundle()
         args.putString(KEY_FILE_NAME, fileName)
@@ -37,19 +33,13 @@ abstract class DownloadDialogFragment : AppCompatDialogFragment() {
     }
 
     companion object {
-        /**
-         * Key for finding the file name in the arguments.
-         */
+        /** Key for finding the file name in the arguments. */
         const val KEY_FILE_NAME = "KEY_FILE_NAME"
 
-        /**
-         * Key for finding the content length in the arguments.
-         */
+        /** Key for finding the content length in the arguments. */
         const val KEY_CONTENT_LENGTH = "KEY_CONTENT_LENGTH"
 
-        /**
-         * Key for finding the url in the arguments.
-         */
+        /** Key for finding the url in the arguments. */
         const val KEY_URL = "KEY_URL"
 
         const val FRAGMENT_TAG = "SHOULD_DOWNLOAD_PROMPT_DIALOG"

@@ -822,9 +822,9 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   void RestoreContext(webgl::LossStatus requiredStatus) const;
 
  private:
-  bool DispatchEvent(const nsAString&) const;
-  void Event_webglcontextlost() const;
-  void Event_webglcontextrestored() const;
+  MOZ_CAN_RUN_SCRIPT bool DispatchEvent(const nsAString&) const;
+  MOZ_CAN_RUN_SCRIPT void Event_webglcontextlost() const;
+  MOZ_CAN_RUN_SCRIPT void Event_webglcontextrestored() const;
 
   bool CreateHostContext(const uvec2& requestedSize);
   void ThrowEvent_WebGLContextCreationError(const std::string&) const;
@@ -2431,10 +2431,11 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
     Run_WithDestArgTypes(std::move(noGc), method, info, args...);
   }
 
+  // FIXME: This should be marked as MOZ_CAN_RUN_SCRIPT
   template <typename MethodT, typename... DestArgs>
-  void Run_WithDestArgTypes(std::optional<JS::AutoCheckCannotGC>&&, MethodT,
-                            const WebGLMethodInfo info,
-                            const DestArgs&...) const;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void Run_WithDestArgTypes(
+      std::optional<JS::AutoCheckCannotGC>&&, MethodT,
+      const WebGLMethodInfo info, const DestArgs&...) const;
 
   // -------------------------------------------------------------------------
   // Helpers for DOM operations, composition, actors, etc

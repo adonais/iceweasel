@@ -172,8 +172,7 @@
 
           if (
             this.tabs.length == 1 &&
-            mutations.length &&
-            mutations[0].removedNodes.length == 1
+            mutations.some(mutation => mutation.removedNodes.length == 1)
           ) {
             // We assume you end up with only one tab in a splitview when the other tab is closed,
             // in which case, move the remaining tab out via this.unsplitTabs.
@@ -331,7 +330,7 @@
           this.documentGlobal === tab.documentGlobal
             ? tab
             : gBrowser.adoptTab(tab, {
-                tabIndex: gBrowser.tabs.at(-1)._tPos + 1,
+                tabIndex: gBrowser.tabs.at(-1).index + 1,
                 selectTab: tab.selected,
               });
         if (indexOfReplacedTab > -1 && indexOfReplacedTab < this.#tabs.length) {

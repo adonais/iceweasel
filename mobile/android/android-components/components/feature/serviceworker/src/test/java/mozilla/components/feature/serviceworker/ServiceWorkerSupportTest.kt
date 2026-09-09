@@ -5,6 +5,7 @@
 package mozilla.components.feature.serviceworker
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.browser.engine.gecko.GeckoEngine
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.concept.engine.DefaultSettings
@@ -19,7 +20,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.verify
 import org.mozilla.geckoview.GeckoRuntime
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class ServiceWorkerSupportTest {
@@ -34,24 +34,25 @@ class ServiceWorkerSupportTest {
         val result = runtime.serviceWorkerDelegate!!.onOpenWindow("")
 
         assertNotNull(result.poll(1))
-        verify(addNewTabUseCase).invoke(
-            url = eq("about:blank"),
-            selectTab = eq(true), // default
-            startLoading = eq(true), // default
-            parentId = eq(null), // default
-            flags = eq(LoadUrlFlags.external()),
-            contextId = eq(null), // default
-            title = eq(""), // default
-            engineSession = any<EngineSession>(),
-            source = eq(SessionState.Source.Internal.None),
-            searchTerms = eq(""), // default
-            private = eq(false), // default
-            historyMetadata = eq(null), // default
-            isSearch = eq(false), // default
-            searchEngineName = eq(null), // default
-            additionalHeaders = eq(null), // default
-            originalInput = eq(null), // default
-            textDirectiveUserActivation = eq(false), // default
-        )
+        verify(addNewTabUseCase)
+            .invoke(
+                url = eq("about:blank"),
+                selectTab = eq(true), // default
+                startLoading = eq(true), // default
+                parentId = eq(null), // default
+                flags = eq(LoadUrlFlags.external()),
+                contextId = eq(null), // default
+                title = eq(""), // default
+                engineSession = any<EngineSession>(),
+                source = eq(SessionState.Source.Internal.None),
+                searchTerms = eq(""), // default
+                private = eq(false), // default
+                historyMetadata = eq(null), // default
+                isSearch = eq(false), // default
+                searchEngineName = eq(null), // default
+                additionalHeaders = eq(null), // default
+                originalInput = eq(null), // default
+                textDirectiveUserActivation = eq(false), // default
+            )
     }
 }

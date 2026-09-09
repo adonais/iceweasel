@@ -3,7 +3,7 @@
   "bugs": {
     "1728450": {
       "issue": "firefox-blocked-completely",
-      "matches": ["*://*.directv.com/*"]
+      "matches": ["*://stream.directv.com/*"]
     }
   },
   "interventions": [

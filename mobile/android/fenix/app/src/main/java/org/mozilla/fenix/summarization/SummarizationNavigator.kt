@@ -11,8 +11,7 @@ import org.mozilla.fenix.browser.BrowserFragmentDirections
 import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
 
 /**
- * Decides whether the current tab is eligible for summarization and, if so, navigates to the
- * summarization screen.
+ * Decides whether the current tab is eligible for summarization and, if so, navigates to the summarization screen.
  *
  * @param summarizationSettings provides the current feature/gesture enabled state.
  * @param eligibilityChecker checks whether the page content is eligible (e.g. language).
@@ -38,8 +37,9 @@ class SummarizationNavigator(
             // If the feature (or the shake gesture) was disabled in the bottom sheet hosted
             // settings but the hosting screen has not been recreated yet, we need to re-check it
             // is still active before proceeding.
-            val featureEnabled = summarizationSettings.isFeatureEnabled.value &&
-                (!fromShakeGesture || summarizationSettings.isGestureEnabled.value)
+            val featureEnabled =
+                summarizationSettings.isFeatureEnabled.value &&
+                    (!fromShakeGesture || summarizationSettings.isGestureEnabled.value)
 
             if (!featureEnabled) {
                 return
@@ -66,16 +66,12 @@ class SummarizationNavigator(
 
             // this can be removed when we get rid of language gating
             @Suppress("ComplexCondition")
-            if (isPrivate ||
-                isPageLoading ||
-                currentDestinationIsNotTheBrowser ||
-                !isEnglishContent()
-            ) {
+            if (isPrivate || isPageLoading || currentDestinationIsNotTheBrowser || !isEnglishContent()) {
                 return
             }
 
             navigate(
-                BrowserFragmentDirections.actionBrowserFragmentToSummarizationFragment(fromShakeGesture),
+                BrowserFragmentDirections.actionBrowserFragmentToSummarizationFragment(fromShake = fromShakeGesture)
             )
         }
     }

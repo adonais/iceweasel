@@ -7,6 +7,7 @@ package mozilla.components.feature.awesomebar.provider
 import android.net.Uri
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
+import java.util.UUID
 import mozilla.components.browser.icons.BrowserIcons
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.concept.awesomebar.AwesomeBar
@@ -18,32 +19,22 @@ import mozilla.components.feature.awesomebar.facts.emitHistorySuggestionClickedF
 import mozilla.components.feature.awesomebar.facts.emitHistorySuggestionRemovedFact
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.support.ktx.android.net.sameHostWithoutMobileSubdomainAs
-import java.util.UUID
 
-/**
- * Return 5 history suggestions by default.
- */
+/** Return 5 history suggestions by default. */
 const val DEFAULT_METADATA_SUGGESTION_LIMIT = 5
 
-/**
- * Default suggestions limit multiplier when needing to filter results by an external url filter.
- */
-@VisibleForTesting
-internal const val HISTORY_METADATA_RESULTS_TO_FILTER_SCALE_FACTOR = 10
+/** Default suggestions limit multiplier when needing to filter results by an external url filter. */
+@VisibleForTesting internal const val HISTORY_METADATA_RESULTS_TO_FILTER_SCALE_FACTOR = 10
 
 /**
  * A [AwesomeBar.SuggestionProvider] implementation that provides suggestions based on [HistoryMetadata].
  *
- * @param historyStorage an instance of the [HistoryStorage] used
- * to query matching metadata records.
- * @param loadUrlUseCase the use case invoked to load the url when the
- * user clicks on the suggestion.
- * @param icons optional instance of [BrowserIcons] to load fav icons
- * for [HistoryMetadata] URLs.
- * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the
- * highest scored suggestion URL.
- * @param maxNumberOfSuggestions optional parameter to specify the maximum number of returned suggestions,
- * defaults to [DEFAULT_METADATA_SUGGESTION_LIMIT].
+ * @param historyStorage an instance of the [HistoryStorage] used to query matching metadata records.
+ * @param loadUrlUseCase the use case invoked to load the url when the user clicks on the suggestion.
+ * @param icons optional instance of [BrowserIcons] to load fav icons for [HistoryMetadata] URLs.
+ * @param engine optional [Engine] instance to call [Engine.speculativeConnect] for the highest scored suggestion URL.
+ * @param maxNumberOfSuggestions optional parameter to specify the maximum number of returned suggestions, defaults to
+ *   [DEFAULT_METADATA_SUGGESTION_LIMIT].
  * @param showEditSuggestion optional parameter to specify if the suggestion should show the edit button
  * @param suggestionsHeader optional parameter to specify if the suggestion should have a header
  * @param resultsUriFilter Optional filter for the url of the suggestions to show.
@@ -70,10 +61,11 @@ class HistoryMetadataSuggestionProvider(
         }
 
         historyStorage.cancelReads(text)
-        val suggestions = when (resultsUriFilter) {
-            null -> getHistorySuggestions(text)
-            else -> getHistorySuggestionsFromHost(resultsUriFilter, text)
-        }
+        val suggestions =
+            when (resultsUriFilter) {
+                null -> getHistorySuggestions(text)
+                else -> getHistorySuggestionsFromHost(resultsUriFilter, text)
+            }
 
         suggestions.firstOrNull()?.key?.url?.let { url -> engine?.speculativeConnect(url) }
         return suggestions.into(this, icons, loadUrlUseCase, showEditSuggestion)
@@ -84,9 +76,8 @@ class HistoryMetadataSuggestionProvider(
      *
      * @param query String to filter history entry's title or URL by.
      */
-    private suspend fun getHistorySuggestions(query: String) = historyStorage
-        .queryHistoryMetadata(query, maxNumberOfSuggestions)
-        .filter { it.totalViewTime > 0 }
+    private suspend fun getHistorySuggestions(query: String) =
+        historyStorage.queryHistoryMetadata(query, maxNumberOfSuggestions).filter { it.totalViewTime > 0 }
 
     /**
      * Get up to [maxNumberOfSuggestions] history metadata suggestions matching [query] from the indicated [url].
@@ -94,13 +85,13 @@ class HistoryMetadataSuggestionProvider(
      * @param query String to filter history entry's title or URL by.
      * @param url URL host to filter all history entry's URL host by.
      */
-    private suspend fun getHistorySuggestionsFromHost(url: Uri, query: String) = historyStorage
-        .queryHistoryMetadata(query, maxNumberOfSuggestions * HISTORY_METADATA_RESULTS_TO_FILTER_SCALE_FACTOR)
-        .filter {
-            it.totalViewTime > 0 &&
-                it.key.url.toUri().sameHostWithoutMobileSubdomainAs(url)
-        }
-        .take(maxNumberOfSuggestions)
+    private suspend fun getHistorySuggestionsFromHost(url: Uri, query: String) =
+        historyStorage
+            .queryHistoryMetadata(query, maxNumberOfSuggestions * HISTORY_METADATA_RESULTS_TO_FILTER_SCALE_FACTOR)
+            .filter {
+                it.totalViewTime > 0 && it.key.url.toUri().sameHostWithoutMobileSubdomainAs(url)
+            }
+            .take(maxNumberOfSuggestions)
 }
 
 internal suspend fun Iterable<HistoryMetadata>.into(

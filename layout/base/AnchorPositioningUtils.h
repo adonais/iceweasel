@@ -43,7 +43,6 @@ class DistanceToNearestScrollContainer {
   bool Valid() const { return mDistance != kInvalid; }
 
   bool operator==(const DistanceToNearestScrollContainer&) const = default;
-  bool operator!=(const DistanceToNearestScrollContainer&) const = default;
 
  private:
   // 0 is invalid - a frame itself cannot be its own nearest scroll container.
@@ -329,7 +328,8 @@ struct AnchorPositioningUtils {
       AnchorPosResolutionCache* aResolutionCache);
 
   static Maybe<nsSize> ResolveAnchorPosSize(
-      const nsIFrame* aPositioned, const ScopedNameRef& aAnchorName,
+      const nsIFrame* aPositioned, const nsIFrame* aAbsoluteContainingBlock,
+      const ScopedNameRef& aAnchorName,
       AnchorPosResolutionCache* aResolutionCache);
 
   /**
@@ -431,6 +431,60 @@ struct AnchorPositioningUtils {
    */
   static nsRect ReassembleAnchorRect(const nsIFrame* aAnchor,
                                      const nsIFrame* aContainingBlock);
+
+  /**
+   * Return the continuation (or IB-split sibling) of aContainingBlock that is a
+   * proper ancestor of aAnchor, which may not be aContainingBlock itself when
+   * the containing block is fragmented. Return nullptr if no continuation of
+   * aContainingBlock contains aAnchor.
+   */
+  static const nsIFrame* GetMatchingContainingBlock(
+      const nsIFrame* aAnchor, const nsIFrame* aContainingBlock);
+
+  struct CombinedFragments {
+    // Previous continuation, if exists, that got skipped due to being on a
+    // different page, or a different containing block continuation.
+    const nsIFrame* mSkippedPrevContinuation = nullptr;
+    // Same as above, but next continuation.
+    const nsIFrame* mSkippedNextContinuation = nullptr;
+    // The overall frame rect formed by unioning the frame's fragment rects.
+    nsRect mRect;
+  };
+  enum class UnionFragments : bool {
+    // Union every fragment of the frame.
+    All,
+    // Union only the fragments under the given containing block continuation.
+    SameContainingBlockOnly,
+  };
+
+  enum class ApplyTransform : bool {
+    // The returned rect is untransformed. The caller is not expected to apply
+    // transforms to it afterwards.
+    No,
+    // The returned rect takes transforms between aFrame and aContainingBlock
+    // into account, if any.
+    Yes,
+  };
+  /**
+   * Get the union of the rects of aFrame and its continuations (but not if the
+   * context is paginated and they're on a different page, as it doesn't make
+   * sense to "merge" their rects in that case).
+   *
+   * @param aFrame The target frame whose combined fragments are wanted.
+   * @param aContainingBlock The frame whose coordinate space the result is
+   * expressed in.
+   * @param aUnionFragments Which of aFrame's fragments to union: all of them,
+   * or only those under aContainingBlock. SameContainingBlockOnly requires
+   * aContainingBlock to be a proper ancestor of aFrame.
+   * @param aApplyTransform Whether the returned mRect takes transforms between
+   * aFrame and aContainingBlock into account per
+   * https://drafts.csswg.org/css-anchor-position-1/#determining. Transforms are
+   * applied only when aContainingBlock is a proper ancestor of aFrame.
+   *
+   */
+  static CombinedFragments GetCombinedFragmentRects(
+      const nsIFrame* aFrame, const nsIFrame* aContainingBlock,
+      UnionFragments aUnionFragments, ApplyTransform aApplyTransform);
 
   // Helper to get shadow root for a property's tree scope
   static const dom::ShadowRoot* GetShadowRootForTreeScope(

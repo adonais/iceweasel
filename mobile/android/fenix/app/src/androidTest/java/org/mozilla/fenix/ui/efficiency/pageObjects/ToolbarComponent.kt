@@ -39,9 +39,9 @@ class ToolbarComponent(composeRule: AndroidComposeTestRule<HomeActivityIntentTes
     }
 
     /**
-     * Assert the address-bar toolbar sits in the top half of the screen. With shouldUseExpandedToolbar the
-     * toolbar is at the bottom in portrait, but moves to the top in landscape and when the tab strip is
-     * enabled. Ports the legacy HomeScreenRobot.verifyToolbarPosition(bottomPosition = false) geometry.
+     * Assert the address-bar toolbar sits in the top half of the screen. With shouldUseExpandedToolbar the toolbar is
+     * at the bottom in portrait, but moves to the top in landscape and when the tab strip is enabled. Ports the legacy
+     * HomeScreenRobot.verifyToolbarPosition(bottomPosition = false) geometry.
      */
     fun verifyToolbarIsAtTop(): ToolbarComponent {
         val toolbar = mDevice.findObject(UiSelector().resourceId("$packageName:id/composable_toolbar"))

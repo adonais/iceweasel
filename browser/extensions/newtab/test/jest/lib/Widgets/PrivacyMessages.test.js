@@ -61,6 +61,17 @@ describe("selectPrivacyMessage", () => {
     expect(decision.variant).toBe("empty");
   });
 
+  it("still picks a message when no sites were visited today", () => {
+    // A zero site count is not a zero state, so the scheduler keeps running.
+    const { decision } = selectPrivacyMessage(
+      ctx({ trackersToday: 34, sitesToday: 0 }),
+      state(),
+      NOW,
+      rand()
+    );
+    expect(["blank", "streak", "tip"]).toContain(decision.variant);
+  });
+
   it("shows first-protection once, then records it", () => {
     const first = selectPrivacyMessage(
       ctx(),
@@ -407,5 +418,61 @@ describe("selectPrivacyMessage", () => {
       );
       expect(decision.variant).toBe("empty");
     });
+  });
+});
+
+describe("promo CTA attribution (Bug 2061524)", () => {
+  it.each([
+    [
+      "newtab-privacy-message-promo-monitor-1",
+      "https://monitor.mozilla.org/?utm_medium=referral&utm_source=firefox-desktop&utm_campaign=widget&utm_content=get-breach-alerts-global",
+    ],
+    [
+      "newtab-privacy-message-promo-monitor-2",
+      "https://monitor.mozilla.org/?utm_medium=referral&utm_source=firefox-desktop&utm_campaign=widget&utm_content=protect-your-info-global",
+    ],
+    [
+      "newtab-privacy-message-promo-relay-1",
+      "https://relay.firefox.com/?utm_medium=referral&utm_source=firefox-desktop&utm_campaign=widget&utm_content=use-email-mask-global",
+    ],
+    [
+      "newtab-privacy-message-promo-relay-2",
+      "https://relay.firefox.com/?utm_medium=referral&utm_source=firefox-desktop&utm_campaign=widget&utm_content=protect-your-inbox-global",
+    ],
+    [
+      "newtab-privacy-message-promo-relay-3",
+      "https://relay.firefox.com/?utm_medium=referral&utm_source=firefox-desktop&utm_campaign=widget&utm_content=50-free-email-mask-global",
+    ],
+  ])("%s opens a tagged url", (id, url) => {
+    const msg = PRIVACY_MESSAGES.find(m => m.id === id);
+    expect(msg.cta).toEqual({
+      type: "OPEN_URL",
+      data: { args: url, where: "tab" },
+    });
+  });
+
+  // The cases above name each promo explicitly, so a future Monitor/Relay promo
+  // could ship untagged with CI still green. This asserts the whole family stays
+  // tagged: every Monitor/Relay promo opens a url carrying all four utm params.
+  it("tags every Monitor/Relay promo CTA with all four utm params", () => {
+    const attributedPromos = PRIVACY_MESSAGES.filter(
+      m => m.feature === "monitor" || m.feature === "relay"
+    );
+    // Guard against the filter silently matching nothing (e.g. a `feature`
+    // rename) and the assertions below vacuously passing.
+    expect(attributedPromos.length).toBeGreaterThan(0);
+    const contents = [];
+    for (const msg of attributedPromos) {
+      expect(msg.cta.type).toBe("OPEN_URL");
+      const params = new URL(msg.cta.data.args).searchParams;
+      expect(params.get("utm_medium")).toBe("referral");
+      expect(params.get("utm_source")).toBe("firefox-desktop");
+      expect(params.get("utm_campaign")).toBe("widget");
+      expect(params.get("utm_content")).toBeTruthy();
+      contents.push(params.get("utm_content"));
+    }
+    // utm_content is what distinguishes one message's signups from another's, so
+    // a duplicate slug would silently merge two messages' attribution.
+    expect(new Set(contents).size).toBe(contents.length);
   });
 });

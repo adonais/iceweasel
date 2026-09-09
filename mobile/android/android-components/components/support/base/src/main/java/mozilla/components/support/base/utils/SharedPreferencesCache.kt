@@ -11,38 +11,24 @@ import mozilla.components.support.base.log.logger.Logger
 import org.json.JSONException
 import org.json.JSONObject
 
-/**
- * An abstract wrapper around [SharedPreferences] which facilitates caching of [T] objects.
- */
+/** An abstract wrapper around [SharedPreferences] which facilitates caching of [T] objects. */
 abstract class SharedPreferencesCache<T>(val context: Context) {
-    /**
-     * Logger used to report issues.
-     */
+    /** Logger used to report issues. */
     abstract val logger: Logger
 
-    /**
-     * Name of the 'key' under which serialized data is stored within the cache.
-     */
+    /** Name of the 'key' under which serialized data is stored within the cache. */
     abstract val cacheKey: String
 
-    /**
-     * Name of the cache.
-     */
+    /** Name of the cache. */
     abstract val cacheName: String
 
-    /**
-     * A conversion method from [T] into a [JSONObject].
-     */
+    /** A conversion method from [T] into a [JSONObject]. */
     abstract fun T.toJSON(): JSONObject
 
-    /**
-     * A conversion method from [JSONObject] to [T].
-     */
+    /** A conversion method from [JSONObject] to [T]. */
     abstract fun fromJSON(obj: JSONObject): T
 
-    /**
-     * @param A [T] value to cache.
-     */
+    /** @param A [T] value to cache. */
     fun setToCache(obj: T) {
         // JSONObject swallows any 'JSONException' thrown in 'toString', and simply returns 'null'.
         // An error happened while converting a JSONObject into a string. Let's fail loudly and
@@ -52,9 +38,7 @@ abstract class SharedPreferencesCache<T>(val context: Context) {
         cache().edit { putString(cacheKey, s) }
     }
 
-    /**
-     * @return Cached [T] value or `null`.
-     */
+    /** @return Cached [T] value or `null`. */
     fun getCached(): T? {
         val s = cache().getString(cacheKey, null) ?: return null
         return try {
@@ -65,9 +49,7 @@ abstract class SharedPreferencesCache<T>(val context: Context) {
         }
     }
 
-    /**
-     * Clear cached values.
-     */
+    /** Clear cached values. */
     fun clear() {
         cache().edit { clear() }
     }

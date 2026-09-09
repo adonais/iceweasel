@@ -73,9 +73,6 @@ skip-if = [
 ["browser_ext_incognito_popup.js"]
 
 ["browser_ext_openPanel.js"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1775565
-]
 
 ["browser_ext_pageAction_activeTab.js"]
 
@@ -127,9 +124,6 @@ run-if = [
 ]
 
 ["browser_ext_popup_select_in_oopif.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan && fission && swgl", # high frequency intermittent
-]
 
 ["browser_ext_popup_sendMessage.js"]
 

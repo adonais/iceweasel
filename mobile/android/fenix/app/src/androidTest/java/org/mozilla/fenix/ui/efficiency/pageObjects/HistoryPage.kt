@@ -21,10 +21,11 @@ class HistoryPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
         NavigationRegistry.register(
             from = "HomePage",
             to = pageName,
-            steps = listOf(
-                NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
-                NavigationStep.Click(MainMenuSelectors.HISTORY_BUTTON),
-            ),
+            steps =
+                listOf(
+                    NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
+                    NavigationStep.Click(MainMenuSelectors.HISTORY_BUTTON),
+                ),
         )
 
         NavigationRegistry.register(

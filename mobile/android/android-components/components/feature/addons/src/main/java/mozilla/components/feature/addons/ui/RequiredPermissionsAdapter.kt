@@ -25,56 +25,46 @@ private const val VIEW_HOLDER_TYPE_EXTRA_WARNING = 4
 
 private const val DOMAINS_CONTRACTED_SUBLIST_SIZE = 5
 
-/**
- * Classes of items that can be included in [RequiredPermissionsAdapter]
- */
+/** Classes of items that can be included in [RequiredPermissionsAdapter] */
 sealed class RequiredPermissionsListItem {
 
     /**
      * A permission to show as a list item.
+     *
      * @param permissionText - The text to show in the compound textview
      */
-    class PermissionItem(
-        val permissionText: String,
-    ) : RequiredPermissionsListItem()
+    class PermissionItem(val permissionText: String) : RequiredPermissionsListItem()
 
     /**
      * A permission to show as a list item with a checkbox.
+     *
      * @param permissionText - The text to show in the compound textview
      */
-    class OptInPermissionItem(
-        val permissionText: String,
-    ) : RequiredPermissionsListItem()
+    class OptInPermissionItem(val permissionText: String) : RequiredPermissionsListItem()
 
     /**
      * A list item of a domain that is required
+     *
      * @param domain - The domain text
      */
-    class DomainItem(
-        val domain: String,
-    ) : RequiredPermissionsListItem()
+    class DomainItem(val domain: String) : RequiredPermissionsListItem()
 
     /**
      * A textview that is clickable to show or hide the full list of domain items
-     * @param isShowAction - Whether the clickable text is for showing or hiding the full list
-     * of domains
+     *
+     * @param isShowAction - Whether the clickable text is for showing or hiding the full list of domains
      */
-    class ShowHideDomainAction(
-        val isShowAction: Boolean,
-    ) : RequiredPermissionsListItem()
+    class ShowHideDomainAction(val isShowAction: Boolean) : RequiredPermissionsListItem()
 
     /**
      * A warning message to be displayed.
+     *
      * @param warningText - The text to show in a warning card.
      */
-    class ExtraWarningItem(
-        val warningText: String,
-    ) : RequiredPermissionsListItem()
+    class ExtraWarningItem(val warningText: String) : RequiredPermissionsListItem()
 }
 
-/**
- * [RequiredPermissionsAdapter] diff util for [RequiredPermissionsListItem]
- */
+/** [RequiredPermissionsAdapter] diff util for [RequiredPermissionsListItem] */
 private class DiffCallback : DiffUtil.ItemCallback<RequiredPermissionsListItem>() {
     override fun areItemsTheSame(
         oldItem: RequiredPermissionsListItem,
@@ -89,8 +79,7 @@ private class DiffCallback : DiffUtil.ItemCallback<RequiredPermissionsListItem>(
                 newItem is RequiredPermissionsListItem.OptInPermissionItem ->
                 oldItem.permissionText == newItem.permissionText
 
-            oldItem is RequiredPermissionsListItem.DomainItem &&
-                newItem is RequiredPermissionsListItem.DomainItem ->
+            oldItem is RequiredPermissionsListItem.DomainItem && newItem is RequiredPermissionsListItem.DomainItem ->
                 oldItem.domain == newItem.domain
 
             oldItem is RequiredPermissionsListItem.ShowHideDomainAction &&
@@ -98,8 +87,7 @@ private class DiffCallback : DiffUtil.ItemCallback<RequiredPermissionsListItem>(
                 oldItem.isShowAction == newItem.isShowAction
 
             oldItem is RequiredPermissionsListItem.ExtraWarningItem &&
-                newItem is RequiredPermissionsListItem.ExtraWarningItem ->
-                oldItem.warningText == newItem.warningText
+                newItem is RequiredPermissionsListItem.ExtraWarningItem -> oldItem.warningText == newItem.warningText
 
             else -> false
         }
@@ -118,8 +106,7 @@ private class DiffCallback : DiffUtil.ItemCallback<RequiredPermissionsListItem>(
                 newItem is RequiredPermissionsListItem.OptInPermissionItem ->
                 oldItem.permissionText == newItem.permissionText
 
-            oldItem is RequiredPermissionsListItem.DomainItem &&
-                newItem is RequiredPermissionsListItem.DomainItem ->
+            oldItem is RequiredPermissionsListItem.DomainItem && newItem is RequiredPermissionsListItem.DomainItem ->
                 oldItem.domain == newItem.domain
 
             oldItem is RequiredPermissionsListItem.ShowHideDomainAction &&
@@ -127,8 +114,7 @@ private class DiffCallback : DiffUtil.ItemCallback<RequiredPermissionsListItem>(
                 oldItem.isShowAction == newItem.isShowAction
 
             oldItem is RequiredPermissionsListItem.ExtraWarningItem &&
-                newItem is RequiredPermissionsListItem.ExtraWarningItem ->
-                oldItem.warningText == newItem.warningText
+                newItem is RequiredPermissionsListItem.ExtraWarningItem -> oldItem.warningText == newItem.warningText
 
             else -> false
         }
@@ -152,8 +138,7 @@ class RequiredPermissionsAdapter(
     private val domains: Set<String>,
     private val domainsHeaderText: String,
     private val extraPermissionWarning: String?,
-) :
-    ListAdapter<RequiredPermissionsListItem, ViewHolder>(DiffCallback()) {
+) : ListAdapter<RequiredPermissionsListItem, ViewHolder>(DiffCallback()) {
 
     private val displayList = mutableListOf<RequiredPermissionsListItem>()
     private var isDomainSectionExpanded = false
@@ -163,31 +148,21 @@ class RequiredPermissionsAdapter(
         submitList(displayList.toList())
     }
 
-    /**
-     * ViewHolder for displaying a Permission list item
-     */
+    /** ViewHolder for displaying a Permission list item */
     class PermissionViewHolder(itemView: View) : ViewHolder(itemView) {
-        private val permissionRequiredTv: TextView =
-            itemView.findViewById(R.id.permission_required_item)
+        private val permissionRequiredTv: TextView = itemView.findViewById(R.id.permission_required_item)
 
-        /**
-         * bind[RequiredPermissionsListItem.PermissionItem] data to view
-         */
+        /** bind[RequiredPermissionsListItem.PermissionItem] data to view */
         fun bind(item: RequiredPermissionsListItem.PermissionItem) {
             permissionRequiredTv.text = item.permissionText
         }
     }
 
-    /**
-     * ViewHolder for displaying a Permission list item
-     */
+    /** ViewHolder for displaying a Permission list item */
     class OptInPermissionViewHolder(itemView: View) : ViewHolder(itemView) {
-        private val permissionOptInCheckbox: AppCompatCheckBox =
-            itemView.findViewById(R.id.permission_opt_in_item)
+        private val permissionOptInCheckbox: AppCompatCheckBox = itemView.findViewById(R.id.permission_opt_in_item)
 
-        /**
-         * bind[RequiredPermissionsListItem.PermissionItem] data to view
-         */
+        /** bind[RequiredPermissionsListItem.PermissionItem] data to view */
         fun bind(item: RequiredPermissionsListItem.OptInPermissionItem, callback: (Boolean) -> Unit) {
             permissionOptInCheckbox.text = item.permissionText
             permissionOptInCheckbox.setOnClickListener {
@@ -196,41 +171,31 @@ class RequiredPermissionsAdapter(
         }
     }
 
-    /**
-     * ViewHolder for displaying a Domain list item
-     */
+    /** ViewHolder for displaying a Domain list item */
     class DomainViewHolder(itemView: View) : ViewHolder(itemView) {
         private val domainTv: TextView = itemView.findViewById(R.id.permission_domain_item)
 
-        /**
-         * bind [RequiredPermissionsListItem.DomainItem] data to view
-         */
+        /** bind [RequiredPermissionsListItem.DomainItem] data to view */
         fun bind(item: RequiredPermissionsListItem.DomainItem) {
             domainTv.text = item.domain
         }
     }
 
-    /**
-     * ViewHolder for displaying a Textview that allows a user to show or hide the full
-     * list of domains
-     */
+    /** ViewHolder for displaying a Textview that allows a user to show or hide the full list of domains */
     class ShowHideViewHolder(itemView: View) : ViewHolder(itemView) {
         private val showHideTv: TextView = itemView.findViewById(R.id.show_hide_permissions)
 
         /**
          * bind [RequiredPermissionsListItem.ShowHideDomainAction] data to view
+         *
          * @param callback - the callback to show or hide the full list of domains when clicked
          */
         fun bind(action: RequiredPermissionsListItem.ShowHideDomainAction, callback: () -> Unit) {
             this.showHideTv.text =
                 if (action.isShowAction) {
-                    itemView.resources.getString(
-                        R.string.mozac_feature_addons_permissions_show_all_sites,
-                    )
+                    itemView.resources.getString(R.string.mozac_feature_addons_permissions_show_all_sites)
                 } else {
-                    itemView.resources.getString(
-                        R.string.mozac_feature_addons_permissions_show_fewer_sites,
-                    )
+                    itemView.resources.getString(R.string.mozac_feature_addons_permissions_show_fewer_sites)
                 }
             showHideTv.setOnClickListener {
                 callback.invoke()
@@ -238,18 +203,14 @@ class RequiredPermissionsAdapter(
         }
     }
 
-    /**
-     * ViewHolder for displaying an extra warning item
-     */
+    /** ViewHolder for displaying an extra warning item */
     class ExtraWarningViewHolder(itemView: View) : ViewHolder(itemView) {
         private val messageBarWarningView: View = itemView.findViewById(R.id.add_on_messagebar_warning)
         private val warningTextView: TextView = itemView.findViewById(R.id.add_on_messagebar_warning_text)
         private val learnMoreLinkTextView: TextView =
             itemView.findViewById(R.id.add_on_messagebar_warning_learn_more_link)
 
-        /**
-         * bind [RequiredPermissionsListItem.DomainItem] data to view
-         */
+        /** bind [RequiredPermissionsListItem.DomainItem] data to view */
         fun bind(item: RequiredPermissionsListItem.ExtraWarningItem) {
             // Align message-bar with the edges of the checkbox row.
             (messageBarWarningView.layoutParams as MarginLayoutParams).let {
@@ -280,50 +241,55 @@ class RequiredPermissionsAdapter(
 
     override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder {
         return when (viewType) {
-            VIEW_HOLDER_TYPE_PERMISSION -> PermissionViewHolder(
-                LayoutInflater.from(viewGroup.context)
-                    .inflate(
-                        R.layout.mozac_feature_addons_permissions_required_item,
-                        viewGroup,
-                        false,
-                    ),
-            )
+            VIEW_HOLDER_TYPE_PERMISSION ->
+                PermissionViewHolder(
+                    LayoutInflater.from(viewGroup.context)
+                        .inflate(
+                            R.layout.mozac_feature_addons_permissions_required_item,
+                            viewGroup,
+                            false,
+                        )
+                )
 
-            VIEW_HOLDER_TYPE_OPT_IN_PERMISSION -> OptInPermissionViewHolder(
-                LayoutInflater.from(viewGroup.context)
-                    .inflate(
-                        R.layout.mozac_feature_addons_permissions_opt_in_item,
-                        viewGroup,
-                        false,
-                    ),
-            )
+            VIEW_HOLDER_TYPE_OPT_IN_PERMISSION ->
+                OptInPermissionViewHolder(
+                    LayoutInflater.from(viewGroup.context)
+                        .inflate(
+                            R.layout.mozac_feature_addons_permissions_opt_in_item,
+                            viewGroup,
+                            false,
+                        )
+                )
 
-            VIEW_HOLDER_TYPE_PERMISSION_DOMAIN -> DomainViewHolder(
-                LayoutInflater.from(viewGroup.context)
-                    .inflate(
-                        R.layout.mozac_feature_addons_permissions_domain_item,
-                        viewGroup,
-                        false,
-                    ),
-            )
+            VIEW_HOLDER_TYPE_PERMISSION_DOMAIN ->
+                DomainViewHolder(
+                    LayoutInflater.from(viewGroup.context)
+                        .inflate(
+                            R.layout.mozac_feature_addons_permissions_domain_item,
+                            viewGroup,
+                            false,
+                        )
+                )
 
-            VIEW_HOLDER_TYPE_SHOW_HIDE_SITES -> ShowHideViewHolder(
-                LayoutInflater.from(viewGroup.context)
-                    .inflate(
-                        R.layout.mozac_feature_addons_permissions_show_hide_domains_item,
-                        viewGroup,
-                        false,
-                    ),
-            )
+            VIEW_HOLDER_TYPE_SHOW_HIDE_SITES ->
+                ShowHideViewHolder(
+                    LayoutInflater.from(viewGroup.context)
+                        .inflate(
+                            R.layout.mozac_feature_addons_permissions_show_hide_domains_item,
+                            viewGroup,
+                            false,
+                        )
+                )
 
-            VIEW_HOLDER_TYPE_EXTRA_WARNING -> ExtraWarningViewHolder(
-                LayoutInflater.from(viewGroup.context)
-                    .inflate(
-                        R.layout.mozac_feature_addons_message_bars,
-                        viewGroup,
-                        false,
-                    ),
-            )
+            VIEW_HOLDER_TYPE_EXTRA_WARNING ->
+                ExtraWarningViewHolder(
+                    LayoutInflater.from(viewGroup.context)
+                        .inflate(
+                            R.layout.mozac_feature_addons_message_bars,
+                            viewGroup,
+                            false,
+                        )
+                )
 
             else -> throw IllegalArgumentException("Unrecognized viewType for Permissions Adapter")
         }
@@ -332,9 +298,7 @@ class RequiredPermissionsAdapter(
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
         when (val item = displayList[position]) {
             is RequiredPermissionsListItem.PermissionItem -> {
-                (viewHolder as PermissionViewHolder).bind(
-                    item,
-                )
+                (viewHolder as PermissionViewHolder).bind(item)
             }
 
             is RequiredPermissionsListItem.OptInPermissionItem -> {
@@ -362,8 +326,8 @@ class RequiredPermissionsAdapter(
     }
 
     /**
-     * Toggles the domain section to be expanded and show all [domains] or contracted
-     * and only show [DOMAINS_CONTRACTED_SUBLIST_SIZE]
+     * Toggles the domain section to be expanded and show all [domains] or contracted and only show
+     * [DOMAINS_CONTRACTED_SUBLIST_SIZE]
      */
     @VisibleForTesting
     internal fun toggleDomainSection() {
@@ -372,24 +336,21 @@ class RequiredPermissionsAdapter(
         submitList(displayList.toList())
     }
 
-    /**
-     * Function used in tests to verify the permissions.
-     */
+    /** Function used in tests to verify the permissions. */
     fun getItemAtPosition(position: Int): RequiredPermissionsListItem {
         return displayList[position]
     }
 
     /**
-     * Item count is based on the [displayList] size which will change if a user
-     * expands or shrinks the domain section
+     * Item count is based on the [displayList] size which will change if a user expands or shrinks the domain section
      */
     override fun getItemCount(): Int {
         return displayList.size
     }
 
     /**
-     * The [displayList] is cleared and built from the list of [permissions] and [domains] which
-     * can be expanded or contracted by a user
+     * The [displayList] is cleared and built from the list of [permissions] and [domains] which can be expanded or
+     * contracted by a user
      */
     private fun buildDisplayList() {
         displayList.clear()
@@ -399,11 +360,7 @@ class RequiredPermissionsAdapter(
 
             if (isDomainSectionExpanded) {
                 // Add the Show fewer sites text button then all domains
-                displayList.add(
-                    RequiredPermissionsListItem.ShowHideDomainAction(
-                        isShowAction = false,
-                    ),
-                )
+                displayList.add(RequiredPermissionsListItem.ShowHideDomainAction(isShowAction = false))
 
                 domains.forEach {
                     displayList.add(RequiredPermissionsListItem.DomainItem(it))
@@ -415,26 +372,18 @@ class RequiredPermissionsAdapter(
                 }
 
                 if (domains.size > DOMAINS_CONTRACTED_SUBLIST_SIZE) {
-                    displayList.add(
-                        RequiredPermissionsListItem.ShowHideDomainAction(
-                            isShowAction = true,
-                        ),
-                    )
+                    displayList.add(RequiredPermissionsListItem.ShowHideDomainAction(isShowAction = true))
                 }
             }
         }
 
         if (permissionRequiresOptIn) {
             permissions.forEach {
-                displayList.add(
-                    RequiredPermissionsListItem.OptInPermissionItem(it),
-                )
+                displayList.add(RequiredPermissionsListItem.OptInPermissionItem(it))
             }
         } else {
             permissions.forEach {
-                displayList.add(
-                    RequiredPermissionsListItem.PermissionItem(it),
-                )
+                displayList.add(RequiredPermissionsListItem.PermissionItem(it))
             }
         }
 

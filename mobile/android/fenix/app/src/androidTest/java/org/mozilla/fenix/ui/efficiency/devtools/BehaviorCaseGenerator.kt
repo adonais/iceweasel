@@ -19,8 +19,8 @@ object BehaviorCaseGenerator {
     /**
      * Existing API.
      *
-     * Keep this because it matches the Navigation/Interaction generator pattern:
-     * dump boilerplate/templates first, execute later.
+     * Keep this because it matches the Navigation/Interaction generator pattern: dump boilerplate/templates first,
+     * execute later.
      */
     fun logBehaviorCaseBoilerplate(
         includeSkipped: Boolean = true,
@@ -36,8 +36,7 @@ object BehaviorCaseGenerator {
     /**
      * Alias for readability in tests.
      *
-     * Use this when the test name is "logBehaviorCasePlans".
-     * Internally it still prints boilerplate.
+     * Use this when the test name is "logBehaviorCasePlans". Internally it still prints boilerplate.
      */
     fun logBehaviorCasePlans(
         profile: BehaviorMatrixProfile = BehaviorRunArguments.matrixProfile(),
@@ -49,47 +48,42 @@ object BehaviorCaseGenerator {
         )
     }
 
-    fun logBehaviorPlanSummary(
-        profile: BehaviorMatrixProfile = BehaviorRunArguments.matrixProfile(),
-    ) {
+    fun logBehaviorPlanSummary(profile: BehaviorMatrixProfile = BehaviorRunArguments.matrixProfile()) {
         val plans = buildPlans(profile)
         logBehaviorPlanSummary(plans)
     }
 
-    fun logBehaviorMatrixSummary(
-        profile: BehaviorMatrixProfile = BehaviorRunArguments.matrixProfile(),
-    ) {
+    fun logBehaviorMatrixSummary(profile: BehaviorMatrixProfile = BehaviorRunArguments.matrixProfile()) {
         val plans = buildPlans(profile)
         logBehaviorMatrixSummary(plans)
     }
 
     /**
-     * Builds the behavior matrix summary report without emitting it anywhere, so a future
-     * consumer (a debug UI, an export, etc.) can reuse the same computation
-     * [logBehaviorMatrixSummary] uses.
+     * Builds the behavior matrix summary report without emitting it anywhere, so a future consumer (a debug UI, an
+     * export, etc.) can reuse the same computation [logBehaviorMatrixSummary] uses.
      */
-    fun buildBehaviorMatrixSummaryReport(
-        plans: List<BehaviorCasePlan>,
-    ): DevToolReport {
+    fun buildBehaviorMatrixSummaryReport(plans: List<BehaviorCasePlan>): DevToolReport {
         val byContext = plans.groupBy { it.context.toString() }
         val byFeatureEntity = plans.groupBy { "${it.feature}.${it.entity}" }
         val byTemplate = plans.groupBy { it.templateId }
 
-        val skippedByReason = plans
-            .mapNotNull { plan ->
-                plan.skippedReason?.let { reason ->
-                    reason to plan.automationId
+        val skippedByReason =
+            plans
+                .mapNotNull { plan ->
+                    plan.skippedReason?.let { reason ->
+                        reason to plan.automationId
+                    }
                 }
-            }
-            .groupBy({ it.first }, { it.second })
+                .groupBy({ it.first }, { it.second })
 
-        val missingGroups = plans
-            .flatMap { plan ->
-                plan.missingRequirements.map { missing ->
-                    missing to plan.automationId
+        val missingGroups =
+            plans
+                .flatMap { plan ->
+                    plan.missingRequirements.map { missing ->
+                        missing to plan.automationId
+                    }
                 }
-            }
-            .groupBy({ it.first }, { it.second })
+                .groupBy({ it.first }, { it.second })
 
         val lines = buildList {
             if (skippedByReason.isNotEmpty()) {
@@ -101,11 +95,9 @@ object BehaviorCaseGenerator {
                         val distinctAutomationIds = automationIds.distinct().sorted()
 
                         add("  - $reason")
-                        distinctAutomationIds
-                            .take(10)
-                            .forEach { automationId ->
-                                add("      used by $automationId")
-                            }
+                        distinctAutomationIds.take(10).forEach { automationId ->
+                            add("      used by $automationId")
+                        }
 
                         if (distinctAutomationIds.size > 10) {
                             add("      ...and ${distinctAutomationIds.size - 10} more")
@@ -127,10 +119,7 @@ object BehaviorCaseGenerator {
             byContext.entries
                 .sortedBy { it.key }
                 .forEach { (context, contextPlans) ->
-                    add(
-                        "  - $context: " +
-                            "${contextPlans.count { it.isRunnable }}/${contextPlans.size} runnable",
-                    )
+                    add("  - $context: " + "${contextPlans.count { it.isRunnable }}/${contextPlans.size} runnable")
                 }
 
             add("")
@@ -138,10 +127,7 @@ object BehaviorCaseGenerator {
             byFeatureEntity.entries
                 .sortedBy { it.key }
                 .forEach { (key, featurePlans) ->
-                    add(
-                        "  - $key: " +
-                            "${featurePlans.count { it.isRunnable }}/${featurePlans.size} runnable",
-                    )
+                    add("  - $key: " + "${featurePlans.count { it.isRunnable }}/${featurePlans.size} runnable")
                 }
 
             add("")
@@ -149,10 +135,7 @@ object BehaviorCaseGenerator {
             byTemplate.entries
                 .sortedBy { it.key }
                 .forEach { (templateId, templatePlans) ->
-                    add(
-                        "  - $templateId: " +
-                            "${templatePlans.count { it.isRunnable }}/${templatePlans.size} runnable",
-                    )
+                    add("  - $templateId: " + "${templatePlans.count { it.isRunnable }}/${templatePlans.size} runnable")
                 }
 
             if (missingGroups.isNotEmpty()) {
@@ -162,13 +145,9 @@ object BehaviorCaseGenerator {
                     .sortedBy { it.key }
                     .forEach { (missingRequirement, automationIds) ->
                         add("  - $missingRequirement")
-                        automationIds
-                            .distinct()
-                            .sorted()
-                            .take(10)
-                            .forEach { automationId ->
-                                add("      used by $automationId")
-                            }
+                        automationIds.distinct().sorted().take(10).forEach { automationId ->
+                            add("      used by $automationId")
+                        }
 
                         if (automationIds.distinct().size > 10) {
                             add("      ...and ${automationIds.distinct().size - 10} more")
@@ -182,20 +161,15 @@ object BehaviorCaseGenerator {
         return DevToolReport(lines = lines)
     }
 
-    fun logBehaviorMatrixSummary(
-        plans: List<BehaviorCasePlan>,
-    ) {
+    fun logBehaviorMatrixSummary(plans: List<BehaviorCasePlan>) {
         logReport(TAG, buildBehaviorMatrixSummaryReport(plans))
     }
 
     /**
-     * Builds the behavior plan summary report without emitting it anywhere, so a future
-     * consumer (a debug UI, an export, etc.) can reuse the same computation
-     * [logBehaviorPlanSummary] uses.
+     * Builds the behavior plan summary report without emitting it anywhere, so a future consumer (a debug UI, an
+     * export, etc.) can reuse the same computation [logBehaviorPlanSummary] uses.
      */
-    fun buildBehaviorPlanSummaryReport(
-        plans: List<BehaviorCasePlan>,
-    ): DevToolReport {
+    fun buildBehaviorPlanSummaryReport(plans: List<BehaviorCasePlan>): DevToolReport {
         val grouped = plans.groupBy { it.feature to it.entity }
 
         val lines = buildList {
@@ -207,27 +181,22 @@ object BehaviorCaseGenerator {
                     compareBy(
                         { it.key.first },
                         { it.key.second },
-                    ),
+                    )
                 )
                 .forEach { (featureEntity, featurePlans) ->
                     val runnable = featurePlans.count { it.isRunnable }
 
-                    add(
-                        "${featureEntity.first}.${featureEntity.second}: " +
-                            "$runnable/${featurePlans.size} runnable",
-                    )
+                    add("${featureEntity.first}.${featureEntity.second}: " + "$runnable/${featurePlans.size} runnable")
 
-                    featurePlans
-                        .sortedWith(compareBy({ it.templateId }, { it.context.toString() }))
-                        .forEach { plan ->
-                            add(
-                                "  - ${plan.automationId} " +
-                                    "runnable=${plan.isRunnable} " +
-                                    "context=${plan.context} " +
-                                    "missing=${plan.missingRequirements} " +
-                                    "skippedReason=${plan.skippedReason}",
-                            )
-                        }
+                    featurePlans.sortedWith(compareBy({ it.templateId }, { it.context.toString() })).forEach { plan ->
+                        add(
+                            "  - ${plan.automationId} " +
+                                "runnable=${plan.isRunnable} " +
+                                "context=${plan.context} " +
+                                "missing=${plan.missingRequirements} " +
+                                "skippedReason=${plan.skippedReason}"
+                        )
+                    }
                 }
 
             add("--------------------------------------------------")
@@ -236,16 +205,13 @@ object BehaviorCaseGenerator {
         return DevToolReport(lines = lines)
     }
 
-    fun logBehaviorPlanSummary(
-        plans: List<BehaviorCasePlan>,
-    ) {
+    fun logBehaviorPlanSummary(plans: List<BehaviorCasePlan>) {
         logReport(TAG, buildBehaviorPlanSummaryReport(plans))
     }
 
     /**
-     * Builds the behavior case boilerplate report without emitting it anywhere, so a future
-     * consumer (a debug UI, an export, etc.) can reuse the same computation
-     * [logBehaviorCaseBoilerplate] uses.
+     * Builds the behavior case boilerplate report without emitting it anywhere, so a future consumer (a debug UI, an
+     * export, etc.) can reuse the same computation [logBehaviorCaseBoilerplate] uses.
      */
     fun buildBehaviorCaseBoilerplateReport(
         plans: List<BehaviorCasePlan>,
@@ -254,14 +220,17 @@ object BehaviorCaseGenerator {
         val runnable = plans.count { it.isRunnable }
         val skipped = plans.size - runnable
 
-        val filteredPlans = plans
-            .filter { includeSkipped || it.isRunnable }
-            .sortedWith(compareBy({ it.feature }, { it.entity }, { it.templateId }, { it.context.toString() }))
+        val filteredPlans =
+            plans
+                .filter { includeSkipped || it.isRunnable }
+                .sortedWith(compareBy({ it.feature }, { it.entity }, { it.templateId }, { it.context.toString() }))
 
         return buildBoilerplateReport(
             header = "Generated ${plans.size} behavior case plans: runnable=$runnable skipped=$skipped",
             items = filteredPlans,
-        ) { plan -> plan.toBoilerplateBlock() }
+        ) { plan ->
+            plan.toBoilerplateBlock()
+        }
     }
 
     fun logBehaviorCaseBoilerplate(
@@ -271,68 +240,83 @@ object BehaviorCaseGenerator {
         logReport(TAG, buildBehaviorCaseBoilerplateReport(plans, includeSkipped))
     }
 
-    private fun buildPlans(
-        profile: BehaviorMatrixProfile,
-    ): List<BehaviorCasePlan> {
+    private fun buildPlans(profile: BehaviorMatrixProfile): List<BehaviorCasePlan> {
         NavigationGraphBootstrap.ensureInitialized()
 
-        return BehaviorTestPlanner.buildBehaviorCasePlans(
-            contexts = BehaviorContextMatrix.variants(profile),
-        )
+        return BehaviorTestPlanner.buildBehaviorCasePlans(contexts = BehaviorContextMatrix.variants(profile))
     }
 
     private fun BehaviorCasePlan.toBoilerplateBlock(): String {
-        val capabilityBlock = if (capabilityIds.isEmpty()) {
-            "emptyList()"
-        } else {
-            capabilityIds.joinToString(
-                separator = ",\n                    ",
-                prefix = "listOf(\n                    ",
-                postfix = ",\n                )",
-            ) { "\"$it\"" }
-        }
+        val capabilityBlock =
+            if (capabilityIds.isEmpty()) {
+                "emptyList()"
+            } else {
+                capabilityIds.joinToString(
+                    separator = ",\n                    ",
+                    prefix = "listOf(\n                    ",
+                    postfix = ",\n                )",
+                ) {
+                    "\"$it\""
+                }
+            }
 
-        val requiredOperationsBlock = if (requiredOperations.isEmpty()) {
-            "emptyList()"
-        } else {
-            requiredOperations.joinToString(
+        val requiredOperationsBlock =
+            if (requiredOperations.isEmpty()) {
+                "emptyList()"
+            } else {
+                requiredOperations.joinToString(
+                    separator = ", ",
+                    prefix = "listOf(",
+                    postfix = ")",
+                ) {
+                    "BehaviorOperation.$it"
+                }
+            }
+
+        val dataBlock =
+            data.values.entries
+                .sortedBy { it.key }
+                .joinToString(
+                    separator = ", ",
+                    prefix = "mapOf(",
+                    postfix = ")",
+                ) {
+                    "\"${it.key}\" to \"${it.value}\""
+                }
+
+        val contextBlock =
+            context.values.entries
+                .sortedBy { it.key }
+                .joinToString(
+                    separator = ", ",
+                    prefix = "mapOf(",
+                    postfix = ")",
+                ) {
+                    "\"${it.key}\" to \"${it.value}\""
+                }
+
+        val navigationTransitionsBlock =
+            navigationTransitions.joinToString(
                 separator = ", ",
                 prefix = "listOf(",
                 postfix = ")",
-            ) { "BehaviorOperation.$it" }
-        }
+            ) {
+                "\"$it\""
+            }
 
-        val dataBlock = data.values.entries
-            .sortedBy { it.key }
-            .joinToString(
+        val missingRequirementsBlock =
+            missingRequirements.joinToString(
                 separator = ", ",
-                prefix = "mapOf(",
+                prefix = "listOf(",
                 postfix = ")",
-            ) { "\"${it.key}\" to \"${it.value}\"" }
+            ) {
+                "\"$it\""
+            }
 
-        val contextBlock = context.values.entries
-            .sortedBy { it.key }
-            .joinToString(
-                separator = ", ",
-                prefix = "mapOf(",
-                postfix = ")",
-            ) { "\"${it.key}\" to \"${it.value}\"" }
-
-        val navigationTransitionsBlock = navigationTransitions.joinToString(
-            separator = ", ",
-            prefix = "listOf(",
-            postfix = ")",
-        ) { "\"$it\"" }
-
-        val missingRequirementsBlock = missingRequirements.joinToString(
-            separator = ", ",
-            prefix = "listOf(",
-            postfix = ")",
-        ) { "\"$it\"" }
-
-        val skippedReasonBlock = skippedReason?.let {
-            "\"${it.escapeForKotlin()}\""
-        } ?: "null"
+        val skippedReasonBlock =
+            skippedReason?.let {
+                "\"${it.escapeForKotlin()}\""
+            } ?: "null"
 
         return """
             // automationId=$automationId
@@ -370,35 +354,31 @@ object BehaviorCaseGenerator {
                 missingRequirements = $missingRequirementsBlock,
                 skippedReason = $skippedReasonBlock,
             )
-        """.trimIndent()
+        """
+            .trimIndent()
     }
 
     private fun String.escapeForKotlin(): String {
-        return replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\n", "\\n")
+        return replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
     }
 
     /**
-     * Builds the behavior context manifest report without emitting it anywhere, so a future
-     * consumer (a debug UI, an export, etc.) can reuse the same computation
-     * [logBehaviorContextManifest] uses.
+     * Builds the behavior context manifest report without emitting it anywhere, so a future consumer (a debug UI, an
+     * export, etc.) can reuse the same computation [logBehaviorContextManifest] uses.
      */
     fun buildBehaviorContextManifestReport(): DevToolReport {
         val lines = buildList {
             add("Behavior context manifest")
             add("--------------------------------------------------")
 
-            BehaviorContextManifest.all
-                .sortedWith(compareBy({ it.key }, { it.value }))
-                .forEach { spec ->
-                    add(
-                        "${spec.id} " +
-                            "status=${spec.status} " +
-                            "applicationMode=${spec.applicationMode} " +
-                            "reason=${spec.reason}",
-                    )
-                }
+            BehaviorContextManifest.all.sortedWith(compareBy({ it.key }, { it.value })).forEach { spec ->
+                add(
+                    "${spec.id} " +
+                        "status=${spec.status} " +
+                        "applicationMode=${spec.applicationMode} " +
+                        "reason=${spec.reason}"
+                )
+            }
 
             add("--------------------------------------------------")
         }
@@ -411,9 +391,8 @@ object BehaviorCaseGenerator {
     }
 
     /**
-     * Builds the behavior state machine report without emitting it anywhere, so a future
-     * consumer (a debug UI, an export, etc.) can reuse the same computation
-     * [logBehaviorStateMachine] uses.
+     * Builds the behavior state machine report without emitting it anywhere, so a future consumer (a debug UI, an
+     * export, etc.) can reuse the same computation [logBehaviorStateMachine] uses.
      */
     fun buildBehaviorStateMachineReport(): DevToolReport {
         val lines = buildList {
@@ -435,7 +414,7 @@ object BehaviorCaseGenerator {
                     add(
                         "    - $context " +
                             "supported=${decision.isSupported}" +
-                            decision.skippedReason?.let { " reason=$it" }.orEmpty(),
+                            decision.skippedReason?.let { " reason=$it" }.orEmpty()
                     )
                 }
 
@@ -443,16 +422,14 @@ object BehaviorCaseGenerator {
             }
 
             add("Manifest:")
-            BehaviorContextManifest.all
-                .sortedWith(compareBy({ it.key }, { it.value }))
-                .forEach { spec ->
-                    add(
-                        "  - ${spec.id} " +
-                            "status=${spec.status} " +
-                            "applicationMode=${spec.applicationMode} " +
-                            "reason=${spec.reason}",
-                    )
-                }
+            BehaviorContextManifest.all.sortedWith(compareBy({ it.key }, { it.value })).forEach { spec ->
+                add(
+                    "  - ${spec.id} " +
+                        "status=${spec.status} " +
+                        "applicationMode=${spec.applicationMode} " +
+                        "reason=${spec.reason}"
+                )
+            }
 
             add("--------------------------------------------------")
         }

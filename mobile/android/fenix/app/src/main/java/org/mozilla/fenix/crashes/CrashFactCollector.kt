@@ -17,18 +17,12 @@ import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.FactProcessor
 import mozilla.components.support.base.facts.Facts
 
-/**
- * Collects facts and record bread crumbs for the events.
- */
-class CrashFactCollector(
-    private val crashReporter: CrashReporting,
-) {
+/** Collects facts and record bread crumbs for the events. */
+class CrashFactCollector(private val crashReporter: CrashReporting) {
 
     private var isInitialized = false
 
-    /**
-     * Starts collecting facts.
-     */
+    /** Starts collecting facts. */
     fun start() {
         // Making sure this only gets initialized once. That could have happened if the user
         // accepts ToU, then goes back and accepts again.
@@ -39,25 +33,25 @@ class CrashFactCollector(
                 override fun process(fact: Fact) {
                     fact.process()
                 }
-            },
+            }
         )
     }
 
-    internal fun Fact.process(): Unit = when (component to item) {
-        Component.FEATURE_CONTEXTMENU to ContextMenuFacts.Items.MENU,
-        Component.FEATURE_DOWNLOADS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_PROMPT_SHOWN,
-        Component.FEATURE_DOWNLOADS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_SAVE_PROMPT_SHOWN,
-        Component.FEATURE_DOWNLOADS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_PROMPT_DISMISSED,
-        Component.FEATURE_DOWNLOADS to AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_PROMPT_SHOWN,
-        Component.FEATURE_DOWNLOADS to AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_PROMPT_DISMISSED,
-        Component.FEATURE_DOWNLOADS to DownloadsFacts.Items.PROMPT,
-        Component.FEATURE_SITEPERMISSIONS to SitePermissionsFacts.Items.PERMISSIONS,
-        Component.FEATURE_PROMPTS to PromptFacts.Items.PROMPT,
-        -> {
-            crashReporter.recordCrashBreadcrumb(Breadcrumb("$component $action $value"))
+    internal fun Fact.process(): Unit =
+        when (component to item) {
+            Component.FEATURE_CONTEXTMENU to ContextMenuFacts.Items.MENU,
+            Component.FEATURE_DOWNLOADS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_PROMPT_SHOWN,
+            Component.FEATURE_DOWNLOADS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_SAVE_PROMPT_SHOWN,
+            Component.FEATURE_DOWNLOADS to CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_PROMPT_DISMISSED,
+            Component.FEATURE_DOWNLOADS to AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_PROMPT_SHOWN,
+            Component.FEATURE_DOWNLOADS to AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_PROMPT_DISMISSED,
+            Component.FEATURE_DOWNLOADS to DownloadsFacts.Items.PROMPT,
+            Component.FEATURE_SITEPERMISSIONS to SitePermissionsFacts.Items.PERMISSIONS,
+            Component.FEATURE_PROMPTS to PromptFacts.Items.PROMPT -> {
+                crashReporter.recordCrashBreadcrumb(Breadcrumb("$component $action $value"))
+            }
+            else -> {
+                // no-op
+            }
         }
-        else -> {
-            // no-op
-        }
-    }
 }

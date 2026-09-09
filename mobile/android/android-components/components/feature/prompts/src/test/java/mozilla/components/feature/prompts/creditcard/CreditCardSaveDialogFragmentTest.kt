@@ -11,6 +11,7 @@ import android.widget.TextView
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.view.isVisible
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.concept.storage.CreditCardEntry
 import mozilla.components.concept.storage.CreditCardValidationDelegate
 import mozilla.components.feature.prompts.PromptFeature
@@ -32,53 +33,56 @@ import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class CreditCardSaveDialogFragmentTest {
 
-    private val creditCard = CreditCardEntry(
-        guid = "1",
-        name = "Banana Apple",
-        number = "4111111111111110",
-        expiryMonth = "5",
-        expiryYear = "2030",
-        cardType = "amex",
-    )
+    private val creditCard =
+        CreditCardEntry(
+            guid = "1",
+            name = "Banana Apple",
+            number = "4111111111111110",
+            expiryMonth = "5",
+            expiryYear = "2030",
+            cardType = "amex",
+        )
     private val sessionId = "sessionId"
     private val promptRequestUID = "uid"
 
     @Test
     fun `WHEN the credit card save dialog fragment view is created THEN the credit card entry is displayed`() {
-        val fragment = spy(
-            CreditCardSaveDialogFragment.newInstance(
-                sessionId = sessionId,
-                promptRequestUID = promptRequestUID,
-                shouldDismissOnLoad = true,
-                creditCard = creditCard,
-            ),
-        )
+        val fragment =
+            spy(
+                CreditCardSaveDialogFragment.newInstance(
+                    sessionId = sessionId,
+                    promptRequestUID = promptRequestUID,
+                    shouldDismissOnLoad = true,
+                    creditCard = creditCard,
+                )
+            )
 
         doReturn(appCompatContext).`when`(fragment).requireContext()
         doAnswer {
-            FrameLayout(appCompatContext).apply {
-                addView(
-                    AppCompatTextView(appCompatContext).apply {
-                        id = R.id.save_credit_card_header
-                    },
-                )
-                addView(
-                    AppCompatTextView(appCompatContext).apply {
-                        id = R.id.save_credit_card_message
-                    },
-                )
-                addView(Button(appCompatContext).apply { id = R.id.save_confirm })
-                addView(Button(appCompatContext).apply { id = R.id.save_cancel })
-                addView(ImageView(appCompatContext).apply { id = R.id.credit_card_logo })
-                addView(TextView(appCompatContext).apply { id = R.id.credit_card_number })
-                addView(TextView(appCompatContext).apply { id = R.id.credit_card_expiration_date })
+                FrameLayout(appCompatContext).apply {
+                    addView(
+                        AppCompatTextView(appCompatContext).apply {
+                            id = R.id.save_credit_card_header
+                        }
+                    )
+                    addView(
+                        AppCompatTextView(appCompatContext).apply {
+                            id = R.id.save_credit_card_message
+                        }
+                    )
+                    addView(Button(appCompatContext).apply { id = R.id.save_confirm })
+                    addView(Button(appCompatContext).apply { id = R.id.save_cancel })
+                    addView(ImageView(appCompatContext).apply { id = R.id.credit_card_logo })
+                    addView(TextView(appCompatContext).apply { id = R.id.credit_card_number })
+                    addView(TextView(appCompatContext).apply { id = R.id.credit_card_expiration_date })
+                }
             }
-        }.`when`(fragment).onCreateView(any(), any(), any())
+            .`when`(fragment)
+            .onCreateView(any(), any(), any())
 
         val view = fragment.onCreateView(mock(), mock(), mock())
         fragment.onViewCreated(view, mock())
@@ -94,35 +98,38 @@ class CreditCardSaveDialogFragmentTest {
 
     @Test
     fun `WHEN setViewText is called with new header and button text THEN the header and button text are updated in the view`() {
-        val fragment = spy(
-            CreditCardSaveDialogFragment.newInstance(
-                sessionId = sessionId,
-                promptRequestUID = promptRequestUID,
-                shouldDismissOnLoad = true,
-                creditCard = creditCard,
-            ),
-        )
+        val fragment =
+            spy(
+                CreditCardSaveDialogFragment.newInstance(
+                    sessionId = sessionId,
+                    promptRequestUID = promptRequestUID,
+                    shouldDismissOnLoad = true,
+                    creditCard = creditCard,
+                )
+            )
 
         doReturn(appCompatContext).`when`(fragment).requireContext()
         doAnswer {
-            FrameLayout(appCompatContext).apply {
-                addView(
-                    AppCompatTextView(appCompatContext).apply {
-                        id = R.id.save_credit_card_header
-                    },
-                )
-                addView(
-                    AppCompatTextView(appCompatContext).apply {
-                        id = R.id.save_credit_card_message
-                    },
-                )
-                addView(Button(appCompatContext).apply { id = R.id.save_confirm })
-                addView(Button(appCompatContext).apply { id = R.id.save_cancel })
-                addView(ImageView(appCompatContext).apply { id = R.id.credit_card_logo })
-                addView(TextView(appCompatContext).apply { id = R.id.credit_card_number })
-                addView(TextView(appCompatContext).apply { id = R.id.credit_card_expiration_date })
+                FrameLayout(appCompatContext).apply {
+                    addView(
+                        AppCompatTextView(appCompatContext).apply {
+                            id = R.id.save_credit_card_header
+                        }
+                    )
+                    addView(
+                        AppCompatTextView(appCompatContext).apply {
+                            id = R.id.save_credit_card_message
+                        }
+                    )
+                    addView(Button(appCompatContext).apply { id = R.id.save_confirm })
+                    addView(Button(appCompatContext).apply { id = R.id.save_cancel })
+                    addView(ImageView(appCompatContext).apply { id = R.id.credit_card_logo })
+                    addView(TextView(appCompatContext).apply { id = R.id.credit_card_number })
+                    addView(TextView(appCompatContext).apply { id = R.id.credit_card_expiration_date })
+                }
             }
-        }.`when`(fragment).onCreateView(any(), any(), any())
+            .`when`(fragment)
+            .onCreateView(any(), any(), any())
 
         val view = fragment.onCreateView(mock(), mock(), mock())
         fragment.onViewCreated(view, mock())
@@ -163,37 +170,40 @@ class CreditCardSaveDialogFragmentTest {
     @Test
     fun `WHEN the confirm button is clicked THEN the prompt feature is notified`() {
         val mockFeature: PromptFeature = mock()
-        val fragment = spy(
-            CreditCardSaveDialogFragment.newInstance(
-                sessionId = sessionId,
-                promptRequestUID = promptRequestUID,
-                shouldDismissOnLoad = true,
-                creditCard = creditCard,
-            ),
-        )
+        val fragment =
+            spy(
+                CreditCardSaveDialogFragment.newInstance(
+                    sessionId = sessionId,
+                    promptRequestUID = promptRequestUID,
+                    shouldDismissOnLoad = true,
+                    creditCard = creditCard,
+                )
+            )
 
         fragment.feature = mockFeature
 
         doReturn(appCompatContext).`when`(fragment).requireContext()
         doAnswer {
-            FrameLayout(appCompatContext).apply {
-                addView(
-                    AppCompatTextView(appCompatContext).apply {
-                        id = R.id.save_credit_card_header
-                    },
-                )
-                addView(
-                    AppCompatTextView(appCompatContext).apply {
-                        id = R.id.save_credit_card_message
-                    },
-                )
-                addView(Button(appCompatContext).apply { id = R.id.save_confirm })
-                addView(Button(appCompatContext).apply { id = R.id.save_cancel })
-                addView(ImageView(appCompatContext).apply { id = R.id.credit_card_logo })
-                addView(TextView(appCompatContext).apply { id = R.id.credit_card_number })
-                addView(TextView(appCompatContext).apply { id = R.id.credit_card_expiration_date })
+                FrameLayout(appCompatContext).apply {
+                    addView(
+                        AppCompatTextView(appCompatContext).apply {
+                            id = R.id.save_credit_card_header
+                        }
+                    )
+                    addView(
+                        AppCompatTextView(appCompatContext).apply {
+                            id = R.id.save_credit_card_message
+                        }
+                    )
+                    addView(Button(appCompatContext).apply { id = R.id.save_confirm })
+                    addView(Button(appCompatContext).apply { id = R.id.save_cancel })
+                    addView(ImageView(appCompatContext).apply { id = R.id.credit_card_logo })
+                    addView(TextView(appCompatContext).apply { id = R.id.credit_card_number })
+                    addView(TextView(appCompatContext).apply { id = R.id.credit_card_expiration_date })
+                }
             }
-        }.`when`(fragment).onCreateView(any(), any(), any())
+            .`when`(fragment)
+            .onCreateView(any(), any(), any())
         doNothing().`when`(fragment).dismiss()
 
         val view = fragment.onCreateView(mock(), mock(), mock())
@@ -203,47 +213,51 @@ class CreditCardSaveDialogFragmentTest {
 
         buttonView.performClick()
 
-        verify(mockFeature).onConfirm(
-            sessionId = sessionId,
-            promptRequestUID = promptRequestUID,
-            value = creditCard,
-        )
+        verify(mockFeature)
+            .onConfirm(
+                sessionId = sessionId,
+                promptRequestUID = promptRequestUID,
+                value = creditCard,
+            )
     }
 
     @Test
     fun `WHEN the cancel button is clicked THEN the prompt feature is notified`() {
         val mockFeature: PromptFeature = mock()
-        val fragment = spy(
-            CreditCardSaveDialogFragment.newInstance(
-                sessionId = sessionId,
-                promptRequestUID = promptRequestUID,
-                shouldDismissOnLoad = true,
-                creditCard = creditCard,
-            ),
-        )
+        val fragment =
+            spy(
+                CreditCardSaveDialogFragment.newInstance(
+                    sessionId = sessionId,
+                    promptRequestUID = promptRequestUID,
+                    shouldDismissOnLoad = true,
+                    creditCard = creditCard,
+                )
+            )
 
         fragment.feature = mockFeature
 
         doReturn(appCompatContext).`when`(fragment).requireContext()
         doAnswer {
-            FrameLayout(appCompatContext).apply {
-                addView(
-                    AppCompatTextView(appCompatContext).apply {
-                        id = R.id.save_credit_card_header
-                    },
-                )
-                addView(
-                    AppCompatTextView(appCompatContext).apply {
-                        id = R.id.save_credit_card_message
-                    },
-                )
-                addView(Button(appCompatContext).apply { id = R.id.save_confirm })
-                addView(Button(appCompatContext).apply { id = R.id.save_cancel })
-                addView(ImageView(appCompatContext).apply { id = R.id.credit_card_logo })
-                addView(TextView(appCompatContext).apply { id = R.id.credit_card_number })
-                addView(TextView(appCompatContext).apply { id = R.id.credit_card_expiration_date })
+                FrameLayout(appCompatContext).apply {
+                    addView(
+                        AppCompatTextView(appCompatContext).apply {
+                            id = R.id.save_credit_card_header
+                        }
+                    )
+                    addView(
+                        AppCompatTextView(appCompatContext).apply {
+                            id = R.id.save_credit_card_message
+                        }
+                    )
+                    addView(Button(appCompatContext).apply { id = R.id.save_confirm })
+                    addView(Button(appCompatContext).apply { id = R.id.save_cancel })
+                    addView(ImageView(appCompatContext).apply { id = R.id.credit_card_logo })
+                    addView(TextView(appCompatContext).apply { id = R.id.credit_card_number })
+                    addView(TextView(appCompatContext).apply { id = R.id.credit_card_expiration_date })
+                }
             }
-        }.`when`(fragment).onCreateView(any(), any(), any())
+            .`when`(fragment)
+            .onCreateView(any(), any(), any())
         doNothing().`when`(fragment).dismiss()
 
         val view = fragment.onCreateView(mock(), mock(), mock())
@@ -253,22 +267,24 @@ class CreditCardSaveDialogFragmentTest {
 
         buttonView.performClick()
 
-        verify(mockFeature).onCancel(
-            sessionId = sessionId,
-            promptRequestUID = promptRequestUID,
-        )
+        verify(mockFeature)
+            .onCancel(
+                sessionId = sessionId,
+                promptRequestUID = promptRequestUID,
+            )
     }
 
     @Test
     fun `WHEN the confirm save button is clicked THEN the appropriate fact is emitted`() {
-        val fragment = spy(
-            CreditCardSaveDialogFragment.newInstance(
-                sessionId = sessionId,
-                promptRequestUID = promptRequestUID,
-                shouldDismissOnLoad = true,
-                creditCard = creditCard,
-            ),
-        )
+        val fragment =
+            spy(
+                CreditCardSaveDialogFragment.newInstance(
+                    sessionId = sessionId,
+                    promptRequestUID = promptRequestUID,
+                    shouldDismissOnLoad = true,
+                    creditCard = creditCard,
+                )
+            )
 
         fragment.confirmResult = CreditCardValidationDelegate.Result.CanBeCreated
 
@@ -288,14 +304,15 @@ class CreditCardSaveDialogFragmentTest {
 
     @Test
     fun `WHEN the confirm update button is clicked THEN the appropriate fact is emitted`() {
-        val fragment = spy(
-            CreditCardSaveDialogFragment.newInstance(
-                sessionId = sessionId,
-                promptRequestUID = promptRequestUID,
-                shouldDismissOnLoad = true,
-                creditCard = creditCard,
-            ),
-        )
+        val fragment =
+            spy(
+                CreditCardSaveDialogFragment.newInstance(
+                    sessionId = sessionId,
+                    promptRequestUID = promptRequestUID,
+                    shouldDismissOnLoad = true,
+                    creditCard = creditCard,
+                )
+            )
 
         fragment.confirmResult = CreditCardValidationDelegate.Result.CanBeUpdated(mock())
 

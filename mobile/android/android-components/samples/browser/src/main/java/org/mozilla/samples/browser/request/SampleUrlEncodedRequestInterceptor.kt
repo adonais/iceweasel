@@ -13,9 +13,7 @@ import mozilla.components.concept.engine.request.RequestInterceptor.ErrorRespons
 import mozilla.components.concept.engine.request.RequestInterceptor.InterceptionResponse
 import org.mozilla.samples.browser.ext.components
 
-/**
- * Example of a request interceptor that loads error pages with URL encoding (images)
- */
+/** Example of a request interceptor that loads error pages with URL encoding (images) */
 class SampleUrlEncodedRequestInterceptor(val context: Context) : RequestInterceptor {
 
     override fun onLoadRequest(
@@ -31,19 +29,8 @@ class SampleUrlEncodedRequestInterceptor(val context: Context) : RequestIntercep
         return when (uri) {
             "sample:about" -> InterceptionResponse.Content("<h1>I am the sample browser</h1>")
             else -> {
-                var response = context.components.appLinksInterceptor.onLoadRequest(
-                    engineSession,
-                    uri,
-                    lastUri,
-                    hasUserGesture,
-                    isSameDomain,
-                    isRedirect,
-                    isDirectNavigation,
-                    isSubframeRequest,
-                )
-
-                if (response == null && !isDirectNavigation) {
-                    response = context.components.webAppInterceptor.onLoadRequest(
+                var response =
+                    context.components.appLinksInterceptor.onLoadRequest(
                         engineSession,
                         uri,
                         lastUri,
@@ -53,6 +40,19 @@ class SampleUrlEncodedRequestInterceptor(val context: Context) : RequestIntercep
                         isDirectNavigation,
                         isSubframeRequest,
                     )
+
+                if (response == null && !isDirectNavigation) {
+                    response =
+                        context.components.webAppInterceptor.onLoadRequest(
+                            engineSession,
+                            uri,
+                            lastUri,
+                            hasUserGesture,
+                            isSameDomain,
+                            isRedirect,
+                            isDirectNavigation,
+                            isSubframeRequest,
+                        )
                 }
 
                 response

@@ -555,11 +555,11 @@ class MachFormatter(base.BaseFormatter):
                     % data["stackwalk_returncode"]
                 )
 
+            if data.get("stackwalk_stdout"):
+                rv.append(data["stackwalk_stdout"])
             if data.get("stackwalk_stderr"):
                 rv.append("stderr from minidump-stackwalk:")
                 rv.append(data["stackwalk_stderr"])
-            elif data.get("stackwalk_stdout"):
-                rv.append(data["stackwalk_stdout"])
 
             if data.get("stackwalk_errors"):
                 rv.extend(data.get("stackwalk_errors"))

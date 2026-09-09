@@ -9,8 +9,8 @@ import android.webkit.MimeTypeMap
 import mozilla.components.feature.downloads.R as downloadsR
 
 /**
- * Generates a user-facing error message indicating that a downloaded file cannot be opened
- * because no application is available to handle its file type.
+ * Generates a user-facing error message indicating that a downloaded file cannot be opened because no application is
+ * available to handle its file type.
  *
  * @param context The Context used to access string resources.
  * @param filePath The file path of the downloaded file.

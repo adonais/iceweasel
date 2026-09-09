@@ -4,6 +4,7 @@
 
 package mozilla.components.browser.state.action
 
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.reducer.BrowserStateReducer
 import mozilla.components.browser.state.selector.findCustomTab
 import mozilla.components.browser.state.selector.findTab
@@ -22,7 +23,6 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertNotNull
 
 class EngineActionTest {
     private lateinit var tab: TabSessionState
@@ -32,9 +32,7 @@ class EngineActionTest {
     fun setUp() {
         tab = createTab("https://www.mozilla.org")
 
-        state = BrowserState(
-            tabs = listOf(tab),
-        )
+        state = BrowserState(tabs = listOf(tab))
     }
 
     private fun engineState() = state.findTab(tab.id)!!.engineState
@@ -44,7 +42,11 @@ class EngineActionTest {
         assertNull(engineState().engineSession)
 
         val engineSession: EngineSession = mock()
-        state = BrowserStateReducer.reduce(state, EngineAction.LinkEngineSessionAction(tab.id, engineSession, timestamp = 1234))
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                EngineAction.LinkEngineSessionAction(tab.id, engineSession, timestamp = 1234),
+            )
 
         assertNotNull(engineState().engineSession)
         assertEquals(engineSession, engineState().engineSession)
@@ -71,7 +73,8 @@ class EngineActionTest {
         assertNull(engineState().engineSessionState)
 
         val engineSessionState: EngineSessionState = mock()
-        state = BrowserStateReducer.reduce(state, EngineAction.UpdateEngineSessionStateAction(tab.id, engineSessionState))
+        state =
+            BrowserStateReducer.reduce(state, EngineAction.UpdateEngineSessionStateAction(tab.id, engineSessionState))
         assertNotNull(engineState().engineSessionState)
         assertEquals(engineSessionState, engineState().engineSessionState)
     }
@@ -81,33 +84,35 @@ class EngineActionTest {
         assertNull(engineState().engineObserver)
 
         val engineObserver: EngineSession.Observer = mock()
-        state = BrowserStateReducer.reduce(state, EngineAction.UpdateEngineSessionObserverAction(tab.id, engineObserver))
+        state =
+            BrowserStateReducer.reduce(state, EngineAction.UpdateEngineSessionObserverAction(tab.id, engineObserver))
         assertNotNull(engineState().engineObserver)
         assertEquals(engineObserver, engineState().engineObserver)
     }
 
     @Test
     fun `PurgeHistoryAction - Removes state from sessions without history`() {
-        val tab1 = createTab("https://www.mozilla.org").copy(
-            engineState = EngineState(engineSession = null, engineSessionState = mock()),
-        )
+        val tab1 =
+            createTab("https://www.mozilla.org")
+                .copy(engineState = EngineState(engineSession = null, engineSessionState = mock()))
 
-        val tab2 = createTab("https://www.firefox.com").copy(
-            engineState = EngineState(engineSession = mock(), engineSessionState = mock()),
-        )
+        val tab2 =
+            createTab("https://www.firefox.com")
+                .copy(engineState = EngineState(engineSession = mock(), engineSessionState = mock()))
 
-        val customTab1 = createCustomTab("http://www.theverge.com").copy(
-            engineState = EngineState(engineSession = null, engineSessionState = mock()),
-        )
+        val customTab1 =
+            createCustomTab("http://www.theverge.com")
+                .copy(engineState = EngineState(engineSession = null, engineSessionState = mock()))
 
-        val customTab2 = createCustomTab("https://www.google.com").copy(
-            engineState = EngineState(engineSession = mock(), engineSessionState = mock()),
-        )
+        val customTab2 =
+            createCustomTab("https://www.google.com")
+                .copy(engineState = EngineState(engineSession = mock(), engineSessionState = mock()))
 
-        var state = BrowserState(
-            tabs = listOf(tab1, tab2),
-            customTabs = listOf(customTab1, customTab2),
-        )
+        var state =
+            BrowserState(
+                tabs = listOf(tab1, tab2),
+                customTabs = listOf(customTab1, customTab2),
+            )
 
         state = BrowserStateReducer.reduce(state, EngineAction.PurgeHistoryAction)
 
@@ -129,7 +134,11 @@ class EngineActionTest {
     @Test
     fun `OptimizedLoadUrlTriggeredAction - State is not changed`() {
         val oldState = state
-        state = BrowserStateReducer.reduce(state, EngineAction.OptimizedLoadUrlTriggeredAction(tab.id, "https://mozilla.org"))
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                EngineAction.OptimizedLoadUrlTriggeredAction(tab.id, "https://mozilla.org"),
+            )
         assertSame(state, oldState)
     }
 }

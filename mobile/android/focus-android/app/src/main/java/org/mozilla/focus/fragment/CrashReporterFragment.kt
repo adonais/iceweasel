@@ -13,9 +13,7 @@ import org.mozilla.focus.GleanMetrics.CrashReporter
 import org.mozilla.focus.R
 import org.mozilla.focus.databinding.FragmentCrashReporterBinding
 
-/**
- * Fragment displayed when a crash occurs, allowing the user to report it.
- */
+/** Fragment displayed when a crash occurs, allowing the user to report it. */
 class CrashReporterFragment : Fragment(R.layout.fragment_crash_reporter) {
     var onCloseTabPressed: ((sendCrashReport: Boolean) -> Unit)? = null
 

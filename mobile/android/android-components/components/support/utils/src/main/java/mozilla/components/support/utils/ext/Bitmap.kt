@@ -11,21 +11,21 @@ import android.util.Size
  * Scales a [Bitmap] to the given [size] while maintaining the aspect ratio.
  *
  * @param size The new [Size] to scale the [Bitmap] to.
- *
  * @return the scaled [Size].
  */
-fun Bitmap.resizeMaintainingAspectRatio(size: Size) = if (width > height) {
-    // Scale a wide bitmap
-    val newMaxWidth = size.width
-    val aspectRatio = height.toFloat() / width.toFloat()
-    val scaledHeight = (newMaxWidth * aspectRatio).toInt()
+fun Bitmap.resizeMaintainingAspectRatio(size: Size) =
+    if (width > height) {
+        // Scale a wide bitmap
+        val newMaxWidth = size.width
+        val aspectRatio = height.toFloat() / width.toFloat()
+        val scaledHeight = (newMaxWidth * aspectRatio).toInt()
 
-    Size(newMaxWidth, scaledHeight)
-} else {
-    // Scale square or tall bitmap
-    val newMaxHeight = size.height
-    val aspectRatio = width.toFloat() / height.toFloat()
-    val scaledWidth = (newMaxHeight * aspectRatio).toInt()
+        Size(newMaxWidth, scaledHeight)
+    } else {
+        // Scale square or tall bitmap
+        val newMaxHeight = size.height
+        val aspectRatio = width.toFloat() / height.toFloat()
+        val scaledWidth = (newMaxHeight * aspectRatio).toInt()
 
-    Size(scaledWidth, newMaxHeight)
-}
+        Size(scaledWidth, newMaxHeight)
+    }

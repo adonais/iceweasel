@@ -24,28 +24,23 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 
-/**
- * Builds a list of statements by sending HTTP requests to the given website.
- */
+/** Builds a list of statements by sending HTTP requests to the given website. */
 class StatementApi(private val httpClient: Client) : StatementListFetcher {
 
     /**
-     * Lazily list all the statements in the given [source] website.
-     * If include statements are present, they will be resolved lazily.
+     * Lazily list all the statements in the given [source] website. If include statements are present, they will be
+     * resolved lazily.
      */
     override fun listStatements(source: AssetDescriptor.Web): Sequence<Statement> {
-        val url = source.site.toUri().buildUpon()
-            .path("/.well-known/assetlinks.json")
-            .build()
-            .toString()
+        val url = source.site.toUri().buildUpon().path("/.well-known/assetlinks.json").build().toString()
         return getWebsiteStatementList(url, seenSoFar = mutableSetOf())
     }
 
     /**
      * Recursively download all the website statements.
+     *
      * @param assetLinksUrl URL to download.
-     * @param seenSoFar URLs that have been downloaded already.
-     * Used to prevent infinite loops.
+     * @param seenSoFar URLs that have been downloaded already. Used to prevent infinite loops.
      */
     private fun getWebsiteStatementList(
         assetLinksUrl: String,
@@ -57,21 +52,23 @@ class StatementApi(private val httpClient: Client) : StatementListFetcher {
             seenSoFar.add(assetLinksUrl)
         }
 
-        val request = Request(
-            url = assetLinksUrl.sanitizeURL(),
-            method = Request.Method.GET,
-            connectTimeout = TIMEOUT,
-            readTimeout = TIMEOUT,
-        )
-        val response = httpClient.safeFetch(request)?.let { res ->
-            val contentTypes = res.headers.getAll(CONTENT_TYPE)
-            if (contentTypes.any { it.contains(CONTENT_TYPE_APPLICATION_JSON, ignoreCase = true) }) {
-                res
-            } else {
-                res.close()
-                null
+        val request =
+            Request(
+                url = assetLinksUrl.sanitizeURL(),
+                method = Request.Method.GET,
+                connectTimeout = TIMEOUT,
+                readTimeout = TIMEOUT,
+            )
+        val response =
+            httpClient.safeFetch(request)?.let { res ->
+                val contentTypes = res.headers.getAll(CONTENT_TYPE)
+                if (contentTypes.any { it.contains(CONTENT_TYPE_APPLICATION_JSON, ignoreCase = true) }) {
+                    res
+                } else {
+                    res.close()
+                    null
+                }
             }
-        }
 
         val statements = response?.let { parseStatementResponse(response) }.orEmpty()
         return sequence<Statement> {
@@ -87,14 +84,12 @@ class StatementApi(private val httpClient: Client) : StatementListFetcher {
             yieldAll(
                 includeStatements.asSequence().flatMap {
                     getWebsiteStatementList(it.include, seenSoFar)
-                },
+                }
             )
         }
     }
 
-    /**
-     * Parse the JSON [Response] returned by the website.
-     */
+    /** Parse the JSON [Response] returned by the website. */
     private fun parseStatementResponse(response: Response): List<StatementResult> {
         val responseBody = response.use { response.body.string() }
         return try {
@@ -106,9 +101,7 @@ class StatementApi(private val httpClient: Client) : StatementListFetcher {
     }
 
     private fun parseStatementListJson(json: JSONArray): List<StatementResult> {
-        return json.asSequence { i -> getJSONObject(i) }
-            .flatMap { parseStatementJson(it) }
-            .toList()
+        return json.asSequence { i -> getJSONObject(i) }.flatMap { parseStatementJson(it) }.toList()
     }
 
     private fun parseStatementJson(json: JSONObject): Sequence<StatementResult> {
@@ -118,24 +111,26 @@ class StatementApi(private val httpClient: Client) : StatementListFetcher {
         }
 
         val relationTypes = Relation.entries.toTypedArray()
-        val relations = json.getJSONArray("relation")
-            .asSequence { i -> getString(i) }
-            .mapNotNull { relation -> relationTypes.find { relation == it.kindAndDetail } }
+        val relations =
+            json
+                .getJSONArray("relation")
+                .asSequence { i -> getString(i) }
+                .mapNotNull { relation -> relationTypes.find { relation == it.kindAndDetail } }
 
         return relations.flatMap { relation ->
             val target = json.getJSONObject("target")
-            val assets = when (target.getString("namespace")) {
-                "web" -> sequenceOf(
-                    AssetDescriptor.Web(site = target.getString("site")),
-                )
-                "android_app" -> {
-                    val packageName = target.getString("package_name")
-                    target.getJSONArray("sha256_cert_fingerprints")
-                        .asSequence { i -> getString(i) }
-                        .map { fingerprint -> AssetDescriptor.Android(packageName, fingerprint) }
+            val assets =
+                when (target.getString("namespace")) {
+                    "web" -> sequenceOf(AssetDescriptor.Web(site = target.getString("site")))
+                    "android_app" -> {
+                        val packageName = target.getString("package_name")
+                        target
+                            .getJSONArray("sha256_cert_fingerprints")
+                            .asSequence { i -> getString(i) }
+                            .map { fingerprint -> AssetDescriptor.Android(packageName, fingerprint) }
+                    }
+                    else -> emptySequence()
                 }
-                else -> emptySequence()
-            }
 
             assets.map { asset -> Statement(relation, asset) }
         }

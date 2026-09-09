@@ -5,13 +5,13 @@
 package mozilla.components.feature.downloads
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.feature.downloads.DownloadDialogFragment.Companion.KEY_FILE_NAME
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 @Suppress("Deprecation") // https://bugzilla.mozilla.org/show_bug.cgi?id=1953923
@@ -23,13 +23,15 @@ class DownloadDialogFragmentTest {
     @Before
     fun setup() {
         dialog = object : DownloadDialogFragment() {}
-        download = DownloadState(
-            "http://ipv4.download.thinkbroadband.com/5MB.zip",
-            "5MB.zip",
-            "application/zip",
-            5242880,
-            userAgent = "Mozilla/5.0 (Linux; Android 7.1.1) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Focus/8.0 Chrome/69.0.3497.100 Mobile Safari/537.36",
-        )
+        download =
+            DownloadState(
+                "http://ipv4.download.thinkbroadband.com/5MB.zip",
+                "5MB.zip",
+                "application/zip",
+                5242880,
+                userAgent =
+                    "Mozilla/5.0 (Linux; Android 7.1.1) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Focus/8.0 Chrome/69.0.3497.100 Mobile Safari/537.36",
+            )
     }
 
     @Test

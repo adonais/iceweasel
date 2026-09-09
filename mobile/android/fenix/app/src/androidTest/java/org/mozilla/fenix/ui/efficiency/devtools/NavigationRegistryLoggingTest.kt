@@ -7,11 +7,11 @@ package org.mozilla.fenix.ui.efficiency.devtools
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.File
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
-import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class NavigationRegistryLoggingTest : BaseTest() {

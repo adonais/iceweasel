@@ -27,10 +27,11 @@ class LoginFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-            authUrl = it.getString(AUTH_URL)
-                ?: throw IllegalStateException("Fragment $this arguments.authUrl is not set.")
-            redirectUrl = it.getString(REDIRECT_URL)
-                ?: throw IllegalStateException("Fragment $this arguments.redirectUrl is not set.")
+            authUrl =
+                it.getString(AUTH_URL) ?: throw IllegalStateException("Fragment $this arguments.authUrl is not set.")
+            redirectUrl =
+                it.getString(REDIRECT_URL)
+                    ?: throw IllegalStateException("Fragment $this arguments.redirectUrl is not set.")
         }
     }
 
@@ -43,21 +44,22 @@ class LoginFragment : Fragment() {
         webView.settings.javaScriptEnabled = true
         CookieManager.getInstance().setAcceptCookie(true)
 
-        webView.webViewClient = object : WebViewClient() {
-            override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                if (url != null && url.startsWith(redirectUrl)) {
-                    val uri = url.toUri()
-                    val code = uri.getQueryParameter("code")
-                    val state = uri.getQueryParameter("state")
-                    val action = uri.getQueryParameter("action") ?: ""
-                    if (code != null && state != null) {
-                        listener?.onLoginComplete(code, state, action, this@LoginFragment)
+        webView.webViewClient =
+            object : WebViewClient() {
+                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                    if (url != null && url.startsWith(redirectUrl)) {
+                        val uri = url.toUri()
+                        val code = uri.getQueryParameter("code")
+                        val state = uri.getQueryParameter("state")
+                        val action = uri.getQueryParameter("action") ?: ""
+                        if (code != null && state != null) {
+                            listener?.onLoginComplete(code, state, action, this@LoginFragment)
+                        }
                     }
-                }
 
-                super.onPageStarted(view, url, favicon)
+                    super.onPageStarted(view, url, favicon)
+                }
             }
-        }
         webView.loadUrl(authUrl)
 
         this@LoginFragment.webView?.destroy()
@@ -92,9 +94,7 @@ class LoginFragment : Fragment() {
     }
 
     interface OnLoginCompleteListener {
-        /**
-         * A callback invoked when we get a successful redirect from the auth server.
-         */
+        /** A callback invoked when we get a successful redirect from the auth server. */
         fun onLoginComplete(code: String, state: String, action: String, fragment: LoginFragment)
     }
 
@@ -104,10 +104,11 @@ class LoginFragment : Fragment() {
 
         fun create(authUrl: String, redirectUrl: String): LoginFragment =
             LoginFragment().apply {
-                arguments = Bundle().apply {
-                    putString(AUTH_URL, authUrl)
-                    putString(REDIRECT_URL, redirectUrl)
-                }
+                arguments =
+                    Bundle().apply {
+                        putString(AUTH_URL, authUrl)
+                        putString(REDIRECT_URL, redirectUrl)
+                    }
             }
     }
 }

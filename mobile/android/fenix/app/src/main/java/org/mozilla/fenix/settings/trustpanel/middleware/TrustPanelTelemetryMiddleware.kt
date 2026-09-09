@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.settings.trustpanel.middleware
 
+import androidx.annotation.VisibleForTesting
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import mozilla.telemetry.glean.private.NoExtras
@@ -12,12 +13,10 @@ import org.mozilla.fenix.GleanMetrics.TrustPanel
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelAction
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelState
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelStore
-import org.mozilla.fenix.trackingprotection.ProtectionsDashboardFragment
 
-/**
- * A [Middleware] for recording telemetry based on [TrustPanelAction]s that are dispatched to the
- * [TrustPanelStore].
- */
+@VisibleForTesting internal const val TRUST_PANEL_TELEMETRY_SOURCE = "trust_panel"
+
+/** A [Middleware] for recording telemetry based on [TrustPanelAction]s that are dispatched to the [TrustPanelStore]. */
 class TrustPanelTelemetryMiddleware : Middleware<TrustPanelState, TrustPanelAction> {
 
     override fun invoke(
@@ -30,9 +29,10 @@ class TrustPanelTelemetryMiddleware : Middleware<TrustPanelState, TrustPanelActi
         next(action)
 
         when (action) {
-            TrustPanelAction.ToggleTrackingProtection -> if (currentState.isTrackingProtectionEnabled) {
-                TrackingProtection.exceptionAdded.record(NoExtras())
-            }
+            TrustPanelAction.ToggleTrackingProtection ->
+                if (currentState.isTrackingProtectionEnabled) {
+                    TrackingProtection.exceptionAdded.record(NoExtras())
+                }
 
             is TrustPanelAction.Navigate.SecurityCertificate -> {
                 TrustPanel.securityCertificate.record(NoExtras())
@@ -44,9 +44,7 @@ class TrustPanelTelemetryMiddleware : Middleware<TrustPanelState, TrustPanelActi
 
             is TrustPanelAction.Navigate.TrackersProtectionDashboard -> {
                 TrackingProtection.privacyReportTapped.record(
-                    TrackingProtection.PrivacyReportTappedExtra(
-                        source = ProtectionsDashboardFragment.SOURCE_TRUST_PANEL,
-                    ),
+                    TrackingProtection.PrivacyReportTappedExtra(TRUST_PANEL_TELEMETRY_SOURCE)
                 )
             }
 
@@ -71,8 +69,7 @@ class TrustPanelTelemetryMiddleware : Middleware<TrustPanelState, TrustPanelActi
             is TrustPanelAction.RequestQWAC,
             is TrustPanelAction.UpdateQWAC,
             is TrustPanelAction.Navigate.ManagePhoneFeature,
-            is TrustPanelAction.Navigate.IPProtectionSettings,
-            -> Unit
+            is TrustPanelAction.Navigate.IPProtectionSettings -> Unit
         }
     }
 }

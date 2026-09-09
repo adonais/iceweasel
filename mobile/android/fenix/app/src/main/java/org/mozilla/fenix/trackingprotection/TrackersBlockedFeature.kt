@@ -5,6 +5,8 @@
 package org.mozilla.fenix.trackingprotection
 
 import androidx.annotation.MainThread
+import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -27,23 +29,20 @@ import mozilla.components.feature.session.TrackingProtectionUseCases
 import mozilla.components.lib.state.helpers.AbstractBinding
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
 import mozilla.components.support.utils.DefaultDateTimeProvider
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateEarliestTrackingDate
 import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateTrackersBlockedCount
 import org.mozilla.fenix.components.appstate.AppAction.BlockedTrackersAction.UpdateTrackersBlockedThisWeek
-import java.util.concurrent.TimeUnit
-import kotlin.time.Duration.Companion.seconds
-import mozilla.components.ui.icons.R as iconsR
 
 /**
- * View-bound feature that dispatches tracker blocked changes from Gecko's blocked trackers database
- * to the [AppStore].
+ * View-bound feature that dispatches tracker blocked changes from Gecko's blocked trackers database to the [AppStore].
  *
  * @param browserStore The [BrowserStore] to observe for trackers blocked related events.
  * @param appStore The [AppStore] to dispatch actions to.
- * @param currentSessionId Optional id of a session to observe for tracker related updates.
- * which will trigger querying the blocked trackers database for new details.
+ * @param currentSessionId Optional id of a session to observe for tracker related updates. which will trigger querying
+ *   the blocked trackers database for new details.
  * @param trackingProtectionUseCases Use case to fetch details about blocked trackers.
  * @param ioDispatcher The [CoroutineDispatcher] for database operations. Defaults to [Dispatchers.IO].
  */
@@ -69,7 +68,8 @@ class TrackersBlockedFeature(
         // allows for a dynamic update of the trackers blocked numbers.
         currentSessionId?.let {
             @OptIn(FlowPreview::class)
-            flow.mapNotNull { state -> state.findTabOrCustomTab(it) }
+            flow
+                .mapNotNull { state -> state.findTabOrCustomTab(it) }
                 .ifAnyChanged { tab -> arrayOf(tab.trackingProtection.blockedTrackers) }
                 .debounce(1.seconds)
                 .collect {
@@ -90,7 +90,7 @@ class TrackersBlockedFeature(
         trackingProtectionUseCases.fetchTotalTrackersBlocked(
             onSuccess = {
                 appStore.dispatch(UpdateTrackersBlockedCount(it))
-            },
+            }
         )
     }
 
@@ -110,43 +110,42 @@ class TrackersBlockedFeature(
         trackingProtectionUseCases.fetchEarliestTrackingDate(
             onSuccess = {
                 appStore.dispatch(UpdateEarliestTrackingDate(it))
-            },
+            }
         )
     }
 
     private val List<TrackingProtectionEvent>?.blockedTrackersCategories: List<TrackersBlockedCategory>
         get() {
             val events = this ?: return emptyList()
-            val trackerCategories = listOf(
-                CategoryConfig(
-                    nameRes = R.plurals.trackers_blocked_panel_num_cross_site_cookies,
-                    iconRes = iconsR.drawable.mozac_ic_cookies_24,
-                    types = setOf(TRACKING_COOKIES),
-                    category = TrackerCategory.CROSS_SITE_COOKIES,
-                ),
-                CategoryConfig(
-                    nameRes = R.plurals.trackers_blocked_panel_num_social_media_trackers,
-                    iconRes = iconsR.drawable.mozac_ic_thumbs_down_24,
-                    types = setOf(SOCIAL),
-                    category = TrackerCategory.SOCIAL_MEDIA_TRACKERS,
-                ),
-                CategoryConfig(
-                    nameRes = R.plurals.trackers_blocked_panel_num_fingerprinters,
-                    iconRes = iconsR.drawable.mozac_ic_fingerprinter_24,
-                    types = setOf(FINGERPRINTERS, SUSPICIOUS_FINGERPRINTERS),
-                    category = TrackerCategory.FINGERPRINTERS,
-                ),
-                CategoryConfig(
-                    nameRes = R.plurals.trackers_blocked_panel_num_trackers_2,
-                    iconRes = iconsR.drawable.mozac_ic_image_24,
-                    types = setOf(TRACKERS),
-                    category = TrackerCategory.TRACKING_CONTENT,
-                ),
-            )
+            val trackerCategories =
+                listOf(
+                    CategoryConfig(
+                        nameRes = R.plurals.trackers_blocked_panel_num_cross_site_cookies,
+                        iconRes = iconsR.drawable.mozac_ic_cookies_24,
+                        types = setOf(TRACKING_COOKIES),
+                        category = TrackerCategory.CROSS_SITE_COOKIES,
+                    ),
+                    CategoryConfig(
+                        nameRes = R.plurals.trackers_blocked_panel_num_social_media_trackers,
+                        iconRes = iconsR.drawable.mozac_ic_thumbs_down_24,
+                        types = setOf(SOCIAL),
+                        category = TrackerCategory.SOCIAL_MEDIA_TRACKERS,
+                    ),
+                    CategoryConfig(
+                        nameRes = R.plurals.trackers_blocked_panel_num_fingerprinters,
+                        iconRes = iconsR.drawable.mozac_ic_fingerprinter_24,
+                        types = setOf(FINGERPRINTERS, SUSPICIOUS_FINGERPRINTERS),
+                        category = TrackerCategory.FINGERPRINTERS,
+                    ),
+                    CategoryConfig(
+                        nameRes = R.plurals.trackers_blocked_panel_num_trackers_2,
+                        iconRes = iconsR.drawable.mozac_ic_image_24,
+                        types = setOf(TRACKERS),
+                        category = TrackerCategory.TRACKING_CONTENT,
+                    ),
+                )
             return trackerCategories.map { config ->
-                val count = events
-                    .filter { it.type in config.types }
-                    .sumOf { it.count }
+                val count = events.filter { it.type in config.types }.sumOf { it.count }
                 TrackersBlockedCategory(config.iconRes, config.nameRes, count, config.category)
             }
         }

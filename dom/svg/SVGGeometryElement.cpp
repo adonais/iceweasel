@@ -48,7 +48,7 @@ void SVGGeometryElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                       bool aNotify) {
   if (mCachedPath && aNamespaceID == kNameSpaceID_None &&
       AttributeDefinesGeometry(aName)) {
-    mCachedPath = nullptr;
+    ClearAnyCachedPath();
   }
   return SVGGeometryElementBase::AfterSetAttr(
       aNamespaceID, aName, aValue, aOldValue, aSubjectPrincipal, aNotify);
@@ -86,7 +86,7 @@ bool SVGGeometryElement::GeometryDependsOnCoordCtx() {
         static_cast<SVGEllipseElement*>(this)->HasCtxDependentLength();
   }
   if (hasCtxDependentLength) {
-    return hasCtxDependentLength.value();
+    return *hasCtxDependentLength;
   }
   // Check the SVGAnimatedLength attribute
   LengthAttributesInfo info =
@@ -125,11 +125,48 @@ already_AddRefed<Path> SVGGeometryElement::GetOrBuildPath(
   return path.forget();
 }
 
+already_AddRefed<Path> SVGGeometryElement::GetTransformedPath(
+    const Matrix& aPathTransform) {
+  FillRule fillRule = GetFillRule();
+  RefPtr<DrawTarget> tmpDT =
+      gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
+
+  RefPtr<Path> path = GetOrBuildPath(tmpDT, fillRule);
+
+  if (path && !aPathTransform.IsIdentity()) {
+    RefPtr<PathBuilder> builder =
+        path->TransformedCopyToBuilder(aPathTransform, fillRule);
+    path = builder->Finish();
+  }
+  return path.forget();
+}
+
+Maybe<Rect> SVGGeometryElement::GetBounds(const Matrix& aPathTransform) {
+  if (RefPtr<Path> path = GetTransformedPath(aPathTransform)) {
+    Rect bbox = path->GetBounds();
+    if (bbox.IsFinite()) {
+      return Some(bbox);
+    }
+  }
+  return Nothing();
+}
+
+Maybe<Rect> SVGGeometryElement::GetStrokedBounds(
+    const StrokeOptions& aStrokeOptions, const Matrix& aPathTransform,
+    const Matrix& aPathToBounds) {
+  if (RefPtr<Path> path = GetTransformedPath(aPathTransform)) {
+    Rect bbox = path->GetStrokedBounds(aStrokeOptions, aPathToBounds);
+    if (bbox.IsFinite()) {
+      return Some(bbox);
+    }
+  }
+  return Nothing();
+}
+
 already_AddRefed<Path> SVGGeometryElement::GetOrBuildPathForMeasuring() {
   RefPtr<DrawTarget> drawTarget =
       gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
-  FillRule fillRule = mCachedPath ? mCachedPath->GetFillRule() : GetFillRule();
-  return GetOrBuildPath(drawTarget, fillRule);
+  return GetOrBuildPath(drawTarget, GetFillRule());
 }
 
 // This helper is currently identical to GetOrBuildPathForMeasuring.
@@ -140,8 +177,7 @@ already_AddRefed<Path> SVGGeometryElement::GetOrBuildPathForMeasuring() {
 already_AddRefed<Path> SVGGeometryElement::GetOrBuildPathForHitTest() {
   RefPtr<DrawTarget> drawTarget =
       gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
-  FillRule fillRule = mCachedPath ? mCachedPath->GetFillRule() : GetFillRule();
-  return GetOrBuildPath(drawTarget, fillRule);
+  return GetOrBuildPath(drawTarget, GetFillRule());
 }
 
 bool SVGGeometryElement::IsGeometryChangedViaCSS(
@@ -163,6 +199,10 @@ bool SVGGeometryElement::IsGeometryChangedViaCSS(
 }
 
 FillRule SVGGeometryElement::GetFillRule() {
+  if (mCachedPath) {
+    return mCachedPath->GetFillRule();
+  }
+
   FillRule fillRule =
       FillRule::FILL_WINDING;  // Equivalent to StyleFillRule::Nonzero
 

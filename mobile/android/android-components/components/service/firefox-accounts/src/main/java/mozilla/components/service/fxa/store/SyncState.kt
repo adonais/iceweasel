@@ -29,11 +29,8 @@ data class SyncState(
 /**
  * Various statuses described the [SyncState].
  *
- * Starts as [NotInitialized].
- * Becomes [Started] during the length of a Sync.
- * Becomes [Idle] when a Sync is completed.
- * Becomes [Error] when a Sync encounters an error.
- * Becomes [LoggedOut] when Sync is logged out.
+ * Starts as [NotInitialized]. Becomes [Started] during the length of a Sync. Becomes [Idle] when a Sync is completed.
+ * Becomes [Error] when a Sync encounters an error. Becomes [LoggedOut] when Sync is logged out.
  *
  * See [WorkManagerSyncManager] for implementation details.
  */

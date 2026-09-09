@@ -9,16 +9,15 @@ import org.mozilla.fenix.perf.AppStartReasonProvider.StartReason
 import org.mozilla.fenix.perf.StartupActivityLog.LogEntry
 
 /**
- * Identifies the "state" of start up where state can be COLD/WARM/HOT and possibly others. See
- * the [Fenix perf glossary](https://wiki.mozilla.org/index.php?title=Performance/Fenix/Glossary)
- * for specific definitions.
+ * Identifies the "state" of start up where state can be COLD/WARM/HOT and possibly others. See the
+ * [Fenix perf glossary](https://wiki.mozilla.org/index.php?title=Performance/Fenix/Glossary) for specific definitions.
  *
- * This class is nuanced: **please read the kdoc carefully before using it.** Consider contacting
- * the perf team with your use case.
+ * This class is nuanced: **please read the kdoc carefully before using it.** Consider contacting the perf team with
+ * your use case.
  *
- * For this class, we use the terminology from the [StartupActivityLog] such as STARTED and STOPPED.
- * However, we're assuming STARTED means foregrounded and STOPPED means backgrounded. If this
- * assumption is false, the logic in this class may be incorrect.
+ * For this class, we use the terminology from the [StartupActivityLog] such as STARTED and STOPPED. However, we're
+ * assuming STARTED means foregrounded and STOPPED means backgrounded. If this assumption is false, the logic in this
+ * class may be incorrect.
  */
 class StartupStateProvider(
     private val startupLog: StartupActivityLog,
@@ -27,15 +26,17 @@ class StartupStateProvider(
 
     /**
      * The restoration state of the application upon this most recent start up. See the
-     * [Fenix perf glossary](https://wiki.mozilla.org/index.php?title=Performance/Fenix/Glossary)
-     * for specific definitions.
+     * [Fenix perf glossary](https://wiki.mozilla.org/index.php?title=Performance/Fenix/Glossary) for specific
+     * definitions.
      */
     enum class StartupState {
-        COLD, WARM, HOT,
+        COLD,
+        WARM,
+        HOT,
 
         /**
-         * A start up state where we weren't able to bucket it into the other categories.
-         * This includes, but is not limited to:
+         * A start up state where we weren't able to bucket it into the other categories. This includes, but is not
+         * limited to:
          * - if the activity this is called from is not currently started
          * - if the currently started activity is not the first started activity
          */
@@ -43,21 +44,22 @@ class StartupStateProvider(
     }
 
     /**
-     * Returns the [StartupState] for the currently started activity. Note: the state will be
-     * [StartupState.UNKNOWN] if the currently started activity is not the first started activity.
+     * Returns the [StartupState] for the currently started activity. Note: the state will be [StartupState.UNKNOWN] if
+     * the currently started activity is not the first started activity.
      *
      * This method must be called after the foreground Activity is STARTED.
      */
-    fun getStartupStateForStartedActivity(activityClass: Class<out Activity>): StartupState = when {
-        isColdStartForStartedActivity(activityClass) -> StartupState.COLD
-        isWarmStartForStartedActivity(activityClass) -> StartupState.WARM
-        isHotStartForStartedActivity(activityClass) -> StartupState.HOT
-        else -> StartupState.UNKNOWN
-    }
+    fun getStartupStateForStartedActivity(activityClass: Class<out Activity>): StartupState =
+        when {
+            isColdStartForStartedActivity(activityClass) -> StartupState.COLD
+            isWarmStartForStartedActivity(activityClass) -> StartupState.WARM
+            isHotStartForStartedActivity(activityClass) -> StartupState.HOT
+            else -> StartupState.UNKNOWN
+        }
 
     /**
-     * Returns true if the current startup state is COLD and the currently started activity is the
-     * first started activity (i.e. we can use it for performance measurements).
+     * Returns true if the current startup state is COLD and the currently started activity is the first started
+     * activity (i.e. we can use it for performance measurements).
      *
      * This method must be called after the foreground Activity is STARTED.
      */
@@ -74,25 +76,26 @@ class StartupStateProvider(
             return false
         }
 
-        val isLastStartedActivityStillStarted = startupLog.log.takeLast(2) == listOf(
-            LogEntry.ActivityStarted(activityClass),
-            LogEntry.AppStarted,
-        )
+        val isLastStartedActivityStillStarted =
+            startupLog.log.takeLast(2) ==
+                listOf(
+                    LogEntry.ActivityStarted(activityClass),
+                    LogEntry.AppStarted,
+                )
         return !startupLog.log.contains(LogEntry.AppStopped) && isLastStartedActivityStillStarted
     }
 
     /**
-     * A short-circuit implementation of [isColdStartForStartedActivity] that will return false early
-     * so we don't have to call [isColdStartForStartedActivity].
+     * A short-circuit implementation of [isColdStartForStartedActivity] that will return false early so we don't have
+     * to call [isColdStartForStartedActivity].
      *
-     * When this can be called might be tightly coupled to [ColdStartupDurationTelemetry]: use at
-     * your own risk.
+     * When this can be called might be tightly coupled to [ColdStartupDurationTelemetry]: use at your own risk.
      */
     fun shouldShortCircuitColdStart(): Boolean = startupLog.log.contains(LogEntry.AppStopped)
 
     /**
-     * Returns true if the current startup state is WARM and the currently started activity is the
-     * first started activity for this start up (i.e. we can use it for performance measurements).
+     * Returns true if the current startup state is WARM and the currently started activity is the first started
+     * activity for this start up (i.e. we can use it for performance measurements).
      *
      * This method must be called after the foreground activity is STARTED.
      */
@@ -113,17 +116,19 @@ class StartupStateProvider(
         val afterLastStopped = startupLog.log.takeLastWhile { it != LogEntry.AppStopped }
 
         @Suppress("MagicNumber") // we take a specific number at the end of the list to compare them.
-        val isLastActivityCreatedStillStarted = afterLastStopped.takeLast(3) == listOf(
-            LogEntry.ActivityCreated(activityClass),
-            LogEntry.ActivityStarted(activityClass),
-            LogEntry.AppStarted,
-        )
+        val isLastActivityCreatedStillStarted =
+            afterLastStopped.takeLast(3) ==
+                listOf(
+                    LogEntry.ActivityCreated(activityClass),
+                    LogEntry.ActivityStarted(activityClass),
+                    LogEntry.AppStarted,
+                )
         return isLastActivityCreatedStillStarted
     }
 
     /**
-     * Returns true if the current startup state is HOT and the currently started activity is the
-     * first started activity for this start up (i.e. we can use it for performance measurements).
+     * Returns true if the current startup state is HOT and the currently started activity is the first started activity
+     * for this start up (i.e. we can use it for performance measurements).
      *
      * This method must be called after the foreground activity is STARTED.
      */
@@ -144,11 +149,12 @@ class StartupStateProvider(
         }
         val afterLastStopped = startupLog.log.takeLastWhile { it != LogEntry.AppStopped }
 
-        val isLastActivityStartedStillStarted = afterLastStopped.takeLast(2) == listOf(
-            LogEntry.ActivityStarted(activityClass),
-            LogEntry.AppStarted,
-        )
-        return !afterLastStopped.contains(LogEntry.ActivityCreated(activityClass)) &&
-            isLastActivityStartedStillStarted
+        val isLastActivityStartedStillStarted =
+            afterLastStopped.takeLast(2) ==
+                listOf(
+                    LogEntry.ActivityStarted(activityClass),
+                    LogEntry.AppStarted,
+                )
+        return !afterLastStopped.contains(LogEntry.ActivityCreated(activityClass)) && isLastActivityStartedStillStarted
     }
 }

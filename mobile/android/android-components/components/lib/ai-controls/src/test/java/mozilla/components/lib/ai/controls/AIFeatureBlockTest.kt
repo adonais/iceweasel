@@ -29,14 +29,16 @@ class AIFeatureBlockTest {
     @Test
     fun `block disables all registered features`() = runTest {
         val registry = FakeAIFeatureRegistry()
-        val featureA = AIControllableFeature.inMemory(
-            id = AIFeatureMetadata.FeatureId("a"),
-            initialEnabled = true,
-        )
-        val featureB = AIControllableFeature.inMemory(
-            id = AIFeatureMetadata.FeatureId("b"),
-            initialEnabled = true,
-        )
+        val featureA =
+            AIControllableFeature.inMemory(
+                id = AIFeatureMetadata.FeatureId("a"),
+                initialEnabled = true,
+            )
+        val featureB =
+            AIControllableFeature.inMemory(
+                id = AIFeatureMetadata.FeatureId("b"),
+                initialEnabled = true,
+            )
         registry.register(featureA)
         registry.register(featureB)
         val block = DefaultAIFeatureBlock(registry, AIFeatureBlockStorage.inMemory())
@@ -70,14 +72,16 @@ class AIFeatureBlockTest {
     @Test
     fun `unblock enables all registered features`() = runTest {
         val registry = FakeAIFeatureRegistry()
-        val featureA = AIControllableFeature.inMemory(
-            id = AIFeatureMetadata.FeatureId("a"),
-            initialEnabled = false,
-        )
-        val featureB = AIControllableFeature.inMemory(
-            id = AIFeatureMetadata.FeatureId("b"),
-            initialEnabled = false,
-        )
+        val featureA =
+            AIControllableFeature.inMemory(
+                id = AIFeatureMetadata.FeatureId("a"),
+                initialEnabled = false,
+            )
+        val featureB =
+            AIControllableFeature.inMemory(
+                id = AIFeatureMetadata.FeatureId("b"),
+                initialEnabled = false,
+            )
         registry.register(featureA)
         registry.register(featureB)
         val block = DefaultAIFeatureBlock(registry, AIFeatureBlockStorage.inMemory())

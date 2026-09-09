@@ -264,7 +264,7 @@ add_task(async function test_timepicker_wrap_midnight() {
     () => {
       return spinnerTime.ariaValueNow == "12";
     },
-    `Should change to 12, instead got ${spinnerTime.ariaValueNow}`
+    { msg: `Should change to 12, instead got ${spinnerTime.ariaValueNow}` }
   );
 
   hours = helper.getSpinnerOptions(SPINNER_HOUR);

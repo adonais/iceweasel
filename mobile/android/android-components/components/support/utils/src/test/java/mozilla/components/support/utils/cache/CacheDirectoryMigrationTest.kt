@@ -5,6 +5,7 @@
 package mozilla.components.support.utils.cache
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.File
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.After
@@ -14,7 +15,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class CacheDirectoryMigrationTest {
@@ -81,9 +81,8 @@ class CacheDirectoryMigrationTest {
         assertTrue(legacyDir.mkdirs())
         File(legacyDir, "marker").writeText("legacy")
 
-        createMigration(
-            newDirectory = { File(it.noBackupFilesDir, "$MISSING_PARENT/$PARENT_DIRECTORY_NAME") },
-        ).migrateIfNeeded(testContext)
+        createMigration(newDirectory = { File(it.noBackupFilesDir, "$MISSING_PARENT/$PARENT_DIRECTORY_NAME") })
+            .migrateIfNeeded(testContext)
 
         val newDir = File(testContext.noBackupFilesDir, "$MISSING_PARENT/$PARENT_DIRECTORY_NAME/entries")
         assertTrue(File(newDir, "marker").exists())
@@ -98,13 +97,13 @@ class CacheDirectoryMigrationTest {
         assertTrue(legacyDir.mkdirs())
         File(legacyDir, "marker").writeText("legacy")
 
-        val staleTempDir = File(testContext.noBackupFilesDir, "$MISSING_PARENT/$PARENT_DIRECTORY_NAME.migrating/entries")
+        val staleTempDir =
+            File(testContext.noBackupFilesDir, "$MISSING_PARENT/$PARENT_DIRECTORY_NAME.migrating/entries")
         assertTrue(staleTempDir.mkdirs())
         File(staleTempDir, "stale-marker").writeText("stale")
 
-        createMigration(
-            newDirectory = { File(it.noBackupFilesDir, "$MISSING_PARENT/$PARENT_DIRECTORY_NAME") },
-        ).migrateIfNeeded(testContext)
+        createMigration(newDirectory = { File(it.noBackupFilesDir, "$MISSING_PARENT/$PARENT_DIRECTORY_NAME") })
+            .migrateIfNeeded(testContext)
 
         val newDir = File(testContext.noBackupFilesDir, "$MISSING_PARENT/$PARENT_DIRECTORY_NAME/entries")
         assertTrue(File(newDir, "marker").exists())
@@ -119,9 +118,8 @@ class CacheDirectoryMigrationTest {
         assertTrue(legacyDir.mkdirs())
         File(legacyDir, "marker").writeText("legacy")
 
-        createMigration(
-            newDirectory = { File(it.noBackupFilesDir, "$MISSING_PARENT/$PARENT_DIRECTORY_NAME") },
-        ).migrateIfNeeded(testContext)
+        createMigration(newDirectory = { File(it.noBackupFilesDir, "$MISSING_PARENT/$PARENT_DIRECTORY_NAME") })
+            .migrateIfNeeded(testContext)
 
         assertFalse(File(testContext.noBackupFilesDir, "$MISSING_PARENT/$PARENT_DIRECTORY_NAME.migrating").exists())
         assertFalse(legacyParent.exists())
@@ -135,14 +133,13 @@ class CacheDirectoryMigrationTest {
         File(legacyDir, "marker").writeText("legacy")
 
         // A file at the target root prevents the fallback copy migration from creating its destination.
-        val blockedTargetRoot = File(testContext.noBackupFilesDir, NO_FOLDER_FILE).apply {
-            writeText("blocking file")
-        }
+        val blockedTargetRoot =
+            File(testContext.noBackupFilesDir, NO_FOLDER_FILE).apply {
+                writeText("blocking file")
+            }
         val targetParent = File(testContext.noBackupFilesDir, "$NO_FOLDER_FILE/$PARENT_DIRECTORY_NAME")
         val migratedEntriesDir = File(targetParent, "entries")
-        val migration = createMigration(
-            newDirectory = { targetParent },
-        )
+        val migration = createMigration(newDirectory = { targetParent })
 
         migration.migrateIfNeeded(testContext)
 
@@ -179,11 +176,12 @@ class CacheDirectoryMigrationTest {
     private fun createMigration(
         legacyDirectory: (android.content.Context) -> File = { File(it.cacheDir, PARENT_DIRECTORY_NAME) },
         newDirectory: (android.content.Context) -> File = { File(it.noBackupFilesDir, PARENT_DIRECTORY_NAME) },
-    ) = CacheDirectoryMigration(
-        logger = Logger("CacheDirMigrationTest"),
-        legacyDirectory = legacyDirectory,
-        newDirectory = newDirectory,
-    )
+    ) =
+        CacheDirectoryMigration(
+            logger = Logger("CacheDirMigrationTest"),
+            legacyDirectory = legacyDirectory,
+            newDirectory = newDirectory,
+        )
 
     companion object {
         private const val PARENT_DIRECTORY_NAME = "cache_dir_migration_test"

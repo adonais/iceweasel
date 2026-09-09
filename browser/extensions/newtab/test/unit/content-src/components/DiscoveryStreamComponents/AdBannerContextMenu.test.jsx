@@ -1,13 +1,25 @@
-import { shallow } from "enzyme";
+import { mount } from "enzyme";
 import { AdBannerContextMenu } from "content-src/components/DiscoveryStreamComponents/AdBannerContextMenu/AdBannerContextMenu";
-import { LinkMenu } from "content-src/components/LinkMenu/LinkMenu";
+import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
+import { Provider } from "react-redux";
 import React from "react";
+import { combineReducers, createStore } from "redux";
 
 describe("<AdBannerContextMenu>", () => {
   let wrapper;
 
+  function mountWithProps(props) {
+    const store = createStore(combineReducers(reducers), INITIAL_STATE);
+    return mount(
+      <Provider store={store}>
+        <AdBannerContextMenu {...props} />
+      </Provider>
+    );
+  }
+
   describe("Ad banner context menu options", () => {
     const props = {
+      dispatch: () => {},
       spoc: { url: "https://www.test.com/", shim: "aaabbbcccddd" },
       position: 1,
       type: "billboard",
@@ -15,7 +27,11 @@ describe("<AdBannerContextMenu>", () => {
     };
 
     beforeEach(() => {
-      wrapper = shallow(<AdBannerContextMenu {...props} />);
+      wrapper = mountWithProps(props);
+    });
+
+    afterEach(() => {
+      wrapper.unmount();
     });
 
     it("should render a context menu button", () => {
@@ -31,100 +47,54 @@ describe("<AdBannerContextMenu>", () => {
       );
     });
 
-    it("should render a context menu button with hover styles when context menu is open", () => {
-      let button = wrapper.find("moz-button");
-      button.simulate("click", {
-        preventDefault: () => {},
-      });
+    it("should pair the moz-button and panel-list via menuId", () => {
+      const button = wrapper.find("moz-button");
+      const panelList = wrapper.find("panel-list");
+      assert.ok(panelList.exists());
+      assert.equal(button.prop("menuId"), panelList.prop("id"));
+    });
 
-      // Make sure the menu wrapper adds an extra classname when the menu is open
+    it("should add hover/active styles when the panel-list fires 'shown'", () => {
+      const panelList = wrapper.find("panel-list").getDOMNode();
+      panelList.dispatchEvent(new CustomEvent("shown"));
+      wrapper.update();
       assert.isTrue(
         wrapper.find("div.ads-context-menu").hasClass("context-menu-open")
       );
     });
 
-    it("should render LinkMenu when context menu button is clicked", () => {
-      let button = wrapper.find("moz-button");
-      button.simulate("click", {
-        preventDefault: () => {},
-      });
-      assert.equal(wrapper.find(LinkMenu).length, 1);
+    it("should remove hover/active styles when the panel-list fires 'hidden'", () => {
+      const panelList = wrapper.find("panel-list").getDOMNode();
+      panelList.dispatchEvent(new CustomEvent("shown"));
+      panelList.dispatchEvent(new CustomEvent("hidden"));
+      wrapper.update();
+      assert.isFalse(
+        wrapper.find("div.ads-context-menu").hasClass("context-menu-open")
+      );
     });
 
-    it("should render LinkMenu when context menu is accessed with the 'Enter' key", () => {
-      let button = wrapper.find("moz-button");
+    it("should call toggleActive when the panel-list opens and closes", () => {
+      const toggleActive = sinon.stub();
+      wrapper = mountWithProps({ ...props, toggleActive });
+      const panelList = wrapper.find("panel-list").getDOMNode();
 
-      button.simulate("keydown", { key: "Enter", preventDefault: () => {} });
+      panelList.dispatchEvent(new CustomEvent("shown"));
+      assert.calledWith(toggleActive, true);
 
-      assert.equal(wrapper.find(LinkMenu).length, 1);
+      panelList.dispatchEvent(new CustomEvent("hidden"));
+      assert.calledWith(toggleActive, false);
     });
 
-    it("should render LinkMenu when context menu is accessed with the 'Space' key", () => {
-      let button = wrapper.find("moz-button");
-
-      button.simulate("keydown", { key: " ", preventDefault: () => {} });
-
-      assert.equal(wrapper.find(LinkMenu).length, 1);
+    it("should render the correct menu options for ad banners with reporting INCLUDED", () => {
+      wrapper = mountWithProps({ ...props, showAdReporting: true });
+      // BlockAdUrl, ReportAd, ManageSponsoredContent, OurSponsorsAndYourPrivacy
+      assert.lengthOf(wrapper.find("panel-item"), 4);
     });
 
-    it("should pass props to LinkMenu", () => {
-      wrapper.find("moz-button").simulate("click", {
-        preventDefault: () => {},
-      });
-      const linkMenuProps = wrapper.find(LinkMenu).props();
-      [
-        "onUpdate",
-        "dispatch",
-        "keyboardAccess",
-        "options",
-        "shouldSendImpressionStats",
-        "userEvent",
-        "site",
-        "index",
-        "source",
-      ].forEach(prop => assert.property(linkMenuProps, prop));
-    });
-
-    it("should pass through the correct menu options to LinkMenu for ad banners with reporting INCLUDED", () => {
-      const propsWithReporting = {
-        ...props,
-        showAdReporting: true,
-      };
-      wrapper = shallow(<AdBannerContextMenu {...propsWithReporting} />);
-      wrapper.find("moz-button").simulate("click", {
-        preventDefault: () => {},
-      });
-      const linkMenuProps = wrapper.find(LinkMenu).props();
-
-      const linkMenuOptions = [
-        "BlockAdUrl",
-        "ReportAd",
-        "ManageSponsoredContent",
-        "OurSponsorsAndYourPrivacy",
-      ];
-
-      assert.deepEqual(linkMenuProps.options, linkMenuOptions);
-    });
-
-    it("should pass through correct menu options to LinkMenu for ad banner with reporting EXCLUDED", () => {
-      const propsWithoutReporting = {
-        ...props,
-        showAdReporting: false,
-      };
-
-      wrapper = shallow(<AdBannerContextMenu {...propsWithoutReporting} />);
-      wrapper.find("moz-button").simulate("click", {
-        preventDefault: () => {},
-      });
-      const linkMenuProps = wrapper.find(LinkMenu).props();
-
-      const linkMenuOptions = [
-        "BlockAdUrl",
-        "ManageSponsoredContent",
-        "OurSponsorsAndYourPrivacy",
-      ];
-
-      assert.deepEqual(linkMenuProps.options, linkMenuOptions);
+    it("should render the correct menu options for ad banners with reporting EXCLUDED", () => {
+      wrapper = mountWithProps({ ...props, showAdReporting: false });
+      // BlockAdUrl, ManageSponsoredContent, OurSponsorsAndYourPrivacy
+      assert.lengthOf(wrapper.find("panel-item"), 3);
     });
   });
 });

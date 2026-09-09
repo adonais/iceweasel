@@ -6,11 +6,11 @@
 
 :::{note}
 
-- This page is part of the {ref}`mozilla_projects_nss_ssl_functions_old_ssl_reference` that
+- This page is part of the {ref}`mozilla-projects-nss-ssl-functions-old-ssl-reference` that
   we are migrating into the format described in the [MDN Style
   Guide](https://developer.mozilla.org/en-US/docs/Project:MDC_style_guide). If you are
   inclined to help with this migration, your help would be very much appreciated.
-- Upgraded documentation may be found in the {ref}`mozilla_projects_nss_reference`
+- Upgraded documentation may be found in the {ref}`mozilla-projects-nss-reference`
 :::
 
 ```{rubric} Selected SSL Types and Structures
@@ -35,7 +35,7 @@ types are described with the functions that use them or in the header files.
 
 (types-and-structures)=
 
-## [Types and Structures](#types_and_structures)
+## Types and Structures
 
 :::{container}
 These types and structures are described here:
@@ -242,26 +242,26 @@ typedef enum {
 The enum includes the following enumerators:
 
 ```{eval-rst}
-+-------------------------------------------------+-------------------------------------------------+
-| .. code::                                       | Reserved for internal use.                      |
-|                                                 |                                                 |
-|    SECWouldBlock                                |                                                 |
-+-------------------------------------------------+-------------------------------------------------+
-| .. code::                                       | The operation failed. To find out why, call     |
-|                                                 | ``PR_GetError``.                                |
-|    SECFailure                                   |                                                 |
-+-------------------------------------------------+-------------------------------------------------+
-| .. code::                                       | The operation succeeded. In this case the value |
-|                                                 | returned by ``PR_GetError`` is meaningless.     |
-|    SECSuccess                                   |                                                 |
-+-------------------------------------------------+-------------------------------------------------+
++------------------+---------------------------------------------------------------------------------------------+
+| .. code::        | Reserved for internal use.                                                                  |
+|                  |                                                                                             |
+|    SECWouldBlock |                                                                                             |
++------------------+---------------------------------------------------------------------------------------------+
+| .. code::        | The operation failed. To find out why, call ``PR_GetError``.                                |
+|                  |                                                                                             |
+|    SECFailure    |                                                                                             |
++------------------+---------------------------------------------------------------------------------------------+
+| .. code::        | The operation succeeded. In this case the value returned by ``PR_GetError`` is meaningless. |
+|                  |                                                                                             |
+|    SECSuccess    |                                                                                             |
++------------------+---------------------------------------------------------------------------------------------+
 ```
 
 :::
 
 (managing-secitem-memory)=
 
-## [Managing SECItem Memory](#managing_secitem_memory)
+## Managing SECItem Memory
 
 :::{container}
 These functions are available for managing the memory associated with `SECItem` structures and
@@ -300,12 +300,12 @@ SECStatus SECItem_FreeItem (
 This function has the following parameter:
 
 ```{eval-rst}
-+----------+--------------------------------------------------------------------------------------+
-| ``item`` | A pointer to a ``SECItem`` structure.                                                |
-+----------+--------------------------------------------------------------------------------------+
-| freeItem | When ``PR_FALSE``, free only the structure pointed to. Otherwise, free both the      |
-|          | structure pointed to and the ``SECItem`` structure itself.                           |
-+----------+--------------------------------------------------------------------------------------+
++----------+--------------------------------------------------------------------------------------------------------------------------------------------+
+| ``item`` | A pointer to a ``SECItem`` structure.                                                                                                      |
++----------+--------------------------------------------------------------------------------------------------------------------------------------------+
+| freeItem | When ``PR_FALSE``, free only the structure pointed to. Otherwise, free both the structure pointed to and the ``SECItem`` structure itself. |
+|          |                                                                                                                                            |
++----------+--------------------------------------------------------------------------------------------------------------------------------------------+
 ```
 
 ```{rubric} Returns
@@ -350,12 +350,12 @@ SECStatus SECItem_ZfreeItem (
 This function has the following parameter:
 
 ```{eval-rst}
-+----------+--------------------------------------------------------------------------------------+
-| ``item`` | A pointer to a ``SECItem`` structure.                                                |
-+----------+--------------------------------------------------------------------------------------+
-| freeItem | When ``PR_FALSE``, free only the structure pointed to. Otherwise, free both the      |
-|          | structure pointed to and the ``SECItem`` structure itself.                           |
-+----------+--------------------------------------------------------------------------------------+
++----------+--------------------------------------------------------------------------------------------------------------------------------------------+
+| ``item`` | A pointer to a ``SECItem`` structure.                                                                                                      |
++----------+--------------------------------------------------------------------------------------------------------------------------------------------+
+| freeItem | When ``PR_FALSE``, free only the structure pointed to. Otherwise, free both the structure pointed to and the ``SECItem`` structure itself. |
+|          |                                                                                                                                            |
++----------+--------------------------------------------------------------------------------------------------------------------------------------------+
 ```
 
 ```{rubric} Returns

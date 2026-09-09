@@ -12,7 +12,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
-  SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
+  SessionStore:
+    "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
   TabMetrics: "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
 });
 
@@ -101,7 +102,7 @@ class ProviderTabGroups extends ActionsProvider {
     return results;
   }
 
-  onPick(_queryContext, controller, action) {
+  onPick(_queryContext, controller, action, _details) {
     let group;
     if (action.dataset.savedGroupId) {
       group = lazy.SessionStore.openSavedTabGroup(

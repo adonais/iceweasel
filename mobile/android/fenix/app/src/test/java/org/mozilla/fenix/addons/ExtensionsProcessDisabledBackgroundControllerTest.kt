@@ -26,14 +26,15 @@ class ExtensionsProcessDisabledBackgroundControllerTest {
             val appStore = AppStore(AppState(isForeground = false))
             var invoked = false
 
-            val controller = ExtensionsProcessDisabledBackgroundController(
-                browserStore,
-                appStore,
-                dispatcher,
-                onExtensionsProcessDisabled = {
-                    invoked = true
-                },
-            )
+            val controller =
+                ExtensionsProcessDisabledBackgroundController(
+                    browserStore,
+                    appStore,
+                    dispatcher,
+                    onExtensionsProcessDisabled = {
+                        invoked = true
+                    },
+                )
 
             controller.start()
 
@@ -50,14 +51,15 @@ class ExtensionsProcessDisabledBackgroundControllerTest {
             val appStore = AppStore(AppState(isForeground = true))
             var invoked = false
 
-            val controller = ExtensionsProcessDisabledBackgroundController(
-                browserStore,
-                appStore,
-                dispatcher,
-                onExtensionsProcessDisabled = {
-                    invoked = true
-                },
-            )
+            val controller =
+                ExtensionsProcessDisabledBackgroundController(
+                    browserStore,
+                    appStore,
+                    dispatcher,
+                    onExtensionsProcessDisabled = {
+                        invoked = true
+                    },
+                )
 
             controller.start()
 

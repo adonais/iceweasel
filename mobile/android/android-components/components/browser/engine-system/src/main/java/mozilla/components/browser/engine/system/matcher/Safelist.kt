@@ -10,9 +10,7 @@ import android.util.JsonReader
 import androidx.core.net.toUri
 import java.util.ArrayList
 
-/**
- * Stores safe-listed URIs for individual hosts.
- */
+/** Stores safe-listed URIs for individual hosts. */
 internal class Safelist {
     private val rootNode: SafelistTrie = SafelistTrie.createRootNode()
 
@@ -45,8 +43,8 @@ internal class Safelist {
     fun contains(hostUri: Uri, resource: Uri): Boolean {
         return if (TextUtils.isEmpty(hostUri.host) || TextUtils.isEmpty(resource.host) || hostUri.scheme == "data") {
             false
-        } else if (resource.scheme?.isPermittedResourceProtocol() == true &&
-            hostUri.scheme?.isSupportedProtocol() == true
+        } else if (
+            resource.scheme?.isPermittedResourceProtocol() == true && hostUri.scheme?.isSupportedProtocol() == true
         ) {
             contains(hostUri.host!!.reverse(), resource.host!!.reverse(), rootNode)
         } else {
@@ -64,9 +62,7 @@ internal class Safelist {
         return if (site.length() == 1) false else contains(site.substring(1), resource, next)
     }
 
-    /**
-     * Check if this String is a valid resource protocol.
-     */
+    /** Check if this String is a valid resource protocol. */
     private fun String.isPermittedResourceProtocol(): Boolean {
         return this.startsWith("http") ||
             this.startsWith("https") ||
@@ -76,9 +72,7 @@ internal class Safelist {
             this.startsWith("about")
     }
 
-    /**
-     * Check if this String is a supported protocol.
-     */
+    /** Check if this String is a supported protocol. */
     private fun String.isSupportedProtocol(): Boolean {
         return this.isPermittedResourceProtocol() || this.startsWith("error")
     }
@@ -126,9 +120,7 @@ internal class Safelist {
     }
 }
 
-/**
- * A [Trie] implementation which stores a safe list (another [Trie]).
- */
+/** A [Trie] implementation which stores a safe list (another [Trie]). */
 internal class SafelistTrie private constructor(character: Char, parent: SafelistTrie?) : Trie(character, parent) {
     var safelist: Trie? = null
 
@@ -137,8 +129,7 @@ internal class SafelistTrie private constructor(character: Char, parent: Safelis
     }
 
     /**
-     * Adds new nodes (recursively) for all chars in the provided string and stores
-     * the provide safelist Trie.
+     * Adds new nodes (recursively) for all chars in the provided string and stores the provide safelist Trie.
      *
      * @param string the string for which a node should be added.
      * @param safelist the safelist to store.
@@ -149,8 +140,7 @@ internal class SafelistTrie private constructor(character: Char, parent: Safelis
     }
 
     /**
-     * Adds new nodes (recursively) for all chars in the provided string and stores
-     * the provide safelist Trie.
+     * Adds new nodes (recursively) for all chars in the provided string and stores the provide safelist Trie.
      *
      * @param string the string for which a node should be added.
      * @param safelist the safelist to store.
@@ -167,9 +157,7 @@ internal class SafelistTrie private constructor(character: Char, parent: Safelis
     }
 
     companion object {
-        /**
-         * Creates a new root node.
-         */
+        /** Creates a new root node. */
         fun createRootNode(): SafelistTrie {
             return SafelistTrie(Character.MIN_VALUE, null)
         }

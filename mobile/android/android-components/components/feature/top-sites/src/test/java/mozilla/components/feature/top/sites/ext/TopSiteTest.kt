@@ -16,14 +16,15 @@ class TopSiteTest {
 
     @Test
     fun hasUrl() {
-        val topSites = listOf(
-            TopSite.Frecent(
-                id = 1,
-                title = "Mozilla",
-                url = "https://mozilla.com",
-                createdAt = 1,
-            ),
-        )
+        val topSites =
+            listOf(
+                TopSite.Frecent(
+                    id = 1,
+                    title = "Mozilla",
+                    url = "https://mozilla.com",
+                    createdAt = 1,
+                )
+            )
 
         assertTrue(topSites.hasUrl("https://mozilla.com"))
         assertTrue(topSites.hasUrl("https://www.mozilla.com"))
@@ -41,14 +42,15 @@ class TopSiteTest {
 
     @Test
     fun hasHostOneItem() {
-        val topSites = listOf(
-            TopSite.Frecent(
-                id = 1,
-                title = "Amazon",
-                url = "https://amazon.com/playstation",
-                createdAt = 1,
-            ),
-        )
+        val topSites =
+            listOf(
+                TopSite.Frecent(
+                    id = 1,
+                    title = "Amazon",
+                    url = "https://amazon.com/playstation",
+                    createdAt = 1,
+                )
+            )
 
         assertTrue(topSites.hasHost("https://amazon.com"))
         assertTrue(topSites.hasHost("https://www.amazon.com"))
@@ -79,26 +81,27 @@ class TopSiteTest {
 
     @Test
     fun hasHostMultipleItems() {
-        val topSites = listOf(
-            TopSite.Frecent(
-                id = 1,
-                title = "Amazon",
-                url = "https://amazon.com/playstation",
-                createdAt = 1,
-            ),
-            TopSite.Frecent(
-                id = 2,
-                title = "Hotels",
-                url = "https://www.hotels.com/",
-                createdAt = 2,
-            ),
-            TopSite.Frecent(
-                id = 3,
-                title = "eBay",
-                url = "https://www.ebay.com/n/all-categories",
-                createdAt = 3,
-            ),
-        )
+        val topSites =
+            listOf(
+                TopSite.Frecent(
+                    id = 1,
+                    title = "Amazon",
+                    url = "https://amazon.com/playstation",
+                    createdAt = 1,
+                ),
+                TopSite.Frecent(
+                    id = 2,
+                    title = "Hotels",
+                    url = "https://www.hotels.com/",
+                    createdAt = 2,
+                ),
+                TopSite.Frecent(
+                    id = 3,
+                    title = "eBay",
+                    url = "https://www.ebay.com/n/all-categories",
+                    createdAt = 3,
+                ),
+            )
 
         assertTrue(topSites.hasHost("https://amazon.com"))
         assertTrue(topSites.hasHost("https://hotels.com"))

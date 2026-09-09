@@ -7,24 +7,19 @@ package mozilla.components.service.nimbus.messaging
 import android.content.Context
 import android.util.AtomicFile
 import androidx.annotation.VisibleForTesting
+import java.io.File
 import mozilla.components.support.ktx.util.readAndDeserialize
 import mozilla.components.support.ktx.util.writeString
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
 
 internal const val FILE_NAME = "nimbus_messages_metadata.json"
 
-/**
- * A storage that persists [Message.Metadata] into disk.
- */
-class OnDiskMessageMetadataStorage(
-    private val context: Context,
-) : MessageMetadataStorage {
+/** A storage that persists [Message.Metadata] into disk. */
+class OnDiskMessageMetadataStorage(private val context: Context) : MessageMetadataStorage {
     private val diskCacheLock = Any()
 
-    @VisibleForTesting
-    internal var metadataMap: MutableMap<String, Message.Metadata> = hashMapOf()
+    @VisibleForTesting internal var metadataMap: MutableMap<String, Message.Metadata> = hashMapOf()
 
     override suspend fun getMetadata(): Map<String, Message.Metadata> {
         if (metadataMap.isEmpty()) {
@@ -55,13 +50,14 @@ class OnDiskMessageMetadataStorage(
     @VisibleForTesting
     internal fun writeToDisk() {
         synchronized(diskCacheLock) {
-            val json = metadataMap.values.toList().fold("") { acc, next ->
-                if (acc.isEmpty()) {
-                    next.toJson()
-                } else {
-                    "$acc,${next.toJson()}"
+            val json =
+                metadataMap.values.toList().fold("") { acc, next ->
+                    if (acc.isEmpty()) {
+                        next.toJson()
+                    } else {
+                        "$acc,${next.toJson()}"
+                    }
                 }
-            }
             getFile().writeString { "[$json]" }
         }
     }
@@ -72,11 +68,13 @@ class OnDiskMessageMetadataStorage(
 }
 
 internal fun JSONArray.toMetadataMap(): Map<String, Message.Metadata> {
-    return (0 until length()).map { index ->
-        getJSONObject(index).toMetadata()
-    }.associateBy {
-        it.id
-    }
+    return (0 until length())
+        .map { index ->
+            getJSONObject(index).toMetadata()
+        }
+        .associateBy {
+            it.id
+        }
 }
 
 @Suppress("MaxLineLength") // To avoid adding any extra space to the string.

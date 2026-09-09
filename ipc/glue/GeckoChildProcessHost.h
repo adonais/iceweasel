@@ -82,6 +82,16 @@ typedef mozilla::MozPromise<base::ProcessHandle, LaunchError, false>
 // remoteType comes last and may itself contain brackets for IPv6 origins, so
 // it has to be parsed greedily to the end of the line.
 //
+// What a utility process actually does is decided by the actors bound into
+// it, and one process can host several of them, so utility processes log a
+// line per actor. These are logged as the actors connect, not at launch:
+//
+//   UTILITYACTOR [childID = 38] [actorName = audioDecoder_Generic]
+//   UTILITYACTOR [childID = 38] [actorName = jSOracle]
+//
+// actorName is a WebIDLUtilityActorName value, the same name about:processes
+// displays.
+//
 // The lines for one process are emitted from different threads and may arrive
 // in any order. Join on childID rather than pid, and treat the last
 // REMOTETYPE line as the current one.

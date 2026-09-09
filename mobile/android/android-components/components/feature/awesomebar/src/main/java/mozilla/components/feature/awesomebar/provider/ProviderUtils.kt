@@ -15,32 +15,27 @@ import java.util.Locale
 internal fun parseIsoDate(
     date: String,
     timeZone: ZoneId,
-): LocalDateTime? = try {
-    OffsetDateTime.parse(date).atZoneSameInstant(timeZone).toLocalDateTime()
-} catch (_: DateTimeParseException) {
-    null
-}
+): LocalDateTime? =
+    try {
+        OffsetDateTime.parse(date).atZoneSameInstant(timeZone).toLocalDateTime()
+    } catch (_: DateTimeParseException) {
+        null
+    }
 
 /**
  * Parses an ISO-8601 date string while preserving the UTC offset embedded in the string.
  *
- * Flight times are provided in the origin/destination airport's local timezone, so the returned
- * local date/time matches the airport's wall-clock time rather than being re-projected onto the
- * device's timezone.
+ * Flight times are provided in the origin/destination airport's local timezone, so the returned local date/time matches
+ * the airport's wall-clock time rather than being re-projected onto the device's timezone.
  */
-internal fun parseIsoDatePreservingOffset(
-    date: String,
-): LocalDateTime? = try {
-    OffsetDateTime.parse(date).toLocalDateTime()
-} catch (_: DateTimeParseException) {
-    null
-}
+internal fun parseIsoDatePreservingOffset(date: String): LocalDateTime? =
+    try {
+        OffsetDateTime.parse(date).toLocalDateTime()
+    } catch (_: DateTimeParseException) {
+        null
+    }
 
 internal fun formatShortTime(
     dateTime: LocalDateTime,
     locale: Locale,
-): String = dateTime.format(
-    DateTimeFormatter
-        .ofLocalizedTime(FormatStyle.SHORT)
-        .withLocale(locale),
-)
+): String = dateTime.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale))

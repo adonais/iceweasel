@@ -19,9 +19,7 @@ import org.mozilla.focus.fragment.BrowserFragment
 import org.mozilla.focus.telemetry.startuptelemetry.StartupPathProvider
 import org.mozilla.focus.telemetry.startuptelemetry.StartupTypeTelemetry
 
-/**
- * The main entry point for "custom tabs" opened by third-party apps.
- */
+/** The main entry point for "custom tabs" opened by third-party apps. */
 class CustomTabActivity : EdgeToEdgeActivity() {
     private lateinit var customTabId: String
     private lateinit var browserFragment: BrowserFragment
@@ -50,15 +48,14 @@ class CustomTabActivity : EdgeToEdgeActivity() {
 
         if (savedInstanceState == null || !this::browserFragment.isInitialized) {
             browserFragment = BrowserFragment.createForTab(customTabId)
-            supportFragmentManager.beginTransaction()
-                .add(R.id.container, browserFragment)
-                .commit()
+            supportFragmentManager.beginTransaction().add(R.id.container, browserFragment).commit()
         }
 
         startupPathProvider.attachOnActivityOnCreate(lifecycle, intent.unsafe)
-        startupTypeTelemetry = StartupTypeTelemetry(components.startupStateProvider, startupPathProvider).apply {
-            attachOnMainActivityOnCreate(lifecycle)
-        }
+        startupTypeTelemetry =
+            StartupTypeTelemetry(components.startupStateProvider, startupPathProvider).apply {
+                attachOnMainActivityOnCreate(lifecycle)
+            }
 
         onBackPressedDispatcher.addCallback(
             this,

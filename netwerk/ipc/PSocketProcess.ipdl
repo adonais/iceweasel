@@ -80,7 +80,7 @@ struct SocketDataArgs
   SocketInfo[] info;
 };
 
-struct SocketPorcessInitAttributes {
+struct SocketProcessInitAttributes {
   bool mOffline;
   bool mConnectivity;
   bool mInitSandbox;
@@ -128,7 +128,8 @@ parent:
                             nsCString aExtraStringData);
   async InitSocketBackground(Endpoint<PSocketProcessBackgroundParent> aEndpoint);
   async PAltService();
-  async PProxyConfigLookup(nullable nsIURI aUri, uint32_t aFlags);
+  async PProxyConfigLookup(nullable nsIURI aUri, uint32_t aFlags,
+                           bool aIsTRRServiceChannel);
 
   async ExcludeHttp2OrHttp3(HttpConnectionInfoCloneArgs aArgs);
 
@@ -154,7 +155,7 @@ parent:
 #endif  // defined(XP_WIN)
 
 child:
-  async Init(SocketPorcessInitAttributes aAttributes);
+  async Init(SocketProcessInitAttributes aAttributes);
   async PreferenceUpdate(Pref pref);
   async RequestMemoryReport(uint32_t generation,
                             bool anonymize,
@@ -213,11 +214,11 @@ child:
   async FlushFOGData() returns (ByteBuf buf);
 
   // Parent sends persisted TLS session tokens to the socket process on startup.
-  async LoadSSLTokensCache(ByteBuf aBuf);
+  async LoadSSLTokensCache(SSLTokensCacheRecordInfo[] aRecords);
 
   // Parent requests a final TLS session token flush from the socket process
   // before shutdown.
-  async FlushSSLTokensCache() returns (ByteBuf buf);
+  async FlushSSLTokensCache() returns (SSLTokensCacheRecordInfo[] records);
 
   // Test-only method.
   // Asks the Socket process to trigger test-only instrumentation.

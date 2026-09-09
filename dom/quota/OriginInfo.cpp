@@ -58,28 +58,8 @@ OriginInfo::OriginInfo(GroupInfo* aGroupInfo, const nsACString& aOrigin,
 }
 
 #if defined(NIGHTLY_BUILD) || defined(DEBUG)
-void OriginInfo::CheckIfUsageIsConsistent(const nsACString& context) const {
-  QuotaManager* quotaManager = QuotaManager::Get();
-  MOZ_ASSERT(quotaManager);
-
-  uint64_t usage = 0;
-  for (Client::Type type : quotaManager->AllClientTypes()) {
-    AssertNoOverflow(usage, mClientUsages[type].valueOr(0));
-    QM_SCOPED_CONTEXT(context + "["_ns + Client::TypeToText(type) +
-                      "]Underflow"_ns);
-    const uint64_t value = mClientUsages[type].valueOr(0);
-    QM_WARNONLY_TRY(OkIf(value < static_cast<uint64_t>(INT64_MAX)));
-    usage += value;
-  }
-  {
-    QM_SCOPED_CONTEXT(context + "Mismatch"_ns);
-    QM_WARNONLY_TRY(OkIf(mUsage == usage));
-    MOZ_ASSERT(mUsage == usage);
-  }
-  {
-    QM_SCOPED_CONTEXT(context + "mUsageUnderflow"_ns);
-    QM_WARNONLY_TRY(OkIf(mUsage < static_cast<uint64_t>(INT64_MAX)));
-  }
+bool OriginInfo::CheckIfUsageIsConsistent(const nsACString& context) const {
+  return CheckClientUsagesConsistency(mClientUsages, mUsage, context);
 }
 #endif  // defined(NIGHTLY_BUILD) || defined(DEBUG)
 

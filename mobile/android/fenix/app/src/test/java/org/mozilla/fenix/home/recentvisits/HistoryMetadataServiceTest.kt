@@ -36,95 +36,107 @@ class HistoryMetadataServiceTest {
     }
 
     @Test
-    fun `GIVEN a regular page WHEN metadata is created THEN a regular document type observation is recorded`() = runTest(testDispatcher) {
-        val parent = createTab("https://mozilla.org")
-        val tab = createTab("https://blog.mozilla.org", parent = parent)
-        service.createMetadata(tab, searchTerms = "hello", referrerUrl = parent.content.url)
-        testDispatcher.scheduler.advanceUntilIdle()
+    fun `GIVEN a regular page WHEN metadata is created THEN a regular document type observation is recorded`() =
+        runTest(testDispatcher) {
+            val parent = createTab("https://mozilla.org")
+            val tab = createTab("https://blog.mozilla.org", parent = parent)
+            service.createMetadata(tab, searchTerms = "hello", referrerUrl = parent.content.url)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        val expectedKey = HistoryMetadataKey(url = tab.content.url, searchTerm = "hello", referrerUrl = parent.content.url)
-        val expectedObservation = HistoryMetadataObservation.DocumentTypeObservation(documentType = DocumentType.Regular)
-        coVerify { storage.noteHistoryMetadataObservation(expectedKey, expectedObservation) }
-    }
-
-    @Test
-    fun `GIVEN a media page WHEN metadata is created THEN a media document type observation is recorded`() = runTest(testDispatcher) {
-        val tab = createTab("https://media.mozilla.org", mediaSessionState = mockk())
-        service.createMetadata(tab)
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        val expectedKey = HistoryMetadataKey(url = tab.content.url)
-        val expectedObservation = HistoryMetadataObservation.DocumentTypeObservation(documentType = DocumentType.Media)
-        coVerify { storage.noteHistoryMetadataObservation(expectedKey, expectedObservation) }
-    }
+            val expectedKey =
+                HistoryMetadataKey(url = tab.content.url, searchTerm = "hello", referrerUrl = parent.content.url)
+            val expectedObservation =
+                HistoryMetadataObservation.DocumentTypeObservation(documentType = DocumentType.Regular)
+            coVerify { storage.noteHistoryMetadataObservation(expectedKey, expectedObservation) }
+        }
 
     @Test
-    fun `GIVEN existing metadata WHEN metadata is created THEN correct document type observation is recorded`() = runTest(testDispatcher) {
-        val existingKey = HistoryMetadataKey(url = "https://media.mozilla.org", referrerUrl = "https://mozilla.org")
-        val tab = createTab("https://media.mozilla.org", historyMetadata = existingKey)
-        service.createMetadata(tab)
-        testDispatcher.scheduler.advanceUntilIdle()
+    fun `GIVEN a media page WHEN metadata is created THEN a media document type observation is recorded`() =
+        runTest(testDispatcher) {
+            val tab = createTab("https://media.mozilla.org", mediaSessionState = mockk())
+            service.createMetadata(tab)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        var expectedKey = HistoryMetadataKey(url = tab.content.url, referrerUrl = existingKey.referrerUrl)
-        var expectedObservation = HistoryMetadataObservation.DocumentTypeObservation(documentType = DocumentType.Regular)
-        coVerify { storage.noteHistoryMetadataObservation(expectedKey, expectedObservation) }
-
-        val otherTab = createTab("https://blog.mozilla.org", historyMetadata = existingKey)
-        service.createMetadata(otherTab)
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        expectedKey = HistoryMetadataKey(url = otherTab.content.url)
-        expectedObservation = HistoryMetadataObservation.DocumentTypeObservation(documentType = DocumentType.Regular)
-        coVerify { storage.noteHistoryMetadataObservation(expectedKey, expectedObservation) }
-    }
+            val expectedKey = HistoryMetadataKey(url = tab.content.url)
+            val expectedObservation =
+                HistoryMetadataObservation.DocumentTypeObservation(documentType = DocumentType.Media)
+            coVerify { storage.noteHistoryMetadataObservation(expectedKey, expectedObservation) }
+        }
 
     @Test
-    fun `WHEN metadata is updated THEN a view time observation is recorded`() = runTest(testDispatcher) {
-        val now = System.currentTimeMillis()
-        val key = HistoryMetadataKey(url = "https://blog.mozilla.org")
-        val tab = createTab(key.url, historyMetadata = key, lastAccess = now - 60 * 1000)
-        service.updateMetadata(key, tab)
-        testDispatcher.scheduler.advanceUntilIdle()
+    fun `GIVEN existing metadata WHEN metadata is created THEN correct document type observation is recorded`() =
+        runTest(testDispatcher) {
+            val existingKey = HistoryMetadataKey(url = "https://media.mozilla.org", referrerUrl = "https://mozilla.org")
+            val tab = createTab("https://media.mozilla.org", historyMetadata = existingKey)
+            service.createMetadata(tab)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        val observation = slot<HistoryMetadataObservation.ViewTimeObservation>()
-        coVerify { storage.noteHistoryMetadataObservation(key, capture(observation)) }
-        assertTrue(observation.captured.viewTime >= 60 * 1000)
-    }
+            var expectedKey = HistoryMetadataKey(url = tab.content.url, referrerUrl = existingKey.referrerUrl)
+            var expectedObservation =
+                HistoryMetadataObservation.DocumentTypeObservation(documentType = DocumentType.Regular)
+            coVerify { storage.noteHistoryMetadataObservation(expectedKey, expectedObservation) }
 
-    @Test
-    fun `WHEN metadata is updated for a tab with no lastAccess THEN view time observation is not recorded`() = runTest(testDispatcher) {
-        val key = HistoryMetadataKey(url = "https://blog.mozilla.org")
-        val tab = createTab(key.url, historyMetadata = key, lastAccess = 0)
-        service.updateMetadata(key, tab)
-        testDispatcher.scheduler.advanceUntilIdle()
+            val otherTab = createTab("https://blog.mozilla.org", historyMetadata = existingKey)
+            service.createMetadata(otherTab)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify(exactly = 0) { storage.noteHistoryMetadataObservation(key, any()) }
-    }
-
-    @Test
-    fun `WHEN metadata is updated for a tab with unchanged lastAccess THEN view time observation is not recorded`() = runTest(testDispatcher) {
-        val now = System.currentTimeMillis()
-        val key = HistoryMetadataKey(url = "https://blog.mozilla.org")
-        val tab = createTab(key.url, historyMetadata = key, lastAccess = now - 60 * 1000)
-        service.updateMetadata(key, tab)
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        val observation = slot<HistoryMetadataObservation.ViewTimeObservation>()
-        coVerify(exactly = 1) { storage.noteHistoryMetadataObservation(key, capture(observation)) }
-        assertTrue(observation.captured.viewTime >= 60 * 1000)
-
-        // Now, call update again with the same lastAccess value. Storage method won't be hit again.
-        service.updateMetadata(key, tab)
-        testDispatcher.scheduler.advanceUntilIdle()
-        coVerify(exactly = 1) { storage.noteHistoryMetadataObservation(key, any()) }
-    }
+            expectedKey = HistoryMetadataKey(url = otherTab.content.url)
+            expectedObservation =
+                HistoryMetadataObservation.DocumentTypeObservation(documentType = DocumentType.Regular)
+            coVerify { storage.noteHistoryMetadataObservation(expectedKey, expectedObservation) }
+        }
 
     @Test
-    fun `WHEN cleanup is called THEN old metadata is deleted`() = runTest(testDispatcher) {
-        val timestamp = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000
-        service.cleanup(timestamp)
-        testDispatcher.scheduler.advanceUntilIdle()
+    fun `WHEN metadata is updated THEN a view time observation is recorded`() =
+        runTest(testDispatcher) {
+            val now = System.currentTimeMillis()
+            val key = HistoryMetadataKey(url = "https://blog.mozilla.org")
+            val tab = createTab(key.url, historyMetadata = key, lastAccess = now - 60 * 1000)
+            service.updateMetadata(key, tab)
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify { storage.deleteHistoryMetadataOlderThan(timestamp) }
-    }
+            val observation = slot<HistoryMetadataObservation.ViewTimeObservation>()
+            coVerify { storage.noteHistoryMetadataObservation(key, capture(observation)) }
+            assertTrue(observation.captured.viewTime >= 60 * 1000)
+        }
+
+    @Test
+    fun `WHEN metadata is updated for a tab with no lastAccess THEN view time observation is not recorded`() =
+        runTest(testDispatcher) {
+            val key = HistoryMetadataKey(url = "https://blog.mozilla.org")
+            val tab = createTab(key.url, historyMetadata = key, lastAccess = 0)
+            service.updateMetadata(key, tab)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify(exactly = 0) { storage.noteHistoryMetadataObservation(key, any()) }
+        }
+
+    @Test
+    fun `WHEN metadata is updated for a tab with unchanged lastAccess THEN view time observation is not recorded`() =
+        runTest(testDispatcher) {
+            val now = System.currentTimeMillis()
+            val key = HistoryMetadataKey(url = "https://blog.mozilla.org")
+            val tab = createTab(key.url, historyMetadata = key, lastAccess = now - 60 * 1000)
+            service.updateMetadata(key, tab)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val observation = slot<HistoryMetadataObservation.ViewTimeObservation>()
+            coVerify(exactly = 1) { storage.noteHistoryMetadataObservation(key, capture(observation)) }
+            assertTrue(observation.captured.viewTime >= 60 * 1000)
+
+            // Now, call update again with the same lastAccess value. Storage method won't be hit again.
+            service.updateMetadata(key, tab)
+            testDispatcher.scheduler.advanceUntilIdle()
+            coVerify(exactly = 1) { storage.noteHistoryMetadataObservation(key, any()) }
+        }
+
+    @Test
+    fun `WHEN cleanup is called THEN old metadata is deleted`() =
+        runTest(testDispatcher) {
+            val timestamp = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000
+            service.cleanup(timestamp)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify { storage.deleteHistoryMetadataOlderThan(timestamp) }
+        }
 }

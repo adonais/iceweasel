@@ -5,11 +5,33 @@ const { ToolbarBadgeHub } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/ToolbarBadgeHub.sys.mjs"
 );
 
+/**
+ * Clicks a badged toolbar button to clear its badge, and closes the account
+ * panel that the click opens in the button's own window.
+ *
+ * @param {Element} button
+ *   The badged toolbar button to click.
+ */
+async function clickToClearBadge(button) {
+  let panelShown = BrowserTestUtils.waitForEvent(
+    button.ownerDocument,
+    "popupshown",
+    true,
+    event => event.target.id === "customizationui-widget-panel"
+  );
+  button.click();
+  let panel = (await panelShown).target;
+
+  let panelHidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
+  panel.hidePopup();
+  await panelHidden;
+}
+
 add_task(async function test_setup() {
   // Cleanup pref value because we click the fxa accounts button.
   // This is not required during tests because we "force show" the message
   // by sending it directly to the Hub bypassing targeting.
-  registerCleanupFunction(() => {
+  registerCleanupFunction(async () => {
     // Clicking on the Firefox Accounts button while in the signed out
     // state opens a new tab for signing in.
     // We'll clean those up here for now.
@@ -33,7 +55,7 @@ add_task(async function test_fxa_badge_shown_nodelay() {
   let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
   // Click the button and clear the badge that occurs normally at startup
   let fxaButton = browserWindow.document.getElementById(msg.content.target);
-  fxaButton.click();
+  await clickToClearBadge(fxaButton);
 
   await TestUtils.waitForCondition(
     () =>
@@ -72,7 +94,7 @@ add_task(async function test_fxa_badge_shown_nodelay() {
 
   // Click the button and clear the badge
   fxaButton = document.getElementById(msg.content.target);
-  fxaButton.click();
+  await clickToClearBadge(fxaButton);
 
   await TestUtils.waitForCondition(
     () =>
@@ -97,7 +119,7 @@ add_task(async function test_fxa_badge_shown_withdelay() {
   let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
   // Click the button and clear the badge that occurs normally at startup
   let fxaButton = browserWindow.document.getElementById(msg.content.target);
-  fxaButton.click();
+  await clickToClearBadge(fxaButton);
 
   await TestUtils.waitForCondition(
     () =>
@@ -136,7 +158,7 @@ add_task(async function test_fxa_badge_shown_withdelay() {
 
   // Click the button and clear the badge
   fxaButton = document.getElementById(msg.content.target);
-  fxaButton.click();
+  await clickToClearBadge(fxaButton);
 
   await TestUtils.waitForCondition(
     () =>

@@ -5,6 +5,7 @@
 #include "MediaStatusManager.h"
 
 #include "MediaControlService.h"
+#include "mozilla/Components.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Document.h"
@@ -268,7 +269,8 @@ nsString MediaStatusManager::GetDefaultFaviconURL() const {
   // Convert URI from `chrome://XXX` to `file://XXX` because we would like to
   // let OS related frameworks, such as SMTC and MPRIS, handle this URL in order
   // to show the icon on virtual controller interface.
-  nsCOMPtr<nsIChromeRegistry> regService = services::GetChromeRegistry();
+  nsCOMPtr<nsIChromeRegistry> regService =
+      components::ChromeRegistry::Service();
   if (!regService) {
     return u""_ns;
   }

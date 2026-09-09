@@ -8,7 +8,7 @@
  * utility methods for subclasses, and so forth.
  */
 
-#include "mozilla/dom/Element.h"
+#include "Element.h"
 
 #include <inttypes.h>
 
@@ -107,6 +107,7 @@
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/NodeInfo.h"
+#include "mozilla/dom/PerformanceContainerTiming.h"
 #include "mozilla/dom/PointerEventHandler.h"
 #include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/Promise.h"
@@ -575,12 +576,15 @@ void Element::SetCustomElementRegistry(
   if (aCustomElementRegistry->IsScoped()) {
     SetCustomElementRegistryState(CustomElementRegistryState::Scoped);
     CustomElementRegistry::SetScopedRegistry(*this, *aCustomElementRegistry);
+    // https://html.spec.whatwg.org/#scoped-document-set
+    // Append element's node document to the registry's scoped document set.
+    aCustomElementRegistry->AddToScopedDocumentSet(OwnerDoc());
   } else {
     SetCustomElementRegistryState(CustomElementRegistryState::Global);
   }
 }
 
-void Element::SetKeepCustomElementRegistryNull() {
+void Element::SetNullCustomElementRegistry() {
   MOZ_ASSERT(StaticPrefs::dom_scoped_custom_element_registries_enabled());
   MOZ_ASSERT(!HasCustomElementRegistry(),
              "We shouldn't set a custom element registry without clearing "
@@ -1601,10 +1605,10 @@ already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
   return shadowRoot.forget();
 }
 
-void Element::AttachAndSetUAShadowRoot(NotifyUAWidget aNotifyUAWidget,
-                                       DelegatesFocus aDelegatesFocus,
-                                       CustomSlotDispatch aCustomSlotDispatch,
-                                       bool aNotify) {
+void Element::AttachAndSetUAShadowRoot(
+    NotifyUAWidget aNotifyUAWidget, DelegatesFocus aDelegatesFocus /* = No */,
+    CustomSlotDispatch aCustomSlotDispatch /* = No */,
+    bool aNotify /* = true*/) {
   MOZ_DIAGNOSTIC_ASSERT(!CanAttachShadowDOM(),
                         "Cannot be used to attach UA shadow DOM");
   if (OwnerDoc()->IsStaticDocument()) {
@@ -1621,13 +1625,34 @@ void Element::AttachAndSetUAShadowRoot(NotifyUAWidget aNotifyUAWidget,
   }
 
   MOZ_ASSERT(GetShadowRoot()->IsUAWidget());
-  if (aNotifyUAWidget == NotifyUAWidget::Yes) {
-    NotifyUAWidgetSetupOrChange();
+  if (aNotifyUAWidget == NotifyUAWidget::No) {
+    return;
   }
+
+  // Note that this method may be called during a BindToTree() or
+  // UnbindFromTree() calls. Then, we shouldn't run script synchronously.
+  // Therefore, we want to make this dispatch the chrome event asynchronously to
+  // avoid to mark this method, BindToTree() and UnbindFromTree() as
+  // MOZ_CAN_RUN_SCRIPT.
+  MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript(),
+             "Block running script before calling "
+             "Element::AttachAndSetUAShadowRoot!");
+
+  AddScriptRunnerToNotifyUAWidgetSetupOrChange();
 }
 
-void Element::NotifyUAWidgetSetupOrChange() {
+void Element::AddScriptRunnerToNotifyUAWidgetSetupOrChange() {
   MOZ_ASSERT(IsInComposedDoc());
+
+  // Note that this method may be called during a BindToTree() or
+  // UnbindFromTree() calls. Then, we shouldn't run script synchronously.
+  // Therefore, we want to make this dispatch the chrome event asynchronously to
+  // avoid to mark this method, BindToTree() and UnbindFromTree() as
+  // MOZ_CAN_RUN_SCRIPT.
+  MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript(),
+             "Block running script before calling "
+             "Element::AddScriptRunnerToNotifyUAWidgetSetupOrChange!");
+
   Document* doc = OwnerDoc();
   if (doc->IsStaticDocument()) {
     return;
@@ -1640,15 +1665,15 @@ void Element::NotifyUAWidgetSetupOrChange() {
   // UA Widget to re-init.
   nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
       "Element::NotifyUAWidgetSetupOrChange::UAWidgetSetupOrChange",
-      [self = RefPtr<Element>(this), doc = RefPtr<Document>(doc)]() {
-        nsContentUtils::DispatchChromeEvent(doc, self,
-                                            u"UAWidgetSetupOrChange"_ns,
+      [self = RefPtr<Element>(this)]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+        nsContentUtils::DispatchChromeEvent(self, u"UAWidgetSetupOrChange"_ns,
                                             CanBubble::eYes, Cancelable::eNo);
       }));
 }
 
-void Element::TeardownUAShadowRoot(NotifyUAWidget aNotify,
-                                   UnattachShadowRoot aUnattachShadowRoot) {
+void Element::TeardownUAShadowRoot(
+    NotifyUAWidget aNotifyUAWidget,
+    UnattachShadowRoot aUnattachShadowRoot /* = Yes */) {
   MOZ_ASSERT(IsInComposedDoc());
   if (!GetShadowRoot()) {
     return;
@@ -1658,9 +1683,18 @@ void Element::TeardownUAShadowRoot(NotifyUAWidget aNotify,
     UnattachShadow();
   }
 
-  if (aNotify == NotifyUAWidget::No) {
+  if (aNotifyUAWidget == NotifyUAWidget::No) {
     return;
   }
+
+  // Note that this method may be called during a BindToTree() or
+  // UnbindFromTree() calls. Then, we shouldn't run script synchronously.
+  // Therefore, we want to make this dispatch the chrome event asynchronously to
+  // avoid to mark this method, BindToTree() and UnbindFromTree() as
+  // MOZ_CAN_RUN_SCRIPT.
+  MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript(),
+             "Block running script before calling "
+             "Element::TeardownUAShadowRoot!");
 
   Document* doc = OwnerDoc();
   if (doc->IsStaticDocument()) {
@@ -1670,19 +1704,20 @@ void Element::TeardownUAShadowRoot(NotifyUAWidget aNotify,
   // The runnable will dispatch an event to tear down UA Widget.
   nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
       "Element::NotifyUAWidgetTeardownAndUnattachShadow::UAWidgetTeardown",
-      [self = RefPtr<Element>(this), doc = RefPtr<Document>(doc)]() {
-        // Bail out if the element is being collected by CC
-        bool hasHadScriptObject = true;
-        nsIScriptGlobalObject* scriptObject =
-            doc->GetScriptHandlingObject(hasHadScriptObject);
-        if (!scriptObject && hasHadScriptObject) {
-          return;
-        }
+      [self = RefPtr<Element>(this), doc = RefPtr<Document>(doc)]()
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+            // Bail out if the element is being collected by CC
+            bool hasHadScriptObject = true;
+            nsIScriptGlobalObject* scriptObject =
+                doc->GetScriptHandlingObject(hasHadScriptObject);
+            if (!scriptObject && hasHadScriptObject) {
+              return;
+            }
 
-        (void)nsContentUtils::DispatchChromeEvent(
-            doc, self, u"UAWidgetTeardown"_ns, CanBubble::eYes,
-            Cancelable::eNo);
-      }));
+            (void)nsContentUtils::DispatchChromeEvent(
+                doc, self, u"UAWidgetTeardown"_ns, CanBubble::eYes,
+                Cancelable::eNo);
+          }));
 }
 
 void Element::UnattachShadow() {
@@ -3001,6 +3036,14 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
+  // Cache our container-timing root from our (already-bound) parent before
+  // recursing into kids, so each can read it from us. Only document-tree
+  // content contributes to container timing.
+  if (aContext.OwnerDoc().MayHaveContainerTimingAttributes() &&
+      aContext.InUncomposedDoc()) {
+    UpdateContainerTimingRootFromParent(&aParent);
+  }
+
   // Now recurse into our kids. Ensure this happens after binding the shadow
   // root so that directionality of slots is updated.
   {
@@ -3059,6 +3102,65 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   return NS_OK;
 }
 
+Element* Element::GetContainerTimingRoot() const {
+  return static_cast<Element*>(GetProperty(nsGkAtoms::containerTimingRoot));
+}
+
+void Element::UpdateContainerTimingRootFromParent(nsINode* aParent) {
+  // This element is tracked by the nearest strict-ancestor element carrying a
+  // `containertiming` attribute, unless it carries `containertimingignore`,
+  // which stops upward propagation. Because the parent's root is already
+  // cached, this is O(1) per element and the whole subtree is populated
+  // top-down (during BindToTree or a subtree recompute).
+  //
+  // Only an HTMLElement can be a container root or an ignored subtree root.
+  // `containertiming` and `containertimingignore` are rare, so the subtree
+  // bloom filter lets us skip the HasAttr scans.
+  static const uint64_t containerTimingBits =
+      AttrArray::HashForBloomFilter(nsGkAtoms::containertiming);
+  static const uint64_t ignoreBits =
+      AttrArray::HashForBloomFilter(nsGkAtoms::containerTimingIgnore);
+
+  const bool rootsIgnoredSubtree = IsHTMLElement() &&
+                                   mAttrs.BloomMayHave(ignoreBits) &&
+                                   HasAttr(nsGkAtoms::containerTimingIgnore);
+
+  Element* root = nullptr;
+  Element* parent = Element::FromNodeOrNull(aParent);
+  if (parent && !rootsIgnoredSubtree) {
+    if (parent->IsHTMLElement() &&
+        parent->mAttrs.BloomMayHave(containerTimingBits) &&
+        parent->HasAttr(nsGkAtoms::containertiming)) {
+      root = parent;
+    } else {
+      // The parent is not itself a container root, so inherit its cached root.
+      // This is deliberately namespace-agnostic: a non-HTML parent can never be
+      // a root, but it does relay one to the HTML content below it.
+      root = parent->GetContainerTimingRoot();
+    }
+  }
+
+  if (root) {
+    // The stored Element* is raw and non-owning. This is safe because `root` is
+    // a strict ancestor, it cannot be destroyed while this element remains
+    // connected, the property is cleared in UnbindFromTree. So it can never
+    // dangle.
+    SetProperty(nsGkAtoms::containerTimingRoot, root);
+  } else if (HasProperties()) {
+    RemoveProperty(nsGkAtoms::containerTimingRoot);
+  }
+}
+
+void Element::RecomputeContainerTimingRootForSubtree() {
+  UpdateContainerTimingRootFromParent(GetParentNode());
+  for (nsIContent* node = GetNextNode(this); node;
+       node = node->GetNextNode(this)) {
+    if (Element* element = Element::FromNode(node)) {
+      element->UpdateContainerTimingRootFromParent(element->GetParentNode());
+    }
+  }
+}
+
 static bool WillDetachFromShadowOnUnbind(const Element& aElement,
                                          bool aNullParent) {
   // If our parent still is in a shadow tree by now, and we're not removing
@@ -3094,6 +3196,25 @@ void Element::UnbindFromTree(UnbindContext& aContext) {
       if (!parent->HasFlag(ELEMENT_IS_DATALIST_OR_HAS_DATALIST_ANCESTOR)) {
         UnsetFlags(ELEMENT_IS_DATALIST_OR_HAS_DATALIST_ANCESTOR);
       }
+    }
+  }
+
+  if (aContext.OwnerDoc().MayHaveContainerTimingAttributes()) {
+    // Drop the cached container-timing root so it can never dangle: an ancestor
+    // root may be destroyed once we are no longer in its subtree.
+    if (HasProperties()) {
+      RemoveProperty(nsGkAtoms::containerTimingRoot);
+    }
+
+    static const uint64_t containerTimingBits =
+        AttrArray::HashForBloomFilter(nsGkAtoms::containertiming);
+
+    // A full disconnect should ensure a new connection creates a fresh painted
+    // region.
+    if (!aContext.IsMove() && IsHTMLElement() &&
+        mAttrs.BloomMayHave(containerTimingBits) &&
+        HasAttr(nsGkAtoms::containertiming)) {
+      ContainerTimingHelpers::DropRecordForContainerRoot(this);
     }
   }
 
@@ -3773,7 +3894,8 @@ static MOZ_ALWAYS_INLINE void SetLifecycleCallbackNamespaceURI(
 
 nsresult Element::SetNoNameSpaceAttrOnNewlyCreatedElement(
     already_AddRefed<nsAtom> aName, nsHtml5String& aValue,
-    bool& aIsPendingMappedAttributeEvaluation) {
+    bool& aIsPendingMappedAttributeEvaluation,
+    const nsAutoScriptBlocker& aGuard) {
   MOZ_ASSERT(aValue);
   MOZ_ASSERT(IsHTMLElement());
   MOZ_ASSERT(!GetParentNode());
@@ -5042,7 +5164,8 @@ already_AddRefed<Promise> Element::RequestFullscreen(
   if (const char* error = GetFullscreenError(aCallerType, OwnerDoc())) {
     request->Reject(error);
   } else {
-    OwnerDoc()->RequestFullscreen(std::move(request));
+    const RefPtr<Document> doc = OwnerDoc();
+    doc->RequestFullscreen(std::move(request));
   }
   return promise.forget();
 }
@@ -5110,9 +5233,9 @@ already_AddRefed<DOMMatrixReadOnly> Element::GetTransformToAncestor(
     // If aAncestor is not actually an ancestor of this (including nullptr),
     // then the call to GetTransformToAncestor will return the transform
     // all the way up through the parent chain.
-    transform = nsLayoutUtils::GetTransformToAncestor(RelativeTo{primaryFrame},
-                                                      RelativeTo{ancestorFrame},
-                                                      nsIFrame::IN_CSS_UNITS)
+    transform = nsLayoutUtils::GetTransformToAncestor(
+                    RelativeTo{primaryFrame}, RelativeTo{ancestorFrame},
+                    TransformMatrixFlag::InCSSUnits)
                     .GetMatrix();
   }
 
@@ -5127,9 +5250,9 @@ already_AddRefed<DOMMatrixReadOnly> Element::GetTransformToParent() {
   Matrix4x4 transform;
   if (primaryFrame) {
     nsIFrame* parentFrame = primaryFrame->GetParent();
-    transform = nsLayoutUtils::GetTransformToAncestor(RelativeTo{primaryFrame},
-                                                      RelativeTo{parentFrame},
-                                                      nsIFrame::IN_CSS_UNITS)
+    transform = nsLayoutUtils::GetTransformToAncestor(
+                    RelativeTo{primaryFrame}, RelativeTo{parentFrame},
+                    TransformMatrixFlag::InCSSUnits)
                     .GetMatrix();
   }
 
@@ -5146,7 +5269,7 @@ already_AddRefed<DOMMatrixReadOnly> Element::GetTransformToViewport() {
         nsLayoutUtils::GetTransformToAncestor(
             RelativeTo{primaryFrame},
             RelativeTo{nsLayoutUtils::GetDisplayRootFrame(primaryFrame)},
-            nsIFrame::IN_CSS_UNITS)
+            TransformMatrixFlag::InCSSUnits)
             .GetMatrix();
   }
 

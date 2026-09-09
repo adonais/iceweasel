@@ -90,8 +90,12 @@ class AutofillCryptoTest {
         assertEquals(KeyGenerationReason.New, key.wasGenerated)
 
         // now, let's corrupt the key. It'll be regenerated
-        // this key is shaped correctly, but of course it won't be the same as what we got back in the first call to key()
-        securePrefs.putString(AutofillCrypto.AUTOFILL_KEY, "{\"kty\":\"oct\",\"k\":\"GhsmEtujZN_qMEgw1ZHhcJhdAFR9EkUgb94qANel-P4\"}")
+        // this key is shaped correctly, but of course it won't be the same as what we got back in the first call to
+        // key()
+        securePrefs.putString(
+            AutofillCrypto.AUTOFILL_KEY,
+            "{\"kty\":\"oct\",\"k\":\"GhsmEtujZN_qMEgw1ZHhcJhdAFR9EkUgb94qANel-P4\"}",
+        )
 
         val key2 = crypto.getOrGenerateKey()
         assertEquals(KeyGenerationReason.RecoveryNeeded.Corrupt, key2.wasGenerated)
@@ -126,7 +130,8 @@ class AutofillCryptoTest {
         assertNull(crypto.encrypt(badKey, plaintext))
 
         // This isn't a valid key.
-        val corruptKey = ManagedKey(key = "{\"kty\":\"oct\",\"k\":\"GhsmEtujZN_qMEgw1ZHhcJhdAFR9EkU\"}", wasGenerated = null)
+        val corruptKey =
+            ManagedKey(key = "{\"kty\":\"oct\",\"k\":\"GhsmEtujZN_qMEgw1ZHhcJhdAFR9EkU\"}", wasGenerated = null)
         assertNull(crypto.encrypt(corruptKey, plaintext))
 
         val goodKey = crypto.getOrGenerateKey()

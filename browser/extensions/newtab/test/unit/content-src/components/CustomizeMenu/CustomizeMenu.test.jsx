@@ -2,6 +2,7 @@ import React from "react";
 import { mount } from "enzyme";
 import { Provider } from "react-redux";
 import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
+import { actionTypes as at } from "common/Actions.mjs";
 import { combineReducers, createStore } from "redux";
 
 import { CustomizeMenu } from "content-src/components/CustomizeMenu/CustomizeMenu";
@@ -348,6 +349,92 @@ describe("<CustomizeMenu>", () => {
     const dialogNode = instance.dialogRef.current;
     instance.onDialogClick({ target: dialogNode });
     assert.calledOnce(DEFAULT_PROPS.onClose);
+  });
+
+  it("disables controls whose pref is locked and leaves the others alone", () => {
+    const state = {
+      ...DEFAULT_STATE,
+      Prefs: {
+        ...DEFAULT_STATE.Prefs,
+        values: {
+          ...DEFAULT_STATE.Prefs.values,
+          lockedPrefs: ["feeds.topsites"],
+        },
+      },
+    };
+
+    wrapper = mount(
+      <WrapWithProvider state={state}>
+        <CustomizeMenu {...DEFAULT_PROPS} showing={true} />
+      </WrapWithProvider>
+    );
+
+    assert.isTrue(
+      wrapper.find("#shortcuts-toggle").getDOMNode().disabled,
+      "the locked pref's toggle is disabled"
+    );
+    assert.notOk(
+      wrapper.find("#pocket-toggle").getDOMNode().disabled,
+      "an unlocked pref's toggle is left enabled"
+    );
+  });
+
+  it("re-enables a control when its pref is unlocked", () => {
+    const store = createStore(combineReducers(reducers), {
+      ...DEFAULT_STATE,
+      Prefs: {
+        ...DEFAULT_STATE.Prefs,
+        values: {
+          ...DEFAULT_STATE.Prefs.values,
+          lockedPrefs: ["feeds.topsites"],
+        },
+      },
+    });
+
+    wrapper = mount(
+      <Provider store={store}>
+        <CustomizeMenu {...DEFAULT_PROPS} showing={true} />
+      </Provider>
+    );
+    const toggle = wrapper.find("#shortcuts-toggle").getDOMNode();
+    assert.isTrue(toggle.disabled, "the locked pref's toggle starts disabled");
+
+    store.dispatch({
+      type: at.PREF_CHANGED,
+      data: { name: "lockedPrefs", value: [] },
+    });
+
+    assert.isFalse(toggle.disabled, "unlocking re-enables the toggle");
+  });
+
+  it("disables a lock-managed control when only its pref is locked", () => {
+    const state = {
+      ...DEFAULT_STATE,
+      Prefs: {
+        ...DEFAULT_STATE.Prefs,
+        values: {
+          ...DEFAULT_STATE.Prefs.values,
+          lockedPrefs: [
+            "discoverystream.sections.personalization.inferred.user.enabled",
+          ],
+        },
+      },
+    };
+
+    wrapper = mount(
+      <WrapWithProvider state={state}>
+        <CustomizeMenu
+          {...DEFAULT_PROPS}
+          showing={true}
+          mayHaveInferredPersonalization={true}
+        />
+      </WrapWithProvider>
+    );
+
+    assert.isTrue(
+      wrapper.find("#inferred-personalization").prop("disabled"),
+      "the lock alone disables it while Pocket is on"
+    );
   });
 
   it("does not call onClose when clicking inside the dialog content", () => {

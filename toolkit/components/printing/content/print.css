@@ -146,6 +146,13 @@ input[type="radio"]:disabled + span > label {
   opacity: 0.5;
 }
 
+#orientation-control {
+  --button-font-size-small: none;
+
+  width: 100%;
+  box-sizing: border-box;
+}
+
 #custom-range {
   margin: 0;
   margin-top: var(--space-xsmall);
@@ -158,18 +165,6 @@ input[type="radio"]:disabled + span > label {
   &:disabled {
     /* Let clicks on the disabled input select the radio button */
     pointer-events: none;
-  }
-}
-
-.toggle-group-label {
-  padding: var(--space-xsmall) var(--space-small);
-
-  #landscape + &::before {
-    content: url("chrome://global/skin/icons/page-landscape.svg");
-  }
-
-  #portrait + &::before {
-    content: url("chrome://global/skin/icons/page-portrait.svg");
   }
 }
 

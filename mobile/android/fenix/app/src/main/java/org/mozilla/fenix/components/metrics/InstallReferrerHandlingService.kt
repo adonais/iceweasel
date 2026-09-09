@@ -9,6 +9,7 @@ import android.os.RemoteException
 import androidx.annotation.VisibleForTesting
 import com.android.installreferrer.api.InstallReferrerClient
 import com.android.installreferrer.api.InstallReferrerStateListener
+import java.net.URLDecoder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -16,18 +17,16 @@ import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.nimbus.FxNimbus
-import java.net.URLDecoder
 
 private const val GCLID_PREFIX = "gclid="
 private const val ADJUST_REFTAG_PREFIX = "adjust_reftag="
 
 /**
- * A service that fetches the install referrer and stores it for use after the user accepts
- * the Terms of Service.
+ * A service that fetches the install referrer and stores it for use after the user accepts the Terms of Service.
  *
- * **WARNING:** This service IS started before the user accepts the Terms of Service.
- * Do NOT use the stored [InstallReferrerHandlingService.response] in any code path that fires
- * telemetry or makes network calls until after ToS is accepted.
+ * **WARNING:** This service IS started before the user accepts the Terms of Service. Do NOT use the stored
+ * [InstallReferrerHandlingService.response] in any code path that fires telemetry or makes network calls until after
+ * ToS is accepted.
  *
  * @param context The application context.
  * @param scope Coroutine scope used to launch background work.
@@ -41,9 +40,7 @@ class InstallReferrerHandlingService(
     @VisibleForTesting
     internal var clientFactory: (Context) -> InstallReferrerClientWrapper = ::DefaultInstallReferrerClient
 
-    /**
-     * Starts the connection with the install referrer and handle the response.
-     */
+    /** Starts the connection with the install referrer and handle the response. */
     fun start() {
         val client = clientFactory(context)
 
@@ -53,17 +50,18 @@ class InstallReferrerHandlingService(
                     when (responseCode) {
                         InstallReferrerClient.InstallReferrerResponse.OK -> {
                             // Connection established.
-                            val installReferrerResponse = try {
-                                client.getInstallReferrer()
-                            } catch (e: RemoteException) {
-                                // We can't do anything about this.
-                                logger.error("Failed to retrieve install referrer response", e)
-                                null
-                            } catch (e: SecurityException) {
-                                // https://issuetracker.google.com/issues/72926755
-                                logger.error("Failed to retrieve install referrer response", e)
-                                null
-                            }
+                            val installReferrerResponse =
+                                try {
+                                    client.getInstallReferrer()
+                                } catch (e: RemoteException) {
+                                    // We can't do anything about this.
+                                    logger.error("Failed to retrieve install referrer response", e)
+                                    null
+                                } catch (e: SecurityException) {
+                                    // https://issuetracker.google.com/issues/72926755
+                                    logger.error("Failed to retrieve install referrer response", e)
+                                    null
+                                }
 
                             val distributionIdManager = context.components.distributionIdManager
 
@@ -84,7 +82,7 @@ class InstallReferrerHandlingService(
                                 context.components.settings.isUserSkyflagAttributed =
                                     isSkyflagAttribution(installReferrerResponse)
                                 distributionIdManager.updateDistributionIdFromUtmParams(
-                                    UTMParams.parseUTMParameters(installReferrerResponse),
+                                    UTMParams.parseUTMParameters(installReferrerResponse)
                                 )
                                 scope.launch {
                                     distributionIdManager.startAdjustIfSkippingConsentScreen()
@@ -107,8 +105,7 @@ class InstallReferrerHandlingService(
                         InstallReferrerClient.InstallReferrerResponse.DEVELOPER_ERROR,
                         InstallReferrerClient.InstallReferrerResponse.PERMISSION_ERROR,
                         InstallReferrerClient.InstallReferrerResponse.SERVICE_UNAVAILABLE,
-                        InstallReferrerClient.InstallReferrerResponse.SERVICE_DISCONNECTED,
-                            -> {
+                        InstallReferrerClient.InstallReferrerResponse.SERVICE_DISCONNECTED -> {
                             context.components.settings.shouldShowMarketingOnboarding = false
                             safeEndConnection(client)
                             return
@@ -120,13 +117,13 @@ class InstallReferrerHandlingService(
                     context.components.settings.shouldShowMarketingOnboarding = false
                     safeEndConnection(client)
                 }
-            },
+            }
         )
     }
 
     /**
-     * Companion object responsible for determine if a install referrer response should result in
-     * showing the marketing onboarding flow.
+     * Companion object responsible for determine if a install referrer response should result in showing the marketing
+     * onboarding flow.
      */
     companion object {
         private val marketingPrefixes = listOf(GCLID_PREFIX, ADJUST_REFTAG_PREFIX)
@@ -141,8 +138,8 @@ class InstallReferrerHandlingService(
         }
 
         /**
-         * The raw install referrer string. Only read this after the user has accepted ToS —
-         * do not use it to trigger telemetry or network calls before consent is given.
+         * The raw install referrer string. Only read this after the user has accepted ToS — do not use it to trigger
+         * telemetry or network calls before consent is given.
          */
         var response: String? = null
 
@@ -179,8 +176,7 @@ class InstallReferrerHandlingService(
             if (installReferrerResponse.isNullOrBlank()) return false
             val decoded = decodeInstallReferrer(installReferrerResponse)
 
-            val clickId = UTMParams.parseInstallReferrer(decoded)[ADJUST_EXTERNAL_CLICK_ID]
-                ?: return false
+            val clickId = UTMParams.parseInstallReferrer(decoded)[ADJUST_EXTERNAL_CLICK_ID] ?: return false
 
             return TIKTOK_EXTERNAL_CLICK_ID_PREFIXES.any { clickId.startsWith(it, ignoreCase = true) }
         }
@@ -194,8 +190,7 @@ class InstallReferrerHandlingService(
                 return true
             }
 
-            val clickId = UTMParams.parseInstallReferrer(decoded)[ADJUST_EXTERNAL_CLICK_ID]
-                ?: return false
+            val clickId = UTMParams.parseInstallReferrer(decoded)[ADJUST_EXTERNAL_CLICK_ID] ?: return false
 
             return clickId.startsWith(REDDIT_EXTERNAL_CLICK_ID_PREFIX, ignoreCase = true)
         }
@@ -213,8 +208,7 @@ class InstallReferrerHandlingService(
             if (installReferrerResponse.isNullOrBlank()) return false
             val decoded = decodeInstallReferrer(installReferrerResponse)
 
-            val clickId = UTMParams.parseInstallReferrer(decoded)[ADJUST_EXTERNAL_CLICK_ID]
-                ?: return false
+            val clickId = UTMParams.parseInstallReferrer(decoded)[ADJUST_EXTERNAL_CLICK_ID] ?: return false
 
             return clickId.startsWith(MOLOCO_EXTERNAL_CLICK_ID_PREFIX, ignoreCase = true)
         }

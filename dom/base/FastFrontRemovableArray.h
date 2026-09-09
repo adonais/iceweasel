@@ -20,6 +20,16 @@ class FastFrontRemovableArray {
  public:
   static const size_t NoIndex = InternalList::NoIndex;
 
+  FastFrontRemovableArray() = default;
+  FastFrontRemovableArray(FastFrontRemovableArray&& aOther)
+      : mList(std::move(aOther.mList)),
+        mIndexOfFirstElement(std::exchange(aOther.mIndexOfFirstElement, 0)) {}
+  FastFrontRemovableArray& operator=(FastFrontRemovableArray&& aOther) {
+    mList = std::move(aOther.mList);
+    mIndexOfFirstElement = std::exchange(aOther.mIndexOfFirstElement, 0);
+    return *this;
+  }
+
   operator Span<const T>() const { return AsSpan(); }
   operator Span<T>() { return AsSpan(); }
 
@@ -33,6 +43,7 @@ class FastFrontRemovableArray {
   bool IsEmpty() const { return Length() == 0; }
 
   void RemoveElementAt(size_t aIndex) {
+    MOZ_ASSERT(mIndexOfFirstElement <= mList.Length());
     if (aIndex == 0) {
       mList[mIndexOfFirstElement++] = nullptr;
       if (mIndexOfFirstElement > std::max(size_t(4), mList.Length() / 4)) {
@@ -53,6 +64,7 @@ class FastFrontRemovableArray {
 
   template <typename U>
   void InsertElementAt(size_t aIndex, U* aElem) {
+    MOZ_ASSERT(mIndexOfFirstElement <= mList.Length());
     if (mIndexOfFirstElement && aIndex == 0) {
       mList[--mIndexOfFirstElement] = aElem;
       return;

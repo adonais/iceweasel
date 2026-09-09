@@ -8,9 +8,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import org.mozilla.samples.browser.R
 
-/**
- * An activity to manage add-ons.
- */
+/** An activity to manage add-ons. */
 class AddonsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

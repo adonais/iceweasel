@@ -23,12 +23,9 @@ import mozilla.components.support.utils.ext.getParcelableArrayListExtraCompat
 import org.mozilla.samples.browser.R
 import org.mozilla.samples.browser.ext.components
 
-private const val LEARN_MORE_URL =
-    "https://support.mozilla.org/kb/add-compatibility-firefox-preview"
+private const val LEARN_MORE_URL = "https://support.mozilla.org/kb/add-compatibility-firefox-preview"
 
-/**
- * Activity for managing unsupported add-ons.
- */
+/** Activity for managing unsupported add-ons. */
 class NotYetSupportedAddonActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,9 +39,7 @@ class NotYetSupportedAddonActivity : AppCompatActivity() {
             .commit()
     }
 
-    /**
-     * Fragment for managing add-ons that are not yet supported by the browser.
-     */
+    /** Fragment for managing add-ons that are not yet supported by the browser. */
     class NotYetSupportedAddonFragment : Fragment(), UnsupportedAddonsAdapterDelegate {
         private lateinit var addons: List<Addon>
         private var adapter: UnsupportedAddonsAdapter? = null
@@ -54,8 +49,7 @@ class NotYetSupportedAddonActivity : AppCompatActivity() {
             container: ViewGroup?,
             savedInstanceState: Bundle?,
         ): View? {
-            addons =
-                requireNotNull(arguments?.getParcelableArrayListCompat("add_ons", Addon::class.java))
+            addons = requireNotNull(arguments?.getParcelableArrayListCompat("add_ons", Addon::class.java))
             return inflater.inflate(R.layout.fragment_not_yet_supported_addons, container, false)
         }
 
@@ -64,11 +58,12 @@ class NotYetSupportedAddonActivity : AppCompatActivity() {
 
             val context = requireContext()
             val recyclerView: RecyclerView = view.findViewById(R.id.unsupported_add_ons_list)
-            adapter = UnsupportedAddonsAdapter(
-                addonManager = context.components.addonManager,
-                unsupportedAddonsAdapterDelegate = this@NotYetSupportedAddonFragment,
-                addons = addons,
-            )
+            adapter =
+                UnsupportedAddonsAdapter(
+                    addonManager = context.components.addonManager,
+                    unsupportedAddonsAdapterDelegate = this@NotYetSupportedAddonFragment,
+                    addons = addons,
+                )
 
             recyclerView.layoutManager = LinearLayoutManager(context)
             recyclerView.adapter = adapter
@@ -84,22 +79,21 @@ class NotYetSupportedAddonActivity : AppCompatActivity() {
         }
 
         override fun onUninstallSuccess() {
-            Toast.makeText(context, "Successfully removed add-on", Toast.LENGTH_SHORT)
-                .show()
+            Toast.makeText(context, "Successfully removed add-on", Toast.LENGTH_SHORT).show()
             if (adapter?.itemCount == 0) {
                 activity?.onBackPressedDispatcher?.onBackPressed()
             }
         }
 
         companion object {
-            /**
-             * Create an [NotYetSupportedAddonFragment] with add_ons as a required parameter.
-             */
-            fun create(addons: ArrayList<Addon>) = NotYetSupportedAddonFragment().apply {
-                arguments = Bundle().apply {
-                    putParcelableArrayList("add_ons", addons)
+            /** Create an [NotYetSupportedAddonFragment] with add_ons as a required parameter. */
+            fun create(addons: ArrayList<Addon>) =
+                NotYetSupportedAddonFragment().apply {
+                    arguments =
+                        Bundle().apply {
+                            putParcelableArrayList("add_ons", addons)
+                        }
                 }
-            }
         }
     }
 }

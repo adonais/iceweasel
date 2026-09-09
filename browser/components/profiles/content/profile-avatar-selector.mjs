@@ -109,6 +109,7 @@ export class ProfileAvatarSelector extends MozLitElement {
     bottomRightMover: "#mover-bottomRight",
     avatarPicker: "#avatars",
     avatars: { all: "moz-visual-picker-item" },
+    dialog: "dialog",
   };
 
   constructor() {
@@ -161,16 +162,14 @@ export class ProfileAvatarSelector extends MozLitElement {
   }
 
   toggleHidden(force = null) {
-    if (force === true) {
-      this.hidden = true;
-    } else if (force === false) {
-      this.hidden = false;
+    if (force === true || (this.dialog.open && force !== false)) {
+      this.dialog.close();
     } else {
-      this.hidden = !this.hidden;
+      this.dialog.show();
     }
 
     // Add or remove event listeners as necessary
-    if (this.hidden) {
+    if (!this.dialog.open) {
       document.removeEventListener("click", this);
       window.removeEventListener("keydown", this);
     } else {
@@ -1015,29 +1014,31 @@ export class ProfileAvatarSelector extends MozLitElement {
         rel="stylesheet"
         href="chrome://browser/content/profiles/profile-avatar-selector.css"
       />
-      <moz-card id="avatar-selector">
-        <div id="content">
-          <moz-segmented-control
-            class="button-group"
-            value=${this.view === VIEWS.ICON ? VIEWS.ICON : VIEWS.CUSTOM}
-            @change=${this.handleTabChange}
-          >
-            <moz-segmented-control-item
-              id="icon"
-              value=${VIEWS.ICON}
-              size="small"
-              data-l10n-id="avatar-selector-icon-tab"
-            ></moz-segmented-control-item>
-            <moz-segmented-control-item
-              id="custom"
-              value=${VIEWS.CUSTOM}
-              size="small"
-              data-l10n-id="avatar-selector-custom-tab"
-            ></moz-segmented-control-item>
-          </moz-segmented-control>
-          ${this.contentTemplate()}
-        </div>
-      </moz-card>`;
+      <dialog data-l10n-id="avatar-selector-dialog">
+        <moz-card id="avatar-selector">
+          <div id="content">
+            <moz-segmented-control
+              class="button-group"
+              value=${this.view === VIEWS.ICON ? VIEWS.ICON : VIEWS.CUSTOM}
+              @change=${this.handleTabChange}
+            >
+              <moz-segmented-control-item
+                id="icon"
+                value=${VIEWS.ICON}
+                size="small"
+                data-l10n-id="avatar-selector-icon-tab"
+              ></moz-segmented-control-item>
+              <moz-segmented-control-item
+                id="custom"
+                value=${VIEWS.CUSTOM}
+                size="small"
+                data-l10n-id="avatar-selector-custom-tab"
+              ></moz-segmented-control-item>
+            </moz-segmented-control>
+            ${this.contentTemplate()}
+          </div>
+        </moz-card>
+      </dialog>`;
   }
 }
 

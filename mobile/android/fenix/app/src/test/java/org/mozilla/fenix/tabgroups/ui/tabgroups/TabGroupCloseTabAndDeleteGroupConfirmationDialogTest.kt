@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.tabgroups.ui.tabgroups
 
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -10,11 +14,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.tabgroups.CloseLastTabAndDeleteTabGroupConfirmationDialog
 import org.mozilla.fenix.tabgroups.TabGroupsTestTag
+
 @RunWith(AndroidJUnit4::class)
 class TabGroupCloseTabAndDeleteGroupConfirmationDialogTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun confirmCloseTabAndDeleteGroupDialogClickedTest() {
@@ -23,12 +27,11 @@ class TabGroupCloseTabAndDeleteGroupConfirmationDialogTest {
         composeTestRule.setContent {
             CloseLastTabAndDeleteTabGroupConfirmationDialog(
                 onConfirmDelete = { onConfirmInvoked = true },
-                onCancel = { },
+                onCancel = {},
             )
         }
 
-        composeTestRule.onNodeWithTag(TabGroupsTestTag.CLOSE_LAST_TAB_AND_DELETE_DIALOG_CONFIRM_BUTTON)
-            .performClick()
+        composeTestRule.onNodeWithTag(TabGroupsTestTag.CLOSE_LAST_TAB_AND_DELETE_DIALOG_CONFIRM_BUTTON).performClick()
 
         Assert.assertTrue(onConfirmInvoked)
     }
@@ -39,13 +42,12 @@ class TabGroupCloseTabAndDeleteGroupConfirmationDialogTest {
 
         composeTestRule.setContent {
             CloseLastTabAndDeleteTabGroupConfirmationDialog(
-                onConfirmDelete = { },
+                onConfirmDelete = {},
                 onCancel = { onCancelInvoked = true },
             )
         }
 
-        composeTestRule.onNodeWithTag(TabGroupsTestTag.CLOSE_LAST_TAB_AND_DELETE_DIALOG_CANCEL_BUTTON)
-            .performClick()
+        composeTestRule.onNodeWithTag(TabGroupsTestTag.CLOSE_LAST_TAB_AND_DELETE_DIALOG_CANCEL_BUTTON).performClick()
 
         Assert.assertTrue(onCancelInvoked)
     }

@@ -111,6 +111,10 @@ add_task(async function testFullscreenCloseAddonInstallPrompt() {
     "Opened notification is webextension permissions prompt"
   );
 
+  // The permissions prompt is autofocused on open (See Bug 2059855), move
+  // focus back to the tab before requesting fullscreen.
+  gBrowser.selectedBrowser.focus();
+
   // Switch to fullscreen and test for addon installation prompt close
   await changeFullscreen(gBrowser.selectedBrowser, true);
   await TestUtils.waitForCondition(

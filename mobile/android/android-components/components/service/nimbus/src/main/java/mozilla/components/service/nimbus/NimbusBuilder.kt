@@ -5,6 +5,7 @@
 package mozilla.components.service.nimbus
 
 import android.content.Context
+import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import mozilla.components.support.base.log.logger.Logger
@@ -12,15 +13,14 @@ import mozilla.components.support.base.utils.NamedThreadFactory
 import org.mozilla.experiments.nimbus.AbstractNimbusBuilder
 import org.mozilla.experiments.nimbus.NimbusDelegate
 import org.mozilla.experiments.nimbus.internal.NimbusServerSettings
-import java.util.concurrent.Executors
 
 private val logger = Logger("service/Nimbus")
 
 /**
  * Class to build instances of Nimbus.
  *
- * This _does not_ invoke any networking calls on the subsequent [Nimbus] object, so may safely
- * used before the engine is warmed up.
+ * This _does not_ invoke any networking calls on the subsequent [Nimbus] object, so may safely used before the engine
+ * is warmed up.
  */
 class NimbusBuilder(context: Context) : AbstractNimbusBuilder<NimbusApi>(context) {
     override fun createDelegate(): NimbusDelegate =
@@ -34,24 +34,23 @@ class NimbusBuilder(context: Context) : AbstractNimbusBuilder<NimbusApi>(context
     override fun newNimbus(
         appInfo: NimbusAppInfo,
         serverSettings: NimbusServerSettings?,
-    ) = Nimbus(
-        context,
-        appInfo = appInfo,
-        coenrollingFeatureIds = getCoenrollingFeatureIds(),
-        server = serverSettings,
-        deviceInfo = createDeviceInfo(),
-        delegate = createDelegate(),
-        recordedContext = recordedContext,
-        geckoPrefHandler = geckoPrefHandler,
-    ).apply {
-        this.register(createObserver())
-    }
+    ) =
+        Nimbus(
+                context,
+                appInfo = appInfo,
+                coenrollingFeatureIds = getCoenrollingFeatureIds(),
+                server = serverSettings,
+                deviceInfo = createDeviceInfo(),
+                delegate = createDelegate(),
+                recordedContext = recordedContext,
+                geckoPrefHandler = geckoPrefHandler,
+            )
+            .apply {
+                this.register(createObserver())
+            }
 
     override fun newNimbusDisabled() = NimbusDisabled(context)
 }
 
-private fun createNamedCoroutineScope(name: String) = CoroutineScope(
-    Executors.newSingleThreadExecutor(
-        NamedThreadFactory(name),
-    ).asCoroutineDispatcher(),
-)
+private fun createNamedCoroutineScope(name: String) =
+    CoroutineScope(Executors.newSingleThreadExecutor(NamedThreadFactory(name)).asCoroutineDispatcher())

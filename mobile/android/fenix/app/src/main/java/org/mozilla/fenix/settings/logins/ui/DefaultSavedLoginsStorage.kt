@@ -6,13 +6,9 @@ package org.mozilla.fenix.settings.logins.ui
 
 import org.mozilla.fenix.utils.Settings
 
-/**
- * An interface to persist the state of the saved logins screen.
- */
+/** An interface to persist the state of the saved logins screen. */
 interface SavedLoginsStorage {
-    /**
-     * Indicates the sort order of the saved logins list.
-     */
+    /** Indicates the sort order of the saved logins list. */
     var savedLoginsSortOrder: LoginsSortOrder
 }
 
@@ -21,9 +17,7 @@ interface SavedLoginsStorage {
  *
  * @property settings The settings object used to persist the saved logins screen state.
  */
-class DefaultSavedLoginsStorage(
-    val settings: Settings,
-) : SavedLoginsStorage {
+class DefaultSavedLoginsStorage(val settings: Settings) : SavedLoginsStorage {
     override var savedLoginsSortOrder
         get() = LoginsSortOrder.fromString(settings.loginsListSortOrder)
         set(value) {

@@ -30,84 +30,59 @@ import androidx.recyclerview.widget.RecyclerView
  */
 @Suppress("TooManyFunctions", "LargeClass")
 internal class ExpandableLayout private constructor(context: Context) : FrameLayout(context) {
-    /**
-     * The wrapped view that needs to be collapsed / expanded.
-     */
-    @VisibleForTesting
-    internal lateinit var wrappedView: ViewGroup
+    /** The wrapped view that needs to be collapsed / expanded. */
+    @VisibleForTesting internal lateinit var wrappedView: ViewGroup
+
+    /** Listener of touches in the empty space left by the collapsed view. */
+    @VisibleForTesting internal var blankTouchListener: (() -> Unit)? = null
+
+    /** Index of the last menu item that should be visible when the wrapped view is collapsed. */
+    @VisibleForTesting internal var lastVisibleItemIndexWhenCollapsed: Int = Int.MAX_VALUE
+
+    /** Index of the sticky footer, if such an item is set. */
+    @VisibleForTesting internal var stickyItemIndex: Int = RecyclerView.NO_POSITION
 
     /**
-     * Listener of touches in the empty space left by the collapsed view.
+     * Height of wrapped view when collapsed. Calculated once based on the position of the "isCollapsingMenuLimit"
+     * BrowserMenuItem. Capped by [parentHeight]
      */
-    @VisibleForTesting
-    internal var blankTouchListener: (() -> Unit)? = null
+    @VisibleForTesting internal var collapsedHeight: Int = NOT_CALCULATED_DEFAULT_HEIGHT
 
     /**
-     * Index of the last menu item that should be visible when the wrapped view is collapsed.
+     * Height of wrapped view when expanded. Calculated once based on measuredHeighWithMargins(). Capped by
+     * [parentHeight]
      */
-    @VisibleForTesting
-    internal var lastVisibleItemIndexWhenCollapsed: Int = Int.MAX_VALUE
+    @VisibleForTesting internal var expandedHeight: Int = NOT_CALCULATED_DEFAULT_HEIGHT
+
+    /** Available space given by the parent. */
+    @VisibleForTesting internal var parentHeight: Int = NOT_CALCULATED_DEFAULT_HEIGHT
 
     /**
-     * Index of the sticky footer, if such an item is set.
-     */
-    @VisibleForTesting
-    internal var stickyItemIndex: Int = RecyclerView.NO_POSITION
-
-    /**
-     * Height of wrapped view when collapsed.
-     * Calculated once based on the position of the "isCollapsingMenuLimit" BrowserMenuItem.
-     * Capped by [parentHeight]
-     */
-    @VisibleForTesting
-    internal var collapsedHeight: Int = NOT_CALCULATED_DEFAULT_HEIGHT
-
-    /**
-     * Height of wrapped view when expanded.
-     * Calculated once based on measuredHeighWithMargins().
-     * Capped by [parentHeight]
-     */
-    @VisibleForTesting
-    internal var expandedHeight: Int = NOT_CALCULATED_DEFAULT_HEIGHT
-
-    /**
-     * Available space given by the parent.
-     */
-    @VisibleForTesting
-    internal var parentHeight: Int = NOT_CALCULATED_DEFAULT_HEIGHT
-
-    /**
-     * Whether to intercept touches while the view is collapsed.
-     * If true:
+     * Whether to intercept touches while the view is collapsed. If true:
      * - a swipe up will be intercepted and used to expand the wrapped view.
-     * - a swipe in the empty space left by the collapsed view will be intercepted
-     * and [blankTouchListener] will be called.
+     * - a swipe in the empty space left by the collapsed view will be intercepted and [blankTouchListener] will be
+     *   called.
      * - other touches / gestures will be left to pass through to the children.
      */
-    @VisibleForTesting
-    internal var isCollapsed = true
+    @VisibleForTesting internal var isCollapsed = true
 
     /**
-     * Whether to intercept touches while the view is expanding.
-     * If true:
+     * Whether to intercept touches while the view is expanding. If true:
      * - all touches / gestures will be intercepted.
      */
-    @VisibleForTesting
-    internal var isExpandInProgress = false
+    @VisibleForTesting internal var isExpandInProgress = false
 
     /**
-     * Distance in pixels a touch can wander before we think the user is scrolling.
-     * (If this would be bigger than that of a child the child will react to the scroll first)
+     * Distance in pixels a touch can wander before we think the user is scrolling. (If this would be bigger than that
+     * of a child the child will react to the scroll first)
      */
-    @VisibleForTesting
-    internal var touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
+    @VisibleForTesting internal var touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
 
     /**
-     * Y axis coordinate of the [MotionEvent.ACTION_DOWN] event.
-     * Used to calculate the distance scrolled, to know when the view should be expanded.
+     * Y axis coordinate of the [MotionEvent.ACTION_DOWN] event. Used to calculate the distance scrolled, to know when
+     * the view should be expanded.
      */
-    @VisibleForTesting
-    internal var initialYCoord = NOT_CALCULATED_Y_TOUCH_COORD
+    @VisibleForTesting internal var initialYCoord = NOT_CALCULATED_Y_TOUCH_COORD
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         callParentOnMeasure(widthMeasureSpec, heightMeasureSpec)
@@ -129,7 +104,8 @@ internal class ExpandableLayout private constructor(context: Context) : FrameLay
     override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
         if (shouldInterceptTouches()) {
             return when (ev?.actionMasked) {
-                MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {
+                MotionEvent.ACTION_CANCEL,
+                MotionEvent.ACTION_UP -> {
                     false // Allow click listeners firing for children.
                 }
                 MotionEvent.ACTION_DOWN -> {
@@ -175,8 +151,7 @@ internal class ExpandableLayout private constructor(context: Context) : FrameLay
         }
     }
 
-    @VisibleForTesting
-    internal fun shouldInterceptTouches() = isCollapsed && !isExpandInProgress
+    @VisibleForTesting internal fun shouldInterceptTouches() = isCollapsed && !isExpandInProgress
 
     @VisibleForTesting
     internal fun isTouchingTheWrappedView(ev: MotionEvent): Boolean {
@@ -282,8 +257,8 @@ internal class ExpandableLayout private constructor(context: Context) : FrameLay
     }
 
     /**
-     * Whether based on the previous movements, when considering this [event]
-     * it can be inferred that the user is currently scrolling up.
+     * Whether based on the previous movements, when considering this [event] it can be inferred that the user is
+     * currently scrolling up.
      */
     @VisibleForTesting
     internal fun isScrollingUp(event: MotionEvent): Boolean {
@@ -314,18 +289,20 @@ internal class ExpandableLayout private constructor(context: Context) : FrameLay
         val listView = (wrappedView.getChildAt(0) as RecyclerView)
         // Reconcile adapter positions with listView children positions.
         // Avoid IndexOutOfBounds / NullPointer exceptions.
-        val validLastVisibleItemIndexWhenCollapsed = getChildPositionForAdapterIndex(
-            listView,
-            lastVisibleItemIndexWhenCollapsed,
-        )
-        val validStickyItemIndex = getChildPositionForAdapterIndex(
-            listView,
-            stickyItemIndex,
-        )
+        val validLastVisibleItemIndexWhenCollapsed =
+            getChildPositionForAdapterIndex(
+                listView,
+                lastVisibleItemIndexWhenCollapsed,
+            )
+        val validStickyItemIndex =
+            getChildPositionForAdapterIndex(
+                listView,
+                stickyItemIndex,
+            )
 
         // Simple sanity check
-        if (validLastVisibleItemIndexWhenCollapsed >= listView.childCount ||
-            validLastVisibleItemIndexWhenCollapsed <= 0
+        if (
+            validLastVisibleItemIndexWhenCollapsed >= listView.childCount || validLastVisibleItemIndexWhenCollapsed <= 0
         ) {
             return measuredHeight
         }
@@ -372,12 +349,11 @@ internal class ExpandableLayout private constructor(context: Context) : FrameLay
     }
 
     /**
-     * In a dynamic menu - one in which items or their positions may change the adapter position and
-     * the RecyclerView position for the same item may differ.
-     * This method helps reconcile that.
+     * In a dynamic menu - one in which items or their positions may change the adapter position and the RecyclerView
+     * position for the same item may differ. This method helps reconcile that.
      *
-     * @return the RecyclerView position for the item at the [adapterIndex] in the adapter or
-     * [RecyclerView.NO_POSITION] if there is no child for the indicated adapter position.
+     * @return the RecyclerView position for the item at the [adapterIndex] in the adapter or [RecyclerView.NO_POSITION]
+     *   if there is no child for the indicated adapter position.
      */
     @VisibleForTesting
     internal fun getChildPositionForAdapterIndex(listView: RecyclerView, adapterIndex: Int): Int {
@@ -391,17 +367,12 @@ internal class ExpandableLayout private constructor(context: Context) : FrameLay
     }
 
     internal companion object {
-        @VisibleForTesting
-        const val NOT_CALCULATED_DEFAULT_HEIGHT = -1
+        @VisibleForTesting const val NOT_CALCULATED_DEFAULT_HEIGHT = -1
 
-        @VisibleForTesting
-        const val NOT_CALCULATED_Y_TOUCH_COORD = 0f
+        @VisibleForTesting const val NOT_CALCULATED_Y_TOUCH_COORD = 0f
 
-        /**
-         * Duration of the expand animation. Same value as the one from [R.android.integer.config_shortAnimTime]
-         */
-        @VisibleForTesting
-        const val DEFAULT_DURATION_EXPAND_ANIMATOR = 200L
+        /** Duration of the expand animation. Same value as the one from [R.android.integer.config_shortAnimTime] */
+        @VisibleForTesting const val DEFAULT_DURATION_EXPAND_ANIMATOR = 200L
 
         /**
          * Wraps a content view in an [ExpandableLayout].
@@ -416,8 +387,8 @@ internal class ExpandableLayout private constructor(context: Context) : FrameLay
             blankTouchListener: (() -> Unit)? = null,
         ): ExpandableLayout {
             val expandableView = ExpandableLayout(contentView.context)
-            val params = MarginLayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
-                .apply {
+            val params =
+                MarginLayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
                     leftMargin = contentView.marginLeft
                     topMargin = contentView.marginTop
                     rightMargin = contentView.marginRight

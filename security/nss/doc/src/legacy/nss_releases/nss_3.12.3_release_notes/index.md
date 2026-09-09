@@ -4,39 +4,39 @@
 
 (nss-3-12-3-release-notes)=
 
-## [NSS 3.12.3 Release Notes](#nss_3.12.3_release_notes)
+## NSS 3.12.3 Release Notes
 
 (nss-3-12-3-release-date)=
 
-### [2009-04-01](#2009-04-01)
+### 2009-04-01
 
 :::{container}
 Newsgroup: [mozilla.dev.tech.crypto](news://news.mozilla.org/mozilla.dev.tech.crypto)
 :::
 
-### [Contents](#contents)
+### Contents
 
 :::{container}
 
 - [Introduction](#introduction)
-- [Distribution Information](#distribution_information)
-- [New in NSS 3.12.3](#new_in_nss_3.12.3)
-- [Bugs Fixed](#bugs_fixed)
+- [Distribution Information](#distribution-information)
+- [New in NSS 3.12.3](#new-in-nss-3123)
+- [Bugs Fixed](#bugs-fixed)
 - [Documentation](#documentation)
 - [Compatibility](#compatibility)
 - [Feedback](#feedback)
 :::
 
-### [Introduction](#introduction)
+### Introduction
 
 :::{container}
 Network Security Services (NSS) 3.12.3 is a patch release for NSS 3.12. The bug fixes in NSS
-3.12.3 are described in the "[Bugs Fixed](#bugs_fixed)" section below.
+3.12.3 are described in the "[Bugs Fixed](#bugs-fixed)" section below.
 
 NSS 3.12.3 is tri-licensed under the MPL 1.1/GPL 2.0/LGPL 2.1.
 :::
 
-### [Distribution Information](#distribution_information)
+### Distribution Information
 
 :::{container}
 The CVS tag for the NSS 3.12.3 release is NSS_3_12_3_RTM. NSS 3.12.3 requires
@@ -76,7 +76,7 @@ and shared libraries, which NSS 3.12.3 requires. NSPR 4.7.4 binary distributions
 
 (new-in-nss-3-12-3)=
 
-### [New in NSS 3.12.3](#new_in_nss_3.12.3)
+### New in NSS 3.12.3
 
 :::{container}
 
@@ -93,78 +93,78 @@ and shared libraries, which NSS 3.12.3 requires. NSPR 4.7.4 binary distributions
   variables.
   Here is a table of the new environment variables introduced in NSS 3.12.3 and information
   about how they affect these new behaviors. The information in this table is excerpted from
-  {ref}`mozilla_projects_nss_reference_nss_environment_variables`
+  {ref}`mozilla-projects-nss-reference-nss-environment-variables`
 
   ```{eval-rst}
-  +--------------------------------+--------------------------------+--------------------------------+
-  | **Environment Variable**       | **Value Type**                 | **Description**                |
-  +--------------------------------+--------------------------------+--------------------------------+
-  | NSRANDCOUNT                    | Integer                        | Sets the maximum number of     |
-  |                                | (byte count)                   | bytes to read from the file    |
-  |                                |                                | named in the environment       |
-  |                                |                                | variable NSRANDFILE (see       |
-  |                                |                                | below). Makes NSRANDFILE       |
-  |                                |                                | usable with /dev/urandom.      |
-  +--------------------------------+--------------------------------+--------------------------------+
-  | NSS_ALLOW_WEAK_SIGNATURE_ALG   | Boolean                        | Enables the use of MD2 and MD4 |
-  |                                | (any non-empty value to        | hash algorithms inside         |
-  |                                | enable)                        | signatures. This was allowed   |
-  |                                |                                | by default before NSS 3.12.3.  |
-  +--------------------------------+--------------------------------+--------------------------------+
-  | NSS_HASH_ALG_SUPPORT           | String                         | Specifies algorithms allowed   |
-  |                                |                                | to be used in certain          |
-  |                                |                                | applications, such as in       |
-  |                                |                                | signatures on certificates and |
-  |                                |                                | CRLs. See documentation at     |
-  |                                |                                | `this                          |
-  |                                |                                | link                           |
-  |                                |                                | <https://bugzilla.mozilla.org/ |
-  |                                |                                | show_bug.cgi?id=483113#c0>`__. |
-  +--------------------------------+--------------------------------+--------------------------------+
-  | NSS_STRICT_NOFORK              | String                         | It is an error to try to use a |
-  |                                | ("1",                          | PKCS#11 crypto module in a     |
-  |                                | "DISABLED",                    | process before it has been     |
-  |                                | or any other non-empty value)  | initialized in that process,   |
-  |                                |                                | even if the module was         |
-  |                                |                                | initialized in the parent      |
-  |                                |                                | process. Beginning in NSS      |
-  |                                |                                | 3.12.3, Softoken will detect   |
-  |                                |                                | this error. This environment   |
-  |                                |                                | variable controls Softoken's   |
-  |                                |                                | response to that error.        |
-  |                                |                                |                                |
-  |                                |                                | -  If set to "1" or unset,     |
-  |                                |                                |    Softoken will trigger an    |
-  |                                |                                |    assertion failure in debug  |
-  |                                |                                |    builds, and will report an  |
-  |                                |                                |    error in non-DEBUG builds.  |
-  |                                |                                | -  If set to "DISABLED",       |
-  |                                |                                |    Softoken will ignore forks, |
-  |                                |                                |    and behave as it did in     |
-  |                                |                                |    older versions.             |
-  |                                |                                | -  If set to any other         |
-  |                                |                                |    non-empty value, Softoken   |
-  |                                |                                |    will report an error in     |
-  |                                |                                |    both DEBUG and non-DEBUG    |
-  |                                |                                |    builds.                     |
-  +--------------------------------+--------------------------------+--------------------------------+
-  | NSS_USE_DECODED_CKA_EC_POINT   | Boolean                        | Tells NSS to send EC key       |
-  |                                | (any non-empty value to        | points across the PKCS#11      |
-  |                                | enable)                        | interface in the non-standard  |
-  |                                |                                | unencoded format that was used |
-  |                                |                                | by default before NSS 3.12.3.  |
-  |                                |                                | The new key point format is a  |
-  |                                |                                | DER encoded ASN.1 OCTET        |
-  |                                |                                | STRING.                        |
-  +--------------------------------+--------------------------------+--------------------------------+
-  | NSS_USE_SHEXP_IN_CERT_NAME     | Boolean                        | Tells NSS to allow shell-style |
-  |                                | (any non-empty value to        | wildcard patterns in           |
-  |                                | enable)                        | certificates to match SSL      |
-  |                                |                                | server host names. This        |
-  |                                |                                | behavior was the default       |
-  |                                |                                | before NSS 3.12.3. The new     |
-  |                                |                                | behavior conforms to RFC 2818. |
-  +--------------------------------+--------------------------------+--------------------------------+
+  +------------------------------+-------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+  | **Environment Variable**     | **Value Type**                | **Description**                                                                                                                                                                                              |
+  +------------------------------+-------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+  | NSRANDCOUNT                  | Integer                       | Sets the maximum number of                                                                                                                                                                                   |
+  |                              | (byte count)                  | bytes to read from the file                                                                                                                                                                                  |
+  |                              |                               | named in the environment                                                                                                                                                                                     |
+  |                              |                               | variable NSRANDFILE (see                                                                                                                                                                                     |
+  |                              |                               | below). Makes NSRANDFILE                                                                                                                                                                                     |
+  |                              |                               | usable with /dev/urandom.                                                                                                                                                                                    |
+  +------------------------------+-------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+  | NSS_ALLOW_WEAK_SIGNATURE_ALG | Boolean                       | Enables the use of MD2 and MD4                                                                                                                                                                               |
+  |                              | (any non-empty value to       | hash algorithms inside                                                                                                                                                                                       |
+  |                              | enable)                       | signatures. This was allowed                                                                                                                                                                                 |
+  |                              |                               | by default before NSS 3.12.3.                                                                                                                                                                                |
+  +------------------------------+-------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+  | NSS_HASH_ALG_SUPPORT         | String                        | Specifies algorithms allowed to be used in certain applications, such as in signatures on certificates and CRLs. See documentation at `thislink <https://bugzilla.mozilla.org/show_bug.cgi?id=483113#c0>`__. |
+  |                              |                               |                                                                                                                                                                                                              |
+  |                              |                               |                                                                                                                                                                                                              |
+  |                              |                               |                                                                                                                                                                                                              |
+  |                              |                               |                                                                                                                                                                                                              |
+  |                              |                               |                                                                                                                                                                                                              |
+  |                              |                               |                                                                                                                                                                                                              |
+  |                              |                               |                                                                                                                                                                                                              |
+  |                              |                               |                                                                                                                                                                                                              |
+  +------------------------------+-------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+  | NSS_STRICT_NOFORK            | String                        | It is an error to try to use a                                                                                                                                                                               |
+  |                              | ("1",                         | PKCS#11 crypto module in a                                                                                                                                                                                   |
+  |                              | "DISABLED",                   | process before it has been                                                                                                                                                                                   |
+  |                              | or any other non-empty value) | initialized in that process,                                                                                                                                                                                 |
+  |                              |                               | even if the module was                                                                                                                                                                                       |
+  |                              |                               | initialized in the parent                                                                                                                                                                                    |
+  |                              |                               | process. Beginning in NSS                                                                                                                                                                                    |
+  |                              |                               | 3.12.3, Softoken will detect                                                                                                                                                                                 |
+  |                              |                               | this error. This environment                                                                                                                                                                                 |
+  |                              |                               | variable controls Softoken's                                                                                                                                                                                 |
+  |                              |                               | response to that error.                                                                                                                                                                                      |
+  |                              |                               |                                                                                                                                                                                                              |
+  |                              |                               | -  If set to "1" or unset,                                                                                                                                                                                   |
+  |                              |                               |    Softoken will trigger an                                                                                                                                                                                  |
+  |                              |                               |    assertion failure in debug                                                                                                                                                                                |
+  |                              |                               |    builds, and will report an                                                                                                                                                                                |
+  |                              |                               |    error in non-DEBUG builds.                                                                                                                                                                                |
+  |                              |                               | -  If set to "DISABLED",                                                                                                                                                                                     |
+  |                              |                               |    Softoken will ignore forks,                                                                                                                                                                               |
+  |                              |                               |    and behave as it did in                                                                                                                                                                                   |
+  |                              |                               |    older versions.                                                                                                                                                                                           |
+  |                              |                               | -  If set to any other                                                                                                                                                                                       |
+  |                              |                               |    non-empty value, Softoken                                                                                                                                                                                 |
+  |                              |                               |    will report an error in                                                                                                                                                                                   |
+  |                              |                               |    both DEBUG and non-DEBUG                                                                                                                                                                                  |
+  |                              |                               |    builds.                                                                                                                                                                                                   |
+  +------------------------------+-------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+  | NSS_USE_DECODED_CKA_EC_POINT | Boolean                       | Tells NSS to send EC key                                                                                                                                                                                     |
+  |                              | (any non-empty value to       | points across the PKCS#11                                                                                                                                                                                    |
+  |                              | enable)                       | interface in the non-standard                                                                                                                                                                                |
+  |                              |                               | unencoded format that was used                                                                                                                                                                               |
+  |                              |                               | by default before NSS 3.12.3.                                                                                                                                                                                |
+  |                              |                               | The new key point format is a                                                                                                                                                                                |
+  |                              |                               | DER encoded ASN.1 OCTET                                                                                                                                                                                      |
+  |                              |                               | STRING.                                                                                                                                                                                                      |
+  +------------------------------+-------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+  | NSS_USE_SHEXP_IN_CERT_NAME   | Boolean                       | Tells NSS to allow shell-style                                                                                                                                                                               |
+  |                              | (any non-empty value to       | wildcard patterns in                                                                                                                                                                                         |
+  |                              | enable)                       | certificates to match SSL                                                                                                                                                                                    |
+  |                              |                               | server host names. This                                                                                                                                                                                      |
+  |                              |                               | behavior was the default                                                                                                                                                                                     |
+  |                              |                               | before NSS 3.12.3. The new                                                                                                                                                                                   |
+  |                              |                               | behavior conforms to RFC 2818.                                                                                                                                                                               |
+  +------------------------------+-------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
   ```
 
 - New Korean SEED cipher:
@@ -223,7 +223,7 @@ and shared libraries, which NSS 3.12.3 requires. NSPR 4.7.4 binary distributions
   - The file watcomfx.h is removed.
 :::
 
-### [Bugs Fixed](#bugs_fixed)
+### Bugs Fixed
 
 :::{container}
 The following bugs have been fixed in NSS 3.12.3.
@@ -389,7 +389,7 @@ The following bugs have been fixed in NSS 3.12.3.
   uses argument uninitialized by caller pbe_PK11AlgidToParam
 :::
 
-### [Documentation](#documentation)
+### Documentation
 
 :::{container}
 For a list of the primary NSS documentation pages on mozilla.org, see [NSS
@@ -400,7 +400,7 @@ release of NSS 3.11 include the following:
 - [NSS Shared DB](http://wiki.mozilla.org/NSS_Shared_DB)
 :::
 
-### [Compatibility](#compatibility)
+### Compatibility
 
 :::{container}
 NSS 3.12.3 shared libraries are backward compatible with all older NSS 3.x shared libraries. A
@@ -410,7 +410,7 @@ to the functions listed in [NSS Public Functions](../ref/nssfunctions.html) will
 compatible with future versions of the NSS shared libraries.
 :::
 
-### [Feedback](#feedback)
+### Feedback
 
 :::{container}
 Bugs discovered should be reported by filing a bug report with

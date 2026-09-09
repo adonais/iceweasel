@@ -31,10 +31,7 @@ internal class LoginPanelTextInputLayout(
             defStyleAttr,
             0,
         ) {
-
-            defaultHintTextColor = ColorStateList.valueOf(
-                context.getColorFromAttr(android.R.attr.textColorPrimary),
-            )
+            defaultHintTextColor = ColorStateList.valueOf(context.getColorFromAttr(android.R.attr.textColorPrimary))
 
             getColorOrNull(R.styleable.LoginPanelTextInputLayout_mozacInputLayoutErrorTextColor)?.let { color ->
                 setErrorTextColor(ColorStateList.valueOf(color))
@@ -46,9 +43,7 @@ internal class LoginPanelTextInputLayout(
         }
     }
 
-    private fun TypedArray.getColorOrNull(
-        @StyleableRes styleableRes: Int,
-    ): Int? {
+    private fun TypedArray.getColorOrNull(@StyleableRes styleableRes: Int): Int? {
         val resourceId = this.getResourceId(styleableRes, 0)
         return if (resourceId > 0) ContextCompat.getColor(context, resourceId) else null
     }

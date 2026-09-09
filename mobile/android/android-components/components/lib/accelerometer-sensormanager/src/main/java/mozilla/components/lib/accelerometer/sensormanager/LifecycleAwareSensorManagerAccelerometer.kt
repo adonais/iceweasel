@@ -20,11 +20,9 @@ import mozilla.components.support.base.log.logger.Logger
 private const val NUM_BUFFER_CAPACITY = 5
 
 /**
- * This class is an adapter between Android platform accelerometer data and
- * platform-agnostic data. It uses the Android [SensorManager] to collect this data,
- * and can be added as a lifecycle observer to handle registering and unregistering its
- * sensor management automatically. It then converts received Sensor data into more friendly
- * types.
+ * This class is an adapter between Android platform accelerometer data and platform-agnostic data. It uses the Android
+ * [SensorManager] to collect this data, and can be added as a lifecycle observer to handle registering and
+ * unregistering its sensor management automatically. It then converts received Sensor data into more friendly types.
  */
 class LifecycleAwareSensorManagerAccelerometer(
     private val sensorManager: SensorManager,
@@ -40,10 +38,11 @@ class LifecycleAwareSensorManagerAccelerometer(
             ?: sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
     }
 
-    private val _samples = Channel<Accelerometer.Sample>(
-        capacity = NUM_BUFFER_CAPACITY,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST,
-    )
+    private val _samples =
+        Channel<Accelerometer.Sample>(
+            capacity = NUM_BUFFER_CAPACITY,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST,
+        )
 
     override fun samples(): Flow<Accelerometer.Sample> = _samples.receiveAsFlow()
 
@@ -70,11 +69,12 @@ class LifecycleAwareSensorManagerAccelerometer(
         _samples.close()
     }
 
-    private fun SensorEvent.toSample(): Accelerometer.Sample? = when (sensor.type) {
-        Sensor.TYPE_LINEAR_ACCELERATION -> linearEventToSample()
-        Sensor.TYPE_ACCELEROMETER -> toLinearAccelerationSample()
-        else -> null
-    }
+    private fun SensorEvent.toSample(): Accelerometer.Sample? =
+        when (sensor.type) {
+            Sensor.TYPE_LINEAR_ACCELERATION -> linearEventToSample()
+            Sensor.TYPE_ACCELEROMETER -> toLinearAccelerationSample()
+            else -> null
+        }
 
     private fun SensorEvent.linearEventToSample(): Accelerometer.Sample {
         return sampleBuffer.request(
@@ -86,36 +86,35 @@ class LifecycleAwareSensorManagerAccelerometer(
     }
 
     /**
-     * This function converts raw [Sensor.TYPE_ACCELEROMETER] values to a linear acceleration. i.e
-     * actual linear movements of the device across the x,y,z axes.
+     * This function converts raw [Sensor.TYPE_ACCELEROMETER] values to a linear acceleration. i.e actual linear
+     * movements of the device across the x,y,z axes.
      *
-     * The raw events here include the impact of gravity, so we need to isolate the impact of gravity,
-     * and then subtract it from the reading.
+     * The raw events here include the impact of gravity, so we need to isolate the impact of gravity, and then subtract
+     * it from the reading.
      *
      * This is done in 2 steps:
+     *
      * ## Step 1: Isolate the effect of gravity in the accelerometer reading.
      *
-     * Since the gravity does not change frequently, it is a low-frequency data, and since movements
-     * of the phone are somewhat sudden and involve quick changes, that is considered high-frequency
-     * data.
+     * Since the gravity does not change frequently, it is a low-frequency data, and since movements of the phone are
+     * somewhat sudden and involve quick changes, that is considered high-frequency data.
      *
-     *  To properly isolate gravity then, we are using a low-pass filter with the following formula:
+     * To properly isolate gravity then, we are using a low-pass filter with the following formula:
      *
      *          g = a*g + (1-a) * acceleration
      *
-     * The idea behind the choice is that we are trying to isolate the acceleration due to gravity,
-     * and since we consider that a fairly low frequency data (does not change frequently),
-     * a low-pass is appropriate for the task.
+     * The idea behind the choice is that we are trying to isolate the acceleration due to gravity, and since we
+     * consider that a fairly low frequency data (does not change frequently), a low-pass is appropriate for the task.
      *
      * Important points:
-     * * This operation is applied continuously, based on the previously calculated value, and
-     * that's why we are writing to the same [GRAVITY_VALUES] float array.
-     * * The alpha/a value ([ACCELEROMETER_FILTER_ALPHA]) is a smoothing factor, and this is based
-     * off calculations related to the rate at which the sensor emits the data.
+     * * This operation is applied continuously, based on the previously calculated value, and that's why we are writing
+     *   to the same [GRAVITY_VALUES] float array.
+     * * The alpha/a value ([ACCELEROMETER_FILTER_ALPHA]) is a smoothing factor, and this is based off calculations
+     *   related to the rate at which the sensor emits the data.
      *
      * ## Step 2: Remove acceleration due to gravity
-     * Since we have now been able to isolate or estimate how much of this acceleration was caused
-     * by the acceleration due to gravity, we can go ahead and subtract it from the raw value.
+     * Since we have now been able to isolate or estimate how much of this acceleration was caused by the acceleration
+     * due to gravity, we can go ahead and subtract it from the raw value.
      */
     private fun SensorEvent.toLinearAccelerationSample(): Accelerometer.Sample {
         // Step 1: Isolate the effect of acceleration due to gravity from the raw event

@@ -12,9 +12,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 
-/**
- * A feature that removes the tab and selects the parent, if one exists.
- */
+/** A feature that removes the tab and selects the parent, if one exists. */
 class LastTabFeature(
     private val store: BrowserStore,
     private val tabId: String? = null,
@@ -23,16 +21,16 @@ class LastTabFeature(
 ) : LifecycleAwareFeature, UserInteractionHandler {
 
     override fun start() = Unit
+
     override fun stop() = Unit
 
     /**
-     * Removes the session if it was opened by an ACTION_VIEW intent
-     * or if it has a parent session and no more history.
+     * Removes the session if it was opened by an ACTION_VIEW intent or if it has a parent session and no more history.
      */
     override fun onBackPressed(): Boolean {
         val tab = store.state.findTabOrCustomTabOrSelectedTab(tabId) ?: return false
-        val isExternalOrCustomTab = tab.source is SessionState.Source.External ||
-            tab.source is SessionState.Source.Internal.CustomTab
+        val isExternalOrCustomTab =
+            tab.source is SessionState.Source.External || tab.source is SessionState.Source.Internal.CustomTab
 
         return if (isExternalOrCustomTab && !tab.restored) {
             activity.finish()

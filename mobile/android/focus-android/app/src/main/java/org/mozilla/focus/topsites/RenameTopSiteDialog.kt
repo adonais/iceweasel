@@ -20,10 +20,9 @@ import org.mozilla.focus.ui.dialog.FocusDialog
  * Display a dialog for renaming a top site.
  *
  * @param currentName The current name of the top site.
- * @param onConfirm Callback invoked when the user confirms the rename operation.
- * The new name is passed as an argument.
- * @param onDismiss Callback invoked when the dialog is dismissed, either by pressing
- * the cancel button or by tapping outside the dialog.
+ * @param onConfirm Callback invoked when the user confirms the rename operation. The new name is passed as an argument.
+ * @param onDismiss Callback invoked when the dialog is dismissed, either by pressing the cancel button or by tapping
+ *   outside the dialog.
  */
 @Composable
 fun RenameTopSiteDialog(
@@ -39,17 +38,21 @@ fun RenameTopSiteDialog(
             DialogInputField(
                 text = text,
                 placeholder = { Text(stringResource(id = R.string.placeholder_rename_top_site)) },
-            ) { newText -> text = newText }
+            ) { newText ->
+                text = newText
+            }
         },
         onDismissRequest = { onDismiss.invoke() },
-        confirmButtonConfig = DialogButtonConfig(
-            text = stringResource(android.R.string.ok),
-            onClick = { onConfirm.invoke(text) },
-            enabled = text.isNotEmpty(),
-        ),
-        dismissButtonConfig = DialogButtonConfig(
-            text = stringResource(android.R.string.cancel),
-            onClick = { onDismiss.invoke() },
-        ),
+        confirmButtonConfig =
+            DialogButtonConfig(
+                text = stringResource(android.R.string.ok),
+                onClick = { onConfirm.invoke(text) },
+                enabled = text.isNotEmpty(),
+            ),
+        dismissButtonConfig =
+            DialogButtonConfig(
+                text = stringResource(android.R.string.cancel),
+                onClick = { onDismiss.invoke() },
+            ),
     )
 }

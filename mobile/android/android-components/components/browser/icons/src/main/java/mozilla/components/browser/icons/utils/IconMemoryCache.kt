@@ -20,11 +20,12 @@ private const val MAXIMUM_CACHE_BITMAP_BYTES = 1024 * 1024 * 25 // 25 MB
 
 class IconMemoryCache : ProcessorMemoryCache, LoaderMemoryCache, MemoryIconPreparer.PreparerMemoryCache {
     private val iconResourcesCache = LruCache<String, List<IconRequest.Resource>>(MAXIMUM_CACHE_URLS)
-    private val iconBitmapCache = object : LruCache<String, Bitmap>(MAXIMUM_CACHE_BITMAP_BYTES) {
-        override fun sizeOf(key: String, value: Bitmap): Int {
-            return value.byteCount
+    private val iconBitmapCache =
+        object : LruCache<String, Bitmap>(MAXIMUM_CACHE_BITMAP_BYTES) {
+            override fun sizeOf(key: String, value: Bitmap): Int {
+                return value.byteCount
+            }
         }
-    }
 
     override fun getResources(request: IconRequest): List<IconRequest.Resource> {
         return iconResourcesCache[request.url] ?: emptyList()

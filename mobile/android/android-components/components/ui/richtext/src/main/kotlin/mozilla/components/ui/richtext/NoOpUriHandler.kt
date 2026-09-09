@@ -7,8 +7,8 @@ package mozilla.components.ui.richtext
 import androidx.compose.ui.platform.UriHandler
 
 /**
- * A no-op URI handler to be the default handler in [RichText] to ensure that we don't handle
- * URIs unless a handler is specified
+ * A no-op URI handler to be the default handler in [RichText] to ensure that we don't handle URIs unless a handler is
+ * specified
  */
 internal class NoOpUriHandler : UriHandler {
     override fun openUri(uri: String) = Unit

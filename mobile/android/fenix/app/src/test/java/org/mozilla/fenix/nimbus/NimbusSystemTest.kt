@@ -30,9 +30,10 @@ class NimbusSystemTest {
     private val lastTimeSlot = slot<Long>()
 
     // By default this comes from the generated Nimbus features.
-    val config = NimbusSystem(
-        refreshIntervalForeground = 60, // minutes
-    )
+    val config =
+        NimbusSystem(
+            refreshIntervalForeground = 60 // minutes
+        )
 
     class NimbusUnderTest(override val context: Context) : NimbusInterface {
         var isFetching = false

@@ -44,6 +44,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import java.util.Locale
 import mozilla.components.compose.base.InfoCard
 import mozilla.components.compose.base.InfoType
 import mozilla.components.compose.base.LinkText
@@ -54,6 +55,7 @@ import mozilla.components.concept.engine.translate.ModelState
 import mozilla.components.concept.engine.translate.TranslationError
 import mozilla.components.feature.downloads.DefaultFileSizeFormatter
 import mozilla.components.feature.downloads.FileSizeFormatter
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.settings.SettingsSectionHeader
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -61,8 +63,6 @@ import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.translations.DownloadIconIndicator
 import org.mozilla.fenix.translations.DownloadInProgressIndicator
-import java.util.Locale
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Firefox Download Languages preference screen.
@@ -70,7 +70,7 @@ import mozilla.components.ui.icons.R as iconsR
  * @param downloadLanguageItemPreferences List of [DownloadLanguageItemPreference]s that needs to be displayed.
  * @param learnMoreUrl The learn more link for translations website.
  * @param fileSizeFormatter [FileSizeFormatter] used to format the size of the file item.
- * @param downloadLanguagesError  If a translation error occurs.
+ * @param downloadLanguagesError If a translation error occurs.
  * @param onLearnMoreClicked Invoked when the user clicks on the "Learn More" button.
  * @param onItemClick Invoked when the user clicks on the language item.
  */
@@ -85,18 +85,13 @@ fun DownloadLanguagesPreference(
     onItemClick: (DownloadLanguageItemPreference) -> Unit,
 ) {
     val downloadedItems = downloadLanguageItemPreferences.filter {
-        (
-            it.languageModel.status == ModelState.DOWNLOADED ||
-                it.languageModel.status == ModelState.ERROR_DELETION
-            ) &&
+        (it.languageModel.status == ModelState.DOWNLOADED || it.languageModel.status == ModelState.ERROR_DELETION) &&
             it.type != DownloadLanguageItemTypePreference.AllLanguages
     }
 
     val notDownloadedItems = downloadLanguageItemPreferences.filter {
-        (
-            it.languageModel.status == ModelState.NOT_DOWNLOADED ||
-                it.languageModel.status == ModelState.ERROR_DOWNLOAD
-            ) &&
+        (it.languageModel.status == ModelState.NOT_DOWNLOADED ||
+            it.languageModel.status == ModelState.ERROR_DOWNLOAD) &&
             it.type != DownloadLanguageItemTypePreference.AllLanguages
     }
 
@@ -111,7 +106,8 @@ fun DownloadLanguagesPreference(
     }
 
     var allLanguagesItemDownloaded: DownloadLanguageItemPreference? = null
-    if (downloadLanguageItemPreferences.any {
+    if (
+        downloadLanguageItemPreferences.any {
             it.type == DownloadLanguageItemTypePreference.AllLanguages &&
                 it.languageModel.status == ModelState.DOWNLOADED
         }
@@ -148,20 +144,15 @@ fun DownloadLanguagesPreference(
             if (downloadLanguagesError != null) {
                 item {
                     DownloadLanguagesErrorWarning(
-                        stringResource(id = R.string.download_languages_fetch_error_warning_text),
+                        stringResource(id = R.string.download_languages_fetch_error_warning_text)
                     )
                 }
             }
 
-            if (
-                allLanguagesItemDownloaded != null ||
-                pivotLanguage?.languageModel?.status == ModelState.DOWNLOADED
-            ) {
+            if (allLanguagesItemDownloaded != null || pivotLanguage?.languageModel?.status == ModelState.DOWNLOADED) {
                 item {
                     DownloadLanguagesHeader(
-                        stringResource(
-                            id = R.string.download_languages_available_languages_preference,
-                        ),
+                        stringResource(id = R.string.download_languages_available_languages_preference)
                     )
                 }
             }
@@ -184,15 +175,16 @@ fun DownloadLanguagesPreference(
                 )
             }
 
-            if (pivotLanguage?.languageModel?.status == ModelState.NOT_DOWNLOADED ||
-                shouldShowDownloadLanguagesHeader(
-                    itemsNotDownloaded = itemsNotDownloaded,
-                    deleteInProgressItems = deleteInProgressItems,
-                    notDownloadedItems = notDownloadedItems,
-                )
+            if (
+                pivotLanguage?.languageModel?.status == ModelState.NOT_DOWNLOADED ||
+                    shouldShowDownloadLanguagesHeader(
+                        itemsNotDownloaded = itemsNotDownloaded,
+                        deleteInProgressItems = deleteInProgressItems,
+                        notDownloadedItems = notDownloadedItems,
+                    )
             ) {
-                if (pivotLanguage?.languageModel?.status == ModelState.DOWNLOADED ||
-                    allLanguagesItemDownloaded != null
+                if (
+                    pivotLanguage?.languageModel?.status == ModelState.DOWNLOADED || allLanguagesItemDownloaded != null
                 ) {
                     item {
                         HorizontalDivider(Modifier.padding(top = 8.dp, bottom = 8.dp))
@@ -200,11 +192,7 @@ fun DownloadLanguagesPreference(
                 }
 
                 item {
-                    DownloadLanguagesHeader(
-                        stringResource(
-                            id = R.string.download_language_header_preference,
-                        ),
-                    )
+                    DownloadLanguagesHeader(stringResource(id = R.string.download_language_header_preference))
                 }
             }
 
@@ -222,17 +210,17 @@ fun DownloadLanguagesPreference(
 
     // The pivot model may be deleted when all of the other models are deleted and it may
     // always be downloaded
-    pivotLanguage?.enabled = downloadedItems.size == 1 ||
-        pivotLanguage.languageModel.status == ModelState.NOT_DOWNLOADED
+    pivotLanguage?.enabled =
+        downloadedItems.size == 1 || pivotLanguage.languageModel.status == ModelState.NOT_DOWNLOADED
 }
 
 @Composable
 private fun DownloadLanguagesErrorWarning(title: String) {
-    val modifier = Modifier
-        .fillMaxWidth()
-        .padding(start = 72.dp, end = 16.dp)
-        .defaultMinSize(minHeight = 56.dp)
-        .wrapContentHeight()
+    val modifier =
+        Modifier.fillMaxWidth()
+            .padding(start = 72.dp, end = 16.dp)
+            .defaultMinSize(minHeight = 56.dp)
+            .wrapContentHeight()
 
     InfoCard(
         description = title,
@@ -247,20 +235,18 @@ private fun shouldShowDownloadLanguagesHeader(
     deleteInProgressItems: List<DownloadLanguageItemPreference>,
     notDownloadedItems: List<DownloadLanguageItemPreference>,
 ): Boolean {
-    return itemsNotDownloaded.isNotEmpty() ||
-        deleteInProgressItems.isNotEmpty() ||
-        notDownloadedItems.isNotEmpty()
+    return itemsNotDownloaded.isNotEmpty() || deleteInProgressItems.isNotEmpty() || notDownloadedItems.isNotEmpty()
 }
 
 @Composable
 private fun DownloadLanguagesHeader(title: String) {
     SettingsSectionHeader(
         text = title,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 72.dp, end = 16.dp)
-            .defaultMinSize(minHeight = 36.dp)
-            .wrapContentHeight(),
+        modifier =
+            Modifier.fillMaxWidth()
+                .padding(start = 72.dp, end = 16.dp)
+                .defaultMinSize(minHeight = 36.dp)
+                .wrapContentHeight(),
     )
 }
 
@@ -273,8 +259,8 @@ private fun LanguageItemPreference(
     val description: String =
         if (
             item.type == DownloadLanguageItemTypePreference.PivotLanguage &&
-            item.languageModel.status == ModelState.DOWNLOADED &&
-            !item.enabled
+                item.languageModel.status == ModelState.DOWNLOADED &&
+                !item.enabled
         ) {
             stringResource(id = R.string.download_languages_default_system_language_require_preference)
         } else {
@@ -282,15 +268,16 @@ private fun LanguageItemPreference(
             fileSizeFormatter.formatSizeInBytes(size)
         }
 
-    val label = if (item.type == DownloadLanguageItemTypePreference.AllLanguages) {
-        if (item.languageModel.status == ModelState.NOT_DOWNLOADED) {
-            stringResource(id = R.string.download_language_all_languages_item_preference)
+    val label =
+        if (item.type == DownloadLanguageItemTypePreference.AllLanguages) {
+            if (item.languageModel.status == ModelState.NOT_DOWNLOADED) {
+                stringResource(id = R.string.download_language_all_languages_item_preference)
+            } else {
+                stringResource(id = R.string.download_language_all_languages_item_preference_to_delete)
+            }
         } else {
-            stringResource(id = R.string.download_language_all_languages_item_preference_to_delete)
+            item.languageModel.language?.localizedDisplayName
         }
-    } else {
-        item.languageModel.language?.localizedDisplayName
-    }
 
     val contentDescription =
         downloadLanguageItemContentDescriptionPreference(
@@ -303,23 +290,19 @@ private fun LanguageItemPreference(
     label?.let {
         TextListItemInlineDescription(
             label = it,
-            modifier = Modifier
-                .padding(
-                    start = 56.dp,
-                )
-                .clearAndSetSemantics {
-                    role = Role.Button
-                    this.contentDescription = contentDescription
-                }
-                .defaultMinSize(minHeight = 56.dp)
-                .wrapContentHeight(),
+            modifier =
+                Modifier.padding(start = 56.dp)
+                    .clearAndSetSemantics {
+                        role = Role.Button
+                        this.contentDescription = contentDescription
+                    }
+                    .defaultMinSize(minHeight = 56.dp)
+                    .wrapContentHeight(),
             description = description,
             enabled = item.enabled,
             onClick = { onItemClick(item) },
             icon = {
-                IconDownloadLanguageItemPreference(
-                    item = item,
-                )
+                IconDownloadLanguageItemPreference(item = item)
             },
         )
     }
@@ -330,7 +313,7 @@ private fun LanguageItemPreference(
                 stringResource(
                     R.string.download_languages_error_warning_text,
                     it,
-                ),
+                )
             )
         }
     } else if (item.languageModel.status == ModelState.ERROR_DELETION) {
@@ -339,7 +322,7 @@ private fun LanguageItemPreference(
                 stringResource(
                     R.string.download_languages_delete_error_warning_text,
                     it,
-                ),
+                )
             )
         }
     }
@@ -350,32 +333,31 @@ private fun DownloadLanguagesHeaderPreference(
     learnMoreUrl: String,
     onLearnMoreClicked: () -> Unit,
 ) {
-    val learnMoreText =
-        stringResource(id = R.string.download_languages_header_learn_more_preference)
-    val learnMoreState = LinkTextState(
-        text = learnMoreText,
-        url = learnMoreUrl,
-        onClick = { onLearnMoreClicked() },
-    )
+    val learnMoreText = stringResource(id = R.string.download_languages_header_learn_more_preference)
+    val learnMoreState =
+        LinkTextState(
+            text = learnMoreText,
+            url = learnMoreUrl,
+            onClick = { onLearnMoreClicked() },
+        )
     Box(
-        modifier = Modifier
-            .padding(
-                start = 72.dp,
-                top = 6.dp,
-                bottom = 6.dp,
-                end = 16.dp,
-            )
-            .semantics { heading() },
+        modifier =
+            Modifier.padding(
+                    start = 72.dp,
+                    top = 6.dp,
+                    bottom = 6.dp,
+                    end = 16.dp,
+                )
+                .semantics { heading() }
     ) {
         LinkText(
-            text = stringResource(
-                R.string.download_languages_header_preference,
-                learnMoreText,
-            ),
+            text =
+                stringResource(
+                    R.string.download_languages_header_preference,
+                    learnMoreText,
+                ),
             linkTextStates = listOf(learnMoreState),
-            style = FirefoxTheme.typography.body1.copy(
-                color = MaterialTheme.colorScheme.onSurface,
-            ),
+            style = FirefoxTheme.typography.body1.copy(color = MaterialTheme.colorScheme.onSurface),
             linkTextDecoration = TextDecoration.Underline,
         )
     }
@@ -393,25 +375,24 @@ private fun downloadLanguageItemContentDescriptionPreference(
     val contentDescription: String
 
     when (item.languageModel.status) {
-        ModelState.DOWNLOADED, ModelState.ERROR_DELETION -> {
+        ModelState.DOWNLOADED,
+        ModelState.ERROR_DELETION -> {
             contentDescription =
-                "$label $itemDescription" + stringResource(
-                    id = R.string.download_languages_item_content_description_downloaded_state,
-                )
+                "$label $itemDescription" +
+                    stringResource(id = R.string.download_languages_item_content_description_downloaded_state)
         }
 
-        ModelState.NOT_DOWNLOADED, ModelState.ERROR_DOWNLOAD -> {
+        ModelState.NOT_DOWNLOADED,
+        ModelState.ERROR_DOWNLOAD -> {
             contentDescription =
-                "$label $itemDescription " + stringResource(
-                    id = R.string.download_languages_item_content_description_not_downloaded_state,
-                )
+                "$label $itemDescription " +
+                    stringResource(id = R.string.download_languages_item_content_description_not_downloaded_state)
         }
 
         ModelState.DELETION_IN_PROGRESS -> {
             contentDescription =
-                "$label $itemDescription " + stringResource(
-                    id = R.string.download_languages_item_content_description_delete_in_progress_state,
-                )
+                "$label $itemDescription " +
+                    stringResource(id = R.string.download_languages_item_content_description_delete_in_progress_state)
         }
 
         ModelState.DOWNLOAD_IN_PROGRESS -> {
@@ -427,29 +408,23 @@ private fun downloadLanguageItemContentDescriptionPreference(
 }
 
 @Composable
-private fun IconDownloadLanguageItemPreference(
-    item: DownloadLanguageItemPreference,
-) {
+private fun IconDownloadLanguageItemPreference(item: DownloadLanguageItemPreference) {
     when (item.languageModel.status) {
-        ModelState.DOWNLOADED, ModelState.ERROR_DELETION -> {
-            if (
-                item.enabled
-            ) {
+        ModelState.DOWNLOADED,
+        ModelState.ERROR_DELETION -> {
+            if (item.enabled) {
                 Icon(
-                    painter = painterResource(
-                        id = iconsR.drawable.mozac_ic_delete_24,
-                    ),
+                    painter = painterResource(id = iconsR.drawable.mozac_ic_delete_24),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
 
-        ModelState.NOT_DOWNLOADED, ModelState.ERROR_DOWNLOAD -> {
+        ModelState.NOT_DOWNLOADED,
+        ModelState.ERROR_DOWNLOAD -> {
             Icon(
-                painter = painterResource(
-                    id = iconsR.drawable.mozac_ic_download_24,
-                ),
+                painter = painterResource(id = iconsR.drawable.mozac_ic_download_24),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -460,22 +435,19 @@ private fun IconDownloadLanguageItemPreference(
         }
 
         ModelState.DELETION_IN_PROGRESS -> {
-            DownloadIconIndicator(
-                icon = painterResource(id = iconsR.drawable.mozac_ic_sync_24),
-            )
+            DownloadIconIndicator(icon = painterResource(id = iconsR.drawable.mozac_ic_sync_24))
         }
     }
 }
 
 /**
- * List item used to display a label with description text (right next to the label) and
- * an [IconButton] at the end.
+ * List item used to display a label with description text (right next to the label) and an [IconButton] at the end.
  *
  * @param label The label in the list item.
  * @param modifier [Modifier] to be applied to the layout.
  * @param description An description text right next the label.
- * @param enabled Controls the enabled state. When false, onClick,
- * and this modifier will appear disabled for accessibility services.
+ * @param enabled Controls the enabled state. When false, onClick, and this modifier will appear disabled for
+ *   accessibility services.
  * @param onClick Called when the user clicks on the item.
  * @param icon Composable for adding Icon UI.
  */
@@ -489,25 +461,23 @@ private fun TextListItemInlineDescription(
     icon: @Composable RowScope.() -> Unit = {},
 ) {
     Row(
-        modifier = Modifier
-            .defaultMinSize(minHeight = 56.dp)
-            .clickable(
+        modifier =
+            Modifier.defaultMinSize(minHeight = 56.dp).clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = LocalIndication.current,
                 enabled = enabled,
-            ) { onClick.invoke() },
+            ) {
+                onClick.invoke()
+            },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = modifier
-                .padding(horizontal = 16.dp, vertical = 6.dp)
-                .weight(1f),
-        ) {
-            val text = stringResource(
-                R.string.download_languages_language_item_preference,
-                label,
-                description,
-            )
+        Row(modifier = modifier.padding(horizontal = 16.dp, vertical = 6.dp).weight(1f)) {
+            val text =
+                stringResource(
+                    R.string.download_languages_language_item_preference,
+                    label,
+                    description,
+                )
 
             Text(
                 buildAnnotatedString {
@@ -525,10 +495,7 @@ private fun TextListItemInlineDescription(
         IconButton(
             onClick = { onClick.invoke() },
             enabled = enabled,
-            modifier = Modifier
-                .padding(end = 16.dp)
-                .size(30.dp)
-                .clearAndSetSemantics {},
+            modifier = Modifier.padding(end = 16.dp).size(30.dp).clearAndSetSemantics {},
         ) {
             icon()
         }
@@ -541,81 +508,86 @@ internal fun getLanguageListPreference(): List<DownloadLanguageItemPreference> {
     return mutableListOf<DownloadLanguageItemPreference>().apply {
         add(
             DownloadLanguageItemPreference(
-                languageModel = LanguageModel(
-                    language = Language(Locale.FRENCH.toLanguageTag(), Locale.FRENCH.displayName),
-                    status = ModelState.DOWNLOADED,
-                    size = 100000L,
-                ),
+                languageModel =
+                    LanguageModel(
+                        language = Language(Locale.FRENCH.toLanguageTag(), Locale.FRENCH.displayName),
+                        status = ModelState.DOWNLOADED,
+                        size = 100000L,
+                    ),
                 type = DownloadLanguageItemTypePreference.GeneralLanguage,
-            ),
+            )
         )
         add(
             DownloadLanguageItemPreference(
-                languageModel = LanguageModel(
-                    language = Language(Locale.GERMAN.toLanguageTag(), Locale.GERMAN.displayName),
-                    status = ModelState.NOT_DOWNLOADED,
-                    size = 1000L,
-                ),
+                languageModel =
+                    LanguageModel(
+                        language = Language(Locale.GERMAN.toLanguageTag(), Locale.GERMAN.displayName),
+                        status = ModelState.NOT_DOWNLOADED,
+                        size = 1000L,
+                    ),
                 type = DownloadLanguageItemTypePreference.GeneralLanguage,
-            ),
+            )
         )
         add(
             DownloadLanguageItemPreference(
-                languageModel = LanguageModel(
-                    language = Language(Locale.ITALIAN.toLanguageTag(), Locale.ITALIAN.displayName),
-                    status = ModelState.DOWNLOAD_IN_PROGRESS,
-                    size = 1000000L,
-                ),
+                languageModel =
+                    LanguageModel(
+                        language = Language(Locale.ITALIAN.toLanguageTag(), Locale.ITALIAN.displayName),
+                        status = ModelState.DOWNLOAD_IN_PROGRESS,
+                        size = 1000000L,
+                    ),
                 type = DownloadLanguageItemTypePreference.GeneralLanguage,
-            ),
+            )
         )
         add(
             DownloadLanguageItemPreference(
-                languageModel = LanguageModel(
-                    language = Language(Locale.ENGLISH.toLanguageTag(), Locale.ENGLISH.displayName),
-                    status = ModelState.DELETION_IN_PROGRESS,
-                    size = 1000000000L,
-                ),
+                languageModel =
+                    LanguageModel(
+                        language = Language(Locale.ENGLISH.toLanguageTag(), Locale.ENGLISH.displayName),
+                        status = ModelState.DELETION_IN_PROGRESS,
+                        size = 1000000000L,
+                    ),
                 type = DownloadLanguageItemTypePreference.GeneralLanguage,
-            ),
+            )
         )
         add(
             DownloadLanguageItemPreference(
-                languageModel = LanguageModel(
-                    status = ModelState.NOT_DOWNLOADED,
-                    size = 10000L,
-                ),
+                languageModel =
+                    LanguageModel(
+                        status = ModelState.NOT_DOWNLOADED,
+                        size = 10000L,
+                    ),
                 type = DownloadLanguageItemTypePreference.AllLanguages,
-            ),
+            )
         )
         add(
             DownloadLanguageItemPreference(
-                languageModel = LanguageModel(
-                    language = Language(Locale.FRENCH.toLanguageTag(), Locale.FRENCH.displayName),
-                    status = ModelState.ERROR_DELETION,
-                    size = 10000L,
-                ),
+                languageModel =
+                    LanguageModel(
+                        language = Language(Locale.FRENCH.toLanguageTag(), Locale.FRENCH.displayName),
+                        status = ModelState.ERROR_DELETION,
+                        size = 10000L,
+                    ),
                 type = DownloadLanguageItemTypePreference.PivotLanguage,
-            ),
+            )
         )
         add(
             DownloadLanguageItemPreference(
-                languageModel = LanguageModel(
-                    language = Language(Locale.CHINESE.toLanguageTag(), Locale.CHINESE.displayName),
-                    status = ModelState.ERROR_DOWNLOAD,
-                    size = 10000L,
-                ),
+                languageModel =
+                    LanguageModel(
+                        language = Language(Locale.CHINESE.toLanguageTag(), Locale.CHINESE.displayName),
+                        status = ModelState.ERROR_DOWNLOAD,
+                        size = 10000L,
+                    ),
                 type = DownloadLanguageItemTypePreference.PivotLanguage,
-            ),
+            )
         )
     }
 }
 
 @Preview
 @Composable
-private fun DownloadLanguagesPreferencePreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun DownloadLanguagesPreferencePreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         DownloadLanguagesPreference(
             downloadLanguageItemPreferences = getLanguageListPreference(),

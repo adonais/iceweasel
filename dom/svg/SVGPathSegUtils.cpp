@@ -293,11 +293,11 @@ struct IsRectHelper {
     auto edge = to - from;
 
     auto maybeDir = GetDirection(edge);
-    if (maybeDir.isNothing()) {
+    if (!maybeDir) {
       return false;
     }
 
-    EdgeDir dir = maybeDir.value();
+    EdgeDir dir = *maybeDir;
 
     if (dir == EdgeDir::NONE) {
       // zero-length edges aren't an issue.

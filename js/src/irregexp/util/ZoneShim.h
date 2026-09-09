@@ -321,12 +321,8 @@ class ZoneAllocator {
   T* allocate(size_t n) { return zone_->AllocateArray<T>(n); }
   void deallocate(T* p, size_t) {}  // noop for zones
 
-  bool operator==(ZoneAllocator const& other) const {
-    return zone_ == other.zone_;
-  }
-  bool operator!=(ZoneAllocator const& other) const {
-    return zone_ != other.zone_;
-  }
+  bool operator==(ZoneAllocator const& other) const = default;
+  bool operator!=(ZoneAllocator const& other) const = default;
 
   using Policy = js::LifoAllocPolicy<js::Fallible>;
   Policy policy() const {

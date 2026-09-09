@@ -27,126 +27,136 @@ class SuspendMiddlewareTest {
     private val testDispatcher = StandardTestDispatcher()
 
     @Test
-    fun `suspends engine session for tab`() = runTest(testDispatcher) {
-        val middleware = SuspendMiddleware(this)
+    fun `suspends engine session for tab`() =
+        runTest(testDispatcher) {
+            val middleware = SuspendMiddleware(this)
 
-        val tab = createTab("https://www.mozilla.org", id = "1")
-        val store = BrowserStore(
-            initialState = BrowserState(tabs = listOf(tab)),
-            middleware = listOf(middleware),
-        )
+            val tab = createTab("https://www.mozilla.org", id = "1")
+            val store =
+                BrowserStore(
+                    initialState = BrowserState(tabs = listOf(tab)),
+                    middleware = listOf(middleware),
+                )
 
-        val engineSession: EngineSession = mock()
-        store.dispatch(EngineAction.LinkEngineSessionAction(tab.id, engineSession))
+            val engineSession: EngineSession = mock()
+            store.dispatch(EngineAction.LinkEngineSessionAction(tab.id, engineSession))
 
-        val state: EngineSessionState = mock()
-        store.dispatch(EngineAction.UpdateEngineSessionStateAction(tab.id, state))
+            val state: EngineSessionState = mock()
+            store.dispatch(EngineAction.UpdateEngineSessionStateAction(tab.id, state))
 
-        store.dispatch(EngineAction.SuspendEngineSessionAction(tab.id))
+            store.dispatch(EngineAction.SuspendEngineSessionAction(tab.id))
 
-        testDispatcher.scheduler.advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertNull(store.state.findTabOrCustomTab(tab.id)?.engineState?.engineSession)
-        assertEquals(state, store.state.findTabOrCustomTab(tab.id)?.engineState?.engineSessionState)
-        verify(engineSession).close()
-    }
-
-    @Test
-    fun `suspends engine session for custom tab`() = runTest(testDispatcher) {
-        val middleware = SuspendMiddleware(this)
-
-        val tab = createCustomTab("https://www.mozilla.org", id = "1")
-        val store = BrowserStore(
-            initialState = BrowserState(customTabs = listOf(tab)),
-            middleware = listOf(middleware),
-        )
-
-        val engineSession: EngineSession = mock()
-        store.dispatch(EngineAction.LinkEngineSessionAction(tab.id, engineSession))
-
-        val state: EngineSessionState = mock()
-        store.dispatch(EngineAction.UpdateEngineSessionStateAction(tab.id, state))
-
-        store.dispatch(EngineAction.SuspendEngineSessionAction(tab.id))
-
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertNull(store.state.findTabOrCustomTab(tab.id)?.engineState?.engineSession)
-        assertEquals(state, store.state.findTabOrCustomTab(tab.id)?.engineState?.engineSessionState)
-        verify(engineSession).close()
-    }
+            assertNull(store.state.findTabOrCustomTab(tab.id)?.engineState?.engineSession)
+            assertEquals(state, store.state.findTabOrCustomTab(tab.id)?.engineState?.engineSessionState)
+            verify(engineSession).close()
+        }
 
     @Test
-    fun `does nothing if tab doesn't exist`() = runTest(testDispatcher) {
-        val middleware = SuspendMiddleware(this)
-        val captureActionsMiddleware = CaptureActionsMiddleware<BrowserState, BrowserAction>()
+    fun `suspends engine session for custom tab`() =
+        runTest(testDispatcher) {
+            val middleware = SuspendMiddleware(this)
 
-        val store = BrowserStore(
-            initialState = BrowserState(tabs = listOf()),
-            middleware = listOf(captureActionsMiddleware, middleware),
-        )
+            val tab = createCustomTab("https://www.mozilla.org", id = "1")
+            val store =
+                BrowserStore(
+                    initialState = BrowserState(customTabs = listOf(tab)),
+                    middleware = listOf(middleware),
+                )
 
-        store.dispatch(EngineAction.SuspendEngineSessionAction("invalid"))
-        testDispatcher.scheduler.advanceUntilIdle()
+            val engineSession: EngineSession = mock()
+            store.dispatch(EngineAction.LinkEngineSessionAction(tab.id, engineSession))
 
-        captureActionsMiddleware.assertNotDispatched(EngineAction.UnlinkEngineSessionAction::class)
-    }
+            val state: EngineSessionState = mock()
+            store.dispatch(EngineAction.UpdateEngineSessionStateAction(tab.id, state))
+
+            store.dispatch(EngineAction.SuspendEngineSessionAction(tab.id))
+
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertNull(store.state.findTabOrCustomTab(tab.id)?.engineState?.engineSession)
+            assertEquals(state, store.state.findTabOrCustomTab(tab.id)?.engineState?.engineSessionState)
+            verify(engineSession).close()
+        }
 
     @Test
-    fun `does nothing if engine session doesn't exist`() = runTest(testDispatcher) {
-        val middleware = SuspendMiddleware(this)
-        val captureActionsMiddleware = CaptureActionsMiddleware<BrowserState, BrowserAction>()
+    fun `does nothing if tab doesn't exist`() =
+        runTest(testDispatcher) {
+            val middleware = SuspendMiddleware(this)
+            val captureActionsMiddleware = CaptureActionsMiddleware<BrowserState, BrowserAction>()
 
-        val tab = createTab("https://www.mozilla.org", id = "1")
-        val store = BrowserStore(
-            initialState = BrowserState(tabs = listOf(tab)),
-            middleware = listOf(middleware),
-        )
+            val store =
+                BrowserStore(
+                    initialState = BrowserState(tabs = listOf()),
+                    middleware = listOf(captureActionsMiddleware, middleware),
+                )
 
-        store.dispatch(EngineAction.SuspendEngineSessionAction("invalid"))
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(EngineAction.SuspendEngineSessionAction("invalid"))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        captureActionsMiddleware.assertNotDispatched(EngineAction.UnlinkEngineSessionAction::class)
-    }
+            captureActionsMiddleware.assertNotDispatched(EngineAction.UnlinkEngineSessionAction::class)
+        }
+
+    @Test
+    fun `does nothing if engine session doesn't exist`() =
+        runTest(testDispatcher) {
+            val middleware = SuspendMiddleware(this)
+            val captureActionsMiddleware = CaptureActionsMiddleware<BrowserState, BrowserAction>()
+
+            val tab = createTab("https://www.mozilla.org", id = "1")
+            val store =
+                BrowserStore(
+                    initialState = BrowserState(tabs = listOf(tab)),
+                    middleware = listOf(middleware),
+                )
+
+            store.dispatch(EngineAction.SuspendEngineSessionAction("invalid"))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            captureActionsMiddleware.assertNotDispatched(EngineAction.UnlinkEngineSessionAction::class)
+        }
 
     @Test
     fun `SuspendEngineSessionAction and KillEngineSessionAction process state the same`() =
         runTest(testDispatcher) {
-        val middleware = SuspendMiddleware(this)
+            val middleware = SuspendMiddleware(this)
 
-        val tab = createTab("https://www.mozilla.org", id = "1")
-        val suspendStore = BrowserStore(
-            initialState = BrowserState(tabs = listOf(tab)),
-            middleware = listOf(middleware),
-        )
-        val killStore = BrowserStore(
-            initialState = BrowserState(tabs = listOf(tab)),
-            middleware = listOf(middleware),
-        )
+            val tab = createTab("https://www.mozilla.org", id = "1")
+            val suspendStore =
+                BrowserStore(
+                    initialState = BrowserState(tabs = listOf(tab)),
+                    middleware = listOf(middleware),
+                )
+            val killStore =
+                BrowserStore(
+                    initialState = BrowserState(tabs = listOf(tab)),
+                    middleware = listOf(middleware),
+                )
 
-        val engineSession: EngineSession = mock()
-        suspendStore.dispatch(EngineAction.LinkEngineSessionAction(tab.id, engineSession))
-        killStore.dispatch(EngineAction.LinkEngineSessionAction(tab.id, engineSession))
+            val engineSession: EngineSession = mock()
+            suspendStore.dispatch(EngineAction.LinkEngineSessionAction(tab.id, engineSession))
+            killStore.dispatch(EngineAction.LinkEngineSessionAction(tab.id, engineSession))
 
-        val state: EngineSessionState = mock()
-        suspendStore.dispatch(EngineAction.UpdateEngineSessionStateAction(tab.id, state))
-        killStore.dispatch(EngineAction.UpdateEngineSessionStateAction(tab.id, state))
+            val state: EngineSessionState = mock()
+            suspendStore.dispatch(EngineAction.UpdateEngineSessionStateAction(tab.id, state))
+            killStore.dispatch(EngineAction.UpdateEngineSessionStateAction(tab.id, state))
 
-        suspendStore.dispatch(EngineAction.SuspendEngineSessionAction(tab.id))
-        killStore.dispatch(EngineAction.KillEngineSessionAction(tab.id))
+            suspendStore.dispatch(EngineAction.SuspendEngineSessionAction(tab.id))
+            killStore.dispatch(EngineAction.KillEngineSessionAction(tab.id))
 
-        testDispatcher.scheduler.advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        assertNull(suspendStore.state.findTabOrCustomTab(tab.id)?.engineState?.engineSession)
-        assertEquals(state, suspendStore.state.findTabOrCustomTab(tab.id)?.engineState?.engineSessionState)
+            assertNull(suspendStore.state.findTabOrCustomTab(tab.id)?.engineState?.engineSession)
+            assertEquals(state, suspendStore.state.findTabOrCustomTab(tab.id)?.engineState?.engineSessionState)
 
-        assertNull(killStore.state.findTabOrCustomTab(tab.id)?.engineState?.engineSession)
-        assertEquals(state, killStore.state.findTabOrCustomTab(tab.id)?.engineState?.engineSessionState)
+            assertNull(killStore.state.findTabOrCustomTab(tab.id)?.engineState?.engineSession)
+            assertEquals(state, killStore.state.findTabOrCustomTab(tab.id)?.engineState?.engineSessionState)
 
-        // KillEngineSessionAction adds to recentlyKilledTabs, while SuspendEngineSessionAction does not
-        assertEquals(
-            suspendStore.state.copy(recentlyKilledTabs = LinkedHashSet()),
-            killStore.state.copy(recentlyKilledTabs = LinkedHashSet()),
-        )
-    }
+            // KillEngineSessionAction adds to recentlyKilledTabs, while SuspendEngineSessionAction does not
+            assertEquals(
+                suspendStore.state.copy(recentlyKilledTabs = LinkedHashSet()),
+                killStore.state.copy(recentlyKilledTabs = LinkedHashSet()),
+            )
+        }
 }

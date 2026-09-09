@@ -14,6 +14,10 @@ import android.content.Intent.ACTION_WEB_SEARCH
 import android.content.Intent.EXTRA_TEXT
 import android.nfc.NfcAdapter.ACTION_NDEF_DISCOVERED
 import androidx.annotation.VisibleForTesting
+import java.net.InetAddress
+import java.net.MalformedURLException
+import java.net.URL
+import java.net.UnknownHostException
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.GlobalScope
@@ -30,17 +34,13 @@ import mozilla.components.support.ktx.kotlin.isUrl
 import mozilla.components.support.ktx.kotlin.toNormalizedUrl
 import mozilla.components.support.utils.SafeIntent
 import mozilla.components.support.utils.WebURLFinder
-import java.net.InetAddress
-import java.net.MalformedURLException
-import java.net.URL
-import java.net.UnknownHostException
 
 /**
  * Processor for intents which should trigger session-related actions.
  *
  * @property tabsUseCases An instance of [TabsUseCases] used to open new tabs.
- * @property newTabSearchUseCase A reference to [SearchUseCases.NewTabSearchUseCase] to be used for
- * ACTION_SEND intents if the provided text is not a URL.
+ * @property newTabSearchUseCase A reference to [SearchUseCases.NewTabSearchUseCase] to be used for ACTION_SEND intents
+ *   if the provided text is not a URL.
  * @property isPrivate Whether a processed intent should open a new tab as private
  */
 class TabIntentProcessor(
@@ -52,9 +52,7 @@ class TabIntentProcessor(
 
     private val logger = Logger("TabIntentProcessor")
 
-    /**
-     * Loads a URL from a view intent in a new session.
-     */
+    /** Loads a URL from a view intent in a new session. */
     private fun processViewIntent(intent: SafeIntent): Boolean {
         val url = intent.dataString
 
@@ -80,8 +78,7 @@ class TabIntentProcessor(
     @VisibleForTesting
     internal fun computeLoadUrlFlags(intent: SafeIntent): LoadUrlFlags {
         return if (intent.hasExtra(EXTRA_APP_LINK_LAUNCH_TYPE)) {
-            val intentLaunchType =
-                intent.getIntExtra(EXTRA_APP_LINK_LAUNCH_TYPE, APP_LINK_LAUNCH_TYPE_UNKNOWN)
+            val intentLaunchType = intent.getIntExtra(EXTRA_APP_LINK_LAUNCH_TYPE, APP_LINK_LAUNCH_TYPE_UNKNOWN)
             LoadUrlFlags.select(LoadUrlFlags.external().value, intentLaunchType)
         } else {
             LoadUrlFlags.external()
@@ -108,8 +105,7 @@ class TabIntentProcessor(
     private fun getWarmupUrl(normalizedUrl: String): String? {
         val engineSettings = engine?.settings ?: return normalizedUrl
         val dohMode = engineSettings.dohSettingsMode
-        val isDohEnabled = dohMode == Engine.DohSettingsMode.INCREASED ||
-            dohMode == Engine.DohSettingsMode.MAX
+        val isDohEnabled = dohMode == Engine.DohSettingsMode.INCREASED || dohMode == Engine.DohSettingsMode.MAX
         return if (isDohEnabled) {
             engineSettings.dohProviderUrl.ifEmpty { null }
         } else {
@@ -128,9 +124,7 @@ class TabIntentProcessor(
         }
     }
 
-     /**
-     * Creates a speculative connection to the given URL using the engine.
-     */
+    /** Creates a speculative connection to the given URL using the engine. */
     private fun createSpeculativeConnection(normalizedUrl: String) {
         engine?.let { engineInstance ->
             try {
@@ -147,10 +141,7 @@ class TabIntentProcessor(
         }
     }
 
-    /**
-     * Processes a send intent and tries to load [EXTRA_TEXT] as a URL.
-     * If it's not a URL, a search is run instead.
-     */
+    /** Processes a send intent and tries to load [EXTRA_TEXT] as a URL. If it's not a URL, a search is run instead. */
     private fun processSendIntent(intent: SafeIntent): Boolean {
         val extraText = intent.getStringExtra(EXTRA_TEXT)
 
@@ -204,16 +195,17 @@ class TabIntentProcessor(
     override fun process(intent: Intent): Boolean {
         val safeIntent = SafeIntent(intent)
         return when (safeIntent.action) {
-            ACTION_VIEW, ACTION_MAIN, ACTION_NDEF_DISCOVERED -> processViewIntent(safeIntent)
+            ACTION_VIEW,
+            ACTION_MAIN,
+            ACTION_NDEF_DISCOVERED -> processViewIntent(safeIntent)
             ACTION_SEND -> processSendIntent(safeIntent)
-            ACTION_SEARCH, ACTION_WEB_SEARCH -> processSearchIntent(safeIntent)
+            ACTION_SEARCH,
+            ACTION_WEB_SEARCH -> processSearchIntent(safeIntent)
             else -> false
         }
     }
 
-    /**
-     * Companion object for [TabIntentProcessor].
-     */
+    /** Companion object for [TabIntentProcessor]. */
     companion object {
         const val EXTRA_APP_LINK_LAUNCH_TYPE = "APP_LINK_LAUNCH_TYPE"
     }

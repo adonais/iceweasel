@@ -10,9 +10,7 @@ import mozilla.components.browser.state.selector.findCustomTab
 import mozilla.components.browser.state.state.BrowserState
 
 internal object CustomTabListReducer {
-    /**
-     * [CustomTabListAction] Reducer function for modifying [BrowserState.customTabs].
-     */
+    /** [CustomTabListAction] Reducer function for modifying [BrowserState.customTabs]. */
     fun reduce(state: BrowserState, action: CustomTabListAction): BrowserState {
         return when (action) {
             is CustomTabListAction.AddCustomTabAction -> state.copy(customTabs = state.customTabs + action.tab)

@@ -33,22 +33,24 @@ import org.robolectric.RobolectricTestRunner
 class TrustPanelStoreTest {
 
     @Test
-    fun `WHEN toggle tracking protection action is dispatched THEN tracking protection enabled state is updated`() = runTest {
-        val store = TrustPanelStore(initialState = TrustPanelState())
+    fun `WHEN toggle tracking protection action is dispatched THEN tracking protection enabled state is updated`() =
+        runTest {
+            val store = TrustPanelStore(initialState = TrustPanelState())
 
-        store.dispatch(TrustPanelAction.ToggleTrackingProtection)
+            store.dispatch(TrustPanelAction.ToggleTrackingProtection)
 
-        assertFalse(store.state.isTrackingProtectionEnabled)
-    }
+            assertFalse(store.state.isTrackingProtectionEnabled)
+        }
 
     @Test
-    fun `WHEN update number of trackers blocked action is dispatched THEN number of trackers blocked state is updated`() = runTest {
-        val store = TrustPanelStore(initialState = TrustPanelState())
+    fun `WHEN update number of trackers blocked action is dispatched THEN number of trackers blocked state is updated`() =
+        runTest {
+            val store = TrustPanelStore(initialState = TrustPanelState())
 
-        store.dispatch(TrustPanelAction.UpdateNumberOfTrackersBlocked(1))
+            store.dispatch(TrustPanelAction.UpdateNumberOfTrackersBlocked(1))
 
-        assertEquals(store.state.numberOfTrackersBlocked, 1)
-    }
+            assertEquals(store.state.numberOfTrackersBlocked, 1)
+        }
 
     @Test
     fun `WHEN update base domain action is dispatched THEN base domain state is updated`() = runTest {
@@ -61,14 +63,15 @@ class TrustPanelStoreTest {
     }
 
     @Test
-    fun `WHEN update detailed tracker category action is dispatched THEN detailed tracker category state is updated`() = runTest {
-        val store = TrustPanelStore(initialState = TrustPanelState())
-        val trackerCategory = TrackingProtectionCategory.CRYPTOMINERS
+    fun `WHEN update detailed tracker category action is dispatched THEN detailed tracker category state is updated`() =
+        runTest {
+            val store = TrustPanelStore(initialState = TrustPanelState())
+            val trackerCategory = TrackingProtectionCategory.CRYPTOMINERS
 
-        store.dispatch(TrustPanelAction.UpdateDetailedTrackerCategory(trackerCategory))
+            store.dispatch(TrustPanelAction.UpdateDetailedTrackerCategory(trackerCategory))
 
-        assertEquals(store.state.detailedTrackerCategory, trackerCategory)
-    }
+            assertEquals(store.state.detailedTrackerCategory, trackerCategory)
+        }
 
     @Test
     fun `WHEN create website permission state method is called THEN website permission state is created`() {
@@ -79,14 +82,15 @@ class TrustPanelStoreTest {
         initializeSitePermissions(sitePermissions)
         every { permissionHighlights.isAutoPlayBlocking } returns true
 
-        val state = TrustPanelStore.createWebsitePermissionState(
-            settings = settings,
-            sitePermissions = sitePermissions,
-            permissionHighlights = permissionHighlights,
-            isPermissionBlockedByAndroid = { phoneFeature: PhoneFeature ->
-                phoneFeature == PhoneFeature.CAMERA // Only the camera permission is blocked
-            },
-        )
+        val state =
+            TrustPanelStore.createWebsitePermissionState(
+                settings = settings,
+                sitePermissions = sitePermissions,
+                permissionHighlights = permissionHighlights,
+                isPermissionBlockedByAndroid = { phoneFeature: PhoneFeature ->
+                    phoneFeature == PhoneFeature.CAMERA // Only the camera permission is blocked
+                },
+            )
 
         state.entries.forEach { (phoneFeature, websitePermission) ->
             if (websitePermission is WebsitePermission.Autoplay) {
@@ -126,14 +130,15 @@ class TrustPanelStoreTest {
         every { permissionHighlights.isAutoPlayBlocking } returns true
         every { settings.isLnaFeatureEnabled } returns false
 
-        val state = TrustPanelStore.createWebsitePermissionState(
-            settings = settings,
-            sitePermissions = sitePermissions,
-            permissionHighlights = permissionHighlights,
-            isPermissionBlockedByAndroid = { phoneFeature: PhoneFeature ->
-                phoneFeature == PhoneFeature.CAMERA // Only the camera permission is blocked
-            },
-        )
+        val state =
+            TrustPanelStore.createWebsitePermissionState(
+                settings = settings,
+                sitePermissions = sitePermissions,
+                permissionHighlights = permissionHighlights,
+                isPermissionBlockedByAndroid = { phoneFeature: PhoneFeature ->
+                    phoneFeature == PhoneFeature.CAMERA // Only the camera permission is blocked
+                },
+            )
 
         val localDeviceAccessPermission = state[PhoneFeature.LOCAL_DEVICE_ACCESS]!!
         val localNetworkAccessPermission = state[PhoneFeature.LOCAL_NETWORK_ACCESS]!!
@@ -160,14 +165,15 @@ class TrustPanelStoreTest {
         every { permissionHighlights.isAutoPlayBlocking } returns true
         every { settings.isLnaFeatureEnabled } returns true
 
-        val state = TrustPanelStore.createWebsitePermissionState(
-            settings = settings,
-            sitePermissions = sitePermissions,
-            permissionHighlights = permissionHighlights,
-            isPermissionBlockedByAndroid = { phoneFeature: PhoneFeature ->
-                phoneFeature == PhoneFeature.CAMERA // Only the camera permission is blocked
-            },
-        )
+        val state =
+            TrustPanelStore.createWebsitePermissionState(
+                settings = settings,
+                sitePermissions = sitePermissions,
+                permissionHighlights = permissionHighlights,
+                isPermissionBlockedByAndroid = { phoneFeature: PhoneFeature ->
+                    phoneFeature == PhoneFeature.CAMERA // Only the camera permission is blocked
+                },
+            )
 
         val localDeviceAccessPermission = state[PhoneFeature.LOCAL_DEVICE_ACCESS]!!
         val localNetworkAccessPermission = state[PhoneFeature.LOCAL_NETWORK_ACCESS]!!
@@ -191,14 +197,15 @@ class TrustPanelStoreTest {
         initializeSitePermissions(sitePermissions)
         every { permissionHighlights.isAutoPlayBlocking } returns true
 
-        val state = TrustPanelStore.createWebsitePermissionState(
-            settings = settings,
-            sitePermissions = sitePermissions,
-            permissionHighlights = permissionHighlights,
-            isPermissionBlockedByAndroid = { phoneFeature: PhoneFeature ->
-                phoneFeature == PhoneFeature.CAMERA // Only the camera permission is blocked
-            },
-        )
+        val state =
+            TrustPanelStore.createWebsitePermissionState(
+                settings = settings,
+                sitePermissions = sitePermissions,
+                permissionHighlights = permissionHighlights,
+                isPermissionBlockedByAndroid = { phoneFeature: PhoneFeature ->
+                    phoneFeature == PhoneFeature.CAMERA // Only the camera permission is blocked
+                },
+            )
 
         assertFalse(PhoneFeature.AUTOPLAY_AUDIBLE in state.keys)
         assertFalse(PhoneFeature.AUTOPLAY_INAUDIBLE in state.keys)
@@ -213,14 +220,15 @@ class TrustPanelStoreTest {
         every { settings.getSitePermissionsPhoneFeatureAction(any(), any()) } returns ASK_TO_ALLOW
         every { settings.getAutoplayUserSetting() } returns AUTOPLAY_ALLOW_ALL
 
-        val state = TrustPanelStore.createWebsitePermissionState(
-            settings = settings,
-            sitePermissions = null,
-            permissionHighlights = permissionHighlights,
-            isPermissionBlockedByAndroid = { phoneFeature: PhoneFeature ->
-                phoneFeature == PhoneFeature.CAMERA // Only the camera permission is blocked
-            },
-        )
+        val state =
+            TrustPanelStore.createWebsitePermissionState(
+                settings = settings,
+                sitePermissions = null,
+                permissionHighlights = permissionHighlights,
+                isPermissionBlockedByAndroid = { phoneFeature: PhoneFeature ->
+                    phoneFeature == PhoneFeature.CAMERA // Only the camera permission is blocked
+                },
+            )
 
         assertEquals(
             state[PhoneFeature.AUTOPLAY],
@@ -240,14 +248,15 @@ class TrustPanelStoreTest {
         every { permissionHighlights.isAutoPlayBlocking } returns false
         every { settings.getSitePermissionsPhoneFeatureAction(any(), any()) } returns ASK_TO_ALLOW
 
-        val state = TrustPanelStore.createWebsitePermissionState(
-            settings = settings,
-            sitePermissions = null,
-            permissionHighlights = permissionHighlights,
-            isPermissionBlockedByAndroid = { phoneFeature: PhoneFeature ->
-                phoneFeature == PhoneFeature.CAMERA // Only the camera permission is blocked
-            },
-        )
+        val state =
+            TrustPanelStore.createWebsitePermissionState(
+                settings = settings,
+                sitePermissions = null,
+                permissionHighlights = permissionHighlights,
+                isPermissionBlockedByAndroid = { phoneFeature: PhoneFeature ->
+                    phoneFeature == PhoneFeature.CAMERA // Only the camera permission is blocked
+                },
+            )
 
         assertEquals(
             state[PhoneFeature.AUTOPLAY],
@@ -260,17 +269,19 @@ class TrustPanelStoreTest {
     }
 
     @Test
-    fun `WHEN update IP protection menu state action is dispatched THEN IP protection menu state is updated`() = runTest {
-        val store = TrustPanelStore(initialState = TrustPanelState())
-        val newState = IPProtectionMenuState(
-            status = IPProtectionMenuStatus.Enabled,
-            dataLimitGb = 5,
-        )
+    fun `WHEN update IP protection menu state action is dispatched THEN IP protection menu state is updated`() =
+        runTest {
+            val store = TrustPanelStore(initialState = TrustPanelState())
+            val newState =
+                IPProtectionMenuState(
+                    status = IPProtectionMenuStatus.Enabled,
+                    dataLimitGb = 5,
+                )
 
-        store.dispatch(TrustPanelAction.UpdateIPProtectionMenuState(newState))
+            store.dispatch(TrustPanelAction.UpdateIPProtectionMenuState(newState))
 
-        assertEquals(newState, store.state.ipProtectionMenuState)
-    }
+            assertEquals(newState, store.state.ipProtectionMenuState)
+        }
 
     @Test
     fun `WHEN update site permissions action is dispatched THEN site permissions state is updated`() = runTest {
@@ -283,81 +294,81 @@ class TrustPanelStoreTest {
     }
 
     @Test
-    fun `WHEN grant permission blocked by android action is dispatched THEN permissions blocked by android state is updated`() = runTest {
-        val toggleablePermission = WebsitePermission.Toggleable(
-            isEnabled = true,
-            isBlockedByAndroid = true,
-            isVisible = true,
-            deviceFeature = PhoneFeature.CAMERA,
-        )
+    fun `WHEN grant permission blocked by android action is dispatched THEN permissions blocked by android state is updated`() =
+        runTest {
+            val toggleablePermission =
+                WebsitePermission.Toggleable(
+                    isEnabled = true,
+                    isBlockedByAndroid = true,
+                    isVisible = true,
+                    deviceFeature = PhoneFeature.CAMERA,
+                )
 
-        val store = TrustPanelStore(
-            initialState = TrustPanelState(
-                websitePermissionsState = mapOf(PhoneFeature.CAMERA to toggleablePermission),
-            ),
-        )
+            val store =
+                TrustPanelStore(
+                    initialState =
+                        TrustPanelState(websitePermissionsState = mapOf(PhoneFeature.CAMERA to toggleablePermission))
+                )
 
-        store.dispatch(TrustPanelAction.WebsitePermissionAction.GrantPermissionBlockedByAndroid(PhoneFeature.CAMERA))
+            store.dispatch(
+                TrustPanelAction.WebsitePermissionAction.GrantPermissionBlockedByAndroid(PhoneFeature.CAMERA)
+            )
 
-        assertEquals(
-            (store.state.websitePermissionsState[PhoneFeature.CAMERA]as? WebsitePermission.Toggleable)
-                ?.isBlockedByAndroid,
-            false,
-        )
-    }
+            assertEquals(
+                (store.state.websitePermissionsState[PhoneFeature.CAMERA] as? WebsitePermission.Toggleable)
+                    ?.isBlockedByAndroid,
+                false,
+            )
+        }
 
     @Test
     fun `WHEN toggle permission action is dispatched THEN permission enabled state is updated`() = runTest {
-        val toggleablePermission = WebsitePermission.Toggleable(
-            isEnabled = true,
-            isBlockedByAndroid = true,
-            isVisible = true,
-            deviceFeature = PhoneFeature.CAMERA,
-        )
+        val toggleablePermission =
+            WebsitePermission.Toggleable(
+                isEnabled = true,
+                isBlockedByAndroid = true,
+                isVisible = true,
+                deviceFeature = PhoneFeature.CAMERA,
+            )
 
-        val store = TrustPanelStore(
-            initialState = TrustPanelState(
-                websitePermissionsState = mapOf(PhoneFeature.CAMERA to toggleablePermission),
-            ),
-        )
+        val store =
+            TrustPanelStore(
+                initialState =
+                    TrustPanelState(websitePermissionsState = mapOf(PhoneFeature.CAMERA to toggleablePermission))
+            )
 
         store.dispatch(TrustPanelAction.WebsitePermissionAction.TogglePermission(PhoneFeature.CAMERA))
 
         assertEquals(
-            (store.state.websitePermissionsState[PhoneFeature.CAMERA]as? WebsitePermission.Toggleable)
-                ?.isEnabled,
+            (store.state.websitePermissionsState[PhoneFeature.CAMERA] as? WebsitePermission.Toggleable)?.isEnabled,
             false,
         )
     }
 
     @Test
     fun `WHEN change autoplay action is dispatched THEN autoplay value state is updated`() = runTest {
-        val toggleablePermission = WebsitePermission.Autoplay(
-            autoplayValue = AutoplayValue.AUTOPLAY_BLOCK_AUDIBLE,
-            isVisible = true,
-            deviceFeature = PhoneFeature.CAMERA,
-        )
+        val toggleablePermission =
+            WebsitePermission.Autoplay(
+                autoplayValue = AutoplayValue.AUTOPLAY_BLOCK_AUDIBLE,
+                isVisible = true,
+                deviceFeature = PhoneFeature.CAMERA,
+            )
 
-        val store = TrustPanelStore(
-            initialState = TrustPanelState(
-                websitePermissionsState = mapOf(PhoneFeature.AUTOPLAY to toggleablePermission),
-            ),
-        )
+        val store =
+            TrustPanelStore(
+                initialState =
+                    TrustPanelState(websitePermissionsState = mapOf(PhoneFeature.AUTOPLAY to toggleablePermission))
+            )
 
-        store.dispatch(
-            TrustPanelAction.WebsitePermissionAction.ChangeAutoplay(AutoplayValue.AUTOPLAY_ALLOW_ALL),
-        )
+        store.dispatch(TrustPanelAction.WebsitePermissionAction.ChangeAutoplay(AutoplayValue.AUTOPLAY_ALLOW_ALL))
 
         assertEquals(
-            (store.state.websitePermissionsState[PhoneFeature.AUTOPLAY]as? WebsitePermission.Autoplay)
-                ?.autoplayValue,
+            (store.state.websitePermissionsState[PhoneFeature.AUTOPLAY] as? WebsitePermission.Autoplay)?.autoplayValue,
             AutoplayValue.AUTOPLAY_ALLOW_ALL,
         )
     }
 
-    private fun initializeSitePermissions(
-        sitePermissions: SitePermissions,
-    ) {
+    private fun initializeSitePermissions(sitePermissions: SitePermissions) {
         every { sitePermissions.camera } returns SitePermissions.Status.NO_DECISION
         every { sitePermissions.microphone } returns SitePermissions.Status.NO_DECISION
         every { sitePermissions.notification } returns SitePermissions.Status.NO_DECISION

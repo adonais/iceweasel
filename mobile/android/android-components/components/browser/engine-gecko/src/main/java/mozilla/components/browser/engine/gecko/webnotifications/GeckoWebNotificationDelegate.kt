@@ -21,10 +21,9 @@ internal class GeckoWebNotificationDelegate(
 ) : GeckoViewWebNotificationDelegate {
 
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
+
     override fun onShowNotification(webNotification: GeckoViewWebNotification) {
-        val deferred = webNotificationDelegate.onShowNotification(
-            webNotification.toWebNotification(),
-        )
+        val deferred = webNotificationDelegate.onShowNotification(webNotification.toWebNotification())
         scope.launch {
             val succeeded = deferred.await()
             if (succeeded) {

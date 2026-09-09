@@ -49,15 +49,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import mozilla.components.compose.base.modifier.thenConditional
-import org.mozilla.fenix.R
-import org.mozilla.fenix.theme.FirefoxTheme
 import java.text.BreakIterator
 import java.text.StringCharacterIterator
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.fenix.R
+import org.mozilla.fenix.theme.FirefoxTheme
 
 private const val FOX_ANIMATION_DURATION = 600
 private const val TYPING_DELAY_MS = 50L
@@ -71,17 +71,17 @@ internal const val PROTECTION_STATUS_PILL_TEST_TAG = "trackersBlockedCard.protec
 /**
  * A card that displays the number of trackers blocked with an animated fox.
  *
- * When [longfoxEnabled] is true the pill launches the longfox game via [onLongfoxEntryPointClicked];
- * otherwise it opens the privacy report via [onPrivacyReportTapped]. This routing is independent of
- * [showLongfoxAnimation], which only controls the occasional fox peek animation.
+ * When [longfoxEnabled] is true the pill launches the longfox game via [onLongfoxEntryPointClicked]; otherwise it opens
+ * the privacy report via [onPrivacyReportTapped]. This routing is independent of [showLongfoxAnimation], which only
+ * controls the occasional fox peek animation.
  *
  * @param trackersBlockedCount The number of trackers blocked to display.
  * @param modifier Modifier to be applied to the card.
- * @param onPrivacyReportTapped Invoked when the pill is tapped while longfox is disabled. If null,
- * the pill is not clickable.
+ * @param onPrivacyReportTapped Invoked when the pill is tapped while longfox is disabled. If null, the pill is not
+ *   clickable.
  * @param onLongfoxEntryPointClicked Invoked when the pill is tapped while longfox is enabled.
- * @param longfoxEnabled Whether the longfox game is enabled, routing pill taps to
- * [onLongfoxEntryPointClicked] instead of [onPrivacyReportTapped].
+ * @param longfoxEnabled Whether the longfox game is enabled, routing pill taps to [onLongfoxEntryPointClicked] instead
+ *   of [onPrivacyReportTapped].
  * @param showLongfoxAnimation Whether to play the fox peek animation and typewriter text.
  */
 @Composable
@@ -143,16 +143,13 @@ fun TrackersBlockedCard(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
-            contentAlignment = Alignment.TopStart,
-        ) {
+        Box(contentAlignment = Alignment.TopStart) {
             if (isPlayingAnimation) {
                 Image(
                     painter = painterResource(R.drawable.expressive_firefox),
                     contentDescription = null,
-                    modifier = Modifier
-                        .testTag(LONGFOX_FOX_IMAGE_TEST_TAG)
-                        .offset {
+                    modifier =
+                        Modifier.testTag(LONGFOX_FOX_IMAGE_TEST_TAG).offset {
                             IntOffset(
                                 x = foxHorizontalOffset.toPx().roundToInt(),
                                 y = ((-peekHeight.toPx()) + (foxOffsetY.value * peekHeight.toPx())).roundToInt(),
@@ -185,18 +182,18 @@ private fun ProtectionStatusPill(
 ) {
     val shape = MaterialTheme.shapes.extraLarge
     Row(
-        modifier = Modifier
-            .testTag(PROTECTION_STATUS_PILL_TEST_TAG)
-            .background(
-                color = MaterialTheme.colorScheme.surfaceBright,
-                shape = shape,
-            )
-            .clip(shape)
-            .thenConditional(
-                Modifier.clickable { onClick?.invoke() },
-                { onClick != null },
-            )
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier =
+            Modifier.testTag(PROTECTION_STATUS_PILL_TEST_TAG)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceBright,
+                    shape = shape,
+                )
+                .clip(shape)
+                .thenConditional(
+                    Modifier.clickable { onClick?.invoke() },
+                    { onClick != null },
+                )
+                .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -209,17 +206,17 @@ private fun ProtectionStatusPill(
 
         Text(
             text =
-            if (longfoxEnabled) {
-                stringResource(R.string.help_catch_trackers)
-            } else if (trackersBlockedCount > 0) {
-                pluralStringResource(
-                    R.plurals.trackers_blocked_count_2,
-                    trackersBlockedCount,
-                    trackersBlockedCount,
-                )
-            } else {
-                stringResource(R.string.trackers_blocked_empty)
-            },
+                if (longfoxEnabled) {
+                    stringResource(R.string.help_catch_trackers)
+                } else if (trackersBlockedCount > 0) {
+                    pluralStringResource(
+                        R.plurals.trackers_blocked_count_2,
+                        trackersBlockedCount,
+                        trackersBlockedCount,
+                    )
+                } else {
+                    stringResource(R.string.trackers_blocked_empty)
+                },
             style = FirefoxTheme.typography.body2,
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -283,11 +280,7 @@ private fun TypewriterText(
         )
         if (showCursor && !isTypingComplete) {
             Spacer(modifier = Modifier.width(1.dp))
-            Box(
-                modifier = Modifier
-                    .size(width = 6.dp, height = 12.dp)
-                    .background(MaterialTheme.colorScheme.primary),
-            )
+            Box(modifier = Modifier.size(width = 6.dp, height = 12.dp).background(MaterialTheme.colorScheme.primary))
         }
     }
 }
@@ -337,12 +330,15 @@ private fun TrackersBlockedCardInteractivePreview() {
                     Image(
                         painter = painterResource(R.drawable.expressive_firefox),
                         contentDescription = null,
-                        modifier = Modifier.offset {
-                            IntOffset(
-                                x = 14.dp.toPx().roundToInt(),
-                                y = ((-peekHeight.dp.toPx()) + (animationProgress * peekHeight.dp.toPx())).roundToInt(),
-                            )
-                        },
+                        modifier =
+                            Modifier.offset {
+                                IntOffset(
+                                    x = 14.dp.toPx().roundToInt(),
+                                    y =
+                                        ((-peekHeight.dp.toPx()) + (animationProgress * peekHeight.dp.toPx()))
+                                            .roundToInt(),
+                                )
+                            },
                     )
 
                     TrackersBlockedCard(

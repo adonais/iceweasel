@@ -8,6 +8,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.os.Build
 import androidx.annotation.VisibleForTesting
+import java.io.File
 import mozilla.components.browser.icons.Icon
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.browser.icons.extension.toIconResources
@@ -21,7 +22,6 @@ import mozilla.components.support.utils.cache.CacheDirectoryMigration
 import mozilla.components.support.utils.cache.DiskLruCacheStore
 import org.json.JSONArray
 import org.json.JSONException
-import java.io.File
 
 private const val RESOURCES_DISK_CACHE_VERSION = 1
 private const val ICON_DATA_DISK_CACHE_VERSION = 1
@@ -35,37 +35,36 @@ private const val BROWSER_ICONS_DIR_NAME = "mozac_browser_icons"
 private const val ICONS_DIR_NAME = "icons"
 private const val RESOURCES_DIR_NAME = "resources"
 
-/**
- * Caching bitmaps and resource URLs on disk.
- */
+/** Caching bitmaps and resource URLs on disk. */
 class IconDiskCache :
-    DiskIconLoader.LoaderDiskCache,
-    DiskIconPreparer.PreparerDiskCache,
-    DiskIconProcessor.ProcessorDiskCache {
+    DiskIconLoader.LoaderDiskCache, DiskIconPreparer.PreparerDiskCache, DiskIconProcessor.ProcessorDiskCache {
     private val logger = Logger("IconDiskCache")
-    private val migration = CacheDirectoryMigration(
-        logger = logger,
-        legacyDirectory = { getParentCacheDirectory(it.cacheDir) },
-        newDirectory = { getParentCacheDirectory(it.noBackupFilesDir) },
-    )
+    private val migration =
+        CacheDirectoryMigration(
+            logger = logger,
+            legacyDirectory = { getParentCacheDirectory(it.cacheDir) },
+            newDirectory = { getParentCacheDirectory(it.noBackupFilesDir) },
+        )
 
     @VisibleForTesting
-    internal val iconResourcesStore = DiskLruCacheStore(
-        logger = logger,
-        version = RESOURCES_DISK_CACHE_VERSION,
-        maxSizeBytes = MAXIMUM_CACHE_RESOURCES_BYTES,
-        directoryProvider = { context -> getCacheDirectory(context, RESOURCES_DIR_NAME) },
-        migration = migration,
-    )
+    internal val iconResourcesStore =
+        DiskLruCacheStore(
+            logger = logger,
+            version = RESOURCES_DISK_CACHE_VERSION,
+            maxSizeBytes = MAXIMUM_CACHE_RESOURCES_BYTES,
+            directoryProvider = { context -> getCacheDirectory(context, RESOURCES_DIR_NAME) },
+            migration = migration,
+        )
 
     @VisibleForTesting
-    internal val iconDataStore = DiskLruCacheStore(
-        logger = logger,
-        version = ICON_DATA_DISK_CACHE_VERSION,
-        maxSizeBytes = MAXIMUM_CACHE_ICON_DATA_BYTES,
-        directoryProvider = { context -> getCacheDirectory(context, ICONS_DIR_NAME) },
-        migration,
-    )
+    internal val iconDataStore =
+        DiskLruCacheStore(
+            logger = logger,
+            version = ICON_DATA_DISK_CACHE_VERSION,
+            maxSizeBytes = MAXIMUM_CACHE_ICON_DATA_BYTES,
+            directoryProvider = { context -> getCacheDirectory(context, ICONS_DIR_NAME) },
+            migration,
+        )
 
     override fun getResources(context: Context, request: IconRequest): List<IconRequest.Resource> {
         val key = createKey(request.url)
@@ -101,12 +100,12 @@ class IconDiskCache :
     }
 
     internal fun putIconBitmap(context: Context, resource: IconRequest.Resource, bitmap: Bitmap) {
-        val compressFormat = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            Bitmap.CompressFormat.WEBP_LOSSY
-        } else {
-            @Suppress("DEPRECATION")
-            Bitmap.CompressFormat.WEBP
-        }
+        val compressFormat =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                Bitmap.CompressFormat.WEBP_LOSSY
+            } else {
+                @Suppress("DEPRECATION") Bitmap.CompressFormat.WEBP
+            }
         iconDataStore.write(context, createKey(resource.url)) { stream ->
             bitmap.compress(compressFormat, WEBP_QUALITY, stream)
         }
@@ -120,8 +119,7 @@ class IconDiskCache :
     private fun getCacheDirectory(context: Context, subdirectoryName: String): File =
         File(getParentCacheDirectory(context.noBackupFilesDir), subdirectoryName)
 
-    private fun getParentCacheDirectory(parent: File) =
-        File(parent, BROWSER_ICONS_DIR_NAME)
+    private fun getParentCacheDirectory(parent: File) = File(parent, BROWSER_ICONS_DIR_NAME)
 }
 
 private fun createKey(rawKey: String): String = rawKey.sha1()

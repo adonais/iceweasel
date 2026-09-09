@@ -5,6 +5,7 @@
 package mozilla.components.service.sync.autofill
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.RustComponentsInitializer
 import mozilla.components.concept.storage.CreditCard
@@ -23,7 +24,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class AutofillCreditCardsAddressesStorageTest {
@@ -47,27 +47,34 @@ class AutofillCreditCardsAddressesStorageTest {
     @Test
     fun `add credit card`() = runTest {
         val plaintextNumber = CreditCardNumber.Plaintext("4111111111111111")
-        val creditCardFields = NewCreditCardFields(
-            billingName = "Jon Doe",
-            plaintextCardNumber = plaintextNumber,
-            cardNumberLast4 = "1111",
-            expiryMonth = 12,
-            expiryYear = 2028,
-            cardType = "amex",
-        )
+        val creditCardFields =
+            NewCreditCardFields(
+                billingName = "Jon Doe",
+                plaintextCardNumber = plaintextNumber,
+                cardNumberLast4 = "1111",
+                expiryMonth = 12,
+                expiryYear = 2028,
+                cardType = "amex",
+            )
         val creditCard = storage.addCreditCard(creditCardFields)
 
         assertNotNull(creditCard)
 
         assertEquals(creditCardFields.billingName, creditCard.billingName)
-        assertEquals(plaintextNumber, storage.crypto.decrypt(storage.crypto.getOrGenerateKey(), creditCard.encryptedCardNumber))
+        assertEquals(
+            plaintextNumber,
+            storage.crypto.decrypt(storage.crypto.getOrGenerateKey(), creditCard.encryptedCardNumber),
+        )
         assertEquals(creditCardFields.cardNumberLast4, creditCard.cardNumberLast4)
         assertEquals(creditCardFields.expiryMonth, creditCard.expiryMonth)
         assertEquals(creditCardFields.expiryYear, creditCard.expiryYear)
         assertEquals(creditCardFields.cardType, creditCard.cardType)
         assertEquals(
             CreditCard.ELLIPSES_START +
-                CreditCard.ELLIPSIS + CreditCard.ELLIPSIS + CreditCard.ELLIPSIS + CreditCard.ELLIPSIS +
+                CreditCard.ELLIPSIS +
+                CreditCard.ELLIPSIS +
+                CreditCard.ELLIPSIS +
+                CreditCard.ELLIPSIS +
                 creditCardFields.cardNumberLast4 +
                 CreditCard.ELLIPSES_END,
             creditCard.obfuscatedCardNumber,
@@ -77,14 +84,15 @@ class AutofillCreditCardsAddressesStorageTest {
     @Test
     fun `get credit card`() = runTest {
         val plaintextNumber = CreditCardNumber.Plaintext("5500000000000004")
-        val creditCardFields = NewCreditCardFields(
-            billingName = "Jon Doe",
-            plaintextCardNumber = plaintextNumber,
-            cardNumberLast4 = "0004",
-            expiryMonth = 12,
-            expiryYear = 2028,
-            cardType = "amex",
-        )
+        val creditCardFields =
+            NewCreditCardFields(
+                billingName = "Jon Doe",
+                plaintextCardNumber = plaintextNumber,
+                cardNumberLast4 = "0004",
+                expiryMonth = 12,
+                expiryYear = 2028,
+                cardType = "amex",
+            )
         val creditCard = storage.addCreditCard(creditCardFields)
 
         assertEquals(creditCard, storage.getCreditCard(creditCard.guid))
@@ -98,32 +106,35 @@ class AutofillCreditCardsAddressesStorageTest {
     @Test
     fun `get all credit cards`() = runTest {
         val plaintextNumber1 = CreditCardNumber.Plaintext("5500000000000004")
-        val creditCardFields1 = NewCreditCardFields(
-            billingName = "Jane Fields",
-            plaintextCardNumber = plaintextNumber1,
-            cardNumberLast4 = "0004",
-            expiryMonth = 12,
-            expiryYear = 2028,
-            cardType = "mastercard",
-        )
+        val creditCardFields1 =
+            NewCreditCardFields(
+                billingName = "Jane Fields",
+                plaintextCardNumber = plaintextNumber1,
+                cardNumberLast4 = "0004",
+                expiryMonth = 12,
+                expiryYear = 2028,
+                cardType = "mastercard",
+            )
         val plaintextNumber2 = CreditCardNumber.Plaintext("4111111111111111")
-        val creditCardFields2 = NewCreditCardFields(
-            billingName = "Banana Apple",
-            plaintextCardNumber = plaintextNumber2,
-            cardNumberLast4 = "1111",
-            expiryMonth = 1,
-            expiryYear = 2030,
-            cardType = "visa",
-        )
+        val creditCardFields2 =
+            NewCreditCardFields(
+                billingName = "Banana Apple",
+                plaintextCardNumber = plaintextNumber2,
+                cardNumberLast4 = "1111",
+                expiryMonth = 1,
+                expiryYear = 2030,
+                cardType = "visa",
+            )
         val plaintextNumber3 = CreditCardNumber.Plaintext("340000000000009")
-        val creditCardFields3 = NewCreditCardFields(
-            billingName = "Pineapple Orange",
-            plaintextCardNumber = plaintextNumber3,
-            cardNumberLast4 = "0009",
-            expiryMonth = 2,
-            expiryYear = 2028,
-            cardType = "amex",
-        )
+        val creditCardFields3 =
+            NewCreditCardFields(
+                billingName = "Pineapple Orange",
+                plaintextCardNumber = plaintextNumber3,
+                cardNumberLast4 = "0009",
+                expiryMonth = 2,
+                expiryYear = 2028,
+                cardType = "amex",
+            )
         val creditCard1 = storage.addCreditCard(creditCardFields1)
         val creditCard2 = storage.addCreditCard(creditCardFields2)
         val creditCard3 = storage.addCreditCard(creditCardFields3)
@@ -148,26 +159,28 @@ class AutofillCreditCardsAddressesStorageTest {
 
     @Test
     fun `update credit card`() = runTest {
-        val creditCardFields = NewCreditCardFields(
-            billingName = "Jon Doe",
-            plaintextCardNumber = CreditCardNumber.Plaintext("4111111111111111"),
-            cardNumberLast4 = "1111",
-            expiryMonth = 12,
-            expiryYear = 2028,
-            cardType = "visa",
-        )
+        val creditCardFields =
+            NewCreditCardFields(
+                billingName = "Jon Doe",
+                plaintextCardNumber = CreditCardNumber.Plaintext("4111111111111111"),
+                cardNumberLast4 = "1111",
+                expiryMonth = 12,
+                expiryYear = 2028,
+                cardType = "visa",
+            )
 
         var creditCard = storage.addCreditCard(creditCardFields)
 
         // Change every field
-        var newCreditCardFields = UpdatableCreditCardFields(
-            billingName = "Jane Fields",
-            cardNumber = CreditCardNumber.Plaintext("30000000000004"),
-            cardNumberLast4 = "0004",
-            expiryMonth = 12,
-            expiryYear = 2038,
-            cardType = "diners",
-        )
+        var newCreditCardFields =
+            UpdatableCreditCardFields(
+                billingName = "Jane Fields",
+                cardNumber = CreditCardNumber.Plaintext("30000000000004"),
+                cardNumberLast4 = "0004",
+                expiryMonth = 12,
+                expiryYear = 2038,
+                cardType = "diners",
+            )
 
         storage.updateCreditCard(creditCard.guid, newCreditCardFields)
 
@@ -183,14 +196,15 @@ class AutofillCreditCardsAddressesStorageTest {
         assertEquals(newCreditCardFields.cardType, creditCard.cardType)
 
         // Change the name only.
-        newCreditCardFields = UpdatableCreditCardFields(
-            billingName = "Bob Jones",
-            cardNumber = creditCard.encryptedCardNumber,
-            cardNumberLast4 = "0004",
-            expiryMonth = 12,
-            expiryYear = 2038,
-            cardType = "diners",
-        )
+        newCreditCardFields =
+            UpdatableCreditCardFields(
+                billingName = "Bob Jones",
+                cardNumber = creditCard.encryptedCardNumber,
+                cardNumberLast4 = "0004",
+                expiryMonth = 12,
+                expiryYear = 2038,
+                cardType = "diners",
+            )
 
         storage.updateCreditCard(creditCard.guid, newCreditCardFields)
 
@@ -206,14 +220,15 @@ class AutofillCreditCardsAddressesStorageTest {
 
     @Test
     fun `delete credit card`() = runTest {
-        val creditCardFields = NewCreditCardFields(
-            billingName = "Jon Doe",
-            plaintextCardNumber = CreditCardNumber.Plaintext("30000000000004"),
-            cardNumberLast4 = "0004",
-            expiryMonth = 12,
-            expiryYear = 2028,
-            cardType = "diners",
-        )
+        val creditCardFields =
+            NewCreditCardFields(
+                billingName = "Jon Doe",
+                plaintextCardNumber = CreditCardNumber.Plaintext("30000000000004"),
+                cardNumberLast4 = "0004",
+                expiryMonth = 12,
+                expiryYear = 2028,
+                cardType = "diners",
+            )
 
         val creditCard = storage.addCreditCard(creditCardFields)
         assertNotNull(storage.getCreditCard(creditCard.guid))
@@ -226,18 +241,19 @@ class AutofillCreditCardsAddressesStorageTest {
 
     @Test
     fun `add address`() = runTest {
-        val addressFields = UpdatableAddressFields(
-            name = "John Smith",
-            organization = "Mozilla",
-            streetAddress = "123 Sesame Street",
-            addressLevel3 = "",
-            addressLevel2 = "",
-            addressLevel1 = "",
-            postalCode = "90210",
-            country = "US",
-            tel = "+1 519 555-5555",
-            email = "foo@bar.com",
-        )
+        val addressFields =
+            UpdatableAddressFields(
+                name = "John Smith",
+                organization = "Mozilla",
+                streetAddress = "123 Sesame Street",
+                addressLevel3 = "",
+                addressLevel2 = "",
+                addressLevel1 = "",
+                postalCode = "90210",
+                country = "US",
+                tel = "+1 519 555-5555",
+                email = "foo@bar.com",
+            )
         val address = storage.addAddress(addressFields)
 
         assertNotNull(address)
@@ -256,18 +272,19 @@ class AutofillCreditCardsAddressesStorageTest {
 
     @Test
     fun `get address`() = runTest {
-        val addressFields = UpdatableAddressFields(
-            name = "John Smith",
-            organization = "Mozilla",
-            streetAddress = "123 Sesame Street",
-            addressLevel3 = "",
-            addressLevel2 = "",
-            addressLevel1 = "",
-            postalCode = "90210",
-            country = "US",
-            tel = "+1 519 555-5555",
-            email = "foo@bar.com",
-        )
+        val addressFields =
+            UpdatableAddressFields(
+                name = "John Smith",
+                organization = "Mozilla",
+                streetAddress = "123 Sesame Street",
+                addressLevel3 = "",
+                addressLevel2 = "",
+                addressLevel1 = "",
+                postalCode = "90210",
+                country = "US",
+                tel = "+1 519 555-5555",
+                email = "foo@bar.com",
+            )
         val address = storage.addAddress(addressFields)
 
         assertEquals(address, storage.getAddress(address.guid))
@@ -280,42 +297,45 @@ class AutofillCreditCardsAddressesStorageTest {
 
     @Test
     fun `get all addresses`() = runTest {
-        val addressFields1 = UpdatableAddressFields(
-            name = "John Smith",
-            organization = "Mozilla",
-            streetAddress = "123 Sesame Street",
-            addressLevel3 = "",
-            addressLevel2 = "",
-            addressLevel1 = "",
-            postalCode = "90210",
-            country = "US",
-            tel = "+1 519 555-5555",
-            email = "foo@bar.com",
-        )
-        val addressFields2 = UpdatableAddressFields(
-            name = "Mary Sue",
-            organization = "",
-            streetAddress = "1 New St",
-            addressLevel3 = "",
-            addressLevel2 = "York",
-            addressLevel1 = "SC",
-            postalCode = "29745",
-            country = "US",
-            tel = "+19871234567",
-            email = "mary@example.com",
-        )
-        val addressFields3 = UpdatableAddressFields(
-            name = "Timothy João Berners-Lee",
-            organization = "World Wide Web Consortium",
-            streetAddress = "Rua Adalberto Pajuaba, 404",
-            addressLevel3 = "Campos Elísios",
-            addressLevel2 = "Ribeirão Preto",
-            addressLevel1 = "SP",
-            postalCode = "14055-220",
-            country = "BR",
-            tel = "+0318522222222",
-            email = "timbr@example.org",
-        )
+        val addressFields1 =
+            UpdatableAddressFields(
+                name = "John Smith",
+                organization = "Mozilla",
+                streetAddress = "123 Sesame Street",
+                addressLevel3 = "",
+                addressLevel2 = "",
+                addressLevel1 = "",
+                postalCode = "90210",
+                country = "US",
+                tel = "+1 519 555-5555",
+                email = "foo@bar.com",
+            )
+        val addressFields2 =
+            UpdatableAddressFields(
+                name = "Mary Sue",
+                organization = "",
+                streetAddress = "1 New St",
+                addressLevel3 = "",
+                addressLevel2 = "York",
+                addressLevel1 = "SC",
+                postalCode = "29745",
+                country = "US",
+                tel = "+19871234567",
+                email = "mary@example.com",
+            )
+        val addressFields3 =
+            UpdatableAddressFields(
+                name = "Timothy João Berners-Lee",
+                organization = "World Wide Web Consortium",
+                streetAddress = "Rua Adalberto Pajuaba, 404",
+                addressLevel3 = "Campos Elísios",
+                addressLevel2 = "Ribeirão Preto",
+                addressLevel1 = "SP",
+                postalCode = "14055-220",
+                country = "BR",
+                tel = "+0318522222222",
+                email = "timbr@example.org",
+            )
         val address1 = storage.addAddress(addressFields1)
         val address2 = storage.addAddress(addressFields2)
         val address3 = storage.addAddress(addressFields3)
@@ -335,33 +355,35 @@ class AutofillCreditCardsAddressesStorageTest {
 
     @Test
     fun `update address`() = runTest {
-        val addressFields = UpdatableAddressFields(
-            name = "John Smith",
-            organization = "Mozilla",
-            streetAddress = "123 Sesame Street",
-            addressLevel3 = "",
-            addressLevel2 = "",
-            addressLevel1 = "",
-            postalCode = "90210",
-            country = "US",
-            tel = "+1 519 555-5555",
-            email = "foo@bar.com",
-        )
+        val addressFields =
+            UpdatableAddressFields(
+                name = "John Smith",
+                organization = "Mozilla",
+                streetAddress = "123 Sesame Street",
+                addressLevel3 = "",
+                addressLevel2 = "",
+                addressLevel1 = "",
+                postalCode = "90210",
+                country = "US",
+                tel = "+1 519 555-5555",
+                email = "foo@bar.com",
+            )
 
         var address = storage.addAddress(addressFields)
 
-        val newAddressFields = UpdatableAddressFields(
-            name = "Mary Sue",
-            organization = "",
-            streetAddress = "1 New St",
-            addressLevel3 = "",
-            addressLevel2 = "York",
-            addressLevel1 = "SC",
-            postalCode = "29745",
-            country = "US",
-            tel = "+19871234567",
-            email = "mary@example.com",
-        )
+        val newAddressFields =
+            UpdatableAddressFields(
+                name = "Mary Sue",
+                organization = "",
+                streetAddress = "1 New St",
+                addressLevel3 = "",
+                addressLevel2 = "York",
+                addressLevel1 = "SC",
+                postalCode = "29745",
+                country = "US",
+                tel = "+19871234567",
+                email = "mary@example.com",
+            )
 
         storage.updateAddress(address.guid, newAddressFields)
 
@@ -381,18 +403,19 @@ class AutofillCreditCardsAddressesStorageTest {
 
     @Test
     fun `delete address`() = runTest {
-        val addressFields = UpdatableAddressFields(
-            name = "John Smith",
-            organization = "Mozilla",
-            streetAddress = "123 Sesame Street",
-            addressLevel3 = "",
-            addressLevel2 = "",
-            addressLevel1 = "",
-            postalCode = "90210",
-            country = "US",
-            tel = "+1 519 555-5555",
-            email = "foo@bar.com",
-        )
+        val addressFields =
+            UpdatableAddressFields(
+                name = "John Smith",
+                organization = "Mozilla",
+                streetAddress = "123 Sesame Street",
+                addressLevel3 = "",
+                addressLevel2 = "",
+                addressLevel1 = "",
+                postalCode = "90210",
+                country = "US",
+                tel = "+1 519 555-5555",
+                email = "foo@bar.com",
+            )
 
         val address = storage.addAddress(addressFields)
         val savedAddress = storage.getAddress(address.guid)

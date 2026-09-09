@@ -187,16 +187,6 @@
     "dark": "{Theme$text/color}",
     "forcedColors": "{HCM Theme$SelectedItemText}"
   },
-  "button/nova/background/color/selected": {
-    "light": "transparent",
-    "dark": "transparent",
-    "forcedColors": "{HCM Theme$SelectedItem}"
-  },
-  "button/nova/split/separator/background/color": {
-    "light": "{Theme$button/border/color}",
-    "dark": "{Theme$button/border/color}",
-    "forcedColors": "{Theme$button/border/color}"
-  },
   "button/background/color": {
     "light": "color-mix(in srgb, currentColor 7%, transparent)",
     "dark": "color-mix(in srgb, currentColor 7%, transparent)",
@@ -220,17 +210,17 @@
   "button/background/color/primary": {
     "light": "{Theme$color/accent/primary}",
     "dark": "{Theme$color/accent/primary}",
-    "forcedColors": "{Theme$color/accent/primary}"
+    "forcedColors": "{HCM Theme$ButtonText}"
   },
   "button/background/color/primary/hover": {
     "light": "{Theme$color/accent/primary/hover}",
     "dark": "{Theme$color/accent/primary/hover}",
-    "forcedColors": "{Theme$color/accent/primary/hover}"
+    "forcedColors": "{HCM Theme$SelectedItem}"
   },
   "button/background/color/primary/active": {
     "light": "{Theme$color/accent/primary/active}",
     "dark": "{Theme$color/accent/primary/active}",
-    "forcedColors": "{Theme$color/accent/primary/active}"
+    "forcedColors": "{Theme$button/background/color/primary/hover}"
   },
   "button/background/color/primary/disabled": {
     "light": "{Theme$button/background/color/primary}",
@@ -352,10 +342,20 @@
     "dark": "transparent",
     "forcedColors": "transparent"
   },
+  "button/background/color/toolbar/active": {
+    "light": "{Theme$toolbarbutton/background/color/active}",
+    "dark": "{Theme$toolbarbutton/background/color/active}",
+    "forcedColors": "{Theme$toolbarbutton/background/color/active}"
+  },
   "button/background/color/toolbar/disabled": {
     "light": "{Theme$button/background/color/ghost}",
     "dark": "{Theme$button/background/color/ghost}",
     "forcedColors": "{Theme$button/background/color/ghost}"
+  },
+  "button/background/color/toolbar/hover": {
+    "light": "{Theme$toolbarbutton/background/color/hover}",
+    "dark": "{Theme$toolbarbutton/background/color/hover}",
+    "forcedColors": "{Theme$toolbarbutton/background/color/hover}"
   },
   "button/background/color/toolbar/selected": {
     "light": "{Theme$button/background/color/ghost/active}",
@@ -1053,6 +1053,16 @@
     "light": "{Theme$button/opacity/disabled}",
     "dark": "{Theme$button/opacity/disabled}",
     "forcedColors": 30
+  },
+  "toolbarbutton/background/color/hover": {
+    "light": "color-mix(in srgb, currentColor 17%, transparent)",
+    "dark": "color-mix(in srgb, currentColor 17%, transparent)",
+    "forcedColors": "{Theme$button/background/color/hover}"
+  },
+  "toolbarbutton/background/color/active": {
+    "light": "color-mix(in srgb, currentColor 30%, transparent)",
+    "dark": "color-mix(in srgb, currentColor 30%, transparent)",
+    "forcedColors": "{Theme$button/background/color/active}"
   },
   "toolbarbutton/outline": {
     "light": "{Primitives$border/width} solid {Theme$toolbarbutton/outline/color}",
@@ -1822,26 +1832,26 @@
   },
   "tab/group/gray": {
     "light": "{Colors$color/gray/55}",
-    "dark": "{Colors$color/gray/0}",
+    "dark": "{Colors$color/gray/40}",
     "forcedColors": "transparent"
   },
   "tab/group/gray/text": {
     "light": "{Colors$color/white}",
-    "dark": "{Colors$color/gray/65}",
+    "dark": "{Colors$color/gray/90}",
     "forcedColors": "transparent"
   },
   "tab/group/gray/text/invert": {
-    "light": "{Colors$color/gray/65}",
+    "light": "{Colors$color/gray/90}",
     "dark": "{Colors$color/white}",
     "forcedColors": "transparent"
   },
   "tab/group/gray/hover": {
     "light": "{Colors$color/gray/65}",
-    "dark": "{Colors$color/gray/10}",
+    "dark": "{Colors$color/gray/50}",
     "forcedColors": "transparent"
   },
   "tab/group/gray/invert": {
-    "light": "{Colors$color/gray/0}",
+    "light": "{Colors$color/gray/40}",
     "dark": "{Colors$color/gray/55}",
     "forcedColors": "transparent"
   },

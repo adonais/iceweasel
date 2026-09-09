@@ -107,9 +107,17 @@ function checkURLMatch(
   const originalLocation = aRequest.QueryInterface(Ci.nsIChannel).originalURI;
   // We have been redirected
   if (originalLocation.spec !== aLocationURI.spec) {
-    if (hosts.has(originalLocation.host)) {
+    let originalHost;
+    try {
+      originalHost = originalLocation.host;
+    } catch (e) {
+      // nsIURI.host can throw for non-nsStandardURL nsIURIs
+      return false;
+    }
+
+    if (hosts.has(originalHost)) {
       return {
-        host: originalLocation.host,
+        host: originalHost,
         url: originalLocation.spec,
       };
     }
@@ -118,7 +126,7 @@ function checkURLMatch(
       for (const regex of regexPatterns) {
         if (regex.test(originalLocation.spec)) {
           return {
-            host: originalLocation.host,
+            host: originalHost,
             url: originalLocation.spec,
           };
         }

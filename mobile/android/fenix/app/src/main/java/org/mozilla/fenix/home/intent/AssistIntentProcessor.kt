@@ -11,9 +11,7 @@ import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.utils.Settings
 
-/**
- * Using Firefox as a digital assistant application should start a voice search.
- */
+/** Using Firefox as a digital assistant application should start a voice search. */
 class AssistIntentProcessor : HomeIntentProcessor {
     override fun process(intent: Intent, navController: NavController, out: Intent, settings: Settings): Boolean {
         if (intent.action != Intent.ACTION_ASSIST) {
@@ -22,11 +20,12 @@ class AssistIntentProcessor : HomeIntentProcessor {
 
         navController.nav(
             id = null,
-            directions = NavGraphDirections.actionGlobalHome(
-                searchAccessPoint = MetricsUtils.Source.DIGITAL_ASSISTANT,
-                focusOnAddressBar = true,
-                startVoiceSearch = settings.shouldShowVoiceSearch,
-            ),
+            directions =
+                NavGraphDirections.actionGlobalHome(
+                    searchAccessPoint = MetricsUtils.Source.DIGITAL_ASSISTANT,
+                    focusOnAddressBar = true,
+                    startVoiceSearch = settings.shouldShowVoiceSearch,
+                ),
         )
 
         return true

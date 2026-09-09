@@ -11,10 +11,10 @@ import androidx.annotation.Px
  *
  * @property targetSize The size the image will be displayed at, in pixels.
  * @property minSize The minimum size of an image before it will be thrown out, in pixels.
- * @property maxSize The maximum size of an image before it will be thrown out, in pixels.
- * Extremely large images are suspicious and should be ignored.
- * @property maxScaleFactor The factor that the image can be scaled up before being thrown out.
- * A lower scale factor results in less pixelation.
+ * @property maxSize The maximum size of an image before it will be thrown out, in pixels. Extremely large images are
+ *   suspicious and should be ignored.
+ * @property maxScaleFactor The factor that the image can be scaled up before being thrown out. A lower scale factor
+ *   results in less pixelation.
  */
 data class DesiredSize(
     @param:Px val targetSize: Int,

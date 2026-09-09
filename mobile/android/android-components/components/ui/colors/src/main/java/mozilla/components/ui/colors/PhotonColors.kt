@@ -9,8 +9,8 @@ import androidx.compose.ui.graphics.Color
 /**
  * Colors from the [Photon Design System](https://design.firefox.com/photon/visuals/color.html).
  *
- * _"Firefox colors are bold, vibrant and attractive. They enhance the experience by providing visual
- * clues and by bringing attention to primary actions."_
+ * _"Firefox colors are bold, vibrant and attractive. They enhance the experience by providing visual clues and by
+ * bringing attention to primary actions."_
  */
 object PhotonColors {
     // Firefox Blue is one of our primary colors. We use blue as accent color for highlighting buttons,

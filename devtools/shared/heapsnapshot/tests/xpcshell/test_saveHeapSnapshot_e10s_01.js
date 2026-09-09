@@ -5,5 +5,6 @@
 // Test saving a heap snapshot in the sandboxed e10s child process.
 
 function run_test() {
+  ChromeUtils.notifyDevToolsOpened();
   run_test_in_child("test_SaveHeapSnapshot.js");
 }

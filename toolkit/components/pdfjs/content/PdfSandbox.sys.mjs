@@ -39,6 +39,7 @@ export class PdfSandbox {
     const sandbox = Cu.Sandbox(null, {
       sandboxName: "PDF.js scripting sandbox",
       sameZoneAs: window,
+      associatedWindow: window,
       wantXrays: true,
       wantGlobalProperties: [],
       wantComponents: false,

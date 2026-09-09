@@ -20,9 +20,8 @@ import org.mozilla.fenix.wallpapers.Wallpaper
 /**
  * Represents the colors for the tab strip.
  *
- * @property backgroundBrush The brush used to paint the tab strip background. Use
- * [SolidColor] with a transparent color to let edge-to-edge wallpapers show through,
- * or a gradient brush for the standard tab strip background.
+ * @property backgroundBrush The brush used to paint the tab strip background. Use [SolidColor] with a transparent color
+ *   to let edge-to-edge wallpapers show through, or a gradient brush for the standard tab strip background.
  * @property tabItemBackgroundColors The background colors of the tab strip items.
  */
 data class TabStripColors(
@@ -68,42 +67,38 @@ data class TabStripColors(
             val isPrivate = browsingModeManager.mode.isPrivate
             val isEdgeToEdgeBackgroundEnabled =
                 settings.enableHomepageEdgeToEdgeBackgroundFeature &&
-                        settings.currentWallpaperName == Wallpaper.EDGE_TO_EDGE
+                    settings.currentWallpaperName == Wallpaper.EDGE_TO_EDGE
             val isSearching = toolbarState?.let {
                 it.isEditMode() && it.editState.query.current.isNotEmpty()
             }
-            val shouldUseEdgeToEdgeColors =
-                isEdgeToEdgeBackgroundEnabled && !isPrivate && isSearching == false
+            val shouldUseEdgeToEdgeColors = isEdgeToEdgeBackgroundEnabled && !isPrivate && isSearching == false
 
             return if (shouldUseEdgeToEdgeColors) {
                 TabStripColors(
-                    backgroundBrush = SolidColor(
-                        colorResource(R.color.homepage_tab_edge_to_edge_toolbar_background),
-                    ),
-                    tabItemBackgroundColors = TabColors(
-                        activeColor = colorResource(
-                            R.color.homepage_tab_edge_to_edge_tab_strip_item_background_active,
+                    backgroundBrush = SolidColor(colorResource(R.color.homepage_tab_edge_to_edge_toolbar_background)),
+                    tabItemBackgroundColors =
+                        TabColors(
+                            activeColor =
+                                colorResource(R.color.homepage_tab_edge_to_edge_tab_strip_item_background_active),
+                            inactiveColor =
+                                colorResource(R.color.homepage_tab_edge_to_edge_tab_strip_item_background_inactive),
                         ),
-                        inactiveColor = colorResource(
-                            R.color.homepage_tab_edge_to_edge_tab_strip_item_background_inactive,
-                        ),
-                    ),
                 )
             } else {
                 default()
             }
         }
 
-        /**
-         * Returns the default [TabStripColors] instance.
-         */
+        /** Returns the default [TabStripColors] instance. */
         @Composable
-        fun default() = TabStripColors(
-            backgroundBrush = FirefoxTheme.gradients.accentSubtle.brush,
-            tabItemBackgroundColors = TabColors(
-                activeColor = MaterialTheme.colorScheme.surface,
-                inactiveColor = Color.Transparent,
-            ),
-        )
+        fun default() =
+            TabStripColors(
+                backgroundBrush = FirefoxTheme.gradients.accentSubtle.brush,
+                tabItemBackgroundColors =
+                    TabColors(
+                        activeColor = MaterialTheme.colorScheme.surface,
+                        inactiveColor = Color.Transparent,
+                    ),
+            )
     }
 }

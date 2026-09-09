@@ -53,10 +53,7 @@ fun PasswordGeneratorBottomSheet(
     colors: PasswordGeneratorDialogColors = PasswordGeneratorDialogColors.default(),
 ) {
     Column(
-        modifier = Modifier
-            .background(colors.background)
-            .padding(all = 8.dp)
-            .fillMaxWidth(),
+        modifier = Modifier.background(colors.background).padding(all = 8.dp).fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         StrongPasswordBottomSheetTitle(colors = colors)
@@ -90,13 +87,14 @@ private fun StrongPasswordBottomSheetTitle(colors: PasswordGeneratorDialogColors
         Text(
             modifier = Modifier.padding(16.dp),
             text = stringResource(id = R.string.mozac_feature_prompts_suggest_strong_password_title),
-            style = TextStyle(
-                fontSize = FONT_SIZE,
-                lineHeight = LINE_HEIGHT,
-                color = colors.title,
-                letterSpacing = LETTER_SPACING,
-                fontWeight = FontWeight.Bold,
-            ),
+            style =
+                TextStyle(
+                    fontSize = FONT_SIZE,
+                    lineHeight = LINE_HEIGHT,
+                    color = colors.title,
+                    letterSpacing = LETTER_SPACING,
+                    fontWeight = FontWeight.Bold,
+                ),
         )
     }
 }
@@ -109,12 +107,13 @@ private fun StrongPasswordBottomSheetDescription(
     Text(
         modifier = modifier.padding(start = 40.dp, top = 0.dp, end = 12.dp, bottom = 16.dp),
         text = stringResource(id = R.string.mozac_feature_prompts_suggest_strong_password_description_3),
-        style = TextStyle(
-            fontSize = FONT_SIZE,
-            lineHeight = LINE_HEIGHT,
-            color = colors.description,
-            letterSpacing = LETTER_SPACING,
-        ),
+        style =
+            TextStyle(
+                fontSize = FONT_SIZE,
+                lineHeight = LINE_HEIGHT,
+                color = colors.description,
+                letterSpacing = LETTER_SPACING,
+            ),
     )
 }
 
@@ -125,22 +124,23 @@ private fun StrongPasswordBottomSheetPasswordBox(
     colors: PasswordGeneratorDialogColors,
 ) {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 40.dp, top = 8.dp, end = 12.dp, bottom = 8.dp)
-            .background(colors.passwordBox)
-            .border(1.dp, colors.boxBorder)
-            .padding(4.dp),
+        modifier =
+            Modifier.fillMaxWidth()
+                .padding(start = 40.dp, top = 8.dp, end = 12.dp, bottom = 8.dp)
+                .background(colors.passwordBox)
+                .border(1.dp, colors.boxBorder)
+                .padding(4.dp)
     ) {
         Text(
             modifier = modifier.padding(8.dp),
             text = generatedPassword,
-            style = TextStyle(
-                fontSize = FONT_SIZE,
-                lineHeight = LINE_HEIGHT,
-                color = colors.title,
-                letterSpacing = LETTER_SPACING,
-            ),
+            style =
+                TextStyle(
+                    fontSize = FONT_SIZE,
+                    lineHeight = LINE_HEIGHT,
+                    color = colors.title,
+                    letterSpacing = LETTER_SPACING,
+                ),
         )
     }
 }
@@ -153,17 +153,16 @@ private fun StrongPasswordBottomSheetButtons(
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 16.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 16.dp),
     ) {
         TextButton(
             text = stringResource(id = R.string.mozac_feature_prompt_not_now),
             onClick = { onCancelDialog() },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = colors.background,
-                contentColor = colors.cancelText,
-            ),
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = colors.background,
+                    contentColor = colors.cancelText,
+                ),
         )
 
         FilledButton(

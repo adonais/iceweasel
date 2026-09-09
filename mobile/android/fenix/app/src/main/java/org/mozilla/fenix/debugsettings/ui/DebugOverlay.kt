@@ -43,21 +43,17 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import kotlin.math.roundToInt
 import mozilla.components.compose.base.button.FloatingActionButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.debugsettings.navigation.DebugDrawerDestination
 import org.mozilla.fenix.debugsettings.store.DrawerStatus
 import org.mozilla.fenix.theme.FirefoxTheme
-import kotlin.math.roundToInt
 
-/**
- * The initial x offset of the debug drawer FAB from [Alignment.CenterStart].
- */
+/** The initial x offset of the debug drawer FAB from [Alignment.CenterStart]. */
 private const val INITIAL_FAB_OFFSET_X = 0f
 
-/**
- * The initial y offset of the debug drawer FAB from [Alignment.CenterStart].
- */
+/** The initial y offset of the debug drawer FAB from [Alignment.CenterStart]. */
 private const val INITIAL_FAB_OFFSET_Y = 0f
 
 /**
@@ -65,8 +61,8 @@ private const val INITIAL_FAB_OFFSET_Y = 0f
  *
  * @param navController [NavHostController] used to perform navigation actions.
  * @param drawerStatus The [DrawerStatus] indicating the physical state of the drawer.
- * @param debugDrawerDestinations The complete list of [DebugDrawerDestination]s used to populate
- * the [DebugDrawer] with sub screens.
+ * @param debugDrawerDestinations The complete list of [DebugDrawerDestination]s used to populate the [DebugDrawer] with
+ *   sub screens.
  * @param onDrawerOpen Invoked when the drawer is opened.
  * @param onDrawerClose Invoked when the drawer is closed.
  * @param onDrawerBackButtonClick Invoked when the user taps on the back button in the app bar.
@@ -90,21 +86,20 @@ fun DebugOverlay(
         onDrawerClose()
     }
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
         FloatingActionButton(
             icon = painterResource(R.drawable.ic_debug_transparent_fire_24),
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 16.dp)
-                .offset { IntOffset(debugDrawerFabOffsetX.roundToInt(), debugDrawerFabOffsetY.roundToInt()) }
-                .draggable2D(
-                    state = rememberDraggable2DState { offset ->
-                        debugDrawerFabOffsetX += offset.x
-                        debugDrawerFabOffsetY += offset.y
-                    },
-                ),
+            modifier =
+                Modifier.align(Alignment.CenterStart)
+                    .padding(start = 16.dp)
+                    .offset { IntOffset(debugDrawerFabOffsetX.roundToInt(), debugDrawerFabOffsetY.roundToInt()) }
+                    .draggable2D(
+                        state =
+                            rememberDraggable2DState { offset ->
+                                debugDrawerFabOffsetX += offset.x
+                                debugDrawerFabOffsetY += offset.y
+                            }
+                    ),
             onClick = {
                 onDrawerOpen()
             },
@@ -113,11 +108,10 @@ fun DebugOverlay(
 
         AnimatedVisibility(
             visible = drawerStatus == DrawerStatus.Open,
-            enter = slideInHorizontally {
-                with(density) { -40.dp.roundToPx() }
-            } + expandHorizontally(
-                expandFrom = Alignment.Start,
-            ),
+            enter =
+                slideInHorizontally {
+                    with(density) { -40.dp.roundToPx() }
+                } + expandHorizontally(expandFrom = Alignment.Start),
             exit = slideOutHorizontally() + shrinkHorizontally() + fadeOut(),
         ) {
             Row(modifier = Modifier.background(MaterialTheme.colorScheme.scrim)) {

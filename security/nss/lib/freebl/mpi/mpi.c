@@ -1024,7 +1024,7 @@ mp_sqr(const mp_int *a, mp_int *sqr)
         for (ix = 3; --count > 0; ix += 2) {
             d = *pa++;
             s_mpv_mul_d_add(pa, count, d, MP_DIGITS(sqr) + ix);
-        }                                    /* for(ix ...) */
+        } /* for(ix ...) */
         MP_DIGIT(sqr, MP_USED(sqr) - 1) = 0; /* above loop stopped short of this. */
 
         /* now sqr *= 2 */

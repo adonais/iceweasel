@@ -105,6 +105,14 @@ CONFIGURE_GIT = """
 Would you like to run a few configuration steps to ensure Git is
 optimally configured?"""
 
+CONFIGURE_SCCACHE = """
+sccache allows speeding up subsequent builds by caching compilation
+results. Note that the initial build will be slower, and local changes
+that invalidate the cache will not benefit from it.
+
+Would you like to enable sccache?"""
+
+
 DEBIAN_DISTROS = (
     "debian",
     "ubuntu",
@@ -239,6 +247,7 @@ class Bootstrapper:
         choice=None,
         no_interactive=False,
         hg_configure=False,
+        sccache_configure=False,
         no_system_changes=False,
         exclude=[],
         mach_context=None,
@@ -246,6 +255,7 @@ class Bootstrapper:
         self.instance = None
         self.choice = choice
         self.hg_configure = hg_configure
+        self.sccache_configure = sccache_configure
         self.no_system_changes = no_system_changes
         self.exclude = exclude
         self.mach_context = mach_context
@@ -323,7 +333,9 @@ class Bootstrapper:
 
         self.instance = cls(**args)
 
-    def maybe_install_private_packages_or_exit(self, application, checkout_type):
+    def maybe_install_private_packages_or_exit(
+        self, application, checkout_type, mozconfig_builder
+    ):
         # Install the clang packages needed for building the style system, as
         # well as the version of NodeJS that we currently support.
         # Also install the clang static-analysis package by default
@@ -335,10 +347,24 @@ class Bootstrapper:
         self.instance.install_toolchain_artifact("samply")
         self.instance.install_toolchain_artifact("profiler-node-tools")
         if not self.instance.artifact_mode:
+            self._maybe_configure_sccache(mozconfig_builder)
             self.instance.install_toolchain_artifact("clang-tools/clang-tidy")
             self.instance.ensure_sccache_packages()
         # Like 'ensure_browser_packages' or 'ensure_mobile_android_packages'
         getattr(self.instance, "ensure_%s_packages" % application)()
+
+    def _maybe_configure_sccache(self, mozconfig_builder):
+        """Offer to enable sccache for non-artifact builds."""
+        if self.instance.artifact_mode:
+            return
+
+        if not self.instance.no_interactive:
+            should_configure = self.instance.prompt_yesno(prompt=CONFIGURE_SCCACHE)
+        else:
+            should_configure = self.sccache_configure
+
+        if should_configure:
+            mozconfig_builder.append("ac_add_options --with-ccache=sccache")
 
     def check_agentic_tools(self):
         if self.instance.no_interactive:
@@ -446,7 +472,9 @@ class Bootstrapper:
             self._add_microsoft_defender_antivirus_exclusions(checkout_root, state_dir)
 
         if self.instance.no_system_changes:
-            self.maybe_install_private_packages_or_exit(application, checkout_type)
+            self.maybe_install_private_packages_or_exit(
+                application, checkout_type, mozconfig_builder
+            )
             self._output_mozconfig(application, mozconfig_builder)
             sys.exit(0)
 
@@ -488,12 +516,14 @@ class Bootstrapper:
             if should_configure_git:
                 repo.configure(state_dir)
 
-        self.maybe_install_private_packages_or_exit(application, checkout_type)
+        self.maybe_install_private_packages_or_exit(
+            application, checkout_type, mozconfig_builder
+        )
         self.check_code_submission(checkout_root)
         # Wait until after moz-phab setup to check telemetry so that employees
         # will be automatically opted-in.
         if not self.instance.no_interactive and not settings.mach_telemetry.is_set_up:
-            initialize_telemetry_setting(settings, str(checkout_root), str(state_dir))
+            initialize_telemetry_setting(settings, str(checkout_root))
 
         self._output_mozconfig(application, mozconfig_builder)
 

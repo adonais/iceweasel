@@ -75,9 +75,9 @@ git = "https://github.com/martinthomson/ohttp"
 rev = "600931b5a1e947776cbaad931ed78f1e89005352"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/audioipc?rev=88fe860"]
+[source."git+https://github.com/mozilla/audioipc?rev=d3c9825"]
 git = "https://github.com/mozilla/audioipc"
-rev = "88fe860"
+rev = "d3c9825"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/authenticator-rs?tag=v0.6.0"]
@@ -120,9 +120,9 @@ git = "https://github.com/mozilla/mls-platform-api"
 rev = "2a2e344019bfc76b7e566ee6e0549cf668d90127"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/mp4parse-rust?rev=8a49a0769764152022bf14a8253bcde1971a75df"]
+[source."git+https://github.com/mozilla/mp4parse-rust?rev=215e238e633fa0df42cc25bfcf43a0f902692691"]
 git = "https://github.com/mozilla/mp4parse-rust"
-rev = "8a49a0769764152022bf14a8253bcde1971a75df"
+rev = "215e238e633fa0df42cc25bfcf43a0f902692691"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/neqo?tag=v0.30.1"]
@@ -139,9 +139,9 @@ git = "https://github.com/rust-minidump/minidump-writer.git"
 rev = "ee5b9d59d85bea1d4c6845f6b854e04fe204adf2"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/servo/rust-cssparser?rev=eff8704e994dc54e5df2a936b78b51828ee21464"]
+[source."git+https://github.com/servo/rust-cssparser?rev=84af7967fc0093c81f44c2d03029fe6db546485e"]
 git = "https://github.com/servo/rust-cssparser"
-rev = "eff8704e994dc54e5df2a936b78b51828ee21464"
+rev = "84af7967fc0093c81f44c2d03029fe6db546485e"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/servo/unicode-bidi?rev=ca612daf1c08c53abe07327cb3e6ef6e0a760f0c"]

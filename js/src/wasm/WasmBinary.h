@@ -105,8 +105,8 @@ class Opcode {
 
   uint32_t bits() const { return bits_; }
 
-  bool operator==(const Opcode& that) const { return bits_ == that.bits_; }
-  bool operator!=(const Opcode& that) const { return bits_ != that.bits_; }
+  bool operator==(const Opcode& that) const = default;
+  bool operator!=(const Opcode& that) const = default;
 };
 
 // The Encoder class appends bytes to the Bytes object it is given during

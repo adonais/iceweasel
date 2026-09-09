@@ -13,8 +13,7 @@ import mozilla.components.lib.dataprotect.SecureAbove22Preferences
 import mozilla.components.support.ktx.android.view.setupPersistentInsets
 
 class MainActivity : AppCompatActivity() {
-    @Suppress("MagicNumber")
-    private val itemKeys: List<String> = List(5) { "protected item ${it + 1}" }
+    @Suppress("MagicNumber") private val itemKeys: List<String> = List(5) { "protected item ${it + 1}" }
 
     private lateinit var listView: RecyclerView
     private lateinit var listAdapter: ProtectedDataAdapter

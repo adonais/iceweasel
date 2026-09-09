@@ -160,6 +160,13 @@ function checkShortenedFilename(actual, expected) {
 }
 
 add_setup(async function () {
+  // This test is about filenames, not about the downloads panel, which would
+  // otherwise open on one of the downloads and stay open until the end of the
+  // file, covering the browser for the remaining tasks.
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.download.alwaysOpenPanel", false]],
+  });
+
   const { HttpServer } = ChromeUtils.importESModule(
     "resource://testing-common/httpd.sys.mjs"
   );

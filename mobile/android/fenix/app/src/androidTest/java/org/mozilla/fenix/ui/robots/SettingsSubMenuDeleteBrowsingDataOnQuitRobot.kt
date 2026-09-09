@@ -25,35 +25,50 @@ import org.mozilla.fenix.helpers.atPosition
 import org.mozilla.fenix.helpers.click
 import org.mozilla.fenix.helpers.isChecked
 
-/**
- * Implementation of Robot Pattern for the settings Delete Browsing Data On Quit sub menu.
- */
+/** Implementation of Robot Pattern for the settings Delete Browsing Data On Quit sub menu. */
 class SettingsSubMenuDeleteBrowsingDataOnQuitRobot {
 
     fun verifyNavigationToolBarHeader() {
-        Log.i(TAG, "verifyNavigationToolBarHeader: Trying to verify that the \"Delete browsing data on quit\" toolbar title is visible")
-        onView(
-            allOf(
-                withId(R.id.navigationToolbar),
-                withChild(withText(R.string.preferences_delete_browsing_data_on_quit)),
-            ),
+        Log.i(
+            TAG,
+            "verifyNavigationToolBarHeader: Trying to verify that the \"Delete browsing data on quit\" toolbar title is visible",
         )
+        onView(
+                allOf(
+                    withId(R.id.navigationToolbar),
+                    withChild(withText(R.string.preferences_delete_browsing_data_on_quit)),
+                )
+            )
             .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
-        Log.i(TAG, "verifyNavigationToolBarHeader: Verified that the \"Delete browsing data on quit\" toolbar title is visible")
+        Log.i(
+            TAG,
+            "verifyNavigationToolBarHeader: Verified that the \"Delete browsing data on quit\" toolbar title is visible",
+        )
     }
 
     fun verifyDeleteBrowsingOnQuitEnabled(enabled: Boolean) {
-        Log.i(TAG, "verifyDeleteBrowsingOnQuitEnabled: Trying to verify that the  \"Delete browsing data on quit\" toggle is checked: $enabled")
+        Log.i(
+            TAG,
+            "verifyDeleteBrowsingOnQuitEnabled: Trying to verify that the  \"Delete browsing data on quit\" toggle is checked: $enabled",
+        )
         deleteBrowsingOnQuitButton().assertIsChecked(enabled)
-        Log.i(TAG, "verifyDeleteBrowsingOnQuitEnabled: Verified that the  \"Delete browsing data on quit\" toggle is checked: $enabled")
+        Log.i(
+            TAG,
+            "verifyDeleteBrowsingOnQuitEnabled: Verified that the  \"Delete browsing data on quit\" toggle is checked: $enabled",
+        )
     }
 
     fun verifyDeleteBrowsingOnQuitButtonSummary() {
-        Log.i(TAG, "verifyDeleteBrowsingOnQuitButtonSummary: Trying to verify that the \"Delete browsing data on quit\" option summary is visible")
-        onView(
-            withText(R.string.preference_summary_delete_browsing_data_on_quit_2),
-        ).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
-        Log.i(TAG, "verifyDeleteBrowsingOnQuitButtonSummary: Verified that the \"Delete browsing data on quit\" option summary is visible")
+        Log.i(
+            TAG,
+            "verifyDeleteBrowsingOnQuitButtonSummary: Trying to verify that the \"Delete browsing data on quit\" option summary is visible",
+        )
+        onView(withText(R.string.preference_summary_delete_browsing_data_on_quit_2))
+            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        Log.i(
+            TAG,
+            "verifyDeleteBrowsingOnQuitButtonSummary: Verified that the \"Delete browsing data on quit\" option summary is visible",
+        )
     }
 
     fun clickDeleteBrowsingOnQuitButtonSwitch() {
@@ -64,38 +79,48 @@ class SettingsSubMenuDeleteBrowsingDataOnQuitRobot {
 
     fun verifyAllTheCheckBoxesText() {
         Log.i(TAG, "verifyAllTheCheckBoxesText: Trying to verify that the \"Open tabs\" option is visible")
-        openTabsCheckbox()
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        openTabsCheckbox().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyAllTheCheckBoxesText: Verified that the \"Open tabs\" option is visible")
         Log.i(TAG, "verifyAllTheCheckBoxesText: Trying to verify that the \"Browsing history\" option is visible")
-        browsingHistoryCheckbox()
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        browsingHistoryCheckbox().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyAllTheCheckBoxesText: Verified that the \"Browsing history\" option is visible")
         Log.i(TAG, "verifyAllTheCheckBoxesText: Trying to verify that the \"Cookies and site data\" option is visible")
-        cookiesAndSiteDataCheckbox()
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        cookiesAndSiteDataCheckbox().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyAllTheCheckBoxesText: Verified that the \"Cookies and site data\" option is visible")
-        Log.i(TAG, "verifyAllTheCheckBoxesText: Trying to verify that the \"Cookies and site data\" option summary is visible")
+        Log.i(
+            TAG,
+            "verifyAllTheCheckBoxesText: Trying to verify that the \"Cookies and site data\" option summary is visible",
+        )
         onView(withText(R.string.preferences_delete_browsing_data_cookies_subtitle))
             .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyAllTheCheckBoxesText: Verified that the \"Cookies and site data\" option summary is visible")
-        Log.i(TAG, "verifyAllTheCheckBoxesText: Trying to verify that the \"Cached images and files\" option is visible")
-        cachedFilesCheckbox()
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        Log.i(
+            TAG,
+            "verifyAllTheCheckBoxesText: Trying to verify that the \"Cached images and files\" option is visible",
+        )
+        cachedFilesCheckbox().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyAllTheCheckBoxesText: Verified that the \"Cached images and files\" option is visible")
-        Log.i(TAG, "verifyAllTheCheckBoxesText: Trying to verify that the \"Cached images and files\" option summary is visible")
+        Log.i(
+            TAG,
+            "verifyAllTheCheckBoxesText: Trying to verify that the \"Cached images and files\" option summary is visible",
+        )
         onView(withText(R.string.preferences_delete_browsing_data_cached_files_subtitle))
             .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
-        Log.i(TAG, "verifyAllTheCheckBoxesText: Verified that the \"Cached images and files\" option summary is visible")
+        Log.i(
+            TAG,
+            "verifyAllTheCheckBoxesText: Verified that the \"Cached images and files\" option summary is visible",
+        )
         Log.i(TAG, "verifyAllTheCheckBoxesText: Trying to verify that the \"Site permissions\" option is visible")
-        sitePermissionsCheckbox()
-            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        sitePermissionsCheckbox().check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyAllTheCheckBoxesText: Verified that the \"Site permissions\" option is visible")
     }
 
     fun verifyAllTheCheckBoxesChecked(checked: Boolean) {
         for (index in 2..7) {
-            Log.i(TAG, "verifyAllTheCheckBoxesChecked: Trying to verify that the the check box at position ${index - 1} is checked: $checked")
+            Log.i(
+                TAG,
+                "verifyAllTheCheckBoxesChecked: Trying to verify that the the check box at position ${index - 1} is checked: $checked",
+            )
             onView(withId(R.id.recycler_view))
                 .check(
                     matches(
@@ -105,12 +130,15 @@ class SettingsSubMenuDeleteBrowsingDataOnQuitRobot {
                                 allOf(
                                     withResourceName(containsString("checkbox")),
                                     isChecked(checked),
-                                ),
+                                )
                             ),
-                        ),
-                    ),
+                        )
+                    )
                 )
-            Log.i(TAG, "verifyAllTheCheckBoxesChecked: Verified that the the check box at position ${index - 1} is checked: $checked")
+            Log.i(
+                TAG,
+                "verifyAllTheCheckBoxesChecked: Verified that the the check box at position ${index - 1} is checked: $checked",
+            )
         }
     }
 
@@ -131,16 +159,14 @@ private fun goBackButton() = onView(withContentDescription("Navigate up"))
 private fun deleteBrowsingOnQuitButton() =
     onView(withClassName(containsString("com.google.android.material.materialswitch.MaterialSwitch")))
 
-private fun openTabsCheckbox() =
-    onView(withText(R.string.preferences_delete_browsing_data_tabs_title_2))
+private fun openTabsCheckbox() = onView(withText(R.string.preferences_delete_browsing_data_tabs_title_2))
 
 private fun browsingHistoryCheckbox() =
     onView(withText(R.string.preferences_delete_browsing_data_browsing_history_title))
 
-private fun cookiesAndSiteDataCheckbox() = onView(withText(R.string.preferences_delete_browsing_data_cookies_and_site_data))
+private fun cookiesAndSiteDataCheckbox() =
+    onView(withText(R.string.preferences_delete_browsing_data_cookies_and_site_data))
 
-private fun cachedFilesCheckbox() =
-    onView(withText(R.string.preferences_delete_browsing_data_cached_files))
+private fun cachedFilesCheckbox() = onView(withText(R.string.preferences_delete_browsing_data_cached_files))
 
-private fun sitePermissionsCheckbox() =
-    onView(withText(R.string.preferences_delete_browsing_data_site_permissions))
+private fun sitePermissionsCheckbox() = onView(withText(R.string.preferences_delete_browsing_data_site_permissions))

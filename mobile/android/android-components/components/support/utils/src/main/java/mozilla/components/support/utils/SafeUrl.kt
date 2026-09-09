@@ -6,13 +6,10 @@ package mozilla.components.support.utils
 
 import android.content.Context
 
-/**
- * Collection of methods used for ensuring the validity and security of URLs.
- */
+/** Collection of methods used for ensuring the validity and security of URLs. */
 object SafeUrl {
     /**
-     * Remove recursively the schemes declared in [R.array.mozac_url_schemes_blocklist]
-     * from the front of [unsafeText].
+     * Remove recursively the schemes declared in [R.array.mozac_url_schemes_blocklist] from the front of [unsafeText].
      */
     fun stripUnsafeUrlSchemes(context: Context, unsafeText: CharSequence?): String? {
         if (unsafeText.isNullOrBlank()) {
@@ -23,7 +20,8 @@ object SafeUrl {
         var safeUrl = unsafeText.toString()
 
         @Suppress("ControlFlowWithEmptyBody", "EmptyWhileBlock")
-        while (urlSchemesBlocklist.find {
+        while (
+            urlSchemesBlocklist.find {
                 if (safeUrl.startsWith(it, true)) {
                     safeUrl = safeUrl.replaceFirst(Regex(it, RegexOption.IGNORE_CASE), "")
                     true
@@ -31,8 +29,7 @@ object SafeUrl {
                     false
                 }
             } != null
-        ) {
-        }
+        ) {}
 
         return safeUrl
     }

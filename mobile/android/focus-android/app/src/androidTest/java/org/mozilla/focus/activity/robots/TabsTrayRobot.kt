@@ -25,12 +25,14 @@ class TabsTrayRobot {
     fun verifyTabsOrder(vararg tabTitle: String) {
         for (tab in tabTitle.indices) {
             assertTrue(
-                mDevice.findObject(
-                    UiSelector()
-                        .resourceId("$packageName:id/session_item")
-                        .index(tab)
-                        .childSelector(UiSelector().textContains(tabTitle[tab])),
-                ).waitForExists(waitingTime),
+                mDevice
+                    .findObject(
+                        UiSelector()
+                            .resourceId("$packageName:id/session_item")
+                            .index(tab)
+                            .childSelector(UiSelector().textContains(tabTitle[tab]))
+                    )
+                    .waitForExists(waitingTime)
             )
         }
     }
@@ -56,11 +58,11 @@ class TabsTrayRobot {
         fun closeTab(tabTitle: String, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
             closeTabButton(tabTitle).perform(click())
             // waiting for the tab to be completely gone before trying other actions on the toolbar
-            mDevice.findObject(
-                UiSelector()
-                    .resourceId("$packageName:id/mozac_browser_toolbar_url_view")
-                    .textContains(tabTitle),
-            ).waitUntilGone(waitingTimeShort)
+            mDevice
+                .findObject(
+                    UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_url_view").textContains(tabTitle)
+                )
+                .waitUntilGone(waitingTimeShort)
 
             BrowserRobot().interact()
             return BrowserRobot.Transition()
@@ -80,7 +82,7 @@ private fun closeTabButton(tabTitle: String) =
         allOf(
             withId(R.id.close_button),
             hasSibling(withText(containsString(tabTitle))),
-        ),
+        )
     )
 
 private fun addNewTabButton() = onView(withText("Add new tab"))

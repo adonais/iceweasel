@@ -11,6 +11,8 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.menu.WebExtensionBrowserMenu.Companion.getOrUpdateWebExtensionMenuItems
@@ -27,6 +29,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.webextension.Action
 import mozilla.components.concept.engine.webextension.WebExtensionBrowserAction
 import mozilla.components.concept.engine.webextension.WebExtensionPageAction
+import mozilla.components.support.base.facts.Action as FactsAction
 import mozilla.components.support.base.facts.processor.CollectionProcessor
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
@@ -37,9 +40,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.coroutines.ContinuationInterceptor
-import kotlin.test.assertNotNull
-import mozilla.components.support.base.facts.Action as FactsAction
 
 @RunWith(AndroidJUnit4::class)
 class WebExtensionBrowserMenuTest {
@@ -55,34 +55,33 @@ class WebExtensionBrowserMenuTest {
         webExtensionBrowserActions.clear()
         val browserAction = WebExtensionBrowserAction("browser_action", true, mock(), "", 0, 0) {}
         val pageAction = WebExtensionPageAction("browser_action", true, mock(), "", 0, 0) {}
-        val extensions = mapOf(
-            "browser_action" to WebExtensionState(
-                "browser_action",
-                "url",
-                "name",
-                true,
-                browserAction = browserAction,
-                pageAction = pageAction,
-            ),
-        )
-
-        val store =
-            BrowserStore(
-                BrowserState(
-                    extensions = extensions,
-                ),
+        val extensions =
+            mapOf(
+                "browser_action" to
+                    WebExtensionState(
+                        "browser_action",
+                        "url",
+                        "name",
+                        true,
+                        browserAction = browserAction,
+                        pageAction = pageAction,
+                    )
             )
-        val items = listOf(
-            SimpleBrowserMenuItem("Hello") {},
-            SimpleBrowserMenuItem("World") {},
-        )
+
+        val store = BrowserStore(BrowserState(extensions = extensions))
+        val items =
+            listOf(
+                SimpleBrowserMenuItem("Hello") {},
+                SimpleBrowserMenuItem("World") {},
+            )
 
         val adapter = BrowserMenuAdapter(testContext, items)
-        val menu = WebExtensionBrowserMenu(
-            adapter,
-            store,
-            coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-        )
+        val menu =
+            WebExtensionBrowserMenu(
+                adapter,
+                store,
+                coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+            )
 
         val anchor = Button(testContext)
         val popup = menu.show(anchor)
@@ -90,20 +89,20 @@ class WebExtensionBrowserMenuTest {
 
         assertNotNull(popup)
 
-        val defaultBrowserAction =
-            WebExtensionBrowserAction("default_title", true, mock(), "", 0, 0) {}
-        val defaultPageAction =
-            WebExtensionPageAction("default_title", true, mock(), "", 0, 0) {}
-        val defaultExtensions: Map<String, WebExtensionState> = mapOf(
-            "id" to WebExtensionState(
-                "id",
-                "url",
-                "name",
-                true,
-                browserAction = defaultBrowserAction,
-                pageAction = defaultPageAction,
-            ),
-        )
+        val defaultBrowserAction = WebExtensionBrowserAction("default_title", true, mock(), "", 0, 0) {}
+        val defaultPageAction = WebExtensionPageAction("default_title", true, mock(), "", 0, 0) {}
+        val defaultExtensions: Map<String, WebExtensionState> =
+            mapOf(
+                "id" to
+                    WebExtensionState(
+                        "id",
+                        "url",
+                        "name",
+                        true,
+                        browserAction = defaultBrowserAction,
+                        pageAction = defaultPageAction,
+                    )
+            )
 
         createTab(
             "https://www.example.org",
@@ -114,20 +113,20 @@ class WebExtensionBrowserMenuTest {
         assertEquals(1, webExtensionPageActions.size)
 
         menu.dismiss()
-        val anotherBrowserAction =
-            WebExtensionBrowserAction("another_title", true, mock(), "", 0, 0) {}
-        val anotherPageAction =
-            WebExtensionBrowserAction("another_title", true, mock(), "", 0, 0) {}
-        val anotherExtension: Map<String, WebExtensionState> = mapOf(
-            "id2" to WebExtensionState(
-                "id2",
-                "url",
-                "name",
-                true,
-                browserAction = anotherBrowserAction,
-                pageAction = anotherPageAction,
-            ),
-        )
+        val anotherBrowserAction = WebExtensionBrowserAction("another_title", true, mock(), "", 0, 0) {}
+        val anotherPageAction = WebExtensionBrowserAction("another_title", true, mock(), "", 0, 0) {}
+        val anotherExtension: Map<String, WebExtensionState> =
+            mapOf(
+                "id2" to
+                    WebExtensionState(
+                        "id2",
+                        "url",
+                        "name",
+                        true,
+                        browserAction = anotherBrowserAction,
+                        pageAction = anotherPageAction,
+                    )
+            )
 
         createTab(
             "https://www.example2.org",
@@ -140,52 +139,53 @@ class WebExtensionBrowserMenuTest {
 
     @Test
     fun `render web extension actions from browser state`() {
-        val defaultBrowserAction =
-            WebExtensionBrowserAction("default_browser_action_title", true, mock(), "", 0, 0) {}
-        val defaultPageAction =
-            WebExtensionPageAction("default_page_action_title", true, mock(), "", 0, 0) {}
+        val defaultBrowserAction = WebExtensionBrowserAction("default_browser_action_title", true, mock(), "", 0, 0) {}
+        val defaultPageAction = WebExtensionPageAction("default_page_action_title", true, mock(), "", 0, 0) {}
         val overriddenBrowserAction =
             WebExtensionBrowserAction("overridden_browser_action_title", true, mock(), "", 0, 0) {}
-        val overriddenPageAction =
-            WebExtensionBrowserAction("overridden_page_action_title", true, mock(), "", 0, 0) {}
+        val overriddenPageAction = WebExtensionBrowserAction("overridden_page_action_title", true, mock(), "", 0, 0) {}
 
-        val extensions: Map<String, WebExtensionState> = mapOf(
-            "id" to WebExtensionState(
-                "id",
-                "url",
-                "name",
-                true,
-                browserAction = defaultBrowserAction,
-                pageAction = defaultPageAction,
-            ),
-        )
-        val overriddenExtensions: Map<String, WebExtensionState> = mapOf(
-            "id" to WebExtensionState(
-                "id",
-                "url",
-                "name",
-                true,
-                browserAction = overriddenBrowserAction,
-                pageAction = overriddenPageAction,
-            ),
-        )
+        val extensions: Map<String, WebExtensionState> =
+            mapOf(
+                "id" to
+                    WebExtensionState(
+                        "id",
+                        "url",
+                        "name",
+                        true,
+                        browserAction = defaultBrowserAction,
+                        pageAction = defaultPageAction,
+                    )
+            )
+        val overriddenExtensions: Map<String, WebExtensionState> =
+            mapOf(
+                "id" to
+                    WebExtensionState(
+                        "id",
+                        "url",
+                        "name",
+                        true,
+                        browserAction = overriddenBrowserAction,
+                        pageAction = overriddenPageAction,
+                    )
+            )
         val store =
             BrowserStore(
                 BrowserState(
-                    tabs = listOf(
-                        createTab(
-                            "https://www.example.org",
-                            id = "tab1",
-                            extensions = overriddenExtensions,
+                    tabs =
+                        listOf(
+                            createTab(
+                                "https://www.example.org",
+                                id = "tab1",
+                                extensions = overriddenExtensions,
+                            )
                         ),
-                    ),
                     selectedTabId = "tab1",
                     extensions = extensions,
-                ),
+                )
             )
 
-        val browserMenuItems =
-            getOrUpdateWebExtensionMenuItems(store.state, store.state.selectedTab)
+        val browserMenuItems = getOrUpdateWebExtensionMenuItems(store.state, store.state.selectedTab)
         assertEquals(2, browserMenuItems.size)
 
         var actionMenu = browserMenuItems[0]
@@ -203,40 +203,34 @@ class WebExtensionBrowserMenuTest {
 
     @Test
     fun `getOrUpdateWebExtensionMenuItems does not include actions from disabled extensions`() {
-        val enabledPageAction =
-            WebExtensionBrowserAction("enabled_page_action", true, mock(), "", 0, 0) {}
-        val disabledPageAction =
-            WebExtensionBrowserAction("disabled_page_action", true, mock(), "", 0, 0) {}
-        val enabledBrowserAction =
-            WebExtensionBrowserAction("enabled_browser_action", true, mock(), "", 0, 0) {}
-        val disabledBrowserAction =
-            WebExtensionBrowserAction("disabled_browser_action", true, mock(), "", 0, 0) {}
+        val enabledPageAction = WebExtensionBrowserAction("enabled_page_action", true, mock(), "", 0, 0) {}
+        val disabledPageAction = WebExtensionBrowserAction("disabled_page_action", true, mock(), "", 0, 0) {}
+        val enabledBrowserAction = WebExtensionBrowserAction("enabled_browser_action", true, mock(), "", 0, 0) {}
+        val disabledBrowserAction = WebExtensionBrowserAction("disabled_browser_action", true, mock(), "", 0, 0) {}
 
-        val extensions = mapOf(
-            "enabled" to WebExtensionState(
-                "enabled",
-                "url",
-                "name",
-                true,
-                browserAction = enabledBrowserAction,
-                pageAction = enabledPageAction,
-            ),
-            "disabled" to WebExtensionState(
-                "disabled",
-                "url",
-                "name",
-                false,
-                browserAction = disabledBrowserAction,
-                pageAction = disabledPageAction,
-            ),
-        )
-
-        val store =
-            BrowserStore(
-                BrowserState(
-                    extensions = extensions,
-                ),
+        val extensions =
+            mapOf(
+                "enabled" to
+                    WebExtensionState(
+                        "enabled",
+                        "url",
+                        "name",
+                        true,
+                        browserAction = enabledBrowserAction,
+                        pageAction = enabledPageAction,
+                    ),
+                "disabled" to
+                    WebExtensionState(
+                        "disabled",
+                        "url",
+                        "name",
+                        false,
+                        browserAction = disabledBrowserAction,
+                        pageAction = disabledPageAction,
+                    ),
             )
+
+        val store = BrowserStore(BrowserState(extensions = extensions))
 
         val browserMenuItems = getOrUpdateWebExtensionMenuItems(store.state)
         assertEquals(2, browserMenuItems.size)
@@ -257,45 +251,48 @@ class WebExtensionBrowserMenuTest {
     fun `browser actions can be overridden per tab`() {
         webExtensionBrowserActions.clear()
         val loadIcon: (suspend (Int) -> Bitmap?)? = { mock() }
-        val pageAction = Action(
-            title = "title",
-            loadIcon = loadIcon,
-            enabled = true,
-            badgeText = "badgeText",
-            badgeTextColor = Color.WHITE,
-            badgeBackgroundColor = Color.BLUE,
-        ) {}
+        val pageAction =
+            Action(
+                title = "title",
+                loadIcon = loadIcon,
+                enabled = true,
+                badgeText = "badgeText",
+                badgeTextColor = Color.WHITE,
+                badgeBackgroundColor = Color.BLUE,
+            ) {}
 
-        val pageActionOverride = Action(
-            title = "updatedTitle",
-            loadIcon = null,
-            enabled = false,
-            badgeText = "updatedText",
-            badgeTextColor = Color.RED,
-            badgeBackgroundColor = Color.GREEN,
-        ) {}
+        val pageActionOverride =
+            Action(
+                title = "updatedTitle",
+                loadIcon = null,
+                enabled = false,
+                badgeText = "updatedText",
+                badgeTextColor = Color.RED,
+                badgeBackgroundColor = Color.GREEN,
+            ) {}
 
-        val browserAction = Action(
-            title = "title",
-            loadIcon = loadIcon,
-            enabled = true,
-            badgeText = "badgeText",
-            badgeTextColor = Color.WHITE,
-            badgeBackgroundColor = Color.BLUE,
-        ) {}
+        val browserAction =
+            Action(
+                title = "title",
+                loadIcon = loadIcon,
+                enabled = true,
+                badgeText = "badgeText",
+                badgeTextColor = Color.WHITE,
+                badgeBackgroundColor = Color.BLUE,
+            ) {}
 
-        val browserActionOverride = Action(
-            title = "updatedTitle",
-            loadIcon = null,
-            enabled = false,
-            badgeText = "updatedText",
-            badgeTextColor = Color.RED,
-            badgeBackgroundColor = Color.GREEN,
-        ) {}
+        val browserActionOverride =
+            Action(
+                title = "updatedTitle",
+                loadIcon = null,
+                enabled = false,
+                badgeText = "updatedText",
+                badgeTextColor = Color.RED,
+                badgeBackgroundColor = Color.GREEN,
+            ) {}
 
         val browserExtensions = HashMap<String, WebExtensionState>()
-        browserExtensions["1"] =
-            WebExtensionState(id = "1", browserAction = browserAction, pageAction = pageAction)
+        browserExtensions["1"] = WebExtensionState(id = "1", browserAction = browserAction, pageAction = pageAction)
 
         val browserState = BrowserState(extensions = browserExtensions)
         getOrUpdateWebExtensionMenuItems(browserState, mock())
@@ -321,16 +318,18 @@ class WebExtensionBrowserMenuTest {
         assertEquals(Color.BLUE, ext1.action.badgeBackgroundColor!!)
 
         val tabExtensions = HashMap<String, WebExtensionState>()
-        tabExtensions["1"] = WebExtensionState(
-            id = "1",
-            browserAction = browserActionOverride,
-            pageAction = pageActionOverride,
-        )
+        tabExtensions["1"] =
+            WebExtensionState(
+                id = "1",
+                browserAction = browserActionOverride,
+                pageAction = pageActionOverride,
+            )
 
-        val tabSessionState = TabSessionState(
-            content = mock(),
-            extensionState = tabExtensions,
-        )
+        val tabSessionState =
+            TabSessionState(
+                content = mock(),
+                extensionState = tabExtensions,
+            )
 
         getOrUpdateWebExtensionMenuItems(browserState, tabSessionState)
 
@@ -359,34 +358,35 @@ class WebExtensionBrowserMenuTest {
     fun `actions are sorted per extension name`() {
         val loadIcon: (suspend (Int) -> Bitmap?)? = { mock() }
 
-        val actionExt1 = Action(
-            title = "title",
-            loadIcon = loadIcon,
-            enabled = true,
-            badgeText = "badgeText",
-            badgeTextColor = Color.WHITE,
-            badgeBackgroundColor = Color.BLUE,
-        ) {}
+        val actionExt1 =
+            Action(
+                title = "title",
+                loadIcon = loadIcon,
+                enabled = true,
+                badgeText = "badgeText",
+                badgeTextColor = Color.WHITE,
+                badgeBackgroundColor = Color.BLUE,
+            ) {}
 
-        val actionExt2 = Action(
-            title = "title",
-            loadIcon = loadIcon,
-            enabled = true,
-            badgeText = "badgeText",
-            badgeTextColor = Color.WHITE,
-            badgeBackgroundColor = Color.BLUE,
-        ) {}
+        val actionExt2 =
+            Action(
+                title = "title",
+                loadIcon = loadIcon,
+                enabled = true,
+                badgeText = "badgeText",
+                badgeTextColor = Color.WHITE,
+                badgeBackgroundColor = Color.BLUE,
+            ) {}
 
         val browserExtensions = HashMap<String, WebExtensionState>()
-        browserExtensions["1"] =
-            WebExtensionState(id = "1", name = "extensionA", browserAction = actionExt1)
-        browserExtensions["2"] =
-            WebExtensionState(id = "2", name = "extensionB", browserAction = actionExt2)
+        browserExtensions["1"] = WebExtensionState(id = "1", name = "extensionA", browserAction = actionExt1)
+        browserExtensions["2"] = WebExtensionState(id = "2", name = "extensionB", browserAction = actionExt2)
 
-        val tabSessionState = TabSessionState(
-            content = mock(),
-            extensionState = emptyMap(),
-        )
+        val tabSessionState =
+            TabSessionState(
+                content = mock(),
+                extensionState = emptyMap(),
+            )
 
         val browserState = BrowserState(extensions = browserExtensions)
         val actionItems = getOrUpdateWebExtensionMenuItems(browserState, tabSessionState)
@@ -409,27 +409,22 @@ class WebExtensionBrowserMenuTest {
         whenever(view.findViewById<View>(R.id.container)).thenReturn(container)
         whenever(view.context).thenReturn(mock())
 
-        val browserAction =
-            WebExtensionBrowserAction("title", true, mock(), "", 0, 0) {}
-        val pageAction =
-            WebExtensionPageAction("title", true, mock(), "", 0, 0) {}
-        val extensions: Map<String, WebExtensionState> = mapOf(
-            "some_example_id" to WebExtensionState(
-                "some_example_id",
-                "url",
-                "name",
-                true,
-                browserAction = browserAction,
-                pageAction = pageAction,
-            ),
-        )
-
-        val store =
-            BrowserStore(
-                BrowserState(
-                    extensions = extensions,
-                ),
+        val browserAction = WebExtensionBrowserAction("title", true, mock(), "", 0, 0) {}
+        val pageAction = WebExtensionPageAction("title", true, mock(), "", 0, 0) {}
+        val extensions: Map<String, WebExtensionState> =
+            mapOf(
+                "some_example_id" to
+                    WebExtensionState(
+                        "some_example_id",
+                        "url",
+                        "name",
+                        true,
+                        browserAction = browserAction,
+                        pageAction = pageAction,
+                    )
             )
+
+        val store = BrowserStore(BrowserState(extensions = extensions))
 
         val browserMenuItems = getOrUpdateWebExtensionMenuItems(store.state)
         val menuItem = browserMenuItems[1]
@@ -453,67 +448,70 @@ class WebExtensionBrowserMenuTest {
     fun `hides browser and page actions in private tabs if extension is not allowed to run`() {
         val loadIcon: (suspend (Int) -> Bitmap?)? = { mock() }
 
-        val actionExt1 = Action(
-            title = "title",
-            loadIcon = loadIcon,
-            enabled = true,
-            badgeText = "badgeText",
-            badgeTextColor = Color.WHITE,
-            badgeBackgroundColor = Color.BLUE,
-        ) {}
+        val actionExt1 =
+            Action(
+                title = "title",
+                loadIcon = loadIcon,
+                enabled = true,
+                badgeText = "badgeText",
+                badgeTextColor = Color.WHITE,
+                badgeBackgroundColor = Color.BLUE,
+            ) {}
 
-        val tabSessionState = TabSessionState(
-            content = mock(),
-            extensionState = emptyMap(),
-        )
+        val tabSessionState =
+            TabSessionState(
+                content = mock(),
+                extensionState = emptyMap(),
+            )
         whenever(tabSessionState.content.private).thenReturn(true)
 
         val browserExtensions = HashMap<String, WebExtensionState>()
-        browserExtensions["1"] =
-            WebExtensionState(id = "1", name = "extensionA", browserAction = actionExt1)
+        browserExtensions["1"] = WebExtensionState(id = "1", name = "extensionA", browserAction = actionExt1)
         val browserState = BrowserState(extensions = browserExtensions)
         val actionItems = getOrUpdateWebExtensionMenuItems(browserState, tabSessionState)
         assertEquals(0, actionItems.size)
 
         val browserExtensionsAllowedInPrivateBrowsing = HashMap<String, WebExtensionState>()
         browserExtensionsAllowedInPrivateBrowsing["1"] =
-            WebExtensionState(id = "1", allowedInPrivateBrowsing = true, name = "extensionA", browserAction = actionExt1)
+            WebExtensionState(
+                id = "1",
+                allowedInPrivateBrowsing = true,
+                name = "extensionA",
+                browserAction = actionExt1,
+            )
         val browserStateAllowedInPrivateBrowsing = BrowserState(extensions = browserExtensionsAllowedInPrivateBrowsing)
-        val actionItemsAllowedInPrivateBrowsing = getOrUpdateWebExtensionMenuItems(browserStateAllowedInPrivateBrowsing, tabSessionState)
+        val actionItemsAllowedInPrivateBrowsing =
+            getOrUpdateWebExtensionMenuItems(browserStateAllowedInPrivateBrowsing, tabSessionState)
         assertEquals(1, actionItemsAllowedInPrivateBrowsing.size)
         assertEquals(actionExt1, actionItemsAllowedInPrivateBrowsing[0].action)
     }
 
     @Test
     fun `does not include menu item for disabled paged actions`() {
-        val enabledPageAction =
-            WebExtensionBrowserAction("enabled_page_action", true, mock(), "", 0, 0) {}
-        val disabledPageAction =
-            WebExtensionBrowserAction("disabled_page_action", false, mock(), "", 0, 0) {}
+        val enabledPageAction = WebExtensionBrowserAction("enabled_page_action", true, mock(), "", 0, 0) {}
+        val disabledPageAction = WebExtensionBrowserAction("disabled_page_action", false, mock(), "", 0, 0) {}
 
-        val extensions = mapOf(
-            "ext1" to WebExtensionState(
-                "ext1",
-                "url",
-                "name",
-                true,
-                pageAction = enabledPageAction,
-            ),
-            "ext2" to WebExtensionState(
-                "ext2",
-                "url",
-                "name",
-                true,
-                pageAction = disabledPageAction,
-            ),
-        )
-
-        val store =
-            BrowserStore(
-                BrowserState(
-                    extensions = extensions,
-                ),
+        val extensions =
+            mapOf(
+                "ext1" to
+                    WebExtensionState(
+                        "ext1",
+                        "url",
+                        "name",
+                        true,
+                        pageAction = enabledPageAction,
+                    ),
+                "ext2" to
+                    WebExtensionState(
+                        "ext2",
+                        "url",
+                        "name",
+                        true,
+                        pageAction = disabledPageAction,
+                    ),
             )
+
+        val store = BrowserStore(BrowserState(extensions = extensions))
 
         val browserMenuItems = getOrUpdateWebExtensionMenuItems(store.state)
         assertEquals(1, browserMenuItems.size)

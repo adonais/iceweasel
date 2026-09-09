@@ -11,7 +11,7 @@ import mozilla.components.concept.awesomebar.AwesomeBar
  *
  * @property visibilityState The suggestions and groups that are currently displayed in the [AwesomeBar].
  * @property clickedSuggestion The [AwesomeBar.Suggestion] that the user clicked. This is `null` if the user is still
- * interacting with the [AwesomeBar], or entered a search term or URL instead of clicking on a suggestion.
+ *   interacting with the [AwesomeBar], or entered a search term or URL instead of clicking on a suggestion.
  */
 data class AwesomeBarState(
     val visibilityState: AwesomeBar.VisibilityState = AwesomeBar.VisibilityState(),

@@ -47,9 +47,15 @@ class UriKtTest {
     @Test
     fun `GIVEN Uris having the same host, one containing mobile subdomains WHEN compared THEN they have the same host without mobile subdomains`() {
         assertTrue("https://m.youtube.com".toUri().sameHostWithoutMobileSubdomainAs("https://www.youtube.com".toUri()))
-        assertTrue("https://en.m.wikipedia.com".toUri().sameHostWithoutMobileSubdomainAs("https://en.wikipedia.com".toUri()))
-        assertFalse("https://m.en.youtube.com".toUri().sameHostWithoutMobileSubdomainAs("https://www.youtube.com".toUri()))
-        assertFalse("https://en.m.wikipedia.com".toUri().sameHostWithoutMobileSubdomainAs("https://it.wikipedia.com".toUri()))
+        assertTrue(
+            "https://en.m.wikipedia.com".toUri().sameHostWithoutMobileSubdomainAs("https://en.wikipedia.com".toUri())
+        )
+        assertFalse(
+            "https://m.en.youtube.com".toUri().sameHostWithoutMobileSubdomainAs("https://www.youtube.com".toUri())
+        )
+        assertFalse(
+            "https://en.m.wikipedia.com".toUri().sameHostWithoutMobileSubdomainAs("https://it.wikipedia.com".toUri())
+        )
     }
 
     private fun assertEquals(expected: String, actual: Uri?) = assertEquals(expected.toUri(), actual)

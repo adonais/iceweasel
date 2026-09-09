@@ -18,12 +18,9 @@ import org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY
 
-/**
- * A [TrackingProtectionExceptionStorage] implementation to store tracking protection exceptions.
- */
-internal class GeckoTrackingProtectionExceptionStorage(
-    private val runtime: GeckoRuntime,
-) : TrackingProtectionExceptionStorage {
+/** A [TrackingProtectionExceptionStorage] implementation to store tracking protection exceptions. */
+internal class GeckoTrackingProtectionExceptionStorage(private val runtime: GeckoRuntime) :
+    TrackingProtectionExceptionStorage {
 
     override fun contains(session: EngineSession, onResult: (Boolean) -> Unit) {
         val url = (session as GeckoEngineSession).currentUrl
@@ -48,11 +45,9 @@ internal class GeckoTrackingProtectionExceptionStorage(
         this.orEmpty().filter { it.isExcludedForTrackingProtection }
 
     private fun List<ContentPermission>?.filterTrackingProtectionExceptions(url: String) =
-        this.orEmpty()
-            .filter {
-                it.isExcludedForTrackingProtection && it.uri.getOrigin().orEmpty()
-                    .stripDefaultPort() == url
-            }
+        this.orEmpty().filter {
+            it.isExcludedForTrackingProtection && it.uri.getOrigin().orEmpty().stripDefaultPort() == url
+        }
 
     override fun add(session: EngineSession, persistInPrivateMode: Boolean) {
         val geckoEngineSession = (session as GeckoEngineSession)

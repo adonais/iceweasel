@@ -36,85 +36,87 @@ const val DELAY_MS_TRANSLATIONS = DURATION_MS_TRANSLATIONS - 10
 private const val SLIDE_DOWN_ANIMATION_DURATION_MS = 150L
 private const val SLIDE_DOWN_ANIMATION_ALPHA_DURATION_MS = 100L
 
-/**
- * [EnterTransition] when navigating to the main content sheet.
- */
+/** [EnterTransition] when navigating to the main content sheet. */
 fun enterMenu(duration: Int, delay: Int, easing: Easing = FastOutSlowInEasing): EnterTransition {
     return fadeIn(
-        animationSpec = tween(
-            durationMillis = duration,
-            delayMillis = duration + delay,
-            easing = easing,
-        ),
-    ) + slideInHorizontally(
-        initialOffsetX = { fullWidth -> -fullWidth / 8 },
-        animationSpec = tween(
-            durationMillis = duration,
-            delayMillis = duration + delay,
-            easing = easing,
-        ),
-    )
+        animationSpec =
+            tween(
+                durationMillis = duration,
+                delayMillis = duration + delay,
+                easing = easing,
+            )
+    ) +
+        slideInHorizontally(
+            initialOffsetX = { fullWidth -> -fullWidth / 8 },
+            animationSpec =
+                tween(
+                    durationMillis = duration,
+                    delayMillis = duration + delay,
+                    easing = easing,
+                ),
+        )
 }
 
-/**
- * [ExitTransition] when navigating from the main content sheet.
- */
+/** [ExitTransition] when navigating from the main content sheet. */
 fun exitMenu(duration: Int, easing: Easing = FastOutSlowInEasing): ExitTransition {
     return fadeOut(
-        animationSpec = tween(
-            durationMillis = duration,
-            easing = easing,
-        ),
-    ) + slideOutHorizontally(
-        targetOffsetX = { fullWidth -> -fullWidth / 8 },
-        animationSpec = tween(
-            durationMillis = duration,
-            easing = easing,
-        ),
-    )
+        animationSpec =
+            tween(
+                durationMillis = duration,
+                easing = easing,
+            )
+    ) +
+        slideOutHorizontally(
+            targetOffsetX = { fullWidth -> -fullWidth / 8 },
+            animationSpec =
+                tween(
+                    durationMillis = duration,
+                    easing = easing,
+                ),
+        )
 }
 
-/**
- * [EnterTransition] when navigating to the sub menu content sheet.
- */
+/** [EnterTransition] when navigating to the sub menu content sheet. */
 fun enterSubmenu(duration: Int, delay: Int, easing: Easing = FastOutSlowInEasing): EnterTransition {
     return fadeIn(
-        animationSpec = tween(
-            durationMillis = duration,
-            delayMillis = duration + delay,
-            easing = easing,
-        ),
-    ) + slideInHorizontally(
-        initialOffsetX = { fullWidth -> fullWidth / 8 },
-        animationSpec = tween(
-            durationMillis = duration,
-            delayMillis = duration + delay,
-            easing = easing,
-        ),
-    )
+        animationSpec =
+            tween(
+                durationMillis = duration,
+                delayMillis = duration + delay,
+                easing = easing,
+            )
+    ) +
+        slideInHorizontally(
+            initialOffsetX = { fullWidth -> fullWidth / 8 },
+            animationSpec =
+                tween(
+                    durationMillis = duration,
+                    delayMillis = duration + delay,
+                    easing = easing,
+                ),
+        )
 }
 
-/**
- * [ExitTransition] when navigating from sub menu content sheet.
- */
+/** [ExitTransition] when navigating from sub menu content sheet. */
 fun exitSubmenu(duration: Int, easing: Easing = FastOutSlowInEasing): ExitTransition {
     return fadeOut(
-        animationSpec = tween(
-            durationMillis = duration,
-            easing = easing,
-        ),
-    ) + slideOutHorizontally(
-        targetOffsetX = { fullWidth -> fullWidth / 8 },
-        animationSpec = tween(
-            durationMillis = duration,
-            easing = easing,
-        ),
-    )
+        animationSpec =
+            tween(
+                durationMillis = duration,
+                easing = easing,
+            )
+    ) +
+        slideOutHorizontally(
+            targetOffsetX = { fullWidth -> fullWidth / 8 },
+            animationSpec =
+                tween(
+                    durationMillis = duration,
+                    easing = easing,
+                ),
+        )
 }
 
-/**
- * For use with [SizeTransform] to specify how the content should grow based on changes.
- */
+/** For use with [SizeTransform] to specify how the content should grow based on changes. */
 fun contentGrowth(
     initialSize: IntSize,
     targetSize: IntSize,
@@ -130,13 +132,9 @@ fun contentGrowth(
     }
 }
 
-/**
- * Fragment animation when navigating a [BottomSheetDialogFragment] to other [Fragment].
- */
+/** Fragment animation when navigating a [BottomSheetDialogFragment] to other [Fragment]. */
 @Suppress("EmptyFunctionBlock")
-fun View.slideDown(
-    endOfAnimationCallback: () -> Unit,
-) {
+fun View.slideDown(endOfAnimationCallback: () -> Unit) {
     val animationSet = AnimationSet(false)
 
     val translateAnimation = TranslateAnimation(0f, 0f, 0f, this.height.toFloat())
@@ -157,7 +155,7 @@ fun View.slideDown(
             }
 
             override fun onAnimationRepeat(p0: Animation?) {}
-        },
+        }
     )
     this.startAnimation(animationSet)
 }

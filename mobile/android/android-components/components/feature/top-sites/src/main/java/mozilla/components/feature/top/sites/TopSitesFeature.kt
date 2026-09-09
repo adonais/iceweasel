@@ -14,18 +14,19 @@ import mozilla.components.support.base.feature.LifecycleAwareFeature
  *
  * @param view An implementor of [TopSitesView] that will be notified of changes to the storage.
  * @param storage The top sites storage that stores pinned and frecent sites.
- * @param config Lambda expression that returns [TopSitesConfig] which species the number of top
- * sites to return and whether or not to include frequently visited sites.
+ * @param config Lambda expression that returns [TopSitesConfig] which species the number of top sites to return and
+ *   whether or not to include frequently visited sites.
  */
 class TopSitesFeature(
     private val view: TopSitesView,
     val storage: TopSitesStorage,
     val config: () -> TopSitesConfig,
-    private val presenter: TopSitesPresenter = DefaultTopSitesPresenter(
-        view,
-        storage,
-        config,
-    ),
+    private val presenter: TopSitesPresenter =
+        DefaultTopSitesPresenter(
+            view,
+            storage,
+            config,
+        ),
 ) : LifecycleAwareFeature {
 
     override fun start() {

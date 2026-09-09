@@ -18,19 +18,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import mozilla.components.compose.base.badge.StatusBadge
 import mozilla.components.compose.base.theme.information
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.store.SummarizationMenuState
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.ThemedValue
 import org.mozilla.fenix.theme.ThemedValueProvider
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Summarization menu item.
  *
  * @param summarizationMenuState The state of the summarization menu.
- * @param onSummarizePageMenuExposed A callback to be executed when the menu is exposed to the user.
- * it will be used to know when to remove the highlight.
+ * @param onSummarizePageMenuExposed A callback to be executed when the menu is exposed to the user. it will be used to
+ *   know when to remove the highlight.
  * @param onSummarizePageClick A callback to be executed when the menu item is clicked.
  */
 @Composable
@@ -45,17 +45,19 @@ internal fun SummarizationMenuItem(
                 onSummarizePageMenuExposed()
             }
         }
-        val state: MenuItemState = if (summarizationMenuState.enabled) {
-            MenuItemState.ENABLED
-        } else {
-            MenuItemState.DISABLED
-        }
+        val state: MenuItemState =
+            if (summarizationMenuState.enabled) {
+                MenuItemState.ENABLED
+            } else {
+                MenuItemState.DISABLED
+            }
 
-        val containerColor = if (summarizationMenuState.enabled) {
-            MaterialTheme.colorScheme.information
-        } else {
-            MaterialTheme.colorScheme.information.copy(alpha = 0.38f)
-        }
+        val containerColor =
+            if (summarizationMenuState.enabled) {
+                MaterialTheme.colorScheme.information
+            } else {
+                MaterialTheme.colorScheme.information.copy(alpha = 0.38f)
+            }
 
         MenuItem(
             label = stringResource(id = R.string.browser_menu_summarize_page),
@@ -80,13 +82,13 @@ internal fun SummarizationMenuItem(
 @Preview
 @Composable
 private fun SummarizationMenuItemPreview(
-    @PreviewParameter(SummarizationMenuStatePreviewProvider::class) state: ThemedValue<SummarizationMenuState>,
+    @PreviewParameter(SummarizationMenuStatePreviewProvider::class) state: ThemedValue<SummarizationMenuState>
 ) {
     FirefoxTheme(theme = state.theme) {
         Column(
-            modifier = Modifier
-                .background(color = MaterialTheme.colorScheme.surface)
-                .padding(all = FirefoxTheme.layout.space.static200),
+            modifier =
+                Modifier.background(color = MaterialTheme.colorScheme.surface)
+                    .padding(all = FirefoxTheme.layout.space.static200)
         ) {
             MenuGroup {
                 SummarizationMenuItem(
@@ -99,27 +101,30 @@ private fun SummarizationMenuItemPreview(
     }
 }
 
-private class SummarizationMenuStatePreviewProvider : ThemedValueProvider<SummarizationMenuState>(
-    baseValues = sequenceOf(
-        SummarizationMenuState.Default.copy(
-            visible = true,
-            enabled = true,
-            highlighted = true,
-            showNewFeatureBadge = true,
-        ),
-        SummarizationMenuState.Default.copy(
-            visible = true,
-            enabled = true,
-        ),
-        SummarizationMenuState.Default.copy(
-            visible = true,
-            enabled = false,
-            showNewFeatureBadge = true,
-        ),
-    ),
-    displayNames = listOf(
-        "Highlighted with badge",
-        "Enabled",
-        "Disabled with badge",
-    ),
-)
+private class SummarizationMenuStatePreviewProvider :
+    ThemedValueProvider<SummarizationMenuState>(
+        baseValues =
+            sequenceOf(
+                SummarizationMenuState.Default.copy(
+                    visible = true,
+                    enabled = true,
+                    highlighted = true,
+                    showNewFeatureBadge = true,
+                ),
+                SummarizationMenuState.Default.copy(
+                    visible = true,
+                    enabled = true,
+                ),
+                SummarizationMenuState.Default.copy(
+                    visible = true,
+                    enabled = false,
+                    showNewFeatureBadge = true,
+                ),
+            ),
+        displayNames =
+            listOf(
+                "Highlighted with badge",
+                "Enabled",
+                "Disabled with badge",
+            ),
+    )

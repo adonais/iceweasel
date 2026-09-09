@@ -18,13 +18,14 @@ nscoord AspectRatio::ComputeRatioDependentSize(
   const LogicalSize& boxSizingAdjust = mUseBoxSizing == UseBoxSizing::No
                                            ? LogicalSize(aWM)
                                            : aContentBoxSizeToBoxSizingAdjust;
-  return aRatioDependentAxis == LogicalAxis::Inline
+  return std::max(
+      0, aRatioDependentAxis == LogicalAxis::Inline
              ? ConvertToWritingMode(aWM).ApplyTo(aRatioDeterminingSize +
                                                  boxSizingAdjust.BSize(aWM)) -
                    boxSizingAdjust.ISize(aWM)
              : ConvertToWritingMode(aWM).Inverted().ApplyTo(
                    aRatioDeterminingSize + boxSizingAdjust.ISize(aWM)) -
-                   boxSizingAdjust.BSize(aWM);
+                   boxSizingAdjust.BSize(aWM));
 }
 
 }  // namespace mozilla

@@ -562,13 +562,6 @@ void ChannelMediaDecoder::MetadataLoaded(
   mResource->SetReadMode(MediaCacheStream::MODE_PLAYBACK);
 }
 
-void ChannelMediaDecoder::GetDebugInfo(dom::MediaDecoderDebugInfo& aInfo) {
-  MediaDecoder::GetDebugInfo(aInfo);
-  if (mResource) {
-    mResource->GetDebugInfo(aInfo.mResource);
-  }
-}
-
 bool ChannelMediaDecoder::MediaStatistics::CanPlayThrough() const {
   // Number of estimated seconds worth of data we need to have buffered
   // ahead of the current playback position before we allow the media decoder

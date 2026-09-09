@@ -25,16 +25,15 @@ private const val VIEW_HOLDER_TYPE_SECTION = 0
 private const val VIEW_HOLDER_TYPE_STUDY = 1
 
 /**
- * An adapter for displaying studies items. This will display information related to the state of
- * a study such as active. In addition, it will perform actions such as removing a study.
+ * An adapter for displaying studies items. This will display information related to the state of a study such as
+ * active. In addition, it will perform actions such as removing a study.
  *
- * @param studiesDelegate Delegate that will provides method for handling
- * the studies actions items.
+ * @param studiesDelegate Delegate that will provides method for handling the studies actions items.
  * @param studies The list of studies.
- *  * @property studiesDelegate Delegate that will provides method for handling
- * the studies actions items.
- * @param shouldSubmitOnInit The sole purpose of this property is to prevent the submitList function
- * to run on init, it should only be used from tests.
+ *     * @property studiesDelegate Delegate that will provides method for handling the studies actions items.
+ *
+ * @param shouldSubmitOnInit The sole purpose of this property is to prevent the submitList function to run on init, it
+ *   should only be used from tests.
  */
 @Suppress("LargeClass")
 class StudiesAdapter(
@@ -43,9 +42,8 @@ class StudiesAdapter(
     private val shouldSubmitOnInit: Boolean = true,
 ) : ListAdapter<Any, CustomViewHolder>(DifferCallback) {
     /**
-     * Represents all the studies that will be distributed in multiple headers like
-     * active, and completed, this helps to have the data source of the items,
-     * displayed in the UI.
+     * Represents all the studies that will be distributed in multiple headers like active, and completed, this helps to
+     * have the data source of the items, displayed in the UI.
      */
     @VisibleForTesting
     internal var studiesMap: MutableMap<String, EnrolledExperiment> =
@@ -135,13 +133,10 @@ class StudiesAdapter(
         return itemsWithSections
     }
 
-    /**
-     * Filter out studies which only affect the messaging feature.
-     */
-    private fun filterStudies(studies: List<EnrolledExperiment>) =
-        studies.filterNot {
-            it.featureIds.size == 1 && it.featureIds.contains(MESSAGING_FEATURE_ID)
-        }
+    /** Filter out studies which only affect the messaging feature. */
+    private fun filterStudies(studies: List<EnrolledExperiment>) = studies.filterNot {
+        it.featureIds.size == 1 && it.featureIds.contains(MESSAGING_FEATURE_ID)
+    }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal data class Section(

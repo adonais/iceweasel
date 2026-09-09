@@ -591,10 +591,6 @@ newtab:
     expires: never
     extra_keys:
       newtab_visit_id: *newtab_visit_id
-      section:
-        description: >
-          section that had impression event
-        type: string
       section_position:
         description: >
           position of section on newtab
@@ -629,10 +625,6 @@ newtab:
     expires: never
     extra_keys:
       newtab_visit_id: *newtab_visit_id
-      section:
-        description: >
-          section that had impression event
-        type: string
       section_position:
         description: >
           position of section on newtab
@@ -663,10 +655,6 @@ newtab:
     expires: never
     extra_keys:
       newtab_visit_id: *newtab_visit_id
-      section:
-        description: >
-          section that had impression event
-        type: string
       section_position:
         description: >
           position of section on newtab
@@ -694,10 +682,6 @@ newtab:
     expires: never
     extra_keys:
       newtab_visit_id: *newtab_visit_id
-      section:
-        description: >
-          section that had impression event
-        type: string
       section_position:
         description: >
           position of section on newtab
@@ -725,10 +709,6 @@ newtab:
     expires: never
     extra_keys:
       newtab_visit_id: *newtab_visit_id
-      section:
-        description: >
-          section that had unblock event
-        type: string
       section_position:
         description: >
           position of section on newtab
@@ -758,6 +738,73 @@ newtab:
     expires: never
     extra_keys:
       newtab_visit_id: *newtab_visit_id
+    send_in_pings:
+      - newtab
+
+  carousel_navigate:
+    type: event
+    description: >
+      Recorded when the previous or next control on the story carousel is used.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2065554
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2065554
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - ini@mozilla.com
+      - sdowne@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+      direction:
+        description: >
+          Which control was used, "previous" or "next"
+        type: string
+      slide_index:
+        description: >
+          Zero-based index of the slide moved to
+        type: quantity
+      section:
+        description: >
+          Name of the section the carousel belongs to
+        type: string
+      section_position:
+        description: >
+          position of section on newtab
+        type: string
+    send_in_pings:
+      - newtab
+
+  carousel_toggle_autoplay:
+    type: event
+    description: >
+      Recorded when the story carousel's rotation control is used to stop or
+      start automatic rotation.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2065554
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2065554
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - ini@mozilla.com
+      - sdowne@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+      paused:
+        description: >
+          Whether the control paused rotation, as opposed to resuming it
+        type: boolean
+      section:
+        description: >
+          Name of the section the carousel belongs to
+        type: string
+      section_position:
+        description: >
+          position of section on newtab
+        type: string
     send_in_pings:
       - newtab
 
@@ -1351,6 +1398,67 @@ newtab:
     send_in_pings:
       - newtab
 
+  page_layout_variant:
+    type: string
+    description: >
+      The name of the newtab page layout variant the client is assigned, for
+      layout experimentation. One of nova-full-width,
+      side-by-side-content-lead, side-by-side-widgets-lead,
+      side-by-side-content-lead-five, side-by-side-widgets-lead-five,
+      spaces-buttons-top or spaces-buttons-bottom. The -five variants reach five
+      card columns counting the widgets column, the others four. The spaces
+      variants split the band into separately-navigable panels and differ only
+      in where the segmented control sits. Reports the assigned variant whether
+      or not the page can currently render it, and covers variants set by pref
+      as well as by a Nimbus train-hop configuration.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061741
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061741
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - mcrawford@mozilla.com
+    expires: never
+    lifetime: application
+    send_in_pings:
+      - newtab
+
+  spaces_switch:
+    type: event
+    description: >
+      Recorded when the user navigates from one newtab space to another, in the
+      spaces page layout variants. Not recorded for the space the page opens on,
+      only for switches away from it, so the count is the number of deliberate
+      navigations.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061742
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061742
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - sdowne@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+      space:
+        description: >
+          The space navigated to. One of stories, widgets or activity.
+        type: string
+      previous_space:
+        description: >
+          The space navigated away from, same values as space.
+        type: string
+      method:
+        description: >
+          Which control was used: tab (the segmented control), keyboard (arrow
+          keys on the segmented control) or swipe (horizontal wheel, shift plus
+          wheel, or a touch drag).
+        type: string
+    send_in_pings:
+      - newtab
+
   spons_nav_traffic_sent:
     type: memory_distribution
     memory_unit: kilobyte
@@ -1403,13 +1511,80 @@ newtab:
     lifetime: ping
     type: boolean
     description: >
-      Whether the user scrolled more than SCROLL_TELEMETRY_THRESHOLD pixels
-      during a newtab session. Absent if no qualifying scroll occurred during
-      the session.
+      Whether the user scrolled more than 50 pixels during a newtab session.
+      Absent if the session ended before the newtab was ever visible.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2049897
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2060343
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2049897
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2060343
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - sdowne@mozilla.com
+      - jbrown@mozilla.com
+    expires: never
+    send_in_pings:
+      - newtab
+
+  scroll100:
+    lifetime: ping
+    type: boolean
+    description: >
+      Whether the user scrolled more than 100 pixels during a newtab session.
+      Absent if the session ended before the newtab was ever visible.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2060343
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2060343
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - sdowne@mozilla.com
+      - jbrown@mozilla.com
+    expires: never
+    send_in_pings:
+      - newtab
+
+  scroll250:
+    lifetime: ping
+    type: boolean
+    description: >
+      Whether the user scrolled more than 250 pixels during a newtab session.
+      Absent if the session ended before the newtab was ever visible.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2060343
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2060343
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - sdowne@mozilla.com
+      - jbrown@mozilla.com
+    expires: never
+    send_in_pings:
+      - newtab
+
+  dwell_time:
+    lifetime: ping
+    type: timing_distribution
+    time_unit: millisecond
+    description: >
+      Active time the user spent on this newtab, in milliseconds. Measures
+      how long the user was interacting with the browser, anywhere in the
+      window, while this newtab was the selected tab of the focused window,
+      not how long the tab was open.
+
+      One sample per newtab visit, absent when no active time accrued, so count
+      missing samples as zero when averaging newtab_session_end pings.
+
+      Resolution is about 5 seconds, so expect a cluster just under that from
+      tabs that were opened and then immediately ignored.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062392
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2062392
     data_sensitivity:
       - interaction
     notification_emails:
@@ -1612,10 +1787,7 @@ topsites:
       - achurchwell@mozilla.com
     expires: never
     extra_keys:
-      advertiser_name: *advertiser_name
-      tile_id: *tile_id
       newtab_visit_id: *newtab_visit_id
-      is_sponsored: *is_sponsored
       position: *topsite_position
     send_in_pings:
       - newtab
@@ -1635,10 +1807,7 @@ topsites:
       - achurchwell@mozilla.com
     expires: never
     extra_keys:
-      advertiser_name: *advertiser_name
-      tile_id: *tile_id
       newtab_visit_id: *newtab_visit_id
-      is_sponsored: *is_sponsored
       position: *topsite_position
     send_in_pings:
       - newtab
@@ -1658,10 +1827,7 @@ topsites:
       - achurchwell@mozilla.com
     expires: never
     extra_keys:
-      advertiser_name: *advertiser_name
-      tile_id: *tile_id
       newtab_visit_id: *newtab_visit_id
-      is_sponsored: *is_sponsored
       position: *topsite_position
     send_in_pings:
       - newtab
@@ -1681,10 +1847,7 @@ topsites:
       - achurchwell@mozilla.com
     expires: never
     extra_keys:
-      advertiser_name: *advertiser_name
-      tile_id: *tile_id
       newtab_visit_id: *newtab_visit_id
-      is_sponsored: *is_sponsored
       position: *topsite_position
       has_title_changed: &has_title_changed
         description: Whether the topsite title was changed.
@@ -2010,11 +2173,6 @@ pocket:
       position: &pocket_position
         description: The position (0-index) of the pocket tile.
         type: quantity
-      recommendation_id: &recommendation_id
-        description: >
-          The id from the Pocket API response that returned the recommendation.
-          Like "{61934fe5-fbb0-4f4e-b9dd-7eab5f6ee9cd}".
-        type: string
       tile_id: &pocket_tile_id
         description: >
           A content identifier.
@@ -2043,17 +2201,6 @@ pocket:
       recommended_at: &recommended_at
         description: The time in milliseconds the recomendation was recommended at.
         type: quantity
-      topic:
-        description: The topic of the recommendation. Like "entertainment".
-        type: string
-      selected_topics:
-        description: >
-          The list of topics the user selected
-        type: string
-      section:
-        description: >
-          If click belongs in a section, the name of the section
-        type: string
       section_position:
         description: >
           If click belongs in a section, the numeric position of the section
@@ -2099,7 +2246,6 @@ pocket:
       is_sponsored: *is_sponsored_pocket
       format: *format
       position: *pocket_position
-      recommendation_id: *recommendation_id
       tile_id: *pocket_tile_id
       scheduled_corpus_item_id: *scheduled_corpus_item_id
       corpus_item_id: *corpus_item_id
@@ -2109,17 +2255,6 @@ pocket:
         description: >
           Returns value based on if a the topic of the pocket recommendation matches one
           of the user-selected topic categories
-        type: string
-      topic:
-        description: The topic of the recommendation. Like "entertainment".
-        type: string
-      selected_topics:
-        description: >
-          The list of topics the user selected
-        type: string
-      section:
-        description: >
-          If click belongs in a section, the name of the section
         type: string
       section_position:
         description: >
@@ -2155,16 +2290,11 @@ pocket:
       is_sponsored: *is_sponsored_pocket
       format: *format
       position: *pocket_position
-      recommendation_id: *recommendation_id
       tile_id: *pocket_tile_id
       scheduled_corpus_item_id: *scheduled_corpus_item_id
       corpus_item_id: *corpus_item_id
       received_rank: *received_rank
       recommended_at: *recommended_at
-      section:
-        description: >
-          If click belongs in a section, the name of the section
-        type: string
       section_position:
         description: >
           If click belongs in a section, the numeric position of the section
@@ -2209,7 +2339,6 @@ pocket:
       is_sponsored: *is_sponsored_pocket
       format: *format
       position: *pocket_position
-      recommendation_id: *recommendation_id
       tile_id: *pocket_tile_id
       scheduled_corpus_item_id: *scheduled_corpus_item_id
       corpus_item_id: *corpus_item_id
@@ -2505,7 +2634,6 @@ newtab_content:
       is_sponsored: *is_sponsored_pocket
       format: *format
       position: *pocket_position
-      recommendation_id: *recommendation_id
       tile_id: *pocket_tile_id
       scheduled_corpus_item_id: *scheduled_corpus_item_id
       corpus_item_id: *corpus_item_id
@@ -2552,7 +2680,6 @@ newtab_content:
       is_sponsored: *is_sponsored_pocket
       format: *format
       position: *pocket_position
-      recommendation_id: *recommendation_id
       tile_id: *pocket_tile_id
       scheduled_corpus_item_id: *scheduled_corpus_item_id
       corpus_item_id: *corpus_item_id
@@ -2604,7 +2731,6 @@ newtab_content:
       is_sponsored: *is_sponsored_pocket
       format: *format
       position: *pocket_position
-      recommendation_id: *recommendation_id
       tile_id: *pocket_tile_id
       scheduled_corpus_item_id: *scheduled_corpus_item_id
       corpus_item_id: *corpus_item_id

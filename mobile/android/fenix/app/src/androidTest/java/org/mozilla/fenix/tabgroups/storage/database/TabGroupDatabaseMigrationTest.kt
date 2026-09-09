@@ -6,19 +6,20 @@ package org.mozilla.fenix.tabgroups.storage.database
 
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.IOException
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
-import java.io.IOException
 
 class TabGroupDatabaseMigrationTest {
     private val testDbName = "migration-test"
 
     @get:Rule
-    val helper: MigrationTestHelper = MigrationTestHelper(
-        InstrumentationRegistry.getInstrumentation(),
-        TabGroupDatabase::class.java,
-    )
+    val helper: MigrationTestHelper =
+        MigrationTestHelper(
+            InstrumentationRegistry.getInstrumentation(),
+            TabGroupDatabase::class.java,
+        )
 
     @Test
     @Throws(IOException::class)
@@ -26,11 +27,11 @@ class TabGroupDatabaseMigrationTest {
         helper.createDatabase(testDbName, 1).apply {
             execSQL(
                 "INSERT INTO $TAB_GROUP_TABLE_NAME (id, title, theme, closed, lastModified) " +
-                    "VALUES ('group-1', 'My Group', 'Violet', 0, 123456789)",
+                    "VALUES ('group-1', 'My Group', 'Violet', 0, 123456789)"
             )
             execSQL(
                 "INSERT INTO $TAB_GROUP_TABLE_NAME (id, title, theme, closed, lastModified) " +
-                    "VALUES ('group-2', 'Other Group', 'Blue', 0, 123456789)",
+                    "VALUES ('group-2', 'Other Group', 'Blue', 0, 123456789)"
             )
             close()
         }

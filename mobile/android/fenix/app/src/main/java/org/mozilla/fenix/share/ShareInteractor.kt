@@ -7,15 +7,9 @@ package org.mozilla.fenix.share
 import mozilla.components.concept.sync.Device
 import org.mozilla.fenix.share.listadapters.AppShareOption
 
-/**
- * Interactor for the share screen.
- */
-class ShareInteractor(
-    private val controller: ShareController,
-) : ShareCloseInteractor,
-    ShareToAccountDevicesInteractor,
-    ShareToAppsInteractor,
-    SaveToPDFInteractor {
+/** Interactor for the share screen. */
+class ShareInteractor(private val controller: ShareController) :
+    ShareCloseInteractor, ShareToAccountDevicesInteractor, ShareToAppsInteractor, SaveToPDFInteractor {
     override fun onReauth() {
         controller.handleReauth()
     }

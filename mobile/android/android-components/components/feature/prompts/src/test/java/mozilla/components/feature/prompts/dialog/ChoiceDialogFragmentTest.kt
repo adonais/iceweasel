@@ -15,6 +15,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.concept.engine.prompt.Choice
 import mozilla.components.feature.prompts.R
 import mozilla.components.feature.prompts.dialog.ChoiceAdapter.Companion.TYPE_GROUP
@@ -46,7 +47,6 @@ import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations.openMocks
 import org.robolectric.Shadows.shadowOf
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class ChoiceDialogFragmentTest {
@@ -207,13 +207,14 @@ class ChoiceDialogFragmentTest {
 
     @Test
     fun `Will adapter will return correct view type `() {
-        val choices = arrayOf(
-            item,
-            Choice(id = "", label = "item1", children = arrayOf()),
-            Choice(id = "", label = "menu", children = arrayOf()),
-            Choice(id = "", label = "separator", children = arrayOf(), isASeparator = true),
-            Choice(id = "", label = "multiple choice"),
-        )
+        val choices =
+            arrayOf(
+                item,
+                Choice(id = "", label = "item1", children = arrayOf()),
+                Choice(id = "", label = "menu", children = arrayOf()),
+                Choice(id = "", label = "separator", children = arrayOf(), isASeparator = true),
+                Choice(id = "", label = "multiple choice"),
+            )
 
         var fragment = spy(newInstance(choices, "sessionId", "uid", false, SINGLE_CHOICE_DIALOG_TYPE))
 
@@ -263,8 +264,7 @@ class ChoiceDialogFragmentTest {
 
         val adapter = getAdapterFrom(fragment)
 
-        val holder =
-            adapter.onCreateViewHolder(LinearLayout(testContext), TYPE_MULTIPLE) as MultipleViewHolder
+        val holder = adapter.onCreateViewHolder(LinearLayout(testContext), TYPE_MULTIPLE) as MultipleViewHolder
         val groupHolder = adapter.onCreateViewHolder(LinearLayout(testContext), TYPE_GROUP) as GroupViewHolder
 
         adapter.bindViewHolder(holder, 0)
@@ -277,13 +277,14 @@ class ChoiceDialogFragmentTest {
 
     @Test
     fun `Will show a multiple choice item with selected element`() {
-        val choices = arrayOf(
-            Choice(
-                id = "",
-                label = "item1",
-                children = arrayOf(Choice(id = "", label = "sub-item1", selected = true)),
-            ),
-        )
+        val choices =
+            arrayOf(
+                Choice(
+                    id = "",
+                    label = "item1",
+                    children = arrayOf(Choice(id = "", label = "sub-item1", selected = true)),
+                )
+            )
 
         val fragment = spy(newInstance(choices, "sessionId", "uid", true, MULTIPLE_CHOICE_DIALOG_TYPE))
 
@@ -294,8 +295,7 @@ class ChoiceDialogFragmentTest {
         assertEquals(2, adapter.itemCount)
 
         val groupHolder = adapter.onCreateViewHolder(LinearLayout(testContext), TYPE_GROUP) as GroupViewHolder
-        val holder =
-            adapter.onCreateViewHolder(LinearLayout(testContext), TYPE_MULTIPLE) as MultipleViewHolder
+        val holder = adapter.onCreateViewHolder(LinearLayout(testContext), TYPE_MULTIPLE) as MultipleViewHolder
 
         adapter.bindViewHolder(groupHolder, 0)
         adapter.bindViewHolder(holder, 1)
@@ -383,8 +383,7 @@ class ChoiceDialogFragmentTest {
 
     @Test
     fun `Clicking on multiple choice item notifies the feature`() {
-        val choices =
-            arrayOf(Choice(id = "", label = "item1", children = arrayOf(subItem)))
+        val choices = arrayOf(Choice(id = "", label = "item1", children = arrayOf(subItem)))
         val fragment = spy(newInstance(choices, "sessionId", "uid", false, MULTIPLE_CHOICE_DIALOG_TYPE))
 
         fragment.feature = mockFeature
@@ -419,8 +418,7 @@ class ChoiceDialogFragmentTest {
 
     @Test
     fun `Clicking on selected multiple choice item will notify feature`() {
-        val choices =
-            arrayOf(item.copy(selected = true))
+        val choices = arrayOf(item.copy(selected = true))
         val fragment = spy(newInstance(choices, "sessionId", "uid", true, MULTIPLE_CHOICE_DIALOG_TYPE))
 
         fragment.feature = mockFeature
@@ -432,8 +430,7 @@ class ChoiceDialogFragmentTest {
 
         val adapter = dialog.findViewById<RecyclerView>(R.id.recyclerView).adapter as ChoiceAdapter
 
-        val holder =
-            adapter.onCreateViewHolder(LinearLayout(testContext), TYPE_MULTIPLE) as MultipleViewHolder
+        val holder = adapter.onCreateViewHolder(LinearLayout(testContext), TYPE_MULTIPLE) as MultipleViewHolder
 
         adapter.bindViewHolder(holder, 0)
 
@@ -452,18 +449,19 @@ class ChoiceDialogFragmentTest {
 
     @Test
     fun `single choice item with multiple sub-menu groups`() {
-        val choices = arrayOf(
-            Choice(
-                id = "group1",
-                label = "group1",
-                children = arrayOf(Choice(id = "item_group_1", label = "item group 1")),
-            ),
-            Choice(
-                id = "group2",
-                label = "group2",
-                children = arrayOf(Choice(id = "item_group_2", label = "item group 2")),
-            ),
-        )
+        val choices =
+            arrayOf(
+                Choice(
+                    id = "group1",
+                    label = "group1",
+                    children = arrayOf(Choice(id = "item_group_1", label = "item group 1")),
+                ),
+                Choice(
+                    id = "group2",
+                    label = "group2",
+                    children = arrayOf(Choice(id = "item_group_2", label = "item group 2")),
+                ),
+            )
 
         val fragment = spy(newInstance(choices, "sessionId", "uid", false, SINGLE_CHOICE_DIALOG_TYPE))
         fragment.feature = mockFeature
@@ -475,8 +473,8 @@ class ChoiceDialogFragmentTest {
 
         val adapter = dialog.findViewById<RecyclerView>(R.id.recyclerView).adapter as ChoiceAdapter
 
-        val groupViewHolder = adapter.onCreateViewHolder(LinearLayout(testContext), adapter.getItemViewType(0))
-            as GroupViewHolder
+        val groupViewHolder =
+            adapter.onCreateViewHolder(LinearLayout(testContext), adapter.getItemViewType(0)) as GroupViewHolder
 
         adapter.bindViewHolder(groupViewHolder, 0)
 
@@ -501,13 +499,13 @@ class ChoiceDialogFragmentTest {
 
     @Test
     fun `disabled single choice item is not clickable`() {
-        val choices = arrayOf(
-            Choice(id = "item1", label = "Enabled choice"),
-            Choice(id = "item2", enable = false, label = "Disabled choice"),
-        )
+        val choices =
+            arrayOf(
+                Choice(id = "item1", label = "Enabled choice"),
+                Choice(id = "item2", enable = false, label = "Disabled choice"),
+            )
 
-        val fragment =
-            spy(newInstance(choices, "sessionId", "uid", false, SINGLE_CHOICE_DIALOG_TYPE))
+        val fragment = spy(newInstance(choices, "sessionId", "uid", false, SINGLE_CHOICE_DIALOG_TYPE))
         fragment.feature = mockFeature
         doReturn(appCompatContext).`when`(fragment).requireContext()
         doNothing().`when`(fragment).dismiss()
@@ -519,8 +517,7 @@ class ChoiceDialogFragmentTest {
 
         // test disabled item
         val disabledItemViewHolder =
-            adapter.onCreateViewHolder(LinearLayout(testContext), adapter.getItemViewType(1))
-                as SingleViewHolder
+            adapter.onCreateViewHolder(LinearLayout(testContext), adapter.getItemViewType(1)) as SingleViewHolder
 
         adapter.bindViewHolder(disabledItemViewHolder, 1)
 
@@ -533,10 +530,11 @@ class ChoiceDialogFragmentTest {
 
     @Test
     fun `enabled single choice item is clickable`() {
-        val choices = arrayOf(
-            Choice(id = "item1", label = "Enabled choice"),
-            Choice(id = "item2", enable = false, label = "Disabled choice"),
-        )
+        val choices =
+            arrayOf(
+                Choice(id = "item1", label = "Enabled choice"),
+                Choice(id = "item2", enable = false, label = "Disabled choice"),
+            )
 
         val fragment = spy(newInstance(choices, "sessionId", "uid", false, SINGLE_CHOICE_DIALOG_TYPE))
         fragment.feature = mockFeature
@@ -563,13 +561,13 @@ class ChoiceDialogFragmentTest {
 
     @Test
     fun `disabled multiple choice item is not clickable`() {
-        val choices = arrayOf(
-            Choice(id = "item1", label = "Enabled choice"),
-            Choice(id = "item2", enable = false, label = "Disabled choice"),
-        )
+        val choices =
+            arrayOf(
+                Choice(id = "item1", label = "Enabled choice"),
+                Choice(id = "item2", enable = false, label = "Disabled choice"),
+            )
 
-        val fragment =
-            spy(newInstance(choices, "sessionId", "uid", false, MULTIPLE_CHOICE_DIALOG_TYPE))
+        val fragment = spy(newInstance(choices, "sessionId", "uid", false, MULTIPLE_CHOICE_DIALOG_TYPE))
         fragment.feature = mockFeature
         doReturn(appCompatContext).`when`(fragment).requireContext()
         doNothing().`when`(fragment).dismiss()
@@ -581,8 +579,7 @@ class ChoiceDialogFragmentTest {
 
         // test disabled item
         val disabledItemViewHolder =
-            adapter.onCreateViewHolder(LinearLayout(testContext), adapter.getItemViewType(1))
-                as MultipleViewHolder
+            adapter.onCreateViewHolder(LinearLayout(testContext), adapter.getItemViewType(1)) as MultipleViewHolder
 
         adapter.bindViewHolder(disabledItemViewHolder, 1)
 
@@ -595,10 +592,11 @@ class ChoiceDialogFragmentTest {
 
     @Test
     fun `enabled multiple choice item is clickable`() {
-        val choices = arrayOf(
-            Choice(id = "item1", label = "Enabled choice"),
-            Choice(id = "item2", enable = false, label = "Disabled choice"),
-        )
+        val choices =
+            arrayOf(
+                Choice(id = "item1", label = "Enabled choice"),
+                Choice(id = "item2", enable = false, label = "Disabled choice"),
+            )
 
         val fragment = spy(newInstance(choices, "sessionId", "uid", false, MULTIPLE_CHOICE_DIALOG_TYPE))
         fragment.feature = mockFeature
@@ -625,13 +623,13 @@ class ChoiceDialogFragmentTest {
 
     @Test
     fun `disabled menu choice item is not clickable`() {
-        val choices = arrayOf(
-            Choice(id = "item1", label = "Enabled choice"),
-            Choice(id = "item2", enable = false, label = "Disabled choice"),
-        )
+        val choices =
+            arrayOf(
+                Choice(id = "item1", label = "Enabled choice"),
+                Choice(id = "item2", enable = false, label = "Disabled choice"),
+            )
 
-        val fragment =
-            spy(newInstance(choices, "sessionId", "uid", false, MENU_CHOICE_DIALOG_TYPE))
+        val fragment = spy(newInstance(choices, "sessionId", "uid", false, MENU_CHOICE_DIALOG_TYPE))
         fragment.feature = mockFeature
         doReturn(appCompatContext).`when`(fragment).requireContext()
         doNothing().`when`(fragment).dismiss()
@@ -643,8 +641,7 @@ class ChoiceDialogFragmentTest {
 
         // test disabled item
         val disabledItemViewHolder =
-            adapter.onCreateViewHolder(LinearLayout(testContext), adapter.getItemViewType(1))
-                as MenuViewHolder
+            adapter.onCreateViewHolder(LinearLayout(testContext), adapter.getItemViewType(1)) as MenuViewHolder
 
         adapter.bindViewHolder(disabledItemViewHolder, 1)
 
@@ -657,10 +654,11 @@ class ChoiceDialogFragmentTest {
 
     @Test
     fun `enabled menu choice item is clickable`() {
-        val choices = arrayOf(
-            Choice(id = "item1", label = "Enabled choice"),
-            Choice(id = "item2", enable = false, label = "Disabled choice"),
-        )
+        val choices =
+            arrayOf(
+                Choice(id = "item1", label = "Enabled choice"),
+                Choice(id = "item2", enable = false, label = "Disabled choice"),
+            )
 
         val fragment = spy(newInstance(choices, "sessionId", "uid", false, MENU_CHOICE_DIALOG_TYPE))
         fragment.feature = mockFeature
@@ -688,13 +686,14 @@ class ChoiceDialogFragmentTest {
     @Test
     fun `scroll to selected item`() {
         // array of 20 choices; 10th one is selected
-        val choices = Array(20) { index ->
-            if (index == 10) {
-                item.copy(selected = true, label = "selected")
-            } else {
-                item.copy(label = "item$index")
+        val choices =
+            Array(20) { index ->
+                if (index == 10) {
+                    item.copy(selected = true, label = "selected")
+                } else {
+                    item.copy(label = "item$index")
+                }
             }
-        }
         val fragment = newInstance(choices, "sessionId", "uid", true, SINGLE_CHOICE_DIALOG_TYPE)
         val inflater = LayoutInflater.from(testContext)
         val dialog = fragment.createDialogContentView(inflater)

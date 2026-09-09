@@ -7,8 +7,10 @@ package mozilla.components.feature.prompts.dialog
 import android.content.DialogInterface
 import android.os.Looper.getMainLooper
 import android.widget.TextView
+import androidx.appcompat.R as appcompatR
 import androidx.appcompat.app.AlertDialog
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.feature.prompts.R
 import mozilla.components.support.test.ext.appCompatContext
 import mozilla.components.support.test.robolectric.testContext
@@ -23,8 +25,6 @@ import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations.openMocks
 import org.robolectric.Shadows.shadowOf
-import kotlin.test.assertNotNull
-import androidx.appcompat.R as appcompatR
 
 @RunWith(AndroidJUnit4::class)
 class ConfirmDialogFragmentTest {
@@ -36,17 +36,18 @@ class ConfirmDialogFragmentTest {
     fun setup() {
         openMocks(this)
         testContext.setTheme(com.google.android.material.R.style.Theme_MaterialComponents_Light)
-        fragment = spy(
-            ConfirmDialogFragment.newInstance(
-                "sessionId",
-                "uid",
-                true,
-                "title",
-                "message",
-                "positiveLabel",
-                "negativeLabel",
-            ),
-        )
+        fragment =
+            spy(
+                ConfirmDialogFragment.newInstance(
+                    "sessionId",
+                    "uid",
+                    true,
+                    "title",
+                    "message",
+                    "positiveLabel",
+                    "negativeLabel",
+                )
+            )
     }
 
     @Test

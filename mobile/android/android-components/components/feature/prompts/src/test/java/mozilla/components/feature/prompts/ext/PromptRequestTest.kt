@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.prompts.ext
 
+import kotlin.reflect.KClass
 import mozilla.components.concept.engine.prompt.PromptRequest
 import mozilla.components.concept.engine.prompt.PromptRequest.Alert
 import mozilla.components.concept.engine.prompt.PromptRequest.Confirm
@@ -17,17 +18,17 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlin.reflect.KClass
 
 class PromptRequestTest {
     @Test
     fun `GIVEN only a subset of prompts should be shown in fullscreen WHEN checking which are not THEN return the expected result`() {
-        val expected = listOf<KClass<out PromptRequest>>(
-            Alert::class,
-            TextPrompt::class,
-            Confirm::class,
-            Popup::class,
-        )
+        val expected =
+            listOf<KClass<out PromptRequest>>(
+                Alert::class,
+                TextPrompt::class,
+                Confirm::class,
+                Popup::class,
+            )
 
         assertEquals(expected, PROMPTS_TO_EXIT_FULLSCREEN_FOR)
     }
@@ -59,48 +60,52 @@ class PromptRequestTest {
 
     @Test
     fun `isPhotoRequest returns true when mime types contain image`() {
-        val request = PromptRequest.File(
-            arrayOf("image/png"),
-            onSingleFileSelected = { _, _ -> },
-            onMultipleFilesSelected = { _, _ -> },
-            onDismiss = {},
-        )
+        val request =
+            PromptRequest.File(
+                arrayOf("image/png"),
+                onSingleFileSelected = { _, _ -> },
+                onMultipleFilesSelected = { _, _ -> },
+                onDismiss = {},
+            )
 
         assertTrue(request.isPhotoRequest())
     }
 
     @Test
     fun `isPhotoRequest returns false when mime types do not contain image`() {
-        val request = PromptRequest.File(
-            arrayOf("video/mp4"),
-            onSingleFileSelected = { _, _ -> },
-            onMultipleFilesSelected = { _, _ -> },
-            onDismiss = {},
-        )
+        val request =
+            PromptRequest.File(
+                arrayOf("video/mp4"),
+                onSingleFileSelected = { _, _ -> },
+                onMultipleFilesSelected = { _, _ -> },
+                onDismiss = {},
+            )
 
         assertFalse(request.isPhotoRequest())
     }
 
     @Test
     fun `isVideoRequest returns true when mime types contain video`() {
-        val request = PromptRequest.File(
-            arrayOf("video/mp4"),
-            onSingleFileSelected = { _, _ -> },
-            onMultipleFilesSelected = { _, _ -> },
-            onDismiss = {},
-        )
+        val request =
+            PromptRequest.File(
+                arrayOf("video/mp4"),
+                onSingleFileSelected = { _, _ -> },
+                onMultipleFilesSelected = { _, _ -> },
+                onDismiss = {},
+            )
 
         assertTrue(request.isVideoRequest())
     }
 
     @Test
     fun `isVideoRequest returns false when mime types do not contain video`() {
-        val request = PromptRequest.File(
-            arrayOf("image/png"),
-            onSingleFileSelected = { _, _ -> },
-            onMultipleFilesSelected = { _, _ -> },
-            onDismiss = {},
-        )
+        val request =
+            PromptRequest.File(
+                arrayOf("image/png"),
+                onSingleFileSelected = { _, _ -> },
+                onMultipleFilesSelected = { _, _ -> },
+                onDismiss = {},
+            )
 
         assertFalse(request.isVideoRequest())
     }

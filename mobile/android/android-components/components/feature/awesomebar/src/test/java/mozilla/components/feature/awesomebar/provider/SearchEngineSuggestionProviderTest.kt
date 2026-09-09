@@ -14,23 +14,25 @@ import org.junit.Test
 
 class SearchEngineSuggestionProviderTest {
     private lateinit var defaultProvider: SearchEngineSuggestionProvider
-    private val engineList = listOf(
-        createSearchEngine("amazon", "https://www.amazon.org/?q={searchTerms}", mock()),
-        createSearchEngine("bing", "https://www.bing.com/?q={searchTerms}", mock()),
-        createSearchEngine("bingo", "https://www.bingo.com/?q={searchTerms}", mock()),
-    )
+    private val engineList =
+        listOf(
+            createSearchEngine("amazon", "https://www.amazon.org/?q={searchTerms}", mock()),
+            createSearchEngine("bing", "https://www.bing.com/?q={searchTerms}", mock()),
+            createSearchEngine("bingo", "https://www.bingo.com/?q={searchTerms}", mock()),
+        )
 
     @Before
     fun setup() {
-        defaultProvider = SearchEngineSuggestionProvider(
-            engineList,
-            mock(),
-            "description",
-            mock(),
-            maxSuggestions = 1,
-            charactersThreshold = 1,
-            titleFormatter = { "Search $it" },
-        )
+        defaultProvider =
+            SearchEngineSuggestionProvider(
+                engineList,
+                mock(),
+                "description",
+                mock(),
+                maxSuggestions = 1,
+                charactersThreshold = 1,
+                titleFormatter = { "Search $it" },
+            )
     }
 
     @Test
@@ -49,14 +51,15 @@ class SearchEngineSuggestionProviderTest {
 
     @Test
     fun `Provider returns empty list when text is shorter than charactersThreshold`() = runTest {
-        val provider = SearchEngineSuggestionProvider(
-            engineList,
-            mock(),
-            "description",
-            mock(),
-            charactersThreshold = 3,
-            titleFormatter = { "Search $it" },
-        )
+        val provider =
+            SearchEngineSuggestionProvider(
+                engineList,
+                mock(),
+                "description",
+                mock(),
+                charactersThreshold = 3,
+                titleFormatter = { "Search $it" },
+            )
 
         val suggestions = provider.onInputChanged("am")
 
@@ -86,13 +89,14 @@ class SearchEngineSuggestionProviderTest {
 
     @Test
     fun `Provider returns empty list when the engine list is empty`() = runTest {
-        val providerEmpty = SearchEngineSuggestionProvider(
-            emptyList(),
-            mock(),
-            "description",
-            mock(),
-            titleFormatter = { it },
-        )
+        val providerEmpty =
+            SearchEngineSuggestionProvider(
+                emptyList(),
+                mock(),
+                "description",
+                mock(),
+                titleFormatter = { it },
+            )
 
         val suggestions = providerEmpty.onInputChanged("a")
 

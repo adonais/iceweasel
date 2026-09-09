@@ -1372,6 +1372,83 @@ add_task(async function test_triggeredTabBookmark_selector() {
   await BrowserTestUtils.closeWindow(win);
 });
 
+add_task(async function test_triggeredTabBookmark_selector_prefers_uri_match() {
+  // Currently not supported on Linux, see Bug 1927472
+  if (AppConstants.platform === "linux") {
+    return;
+  }
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.toolbars.bookmarks.visibility", "always"]],
+  });
+  registerCleanupFunction(async () => {
+    await PlacesUtils.bookmarks.eraseEverything();
+    await SpecialPowers.popPrefEnv();
+  });
+
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  const firstBookmarkURL = "https://example.com/";
+  const secondBookmarkURL = "https://example.org/";
+
+  BrowserTestUtils.startLoadingURIString(browser, secondBookmarkURL);
+  await BrowserTestUtils.browserLoaded(browser);
+
+  const title = browser.contentTitle;
+  Assert.ok(title, "Triggering tab has a content title to reuse");
+
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title,
+    url: firstBookmarkURL,
+  });
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title,
+    url: secondBookmarkURL,
+  });
+
+  const config = {
+    win,
+    location: "chrome",
+    context: "chrome",
+    browser,
+    theme: { preset: "chrome" },
+  };
+
+  const message = JSON.parse(JSON.stringify(testMessage.message));
+  message.content.screens[0].anchors[0].selector = "%triggeredTabBookmark%";
+
+  const sandbox = sinon.createSandbox();
+  const doc = win.document;
+  const featureCallout = new FeatureCallout(config);
+  const getAnchorSpy = sandbox.spy(featureCallout, "_getAnchor");
+
+  await featureCallout.showFeatureCallout(message);
+  await waitForCalloutScreen(doc, message.content.screens[0].id);
+
+  const [anchor] = getAnchorSpy.returnValues;
+
+  Assert.strictEqual(
+    anchor?.element?.classList.contains("bookmark-item"),
+    true,
+    "Resolved anchor element is a bookmark item"
+  );
+
+  Assert.strictEqual(
+    anchor.element?._placesNode?.uri,
+    secondBookmarkURL,
+    "Resolved bookmark matches the triggered tab's URI, not the first same-titled bookmark"
+  );
+
+  doc.querySelector(calloutCTASelector).click();
+  await waitForCalloutRemoved(doc);
+
+  sandbox.restore();
+  await BrowserTestUtils.closeWindow(win);
+});
+
 add_task(async function test_triggeredTabBookmark_selector_fallback_overflow() {
   // Currently not supported on Linux, see Bug 1927472
   if (AppConstants.platform === "linux") {
@@ -1731,5 +1808,81 @@ add_task(async function test_triggeredTabBookmark_selector_on_reused_callout() {
   }
 
   sandbox.restore();
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(async function force_shown_feature_tour_advances_screens() {
+  const TEST_MESSAGE = {
+    id: "TEST_FORCE_SHOWN_TOUR",
+    template: "feature_callout",
+    content: {
+      id: "TEST_FORCE_SHOWN_TOUR",
+      template: "multistage",
+      backdrop: "transparent",
+      transitions: false,
+      disableHistoryUpdates: true,
+      screens: [
+        {
+          id: "FORCE_SHOWN_SCREEN_1",
+          anchors: [
+            {
+              selector: "#PanelUI-menu-button",
+              arrow_position: "top-center-arrow-end",
+            },
+          ],
+          content: {
+            position: "callout",
+            title: { raw: "Screen 1" },
+            primary_button: {
+              label: { raw: "Next" },
+              action: { advance_screens: { direction: 1 } },
+            },
+          },
+        },
+        {
+          id: "FORCE_SHOWN_SCREEN_2",
+          anchors: [
+            {
+              selector: "#PanelUI-menu-button",
+              arrow_position: "top-center-arrow-end",
+            },
+          ],
+          content: {
+            position: "callout",
+            title: { raw: "Screen 2" },
+            primary_button: {
+              label: { raw: "Done" },
+              action: { navigate: true },
+            },
+          },
+        },
+      ],
+    },
+    priority: 1,
+    targeting: "true",
+    groups: [],
+  };
+
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+  win.focus();
+  const browser = win.gBrowser.selectedBrowser;
+
+  ASRouter.routeCFRMessage(TEST_MESSAGE, browser, { id: "test-trigger" }, true);
+  await waitForCalloutScreen(win.document, "FORCE_SHOWN_SCREEN_1");
+  ok(
+    win.document.querySelector(calloutSelector),
+    "Force-shown feature tour shows screen 1"
+  );
+
+  win.document.querySelector(`#${calloutId} .primary`).click();
+  await waitForCalloutScreen(win.document, "FORCE_SHOWN_SCREEN_2");
+  ok(
+    win.document.querySelector(calloutSelector),
+    "Force-shown feature tour advances to screen 2 without ending prematurely"
+  );
+
+  win.document.querySelector(`#${calloutId} .primary`).click();
+  await waitForCalloutRemoved(win.document);
+
   await BrowserTestUtils.closeWindow(win);
 });

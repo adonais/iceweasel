@@ -12,6 +12,8 @@ skip-if = [
 
 ["browser_drag_splitview.js"]
 
+["browser_drag_tab_group_expand_on_drop.js"]
+
 ["browser_drag_tab_group_overflow.js"]
 
 ["browser_drag_to_pin.js"]

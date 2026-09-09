@@ -12,8 +12,8 @@ import org.mozilla.geckoview.PageExtractionController.PageExtractionException.ER
 import org.mozilla.geckoview.PageExtractionController.PageExtractionException.ERROR_NULL_RESULT
 
 /**
- * Bridge function to map from GeckoSession's [PageExtractionController.PageExtractionException]
- * into [PageExtractionError]
+ * Bridge function to map from GeckoSession's [PageExtractionController.PageExtractionException] into
+ * [PageExtractionError]
  */
 @OptIn(ExperimentalGeckoViewApi::class)
 fun Throwable.intoPageExtractionError(): PageExtractionError {

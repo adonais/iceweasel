@@ -13,6 +13,7 @@ import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.view.children
 import androidx.core.view.isVisible
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.concept.menu.MenuController
 import mozilla.components.concept.menu.candidate.HighPriorityHighlightEffect
 import mozilla.components.concept.menu.candidate.LowPriorityHighlightEffect
@@ -28,7 +29,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.verify
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class MenuButton2Test {
@@ -93,9 +93,7 @@ class MenuButton2Test {
         assertFalse(highlightView.isVisible)
         assertFalse(notificationIconView.isVisible)
 
-        menuButton.setEffect(
-            HighPriorityHighlightEffect(Color.RED),
-        )
+        menuButton.setEffect(HighPriorityHighlightEffect(Color.RED))
 
         assertTrue(highlightView.isVisible)
         assertFalse(notificationIconView.isVisible)
@@ -108,9 +106,7 @@ class MenuButton2Test {
         assertFalse(highlightView.isVisible)
         assertFalse(notificationIconView.isVisible)
 
-        menuButton.setEffect(
-            LowPriorityHighlightEffect(Color.BLUE),
-        )
+        menuButton.setEffect(LowPriorityHighlightEffect(Color.BLUE))
 
         assertFalse(highlightView.isVisible)
         assertTrue(notificationIconView.isVisible)

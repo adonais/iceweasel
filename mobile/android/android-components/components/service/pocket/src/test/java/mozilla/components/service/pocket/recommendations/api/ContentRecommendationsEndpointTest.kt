@@ -28,21 +28,20 @@ class ContentRecommendationsEndpointTest {
         client = mock()
         rawEndpoint = mock()
 
-        endpoint = ContentRecommendationsEndpoint(
-            rawEndpoint = rawEndpoint,
-        )
+        endpoint = ContentRecommendationsEndpoint(rawEndpoint = rawEndpoint)
     }
 
     @Test
     fun `WHEN fetching content recommendations returns a null or empty response THEN return a pocket response failure`() {
         arrayOf(
-            null,
-            "",
-        ).forEach { result ->
-            whenever(rawEndpoint.getContentRecommendations()).thenReturn(result)
+                null,
+                "",
+            )
+            .forEach { result ->
+                whenever(rawEndpoint.getContentRecommendations()).thenReturn(result)
 
-            assertResponseIsFailure(endpoint.getContentRecommendations())
-        }
+                assertResponseIsFailure(endpoint.getContentRecommendations())
+            }
     }
 
     @Test

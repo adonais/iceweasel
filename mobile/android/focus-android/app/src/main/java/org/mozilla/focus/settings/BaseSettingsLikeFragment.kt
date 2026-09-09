@@ -16,8 +16,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.preference.PreferenceFragmentCompat
 
 /**
- * Similar behavior as [BaseSettingsFragment], but doesn't extend [PreferenceFragmentCompat] and is
- * a regular [Fragment] instead.
+ * Similar behavior as [BaseSettingsFragment], but doesn't extend [PreferenceFragmentCompat] and is a regular [Fragment]
+ * instead.
  */
 open class BaseSettingsLikeFragment : Fragment(), MenuProvider {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

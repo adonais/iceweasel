@@ -18,13 +18,19 @@ on:
 env:
   ALLOWED_TEAM: lando-github-pilot
   ALLOWED_PATHS: |
+    .*.ftl$
+    browser/base/content/test/static
+    dom/animation
     gradle/
+    layout/
     mobile/android/android-components
     mobile/android/fenix
     mobile/android/focus-android
+    modules/libpref/init/StaticPrefList.yaml
+    servo
     taskcluster/config.yml
-    .*.ftl$
-    browser/base/content/test/static
+    testing/web-platform
+    xpcom/ds/StaticAtoms.py
 
   GH_REPO: ${{ github.repository }}
   PR: ${{ github.event.pull_request.number }}
@@ -40,7 +46,7 @@ jobs:
       # We use the Lando Web App to obtain a token with sufficient permissions.
       - name: Generate a Lando Web token
         id: generate-lando-web-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
         continue-on-error: true
         with:
           app-id: ${{ vars.LANDO_WEB_APP_ID }}
@@ -83,7 +89,7 @@ jobs:
         if: (steps.team.outputs.is_member == 'true' && steps.paths.outputs.only_allowed == 'true') && github.event.action == 'opened' && github.base_ref == 'main'
         run: |
           gh pr comment "${PR}" --body "> [!WARNING]
-          The base branch is currently set to \`main\`. Please Edit this PR and set the base to \`autoland\`."
+          The base branch is currently set to \`main\`. Please [Edit this PR](https://docs.github.com/en/pull-requests/how-tos/create-pull-requests/changing-the-base-branch-of-a-pull-request) and set the base to \`autoland\`."
 
       - name: Add Lando link
         if: (steps.team.outputs.is_member == 'true' && steps.paths.outputs.only_allowed == 'true') && github.event.action == 'opened'

@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.IOException
 import mockwebserver3.Dispatcher
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -16,15 +17,13 @@ import okio.Buffer
 import okio.source
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
-import java.io.IOException
 
-/**
- * A [TestWatcher] junit rule that will serve content from assets in the test package.
- */
+/** A [TestWatcher] junit rule that will serve content from assets in the test package. */
 class WebserverRule : TestWatcher() {
-    private val webserver: MockWebServer = MockWebServer().apply {
-        dispatcher = AndroidAssetDispatcher()
-    }
+    private val webserver: MockWebServer =
+        MockWebServer().apply {
+            dispatcher = AndroidAssetDispatcher()
+        }
 
     fun url(path: String = ""): String {
         return webserver.url(path).toString()
@@ -71,12 +70,13 @@ class AndroidAssetDispatcher : Dispatcher() {
     }
 }
 
-private fun contentType(path: String) = when {
-    path.endsWith(".png") -> "image/png"
-    path.endsWith(".jpg") || path.endsWith(".jpeg") -> "image/jpeg"
-    path.endsWith(".gif") -> "image/gif"
-    path.endsWith(".svg") -> "image/svg+xml"
-    path.endsWith(".html") || path.endsWith(".htm") -> "text/html; charset=utf-8"
-    path.endsWith(".txt") -> "text/plain; charset=utf-8"
-    else -> "application/octet-stream"
-}
+private fun contentType(path: String) =
+    when {
+        path.endsWith(".png") -> "image/png"
+        path.endsWith(".jpg") || path.endsWith(".jpeg") -> "image/jpeg"
+        path.endsWith(".gif") -> "image/gif"
+        path.endsWith(".svg") -> "image/svg+xml"
+        path.endsWith(".html") || path.endsWith(".htm") -> "text/html; charset=utf-8"
+        path.endsWith(".txt") -> "text/plain; charset=utf-8"
+        else -> "application/octet-stream"
+    }

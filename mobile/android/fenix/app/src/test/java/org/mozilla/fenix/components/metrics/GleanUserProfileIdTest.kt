@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.components.metrics
 
+import java.util.UUID
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNull
 import org.junit.Test
@@ -12,7 +13,6 @@ import org.mozilla.fenix.components.metrics.fake.FakeGleanProfileIdStore
 import org.mozilla.fenix.components.metrics.fake.FakeGleanUsageReporting
 import org.mozilla.fenix.components.metrics.fake.FakeLifecycleEventObserver
 import org.mozilla.fenix.components.metrics.fake.FakeLifecycleOwner
-import java.util.UUID
 
 internal class GleanUserProfileIdTest {
 
@@ -66,11 +66,12 @@ internal class GleanUserProfileIdTest {
         assertNull(fakeGleanUsageId.gleanStoredProfileId)
     }
 
-    private fun createGleanUsageReportingMetricsService() = GleanUsageReportingMetricsService(
-        lifecycleOwner = FakeLifecycleOwner(),
-        gleanUsageReportingLifecycleObserver = FakeLifecycleEventObserver(),
-        gleanUsageReporting = FakeGleanUsageReporting(),
-        gleanProfileId = fakeGleanUsageId,
-        gleanProfileIdStore = fakeGleanProfileIdStore,
-    )
+    private fun createGleanUsageReportingMetricsService() =
+        GleanUsageReportingMetricsService(
+            lifecycleOwner = FakeLifecycleOwner(),
+            gleanUsageReportingLifecycleObserver = FakeLifecycleEventObserver(),
+            gleanUsageReporting = FakeGleanUsageReporting(),
+            gleanProfileId = fakeGleanUsageId,
+            gleanProfileIdStore = fakeGleanProfileIdStore,
+        )
 }

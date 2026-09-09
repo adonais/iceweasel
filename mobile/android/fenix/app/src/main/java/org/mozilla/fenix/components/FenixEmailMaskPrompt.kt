@@ -33,24 +33,27 @@ class FenixEmailMaskPrompt<V>(
     override val isPromptDisplayed: Boolean
         get() = isVisible
 
-    override fun showPrompt() = with(view) {
-        emailMaskPromptListener = this@FenixEmailMaskPrompt.emailMaskPromptListener
-        showPrompt()
-        behavior = createCustomAutofillBarBehavior()
-        isVisible = true
-        this@FenixEmailMaskPrompt.onShow()
-    }
+    override fun showPrompt() =
+        with(view) {
+            emailMaskPromptListener = this@FenixEmailMaskPrompt.emailMaskPromptListener
+            showPrompt()
+            behavior = createCustomAutofillBarBehavior()
+            isVisible = true
+            this@FenixEmailMaskPrompt.onShow()
+        }
 
-    override fun hidePrompt() = with(view) {
-        hidePrompt()
-        emailMaskPromptListener = null
-        behavior = null
-        isVisible = false
-        this@FenixEmailMaskPrompt.onHide()
-    }
+    override fun hidePrompt() =
+        with(view) {
+            hidePrompt()
+            emailMaskPromptListener = null
+            behavior = null
+            isVisible = false
+            this@FenixEmailMaskPrompt.onHide()
+        }
 
-    private fun <T : View> T.createCustomAutofillBarBehavior() = AutofillSelectBarBehavior<T>(
-        context = context,
-        toolbarPosition = toolbarPositionProvider(),
-    )
+    private fun <T : View> T.createCustomAutofillBarBehavior() =
+        AutofillSelectBarBehavior<T>(
+            context = context,
+            toolbarPosition = toolbarPositionProvider(),
+        )
 }

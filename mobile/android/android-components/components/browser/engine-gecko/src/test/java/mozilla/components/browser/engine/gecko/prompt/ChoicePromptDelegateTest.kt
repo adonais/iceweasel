@@ -36,13 +36,14 @@ class ChoicePromptDelegateTest {
                     observedUID = previousPromptRequestUid
                     isOnPromptUpdateCalled = true
                 }
-            },
+            }
         )
-        val prompt = PromptRequest.SingleChoice(
-            arrayOf(),
-            { isOnConfirmCalled = true },
-            { isOnDismissCalled = true },
-        )
+        val prompt =
+            PromptRequest.SingleChoice(
+                arrayOf(),
+                { isOnConfirmCalled = true },
+                { isOnDismissCalled = true },
+            )
         val delegate = ChoicePromptDelegate(mockSession, prompt)
         val updatedPrompt = mock<GeckoSession.PromptDelegate.ChoicePrompt>()
         ReflectionUtils.setField(updatedPrompt, "choices", arrayOf<GeckoChoice>())
@@ -68,7 +69,7 @@ class ChoicePromptDelegateTest {
                     super.onPromptDismissed(promptRequest)
                     isOnDismissCalled = true
                 }
-            },
+            }
         )
         val basePrompt: GeckoSession.PromptDelegate.ChoicePrompt = mock()
         val prompt: PromptRequest.SingleChoice = mock()

@@ -7,6 +7,9 @@ package mozilla.components.browser.toolbar.edit
 import android.view.KeyEvent
 import android.view.View
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.concurrent.CountDownLatch
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.browser.toolbar.R
@@ -24,19 +27,17 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.CountDownLatch
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class EditToolbarTest {
     private fun createEditToolbar(): Pair<BrowserToolbar, EditToolbar> {
         val toolbar: BrowserToolbar = mock()
-        val displayToolbar = EditToolbar(
-            testContext,
-            toolbar,
-            View.inflate(testContext, R.layout.mozac_browser_toolbar_edittoolbar, null),
-        )
+        val displayToolbar =
+            EditToolbar(
+                testContext,
+                toolbar,
+                View.inflate(testContext, R.layout.mozac_browser_toolbar_edittoolbar, null),
+            )
         return Pair(toolbar, displayToolbar)
     }
 
@@ -128,7 +129,7 @@ class EditToolbarTest {
                     KeyEvent.ACTION_DOWN,
                     KeyEvent.KEYCODE_ENTER,
                     0,
-                ),
+                )
             )
 
             assertEquals(2, facts.size)
@@ -165,11 +166,12 @@ class EditToolbarTest {
             toolbar.edit.views.url.setText("https://www.mozilla.org")
 
             // Fake autocomplete
-            toolbar.edit.views.url.autocompleteResult = InlineAutocompleteEditText.AutocompleteResult(
-                text = "hello world",
-                source = "test-source",
-                totalItems = 100,
-            )
+            toolbar.edit.views.url.autocompleteResult =
+                InlineAutocompleteEditText.AutocompleteResult(
+                    text = "hello world",
+                    source = "test-source",
+                    totalItems = 100,
+                )
 
             toolbar.edit.views.url.dispatchKeyEvent(
                 KeyEvent(
@@ -178,7 +180,7 @@ class EditToolbarTest {
                     KeyEvent.ACTION_DOWN,
                     KeyEvent.KEYCODE_ENTER,
                     0,
-                ),
+                )
             )
 
             assertEquals(2, facts.size)
@@ -273,11 +275,12 @@ class EditToolbarTest {
 
         var callbackCalled = false
 
-        editToolbar.editListener = object : Toolbar.OnEditListener {
-            override fun onTextChanged(text: String) {
-                callbackCalled = true
+        editToolbar.editListener =
+            object : Toolbar.OnEditListener {
+                override fun onTextChanged(text: String) {
+                    callbackCalled = true
+                }
             }
-        }
 
         editToolbar.editSuggestion("firefox")
 

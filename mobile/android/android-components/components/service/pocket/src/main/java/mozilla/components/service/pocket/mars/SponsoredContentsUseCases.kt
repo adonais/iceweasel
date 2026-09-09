@@ -16,8 +16,8 @@ import mozilla.components.service.pocket.stories.api.PocketResponse.Success
 /**
  * Use cases for sponsored contents actions.
  *
- * @param appContext Application [Context]. Prefer sending application context to limit the
- * possibility of even small leaks.
+ * @param appContext Application [Context]. Prefer sending application context to limit the possibility of even small
+ *   leaks.
  * @param client The HTTP [Client] to use for network requests.
  * @param config Configuration for sponsored contents request.
  */
@@ -27,30 +27,22 @@ internal class SponsoredContentsUseCases(
     private val config: MarsSpocsRequestConfig,
 ) {
 
-    /**
-     * Fetches the latest sponsored contents from the provider and store them in storage.
-     */
+    /** Fetches the latest sponsored contents from the provider and store them in storage. */
     internal val refreshSponsoredContents by lazy {
         RefreshSponsoredContents(appContext, client, config)
     }
 
-    /**
-     * Get the list of sponsored contents.
-     */
+    /** Get the list of sponsored contents. */
     internal val getSponsoredContents by lazy {
         GetSponsoredContents(appContext)
     }
 
-    /**
-     * Records the sponsored contents that has been viewed (impression).
-     */
+    /** Records the sponsored contents that has been viewed (impression). */
     internal val recordImpressions by lazy {
         RecordImpressions(appContext)
     }
 
-    /**
-     * Deletes all data persisted for sponsored content.
-     */
+    /** Deletes all data persisted for sponsored content. */
     internal val deleteUser by lazy {
         DeleteUser(appContext)
     }
@@ -58,23 +50,19 @@ internal class SponsoredContentsUseCases(
     /**
      * Use case for fetching and refreshing the list of sponsored contents in storage.
      *
-     * @param context Application [Context]. Prefer sending application context to limit the
-     * possibility of even small leaks.
+     * @param context Application [Context]. Prefer sending application context to limit the possibility of even small
+     *   leaks.
      * @param client The HTTP [Client] to use for network requests.
      * @param config Configuration for sponsored contents request.
      */
     internal inner class RefreshSponsoredContents(
-        @get:VisibleForTesting
-        internal val context: Context = this@SponsoredContentsUseCases.appContext,
-        @get:VisibleForTesting
-        internal val client: Client = this@SponsoredContentsUseCases.client,
-        @get:VisibleForTesting
-        internal val config: MarsSpocsRequestConfig = this@SponsoredContentsUseCases.config,
+        @get:VisibleForTesting internal val context: Context = this@SponsoredContentsUseCases.appContext,
+        @get:VisibleForTesting internal val client: Client = this@SponsoredContentsUseCases.client,
+        @get:VisibleForTesting internal val config: MarsSpocsRequestConfig = this@SponsoredContentsUseCases.config,
     ) {
 
         /**
-         * Fetches sponsored content based on the provided [config] and stores the items in
-         * storage.
+         * Fetches sponsored content based on the provided [config] and stores the items in storage.
          *
          * @return True if the operation was successful and false otherwise.
          */
@@ -94,17 +82,14 @@ internal class SponsoredContentsUseCases(
     /**
      * Use case for getting the list of available sponsored contents from storage.
      *
-     * @param context Application [Context]. Prefer sending application context to limit the
-     * possibility of even small leaks.
+     * @param context Application [Context]. Prefer sending application context to limit the possibility of even small
+     *   leaks.
      */
     internal inner class GetSponsoredContents(
-        @get:VisibleForTesting
-        internal val context: Context = this@SponsoredContentsUseCases.appContext,
+        @get:VisibleForTesting internal val context: Context = this@SponsoredContentsUseCases.appContext
     ) {
 
-        /**
-         * Returns the list of [SponsoredContent]s from storage.
-         */
+        /** Returns the list of [SponsoredContent]s from storage. */
         suspend operator fun invoke(): List<SponsoredContent> {
             return getSponsoredContentsRepository(context).getAllSponsoredContent()
         }
@@ -113,17 +98,15 @@ internal class SponsoredContentsUseCases(
     /**
      * Use case for recording sponsored content impressions.
      *
-     * @param context Application [Context]. Prefer sending application context to limit the
-     * possibility of even small leaks.
+     * @param context Application [Context]. Prefer sending application context to limit the possibility of even small
+     *   leaks.
      */
     internal inner class RecordImpressions(
-        @get:VisibleForTesting
-        internal val context: Context = this@SponsoredContentsUseCases.appContext,
+        @get:VisibleForTesting internal val context: Context = this@SponsoredContentsUseCases.appContext
     ) {
 
         /**
-         * Records the sponsored content impressions from the provided list of sponsored content
-         * URLs.
+         * Records the sponsored content impressions from the provided list of sponsored content URLs.
          *
          * @param impressions A list of sponsored content URLs that have been viewed.
          */
@@ -137,18 +120,15 @@ internal class SponsoredContentsUseCases(
     /**
      * Use case for deleting any data persisted for sponsored content.
      *
-     * @param context Application [Context]. Prefer sending application context to limit the
-     * possibility of even small leaks.
+     * @param context Application [Context]. Prefer sending application context to limit the possibility of even small
+     *   leaks.
      * @param client The HTTP [Client] to use for network requests.
      * @param config Configuration for sponsored contents request.
      */
     internal inner class DeleteUser(
-        @get:VisibleForTesting
-        internal val context: Context = this@SponsoredContentsUseCases.appContext,
-        @get:VisibleForTesting
-        internal val client: Client = this@SponsoredContentsUseCases.client,
-        @get:VisibleForTesting
-        internal val config: MarsSpocsRequestConfig = this@SponsoredContentsUseCases.config,
+        @get:VisibleForTesting internal val context: Context = this@SponsoredContentsUseCases.appContext,
+        @get:VisibleForTesting internal val client: Client = this@SponsoredContentsUseCases.client,
+        @get:VisibleForTesting internal val config: MarsSpocsRequestConfig = this@SponsoredContentsUseCases.config,
     ) {
 
         suspend operator fun invoke(): Boolean {
@@ -169,15 +149,15 @@ internal class SponsoredContentsUseCases(
     }
 
     @VisibleForTesting
-    internal fun getSponsoredContentsRepository(context: Context) =
-        SponsoredContentsRepository(context)
+    internal fun getSponsoredContentsRepository(context: Context) = SponsoredContentsRepository(context)
 
     @VisibleForTesting
     internal fun getSponsoredContentsProvider(
         client: Client,
         config: MarsSpocsRequestConfig,
-    ) = MarsSpocsEndpoint.newInstance(
-        client = client,
-        config = config,
-    )
+    ) =
+        MarsSpocsEndpoint.newInstance(
+            client = client,
+            config = config,
+        )
 }

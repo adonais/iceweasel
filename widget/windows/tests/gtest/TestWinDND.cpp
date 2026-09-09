@@ -892,3 +892,78 @@ TEST(TestWinDND, TruncatedFileGroupDescriptorIsRejected)
   EXPECT_EQ(data, nullptr);
   EXPECT_EQ(len, 0u);
 }
+
+static HGLOBAL MakeDropFiles(DWORD aPFiles, BOOL aWide, const void* aList,
+                             size_t aListBytes) {
+  HGLOBAL hglobal =
+      ::GlobalAlloc(GMEM_MOVEABLE, sizeof(DROPFILES) + aListBytes);
+  if (!hglobal) {
+    return nullptr;
+  }
+  auto* bytes = static_cast<BYTE*>(::GlobalLock(hglobal));
+  if (!bytes) {
+    ::GlobalFree(hglobal);
+    return nullptr;
+  }
+  // Fill the whole allocation, padding included, with non-NUL bytes so that it
+  // cannot accidentally terminate the file list.
+  memset(bytes, 0x41, ::GlobalSize(hglobal));
+  auto* header = reinterpret_cast<DROPFILES*>(bytes);
+  memset(header, 0, sizeof(*header));
+  header->pFiles = aPFiles;
+  header->fWide = aWide;
+  memcpy(bytes + sizeof(DROPFILES), aList, aListBytes);
+  ::GlobalUnlock(hglobal);
+  return hglobal;
+}
+
+// Reject invalid DROPFILES data
+TEST(TestWinDND, IsValidDropFilesData)
+{
+  const wchar_t terminatedW[] = {L'C', L':', L'\\', L'a', L'\0', L'\0'};
+  const wchar_t singleNulW[] = {L'C', L':', L'\\', L'a', L'\0'};
+  const wchar_t unterminatedW[] = {L'C', L':', L'\\', L'a'};
+  const char terminatedA[] = {'C', ':', '\\', 'a', '\0', '\0'};
+
+  EXPECT_FALSE(nsClipboard::IsValidDropFilesData(nullptr));
+
+  // Too small to hold a DROPFILES header.
+  HGLOBAL tooSmall = ::GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, 1);
+  ASSERT_NE(tooSmall, nullptr);
+  ASSERT_LT(::GlobalSize(tooSmall), sizeof(DROPFILES));
+  EXPECT_FALSE(nsClipboard::IsValidDropFilesData(tooSmall));
+  ::GlobalFree(tooSmall);
+
+  struct TestData {
+    const char* mDescription;
+    DWORD mPFiles;
+    BOOL mWide;
+    const void* mList;
+    size_t mListBytes;
+    bool mValid;
+  };
+
+  const TestData tests[] = {
+      {"wide, terminated", sizeof(DROPFILES), TRUE, terminatedW,
+       sizeof(terminatedW), true},
+      {"ansi, terminated", sizeof(DROPFILES), FALSE, terminatedA,
+       sizeof(terminatedA), true},
+      {"wide, single NUL", sizeof(DROPFILES), TRUE, singleNulW,
+       sizeof(singleNulW), false},
+      {"wide, unterminated", sizeof(DROPFILES), TRUE, unterminatedW,
+       sizeof(unterminatedW), false},
+      {"list starts past the end", 0x40000000, TRUE, terminatedW,
+       sizeof(terminatedW), false},
+      {"list starts inside the header", 4, TRUE, terminatedW,
+       sizeof(terminatedW), false},
+  };
+
+  for (const auto& test : tests) {
+    HGLOBAL hglobal =
+        MakeDropFiles(test.mPFiles, test.mWide, test.mList, test.mListBytes);
+    ASSERT_NE(hglobal, nullptr);
+    EXPECT_EQ(nsClipboard::IsValidDropFilesData(hglobal), test.mValid)
+        << test.mDescription;
+    ::GlobalFree(hglobal);
+  }
+}

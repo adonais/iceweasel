@@ -9,9 +9,7 @@ import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.support.ktx.kotlin.isUrl
 import mozilla.components.support.ktx.kotlin.toNormalizedUrl
 
-/**
- * Connects a toolbar instance to the browser engine via use cases
- */
+/** Connects a toolbar instance to the browser engine via use cases */
 class ToolbarInteractor(
     private val toolbar: Toolbar,
     private val loadUrlUseCase: SessionUseCases.LoadUrlUseCase,
@@ -19,9 +17,8 @@ class ToolbarInteractor(
 ) {
 
     /**
-     * Starts this interactor. Makes sure this interactor is listening
-     * to relevant UI changes and triggers the corresponding use-cases
-     * in response.
+     * Starts this interactor. Makes sure this interactor is listening to relevant UI changes and triggers the
+     * corresponding use-cases in response.
      */
     fun start() {
         toolbar.setOnUrlCommitListener { text ->

@@ -7,6 +7,8 @@ package mozilla.components.concept.toolbar
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.UUID
+import kotlin.test.assertNotNull
 import mozilla.components.support.base.android.Padding
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
@@ -15,8 +17,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.UUID
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class ActionToggleButtonTest {
@@ -191,9 +191,10 @@ class ActionToggleButtonTest {
     fun `default constructor with drawables`() {
         var selectedValue = false
         val visibility = { true }
-        val button = Toolbar.ActionToggleButton(mock(), mock(), "image", "selected", visible = visibility) { value ->
-            selectedValue = value
-        }
+        val button =
+            Toolbar.ActionToggleButton(mock(), mock(), "image", "selected", visible = visibility) { value ->
+                selectedValue = value
+            }
         assertEquals(true, button.visible())
         assertNotNull(button.imageDrawable)
         assertNotNull(button.imageSelectedDrawable)
@@ -201,7 +202,7 @@ class ActionToggleButtonTest {
         button.setSelected(true)
         assertTrue(selectedValue)
 
-        val buttonVisibility = Toolbar.ActionToggleButton(mock(), mock(), "image", "selected", background = 0) { }
+        val buttonVisibility = Toolbar.ActionToggleButton(mock(), mock(), "image", "selected", background = 0) {}
         assertTrue(buttonVisibility.visible())
     }
 

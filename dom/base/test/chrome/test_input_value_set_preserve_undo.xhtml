@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-stylesheet href="chrome://global/skin" type="text/css"?>
 <?xml-stylesheet href="chrome://mochikit/content/tests/SimpleTest/test.css" type="text/css"?>
-<window title="Bug 1676785"
+<window title="Bug 1676785 and bug 2069367"
   xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
   xmlns:html="http://www.w3.org/1999/xhtml"
   xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
@@ -9,10 +9,11 @@
 <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
 <html:body>
   <xul:hbox>
-    <html:input id="xul" />
+    <html:input id="xul-parent" />
   </xul:hbox>
   <html:div>
-    <html:input id="non-xul" />
+    <html:input id="plain" />
+    <html:input id="with-attribute" preserveundohistory="" />
   </html:div>
 </html:body>
 <script class="testbody">
@@ -28,8 +29,9 @@ function shouldPreserveHistory(input, preserve) {
 }
 
 window.onload = function() {
-  shouldPreserveHistory(document.getElementById("xul"), true);
-  shouldPreserveHistory(document.getElementById("non-xul"), false);
+  shouldPreserveHistory(document.getElementById("xul-parent"), false);
+  shouldPreserveHistory(document.getElementById("plain"), false);
+  shouldPreserveHistory(document.getElementById("with-attribute"), true);
 
   SimpleTest.finish();
 }

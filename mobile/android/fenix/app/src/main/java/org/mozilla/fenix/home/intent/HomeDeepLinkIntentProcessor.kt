@@ -10,12 +10,14 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import androidx.annotation.VisibleForTesting
 import androidx.navigation.NavController
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.BuildConfig
+import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.GlobalDirections
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
@@ -25,15 +27,16 @@ import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.alreadyOnDestination
 import org.mozilla.fenix.ext.openSetDefaultBrowserOption
 import org.mozilla.fenix.onboarding.MARKETING_CHANNEL_ID
-import org.mozilla.fenix.utils.maybeShowAddSearchWidgetPrompt
 import org.mozilla.fenix.utils.Settings as AppSettings
+import org.mozilla.fenix.utils.maybeShowAddSearchWidgetPrompt
 
 // Intent extra to enable or disable TabTray animation setting for testing
 private const val EXTRA_TAB_TRAY_ANIMATION = "EXTRA_TAB_TRAY_ANIMATION"
 
-/**
- * Deep links in the form of `fenix://host` open different parts of the app.
- */
+@VisibleForTesting internal const val HOME_DEEPLINK_TELEMETRY_SOURCE = "deeplink"
+@VisibleForTesting internal const val PRIVACY_REPORT_NOTIFICATION_TELEMETRY_SOURCE = "privacy_report_notification"
+
+/** Deep links in the form of `fenix://host` open different parts of the app. */
 class HomeDeepLinkIntentProcessor(
     private val activity: HomeActivity,
     private val shareUseCases: ShareUseCases,
@@ -60,41 +63,42 @@ class HomeDeepLinkIntentProcessor(
     ) {
         handleDeepLinkSideEffects(deepLink, extras, settings, navController)
 
-        val globalDirections = when (deepLink.host) {
-            "home", "enable_private_browsing" -> GlobalDirections.Home
-            "urls_bookmarks" -> GlobalDirections.Bookmarks
-            "urls_history" -> GlobalDirections.History
-            "settings" -> GlobalDirections.Settings
-            "turn_on_sync" -> GlobalDirections.Sync
-            "settings_search_engine" -> GlobalDirections.SearchEngine
-            "settings_accessibility" -> GlobalDirections.Accessibility
-            "settings_delete_browsing_data" -> GlobalDirections.DeleteData
-            "settings_addon_manager" -> GlobalDirections.SettingsAddonManager
-            "settings_logins" -> GlobalDirections.SettingsLogins
-            "settings_tracking_protection" -> GlobalDirections.SettingsTrackingProtection
-            // We'd like to highlight views within the fragment
-            // https://github.com/mozilla-mobile/fenix/issues/11856
-            // The current version of UI has these features in more complex screens.
-            "settings_privacy" -> GlobalDirections.Settings
-            "settings_wallpapers" -> GlobalDirections.WallpaperSettings
-            "home_collections" -> GlobalDirections.Home
-            "settings_private_browsing" -> GlobalDirections.SettingsPrivateBrowsing
-            "settings_app_icon" -> GlobalDirections.SettingsAppIcon
-            "settings_ai_controls" -> GlobalDirections.SettingsAIControls
-            "protections_dashboard" -> GlobalDirections.ProtectionsDashboard
-            "settings_ip_protection" -> GlobalDirections.SettingsIpProtection
+        val globalDirections =
+            when (deepLink.host) {
+                "home",
+                "enable_private_browsing" -> GlobalDirections.Home
+                "urls_bookmarks" -> GlobalDirections.Bookmarks
+                "urls_history" -> GlobalDirections.History
+                "settings" -> GlobalDirections.Settings
+                "turn_on_sync" -> GlobalDirections.Sync
+                "settings_search_engine" -> GlobalDirections.SearchEngine
+                "settings_accessibility" -> GlobalDirections.Accessibility
+                "settings_delete_browsing_data" -> GlobalDirections.DeleteData
+                "settings_addon_manager" -> GlobalDirections.SettingsAddonManager
+                "settings_logins" -> GlobalDirections.SettingsLogins
+                "settings_tracking_protection" -> GlobalDirections.SettingsTrackingProtection
+                // We'd like to highlight views within the fragment
+                // https://github.com/mozilla-mobile/fenix/issues/11856
+                // The current version of UI has these features in more complex screens.
+                "settings_privacy" -> GlobalDirections.Settings
+                "settings_wallpapers" -> GlobalDirections.WallpaperSettings
+                "home_collections" -> GlobalDirections.Home
+                "settings_private_browsing" -> GlobalDirections.SettingsPrivateBrowsing
+                "settings_app_icon" -> GlobalDirections.SettingsAppIcon
+                "settings_ai_controls" -> GlobalDirections.SettingsAIControls
+                "privacy_report",
+                "protections_dashboard" -> GlobalDirections.ProtectionsDashboard
+                "settings_ip_protection" -> GlobalDirections.SettingsIpProtection
 
-            else -> return
-        }
+                else -> return
+            }
 
         if (!navController.alreadyOnDestination(globalDirections.destinationId)) {
             navController.navigate(globalDirections.navDirections)
         }
     }
 
-    /**
-     * Handle links that require more than just simple navigation.
-     */
+    /** Handle links that require more than just simple navigation. */
     private fun handleDeepLinkSideEffects(
         deepLink: Uri,
         extras: Bundle?,
@@ -104,10 +108,11 @@ class HomeDeepLinkIntentProcessor(
         when (deepLink.host) {
             "home" -> {
                 if (extras?.containsKey(EXTRA_TAB_TRAY_ANIMATION) == true) {
-                    val tabTrayAnimationPreference = extras.getBoolean(
-                        EXTRA_TAB_TRAY_ANIMATION,
-                        settings.tabManagerOpeningAnimationEnabled,
-                    )
+                    val tabTrayAnimationPreference =
+                        extras.getBoolean(
+                            EXTRA_TAB_TRAY_ANIMATION,
+                            settings.tabManagerOpeningAnimationEnabled,
+                        )
                     settings.tabManagerOpeningAnimationEnabled = tabTrayAnimationPreference
                 }
             }
@@ -148,15 +153,24 @@ class HomeDeepLinkIntentProcessor(
                 return
             }
             "share_sheet" -> showShareSheet(deepLink, navController)
+            "protections_dashboard" ->
+                TrackingProtection.privacyReportTapped.record(
+                    TrackingProtection.PrivacyReportTappedExtra(HOME_DEEPLINK_TELEMETRY_SOURCE)
+                )
+            "privacy_report" ->
+                TrackingProtection.privacyReportTapped.record(
+                    TrackingProtection.PrivacyReportTappedExtra(PRIVACY_REPORT_NOTIFICATION_TELEMETRY_SOURCE)
+                )
         }
     }
 
     private fun notificationSettings(context: Context, channel: String? = null) =
         Intent().apply {
-            action = channel?.let {
-                putExtra(Settings.EXTRA_CHANNEL_ID, it)
-                Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS
-            } ?: Settings.ACTION_APP_NOTIFICATION_SETTINGS
+            action =
+                channel?.let {
+                    putExtra(Settings.EXTRA_CHANNEL_ID, it)
+                    Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS
+                } ?: Settings.ACTION_APP_NOTIFICATION_SETTINGS
             putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
         }
 
@@ -181,11 +195,11 @@ class HomeDeepLinkIntentProcessor(
             navigateToShareFragment = {
                 navController.navigate(
                     NavGraphDirections.actionGlobalShareFragment(
-                        data = arrayOf(ShareData(url = url, title = title, text = text)),
+                        data = arrayOf(ShareData(url = url, title = title, text = text, private = false)),
                         shareSubject = subject.ifEmpty { title },
                         showPage = false,
                         sessionId = null,
-                    ),
+                    )
                 )
             },
         )

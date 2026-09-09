@@ -7,25 +7,21 @@ package org.mozilla.fenix.components.search
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import java.io.BufferedInputStream
+import java.io.IOException
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.feature.search.ext.parseLegacySearchEngine
 import mozilla.components.feature.search.middleware.SearchMiddleware
 import org.mozilla.fenix.ext.components
 import org.xmlpull.v1.XmlPullParserException
-import java.io.BufferedInputStream
-import java.io.IOException
 
 private const val PREF_FILE_SEARCH_ENGINES = "custom-search-engines"
 
 private const val PREF_KEY_CUSTOM_SEARCH_ENGINES = "pref_custom_search_engines"
 private const val PREF_KEY_MIGRATED = "pref_search_migrated"
 
-/**
- * Helper class to migrate the search related data in Fenix to the "Android Components" implementation.
- */
-internal class SearchMigration(
-    private val context: Context,
-) : SearchMiddleware.Migration {
+/** Helper class to migrate the search related data in Fenix to the "Android Components" implementation. */
+internal class SearchMigration(private val context: Context) : SearchMiddleware.Migration {
 
     override fun getValuesToMigrate(): SearchMiddleware.Migration.MigrationValues? {
         val preferences = context.getSharedPreferences(PREF_FILE_SEARCH_ENGINES, Context.MODE_PRIVATE)
@@ -33,19 +29,18 @@ internal class SearchMigration(
             return null
         }
 
-        val values = SearchMiddleware.Migration.MigrationValues(
-            customSearchEngines = loadCustomSearchEngines(preferences),
-            defaultSearchEngineName = context.components.settings.defaultSearchEngineName,
-        )
+        val values =
+            SearchMiddleware.Migration.MigrationValues(
+                customSearchEngines = loadCustomSearchEngines(preferences),
+                defaultSearchEngineName = context.components.settings.defaultSearchEngineName,
+            )
 
         preferences.edit { putBoolean(PREF_KEY_MIGRATED, true) }
 
         return values
     }
 
-    private fun loadCustomSearchEngines(
-        preferences: SharedPreferences,
-    ): List<SearchEngine> {
+    private fun loadCustomSearchEngines(preferences: SharedPreferences): List<SearchEngine> {
         val ids = preferences.getStringSet(PREF_KEY_CUSTOM_SEARCH_ENGINES, emptySet()) ?: emptySet()
 
         return ids.mapNotNull { id ->

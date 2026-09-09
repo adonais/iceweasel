@@ -19,11 +19,11 @@ import mozilla.components.lib.dataprotect.SecureAbove22Preferences
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * A class that knows how to encrypt & decrypt strings, backed by application-services' autofill lib.
- * Used for protecting credit card numbers at rest.
+ * A class that knows how to encrypt & decrypt strings, backed by application-services' autofill lib. Used for
+ * protecting credit card numbers at rest.
  *
- * This class manages creation and storage of the encryption key.
- * It also keeps track of abnormal events, such as managed key going missing or getting corrupted.
+ * This class manages creation and storage of the encryption key. It also keeps track of abnormal events, such as
+ * managed key going missing or getting corrupted.
  *
  * @param context [Context] used for obtaining [SharedPreferences] for managing internal prefs.
  * @param securePrefs A [SecureAbove22Preferences] instance used for storing the managed key.

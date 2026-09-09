@@ -6,6 +6,7 @@ package org.mozilla.fenix.onboarding.store
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.mockk
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.telemetry.glean.testing.GleanTestRule
 import org.junit.Assert.assertEquals
@@ -16,13 +17,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.Onboarding
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class PrivacyPreferencesTelemetryMiddlewareTest {
 
-    @get:Rule
-    val gleanTestRule = GleanTestRule(testContext)
+    @get:Rule val gleanTestRule = GleanTestRule(testContext)
 
     private lateinit var middleware: PrivacyPreferencesTelemetryMiddleware
 

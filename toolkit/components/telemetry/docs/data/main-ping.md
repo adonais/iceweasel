@@ -51,7 +51,7 @@ Structure:
     sessionLength: <integer>, // the session length until now in seconds, monotonic
     subsessionLength: <integer>, // the subsession length in seconds, monotonic
 
-    addons: <string>, // obsolete, use ``environment.addons``
+    addons: <string>, // obsolete, use the `addons` Glean ping instead
   },
 
   processes: {...},

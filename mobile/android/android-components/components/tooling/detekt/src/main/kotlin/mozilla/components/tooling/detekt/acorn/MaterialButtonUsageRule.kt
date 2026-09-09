@@ -18,27 +18,26 @@ import org.jetbrains.kotlin.psi.KtImportDirective
 import org.jetbrains.kotlin.psi.psiUtil.getStrictParentOfType
 
 /**
- * Lints against using `androidx.compose.material3.Button` and instead recommends using the
- * appropriate button from `mozilla.components.compose.base.button` which aligns with the
- * Acorn Design System.
+ * Lints against using `androidx.compose.material3.Button` and instead recommends using the appropriate button from
+ * `mozilla.components.compose.base.button` which aligns with the Acorn Design System.
  *
- * Note: Custom buttons that don't align with any of the available buttons in the
- * Acorn Design System should suppress the rule.
+ * Note: Custom buttons that don't align with any of the available buttons in the Acorn Design System should suppress
+ * the rule.
  */
 class MaterialButtonUsageRule(config: Config = Config.empty) : Rule(config) {
     override val issue: Issue
-        get() = Issue(
-            id = "MaterialButtonUsage",
-            severity = Severity.Maintainability,
-            description = "$FORBIDDEN_IMPORT should not be used directly. Use an appropriate " +
-                "button from $RECOMMENDED_IMPORT instead, which aligns with the " +
-                "Acorn Design System",
-            debt = Debt.FIVE_MINS,
-        )
+        get() =
+            Issue(
+                id = "MaterialButtonUsage",
+                severity = Severity.Maintainability,
+                description =
+                    "$FORBIDDEN_IMPORT should not be used directly. Use an appropriate " +
+                        "button from $RECOMMENDED_IMPORT instead, which aligns with the " +
+                        "Acorn Design System",
+                debt = Debt.FIVE_MINS,
+            )
 
-    /**
-     * Report a code smell if [FORBIDDEN_IMPORT] is found in the imports.
-     */
+    /** Report a code smell if [FORBIDDEN_IMPORT] is found in the imports. */
     override fun visitImportDirective(importDirective: KtImportDirective) {
         super.visitImportDirective(importDirective)
 
@@ -50,8 +49,7 @@ class MaterialButtonUsageRule(config: Config = Config.empty) : Rule(config) {
     }
 
     /**
-     * Report a code smell if the fully qualified `androidx.compose.material3.Button` is referenced
-     * outside the imports.
+     * Report a code smell if the fully qualified `androidx.compose.material3.Button` is referenced outside the imports.
      */
     override fun visitDotQualifiedExpression(expression: KtDotQualifiedExpression) {
         super.visitDotQualifiedExpression(expression)
@@ -62,10 +60,11 @@ class MaterialButtonUsageRule(config: Config = Config.empty) : Rule(config) {
 
         if (expression.receiverExpression.text != FORBIDDEN_PACKAGE) return
 
-        val selectorName = when (val selector = expression.selectorExpression) {
-            is KtCallExpression -> selector.calleeExpression?.text
-            else -> selector?.text
-        }
+        val selectorName =
+            when (val selector = expression.selectorExpression) {
+                is KtCallExpression -> selector.calleeExpression?.text
+                else -> selector?.text
+            }
 
         if (selectorName == FORBIDDEN_NAME) {
             reportCodeSmell(element = expression)
@@ -78,7 +77,7 @@ class MaterialButtonUsageRule(config: Config = Config.empty) : Rule(config) {
                 issue = issue,
                 entity = Entity.from(element = element),
                 message = MESSAGE,
-            ),
+            )
         )
     }
 
@@ -88,7 +87,6 @@ class MaterialButtonUsageRule(config: Config = Config.empty) : Rule(config) {
         private const val FORBIDDEN_IMPORT = "$FORBIDDEN_PACKAGE.$FORBIDDEN_NAME"
         private const val RECOMMENDED_IMPORT = "mozilla.components.compose.base.button"
 
-        internal const val MESSAGE =
-            "Use an appropriate button from $RECOMMENDED_IMPORT instead of $FORBIDDEN_IMPORT."
+        internal const val MESSAGE = "Use an appropriate button from $RECOMMENDED_IMPORT instead of $FORBIDDEN_IMPORT."
     }
 }

@@ -8,12 +8,10 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 
-/**
- * Checks for availability of network and if there's internet flowing through it or not.
- */
+/** Checks for availability of network and if there's internet flowing through it or not. */
 fun ConnectivityManager.isOnline(network: Network? = null): Boolean {
     return getNetworkCapabilities(network ?: activeNetwork)?.let {
-            it.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+        it.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
             it.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-        } ?: false
+    } ?: false
 }

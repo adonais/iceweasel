@@ -41,41 +41,32 @@ import mozilla.components.ui.colors.R as colorsR
  *   +------------------------progress------------------------------------+
  * ```
  *
- * Navigation actions (optional):
- *     A dynamic list of clickable icons usually used for navigation on larger devices
- *     (e.g. “back”/”forward” buttons.)
+ * Navigation actions (optional): A dynamic list of clickable icons usually used for navigation on larger devices (e.g.
+ * “back”/”forward” buttons.)
  *
- * Indicators (optional):
- *     Tracking protection indicator icon (e.g. “shield” icon) that may show a doorhanger when clicked.
- *     Separator icon: a vertical line that separate the above and below icons.
- *     Site security indicator icon (e.g. “Lock” icon) that may show a doorhanger when clicked.
- *     Empty indicator: Icon that will be displayed if the URL is empty.
+ * Indicators (optional): Tracking protection indicator icon (e.g. “shield” icon) that may show a doorhanger when
+ * clicked. Separator icon: a vertical line that separate the above and below icons. Site security indicator icon (e.g.
+ * “Lock” icon) that may show a doorhanger when clicked. Empty indicator: Icon that will be displayed if the URL is
+ * empty.
  *
- * URL:
- *     Section that displays the current URL (read-only)
+ * URL: Section that displays the current URL (read-only)
  *
- * Page actions (optional):
- *     A dynamic list of clickable icons inside the URL section (e.g. “reader mode” icon)
+ * Page actions (optional): A dynamic list of clickable icons inside the URL section (e.g. “reader mode” icon)
  *
- * Browser actions (optional):
- *     A list of dynamic clickable icons on the toolbar (e.g. tabs tray button)
+ * Browser actions (optional): A list of dynamic clickable icons on the toolbar (e.g. tabs tray button)
  *
- * Menu (optional):
- *     A button that shows an overflow menu when clicked (constructed using the browser-menu
- *     component)
+ * Menu (optional): A button that shows an overflow menu when clicked (constructed using the browser-menu component)
  *
- * Progress (optional):
- *     A horizontal progress bar showing the loading progress (at the top or bottom of the toolbar).
+ * Progress (optional): A horizontal progress bar showing the loading progress (at the top or bottom of the toolbar).
  */
 @Suppress("LargeClass")
-class DisplayToolbar internal constructor(
+class DisplayToolbar
+internal constructor(
     private val context: Context,
     private val toolbar: BrowserToolbar,
     internal val rootView: View,
 ) {
-    /**
-     * Enum of indicators that can be displayed in the toolbar.
-     */
+    /** Enum of indicators that can be displayed in the toolbar. */
     enum class Indicators {
         SECURITY,
         TRACKING_PROTECTION,
@@ -98,8 +89,8 @@ class DisplayToolbar internal constructor(
      * @property separator Color tint for the separator shown between indicators.
      * @property highlight Color tint for the highlight icon.
      *
-     * Set/Get the site security icon colours. It uses a pair of color integers which represent the
-     * insecure and secure colours respectively.
+     * Set/Get the site security icon colours. It uses a pair of color integers which represent the insecure and secure
+     * colours respectively.
      */
     data class Colors(
         @param:ColorInt val siteInfoIconSecure: Int,
@@ -119,14 +110,14 @@ class DisplayToolbar internal constructor(
      * Data class holding the customizable icons in "display mode".
      *
      * @property emptyIcon An icon that is shown in front of the URL if the URL is empty.
-     * @property trackingProtectionTrackersBlocked An icon that is shown if tracking protection is
-     * enabled and trackers have been blocked.
-     * @property trackingProtectionNothingBlocked An icon that is shown if tracking protection is
-     * enabled and no trackers have been blocked.
-     * @property trackingProtectionException An icon that is shown if tracking protection is enabled
-     * but the current page is in the "exception list".
-     * @property highlight An icon that is shown if any event needs to be brought
-     * to the user's attention. Like the autoplay permission been blocked.
+     * @property trackingProtectionTrackersBlocked An icon that is shown if tracking protection is enabled and trackers
+     *   have been blocked.
+     * @property trackingProtectionNothingBlocked An icon that is shown if tracking protection is enabled and no
+     *   trackers have been blocked.
+     * @property trackingProtectionException An icon that is shown if tracking protection is enabled but the current
+     *   page is in the "exception list".
+     * @property highlight An icon that is shown if any event needs to be brought to the user's attention. Like the
+     *   autoplay permission been blocked.
      */
     data class Icons(
         val emptyIcon: Drawable?,
@@ -136,9 +127,7 @@ class DisplayToolbar internal constructor(
         val highlight: Drawable,
     )
 
-    /**
-     * Gravity enum for positioning the progress bar.
-     */
+    /** Gravity enum for positioning the progress bar. */
     enum class Gravity {
         TOP,
         BOTTOM,
@@ -155,41 +144,41 @@ class DisplayToolbar internal constructor(
         val goneEndMargin: Int?,
     )
 
-    internal val views = DisplayToolbarViews(
-        browserActions = rootView.findViewById(R.id.mozac_browser_toolbar_browser_actions),
-        pageActions = rootView.findViewById(R.id.mozac_browser_toolbar_page_actions),
-        navigationActions = rootView.findViewById(R.id.mozac_browser_toolbar_navigation_actions),
-        background = rootView.findViewById(R.id.mozac_browser_toolbar_background),
-        separator = rootView.findViewById(R.id.mozac_browser_toolbar_separator),
-        emptyIndicator = rootView.findViewById(R.id.mozac_browser_toolbar_empty_indicator),
-        menu = MenuButton(rootView.findViewById(R.id.mozac_browser_toolbar_menu)),
-        siteInfoIndicator = rootView.findViewById(R.id.mozac_browser_toolbar_site_info_indicator),
-        trackingProtectionIndicator = rootView.findViewById(
-            R.id.mozac_browser_toolbar_tracking_protection_indicator,
-        ),
-        origin = rootView.findViewById<OriginView>(R.id.mozac_browser_toolbar_origin_view).also {
-            it.toolbar = toolbar
-        },
-        progress = rootView.findViewById<ProgressBar>(R.id.mozac_browser_toolbar_progress),
-        highlight = rootView.findViewById(R.id.mozac_browser_toolbar_permission_indicator),
-    )
+    internal val views =
+        DisplayToolbarViews(
+            browserActions = rootView.findViewById(R.id.mozac_browser_toolbar_browser_actions),
+            pageActions = rootView.findViewById(R.id.mozac_browser_toolbar_page_actions),
+            navigationActions = rootView.findViewById(R.id.mozac_browser_toolbar_navigation_actions),
+            background = rootView.findViewById(R.id.mozac_browser_toolbar_background),
+            separator = rootView.findViewById(R.id.mozac_browser_toolbar_separator),
+            emptyIndicator = rootView.findViewById(R.id.mozac_browser_toolbar_empty_indicator),
+            menu = MenuButton(rootView.findViewById(R.id.mozac_browser_toolbar_menu)),
+            siteInfoIndicator = rootView.findViewById(R.id.mozac_browser_toolbar_site_info_indicator),
+            trackingProtectionIndicator =
+                rootView.findViewById(R.id.mozac_browser_toolbar_tracking_protection_indicator),
+            origin =
+                rootView.findViewById<OriginView>(R.id.mozac_browser_toolbar_origin_view).also {
+                    it.toolbar = toolbar
+                },
+            progress = rootView.findViewById<ProgressBar>(R.id.mozac_browser_toolbar_progress),
+            highlight = rootView.findViewById(R.id.mozac_browser_toolbar_permission_indicator),
+        )
 
-    /**
-     * Customizable colors in "display mode".
-     */
-    var colors: Colors = Colors(
-        siteInfoIconSecure = ContextCompat.getColor(context, colorsR.color.photonWhite),
-        siteInfoIconInsecure = ContextCompat.getColor(context, colorsR.color.photonWhite),
-        siteInfoIconLocalPdf = ContextCompat.getColor(context, colorsR.color.photonWhite),
-        emptyIcon = ContextCompat.getColor(context, colorsR.color.photonWhite),
-        menu = ContextCompat.getColor(context, colorsR.color.photonWhite),
-        hint = views.origin.hintColor,
-        title = views.origin.titleColor,
-        text = views.origin.textColor,
-        trackingProtection = null,
-        separator = ContextCompat.getColor(context, colorsR.color.photonGrey80),
-        highlight = null,
-    )
+    /** Customizable colors in "display mode". */
+    var colors: Colors =
+        Colors(
+            siteInfoIconSecure = ContextCompat.getColor(context, colorsR.color.photonWhite),
+            siteInfoIconInsecure = ContextCompat.getColor(context, colorsR.color.photonWhite),
+            siteInfoIconLocalPdf = ContextCompat.getColor(context, colorsR.color.photonWhite),
+            emptyIcon = ContextCompat.getColor(context, colorsR.color.photonWhite),
+            menu = ContextCompat.getColor(context, colorsR.color.photonWhite),
+            hint = views.origin.hintColor,
+            title = views.origin.titleColor,
+            text = views.origin.textColor,
+            trackingProtection = null,
+            separator = ContextCompat.getColor(context, colorsR.color.photonGrey80),
+            highlight = null,
+        )
         set(value) {
             field = value
 
@@ -211,24 +200,18 @@ class DisplayToolbar internal constructor(
             }
         }
 
-    /**
-     * Customizable icons in "edit mode".
-     */
-    var icons: Icons = Icons(
-        emptyIcon = null,
-        trackingProtectionTrackersBlocked = requireNotNull(
-            getDrawable(context, TrackingProtectionIconView.DEFAULT_ICON_ON_TRACKERS_BLOCKED),
-        ),
-        trackingProtectionNothingBlocked = requireNotNull(
-            getDrawable(context, TrackingProtectionIconView.DEFAULT_ICON_ON_NO_TRACKERS_BLOCKED),
-        ),
-        trackingProtectionException = requireNotNull(
-            getDrawable(context, TrackingProtectionIconView.DEFAULT_ICON_OFF_FOR_A_SITE),
-        ),
-        highlight = requireNotNull(
-            getDrawable(context, R.drawable.mozac_dot_notification),
-        ),
-    )
+    /** Customizable icons in "edit mode". */
+    var icons: Icons =
+        Icons(
+            emptyIcon = null,
+            trackingProtectionTrackersBlocked =
+                requireNotNull(getDrawable(context, TrackingProtectionIconView.DEFAULT_ICON_ON_TRACKERS_BLOCKED)),
+            trackingProtectionNothingBlocked =
+                requireNotNull(getDrawable(context, TrackingProtectionIconView.DEFAULT_ICON_ON_NO_TRACKERS_BLOCKED)),
+            trackingProtectionException =
+                requireNotNull(getDrawable(context, TrackingProtectionIconView.DEFAULT_ICON_OFF_FOR_A_SITE)),
+            highlight = requireNotNull(getDrawable(context, R.drawable.mozac_dot_notification)),
+        )
         set(value) {
             field = value
 
@@ -242,14 +225,10 @@ class DisplayToolbar internal constructor(
             views.highlight.setIcon(value.highlight)
         }
 
-    /**
-     * Allows customization of URL for display purposes.
-     */
+    /** Allows customization of URL for display purposes. */
     var urlFormatter: ((CharSequence) -> CharSequence)? = null
 
-    /**
-     * Sets a listener to be invoked when the site info indicator icon is clicked.
-     */
+    /** Sets a listener to be invoked when the site info indicator icon is clicked. */
     fun setOnSiteInfoClickedListener(listener: (() -> Unit)?) {
         if (listener == null) {
             views.siteInfoIndicator.setOnClickListener(null)
@@ -270,9 +249,7 @@ class DisplayToolbar internal constructor(
         }
     }
 
-    /**
-     * Sets a listener to be invoked when the site tracking protection indicator icon is clicked.
-     */
+    /** Sets a listener to be invoked when the site tracking protection indicator icon is clicked. */
     fun setOnTrackingProtectionClickedListener(listener: (() -> Unit)?) {
         if (listener == null) {
             views.trackingProtectionIndicator.setOnClickListener(null)
@@ -293,16 +270,12 @@ class DisplayToolbar internal constructor(
         }
     }
 
-    /**
-     *  Sets a lambda to be invoked when the menu is dismissed
-     */
+    /** Sets a lambda to be invoked when the menu is dismissed */
     fun setMenuDismissAction(onDismiss: () -> Unit) {
         views.menu.setMenuDismissAction(onDismiss)
     }
 
-    /**
-     * List of indicators that should be displayed next to the URL.
-     */
+    /** List of indicators that should be displayed next to the URL. */
     var indicators: List<Indicators> = listOf(Indicators.SECURITY)
         set(value) {
             field = value
@@ -316,27 +289,21 @@ class DisplayToolbar internal constructor(
             updateIndicatorVisibility()
         }
 
-    /**
-     * Adds the security indicator if the list does not contain it.
-     */
+    /** Adds the security indicator if the list does not contain it. */
     fun addSecurityIndicator() {
         if (!indicators.contains(Indicators.SECURITY)) {
             indicators += Indicators.SECURITY
         }
     }
 
-    /**
-     * Removes the security indicator if the list contains it.
-     */
+    /** Removes the security indicator if the list contains it. */
     fun removeSecurityIndicator() {
         if (indicators.contains(Indicators.SECURITY)) {
             indicators -= Indicators.SECURITY
         }
     }
 
-    /**
-     * Sets the background that should be drawn behind the URL, page actions an indicators.
-     */
+    /** Sets the background that should be drawn behind the URL, page actions an indicators. */
     fun setUrlBackground(background: Drawable?) {
         views.background.setImageDrawable(background)
     }
@@ -359,9 +326,7 @@ class DisplayToolbar internal constructor(
         }
     }
 
-    /**
-     * Whether the progress bar should be drawn at the top or bottom of the toolbar.
-     */
+    /** Whether the progress bar should be drawn at the top or bottom of the toolbar. */
     var progressGravity: Gravity = Gravity.BOTTOM
         set(value) {
             field = value
@@ -383,9 +348,9 @@ class DisplayToolbar internal constructor(
         }
 
     /**
-     * Sets a lambda that will be invoked whenever the URL in display mode was clicked. Only if this
-     * lambda returns <code>true</code> the toolbar will switch to editing mode. Return
-     * <code>false</code> to not switch to editing mode and handle the click manually.
+     * Sets a lambda that will be invoked whenever the URL in display mode was clicked. Only if this lambda returns
+     * <code>true</code> the toolbar will switch to editing mode. Return <code>false</code> to not switch to editing
+     * mode and handle the click manually.
      */
     var onUrlClicked: () -> Boolean
         get() = views.origin.onUrlClicked
@@ -393,45 +358,37 @@ class DisplayToolbar internal constructor(
             views.origin.onUrlClicked = value
         }
 
-    /**
-     * Sets the text to be displayed when the URL of the toolbar is empty.
-     */
+    /** Sets the text to be displayed when the URL of the toolbar is empty. */
     var hint: String
         get() = views.origin.hint
         set(value) {
             views.origin.hint = value
         }
 
-    /**
-     * Sets the size of the text for the title displayed in the toolbar.
-     */
+    /** Sets the size of the text for the title displayed in the toolbar. */
     var titleTextSize: Float
         get() = views.origin.titleTextSize
         set(value) {
             views.origin.titleTextSize = value
         }
 
-    /**
-     * Sets the size of the text for the URL/search term displayed in the toolbar.
-     */
+    /** Sets the size of the text for the URL/search term displayed in the toolbar. */
     var textSize: Float
         get() = views.origin.textSize
         set(value) {
             views.origin.textSize = value
         }
 
-    /**
-     * Sets the typeface of the text for the URL/search term displayed in the toolbar.
-     */
-    var typeface: Typeface
+    /** Sets the typeface of the text for the URL/search term displayed in the toolbar. */
+    var typeface: Typeface?
         get() = views.origin.typeface
         set(value) {
             views.origin.typeface = value
         }
 
     /**
-     * Sets a [BrowserMenuBuilder] that will be used to create a menu when the menu button is clicked.
-     * The menu button will only be visible if a builder or controller has been set.
+     * Sets a [BrowserMenuBuilder] that will be used to create a menu when the menu button is clicked. The menu button
+     * will only be visible if a builder or controller has been set.
      */
     var menuBuilder: BrowserMenuBuilder?
         get() = views.menu.menuBuilder
@@ -440,9 +397,9 @@ class DisplayToolbar internal constructor(
         }
 
     /**
-     * Sets a [MenuController] that will be used to create a menu when the menu button is clicked.
-     * The menu button will only be visible if a builder or controller has been set.
-     * If both a [menuBuilder] and controller are present, only the controller will be used.
+     * Sets a [MenuController] that will be used to create a menu when the menu button is clicked. The menu button will
+     * only be visible if a builder or controller has been set. If both a [menuBuilder] and controller are present, only
+     * the controller will be used.
      */
     var menuController: MenuController?
         get() = views.menu.menuController
@@ -450,53 +407,54 @@ class DisplayToolbar internal constructor(
             views.menu.menuController = value
         }
 
-    /**
-     * Set a LongClickListener to the urlView of the toolbar.
-     */
+    /** Set a LongClickListener to the urlView of the toolbar. */
     fun setOnUrlLongClickListener(handler: ((View) -> Boolean)?) = views.origin.setOnUrlLongClickListener(handler)
 
     private fun updateIndicatorVisibility() {
         val urlEmpty = url.isEmpty()
 
-        views.siteInfoIndicator.visibility = if (!urlEmpty && indicators.contains(Indicators.SECURITY)) {
-            View.VISIBLE
-        } else {
-            View.GONE
-        }
+        views.siteInfoIndicator.visibility =
+            if (!urlEmpty && indicators.contains(Indicators.SECURITY)) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
 
-        views.trackingProtectionIndicator.visibility = if (
-            !urlEmpty && indicators.contains(Indicators.TRACKING_PROTECTION)
-        ) {
-            View.VISIBLE
-        } else {
-            View.GONE
-        }
+        views.trackingProtectionIndicator.visibility =
+            if (!urlEmpty && indicators.contains(Indicators.TRACKING_PROTECTION)) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
 
-        views.emptyIndicator.visibility = if (urlEmpty && indicators.contains(Indicators.EMPTY)) {
-            View.VISIBLE
-        } else {
-            View.GONE
-        }
+        views.emptyIndicator.visibility =
+            if (urlEmpty && indicators.contains(Indicators.EMPTY)) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
 
-        views.highlight.visibility = if (!urlEmpty && indicators.contains(Indicators.HIGHLIGHT)) {
-            setHighlight(toolbar.highlight)
-        } else {
-            View.GONE
-        }
+        views.highlight.visibility =
+            if (!urlEmpty && indicators.contains(Indicators.HIGHLIGHT)) {
+                setHighlight(toolbar.highlight)
+            } else {
+                View.GONE
+            }
 
         updateSeparatorVisibility()
     }
 
     private fun updateSeparatorVisibility() {
-        views.separator.visibility = if (
-            displayIndicatorSeparator &&
-            views.trackingProtectionIndicator.isVisible &&
-            views.siteInfoIndicator.isVisible
-        ) {
-            View.VISIBLE
-        } else {
-            View.GONE
-        }
+        views.separator.visibility =
+            if (
+                displayIndicatorSeparator &&
+                    views.trackingProtectionIndicator.isVisible &&
+                    views.siteInfoIndicator.isVisible
+            ) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
 
         // In Fenix (which is using a beta release of ConstraintLayout) we are seeing issues after
         // early visibility changes. Children of the ConstraintLayout are not visible and have a
@@ -506,18 +464,14 @@ class DisplayToolbar internal constructor(
         rootView.requestLayout()
     }
 
-    /**
-     * Updates the title to be displayed.
-     */
+    /** Updates the title to be displayed. */
     internal var title: String
         get() = views.origin.title
         set(value) {
             views.origin.title = value
         }
 
-    /**
-     * Updates the URL to be displayed.
-     */
+    /** Updates the URL to be displayed. */
     internal var url: CharSequence = ""
         set(value) {
             field = value
@@ -526,8 +480,8 @@ class DisplayToolbar internal constructor(
         }
 
     /**
-     * Sets the site's info icon as a local PDF if true. If web content is being displayed,
-     * sets the site's info as secure if true, or insecure otherwise.
+     * Sets the site's info icon as a local PDF if true. If web content is being displayed, sets the site's info as
+     * secure if true, or insecure otherwise.
      */
     internal var siteInfo: Toolbar.SiteInfo = Toolbar.SiteInfo.INSECURE
         set(value) {
@@ -536,11 +490,13 @@ class DisplayToolbar internal constructor(
         }
 
     private fun updateSiteInfoIcon() {
-        @ColorInt val color = when (siteInfo) {
-            Toolbar.SiteInfo.INSECURE -> colors.siteInfoIconInsecure
-            Toolbar.SiteInfo.SECURE -> colors.siteInfoIconSecure
-            Toolbar.SiteInfo.LOCAL_PDF -> colors.siteInfoIconLocalPdf
-        }
+        @ColorInt
+        val color =
+            when (siteInfo) {
+                Toolbar.SiteInfo.INSECURE -> colors.siteInfoIconInsecure
+                Toolbar.SiteInfo.SECURE -> colors.siteInfoIconSecure
+                Toolbar.SiteInfo.LOCAL_PDF -> colors.siteInfoIconLocalPdf
+            }
         if (color == Color.TRANSPARENT) {
             views.siteInfoIndicator.clearColorFilter()
         } else {
@@ -572,26 +528,22 @@ class DisplayToolbar internal constructor(
     /**
      * Updates the progress to be displayed.
      *
-     * Accessibility note:
-     *     ProgressBars can be made accessible to TalkBack by setting `android:accessibilityLiveRegion`.
-     *     They will emit TYPE_VIEW_SELECTED events. TalkBack will format those events into percentage
-     *     announcements along with a pitch-change earcon. We are not using that feature here for
-     *     several reasons:
-     *     1. They are dispatched via a 200ms timeout. Since loading a page can be a short process,
-     *        and since we only update the bar a handful of times, these events often never fire and
-     *        they don't give the user a true sense of the progress.
-     *     2. The last 100% event is dispatched after the view is hidden. This prevents the event
-     *        from being fired, so the user never gets a "complete" event.
-     *     3. Live regions in TalkBack have their role announced, so the user will hear
-     *        "Progress bar, 25%". For a common feature like page load this is very chatty and unintuitive.
-     *     4. We can provide custom strings instead of the less useful percentage utterance, but
-     *        TalkBack will not play an earcon if an event has its own text.
+     * Accessibility note: ProgressBars can be made accessible to TalkBack by setting `android:accessibilityLiveRegion`.
+     * They will emit TYPE_VIEW_SELECTED events. TalkBack will format those events into percentage announcements along
+     * with a pitch-change earcon. We are not using that feature here for several reasons:
+     * 1. They are dispatched via a 200ms timeout. Since loading a page can be a short process, and since we only update
+     *    the bar a handful of times, these events often never fire and they don't give the user a true sense of the
+     *    progress.
+     * 2. The last 100% event is dispatched after the view is hidden. This prevents the event from being fired, so the
+     *    user never gets a "complete" event.
+     * 3. Live regions in TalkBack have their role announced, so the user will hear "Progress bar, 25%". For a common
+     *    feature like page load this is very chatty and unintuitive.
+     * 4. We can provide custom strings instead of the less useful percentage utterance, but TalkBack will not play an
+     *    earcon if an event has its own text.
      *
-     *     For all those reasons, we are going another route here with a "loading" announcement
-     *     when the progress bar first appears along with scroll events that have the same
-     *     pitch-change earcon in TalkBack (although they are a bit louder). This gives a concise and
-     *     consistent feedback to the user that they can depend on.
-     *
+     *    For all those reasons, we are going another route here with a "loading" announcement when the progress bar
+     *    first appears along with scroll events that have the same pitch-change earcon in TalkBack (although they are a
+     *    bit louder). This gives a concise and consistent feedback to the user that they can depend on.
      */
     internal fun updateProgress(progress: Int) {
         if (!views.progress.isVisible && progress > 0) {
@@ -602,21 +554,22 @@ class DisplayToolbar internal constructor(
             if (progress < views.progress.max) {
                 @Suppress("DEPRECATION")
                 views.progress.announceForAccessibility(
-                    context.getString(R.string.mozac_browser_toolbar_progress_loading),
+                    context.getString(R.string.mozac_browser_toolbar_progress_loading)
                 )
             }
         }
 
         views.progress.progress = progress
-        val event = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            AccessibilityEvent(AccessibilityEvent.TYPE_VIEW_SCROLLED)
-        } else {
-            @Suppress("DEPRECATION")
-            AccessibilityEvent.obtain(AccessibilityEvent.TYPE_VIEW_SCROLLED)
-        }.apply {
-            scrollY = progress
-            maxScrollY = views.progress.max
-        }
+        val event =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    AccessibilityEvent(AccessibilityEvent.TYPE_VIEW_SCROLLED)
+                } else {
+                    @Suppress("DEPRECATION") AccessibilityEvent.obtain(AccessibilityEvent.TYPE_VIEW_SCROLLED)
+                }
+                .apply {
+                    scrollY = progress
+                    maxScrollY = views.progress.max
+                }
 
         if (context.isScreenReaderEnabled) {
             views.progress.parent.requestSendAccessibilityEvent(views.progress, event)
@@ -629,8 +582,8 @@ class DisplayToolbar internal constructor(
     }
 
     /**
-     * Declare that the actions (navigation actions, browser actions, page actions) have changed and
-     * should be updated if needed.
+     * Declare that the actions (navigation actions, browser actions, page actions) have changed and should be updated
+     * if needed.
      */
     internal fun invalidateActions() {
         views.menu.invalidateMenu()
@@ -641,22 +594,20 @@ class DisplayToolbar internal constructor(
     }
 
     /**
-     * Adds an action to be displayed on the right side of the toolbar (outside of the URL bounding
-     * box) in display mode.
+     * Adds an action to be displayed on the right side of the toolbar (outside of the URL bounding box) in display
+     * mode.
      *
-     * If there is not enough room to show all icons then some icons may be moved to an overflow
-     * menu.
+     * If there is not enough room to show all icons then some icons may be moved to an overflow menu.
      *
-     * Related:
-     * https://developer.mozilla.org/en-US/Add-ons/WebExtensions/user_interface/Browser_action
+     * Related: https://developer.mozilla.org/en-US/Add-ons/WebExtensions/user_interface/Browser_action
      */
     internal fun addBrowserAction(action: Toolbar.Action) {
         views.browserActions.addAction(action)
     }
 
     /**
-     * Removes a previously added browser action (see [addBrowserAction]). If the provided
-     * action was never added, this method has no effect.
+     * Removes a previously added browser action (see [addBrowserAction]). If the provided action was never added, this
+     * method has no effect.
      *
      * @param action the action to remove.
      */
@@ -665,8 +616,8 @@ class DisplayToolbar internal constructor(
     }
 
     /**
-     * Removes a previously added page action (see [addBrowserAction]). If the provided
-     * action was never added, this method has no effect.
+     * Removes a previously added page action (see [addBrowserAction]). If the provided action was never added, this
+     * method has no effect.
      *
      * @param action the action to remove.
      */
@@ -677,24 +628,23 @@ class DisplayToolbar internal constructor(
     /**
      * Adds an action to be displayed on the right side of the URL in display mode.
      *
-     * Related:
-     * https://developer.mozilla.org/en-US/Add-ons/WebExtensions/user_interface/Page_actions
+     * Related: https://developer.mozilla.org/en-US/Add-ons/WebExtensions/user_interface/Page_actions
      */
     internal fun addPageAction(action: Toolbar.Action) {
         views.pageActions.addAction(action)
     }
 
     /**
-     * Adds an action to be display on the far left side of the toolbar. This area is usually used
-     * on larger devices for navigation actions like "back" and "forward".
+     * Adds an action to be display on the far left side of the toolbar. This area is usually used on larger devices for
+     * navigation actions like "back" and "forward".
      */
     internal fun addNavigationAction(action: Toolbar.Action) {
         views.navigationActions.addAction(action)
     }
 
     /**
-     * Removes a previously added navigation action (see [addNavigationAction]). If the provided
-     * action was never added, this method has no effect.
+     * Removes a previously added navigation action (see [addNavigationAction]). If the provided action was never added,
+     * this method has no effect.
      *
      * @param action the action to remove.
      */
@@ -702,23 +652,17 @@ class DisplayToolbar internal constructor(
         views.navigationActions.removeAction(action)
     }
 
-    /**
-     * Hides the menu button in display mode.
-     */
+    /** Hides the menu button in display mode. */
     fun hideMenuButton() {
         views.menu.setShouldBeHidden(true)
     }
 
-    /**
-     * Shows the menu button in display mode.
-     */
+    /** Shows the menu button in display mode. */
     internal fun showMenuButton() {
         views.menu.setShouldBeHidden(false)
     }
 
-    /**
-     * Sets the horizontal padding.
-     */
+    /** Sets the horizontal padding. */
     fun setHorizontalPadding(horizontalPadding: Int) {
         val background = views.background
         (background.layoutParams as? ConstraintLayout.LayoutParams)?.apply {
@@ -729,9 +673,7 @@ class DisplayToolbar internal constructor(
     }
 }
 
-/**
- * Internal holder for view references.
- */
+/** Internal holder for view references. */
 @Suppress("LongParameterList")
 internal class DisplayToolbarViews(
     val browserActions: ActionContainer,

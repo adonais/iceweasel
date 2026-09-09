@@ -11,6 +11,8 @@ import mozilla.components.concept.engine.Engine
 import mozilla.components.feature.ipprotection.IPProtectionFeature
 import mozilla.components.feature.ipprotection.IPProtectionStorageSynchronizer
 import mozilla.components.feature.ipprotection.auth.gpi.IPProtectionGpiProvider
+import mozilla.components.feature.ipprotection.store.DefaultIPProtectionLocationRepository
+import mozilla.components.feature.ipprotection.store.IPProtectionLocationMiddleware
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.lib.integrity.googleplay.GooglePlayIntegrityClient
 import mozilla.components.service.fxa.manager.FxaAccountManager
@@ -23,17 +25,15 @@ import org.mozilla.fenix.components.LogMiddleware
 import org.mozilla.fenix.utils.Settings
 
 /**
- * Auth sources for IP Protection. Bundles the providers that supply credentials
- * to the underlying [IPProtectionFeature].
+ * Auth sources for IP Protection. Bundles the providers that supply credentials to the underlying
+ * [IPProtectionFeature].
  */
 data class IPProtectionAuthSources(
     val fxaAccountManager: Lazy<FxaAccountManager>,
     val integrityClient: Lazy<GooglePlayIntegrityClient>,
 )
 
-/**
- * Provides access to IP Protection related components.
- */
+/** Provides access to IP Protection related components. */
 @Suppress("LongParameterList")
 class IPProtection(
     val engine: Engine,
@@ -46,19 +46,21 @@ class IPProtection(
 ) {
     val store by lazy {
         IPProtectionStore(
-            middleware = listOf(
-                LogMiddleware(
-                    shouldIncludeDetailedData = { Config.channel.isDebug },
-                    // tag has a max line-length; the rest of the default was unhelpful.
-                    logger = Logger("IPPStore"),
-                ),
-                IPProtectionSnackbarMiddleware(
-                    lazyAppStore = lazyAppStore,
-                    messages = snackbarMessages,
-                ),
-                IPProtectionTelemetryMiddleware(),
-                IPProtectionPreferencesMiddleware(DefaultIPProtectionRepository(settings)),
-            ),
+            middleware =
+                listOf(
+                    LogMiddleware(
+                        shouldIncludeDetailedData = { Config.channel.isDebug },
+                        // tag has a max line-length; the rest of the default was unhelpful.
+                        logger = Logger("IPPStore"),
+                    ),
+                    IPProtectionSnackbarMiddleware(
+                        lazyAppStore = lazyAppStore,
+                        messages = snackbarMessages,
+                    ),
+                    IPProtectionTelemetryMiddleware(),
+                    IPProtectionPreferencesMiddleware(DefaultIPProtectionRepository(settings)),
+                    IPProtectionLocationMiddleware(repository = DefaultIPProtectionLocationRepository(context)),
+                )
         )
     }
 
@@ -95,9 +97,8 @@ class IPProtection(
 
     private val snackbarMessages by lazy {
         IPProtectionSnackbarMessages(
-            connectionError = context.getString(
-                R.string.ip_protection_connection_error_snackbar,
-            ),
+            connectionError = context.getString(R.string.ip_protection_connection_error_snackbar),
+            locationSelectionReset = context.getString(R.string.ip_protection_location_selection_reset_snackbar),
         )
     }
 }

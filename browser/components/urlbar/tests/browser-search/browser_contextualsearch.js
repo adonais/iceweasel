@@ -15,6 +15,14 @@ const { CustomizableUITestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/CustomizableUITestUtils.sys.mjs"
 );
 
+const { SearchSERPTelemetry, SearchSERPTelemetryUtils } =
+  ChromeUtils.importESModule(
+    "moz-src:///browser/components/search/SearchSERPTelemetry.sys.mjs"
+  );
+
+const PRINT_POSTDATA_URL =
+  "http://mochi.test:8888/browser/browser/components/urlbar/tests/browser/print_postdata.sjs";
+
 const CONFIG = [
   {
     identifier: "default-engine",
@@ -289,9 +297,30 @@ add_task(async function test_host_match_installed_engine_immediate_search() {
   await SearchTestUtils.updateRemoteSettingsConfig([CONFIG[0]]);
   let ext = await SearchTestUtils.installSearchExtension({
     name: "HostMatchEngine",
-    search_url: "https://example.net/search",
+    search_url:
+      "https://example.net/browser/browser/components/urlbar/tests/browser-search/dummy_page.html",
   });
   await AddonTestUtils.waitForSearchProviderStartup(ext);
+
+  SearchSERPTelemetry.overrideSearchTelemetryForTests([
+    {
+      telemetryId: "example",
+      searchPageRegexp:
+        /^https:\/\/example\.net\/browser\/browser\/components\/urlbar\/tests\/browser-search\/dummy_page\.html/,
+      queryParamNames: ["q"],
+      extraAdServersRegexps: [/^https:\/\/example\.com\/ad/],
+      components: [
+        {
+          type: SearchSERPTelemetryUtils.COMPONENTS.AD_LINK,
+          default: true,
+        },
+      ],
+    },
+  ]);
+
+  registerCleanupFunction(() => {
+    SearchSERPTelemetry.overrideSearchTelemetryForTests();
+  });
 
   const query = "testquery";
   let engine = SearchService.getEngineByName("HostMatchEngine");
@@ -308,6 +337,8 @@ add_task(async function test_host_match_installed_engine_immediate_search() {
     "Contextual search action is shown for host-matched installed engine"
   );
 
+  clearSAPTelemetry();
+  let onImpression = TestUtils.topicObserved("reported-page-with-impression");
   let onLoad = BrowserTestUtils.browserLoaded(
     gBrowser.selectedBrowser,
     false,
@@ -316,6 +347,7 @@ add_task(async function test_host_match_installed_engine_immediate_search() {
   let btn = window.document.querySelector(".urlbarView-action-btn");
   EventUtils.synthesizeMouseAtCenter(btn, {}, window);
   await onLoad;
+  await onImpression;
 
   Assert.equal(
     gBrowser.selectedBrowser.currentURI.spec,
@@ -324,6 +356,21 @@ add_task(async function test_host_match_installed_engine_immediate_search() {
   );
   Assert.ok(!gURLBar.searchMode, "Search mode was not entered");
 
+  await SearchUITestUtils.assertSAPTelemetry({
+    engineName: "HostMatchEngine",
+    source: "urlbar",
+    count: 1,
+  });
+
+  let impressions = Glean.serp.impression.testGetValue();
+  Assert.equal(impressions.length, 1, "Should record one SERP impression");
+  Assert.equal(
+    impressions[0].extra.source,
+    "urlbar",
+    "SERP impression should be attributed to the urlbar"
+  );
+
+  clearSAPTelemetry();
   await loadUri("https://example.net/");
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -401,6 +448,54 @@ add_task(async function test_tab_to_search_engine() {
   });
 
   await onLoad;
+  await SearchTestUtils.updateRemoteSettingsConfig(CONFIG);
+});
+
+add_task(async function test_opensearch_post_engine() {
+  // Only the default engine's host is configured, so it does not shadow the
+  // page-advertised OpenSearch engine matched below.
+  await SearchTestUtils.updateRemoteSettingsConfig([CONFIG[0]]);
+
+  let pageUrl = (
+    getRootDirectory(gTestPath) + "post_search_engine.html"
+  ).replace("chrome://mochitests/content", "https://example.com");
+  await loadUri(pageUrl);
+
+  await TestUtils.waitForCondition(
+    () => OpenSearchManager.getEngines(gBrowser.selectedBrowser).length,
+    "Waiting for the page's OpenSearch engine to be registered"
+  );
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "kitten pics",
+  });
+
+  Assert.ok(
+    await hasActions(1),
+    "Contextual search action is shown for the page's OpenSearch engine"
+  );
+
+  let onLoad = BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    false,
+    PRINT_POSTDATA_URL
+  );
+  EventUtils.synthesizeKey("KEY_Tab");
+  EventUtils.synthesizeKey("KEY_Enter");
+  await onLoad;
+
+  let textContent = await SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [],
+    () => content.document.body.textContent
+  );
+  Assert.equal(
+    textContent,
+    "searchterms=kitten+pics",
+    "The search was performed with the query in the POST data"
+  );
+
   await SearchTestUtils.updateRemoteSettingsConfig(CONFIG);
 });
 

@@ -8,18 +8,12 @@ import androidx.annotation.VisibleForTesting
 
 private const val WHATSAPP_PACKAGE_NAME = "com.whatsapp"
 
-/**
- * Interface encapsulates the "Sent from Firefox" nimbus experiment.
- */
+/** Interface encapsulates the "Sent from Firefox" nimbus experiment. */
 interface SentFromFirefoxManager {
-    /**
-     * Indicates whether the feature is enabled or not.
-     */
+    /** Indicates whether the feature is enabled or not. */
     val featureEnabled: Boolean
 
-    /**
-     * Indicates whether the link sharing snackbar should be shown (once per install).
-     */
+    /** Indicates whether the link sharing snackbar should be shown (once per install). */
     val shouldShowSnackbar: Boolean
 
     /**
@@ -55,8 +49,7 @@ class DefaultSentFromFirefoxManager(
         get() = storage.featureEnabled
 
     override val shouldShowSnackbar: Boolean
-        get() = featureEnabled && snackbarEnabled && !storage.isLinkSharingSettingsSnackbarShown &&
-            lastShareAppended
+        get() = featureEnabled && snackbarEnabled && !storage.isLinkSharingSettingsSnackbarShown && lastShareAppended
 
     override fun maybeAppendShareText(packageName: String, shareText: String): String {
         val shouldAppendText = packageName == WHATSAPP_PACKAGE_NAME && featureEnabled
@@ -72,10 +65,11 @@ class DefaultSentFromFirefoxManager(
     }
 
     @VisibleForTesting
-    internal fun getSentFromFirefoxMessage(sharedText: String) = String.format(
-        templateMessage,
-        sharedText,
-        appName,
-        downloadLink,
-    )
+    internal fun getSentFromFirefoxMessage(sharedText: String) =
+        String.format(
+            templateMessage,
+            sharedText,
+            appName,
+            downloadLink,
+        )
 }

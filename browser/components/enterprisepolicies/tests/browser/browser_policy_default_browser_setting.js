@@ -51,3 +51,31 @@ add_task(async function test_default_browser_setting_disabled() {
   );
   await checkSetDefaultUI({ isHidden: true });
 });
+
+add_task(async function test_set_default_browser_blocked_by_policy() {
+  const { sinon } = ChromeUtils.importESModule(
+    "resource://testing-common/Sinon.sys.mjs"
+  );
+  const sandbox = sinon.createSandbox();
+  // Stubbed so a regression in the guard cannot change the real system default.
+  const userChoiceStub = sandbox
+    .stub(ShellService, "setAsDefaultUserChoice")
+    .resolves();
+  const setDefaultStub = sinon.stub();
+  sandbox
+    .stub(ShellService, "shellService")
+    .value({ setDefaultBrowser: setDefaultStub });
+
+  await setupPolicyEngineWithJson({
+    policies: {
+      DefaultBrowserSettingEnabled: false,
+    },
+  });
+
+  await ShellService.setDefaultBrowser(false);
+
+  Assert.ok(userChoiceStub.notCalled, "UserChoice method not called");
+  Assert.ok(setDefaultStub.notCalled, "Fallback method not called");
+
+  sandbox.restore();
+});

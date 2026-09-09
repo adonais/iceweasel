@@ -7,7 +7,7 @@
  */
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-import { GenericAutocompleteItem } from "resource://gre/modules/FillHelpers.sys.mjs";
+import { adaptExternalAutocompleteItem } from "resource://gre/modules/FillHelpers.sys.mjs";
 
 const lazy = {};
 
@@ -371,16 +371,7 @@ export class LoginAutoCompleteResult {
     if (isFooterEnabled()) {
       if (autocompleteItems) {
         this.#rows.push(
-          ...autocompleteItems.map(
-            item =>
-              new GenericAutocompleteItem(
-                item.image,
-                item.label,
-                item.secondary,
-                item.fillMessageName,
-                item.fillMessageData
-              )
-          )
+          ...autocompleteItems.map(adaptExternalAutocompleteItem)
         );
       }
 

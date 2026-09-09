@@ -116,7 +116,7 @@ git log $COMMIT_RANGE --oneline
 # Convert the files that we've already generated for no-op detection into
 # something that we can use as a regular expression for searching.
 KNOWN_NO_OP_COMMITS=`cd $STATE_DIR ; \
-  ls *.no-op-cherry-pick-msg \
+  ls *.no-op-cherry-pick-msg 2>/dev/null || true \
   | sed 's/\.no-op-cherry-pick-msg//' \
   | paste -sd '|' /dev/stdin`
 

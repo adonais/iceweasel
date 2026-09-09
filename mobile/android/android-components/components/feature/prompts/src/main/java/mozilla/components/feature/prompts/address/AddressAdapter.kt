@@ -17,23 +17,17 @@ import mozilla.components.feature.prompts.R
 
 @VisibleForTesting
 internal object AddressDiffCallback : DiffUtil.ItemCallback<Address>() {
-    override fun areItemsTheSame(oldItem: Address, newItem: Address) =
-        oldItem.guid == newItem.guid
+    override fun areItemsTheSame(oldItem: Address, newItem: Address) = oldItem.guid == newItem.guid
 
-    override fun areContentsTheSame(oldItem: Address, newItem: Address) =
-        oldItem == newItem
+    override fun areContentsTheSame(oldItem: Address, newItem: Address) = oldItem == newItem
 }
 
-/**
- * RecyclerView adapter for displaying address items.
- */
-internal class AddressAdapter(
-    private val onAddressSelected: (Address) -> Unit,
-) : ListAdapter<Address, AddressViewHolder>(AddressDiffCallback) {
+/** RecyclerView adapter for displaying address items. */
+internal class AddressAdapter(private val onAddressSelected: (Address) -> Unit) :
+    ListAdapter<Address, AddressViewHolder>(AddressDiffCallback) {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AddressViewHolder {
-        val view = LayoutInflater
-            .from(parent.context)
-            .inflate(R.layout.mozac_feature_prompts_address_list_item, parent, false)
+        val view =
+            LayoutInflater.from(parent.context).inflate(R.layout.mozac_feature_prompts_address_list_item, parent, false)
         return AddressViewHolder(view, onAddressSelected)
     }
 
@@ -42,16 +36,13 @@ internal class AddressAdapter(
     }
 }
 
-/**
- * View holder for a address item.
- */
+/** View holder for a address item. */
 @VisibleForTesting
 internal class AddressViewHolder(
     itemView: View,
     private val onAddressSelected: (Address) -> Unit,
 ) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
-    @VisibleForTesting
-    lateinit var address: Address
+    @VisibleForTesting lateinit var address: Address
 
     init {
         itemView.setOnClickListener(this)

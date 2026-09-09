@@ -7,9 +7,7 @@ package mozilla.components.browser.state.reducer
 import mozilla.components.browser.state.action.DefaultDesktopModeAction
 import mozilla.components.browser.state.state.BrowserState
 
-/**
- * An [DefaultDesktopModeAction] reducer that updates [BrowserState.desktopMode].
- */
+/** An [DefaultDesktopModeAction] reducer that updates [BrowserState.desktopMode]. */
 internal object DesktopModeReducer {
     fun reduce(state: BrowserState, action: DefaultDesktopModeAction): BrowserState {
         return when (action) {

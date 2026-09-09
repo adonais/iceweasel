@@ -10,12 +10,10 @@ import mozilla.components.support.ktx.kotlin.ELLIPSIS
 // Extension functions for the android.net.Uri class
 
 /**
- * Return the truncated host of this Uri. The truncated host will only contain up to 2-3 segments of
- * the original host. The original host will be returned if it's null or and empty String.
+ * Return the truncated host of this Uri. The truncated host will only contain up to 2-3 segments of the original host.
+ * The original host will be returned if it's null or and empty String.
  *
- * Examples:
- *   mail.google.com -> google.com
- *   www.tomshardware.co.uk -> tomshardware.co.uk
+ * Examples: mail.google.com -> google.com www.tomshardware.co.uk -> tomshardware.co.uk
  *
  * Spec: https://github.com/mozilla-mobile/focus-android/issues/1231#issuecomment-326237077
  */
@@ -51,11 +49,10 @@ fun Uri.truncatedHost(): String? {
 }
 
 /**
- * Return the truncated path only containing the first and last segment of the full path. If the
- * Uri does not have a path an empty String will be returned.
+ * Return the truncated path only containing the first and last segment of the full path. If the Uri does not have a
+ * path an empty String will be returned.
  *
- * Example:
- * /foo/bar/test/index.html -> /foo/…/index.html
+ * Example: /foo/bar/test/index.html -> /foo/…/index.html
  */
 fun Uri.truncatedPath(): String {
     val segments = pathSegments

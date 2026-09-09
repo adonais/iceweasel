@@ -6,28 +6,23 @@ package mozilla.components.browser.storage.sync
 
 import androidx.annotation.VisibleForTesting
 
-/**
- * Provides global access to the dependencies needed for places storage operations.
- * */
+/** Provides global access to the dependencies needed for places storage operations. */
 object GlobalPlacesDependencyProvider {
 
-    @VisibleForTesting
-    internal var placesStorage: PlacesStorage? = null
+    @VisibleForTesting internal var placesStorage: PlacesStorage? = null
 
     /**
-     * Initializes places storage for running the maintenance task via [PlacesHistoryStorageWorker].
-     * This method should be called in client application's onCreate method and before
-     * [PlacesHistoryStorage.registerStorageMaintenanceWorker] in order to run the worker while
-     * the app is not running.
-     * */
+     * Initializes places storage for running the maintenance task via [PlacesHistoryStorageWorker]. This method should
+     * be called in client application's onCreate method and before
+     * [PlacesHistoryStorage.registerStorageMaintenanceWorker] in order to run the worker while the app is not running.
+     */
     fun initialize(placesStorage: PlacesStorage) {
         this.placesStorage = placesStorage
     }
 
     /**
-     * Provides [PlacesStorage] globally when needed for [PlacesHistoryStorageWorker]
-     * to run maintenance on the storage.
-     * */
+     * Provides [PlacesStorage] globally when needed for [PlacesHistoryStorageWorker] to run maintenance on the storage.
+     */
     internal fun requirePlacesStorage(): PlacesStorage {
         return requireNotNull(placesStorage) {
             "GlobalPlacesDependencyProvider.initialize must be called before accessing the Places storage"

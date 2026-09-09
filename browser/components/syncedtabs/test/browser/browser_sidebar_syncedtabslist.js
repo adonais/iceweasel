@@ -654,6 +654,11 @@ async function testContainerMenu(menu) {
     newTab.hasAttribute("usercontextid"),
     `Tab with usercontextid = ${shown[shown.length - 1]} should be opened`
   );
+  is(
+    Glean.containers.containerTabOpened.testGetValue().at(-1).extra.source,
+    "synced_tabs_context_menu",
+    "container_tab_opened reports the synced tabs source"
+  );
   registerCleanupFunction(() => BrowserTestUtils.removeTab(newTab));
   return true;
 }

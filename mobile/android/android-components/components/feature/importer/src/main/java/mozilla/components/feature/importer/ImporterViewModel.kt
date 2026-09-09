@@ -10,24 +10,24 @@ import androidx.lifecycle.viewModelScope
 import mozilla.components.concept.bookmarks.file.BookmarksFileImporter
 
 /**
- * [ViewModel] that owns the [ImporterStore] for the import flow so that its state and
- * side-effects survive configuration changes.
+ * [ViewModel] that owns the [ImporterStore] for the import flow so that its state and side-effects survive
+ * configuration changes.
  */
-internal class ImporterViewModel(
-    importer: BookmarksFileImporter,
-) : ViewModel() {
-    val store = ImporterStore(
-        initialState = ImporterState.Inert,
-        reducer = { _, action -> importerReducer(action) },
-        middleware = listOf(ImporterMiddleware(importer, viewModelScope)),
-    )
+internal class ImporterViewModel(importer: BookmarksFileImporter) : ViewModel() {
+    val store =
+        ImporterStore(
+            initialState = ImporterState.Inert,
+            reducer = { _, action -> importerReducer(action) },
+            middleware = listOf(ImporterMiddleware(importer, viewModelScope)),
+        )
 
     companion object {
-        fun factory(importer: BookmarksFileImporter) = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                return ImporterViewModel(importer) as T
+        fun factory(importer: BookmarksFileImporter) =
+            object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                    return ImporterViewModel(importer) as T
+                }
             }
-        }
     }
 }

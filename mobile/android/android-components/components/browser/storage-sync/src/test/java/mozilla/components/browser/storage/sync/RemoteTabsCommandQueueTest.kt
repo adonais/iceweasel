@@ -26,7 +26,12 @@ import org.mockito.Mockito.verify
 class RemoteTabsCommandQueueTest {
     private val storage: RemoteTabsStorage = mock()
     private val api: RemoteCommandStore = mock()
-    private val closeTabsCommandSender: RemoteTabsCommandQueue.CommandSender<DeviceCommandOutgoing.CloseTab, RemoteTabsCommandQueue.SendCloseTabsResult> = mock()
+    private val closeTabsCommandSender:
+        RemoteTabsCommandQueue.CommandSender<
+            DeviceCommandOutgoing.CloseTab,
+            RemoteTabsCommandQueue.SendCloseTabsResult,
+        > =
+        mock()
     private val commands = RemoteTabsCommandQueue(storage, closeTabsCommandSender)
 
     @Before
@@ -63,186 +68,211 @@ class RemoteTabsCommandQueueTest {
     }
 
     @Test
-    fun `GIVEN a queue with unsent pending commands AND a sender that sends all commands WHEN the queue is flushed THEN the flush should succeed`() = runTest {
-        whenever(api.getUnsentCommands()).thenReturn(
-            listOf(
-                PendingCommand(
-                    deviceId = "123",
-                    command = RemoteCommand.CloseTab("https://getfirefox.com"),
-                    timeRequested = 0,
-                    timeSent = null,
-                ),
-                PendingCommand(
-                    deviceId = "1234",
-                    command = RemoteCommand.CloseTab("https://getthunderbird.com"),
-                    timeRequested = 0,
-                    timeSent = null,
-                ),
-            ),
-        )
-        whenever(closeTabsCommandSender.send(any(), any())).thenReturn(RemoteTabsCommandQueue.SendCloseTabsResult.Ok)
-        whenever(api.setPendingCommandSent(any())).thenReturn(true)
+    fun `GIVEN a queue with unsent pending commands AND a sender that sends all commands WHEN the queue is flushed THEN the flush should succeed`() =
+        runTest {
+            whenever(api.getUnsentCommands())
+                .thenReturn(
+                    listOf(
+                        PendingCommand(
+                            deviceId = "123",
+                            command = RemoteCommand.CloseTab("https://getfirefox.com"),
+                            timeRequested = 0,
+                            timeSent = null,
+                        ),
+                        PendingCommand(
+                            deviceId = "1234",
+                            command = RemoteCommand.CloseTab("https://getthunderbird.com"),
+                            timeRequested = 0,
+                            timeSent = null,
+                        ),
+                    )
+                )
+            whenever(closeTabsCommandSender.send(any(), any()))
+                .thenReturn(RemoteTabsCommandQueue.SendCloseTabsResult.Ok)
+            whenever(api.setPendingCommandSent(any())).thenReturn(true)
 
-        assertEquals(DeviceCommandQueue.FlushResult.ok(), commands.flush())
-        verify(closeTabsCommandSender, times(2)).send(any(), any())
-        verify(api, times(2)).setPendingCommandSent(any())
-    }
-
-    @Test
-    fun `GIVEN a queue with unsent pending commands AND a sender that returns 'no account' WHEN the queue is flushed THEN the flush should succeed`() = runTest {
-        whenever(api.getUnsentCommands()).thenReturn(
-            listOf(
-                PendingCommand(
-                    deviceId = "123",
-                    command = RemoteCommand.CloseTab("https://getfirefox.com"),
-                    timeRequested = 0,
-                    timeSent = null,
-                ),
-            ),
-        )
-        whenever(closeTabsCommandSender.send(any(), any())).thenReturn(RemoteTabsCommandQueue.SendCloseTabsResult.NoAccount)
-
-        assertEquals(DeviceCommandQueue.FlushResult.ok(), commands.flush())
-        verify(closeTabsCommandSender).send(any(), any())
-        verify(api, never()).setPendingCommandSent(any())
-    }
+            assertEquals(DeviceCommandQueue.FlushResult.ok(), commands.flush())
+            verify(closeTabsCommandSender, times(2)).send(any(), any())
+            verify(api, times(2)).setPendingCommandSent(any())
+        }
 
     @Test
-    fun `GIVEN a queue with unsent pending commands AND a sender that returns 'no device' WHEN the queue is flushed THEN the flush should succeed`() = runTest {
-        whenever(api.getUnsentCommands()).thenReturn(
-            listOf(
-                PendingCommand(
-                    deviceId = "123",
-                    command = RemoteCommand.CloseTab("https://getfirefox.com"),
-                    timeRequested = 0,
-                    timeSent = null,
-                ),
-            ),
-        )
-        whenever(closeTabsCommandSender.send(any(), any())).thenReturn(RemoteTabsCommandQueue.SendCloseTabsResult.NoDevice)
+    fun `GIVEN a queue with unsent pending commands AND a sender that returns 'no account' WHEN the queue is flushed THEN the flush should succeed`() =
+        runTest {
+            whenever(api.getUnsentCommands())
+                .thenReturn(
+                    listOf(
+                        PendingCommand(
+                            deviceId = "123",
+                            command = RemoteCommand.CloseTab("https://getfirefox.com"),
+                            timeRequested = 0,
+                            timeSent = null,
+                        )
+                    )
+                )
+            whenever(closeTabsCommandSender.send(any(), any()))
+                .thenReturn(RemoteTabsCommandQueue.SendCloseTabsResult.NoAccount)
 
-        assertEquals(DeviceCommandQueue.FlushResult.ok(), commands.flush())
-        verify(closeTabsCommandSender).send(any(), any())
-        verify(api, never()).setPendingCommandSent(any())
-    }
-
-    @Test
-    fun `GIVEN a queue with unsent pending commands AND a sender that returns an error WHEN the queue is flushed THEN the flush should be retried`() = runTest {
-        whenever(api.getUnsentCommands()).thenReturn(
-            listOf(
-                PendingCommand(
-                    deviceId = "123",
-                    command = RemoteCommand.CloseTab("https://getfirefox.com"),
-                    timeRequested = 0,
-                    timeSent = null,
-                ),
-            ),
-        )
-        whenever(closeTabsCommandSender.send(any(), any())).thenReturn(RemoteTabsCommandQueue.SendCloseTabsResult.Error)
-
-        assertEquals(DeviceCommandQueue.FlushResult.retry(), commands.flush())
-        verify(closeTabsCommandSender).send(any(), any())
-        verify(api, never()).setPendingCommandSent(any())
-    }
+            assertEquals(DeviceCommandQueue.FlushResult.ok(), commands.flush())
+            verify(closeTabsCommandSender).send(any(), any())
+            verify(api, never()).setPendingCommandSent(any())
+        }
 
     @Test
-    fun `GIVEN a queue with unsent pending commands AND a sender that sends some commands WHEN the queue is flushed THEN the flush should be retried`() = runTest {
-        whenever(api.getUnsentCommands()).thenReturn(
-            listOf(
-                PendingCommand(
-                    deviceId = "123",
-                    command = RemoteCommand.CloseTab("https://getfirefox.com"),
-                    timeRequested = 0,
-                    timeSent = null,
-                ),
-                PendingCommand(
-                    deviceId = "1234",
-                    command = RemoteCommand.CloseTab("https://getthunderbird.com"),
-                    timeRequested = 0,
-                    timeSent = null,
-                ),
-            ),
-        )
-        whenever(closeTabsCommandSender.send(eq("123"), any())).thenReturn(RemoteTabsCommandQueue.SendCloseTabsResult.Ok)
-        whenever(closeTabsCommandSender.send(eq("1234"), any())).thenReturn(RemoteTabsCommandQueue.SendCloseTabsResult.Error)
-        whenever(api.setPendingCommandSent(any())).thenReturn(true)
+    fun `GIVEN a queue with unsent pending commands AND a sender that returns 'no device' WHEN the queue is flushed THEN the flush should succeed`() =
+        runTest {
+            whenever(api.getUnsentCommands())
+                .thenReturn(
+                    listOf(
+                        PendingCommand(
+                            deviceId = "123",
+                            command = RemoteCommand.CloseTab("https://getfirefox.com"),
+                            timeRequested = 0,
+                            timeSent = null,
+                        )
+                    )
+                )
+            whenever(closeTabsCommandSender.send(any(), any()))
+                .thenReturn(RemoteTabsCommandQueue.SendCloseTabsResult.NoDevice)
 
-        assertEquals(DeviceCommandQueue.FlushResult.retry(), commands.flush())
-        verify(closeTabsCommandSender, times(2)).send(any(), any())
-        val pendingCommandCaptor = argumentCaptor<PendingCommand>()
-        verify(api).setPendingCommandSent(pendingCommandCaptor.capture())
-        assertEquals("123", pendingCommandCaptor.value.deviceId)
-    }
+            assertEquals(DeviceCommandQueue.FlushResult.ok(), commands.flush())
+            verify(closeTabsCommandSender).send(any(), any())
+            verify(api, never()).setPendingCommandSent(any())
+        }
 
     @Test
-    fun `GIVEN a queue with unsent pending commands for the same device AND a sender that sends all commands WHEN the queue is flushed THEN the flush should succeed`() = runTest {
-        whenever(api.getUnsentCommands()).thenReturn(
-            listOf(
-                PendingCommand(
-                    deviceId = "123",
-                    command = RemoteCommand.CloseTab("https://getfirefox.com"),
-                    timeRequested = 0,
-                    timeSent = null,
-                ),
-                PendingCommand(
-                    deviceId = "123",
-                    command = RemoteCommand.CloseTab("https://getthunderbird.com"),
-                    timeRequested = 0,
-                    timeSent = null,
-                ),
-                PendingCommand(
-                    deviceId = "123",
-                    command = RemoteCommand.CloseTab("https://example.com"),
-                    timeRequested = 0,
-                    timeSent = null,
-                ),
-            ),
-        )
+    fun `GIVEN a queue with unsent pending commands AND a sender that returns an error WHEN the queue is flushed THEN the flush should be retried`() =
+        runTest {
+            whenever(api.getUnsentCommands())
+                .thenReturn(
+                    listOf(
+                        PendingCommand(
+                            deviceId = "123",
+                            command = RemoteCommand.CloseTab("https://getfirefox.com"),
+                            timeRequested = 0,
+                            timeSent = null,
+                        )
+                    )
+                )
+            whenever(closeTabsCommandSender.send(any(), any()))
+                .thenReturn(RemoteTabsCommandQueue.SendCloseTabsResult.Error)
 
-        whenever(closeTabsCommandSender.send(eq("123"), any())).thenReturn(RemoteTabsCommandQueue.SendCloseTabsResult.Ok)
-        whenever(api.setPendingCommandSent(any())).thenReturn(true)
-
-        assertEquals(DeviceCommandQueue.FlushResult.ok(), commands.flush())
-        val outgoingCommandCaptor = argumentCaptor<DeviceCommandOutgoing.CloseTab>()
-        verify(closeTabsCommandSender).send(any(), outgoingCommandCaptor.capture())
-        verify(api, times(3)).setPendingCommandSent(any())
-
-        assertEquals(listOf("https://getfirefox.com", "https://getthunderbird.com", "https://example.com"), outgoingCommandCaptor.value.urls)
-    }
+            assertEquals(DeviceCommandQueue.FlushResult.retry(), commands.flush())
+            verify(closeTabsCommandSender).send(any(), any())
+            verify(api, never()).setPendingCommandSent(any())
+        }
 
     @Test
-    fun `GIVEN a queue with unsent pending commands for the same device AND a sender that returns URLs to retry WHEN the queue is flushed THEN the flush should be retried`() = runTest {
-        whenever(api.getUnsentCommands()).thenReturn(
-            listOf(
-                PendingCommand(
-                    deviceId = "123",
-                    command = RemoteCommand.CloseTab("https://getfirefox.com"),
-                    timeRequested = 0,
-                    timeSent = null,
-                ),
-                PendingCommand(
-                    deviceId = "123",
-                    command = RemoteCommand.CloseTab("https://getthunderbird.com"),
-                    timeRequested = 0,
-                    timeSent = null,
-                ),
-                PendingCommand(
-                    deviceId = "123",
-                    command = RemoteCommand.CloseTab("https://example.com"),
-                    timeRequested = 0,
-                    timeSent = null,
-                ),
-            ),
-        )
+    fun `GIVEN a queue with unsent pending commands AND a sender that sends some commands WHEN the queue is flushed THEN the flush should be retried`() =
+        runTest {
+            whenever(api.getUnsentCommands())
+                .thenReturn(
+                    listOf(
+                        PendingCommand(
+                            deviceId = "123",
+                            command = RemoteCommand.CloseTab("https://getfirefox.com"),
+                            timeRequested = 0,
+                            timeSent = null,
+                        ),
+                        PendingCommand(
+                            deviceId = "1234",
+                            command = RemoteCommand.CloseTab("https://getthunderbird.com"),
+                            timeRequested = 0,
+                            timeSent = null,
+                        ),
+                    )
+                )
+            whenever(closeTabsCommandSender.send(eq("123"), any()))
+                .thenReturn(RemoteTabsCommandQueue.SendCloseTabsResult.Ok)
+            whenever(closeTabsCommandSender.send(eq("1234"), any()))
+                .thenReturn(RemoteTabsCommandQueue.SendCloseTabsResult.Error)
+            whenever(api.setPendingCommandSent(any())).thenReturn(true)
 
-        whenever(closeTabsCommandSender.send(eq("123"), any())).thenReturn(RemoteTabsCommandQueue.SendCloseTabsResult.RetryFor(listOf("https://getthunderbird.com")))
-        whenever(api.setPendingCommandSent(any())).thenReturn(true)
+            assertEquals(DeviceCommandQueue.FlushResult.retry(), commands.flush())
+            verify(closeTabsCommandSender, times(2)).send(any(), any())
+            val pendingCommandCaptor = argumentCaptor<PendingCommand>()
+            verify(api).setPendingCommandSent(pendingCommandCaptor.capture())
+            assertEquals("123", pendingCommandCaptor.value.deviceId)
+        }
 
-        assertEquals(DeviceCommandQueue.FlushResult.retry(), commands.flush())
-        verify(closeTabsCommandSender).send(any(), any())
-        val pendingCommandCaptor = argumentCaptor<PendingCommand>()
-        verify(api, times(2)).setPendingCommandSent(pendingCommandCaptor.capture())
-        assertEquals(RemoteCommand.CloseTab("https://getfirefox.com"), pendingCommandCaptor.allValues[0].command)
-        assertEquals(RemoteCommand.CloseTab("https://example.com"), pendingCommandCaptor.allValues[1].command)
-    }
+    @Test
+    fun `GIVEN a queue with unsent pending commands for the same device AND a sender that sends all commands WHEN the queue is flushed THEN the flush should succeed`() =
+        runTest {
+            whenever(api.getUnsentCommands())
+                .thenReturn(
+                    listOf(
+                        PendingCommand(
+                            deviceId = "123",
+                            command = RemoteCommand.CloseTab("https://getfirefox.com"),
+                            timeRequested = 0,
+                            timeSent = null,
+                        ),
+                        PendingCommand(
+                            deviceId = "123",
+                            command = RemoteCommand.CloseTab("https://getthunderbird.com"),
+                            timeRequested = 0,
+                            timeSent = null,
+                        ),
+                        PendingCommand(
+                            deviceId = "123",
+                            command = RemoteCommand.CloseTab("https://example.com"),
+                            timeRequested = 0,
+                            timeSent = null,
+                        ),
+                    )
+                )
+
+            whenever(closeTabsCommandSender.send(eq("123"), any()))
+                .thenReturn(RemoteTabsCommandQueue.SendCloseTabsResult.Ok)
+            whenever(api.setPendingCommandSent(any())).thenReturn(true)
+
+            assertEquals(DeviceCommandQueue.FlushResult.ok(), commands.flush())
+            val outgoingCommandCaptor = argumentCaptor<DeviceCommandOutgoing.CloseTab>()
+            verify(closeTabsCommandSender).send(any(), outgoingCommandCaptor.capture())
+            verify(api, times(3)).setPendingCommandSent(any())
+
+            assertEquals(
+                listOf("https://getfirefox.com", "https://getthunderbird.com", "https://example.com"),
+                outgoingCommandCaptor.value.urls,
+            )
+        }
+
+    @Test
+    fun `GIVEN a queue with unsent pending commands for the same device AND a sender that returns URLs to retry WHEN the queue is flushed THEN the flush should be retried`() =
+        runTest {
+            whenever(api.getUnsentCommands())
+                .thenReturn(
+                    listOf(
+                        PendingCommand(
+                            deviceId = "123",
+                            command = RemoteCommand.CloseTab("https://getfirefox.com"),
+                            timeRequested = 0,
+                            timeSent = null,
+                        ),
+                        PendingCommand(
+                            deviceId = "123",
+                            command = RemoteCommand.CloseTab("https://getthunderbird.com"),
+                            timeRequested = 0,
+                            timeSent = null,
+                        ),
+                        PendingCommand(
+                            deviceId = "123",
+                            command = RemoteCommand.CloseTab("https://example.com"),
+                            timeRequested = 0,
+                            timeSent = null,
+                        ),
+                    )
+                )
+
+            whenever(closeTabsCommandSender.send(eq("123"), any()))
+                .thenReturn(RemoteTabsCommandQueue.SendCloseTabsResult.RetryFor(listOf("https://getthunderbird.com")))
+            whenever(api.setPendingCommandSent(any())).thenReturn(true)
+
+            assertEquals(DeviceCommandQueue.FlushResult.retry(), commands.flush())
+            verify(closeTabsCommandSender).send(any(), any())
+            val pendingCommandCaptor = argumentCaptor<PendingCommand>()
+            verify(api, times(2)).setPendingCommandSent(pendingCommandCaptor.capture())
+            assertEquals(RemoteCommand.CloseTab("https://getfirefox.com"), pendingCommandCaptor.allValues[0].command)
+            assertEquals(RemoteCommand.CloseTab("https://example.com"), pendingCommandCaptor.allValues[1].command)
+        }
 }

@@ -157,12 +157,9 @@ export class BackupUIChild extends JSWindowActorChild {
       this.sendAsyncMessage("FindBackupsInWellKnownLocations", event.detail);
     } else if (event.type == "BackupUI:ProbeDefaultBackupDir") {
       let targetNodeName = event.composedTarget.nodeName;
-      let parentDirPath = event.detail?.parentDirPath;
       let readAccessGranted = false;
       try {
-        ({ readAccessGranted } = await this.sendQuery("ProbeDefaultBackupDir", {
-          parentDirPath,
-        }));
+        ({ readAccessGranted } = await this.sendQuery("ProbeDefaultBackupDir"));
       } catch (e) {
         lazy.logConsole.error("ProbeDefaultBackupDir failed:", e);
       }

@@ -189,6 +189,31 @@
   list-style-image: url("chrome://browser/skin/flame.svg");
 }
 
+#remote-control-toolbar-button {
+  list-style-image: url("chrome://browser/skin/remote-control.svg");
+
+  /* While running, tint the icon and display a colored dot. */
+  &[remote-control-running] {
+    --toolbarbutton-icon-fill: var(--icon-color-success);
+
+    /* Same dot styling as the .toolbarbutton-badge.feature-callout rule in
+     * toolbarbuttons.css, duplicated here because this badge is keyed off an
+     * attribute rather than a class. Keep both in sync. */
+    > .toolbarbutton-badge-stack > .toolbarbutton-badge {
+      width: 14px;
+      height: 14px;
+      min-width: auto;
+      box-shadow: none;
+      border: none;
+      padding: 0;
+      display: block;
+      margin: -7px 0 0 !important;
+      margin-inline-end: -6px !important;
+      background: url("chrome://global/skin/icons/badge-blue.svg");
+    }
+  }
+}
+
 #email-link-button {
   list-style-image: url("chrome://browser/skin/mail.svg");
 }
@@ -453,8 +478,12 @@
   }
 }
 
-#smartwindow-group-tabs-button-inner {
+#smartwindow-group-tabs-button {
   list-style-image: url("chrome://browser/skin/grid-sparkle.svg");
+}
+
+#smartwindow-monitor-button {
+  list-style-image: url("chrome://browser/content/aiwindow/assets/agent-watch.svg");
 }
 
 #document-pip-return-to-opener-button {

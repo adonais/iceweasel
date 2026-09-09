@@ -9,20 +9,14 @@ import mozilla.components.support.base.facts.Action
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.collect
 
-/**
- * Facts emitted for telemetry related to the AwesomeBar composable.
- */
+/** Facts emitted for telemetry related to the AwesomeBar composable. */
 object AwesomeBarFacts {
-    /**
-     * Specific types of telemetry items.
-     */
+    /** Specific types of telemetry items. */
     object Items {
         const val PROVIDER_DURATION = "provider_duration"
     }
 
-    /**
-     * Keys used to record metadata about [Items].
-     */
+    /** Keys used to record metadata about [Items]. */
     object MetadataKeys {
         const val DURATION_PAIR = "duration_pair"
     }
@@ -34,11 +28,12 @@ object AwesomeBarFacts {
         metadata: Map<String, Any>? = null,
     ) {
         Fact(
-            Component.COMPOSE_AWESOMEBAR,
-            action,
-            item,
-            value,
-            metadata,
-        ).collect()
+                Component.COMPOSE_AWESOMEBAR,
+                action,
+                item,
+                value,
+                metadata,
+            )
+            .collect()
     }
 }

@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButtonDefaults as M3FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -47,6 +48,7 @@ import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.modifier.animateRotation
 import mozilla.components.compose.base.text.Text
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.createTab
@@ -57,8 +59,6 @@ import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 import org.mozilla.fenix.theme.FirefoxTheme
-import androidx.compose.material3.FloatingActionButtonDefaults as M3FloatingActionButtonDefaults
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Floating Toolbar for the Tab Manager.
@@ -165,27 +165,29 @@ private fun FloatingToolbarActions(
     var showBottomAppBarMenu by remember { mutableStateOf(false) }
     var showCloseAllTabsDialog by remember { mutableStateOf(false) }
 
-    val menuItems = generateMenuItems(
-        selectedPage = state.selectedPage,
-        normalTabCount = state.normalTabsState.items.size,
-        privateTabCount = state.privateBrowsing.tabs.size,
-        homepageAsNewTabEnabled = state.config.homepageAsNewTabEnabled,
-        onAccountSettingsClick = onAccountSettingsClick,
-        onTabSettingsClick = onTabSettingsClick,
-        onRecentlyClosedClick = onRecentlyClosedClick,
-        onNewTabGroupClick = onNewTabGroupClick,
-        onEnterMultiselectModeClick = onEnterMultiselectModeClick,
-        onSelectAllTabsClick = onSelectAllTabsClick,
-        onDeleteAllTabsClick = { showCloseAllTabsDialog = true },
-    )
+    val menuItems =
+        generateMenuItems(
+            selectedPage = state.selectedPage,
+            normalTabCount = state.normalTabsState.items.size,
+            privateTabCount = state.privateBrowsing.tabs.size,
+            homepageAsNewTabEnabled = state.config.homepageAsNewTabEnabled,
+            onAccountSettingsClick = onAccountSettingsClick,
+            onTabSettingsClick = onTabSettingsClick,
+            onRecentlyClosedClick = onRecentlyClosedClick,
+            onNewTabGroupClick = onNewTabGroupClick,
+            onEnterMultiselectModeClick = onEnterMultiselectModeClick,
+            onSelectAllTabsClick = onSelectAllTabsClick,
+            onDeleteAllTabsClick = { showCloseAllTabsDialog = true },
+        )
 
     Card(
         modifier = Modifier.height(56.dp),
         shape = CircleShape,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp),
     ) {
         Row(
@@ -248,11 +250,11 @@ internal fun FloatingToolbarFAB(
     onSyncedTabsFabClicked: () -> Unit,
     onTabGroupsFabClicked: () -> Unit,
 ) {
-    val isSyncDisabled = !state.sync.isSignedIn || state.sync.syncedTabs.any {
-        it is SyncedTabsListItem.Error && it.errorText == stringResource(
-            id = R.string.synced_tabs_reauth,
-        )
-    }
+    val isSyncDisabled =
+        !state.sync.isSignedIn ||
+            state.sync.syncedTabs.any {
+                it is SyncedTabsListItem.Error && it.errorText == stringResource(id = R.string.synced_tabs_reauth)
+            }
 
     @DrawableRes val icon: Int
     val contentDescription: String
@@ -290,12 +292,13 @@ internal fun FloatingToolbarFAB(
             }
             if (isSyncDisabled) {
                 colors = FloatingActionButtonDefaults.colorsDisabled()
-                elevation = M3FloatingActionButtonDefaults.elevation(
-                    defaultElevation = 0.dp,
-                    pressedElevation = 0.dp,
-                    focusedElevation = 0.dp,
-                    hoveredElevation = 0.dp,
-                )
+                elevation =
+                    M3FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 0.dp,
+                        pressedElevation = 0.dp,
+                        focusedElevation = 0.dp,
+                        hoveredElevation = 0.dp,
+                    )
             }
             iconModifier = Modifier.animateRotation(animate = state.sync.isSyncing)
         }
@@ -317,8 +320,7 @@ internal fun FloatingToolbarFAB(
 }
 
 /**
- * Confirmation dialog shown when the user selects the "Close all tabs" action
- * from the tab manager.
+ * Confirmation dialog shown when the user selects the "Close all tabs" action from the tab manager.
  *
  * @param onConfirm Invoked when the user confirms in closing all open tabs.
  * @param onDismiss Invoked when the dialog is dismissed without confirming.
@@ -371,121 +373,126 @@ private fun generateMenuItems(
     onDeleteAllTabsClick: () -> Unit,
     onAccountSettingsClick: () -> Unit,
 ): List<MenuItem> {
-    val enterSelectModeItem = MenuItem.IconItem(
-        text = Text.Resource(R.string.tabs_tray_select_tabs),
-        drawableRes = iconsR.drawable.mozac_ic_checkmark_24,
-        testTag = TabsTrayTestTag.SELECT_TABS,
-        onClick = onEnterMultiselectModeClick,
-    )
-    val selectAllTabsItem = MenuItem.IconItem(
-        text = Text.Resource(R.string.tab_tray_menu_select_all_tabs),
-        drawableRes = iconsR.drawable.mozac_ic_select_all_24,
-        testTag = TabsTrayTestTag.SELECT_ALL_TABS,
-        onClick = onSelectAllTabsClick,
-    )
-    val recentlyClosedTabsItem = MenuItem.IconItem(
-        text = Text.Resource(R.string.tab_tray_menu_recently_closed),
-        drawableRes = iconsR.drawable.mozac_ic_history_24,
-        testTag = TabsTrayTestTag.RECENTLY_CLOSED_TABS,
-        onClick = onRecentlyClosedClick,
-    )
-    val newTabGroupItem = MenuItem.IconItem(
-        text = Text.Resource(R.string.add_to_new_tab_group_title),
-        drawableRes = iconsR.drawable.mozac_ic_tab_group_24,
-        testTag = TabsTrayTestTag.NEW_TAB_GROUP,
-        onClick = onNewTabGroupClick,
-    )
-    val tabSettingsItem = MenuItem.IconItem(
-        text = Text.Resource(R.string.tab_tray_menu_tab_settings),
-        drawableRes = iconsR.drawable.mozac_ic_settings_24,
-        testTag = TabsTrayTestTag.TAB_SETTINGS,
-        onClick = onTabSettingsClick,
-    )
-    val deleteAllTabsItem = MenuItem.IconItem(
-        text = Text.Resource(R.string.tab_tray_menu_item_close),
-        drawableRes = iconsR.drawable.mozac_ic_delete_24,
-        testTag = TabsTrayTestTag.CLOSE_ALL_TABS,
-        onClick = onDeleteAllTabsClick,
-        level = MenuItem.FixedItem.Level.Critical,
-    )
-    val accountSettingsItem = MenuItem.IconItem(
-        text = Text.Resource(R.string.tab_tray_menu_account_settings),
-        drawableRes = iconsR.drawable.mozac_ic_avatar_circle_24,
-        testTag = TabsTrayTestTag.ACCOUNT_SETTINGS,
-        onClick = onAccountSettingsClick,
-    )
+    val enterSelectModeItem =
+        MenuItem.IconItem(
+            text = Text.Resource(R.string.tabs_tray_select_tabs),
+            drawableRes = iconsR.drawable.mozac_ic_checkmark_24,
+            testTag = TabsTrayTestTag.SELECT_TABS,
+            onClick = onEnterMultiselectModeClick,
+        )
+    val selectAllTabsItem =
+        MenuItem.IconItem(
+            text = Text.Resource(R.string.tab_tray_menu_select_all_tabs),
+            drawableRes = iconsR.drawable.mozac_ic_select_all_24,
+            testTag = TabsTrayTestTag.SELECT_ALL_TABS,
+            onClick = onSelectAllTabsClick,
+        )
+    val recentlyClosedTabsItem =
+        MenuItem.IconItem(
+            text = Text.Resource(R.string.tab_tray_menu_recently_closed),
+            drawableRes = iconsR.drawable.mozac_ic_history_24,
+            testTag = TabsTrayTestTag.RECENTLY_CLOSED_TABS,
+            onClick = onRecentlyClosedClick,
+        )
+    val newTabGroupItem =
+        MenuItem.IconItem(
+            text = Text.Resource(R.string.add_to_new_tab_group_title),
+            drawableRes = iconsR.drawable.mozac_ic_tab_group_24,
+            testTag = TabsTrayTestTag.NEW_TAB_GROUP,
+            onClick = onNewTabGroupClick,
+        )
+    val tabSettingsItem =
+        MenuItem.IconItem(
+            text = Text.Resource(R.string.tab_tray_menu_tab_settings),
+            drawableRes = iconsR.drawable.mozac_ic_settings_24,
+            testTag = TabsTrayTestTag.TAB_SETTINGS,
+            onClick = onTabSettingsClick,
+        )
+    val deleteAllTabsItem =
+        MenuItem.IconItem(
+            text = Text.Resource(R.string.tab_tray_menu_item_close),
+            drawableRes = iconsR.drawable.mozac_ic_delete_24,
+            testTag = TabsTrayTestTag.CLOSE_ALL_TABS,
+            onClick = onDeleteAllTabsClick,
+            level = MenuItem.FixedItem.Level.Critical,
+        )
+    val accountSettingsItem =
+        MenuItem.IconItem(
+            text = Text.Resource(R.string.tab_tray_menu_account_settings),
+            drawableRes = iconsR.drawable.mozac_ic_avatar_circle_24,
+            testTag = TabsTrayTestTag.ACCOUNT_SETTINGS,
+            onClick = onAccountSettingsClick,
+        )
     return when {
-        selectedPage == Page.NormalTabs && normalTabCount == 0 -> listOfNotNull(
-            recentlyClosedTabsItem,
-            newTabGroupItem.takeIf { homepageAsNewTabEnabled },
-            tabSettingsItem,
-        )
+        selectedPage == Page.NormalTabs && normalTabCount == 0 ->
+            listOfNotNull(
+                recentlyClosedTabsItem,
+                newTabGroupItem.takeIf { homepageAsNewTabEnabled },
+                tabSettingsItem,
+            )
 
-        selectedPage == Page.PrivateTabs && privateTabCount == 0 -> listOf(
-            recentlyClosedTabsItem,
-            tabSettingsItem,
-        )
+        selectedPage == Page.PrivateTabs && privateTabCount == 0 ->
+            listOf(
+                recentlyClosedTabsItem,
+                tabSettingsItem,
+            )
 
-        selectedPage == Page.NormalTabs -> listOfNotNull(
-            enterSelectModeItem,
-            selectAllTabsItem,
-            recentlyClosedTabsItem,
-            newTabGroupItem.takeIf { homepageAsNewTabEnabled },
-            tabSettingsItem,
-            deleteAllTabsItem,
-        )
+        selectedPage == Page.NormalTabs ->
+            listOfNotNull(
+                enterSelectModeItem,
+                selectAllTabsItem,
+                recentlyClosedTabsItem,
+                newTabGroupItem.takeIf { homepageAsNewTabEnabled },
+                tabSettingsItem,
+                deleteAllTabsItem,
+            )
 
-        selectedPage == Page.PrivateTabs -> listOf(
-            recentlyClosedTabsItem,
-            tabSettingsItem,
-            deleteAllTabsItem,
-        )
+        selectedPage == Page.PrivateTabs ->
+            listOf(
+                recentlyClosedTabsItem,
+                tabSettingsItem,
+                deleteAllTabsItem,
+            )
 
-        selectedPage == Page.SyncedTabs -> listOf(
-            accountSettingsItem,
-            recentlyClosedTabsItem,
-        )
+        selectedPage == Page.SyncedTabs ->
+            listOf(
+                accountSettingsItem,
+                recentlyClosedTabsItem,
+            )
 
         else -> emptyList()
     }
 }
 
 private class TabManagerFloatingToolbarParameterProvider : PreviewParameterProvider<TabsTrayState> {
-        val data = listOf(
+    val data =
+        listOf(
             Pair(
                 "Normal tabs page with at least one tab",
                 TabsTrayState(
                     selectedPage = Page.NormalTabs,
-                    normalTabsState = TabsTrayState.NormalTabsState(
-                        items = listOf(createTab(url = "url")),
-                    ),
+                    normalTabsState = TabsTrayState.NormalTabsState(items = listOf(createTab(url = "url"))),
                 ),
             ),
             Pair(
                 "Private tabs page with no tabs",
                 TabsTrayState(
                     selectedPage = Page.NormalTabs,
-                    normalTabsState = TabsTrayState.NormalTabsState(
-                        items = emptyList(),
-                    ),
+                    normalTabsState = TabsTrayState.NormalTabsState(items = emptyList()),
                 ),
             ),
             Pair(
                 "Private tabs page with tabs",
                 TabsTrayState(
                     selectedPage = Page.PrivateTabs,
-                    privateBrowsing = TabsTrayState.PrivateBrowsingState(
-                        tabs = listOf(createTab(url = "url")),
-                    ),
+                    privateBrowsing = TabsTrayState.PrivateBrowsingState(tabs = listOf(createTab(url = "url"))),
                 ),
             ),
             Pair(
                 "Private tabs page with no tabs",
                 TabsTrayState(
                     selectedPage = Page.PrivateTabs,
-                    privateBrowsing = TabsTrayState.PrivateBrowsingState(
-                        tabs = emptyList(),
-                    ),
+                    privateBrowsing = TabsTrayState.PrivateBrowsingState(tabs = emptyList()),
                 ),
             ),
             Pair(
@@ -499,10 +506,11 @@ private class TabManagerFloatingToolbarParameterProvider : PreviewParameterProvi
                 "Synced page while syncing",
                 TabsTrayState(
                     selectedPage = Page.SyncedTabs,
-                    sync = TabsTrayState.SyncState(
-                        isSignedIn = true,
-                        isSyncing = true,
-                    ),
+                    sync =
+                        TabsTrayState.SyncState(
+                            isSignedIn = true,
+                            isSyncing = true,
+                        ),
                 ),
             ),
             Pair(
@@ -525,7 +533,7 @@ private class TabManagerFloatingToolbarParameterProvider : PreviewParameterProvi
 @PreviewLightDark
 @Composable
 private fun TabManagerFloatingToolbarPreview(
-    @PreviewParameter(TabManagerFloatingToolbarParameterProvider::class) previewState: TabsTrayState,
+    @PreviewParameter(TabManagerFloatingToolbarParameterProvider::class) previewState: TabsTrayState
 ) {
     val store = remember { TabsTrayStore(initialState = previewState) }
     val state by store.stateFlow.collectAsState(initial = store.state)

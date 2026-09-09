@@ -1522,7 +1522,7 @@ static const struct wp_image_description_v1_listener
 bool WaylandSurface::EnableColorManagementLocked(
     const WaylandSurfaceLock& aProofOfLock, gfx::YUVColorSpace aColorSpace,
     gfx::TransferFunction aTransferFunction,
-    const mozilla::gfx::HDRMetadata& aHDRMetadata) {
+    const mozilla::gfx::HDRMetadata& aHDRMetadata, GdkWindow* aGdkWindow) {
   MOZ_DIAGNOSTIC_ASSERT(mIsMapped);
   MOZ_DIAGNOSTIC_ASSERT(!mColorSurface);
 
@@ -1622,6 +1622,38 @@ bool WaylandSurface::EnableColorManagementLocked(
         LOGWAYLAND("SetMDCV feature not supported.");
       }
     }
+
+    if (!aHDRMetadata.mContentLightLevel.isSome() &&
+        !aHDRMetadata.mSmpte2086.isSome()) {
+      // w/o hdr metadata we default luminances in the range [0, 1000] nits
+      const float minLuminance = 0;
+      const float maxLuminance = 1000;
+
+      RefPtr<widget::Screen> screen =
+          aGdkWindow ? ScreenHelperGTK::GetScreenForGdkWindow(aGdkWindow)
+                     : nullptr;
+
+      // if we don't have a screen we fallback at 80 nits for SDR white
+      float sdrContentBrightness =
+          screen ? screen->GetSDRContentBrightness() : 80.f;
+
+      uint16_t maxCLL = std::lround(std::max(0.0f, sdrContentBrightness));
+      uint16_t maxFALL = maxCLL;
+
+      LOGWAYLAND("HDR w/o metadata -> MaxCLL=%u cd/m^2, MaxFALL=%u cd/m^2",
+                 maxCLL, maxFALL);
+
+      wp_image_description_creator_params_v1_set_max_cll(params, maxCLL);
+      wp_image_description_creator_params_v1_set_max_fall(params, maxFALL);
+
+      if (WaylandDisplayGet()->IsSetLuminancesSupported()) {
+        LOGWAYLAND("HDR w/o metadata -> Luminances=(%f, %f, %f) cd/m^2",
+                   minLuminance, maxLuminance, sdrContentBrightness);
+        SetLuminances(params, minLuminance, maxLuminance, sdrContentBrightness);
+      } else {
+        LOGWAYLAND("SetLuminances feature not supported.");
+      }
+    }
   }
 
   mImageDescription = WUniquePtr<wp_image_description_v1>(
@@ -1687,6 +1719,17 @@ void WaylandSurface::SetColorRepresentationLocked(
 
 void WaylandSurface::AssertCurrentThreadOwnsMutex() {
   mMutex.AssertCurrentThreadOwns();
+}
+
+void WaylandSurface::SetLuminances(
+    wp_image_description_creator_params_v1* aParams, float minLum, float maxLum,
+    float refLum) {
+  uint32_t minLuminance = std::lround(std::max(0.0f, minLum) * 10000.0f);
+  uint32_t maxLuminance = std::lround(std::max(0.0f, maxLum));
+  uint32_t refLuminance = std::lround(std::max(0.0f, refLum));
+
+  wp_image_description_creator_params_v1_set_luminances(
+      aParams, minLuminance, maxLuminance, refLuminance);
 }
 
 void WaylandSurface::SetContentLightLevel(

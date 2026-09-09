@@ -18,7 +18,7 @@ class ConstraintValidation : public nsIConstraintValidation {
   // Web IDL binding methods
   void GetValidationMessage(nsAString& aValidationMessage,
                             mozilla::ErrorResult& aError);
-  bool CheckValidity();
+  MOZ_CAN_RUN_SCRIPT bool CheckValidity();
 
  protected:
   // You can't instantiate an object from that class.

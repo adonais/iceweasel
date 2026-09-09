@@ -120,7 +120,7 @@ fn generate_annotation_skiplist(annotations: &[Annotation]) -> Result<String, Er
         if let Some(skip_if) = &annotation.skip_if {
             let entry = format!(
                 "    CrashAnnotationSkipValue {{ annotation: CrashAnnotation::{}, value: b\"{}\" }},\n",
-                &annotation.name, skip_if
+                annotation.name, skip_if
             );
             skiplist.push_str(&entry);
         }

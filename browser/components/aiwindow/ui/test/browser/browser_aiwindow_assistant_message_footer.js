@@ -65,6 +65,33 @@ add_task(async function test_message_footer_wires_buttons() {
   });
 });
 
+add_task(async function test_message_footer_hides_retry() {
+  await BrowserTestUtils.withNewTab(TEST_PAGE, async browser => {
+    await SpecialPowers.spawn(browser, [], async () => {
+      const footer = content.document.getElementById("footer");
+      footer.messageId = "msg-1";
+      footer.hideRetry = true;
+
+      await content.customElements.whenDefined("assistant-message-footer");
+      await footer.updateComplete;
+
+      const shadow = footer.shadowRoot;
+      ok(
+        !shadow.querySelector("moz-button.retry-button"),
+        "Retry button is not rendered when hideRetry is true"
+      );
+
+      footer.hideRetry = false;
+      await footer.updateComplete;
+
+      ok(
+        shadow.querySelector("moz-button.retry-button"),
+        "Retry button is rendered again once hideRetry is false"
+      );
+    });
+  });
+});
+
 add_task(async function test_feedback_buttons() {
   await BrowserTestUtils.withNewTab(TEST_PAGE, async browser => {
     await SpecialPowers.spawn(browser, [], async () => {

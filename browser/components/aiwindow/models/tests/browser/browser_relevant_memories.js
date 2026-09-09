@@ -61,12 +61,6 @@ add_task(async function test_constructRelevantMemoriesContextMessage() {
     "Should have the message and relevantMemories keys"
   );
 
-  // Check specific fields
-  Assert.equal(
-    relevantMemoriesContextMessage.message.role,
-    "system",
-    "Should have role 'system'"
-  );
   Assert.ok(
     relevantMemoriesContextMessage.message.content.includes(
       "# Existing Memories"

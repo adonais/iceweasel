@@ -39,8 +39,8 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
- * Dialog fragment for starting profiling sessions. Simplified with all permission handling
- * now delegated to the ProfilerService and NotificationsDelegate.
+ * Dialog fragment for starting profiling sessions. Simplified with all permission handling now delegated to the
+ * ProfilerService and NotificationsDelegate.
  */
 class ProfilerStartDialogFragment : AppCompatDialogFragment() {
 
@@ -66,15 +66,16 @@ class ProfilerStartDialogFragment : AppCompatDialogFragment() {
         val uiState by viewModel.uiState.collectAsState()
         val context = LocalContext.current
 
-        val toastMessage: String? = when (val state = uiState) {
-            is ProfilerUiState.ShowToast -> {
-                stringResource(state.messageResId) + state.extra
+        val toastMessage: String? =
+            when (val state = uiState) {
+                is ProfilerUiState.ShowToast -> {
+                    stringResource(state.messageResId) + state.extra
+                }
+                is ProfilerUiState.Error -> {
+                    stringResource(state.messageResId) + " " + state.errorDetails
+                }
+                else -> null
             }
-            is ProfilerUiState.Error -> {
-                stringResource(state.messageResId) + " " + state.errorDetails
-            }
-            else -> null
-        }
 
         LaunchedEffect(uiState) {
             toastMessage?.let {
@@ -90,7 +91,7 @@ class ProfilerStartDialogFragment : AppCompatDialogFragment() {
                 if (uiState is ProfilerUiState.Idle) {
                     this@ProfilerStartDialogFragment.dismiss()
                 }
-            },
+            }
         ) {
             when (val currentState = uiState) {
                 is ProfilerUiState.Idle -> {
@@ -139,27 +140,26 @@ class ProfilerStartDialogFragment : AppCompatDialogFragment() {
             )
 
             Spacer(modifier = Modifier.height(8.dp))
-            Column(
-                modifier = Modifier.weight(1f, fill = false)
-                    .verticalScroll(rememberScrollState()),
-            ) {
+            Column(modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
                 ProfilerSettings.entries.forEach { setting ->
-                    val settingName = when (setting) {
-                        ProfilerSettings.Firefox -> stringResource(R.string.profiler_filter_firefox)
-                        ProfilerSettings.Graphics -> stringResource(R.string.profiler_filter_graphics)
-                        ProfilerSettings.Media -> stringResource(R.string.profiler_filter_media)
-                        ProfilerSettings.Networking -> stringResource(R.string.profiler_filter_networking)
-                        ProfilerSettings.Debug -> stringResource(R.string.profiler_filter_debug)
-                        ProfilerSettings.WebCompat -> stringResource(R.string.profiler_filter_web_compat)
-                    }
-                    val settingDesc = when (setting) {
-                        ProfilerSettings.Firefox -> stringResource(R.string.profiler_filter_firefox_explain)
-                        ProfilerSettings.Graphics -> stringResource(R.string.profiler_filter_graphics_explain)
-                        ProfilerSettings.Media -> stringResource(R.string.profiler_filter_media_explain)
-                        ProfilerSettings.Networking -> stringResource(R.string.profiler_filter_networking_explain)
-                        ProfilerSettings.Debug -> stringResource(R.string.profiler_filter_debug_explain)
-                        ProfilerSettings.WebCompat -> stringResource(R.string.profiler_filter_web_compat_explain)
-                    }
+                    val settingName =
+                        when (setting) {
+                            ProfilerSettings.Firefox -> stringResource(R.string.profiler_filter_firefox)
+                            ProfilerSettings.Graphics -> stringResource(R.string.profiler_filter_graphics)
+                            ProfilerSettings.Media -> stringResource(R.string.profiler_filter_media)
+                            ProfilerSettings.Networking -> stringResource(R.string.profiler_filter_networking)
+                            ProfilerSettings.Debug -> stringResource(R.string.profiler_filter_debug)
+                            ProfilerSettings.WebCompat -> stringResource(R.string.profiler_filter_web_compat)
+                        }
+                    val settingDesc =
+                        when (setting) {
+                            ProfilerSettings.Firefox -> stringResource(R.string.profiler_filter_firefox_explain)
+                            ProfilerSettings.Graphics -> stringResource(R.string.profiler_filter_graphics_explain)
+                            ProfilerSettings.Media -> stringResource(R.string.profiler_filter_media_explain)
+                            ProfilerSettings.Networking -> stringResource(R.string.profiler_filter_networking_explain)
+                            ProfilerSettings.Debug -> stringResource(R.string.profiler_filter_debug_explain)
+                            ProfilerSettings.WebCompat -> stringResource(R.string.profiler_filter_web_compat_explain)
+                        }
 
                     ProfilerLabeledRadioButton(
                         text = settingName,

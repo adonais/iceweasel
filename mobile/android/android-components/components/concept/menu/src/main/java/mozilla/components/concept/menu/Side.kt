@@ -4,17 +4,11 @@
 
 package mozilla.components.concept.menu
 
-/**
- * Indicates the starting or ending side of the menu or an option.
- */
+/** Indicates the starting or ending side of the menu or an option. */
 enum class Side {
-    /**
-     * Starting side (top or left).
-     */
+    /** Starting side (top or left). */
     START,
 
-    /**
-     * Ending side (bottom or right).
-     */
+    /** Ending side (bottom or right). */
     END,
 }

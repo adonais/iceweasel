@@ -764,9 +764,6 @@ existing_tasks:
   source-test-jsshell-bench-sunspider-sm: HxAlqr5PQtOtzLukfCHO4Q
   source-test-jsshell-bench-web-tooling-sm: G0I2H8XbTaeskioopdvm1w
   source-test-jsshell-bench-web-tooling-v8: fKcLQRSsT9eQTcDoOhdHSQ
-  source-test-ktlint-android-components: LPGpNy6mS1yguxA8Zruikg
-  source-test-ktlint-fenix: fwiMAbkITh6RIsB61BwZzA
-  source-test-ktlint-focus: eIeqyyRQSlmJgL8uzyh9XA
   source-test-mozlint-android-android-components: NliWkhZuQqasIx-BavjXtA
   source-test-mozlint-android-fenix: GROiXRwWRj-HLlwOKEKcSw
   source-test-mozlint-android-focus: AY8otzFuR0Gqe-6N02tA4g
@@ -5219,6 +5216,7 @@ filters:
   - target_tasks_method
 head_git_repository: https://github.com/mozilla-firefox/firefox
 head_git_rev: 88121de0ccd1a6e364645b9971f36c5eb00f4317
+head_git_ref: refs/heads/main
 head_ref: 9a81a01d61b6342b237a6431865eef20ee487c20
 head_repository: https://hg.mozilla.org/mozilla-central
 head_rev: 9a81a01d61b6342b237a6431865eef20ee487c20

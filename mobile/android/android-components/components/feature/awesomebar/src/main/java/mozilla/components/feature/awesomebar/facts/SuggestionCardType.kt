@@ -4,9 +4,7 @@
 
 package mozilla.components.feature.awesomebar.facts
 
-/**
- * Suggestion card types used for telemetry related to the AwesomeBar feature.
- */
+/** Suggestion card types used for telemetry related to the AwesomeBar feature. */
 enum class SuggestionCardType(val value: String) {
     STOCKS("stocks"),
     SPORTS("sports"),

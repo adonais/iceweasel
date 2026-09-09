@@ -62,11 +62,18 @@ const SECURE_EXPERIMENTS_COLLECTION = "secureExperiments";
 const IS_MAIN_PROCESS =
   Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT;
 
+// IMPORTANT: This list of feature IDs will *only* be accepted if they come from
+// the secure collection (nimbus-secure-experiments).
+//
+// All new features to this list *must* be added to the corresponding list in
+// Experimenter:
+// https://github.com/mozilla/experimenter/blob/cca860ba06f07874800423bed616b9f51166d9e0/experimenter/experimenter/experiments/constants.py#L280-L283
 const SECURE_FEATURE_IDS = new Set([
   "prefFlips",
   "newtabTrainhopAddon",
   "newtabTrainhopAddonDeployment",
 ]);
+
 const RS_COLLECTION_OPTIONS = {
   [EXPERIMENTS_COLLECTION]: {
     // None of these features can be present to accept an experiment from the

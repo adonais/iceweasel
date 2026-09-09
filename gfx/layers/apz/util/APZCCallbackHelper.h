@@ -161,7 +161,7 @@ class APZCCallbackHelper {
       uint64_t aInputBlockId);
 
   /* Notify content of a mouse scroll testing event. */
-  static void NotifyMozMouseScrollEvent(
+  MOZ_CAN_RUN_SCRIPT static void NotifyMozMouseScrollEvent(
       const ScrollableLayerGuid::ViewID& aScrollId, const nsString& aEvent);
 
   /* Notify content that the repaint flush is complete. */

@@ -82,19 +82,23 @@ skip-if = [
 ["browser_private_search_perwindowpb.js"]
 
 ["browser_remote_override.js"]
+tags = "urlbar"
 
 ["browser_rich_suggestions.js"]
+tags = "urlbar"
 support-files = ["trendingSuggestionEngine.sjs"]
 
 ["browser_searchPanelHeader.js"]
 
 ["browser_searchRestrictToken_privateWindow.js"]
+tags = "urlbar"
 
 ["browser_search_annotation.js"]
 
 ["browser_search_discovery.js"]
 
 ["browser_search_lastused_pref.js"]
+tags = "urlbar"
 
 ["browser_searchbar_addEngine.js"]
 
@@ -123,6 +127,7 @@ skip-if = [
 ["browser_tooManyEnginesOffered.js"]
 
 ["browser_trending_suggestions.js"]
+tags = "urlbar"
 support-files = ["trendingSuggestionEngine.sjs"]
 
 ["browser_webSearch.js"]

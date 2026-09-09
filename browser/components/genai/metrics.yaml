@@ -961,6 +961,43 @@ genai.linkpreview:
         type: quantity
         description: Milliseconds to generate full result
 
+  smoke_test:
+    type: event
+    description: >
+      This tests whether SmolLM2-360M is producing the correct output when set in greedy mode,
+      which is done to produce deterministic results.  This fires at most once per build ID per install.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2047026
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2047026
+    data_sensitivity:
+      - technical
+    expires: 170
+    notification_emails:
+      - firefox-ai-and-ml@mozilla.com
+    send_in_pings:
+      - events
+    extra_keys:
+      flow_id:
+        type: string
+        description: >
+          Joins to sibling firefox.ai.runtime.engine_run and
+          run_inference_success_flow events for the same inference.
+      output_hash:
+        type: string
+        description: >
+          SHA-256 of the greedy output. Analysts bucket users whose output
+          drifted the same way by grouping on this hash.
+      matches_pinned:
+        type: boolean
+        description: Whether output_hash equalled the pinned reference.
+      model_id:
+        type: string
+        description: Model identifier used by the smoke test run.
+      model_revision:
+        type: string
+        description: Model revision used by the smoke test run.
+
   key_points_toggle:
     type: event
     description: >

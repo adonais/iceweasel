@@ -37,6 +37,14 @@ add_task(function test() {
     parseFloat(UrlbarPrefs.get("intentThreshold").toFixed(2)),
     0.75
   );
+
+  UrlbarPrefs.set("placeholderName", "百度");
+  Assert.equal(
+    UrlbarPrefs.get("placeholderName"),
+    "百度",
+    "UTF-8 prefs are read corrently"
+  );
+  Services.prefs.clearUserPref("browser.urlbar.placeholderName");
 });
 
 const EXPECTED_SUGGESTIONS_FIRST_GROUPS = {

@@ -7,18 +7,14 @@ package org.mozilla.fenix.components.appstate
 import org.mozilla.fenix.components.appstate.AppAction.ShortcutAction
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState
 
-/**
- * A [ShortcutAction] reducer that updates [AppState.snackbarState].
- */
+/** A [ShortcutAction] reducer that updates [AppState.snackbarState]. */
 internal object ShortcutStateReducer {
-    fun reduce(state: AppState, action: ShortcutAction): AppState = when (action) {
-        is ShortcutAction.ShortcutAdded -> state.copy(
-            snackbarState = SnackbarState.ShortcutAdded,
-        )
+    fun reduce(state: AppState, action: ShortcutAction): AppState =
+        when (action) {
+            is ShortcutAction.ShortcutAdded -> state.copy(snackbarState = SnackbarState.ShortcutAdded)
 
-        is ShortcutAction.AddShortcutSheetShown,
-        is ShortcutAction.AddWebsiteDialogShown,
-        is ShortcutAction.FrecencyTopSitePromoted,
-            -> state
-    }
+            is ShortcutAction.AddShortcutSheetShown,
+            is ShortcutAction.AddWebsiteDialogShown,
+            is ShortcutAction.FrecencyTopSitePromoted -> state
+        }
 }

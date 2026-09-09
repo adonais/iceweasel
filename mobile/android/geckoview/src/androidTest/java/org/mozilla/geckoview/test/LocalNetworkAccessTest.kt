@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -9,19 +9,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * This pref references the request blocking feature of the Local Network / Device Access feature.
- */
+/** This pref references the request blocking feature of the Local Network / Device Access feature. */
 private const val LNA_BLOCKING_PREF = "network.lna.blocking"
 
-/**
- * This pref references the tracker blocking features of the Local Network / Device Access feature.
- */
+/** This pref references the tracker blocking features of the Local Network / Device Access feature. */
 private const val LNA_TRACKER_BLOCKING_PREF = "network.lna.block_trackers"
 
-/**
- * This pref references the state of the overall Local Network / Device Access feature.
- */
+/** This pref references the state of the overall Local Network / Device Access feature. */
 private const val LNA_FEATURE_ENABLED_PREF = "network.lna.enabled"
 
 @RunWith(AndroidJUnit4::class)
@@ -104,8 +98,7 @@ class LocalNetworkAccessTest : BaseSessionTest() {
         val settings = sessionRule.runtime.settings
         settings.setLnaEnabled(true)
 
-        val lnaFeatureEnabledPrefValue =
-            sessionRule.getPrefs(LNA_FEATURE_ENABLED_PREF)[0] as Boolean
+        val lnaFeatureEnabledPrefValue = sessionRule.getPrefs(LNA_FEATURE_ENABLED_PREF)[0] as Boolean
         assertTrue(
             "Calling setLnaFeatureEnabled(true) should set the pref to true",
             lnaFeatureEnabledPrefValue,
@@ -117,8 +110,7 @@ class LocalNetworkAccessTest : BaseSessionTest() {
         val settings = sessionRule.runtime.settings
         settings.setLnaEnabled(false)
 
-        val lnaEnabledPrefValue =
-            sessionRule.getPrefs(LNA_FEATURE_ENABLED_PREF)[0] as Boolean
+        val lnaEnabledPrefValue = sessionRule.getPrefs(LNA_FEATURE_ENABLED_PREF)[0] as Boolean
         assertFalse(
             "Calling setLnaEnabled(false) should set the pref to false",
             lnaEnabledPrefValue,
@@ -153,8 +145,7 @@ class LocalNetworkAccessTest : BaseSessionTest() {
 
         settings.setLnaBlockTrackers(true)
 
-        val lnaTrackerBlockingPrefValue =
-            sessionRule.getPrefs(LNA_TRACKER_BLOCKING_PREF)[0] as Boolean
+        val lnaTrackerBlockingPrefValue = sessionRule.getPrefs(LNA_TRACKER_BLOCKING_PREF)[0] as Boolean
 
         assertTrue(
             "Calling setLnaBlockTrackers(true) should set the pref to true",
@@ -168,8 +159,7 @@ class LocalNetworkAccessTest : BaseSessionTest() {
 
         settings.setLnaBlockTrackers(false)
 
-        val lnaTrackerBlockingPrefValue =
-            sessionRule.getPrefs(LNA_TRACKER_BLOCKING_PREF)[0] as Boolean
+        val lnaTrackerBlockingPrefValue = sessionRule.getPrefs(LNA_TRACKER_BLOCKING_PREF)[0] as Boolean
 
         assertFalse(
             "Calling setLnaBlockTrackers(false) should set the pref to false",

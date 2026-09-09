@@ -1819,15 +1819,9 @@ public:
     F->Output.push_back(std::move(ros.str()));
   }
 
-  std::string typeToString(QualType Type) {
-    if (CXXRecordDecl* cxxDecl = Type->getAsCXXRecordDecl()) {
-      if (cxxDecl->isLambda()) {
-        return getQualifiedName(cxxDecl);
-      }
-    }
-    return Type.getAsString();
-  }
-  std::string typeToString(QualType Type, PrintingPolicy policy) {
+  std::string typeToString(QualType Type, PrintingPolicy policy = LangOptions{}) {
+    policy.FullyQualifiedName = true;
+
     if (CXXRecordDecl* cxxDecl = Type->getAsCXXRecordDecl()) {
       if (cxxDecl->isLambda()) {
         return getQualifiedName(cxxDecl);
@@ -2152,7 +2146,11 @@ public:
   }
 
   SourceRange getCommentRange(NamedDecl *D) {
+#if CLANG_VERSION_MAJOR >= 23
+    const RawComment *RC = AstContext->getRawCommentNoCache(D);
+#else
     const RawComment *RC = AstContext->getRawCommentForDeclNoCache(D);
+#endif
     if (!RC) {
       return SourceRange();
     }
@@ -2557,7 +2555,7 @@ public:
   }
 
   bool VisitTagTypeLoc(TagTypeLoc L) {
-    SourceLocation Loc = L.getBeginLoc();
+    SourceLocation Loc = L.getNameLoc();
     if (!isInterestingLocation(Loc)) {
       return true;
     }
@@ -2572,7 +2570,7 @@ public:
   }
 
   bool VisitTypedefTypeLoc(TypedefTypeLoc L) {
-    SourceLocation Loc = L.getBeginLoc();
+    SourceLocation Loc = L.getNameLoc();
     if (!isInterestingLocation(Loc)) {
       return true;
     }
@@ -2587,7 +2585,7 @@ public:
   }
 
   bool VisitInjectedClassNameTypeLoc(InjectedClassNameTypeLoc L) {
-    SourceLocation Loc = L.getBeginLoc();
+    SourceLocation Loc = L.getNameLoc();
     if (!isInterestingLocation(Loc)) {
       return true;
     }
@@ -2602,7 +2600,7 @@ public:
   }
 
   bool VisitTemplateSpecializationTypeLoc(TemplateSpecializationTypeLoc L) {
-    SourceLocation Loc = L.getBeginLoc();
+    SourceLocation Loc = L.getTemplateNameLoc();
     if (!isInterestingLocation(Loc)) {
       return true;
     }
@@ -2610,6 +2608,10 @@ public:
     SourceLocation SpellingLoc = SM.getSpellingLoc(Loc);
 
     TemplateDecl *Td = L.getTypePtr()->getTemplateName().getAsTemplateDecl();
+    if (!Td) {
+      return true;
+    }
+
     if (ClassTemplateDecl *D = dyn_cast<ClassTemplateDecl>(Td)) {
       NamedDecl *Decl = D->getTemplatedDecl();
       std::string Mangled = getMangledName(CurMangleContext, Decl);

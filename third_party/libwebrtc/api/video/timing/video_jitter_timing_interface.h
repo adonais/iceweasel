@@ -13,6 +13,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <span>
 
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
@@ -46,10 +47,16 @@ class VideoJitterTimingInterface {
   // Resets the model to its initial state.
   virtual void Reset() = 0;
 
-  // Updates the model with information of a complete frame.
+  // Updates the model when a frame becomes complete.
   virtual void OnCompleteFrame(const FrameInfo& info) = 0;
 
-  // Updates the model with information of a decodable temporal unit.
+  // Updates the model when temporal units become continuous.
+  // Returns the estimated jitter delay (or nullopt if not available).
+  virtual std::optional<TimeDelta> OnContinuousTemporalUnits(
+      std::span<const uint32_t> rtp_timestamps,
+      Timestamp now) = 0;
+
+  // Updates the model when a temporal unit becomes decodable.
   // Returns the estimated jitter delay (or nullopt if not available).
   virtual std::optional<TimeDelta> OnDecodableTemporalUnit(
       const TemporalUnitInfo& info) = 0;

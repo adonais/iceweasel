@@ -60,14 +60,15 @@ class SponsoredContentsRepositoryTest {
     }
 
     @Test
-    fun `GIVEN a sponsored contents response WHEN sponsored contents are added THEN persist the provided sponsored contents in storage`() = runTest {
-        val response = PocketTestResources.marsSpocsResponse
-        val entities = response.spocs.map { it.toSponsoredContentEntity() }
+    fun `GIVEN a sponsored contents response WHEN sponsored contents are added THEN persist the provided sponsored contents in storage`() =
+        runTest {
+            val response = PocketTestResources.marsSpocsResponse
+            val entities = response.spocs.map { it.toSponsoredContentEntity() }
 
-        repository.addSponsoredContents(response)
+            repository.addSponsoredContents(response)
 
-        verify(dao).cleanOldAndInsertNewSponsoredContents(sponsoredContents = entities)
-    }
+            verify(dao).cleanOldAndInsertNewSponsoredContents(sponsoredContents = entities)
+        }
 
     @Test
     fun `WHEN sponsored content impressions are recorded THEN persist the impressions in storage`() = runTest {

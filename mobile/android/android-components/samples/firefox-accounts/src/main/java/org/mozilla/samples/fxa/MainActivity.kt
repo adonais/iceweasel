@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.app.ActivityCompat
 import androidx.core.net.toUri
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,7 +37,6 @@ import mozilla.components.support.base.log.sink.AndroidLogSink
 import mozilla.components.support.ktx.android.view.setupPersistentInsets
 import mozilla.components.support.rusthttp.RustHttpConfig
 import mozilla.components.support.rustlog.RustLog
-import kotlin.coroutines.CoroutineContext
 
 open class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteListener, CoroutineScope {
     private var scopesWithoutKeys: Set<String> = setOf("profile")
@@ -53,11 +53,12 @@ open class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteList
         FxaAccountManager(
             context = applicationContext,
             serverConfig = ServerConfig(FxaServer.Custom(CONFIG_URL), CLIENT_ID, REDIRECT_URL),
-            deviceConfig = DeviceConfig(
-                name = "A-C FxA Sample",
-                type = DeviceType.MOBILE,
-                capabilities = setOf(DeviceCapability.SEND_TAB),
-            ),
+            deviceConfig =
+                DeviceConfig(
+                    name = "A-C FxA Sample",
+                    type = DeviceType.MOBILE,
+                    capabilities = setOf(DeviceCapability.SEND_TAB),
+                ),
             syncConfig = null,
             applicationScopes = scopesWithKeys,
         )
@@ -86,32 +87,34 @@ open class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteList
         accountManager.register(accountObserver, owner = this, autoPause = true)
         launch { accountManager.start() }
 
-        qrFeature = QrFeature(
-            this,
-            fragmentManager = supportFragmentManager,
-            onNeedToRequestPermissions = { permissions ->
-                ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE_CAMERA_PERMISSIONS)
-            },
-            onScanResult = { pairingUrl ->
-                launch {
-                    val url = accountManager.beginAuthentication(
-                        pairingUrl = pairingUrl,
-                        entrypoint = SampleFxAEntryPoint.HomeMenu,
-                        authScopes = scopes,
-                    )
-                    if (url == null) {
-                        Log.log(
-                            Log.Priority.ERROR,
-                            tag = "mozac-samples-fxa",
-                            message = "Pairing flow failed for $pairingUrl",
-                        )
-                        return@launch
+        qrFeature =
+            QrFeature(
+                this,
+                fragmentManager = supportFragmentManager,
+                onNeedToRequestPermissions = { permissions ->
+                    ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE_CAMERA_PERMISSIONS)
+                },
+                onScanResult = { pairingUrl ->
+                    launch {
+                        val url =
+                            accountManager.beginAuthentication(
+                                pairingUrl = pairingUrl,
+                                entrypoint = SampleFxAEntryPoint.HomeMenu,
+                                authScopes = scopes,
+                            )
+                        if (url == null) {
+                            Log.log(
+                                Log.Priority.ERROR,
+                                tag = "mozac-samples-fxa",
+                                message = "Pairing flow failed for $pairingUrl",
+                            )
+                            return@launch
+                        }
+                        openWebView(url)
                     }
-                    openWebView(url)
-                }
-            },
-            scanMessage = R.string.pair_instructions_message,
-        )
+                },
+                scanMessage = R.string.pair_instructions_message,
+            )
 
         lifecycle.addObserver(qrFeature)
 
@@ -174,10 +177,8 @@ open class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteList
     }
 
     private fun openTab(url: String) {
-        val customTabsIntent = CustomTabsIntent.Builder()
-            .setShareState(CustomTabsIntent.SHARE_STATE_ON)
-            .setShowTitle(true)
-            .build()
+        val customTabsIntent =
+            CustomTabsIntent.Builder().setShareState(CustomTabsIntent.SHARE_STATE_ON).setShowTitle(true).build()
 
         customTabsIntent.intent.data = url.toUri()
         customTabsIntent.launchUrl(this@MainActivity, url.toUri())
@@ -196,22 +197,23 @@ open class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteList
         txtView.text = getString(R.string.signed_in, "${profile.displayName ?: ""} ${profile.email}")
     }
 
-    private val accountObserver = object : AccountObserver {
-        override fun onAuthenticated(account: OAuthAccount, authType: AuthType) {
-            launch {
-                account.getProfile()?.let { displayProfile(it) }
+    private val accountObserver =
+        object : AccountObserver {
+            override fun onAuthenticated(account: OAuthAccount, authType: AuthType) {
+                launch {
+                    account.getProfile()?.let { displayProfile(it) }
+                }
+            }
+
+            override fun onProfileUpdated(profile: Profile) {
+                displayProfile(profile)
+            }
+
+            override fun onLoggedOut() {
+                val txtView: TextView = findViewById(R.id.txtView)
+                txtView.text = getString(R.string.logged_out)
             }
         }
-
-        override fun onProfileUpdated(profile: Profile) {
-            displayProfile(profile)
-        }
-
-        override fun onLoggedOut() {
-            val txtView: TextView = findViewById(R.id.txtView)
-            txtView.text = getString(R.string.logged_out)
-        }
-    }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         when (requestCode) {

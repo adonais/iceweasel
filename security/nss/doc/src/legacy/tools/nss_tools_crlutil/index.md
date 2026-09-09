@@ -4,7 +4,7 @@
 
 (using-the-certificate-revocation-list-management-tool)=
 
-## [Using the Certificate Revocation List Management Tool](#using_the_certificate_revocation_list_management_tool)
+## Using the Certificate Revocation List Management Tool
 
 :::{container}
 Newsgroup: [mozilla.dev.tech.crypto](news://news.mozilla.org/mozilla.dev.tech.crypto)
@@ -26,7 +26,7 @@ Tool](NSS_Tools_certutil).
 ## \` \<#availability_2>\`\_\_ Availability
 
 :::{container}
-See the {ref}`mozilla_projects_nss_releases` for the platforms this tool is available on.
+See the {ref}`mozilla-projects-nss-releases` for the platforms this tool is available on.
 :::
 
 ## \` \<#syntax_2>\`\_\_ Syntax
@@ -41,7 +41,7 @@ following section. Each command takes one option. Each option may take zero or m
 see a usage string, issue the command without options, or with the `-H` option.
 :::
 
-### [Options and Arguments](#options_and_arguments)
+### Options and Arguments
 
 :::{container}
 Options specify an action and are uppercase. Option arguments modify an action and are lowercase.
@@ -49,92 +49,92 @@ Certificate Revocation List Management Tool command options and their arguments 
 follows:
 
 ```{eval-rst}
-+-------------------------------------------------+-------------------------------------------------+
-| **Options**                                     |                                                 |
-+-------------------------------------------------+-------------------------------------------------+
-| ``-G``                                          | Create new Certificate Revocation List(CRL).    |
-+-------------------------------------------------+-------------------------------------------------+
-| ``-D``                                          | Delete Certificate Revocation List from cert    |
-|                                                 | database.                                       |
-+-------------------------------------------------+-------------------------------------------------+
-| ``-I``                                          | Import a CRL to the cert database               |
-+-------------------------------------------------+-------------------------------------------------+
-| ``-E``                                          | Erase all CRLs of specified type from the cert  |
-|                                                 | database                                        |
-+-------------------------------------------------+-------------------------------------------------+
-| ``-L``                                          | List existing CRL located in cert database      |
-|                                                 | file.                                           |
-+-------------------------------------------------+-------------------------------------------------+
-| ``-M``                                          | Modify existing CRL which can be located in     |
-|                                                 | cert db or in arbitrary file. If located in     |
-|                                                 | file it should be encoded in ASN.1 encode       |
-|                                                 | format.                                         |
-+-------------------------------------------------+-------------------------------------------------+
-| **Arguments**                                   |                                                 |
-+-------------------------------------------------+-------------------------------------------------+
-| ``-B``                                          | Bypass CA signature checks.                     |
-+-------------------------------------------------+-------------------------------------------------+
-| ``-P``\ *dbprefix*                              | Specify the prefix used on the                  |
-|                                                 | ``NSS security database`` files (for example,   |
-|                                                 | ``my_cert8.db`` and ``my_key3.db``). This       |
-|                                                 | option is provided as a special case. Changing  |
-|                                                 | the names of the certificate and key databases  |
-|                                                 | is not recommended.                             |
-+-------------------------------------------------+-------------------------------------------------+
-| ``-a``                                          | Use ASCII format or allow the use of ASCII      |
-|                                                 | format for input and output. This formatting    |
-|                                                 | follows `RFC                                    |
-|                                                 | #1113 <http                                     |
-|                                                 | ://andrew2.andrew.cmu.edu/rfc/rfc1113.html>`__. |
-+-------------------------------------------------+-------------------------------------------------+
-| ``-c``\ *crl-gen-file*                          | Specify script file that will be used to        |
-|                                                 | control crl generation/modification. See        |
-|                                                 | crl-cript-file `format <#10232455>`__ below. If |
-|                                                 | options *-M|-G* is used and *-c                 |
-|                                                 | crl-script-file* is not specified, crlutil will |
-|                                                 | read script data from standard input.           |
-+-------------------------------------------------+-------------------------------------------------+
-| ``-d``\ *directory*                             | Specify the database directory containing the   |
-|                                                 | certificate and key database files. On Unix the |
-|                                                 | Certificate Database Tool defaults to           |
-|                                                 | ``$HOME/.netscape`` (that is, ``~/.netscape``). |
-|                                                 | On Windows NT the default is the current        |
-|                                                 | directory.                                      |
-|                                                 |                                                 |
-|                                                 | The ``NSS database`` files must reside in the   |
-|                                                 | same directory.                                 |
-+-------------------------------------------------+-------------------------------------------------+
-| ``-i``\ *crl-import-file*                       | Specify the file which contains the CRL to      |
-|                                                 | import                                          |
-+-------------------------------------------------+-------------------------------------------------+
-| ``-f``\ *password-file*                         | Specify a file that will automatically supply   |
-|                                                 | the password to include in a certificate or to  |
-|                                                 | access a certificate database. This is a        |
-|                                                 | plain-text file containing one password. Be     |
-|                                                 | sure to prevent unauthorized access to this     |
-|                                                 | file.                                           |
-+-------------------------------------------------+-------------------------------------------------+
-| ``-l``\ *algorithm-name*                        | Specify a specific signature algorithm. List of |
-|                                                 | possible algorithms: MD2 \| MD4 \| MD5 \| SHA1  |
-|                                                 | \| SHA256 \| SHA384 \| SHA512                   |
-+-------------------------------------------------+-------------------------------------------------+
-| ``-n``\ *nickname*                              | Specify the nickname of a certificate or key to |
-|                                                 | list, create, add to a database, modify, or     |
-|                                                 | validate. Bracket the *nickname* string with    |
-|                                                 | quotation marks if it contains spaces.          |
-+-------------------------------------------------+-------------------------------------------------+
-| ``-o``\ *output-file*                           | Specify the output file name for new CRL.       |
-|                                                 | Bracket the *output-file* string with quotation |
-|                                                 | marks if it contains spaces. If this argument   |
-|                                                 | is not used the output destination defaults to  |
-|                                                 | standard output.                                |
-+-------------------------------------------------+-------------------------------------------------+
-| ``-t``\ *crl-type*                              | Specify type of CRL. possible types are: 0 -    |
-|                                                 | SEC_KRL_TYPE, 1 - SEC_CRL_TYPE. **This option   |
-|                                                 | is obsolete**                                   |
-+-------------------------------------------------+-------------------------------------------------+
-| ``-u``\ *url*                                   | Specify the url.                                |
-+-------------------------------------------------+-------------------------------------------------+
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **Options**               |                                                                                                                                                                                                                                                         |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``-G``                    | Create new Certificate Revocation List(CRL).                                                                                                                                                                                                            |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``-D``                    | Delete Certificate Revocation List from cert                                                                                                                                                                                                            |
+|                           | database.                                                                                                                                                                                                                                               |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``-I``                    | Import a CRL to the cert database                                                                                                                                                                                                                       |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``-E``                    | Erase all CRLs of specified type from the cert                                                                                                                                                                                                          |
+|                           | database                                                                                                                                                                                                                                                |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``-L``                    | List existing CRL located in cert database                                                                                                                                                                                                              |
+|                           | file.                                                                                                                                                                                                                                                   |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``-M``                    | Modify existing CRL which can be located in                                                                                                                                                                                                             |
+|                           | cert db or in arbitrary file. If located in                                                                                                                                                                                                             |
+|                           | file it should be encoded in ASN.1 encode                                                                                                                                                                                                               |
+|                           | format.                                                                                                                                                                                                                                                 |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **Arguments**             |                                                                                                                                                                                                                                                         |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``-B``                    | Bypass CA signature checks.                                                                                                                                                                                                                             |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``-P``\ *dbprefix*        | Specify the prefix used on the ``NSS security database`` files (for example, ``my_cert8.db`` and ``my_key3.db``). This option is provided as a special case. Changing the names of the certificate and key databases is not recommended.                |
+|                           |                                                                                                                                                                                                                                                         |
+|                           |                                                                                                                                                                                                                                                         |
+|                           |                                                                                                                                                                                                                                                         |
+|                           |                                                                                                                                                                                                                                                         |
+|                           |                                                                                                                                                                                                                                                         |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``-a``                    | Use ASCII format or allow the use of ASCII format for input and output. This formatting follows `RFC#1113 <http://andrew2.andrew.cmu.edu/rfc/rfc1113.html>`__.                                                                                          |
+|                           |                                                                                                                                                                                                                                                         |
+|                           |                                                                                                                                                                                                                                                         |
+|                           |                                                                                                                                                                                                                                                         |
+|                           |                                                                                                                                                                                                                                                         |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``-c``\ *crl-gen-file*    | Specify script file that will be used to control crl generation/modification. See crl-cript-file `format <#10232455>`__ below. If options *-M|-G* is used and *-c crl-script-file* is not specified, crlutil will read script data from standard input. |
+|                           |                                                                                                                                                                                                                                                         |
+|                           |                                                                                                                                                                                                                                                         |
+|                           |                                                                                                                                                                                                                                                         |
+|                           |                                                                                                                                                                                                                                                         |
+|                           |                                                                                                                                                                                                                                                         |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``-d``\ *directory*       | Specify the database directory containing the                                                                                                                                                                                                           |
+|                           | certificate and key database files. On Unix the                                                                                                                                                                                                         |
+|                           | Certificate Database Tool defaults to                                                                                                                                                                                                                   |
+|                           | ``$HOME/.netscape`` (that is, ``~/.netscape``).                                                                                                                                                                                                         |
+|                           | On Windows NT the default is the current                                                                                                                                                                                                                |
+|                           | directory.                                                                                                                                                                                                                                              |
+|                           |                                                                                                                                                                                                                                                         |
+|                           | The ``NSS database`` files must reside in the                                                                                                                                                                                                           |
+|                           | same directory.                                                                                                                                                                                                                                         |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``-i``\ *crl-import-file* | Specify the file which contains the CRL to                                                                                                                                                                                                              |
+|                           | import                                                                                                                                                                                                                                                  |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``-f``\ *password-file*   | Specify a file that will automatically supply                                                                                                                                                                                                           |
+|                           | the password to include in a certificate or to                                                                                                                                                                                                          |
+|                           | access a certificate database. This is a                                                                                                                                                                                                                |
+|                           | plain-text file containing one password. Be                                                                                                                                                                                                             |
+|                           | sure to prevent unauthorized access to this                                                                                                                                                                                                             |
+|                           | file.                                                                                                                                                                                                                                                   |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``-l``\ *algorithm-name*  | Specify a specific signature algorithm. List of                                                                                                                                                                                                         |
+|                           | possible algorithms: MD2 \| MD4 \| MD5 \| SHA1                                                                                                                                                                                                          |
+|                           | \| SHA256 \| SHA384 \| SHA512                                                                                                                                                                                                                           |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``-n``\ *nickname*        | Specify the nickname of a certificate or key to                                                                                                                                                                                                         |
+|                           | list, create, add to a database, modify, or                                                                                                                                                                                                             |
+|                           | validate. Bracket the *nickname* string with                                                                                                                                                                                                            |
+|                           | quotation marks if it contains spaces.                                                                                                                                                                                                                  |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``-o``\ *output-file*     | Specify the output file name for new CRL.                                                                                                                                                                                                               |
+|                           | Bracket the *output-file* string with quotation                                                                                                                                                                                                         |
+|                           | marks if it contains spaces. If this argument                                                                                                                                                                                                           |
+|                           | is not used the output destination defaults to                                                                                                                                                                                                          |
+|                           | standard output.                                                                                                                                                                                                                                        |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``-t``\ *crl-type*        | Specify type of CRL. possible types are: 0 -                                                                                                                                                                                                            |
+|                           | SEC_KRL_TYPE, 1 - SEC_CRL_TYPE. **This option                                                                                                                                                                                                           |
+|                           | is obsolete**                                                                                                                                                                                                                                           |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ``-u``\ *url*             | Specify the url.                                                                                                                                                                                                                                        |
++---------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 ```
 
 ```{eval-rst}
@@ -147,7 +147,7 @@ follows:
 
 (crl-generation-script-syntax)=
 
-## [CRL Generation script syntax:](#crl_generation_script_syntax)
+## CRL Generation script syntax:
 
 :::{container}
 CRL generation script file has the following syntax:
@@ -222,7 +222,7 @@ CRL generation script file has the following syntax:
 
 (implemented-extensions)=
 
-## [Implemented Extensions](#implemented_extensions)
+## Implemented Extensions
 
 :::{container}
 The extensions defined for CRL provide methods for associating additional attributes with CRLs of
@@ -363,7 +363,7 @@ optional, those without square brackets are required.
 
 (creating-a-new-crl)=
 
-### [Creating a New CRL](#creating_a_new_crl)
+### Creating a New CRL
 
 :::{container}
 This example creates a new CRL and importing it in to a Database in the specified directory:
@@ -379,7 +379,7 @@ Where *cert-nickname* is the name the new CRL will be signed with.
 
 (listing-crls-in-a-database)=
 
-### [Listing CRLs in a Database](#listing_crls_in_a_database)
+### Listing CRLs in a Database
 
 :::{container}
 This example lists all the CRLs in the `NSS database` in the specified directory:
@@ -411,7 +411,7 @@ To view a particular CRL user should specify
 
 (deleting-crl-from-a-database)=
 
-### [Deleting CRL from a Database](#deleting_crl_from_a_database)
+### Deleting CRL from a Database
 
 :::{container}
 This example deletes CRL from a database in the specified directory:
@@ -421,7 +421,7 @@ This example deletes CRL from a database in the specified directory:
 
 (importing-crl-into-a-database)=
 
-### [Importing CRL into a Database](#importing_crl_into_a_database)
+### Importing CRL into a Database
 
 :::{container}
 This example imports CRL into a database:
@@ -433,7 +433,7 @@ File should has binary format of ASN.1 encoded CRL data.
 
 (modifying-crl-in-a-database)=
 
-### [Modifying CRL in a Database](#modifying_crl_in_a_database)
+### Modifying CRL in a Database
 
 :::{container}
 This example modifies a new CRL and importing it in to a Database in the specified directory:

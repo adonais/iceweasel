@@ -5,6 +5,9 @@
 package mozilla.components.feature.prompts.widget
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.Calendar.DECEMBER
+import java.util.Calendar.FEBRUARY
+import java.util.Calendar.JANUARY
 import mozilla.components.feature.prompts.ext.month
 import mozilla.components.feature.prompts.ext.now
 import mozilla.components.feature.prompts.ext.toCalendar
@@ -16,9 +19,6 @@ import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.Calendar.DECEMBER
-import java.util.Calendar.FEBRUARY
-import java.util.Calendar.JANUARY
 
 @RunWith(AndroidJUnit4::class)
 class MonthAndYearPickerTest {
@@ -29,12 +29,13 @@ class MonthAndYearPickerTest {
         val minDate = "2018-04".toDate("yyyy-MM").toCalendar()
         val maxDate = "2018-09".toDate("yyyy-MM").toCalendar()
 
-        val monthAndYearPicker = MonthAndYearPicker(
-            context = testContext,
-            selectedDate = initialDate,
-            minDate = minDate,
-            maxDate = maxDate,
-        )
+        val monthAndYearPicker =
+            MonthAndYearPicker(
+                context = testContext,
+                selectedDate = initialDate,
+                minDate = minDate,
+                maxDate = maxDate,
+            )
 
         with(monthAndYearPicker.monthView) {
             assertEquals(initialDate.month, value)
@@ -55,12 +56,13 @@ class MonthAndYearPickerTest {
         val minDate = "2018-04".toDate("yyyy-MM").toCalendar()
         val maxDate = "2019-09".toDate("yyyy-MM").toCalendar()
 
-        val monthAndYearPicker = MonthAndYearPicker(
-            context = testContext,
-            selectedDate = initialDate,
-            minDate = minDate,
-            maxDate = maxDate,
-        )
+        val monthAndYearPicker =
+            MonthAndYearPicker(
+                context = testContext,
+                selectedDate = initialDate,
+                minDate = minDate,
+                maxDate = maxDate,
+            )
 
         with(monthAndYearPicker.monthView) {
             assertEquals(initialDate.month, value)
@@ -80,10 +82,11 @@ class MonthAndYearPickerTest {
         val initialDate = "2018-06".toDate("yyyy-MM")
         val initialCal = "2018-06".toDate("yyyy-MM").toCalendar()
 
-        val monthAndYearPicker = MonthAndYearPicker(
-            context = testContext,
-            selectedDate = initialDate.toCalendar(),
-        )
+        val monthAndYearPicker =
+            MonthAndYearPicker(
+                context = testContext,
+                selectedDate = initialDate.toCalendar(),
+            )
 
         val yearView = monthAndYearPicker.yearView
         assertEquals(initialCal.year, yearView.value)
@@ -98,10 +101,11 @@ class MonthAndYearPickerTest {
         val initialDate = "2018-06".toDate("yyyy-MM")
         val initialCal = "2018-06".toDate("yyyy-MM").toCalendar()
 
-        val monthAndYearPicker = MonthAndYearPicker(
-            context = testContext,
-            selectedDate = initialDate.toCalendar(),
-        )
+        val monthAndYearPicker =
+            MonthAndYearPicker(
+                context = testContext,
+                selectedDate = initialDate.toCalendar(),
+            )
 
         val yearView = monthAndYearPicker.yearView
         assertEquals(initialCal.year, yearView.value)
@@ -116,20 +120,22 @@ class MonthAndYearPickerTest {
         val initialDate = "2018-06".toDate("yyyy-MM")
         val initialCal = "2018-06".toDate("yyyy-MM").toCalendar()
 
-        val monthAndYearPicker = MonthAndYearPicker(
-            context = testContext,
-            selectedDate = initialDate.toCalendar(),
-        )
+        val monthAndYearPicker =
+            MonthAndYearPicker(
+                context = testContext,
+                selectedDate = initialDate.toCalendar(),
+            )
 
         var newMonth = 0
         var newYear = 0
 
-        monthAndYearPicker.dateSetListener = object : MonthAndYearPicker.OnDateSetListener {
-            override fun onDateSet(picker: MonthAndYearPicker, month: Int, year: Int) {
-                newMonth = month
-                newYear = year
+        monthAndYearPicker.dateSetListener =
+            object : MonthAndYearPicker.OnDateSetListener {
+                override fun onDateSet(picker: MonthAndYearPicker, month: Int, year: Int) {
+                    newMonth = month
+                    newYear = year
+                }
             }
-        }
 
         assertEquals(0, newMonth)
         assertEquals(0, newYear)
@@ -152,12 +158,13 @@ class MonthAndYearPickerTest {
         val minDate = "2019-04".toDate("yyyy-MM").toCalendar()
         val maxDate = "2018-09".toDate("yyyy-MM").toCalendar()
 
-        val monthAndYearPicker = MonthAndYearPicker(
-            context = testContext,
-            selectedDate = initialDate,
-            minDate = minDate,
-            maxDate = maxDate,
-        )
+        val monthAndYearPicker =
+            MonthAndYearPicker(
+                context = testContext,
+                selectedDate = initialDate,
+                minDate = minDate,
+                maxDate = maxDate,
+            )
 
         with(monthAndYearPicker.monthView) {
             assertEquals(JANUARY, minValue)
@@ -178,12 +185,13 @@ class MonthAndYearPickerTest {
 
         initialDate.year = minDate.year - 1
 
-        val monthAndYearPicker = MonthAndYearPicker(
-            context = testContext,
-            selectedDate = initialDate,
-            minDate = minDate,
-            maxDate = maxDate,
-        )
+        val monthAndYearPicker =
+            MonthAndYearPicker(
+                context = testContext,
+                selectedDate = initialDate,
+                minDate = minDate,
+                maxDate = maxDate,
+            )
 
         with(monthAndYearPicker.monthView) {
             assertEquals(minDate.month, value)

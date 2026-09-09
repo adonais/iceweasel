@@ -79,7 +79,6 @@
 #include "mozilla/StaticPrefs_docshell.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_extensions.h"
-#include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/TelemetryHistogramEnums.h"
@@ -437,10 +436,12 @@ class nsGlobalWindowObserver final : public nsIObserver,
   explicit nsGlobalWindowObserver(nsGlobalWindowInner* aWindow)
       : mWindow(aWindow) {}
   NS_DECL_ISUPPORTS
-  NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
-                     const char16_t* aData) override {
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD
+  Observe(nsISupports* aSubject, const char* aTopic,
+          const char16_t* aData) override {
     if (!mWindow) return NS_OK;
-    return mWindow->Observe(aSubject, aTopic, aData);
+    const RefPtr<nsGlobalWindowInner> win = mWindow;
+    return win->Observe(aSubject, aTopic, aData);
   }
   void Forget() { mWindow = nullptr; }
   NS_IMETHOD GetInterface(const nsIID& aIID, void** aResult) override {
@@ -1323,11 +1324,12 @@ void nsGlobalWindowInner::FreeInnerObjects() {
   }
   mSessionStorage = nullptr;
   if (mPerformance) {
-    // Since window is dying, nothing is going to be painted
-    // with meaningful sizes, so these temp data for LCP is
-    // no longer needed.
-    static_cast<PerformanceMainThread*>(mPerformance.get())
-        ->ClearGeneratedTempDataForLCP();
+    // Since window is dying, nothing is going to be painted with meaningful
+    // sizes, so the temp data for LCP and container timing is no longer needed.
+    // Clearing the container timing records also drops their raw element keys.
+    auto* perf = static_cast<PerformanceMainThread*>(mPerformance.get());
+    perf->ClearGeneratedTempDataForLCP();
+    perf->ClearContainerTimingData();
   }
   mPerformance = nullptr;
 
@@ -1436,8 +1438,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsGlobalWindowInner)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPerformance)
 
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWebTaskScheduler)
-
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWebTaskSchedulingState)
 
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTrustedTypePolicyFactory)
 
@@ -1549,8 +1549,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsGlobalWindowInner)
     tmp->mWebTaskScheduler->Disconnect();
     NS_IMPL_CYCLE_COLLECTION_UNLINK(mWebTaskScheduler)
   }
-
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mWebTaskSchedulingState)
 
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mTrustedTypePolicyFactory)
 
@@ -1868,7 +1866,7 @@ void nsGlobalWindowInner::InitDocumentDependentState(JSContext* aCx) {
   if (mWebTaskScheduler) {
     mWebTaskScheduler->Disconnect();
     mWebTaskScheduler = nullptr;
-    mWebTaskSchedulingState = nullptr;
+    SetWebTaskSchedulingState(nullptr);
   }
 
   // This must be called after nullifying the internal objects because here we
@@ -1986,10 +1984,7 @@ nsresult nsGlobalWindowInner::EnsureClientSource() {
   nsCOMPtr<nsIPrincipal> foreignPartitionedPrincipal;
 
   nsresult rv = StoragePrincipalHelper::GetPrincipal(
-      this,
-      StaticPrefs::privacy_partition_serviceWorkers()
-          ? StoragePrincipalHelper::eForeignPartitionedPrincipal
-          : StoragePrincipalHelper::eRegularPrincipal,
+      this, StoragePrincipalHelper::eForeignPartitionedPrincipal,
       getter_AddRefs(foreignPartitionedPrincipal));
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -3717,29 +3712,29 @@ void nsGlobalWindowInner::SetName(const nsAString& aName,
   FORWARD_TO_OUTER_OR_THROW(SetNameOuter, (aName, aError), aError, );
 }
 
-double nsGlobalWindowInner::GetInnerWidth(ErrorResult& aError) {
-  FORWARD_TO_OUTER_OR_THROW(GetInnerWidthOuter, (aError), aError, 0);
+double nsGlobalWindowInner::GetInnerWidth(CallerType aCallerType,
+                                          ErrorResult& aError) {
+  FORWARD_TO_OUTER_OR_THROW(GetInnerWidthOuter, (aCallerType, aError), aError,
+                            0);
 }
 
-nsresult nsGlobalWindowInner::GetInnerWidth(double* aWidth) {
+nsresult nsGlobalWindowInner::GetInnerWidth(CallerType aCallerType,
+                                            double* aWidth) {
   ErrorResult rv;
-  // Callee doesn't care about the caller type, but play it safe.
-  *aWidth = GetInnerWidth(rv);
+  *aWidth = GetInnerWidth(aCallerType, rv);
   return rv.StealNSResult();
 }
 
-double nsGlobalWindowInner::GetInnerHeight(ErrorResult& aError) {
-  // We ignore aCallerType; we only have that argument because some other things
-  // called by GetReplaceableWindowCoord need it.  If this ever changes, fix
-  //   nsresult nsGlobalWindowInner::GetInnerHeight(double* aInnerWidth)
-  // to actually take a useful CallerType and pass it in here.
-  FORWARD_TO_OUTER_OR_THROW(GetInnerHeightOuter, (aError), aError, 0);
+double nsGlobalWindowInner::GetInnerHeight(CallerType aCallerType,
+                                           ErrorResult& aError) {
+  FORWARD_TO_OUTER_OR_THROW(GetInnerHeightOuter, (aCallerType, aError), aError,
+                            0);
 }
 
-nsresult nsGlobalWindowInner::GetInnerHeight(double* aHeight) {
+nsresult nsGlobalWindowInner::GetInnerHeight(CallerType aCallerType,
+                                             double* aHeight) {
   ErrorResult rv;
-  // Callee doesn't care about the caller type, but play it safe.
-  *aHeight = GetInnerHeight(rv);
+  *aHeight = GetInnerHeight(aCallerType, rv);
   return rv.StealNSResult();
 }
 
@@ -4380,11 +4375,6 @@ WebTaskScheduler* nsGlobalWindowInner::Scheduler() {
   }
   MOZ_ASSERT(mWebTaskScheduler);
   return mWebTaskScheduler;
-}
-
-inline void nsGlobalWindowInner::SetWebTaskSchedulingState(
-    WebTaskSchedulingState* aState) {
-  mWebTaskSchedulingState = aState;
 }
 
 bool nsGlobalWindowInner::Find(const nsAString& aString, bool aCaseSensitive,
@@ -5216,7 +5206,7 @@ void nsGlobalWindowInner::FireOfflineStatusEventIfChanged() {
   } else {
     name.AssignLiteral("online");
   }
-  nsContentUtils::DispatchTrustedEvent(mDoc, this, name, CanBubble::eNo,
+  nsContentUtils::DispatchTrustedEvent(this, this, name, CanBubble::eNo,
                                        Cancelable::eNo);
 }
 
@@ -6268,8 +6258,8 @@ nsresult nsGlobalWindowInner::FireDelayedDOMEvents(bool aIncludeSubWindows) {
     }
 
     for (const nsCOMPtr<nsIDocShellTreeItem>& childShell : children) {
-      if (nsCOMPtr<nsPIDOMWindowOuter> pWin = childShell->GetWindow()) {
-        auto* win = nsGlobalWindowOuter::Cast(pWin);
+      if (const RefPtr<nsGlobalWindowOuter> win =
+              nsGlobalWindowOuter::Cast(childShell->GetWindow())) {
         win->FireDelayedDOMEvents(true);
       }
     }

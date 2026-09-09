@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.historymetadata
 
+import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
@@ -14,11 +15,8 @@ import mozilla.components.concept.storage.HistoryMetadataObservation
 import mozilla.components.concept.storage.HistoryMetadataStorage
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.utils.NamedThreadFactory
-import java.util.concurrent.Executors
 
-/**
- * Service for managing (creating, updating, deleting) history metadata.
- */
+/** Service for managing (creating, updating, deleting) history metadata. */
 interface HistoryMetadataService {
 
     /**
@@ -43,8 +41,7 @@ interface HistoryMetadataService {
     fun updateMetadata(key: HistoryMetadataKey, tab: TabSessionState)
 
     /**
-     * Deletes history metadata records that haven't been updated since
-     * the specified timestamp.
+     * Deletes history metadata records that haven't been updated since the specified timestamp.
      *
      * @param olderThan timestamp indicating which records to delete.
      */
@@ -53,11 +50,10 @@ interface HistoryMetadataService {
 
 class DefaultHistoryMetadataService(
     private val storage: HistoryMetadataStorage,
-    private val scope: CoroutineScope = CoroutineScope(
-        Executors.newSingleThreadExecutor(
-            NamedThreadFactory("HistoryMetadataService"),
-        ).asCoroutineDispatcher(),
-    ),
+    private val scope: CoroutineScope =
+        CoroutineScope(
+            Executors.newSingleThreadExecutor(NamedThreadFactory("HistoryMetadataService")).asCoroutineDispatcher()
+        ),
     private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
 ) : HistoryMetadataService {
 
@@ -70,18 +66,21 @@ class DefaultHistoryMetadataService(
         logger.debug("Creating metadata for tab ${tab.id}")
 
         val existingMetadata = tab.historyMetadata
-        val metadataKey = if (existingMetadata != null && existingMetadata.url == tab.content.url) {
-            existingMetadata
-        } else {
-            tab.toHistoryMetadataKey(searchTerms, referrerUrl)
-        }
+        val metadataKey =
+            if (existingMetadata != null && existingMetadata.url == tab.content.url) {
+                existingMetadata
+            } else {
+                tab.toHistoryMetadataKey(searchTerms, referrerUrl)
+            }
 
-        val documentTypeObservation = HistoryMetadataObservation.DocumentTypeObservation(
-            documentType = when (tab.mediaSessionState) {
-                null -> DocumentType.Regular
-                else -> DocumentType.Media
-            },
-        )
+        val documentTypeObservation =
+            HistoryMetadataObservation.DocumentTypeObservation(
+                documentType =
+                    when (tab.mediaSessionState) {
+                        null -> DocumentType.Regular
+                        else -> DocumentType.Media
+                    }
+            )
 
         scope.launch {
             storage.noteHistoryMetadataObservation(metadataKey, documentTypeObservation)
@@ -107,15 +106,12 @@ class DefaultHistoryMetadataService(
         scope.launch {
             val lastUpdated = tabsLastUpdated[tab.id] ?: 0
             if (lastUpdated > lastAccess) {
-                logger.debug(
-                    "Failed to update metadata because it was already recorded or lastAccess is incorrect",
-                )
+                logger.debug("Failed to update metadata because it was already recorded or lastAccess is incorrect")
                 return@launch
             }
 
-            val viewTimeObservation = HistoryMetadataObservation.ViewTimeObservation(
-                viewTime = (now - lastAccess).toInt(),
-            )
+            val viewTimeObservation =
+                HistoryMetadataObservation.ViewTimeObservation(viewTime = (now - lastAccess).toInt())
             storage.noteHistoryMetadataObservation(key, viewTimeObservation)
             tabsLastUpdated[tab.id] = now
         }

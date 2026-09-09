@@ -6,9 +6,7 @@ package org.mozilla.fenix.tabstray.browser
 
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 
-/**
- * Interactor for all things related to inactive tabs in the tabs tray.
- */
+/** Interactor for all things related to inactive tabs in the tabs tray. */
 interface InactiveTabsInteractor {
     /**
      * Invoked when the inactive tabs header is clicked.
@@ -31,18 +29,12 @@ interface InactiveTabsInteractor {
      */
     fun onInactiveTabClosed(tab: TabsTrayItem.Tab)
 
-    /**
-     * Invoked when the user clicks on the delete all inactive tabs button.
-     */
+    /** Invoked when the user clicks on the delete all inactive tabs button. */
     fun onDeleteAllInactiveTabsClicked()
 
-    /**
-     * Invoked when the user clicks the close button in the auto close dialog.
-     */
+    /** Invoked when the user clicks the close button in the auto close dialog. */
     fun onAutoCloseDialogCloseButtonClicked()
 
-    /**
-     * Invoked when the user clicks to enable the inactive tab auto-close feature.
-     */
+    /** Invoked when the user clicks to enable the inactive tab auto-close feature. */
     fun onEnableAutoCloseClicked()
 }

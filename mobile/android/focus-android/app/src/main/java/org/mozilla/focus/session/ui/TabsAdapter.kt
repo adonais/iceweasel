@@ -10,10 +10,9 @@ import androidx.recyclerview.widget.RecyclerView
 import mozilla.components.browser.state.state.TabSessionState
 import org.mozilla.focus.databinding.ItemSessionBinding
 
-/**
- * Adapter implementation to show a list of active tabs.
- */
-class TabsAdapter internal constructor(
+/** Adapter implementation to show a list of active tabs. */
+class TabsAdapter
+internal constructor(
     private val tabList: List<TabSessionState>,
     private val isCurrentSession: (TabSessionState) -> Boolean,
     private val selectSession: (TabSessionState) -> Unit,
@@ -23,8 +22,7 @@ class TabsAdapter internal constructor(
 ) : RecyclerView.Adapter<TabViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TabViewHolder {
-        val binding =
-            ItemSessionBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = ItemSessionBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return TabViewHolder(binding)
     }
 
@@ -33,11 +31,12 @@ class TabsAdapter internal constructor(
         val isCloseAllItem = position == tabList.size + 1
 
         val tabIndex = position - 1
-        val currentItem = if (!isAddNewTabItem && !isCloseAllItem) {
-            tabList.getOrNull(tabIndex)
-        } else {
-            null
-        }
+        val currentItem =
+            if (!isAddNewTabItem && !isCloseAllItem) {
+                tabList.getOrNull(tabIndex)
+            } else {
+                null
+            }
 
         holder.bind(
             currentItem,

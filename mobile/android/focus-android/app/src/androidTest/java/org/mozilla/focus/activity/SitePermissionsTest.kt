@@ -38,23 +38,21 @@ class SitePermissionsTest {
     // Test page created and handled by the Mozilla mobile test-eng team
     private val permissionsPage = "https://mozilla-mobile.github.io/testapp/permissions"
     private val permissionsPageHost = "mozilla-mobile.github.io"
-    private val cameraManager = (InstrumentationRegistry.getInstrumentation().targetContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager)
+    private val cameraManager =
+        (InstrumentationRegistry.getInstrumentation().targetContext.getSystemService(Context.CAMERA_SERVICE)
+            as CameraManager)
 
-    @get:Rule(order = 0)
-    val focusTestRule: FocusTestRule = FocusTestRule()
+    @get:Rule(order = 0) val focusTestRule: FocusTestRule = FocusTestRule()
 
-    private val webServerRule get() = focusTestRule.mockWebServerRule
+    private val webServerRule
+        get() = focusTestRule.mockWebServerRule
 
-    @get:Rule
-    val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
-
-    @get:Rule
-    val grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(
-        Manifest.permission.ACCESS_COARSE_LOCATION,
-    )
+    @get:Rule val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
 
     @get:Rule
-    val mockLocationUpdatesRule = MockLocationUpdatesRule()
+    val grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(Manifest.permission.ACCESS_COARSE_LOCATION)
+
+    @get:Rule val mockLocationUpdatesRule = MockLocationUpdatesRule()
 
     @Before
     fun setUp() {
@@ -71,26 +69,26 @@ class SitePermissionsTest {
 
     @Test
     fun sitePermissionsSettingsItemsTest() {
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openPrivacySettingsMenu {
-        }.clickSitePermissionsSettings {
-            verifySitePermissionsItems()
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openPrivacySettingsMenu {}
+            .clickSitePermissionsSettings {
+                verifySitePermissionsItems()
+            }
     }
 
     @SmokeTest
     @Test
     fun autoplayPermissionsSettingsItemsTest() {
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openPrivacySettingsMenu {
-        }.clickSitePermissionsSettings {
-            openAutoPlaySettings()
-            verifyAutoplaySection()
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openPrivacySettingsMenu {}
+            .clickSitePermissionsSettings {
+                openAutoPlaySettings()
+                verifyAutoplaySection()
+            }
     }
 
     // Tests the default autoplay setting: Block audio only on a video with autoplay attribute and not muted
@@ -99,13 +97,13 @@ class SitePermissionsTest {
     fun blockAudioAutoplayPermissionTest() {
         val videoPage = webServerRule.server.getMediaTestAsset("videoPage")
 
-        searchScreen {
-        }.loadPage(videoPage.url) {
-            progressBar.waitUntilGone(waitingTime)
-            // an un-muted video won't be able to autoplay with this setting, so we have to press play
-            clickPlayButton()
-            waitForPlaybackToStart()
-        }
+        searchScreen {}
+            .loadPage(videoPage.url) {
+                progressBar.waitUntilGone(waitingTime)
+                // an un-muted video won't be able to autoplay with this setting, so we have to press play
+                clickPlayButton()
+                waitForPlaybackToStart()
+            }
     }
 
     // Tests the default autoplay setting: Block audio only on a video with autoplay and muted attributes
@@ -114,11 +112,11 @@ class SitePermissionsTest {
     fun blockAudioAutoplayPermissionOnMutedVideoTest() {
         val mutedVideoPage = webServerRule.server.getMediaTestAsset("mutedVideoPage")
 
-        searchScreen {
-        }.loadPage(mutedVideoPage.url) {
-            // a muted video will autoplay with this setting
-            waitForPlaybackToStart()
-        }
+        searchScreen {}
+            .loadPage(mutedVideoPage.url) {
+                // a muted video will autoplay with this setting
+                waitForPlaybackToStart()
+            }
     }
 
     // Tests the autoplay setting: Allow audio and video on a video with autoplay attribute and not muted
@@ -128,19 +126,19 @@ class SitePermissionsTest {
     fun allowAudioVideoAutoplayPermissionTest() {
         val videoPage = webServerRule.server.getMediaTestAsset("videoPage")
 
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openPrivacySettingsMenu {
-        }.clickSitePermissionsSettings {
-            openAutoPlaySettings()
-            selectAllowAudioVideoAutoplay()
-            exitToTop()
-        }
-        searchScreen {
-        }.loadPage(videoPage.url) {
-            waitForPlaybackToStart()
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openPrivacySettingsMenu {}
+            .clickSitePermissionsSettings {
+                openAutoPlaySettings()
+                selectAllowAudioVideoAutoplay()
+                exitToTop()
+            }
+        searchScreen {}
+            .loadPage(videoPage.url) {
+                waitForPlaybackToStart()
+            }
     }
 
     // Tests the autoplay setting: Allow audio and video on a video with autoplay and muted attributes
@@ -150,22 +148,20 @@ class SitePermissionsTest {
         val genericPage = webServerRule.server.genericAsset
         val mutedVideoPage = webServerRule.server.getMediaTestAsset("mutedVideoPage")
 
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openPrivacySettingsMenu {
-        }.clickSitePermissionsSettings {
-            openAutoPlaySettings()
-            selectAllowAudioVideoAutoplay()
-            exitToTop()
-        }
-        searchScreen {
-        }.loadPage(genericPage.url) {
-        }.clearBrowsingData {}
-        searchScreen {
-        }.loadPage(mutedVideoPage.url) {
-            waitForPlaybackToStart()
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openPrivacySettingsMenu {}
+            .clickSitePermissionsSettings {
+                openAutoPlaySettings()
+                selectAllowAudioVideoAutoplay()
+                exitToTop()
+            }
+        searchScreen {}.loadPage(genericPage.url) {}.clearBrowsingData {}
+        searchScreen {}
+            .loadPage(mutedVideoPage.url) {
+                waitForPlaybackToStart()
+            }
     }
 
     // Tests the autoplay setting: Block audio and video
@@ -174,61 +170,61 @@ class SitePermissionsTest {
     fun blockAudioVideoAutoplayPermissionTest() {
         val videoPage = webServerRule.server.getMediaTestAsset("videoPage")
 
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openPrivacySettingsMenu {
-        }.clickSitePermissionsSettings {
-            openAutoPlaySettings()
-            selectBlockAudioVideoAutoplay()
-            exitToTop()
-        }
-        searchScreen {
-        }.loadPage(videoPage.url) {
-            clickPlayButton()
-            waitForPlaybackToStart()
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openPrivacySettingsMenu {}
+            .clickSitePermissionsSettings {
+                openAutoPlaySettings()
+                selectBlockAudioVideoAutoplay()
+                exitToTop()
+            }
+        searchScreen {}
+            .loadPage(videoPage.url) {
+                clickPlayButton()
+                waitForPlaybackToStart()
+            }
     }
 
     @SmokeTest
     @Test
     fun cameraPermissionsSettingsItemsTest() {
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openPrivacySettingsMenu {
-        }.clickSitePermissionsSettings {
-            openCameraPermissionsSettings()
-            verifyPermissionsStateSettings()
-            verifyAskToAllowChecked()
-            verifyBlockedByAndroidState()
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openPrivacySettingsMenu {}
+            .clickSitePermissionsSettings {
+                openCameraPermissionsSettings()
+                verifyPermissionsStateSettings()
+                verifyAskToAllowChecked()
+                verifyBlockedByAndroidState()
+            }
     }
 
     @SmokeTest
     @Test
     fun locationPermissionsSettingsItemsTest() {
-        homeScreen {
-        }.openMainMenu {
-        }.openSettings {
-        }.openPrivacySettingsMenu {
-        }.clickSitePermissionsSettings {
-            openLocationPermissionsSettings()
-            verifyPermissionsStateSettings()
-            verifyAskToAllowChecked()
-            verifyBlockedByAndroidState()
-        }
+        homeScreen {}
+            .openMainMenu {}
+            .openSettings {}
+            .openPrivacySettingsMenu {}
+            .clickSitePermissionsSettings {
+                openLocationPermissionsSettings()
+                verifyPermissionsStateSettings()
+                verifyAskToAllowChecked()
+                verifyBlockedByAndroidState()
+            }
     }
 
     @Test
     fun testLocationSharingNotAllowed() {
-        searchScreen {
-        }.loadPage(permissionsPage) {
-            clickGetLocationButton()
-            verifyLocationPermissionPrompt(permissionsPageHost)
-            denySitePermissionRequest()
-            verifyPageContent("User denied geolocation prompt")
-        }
+        searchScreen {}
+            .loadPage(permissionsPage) {
+                clickGetLocationButton()
+                verifyLocationPermissionPrompt(permissionsPageHost)
+                denySitePermissionRequest()
+                verifyPageContent("User denied geolocation prompt")
+            }
     }
 
     @SmokeTest
@@ -240,41 +236,41 @@ class SitePermissionsTest {
             mockLocationUpdatesRule.setMockLocation()
         }
 
-        searchScreen {
-        }.loadPage(permissionsPage) {
-            clickGetLocationButton()
-            verifyLocationPermissionPrompt(permissionsPageHost)
-            allowSitePermissionRequest()
-            verifyPageContent("${mockLocationUpdatesRule.latitude}")
-            verifyPageContent("${mockLocationUpdatesRule.longitude}")
-        }
+        searchScreen {}
+            .loadPage(permissionsPage) {
+                clickGetLocationButton()
+                verifyLocationPermissionPrompt(permissionsPageHost)
+                allowSitePermissionRequest()
+                verifyPageContent("${mockLocationUpdatesRule.latitude}")
+                verifyPageContent("${mockLocationUpdatesRule.longitude}")
+            }
     }
 
     @SmokeTest
     @Test
     fun allowCameraPermissionsTest() {
         Assume.assumeTrue(cameraManager.cameraIdList.isNotEmpty())
-        searchScreen {
-        }.loadPage(permissionsPage) {
-            clickGetCameraButton()
-            grantAppPermission()
-            verifyCameraPermissionPrompt(permissionsPageHost)
-            allowSitePermissionRequest()
-            verifyPageContent("Camera allowed")
-        }
+        searchScreen {}
+            .loadPage(permissionsPage) {
+                clickGetCameraButton()
+                grantAppPermission()
+                verifyCameraPermissionPrompt(permissionsPageHost)
+                allowSitePermissionRequest()
+                verifyPageContent("Camera allowed")
+            }
     }
 
     @SmokeTest
     @Test
     fun denyCameraPermissionsTest() {
         Assume.assumeTrue(cameraManager.cameraIdList.isNotEmpty())
-        searchScreen {
-        }.loadPage(permissionsPage) {
-            clickGetCameraButton()
-            grantAppPermission()
-            verifyCameraPermissionPrompt(permissionsPageHost)
-            denySitePermissionRequest()
-            verifyPageContent("Camera not allowed")
-        }
+        searchScreen {}
+            .loadPage(permissionsPage) {
+                clickGetCameraButton()
+                grantAppPermission()
+                verifyCameraPermissionPrompt(permissionsPageHost)
+                denySitePermissionRequest()
+                verifyPageContent("Camera not allowed")
+            }
     }
 }

@@ -29,22 +29,21 @@ class MarsSpocsEndpointTest {
         client = mock()
         rawEndpoint = mock()
 
-        endpoint = MarsSpocsEndpoint(
-            rawEndpoint = rawEndpoint,
-        )
+        endpoint = MarsSpocsEndpoint(rawEndpoint = rawEndpoint)
     }
 
     @Test
     fun `WHEN fetching sponsored stories returns a null or empty response THEN return a pocket response failure`() {
         arrayOf(
-            null,
-            "",
-            " ",
-        ).forEach { result ->
-            whenever(rawEndpoint.getSponsoredStories()).thenReturn(result)
+                null,
+                "",
+                " ",
+            )
+            .forEach { result ->
+                whenever(rawEndpoint.getSponsoredStories()).thenReturn(result)
 
-            assertResponseIsFailure(endpoint.getSponsoredStories())
-        }
+                assertResponseIsFailure(endpoint.getSponsoredStories())
+            }
     }
 
     @Test

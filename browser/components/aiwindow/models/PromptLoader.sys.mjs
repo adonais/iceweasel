@@ -5,7 +5,7 @@
  */
 
 import {
-  getRemoteClient,
+  getRemoteRecords,
   selectMainConfig,
   renderPrompt,
   checkMajorVersion,
@@ -54,6 +54,7 @@ export const FEATURE_PURPOSES = Object.freeze({
     PURPOSES.MEMORY_GENERATION,
   [MODEL_FEATURES.AGENT_MONITOR]: PURPOSES.MONITOR,
   [MODEL_FEATURES.SEARCH_ANSWER_GENERATION]: PURPOSES.CHAT,
+  [MODEL_FEATURES.AITAB]: PURPOSES.AITAB,
 });
 
 function getDefaultServiceType(feature) {
@@ -68,7 +69,7 @@ function getDefaultServiceType(feature) {
 const V2_RECORD_KINDS = new Set(["module", "skill", "params"]);
 
 async function loadV2Records() {
-  const records = await getRemoteClient().get();
+  const records = await getRemoteRecords();
   return records.filter(r => V2_RECORD_KINDS.has(r.kind));
 }
 
@@ -128,6 +129,7 @@ function findParams(records, { feature, model }) {
   return (
     (model && candidates.find(r => r.model === model)) ||
     candidates.find(r => r.model === GENERIC_MODEL_NAME) ||
+    candidates.find(r => r.is_default === true) ||
     null
   );
 }
@@ -363,7 +365,7 @@ export async function buildBrowserContextPrompt(
  * @returns {Promise<object>}
  */
 async function selectFeatureConfig(feature, opts = {}) {
-  const allRecords = await getRemoteClient().get();
+  const allRecords = await getRemoteRecords();
 
   const hasV2Params = allRecords.some(
     r => r.feature === feature && r.kind === "params"
@@ -428,11 +430,10 @@ export async function buildEngineForFeature(feature, opts = {}) {
     }
   }
   const serviceType = mainConfig.service_type ?? getDefaultServiceType(feature);
-  const purpose =
+  let purpose =
     mainConfig.purpose ??
     FEATURE_PURPOSES[feature] ??
     FEATURE_PURPOSES[DEFAULT_PURPOSE];
-
   const modelChoiceId =
     opts.modelChoiceIdOverride ??
     Services.prefs.getStringPref(MODEL_CHOICE_PREF, "");
@@ -442,6 +443,7 @@ export async function buildEngineForFeature(feature, opts = {}) {
   let model = mainConfig.model;
   const CHAT_MODEL_FALLBACK_FEATURES = new Set([
     MODEL_FEATURES.AGENT_MONITOR,
+    MODEL_FEATURES.AITAB,
     MODEL_FEATURES.RESUME_ACTIVITY_CONVERSATION,
     MODEL_FEATURES.RESUME_ACTIVITY_CONVERSATION_STARTER,
   ]);
@@ -566,11 +568,12 @@ export async function loadPromptV2(feature, opts = {}) {
     paramsRecord.modules?.find(m => m.name === opts.module)?.version ??
     paramsRecord.version;
 
-  // find the module record for the feature+module+model+version
+  // find the module record for the feature+module+model+version by the param
+  // record's model
   const moduleRecord = findModule(v2Records, {
     feature,
     module: opts.module,
-    options: { model, version: moduleVersion },
+    options: { model: paramsRecord.model, version: moduleVersion },
   });
   if (!moduleRecord?.prompts) {
     const err = new Error(

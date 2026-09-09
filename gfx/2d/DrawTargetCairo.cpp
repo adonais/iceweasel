@@ -1896,6 +1896,10 @@ DrawTargetCairo::CreateSourceSurfaceFromNativeSurface(
 
 already_AddRefed<DrawTarget> DrawTargetCairo::CreateSimilarDrawTarget(
     const IntSize& aSize, SurfaceFormat aFormat) const {
+  if (!CanCreateSimilarDrawTarget(aSize, aFormat)) {
+    return nullptr;
+  }
+
   if (cairo_surface_status(cairo_get_group_target(mContext))) {
     RefPtr target = MakeRefPtr<DrawTargetCairo>();
     if (target->Init(aSize, aFormat)) {
@@ -1944,6 +1948,12 @@ already_AddRefed<DrawTarget> DrawTargetCairo::CreateSimilarDrawTarget(
   cairo_surface_destroy(similar);
 
   return nullptr;
+}
+
+bool DrawTargetCairo::CanCreateSimilarDrawTarget(const IntSize& aSize,
+                                                 SurfaceFormat aFormat) const {
+  // Ensure that surface indexes fit in an int32_t.
+  return Factory::CheckSurfaceSize(aSize);
 }
 
 RefPtr<DrawTarget> DrawTargetCairo::CreateClippedDrawTarget(
@@ -2069,6 +2079,10 @@ bool DrawTargetCairo::Init(cairo_surface_t* aSurface, const IntSize& aSize,
 }
 
 bool DrawTargetCairo::Init(const IntSize& aSize, SurfaceFormat aFormat) {
+  if (!Factory::CheckSurfaceSize(aSize)) {
+    return false;
+  }
+
   cairo_surface_t* surf = cairo_image_surface_create(
       GfxFormatToCairoFormat(aFormat), aSize.width, aSize.height);
   return InitAlreadyReferenced(surf, aSize);

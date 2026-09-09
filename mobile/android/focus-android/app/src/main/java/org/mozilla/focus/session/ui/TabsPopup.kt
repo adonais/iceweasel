@@ -18,8 +18,8 @@ import org.mozilla.focus.databinding.PopupTabsBinding
 import org.mozilla.focus.state.AppAction
 
 /**
- * A [PopupWindow] that displays a list of open tabs, allowing the user to switch between,
- * close, or create new browser sessions.
+ * A [PopupWindow] that displays a list of open tabs, allowing the user to switch between, close, or create new browser
+ * sessions.
  *
  * @param parentView The [ViewGroup] used to provide context for layout inflation.
  * @param components The app's [Components] instance used to access state, use cases, and dispatch actions.
@@ -35,17 +35,17 @@ class TabsPopup(
     }
 
     private fun initializeLayout() {
-        val layoutInflater =
-            parentView.context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+        val layoutInflater = parentView.context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
         binding = PopupTabsBinding.inflate(layoutInflater, parentView, false)
-        val sessionsAdapter = TabsAdapter(
-            tabList = components.store.state.privateTabs,
-            isCurrentSession = { tab -> isCurrentSession(tab) },
-            selectSession = { tab -> selectSession(tab) },
-            closeSession = { tab -> closeSession(tab) },
-            closeOtherSessions = { closeOtherSessions() },
-            addNewTab = { addNewTab() },
-        )
+        val sessionsAdapter =
+            TabsAdapter(
+                tabList = components.store.state.privateTabs,
+                isCurrentSession = { tab -> isCurrentSession(tab) },
+                selectSession = { tab -> selectSession(tab) },
+                closeSession = { tab -> closeSession(tab) },
+                closeOtherSessions = { closeOtherSessions() },
+                addNewTab = { addNewTab() },
+            )
 
         binding.sessions.apply {
             adapter = sessionsAdapter

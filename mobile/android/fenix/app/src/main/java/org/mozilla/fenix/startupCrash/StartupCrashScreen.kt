@@ -35,9 +35,9 @@ import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.lib.state.ext.observeAsComposableState
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 @Composable
 internal fun StartupCrashScreen(store: StartupCrashStore) {
@@ -46,10 +46,7 @@ internal fun StartupCrashScreen(store: StartupCrashStore) {
 
     Surface {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(horizontal = 16.dp),
+            modifier = Modifier.fillMaxSize().verticalScroll(scrollState).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -100,10 +97,11 @@ private fun ReportButtons(store: StartupCrashStore) {
 @Composable
 private fun ReopenButton(store: StartupCrashStore) {
     FilledButton(
-        text = stringResource(
-            R.string.startup_crash_restart,
-            stringResource(R.string.firefox),
-        ),
+        text =
+            stringResource(
+                R.string.startup_crash_restart,
+                stringResource(R.string.firefox),
+            ),
         modifier = Modifier.fillMaxWidth(),
         icon = painterResource(iconsR.drawable.mozac_ic_checkmark_24),
     ) {
@@ -130,11 +128,12 @@ private fun CircularLoadButton() {
 @Composable
 private fun ScreenImg() {
     Image(
-        painter = if (!isSystemInDarkTheme()) {
-            painterResource(id = R.drawable.fox_alert_crash_light)
-        } else {
-            painterResource(id = R.drawable.fox_alert_crash_dark)
-        },
+        painter =
+            if (!isSystemInDarkTheme()) {
+                painterResource(id = R.drawable.fox_alert_crash_light)
+            } else {
+                painterResource(id = R.drawable.fox_alert_crash_dark)
+            },
         contentDescription = null,
     )
 }
@@ -147,18 +146,20 @@ private fun ScreenText() {
         modifier = Modifier.fillMaxWidth(),
     ) {
         Text(
-            text = stringResource(
-                R.string.startup_crash_title,
-                stringResource(R.string.firefox),
-            ),
+            text =
+                stringResource(
+                    R.string.startup_crash_title,
+                    stringResource(R.string.firefox),
+                ),
             style = FirefoxTheme.typography.headline5,
         )
 
         Text(
-            text = stringResource(
-                R.string.startup_crash_body,
-                stringResource(R.string.firefox),
-            ),
+            text =
+                stringResource(
+                    R.string.startup_crash_body,
+                    stringResource(R.string.firefox),
+                ),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = FirefoxTheme.typography.body2,
             textAlign = TextAlign.Center,
@@ -167,18 +168,17 @@ private fun ScreenText() {
 }
 
 internal class UiStateProvider : PreviewParameterProvider<UiState> {
-    override val values: Sequence<UiState> = sequenceOf(
-        UiState.Idle,
-        UiState.Loading,
-        UiState.Finished,
-    )
+    override val values: Sequence<UiState> =
+        sequenceOf(
+            UiState.Idle,
+            UiState.Loading,
+            UiState.Finished,
+        )
 }
 
 @Composable
 @FlexibleWindowLightDarkPreview
-internal fun StartupCrashScreenPreview(
-    @PreviewParameter(UiStateProvider::class) uiState: UiState,
-) {
+internal fun StartupCrashScreenPreview(@PreviewParameter(UiStateProvider::class) uiState: UiState) {
     val store = remember {
         StartupCrashStore(
             initialState = StartupCrashState(uiState),

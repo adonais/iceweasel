@@ -16,8 +16,8 @@ import java.util.LinkedList
 import java.util.WeakHashMap
 
 /**
- * A helper for classes that want to get observed. This class keeps track of registered observers
- * and can automatically unregister observers if a LifecycleOwner is provided.
+ * A helper for classes that want to get observed. This class keeps track of registered observers and can automatically
+ * unregister observers if a LifecycleOwner is provided.
  *
  * ObserverRegistry is thread-safe.
  */
@@ -29,8 +29,8 @@ open class ObserverRegistry<T> : Observable<T> {
     private val queuedNotifications = LinkedList<T.() -> Unit>()
 
     /**
-     * Registers an observer to get notified about changes. Does nothing if [observer] is already registered.
-     * This method is thread-safe.
+     * Registers an observer to get notified about changes. Does nothing if [observer] is already registered. This
+     * method is thread-safe.
      *
      * @param observer the observer to register.
      */
@@ -53,11 +53,12 @@ open class ObserverRegistry<T> : Observable<T> {
 
         register(observer)
 
-        val lifecycleObserver = if (autoPause) {
-            AutoPauseLifecycleBoundObserver(owner, registry = this, observer = observer)
-        } else {
-            LifecycleBoundObserver(owner, registry = this, observer = observer)
-        }
+        val lifecycleObserver =
+            if (autoPause) {
+                AutoPauseLifecycleBoundObserver(owner, registry = this, observer = observer)
+            } else {
+                LifecycleBoundObserver(owner, registry = this, observer = observer)
+            }
 
         lifecycleObservers[observer] = lifecycleObserver
 
@@ -70,11 +71,12 @@ open class ObserverRegistry<T> : Observable<T> {
 
     @Synchronized
     override fun register(observer: T, view: View) {
-        val viewObserver = ViewBoundObserver(
-            view,
-            registry = this,
-            observer = observer,
-        )
+        val viewObserver =
+            ViewBoundObserver(
+                view,
+                registry = this,
+                observer = observer,
+            )
 
         viewObservers[observer] = viewObserver
 
@@ -176,9 +178,7 @@ open class ObserverRegistry<T> : Observable<T> {
         return true
     }
 
-    /**
-     * LifecycleObserver implementation to bind an observer to a Lifecycle.
-     */
+    /** LifecycleObserver implementation to bind an observer to a Lifecycle. */
     private open class LifecycleBoundObserver<T>(
         private val owner: LifecycleOwner,
         protected val registry: ObserverRegistry<T>,
@@ -200,8 +200,8 @@ open class ObserverRegistry<T> : Observable<T> {
     }
 
     /**
-     * LifecycleObserver implementation to bind an observer to a Lifecycle and pause observing
-     * automatically for the pause and resume events.
+     * LifecycleObserver implementation to bind an observer to a Lifecycle and pause observing automatically for the
+     * pause and resume events.
      */
     private class AutoPauseLifecycleBoundObserver<T>(
         owner: LifecycleOwner,
@@ -228,8 +228,8 @@ open class ObserverRegistry<T> : Observable<T> {
     }
 
     /**
-     * View.OnAttachStateChangeListener implementation to automatically unregister an observer if
-     * the bound view gets detached.
+     * View.OnAttachStateChangeListener implementation to automatically unregister an observer if the bound view gets
+     * detached.
      */
     private class ViewBoundObserver<T>(
         private val view: View,
@@ -251,10 +251,9 @@ open class ObserverRegistry<T> : Observable<T> {
 }
 
 /**
- * A deprecated version of [ObserverRegistry] to migrate and deprecate existing
- * components individually. All components implement [ObserverRegistry] by
- * delegate so this makes it easy to deprecate without having to override
- * all methods in each component separately.
+ * A deprecated version of [ObserverRegistry] to migrate and deprecate existing components individually. All components
+ * implement [ObserverRegistry] by delegate so this makes it easy to deprecate without having to override all methods in
+ * each component separately.
  */
 @Deprecated(OBSERVER_DEPRECATION_MESSAGE)
 @Suppress("Deprecation")

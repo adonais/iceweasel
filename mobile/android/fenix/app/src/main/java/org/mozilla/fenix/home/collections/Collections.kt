@@ -51,14 +51,15 @@ fun Collections(
             Collection(
                 collection = collection,
                 expanded = expandedCollections.contains(collection.id),
-                menuItems = getMenuItems(
-                    collection = collection,
-                    showAddTabs = showAddTabToCollection,
-                    onOpenTabsTapped = interactor::onCollectionOpenTabsTapped,
-                    onRenameCollectionTapped = interactor::onRenameCollectionTapped,
-                    onAddTabTapped = interactor::onCollectionAddTabTapped,
-                    onDeleteCollectionTapped = interactor::onDeleteCollectionTapped,
-                ),
+                menuItems =
+                    getMenuItems(
+                        collection = collection,
+                        showAddTabs = showAddTabToCollection,
+                        onOpenTabsTapped = interactor::onCollectionOpenTabsTapped,
+                        onRenameCollectionTapped = interactor::onRenameCollectionTapped,
+                        onAddTabTapped = interactor::onCollectionAddTabTapped,
+                        onDeleteCollectionTapped = interactor::onDeleteCollectionTapped,
+                    ),
                 onToggleCollectionExpanded = interactor::onToggleCollectionExpanded,
                 onCollectionShareTabsClicked = interactor::onCollectionShareTabsClicked,
             )
@@ -89,8 +90,8 @@ fun Collections(
 /**
  * Constructs and returns the default list of menu options for a [TabCollection].
  *
- * @param collection [TabCollection] for which the menu will be shown.
- * Might serve as an argument for the callbacks for when the user interacts with certain menu options.
+ * @param collection [TabCollection] for which the menu will be shown. Might serve as an argument for the callbacks for
+ *   when the user interacts with certain menu options.
  * @param showAddTabs Whether to show the option to add a currently open tab to the [collection].
  * @param onOpenTabsTapped Invoked when the user chooses to open the tabs from [collection].
  * @param onRenameCollectionTapped Invoked when the user chooses to rename the [collection].
@@ -147,54 +148,75 @@ private fun CollectionsPreview() {
         Surface {
             Collections(
                 modifier = Modifier.padding(8.dp),
-                collections = listOf(
-                    FakeHomepagePreview.collection(
-                        tabs = listOf(
-                            FakeHomepagePreview.tab(),
-                            FakeHomepagePreview.tab(),
-                            FakeHomepagePreview.tab(),
+                collections =
+                    listOf(
+                        FakeHomepagePreview.collection(
+                            tabs =
+                                listOf(
+                                    FakeHomepagePreview.tab(),
+                                    FakeHomepagePreview.tab(),
+                                    FakeHomepagePreview.tab(),
+                                )
+                        ),
+                        FakeHomepagePreview.collection(
+                            tabs =
+                                listOf(
+                                    FakeHomepagePreview.tab(),
+                                    FakeHomepagePreview.tab(),
+                                )
                         ),
                     ),
-                    FakeHomepagePreview.collection(
-                        tabs = listOf(
-                            FakeHomepagePreview.tab(),
-                            FakeHomepagePreview.tab(),
-                        ),
-                    ),
-                ),
                 showAddTabToCollection = true,
                 expandedCollections = expandedCollections.value,
-                interactor = object : CollectionInteractor {
-                    override fun onCollectionAddTabTapped(collection: TabCollection) { /* no op */ }
-
-                    override fun onCollectionOpenTabClicked(tab: Tab) { /* no op */ }
-
-                    override fun onCollectionOpenTabsTapped(collection: TabCollection) { /* no op */ }
-
-                    override fun onCollectionRemoveTab(
-                        collection: TabCollection,
-                        tab: Tab,
-                    ) { /* no op */ }
-
-                    override fun onCollectionShareTabsClicked(collection: TabCollection) { /* no op */ }
-
-                    override fun onDeleteCollectionTapped(collection: TabCollection) { /* no op */ }
-
-                    override fun onRenameCollectionTapped(collection: TabCollection) { /* no op */ }
-
-                    override fun onToggleCollectionExpanded(
-                        collection: TabCollection,
-                        expand: Boolean,
-                    ) {
-                        expandedCollections.value = if (expand) {
-                            setOf(1L)
-                        } else {
-                            setOf()
+                interactor =
+                    object : CollectionInteractor {
+                        override fun onCollectionAddTabTapped(collection: TabCollection) {
+                            /* no op */
                         }
-                    }
 
-                    override fun onAddTabsToCollectionTapped() { /* no op */ }
-                },
+                        override fun onCollectionOpenTabClicked(tab: Tab) {
+                            /* no op */
+                        }
+
+                        override fun onCollectionOpenTabsTapped(collection: TabCollection) {
+                            /* no op */
+                        }
+
+                        override fun onCollectionRemoveTab(
+                            collection: TabCollection,
+                            tab: Tab,
+                        ) {
+                            /* no op */
+                        }
+
+                        override fun onCollectionShareTabsClicked(collection: TabCollection) {
+                            /* no op */
+                        }
+
+                        override fun onDeleteCollectionTapped(collection: TabCollection) {
+                            /* no op */
+                        }
+
+                        override fun onRenameCollectionTapped(collection: TabCollection) {
+                            /* no op */
+                        }
+
+                        override fun onToggleCollectionExpanded(
+                            collection: TabCollection,
+                            expand: Boolean,
+                        ) {
+                            expandedCollections.value =
+                                if (expand) {
+                                    setOf(1L)
+                                } else {
+                                    setOf()
+                                }
+                        }
+
+                        override fun onAddTabsToCollectionTapped() {
+                            /* no op */
+                        }
+                    },
             )
         }
     }

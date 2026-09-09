@@ -7,16 +7,16 @@ package org.mozilla.fenix.iconpicker
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import org.mozilla.fenix.R
 import mozilla.components.ui.colors.R as colorsR
+import org.mozilla.fenix.R
 
 /**
- * Enum that represents app launcher icons available for the user to set as an alternative launcher
- * icon. It is based off <activity-alias> entries declared in the AndroidManifest, with addition
- * of title and subtitle for representing the icon name in the UI.
+ * Enum that represents app launcher icons available for the user to set as an alternative launcher icon. It is based
+ * off <activity-alias> entries declared in the AndroidManifest, with addition of title and subtitle for representing
+ * the icon name in the UI.
  *
- * The aliasSuffix is the ending part of the <activity-alias>.
- * They are used to construct full component names for switching the launcher icon at runtime.
+ * The aliasSuffix is the ending part of the <activity-alias>. They are used to construct full component names for
+ * switching the launcher icon at runtime.
  *
  * Example:
  * - "AppSolidLight" → android:name="${applicationId}.AppSolidLight"
@@ -151,29 +151,25 @@ enum class AppIcon(
         iconBackground = IconBackground.Drawable(drawableResId = R.drawable.ic_launcher_background_cool),
         iconForegroundId = R.drawable.ic_cool,
         titleId = R.string.alternative_app_icon_option_cool,
-    ),
-    ;
+    );
 
-    /**
-     * [AppIcon] helper object
-     */
+    /** [AppIcon] helper object */
     companion object {
         /**
          * Returns the [AppIcon] associated with the given string.
          *
-         * @param aliasSuffix The suffix from android:name in the manifest (e.g. "AppSolidLight").
-         * Full definition example from the manifest: android:name="${applicationId}.AppSolidLight"
+         * @param aliasSuffix The suffix from android:name in the manifest (e.g. "AppSolidLight"). Full definition
+         *   example from the manifest: android:name="${applicationId}.AppSolidLight"
          */
-        fun fromString(aliasSuffix: String): AppIcon =
-            entries.find { it.aliasSuffix == aliasSuffix } ?: AppDefault
+        fun fromString(aliasSuffix: String): AppIcon = entries.find { it.aliasSuffix == aliasSuffix } ?: AppDefault
     }
 }
 
 /**
  * Represents the background layer of an app icon mipmap assigned to a `<activity-alias>`.
  *
- * It allows passing both `@DrawableRes` and `@ColorRes`, as mipmap files support both
- * `drawable` and `color` parameters for `<background android:drawable>`
+ * It allows passing both `@DrawableRes` and `@ColorRes`, as mipmap files support both `drawable` and `color` parameters
+ * for `<background android:drawable>`
  */
 sealed class IconBackground {
     /**
@@ -181,16 +177,12 @@ sealed class IconBackground {
      *
      * @property colorResId The color resource ID to use.
      */
-    data class Color(
-        @param:ColorRes val colorResId: Int,
-    ) : IconBackground()
+    data class Color(@param:ColorRes val colorResId: Int) : IconBackground()
 
     /**
      * A drawable background.
      *
      * @property drawableResId The drawable resource ID to use.
      */
-    data class Drawable(
-        @param:DrawableRes val drawableResId: Int,
-    ) : IconBackground()
+    data class Drawable(@param:DrawableRes val drawableResId: Int) : IconBackground()
 }

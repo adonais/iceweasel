@@ -50,12 +50,10 @@ class DefaultTermsOfUseDataProviderTest {
             val result = defaultTermsOfUseDataProvider.isIncreasedDohProtectionEnabled()
             when (it) {
                 Engine.DohSettingsMode.INCREASED,
-                Engine.DohSettingsMode.MAX,
-                    -> assertTrue(result)
+                Engine.DohSettingsMode.MAX -> assertTrue(result)
 
                 Engine.DohSettingsMode.DEFAULT,
-                Engine.DohSettingsMode.OFF,
-                    -> assertFalse(result)
+                Engine.DohSettingsMode.OFF -> assertFalse(result)
             }
         }
     }
@@ -70,8 +68,7 @@ class DefaultTermsOfUseDataProviderTest {
             val result = defaultTermsOfUseDataProvider.enabledHttpsOnlyMode()
             when (it) {
                 HttpsOnlyMode.ENABLED_PRIVATE_ONLY,
-                HttpsOnlyMode.ENABLED,
-                    -> assertTrue(result)
+                HttpsOnlyMode.ENABLED -> assertTrue(result)
 
                 HttpsOnlyMode.DISABLED -> assertFalse(result)
             }

@@ -167,6 +167,13 @@ constexpr state::DirtyObjects kTilingDirtyObjectsBase{state::DIRTY_OBJECT_DRAW_F
 
 constexpr bool kEnableAEPRequirementLogging = false;
 
+// A helper to return strings as const GLubyte *, adding safety that the reinterpret_cast is applied
+// only to const char *.
+const GLubyte *AsGLubytePtr(const char *str)
+{
+    return reinterpret_cast<const GLubyte *>(str);
+}
+
 egl::ShareGroup *AllocateOrGetShareGroup(egl::Display *display, const gl::Context *shareContext)
 {
     if (shareContext)
@@ -687,7 +694,6 @@ Context::Context(egl::Display *display,
              shareTextures,
              shareSemaphores,
              AllocateOrUseContextMutex(sharedContextMutex),
-             &mOverlay,
              GetClientVersion(display, attribs),
              GetDebug(display->getFrontendFeatures(), attribs),
              GetBindGeneratesResource(attribs),
@@ -731,7 +737,6 @@ Context::Context(egl::Display *display,
       mProgramPipelineObserverBinding(this, kProgramPipelineSubjectIndex),
       mFrameCapture(new angle::FrameCapture),
       mRefCount(0),
-      mOverlay(mImplementation.get()),
       mIsDestroyed(false),
       mDestroyedManagers(false)
 {
@@ -877,16 +882,6 @@ void Context::initializeDefaultResources()
         mZeroTextures[TextureType::External].set(this, zeroTextureExternal);
     }
 
-    // This may change native TEXTURE_2D, TEXTURE_EXTERNAL_OES and TEXTURE_RECTANGLE,
-    // binding states. Ensure state manager is aware of this when binding
-    // this texture type.
-    if (mSupportedExtensions.videoTextureWEBGL)
-    {
-        Texture *zeroTextureVideoImage =
-            new Texture(mImplementation.get(), {0}, TextureType::VideoImage);
-        mZeroTextures[TextureType::VideoImage].set(this, zeroTextureVideoImage);
-    }
-
     mState.initializeZeroTextures(this, mZeroTextures);
 
     ANGLE_CONTEXT_TRY(mImplementation->initialize(mDisplay->getImageLoadContext()));
@@ -933,8 +928,6 @@ void Context::initializeDefaultResources()
     mCopyImageDirtyBits |= kCopyImageDirtyBitsBase;
     mCopyImageDirtyObjects |= kCopyImageDirtyObjectsBase;
     mTilingDirtyObjects |= kTilingDirtyObjectsBase;
-
-    mOverlay.init();
 }
 
 egl::Error Context::onDestroy(const egl::Display *display)
@@ -1024,8 +1017,6 @@ egl::Error Context::onDestroy(const egl::Display *display)
 
     // Backend requires implementation to be destroyed first to close down all the objects
     mState.mShareGroup->release(display);
-
-    mOverlay.destroy(this);
 
     return egl::NoError();
 }
@@ -1664,6 +1655,11 @@ void Context::bindImageTexture(GLuint unit,
                                GLenum format)
 {
     Texture *tex = mState.mTextureManager->getTexture(texture);
+    // For robust init, make sure the texture is initialized before storage writes.
+    if (tex != nullptr)
+    {
+        ANGLE_CONTEXT_TRY(tex->ensureInitialized(this));
+    }
     mState.setImageUnit(this, unit, tex, level, layered, layer, access, format);
     mImageObserverBindings[unit].bind(tex);
 }
@@ -2686,7 +2682,7 @@ void Context::getInteger64i_vRobust(GLenum target,
     const bool paramFound = getIndexedQueryParameterInfo(target, &nativeType, &numParams);
     ASSERT(paramFound);
 
-    if (nativeType == GL_INT_64_ANGLEX)
+    if (nativeType == GL_INT64)
     {
         mState.getInteger64i_v(target, index, data);
     }
@@ -3556,6 +3552,17 @@ void Context::programParameteri(ShaderProgramID program, GLenum pname, GLint val
     SetProgramParameteri(this, programObject, pname, value);
 }
 
+const char *Context::makeStaticString(const std::string &str)
+{
+    auto it = mStaticStrings.find(str);
+    if (it != mStaticStrings.end())
+    {
+        return it->c_str();
+    }
+
+    return mStaticStrings.insert(str).first->c_str();
+}
+
 void Context::initRendererString()
 {
     std::ostringstream frontendRendererString;
@@ -3591,7 +3598,7 @@ void Context::initRendererString()
         frontendRendererString << ")";
     }
 
-    mRendererString = MakeStaticString(frontendRendererString.str());
+    mRendererString = makeStaticString(frontendRendererString.str());
 }
 
 void Context::initVendorString()
@@ -3613,7 +3620,7 @@ void Context::initVendorString()
         vendorString << mDisplay->getVendorString();
     }
 
-    mVendorString = MakeStaticString(vendorString.str());
+    mVendorString = makeStaticString(vendorString.str());
 }
 
 void Context::initVersionStrings()
@@ -3639,29 +3646,29 @@ void Context::initVersionStrings()
                       << angle::GetANGLEVersionString() << ")";
     }
 
-    mVersionString = MakeStaticString(versionString.str());
+    mVersionString = makeStaticString(versionString.str());
 
     std::ostringstream shadingLanguageVersionString;
     shadingLanguageVersionString << "OpenGL ES GLSL ES ";
     shadingLanguageVersionString << (clientVersion.getMajor() == 2 ? 1 : clientVersion.getMajor())
                                  << "." << clientVersion.getMinor() << "0 (ANGLE "
                                  << angle::GetANGLEVersionString() << ")";
-    mShadingLanguageString = MakeStaticString(shadingLanguageVersionString.str());
+    mShadingLanguageString = makeStaticString(shadingLanguageVersionString.str());
 }
 
 void Context::initExtensionStrings()
 {
-    auto mergeExtensionStrings = [](const std::vector<const char *> &strings) {
+    auto mergeExtensionStrings = [this](const std::vector<const char *> &strings) {
         std::ostringstream combinedStringStream;
         std::copy(strings.begin(), strings.end(),
                   std::ostream_iterator<const char *>(combinedStringStream, " "));
-        return MakeStaticString(combinedStringStream.str());
+        return makeStaticString(combinedStringStream.str());
     };
 
     mExtensionStrings.clear();
     for (const auto &extensionString : mState.getExtensions().getStrings())
     {
-        mExtensionStrings.push_back(MakeStaticString(extensionString));
+        mExtensionStrings.push_back(makeStaticString(extensionString));
     }
     mExtensionString = mergeExtensionStrings(mExtensionStrings);
 
@@ -3672,7 +3679,7 @@ void Context::initExtensionStrings()
             !(mState.getExtensions().*(extensionInfo.second.ExtensionsMember)) &&
             mSupportedExtensions.*(extensionInfo.second.ExtensionsMember))
         {
-            mRequestableExtensionStrings.push_back(MakeStaticString(extensionInfo.first));
+            mRequestableExtensionStrings.push_back(makeStaticString(extensionInfo.first));
         }
     }
     mRequestableExtensionString = mergeExtensionStrings(mRequestableExtensionStrings);
@@ -3693,28 +3700,28 @@ const GLubyte *Context::getString(GLenum name) const
     switch (name)
     {
         case GL_VENDOR:
-            return reinterpret_cast<const GLubyte *>(mVendorString);
+            return AsGLubytePtr(mVendorString);
 
         case GL_RENDERER:
-            return reinterpret_cast<const GLubyte *>(mRendererString);
+            return AsGLubytePtr(mRendererString);
 
         case GL_VERSION:
-            return reinterpret_cast<const GLubyte *>(mVersionString);
+            return AsGLubytePtr(mVersionString);
 
         case GL_SHADING_LANGUAGE_VERSION:
-            return reinterpret_cast<const GLubyte *>(mShadingLanguageString);
+            return AsGLubytePtr(mShadingLanguageString);
 
         case GL_EXTENSIONS:
-            return reinterpret_cast<const GLubyte *>(mExtensionString);
+            return AsGLubytePtr(mExtensionString);
 
         case GL_REQUESTABLE_EXTENSIONS_ANGLE:
-            return reinterpret_cast<const GLubyte *>(mRequestableExtensionString);
+            return AsGLubytePtr(mRequestableExtensionString);
 
         case GL_SERIALIZED_CONTEXT_STRING_ANGLE:
             if (angle::SerializeContextToString(this, &mCachedSerializedStateString) ==
                 angle::Result::Continue)
             {
-                return reinterpret_cast<const GLubyte *>(mCachedSerializedStateString.c_str());
+                return AsGLubytePtr(mCachedSerializedStateString.c_str());
             }
             else
             {
@@ -3732,10 +3739,10 @@ const GLubyte *Context::getStringi(GLenum name, GLuint index) const
     switch (name)
     {
         case GL_EXTENSIONS:
-            return reinterpret_cast<const GLubyte *>(mExtensionStrings[index]);
+            return AsGLubytePtr(mExtensionStrings[index]);
 
         case GL_REQUESTABLE_EXTENSIONS_ANGLE:
-            return reinterpret_cast<const GLubyte *>(mRequestableExtensionStrings[index]);
+            return AsGLubytePtr(mRequestableExtensionStrings[index]);
 
         default:
             UNREACHABLE();
@@ -3885,6 +3892,10 @@ Extensions Context::generateSupportedExtensions() const
         supportedExtensions.texture3DOES             = false;
         supportedExtensions.clipDistanceAPPLE        = false;
         supportedExtensions.disjointTimerQueryEXT    = false;
+        supportedExtensions.robustnessKHR            = false;
+
+        supportedExtensions.blendEquationAdvancedKHR         = false;
+        supportedExtensions.blendEquationAdvancedCoherentKHR = false;
     }
 
     if (getClientVersion() < ES_3_0)
@@ -3910,14 +3921,7 @@ Extensions Context::generateSupportedExtensions() const
         supportedExtensions.textureFormatSRGBOverrideEXT            = false;
         supportedExtensions.renderSharedExponentQCOM                = false;
         supportedExtensions.renderSnormEXT                          = false;
-
-        // Support GL_EXT_texture_norm16 on non-WebGL ES2 contexts. This is needed for R16/RG16
-        // texturing for HDR video playback in Chromium which uses ES2 for compositor contexts.
-        // Remove this workaround after Chromium migrates to ES3 for compositor contexts.
-        if (mWebGLContext || getClientVersion() < ES_2_0)
-        {
-            supportedExtensions.textureNorm16EXT = false;
-        }
+        supportedExtensions.textureNorm16EXT                        = false;
 
         // Requires immutable textures
         supportedExtensions.yuvInternalFormatANGLE = false;
@@ -3926,10 +3930,6 @@ Extensions Context::generateSupportedExtensions() const
         supportedExtensions.shaderMultisampleInterpolationOES  = false;
         supportedExtensions.shaderNoperspectiveInterpolationNV = false;
         supportedExtensions.sampleVariablesOES                 = false;
-
-        // Require ES 3.1 but could likely be exposed on 3.0
-        supportedExtensions.textureCubeMapArrayEXT = false;
-        supportedExtensions.textureCubeMapArrayOES = false;
 
         // Require RED and RG formats
         supportedExtensions.textureSRGBR8EXT  = false;
@@ -3994,6 +3994,8 @@ Extensions Context::generateSupportedExtensions() const
         supportedExtensions.tessellationShaderOES   = false;
         supportedExtensions.textureBufferEXT        = false;
         supportedExtensions.textureBufferOES        = false;
+        supportedExtensions.textureCubeMapArrayEXT  = false;
+        supportedExtensions.textureCubeMapArrayOES  = false;
     }
 
     if (getClientVersion() > ES_2_0)
@@ -4177,6 +4179,11 @@ Extensions Context::generateSupportedExtensions() const
         }
     }
 
+// Disable the explicit context extension if the entry points are not compiled.
+#if !defined(ANGLE_ENABLE_EXPLICIT_CONTEXT)
+    supportedExtensions.explicitContextANGLE = false;
+#endif
+
     return supportedExtensions;
 }
 
@@ -4186,7 +4193,19 @@ void Context::initCaps()
     *caps      = mImplementation->getNativeCaps();
 
     // Update limitations before evaluating extension support
-    *mState.getMutableLimitations() = mImplementation->getNativeLimitations();
+    {
+        gl::Limitations implementationLimitations = mImplementation->getNativeLimitations();
+
+        if (mDisplay->getFrontendFeatures().limitMaxBufferBytesTo1MB.enabled)
+        {
+            implementationLimitations.maxBufferBytes = 1 << 20;
+        }
+        if (mDisplay->getFrontendFeatures().limitMaxTextureBytesTo1MB.enabled)
+        {
+            implementationLimitations.maxTextureBytes = 1 << 20;
+        }
+        *mState.getMutableLimitations() = implementationLimitations;
+    }
 
     // TODO (http://anglebug.com/42264543): mSupportedExtensions should not be modified here
     mSupportedExtensions = generateSupportedExtensions();
@@ -4195,18 +4214,8 @@ void Context::initCaps()
     {
         INFO() << "Limiting compressed format support.\n";
 
-        mSupportedExtensions.compressedEACR11SignedTextureOES                = false;
-        mSupportedExtensions.compressedEACR11UnsignedTextureOES              = false;
-        mSupportedExtensions.compressedEACRG11SignedTextureOES               = false;
-        mSupportedExtensions.compressedEACRG11UnsignedTextureOES             = false;
         mSupportedExtensions.compressedETC1RGB8SubTextureEXT                 = false;
         mSupportedExtensions.compressedETC1RGB8TextureOES                    = false;
-        mSupportedExtensions.compressedETC2PunchthroughARGBA8TextureOES      = false;
-        mSupportedExtensions.compressedETC2PunchthroughASRGB8AlphaTextureOES = false;
-        mSupportedExtensions.compressedETC2RGB8TextureOES                    = false;
-        mSupportedExtensions.compressedETC2RGBA8TextureOES                   = false;
-        mSupportedExtensions.compressedETC2SRGB8Alpha8TextureOES             = false;
-        mSupportedExtensions.compressedETC2SRGB8TextureOES                   = false;
         mSupportedExtensions.compressedTextureEtcANGLE                       = false;
         mSupportedExtensions.textureCompressionPvrtcIMG                      = false;
         mSupportedExtensions.pvrtcSRGBEXT                                    = false;
@@ -4272,12 +4281,18 @@ void Context::initCaps()
         }                                      \
     } while (0)
 
-    // Apply/Verify implementation limits
-    ANGLE_LIMIT_CAP(caps->maxDrawBuffers, IMPLEMENTATION_MAX_DRAW_BUFFERS);
+    // Apply/Verify implementation limits.
+    //
+    // GLES requires that draw buffers are mapped to color attachments with an identical index (in
+    // glDrawBuffers), and so draw buffers and color attachments are frequently interchanged in the
+    // codebase.  The same limit is thus used for both.
+    const GLint maxDrawBuffersAndColorAttachments = std::min<GLint>(
+        std::min(caps->maxDrawBuffers, caps->maxColorAttachments), IMPLEMENTATION_MAX_DRAW_BUFFERS);
+    ANGLE_LIMIT_CAP(caps->maxDrawBuffers, maxDrawBuffersAndColorAttachments);
     ANGLE_LIMIT_CAP(caps->maxFramebufferWidth, IMPLEMENTATION_MAX_FRAMEBUFFER_SIZE);
     ANGLE_LIMIT_CAP(caps->maxFramebufferHeight, IMPLEMENTATION_MAX_FRAMEBUFFER_SIZE);
     ANGLE_LIMIT_CAP(caps->maxRenderbufferSize, IMPLEMENTATION_MAX_RENDERBUFFER_SIZE);
-    ANGLE_LIMIT_CAP(caps->maxColorAttachments, IMPLEMENTATION_MAX_DRAW_BUFFERS);
+    ANGLE_LIMIT_CAP(caps->maxColorAttachments, maxDrawBuffersAndColorAttachments);
     ANGLE_LIMIT_CAP(caps->maxVertexAttributes, MAX_VERTEX_ATTRIBS);
     if (mDisplay->getFrontendFeatures().forceMinimumMaxVertexAttributes.enabled &&
         getClientVersion() <= Version(2, 0))
@@ -4636,6 +4651,13 @@ void Context::updateCaps()
     caps->compressedTextureFormats.clear();
     textureCaps->clear();
 
+    // Workaround for dEQP bug
+    // https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6138
+    // . Put paletted formats at the end of the compressed texture
+    // format list. If these tests are fixed, remove this vector and
+    // simplify the code below.
+    std::vector<GLenum> palettedFormats;
+
     for (GLenum sizedInternalFormat : GetAllSizedInternalFormats())
     {
         TextureCaps formatCaps = mImplementation->getNativeTextureCaps().get(sizedInternalFormat);
@@ -4714,13 +4736,23 @@ void Context::updateCaps()
             }
         }
 
-        if (formatCaps.texturable && (formatInfo.compressed || formatInfo.paletted))
+        if (formatCaps.texturable)
         {
-            caps->compressedTextureFormats.push_back(sizedInternalFormat);
+            if (formatInfo.compressed)
+            {
+                caps->compressedTextureFormats.push_back(sizedInternalFormat);
+            }
+            else if (formatInfo.paletted)
+            {
+                palettedFormats.push_back(sizedInternalFormat);
+            }
         }
 
         textureCaps->insert(sizedInternalFormat, formatCaps);
     }
+
+    caps->compressedTextureFormats.insert(caps->compressedTextureFormats.end(),
+                                          palettedFormats.begin(), palettedFormats.end());
 
     // If program binary is disabled, blank out the memory cache pointer.
     if (!mSupportedExtensions.getProgramBinaryOES)
@@ -4933,20 +4965,6 @@ void Context::blitFramebuffer(GLint srcX0,
     ANGLE_CONTEXT_TRY(drawFramebuffer->blit(this, srcArea, dstArea, mask, filter));
 }
 
-void Context::blitFramebufferNV(GLint srcX0,
-                                GLint srcY0,
-                                GLint srcX1,
-                                GLint srcY1,
-                                GLint dstX0,
-                                GLint dstY0,
-                                GLint dstX1,
-                                GLint dstY1,
-                                GLbitfield mask,
-                                GLenum filter)
-{
-    blitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
-}
-
 void Context::clear(GLbitfield mask)
 {
     if (mState.isRasterizerDiscardEnabled())
@@ -5134,6 +5152,34 @@ void Context::clearBufferfi(GLenum buffer, GLint drawbuffer, GLfloat depth, GLin
         framebufferObject->clearBufferfi(this, buffer, drawbuffer, clamp01(depth), stencil));
 }
 
+ANGLE_INLINE angle::Result Context::readPixelsImpl(GLint x,
+                                                   GLint y,
+                                                   GLsizei width,
+                                                   GLsizei height,
+                                                   GLenum format,
+                                                   GLenum type,
+                                                   void *pixels)
+{
+    // Zero dimensions are no-ops and negative dimensions must be blocked by validation.
+    // Exit early in both cases to avoid backend failures when validation is disabled.
+    if (ANGLE_UNLIKELY(width <= 0 || height <= 0))
+    {
+        return angle::Result::Continue;
+    }
+
+    ANGLE_TRY(syncStateForReadPixels());
+
+    Framebuffer *readFBO = mState.getReadFramebuffer();
+    ASSERT(readFBO);
+
+    Rectangle area(x, y, width, height);
+    PixelPackState packState = mState.getPackState();
+    Buffer *packBuffer       = mState.getTargetBuffer(gl::BufferBinding::PixelPack);
+    ANGLE_TRY(readFBO->readPixels(this, area, format, type, packState, packBuffer, pixels));
+
+    return angle::Result::Continue;
+}
+
 void Context::readPixels(GLint x,
                          GLint y,
                          GLsizei width,
@@ -5142,20 +5188,7 @@ void Context::readPixels(GLint x,
                          GLenum type,
                          void *pixels)
 {
-    if (width == 0 || height == 0)
-    {
-        return;
-    }
-
-    ANGLE_CONTEXT_TRY(syncStateForReadPixels());
-
-    Framebuffer *readFBO = mState.getReadFramebuffer();
-    ASSERT(readFBO);
-
-    Rectangle area(x, y, width, height);
-    PixelPackState packState = mState.getPackState();
-    Buffer *packBuffer       = mState.getTargetBuffer(gl::BufferBinding::PixelPack);
-    ANGLE_CONTEXT_TRY(readFBO->readPixels(this, area, format, type, packState, packBuffer, pixels));
+    ANGLE_CONTEXT_TRY(readPixelsImpl(x, y, width, height, format, type, pixels));
 }
 
 void Context::readPixelsRobust(GLint x,
@@ -5170,7 +5203,63 @@ void Context::readPixelsRobust(GLint x,
                                GLsizei *rows,
                                void *pixels)
 {
-    readPixels(x, y, width, height, format, type, pixels);
+    ANGLE_CONTEXT_TRY(readPixelsImpl(x, y, width, height, format, type, pixels));
+
+    if (length != nullptr)
+    {
+        if (mState.getTargetBuffer(BufferBinding::PixelPack) == nullptr)
+        {
+            const InternalFormat &formatInfo = GetInternalFormatInfo(format, type);
+
+            GLuint endByte   = 0;
+            const bool valid = formatInfo.computePackUnpackEndByte(
+                type, Extents(width, height, 1), mState.getPackState(), false, &endByte);
+            ASSERT(valid);
+            ASSERT(endByte <= static_cast<GLuint>(std::numeric_limits<GLsizei>::max()));
+
+            *length = static_cast<GLsizei>(endByte);
+        }
+        else
+        {
+            *length = 0;
+        }
+    }
+
+    GLsizei columnsValue = 0;
+    GLsizei rowsValue    = 0;
+    // If the call above exited early due to width or height being zero,
+    // the read buffer dimensions might remain unresolved at this point.
+    // There is no need to compute output dimensions in that case.
+    if (ANGLE_LIKELY(width > 0 && height > 0))
+    {
+        const Extents readBufferSize =
+            mState.getReadFramebuffer()->getState().getReadPixelsAttachment(format)->getSize();
+        ASSERT(readBufferSize.width >= 0 && readBufferSize.height >= 0);
+        ASSERT(angle::base::CheckAdd<GLint>(x, width).IsValid());
+        ASSERT(angle::base::CheckAdd<GLint>(y, height).IsValid());
+
+        // These expressions cannot overflow with the assertions above.
+        // Minuend is the clipped end; subtrahend is the clipped start.
+        columnsValue = std::min<GLsizei>(x + width, readBufferSize.width) - std::max(0, x);
+        rowsValue    = std::min<GLsizei>(y + height, readBufferSize.height) - std::max(0, y);
+
+        // If any computed dimension is not positive, the intersection is empty.
+        if (columnsValue <= 0 || rowsValue <= 0)
+        {
+            columnsValue = 0;
+            rowsValue    = 0;
+        }
+    }
+
+    if (columns != nullptr)
+    {
+        *columns = columnsValue;
+    }
+
+    if (rows != nullptr)
+    {
+        *rows = rowsValue;
+    }
 }
 
 void Context::copyTexImage2D(TextureTarget target,
@@ -5272,6 +5361,9 @@ void Context::copyImageSubData(GLuint srcName,
         return;
     }
 
+    ASSERT(srcTarget != GL_RENDERER || (srcLevel == 0 && srcZ == 0 && srcDepth == 1));
+    ASSERT(dstTarget != GL_RENDERER || (dstLevel == 0 && dstZ == 0 && srcDepth == 1));
+
     if (srcTarget == GL_RENDERBUFFER)
     {
         // Source target is a Renderbuffer
@@ -5283,8 +5375,7 @@ void Context::copyImageSubData(GLuint srcName,
 
             // Copy Renderbuffer to Renderbuffer
             ANGLE_CONTEXT_TRY(writeBuffer->copyRenderbufferSubData(
-                this, readBuffer, srcLevel, srcX, srcY, srcZ, dstLevel, dstX, dstY, dstZ, srcWidth,
-                srcHeight, srcDepth));
+                this, readBuffer, srcX, srcY, dstX, dstY, srcWidth, srcHeight));
         }
         else
         {
@@ -5298,8 +5389,7 @@ void Context::copyImageSubData(GLuint srcName,
 
             // Copy Renderbuffer to Texture
             ANGLE_CONTEXT_TRY(writeTexture->copyRenderbufferSubData(
-                this, readBuffer, srcLevel, srcX, srcY, srcZ, dstLevel, dstX, dstY, dstZ, srcWidth,
-                srcHeight, srcDepth));
+                this, readBuffer, srcX, srcY, dstLevel, dstX, dstY, dstZ, srcWidth, srcHeight));
         }
     }
     else
@@ -5320,9 +5410,8 @@ void Context::copyImageSubData(GLuint srcName,
             Renderbuffer *writeBuffer = getRenderbuffer(PackParam<RenderbufferID>(dstName));
 
             // Copy Texture to Renderbuffer
-            ANGLE_CONTEXT_TRY(writeBuffer->copyTextureSubData(this, readTexture, srcLevel, srcX,
-                                                              srcY, srcZ, dstLevel, dstX, dstY,
-                                                              dstZ, srcWidth, srcHeight, srcDepth));
+            ANGLE_CONTEXT_TRY(writeBuffer->copyTextureSubData(
+                this, readTexture, srcLevel, srcX, srcY, srcZ, dstX, dstY, srcWidth, srcHeight));
         }
         else
         {
@@ -6526,27 +6615,6 @@ void Context::texStorage3DMultisample(TextureType target,
                                                      ConvertToBool(fixedsamplelocations)));
 }
 
-void Context::texImage2DExternal(TextureTarget target,
-                                 GLint level,
-                                 GLint internalformat,
-                                 GLsizei width,
-                                 GLsizei height,
-                                 GLint border,
-                                 GLenum format,
-                                 GLenum type)
-{
-    Extents size(width, height, 1);
-    Texture *texture = getTextureByTarget(target);
-    ANGLE_CONTEXT_TRY(
-        texture->setImageExternal(this, target, level, internalformat, size, format, type));
-}
-
-void Context::invalidateTexture(TextureType target)
-{
-    mImplementation->invalidateTexture(target);
-    mState.invalidateTextureBindings(target);
-}
-
 void Context::getMultisamplefv(GLenum pname, GLuint index, GLfloat *val)
 {
     // According to spec 3.1 Table 20.49: Framebuffer Dependent Values,
@@ -6659,16 +6727,18 @@ void Context::getSynciv(SyncID syncPacked,
     ANGLE_CONTEXT_TRY(QuerySynciv(this, syncObject, pname, count, length, values));
 }
 
-void Context::getFramebufferParameteriv(GLenum target, GLenum pname, GLint *params)
+void Context::getFramebufferParameteriv(GLenum target,
+                                        FramebufferParameter pnamePacked,
+                                        GLint *params)
 {
     Framebuffer *framebuffer = mState.getTargetFramebuffer(target);
-    QueryFramebufferParameteriv(framebuffer, pname, params);
+    QueryFramebufferParameteriv(framebuffer, pnamePacked, params);
 }
 
-void Context::framebufferParameteri(GLenum target, GLenum pname, GLint param)
+void Context::framebufferParameteri(GLenum target, FramebufferParameter pnamePacked, GLint param)
 {
     Framebuffer *framebuffer = mState.getTargetFramebuffer(target);
-    SetFramebufferParameteri(this, framebuffer, pname, param);
+    SetFramebufferParameteri(this, framebuffer, pnamePacked, param);
 }
 
 bool Context::getScratchBuffer(size_t requstedSizeBytes,
@@ -6695,7 +6765,7 @@ angle::ScratchBuffer *Context::getScratchBuffer() const
 }
 
 bool Context::getZeroFilledBuffer(size_t requstedSizeBytes,
-                                  angle::MemoryBuffer **zeroBufferOut) const
+                                  const angle::MemoryBuffer **zeroBufferOut) const
 {
     if (!mZeroFilledBuffer.valid())
     {
@@ -6703,7 +6773,15 @@ bool Context::getZeroFilledBuffer(size_t requstedSizeBytes,
     }
 
     ASSERT(mZeroFilledBuffer.valid());
-    return mZeroFilledBuffer.value().getInitialized(requstedSizeBytes, zeroBufferOut, 0);
+
+    angle::MemoryBuffer *memoryBuffer = nullptr;
+    if (!mZeroFilledBuffer.value().getInitialized(requstedSizeBytes, &memoryBuffer, 0))
+    {
+        return false;
+    }
+
+    *zeroBufferOut = memoryBuffer;
+    return true;
 }
 
 void Context::dispatchCompute(GLuint numGroupsX, GLuint numGroupsY, GLuint numGroupsZ)
@@ -6902,15 +6980,6 @@ void Context::drawArraysInstancedBaseInstance(PrimitiveMode mode,
     MarkTransformFeedbackBufferUsage(this, count, 1);
 }
 
-void Context::drawArraysInstancedBaseInstanceANGLE(PrimitiveMode mode,
-                                                   GLint first,
-                                                   GLsizei count,
-                                                   GLsizei instanceCount,
-                                                   GLuint baseInstance)
-{
-    drawArraysInstancedBaseInstance(mode, first, count, instanceCount, baseInstance);
-}
-
 void Context::drawElementsInstancedBaseInstance(PrimitiveMode mode,
                                                 GLsizei count,
                                                 DrawElementsType type,
@@ -6956,18 +7025,6 @@ void Context::drawElementsInstancedBaseVertexBaseInstance(PrimitiveMode mode,
 
     ANGLE_CONTEXT_TRY(mImplementation->drawElementsInstancedBaseVertexBaseInstance(
         this, mode, count, type, indices, instanceCount, baseVertex, baseInstance));
-}
-
-void Context::drawElementsInstancedBaseVertexBaseInstanceANGLE(PrimitiveMode mode,
-                                                               GLsizei count,
-                                                               DrawElementsType type,
-                                                               const GLvoid *indices,
-                                                               GLsizei instanceCount,
-                                                               GLint baseVertex,
-                                                               GLuint baseInstance)
-{
-    drawElementsInstancedBaseVertexBaseInstance(mode, count, type, indices, instanceCount,
-                                                baseVertex, baseInstance);
 }
 
 void Context::multiDrawArraysInstancedBaseInstance(PrimitiveMode mode,
@@ -7027,11 +7084,8 @@ GLenum Context::checkFramebufferStatus(GLenum target)
 
 void Context::compileShader(ShaderProgramID shader)
 {
-    Shader *shaderObject = GetValidShader(this, angle::EntryPoint::GLCompileShader, shader);
-    if (!shaderObject)
-    {
-        return;
-    }
+    Shader *shaderObject = getShaderNoResolveCompile(shader);
+    ASSERT(shaderObject != nullptr);
     shaderObject->compile(this, angle::JobResultExpectancy::Future);
 }
 
@@ -8032,7 +8086,7 @@ void Context::uniformBlockBinding(ShaderProgramID program,
 GLsync Context::fenceSync(GLenum condition, GLbitfield flags)
 {
     SyncID syncHandle;
-    if (!mState.mSyncManager->createSync(mImplementation.get(), this, &syncHandle))
+    if (!mState.mSyncManager->createSync(mImplementation.get(), &syncHandle))
     {
         handleExhaustionError(angle::EntryPoint::GLFenceSync);
         return nullptr;
@@ -8086,7 +8140,7 @@ void Context::getInteger64vRobust(GLenum pname, GLsizei paramCount, GLsizei *len
         return;  // Avoid crashing with invalid apps running with no validation.
     }
 
-    if (nativeType == GL_INT_64_ANGLEX)
+    if (nativeType == GL_INT64)
     {
         getInteger64vImpl(pname, data);
     }
@@ -9294,16 +9348,6 @@ void Context::maxShaderCompilerThreads(GLuint count)
     mImplementation->setMaxShaderCompilerThreads(count);
 }
 
-void Context::framebufferParameteriMESA(GLenum target, GLenum pname, GLint param)
-{
-    framebufferParameteri(target, pname, param);
-}
-
-void Context::getFramebufferParameterivMESA(GLenum target, GLenum pname, GLint *params)
-{
-    getFramebufferParameteriv(target, pname, params);
-}
-
 bool Context::isGLES1() const
 {
     return mState.isGLES1();
@@ -9448,6 +9492,7 @@ void Context::onSubjectStateChange(angle::SubjectIndex index, angle::SubjectMess
                 {
                     Program *program = mState.getProgram();
                     ASSERT(program->isLinked());
+                    mState.onCurrentExecutableRelink();
                     ANGLE_CONTEXT_TRY(mState.installProgramExecutable(this));
                     mStateCache.onProgramExecutableChange(this);
                     break;
@@ -9471,6 +9516,7 @@ void Context::onSubjectStateChange(angle::SubjectIndex index, angle::SubjectMess
                     mStateCache.onProgramExecutableChange(this);
                     break;
                 case angle::SubjectMessage::ProgramRelinked:
+                    mState.onCurrentExecutableRelink();
                     ANGLE_CONTEXT_TRY(mState.installProgramPipelineExecutable(this));
                     mStateCache.onProgramExecutableChange(this);
                     break;
@@ -10038,7 +10084,7 @@ void Context::blobCacheCallbacks(GLSETBLOBPROCANGLE set,
     mState.getBlobCacheCallbacks() = {set, get, userParam};
 }
 
-void Context::texStorageAttribs2D(GLenum target,
+void Context::texStorageAttribs2D(TextureType targetPacked,
                                   GLsizei levels,
                                   GLenum internalFormat,
                                   GLsizei width,
@@ -10046,13 +10092,12 @@ void Context::texStorageAttribs2D(GLenum target,
                                   const GLint *attribList)
 {
     Extents size(width, height, 1);
-    TextureType textype = FromGLenum<TextureType>(target);
-    Texture *texture    = getTextureByType(textype);
+    Texture *texture = getTextureByType(targetPacked);
     ANGLE_CONTEXT_TRY(
-        texture->setStorageAttribs(this, textype, levels, internalFormat, size, attribList));
+        texture->setStorageAttribs(this, targetPacked, levels, internalFormat, size, attribList));
 }
 
-void Context::texStorageAttribs3D(GLenum target,
+void Context::texStorageAttribs3D(TextureType targetPacked,
                                   GLsizei levels,
                                   GLenum internalFormat,
                                   GLsizei width,
@@ -10061,10 +10106,9 @@ void Context::texStorageAttribs3D(GLenum target,
                                   const GLint *attribList)
 {
     Extents size(width, height, depth);
-    TextureType textype = FromGLenum<TextureType>(target);
-    Texture *texture    = getTextureByType(textype);
+    Texture *texture = getTextureByType(targetPacked);
     ANGLE_CONTEXT_TRY(
-        texture->setStorageAttribs(this, textype, levels, internalFormat, size, attribList));
+        texture->setStorageAttribs(this, targetPacked, levels, internalFormat, size, attribList));
 }
 
 size_t Context::getMemoryUsage() const
@@ -10189,6 +10233,18 @@ void Context::onFramebufferDestroy(const Framebuffer *framebuffer) const
 void Context::onProgramPipelineDestroy(const ProgramPipeline *programPipeline) const
 {
     mState.mProgramPipelineManager->recycleHandle(programPipeline->id());
+}
+
+void Context::invalidateTransformFeedbackCapacities(const Buffer *buffer) const
+{
+    for (auto pair : UnsafeResourceMapIter(mTransformFeedbackMap))
+    {
+        TransformFeedback *tf = pair.second;
+        if (tf != nullptr && tf->isBufferBound(buffer->id()))
+        {
+            tf->invalidateVertexCapacity();
+        }
+    }
 }
 
 // ErrorSet implementation.
@@ -10782,7 +10838,6 @@ void StateCache::updateValidBindTextureTypes(Context *context)
         {TextureType::Rectangle, exts.textureRectangleANGLE},
         {TextureType::CubeMap, true},
         {TextureType::CubeMapArray, isGLES32 || exts.textureCubeMapArrayAny()},
-        {TextureType::VideoImage, exts.videoTextureWEBGL},
         {TextureType::Buffer, isGLES32 || exts.textureBufferAny()},
     }};
 }

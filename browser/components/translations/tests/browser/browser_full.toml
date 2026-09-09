@@ -22,6 +22,8 @@ prefs = [
 
 ["browser_translations_full_page_intersection_content_eager.js"]
 
+["browser_translations_full_page_intersection_engine_timeout.js"]
+
 ["browser_translations_full_page_intersection_find_bar.js"]
 
 ["browser_translations_full_page_intersection_find_bar_move_tab_to_new_window.js"]

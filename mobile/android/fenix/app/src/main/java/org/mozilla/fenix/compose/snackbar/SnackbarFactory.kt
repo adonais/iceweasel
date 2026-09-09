@@ -7,10 +7,8 @@ package org.mozilla.fenix.compose.snackbar
 import android.view.View
 
 /**
- * A factory for creating [Snackbar] instances.
- * This interface can be implemented to customize the creation of Snackbars,
- * for example, to use a different Snackbar implementation or to add custom logic
- * during Snackbar creation.
+ * A factory for creating [Snackbar] instances. This interface can be implemented to customize the creation of
+ * Snackbars, for example, to use a different Snackbar implementation or to add custom logic during Snackbar creation.
  */
 fun interface SnackbarFactory {
     /**
@@ -26,9 +24,7 @@ fun interface SnackbarFactory {
     ): Snackbar
 }
 
-/**
- * Default implementation of [SnackbarFactory].
- */
+/** Default implementation of [SnackbarFactory]. */
 class DefaultSnackbarFactory : SnackbarFactory {
     /**
      * Creates a [Snackbar] instance.

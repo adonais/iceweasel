@@ -7,20 +7,20 @@ package org.mozilla.fenix.ui.efficiency.generation.behavior
 /**
  * Runtime data shared across a generated behavior case.
  *
- * Keep this intentionally tiny for now. Behavior tests usually need one or two
- * dynamic values, such as a folder name, bookmark title, URL, or count.
+ * Keep this intentionally tiny for now. Behavior tests usually need one or two dynamic values, such as a folder name,
+ * bookmark title, URL, or count.
  */
-data class BehaviorData(
-    val values: Map<String, String>,
-) {
+data class BehaviorData(val values: Map<String, String>) {
     operator fun get(key: String): String = require(key)
 
-    fun require(key: String): String = values[key]
-        ?: throw IllegalArgumentException("Missing behavior data key '$key'. Available keys=${values.keys.sorted()}")
+    fun require(key: String): String =
+        values[key]
+            ?: throw IllegalArgumentException(
+                "Missing behavior data key '$key'. Available keys=${values.keys.sorted()}"
+            )
 
-    override fun toString(): String = values.entries
-        .sortedBy { it.key }
-        .joinToString(prefix = "{", postfix = "}") { "${it.key}=${it.value}" }
+    override fun toString(): String =
+        values.entries.sortedBy { it.key }.joinToString(prefix = "{", postfix = "}") { "${it.key}=${it.value}" }
 }
 
 object BehaviorDataCatalog {
@@ -47,20 +47,19 @@ object BehaviorDataCatalog {
         feature: String,
         entity: String,
         templateId: String,
-    ): String = when (key) {
-        "folderName" -> "TAE Folder ${templateId.stableSuffix()}"
-        "bookmarkTitle" -> "TAE Bookmark ${templateId.stableSuffix()}"
-        "bookmarkUrl" -> "https://example.com/$feature/$entity/${templateId.stableSuffix()}"
-        "itemTitle" -> "TAE Item ${templateId.stableSuffix()}"
-        else -> "TAE ${key.toDisplayName()} ${templateId.stableSuffix()}"
-    }
+    ): String =
+        when (key) {
+            "folderName" -> "TAE Folder ${templateId.stableSuffix()}"
+            "bookmarkTitle" -> "TAE Bookmark ${templateId.stableSuffix()}"
+            "bookmarkUrl" -> "https://example.com/$feature/$entity/${templateId.stableSuffix()}"
+            "itemTitle" -> "TAE Item ${templateId.stableSuffix()}"
+            else -> "TAE ${key.toDisplayName()} ${templateId.stableSuffix()}"
+        }
 
-    private fun String.stableSuffix(): String =
-        replace("entity.", "")
-            .replace(".", "-")
-            .take(32)
+    private fun String.stableSuffix(): String = replace("entity.", "").replace(".", "-").take(32)
 
     private fun String.toDisplayName(): String =
-        replace(Regex("([a-z])([A-Z])"), "$1 $2")
-            .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+        replace(Regex("([a-z])([A-Z])"), "$1 $2").replaceFirstChar {
+            if (it.isLowerCase()) it.titlecase() else it.toString()
+        }
 }

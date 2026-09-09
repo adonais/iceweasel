@@ -12,13 +12,11 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import mozilla.components.support.ktx.android.content.getDrawableWithTint
-import org.mozilla.fenix.R
 import mozilla.components.ui.colors.R as colorsR
 import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.fenix.R
 
-/**
- * Updates views in [R.id.bottom_button_bar_layout] for collection creation.
- */
+/** Updates views in [R.id.bottom_button_bar_layout] for collection creation. */
 class CollectionCreationBottomBarView(
     private val interactor: CollectionCreationInteractor,
     private val layout: ViewGroup,
@@ -31,7 +29,9 @@ class CollectionCreationBottomBarView(
         when (step) {
             SaveCollectionStep.SelectTabs -> updateForSelectTabs(state)
             SaveCollectionStep.SelectCollection -> updateForSelectCollection()
-            else -> { /* noop */ }
+            else -> {
+                /* noop */
+            }
         }
     }
 
@@ -40,10 +40,11 @@ class CollectionCreationBottomBarView(
         layout.isClickable = false
 
         iconButton.apply {
-            val drawable = context.getDrawableWithTint(
-                iconsR.drawable.mozac_ic_cross_24,
-                ContextCompat.getColor(context, colorsR.color.novaWhite),
-            )
+            val drawable =
+                context.getDrawableWithTint(
+                    iconsR.drawable.mozac_ic_cross_24,
+                    ContextCompat.getColor(context, colorsR.color.novaWhite),
+                )
             setImageDrawable(drawable)
             contentDescription = context.getString(R.string.create_collection_close)
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
@@ -51,18 +52,19 @@ class CollectionCreationBottomBarView(
         }
 
         textView.apply {
-            text = if (state.selectedTabs.isEmpty()) {
-                context.getString(R.string.create_collection_save_to_collection_empty)
-            } else {
-                context.getString(
-                    if (state.selectedTabs.size == 1) {
-                        R.string.create_collection_save_to_collection_tab_selected
-                    } else {
-                        R.string.create_collection_save_to_collection_tabs_selected
-                    },
-                    state.selectedTabs.size,
-                )
-            }
+            text =
+                if (state.selectedTabs.isEmpty()) {
+                    context.getString(R.string.create_collection_save_to_collection_empty)
+                } else {
+                    context.getString(
+                        if (state.selectedTabs.size == 1) {
+                            R.string.create_collection_save_to_collection_tab_selected
+                        } else {
+                            R.string.create_collection_save_to_collection_tabs_selected
+                        },
+                        state.selectedTabs.size,
+                    )
+                }
         }
 
         saveButton.apply {
@@ -83,14 +85,14 @@ class CollectionCreationBottomBarView(
     private fun updateForSelectCollection() {
         saveButton.visibility = View.GONE
 
-        textView.text =
-            textView.context.getString(R.string.create_collection_add_new_collection)
+        textView.text = textView.context.getString(R.string.create_collection_add_new_collection)
 
         iconButton.apply {
-            val drawable = context.getDrawableWithTint(
-                iconsR.drawable.mozac_ic_plus_24,
-                ContextCompat.getColor(context, colorsR.color.novaWhite),
-            )
+            val drawable =
+                context.getDrawableWithTint(
+                    iconsR.drawable.mozac_ic_plus_24,
+                    ContextCompat.getColor(context, colorsR.color.novaWhite),
+                )
             setImageDrawable(drawable)
             contentDescription = null
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO

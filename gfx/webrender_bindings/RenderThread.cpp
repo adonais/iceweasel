@@ -1416,6 +1416,8 @@ void RenderThread::HandleDeviceReset(gfx::DeviceResetDetectPlace aPlace,
 
   mHandlingDeviceReset = true;
 
+  gfxCriticalNote << "Handle DeviceReset";
+
   {
     MutexAutoLock lock(mRenderTextureMapLock);
     mRenderTexturesDeferred.clear();

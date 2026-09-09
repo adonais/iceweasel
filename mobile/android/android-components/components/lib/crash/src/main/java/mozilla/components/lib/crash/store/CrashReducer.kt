@@ -8,9 +8,7 @@ import android.text.format.DateUtils
 
 private const val FIVE_DAYS_IN_MILLIS = DateUtils.DAY_IN_MILLIS * 5
 
-/**
- * The [CrashState] reducer.
- */
+/** The [CrashState] reducer. */
 fun crashReducer(
     state: CrashState,
     action: CrashAction,
@@ -19,19 +17,18 @@ fun crashReducer(
         CrashAction.Initialize,
         is CrashAction.CheckDeferred,
         is CrashAction.CheckForCrashes,
-        is CrashAction.FinishCheckingForCrashes,
-        -> state
-        is CrashAction.RestoreDeferred -> if (action.now > action.until) {
-            CrashState.Ready
-        } else {
-            CrashState.Deferred(until = action.until)
-        }
+        is CrashAction.FinishCheckingForCrashes -> state
+        is CrashAction.RestoreDeferred ->
+            if (action.now > action.until) {
+                CrashState.Ready
+            } else {
+                CrashState.Deferred(until = action.until)
+            }
         is CrashAction.Defer -> CrashState.Deferred(action.now + FIVE_DAYS_IN_MILLIS)
         is CrashAction.ShowPrompt -> CrashState.Reporting(action.crashIDs)
         is CrashAction.PromptShown -> CrashState.Idle
         CrashAction.CancelTapped,
         CrashAction.CancelForEverTapped,
-        is CrashAction.ReportTapped,
-        -> CrashState.Done
+        is CrashAction.ReportTapped -> CrashState.Done
     }
 }

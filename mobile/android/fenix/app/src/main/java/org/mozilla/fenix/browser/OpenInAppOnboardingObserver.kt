@@ -27,9 +27,7 @@ import org.mozilla.fenix.browser.infobanner.InfoBanner
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.utils.Settings
 
-/**
- * Displays an [InfoBanner] when a user visits a website that can be opened in an installed native app.
- */
+/** Displays an [InfoBanner] when a user visits a website that can be opened in an installed native app. */
 @Suppress("LongParameterList")
 class OpenInAppOnboardingObserver(
     private val context: Context,
@@ -46,31 +44,32 @@ class OpenInAppOnboardingObserver(
     private var currentUrl: String? = null
     private var sessionDomainForDisplayedBanner: String? = null
 
-    @VisibleForTesting
-    internal var infoBanner: InfoBanner? = null
+    @VisibleForTesting internal var infoBanner: InfoBanner? = null
 
     override fun start() {
-        scope = store.flowScoped(lifecycleOwner, mainDispatcher) { flow ->
-            flow.mapNotNull { state ->
-                state.selectedTab
-            }
-                .ifAnyChanged { tab ->
-                    arrayOf(tab.content.url, tab.content.loading)
-                }
-                .collect { tab ->
-                    if (tab.content.url != currentUrl) {
-                        sessionDomainForDisplayedBanner?.let {
-                            if (tab.content.url.tryGetHostFromUrl() != it) {
-                                infoBanner?.dismiss()
-                            }
-                        }
-                        currentUrl = tab.content.url
-                    } else {
-                        // Loading state has changed
-                        maybeShowOpenInAppBanner(tab.content.url, tab.content.loading)
+        scope =
+            store.flowScoped(lifecycleOwner, mainDispatcher) { flow ->
+                flow
+                    .mapNotNull { state ->
+                        state.selectedTab
                     }
-                }
-        }
+                    .ifAnyChanged { tab ->
+                        arrayOf(tab.content.url, tab.content.loading)
+                    }
+                    .collect { tab ->
+                        if (tab.content.url != currentUrl) {
+                            sessionDomainForDisplayedBanner?.let {
+                                if (tab.content.url.tryGetHostFromUrl() != it) {
+                                    infoBanner?.dismiss()
+                                }
+                            }
+                            currentUrl = tab.content.url
+                        } else {
+                            // Loading state has changed
+                            maybeShowOpenInAppBanner(tab.content.url, tab.content.loading)
+                        }
+                    }
+            }
     }
 
     override fun stop() {
@@ -106,9 +105,10 @@ class OpenInAppOnboardingObserver(
             container = container,
             shouldScrollWithTopToolbar = shouldScrollWithTopToolbar,
         ) {
-            val directions = BrowserFragmentDirections.actionBrowserFragmentToSettingsFragment(
-                preferenceToScrollTo = context.getString(R.string.pref_key_open_links_in_apps),
-            )
+            val directions =
+                BrowserFragmentDirections.actionBrowserFragmentToSettingsFragment(
+                    preferenceToScrollTo = context.getString(R.string.pref_key_open_links_in_apps)
+                )
             navController.nav(R.id.browserFragment, directions)
         }
     }

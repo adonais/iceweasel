@@ -17,22 +17,21 @@ import androidx.compose.ui.window.DialogProperties
 import mozilla.components.compose.base.theme.AcornTheme
 
 /**
- * A loading dialog for an in-progress import flow. Displays a spinner with fixed title/description
- * while the importer is working, and a cancel action that invokes [onCancel].
+ * A loading dialog for an in-progress import flow. Displays a spinner with fixed title/description while the importer
+ * is working, and a cancel action that invokes [onCancel].
  *
- * The caller is responsible for hiding this dialog by observing the importer state and only
- * composing it while the import is in progress.
+ * The caller is responsible for hiding this dialog by observing the importer state and only composing it while the
+ * import is in progress.
  */
 @Composable
-internal fun PasswordsImporterDialog(
-    onCancel: () -> Unit,
-) {
+internal fun PasswordsImporterDialog(onCancel: () -> Unit) {
     AlertDialog(
-        properties = DialogProperties(
-            dismissOnBackPress = false,
-            dismissOnClickOutside = false,
-        ),
-        onDismissRequest = { },
+        properties =
+            DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false,
+            ),
+        onDismissRequest = {},
         icon = {
             CircularProgressIndicator(modifier = Modifier.size(24.dp))
         },

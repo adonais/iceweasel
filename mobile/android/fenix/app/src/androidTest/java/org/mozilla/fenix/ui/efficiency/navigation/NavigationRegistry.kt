@@ -5,7 +5,6 @@
 package org.mozilla.fenix.ui.efficiency.navigation
 
 import android.util.Log
-import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 
 object NavigationRegistry {
@@ -58,9 +57,7 @@ object NavigationRegistry {
         return null
     }
 
-    /**
-     * Returns all registered page names found in the graph.
-     */
+    /** Returns all registered page names found in the graph. */
     fun getAllPages(): Set<String> {
         return buildSet {
             addAll(graph.keys)
@@ -74,8 +71,7 @@ object NavigationRegistry {
     /**
      * Finds all distinct simple paths from [from] to [to].
      *
-     * "Simple" means a page cannot appear twice in the same path.
-     * This prevents infinite loops in cyclic graphs.
+     * "Simple" means a page cannot appear twice in the same path. This prevents infinite loops in cyclic graphs.
      */
     fun findAllPaths(from: String, to: String): List<NavigationPath> {
         val results = mutableListOf<NavigationPath>()
@@ -107,7 +103,7 @@ object NavigationRegistry {
                 NavigationPath(
                     pages = buildPageSequence(edgePath, current),
                     edges = edgePath.toList(),
-                ),
+                )
             )
             return
         }
@@ -142,9 +138,7 @@ object NavigationRegistry {
         return pages
     }
 
-    /**
-     * Logs every distinct simple path between two pages.
-     */
+    /** Logs every distinct simple path between two pages. */
     fun logAllPaths(from: String, to: String) {
         val paths = findAllPaths(from, to)
 
@@ -164,8 +158,7 @@ object NavigationRegistry {
                 path.edges.forEachIndexed { edgeIndex, edge ->
                     Log.i(
                         TAG,
-                        "      Edge ${edgeIndex + 1}: ${edge.from} -> ${edge.to} " +
-                            "[${edge.steps.size} step(s)]",
+                        "      Edge ${edgeIndex + 1}: ${edge.from} -> ${edge.to} " + "[${edge.steps.size} step(s)]",
                     )
                     edge.steps.forEachIndexed { stepIndex, step ->
                         Log.i(TAG, "         Step ${stepIndex + 1}: $step")
@@ -236,15 +229,14 @@ object NavigationRegistry {
             }
 
             graph.values.flatten().forEach { edge ->
-                val attrs = if (edge.steps.isEmpty()) {
-                    """label="0", style="dashed""""
-                } else {
-                    """label="${edge.steps.size}""""
-                }
+                val attrs =
+                    if (edge.steps.isEmpty()) {
+                        """label="0", style="dashed""""
+                    } else {
+                        """label="${edge.steps.size}""""
+                    }
 
-                appendLine(
-                    """  "${escapeDot(edge.from)}" -> "${escapeDot(edge.to)}" [$attrs];""",
-                )
+                appendLine("""  "${escapeDot(edge.from)}" -> "${escapeDot(edge.to)}" [$attrs];""")
             }
 
             appendLine("}")
@@ -252,15 +244,11 @@ object NavigationRegistry {
     }
 
     private fun escapeDot(value: String): String {
-        return value
-            .replace("\\", "\\\\")
-            .replace("\"", "\\\"")
+        return value.replace("\\", "\\\\").replace("\"", "\\\"")
     }
 }
 
-/**
- * Represents one distinct navigation path through the graph.
- */
+/** Represents one distinct navigation path through the graph. */
 data class NavigationPath(
     val pages: List<String>,
     val edges: List<NavigationEdge>,

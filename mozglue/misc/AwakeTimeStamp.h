@@ -5,7 +5,8 @@
 #ifndef mozilla_AwakeTimeStamp_h
 #define mozilla_AwakeTimeStamp_h
 
-#include <stdint.h>
+#include <compare>
+#include <cstdint>
 #include <mozilla/Types.h>
 #include "mozilla/Assertions.h"
 
@@ -33,24 +34,9 @@ class AwakeTimeStamp {
   MFBT_API static AwakeTimeStamp Now();
   MFBT_API void operator+=(const AwakeTimeDuration& aOther);
   MFBT_API void operator-=(const AwakeTimeDuration& aOther);
-  MFBT_API bool operator<(const AwakeTimeStamp& aOther) const {
-    return mValueUs < aOther.mValueUs;
-  }
-  MFBT_API bool operator<=(const AwakeTimeStamp& aOther) const {
-    return mValueUs <= aOther.mValueUs;
-  }
-  MFBT_API bool operator>=(const AwakeTimeStamp& aOther) const {
-    return mValueUs >= aOther.mValueUs;
-  }
-  MFBT_API bool operator>(const AwakeTimeStamp& aOther) const {
-    return mValueUs > aOther.mValueUs;
-  }
-  MFBT_API bool operator==(const AwakeTimeStamp& aOther) const {
-    return mValueUs == aOther.mValueUs;
-  }
-  MFBT_API bool operator!=(const AwakeTimeStamp& aOther) const {
-    return !(*this == aOther);
-  }
+
+  MFBT_API auto operator<=>(const AwakeTimeStamp& aOther) const = default;
+
   MFBT_API AwakeTimeDuration operator-(AwakeTimeStamp const& aOther) const;
   MFBT_API AwakeTimeStamp operator-(AwakeTimeDuration const& aOther) const;
   MFBT_API AwakeTimeStamp operator+(const AwakeTimeDuration& aDuration) const;
@@ -91,24 +77,8 @@ class AwakeTimeDuration {
     MOZ_ASSERT(mValueUs >= aOther.mValueUs);
     mValueUs -= aOther.mValueUs;
   }
-  MFBT_API bool operator<(const AwakeTimeDuration& aOther) const {
-    return mValueUs < aOther.mValueUs;
-  }
-  MFBT_API bool operator<=(const AwakeTimeDuration& aOther) const {
-    return mValueUs <= aOther.mValueUs;
-  }
-  MFBT_API bool operator>=(const AwakeTimeDuration& aOther) const {
-    return mValueUs >= aOther.mValueUs;
-  }
-  MFBT_API bool operator>(const AwakeTimeDuration& aOther) const {
-    return mValueUs > aOther.mValueUs;
-  }
-  MFBT_API bool operator==(const AwakeTimeDuration& aOther) const {
-    return mValueUs == aOther.mValueUs;
-  }
-  MFBT_API bool operator!=(const AwakeTimeDuration& aOther) const {
-    return !(*this == aOther);
-  }
+
+  MFBT_API auto operator<=>(const AwakeTimeDuration& aOther) const = default;
 
  private:
   friend AwakeTimeStamp;

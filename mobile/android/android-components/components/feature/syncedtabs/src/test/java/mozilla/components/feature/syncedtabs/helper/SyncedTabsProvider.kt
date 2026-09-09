@@ -11,73 +11,71 @@ import mozilla.components.concept.sync.Device
 import mozilla.components.concept.sync.DeviceType.DESKTOP
 import mozilla.components.concept.sync.DeviceType.MOBILE
 
-/**
- * Get fake tabs from a fake desktop device.
- */
-internal fun getDevice1Tabs() = SyncedDeviceTabs(
-    Device(
-        id = "client1",
-        displayName = "Foo Client",
-        deviceType = DESKTOP,
-        isCurrentDevice = false,
-        lastAccessTime = null,
-        capabilities = listOf(),
-        subscriptionExpired = false,
-        subscription = null,
-    ),
-    listOf(
-        Tab(
-            listOf(
-                TabEntry("Foo", "https://foo.bar", null), // active tab
-                TabEntry("Bobo", "https://foo.bar", null),
-                TabEntry("Foo", "https://bobo.bar", null),
-            ),
-            0,
-            1,
-            false,
+/** Get fake tabs from a fake desktop device. */
+internal fun getDevice1Tabs() =
+    SyncedDeviceTabs(
+        Device(
+            id = "client1",
+            displayName = "Foo Client",
+            deviceType = DESKTOP,
+            isCurrentDevice = false,
+            lastAccessTime = null,
+            capabilities = listOf(),
+            subscriptionExpired = false,
+            subscription = null,
         ),
-        Tab(
-            listOf(
-                TabEntry("Hello Bobo", "https://foo.bar", null), // active tab
+        listOf(
+            Tab(
+                listOf(
+                    TabEntry("Foo", "https://foo.bar", null), // active tab
+                    TabEntry("Bobo", "https://foo.bar", null),
+                    TabEntry("Foo", "https://bobo.bar", null),
+                ),
+                0,
+                1,
+                false,
             ),
-            0,
-            5,
-            false,
-        ),
-        Tab(
-            listOf(
-                TabEntry("In URL", "https://bobo.bar", null), // active tab
+            Tab(
+                listOf(
+                    TabEntry("Hello Bobo", "https://foo.bar", null) // active tab
+                ),
+                0,
+                5,
+                false,
             ),
-            0,
-            2,
-            false,
+            Tab(
+                listOf(
+                    TabEntry("In URL", "https://bobo.bar", null) // active tab
+                ),
+                0,
+                2,
+                false,
+            ),
         ),
-    ),
-)
+    )
 
-/**
- * Get fake tabs from a fake mobile device.
- */
-internal fun getDevice2Tabs() = SyncedDeviceTabs(
-    Device(
-        id = "client2",
-        displayName = "Bar Client",
-        deviceType = MOBILE,
-        isCurrentDevice = false,
-        lastAccessTime = null,
-        capabilities = listOf(),
-        subscriptionExpired = false,
-        subscription = null,
-    ),
-    listOf(
-        Tab(
-            listOf(
-                TabEntry("Bar", "https://bar.bar", null),
-                TabEntry("BOBO in CAPS", "https://obob.bar", null), // active tab
-            ),
-            1,
-            1,
-            false,
+/** Get fake tabs from a fake mobile device. */
+internal fun getDevice2Tabs() =
+    SyncedDeviceTabs(
+        Device(
+            id = "client2",
+            displayName = "Bar Client",
+            deviceType = MOBILE,
+            isCurrentDevice = false,
+            lastAccessTime = null,
+            capabilities = listOf(),
+            subscriptionExpired = false,
+            subscription = null,
         ),
-    ),
-)
+        listOf(
+            Tab(
+                listOf(
+                    TabEntry("Bar", "https://bar.bar", null),
+                    TabEntry("BOBO in CAPS", "https://obob.bar", null), // active tab
+                ),
+                1,
+                1,
+                false,
+            )
+        ),
+    )

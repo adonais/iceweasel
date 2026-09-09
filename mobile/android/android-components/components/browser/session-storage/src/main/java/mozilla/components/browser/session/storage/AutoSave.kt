@@ -11,6 +11,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -24,15 +28,10 @@ import kotlinx.coroutines.launch
 import mozilla.components.browser.state.selector.normalTabs
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.BrowserState
-import mozilla.components.browser.state.state.TabPartition
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.utils.NamedThreadFactory
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
 
 class AutoSave(
     private val store: BrowserStore,
@@ -62,9 +61,8 @@ class AutoSave(
     fun periodicallyInForeground(
         interval: Long = 300,
         unit: TimeUnit = TimeUnit.SECONDS,
-        scheduler: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(
-            NamedThreadFactory("AutoSave"),
-        ),
+        scheduler: ScheduledExecutorService =
+            Executors.newSingleThreadScheduledExecutor(NamedThreadFactory("AutoSave")),
         lifecycle: Lifecycle = ProcessLifecycleOwner.get().lifecycle,
     ): AutoSave {
         lifecycle.addObserver(
@@ -73,27 +71,19 @@ class AutoSave(
                 scheduler,
                 interval,
                 unit,
-            ),
+            )
         )
         return this
     }
 
-    /**
-     * Saves the state automatically when the app goes to the background.
-     */
-    fun whenGoingToBackground(
-        lifecycle: Lifecycle = ProcessLifecycleOwner.get().lifecycle,
-    ): AutoSave {
+    /** Saves the state automatically when the app goes to the background. */
+    fun whenGoingToBackground(lifecycle: Lifecycle = ProcessLifecycleOwner.get().lifecycle): AutoSave {
         lifecycle.addObserver(AutoSaveBackground(this))
         return this
     }
 
-    /**
-     * Saves the state automatically when the sessions change, e.g. sessions get added and removed.
-     */
-    fun whenSessionsChange(
-        scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
-    ): AutoSave {
+    /** Saves the state automatically when the sessions change, e.g. sessions get added and removed. */
+    fun whenSessionsChange(scope: CoroutineScope = CoroutineScope(Dispatchers.IO)): AutoSave {
         scope.launch {
             val monitoring = StateMonitoring(this@AutoSave)
             monitoring.monitor(store.flow())
@@ -124,28 +114,28 @@ class AutoSave(
 
         @OptIn(DelicateCoroutinesApi::class)
         GlobalScope.launch(Dispatchers.IO) {
-            if (delaySave && delayMs > 0) {
-                logger.debug("Delaying save (${delayMs}ms)")
-                delay(delayMs)
-            }
+                if (delaySave && delayMs > 0) {
+                    logger.debug("Delaying save (${delayMs}ms)")
+                    delay(delayMs)
+                }
 
-            val start = now()
+                val start = now()
 
-            try {
-                val state = store.state
-                sessionStorage.save(state)
-            } finally {
-                val took = now() - start
-                logger.debug("Saved state to disk [${took}ms]")
+                try {
+                    val state = store.state
+                    sessionStorage.save(state)
+                } finally {
+                    val took = now() - start
+                    logger.debug("Saved state to disk [${took}ms]")
+                }
             }
-        }.also {
-            saveJob = it
-            return it
-        }
+            .also {
+                saveJob = it
+                return it
+            }
     }
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal fun now() = SystemClock.elapsedRealtime()
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal fun now() = SystemClock.elapsedRealtime()
 
     companion object {
         // Minimum interval between saving states.
@@ -153,9 +143,7 @@ class AutoSave(
     }
 }
 
-/**
- * [LifecycleObserver] to start/stop a task that saves the state at a periodic interval.
- */
+/** [LifecycleObserver] to start/stop a task that saves the state at a periodic interval. */
 private class AutoSavePeriodically(
     private val autoSave: AutoSave,
     private val scheduler: ScheduledExecutorService,
@@ -169,15 +157,16 @@ private class AutoSavePeriodically(
     // is going to the background (see onStop below).
     @Suppress("DiscouragedApi")
     override fun onStart(owner: LifecycleOwner) {
-        scheduledFuture = scheduler.scheduleAtFixedRate(
-            {
-                autoSave.logger.info("Save: Periodic")
-                autoSave.triggerSave()
-            },
-            interval,
-            interval,
-            unit,
-        )
+        scheduledFuture =
+            scheduler.scheduleAtFixedRate(
+                {
+                    autoSave.logger.info("Save: Periodic")
+                    autoSave.triggerSave()
+                },
+                interval,
+                interval,
+                unit,
+            )
     }
 
     override fun onStop(owner: LifecycleOwner) {
@@ -185,12 +174,8 @@ private class AutoSavePeriodically(
     }
 }
 
-/**
- * [LifecycleObserver] to save the state when the app goes to the background.
- */
-private class AutoSaveBackground(
-    private val autoSave: AutoSave,
-) : DefaultLifecycleObserver {
+/** [LifecycleObserver] to save the state when the app goes to the background. */
+private class AutoSaveBackground(private val autoSave: AutoSave) : DefaultLifecycleObserver {
     override fun onStop(owner: LifecycleOwner) {
         autoSave.logger.info("Save: Background")
 
@@ -198,9 +183,7 @@ private class AutoSaveBackground(
     }
 }
 
-private class StateMonitoring(
-    private val autoSave: AutoSave,
-) {
+private class StateMonitoring(private val autoSave: AutoSave) {
     private var lastObservation: Observation? = null
 
     suspend fun monitor(flow: Flow<BrowserState>) {
@@ -210,7 +193,6 @@ private class StateMonitoring(
                     selectedTabId = state.selectedTabId,
                     tabs = state.normalTabs.size,
                     loading = state.selectedTab?.content?.loading,
-                    tabPartitions = state.tabPartitions,
                 )
             }
             .distinctUntilChanged()
@@ -225,21 +207,19 @@ private class StateMonitoring(
             return
         }
 
-        val triggerSave = if (lastObservation!!.selectedTabId != observation.selectedTabId) {
-            autoSave.logger.info("Save: New tab selected")
-            true
-        } else if (lastObservation!!.tabs != observation.tabs) {
-            autoSave.logger.info("Save: Number of tabs changed")
-            true
-        } else if (lastObservation!!.loading != observation.loading && observation.loading == false) {
-            autoSave.logger.info("Save: Load finished")
-            true
-        } else if (lastObservation!!.tabPartitions != observation.tabPartitions) {
-            autoSave.logger.info("Save: Tab partitions changed")
-            true
-        } else {
-            false
-        }
+        val triggerSave =
+            if (lastObservation!!.selectedTabId != observation.selectedTabId) {
+                autoSave.logger.info("Save: New tab selected")
+                true
+            } else if (lastObservation!!.tabs != observation.tabs) {
+                autoSave.logger.info("Save: Number of tabs changed")
+                true
+            } else if (lastObservation!!.loading != observation.loading && observation.loading == false) {
+                autoSave.logger.info("Save: Load finished")
+                true
+            } else {
+                false
+            }
 
         lastObservation = observation
 
@@ -252,6 +232,5 @@ private class StateMonitoring(
         val selectedTabId: String?,
         val tabs: Int,
         val loading: Boolean?,
-        val tabPartitions: Map<String, TabPartition>,
     )
 }

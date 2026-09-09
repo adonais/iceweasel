@@ -26,40 +26,26 @@ class TestLifecycleOwner(initialState: State = State.CREATED) : LifecycleOwner {
     override val lifecycle: Lifecycle
         get() = registry
 
-    /**
-     * Registers a [LifecycleObserver] for this [LifecycleOwner]
-     */
+    /** Registers a [LifecycleObserver] for this [LifecycleOwner] */
     fun registerObserver(observer: LifecycleObserver) {
         registry.addObserver(observer)
     }
 
-    /**
-     * Simulates the `onCreate()` event
-     */
+    /** Simulates the `onCreate()` event */
     fun onCreate() = registry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
 
-    /**
-     * Simulates the on `onStart()` event
-     */
+    /** Simulates the on `onStart()` event */
     fun onStart() = registry.handleLifecycleEvent(Lifecycle.Event.ON_START)
 
-    /**
-     * Simulates the on `onResume()` event
-     */
+    /** Simulates the on `onResume()` event */
     fun onResume() = registry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
 
-    /**
-     * Simulates the on `onPause()` event
-     */
+    /** Simulates the on `onPause()` event */
     fun onPause() = registry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
 
-    /**
-     * Simulates the on `onStop()` event
-     */
+    /** Simulates the on `onStop()` event */
     fun onStop() = registry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
 
-    /**
-     * Simulates the on `onDestroy()` event
-     */
+    /** Simulates the on `onDestroy()` event */
     fun onDestroy() = registry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
 }

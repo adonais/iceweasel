@@ -1364,4 +1364,8 @@ bool nsWaylandDisplay::IsSetMDCVSupported() {
   return mColorManagerSupportedFeature.mDisplayPrimaries;
 }
 
+bool nsWaylandDisplay::IsSetLuminancesSupported() {
+  return mColorManagerSupportedFeature.mLuminances;
+}
+
 }  // namespace mozilla::widget

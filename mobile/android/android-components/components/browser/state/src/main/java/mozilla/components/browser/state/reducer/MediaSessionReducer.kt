@@ -11,25 +11,19 @@ import mozilla.components.browser.state.state.SessionState
 import mozilla.components.concept.engine.mediasession.MediaSession
 
 internal object MediaSessionReducer {
-    /**
-     * [MediaSessionAction] Reducer function for modifying the [MediaSessionState] of a [SessionState].
-     */
+    /** [MediaSessionAction] Reducer function for modifying the [MediaSessionState] of a [SessionState]. */
     fun reduce(state: BrowserState, action: MediaSessionAction): BrowserState {
         return when (action) {
             is MediaSessionAction.ActivatedMediaSessionAction ->
                 state.addMediaSession(action.tabId, action.mediaSessionController)
-            is MediaSessionAction.DeactivatedMediaSessionAction ->
-                state.removeMediaSession(action.tabId)
-            is MediaSessionAction.UpdateMediaMetadataAction ->
-                state.updateMediaMetadata(action.tabId, action.metadata)
+            is MediaSessionAction.DeactivatedMediaSessionAction -> state.removeMediaSession(action.tabId)
+            is MediaSessionAction.UpdateMediaMetadataAction -> state.updateMediaMetadata(action.tabId, action.metadata)
             is MediaSessionAction.UpdateMediaPlaybackStateAction ->
                 state.updatePlaybackState(action.tabId, action.playbackState)
-            is MediaSessionAction.UpdateMediaFeatureAction ->
-                state.updateMediaFeature(action.tabId, action.features)
+            is MediaSessionAction.UpdateMediaFeatureAction -> state.updateMediaFeature(action.tabId, action.features)
             is MediaSessionAction.UpdateMediaPositionStateAction ->
                 state.updatePositionState(action.tabId, action.positionState)
-            is MediaSessionAction.UpdateMediaMutedAction ->
-                state.updateMuted(action.tabId, action.muted)
+            is MediaSessionAction.UpdateMediaMutedAction -> state.updateMuted(action.tabId, action.muted)
             is MediaSessionAction.UpdateMediaFullscreenAction ->
                 state.updateFullscreen(
                     action.tabId,
@@ -47,11 +41,7 @@ private fun BrowserState.updateAudioSessionType(
     audioSessionType: MediaSession.AudioSessionType,
 ): BrowserState {
     return updateTabOrCustomTabState(tabId) { current ->
-        current.createCopy(
-            mediaSessionState = current.mediaSessionState?.copy(
-                audioSessionType = audioSessionType,
-            ),
-        )
+        current.createCopy(mediaSessionState = current.mediaSessionState?.copy(audioSessionType = audioSessionType))
     }
 }
 
@@ -60,17 +50,11 @@ private fun BrowserState.addMediaSession(
     mediaSessionController: MediaSession.Controller,
 ): BrowserState {
     return updateTabOrCustomTabState(tabId) { current ->
-        current.createCopy(
-            mediaSessionState = MediaSessionState(
-                controller = mediaSessionController,
-            ),
-        )
+        current.createCopy(mediaSessionState = MediaSessionState(controller = mediaSessionController))
     }
 }
 
-private fun BrowserState.removeMediaSession(
-    tabId: String,
-): BrowserState {
+private fun BrowserState.removeMediaSession(tabId: String): BrowserState {
     return updateTabOrCustomTabState(tabId) { current ->
         current.createCopy(mediaSessionState = null)
     }
@@ -81,11 +65,7 @@ private fun BrowserState.updateMediaMetadata(
     metadata: MediaSession.Metadata,
 ): BrowserState {
     return updateTabOrCustomTabState(tabId) { current ->
-        current.createCopy(
-            mediaSessionState = current.mediaSessionState?.copy(
-                metadata = metadata,
-            ),
-        )
+        current.createCopy(mediaSessionState = current.mediaSessionState?.copy(metadata = metadata))
     }
 }
 
@@ -94,11 +74,7 @@ private fun BrowserState.updatePlaybackState(
     playbackState: MediaSession.PlaybackState,
 ): BrowserState {
     return updateTabOrCustomTabState(tabId) { current ->
-        current.createCopy(
-            mediaSessionState = current.mediaSessionState?.copy(
-                playbackState = playbackState,
-            ),
-        )
+        current.createCopy(mediaSessionState = current.mediaSessionState?.copy(playbackState = playbackState))
     }
 }
 
@@ -107,11 +83,7 @@ private fun BrowserState.updateMediaFeature(
     features: MediaSession.Feature,
 ): BrowserState {
     return updateTabOrCustomTabState(tabId) { current ->
-        current.createCopy(
-            mediaSessionState = current.mediaSessionState?.copy(
-                features = features,
-            ),
-        )
+        current.createCopy(mediaSessionState = current.mediaSessionState?.copy(features = features))
     }
 }
 
@@ -120,11 +92,7 @@ private fun BrowserState.updatePositionState(
     positionState: MediaSession.PositionState,
 ): BrowserState {
     return updateTabOrCustomTabState(tabId) { current ->
-        current.createCopy(
-            mediaSessionState = current.mediaSessionState?.copy(
-                positionState = positionState,
-            ),
-        )
+        current.createCopy(mediaSessionState = current.mediaSessionState?.copy(positionState = positionState))
     }
 }
 
@@ -133,11 +101,7 @@ private fun BrowserState.updateMuted(
     muted: Boolean,
 ): BrowserState {
     return updateTabOrCustomTabState(tabId) { current ->
-        current.createCopy(
-            mediaSessionState = current.mediaSessionState?.copy(
-                muted = muted,
-            ),
-        )
+        current.createCopy(mediaSessionState = current.mediaSessionState?.copy(muted = muted))
     }
 }
 
@@ -148,10 +112,11 @@ private fun BrowserState.updateFullscreen(
 ): BrowserState {
     return updateTabOrCustomTabState(tabId) { current ->
         current.createCopy(
-            mediaSessionState = current.mediaSessionState?.copy(
-                fullscreen = fullscreen,
-                elementMetadata = elementMetadata,
-            ),
+            mediaSessionState =
+                current.mediaSessionState?.copy(
+                    fullscreen = fullscreen,
+                    elementMetadata = elementMetadata,
+                )
         )
     }
 }

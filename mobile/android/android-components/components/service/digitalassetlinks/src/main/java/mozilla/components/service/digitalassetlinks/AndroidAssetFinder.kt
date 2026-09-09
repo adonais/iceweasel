@@ -10,7 +10,6 @@ import android.content.pm.Signature
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import androidx.annotation.VisibleForTesting
-import mozilla.components.support.utils.ext.PackageManagerCompatHelper
 import java.io.ByteArrayInputStream
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
@@ -18,32 +17,33 @@ import java.security.cert.CertificateEncodingException
 import java.security.cert.CertificateException
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
+import mozilla.components.support.utils.ext.PackageManagerCompatHelper
 
-/**
- * Get the SHA256 certificate for an installed Android app.
- */
+/** Get the SHA256 certificate for an installed Android app. */
 class AndroidAssetFinder {
 
     /**
-     * Converts the Android App with the given package name into an asset descriptor
-     * by computing the SHA256 certificate for each signing signature.
+     * Converts the Android App with the given package name into an asset descriptor by computing the SHA256 certificate
+     * for each signing signature.
      *
-     * The output is lazily computed. If desired, only the first item from the sequence could
-     * be used and other certificates (if any) will not be computed.
+     * The output is lazily computed. If desired, only the first item from the sequence could be used and other
+     * certificates (if any) will not be computed.
      */
     fun getAndroidAppAsset(
         packageName: String,
         packageManager: PackageManagerCompatHelper,
     ): Sequence<AssetDescriptor.Android> {
-        return packageManager.getSignatures(packageName).asSequence()
+        return packageManager
+            .getSignatures(packageName)
+            .asSequence()
             .mapNotNull { signature -> getCertificateSHA256Fingerprint(signature) }
             .map { fingerprint -> AssetDescriptor.Android(packageName, fingerprint) }
     }
 
     /**
-     * Computes the SHA256 certificate for the given package name. The app with the given package
-     * name has to be installed on device. The output will be a 30 long HEX string with : between
-     * each value.
+     * Computes the SHA256 certificate for the given package name. The app with the given package name has to be
+     * installed on device. The output will be a 30 long HEX string with : between each value.
+     *
      * @return The SHA256 certificate for the package name.
      */
     @VisibleForTesting
@@ -67,22 +67,23 @@ class AndroidAssetFinder {
     private fun PackageManagerCompatHelper.getSignatures(packageName: String): Array<Signature> {
         val packageInfo = getPackageSignatureInfo(packageName) ?: return emptyArray()
 
-        val signatures = if (SDK_INT >= Build.VERSION_CODES.P) {
-            val signingInfo = packageInfo.signingInfo ?: return emptyArray()
-            if (signingInfo.hasMultipleSigners()) {
-                signingInfo.apkContentsSigners
-            } else {
-                val history = signingInfo.signingCertificateHistory
-                if (history.isEmpty()) {
-                    emptyArray()
+        val signatures =
+            if (SDK_INT >= Build.VERSION_CODES.P) {
+                val signingInfo = packageInfo.signingInfo ?: return emptyArray()
+                if (signingInfo.hasMultipleSigners()) {
+                    signingInfo.apkContentsSigners
                 } else {
-                    arrayOf(history.first())
+                    val history = signingInfo.signingCertificateHistory
+                    if (history.isEmpty()) {
+                        emptyArray()
+                    } else {
+                        arrayOf(history.first())
+                    }
                 }
+            } else {
+                @Suppress("Deprecation")
+                packageInfo.signatures ?: emptyArray()
             }
-        } else {
-            @Suppress("Deprecation")
-            packageInfo.signatures ?: emptyArray()
-        }
 
         return signatures
     }
@@ -92,8 +93,7 @@ class AndroidAssetFinder {
             if (SDK_INT >= Build.VERSION_CODES.P) {
                 getPackageInfoCompat(packageName, PackageManager.GET_SIGNING_CERTIFICATES)
             } else {
-                @Suppress("Deprecation")
-                getPackageInfoCompat(packageName, PackageManager.GET_SIGNATURES)
+                @Suppress("Deprecation") getPackageInfoCompat(packageName, PackageManager.GET_SIGNATURES)
             }
         } catch (e: PackageManager.NameNotFoundException) {
             // Will return null if there is no package found.
@@ -103,6 +103,7 @@ class AndroidAssetFinder {
 
     /**
      * Converts a byte array to hex string with : inserted between each element.
+     *
      * @param bytes The array to be converted.
      * @return A string with two letters representing each byte and : in between.
      */

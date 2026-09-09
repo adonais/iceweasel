@@ -25,6 +25,7 @@ object Constants {
         const val ANDROID_SETTINGS = "com.android.settings"
         const val PRINT_SPOOLER = "com.android.printspooler"
         const val PIXEL_LAUNCHER = "com.google.android.apps.nexuslauncher"
+        const val DOCUMENTS_UI = "com.google.android.documentsui"
     }
 
     const val SPEECH_RECOGNITION = "android.speech.action.RECOGNIZE_SPEECH"
@@ -33,11 +34,12 @@ object Constants {
     const val LISTS_MAXSWIPES: Int = 3
     const val RETRY_COUNT = 3
 
-    val searchEngineCodes = mapOf(
-        "Google" to "client=firefox-b-m",
-        "Bing" to "MOZB&form=MOZMBA&q=firefox",
-        "DuckDuckGo" to "t=fpas",
-    )
+    val searchEngineCodes =
+        mapOf(
+            "Google" to "client=firefox-b-m",
+            "Bing" to "MOZB&form=MOZMBA&q=firefox",
+            "DuckDuckGo" to "t=fpas",
+        )
 
     val firstSponsoredShortcutTitle by lazy { getSponsoredShortcutTitle(2) }
     val secondSponsoredShortcutTitle by lazy { getSponsoredShortcutTitle(3) }
@@ -53,24 +55,28 @@ object Constants {
     }
 
     // Notes:
-    // "Ghostery" - not included in the list because of the name discrepancy between the recommended list and the install confirmation prompt
-    // "AdGuard AdBlocker" - not included in the list because of the inconsistencies caused by the new tab that is opened after installation
+    // "Ghostery" - not included in the list because of the name discrepancy between the recommended list and the
+    // install confirmation prompt
+    // "AdGuard AdBlocker" - not included in the list because of the inconsistencies caused by the new tab that is
+    // opened after installation
     // "Video Background Play Fix", "FoxyProxy" and "Google Search Fixer"
-    // - not included because instead of the add-on name the main menu extensions button displays "No extensions enabled"
+    // - not included because instead of the add-on name the main menu extensions button displays "No extensions
+    // enabled"
     // and no name is being displayed in the installed "Extensions" list, only the add-on icon
-    val recommendedAddons = listOf(
-        "uBlock Origin",
-        "Privacy Badger",
-        "Dark Reader",
-        "Bitwarden",
-        "NoScript",
-        "Search by Image",
-        "ClearURLs",
-        "Firefox Relay",
-        "Read Aloud: A Text to Speech Voice Reader",
-        "Decentraleyes",
-        "YouTube High Definition",
-        "Web Archives",
-        "Tomato Clock",
-    )
+    val recommendedAddons =
+        listOf(
+            "uBlock Origin",
+            "Privacy Badger",
+            "Dark Reader",
+            "Bitwarden",
+            "NoScript",
+            "Search by Image",
+            "ClearURLs",
+            "Firefox Relay",
+            "Read Aloud: A Text to Speech Voice Reader",
+            "Decentraleyes",
+            "YouTube High Definition",
+            "Web Archives",
+            "Tomato Clock",
+        )
 }

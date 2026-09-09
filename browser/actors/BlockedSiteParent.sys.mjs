@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { EscapablePageParent } from "resource://gre/actors/NetErrorParent.sys.mjs";
+import { EscapablePageParent } from "moz-src:///toolkit/actors/NetErrorParent.sys.mjs";
 
 let lazy = {};
 

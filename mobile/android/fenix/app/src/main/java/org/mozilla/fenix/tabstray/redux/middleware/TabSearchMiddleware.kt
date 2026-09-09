@@ -20,7 +20,7 @@ import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
  *
  * @param scope The [CoroutineScope] for running the tab filtering off of the main thread.
  * @param mainScope The [CoroutineScope] used for returning to the main thread.
- **/
+ */
 class TabSearchMiddleware(
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default),
     private val mainScope: CoroutineScope = CoroutineScope(Dispatchers.Main),
@@ -37,39 +37,41 @@ class TabSearchMiddleware(
             is TabSearchAction.SearchQueryChanged -> {
                 scope.launch {
                     val state = store.state
-                    val items = when (state.selectedPage) {
-                        Page.NormalTabs -> {
-                            state.normalTabsState.items + state.inactiveTabs.tabs
+                    val items =
+                        when (state.selectedPage) {
+                            Page.NormalTabs -> {
+                                state.normalTabsState.items + state.inactiveTabs.tabs
+                            }
+                            Page.PrivateTabs -> {
+                                state.privateBrowsing.tabs
+                            }
+                            else -> emptyList()
                         }
-                        Page.PrivateTabs -> {
-                            state.privateBrowsing.tabs
-                        }
-                        else -> emptyList()
-                    }
 
                     val query = action.query.trim()
 
-                    val filteredTabs = if (query.isBlank()) {
-                        emptyList()
-                    } else {
-                        val allTabs = items.flatMap { item ->
-                            when (item) {
-                                is TabsTrayItem.Tab -> listOf(item)
-                                is TabsTrayItem.TabGroup -> item.tabs
+                    val filteredTabs =
+                        if (query.isBlank()) {
+                            emptyList()
+                        } else {
+                            val allTabs = items.flatMap { item ->
+                                when (item) {
+                                    is TabsTrayItem.Tab -> listOf(item)
+                                    is TabsTrayItem.TabGroup -> item.tabs
+                                }
                             }
+
+                            val (matchingHomepage, matchingNonHomepage) =
+                                allTabs
+                                    .filter { it.contains(text = query) }
+                                    .sortedByDescending { it.lastAccess }
+                                    .partition { it.isHomepageItem }
+
+                            // If the results contain homepages, only display one homepage result
+                            val homeTab = matchingHomepage.take(1)
+
+                            homeTab + matchingNonHomepage
                         }
-
-                        val (matchingHomepage, matchingNonHomepage) =
-                            allTabs
-                                .filter { it.contains(text = query) }
-                                .sortedByDescending { it.lastAccess }
-                                .partition { it.isHomepageItem }
-
-                        // If the results contain homepages, only display one homepage result
-                        val homeTab = matchingHomepage.take(1)
-
-                        homeTab + matchingNonHomepage
-                    }
 
                     mainScope.launch {
                         store.dispatch(TabSearchAction.SearchResultsUpdated(filteredTabs))

@@ -39,16 +39,6 @@ const lazy = XPCOMUtils.declareLazy({
   mlUtils: { service: "@mozilla.org/ml-utils;1", iid: Ci.nsIMLUtils },
 });
 
-/**
- * Cached resolution of "best-onnx" for this inference-child process. Null
- * until the first engine creation attempt observes whether the native
- * runtime is usable; thereafter set to the concrete backend that worked.
- * See `dom/onnx/InferenceSession.cpp` for the underlying ORT load.
- *
- * @type {null | "onnx" | "onnx-native"}
- */
-let gBestOnnxBackend = null;
-
 const SAFE_OVERRIDE_OPTIONS = [
   "dtype",
   "logLevel",
@@ -226,18 +216,30 @@ export class MLEngineChild extends JSProcessActorChild {
 
   /**
    * Resolves a requested backend to a concrete backend identifier. "best-onnx"
-   * returns the cached choice if one exists, otherwise optimistically tries
-   * onnx-native (the caller's engine creation will update the cache on success
-   * or fallback). Any other value is already concrete.
+   * asks the parent for native ONNX availability, which is cached once per
+   * parent process in `EngineProcess`, and resolves to onnx-native or onnx
+   * accordingly. A `false` result is taken at face value (native unavailable or
+   * the probe failed) and resolves to wasm onnx. Any other value is already
+   * concrete.
    *
    * @param {string} backend - Requested backend or "best-onnx".
-   * @returns {string} Resolved backend identifier.
+   * @returns {Promise<string>} Resolved backend identifier.
    */
-  chooseBestBackend(backend) {
-    if (backend === lazy.BACKENDS.bestOnnx) {
-      return gBestOnnxBackend ?? lazy.BACKENDS.onnxNative;
+  async chooseBestBackend(backend) {
+    if (backend !== lazy.BACKENDS.bestOnnx) {
+      return backend;
     }
-    return backend;
+    const available = await this.#getNativeOnnxRuntimeAvailability();
+    return available ? lazy.BACKENDS.onnxNative : lazy.BACKENDS.onnx;
+  }
+
+  /**
+   * Asks the parent for the shared native ONNX availability value.
+   *
+   * @returns {Promise<boolean>}
+   */
+  #getNativeOnnxRuntimeAvailability() {
+    return this.sendQuery("MLEngine:GetNativeOnnxRuntimeAvailability");
   }
 
   /**
@@ -430,7 +432,7 @@ class EngineDispatcher {
 
     const requestedBackend = pipelineOptions.backend;
     this.pipelineOptions.backend =
-      this.mlEngineChild.chooseBestBackend(requestedBackend);
+      await this.mlEngineChild.chooseBestBackend(requestedBackend);
 
     // Retrigger validation
     this.pipelineOptions = new lazy.PipelineOptions(this.pipelineOptions);
@@ -464,41 +466,18 @@ class EngineDispatcher {
       this.pipelineOptions.backend === lazy.BACKENDS.onnxNative;
 
     try {
-      const engine = await tryCreate();
-      if (triedNativeForBestOnnx) {
-        gBestOnnxBackend = lazy.BACKENDS.onnxNative;
-      }
-      return engine;
+      return await tryCreate();
     } catch (error) {
-      // best-onnx promised the caller a working onnx engine. If the native
-      // attempt failed, fall back to the wasm onnx backend. The
-      // NotSupportedError raised from dom/onnx/InferenceSession.cpp gets
-      // wrapped at Pipeline.mjs:87, which strips the original .name, so
-      // match on the message text from the C++ source instead. On that
-      // match we cache the wasm choice; on any other failure we still
-      // retry once with wasm but leave the cache alone.
+      // best-onnx promised the caller a working onnx engine. The availability
+      // gate should keep native creation from being attempted when it can't
+      // load, but if it fails anyway, fall back once to the wasm onnx backend.
       if (!triedNativeForBestOnnx) {
         throw error;
       }
-      // KEEP IN SYNC: dom/onnx/InferenceSession.cpp raises this exact
-      // string via MaybeRejectWithNotSupportedError when libonnxruntime
-      // is missing. We match on message text because the BackendError
-      // wrapper at Pipeline.mjs:87 strips the original error name.
-      const isOrtUnavailable =
-        /onnxruntime shared library could not be loaded/.test(
-          error?.message ?? ""
-        );
-      if (isOrtUnavailable) {
-        gBestOnnxBackend = lazy.BACKENDS.onnx;
-        lazy.console.warn(
-          "Native onnx runtime not available; falling back to wasm onnx backend."
-        );
-      } else {
-        lazy.console.warn(
-          "onnx-native engine creation failed; retrying with wasm onnx backend.",
-          error
-        );
-      }
+      lazy.console.warn(
+        "onnx-native engine creation failed; retrying with wasm onnx backend.",
+        error
+      );
       this.pipelineOptions.backend = lazy.BACKENDS.onnx;
       this.pipelineOptions = new lazy.PipelineOptions(this.pipelineOptions);
       return tryCreate();

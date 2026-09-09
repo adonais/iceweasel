@@ -19,9 +19,7 @@ import org.mozilla.samples.acorn.components.ui.ComponentListScreen
 import org.mozilla.samples.acorn.components.ui.IconsScreen
 import org.mozilla.samples.acorn.components.ui.SnackbarScreen
 
-/**
- * Activity demonstrating the Acorn Design System components.
- */
+/** Activity demonstrating the Acorn Design System components. */
 class AcornComponentsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

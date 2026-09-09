@@ -7,23 +7,19 @@ import android.content.Context
 import mozilla.components.concept.engine.DownloadDelegate
 import mozilla.components.support.utils.DefaultDownloadFileUtils
 
-/**
- * This class acts as a bridge between the engine's download requests and the application's
- * file utility logic.
- */
+/** This class acts as a bridge between the engine's download requests and the application's file utility logic. */
 class EngineDownloadDelegate(
     context: Context,
     downloadLocation: () -> String,
 ) : DownloadDelegate {
 
-    val downloadFileUtils = DefaultDownloadFileUtils(
-        context = context,
-        downloadLocation = downloadLocation,
-    )
+    val downloadFileUtils =
+        DefaultDownloadFileUtils(
+            context = context,
+            downloadLocation = downloadLocation,
+        )
 
-    /**
-     * Guess the name of the file that should be downloaded.
-     */
+    /** Guess the name of the file that should be downloaded. */
     override fun guessFileName(
         contentDisposition: String?,
         url: String?,

@@ -7,8 +7,9 @@ package mozilla.components.feature.readerview.view
 import android.view.View
 import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.AppCompatRadioButton
+import androidx.core.view.isVisible
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import mozilla.components.feature.readerview.R
+import mozilla.components.feature.readerview.R as readerviewR
 import mozilla.components.feature.readerview.ReaderViewFeature
 import mozilla.components.support.test.mock
 import mozilla.ext.appCompatContext
@@ -20,7 +21,6 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import mozilla.components.feature.readerview.R as readerviewR
 
 @RunWith(AndroidJUnit4::class)
 class ReaderViewControlsBarTest {
@@ -36,10 +36,11 @@ class ReaderViewControlsBarTest {
     @Test
     fun `font options are set`() {
         val bar = ReaderViewControlsBar(appCompatContext)
-        bar.tryInflate()
+        bar.tryInflate(LISTEN_TO_PAGE_DISABLED)
 
         val serifButton = bar.findViewById<AppCompatRadioButton>(readerviewR.id.mozac_feature_readerview_font_serif)
-        val sansSerifButton = bar.findViewById<AppCompatRadioButton>(readerviewR.id.mozac_feature_readerview_font_sans_serif)
+        val sansSerifButton =
+            bar.findViewById<AppCompatRadioButton>(readerviewR.id.mozac_feature_readerview_font_sans_serif)
 
         assertFalse(serifButton.isChecked)
 
@@ -57,10 +58,12 @@ class ReaderViewControlsBarTest {
     @Test
     fun `font size buttons are enabled or disabled`() {
         val bar = ReaderViewControlsBar(appCompatContext)
-        bar.tryInflate()
+        bar.tryInflate(LISTEN_TO_PAGE_DISABLED)
 
-        val sizeDecreaseButton = bar.findViewById<AppCompatButton>(readerviewR.id.mozac_feature_readerview_font_size_decrease)
-        val sizeIncreaseButton = bar.findViewById<AppCompatButton>(readerviewR.id.mozac_feature_readerview_font_size_increase)
+        val sizeDecreaseButton =
+            bar.findViewById<AppCompatButton>(readerviewR.id.mozac_feature_readerview_font_size_decrease)
+        val sizeIncreaseButton =
+            bar.findViewById<AppCompatButton>(readerviewR.id.mozac_feature_readerview_font_size_increase)
 
         bar.setFontSize(5)
 
@@ -91,11 +94,13 @@ class ReaderViewControlsBarTest {
     @Test
     fun `color scheme is set`() {
         val bar = ReaderViewControlsBar(appCompatContext)
-        bar.tryInflate()
+        bar.tryInflate(LISTEN_TO_PAGE_DISABLED)
 
         val colorOptionDark = bar.findViewById<AppCompatRadioButton>(readerviewR.id.mozac_feature_readerview_color_dark)
-        val colorOptionSepia = bar.findViewById<AppCompatRadioButton>(readerviewR.id.mozac_feature_readerview_color_sepia)
-        val colorOptionLight = bar.findViewById<AppCompatRadioButton>(readerviewR.id.mozac_feature_readerview_color_light)
+        val colorOptionSepia =
+            bar.findViewById<AppCompatRadioButton>(readerviewR.id.mozac_feature_readerview_color_sepia)
+        val colorOptionLight =
+            bar.findViewById<AppCompatRadioButton>(readerviewR.id.mozac_feature_readerview_color_light)
 
         bar.setColorScheme(ReaderViewFeature.ColorScheme.DARK)
 
@@ -158,7 +163,7 @@ class ReaderViewControlsBarTest {
         assertNull(bar.listener)
 
         bar.listener = listener
-        bar.tryInflate()
+        bar.tryInflate(LISTEN_TO_PAGE_DISABLED)
 
         bar.findViewById<AppCompatRadioButton>(readerviewR.id.mozac_feature_readerview_font_sans_serif).performClick()
 
@@ -173,7 +178,7 @@ class ReaderViewControlsBarTest {
         assertNull(bar.listener)
 
         bar.listener = listener
-        bar.tryInflate()
+        bar.tryInflate(LISTEN_TO_PAGE_DISABLED)
 
         bar.findViewById<AppCompatButton>(readerviewR.id.mozac_feature_readerview_font_size_increase).performClick()
 
@@ -188,7 +193,7 @@ class ReaderViewControlsBarTest {
         assertNull(bar.listener)
 
         bar.listener = listener
-        bar.tryInflate()
+        bar.tryInflate(LISTEN_TO_PAGE_DISABLED)
 
         bar.findViewById<AppCompatRadioButton>(readerviewR.id.mozac_feature_readerview_color_sepia).performClick()
 
@@ -199,7 +204,32 @@ class ReaderViewControlsBarTest {
     fun `tryInflate is only successfully once`() {
         val bar = ReaderViewControlsBar(appCompatContext)
 
-        assertTrue(bar.tryInflate())
-        assertFalse(bar.tryInflate())
+        assertTrue(bar.tryInflate(LISTEN_TO_PAGE_DISABLED))
+        assertFalse(bar.tryInflate(LISTEN_TO_PAGE_DISABLED))
+    }
+
+    @Test
+    fun `when listen-to-page flag enabled listen button is shown`() {
+        val bar = ReaderViewControlsBar(appCompatContext)
+
+        bar.tryInflate(LISTEN_TO_PAGE_ENABLED)
+        val listenButton = bar.findViewById<AppCompatButton>(readerviewR.id.mozac_feature_readerview_listen)
+
+        assertTrue(listenButton.isVisible)
+    }
+
+    @Test
+    fun `when listen-to-page flag disabled listen button is not shown`() {
+        val bar = ReaderViewControlsBar(appCompatContext)
+
+        bar.tryInflate(LISTEN_TO_PAGE_DISABLED)
+        val listenButton = bar.findViewById<AppCompatButton>(readerviewR.id.mozac_feature_readerview_listen)
+
+        assertFalse(listenButton.isVisible)
+    }
+
+    companion object {
+        const val LISTEN_TO_PAGE_ENABLED: Boolean = true
+        const val LISTEN_TO_PAGE_DISABLED: Boolean = false
     }
 }

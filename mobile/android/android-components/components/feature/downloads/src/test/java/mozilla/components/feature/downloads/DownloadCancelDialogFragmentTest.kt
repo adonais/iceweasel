@@ -62,83 +62,87 @@ class DownloadCancelDialogFragmentTest {
 
     @Test
     fun `WHEN overriding strings are provided to the prompt, THEN they are used by the prompt`() {
-        val testText = DownloadCancelDialogFragment.PromptText(
-            titleText = R.string.mozac_feature_downloads_cancel_active_private_downloads_warning_content_body,
-            bodyText = R.string.mozac_feature_downloads_cancel_active_downloads_warning_content_title,
-            acceptText = R.string.mozac_feature_downloads_cancel_active_private_downloads_deny,
-            denyText = R.string.mozac_feature_downloads_cancel_active_downloads_accept,
-        )
+        val testText =
+            DownloadCancelDialogFragment.PromptText(
+                titleText = R.string.mozac_feature_downloads_cancel_active_private_downloads_warning_content_body,
+                bodyText = R.string.mozac_feature_downloads_cancel_active_downloads_warning_content_title,
+                acceptText = R.string.mozac_feature_downloads_cancel_active_private_downloads_deny,
+                denyText = R.string.mozac_feature_downloads_cancel_active_downloads_accept,
+            )
         spy(
-            DownloadCancelDialogFragment.newInstance(
-                0,
-                promptText = testText,
-            ),
-        ).apply {
-            doReturn(testContext).`when`(this).requireContext()
+                DownloadCancelDialogFragment.newInstance(
+                    0,
+                    promptText = testText,
+                )
+            )
+            .apply {
+                doReturn(testContext).`when`(this).requireContext()
 
-            with(onCreateDialog(null)) {
-                findViewById<TextView>(R.id.title).apply {
-                    Assert.assertEquals(text, testContext.getString(testText.titleText))
-                }
-                findViewById<TextView>(R.id.body).apply {
-                    Assert.assertEquals(text, testContext.getString(testText.bodyText))
-                }
-                findViewById<Button>(R.id.accept_button).apply {
-                    Assert.assertEquals(text, testContext.getString(testText.acceptText))
-                }
-                findViewById<Button>(R.id.deny_button).apply {
-                    Assert.assertEquals(text, testContext.getString(testText.denyText))
+                with(onCreateDialog(null)) {
+                    findViewById<TextView>(R.id.title).apply {
+                        Assert.assertEquals(text, testContext.getString(testText.titleText))
+                    }
+                    findViewById<TextView>(R.id.body).apply {
+                        Assert.assertEquals(text, testContext.getString(testText.bodyText))
+                    }
+                    findViewById<Button>(R.id.accept_button).apply {
+                        Assert.assertEquals(text, testContext.getString(testText.acceptText))
+                    }
+                    findViewById<Button>(R.id.deny_button).apply {
+                        Assert.assertEquals(text, testContext.getString(testText.denyText))
+                    }
                 }
             }
-        }
     }
 
     @Test
     fun `WHEN styling is provided to the prompt, THEN it's used by the prompt`() {
-        val testStyling = DownloadCancelDialogFragment.PromptStyling(
-            gravity = Gravity.TOP,
-            shouldWidthMatchParent = false,
-            positiveButtonBackgroundColor = android.R.color.white,
-            positiveButtonTextColor = android.R.color.black,
-            positiveButtonRadius = 4f,
-        )
+        val testStyling =
+            DownloadCancelDialogFragment.PromptStyling(
+                gravity = Gravity.TOP,
+                shouldWidthMatchParent = false,
+                positiveButtonBackgroundColor = android.R.color.white,
+                positiveButtonTextColor = android.R.color.black,
+                positiveButtonRadius = 4f,
+            )
 
         spy(
-            DownloadCancelDialogFragment.newInstance(
-                0,
-                promptStyling = testStyling,
-            ),
-        ).apply {
-            doReturn(testContext).`when`(this).requireContext()
+                DownloadCancelDialogFragment.newInstance(
+                    0,
+                    promptStyling = testStyling,
+                )
+            )
+            .apply {
+                doReturn(testContext).`when`(this).requireContext()
 
-            with(onCreateDialog(null)) {
-                with(window!!.attributes) {
-                    Assert.assertTrue(gravity == Gravity.TOP)
-                    Assert.assertTrue(width == ViewGroup.LayoutParams.WRAP_CONTENT)
-                }
+                with(onCreateDialog(null)) {
+                    with(window!!.attributes) {
+                        Assert.assertTrue(gravity == Gravity.TOP)
+                        Assert.assertTrue(width == ViewGroup.LayoutParams.WRAP_CONTENT)
+                    }
 
-                with(findViewById<Button>(R.id.accept_button)) {
-                    Assert.assertEquals(
-                        ContextCompat.getColor(
-                            testContext,
-                            testStyling.positiveButtonBackgroundColor!!,
-                        ),
-                        (background as GradientDrawable).color?.defaultColor,
-                    )
-                    Assert.assertEquals(
-                        testStyling.positiveButtonRadius!!,
-                        (background as GradientDrawable).cornerRadius,
-                    )
-                    Assert.assertEquals(
-                        ContextCompat.getColor(
-                            testContext,
-                            testStyling.positiveButtonTextColor!!,
-                        ),
-                        textColors.defaultColor,
-                    )
+                    with(findViewById<Button>(R.id.accept_button)) {
+                        Assert.assertEquals(
+                            ContextCompat.getColor(
+                                testContext,
+                                testStyling.positiveButtonBackgroundColor!!,
+                            ),
+                            (background as GradientDrawable).color?.defaultColor,
+                        )
+                        Assert.assertEquals(
+                            testStyling.positiveButtonRadius!!,
+                            (background as GradientDrawable).cornerRadius,
+                        )
+                        Assert.assertEquals(
+                            ContextCompat.getColor(
+                                testContext,
+                                testStyling.positiveButtonTextColor!!,
+                            ),
+                            textColors.defaultColor,
+                        )
+                    }
                 }
             }
-        }
     }
 
     private fun mockFragmentManager(): FragmentManager {

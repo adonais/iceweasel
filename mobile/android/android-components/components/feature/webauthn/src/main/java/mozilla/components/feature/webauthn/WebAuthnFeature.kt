@@ -14,8 +14,8 @@ import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * A feature that implementing the [ActivityDelegate] to adds support
- * for [WebAuthn](https://tools.ietf.org/html/rfc8809).
+ * A feature that implementing the [ActivityDelegate] to adds support for
+ * [WebAuthn](https://tools.ietf.org/html/rfc8809).
  */
 class WebAuthnFeature(
     private val engine: Engine,
@@ -37,9 +37,7 @@ class WebAuthnFeature(
 
     override fun onActivityResult(requestCode: Int, data: Intent?, resultCode: Int): Boolean {
         logger.info(
-            "Received activity result with " +
-                "code: $requestCode " +
-                "and original request code: $requestCodeCounter",
+            "Received activity result with " + "code: $requestCode " + "and original request code: $requestCodeCounter"
         )
 
         if (requestCode != requestCodeCounter) {

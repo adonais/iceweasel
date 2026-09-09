@@ -11,16 +11,12 @@ import androidx.recyclerview.widget.ListAdapter
 import mozilla.components.concept.storage.CreditCard
 import org.mozilla.fenix.settings.creditcards.interactor.CreditCardsManagementInteractor
 
-/**
- * Adapter for a list of credit cards to be displayed.
- */
-class CreditCardsAdapter(
-    private val interactor: CreditCardsManagementInteractor,
-) : ListAdapter<CreditCard, CreditCardItemViewHolder>(DiffCallback) {
+/** Adapter for a list of credit cards to be displayed. */
+class CreditCardsAdapter(private val interactor: CreditCardsManagementInteractor) :
+    ListAdapter<CreditCard, CreditCardItemViewHolder>(DiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CreditCardItemViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(CreditCardItemViewHolder.LAYOUT_ID, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(CreditCardItemViewHolder.LAYOUT_ID, parent, false)
         return CreditCardItemViewHolder(view, interactor)
     }
 
@@ -29,10 +25,8 @@ class CreditCardsAdapter(
     }
 
     internal object DiffCallback : DiffUtil.ItemCallback<CreditCard>() {
-        override fun areItemsTheSame(oldItem: CreditCard, newItem: CreditCard) =
-            oldItem.guid == newItem.guid
+        override fun areItemsTheSame(oldItem: CreditCard, newItem: CreditCard) = oldItem.guid == newItem.guid
 
-        override fun areContentsTheSame(oldItem: CreditCard, newItem: CreditCard) =
-            oldItem == newItem
+        override fun areContentsTheSame(oldItem: CreditCard, newItem: CreditCard) = oldItem == newItem
     }
 }

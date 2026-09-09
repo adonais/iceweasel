@@ -105,25 +105,25 @@ sftk_NullHashEnd(void *info, unsigned char *data, unsigned int *lenp,
 #endif
 
 /* Wrappers to avoid undefined behavior calling functions through a pointer of incorrect type. */
-#define SFTKHashWrap(ctxtype, mmm)                                                        \
-    static void                                                                           \
-        SFTKHash_##mmm##_Update(void *vctx, const unsigned char *input, unsigned int len) \
-    {                                                                                     \
-        ctxtype *ctx = vctx;                                                              \
-        mmm##_Update(ctx, input, len);                                                    \
-    }                                                                                     \
-    static void                                                                           \
-        SFTKHash_##mmm##_End(void *vctx, unsigned char *digest,                           \
-                             unsigned int *len, unsigned int maxLen)                      \
-    {                                                                                     \
-        ctxtype *ctx = vctx;                                                              \
-        mmm##_End(ctx, digest, len, maxLen);                                              \
-    }                                                                                     \
-    static void                                                                           \
-        SFTKHash_##mmm##_DestroyContext(void *vctx, PRBool freeit)                        \
-    {                                                                                     \
-        ctxtype *ctx = vctx;                                                              \
-        mmm##_DestroyContext(ctx, freeit);                                                \
+#define SFTKHashWrap(ctxtype, mmm)                                                    \
+    static void                                                                       \
+    SFTKHash_##mmm##_Update(void *vctx, const unsigned char *input, unsigned int len) \
+    {                                                                                 \
+        ctxtype *ctx = vctx;                                                          \
+        mmm##_Update(ctx, input, len);                                                \
+    }                                                                                 \
+    static void                                                                       \
+    SFTKHash_##mmm##_End(void *vctx, unsigned char *digest,                           \
+                         unsigned int *len, unsigned int maxLen)                      \
+    {                                                                                 \
+        ctxtype *ctx = vctx;                                                          \
+        mmm##_End(ctx, digest, len, maxLen);                                          \
+    }                                                                                 \
+    static void                                                                       \
+    SFTKHash_##mmm##_DestroyContext(void *vctx, PRBool freeit)                        \
+    {                                                                                 \
+        ctxtype *ctx = vctx;                                                          \
+        mmm##_DestroyContext(ctx, freeit);                                            \
     }
 
 SFTKHashWrap(MD2Context, MD2);
@@ -153,15 +153,15 @@ SFTKHash_MD5_Begin(void *vctx)
     MD5_Begin(ctx);
 }
 
-#define SFTKCipherWrap(ctxtype, mmm)                                         \
-    static SECStatus                                                         \
-        SFTKCipher_##mmm(void *vctx, unsigned char *output,                  \
-                         unsigned int *outputLen, unsigned int maxOutputLen, \
-                         const unsigned char *input, unsigned int inputLen)  \
-    {                                                                        \
-        ctxtype *ctx = vctx;                                                 \
-        return mmm(ctx, output, outputLen, maxOutputLen,                     \
-                   input, inputLen);                                         \
+#define SFTKCipherWrap(ctxtype, mmm)                                     \
+    static SECStatus                                                     \
+    SFTKCipher_##mmm(void *vctx, unsigned char *output,                  \
+                     unsigned int *outputLen, unsigned int maxOutputLen, \
+                     const unsigned char *input, unsigned int inputLen)  \
+    {                                                                    \
+        ctxtype *ctx = vctx;                                             \
+        return mmm(ctx, output, outputLen, maxOutputLen,                 \
+                   input, inputLen);                                     \
     }
 
 SFTKCipherWrap(AESKeyWrapContext, AESKeyWrap_EncryptKWP);
@@ -2281,7 +2281,7 @@ NSC_DigestFinal(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pDigest,
  */
 #define DOSUB(mmm)                                              \
     static CK_RV                                                \
-        sftk_doSub##mmm(SFTKSessionContext *context)            \
+    sftk_doSub##mmm(SFTKSessionContext *context)                \
     {                                                           \
         mmm##Context *mmm##_ctx = mmm##_NewContext();           \
         context->hashInfo = (void *)mmm##_ctx;                  \
@@ -3052,6 +3052,12 @@ nsc_EDDSASignStub(void *ctx, unsigned char *sigBuf,
     return rv;
 }
 
+static void
+sftk_MLDSADestroyContext(void *info, PRBool freeit)
+{
+    MLDSA_DestroyContext((MLDSAContext *)info);
+}
+
 void
 sftk_MLDSASignUpdate(void *info, const unsigned char *data, unsigned int len)
 {
@@ -3345,29 +3351,25 @@ NSC_SignInit(CK_SESSION_HANDLE hSession,
             rv = MLDSA_SignInit(&privKey->u.mldsa, hedgeType, &signCtx, &ctptr);
             if (rv != SECSuccess) {
                 crv = sftk_MapCryptError(PORT_GetError());
-                if (privKey != key->objectInfo) {
-                    nsslowkey_DestroyPrivateKey(privKey);
-                }
                 break;
             }
             /* set up our cipher info. MLDSA is only a combined hash/sign
              * so the hash update is our sign update, the hash end is a null
              * function returning a zero length value, and the final gets our
-             * signature based on the context. Both the cipher context and the
-             * hash Info is the same. The MLDSA_SignFinal frees the context,
-             * so we don't have to */
+             * signature based on the context. cipherInfo and hashInfo are the
+             * same pointer, so only one of them may free it: destroy does,
+             * hashdestroy doesn't. Freeing from here rather than from
+             * MLDSA_SignFinal is what releases the context when the operation
+             * is abandoned instead of finished. */
             context->multi = PR_TRUE;
             context->cipherInfo = ctptr;
             context->hashInfo = ctptr;
             context->hashUpdate = sftk_MLDSASignUpdate;
             context->end = sftk_NullHashEnd;
             context->hashdestroy = sftk_Null;
-            context->destroy = sftk_Null;
+            context->destroy = sftk_MLDSADestroyContext;
             context->update = sftk_MLDSASignFinal;
             context->maxLen = sftk_MLDSAGetSigLen(privKey->u.mldsa.paramSet);
-            if (privKey != key->objectInfo) {
-                nsslowkey_DestroyPrivateKey(privKey);
-            }
             break;
         }
 
@@ -4223,16 +4225,18 @@ NSC_VerifyInit(CK_SESSION_HANDLE hSession,
             /* set up our cipher info. MLDSA is only a combined hash/sign
              * so the hash update is our sign update, the hash end is a null
              * function returning a zero length value, and the final gets our
-             * signature based on the context. Both the cipher context and the
-             * hash Info is the same. The MLDSA_VerifyFinal frees the context,
-             * so we don't have to */
+             * signature based on the context. cipherInfo and hashInfo are the
+             * same pointer, so only one of them may free it: destroy does,
+             * hashdestroy doesn't. Freeing from here rather than from
+             * MLDSA_VerifyFinal is what releases the context when the
+             * operation is abandoned instead of finished. */
             context->multi = PR_TRUE;
             context->cipherInfo = ctptr;
             context->hashInfo = ctptr;
             context->hashUpdate = sftk_MLDSAVerifyUpdate;
             context->end = sftk_NullHashEnd;
             context->hashdestroy = sftk_Null;
-            context->destroy = sftk_Null;
+            context->destroy = sftk_MLDSADestroyContext;
             context->verify = sftk_MLDSAVerifyFinal;
             context->maxLen = sftk_MLDSAGetSigLen(pubKey->u.mldsa.paramSet);
             break;
@@ -7705,9 +7709,6 @@ sftk_unwrapPrivateKey(SFTKObject *key, SECItem *bpki)
             break;
         case NSSLOWKEYMLDSAKey:
             keyType = CKK_ML_DSA;
-            crv = (sftk_hasAttribute(key, CKA_NSS_DB)) ? CKR_OK : CKR_KEY_TYPE_INCONSISTENT;
-            if (crv != CKR_OK)
-                break;
             crv = sftk_AddAttributeType(key, CKA_KEY_TYPE, &keyType,
                                         sizeof(keyType));
             if (crv != CKR_OK)
@@ -9472,6 +9473,10 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
                 len = stringPtr->ulLen;
             } else {
                 mode = NSS_DES_EDE3_CBC;
+                if (BAD_PARAM_CAST(pMechanism, sizeof(CK_DES_CBC_ENCRYPT_DATA_PARAMS))) {
+                    crv = CKR_MECHANISM_PARAM_INVALID;
+                    break;
+                }
                 desEncryptPtr =
                     (CK_DES_CBC_ENCRYPT_DATA_PARAMS *)
                         pMechanism->pParameter;
@@ -10172,7 +10177,7 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
         case CKM_NSS_HKDF_SHA512:
             hashMech = CKM_SHA512;
             goto hkdf;
-        hkdf : {
+        hkdf: {
             const CK_NSS_HKDFParams *params =
                 (const CK_NSS_HKDFParams *)pMechanism->pParameter;
             CK_HKDF_PARAMS hkdfParams;

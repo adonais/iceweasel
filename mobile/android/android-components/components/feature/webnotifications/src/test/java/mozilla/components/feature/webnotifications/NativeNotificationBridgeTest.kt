@@ -8,6 +8,7 @@ import android.app.Notification
 import android.app.Notification.BigTextStyle
 import android.app.Notification.EXTRA_SUB_TEXT
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.icons.BrowserIcons
@@ -29,7 +30,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.verify
-import kotlin.test.assertNotNull
 
 private const val TEST_TITLE = "test title"
 private const val TEST_TAG = "test tag"
@@ -39,19 +39,20 @@ private const val TEST_CHANNEL = "testChannel"
 
 @RunWith(AndroidJUnit4::class)
 class NativeNotificationBridgeTest {
-    private val blankNotification = WebNotification(
-        TEST_TITLE,
-        TEST_TAG,
-        TEST_TEXT,
-        TEST_URL,
-        null,
-        null,
-        null,
-        true,
-        mock(),
-        0,
-        privateBrowsing = false,
-    )
+    private val blankNotification =
+        WebNotification(
+            TEST_TITLE,
+            TEST_TAG,
+            TEST_TEXT,
+            TEST_URL,
+            null,
+            null,
+            null,
+            true,
+            mock(),
+            0,
+            privateBrowsing = false,
+        )
 
     private lateinit var icons: BrowserIcons
     private lateinit var bridge: NativeNotificationBridge
@@ -67,13 +68,14 @@ class NativeNotificationBridgeTest {
 
     @Test
     fun `create blank notification`() = runTest {
-        val notification = bridge.convertToAndroidNotification(
-            blankNotification,
-            testContext,
-            TEST_CHANNEL,
-            null,
-            0,
-        )
+        val notification =
+            bridge.convertToAndroidNotification(
+                blankNotification,
+                testContext,
+                TEST_CHANNEL,
+                null,
+                0,
+            )
 
         assertNull(notification.actions)
         assertEquals(TEST_CHANNEL, notification.channelId)
@@ -85,13 +87,14 @@ class NativeNotificationBridgeTest {
 
     @Test
     fun `set when`() = runTest {
-        val notification = bridge.convertToAndroidNotification(
-            blankNotification.copy(timestamp = 1234567890),
-            testContext,
-            TEST_CHANNEL,
-            null,
-            0,
-        )
+        val notification =
+            bridge.convertToAndroidNotification(
+                blankNotification.copy(timestamp = 1234567890),
+                testContext,
+                TEST_CHANNEL,
+                null,
+                0,
+            )
 
         assertEquals(1234567890, notification.`when`)
     }
@@ -106,41 +109,45 @@ class NativeNotificationBridgeTest {
             0,
         )
 
-        verify(icons).loadIcon(
-            IconRequest(
-                url = "https://example.com",
-                size = DEFAULT,
-                resources = listOf(
-                    Resource(
-                        url = "https://example.com/large.png",
-                        type = MANIFEST_ICON,
-                    ),
-                ),
-                isPrivate = true,
-            ),
-        )
+        verify(icons)
+            .loadIcon(
+                IconRequest(
+                    url = "https://example.com",
+                    size = DEFAULT,
+                    resources =
+                        listOf(
+                            Resource(
+                                url = "https://example.com/large.png",
+                                type = MANIFEST_ICON,
+                            )
+                        ),
+                    isPrivate = true,
+                )
+            )
     }
 
     @Test
     fun `android notification sets BigTextStyle`() = runTest {
-        val notification = bridge.convertToAndroidNotification(
-            blankNotification.copy(iconUrl = "https://example.com/large.png"),
-            testContext,
-            TEST_CHANNEL,
-            null,
-            0,
-        )
+        val notification =
+            bridge.convertToAndroidNotification(
+                blankNotification.copy(iconUrl = "https://example.com/large.png"),
+                testContext,
+                TEST_CHANNEL,
+                null,
+                0,
+            )
 
         val expectedStyle = BigTextStyle().javaClass.name
         assertEquals(expectedStyle, notification.extras.getString(Notification.EXTRA_TEMPLATE))
 
-        val noBodyNotification = bridge.convertToAndroidNotification(
-            blankNotification.copy(iconUrl = "https://example.com/large.png", body = null),
-            testContext,
-            TEST_CHANNEL,
-            null,
-            0,
-        )
+        val noBodyNotification =
+            bridge.convertToAndroidNotification(
+                blankNotification.copy(iconUrl = "https://example.com/large.png", body = null),
+                testContext,
+                TEST_CHANNEL,
+                null,
+                0,
+            )
 
         assertNotEquals(expectedStyle, noBodyNotification.extras.getString(Notification.EXTRA_TEMPLATE))
     }

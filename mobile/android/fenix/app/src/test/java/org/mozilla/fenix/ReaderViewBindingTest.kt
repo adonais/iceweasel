@@ -28,66 +28,68 @@ class ReaderViewBindingTest {
     }
 
     @Test
-    fun `WHEN the reader view state is active THEN show reader view`() = runTest(testDispatcher) {
-        val appStore = AppStore()
-        val binding = ReaderViewBinding(
-            appStore = appStore,
-            readerMenuController = readerModeController,
-            mainDispatcher = testDispatcher,
-        )
+    fun `WHEN the reader view state is active THEN show reader view`() =
+        runTest(testDispatcher) {
+            val appStore = AppStore()
+            val binding =
+                ReaderViewBinding(
+                    appStore = appStore,
+                    readerMenuController = readerModeController,
+                    mainDispatcher = testDispatcher,
+                )
 
-        binding.start()
+            binding.start()
 
-        appStore.dispatch(ReaderViewAction.ReaderViewStarted)
+            appStore.dispatch(ReaderViewAction.ReaderViewStarted)
 
-        testDispatcher.scheduler.advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify { readerModeController.showReaderView() }
+            verify { readerModeController.showReaderView() }
 
-        assertEquals(ReaderViewState.None, appStore.state.readerViewState)
-    }
-
-    @Test
-    fun `WHEN the reader view state is dismiss THEN hide reader view`() = runTest(testDispatcher) {
-        val appStore = AppStore(
-            initialState = AppState(),
-        )
-        val binding = ReaderViewBinding(
-            appStore = appStore,
-            readerMenuController = readerModeController,
-            mainDispatcher = testDispatcher,
-        )
-
-        binding.start()
-
-        appStore.dispatch(ReaderViewAction.ReaderViewDismissed)
-
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        verify { readerModeController.hideReaderView() }
-
-        assertEquals(ReaderViewState.None, appStore.state.readerViewState)
-    }
+            assertEquals(ReaderViewState.None, appStore.state.readerViewState)
+        }
 
     @Test
-    fun `WHEN the reader view state is show controls THEN show reader view customization controls`() = runTest(testDispatcher) {
-        val appStore = AppStore(
-            initialState = AppState(),
-        )
-        val binding = ReaderViewBinding(
-            appStore = appStore,
-            readerMenuController = readerModeController,
-            mainDispatcher = testDispatcher,
-        )
+    fun `WHEN the reader view state is dismiss THEN hide reader view`() =
+        runTest(testDispatcher) {
+            val appStore = AppStore(initialState = AppState())
+            val binding =
+                ReaderViewBinding(
+                    appStore = appStore,
+                    readerMenuController = readerModeController,
+                    mainDispatcher = testDispatcher,
+                )
 
-        binding.start()
+            binding.start()
 
-        appStore.dispatch(ReaderViewAction.ReaderViewControlsShown)
+            appStore.dispatch(ReaderViewAction.ReaderViewDismissed)
 
-        testDispatcher.scheduler.advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify { readerModeController.showControls() }
+            verify { readerModeController.hideReaderView() }
 
-        assertEquals(ReaderViewState.None, appStore.state.readerViewState)
-    }
+            assertEquals(ReaderViewState.None, appStore.state.readerViewState)
+        }
+
+    @Test
+    fun `WHEN the reader view state is show controls THEN show reader view customization controls`() =
+        runTest(testDispatcher) {
+            val appStore = AppStore(initialState = AppState())
+            val binding =
+                ReaderViewBinding(
+                    appStore = appStore,
+                    readerMenuController = readerModeController,
+                    mainDispatcher = testDispatcher,
+                )
+
+            binding.start()
+
+            appStore.dispatch(ReaderViewAction.ReaderViewControlsShown)
+
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify { readerModeController.showControls() }
+
+            assertEquals(ReaderViewState.None, appStore.state.readerViewState)
+        }
 }

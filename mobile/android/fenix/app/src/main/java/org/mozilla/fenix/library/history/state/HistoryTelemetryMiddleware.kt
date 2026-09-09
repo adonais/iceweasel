@@ -7,21 +7,20 @@ package org.mozilla.fenix.library.history.state
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import mozilla.telemetry.glean.private.NoExtras
+import org.mozilla.fenix.GleanMetrics.History as GleanHistory
 import org.mozilla.fenix.library.history.History
 import org.mozilla.fenix.library.history.HistoryFragmentAction
 import org.mozilla.fenix.library.history.HistoryFragmentState
 import org.mozilla.fenix.library.history.RemoveTimeFrame
-import org.mozilla.fenix.GleanMetrics.History as GleanHistory
 
 /**
- * A [Middleware] for recording telemetry based on [HistoryFragmentAction]s that are dispatched to
- * the [HistoryFragmentStore].
+ * A [Middleware] for recording telemetry based on [HistoryFragmentAction]s that are dispatched to the
+ * [HistoryFragmentStore].
  *
  * @param isInPrivateMode Whether the app is currently in private browsing mode.
  */
-class HistoryTelemetryMiddleware(
-    private val isInPrivateMode: Boolean,
-) : Middleware<HistoryFragmentState, HistoryFragmentAction> {
+class HistoryTelemetryMiddleware(private val isInPrivateMode: Boolean) :
+    Middleware<HistoryFragmentState, HistoryFragmentAction> {
     override fun invoke(
         store: Store<HistoryFragmentState, HistoryFragmentAction>,
         next: (HistoryFragmentAction) -> Unit,
@@ -39,7 +38,7 @@ class HistoryTelemetryMiddleware(
                                     isRemote = item.isRemote,
                                     timeGroup = item.historyTimeGroup.toString(),
                                     isPrivate = isInPrivateMode,
-                                ),
+                                )
                             )
                         }
                         is History.Group -> GleanHistory.searchTermGroupTapped.record(NoExtras())
@@ -52,11 +51,12 @@ class HistoryTelemetryMiddleware(
                     GleanHistory.removed.record(NoExtras())
                 }
             }
-            is HistoryFragmentAction.DeleteTimeRange -> when (action.timeFrame) {
-                RemoveTimeFrame.LastHour -> GleanHistory.removedLastHour.record(NoExtras())
-                RemoveTimeFrame.TodayAndYesterday -> GleanHistory.removedTodayAndYesterday.record(NoExtras())
-                null -> GleanHistory.removedAll.record(NoExtras())
-            }
+            is HistoryFragmentAction.DeleteTimeRange ->
+                when (action.timeFrame) {
+                    RemoveTimeFrame.LastHour -> GleanHistory.removedLastHour.record(NoExtras())
+                    RemoveTimeFrame.TodayAndYesterday -> GleanHistory.removedTodayAndYesterday.record(NoExtras())
+                    null -> GleanHistory.removedAll.record(NoExtras())
+                }
             else -> Unit
         }
     }

@@ -78,43 +78,50 @@ class NotificationManager(
         // If one exists, we'll update its contents in-place
         // with the new total number of closed tabs.
         val notificationIdFromTag = SharedIdsHelper.getIdForTag(context, TABS_CLOSED_NOTIFICATION_TAG)
-        val lastNotification = notificationManagerCompat.activeNotifications.find {
-            it.tag == TABS_CLOSED_TAG && it.id == notificationIdFromTag
-        }
+        val lastNotification =
+            notificationManagerCompat.activeNotifications.find {
+                it.tag == TABS_CLOSED_TAG && it.id == notificationIdFromTag
+            }
         val lastTotalCount = lastNotification?.notification?.extras?.getInt(TOTAL_TABS_CLOSED_EXTRA) ?: 0
         val (notificationId, totalCount) = Pair(notificationIdFromTag, lastTotalCount + count)
 
-        val notification = NotificationCompat.Builder(context, RECEIVE_TABS_CHANNEL_ID).apply {
-            val title = context.resources.getString(
-                R.string.fxa_tabs_closed_notification_title,
-                context.resources.getString(R.string.app_name),
-                totalCount,
-            )
-            setContentTitle(title)
+        val notification =
+            NotificationCompat.Builder(context, RECEIVE_TABS_CHANNEL_ID)
+                .apply {
+                    val title =
+                        context.resources.getString(
+                            R.string.fxa_tabs_closed_notification_title,
+                            context.resources.getString(R.string.app_name),
+                            totalCount,
+                        )
+                    setContentTitle(title)
 
-            val text = context.resources.getString(R.string.fxa_tabs_closed_text)
-            setContentText(text)
+                    val text = context.resources.getString(R.string.fxa_tabs_closed_text)
+                    setContentText(text)
 
-            val intent = Intent(context, HomeActivity::class.java).apply {
-                action = OpenRecentlyClosedIntentProcessor.ACTION_OPEN_RECENTLY_CLOSED
-            }
-            val pendingIntent = PendingIntent.getActivity(
-                context,
-                0,
-                intent,
-                IntentUtils.DEFAULT_PENDING_INTENT_FLAGS or PendingIntent.FLAG_UPDATE_CURRENT,
-            )
-            setContentIntent(pendingIntent)
+                    val intent =
+                        Intent(context, HomeActivity::class.java).apply {
+                            action = OpenRecentlyClosedIntentProcessor.ACTION_OPEN_RECENTLY_CLOSED
+                        }
+                    val pendingIntent =
+                        PendingIntent.getActivity(
+                            context,
+                            0,
+                            intent,
+                            IntentUtils.DEFAULT_PENDING_INTENT_FLAGS or PendingIntent.FLAG_UPDATE_CURRENT,
+                        )
+                    setContentIntent(pendingIntent)
 
-            addExtras(Bundle().apply { putInt(TOTAL_TABS_CLOSED_EXTRA, totalCount) })
+                    addExtras(Bundle().apply { putInt(TOTAL_TABS_CLOSED_EXTRA, totalCount) })
 
-            setSmallIcon(R.drawable.ic_status_logo)
-            setWhen(currentTimeMillis())
-            setAutoCancel(true)
-            setDefaults(Notification.DEFAULT_VIBRATE or Notification.DEFAULT_SOUND)
+                    setSmallIcon(R.drawable.ic_status_logo)
+                    setWhen(currentTimeMillis())
+                    setAutoCancel(true)
+                    setDefaults(Notification.DEFAULT_VIBRATE or Notification.DEFAULT_SOUND)
 
-            setCategory(Notification.CATEGORY_STATUS)
-        }.build()
+                    setCategory(Notification.CATEGORY_STATUS)
+                }
+                .build()
 
         notificationManagerCompat.notify(TABS_CLOSED_TAG, notificationId, notification)
     }
@@ -137,35 +144,36 @@ class NotificationManager(
         logger.debug("${filteredTabs.size} tab(s) after filtering for unsupported schemes")
         filteredTabs.forEach { tab ->
             val showReceivedTabsIntentFlags = IntentUtils.DEFAULT_PENDING_INTENT_FLAGS or PendingIntent.FLAG_ONE_SHOT
-            val intent = Intent(context, IntentReceiverActivity::class.java).apply {
-                action = Intent.ACTION_VIEW
-                data = tab.url.toUri()
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
+            val intent =
+                Intent(context, IntentReceiverActivity::class.java).apply {
+                    action = Intent.ACTION_VIEW
+                    data = tab.url.toUri()
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
             intent.putExtra(RECEIVE_TABS_TAG, true)
             intent.putExtra(HomeActivity.PRIVATE_BROWSING_MODE, tab.privacy == TabPrivacy.Private)
             val pendingIntent: PendingIntent =
                 PendingIntent.getActivity(context, 0, intent, showReceivedTabsIntentFlags)
 
-            val builder = NotificationCompat.Builder(context, RECEIVE_TABS_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_status_logo)
-                .setSendTabTitle(context, device, tab)
-                .setWhen(currentTimeMillis())
-                .setContentText(tab.url)
-                .setContentIntent(pendingIntent)
-                .setAutoCancel(true)
-                // Explicitly set a priority for <API25 devices.
-                // On newer devices this is inherited from the channel.
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setDefaults(Notification.DEFAULT_VIBRATE or Notification.DEFAULT_SOUND)
+            val builder =
+                NotificationCompat.Builder(context, RECEIVE_TABS_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_status_logo)
+                    .setSendTabTitle(context, device, tab)
+                    .setWhen(currentTimeMillis())
+                    .setContentText(tab.url)
+                    .setContentIntent(pendingIntent)
+                    .setAutoCancel(true)
+                    // Explicitly set a priority for <API25 devices.
+                    // On newer devices this is inherited from the channel.
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setDefaults(Notification.DEFAULT_VIBRATE or Notification.DEFAULT_SOUND)
 
             builder.setCategory(Notification.CATEGORY_REMINDER)
 
             val notification = builder.build()
 
             // Pick a random ID for this notification so that different tabs do not clash.
-            @SuppressWarnings("MagicNumber")
-            val notificationId = (Math.random() * 100).toInt()
+            @SuppressWarnings("MagicNumber") val notificationId = (Math.random() * 100).toInt()
 
             with(NotificationManagerCompat.from(context)) {
                 notify(RECEIVE_TABS_TAG, notificationId, notification)
@@ -179,9 +187,10 @@ class NotificationManager(
         channelName: String,
         channelDescription: String,
     ) {
-        val channel = NotificationChannel(channelId, channelName, importance).apply {
-            description = channelDescription
-        }
+        val channel =
+            NotificationChannel(channelId, channelName, importance).apply {
+                description = channelDescription
+            }
         // Register the channel with the system. Once this is done, we can't change importance or other notification
         // channel behaviour. We will be able to change 'name' and 'description' if we so choose.
         val notificationManager: NotificationManager = context.getSystemService()!!
@@ -198,7 +207,7 @@ class NotificationManager(
                 context.getString(
                     R.string.fxa_tab_received_from_notification_name,
                     it.displayName,
-                ),
+                )
             )
             return this
         }
@@ -214,7 +223,8 @@ class NotificationManager(
 
 internal fun isValidTabSchema(tab: TabData): Boolean {
     // We don't sync certain schemas, about|resource|chrome|file|blob|moz-extension
-    // See https://searchfox.org/mozilla-central/rev/7d379061bd56251df911728686c378c5820513d8/modules/libpref/init/all.js#4356
+    // See
+    // https://searchfox.org/mozilla-central/rev/7d379061bd56251df911728686c378c5820513d8/modules/libpref/init/all.js#4356
     val filteredSchemas = arrayOf("about:", "resource:", "chrome:", "file:", "blob:", "moz-extension:")
     return filteredSchemas.none({ tab.url.startsWith(it) })
 }

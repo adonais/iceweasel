@@ -31,7 +31,13 @@ class AppLinkRedirectTest {
         assertFalse(appLink.hasFallback())
         assertTrue(appLink.isRedirect())
 
-        appLink = AppLinkRedirect(appIntent = mock(), appName = "", fallbackUrl = "https://example.com", marketplaceIntent = null)
+        appLink =
+            AppLinkRedirect(
+                appIntent = mock(),
+                appName = "",
+                fallbackUrl = "https://example.com",
+                marketplaceIntent = null,
+            )
         assertTrue(appLink.hasFallback())
         assertTrue(appLink.isRedirect())
     }
@@ -44,10 +50,22 @@ class AppLinkRedirectTest {
         appLink = AppLinkRedirect(appIntent = mock(), appName = "", fallbackUrl = null, marketplaceIntent = null)
         assertTrue(appLink.isRedirect())
 
-        appLink = AppLinkRedirect(appIntent = null, appName = "", fallbackUrl = "https://example.com", marketplaceIntent = null)
+        appLink =
+            AppLinkRedirect(
+                appIntent = null,
+                appName = "",
+                fallbackUrl = "https://example.com",
+                marketplaceIntent = null,
+            )
         assertTrue(appLink.isRedirect())
 
-        appLink = AppLinkRedirect(appIntent = mock(), appName = "", fallbackUrl = "https://example.com", marketplaceIntent = null)
+        appLink =
+            AppLinkRedirect(
+                appIntent = mock(),
+                appName = "",
+                fallbackUrl = "https://example.com",
+                marketplaceIntent = null,
+            )
         assertTrue(appLink.isRedirect())
     }
 
@@ -58,11 +76,23 @@ class AppLinkRedirectTest {
         `when`(intent.data).thenReturn(uri)
         `when`(uri.scheme).thenReturn("market")
 
-        var appLink = AppLinkRedirect(appIntent = null, appName = "", fallbackUrl = "https://example.com", marketplaceIntent = null)
+        var appLink =
+            AppLinkRedirect(
+                appIntent = null,
+                appName = "",
+                fallbackUrl = "https://example.com",
+                marketplaceIntent = null,
+            )
         assertFalse(appLink.isInstallable())
         assertTrue(appLink.isRedirect())
 
-        appLink = AppLinkRedirect(appIntent = intent, appName = "", fallbackUrl = "https://example.com", marketplaceIntent = null)
+        appLink =
+            AppLinkRedirect(
+                appIntent = intent,
+                appName = "",
+                fallbackUrl = "https://example.com",
+                marketplaceIntent = null,
+            )
         assertTrue(appLink.isInstallable())
         assertTrue(appLink.isRedirect())
     }

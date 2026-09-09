@@ -38,6 +38,12 @@ add_setup(async function () {
   SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
   await waitForIdle();
 
+  // This file drives the handoff search bar, which the newtab <moz-urlbar>
+  // supersedes when its feature gate is on.
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.newtab.featureGate", false]],
+  });
+
   await SearchTestUtils.installSearchExtension(
     {
       search_url: getPageUrl(true),

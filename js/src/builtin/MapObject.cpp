@@ -724,6 +724,10 @@ bool MapObject::tryOptimizeCtorWithIterable(JSContext* cx,
     ArrayObject* array = &iterable->as<ArrayObject>();
     uint32_t len = array->getDenseInitializedLength();
 
+    if (!Table(this).ensureCapacity(cx, len)) {
+      return false;
+    }
+
     for (uint32_t index = 0; index < len; index++) {
       Value element = array->getDenseElement(index);
       MOZ_ASSERT(IsPackedArray(&element.toObject()));
@@ -740,6 +744,10 @@ bool MapObject::tryOptimizeCtorWithIterable(JSContext* cx,
       }
     }
 
+    // If there were many duplicate keys, we may have over-allocated.
+    // In that case, resize now.
+    Table(this).maybeShrink(cx);
+
     *optimized = true;
     return true;
   }
@@ -747,6 +755,9 @@ bool MapObject::tryOptimizeCtorWithIterable(JSContext* cx,
   // Fast path for `new Map(map)`.
   if (IsMapObjectWithDefaultIterator(iterable, cx)) {
     auto* iterableMap = &iterable->as<MapObject>();
+    if (!Table(this).ensureCapacity(cx, Table(iterableMap).count())) {
+      return false;
+    }
     auto addEntry = [cx, this](auto& entry) {
       return setWithHashableKey(cx, entry.key, entry.value);
     };
@@ -1455,6 +1466,9 @@ bool SetObject::tryOptimizeCtorWithIterable(JSContext* cx,
   // Fast path for `new Set(set)`.
   if (IsSetObjectWithDefaultIterator(iterable, cx)) {
     auto* iterableSet = &iterable->as<SetObject>();
+    if (!Table(this).ensureCapacity(cx, Table(iterableSet).count())) {
+      return false;
+    }
     auto addEntry = [cx, this](auto& entry) {
       return addHashableValue(cx, entry);
     };

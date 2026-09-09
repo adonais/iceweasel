@@ -16,11 +16,15 @@ Please read the two links above before getting involved. **Contributions that do
 
 Whether you're an external contributor or a Mozilla employee, the process to get your code into the repository is essentially the same:
 
-* You [find a bug to work on](./contributing/find-bugs.md) (*note: we use bugs to track 'broken' things, new features and even discussions*).
-* [Work on the bug](./contributing/fixing-bugs.md).
-* [Request a review](./contributing/making-prs.md) for your code.
+* You find a bug to work on (*note: we use bugs to track 'broken' things, new features and even discussions*). See {doc}`/contributing/filing-good-bugs` and [DevTools bugs and issue trackers](./bugs-issues.md).
+* Work on the bug, then {ref}`write and submit a patch <write-a-patch>`.
+* {ref}`Request a review <Getting reviews>` for your code. DevTools patches go to `#devtools-reviewers`.
 * Land the code in the repository.
 * And you've contributed—well done 😀
+
+The steps above are the same for every part of Firefox, so they are documented
+once in {ref}`Working on Firefox <working-on-firefox>`. This page and the rest
+of this section only cover what is specific to DevTools.
 
 ## Help with design and UX
 

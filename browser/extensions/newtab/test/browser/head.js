@@ -142,9 +142,10 @@ function addContentHelpers() {
       // Gives fluent-dom the time to render strings
       await new Promise(r => content.requestAnimationFrame(r));
 
-      const contextMenu = item.querySelector(".context-menu");
-      const contextMenuList = contextMenu.querySelector(".context-menu-list");
-      return [...contextMenuList.getElementsByClassName("context-menu-item")];
+      const panelList = item.querySelector("panel-list");
+      return [...panelList.children].filter(
+        child => child.localName === "panel-item"
+      );
     },
   });
 }

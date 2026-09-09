@@ -4,9 +4,9 @@
 
 package mozilla.components.concept.engine
 
+import kotlin.test.assertIs
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import kotlin.test.assertIs
 
 class HitResultTest {
     @Test

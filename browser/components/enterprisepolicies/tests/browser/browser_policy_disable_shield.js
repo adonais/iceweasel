@@ -10,12 +10,8 @@ add_task(async function test_policy_disable_shield() {
   const { BaseAction } = ChromeUtils.importESModule(
     "resource://normandy/actions/BaseAction.sys.mjs"
   );
-  const { BaseStudyAction } = ChromeUtils.importESModule(
-    "resource://normandy/actions/BaseStudyAction.sys.mjs"
-  );
 
   const baseAction = new BaseAction();
-  const baseStudyAction = new BaseStudyAction();
 
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -36,13 +32,6 @@ add_task(async function test_policy_disable_shield() {
     "Base action is not disabled"
   );
 
-  baseStudyAction._preExecution();
-  is(
-    baseStudyAction.state,
-    BaseAction.STATE_PREPARING,
-    "Base study action is not disabled"
-  );
-
   await setupPolicyEngineWithJson({
     policies: {
       DisableFirefoxStudies: true,
@@ -57,12 +46,5 @@ add_task(async function test_policy_disable_shield() {
     baseAction.state,
     BaseAction.STATE_PREPARING,
     "Base action is not disabled"
-  );
-
-  baseStudyAction._preExecution();
-  is(
-    baseStudyAction.state,
-    BaseAction.STATE_DISABLED,
-    "Base study action is disabled"
   );
 });

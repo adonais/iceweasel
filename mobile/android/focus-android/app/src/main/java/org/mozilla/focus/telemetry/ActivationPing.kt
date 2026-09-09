@@ -18,9 +18,9 @@ import org.mozilla.focus.GleanMetrics.Pings
 /**
  * Responsible for managing and sending the one-time "activation" ping.
  *
- * This class ensures that the activation ping is triggered exactly once during the
- * lifetime of the application installation. It persists the sent state using
- * [SharedPreferences] to prevent duplicate transmissions on subsequent app launches.
+ * This class ensures that the activation ping is triggered exactly once during the lifetime of the application
+ * installation. It persists the sent state using [SharedPreferences] to prevent duplicate transmissions on subsequent
+ * app launches.
  */
 class ActivationPing(
     private val context: Context,
@@ -36,12 +36,10 @@ class ActivationPing(
     }
 
     /**
-     * Checks whether or not the activation ping was already
-     * triggered by the application.
+     * Checks whether or not the activation ping was already triggered by the application.
      *
-     * Note that this only tells us that Fenix triggered the
-     * ping and then delegated the transmission to Glean. We
-     * have no way to tell if it was actually sent or not.
+     * Note that this only tells us that Fenix triggered the ping and then delegated the transmission to Glean. We have
+     * no way to tell if it was actually sent or not.
      *
      * @return true if it was already triggered, false otherwise.
      */
@@ -51,19 +49,15 @@ class ActivationPing(
     }
 
     /**
-     * Marks the "activation" ping as triggered by the application.
-     * This ensures the ping is not triggered again at the next app
-     * start.
+     * Marks the "activation" ping as triggered by the application. This ensures the ping is not triggered again at the
+     * next app start.
      */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun markAsTriggered() {
         prefs.edit { putBoolean("ping_sent", true) }
     }
 
-    /**
-     * Fills the metrics and triggers the 'activation' ping.
-     * This is a separate function to simplify unit-testing.
-     */
+    /** Fills the metrics and triggers the 'activation' ping. This is a separate function to simplify unit-testing. */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun triggerPing() {
         // Generate the activation_id.
@@ -76,9 +70,8 @@ class ActivationPing(
     }
 
     /**
-     * Trigger sending the `activation` ping if it wasn't sent already.
-     * Then, mark it so that it doesn't get triggered next time Fenix
-     * starts.
+     * Trigger sending the `activation` ping if it wasn't sent already. Then, mark it so that it doesn't get triggered
+     * next time Fenix starts.
      */
     fun checkAndSend() {
         if (wasAlreadyTriggered()) {

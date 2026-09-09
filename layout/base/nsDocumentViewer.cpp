@@ -323,11 +323,10 @@ class nsDocumentViewer final : public nsIDocumentViewer,
    * FIXME(emilio): aNeedMakeCX makes no sense, it only influences whether
    * aDoInitialReflow is true.
    */
-  nsresult InitInternal(nsIWidget* aParentWidget,
-                        mozilla::dom::WindowGlobalChild* aActor,
-                        const LayoutDeviceIntRect& aBounds, bool aDoCreation,
-                        bool aNeedMakeCX = true,
-                        bool aForceSetNewDocument = true);
+  MOZ_CAN_RUN_SCRIPT nsresult InitInternal(
+      nsIWidget* aParentWidget, mozilla::dom::WindowGlobalChild* aActor,
+      const LayoutDeviceIntRect& aBounds, bool aDoCreation,
+      bool aNeedMakeCX = true, bool aForceSetNewDocument = true);
   /**
    * @param aDoInitialReflow set to true if you want to kick off the initial
    * reflow
@@ -782,7 +781,8 @@ nsresult nsDocumentViewer::InitInternal(nsIWidget* aParentWidget,
     if (window) {
       nsCOMPtr<Document> curDoc = window->GetExtantDoc();
       if (aForceSetNewDocument || curDoc != mDocument) {
-        nsresult rv = window->SetNewDocument(mDocument, nullptr, false, aActor);
+        const RefPtr<Document> doc = mDocument.get();
+        nsresult rv = window->SetNewDocument(doc, nullptr, false, aActor);
         if (NS_FAILED(rv)) {
           Destroy();
           return rv;
@@ -834,7 +834,8 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
   NS_ENSURE_TRUE(mDocument, NS_ERROR_NOT_AVAILABLE);
 
   // First, get the window from the document...
-  nsCOMPtr<nsPIDOMWindowOuter> window = mDocument->GetWindow();
+  RefPtr<nsGlobalWindowOuter> window =
+      nsGlobalWindowOuter::Cast(mDocument->GetWindow());
   RefPtr<nsDocShell> docShell = nsDocShell::Cast(window->GetDocShell());
 
   mLoaded = true;
@@ -950,13 +951,14 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
   if (mDocument && mDocument->IsCurrentActiveDocument() &&
       aStatus != NS_BINDING_ABORTED) {
     // Re-get window, since it might have changed during above firing of onload
-    window = mDocument->GetWindow();
+    window = nsGlobalWindowOuter::Cast(mDocument->GetWindow());
     if (window) {
       docShell = nsDocShell::Cast(window->GetDocShell());
       bool isInUnload;
       if (docShell && NS_SUCCEEDED(docShell->GetIsInUnload(&isInUnload)) &&
           !isInUnload) {
-        mDocument->OnPageShow(restoring, nullptr);
+        const RefPtr<Document> doc = mDocument.get();
+        doc->OnPageShow(restoring, nullptr);
       }
     }
   }
@@ -1024,9 +1026,8 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
 #ifdef NS_PRINTING
   // Check to see if someone tried to print during the load
   if (window) {
-    auto* outerWin = nsGlobalWindowOuter::Cast(window);
-    outerWin->StopDelayingPrintingUntilAfterLoad();
-    if (outerWin->DelayedPrintUntilAfterLoad()) {
+    window->StopDelayingPrintingUntilAfterLoad();
+    if (window->DelayedPrintUntilAfterLoad()) {
       // We call into the inner because it ensures there's an active document
       // and such, and it also waits until the whole thing completes, which is
       // nice because it allows us to close if needed right here.
@@ -1034,11 +1035,11 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
               nsGlobalWindowInner::Cast(window->GetCurrentInnerWindow())) {
         inner->Print(IgnoreErrors());
       }
-      if (outerWin->DelayedCloseForPrinting()) {
-        outerWin->Close();
+      if (window->DelayedCloseForPrinting()) {
+        window->Close();
       }
     } else {
-      MOZ_ASSERT(!outerWin->DelayedCloseForPrinting());
+      MOZ_ASSERT(!window->DelayedCloseForPrinting());
     }
   }
 #endif
@@ -1260,7 +1261,7 @@ nsDocumentViewer::PageHide(bool aIsUnload) {
   // and decrement it again when it goes out of scope.
   IgnoreOpensDuringUnload ignoreOpens(mDocument);
 
-  mDocument->OnPageHide(!aIsUnload, nullptr);
+  MOZ_KnownLive(mDocument)->OnPageHide(!aIsUnload, nullptr);
 
   // inform the window so that the focus state is reset.
   NS_ENSURE_STATE(mDocument);
@@ -1316,7 +1317,10 @@ nsDocumentViewer::Open() {
     mDocument->SetContainer(mContainer);
   }
 
-  MOZ_TRY(InitInternal(mParentWidget, nullptr, mBounds, false));
+  {
+    const nsCOMPtr<nsIWidget> parentWidget = mParentWidget;
+    MOZ_TRY(InitInternal(parentWidget, nullptr, mBounds, false));
+  }
 
   mHidden = false;
 
@@ -1578,7 +1582,8 @@ nsDocumentViewer::SetDocumentInternal(Document* aDocument,
     DestroyPresContext();
 
     mWindow = nullptr;
-    MOZ_TRY(InitInternal(mParentWidget, nullptr, mBounds, true, true, false));
+    const nsCOMPtr<nsIWidget> parentWidget = mParentWidget;
+    MOZ_TRY(InitInternal(parentWidget, nullptr, mBounds, true, true, false));
   }
 
   return NS_OK;
@@ -2939,7 +2944,8 @@ NS_IMETHODIMP nsDocumentViewer::SetPageModeForTesting(
     mPresContext->SetPageScale(1.0f);
   }
 
-  MOZ_TRY(InitInternal(mParentWidget, nullptr, mBounds, true, false, false));
+  const nsCOMPtr<nsIWidget> parentWidget = mParentWidget;
+  MOZ_TRY(InitInternal(parentWidget, nullptr, mBounds, true, false, false));
 
   Show();
   return NS_OK;

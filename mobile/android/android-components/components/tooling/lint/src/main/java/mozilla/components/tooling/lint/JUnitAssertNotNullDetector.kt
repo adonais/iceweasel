@@ -14,35 +14,39 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiMethod
+import java.util.EnumSet
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.skipParenthesizedExprDown
-import java.util.EnumSet
 
 /**
- * Detects usages of JUnit's `org.junit.Assert.assertNotNull` and suggests replacing them
- * with `kotlin.test.assertNotNull`, which returns the non-null value and enables smart casts.
+ * Detects usages of JUnit's `org.junit.Assert.assertNotNull` and suggests replacing them with
+ * `kotlin.test.assertNotNull`, which returns the non-null value and enables smart casts.
  */
 class JUnitAssertNotNullDetector : Detector(), SourceCodeScanner {
 
     companion object {
-        private val Implementation = Implementation(
-            JUnitAssertNotNullDetector::class.java,
-            EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
-        )
+        private val Implementation =
+            Implementation(
+                JUnitAssertNotNullDetector::class.java,
+                EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+            )
 
         @JvmField
-        val ISSUE_USE_KOTLIN_TEST_ASSERT_NOT_NULL: Issue = Issue.create(
-            id = "JUnitAssertNotNull",
-            briefDescription = "Use kotlin.test.assertNotNull instead of JUnit assertNotNull",
-            explanation = """
-                `kotlin.test.assertNotNull(value)` allows the compiler to smart cast \
-                the variable to a non-null type so you don't need `!!` or `?.`.
-            """.trimIndent(),
-            category = Category.TESTING,
-            priority = 6,
-            severity = Severity.WARNING,
-            implementation = Implementation,
-        )
+        val ISSUE_USE_KOTLIN_TEST_ASSERT_NOT_NULL: Issue =
+            Issue.create(
+                id = "JUnitAssertNotNull",
+                briefDescription = "Use kotlin.test.assertNotNull instead of JUnit assertNotNull",
+                explanation =
+                    """
+                    `kotlin.test.assertNotNull(value)` allows the compiler to smart cast \
+                    the variable to a non-null type so you don't need `!!` or `?.`.
+                    """
+                        .trimIndent(),
+                category = Category.TESTING,
+                priority = 6,
+                severity = Severity.WARNING,
+                implementation = Implementation,
+            )
     }
 
     override fun getApplicableMethodNames(): List<String> = listOf("assertNotNull")
@@ -77,11 +81,12 @@ class JUnitAssertNotNullDetector : Detector(), SourceCodeScanner {
         val messageText = messageArg?.sourcePsi?.text
 
         if (valueText != null) {
-            val replacementText = if (messageText != null) {
-                "kotlin.test.assertNotNull($valueText, $messageText)"
-            } else {
-                "kotlin.test.assertNotNull($valueText)"
-            }
+            val replacementText =
+                if (messageText != null) {
+                    "kotlin.test.assertNotNull($valueText, $messageText)"
+                } else {
+                    "kotlin.test.assertNotNull($valueText)"
+                }
 
             return LintFix.create()
                 .name("Replace with $replacementText")

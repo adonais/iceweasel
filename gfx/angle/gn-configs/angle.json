@@ -13,7 +13,6 @@
       "angle_build_all": false,
       "angle_enable_abseil": false,
       "angle_build_vulkan_system_info": false,
-      "angle_enable_d3d9": false,
       "angle_enable_d3d11": false,
       "angle_enable_essl": true,
       "angle_enable_gl": false,
@@ -37,7 +36,6 @@
       "angle_enable_msl": true
     },
     "win": {
-      "angle_enable_d3d9": true,
       "angle_enable_d3d11": true,
       "angle_enable_hlsl": true
     }

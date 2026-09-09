@@ -4,6 +4,7 @@
 
 #include "mozilla/devtools/HeapSnapshot.h"
 #include "mozilla/devtools/HeapSnapshotTempFileHelperParent.h"
+#include "mozilla/dom/ChromeUtils.h"
 #include "mozilla/ErrorResult.h"
 #include "private/pprio.h"
 
@@ -21,6 +22,9 @@ static bool openFileFailure(ErrorResult& rv,
 mozilla::ipc::IPCResult
 HeapSnapshotTempFileHelperParent::RecvOpenHeapSnapshotTempFile(
     OpenHeapSnapshotTempFileResponse* outResponse) {
+  if (!dom::ChromeUtils::IsDevToolsOpened()) {
+    return IPC_FAIL_NO_REASON(this);
+  }
   auto start = TimeStamp::Now();
   ErrorResult rv;
   nsAutoString filePath;

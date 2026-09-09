@@ -7,12 +7,12 @@ package org.mozilla.fenix.tabstray.browser.compose
 /**
  * The tab item's interaction state (hover, drag, etc)
  *
- * @property isHoveredByItem: True when the tab item is being hovered over by another tab item.  False otherwise.
+ * @property isHoveredByItem: True when the tab item is being hovered over by another tab item. False otherwise.
  * @property isDragged: True when the tab item is being dragged for re-order or drag and drop, false otherwise.
- * @property isHeld: True when the tab item is being held down before being moved, false otherwise.  isHeld
- * and isDragged can both be true, because isDragged tracks the drag gesture action.
- * @property isEnteringGroup: True when the tab item is a group that is entering composition for the first time.  False
- * otherwise.
+ * @property isHeld: True when the tab item is being held down before being moved, false otherwise. isHeld and isDragged
+ *   can both be true, because isDragged tracks the drag gesture action.
+ * @property isEnteringGroup: True when the tab item is a group that is entering composition for the first time. False
+ *   otherwise.
  */
 data class TabItemInteractionState(
     val isHoveredByItem: Boolean = false,

@@ -11,40 +11,28 @@ import androidx.core.content.edit
 
 private const val SHARED_PREFS_FILENAME = "ADDRESSES_DEBUG_REGION"
 
-/**
- * List of regions that can be enabled for debugging purposes only.
- */
+/** List of regions that can be enabled for debugging purposes only. */
 enum class DebugRegion(val country: String) {
-    AU("AU"),
+    AU("AU")
 }
 
-/**
- * Type declaring methods for interacting with a storage layer relating to debug regions.
- */
+/** Type declaring methods for interacting with a storage layer relating to debug regions. */
 interface AddressesDebugRegionRepository {
-    /**
-     * Get all the enabled debug region.
-     */
+    /** Get all the enabled debug region. */
     fun getAllEnabledRegions(): List<DebugRegion>
 
-    /**
-     * Check whether a debug region is enabled.
-     */
+    /** Check whether a debug region is enabled. */
     fun isRegionEnabled(region: DebugRegion): Boolean
 
-    /**
-     * Set whether a debug region is enabled.
-     */
+    /** Set whether a debug region is enabled. */
     fun setRegionEnabled(region: DebugRegion, enabled: Boolean)
 }
 
 /**
- * A [AddressesDebugRegionRepository] that uses shared prefs as its storage mechanism. This was chosen
- * for easy interop with utils/Settings.kt but could be updated to DataStore down the road.
+ * A [AddressesDebugRegionRepository] that uses shared prefs as its storage mechanism. This was chosen for easy interop
+ * with utils/Settings.kt but could be updated to DataStore down the road.
  */
-class SharedPrefsAddressesDebugRegionRepository(
-    context: Context,
-) : AddressesDebugRegionRepository {
+class SharedPrefsAddressesDebugRegionRepository(context: Context) : AddressesDebugRegionRepository {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(SHARED_PREFS_FILENAME, MODE_PRIVATE)
 
@@ -53,16 +41,14 @@ class SharedPrefsAddressesDebugRegionRepository(
             prefs.getBoolean(region.country, false)
         }
 
-    override fun isRegionEnabled(region: DebugRegion): Boolean =
-        prefs.getBoolean(region.country, false)
+    override fun isRegionEnabled(region: DebugRegion): Boolean = prefs.getBoolean(region.country, false)
 
-    override fun setRegionEnabled(region: DebugRegion, enabled: Boolean) =
-        prefs.edit { putBoolean(region.country, enabled) }
+    override fun setRegionEnabled(region: DebugRegion, enabled: Boolean) = prefs.edit {
+        putBoolean(region.country, enabled)
+    }
 }
 
-/**
- * An empty [AddressesDebugRegionRepository] that is a no-op for release.
- */
+/** An empty [AddressesDebugRegionRepository] that is a no-op for release. */
 class EmptyAddressesDebugRegionRepository : AddressesDebugRegionRepository {
     override fun getAllEnabledRegions() = listOf<DebugRegion>()
 
@@ -71,23 +57,25 @@ class EmptyAddressesDebugRegionRepository : AddressesDebugRegionRepository {
     override fun setRegionEnabled(
         region: DebugRegion,
         enabled: Boolean,
-    ) { /* noop */ }
+    ) {
+        /* noop */
+    }
 }
 
-/**
- * A fake [AddressesDebugRegionRepository].
- */
+/** A fake [AddressesDebugRegionRepository]. */
 class FakeAddressesDebugRegionRepository : AddressesDebugRegionRepository {
-    private val debugRegions = DebugRegion.entries.associateWith {
-        false
-    }.toMutableMap()
+    private val debugRegions =
+        DebugRegion.entries
+            .associateWith {
+                false
+            }
+            .toMutableMap()
 
     override fun getAllEnabledRegions(): List<DebugRegion> {
         return debugRegions.filter { it.value }.keys.toList()
     }
 
-    override fun isRegionEnabled(region: DebugRegion): Boolean =
-        debugRegions[region] ?: false
+    override fun isRegionEnabled(region: DebugRegion): Boolean = debugRegions[region] ?: false
 
     override fun setRegionEnabled(region: DebugRegion, enabled: Boolean) {
         debugRegions[region] = enabled

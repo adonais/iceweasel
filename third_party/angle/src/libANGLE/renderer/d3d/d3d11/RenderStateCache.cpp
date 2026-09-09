@@ -7,11 +7,8 @@
 // RenderStateCache.cpp: Defines rx::RenderStateCache, a cache of Direct3D render
 // state objects.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "libANGLE/renderer/d3d/d3d11/RenderStateCache.h"
+#include "common/unsafe_buffers.h"
 
 #include <float.h>
 
@@ -161,7 +158,7 @@ angle::Result RenderStateCache::getBlendState(const gl::Context *context,
 
     for (size_t i = 0; i < blendStateExt.getDrawBufferCount(); i++)
     {
-        D3D11_RENDER_TARGET_BLEND_DESC &rtDesc = blendDesc.RenderTarget[i];
+        D3D11_RENDER_TARGET_BLEND_DESC &rtDesc = ANGLE_UNSAFE_TODO(blendDesc.RenderTarget[i]);
 
         if (blendStateExt.getEnabledMask().test(i))
         {
@@ -326,18 +323,6 @@ angle::Result RenderStateCache::getSamplerState(const gl::Context *context,
     samplerDesc.BorderColor[3] = samplerState.getBorderColor().colorF.alpha;
     samplerDesc.MinLOD         = samplerState.getMinLod();
     samplerDesc.MaxLOD         = samplerState.getMaxLod();
-
-    if (featureLevel <= D3D_FEATURE_LEVEL_9_3)
-    {
-        // Check that maxLOD is nearly FLT_MAX (1000.0f is the default), since 9_3 doesn't support
-        // anything other than FLT_MAX. Note that Feature Level 9_* only supports GL ES 2.0, so the
-        // consumer of ANGLE can't modify the Max LOD themselves.
-        ASSERT(samplerState.getMaxLod() >= 999.9f);
-
-        // Now just set MaxLOD to FLT_MAX. Other parts of the renderer (e.g. the non-zero max LOD
-        // workaround) should take account of this.
-        samplerDesc.MaxLOD = FLT_MAX;
-    }
 
     d3d11::SamplerState dx11SamplerState;
     ANGLE_TRY(

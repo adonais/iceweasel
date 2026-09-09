@@ -1881,7 +1881,7 @@ void GeckoViewSupport::Open(
       java::EventDispatcher::Ref::From(aDispatcher));
   androidView->mInitData = java::GeckoBundle::Ref::From(aInitData);
 
-  nsAutoCString chromeFlags("chrome,dialog=0,remote,resizable,scrollbars");
+  nsAutoCString chromeFlags("chrome,dialog=0,remote,resizable");
   if (aPrivateMode) {
     chromeFlags += ",private";
   }
@@ -1934,8 +1934,10 @@ void GeckoViewSupport::Close() {
     return;
   }
 
-  mDOMWindow->ForceClose();
-  mDOMWindow = nullptr;
+  if (const nsCOMPtr<nsPIDOMWindowOuter> window = std::move(mDOMWindow)) {
+    MOZ_ASSERT(!mDOMWindow);
+    window->ForceClose();
+  }
   mGeckoViewWindow = nullptr;
 }
 
@@ -2450,17 +2452,6 @@ RefPtr<MozPromise<bool, bool, false>> nsWindow::OnLoadRequest(
   return geckoResult
              ? MozPromise<bool, bool, false>::FromGeckoResult(geckoResult)
              : nullptr;
-}
-
-float nsWindow::GetDPI() {
-  float dpi = 160.0f;
-
-  nsCOMPtr<nsIScreen> screen = GetWidgetScreen();
-  if (screen) {
-    screen->GetDpi(&dpi);
-  }
-
-  return dpi;
 }
 
 double nsWindow::GetDefaultScaleInternal() {

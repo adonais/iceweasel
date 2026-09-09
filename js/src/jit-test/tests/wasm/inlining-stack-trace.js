@@ -60,6 +60,14 @@ let exports = wasmEvalText(`(module
   (func $mod1 (export "mod1")
     call $mod2
   )
+
+  (func $inlinee (param i32) (result i32)
+    (i32.add (local.get 0) (i32.const 1))
+  )
+  (func $trapAfterInline (export "trapAfterInline")
+    (drop (call $inlinee (i32.const 0)))
+    unreachable
+  )
 )`, {"": {throw3: () => { throw new Error() }}}).exports;
 
 let tests = [
@@ -69,6 +77,7 @@ let tests = [
   {func: exports.null1, stack: ['null2', 'null1', '']},
   {func: exports.div1, stack: ['div2', 'div1', '']},
   {func: exports.mod1, stack: ['mod2', 'mod1', '']},
+  {func: exports.trapAfterInline, stack: ['trapAfterInline', '']},
 ];
 
 // Run this two times. The first time should trigger a synchronous compile,

@@ -8,9 +8,6 @@ import android.graphics.Bitmap
 import android.util.AtomicFile
 import android.util.Base64
 import androidx.annotation.VisibleForTesting
-import mozilla.components.browser.state.search.SearchEngine
-import org.w3c.dom.DOMException
-import org.w3c.dom.Document
 import java.io.ByteArrayOutputStream
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
@@ -20,10 +17,11 @@ import javax.xml.transform.TransformerException
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
+import mozilla.components.browser.state.search.SearchEngine
+import org.w3c.dom.DOMException
+import org.w3c.dom.Document
 
-/**
- * A simple XML writer for search engine plugins.
- */
+/** A simple XML writer for search engine plugins. */
 internal class SearchEngineWriter {
     /**
      * Builds and save the XML document of [SearchEngine] to the provided [File].
@@ -115,6 +113,7 @@ internal class SearchEngineWriter {
 }
 
 private const val BITMAP_COMPRESS_QUALITY = 100
+
 private fun Bitmap.toBase64(): String {
     val stream = ByteArrayOutputStream()
     compress(Bitmap.CompressFormat.PNG, BITMAP_COMPRESS_QUALITY, stream)

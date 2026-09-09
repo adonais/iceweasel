@@ -9,6 +9,8 @@ import android.net.Uri
 import androidx.annotation.ColorInt
 import androidx.annotation.VisibleForTesting
 import androidx.navigation.NavController
+import java.util.concurrent.TimeUnit
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,6 +34,7 @@ import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Collections
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.TabsTray
+import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
@@ -66,20 +69,14 @@ import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.tabstray.ui.TabManagementFragmentDirections
-import org.mozilla.fenix.trackingprotection.ProtectionsDashboardFragment
 import org.mozilla.fenix.utils.Settings
-import java.util.concurrent.TimeUnit
-import kotlin.coroutines.CoroutineContext
 
 internal const val INACTIVE_TABS_FEATURE_NAME = "Inactive tabs"
 
-/**
- * Controller for handling any actions in the tab manager.
- */
-interface TabManagerController :
-    SyncedTabsController,
-    InactiveTabsController,
-    TabsTrayFabController {
+@VisibleForTesting internal const val TABS_TRAY_TELEMETRY_SOURCE = "tabs_tray"
+
+/** Controller for handling any actions in the tab manager. */
+interface TabManagerController : SyncedTabsController, InactiveTabsController, TabsTrayFabController {
 
     /**
      * Set the current visible tab page to the provided [page].
@@ -88,20 +85,16 @@ interface TabManagerController :
      */
     fun handleTabPageClicked(page: Page)
 
-    /**
-     * Navigate from the Tab Manager to Browser.
-     */
+    /** Navigate from the Tab Manager to Browser. */
     fun handleNavigateToBrowser()
 
-    /**
-     * Navigates from the tab manager to the homepage.
-     */
+    /** Navigates from the tab manager to the homepage. */
     fun handleNavigateToHome()
 
     /**
-     * Deletes the [TabsTrayItem] with the specified [tabId] or calls [DownloadCancelDialogFragment]
-     * if user tries to close the last private tab while private downloads are active.
-     * This method has no effect if the tab does not exist.
+     * Deletes the [TabsTrayItem] with the specified [tabId] or calls [DownloadCancelDialogFragment] if user tries to
+     * close the last private tab while private downloads are active. This method has no effect if the tab does not
+     * exist.
      *
      * @param tab The [TabsTrayItem.Tab] to be removed from the Tab Manager.
      * @param source app feature from which the tab with [tabId] was closed.
@@ -116,24 +109,16 @@ interface TabManagerController :
      */
     fun handleDeletePrivateTabWarningAccepted(tabId: String, source: String? = null)
 
-    /**
-     * Deletes the current state of selected tabs, offering an undo option.
-     */
+    /** Deletes the current state of selected tabs, offering an undo option. */
     fun handleDeleteSelectedTabsClicked()
 
-    /**
-     * Bookmarks the current set of selected tabs.
-     */
+    /** Bookmarks the current set of selected tabs. */
     fun handleBookmarkSelectedTabsClicked()
 
-    /**
-     * Saves the current set of selected tabs to a collection.
-     */
+    /** Saves the current set of selected tabs to a collection. */
     fun handleAddSelectedTabsToCollectionClicked()
 
-    /**
-     * Shares the current set of selected tabs.
-     */
+    /** Shares the current set of selected tabs. */
     fun handleShareSelectedTabsClicked()
 
     /**
@@ -149,14 +134,12 @@ interface TabManagerController :
         thumbnailUri: Uri?,
     )
 
-    /**
-     * Navigate from the Tab Manager to Recently Closed section in the History fragment.
-     */
+    /** Navigate from the Tab Manager to Recently Closed section in the History fragment. */
     fun handleNavigateToRecentlyClosed()
 
     /**
-     * Marks all selected tabs' last access timestamp to be 15 days or [numDays];
-     * enough time to have a tab considered as inactive.
+     * Marks all selected tabs' last access timestamp to be 15 days or [numDays]; enough time to have a tab considered
+     * as inactive.
      *
      * ⚠️ DO NOT USE THIS OUTSIDE OF DEBUGGING/TESTING.
      *
@@ -175,9 +158,7 @@ interface TabManagerController :
         source: String?,
     )
 
-    /**
-     * Handle the completion of the TabTray transition animation.
-     */
+    /** Handle the completion of the TabTray transition animation. */
     fun handleNavigationRequested()
 
     /**
@@ -187,39 +168,25 @@ interface TabManagerController :
      */
     fun handleBackPressed(): Boolean
 
-    /**
-     * Navigates to the sign into Sync flow
-     */
+    /** Navigates to the sign into Sync flow */
     fun handleSignInClicked()
 
-    /**
-     * Called when clicking the account settings button.
-     */
+    /** Called when clicking the account settings button. */
     fun onAccountSettingsClicked()
 
-    /**
-     * Called when clicking the tab settings button.
-     */
+    /** Called when clicking the tab settings button. */
     fun onTabSettingsClicked()
 
-    /**
-     * Called when clicking the close all tabs button.
-     */
+    /** Called when clicking the close all tabs button. */
     fun onCloseAllTabsClicked(private: Boolean)
 
-    /**
-     * Called when cancelling private downloads confirmed.
-     */
+    /** Called when cancelling private downloads confirmed. */
     fun onCloseAllPrivateTabsWarningConfirmed(private: Boolean)
 
-    /**
-     * Called when opening the recently closed tabs menu button.
-     */
+    /** Called when opening the recently closed tabs menu button. */
     fun onOpenRecentlyClosedClicked()
 
-    /**
-     * Called when the trackers blocked pill is tapped.
-     */
+    /** Called when the trackers blocked pill is tapped. */
     fun onPrivacyReportTapped()
 }
 
@@ -240,9 +207,9 @@ interface TabManagerController :
  * @param fenixBrowserUseCases [FenixBrowserUseCases] used for adding new homepage tabs.
  * @param shareUseCases [ShareUseCases] for sharing content via the system share sheet or the in-app [ShareFragment].
  * @param closeSyncedTabsUseCases Use cases for closing synced tabs.
- * @param addBookmarkUseCase Use case for adding a new bookmark; resolves the parent folder via
- * the shared [LastSavedFolderCache] so the tab manager's bulk save lands in the same folder as
- * single-bookmark saves from the toolbar and menu.
+ * @param addBookmarkUseCase Use case for adding a new bookmark; resolves the parent folder via the shared
+ *   [LastSavedFolderCache] so the tab manager's bulk save lands in the same folder as single-bookmark saves from the
+ *   toolbar and menu.
  * @param ioDispatcher [CoroutineContext] used for storage operations.
  * @param mainDispatcher [CoroutineContext] used for UI operations.
  * @param collectionStorage Storage layer for interacting with collections.
@@ -251,8 +218,7 @@ interface TabManagerController :
  * @param showUndoSnackbarForSyncedTab Lambda used to display an undo snackbar when a synced tab is closed.
  * @property showCancelledDownloadWarning Lambda used to display a cancelled download warning.
  * @param showBookmarkSnackbar Lambda used to display a snackbar upon saving tabs as bookmarks.
- * @param showCollectionSnackbar Lambda used to display a snackbar upon successfully saving tabs
- * to a collection.
+ * @param showCollectionSnackbar Lambda used to display a snackbar upon successfully saving tabs to a collection.
  * @param currentTimeMillis provider for the current time in milliseconds, injectable for testing.
  */
 @Suppress("TooManyFunctions", "LongParameterList")
@@ -280,10 +246,11 @@ class DefaultTabManagerController(
     private val showUndoSnackbarForSyncedTab: (CloseTabsUseCases.UndoableOperation) -> Unit,
     internal val showCancelledDownloadWarning: (downloadCount: Int, tabId: String?, source: String?) -> Unit,
     private val showBookmarkSnackbar: (tabSize: Int, parentFolderTitle: String?) -> Unit,
-    private val showCollectionSnackbar: (
-        tabSize: Int,
-        isNewCollection: Boolean,
-    ) -> Unit,
+    private val showCollectionSnackbar:
+        (
+            tabSize: Int,
+            isNewCollection: Boolean,
+        ) -> Unit,
     private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
 ) : TabManagerController {
 
@@ -311,16 +278,14 @@ class DefaultTabManagerController(
         browsingModeManager.mode = BrowsingMode.fromBoolean(isPrivate)
 
         if (settings.enableHomepageAsNewTab) {
-            fenixBrowserUseCases.addNewHomepageTab(
-                private = isPrivate,
-            )
+            fenixBrowserUseCases.addNewHomepageTab(private = isPrivate)
             handleNavigateToHome()
         } else {
             navController.popBackStack()
             navController.navigate(
                 TabManagementFragmentDirections.actionGlobalHome(
-                    focusOnAddressBar = !settings.enableHomepageTrendingRecentSearch,
-                ),
+                    focusOnAddressBar = !settings.enableHomepageTrendingRecentSearch
+                )
             )
         }
 
@@ -352,9 +317,7 @@ class DefaultTabManagerController(
 
     override fun handleNavigateToHome() {
         if (!navController.popBackStack(R.id.homeFragment, false)) {
-            navController.navigate(
-                TabManagementFragmentDirections.actionGlobalHome(),
-            )
+            navController.navigate(TabManagementFragmentDirections.actionGlobalHome())
         }
     }
 
@@ -366,9 +329,7 @@ class DefaultTabManagerController(
         val privateTab = tabsTrayStore.state.privateBrowsing.tabs.find { it.id == tabId } as? TabsTrayItem.Tab
 
         if (privateTab == null) {
-            Logger.error(
-                "handleDeletePrivateTabWarningAccepted: Failed to find private tab with ID $tabId",
-            )
+            Logger.error("handleDeletePrivateTabWarningAccepted: Failed to find private tab with ID $tabId")
             return
         }
         deleteTab(privateTab, source, isConfirmed = true)
@@ -389,9 +350,10 @@ class DefaultTabManagerController(
             tabsUseCases.removeTab(excludedTabIds = excludedTabIds, tabId = tab.id)
             showUndoSnackbarForTab(isPrivate)
         } else {
-            val privateDownloads = browserStore.state.downloads.filter { map ->
-                map.value.private && map.value.isActiveDownload()
-            }
+            val privateDownloads =
+                browserStore.state.downloads.filter { map ->
+                    map.value.private && map.value.isActiveDownload()
+                }
             if (!isConfirmed && privateDownloads.isNotEmpty()) {
                 showCancelledDownloadWarning(privateDownloads.size, tab.id, source)
                 return
@@ -404,8 +366,7 @@ class DefaultTabManagerController(
     }
 
     /**
-     * Calculates the IDs of normal tabs that should be protected from being selected after other tabs are deleted.
-     * This
+     * Calculates the IDs of normal tabs that should be protected from being selected after other tabs are deleted. This
      * includes all inactive tabs and tabs inside open (visible) tab groups.
      */
     private fun getExcludedNormalTabIds(): Set<String> {
@@ -413,32 +374,29 @@ class DefaultTabManagerController(
 
         val inactiveTabIds = state.inactiveTabs.tabs.map { it.id }
 
-        val openGroupTabIds = state.tabGroupState.groups
-            .filterNot { it.closed }
-            .toTabList()
-            .map { it.id }
+        val openGroupTabIds = state.tabGroupState.groups.filterNot { it.closed }.toTabList().map { it.id }
 
         return (inactiveTabIds + openGroupTabIds).toSet()
     }
 
     /**
-     * Determines if there will be any tabs left to display after a deletion.
-     * Shared between single and multiple tab deletions to ensure routing logic stays in sync.
-     * When closing all normal tabs and at least 1 tab group is open, this will always return true.
+     * Determines if there will be any tabs left to display after a deletion. Shared between single and multiple tab
+     * deletions to ensure routing logic stays in sync. When closing all normal tabs and at least 1 tab group is open,
+     * this will always return true.
      *
      * @param isPrivate Indicates whether the tabs being deleted is private.
      * @param closingTabIds The set of tab IDs of tabs that are to be deleted.
-     *
      */
     private fun willTabsRemainAfterDeletion(
         isPrivate: Boolean,
         closingTabIds: Set<String>,
     ): Boolean {
-        val activeTabs = if (isPrivate) {
-            tabsTrayStore.state.privateBrowsing.tabs
-        } else {
-            tabsTrayStore.state.normalTabsState.items.toTabList()
-        }
+        val activeTabs =
+            if (isPrivate) {
+                tabsTrayStore.state.privateBrowsing.tabs
+            } else {
+                tabsTrayStore.state.normalTabsState.items.toTabList()
+            }
 
         val closingAllActiveTabs = closingTabIds.containsAll(activeTabs.map { it.id })
 
@@ -455,9 +413,7 @@ class DefaultTabManagerController(
         tabsTrayStore.dispatch(TabsTrayAction.ExitSelectMode)
     }
 
-    /**
-     * Helper function to delete multiple tabs and offer an undo option.
-     */
+    /** Helper function to delete multiple tabs and offer an undo option. */
     @VisibleForTesting
     internal fun deleteMultipleTabs(tabs: Collection<TabsTrayItem.Tab>) {
         val isPrivate = tabs.any { it.private }
@@ -506,16 +462,17 @@ class DefaultTabManagerController(
         // tab manager closes before the job is done.
         CoroutineScope(ioDispatcher).launch {
             Result.runCatching {
-                val results = tabs.map { tab ->
-                    addBookmarkUseCase(url = tab.url, title = tab.title)
+                    val results = tabs.map { tab ->
+                        addBookmarkUseCase(url = tab.url, title = tab.title)
+                    }
+                    val parentNode = results.firstOrNull()?.parentNode
+                    withContext(mainDispatcher) {
+                        showBookmarkSnackbar(tabs.size, parentNode?.title)
+                    }
                 }
-                val parentNode = results.firstOrNull()?.parentNode
-                withContext(mainDispatcher) {
-                    showBookmarkSnackbar(tabs.size, parentNode?.title)
+                .getOrElse {
+                    // silently fail
                 }
-            }.getOrElse {
-                // silently fail
-            }
         }
 
         tabsTrayStore.dispatch(TabsTrayAction.ExitSelectMode)
@@ -537,32 +494,33 @@ class DefaultTabManagerController(
         val tabIds = tabs.map { it.id }.toSet()
         val transformedTabs = browserStore.state.tabs.filter { it.id in tabIds }
         CollectionsDialog(
-            storage = collectionStorage,
-            sessionList = transformedTabs,
-            onPositiveButtonClick = { id, isNewCollection ->
+                storage = collectionStorage,
+                sessionList = transformedTabs,
+                onPositiveButtonClick = { id, isNewCollection ->
 
-                // If collection is null, a new one was created.
-                if (isNewCollection) {
-                    Collections.saved.record(
-                        Collections.SavedExtra(
-                            tabsTrayStore.state.normalTabsState.tabCount.toString(),
-                            tabs.size.toString(),
-                        ),
-                    )
-                } else {
-                    Collections.tabsAdded.record(
-                        Collections.TabsAddedExtra(
-                            tabsTrayStore.state.normalTabsState.tabCount.toString(),
-                            tabs.size.toString(),
-                        ),
-                    )
-                }
-                id?.apply {
-                    showCollectionSnackbar(tabs.size, isNewCollection)
-                }
-            },
-            onNegativeButtonClick = {},
-        ).show(context)
+                    // If collection is null, a new one was created.
+                    if (isNewCollection) {
+                        Collections.saved.record(
+                            Collections.SavedExtra(
+                                tabsTrayStore.state.normalTabsState.tabCount.toString(),
+                                tabs.size.toString(),
+                            )
+                        )
+                    } else {
+                        Collections.tabsAdded.record(
+                            Collections.TabsAddedExtra(
+                                tabsTrayStore.state.normalTabsState.tabCount.toString(),
+                                tabs.size.toString(),
+                            )
+                        )
+                    }
+                    id?.apply {
+                        showCollectionSnackbar(tabs.size, isNewCollection)
+                    }
+                },
+                onNegativeButtonClick = {},
+            )
+            .show(context)
     }
 
     override fun handleShareSelectedTabsClicked() {
@@ -571,7 +529,7 @@ class DefaultTabManagerController(
         TabsTray.shareSelectedTabs.record(TabsTray.ShareSelectedTabsExtra(tabCount = tabs.size))
 
         val data = tabs.map {
-            ShareData(url = it.url, title = it.title)
+            ShareData(url = it.url, title = it.title, private = it.private)
         }
 
         shareUseCases.shareItems(
@@ -581,7 +539,7 @@ class DefaultTabManagerController(
             chooserActions = ShareSheetChooserAction.tabChooserActions,
             navigateToShareFragment = {
                 navController.navigate(
-                    TabManagementFragmentDirections.actionGlobalShareFragment(data = data.toTypedArray()),
+                    TabManagementFragmentDirections.actionGlobalShareFragment(data = data.toTypedArray())
                 )
             },
         )
@@ -594,9 +552,10 @@ class DefaultTabManagerController(
     ) {
         TabsTray.shareTabGroup.record(TabsTray.ShareTabGroupExtra(tabCount = group.tabs.size))
 
-        val data = group.tabs.map {
-            ShareData(url = it.url, title = it.title)
-        }
+        val data =
+            group.tabs.map {
+                ShareData(url = it.url, title = it.title, private = it.private)
+            }
 
         shareUseCases.shareItems(
             items = data,
@@ -611,7 +570,7 @@ class DefaultTabManagerController(
                         data = data.toTypedArray(),
                         shareGroupTitle = group.title,
                         shareGroupColor = dotColor,
-                    ),
+                    )
                 )
             },
         )
@@ -626,9 +585,7 @@ class DefaultTabManagerController(
         }
     }
 
-    /**
-     * Navigate to home and delegate the session deletion to the Home Screen.
-     * */
+    /** Navigate to home and delegate the session deletion to the Home Screen. */
     @VisibleForTesting
     internal fun dismissTabManagerAndNavigateHome(sessionId: String) {
         navigateToHomeAndDeleteSession(sessionId)
@@ -732,38 +689,37 @@ class DefaultTabManagerController(
     override fun handleDeleteAllInactiveTabsClicked() {
         val numTabs: Int
         TabsTray.closeAllInactiveTabs.record(NoExtras())
-        browserStore.state.potentialInactiveTabs.map { it.id }.let {
-            tabsUseCases.removeTabs(it, excludedTabIds = emptySet())
-            numTabs = it.size
-        }
+        browserStore.state.potentialInactiveTabs
+            .map { it.id }
+            .let {
+                tabsUseCases.removeTabs(it, excludedTabIds = emptySet())
+                numTabs = it.size
+            }
         showUndoSnackbarForInactiveTab(numTabs)
     }
 
     override fun handleSignInClicked() {
         navController.navigate(
-            TabManagementFragmentDirections.actionGlobalTurnOnSync(
-                entrypoint = FenixFxAEntryPoint.SyncedTabsMenu,
-            ),
+            TabManagementFragmentDirections.actionGlobalTurnOnSync(entrypoint = FenixFxAEntryPoint.SyncedTabsMenu)
         )
     }
 
     override fun onAccountSettingsClicked() {
         val isSignedIn = accountManager.authenticatedAccount() != null
 
-        val direction = if (isSignedIn) {
-            TabManagementFragmentDirections.actionGlobalAccountSettingsFragment()
-        } else {
-            TabManagementFragmentDirections.actionGlobalTurnOnSync(
-                entrypoint = FenixFxAEntryPoint.NavigationInteraction,
-            )
-        }
+        val direction =
+            if (isSignedIn) {
+                TabManagementFragmentDirections.actionGlobalAccountSettingsFragment()
+            } else {
+                TabManagementFragmentDirections.actionGlobalTurnOnSync(
+                    entrypoint = FenixFxAEntryPoint.NavigationInteraction
+                )
+            }
         navController.navigate(direction)
     }
 
     override fun onTabSettingsClicked() {
-        navController.navigate(
-            TabManagementFragmentDirections.actionGlobalTabSettingsFragment(),
-        )
+        navController.navigate(TabManagementFragmentDirections.actionGlobalTabSettingsFragment())
     }
 
     override fun onCloseAllTabsClicked(private: Boolean) {
@@ -775,26 +731,25 @@ class DefaultTabManagerController(
     }
 
     override fun onOpenRecentlyClosedClicked() {
-        navController.navigate(
-            TabManagementFragmentDirections.actionGlobalRecentlyClosed(),
-        )
+        navController.navigate(TabManagementFragmentDirections.actionGlobalRecentlyClosed())
         Events.recentlyClosedTabsOpened.record(NoExtras())
     }
 
     override fun onPrivacyReportTapped() {
+        TrackingProtection.privacyReportTapped.record(
+            TrackingProtection.PrivacyReportTappedExtra(TABS_TRAY_TELEMETRY_SOURCE)
+        )
+
         val currentSessionId = browserStore.state.selectedTabId
         navController.nav(
             R.id.tabManagementFragment,
             TabManagementFragmentDirections.actionTabManagementFragmentToGlobalProtectionsDashboard(
-                currentSessionId,
-                source = ProtectionsDashboardFragment.SOURCE_TABS_TRAY,
+                customTabSessionId = currentSessionId
             ),
         )
     }
 
-    /**
-     * Marks the inactive tabs auto close dialog as shown and to not be displayed again.
-     */
+    /** Marks the inactive tabs auto close dialog as shown and to not be displayed again. */
     private fun markDialogAsShown() {
         settings.hasInactiveTabsAutoCloseDialogBeenDismissed = true
     }
@@ -806,16 +761,18 @@ class DefaultTabManagerController(
      * @param isConfirmed: whether the user has confirmed the warning message
      */
     private fun closeAllTabs(private: Boolean, isConfirmed: Boolean) {
-        val sessionsToClose = if (private) {
-            ALL_PRIVATE_TABS
-        } else {
-            ALL_NORMAL_TABS
-        }
+        val sessionsToClose =
+            if (private) {
+                ALL_PRIVATE_TABS
+            } else {
+                ALL_NORMAL_TABS
+            }
 
         if (private && !isConfirmed) {
-            val privateDownloads = browserStore.state.downloads.filter {
-                it.value.private && it.value.isActiveDownload()
-            }
+            val privateDownloads =
+                browserStore.state.downloads.filter {
+                    it.value.private && it.value.isActiveDownload()
+                }
             if (privateDownloads.isNotEmpty()) {
                 showCancelledDownloadWarning(privateDownloads.size, null, null)
                 return

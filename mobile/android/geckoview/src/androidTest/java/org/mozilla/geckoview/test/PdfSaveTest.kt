@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -13,7 +13,8 @@ import org.junit.runner.RunWith
 @MediumTest
 class PdfSaveTest : BaseSessionTest() {
 
-    @Test fun savePdf() {
+    @Test
+    fun savePdf() {
         mainSession.loadTestPath(TRACEMONKEY_PDF_PATH)
         mainSession.waitForPageStop()
 
@@ -23,7 +24,11 @@ class PdfSaveTest : BaseSessionTest() {
 
         assertThat("Check the response uri.", response.uri.substringAfterLast("/"), equalTo(filename))
         assertThat("Check the response content-type.", response.headers.get("content-type"), equalTo("application/pdf"))
-        assertThat("Check the response filename.", response.headers.get("Content-disposition"), equalTo("attachment; filename=\"" + filename + "\""))
+        assertThat(
+            "Check the response filename.",
+            response.headers.get("Content-disposition"),
+            equalTo("attachment; filename=\"" + filename + "\""),
+        )
         assertThat("Check that bytes arrays are the same.", response.body?.readBytes(), equalTo(originalBytes))
     }
 }

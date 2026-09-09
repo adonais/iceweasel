@@ -27,11 +27,10 @@ private val logger = Logger("StartupTypeTelemetry")
 
 /**
  * Records telemetry for the number of start ups. See the
- * [Fenix perf glossary](https://wiki.mozilla.org/index.php?title=Performance/Fenix/Glossary)
- * for specific definitions.
+ * [Fenix perf glossary](https://wiki.mozilla.org/index.php?title=Performance/Fenix/Glossary) for specific definitions.
  *
- * This should be a member variable of [HomeActivity] because its data is tied to the lifecycle of an
- * Activity. Call [attachOnHomeActivityOnCreate] for this class to work correctly.
+ * This should be a member variable of [HomeActivity] because its data is tied to the lifecycle of an Activity. Call
+ * [attachOnHomeActivityOnCreate] for this class to work correctly.
  *
  * N.B.: this class is lightly hardcoded to HomeActivity.
  */
@@ -46,28 +45,28 @@ class StartupTypeTelemetry(
 
     private fun getTelemetryLabel(startupState: StartupState, startupPath: StartupPath): String {
         // We don't use the enum name directly to avoid unintentional changes when refactoring.
-        val stateLabel = when (startupState) {
-            StartupState.COLD -> "cold"
-            StartupState.WARM -> "warm"
-            StartupState.HOT -> "hot"
-            StartupState.UNKNOWN -> "unknown"
-        }
+        val stateLabel =
+            when (startupState) {
+                StartupState.COLD -> "cold"
+                StartupState.WARM -> "warm"
+                StartupState.HOT -> "hot"
+                StartupState.UNKNOWN -> "unknown"
+            }
 
-        val pathLabel = when (startupPath) {
-            StartupPath.MAIN -> "main"
-            StartupPath.VIEW -> "view"
+        val pathLabel =
+            when (startupPath) {
+                StartupPath.MAIN -> "main"
+                StartupPath.VIEW -> "view"
 
-            // To avoid combinatorial explosion in label names, we bucket NOT_SET into UNKNOWN.
-            StartupPath.NOT_SET,
-            StartupPath.UNKNOWN,
-            -> "unknown"
-        }
+                // To avoid combinatorial explosion in label names, we bucket NOT_SET into UNKNOWN.
+                StartupPath.NOT_SET,
+                StartupPath.UNKNOWN -> "unknown"
+            }
 
         return "${stateLabel}_$pathLabel"
     }
 
-    @VisibleForTesting(otherwise = NONE)
-    fun getTestCallbacks() = StartupTypeLifecycleObserver()
+    @VisibleForTesting(otherwise = NONE) fun getTestCallbacks() = StartupTypeLifecycleObserver()
 
     /**
      * Record startup telemetry based on the available [startupStateProvider] and [startupPathProvider].

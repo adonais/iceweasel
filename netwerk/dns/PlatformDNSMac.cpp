@@ -105,7 +105,7 @@ void QueryCallback(DNSServiceRef aSDRef, DNSServiceFlags aFlags,
 nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
                                 nsIDNSService::DNSFlags aFlags,
                                 TypeRecordResultType& aResult, uint32_t& aTTL,
-                                nsACString& aAliasName) {
+                                HTTPSAliasTarget& aAlias) {
   nsAutoCString host(aHost);
   nsAutoCString cname;
 
@@ -166,9 +166,11 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
   }
   if (aResult.is<Nothing>()) {
     if (!context.mAliasName.IsEmpty()) {
-      // The response was an HTTPS AliasMode record; hand the target back so
-      // the caller can issue a fresh lookup for it.
-      aAliasName = context.mAliasName;
+      // The response was an HTTPS AliasMode record (intermediate CNAMEs are
+      // ignored by QueryCallback); hand the target back so the caller can
+      // issue a fresh lookup for it.
+      aAlias.mName = context.mAliasName;
+      aAlias.mFromAliasMode = true;
       return NS_OK;
     }
     // The call succeeded, but no HTTPS records were found.

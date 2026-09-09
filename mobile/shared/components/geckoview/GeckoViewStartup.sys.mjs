@@ -99,12 +99,12 @@ const JSWINDOWACTORS = {
     messageManagerGroups: ["browsers"],
     safeForUntrustedWebProcess: true,
   },
-  GeckoViewPdfjs: {
+  GeckoViewPdfJs: {
     parent: {
-      esModuleURI: "resource://pdf.js/GeckoViewPdfjsParent.sys.mjs",
+      esModuleURI: "resource://pdf.js/GeckoViewPdfJsParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://pdf.js/GeckoViewPdfjsChild.sys.mjs",
+      esModuleURI: "resource://pdf.js/GeckoViewPdfJsChild.sys.mjs",
     },
     allFrames: true,
     safeForUntrustedWebProcess: true,

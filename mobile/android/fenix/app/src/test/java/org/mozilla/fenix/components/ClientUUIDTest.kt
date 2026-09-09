@@ -18,9 +18,13 @@ class ClientUUIDTest {
         assertEquals(UserId("my-generated-uuid"), first.getUserId())
         assertEquals(UserId("my-generated-uuid"), first.getUserId())
 
-        val second = PrefsBackedClientUUID({ prefs }, generateUUID = {
-            throw IllegalStateException("We should not be generating another uuid")
-        })
+        val second =
+            PrefsBackedClientUUID(
+                { prefs },
+                generateUUID = {
+                    throw IllegalStateException("We should not be generating another uuid")
+                },
+            )
         assertEquals(UserId("my-generated-uuid"), second.getUserId())
         assertEquals(UserId("my-generated-uuid"), second.getUserId())
     }
@@ -29,11 +33,12 @@ class ClientUUIDTest {
     fun `that generateHash uses the provided hasher`() {
         val prefs = FakeSharedPreferences()
 
-        val clientUUID = PrefsBackedClientUUID(
-            getPrefs = { prefs },
-            generateUUID = { "my-generated-uuid" },
-            hasher = { "This is a hashed value: $it" },
-        )
+        val clientUUID =
+            PrefsBackedClientUUID(
+                getPrefs = { prefs },
+                generateUUID = { "my-generated-uuid" },
+                hasher = { "This is a hashed value: $it" },
+            )
 
         assertEquals("This is a hashed value: my-generated-uuid", clientUUID.generateHash())
     }

@@ -1107,6 +1107,128 @@ add_task(async function test_rollout_reenroll_recipe_not_seen() {
   await cleanup();
 });
 
+add_task(async function testRolloutReenrollPrefFlips() {
+  const rollout = NimbusTestUtils.factories.recipe.withFeatureConfig(
+    "rollout",
+    {
+      featureId: "prefFlips",
+      value: {
+        prefs: {
+          "test-pref.please.ignore": {
+            branch: "user",
+            value: "value",
+          },
+        },
+      },
+    },
+    { isRollout: true }
+  );
+
+  const expectedPrefFlips = {
+    originalValues: { "test-pref.please.ignore": null },
+  };
+
+  const { loader, manager, cleanup } = await setupTest({
+    secureExperiments: [rollout],
+  });
+  await NimbusTestUtils.flushStore();
+
+  {
+    const inMemoryEnrollment = manager.store.get("rollout");
+    Assert.ok(inMemoryEnrollment?.active, "enrolled in rollout");
+    Assert.deepEqual(
+      inMemoryEnrollment.prefs,
+      [],
+      "in-memory enrollment has no setPrefs"
+    );
+    Assert.deepEqual(
+      inMemoryEnrollment.prefFlips,
+      expectedPrefFlips,
+      "in-memory enrollment prefFlips are correct"
+    );
+
+    const dbEnrollment = await NimbusTestUtils.queryEnrollment("rollout");
+    Assert.deepEqual(
+      inMemoryEnrollment.prefs,
+      dbEnrollment.setPrefs,
+      "in-memory enrollment setPrefs match db"
+    );
+    Assert.deepEqual(
+      inMemoryEnrollment.prefFlips,
+      dbEnrollment.prefFlips,
+      "in-memory enrollment prefFlips match db"
+    );
+  }
+
+  info("trigger unenrollment...");
+  loader.remoteSettingsClients.secureExperiments.get.resolves([]);
+  await loader.updateRecipes("timer");
+  await NimbusTestUtils.flushStore();
+
+  {
+    const inMemoryEnrollment = manager.store.get("rollout");
+    Assert.ok(!inMemoryEnrollment.active, "unenrolled from rollout");
+    Assert.deepEqual(
+      inMemoryEnrollment.prefs,
+      null,
+      "in-memory enrollment has null setPrefs"
+    );
+    Assert.deepEqual(
+      inMemoryEnrollment.prefFlips,
+      null,
+      "in-memory enrollment prefFlips are null"
+    );
+
+    const dbEnrollment = await NimbusTestUtils.queryEnrollment("rollout");
+    Assert.deepEqual(
+      inMemoryEnrollment.prefs,
+      dbEnrollment.setPrefs,
+      "in-memory enrollment setPrefs match db"
+    );
+    Assert.deepEqual(
+      inMemoryEnrollment.prefFlips,
+      dbEnrollment.prefFlips,
+      "in-memory enrollment prefFlips match db"
+    );
+  }
+
+  info("triggering re-enroll...");
+  loader.remoteSettingsClients.secureExperiments.get.resolves([rollout]);
+  await loader.updateRecipes("timer");
+  await NimbusTestUtils.flushStore();
+
+  {
+    const inMemoryEnrollment = manager.store.get("rollout");
+    Assert.ok(!!inMemoryEnrollment, "in-memory enrollment exists");
+    Assert.ok(inMemoryEnrollment.active, "in-memory enrollment active");
+    Assert.notEqual(
+      inMemoryEnrollment.prefFlips,
+      null,
+      "in-memory prefFlips are not null"
+    );
+    Assert.equal(
+      inMemoryEnrollment.setPrefs,
+      null,
+      "in-memory setPrefs are null"
+    );
+
+    const dbEnrollment = await NimbusTestUtils.queryEnrollment("rollout");
+    Assert.deepEqual(
+      inMemoryEnrollment.prefs,
+      dbEnrollment.setPrefs,
+      "in-memory enrollment setPrefs match db"
+    );
+    Assert.deepEqual(
+      inMemoryEnrollment.prefFlips,
+      dbEnrollment.prefFlips,
+      "in-memory enrollment prefFlips match db"
+    );
+  }
+
+  await NimbusTestUtils.cleanupManager(["rollout"]);
+  await cleanup();
+});
+
 add_task(async function test_experiment_reenroll() {
   const experiment = NimbusTestUtils.factories.recipe("experiment");
 

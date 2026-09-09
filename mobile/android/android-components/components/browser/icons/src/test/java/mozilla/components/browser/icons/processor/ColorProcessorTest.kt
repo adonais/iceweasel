@@ -6,6 +6,7 @@ package mozilla.components.browser.icons.processor
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import kotlin.test.assertNotNull
 import mozilla.components.browser.icons.Icon
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.support.test.any
@@ -16,13 +17,13 @@ import org.mockito.Mockito.anyInt
 import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.spy
-import kotlin.test.assertNotNull
 
 class ColorProcessorTest {
 
-    private val mockRequest = mock<IconRequest>().apply {
-        doReturn(null).`when`(this).color
-    }
+    private val mockRequest =
+        mock<IconRequest>().apply {
+            doReturn(null).`when`(this).color
+        }
 
     @Test
     fun `test extracting color`() {
@@ -62,9 +63,10 @@ class ColorProcessorTest {
 
     @Test
     fun `GIVEN a request that has a color, WHEN processing THEN return initial icon with request color`() {
-        val request = mock<IconRequest>().apply {
-            doReturn(Color.BLUE).`when`(this).color
-        }
+        val request =
+            mock<IconRequest>().apply {
+                doReturn(Color.BLUE).`when`(this).color
+            }
         val icon = Icon(bitmap = mock(), source = Icon.Source.DISK)
         val processed = ColorProcessor().process(mock(), request, mock(), icon, mock())
 
@@ -102,12 +104,14 @@ class ColorProcessorTest {
         doReturn(size).`when`(bitmap).width
 
         doAnswer {
-            val pixels: IntArray = it.getArgument(0)
-            for (i in 0 until pixels.size) {
-                pixels[i] = Color.RED
+                val pixels: IntArray = it.getArgument(0)
+                for (i in 0 until pixels.size) {
+                    pixels[i] = Color.RED
+                }
+                null
             }
-            null
-        }.`when`(bitmap).getPixels(any(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt())
+            .`when`(bitmap)
+            .getPixels(any(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt())
 
         return bitmap
     }

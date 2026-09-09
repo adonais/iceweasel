@@ -26,11 +26,11 @@ class AssistIntentProcessorTest {
 
     @Test
     fun `GIVEN an intent with wrong action WHEN it is processed THEN nothing should happen`() {
-        val intent = Intent().apply {
-            action = TEST_WRONG_ACTION
-        }
-        val result =
-            StartSearchIntentProcessor { true }.process(intent, navController, out, settings)
+        val intent =
+            Intent().apply {
+                action = TEST_WRONG_ACTION
+            }
+        val result = StartSearchIntentProcessor { true }.process(intent, navController, out, settings)
 
         verify { navController wasNot Called }
         verify { out wasNot Called }
@@ -41,9 +41,10 @@ class AssistIntentProcessorTest {
     fun `GIVEN an intent with ACTION_ASSIST action WHEN it is processed THEN navigate to home with address bar focused`() {
         every { settings.shouldShowVoiceSearch } returns true
 
-        val intent = Intent().apply {
-            action = Intent.ACTION_ASSIST
-        }
+        val intent =
+            Intent().apply {
+                action = Intent.ACTION_ASSIST
+            }
 
         AssistIntentProcessor().process(intent, navController, out, settings)
 
@@ -66,9 +67,10 @@ class AssistIntentProcessorTest {
     @Test
     fun `GIVEN an intent with ACTION_ASSIST action and voice search is disabled WHEN it is processed THEN startVoiceSearch should be false`() {
         every { settings.shouldShowVoiceSearch } returns false
-        val intent = Intent().apply {
-            action = Intent.ACTION_ASSIST
-        }
+        val intent =
+            Intent().apply {
+                action = Intent.ACTION_ASSIST
+            }
 
         AssistIntentProcessor().process(intent, navController, out, settings)
 

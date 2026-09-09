@@ -7,9 +7,7 @@ package org.mozilla.fenix.settings.about
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 
-/**
- * Triggers the "secret" debug menu when logoView is tapped 5 times.
- */
+/** Triggers the "secret" debug menu when logoView is tapped 5 times. */
 class SecretDebugMenuTrigger(
     private val onLogoClicked: (Int) -> Unit,
     private val onDebugMenuActivated: () -> Unit,
@@ -17,9 +15,7 @@ class SecretDebugMenuTrigger(
 
     private var secretDebugMenuClicks = 0
 
-    /**
-     * Reset the [secretDebugMenuClicks] counter.
-     */
+    /** Reset the [secretDebugMenuClicks] counter. */
     override fun onResume(owner: LifecycleOwner) {
         secretDebugMenuClicks = 0
     }

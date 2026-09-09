@@ -11,6 +11,7 @@ const TEST_URI = `
   body {
     user-select: none;
     stroke-color: red;
+    -moz-orient: horizontal;
   }
 </style>
 <body>
@@ -36,20 +37,23 @@ const TEST_DATA_INITIAL = [
           expectedLearnMoreUrl:
             "https://drafts.csswg.org/fill-stroke-3/#stroke-color",
         },
-        // TODO: Add a test for it when we have another property with no MDN url nor spec url Bug 1840910
+        "-moz-orient": {
+          value: "horizontal",
+          expected: COMPATIBILITY_TOOLTIP_MESSAGE.default,
+          // Neither MDN url nor spec url, so there is no link at all
+          expectedLearnMoreUrl: null,
+        },
       },
     ],
   },
 ];
 
 add_task(async function () {
+  // This test relies on the mock dataset, see
+  // devtools/shared/compatibility/dataset/mock-css-properties.json
+  await setMockCompatibilityDataset();
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   const { inspector, view } = await openRuleView();
-
-  // If the test fail because the properties used are no longer in the dataset, or they
-  // now have mdn/spec url although we expected them not to, uncomment the next line
-  // to get all the properties in the dataset that don't have a MDN url.
-  // logCssCompatDataPropertiesWithoutMDNUrl()
 
   await runCSSCompatibilityTests(view, inspector, TEST_DATA_INITIAL);
 });

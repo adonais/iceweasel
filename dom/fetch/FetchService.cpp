@@ -8,6 +8,7 @@
 #include "FetchParent.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Components.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ClientInfo.h"
@@ -716,7 +717,7 @@ nsresult FetchService::RegisterNetworkObserver() {
     return NS_ERROR_UNEXPECTED;
   }
 
-  nsCOMPtr<nsIIOService> ioService = services::GetIOService();
+  nsCOMPtr<nsIIOService> ioService = components::IO::Service();
   if (!ioService) {
     return NS_ERROR_UNEXPECTED;
   }

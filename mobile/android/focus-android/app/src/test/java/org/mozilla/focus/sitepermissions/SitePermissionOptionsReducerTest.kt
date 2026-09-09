@@ -17,7 +17,11 @@ class SitePermissionOptionsReducerTest {
     fun `GIVEN site permission screen store WHEN android permission action is dispatched THEN site permission options screen state is updated`() {
         val initialState = SitePermissionOptionsScreenState()
 
-        val finalState = SitePermissionOptionsScreenReducer.reduce(initialState, SitePermissionOptionsScreenAction.AndroidPermission(true))
+        val finalState =
+            SitePermissionOptionsScreenReducer.reduce(
+                initialState,
+                SitePermissionOptionsScreenAction.AndroidPermission(true),
+            )
 
         assertTrue(finalState.isAndroidPermissionGranted)
     }
@@ -26,7 +30,11 @@ class SitePermissionOptionsReducerTest {
     fun `GIVEN site permission screen store WHEN select permission action is dispatched THEN site permission options screen state is updated`() {
         val initialState = SitePermissionOptionsScreenState()
 
-        val finalState = SitePermissionOptionsScreenReducer.reduce(initialState, SitePermissionOptionsScreenAction.Select(SitePermissionOption.Blocked()))
+        val finalState =
+            SitePermissionOptionsScreenReducer.reduce(
+                initialState,
+                SitePermissionOptionsScreenAction.Select(SitePermissionOption.Blocked()),
+            )
 
         assertEquals(SitePermissionOption.Blocked(), finalState.selectedSitePermissionOption)
     }
@@ -36,19 +44,20 @@ class SitePermissionOptionsReducerTest {
         val initialState = SitePermissionOptionsScreenState()
         val sitePermissionLabel = "Autoplay"
 
-        val finalState = SitePermissionOptionsScreenReducer.reduce(
-            initialState,
-            SitePermissionOptionsScreenAction.UpdateSitePermissionOptions(
-                listOf(
-                    AutoplayOption.BlockAudioOnly(),
+        val finalState =
+            SitePermissionOptionsScreenReducer.reduce(
+                initialState,
+                SitePermissionOptionsScreenAction.UpdateSitePermissionOptions(
+                    listOf(
+                        AutoplayOption.BlockAudioOnly(),
+                        AutoplayOption.AllowAudioVideo(),
+                        AutoplayOption.BlockAudioVideo(),
+                    ),
                     AutoplayOption.AllowAudioVideo(),
-                    AutoplayOption.BlockAudioVideo(),
+                    sitePermissionLabel,
+                    true,
                 ),
-                AutoplayOption.AllowAudioVideo(),
-                sitePermissionLabel,
-                true,
-            ),
-        )
+            )
 
         assertEquals(AutoplayOption.AllowAudioVideo(), finalState.selectedSitePermissionOption)
         assertTrue(finalState.isAndroidPermissionGranted)

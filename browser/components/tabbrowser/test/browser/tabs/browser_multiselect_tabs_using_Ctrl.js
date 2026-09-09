@@ -4,18 +4,12 @@ add_task(async function click() {
   const tab = await addTab();
 
   await triggerClickOn(tab, { ctrlKey: true });
-  ok(
-    tab.multiselected && gBrowser._multiSelectedTabsSet.has(tab),
-    "Tab should be (multi) selected after click"
-  );
+  ok(tab.multiselected, "Tab should be (multi) selected after click");
   isnot(gBrowser.selectedTab, tab, "Multi-selected tab is not focused");
   is(gBrowser.selectedTab, initialFocusedTab, "Focused tab doesn't change");
 
   await triggerClickOn(tab, { ctrlKey: true });
-  ok(
-    !tab.multiselected && !gBrowser._multiSelectedTabsSet.has(tab),
-    "Tab is not (multi) selected anymore"
-  );
+  ok(!tab.multiselected, "Tab is not (multi) selected anymore");
   is(
     gBrowser.selectedTab,
     initialFocusedTab,
@@ -35,14 +29,8 @@ add_task(async function clearSelection() {
   info("We multi-select tab2 with ctrl key down");
   await triggerClickOn(tab2, { ctrlKey: true });
 
-  ok(
-    tab1.multiselected && gBrowser._multiSelectedTabsSet.has(tab1),
-    "Tab1 is (multi) selected"
-  );
-  ok(
-    tab2.multiselected && gBrowser._multiSelectedTabsSet.has(tab2),
-    "Tab2 is (multi) selected"
-  );
+  ok(tab1.multiselected, "Tab1 is (multi) selected");
+  ok(tab2.multiselected, "Tab2 is (multi) selected");
   is(gBrowser.multiSelectedTabsCount, 2, "Two tabs (multi) selected");
   isnot(tab3, gBrowser.selectedTab, "Tab3 doesn't have focus");
 

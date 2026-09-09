@@ -1332,7 +1332,7 @@ nsresult CollectProcessInfo(ProcessInfo& info) {
     glean::system_cpu::logical_cores.Set(info.cpuCount);
   }
 #endif
-  if (Maybe<hal::HeterogeneousCpuInfo> hetCpuInfo =
+  if (const Maybe<hal::HeterogeneousCpuInfo>& hetCpuInfo =
           hal::GetHeterogeneousCpuInfo()) {
     info.cpuPCount = int32_t(hetCpuInfo->mBigCpus.Count());
     info.cpuMCount = int32_t(hetCpuInfo->mMediumCpus.Count());
@@ -1774,6 +1774,7 @@ nsresult nsSystemInfo::Init() {
   nsCString dist, desc, release, codename;
   if (widget::lsb::GetLSBRelease(dist, desc, release, codename)) {
     SetPropertyAsACString(u"distro"_ns, dist);
+    SetPropertyAsACString(u"distroDesc"_ns, desc);
     SetPropertyAsACString(u"distroVersion"_ns, release);
   }
 

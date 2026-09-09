@@ -19,9 +19,7 @@ import org.mozilla.fenix.settings.doh.info.InfoScreen
 import org.mozilla.fenix.settings.doh.info.InfoScreenTopic
 import org.mozilla.fenix.settings.doh.root.DohSettingsScreen
 
-/**
- * Nav host of the screen of DoH Settings
- */
+/** Nav host of the screen of DoH Settings */
 @Composable
 @Suppress("LongMethod")
 internal fun DohSettingsNavHost(
@@ -43,57 +41,41 @@ internal fun DohSettingsNavHost(
             DohSettingsScreen(
                 state = state,
                 onLearnMoreClicked = { url ->
-                    store.dispatch(
-                        LearnMoreClicked(
-                            url,
-                        ),
-                    )
+                    store.dispatch(LearnMoreClicked(url))
                 },
                 onDohOptionSelected = { protectionLevel, provider ->
                     store.dispatch(
                         DohSettingsRootAction.DohOptionSelected(
                             protectionLevel = protectionLevel,
                             provider = provider,
-                        ),
+                        )
                     )
                 },
                 onExceptionsClicked = {
-                    store.dispatch(
-                        DohSettingsRootAction.ExceptionsClicked,
-                    )
+                    store.dispatch(DohSettingsRootAction.ExceptionsClicked)
                 },
                 onCustomClicked = {
-                    store.dispatch(
-                        DohSettingsRootAction.CustomClicked,
-                    )
+                    store.dispatch(DohSettingsRootAction.CustomClicked)
                 },
                 onCustomCancelClicked = {
-                    store.dispatch(
-                        DohSettingsRootAction.DohCustomProviderDialogAction.CancelClicked,
-                    )
+                    store.dispatch(DohSettingsRootAction.DohCustomProviderDialogAction.CancelClicked)
                 },
                 onCustomAddClicked = { customProvider, url ->
                     store.dispatch(
                         DohSettingsRootAction.DohCustomProviderDialogAction.AddCustomClicked(
                             customProvider,
                             url,
-                        ),
+                        )
                     )
                 },
                 onDefaultInfoClicked = {
-                    store.dispatch(
-                        DohSettingsRootAction.DefaultInfoClicked,
-                    )
+                    store.dispatch(DohSettingsRootAction.DefaultInfoClicked)
                 },
                 onIncreasedInfoClicked = {
-                    store.dispatch(
-                        DohSettingsRootAction.IncreasedInfoClicked,
-                    )
+                    store.dispatch(DohSettingsRootAction.IncreasedInfoClicked)
                 },
                 onMaxInfoClicked = {
-                    store.dispatch(
-                        DohSettingsRootAction.MaxInfoClicked,
-                    )
+                    store.dispatch(DohSettingsRootAction.MaxInfoClicked)
                 },
             )
         }
@@ -102,11 +84,7 @@ internal fun DohSettingsNavHost(
             InfoScreen(
                 infoScreenTopic = InfoScreenTopic.DEFAULT,
                 onLearnMoreClicked = { url ->
-                    store.dispatch(
-                        LearnMoreClicked(
-                            url,
-                        ),
-                    )
+                    store.dispatch(LearnMoreClicked(url))
                 },
             )
         }
@@ -114,11 +92,7 @@ internal fun DohSettingsNavHost(
             InfoScreen(
                 infoScreenTopic = InfoScreenTopic.INCREASED,
                 onLearnMoreClicked = { url ->
-                    store.dispatch(
-                        LearnMoreClicked(
-                            url,
-                        ),
-                    )
+                    store.dispatch(LearnMoreClicked(url))
                 },
             )
         }
@@ -126,11 +100,7 @@ internal fun DohSettingsNavHost(
             InfoScreen(
                 infoScreenTopic = InfoScreenTopic.MAX,
                 onLearnMoreClicked = { url ->
-                    store.dispatch(
-                        LearnMoreClicked(
-                            url,
-                        ),
-                    )
+                    store.dispatch(LearnMoreClicked(url))
                 },
             )
         }
@@ -140,19 +110,13 @@ internal fun DohSettingsNavHost(
             ExceptionsListScreen(
                 state = state,
                 onAddExceptionsClicked = {
-                    store.dispatch(
-                        ExceptionsAction.AddExceptionsClicked,
-                    )
+                    store.dispatch(ExceptionsAction.AddExceptionsClicked)
                 },
                 onRemoveClicked = { url ->
-                    store.dispatch(
-                        ExceptionsAction.RemoveClicked(url),
-                    )
+                    store.dispatch(ExceptionsAction.RemoveClicked(url))
                 },
                 onRemoveAllClicked = {
-                    store.dispatch(
-                        ExceptionsAction.RemoveAllClicked,
-                    )
+                    store.dispatch(ExceptionsAction.RemoveAllClicked)
                 },
             )
         }
@@ -162,9 +126,7 @@ internal fun DohSettingsNavHost(
             AddExceptionScreen(
                 state = state,
                 onSaveClicked = { url ->
-                    store.dispatch(
-                        ExceptionsAction.SaveClicked(url),
-                    )
+                    store.dispatch(ExceptionsAction.SaveClicked(url))
                 },
             )
         }
@@ -177,21 +139,20 @@ private fun UpdateToolbar(
     onUpdateToolbar: (Int) -> Unit,
 ) {
     val backstack by navController.currentBackStackEntryAsState()
-    val titleResId = when (backstack?.destination?.route) {
-        DohSettingsDestinations.ROOT -> R.string.preference_doh_title
-        DohSettingsDestinations.INFO_DEFAULT -> R.string.preference_doh_default_protection
-        DohSettingsDestinations.INFO_INCREASED -> R.string.preference_doh_increased_protection
-        DohSettingsDestinations.INFO_MAX -> R.string.preference_doh_max_protection
-        DohSettingsDestinations.EXCEPTIONS_LIST -> R.string.preference_doh_exceptions
-        DohSettingsDestinations.ADD_EXCEPTION -> R.string.preference_doh_exceptions_add
-        else -> R.string.preference_doh_title
-    }
+    val titleResId =
+        when (backstack?.destination?.route) {
+            DohSettingsDestinations.ROOT -> R.string.preference_doh_title
+            DohSettingsDestinations.INFO_DEFAULT -> R.string.preference_doh_default_protection
+            DohSettingsDestinations.INFO_INCREASED -> R.string.preference_doh_increased_protection
+            DohSettingsDestinations.INFO_MAX -> R.string.preference_doh_max_protection
+            DohSettingsDestinations.EXCEPTIONS_LIST -> R.string.preference_doh_exceptions
+            DohSettingsDestinations.ADD_EXCEPTION -> R.string.preference_doh_exceptions_add
+            else -> R.string.preference_doh_title
+        }
     onUpdateToolbar(titleResId)
 }
 
-/**
- * Destination routes within the settings screen
- */
+/** Destination routes within the settings screen */
 internal object DohSettingsDestinations {
     const val ROOT = "doh:settings:root"
     const val INFO_DEFAULT = "doh:settings:info"

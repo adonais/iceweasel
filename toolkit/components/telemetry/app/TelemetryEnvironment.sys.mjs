@@ -15,7 +15,7 @@ const Utils = TelemetryUtils;
 
 import {
   AddonManager,
-  EnvironmentAddonBuilder,
+  TELEMETRY_ENVIRONMENT_ADDONS_CHANGED_TOPIC,
 } from "resource://gre/modules/AddonManager.sys.mjs";
 
 const lazy = {};
@@ -80,8 +80,8 @@ export var Policy = {
 var gActiveExperimentStartupBuffer = new Map();
 
 // For Powering arewegleanyet.com (See bug 1944592)
-// Legacy Count: 116
-// Glean Count: 116
+// Legacy Count: 113
+// Glean Count: 113
 
 var gGlobalEnvironment;
 function getGlobal() {
@@ -597,14 +597,6 @@ function EnvironmentCache() {
 
   let p = [this._updateSettings()];
 
-  // NOTE: on mobile builds the EnvironmentAddonBuilder instance is directly
-  // created and managed from inside AddonManager.sys.mjs, whereas on Desktop
-  // TelemetryEnvironment is still expected to be collecting the activeAddons.
-  if (EnvironmentAddonBuilder.isTelemetryEnvironmentEnabled()) {
-    this._addonBuilder = new EnvironmentAddonBuilder(this);
-    p.push(this._addonBuilder.init());
-  }
-
   this._currentEnvironment.profile = {};
   p.push(this._updateProfile());
   if (AppConstants.MOZ_BUILD_APP == "browser") {
@@ -624,9 +616,6 @@ function EnvironmentCache() {
   let setup = () => {
     this._initTask = null;
     this._startWatchingPrefs();
-    // NOTE: on mobile builds the EnvironmentAddonBuilder instance is directly
-    // created and managed from inside AddonManager.sys.mjs.
-    this._addonBuilder?.watchForChanges();
     this._updateGraphicsFeatures();
     return this.currentEnvironment;
   };
@@ -974,6 +963,7 @@ EnvironmentCache.prototype = {
     Services.obs.addObserver(this, AUTO_UPDATE_PREF_CHANGE_TOPIC);
     Services.obs.addObserver(this, BACKGROUND_UPDATE_PREF_CHANGE_TOPIC);
     Services.obs.addObserver(this, SERVICES_INFO_CHANGE_TOPIC);
+    Services.obs.addObserver(this, TELEMETRY_ENVIRONMENT_ADDONS_CHANGED_TOPIC);
   },
 
   _removeObservers() {
@@ -992,6 +982,10 @@ EnvironmentCache.prototype = {
     Services.obs.removeObserver(this, AUTO_UPDATE_PREF_CHANGE_TOPIC);
     Services.obs.removeObserver(this, BACKGROUND_UPDATE_PREF_CHANGE_TOPIC);
     Services.obs.removeObserver(this, SERVICES_INFO_CHANGE_TOPIC);
+    Services.obs.removeObserver(
+      this,
+      TELEMETRY_ENVIRONMENT_ADDONS_CHANGED_TOPIC
+    );
   },
 
   observe(aSubject, aTopic, aData) {
@@ -1070,6 +1064,9 @@ EnvironmentCache.prototype = {
         break;
       case SERVICES_INFO_CHANGE_TOPIC:
         this._updateServicesInfo();
+        break;
+      case TELEMETRY_ENVIRONMENT_ADDONS_CHANGED_TOPIC:
+        this._onAddonsChanged();
         break;
     }
   },
@@ -1903,7 +1900,17 @@ EnvironmentCache.prototype = {
       return;
     }
 
-    if (ObjectUtils.deepEqual(this._currentEnvironment, oldEnvironment)) {
+    // `environment.addons` is not part of the environment data anymore
+    // and so ObjectUtils.deepEqual would be true and return earlier
+    // but we still want changes to the active addons to keep triggering
+    // `"environment-change"` main pings with the same frequence as before
+    // `environment.addons` was removed from the environment.
+    const forceNotifyListeners = what === "addons-changed";
+
+    if (
+      !forceNotifyListeners &&
+      ObjectUtils.deepEqual(this._currentEnvironment, oldEnvironment)
+    ) {
       this._log.trace("_onEnvironmentChange - Environment didn't change");
       return;
     }
@@ -1919,6 +1926,20 @@ EnvironmentCache.prototype = {
         );
       }
     }
+  },
+
+  /**
+   * Trigger an environment change for a change in the set of active addons.
+   *
+   * NOTE: `environment.addons` no longer exists (dropped as part of Bug 2055613),
+   * but we still need that addon installs/removals/updates keep triggering
+   * `"environment-change"` main pings, at the same frequency as before
+   * `environment.addons` data was removed from the environment.
+   */
+  _onAddonsChanged() {
+    this._log.trace("_onAddonsChanged");
+    let oldEnvironment = Cu.cloneInto(this._currentEnvironment, {});
+    this._onEnvironmentChange("addons-changed", oldEnvironment);
   },
 
   reset() {

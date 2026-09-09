@@ -19,14 +19,14 @@
 enum PwDataType { PW_NONE = 0, PW_FROMFILE = 1, PW_PLAINTEXT = 2 };
 typedef struct {
   PwDataType source;
-  char *data;
+  char* data;
 } PwData;
 
 bool InitSlotPassword(void);
 bool ChangeSlotPassword(void);
-bool DBLoginIfNeeded(const ScopedPK11SlotInfo &slot);
-std::string StringToHex(const ScopedSECItem &input);
+bool DBLoginIfNeeded(const ScopedPK11SlotInfo& slot);
+std::string StringToHex(const ScopedSECItem& input);
 std::vector<uint8_t> ReadInputData(std::string dataPath);
-std::istream &GetStreamFromFileOrStdin(std::string &path, std::ifstream &ifs);
+std::istream& GetStreamFromFileOrStdin(std::string& path, std::ifstream& ifs);
 
 #endif  // util_h__

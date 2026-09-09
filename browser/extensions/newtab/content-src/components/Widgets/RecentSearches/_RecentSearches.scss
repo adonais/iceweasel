@@ -1,0 +1,76 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+.recent-searches {
+  @include widget-base-style;
+
+  &.medium-widget {
+    grid-row: span 2;
+  }
+
+  &.large-widget {
+    grid-row: span 4;
+  }
+}
+
+.recent-searches-title-wrapper {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.recent-searches-badge-title-wrapper {
+  align-items: center;
+  display: flex;
+  gap: var(--space-small);
+  min-inline-size: 0;
+}
+
+.recent-searches-title {
+  font-size: var(--font-size-root);
+  font-weight: var(--font-weight);
+  margin: 0;
+}
+
+// Keep this at the top level so the High Contrast Mode override below applies.
+.recent-searches-new-badge {
+  flex: none;
+  background-color: var(--badge-background-color-filled);
+  border-radius: var(--badge-border-radius);
+  text-transform: uppercase;
+
+  --badge-padding-block: 1px;
+  --badge-padding-inline: var(--space-small);
+  --badge-background-color-filled: var(--color-green-40);
+  --badge-text-color: var(--badge-text-color-filled);
+  --badge-border-color: transparent;
+}
+
+// Keep the badge readable in High Contrast Mode by using the system accent.
+@media (forced-colors: active) {
+  .recent-searches-new-badge {
+    --badge-background-color-filled: AccentColor;
+  }
+}
+
+.recent-searches-context-menu-wrapper {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.recent-searches:hover,
+.recent-searches:focus-within {
+  .recent-searches-context-menu-wrapper {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.recent-searches-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-small);
+  min-height: 0;
+}

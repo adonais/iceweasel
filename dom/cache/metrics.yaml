@@ -1,0 +1,34 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# Adding a new metric? We have docs for that!
+# https://firefox-source-docs.mozilla.org/toolkit/components/glean/user/new_definitions_file.html
+
+---
+$schema: moz://mozilla.org/schemas/glean/metrics/2-0-0
+$tags:
+  - 'Core :: Storage: Cache API'
+
+cache:
+  schema_init_error:
+    type: labeled_counter
+    description: >
+      Counts errors encountered when initializing or migrating a Cache API
+      caches.sqlite schema during quota initialization. Labeled by error
+      category: "future_version" when the on-disk schema version exceeds the
+      code's latest version (e.g. profile downgrade), "other" for all
+      remaining schema errors.
+    labels:
+      - future_version
+      - other
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2056559
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2056559
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - jjalkanen@mozilla.com
+      - storage-telemetry@mozilla.com
+    expires: never

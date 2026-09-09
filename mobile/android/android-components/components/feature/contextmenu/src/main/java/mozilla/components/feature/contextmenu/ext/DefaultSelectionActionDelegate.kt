@@ -12,9 +12,7 @@ import mozilla.components.support.ktx.android.content.call
 import mozilla.components.support.ktx.android.content.email
 import mozilla.components.support.ktx.android.content.share
 
-/**
- * More convenient secondary constructor for creating a [DefaultSelectionActionDelegate].
- */
+/** More convenient secondary constructor for creating a [DefaultSelectionActionDelegate]. */
 @Suppress("FunctionName")
 fun DefaultSelectionActionDelegate(
     store: BrowserStore,

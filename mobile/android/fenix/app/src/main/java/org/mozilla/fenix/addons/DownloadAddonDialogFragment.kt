@@ -43,19 +43,19 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.compose.content
 import androidx.navigation.fragment.navArgs
 import mozilla.components.compose.base.button.TextButton
+import mozilla.components.feature.addons.R as addonsR
 import mozilla.components.support.base.android.NoObscuredTouchesDialogFragment
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.compose.Favicon
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.theme.getThemeProvider
-import mozilla.components.feature.addons.R as addonsR
-import mozilla.components.ui.icons.R as iconsR
 
 /**
- * [AppCompatDialogFragment] showing a modal message to users to inform about the progress of installing an addon.
- * This dialog will have a single negative button which will automatically dismiss it and inform on this through
- * the [onCancelled] callback.
+ * [AppCompatDialogFragment] showing a modal message to users to inform about the progress of installing an addon. This
+ * dialog will have a single negative button which will automatically dismiss it and inform on this through the
+ * [onCancelled] callback.
  *
  * All data about the addon being installed is to be passed as navigation arguments.
  *
@@ -64,9 +64,7 @@ import mozilla.components.ui.icons.R as iconsR
 class DownloadAddonDialogFragment : NoObscuredTouchesDialogFragment() {
     private val args by navArgs<DownloadAddonDialogFragmentArgs>()
 
-    /**
-     * Optional callback for when this dialog has been canceled by the user.
-     */
+    /** Optional callback for when this dialog has been canceled by the user. */
     var onCancelled: (() -> Unit)? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -109,8 +107,7 @@ class DownloadAddonDialogFragment : NoObscuredTouchesDialogFragment() {
         onCancelled?.invoke()
     }
 
-    @VisibleForTesting
-    internal var overriddenTheme: Theme? = null
+    @VisibleForTesting internal var overriddenTheme: Theme? = null
 }
 
 @Composable
@@ -124,16 +121,12 @@ private fun DownloadAddonDialogContent(
         color = MaterialTheme.colorScheme.surface,
     ) {
         Column(
-            modifier = Modifier
-                .padding(horizontal = FirefoxTheme.layout.space.static200)
-                .padding(top = FirefoxTheme.layout.space.static150, bottom = FirefoxTheme.layout.space.static300),
+            modifier =
+                Modifier.padding(horizontal = FirefoxTheme.layout.space.static200)
+                    .padding(top = FirefoxTheme.layout.space.static150, bottom = FirefoxTheme.layout.space.static300)
         ) {
-            Column(
-                modifier = Modifier.semantics(mergeDescendants = true) {},
-            ) {
-                Header(
-                    modifier = Modifier.padding(vertical = FirefoxTheme.layout.space.static100),
-                )
+            Column(modifier = Modifier.semantics(mergeDescendants = true) {}) {
+                Header(modifier = Modifier.padding(vertical = FirefoxTheme.layout.space.static100))
 
                 if (!addonName.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static150))
@@ -162,9 +155,7 @@ private fun DownloadAddonDialogContent(
 }
 
 @Composable
-private fun Header(
-    modifier: Modifier = Modifier,
-) {
+private fun Header(modifier: Modifier = Modifier) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier,
@@ -193,14 +184,15 @@ private fun AddonDetails(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-            .padding(
-                horizontal = FirefoxTheme.layout.space.static150,
-                vertical = FirefoxTheme.layout.space.static200,
-            ),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                .padding(
+                    horizontal = FirefoxTheme.layout.space.static150,
+                    vertical = FirefoxTheme.layout.space.static200,
+                ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Favicon(
@@ -223,9 +215,7 @@ private fun AddonDetails(
 
 @Preview
 @Composable
-private fun DownloadAddonDialogContentPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun DownloadAddonDialogContentPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         DownloadAddonDialogContent(
             addonName = "Read Aloud: A Text to Speech Voice Reader",
@@ -238,7 +228,7 @@ private fun DownloadAddonDialogContentPreview(
 @Preview
 @Composable
 private fun DownloadAddonDialogWithNoAddonNameContentPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme
 ) {
     FirefoxTheme(theme) {
         DownloadAddonDialogContent(

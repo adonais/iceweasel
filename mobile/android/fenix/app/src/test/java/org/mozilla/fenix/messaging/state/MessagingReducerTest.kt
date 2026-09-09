@@ -5,6 +5,7 @@
 package org.mozilla.fenix.messaging.state
 
 import io.mockk.mockk
+import kotlin.test.assertNotNull
 import mozilla.components.service.nimbus.messaging.Message
 import mozilla.components.service.nimbus.messaging.MessageData
 import mozilla.components.service.nimbus.messaging.MessageSurfaceId
@@ -29,7 +30,6 @@ import org.mozilla.fenix.components.appstate.AppStoreReducer
 import org.mozilla.fenix.messaging.FenixMessageSurfaceId
 import org.mozilla.fenix.messaging.MessagingState
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class MessagingReducerTest {
@@ -41,18 +41,15 @@ class MessagingReducerTest {
 
     @Test
     fun `GIVEN a new value for messageToShow WHEN UpdateMessageToShow is called THEN update the current value`() {
-        val initialState = AppState(
-            messaging = MessagingState(
-                messageToShow = mapOf(),
-            ),
-        )
+        val initialState = AppState(messaging = MessagingState(messageToShow = mapOf()))
 
         val m = createMessage("message1")
 
-        var updatedState = MessagingReducer.reduce(
-            initialState,
-            UpdateMessageToShow(m),
-        )
+        var updatedState =
+            MessagingReducer.reduce(
+                initialState,
+                UpdateMessageToShow(m),
+            )
 
         assertNotNull(updatedState.messaging.messageToShow[m.surface])
 
@@ -61,7 +58,11 @@ class MessagingReducerTest {
         assertNull(updatedState.messaging.messageToShow[m.surface])
     }
 
-    private fun createMessage(id: String, action: String = "action-1", surface: MessageSurfaceId = FenixMessageSurfaceId.HOMESCREEN): Message =
+    private fun createMessage(
+        id: String,
+        action: String = "action-1",
+        surface: MessageSurfaceId = FenixMessageSurfaceId.HOMESCREEN,
+    ): Message =
         Message(
             id = id,
             data = MessageData(surface = surface),
@@ -73,16 +74,13 @@ class MessagingReducerTest {
 
     @Test
     fun `GIVEN a new value for messages WHEN UpdateMessages is called THEN update the current value`() {
-        val initialState = AppState(
-            messaging = MessagingState(
-                messages = emptyList(),
-            ),
-        )
+        val initialState = AppState(messaging = MessagingState(messages = emptyList()))
 
-        var updatedState = MessagingReducer.reduce(
-            initialState,
-            UpdateMessages(listOf(mockk())),
-        )
+        var updatedState =
+            MessagingReducer.reduce(
+                initialState,
+                UpdateMessages(listOf(mockk())),
+            )
 
         assertFalse(updatedState.messaging.messages.isEmpty())
 
@@ -126,10 +124,11 @@ class MessagingReducerTest {
         val message = createMicrosurveyMessage(id = "microsurvey1")
         val shownState = MessagingReducer.reduce(AppState(), UpdateMessageToShow(message))
 
-        val updatedState = MessagingReducer.reduce(
-            shownState,
-            ConsumeMessageToShow(FenixMessageSurfaceId.MICROSURVEY),
-        )
+        val updatedState =
+            MessagingReducer.reduce(
+                shownState,
+                ConsumeMessageToShow(FenixMessageSurfaceId.MICROSURVEY),
+            )
 
         assertNull(updatedState.microsurvey.current)
     }
@@ -145,23 +144,27 @@ class MessagingReducerTest {
         assertNull(updatedState.microsurvey.current)
     }
 
-    private fun createMicrosurveyMessage(id: String, hasValidConfig: Boolean = true) = Message(
-        id = id,
-        data = MessageData(
-            surface = FenixMessageSurfaceId.MICROSURVEY,
-            title = StringHolder(null, "test title"),
-            text = StringHolder(null, "test question"),
-            microsurveyConfig = MicrosurveyConfig(
-                answers = if (hasValidConfig) {
-                    listOf(MicrosurveyAnswer(text = StringHolder(null, "a"), ordering = 0))
-                } else {
-                    emptyList()
-                },
-            ),
-        ),
-        action = "action-1",
-        style = StyleData(),
-        triggerIfAll = listOf(),
-        metadata = Message.Metadata(id = id),
-    )
+    private fun createMicrosurveyMessage(id: String, hasValidConfig: Boolean = true) =
+        Message(
+            id = id,
+            data =
+                MessageData(
+                    surface = FenixMessageSurfaceId.MICROSURVEY,
+                    title = StringHolder(null, "test title"),
+                    text = StringHolder(null, "test question"),
+                    microsurveyConfig =
+                        MicrosurveyConfig(
+                            answers =
+                                if (hasValidConfig) {
+                                    listOf(MicrosurveyAnswer(text = StringHolder(null, "a"), ordering = 0))
+                                } else {
+                                    emptyList()
+                                }
+                        ),
+                ),
+            action = "action-1",
+            style = StyleData(),
+            triggerIfAll = listOf(),
+            metadata = Message.Metadata(id = id),
+        )
 }

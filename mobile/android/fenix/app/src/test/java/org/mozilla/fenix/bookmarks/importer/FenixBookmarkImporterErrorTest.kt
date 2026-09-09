@@ -4,11 +4,11 @@
 
 package org.mozilla.fenix.bookmarks.importer
 
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import mozilla.components.concept.bookmark.parser.BookmarksParserError
 import mozilla.components.concept.bookmarks.file.BookmarksImporterError
 import org.junit.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class FenixBookmarkImporterErrorTest {
 
@@ -49,18 +49,20 @@ class FenixBookmarkImporterErrorTest {
 
     @Test
     fun `GIVEN a FileParseError caused by InvalidFormatError THEN it maps to PARSE_ERROR_INVALID_FORMAT`() {
-        val error = BookmarksImporterError.FileParseError(
-            cause = BookmarksParserError.InvalidFormatError(message = "missing link"),
-        )
+        val error =
+            BookmarksImporterError.FileParseError(
+                cause = BookmarksParserError.InvalidFormatError(message = "missing link")
+            )
 
         assertEquals(FenixBookmarkImporterError.PARSE_ERROR_INVALID_FORMAT, error.toFenixError())
     }
 
     @Test
     fun `GIVEN a FileParseError caused by UnexpectedError THEN it maps to PARSE_ERROR_UNKNOWN`() {
-        val error = BookmarksImporterError.FileParseError(
-            cause = BookmarksParserError.UnexpectedError(message = "io error", cause = null),
-        )
+        val error =
+            BookmarksImporterError.FileParseError(
+                cause = BookmarksParserError.UnexpectedError(message = "io error", cause = null)
+            )
 
         assertEquals(FenixBookmarkImporterError.PARSE_ERROR_UNKNOWN, error.toFenixError())
     }

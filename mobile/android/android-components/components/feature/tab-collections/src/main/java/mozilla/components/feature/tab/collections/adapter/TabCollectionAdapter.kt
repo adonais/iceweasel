@@ -13,17 +13,12 @@ import mozilla.components.feature.tab.collections.TabCollection
 import mozilla.components.feature.tab.collections.db.TabCollectionWithTabs
 import mozilla.components.feature.tab.collections.db.TabEntity
 
-internal class TabCollectionAdapter(
-    internal val entity: TabCollectionWithTabs,
-) : TabCollection {
+internal class TabCollectionAdapter(internal val entity: TabCollectionWithTabs) : TabCollection {
     override val title: String
         get() = entity.collection.title
 
     override val tabs: List<Tab> by lazy {
-        entity
-            .tabs
-            .sortedByDescending { it.createdAt }
-            .map { TabAdapter(it) }
+        entity.tabs.sortedByDescending { it.createdAt }.map { TabAdapter(it) }
     }
 
     override val id: Long
@@ -43,9 +38,10 @@ internal class TabCollectionAdapter(
         tabs: List<Tab>,
         restoreSessionId: Boolean,
     ): List<RecoverableTab> {
-        val entities = entity.tabs.filter { candidate ->
-            tabs.find { tab -> tab.id == candidate.id } != null
-        }
+        val entities =
+            entity.tabs.filter { candidate ->
+                tabs.find { tab -> tab.id == candidate.id } != null
+            }
         return restore(context, engine, entities, restoreSessionId)
     }
 

@@ -16,6 +16,11 @@ ChromeUtils.defineESModuleGetters(this, {
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
+const { UrlbarParentController } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs"
+);
+
+const NON_ASCII_ENGINE_NAME = "百度";
 
 const CONFIG = [
   {
@@ -36,9 +41,19 @@ const CONFIG = [
       classification: "general",
     },
   },
+  {
+    identifier: "nonAsciiEngine",
+    base: {
+      name: NON_ASCII_ENGINE_NAME,
+    },
+  },
 ];
 
-let appDefaultEngine, extraEngine, extraPrivateEngine, expectedString;
+let appDefaultEngine,
+  extraEngine,
+  extraPrivateEngine,
+  nonAsciiEngine,
+  expectedString;
 let tabs = [];
 
 let noEngineString;
@@ -79,6 +94,7 @@ add_setup(async function () {
     suggest_url: `${rootUrl}/searchSuggestionEngine.sjs`,
   });
   extraPrivateEngine = SearchService.getEngineByName("extraPrivateEngine");
+  nonAsciiEngine = SearchService.getEngineByName(NON_ASCII_ENGINE_NAME);
 
   // Force display of a tab with a URL bar, to clear out any possible placeholder
   // initialization listeners that happen on startup.
@@ -409,6 +425,82 @@ add_task(async function test_keyword_disabled() {
   await SpecialPowers.popPrefEnv();
   await TestUtils.waitForCondition(() => gURLBar.placeholder == expectedString);
   Assert.ok(true, "Updated the placeholder to the keyword enabled one.");
+});
+
+add_task(async function test_engine_change_while_engine_store_initializes() {
+  await SearchService.setDefault(
+    appDefaultEngine,
+    SearchService.CHANGE_REASON.UNKNOWN
+  );
+  await TestUtils.waitForCondition(
+    () => UrlbarPrefs.get("placeholderName") == appDefaultEngine.name,
+    "The engine name should be saved for the next window's placeholder."
+  );
+
+  // Over the message path a new window's engine store initializes
+  // asynchronously, so a default engine change can land before it has. Force
+  // that ordering by holding the init; on the direct path the store is
+  // initialized before the window is usable, so there is nothing to hold.
+  let release;
+  let held = new Promise(r => (release = r));
+  let stub;
+  if (UrlbarPrefs.get("ipc.chromeMessagePassing")) {
+    let realInit = UrlbarParentController.prototype.initEngineStore;
+    stub = sinon
+      .stub(UrlbarParentController.prototype, "initEngineStore")
+      .callsFake(async function () {
+        await held;
+        return realInit.call(this);
+      });
+  }
+
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+  await TestUtils.waitForCondition(
+    () => win.gURLBar.placeholder == expectedString,
+    "The placeholder should start out with the saved engine name."
+  );
+
+  await SearchService.setDefault(
+    extraEngine,
+    SearchService.CHANGE_REASON.UNKNOWN
+  );
+
+  release();
+  stub?.restore();
+  await TestUtils.waitForCondition(
+    () => win.gURLBar.placeholder == noEngineString,
+    "The placeholder should match the default placeholder for non-built-in engines."
+  );
+  Assert.equal(win.gURLBar.placeholder, noEngineString);
+
+  await SearchService.setDefault(
+    appDefaultEngine,
+    SearchService.CHANGE_REASON.UNKNOWN
+  );
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(async function test_non_ascii_engine_name() {
+  await SearchService.setDefault(
+    nonAsciiEngine,
+    SearchService.CHANGE_REASON.UNKNOWN
+  );
+
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+  Assert.deepEqual(
+    win.document.l10n.getAttributes(win.gURLBar.inputField),
+    {
+      id: "urlbar-placeholder-with-name",
+      args: { name: NON_ASCII_ENGINE_NAME },
+    },
+    "New windows should have UTF-8 placeholder."
+  );
+
+  await SearchService.setDefault(
+    appDefaultEngine,
+    SearchService.CHANGE_REASON.UNKNOWN
+  );
+  await BrowserTestUtils.closeWindow(win);
 });
 
 /**

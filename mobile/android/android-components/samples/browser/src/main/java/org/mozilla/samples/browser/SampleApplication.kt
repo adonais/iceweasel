@@ -5,6 +5,9 @@
 package org.mozilla.samples.browser
 
 import android.app.Application
+import java.util.Calendar
+import java.util.TimeZone
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -27,9 +30,6 @@ import mozilla.components.support.webextensions.WebExtensionSupport
 import mozilla.telemetry.glean.BuildInfo
 import mozilla.telemetry.glean.Glean
 import mozilla.telemetry.glean.config.Configuration
-import java.util.Calendar
-import java.util.TimeZone
-import java.util.concurrent.TimeUnit
 
 @Suppress("MagicNumber")
 internal object GleanBuildInfo {
@@ -37,9 +37,8 @@ internal object GleanBuildInfo {
         BuildInfo(
             versionCode = "0.0.1",
             versionName = "0.0.1",
-            buildDate = Calendar.getInstance(
-                TimeZone.getTimeZone("GMT+0"),
-            ).also { cal -> cal.set(2019, 9, 23, 12, 52, 8) },
+            buildDate =
+                Calendar.getInstance(TimeZone.getTimeZone("GMT+0")).also { cal -> cal.set(2019, 9, 23, 12, 52, 8) },
         )
     }
 }
@@ -124,14 +123,16 @@ class SampleApplication : Application() {
     }
 
     @DelicateCoroutinesApi
-    private fun restoreBrowserState() = GlobalScope.launch(Dispatchers.Main) {
-        components.tabsUseCases.restore(components.sessionStorage)
+    private fun restoreBrowserState() =
+        GlobalScope.launch(Dispatchers.Main) {
+            components.tabsUseCases.restore(components.sessionStorage)
 
-        components.sessionStorage.autoSave(components.store)
-            .periodicallyInForeground(interval = 30, unit = TimeUnit.SECONDS)
-            .whenGoingToBackground()
-            .whenSessionsChange()
-    }
+            components.sessionStorage
+                .autoSave(components.store)
+                .periodicallyInForeground(interval = 30, unit = TimeUnit.SECONDS)
+                .whenGoingToBackground()
+                .whenSessionsChange()
+        }
 
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)

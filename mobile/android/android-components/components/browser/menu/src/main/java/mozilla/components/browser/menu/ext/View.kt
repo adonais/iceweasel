@@ -7,10 +7,9 @@ package mozilla.components.browser.menu.ext
 import android.util.TypedValue
 import android.view.View
 
-/**
- * Adds ripple effect to the view
- */
-fun View.addRippleEffect() = with(TypedValue()) {
-    context.theme.resolveAttribute(android.R.attr.selectableItemBackground, this, true)
-    setBackgroundResource(resourceId)
-}
+/** Adds ripple effect to the view */
+fun View.addRippleEffect() =
+    with(TypedValue()) {
+        context.theme.resolveAttribute(android.R.attr.selectableItemBackground, this, true)
+        setBackgroundResource(resourceId)
+    }

@@ -8,45 +8,29 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.nimbus.FxNimbus
 
-/**
- * Feature helper for managing the release of the Tabs Tray UI enhancements.
- */
+/** Feature helper for managing the release of the Tabs Tray UI enhancements. */
 interface TabManagementFeatureHelper {
 
-    /**
-     * Whether the Tab Manager opening animation is enabled.
-     */
+    /** Whether the Tab Manager opening animation is enabled. */
     val openingAnimationEnabled: Boolean
 
-    /**
-     * Whether the Tab Groups feature is enabled.
-     */
+    /** Whether the Tab Groups feature is enabled. */
     val tabGroupsEnabled: Boolean
 
-    /**
-     * Whether drag and drop is enabled for the Tab Groups feature.
-     */
+    /** Whether drag and drop is enabled for the Tab Groups feature. */
     val tabGroupsDragAndDropEnabled: Boolean
 
-    /**
-     * Determines whether the "Ungroup" item is displayed in a tab group's three dot menu.
-     */
+    /** Determines whether the "Ungroup" item is displayed in a tab group's three dot menu. */
     val ungroupTabGroupEnabled: Boolean
 
-    /**
-     * Whether onboarding is enabled for the Tab Groups feature.
-     */
+    /** Whether onboarding is enabled for the Tab Groups feature. */
     val tabGroupsOnboardingEnabled: Boolean
 
-    /**
-     * Control whether reorder happens live during a drag and drop action for Tab Groups.
-     */
+    /** Control whether reorder happens live during a drag and drop action for Tab Groups. */
     val tabGroupsLiveReorderEnabled: Boolean
 }
 
-/**
- * The default implementation of [TabManagementFeatureHelper].
- */
+/** The default implementation of [TabManagementFeatureHelper]. */
 data object DefaultTabManagementFeatureHelper : TabManagementFeatureHelper {
 
     override val openingAnimationEnabled: Boolean
@@ -68,6 +52,7 @@ data object DefaultTabManagementFeatureHelper : TabManagementFeatureHelper {
         get() = Config.channel.isDebug || FxNimbus.features.tabGroupsOnboarding.value().enabled
 }
 
-val LocalTabManagementFeatureHelper = staticCompositionLocalOf<TabManagementFeatureHelper> {
-    DefaultTabManagementFeatureHelper
-}
+val LocalTabManagementFeatureHelper =
+    staticCompositionLocalOf<TabManagementFeatureHelper> {
+        DefaultTabManagementFeatureHelper
+    }

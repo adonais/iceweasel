@@ -4,9 +4,7 @@
 
 package org.mozilla.fenix.onboarding
 
-/**
- * The reason the user is being onboarded. These values are sent in metrics related to onboarding.
- */
+/** The reason the user is being onboarded. These values are sent in metrics related to onboarding. */
 enum class OnboardingReason(val value: String) {
     NEW_USER("new_user"),
     EXISTING_USER("existing_user"),

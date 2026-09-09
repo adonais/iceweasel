@@ -374,9 +374,12 @@ export class FormAutofillSection {
   }
 
   shouldAutofillField(fieldDetail) {
-    // We don't save security code, but if somehow the profile has securty code,
-    // make sure we don't autofill it.
-    if (fieldDetail.fieldName == "cc-csc") {
+    // The security code is historically never autofilled. The in-progress CVV
+    // pref lets it participate; otherwise keep the previous behavior.
+    if (
+      fieldDetail.fieldName == "cc-csc" &&
+      !lazy.FormAutofill.isAutofillCreditCardCVVEnabled
+    ) {
       return false;
     }
 
@@ -676,6 +679,12 @@ export class FormAutofillCreditCardSection extends FormAutofillSection {
       // so that fields with a maxlength of four correctly show only the last 4
       // digits in the preview.
       profile["cc-number"] = "****" + profile["cc-number"];
+    }
+
+    // Never reveal the security code in the preview. The real value is still
+    // used when filling.
+    if (profile["cc-csc"]) {
+      profile["cc-csc"] = "*".repeat(profile["cc-csc"].toString().length);
     }
 
     return true;

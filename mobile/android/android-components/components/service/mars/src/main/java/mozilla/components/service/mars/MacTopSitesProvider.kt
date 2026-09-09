@@ -18,8 +18,8 @@ import mozilla.components.support.base.log.logger.Logger
 /**
  * Provides access to the Mozilla Ads Client for fetching top sites tile.
  *
- * @property adsClientProvider [MozAdsClientProvider] used to get an instance of [MozAdsClient] for
- * making HTTP API calls.
+ * @property adsClientProvider [MozAdsClientProvider] used to get an instance of [MozAdsClient] for making HTTP API
+ *   calls.
  * @property requestConfig Configuration for the top sites tile request.
  * @property crashReporter [CrashReporting] instance used for recording caught exceptions.
  */
@@ -33,16 +33,18 @@ class MacTopSitesProvider(
 
     override suspend fun getTopSites(allowCache: Boolean): List<TopSite.Provided> {
         return try {
-            val mozAdRequests = requestConfig.placements.map { placementId ->
-                MozAdsPlacementRequest(
-                    placementId = placementId,
-                    iabContent = null,
+            val mozAdRequests =
+                requestConfig.placements.map { placementId ->
+                    MozAdsPlacementRequest(
+                        placementId = placementId,
+                        iabContent = null,
+                    )
+                }
+            val tiles =
+                adsClientProvider.value.requireInstance.requestTileAds(
+                    mozAdRequests = mozAdRequests,
+                    options = null,
                 )
-            }
-            val tiles = adsClientProvider.value.requireInstance.requestTileAds(
-                mozAdRequests = mozAdRequests,
-                options = null,
-            )
 
             requestConfig.placements.mapNotNull { placementId ->
                 tiles[placementId]?.toTopSite()
@@ -50,9 +52,7 @@ class MacTopSitesProvider(
         } catch (e: MozAdsClientApiException) {
             val message = "MacTopSitesProvider - Failed to request ads from Mozilla Ads client"
             logger.error(message = message, throwable = e)
-            crashReporter?.recordCrashBreadcrumb(
-                Breadcrumb(message = message),
-            )
+            crashReporter?.recordCrashBreadcrumb(Breadcrumb(message = message))
             crashReporter?.submitCaughtException(e)
 
             emptyList()
@@ -61,12 +61,13 @@ class MacTopSitesProvider(
 }
 
 @VisibleForTesting
-internal fun MozAdsTile.toTopSite() = TopSite.Provided(
-    id = null,
-    title = name,
-    url = url,
-    clickUrl = callbacks.click,
-    imageUrl = imageUrl,
-    impressionUrl = callbacks.impression,
-    createdAt = null,
-)
+internal fun MozAdsTile.toTopSite() =
+    TopSite.Provided(
+        id = null,
+        title = name,
+        url = url,
+        clickUrl = callbacks.click,
+        imageUrl = imageUrl,
+        impressionUrl = callbacks.impression,
+        createdAt = null,
+    )

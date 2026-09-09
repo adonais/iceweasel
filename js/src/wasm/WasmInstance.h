@@ -623,7 +623,7 @@ class alignas(16) Instance {
                            uint32_t dstIndex, void* srcArray, uint32_t srcIndex,
                            uint32_t numElements, uint32_t elementSize);
 #ifdef ENABLE_WASM_JSPI
-  static void* contNew(Instance* instance, void* funcRef);
+  static void* contNew(Instance* instance, void* funcRef, void* baseFrameStub);
   static void* contNewEmpty(Instance* instance);
   static void contUnwind(Instance* instance, wasm::Handlers* handlers);
 #endif

@@ -87,7 +87,7 @@ parent:
   async NotifyBatteryInfo(BatteryInformation aBatteryInfo);
 
   // Create a new content-process compositor bridge.
-  async NewContentCompositorManager(Endpoint<PCompositorManagerParent> endpoint, ContentParentId childId, uint32_t aNamespace);
+  async NewContentCompositorManager(Endpoint<PCompositorManagerParent> endpoint, ContentParentId childId, uint32_t aNamespace, uint32_t aContentBridgeNamespace);
   async NewContentImageBridge(Endpoint<PImageBridgeParent> endpoint, ContentParentId childId, uint32_t aNamespace);
   async NewContentVRManager(Endpoint<PVRManagerParent> endpoint, ContentParentId childId, uint32_t aNamespace);
   async NewContentRemoteMediaManager(Endpoint<PRemoteMediaManagerParent> endpoint, ContentParentId childId);

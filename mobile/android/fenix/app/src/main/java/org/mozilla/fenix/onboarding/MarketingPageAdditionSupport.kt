@@ -7,6 +7,7 @@ package org.mozilla.fenix.onboarding
 import android.content.SharedPreferences
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -21,7 +22,6 @@ import org.mozilla.fenix.onboarding.view.OnboardingPageUiData
 import org.mozilla.fenix.perf.runBlockingIncrement
 import org.mozilla.fenix.settings.OnSharedPreferenceChangeListener
 import org.mozilla.fenix.utils.Settings
-import kotlin.coroutines.CoroutineContext
 
 /**
  * Handles adding the marketing page to onboarding if certain conditions are met.
@@ -47,22 +47,24 @@ class MarketingPageAdditionSupport(
     private var job: Job? = null
 
     override fun start() {
-        job = lifecycleOwner.lifecycleScope.launch(ioContext) {
-            settings.preferences.flowScopedBooleanPreference(
-                lifecycleOwner,
-                mainContext,
-                prefKey,
-                settings.shouldShowMarketingOnboarding,
-            )
-                .distinctUntilChanged()
-                .collect { shouldShowMarketingOnboarding ->
-                    if (shouldShowMarketingOnboarding) {
-                        marketingPage?.let {
-                            pagesToDisplay.addMarketingPageIfAbsent(it)
+        job =
+            lifecycleOwner.lifecycleScope.launch(ioContext) {
+                settings.preferences
+                    .flowScopedBooleanPreference(
+                        lifecycleOwner,
+                        mainContext,
+                        prefKey,
+                        settings.shouldShowMarketingOnboarding,
+                    )
+                    .distinctUntilChanged()
+                    .collect { shouldShowMarketingOnboarding ->
+                        if (shouldShowMarketingOnboarding) {
+                            marketingPage?.let {
+                                pagesToDisplay.addMarketingPageIfAbsent(it)
+                            }
                         }
                     }
-                }
-        }
+            }
     }
 
     override fun stop() {
@@ -82,17 +84,16 @@ internal fun SharedPreferences.flowScopedBooleanPreference(
     key: String,
     defValue: Boolean,
 ) = channelFlow {
-    val listener = OnSharedPreferenceChangeListener(
-        this@flowScopedBooleanPreference,
-    ) { pref, updatedKey ->
-        if (key == updatedKey) {
-            val result = pref.getBoolean(key, defValue)
-            runBlockingIncrement {
-                send(result)
+    val listener =
+        OnSharedPreferenceChangeListener(this@flowScopedBooleanPreference) { pref, updatedKey ->
+            if (key == updatedKey) {
+                val result = pref.getBoolean(key, defValue)
+                runBlockingIncrement {
+                    send(result)
+                }
+                this@channelFlow.close()
             }
-            this@channelFlow.close()
         }
-    }
 
     withContext(mainContext) {
         owner.lifecycle.addObserver(listener)
@@ -105,4 +106,5 @@ internal fun SharedPreferences.flowScopedBooleanPreference(
         // On the off-chance that we close unexpectedly, let's clean up.
         unregisterOnSharedPreferenceChangeListener(listener)
     }
-}.buffer(Channel.CONFLATED)
+}
+    .buffer(Channel.CONFLATED)

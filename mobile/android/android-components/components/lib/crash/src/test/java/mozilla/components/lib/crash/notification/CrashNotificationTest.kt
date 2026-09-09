@@ -26,15 +26,16 @@ import org.robolectric.annotation.Config
 class CrashNotificationTest {
     @Test
     fun shouldShowNotificationInsteadOfPrompt() {
-        val foregroundChildNativeCrash = Crash.NativeCodeCrash(
-            timestamp = 0,
-            minidumpPath = "",
-            extrasPath = "",
-            processVisibility = Crash.NativeCodeCrash.PROCESS_VISIBILITY_FOREGROUND_CHILD,
-            processType = "content",
-            breadcrumbs = arrayListOf(),
-            remoteType = null,
-        )
+        val foregroundChildNativeCrash =
+            Crash.NativeCodeCrash(
+                timestamp = 0,
+                minidumpPath = "",
+                extrasPath = "",
+                processVisibility = Crash.NativeCodeCrash.PROCESS_VISIBILITY_FOREGROUND_CHILD,
+                processType = "content",
+                breadcrumbs = arrayListOf(),
+                remoteType = null,
+            )
 
         assertFalse(CrashNotification.shouldShowNotificationInsteadOfPrompt(foregroundChildNativeCrash, sdkLevel = 21))
         assertFalse(CrashNotification.shouldShowNotificationInsteadOfPrompt(foregroundChildNativeCrash, sdkLevel = 22))
@@ -48,15 +49,16 @@ class CrashNotificationTest {
         assertFalse(CrashNotification.shouldShowNotificationInsteadOfPrompt(foregroundChildNativeCrash, sdkLevel = 30))
         assertFalse(CrashNotification.shouldShowNotificationInsteadOfPrompt(foregroundChildNativeCrash, sdkLevel = 31))
 
-        val mainProcessNativeCrash = Crash.NativeCodeCrash(
-            timestamp = 0,
-            minidumpPath = "",
-            extrasPath = "",
-            processVisibility = Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
-            processType = "main",
-            breadcrumbs = arrayListOf(),
-            remoteType = null,
-        )
+        val mainProcessNativeCrash =
+            Crash.NativeCodeCrash(
+                timestamp = 0,
+                minidumpPath = "",
+                extrasPath = "",
+                processVisibility = Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
+                processType = "main",
+                breadcrumbs = arrayListOf(),
+                remoteType = null,
+            )
 
         assertFalse(CrashNotification.shouldShowNotificationInsteadOfPrompt(mainProcessNativeCrash, sdkLevel = 21))
         assertFalse(CrashNotification.shouldShowNotificationInsteadOfPrompt(mainProcessNativeCrash, sdkLevel = 22))
@@ -70,15 +72,16 @@ class CrashNotificationTest {
         assertTrue(CrashNotification.shouldShowNotificationInsteadOfPrompt(mainProcessNativeCrash, sdkLevel = 30))
         assertTrue(CrashNotification.shouldShowNotificationInsteadOfPrompt(mainProcessNativeCrash, sdkLevel = 31))
 
-        val backgroundChildNativeCrash = Crash.NativeCodeCrash(
-            timestamp = 0,
-            minidumpPath = "",
-            extrasPath = "",
-            processVisibility = Crash.NativeCodeCrash.PROCESS_VISIBILITY_BACKGROUND_CHILD,
-            processType = "utility",
-            breadcrumbs = arrayListOf(),
-            remoteType = null,
-        )
+        val backgroundChildNativeCrash =
+            Crash.NativeCodeCrash(
+                timestamp = 0,
+                minidumpPath = "",
+                extrasPath = "",
+                processVisibility = Crash.NativeCodeCrash.PROCESS_VISIBILITY_BACKGROUND_CHILD,
+                processType = "utility",
+                breadcrumbs = arrayListOf(),
+                remoteType = null,
+            )
 
         assertFalse(CrashNotification.shouldShowNotificationInsteadOfPrompt(backgroundChildNativeCrash, sdkLevel = 21))
         assertFalse(CrashNotification.shouldShowNotificationInsteadOfPrompt(backgroundChildNativeCrash, sdkLevel = 22))
@@ -120,13 +123,12 @@ class CrashNotificationTest {
 
         whenever(notificationManagerCompat.areNotificationsEnabled()).thenReturn(true)
 
-        val crashNotification = CrashNotification(
-            testContext,
-            crash,
-            CrashReporter.PromptConfiguration(
-                appName = "TestApp",
-            ),
-        )
+        val crashNotification =
+            CrashNotification(
+                testContext,
+                crash,
+                CrashReporter.PromptConfiguration(appName = "TestApp"),
+            )
         crashNotification.show()
 
         assertEquals(1, shadowNotificationManager.notificationChannels.size)
@@ -152,14 +154,13 @@ class CrashNotificationTest {
 
         whenever(notificationManagerCompat.areNotificationsEnabled()).thenReturn(false)
 
-        val crashNotification = CrashNotification(
-            testContext,
-            crash,
-            CrashReporter.PromptConfiguration(
-                appName = "TestApp",
-            ),
-            notificationManagerCompat,
-        )
+        val crashNotification =
+            CrashNotification(
+                testContext,
+                crash,
+                CrashReporter.PromptConfiguration(appName = "TestApp"),
+                notificationManagerCompat,
+            )
         crashNotification.show()
 
         assertEquals(1, shadowNotificationManager.notificationChannels.size)
@@ -184,14 +185,13 @@ class CrashNotificationTest {
 
         whenever(notificationManagerCompat.areNotificationsEnabled()).thenReturn(false)
 
-        val crashNotification = CrashNotification(
-            testContext,
-            crash,
-            CrashReporter.PromptConfiguration(
-                appName = "TestApp",
-            ),
-            notificationManagerCompat,
-        )
+        val crashNotification =
+            CrashNotification(
+                testContext,
+                crash,
+                CrashReporter.PromptConfiguration(appName = "TestApp"),
+                notificationManagerCompat,
+            )
         crashNotification.show()
 
         assertEquals(1, shadowNotificationManager.notificationChannels.size)

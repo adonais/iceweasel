@@ -260,6 +260,12 @@ RenderedFrameId RendererOGL::UpdateAndRender(
 
   if (present) {
     if (aReadbackBuffer.isSome()) {
+      // Check graphics reset status before readback
+      CheckGraphicsResetStatus(gfx::DeviceResetDetectPlace::WR_BEFORE_READBACK,
+                               /* aForce */ true);
+    }
+
+    if (aReadbackBuffer.isSome() && !mThread->IsHandlingDeviceReset()) {
       MOZ_ASSERT(aReadbackSize.isSome());
       MOZ_ASSERT(aReadbackFormat.isSome());
       if (!mCompositor->MaybeReadback(aReadbackSize.ref(),

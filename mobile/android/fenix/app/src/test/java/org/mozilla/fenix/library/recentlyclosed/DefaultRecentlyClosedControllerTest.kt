@@ -11,6 +11,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
@@ -42,7 +43,6 @@ import org.mozilla.fenix.ext.directionsEq
 import org.mozilla.fenix.ext.optionsEq
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class DefaultRecentlyClosedControllerTest {
@@ -55,8 +55,7 @@ class DefaultRecentlyClosedControllerTest {
     private val tabsUseCases: TabsUseCases = mockk(relaxed = true)
     private val shareUseCases: ShareUseCases = mockk(relaxed = true)
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     @Before
     fun setUp() {
@@ -69,11 +68,12 @@ class DefaultRecentlyClosedControllerTest {
 
         var tabUrl: String? = null
 
-        val controller = createController(
-            openToBrowser = { url ->
-                tabUrl = url
-            },
-        )
+        val controller =
+            createController(
+                openToBrowser = { url ->
+                    tabUrl = url
+                }
+            )
 
         controller.handleOpen(item)
         assertEquals(item.url, tabUrl)
@@ -86,9 +86,7 @@ class DefaultRecentlyClosedControllerTest {
         val tabUrls = mutableListOf<String>()
 
         currentMode = BrowsingMode.Normal
-        var controller = createController(
-            openToBrowser = { url -> tabUrls.add(url) },
-        )
+        var controller = createController(openToBrowser = { url -> tabUrls.add(url) })
         assertNull(RecentlyClosedTabs.menuOpenInNormalTab.testGetValue())
 
         controller.handleOpen(tabs.toSet())
@@ -102,9 +100,7 @@ class DefaultRecentlyClosedControllerTest {
         tabUrls.clear()
 
         currentMode = BrowsingMode.Private
-        controller = createController(
-            openToBrowser = { url -> tabUrls.add(url) },
-        )
+        controller = createController(openToBrowser = { url -> tabUrls.add(url) })
         assertNull(RecentlyClosedTabs.menuOpenInPrivateTab.testGetValue())
 
         controller.handleOpen(tabs.toSet())
@@ -210,9 +206,7 @@ class DefaultRecentlyClosedControllerTest {
 
         verify {
             navController.navigate(
-                directionsEq(
-                    RecentlyClosedFragmentDirections.actionGlobalHistoryFragment(),
-                ),
+                directionsEq(RecentlyClosedFragmentDirections.actionGlobalHistoryFragment()),
                 optionsEq(NavOptions.Builder().setPopUpTo(R.id.historyFragment, true).build()),
             )
         }
@@ -228,7 +222,7 @@ class DefaultRecentlyClosedControllerTest {
 
         createController().handleShare(tabs.toSet())
 
-        val items = listOf(ShareData(url = tabs[0].url, title = tabs[0].title))
+        val items = listOf(ShareData(url = tabs[0].url, title = tabs[0].title, private = tabs[0].private))
         verify {
             shareUseCases.shareItems(
                 items = items,
@@ -249,10 +243,11 @@ class DefaultRecentlyClosedControllerTest {
 
         createController().handleShare(tabs.toSet())
 
-        val items = listOf(
-            ShareData(url = tabs[0].url, title = tabs[0].title),
-            ShareData(url = tabs[1].url, title = tabs[1].title),
-        )
+        val items =
+            listOf(
+                ShareData(url = tabs[0].url, title = tabs[0].title, private = tabs[0].private),
+                ShareData(url = tabs[1].url, title = tabs[1].title, private = tabs[1].private),
+            )
         verify {
             shareUseCases.shareItems(
                 items = items,
@@ -306,25 +301,27 @@ class DefaultRecentlyClosedControllerTest {
     }
 
     @Test
-    fun `GIVEN private browsing mode WHEN handleRestore is called THEN handleOpen is invoked with private mode`() = runTest {
-        val item: TabState = mockk(relaxed = true)
-        var capturedUrl: String? = null
-        currentMode = BrowsingMode.Private
-        val controller = createController(
-            scope = this,
-            openToBrowser = { url ->
-                capturedUrl = url
-            },
-        )
+    fun `GIVEN private browsing mode WHEN handleRestore is called THEN handleOpen is invoked with private mode`() =
+        runTest {
+            val item: TabState = mockk(relaxed = true)
+            var capturedUrl: String? = null
+            currentMode = BrowsingMode.Private
+            val controller =
+                createController(
+                    scope = this,
+                    openToBrowser = { url ->
+                        capturedUrl = url
+                    },
+                )
 
-        assertNull(RecentlyClosedTabs.openTab.testGetValue())
+            assertNull(RecentlyClosedTabs.openTab.testGetValue())
 
-        controller.handleRestore(item)
+            controller.handleRestore(item)
 
-        testScheduler.advanceUntilIdle()
+            testScheduler.advanceUntilIdle()
 
-        assertEquals(item.url, capturedUrl)
-    }
+            assertEquals(item.url, capturedUrl)
+        }
 
     @Test
     fun `exist multi-select mode when back is pressed`() {
@@ -370,8 +367,7 @@ class DefaultRecentlyClosedControllerTest {
         )
     }
 
-    private fun createFakeTab(id: String = "FakeId", url: String = "www.fake.com"): TabState =
-        TabState(id, url)
+    private fun createFakeTab(id: String = "FakeId", url: String = "www.fake.com"): TabState = TabState(id, url)
 
     private fun createFakeTabList(size: Int): List<TabState> {
         val fakeTabs = mutableListOf<TabState>()

@@ -33,53 +33,54 @@ class EmailMaskEngineUpdaterTest {
     }
 
     @Test
-    fun `WHEN relay store is ineligible THEN engine relay mode is disabled`() = runTest(testDispatcher) {
-        val store = RelayEligibilityStore()
-        val updater = EmailMaskEngineUpdater(engine, store, testDispatcher)
+    fun `WHEN relay store is ineligible THEN engine relay mode is disabled`() =
+        runTest(testDispatcher) {
+            val store = RelayEligibilityStore()
+            val updater = EmailMaskEngineUpdater(engine, store, testDispatcher)
 
-        updater.start()
+            updater.start()
 
-        testDispatcher.scheduler.advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify { engineSettings.firefoxRelay = Engine.FirefoxRelayMode.DISABLED }
-    }
-
-    @Test
-    fun `WHEN relay store is eligible for free plan THEN engine relay mode is enabled`() = runTest(testDispatcher) {
-        val store = RelayEligibilityStore(
-            initialState = RelayState(eligibilityState = Eligible.Free(5)),
-        )
-        val updater = EmailMaskEngineUpdater(engine, store, testDispatcher)
-
-        updater.start()
-
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        verify { engineSettings.firefoxRelay = Engine.FirefoxRelayMode.ENABLED }
-    }
+            verify { engineSettings.firefoxRelay = Engine.FirefoxRelayMode.DISABLED }
+        }
 
     @Test
-    fun `WHEN relay eligibility changes to free plan THEN engine relay mode changes to enabled`() = runTest(testDispatcher) {
-        val store = RelayEligibilityStore()
-        val updater = EmailMaskEngineUpdater(engine, store, testDispatcher)
+    fun `WHEN relay store is eligible for free plan THEN engine relay mode is enabled`() =
+        runTest(testDispatcher) {
+            val store = RelayEligibilityStore(initialState = RelayState(eligibilityState = Eligible.Free(5)))
+            val updater = EmailMaskEngineUpdater(engine, store, testDispatcher)
 
-        updater.start()
+            updater.start()
 
-        testDispatcher.scheduler.advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify { engineSettings.firefoxRelay = Engine.FirefoxRelayMode.DISABLED }
+            verify { engineSettings.firefoxRelay = Engine.FirefoxRelayMode.ENABLED }
+        }
 
-        store.dispatch(
-            RelayEligibilityAction.RelayStatusResult(
-                fetchSucceeded = true,
-                relayPlanTier = RelayPlanTier.FREE,
-                totalMasksUsed = 5,
-                lastCheckedMs = 123L,
-            ),
-        )
+    @Test
+    fun `WHEN relay eligibility changes to free plan THEN engine relay mode changes to enabled`() =
+        runTest(testDispatcher) {
+            val store = RelayEligibilityStore()
+            val updater = EmailMaskEngineUpdater(engine, store, testDispatcher)
 
-        testDispatcher.scheduler.advanceUntilIdle()
+            updater.start()
 
-        verify { engineSettings.firefoxRelay = Engine.FirefoxRelayMode.ENABLED }
-    }
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify { engineSettings.firefoxRelay = Engine.FirefoxRelayMode.DISABLED }
+
+            store.dispatch(
+                RelayEligibilityAction.RelayStatusResult(
+                    fetchSucceeded = true,
+                    relayPlanTier = RelayPlanTier.FREE,
+                    totalMasksUsed = 5,
+                    lastCheckedMs = 123L,
+                )
+            )
+
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify { engineSettings.firefoxRelay = Engine.FirefoxRelayMode.ENABLED }
+        }
 }

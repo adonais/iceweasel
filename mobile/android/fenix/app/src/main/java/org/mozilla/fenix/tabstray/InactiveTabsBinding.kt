@@ -20,8 +20,8 @@ import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
  *
  * @param appStore [AppStore] used to listen for changes to [AppState].
  * @param tabsTrayStore [TabsTrayStore] used to listen for changes to [TabsTrayState].
- * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur.
- *                       Defaults to [Dispatchers.Main].
+ * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur. Defaults to
+ *   [Dispatchers.Main].
  */
 class InactiveTabsBinding(
     appStore: AppStore,
@@ -29,7 +29,8 @@ class InactiveTabsBinding(
     mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : AbstractBinding<AppState>(appStore, mainDispatcher) {
     override suspend fun onState(flow: Flow<AppState>) {
-        flow.distinctUntilChangedBy { it.inactiveTabsExpanded }
+        flow
+            .distinctUntilChangedBy { it.inactiveTabsExpanded }
             .collectLatest {
                 tabsTrayStore.dispatch(TabsTrayAction.UpdateInactiveExpanded(expanded = it.inactiveTabsExpanded))
             }

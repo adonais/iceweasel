@@ -20,8 +20,8 @@ import mozilla.components.concept.engine.mediasession.MediaSession
  * @property controller Current media session controller for the tab (or null)
  * @property lastAccess The last time this tab was selected.
  * @property createdAt When the tab was first created.
- * @property searchTerm the last used search term for this tab or from the originating tab, or an
- * empty string if no search was executed.
+ * @property searchTerm the last used search term for this tab or from the originating tab, or an empty string if no
+ *   search was executed.
  */
 @Deprecated(
     "This will be removed in a future release",

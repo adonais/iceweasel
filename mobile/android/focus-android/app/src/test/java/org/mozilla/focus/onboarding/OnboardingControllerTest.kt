@@ -23,23 +23,17 @@ import org.mozilla.focus.utils.Settings
 
 class OnboardingControllerTest {
 
-    @Mock
-    private lateinit var appStore: AppStore
+    @Mock private lateinit var appStore: AppStore
 
-    @Mock
-    private lateinit var context: Context
+    @Mock private lateinit var context: Context
 
-    @Mock
-    private lateinit var appContext: FocusApplication
+    @Mock private lateinit var appContext: FocusApplication
 
-    @Mock
-    private lateinit var components: Components
+    @Mock private lateinit var components: Components
 
-    @Mock
-    private lateinit var settings: Settings
+    @Mock private lateinit var settings: Settings
 
-    @Mock
-    private lateinit var onboardingStorage: OnboardingStorage
+    @Mock private lateinit var onboardingStorage: OnboardingStorage
     private lateinit var onboardingController: OnboardingController
 
     @Before
@@ -50,14 +44,15 @@ class OnboardingControllerTest {
         whenever(appContext.components).thenReturn(components)
         whenever(components.settings).thenReturn(settings)
 
-        onboardingController = spy(
-            DefaultOnboardingController(
-                onboardingStorage,
-                appStore,
-                context,
-                "1",
-            ),
-        )
+        onboardingController =
+            spy(
+                DefaultOnboardingController(
+                    onboardingStorage,
+                    appStore,
+                    context,
+                    "1",
+                )
+            )
     }
 
     @Test

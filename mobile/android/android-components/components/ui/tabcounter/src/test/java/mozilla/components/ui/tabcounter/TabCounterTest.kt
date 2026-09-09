@@ -13,6 +13,7 @@ import androidx.core.view.isVisible
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
+import mozilla.components.ui.icons.R as iconsR
 import mozilla.components.ui.tabcounter.databinding.MozacUiTabcounterLayoutBinding
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -30,13 +31,12 @@ class TabCounterTest {
     @Before
     fun setUp() {
         tabCounter = TabCounterView(testContext)
-        binding =
-            MozacUiTabcounterLayoutBinding.inflate(LayoutInflater.from(testContext), tabCounter)
+        binding = MozacUiTabcounterLayoutBinding.inflate(LayoutInflater.from(testContext), tabCounter)
     }
 
     @Test
     fun `Default tab count is set to zero`() {
-        val expectedIcon = ContextCompat.getDrawable(testContext, R.drawable.mozac_ui_tabcounter_box)?.toBitmap()
+        val expectedIcon = ContextCompat.getDrawable(testContext, iconsR.drawable.mozac_ic_tab_24)?.toBitmap()
         val actualIcon = binding.counterBox.background.toBitmap()
 
         assertTrue(actualIcon.sameAs(expectedIcon))
@@ -47,7 +47,7 @@ class TabCounterTest {
     @Test
     fun `Set tab count as single digit value shows count`() {
         tabCounter.setCount(1)
-        val expectedIcon = ContextCompat.getDrawable(testContext, R.drawable.mozac_ui_tabcounter_box)?.toBitmap()
+        val expectedIcon = ContextCompat.getDrawable(testContext, iconsR.drawable.mozac_ic_tab_24)?.toBitmap()
         val actualIcon = binding.counterBox.background.toBitmap()
 
         assertTrue(actualIcon.sameAs(expectedIcon))
@@ -58,7 +58,7 @@ class TabCounterTest {
     @Test
     fun `Set tab count as two digit number shows count`() {
         tabCounter.setCount(99)
-        val expectedIcon = ContextCompat.getDrawable(testContext, R.drawable.mozac_ui_tabcounter_box)?.toBitmap()
+        val expectedIcon = ContextCompat.getDrawable(testContext, iconsR.drawable.mozac_ic_tab_24)?.toBitmap()
         val actualIcon = binding.counterBox.background.toBitmap()
 
         assertTrue(actualIcon.sameAs(expectedIcon))
@@ -69,7 +69,7 @@ class TabCounterTest {
     @Test
     fun `Setting tab count as three digit value shows correct icon`() {
         tabCounter.setCount(100)
-        val expectedIcon = ContextCompat.getDrawable(testContext, R.drawable.mozac_ui_infinite_tabcounter_box)?.toBitmap()
+        val expectedIcon = ContextCompat.getDrawable(testContext, iconsR.drawable.mozac_ic_infinite_tabs_24)?.toBitmap()
         val actualIcon = binding.counterBox.background.toBitmap()
 
         assertTrue(actualIcon.sameAs(expectedIcon))

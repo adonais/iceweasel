@@ -3760,6 +3760,12 @@ void AsyncPanZoomController::HandlePanningUpdate(
 
 void AsyncPanZoomController::HandlePinchLocking(
     const PinchGestureInput& aEvent) {
+  // Pinch locking is only applicable to PinchGestureInput events
+  // created from multi-touch input.
+  if (aEvent.mSource != PinchGestureInput::TOUCH) {
+    return;
+  }
+
   // Focus change and span distance calculated from an event buffer
   // Used to handle pinch locking irrespective of touch screen sensitivity
   // Note: both values fall back to the same value as
@@ -3983,8 +3989,9 @@ bool AsyncPanZoomController::AttemptScroll(
 
   // If there is no APZC later in the handoff chain that accepted the
   // overscroll, try to accept it ourselves. We only accept it if we
-  // are pannable.
-  if (ScrollSourceAllowsOverscroll(aOverscrollHandoffState.mScrollSource)) {
+  // are pannable and we were allowed to scroll in this input block.
+  if (scrollThisApzc &&
+      ScrollSourceAllowsOverscroll(aOverscrollHandoffState.mScrollSource)) {
     APZC_LOG("%p taking overscroll during panning\n", this);
 
     ParentLayerPoint prevVisualOverscroll = GetOverscrollAmount();
@@ -4340,8 +4347,11 @@ bool AsyncPanZoomController::CallDispatchScroll(
     }
   }
 
-  return treeManagerLocal->DispatchScroll(this, aStartPoint, endPoint,
-                                          aOverscrollHandoffState);
+  const ParentLayerPoint delta = aEndPoint - endPoint;
+  const bool result = treeManagerLocal->DispatchScroll(
+      this, aStartPoint, endPoint, aOverscrollHandoffState);
+  aEndPoint = endPoint + delta;
+  return result;
 }
 
 void AsyncPanZoomController::RecordScrollPayload(const TimeStamp& aTimeStamp) {
@@ -5906,7 +5916,7 @@ void AsyncPanZoomController::NotifyMainThreadTransaction(
   for (const auto& scrollUpdate : aScrollMetadata.GetScrollUpdates()) {
     APZC_LOG("%p processing scroll update %s\n", this,
              ToString(scrollUpdate).c_str());
-    if (!(Metrics().GetScrollGeneration() < scrollUpdate.GetGeneration())) {
+    if (Metrics().GetScrollGeneration() >= scrollUpdate.GetGeneration()) {
       // This is stale, let's ignore it
       APZC_LOG("%p scrollupdate generation stale, dropping\n", this);
       continue;

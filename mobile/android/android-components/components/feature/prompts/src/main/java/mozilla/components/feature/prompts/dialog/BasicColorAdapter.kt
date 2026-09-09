@@ -38,24 +38,17 @@ data class ColorItem(
 )
 
 private object ColorItemDiffCallback : DiffUtil.ItemCallback<ColorItem>() {
-    override fun areItemsTheSame(oldItem: ColorItem, newItem: ColorItem) =
-        oldItem.color == newItem.color
+    override fun areItemsTheSame(oldItem: ColorItem, newItem: ColorItem) = oldItem.color == newItem.color
 
-    override fun areContentsTheSame(oldItem: ColorItem, newItem: ColorItem) =
-        oldItem == newItem
+    override fun areContentsTheSame(oldItem: ColorItem, newItem: ColorItem) = oldItem == newItem
 }
 
-/**
- * RecyclerView adapter for displaying color items.
- */
-internal class BasicColorAdapter(
-    private val onColorSelected: (Int) -> Unit,
-) : ListAdapter<ColorItem, ColorViewHolder>(ColorItemDiffCallback) {
+/** RecyclerView adapter for displaying color items. */
+internal class BasicColorAdapter(private val onColorSelected: (Int) -> Unit) :
+    ListAdapter<ColorItem, ColorViewHolder>(ColorItemDiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ColorViewHolder {
-        val view = LayoutInflater
-            .from(parent.context)
-            .inflate(R.layout.mozac_feature_prompts_color_item, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.mozac_feature_prompts_color_item, parent, false)
         return ColorViewHolder(view, onColorSelected)
     }
 
@@ -64,16 +57,12 @@ internal class BasicColorAdapter(
     }
 }
 
-/**
- * View holder for a color item.
- */
+/** View holder for a color item. */
 internal class ColorViewHolder(
     itemView: View,
     private val onColorSelected: (Int) -> Unit,
 ) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
-    @VisibleForTesting
-    @ColorInt
-    internal var color: Int = Color.BLACK
+    @VisibleForTesting @ColorInt internal var color: Int = Color.BLACK
 
     private val checkDrawable: Drawable? by lazy {
         // Get the height of the row
@@ -104,23 +93,26 @@ internal class ColorViewHolder(
         color = colorItem.color
 
         // Set the background to look like this item's color
-        itemView.background = itemView.background.apply {
-            colorFilter = createBlendModeColorFilterCompat(
-                colorItem.color,
-                BlendModeCompat.MODULATE,
-            )
-        }
+        itemView.background =
+            itemView.background.apply {
+                colorFilter =
+                    createBlendModeColorFilterCompat(
+                        colorItem.color,
+                        BlendModeCompat.MODULATE,
+                    )
+            }
         itemView.contentDescription = colorItem.contentDescription
 
         // Display the check mark
-        val check = if (colorItem.selected) {
-            checkDrawable?.apply {
-                val readableColor = ColorUtils.getReadableTextColor(color)
-                colorFilter = createBlendModeColorFilterCompat(readableColor, SRC_IN)
+        val check =
+            if (colorItem.selected) {
+                checkDrawable?.apply {
+                    val readableColor = ColorUtils.getReadableTextColor(color)
+                    colorFilter = createBlendModeColorFilterCompat(readableColor, SRC_IN)
+                }
+            } else {
+                null
             }
-        } else {
-            null
-        }
         itemView.isActivated = colorItem.selected
         (itemView as TextView).setCompoundDrawablesRelative(check, null, null, null)
     }

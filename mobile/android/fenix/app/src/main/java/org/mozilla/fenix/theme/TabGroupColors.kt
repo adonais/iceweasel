@@ -23,9 +23,7 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.ContainerColorStack
 import mozilla.components.ui.colors.NovaColors
 
-/**
- * Represents the complete palette of colors available for tab groups.
- */
+/** Represents the complete palette of colors available for tab groups. */
 data class TabGroupColorPalette(
     val yellow: TabGroupColors,
     val orange: TabGroupColors,
@@ -38,31 +36,46 @@ data class TabGroupColorPalette(
     val grey: TabGroupColors,
 ) {
     companion object {
-        val lightPalette = TabGroupColorPalette(
-            yellow = TabGroupColors(primary = NovaColors.Yellow50, onPrimary = NovaColors.White),
-            orange = TabGroupColors(primary = NovaColors.Orange50, onPrimary = NovaColors.White),
-            red = TabGroupColors(primary = NovaColors.Red50, onPrimary = NovaColors.White),
-            pink = TabGroupColors(primary = NovaColors.Pink50, onPrimary = NovaColors.White),
-            purple = TabGroupColors(primary = NovaColors.Violet50, onPrimary = NovaColors.White),
-            blue = TabGroupColors(primary = NovaColors.Blue50, onPrimary = NovaColors.White),
-            cyan = TabGroupColors(primary = NovaColors.Cyan50, onPrimary = NovaColors.White),
-            green = TabGroupColors(primary = NovaColors.Green50, onPrimary = NovaColors.White),
-            grey = TabGroupColors(primary = NovaColors.Gray50, onPrimary = NovaColors.White),
-        )
+        val lightPalette =
+            TabGroupColorPalette(
+                yellow = TabGroupColors(primary = NovaColors.Yellow50, onPrimary = NovaColors.White),
+                orange = TabGroupColors(primary = NovaColors.Orange50, onPrimary = NovaColors.White),
+                red = TabGroupColors(primary = NovaColors.Red50, onPrimary = NovaColors.White),
+                pink = TabGroupColors(primary = NovaColors.Pink50, onPrimary = NovaColors.White),
+                purple = TabGroupColors(primary = NovaColors.Violet50, onPrimary = NovaColors.White),
+                blue = TabGroupColors(primary = NovaColors.Blue50, onPrimary = NovaColors.White),
+                cyan = TabGroupColors(primary = NovaColors.Cyan50, onPrimary = NovaColors.White),
+                green = TabGroupColors(primary = NovaColors.Green50, onPrimary = NovaColors.White),
+                grey = TabGroupColors(primary = NovaColors.Gray50, onPrimary = NovaColors.White),
+            )
 
-        val darkPalette = TabGroupColorPalette(
-            yellow = TabGroupColors(primary = NovaColors.Yellow30, onPrimary = NovaColors.Yellow90),
-            orange = TabGroupColors(primary = NovaColors.Orange30, onPrimary = NovaColors.Orange90),
-            red = TabGroupColors(primary = NovaColors.Red30, onPrimary = NovaColors.Red90),
-            pink = TabGroupColors(primary = NovaColors.Pink30, onPrimary = NovaColors.Pink90),
-            purple = TabGroupColors(primary = NovaColors.Violet30, onPrimary = NovaColors.Violet90),
-            blue = TabGroupColors(primary = NovaColors.Blue30, onPrimary = NovaColors.Blue90),
-            cyan = TabGroupColors(primary = NovaColors.Cyan30, onPrimary = NovaColors.Cyan90),
-            green = TabGroupColors(primary = NovaColors.Green30, onPrimary = NovaColors.Green90),
-            grey = TabGroupColors(primary = NovaColors.Gray40, onPrimary = NovaColors.Gray90),
-        )
+        val darkPalette =
+            TabGroupColorPalette(
+                yellow = TabGroupColors(primary = NovaColors.Yellow30, onPrimary = NovaColors.Yellow90),
+                orange = TabGroupColors(primary = NovaColors.Orange30, onPrimary = NovaColors.Orange90),
+                red = TabGroupColors(primary = NovaColors.Red30, onPrimary = NovaColors.Red90),
+                pink = TabGroupColors(primary = NovaColors.Pink30, onPrimary = NovaColors.Pink90),
+                purple = TabGroupColors(primary = NovaColors.Violet30, onPrimary = NovaColors.Violet90),
+                blue = TabGroupColors(primary = NovaColors.Blue30, onPrimary = NovaColors.Blue90),
+                cyan = TabGroupColors(primary = NovaColors.Cyan30, onPrimary = NovaColors.Cyan90),
+                green = TabGroupColors(primary = NovaColors.Green30, onPrimary = NovaColors.Green90),
+                grey = TabGroupColors(primary = NovaColors.Gray40, onPrimary = NovaColors.Gray90),
+            )
 
         val privatePalette = darkPalette
+
+        val oledPalette =
+            TabGroupColorPalette(
+                yellow = TabGroupColors(primary = NovaColors.Yellow70, onPrimary = NovaColors.Gray20),
+                orange = TabGroupColors(primary = NovaColors.Orange70, onPrimary = NovaColors.Gray20),
+                red = TabGroupColors(primary = NovaColors.Red70, onPrimary = NovaColors.Gray20),
+                pink = TabGroupColors(primary = NovaColors.Pink70, onPrimary = NovaColors.Gray20),
+                purple = TabGroupColors(primary = NovaColors.Violet70, onPrimary = NovaColors.Gray20),
+                blue = TabGroupColors(primary = NovaColors.Blue70, onPrimary = NovaColors.Gray20),
+                cyan = TabGroupColors(primary = NovaColors.Cyan70, onPrimary = NovaColors.Gray20),
+                green = TabGroupColors(primary = NovaColors.Green70, onPrimary = NovaColors.Gray20),
+                grey = TabGroupColors(primary = NovaColors.Gray60, onPrimary = NovaColors.Gray20),
+            )
     }
 }
 
@@ -81,30 +94,20 @@ internal val localTabGroupColors = staticCompositionLocalOf {
     TabGroupColorPalette.lightPalette
 }
 
-/**
- * Preview showcasing the tab group colors across all supported themes.
- */
+/** Preview showcasing the tab group colors across all supported themes. */
 @Preview(widthDp = 1050, showBackground = true)
 @Composable
-private fun TabGroupColorsPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun TabGroupColorsPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     TabGroupColorsGrid(theme = theme)
 }
 
-/**
- * Shared helper to render the color grid so we don't repeat the layout code for every theme preview.
- */
+/** Shared helper to render the color grid so we don't repeat the layout code for every theme preview. */
 @Composable
 private fun TabGroupColorsGrid(theme: Theme) {
     FirefoxTheme(theme = theme) {
         val tabColors = FirefoxTheme.tabGroupColors
 
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.background)
-                .padding(16.dp),
-        ) {
+        Column(modifier = Modifier.background(MaterialTheme.colorScheme.background).padding(16.dp)) {
             Text(
                 text = "Tab Group Colors",
                 style = MaterialTheme.typography.displayMedium,

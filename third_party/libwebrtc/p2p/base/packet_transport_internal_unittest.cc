@@ -55,6 +55,19 @@ TEST(PacketTransportInternal, NotifiesOnceOnClose) {
   EXPECT_EQ(call_count, 1);  // Call count should not have increased.
 }
 
+TEST(PacketTransportInternal, UnsubscribeReceivingState) {
+  FakePacketTransport packet_transport(CreateTestEnvironment(), "test");
+  int call_count = 0;
+  void* tag = &call_count;
+  packet_transport.SubscribeReceivingState(
+      tag, [&](PacketTransportInternal*) { ++call_count; });
+  packet_transport.NotifyReceivingState(&packet_transport);
+  EXPECT_EQ(call_count, 1);
+  packet_transport.UnsubscribeReceivingState(tag);
+  packet_transport.NotifyReceivingState(&packet_transport);
+  EXPECT_EQ(call_count, 1);
+}
+
 }  // namespace
 
 }  // namespace webrtc

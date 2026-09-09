@@ -13,67 +13,97 @@ import java.io.File
 /**
  * A fake implementation of [DownloadFileUtils] for testing purposes.
  *
- * This class allows faking the behavior of file-related operations during downloads
- * by providing lambdas for its primary functions.
+ * This class allows faking the behavior of file-related operations during downloads by providing lambdas for its
+ * primary functions.
  */
 class FakeDownloadFileUtils(
     private val downloadLocation: String = "/storage/emulated/0/Download",
-    private val guessFileName: (
-        contentDisposition: String?,
-        url: String?,
-        mimeType: String?,
-    ) -> String = { _, _, _ -> "fileName" },
-    private val findDownloadFileUri: (
-        fileName: String?,
-        directoryPath: String,
-    ) -> Uri? = { fileName, _ ->
-        fileName?.toUri()
-    },
-    private val findShareableDownloadFileUri: (
-        fileName: String?,
-        directoryPath: String,
-    ) -> Uri? = { fileName, _ ->
-        fileName?.toUri()
-    },
-    private val fileExists: (
-        directoryPath: String,
-        fileName: String?,
-    ) -> Boolean = { directoryPath, fileName ->
-        File(directoryPath, fileName ?: "").exists()
-    },
-    private val uniqueFileName: (
-        directoryPath: String,
-        fileName: String,
-    ) -> String = { _, fileName ->
-        fileName
-    },
-    private val openFile: (
-        fileName: String?,
-        directoryPath: String,
-        contentType: String?,
-    ) -> Boolean = { _, _, _ -> true },
-    private val createOpenFileIntent: (
-        fileName: String?,
-        directoryPath: String,
-        downloadContentType: String?,
-    ) -> Intent? = { _, _, _ -> null },
-    private val deleteMediaFile: (
-        contentResolver: ContentResolver,
-        fileName: String?,
-        directoryPath: String,
-    ) -> Boolean = { _, _, _ -> true },
-    private val getSafeContentType: (
-        fileName: String?,
-        contentType: String?,
-        uri: Uri?,
-    ) -> String = { _, _, _ ->
-        "safeContentType"
-    },
-    private val renameFile: (
-        directoryPath: String,
-        oldName: String?,
-        newName: String,
-    ) -> Boolean = { _, _, _ -> true },
+    private val guessFileName:
+        (
+            contentDisposition: String?,
+            url: String?,
+            mimeType: String?,
+        ) -> String =
+        { _, _, _ ->
+            "fileName"
+        },
+    private val findDownloadFileUri:
+        (
+            fileName: String?,
+            directoryPath: String,
+        ) -> Uri? =
+        { fileName, _ ->
+            fileName?.toUri()
+        },
+    private val findShareableDownloadFileUri:
+        (
+            fileName: String?,
+            directoryPath: String,
+        ) -> Uri? =
+        { fileName, _ ->
+            fileName?.toUri()
+        },
+    private val fileExists:
+        (
+            directoryPath: String,
+            fileName: String?,
+        ) -> Boolean =
+        { directoryPath, fileName ->
+            File(directoryPath, fileName ?: "").exists()
+        },
+    private val uniqueFileName:
+        (
+            directoryPath: String,
+            fileName: String,
+        ) -> String =
+        { _, fileName ->
+            fileName
+        },
+    private val openFile:
+        (
+            fileName: String?,
+            directoryPath: String,
+            contentType: String?,
+        ) -> Boolean =
+        { _, _, _ ->
+            true
+        },
+    private val createOpenFileIntent:
+        (
+            fileName: String?,
+            directoryPath: String,
+            downloadContentType: String?,
+        ) -> Intent? =
+        { _, _, _ ->
+            null
+        },
+    private val deleteMediaFile:
+        (
+            contentResolver: ContentResolver,
+            fileName: String?,
+            directoryPath: String,
+        ) -> Boolean =
+        { _, _, _ ->
+            true
+        },
+    private val getSafeContentType:
+        (
+            fileName: String?,
+            contentType: String?,
+            uri: Uri?,
+        ) -> String =
+        { _, _, _ ->
+            "safeContentType"
+        },
+    private val renameFile:
+        (
+            directoryPath: String,
+            oldName: String?,
+            newName: String,
+        ) -> Boolean =
+        { _, _, _ ->
+            true
+        },
 ) : DownloadFileUtils {
     override val currentDownloadLocation: String
         get() = downloadLocation
@@ -113,7 +143,7 @@ class FakeDownloadFileUtils(
         fileName: String?,
         directoryPath: String,
     ): Uri? {
-       return findShareableDownloadFileUri.invoke(fileName, directoryPath)
+        return findShareableDownloadFileUri.invoke(fileName, directoryPath)
     }
 
     override fun getSafeContentType(

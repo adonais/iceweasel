@@ -10,6 +10,7 @@ import android.view.ViewTreeObserver
 import android.widget.CheckBox
 import androidx.appcompat.widget.SwitchCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.browser.menu.BrowserMenu
 import mozilla.components.browser.menu.R
 import mozilla.components.concept.menu.candidate.CompoundMenuCandidate
@@ -27,28 +28,28 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class BrowserMenuCompoundButtonTest {
 
     @Test
     fun `simple menu items are always visible by default`() {
-        val item = SimpleTestBrowserCompoundButton("Hello") {
-            // do nothing
-        }
+        val item =
+            SimpleTestBrowserCompoundButton("Hello") {
+                // do nothing
+            }
 
         assertTrue(item.visible())
     }
 
     @Test
     fun `layout resource can be inflated`() {
-        val item = SimpleTestBrowserCompoundButton("Hello") {
-            // do nothing
-        }
+        val item =
+            SimpleTestBrowserCompoundButton("Hello") {
+                // do nothing
+            }
 
-        val view = LayoutInflater.from(testContext)
-            .inflate(item.getLayoutResource(), null)
+        val view = LayoutInflater.from(testContext).inflate(item.getLayoutResource(), null)
 
         assertNotNull(view)
     }
@@ -57,9 +58,10 @@ class BrowserMenuCompoundButtonTest {
     fun `clicking bound view will invoke callback and dismiss menu`() {
         var callbackInvoked = false
 
-        val item = SimpleTestBrowserCompoundButton("Hello") { checked ->
-            callbackInvoked = checked
-        }
+        val item =
+            SimpleTestBrowserCompoundButton("Hello") { checked ->
+                callbackInvoked = checked
+            }
 
         val menu = mock(BrowserMenu::class.java)
         val view = CheckBox(testContext)
@@ -102,9 +104,10 @@ class BrowserMenuCompoundButtonTest {
                 onCheckedChange = listener,
             ),
             SimpleTestBrowserCompoundButton(
-                "Hello",
-                listener = listener,
-            ).asCandidate(testContext),
+                    "Hello",
+                    listener = listener,
+                )
+                .asCandidate(testContext),
         )
 
         assertEquals(
@@ -115,10 +118,11 @@ class BrowserMenuCompoundButtonTest {
                 onCheckedChange = listener,
             ),
             SimpleTestBrowserCompoundButton(
-                "Hello",
-                initialState = { true },
-                listener = listener,
-            ).asCandidate(testContext),
+                    "Hello",
+                    initialState = { true },
+                    listener = listener,
+                )
+                .asCandidate(testContext),
         )
     }
 

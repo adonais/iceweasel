@@ -12,9 +12,7 @@ import mozilla.components.concept.engine.EngineSession.TrackingProtectionPolicyF
 import org.mozilla.fenix.R
 import org.mozilla.fenix.utils.Settings
 
-/**
- * Handles the logic behind creating new [TrackingProtectionPolicy]s.
- */
+/** Handles the logic behind creating new [TrackingProtectionPolicy]s. */
 class TrackingProtectionPolicyFactory(
     private val settings: Settings,
     private val resources: Resources,
@@ -23,10 +21,10 @@ class TrackingProtectionPolicyFactory(
     /**
      * Constructs a [TrackingProtectionPolicy] based on current preferences.
      *
-     * @param normalMode whether or not tracking protection should be enabled
-     * in normal browsing mode, defaults to the current preference value.
-     * @param privateMode whether or not tracking protection should be enabled
-     * in private browsing mode, default to the current preference value.
+     * @param normalMode whether or not tracking protection should be enabled in normal browsing mode, defaults to the
+     *   current preference value.
+     * @param privateMode whether or not tracking protection should be enabled in private browsing mode, default to the
+     *   current preference value.
      * @return the constructed tracking protection policy based on preferences.
      */
     fun createTrackingProtectionPolicy(
@@ -35,10 +33,11 @@ class TrackingProtectionPolicyFactory(
     ): TrackingProtectionPolicy {
         val trackingProtectionPolicy =
             when {
-                settings.useStrictTrackingProtection -> TrackingProtectionPolicy.strict(
-                    getAllowBaselineTrackingProtection(),
-                    getAllowConvenienceTrackingProtection(),
-                )
+                settings.useStrictTrackingProtection ->
+                    TrackingProtectionPolicy.strict(
+                        getAllowBaselineTrackingProtection(),
+                        getAllowConvenienceTrackingProtection(),
+                    )
                 settings.useCustomTrackingProtection -> return createCustomTrackingProtectionPolicy()
                 else -> TrackingProtectionPolicy.recommended()
             }
@@ -53,19 +52,20 @@ class TrackingProtectionPolicyFactory(
 
     private fun createCustomTrackingProtectionPolicy(): TrackingProtectionPolicy {
         return TrackingProtectionPolicy.select(
-            cookiePolicy = getCustomCookiePolicy(),
-            trackingCategories = getCustomTrackingCategories(),
-            cookiePurging = getCustomCookiePurgingPolicy(),
-            strictSocialTrackingProtection = settings.blockTrackingContentInCustomTrackingProtection,
-            allowListBaselineTrackingProtection = getAllowBaselineTrackingProtection(),
-            allowListConvenienceTrackingProtection = getAllowConvenienceTrackingProtection(),
-        ).let {
-            if (settings.blockTrackingContentSelectionInCustomTrackingProtection == "private") {
-                it.forPrivateSessionsOnly()
-            } else {
-                it
+                cookiePolicy = getCustomCookiePolicy(),
+                trackingCategories = getCustomTrackingCategories(),
+                cookiePurging = getCustomCookiePurgingPolicy(),
+                strictSocialTrackingProtection = settings.blockTrackingContentInCustomTrackingProtection,
+                allowListBaselineTrackingProtection = getAllowBaselineTrackingProtection(),
+                allowListConvenienceTrackingProtection = getAllowConvenienceTrackingProtection(),
+            )
+            .let {
+                if (settings.blockTrackingContentSelectionInCustomTrackingProtection == "private") {
+                    it.forPrivateSessionsOnly()
+                } else {
+                    it
+                }
             }
-        }
     }
 
     private fun getCustomCookiePolicy(): CookiePolicy {
@@ -84,12 +84,13 @@ class TrackingProtectionPolicyFactory(
     }
 
     private fun getCustomTrackingCategories(): Array<TrackingProtectionPolicy.TrackingCategory> {
-        val categories = arrayListOf(
-            TrackingProtectionPolicy.TrackingCategory.AD,
-            TrackingProtectionPolicy.TrackingCategory.ANALYTICS,
-            TrackingProtectionPolicy.TrackingCategory.SOCIAL,
-            TrackingProtectionPolicy.TrackingCategory.MOZILLA_SOCIAL,
-        )
+        val categories =
+            arrayListOf(
+                TrackingProtectionPolicy.TrackingCategory.AD,
+                TrackingProtectionPolicy.TrackingCategory.ANALYTICS,
+                TrackingProtectionPolicy.TrackingCategory.SOCIAL,
+                TrackingProtectionPolicy.TrackingCategory.MOZILLA_SOCIAL,
+            )
 
         if (settings.blockTrackingContentInCustomTrackingProtection) {
             categories.add(TrackingProtectionPolicy.TrackingCategory.SCRIPTS_AND_SUB_RESOURCES)

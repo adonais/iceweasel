@@ -6,6 +6,7 @@ package mozilla.components.browser.engine.gecko.activity
 
 import android.content.pm.ActivityInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
 import mozilla.components.concept.engine.activity.OrientationDelegate
 import mozilla.components.concept.engine.activity.OrientationDelegate.LockResult
 import mozilla.components.support.test.mock
@@ -16,14 +17,14 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.verify
 import org.mozilla.geckoview.AllowOrDeny
-import kotlin.test.assertIs
 
 @RunWith(AndroidJUnit4::class)
 class GeckoScreenOrientationDelegateTest {
     @Test
     fun `GIVEN a delegate is set WHEN the orientation should be locked THEN call this on the delegate`() {
         val activityDelegate = mock<OrientationDelegate>()
-        whenever(activityDelegate.onOrientationLock(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)).thenReturn(LockResult.SUCCESS)
+        whenever(activityDelegate.onOrientationLock(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE))
+            .thenReturn(LockResult.SUCCESS)
 
         val geckoDelegate = GeckoScreenOrientationDelegate(activityDelegate)
 
@@ -34,9 +35,10 @@ class GeckoScreenOrientationDelegateTest {
 
     @Test
     fun `GIVEN a delegate is set WHEN the orientation should be locked THEN return ALLOW depending on the delegate response`() {
-        val activityDelegate = object : OrientationDelegate {
-            override fun onOrientationLock(requestedOrientation: Int) = LockResult.SUCCESS
-        }
+        val activityDelegate =
+            object : OrientationDelegate {
+                override fun onOrientationLock(requestedOrientation: Int) = LockResult.SUCCESS
+            }
         val geckoDelegate = GeckoScreenOrientationDelegate(activityDelegate)
 
         val result = geckoDelegate.onOrientationLock(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)
@@ -46,9 +48,10 @@ class GeckoScreenOrientationDelegateTest {
 
     @Test
     fun `GIVEN a delegate is set WHEN the orientation should be locked THEN return DENY depending on the delegate response`() {
-        val activityDelegate = object : OrientationDelegate {
-            override fun onOrientationLock(requestedOrientation: Int) = LockResult.REJECTED
-        }
+        val activityDelegate =
+            object : OrientationDelegate {
+                override fun onOrientationLock(requestedOrientation: Int) = LockResult.REJECTED
+            }
         val geckoDelegate = GeckoScreenOrientationDelegate(activityDelegate)
 
         val result = geckoDelegate.onOrientationLock(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)
@@ -58,20 +61,24 @@ class GeckoScreenOrientationDelegateTest {
 
     @Test
     fun `GIVEN a delegate is set WHEN the orientation should be locked THEN return exception depending on the delegate response`() {
-        val activityDelegate = object : OrientationDelegate {
-            override fun onOrientationLock(requestedOrientation: Int) = LockResult.NOT_SUPPORTED
-        }
+        val activityDelegate =
+            object : OrientationDelegate {
+                override fun onOrientationLock(requestedOrientation: Int) = LockResult.NOT_SUPPORTED
+            }
         val geckoDelegate = GeckoScreenOrientationDelegate(activityDelegate)
 
         val result = geckoDelegate.onOrientationLock(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT)
 
-        result.then<Void>({
-            throw AssertionError("Should have failed")
-        }, {
-            assertIs<UnsupportedOperationException>(it)
-            assertEquals("Not supported", it.message)
-            null
-        })
+        result.then<Void>(
+            {
+                throw AssertionError("Should have failed")
+            },
+            {
+                assertIs<UnsupportedOperationException>(it)
+                assertEquals("Not supported", it.message)
+                null
+            },
+        )
     }
 
     @Test

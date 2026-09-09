@@ -7,22 +7,23 @@ package mozilla.components.feature.pwa.db
 import androidx.core.database.getStringOrNull
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.IOException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import java.io.IOException
 
 class ManifestDatabaseMigrationTest {
     private val testDbName = "migration-test"
 
     @Rule
     @JvmField
-    val helper: MigrationTestHelper = MigrationTestHelper(
-        InstrumentationRegistry.getInstrumentation(),
-        ManifestDatabase::class.java,
-    )
+    val helper: MigrationTestHelper =
+        MigrationTestHelper(
+            InstrumentationRegistry.getInstrumentation(),
+            ManifestDatabase::class.java,
+        )
 
     @Test
     @Throws(IOException::class)
@@ -30,7 +31,9 @@ class ManifestDatabaseMigrationTest {
         helper.createDatabase(testDbName, 2).apply {
             // db has schema version 2. insert some data using SQL queries.
             // You cannot use DAO classes because they expect the latest schema.
-            execSQL("INSERT INTO manifests (start_url, created_at, updated_at, manifest, used_at, scope) VALUES ('https://mozilla.org', 1, 2, '{}', 3, 'https://mozilla.org')")
+            execSQL(
+                "INSERT INTO manifests (start_url, created_at, updated_at, manifest, used_at, scope) VALUES ('https://mozilla.org', 1, 2, '{}', 3, 'https://mozilla.org')"
+            )
 
             // Prepare for the next version.
             close()
@@ -59,7 +62,9 @@ class ManifestDatabaseMigrationTest {
         helper.createDatabase(testDbName, 1).apply {
             // db has schema version 1. insert some data using SQL queries.
             // You cannot use DAO classes because they expect the latest schema.
-            execSQL("INSERT INTO manifests (start_url, created_at, updated_at, manifest, used_at, scope) VALUES ('https://mozilla.org', 1, 2, '{}', 3, 'https://mozilla.org')")
+            execSQL(
+                "INSERT INTO manifests (start_url, created_at, updated_at, manifest, used_at, scope) VALUES ('https://mozilla.org', 1, 2, '{}', 3, 'https://mozilla.org')"
+            )
 
             // Prepare for the next version.
             close()
@@ -88,7 +93,9 @@ class ManifestDatabaseMigrationTest {
         helper.createDatabase(testDbName, 0).apply {
             // db has schema version 0 which was the original version 1. insert some data using SQL queries.
             // You cannot use DAO classes because they expect the latest schema.
-            execSQL("INSERT INTO manifests (start_url, created_at, updated_at, manifest) VALUES ('https://mozilla.org', 1, 2, '{}')")
+            execSQL(
+                "INSERT INTO manifests (start_url, created_at, updated_at, manifest) VALUES ('https://mozilla.org', 1, 2, '{}')"
+            )
 
             // Prepare for the next version.
             close()

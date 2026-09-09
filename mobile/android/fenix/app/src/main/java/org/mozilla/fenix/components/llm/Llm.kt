@@ -18,9 +18,7 @@ import org.mozilla.fenix.components.llm.ext.choose
 import org.mozilla.fenix.components.llm.ext.fxaTokenProvider
 import org.mozilla.fenix.perf.lazyMonitored
 
-/**
- * Component group for LLM services.
- */
+/** Component group for LLM services. */
 class Llm(
     private val client: Client,
     private val storage: MlpaTokenStorage,

@@ -24,7 +24,6 @@
   profile-avatar-selector {
     position: absolute;
     inset-inline-start: -140px;
-    z-index: 1;
   }
 }
 
@@ -46,12 +45,12 @@
   border: var(--input-text-border);
 
   &:focus-visible {
-    outline: var(--focus-outline);
-    outline-offset: var(--focus-outline-offset);
+    outline-offset: unset;
   }
 
   &:invalid {
     border-color: var(--border-color-error);
+    accent-color: var(--border-color-error);
 
     &:not(:focus-visible) {
       outline: none;

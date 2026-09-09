@@ -21,8 +21,7 @@ import org.mozilla.fenix.theme.Theme
 
 @RunWith(AndroidJUnit4::class)
 class MainMenuTest {
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     private val customizeHomepageLabel: String
         get() = testContext.getString(R.string.browser_menu_customize_homepage)

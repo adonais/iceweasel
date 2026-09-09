@@ -4,37 +4,29 @@
 
 package mozilla.components.lib.crash.runtimetagproviders
 
-import mozilla.components.lib.crash.RuntimeTag
-import mozilla.components.lib.crash.RuntimeTagProvider
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import mozilla.components.lib.crash.RuntimeTag
+import mozilla.components.lib.crash.RuntimeTagProvider
 
-/**
- * Interface to provide information about the current version of the application
- */
+/** Interface to provide information about the current version of the application */
 fun interface StartTimeProvider {
 
-    /**
-     * Get the start time of the application.
-     */
+    /** Get the start time of the application. */
     fun getStartTime(): Long
 }
 
 private object DefaultStartTimeProvider : StartTimeProvider {
     // The process start time is captured once for the lifetime of the app, so there is no
     // per-instance clock to inject here.
-    @Suppress("NoSystemCurrentTimeMillis")
-    private val startTime = System.currentTimeMillis()
+    @Suppress("NoSystemCurrentTimeMillis") private val startTime = System.currentTimeMillis()
 
     override fun getStartTime() = startTime
 }
 
-/**
- * Includes information about environment values with the crash so that it can be persisted.
- */
-class EnvironmentRuntimeProvider(
-    private val startTimeProvider: StartTimeProvider = DefaultStartTimeProvider,
-) : RuntimeTagProvider {
+/** Includes information about environment values with the crash so that it can be persisted. */
+class EnvironmentRuntimeProvider(private val startTimeProvider: StartTimeProvider = DefaultStartTimeProvider) :
+    RuntimeTagProvider {
     override fun invoke(): Map<String, String> {
         return mapOf(
             RuntimeTag.LOCALE to Locale.getDefault().toString(),

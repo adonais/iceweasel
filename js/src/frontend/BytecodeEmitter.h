@@ -730,10 +730,13 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   }
   [[nodiscard]] bool emitGetDotGeneratorInScope(EmitterScope& currentScope);
 
+  [[nodiscard]] bool checkResumeIndexLimit();
   [[nodiscard]] bool allocateResumeIndex(BytecodeOffset offset,
                                          uint32_t* resumeIndex);
-  [[nodiscard]] bool allocateResumeIndexRange(
-      mozilla::Span<BytecodeOffset> offsets, uint32_t* firstResumeIndex);
+  [[nodiscard]] bool allocateTableSwitchResumeIndexRange(
+      mozilla::Span<BytecodeOffset> caseOffsets, BytecodeOffset switchOffset,
+      uint32_t* firstResumeIndex);
+  [[nodiscard]] bool finishResumeOffsets();
 
   [[nodiscard]] bool emitInitialYield(UnaryNode* yieldNode);
   [[nodiscard]] bool emitYield(UnaryNode* yieldNode);
@@ -856,6 +859,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
     return emitIteratorCloseInScope(*innermostEmitterScope(), iterKind,
                                     completionKind, selfHostedIter);
   }
+  [[nodiscard]] bool emitDestructuringIteratorClose(
+      SelfHostedIter selfHostedIter);
 
   template <typename InnerEmitter>
   [[nodiscard]] bool wrapWithDestructuringTryNote(int32_t iterDepth,
@@ -891,6 +896,9 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   [[nodiscard]] bool emitReturn(UnaryNode* returnNode);
   [[nodiscard]] bool finishReturn(BytecodeOffset setRvalOffset);
+
+  [[nodiscard]] bool emitCheckYieldResumeKind();
+  [[nodiscard]] bool emitCheckAwaitResumeKind();
 
   [[nodiscard]] bool emitExpressionStatement(UnaryNode* exprStmt);
   [[nodiscard]] bool emitStatementList(ListNode* stmtList);

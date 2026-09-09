@@ -19,6 +19,7 @@ import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.core.view.inputmethod.EditorInfoCompat
 import androidx.core.view.isVisible
+import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -36,7 +37,6 @@ import mozilla.components.support.ktx.android.content.pixelSizeFor
 import mozilla.components.support.ktx.android.view.pixelSizeFor
 import mozilla.components.support.ktx.android.view.showKeyboard
 import mozilla.components.ui.autocomplete.InlineAutocompleteEditText
-import java.util.concurrent.Executors
 import mozilla.components.ui.colors.R as colorsR
 
 private const val AUTOCOMPLETE_QUERY_THREADS = 3
@@ -44,21 +44,19 @@ private const val AUTOCOMPLETE_QUERY_THREADS = 3
 /**
  * Sub-component of the browser toolbar responsible for allowing the user to edit the URL ("edit mode").
  *
- * Structure:
- * +------+--------------------+---------------------------+------------------+------+
- * | icon | edit actions start |           url             | edit actions end | exit |
+ * Structure: +------+--------------------+---------------------------+------------------+------+ | icon | edit actions
+ * start | url | edit actions end | exit |
  * +------+--------------------+---------------------------+------------------+------+
  *
  * - icon: Optional icon that will be shown in front of the URL.
- * - edit actions start: Optional action icons injected by other components in front of the URL
- * (e.g. search engines).
+ * - edit actions start: Optional action icons injected by other components in front of the URL (e.g. search engines).
  * - url: Editable URL of the currently displayed website.
- * - edit actions end: Optional action icons injected by other components after the URL
- * (e.g. barcode scanner).
+ * - edit actions end: Optional action icons injected by other components after the URL (e.g. barcode scanner).
  * - exit: Button that switches back to display mode or invoke an app-defined callback.
  */
 @Suppress("LargeClass")
-class EditToolbar internal constructor(
+class EditToolbar
+internal constructor(
     context: Context,
     private val toolbar: BrowserToolbar,
     internal val rootView: View,
@@ -84,68 +82,71 @@ class EditToolbar internal constructor(
         @param:ColorInt val suggestionForeground: Int?,
     )
 
-    private val autocompleteScope = CoroutineScope(
-        SupervisorJob() +
-        Executors.newFixedThreadPool(
-            AUTOCOMPLETE_QUERY_THREADS,
-            NamedThreadFactory("EditToolbar"),
-        ).asCoroutineDispatcher() +
-        CoroutineExceptionHandler { _, throwable ->
-            logger.error("Error while processing autocomplete input", throwable)
-        },
-    )
+    private val autocompleteScope =
+        CoroutineScope(
+            SupervisorJob() +
+                Executors.newFixedThreadPool(
+                        AUTOCOMPLETE_QUERY_THREADS,
+                        NamedThreadFactory("EditToolbar"),
+                    )
+                    .asCoroutineDispatcher() +
+                CoroutineExceptionHandler { _, throwable ->
+                    logger.error("Error while processing autocomplete input", throwable)
+                }
+        )
 
     @VisibleForTesting(otherwise = PRIVATE)
-    internal val views = EditToolbarViews(
-        background = rootView.findViewById(R.id.mozac_browser_toolbar_background),
-        icon = rootView.findViewById(R.id.mozac_browser_toolbar_edit_icon),
-        editActionsStart = rootView.findViewById(R.id.mozac_browser_toolbar_edit_actions_start),
-        editActionsEnd = rootView.findViewById(R.id.mozac_browser_toolbar_edit_actions_end),
-        clear = rootView.findViewById<ImageView>(R.id.mozac_browser_toolbar_clear_view).apply {
-            setOnClickListener {
-                onClear()
-            }
-        },
-        url = rootView.findViewById<InlineAutocompleteEditText>(
-            R.id.mozac_browser_toolbar_edit_url_view,
-        ).apply {
-            setOnCommitListener {
-                // We emit the fact before notifying the listener because otherwise the listener may cause a focus
-                // change which may reset the autocomplete state that we want to report here.
-                emitCommitFact(autocompleteResult)
+    internal val views =
+        EditToolbarViews(
+            background = rootView.findViewById(R.id.mozac_browser_toolbar_background),
+            icon = rootView.findViewById(R.id.mozac_browser_toolbar_edit_icon),
+            editActionsStart = rootView.findViewById(R.id.mozac_browser_toolbar_edit_actions_start),
+            editActionsEnd = rootView.findViewById(R.id.mozac_browser_toolbar_edit_actions_end),
+            clear =
+                rootView.findViewById<ImageView>(R.id.mozac_browser_toolbar_clear_view).apply {
+                    setOnClickListener {
+                        onClear()
+                    }
+                },
+            url =
+                rootView.findViewById<InlineAutocompleteEditText>(R.id.mozac_browser_toolbar_edit_url_view).apply {
+                    setOnCommitListener {
+                        // We emit the fact before notifying the listener because otherwise the listener may cause a
+                        // focus
+                        // change which may reset the autocomplete state that we want to report here.
+                        emitCommitFact(autocompleteResult)
 
-                toolbar.onUrlEntered(text.toString())
-            }
+                        toolbar.onUrlEntered(text.toString())
+                    }
 
-            setOnTextChangeListener { text, _ ->
-                onTextChanged(text)
-            }
+                    setOnTextChangeListener { text, _ ->
+                        onTextChanged(text)
+                    }
 
-            setUrlGoneMargin(
-                ConstraintSet.END,
-                context.pixelSizeFor(R.dimen.mozac_browser_toolbar_url_gone_margin_end),
-            )
+                    setUrlGoneMargin(
+                        ConstraintSet.END,
+                        context.pixelSizeFor(R.dimen.mozac_browser_toolbar_url_gone_margin_end),
+                    )
 
-            setOnDispatchKeyEventPreImeListener { event ->
-                if (event?.keyCode == KeyEvent.KEYCODE_BACK && editListener?.onCancelEditing() != false) {
-                    toolbar.displayMode()
-                }
-                false
-            }
-        },
-    )
+                    setOnDispatchKeyEventPreImeListener { event ->
+                        if (event?.keyCode == KeyEvent.KEYCODE_BACK && editListener?.onCancelEditing() != false) {
+                            toolbar.displayMode()
+                        }
+                        false
+                    }
+                },
+        )
 
-    /**
-     * Customizable colors in "edit mode".
-     */
-    var colors: Colors = Colors(
-        clear = ContextCompat.getColor(context, colorsR.color.photonWhite),
-        icon = null,
-        hint = views.url.currentHintTextColor,
-        text = views.url.currentTextColor,
-        suggestionBackground = views.url.autoCompleteBackgroundColor,
-        suggestionForeground = views.url.autoCompleteForegroundColor,
-    )
+    /** Customizable colors in "edit mode". */
+    var colors: Colors =
+        Colors(
+            clear = ContextCompat.getColor(context, colorsR.color.photonWhite),
+            icon = null,
+            hint = views.url.currentHintTextColor,
+            text = views.url.currentTextColor,
+            suggestionBackground = views.url.autoCompleteBackgroundColor,
+            suggestionForeground = views.url.autoCompleteForegroundColor,
+        )
         set(value) {
             field = value
 
@@ -161,64 +162,52 @@ class EditToolbar internal constructor(
             views.url.autoCompleteForegroundColor = value.suggestionForeground
         }
 
-    /**
-     * Sets the background that will be drawn behind the URL, icon and edit actions.
-     */
+    /** Sets the background that will be drawn behind the URL, icon and edit actions. */
     fun setUrlBackground(background: Drawable?) {
         views.background.setImageDrawable(background)
     }
 
-    /**
-     * Sets an icon that will be drawn in front of the URL.
-     */
+    /** Sets an icon that will be drawn in front of the URL. */
     fun setIcon(icon: Drawable, contentDescription: String) {
         views.icon.setImageDrawable(icon)
         views.icon.contentDescription = contentDescription
         views.icon.visibility = View.VISIBLE
     }
 
-    /**
-     * Sets a click listener on the icon view
-     */
+    /** Sets a click listener on the icon view */
     fun setIconClickListener(listener: ((View) -> Unit)?) {
         views.icon.setOnClickListener(listener)
     }
 
-    /**
-     * Sets the text to be displayed when the URL of the toolbar is empty.
-     */
+    /** Sets the text to be displayed when the URL of the toolbar is empty. */
     var hint: String
         get() = views.url.hint.toString()
-        set(value) { views.url.hint = value }
+        set(value) {
+            views.url.hint = value
+        }
 
-    /**
-     * Sets the size of the text for the URL/search term displayed in the toolbar.
-     */
+    /** Sets the size of the text for the URL/search term displayed in the toolbar. */
     var textSize: Float
         get() = views.url.textSize
         set(value) {
             views.url.textSize = value
         }
 
-    /**
-     * Sets the typeface of the text for the URL/search term displayed in the toolbar.
-     */
-    var typeface: Typeface
+    /** Sets the typeface of the text for the URL/search term displayed in the toolbar. */
+    var typeface: Typeface?
         get() = views.url.typeface
-        set(value) { views.url.typeface = value }
+        set(value) {
+            views.url.typeface = value
+        }
 
-    /**
-     * Sets a listener to be invoked when focus of the URL input view (in edit mode) changed.
-     */
+    /** Sets a listener to be invoked when focus of the URL input view (in edit mode) changed. */
     fun setOnEditFocusChangeListener(listener: (Boolean) -> Unit) {
         views.url.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
             listener.invoke(hasFocus)
         }
     }
 
-    /**
-     * Focuses the url input field and shows the virtual keyboard if needed.
-     */
+    /** Focuses the url input field and shows the virtual keyboard if needed. */
     fun focus() {
         views.url.run {
             if (!hasFocus()) {
@@ -251,9 +240,7 @@ class EditToolbar internal constructor(
         views.url.setOnFilterListener(listener)
     }
 
-    /**
-     * Attempt to restart the autocomplete functionality with the current user input.
-     */
+    /** Attempt to restart the autocomplete functionality with the current user input. */
     internal fun refreshAutocompleteSuggestion() {
         views.url.refreshAutocompleteSuggestions()
     }
@@ -276,8 +263,8 @@ class EditToolbar internal constructor(
     }
 
     /**
-     * Updates the text of the URL input field. Note: this does *not* affect the value of url itself
-     * and is only a visual change
+     * Updates the text of the URL input field. Note: this does *not* affect the value of url itself and is only a
+     * visual change
      */
     fun updateUrl(
         url: String,
@@ -298,23 +285,17 @@ class EditToolbar internal constructor(
         return views.url.text.toString()
     }
 
-    /**
-     * Select the entire text in the URL input field.
-     */
+    /** Select the entire text in the URL input field. */
     internal fun selectAll() {
         views.url.selectAll()
     }
 
-    /**
-     * Places the cursor at the end of the URL input field.
-     */
+    /** Places the cursor at the end of the URL input field. */
     internal fun selectEnd() {
         views.url.setSelection(views.url.text.length)
     }
 
-    /**
-     * Applies the given search terms for further editing, requesting new suggestions along the way.
-     */
+    /** Applies the given search terms for further editing, requesting new suggestions along the way. */
     internal fun editSuggestion(searchTerms: String) {
         updateUrl(searchTerms)
         views.url.setSelection(views.url.text.length)
@@ -332,11 +313,12 @@ class EditToolbar internal constructor(
     internal var private: Boolean
         get() = (views.url.imeOptions and EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING) != 0
         set(value) {
-            views.url.imeOptions = if (value) {
-                views.url.imeOptions or EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING
-            } else {
-                views.url.imeOptions and (EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING.inv())
-            }
+            views.url.imeOptions =
+                if (value) {
+                    views.url.imeOptions or EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING
+                } else {
+                    views.url.imeOptions and (EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING.inv())
+                }
         }
 
     private fun onClear() {
@@ -347,9 +329,7 @@ class EditToolbar internal constructor(
 
     private fun setUrlGoneMargin(anchor: Int, dimen: Int) {
         val set = ConstraintSet()
-        val container = rootView.findViewById<ConstraintLayout>(
-            R.id.mozac_browser_toolbar_container,
-        )
+        val container = rootView.findViewById<ConstraintLayout>(R.id.mozac_browser_toolbar_container)
         set.clone(container)
         set.setGoneMargin(R.id.mozac_browser_toolbar_edit_url_view, anchor, dimen)
         set.applyTo(container)
@@ -368,18 +348,14 @@ class EditToolbar internal constructor(
         } else {
             setUrlGoneMargin(
                 ConstraintSet.END,
-                rootView.pixelSizeFor(
-                    R.dimen.mozac_browser_toolbar_url_gone_margin_end,
-                ),
+                rootView.pixelSizeFor(R.dimen.mozac_browser_toolbar_url_gone_margin_end),
             )
         }
         editListener?.onTextChanged(text)
     }
 }
 
-/**
- * Internal holder for view references.
- */
+/** Internal holder for view references. */
 internal class EditToolbarViews(
     val background: ImageView,
     val icon: ImageView,

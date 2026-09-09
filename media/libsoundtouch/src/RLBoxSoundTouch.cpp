@@ -151,6 +151,10 @@ uint RLBoxSoundTouch::receiveSamples(AudioDataValue* aOutput,
   return numWrittenSamples;
 }
 
+void RLBoxSoundTouch::clear() {
+  return mSandbox.invoke_sandbox_function(Clear, mTimeStretcher);
+}
+
 void RLBoxSoundTouch::flush() {
   return mSandbox.invoke_sandbox_function(Flush, mTimeStretcher);
 }

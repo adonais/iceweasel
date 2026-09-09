@@ -15,12 +15,14 @@ class LoginExceptionFragmentStoreTest {
     fun onChange() {
         val initialState = ExceptionsFragmentState()
         val store = ExceptionsFragmentStore(initialState)
-        val newExceptionsItem: LoginException = object : LoginException {
-            override val id: Long
-                get() = 1234L
-            override val origin: String
-                get() = "test"
-        }
+        val newExceptionsItem: LoginException =
+            object : LoginException {
+                override val id: Long
+                    get() = 1234L
+
+                override val origin: String
+                    get() = "test"
+            }
 
         store.dispatch(ExceptionsFragmentAction.Change(listOf(newExceptionsItem)))
         assertNotSame(initialState, store.state)

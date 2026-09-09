@@ -38,6 +38,7 @@ import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.text.Text
 import mozilla.components.support.ktx.kotlin.trimmed
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.FaviconListItem
 import org.mozilla.fenix.compose.list.IconListItem
@@ -47,7 +48,6 @@ import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryHigh
 import org.mozilla.fenix.home.topsites.ui.HomepageCard
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.wallpapers.WallpaperTheme
-import mozilla.components.ui.icons.R as iconsR
 
 // Number of recently visited items per column.
 private const val VISITS_PER_COLUMN = 3
@@ -63,9 +63,8 @@ private val contentPadding = 16.dp
  * @param recentVisits List of [RecentlyVisitedItem] to display.
  * @param menuItems List of [RecentVisitMenuItem] shown long clicking a [RecentlyVisitedItem].
  * @param backgroundColor The background [Color] of each item.
- * @param onRecentVisitClick Invoked when the user clicks on a recent visit. The first parameter is
- * the [RecentlyVisitedItem] that was clicked and the second parameter is the "page" or column number
- * the item resides in.
+ * @param onRecentVisitClick Invoked when the user clicks on a recent visit. The first parameter is the
+ *   [RecentlyVisitedItem] that was clicked and the second parameter is the "page" or column number the item resides in.
  */
 @Composable
 @Suppress("CognitiveComplexMethod")
@@ -78,16 +77,16 @@ fun RecentlyVisited(
     val isSingleColumn by remember(recentVisits) { derivedStateOf { recentVisits.size <= VISITS_PER_COLUMN } }
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .thenConditional(
-                modifier = Modifier.horizontalScroll(state = rememberScrollState()),
-                predicate = { !isSingleColumn },
-            )
-            .padding(
-                horizontal = contentPadding,
-                vertical = 8.dp,
-            ),
+        modifier =
+            Modifier.fillMaxWidth()
+                .thenConditional(
+                    modifier = Modifier.horizontalScroll(state = rememberScrollState()),
+                    predicate = { !isSingleColumn },
+                )
+                .padding(
+                    horizontal = contentPadding,
+                    vertical = 8.dp,
+                )
     ) {
         HomepageCard(
             modifier = Modifier.fillMaxWidth(),
@@ -101,41 +100,41 @@ fun RecentlyVisited(
                 recentVisits.forEachIndexed { index, recentVisit ->
                     // Don't display the divider when its the last item in a column or the last item
                     // in the table.
-                    val showDivider = (index + 1) % VISITS_PER_COLUMN != 0 &&
-                        index != recentVisits.lastIndex
+                    val showDivider = (index + 1) % VISITS_PER_COLUMN != 0 && index != recentVisits.lastIndex
                     val pageIndex = index / VISITS_PER_COLUMN
                     val pageNumber = pageIndex + 1
 
                     Box(
-                        modifier = if (isSingleColumn) {
-                            Modifier.fillMaxWidth()
-                        } else {
-                            Modifier.widthIn(max = recentlyVisitedItemMaxWidth)
-                        },
+                        modifier =
+                            if (isSingleColumn) {
+                                Modifier.fillMaxWidth()
+                            } else {
+                                Modifier.widthIn(max = recentlyVisitedItemMaxWidth)
+                            }
                     ) {
                         when (recentVisit) {
-                            is RecentHistoryHighlight -> RecentlyVisitedHistoryHighlight(
-                                recentVisit = recentVisit,
-                                menuItems = menuItems,
-                                onRecentVisitClick = {
-                                    onRecentVisitClick(it, pageNumber)
-                                },
-                            )
+                            is RecentHistoryHighlight ->
+                                RecentlyVisitedHistoryHighlight(
+                                    recentVisit = recentVisit,
+                                    menuItems = menuItems,
+                                    onRecentVisitClick = {
+                                        onRecentVisitClick(it, pageNumber)
+                                    },
+                                )
 
-                            is RecentHistoryGroup -> RecentlyVisitedHistoryGroup(
-                                recentVisit = recentVisit,
-                                menuItems = menuItems,
-                                onRecentVisitClick = {
-                                    onRecentVisitClick(it, pageNumber)
-                                },
-                            )
+                            is RecentHistoryGroup ->
+                                RecentlyVisitedHistoryGroup(
+                                    recentVisit = recentVisit,
+                                    menuItems = menuItems,
+                                    onRecentVisitClick = {
+                                        onRecentVisitClick(it, pageNumber)
+                                    },
+                                )
                         }
 
                         if (showDivider) {
                             HorizontalDivider(
-                                modifier = Modifier
-                                    .align(Alignment.BottomCenter)
-                                    .padding(horizontal = contentPadding),
+                                modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = contentPadding)
                             )
                         }
                     }
@@ -159,17 +158,18 @@ private fun RecentlyVisitedHistoryGroup(
     onRecentVisitClick: (RecentHistoryGroup) -> Unit = { _ -> },
 ) {
     var isMenuExpanded by remember { mutableStateOf(false) }
-    val captionId = if (recentVisit.historyMetadata.size == 1) {
-        R.string.history_search_group_site_1
-    } else {
-        R.string.history_search_group_sites_1
-    }
+    val captionId =
+        if (recentVisit.historyMetadata.size == 1) {
+            R.string.history_search_group_site_1
+        } else {
+            R.string.history_search_group_sites_1
+        }
 
     Box {
         IconListItem(
             label = recentVisit.title.trimmed(),
-            modifier = Modifier
-                .combinedClickable(
+            modifier =
+                Modifier.combinedClickable(
                     onClick = { onRecentVisitClick(recentVisit) },
                     onLongClick = { isMenuExpanded = true },
                 ),
@@ -178,14 +178,16 @@ private fun RecentlyVisitedHistoryGroup(
         )
 
         DropdownMenu(
-            menuItems = menuItems.map { item ->
-                MenuItem.TextItem(Text.String(item.title)) { item.onClick(recentVisit) }
-            },
+            menuItems =
+                menuItems.map { item ->
+                    MenuItem.TextItem(Text.String(item.title)) { item.onClick(recentVisit) }
+                },
             expanded = isMenuExpanded,
-            modifier = Modifier.semantics {
-                testTagsAsResourceId = true
-                testTag = "recent.visit.menu"
-            },
+            modifier =
+                Modifier.semantics {
+                    testTagsAsResourceId = true
+                    testTag = "recent.visit.menu"
+                },
             onDismissRequest = { isMenuExpanded = false },
         )
     }
@@ -210,8 +212,8 @@ private fun RecentlyVisitedHistoryHighlight(
         FaviconListItem(
             label = recentVisit.title.trimmed(),
             url = recentVisit.url,
-            modifier = Modifier
-                .combinedClickable(
+            modifier =
+                Modifier.combinedClickable(
                     onClick = { onRecentVisitClick(recentVisit) },
                     onLongClick = { isMenuExpanded = true },
                 ),
@@ -219,13 +221,15 @@ private fun RecentlyVisitedHistoryHighlight(
 
         DropdownMenu(
             expanded = isMenuExpanded,
-            menuItems = menuItems.map { item ->
-                MenuItem.TextItem(Text.String(item.title)) { item.onClick(recentVisit) }
-            },
-            modifier = Modifier.semantics {
-                testTagsAsResourceId = true
-                testTag = "recent.visit.menu"
-            },
+            menuItems =
+                menuItems.map { item ->
+                    MenuItem.TextItem(Text.String(item.title)) { item.onClick(recentVisit) }
+                },
+            modifier =
+                Modifier.semantics {
+                    testTagsAsResourceId = true
+                    testTag = "recent.visit.menu"
+                },
             onDismissRequest = { isMenuExpanded = false },
         )
     }
@@ -237,13 +241,14 @@ private fun RecentlyVisitedMultipleColumnsPreview() {
     FirefoxTheme {
         Surface {
             RecentlyVisited(
-                recentVisits = listOf(
-                    RecentHistoryGroup(title = "running shoes"),
-                    RecentHistoryGroup(title = "mozilla"),
-                    RecentHistoryGroup(title = "firefox"),
-                    RecentHistoryGroup(title = "pocket"),
-                    RecentHistoryHighlight(title = "Mozilla", url = "www.mozilla.com"),
-                ),
+                recentVisits =
+                    listOf(
+                        RecentHistoryGroup(title = "running shoes"),
+                        RecentHistoryGroup(title = "mozilla"),
+                        RecentHistoryGroup(title = "firefox"),
+                        RecentHistoryGroup(title = "pocket"),
+                        RecentHistoryHighlight(title = "Mozilla", url = "www.mozilla.com"),
+                    ),
                 menuItems = emptyList(),
             )
         }
@@ -256,10 +261,11 @@ private fun RecentlyVisitedSingleColumnPreview() {
     FirefoxTheme {
         Surface {
             RecentlyVisited(
-                recentVisits = listOf(
-                    RecentHistoryGroup(title = "running shoes"),
-                    RecentHistoryHighlight(title = "Mozilla", url = "www.mozilla.com"),
-                ),
+                recentVisits =
+                    listOf(
+                        RecentHistoryGroup(title = "running shoes"),
+                        RecentHistoryHighlight(title = "Mozilla", url = "www.mozilla.com"),
+                    ),
                 menuItems = emptyList(),
             )
         }

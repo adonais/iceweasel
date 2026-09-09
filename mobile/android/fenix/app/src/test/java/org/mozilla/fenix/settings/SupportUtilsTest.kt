@@ -9,9 +9,9 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import io.mockk.every
 import io.mockk.mockk
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.util.Locale
 
 class SupportUtilsTest {
 
@@ -52,7 +52,10 @@ class SupportUtilsTest {
     fun getGenericSumoURLForTopic() {
         assertEquals(
             "https://support.mozilla.org/en-GB/kb/faq-android",
-            SupportUtils.getGenericSumoURLForTopic(SupportUtils.SumoTopic.HELP, Locale.Builder().setLanguage("en").setRegion("GB").build()),
+            SupportUtils.getGenericSumoURLForTopic(
+                SupportUtils.SumoTopic.HELP,
+                Locale.Builder().setLanguage("en").setRegion("GB").build(),
+            ),
         )
         assertEquals(
             "https://support.mozilla.org/de/kb/your-rights",
@@ -64,7 +67,10 @@ class SupportUtilsTest {
     fun getMozillaPageUrl() {
         assertEquals(
             "https://www.mozilla.org/en-US/about/manifesto/",
-            SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.MANIFESTO, Locale.Builder().setLanguage("en").setRegion("US").build()),
+            SupportUtils.getMozillaPageUrl(
+                SupportUtils.MozillaPage.MANIFESTO,
+                Locale.Builder().setLanguage("en").setRegion("US").build(),
+            ),
         )
         assertEquals(
             "https://www.mozilla.org/zh/privacy/firefox/",

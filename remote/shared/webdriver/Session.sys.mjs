@@ -47,6 +47,9 @@ XPCOMUtils.defineLazyServiceGetter(
 // Global singleton that holds active WebDriver sessions
 const webDriverSessions = new Map();
 
+// Notification emitted when a session is created or destroyed.
+const NOTIFY_WEBDRIVER_SESSION_CHANGED = "webdriver-session-changed";
+
 /**
  * @typedef {Set} SessionConfigurationFlags
  *     A set of flags defining the features of a WebDriver session. It can be
@@ -293,6 +296,8 @@ export class WebDriverSession {
     }
 
     webDriverSessions.set(this.#id, this);
+
+    Services.obs.notifyObservers(null, NOTIFY_WEBDRIVER_SESSION_CHANGED);
   }
 
   destroy() {
@@ -341,6 +346,8 @@ export class WebDriverSession {
     for (const id of this.#chromeProtocolHandles.keys()) {
       this.unregisterChromeHandler(id);
     }
+
+    Services.obs.notifyObservers(null, NOTIFY_WEBDRIVER_SESSION_CHANGED);
   }
 
   get a11yChecks() {
@@ -614,4 +621,15 @@ export function getSeenNodesForBrowsingContext(sessionId, browsingContext) {
  */
 export function getWebDriverSessionById(sessionId) {
   return webDriverSessions.get(sessionId);
+}
+
+/**
+ * Check if at least one WebDriver session is currently active, which means that
+ * a remote application is connected to this browser instance.
+ *
+ * @returns {boolean}
+ *     True if a WebDriver session is active, false otherwise.
+ */
+export function hasActiveWebDriverSession() {
+  return webDriverSessions.size > 0;
 }

@@ -35,8 +35,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 class ShareUseCasesTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private lateinit var shareSheetLauncher: FakeShareSheetLauncher
     private lateinit var settings: Settings
@@ -49,25 +48,26 @@ class ShareUseCasesTest {
     @Before
     fun setUp() {
         shareSheetLauncher = FakeShareSheetLauncher()
-        settings = mockk(relaxed = true) {
-            every { nativeShareSheetEnabled } returns true
-        }
-        browserStore = BrowserStore(
-            BrowserState(tabs = listOf(createTab(url = "https://mozilla.org", id = "123"))),
-        )
-        shareUseCases = ShareUseCases(
-            browserStore = browserStore,
-            shareSheetLauncher = shareSheetLauncher,
-            settings = settings,
-        )
+        settings =
+            mockk(relaxed = true) {
+                every { nativeShareSheetEnabled } returns true
+            }
+        browserStore = BrowserStore(BrowserState(tabs = listOf(createTab(url = "https://mozilla.org", id = "123"))))
+        shareUseCases =
+            ShareUseCases(
+                browserStore = browserStore,
+                shareSheetLauncher = shareSheetLauncher,
+                settings = settings,
+            )
         navigatedToShareFragment = false
     }
 
     @Test
     fun `GIVEN current tab is a PDF WHEN shareUrl is called THEN PDF share action is dispatched and telemetry is not recorded`() {
-        val pdfTab = createTab(url = "https://mozilla.org/file.pdf", id = "pdf").let {
-            it.copy(content = it.content.copy(isPdf = true))
-        }
+        val pdfTab =
+            createTab(url = "https://mozilla.org/file.pdf", id = "pdf").let {
+                it.copy(content = it.content.copy(isPdf = true))
+            }
         val pdfStore = spyk(BrowserStore(BrowserState(tabs = listOf(pdfTab))))
         shareUseCases = ShareUseCases(pdfStore, shareSheetLauncher, settings)
 
@@ -106,13 +106,14 @@ class ShareUseCasesTest {
                     title = "Mozilla",
                     isPrivate = false,
                     isCustomTab = false,
-                    chooserActions = listOf(
-                        ShareSheetChooserAction.SAVE_PDF,
-                        ShareSheetChooserAction.PRINT,
-                        ShareSheetChooserAction.SEND_TO_DEVICES,
-                        ShareSheetChooserAction.QR_CODE,
-                    ),
-                ),
+                    chooserActions =
+                        listOf(
+                            ShareSheetChooserAction.SAVE_PDF,
+                            ShareSheetChooserAction.PRINT,
+                            ShareSheetChooserAction.SEND_TO_DEVICES,
+                            ShareSheetChooserAction.QR_CODE,
+                        ),
+                )
             ),
             shareSheetLauncher.urlShares,
         )
@@ -146,13 +147,14 @@ class ShareUseCasesTest {
                     isCustomTab = false,
                     text = "Check this out",
                     subject = "A subject",
-                    chooserActions = listOf(
-                        ShareSheetChooserAction.SAVE_PDF,
-                        ShareSheetChooserAction.PRINT,
-                        ShareSheetChooserAction.SEND_TO_DEVICES,
-                        ShareSheetChooserAction.QR_CODE,
-                    ),
-                ),
+                    chooserActions =
+                        listOf(
+                            ShareSheetChooserAction.SAVE_PDF,
+                            ShareSheetChooserAction.PRINT,
+                            ShareSheetChooserAction.SEND_TO_DEVICES,
+                            ShareSheetChooserAction.QR_CODE,
+                        ),
+                )
             ),
             shareSheetLauncher.urlShares,
         )
@@ -232,7 +234,7 @@ class ShareUseCasesTest {
     @Config(sdk = [34])
     @Test
     fun `GIVEN a list of share data and subject WHEN shareItems is called THEN system share sheet is launched`() {
-        val items = listOf(ShareData(url = "https://mozilla.org", title = "Mozilla"))
+        val items = listOf(ShareData(url = "https://mozilla.org", title = "Mozilla", private = false))
 
         assertNull(NativeShareSheet.shown.testGetValue())
 
@@ -249,7 +251,7 @@ class ShareUseCasesTest {
                     items = items,
                     isPrivate = false,
                     subject = "My collection",
-                ),
+                )
             ),
             shareSheetLauncher.itemsShares,
         )
@@ -262,7 +264,7 @@ class ShareUseCasesTest {
     @Config(sdk = [34])
     @Test
     fun `GIVEN chooserActions and a thumbnailUri WHEN shareItems is called THEN they are forwarded to the system share sheet`() {
-        val items = listOf(ShareData(url = "https://mozilla.org", title = "Mozilla"))
+        val items = listOf(ShareData(url = "https://mozilla.org", title = "Mozilla", private = false))
         val thumbnailUri = "content://thumbnail".toUri()
 
         shareUseCases.shareItems(
@@ -282,7 +284,7 @@ class ShareUseCasesTest {
                     subject = "My tab group",
                     chooserActions = ShareSheetChooserAction.tabChooserActions,
                     thumbnailUri = thumbnailUri,
-                ),
+                )
             ),
             shareSheetLauncher.itemsShares,
         )
@@ -294,7 +296,7 @@ class ShareUseCasesTest {
         every { settings.nativeShareSheetEnabled } returns false
 
         shareUseCases.shareItems(
-            items = listOf(ShareData(url = "https://mozilla.org")),
+            items = listOf(ShareData(url = "https://mozilla.org", private = false)),
             source = ShareSource.HOME,
             navigateToShareFragment = navigateToShareFragment,
         )
@@ -308,7 +310,7 @@ class ShareUseCasesTest {
     @Test
     fun `GIVEN native share sheet is not supported WHEN shareItems is called THEN navigate to share fragment and telemetry is not recorded`() {
         shareUseCases.shareItems(
-            items = listOf(ShareData(url = "https://mozilla.org")),
+            items = listOf(ShareData(url = "https://mozilla.org", private = false)),
             source = ShareSource.HOME,
             navigateToShareFragment = navigateToShareFragment,
         )

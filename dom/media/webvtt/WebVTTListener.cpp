@@ -87,13 +87,15 @@ WebVTTListener::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
 }
 
 NS_IMETHODIMP
-WebVTTListener::OnStartRequest(nsIRequest* aRequest) {
+WebVTTListener::OnStartRequest(nsIRequest* aRequest)
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   if (IsCanceled()) {
     return NS_OK;
   }
 
   LOG("OnStartRequest");
-  mElement->DispatchTestEvent(u"mozStartedLoadingTextTrack"_ns);
+  const RefPtr<HTMLTrackElement> element = mElement;
+  element->DispatchTestEvent(u"mozStartedLoadingTextTrack"_ns);
   return NS_OK;
 }
 

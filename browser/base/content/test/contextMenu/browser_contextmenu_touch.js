@@ -88,7 +88,7 @@ add_task(async function test_toolbar_contextmenu_touch() {
 // Test the urlbar input context menu.
 add_task(async function test_urlbar_contextmenu_touch() {
   let urlbar = document.getElementById("urlbar");
-  let textBox = urlbar.querySelector("moz-input-box");
-  let menu = textBox.menupopup;
+  let textBox = urlbar.querySelector(".urlbar-input-box");
+  let menu = window.EditContextMenu.popup;
   await openAndCheckContextMenu(menu, textBox);
 });

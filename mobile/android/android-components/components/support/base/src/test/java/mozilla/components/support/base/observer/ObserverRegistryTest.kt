@@ -351,8 +351,7 @@ class ObserverRegistryTest {
         val registry = ObserverRegistry<TestObserver>()
         val observer = TestObserver()
 
-        @Suppress("UsePropertyAccessSyntax")
-        doReturn(false).`when`(view).isAttachedToWindow()
+        @Suppress("UsePropertyAccessSyntax") doReturn(false).`when`(view).isAttachedToWindow()
 
         registry.register(observer, view)
 
@@ -659,9 +658,7 @@ class ObserverRegistryTest {
         }
     }
 
-    private class TestConsumingObserver(
-        private val shouldConsume: Boolean,
-    ) {
+    private class TestConsumingObserver(private val shouldConsume: Boolean) {
         var notified: Boolean = false
         var notifiedWith: Int? = null
 
@@ -673,9 +670,10 @@ class ObserverRegistryTest {
     }
 
     private class MockedLifecycleOwner(initialState: Lifecycle.State) : LifecycleOwner {
-        val lifecycleRegistry = LifecycleRegistry(this).apply {
-            currentState = initialState
-        }
+        val lifecycleRegistry =
+            LifecycleRegistry(this).apply {
+                currentState = initialState
+            }
 
         override val lifecycle: Lifecycle = lifecycleRegistry
     }

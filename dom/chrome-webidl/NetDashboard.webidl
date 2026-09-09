@@ -195,9 +195,9 @@ dictionary SSLTokensCacheElement {
   octet overridableErrorCategory = 0;
   // -1: unknown, 0: not a built-in root, 1: built-in root.
   long builtInRoot = -1;
-  sequence<octet> serverCertDER;
-  sequence<sequence<octet>> succeededCertChainDER;
-  sequence<sequence<octet>> handshakeCertDER;
+  Uint8Array serverCertDER;
+  sequence<Uint8Array> succeededCertChainDER;
+  sequence<Uint8Array> handshakeCertDER;
 };
 
 [GenerateConversionToJS]

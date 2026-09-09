@@ -9,13 +9,11 @@ import mozilla.components.support.base.facts.Action
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.collect
 
-/**
- * Facts emitted for telemetry related to [mozilla.components.feature.prompts.login.PasswordGeneratorDialogFragment]
- */
+/** Facts emitted for telemetry related to [mozilla.components.feature.prompts.login.PasswordGeneratorDialogFragment] */
 class GeneratedPasswordFacts {
     /**
-     * Items that specify how the [mozilla.components.feature.prompts.login.PasswordGeneratorDialogFragment]
-     * was interacted with
+     * Items that specify how the [mozilla.components.feature.prompts.login.PasswordGeneratorDialogFragment] was
+     * interacted with
      */
     object Items {
         const val SHOWN = "shown"
@@ -30,20 +28,23 @@ private fun emitPasswordGeneratorDialogFacts(
     metadata: Map<String, Any>? = null,
 ) {
     Fact(
-        Component.FEATURE_PROMPTS,
-        action,
-        item,
-        value,
-        metadata,
-    ).collect()
+            Component.FEATURE_PROMPTS,
+            action,
+            item,
+            value,
+            metadata,
+        )
+        .collect()
 }
 
-internal fun emitGeneratedPasswordShownFact() = emitPasswordGeneratorDialogFacts(
-    action = Action.CLICK,
-    item = GeneratedPasswordFacts.Items.SHOWN,
-)
+internal fun emitGeneratedPasswordShownFact() =
+    emitPasswordGeneratorDialogFacts(
+        action = Action.CLICK,
+        item = GeneratedPasswordFacts.Items.SHOWN,
+    )
 
-internal fun emitGeneratedPasswordFilledFact() = emitPasswordGeneratorDialogFacts(
-    action = Action.CLICK,
-    item = GeneratedPasswordFacts.Items.FILLED,
-)
+internal fun emitGeneratedPasswordFilledFact() =
+    emitPasswordGeneratorDialogFacts(
+        action = Action.CLICK,
+        item = GeneratedPasswordFacts.Items.FILLED,
+    )

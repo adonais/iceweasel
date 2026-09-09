@@ -8,19 +8,14 @@ import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import mozilla.components.lib.llm.mlpa.service.AuthorizationToken
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Instant
+import mozilla.components.lib.llm.mlpa.service.AuthorizationToken
 
-/**
- * Manages persistent storage for [AuthorizationToken]s used by the MLPA service.
- */
+/** Manages persistent storage for [AuthorizationToken]s used by the MLPA service. */
 interface MlpaTokenStorage {
-    /**
-     * Returns the stored [AuthorizationToken], or null if no token is available or the token
-     * has expired.
-     */
+    /** Returns the stored [AuthorizationToken], or null if no token is available or the token has expired. */
     suspend fun getToken(): AuthorizationToken.Integrity?
 
     /**
@@ -31,28 +26,26 @@ interface MlpaTokenStorage {
      */
     suspend fun setToken(token: AuthorizationToken.Integrity, expiresIn: Duration)
 
-    /**
-     * Clears any persisted token from storage.
-     */
+    /** Clears any persisted token from storage. */
     suspend fun clear()
 
     companion object {
         /**
-         * Creates a static [MlpaTokenStorage]. This will return whatever is passed in at the time of
-         * construction.
+         * Creates a static [MlpaTokenStorage]. This will return whatever is passed in at the time of construction.
          *
          * @param token an [AuthorizationToken.Integrity]
          */
-        fun static(token: AuthorizationToken.Integrity? = null) = object : MlpaTokenStorage {
-            override suspend fun getToken() = token
+        fun static(token: AuthorizationToken.Integrity? = null) =
+            object : MlpaTokenStorage {
+                override suspend fun getToken() = token
 
-            override suspend fun setToken(
-                token: AuthorizationToken.Integrity,
-                expiresIn: Duration,
-            ) {}
+                override suspend fun setToken(
+                    token: AuthorizationToken.Integrity,
+                    expiresIn: Duration,
+                ) {}
 
-            override suspend fun clear() {}
-        }
+                override suspend fun clear() {}
+            }
 
         /**
          * Creates an implementation of [MlpaTokenStorage] that is backed by [SharedPreferences].
@@ -60,9 +53,7 @@ interface MlpaTokenStorage {
          * @param context required to create [SharedPreferences].
          * @return An instance of [MlpaTokenStorage].
          */
-        fun sharedPrefs(
-            context: Context,
-        ): MlpaTokenStorage {
+        fun sharedPrefs(context: Context): MlpaTokenStorage {
             val prefs = context.getSharedPreferences("mlpa_token_storage", MODE_PRIVATE)
             return SharedPreferencesBackedMlpaStorage(prefs)
         }
@@ -93,11 +84,14 @@ internal class SharedPreferencesBackedMlpaStorage(
         }
     }
 
-    private val SharedPreferences.token get() = getString(TOKEN_KEY, null)?.let {
-        AuthorizationToken.Integrity(it)
-    }
+    private val SharedPreferences.token
+        get() =
+            getString(TOKEN_KEY, null)?.let {
+                AuthorizationToken.Integrity(it)
+            }
 
-    private val SharedPreferences.expiresAt get() = Instant.fromEpochMilliseconds(getLong(EXPIRES_AT_KEY, 0L))
+    private val SharedPreferences.expiresAt
+        get() = Instant.fromEpochMilliseconds(getLong(EXPIRES_AT_KEY, 0L))
 
     companion object {
         const val TOKEN_KEY = "MLPA_TOKEN"

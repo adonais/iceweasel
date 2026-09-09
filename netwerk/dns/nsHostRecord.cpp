@@ -167,6 +167,12 @@ bool nsHostRecord::HasUsableResult(const mozilla::TimeStamp& now,
   return HasUsableResultInternal(now, queryFlags);
 }
 
+nsresult nsHostRecord::GetFromStaleCache(bool* aResult) {
+  NS_ENSURE_ARG(aResult);
+  *aResult = mFromStaleCache;
+  return NS_OK;
+}
+
 //----------------------------------------------------------------------------
 // AddrHostRecord
 //----------------------------------------------------------------------------

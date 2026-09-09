@@ -19,13 +19,11 @@ import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.feature.tabs.tabstray.TabsFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.samples.browser.databinding.FragmentTabstrayBinding
 import org.mozilla.samples.browser.ext.components
-import mozilla.components.ui.icons.R as iconsR
 
-/**
- * A fragment for displaying the tabs tray.
- */
+/** A fragment for displaying the tabs tray. */
 class TabsTrayFragment : Fragment(), UserInteractionHandler {
     private val tabsFeature: ViewBoundFeatureWrapper<TabsFeature> = ViewBoundFeatureWrapper()
 
@@ -57,11 +55,12 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
         binding.tabsTray.layoutManager = GridLayoutManager(context, 2)
 
         tabsFeature.set(
-            feature = TabsFeature(
-                tabsTray = tabsAdapter,
-                store = components.store,
-                onCloseTray = ::closeTabsTray,
-            ),
+            feature =
+                TabsFeature(
+                    tabsTray = tabsAdapter,
+                    store = components.store,
+                    onCloseTray = ::closeTabsTray,
+                ),
             owner = this,
             view = view,
         )
@@ -80,23 +79,25 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
     }
 
     private fun createTabsAdapter(view: View): TabsAdapter {
-        val removeUseCase = RemoveTabWithUndoUseCase(
-            components.tabsUseCases.removeTab,
-            view,
-            components.tabsUseCases.undo,
-        )
+        val removeUseCase =
+            RemoveTabWithUndoUseCase(
+                components.tabsUseCases.removeTab,
+                view,
+                components.tabsUseCases.undo,
+            )
         return TabsAdapter(
             thumbnailLoader = ThumbnailLoader(components.thumbnailStorage),
-            delegate = object : TabsTray.Delegate {
-                override fun onTabSelected(tab: TabSessionState, source: String?) {
-                    components.tabsUseCases.selectTab(tab.id)
-                    closeTabsTray()
-                }
+            delegate =
+                object : TabsTray.Delegate {
+                    override fun onTabSelected(tab: TabSessionState, source: String?) {
+                        components.tabsUseCases.selectTab(tab.id)
+                        closeTabsTray()
+                    }
 
-                override fun onTabClosed(tab: TabSessionState, source: String?) {
-                    removeUseCase.invoke(tab.id)
-                }
-            },
+                    override fun onTabClosed(tab: TabSessionState, source: String?) {
+                        removeUseCase.invoke(tab.id)
+                    }
+                },
         )
     }
 }
@@ -114,13 +115,13 @@ private class RemoveTabWithUndoUseCase(
 
     private fun showSnackbar() {
         Snackbar.make(
-            view,
-            "Tab removed.",
-            Snackbar.LENGTH_LONG,
-        ).setAction(
-            "Undo",
-        ) {
-            undo.invoke()
-        }.show()
+                view,
+                "Tab removed.",
+                Snackbar.LENGTH_LONG,
+            )
+            .setAction("Undo") {
+                undo.invoke()
+            }
+            .show()
     }
 }

@@ -16,30 +16,27 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import mozilla.components.compose.browser.awesomebar.AwesomeBarColors
 
-/**
- * Renders a header for a group of suggestions.
- */
+/** Renders a header for a group of suggestions. */
 @Composable
 internal fun SuggestionGroup(
     title: String,
     colors: AwesomeBarColors,
 ) {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .pointerInput(Unit) {
+        modifier =
+            Modifier.fillMaxWidth().pointerInput(Unit) {
                 detectTapGestures(onTap = { /* No-op to consume click */ })
-            },
+            }
     ) {
         Text(
             title,
             color = colors.groupTitle,
-            modifier = Modifier
-                .padding(
-                    vertical = 12.dp,
-                    horizontal = 16.dp,
-                )
-                .fillMaxWidth(),
+            modifier =
+                Modifier.padding(
+                        vertical = 12.dp,
+                        horizontal = 16.dp,
+                    )
+                    .fillMaxWidth(),
             fontSize = 14.sp,
         )
     }

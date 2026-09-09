@@ -8,8 +8,8 @@ import android.os.StatFs
 import java.io.File
 
 /**
- * Interface for abstracting file system operations.
- * This allows for easier testing by providing a way to mock file system interactions.
+ * Interface for abstracting file system operations. This allows for easier testing by providing a way to mock file
+ * system interactions.
  */
 interface FileSystemHelper {
 
@@ -38,18 +38,16 @@ interface FileSystemHelper {
     fun availableBytesInDirectory(path: String): Long
 }
 
-/**
- * Default implementation of [FileSystemHelper].
- */
+/** Default implementation of [FileSystemHelper]. */
 class DefaultFileSystemHelper : FileSystemHelper {
 
     /**
-     * Creates a directory at the specified path if it does not already exist.
-     * It uses [File.mkdirs] which creates parent directories if necessary.
+     * Creates a directory at the specified path if it does not already exist. It uses [File.mkdirs] which creates
+     * parent directories if necessary.
      *
      * @param path The absolute path of the directory to create.
-     * @return `true` if the directory was created (or any necessary parent directories),
-     *         `false` if the directory already existed.
+     * @return `true` if the directory was created (or any necessary parent directories), `false` if the directory
+     *   already existed.
      */
     override fun createDirectoryIfNotExists(path: String): Boolean {
         val directory = File(path)
@@ -60,8 +58,8 @@ class DefaultFileSystemHelper : FileSystemHelper {
     }
 
     /**
-     * Returns the number of available bytes in the file system directory specified by the path.
-     * Uses [StatFs] to retrieve this information.
+     * Returns the number of available bytes in the file system directory specified by the path. Uses [StatFs] to
+     * retrieve this information.
      *
      * @param path The absolute path of the directory.
      * @return The number of available bytes.

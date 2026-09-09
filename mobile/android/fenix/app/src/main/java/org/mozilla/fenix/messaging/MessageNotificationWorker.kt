@@ -19,6 +19,8 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.await
+import java.util.concurrent.CancellationException
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -36,40 +38,36 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.onboarding.ensureMarketingChannelExists
 import org.mozilla.fenix.utils.IntentUtils
 import org.mozilla.fenix.utils.createBaseNotification
-import java.util.concurrent.CancellationException
-import java.util.concurrent.TimeUnit
 
 const val CLICKED_MESSAGE_ID = "clickedMessageId"
 const val DISMISSED_MESSAGE_ID = "dismissedMessageId"
 
 /**
- * Timeout duration (in milliseconds) for the fetch experiments operation, covering both the
- * network request and any required post-processing.
+ * Timeout duration (in milliseconds) for the fetch experiments operation, covering both the network request and any
+ * required post-processing.
  *
  * This is a background task, not initiated by the user, so a slightly higher timeout is acceptable.
  *
- * If the operation doesn't complete within this time, it will be retried on the next app launch
- * or during the next scheduled sync interval.
+ * If the operation doesn't complete within this time, it will be retried on the next app launch or during the next
+ * scheduled sync interval.
  *
  * **Six seconds will cover 99% of users** based on Nimbus research.
+ *
  * @see https://sql.telemetry.mozilla.org/queries/91863/source?p_days=30#227434.
  */
 private const val NIMBUS_FETCH_OPERATION_TIMEOUT_MILLIS: Long = 6000
 
 private const val NIMBUS_APPLY_OPERATION_TIMEOUT_MILLIS: Long = 500
 
-/**
- * The total timeout duration (in milliseconds) for the Nimbus fetch and apply operations.
- */
+/** The total timeout duration (in milliseconds) for the Nimbus fetch and apply operations. */
 private const val NIMBUS_UPDATE_OPERATION_TIMEOUT_MILLIS =
     NIMBUS_FETCH_OPERATION_TIMEOUT_MILLIS + NIMBUS_APPLY_OPERATION_TIMEOUT_MILLIS
 
 private val LOGGER = Logger("MessageNotificationWorker")
 
 /**
- * Background [CoroutineWorker] that polls Nimbus for available [Message]s at a given interval.
- * A [Notification] will be created using the configuration of the next highest priority [Message]
- * if it has not already been displayed.
+ * Background [CoroutineWorker] that polls Nimbus for available [Message]s at a given interval. A [Notification] will be
+ * created using the configuration of the next highest priority [Message] if it has not already been displayed.
  */
 class MessageNotificationWorker(
     context: Context,
@@ -92,9 +90,7 @@ class MessageNotificationWorker(
 
         val messaging = nimbus.messaging
 
-        val nextMessage =
-            messaging.getNextMessage(FenixMessageSurfaceId.NOTIFICATION)
-                ?: return Result.success()
+        val nextMessage = messaging.getNextMessage(FenixMessageSurfaceId.NOTIFICATION) ?: return Result.success()
 
         val currentBootUniqueIdentifier = BootUtils.getBootIdentifier(context)
         //  Device has NOT been power cycled.
@@ -173,19 +169,19 @@ class MessageNotificationWorker(
         private const val MESSAGE_TAG = "org.mozilla.fenix.message.tag"
         private const val MESSAGE_WORK_NAME = "org.mozilla.fenix.message.work"
 
-        /**
-         * Initialize the message notification [CoroutineWorker] to begin polling Nimbus.
-         */
+        /** Initialize the message notification [CoroutineWorker] to begin polling Nimbus. */
         fun setMessageNotificationWorker(context: Context) {
             val messaging = FxNimbusMessaging.features.messaging
             val featureConfig = messaging.value()
             val notificationConfig = featureConfig.notificationConfig
             val pollingInterval = notificationConfig.refreshInterval.toLong()
 
-            val messageWorkRequest = PeriodicWorkRequestBuilder<MessageNotificationWorker>(
-                pollingInterval,
-                TimeUnit.MINUTES,
-            ).build()
+            val messageWorkRequest =
+                PeriodicWorkRequestBuilder<MessageNotificationWorker>(
+                        pollingInterval,
+                        TimeUnit.MINUTES,
+                    )
+                    .build()
 
             val instanceWorkManager = WorkManager.getInstance(context)
             instanceWorkManager.enqueueUniquePeriodicWork(
@@ -202,23 +198,19 @@ class MessageNotificationWorker(
             LOGGER.info("Registered the message notification worker for periodic experiment fetches.")
         }
 
-        /**
-         * Cancel the message notification [CoroutineWorker] to stop polling Nimbus.
-         */
+        /** Cancel the message notification [CoroutineWorker] to stop polling Nimbus. */
         @Suppress("TooGenericExceptionCaught")
         suspend fun cancelMessageNotificationWorker(context: Context) {
             LOGGER.info("Canceling the message notification worker...")
 
             try {
-                WorkManager.getInstance(context)
-                    .cancelUniqueWork(MESSAGE_WORK_NAME)
-                    .await()
+                WorkManager.getInstance(context).cancelUniqueWork(MESSAGE_WORK_NAME).await()
 
                 LOGGER.info("Message notification worker cancellation completed.")
             } catch (e: CancellationException) {
                 LOGGER.debug(
                     "Stopped waiting for message notification worker cancellation because" +
-                        " the coroutine was cancelled.",
+                        " the coroutine was cancelled."
                 )
 
                 // Rethrow the exception so it propagates instead of being swallowed by the
@@ -230,8 +222,8 @@ class MessageNotificationWorker(
         }
 
         /**
-         * @return `true` if the fetch and apply operations were successfully completed within the
-         * given [operationTimeout].
+         * @return `true` if the fetch and apply operations were successfully completed within the given
+         *   [operationTimeout].
          */
         @VisibleForTesting
         internal suspend fun tryFetchAndApplyNimbusExperiments(
@@ -240,11 +232,12 @@ class MessageNotificationWorker(
             experimentsFetched: CompletableDeferred<Unit> = CompletableDeferred(),
             experimentsApplied: CompletableDeferred<Unit> = CompletableDeferred(),
         ): Boolean {
-            val nimbusExperimentsObserver = NimbusExperimentsObserver(
-                nimbusSdk = nimbusSdk,
-                experimentsFetched = experimentsFetched,
-                experimentsApplied = experimentsApplied,
-            )
+            val nimbusExperimentsObserver =
+                NimbusExperimentsObserver(
+                    nimbusSdk = nimbusSdk,
+                    experimentsFetched = experimentsFetched,
+                    experimentsApplied = experimentsApplied,
+                )
 
             nimbusSdk.register(nimbusExperimentsObserver)
 
@@ -289,8 +282,7 @@ class MessageNotificationWorker(
 }
 
 /**
- * When a [Message] [Notification] is dismissed by the user record telemetry data and update the
- * [Message.metadata].
+ * When a [Message] [Notification] is dismissed by the user record telemetry data and update the [Message.metadata].
  *
  * This Service is only intended to be used by the [MessageNotificationWorker.createOnDismissPendingIntent] function.
  */
@@ -304,9 +296,10 @@ class NotificationDismissedService : LifecycleService() {
 
             lifecycleScope.launch {
                 // Get the relevant message.
-                val message = intent.getStringExtra(DISMISSED_MESSAGE_ID)?.let { messageId ->
-                    messaging.getMessage(messageId)
-                }
+                val message =
+                    intent.getStringExtra(DISMISSED_MESSAGE_ID)?.let { messageId ->
+                        messaging.getMessage(messageId)
+                    }
 
                 if (message != null) {
                     withContext(Dispatchers.IO) {
@@ -322,8 +315,7 @@ class NotificationDismissedService : LifecycleService() {
 }
 
 /**
- * When a [Message] [Notification] is clicked by the user record telemetry data and update the
- * [Message.metadata].
+ * When a [Message] [Notification] is clicked by the user record telemetry data and update the [Message.metadata].
  *
  * This Activity is only intended to be used by the [MessageNotificationWorker.createOnClickPendingIntent] function.
  */
@@ -336,9 +328,10 @@ class NotificationClickedReceiverActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             // Get the relevant message.
-            val message = intent.getStringExtra(CLICKED_MESSAGE_ID)?.let { messageId ->
-                messaging.getMessage(messageId)
-            }
+            val message =
+                intent.getStringExtra(CLICKED_MESSAGE_ID)?.let { messageId ->
+                    messaging.getMessage(messageId)
+                }
 
             if (message != null) {
                 withContext(Dispatchers.IO) {

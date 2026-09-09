@@ -5,6 +5,7 @@
 package org.mozilla.fenix.ui.robots
 
 import android.util.Log
+import androidx.appcompat.R as appcompatR
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.matcher.ViewMatchers
@@ -20,7 +21,6 @@ import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.click
-import androidx.appcompat.R as appcompatR
 
 class SettingsSubMenuLanguageRobot {
     fun selectLanguage(language: String) {
@@ -28,9 +28,7 @@ class SettingsSubMenuLanguageRobot {
         languagesList().waitForExists(waitingTime)
         Log.i(TAG, "selectLanguage: Waited for $waitingTime ms for language list to exist")
         Log.i(TAG, "selectLanguage: Trying to click language: $language")
-        languagesList()
-            .getChildByText(UiSelector().text(language), language)
-            .click()
+        languagesList().getChildByText(UiSelector().text(language), language).click()
         Log.i(TAG, "selectLanguage: Clicked language: $language")
     }
 
@@ -52,7 +50,7 @@ class SettingsSubMenuLanguageRobot {
         assertUIObjectExists(
             languagesList()
                 .getChildByText(UiSelector().text(language), language, true)
-                .getFromParent(UiSelector().resourceId("$packageName:id/locale_selected_icon")),
+                .getFromParent(UiSelector().resourceId("$packageName:id/locale_selected_icon"))
         )
     }
 
@@ -71,8 +69,7 @@ class SettingsSubMenuLanguageRobot {
         Log.i(TAG, "typeInSearchBar: Search bar text was set to: $text")
     }
 
-    fun verifySearchResultsContains(languageName: String) =
-        assertUIObjectExists(language(languageName))
+    fun verifySearchResultsContains(languageName: String) = assertUIObjectExists(language(languageName))
 
     fun clearSearchBar() {
         Log.i(TAG, "clearSearchBar: Trying to click the clear search bar button")
@@ -98,17 +95,10 @@ class SettingsSubMenuLanguageRobot {
     }
 }
 
-private fun goBackButton() =
-    onView(CoreMatchers.allOf(ViewMatchers.withContentDescription("Navigate up")))
+private fun goBackButton() = onView(CoreMatchers.allOf(ViewMatchers.withContentDescription("Navigate up")))
 
-private fun languagesList() =
-    UiScrollable(
-        UiSelector()
-            .resourceId("$packageName:id/locale_list")
-            .scrollable(true),
-    )
+private fun languagesList() = UiScrollable(UiSelector().resourceId("$packageName:id/locale_list").scrollable(true))
 
 private fun language(name: String) = mDevice.findObject(UiSelector().text(name))
 
-private fun searchBar() =
-    mDevice.findObject(UiSelector().resourceId("$packageName:id/search_src_text"))
+private fun searchBar() = mDevice.findObject(UiSelector().resourceId("$packageName:id/search_src_text"))

@@ -10,10 +10,7 @@ interface GroupableRadioButton {
     fun addToRadioGroup(radioButton: GroupableRadioButton)
 }
 
-/**
- * Connect all the given radio buttons into a group,
- * so that when one radio is checked the others are unchecked.
- */
+/** Connect all the given radio buttons into a group, so that when one radio is checked the others are unchecked. */
 fun addToRadioGroup(vararg radios: GroupableRadioButton) {
     for (i in 0..radios.lastIndex) {
         for (j in (i + 1)..radios.lastIndex) {

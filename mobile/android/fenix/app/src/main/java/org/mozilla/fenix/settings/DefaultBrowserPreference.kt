@@ -12,7 +12,9 @@ import com.google.android.material.materialswitch.MaterialSwitch
 import mozilla.components.support.utils.Browsers
 import org.mozilla.fenix.R
 
-class DefaultBrowserPreference @JvmOverloads constructor(
+class DefaultBrowserPreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : Preference(context, attrs) {

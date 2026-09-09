@@ -17,15 +17,10 @@ import org.mozilla.geckoview.GeckoPreferenceController.PREF_TYPE_INT
 import org.mozilla.geckoview.GeckoPreferenceController.PREF_TYPE_STRING
 import org.mozilla.geckoview.GeckoPreferenceController.SetGeckoPreference
 
-/**
- * Utility file for preferences functions related to the Gecko implementation.
- */
+/** Utility file for preferences functions related to the Gecko implementation. */
 object GeckoPreferencesUtils {
 
-    /**
-     * Convenience method for mapping an Android Components [Branch]
-     * into the corresponding GeckoView branch
-     */
+    /** Convenience method for mapping an Android Components [Branch] into the corresponding GeckoView branch */
     @OptIn(ExperimentalGeckoViewApi::class)
     fun Branch.intoGeckoBranch(): Int {
         return when (this) {
@@ -34,10 +29,7 @@ object GeckoPreferencesUtils {
         }
     }
 
-    /**
-     * Convenience method for mapping a Gecko preference type
-     * into the corresponding AC [BrowserPrefType]
-     */
+    /** Convenience method for mapping a Gecko preference type into the corresponding AC [BrowserPrefType] */
     @OptIn(ExperimentalGeckoViewApi::class)
     fun Int.intoBrowserPrefType(): BrowserPrefType {
         return when (this) {
@@ -48,10 +40,7 @@ object GeckoPreferencesUtils {
         }
     }
 
-    /**
-     * Convenience method for mapping a GeckoView [GeckoPreference]
-     * into an Android Components [BrowserPreference].
-     */
+    /** Convenience method for mapping a GeckoView [GeckoPreference] into an Android Components [BrowserPreference]. */
     @OptIn(ExperimentalGeckoViewApi::class)
     fun GeckoPreference<*>.intoBrowserPreference(): BrowserPreference<*> {
         return BrowserPreference(
@@ -65,14 +54,14 @@ object GeckoPreferencesUtils {
     }
 
     /**
-     * Convenience method for mapping an Android Component [SetBrowserPreference] into
-     * a GeckoView [SetGeckoPreference]. May throw under unexpected conditions.
+     * Convenience method for mapping an Android Component [SetBrowserPreference] into a GeckoView [SetGeckoPreference].
+     * May throw under unexpected conditions.
      */
     @OptIn(ExperimentalGeckoViewApi::class)
     fun SetBrowserPreference<*>.intoSetGeckoPreference(): SetGeckoPreference<*> =
         when (this.value) {
             is String -> {
-                 SetGeckoPreference.setStringPref(
+                SetGeckoPreference.setStringPref(
                     this.pref,
                     this.value as String,
                     this.branch.intoGeckoBranch(),
@@ -80,7 +69,7 @@ object GeckoPreferencesUtils {
             }
 
             is Int -> {
-                 SetGeckoPreference.setIntPref(
+                SetGeckoPreference.setIntPref(
                     this.pref,
                     this.value as Int,
                     this.branch.intoGeckoBranch(),
@@ -98,7 +87,7 @@ object GeckoPreferencesUtils {
                 // [SetBrowserPreference] should restrict this from ever actually occurring.
                 throw UnsupportedOperationException(
                     "Should only ever set browser preferences of type String, Int, and Boolean! " +
-                    "Trying to set a Float preference? Convert it to a String first.",
+                        "Trying to set a Float preference? Convert it to a String first."
                 )
             }
         }

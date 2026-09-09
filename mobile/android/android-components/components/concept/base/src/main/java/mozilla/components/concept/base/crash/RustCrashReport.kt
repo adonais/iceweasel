@@ -7,11 +7,10 @@ package mozilla.components.concept.base.crash
 /**
  * Crash report for rust errors
  *
- * We implement this on exception classes that correspond to Rust errors to
- * customize how the crash reports look.
+ * We implement this on exception classes that correspond to Rust errors to customize how the crash reports look.
  *
- * CrashReporting implementors should test if exceptions implement this
- * interface.  If so, they should try to customize their crash reports to match.
+ * CrashReporting implementors should test if exceptions implement this interface. If so, they should try to customize
+ * their crash reports to match.
  */
 interface RustCrashReport {
     val typeName: String

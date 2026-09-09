@@ -127,8 +127,8 @@ void DisableSensorNotifications(SensorType aSensor) {
   }
   // If all sensors are disabled, cancel the update timer.
   if (sUpdateTimer) {
-    if (std::all_of(std::begin(sActiveSensors), std::end(sActiveSensors),
-                    [](bool v) { return v; })) {
+    if (std::none_of(std::begin(sActiveSensors), std::end(sActiveSensors),
+                     [](bool v) { return v; })) {
       sUpdateTimer->Cancel();
       NS_RELEASE(sUpdateTimer);
     }

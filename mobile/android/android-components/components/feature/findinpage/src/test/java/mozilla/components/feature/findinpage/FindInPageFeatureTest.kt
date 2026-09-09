@@ -117,9 +117,10 @@ class FindInPageFeatureTest {
 
         var lambdaInvoked = false
 
-        val feature = FindInPageFeature(BrowserStore(), mock(), mock()) {
-            lambdaInvoked = true
-        }
+        val feature =
+            FindInPageFeature(BrowserStore(), mock(), mock()) {
+                lambdaInvoked = true
+            }
 
         feature.presenter = presenter
         feature.interactor = interactor

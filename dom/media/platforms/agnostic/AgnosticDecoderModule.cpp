@@ -15,20 +15,14 @@ namespace mozilla {
 
 enum class DecoderType {
   AV1,
-  Opus,
-  Vorbis,
   VPX,
-  Wave,
 };
 
 static bool IsAvailableInDefault(DecoderType type) {
   switch (type) {
     case DecoderType::AV1:
       return StaticPrefs::media_av1_enabled();
-    case DecoderType::Opus:
-    case DecoderType::Vorbis:
     case DecoderType::VPX:
-    case DecoderType::Wave:
       return true;
     default:
       return false;
@@ -39,41 +33,15 @@ static bool IsAvailableInRdd(DecoderType type) {
   switch (type) {
     case DecoderType::AV1:
       return StaticPrefs::media_av1_enabled();
-    case DecoderType::Opus:
-      return StaticPrefs::media_rdd_opus_enabled();
-    case DecoderType::Vorbis:
-#if defined(__MINGW32__)
-      // If this is a MinGW build we need to force AgnosticDecoderModule to
-      // handle the decision to support Vorbis decoding (instead of
-      // RDD/RemoteDecoderModule) because of Bug 1597408 (Vorbis decoding on
-      // RDD causing sandboxing failure on MinGW-clang).  Typically this
-      // would be dealt with using defines in StaticPrefList.yaml, but we
-      // must handle it here because of Bug 1598426 (the __MINGW32__ define
-      // isn't supported in StaticPrefList.yaml).
-      return false;
-#else
-      return StaticPrefs::media_rdd_vorbis_enabled();
-#endif
     case DecoderType::VPX:
       return StaticPrefs::media_rdd_vpx_enabled();
-    case DecoderType::Wave:
-      return StaticPrefs::media_rdd_wav_enabled();
     default:
       return false;
   }
 }
 
-static bool IsAvailableInUtility(DecoderType type) {
-  switch (type) {
-    case DecoderType::Opus:
-    case DecoderType::Vorbis:
-    case DecoderType::Wave:
-      return true;
-    // Others are video codecs, don't take care of them
-    default:
-      return false;
-  }
-}
+// The utility process only decodes audio, which this module no longer handles.
+static bool IsAvailableInUtility(DecoderType) { return false; }
 
 // Checks if decoder is available in the current process
 static bool IsAvailable(DecoderType type) {

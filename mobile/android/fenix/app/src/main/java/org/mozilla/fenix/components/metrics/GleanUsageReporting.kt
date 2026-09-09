@@ -5,15 +5,13 @@
 package org.mozilla.fenix.components.metrics
 
 import android.os.Build
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.GleanMetrics.Usage
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
 
-/**
- * Makes the glean calls we need to manage the usage reporting ping.
- */
+/** Makes the glean calls we need to manage the usage reporting ping. */
 class GleanUsageReporting : GleanUsageReportingApi {
 
     override fun setEnabled(enabled: Boolean) {

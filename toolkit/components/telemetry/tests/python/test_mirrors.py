@@ -40,12 +40,10 @@ MIRROR_TYPES = {
 WEAKER_EVENT_COMPATIBILITY_PROBES = [
     "security.ui.protectionspopup#click",
     "intl.ui.browserLanguage#action",
-    "privacy.ui.fpp#click",
     "slow_script_warning#shown",
     "pwmgr#mgmt_interaction",
     "relay_integration#popup_option",
     "relay_integration#mask_panel",
-    "security.ui.certerror#click",
     "security.ui.certerror#load",
 ]
 

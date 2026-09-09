@@ -7,9 +7,9 @@
 
 @layer tokens-foundation, tokens-browser-theme, tokens-foundation-brand, tokens-foundation-nova, tokens-browser-theme-nova, tokens-foundation-brand-nova, tokens-prefers-contrast, tokens-prefers-contrast-nova, tokens-forced-colors, tokens-forced-colors-nova;
 
-@layer tokens-foundation {
-  :root,
-  :host {
+:root,
+:host {
+  @layer tokens-foundation {
     --tab-attention-dot-color: var(--color-accent-attention);
     --tab-background-color-hover: color-mix(in srgb, currentColor 11%, transparent);
     --tab-background-color-selected: var(--toolbar-background-color);
@@ -26,11 +26,11 @@
     --tab-group-cyan-invert: light-dark(var(--color-cyan-10), var(--color-cyan-50));
     --tab-group-cyan-text: light-dark(var(--color-white), var(--color-cyan-60));
     --tab-group-cyan-text-invert: light-dark(var(--color-cyan-60), var(--color-white));
-    --tab-group-gray: light-dark(var(--color-gray-55), var(--color-gray-0));
-    --tab-group-gray-hover: light-dark(var(--color-gray-65), var(--color-gray-10));
-    --tab-group-gray-invert: light-dark(var(--color-gray-0), var(--color-gray-55));
-    --tab-group-gray-text: light-dark(var(--color-white), var(--color-gray-65));
-    --tab-group-gray-text-invert: light-dark(var(--color-gray-65), var(--color-white));
+    --tab-group-gray: light-dark(var(--color-gray-55), var(--color-gray-40));
+    --tab-group-gray-hover: light-dark(var(--color-gray-65), var(--color-gray-50));
+    --tab-group-gray-invert: light-dark(var(--color-gray-40), var(--color-gray-55));
+    --tab-group-gray-text: light-dark(var(--color-white), var(--color-gray-90));
+    --tab-group-gray-text-invert: light-dark(var(--color-gray-90), var(--color-white));
     --tab-group-green: light-dark(var(--color-green-50), var(--color-green-10));
     --tab-group-green-hover: light-dark(var(--color-green-60), var(--color-green-20));
     --tab-group-green-invert: light-dark(var(--color-green-10), var(--color-green-50));
@@ -80,36 +80,16 @@
     --tab-vertical-block-margin: var(--dimension-2);
     --tab-vertical-inline-padding: var(--space-medium);
   }
-}
 
-/* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-@layer tokens-prefers-contrast {
-  @media (prefers-contrast) {
-    :root,
-    :host {
+  @layer tokens-prefers-contrast {
+    @media (prefers-contrast) {
       --tab-hover-outline-color: currentColor;
       --tab-selected-outline-color: currentColor;
     }
   }
-}
 
-/* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-@layer tokens-browser-theme {
-  @media not ((forced-colors) or (-moz-native-theme)) {
-    :root:is([theme-in-app], :not([lwtheme])),
-    :host(.anonymous-content-host) {
-      --tab-background-color-selected: light-dark(var(--color-white), rgba(106, 106, 120, 0.7));
-      --tab-selected-textcolor: light-dark(rgb(21, 20, 26), var(--color-white));
-    }
-  }
-}
-
-@media -moz-pref("browser.nova.enabled") {
-  @layer tokens-foundation-nova {
-    :root,
-    :host {
+  @media -moz-pref("browser.nova.enabled") {
+    @layer tokens-foundation-nova {
       --tab-background-color-hover: color-mix(in srgb, currentColor 17%, transparent);
       --tab-background-color-selected: var(--toolbar-background-color);
       --tab-border-color-accent: linear-gradient(96deg, var(--tab-border-color-selected-leading) 20.68%, var(--tab-border-color-selected-trailing) 79.34%);
@@ -145,26 +125,28 @@
       --tab-margin-block: 6px;
       --tab-outline-offset: -1px;
     }
-  }
 
-  /* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-  @layer tokens-forced-colors-nova {
-    @media (forced-colors) {
-      :root,
-      :host {
+    @layer tokens-forced-colors-nova {
+      @media (forced-colors) {
         --tab-border-color-selected-leading: var(--border-color);
         --tab-border-color-selected-trailing: var(--border-color);
       }
     }
   }
+}
 
-  /* Bug 1879900: Can't nest media queries inside of :host, :root selector
-   until Bug 1879349 lands */
-  @layer tokens-browser-theme-nova {
+:root:is([theme-in-app], :not([lwtheme])),
+:host(.anonymous-content-host) {
+  @layer tokens-browser-theme {
     @media not ((forced-colors) or (-moz-native-theme)) {
-      :root:is([theme-in-app], :not([lwtheme])),
-      :host(.anonymous-content-host) {
+      --tab-background-color-selected: light-dark(var(--color-white), rgba(106, 106, 120, 0.7));
+      --tab-selected-textcolor: light-dark(rgb(21, 20, 26), var(--color-white));
+    }
+  }
+
+  @media -moz-pref("browser.nova.enabled") {
+    @layer tokens-browser-theme-nova {
+      @media not ((forced-colors) or (-moz-native-theme)) {
         --tab-background-color-hover: var(--toolbarbutton-background-color-hover);
         --tab-background-color-selected: var(--background-color-box);
       }

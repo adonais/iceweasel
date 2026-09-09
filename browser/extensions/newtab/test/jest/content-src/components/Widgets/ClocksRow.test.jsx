@@ -61,6 +61,36 @@ describe("<ClocksRow>", () => {
     expect(container.querySelector(".clocks-city").textContent).toBe("NYC");
   });
 
+  it("renders the localized curated name resolved from cityId", () => {
+    const { container } = renderRow({
+      clock: {
+        timeZone: "Europe/Berlin",
+        city: "Munich",
+        cityId: "de-munich",
+        label: null,
+        labelColor: null,
+      },
+      curatedNames: { "de-munich": "München" },
+      shouldAbbreviate: false,
+    });
+    expect(container.querySelector(".clocks-city").textContent).toBe("München");
+  });
+
+  it("abbreviates a curated clock via cityId even when localized", () => {
+    const { container } = renderRow({
+      clock: {
+        timeZone: "Europe/Berlin",
+        city: "Munich",
+        cityId: "de-munich",
+        label: null,
+        labelColor: null,
+      },
+      curatedNames: { "de-munich": "München" },
+      shouldAbbreviate: true,
+    });
+    expect(container.querySelector(".clocks-city").textContent).toBe("MUC");
+  });
+
   it("renders the label chip only when showLabel is true AND clock.label is set", () => {
     const { container: withChip } = renderRow({
       clock: { timeZone: "Europe/Berlin", label: "Home", labelColor: "cyan" },

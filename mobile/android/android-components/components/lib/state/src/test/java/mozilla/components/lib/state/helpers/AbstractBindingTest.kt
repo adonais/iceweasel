@@ -21,10 +21,11 @@ class AbstractBindingTest {
 
     @Test
     fun `binding onState is invoked when a flow is created`() {
-        val store = Store(
-            TestState(counter = 0),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 0),
+                ::reducer,
+            )
 
         val binding = TestBinding(store)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -39,10 +40,11 @@ class AbstractBindingTest {
 
     @Test
     fun `binding has no state changes when only stop is invoked`() {
-        val store = Store(
-            TestState(counter = 0),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 0),
+                ::reducer,
+            )
 
         val binding = TestBinding(store)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -57,20 +59,22 @@ class AbstractBindingTest {
 
     @Test
     fun `binding does not get state updates after stopped`() {
-        val store = Store(
-            TestState(counter = 0),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 0),
+                ::reducer,
+            )
 
         var counter = 0
 
-        val binding = TestBinding(store) {
-            counter++
-            // After we stop, we shouldn't get updates for the third action dispatched.
-            if (counter >= 3) {
-                fail()
+        val binding =
+            TestBinding(store) {
+                counter++
+                // After we stop, we shouldn't get updates for the third action dispatched.
+                if (counter >= 3) {
+                    fail()
+                }
             }
-        }
         testDispatcher.scheduler.advanceUntilIdle()
 
         store.dispatch(TestAction.IncrementAction)
@@ -91,6 +95,7 @@ class AbstractBindingTest {
         private val onStateUpdated: (TestState) -> Unit = {},
     ) : AbstractBinding<TestState>(store, testDispatcher) {
         var invoked = false
+
         override suspend fun onState(flow: Flow<TestState>) {
             invoked = true
             flow.collect { onStateUpdated(it) }

@@ -6,7 +6,6 @@
 
 #include "frontend/BytecodeEmitter.h"  // BytecodeEmitter
 #include "frontend/EmitterScope.h"     // EmitterScope
-#include "frontend/IfEmitter.h"        // InternalIfEmitter
 #include "vm/CompletionKind.h"         // CompletionKind
 #include "vm/Opcodes.h"                // JSOp
 
@@ -18,7 +17,6 @@ ForOfLoopControl::ForOfLoopControl(BytecodeEmitter* bce, int32_t iterDepth,
                                    IteratorKind iterKind)
     : LoopControl(bce, StatementKind::ForOfLoop),
       iterDepth_(iterDepth),
-      numYieldsAtBeginCodeNeedingIterClose_(UINT32_MAX),
       selfHostedIter_(selfHostedIter),
       iterKind_(iterKind) {}
 
@@ -29,9 +27,6 @@ bool ForOfLoopControl::emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce) {
   if (!tryCatch_->emitTry()) {
     return false;
   }
-
-  MOZ_ASSERT(numYieldsAtBeginCodeNeedingIterClose_ == UINT32_MAX);
-  numYieldsAtBeginCodeNeedingIterClose_ = bce->bytecodeSection().numYields();
 
   return true;
 }
@@ -97,70 +92,11 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
     return false;
   }
 
-  // If any yields were emitted, then this for-of loop is inside a star
-  // generator and must handle the case of Generator.return. Like in
-  // yield*, it is handled with a finally block. If the generator is
-  // closing, then the exception/resumeindex value (third value on
-  // the stack) will be a magic JS_GENERATOR_CLOSING value.
-  // TODO: Refactor this to eliminate the swaps.
-  uint32_t numYieldsEmitted = bce->bytecodeSection().numYields();
-  if (numYieldsEmitted > numYieldsAtBeginCodeNeedingIterClose_) {
-    if (!tryCatch_->emitFinally()) {
-      return false;
-    }
-    //              [stack] ITER ... FVALUE FSTACK FTHROWING
-    InternalIfEmitter ifGeneratorClosing(bce);
-    if (!bce->emitPickN(2)) {
-      //            [stack] ITER ... FSTACK FTHROWING FVALUE
-      return false;
-    }
-    if (!bce->emit1(JSOp::IsGenClosing)) {
-      //            [stack] ITER ... FSTACK FTHROWING FVALUE CLOSING
-      return false;
-    }
-    if (!ifGeneratorClosing.emitThen()) {
-      //            [stack] ITER ... FSTACK FTHROWING FVALUE
-      return false;
-    }
-    if (forOfDisposalEmitter_.isSome()) {
-      if (!bce->emit1(JSOp::Swap)) {
-        //          [stack] ITER ... FSTACK FVALUE FTHROWING
-        return false;
-      }
-      if (!forOfDisposalEmitter_->prepareForForOfIteratorClose()) {
-        //          [stack] ITER ... FSTACK FVALUE FTHROWING
-        return false;
-      }
-      if (!bce->emit1(JSOp::Swap)) {
-        //          [stack] ITER ... FSTACK FTHROWING FVALUE
-        return false;
-      }
-    }
-    if (!bce->emitDupAt(slotFromTop + 1)) {
-      //            [stack] ITER ... FSTACK FTHROWING FVALUE ITER
-      return false;
-    }
-    if (!emitIteratorCloseInInnermostScopeWithTryNote(bce,
-                                                      CompletionKind::Normal)) {
-      //            [stack] ITER ... FSTACK FTHROWING FVALUE
-      return false;
-    }
-    if (!ifGeneratorClosing.emitEnd()) {
-      //            [stack] ITER ... FSTACK FTHROWING FVALUE
-      return false;
-    }
-    if (!bce->emitUnpickN(2)) {
-      //            [stack] ITER ... FVALUE FSTACK FTHROWING
-      return false;
-    }
-  }
-
   if (!tryCatch_->emitEnd()) {
     return false;
   }
 
   tryCatch_.reset();
-  numYieldsAtBeginCodeNeedingIterClose_ = UINT32_MAX;
 
   return true;
 }
@@ -195,6 +131,9 @@ bool ForOfLoopControl::emitIteratorCloseInScope(BytecodeEmitter* bce,
 bool ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(
     BytecodeEmitter* bce, EmitterScope& currentScope, bool isTarget,
     BytecodeOffset* tryNoteStart) {
+  //                [stack] NEXT ITER VALUE
+  MOZ_ASSERT(bce->bytecodeSection().stackDepth() == *nonLocalExitStackDepth());
+
   // Pop unnecessary value from the stack.  Effectively this means
   // leaving try-catch block.  However, the performing IteratorClose can
   // reach the depth for try-catch, and effectively re-enter the

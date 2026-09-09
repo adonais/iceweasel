@@ -6,6 +6,7 @@ package mozilla.components.ui.widgets.behavior
 
 import android.view.View
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
@@ -15,7 +16,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.doReturn
-import kotlin.test.assertIs
 
 @RunWith(AndroidJUnit4::class)
 class EngineViewScrollingBehaviorFactoryTest {
@@ -28,44 +28,52 @@ class EngineViewScrollingBehaviorFactoryTest {
 
     @Test
     fun `GIVEN should use scroll data and dependency is at bottom WHEN building a scrolling behavior THEN return one using scroll data`() {
-        val result = EngineViewScrollingBehaviorFactory(true).build(
-            engineView = engineView,
-            dependency = mock(),
-            dependencyGravity = Bottom,
-        )
+        val result =
+            EngineViewScrollingBehaviorFactory(true)
+                .build(
+                    engineView = engineView,
+                    dependency = mock(),
+                    dependencyGravity = Bottom,
+                )
 
         assertIs<EngineViewScrollingDataBehavior>(result)
     }
 
     @Test
     fun `GIVEN should not use scroll data and dependency is at bottom WHEN building a scrolling behavior THEN return one using scroll gestures`() {
-        val result = EngineViewScrollingBehaviorFactory(false).build(
-            engineView = engineView,
-            dependency = mock(),
-            dependencyGravity = Bottom,
-        )
+        val result =
+            EngineViewScrollingBehaviorFactory(false)
+                .build(
+                    engineView = engineView,
+                    dependency = mock(),
+                    dependencyGravity = Bottom,
+                )
 
         assertIs<EngineViewScrollingGesturesBehavior>(result)
     }
 
     @Test
     fun `GIVEN should use scroll data and dependency is at top WHEN building a scrolling behavior THEN return one using scroll gestures`() {
-        val result = EngineViewScrollingBehaviorFactory(true).build(
-            engineView = engineView,
-            dependency = mock(),
-            dependencyGravity = Top,
-        )
+        val result =
+            EngineViewScrollingBehaviorFactory(true)
+                .build(
+                    engineView = engineView,
+                    dependency = mock(),
+                    dependencyGravity = Top,
+                )
 
         assertIs<EngineViewScrollingGesturesBehavior>(result)
     }
 
     @Test
     fun `GIVEN should not use scroll data and dependency is at top WHEN building a scrolling behavior THEN return one using scroll gestures`() {
-        val result = EngineViewScrollingBehaviorFactory(false).build(
-            engineView = engineView,
-            dependency = mock(),
-            dependencyGravity = Top,
-        )
+        val result =
+            EngineViewScrollingBehaviorFactory(false)
+                .build(
+                    engineView = engineView,
+                    dependency = mock(),
+                    dependencyGravity = Top,
+                )
 
         assertIs<EngineViewScrollingGesturesBehavior>(result)
     }

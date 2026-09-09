@@ -34,6 +34,7 @@ const TEST_DATA = [
 ];
 
 add_task(async function () {
+  await setMockCompatibilityDataset();
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   Services.fog.testResetFOG();
   const { inspector, view } = await openRuleView();

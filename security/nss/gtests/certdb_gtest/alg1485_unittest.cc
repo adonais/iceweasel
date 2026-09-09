@@ -47,7 +47,7 @@ static const AVATestValues kAVATestStrings[] = {
     {"CN=Somebody,L=Set,O=Up,C=US,1=The,2=Bomb", true},
     {"OID.2.5.4.6=😑", true},
     {"2.5.4.6=😑", true},
-    {"OID.moocow=😑", false},      // OIDs must be numeric
+    {"OID.moocow=😑", false},     // OIDs must be numeric
     {"3.2=bad", false},           // OIDs cannot be overly large; 3 is too big
     {"256.257=bad", false},       // Still too big
     {"YO=LO", false},             // Unknown Tag, 'YO'

@@ -102,9 +102,7 @@ private fun DownloadConsentButtons(
     onClickAllow: () -> Unit,
     onClickCancel: () -> Unit,
 ) {
-    Column(
-        modifier = modifier,
-    ) {
+    Column(modifier = modifier) {
         FilledButton(
             modifier = Modifier.fillMaxWidth(),
             onClick = onClickAllow,

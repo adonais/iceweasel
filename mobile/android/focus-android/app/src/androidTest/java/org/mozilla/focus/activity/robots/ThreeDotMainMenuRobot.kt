@@ -48,14 +48,13 @@ class ThreeDotMainMenuRobot {
 
     fun verifyReportSiteIssueButtonExists() {
         // Report Site Issue lazily appears, so we need to wait
-        val reportSiteIssueButton = mDevice.wait(
-            Until.hasObject(
-                By.res("$packageName:id/mozac_browser_menu_menuView").hasDescendant(
-                    By.text("Report broken site…"),
+        val reportSiteIssueButton =
+            mDevice.wait(
+                Until.hasObject(
+                    By.res("$packageName:id/mozac_browser_menu_menuView").hasDescendant(By.text("Report broken site…"))
                 ),
-            ),
-            waitingTime,
-        )
+                waitingTime,
+            )
 
         assertTrue(reportSiteIssueButton)
     }
@@ -90,9 +89,7 @@ class ThreeDotMainMenuRobot {
             interact: SettingsRobot.() -> Unit,
         ): SettingsRobot.Transition {
             mDevice.findObject(UiSelector().text(localizedText)).waitForExists(waitingTime)
-            settingsMenuButton(localizedText)
-                .check(matches(isDisplayed()))
-                .perform(click())
+            settingsMenuButton(localizedText).check(matches(isDisplayed())).perform(click())
 
             SettingsRobot().interact()
             return SettingsRobot.Transition()
@@ -115,9 +112,7 @@ class ThreeDotMainMenuRobot {
         }
 
         fun clickHelpPageLink(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            helpPageMenuLink
-                .check(matches(isDisplayed()))
-                .perform(click())
+            helpPageMenuLink.check(matches(isDisplayed())).perform(click())
 
             BrowserRobot().interact()
             return BrowserRobot.Transition()
@@ -170,69 +165,30 @@ class ThreeDotMainMenuRobot {
 }
 
 private fun settingsMenuButton(localizedText: String = "Settings") =
-    onView(
-        allOf(withText(localizedText), withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)),
-    )
+    onView(allOf(withText(localizedText), withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
 
-private val shareBtn = mDevice.findObject(
-    UiSelector()
-        .description("Share…"),
-)
+private val shareBtn = mDevice.findObject(UiSelector().description("Share…"))
 
-private val addShortcutButton =
-    mDevice.findObject(
-        UiSelector()
-            .text("Add to Shortcuts"),
-    )
+private val addShortcutButton = mDevice.findObject(UiSelector().text("Add to Shortcuts"))
 
-private val reloadButton = mDevice.findObject(
-    UiSelector()
-        .description("Reload website"),
-)
+private val reloadButton = mDevice.findObject(UiSelector().description("Reload website"))
 
-private val stopLoadingButton = mDevice.findObject(
-    UiSelector()
-        .description("Stop loading website"),
-)
+private val stopLoadingButton = mDevice.findObject(UiSelector().description("Stop loading website"))
 
-private val addToHomeButton = mDevice.findObject(
-    UiSelector()
-        .text("Add to Home screen"),
-)
+private val addToHomeButton = mDevice.findObject(UiSelector().text("Add to Home screen"))
 
 private val findInPageButton = onView(withText("Find in Page"))
 
 private val helpPageMenuLink = onView(withText("Help"))
 
-private val openInBtn = mDevice.findObject(
-    UiSelector()
-        .text("Open in…"),
-)
+private val openInBtn = mDevice.findObject(UiSelector().text("Open in…"))
 
-private val openInDialogTitle = mDevice.findObject(
-    UiSelector()
-        .text("Open in…"),
-)
+private val openInDialogTitle = mDevice.findObject(UiSelector().text("Open in…"))
 
-private val openWithList = mDevice.findObject(
-    UiSelector()
-        .resourceId("$packageName:id/apps"),
-)
+private val openWithList = mDevice.findObject(UiSelector().resourceId("$packageName:id/apps"))
 
-private val requestDesktopSiteButton =
-    mDevice.findObject(
-        UiSelector()
-            .resourceId("$packageName:id/switch_widget"),
-    )
+private val requestDesktopSiteButton = mDevice.findObject(UiSelector().resourceId("$packageName:id/switch_widget"))
 
-private val backButton =
-    mDevice.findObject(
-        UiSelector()
-            .description("Navigate back"),
-    )
+private val backButton = mDevice.findObject(UiSelector().description("Navigate back"))
 
-private val forwardButton =
-    mDevice.findObject(
-        UiSelector()
-            .description("Navigate forward"),
-    )
+private val forwardButton = mDevice.findObject(UiSelector().description("Navigate forward"))

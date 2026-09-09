@@ -2382,34 +2382,13 @@ already_AddRefed<DataSourceSurface> FilterNodeConvolveMatrixSoftware::Render(
   return DoRender(aRect, mKernelUnitLength.width, mKernelUnitLength.height);
 }
 
-static std::vector<Float> ReversedVector(const std::vector<Float>& aVector) {
-  size_t length = aVector.size();
-  std::vector<Float> result(length, 0);
-  for (size_t i = 0; i < length; i++) {
-    result[length - 1 - i] = aVector[i];
-  }
-  return result;
-}
+static Float MaxResultAbs(const std::vector<Float>& aVector, Float aBias) {
+  std::array results{aBias, -aBias};
 
-static std::vector<Float> ScaledVector(const std::vector<Float>& aVector,
-                                       Float aDivisor) {
-  size_t length = aVector.size();
-  std::vector<Float> result(length, 0);
-  for (size_t i = 0; i < length; i++) {
-    result[i] = aVector[i] / aDivisor;
+  for (const auto& value : aVector) {
+    results[std::signbit(value)] += std::abs(value);
   }
-  return result;
-}
-
-static Float MaxVectorSum(const std::vector<Float>& aVector) {
-  Float sum = 0;
-  size_t length = aVector.size();
-  for (size_t i = 0; i < length; i++) {
-    if (aVector[i] > 0) {
-      sum += aVector[i];
-    }
-  }
-  return sum;
+  return std::max(results[0], results[1]);
 }
 
 // Returns shiftL and shiftR in such a way that
@@ -2470,28 +2449,34 @@ already_AddRefed<DataSourceSurface> FilterNodeConvolveMatrixSoftware::DoRender(
     return nullptr;
   }
 
-  IntPoint offset = aRect.TopLeft() - srcRect.TopLeft();
-
   DataSourceSurface::ScopedMap sourceMap(input, DataSourceSurface::READ);
   DataSourceSurface::ScopedMap targetMap(target, DataSourceSurface::WRITE);
   if (MOZ2D_WARN_IF(!sourceMap.IsMapped() || !targetMap.IsMapped())) {
     return nullptr;
   }
 
-  uint8_t* sourceData =
-      DataAtOffset(input, sourceMap.GetMappedSurface(), offset);
-  int32_t sourceStride = sourceMap.GetStride();
-  uint8_t* sourceBegin = sourceMap.GetData();
-  uint8_t* sourceEnd = sourceBegin + sourceStride * input->GetSize().height;
-  uint8_t* targetData = targetMap.GetData();
-  int32_t targetStride = targetMap.GetStride();
-
-  // Why exactly are we reversing the kernel?
-  std::vector<Float> kernel = ReversedVector(mKernelMatrix);
-  kernel = ScaledVector(kernel, mDivisor);
-  Float maxResultAbs = std::max(MaxVectorSum(kernel) + mBias,
-                                MaxVectorSum(ScaledVector(kernel, -1)) - mBias);
-  maxResultAbs = std::max(maxResultAbs, 1.0f);
+  std::vector<Float> kernel(mKernelMatrix.size());
+  // In the formulas SVG uses, the values in the kernel matrix are applied such
+  // that the kernel matrix is rotated 180 degrees relative to the source and
+  // destination images in order to match convolution theory as described in
+  // many computer graphics textbooks.
+  std::reverse_copy(mKernelMatrix.begin(), mKernelMatrix.end(), kernel.begin());
+  if (mDivisor != 1.0f) {
+    for (auto& value : kernel) {
+      value /= mDivisor;
+    }
+  }
+  static constexpr float kMaxScaledKernelMatrixValue = 1e6f;
+  for (const auto& value : kernel) {
+    if (std::abs(value) > kMaxScaledKernelMatrixValue) {
+      return nullptr;
+    }
+  }
+  static constexpr float kMaxBiasValue = 1e6f;
+  if (std::abs(mBias) > kMaxBiasValue) {
+    return nullptr;
+  }
+  Float maxResultAbs = std::max(MaxResultAbs(kernel, mBias), 1.0f);
 
   double idealFactor = INT32_MAX / 2.0 / maxResultAbs / 255.0 * 0.999;
   MOZ_ASSERT(255.0 * maxResultAbs * idealFactor <= INT32_MAX / 2.0,
@@ -2502,17 +2487,28 @@ already_AddRefed<DataSourceSurface> FilterNodeConvolveMatrixSoftware::DoRender(
   MOZ_ASSERT(255.0 * maxResultAbs * factorFromShifts <= INT32_MAX / 2.0,
              "badly chosen float-to-int scale");
 
-  auto intKernel = MakeUnique<int32_t[]>(kernel.size());
-  for (size_t i = 0; i < kernel.size(); i++) {
-    intKernel[i] = NS_lround(kernel[i] * factorFromShifts);
+  std::vector<int32_t> intKernel(kernel.size());
+  auto it = intKernel.begin();
+  for (const auto& value : kernel) {
+    *it++ = NS_lround(value * factorFromShifts);
   }
   int32_t bias = NS_lround(mBias * 255 * factorFromShifts);
+
+  IntPoint offset = aRect.TopLeft() - srcRect.TopLeft();
+
+  uint8_t* sourceData =
+      DataAtOffset(input, sourceMap.GetMappedSurface(), offset);
+  int32_t sourceStride = sourceMap.GetStride();
+  uint8_t* sourceBegin = sourceMap.GetData();
+  uint8_t* sourceEnd = sourceBegin + sourceStride * input->GetSize().height;
+  uint8_t* targetData = targetMap.GetData();
+  int32_t targetStride = targetMap.GetStride();
 
   for (int32_t y = 0; y < aRect.Height(); y++) {
     for (int32_t x = 0; x < aRect.Width(); x++) {
       ConvolvePixel(sourceData, targetData, aRect.Width(), aRect.Height(),
                     sourceStride, targetStride, sourceBegin, sourceEnd, x, y,
-                    intKernel.get(), bias, shiftL, shiftR, mPreserveAlpha,
+                    intKernel.data(), bias, shiftL, shiftR, mPreserveAlpha,
                     mKernelSize.width, mKernelSize.height, mTarget.x, mTarget.y,
                     aKernelUnitLengthX, aKernelUnitLengthY);
     }

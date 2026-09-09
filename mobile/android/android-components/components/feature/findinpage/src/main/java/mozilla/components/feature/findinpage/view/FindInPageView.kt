@@ -7,13 +7,9 @@ package mozilla.components.feature.findinpage.view
 import android.view.View
 import mozilla.components.browser.state.state.content.FindResultState
 
-/**
- * An interface for views that can display "find in page" results and related UI controls.
- */
+/** An interface for views that can display "find in page" results and related UI controls. */
 interface FindInPageView {
-    /**
-     * Listener to be invoked after the user performs certain actions (e.g. "find next result").
-     */
+    /** Listener to be invoked after the user performs certain actions (e.g. "find next result"). */
     var listener: Listener?
 
     /**
@@ -24,31 +20,27 @@ interface FindInPageView {
      */
     var private: Boolean
 
-    /**
-     * Displays the given [FindResultState] state in the view.
-     */
+    /** Displays the given [FindResultState] state in the view. */
     fun displayResult(result: FindResultState)
 
-    /**
-     * Requests focus for the input element the user can type their query into.
-     */
+    /** Requests focus for the input element the user can type their query into. */
     fun focus()
 
-    /**
-     * Clears the UI state.
-     */
+    /** Clears the UI state. */
     fun clear()
 
-    /**
-     * Casts this [FindInPageView] interface to an actual Android [View] object.
-     */
+    /** Casts this [FindInPageView] interface to an actual Android [View] object. */
     fun asView(): View = (this as View)
 
     interface Listener {
         fun onPreviousResult()
+
         fun onNextResult()
+
         fun onClose()
+
         fun onFindAll(query: String)
+
         fun onClearMatches()
     }
 }

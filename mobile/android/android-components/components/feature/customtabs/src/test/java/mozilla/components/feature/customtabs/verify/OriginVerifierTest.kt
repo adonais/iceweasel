@@ -27,10 +27,11 @@ import org.mockito.MockitoAnnotations.openMocks
 @RunWith(AndroidJUnit4::class)
 class OriginVerifierTest {
 
-    private val androidAsset = AssetDescriptor.Android(
-        packageName = "com.app.name",
-        sha256CertFingerprint = "AA:BB:CC:10:20:30:01:02",
-    )
+    private val androidAsset =
+        AssetDescriptor.Android(
+            packageName = "com.app.name",
+            sha256CertFingerprint = "AA:BB:CC:10:20:30:01:02",
+        )
 
     @Mock private lateinit var packageManager: PackageManagerCompatHelper
 
@@ -60,23 +61,26 @@ class OriginVerifierTest {
     @Test
     fun verifyOrigin() = runTest {
         val verifier = buildVerifier(RELATION_USE_AS_ORIGIN)
-        doReturn(true).`when`(checker).checkRelationship(
-            AssetDescriptor.Web("https://www.example.com"),
-            Relation.USE_AS_ORIGIN,
-            androidAsset,
-        )
+        doReturn(true)
+            .`when`(checker)
+            .checkRelationship(
+                AssetDescriptor.Web("https://www.example.com"),
+                Relation.USE_AS_ORIGIN,
+                androidAsset,
+            )
         assertTrue(verifier.verifyOrigin("https://www.example.com".toUri()))
     }
 
     private fun buildVerifier(relation: Int): OriginVerifier {
-        val verifier = spy(
-            OriginVerifier(
-                "com.app.name",
-                relation,
-                packageManager,
-                checker,
-            ),
-        )
+        val verifier =
+            spy(
+                OriginVerifier(
+                    "com.app.name",
+                    relation,
+                    packageManager,
+                    checker,
+                )
+            )
         doReturn(androidAsset).`when`(verifier).androidAsset
         return verifier
     }

@@ -33,11 +33,12 @@ class NotificationTest {
 
         assertFalse(exists(channelId = NOTIFICATION_CHANNEL_ID))
 
-        val channelData = ChannelData(
-            NOTIFICATION_CHANNEL_ID,
-            android.R.string.ok,
-            NotificationManagerCompat.IMPORTANCE_LOW,
-        )
+        val channelData =
+            ChannelData(
+                NOTIFICATION_CHANNEL_ID,
+                android.R.string.ok,
+                NotificationManagerCompat.IMPORTANCE_LOW,
+            )
 
         val setupChannel: NotificationChannel.() -> Unit = {
             assertFalse(exists(channelId = NOTIFICATION_CHANNEL_ID))
@@ -54,8 +55,7 @@ class NotificationTest {
             assertTrue(channel.lockscreenVisibility == NotificationCompat.VISIBILITY_SECRET)
         }
 
-        val channelId =
-            ensureNotificationChannelExists(testContext, channelData, setupChannel, afterCreatedChannel)
+        val channelId = ensureNotificationChannelExists(testContext, channelData, setupChannel, afterCreatedChannel)
 
         assertTrue(setupChannelWasCalled)
         assertTrue(afterCreatedChannelWasCalled)

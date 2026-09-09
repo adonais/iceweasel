@@ -4,9 +4,7 @@
 
 package mozilla.components.support.test
 
-/**
- * Expects [block] to throw an exception of type [T], and returns the exception.
- */
+/** Expects [block] to throw an exception of type [T], and returns the exception. */
 inline fun <reified T : Throwable> expectException(block: () -> Unit): T =
     try {
         block()

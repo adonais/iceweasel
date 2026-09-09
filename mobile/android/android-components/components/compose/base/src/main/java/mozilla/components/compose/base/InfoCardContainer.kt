@@ -67,18 +67,19 @@ fun ExpandableInfoCardContainer(
     ) {
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier
-                .fillMaxWidth()
-                .semantics { heading() }
-                .clickable(
-                    onClickLabel = if (isExpanded) {
-                        stringResource(R.string.mozac_compose_base_a11y_action_label_collapse)
-                    } else {
-                        stringResource(R.string.mozac_compose_base_a11y_action_label_expand)
-                    },
-                    onClick = onExpandToggleClick,
-                )
-                .padding(defaultCardContentPadding),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .semantics { heading() }
+                    .clickable(
+                        onClickLabel =
+                            if (isExpanded) {
+                                stringResource(R.string.mozac_compose_base_a11y_action_label_collapse)
+                            } else {
+                                stringResource(R.string.mozac_compose_base_a11y_action_label_expand)
+                            },
+                        onClick = onExpandToggleClick,
+                    )
+                    .padding(defaultCardContentPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -86,29 +87,32 @@ fun ExpandableInfoCardContainer(
                 style = AcornTheme.typography.headline8,
             )
 
-            val chevronDrawable = if (isExpanded) {
-                iconsR.drawable.mozac_ic_chevron_up_20
-            } else {
-                iconsR.drawable.mozac_ic_chevron_down_20
-            }
+            val chevronDrawable =
+                if (isExpanded) {
+                    iconsR.drawable.mozac_ic_chevron_up_20
+                } else {
+                    iconsR.drawable.mozac_ic_chevron_down_20
+                }
 
             Icon(
                 painter = painterResource(id = chevronDrawable),
-                contentDescription = if (isExpanded) {
-                    stringResource(R.string.mozac_compose_base_a11y_state_label_expanded)
-                } else {
-                    stringResource(R.string.mozac_compose_base_a11y_state_label_collapsed)
-                },
+                contentDescription =
+                    if (isExpanded) {
+                        stringResource(R.string.mozac_compose_base_a11y_state_label_expanded)
+                    } else {
+                        stringResource(R.string.mozac_compose_base_a11y_state_label_collapsed)
+                    },
             )
         }
 
         AnimatedVisibility(visible = isExpanded) {
             Box(
-                modifier = Modifier.padding(
-                    start = defaultCardContentPadding,
-                    end = defaultCardContentPadding,
-                    bottom = defaultCardContentPadding,
-                ),
+                modifier =
+                    Modifier.padding(
+                        start = defaultCardContentPadding,
+                        end = defaultCardContentPadding,
+                        bottom = defaultCardContentPadding,
+                    )
             ) {
                 content()
             }
@@ -141,9 +145,7 @@ fun InfoCardContainer(
         elevation = CardDefaults.cardElevation(defaultElevation = elevation),
         modifier = modifier,
     ) {
-        Column(
-            modifier = Modifier.padding(contentPadding),
-        ) {
+        Column(modifier = Modifier.padding(contentPadding)) {
             content()
         }
     }
@@ -157,9 +159,7 @@ private fun InfoCardContainerPreview() {
             Column(modifier = Modifier.padding(16.dp)) {
                 var isExpanded by remember { mutableStateOf(true) }
 
-                InfoCardContainer(
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
+                InfoCardContainer(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = "Info Check Card Content",
                         style = AcornTheme.typography.headline8,

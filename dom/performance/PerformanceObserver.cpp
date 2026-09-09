@@ -5,6 +5,7 @@
 #include "PerformanceObserver.h"
 
 #include "LargestContentfulPaint.h"
+#include "PerformanceContainerTiming.h"
 #include "PerformanceEntry.h"
 #include "PerformanceObserverEntryList.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -209,6 +210,12 @@ void PerformanceObserver::Observe(const PerformanceObserverInit& aOptions,
         validEntryTypes.AppendElement(kLargestContentfulPaintName);
       }
     }
+    if (StaticPrefs::dom_enable_container_timing()) {
+      if (entryTypes.Contains(kContainerTimingName) &&
+          !validEntryTypes.Contains(kContainerTimingName)) {
+        validEntryTypes.AppendElement(kContainerTimingName);
+      }
+    }
     for (const nsLiteralString& name : kValidTypeNames) {
       if (entryTypes.Contains(name) && !validEntryTypes.Contains(name)) {
         validEntryTypes.AppendElement(name);
@@ -277,6 +284,12 @@ void PerformanceObserver::Observe(const PerformanceObserverInit& aOptions,
       }
     }
 
+    if (StaticPrefs::dom_enable_container_timing()) {
+      if (type == kContainerTimingName) {
+        typeValid = true;
+      }
+    }
+
     if (!typeValid) {
       AutoTArray<nsString, 1> params = {std::move(type)};
       mGlobal->ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
@@ -327,6 +340,10 @@ void PerformanceObserver::GetSupportedEntryTypes(
   nsTArray<nsString> validTypes;
   JS::Rooted<JS::Value> val(aGlobal.Context());
 
+  if (StaticPrefs::dom_enable_container_timing()) {
+    validTypes.AppendElement(kContainerTimingName);
+  }
+
   if (StaticPrefs::dom_enable_event_timing()) {
     for (const nsLiteralString& name : kValidEventTimingNames) {
       validTypes.AppendElement(name);
@@ -336,6 +353,7 @@ void PerformanceObserver::GetSupportedEntryTypes(
   if (StaticPrefs::dom_enable_largest_contentful_paint()) {
     validTypes.AppendElement(u"largest-contentful-paint"_ns);
   }
+
   for (const nsLiteralString& name : kValidTypeNames) {
     validTypes.AppendElement(name);
   }

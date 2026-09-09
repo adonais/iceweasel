@@ -92,3 +92,7 @@ with Files("**"):
 EXTRA_JS_MODULES.backgroundtasks += [
     "BackgroundTask_defaultagent.sys.mjs",
 ]
+
+EXTRA_JS_MODULES += [
+    "DefaultAgentScheduler.sys.mjs",
+]

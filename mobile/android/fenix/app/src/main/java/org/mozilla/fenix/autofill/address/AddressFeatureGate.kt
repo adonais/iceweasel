@@ -4,22 +4,18 @@
 
 package org.mozilla.fenix.autofill.address
 
-import org.mozilla.fenix.debugsettings.addresses.AddressesDebugRegionRepository
 import java.util.Locale
+import org.mozilla.fenix.debugsettings.addresses.AddressesDebugRegionRepository
 
-/**
- * An interface to access whether or not the address feature is enabled.
- */
+/** An interface to access whether or not the address feature is enabled. */
 fun interface AddressFeatureGate {
-    /**
-     * @return a [Boolean] indicating if the address feature is enabled.
-     */
+    /** @return a [Boolean] indicating if the address feature is enabled. */
     fun isAddressFeatureEnabled(): Boolean
 }
 
 /**
- * An implementation of [AddressFeatureGate] that uses the users [Locale] and any enabled regions
- * within a [AddressesDebugRegionRepository].
+ * An implementation of [AddressFeatureGate] that uses the users [Locale] and any enabled regions within a
+ * [AddressesDebugRegionRepository].
  *
  * @param locale the [Locale] to check against.
  * @param debugRepository a [AddressesDebugRegionRepository] to query any extra regions to test against.
@@ -38,6 +34,5 @@ class RegionAddressFeatureGate(
     }
 }
 
-private fun AddressesDebugRegionRepository.isCountryEnabled(country: String): Boolean = getAllEnabledRegions()
-    .map { it.country }
-    .contains(country)
+private fun AddressesDebugRegionRepository.isCountryEnabled(country: String): Boolean =
+    getAllEnabledRegions().map { it.country }.contains(country)

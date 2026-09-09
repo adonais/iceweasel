@@ -358,10 +358,15 @@ add_task(async function test_cookie_permission() {
     let blockRadioButton = pageInfo.document.getElementById("cookie#2");
 
     ok(defaultCheckbox.checked, "The default checkbox should be checked.");
+    ok(!defaultCheckbox.disabled, "The default checkbox should be enabled.");
 
     defaultCheckbox.checked = false;
     defaultCheckbox.dispatchEvent(new Event("command"));
 
+    ok(
+      !blockRadioButton.disabled,
+      "The cookie radios should be enabled once the default is unchecked."
+    );
     is(
       PermissionTestUtils.testPermission(gBrowser.currentURI, "cookie"),
       SitePermissions.ALLOW,

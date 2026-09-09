@@ -7,6 +7,9 @@ package org.mozilla.fenix.wallpapers
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.every
 import io.mockk.mockk
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.fetch.Client
 import mozilla.components.concept.fetch.Request
@@ -18,23 +21,23 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.wallpapers.WallpaperMetadataFetcher.Companion.CURRENT_JSON_VERSION
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
 class WallpaperMetadataFetcherTest {
 
-    private val expectedRequest = Request(
-        url = BuildConfig.WALLPAPER_URL.substringBefore("android") +
-            "metadata/v$CURRENT_JSON_VERSION/wallpapers.json",
-        method = Request.Method.GET,
-        conservative = true,
-    )
+    private val expectedRequest =
+        Request(
+            url =
+                BuildConfig.WALLPAPER_URL.substringBefore("android") +
+                    "metadata/v$CURRENT_JSON_VERSION/wallpapers.json",
+            method = Request.Method.GET,
+            conservative = true,
+        )
     private val mockResponse = mockk<Response>()
-    private val mockClient = mockk<Client> {
-        every { fetch(expectedRequest) } returns mockResponse
-    }
+    private val mockClient =
+        mockk<Client> {
+            every { fetch(expectedRequest) } returns mockResponse
+        }
 
     private lateinit var metadataFetcher: WallpaperMetadataFetcher
 
@@ -45,7 +48,8 @@ class WallpaperMetadataFetcherTest {
 
     @Test
     fun `GIVEN wallpaper metadata WHEN parsed THEN wallpapers have correct ids, text and card colors`() = runTest {
-        val json = """
+        val json =
+            """
             {
                 "last-updated-date": "2022-01-01",
                 "collections": [
@@ -70,7 +74,8 @@ class WallpaperMetadataFetcherTest {
                     }
                 ]
             }
-        """.trimIndent()
+            """
+                .trimIndent()
         every { mockResponse.body } returns Response.Body(json.byteInputStream())
 
         val wallpapers = metadataFetcher.downloadWallpaperList()
@@ -89,7 +94,8 @@ class WallpaperMetadataFetcherTest {
 
     @Test
     fun `GIVEN wallpaper metadata is missing an id WHEN parsed THEN parsing fails`() = runTest {
-        val json = """
+        val json =
+            """
             {
                 "last-updated-date": "2022-01-01",
                 "collections": [
@@ -113,7 +119,8 @@ class WallpaperMetadataFetcherTest {
                     }
                 ]
             }
-        """.trimIndent()
+            """
+                .trimIndent()
         every { mockResponse.body } returns Response.Body(json.byteInputStream())
 
         val wallpapers = metadataFetcher.downloadWallpaperList()
@@ -123,7 +130,8 @@ class WallpaperMetadataFetcherTest {
 
     @Test
     fun `GIVEN wallpaper metadata is missing a text color WHEN parsed THEN parsing fails`() = runTest {
-        val json = """
+        val json =
+            """
             {
                 "last-updated-date": "2022-01-01",
                 "collections": [
@@ -147,7 +155,8 @@ class WallpaperMetadataFetcherTest {
                     }
                 ]
             }
-        """.trimIndent()
+            """
+                .trimIndent()
         every { mockResponse.body } returns Response.Body(json.byteInputStream())
 
         val wallpapers = metadataFetcher.downloadWallpaperList()
@@ -157,7 +166,8 @@ class WallpaperMetadataFetcherTest {
 
     @Test
     fun `GIVEN wallpaper metadata is missing a card color WHEN parsed THEN parsing fails`() = runTest {
-        val json = """
+        val json =
+            """
             {
                 "last-updated-date": "2022-01-01",
                 "collections": [
@@ -180,7 +190,8 @@ class WallpaperMetadataFetcherTest {
                     }
                 ]
             }
-        """.trimIndent()
+            """
+                .trimIndent()
         every { mockResponse.body } returns Response.Body(json.byteInputStream())
 
         val wallpapers = metadataFetcher.downloadWallpaperList()
@@ -191,7 +202,8 @@ class WallpaperMetadataFetcherTest {
     @Test
     fun `GIVEN collection with specified locales WHEN parsed THEN wallpapers includes locales`() = runTest {
         val locales = listOf("en-US", "es-US", "en-CA", "fr-CA")
-        val json = """
+        val json =
+            """
             {
                 "last-updated-date": "2022-01-01",
                 "collections": [
@@ -216,7 +228,8 @@ class WallpaperMetadataFetcherTest {
                     }
                 ]
             }
-        """.trimIndent()
+            """
+                .trimIndent()
         every { mockResponse.body } returns Response.Body(json.byteInputStream())
 
         val wallpapers = metadataFetcher.downloadWallpaperList()
@@ -225,7 +238,7 @@ class WallpaperMetadataFetcherTest {
         assertTrue(
             wallpapers.all {
                 it.collection.availableLocales == locales
-            },
+            }
         )
     }
 
@@ -240,7 +253,8 @@ class WallpaperMetadataFetcherTest {
             set(2022, Calendar.SEPTEMBER, 30)
             time
         }
-        val json = """
+        val json =
+            """
             {
                 "last-updated-date": "2022-01-01",
                 "collections": [
@@ -268,7 +282,8 @@ class WallpaperMetadataFetcherTest {
                     }
                 ]
             }
-        """.trimIndent()
+            """
+                .trimIndent()
         every { mockResponse.body } returns Response.Body(json.byteInputStream())
 
         val wallpapers = metadataFetcher.downloadWallpaperList()
@@ -279,13 +294,14 @@ class WallpaperMetadataFetcherTest {
                 val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
                 formatter.format(startDate) == formatter.format(it.collection.startDate!!) &&
                     formatter.format(endDate) == formatter.format(it.collection.endDate!!)
-            },
+            }
         )
     }
 
     @Test
     fun `GIVEN collection with specified learn more url WHEN parsed THEN wallpapers includes url`() = runTest {
-        val json = """
+        val json =
+            """
             {
                 "last-updated-date": "2022-01-01",
                 "collections": [
@@ -311,7 +327,8 @@ class WallpaperMetadataFetcherTest {
                     }
                 ]
             }
-        """.trimIndent()
+            """
+                .trimIndent()
         every { mockResponse.body } returns Response.Body(json.byteInputStream())
 
         val wallpapers = metadataFetcher.downloadWallpaperList()
@@ -320,7 +337,7 @@ class WallpaperMetadataFetcherTest {
         assertTrue(
             wallpapers.all {
                 it.collection.learnMoreUrl == "https://www.mozilla.org"
-            },
+            }
         )
     }
 
@@ -328,7 +345,8 @@ class WallpaperMetadataFetcherTest {
     fun `GIVEN collection with specified heading and description WHEN parsed THEN wallpapers include them`() = runTest {
         val heading = "A classic firefox experience"
         val description = "Check out these cool foxes, they're adorable and can be your wallpaper"
-        val json = """
+        val json =
+            """
             {
                 "last-updated-date": "2022-01-01",
                 "collections": [
@@ -356,7 +374,8 @@ class WallpaperMetadataFetcherTest {
                     }
                 ]
             }
-        """.trimIndent()
+        """
+                .trimIndent()
         every { mockResponse.body } returns Response.Body(json.byteInputStream())
 
         val wallpapers = metadataFetcher.downloadWallpaperList()
@@ -365,13 +384,14 @@ class WallpaperMetadataFetcherTest {
         assertTrue(
             wallpapers.all {
                 it.collection.heading == heading && it.collection.description == description
-            },
+            }
         )
     }
 
     @Test
     fun `GIVEN string fields with null values WHEN parsed THEN fields are correctly null`() = runTest {
-        val json = """
+        val json =
+            """
             {
                 "last-updated-date": "2022-01-01",
                 "collections": [
@@ -399,7 +419,8 @@ class WallpaperMetadataFetcherTest {
                     }
                 ]
             }
-        """.trimIndent()
+            """
+                .trimIndent()
         every { mockResponse.body } returns Response.Body(json.byteInputStream())
 
         val wallpapers = metadataFetcher.downloadWallpaperList()
@@ -408,7 +429,7 @@ class WallpaperMetadataFetcherTest {
         assertTrue(
             wallpapers.all {
                 it.collection.heading == null && it.collection.description == null
-            },
+            }
         )
     }
 }

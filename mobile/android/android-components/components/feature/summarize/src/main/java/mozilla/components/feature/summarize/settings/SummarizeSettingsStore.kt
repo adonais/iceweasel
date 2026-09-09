@@ -6,5 +6,4 @@ package mozilla.components.feature.summarize.settings
 
 import mozilla.components.lib.state.Store
 
-typealias SummarizeSettingsStore =
-    Store<SummarizeSettingsState, SummarizeSettingsAction>
+typealias SummarizeSettingsStore = Store<SummarizeSettingsState, SummarizeSettingsAction>

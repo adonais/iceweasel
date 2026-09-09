@@ -25,9 +25,7 @@ import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.android.arch.lifecycle.addObservers
 import org.mozilla.samples.browser.ext.components
 
-/**
- * Fragment used for browsing within an external app, such as for custom tabs and PWAs.
- */
+/** Fragment used for browsing within an external app, such as for custom tabs and PWAs. */
 class ExternalAppBrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     private val customTabsToolbarFeature = ViewBoundFeatureWrapper<CustomTabsToolbarFeature>()
     private val hideToolbarFeature = ViewBoundFeatureWrapper<WebAppHideToolbarFeature>()
@@ -42,61 +40,66 @@ class ExternalAppBrowserFragment : BaseBrowserFragment(), UserInteractionHandler
         val manifest = this.manifest
 
         customTabsToolbarFeature.set(
-            feature = CustomTabsToolbarFeature(
-                components.store,
-                binding.toolbar,
-                sessionId,
-                components.customTabsUseCases,
-                components.menuBuilder,
-                window = activity?.window,
-                closeListener = { activity?.finish() },
-            ),
+            feature =
+                CustomTabsToolbarFeature(
+                    components.store,
+                    binding.toolbar,
+                    sessionId,
+                    components.customTabsUseCases,
+                    components.menuBuilder,
+                    window = activity?.window,
+                    closeListener = { activity?.finish() },
+                ),
             owner = this,
             view = binding.root,
         )
 
         hideToolbarFeature.set(
-            feature = WebAppHideToolbarFeature(
-                components.store,
-                components.customTabsStore,
-                sessionId,
-                manifest,
-                scope = viewLifecycleOwner.lifecycleScope,
-            ) { toolbarVisible ->
-                binding.toolbar.isVisible = toolbarVisible
-            },
+            feature =
+                WebAppHideToolbarFeature(
+                    components.store,
+                    components.customTabsStore,
+                    sessionId,
+                    manifest,
+                    scope = viewLifecycleOwner.lifecycleScope,
+                ) { toolbarVisible ->
+                    binding.toolbar.isVisible = toolbarVisible
+                },
             owner = this,
             view = binding.toolbar,
         )
 
-        val windowFeature = CustomTabWindowFeature(
-            requireActivity(),
-            components.store,
-            sessionId!!,
-        )
+        val windowFeature =
+            CustomTabWindowFeature(
+                requireActivity(),
+                components.store,
+                sessionId!!,
+            )
         lifecycle.addObserver(windowFeature)
 
         if (manifest != null) {
-            activity?.lifecycle?.addObservers(
-                WebAppActivityFeature(
-                    requireActivity(),
-                    components.icons,
-                    manifest,
-                ),
-                ManifestUpdateFeature(
-                    requireContext(),
-                    components.store,
-                    components.webAppShortcutManager,
-                    components.webAppManifestStorage,
-                    sessionId!!,
-                    manifest,
-                ),
-                WebAppContentFeature(
-                    components.store,
-                    sessionId,
-                    manifest,
-                ),
-            )
+            activity
+                ?.lifecycle
+                ?.addObservers(
+                    WebAppActivityFeature(
+                        requireActivity(),
+                        components.icons,
+                        manifest,
+                    ),
+                    ManifestUpdateFeature(
+                        requireContext(),
+                        components.store,
+                        components.webAppShortcutManager,
+                        components.webAppManifestStorage,
+                        sessionId!!,
+                        manifest,
+                    ),
+                    WebAppContentFeature(
+                        components.store,
+                        sessionId,
+                        manifest,
+                    ),
+                )
             viewLifecycleOwner.lifecycle.addObserver(
                 WebAppSiteControlsFeature(
                     context?.applicationContext!!,
@@ -106,7 +109,7 @@ class ExternalAppBrowserFragment : BaseBrowserFragment(), UserInteractionHandler
                     manifest,
                     icons = components.icons,
                     notificationsDelegate = components.notificationsDelegate,
-                ),
+                )
             )
         }
 
@@ -114,21 +117,22 @@ class ExternalAppBrowserFragment : BaseBrowserFragment(), UserInteractionHandler
     }
 
     /**
-     * Calls [onBackPressed] for features in the base class first,
-     * before trying to call the external app [UserInteractionHandler].
+     * Calls [onBackPressed] for features in the base class first, before trying to call the external app
+     * [UserInteractionHandler].
      */
-    override fun onBackPressed(): Boolean =
-        super.onBackPressed() || customTabsToolbarFeature.onBackPressed()
+    override fun onBackPressed(): Boolean = super.onBackPressed() || customTabsToolbarFeature.onBackPressed()
 
     companion object {
         fun create(
             sessionId: String,
             manifest: WebAppManifest?,
-        ) = ExternalAppBrowserFragment().apply {
-            arguments = Bundle().apply {
-                putSessionId(sessionId)
-                putWebAppManifest(manifest)
+        ) =
+            ExternalAppBrowserFragment().apply {
+                arguments =
+                    Bundle().apply {
+                        putSessionId(sessionId)
+                        putWebAppManifest(manifest)
+                    }
             }
-        }
     }
 }

@@ -12,9 +12,7 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Reducer
 import mozilla.components.lib.state.Store
 
-/**
- * [Store] for IP protection feature state.
- */
+/** [Store] for IP protection feature state. */
 class IPProtectionStore(
     initialState: IPProtectionState = IPProtectionState(),
     reducer: Reducer<IPProtectionState, IPProtectionAction> = ::iPProtectionReducer,

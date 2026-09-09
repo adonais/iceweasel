@@ -49,12 +49,8 @@ class TaggedProto {
     __atomic_store_n(&proto, other.proto, __ATOMIC_RELAXED);
   }
 
-  bool operator==(const TaggedProto& other) const {
-    return proto == other.proto;
-  }
-  bool operator!=(const TaggedProto& other) const {
-    return proto != other.proto;
-  }
+  bool operator==(const TaggedProto& other) const = default;
+  bool operator!=(const TaggedProto& other) const = default;
 
   HashNumber hashCode() const;
 

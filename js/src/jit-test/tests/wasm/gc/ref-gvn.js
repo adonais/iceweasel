@@ -913,21 +913,71 @@
   assertEq(a11, null);
   assertEq(wasmGcReadField(b11, 0), 1337);
 }
-{
-  wasmEvalText(`(module
-    (func
-      ref.null any
-      ref.as_non_null
-      drop
-
-      ref.null eq
-      ref.as_non_null
-      drop
-    )
-  )`);
-}
 
 if (getBuildConfiguration("jitspew")) {
+  // GVN should not combine definitions whose GLB is uninhabitable
+  {
+    const code = wasmTextToBinary(`(module
+      (func
+        ref.null any
+        ref.as_non_null
+        drop
+
+        ref.null eq
+        ref.as_non_null
+        drop
+      )
+    )`);
+    const ionJSON = wasmGetIon(code, 0);
+    const unoptimized = wasmIonGetFirstMIRPass(ionJSON);
+    const optimized = wasmIonGetLastMIRPass(ionJSON);
+
+    assertOpcodesInOrder(unoptimized, [
+      "WasmNullConstant", "WasmRefAsNonNull",
+      "WasmNullConstant", "WasmRefAsNonNull",
+    ]);
+    assertOpcodesInOrder(optimized, [
+      "WasmNullConstant", "WasmRefAsNonNull",
+      "!WasmNullConstant", "WasmRefAsNonNull",
+    ]);
+
+    wasmEvalBinary(code);
+  }
+  // GVN should not fold to an uninhabitable definition (even though
+  // uninhabitable definitions are permitted by construction)
+  {
+    const code = wasmTextToBinary(`(module
+      (func (param (ref null none))
+        local.get 0
+        ref.cast anyref ;; this should be folded away, since it is trivial
+        drop
+      )
+      (func (param (ref none))
+        local.get 0
+        ref.cast anyref ;; this should not be folded away, even though (ref none) is a subtype
+        drop
+      )
+    )`);
+    {
+      const ionJSON = wasmGetIon(code, 0);
+      const unoptimized = wasmIonGetFirstMIRPass(ionJSON);
+      const optimized = wasmIonGetLastMIRPass(ionJSON);
+
+      assertOpcodesInOrder(unoptimized, ["WasmParameter", "WasmRefCastAbstract", "WasmReturn"]);
+      assertOpcodesInOrder(optimized, ["WasmParameter", "!WasmRefCastAbstract", "WasmReturn"]);
+    }
+    {
+      const ionJSON = wasmGetIon(code, 1);
+      const unoptimized = wasmIonGetFirstMIRPass(ionJSON);
+      const optimized = wasmIonGetLastMIRPass(ionJSON);
+
+      assertOpcodesInOrder(unoptimized, ["WasmParameter", "WasmRefCastAbstract", "WasmReturn"]);
+      assertOpcodesInOrder(optimized, ["WasmParameter", "WasmRefCastAbstract", "WasmReturn"]);
+    }
+
+    wasmEvalBinary(code);
+  }
+
   // Test type calculations from phis (uses LUB to compute common type for all values)
   {
     const code = wasmTextToBinary(`(module
@@ -1180,5 +1230,89 @@ if (getBuildConfiguration("jitspew")) {
 
     const { test, make } = wasmEvalBinary(code).exports;
     assertEq(test(make()), -1);
+    assertErrorMessage(() => test(null), WebAssembly.RuntimeError, /null/);
   }
+
+  // Uninhabitable types (e.g. (ref none)) are not touched by these
+  // optimizations.
+  {
+    // cast -> cast with (ref none)
+    const code = wasmTextToBinary(`(module
+      (func (param anyref)
+        local.get 0
+        ref.cast nullref
+        drop
+
+        local.get 0
+        ref.cast eqref   ;; will be eliminated
+        drop
+      )
+      (func (param anyref)
+        local.get 0
+        ref.cast (ref none)
+        drop
+
+        local.get 0
+        ref.cast eqref   ;; must not be eliminated
+        drop
+      )
+    )`);
+
+    {
+      const ionJSON = wasmGetIon(code, 0);
+      const unoptimized = wasmIonGetFirstMIRPass(ionJSON);
+      const optimized = wasmIonGetLastMIRPass(ionJSON);
+      assertOpcodesInOrder(unoptimized, ["WasmRefCastAbstract", "WasmRefCastAbstract"]);
+      assertOpcodesInOrder(optimized, ["WasmRefCastAbstract", "!WasmRefCastAbstract"]);
+    }
+    {
+      const ionJSON = wasmGetIon(code, 1);
+      const unoptimized = wasmIonGetFirstMIRPass(ionJSON);
+      const optimized = wasmIonGetLastMIRPass(ionJSON);
+      assertOpcodesInOrder(unoptimized, ["WasmRefCastAbstract", "WasmRefCastAbstract"]);
+      assertOpcodesInOrder(optimized, ["WasmRefCastAbstract", "WasmRefCastAbstract"]);
+    }
+
+    wasmEvalBinary(code);
+  }
+  {
+    // cast -> test with (ref none)
+    const code = wasmTextToBinary(`(module
+      (func (param anyref) (result i32)
+        local.get 0
+        ref.cast nullref
+        drop
+
+        local.get 0
+        ref.test eqref      ;; will be replaced
+      )
+      (func (param anyref) (result i32)
+        local.get 0
+        ref.cast (ref none)
+        drop
+
+        local.get 0
+        ref.test eqref      ;; must not be replaced with constant 1
+      )
+    )`);
+
+    {
+      const ionJSON = wasmGetIon(code, 0);
+      const unoptimized = wasmIonGetFirstMIRPass(ionJSON);
+      const optimized = wasmIonGetLastMIRPass(ionJSON);
+      assertOpcodesInOrder(unoptimized, ["WasmRefCastAbstract", "WasmRefTestAbstract"]);
+      assertOpcodesInOrder(optimized, ["WasmRefCastAbstract", "!WasmRefTestAbstract", "Constant"]);
+    }
+    {
+      const ionJSON = wasmGetIon(code, 1);
+      const unoptimized = wasmIonGetFirstMIRPass(ionJSON);
+      const optimized = wasmIonGetLastMIRPass(ionJSON);
+      assertOpcodesInOrder(unoptimized, ["WasmRefCastAbstract", "WasmRefTestAbstract"]);
+      assertOpcodesInOrder(optimized, ["WasmRefCastAbstract", "WasmRefTestAbstract"]);
+    }
+
+    wasmEvalBinary(code);
+  }
+  // ref.test of (ref none) gets folded into a constant 0 by GVN, so we can't
+  // test it the same way.
 }

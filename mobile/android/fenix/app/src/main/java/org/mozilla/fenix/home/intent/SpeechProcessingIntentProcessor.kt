@@ -19,8 +19,8 @@ import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.widget.VoiceSearchActivity.Companion.SPEECH_PROCESSING
 
 /**
- * The search widget has a microphone button to let users search with their voice.
- * Once the search is complete then a new search should be started.
+ * The search widget has a microphone button to let users search with their voice. Once the search is complete then a
+ * new search should be started.
  */
 class SpeechProcessingIntentProcessor(
     private val activity: HomeActivity,
@@ -30,7 +30,7 @@ class SpeechProcessingIntentProcessor(
     override fun process(intent: Intent, navController: NavController, out: Intent, settings: Settings): Boolean {
         if (
             !intent.hasExtra(SPEECH_PROCESSING) ||
-            intent.extras?.getBoolean(HomeActivity.OPEN_TO_BROWSER_AND_LOAD) != true
+                intent.extras?.getBoolean(HomeActivity.OPEN_TO_BROWSER_AND_LOAD) != true
         ) {
             return false
         }

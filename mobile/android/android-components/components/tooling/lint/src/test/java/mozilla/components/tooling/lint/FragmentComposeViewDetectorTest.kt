@@ -18,8 +18,9 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
 
     override fun getIssues(): List<Issue> = FragmentComposeViewDetector.ISSUES
 
-    private val fragmentStub = kotlin(
-        """
+    private val fragmentStub =
+        kotlin(
+                """
         package androidx.fragment.app
 
         import android.content.Context
@@ -37,11 +38,13 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
 
             fun requireContext(): Context = Context()
         }
-        """,
-    ).indented()
-
-    private val composeViewStub = kotlin(
         """
+            )
+            .indented()
+
+    private val composeViewStub =
+        kotlin(
+                """
         package androidx.compose.ui.platform
 
         import android.content.Context
@@ -56,8 +59,9 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
             object DisposeOnViewTreeLifecycleDestroyed : ViewCompositionStrategy
             object DisposeOnDetachedFromWindow : ViewCompositionStrategy
         }
-        """,
-    ).indented()
+        """
+            )
+            .indented()
 
     private val stubs = arrayOf(fragmentStub, composeViewStub)
 
@@ -67,7 +71,7 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
             .files(
                 *stubs,
                 kotlin(
-                    """
+                        """
                     package test
 
                     import android.os.Bundle
@@ -86,8 +90,9 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
                             return ComposeView(context)
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expect(
@@ -96,7 +101,8 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
                         return ComposeView(context)
                                ~~~~~~~~~~~
                 1 error
-            """.trimIndent(),
+                """
+                    .trimIndent()
             )
     }
 
@@ -106,7 +112,7 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
             .files(
                 *stubs,
                 kotlin(
-                    """
+                        """
                     package test
 
                     import android.os.Bundle
@@ -129,8 +135,9 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
                             }
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expect(
@@ -139,7 +146,8 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
                         return ComposeView(inflater.context).apply {
                                ~~~~~~~~~~~
                 1 error
-            """.trimIndent(),
+                """
+                    .trimIndent()
             )
     }
 
@@ -149,7 +157,7 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
             .files(
                 *stubs,
                 kotlin(
-                    """
+                        """
                     package test
 
                     import android.os.Bundle
@@ -171,8 +179,9 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
                             }
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expect(
@@ -181,7 +190,8 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
                         return ComposeView(inflater.context).apply {
                                ~~~~~~~~~~~
                 0 errors, 1 warning
-            """.trimIndent(),
+                """
+                    .trimIndent()
             )
     }
 
@@ -191,7 +201,7 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
             .files(
                 *stubs,
                 kotlin(
-                    """
+                        """
                     package test
 
                     import android.os.Bundle
@@ -213,17 +223,19 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
                             }
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expect(
                 """
-                    src/test/MyFragment.kt:17: Error: Use content {} to avoid a memory leak caused by missing setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed). [MissingViewCompositionStrategy]
-                            return ComposeView(inflater.context).apply {
-                                   ~~~~~~~~~~~
-                    1 error
-                """.trimIndent(),
+                src/test/MyFragment.kt:17: Error: Use content {} to avoid a memory leak caused by missing setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed). [MissingViewCompositionStrategy]
+                        return ComposeView(inflater.context).apply {
+                               ~~~~~~~~~~~
+                1 error
+                """
+                    .trimIndent()
             )
     }
 
@@ -233,7 +245,7 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
             .files(
                 *stubs,
                 kotlin(
-                    """
+                        """
                     package test
 
                     import android.content.Context
@@ -246,8 +258,9 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
                             return ComposeView(context)
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectClean()
@@ -259,7 +272,7 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
             .files(
                 composeViewStub,
                 kotlin(
-                    """
+                        """
                     package test
 
                     import android.os.Bundle
@@ -277,8 +290,9 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
                             return ComposeView(inflater.context)
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectClean()
@@ -290,7 +304,7 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
             .files(
                 *stubs,
                 kotlin(
-                    """
+                        """
                     package androidx.fragment.compose
 
                     import androidx.compose.ui.platform.ComposeView
@@ -302,10 +316,11 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
                             setContent(content)
                         }
                     }
-                    """,
-                ).indented(),
-                kotlin(
                     """
+                    )
+                    .indented(),
+                kotlin(
+                        """
                     package test
 
                     import android.os.Bundle
@@ -326,8 +341,9 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
                             }
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectClean()
@@ -339,7 +355,7 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
             .files(
                 *stubs,
                 kotlin(
-                    """
+                        """
                     package test
 
                     import android.os.Bundle
@@ -361,19 +377,19 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
                             }
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectClean()
     }
 
     /**
-     * The example code here is a bit contrived. It would actually be good to flag this usage,
-     * because `run {}` is a trivial wrapper and the `ComposeView` is actually returned from `onCreateView()`.
-     * But this is the simplest case to test ignoring returns in lambdas.
-     * And we want to ignore returns in lambdas, because we don't want to accidentally flag something
-     * that isn't really returned from `onCreateView()`.
+     * The example code here is a bit contrived. It would actually be good to flag this usage, because `run {}` is a
+     * trivial wrapper and the `ComposeView` is actually returned from `onCreateView()`. But this is the simplest case
+     * to test ignoring returns in lambdas. And we want to ignore returns in lambdas, because we don't want to
+     * accidentally flag something that isn't really returned from `onCreateView()`.
      */
     @Test
     fun `returning ComposeView from inside a lambda is clean`() {
@@ -381,7 +397,7 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
             .files(
                 *stubs,
                 kotlin(
-                    """
+                        """
                     package test
 
                     import android.os.Bundle
@@ -402,8 +418,9 @@ class FragmentComposeViewDetectorTest : LintDetectorTest() {
                             }
                         }
                     }
-                    """,
-                ).indented(),
+                    """
+                    )
+                    .indented(),
             )
             .run()
             .expectClean()

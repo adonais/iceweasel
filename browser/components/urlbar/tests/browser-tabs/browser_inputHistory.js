@@ -147,7 +147,7 @@ add_task(
       );
       Assert.equal(
         1,
-        result.result.payload.userContextId,
+        result.result.payload.userContext.id,
         "Should use the expected container"
       );
     }

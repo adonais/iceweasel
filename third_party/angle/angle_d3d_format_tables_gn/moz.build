@@ -12,7 +12,6 @@ AllowCompilerWarnings()
 DEFINES["ANGLE_DISABLE_POOL_ALLOC"] = True
 DEFINES["ANGLE_ENABLE_CONTEXT_MUTEX"] = "1"
 DEFINES["ANGLE_ENABLE_D3D11"] = True
-DEFINES["ANGLE_ENABLE_D3D9"] = True
 DEFINES["ANGLE_ENABLE_DEBUG_ANNOTATIONS"] = False
 DEFINES["ANGLE_ENABLE_KEYEDMUTEX"] = True
 DEFINES["ANGLE_ENABLE_SHARE_CONTEXT_LOCK"] = "1"
@@ -20,6 +19,7 @@ DEFINES["ANGLE_IS_WIN"] = True
 DEFINES["ANGLE_PLATFORM_EXPORT"] = ""
 DEFINES["ANGLE_SKIP_DXGI_1_2_CHECK"] = True
 DEFINES["CERT_CHAIN_PARA_HAS_EXTRA_FIELDS"] = True
+DEFINES["EGL_NO_X11"] = True
 DEFINES["LIBANGLE_IMPLEMENTATION"] = True
 DEFINES["NOMINMAX"] = True
 DEFINES["NTDDI_VERSION"] = "0x0A000000"
@@ -59,7 +59,6 @@ OS_LIBS += [
 ]
 
 UNIFIED_SOURCES += [
-    "/third_party/angle/src/libANGLE/renderer/d3d_format.cpp",
     "/third_party/angle/src/libANGLE/renderer/dxgi_format_map_autogen.cpp",
     "/third_party/angle/src/libANGLE/renderer/dxgi_support_table_autogen.cpp"
 ]

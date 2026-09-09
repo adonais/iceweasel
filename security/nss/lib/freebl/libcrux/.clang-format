@@ -1,0 +1,7 @@
+# This is vendored, generated libcrux code (see README.md). It is kept
+# byte-identical to the upstream combined_extraction/c so it can be re-synced and
+# diff-checked verbatim (automation/taskcluster/scripts/run_hacl.sh). Do not
+# reformat it: DisableFormat makes clang-format (and the CI format check in
+# automation/clang-format/run_clang_format.sh) leave this whole subtree alone.
+DisableFormat: true
+SortIncludes: false

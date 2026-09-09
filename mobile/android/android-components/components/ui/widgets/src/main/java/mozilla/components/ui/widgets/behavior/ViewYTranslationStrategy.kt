@@ -11,73 +11,55 @@ import androidx.annotation.VisibleForTesting
 import kotlin.math.max
 import kotlin.math.min
 
-@VisibleForTesting
-internal const val SNAP_ANIMATION_DURATION = 150L
+@VisibleForTesting internal const val SNAP_ANIMATION_DURATION = 150L
 
-/**
- * Helper class with methods for different behaviors for when translating a [View] on the Y axis.
- */
+/** Helper class with methods for different behaviors for when translating a [View] on the Y axis. */
 internal abstract class ViewYTranslationStrategy {
     @VisibleForTesting
-    var animator = ValueAnimator().apply {
-        interpolator = DecelerateInterpolator()
-        duration = SNAP_ANIMATION_DURATION
-    }
+    var animator =
+        ValueAnimator().apply {
+            interpolator = DecelerateInterpolator()
+            duration = SNAP_ANIMATION_DURATION
+        }
 
     /**
-     * Snap the [View] to be collapsed or expanded, depending on whatever state is closer
-     * over a short amount of time.
+     * Snap the [View] to be collapsed or expanded, depending on whatever state is closer over a short amount of time.
      */
     abstract fun snapWithAnimation(view: View)
 
-    /**
-     * Snap the [View] to be collapsed or expanded, depending on whatever state is closer immediately.
-     */
+    /** Snap the [View] to be collapsed or expanded, depending on whatever state is closer immediately. */
     abstract fun snapImmediately(view: View?)
 
-    /**
-     * Translate the [View] to it's full visible height.
-     */
+    /** Translate the [View] to it's full visible height. */
     abstract fun expandWithAnimation(view: View)
 
     /**
-     * Force expanding the [View] depending on the [distance] value that should be translated
-     * cancelling any other translation already in progress.
+     * Force expanding the [View] depending on the [distance] value that should be translated cancelling any other
+     * translation already in progress.
      */
     abstract fun forceExpandWithAnimation(view: View, distance: Float)
 
-    /**
-     * Translate the [View] to it's full 0 visible height.
-     */
+    /** Translate the [View] to it's full 0 visible height. */
     abstract fun collapseWithAnimation(view: View)
 
-    /**
-     * Translate [view] immediately to the specified [distance] amount (positive or negative).
-     */
+    /** Translate [view] immediately to the specified [distance] amount (positive or negative). */
     abstract fun translate(view: View, distance: Float)
 
-    /**
-     * Translate [view] to the indicated [targetTranslationY] vaue over a short amount of time.
-     */
-    open fun animateToTranslationY(view: View, targetTranslationY: Float) = with(animator) {
-        addUpdateListener { view.translationY = it.animatedValue as Float }
-        setFloatValues(view.translationY, targetTranslationY)
-        start()
-    }
+    /** Translate [view] to the indicated [targetTranslationY] vaue over a short amount of time. */
+    open fun animateToTranslationY(view: View, targetTranslationY: Float) =
+        with(animator) {
+            addUpdateListener { view.translationY = it.animatedValue as Float }
+            setFloatValues(view.translationY, targetTranslationY)
+            start()
+        }
 
-    /**
-     * Cancel any translation animations currently in progress.
-     */
+    /** Cancel any translation animations currently in progress. */
     fun cancelInProgressTranslation() = animator.cancel()
 }
 
-/**
- * Helper class containing methods for translating a [View] on the Y axis
- * between 0 and [View.getHeight]
- */
+/** Helper class containing methods for translating a [View] on the Y axis between 0 and [View.getHeight] */
 internal class BottomViewBehaviorStrategy : ViewYTranslationStrategy() {
-    @VisibleForTesting
-    internal var wasLastExpanding = false
+    @VisibleForTesting internal var wasLastExpanding = false
 
     override fun snapWithAnimation(view: View) {
         if (view.translationY >= (view.height / 2f)) {
@@ -92,11 +74,12 @@ internal class BottomViewBehaviorStrategy : ViewYTranslationStrategy() {
             animator.end()
         } else {
             view?.apply {
-                translationY = if (translationY >= height / 2) {
-                    height.toFloat()
-                } else {
-                    0f
-                }
+                translationY =
+                    if (translationY >= height / 2) {
+                        height.toFloat()
+                    } else {
+                        0f
+                    }
             }
         }
     }
@@ -119,8 +102,7 @@ internal class BottomViewBehaviorStrategy : ViewYTranslationStrategy() {
     }
 
     override fun translate(view: View, distance: Float) {
-        view.translationY =
-            max(0f, min(view.height.toFloat(), view.translationY + distance))
+        view.translationY = max(0f, min(view.height.toFloat(), view.translationY + distance))
     }
 
     override fun animateToTranslationY(view: View, targetTranslationY: Float) {
@@ -129,13 +111,9 @@ internal class BottomViewBehaviorStrategy : ViewYTranslationStrategy() {
     }
 }
 
-/**
- * Helper class containing methods for translating a [View] on the Y axis
- * between -[View.getHeight] and 0.
- */
+/** Helper class containing methods for translating a [View] on the Y axis between -[View.getHeight] and 0. */
 internal class TopViewBehaviorStrategy : ViewYTranslationStrategy() {
-    @VisibleForTesting
-    internal var wasLastExpanding = false
+    @VisibleForTesting internal var wasLastExpanding = false
 
     override fun snapWithAnimation(view: View) {
         if (view.translationY >= -(view.height / 2f)) {
@@ -150,11 +128,12 @@ internal class TopViewBehaviorStrategy : ViewYTranslationStrategy() {
             animator.end()
         } else {
             view?.apply {
-                translationY = if (translationY >= -height / 2) {
-                    0f
-                } else {
-                    -height.toFloat()
-                }
+                translationY =
+                    if (translationY >= -height / 2) {
+                        0f
+                    } else {
+                        -height.toFloat()
+                    }
             }
         }
     }
@@ -178,8 +157,7 @@ internal class TopViewBehaviorStrategy : ViewYTranslationStrategy() {
     }
 
     override fun translate(view: View, distance: Float) {
-        view.translationY =
-            min(0f, max(-view.height.toFloat(), view.translationY - distance))
+        view.translationY = min(0f, max(-view.height.toFloat(), view.translationY - distance))
     }
 
     override fun animateToTranslationY(view: View, targetTranslationY: Float) {

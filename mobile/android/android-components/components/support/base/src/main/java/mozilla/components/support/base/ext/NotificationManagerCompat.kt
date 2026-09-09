@@ -21,9 +21,8 @@ fun NotificationManagerCompat.areNotificationsEnabledSafe(): Boolean {
 }
 
 /**
- * If the channel does not exist or is null, this returns false.
- * If the channel exists with importance more than [NotificationManagerCompat.IMPORTANCE_NONE] and
- * notifications are enabled for the app, this returns true.
+ * If the channel does not exist or is null, this returns false. If the channel exists with importance more than
+ * [NotificationManagerCompat.IMPORTANCE_NONE] and notifications are enabled for the app, this returns true.
  *
  * @param channelId the id of the notification channel to check.
  * @return true if the channel is enabled, false otherwise.
@@ -38,9 +37,8 @@ fun NotificationManagerCompat.isNotificationChannelEnabled(channelId: String): B
 }
 
 /**
- * Returns the notification channel with the given [channelId], or null if the channel does not
- * exist, catches any exception that was thrown by
- * [NotificationManagerCompat.getNotificationChannelCompat] and returns null.
+ * Returns the notification channel with the given [channelId], or null if the channel does not exist, catches any
+ * exception that was thrown by [NotificationManagerCompat.getNotificationChannelCompat] and returns null.
  *
  * @param channelId the id of the notification channel to check.
  */

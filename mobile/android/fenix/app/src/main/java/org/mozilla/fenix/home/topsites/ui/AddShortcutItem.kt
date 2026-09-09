@@ -36,13 +36,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.home.topsites.TOP_SITES_FAVICON_CARD_SIZE
 import org.mozilla.fenix.home.topsites.TOP_SITES_ITEM_SIZE
 import org.mozilla.fenix.home.topsites.TopSiteColors
 import org.mozilla.fenix.home.topsites.TopSitesTestTag
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 @Composable
 internal fun AddShortcutItem(
@@ -50,21 +50,21 @@ internal fun AddShortcutItem(
     onClick: () -> Unit,
 ) {
     Box(
-        modifier = Modifier
-            .semantics {
-                testTagsAsResourceId = true
-            }
-            .testTag(TopSitesTestTag.ADD_SHORTCUT_ROOT),
+        modifier =
+            Modifier.semantics {
+                    testTagsAsResourceId = true
+                }
+                .testTag(TopSitesTestTag.ADD_SHORTCUT_ROOT)
     ) {
         Column(
-            modifier = Modifier
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null, // Prevents onClick press/ripple animation
-                    role = Role.Button,
-                    onClick = onClick,
-                )
-                .width(TOP_SITES_ITEM_SIZE.dp),
+            modifier =
+                Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null, // Prevents onClick press/ripple animation
+                        role = Role.Button,
+                        onClick = onClick,
+                    )
+                    .width(TOP_SITES_ITEM_SIZE.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(modifier = Modifier.height(4.dp))
@@ -94,11 +94,11 @@ internal fun AddShortcutItem(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    modifier = Modifier
-                        .semantics {
-                            testTagsAsResourceId = true
-                        }
-                        .testTag(TopSitesTestTag.ADD_SHORTCUT_TITLE),
+                    modifier =
+                        Modifier.semantics {
+                                testTagsAsResourceId = true
+                            }
+                            .testTag(TopSitesTestTag.ADD_SHORTCUT_TITLE),
                     text = stringResource(R.string.homepage_shortcuts_add_shortcut),
                     color = topSiteColors.titleTextColor,
                     overflow = TextOverflow.Ellipsis,

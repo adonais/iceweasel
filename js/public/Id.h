@@ -69,12 +69,8 @@ class PropertyKey {
     return id;
   }
 
-  bool operator==(const PropertyKey& rhs) const {
-    return asBits_ == rhs.asBits_;
-  }
-  bool operator!=(const PropertyKey& rhs) const {
-    return asBits_ != rhs.asBits_;
-  }
+  bool operator==(const PropertyKey& rhs) const = default;
+  bool operator!=(const PropertyKey& rhs) const = default;
 
   MOZ_ALWAYS_INLINE bool isVoid() const {
     MOZ_ASSERT_IF((asBits_ & TypeMask) == VoidTypeTag, asBits_ == VoidTypeTag);

@@ -6,12 +6,10 @@
 // ProgramExecutableMtl.cpp: Implementation of ProgramExecutableMtl.
 //
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "libANGLE/renderer/metal/ProgramExecutableMtl.h"
 
+#include "common/span_util.h"
+#include "common/unsafe_buffers.h"
 #include "libANGLE/renderer/metal/BufferMtl.h"
 #include "libANGLE/renderer/metal/ContextMtl.h"
 #include "libANGLE/renderer/metal/TextureMtl.h"
@@ -23,6 +21,12 @@ namespace rx
 namespace
 {
 #define SHADER_ENTRY_NAME @"main0"
+
+Serial GenerateProgramSerialId()
+{
+    static AtomicSerialFactory gProgramSerialFactory;
+    return gProgramSerialFactory.generate();
+}
 
 bool CompareBlockInfo(const sh::BlockMemberInfo &a, const sh::BlockMemberInfo &b)
 {
@@ -84,9 +88,9 @@ inline void memcpy_guarded(void *dst, const void *src, const void *maxSrcPtr, si
     size_t bytesToZero    = size - bytesToCopy;
 
     if (bytesToCopy)
-        memcpy(dst, src, bytesToCopy);
+        ANGLE_UNSAFE_TODO(memcpy(dst, src, bytesToCopy));
     if (bytesToZero)
-        memset((uint8_t *)dst + bytesToCopy, 0, bytesToZero);
+        ANGLE_UNSAFE_TODO(memset((uint8_t *)dst + bytesToCopy, 0, bytesToZero));
 }
 
 // Copy matrix one column at a time
@@ -104,8 +108,9 @@ inline void copy_matrix(void *dst,
     for (size_t col = 0; col < dstCols; col++)
     {
         size_t srcOffset = col * srcStride;
-        memcpy_guarded(((uint8_t *)dst) + dstStride * col, (const uint8_t *)src + srcOffset,
-                       maxSrcPtr, elemSize * dstRows);
+        ANGLE_UNSAFE_TODO(memcpy_guarded(((uint8_t *)dst) + dstStride * col,
+                                         (const uint8_t *)src + srcOffset, maxSrcPtr,
+                                         elemSize * dstRows));
     }
 }
 
@@ -126,8 +131,9 @@ inline void copy_matrix_row_major(void *dst,
         for (size_t row = 0; row < dstRows; row++)
         {
             size_t srcOffset = row * srcStride + col * elemSize;
-            memcpy_guarded((uint8_t *)dst + dstStride * col + row * elemSize,
-                           (const uint8_t *)src + srcOffset, maxSrcPtr, elemSize);
+            ANGLE_UNSAFE_TODO(memcpy_guarded((uint8_t *)dst + dstStride * col + row * elemSize,
+                                             (const uint8_t *)src + srcOffset, maxSrcPtr,
+                                             elemSize));
         }
     }
 }
@@ -137,11 +143,9 @@ angle::Result ConvertUniformBufferData(ContextMtl *contextMtl,
                                        mtl::BufferPool *dynamicBuffer,
                                        const uint8_t *sourceData,
                                        size_t sizeToCopy,
-                                       mtl::BufferRef *bufferOut,
-                                       size_t *bufferOffsetOut)
+                                       mtl::BufferSlice *outBuffer)
 {
-    uint8_t *dst             = nullptr;
-    const uint8_t *maxSrcPtr = sourceData + sizeToCopy;
+    const uint8_t *maxSrcPtr = ANGLE_UNSAFE_TODO(sourceData + sizeToCopy);
     dynamicBuffer->releaseInFlightBuffers(contextMtl);
 
     // When converting a UBO buffer, we convert all of the data
@@ -152,8 +156,8 @@ angle::Result ConvertUniformBufferData(ContextMtl *contextMtl,
     size_t numBlocksToCopy =
         (sizeToCopy + blockConversionInfo.stdSize() - 1) / blockConversionInfo.stdSize();
     size_t bytesToAllocate = numBlocksToCopy * blockConversionInfo.metalSize();
-    ANGLE_TRY(dynamicBuffer->allocate(contextMtl, bytesToAllocate, &dst, bufferOut, bufferOffsetOut,
-                                      nullptr));
+    angle::Span<uint8_t> dst;
+    ANGLE_TRY(dynamicBuffer->allocateAndMap(contextMtl, bytesToAllocate, &dst, outBuffer));
 
     const std::vector<sh::BlockMemberInfo> &stdConversions = blockConversionInfo.stdInfo();
     const std::vector<sh::BlockMemberInfo> &mtlConversions = blockConversionInfo.metalInfo();
@@ -179,10 +183,12 @@ angle::Result ConvertUniformBufferData(ContextMtl *contextMtl,
                 if (gl::IsMatrixType(mtlIterator->type))
                 {
 
-                    void *dstMat = dst + mtlIterator->offset + mtlArrayOffset +
-                                   blockConversionInfo.metalSize() * i;
-                    const void *srcMat = sourceData + stdIterator->offset + stdArrayOffset +
-                                         blockConversionInfo.stdSize() * i;
+                    void *dstMat = dst.subspan(mtlIterator->offset + mtlArrayOffset +
+                                               blockConversionInfo.metalSize() * i)
+                                       .data();
+                    const void *srcMat =
+                        ANGLE_UNSAFE_TODO(sourceData + stdIterator->offset + stdArrayOffset +
+                                          blockConversionInfo.stdSize() * i);
                     // Transpose matricies into column major order, if they're row major encoded.
                     if (stdIterator->isRowMajorMatrix)
                     {
@@ -204,24 +210,27 @@ angle::Result ConvertUniformBufferData(ContextMtl *contextMtl,
                          boolCol++)
                     {
                         const uint8_t *srcBool =
-                            (sourceData + stdIterator->offset + stdArrayOffset +
-                             blockConversionInfo.stdSize() * i +
-                             gl::VariableComponentSize(GL_BOOL) * boolCol);
+                            ANGLE_UNSAFE_TODO((sourceData + stdIterator->offset + stdArrayOffset +
+                                               blockConversionInfo.stdSize() * i +
+                                               gl::VariableComponentSize(GL_BOOL) * boolCol));
                         unsigned int srcValue =
                             srcBool < maxSrcPtr ? *((unsigned int *)(srcBool)) : 0;
-                        uint8_t *dstBool = dst + mtlIterator->offset + mtlArrayOffset +
-                                           blockConversionInfo.metalSize() * i +
-                                           sizeof(bool) * boolCol;
+                        uint8_t *dstBool = dst.subspan(mtlIterator->offset + mtlArrayOffset +
+                                                       blockConversionInfo.metalSize() * i +
+                                                       sizeof(bool) * boolCol)
+                                               .data();
                         *dstBool = (srcValue != 0);
                     }
                 }
                 else
                 {
-                    memcpy_guarded(dst + mtlIterator->offset + mtlArrayOffset +
-                                       blockConversionInfo.metalSize() * i,
-                                   sourceData + stdIterator->offset + stdArrayOffset +
-                                       blockConversionInfo.stdSize() * i,
-                                   maxSrcPtr, mtl::GetMetalSizeForGLType(mtlIterator->type));
+                    ANGLE_UNSAFE_TODO(
+                        memcpy_guarded(dst.subspan(mtlIterator->offset + mtlArrayOffset +
+                                                   blockConversionInfo.metalSize() * i)
+                                           .data(),
+                                       sourceData + stdIterator->offset + stdArrayOffset +
+                                           blockConversionInfo.stdSize() * i,
+                                       maxSrcPtr, mtl::GetMetalSizeForGLType(mtlIterator->type)));
                 }
             }
             ++stdIterator;
@@ -250,8 +259,10 @@ void InitArgumentBufferEncoder(mtl::Context *context,
         angle::adoptObjCPtr([function newArgumentEncoderWithBufferIndex:bufferIndex]);
     if (encoder->metalArgBufferEncoder)
     {
-        encoder->bufferPool.initialize(context, encoder->metalArgBufferEncoder.get().encodedLength,
-                                       mtl::kArgumentBufferOffsetAlignment, 0);
+        const NSUInteger encodedLength      = encoder->metalArgBufferEncoder.get().encodedLength;
+        constexpr size_t kArgBufferPoolSize = 64 * 1024;
+        const size_t poolSize = std::max(static_cast<size_t>(encodedLength), kArgBufferPoolSize);
+        encoder->bufferPool.initialize(context, poolSize, mtl::kArgumentBufferOffsetAlignment, 0);
     }
 }
 
@@ -266,13 +277,15 @@ void UpdateDefaultUniformBlockWithElementSize(GLsizei count,
 {
     const int elementSize = (int)(baseElementSize * componentCount);
 
-    uint8_t *dst = uniformData->data() + layoutInfo.offset;
+    uint8_t *dst = ANGLE_UNSAFE_TODO(uniformData->data() + layoutInfo.offset);
     if (layoutInfo.arrayStride == 0 || layoutInfo.arrayStride == elementSize)
     {
         uint32_t arrayOffset = arrayIndex * layoutInfo.arrayStride;
-        uint8_t *writePtr    = dst + arrayOffset;
-        ASSERT(writePtr + (elementSize * count) <= uniformData->data() + uniformData->size());
-        memcpy(writePtr, v, elementSize * count);
+        uint8_t *writePtr    = ANGLE_UNSAFE_TODO(dst + arrayOffset);
+        ANGLE_UNSAFE_TODO({
+            ASSERT(writePtr + (elementSize * count) <= uniformData->data() + uniformData->size());
+            memcpy(writePtr, v, elementSize * count);
+        })
     }
     else
     {
@@ -282,10 +295,12 @@ void UpdateDefaultUniformBlockWithElementSize(GLsizei count,
              writeIndex++, readIndex++)
         {
             const int arrayOffset = writeIndex * layoutInfo.arrayStride;
-            uint8_t *writePtr     = dst + arrayOffset;
-            const T *readPtr      = v + (readIndex * componentCount);
-            ASSERT(writePtr + elementSize <= uniformData->data() + uniformData->size());
-            memcpy(writePtr, readPtr, elementSize);
+            uint8_t *writePtr     = ANGLE_UNSAFE_TODO(dst + arrayOffset);
+            const T *readPtr      = ANGLE_UNSAFE_TODO(v + (readIndex * componentCount));
+            ANGLE_UNSAFE_TODO({
+                ASSERT(writePtr + elementSize <= uniformData->data() + uniformData->size());
+                memcpy(writePtr, readPtr, elementSize);
+            })
         }
     }
 }
@@ -311,19 +326,19 @@ void ReadFromDefaultUniformBlockWithElementSize(int componentCount,
     ASSERT(layoutInfo.offset != -1);
 
     const size_t elementSize = (baseElementSize * componentCount);
-    const uint8_t *source    = uniformData->data() + layoutInfo.offset;
+    const uint8_t *source    = ANGLE_UNSAFE_TODO(uniformData->data() + layoutInfo.offset);
 
     if (layoutInfo.arrayStride == 0 || (size_t)layoutInfo.arrayStride == elementSize)
     {
-        const uint8_t *readPtr = source + arrayIndex * layoutInfo.arrayStride;
-        memcpy(dst, readPtr, elementSize);
+        const uint8_t *readPtr = ANGLE_UNSAFE_TODO(source + arrayIndex * layoutInfo.arrayStride);
+        ANGLE_UNSAFE_TODO(memcpy(dst, readPtr, elementSize));
     }
     else
     {
         // Have to respect the arrayStride between each element of the array.
         const int arrayOffset  = arrayIndex * layoutInfo.arrayStride;
-        const uint8_t *readPtr = source + arrayOffset;
-        memcpy(dst, readPtr, elementSize);
+        const uint8_t *readPtr = ANGLE_UNSAFE_TODO(source + arrayOffset);
+        ANGLE_UNSAFE_TODO(memcpy(dst, readPtr, elementSize));
     }
 }
 
@@ -378,7 +393,10 @@ DefaultUniformBlockMtl::DefaultUniformBlockMtl() {}
 DefaultUniformBlockMtl::~DefaultUniformBlockMtl() = default;
 
 ProgramExecutableMtl::ProgramExecutableMtl(const gl::ProgramExecutable *executable)
-    : ProgramExecutableImpl(executable), mProgramHasFlatAttributes(false), mShadowCompareModes{}
+    : ProgramExecutableImpl(executable),
+      mProgramHasFlatAttributes(false),
+      mShadowCompareModes{},
+      mProgramSerialId(GenerateProgramSerialId())
 {
     mCurrentShaderVariants.fill(nullptr);
 
@@ -903,11 +921,11 @@ angle::Result ProgramExecutableMtl::setupDraw(const gl::Context *glContext,
 
         // Cache current shader variant references for easier querying.
         mCurrentShaderVariants[gl::ShaderType::Vertex] =
-            &mVertexShaderVariants[pipelineDesc.rasterizationType];
+            &mVertexShaderVariants[pipelineDesc.getRasterizationType()];
 
-        const bool multisampledRendering = pipelineDesc.outputDescriptor.rasterSampleCount > 1;
+        const bool multisampledRendering = pipelineDesc.outputDescriptor.getRasterSampleCount() > 1;
         const bool allowFragDepthWrite =
-            pipelineDesc.outputDescriptor.depthAttachmentPixelFormat != 0;
+            pipelineDesc.outputDescriptor.getDepthAttachmentPixelFormat() != MTLPixelFormatInvalid;
         mCurrentShaderVariants[gl::ShaderType::Fragment] =
             pipelineDesc.rasterizationEnabled()
                 ? &mFragmentShaderVariants[PipelineParametersToFragmentShaderVariantIndex(
@@ -947,7 +965,7 @@ angle::Result ProgramExecutableMtl::getSpecializedShader(
     {
         // For vertex shader, we need to create 3 variants, one with emulated rasterization
         // discard, one with true rasterization discard and one without.
-        shaderVariant = &mVertexShaderVariants[renderPipelineDesc.rasterizationType];
+        shaderVariant = &mVertexShaderVariants[renderPipelineDesc.getRasterizationType()];
         if (shaderVariant->metalShader)
         {
             // Already created.
@@ -955,7 +973,7 @@ angle::Result ProgramExecutableMtl::getSpecializedShader(
             return angle::Result::Continue;
         }
 
-        if (renderPipelineDesc.rasterizationType == mtl::RenderPipelineRasterization::Disabled)
+        if (renderPipelineDesc.getRasterizationType() == mtl::RenderPipelineRasterization::Disabled)
         {
             // Special case: XFB output only vertex shader.
             ASSERT(!mExecutable->getLinkedTransformFeedbackVaryings().empty());
@@ -972,7 +990,7 @@ angle::Result ProgramExecutableMtl::getSpecializedShader(
 
         ANGLE_MTL_OBJC_SCOPE
         {
-            BOOL emulateDiscard = renderPipelineDesc.rasterizationType ==
+            BOOL emulateDiscard = renderPipelineDesc.getRasterizationType() ==
                                   mtl::RenderPipelineRasterization::EmulatedDiscard;
 
             NSString *discardEnabledStr =
@@ -989,9 +1007,10 @@ angle::Result ProgramExecutableMtl::getSpecializedShader(
         // For fragment shader, we need to create 4 variants,
         // combining multisampled rendering and depth write enabled states.
         const bool multisampledRendering =
-            renderPipelineDesc.outputDescriptor.rasterSampleCount > 1;
+            renderPipelineDesc.outputDescriptor.getRasterSampleCount() > 1;
         const bool allowFragDepthWrite =
-            renderPipelineDesc.outputDescriptor.depthAttachmentPixelFormat != 0;
+            renderPipelineDesc.outputDescriptor.getDepthAttachmentPixelFormat() !=
+            MTLPixelFormatInvalid;
         shaderVariant = &mFragmentShaderVariants[PipelineParametersToFragmentShaderVariantIndex(
             multisampledRendering, allowFragDepthWrite)];
         if (shaderVariant->metalShader)
@@ -1086,18 +1105,13 @@ angle::Result ProgramExecutableMtl::commitUniforms(ContextMtl *context,
             bufferPool->releaseInFlightBuffers(context);
 
             ASSERT(uniformBlock.uniformData.size() <= mtl::kDefaultUniformsMaxSize);
-            mtl::BufferRef mtlBufferOut;
-            size_t offsetOut;
-            uint8_t *ptrOut;
-            // Allocate a new Uniform buffer
-            ANGLE_TRY(bufferPool->allocate(context, uniformBlock.uniformData.size(), &ptrOut,
-                                           &mtlBufferOut, &offsetOut));
-            // Copy the uniform result
-            memcpy(ptrOut, uniformBlock.uniformData.data(), uniformBlock.uniformData.size());
-            // Commit
+            mtl::BufferSlice uniformBuffer;
+            angle::Span<uint8_t> mapped;
+            ANGLE_TRY(bufferPool->allocateAndMap(context, uniformBlock.uniformData.size(), &mapped,
+                                                 &uniformBuffer));
+            angle::SpanMemcpy(mapped, uniformBlock.uniformData.span());
             ANGLE_TRY(bufferPool->commit(context));
-            // Set buffer
-            cmdEncoder->setBuffer(shaderType, mtlBufferOut, (uint32_t)offsetOut,
+            cmdEncoder->setBuffer(shaderType, uniformBuffer.buffer(), uniformBuffer.offset(),
                                   mtl::kDefaultUniformsBindingIndex);
         }
 
@@ -1162,8 +1176,9 @@ angle::Result ProgramExecutableMtl::updateTextures(const gl::Context *glContext,
                 if (samplerBinding.format == gl::SamplerFormat::Shadow)
                 {
                     hasDepthSampler                  = true;
-                    mShadowCompareModes[textureSlot] = mtl::MslGetShaderShadowCompareMode(
-                        samplerState->getCompareMode(), samplerState->getCompareFunc());
+                    ANGLE_UNSAFE_TODO(mShadowCompareModes[textureSlot]) =
+                        mtl::MslGetShaderShadowCompareMode(samplerState->getCompareMode(),
+                                                           samplerState->getCompareFunc());
                 }
                 ANGLE_TRY(textureMtl->bindToShader(glContext, cmdEncoder, shaderType, sampler,
                                                    textureSlot, samplerSlot));
@@ -1221,8 +1236,7 @@ angle::Result ProgramExecutableMtl::updateUniformBuffers(
 
     // This array is only used inside this function and its callees.
     ScopedAutoClearVector<uint32_t> scopeArrayClear(&mArgumentBufferRenderStageUsages);
-    ScopedAutoClearVector<std::pair<mtl::BufferRef, uint32_t>> scopeArrayClear2(
-        &mLegalizedOffsetedUniformBuffers);
+    ScopedAutoClearVector<mtl::BufferSlice> scopeArrayClear2(&mLegalizedOffsetedUniformBuffers);
     mArgumentBufferRenderStageUsages.resize(blocks.size());
     mLegalizedOffsetedUniformBuffers.resize(blocks.size());
 
@@ -1268,7 +1282,7 @@ angle::Result ProgramExecutableMtl::updateUniformBuffers(
             continue;
         }
 
-        cmdEncoder->useResource(mLegalizedOffsetedUniformBuffers[bufferIndex].first,
+        cmdEncoder->useResource(mLegalizedOffsetedUniformBuffers[bufferIndex].buffer(),
                                 MTLResourceUsageRead, static_cast<MTLRenderStages>(stages));
     }
 
@@ -1304,18 +1318,18 @@ angle::Result ProgramExecutableMtl::legalizeUniformBufferOffsets(ContextMtl *con
 
             UniformConversionBufferMtl *conversion =
                 (UniformConversionBufferMtl *)bufferMtl->getUniformConversionBuffer(
-                    context, std::pair<size_t, size_t>(bufferIndex, srcOffset),
-                    conversionInfo.stdSize());
+                    context, mProgramSerialId.getValue(),
+                    std::pair<size_t, size_t>(bufferIndex, srcOffset), conversionInfo.stdSize());
             // Has the content of the buffer has changed since last conversion?
             if (conversion->dirty)
             {
                 angle::Span<const uint8_t> source =
                     bufferMtl->getBufferDataReadOnly(context, conversion->initialSrcOffset());
 
-                ANGLE_TRY(ConvertUniformBufferData(
-                    context, conversionInfo, &conversion->data, source.data(), source.size(),
-                    &conversion->convertedBuffer, &conversion->convertedOffset));
-
+                mtl::BufferSlice converted;
+                ANGLE_TRY(ConvertUniformBufferData(context, conversionInfo, &conversion->bufferPool,
+                                                   source.data(), source.size(), &converted));
+                conversion->buffer = std::move(converted);
                 conversion->dirty = false;
             }
             // Calculate offset in new block.
@@ -1325,18 +1339,17 @@ angle::Result ProgramExecutableMtl::legalizeUniformBufferOffsets(ContextMtl *con
                 (unsigned int)(dstOffsetSource / conversionInfo.stdSize());
             size_t bytesToOffset = numBlocksToOffset * conversionInfo.metalSize();
 
-            mLegalizedOffsetedUniformBuffers[bufferIndex].first = conversion->convertedBuffer;
-            mLegalizedOffsetedUniformBuffers[bufferIndex].second =
-                static_cast<uint32_t>(conversion->convertedOffset + bytesToOffset);
+            mLegalizedOffsetedUniformBuffers[bufferIndex] =
+                conversion->buffer.subslice(bytesToOffset);
             // Ensure that the converted info can fit in the buffer.
-            ASSERT(conversion->convertedOffset + bytesToOffset + conversionInfo.metalSize() <=
-                   conversion->convertedBuffer->size());
+            ASSERT(bytesToOffset + conversionInfo.metalSize() <= conversion->buffer.size());
         }
         else
         {
-            mLegalizedOffsetedUniformBuffers[bufferIndex].first = bufferMtl->getCurrentBuffer();
-            mLegalizedOffsetedUniformBuffers[bufferIndex].second =
-                static_cast<uint32_t>(bufferBinding.getOffset());
+            mtl::BufferRef buf   = bufferMtl->getCurrentBuffer();
+            size_t bindingOffset = bufferBinding.getOffset();
+            mLegalizedOffsetedUniformBuffers[bufferIndex] =
+                mtl::BufferSlice(buf).subslice(bindingOffset);
         }
     }
     return angle::Result::Continue;
@@ -1371,8 +1384,8 @@ angle::Result ProgramExecutableMtl::bindUniformBuffersToDiscreteSlots(
             continue;
         }
 
-        mtl::BufferRef mtlBuffer = mLegalizedOffsetedUniformBuffers[bufferIndex].first;
-        uint32_t offset          = mLegalizedOffsetedUniformBuffers[bufferIndex].second;
+        mtl::BufferRef mtlBuffer = mLegalizedOffsetedUniformBuffers[bufferIndex].buffer();
+        size_t offset            = mLegalizedOffsetedUniformBuffers[bufferIndex].offset();
         cmdEncoder->setBuffer(shaderType, mtlBuffer, offset, actualBufferIdx);
     }
     return angle::Result::Continue;
@@ -1394,19 +1407,17 @@ angle::Result ProgramExecutableMtl::encodeUniformBuffersInfoArgumentBuffer(
     ProgramArgumentBufferEncoderMtl &bufferEncoder =
         mCurrentShaderVariants[shaderType]->uboArgBufferEncoder;
 
-    mtl::BufferRef argumentBuffer;
-    size_t argumentBufferOffset;
+    mtl::BufferSlice argumentBuffer;
     bufferEncoder.bufferPool.releaseInFlightBuffers(context);
     ANGLE_TRY(bufferEncoder.bufferPool.allocate(
-        context, bufferEncoder.metalArgBufferEncoder.get().encodedLength, nullptr, &argumentBuffer,
-        &argumentBufferOffset));
+        context, bufferEncoder.metalArgBufferEncoder.get().encodedLength, &argumentBuffer));
 
     // MTLArgumentEncoder is modifying the buffer indirectly on CPU. We need to call map()
     // so that the buffer's data changes could be flushed to the GPU side later.
-    ANGLE_UNUSED_VARIABLE(argumentBuffer->mapNoSync(context));
+    ANGLE_UNUSED_VARIABLE(argumentBuffer.buffer()->mapNoSync(context));
 
-    [bufferEncoder.metalArgBufferEncoder setArgumentBuffer:argumentBuffer->get()
-                                                    offset:argumentBufferOffset];
+    [bufferEncoder.metalArgBufferEncoder setArgumentBuffer:argumentBuffer.buffer()->get()
+                                                    offset:argumentBuffer.offset()];
 
     constexpr gl::ShaderMap<MTLRenderStages> kShaderStageMap = {
         {gl::ShaderType::Vertex, MTLRenderStageVertex},
@@ -1435,18 +1446,18 @@ angle::Result ProgramExecutableMtl::encodeUniformBuffersInfoArgumentBuffer(
             continue;
         }
 
-        mtl::BufferRef mtlBuffer = mLegalizedOffsetedUniformBuffers[bufferIndex].first;
-        uint32_t offset          = mLegalizedOffsetedUniformBuffers[bufferIndex].second;
+        mtl::BufferRef mtlBuffer = mLegalizedOffsetedUniformBuffers[bufferIndex].buffer();
+        size_t offset            = mLegalizedOffsetedUniformBuffers[bufferIndex].offset();
         [bufferEncoder.metalArgBufferEncoder setBuffer:mtlBuffer->get()
                                                 offset:offset
                                                atIndex:actualBufferIdx];
     }
 
     // Flush changes made by MTLArgumentEncoder to GPU.
-    argumentBuffer->unmapAndFlushSubset(context, argumentBufferOffset,
-                                        bufferEncoder.metalArgBufferEncoder.get().encodedLength);
+    argumentBuffer.buffer()->unmapAndFlushSubset(
+        context, argumentBuffer.offset(), bufferEncoder.metalArgBufferEncoder.get().encodedLength);
 
-    cmdEncoder->setBuffer(shaderType, argumentBuffer, static_cast<uint32_t>(argumentBufferOffset),
+    cmdEncoder->setBuffer(shaderType, argumentBuffer.buffer(), argumentBuffer.offset(),
                           mtl::kUBOArgumentBufferBindingIndex);
     return angle::Result::Continue;
 }
@@ -1559,13 +1570,14 @@ void ProgramExecutableMtl::setUniformImpl(GLint location,
             for (GLint i = 0; i < count; i++)
             {
                 GLint elementOffset = i * layoutInfo.arrayStride + initialArrayOffset;
-                bool *dest =
-                    reinterpret_cast<bool *>(uniformBlock.uniformData.data() + elementOffset);
-                const T *source = v + i * componentCount;
+                bool *dest          = ANGLE_UNSAFE_TODO(
+                    reinterpret_cast<bool *>(uniformBlock.uniformData.data() + elementOffset));
+                const T *source = ANGLE_UNSAFE_TODO(v + i * componentCount);
 
                 for (int c = 0; c < componentCount; c++)
                 {
-                    dest[c] = (source[c] == static_cast<T>(0)) ? GL_FALSE : GL_TRUE;
+                    ANGLE_UNSAFE_TODO(dest[c] =
+                                          (source[c] == static_cast<T>(0)) ? GL_FALSE : GL_TRUE);
                 }
             }
 
@@ -1596,8 +1608,9 @@ void ProgramExecutableMtl::getUniformImpl(GLint location, T *v, GLenum entryPoin
 
     if (gl::IsMatrixType(linkedUniform.getType()))
     {
-        const uint8_t *ptrToElement = uniformBlock.uniformData.data() + layoutInfo.offset +
-                                      (locationInfo.arrayIndex * layoutInfo.arrayStride);
+        const uint8_t *ptrToElement =
+            ANGLE_UNSAFE_TODO(uniformBlock.uniformData.data() + layoutInfo.offset +
+                              (locationInfo.arrayIndex * layoutInfo.arrayStride));
         mtl::GetMatrixUniformMetal(linkedUniform.getType(), v,
                                    reinterpret_cast<const T *>(ptrToElement), false);
     }
@@ -1611,8 +1624,8 @@ void ProgramExecutableMtl::getUniformImpl(GLint location, T *v, GLenum entryPoin
             layoutInfo, &uniformBlock.uniformData);
         for (int bCol = 0; bCol < linkedUniform.getElementComponents(); ++bCol)
         {
-            unsigned int data = bVals[bCol];
-            *(v + bCol)       = static_cast<T>(data);
+            unsigned int data              = ANGLE_UNSAFE_TODO(bVals[bCol]);
+            ANGLE_UNSAFE_TODO(*(v + bCol)) = static_cast<T>(data);
         }
     }
     else
@@ -1705,9 +1718,9 @@ void ProgramExecutableMtl::setUniformMatrixfv(GLint location,
             continue;
         }
 
-        mtl::SetFloatUniformMatrixMetal<cols, rows>::Run(
+        ANGLE_UNSAFE_TODO(mtl::SetFloatUniformMatrixMetal<cols, rows>::Run(
             locationInfo.arrayIndex, linkedUniform.getBasicTypeElementCount(), count, transpose,
-            value, uniformBlock.uniformData.data() + layoutInfo.offset);
+            value, uniformBlock.uniformData.data() + layoutInfo.offset));
 
         mDefaultUniformBlocksDirty.set(shaderType);
     }

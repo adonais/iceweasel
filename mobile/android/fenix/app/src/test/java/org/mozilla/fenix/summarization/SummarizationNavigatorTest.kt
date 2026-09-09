@@ -44,9 +44,10 @@ class SummarizationNavigatorTest {
             every { isGestureEnabled } returns gestureEnabled
         }
         eligibilityChecker = mockk()
-        navController = mockk(relaxed = true) {
-            every { currentDestination } returns browserDestination()
-        }
+        navController =
+            mockk(relaxed = true) {
+                every { currentDestination } returns browserDestination()
+            }
     }
 
     @Test
@@ -60,73 +61,80 @@ class SummarizationNavigatorTest {
     }
 
     @Test
-    fun `GIVEN a shake gesture but the gesture setting is disabled WHEN attempting to navigate to summarization THEN don't navigate`() = runTest {
-        gestureEnabled.value = false
-        val navigator = navigator(tab = eligibleTab())
+    fun `GIVEN a shake gesture but the gesture setting is disabled WHEN attempting to navigate to summarization THEN don't navigate`() =
+        runTest {
+            gestureEnabled.value = false
+            val navigator = navigator(tab = eligibleTab())
 
-        navigator.navigateToSummarizationIfEligible(navController, fromShakeGesture = true)
+            navigator.navigateToSummarizationIfEligible(navController, fromShakeGesture = true)
 
-        verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
-    }
-
-    @Test
-    fun `GIVEN a shake gesture and the gesture setting is disabled but it is not from a shake WHEN attempting to navigate to summarization THEN navigate`() = runTest {
-        gestureEnabled.value = false
-        val navigator = navigator(tab = eligibleTab())
-
-        navigator.navigateToSummarizationIfEligible(navController, fromShakeGesture = false)
-
-        verify { navController.navigate(any<NavDirections>()) }
-    }
+            verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
+        }
 
     @Test
-    fun `GIVEN the current tab is private WHEN attempting to navigate to summarization THEN don't navigate`() = runTest {
-        val navigator = navigator(tab = eligibleTab(private = true))
+    fun `GIVEN a shake gesture and the gesture setting is disabled but it is not from a shake WHEN attempting to navigate to summarization THEN navigate`() =
+        runTest {
+            gestureEnabled.value = false
+            val navigator = navigator(tab = eligibleTab())
 
-        navigator.navigateToSummarizationIfEligible(navController, fromShakeGesture = false)
+            navigator.navigateToSummarizationIfEligible(navController, fromShakeGesture = false)
 
-        verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
-    }
-
-    @Test
-    fun `GIVEN the current tab is loading WHEN attempting to navigate to summarization THEN don't navigate`() = runTest {
-        val navigator = navigator(tab = eligibleTab(loading = true))
-
-        navigator.navigateToSummarizationIfEligible(navController, fromShakeGesture = false)
-
-        verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
-    }
+            verify { navController.navigate(any<NavDirections>()) }
+        }
 
     @Test
-    fun `GIVEN the current destination is not the browser WHEN attempting to navigate to summarization THEN don't navigate`() = runTest {
-        every { navController.currentDestination } returns mockk { every { id } returns R.id.homeFragment }
-        val navigator = navigator(tab = eligibleTab())
+    fun `GIVEN the current tab is private WHEN attempting to navigate to summarization THEN don't navigate`() =
+        runTest {
+            val navigator = navigator(tab = eligibleTab(private = true))
 
-        navigator.navigateToSummarizationIfEligible(navController, fromShakeGesture = false)
+            navigator.navigateToSummarizationIfEligible(navController, fromShakeGesture = false)
 
-        verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
-    }
-
-    @Test
-    fun `GIVEN there is no current destination WHEN attempting to navigate to summarization THEN don't navigate`() = runTest {
-        every { navController.currentDestination } returns null
-        val navigator = navigator(tab = eligibleTab())
-
-        navigator.navigateToSummarizationIfEligible(navController, fromShakeGesture = false)
-
-        verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
-    }
+            verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
+        }
 
     @Test
-    fun `GIVEN the content is not English WHEN attempting to navigate to summarization THEN don't navigate`() = runTest {
-        val session = mockk<EngineSession>()
-        coEvery { eligibilityChecker.checkLanguage(session) } returns Result.success(false)
-        val navigator = navigator(tab = eligibleTab(session = session))
+    fun `GIVEN the current tab is loading WHEN attempting to navigate to summarization THEN don't navigate`() =
+        runTest {
+            val navigator = navigator(tab = eligibleTab(loading = true))
 
-        navigator.navigateToSummarizationIfEligible(navController, fromShakeGesture = false)
+            navigator.navigateToSummarizationIfEligible(navController, fromShakeGesture = false)
 
-        verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
-    }
+            verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
+        }
+
+    @Test
+    fun `GIVEN the current destination is not the browser WHEN attempting to navigate to summarization THEN don't navigate`() =
+        runTest {
+            every { navController.currentDestination } returns mockk { every { id } returns R.id.homeFragment }
+            val navigator = navigator(tab = eligibleTab())
+
+            navigator.navigateToSummarizationIfEligible(navController, fromShakeGesture = false)
+
+            verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
+        }
+
+    @Test
+    fun `GIVEN there is no current destination WHEN attempting to navigate to summarization THEN don't navigate`() =
+        runTest {
+            every { navController.currentDestination } returns null
+            val navigator = navigator(tab = eligibleTab())
+
+            navigator.navigateToSummarizationIfEligible(navController, fromShakeGesture = false)
+
+            verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
+        }
+
+    @Test
+    fun `GIVEN the content is not English WHEN attempting to navigate to summarization THEN don't navigate`() =
+        runTest {
+            val session = mockk<EngineSession>()
+            coEvery { eligibilityChecker.checkLanguage(session) } returns Result.success(false)
+            val navigator = navigator(tab = eligibleTab(session = session))
+
+            navigator.navigateToSummarizationIfEligible(navController, fromShakeGesture = false)
+
+            verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
+        }
 
     @Test
     fun `GIVEN the language check fails WHEN attempting to navigate to summarization THEN don't navigate`() = runTest {
@@ -140,14 +148,15 @@ class SummarizationNavigatorTest {
     }
 
     @Test
-    fun `GIVEN there is no engine session WHEN attempting to navigate to summarization THEN don't navigate`() = runTest {
-        val navigator = navigator(tab = eligibleTab(session = null))
+    fun `GIVEN there is no engine session WHEN attempting to navigate to summarization THEN don't navigate`() =
+        runTest {
+            val navigator = navigator(tab = eligibleTab(session = null))
 
-        navigator.navigateToSummarizationIfEligible(navController, fromShakeGesture = false)
+            navigator.navigateToSummarizationIfEligible(navController, fromShakeGesture = false)
 
-        coVerify(exactly = 0) { eligibilityChecker.checkLanguage(any()) }
-        verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
-    }
+            coVerify(exactly = 0) { eligibilityChecker.checkLanguage(any()) }
+            verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
+        }
 
     @Test
     fun `GIVEN there is no current tab WHEN attempting to navigate to summarization THEN don't navigate`() = runTest {
@@ -171,21 +180,23 @@ class SummarizationNavigatorTest {
     }
 
     @Test
-    fun `GIVEN an eligible tab and a shake gesture WHEN attempting to navigate to summarization THEN navigates with the shake argument`() = runTest {
-        val navigator = navigator(tab = eligibleTab())
-        val directions = slot<NavDirections>()
+    fun `GIVEN an eligible tab and a shake gesture WHEN attempting to navigate to summarization THEN navigates with the shake argument`() =
+        runTest {
+            val navigator = navigator(tab = eligibleTab())
+            val directions = slot<NavDirections>()
 
-        navigator.navigateToSummarizationIfEligible(navController, fromShakeGesture = true)
+            navigator.navigateToSummarizationIfEligible(navController, fromShakeGesture = true)
 
-        verify { navController.navigate(capture(directions)) }
-        assertTrue(directions.captured.arguments.getBoolean("fromShake"))
-    }
+            verify { navController.navigate(capture(directions)) }
+            assertTrue(directions.captured.arguments.getBoolean("fromShake"))
+        }
 
-    private fun navigator(tab: SessionState?) = SummarizationNavigator(
-        summarizationSettings = settings,
-        eligibilityChecker = eligibilityChecker,
-        getCurrentTab = { tab },
-    )
+    private fun navigator(tab: SessionState?) =
+        SummarizationNavigator(
+            summarizationSettings = settings,
+            eligibilityChecker = eligibilityChecker,
+            getCurrentTab = { tab },
+        )
 
     private fun browserDestination(): NavDestination = mockk {
         every { id } returns R.id.browserFragment
@@ -194,19 +205,22 @@ class SummarizationNavigatorTest {
     private fun eligibleTab(
         private: Boolean = false,
         loading: Boolean = false,
-        session: EngineSession? = mockk<EngineSession>().also {
-            coEvery { eligibilityChecker.checkLanguage(it) } returns Result.success(true)
-        },
+        session: EngineSession? =
+            mockk<EngineSession>().also {
+                coEvery { eligibilityChecker.checkLanguage(it) } returns Result.success(true)
+            },
     ): SessionState {
-        val contentState = mockk<ContentState> {
-            every { this@mockk.private } returns private
-            every { this@mockk.loading } returns loading
-        }
+        val contentState =
+            mockk<ContentState> {
+                every { this@mockk.private } returns private
+                every { this@mockk.loading } returns loading
+            }
         return mockk {
             every { content } returns contentState
-            every { engineState } returns mockk {
-                every { engineSession } returns session
-            }
+            every { engineState } returns
+                mockk {
+                    every { engineSession } returns session
+                }
         }
     }
 }

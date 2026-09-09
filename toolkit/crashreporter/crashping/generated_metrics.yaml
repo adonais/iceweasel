@@ -114,6 +114,39 @@ crash:
     send_in_pings:
     - crash
     type: string
+  cpu_architecture:
+    bugs:
+    - https://bugzilla.mozilla.org/1950749
+    data_reviews:
+    - https://bugzilla.mozilla.org/1950749
+    data_sensitivity:
+    - technical
+    description: 'Architecture of the CPU. One of the values described in `system_info.cpu_arch`
+      of https://github.com/rust-minidump/rust-minidump/blob/main/minidump-processor/json-schema.md:
+      "x86", "amd64", "ppc", "ppc64", "sparc", "arm", "arm64", or "unknown".'
+    expires: never
+    notification_emails:
+    - crash-reporting-wg@mozilla.org
+    - stability@mozilla.org
+    send_in_pings:
+    - crash
+    type: string
+  cpu_info:
+    bugs:
+    - https://bugzilla.mozilla.org/1950749
+    data_reviews:
+    - https://bugzilla.mozilla.org/1950749
+    data_sensitivity:
+    - technical
+    description: Information about the CPU, as a string. This typically includes family,
+      model, and stepping.
+    expires: never
+    notification_emails:
+    - crash-reporting-wg@mozilla.org
+    - stability@mozilla.org
+    send_in_pings:
+    - crash
+    type: string
   crash_type:
     bugs:
     - https://bugzilla.mozilla.org/1950749
@@ -260,6 +293,22 @@ crash:
     send_in_pings:
     - crash
     type: string
+  ipc_shutdown_state:
+    bugs:
+    - https://bugzilla.mozilla.org/2049749
+    data_reviews:
+    - https://bugzilla.mozilla.org/2049749
+    data_sensitivity:
+    - technical
+    description: IPC shutdown state, can be set to either "RecvShutdown" or "SendFinishShutdown"
+      by a content process while it's shutting down.
+    expires: never
+    notification_emails:
+    - crash-reporting-wg@mozilla.org
+    - stability@mozilla.org
+    send_in_pings:
+    - crash
+    type: string
   is_garbage_collecting:
     bugs:
     - https://bugzilla.mozilla.org/1950749
@@ -337,6 +386,21 @@ crash:
     - crash
     time_unit: second
     type: timespan
+  linux_lsb_description:
+    bugs:
+    - https://bugzilla.mozilla.org/1950749
+    data_reviews:
+    - https://bugzilla.mozilla.org/1950749
+    data_sensitivity:
+    - technical
+    description: The Linux lsb_release description.
+    expires: never
+    notification_emails:
+    - crash-reporting-wg@mozilla.org
+    - stability@mozilla.org
+    send_in_pings:
+    - crash
+    type: string
   linux_memory_psi:
     bugs:
     - https://bugzilla.mozilla.org/1950749
@@ -392,6 +456,38 @@ crash:
     - technical
     description: Plaintext description of why Firefox crashed, this is usually set
       by assertions and the like.
+    expires: never
+    notification_emails:
+    - crash-reporting-wg@mozilla.org
+    - stability@mozilla.org
+    send_in_pings:
+    - crash
+    type: string
+  os:
+    bugs:
+    - https://bugzilla.mozilla.org/1950749
+    data_reviews:
+    - https://bugzilla.mozilla.org/1950749
+    data_sensitivity:
+    - technical
+    description: 'The operating system name. One of the values described in `system_info.os`
+      of https://github.com/rust-minidump/rust-minidump/blob/main/minidump-processor/json-schema.md:
+      "Windows NT", "Mac OS X", "iOS", "Linux", "Solaris", "Android", or "Unknown".'
+    expires: never
+    notification_emails:
+    - crash-reporting-wg@mozilla.org
+    - stability@mozilla.org
+    send_in_pings:
+    - crash
+    type: string
+  os_version:
+    bugs:
+    - https://bugzilla.mozilla.org/1950749
+    data_reviews:
+    - https://bugzilla.mozilla.org/1950749
+    data_sensitivity:
+    - technical
+    description: The operating system version number.
     expires: never
     notification_emails:
     - crash-reporting-wg@mozilla.org
@@ -630,6 +726,23 @@ crash:
     send_in_pings:
     - crash
     type: boolean
+  startup_time:
+    bugs:
+    - https://bugzilla.mozilla.org/2049749
+    data_reviews:
+    - https://bugzilla.mozilla.org/2049749
+    data_sensitivity:
+    - technical
+    description: The time when Firefox was launched expressed in seconds since the
+      Epoch.
+    expires: never
+    notification_emails:
+    - crash-reporting-wg@mozilla.org
+    - stability@mozilla.org
+    send_in_pings:
+    - crash
+    time_unit: second
+    type: timespan
   time:
     bugs:
     - https://bugzilla.mozilla.org/1950749
@@ -662,6 +775,21 @@ crash:
     - crash
     time_unit: second
     type: timespan
+  useragent_locale:
+    bugs:
+    - https://bugzilla.mozilla.org/2049749
+    data_reviews:
+    - https://bugzilla.mozilla.org/2049749
+    data_sensitivity:
+    - technical
+    description: User-agent locale.
+    expires: never
+    notification_emails:
+    - crash-reporting-wg@mozilla.org
+    - stability@mozilla.org
+    send_in_pings:
+    - crash
+    type: string
   utility_actors_name:
     bugs:
     - https://bugzilla.mozilla.org/1950749

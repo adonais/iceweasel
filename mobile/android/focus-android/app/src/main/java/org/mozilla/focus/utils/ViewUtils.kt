@@ -9,17 +9,13 @@ import android.view.View
 import androidx.annotation.StringRes
 import com.google.android.material.snackbar.Snackbar
 
-/**
- * Utility class for view-related operations.
- */
+/** Utility class for view-related operations. */
 object ViewUtils {
 
     private const val MENU_ITEM_ALPHA_ENABLED = 255
     private const val MENU_ITEM_ALPHA_DISABLED = 130
 
-    /**
-     * Create a custom FocusSnackbar.
-     */
+    /** Create a custom FocusSnackbar. */
     fun showBrandedSnackbar(
         view: View?,
         @StringRes resId: Int,
@@ -33,8 +29,8 @@ object ViewUtils {
     }
 
     /**
-     * Enable or disable a [MenuItem]
-     * If the menu item is disabled it can not be clicked and the menu icon is semi-transparent
+     * Enable or disable a [MenuItem] If the menu item is disabled it can not be clicked and the menu icon is
+     * semi-transparent
      *
      * @param menuItem the menu item to enable/disable
      * @param enabled true if the menu item should be enabled

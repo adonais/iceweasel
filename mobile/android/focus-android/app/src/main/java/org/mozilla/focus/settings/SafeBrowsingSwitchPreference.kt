@@ -8,13 +8,10 @@ import android.content.Context
 import android.util.AttributeSet
 import org.mozilla.focus.utils.SupportUtils
 
-/**
- * Switch preference for enabling/disabling autocompletion for custom domains entered by the user.
- */
+/** Switch preference for enabling/disabling autocompletion for custom domains entered by the user. */
 class SafeBrowsingSwitchPreference(
     context: Context,
     attrs: AttributeSet?,
 ) : LearnMoreSwitchPreference(context, attrs) {
-    override fun getLearnMoreUrl() =
-        SupportUtils.getSafeBrowsingURL()
+    override fun getLearnMoreUrl() = SupportUtils.getSafeBrowsingURL()
 }

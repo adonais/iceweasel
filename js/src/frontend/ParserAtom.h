@@ -298,12 +298,8 @@ class TaggedParserAtomIndex {
   uint32_t* rawDataRef() { return &data_; }
   uint32_t rawData() const { return data_; }
 
-  bool operator==(const TaggedParserAtomIndex& rhs) const {
-    return data_ == rhs.data_;
-  }
-  bool operator!=(const TaggedParserAtomIndex& rhs) const {
-    return data_ != rhs.data_;
-  }
+  bool operator==(const TaggedParserAtomIndex& rhs) const = default;
+  bool operator!=(const TaggedParserAtomIndex& rhs) const = default;
 
   explicit operator bool() const { return !isNull(); }
 };
@@ -338,12 +334,8 @@ class TrivialTaggedParserAtomIndex {
 
   uint32_t rawData() const { return data_; }
 
-  bool operator==(const TrivialTaggedParserAtomIndex& rhs) const {
-    return data_ == rhs.data_;
-  }
-  bool operator!=(const TrivialTaggedParserAtomIndex& rhs) const {
-    return data_ != rhs.data_;
-  }
+  bool operator==(const TrivialTaggedParserAtomIndex& rhs) const = default;
+  bool operator!=(const TrivialTaggedParserAtomIndex& rhs) const = default;
 
   explicit operator bool() const { return !isNull(); }
 };

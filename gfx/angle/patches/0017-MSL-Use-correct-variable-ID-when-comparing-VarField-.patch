@@ -1,0 +1,27 @@
+From c34869c750353ed74a76d4fbf6f5c5ccbe852ccc Mon Sep 17 00:00:00 2001
+From: Jamie Nicol <jnicol@mozilla.com>
+Date: Fri, 3 Jul 2026 10:53:02 +0100
+Subject: [PATCH] MSL: Use correct variable ID when comparing VarField equality
+
+Bug: angleproject:530710325
+Change-Id: I5e423e27ff7fc2ee4c1bd287f65133c26a6a6964
+---
+ src/compiler/translator/msl/SymbolEnv.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/compiler/translator/msl/SymbolEnv.h b/src/compiler/translator/msl/SymbolEnv.h
+index 804dac4..0a40cb1 100644
+--- a/src/compiler/translator/msl/SymbolEnv.h
++++ b/src/compiler/translator/msl/SymbolEnv.h
+@@ -39,7 +39,7 @@ class VarField
+     ANGLE_INLINE bool operator==(const VarField &other) const
+     {
+         const int thisVarId  = mVariable ? mVariable->uniqueId().get() : -1;
+-        const int otherVarId = other.mVariable ? mVariable->uniqueId().get() : -1;
++        const int otherVarId = other.mVariable ? other.mVariable->uniqueId().get() : -1;
+         return thisVarId == otherVarId && mField == other.mField;
+     }
+ 
+-- 
+2.43.0
+

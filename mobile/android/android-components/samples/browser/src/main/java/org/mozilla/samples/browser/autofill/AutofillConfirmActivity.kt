@@ -8,9 +8,7 @@ import mozilla.components.feature.autofill.AutofillConfiguration
 import mozilla.components.feature.autofill.ui.AbstractAutofillConfirmActivity
 import org.mozilla.samples.browser.ext.components
 
-/**
- * Activity responsible for asking the user to confirm before autofilling a third-party app.
- */
+/** Activity responsible for asking the user to confirm before autofilling a third-party app. */
 class AutofillConfirmActivity : AbstractAutofillConfirmActivity() {
     override val configuration: AutofillConfiguration by lazy { components.autofillConfiguration }
 }

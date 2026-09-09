@@ -11,19 +11,17 @@ import mozilla.components.feature.password.importer.PasswordsImporterState.Finis
 import mozilla.components.feature.password.importer.PasswordsImporterState.Loading
 import mozilla.components.feature.password.importer.PasswordsImporterState.SelectingFile
 
-/**
- * Reduces the given [action] into a new [PasswordsImporterState].
- */
+/** Reduces the given [action] into a new [PasswordsImporterState]. */
 fun passwordsImporterReducer(
     state: PasswordsImporterState,
     action: PasswordsImporterAction,
-): PasswordsImporterState = when (action) {
-    PasswordsImporterAction.ViewAppeared -> SelectingFile
-    is PasswordsImporterAction.FileSelected -> state
-    PasswordsImporterAction.ImportStarted -> Loading
-    is PasswordsImporterAction.ImportFinished -> Finished(Success(action.passwordsImported))
-    PasswordsImporterAction.ImportFailed -> Finished(Failure)
-    PasswordsImporterAction.FileSelectionCanceled,
-    PasswordsImporterAction.ImportCanceled,
-        -> Finished(Canceled)
-}
+): PasswordsImporterState =
+    when (action) {
+        PasswordsImporterAction.ViewAppeared -> SelectingFile
+        is PasswordsImporterAction.FileSelected -> state
+        PasswordsImporterAction.ImportStarted -> Loading
+        is PasswordsImporterAction.ImportFinished -> Finished(Success(action.passwordsImported))
+        PasswordsImporterAction.ImportFailed -> Finished(Failure)
+        PasswordsImporterAction.FileSelectionCanceled,
+        PasswordsImporterAction.ImportCanceled -> Finished(Canceled)
+    }

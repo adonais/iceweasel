@@ -210,3 +210,89 @@ def check_host_bin_prog(var, prog, toolchain=None):
 
 check_host_bin_prog("EMBEDDED_UNIFFI_BINDGEN", "embedded-uniffi-bindgen")
 check_host_bin_prog("NIMBUS_FML", "nimbus-fml")
+
+
+@depends(
+    moz_app_name,
+    android_cpu_arch,
+    moz_child_process_name,
+    moz_debug,
+    "MOZ_ANDROID_EXCLUDE_FONTS",
+    "--enable-pref-extensions",
+    artifact_builds,
+    "MOZ_ANDROID_FAT_AAR_ARCHITECTURES",
+    mac_bundle_name,
+    moz_pkg_binpath,
+    clang_rt_asan_lib_path,
+    enable_appservices_in_tree,
+)
+@imports(_from="mozbuild.packaging", _import="quote_defines")
+@imports(_from="os.path", _import="basename")
+def package_manifest_defines(
+    app_name,
+    android_cpu_arch,
+    child_process_name,
+    moz_debug,
+    exclude_fonts,
+    pref_extensions,
+    artifact_builds,
+    fat_aar_architectures,
+    mac_bundle_name,
+    binpath,
+    clang_rt_asan_lib_path,
+    appservices_in_tree,
+):
+    defines = [
+        f"-DMOZ_APP_NAME={app_name}",
+        "-DPREF_DIR=defaults/pref",
+        "-DJAREXT=",
+        f"-DMOZ_CHILD_PROCESS_NAME={child_process_name or ''}",
+        f"-DANDROID_CPU_ARCH={android_cpu_arch or ''}",
+        f"-DBINPATH={binpath}",
+    ]
+    if moz_debug:
+        defines.append("-DMOZ_DEBUG=1")
+    if exclude_fonts:
+        defines.append("-DMOZ_ANDROID_EXCLUDE_FONTS=1")
+    if pref_extensions:
+        defines.append("-DMOZ_PREF_EXTENSIONS=1")
+    if artifact_builds:
+        defines.append("-DMOZ_ARTIFACT_BUILDS=1")
+    if fat_aar_architectures:
+        defines.append("-DMOZ_ANDROID_FAT_AAR_ARCHITECTURES=1")
+    if mac_bundle_name:
+        defines.append(f"-DAPPNAME={mac_bundle_name}")
+    if clang_rt_asan_lib_path:
+        defines.append(f"-DMOZ_CLANG_RT_ASAN_LIB={basename(clang_rt_asan_lib_path)}")
+    if appservices_in_tree:
+        defines.append("-DMOZ_APPSERVICES_IN_TREE=1")
+    return quote_defines(defines)
+
+
+set_config("PACKAGE_MANIFEST_DEFINES", package_manifest_defines)
+
+
+@depends(build_environment.topsrcdir)
+@imports(_import="mozpack.path", _as="mozpath")
+def package_inputs(topsrcdir):
+    installer = mozpath.join(topsrcdir, "mobile", "android", "installer")
+    return namespace(
+        manifest=mozpath.join(installer, "package-manifest.in"),
+        removals=mozpath.join(installer, "removed-files.in"),
+        allowed_dupes=[mozpath.join(installer, "allowed-dupes.mn")],
+    )
+
+
+set_config("MOZ_PKG_MANIFEST", package_inputs.manifest)
+set_config("MOZ_PKG_REMOVALS", package_inputs.removals)
+set_config("MOZ_PKG_ALLOWED_DUPES", package_inputs.allowed_dupes)
+
+
+# When packaging an artifact build not all xpt files expected by the packager
+# will be present. Toolchain gradle-dependencies tasks use
+# --disable-compile-environment and bin/lib*.so files are missing.
+set_config(
+    "MOZ_PKG_FATAL_WARNINGS", True, when=~artifact_builds & compile_environment
+)
+
+set_config("MOZ_CHROME_LOCALE_ENTRIES", ["@BINPATH@/chrome/"])

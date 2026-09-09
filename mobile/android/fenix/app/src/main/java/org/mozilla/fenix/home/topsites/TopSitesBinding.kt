@@ -17,14 +17,13 @@ import mozilla.components.feature.top.sites.presenter.DefaultTopSitesPresenter
 import mozilla.components.lib.state.helpers.AbstractBinding
 
 /**
- * A binding for starting the [DefaultTopSitesPresenter] and observing the [SearchEngine]
- * to update the top sites that are displayed.
+ * A binding for starting the [DefaultTopSitesPresenter] and observing the [SearchEngine] to update the top sites that
+ * are displayed.
  *
  * @param browserStore The [BrowserStore] to observe state changes.
- * @param presenter The [DefaultTopSitesPresenter] that connects the top sites view
- * with the storage.
- * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will
- * occur. Defaults to [Dispatchers.Main].
+ * @param presenter The [DefaultTopSitesPresenter] that connects the top sites view with the storage.
+ * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur. Defaults to
+ *   [Dispatchers.Main].
  */
 class TopSitesBinding(
     browserStore: BrowserStore,
@@ -44,7 +43,8 @@ class TopSitesBinding(
 
     override suspend fun onState(flow: Flow<BrowserState>) {
         // Whenever the selected search engine changes, update the top sites that are presented.
-        flow.map { state -> state.search.selectedOrDefaultSearchEngine?.name }
+        flow
+            .map { state -> state.search.selectedOrDefaultSearchEngine?.name }
             .distinctUntilChanged()
             .collect {
                 presenter.onStorageUpdated()

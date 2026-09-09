@@ -15,6 +15,7 @@ async def test_step_out_from_nested_function(
     inline,
     subscribe_events,
     wait_for_event,
+    wait_for_future_safe,
     set_breakpoint,
 ):
     await subscribe_events([PAUSED_EVENT, RESUMED_EVENT])
@@ -49,7 +50,7 @@ function test() {
         )
     )
 
-    paused_event1 = await on_paused
+    paused_event1 = await wait_for_future_safe(on_paused)
 
     assert paused_event1["line"] == 5
     assert paused_event1["callFrames"][0]["functionName"] == "helper"
@@ -59,7 +60,7 @@ function test() {
     on_paused2 = wait_for_event(PAUSED_EVENT)
     await bidi_session.moz.debugging.step_out(context=new_tab["context"])
 
-    paused_event2 = await on_paused2
+    paused_event2 = await wait_for_future_safe(on_paused2)
     assert paused_event2["line"] == 10
     assert paused_event2["callFrames"][0]["functionName"] == "test"
 
@@ -77,6 +78,7 @@ async def test_step_out_from_top_level(
     inline,
     subscribe_events,
     wait_for_event,
+    wait_for_future_safe,
     set_breakpoint,
 ):
     await subscribe_events([PAUSED_EVENT, RESUMED_EVENT])
@@ -107,7 +109,7 @@ function test() {
         )
     )
 
-    paused_event = await on_paused
+    paused_event = await wait_for_future_safe(on_paused)
     assert paused_event["line"] == 6
     assert paused_event["callFrames"][0]["functionName"] == "test"
 

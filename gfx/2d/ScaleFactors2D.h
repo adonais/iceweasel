@@ -69,13 +69,8 @@ struct BaseScaleFactors2D {
 
   BaseScaleFactors2D& operator=(const BaseScaleFactors2D&) = default;
 
-  bool operator==(const BaseScaleFactors2D& aOther) const {
-    return xScale == aOther.xScale && yScale == aOther.yScale;
-  }
-
-  bool operator!=(const BaseScaleFactors2D& aOther) const {
-    return !(*this == aOther);
-  }
+  bool operator==(const BaseScaleFactors2D& aOther) const = default;
+  bool operator!=(const BaseScaleFactors2D& aOther) const = default;
 
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const BaseScaleFactors2D& aScale) {

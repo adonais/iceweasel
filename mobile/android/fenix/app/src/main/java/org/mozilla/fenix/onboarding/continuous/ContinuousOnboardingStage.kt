@@ -4,7 +4,11 @@
 
 package org.mozilla.fenix.onboarding.continuous
 
-/**
- * Stages of the continuous onboarding flow.
- */
-enum class ContinuousOnboardingStage { DAY_2, DAY_3, DAY_7, NONE }
+/** Stages of the continuous onboarding flow. */
+enum class ContinuousOnboardingStage {
+    DAY_2,
+    DAY_3,
+    DAY_5,
+    DAY_7,
+    NONE,
+}

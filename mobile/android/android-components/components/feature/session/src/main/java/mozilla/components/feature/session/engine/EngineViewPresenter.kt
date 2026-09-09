@@ -19,9 +19,7 @@ import mozilla.components.concept.engine.EngineView
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
 
-/**
- * Presenter implementation for EngineView.
- */
+/** Presenter implementation for EngineView. */
 internal class EngineViewPresenter(
     private val store: BrowserStore,
     private val engineView: EngineView,
@@ -32,28 +30,26 @@ internal class EngineViewPresenter(
     private var scope: CoroutineScope? = null
     private var currentlyRenderedTabId: String? = null
 
-    /**
-     * Start presenter and display data in view.
-     */
+    /** Start presenter and display data in view. */
     fun start() {
-        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.map { state -> state.findTabOrCustomTabOrSelectedTab(tabId) }
-                // Render if the tab itself changed and when an engine session is linked
-                .ifAnyChanged { tab ->
-                    arrayOf(
-                        tab?.id,
-                        tab?.engineState?.engineSession,
-                        tab?.engineState?.crashed,
-                        tab?.content?.firstContentfulPaint,
-                    )
-                }
-                .collect { tab -> onTabToRender(tab) }
-        }
+        scope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .map { state -> state.findTabOrCustomTabOrSelectedTab(tabId) }
+                    // Render if the tab itself changed and when an engine session is linked
+                    .ifAnyChanged { tab ->
+                        arrayOf(
+                            tab?.id,
+                            tab?.engineState?.engineSession,
+                            tab?.engineState?.crashed,
+                            tab?.content?.firstContentfulPaint,
+                        )
+                    }
+                    .collect { tab -> onTabToRender(tab) }
+            }
     }
 
-    /**
-     * Stop presenter from updating view.
-     */
+    /** Stop presenter from updating view. */
     fun stop() {
         stampLastVisibleAt()
         scope?.cancel()

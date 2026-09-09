@@ -4,10 +4,6 @@
 
 package mozilla.components.lib.dataprotect
 
-import org.junit.Assert
-import org.junit.Before
-import org.junit.Ignore
-import org.junit.Test
 import java.nio.charset.StandardCharsets
 import java.security.GeneralSecurityException
 import java.security.Key
@@ -18,6 +14,10 @@ import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import kotlin.test.assertNotNull
+import org.junit.Assert
+import org.junit.Before
+import org.junit.Ignore
+import org.junit.Test
 
 private val DEFAULTPASS = "testit!".toCharArray()
 
@@ -29,8 +29,8 @@ internal class MockStoreWrapper : KeyStoreWrapper() {
         return ks
     }
 
-    override fun getKeyFor(label: String): Key? =
-        getKeyStore().getKey(label, DEFAULTPASS)
+    override fun getKeyFor(label: String): Key? = getKeyStore().getKey(label, DEFAULTPASS)
+
     override fun makeKeyFor(label: String): SecretKey {
         val gen = KeyGenerator.getInstance("AES")
         gen.init(256)

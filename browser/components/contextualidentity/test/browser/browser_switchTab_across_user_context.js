@@ -45,7 +45,7 @@ add_task(async function test_switch_tab() {
       return (
         result.type == UrlbarShared.RESULT_TYPE.TAB_SWITCH &&
         result.payload.url == "https://example.com/" &&
-        result.payload.userContextId == contextIdTabA
+        result.payload.userContext.id == contextIdTabA
       );
     }),
     "Switch tab row for user context A is present in results."
@@ -57,7 +57,7 @@ add_task(async function test_switch_tab() {
     return (
       result.type == UrlbarShared.RESULT_TYPE.TAB_SWITCH &&
       result.payload.url == "https://example.com/" &&
-      result.payload.userContextId == contextIdTabB
+      result.payload.userContext.id == contextIdTabB
     );
   });
 

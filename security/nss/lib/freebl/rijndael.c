@@ -330,7 +330,7 @@ gen_TInvXi(PRUint8 tx, PRUint8 i)
     ((((PRUint32)SBOX((w >> 24) & 0xff)) << 24) | \
      (((PRUint32)SBOX((w >> 16) & 0xff)) << 16) | \
      (((PRUint32)SBOX((w >> 8) & 0xff)) << 8) |   \
-     (((PRUint32)SBOX((w)&0xff))))
+     (((PRUint32)SBOX((w) & 0xff))))
 
 #ifdef IS_LITTLE_ENDIAN
 #define ROTBYTE(b) \
@@ -513,15 +513,15 @@ rijndael_invkey_expansion(AESContext *cx, const unsigned char *key, unsigned int
  *************************************************************************/
 
 #ifdef IS_LITTLE_ENDIAN
-#define BYTE0WORD(w) ((w)&0x000000ff)
-#define BYTE1WORD(w) ((w)&0x0000ff00)
-#define BYTE2WORD(w) ((w)&0x00ff0000)
-#define BYTE3WORD(w) ((w)&0xff000000)
+#define BYTE0WORD(w) ((w) & 0x000000ff)
+#define BYTE1WORD(w) ((w) & 0x0000ff00)
+#define BYTE2WORD(w) ((w) & 0x00ff0000)
+#define BYTE3WORD(w) ((w) & 0xff000000)
 #else
-#define BYTE0WORD(w) ((w)&0xff000000)
-#define BYTE1WORD(w) ((w)&0x00ff0000)
-#define BYTE2WORD(w) ((w)&0x0000ff00)
-#define BYTE3WORD(w) ((w)&0x000000ff)
+#define BYTE0WORD(w) ((w) & 0xff000000)
+#define BYTE1WORD(w) ((w) & 0x00ff0000)
+#define BYTE2WORD(w) ((w) & 0x0000ff00)
+#define BYTE3WORD(w) ((w) & 0x000000ff)
 #endif
 
 typedef union {

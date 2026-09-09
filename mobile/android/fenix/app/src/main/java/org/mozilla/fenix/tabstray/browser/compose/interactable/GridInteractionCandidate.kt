@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.grid.LazyGridItemInfo
 
 /**
  * Represents a candidate for a tab grid item interaction.
+ *
  * @property type the [InteractionType] representing the type of interaction - reorder, scroll, drag and drop, etc.
  * @property score the [Float] representing the candidate score - lowest score wins.
  * @property anchorItem the [LazyGridItemInfo] representing the item that anchors the interaction, or the target.

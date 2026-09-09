@@ -12,8 +12,9 @@ internal class StartupCrashStore(
     initialState: StartupCrashState,
     reducer: Reducer<StartupCrashState, StartupCrashAction> = ::startupCrashReducer,
     middleware: List<Middleware<StartupCrashState, StartupCrashAction>> = listOf(),
-) : Store<StartupCrashState, StartupCrashAction>(
-    initialState = initialState,
-    reducer = reducer,
-    middleware = middleware,
-)
+) :
+    Store<StartupCrashState, StartupCrashAction>(
+        initialState = initialState,
+        reducer = reducer,
+        middleware = middleware,
+    )

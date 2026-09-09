@@ -97,25 +97,23 @@ internal class AutofillSettingsMiddleware(
             is UpdateCreditCards,
             is AccountAuthenticationAction.Authenticated,
             is AccountAuthenticationAction.Failed,
-            is AccountAuthenticationAction.NotAuthenticated,
-                -> Unit
+            is AccountAuthenticationAction.NotAuthenticated -> Unit
         }
     }
 
-    private fun Store<AutofillSettingsState, AutofillSettingsAction>.loadAddressesAndCreditCards() =
-        scope.launch {
-            val addresses = autofillSettingsStorage.getAllAddresses()
-            val creditCards = autofillSettingsStorage.getAllCreditCards()
+    private fun Store<AutofillSettingsState, AutofillSettingsAction>.loadAddressesAndCreditCards() = scope.launch {
+        val addresses = autofillSettingsStorage.getAllAddresses()
+        val creditCards = autofillSettingsStorage.getAllCreditCards()
 
-            dispatch(UpdateAddresses(addresses = addresses))
-            dispatch(UpdateCreditCards(creditCards = creditCards))
-        }
+        dispatch(UpdateAddresses(addresses = addresses))
+        dispatch(UpdateCreditCards(creditCards = creditCards))
+    }
 
     private fun Store<AutofillSettingsState, AutofillSettingsAction>.registerObserverForAccountChanges(
-        accountManager: FxaAccountManager,
-    ) =
-        scope.launch {
-            observer = object : AccountObserver {
+        accountManager: FxaAccountManager
+    ) = scope.launch {
+        observer =
+            object : AccountObserver {
                 override fun onAuthenticated(account: OAuthAccount, authType: AuthType) {
                     dispatch(AccountAuthenticationAction.Authenticated)
                 }
@@ -129,6 +127,6 @@ internal class AutofillSettingsMiddleware(
                 }
             }
 
-            accountManager.register(observer)
-        }
+        accountManager.register(observer)
+    }
 }

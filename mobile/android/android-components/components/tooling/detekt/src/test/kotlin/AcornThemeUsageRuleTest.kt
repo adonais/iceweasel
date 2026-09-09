@@ -12,16 +12,16 @@ import org.junit.Test
 
 class AcornThemeUsageRuleTest {
 
-    private val fenixConfig = TestConfig(
-        "appThemeName" to "org.mozilla.fenix.theme.FirefoxTheme",
-    )
+    private val fenixConfig = TestConfig("appThemeName" to "org.mozilla.fenix.theme.FirefoxTheme")
 
     @Test
     fun `GIVEN appThemeName is not configured WHEN AcornTheme is imported THEN it is flagged with a generic message`() {
-        val code = """
+        val code =
+            """
             package com.example
             import mozilla.components.compose.base.theme.AcornTheme
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = AcornThemeUsageRule().lint(code)
 
@@ -34,10 +34,12 @@ class AcornThemeUsageRuleTest {
 
     @Test
     fun `GIVEN appThemeName is configured WHEN AcornTheme is imported THEN the message mentions the appThemeName to use`() {
-        val code = """
+        val code =
+            """
             package org.mozilla.fenix.compose
             import mozilla.components.compose.base.theme.AcornTheme
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = AcornThemeUsageRule(fenixConfig).lint(code)
 
@@ -50,10 +52,12 @@ class AcornThemeUsageRuleTest {
 
     @Test
     fun `WHEN the configured app theme is imported THEN it is not flagged`() {
-        val code = """
+        val code =
+            """
             package org.mozilla.fenix.compose
             import org.mozilla.fenix.theme.FirefoxTheme
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = AcornThemeUsageRule(fenixConfig).lint(code)
 
@@ -62,12 +66,14 @@ class AcornThemeUsageRuleTest {
 
     @Test
     fun `WHEN other imports from the Acorn theme package are used THEN they are not flagged`() {
-        val code = """
+        val code =
+            """
             package org.mozilla.fenix.compose
             import mozilla.components.compose.base.theme.AcornColors
             import mozilla.components.compose.base.theme.AcornTypography
             import mozilla.components.compose.base.theme.lightColorPalette
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = AcornThemeUsageRule(fenixConfig).lint(code)
 
@@ -76,10 +82,12 @@ class AcornThemeUsageRuleTest {
 
     @Test
     fun `WHEN AcornTheme is imported with an alias THEN it is flagged`() {
-        val code = """
+        val code =
+            """
             package org.mozilla.fenix.compose
             import mozilla.components.compose.base.theme.AcornTheme as Theme
-        """.trimIndent()
+            """
+                .trimIndent()
 
         val findings = AcornThemeUsageRule(fenixConfig).lint(code)
 

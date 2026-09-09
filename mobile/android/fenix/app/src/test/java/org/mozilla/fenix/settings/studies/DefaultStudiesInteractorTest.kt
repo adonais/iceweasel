@@ -20,20 +20,20 @@ class DefaultStudiesInteractorTest {
     private val openUrlInBrowserCalls = mutableListOf<String>()
     private val openUrlInBrowser: (String) -> Unit = { openUrlInBrowserCalls.add(it) }
 
-    @RelaxedMockK
-    private lateinit var experiments: NimbusApi
+    @RelaxedMockK private lateinit var experiments: NimbusApi
 
     private lateinit var interactor: DefaultStudiesInteractor
 
     @Before
     fun setup() {
         MockKAnnotations.init(this)
-        interactor = spyk(
-            DefaultStudiesInteractor(
-                openUrlInBrowser = openUrlInBrowser,
-                experiments = experiments,
-            ),
-        )
+        interactor =
+            spyk(
+                DefaultStudiesInteractor(
+                    openUrlInBrowser = openUrlInBrowser,
+                    experiments = experiments,
+                )
+            )
     }
 
     @Test

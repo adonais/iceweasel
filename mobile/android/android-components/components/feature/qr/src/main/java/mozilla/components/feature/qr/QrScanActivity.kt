@@ -16,19 +16,15 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.commit
 
 /**
- *
- * This [AppCompatActivity] hosts the [QrFragment] and
- * uses the [androidx.fragment.app.FragmentResultListener]
- * to send results back to the caller.
+ * This [AppCompatActivity] hosts the [QrFragment] and uses the [androidx.fragment.app.FragmentResultListener] to send
+ * results back to the caller.
  */
 class QrScanActivity : AppCompatActivity() {
 
     private var scanMessage: Int? = null
 
     private val requestPermissionLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestPermission(),
-        ) { isGranted: Boolean ->
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
             if (isGranted) {
                 // start scan
                 launchQrFragment()
@@ -37,12 +33,11 @@ class QrScanActivity : AppCompatActivity() {
                 setResult(RESULT_CANCELED)
                 finish()
             }
-    }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (intent.hasExtra(EXTRA_SCAN_MESSAGE)) {
-            scanMessage = intent.getIntExtra(EXTRA_SCAN_MESSAGE, 0)
-                .takeIf { it != 0 }
+            scanMessage = intent.getIntExtra(EXTRA_SCAN_MESSAGE, 0).takeIf { it != 0 }
         }
         supportFragmentManager.fragmentFactory = QrFragmentFactory { scanMessage }
 
@@ -56,9 +51,10 @@ class QrScanActivity : AppCompatActivity() {
             if (requestKey == QrFragment.RESULT_REQUEST_KEY) {
                 val resultData = bundle.getString(QrFragment.RESULT_BUNDLE_KEY)
                 if (resultData != null) {
-                    val resultIntent = Intent().apply {
-                        putExtra(EXTRA_SCAN_RESULT_DATA, resultData)
-                    }
+                    val resultIntent =
+                        Intent().apply {
+                            putExtra(EXTRA_SCAN_RESULT_DATA, resultData)
+                        }
                     setResult(RESULT_OK, resultIntent)
                 } else {
                     setResult(RESULT_CANCELED)
@@ -94,23 +90,17 @@ class QrScanActivity : AppCompatActivity() {
                 launchQrFragment()
             }
             else -> {
-                requestPermissionLauncher.launch(
-                    Manifest.permission.CAMERA,
-                )
+                requestPermissionLauncher.launch(Manifest.permission.CAMERA)
             }
         }
     }
 
-    /**
-     * Companion object for [QrScanActivity].
-     */
+    /** Companion object for [QrScanActivity]. */
     companion object {
         const val EXTRA_SCAN_MESSAGE = "scanMessage"
         const val EXTRA_SCAN_RESULT_DATA = "qr_fragment_result_data"
 
-        /**
-         * Creates an [Intent] to start [QrScanActivity].
-         */
+        /** Creates an [Intent] to start [QrScanActivity]. */
         fun newIntent(context: Context, scanMessage: Int? = null): Intent {
             return Intent(context, QrScanActivity::class.java).apply {
                 if (scanMessage != null) {

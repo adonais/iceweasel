@@ -6,24 +6,22 @@ package org.mozilla.fenix.library
 
 import android.content.Context
 import android.view.ViewGroup
+import androidx.appcompat.R as appcompatR
 import androidx.appcompat.widget.Toolbar
+import com.google.android.material.R as materialR
 import mozilla.components.support.ktx.android.content.getColorFromAttr
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.asActivity
 import org.mozilla.fenix.ext.setToolbarColors
-import androidx.appcompat.R as appcompatR
-import com.google.android.material.R as materialR
-import mozilla.components.ui.icons.R as iconsR
 
-open class LibraryPageView(
-    val containerView: ViewGroup,
-) {
-    protected val context: Context inline get() = containerView.context
+open class LibraryPageView(val containerView: ViewGroup) {
+    protected val context: Context
+        inline get() = containerView.context
+
     protected val activity = context.asActivity()
 
-    protected fun setUiForNormalMode(
-        title: String?,
-    ) {
+    protected fun setUiForNormalMode(title: String?) {
         updateToolbar(
             title = title,
             foregroundColor = context.getColorFromAttr(materialR.attr.colorOnSurface),
@@ -31,9 +29,7 @@ open class LibraryPageView(
         )
     }
 
-    protected fun setUiForSelectingMode(
-        title: String?,
-    ) {
+    protected fun setUiForSelectingMode(title: String?) {
         updateToolbar(
             title = title,
             foregroundColor = context.getColorFromAttr(materialR.attr.colorOnPrimary),

@@ -6,6 +6,4 @@ STANDALONE_MAKEFILE := 1
 
 include $(topsrcdir)/config/rules.mk
 
-MOZ_PKG_DUPEFLAGS = -f $(srcdir)/allowed-dupes.mn
-
 include $(topsrcdir)/toolkit/mozapps/installer/packager.mk

@@ -46,7 +46,7 @@ static void close_logging() {
 // to function pointer types. So the work-around is to convert first to size_t.
 // http://www.trilithium.com/johan/2004/12/problem-with-dlsym/
 template <typename func_ptr_type>
-static func_ptr_type cast(void* ptr) {
+func_ptr_type cast(void* ptr) {
   return reinterpret_cast<func_ptr_type>(reinterpret_cast<size_t>(ptr));
 }
 

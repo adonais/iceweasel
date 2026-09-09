@@ -304,9 +304,6 @@ class MockCall : public webrtc::Call {
   void SignalChannelNetworkState(webrtc::MediaType media,
                                  webrtc::NetworkState state) override {}
 
-  void OnAudioTransportOverheadChanged(
-      int transport_overhead_per_packet) override {}
-
   void OnUpdateSyncGroup(webrtc::AudioReceiveStreamInterface& stream,
                          absl::string_view sync_group) override {}
 

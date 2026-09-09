@@ -20,33 +20,21 @@ data class Icon(
     val source: Source,
     val maskable: Boolean = false,
 ) {
-    /**
-     * The source of an [Icon].
-     */
+    /** The source of an [Icon]. */
     enum class Source {
-        /**
-         * This icon was generated.
-         */
+        /** This icon was generated. */
         GENERATOR,
 
-        /**
-         * This icon was downloaded.
-         */
+        /** This icon was downloaded. */
         DOWNLOAD,
 
-        /**
-         * This icon was inlined in the document.
-         */
+        /** This icon was inlined in the document. */
         INLINE,
 
-        /**
-         * This icon was loaded from an in-memory cache.
-         */
+        /** This icon was loaded from an in-memory cache. */
         MEMORY,
 
-        /**
-         * This icon was loaded from a disk cache.
-         */
+        /** This icon was loaded from a disk cache. */
         DISK,
     }
 }

@@ -60,25 +60,7 @@ struct ReferencePtr {
 
   // Implement some operators so this class can be used as a key in
   // stdlib classes.
-  bool operator<(const ReferencePtr& aOther) const {
-    return mLongPtr < aOther.mLongPtr;
-  }
-
-  bool operator>(const ReferencePtr& aOther) const {
-    return mLongPtr > aOther.mLongPtr;
-  }
-
-  bool operator==(const ReferencePtr& aOther) const {
-    return mLongPtr == aOther.mLongPtr;
-  }
-
-  bool operator!=(const ReferencePtr& aOther) const {
-    return !(*this == aOther);
-  }
-
-  bool operator>=(const ReferencePtr& aOther) const {
-    return mLongPtr >= aOther.mLongPtr;
-  }
+  auto operator<=>(const ReferencePtr& aOther) const = default;
 
   uint64_t mLongPtr;
 };

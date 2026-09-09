@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.prompts.identitycredential
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -16,17 +17,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.concept.identitycredential.Account
 import mozilla.components.concept.identitycredential.Provider
 import mozilla.components.feature.prompts.R
@@ -50,36 +57,46 @@ fun SelectAccountDialog(
     colors: DialogColors = DialogColors.default(),
     onAccountClick: (Account) -> Unit,
 ) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-    ) {
+    val iconDp = AcornTheme.layout.size.static200
+    val iconSize = with(LocalDensity.current) { iconDp.roundToPx() }
+    val icon = provider.icon
+    val providerIcon by
+        produceState<Bitmap?>(initialValue = null, icon, iconSize) {
+            value = withContext(Dispatchers.Default) { icon?.base64ToBitmap(iconSize, iconSize) }
+        }
+
+    Column(modifier = modifier.fillMaxWidth()) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(16.dp),
         ) {
-            provider.icon?.base64ToBitmap()?.asImageBitmap()?.let {
-                Image(
-                    bitmap = it,
-                    contentDescription = null,
-                    contentScale = ContentScale.FillWidth,
-                    modifier = Modifier
-                        .size(16.dp),
-                )
+            if (icon != null) {
+                // The slot is held while the icon decodes, so the title does not shift once it lands.
+                providerIcon?.asImageBitmap()?.let {
+                    Image(
+                        bitmap = it,
+                        contentDescription = null,
+                        contentScale = ContentScale.FillWidth,
+                        modifier = Modifier.size(iconDp),
+                    )
+                } ?: Spacer(Modifier.size(iconDp))
 
                 Spacer(Modifier.width(4.dp))
             }
 
             Text(
-                text = stringResource(
-                    id = R.string.mozac_feature_prompts_identity_credentials_choose_account_for_provider,
-                    provider.name,
-                ),
-                style = TextStyle(
-                    fontSize = 16.sp,
-                    lineHeight = 24.sp,
-                    color = colors.title,
-                    letterSpacing = 0.15.sp,
-                ),
+                text =
+                    stringResource(
+                        id = R.string.mozac_feature_prompts_identity_credentials_choose_account_for_provider,
+                        provider.name,
+                    ),
+                style =
+                    TextStyle(
+                        fontSize = 16.sp,
+                        lineHeight = 24.sp,
+                        color = colors.title,
+                        letterSpacing = 0.15.sp,
+                    ),
             )
         }
 
@@ -98,6 +115,13 @@ private fun AccountItem(
     colors: DialogColors = DialogColors.default(),
     onClick: (Account) -> Unit,
 ) {
+    val iconDp = AcornTheme.layout.size.static400
+    val iconSize = with(LocalDensity.current) { iconDp.roundToPx() }
+    val accountIcon by
+        produceState<Bitmap?>(initialValue = null, account.icon, iconSize) {
+            value = withContext(Dispatchers.Default) { account.icon?.base64ToBitmap(iconSize, iconSize) }
+        }
+
     IdentityCredentialItem(
         title = account.name,
         description = account.email,
@@ -105,20 +129,14 @@ private fun AccountItem(
         modifier = modifier,
         onClick = { onClick(account) },
     ) {
-        account.icon?.base64ToBitmap()?.asImageBitmap()?.let { bitmap ->
+        accountIcon?.asImageBitmap()?.let { bitmap ->
             Image(
                 bitmap = bitmap,
                 contentDescription = null,
                 contentScale = ContentScale.FillWidth,
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .size(32.dp),
+                modifier = Modifier.padding(horizontal = 16.dp).size(iconDp),
             )
-        } ?: Spacer(
-            Modifier
-                .padding(horizontal = 16.dp)
-                .width(32.dp),
-        )
+        } ?: Spacer(Modifier.padding(horizontal = 16.dp).size(iconDp))
     }
 }
 
@@ -127,12 +145,13 @@ private fun AccountItem(
 private fun AccountItemPreview() {
     AccountItem(
         modifier = Modifier.background(Color.White),
-        account = Account(
-            0,
-            "user@mozilla.com",
-            "User",
-            USER_PICTURE,
-        ),
+        account =
+            Account(
+                0,
+                "user@mozilla.com",
+                "User",
+                USER_PICTURE,
+            ),
         onClick = {},
     )
 }
@@ -143,22 +162,23 @@ private fun SelectAccountDialogPreview() {
     DialogPreviewMaterialTheme {
         SelectAccountDialog(
             provider = Provider(0, GOOGLE_FAVICON, "Google", "google.com"),
-            accounts = listOf(
-                Account(
-                    0,
-                    "user@mozilla.com",
-                    "User",
-                    USER_PICTURE,
+            accounts =
+                listOf(
+                    Account(
+                        0,
+                        "user@mozilla.com",
+                        "User",
+                        USER_PICTURE,
+                    ),
+                    Account(
+                        1,
+                        "user2@mozilla.com",
+                        "Google",
+                        null,
+                    ),
                 ),
-                Account(
-                    1,
-                    "user2@mozilla.com",
-                    "Google",
-                    null,
-                ),
-            ),
             modifier = Modifier.background(Color.White),
-            onAccountClick = { },
+            onAccountClick = {},
         )
     }
 }

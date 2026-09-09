@@ -20,9 +20,7 @@ import org.mozilla.fenix.helpers.MatcherHelper.itemWithDescription
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.isChecked
 
-/**
- * Implementation of Robot Pattern for the Open Links In Apps sub menu.
- */
+/** Implementation of Robot Pattern for the Open Links In Apps sub menu. */
 class SettingsSubMenuOpenLinksInAppsRobot {
 
     fun verifyOpenLinksInAppsView(selectedOpenLinkInAppsOption: String) {
@@ -47,13 +45,17 @@ class SettingsSubMenuOpenLinksInAppsRobot {
     }
 
     fun verifySelectedOpenLinksInAppOption(openLinkInAppsOption: String) {
-        Log.i(TAG, "verifySelectedOpenLinksInAppOption: Trying to verify that the $openLinkInAppsOption option is checked")
+        Log.i(
+            TAG,
+            "verifySelectedOpenLinksInAppOption: Trying to verify that the $openLinkInAppsOption option is checked",
+        )
         onView(
-            allOf(
-                withId(R.id.radio_button),
-                hasSibling(withText(openLinkInAppsOption)),
-            ),
-        ).check(matches(isChecked(true)))
+                allOf(
+                    withId(R.id.radio_button),
+                    hasSibling(withText(openLinkInAppsOption)),
+                )
+            )
+            .check(matches(isChecked(true)))
         Log.i(TAG, "verifySelectedOpenLinksInAppOption: Verified that the $openLinkInAppsOption option is checked")
     }
 
@@ -81,10 +83,12 @@ class SettingsSubMenuOpenLinksInAppsRobot {
         }
     }
 }
+
 private fun goBackButton() = itemWithDescription("Navigate up")
-private fun alwaysOption() =
-    itemContainingText(getStringResource(R.string.preferences_open_links_in_apps_always))
+
+private fun alwaysOption() = itemContainingText(getStringResource(R.string.preferences_open_links_in_apps_always))
+
 private fun askBeforeOpeningOption() =
     itemContainingText(getStringResource(R.string.preferences_open_links_in_apps_ask))
-private fun neverOption() =
-    itemContainingText(getStringResource(R.string.preferences_open_links_in_apps_never))
+
+private fun neverOption() = itemContainingText(getStringResource(R.string.preferences_open_links_in_apps_never))

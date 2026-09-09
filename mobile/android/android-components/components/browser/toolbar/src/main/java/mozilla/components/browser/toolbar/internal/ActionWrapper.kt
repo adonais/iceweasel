@@ -7,9 +7,7 @@ package mozilla.components.browser.toolbar.internal
 import android.view.View
 import mozilla.components.concept.toolbar.Toolbar
 
-/**
- * A wrapper helper to pair a Toolbar.Action with an optional View.
- */
+/** A wrapper helper to pair a Toolbar.Action with an optional View. */
 internal class ActionWrapper(
     var actual: Toolbar.Action,
     var view: View? = null,

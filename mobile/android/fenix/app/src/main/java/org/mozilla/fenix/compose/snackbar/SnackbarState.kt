@@ -40,14 +40,10 @@ data class SnackbarState(
     val onDismiss: () -> Unit = defaultOnDismiss,
 ) {
 
-    /**
-     * A sealed type to represent a Snackbar's display duration.
-     */
+    /** A sealed type to represent a Snackbar's display duration. */
     sealed interface Duration {
 
-        /**
-         * A predefined display duration.
-         */
+        /** A predefined display duration. */
         enum class Preset(val durationMs: Int) : Duration {
             Indefinite(durationMs = Int.MAX_VALUE),
             Long(durationMs = 10000),
@@ -62,18 +58,15 @@ data class SnackbarState(
         data class Custom(val durationMs: Int) : Duration
     }
 
-    /**
-     * Get the display duration of the Snackbar in milliseconds.
-     */
+    /** Get the display duration of the Snackbar in milliseconds. */
     val durationMs: Int
-        get() = when (duration) {
-            is Duration.Preset -> duration.durationMs
-            is Duration.Custom -> duration.durationMs
-        }
+        get() =
+            when (duration) {
+                is Duration.Preset -> duration.durationMs
+                is Duration.Custom -> duration.durationMs
+            }
 
-    /**
-     * Convert [SnackbarState.Duration] to [SnackbarDuration].
-     */
+    /** Convert [SnackbarState.Duration] to [SnackbarDuration]. */
     fun toSnackbarDuration(): SnackbarDuration {
         return when (duration) {
             Duration.Preset.Indefinite -> SnackbarDuration.Indefinite
@@ -83,9 +76,7 @@ data class SnackbarState(
         }
     }
 
-    /**
-     * The type of Snackbar to display.
-     */
+    /** The type of Snackbar to display. */
     enum class Type {
         Default,
         Warning,
@@ -102,30 +93,28 @@ data class SnackbarState(
         val textOverflow: TextOverflow = TextOverflow.Ellipsis,
     )
 
-    /**
-     * Converts this [SnackbarState] into [SnackbarData] used to display a Snackbar.
-     */
+    /** Converts this [SnackbarState] into [SnackbarData] used to display a Snackbar. */
     fun toSnackbarData(): SnackbarData {
         return SnackbarData(
-            visuals = SnackbarVisuals(
-                message = message,
-                subMessage = subMessage?.text,
-                actionLabel = action?.label,
-                withDismissAction = withDismissAction,
-                duration = toSnackbarDuration(),
-            ),
+            visuals =
+                SnackbarVisuals(
+                    message = message,
+                    subMessage = subMessage?.text,
+                    actionLabel = action?.label,
+                    withDismissAction = withDismissAction,
+                    duration = toSnackbarDuration(),
+                ),
             dismiss = onDismiss,
             performAction = action?.onClick ?: {},
         )
     }
 }
 
-/**
- * Helper function to convert a Material Integer constant to a [SnackbarState.Duration].
- */
-fun Int.toSnackbarDuration(): SnackbarState.Duration = when (this) {
-    LENGTH_SHORT -> SnackbarState.Duration.Preset.Short
-    LENGTH_LONG -> SnackbarState.Duration.Preset.Long
-    LENGTH_INDEFINITE -> SnackbarState.Duration.Preset.Indefinite
-    else -> SnackbarState.Duration.Custom(durationMs = this)
-}
+/** Helper function to convert a Material Integer constant to a [SnackbarState.Duration]. */
+fun Int.toSnackbarDuration(): SnackbarState.Duration =
+    when (this) {
+        LENGTH_SHORT -> SnackbarState.Duration.Preset.Short
+        LENGTH_LONG -> SnackbarState.Duration.Preset.Long
+        LENGTH_INDEFINITE -> SnackbarState.Duration.Preset.Indefinite
+        else -> SnackbarState.Duration.Custom(durationMs = this)
+    }

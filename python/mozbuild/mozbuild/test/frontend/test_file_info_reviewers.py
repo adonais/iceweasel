@@ -4,18 +4,13 @@
 
 import unittest
 
-from mach.registrar import Registrar
 from mozunit import main
 
-# Importing mozbuild.frontend.mach_commands runs the @Command decorators, which
-# require their categories to be registered first.
-for _cat in ("build-dev",):
-    if _cat not in Registrar.categories:
-        Registrar.register_category(_cat, _cat, _cat)
-
-from mozbuild.frontend.mach_commands import (  # noqa: E402
-    _herald_reviewers_for_files,
-    _parse_reviewers_from_subjects,
+from mozbuild.frontend.reviewers import (
+    herald_reviewers_for_files,
+    mots_groups_for_files,
+    mots_modules_for_files,
+    parse_reviewers_from_subjects,
 )
 
 
@@ -41,7 +36,7 @@ def _individual(target, blocking=False):
 
 
 def _groups(rules, relpaths):
-    return _herald_reviewers_for_files(rules, relpaths)[0]
+    return herald_reviewers_for_files(rules, relpaths)[0]
 
 
 class TestHeraldReviewersForFiles(unittest.TestCase):
@@ -148,7 +143,7 @@ class TestHeraldReviewersForFiles(unittest.TestCase):
                 )
             ]
         }
-        groups, individuals = _herald_reviewers_for_files(rules, ["dom/foo.cpp"])
+        groups, individuals = herald_reviewers_for_files(rules, ["dom/foo.cpp"])
         self.assertEqual(groups, {"dom-reviewers": True})
         self.assertEqual(individuals, {"someone": False})
 
@@ -206,19 +201,253 @@ class TestHeraldReviewersForFiles(unittest.TestCase):
         self.assertEqual(_groups(rules, ["dom/foo.cpp"]), {})
 
 
+def _module(machine_name, includes, **kwargs):
+    module = {
+        "machine_name": machine_name,
+        "name": machine_name,
+        "includes": includes,
+    }
+    module.update(kwargs)
+    return module
+
+
+class TestMotsModulesForFiles(unittest.TestCase):
+    def test_glob_and_directory_includes(self):
+        config = {
+            "modules": [
+                _module("necko", ["netwerk/**/*"]),
+                # A pattern naming a directory covers everything under it.
+                _module("rlbox", ["security/rlbox"]),
+            ]
+        }
+
+        def names(paths):
+            return [m["machine_name"] for m in mots_modules_for_files(config, paths)]
+
+        self.assertEqual(names(["netwerk/dns/DNS.cpp"]), ["necko"])
+        self.assertEqual(names(["security/rlbox/rlbox.h"]), ["rlbox"])
+        self.assertEqual(names(["dom/foo.cpp"]), [])
+
+    def test_excludes(self):
+        config = {
+            "modules": [_module("necko", ["netwerk/**/*"], excludes=["netwerk/cookie"])]
+        }
+        self.assertEqual(
+            mots_modules_for_files(config, ["netwerk/cookie/CookieService.cpp"]),
+            [],
+        )
+
+    def test_external_includes_never_match(self):
+        config = {"modules": [_module("bugbug", ["https://github.com/mozilla/bugbug"])]}
+        self.assertEqual(mots_modules_for_files(config, ["https/foo"]), [])
+
+    def test_empty_pattern_owns_nothing(self):
+        # mozpath.match matches everything against an empty pattern.
+        config = {"modules": [_module("everything", ["/"])]}
+        self.assertEqual(mots_modules_for_files(config, ["dom/foo.cpp"]), [])
+
+    def test_submodule_takes_precedence_over_parent(self):
+        config = {
+            "modules": [
+                _module(
+                    "build_config",
+                    ["build/**/*", "taskcluster/**/*"],
+                    submodules=[
+                        _module(
+                            "taskgraph",
+                            ["taskcluster/**/*"],
+                            meta={"review_group": "taskgraph-reviewers"},
+                        )
+                    ],
+                )
+            ]
+        }
+        modules = mots_modules_for_files(
+            config, ["taskcluster/ci/config.yml", "build/moz.build"]
+        )
+        self.assertEqual(
+            {m["machine_name"]: m["paths"] for m in modules},
+            {
+                "build_config": ["build/moz.build"],
+                "taskgraph": ["taskcluster/ci/config.yml"],
+            },
+        )
+
+    def test_submodule_inherits_parent_excludes(self):
+        config = {
+            "modules": [
+                _module(
+                    "necko",
+                    ["netwerk/**/*"],
+                    excludes=["netwerk/cookie/**/*"],
+                    submodules=[
+                        _module(
+                            "http",
+                            ["netwerk/**/*"],
+                            meta={"review_group": "necko-http"},
+                        )
+                    ],
+                )
+            ]
+        }
+        self.assertEqual(
+            mots_modules_for_files(config, ["netwerk/cookie/CookieService.cpp"]), []
+        )
+
+    def test_submodule_empty_excludes_does_not_inherit_parent(self):
+        config = {
+            "modules": [
+                _module(
+                    "necko",
+                    ["netwerk/**/*"],
+                    excludes=["netwerk/cookie/**/*"],
+                    submodules=[
+                        _module(
+                            "cookies",
+                            ["netwerk/cookie/**/*"],
+                            excludes=[],
+                            meta={"review_group": "necko-cookies"},
+                        )
+                    ],
+                )
+            ]
+        }
+        path = "netwerk/cookie/CookieService.cpp"
+        self.assertEqual(
+            mots_groups_for_files(config, [path]), {"necko-cookies": ["cookies"]}
+        )
+
+    def test_submodule_without_review_group_keeps_parent(self):
+        # A submodule with no reviewer group of its own has no reviewer to
+        # contribute, so claiming the parent's paths would only lose the
+        # parent's group.
+        config = {
+            "modules": [
+                _module(
+                    "desktop",
+                    ["browser/**/*"],
+                    meta={"review_group": "firefox-desktop-core-reviewers"},
+                    submodules=[_module("downloads", ["browser/components/downloads"])],
+                )
+            ]
+        }
+        path = "browser/components/downloads/Downloads.sys.mjs"
+        self.assertEqual(
+            {
+                m["machine_name"]: m["paths"]
+                for m in mots_modules_for_files(config, [path])
+            },
+            {"desktop": [path]},
+        )
+        self.assertEqual(
+            mots_groups_for_files(config, [path]),
+            {"firefox-desktop-core-reviewers": ["desktop"]},
+        )
+
+    def test_submodule_without_patterns_keeps_parent(self):
+        # A submodule declaring no patterns inherits the parent's whole scope,
+        # so it says nothing about which paths it owns and must not claim them:
+        # mots.yaml has such submodules (e.g. localization under Firefox
+        # Desktop) whose group is not the right suggestion for the whole parent.
+        config = {
+            "modules": [
+                _module(
+                    "desktop",
+                    ["browser/**/*"],
+                    meta={"review_group": "firefox-desktop-core-reviewers"},
+                    submodules=[
+                        {
+                            "machine_name": "localization",
+                            "name": "localization",
+                            "includes": [],
+                            "meta": {"review_group": "fluent-reviewers"},
+                        }
+                    ],
+                )
+            ]
+        }
+        self.assertEqual(
+            mots_groups_for_files(config, ["browser/base/content/browser.js"]),
+            {"firefox-desktop-core-reviewers": ["desktop"]},
+        )
+
+    def test_exclude_module_paths_defers_to_other_modules(self):
+        config = {
+            "modules": [
+                _module("catchall", ["dom/**/*"], exclude_module_paths=True),
+                _module("media", ["dom/media/**/*"]),
+            ]
+        }
+        modules = mots_modules_for_files(
+            config, ["dom/media/AudioSink.cpp", "dom/base/Element.cpp"]
+        )
+        self.assertEqual(
+            {m["machine_name"]: m["paths"] for m in modules},
+            {
+                "catchall": ["dom/base/Element.cpp"],
+                "media": ["dom/media/AudioSink.cpp"],
+            },
+        )
+
+
+class TestMotsGroupsForFiles(unittest.TestCase):
+    def test_only_review_group_meta_is_a_reviewer(self):
+        # meta.group is a mailing list, which is not a usable reviewer, and a
+        # module with no review group contributes nothing since owners and peers
+        # are not suggested.
+        config = {
+            "modules": [
+                _module(
+                    "necko",
+                    ["netwerk/**/*"],
+                    meta={"group": "dev-tech-network", "review_group": "necko"},
+                    owners=[{"nick": "valentin"}],
+                ),
+                _module(
+                    "ua",
+                    ["netwerk/http/**/*"],
+                    meta={"group": "dev-platform"},
+                    owners=[{"nick": "tantek"}],
+                ),
+            ]
+        }
+        self.assertEqual(
+            mots_groups_for_files(config, ["netwerk/http/nsHttpChannel.cpp"]),
+            {"necko": ["necko"]},
+        )
+
+    def test_group_shared_by_several_modules(self):
+        config = {
+            "modules": [
+                _module("necko", ["netwerk/**/*"], meta={"review_group": "necko"}),
+                _module("fetch", ["dom/fetch/**/*"], meta={"review_group": "necko"}),
+            ]
+        }
+        self.assertEqual(
+            mots_groups_for_files(config, ["netwerk/dns/DNS.cpp", "dom/fetch/Fetch.h"]),
+            {"necko": ["fetch", "necko"]},
+        )
+
+    def test_no_match(self):
+        config = {
+            "modules": [_module("necko", ["netwerk/**/*"], meta={"review_group": "n"})]
+        }
+        self.assertEqual(mots_groups_for_files(config, ["dom/foo.cpp"]), {})
+
+
 class TestParseReviewersFromSubjects(unittest.TestCase):
     def test_individuals_and_groups(self):
         subjects = [
             "Bug 1 - do a thing r=foo,#bar-reviewers,baz!",
             "Bug 2 - another thing. r=foo",
         ]
-        individuals, groups = _parse_reviewers_from_subjects(subjects)
+        individuals, groups = parse_reviewers_from_subjects(subjects)
         self.assertEqual(individuals, [("foo", 2), ("baz", 1)])
         self.assertEqual(groups, [("bar-reviewers", 1)])
 
     def test_group_classified_by_hash_prefix(self):
         # The "#" prefix is the group marker, not the "-reviewers" suffix.
-        individuals, groups = _parse_reviewers_from_subjects([
+        individuals, groups = parse_reviewers_from_subjects([
             "Bug 1 - thing r=#webdriver-reviewers-rotation,not-a-group-reviewers"
         ])
         self.assertEqual(groups, [("webdriver-reviewers-rotation", 1)])
@@ -226,12 +455,12 @@ class TestParseReviewersFromSubjects(unittest.TestCase):
 
     def test_review_request_syntax_not_parsed(self):
         # Committed messages use "r="; "r?" is a request and is not parsed.
-        individuals, groups = _parse_reviewers_from_subjects(["Bug 1 - thing r?foo"])
+        individuals, groups = parse_reviewers_from_subjects(["Bug 1 - thing r?foo"])
         self.assertEqual(individuals, [])
         self.assertEqual(groups, [])
 
     def test_no_reviewer(self):
-        individuals, groups = _parse_reviewers_from_subjects([
+        individuals, groups = parse_reviewers_from_subjects([
             "Bug 1 - thing with no reviewer trailer"
         ])
         self.assertEqual(individuals, [])
@@ -244,7 +473,7 @@ class TestParseReviewersFromSubjects(unittest.TestCase):
             "r=aaa",
             "r=ccc",
         ]
-        individuals, _ = _parse_reviewers_from_subjects(subjects)
+        individuals, _ = parse_reviewers_from_subjects(subjects)
         self.assertEqual(individuals, [("aaa", 2), ("bbb", 1), ("ccc", 1)])
 
 

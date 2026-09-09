@@ -7,10 +7,9 @@ package mozilla.components.feature.search.telemetry
 /**
  * Cookie details used to identify follow-on searches.
  *
- * @property extraCodeParamName the query parameter name in the URL that indicates
- * this might be a follow-on search.
- * @property extraCodePrefixes possible values for the query parameter in the URL that indicates
- * this might be a follow-on search.
+ * @property extraCodeParamName the query parameter name in the URL that indicates this might be a follow-on search.
+ * @property extraCodePrefixes possible values for the query parameter in the URL that indicates this might be a
+ *   follow-on search.
  * @property host the hostname on which the cookie is stored.
  * @property name the name of the cookie to check.
  * @property codeParamName the name of parameter within the cookie.

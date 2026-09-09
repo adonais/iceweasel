@@ -8,57 +8,40 @@ import mozilla.components.concept.base.profiler.Profiler
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.ProfilerController
 
-/**
- * Gecko-based implementation of [Profiler], wrapping the
- * ProfilerController object provided by GeckoView.
- */
+/** Gecko-based implementation of [Profiler], wrapping the ProfilerController object provided by GeckoView. */
 class Profiler : Profiler {
 
-    /**
-     * See [Profiler.isProfilerActive].
-     */
+    /** See [Profiler.isProfilerActive]. */
     override fun isProfilerActive(): Boolean {
         return ProfilerController.isProfilerActive()
     }
 
-    /**
-     * See [Profiler.getProfilerTime].
-     */
+    /** See [Profiler.getProfilerTime]. */
     override fun getProfilerTime(): Double? {
         return ProfilerController.getProfilerTime()
     }
 
-    /**
-     * See [Profiler.addMarker].
-     */
+    /** See [Profiler.addMarker]. */
     override fun addMarker(markerName: String, startTime: Double?, endTime: Double?, text: String?) {
         ProfilerController.addMarker(markerName, startTime, endTime, text)
     }
 
-    /**
-     * See [Profiler.addMarker].
-     */
+    /** See [Profiler.addMarker]. */
     override fun addMarker(markerName: String, startTime: Double?, text: String?) {
         ProfilerController.addMarker(markerName, startTime, text)
     }
 
-    /**
-     * See [Profiler.addMarker].
-     */
+    /** See [Profiler.addMarker]. */
     override fun addMarker(markerName: String, startTime: Double?) {
         ProfilerController.addMarker(markerName, startTime)
     }
 
-    /**
-     * See [Profiler.addMarker].
-     */
+    /** See [Profiler.addMarker]. */
     override fun addMarker(markerName: String, text: String?) {
         ProfilerController.addMarker(markerName, text)
     }
 
-    /**
-     * See [Profiler.addMarker].
-     */
+    /** See [Profiler.addMarker]. */
     override fun addMarker(markerName: String) {
         ProfilerController.addMarker(markerName)
     }
@@ -68,15 +51,16 @@ class Profiler : Profiler {
     }
 
     override fun stopProfiler(onSuccess: (ByteArray?) -> Unit, onError: (Throwable) -> Unit) {
-        ProfilerController.stopProfiler().then(
-            { profileResult ->
-                onSuccess(profileResult)
-                GeckoResult<Void>()
-            },
-            { throwable ->
-                onError(throwable)
-                GeckoResult<Void>()
-            },
-        )
+        ProfilerController.stopProfiler()
+            .then(
+                { profileResult ->
+                    onSuccess(profileResult)
+                    GeckoResult<Void>()
+                },
+                { throwable ->
+                    onError(throwable)
+                    GeckoResult<Void>()
+                },
+            )
     }
 }

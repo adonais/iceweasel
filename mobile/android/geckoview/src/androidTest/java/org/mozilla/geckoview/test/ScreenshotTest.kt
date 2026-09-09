@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -16,6 +16,9 @@ import androidx.core.graphics.createBitmap
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
+import kotlin.math.absoluteValue
+import kotlin.math.max
+import kotlin.test.assertIs
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.lessThanOrEqualTo
 import org.hamcrest.Matchers.notNullValue
@@ -33,9 +36,6 @@ import org.mozilla.geckoview.GeckoSession.ProgressDelegate
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
 import org.mozilla.geckoview.test.util.UiThreadUtils
-import kotlin.math.absoluteValue
-import kotlin.math.max
-import kotlin.test.assertIs
 
 private const val SCREEN_HEIGHT = 800
 private const val SCREEN_WIDTH = 800
@@ -49,15 +49,14 @@ class ScreenshotTest : BaseSessionTest() {
         val screenshotFile = createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(screenshotFile)
         val paint = Paint()
-        paint.shader = LinearGradient(0f, 0f, width.toFloat(), height.toFloat(), Color.RED, Color.WHITE, Shader.TileMode.MIRROR)
+        paint.shader =
+            LinearGradient(0f, 0f, width.toFloat(), height.toFloat(), Color.RED, Color.WHITE, Shader.TileMode.MIRROR)
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
         return screenshotFile
     }
 
     companion object {
-        /**
-         * Compares two Bitmaps and returns the largest color element difference (red, green or blue)
-         */
+        /** Compares two Bitmaps and returns the largest color element difference (red, green or blue) */
         public fun imageElementDifference(b1: Bitmap, b2: Bitmap): Int {
             return if (b1.width == b2.width && b1.height == b2.height) {
                 val pixels1 = IntArray(b1.width * b1.height)
@@ -103,11 +102,11 @@ class ScreenshotTest : BaseSessionTest() {
         val screenshotFile = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         mainSession.loadTestPath(COLORS_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ContentDelegate {
-            @AssertCalled(count = 1)
-            override fun onFirstContentfulPaint(session: GeckoSession) {
+        sessionRule.waitUntilCalled(
+            object : ContentDelegate {
+                @AssertCalled(count = 1) override fun onFirstContentfulPaint(session: GeckoSession) {}
             }
-        })
+        )
 
         sessionRule.display?.let {
             assertScreenshotResult(it.capturePixels(), screenshotFile)
@@ -120,11 +119,11 @@ class ScreenshotTest : BaseSessionTest() {
         val screenshotFile = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         mainSession.loadTestPath(COLORS_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ContentDelegate {
-            @AssertCalled(count = 1)
-            override fun onFirstContentfulPaint(session: GeckoSession) {
+        sessionRule.waitUntilCalled(
+            object : ContentDelegate {
+                @AssertCalled(count = 1) override fun onFirstContentfulPaint(session: GeckoSession) {}
             }
-        })
+        )
 
         sessionRule.display?.let {
             val call1 = it.capturePixels()
@@ -157,13 +156,15 @@ class ScreenshotTest : BaseSessionTest() {
             mainSession.close()
             var exceptionListenerCalled = false
             val result = display.capturePixels()
-            result.exceptionally { error: Throwable ->
-                assertIs<IllegalStateException>(error)
-                exceptionListenerCalled = true
-                result
-            }.accept {
-                fail("screenshot shouldn't complete successfully after session is closed")
-            }
+            result
+                .exceptionally { error: Throwable ->
+                    assertIs<IllegalStateException>(error)
+                    exceptionListenerCalled = true
+                    result
+                }
+                .accept {
+                    fail("screenshot shouldn't complete successfully after session is closed")
+                }
             UiThreadUtils.waitForCondition(
                 { exceptionListenerCalled },
                 sessionRule.env.defaultTimeoutMillis,
@@ -246,8 +247,7 @@ class ScreenshotTest : BaseSessionTest() {
             // second screenshot to succeed.
             try {
                 sessionRule.waitForResult(result1)
-            } catch (e: IllegalStateException) {
-            }
+            } catch (e: IllegalStateException) {}
             sessionRule.waitForResult(result2)
         }
     }
@@ -260,22 +260,24 @@ class ScreenshotTest : BaseSessionTest() {
         val screenshotFile = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         mainSession.loadTestPath(COLORS_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ContentDelegate {
-            @AssertCalled(count = 1)
-            override fun onFirstContentfulPaint(session: GeckoSession) {
+        sessionRule.waitUntilCalled(
+            object : ContentDelegate {
+                @AssertCalled(count = 1) override fun onFirstContentfulPaint(session: GeckoSession) {}
             }
-        })
+        )
 
         mainSession.setActive(false)
 
         // Deactivating the session should trigger a flush state change
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onSessionStateChange(
-                session: GeckoSession,
-                sessionState: GeckoSession.SessionState,
-            ) {}
-        })
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onSessionStateChange(
+                    session: GeckoSession,
+                    sessionState: GeckoSession.SessionState,
+                ) {}
+            }
+        )
 
         sessionRule.display?.let {
             assertScreenshotResult(it.capturePixels(), screenshotFile)
@@ -288,11 +290,11 @@ class ScreenshotTest : BaseSessionTest() {
         val screenshotFile = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         mainSession.loadTestPath(COLORS_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ContentDelegate {
-            @AssertCalled(count = 1)
-            override fun onFirstContentfulPaint(session: GeckoSession) {
+        sessionRule.waitUntilCalled(
+            object : ContentDelegate {
+                @AssertCalled(count = 1) override fun onFirstContentfulPaint(session: GeckoSession) {}
             }
-        })
+        )
 
         sessionRule.display?.let {
             assertScreenshotResult(it.screenshot().capture(), screenshotFile)
@@ -305,11 +307,11 @@ class ScreenshotTest : BaseSessionTest() {
         val screenshotFile = getComparisonScreenshot(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
 
         mainSession.loadTestPath(COLORS_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ContentDelegate {
-            @AssertCalled(count = 1)
-            override fun onFirstContentfulPaint(session: GeckoSession) {
+        sessionRule.waitUntilCalled(
+            object : ContentDelegate {
+                @AssertCalled(count = 1) override fun onFirstContentfulPaint(session: GeckoSession) {}
             }
-        })
+        )
 
         sessionRule.display?.let {
             assertScreenshotResult(it.screenshot().size(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2).capture(), screenshotFile)
@@ -322,11 +324,11 @@ class ScreenshotTest : BaseSessionTest() {
         val screenshotFile = getComparisonScreenshot(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
 
         mainSession.loadTestPath(COLORS_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ContentDelegate {
-            @AssertCalled(count = 1)
-            override fun onFirstContentfulPaint(session: GeckoSession) {
+        sessionRule.waitUntilCalled(
+            object : ContentDelegate {
+                @AssertCalled(count = 1) override fun onFirstContentfulPaint(session: GeckoSession) {}
             }
-        })
+        )
 
         sessionRule.display?.let {
             assertScreenshotResult(it.screenshot().scale(0.5f).capture(), screenshotFile)
@@ -339,11 +341,11 @@ class ScreenshotTest : BaseSessionTest() {
         val screenshotFile = getComparisonScreenshot(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
 
         mainSession.loadTestPath(COLORS_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ContentDelegate {
-            @AssertCalled(count = 1)
-            override fun onFirstContentfulPaint(session: GeckoSession) {
+        sessionRule.waitUntilCalled(
+            object : ContentDelegate {
+                @AssertCalled(count = 1) override fun onFirstContentfulPaint(session: GeckoSession) {}
             }
-        })
+        )
 
         sessionRule.display?.let {
             assertScreenshotResult(it.screenshot().aspectPreservingSize(SCREEN_WIDTH / 2).capture(), screenshotFile)
@@ -356,11 +358,11 @@ class ScreenshotTest : BaseSessionTest() {
         val screenshotFile = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         mainSession.loadTestPath(COLORS_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ContentDelegate {
-            @AssertCalled(count = 1)
-            override fun onFirstContentfulPaint(session: GeckoSession) {
+        sessionRule.waitUntilCalled(
+            object : ContentDelegate {
+                @AssertCalled(count = 1) override fun onFirstContentfulPaint(session: GeckoSession) {}
             }
-        })
+        )
 
         sessionRule.display?.let {
             val call1 = it.screenshot().capture()
@@ -378,11 +380,11 @@ class ScreenshotTest : BaseSessionTest() {
         val screenshotFile = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         mainSession.loadTestPath(COLORS_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ContentDelegate {
-            @AssertCalled(count = 1)
-            override fun onFirstContentfulPaint(session: GeckoSession) {
+        sessionRule.waitUntilCalled(
+            object : ContentDelegate {
+                @AssertCalled(count = 1) override fun onFirstContentfulPaint(session: GeckoSession) {}
             }
-        })
+        )
 
         sessionRule.display?.let {
             assertScreenshotResult(it.screenshot().source(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT).capture(), screenshotFile)
@@ -395,11 +397,11 @@ class ScreenshotTest : BaseSessionTest() {
         val screenshotFile = getComparisonScreenshot(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
 
         mainSession.loadTestPath(COLORS_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ContentDelegate {
-            @AssertCalled(count = 1)
-            override fun onFirstContentfulPaint(session: GeckoSession) {
+        sessionRule.waitUntilCalled(
+            object : ContentDelegate {
+                @AssertCalled(count = 1) override fun onFirstContentfulPaint(session: GeckoSession) {}
             }
-        })
+        )
 
         sessionRule.display?.let {
             assertScreenshotResult(
@@ -417,17 +419,15 @@ class ScreenshotTest : BaseSessionTest() {
     fun screenshotQuarters() {
         val res = InstrumentationRegistry.getInstrumentation().targetContext.resources
         mainSession.loadTestPath(COLORS_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ContentDelegate {
-            @AssertCalled(count = 1)
-            override fun onFirstContentfulPaint(session: GeckoSession) {
+        sessionRule.waitUntilCalled(
+            object : ContentDelegate {
+                @AssertCalled(count = 1) override fun onFirstContentfulPaint(session: GeckoSession) {}
             }
-        })
+        )
 
         sessionRule.display?.let {
             assertScreenshotResult(
-                it.screenshot()
-                    .source(0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
-                    .capture(),
+                it.screenshot().source(0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2).capture(),
                 BitmapFactory.decodeResource(res, R.drawable.colors_tl),
             )
             assertScreenshotResult(
@@ -444,11 +444,11 @@ class ScreenshotTest : BaseSessionTest() {
     fun screenshotQuartersScaled() {
         val res = InstrumentationRegistry.getInstrumentation().targetContext.resources
         mainSession.loadTestPath(COLORS_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ContentDelegate {
-            @AssertCalled(count = 1)
-            override fun onFirstContentfulPaint(session: GeckoSession) {
+        sessionRule.waitUntilCalled(
+            object : ContentDelegate {
+                @AssertCalled(count = 1) override fun onFirstContentfulPaint(session: GeckoSession) {}
             }
-        })
+        )
 
         sessionRule.display?.let {
             assertScreenshotResult(
@@ -472,14 +472,16 @@ class ScreenshotTest : BaseSessionTest() {
     @Test
     fun giantScreenshot() {
         mainSession.loadTestPath(COLORS_HTML_PATH)
-        sessionRule.display?.screenshot()!!.source(0, 0, BIG_SCREEN_WIDTH, BIG_SCREEN_HEIGHT)
+        sessionRule.display
+            ?.screenshot()!!
+            .source(0, 0, BIG_SCREEN_WIDTH, BIG_SCREEN_HEIGHT)
             .size(BIG_SCREEN_WIDTH, BIG_SCREEN_HEIGHT)
             .capture()
             .exceptionally(
                 OnExceptionListener<Throwable> { error: Throwable ->
                     assertIs<OutOfMemoryError>(error)
                     fromException(error)
-                },
+                }
             )
     }
 }

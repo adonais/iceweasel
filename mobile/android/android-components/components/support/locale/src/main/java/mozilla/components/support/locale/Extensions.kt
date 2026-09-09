@@ -7,11 +7,12 @@ package mozilla.components.support.locale
 import java.util.Locale
 
 fun String.toLocale(): Locale {
-    val index: Int = if (contains('-')) {
-        indexOf('-')
-    } else {
-        indexOf('_')
-    }
+    val index: Int =
+        if (contains('-')) {
+            indexOf('-')
+        } else {
+            indexOf('_')
+        }
     return if (index != -1) {
         val langCode = substring(0, index)
         val countryCode = substring(index + 1)
@@ -22,10 +23,8 @@ fun String.toLocale(): Locale {
 }
 
 /**
- * Gets a gecko-compatible locale string (e.g. "es-ES" instead of Java [Locale]
- * "es_ES") for the default locale.
- * If the locale can't be determined on the system, the value is "und",
- * to indicate "undetermined".
+ * Gets a gecko-compatible locale string (e.g. "es-ES" instead of Java [Locale] "es_ES") for the default locale. If the
+ * locale can't be determined on the system, the value is "und", to indicate "undetermined".
  *
  * This method approximates the API21 method [Locale.toLanguageTag].
  *
@@ -41,12 +40,13 @@ fun Locale.getLocaleTag(): String {
 
     // `locale.language` can, but should never be, an empty string.
     // Modernize certain language codes.
-    val language = when (this.language) {
-        "iw" -> "he"
-        "in" -> "id"
-        "ji" -> "yi"
-        else -> this.language
-    }
+    val language =
+        when (this.language) {
+            "iw" -> "he"
+            "in" -> "id"
+            "ji" -> "yi"
+            else -> this.language
+        }
     val country = this.country // Can be an empty string.
 
     return when {

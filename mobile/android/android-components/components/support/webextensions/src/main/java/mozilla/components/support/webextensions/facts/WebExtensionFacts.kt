@@ -10,13 +10,9 @@ import mozilla.components.support.base.facts.Action
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.collect
 
-/**
- * Facts emitted for telemetry related to the Addons feature.
- */
+/** Facts emitted for telemetry related to the Addons feature. */
 class WebExtensionFacts {
-    /**
-     * Items that specify which portion of the web extension events were invoked.
-     */
+    /** Items that specify which portion of the web extension events were invoked. */
     object Items {
         const val WEB_EXTENSIONS_INITIALIZED = "web_extensions_initialized"
     }
@@ -29,12 +25,13 @@ private fun emitWebExtensionFact(
     metadata: Map<String, Any>? = null,
 ) {
     Fact(
-        Component.SUPPORT_WEBEXTENSIONS,
-        action,
-        item,
-        value,
-        metadata,
-    ).collect()
+            Component.SUPPORT_WEBEXTENSIONS,
+            action,
+            item,
+            value,
+            metadata,
+        )
+        .collect()
 }
 
 internal fun emitWebExtensionsInitializedFact(extensions: List<WebExtension>) {
@@ -43,9 +40,10 @@ internal fun emitWebExtensionsInitializedFact(extensions: List<WebExtension>) {
     emitWebExtensionFact(
         Action.INTERACTION,
         WebExtensionFacts.Items.WEB_EXTENSIONS_INITIALIZED,
-        metadata = mapOf(
-            "installed" to installedAddons.map { it.id },
-            "enabled" to enabledAddons.map { it.id },
-        ),
+        metadata =
+            mapOf(
+                "installed" to installedAddons.map { it.id },
+                "enabled" to enabledAddons.map { it.id },
+            ),
     )
 }

@@ -9,6 +9,10 @@
 <resources>
   <!-- Link text to learn more about downloading Gemini Nano -->
   <string name="mozac_summarize_learn_more_link">Uzzināt vairāk</string>
+  <!-- Title for the download error screen -->
+  <string name="mozac_summarize_download_error_title">Kļūda</string>
+  <!-- Generic fallback message for the download error screen -->
+  <string name="mozac_summarize_download_error_fallback_message">Nezināma kļūda</string>
   <!-- Button for the download error screen to try again -->
   <string name="mozac_summarize_download_error_positive_button">Mēģināt vēlreiz</string>
   <!-- Title for the error screen when the page content is behind a paywall -->

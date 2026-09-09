@@ -22,8 +22,7 @@ import org.mozilla.fenix.theme.Theme
 
 @RunWith(AndroidJUnit4::class)
 class IPProtectionMenuItemTest {
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     private val toggleLabel: String
         get() = testContext.getString(R.string.ip_protection_toggle_label)
@@ -32,27 +31,27 @@ class IPProtectionMenuItemTest {
     fun `WHEN IP protection is enabled THEN the toggle exposes the on state to screen readers`() {
         setContent(IPProtectionMenuStatus.Enabled)
 
-        composeTestRule.onNodeWithText(toggleLabel).assert(
-            hasStateDescription(testContext.getString(R.string.preferences_ip_protection_on)),
-        )
+        composeTestRule
+            .onNodeWithText(toggleLabel)
+            .assert(hasStateDescription(testContext.getString(R.string.preferences_ip_protection_on)))
     }
 
     @Test
     fun `WHEN IP protection is disabled THEN the toggle exposes the off state to screen readers`() {
         setContent(IPProtectionMenuStatus.Disabled)
 
-        composeTestRule.onNodeWithText(toggleLabel).assert(
-            hasStateDescription(testContext.getString(R.string.preferences_ip_protection_off)),
-        )
+        composeTestRule
+            .onNodeWithText(toggleLabel)
+            .assert(hasStateDescription(testContext.getString(R.string.preferences_ip_protection_off)))
     }
 
     @Test
     fun `WHEN IP protection is connecting THEN the connecting state is exposed to screen readers`() {
         setContent(IPProtectionMenuStatus.Activating)
 
-        composeTestRule.onNodeWithText(toggleLabel).assert(
-            hasStateDescription(testContext.getString(R.string.ip_protection_menu_connecting)),
-        )
+        composeTestRule
+            .onNodeWithText(toggleLabel)
+            .assert(hasStateDescription(testContext.getString(R.string.ip_protection_menu_connecting)))
     }
 
     private fun hasStateDescription(value: String) =

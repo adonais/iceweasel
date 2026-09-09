@@ -20,29 +20,30 @@ import mozilla.components.support.base.feature.LifecycleAwareFeature
  * Feature implementation that opens options page for web extensions.
  *
  * @property store the application's [BrowserStore].
- * @property onOpenOptionsPage a callback invoked when the application should open an
- * options page. This is a lambda accepting the [ActiveOptionsPage] of the extension
- * that wants to open an options page.
+ * @property onOpenOptionsPage a callback invoked when the application should open an options page. This is a lambda
+ *   accepting the [ActiveOptionsPage] of the extension that wants to open an options page.
  */
 class WebExtensionOptionsPageObserver(
     private val store: BrowserStore,
-    private val onOpenOptionsPage: (ActiveOptionsPage) -> Unit = { },
+    private val onOpenOptionsPage: (ActiveOptionsPage) -> Unit = {},
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : LifecycleAwareFeature {
     private var optionsPageScope: CoroutineScope? = null
 
     override fun start() {
-        optionsPageScope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.distinctUntilChangedBy { it.extensions }
-                .map { it.extensions.filterValues { ext -> ext.activeOptionsPage != null } }
-                .distinctUntilChanged()
-                .collect { extensionStates ->
-                    if (extensionStates.values.isNotEmpty()) {
-                        // We currently limit to one active options page at a time
-                        onOpenOptionsPage(extensionStates.values.first().activeOptionsPage!!)
+        optionsPageScope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .distinctUntilChangedBy { it.extensions }
+                    .map { it.extensions.filterValues { ext -> ext.activeOptionsPage != null } }
+                    .distinctUntilChanged()
+                    .collect { extensionStates ->
+                        if (extensionStates.values.isNotEmpty()) {
+                            // We currently limit to one active options page at a time
+                            onOpenOptionsPage(extensionStates.values.first().activeOptionsPage!!)
+                        }
                     }
-                }
-        }
+            }
     }
 
     override fun stop() {

@@ -216,7 +216,6 @@ export var PageThumbs = {
    *   isImage - indicate that this should be treated as an image url.
    *   backgroundColor - background color to draw behind images.
    *   targetWidth - desired width for images.
-   *   preserveAspectRatio - resize image height based on targetWidth
    *   isBackgroundThumb - true if request is from the background thumb service.
    *   fullViewport - request that a screenshot for the viewport be
    *     captured. This makes it possible to get a screenshot that reflects
@@ -232,7 +231,6 @@ export var PageThumbs = {
         aArgs?.backgroundColor ?? lazy.PageThumbUtils.THUMBNAIL_BG_COLOR,
       targetWidth:
         aArgs?.targetWidth ?? lazy.PageThumbUtils.THUMBNAIL_DEFAULT_SIZE,
-      preserveAspectRatio: aArgs?.preserveAspectRatio ?? false,
       isBackgroundThumb: aArgs ? aArgs.isBackgroundThumb : false,
       fullViewport: aArgs?.fullViewport ?? false,
     };
@@ -308,7 +306,7 @@ export var PageThumbs = {
   },
 
   /**
-   * Asynchrnously render an appropriately scaled thumbnail to canvas.
+   * Asynchronously render an appropriately scaled thumbnail to canvas.
    *
    * @param aBrowser The browser to capture a thumbnail from.
    * @param aWidth The desired canvas width.
@@ -318,7 +316,6 @@ export var PageThumbs = {
    *   isImage - indicate that this should be treated as an image url.
    *   backgroundColor - background color to draw behind images.
    *   targetWidth - desired width for images.
-   *   preserveAspectRatio - resize image height based on targetWidth
    *   isBackgroundThumb - true if request is from the background thumb service.
    *   fullViewport - request that a screenshot for the viewport be
    *     captured. This makes it possible to get a screenshot that reflects
@@ -347,7 +344,6 @@ export var PageThumbs = {
     if (contentWidth == 0 || contentHeight == 0) {
       throw new Error("IMAGE_ZERO_DIMENSION");
     }
-    let aspectRatio = contentWidth / contentHeight;
 
     if (!aBrowser.isConnected) {
       return null;
@@ -371,21 +367,9 @@ export var PageThumbs = {
       ctx.putImageData(imageData, 0, 0);
     } else {
       let fullScale = aArgs ? aArgs.fullScale : false;
-      let targetWidth = aArgs.targetWidth ? aArgs.targetWidth : aWidth;
-      let preserveAspectRatio = aArgs ? aArgs.preserveAspectRatio : false;
-      let scale = 1;
-      if (!fullScale) {
-        let targetScale;
-        if (preserveAspectRatio) {
-          targetScale = targetWidth / contentWidth;
-        } else {
-          targetScale = Math.max(
-            aWidth / contentWidth,
-            aHeight / contentHeight
-          );
-        }
-        scale = Math.min(targetScale, 1);
-      }
+      let scale = fullScale
+        ? 1
+        : Math.min(Math.max(aWidth / contentWidth, aHeight / contentHeight), 1);
 
       let image = await aBrowser.drawSnapshot(
         0,
@@ -400,13 +384,8 @@ export var PageThumbs = {
         return null;
       }
 
-      if (preserveAspectRatio) {
-        thumbnail.width = targetWidth;
-        thumbnail.height = targetWidth / aspectRatio;
-      } else {
-        thumbnail.width = fullScale ? contentWidth : aWidth;
-        thumbnail.height = fullScale ? contentHeight : aHeight;
-      }
+      thumbnail.width = fullScale ? contentWidth : aWidth;
+      thumbnail.height = fullScale ? contentHeight : aHeight;
       ctx.drawImage(image, 0, 0);
     }
 

@@ -41,10 +41,7 @@ fun Banner(
     onButton2Click: () -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceDimVariant)
-            .padding(all = 16.dp),
+        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceDimVariant).padding(all = 16.dp)
     ) {
         Text(
             text = message,

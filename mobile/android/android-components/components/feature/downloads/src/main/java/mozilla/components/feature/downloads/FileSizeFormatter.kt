@@ -7,9 +7,7 @@ package mozilla.components.feature.downloads
 import android.content.Context
 import android.text.format.Formatter
 
-/**
- * Utility interface to format the size of a file in a localized manner.
- */
+/** Utility interface to format the size of a file in a localized manner. */
 interface FileSizeFormatter {
 
     /**
@@ -26,6 +24,5 @@ interface FileSizeFormatter {
  * @param context The Android [Context].
  */
 class DefaultFileSizeFormatter(private val context: Context) : FileSizeFormatter {
-    override fun formatSizeInBytes(sizeInBytes: Long): String =
-        Formatter.formatFileSize(context, sizeInBytes)
+    override fun formatSizeInBytes(sizeInBytes: Long): String = Formatter.formatFileSize(context, sizeInBytes)
 }

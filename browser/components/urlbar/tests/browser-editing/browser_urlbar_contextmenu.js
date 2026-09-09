@@ -142,6 +142,14 @@ add_task(async function basic() {
             target.getAttribute("usercontextid"),
             expectedOption.userContextId
           );
+          let openedEvent = Glean.containers.containerTabOpened
+            .testGetValue()
+            .at(-1);
+          Assert.equal(
+            openedEvent.extra.source,
+            "urlbar_result_context_menu",
+            "container_tab_opened reports the urlbar source"
+          );
         } else {
           Assert.ok(!target.hasAttribute("usercontextid"));
         }

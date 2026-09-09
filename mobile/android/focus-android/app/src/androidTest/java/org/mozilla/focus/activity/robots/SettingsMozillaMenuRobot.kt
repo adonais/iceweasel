@@ -42,8 +42,7 @@ class SettingsMozillaMenuRobot {
 
     fun verifyVersionNumbers() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val packageInfo =
-            context.packageManagerCompatHelper.getPackageInfoCompat(context.packageName, 0)
+        val packageInfo = context.packageManagerCompatHelper.getPackageInfoCompat(context.packageName, 0)
         val versionName = packageInfo.versionName ?: ""
         val gvBuildId = org.mozilla.geckoview.BuildConfig.MOZ_APP_BUILDID
         val gvVersion = org.mozilla.geckoview.BuildConfig.MOZ_APP_VERSION
@@ -53,27 +52,23 @@ class SettingsMozillaMenuRobot {
         runWithIdleRes(sessionLoadedIdlingResource) {
             assertTrue(
                 "Expected app version number not found",
-                mDevice.findObject(UiSelector().textContains(versionName))
-                    .waitForExists(waitingTime),
+                mDevice.findObject(UiSelector().textContains(versionName)).waitForExists(waitingTime),
             )
 
             assertTrue(
                 "Expected GV version not found",
-                mDevice.findObject(UiSelector().textContains(gvVersion))
-                    .waitForExists(waitingTime),
+                mDevice.findObject(UiSelector().textContains(gvVersion)).waitForExists(waitingTime),
             )
 
             assertTrue(
                 "Expected GV build ID not found",
-                mDevice.findObject(UiSelector().textContains(gvBuildId))
-                    .waitForExists(waitingTime),
+                mDevice.findObject(UiSelector().textContains(gvBuildId)).waitForExists(waitingTime),
             )
         }
     }
 
     fun verifyLibrariesUsedTitle() {
-        librariesUsedTitle
-            .check(matches(isDisplayed()))
+        librariesUsedTitle.check(matches(isDisplayed()))
     }
 
     fun verifyTheLibrariesListNotEmpty() {
@@ -86,9 +81,7 @@ class SettingsMozillaMenuRobot {
 
     class Transition {
         fun openAboutPage(interact: SettingsMozillaMenuRobot.() -> Unit): Transition {
-            aboutFocusPageLink
-                .check(matches(isDisplayed()))
-                .perform(click())
+            aboutFocusPageLink.check(matches(isDisplayed())).perform(click())
 
             SettingsMozillaMenuRobot().interact()
             return Transition()
@@ -102,45 +95,35 @@ class SettingsMozillaMenuRobot {
         }
 
         fun openTermsOfUsePage(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            termsOfUseLink
-                .check(matches(isDisplayed()))
-                .perform(click())
+            termsOfUseLink.check(matches(isDisplayed())).perform(click())
 
             BrowserRobot().interact()
             return BrowserRobot.Transition()
         }
 
         fun openLicenseInformation(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            licenseInfo
-                .check(matches(isDisplayed()))
-                .perform(click())
+            licenseInfo.check(matches(isDisplayed())).perform(click())
 
             BrowserRobot().interact()
             return BrowserRobot.Transition()
         }
 
         fun openLibrariesUsedPage(interact: SettingsMozillaMenuRobot.() -> Unit): BrowserRobot.Transition {
-            librariesUsedLink
-                .check(matches(isDisplayed()))
-                .perform(click())
+            librariesUsedLink.check(matches(isDisplayed())).perform(click())
 
             SettingsMozillaMenuRobot().interact()
             return BrowserRobot.Transition()
         }
 
         fun openPrivacyNotice(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            privacyNoticeLink
-                .check(matches(isDisplayed()))
-                .perform(click())
+            privacyNoticeLink.check(matches(isDisplayed())).perform(click())
 
             BrowserRobot().interact()
             return BrowserRobot.Transition()
         }
 
         fun openHelpLink(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            helpPageLink
-                .check(matches(isDisplayed()))
-                .perform(click())
+            helpPageLink.check(matches(isDisplayed())).perform(click())
 
             BrowserRobot().interact()
             return BrowserRobot.Transition()
@@ -148,8 +131,7 @@ class SettingsMozillaMenuRobot {
     }
 }
 
-private val mozillaSettingsList =
-    UiScrollable(UiSelector().resourceId("$packageName:id/recycler_view"))
+private val mozillaSettingsList = UiScrollable(UiSelector().resourceId("$packageName:id/recycler_view"))
 
 private val aboutFocusPageLink = onView(withText("About $appName"))
 
@@ -157,40 +139,32 @@ private val helpPageLink =
     onView(
         allOf(
             withText("Help"),
-            withParent(
-                hasSibling(withId(R.id.icon_frame)),
-            ),
-        ),
+            withParent(hasSibling(withId(R.id.icon_frame))),
+        )
     )
 
 private val termsOfUseLink =
     onView(
         allOf(
             withText(getStringResource(R.string.menu_terms_of_use)),
-            withParent(
-                hasSibling(withId(R.id.icon_frame)),
-            ),
-        ),
+            withParent(hasSibling(withId(R.id.icon_frame))),
+        )
     )
 
 private val privacyNoticeLink =
     onView(
         allOf(
             withText("Privacy Notice"),
-            withParent(
-                hasSibling(withId(R.id.icon_frame)),
-            ),
-        ),
+            withParent(hasSibling(withId(R.id.icon_frame))),
+        )
     )
 
 private val licenseInfo =
     onView(
         allOf(
             withText("Licensing information"),
-            withParent(
-                hasSibling(withId(R.id.icon_frame)),
-            ),
-        ),
+            withParent(hasSibling(withId(R.id.icon_frame))),
+        )
     )
 
 private val librariesUsedLink = onView(withText("Libraries that we use"))

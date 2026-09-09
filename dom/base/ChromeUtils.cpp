@@ -23,6 +23,7 @@
 #include "jsfriendapi.h"
 #include "mozJSModuleLoader.h"
 #include "mozilla/Base64.h"
+#include "mozilla/ChromeProfilerCounter.h"
 #include "mozilla/Components.h"
 #include "mozilla/ControllerCommand.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
@@ -52,6 +53,8 @@
 #include "mozilla/dom/PBrowserParent.h"
 #include "mozilla/dom/PopupBlocker.h"
 #include "mozilla/dom/ProcessIsolation.h"
+#include "mozilla/dom/ProfilerCounter.h"
+#include "mozilla/dom/ProfilerCounterBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/Record.h"
 #include "mozilla/dom/ReportingHeader.h"
@@ -431,6 +434,16 @@ void ChromeUtils::AddProfilerMarker(
       profiler_add_marker(aName, category, std::move(options));
     }
   }
+}
+
+/* static */
+already_AddRefed<ProfilerCounter> ChromeUtils::AddProfilerCounter(
+    GlobalObject& aGlobal, const ProfilerCounterOptions& aOptions) {
+  auto counter = MakeRefPtr<ChromeProfilerCounter>(
+      aOptions.mName, aOptions.mCategory, aOptions.mDescription);
+  RefPtr<ProfilerCounter> wrapper =
+      new ProfilerCounter(aGlobal.GetAsSupports(), counter.forget());
+  return wrapper.forget();
 }
 
 /* static */

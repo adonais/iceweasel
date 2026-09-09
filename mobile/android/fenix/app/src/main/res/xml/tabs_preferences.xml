@@ -68,4 +68,8 @@
             android:key="@string/pref_key_privacy_report_tab_manager"
             android:title="@string/preferences_privacy_report_title" />
     </androidx.preference.PreferenceCategory>
+
+    <androidx.preference.SwitchPreferenceCompat
+        android:key="@string/pref_key_tab_groups"
+        android:title="@string/preferences_tab_groups_feature" />
 </androidx.preference.PreferenceScreen>

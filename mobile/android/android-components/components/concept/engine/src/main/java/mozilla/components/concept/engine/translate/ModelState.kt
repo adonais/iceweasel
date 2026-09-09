@@ -4,37 +4,23 @@
 
 package mozilla.components.concept.engine.translate
 
-/**
- * The current state or status of a language model.
- */
+/** The current state or status of a language model. */
 enum class ModelState {
-    /**
-     * The language model(s) are not downloaded to the device.
-     */
+    /** The language model(s) are not downloaded to the device. */
     NOT_DOWNLOADED,
 
-    /**
-     * The device is currently processing downloading the language model(s).
-     */
+    /** The device is currently processing downloading the language model(s). */
     DOWNLOAD_IN_PROGRESS,
 
-    /**
-     * The device is currently processing deleting the language model(s).
-     */
+    /** The device is currently processing deleting the language model(s). */
     DELETION_IN_PROGRESS,
 
-    /**
-     * The language model(s) are downloaded to the device.
-     */
+    /** The language model(s) are downloaded to the device. */
     DOWNLOADED,
 
-    /**
-     * An error occurred while deleting the language model.
-     */
+    /** An error occurred while deleting the language model. */
     ERROR_DELETION,
 
-    /**
-     * An error occurred while downloading the language model.
-     */
+    /** An error occurred while downloading the language model. */
     ERROR_DOWNLOAD,
 }

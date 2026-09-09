@@ -24,6 +24,7 @@ if (is_android) {
     ]
 
     deps = [
+      ":generated_jni_java",
       ":resources",
       "//rtc_base:base_java",
       "//sdk/android:base_java",
@@ -31,6 +32,7 @@ if (is_android) {
       "//sdk/android:video_java",
       "//third_party/androidx:androidx_core_core_java",
       "//third_party/androidx:androidx_legacy_legacy_support_v4_java",
+      "//third_party/jni_zero:jni_zero_java",
     ]
 
     shared_libraries = [ ":examples_androidvoip_jni" ]

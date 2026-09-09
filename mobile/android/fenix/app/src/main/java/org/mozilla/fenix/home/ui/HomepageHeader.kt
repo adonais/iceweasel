@@ -31,6 +31,7 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.home.ui.HomepageTestTag.PRIVATE_BROWSING_HOMEPAGE_BUTTON
@@ -38,11 +39,8 @@ import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.wallpapers.WallpaperTheme
-import mozilla.components.ui.icons.R as iconsR
 
-/**
- * Header for the homepage.
- */
+/** Header for the homepage. */
 @Composable
 fun HomepageHeader(
     browsingMode: BrowsingMode,
@@ -51,22 +49,24 @@ fun HomepageHeader(
     // In normal mode the wordmark and private-browsing button follow the wallpaper text color; in
     // private mode there is no wallpaper, so the wordmark is untinted and the button uses its
     // dedicated private-mode icon color.
-    val wordmarkTextColor = if (browsingMode.isPrivate) {
-        null
-    } else {
-        WallpaperTheme.onWallpaper
-    }
-    val privateBrowsingButtonColor = if (browsingMode.isPrivate) {
-        colorResource(getAttr(iconsR.attr.mozac_ic_private_mode_circle_fill_icon_color))
-    } else {
-        WallpaperTheme.onWallpaper
-    }
+    val wordmarkTextColor =
+        if (browsingMode.isPrivate) {
+            null
+        } else {
+            WallpaperTheme.onWallpaper
+        }
+    val privateBrowsingButtonColor =
+        if (browsingMode.isPrivate) {
+            colorResource(getAttr(iconsR.attr.mozac_ic_private_mode_circle_fill_icon_color))
+        } else {
+            WallpaperTheme.onWallpaper
+        }
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 32.dp),
+        modifier =
+            Modifier.fillMaxWidth()
+                .wrapContentHeight()
+                .padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 32.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         WordmarkLogo()
@@ -90,17 +90,17 @@ private fun PrivateBrowsingButton(
     browsingModeChanged: (BrowsingMode) -> Unit,
 ) {
     IconToggleButton(
-        modifier = Modifier
-            .background(
-                color = colorResource(getAttr(iconsR.attr.mozac_ic_private_mode_circle_fill_background_color)),
-                shape = CircleShape,
-            )
-            .size(40.dp)
-            .semantics {
-                role = Role.Switch
-                testTagsAsResourceId = true
-                testTag = PRIVATE_BROWSING_HOMEPAGE_BUTTON
-            },
+        modifier =
+            Modifier.background(
+                    color = colorResource(getAttr(iconsR.attr.mozac_ic_private_mode_circle_fill_background_color)),
+                    shape = CircleShape,
+                )
+                .size(40.dp)
+                .semantics {
+                    role = Role.Switch
+                    testTagsAsResourceId = true
+                    testTag = PRIVATE_BROWSING_HOMEPAGE_BUTTON
+                },
         checked = browsingMode.isPrivate,
         onCheckedChange = {
             browsingModeChanged(BrowsingMode.fromBoolean(!browsingMode.isPrivate))
@@ -125,9 +125,7 @@ internal fun getAttr(resId: Int): Int {
 
 @Preview
 @Composable
-private fun HomepageHeaderPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun HomepageHeaderPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         Surface {
             HomepageHeader(

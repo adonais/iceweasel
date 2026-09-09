@@ -6,17 +6,16 @@ package mozilla.components.browser.engine.gecko
 
 import android.util.JsonReader
 import android.util.JsonWriter
+import java.io.IOException
 import mozilla.components.concept.engine.EngineSessionState
 import org.json.JSONException
 import org.json.JSONObject
 import org.mozilla.geckoview.GeckoSession
-import java.io.IOException
 
 private const val GECKO_STATE_KEY = "GECKO_STATE"
 
-class GeckoEngineSessionState internal constructor(
-    internal val actualState: GeckoSession.SessionState?,
-) : EngineSessionState {
+class GeckoEngineSessionState internal constructor(internal val actualState: GeckoSession.SessionState?) :
+    EngineSessionState {
     override fun writeTo(writer: JsonWriter) {
         with(writer) {
             beginObject()
@@ -30,44 +29,41 @@ class GeckoEngineSessionState internal constructor(
     }
 
     companion object {
-        fun fromJSON(json: JSONObject): GeckoEngineSessionState = try {
-            val state = json.getString(GECKO_STATE_KEY)
+        fun fromJSON(json: JSONObject): GeckoEngineSessionState =
+            try {
+                val state = json.getString(GECKO_STATE_KEY)
 
-            GeckoEngineSessionState(
-                GeckoSession.SessionState.fromString(state),
-            )
-        } catch (e: JSONException) {
-            GeckoEngineSessionState(null)
-        }
-
-        /**
-         * Creates a [GeckoEngineSessionState] from the given [JsonReader].
-         */
-        fun from(reader: JsonReader): GeckoEngineSessionState = try {
-            reader.beginObject()
-
-            val rawState = if (reader.hasNext()) {
-                val key = reader.nextName()
-                if (key != GECKO_STATE_KEY) {
-                    throw AssertionError("Unknown state key: $key")
-                }
-
-                reader.nextString()
-            } else {
-                null
+                GeckoEngineSessionState(GeckoSession.SessionState.fromString(state))
+            } catch (e: JSONException) {
+                GeckoEngineSessionState(null)
             }
 
-            reader.endObject()
+        /** Creates a [GeckoEngineSessionState] from the given [JsonReader]. */
+        fun from(reader: JsonReader): GeckoEngineSessionState =
+            try {
+                reader.beginObject()
 
-            GeckoEngineSessionState(
-                rawState?.let { GeckoSession.SessionState.fromString(it) },
-            )
-        } catch (e: IOException) {
-            GeckoEngineSessionState(null)
-        } catch (e: JSONException) {
-            // Internally GeckoView uses org.json and currently may throw JSONException in certain cases
-            // https://github.com/mozilla-mobile/android-components/issues/9332
-            GeckoEngineSessionState(null)
-        }
+                val rawState =
+                    if (reader.hasNext()) {
+                        val key = reader.nextName()
+                        if (key != GECKO_STATE_KEY) {
+                            throw AssertionError("Unknown state key: $key")
+                        }
+
+                        reader.nextString()
+                    } else {
+                        null
+                    }
+
+                reader.endObject()
+
+                GeckoEngineSessionState(rawState?.let { GeckoSession.SessionState.fromString(it) })
+            } catch (e: IOException) {
+                GeckoEngineSessionState(null)
+            } catch (e: JSONException) {
+                // Internally GeckoView uses org.json and currently may throw JSONException in certain cases
+                // https://github.com/mozilla-mobile/android-components/issues/9332
+                GeckoEngineSessionState(null)
+            }
     }
 }

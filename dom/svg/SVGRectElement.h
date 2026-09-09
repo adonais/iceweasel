@@ -34,9 +34,8 @@ class SVGRectElement final : public SVGRectElementBase {
   bool HasValidDimensions() const override;
 
   // SVGGeometryElement methods:
-  bool GetGeometryBounds(
-      Rect* aBounds, const StrokeOptions& aStrokeOptions,
-      const Matrix& aToBoundsSpace,
+  Maybe<Rect> GetGeometryBounds(
+      const StrokeOptions& aStrokeOptions, const Matrix& aToBoundsSpace,
       const Matrix* aToNonScalingStrokeSpace = nullptr) override;
   void GetAsSimplePath(SimplePath* aSimplePath) override;
   already_AddRefed<Path> BuildPath(PathBuilder* aBuilder = nullptr) override;

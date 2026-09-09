@@ -70,9 +70,9 @@ private fun LanguagesListComposablePreview() {
 /**
  * Displays a lazily-loaded list of languages.
  *
- * This composable is optimized for performance by processing each language item only when it's
- * about to be displayed. It also handles the special case for the "System Default" language
- * by resolving its display name from string resources.
+ * This composable is optimized for performance by processing each language item only when it's about to be displayed.
+ * It also handles the special case for the "System Default" language by resolving its display name from string
+ * resources.
  *
  * @param languages The list of [Language] data to display.
  * @param selectedTag The tag of the currently selected language, used to highlight the correct item.
@@ -94,11 +94,12 @@ fun LanguagesList(
             items(languages, key = { it.tag }) { language ->
                 // By performing this logic here, inside the `items` block, we ensure
                 // that the work is only done for visible items, making the list fast.
-                val languageForDisplay = if (language.tag == LanguageStorage.LOCALE_SYSTEM_DEFAULT) {
-                    language.copy(displayName = stringResource(R.string.preference_language_systemdefault))
-                } else {
-                    language
-                }
+                val languageForDisplay =
+                    if (language.tag == LanguageStorage.LOCALE_SYSTEM_DEFAULT) {
+                        language.copy(displayName = stringResource(R.string.preference_language_systemdefault))
+                    } else {
+                        language
+                    }
 
                 LanguageNameAndTagItem(
                     language = languageForDisplay,
@@ -117,10 +118,7 @@ private fun LanguageNameAndTagItem(
     onClick: (Language) -> Unit,
 ) {
     Row(
-        Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .clickable { onClick(language) },
+        Modifier.fillMaxWidth().wrapContentHeight().clickable { onClick(language) },
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -167,8 +165,6 @@ private fun LanguageDisplayName(language: Language, onClick: (Language) -> Unit)
     Text(
         text = AnnotatedString(language.displayName!!),
         style = MaterialTheme.typography.bodyLarge,
-        modifier = Modifier
-            .padding(focusDimensions.paddingText)
-            .clickable { onClick(language) },
+        modifier = Modifier.padding(focusDimensions.paddingText).clickable { onClick(language) },
     )
 }

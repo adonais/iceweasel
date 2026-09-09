@@ -10,9 +10,7 @@ import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.termsofuse.TOU_VERSION
 import org.mozilla.fenix.utils.Settings
 
-/**
- * Default implementation for [OnboardingTermsOfServiceEventHandler].
- */
+/** Default implementation for [OnboardingTermsOfServiceEventHandler]. */
 class DefaultOnboardingTermsOfServiceEventHandler(
     private val telemetryRecorder: OnboardingTelemetryRecorder,
     private val openLink: (String) -> Unit,
@@ -27,7 +25,7 @@ class DefaultOnboardingTermsOfServiceEventHandler(
         openLink(
             url.trim().ifNullOrEmpty {
                 SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.TERMS_OF_SERVICE)
-            },
+            }
         )
     }
 
@@ -36,7 +34,7 @@ class DefaultOnboardingTermsOfServiceEventHandler(
         openLink(
             url.trim().ifNullOrEmpty {
                 SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVACY_NOTICE)
-            },
+            }
         )
     }
 

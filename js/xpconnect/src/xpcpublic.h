@@ -666,6 +666,10 @@ inline nsGlobalWindowInner* SandboxWindowOrNull(JSObject* aObj,
   return proto ? WindowOrNull(proto) : nullptr;
 }
 
+/** Return a Sandbox's explicit associatedWindow, if any. */
+already_AddRefed<nsGlobalWindowInner> SandboxAssociatedWindowOrNull(
+    JSObject* aObj);
+
 /**
  * If |cx| is in a realm whose global is a window, returns the associated
  * nsGlobalWindow. Otherwise, returns null.

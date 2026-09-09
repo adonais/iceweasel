@@ -19,18 +19,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import mozilla.components.support.utils.ext.isLandscape
 
-/**
- * Vertical spacing used when the device is in Portrait.
- */
+/** Vertical spacing used when the device is in Portrait. */
 private val EmptyPageContentOffset = 190.dp
 
 /**
  * UI for displaying an Empty Tab Page in the Tab Manager.
  *
- * @see [NormalTabsPage], [PrivateTabsPage], [SyncedTabsPage]
- *
  * @param modifier The [Modifier] to be applied to the layout.
  * @param content The content of this [EmptyTabPage].
+ * @see [NormalTabsPage], [PrivateTabsPage], [SyncedTabsPage]
  */
 @Composable
 internal fun EmptyTabPage(
@@ -40,13 +37,13 @@ internal fun EmptyTabPage(
     val isLandscape = LocalContext.current.isLandscape()
 
     Box(
-        modifier = modifier
-            .fillMaxSize(),
-        contentAlignment = if (isLandscape) {
-            Alignment.Center
-        } else {
-            Alignment.TopCenter
-        },
+        modifier = modifier.fillMaxSize(),
+        contentAlignment =
+            if (isLandscape) {
+                Alignment.Center
+            } else {
+                Alignment.TopCenter
+            },
     ) {
         Column {
             CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.secondary) {

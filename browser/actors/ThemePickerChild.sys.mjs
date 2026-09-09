@@ -2,6 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const PREF_SYSTEM_USES_DARK = "ui.systemUsesDarkTheme";
+const PREF_NATIVE_THEME = "browser.theme.native-theme";
+const PREF_ACTIVE_THEME_ID = "extensions.activeThemeID";
+const PREFS = [PREF_SYSTEM_USES_DARK, PREF_NATIVE_THEME, PREF_ACTIVE_THEME_ID];
+
 /**
  * JSWindowActor child for theme-picker component. Handles communication between
  * unprivileged content (ThemePickerRemoteController) and the privileged parent
@@ -10,6 +15,9 @@
 export class ThemePickerChild extends JSWindowActorChild {
   actorCreated() {
     Services.obs.addObserver(this.lookAndFeelChanged, "look-and-feel-changed");
+    for (const pref of PREFS) {
+      Services.prefs.addObserver(pref, this.prefChanged);
+    }
   }
 
   didDestroy() {
@@ -17,6 +25,9 @@ export class ThemePickerChild extends JSWindowActorChild {
       this.lookAndFeelChanged,
       "look-and-feel-changed"
     );
+    for (const pref of PREFS) {
+      Services.prefs.removeObserver(pref, this.prefChanged);
+    }
   }
 
   lookAndFeelChanged = () => {
@@ -32,6 +43,26 @@ export class ThemePickerChild extends JSWindowActorChild {
     );
   };
 
+  prefChanged = async (_, __, data) => {
+    switch (data) {
+      case PREF_ACTIVE_THEME_ID: {
+        const result = await this.sendQuery("ThemePicker:GetActiveTheme");
+        this.dispatchToWindow("ThemePickerThemeUpdated", result);
+        break;
+      }
+      case PREF_NATIVE_THEME: {
+        const result = await this.sendQuery("ThemePicker:GetNativeTheme");
+        this.dispatchToWindow("ThemePickerNativeThemeUpdated", result);
+        break;
+      }
+      case PREF_SYSTEM_USES_DARK: {
+        const result = await this.sendQuery("ThemePicker:GetAppearance");
+        this.dispatchToWindow("ThemePickerAppearanceUpdated", result);
+        break;
+      }
+    }
+  };
+
   async handleEvent(event) {
     const target = event.composedTarget;
 
@@ -41,7 +72,7 @@ export class ThemePickerChild extends JSWindowActorChild {
           "ThemePicker:GetInitialState",
           event.detail
         );
-        this.sendToWidget(target, "ThemePickerInitialState", result);
+        this.dispatchToWidget(target, "ThemePickerInitialState", result);
         break;
       }
       case "ThemePickerUpdateTheme": {
@@ -49,7 +80,7 @@ export class ThemePickerChild extends JSWindowActorChild {
           "ThemePicker:UpdateTheme",
           event.detail
         );
-        this.sendToWidget(target, "ThemePickerThemeUpdated", result);
+        this.dispatchToWindow("ThemePickerThemeUpdated", result);
         break;
       }
       case "ThemePickerUpdateAppearance": {
@@ -57,7 +88,7 @@ export class ThemePickerChild extends JSWindowActorChild {
           "ThemePicker:UpdateAppearance",
           event.detail
         );
-        this.sendToWidget(target, "ThemePickerAppearanceUpdated", result);
+        this.dispatchToWindow("ThemePickerAppearanceUpdated", result);
         break;
       }
       case "ThemePickerUpdateNativeTheme": {
@@ -65,19 +96,27 @@ export class ThemePickerChild extends JSWindowActorChild {
           "ThemePicker:UpdateNativeTheme",
           event.detail
         );
-        this.sendToWidget(target, "ThemePickerNativeThemeUpdated", result);
+        this.dispatchToWindow("ThemePickerNativeThemeUpdated", result);
         break;
       }
     }
   }
 
-  sendToWidget(target, eventName, detail) {
+  dispatchToWidget(target, eventName, detail) {
     const win = target.documentGlobal;
     target.dispatchEvent(
       new win.CustomEvent(eventName, {
         bubbles: true,
         composed: true,
         detail: Cu.cloneInto(detail, win),
+      })
+    );
+  }
+
+  dispatchToWindow(eventName, detail) {
+    this.contentWindow.dispatchEvent(
+      new this.contentWindow.CustomEvent(eventName, {
+        detail: Cu.cloneInto(detail, this.contentWindow),
       })
     );
   }

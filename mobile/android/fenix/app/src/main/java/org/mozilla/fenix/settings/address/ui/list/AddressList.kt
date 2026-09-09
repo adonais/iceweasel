@@ -16,6 +16,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.concept.storage.Address
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.IconListItem
 import org.mozilla.fenix.compose.list.TextListItem
@@ -23,7 +24,6 @@ import org.mozilla.fenix.settings.address.ext.getAddressLabel
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A list of addresses.
@@ -59,31 +59,30 @@ fun AddressList(
     }
 }
 
-private val addresses = listOf(
-    Address(
-        guid = "1",
-        name = "Banana Apple",
-        organization = "Mozilla",
-        streetAddress = "123 Sesame Street",
-        addressLevel3 = "",
-        addressLevel2 = "",
-        addressLevel1 = "",
-        postalCode = "90210",
-        country = "US",
-        tel = "+1 519 555-5555",
-        email = "foo@bar.com",
-        timeCreated = 0L,
-        timeLastUsed = 0L,
-        timeLastModified = 0L,
-        timesUsed = 0L,
-    ),
-)
+private val addresses =
+    listOf(
+        Address(
+            guid = "1",
+            name = "Banana Apple",
+            organization = "Mozilla",
+            streetAddress = "123 Sesame Street",
+            addressLevel3 = "",
+            addressLevel2 = "",
+            addressLevel1 = "",
+            postalCode = "90210",
+            country = "US",
+            tel = "+1 519 555-5555",
+            email = "foo@bar.com",
+            timeCreated = 0L,
+            timeLastUsed = 0L,
+            timeLastModified = 0L,
+            timesUsed = 0L,
+        )
+    )
 
 @FlexibleWindowPreview
 @Composable
-private fun AddressListPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun AddressListPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         Surface {
             AddressList(

@@ -24,7 +24,7 @@ async function moveTabs() {
     ok(!tabs[i].multiselected, "Tab" + i + " is not multiselected");
   }
   for (let i of [0, 1, 2, 3, 4, 5]) {
-    is(tabs[i]._tPos, i, "Tab" + i + " position is :" + i);
+    is(tabs[i].index, i, "Tab" + i + " position is :" + i);
   }
 
   await dragAndDrop(tab3, tab4);
@@ -39,22 +39,22 @@ async function moveTabs() {
     ok(!tabs[i].multiselected, "Tab" + i + " is still not multiselected");
   }
 
-  is(tab0._tPos, 0, "Tab0 position (0) doesn't change");
+  is(tab0.index, 0, "Tab0 position (0) doesn't change");
 
   // Multiselected tabs gets grouped at the start of the slide.
   is(
-    tab1._tPos,
-    tab3._tPos - 1,
+    tab1.index,
+    tab3.index - 1,
     "Tab1 is located right at the left of the dragged tab (tab3)"
   );
   is(
-    tab5._tPos,
-    tab3._tPos + 1,
+    tab5.index,
+    tab3.index + 1,
     "Tab5 is located right at the right of the dragged tab (tab3)"
   );
-  is(tab3._tPos, 4, "Dragged tab (tab3) position is 4");
+  is(tab3.index, 4, "Dragged tab (tab3) position is 4");
 
-  is(tab4._tPos, 2, "Drag target (tab4) has shifted to position 2");
+  is(tab4.index, 2, "Drag target (tab4) has shifted to position 2");
 
   for (let tab of tabs.filter(t => t != tab0)) {
     BrowserTestUtils.removeTab(tab);

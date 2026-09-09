@@ -3,11 +3,53 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React, { useCallback } from "react";
-import { Localized, CONFIGURABLE_STYLES } from "./MSLocalized";
+import {
+  Localized,
+  pickConfigurableStyles,
+  resolveImageSrc,
+} from "./MSLocalized";
 
 function renderSegment(segment, index, handleAction) {
   if (typeof segment === "string") {
     return segment;
+  }
+
+  if (segment?.imageURL) {
+    return (
+      <img
+        key={index}
+        className="inline-icon"
+        src={resolveImageSrc(segment)}
+        alt={segment.alt ?? ""}
+        style={pickConfigurableStyles(segment)}
+      />
+    );
+  }
+  if (segment?.action) {
+    return (
+      <a
+        key={index}
+        href={segment.href}
+        value={segment.id}
+        role={segment.href ? null : "link"}
+        className="text-link"
+        tabIndex="0"
+        onClick={event => {
+          event.preventDefault();
+          handleAction(event, segment.action);
+        }}
+        onKeyPress={event => {
+          if (event.key === "Enter" && !event.repeat) {
+            event.preventDefault();
+            handleAction(event, segment.action);
+          }
+        }}
+      >
+        <Localized text={segment}>
+          <span />
+        </Localized>
+      </a>
+    );
   }
   if (segment?.href) {
     const action = {
@@ -87,15 +129,11 @@ export const LinkParagraph = props => {
       : "link-paragraph";
 
   if (Array.isArray(text)) {
-    const style = {};
-    for (const styleProp of CONFIGURABLE_STYLES) {
-      if (text_content[styleProp] !== undefined) {
-        style[styleProp] = text_content[styleProp];
-      }
-    }
-
     return (
-      <p className={paragraphClassName} style={style}>
+      <p
+        className={paragraphClassName}
+        style={pickConfigurableStyles(text_content)}
+      >
         {text.map((segment, index) =>
           renderSegment(segment, index, handleAction)
         )}

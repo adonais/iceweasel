@@ -16,6 +16,7 @@ const PROMO_LISTENERS = new WeakMap();
 export const SMARTWINDOW_PROMO_EVENTS = Object.freeze({
   PRIMARY: "SmartWindowPromo:PrimaryAction",
   CLOSE: "SmartWindowPromo:Close",
+  DISMISS: "SmartWindowPromo:Dismiss",
   IMPRESSION: "SmartWindowPromo:Impression",
 });
 
@@ -45,6 +46,7 @@ export const SmartWindowNewTabPromo = {
       imageDisplay: content.imageDisplay,
       primaryActionText: await this.resolveText(primaryButton.label),
       secondaryActionText: await this.resolveText(additionalButton.label),
+      dismissable: !!content.dismissable,
     };
 
     this.detachListeners(aiWindow);
@@ -87,6 +89,16 @@ export const SmartWindowNewTabPromo = {
             browser
           );
         }
+        this.hide(aiWindow);
+      },
+      { signal }
+    );
+
+    // moz-promo's built-in close (X) button
+    aiWindow.addEventListener(
+      SMARTWINDOW_PROMO_EVENTS.DISMISS,
+      () => {
+        this.recordTelemetry("DISMISS_BUTTON", message.id);
         this.hide(aiWindow);
       },
       { signal }

@@ -6,12 +6,6 @@
 // Test a given Target's parentFront attribute returns the correct parent front.
 
 const {
-  DevToolsClient,
-} = require("resource://devtools/client/devtools-client.js");
-const {
-  DevToolsServer,
-} = require("resource://devtools/server/devtools-server.js");
-const {
   createCommandsDictionary,
 } = require("resource://devtools/shared/commands/index.js");
 
@@ -21,7 +15,7 @@ const TEST_URL = `data:text/html;charset=utf-8,<div id="test"></div>`;
 add_task(async function () {
   const tab = await addTab(TEST_URL);
 
-  const client = await setupDebuggerClient();
+  const client = await CommandsFactory.spawnClientToDebugSystemPrincipal();
   const mainRoot = client.mainRoot;
 
   const tabDescriptors = await mainRoot.listTabs();
@@ -51,7 +45,7 @@ add_task(async function () {
 
 // Test against Process targets
 add_task(async function () {
-  const client = await setupDebuggerClient();
+  const client = await CommandsFactory.spawnClientToDebugSystemPrincipal();
   const mainRoot = client.mainRoot;
 
   const processes = await mainRoot.listProcesses();
@@ -71,7 +65,7 @@ add_task(async function () {
 
 // Test against worker targets on parent process
 add_task(async function () {
-  const client = await setupDebuggerClient();
+  const client = await CommandsFactory.spawnClientToDebugSystemPrincipal();
 
   const mainRoot = client.mainRoot;
 
@@ -122,19 +116,6 @@ add_task(async function () {
 
   await client.close();
 });
-
-async function setupDebuggerClient() {
-  // Instantiate a minimal server
-  DevToolsServer.init();
-  DevToolsServer.allowChromeProcess = true;
-  if (!DevToolsServer.createRootActor) {
-    DevToolsServer.registerAllActors();
-  }
-  const transport = DevToolsServer.connectPipe();
-  const client = new DevToolsClient(transport);
-  await client.connect();
-  return client;
-}
 
 async function testGetTargetWithConcurrentCalls(descriptors, isTargetAttached) {
   // Assert that concurrent calls to getTarget resolves the same target and that it is already attached

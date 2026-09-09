@@ -23,17 +23,16 @@ import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.theme.AcornTheme
 import org.mozilla.samples.acorn.components.Destinations
 
-private val componentCategories = listOf(
-    Destinations.ICONS to "Icons",
-    Destinations.COLORS to "Colors",
-    Destinations.BANNER to "Banner",
-    Destinations.BUTTONS to "Buttons",
-    Destinations.SNACKBAR to "Snackbar",
-)
+private val componentCategories =
+    listOf(
+        Destinations.ICONS to "Icons",
+        Destinations.COLORS to "Colors",
+        Destinations.BANNER to "Banner",
+        Destinations.BUTTONS to "Buttons",
+        Destinations.SNACKBAR to "Snackbar",
+    )
 
-/**
- * Displays a list of available Acorn Design System components.
- */
+/** Displays a list of available Acorn Design System components. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ComponentListScreen(onNavigate: (String) -> Unit) {
@@ -48,22 +47,14 @@ fun ComponentListScreen(onNavigate: (String) -> Unit) {
                 },
                 actions = { ThemeToggleButton() },
             )
-        },
+        }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState()),
-        ) {
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding).verticalScroll(rememberScrollState())) {
             componentCategories.forEach { (route, title) ->
                 Text(
                     text = title,
                     style = AcornTheme.typography.subtitle1,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onNavigate(route) }
-                        .padding(all = 16.dp),
+                    modifier = Modifier.fillMaxWidth().clickable { onNavigate(route) }.padding(all = 16.dp),
                 )
             }
         }

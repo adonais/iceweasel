@@ -16,6 +16,7 @@ import io.mockk.mockk
 import io.mockk.mockkConstructor
 import io.mockk.unmockkConstructor
 import io.mockk.verify
+import kotlin.test.assertIs
 import mozilla.components.concept.engine.content.blocking.TrackingProtectionException
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.After
@@ -27,7 +28,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.databinding.ComponentExceptionsBinding
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertIs
 
 @RunWith(RobolectricTestRunner::class)
 class TrackingProtectionExceptionsViewTest {
@@ -45,10 +45,11 @@ class TrackingProtectionExceptionsViewTest {
         container = FrameLayout(testContext)
         interactor = mockk()
 
-        exceptionsView = TrackingProtectionExceptionsView(
-            container,
-            interactor,
-        )
+        exceptionsView =
+            TrackingProtectionExceptionsView(
+                container,
+                interactor,
+            )
         binding = ComponentExceptionsBinding.bind(container)
     }
 

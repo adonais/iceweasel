@@ -16,9 +16,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A menu group container.
@@ -28,8 +28,7 @@ import mozilla.components.ui.icons.R as iconsR
 @Composable
 internal fun MenuGroup(content: @Composable () -> Unit) {
     Column(
-        modifier = Modifier
-            .clip(shape = MaterialTheme.shapes.extraLarge),
+        modifier = Modifier.clip(shape = MaterialTheme.shapes.extraLarge),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         content()
@@ -41,9 +40,9 @@ internal fun MenuGroup(content: @Composable () -> Unit) {
 private fun MenuGroupPreview() {
     FirefoxTheme {
         Column(
-            modifier = Modifier
-                .background(color = MaterialTheme.colorScheme.surface)
-                .padding(all = FirefoxTheme.layout.space.static200),
+            modifier =
+                Modifier.background(color = MaterialTheme.colorScheme.surface)
+                    .padding(all = FirefoxTheme.layout.space.static200)
         ) {
             MenuGroup {
                 MenuItem(

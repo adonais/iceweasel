@@ -111,6 +111,7 @@ class PerfParser(CompareParser):
         "extensions",
         "gecko-profile",
         "path",
+        "pushdate",
         "rebuild",
     ]
 

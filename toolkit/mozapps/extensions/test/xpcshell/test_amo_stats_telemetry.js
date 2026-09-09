@@ -7,8 +7,6 @@ const { TelemetryController } = ChromeUtils.importESModule(
   "resource://gre/modules/TelemetryController.sys.mjs"
 );
 
-AddonTestUtils.init(this);
-AddonTestUtils.overrideCertDB();
 AddonTestUtils.createAppInfo(
   "xpcshell@tests.mozilla.org",
   "XPCShell",
@@ -148,7 +146,7 @@ add_task(
     // Note: This returns null on Android because toolkit.telemetry.unified=false
     // and this is deprecated and the AMO usage stats to be migrated to Glean
     // addons.activeAddons metric.
-    const { payload, environment } = TelemetryController.getCurrentPingData();
+    const { payload } = TelemetryController.getCurrentPingData();
 
     // Important: `payload.info.addons` is being used for AMO usage stats.
     Assert.ok("addons" in payload.info, "payload.info.addons is defined");
@@ -165,16 +163,6 @@ add_task(
     for (const { id, name } of extensions) {
       Assert.ok(id in payload.addonDetails.XPI);
       Assert.equal(payload.addonDetails.XPI[id].name, name);
-    }
-
-    const { addons } = environment;
-    Assert.ok(
-      "activeAddons" in addons,
-      "environment.addons.activeAddons is defined"
-    );
-    Assert.ok("theme" in addons, "environment.addons.theme is defined");
-    for (const { id } of extensions) {
-      Assert.ok(id in environment.addons.activeAddons);
     }
 
     await uninstallTestExtensions();

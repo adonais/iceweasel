@@ -17,25 +17,27 @@ class FindInPageBindingTest {
     private val testDispatcher = StandardTestDispatcher()
 
     @Test
-    fun `WHEN find in page started action is dispatched THEN launch find in page feature`() = runTest(testDispatcher) {
-        val appStore = AppStore()
-        var onFindInPageLaunchCalled = false
+    fun `WHEN find in page started action is dispatched THEN launch find in page feature`() =
+        runTest(testDispatcher) {
+            val appStore = AppStore()
+            var onFindInPageLaunchCalled = false
 
-        val binding = FindInPageBinding(
-            appStore = appStore,
-            onFindInPageLaunch = { onFindInPageLaunchCalled = true },
-            mainDispatcher = testDispatcher,
-        )
-        binding.start()
+            val binding =
+                FindInPageBinding(
+                    appStore = appStore,
+                    onFindInPageLaunch = { onFindInPageLaunchCalled = true },
+                    mainDispatcher = testDispatcher,
+                )
+            binding.start()
 
-        appStore.dispatch(FindInPageAction.FindInPageStarted)
+            appStore.dispatch(FindInPageAction.FindInPageStarted)
 
-        // Wait for FindInPageAction.FindInPageStarted
-        testDispatcher.scheduler.advanceUntilIdle()
-        // Wait for FindInPageAction.FindInPageShown
+            // Wait for FindInPageAction.FindInPageStarted
+            testDispatcher.scheduler.advanceUntilIdle()
+            // Wait for FindInPageAction.FindInPageShown
 
-        assertFalse(appStore.state.showFindInPage)
+            assertFalse(appStore.state.showFindInPage)
 
-        assertTrue(onFindInPageLaunchCalled)
-    }
+            assertTrue(onFindInPageLaunchCalled)
+        }
 }

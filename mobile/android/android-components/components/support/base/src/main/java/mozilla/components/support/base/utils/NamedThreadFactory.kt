@@ -9,18 +9,17 @@ import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * A [ThreadFactory] that names its threads, "prefix-thread-<#>", deferring further thread
- * creation details to [Executors.defaultThreadFactory].
+ * A [ThreadFactory] that names its threads, "prefix-thread-<#>", deferring further thread creation details to
+ * [Executors.defaultThreadFactory].
  */
-class NamedThreadFactory(
-    private val prefix: String,
-) : ThreadFactory {
+class NamedThreadFactory(private val prefix: String) : ThreadFactory {
 
     private val backingFactory = Executors.defaultThreadFactory()
     private val threadNumber = AtomicInteger(1)
 
-    override fun newThread(r: Runnable?): Thread = backingFactory.newThread(r).apply {
-        val threadNumber = threadNumber.getAndIncrement()
-        name = "$prefix-thread-$threadNumber"
-    }
+    override fun newThread(r: Runnable?): Thread =
+        backingFactory.newThread(r).apply {
+            val threadNumber = threadNumber.getAndIncrement()
+            name = "$prefix-thread-$threadNumber"
+        }
 }

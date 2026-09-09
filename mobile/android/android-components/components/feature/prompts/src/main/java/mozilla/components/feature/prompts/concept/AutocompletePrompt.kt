@@ -4,12 +4,8 @@
 
 package mozilla.components.feature.prompts.concept
 
-/**
- * A prompt for displaying a list of options that the user can choose to be autocompleted.
- */
-interface AutocompletePrompt<T> :
-    SelectablePromptView<T>,
-    ToggleablePrompt {
+/** A prompt for displaying a list of options that the user can choose to be autocompleted. */
+interface AutocompletePrompt<T> : SelectablePromptView<T>, ToggleablePrompt {
 
     /**
      * Populate the prompt with the provided options.

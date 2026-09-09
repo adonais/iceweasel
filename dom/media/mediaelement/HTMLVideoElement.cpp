@@ -287,8 +287,8 @@ nsMapRuleToAttributesFunc HTMLVideoElement::GetAttributeMappingFunction()
 }
 
 void HTMLVideoElement::UnbindFromTree(UnbindContext& aContext) {
-  if (mVisualCloneSource) {
-    mVisualCloneSource->EndCloningVisually();
+  if (const RefPtr<HTMLVideoElement> visualCloneSource = mVisualCloneSource) {
+    visualCloneSource->EndCloningVisually();
   } else if (mVisualCloneTarget) {
     AsyncEventDispatcher::RunDOMEventWhenSafe(
         *this, u"MozStopPictureInPicture"_ns, CanBubble::eNo,
@@ -315,7 +315,7 @@ bool HTMLVideoElement::IsInteractiveHTMLContent() const {
          HTMLMediaElement::IsInteractiveHTMLContent();
 }
 
-gfx::IntSize HTMLVideoElement::GetVideoIntrinsicDimensions() {
+gfx::IntSize HTMLVideoElement::GetVideoIntrinsicDimensions() const {
   const auto& sz = mMediaInfo.mVideo.mDisplay;
 
   // Prefer the size of the container as it's more up to date.
@@ -324,7 +324,7 @@ gfx::IntSize HTMLVideoElement::GetVideoIntrinsicDimensions() {
       .valueOr(sz);
 }
 
-uint32_t HTMLVideoElement::VideoWidth() {
+uint32_t HTMLVideoElement::VideoWidth() const {
   if (!HasVideo()) {
     return 0;
   }
@@ -336,7 +336,7 @@ uint32_t HTMLVideoElement::VideoWidth() {
   return size.width;
 }
 
-uint32_t HTMLVideoElement::VideoHeight() {
+uint32_t HTMLVideoElement::VideoHeight() const {
   if (!HasVideo()) {
     return 0;
   }
@@ -666,7 +666,8 @@ already_AddRefed<Promise> HTMLVideoElement::CloneElementVisually(
   aTargetVideo.SetMediaInfo(mMediaInfo);
 
   if (IsInComposedDoc() && !StaticPrefs::media_cloneElementVisually_testing()) {
-    NotifyUAWidgetSetupOrChange();
+    const nsAutoScriptBlocker scriptBlocker;
+    AddScriptRunnerToNotifyUAWidgetSetupOrChange();
   }
 
   MaybeBeginCloningVisually();
@@ -728,7 +729,8 @@ void HTMLVideoElement::EndCloningVisually() {
 
   if (IsInComposedDoc() && OwnerDoc()->IsCurrentActiveDocument() &&
       !StaticPrefs::media_cloneElementVisually_testing()) {
-    NotifyUAWidgetSetupOrChange();
+    const nsAutoScriptBlocker scriptBlocker;
+    AddScriptRunnerToNotifyUAWidgetSetupOrChange();
   }
 
   ClosePictureInPictureWindowAndFireEvent();

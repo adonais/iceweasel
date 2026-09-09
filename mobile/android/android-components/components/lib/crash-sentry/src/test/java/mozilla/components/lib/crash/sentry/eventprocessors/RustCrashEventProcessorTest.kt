@@ -23,9 +23,10 @@ class RustCrashEventProcessorTest {
     @Test
     fun `GIVEN a SentryEvent that contains a RustCrashReport WHEN process is called THEN a fingerprint is added and the exception type and value are cleaned up`() {
         val processor = RustCrashEventProcessor()
-        val event = SentryEvent(TestRustException()).apply {
-            exceptions = listOf(SentryException())
-        }
+        val event =
+            SentryEvent(TestRustException()).apply {
+                exceptions = listOf(SentryException())
+            }
 
         processor.process(event, Hint())
         assertEquals("test_rust_crash", event.fingerprints?.first())

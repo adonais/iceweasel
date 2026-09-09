@@ -12,16 +12,13 @@ import mozilla.components.lib.state.helpers.AbstractBinding
 import org.mozilla.fenix.library.history.HistoryFragmentState
 import org.mozilla.fenix.library.history.HistoryFragmentStore
 
-/**
- * A binding to map state updates to menu updates.
- */
+/** A binding to map state updates to menu updates. */
 class MenuBinding(
     store: HistoryFragmentStore,
     val invalidateOptionsMenu: () -> Unit,
     mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : AbstractBinding<HistoryFragmentState>(store, mainDispatcher) {
     override suspend fun onState(flow: Flow<HistoryFragmentState>) {
-        flow.distinctUntilChangedBy { it.mode }
-            .collect { invalidateOptionsMenu() }
+        flow.distinctUntilChangedBy { it.mode }.collect { invalidateOptionsMenu() }
     }
 }

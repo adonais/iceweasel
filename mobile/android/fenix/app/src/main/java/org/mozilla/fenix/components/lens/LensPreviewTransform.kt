@@ -42,25 +42,24 @@ internal data class PreviewConstraints(
  *
  * Preview scaling is handled in two stages:
  *
- * 1. `LensCameraScreen` sizes the preview `TextureView` to match the camera buffer's aspect ratio,
- *    using the ratio from [displayAspectRatio].
- * 2. The matrix from [forRotation] corrects the sensor rotation and compensates for TextureView's
- *    default behaviour of stretching the buffer to fill its bounds.
+ * 1. `LensCameraScreen` sizes the preview `TextureView` to match the camera buffer's aspect ratio, using the ratio from
+ *    [displayAspectRatio].
+ * 2. The matrix from [forRotation] corrects the sensor rotation and compensates for TextureView's default behaviour of
+ *    stretching the buffer to fill its bounds.
  *
- * Once the aspect ratio is known and the view has been resized, the compensating scale drops out:
- * the matrix reduces to identity when upright and to the sensor rotation alone in landscape.
- * Before then, the matrix letterboxes the preview as a temporary fallback. Any uncovered area
- * shows the black background behind the TextureView.
+ * Once the aspect ratio is known and the view has been resized, the compensating scale drops out: the matrix reduces to
+ * identity when upright and to the sensor rotation alone in landscape. Before then, the matrix letterboxes the preview
+ * as a temporary fallback. Any uncovered area shows the black background behind the TextureView.
  *
- * Both stages are driven by the same [areDimensionsSwapped] result, so they always agree on which
- * axis of the camera buffer is the long one on screen.
+ * Both stages are driven by the same [areDimensionsSwapped] result, so they always agree on which axis of the camera
+ * buffer is the long one on screen.
  */
 internal object LensPreviewTransform {
 
     /**
-     * Returns the preview transform for a [bufferSize] camera buffer displayed in a
-     * [viewWidth] x [viewHeight] TextureView at the given screen [rotation], where [swapped] is
-     * the [areDimensionsSwapped] result for that rotation.
+     * Returns the preview transform for a [bufferSize] camera buffer displayed in a [viewWidth] x [viewHeight]
+     * TextureView at the given screen [rotation], where [swapped] is the [areDimensionsSwapped] result for that
+     * rotation.
      */
     fun forRotation(viewWidth: Int, viewHeight: Int, bufferSize: Size, rotation: Int, swapped: Boolean): Matrix {
         if (viewWidth <= 0 || viewHeight <= 0) return Matrix()
@@ -123,45 +122,45 @@ internal object LensPreviewTransform {
         min(viewWidth.toFloat() / contentSize.width, viewHeight.toFloat() / contentSize.height)
 
     /**
-     * Transposes [bufferSize] from sensor orientation into display orientation when the two
-     * disagree about which axis is the long one.
+     * Transposes [bufferSize] from sensor orientation into display orientation when the two disagree about which axis
+     * is the long one.
      */
     private fun displayOrientedSize(bufferSize: Size, swapped: Boolean): Size =
         if (swapped) Size(bufferSize.height, bufferSize.width) else bufferSize
 
     /**
-     * Whether the view and sensor dimensions are transposed relative to each other, which happens
-     * when [displayRotation] and [sensorOrientation] disagree about which axis is the long one.
+     * Whether the view and sensor dimensions are transposed relative to each other, which happens when
+     * [displayRotation] and [sensorOrientation] disagree about which axis is the long one.
      */
     fun areDimensionsSwapped(displayRotation: Int, sensorOrientation: Int): Boolean =
         when (displayRotation) {
-            Surface.ROTATION_0, Surface.ROTATION_180 ->
-                sensorOrientation == ORIENTATION_90 || sensorOrientation == ORIENTATION_270
-            Surface.ROTATION_90, Surface.ROTATION_270 ->
-                sensorOrientation == ORIENTATION_0 || sensorOrientation == ORIENTATION_180
+            Surface.ROTATION_0,
+            Surface.ROTATION_180 -> sensorOrientation == ORIENTATION_90 || sensorOrientation == ORIENTATION_270
+            Surface.ROTATION_90,
+            Surface.ROTATION_270 -> sensorOrientation == ORIENTATION_0 || sensorOrientation == ORIENTATION_180
             else -> false
         }
 
     /**
-     * Maps the view and display dimensions into sensor orientation, capped at the maximum preview
-     * dimensions the camera pipeline supports. [swapped] is the [areDimensionsSwapped] result for
-     * the current rotation.
+     * Maps the view and display dimensions into sensor orientation, capped at the maximum preview dimensions the camera
+     * pipeline supports. [swapped] is the [areDimensionsSwapped] result for the current rotation.
      */
     fun previewConstraints(
         viewWidth: Int,
         viewHeight: Int,
         displaySize: Point,
         swapped: Boolean,
-    ): PreviewConstraints = PreviewConstraints(
-        rotatedWidth = if (swapped) viewHeight else viewWidth,
-        rotatedHeight = if (swapped) viewWidth else viewHeight,
-        maxWidth = min(if (swapped) displaySize.y else displaySize.x, MAX_PREVIEW_WIDTH),
-        maxHeight = min(if (swapped) displaySize.x else displaySize.y, MAX_PREVIEW_HEIGHT),
-    )
+    ): PreviewConstraints =
+        PreviewConstraints(
+            rotatedWidth = if (swapped) viewHeight else viewWidth,
+            rotatedHeight = if (swapped) viewWidth else viewHeight,
+            maxWidth = min(if (swapped) displaySize.y else displaySize.x, MAX_PREVIEW_WIDTH),
+            maxHeight = min(if (swapped) displaySize.x else displaySize.y, MAX_PREVIEW_HEIGHT),
+        )
 
     /**
-     * Display-oriented width/height ratio for a [previewSize] camera buffer, where [swapped] is
-     * the [areDimensionsSwapped] result for the current rotation.
+     * Display-oriented width/height ratio for a [previewSize] camera buffer, where [swapped] is the
+     * [areDimensionsSwapped] result for the current rotation.
      */
     fun displayAspectRatio(previewSize: Size, swapped: Boolean): Float {
         val size = displayOrientedSize(previewSize, swapped)

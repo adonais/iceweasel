@@ -10,14 +10,10 @@ import mozilla.appservices.remotesettings.RemoteSettingsRecord
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.remotesettings.RemoteSettingsService
 
-/**
- * Repository for fetching configuration from Remote Settings.
-**/
+/** Repository for fetching configuration from Remote Settings. */
 class RemoteSettingsRepository private constructor() {
 
-    /**
-     * Companion object holding utility methods and properties for [RemoteSettingsRepository].
-     */
+    /** Companion object holding utility methods and properties for [RemoteSettingsRepository]. */
     companion object {
         val logger = Logger("RemoteSettingsRepository")
 

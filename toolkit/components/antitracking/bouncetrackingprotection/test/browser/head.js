@@ -194,8 +194,12 @@ function insertIframeAndWaitForLoad(
 }
 
 /**
- * Insert an <a href/> element with the given target and perform a synthesized
- * click on it.
+ * Insert an <a href/> element with the given target and click it with a
+ * synthesized mouse event.
+ *
+ * The click is a real widget level event, so it grants transient user
+ * activation and marks the document as interacted with the same way a user
+ * click does. Callers must not fake either of those separately.
  *
  * @param {MozBrowser|BrowsingContext} browser - Browser or BrowsingContext to
  * insert the link in.
@@ -219,14 +223,26 @@ async function navigateLinkClick(
     throw new Error(`Invalid option '${spawnWindow}' for spawnWindow`);
   }
 
-  await SpecialPowers.spawn(
+  // The link is inserted and clicked in the same content task. Doing the click
+  // from the parent instead, via BrowserTestUtils.synthesizeMouseAtCenter,
+  // needs a second round trip which can race the insertion (Bug 1743857). That
+  // helper resolves the target in the content process and silently falls back
+  // to clicking (0, 0) when the selector does not match, so a lost race shows
+  // up as the click landing on the document body.
+  let clicked = await SpecialPowers.spawn(
     browser,
     [targetURL.href, spawnWindow, linkTarget],
     async (targetURL, spawnWindow, linkTarget) => {
       let link = content.document.createElement("a");
       link.id = "link";
       link.textContent = "Click Me";
-      link.style.display = "block";
+      // Pin the link to the top left corner and above any other content so the
+      // click at its center hits it regardless of what the page already
+      // renders, and without having to scroll it into view.
+      link.style.position = "fixed";
+      link.style.top = "0";
+      link.style.left = "0";
+      link.style.zIndex = "2147483647";
       link.style.fontSize = "40px";
 
       // For opening a popup we attach an event listener to trigger via click.
@@ -252,12 +268,40 @@ async function navigateLinkClick(
 
       content.document.body.appendChild(link);
 
-      // TODO: Bug 1892091: Use EventUtils.synthesizeMouse instead for a real click.
-      SpecialPowers.wrap(content.document).notifyUserGestureActivation();
-      content.document.userInteractionForTesting();
-      link.click();
+      let clicked = false;
+      link.addEventListener("click", () => {
+        clicked = true;
+      });
+
+      // Unlike click(), a synthesized click is hit tested at a coordinate, so
+      // the link has to be reachable at its center before dispatching.
+      // elementFromPoint goes through the same hit testing path, so it tells us
+      // exactly when that holds. Right after a load it can take a paint to get
+      // there, which is why this waits rather than checking once.
+      let isHittable = () => {
+        let { left, top, width, height } = link.getBoundingClientRect();
+        return link.contains(
+          content.document.elementFromPoint(left + width / 2, top + height / 2)
+        );
+      };
+      if (!isHittable()) {
+        await ContentTaskUtils.waitForCondition(
+          isHittable,
+          "The link is hit testable at its center."
+        );
+      }
+
+      ContentTaskUtils.getEventUtils(content).synthesizeMouseAtCenter(
+        link,
+        {},
+        content
+      );
+
+      return clicked;
     }
   );
+
+  Assert.ok(clicked, "The synthesized click hit the link.");
 }
 
 /**

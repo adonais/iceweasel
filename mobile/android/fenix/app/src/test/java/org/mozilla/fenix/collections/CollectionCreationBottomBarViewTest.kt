@@ -41,13 +41,14 @@ class CollectionCreationBottomBarViewTest {
         textView = TextView(testContext)
         saveButton = Button(testContext)
 
-        bottomBarView = CollectionCreationBottomBarView(
-            interactor,
-            layout,
-            iconButton,
-            textView,
-            saveButton,
-        )
+        bottomBarView =
+            CollectionCreationBottomBarView(
+                interactor,
+                layout,
+                iconButton,
+                textView,
+                saveButton,
+            )
     }
 
     @Test
@@ -82,25 +83,19 @@ class CollectionCreationBottomBarViewTest {
     fun testTextViewUpdateForSelectTabs() {
         bottomBarView.update(
             SaveCollectionStep.SelectTabs,
-            CollectionCreationState(
-                selectedTabs = emptySet(),
-            ),
+            CollectionCreationState(selectedTabs = emptySet()),
         )
         assertEquals("Select tabs to save", textView.text)
 
         bottomBarView.update(
             SaveCollectionStep.SelectTabs,
-            CollectionCreationState(
-                selectedTabs = setOf(mockk()),
-            ),
+            CollectionCreationState(selectedTabs = setOf(mockk())),
         )
         assertEquals("1 tab selected", textView.text)
 
         bottomBarView.update(
             SaveCollectionStep.SelectTabs,
-            CollectionCreationState(
-                selectedTabs = setOf(mockk(), mockk()),
-            ),
+            CollectionCreationState(selectedTabs = setOf(mockk(), mockk())),
         )
         assertEquals("2 tabs selected", textView.text)
     }

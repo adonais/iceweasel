@@ -11,8 +11,10 @@ from mozbuild.base import MachCommandConditions as conditions
 _TRY_PLATFORMS = {
     "linux-xpcshell": "perftest-linux-try-xpcshell",
     "mac-xpcshell": "perftest-macosx-try-xpcshell",
+    "mac-aarch64-xpcshell": "perftest-macosx-aarch64-try-xpcshell",
     "linux-browsertime": "perftest-linux-try-browsertime",
     "mac-browsertime": "perftest-macosx-try-browsertime",
+    "mac-aarch64-browsertime": "perftest-macosx-aarch64-try-browsertime",
     "win-browsertimee": "perftest-windows-try-browsertime",
 }
 

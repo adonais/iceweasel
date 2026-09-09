@@ -58,23 +58,30 @@ import org.mozilla.fenix.helpers.ext.clearAndSetText
 import org.mozilla.fenix.helpers.waitUntilDisplayed
 import org.mozilla.fenix.settings.address.ui.edit.EditAddressTestTag
 import org.mozilla.fenix.settings.creditcards.ui.CreditCardEditorTestTags
+import org.mozilla.fenix.ui.efficiency.data.AddressDetails
 
 class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule) {
 
     fun verifyAutofillToolbarTitle() {
         assertUIObjectExists(autofillToolbarTitle())
     }
+
     fun verifyManageAddressesToolbarTitle() {
-        Log.i(TAG, "verifyManageAddressesToolbarTitle: Trying to verify that the \"Manage addresses\" toolbar title is displayed")
+        Log.i(
+            TAG,
+            "verifyManageAddressesToolbarTitle: Trying to verify that the \"Manage addresses\" toolbar title is displayed",
+        )
         onView(
-            allOf(
-                withId(R.id.navigationToolbar),
-                withChild(
-                    withText(R.string.preferences_addresses_manage_addresses),
-                ),
-            ),
-        ).check(matches(isDisplayed()))
-        Log.i(TAG, "verifyManageAddressesToolbarTitle: Verified that the \"Manage addresses\" toolbar title is displayed")
+                allOf(
+                    withId(R.id.navigationToolbar),
+                    withChild(withText(R.string.preferences_addresses_manage_addresses)),
+                )
+            )
+            .check(matches(isDisplayed()))
+        Log.i(
+            TAG,
+            "verifyManageAddressesToolbarTitle: Verified that the \"Manage addresses\" toolbar title is displayed",
+        )
     }
 
     fun verifyAddressAutofillSection(isAddressAutofillEnabled: Boolean, userHasSavedAddress: Boolean) {
@@ -136,7 +143,10 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
     }
 
     fun verifyAddressesAutofillToggle(enabled: Boolean) {
-        Log.i(TAG, "verifyAddressesAutofillToggle: Trying to verify that the \"Save and autofill addresses\" toggle is checked: $enabled")
+        Log.i(
+            TAG,
+            "verifyAddressesAutofillToggle: Trying to verify that the \"Save and autofill addresses\" toggle is checked: $enabled",
+        )
         onView(withText(R.string.preferences_addresses_save_and_autofill_addresses_2))
             .check(
                 matches(
@@ -148,15 +158,21 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
                             } else {
                                 isNotChecked()
                             },
-                        ),
-                    ),
-                ),
+                        )
+                    )
+                )
             )
-        Log.i(TAG, "verifyAddressesAutofillToggle: Verified that the \"Save and autofill addresses\" toggle is checked: $enabled")
+        Log.i(
+            TAG,
+            "verifyAddressesAutofillToggle: Verified that the \"Save and autofill addresses\" toggle is checked: $enabled",
+        )
     }
 
     fun verifySaveAndAutofillCreditCardsToggle(enabled: Boolean) {
-        Log.i(TAG, "verifySaveAndAutofillCreditCardsToggle: Trying to verify that the \"Save and autofill cards\" toggle is checked: $enabled")
+        Log.i(
+            TAG,
+            "verifySaveAndAutofillCreditCardsToggle: Trying to verify that the \"Save and autofill cards\" toggle is checked: $enabled",
+        )
         onView(withText(R.string.preferences_credit_cards_save_and_autofill_cards_2))
             .check(
                 matches(
@@ -168,11 +184,14 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
                             } else {
                                 isNotChecked()
                             },
-                        ),
-                    ),
-                ),
+                        )
+                    )
+                )
             )
-        Log.i(TAG, "verifySaveAndAutofillCreditCardsToggle: Verified that the \"Save and autofill cards\" toggle is checked: $enabled")
+        Log.i(
+            TAG,
+            "verifySaveAndAutofillCreditCardsToggle: Verified that the \"Save and autofill cards\" toggle is checked: $enabled",
+        )
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -182,17 +201,18 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         waitForKeyboardDismiss()
         Log.i(TAG, "verifyAddAddressView: Performed \"Close soft keyboard\" action")
         listOf(
-            composeTestRule.navigateBackButton(),
-            composeTestRule.addAddressToolbarTitle(),
-            composeTestRule.toolbarCheckmarkButton(),
-            composeTestRule.nameTextInput(),
-            composeTestRule.streetAddressTextInput(),
-            composeTestRule.cityTextInput(),
-            composeTestRule.subRegionDropDown(),
-            composeTestRule.zipCodeTextInput(),
-            composeTestRule.countryDropDown(),
-            composeTestRule.phoneTextInput(),
-        ).forEach { it.assertIsDisplayed() }
+                composeTestRule.navigateBackButton(),
+                composeTestRule.addAddressToolbarTitle(),
+                composeTestRule.toolbarCheckmarkButton(),
+                composeTestRule.nameTextInput(),
+                composeTestRule.streetAddressTextInput(),
+                composeTestRule.cityTextInput(),
+                composeTestRule.subRegionDropDown(),
+                composeTestRule.zipCodeTextInput(),
+                composeTestRule.countryDropDown(),
+                composeTestRule.phoneTextInput(),
+            )
+            .forEach { it.assertIsDisplayed() }
         composeTestRule.addressForm().performScrollToNode(hasTestTag(EditAddressTestTag.EMAIL_FIELD))
         composeTestRule.waitUntilDisplayed(composeTestRule.emailTextInput())
         composeTestRule.emailTextInput().assertIsDisplayed()
@@ -240,26 +260,31 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
     fun verifyEditAddressView() {
         Log.i(TAG, "verifyEditAddressView: Trying to verify that the \"Edit address\" items are displayed")
         listOf(
-            composeTestRule.navigateBackButton(),
-            composeTestRule.editAddressToolbarTitle(),
-            composeTestRule.toolbarCheckmarkButton(),
-            composeTestRule.toolbarDeleteAddressButton(),
-            composeTestRule.nameTextInput(),
-            composeTestRule.streetAddressTextInput(),
-            composeTestRule.cityTextInput(),
-            composeTestRule.subRegionDropDown(),
-        ).forEach { it.assertIsDisplayed() }
+                composeTestRule.navigateBackButton(),
+                composeTestRule.editAddressToolbarTitle(),
+                composeTestRule.toolbarCheckmarkButton(),
+                composeTestRule.toolbarDeleteAddressButton(),
+                composeTestRule.nameTextInput(),
+                composeTestRule.streetAddressTextInput(),
+                composeTestRule.cityTextInput(),
+                composeTestRule.subRegionDropDown(),
+            )
+            .forEach { it.assertIsDisplayed() }
 
-        Log.i(TAG, "verifyEditAddressView: Trying to click device back button to dismiss keyboard using device back button")
+        Log.i(
+            TAG,
+            "verifyEditAddressView: Trying to click device back button to dismiss keyboard using device back button",
+        )
         mDevice.pressBack()
         Log.i(TAG, "verifyEditAddressView: Clicked device back button to dismiss keyboard using device back button")
         waitForAppWindowToBeUpdated()
 
         listOf(
-            composeTestRule.zipCodeTextInput(),
-            composeTestRule.countryDropDown(),
-            composeTestRule.phoneTextInput(),
-        ).forEach { it.assertIsDisplayed() }
+                composeTestRule.zipCodeTextInput(),
+                composeTestRule.countryDropDown(),
+                composeTestRule.phoneTextInput(),
+            )
+            .forEach { it.assertIsDisplayed() }
         composeTestRule.addressForm().performScrollToNode(hasTestTag(EditAddressTestTag.EMAIL_FIELD))
         composeTestRule.waitUntilDisplayed(composeTestRule.emailTextInput())
         composeTestRule.emailTextInput().assertIsDisplayed()
@@ -271,9 +296,10 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         }
 
         listOf(
-            composeTestRule.saveButton(),
-            composeTestRule.cancelButton(),
-        ).forEach { it.assertIsDisplayed() }
+                composeTestRule.saveButton(),
+                composeTestRule.cancelButton(),
+            )
+            .forEach { it.assertIsDisplayed() }
         Log.i(TAG, "verifyEditAddressView: Verified that the \"Edit address\" items are displayed")
     }
 
@@ -293,34 +319,55 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         Log.i(TAG, "clickAddAddressButton: Clicked the \"Add address\" button")
         waitForAppWindowToBeUpdated()
     }
+
     fun clickManageAddressesButton() {
         Log.i(TAG, "clickManageAddressesButton: Trying to click the \"Manage addresses\" button")
         manageAddressesButton().click()
         Log.i(TAG, "clickManageAddressesButton: Clicked the \"Manage addresses\" button")
     }
+
     fun clickSavedAddress(composeTestRule: ComposeTestRule, name: String) {
-        Log.i(TAG, "clickSavedAddress: Trying to click the $name saved address and and wait for $waitingTime ms for a new window")
+        Log.i(
+            TAG,
+            "clickSavedAddress: Trying to click the $name saved address and and wait for $waitingTime ms for a new window",
+        )
         composeTestRule.onNodeWithText(name, useUnmergedTree = true).performClick()
-        Log.i(TAG, "clickSavedAddress: Clicked the $name saved address and and waited for $waitingTime ms for a new window")
+        Log.i(
+            TAG,
+            "clickSavedAddress: Clicked the $name saved address and and waited for $waitingTime ms for a new window",
+        )
     }
 
     @OptIn(ExperimentalTestApi::class)
     fun clickDeleteAddressButton() {
-        Log.i(TAG, "clickDeleteAddressButton: Waiting for $waitingTime ms for the delete address toolbar button to exist")
+        Log.i(
+            TAG,
+            "clickDeleteAddressButton: Waiting for $waitingTime ms for the delete address toolbar button to exist",
+        )
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(EditAddressTestTag.TOPBAR_DELETE_BUTTON), waitingTime)
-        Log.i(TAG, "clickDeleteAddressButton: Waited for $waitingTime ms for the delete address toolbar button to exist")
+        Log.i(
+            TAG,
+            "clickDeleteAddressButton: Waited for $waitingTime ms for the delete address toolbar button to exist",
+        )
         Log.i(TAG, "clickDeleteAddressButton: Trying to click the delete address toolbar button")
         composeTestRule.toolbarDeleteAddressButton().performClick()
         Log.i(TAG, "clickDeleteAddressButton: Clicked the delete address toolbar button")
     }
+
     fun clickCancelDeleteAddressButton() {
-        Log.i(TAG, "clickCancelDeleteAddressButton: Trying to click the \"CANCEL\" button from the delete address dialog")
+        Log.i(
+            TAG,
+            "clickCancelDeleteAddressButton: Trying to click the \"CANCEL\" button from the delete address dialog",
+        )
         composeTestRule.cancelDeleteAddressButton().performClick()
         Log.i(TAG, "clickCancelDeleteAddressButton: Clicked the \"CANCEL\" button from the delete address dialog")
     }
 
     fun clickConfirmDeleteAddressButton() {
-        Log.i(TAG, "clickConfirmDeleteAddressButton: Trying to click the \"DELETE\" button from the delete address dialog")
+        Log.i(
+            TAG,
+            "clickConfirmDeleteAddressButton: Trying to click the \"DELETE\" button from the delete address dialog",
+        )
         composeTestRule.confirmDeleteAddressButton().performClick()
         Log.i(TAG, "clickConfirmDeleteAddressButton: Clicked \"DELETE\" button from the delete address dialog")
     }
@@ -359,26 +406,28 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
     @OptIn(ExperimentalTestApi::class)
     fun fillAndSaveAddress(
         composeTestRule: ComposeTestRule,
+        address: AddressDetails,
         navigateToAutofillSettings: Boolean,
         isAddressAutofillEnabled: Boolean = true,
         userHasSavedAddress: Boolean = false,
-        name: String,
-        streetAddress: String,
-        city: String,
-        state: String,
-        zipCode: String,
-        country: String,
-        phoneNumber: String,
-        emailAddress: String,
     ) {
+        val name = address.name
+        val streetAddress = address.streetAddress
+        val city = address.city
+        val state = address.state
+        val zipCode = address.zipCode
+        val country = address.country
+        val phoneNumber = address.phoneNumber
+        val emailAddress = address.emailAddress
+
         if (navigateToAutofillSettings) {
-            homeScreen(composeTestRule) {
-            }.openThreeDotMenu {
-            }.clickSettingsButton {
-            }.openAutofillSubMenu(composeTestRule) {
-                verifyAddressAutofillSection(isAddressAutofillEnabled, userHasSavedAddress)
-                clickAddAddressButton()
-            }
+            homeScreen(composeTestRule) {}
+                .openThreeDotMenu {}
+                .clickSettingsButton {}
+                .openAutofillSubMenu(composeTestRule) {
+                    verifyAddressAutofillSection(isAddressAutofillEnabled, userHasSavedAddress)
+                    clickAddAddressButton()
+                }
         }
         Log.i(TAG, "fillAndSaveAddress: Waiting for $waitingTimeLong ms for \"Name\" text field to exist")
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(EditAddressTestTag.NAME_FIELD), waitingTimeLong)
@@ -435,30 +484,45 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         addCreditCardButton().click()
         Log.i(TAG, "clickAddCreditCardButton: Clicked the \"Add credit card\" button")
     }
+
     fun clickManageSavedCreditCardsButton() {
         Log.i(TAG, "clickManageSavedCreditCardsButton: Trying to click the \"Manage saved cards\" button")
         manageSavedCreditCardsButton().click()
         Log.i(TAG, "clickManageSavedCreditCardsButton: Clicked the \"Manage saved cards\" button")
     }
+
     fun clickSecuredCreditCardsLaterButton() {
         Log.i(TAG, "clickSecuredCreditCardsLaterButton: Trying to click the \"Later\" button")
         securedCreditCardsLaterButton().click()
         Log.i(TAG, "clickSecuredCreditCardsLaterButton: Clicked the \"Later\" button")
     }
+
     fun clickSavedCreditCard() {
-        Log.i(TAG, "clickSavedCreditCard: Trying to click the saved credit card and and wait for $waitingTime ms for a new window")
+        Log.i(
+            TAG,
+            "clickSavedCreditCard: Trying to click the saved credit card and and wait for $waitingTime ms for a new window",
+        )
         savedCreditCardNumber().clickAndWaitForNewWindow(waitingTime)
-        Log.i(TAG, "clickSavedCreditCard: Clicked the saved credit card and and waited for $waitingTime ms for a new window")
+        Log.i(
+            TAG,
+            "clickSavedCreditCard: Clicked the saved credit card and and waited for $waitingTime ms for a new window",
+        )
     }
 
     @OptIn(ExperimentalTestApi::class)
     fun clickDeleteCreditCardToolbarButton() {
-        Log.i(TAG, "clickDeleteCreditCardToolbarButton: Waiting for $waitingTime ms for the delete credit card toolbar button to exist")
+        Log.i(
+            TAG,
+            "clickDeleteCreditCardToolbarButton: Waiting for $waitingTime ms for the delete credit card toolbar button to exist",
+        )
         composeTestRule.waitUntilAtLeastOneExists(
             hasTestTag(CreditCardEditorTestTags.TOPBAR_DELETE_BUTTON),
             waitingTime,
         )
-        Log.i(TAG, "clickDeleteCreditCardToolbarButton: Waited for $waitingTime ms for the delete credit card toolbar button to exist")
+        Log.i(
+            TAG,
+            "clickDeleteCreditCardToolbarButton: Waited for $waitingTime ms for the delete credit card toolbar button to exist",
+        )
         Log.i(TAG, "clickDeleteCreditCardToolbarButton: Trying to click the delete credit card toolbar button")
         composeTestRule.deleteCreditCardToolbarButton().performClick()
         Log.i(TAG, "clickDeleteCreditCardToolbarButton: Clicked the delete credit card toolbar button")
@@ -466,16 +530,23 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
 
     @OptIn(ExperimentalTestApi::class)
     fun clickDeleteCreditCardMenuButton() {
-        Log.i(TAG, "clickDeleteCreditCardMenuButton: Waiting for $waitingTime ms for the delete credit card menu button to exist")
+        Log.i(
+            TAG,
+            "clickDeleteCreditCardMenuButton: Waiting for $waitingTime ms for the delete credit card menu button to exist",
+        )
         composeTestRule.waitUntilAtLeastOneExists(
             hasTestTag(CreditCardEditorTestTags.DELETE_BUTTON),
             waitingTime,
         )
-        Log.i(TAG, "clickDeleteCreditCardMenuButton: Waited for $waitingTime ms for the delete credit card menu button to exist")
+        Log.i(
+            TAG,
+            "clickDeleteCreditCardMenuButton: Waited for $waitingTime ms for the delete credit card menu button to exist",
+        )
         Log.i(TAG, "clickDeleteCreditCardMenuButton: Trying to click the delete credit card menu button")
         composeTestRule.deleteFormButton().performClick()
         Log.i(TAG, "clickDeleteCreditCardMenuButton: Clicked the delete credit card menu button")
     }
+
     fun clickSaveAndAutofillCreditCardsOption() {
         Log.i(TAG, "clickSaveAndAutofillCreditCardsOption: Trying to click the \"Save and autofill cards\" option")
         saveAndAutofillCreditCardsOption().click()
@@ -496,12 +567,18 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
 
     @OptIn(ExperimentalTestApi::class)
     fun clickExpiryMonthOption(expiryMonth: String) {
-        Log.i(TAG, "clickExpiryMonthOption: Waiting for $waitingTime ms for the $expiryMonth expiry month option to exist")
+        Log.i(
+            TAG,
+            "clickExpiryMonthOption: Waiting for $waitingTime ms for the $expiryMonth expiry month option to exist",
+        )
         composeTestRule.waitUntilAtLeastOneExists(
             hasText(expiryMonth, substring = true, ignoreCase = true),
             waitingTime,
         )
-        Log.i(TAG, "clickExpiryMonthOption: Waited for $waitingTime ms for the $expiryMonth expiry month option to exist")
+        Log.i(
+            TAG,
+            "clickExpiryMonthOption: Waited for $waitingTime ms for the $expiryMonth expiry month option to exist",
+        )
         Log.i(TAG, "clickExpiryMonthOption: Trying to click $expiryMonth expiry month option")
         composeTestRule.expiryMonthOption(expiryMonth).performClick()
         Log.i(TAG, "clickExpiryMonthOption: Clicked $expiryMonth expiry month option")
@@ -561,12 +638,18 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
     @OptIn(ExperimentalTestApi::class)
     fun clearCreditCardNumber() =
         composeTestRule.creditCardNumberTextInput().also {
-            Log.i(TAG, "clearCreditCardNumber: Waiting for $waitingTime ms for the credit card number text field to exist")
+            Log.i(
+                TAG,
+                "clearCreditCardNumber: Waiting for $waitingTime ms for the credit card number text field to exist",
+            )
             composeTestRule.waitUntilAtLeastOneExists(
                 hasTestTag(CreditCardEditorTestTags.CARD_NUMBER_FIELD),
                 waitingTime,
             )
-            Log.i(TAG, "clearCreditCardNumber: Waited for $waitingTime ms for the credit card number text field to exist")
+            Log.i(
+                TAG,
+                "clearCreditCardNumber: Waited for $waitingTime ms for the credit card number text field to exist",
+            )
 
             Log.i(TAG, "clearCreditCardNumber: Trying to clear the credit card number text field")
             it.performTextClearance()
@@ -598,58 +681,56 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         cardName: String,
         expiryMonth: String,
         expiryYear: String,
-    ) = with(composeTestRule) {
-        Log.i(TAG, "verifyEditCreditCardView: Waiting for compose rule to be idle")
-        composeTestRule.waitForIdle()
-        Log.i(TAG, "verifyEditCreditCardView: Waited for compose rule to be idle")
+    ) =
+        with(composeTestRule) {
+            Log.i(TAG, "verifyEditCreditCardView: Waiting for compose rule to be idle")
+            composeTestRule.waitForIdle()
+            Log.i(TAG, "verifyEditCreditCardView: Waited for compose rule to be idle")
 
-        editCreditCardToolbarTitle()
+            editCreditCardToolbarTitle().assertExists("Unable to assert that the edit credit card toolbar title exists")
+            deleteCreditCardToolbarButton()
+                .assertExists("Unable to assert that the delete credit card toolbar button exists")
+            saveCreditCardToolbarButton()
+                .assertExists("Unable to assert that the save credit card toolbar button exists")
+
+            Log.i(
+                TAG,
+                "verifyEditCreditCardView: Trying to verify that the card number text field is set to: $cardNumber",
+            )
+            creditCardNumberTextInput().assertTextContains(cardNumber)
+            Log.i(TAG, "verifyEditCreditCardView: Verified that the card number text field was set to: $cardNumber")
+            Log.i(TAG, "verifyEditCreditCardView: Trying to verify that the card name text field is set to: $cardName")
+            nameOnCreditCardTextInput().assertTextContains(cardName)
+            Log.i(TAG, "verifyEditCreditCardView: Verified that the card card name text field was set to: $cardName")
+
+            // Can't get the text from the drop-down items, need to verify them individually
+            expiryMonthDropDown().assertExists("Unable to assert that the expiry month dropdown exists")
+            expiryYearDropDown().assertExists("Unable to assert that the expiry year dropdown exists")
+
+            onNodeWithText(expiryMonth, substring = true)
+                .assertExists("Unable to assert that the $expiryMonth expiry month is shown")
+            onNodeWithText(expiryYear, substring = true)
+                .assertExists("Unable to assert that the $expiryYear expiry year is shown")
+
+            saveFormButton().assertExists("Unable to assert that the save button exists")
+            cancelFormButton().assertExists("Unable to assert that the cancel button exists")
+            deleteFormButton().assertExists("Unable to assert that the delete button exists")
+        }
+
+    fun verifyEditCreditCardToolbarTitle() =
+        composeTestRule
+            .editCreditCardToolbarTitle()
             .assertExists("Unable to assert that the edit credit card toolbar title exists")
-        deleteCreditCardToolbarButton()
-            .assertExists("Unable to assert that the delete credit card toolbar button exists")
-        saveCreditCardToolbarButton()
-            .assertExists("Unable to assert that the save credit card toolbar button exists")
-
-        Log.i(TAG, "verifyEditCreditCardView: Trying to verify that the card number text field is set to: $cardNumber")
-        creditCardNumberTextInput()
-            .assertTextContains(cardNumber)
-        Log.i(TAG, "verifyEditCreditCardView: Verified that the card number text field was set to: $cardNumber")
-        Log.i(TAG, "verifyEditCreditCardView: Trying to verify that the card name text field is set to: $cardName")
-        nameOnCreditCardTextInput().assertTextContains(cardName)
-        Log.i(TAG, "verifyEditCreditCardView: Verified that the card card name text field was set to: $cardName")
-
-        // Can't get the text from the drop-down items, need to verify them individually
-        expiryMonthDropDown()
-            .assertExists("Unable to assert that the expiry month dropdown exists")
-        expiryYearDropDown()
-            .assertExists("Unable to assert that the expiry year dropdown exists")
-
-        onNodeWithText(expiryMonth, substring = true)
-            .assertExists("Unable to assert that the $expiryMonth expiry month is shown")
-        onNodeWithText(expiryYear, substring = true)
-            .assertExists("Unable to assert that the $expiryYear expiry year is shown")
-
-        saveFormButton().assertExists("Unable to assert that the save button exists")
-        cancelFormButton().assertExists("Unable to assert that the cancel button exists")
-        deleteFormButton().assertExists("Unable to assert that the delete button exists")
-    }
-
-    fun verifyEditCreditCardToolbarTitle() = composeTestRule.editCreditCardToolbarTitle()
-        .assertExists("Unable to assert that the edit credit card toolbar title exists")
 
     fun verifyCreditCardNumberErrorMessage() {
-        val errorMessage =
-            getStringResource(R.string.credit_cards_number_validation_error_message_2)
+        val errorMessage = getStringResource(R.string.credit_cards_number_validation_error_message_2)
 
-        composeTestRule.creditCardNumberTextInput()
-            .assertTextContains(errorMessage)
+        composeTestRule.creditCardNumberTextInput().assertTextContains(errorMessage)
     }
 
     fun verifyNameOnCreditCardErrorMessage() {
-        val errorMessage =
-            getStringResource(R.string.credit_cards_name_on_card_validation_error_message_2)
-        composeTestRule.nameOnCreditCardTextInput()
-            .assertTextContains(errorMessage)
+        val errorMessage = getStringResource(R.string.credit_cards_name_on_card_validation_error_message_2)
+        composeTestRule.nameOnCreditCardTextInput().assertTextContains(errorMessage)
     }
 
     class Transition(private val composeTestRule: ComposeTestRule) {
@@ -662,7 +743,9 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
             return SettingsRobot.Transition()
         }
 
-        fun goBackToAutofillSettings(interact: SettingsSubMenuAutofillRobot.() -> Unit): SettingsSubMenuAutofillRobot.Transition {
+        fun goBackToAutofillSettings(
+            interact: SettingsSubMenuAutofillRobot.() -> Unit
+        ): SettingsSubMenuAutofillRobot.Transition {
             Log.i(TAG, "goBackToAutofillSettings: Trying to click the navigate up toolbar button")
             navigateBackButton().click()
             Log.i(TAG, "goBackToAutofillSettings: Clicked the navigate up toolbar button")
@@ -671,7 +754,10 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
             return SettingsSubMenuAutofillRobot.Transition(composeTestRule)
         }
 
-        fun goBackToAutofillSettings(composeTestRule: ComposeTestRule, interact: SettingsSubMenuAutofillRobot.() -> Unit): SettingsSubMenuAutofillRobot.Transition {
+        fun goBackToAutofillSettings(
+            composeTestRule: ComposeTestRule,
+            interact: SettingsSubMenuAutofillRobot.() -> Unit,
+        ): SettingsSubMenuAutofillRobot.Transition {
             Log.i(TAG, "goBackToAutofillSettings: Trying to click the navigate up toolbar button")
             composeTestRule.navigateBackButton().performClick()
             Log.i(TAG, "goBackToAutofillSettings: Clicked the navigate up toolbar button")
@@ -680,7 +766,9 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
             return SettingsSubMenuAutofillRobot.Transition(composeTestRule)
         }
 
-        fun goBackToSavedCreditCards(interact: SettingsSubMenuAutofillRobot.() -> Unit): SettingsSubMenuAutofillRobot.Transition {
+        fun goBackToSavedCreditCards(
+            interact: SettingsSubMenuAutofillRobot.() -> Unit
+        ): SettingsSubMenuAutofillRobot.Transition {
             Log.i(TAG, "goBackToSavedCreditCards: Trying to click the navigate up toolbar button")
             composeTestRule.navigateBackButton().performClick()
             Log.i(TAG, "goBackToSavedCreditCards: Clicked the navigate up toolbar button")
@@ -689,7 +777,10 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
             return SettingsSubMenuAutofillRobot.Transition(composeTestRule)
         }
 
-        fun goBackToBrowser(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+        fun goBackToBrowser(
+            composeTestRule: ComposeTestRule,
+            interact: BrowserRobot.() -> Unit,
+        ): BrowserRobot.Transition {
             Log.i(TAG, "goBackToBrowser: Trying to click the device back button")
             mDevice.pressBack()
             Log.i(TAG, "goBackToBrowser: Clicked the device back button")
@@ -700,83 +791,141 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
     }
 }
 
-fun autofillScreen(composeTestRule: ComposeTestRule, interact: SettingsSubMenuAutofillRobot.() -> Unit): SettingsSubMenuAutofillRobot.Transition {
+fun autofillScreen(
+    composeTestRule: ComposeTestRule,
+    interact: SettingsSubMenuAutofillRobot.() -> Unit,
+): SettingsSubMenuAutofillRobot.Transition {
     SettingsSubMenuAutofillRobot(composeTestRule).interact()
     return SettingsSubMenuAutofillRobot.Transition(composeTestRule)
 }
 
 private fun autofillToolbarTitle() = itemContainingText(getStringResource(R.string.preferences_autofill))
+
 private fun addressesSectionTitle() = itemContainingText(getStringResource(R.string.preferences_addresses))
+
 private fun manageAddressesToolbarTitle() =
     mDevice.findObject(
         UiSelector()
             .resourceId("$packageName:id/navigationToolbar")
-            .childSelector(UiSelector().text(getStringResource(R.string.addresses_manage_addresses))),
+            .childSelector(UiSelector().text(getStringResource(R.string.addresses_manage_addresses)))
     )
 
-private fun saveAndAutofillAddressesOption() = itemContainingText(getStringResource(R.string.preferences_addresses_save_and_autofill_addresses_2))
-private fun saveAndAutofillAddressesSummary() = itemContainingText(getStringResource(R.string.preferences_addresses_save_and_autofill_addresses_summary_2))
+private fun saveAndAutofillAddressesOption() =
+    itemContainingText(getStringResource(R.string.preferences_addresses_save_and_autofill_addresses_2))
+
+private fun saveAndAutofillAddressesSummary() =
+    itemContainingText(getStringResource(R.string.preferences_addresses_save_and_autofill_addresses_summary_2))
+
 private fun addAddressButton() = itemContainingText(getStringResource(R.string.preferences_addresses_add_address))
+
 private fun manageAddressesButton() =
     mDevice.findObject(
         UiSelector()
             .resourceId("android:id/title")
-            .text(getStringResource(R.string.preferences_addresses_manage_addresses)),
+            .text(getStringResource(R.string.preferences_addresses_manage_addresses))
     )
 
-private fun ComposeTestRule.addAddressToolbarTitle() = onNodeWithText(getStringResource(R.string.preferences_addresses_add_address))
-private fun ComposeTestRule.editAddressToolbarTitle() = onNodeWithText(getStringResource(R.string.addresses_edit_address))
-private fun ComposeTestRule.toolbarCheckmarkButton() = onNodeWithContentDescription(getStringResource(R.string.address_menu_save_address))
+private fun ComposeTestRule.addAddressToolbarTitle() =
+    onNodeWithText(getStringResource(R.string.preferences_addresses_add_address))
+
+private fun ComposeTestRule.editAddressToolbarTitle() =
+    onNodeWithText(getStringResource(R.string.addresses_edit_address))
+
+private fun ComposeTestRule.toolbarCheckmarkButton() =
+    onNodeWithContentDescription(getStringResource(R.string.address_menu_save_address))
+
 private fun navigateBackButton() = itemWithDescription(getStringResource(R.string.action_bar_up_description))
+
 private fun ComposeTestRule.navigateBackButton() = onNodeWithContentDescription("Navigate back")
+
 private fun ComposeTestRule.nameTextInput() = onNodeWithTag(EditAddressTestTag.NAME_FIELD)
+
 private fun ComposeTestRule.streetAddressTextInput() = onNodeWithTag(EditAddressTestTag.STREET_ADDRESS_FIELD)
+
 private fun ComposeTestRule.cityTextInput() = onNodeWithTag(EditAddressTestTag.ADDRESS_LEVEL2_FIELD)
+
 private fun ComposeTestRule.subRegionDropDown() = onNodeWithTag(EditAddressTestTag.ADDRESS_LEVEL1_FIELD)
+
 private fun ComposeTestRule.zipCodeTextInput() = onNodeWithTag(EditAddressTestTag.POSTAL_CODE_FIELD)
+
 private fun ComposeTestRule.countryDropDown() = onNodeWithTag(EditAddressTestTag.COUNTRY_FIELD)
+
 private fun ComposeTestRule.phoneTextInput() = onNodeWithTag(EditAddressTestTag.TEL_FIELD)
+
 private fun ComposeTestRule.emailTextInput() = onNodeWithTag(EditAddressTestTag.EMAIL_FIELD)
+
 private fun ComposeTestRule.addressForm() = onNodeWithTag(EditAddressTestTag.FORM)
+
 private fun ComposeTestRule.saveButton() = onNodeWithTag(EditAddressTestTag.SAVE_BUTTON)
+
 private fun ComposeTestRule.cancelButton() = onNodeWithTag(EditAddressTestTag.CANCEL_BUTTON)
+
 private fun ComposeTestRule.toolbarDeleteAddressButton() = onNodeWithTag(EditAddressTestTag.TOPBAR_DELETE_BUTTON)
+
 private fun ComposeTestRule.cancelDeleteAddressButton() = onNodeWithTag(EditAddressTestTag.DIALOG_CANCEL_BUTTON)
+
 private fun ComposeTestRule.confirmDeleteAddressButton() = onNodeWithTag(EditAddressTestTag.DIALOG_DELETE_BUTTON)
 
 private fun creditCardsSectionTitle() = itemContainingText(getStringResource(R.string.preferences_credit_cards_2))
-private fun saveAndAutofillCreditCardsOption() = itemContainingText(getStringResource(R.string.preferences_credit_cards_save_and_autofill_cards_2))
-private fun saveAndAutofillCreditCardsSummary() = itemContainingText(getStringResource(R.string.preferences_credit_cards_save_and_autofill_cards_summary_2))
-private fun syncCreditCardsAcrossDevicesButton() = itemContainingText(getStringResource(R.string.preferences_credit_cards_sync_cards_across_devices))
-private fun addCreditCardButton() = mDevice.findObject(UiSelector().textContains(getStringResource(R.string.preferences_credit_cards_add_credit_card_2)))
+
+private fun saveAndAutofillCreditCardsOption() =
+    itemContainingText(getStringResource(R.string.preferences_credit_cards_save_and_autofill_cards_2))
+
+private fun saveAndAutofillCreditCardsSummary() =
+    itemContainingText(getStringResource(R.string.preferences_credit_cards_save_and_autofill_cards_summary_2))
+
+private fun syncCreditCardsAcrossDevicesButton() =
+    itemContainingText(getStringResource(R.string.preferences_credit_cards_sync_cards_across_devices))
+
+private fun addCreditCardButton() =
+    mDevice.findObject(
+        UiSelector().textContains(getStringResource(R.string.preferences_credit_cards_add_credit_card_2))
+    )
+
 private fun savedCreditCardsToolbarTitle() = itemContainingText(getStringResource(R.string.credit_cards_saved_cards))
-private fun ComposeTestRule.editCreditCardToolbarTitle() = onNodeWithText(getStringResource(R.string.credit_cards_edit_card))
-private fun manageSavedCreditCardsButton() = mDevice.findObject(UiSelector().textContains(getStringResource(R.string.preferences_credit_cards_manage_saved_cards_2)))
+
+private fun ComposeTestRule.editCreditCardToolbarTitle() =
+    onNodeWithText(getStringResource(R.string.credit_cards_edit_card))
+
+private fun manageSavedCreditCardsButton() =
+    mDevice.findObject(
+        UiSelector().textContains(getStringResource(R.string.preferences_credit_cards_manage_saved_cards_2))
+    )
 
 private fun ComposeTestRule.creditCardNumberTextInput() = onNodeWithTag(CreditCardEditorTestTags.CARD_NUMBER_FIELD)
 
 private fun ComposeTestRule.nameOnCreditCardTextInput() = onNodeWithTag(CreditCardEditorTestTags.NAME_ON_CARD_FIELD)
 
-private fun ComposeTestRule.expiryMonthDropDown() =
-    onNodeWithTag(CreditCardEditorTestTags.EXPIRATION_MONTH_FIELD)
+private fun ComposeTestRule.expiryMonthDropDown() = onNodeWithTag(CreditCardEditorTestTags.EXPIRATION_MONTH_FIELD)
 
-private fun ComposeTestRule.expiryYearDropDown() =
-    onNodeWithTag(CreditCardEditorTestTags.EXPIRATION_YEAR_FIELD)
+private fun ComposeTestRule.expiryYearDropDown() = onNodeWithTag(CreditCardEditorTestTags.EXPIRATION_YEAR_FIELD)
 
 private fun savedCreditCardNumber() = mDevice.findObject(UiSelector().resourceId("$packageName:id/credit_card_logo"))
-private fun ComposeTestRule.deleteCreditCardToolbarButton() = onNodeWithTag(CreditCardEditorTestTags.TOPBAR_DELETE_BUTTON)
+
+private fun ComposeTestRule.deleteCreditCardToolbarButton() =
+    onNodeWithTag(CreditCardEditorTestTags.TOPBAR_DELETE_BUTTON)
+
 private fun ComposeTestRule.saveCreditCardToolbarButton() = onNodeWithTag(CreditCardEditorTestTags.TOPBAR_SAVE_BUTTON)
-private fun ComposeTestRule.confirmDeleteCreditCardButton() = onNodeWithTag(CreditCardEditorTestTags.DELETE_DIALOG_DELETE_BUTTON)
-private fun ComposeTestRule.cancelDeleteCreditCardButton() = onNodeWithTag(CreditCardEditorTestTags.DELETE_DIALOG_CANCEL_BUTTON)
+
+private fun ComposeTestRule.confirmDeleteCreditCardButton() =
+    onNodeWithTag(CreditCardEditorTestTags.DELETE_DIALOG_DELETE_BUTTON)
+
+private fun ComposeTestRule.cancelDeleteCreditCardButton() =
+    onNodeWithTag(CreditCardEditorTestTags.DELETE_DIALOG_CANCEL_BUTTON)
+
 private fun securedCreditCardsLaterButton() = onView(withId(android.R.id.button2)).inRoot(RootMatchers.isDialog())
+
 private fun ComposeTestRule.saveFormButton() = onNodeWithTag(CreditCardEditorTestTags.SAVE_BUTTON)
+
 private fun ComposeTestRule.cancelFormButton() = onNodeWithTag(CreditCardEditorTestTags.CANCEL_BUTTON)
+
 private fun ComposeTestRule.deleteFormButton() = onNodeWithTag(CreditCardEditorTestTags.DELETE_BUTTON)
 
 private fun ComposeTestRule.expiryMonthOption(expiryMonth: String) =
     onNodeWithText(expiryMonth, substring = true, ignoreCase = true)
 
-private fun ComposeTestRule.expiryYearOption(expiryYear: String) = onNodeWithText(expiryYear, substring = true, ignoreCase = true)
+private fun ComposeTestRule.expiryYearOption(expiryYear: String) =
+    onNodeWithText(expiryYear, substring = true, ignoreCase = true)
 
 @OptIn(ExperimentalTestApi::class)
 private fun clickDropdownOption(
@@ -823,8 +972,8 @@ private fun clickDropdownOption(
 }
 
 /**
- * Polls until the Compose DropdownMenu popup window is no longer present in the accessibility
- * window hierarchy, or throws if it does not dismiss within [timeoutMs].
+ * Polls until the Compose DropdownMenu popup window is no longer present in the accessibility window hierarchy, or
+ * throws if it does not dismiss within [timeoutMs].
  */
 private fun waitForPopupToDismiss(composeTestRule: ComposeTestRule, timeoutMs: Long = 10000L) {
     composeTestRule.waitForIdle()
@@ -833,13 +982,16 @@ private fun waitForPopupToDismiss(composeTestRule: ComposeTestRule, timeoutMs: L
     while (SystemClock.elapsedRealtime() - startTime < timeoutMs) {
         // Compose's DropdownMenu renders into a separate popup window whose
         // AccessibilityWindowInfo.title is set to "Pop-Up" by the framework.
-        val hasPopup = InstrumentationRegistry.getInstrumentation()
-            .uiAutomation
-            .windows
-            .any { it.title?.contains("Pop-Up", ignoreCase = true) == true }
+        val hasPopup =
+            InstrumentationRegistry.getInstrumentation().uiAutomation.windows.any {
+                it.title?.contains("Pop-Up", ignoreCase = true) == true
+            }
         if (!hasPopup) {
             if (polled > 0) {
-                Log.i(TAG, "waitForPopupToDismiss: popup gone after ${SystemClock.elapsedRealtime() - startTime}ms ($polled polls)")
+                Log.i(
+                    TAG,
+                    "waitForPopupToDismiss: popup gone after ${SystemClock.elapsedRealtime() - startTime}ms ($polled polls)",
+                )
             } else {
                 Log.i(TAG, "waitForPopupToDismiss: no popup present")
             }
@@ -853,9 +1005,9 @@ private fun waitForPopupToDismiss(composeTestRule: ComposeTestRule, timeoutMs: L
 }
 
 /**
- * Closes the soft keyboard and waits until the IME window is fully gone from the window
- * hierarchy. On slow emulators (e.g. Firebase Test Lab) the hide animation can take ~9 s; polling
- * here prevents the IME animation from dismissing a dropdown popup that opens immediately after.
+ * Closes the soft keyboard and waits until the IME window is fully gone from the window hierarchy. On slow emulators
+ * (e.g. Firebase Test Lab) the hide animation can take ~9 s; polling here prevents the IME animation from dismissing a
+ * dropdown popup that opens immediately after.
  */
 private fun waitForKeyboardDismiss(timeoutMs: Long = 15000L) {
     Log.i(TAG, "waitForKeyboardDismiss: Trying to close the soft keyboard")
@@ -867,13 +1019,16 @@ private fun waitForKeyboardDismiss(timeoutMs: Long = 15000L) {
     val startTime = SystemClock.elapsedRealtime()
     var polled = 0
     while (SystemClock.elapsedRealtime() - startTime < timeoutMs) {
-        val hasImeWindow = InstrumentationRegistry.getInstrumentation()
-            .uiAutomation
-            .windows
-            .any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
+        val hasImeWindow =
+            InstrumentationRegistry.getInstrumentation().uiAutomation.windows.any {
+                it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD
+            }
         if (!hasImeWindow) {
             if (polled > 0) {
-                Log.i(TAG, "waitForKeyboardDismiss: keyboard gone after ${SystemClock.elapsedRealtime() - startTime}ms ($polled polls)")
+                Log.i(
+                    TAG,
+                    "waitForKeyboardDismiss: keyboard gone after ${SystemClock.elapsedRealtime() - startTime}ms ($polled polls)",
+                )
             } else {
                 Log.i(TAG, "waitForKeyboardDismiss: keyboard was not present")
             }

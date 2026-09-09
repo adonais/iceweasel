@@ -16,14 +16,11 @@ import mozilla.components.lib.state.Store
 import mozilla.components.support.base.log.logger.Logger
 
 /**
- * [BrowserStore] middleware to be used alongside with [AdsTelemetry] to check when an ad shown
- * in search results is clicked.
+ * [BrowserStore] middleware to be used alongside with [AdsTelemetry] to check when an ad shown in search results is
+ * clicked.
  */
-class AdsTelemetryMiddleware(
-    private val adsTelemetry: AdsTelemetry,
-) : Middleware<BrowserState, BrowserAction> {
-    @VisibleForTesting
-    internal val redirectChain = mutableMapOf<String, RedirectChain>()
+class AdsTelemetryMiddleware(private val adsTelemetry: AdsTelemetry) : Middleware<BrowserState, BrowserAction> {
+    @VisibleForTesting internal val redirectChain = mutableMapOf<String, RedirectChain>()
     private val logger = Logger("AdsTelemetryMiddleware")
 
     @Suppress("TooGenericExceptionCaught")
@@ -64,9 +61,7 @@ class AdsTelemetryMiddleware(
     }
 }
 
-/**
- * Utility to collect URLs / load requests in between location changes.
- */
+/** Utility to collect URLs / load requests in between location changes. */
 @VisibleForTesting
 internal class RedirectChain(val root: String) {
     val chain = mutableListOf<String>()

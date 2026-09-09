@@ -74,18 +74,18 @@ fun UninstallSurveyBottomSheet(
         topBar = {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .padding(top = FirefoxTheme.layout.space.static100)
-                    .nestedScroll(rememberNestedScrollInteropConnection())
-                    .verticalScroll(rememberScrollState()),
+                modifier =
+                    Modifier.padding(top = FirefoxTheme.layout.space.static100)
+                        .nestedScroll(rememberNestedScrollInteropConnection())
+                        .verticalScroll(rememberScrollState()),
             ) {
                 BottomSheetHandle(
                     onRequestDismiss = {},
                     contentDescription = stringResource(R.string.microsurvey_close_handle_content_description),
-                    modifier = Modifier
-                        .padding(bottom = FirefoxTheme.layout.space.static25)
-                        .fillMaxWidth(BOTTOM_SHEET_HANDLE_WIDTH_PERCENT)
-                        .semantics { traversalIndex = -1f },
+                    modifier =
+                        Modifier.padding(bottom = FirefoxTheme.layout.space.static25)
+                            .fillMaxWidth(BOTTOM_SHEET_HANDLE_WIDTH_PERCENT)
+                            .semantics { traversalIndex = -1f },
                 )
 
                 MicrosurveyHeader(title = stringResource(id = R.string.micro_survey_survey_header_2)) {
@@ -94,10 +94,7 @@ fun UninstallSurveyBottomSheet(
             }
         },
         bottomBar = {
-            Column(
-                modifier = Modifier
-                    .padding(bottom = FirefoxTheme.layout.space.static100),
-            ) {
+            Column(modifier = Modifier.padding(bottom = FirefoxTheme.layout.space.static100)) {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 UninstallSurveyFooter(
@@ -116,13 +113,12 @@ fun UninstallSurveyBottomSheet(
         },
     ) { innerPadding ->
         Surface(
-            modifier = Modifier
-                .wrapContentHeight()
-                .padding(innerPadding),
-            shape = MaterialTheme.shapes.large.copy(
-                bottomStart = CornerSize(0.dp),
-                bottomEnd = CornerSize(0.dp),
-            ),
+            modifier = Modifier.wrapContentHeight().padding(innerPadding),
+            shape =
+                MaterialTheme.shapes.large.copy(
+                    bottomStart = CornerSize(0.dp),
+                    bottomEnd = CornerSize(0.dp),
+                ),
         ) {
             if (isSubmitted) {
                 MicrosurveyCompleted()
@@ -145,9 +141,7 @@ fun UninstallSurveyBottomSheet(
     fontScale = 2.0f,
 )
 @Composable
-private fun UninstallSurveyBottomSheetPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun UninstallSurveyBottomSheetPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         UninstallSurveyBottomSheet(
             question = stringResource(id = R.string.microsurvey_uninstall_survey_title),
@@ -155,14 +149,15 @@ private fun UninstallSurveyBottomSheetPreview(
             onPrivacyPolicyLinkClick = {},
             onCloseButtonClicked = {},
             onSubmitButtonClicked = {},
-            answers = listOf(
-                stringResource(id = R.string.uninstall_survey_option_1_v2),
-                stringResource(id = R.string.uninstall_survey_option_2_v2),
-                stringResource(id = R.string.uninstall_survey_option_3_v2),
-                stringResource(id = R.string.uninstall_survey_option_4_v2),
-                stringResource(id = R.string.uninstall_survey_option_5_v2),
-                stringResource(id = R.string.uninstall_survey_option_6_v2),
-            ),
+            answers =
+                listOf(
+                    stringResource(id = R.string.uninstall_survey_option_1_v2),
+                    stringResource(id = R.string.uninstall_survey_option_2_v2),
+                    stringResource(id = R.string.uninstall_survey_option_3_v2),
+                    stringResource(id = R.string.uninstall_survey_option_4_v2),
+                    stringResource(id = R.string.uninstall_survey_option_5_v2),
+                    stringResource(id = R.string.uninstall_survey_option_6_v2),
+                ),
             isSubmitAlwaysEnabled = true,
             buttonLabel = stringResource(id = R.string.uninstall_survey_button_label),
         )

@@ -30,23 +30,23 @@ import org.mozilla.fenix.theme.Theme
 
 @RunWith(AndroidJUnit4::class)
 class FirefoxLabsScreenTest {
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     private fun testItem(
         enrolled: Boolean = false,
         requiresRestart: Boolean = true,
         feedbackUrl: String? = null,
         available: Boolean = true,
-    ) = LabsItem(
-        slug = "test-lab",
-        title = TITLE,
-        description = "Description for screen tests.",
-        enrolled = enrolled,
-        requiresRestart = requiresRestart,
-        feedbackUrl = feedbackUrl,
-        available = available,
-    )
+    ) =
+        LabsItem(
+            slug = "test-lab",
+            title = TITLE,
+            description = "Description for screen tests.",
+            enrolled = enrolled,
+            requiresRestart = requiresRestart,
+            feedbackUrl = feedbackUrl,
+            available = available,
+        )
 
     private companion object {
         const val TITLE = "Test lab"
@@ -54,12 +54,14 @@ class FirefoxLabsScreenTest {
 
     @Test
     fun `WHEN all labs items are unenrolled THEN the restore defaults button is disabled`() {
-        val store = LabsStore(
-            initialState = LabsState(
-                labsItems = listOf(testItem(enrolled = false)),
-                dialogState = DialogState.Closed,
-            ),
-        )
+        val store =
+            LabsStore(
+                initialState =
+                    LabsState(
+                        labsItems = listOf(testItem(enrolled = false)),
+                        dialogState = DialogState.Closed,
+                    )
+            )
 
         composeTestRule.setContent {
             FirefoxTheme(theme = Theme.Light) {
@@ -71,19 +73,21 @@ class FirefoxLabsScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithText(
-            testContext.getString(R.string.firefox_labs_restore_default_button_text),
-        ).assertIsNotEnabled()
+        composeTestRule
+            .onNodeWithText(testContext.getString(R.string.firefox_labs_restore_default_button_text))
+            .assertIsNotEnabled()
     }
 
     @Test
     fun `WHEN at least one labs item is enrolled THEN the restore defaults button is enabled`() {
-        val store = LabsStore(
-            initialState = LabsState(
-                labsItems = listOf(testItem(enrolled = true)),
-                dialogState = DialogState.Closed,
-            ),
-        )
+        val store =
+            LabsStore(
+                initialState =
+                    LabsState(
+                        labsItems = listOf(testItem(enrolled = true)),
+                        dialogState = DialogState.Closed,
+                    )
+            )
 
         composeTestRule.setContent {
             FirefoxTheme(theme = Theme.Light) {
@@ -95,19 +99,21 @@ class FirefoxLabsScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithText(
-            testContext.getString(R.string.firefox_labs_restore_default_button_text),
-        ).assertIsEnabled()
+        composeTestRule
+            .onNodeWithText(testContext.getString(R.string.firefox_labs_restore_default_button_text))
+            .assertIsEnabled()
     }
 
     @Test
     fun `WHEN a labs item has no feedback URL THEN the share feedback link is not displayed`() {
-        val store = LabsStore(
-            initialState = LabsState(
-                labsItems = listOf(testItem(feedbackUrl = null)),
-                dialogState = DialogState.Closed,
-            ),
-        )
+        val store =
+            LabsStore(
+                initialState =
+                    LabsState(
+                        labsItems = listOf(testItem(feedbackUrl = null)),
+                        dialogState = DialogState.Closed,
+                    )
+            )
 
         composeTestRule.setContent {
             FirefoxTheme(theme = Theme.Light) {
@@ -119,22 +125,26 @@ class FirefoxLabsScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithContentDescription(
-            testContext.getString(
-                R.string.firefox_labs_share_feedback_content_description,
-                TITLE,
-            ),
-        ).assertDoesNotExist()
+        composeTestRule
+            .onNodeWithContentDescription(
+                testContext.getString(
+                    R.string.firefox_labs_share_feedback_content_description,
+                    TITLE,
+                )
+            )
+            .assertDoesNotExist()
     }
 
     @Test
     fun `WHEN a labs item has a feedback URL THEN the share feedback link is displayed`() {
-        val store = LabsStore(
-            initialState = LabsState(
-                labsItems = listOf(testItem(feedbackUrl = "https://connect.mozilla.org/")),
-                dialogState = DialogState.Closed,
-            ),
-        )
+        val store =
+            LabsStore(
+                initialState =
+                    LabsState(
+                        labsItems = listOf(testItem(feedbackUrl = "https://connect.mozilla.org/")),
+                        dialogState = DialogState.Closed,
+                    )
+            )
 
         composeTestRule.setContent {
             FirefoxTheme(theme = Theme.Light) {
@@ -146,22 +156,26 @@ class FirefoxLabsScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithContentDescription(
-            testContext.getString(
-                R.string.firefox_labs_share_feedback_content_description,
-                TITLE,
-            ),
-        ).assertExists()
+        composeTestRule
+            .onNodeWithContentDescription(
+                testContext.getString(
+                    R.string.firefox_labs_share_feedback_content_description,
+                    TITLE,
+                )
+            )
+            .assertExists()
     }
 
     @Test
     fun `WHEN a labs item is unavailable THEN its toggle is deactivated and the helper text is shown`() {
-        val store = LabsStore(
-            initialState = LabsState(
-                labsItems = listOf(testItem(available = false)),
-                dialogState = DialogState.Closed,
-            ),
-        )
+        val store =
+            LabsStore(
+                initialState =
+                    LabsState(
+                        labsItems = listOf(testItem(available = false)),
+                        dialogState = DialogState.Closed,
+                    )
+            )
 
         composeTestRule.setContent {
             FirefoxTheme(theme = Theme.Light) {
@@ -174,20 +188,24 @@ class FirefoxLabsScreenTest {
         }
 
         composeTestRule.onNodeWithText(TITLE).assertHasNoClickAction()
-        composeTestRule.onNodeWithText(
-            testContext.getString(R.string.firefox_labs_feature_conflict),
-            useUnmergedTree = true,
-        ).assertExists()
+        composeTestRule
+            .onNodeWithText(
+                testContext.getString(R.string.firefox_labs_feature_conflict),
+                useUnmergedTree = true,
+            )
+            .assertExists()
     }
 
     @Test
     fun `WHEN a labs item is available THEN the helper text is not shown`() {
-        val store = LabsStore(
-            initialState = LabsState(
-                labsItems = listOf(testItem(available = true)),
-                dialogState = DialogState.Closed,
-            ),
-        )
+        val store =
+            LabsStore(
+                initialState =
+                    LabsState(
+                        labsItems = listOf(testItem(available = true)),
+                        dialogState = DialogState.Closed,
+                    )
+            )
 
         composeTestRule.setContent {
             FirefoxTheme(theme = Theme.Light) {
@@ -200,21 +218,25 @@ class FirefoxLabsScreenTest {
         }
 
         composeTestRule.onNodeWithText(TITLE).assertHasClickAction()
-        composeTestRule.onNodeWithText(
-            testContext.getString(R.string.firefox_labs_feature_conflict),
-            useUnmergedTree = true,
-        ).assertDoesNotExist()
+        composeTestRule
+            .onNodeWithText(
+                testContext.getString(R.string.firefox_labs_feature_conflict),
+                useUnmergedTree = true,
+            )
+            .assertDoesNotExist()
     }
 
     @Test
     fun `WHEN tapping a labs item with requiresRestart=true THEN the toggle confirmation dialog is shown`() {
         val item = testItem(requiresRestart = true)
-        val store = LabsStore(
-            initialState = LabsState(
-                labsItems = listOf(item),
-                dialogState = DialogState.Closed,
-            ),
-        )
+        val store =
+            LabsStore(
+                initialState =
+                    LabsState(
+                        labsItems = listOf(item),
+                        dialogState = DialogState.Closed,
+                    )
+            )
 
         composeTestRule.setContent {
             FirefoxTheme(theme = Theme.Light) {
@@ -236,12 +258,14 @@ class FirefoxLabsScreenTest {
     @Test
     fun `WHEN tapping a labs item with requiresRestart=false THEN the item is toggled directly with no dialog`() {
         val item = testItem(requiresRestart = false)
-        val store = LabsStore(
-            initialState = LabsState(
-                labsItems = listOf(item),
-                dialogState = DialogState.Closed,
-            ),
-        )
+        val store =
+            LabsStore(
+                initialState =
+                    LabsState(
+                        labsItems = listOf(item),
+                        dialogState = DialogState.Closed,
+                    )
+            )
 
         composeTestRule.setContent {
             FirefoxTheme(theme = Theme.Light) {
@@ -262,12 +286,14 @@ class FirefoxLabsScreenTest {
 
     @Test
     fun `WHEN tapping Restore defaults AND an enrolled item requires restart THEN the restore defaults dialog is shown`() {
-        val store = LabsStore(
-            initialState = LabsState(
-                labsItems = listOf(testItem(enrolled = true, requiresRestart = true)),
-                dialogState = DialogState.Closed,
-            ),
-        )
+        val store =
+            LabsStore(
+                initialState =
+                    LabsState(
+                        labsItems = listOf(testItem(enrolled = true, requiresRestart = true)),
+                        dialogState = DialogState.Closed,
+                    )
+            )
 
         composeTestRule.setContent {
             FirefoxTheme(theme = Theme.Light) {
@@ -279,9 +305,9 @@ class FirefoxLabsScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithText(
-            testContext.getString(R.string.firefox_labs_restore_default_button_text),
-        ).performClick()
+        composeTestRule
+            .onNodeWithText(testContext.getString(R.string.firefox_labs_restore_default_button_text))
+            .performClick()
 
         composeTestRule.waitForIdle()
         assertEquals(DialogState.RestoreDefaults, store.state.dialogState)
@@ -290,12 +316,14 @@ class FirefoxLabsScreenTest {
 
     @Test
     fun `WHEN tapping Restore defaults AND no enrolled item requires restart THEN items are unenrolled with no dialog`() {
-        val store = LabsStore(
-            initialState = LabsState(
-                labsItems = listOf(testItem(enrolled = true, requiresRestart = false)),
-                dialogState = DialogState.Closed,
-            ),
-        )
+        val store =
+            LabsStore(
+                initialState =
+                    LabsState(
+                        labsItems = listOf(testItem(enrolled = true, requiresRestart = false)),
+                        dialogState = DialogState.Closed,
+                    )
+            )
 
         composeTestRule.setContent {
             FirefoxTheme(theme = Theme.Light) {
@@ -307,9 +335,9 @@ class FirefoxLabsScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithText(
-            testContext.getString(R.string.firefox_labs_restore_default_button_text),
-        ).performClick()
+        composeTestRule
+            .onNodeWithText(testContext.getString(R.string.firefox_labs_restore_default_button_text))
+            .performClick()
 
         composeTestRule.waitForIdle()
         assertEquals(DialogState.Closed, store.state.dialogState)

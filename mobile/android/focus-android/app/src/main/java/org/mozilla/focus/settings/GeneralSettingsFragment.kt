@@ -21,11 +21,8 @@ import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.state.Screen
 import org.mozilla.focus.widget.DefaultBrowserPreference
 
-/**
- * Settings fragment for general application settings like theme and language.
- */
-class GeneralSettingsFragment :
-    BaseSettingsFragment() {
+/** Settings fragment for general application settings like theme and language. */
+class GeneralSettingsFragment : BaseSettingsFragment() {
 
     private lateinit var radioLightTheme: RadioButtonPreference
     private lateinit var radioDarkTheme: RadioButtonPreference
@@ -57,9 +54,7 @@ class GeneralSettingsFragment :
         val localePreference: Preference = requirePreference(R.string.pref_key_locale)
         localePreference.summary = getLocaleSummary()
         localePreference.setOnPreferenceClickListener {
-            requireComponents.appStore.dispatch(
-                AppAction.OpenSettings(Screen.Settings.Page.Locale),
-            )
+            requireComponents.appStore.dispatch(AppAction.OpenSettings(Screen.Settings.Page.Locale))
             true
         }
     }
@@ -84,11 +79,12 @@ class GeneralSettingsFragment :
 
     private fun bindDefaultTheme() {
         radioDefaultTheme = requirePreference(R.string.pref_key_default_theme)
-        val defaultThemeTitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            context?.getString(R.string.preference_follow_device_theme)
-        } else {
-            context?.getString(R.string.preference_auto_battery_theme)
-        }
+        val defaultThemeTitle =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                context?.getString(R.string.preference_follow_device_theme)
+            } else {
+                context?.getString(R.string.preference_auto_battery_theme)
+            }
 
         radioDefaultTheme.apply {
             title = defaultThemeTitle
@@ -117,8 +113,7 @@ class GeneralSettingsFragment :
     }
 
     @VisibleForTesting
-    internal fun getLocaleDescriptorNativeName(localeTag: String): String? =
-        LocaleDescriptor(localeTag).getNativeName()
+    internal fun getLocaleDescriptorNativeName(localeTag: String): String? = LocaleDescriptor(localeTag).getNativeName()
 
     private fun setupRadioGroups() {
         addToRadioGroup(
@@ -139,13 +134,9 @@ class GeneralSettingsFragment :
 
     private fun setDefaultTheme() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            AppCompatDelegate.setDefaultNightMode(
-                AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM,
-            )
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
         } else {
-            AppCompatDelegate.setDefaultNightMode(
-                AppCompatDelegate.MODE_NIGHT_AUTO_BATTERY,
-            )
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_AUTO_BATTERY)
         }
     }
 }

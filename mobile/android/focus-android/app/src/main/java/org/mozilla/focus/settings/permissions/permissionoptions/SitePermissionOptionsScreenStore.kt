@@ -10,25 +10,22 @@ import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
 import org.mozilla.focus.settings.permissions.SitePermissionOption
 
-/**
- * Store for the site permission options screen.
- */
+/** Store for the site permission options screen. */
 class SitePermissionOptionsScreenStore(
     initialState: SitePermissionOptionsScreenState,
     middlewares: List<Middleware<SitePermissionOptionsScreenState, SitePermissionOptionsScreenAction>> = emptyList(),
-) : Store<SitePermissionOptionsScreenState, SitePermissionOptionsScreenAction>(
-    initialState,
-    SitePermissionOptionsScreenReducer::reduce,
-    middlewares,
-) {
+) :
+    Store<SitePermissionOptionsScreenState, SitePermissionOptionsScreenAction>(
+        initialState,
+        SitePermissionOptionsScreenReducer::reduce,
+        middlewares,
+    ) {
     init {
         dispatch(SitePermissionOptionsScreenAction.InitSitePermissionOptions)
     }
 }
 
-/**
- * State for the site permission options screen.
- */
+/** State for the site permission options screen. */
 data class SitePermissionOptionsScreenState(
     val sitePermissionOptionList: List<SitePermissionOption> = emptyList(),
     val selectedSitePermissionOption: SitePermissionOption? = null,
@@ -36,28 +33,18 @@ data class SitePermissionOptionsScreenState(
     val isAndroidPermissionGranted: Boolean = false,
 ) : State
 
-/**
- * Actions for the site permission options screen.
- */
+/** Actions for the site permission options screen. */
 sealed class SitePermissionOptionsScreenAction : Action {
-    /**
-     * Action to initialize the site permission options.
-     */
+    /** Action to initialize the site permission options. */
     object InitSitePermissionOptions : SitePermissionOptionsScreenAction()
 
-    /**
-     * Action to select a specific site permission option.
-     */
+    /** Action to select a specific site permission option. */
     data class Select(val selectedSitePermissionOption: SitePermissionOption) : SitePermissionOptionsScreenAction()
 
-    /**
-     * Action to update the Android permission status.
-     */
+    /** Action to update the Android permission status. */
     data class AndroidPermission(val isAndroidPermissionGranted: Boolean) : SitePermissionOptionsScreenAction()
 
-    /**
-     * Action to update all site permission options.
-     */
+    /** Action to update all site permission options. */
     data class UpdateSitePermissionOptions(
         val sitePermissionOptionsList: List<SitePermissionOption>,
         val selectedSitePermissionOption: SitePermissionOption,
@@ -67,22 +54,22 @@ sealed class SitePermissionOptionsScreenAction : Action {
 }
 
 /**
- * A reducer that takes the current [SitePermissionOptionsScreenState] and an [SitePermissionOptionsScreenAction]
- * and returns a new [SitePermissionOptionsScreenState].
+ * A reducer that takes the current [SitePermissionOptionsScreenState] and an [SitePermissionOptionsScreenAction] and
+ * returns a new [SitePermissionOptionsScreenState].
  *
- * This reducer is responsible for handling actions related to site permission options, such as selecting
- * an option, updating the list of options, and initializing the options.
+ * This reducer is responsible for handling actions related to site permission options, such as selecting an option,
+ * updating the list of options, and initializing the options.
  */
 object SitePermissionOptionsScreenReducer {
     /**
-     * Reduces the current [SitePermissionOptionsScreenState] with the given [SitePermissionOptionsScreenAction]
-     * to produce a new [SitePermissionOptionsScreenState].
+     * Reduces the current [SitePermissionOptionsScreenState] with the given [SitePermissionOptionsScreenAction] to
+     * produce a new [SitePermissionOptionsScreenState].
      *
      * @param state The current state of the site permission options screen.
      * @param action The action to be applied to the current state.
      * @return The new state after applying the action.
      * @throws IllegalStateException if [SitePermissionOptionsScreenAction.InitSitePermissionOptions] is dispatched
-     * without adding [SitePermissionsOptionsMiddleware] to the [SitePermissionOptionsScreenStore].
+     *   without adding [SitePermissionsOptionsMiddleware] to the [SitePermissionOptionsScreenStore].
      */
     fun reduce(
         state: SitePermissionOptionsScreenState,
@@ -104,7 +91,7 @@ object SitePermissionOptionsScreenReducer {
             SitePermissionOptionsScreenAction.InitSitePermissionOptions -> {
                 throw IllegalStateException(
                     "You need to add SitePermissionsOptionsMiddleware " +
-                            "to your SitePermissionsOptionsScreenStore. ($action)",
+                        "to your SitePermissionsOptionsScreenStore. ($action)"
                 )
             }
             is SitePermissionOptionsScreenAction.AndroidPermission -> {

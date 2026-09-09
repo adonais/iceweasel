@@ -10,9 +10,8 @@ import mozilla.components.support.ktx.android.content.appVersionName
 // This file is a modified port from Focus Android
 
 /**
- * Convenience class to deal with the application version number
- * I opted to keep it contained to the whatsnew package. We may
- * want to pull it
+ * Convenience class to deal with the application version number I opted to keep it contained to the whatsnew package.
+ * We may want to pull it
  */
 open class WhatsNewVersion(internal open val version: String) {
 

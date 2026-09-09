@@ -47,11 +47,12 @@ class SearchEngineFragmentTest {
         every { settings.preferences } returns preferences
         every { preferences.edit() } returns preferencesEditor
 
-        fragment = spyk(SearchEngineFragment()) {
-            every { context } returns testContext
-            every { isAdded } returns true
-            every { activity } returns mockk<HomeActivity>(relaxed = true)
-        }
+        fragment =
+            spyk(SearchEngineFragment()) {
+                every { context } returns testContext
+                every { isAdded } returns true
+                every { activity } returns mockk<HomeActivity>(relaxed = true)
+            }
 
         every { fragment.updateAllWidgets(testContext) } just Runs
     }
@@ -59,9 +60,10 @@ class SearchEngineFragmentTest {
     @Test
     fun `GIVEN pref_key_show_voice_search preference WHEN it is modified THEN the value is persisted and widgets updated`() {
         val voiceSearchPreferenceKey = testContext.getString(R.string.pref_key_show_voice_search)
-        val voiceSearchPreference = spyk(SwitchPreferenceCompat(testContext)) {
-            every { key } returns voiceSearchPreferenceKey
-        }
+        val voiceSearchPreference =
+            spyk(SwitchPreferenceCompat(testContext)) {
+                every { key } returns voiceSearchPreferenceKey
+            }
 
         // Trigger the voice preference setup.
         fragment.initialiseVoiceSearchPreference(voiceSearchPreference)
@@ -75,21 +77,24 @@ class SearchEngineFragmentTest {
     fun `GIVEN pref_key_default_search_engine preference it has selected engine as summary WHEN clicked navigates to default engine settings`() {
         val searchEngineName = "MySearchEngine"
 
-        val searchEngine = mockk<SearchEngine>(relaxed = true) {
-            every { name } returns searchEngineName
-            every { id } returns "engine-1"
-        }
+        val searchEngine =
+            mockk<SearchEngine>(relaxed = true) {
+                every { name } returns searchEngineName
+                every { id } returns "engine-1"
+            }
 
-        every { testContext.components.core.store.state.search } returns SearchState(
-            regionSearchEngines = listOf(searchEngine),
-            userSelectedSearchEngineId = "engine-1",
-        )
+        every { testContext.components.core.store.state.search } returns
+            SearchState(
+                regionSearchEngines = listOf(searchEngine),
+                userSelectedSearchEngineId = "engine-1",
+            )
         every { fragment.openDefaultEngineSettings() } just Runs
 
         val defaultSearchEngineKey = testContext.getString(R.string.pref_key_default_search_engine)
-        val defaultSearchEnginePreference = spyk(Preference(testContext)) {
-            every { key } returns defaultSearchEngineKey
-        }
+        val defaultSearchEnginePreference =
+            spyk(Preference(testContext)) {
+                every { key } returns defaultSearchEngineKey
+            }
 
         every { fragment.findPreference<Preference>(defaultSearchEngineKey) } returns defaultSearchEnginePreference
 
@@ -104,20 +109,23 @@ class SearchEngineFragmentTest {
 
     @Test
     fun `GIVEN no private search engine selected WHEN updating default engine pref THEN summary shows only normal engine name`() {
-        val normalEngine = mockk<SearchEngine>(relaxed = true) {
-            every { name } returns "Google"
-            every { id } returns "google"
-        }
+        val normalEngine =
+            mockk<SearchEngine>(relaxed = true) {
+                every { name } returns "Google"
+                every { id } returns "google"
+            }
 
-        every { testContext.components.core.store.state.search } returns SearchState(
-            regionSearchEngines = listOf(normalEngine),
-            userSelectedSearchEngineId = "google",
-        )
+        every { testContext.components.core.store.state.search } returns
+            SearchState(
+                regionSearchEngines = listOf(normalEngine),
+                userSelectedSearchEngineId = "google",
+            )
 
         val defaultSearchEngineKey = testContext.getString(R.string.pref_key_default_search_engine)
-        val defaultSearchEnginePreference = spyk(Preference(testContext)) {
-            every { key } returns defaultSearchEngineKey
-        }
+        val defaultSearchEnginePreference =
+            spyk(Preference(testContext)) {
+                every { key } returns defaultSearchEngineKey
+            }
         every { fragment.findPreference<Preference>(defaultSearchEngineKey) } returns defaultSearchEnginePreference
 
         fragment.updateDefaultSearchEnginePreference()
@@ -127,25 +135,29 @@ class SearchEngineFragmentTest {
 
     @Test
     fun `GIVEN different private search engine selected WHEN updating default engine pref THEN summary shows both engines`() {
-        val normalEngine = mockk<SearchEngine>(relaxed = true) {
-            every { name } returns "Google"
-            every { id } returns "google"
-        }
-        val privateEngine = mockk<SearchEngine>(relaxed = true) {
-            every { name } returns "DuckDuckGo"
-            every { id } returns "ddg"
-        }
+        val normalEngine =
+            mockk<SearchEngine>(relaxed = true) {
+                every { name } returns "Google"
+                every { id } returns "google"
+            }
+        val privateEngine =
+            mockk<SearchEngine>(relaxed = true) {
+                every { name } returns "DuckDuckGo"
+                every { id } returns "ddg"
+            }
 
-        every { testContext.components.core.store.state.search } returns SearchState(
-            regionSearchEngines = listOf(normalEngine, privateEngine),
-            userSelectedSearchEngineId = "google",
-            userSelectedPrivateSearchEngineId = "ddg",
-        )
+        every { testContext.components.core.store.state.search } returns
+            SearchState(
+                regionSearchEngines = listOf(normalEngine, privateEngine),
+                userSelectedSearchEngineId = "google",
+                userSelectedPrivateSearchEngineId = "ddg",
+            )
 
         val defaultSearchEngineKey = testContext.getString(R.string.pref_key_default_search_engine)
-        val defaultSearchEnginePreference = spyk(Preference(testContext)) {
-            every { key } returns defaultSearchEngineKey
-        }
+        val defaultSearchEnginePreference =
+            spyk(Preference(testContext)) {
+                every { key } returns defaultSearchEngineKey
+            }
         every { fragment.findPreference<Preference>(defaultSearchEngineKey) } returns defaultSearchEnginePreference
 
         fragment.updateDefaultSearchEnginePreference()
@@ -159,21 +171,24 @@ class SearchEngineFragmentTest {
 
     @Test
     fun `GIVEN private engine same as normal engine WHEN updating default engine pref THEN summary shows only normal engine name`() {
-        val engine = mockk<SearchEngine>(relaxed = true) {
-            every { name } returns "Google"
-            every { id } returns "google"
-        }
+        val engine =
+            mockk<SearchEngine>(relaxed = true) {
+                every { name } returns "Google"
+                every { id } returns "google"
+            }
 
-        every { testContext.components.core.store.state.search } returns SearchState(
-            regionSearchEngines = listOf(engine),
-            userSelectedSearchEngineId = "google",
-            userSelectedPrivateSearchEngineId = "google",
-        )
+        every { testContext.components.core.store.state.search } returns
+            SearchState(
+                regionSearchEngines = listOf(engine),
+                userSelectedSearchEngineId = "google",
+                userSelectedPrivateSearchEngineId = "google",
+            )
 
         val defaultSearchEngineKey = testContext.getString(R.string.pref_key_default_search_engine)
-        val defaultSearchEnginePreference = spyk(Preference(testContext)) {
-            every { key } returns defaultSearchEngineKey
-        }
+        val defaultSearchEnginePreference =
+            spyk(Preference(testContext)) {
+                every { key } returns defaultSearchEngineKey
+            }
         every { fragment.findPreference<Preference>(defaultSearchEngineKey) } returns defaultSearchEnginePreference
 
         fragment.updateDefaultSearchEnginePreference()
@@ -186,9 +201,10 @@ class SearchEngineFragmentTest {
         every { fragment.openSearchShortcutsSettings() } just Runs
 
         val manageShortcutsKey = testContext.getString(R.string.pref_key_manage_search_shortcuts)
-        val manageShortcutsPreference = spyk(Preference(testContext)) {
-            every { key } returns manageShortcutsKey
-        }
+        val manageShortcutsPreference =
+            spyk(Preference(testContext)) {
+                every { key } returns manageShortcutsKey
+            }
 
         every { fragment.findPreference<Preference>(manageShortcutsKey) } returns manageShortcutsPreference
 
@@ -269,6 +285,16 @@ class SearchEngineFragmentTest {
         verify { preferencesEditor.putBoolean(googleLensKey, true) }
     }
 
+    @Test
+    fun `GIVEN an initialised Google Lens preference WHEN it is toggled THEN the widgets are updated`() {
+        val preference = buildGoogleLensPreference()
+        fragment.initialiseGoogleLensPreference(preference)
+
+        preference.callChangeListener(false)
+
+        verify { fragment.updateAllWidgets(testContext) }
+    }
+
     private fun buildGoogleLensPreference(): SwitchWithCaptionPreference {
         val googleLensKey = testContext.getString(R.string.pref_key_google_lens_integration_user_enabled)
         return spyk(SwitchWithCaptionPreference(testContext)) {
@@ -281,9 +307,10 @@ class SearchEngineFragmentTest {
         every { fragment.openLearnMoreLink() } just Runs
 
         val learnAboutFxSuggestKey = testContext.getString(R.string.pref_key_learn_about_fx_suggest)
-        val learnAboutFxSuggestPreference = spyk(Preference(testContext)) {
-            every { key } returns learnAboutFxSuggestKey
-        }
+        val learnAboutFxSuggestPreference =
+            spyk(Preference(testContext)) {
+                every { key } returns learnAboutFxSuggestKey
+            }
 
         every { fragment.findPreference<Preference>(learnAboutFxSuggestKey) } returns learnAboutFxSuggestPreference
 

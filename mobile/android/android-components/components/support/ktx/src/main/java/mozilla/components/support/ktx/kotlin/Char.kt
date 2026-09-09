@@ -7,8 +7,8 @@
 package mozilla.components.support.ktx.kotlin
 
 /**
- * A series of dots (typically three, such as "…") that usually indicates an intentional omission of
- * a word, sentence, or whole section from a text without altering its original meaning.
+ * A series of dots (typically three, such as "…") that usually indicates an intentional omission of a word, sentence,
+ * or whole section from a text without altering its original meaning.
  */
 val Char.Companion.ELLIPSIS: Char
     get() = '…'

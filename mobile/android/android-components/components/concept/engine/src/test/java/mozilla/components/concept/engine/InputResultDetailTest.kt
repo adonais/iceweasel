@@ -61,11 +61,12 @@ class InputResultDetailTest {
         assertEquals(SCROLL_DIRECTIONS_RIGHT, inputResultDetail.scrollDirections)
         assertEquals(OVERSCROLL_DIRECTIONS_NONE, inputResultDetail.overscrollDirections)
 
-        inputResultDetail = inputResultDetail.copy(
-            INPUT_UNHANDLED,
-            SCROLL_DIRECTIONS_NONE,
-            OVERSCROLL_DIRECTIONS_HORIZONTAL,
-        )
+        inputResultDetail =
+            inputResultDetail.copy(
+                INPUT_UNHANDLED,
+                SCROLL_DIRECTIONS_NONE,
+                OVERSCROLL_DIRECTIONS_HORIZONTAL,
+            )
         assertEquals(INPUT_UNHANDLED, inputResultDetail.inputResult)
         assertEquals(SCROLL_DIRECTIONS_NONE, inputResultDetail.scrollDirections)
         assertEquals(OVERSCROLL_DIRECTIONS_HORIZONTAL, inputResultDetail.overscrollDirections)
@@ -141,11 +142,15 @@ class InputResultDetailTest {
     @Test
     fun `GIVEN an InputResultDetail WHEN toString is called THEN it returns a string referring to all data`() {
         // Add as many details as possible. Scroll and overscroll is not possible at the same time.
-        inputResultDetail = inputResultDetail.copy(
-            inputResult = INPUT_HANDLED,
-            scrollDirections = SCROLL_DIRECTIONS_LEFT or SCROLL_DIRECTIONS_RIGHT or
-                SCROLL_DIRECTIONS_TOP or SCROLL_DIRECTIONS_BOTTOM,
-        )
+        inputResultDetail =
+            inputResultDetail.copy(
+                inputResult = INPUT_HANDLED,
+                scrollDirections =
+                    SCROLL_DIRECTIONS_LEFT or
+                        SCROLL_DIRECTIONS_RIGHT or
+                        SCROLL_DIRECTIONS_TOP or
+                        SCROLL_DIRECTIONS_BOTTOM,
+            )
 
         val result = inputResultDetail.toString()
 
@@ -154,7 +159,7 @@ class InputResultDetailTest {
                 .append("Input ${inputResultDetail.getInputResultHandledDescription()}. ")
                 .append(
                     "Content ${inputResultDetail.getScrollDirectionsDescription()} " +
-                        "and ${inputResultDetail.getOverscrollDirectionsDescription()}",
+                        "and ${inputResultDetail.getOverscrollDirectionsDescription()}"
                 )
                 .append(')')
                 .toString(),
@@ -186,11 +191,15 @@ class InputResultDetailTest {
     fun `GIVEN an InputResultDetail WHEN getScrollDirectionsDescription is called THEN it returns a string describing what scrolling is possible`() {
         assertEquals(SCROLL_IMPOSSIBLE_TOSTRING_DESCRIPTION, inputResultDetail.getScrollDirectionsDescription())
 
-        inputResultDetail = inputResultDetail.copy(
-            inputResult = INPUT_HANDLED,
-            scrollDirections = SCROLL_DIRECTIONS_LEFT or SCROLL_DIRECTIONS_RIGHT or
-                SCROLL_DIRECTIONS_TOP or SCROLL_DIRECTIONS_BOTTOM,
-        )
+        inputResultDetail =
+            inputResultDetail.copy(
+                inputResult = INPUT_HANDLED,
+                scrollDirections =
+                    SCROLL_DIRECTIONS_LEFT or
+                        SCROLL_DIRECTIONS_RIGHT or
+                        SCROLL_DIRECTIONS_TOP or
+                        SCROLL_DIRECTIONS_BOTTOM,
+            )
 
         assertEquals(
             SCROLL_TOSTRING_DESCRIPTION +
@@ -206,10 +215,14 @@ class InputResultDetailTest {
     fun `GIVEN an InputResultDetail WHEN getScrollDirectionsDescription is called for an unhandled touch THEN returns a string describing impossible scroll`() {
         assertEquals(SCROLL_IMPOSSIBLE_TOSTRING_DESCRIPTION, inputResultDetail.getScrollDirectionsDescription())
 
-        inputResultDetail = inputResultDetail.copy(
-            scrollDirections = SCROLL_DIRECTIONS_LEFT or SCROLL_DIRECTIONS_RIGHT or
-                SCROLL_DIRECTIONS_TOP or SCROLL_DIRECTIONS_BOTTOM,
-        )
+        inputResultDetail =
+            inputResultDetail.copy(
+                scrollDirections =
+                    SCROLL_DIRECTIONS_LEFT or
+                        SCROLL_DIRECTIONS_RIGHT or
+                        SCROLL_DIRECTIONS_TOP or
+                        SCROLL_DIRECTIONS_BOTTOM
+            )
 
         assertEquals(SCROLL_IMPOSSIBLE_TOSTRING_DESCRIPTION, inputResultDetail.getScrollDirectionsDescription())
     }
@@ -221,10 +234,11 @@ class InputResultDetailTest {
             inputResultDetail.getOverscrollDirectionsDescription(),
         )
 
-        inputResultDetail = inputResultDetail.copy(
-            inputResult = INPUT_HANDLED,
-            overscrollDirections = OVERSCROLL_DIRECTIONS_VERTICAL or OVERSCROLL_DIRECTIONS_HORIZONTAL,
-        )
+        inputResultDetail =
+            inputResultDetail.copy(
+                inputResult = INPUT_HANDLED,
+                overscrollDirections = OVERSCROLL_DIRECTIONS_VERTICAL or OVERSCROLL_DIRECTIONS_HORIZONTAL,
+            )
 
         assertEquals(
             OVERSCROLL_TOSTRING_DESCRIPTION +
@@ -243,10 +257,11 @@ class InputResultDetailTest {
             inputResultDetail.getOverscrollDirectionsDescription(),
         )
 
-        inputResultDetail = inputResultDetail.copy(
-            inputResult = INPUT_HANDLED_CONTENT,
-            overscrollDirections = OVERSCROLL_DIRECTIONS_VERTICAL or OVERSCROLL_DIRECTIONS_HORIZONTAL,
-        )
+        inputResultDetail =
+            inputResultDetail.copy(
+                inputResult = INPUT_HANDLED_CONTENT,
+                overscrollDirections = OVERSCROLL_DIRECTIONS_VERTICAL or OVERSCROLL_DIRECTIONS_HORIZONTAL,
+            )
 
         assertEquals(
             OVERSCROLL_IMPOSSIBLE_TOSTRING_DESCRIPTION,
@@ -381,7 +396,8 @@ class InputResultDetailTest {
 
         assertFalse(inputResultDetail.canOverscrollLeft())
 
-        inputResultDetail = inputResultDetail.copy(INPUT_HANDLED, SCROLL_DIRECTIONS_BOTTOM, OVERSCROLL_DIRECTIONS_HORIZONTAL)
+        inputResultDetail =
+            inputResultDetail.copy(INPUT_HANDLED, SCROLL_DIRECTIONS_BOTTOM, OVERSCROLL_DIRECTIONS_HORIZONTAL)
         assertTrue(inputResultDetail.canOverscrollLeft())
 
         inputResultDetail = inputResultDetail.copy(INPUT_UNHANDLED)
@@ -390,10 +406,15 @@ class InputResultDetailTest {
         inputResultDetail = inputResultDetail.copy(scrollDirections = SCROLL_DIRECTIONS_LEFT)
         assertFalse(inputResultDetail.canOverscrollLeft())
 
-        inputResultDetail = inputResultDetail.copy(scrollDirections = SCROLL_DIRECTIONS_TOP, overscrollDirections = OVERSCROLL_DIRECTIONS_HORIZONTAL)
+        inputResultDetail =
+            inputResultDetail.copy(
+                scrollDirections = SCROLL_DIRECTIONS_TOP,
+                overscrollDirections = OVERSCROLL_DIRECTIONS_HORIZONTAL,
+            )
         assertTrue(inputResultDetail.canOverscrollLeft())
 
-        inputResultDetail = inputResultDetail.copy(INPUT_HANDLED, SCROLL_DIRECTIONS_RIGHT, OVERSCROLL_DIRECTIONS_VERTICAL)
+        inputResultDetail =
+            inputResultDetail.copy(INPUT_HANDLED, SCROLL_DIRECTIONS_RIGHT, OVERSCROLL_DIRECTIONS_VERTICAL)
         assertFalse(inputResultDetail.canOverscrollLeft())
     }
 
@@ -412,10 +433,12 @@ class InputResultDetailTest {
         inputResultDetail = inputResultDetail.copy(INPUT_HANDLED)
         assertFalse(inputResultDetail.canOverscrollTop())
 
-        inputResultDetail = inputResultDetail.copy(INPUT_HANDLED_CONTENT, SCROLL_DIRECTIONS_TOP, OVERSCROLL_DIRECTIONS_VERTICAL)
+        inputResultDetail =
+            inputResultDetail.copy(INPUT_HANDLED_CONTENT, SCROLL_DIRECTIONS_TOP, OVERSCROLL_DIRECTIONS_VERTICAL)
         assertFalse(inputResultDetail.canOverscrollTop())
 
-        inputResultDetail = inputResultDetail.copy(INPUT_UNHANDLED, SCROLL_DIRECTIONS_LEFT, OVERSCROLL_DIRECTIONS_VERTICAL)
+        inputResultDetail =
+            inputResultDetail.copy(INPUT_UNHANDLED, SCROLL_DIRECTIONS_LEFT, OVERSCROLL_DIRECTIONS_VERTICAL)
         assertTrue(inputResultDetail.canOverscrollTop())
 
         inputResultDetail = inputResultDetail.copy(overscrollDirections = OVERSCROLL_DIRECTIONS_HORIZONTAL)
@@ -431,7 +454,8 @@ class InputResultDetailTest {
 
         assertFalse(inputResultDetail.canOverscrollRight())
 
-        inputResultDetail = inputResultDetail.copy(INPUT_HANDLED, SCROLL_DIRECTIONS_BOTTOM, OVERSCROLL_DIRECTIONS_HORIZONTAL)
+        inputResultDetail =
+            inputResultDetail.copy(INPUT_HANDLED, SCROLL_DIRECTIONS_BOTTOM, OVERSCROLL_DIRECTIONS_HORIZONTAL)
         assertTrue(inputResultDetail.canOverscrollRight())
 
         inputResultDetail = inputResultDetail.copy(INPUT_UNHANDLED)
@@ -440,10 +464,15 @@ class InputResultDetailTest {
         inputResultDetail = inputResultDetail.copy(scrollDirections = SCROLL_DIRECTIONS_RIGHT)
         assertFalse(inputResultDetail.canOverscrollRight())
 
-        inputResultDetail = inputResultDetail.copy(scrollDirections = SCROLL_DIRECTIONS_TOP, overscrollDirections = OVERSCROLL_DIRECTIONS_HORIZONTAL)
+        inputResultDetail =
+            inputResultDetail.copy(
+                scrollDirections = SCROLL_DIRECTIONS_TOP,
+                overscrollDirections = OVERSCROLL_DIRECTIONS_HORIZONTAL,
+            )
         assertTrue(inputResultDetail.canOverscrollRight())
 
-        inputResultDetail = inputResultDetail.copy(INPUT_HANDLED, SCROLL_DIRECTIONS_LEFT, OVERSCROLL_DIRECTIONS_VERTICAL)
+        inputResultDetail =
+            inputResultDetail.copy(INPUT_HANDLED, SCROLL_DIRECTIONS_LEFT, OVERSCROLL_DIRECTIONS_VERTICAL)
         assertFalse(inputResultDetail.canOverscrollRight())
     }
 
@@ -462,10 +491,12 @@ class InputResultDetailTest {
         inputResultDetail = inputResultDetail.copy(INPUT_HANDLED)
         assertFalse(inputResultDetail.canOverscrollBottom())
 
-        inputResultDetail = inputResultDetail.copy(INPUT_HANDLED_CONTENT, SCROLL_DIRECTIONS_BOTTOM, OVERSCROLL_DIRECTIONS_VERTICAL)
+        inputResultDetail =
+            inputResultDetail.copy(INPUT_HANDLED_CONTENT, SCROLL_DIRECTIONS_BOTTOM, OVERSCROLL_DIRECTIONS_VERTICAL)
         assertFalse(inputResultDetail.canOverscrollBottom())
 
-        inputResultDetail = inputResultDetail.copy(INPUT_UNHANDLED, SCROLL_DIRECTIONS_LEFT, OVERSCROLL_DIRECTIONS_VERTICAL)
+        inputResultDetail =
+            inputResultDetail.copy(INPUT_UNHANDLED, SCROLL_DIRECTIONS_LEFT, OVERSCROLL_DIRECTIONS_VERTICAL)
         assertTrue(inputResultDetail.canOverscrollBottom())
 
         inputResultDetail = inputResultDetail.copy(overscrollDirections = OVERSCROLL_DIRECTIONS_HORIZONTAL)

@@ -11,9 +11,7 @@ import mozilla.components.support.utils.ext.top
 object StatusBarUtils {
     private var statusBarSize = -1
 
-    /**
-     * Determine the height of the status bar asynchronously.
-     */
+    /** Determine the height of the status bar asynchronously. */
     @Suppress("unused")
     fun getStatusBarHeight(view: View, block: (Int) -> Unit) {
         if (statusBarSize > 0) {

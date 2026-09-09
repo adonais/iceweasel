@@ -8,11 +8,11 @@ import android.content.Context
 import android.view.View
 import io.mockk.every
 import io.mockk.mockk
+import java.util.Locale
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.util.Locale
 
 class BaseLocaleViewHolderTest {
 
@@ -43,7 +43,8 @@ class BaseLocaleViewHolderTest {
 
     @Test
     fun `isCurrentLocaleSelected returns false for other locale when system default is NOT selected`() {
-        every { localeSelectionChecker.isDefaultLocaleSelected(context) } returns false // System default IS NOT selected
+        every { localeSelectionChecker.isDefaultLocaleSelected(context) } returns
+            false // System default IS NOT selected
         val otherLocale = Locale.Builder().setLanguage("fr").setRegion("FR").build()
 
         assertFalse(localeViewHolder.isCurrentLocaleSelected(otherLocale, isDefault = true))
@@ -52,7 +53,8 @@ class BaseLocaleViewHolderTest {
 
     @Test
     fun `isCurrentLocaleSelected returns true for selected locale and isDefault=false when system default is NOT selected`() {
-        every { localeSelectionChecker.isDefaultLocaleSelected(context) } returns false // System default IS NOT selected
+        every { localeSelectionChecker.isDefaultLocaleSelected(context) } returns
+            false // System default IS NOT selected
 
         assertFalse(localeViewHolder.isCurrentLocaleSelected(selectedLocale, isDefault = true))
         assertTrue(localeViewHolder.isCurrentLocaleSelected(selectedLocale, isDefault = false))
@@ -94,7 +96,8 @@ class BaseLocaleViewHolderTest {
 
     @Test
     fun `verify selected locale checker returns true when isDefault=false and system default not selected`() {
-        every { localeSelectionChecker.isDefaultLocaleSelected(context) } returns false // Current app locale is NOT system default
+        every { localeSelectionChecker.isDefaultLocaleSelected(context) } returns
+            false // Current app locale is NOT system default
 
         assertFalse(localeViewHolder.isCurrentLocaleSelected(selectedLocale, isDefault = true))
         assertTrue(localeViewHolder.isCurrentLocaleSelected(selectedLocale, isDefault = false))
@@ -102,7 +105,8 @@ class BaseLocaleViewHolderTest {
 
     @Test
     fun `verify default locale checker returns true when isDefault=true and system default is selected`() {
-        every { localeSelectionChecker.isDefaultLocaleSelected(context) } returns true // Current app locale IS system default
+        every { localeSelectionChecker.isDefaultLocaleSelected(context) } returns
+            true // Current app locale IS system default
 
         assertTrue(localeViewHolder.isCurrentLocaleSelected(selectedLocale, isDefault = true))
         assertFalse(localeViewHolder.isCurrentLocaleSelected(selectedLocale, isDefault = false))

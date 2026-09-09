@@ -1124,3 +1124,146 @@ add_task(async function test_canvas_snapshot_with_text_extraction() {
 
   return cleanup();
 });
+
+// useSimpleText
+
+add_task(async function test_dom_extractor_simple_text_anchors() {
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  // The same markup as test_dom_extractor_link_anchors, so this asserts the
+  // simplified form of an output that is already pinned down above.
+  const { getPageExtractor, cleanup } = await html`
+    <article>
+      <h1>Comprehensive Anchor Test</h1>
+
+      <p>Reach us via <a href="mailto:user@mozilla.org">Email</a>.</p>
+
+      <p>Literal text with [name](value).</p>
+
+      <p>
+        <a href="https://example.com/external" target="_blank">New Tab Link</a>
+      </p>
+
+      <a href="https://example.com/card" id="card-link">
+        <div class="card">
+          <h2>Card Title</h2>
+          <p>Card description.</p>
+        </div>
+      </a>
+
+      <p>
+        <a href="https://example.com/mixed">
+          Read <strong>bold text</strong> and <em>italic text</em> inside.
+        </a>
+      </p>
+
+      <p>
+        <a href="https://example.com/with-alt"
+          ><img src="logo.png" alt="Company Logo"
+        /></a>
+      </p>
+    </article>
+  `;
+
+  const { text, links } = await getPageExtractor().getText({
+    useSimpleText: true,
+  });
+
+  const actualLines = text
+    .split("\n")
+    .map(line => line.trim())
+    .filter(line => !!line.length);
+
+  Assert.deepEqual(
+    actualLines,
+    [
+      "Comprehensive Anchor Test",
+      "Reach us via Email.",
+      "Literal text with [name](value).",
+      "New Tab Link",
+      "Card Title",
+      "Card description.",
+      "Read bold text and italic text inside.",
+      "Company Logo",
+    ],
+    "Anchors keep their text and lose their target."
+  );
+
+  Assert.deepEqual(
+    links,
+    [
+      "mailto:user@mozilla.org",
+      "https://example.com/external",
+      "https://example.com/card",
+      "https://example.com/mixed",
+      "https://example.com/with-alt",
+    ],
+    "Every href is still reported even though none appear in the text."
+  );
+
+  return cleanup();
+});
+
+add_task(async function test_dom_extractor_simple_text_whitespace() {
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  // The same markup as test_dom_extractor_normalize_whitespace, which asserts
+  // this document extracts as "aaaa aaaa\nbbbb cccc\ndddd      dddd\neeee\n\n\nffff".
+  // prettier-ignore
+  const { getPageExtractor, cleanup } = await html`
+    <p>aaaa      aaaa</p>
+    <p>bbbb\n\n\ncccc</p>
+
+    <pre>dddd      dddd</pre>
+    <pre>eeee\n\n\nffff</pre>
+  `;
+
+  is(
+    (await getPageExtractor().getText({ useSimpleText: true })).text,
+
+    [
+      "aaaa aaaa",
+      "bbbb cccc",
+      // Runs of spaces preserved by <pre> collapse, since they are within a block.
+      "dddd dddd",
+      // The blank lines between these collapse to a single paragraph break.
+      "eeee",
+      "ffff",
+    ].join("\n"),
+    "Whitespace collapses within a block while paragraph breaks survive."
+  );
+
+  return cleanup();
+});
+
+add_task(async function test_dom_extractor_simple_text_with_site_strategy() {
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
+    <div>
+      <a href="https://example.com/result">
+        <div>
+          <h3>Result Title</h3>
+          <cite>https://example.com › path</cite>
+        </div>
+      </a>
+    </div>
+  `;
+
+  const { text } = await getPageExtractor().getText({
+    useSimpleText: true,
+    sourceUrl: "https://www.google.com/search?q=test",
+  });
+
+  ok(
+    text.includes("Result Title"),
+    `The block text survives simplification: ${JSON.stringify(text)}`
+  );
+  ok(
+    !text.includes("›"),
+    `The site strategy's cite filter still applies: ${JSON.stringify(text)}`
+  );
+  ok(
+    !text.includes("]("),
+    `Markdown from formatBlockAnchorsAsMarkdown is flattened: ${JSON.stringify(text)}`
+  );
+
+  return cleanup();
+});

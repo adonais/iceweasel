@@ -13,8 +13,8 @@ import java.util.Locale
 /**
  * Writes a **human-readable summary log** (`summary.log`) for a test run.
  *
- * Each call to [line] appends a single timestamped line both to logcat and
- * to the on-device file. The format is intentionally simple and concise:
+ * Each call to [line] appends a single timestamped line both to logcat and to the on-device file. The format is
+ * intentionally simple and concise:
  * ```
  * 12:34:56.789 [TEST] PRIVATE_BROWSING.Presence — START
  * 12:34:56.905 [STEP] Navigate.To.Home — PASS
@@ -23,8 +23,7 @@ import java.util.Locale
  *
  * Used by [CombinedLogger] alongside [JsonSink] for richer structured output.
  *
- * Thread-safe: synchronized on writes to avoid interleaving lines from
- * concurrent steps in multi-test processes.
+ * Thread-safe: synchronized on writes to avoid interleaving lines from concurrent steps in multi-test processes.
  */
 class SummarySink(private val file: File) {
     private val tag = "TestFactorySummary"

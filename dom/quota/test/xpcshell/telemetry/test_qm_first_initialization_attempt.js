@@ -298,6 +298,9 @@ const testcases = [
         UpgradeStorageFrom2_2To2_3: {
           values: [0, 1, 0],
         },
+        UpgradeStorageFrom2_3To2_4: {
+          values: [0, 1, 0],
+        },
         Storage: {
           values: [1, 1, 0],
         },
@@ -339,6 +342,9 @@ const testcases = [
         UpgradeStorageFrom2_2To2_3: {
           values: [0, 1, 0],
         },
+        UpgradeStorageFrom2_3To2_4: {
+          values: [0, 1, 0],
+        },
         Storage: {
           values: [1, 1, 0],
         },
@@ -377,6 +383,9 @@ const testcases = [
         UpgradeStorageFrom2_2To2_3: {
           values: [0, 1, 0],
         },
+        UpgradeStorageFrom2_3To2_4: {
+          values: [0, 1, 0],
+        },
         Storage: {
           values: [1, 1, 0],
         },
@@ -410,6 +419,9 @@ const testcases = [
           values: [1, 1, 0],
         },
         UpgradeStorageFrom2_2To2_3: {
+          values: [0, 1, 0],
+        },
+        UpgradeStorageFrom2_3To2_4: {
           values: [0, 1, 0],
         },
         Storage: {
@@ -446,6 +458,9 @@ const testcases = [
         // mainKey
         UpgradeStorageFrom2_2To2_3: {
           values: [1, 1, 0],
+        },
+        UpgradeStorageFrom2_3To2_4: {
+          values: [0, 1, 0],
         },
         Storage: {
           values: [1, 1, 0],
@@ -501,6 +516,9 @@ const testcases = [
         UpgradeStorageFrom2_2To2_3: {
           values: [0, 1, 0],
         },
+        UpgradeStorageFrom2_3To2_4: {
+          values: [0, 1, 0],
+        },
         Storage: {
           values: [1, 1, 0],
         },
@@ -551,6 +569,9 @@ const testcases = [
           values: [0, 1, 0],
         },
         UpgradeStorageFrom2_2To2_3: {
+          values: [0, 1, 0],
+        },
+        UpgradeStorageFrom2_3To2_4: {
           values: [0, 1, 0],
         },
         Storage: {

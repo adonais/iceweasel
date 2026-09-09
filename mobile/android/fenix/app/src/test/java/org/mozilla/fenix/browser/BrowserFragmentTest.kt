@@ -5,8 +5,12 @@
 package org.mozilla.fenix.browser
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.content.res.Resources
+import android.os.Build
 import android.view.View
+import android.view.Window
+import android.view.WindowManager
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -17,6 +21,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import kotlin.coroutines.ContinuationInterceptor
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.RestoreCompleteAction
@@ -27,6 +32,7 @@ import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.support.test.robolectric.testContext
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -42,7 +48,6 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.onboarding.FenixOnboarding
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
-import kotlin.coroutines.ContinuationInterceptor
 
 @RunWith(RobolectricTestRunner::class)
 class BrowserFragmentTest {
@@ -279,73 +284,77 @@ class BrowserFragmentTest {
     }
 
     @Test
-    fun `GIVEN the onboarding is not finished WHEN visiting an onboarding link THEN the onboarding is not dismissed `() = runTest {
-        every { onboarding.userHasBeenOnboarded() } returns false
+    fun `GIVEN the onboarding is not finished WHEN visiting an onboarding link THEN the onboarding is not dismissed `() =
+        runTest {
+            every { onboarding.userHasBeenOnboarded() } returns false
 
-        browserFragment.observeTabSource(
-            store,
-            coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-        )
+            browserFragment.observeTabSource(
+                store,
+                coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+            )
 
-        val newSelectedTab = createTab(BaseBrowserFragment.onboardingLinksList[0])
-        addAndSelectTab(newSelectedTab)
-        testScheduler.advanceUntilIdle()
+            val newSelectedTab = createTab(BaseBrowserFragment.onboardingLinksList[0])
+            addAndSelectTab(newSelectedTab)
+            testScheduler.advanceUntilIdle()
 
-        verify(exactly = 0) { onboarding.finish() }
-    }
-
-    @Test
-    fun `GIVEN the onboarding is not finished WHEN opening a page from another app THEN the onboarding is not dismissed `() = runTest {
-        every { onboarding.userHasBeenOnboarded() } returns false
-
-        browserFragment.observeTabSource(
-            store,
-            coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-        )
-
-        val newSelectedTab1 = createTab("any-tab-1.org", source = SessionState.Source.External.ActionSearch(mockk()))
-        val newSelectedTab2 = createTab("any-tab-2.org", source = SessionState.Source.External.ActionView(mockk()))
-        val newSelectedTab3 = createTab("any-tab-3.org", source = SessionState.Source.External.ActionSend(mockk()))
-        val newSelectedTab4 = createTab("any-tab-4.org", source = SessionState.Source.External.CustomTab(mockk()))
-
-        addAndSelectTab(newSelectedTab1)
-        testScheduler.advanceUntilIdle()
-
-        verify(exactly = 0) { onboarding.finish() }
-
-        addAndSelectTab(newSelectedTab2)
-        testScheduler.advanceUntilIdle()
-
-        verify(exactly = 0) { onboarding.finish() }
-
-        addAndSelectTab(newSelectedTab3)
-        testScheduler.advanceUntilIdle()
-
-        verify(exactly = 0) { onboarding.finish() }
-
-        addAndSelectTab(newSelectedTab4)
-        testScheduler.advanceUntilIdle()
-
-        verify(exactly = 0) { onboarding.finish() }
-    }
+            verify(exactly = 0) { onboarding.finish() }
+        }
 
     @Test
-    fun `GIVEN the onboarding is not finished WHEN visiting an link after redirect THEN the onboarding is not dismissed `() = runTest {
-        every { onboarding.userHasBeenOnboarded() } returns false
+    fun `GIVEN the onboarding is not finished WHEN opening a page from another app THEN the onboarding is not dismissed `() =
+        runTest {
+            every { onboarding.userHasBeenOnboarded() } returns false
 
-        val newSelectedTab: TabSessionState = mockk(relaxed = true)
-        every { newSelectedTab.content.loadRequest?.triggeredByRedirect } returns true
-        every { newSelectedTab.parentId } returns null
+            browserFragment.observeTabSource(
+                store,
+                coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+            )
 
-        browserFragment.observeTabSource(
-            store,
-            coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
-        )
-        addAndSelectTab(newSelectedTab)
-        testScheduler.advanceUntilIdle()
+            val newSelectedTab1 =
+                createTab("any-tab-1.org", source = SessionState.Source.External.ActionSearch(mockk()))
+            val newSelectedTab2 = createTab("any-tab-2.org", source = SessionState.Source.External.ActionView(mockk()))
+            val newSelectedTab3 = createTab("any-tab-3.org", source = SessionState.Source.External.ActionSend(mockk()))
+            val newSelectedTab4 = createTab("any-tab-4.org", source = SessionState.Source.External.CustomTab(mockk()))
 
-        verify(exactly = 0) { onboarding.finish() }
-    }
+            addAndSelectTab(newSelectedTab1)
+            testScheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { onboarding.finish() }
+
+            addAndSelectTab(newSelectedTab2)
+            testScheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { onboarding.finish() }
+
+            addAndSelectTab(newSelectedTab3)
+            testScheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { onboarding.finish() }
+
+            addAndSelectTab(newSelectedTab4)
+            testScheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { onboarding.finish() }
+        }
+
+    @Test
+    fun `GIVEN the onboarding is not finished WHEN visiting an link after redirect THEN the onboarding is not dismissed `() =
+        runTest {
+            every { onboarding.userHasBeenOnboarded() } returns false
+
+            val newSelectedTab: TabSessionState = mockk(relaxed = true)
+            every { newSelectedTab.content.loadRequest?.triggeredByRedirect } returns true
+            every { newSelectedTab.parentId } returns null
+
+            browserFragment.observeTabSource(
+                store,
+                coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+            )
+            addAndSelectTab(newSelectedTab)
+            testScheduler.advanceUntilIdle()
+
+            verify(exactly = 0) { onboarding.finish() }
+        }
 
     @Test
     fun `WHEN isPullToRefreshEnabledInBrowser is disabled THEN pull down refresh is disabled`() {
@@ -369,9 +378,10 @@ class BrowserFragmentTest {
     }
 
     internal class MockedLifecycleOwner(initialState: Lifecycle.State) : LifecycleOwner {
-        override val lifecycle: Lifecycle = LifecycleRegistry(this).apply {
-            currentState = initialState
-        }
+        override val lifecycle: Lifecycle =
+            LifecycleRegistry(this).apply {
+                currentState = initialState
+            }
     }
 
     @Test
@@ -384,5 +394,24 @@ class BrowserFragmentTest {
         browserFragment.updateLastBrowseActivity()
 
         verify(exactly = 1) { settings.recordLastBrowseActivity() }
+    }
+
+    @Test
+    fun `WHEN the viewport fit changes THEN the cutout mode is applied to the window`() {
+        val layoutParams = WindowManager.LayoutParams()
+        val window: Window = mockk(relaxed = true)
+        every { window.attributes } returns layoutParams
+        every { homeActivity.window } returns window
+        every { homeActivity.applicationInfo } returns
+            ApplicationInfo().apply { targetSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE }
+
+        browserFragment.viewportFitChange(WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES)
+
+        assertEquals(
+            WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES,
+            layoutParams.layoutInDisplayCutoutMode,
+        )
+        // Mutating the params is not enough, they only reach WindowManager through setAttributes.
+        verify(exactly = 1) { window.attributes = layoutParams }
     }
 }

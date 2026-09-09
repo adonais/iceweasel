@@ -8,7 +8,8 @@ ChromeUtils.defineESModuleGetters(this, {
   MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
   PermissionTestUtils: "resource://testing-common/PermissionTestUtils.sys.mjs",
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
-  WindowsLaunchOnLogin: "resource://gre/modules/WindowsLaunchOnLogin.sys.mjs",
+  WindowsLaunchOnLogin:
+    "resource://gre/modules/launchonlogin/WindowsLaunchOnLogin.sys.mjs",
 });
 
 const STARTUP_PANE = SRD_PREF_VALUE ? "paneHome" : "paneGeneral";

@@ -27,6 +27,8 @@ class SingleTestMixin:
         # Use self._map_test_path_to_source(test_machine_path, source_path) to add a mapping.
         self.test_src_path = {}
         self.per_test_log_index = 1
+        # Path of the testsummary log for the harness run currently being set up.
+        self.test_summary_file = None
 
     def _map_test_path_to_source(self, test_machine_path, source_path):
         test_machine_path = test_machine_path.replace(os.sep, posixpath.sep)
@@ -595,5 +597,30 @@ class SingleTestMixin:
         error_summary_file = os.path.join(
             dir, "%s%s_errorsummary.log" % (test_suite, index)
         )
-        test_summary_file = os.path.join(dir, "summary.jsonl")
+        test_summary_file = os.path.join(
+            dir, "%s%s_testsummary.jsonl" % (test_suite, index)
+        )
+        self.test_summary_file = test_summary_file
         return raw_log_file, error_summary_file, test_summary_file
+
+    def append_test_summary(self, dir):
+        """
+        Append the last harness run's testsummary log to the task's summary.jsonl.
+
+        Each harness invocation truncates the file it was given, so the per-run
+        logs are concatenated into a single fixed-name artifact. Suites that do
+        not pass --log-testsummary produce no file, in which case this is a no-op.
+        """
+        part = self.test_summary_file
+        self.test_summary_file = None
+        if not part or not os.path.exists(part):
+            return
+        with open(part, encoding="utf-8") as fh:
+            contents = fh.read()
+        os.remove(part)
+        if not contents:
+            return
+        if not contents.endswith("\n"):
+            contents += "\n"
+        with open(os.path.join(dir, "summary.jsonl"), "a", encoding="utf-8") as fh:
+            fh.write(contents)

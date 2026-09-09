@@ -7,10 +7,7 @@ package mozilla.components.support.ktx.android.util
 import android.util.JsonReader
 import android.util.JsonToken
 
-/**
- * Returns the [JsonToken.STRING] value of the next token or `null` if the next token
- * is [JsonToken.NULL].
- */
+/** Returns the [JsonToken.STRING] value of the next token or `null` if the next token is [JsonToken.NULL]. */
 fun JsonReader.nextStringOrNull(): String? {
     return if (peek() == JsonToken.NULL) {
         nextNull()
@@ -20,10 +17,7 @@ fun JsonReader.nextStringOrNull(): String? {
     }
 }
 
-/**
- * Returns the [JsonToken.BOOLEAN] value of the next token or `null` if the next token
- * is [JsonToken.NULL].
- */
+/** Returns the [JsonToken.BOOLEAN] value of the next token or `null` if the next token is [JsonToken.NULL]. */
 fun JsonReader.nextBooleanOrNull(): Boolean? {
     return if (peek() == JsonToken.NULL) {
         nextNull()
@@ -33,10 +27,7 @@ fun JsonReader.nextBooleanOrNull(): Boolean? {
     }
 }
 
-/**
- * Returns the [JsonToken.NUMBER] value of the next token or `null` if the next token
- * is [JsonToken.NULL].
- */
+/** Returns the [JsonToken.NUMBER] value of the next token or `null` if the next token is [JsonToken.NULL]. */
 fun JsonReader.nextIntOrNull(): Int? {
     return if (peek() == JsonToken.NULL) {
         nextNull()

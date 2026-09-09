@@ -5,6 +5,10 @@
 package mozilla.components.feature.awesomebar.provider
 
 import androidx.annotation.VisibleForTesting
+import java.time.DateTimeException
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import java.util.UUID
 import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.feature.awesomebar.facts.SuggestionCardType
 import mozilla.components.feature.awesomebar.facts.emitOptimizedSuggestionCardClickedFact
@@ -15,10 +19,6 @@ import mozilla.components.feature.awesomebar.optimizedsuggestions.FlightItem
 import mozilla.components.feature.awesomebar.optimizedsuggestions.FlightSuggestion
 import mozilla.components.feature.awesomebar.optimizedsuggestions.FlightSuggestionStatus
 import mozilla.components.feature.session.SessionUseCases
-import java.time.DateTimeException
-import java.time.format.DateTimeFormatter
-import java.util.Locale
-import java.util.UUID
 
 const val DEFAULT_FLIGHT_SUGGESTION_LIMIT = 1
 
@@ -63,15 +63,14 @@ class FlightsOnlineSuggestionProvider(
     }
 
     private fun FlightItem.toSuggestionOrNull(): FlightSuggestion? {
-        val hasRequiredFields =
-            url.isNotBlank() && flightNumber.isNotBlank()
+        val hasRequiredFields = url.isNotBlank() && flightNumber.isNotBlank()
 
         val flightStatus = parseFlightStatus(delayed, status)
         val departureFlightData = parseFlightData(origin, departure)
         val arrivalFlightData = parseFlightData(destination, arrival)
 
-        val hasAllFields = hasRequiredFields && flightStatus != null &&
-            departureFlightData != null && arrivalFlightData != null
+        val hasAllFields =
+            hasRequiredFields && flightStatus != null && departureFlightData != null && arrivalFlightData != null
 
         return if (hasAllFields) {
             FlightSuggestion(
@@ -118,11 +117,7 @@ class FlightsOnlineSuggestionProvider(
 
         return try {
             val time = formatShortTime(parsedDate, locale)
-            val date = parsedDate.format(
-                DateTimeFormatter
-                    .ofPattern("MMM d")
-                    .withLocale(locale),
-            )
+            val date = parsedDate.format(DateTimeFormatter.ofPattern("MMM d").withLocale(locale))
 
             FlightData(
                 airportCity = airport.city,

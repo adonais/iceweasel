@@ -38,44 +38,46 @@ import mozilla.components.compose.engine.WebContent
 import mozilla.components.compose.tabstray.TabList
 import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.concept.awesomebar.AwesomeBar.GroupedSuggestion
+import mozilla.components.feature.awesomebar.R as awesomebarR
 import mozilla.components.feature.awesomebar.provider.ClipboardSuggestionProvider
 import mozilla.components.feature.awesomebar.provider.SearchActionProvider
 import mozilla.components.feature.awesomebar.provider.SearchSuggestionProvider
 import mozilla.components.feature.awesomebar.provider.SessionSuggestionProvider
 import mozilla.components.feature.fxsuggest.FxSuggestSuggestionProvider
+import mozilla.components.feature.fxsuggest.R as fxsuggestR
 import mozilla.components.lib.state.Store
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.composableStore
 import org.mozilla.samples.compose.browser.browser.BrowserToolbarMiddleware.Companion.Dependencies
 import org.mozilla.samples.compose.browser.components
-import mozilla.components.feature.awesomebar.R as awesomebarR
-import mozilla.components.feature.fxsuggest.R as fxsuggestR
 
-/**
- * The main browser screen.
- */
+/** The main browser screen. */
 @Suppress("LongMethod")
 @Composable
 fun BrowserScreen(navController: NavController) {
     val context = LocalContext.current
 
-    val store by composableStore(BrowserScreenState()) { restoredState ->
-        BrowserScreenStore(restoredState)
-    }
-    val toolbarStore by composableStore(BrowserToolbarState()) { restoredState ->
-        BrowserToolbarStore(
-            initialState = restoredState,
-            middleware = listOf(
-                BrowserToolbarMiddleware(
-                    initialDependencies = Dependencies(
-                        context = context,
-                        navController = navController,
-                        browserScreenStore = store,
+    val store by
+        composableStore(BrowserScreenState()) { restoredState ->
+            BrowserScreenStore(restoredState)
+        }
+    val toolbarStore by
+        composableStore(BrowserToolbarState()) { restoredState ->
+            BrowserToolbarStore(
+                initialState = restoredState,
+                middleware =
+                    listOf(
+                        BrowserToolbarMiddleware(
+                            initialDependencies =
+                                Dependencies(
+                                    context = context,
+                                    navController = navController,
+                                    browserScreenStore = store,
+                                )
+                        )
                     ),
-                ),
-            ),
-        )
-    }
+            )
+        }
 
     val toolbarState by toolbarStore.stateFlow.collectAsState()
     val showTabs = store.observeAsComposableState { state -> state.showTabs }
@@ -86,9 +88,7 @@ fun BrowserScreen(navController: NavController) {
     AcornTheme {
         Box {
             Column {
-                BrowserToolbar(
-                    store = toolbarStore,
-                )
+                BrowserToolbar(store = toolbarStore)
 
                 Box {
                     WebContent(
@@ -108,8 +108,8 @@ fun BrowserScreen(navController: NavController) {
                             onAutoComplete = { suggestion ->
                                 toolbarStore.dispatch(
                                     BrowserEditToolbarAction.SearchQueryUpdated(
-                                        BrowserToolbarQuery(suggestion.editSuggestion!!),
-                                    ),
+                                        BrowserToolbarQuery(suggestion.editSuggestion!!)
+                                    )
                                 )
                             },
                         )
@@ -127,9 +127,7 @@ fun BrowserScreen(navController: NavController) {
     }
 }
 
-/**
- * Shows the list of tabs.
- */
+/** Shows the list of tabs. */
 @Composable
 fun TabsTray(
     store: Store<BrowserScreenState, BrowserScreenAction>,
@@ -140,19 +138,15 @@ fun TabsTray(
     BackHandler(onBack = { store.dispatch(BrowserScreenAction.HideTabs) })
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
-            .background(color = MaterialTheme.colorScheme.onSurfaceVariant)
-            .clickable {
-                store.dispatch(BrowserScreenAction.HideTabs)
-            },
+        modifier =
+            Modifier.fillMaxWidth()
+                .fillMaxHeight()
+                .background(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                .clickable {
+                    store.dispatch(BrowserScreenAction.HideTabs)
+                }
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxHeight(fraction = 0.8f)
-                .align(Alignment.BottomStart),
-        ) {
+        Column(modifier = Modifier.fillMaxHeight(fraction = 0.8f).align(Alignment.BottomStart)) {
             TabList(
                 store = components().store,
                 onTabSelected = { tab ->
@@ -193,63 +187,69 @@ private fun Suggestions(
     val sponsoredSuggestionDescription = stringResource(fxsuggestR.string.sponsored_suggestion_description)
     var hiddenSuggestions by remember { mutableStateOf(emptySet<GroupedSuggestion>()) }
 
-    val sessionSuggestionProvider = remember(
-        components.store,
-        components.tabsUseCases.selectTab,
-        switchToTabDescription,
-    ) {
-        SessionSuggestionProvider(
+    val sessionSuggestionProvider =
+        remember(
             components.store,
             components.tabsUseCases.selectTab,
-            switchToTabDescription = switchToTabDescription,
-        )
-    }
+            switchToTabDescription,
+        ) {
+            SessionSuggestionProvider(
+                components.store,
+                components.tabsUseCases.selectTab,
+                switchToTabDescription = switchToTabDescription,
+            )
+        }
 
-    val searchActionProvider = remember(components.store, components.searchUseCases.defaultSearch) {
-        SearchActionProvider(components.store, components.searchUseCases.defaultSearch)
-    }
+    val searchActionProvider =
+        remember(components.store, components.searchUseCases.defaultSearch) {
+            SearchActionProvider(components.store, components.searchUseCases.defaultSearch)
+        }
 
-    val fxSuggestSuggestionProvider = remember(components.sessionUseCases.loadUrl, sponsoredSuggestionDescription) {
-        FxSuggestSuggestionProvider(
-            loadUrlUseCase = components.sessionUseCases.loadUrl,
-            includeSponsoredSuggestions = false,
-            includeNonSponsoredSuggestions = true,
-            sponsoredSuggestionDescription = sponsoredSuggestionDescription,
-        )
-    }
+    val fxSuggestSuggestionProvider =
+        remember(components.sessionUseCases.loadUrl, sponsoredSuggestionDescription) {
+            FxSuggestSuggestionProvider(
+                loadUrlUseCase = components.sessionUseCases.loadUrl,
+                includeSponsoredSuggestions = false,
+                includeNonSponsoredSuggestions = true,
+                sponsoredSuggestionDescription = sponsoredSuggestionDescription,
+            )
+        }
 
-    val searchSuggestionProvider = remember(
-        components.store,
-        components.searchUseCases.defaultSearch,
-        components.client,
-        components.engine,
-    ) {
-        SearchSuggestionProvider(
+    val searchSuggestionProvider =
+        remember(
             components.store,
             components.searchUseCases.defaultSearch,
             components.client,
-            mode = SearchSuggestionProvider.Mode.MULTIPLE_SUGGESTIONS,
-            engine = components.engine,
-            filterExactMatch = true,
-        )
-    }
+            components.engine,
+        ) {
+            SearchSuggestionProvider(
+                components.store,
+                components.searchUseCases.defaultSearch,
+                components.client,
+                mode = SearchSuggestionProvider.Mode.MULTIPLE_SUGGESTIONS,
+                engine = components.engine,
+                filterExactMatch = true,
+            )
+        }
 
-    val clipboardSuggestionProvider = remember(context, components.sessionUseCases.loadUrl) {
-        ClipboardSuggestionProvider(
-            context,
-            components.sessionUseCases.loadUrl,
-        )
-    }
+    val clipboardSuggestionProvider =
+        remember(context, components.sessionUseCases.loadUrl) {
+            ClipboardSuggestionProvider(
+                context,
+                components.sessionUseCases.loadUrl,
+            )
+        }
 
     AwesomeBar(
         url,
-        providers = listOf(
-            sessionSuggestionProvider,
-            searchActionProvider,
-            fxSuggestSuggestionProvider,
-            searchSuggestionProvider,
-            clipboardSuggestionProvider,
-        ),
+        providers =
+            listOf(
+                sessionSuggestionProvider,
+                searchActionProvider,
+                fxSuggestSuggestionProvider,
+                searchSuggestionProvider,
+                clipboardSuggestionProvider,
+            ),
         hiddenSuggestions = hiddenSuggestions,
         onSuggestionClicked = { suggestion -> onSuggestionClicked(suggestion) },
         onAutoComplete = { suggestion -> onAutoComplete(suggestion) },

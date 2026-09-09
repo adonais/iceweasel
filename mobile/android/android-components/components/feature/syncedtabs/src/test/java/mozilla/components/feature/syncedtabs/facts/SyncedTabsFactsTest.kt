@@ -15,7 +15,6 @@ class SyncedTabsFactsTest {
     @Test
     fun `Emits facts for current state`() {
         CollectionProcessor.withFactCollection { facts ->
-
             emitSyncedTabSuggestionClickedFact()
 
             assertEquals(1, facts.size)

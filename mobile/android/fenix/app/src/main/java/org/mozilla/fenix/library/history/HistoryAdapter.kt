@@ -11,17 +11,14 @@ import androidx.recyclerview.widget.DiffUtil
 import org.mozilla.fenix.library.history.viewholders.HistoryListItemViewHolder
 import org.mozilla.fenix.selection.SelectionHolder
 
-/**
- * Adapter for the list of visited pages, that uses Paging 3 versions of the Paging library.
- */
+/** Adapter for the list of visited pages, that uses Paging 3 versions of the Paging library. */
 class HistoryAdapter(
     private val store: HistoryFragmentStore,
     private val onRecentlyClosedClicked: () -> Unit,
     private val onHistoryItemClicked: (History) -> Unit,
     private val onDeleteInitiated: (Set<History>) -> Unit,
     private val onEmptyStateChanged: (Boolean) -> Unit,
-) : PagingDataAdapter<History, HistoryListItemViewHolder>(historyDiffCallback),
-    SelectionHolder<History> {
+) : PagingDataAdapter<History, HistoryListItemViewHolder>(historyDiffCallback), SelectionHolder<History> {
 
     private var mode: HistoryFragmentState.Mode = HistoryFragmentState.Mode.Normal
     private var pendingDeletionItems = emptySet<PendingDeletionHistory>()
@@ -70,27 +67,32 @@ class HistoryAdapter(
         if (pendingDeletionItems.isNotEmpty()) {
             when (current) {
                 is History.Regular -> {
-                    isPendingDeletion = pendingDeletionItems.find {
-                        it is PendingDeletionHistory.Item && it.visitedAt == current.visitedAt
-                    } != null
+                    isPendingDeletion =
+                        pendingDeletionItems.find {
+                            it is PendingDeletionHistory.Item && it.visitedAt == current.visitedAt
+                        } != null
                 }
                 is History.Group -> {
-                    isPendingDeletion = pendingDeletionItems.find {
-                        it is PendingDeletionHistory.Group && it.visitedAt == current.visitedAt
-                    } != null
+                    isPendingDeletion =
+                        pendingDeletionItems.find {
+                            it is PendingDeletionHistory.Group && it.visitedAt == current.visitedAt
+                        } != null
 
                     if (!isPendingDeletion) {
-                        groupPendingDeletionCount = current.items.count { historyMetadata ->
-                            pendingDeletionItems.find {
-                                it is PendingDeletionHistory.MetaData &&
-                                    it.key == historyMetadata.historyMetadataKey &&
-                                    it.visitedAt == historyMetadata.visitedAt
-                            } != null
-                        }.also {
-                            if (it == current.items.size) {
-                                isPendingDeletion = true
-                            }
-                        }
+                        groupPendingDeletionCount =
+                            current.items
+                                .count { historyMetadata ->
+                                    pendingDeletionItems.find {
+                                        it is PendingDeletionHistory.MetaData &&
+                                            it.key == historyMetadata.historyMetadataKey &&
+                                            it.visitedAt == historyMetadata.visitedAt
+                                    } != null
+                                }
+                                .also {
+                                    if (it == current.items.size) {
+                                        isPendingDeletion = true
+                                    }
+                                }
                     }
                 }
                 else -> {}
@@ -136,26 +138,25 @@ class HistoryAdapter(
         )
     }
 
-    /**
-     * @param pendingDeletionItems is used to filter out the items that should not be displayed.
-     */
+    /** @param pendingDeletionItems is used to filter out the items that should not be displayed. */
     fun updatePendingDeletionItems(pendingDeletionItems: Set<PendingDeletionHistory>) {
         this.pendingDeletionItems = pendingDeletionItems
     }
 
     companion object {
-        private val historyDiffCallback = object : DiffUtil.ItemCallback<History>() {
-            override fun areItemsTheSame(oldItem: History, newItem: History): Boolean {
-                return oldItem == newItem
-            }
+        private val historyDiffCallback =
+            object : DiffUtil.ItemCallback<History>() {
+                override fun areItemsTheSame(oldItem: History, newItem: History): Boolean {
+                    return oldItem == newItem
+                }
 
-            override fun areContentsTheSame(oldItem: History, newItem: History): Boolean {
-                return oldItem == newItem
-            }
+                override fun areContentsTheSame(oldItem: History, newItem: History): Boolean {
+                    return oldItem == newItem
+                }
 
-            override fun getChangePayload(oldItem: History, newItem: History): Any? {
-                return newItem
+                override fun getChangePayload(oldItem: History, newItem: History): Any? {
+                    return newItem
+                }
             }
-        }
     }
 }

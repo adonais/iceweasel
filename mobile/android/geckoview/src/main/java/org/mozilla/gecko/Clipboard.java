@@ -10,6 +10,7 @@ import android.content.ClipboardManager;
 import android.content.ClipboardManager.OnPrimaryClipChangedListener;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
+import android.net.Uri;
 import android.os.Build;
 import android.os.PersistableBundle;
 import android.text.TextUtils;
@@ -26,6 +27,13 @@ public final class Clipboard {
   private static final String PLAINTEXT_MIME = "text/plain";
   private static final String LOGTAG = "GeckoClipboard";
   private static final int DEFAULT_BUFFER_SIZE = 8192;
+
+  // W3C clipboard-apis spec, Appendix A. Android shares the Linux/ChromeOS
+  // convention: the JSON essence->slot map is held under
+  // "application/web;type=\"custom/formatmap\"", and each essence's bytes
+  // live under "application/web;type=\"custom/formatN\"".
+  private static final String WEB_CUSTOM_FORMAT_MAP_MIME =
+      "application/web;type=\"custom/formatmap\"";
 
   private static OnPrimaryClipChangedListener sClipboardChangedListener = null;
   private static final AtomicLong sClipboardSequenceNumber = new AtomicLong();
@@ -267,7 +275,12 @@ public final class Clipboard {
         new OnPrimaryClipChangedListener() {
           @Override
           public void onPrimaryClipChanged() {
-            Clipboard.updateSequenceNumber(GeckoAppShell.getApplicationContext());
+            final Context appContext = GeckoAppShell.getApplicationContext();
+            Clipboard.updateSequenceNumber(appContext);
+            // Reap our in-memory clipboard bytes if the primary clip is no
+            // longer ours; another app writing text/image/etc. makes our
+            // URIs unreachable.
+            GeckoClipboardContentProvider.onPrimaryClipChanged(appContext);
           }
         };
 
@@ -315,5 +328,147 @@ public final class Clipboard {
   @WrapForJNI(calledFrom = "gecko")
   private static long getSequenceNumber(final Context context) {
     return sClipboardSequenceNumber.get();
+  }
+
+  // ---- Multi-MIME clipboard write support ----
+  //
+  // Writes use a session model so we don't need to pass byte[][] across JNI.
+  // The session is MIME-agnostic: any number of (MIME, bytes) payloads can be
+  // pushed in, and the commit step builds a single multi-item ClipData backed
+  // by GeckoClipboardContentProvider URIs. Web custom format is the first consumer;
+  // future callers can reuse the same session to publish arbitrary
+  // (MIME, bytes) sets alongside standard text/HTML.
+  //   1. openWriteSession() returns a session id.
+  //   2. addPayload() appends one (MIME, bytes) pair. Payload order matters:
+  //      the first added payload becomes ClipData.Item[0]'s URI (bundled with
+  //      the standard text/HTML), subsequent payloads become items 1..N.
+  //   3. commitWriteSession() finalises the ClipData and installs it as the
+  //      primary clip.
+
+  @WrapForJNI(calledFrom = "gecko")
+  private static long openWriteSession() {
+    return GeckoClipboardContentProvider.openSession();
+  }
+
+  @WrapForJNI(calledFrom = "gecko")
+  private static void addPayload(
+      final long sessionId, final String mimeType, final byte[] payload) {
+    GeckoClipboardContentProvider.addPayload(sessionId, mimeType, payload);
+  }
+
+  @WrapForJNI(calledFrom = "gecko")
+  private static boolean commitWriteSession(
+      final Context context,
+      final long sessionId,
+      final CharSequence text,
+      final String htmlText,
+      final boolean isPrivateData) {
+    final ClipData clipData =
+        GeckoClipboardContentProvider.commitSessionToClipData(context, sessionId, text, htmlText);
+    if (clipData == null) {
+      return false;
+    }
+    return setData(context, clipData, isPrivateData);
+  }
+
+  @WrapForJNI(calledFrom = "gecko")
+  private static void cancelWriteSession(final long sessionId) {
+    GeckoClipboardContentProvider.cancelSession(sessionId);
+  }
+
+  /**
+   * Returns the {@code application/web;type="custom/formatmap"} JSON for the primary clip, or null.
+   */
+  @WrapForJNI(calledFrom = "gecko")
+  private static String getWebCustomFormatMapJson(final Context context) {
+    final byte[] bytes = readWebClipBytes(context, WEB_CUSTOM_FORMAT_MAP_MIME);
+    if (bytes == null) {
+      return null;
+    }
+    return new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+  }
+
+  /**
+   * Returns the bytes for a per-essence {@code application/web;type="custom/formatN"} MIME, or
+   * null.
+   */
+  @WrapForJNI(calledFrom = "gecko")
+  private static byte[] getWebCustomFormatPayload(final Context context, final String mimeType) {
+    return readWebClipBytes(context, mimeType);
+  }
+
+  @WrapForJNI(calledFrom = "gecko")
+  private static boolean hasWebCustomFormatMap(final Context context) {
+    final ClipboardManager cm =
+        (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+    if (!cm.hasPrimaryClip()) {
+      return false;
+    }
+    final ClipDescription description = cm.getPrimaryClipDescription();
+    return description != null && description.hasMimeType(WEB_CUSTOM_FORMAT_MAP_MIME);
+  }
+
+  // Walks the primary clip's items looking for one whose Uri the
+  // ContentResolver reports as serving aMimeType, and reads it.
+  private static byte[] readWebClipBytes(final Context context, final String mimeType) {
+    final ClipboardManager cm =
+        (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+    if (!cm.hasPrimaryClip()) {
+      return null;
+    }
+    // ClipboardManager.getPrimaryClip() can throw when the clip's owning
+    // app process has died and Android can't rehydrate the ClipData.
+    final ClipData clip;
+    try {
+      clip = cm.getPrimaryClip();
+    } catch (final RuntimeException e) {
+      Log.w(LOGTAG, "readWebClipBytes: getPrimaryClip failed", e);
+      return null;
+    }
+    if (clip == null) {
+      return null;
+    }
+    final ClipDescription description = clip.getDescription();
+    if (description == null || !description.hasMimeType(mimeType)) {
+      return null;
+    }
+    for (int i = 0; i < clip.getItemCount(); ++i) {
+      final Uri uri = clip.getItemAt(i).getUri();
+      if (uri == null) {
+        continue;
+      }
+      final String[] supportedTypes = context.getContentResolver().getStreamTypes(uri, mimeType);
+      if (supportedTypes == null) {
+        continue;
+      }
+      boolean matches = false;
+      for (final String t : supportedTypes) {
+        if (mimeType.equals(t)) {
+          matches = true;
+          break;
+        }
+      }
+      if (!matches) {
+        continue;
+      }
+      try (final AssetFileDescriptor descriptor =
+              context.getContentResolver().openAssetFileDescriptor(uri, "r");
+          final InputStream inputStream = new FileInputStream(descriptor.getFileDescriptor());
+          final ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+        final byte[] buf = new byte[DEFAULT_BUFFER_SIZE];
+        int n;
+        while ((n = inputStream.read(buf)) != -1) {
+          outputStream.write(buf, 0, n);
+        }
+        return outputStream.toByteArray();
+      } catch (final IOException e) {
+        Log.e(LOGTAG, "Couldn't read web custom format payload from clipboard", e);
+        return null;
+      } catch (final OutOfMemoryError e) {
+        Log.e(LOGTAG, "Web custom format payload too large to read", e);
+        return null;
+      }
+    }
+    return null;
   }
 }

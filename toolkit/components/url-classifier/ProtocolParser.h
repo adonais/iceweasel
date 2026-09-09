@@ -37,7 +37,11 @@ class ProtocolParser {
                  const nsTArray<nsCString>& aUpdateTables);
   virtual nsresult AppendStream(const nsACString& aData) = 0;
 
-  uint32_t UpdateWaitSec() { return mUpdateWaitSec; }
+  // V5 carries a wait duration per list, while V2 and V4 carry a single
+  // response-level one. For the latter, the same duration is reported for
+  // every requested table so that callers only deal with per-table values.
+  // Consumes the durations, so it can only be called once.
+  nsTArray<TableWaitDuration> TakeUpdateWaits();
 
   // Notify that the inbound data is ready for parsing if progressive
   // parsing is not supported, for example in V4.
@@ -75,8 +79,13 @@ class ProtocolParser {
   // The table names that failed to update and need to be reset.
   nsTArray<nsCString> mTablesToReset;
 
-  // How long we should wait until the next update.
+  // How long we should wait until the next update. Only used by the protocols
+  // carrying a single response-level duration (V2 and V4).
   uint32_t mUpdateWaitSec;
+
+  // How long we should wait until the next update, per table. Only used by
+  // the protocols carrying a duration per list (V5).
+  nsTArray<TableWaitDuration> mUpdateWaits;
 };
 
 /**

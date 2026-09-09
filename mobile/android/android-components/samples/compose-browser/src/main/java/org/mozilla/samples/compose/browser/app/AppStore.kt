@@ -6,13 +6,12 @@ package org.mozilla.samples.compose.browser.app
 
 import mozilla.components.lib.state.Store
 
-/**
- * [Store] for the global [AppState].
- */
-class AppStore : Store<AppState, AppAction>(
-    initialState = AppState(),
-    reducer = ::reduce,
-)
+/** [Store] for the global [AppState]. */
+class AppStore :
+    Store<AppState, AppAction>(
+        initialState = AppState(),
+        reducer = ::reduce,
+    )
 
 private fun reduce(appState: AppState, appAction: AppAction): AppState {
     if (appAction is AppAction.ToggleTheme) {

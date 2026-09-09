@@ -45,6 +45,7 @@ class ChooserParser(BaseTryParser):
         "gecko-profile",
         "path",
         "pernosco",
+        "pushdate",
         "rebuild",
         "worker-overrides",
     ]

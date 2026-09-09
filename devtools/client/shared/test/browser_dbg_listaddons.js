@@ -3,13 +3,6 @@
 
 "use strict";
 
-var {
-  DevToolsServer,
-} = require("resource://devtools/server/devtools-server.js");
-var {
-  DevToolsClient,
-} = require("resource://devtools/client/devtools-client.js");
-
 /**
  * Make sure the listAddons request works as specified.
  */
@@ -19,14 +12,7 @@ const ADDON2_ID = "test-addon-2@mozilla.org";
 const ADDON2_PATH = "addons/test-addon-2/";
 
 add_task(async function () {
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
-
-  const transport = DevToolsServer.connectPipe();
-  const client = new DevToolsClient(transport);
-
-  const [type] = await client.connect();
-  is(type, "browser", "Root actor should identify itself as a browser.");
+  const client = await createLocalClientForTests();
 
   let addonListChangedEvents = 0;
   client.mainRoot.on("addonListChanged", () => addonListChangedEvents++);

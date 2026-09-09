@@ -35,9 +35,7 @@ import org.mozilla.fenix.settings.biometric.DefaultBiometricUtils
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.theme.FirefoxTheme
 
-/**
- * Fragment used to display biometric authentication when the app is locked.
- */
+/** Fragment used to display biometric authentication when the app is locked. */
 class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler, SystemInsetsPaddedFragment {
     private lateinit var startForResult: ActivityResultLauncher<Intent>
     private val args: UnlockPrivateTabsFragmentArgs by navArgs()
@@ -48,10 +46,11 @@ class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler, SystemInse
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        startForResult = registerForActivityResult(
-            onSuccess = { onAuthSuccess() },
-            onFailure = { onAuthFailure() },
-        )
+        startForResult =
+            registerForActivityResult(
+                onSuccess = { onAuthSuccess() },
+                onFailure = { onAuthFailure() },
+            )
 
         return ComposeView(requireContext()).apply {
             isTransitionGroup = true
@@ -64,8 +63,7 @@ class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler, SystemInse
         PrivateBrowsingLocked.promptShown.record()
 
         val appStore = requireComponents.appStore
-        val isCustomPrivateTab =
-            isCustomTabIntent(requireActivity().intent) && appStore.state.mode.isPrivate
+        val isCustomPrivateTab = isCustomTabIntent(requireActivity().intent) && appStore.state.mode.isPrivate
 
         (view as ComposeView).setContent {
             FirefoxTheme {
@@ -116,25 +114,23 @@ class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler, SystemInse
     }
 
     /**
-     * If the users decides to leave the fragment, we want to navigate them to normal tabs page.
-     * If they don't have regular opened tabs, we navigate back to homepage as a fallback.
+     * If the users decides to leave the fragment, we want to navigate them to normal tabs page. If they don't have
+     * regular opened tabs, we navigate back to homepage as a fallback.
      */
     private fun closeFragment() {
         when (navigationOrigin) {
             // If we locked private mode while the user had a private tab opened or was on private
             // home page, then, when leaving without authentication, we want to navigate user back
             // to normal mode. If they have opened regular tabs, we open the tabs tray as well.
-            NavigationOrigin.TAB, NavigationOrigin.HOME_PAGE -> {
+            NavigationOrigin.TAB,
+            NavigationOrigin.HOME_PAGE -> {
                 (activity as HomeActivity).browsingModeManager.mode = BrowsingMode.Normal
                 findNavController().navigate(UnlockPrivateTabsFragmentDirections.actionGlobalHome())
 
                 val hasNormalTabs = requireComponents.core.store.state.normalTabs.isNotEmpty()
                 if (hasNormalTabs) {
-                    findNavController().navigate(
-                        HomeFragmentDirections.actionGlobalTabManagementFragment(
-                            page = Page.NormalTabs,
-                        ),
-                    )
+                    findNavController()
+                        .navigate(HomeFragmentDirections.actionGlobalTabManagementFragment(page = Page.NormalTabs))
                 }
             }
             // If we locked private mode while the user had the tabs tray private page opened, then
@@ -143,11 +139,8 @@ class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler, SystemInse
             NavigationOrigin.TABS_TRAY -> {
                 findNavController().popBackStack()
 
-                findNavController().navigate(
-                    HomeFragmentDirections.actionGlobalTabManagementFragment(
-                        page = Page.NormalTabs,
-                    ),
-                )
+                findNavController()
+                    .navigate(HomeFragmentDirections.actionGlobalTabManagementFragment(page = Page.NormalTabs))
             }
             // If private mode is locked and the user opens a private custom tab,
             // close the activity when they leave without authenticating to return to the host app.
@@ -163,11 +156,8 @@ class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler, SystemInse
         findNavController().popBackStack()
 
         if (navigationOrigin == NavigationOrigin.TABS_TRAY) {
-            findNavController().navigate(
-                HomeFragmentDirections.actionGlobalTabManagementFragment(
-                    page = Page.PrivateTabs,
-                ),
-            )
+            findNavController()
+                .navigate(HomeFragmentDirections.actionGlobalTabManagementFragment(page = Page.PrivateTabs))
         }
     }
 

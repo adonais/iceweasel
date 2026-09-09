@@ -38,6 +38,12 @@ add_UITour_task(async function test_showFirefoxAccountsForAIWindow() {
 
   Assert.ok(launchStub.calledOnce, "launchWindow should be called");
 
+  Assert.deepEqual(
+    launchStub.firstCall.args.slice(1),
+    [false, "bedrock"],
+    "launchWindow should be called with the bedrock trigger"
+  );
+
   launchStub.restore();
   await SpecialPowers.popPrefEnv();
 });

@@ -13,15 +13,11 @@ import org.junit.Test
 class RecentlyClosedFragmentInteractorTest {
 
     lateinit var interactor: RecentlyClosedFragmentInteractor
-    private val defaultRecentlyClosedController: DefaultRecentlyClosedController =
-        mockk(relaxed = true)
+    private val defaultRecentlyClosedController: DefaultRecentlyClosedController = mockk(relaxed = true)
 
     @Before
     fun setup() {
-        interactor =
-            RecentlyClosedFragmentInteractor(
-                recentlyClosedController = defaultRecentlyClosedController,
-            )
+        interactor = RecentlyClosedFragmentInteractor(recentlyClosedController = defaultRecentlyClosedController)
     }
 
     @Test

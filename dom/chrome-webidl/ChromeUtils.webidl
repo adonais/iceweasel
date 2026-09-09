@@ -362,6 +362,27 @@ namespace ChromeUtils {
                               optional (UTF8String or object) data);
 
   /**
+   * Create a new profiler counter for counting a scalar value, and displaying it
+   * in the profiler UI as a track in the thread list. The counter can be incremented
+   * or decremented as frequently as you want, but its value is only recorded when
+   * the profiler records a sample.
+   *
+   * Counters are a general-purpose way to record how some quantity changes over the
+   * course of time. In Nightly, the profiler automatically tracks total allocated memory
+   * through a ProfilerCounter. This API lets any subsystem expose its own metric
+   * as a graphed track.
+   *
+   * Usage:
+   *   const counter = ChromeUtils.addProfilerCounter({ name: "Cache Size", category: "Memory" });
+   *   counter.add(10);
+   *   counter.add(-3);
+   *
+   * @param options:  Options for how to configure the counter.
+   */
+  [Exposed=Window]
+  ProfilerCounter addProfilerCounter(ProfilerCounterOptions options);
+
+  /**
    * Register a custom marker schema for use with the profiler.
    *
    * The schema defines how markers with a given "type" field should be displayed
@@ -1078,6 +1099,7 @@ enum WebIDLUtilityActorName {
   "windowsUtils",
   "windowsFileDialog",
   "pkcs11Module",
+  "hwInference",
 };
 
 dictionary UtilityActorsDictionary {

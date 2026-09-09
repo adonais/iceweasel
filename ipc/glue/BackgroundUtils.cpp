@@ -607,6 +607,7 @@ nsresult LoadInfoToLoadInfoArgs(nsILoadInfo* aLoadInfo,
       maybePolicyContainerToInherit, aLoadInfo->GetStoragePermission(),
       aLoadInfo->GetParentIpAddressSpace(), aLoadInfo->GetIpAddressSpace(),
       overriddenFingerprintingSettingsArg, aLoadInfo->GetIsMetaRefresh(),
+      aLoadInfo->GetActivatedFromNavigationalPrefetch(),
       aLoadInfo->GetLoadingEmbedderPolicy(),
       aLoadInfo->GetIsOriginTrialCoepCredentiallessEnabledForTopLevel(),
       unstrippedURI, interceptionInfoArg, aLoadInfo->GetIsNewWindowTarget(),
@@ -1068,7 +1069,7 @@ nsresult MergeParentLoadInfoForwarder(
   rv = aLoadInfo->SetIsMetaRefresh(aForwarderArgs.isMetaRefresh());
   NS_ENSURE_SUCCESS(rv, rv);
 
-  const Maybe<RFPTargetSet> overriddenFingerprintingSettings =
+  const Maybe<RFPTargetSet>& overriddenFingerprintingSettings =
       aForwarderArgs.overriddenFingerprintingSettings();
   if (overriddenFingerprintingSettings.isSome()) {
     aLoadInfo->SetOverriddenFingerprintingSettings(

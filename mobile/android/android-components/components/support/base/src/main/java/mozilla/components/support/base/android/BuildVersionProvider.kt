@@ -7,14 +7,12 @@ package mozilla.components.support.base.android
 import android.os.Build
 
 /**
- * This class provides information about the build version without exposing the android framework
- * APIs directly, making it easier to test the code that depends on it.
+ * This class provides information about the build version without exposing the android framework APIs directly, making
+ * it easier to test the code that depends on it.
  */
 interface BuildVersionProvider {
 
-    /**
-     * Returns the SDK_INT of the current build version.
-     */
+    /** Returns the SDK_INT of the current build version. */
     fun sdkInt(): Int
 
     companion object {
@@ -22,9 +20,7 @@ interface BuildVersionProvider {
     }
 }
 
-/**
- * @see BuildVersionProvider
- */
+/** @see BuildVersionProvider */
 class DefaultBuildVersionProvider : BuildVersionProvider {
 
     override fun sdkInt(): Int = Build.VERSION.SDK_INT

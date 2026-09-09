@@ -31,23 +31,17 @@ class StrictModeManagerTest {
     private lateinit var debugManager: StrictModeManager
     private lateinit var releaseManager: StrictModeManager
 
-    @MockK(relaxUnitFun = true)
-    private lateinit var fragmentManager: FragmentManager
+    @MockK(relaxUnitFun = true) private lateinit var fragmentManager: FragmentManager
 
-    @RelaxedMockK
-    private lateinit var components: Components
+    @RelaxedMockK private lateinit var components: Components
 
     @Before
     fun setup() {
         MockKAnnotations.init(this)
 
-        debugManager = spyk(
-            StrictModeManager(true, components, mockk()),
-        )
+        debugManager = spyk(StrictModeManager(true, components, mockk()))
 
-        releaseManager = spyk(
-            StrictModeManager(false, components, mockk()),
-        )
+        releaseManager = spyk(StrictModeManager(false, components, mockk()))
     }
 
     @Test
@@ -102,14 +96,14 @@ class StrictModeManagerTest {
 
     @Test
     fun `GIVEN we're in a release build WHEN allowViolation is called THEN the old policy is not set`() {
-        releaseManager.allowViolation(StrictMode::allowThreadDiskReads) { }
+        releaseManager.allowViolation(StrictMode::allowThreadDiskReads) {}
         verify(exactly = 0) { releaseManager.applyThreadPolicy(any()) }
     }
 
     @Test
     fun `GIVEN we're in a debug build WHEN allowViolation is called THEN the old policy is set`() {
         val expectedPolicy = StrictMode.allowThreadDiskReads()
-        debugManager.allowViolation({ expectedPolicy }) { }
+        debugManager.allowViolation({ expectedPolicy }) {}
         verify { debugManager.applyThreadPolicy(expectedPolicy) }
     }
 
@@ -127,7 +121,10 @@ class StrictModeManagerTest {
     @Test
     fun `GIVEN we're in a debug build WHEN allowViolation is called THEN the allowFn should run`() {
         var runs = 0
-        val allowFn = { runs += 1; StrictMode.allowThreadDiskReads() }
+        val allowFn = {
+            runs += 1
+            StrictMode.allowThreadDiskReads()
+        }
         debugManager.allowViolation(allowFn) {}
         assertEquals(1, runs)
     }
@@ -135,7 +132,10 @@ class StrictModeManagerTest {
     @Test
     fun `GIVEN we're in a release build WHEN allowViolation is called THEN the allowFn should not run`() {
         var runs = 0
-        val allowFn = { runs += 1; StrictMode.allowThreadDiskReads() }
+        val allowFn = {
+            runs += 1
+            StrictMode.allowThreadDiskReads()
+        }
         releaseManager.allowViolation(allowFn) {}
         assertEquals(0, runs)
     }
@@ -143,7 +143,7 @@ class StrictModeManagerTest {
     @Test
     fun `GIVEN we're in debug mode WHEN we suppress StrictMode THEN the suppressed count increases`() {
         assertEquals(0, debugManager.suppressionCount.get())
-        debugManager.allowViolation(StrictMode::allowThreadDiskReads) { }
+        debugManager.allowViolation(StrictMode::allowThreadDiskReads) {}
         assertEquals(1, debugManager.suppressionCount.get())
     }
 }

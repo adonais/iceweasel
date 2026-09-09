@@ -6,9 +6,7 @@ package org.mozilla.fenix.settings.studies
 
 import org.mozilla.experiments.nimbus.internal.EnrolledExperiment
 
-/**
- * Provides methods for handling the studies items.
- */
+/** Provides methods for handling the studies items. */
 interface StudiesAdapterDelegate {
     /**
      * Handler for when the remove button is clicked.

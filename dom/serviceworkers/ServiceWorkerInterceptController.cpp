@@ -7,7 +7,6 @@
 #include "ServiceWorkerManager.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
@@ -111,10 +110,7 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
 
   nsCOMPtr<nsIPrincipal> principal;
   nsresult rv = StoragePrincipalHelper::GetPrincipal(
-      aChannel,
-      StaticPrefs::privacy_partition_serviceWorkers()
-          ? StoragePrincipalHelper::eForeignPartitionedPrincipal
-          : StoragePrincipalHelper::eRegularPrincipal,
+      aChannel, StoragePrincipalHelper::eForeignPartitionedPrincipal,
       getter_AddRefs(principal));
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -143,7 +139,6 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
       (storageAccess == StorageAccess::ePrivateBrowsing &&
        StaticPrefs::dom_serviceWorkers_privateBrowsing_enabled()) ||
       (ShouldPartitionStorage(storageAccess) &&
-       StaticPrefs::privacy_partition_serviceWorkers() &&
        StoragePartitioningEnabled(storageAccess, cookieJarSettings) &&
        (!principal->GetIsInPrivateBrowsing() ||
         StaticPrefs::dom_serviceWorkers_privateBrowsing_enabled()));

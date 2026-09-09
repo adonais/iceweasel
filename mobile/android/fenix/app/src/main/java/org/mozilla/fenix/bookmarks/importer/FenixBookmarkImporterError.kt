@@ -7,9 +7,7 @@ package org.mozilla.fenix.bookmarks.importer
 import mozilla.components.concept.bookmark.parser.BookmarksParserError
 import mozilla.components.concept.bookmarks.file.BookmarksImporterError
 
-/**
- * Represents errors that can occur during the import process.
- */
+/** Represents errors that can occur during the import process. */
 enum class FenixBookmarkImporterError(val code: Int) {
     /**
      * Error reading the file
@@ -21,24 +19,24 @@ enum class FenixBookmarkImporterError(val code: Int) {
     /**
      * An unsupported content type while parsing.
      *
-     * Maps to [mozilla.components.concept.bookmarks.file.BookmarksImporterError.FileParseError]
-     * whose cause is [mozilla.components.concept.bookmark.parser.BookmarksParserError.UnsupportedContentType]
+     * Maps to [mozilla.components.concept.bookmarks.file.BookmarksImporterError.FileParseError] whose cause is
+     * [mozilla.components.concept.bookmark.parser.BookmarksParserError.UnsupportedContentType]
      */
     PARSE_ERROR_UNSUPPORTED_CONTENT_TYPE(2001),
 
     /**
      * An invalid format while parsing.
      *
-     * Maps to [mozilla.components.concept.bookmarks.file.BookmarksImporterError.FileParseError]
-     * whose cause is [mozilla.components.concept.bookmark.parser.BookmarksParserError.InvalidFormatError]
+     * Maps to [mozilla.components.concept.bookmarks.file.BookmarksImporterError.FileParseError] whose cause is
+     * [mozilla.components.concept.bookmark.parser.BookmarksParserError.InvalidFormatError]
      */
     PARSE_ERROR_INVALID_FORMAT(2002),
 
     /**
      * An unknown error while parsing.
      *
-     * Maps to [mozilla.components.concept.bookmarks.file.BookmarksImporterError.FileParseError]
-     * whose cause is [mozilla.components.concept.bookmark.parser.BookmarksParserError.UnexpectedError]
+     * Maps to [mozilla.components.concept.bookmarks.file.BookmarksImporterError.FileParseError] whose cause is
+     * [mozilla.components.concept.bookmark.parser.BookmarksParserError.UnexpectedError]
      */
     PARSE_ERROR_UNKNOWN(2003),
 
@@ -49,9 +47,7 @@ enum class FenixBookmarkImporterError(val code: Int) {
      */
     BOOKMARKS_SAVE_ERROR(3001),
 
-    /**
-     * An unknown error that doesn't fall into any other category.
-     */
+    /** An unknown error that doesn't fall into any other category. */
     UNKNOWN_ERROR(4001),
 }
 

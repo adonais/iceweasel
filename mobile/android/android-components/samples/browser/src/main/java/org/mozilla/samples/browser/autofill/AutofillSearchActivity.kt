@@ -9,8 +9,7 @@ import mozilla.components.feature.autofill.ui.AbstractAutofillSearchActivity
 import org.mozilla.samples.browser.ext.components
 
 /**
- * Activity responsible for letting the user manually search and pick credentials for auto-filling a
- * third-party app.
+ * Activity responsible for letting the user manually search and pick credentials for auto-filling a third-party app.
  */
 class AutofillSearchActivity : AbstractAutofillSearchActivity() {
     override val configuration: AutofillConfiguration by lazy { components.autofillConfiguration }

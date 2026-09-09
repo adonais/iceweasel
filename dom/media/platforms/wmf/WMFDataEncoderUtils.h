@@ -35,6 +35,11 @@ extern LazyLogModule sPEMLog;
 
 GUID CodecToSubtype(CodecType aCodec);
 
+// Whether the NV12 buffer fed to the MFT can be laid out for aSize. Applies
+// whatever the source format, since the MFT's input type is always NV12: the
+// single stride of aSize.width is short of a chroma row at odd widths.
+bool IsFrameSizeSupportedForNV12Input(const gfx::IntSize& aSize);
+
 media::EncodeSupportSet CanCreateWMFEncoder(const EncoderConfig& aConfig);
 
 already_AddRefed<MediaByteBuffer> ParseH264Parameters(

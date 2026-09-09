@@ -14,8 +14,8 @@ import mozilla.components.concept.menu.candidate.CompoundMenuCandidate
  * @param label The visible label of this menu item.
  * @param initialState The initial value the checkbox should have.
  * @param isCollapsingMenuLimit Whether this menu item can serve as the limit of a collapsing menu.
- * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards
- * depending on the menu position).
+ * @param isSticky whether this item menu should not be scrolled offscreen (downwards or upwards depending on the menu
+ *   position).
  * @param listener Callback to be invoked when this menu item is checked.
  */
 class BrowserMenuCheckbox(
@@ -27,7 +27,6 @@ class BrowserMenuCheckbox(
 ) : BrowserMenuCompoundButton(label, isCollapsingMenuLimit, isSticky, initialState, listener) {
     override fun getLayoutResource() = R.layout.mozac_browser_menu_item_checkbox
 
-    override fun asCandidate(context: Context) = super.asCandidate(context).copy(
-        end = CompoundMenuCandidate.ButtonType.CHECKBOX,
-    )
+    override fun asCandidate(context: Context) =
+        super.asCandidate(context).copy(end = CompoundMenuCandidate.ButtonType.CHECKBOX)
 }

@@ -12,21 +12,19 @@ import mozilla.components.browser.state.state.CustomTabSessionState
 import mozilla.components.concept.menu.candidate.TextMenuCandidate
 
 /**
- * Build menu items displayed when the 3-dot overflow menu is opened.
- * These items are provided by the app that creates the custom tab,
- * and should be inserted alongside menu items created by the browser.
+ * Build menu items displayed when the 3-dot overflow menu is opened. These items are provided by the app that creates
+ * the custom tab, and should be inserted alongside menu items created by the browser.
  */
 fun CustomTabSessionState.createCustomTabMenuCandidates(context: Context) =
     config.menuItems.map { item ->
-        TextMenuCandidate(
-            text = item.name,
-        ) {
+        TextMenuCandidate(text = item.name) {
             item.pendingIntent.sendWithUrl(context, content.url)
         }
     }
 
-internal fun PendingIntent.sendWithUrl(context: Context, url: String) = send(
-    context,
-    0,
-    Intent(null, url.toUri()),
-)
+internal fun PendingIntent.sendWithUrl(context: Context, url: String) =
+    send(
+        context,
+        0,
+        Intent(null, url.toUri()),
+    )

@@ -6,12 +6,12 @@ package mozilla.components.lib.state
 
 import androidx.annotation.CheckResult
 import androidx.annotation.VisibleForTesting
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import java.lang.ref.WeakReference
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * A generic store holding an immutable [State].
@@ -35,9 +35,7 @@ open class Store<S : State, A : Action>(
 
     private val mutableStateFlow = MutableStateFlow(initialState)
 
-    /**
-     * The current [State].
-     */
+    /** The current [State]. */
     val state: S
         get() = mutableStateFlow.value
 
@@ -55,9 +53,9 @@ open class Store<S : State, A : Action>(
      * [Subscription.unsubscribe] to stop observing and avoid potentially leaking memory by keeping an unused [Observer]
      * registered. It's is recommend to use one of the `observe` extension methods that unsubscribe automatically.
      *
-     * The created [Subscription] is in paused state until explicitly resumed by calling [Subscription.resume].
-     * While paused the [Subscription] will not receive any state updates. Once resumed the [observer]
-     * will get invoked immediately with the latest state.
+     * The created [Subscription] is in paused state until explicitly resumed by calling [Subscription.resume]. While
+     * paused the [Subscription] will not receive any state updates. Once resumed the [observer] will get invoked
+     * immediately with the latest state.
      *
      * @return A [Subscription] object that can be used to unsubscribe from further state changes.
      */
@@ -71,11 +69,9 @@ open class Store<S : State, A : Action>(
     }
 
     /**
-     * Dispatch an [Action] to the store in order to trigger a [State] change.
-     * This function may be invoked on any thread.
-     * Invocations are serialized by synchronizing on `this@Store`,
-     * preventing concurrent modification of the underlying store.
-     * Long running reducers and/or middlewares can and will impact all consumers.
+     * Dispatch an [Action] to the store in order to trigger a [State] change. This function may be invoked on any
+     * thread. Invocations are serialized by synchronizing on `this@Store`, preventing concurrent modification of the
+     * underlying store. Long running reducers and/or middlewares can and will impact all consumers.
      *
      * @return Unit. Previously this returned a new Job that was launched here, but this no longer happens.
      */
@@ -103,7 +99,8 @@ open class Store<S : State, A : Action>(
      * A [Subscription] is returned whenever an observer is registered via the [observeManually] method. Calling
      * [unsubscribe] on the [Subscription] will unregister the observer.
      */
-    class Subscription<S : State, A : Action> internal constructor(
+    class Subscription<S : State, A : Action>
+    internal constructor(
         internal val observer: Observer<S>,
         store: Store<S, A>,
     ) {
@@ -112,8 +109,8 @@ open class Store<S : State, A : Action>(
         private var active = false
 
         /**
-         * Resumes the [Subscription]. The [Observer] will get notified for every state change.
-         * Additionally it will get invoked immediately with the latest state.
+         * Resumes the [Subscription]. The [Observer] will get notified for every state change. Additionally it will get
+         * invoked immediately with the latest state.
          */
         @Synchronized
         fun resume() {
@@ -123,8 +120,8 @@ open class Store<S : State, A : Action>(
         }
 
         /**
-         * Pauses the [Subscription]. The [Observer] will not get notified when the state changes
-         * until [resume] is called.
+         * Pauses the [Subscription]. The [Observer] will not get notified when the state changes until [resume] is
+         * called.
          */
         @Synchronized
         fun pause() {
@@ -146,8 +143,7 @@ open class Store<S : State, A : Action>(
         /**
          * Unsubscribe from the [Store].
          *
-         * Calling this method will clear all references and the subscription will not longer be
-         * active.
+         * Calling this method will clear all references and the subscription will not longer be active.
          */
         @Synchronized
         fun unsubscribe() {

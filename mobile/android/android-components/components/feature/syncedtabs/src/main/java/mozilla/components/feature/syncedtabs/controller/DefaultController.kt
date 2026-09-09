@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.syncedtabs.controller
 
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +17,6 @@ import mozilla.components.feature.syncedtabs.view.SyncedTabsView.ErrorType
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.ext.withConstellationIfExists
 import mozilla.components.service.fxa.sync.SyncReason
-import kotlin.coroutines.CoroutineContext
 
 internal class DefaultController(
     override val provider: SyncedTabsProvider,
@@ -28,9 +28,7 @@ internal class DefaultController(
 
     private val scope = CoroutineScope(coroutineContext)
 
-    /**
-     * See [SyncedTabsController.refreshSyncedTabs]
-     */
+    /** See [SyncedTabsController.refreshSyncedTabs] */
     override fun refreshSyncedTabs() {
         scope.launch {
             accountManager.withConstellationIfExists {
@@ -54,9 +52,7 @@ internal class DefaultController(
         }
     }
 
-    /**
-     * See [SyncedTabsController.syncAccount]
-     */
+    /** See [SyncedTabsController.syncAccount] */
     override fun syncAccount() {
         view.startLoading()
         scope.launch {

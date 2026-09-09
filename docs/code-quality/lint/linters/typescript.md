@@ -30,6 +30,10 @@ See the [Usage guide] for more options.
 
 ## Common Issues and How To Solve Them
 
+### The TypeScript type information needs updating due to source code changes
+
+See [Updating Gecko Type Definitions](../../typescript/updatingTypes.md)
+
 ### This code should neither be linted nor formatted
 
 - If it is a third-party piece of code, please add it to {searchfox}`ThirdPartyPaths.txt <tools/rewriting/ThirdPartyPaths.txt>`.

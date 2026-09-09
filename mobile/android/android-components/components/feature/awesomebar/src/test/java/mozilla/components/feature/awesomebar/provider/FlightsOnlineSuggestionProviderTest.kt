@@ -4,6 +4,8 @@
 
 package mozilla.components.feature.awesomebar.provider
 
+import java.util.Locale
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -19,8 +21,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.verify
-import java.util.Locale
-import kotlin.test.assertNotNull
 
 private const val ARTIFICIAL_DELAY = 350L
 
@@ -39,12 +39,13 @@ class FlightsOnlineSuggestionProviderTest {
     fun setUp() {
         fakeDataSource = FakeCombinedOnlineSuggestionDataSource(flightResults = listOf(sampleFlightItem()))
 
-        provider = FlightsOnlineSuggestionProvider(
-            loadUrlUseCase = mock(),
-            dataSource = fakeDataSource,
-            suggestionsHeader = null,
-            maxNumberOfSuggestions = DEFAULT_FLIGHT_SUGGESTION_LIMIT,
-        )
+        provider =
+            FlightsOnlineSuggestionProvider(
+                loadUrlUseCase = mock(),
+                dataSource = fakeDataSource,
+                suggestionsHeader = null,
+                maxNumberOfSuggestions = DEFAULT_FLIGHT_SUGGESTION_LIMIT,
+            )
     }
 
     @Test
@@ -74,15 +75,15 @@ class FlightsOnlineSuggestionProviderTest {
     fun `onSuggestionClicked invokes search use case with query`() = runTest {
         val url = "https://www.flightaware.com/live/flight/AAL123"
         val loadUrlUseCase: LoadUrlUseCase = mock()
-        val localDateSource = FakeCombinedOnlineSuggestionDataSource(
-            flightResults = listOf(sampleFlightItem(url = url)),
-        )
-        val localProvider = FlightsOnlineSuggestionProvider(
-            loadUrlUseCase = loadUrlUseCase,
-            dataSource = localDateSource,
-            suggestionsHeader = null,
-            maxNumberOfSuggestions = DEFAULT_FLIGHT_SUGGESTION_LIMIT,
-        )
+        val localDateSource =
+            FakeCombinedOnlineSuggestionDataSource(flightResults = listOf(sampleFlightItem(url = url)))
+        val localProvider =
+            FlightsOnlineSuggestionProvider(
+                loadUrlUseCase = loadUrlUseCase,
+                dataSource = localDateSource,
+                suggestionsHeader = null,
+                maxNumberOfSuggestions = DEFAULT_FLIGHT_SUGGESTION_LIMIT,
+            )
 
         val deferred = async { localProvider.onInputChanged("aa123") }
         advanceTimeBy(ARTIFICIAL_DELAY)
@@ -97,20 +98,22 @@ class FlightsOnlineSuggestionProviderTest {
 
     @Test
     fun `respects maxNumberOfSuggestions`() = runTest {
-        val manyResults = listOf(
-            sampleFlightItem(url = "https://www.flightaware.com/live/flight/AAL123", flightNumber = "A"),
-            sampleFlightItem(url = "https://www.flightaware.com/live/flight/AAL105", flightNumber = "B"),
-            sampleFlightItem(url = "https://www.flightaware.com/live/flight/AAL101", flightNumber = "C"),
-        )
+        val manyResults =
+            listOf(
+                sampleFlightItem(url = "https://www.flightaware.com/live/flight/AAL123", flightNumber = "A"),
+                sampleFlightItem(url = "https://www.flightaware.com/live/flight/AAL105", flightNumber = "B"),
+                sampleFlightItem(url = "https://www.flightaware.com/live/flight/AAL101", flightNumber = "C"),
+            )
 
         val localDataSource = FakeCombinedOnlineSuggestionDataSource(flightResults = manyResults)
 
-        val limitedProvider = FlightsOnlineSuggestionProvider(
-            loadUrlUseCase = mock(),
-            dataSource = localDataSource,
-            suggestionsHeader = null,
-            maxNumberOfSuggestions = 1,
-        )
+        val limitedProvider =
+            FlightsOnlineSuggestionProvider(
+                loadUrlUseCase = mock(),
+                dataSource = localDataSource,
+                suggestionsHeader = null,
+                maxNumberOfSuggestions = 1,
+            )
 
         val deferred = async { limitedProvider.onInputChanged("flight") }
         advanceTimeBy(ARTIFICIAL_DELAY)
@@ -121,12 +124,13 @@ class FlightsOnlineSuggestionProviderTest {
 
     @Test
     fun `id is stable per instance`() = runTest {
-        val p = FlightsOnlineSuggestionProvider(
-            loadUrlUseCase = mock(),
-            dataSource = fakeDataSource,
-            suggestionsHeader = null,
-            maxNumberOfSuggestions = 1,
-        )
+        val p =
+            FlightsOnlineSuggestionProvider(
+                loadUrlUseCase = mock(),
+                dataSource = fakeDataSource,
+                suggestionsHeader = null,
+                maxNumberOfSuggestions = 1,
+            )
 
         val id1 = p.id
         val deferred = async { p.onInputChanged("sport") }
@@ -140,12 +144,13 @@ class FlightsOnlineSuggestionProviderTest {
     @Test
     fun `cancellation before delay prevents data source call`() = runTest {
         val localDataSource = fakeDataSource
-        val cancellableProvider = FlightsOnlineSuggestionProvider(
-            loadUrlUseCase = mock(),
-            dataSource = localDataSource,
-            suggestionsHeader = null,
-            maxNumberOfSuggestions = 1,
-        )
+        val cancellableProvider =
+            FlightsOnlineSuggestionProvider(
+                loadUrlUseCase = mock(),
+                dataSource = localDataSource,
+                suggestionsHeader = null,
+                maxNumberOfSuggestions = 1,
+            )
 
         val job = async { cancellableProvider.onInputChanged("flight") }
 
@@ -206,16 +211,18 @@ class FlightsOnlineSuggestionProviderTest {
     @Test
     fun `parseFlightData uses estimatedTime when available`() {
         val airport = FlightItem.Airport(code = "LAX", city = "Los Angeles")
-        val timing = FlightItem.Timing(
-            scheduledTime = "2025-10-05T13:05:00-07:00",
-            estimatedTime = "2025-10-05T15:05:00-07:00",
-        )
+        val timing =
+            FlightItem.Timing(
+                scheduledTime = "2025-10-05T13:05:00-07:00",
+                estimatedTime = "2025-10-05T15:05:00-07:00",
+            )
 
-        val result = provider.parseFlightData(
-            airport = airport,
-            time = timing,
-            locale = Locale.US,
-        )
+        val result =
+            provider.parseFlightData(
+                airport = airport,
+                time = timing,
+                locale = Locale.US,
+            )
 
         assertNotNull(result)
         assertEquals("LAX", result.airportCode)
@@ -227,16 +234,18 @@ class FlightsOnlineSuggestionProviderTest {
     @Test
     fun `parseFlightData uses scheduledTime when estimatedTime is not available`() {
         val airport = FlightItem.Airport(code = "JFK", city = "New York")
-        val timing = FlightItem.Timing(
-            scheduledTime = "2025-10-05T13:05:00-04:00",
-            estimatedTime = null,
-        )
+        val timing =
+            FlightItem.Timing(
+                scheduledTime = "2025-10-05T13:05:00-04:00",
+                estimatedTime = null,
+            )
 
-        val result = provider.parseFlightData(
-            airport = airport,
-            time = timing,
-            locale = Locale.US,
-        )
+        val result =
+            provider.parseFlightData(
+                airport = airport,
+                time = timing,
+                locale = Locale.US,
+            )
 
         assertNotNull(result)
         assertEquals("JFK", result.airportCode)
@@ -248,15 +257,17 @@ class FlightsOnlineSuggestionProviderTest {
     @Test
     fun `parseFlightData returns null for invalid ISO date format`() {
         val airport = FlightItem.Airport(code = "LAX", city = "Los Angeles")
-        val timing = FlightItem.Timing(
-            scheduledTime = "invalid-date-format",
-            estimatedTime = null,
-        )
+        val timing =
+            FlightItem.Timing(
+                scheduledTime = "invalid-date-format",
+                estimatedTime = null,
+            )
 
-        val result = provider.parseFlightData(
-            airport = airport,
-            time = timing,
-        )
+        val result =
+            provider.parseFlightData(
+                airport = airport,
+                time = timing,
+            )
 
         assertNull(result)
     }
@@ -266,27 +277,31 @@ class FlightsOnlineSuggestionProviderTest {
         // The destination airport is one hour ahead of the departure airport. The arrival time
         // must be shown in the destination's local time, not re-projected onto another zone.
         val departureAirport = FlightItem.Airport(code = "BNA", city = "Nashville")
-        val departureTiming = FlightItem.Timing(
-            scheduledTime = "2025-10-05T22:13:00-06:00",
-            estimatedTime = null,
-        )
+        val departureTiming =
+            FlightItem.Timing(
+                scheduledTime = "2025-10-05T22:13:00-06:00",
+                estimatedTime = null,
+            )
         val arrivalAirport = FlightItem.Airport(code = "PHL", city = "Philadelphia")
-        val arrivalTiming = FlightItem.Timing(
-            scheduledTime = "2025-10-06T00:13:00-05:00",
-            estimatedTime = null,
-        )
+        val arrivalTiming =
+            FlightItem.Timing(
+                scheduledTime = "2025-10-06T00:13:00-05:00",
+                estimatedTime = null,
+            )
 
-        val departureResult = provider.parseFlightData(
-            airport = departureAirport,
-            time = departureTiming,
-            locale = Locale.US,
-        )
+        val departureResult =
+            provider.parseFlightData(
+                airport = departureAirport,
+                time = departureTiming,
+                locale = Locale.US,
+            )
 
-        val arrivalResult = provider.parseFlightData(
-            airport = arrivalAirport,
-            time = arrivalTiming,
-            locale = Locale.US,
-        )
+        val arrivalResult =
+            provider.parseFlightData(
+                airport = arrivalAirport,
+                time = arrivalTiming,
+                locale = Locale.US,
+            )
 
         assertNotNull(departureResult)
         assertNotNull(arrivalResult)
@@ -299,22 +314,25 @@ class FlightsOnlineSuggestionProviderTest {
     @Test
     fun `parseFlightData formats date with different locale`() {
         val airport = FlightItem.Airport(code = "CDG", city = "Paris")
-        val timing = FlightItem.Timing(
-            scheduledTime = "2025-10-05T13:05:00+02:00",
-            estimatedTime = null,
-        )
+        val timing =
+            FlightItem.Timing(
+                scheduledTime = "2025-10-05T13:05:00+02:00",
+                estimatedTime = null,
+            )
 
-        val resultUS = provider.parseFlightData(
-            airport = airport,
-            time = timing,
-            locale = Locale.US,
-        )
+        val resultUS =
+            provider.parseFlightData(
+                airport = airport,
+                time = timing,
+                locale = Locale.US,
+            )
 
-        val resultFrance = provider.parseFlightData(
-            airport = airport,
-            time = timing,
-            locale = Locale.FRANCE,
-        )
+        val resultFrance =
+            provider.parseFlightData(
+                airport = airport,
+                time = timing,
+                locale = Locale.FRANCE,
+            )
 
         assertNotNull(resultUS)
         assertNotNull(resultFrance)
@@ -336,39 +354,45 @@ private fun sampleFlightItem(
     delayed: Boolean = false,
     url: String = "https://flightaware.com/live/flight/AAL123",
     airline: FlightItem.Airline = sampleAirline,
-) = FlightItem(
-    flightNumber = flightNumber,
-    destination = destination,
-    origin = origin,
-    departure = departure,
-    arrival = arrival,
-    status = status,
-    progressPercent = progressPercent,
-    timeLeftMinutes = timeLeftMinutes,
-    delayed = delayed,
-    url = url,
-    airline = airline,
-)
+) =
+    FlightItem(
+        flightNumber = flightNumber,
+        destination = destination,
+        origin = origin,
+        departure = departure,
+        arrival = arrival,
+        status = status,
+        progressPercent = progressPercent,
+        timeLeftMinutes = timeLeftMinutes,
+        delayed = delayed,
+        url = url,
+        airline = airline,
+    )
 
-private val sampleDestination = FlightItem.Airport(
-    code = "JFK",
-    city = "New York",
-)
-private val sampleOrigin = FlightItem.Airport(
-    code = "LAX",
-    city = "Los Angeles",
-)
-private val sampleDeparture = FlightItem.Timing(
-    scheduledTime = "2025-10-05T13:05:00-07:00",
-    estimatedTime = "2025-10-05T15:05:00-07:00",
-)
-private val sampleArrival = FlightItem.Timing(
-    scheduledTime = "2025-10-05T18:20:00-04:00",
-    estimatedTime = "2025-10-05T18:25:00-04:00",
-)
-private val sampleAirline = FlightItem.Airline(
-    code = "AAL",
-    name = "American Airlines",
-    color = "#0078D2",
-    icon = null,
-)
+private val sampleDestination =
+    FlightItem.Airport(
+        code = "JFK",
+        city = "New York",
+    )
+private val sampleOrigin =
+    FlightItem.Airport(
+        code = "LAX",
+        city = "Los Angeles",
+    )
+private val sampleDeparture =
+    FlightItem.Timing(
+        scheduledTime = "2025-10-05T13:05:00-07:00",
+        estimatedTime = "2025-10-05T15:05:00-07:00",
+    )
+private val sampleArrival =
+    FlightItem.Timing(
+        scheduledTime = "2025-10-05T18:20:00-04:00",
+        estimatedTime = "2025-10-05T18:25:00-04:00",
+    )
+private val sampleAirline =
+    FlightItem.Airline(
+        code = "AAL",
+        name = "American Airlines",
+        color = "#0078D2",
+        icon = null,
+    )

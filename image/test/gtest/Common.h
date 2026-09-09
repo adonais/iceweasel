@@ -607,6 +607,8 @@ ImageTestCase ProgressiveAlphaMultiGroupJXLTestCase();
 
 ImageTestCase ExifResolutionTestCase();
 
+ImageTestCase ExifOrientationDownscaleJPGTestCase();
+
 RefPtr<Image> TestCaseToDecodedImage(const ImageTestCase&);
 
 }  // namespace image

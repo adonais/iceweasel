@@ -9,9 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import org.mozilla.fenix.tabstray.repository.uistate.TabManagerUiStateRepository
 import org.mozilla.fenix.tabstray.repository.uistate.data.PersistedUIState
 
-class FakeTabManagerUiStateRepository(
-    initialPersistedUIState: PersistedUIState? = null,
-) : TabManagerUiStateRepository {
+class FakeTabManagerUiStateRepository(initialPersistedUIState: PersistedUIState? = null) : TabManagerUiStateRepository {
 
     private val uiStateFlow: MutableStateFlow<PersistedUIState?> = MutableStateFlow(initialPersistedUIState)
 

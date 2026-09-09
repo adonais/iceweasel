@@ -10,22 +10,26 @@ import android.widget.TextView
 import androidx.core.view.isGone
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
-import org.mozilla.fenix.R
 import kotlin.properties.Delegates
+import org.mozilla.fenix.R
 
-class AccountPreference @JvmOverloads constructor(
+class AccountPreference
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : Preference(context, attrs) {
     private var emailView: TextView? = null
     private var displayNameView: TextView? = null
-    var displayName: String? by Delegates.observable(null) { _, _, new ->
-        updateDisplayName(new)
-    }
+    var displayName: String? by
+        Delegates.observable(null) { _, _, new ->
+            updateDisplayName(new)
+        }
 
-    var email: String? by Delegates.observable(null) { _, _, new ->
-        new?.let { updateEmailText(it) }
-    }
+    var email: String? by
+        Delegates.observable(null) { _, _, new ->
+            new?.let { updateEmailText(it) }
+        }
 
     init {
         layoutResource = R.layout.account_preference

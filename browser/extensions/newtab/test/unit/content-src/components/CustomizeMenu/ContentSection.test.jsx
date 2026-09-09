@@ -306,6 +306,52 @@ describe("ContentSection", () => {
     );
   });
 
+  it("should dispatch WIDGETS_ENABLED with widget_name=recent_searches when the recent searches toggle fires", () => {
+    const dispatch = sinon.spy();
+    wrapper = mount(
+      <ContentSection
+        {...DEFAULT_PROPS}
+        dispatch={dispatch}
+        // The classic-path widget toggles render only when the widgets
+        // section is available and Nova is off.
+        mayHaveWidgets={true}
+        novaEnabled={false}
+        mayHaveRecentSearchesWidget={true}
+        enabledWidgets={{
+          recentSearchesEnabled: false,
+          widgetsMaximized: false,
+          widgetsMayBeMaximized: false,
+        }}
+      />
+    );
+
+    assert.ok(
+      wrapper.find("#recent-searches-widget-section").exists(),
+      "Expected the recent searches toggle section to render"
+    );
+
+    wrapper.instance().onPreferenceSelect({
+      target: {
+        nodeName: "INPUT",
+        checked: true,
+        dataset: {
+          preference: "widgets.recentSearches.enabled",
+          eventSource: "WIDGET_RECENT_SEARCHES",
+        },
+      },
+    });
+
+    const widgetsEnabledCall = dispatch
+      .getCalls()
+      .find(call => call.args[0].type === "WIDGETS_ENABLED");
+    assert.ok(widgetsEnabledCall, "Expected WIDGETS_ENABLED to be dispatched");
+    assert.equal(
+      widgetsEnabledCall.args[0].data.widget_name,
+      "recent_searches",
+      "widget_name should be recent_searches"
+    );
+  });
+
   it("should dispatch WIDGETS_ENABLED with widget_size=small for Weather widget", () => {
     const dispatch = sinon.spy();
     wrapper = mount(

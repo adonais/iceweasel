@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package org.mozilla.fenix.dataChoicesStore
 
 import androidx.navigation.NavController
@@ -121,16 +125,15 @@ class DataChoicesMiddlewareTest {
     }
 
     @Test
-    fun `when a crash report option is selected then it is saved to the crash report cache`() =
-        runTest {
-            val store = makeStore(this)
+    fun `when a crash report option is selected then it is saved to the crash report cache`() = runTest {
+        val store = makeStore(this)
 
-            store.dispatch(ChoiceAction.ReportOptionClicked(CrashReportOption.Never))
-            testScheduler.advanceUntilIdle()
+        store.dispatch(ChoiceAction.ReportOptionClicked(CrashReportOption.Never))
+        testScheduler.advanceUntilIdle()
 
-            coVerify { crashReportCache.setReportOption(CrashReportOption.Never) }
-            assertEquals(CrashReportOption.Never, store.state.selectedCrashOption)
-        }
+        coVerify { crashReportCache.setReportOption(CrashReportOption.Never) }
+        assertEquals(CrashReportOption.Never, store.state.selectedCrashOption)
+    }
 
     @Test
     fun `when studies is clicked then navigation to the studies screen is triggered`() = runTest {
@@ -152,41 +155,42 @@ class DataChoicesMiddlewareTest {
     }
 
     @Test
-    fun `when learn more is clicked then the corresponding help topic callback is invoked`() =
-        runTest {
-            var invokedTopic: SupportUtils.SumoTopic? = null
-            val store = makeStore(scope = this) { topic -> invokedTopic = topic }
+    fun `when learn more is clicked then the corresponding help topic callback is invoked`() = runTest {
+        var invokedTopic: SupportUtils.SumoTopic? = null
+        val store = makeStore(scope = this) { topic -> invokedTopic = topic }
 
-            store.dispatch(LearnMore.TelemetryLearnMoreClicked)
-            assertEquals(SupportUtils.SumoTopic.TECHNICAL_AND_INTERACTION_DATA, invokedTopic)
+        store.dispatch(LearnMore.TelemetryLearnMoreClicked)
+        assertEquals(SupportUtils.SumoTopic.TECHNICAL_AND_INTERACTION_DATA, invokedTopic)
 
-            store.dispatch(LearnMore.MeasurementDataLearnMoreClicked)
-            assertEquals(SupportUtils.SumoTopic.MARKETING_DATA, invokedTopic)
+        store.dispatch(LearnMore.MeasurementDataLearnMoreClicked)
+        assertEquals(SupportUtils.SumoTopic.MARKETING_DATA, invokedTopic)
 
-            store.dispatch(LearnMore.CrashLearnMoreClicked)
-            assertEquals(SupportUtils.SumoTopic.CRASH_REPORTS, invokedTopic)
+        store.dispatch(LearnMore.CrashLearnMoreClicked)
+        assertEquals(SupportUtils.SumoTopic.CRASH_REPORTS, invokedTopic)
 
-            store.dispatch(LearnMore.UsagePingLearnMoreClicked)
-            assertEquals(SupportUtils.SumoTopic.USAGE_PING_SETTINGS, invokedTopic)
-        }
+        store.dispatch(LearnMore.UsagePingLearnMoreClicked)
+        assertEquals(SupportUtils.SumoTopic.USAGE_PING_SETTINGS, invokedTopic)
+    }
 
     private fun makeStore(
         scope: CoroutineScope,
         learnMoreClicked: (SupportUtils.SumoTopic) -> Unit = {},
-    ) = DataChoicesStore(
-        initialState = DataChoicesState(),
-        middleware = listOf(
-            DataChoicesMiddleware(
-                settings = settings,
-                learnMoreClicked = learnMoreClicked,
-                nimbusSdk = nimbus,
-                engine = engine,
-                metrics = metrics,
-                crashReporter = crashReporter,
-                navController = nav,
-                crashReportCache = crashReportCache,
-                scope = scope,
-            ),
-        ),
-    )
+    ) =
+        DataChoicesStore(
+            initialState = DataChoicesState(),
+            middleware =
+                listOf(
+                    DataChoicesMiddleware(
+                        settings = settings,
+                        learnMoreClicked = learnMoreClicked,
+                        nimbusSdk = nimbus,
+                        engine = engine,
+                        metrics = metrics,
+                        crashReporter = crashReporter,
+                        navController = nav,
+                        crashReportCache = crashReportCache,
+                        scope = scope,
+                    )
+                ),
+        )
 }

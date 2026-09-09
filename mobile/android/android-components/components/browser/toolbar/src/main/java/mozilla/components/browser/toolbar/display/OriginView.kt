@@ -21,73 +21,66 @@ import mozilla.components.browser.toolbar.R
 import mozilla.components.concept.toolbar.Toolbar
 import mozilla.components.support.ktx.android.view.pixelSizeFor
 
-/**
- * View displaying the URL and optionally the title of a website.
- */
-internal class OriginView @JvmOverloads constructor(
+/** View displaying the URL and optionally the title of a website. */
+internal class OriginView
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
 ) : LinearLayout(context, attrs, defStyleAttr) {
     internal lateinit var toolbar: BrowserToolbar
 
-    private val textSizeUrlNormal = context.resources.getDimension(
-        R.dimen.mozac_browser_toolbar_url_textsize,
-    )
-    private val textSizeUrlWithTitle = context.resources.getDimension(
-        R.dimen.mozac_browser_toolbar_url_with_title_textsize,
-    )
-    private val textSizeTitle = context.resources.getDimension(
-        R.dimen.mozac_browser_toolbar_title_textsize,
-    )
+    private val textSizeUrlNormal = context.resources.getDimension(R.dimen.mozac_browser_toolbar_url_textsize)
+    private val textSizeUrlWithTitle =
+        context.resources.getDimension(R.dimen.mozac_browser_toolbar_url_with_title_textsize)
+    private val textSizeTitle = context.resources.getDimension(R.dimen.mozac_browser_toolbar_title_textsize)
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal val urlView = TextView(context).apply {
-        id = R.id.mozac_browser_toolbar_url_view
-        setTextSize(TypedValue.COMPLEX_UNIT_PX, textSizeUrlNormal)
-        gravity = Gravity.CENTER_VERTICAL
+    internal val urlView =
+        TextView(context).apply {
+            id = R.id.mozac_browser_toolbar_url_view
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, textSizeUrlNormal)
+            gravity = Gravity.CENTER_VERTICAL
 
-        setSingleLine()
-        isClickable = true
-        isFocusable = true
+            setSingleLine()
+            isClickable = true
+            isFocusable = true
 
-        textDirection = View.TEXT_DIRECTION_LTR
-        layoutDirection = View.LAYOUT_DIRECTION_LTR
+            textDirection = View.TEXT_DIRECTION_LTR
+            layoutDirection = View.LAYOUT_DIRECTION_LTR
 
-        setOnClickListener {
-            if (onUrlClicked()) {
-                toolbar.editMode()
+            setOnClickListener {
+                if (onUrlClicked()) {
+                    toolbar.editMode()
+                }
             }
+
+            val fadingEdgeSize = pixelSizeFor(R.dimen.mozac_browser_toolbar_url_fading_edge_size)
+
+            setFadingEdgeLength(fadingEdgeSize)
+            isHorizontalFadingEdgeEnabled = fadingEdgeSize > 0
         }
 
-        val fadingEdgeSize = pixelSizeFor(
-            R.dimen.mozac_browser_toolbar_url_fading_edge_size,
-        )
-
-        setFadingEdgeLength(fadingEdgeSize)
-        isHorizontalFadingEdgeEnabled = fadingEdgeSize > 0
-    }
-
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal val titleView = TextView(context).apply {
-        id = R.id.mozac_browser_toolbar_title_view
-        visibility = View.GONE
+    internal val titleView =
+        TextView(context).apply {
+            id = R.id.mozac_browser_toolbar_title_view
+            visibility = View.GONE
 
-        setTextSize(
-            TypedValue.COMPLEX_UNIT_PX,
-            textSizeTitle,
-        )
-        gravity = Gravity.CENTER_VERTICAL
+            setTextSize(
+                TypedValue.COMPLEX_UNIT_PX,
+                textSizeTitle,
+            )
+            gravity = Gravity.CENTER_VERTICAL
 
-        setSingleLine()
+            setSingleLine()
 
-        val fadingEdgeSize = pixelSizeFor(
-            R.dimen.mozac_browser_toolbar_url_fading_edge_size,
-        )
+            val fadingEdgeSize = pixelSizeFor(R.dimen.mozac_browser_toolbar_url_fading_edge_size)
 
-        setFadingEdgeLength(fadingEdgeSize)
-        isHorizontalFadingEdgeEnabled = fadingEdgeSize > 0
-    }
+            setFadingEdgeLength(fadingEdgeSize)
+            isHorizontalFadingEdgeEnabled = fadingEdgeSize > 0
+        }
 
     init {
         orientation = VERTICAL
@@ -140,25 +133,27 @@ internal class OriginView @JvmOverloads constructor(
         titleView.setOnLongClickListener(handler)
     }
 
-    /**
-     * Scrolls the URL view to ensure the registrable domain is visible.
-     */
+    /** Scrolls the URL view to ensure the registrable domain is visible. */
     @VisibleForTesting
     internal fun scrollToShowRegistrableDomain() {
         val text = urlView.text
 
-        val spans = (text as? Spanned)?.getSpans(
-            0,
-            text.length,
-            Toolbar.RegistrableDomainColorSpan::class.java,
-        )
-
-        if (spans?.size == 1) {
-            val registrableDomainSpan = (urlView.text as? Spanned)?.getSpans(
+        val spans =
+            (text as? Spanned)?.getSpans(
                 0,
                 text.length,
                 Toolbar.RegistrableDomainColorSpan::class.java,
-            )?.getOrNull(0)
+            )
+
+        if (spans?.size == 1) {
+            val registrableDomainSpan =
+                (urlView.text as? Spanned)
+                    ?.getSpans(
+                        0,
+                        text.length,
+                        Toolbar.RegistrableDomainColorSpan::class.java,
+                    )
+                    ?.getOrNull(0)
 
             val valueUntilRegistrableDomainEnd = text.subSequence(0, text.getSpanEnd(registrableDomainSpan))
 
@@ -176,8 +171,7 @@ internal class OriginView @JvmOverloads constructor(
         urlView.scrollTo(0, 0)
     }
 
-    @VisibleForTesting
-    internal fun measureUrlTextWidh(text: String) = urlView.paint.measureText(text)
+    @VisibleForTesting internal fun measureUrlTextWidh(text: String) = urlView.paint.measureText(text)
 
     internal var url: CharSequence
         get() = urlView.text
@@ -187,56 +181,50 @@ internal class OriginView @JvmOverloads constructor(
             scrollToShowRegistrableDomain()
         }
 
-    /**
-     * Sets the colour of the text to be displayed when the URL of the toolbar is empty.
-     */
+    /** Sets the colour of the text to be displayed when the URL of the toolbar is empty. */
     var hintColor: Int
         get() = urlView.currentHintTextColor
         set(value) {
             urlView.setHintTextColor(value)
         }
 
-    /**
-     * Sets the text to be displayed when the URL of the toolbar is empty.
-     */
+    /** Sets the text to be displayed when the URL of the toolbar is empty. */
     var hint: String
         get() = urlView.hint.toString()
-        set(value) { urlView.hint = value }
+        set(value) {
+            urlView.hint = value
+        }
 
-    /**
-     * Sets the colour of the text for title displayed in the toolbar.
-     */
+    /** Sets the colour of the text for title displayed in the toolbar. */
     var titleColor: Int
         get() = urlView.currentTextColor
-        set(value) { titleView.setTextColor(value) }
+        set(value) {
+            titleView.setTextColor(value)
+        }
 
-    /**
-     * Sets the colour of the text for the URL/search term displayed in the toolbar.
-     */
+    /** Sets the colour of the text for the URL/search term displayed in the toolbar. */
     var textColor: Int
         get() = urlView.currentTextColor
-        set(value) { urlView.setTextColor(value) }
+        set(value) {
+            urlView.setTextColor(value)
+        }
 
-    /**
-     * Sets the size of the text for the title displayed in the toolbar.
-     */
+    /** Sets the size of the text for the title displayed in the toolbar. */
     var titleTextSize: Float
         get() = titleView.textSize
-        set(value) { titleView.textSize = value }
+        set(value) {
+            titleView.textSize = value
+        }
 
-    /**
-     * Sets the size of the text for the URL/search term displayed in the toolbar.
-     */
+    /** Sets the size of the text for the URL/search term displayed in the toolbar. */
     var textSize: Float
         get() = urlView.textSize
         set(value) {
             urlView.textSize = value
         }
 
-    /**
-     * Sets the typeface of the text for the URL/search term displayed in the toolbar.
-     */
-    var typeface: Typeface
+    /** Sets the typeface of the text for the URL/search term displayed in the toolbar. */
+    var typeface: Typeface?
         get() = urlView.typeface
         set(value) {
             urlView.typeface = value

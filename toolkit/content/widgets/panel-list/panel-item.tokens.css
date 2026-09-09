@@ -7,9 +7,9 @@
 
 @layer tokens-foundation, tokens-browser-theme, tokens-foundation-brand, tokens-foundation-nova, tokens-browser-theme-nova, tokens-foundation-brand-nova, tokens-prefers-contrast, tokens-prefers-contrast-nova, tokens-forced-colors, tokens-forced-colors-nova;
 
-@layer tokens-foundation {
-  :root,
-  :host {
+:root,
+:host {
+  @layer tokens-foundation {
     --panel-item-badge-inset-block-start: 4px;
     --panel-item-badge-inset-inline-start: 24px;
     --panel-item-button-border-radius: 0;
@@ -17,12 +17,9 @@
     --panel-item-button-padding: var(--space-xsmall) var(--space-small);
     --panel-item-button-padding-inline-start: var(--space-xxlarge);
   }
-}
 
-@media -moz-pref("browser.nova.enabled") {
-  @layer tokens-foundation-nova {
-    :root,
-    :host {
+  @media -moz-pref("browser.nova.enabled") {
+    @layer tokens-foundation-nova {
       --panel-item-badge-inset-block-start: var(--space-xsmall);
       --panel-item-badge-inset-inline-start: calc(var(--panel-menuitem-padding-inline) + var(--icon-size));
       --panel-item-button-border-radius: var(--panel-menuitem-border-radius);

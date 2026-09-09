@@ -10,9 +10,7 @@ import mozilla.components.feature.addons.ui.AddonsManagerAdapterDelegate
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.navigateSafe
 
-/**
- * View used for managing add-ons.
- */
+/** View used for managing add-ons. */
 class AddonsManagementView(
     private val navController: NavController,
     private val onInstallButtonClicked: (Addon) -> Unit,
@@ -47,25 +45,19 @@ class AddonsManagementView(
     }
 
     private fun showInstalledAddonDetailsFragment(addon: Addon) {
-        val directions =
-            AddonsManagementFragmentDirections.actionAddonsManagementFragmentToInstalledAddonDetails(
-                addon,
-            )
+        val directions = AddonsManagementFragmentDirections.actionAddonsManagementFragmentToInstalledAddonDetails(addon)
         navController.navigateSafe(R.id.addonsManagementFragment, directions)
     }
 
     private fun showDetailsFragment(addon: Addon) {
-        val directions =
-            AddonsManagementFragmentDirections.actionAddonsManagementFragmentToAddonDetailsFragment(
-                addon,
-            )
+        val directions = AddonsManagementFragmentDirections.actionAddonsManagementFragmentToAddonDetailsFragment(addon)
         navController.navigateSafe(R.id.addonsManagementFragment, directions)
     }
 
     private fun showNotYetSupportedAddonFragment(unsupportedAddons: List<Addon>) {
         val directions =
             AddonsManagementFragmentDirections.actionAddonsManagementFragmentToNotYetSupportedAddonFragment(
-                unsupportedAddons.toTypedArray(),
+                unsupportedAddons.toTypedArray()
             )
         navController.navigate(directions)
     }

@@ -265,6 +265,8 @@ class MacroAssemblerLOONG64 : public Assembler {
 
   void ma_xor(Register rd, Register rj, Imm32 imm);
 
+  void ma_nor(Register rd, Register rj, Imm32 imm);
+
   // load
   FaultingCodeRange ma_load(Register dest, const BaseIndex& src,
                             LoadStoreSize size = SizeWord,

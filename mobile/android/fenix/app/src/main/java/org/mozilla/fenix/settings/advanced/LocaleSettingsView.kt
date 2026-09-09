@@ -8,9 +8,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
+import java.util.Locale
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.ComponentLocaleSettingsBinding
-import java.util.Locale
 
 interface LocaleSettingsViewInteractor {
 
@@ -26,8 +26,7 @@ class LocaleSettingsView(
     val interactor: LocaleSettingsViewInteractor,
 ) {
 
-    val view: View = LayoutInflater.from(container.context)
-        .inflate(R.layout.component_locale_settings, container, true)
+    val view: View = LayoutInflater.from(container.context).inflate(R.layout.component_locale_settings, container, true)
 
     val binding = ComponentLocaleSettingsBinding.bind(view)
 

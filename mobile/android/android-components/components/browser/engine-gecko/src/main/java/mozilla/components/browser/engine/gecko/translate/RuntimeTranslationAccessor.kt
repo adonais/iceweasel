@@ -22,17 +22,17 @@ import org.mozilla.geckoview.TranslationsController
  * Accessor interface for interacting with the static methods of
  * [org.mozilla.geckoview.TranslationsController.RuntimeTranslation].
  *
- * This interface provides a way to abstract the static calls, primarily for testability.
- * It mirrors the callback-based asynchronous pattern used by consumers like `GeckoEngine`.
+ * This interface provides a way to abstract the static calls, primarily for testability. It mirrors the callback-based
+ * asynchronous pattern used by consumers like `GeckoEngine`.
  *
- * Instead of returning a result object (like GeckoResult), each method accepts
- * `onSuccess` and `onError` callbacks to handle the asynchronous outcome.
+ * Instead of returning a result object (like GeckoResult), each method accepts `onSuccess` and `onError` callbacks to
+ * handle the asynchronous outcome.
  */
 interface RuntimeTranslationAccessor {
 
     /**
-     * Checks if the translations engine is supported by the current runtime.
-     * Corresponds to [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.isTranslationsEngineSupported].
+     * Checks if the translations engine is supported by the current runtime. Corresponds to
+     * [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.isTranslationsEngineSupported].
      *
      * @param onSuccess Callback invoked with `true` if supported, `false` otherwise.
      * @param onError Callback invoked if the check fails or an error occurs.
@@ -43,8 +43,8 @@ interface RuntimeTranslationAccessor {
     )
 
     /**
-     * Retrieves the estimated download size for a given language pair.
-     * Corresponds to [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.checkPairDownloadSize].
+     * Retrieves the estimated download size for a given language pair. Corresponds to
+     * [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.checkPairDownloadSize].
      *
      * @param fromLanguage The BCP-47 language code of the source language.
      * @param toLanguage The BCP-47 language code of the target language.
@@ -59,9 +59,9 @@ interface RuntimeTranslationAccessor {
     )
 
     /**
-     * Lists the download states of all available translation language models.
-     * Adapts the result from `TranslationsController` to `List<LanguageModel>`.
-     * Corresponds to [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.listModelDownloadStates].
+     * Lists the download states of all available translation language models. Adapts the result from
+     * `TranslationsController` to `List<LanguageModel>`. Corresponds to
+     * [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.listModelDownloadStates].
      *
      * @param onSuccess Callback invoked with a list of [LanguageModel] objects.
      * @param onError Callback invoked if the operation fails.
@@ -72,9 +72,9 @@ interface RuntimeTranslationAccessor {
     )
 
     /**
-     * Retrieves the list of supported "from" and "to" languages for translation.
-     * Adapts the result to the `TranslationSupport` data class.
-     * Corresponds to [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.listSupportedLanguages].
+     * Retrieves the list of supported "from" and "to" languages for translation. Adapts the result to the
+     * `TranslationSupport` data class. Corresponds to
+     * [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.listSupportedLanguages].
      *
      * @param onSuccess Callback invoked with a [TranslationSupport] object.
      * @param onError Callback invoked if the operation fails.
@@ -85,8 +85,8 @@ interface RuntimeTranslationAccessor {
     )
 
     /**
-     * Manages translation language models (e.g., install, remove).
-     * Corresponds to [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.manageLanguageModel].
+     * Manages translation language models (e.g., install, remove). Corresponds to
+     * [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.manageLanguageModel].
      *
      * @param options The [ManageModelOptions] specifying the operation to perform.
      * @param onSuccess Callback invoked on successful completion.
@@ -99,8 +99,8 @@ interface RuntimeTranslationAccessor {
     )
 
     /**
-     * Retrieves the list of user-preferred languages as BCP-47 codes.
-     * Corresponds to [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.preferredLanguages].
+     * Retrieves the list of user-preferred languages as BCP-47 codes. Corresponds to
+     * [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.preferredLanguages].
      *
      * @param onSuccess Callback invoked with a list of language code strings.
      * @param onError Callback invoked if the operation fails.
@@ -111,8 +111,8 @@ interface RuntimeTranslationAccessor {
     )
 
     /**
-     * Retrieves the translation setting for a specific language.
-     * Corresponds to [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.getLanguageSetting].
+     * Retrieves the translation setting for a specific language. Corresponds to
+     * [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.getLanguageSetting].
      *
      * @param languageCode The BCP-47 language code.
      * @param onSuccess Callback invoked with the [LanguageSetting] for the language.
@@ -125,8 +125,8 @@ interface RuntimeTranslationAccessor {
     )
 
     /**
-     * Sets the translation setting for a specific language.
-     * Corresponds to [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.setLanguageSettings].
+     * Sets the translation setting for a specific language. Corresponds to
+     * [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.setLanguageSettings].
      *
      * @param languageCode The BCP-47 language code.
      * @param setting The [LanguageSetting] to apply.
@@ -141,9 +141,8 @@ interface RuntimeTranslationAccessor {
     )
 
     /**
-     * Retrieves all language translation settings.
-     * Adapts to `Map<String, LanguageSetting>`.
-     * Corresponds to [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.getLanguageSettings].
+     * Retrieves all language translation settings. Adapts to `Map<String, LanguageSetting>`. Corresponds to
+     * [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.getLanguageSettings].
      *
      * @param onSuccess Callback invoked with a map of language codes to their [LanguageSetting].
      * @param onError Callback invoked if the operation fails.
@@ -154,8 +153,8 @@ interface RuntimeTranslationAccessor {
     )
 
     /**
-     * Retrieves the list of sites for which translation should never be offered.
-     * Corresponds to [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.getNeverTranslateSiteList].
+     * Retrieves the list of sites for which translation should never be offered. Corresponds to
+     * [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.getNeverTranslateSiteList].
      *
      * @param onSuccess Callback invoked with a list of site origin strings.
      * @param onError Callback invoked if the operation fails.
@@ -166,8 +165,8 @@ interface RuntimeTranslationAccessor {
     )
 
     /**
-     * Sets or unsets a site in the "never translate" list.
-     * Corresponds to [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.setNeverTranslateSpecifiedSite].
+     * Sets or unsets a site in the "never translate" list. Corresponds to
+     * [org.mozilla.geckoview.TranslationsController.RuntimeTranslation.setNeverTranslateSpecifiedSite].
      *
      * @param origin The origin of the site (e.g., "https://example.com").
      * @param neverTranslate `true` to add the site to the never-translate list, `false` to remove it.
@@ -185,18 +184,17 @@ interface RuntimeTranslationAccessor {
 /**
  * Default implementation of [RuntimeTranslationAccessor].
  *
- * This class directly delegates calls to the static methods of
- * [TranslationsController.RuntimeTranslation] and invokes the provided
- * `onSuccess` or `onError` callbacks based on the outcome of the underlying
- * [GeckoResult]. It also handles adapting results to the types expected by the callbacks.
+ * This class directly delegates calls to the static methods of [TranslationsController.RuntimeTranslation] and invokes
+ * the provided `onSuccess` or `onError` callbacks based on the outcome of the underlying [GeckoResult]. It also handles
+ * adapting results to the types expected by the callbacks.
  */
 internal class DefaultRuntimeTranslationAccessor : RuntimeTranslationAccessor {
 
     /**
      * Handles the result of a [GeckoResult] operation.
      *
-     * This function processes a [GeckoResult], which represents an asynchronous operation
-     * that can either succeed with a value or fail with an error.
+     * This function processes a [GeckoResult], which represents an asynchronous operation that can either succeed with
+     * a value or fail with an error.
      *
      * If the `geckoResult` completes successfully:
      * - If the result value is not null, the `onSuccess` callback is invoked with the value.
@@ -207,10 +205,10 @@ internal class DefaultRuntimeTranslationAccessor : RuntimeTranslationAccessor {
      *
      * @param T The type of the successful result value. Must be a non-nullable type.
      * @param geckoResult The [GeckoResult] to handle.
-     * @param onSuccess A callback function to be invoked if the operation succeeds with a non-null value.
-     *                  It takes the successful result of type [T] as a parameter.
-     * @param onError A callback function to be invoked if the operation fails or if the successful
-     *                result is null. It takes a [TranslationError] as a parameter.
+     * @param onSuccess A callback function to be invoked if the operation succeeds with a non-null value. It takes the
+     *   successful result of type [T] as a parameter.
+     * @param onError A callback function to be invoked if the operation fails or if the successful result is null. It
+     *   takes a [TranslationError] as a parameter.
      */
     internal fun <T : Any> handleGeckoResult(
         geckoResult: GeckoResult<T>,
@@ -236,8 +234,8 @@ internal class DefaultRuntimeTranslationAccessor : RuntimeTranslationAccessor {
     /**
      * Handles the result of a [GeckoResult] operation that does not produce a value (i.e., `Void`).
      *
-     * This function processes a [GeckoResult] representing an asynchronous operation
-     * that completes either successfully (without a specific value) or fails with an error.
+     * This function processes a [GeckoResult] representing an asynchronous operation that completes either successfully
+     * (without a specific value) or fails with an error.
      *
      * If the `geckoResult` completes successfully:
      * - The `onSuccess` callback is invoked.
@@ -248,8 +246,8 @@ internal class DefaultRuntimeTranslationAccessor : RuntimeTranslationAccessor {
      * @param TVoid The type of the result, typically `Void` or a similar type indicating no meaningful value.
      * @param geckoResult The [GeckoResult] to handle.
      * @param onSuccess A callback function to be invoked if the operation succeeds.
-     * @param onError A callback function to be invoked if the operation fails,
-     *                taking a [TranslationError] as a parameter.
+     * @param onError A callback function to be invoked if the operation fails, taking a [TranslationError] as a
+     *   parameter.
      */
     internal fun <TVoid> handleVoidGeckoResult(
         geckoResult: GeckoResult<TVoid>,
@@ -299,9 +297,8 @@ internal class DefaultRuntimeTranslationAccessor : RuntimeTranslationAccessor {
         onSuccess: (List<LanguageModel>) -> Unit,
         onError: (TranslationError) -> Unit,
     ) {
-        val geckoResult = mapGeckoViewLanguageModels(
-            TranslationsController.RuntimeTranslation.listModelDownloadStates(),
-        )
+        val geckoResult =
+            mapGeckoViewLanguageModels(TranslationsController.RuntimeTranslation.listModelDownloadStates())
 
         handleGeckoResult(
             geckoResult,
@@ -314,9 +311,7 @@ internal class DefaultRuntimeTranslationAccessor : RuntimeTranslationAccessor {
         onSuccess: (TranslationSupport) -> Unit,
         onError: (TranslationError) -> Unit,
     ) {
-        val geckoResult = mapGeckoTranslationSupport(
-            TranslationsController.RuntimeTranslation.listSupportedLanguages(),
-        )
+        val geckoResult = mapGeckoTranslationSupport(TranslationsController.RuntimeTranslation.listSupportedLanguages())
 
         handleGeckoResult(
             geckoResult,
@@ -355,9 +350,7 @@ internal class DefaultRuntimeTranslationAccessor : RuntimeTranslationAccessor {
         onSuccess: (LanguageSetting) -> Unit,
         onError: (TranslationError) -> Unit,
     ) {
-        val geckoResult = mapLanguageSetting(
-            TranslationsController.RuntimeTranslation.getLanguageSetting(languageCode),
-        )
+        val geckoResult = mapLanguageSetting(TranslationsController.RuntimeTranslation.getLanguageSetting(languageCode))
 
         handleGeckoResult(
             geckoResult,
@@ -386,9 +379,7 @@ internal class DefaultRuntimeTranslationAccessor : RuntimeTranslationAccessor {
         onSuccess: (Map<String, LanguageSetting>) -> Unit,
         onError: (TranslationError) -> Unit,
     ) {
-        val geckoResult = mapToLanguageSettingMap(
-            TranslationsController.RuntimeTranslation.getLanguageSettings(),
-        )
+        val geckoResult = mapToLanguageSettingMap(TranslationsController.RuntimeTranslation.getLanguageSettings())
 
         handleGeckoResult(
             geckoResult,

@@ -20,13 +20,12 @@ import org.mozilla.focus.testAnnotations.SmokeTest
 class MediaPlaybackTest {
     private val featureSettingsHelper = FeatureSettingsHelper()
 
-    @get:Rule(order = 0)
-    val focusTestRule: FocusTestRule = FocusTestRule()
+    @get:Rule(order = 0) val focusTestRule: FocusTestRule = FocusTestRule()
 
-    private val webServerRule get() = focusTestRule.mockWebServerRule
+    private val webServerRule
+        get() = focusTestRule.mockWebServerRule
 
-    @get:Rule
-    val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
+    @get:Rule val mActivityTestRule = MainActivityFirstrunTestRule(showFirstRun = false)
 
     @Before
     fun setUp() {
@@ -43,15 +42,15 @@ class MediaPlaybackTest {
     fun testVideoPlayback() {
         val videoPageUrl = webServerRule.server.getMediaTestAsset("videoPage").url
 
-        searchScreen {
-        }.loadPage(videoPageUrl) {
-            clickPlayButton()
-            waitForPlaybackToStart()
-            // need this alert hack to check the video is playing,
-            // currently the test cannot verify the text in the page
-            clickPauseButton()
-            verifyPlaybackStopped()
-        }
+        searchScreen {}
+            .loadPage(videoPageUrl) {
+                clickPlayButton()
+                waitForPlaybackToStart()
+                // need this alert hack to check the video is playing,
+                // currently the test cannot verify the text in the page
+                clickPauseButton()
+                verifyPlaybackStopped()
+            }
     }
 
     @SmokeTest
@@ -59,15 +58,15 @@ class MediaPlaybackTest {
     fun testAudioPlayback() {
         val audioPageUrl = webServerRule.server.getMediaTestAsset("audioPage").url
 
-        searchScreen {
-        }.loadPage(audioPageUrl) {
-            clickPlayButton()
-            waitForPlaybackToStart()
-            // need this alert hack to check the video is playing,
-            // currently the test cannot verify the text in the page
-            clickPauseButton()
-            verifyPlaybackStopped()
-        }
+        searchScreen {}
+            .loadPage(audioPageUrl) {
+                clickPlayButton()
+                waitForPlaybackToStart()
+                // need this alert hack to check the video is playing,
+                // currently the test cannot verify the text in the page
+                clickPauseButton()
+                verifyPlaybackStopped()
+            }
     }
 
     @SmokeTest
@@ -76,11 +75,11 @@ class MediaPlaybackTest {
         val audioPageUrl = webServerRule.server.getMediaTestAsset("audioPage").url
         val notificationMessage = "A site is playing media"
 
-        searchScreen {
-        }.loadPage(audioPageUrl) {
-            clickPlayButton()
-            waitForPlaybackToStart()
-        }
+        searchScreen {}
+            .loadPage(audioPageUrl) {
+                clickPlayButton()
+                waitForPlaybackToStart()
+            }
         mDevice.openNotification()
         notificationTray {
             verifyMediaNotificationExists("A site is playing media")
@@ -90,7 +89,8 @@ class MediaPlaybackTest {
         mDevice.pressBack()
         browserScreen {
             verifyPlaybackStopped()
-        }.clearBrowsingData {}
+        }
+            .clearBrowsingData {}
         mDevice.openNotification()
         notificationTray {
             verifyNotificationGone(notificationMessage)

@@ -71,8 +71,7 @@ struct DeviceIdentifier
 
 enum RendererClass
 {
-    RENDERER_D3D11,
-    RENDERER_D3D9
+    RENDERER_D3D11
 };
 
 struct BindFlags
@@ -183,8 +182,7 @@ class RendererD3D : public BufferFactoryD3D
     virtual std::string getVendorString() const                         = 0;
     virtual std::string getVersionString(bool includeFullVersion) const = 0;
 
-    virtual int getMinorShaderModel() const          = 0;
-    virtual std::string getShaderModelSuffix() const = 0;
+    virtual int getMinorShaderModel() const = 0;
 
     // Direct3D Specific methods
     virtual DeviceIdentifier getAdapterIdentifier() const = 0;
@@ -341,13 +339,11 @@ class RendererD3D : public BufferFactoryD3D
                                                    GLsizei width,
                                                    GLsizei height,
                                                    int levels,
-                                                   const std::string &label,
-                                                   bool hintLevelZeroOnly)                   = 0;
+                                                   const std::string &label)                 = 0;
     virtual TextureStorage *createTextureStorageCube(GLenum internalformat,
                                                      BindFlags bindFlags,
                                                      int size,
                                                      int levels,
-                                                     bool hintLevelZeroOnly,
                                                      const std::string &label)               = 0;
     virtual TextureStorage *createTextureStorage3D(GLenum internalformat,
                                                    BindFlags bindFlags,
@@ -479,9 +475,8 @@ class RendererD3D : public BufferFactoryD3D
 unsigned int GetBlendSampleMask(const gl::State &glState, int samples);
 GLenum DefaultGLErrorCode(HRESULT hr);
 
-// Define stubs so we don't need to include D3D9/D3D11 headers directly.
+// Define stub so we don't need to include D3D11 headers directly.
 RendererD3D *CreateRenderer11(egl::Display *display);
-RendererD3D *CreateRenderer9(egl::Display *display);
 
 }  // namespace rx
 

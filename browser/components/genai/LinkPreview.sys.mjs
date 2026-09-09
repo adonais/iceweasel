@@ -809,11 +809,15 @@ export const LinkPreview = {
     }
 
     // Check for the start of a long unmodified primary button press on a link.
+    // A mousedown that doesn't report the primary button as held is synthesized
+    // to activate an element, e.g. keyboard activation of a panel button, and
+    // no mouseup will follow to end the press.
     const win = event.currentTarget;
     const stateObject = this._windowStates.get(win);
     if (
       event.type == "mousedown" &&
       !event.button &&
+      event.buttons & 1 &&
       !event.altKey &&
       !event.ctrlKey &&
       !event.metaKey &&

@@ -5,6 +5,7 @@
 package mozilla.components.feature.pwa.feature
 
 import androidx.core.net.toUri
+import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
@@ -24,23 +25,21 @@ import mozilla.components.feature.pwa.ext.trustedOrigins
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.ktx.android.net.isInScope
-import kotlin.properties.Delegates
 
 /**
  * Hides a custom tab toolbar for Progressive Web Apps and Trusted Web Activities.
  *
- * When the tab with [tabId] is inside a trusted scope, the toolbar will be hidden.
- * Once the tab with [tabId] navigates to another scope, the toolbar will be revealed.
- * The toolbar is also hidden in fullscreen mode or picture in picture mode.
+ * When the tab with [tabId] is inside a trusted scope, the toolbar will be hidden. Once the tab with [tabId] navigates
+ * to another scope, the toolbar will be revealed. The toolbar is also hidden in fullscreen mode or picture in picture
+ * mode.
  *
- * In standard custom tabs, no scopes are trusted.
- * As a result the URL has no impact on toolbar visibility.
+ * In standard custom tabs, no scopes are trusted. As a result the URL has no impact on toolbar visibility.
  *
  * @param store Reference to the browser store where tab state is located.
  * @param customTabsStore Reference to the store that communicates with the custom tabs service.
  * @param tabId ID of the tab session, or null if the selected session should be used.
- * @param manifest Reference to the cached [WebAppManifest] for the current PWA.
- * Null if this feature is not used in a PWA context.
+ * @param manifest Reference to the cached [WebAppManifest] for the current PWA. Null if this feature is not used in a
+ *   PWA context.
  * @param scope Coroutine scope for the feature.
  * @param setToolbarVisibility Callback to show or hide the toolbar.
  */
@@ -53,13 +52,12 @@ class WebAppHideToolbarFeature(
     private val setToolbarVisibility: (Boolean) -> Unit,
 ) : LifecycleAwareFeature {
 
-    private var _shouldToolbarsBeVisible: Boolean by Delegates.observable(false) { _, _, newValue ->
-        setToolbarVisibility(newValue)
-    }
+    private var _shouldToolbarsBeVisible: Boolean by
+        Delegates.observable(false) { _, _, newValue ->
+            setToolbarVisibility(newValue)
+        }
 
-    /**
-     * Whether the toolbar should be visible for the current tab.
-     */
+    /** Whether the toolbar should be visible for the current tab. */
     val shouldToolbarsBeVisible = _shouldToolbarsBeVisible
 
     private val manifestScope = listOfNotNull(manifest?.getTrustedScope())
@@ -77,14 +75,14 @@ class WebAppHideToolbarFeature(
             // Since we subscribe to both store and customTabsStore,
             // we don't extend another non-external-apps feature for hiding the toolbar
             // as very little code would be shared.
-            val sessionFlow = store.flow()
-                .map { state -> state.findTabOrCustomTabOrSelectedTab(tabId) }
-                .distinctUntilChanged()
+            val sessionFlow =
+                store.flow().map { state -> state.findTabOrCustomTabOrSelectedTab(tabId) }.distinctUntilChanged()
             val customTabServiceMapFlow = customTabsStore.flow()
 
-            sessionFlow.combine(customTabServiceMapFlow) { tab, customTabServiceState ->
-                tab to customTabServiceState.getCustomTabStateForTab(tab)
-            }
+            sessionFlow
+                .combine(customTabServiceMapFlow) { tab, customTabServiceState ->
+                    tab to customTabServiceState.getCustomTabStateForTab(tab)
+                }
                 .map { (tab, customTabState) -> shouldToolbarBeVisible(tab, customTabState) }
                 .distinctUntilChanged()
                 .collect { toolbarVisible ->
@@ -99,8 +97,8 @@ class WebAppHideToolbarFeature(
     }
 
     /**
-     * Reports if the toolbar should be shown for the given external app session.
-     * If the URL is in the same scope as the [WebAppManifest]
+     * Reports if the toolbar should be shown for the given external app session. If the URL is in the same scope as the
+     * [WebAppManifest]
      */
     private fun shouldToolbarBeVisible(
         session: SessionState?,
@@ -114,12 +112,8 @@ class WebAppHideToolbarFeature(
         return !inScope && !session.content.fullScreen && !session.content.pictureInPictureEnabled
     }
 
-    /**
-     * Find corresponding custom tab state, if any.
-     */
-    private fun CustomTabsServiceState.getCustomTabStateForTab(
-        tab: SessionState?,
-    ): CustomTabState? {
+    /** Find corresponding custom tab state, if any. */
+    private fun CustomTabsServiceState.getCustomTabStateForTab(tab: SessionState?): CustomTabState? {
         return (tab as? CustomTabSessionState)?.config?.sessionToken?.let { sessionToken ->
             tabs[sessionToken]
         }

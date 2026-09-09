@@ -41,6 +41,7 @@ support-files = ["searchTelemetryAd_searchbox_with_content.html", "serp.css"]
 ["browser_search_telemetry_adblock_count.js"]
 
 ["browser_search_telemetry_app_provided_and_overridden.js"]
+tags = "urlbar"
 
 ["browser_search_telemetry_categorization_experiment_info.js"]
 skip-if = [
@@ -192,6 +193,8 @@ support-files = ["searchTelemetry.html", "searchTelemetryAd.html", "serp.css"]
 ["browser_search_telemetry_remote_settings_sync.js"]
 support-files = ["searchTelemetryAd.html", "serp.css"]
 
+["browser_search_telemetry_sap_newtab_searchbar.js"]
+
 ["browser_search_telemetry_searchbar.js"]
 https_first_disabled = true
 support-files = [
@@ -204,6 +207,7 @@ skip-if = [
 
 
 ["browser_search_telemetry_searchform.js"]
+tags = "urlbar"
 
 ["browser_search_telemetry_shopping.js"]
 support-files = ["searchTelemetryAd_shopping.html"]
@@ -212,6 +216,7 @@ support-files = ["searchTelemetryAd_shopping.html"]
 support-files = ["searchTelemetry.html"]
 
 ["browser_search_telemetry_sources.js"]
+tags = "urlbar"
 support-files = ["searchTelemetry.html", "searchTelemetryAd.html"]
 
 ["browser_search_telemetry_sources_ads.js"]
@@ -238,6 +243,7 @@ support-files = [
 support-files = ["searchTelemetryAd_searchbox_with_content.html"]
 
 ["browser_search_telemetry_sources_navigation.js"]
+tags = "urlbar"
 support-files = ["searchTelemetry.html", "searchTelemetryAd.html"]
 
 ["browser_search_telemetry_sources_webextension.js"]

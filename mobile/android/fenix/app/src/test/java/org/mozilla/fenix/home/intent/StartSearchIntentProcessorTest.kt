@@ -9,6 +9,7 @@ import androidx.navigation.NavController
 import io.mockk.Called
 import io.mockk.mockk
 import io.mockk.verify
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -21,13 +22,11 @@ import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class StartSearchIntentProcessorTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private val navController: NavController = mockk(relaxed = true)
     private val out: Intent = mockk(relaxed = true)
@@ -35,9 +34,10 @@ class StartSearchIntentProcessorTest {
 
     @Test
     fun `do not process when user has not been onboarded`() {
-        val intent = Intent().apply {
-            putExtra(HomeActivity.OPEN_TO_SEARCH, StartSearchIntentProcessor.SEARCH_WIDGET)
-        }
+        val intent =
+            Intent().apply {
+                putExtra(HomeActivity.OPEN_TO_SEARCH, StartSearchIntentProcessor.SEARCH_WIDGET)
+            }
         StartSearchIntentProcessor { false }.process(intent, navController, out, settings)
 
         verify { navController wasNot Called }
@@ -52,9 +52,10 @@ class StartSearchIntentProcessorTest {
 
     @Test
     fun `do not process when search extra is false`() {
-        val intent = Intent().apply {
-            removeExtra(HomeActivity.OPEN_TO_SEARCH)
-        }
+        val intent =
+            Intent().apply {
+                removeExtra(HomeActivity.OPEN_TO_SEARCH)
+            }
         StartSearchIntentProcessor { true }.process(intent, navController, out, settings)
 
         verify { navController wasNot Called }
@@ -63,9 +64,10 @@ class StartSearchIntentProcessorTest {
 
     @Test
     fun `process search intents to navigate home with address bar focused`() {
-        val intent = Intent().apply {
-            putExtra(HomeActivity.OPEN_TO_SEARCH, StartSearchIntentProcessor.SEARCH_WIDGET)
-        }
+        val intent =
+            Intent().apply {
+                putExtra(HomeActivity.OPEN_TO_SEARCH, StartSearchIntentProcessor.SEARCH_WIDGET)
+            }
         StartSearchIntentProcessor { true }.process(intent, navController, out, settings)
 
         assertNotNull(SearchWidget.newTabButton.testGetValue())

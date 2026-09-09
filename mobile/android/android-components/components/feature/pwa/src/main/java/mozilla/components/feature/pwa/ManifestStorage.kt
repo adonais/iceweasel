@@ -19,8 +19,8 @@ private const val MAXIMUM_WEBMANIFEST_COUNT = 3
  * Disk storage for [WebAppManifest]. Other components use this class to reload a saved manifest.
  *
  * @param context the application context this storage is associated with
- * @param activeThresholdMs a timeout in milliseconds after which the storage will consider a manifest
- *                      as unused. By default this is [ACTIVE_THRESHOLD_MS].
+ * @param activeThresholdMs a timeout in milliseconds after which the storage will consider a manifest as unused. By
+ *   default this is [ACTIVE_THRESHOLD_MS].
  * @param currentTimeMillis provider for the current time in milliseconds, injectable for testing.
  */
 class ManifestStorage(
@@ -29,30 +29,30 @@ class ManifestStorage(
     private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
 ) {
 
-    @VisibleForTesting
-    internal var manifestDao = lazy { ManifestDatabase.get(context).manifestDao() }
+    @VisibleForTesting internal var manifestDao = lazy { ManifestDatabase.get(context).manifestDao() }
     internal var installedScopes: MutableMap<String, String>? = null
     internal val manifestCache = LruCache<String, WebAppManifest>(MAXIMUM_WEBMANIFEST_COUNT)
 
     /**
-     * Load a Web App Manifest for the given URL from disk.
-     * If no manifest is found, null is returned.
+     * Load a Web App Manifest for the given URL from disk. If no manifest is found, null is returned.
      *
      * @param startUrl URL of site. Should correspond to manifest's start_url.
      */
-    suspend fun loadManifest(startUrl: String): WebAppManifest? = withContext(IO) {
-        manifestDao.value.getManifest(startUrl)?.manifest
-    }
+    suspend fun loadManifest(startUrl: String): WebAppManifest? =
+        withContext(IO) {
+            manifestDao.value.getManifest(startUrl)?.manifest
+        }
 
     /**
-     * Load all Web App Manifests with a matching scope for the given URL from disk.
-     * If no manifests are found, an empty list is returned.
+     * Load all Web App Manifests with a matching scope for the given URL from disk. If no manifests are found, an empty
+     * list is returned.
      *
      * @param url URL of site. Should correspond to an url covered by the scope of a stored manifest.
      */
-    suspend fun loadManifestsByScope(url: String): List<WebAppManifest> = withContext(IO) {
-        manifestDao.value.getManifestsByScope(url).map { it.manifest }
-    }
+    suspend fun loadManifestsByScope(url: String): List<WebAppManifest> =
+        withContext(IO) {
+            manifestDao.value.getManifestsByScope(url).map { it.manifest }
+        }
 
     /**
      * Checks whether there is a currently used manifest with a scope that matches the url.
@@ -63,9 +63,10 @@ class ManifestStorage(
     suspend fun hasRecentManifest(
         url: String,
         @VisibleForTesting currentTimeMs: Long = currentTimeMillis(),
-    ): Boolean = withContext(IO) {
-        manifestDao.value.hasRecentManifest(url, thresholdMs = currentTimeMs - activeThresholdMs) > 0
-    }
+    ): Boolean =
+        withContext(IO) {
+            manifestDao.value.hasRecentManifest(url, thresholdMs = currentTimeMs - activeThresholdMs) > 0
+        }
 
     /**
      * Counts number of recently used manifests, as configured by [activeThresholdMs].
@@ -76,9 +77,10 @@ class ManifestStorage(
     suspend fun recentManifestsCount(
         activeThresholdMs: Long = this.activeThresholdMs,
         @VisibleForTesting currentTimeMs: Long = currentTimeMillis(),
-    ): Int = withContext(IO) {
-        manifestDao.value.recentManifestsCount(thresholdMs = currentTimeMs - activeThresholdMs)
-    }
+    ): Int =
+        withContext(IO) {
+            manifestDao.value.recentManifestsCount(thresholdMs = currentTimeMs - activeThresholdMs)
+        }
 
     /**
      * Returns the cached scope for an url if the url falls into a web app scope that has been installed by the user.
@@ -99,75 +101,71 @@ class ManifestStorage(
      *
      * @param currentTime the current time is used to determine which web apps are still installed.
      */
-    suspend fun warmUpScopes(currentTime: Long) = withContext(IO) {
-        installedScopes = manifestDao.value
-            .getInstalledScopes(deadline(currentTime))
-            .mapNotNull { manifest -> manifest.scope?.let { scope -> Pair(scope, manifest.startUrl) } }
-            .toMap()
-            .toMutableMap()
-    }
+    suspend fun warmUpScopes(currentTime: Long) =
+        withContext(IO) {
+            installedScopes =
+                manifestDao.value
+                    .getInstalledScopes(deadline(currentTime))
+                    .mapNotNull { manifest -> manifest.scope?.let { scope -> Pair(scope, manifest.startUrl) } }
+                    .toMap()
+                    .toMutableMap()
+        }
 
     /**
-     * Load all Web App Manifests that contain share targets.
-     * If no manifests are found, an empty list is returned.
+     * Load all Web App Manifests that contain share targets. If no manifests are found, an empty list is returned.
      *
      * @param currentTime the current time in milliseconds.
      */
-    suspend fun loadShareableManifests(currentTime: Long): List<WebAppManifest> = withContext(IO) {
-        manifestDao.value.getRecentShareableManifests(deadline(currentTime)).map { it.manifest }
-    }
-
-    /**
-     * Save a Web App Manifest to disk.
-     */
-    suspend fun saveManifest(manifest: WebAppManifest) = withContext(IO) {
-        val entity = ManifestEntity(manifest, currentTime = currentTimeMillis())
-        manifestDao.value.insertManifest(entity)
-    }
-
-    /**
-     * Update an existing Web App Manifest on disk.
-     */
-    suspend fun updateManifest(manifest: WebAppManifest) = withContext(IO) {
-        manifestDao.value.getManifest(manifest.startUrl)?.let { existing ->
-            val update = existing.copy(manifest = manifest, updatedAt = currentTimeMillis())
-            manifestDao.value.updateManifest(update)
+    suspend fun loadShareableManifests(currentTime: Long): List<WebAppManifest> =
+        withContext(IO) {
+            manifestDao.value.getRecentShareableManifests(deadline(currentTime)).map { it.manifest }
         }
-    }
+
+    /** Save a Web App Manifest to disk. */
+    suspend fun saveManifest(manifest: WebAppManifest) =
+        withContext(IO) {
+            val entity = ManifestEntity(manifest, currentTime = currentTimeMillis())
+            manifestDao.value.insertManifest(entity)
+        }
+
+    /** Update an existing Web App Manifest on disk. */
+    suspend fun updateManifest(manifest: WebAppManifest) =
+        withContext(IO) {
+            manifestDao.value.getManifest(manifest.startUrl)?.let { existing ->
+                val update = existing.copy(manifest = manifest, updatedAt = currentTimeMillis())
+                manifestDao.value.updateManifest(update)
+            }
+        }
 
     /**
      * Update the last time a web app was used.
      *
      * @param manifest the manifest to update
      */
-    suspend fun updateManifestUsedAt(manifest: WebAppManifest) = withContext(IO) {
-        manifestDao.value.getManifest(manifest.startUrl)?.let { existing ->
-            val update = existing.copy(usedAt = currentTimeMillis())
-            manifestDao.value.updateManifest(update)
+    suspend fun updateManifestUsedAt(manifest: WebAppManifest) =
+        withContext(IO) {
+            manifestDao.value.getManifest(manifest.startUrl)?.let { existing ->
+                val update = existing.copy(usedAt = currentTimeMillis())
+                manifestDao.value.updateManifest(update)
 
-            existing.scope?.let { scope ->
-                installedScopes?.put(scope, existing.startUrl)
+                existing.scope?.let { scope ->
+                    installedScopes?.put(scope, existing.startUrl)
+                }
+
+                return@let
             }
-
-            return@let
         }
-    }
 
-    /**
-     * Delete all manifests associated with the list of URLs.
-     */
-    suspend fun removeManifests(startUrls: List<String>) = withContext(IO) {
-        manifestDao.value.deleteManifests(startUrls)
-    }
+    /** Delete all manifests associated with the list of URLs. */
+    suspend fun removeManifests(startUrls: List<String>) =
+        withContext(IO) {
+            manifestDao.value.deleteManifests(startUrls)
+        }
 
-    /**
-     * Add WebAppManifest to cache
-     */
+    /** Add WebAppManifest to cache */
     fun setManifestCache(url: String, manifest: WebAppManifest) = manifestCache.put(url, manifest)
 
-    /**
-     * Get WebAppManifest from cache
-     */
+    /** Get WebAppManifest from cache */
     fun getManifestCache(url: String): WebAppManifest? = manifestCache.remove(url)
 
     internal fun clearManifestCache() = manifestCache.evictAll()

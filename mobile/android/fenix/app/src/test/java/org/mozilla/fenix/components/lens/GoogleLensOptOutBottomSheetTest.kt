@@ -26,15 +26,25 @@ import org.mozilla.fenix.theme.Theme
 @RunWith(AndroidJUnit4::class)
 class GoogleLensOptOutBottomSheetTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
-    private val resources get() = ApplicationProvider.getApplicationContext<Context>().resources
-    private val title get() = resources.getString(R.string.lens_opt_out_title)
-    private val description get() = resources.getString(R.string.lens_opt_out_description)
-    private val settingsLink get() = resources.getString(R.string.lens_opt_out_settings_link)
-    private val tryItNow get() = resources.getString(R.string.lens_opt_out_try_it_now_button)
-    private val notNow get() = resources.getString(R.string.lens_opt_out_not_now_button)
+    private val resources
+        get() = ApplicationProvider.getApplicationContext<Context>().resources
+
+    private val title
+        get() = resources.getString(R.string.lens_opt_out_title)
+
+    private val description
+        get() = resources.getString(R.string.lens_opt_out_description)
+
+    private val settingsLink
+        get() = resources.getString(R.string.lens_opt_out_settings_link)
+
+    private val tryItNow
+        get() = resources.getString(R.string.lens_opt_out_try_it_now_button)
+
+    private val notNow
+        get() = resources.getString(R.string.lens_opt_out_not_now_button)
 
     private var tryItNowClicked = false
     private var notNowClicked = false

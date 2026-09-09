@@ -24,9 +24,7 @@ import org.mozilla.fenix.search.BrowserToolbarSearchMiddleware
 import org.mozilla.fenix.search.BrowserToolbarSearchStatusSyncMiddleware
 import org.mozilla.fenix.translations.TranslationsEnabledSettings
 
-/**
- * Delegate for building the [BrowserToolbarStore] used in the home screen.
- */
+/** Delegate for building the [BrowserToolbarStore] used in the home screen. */
 object HomeToolbarStoreBuilder {
     /**
      * Build the [BrowserToolbarStore] used in the home screen.
@@ -45,43 +43,45 @@ object HomeToolbarStoreBuilder {
         appStore: AppStore,
         browserStore: BrowserStore,
         browsingModeManager: BrowsingModeManager,
-    ) = fragment.fragmentStore(BrowserToolbarState()) {
-        val lifecycleScope = fragment.viewLifecycleOwner.lifecycle.coroutineScope
+    ) =
+        fragment.fragmentStore(BrowserToolbarState()) {
+            val lifecycleScope = fragment.viewLifecycleOwner.lifecycle.coroutineScope
 
-        BrowserToolbarStore(
-            initialState = it,
-            middleware = listOf(
-                BrowserToolbarSearchStatusSyncMiddleware(
-                    appStore = appStore,
-                    browsingModeManager = browsingModeManager,
-                    scope = lifecycleScope,
-                ),
-                BrowserToolbarMiddleware(
-                    uiContext = context,
-                    appStore = appStore,
-                    browserStore = browserStore,
-                    clipboard = context.components.clipboardHandler,
-                    fenixBrowserUseCases = context.components.useCases.fenixBrowserUseCases,
-                    navController = navController,
-                    browsingModeManager = browsingModeManager,
-                    settings = context.components.settings,
-                    translationsFeatureSettings = TranslationsEnabledSettings.dataStore(context),
-                    isWideScreen = { fragment.isWideWindow() },
-                    isTallScreen = { fragment.isTallWindow() },
-                    scope = lifecycleScope,
-                ),
-                BrowserToolbarSearchMiddleware(
-                    uiContext = context,
-                    appStore = appStore,
-                    browserStore = browserStore,
-                    components = context.components,
-                    navController = navController,
-                    browsingModeManager = browsingModeManager,
-                    settings = context.components.settings,
-                    scope = lifecycleScope,
-                ),
-                BrowserToolbarTelemetryMiddleware(),
-            ),
-        )
-    }
+            BrowserToolbarStore(
+                initialState = it,
+                middleware =
+                    listOf(
+                        BrowserToolbarSearchStatusSyncMiddleware(
+                            appStore = appStore,
+                            browsingModeManager = browsingModeManager,
+                            scope = lifecycleScope,
+                        ),
+                        BrowserToolbarMiddleware(
+                            uiContext = context,
+                            appStore = appStore,
+                            browserStore = browserStore,
+                            clipboard = context.components.clipboardHandler,
+                            fenixBrowserUseCases = context.components.useCases.fenixBrowserUseCases,
+                            navController = navController,
+                            browsingModeManager = browsingModeManager,
+                            settings = context.components.settings,
+                            translationsFeatureSettings = TranslationsEnabledSettings.dataStore(context),
+                            isWideScreen = { fragment.isWideWindow() },
+                            isTallScreen = { fragment.isTallWindow() },
+                            scope = lifecycleScope,
+                        ),
+                        BrowserToolbarSearchMiddleware(
+                            uiContext = context,
+                            appStore = appStore,
+                            browserStore = browserStore,
+                            components = context.components,
+                            navController = navController,
+                            browsingModeManager = browsingModeManager,
+                            settings = context.components.settings,
+                            scope = lifecycleScope,
+                        ),
+                        BrowserToolbarTelemetryMiddleware(),
+                    ),
+            )
+        }
 }

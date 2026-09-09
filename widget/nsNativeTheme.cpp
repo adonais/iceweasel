@@ -343,6 +343,9 @@ bool nsNativeTheme::IsDarkBackgroundForScrollbar(nsIFrame* aFrame) {
 
 /* static */
 bool nsNativeTheme::IsDarkBackground(nsIFrame* aFrame) {
+  if (auto cs = LookAndFeel::ExplicitColorSchemeForFrame(aFrame)) {
+    return *cs == ColorScheme::Dark;
+  }
   auto color =
       nsCSSRendering::FindEffectiveBackgroundColor(
           aFrame, /* aStopAtThemed = */ false, /* aPreferBodyToCanvas = */ true)

@@ -18,7 +18,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import kotlin.reflect.KVisibility
 
 @RunWith(AndroidJUnit4::class)
 class AutofillStorageWorkerTest {
@@ -29,28 +28,21 @@ class AutofillStorageWorkerTest {
     }
 
     @Test
-    fun `CreditCardsAddressesStorage's runMaintenance is called when worker's startWork is called`() =
-        runTest {
-            val autofillStorage = mock<CreditCardsAddressesStorage>()
-            GlobalAutofillDependencyProvider.initialize(lazy { autofillStorage })
-            val worker =
-                TestListenableWorkerBuilder<AutofillStorageWorker>(
-                    testContext,
-                ).build()
+    fun `CreditCardsAddressesStorage's runMaintenance is called when worker's startWork is called`() = runTest {
+        val autofillStorage = mock<CreditCardsAddressesStorage>()
+        GlobalAutofillDependencyProvider.initialize(lazy { autofillStorage })
+        val worker = TestListenableWorkerBuilder<AutofillStorageWorker>(testContext).build()
 
-            worker.doWork()
-            verify(autofillStorage).runMaintenance(AutofillStorageWorker.DB_SIZE_LIMIT_IN_BYTES.toUInt())
-        }
+        worker.doWork()
+        verify(autofillStorage).runMaintenance(AutofillStorageWorker.DB_SIZE_LIMIT_IN_BYTES.toUInt())
+    }
 
     @Test
     fun `CreditCardsAddressesStorage's runMaintenance operation is successful, successful result returned by the worker`() =
         runTest {
             val autofillStorage = mock<CreditCardsAddressesStorage>()
             GlobalAutofillDependencyProvider.initialize(lazy { autofillStorage })
-            val worker =
-                TestListenableWorkerBuilder<AutofillStorageWorker>(
-                    testContext,
-                ).build()
+            val worker = TestListenableWorkerBuilder<AutofillStorageWorker>(testContext).build()
 
             val result = worker.doWork()
             assertEquals(Result.success(), result)
@@ -63,10 +55,7 @@ class AutofillStorageWorkerTest {
             `when`(autofillStorage.runMaintenance(AutofillStorageWorker.DB_SIZE_LIMIT_IN_BYTES.toUInt()))
                 .thenThrow(CancellationException())
             GlobalAutofillDependencyProvider.initialize(lazy { autofillStorage })
-            val worker =
-                TestListenableWorkerBuilder<AutofillStorageWorker>(
-                    testContext,
-                ).build()
+            val worker = TestListenableWorkerBuilder<AutofillStorageWorker>(testContext).build()
 
             val result = worker.doWork()
             assertEquals(Result.failure(), result)
@@ -79,10 +68,7 @@ class AutofillStorageWorkerTest {
             `when`(autofillStorage.runMaintenance(AutofillStorageWorker.DB_SIZE_LIMIT_IN_BYTES.toUInt()))
                 .thenThrow(CancellationException())
             GlobalAutofillDependencyProvider.initialize(lazy { autofillStorage })
-            val worker =
-                TestListenableWorkerBuilder<AutofillStorageWorker>(
-                    testContext,
-                ).build()
+            val worker = TestListenableWorkerBuilder<AutofillStorageWorker>(testContext).build()
 
             worker.doWork()
             verify(autofillStorage).cancelWrites()

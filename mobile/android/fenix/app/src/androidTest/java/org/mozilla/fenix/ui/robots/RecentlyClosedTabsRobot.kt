@@ -28,27 +28,27 @@ import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.click
 
-/**
- * Implementation of Robot Pattern for the recently closed tabs menu.
- */
-
+/** Implementation of Robot Pattern for the recently closed tabs menu. */
 class RecentlyClosedTabsRobot {
 
     fun waitForListToExist() {
         Log.i(TAG, "waitForListToExist: Waiting for $waitingTime ms for recently closed tabs list to exist")
-        mDevice.findObject(UiSelector().resourceId("$packageName:id/recently_closed_list"))
-            .waitForExists(waitingTime)
+        mDevice.findObject(UiSelector().resourceId("$packageName:id/recently_closed_list")).waitForExists(waitingTime)
         Log.i(TAG, "waitForListToExist: Waited for $waitingTime ms for recently closed tabs list to exist")
     }
 
     fun verifyRecentlyClosedTabsMenuView() {
-        Log.i(TAG, "verifyRecentlyClosedTabsMenuView: Trying to verify that the recently closed tabs menu view is visible")
+        Log.i(
+            TAG,
+            "verifyRecentlyClosedTabsMenuView: Trying to verify that the recently closed tabs menu view is visible",
+        )
         onView(
-            allOf(
-                withText("Recently closed tabs"),
-                withParent(withId(R.id.navigationToolbar)),
-            ),
-        ).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+                allOf(
+                    withText("Recently closed tabs"),
+                    withParent(withId(R.id.navigationToolbar)),
+                )
+            )
+            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyRecentlyClosedTabsMenuView: Verified that the recently closed tabs menu view is visible")
     }
 
@@ -56,32 +56,38 @@ class RecentlyClosedTabsRobot {
         Log.i(TAG, "verifyEmptyRecentlyClosedTabsList: Waiting for device to be idle")
         mDevice.waitForIdle()
         Log.i(TAG, "verifyEmptyRecentlyClosedTabsList: Waited for device to be idle")
-        Log.i(TAG, "verifyEmptyRecentlyClosedTabsList: Trying to verify that the empty recently closed tabs list is visible")
+        Log.i(
+            TAG,
+            "verifyEmptyRecentlyClosedTabsList: Trying to verify that the empty recently closed tabs list is visible",
+        )
         onView(
-            allOf(
-                withId(R.id.recently_closed_empty_view),
-                withText(R.string.recently_closed_empty_message),
-            ),
-        ).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+                allOf(
+                    withId(R.id.recently_closed_empty_view),
+                    withText(R.string.recently_closed_empty_message),
+                )
+            )
+            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyEmptyRecentlyClosedTabsList: Verified that the empty recently closed tabs list is visible")
     }
 
-    fun verifyRecentlyClosedTabsPageTitle(title: String) =
-        assertUIObjectExists(
-            recentlyClosedTabsPageTitle(title),
-        )
+    fun verifyRecentlyClosedTabsPageTitle(title: String) = assertUIObjectExists(recentlyClosedTabsPageTitle(title))
 
     fun verifyRecentlyClosedTabsUrl(expectedUrl: Uri) {
-        Log.i(TAG, "verifyRecentlyClosedTabsUrl: Trying to verify that the recently closed tab with url: $expectedUrl is visible")
+        Log.i(
+            TAG,
+            "verifyRecentlyClosedTabsUrl: Trying to verify that the recently closed tab with url: $expectedUrl is visible",
+        )
         onView(
-            allOf(
-                withId(R.id.url),
-                withEffectiveVisibility(
-                    Visibility.VISIBLE,
-                ),
-            ),
-        ).check(matches(withText(Matchers.containsString(expectedUrl.toString()))))
-        Log.i(TAG, "verifyRecentlyClosedTabsUrl: Verified that the recently closed tab with url: $expectedUrl is visible")
+                allOf(
+                    withId(R.id.url),
+                    withEffectiveVisibility(Visibility.VISIBLE),
+                )
+            )
+            .check(matches(withText(Matchers.containsString(expectedUrl.toString()))))
+        Log.i(
+            TAG,
+            "verifyRecentlyClosedTabsUrl: Verified that the recently closed tab with url: $expectedUrl is visible",
+        )
     }
 
     fun clickDeleteRecentlyClosedTabs() {
@@ -91,11 +97,21 @@ class RecentlyClosedTabsRobot {
     }
 
     class Transition {
-        fun clickRecentlyClosedItem(composeTestRule: ComposeTestRule, title: String, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+        fun clickRecentlyClosedItem(
+            composeTestRule: ComposeTestRule,
+            title: String,
+            interact: BrowserRobot.() -> Unit,
+        ): BrowserRobot.Transition {
             recentlyClosedTabsPageTitle(title).also {
-                Log.i(TAG, "clickRecentlyClosedItem: Waiting for $waitingTimeShort ms for recently closed tab with title: $title to exist")
+                Log.i(
+                    TAG,
+                    "clickRecentlyClosedItem: Waiting for $waitingTimeShort ms for recently closed tab with title: $title to exist",
+                )
                 it.waitForExists(waitingTimeShort)
-                Log.i(TAG, "clickRecentlyClosedItem: Waited for $waitingTimeShort ms for recently closed tab with title: $title to exist")
+                Log.i(
+                    TAG,
+                    "clickRecentlyClosedItem: Waited for $waitingTimeShort ms for recently closed tab with title: $title to exist",
+                )
                 Log.i(TAG, "clickRecentlyClosedItem: Trying to click the recently closed tab with title: $title")
                 it.click()
                 Log.i(TAG, "clickRecentlyClosedItem: Clicked the recently closed tab with title: $title")
@@ -108,7 +124,10 @@ class RecentlyClosedTabsRobot {
             return BrowserRobot.Transition(composeTestRule)
         }
 
-        fun clickOpenInNewTab(testRule: ComposeTestRule, interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
+        fun clickOpenInNewTab(
+            testRule: ComposeTestRule,
+            interact: TabDrawerRobot.() -> Unit,
+        ): TabDrawerRobot.Transition {
             Log.i(TAG, "clickOpenInNewTab: Trying to click the multi-select \"Open in a new tab\" context menu button")
             openInNewTabOption().click()
             Log.i(TAG, "clickOpenInNewTab: Clicked the multi-select \"Open in a new tab\" context menu button")
@@ -117,8 +136,14 @@ class RecentlyClosedTabsRobot {
             return TabDrawerRobot.Transition(testRule)
         }
 
-        fun clickOpenInPrivateTab(testRule: ComposeTestRule, interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
-            Log.i(TAG, "clickOpenInPrivateTab: Trying to click the multi-select \"Open in a private tab\" context menu button")
+        fun clickOpenInPrivateTab(
+            testRule: ComposeTestRule,
+            interact: TabDrawerRobot.() -> Unit,
+        ): TabDrawerRobot.Transition {
+            Log.i(
+                TAG,
+                "clickOpenInPrivateTab: Trying to click the multi-select \"Open in a private tab\" context menu button",
+            )
             openInPrivateTabOption().click()
             Log.i(TAG, "clickOpenInPrivateTab: Clicked the multi-select \"Open in a private tab\" context menu button")
 
@@ -135,7 +160,10 @@ class RecentlyClosedTabsRobot {
             return ShareOverlayRobot.Transition()
         }
 
-        fun goBackToHistoryMenu(composeTestRule: ComposeTestRule, interact: HistoryRobot.() -> Unit): HistoryRobot.Transition {
+        fun goBackToHistoryMenu(
+            composeTestRule: ComposeTestRule,
+            interact: HistoryRobot.() -> Unit,
+        ): HistoryRobot.Transition {
             Log.i(TAG, "goBackToHistoryMenu: Trying to click navigate up toolbar button")
             onView(withContentDescription("Navigate up")).click()
             Log.i(TAG, "goBackToHistoryMenu: Clicked navigate up toolbar button")
@@ -156,10 +184,8 @@ private fun recentlyClosedTabDeleteButton() =
     onView(
         allOf(
             withId(R.id.overflow_menu),
-            withEffectiveVisibility(
-                Visibility.VISIBLE,
-            ),
-        ),
+            withEffectiveVisibility(Visibility.VISIBLE),
+        )
     )
 
 private fun openInNewTabOption() = onView(withText("Open in new tab"))

@@ -4,19 +4,13 @@
 
 package mozilla.components.concept.engine.webpush
 
-/**
- * Notifies applications or other components of engine events related to Web Push notifications.
- */
+/** Notifies applications or other components of engine events related to Web Push notifications. */
 interface WebPushDelegate {
 
-    /**
-     * Requests a WebPush subscription for the given Service Worker scope.
-     */
+    /** Requests a WebPush subscription for the given Service Worker scope. */
     fun onGetSubscription(scope: String, onSubscription: (WebPushSubscription?) -> Unit) = Unit
 
-    /**
-     * Create a WebPush subscription for the given Service Worker scope.
-     */
+    /** Create a WebPush subscription for the given Service Worker scope. */
     fun onSubscribe(scope: String, serverKey: ByteArray?, onSubscribe: (WebPushSubscription?) -> Unit) = Unit
 
     /**

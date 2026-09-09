@@ -9,28 +9,29 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-/**
- * Internal database for storing login exceptions.
- */
+/** Internal database for storing login exceptions. */
 @Database(entities = [LoginExceptionEntity::class], version = 1)
 internal abstract class LoginExceptionDatabase : RoomDatabase() {
     abstract fun loginExceptionDao(): LoginExceptionDao
 
     companion object {
-        @Volatile
-        private var instance: LoginExceptionDatabase? = null
+        @Volatile private var instance: LoginExceptionDatabase? = null
 
         @Synchronized
         fun get(context: Context): LoginExceptionDatabase {
-            instance?.let { return it }
+            instance?.let {
+                return it
+            }
 
             return Room.databaseBuilder(
-                context,
-                LoginExceptionDatabase::class.java,
-                "login_exceptions",
-            ).build().also {
-                instance = it
-            }
+                    context,
+                    LoginExceptionDatabase::class.java,
+                    "login_exceptions",
+                )
+                .build()
+                .also {
+                    instance = it
+                }
         }
     }
 }

@@ -33,6 +33,10 @@ const PREF_SELECTED_WALLPAPER =
 const PREF_WALLPAPERS_USER_ENABLED_MIGRATED =
   "browser.newtabpage.activity-stream.newtabWallpapers.user.enabled.migrated";
 
+// Used by every operation that changes <profile>/wallpaper/ or the uuid pref,
+// so an upload and a reset can never overlap.
+const WALLPAPER_FILE_LOCK = "newtab-wallpaper-file";
+
 export class WallpaperFeed {
   constructor() {
     this.loaded = false;
@@ -59,6 +63,13 @@ export class WallpaperFeed {
    */
   RemoteSettings(...args) {
     return lazy.RemoteSettings(...args);
+  }
+
+  /**
+   * This thin wrapper around IOUtils.write lets tests simulate write failures.
+   */
+  writeFile(...args) {
+    return IOUtils.write(...args);
   }
 
   async wallpaperSetup(isStartup = false) {
@@ -289,21 +300,44 @@ export class WallpaperFeed {
       return null;
     }
     try {
+      return await locks.request(WALLPAPER_FILE_LOCK, () =>
+        this.#writeWallpaper(file, wallpaperTheme)
+      );
+    } catch (error) {
+      console.error("Could not take the wallpaper file lock:", error);
+      return null;
+    }
+  }
+
+  async #writeWallpaper(file, wallpaperTheme) {
+    try {
       const wallpaperDir = PathUtils.join(PathUtils.profileDir, "wallpaper");
 
       // create wallpaper directory if it does not exist
       await IOUtils.makeDirectory(wallpaperDir, { ignoreExisting: true });
 
-      let uuid = Services.uuid.generateUUID().toString().slice(1, -1);
-      Services.prefs.setStringPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID, uuid);
+      // Clear out anything left by an earlier version or an interrupted write.
+      await this.#sweepWallpaperDirectory();
 
+      const previousUuid = Services.prefs.getStringPref(
+        PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID,
+        ""
+      );
+
+      const uuid = Services.uuid.generateUUID().toString().slice(1, -1);
       const filePath = PathUtils.join(wallpaperDir, uuid);
 
       // convert to Uint8Array for IOUtils
       const arrayBuffer = await file.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
 
-      await IOUtils.write(filePath, uint8Array, { tmpPath: `${filePath}.tmp` });
+      await this.writeFile(filePath, uint8Array, {
+        tmpPath: `${filePath}.tmp`,
+      });
+
+      // Point the pref at the new file only once it exists, so a failed write
+      // leaves the previous upload referenced and on disk.
+      Services.prefs.setStringPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID, uuid);
 
       const wallpaperURI = this.getWallpaperURL(uuid);
 
@@ -318,6 +352,18 @@ export class WallpaperFeed {
         ac.SetPref("newtabWallpapers.customWallpaper.theme", wallpaperTheme)
       );
 
+      // Delete the file this upload replaced. A failure only leaves it for the
+      // next sweep, and must not fail the upload that already succeeded.
+      if (previousUuid) {
+        try {
+          await IOUtils.remove(PathUtils.join(wallpaperDir, previousUuid), {
+            ignoreAbsent: true,
+          });
+        } catch (error) {
+          console.error("Failed to remove replaced wallpaper:", error);
+        }
+      }
+
       return filePath;
     } catch (error) {
       console.error("Error saving wallpaper:", error);
@@ -325,7 +371,54 @@ export class WallpaperFeed {
     }
   }
 
+  /**
+   * Deletes files in the wallpaper directory that the uuid pref does not name:
+   * wallpapers replaced before this cleanup existed, and .tmp files left by an
+   * interrupted write. Runs before each upload. Callers must already hold
+   * WALLPAPER_FILE_LOCK.
+   */
+  async #sweepWallpaperDirectory() {
+    try {
+      const wallpaperDir = PathUtils.join(PathUtils.profileDir, "wallpaper");
+      const children = await IOUtils.getChildren(wallpaperDir, {
+        ignoreAbsent: true,
+      });
+
+      const uuid = Services.prefs.getStringPref(
+        PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID,
+        ""
+      );
+
+      for (const path of children) {
+        if (uuid && PathUtils.filename(path) === uuid) {
+          continue;
+        }
+        // Per file, so one bad entry does not stop the rest of the sweep.
+        try {
+          const { type } = await IOUtils.stat(path);
+          if (type === "regular") {
+            await IOUtils.remove(path, { ignoreAbsent: true });
+          }
+        } catch (error) {
+          console.error("Failed to remove an orphaned wallpaper:", error);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to clean up the wallpaper directory:", error);
+    }
+  }
+
   async removeCustomWallpaper() {
+    try {
+      await locks.request(WALLPAPER_FILE_LOCK, () =>
+        this.#deleteCustomWallpaper()
+      );
+    } catch (error) {
+      console.error("Could not take the wallpaper file lock:", error);
+    }
+  }
+
+  async #deleteCustomWallpaper() {
     try {
       let uuid = Services.prefs.getStringPref(
         PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID,

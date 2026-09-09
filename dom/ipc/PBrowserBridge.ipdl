@@ -3,9 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include protocol PBrowser;
-#ifdef ACCESSIBILITY
-include protocol PDocAccessible;
-#endif
 
 include DOMTypes;
 include PPrintingTypes;
@@ -129,10 +126,11 @@ parent:
   /**
    * Tell the parent the accessible for this iframe's embedder
    * OuterDocAccessible.
-   * aDoc is the actor for the containing document.
-   * aID is the unique id of the embedder accessible within that document.
+   * aID is the unique id of the embedder accessible within the containing
+   * document. The containing document itself is determined using the
+   * WindowGlobal tree.
    */
-  async SetEmbedderAccessible(nullable PDocAccessible aDoc, uint64_t aID);
+  async SetEmbedderAccessible(uint64_t aID);
 #endif
 };
 

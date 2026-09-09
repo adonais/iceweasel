@@ -33,6 +33,7 @@ class SVGNumberList {
   friend class dom::DOMSVGNumber;
   friend class dom::DOMSVGNumberList;
   friend class SVGAnimatedNumberList;
+  using const_iterator = FallibleTArray<float>::const_iterator;
 
  public:
   SVGNumberList() = default;
@@ -59,12 +60,8 @@ class SVGNumberList {
 
   const float& operator[](uint32_t aIndex) const { return mNumbers[aIndex]; }
 
-  [[nodiscard]] FallibleTArray<float>::const_iterator begin() const {
-    return mNumbers.begin();
-  }
-  [[nodiscard]] FallibleTArray<float>::const_iterator end() const {
-    return mNumbers.end();
-  }
+  [[nodiscard]] const_iterator begin() const { return mNumbers.begin(); }
+  [[nodiscard]] const_iterator end() const { return mNumbers.end(); }
 
   bool operator==(const SVGNumberList& rhs) const {
     return mNumbers == rhs.mNumbers;

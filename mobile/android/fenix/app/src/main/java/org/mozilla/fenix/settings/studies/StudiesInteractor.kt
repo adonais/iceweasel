@@ -8,14 +8,10 @@ import mozilla.components.service.nimbus.NimbusApi
 import org.mozilla.experiments.nimbus.internal.EnrolledExperiment
 
 interface StudiesInteractor {
-    /**
-     * Open the given [url] in the browser.
-     */
+    /** Open the given [url] in the browser. */
     fun openWebsite(url: String)
 
-    /**
-     * Remove a study by the given [experiment].
-     */
+    /** Remove a study by the given [experiment]. */
     fun removeStudy(experiment: EnrolledExperiment)
 }
 

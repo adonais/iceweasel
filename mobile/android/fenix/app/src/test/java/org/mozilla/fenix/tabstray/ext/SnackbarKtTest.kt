@@ -8,6 +8,7 @@ import android.widget.FrameLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import io.mockk.every
 import io.mockk.mockk
+import kotlin.test.assertIs
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -22,23 +23,23 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.MockkRetryTestRule
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertIs
 
 @RunWith(RobolectricTestRunner::class)
 class SnackbarKtTest {
 
-    @get:Rule
-    val mockkRule = MockkRetryTestRule()
+    @get:Rule val mockkRule = MockkRetryTestRule()
 
     @Test
     fun `GIVEN the snackbar is a child of dynamic container WHEN it is shown THEN enable the dynamic behavior`() {
-        val container = FrameLayout(testContext).apply {
-            id = R.id.dynamicSnackbarContainer
-            layoutParams = CoordinatorLayout.LayoutParams(0, 0)
-        }
-        val settings: Settings = mockk(relaxed = true) {
-            every { toolbarPosition } returns ToolbarPosition.BOTTOM
-        }
+        val container =
+            FrameLayout(testContext).apply {
+                id = R.id.dynamicSnackbarContainer
+                layoutParams = CoordinatorLayout.LayoutParams(0, 0)
+            }
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { toolbarPosition } returns ToolbarPosition.BOTTOM
+            }
 
         every { testContext.components.settings } returns settings
 

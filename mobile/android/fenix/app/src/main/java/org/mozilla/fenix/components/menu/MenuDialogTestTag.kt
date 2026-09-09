@@ -4,9 +4,7 @@
 
 package org.mozilla.fenix.components.menu
 
-/**
- * Menu dialog test tags are used to identify the items in automated tests.
- */
+/** Menu dialog test tags are used to identify the items in automated tests. */
 internal object MenuDialogTestTag {
     private const val MAIN_MENU = "mainMenu"
 

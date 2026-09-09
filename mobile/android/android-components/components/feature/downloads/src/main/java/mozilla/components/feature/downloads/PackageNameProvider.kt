@@ -6,9 +6,7 @@ package mozilla.components.feature.downloads
 
 import android.content.Context
 
-/**
- * Provides the package name of the application.
- */
+/** Provides the package name of the application. */
 interface PackageNameProvider {
     val packageName: String
 }

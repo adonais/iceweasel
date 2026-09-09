@@ -52,6 +52,7 @@ const Template = ({
   l10nId,
   supportPage,
   accessKey,
+  title,
   iconSrc,
   hasSlottedSupportLink,
   nestedFields,
@@ -67,6 +68,7 @@ const Template = ({
       aria-label=${ifDefined(ariaLabel)}
       data-l10n-id=${ifDefined(l10nId)}
       accesskey=${ifDefined(accessKey)}
+      title=${ifDefined(title || null)}
       support-page=${ifDefined(supportPage)}
       iconsrc=${ifDefined(iconSrc)}
       inputlayout=${ifDefined(inputLayout)}
@@ -99,6 +101,7 @@ Default.args = {
   l10nId: "moz-toggle-label",
   hasSupportLink: false,
   accessKey: "",
+  title: "",
   supportPage: "",
   iconSrc: "",
   hasSlottedSupportLink: false,

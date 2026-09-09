@@ -8,14 +8,7 @@
 "use strict";
 
 add_task(async () => {
-  let client, tab;
-
-  function connect() {
-    // Fake a first connection to the content process
-    const transport = DevToolsServer.connectPipe();
-    client = new DevToolsClient(transport);
-    return client.connect();
-  }
+  let tab;
 
   async function listProcess() {
     const onNewProcess = new Promise(resolve => {
@@ -107,14 +100,7 @@ add_task(async () => {
     info("Loader destroyed in the content process");
   }
 
-  // Instantiate a minimal server
-  DevToolsServer.init();
-  DevToolsServer.allowChromeProcess = true;
-  if (!DevToolsServer.createRootActor) {
-    DevToolsServer.registerAllActors();
-  }
-
-  await connect();
+  const client = await CommandsFactory.spawnClientToDebugSystemPrincipal();
   await listProcess();
 
   const [front, contentId] = await getProcess();
@@ -124,5 +110,4 @@ add_task(async () => {
   await closeClient();
 
   BrowserTestUtils.removeTab(tab);
-  DevToolsServer.destroy();
 });

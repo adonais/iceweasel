@@ -25,7 +25,7 @@ class TLSCertificateCompressionExtensionCatcher : public TlsExtensionFilter {
  public:
   TLSCertificateCompressionExtensionCatcher(const std::shared_ptr<TlsAgent>& a)
       : TlsExtensionFilter(a),
-        received_compressed_certificate_extension_(false){};
+        received_compressed_certificate_extension_(false) {};
 
   PacketFilter::Action FilterExtension(uint16_t extension_type,
                                        const DataBuffer& input,
@@ -59,7 +59,7 @@ class TLSCertificateCompressionExtensionModifier : public TlsExtensionFilter {
  public:
   TLSCertificateCompressionExtensionModifier(const std::shared_ptr<TlsAgent>& a,
                                              uint8_t byte, uint8_t value)
-      : TlsExtensionFilter(a), offset_(byte), value_(value){};
+      : TlsExtensionFilter(a), offset_(byte), value_(value) {};
 
   PacketFilter::Action FilterExtension(uint16_t extension_type,
                                        const DataBuffer& input,

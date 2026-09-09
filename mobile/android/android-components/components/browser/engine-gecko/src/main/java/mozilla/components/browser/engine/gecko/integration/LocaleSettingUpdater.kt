@@ -9,13 +9,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import androidx.core.content.ContextCompat
+import androidx.core.os.LocaleListCompat as LocaleList
 import mozilla.components.support.utils.ext.registerReceiverCompat
 import org.mozilla.geckoview.GeckoRuntime
-import androidx.core.os.LocaleListCompat as LocaleList
 
-/**
- * Class to set the locales setting for geckoview, updating from the locale of the device.
- */
+/** Class to set the locales setting for geckoview, updating from the locale of the device. */
 class LocaleSettingUpdater(
     private val context: Context,
     private val runtime: GeckoRuntime,

@@ -37,7 +37,8 @@ class SVGAnimationElement : public SVGAnimationElementBase, public SVGTests {
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override = 0;
 
   // nsIContent specializations
-  nsresult BindToTree(BindContext&, nsINode& aParent) override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult BindToTree(BindContext&,
+                                                  nsINode& aParent) override;
   void UnbindFromTree(UnbindContext&) override;
 
   // Element specializations
@@ -45,9 +46,12 @@ class SVGAnimationElement : public SVGAnimationElementBase, public SVGTests {
                       const nsAString& aValue,
                       nsIPrincipal* aMaybeScriptedPrincipal,
                       nsAttrValue& aResult) override;
-  void AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
-                    const nsAttrValue* aValue, const nsAttrValue* aOldValue,
-                    nsIPrincipal* aSubjectPrincipal, bool aNotify) override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void AfterSetAttr(int32_t aNamespaceID,
+                                                nsAtom* aName,
+                                                const nsAttrValue* aValue,
+                                                const nsAttrValue* aOldValue,
+                                                nsIPrincipal* aSubjectPrincipal,
+                                                bool aNotify) override;
 
   Element* GetTargetElementContent();
   virtual bool GetTargetAttributeName(int32_t* aNamespaceID,
@@ -106,7 +110,7 @@ class SVGAnimationElement : public SVGAnimationElementBase, public SVGTests {
  protected:
   // SVGElement overrides
 
-  void UpdateHrefTarget(const nsAString& aHrefStr);
+  MOZ_CAN_RUN_SCRIPT void UpdateHrefTarget(const nsAString& aHrefStr);
   void AnimationTargetChanged();
 
   /**

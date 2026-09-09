@@ -13,10 +13,10 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.TextView
+import com.google.android.material.R as materialR
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import mozilla.components.feature.prompts.R
-import com.google.android.material.R as materialR
 
 internal class WebAuthnRelatedOriginDialogFragment : PromptDialogFragment() {
 
@@ -37,11 +37,12 @@ internal class WebAuthnRelatedOriginDialogFragment : PromptDialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        return LayoutInflater.from(requireContext()).inflate(
-            R.layout.mozac_feature_prompts_webauthn_related_origin,
-            container,
-            false,
-        )
+        return LayoutInflater.from(requireContext())
+            .inflate(
+                R.layout.mozac_feature_prompts_webauthn_related_origin,
+                container,
+                false,
+            )
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

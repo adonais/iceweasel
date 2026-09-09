@@ -15,7 +15,6 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends \
     clang \
     libclang-rt-18-dev \
-    clang-format \
     cmake \
     libelf-dev \
     libdw-dev \

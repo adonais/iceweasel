@@ -42,8 +42,6 @@ class AboutStudies extends React.Component {
     super(props);
 
     this.remoteValueNameMap = {
-      AddonStudyList: "addonStudies",
-      PreferenceStudyList: "prefStudies",
       MessagingSystemList: "experiments",
       ShieldLearnMoreHref: "learnMoreHref",
       StudiesEnabled: "studiesEnabled",
@@ -102,8 +100,6 @@ class AboutStudies extends React.Component {
       translations,
       learnMoreHref,
       studiesEnabled,
-      addonStudies,
-      prefStudies,
       experiments,
       optInMessage,
     } = this.state;
@@ -122,8 +118,6 @@ class AboutStudies extends React.Component {
       optInMessage && r(OptInBox, optInMessage),
       r(StudyList, {
         translations,
-        addonStudies,
-        prefStudies,
         experiments,
       })
     );
@@ -192,9 +186,9 @@ function OptInBox({ error, message }) {
  */
 class StudyList extends React.Component {
   render() {
-    const { addonStudies, prefStudies, translations, experiments } = this.props;
+    const { translations, experiments } = this.props;
 
-    if (!addonStudies.length && !prefStudies.length && !experiments.length) {
+    if (!experiments.length) {
       return r("p", { className: "study-list-info" }, translations.noStudies);
     }
 
@@ -202,33 +196,8 @@ class StudyList extends React.Component {
     const inactiveStudies = [];
 
     // Since we are modifying the study objects, it is polite to make copies
-    for (const study of addonStudies) {
-      const clonedStudy = Object.assign({}, study, {
-        type: "addon",
-        sortDate: study.studyStartDate,
-      });
-      if (study.active) {
-        activeStudies.push(clonedStudy);
-      } else {
-        inactiveStudies.push(clonedStudy);
-      }
-    }
-
-    for (const study of prefStudies) {
-      const clonedStudy = Object.assign({}, study, {
-        type: "pref",
-        sortDate: new Date(study.lastSeen),
-      });
-      if (study.expired) {
-        inactiveStudies.push(clonedStudy);
-      } else {
-        activeStudies.push(clonedStudy);
-      }
-    }
-
     for (const study of experiments) {
       const clonedStudy = Object.assign({}, study, {
-        type: study.isRollout ? "rollout" : "nimbus",
         sortDate: new Date(study.lastSeen),
       });
       if (!study.active) {
@@ -247,69 +216,30 @@ class StudyList extends React.Component {
       r(
         "ul",
         { className: "study-list active-study-list" },
-        activeStudies.map(study => {
-          if (study.type === "addon") {
-            return r(AddonStudyListItem, {
-              key: study.slug,
-              study,
-              translations,
-            });
-          }
-          if (study.type === "nimbus" || study.type === "rollout") {
-            return r(MessagingSystemListItem, {
-              key: study.slug,
-              study,
-              translations,
-            });
-          }
-          if (study.type === "pref") {
-            return r(PreferenceStudyListItem, {
-              key: study.slug,
-              study,
-              translations,
-            });
-          }
-          return null;
-        })
+        activeStudies.map(study =>
+          r(MessagingSystemListItem, {
+            key: study.slug,
+            study,
+            translations,
+          })
+        )
       ),
       r("h2", {}, translations.completedStudiesList),
       r(
         "ul",
         { className: "study-list inactive-study-list" },
-        inactiveStudies.map(study => {
-          if (study.type === "addon") {
-            return r(AddonStudyListItem, {
-              key: study.slug,
-              study,
-              translations,
-            });
-          }
-          if (
-            study.type === "nimbus" ||
-            study.type === "messaging_experiment" ||
-            study.type === "rollout"
-          ) {
-            return r(MessagingSystemListItem, {
-              key: study.slug,
-              study,
-              translations,
-            });
-          }
-          if (study.type === "pref") {
-            return r(PreferenceStudyListItem, {
-              key: study.slug,
-              study,
-              translations,
-            });
-          }
-          return null;
-        })
+        inactiveStudies.map(study =>
+          r(MessagingSystemListItem, {
+            key: study.slug,
+            study,
+            translations,
+          })
+        )
       )
     );
   }
 }
 StudyList.propTypes = {
-  addonStudies: PropTypes.array.isRequired,
   translations: PropTypes.object.isRequired,
 };
 
@@ -374,189 +304,5 @@ class MessagingSystemListItem extends React.Component {
     );
   }
 }
-
-/**
- * Details about an individual add-on study, with an option to end it if it is active.
- */
-class AddonStudyListItem extends React.Component {
-  constructor(props) {
-    super(props);
-    this.handleClickRemove = this.handleClickRemove.bind(this);
-  }
-
-  handleClickRemove() {
-    sendPageEvent("RemoveAddonStudy", {
-      recipeId: this.props.study.recipeId,
-      reason: "individual-opt-out",
-    });
-  }
-
-  render() {
-    const { study, translations } = this.props;
-    return r(
-      "li",
-      {
-        className: classnames("study addon-study", { disabled: !study.active }),
-        "data-study-slug": study.slug, // used to identify this row in tests
-      },
-      r(
-        "div",
-        { className: "study-icon" },
-        study.userFacingName
-          .replace(/-?add-?on-?/i, "")
-          .replace(/-?study-?/i, "")
-          .slice(0, 1)
-      ),
-      r(
-        "div",
-        { className: "study-details" },
-        r(
-          "div",
-          { className: "study-header" },
-          r("span", { className: "study-name" }, study.userFacingName),
-          r("span", {}, "\u2022"), // &bullet;
-          r(
-            "span",
-            { className: "study-status" },
-            study.active
-              ? translations.activeStatus
-              : translations.completeStatus
-          )
-        ),
-        r(
-          "div",
-          { className: "study-description" },
-          study.userFacingDescription
-        )
-      ),
-      r(
-        "div",
-        { className: "study-actions" },
-        study.active &&
-          r(
-            "button",
-            { className: "remove-button", onClick: this.handleClickRemove },
-            r("div", { className: "button-box" }, translations.removeButton)
-          )
-      )
-    );
-  }
-}
-AddonStudyListItem.propTypes = {
-  study: PropTypes.shape({
-    recipeId: PropTypes.number.isRequired,
-    slug: PropTypes.string.isRequired,
-    userFacingName: PropTypes.string.isRequired,
-    active: PropTypes.bool.isRequired,
-    userFacingDescription: PropTypes.string.isRequired,
-  }).isRequired,
-  translations: PropTypes.object.isRequired,
-};
-
-/**
- * Details about an individual preference study, with an option to end it if it is active.
- */
-class PreferenceStudyListItem extends React.Component {
-  constructor(props) {
-    super(props);
-    this.handleClickRemove = this.handleClickRemove.bind(this);
-  }
-
-  handleClickRemove() {
-    sendPageEvent("RemovePreferenceStudy", {
-      experimentName: this.props.study.slug,
-      reason: "individual-opt-out",
-    });
-  }
-
-  render() {
-    const { study, translations } = this.props;
-
-    let iconLetter = (study.userFacingName || study.slug)
-      .replace(/-?pref-?(flip|study)-?/, "")
-      .replace(/-?study-?/, "")
-      .slice(0, 1)
-      .toUpperCase();
-
-    let description = study.userFacingDescription;
-    if (!description) {
-      // Assume there is exactly one preference (old-style preference experiment).
-      const [preferenceName, { preferenceValue }] = Object.entries(
-        study.preferences
-      )[0];
-      // Sanitize the values by setting them as the text content of an element,
-      // and then getting the HTML representation of that text. This will have the
-      // browser safely sanitize them. Use outerHTML to also include the <code>
-      // element in the string.
-      const sanitizer = document.createElement("code");
-      sanitizer.textContent = preferenceName;
-      const sanitizedPreferenceName = sanitizer.outerHTML;
-      sanitizer.textContent = preferenceValue;
-      const sanitizedPreferenceValue = sanitizer.outerHTML;
-      description = translations.preferenceStudyDescription
-        .replace(/%(?:1\$)?S/, sanitizedPreferenceName)
-        .replace(/%(?:2\$)?S/, sanitizedPreferenceValue);
-    }
-
-    return r(
-      "li",
-      {
-        className: classnames("study pref-study", { disabled: study.expired }),
-        "data-study-slug": study.slug, // used to identify this row in tests
-      },
-      r("div", { className: "study-icon" }, iconLetter),
-      r(
-        "div",
-        { className: "study-details" },
-        r(
-          "div",
-          { className: "study-header" },
-          r(
-            "span",
-            { className: "study-name" },
-            study.userFacingName || study.slug
-          ),
-          r("span", {}, "\u2022"), // &bullet;
-          r(
-            "span",
-            { className: "study-status" },
-            study.expired
-              ? translations.completeStatus
-              : translations.activeStatus
-          )
-        ),
-        r("div", {
-          className: "study-description",
-          dangerouslySetInnerHTML: { __html: description },
-        })
-      ),
-      r(
-        "div",
-        { className: "study-actions" },
-        !study.expired &&
-          r(
-            "button",
-            { className: "remove-button", onClick: this.handleClickRemove },
-            r("div", { className: "button-box" }, translations.removeButton)
-          )
-      )
-    );
-  }
-}
-PreferenceStudyListItem.propTypes = {
-  study: PropTypes.shape({
-    slug: PropTypes.string.isRequired,
-    userFacingName: PropTypes.string,
-    userFacingDescription: PropTypes.string,
-    expired: PropTypes.bool.isRequired,
-    preferenceName: PropTypes.string.isRequired,
-    preferenceValue: PropTypes.oneOf(
-      PropTypes.string,
-      PropTypes.bool,
-      PropTypes.number
-    ).isRequired,
-  }).isRequired,
-  translations: PropTypes.object.isRequired,
-};
 
 ReactDOM.render(r(AboutStudies), document.getElementById("app"));

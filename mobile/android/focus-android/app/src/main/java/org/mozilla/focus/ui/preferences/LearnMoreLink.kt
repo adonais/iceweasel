@@ -33,11 +33,8 @@ fun ColumnScope.LearnMoreLink(
         text = stringResource(R.string.about_screen_learn_more),
         color = focusColors.aboutPageLink,
         style = focusTypography.links,
-        modifier = modifier
-            .padding(focusDimensions.paddingText)
-            .fillMaxWidth()
-            .align(Start)
-            .clickable {
+        modifier =
+            modifier.padding(focusDimensions.paddingText).fillMaxWidth().align(Start).clickable {
                 openLearnMore()
             },
     )

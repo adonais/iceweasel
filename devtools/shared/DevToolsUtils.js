@@ -28,6 +28,17 @@ if (!isWorker) {
     },
     { global: "contextual" }
   );
+
+  const { XPCOMUtils } = ChromeUtils.importESModule(
+    "resource://gre/modules/XPCOMUtils.sys.mjs",
+    { global: "contextual" }
+  );
+  XPCOMUtils.defineLazyPreferenceGetter(
+    lazy,
+    "executeSoonDelay",
+    "devtools.testing.executeSoonDelay",
+    0
+  );
 }
 
 // Native getters which are considered to be side effect free.
@@ -58,25 +69,47 @@ for (const key of Object.keys(ThreadSafeDevToolsUtils)) {
 }
 
 /**
+ * Encapsulate a function that should be dispatched to the main thread via
+ * executeSoon/... in various debugging / diagnosis wrappers.
+ *
+ * @param {Function} fn
+ *     The function to encapsulate.
+ * @returns {Function}
+ *     The wrapped function to execute.
+ */
+function getMainThreadExecutor(fn, debugLabel) {
+  let executor;
+  // Only enable async stack reporting when DEBUG_JS_MODULES is set
+  // (customized local builds) to avoid a performance penalty.
+  if (AppConstants.DEBUG_JS_MODULES || flags.testing) {
+    const stack = getStack();
+    executor = () => {
+      callFunctionWithAsyncStack(fn, stack, debugLabel);
+    };
+  } else {
+    executor = fn;
+  }
+
+  // This should never be called in worker code paths, and executeSoonDelay will
+  // not be defined there.
+  if (lazy.executeSoonDelay) {
+    return () => setTimeout(executor, lazy.executeSoonDelay);
+  }
+
+  return executor;
+}
+
+/**
  * Waits for the next tick in the event loop to execute a callback.
  */
 exports.executeSoon = function (fn) {
   if (isWorker) {
     setImmediate(fn);
   } else {
-    let executor;
-    // Only enable async stack reporting when DEBUG_JS_MODULES is set
-    // (customized local builds) to avoid a performance penalty.
-    if (AppConstants.DEBUG_JS_MODULES || flags.testing) {
-      const stack = getStack();
-      executor = () => {
-        callFunctionWithAsyncStack(fn, stack, "DevToolsUtils.executeSoon");
-      };
-    } else {
-      executor = fn;
-    }
     Services.tm.dispatchToMainThread({
-      run: exports.makeInfallible(executor),
+      run: exports.makeInfallible(
+        getMainThreadExecutor(fn, "DevToolsUtils.executeSoon")
+      ),
     });
   }
 };
@@ -89,23 +122,10 @@ exports.executeSoonWithMicroTask = function (fn) {
   if (isWorker) {
     setImmediate(fn);
   } else {
-    let executor;
-    // Only enable async stack reporting when DEBUG_JS_MODULES is set
-    // (customized local builds) to avoid a performance penalty.
-    if (AppConstants.DEBUG_JS_MODULES || flags.testing) {
-      const stack = getStack();
-      executor = () => {
-        callFunctionWithAsyncStack(
-          fn,
-          stack,
-          "DevToolsUtils.executeSoonWithMicroTask"
-        );
-      };
-    } else {
-      executor = fn;
-    }
     Services.tm.dispatchToMainThreadWithMicroTask({
-      run: exports.makeInfallible(executor),
+      run: exports.makeInfallible(
+        getMainThreadExecutor(fn, "DevToolsUtils.executeSoonWithMicroTask")
+      ),
     });
   }
 };

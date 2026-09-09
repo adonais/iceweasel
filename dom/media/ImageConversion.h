@@ -44,6 +44,9 @@ nsresult ConvertToI420(layers::Image* aImage, uint8_t* aDestY, int aDestStrideY,
 
 /**
  * Converts aImage to an NV12 image and writes it to the given buffers.
+ *
+ * aDestStrideUV must be at least 2 * ceil(aDestSize.width / 2), since U and V
+ * are interleaved. Returns NS_ERROR_INVALID_ARG if either stride is too small.
  */
 nsresult ConvertToNV12(layers::Image* aImage, uint8_t* aDestY, int aDestStrideY,
                        uint8_t* aDestUV, int aDestStrideUV,

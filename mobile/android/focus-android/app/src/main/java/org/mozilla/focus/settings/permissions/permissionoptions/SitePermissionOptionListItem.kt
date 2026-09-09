@@ -6,9 +6,7 @@ package org.mozilla.focus.settings.permissions.permissionoptions
 
 import org.mozilla.focus.settings.permissions.SitePermissionOption
 
-/**
- * Data class representing an item in the site permission options list.
- */
+/** Data class representing an item in the site permission options list. */
 data class SitePermissionOptionListItem(
     val sitePermissionOption: SitePermissionOption,
     val onClick: (SitePermissionOption) -> Unit,

@@ -31,16 +31,18 @@ import org.mockito.Mockito.verify
 class DigitalAssetLinksApiTest {
 
     private val webAsset = AssetDescriptor.Web(site = "https://mozilla.org")
-    private val androidAsset = AssetDescriptor.Android(
-        packageName = "com.mozilla.fenix",
-        sha256CertFingerprint = "01:23:45:67:89",
-    )
-    private val baseRequest = Request(
-        url = "https://mozilla.org",
-        method = Request.Method.GET,
-        connectTimeout = TIMEOUT,
-        readTimeout = TIMEOUT,
-    )
+    private val androidAsset =
+        AssetDescriptor.Android(
+            packageName = "com.mozilla.fenix",
+            sha256CertFingerprint = "01:23:45:67:89",
+        )
+    private val baseRequest =
+        Request(
+            url = "https://mozilla.org",
+            method = Request.Method.GET,
+            connectTimeout = TIMEOUT,
+            readTimeout = TIMEOUT,
+        )
     private val apiKey = "X"
     private lateinit var client: Client
     private lateinit var api: DigitalAssetLinksApi
@@ -110,7 +112,8 @@ class DigitalAssetLinksApiTest {
         doReturn(mockResponse(jsonPrefix + jsonSuffix)).`when`(client).fetch(any())
         assertEquals(emptyList<Statement>(), api.listStatements(webAsset).toList())
 
-        val invalidRelation = """
+        val invalidRelation =
+            """
         {
             "source": {"web":{"site": "https://mozilla.org"}},
             "target": {"web":{"site": "https://mozilla.org"}},
@@ -120,7 +123,8 @@ class DigitalAssetLinksApiTest {
         doReturn(mockResponse(jsonPrefix + invalidRelation + jsonSuffix)).`when`(client).fetch(any())
         assertEquals(emptyList<Statement>(), api.listStatements(webAsset).toList())
 
-        val invalidTarget = """
+        val invalidTarget =
+            """
         {
             "source": {"web":{"site": "https://mozilla.org"}},
             "target": {},
@@ -133,7 +137,8 @@ class DigitalAssetLinksApiTest {
 
     @Test
     fun `parses json statement list with web target`() {
-        val webStatement = """
+        val webStatement =
+            """
         {"statements": [{
             "source": {"web":{"site": "https://mozilla.org"}},
             "target": {"web":{"site": "https://mozilla.org"}},
@@ -146,7 +151,7 @@ class DigitalAssetLinksApiTest {
                 Statement(
                     relation = USE_AS_ORIGIN,
                     target = webAsset,
-                ),
+                )
             ),
             api.listStatements(webAsset).toList(),
         )
@@ -154,7 +159,8 @@ class DigitalAssetLinksApiTest {
 
     @Test
     fun `parses json statement list with android target`() {
-        val androidStatement = """
+        val androidStatement =
+            """
         {"statements": [{
             "source": {"web":{"site": "https://mozilla.org"}},
             "target": {"androidApp":{
@@ -170,7 +176,7 @@ class DigitalAssetLinksApiTest {
                 Statement(
                     relation = HANDLE_ALL_URLS,
                     target = androidAsset,
-                ),
+                )
             ),
             api.listStatements(webAsset).toList(),
         )
@@ -179,47 +185,54 @@ class DigitalAssetLinksApiTest {
     @Test
     fun `passes data in get check request URL for android target`() {
         api.checkRelationship(webAsset, USE_AS_ORIGIN, androidAsset)
-        verify(client).fetch(
-            baseRequest.copy(
-                url = "https://digitalassetlinks.googleapis.com/v1/assetlinks:check?" +
-                    "prettyPrint=false&key=X&relation=delegate_permission%2Fcommon.use_as_origin&" +
-                    "source.web.site=${Uri.encode("https://mozilla.org")}&" +
-                    "target.androidApp.packageName=com.mozilla.fenix&" +
-                    "target.androidApp.certificate.sha256Fingerprint=${Uri.encode("01:23:45:67:89")}",
-            ),
-        )
+        verify(client)
+            .fetch(
+                baseRequest.copy(
+                    url =
+                        "https://digitalassetlinks.googleapis.com/v1/assetlinks:check?" +
+                            "prettyPrint=false&key=X&relation=delegate_permission%2Fcommon.use_as_origin&" +
+                            "source.web.site=${Uri.encode("https://mozilla.org")}&" +
+                            "target.androidApp.packageName=com.mozilla.fenix&" +
+                            "target.androidApp.certificate.sha256Fingerprint=${Uri.encode("01:23:45:67:89")}"
+                )
+            )
     }
 
     @Test
     fun `passes data in get check request URL for web target`() {
         api.checkRelationship(webAsset, HANDLE_ALL_URLS, webAsset)
-        verify(client).fetch(
-            baseRequest.copy(
-                url = "https://digitalassetlinks.googleapis.com/v1/assetlinks:check?" +
-                    "prettyPrint=false&key=X&relation=delegate_permission%2Fcommon.handle_all_urls&" +
-                    "source.web.site=${Uri.encode("https://mozilla.org")}&" +
-                    "target.web.site=${Uri.encode("https://mozilla.org")}",
-            ),
-        )
+        verify(client)
+            .fetch(
+                baseRequest.copy(
+                    url =
+                        "https://digitalassetlinks.googleapis.com/v1/assetlinks:check?" +
+                            "prettyPrint=false&key=X&relation=delegate_permission%2Fcommon.handle_all_urls&" +
+                            "source.web.site=${Uri.encode("https://mozilla.org")}&" +
+                            "target.web.site=${Uri.encode("https://mozilla.org")}"
+                )
+            )
     }
 
     @Test
     fun `passes data in get list request URL`() {
         api.listStatements(webAsset)
-        verify(client).fetch(
-            baseRequest.copy(
-                url = "https://digitalassetlinks.googleapis.com/v1/statements:list?" +
-                    "prettyPrint=false&key=X&source.web.site=${Uri.encode("https://mozilla.org")}",
-            ),
-        )
+        verify(client)
+            .fetch(
+                baseRequest.copy(
+                    url =
+                        "https://digitalassetlinks.googleapis.com/v1/statements:list?" +
+                            "prettyPrint=false&key=X&source.web.site=${Uri.encode("https://mozilla.org")}"
+                )
+            )
     }
 
-    private fun mockResponse(data: String) = Response(
-        url = "",
-        status = SUCCESS,
-        headers = MutableHeaders(),
-        body = mockBody(data),
-    )
+    private fun mockResponse(data: String) =
+        Response(
+            url = "",
+            status = SUCCESS,
+            headers = MutableHeaders(),
+            body = mockBody(data),
+        )
 
     private fun mockBody(data: String): Response.Body {
         val mockBody: Response.Body = mock()

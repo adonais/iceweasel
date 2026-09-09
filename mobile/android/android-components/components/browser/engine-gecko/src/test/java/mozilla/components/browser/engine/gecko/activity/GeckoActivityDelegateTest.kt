@@ -8,6 +8,8 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.content.IntentSender
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.lang.ref.WeakReference
+import kotlin.test.assertNotNull
 import mozilla.components.concept.engine.activity.ActivityDelegate
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
@@ -16,8 +18,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.`when`
 import org.mozilla.geckoview.GeckoResult
-import java.lang.ref.WeakReference
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class GeckoActivityDelegateTest {
@@ -31,11 +31,12 @@ class GeckoActivityDelegateTest {
 
     @Test
     fun `onStartActivityForResult is completed successfully`() {
-        val delegate: ActivityDelegate = object : ActivityDelegate {
-            override fun startIntentSenderForResult(intent: IntentSender, onResult: (Intent?) -> Unit) {
-                onResult(mock())
+        val delegate: ActivityDelegate =
+            object : ActivityDelegate {
+                override fun startIntentSenderForResult(intent: IntentSender, onResult: (Intent?) -> Unit) {
+                    onResult(mock())
+                }
             }
-        }
 
         val geckoActivityDelegate = GeckoActivityDelegate(WeakReference(delegate))
         val result = geckoActivityDelegate.onStartActivityForResult(pendingIntent)
@@ -47,11 +48,12 @@ class GeckoActivityDelegateTest {
 
     @Test
     fun `onStartActivityForResult completes exceptionally on null response`() {
-        val delegate: ActivityDelegate = object : ActivityDelegate {
-            override fun startIntentSenderForResult(intent: IntentSender, onResult: (Intent?) -> Unit) {
-                onResult(null)
+        val delegate: ActivityDelegate =
+            object : ActivityDelegate {
+                override fun startIntentSenderForResult(intent: IntentSender, onResult: (Intent?) -> Unit) {
+                    onResult(null)
+                }
             }
-        }
 
         val geckoActivityDelegate = GeckoActivityDelegate(WeakReference(delegate))
         val result = geckoActivityDelegate.onStartActivityForResult(pendingIntent)

@@ -5,14 +5,14 @@
 package mozilla.components.feature.protection.dashboard
 
 import android.content.Context
+import java.time.LocalDate
+import kotlin.time.Duration.Companion.days
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import mozilla.components.concept.engine.EngineSession.TrackingProtectionPolicy.TrackingCategory
 import mozilla.components.feature.protection.dashboard.db.TrackerByHostEntity
 import mozilla.components.feature.protection.dashboard.db.TrackerTotalEntity
 import mozilla.components.feature.protection.dashboard.db.TrackersDatabase
-import java.time.LocalDate
-import kotlin.time.Duration.Companion.days
 
 private val DAYS_IN_WEEK = 7.days.inWholeDays
 private val DAYS_IN_MONTH = 30.days.inWholeDays
@@ -60,29 +60,19 @@ class ProtectionsStorage(context: Context) {
         return dao.getTotalCountSince(startDate).map { it ?: 0 }
     }
 
-    /**
-     * Returns the total count of trackers blocked today.
-     */
+    /** Returns the total count of trackers blocked today. */
     fun getTotalCountToday(): Flow<Int> = getTotalCountSince(todayAsEpochDay())
 
-    /**
-     * Returns the total count of trackers blocked in the last 7 days.
-     */
+    /** Returns the total count of trackers blocked in the last 7 days. */
     fun getTotalCountWeek(): Flow<Int> = getTotalCountSince(todayAsEpochDay() - DAYS_IN_WEEK)
 
-    /**
-     * Returns the total count of trackers blocked in the last 30 days.
-     */
+    /** Returns the total count of trackers blocked in the last 30 days. */
     fun getTotalCountMonth(): Flow<Int> = getTotalCountSince(todayAsEpochDay() - DAYS_IN_MONTH)
 
-    /**
-     * Returns the total count of trackers blocked in the last 365 days.
-     */
+    /** Returns the total count of trackers blocked in the last 365 days. */
     fun getTotalCountYear(): Flow<Int> = getTotalCountSince(todayAsEpochDay() - DAYS_IN_YEAR)
 
-    /**
-     * Returns the total count of all trackers ever blocked.
-     */
+    /** Returns the total count of all trackers ever blocked. */
     fun getTotalCountAllTime(): Flow<Int> = getTotalCountSince(0)
 
     /**
@@ -96,9 +86,7 @@ class ProtectionsStorage(context: Context) {
         }
     }
 
-    /**
-     * Deletes all stored tracker data.
-     */
+    /** Deletes all stored tracker data. */
     suspend fun deleteAll() {
         dao.deleteAllTotals()
         dao.deleteAllByHost()
@@ -106,46 +94,51 @@ class ProtectionsStorage(context: Context) {
 
     private fun todayAsEpochDay(): Long = LocalDate.now().toEpochDay()
 
-    private fun TrackerTotalEntity.incrementCategories(
-        categories: List<TrackingCategory>,
-    ): TrackerTotalEntity = categories.fold(this) { entity, category ->
-        when (category) {
-            TrackingCategory.AD -> entity.copy(adCount = entity.adCount + 1)
-            TrackingCategory.ANALYTICS -> entity.copy(analyticsCount = entity.analyticsCount + 1)
-            TrackingCategory.SOCIAL -> entity.copy(socialCount = entity.socialCount + 1)
-            TrackingCategory.CONTENT -> entity.copy(contentCount = entity.contentCount + 1)
-            TrackingCategory.CRYPTOMINING -> entity.copy(cryptominingCount = entity.cryptominingCount + 1)
-            TrackingCategory.FINGERPRINTING -> entity.copy(fingerprintingCount = entity.fingerprintingCount + 1)
-            TrackingCategory.MOZILLA_SOCIAL -> entity.copy(mozillaSocialCount = entity.mozillaSocialCount + 1)
-            TrackingCategory.SCRIPTS_AND_SUB_RESOURCES ->
-                entity.copy(scriptsAndSubResourcesCount = entity.scriptsAndSubResourcesCount + 1)
-            else -> entity
+    private fun TrackerTotalEntity.incrementCategories(categories: List<TrackingCategory>): TrackerTotalEntity =
+        categories.fold(this) { entity, category ->
+            when (category) {
+                TrackingCategory.AD -> entity.copy(adCount = entity.adCount + 1)
+                TrackingCategory.ANALYTICS -> entity.copy(analyticsCount = entity.analyticsCount + 1)
+                TrackingCategory.SOCIAL -> entity.copy(socialCount = entity.socialCount + 1)
+                TrackingCategory.CONTENT -> entity.copy(contentCount = entity.contentCount + 1)
+                TrackingCategory.CRYPTOMINING -> entity.copy(cryptominingCount = entity.cryptominingCount + 1)
+                TrackingCategory.FINGERPRINTING -> entity.copy(fingerprintingCount = entity.fingerprintingCount + 1)
+                TrackingCategory.MOZILLA_SOCIAL -> entity.copy(mozillaSocialCount = entity.mozillaSocialCount + 1)
+                TrackingCategory.SCRIPTS_AND_SUB_RESOURCES ->
+                    entity.copy(scriptsAndSubResourcesCount = entity.scriptsAndSubResourcesCount + 1)
+                else -> entity
+            }
         }
-    }
 
-    private fun TrackerByHostEntity.incrementCategories(
-        categories: List<TrackingCategory>,
-    ): TrackerByHostEntity = categories.fold(this) { entity, category ->
-        when (category) {
-            TrackingCategory.AD -> entity.copy(adCount = entity.adCount + 1)
-            TrackingCategory.ANALYTICS -> entity.copy(analyticsCount = entity.analyticsCount + 1)
-            TrackingCategory.SOCIAL -> entity.copy(socialCount = entity.socialCount + 1)
-            TrackingCategory.CONTENT -> entity.copy(contentCount = entity.contentCount + 1)
-            TrackingCategory.CRYPTOMINING -> entity.copy(cryptominingCount = entity.cryptominingCount + 1)
-            TrackingCategory.FINGERPRINTING -> entity.copy(fingerprintingCount = entity.fingerprintingCount + 1)
-            TrackingCategory.MOZILLA_SOCIAL -> entity.copy(mozillaSocialCount = entity.mozillaSocialCount + 1)
-            TrackingCategory.SCRIPTS_AND_SUB_RESOURCES ->
-                entity.copy(scriptsAndSubResourcesCount = entity.scriptsAndSubResourcesCount + 1)
-            else -> entity
+    private fun TrackerByHostEntity.incrementCategories(categories: List<TrackingCategory>): TrackerByHostEntity =
+        categories.fold(this) { entity, category ->
+            when (category) {
+                TrackingCategory.AD -> entity.copy(adCount = entity.adCount + 1)
+                TrackingCategory.ANALYTICS -> entity.copy(analyticsCount = entity.analyticsCount + 1)
+                TrackingCategory.SOCIAL -> entity.copy(socialCount = entity.socialCount + 1)
+                TrackingCategory.CONTENT -> entity.copy(contentCount = entity.contentCount + 1)
+                TrackingCategory.CRYPTOMINING -> entity.copy(cryptominingCount = entity.cryptominingCount + 1)
+                TrackingCategory.FINGERPRINTING -> entity.copy(fingerprintingCount = entity.fingerprintingCount + 1)
+                TrackingCategory.MOZILLA_SOCIAL -> entity.copy(mozillaSocialCount = entity.mozillaSocialCount + 1)
+                TrackingCategory.SCRIPTS_AND_SUB_RESOURCES ->
+                    entity.copy(scriptsAndSubResourcesCount = entity.scriptsAndSubResourcesCount + 1)
+                else -> entity
+            }
         }
-    }
 
     private fun TrackerByHostEntity.toHostStats(): HostStats {
         return HostStats(
             host = host,
-            totalCount = adCount + analyticsCount + socialCount + contentCount +
-                cryptominingCount + fingerprintingCount + mozillaSocialCount +
-                emailCount + scriptsAndSubResourcesCount,
+            totalCount =
+                adCount +
+                    analyticsCount +
+                    socialCount +
+                    contentCount +
+                    cryptominingCount +
+                    fingerprintingCount +
+                    mozillaSocialCount +
+                    emailCount +
+                    scriptsAndSubResourcesCount,
         )
     }
 }

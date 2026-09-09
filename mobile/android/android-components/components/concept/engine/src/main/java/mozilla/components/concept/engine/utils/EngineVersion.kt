@@ -4,9 +4,7 @@
 
 package mozilla.components.concept.engine.utils
 
-/**
- * Release type - as compiled - of the engine.
- */
+/** Release type - as compiled - of the engine. */
 enum class EngineReleaseChannel {
     UNKNOWN,
     NIGHTLY,
@@ -22,7 +20,7 @@ enum class EngineReleaseChannel {
  * @param minor Minor version number
  * @param patch Patch version number
  * @param metadata Additional and optional metadata appended to the version number, e.g. for a version number of
- * "68.0a1" [metadata] will contain "a1".
+ *   "68.0a1" [metadata] will contain "a1".
  * @param releaseChannel Additional property indicating the release channel of this version.
  */
 data class EngineVersion(
@@ -37,11 +35,12 @@ data class EngineVersion(
             major != other.major -> major - other.major
             minor != other.minor -> minor - other.minor
             patch != other.patch -> (patch - other.patch).toInt()
-            metadata != other.metadata -> when {
-                metadata == null -> -1
-                other.metadata == null -> 1
-                else -> metadata.compareTo(other.metadata)
-            }
+            metadata != other.metadata ->
+                when {
+                    metadata == null -> -1
+                    other.metadata == null -> 1
+                    else -> metadata.compareTo(other.metadata)
+                }
             releaseChannel != other.releaseChannel -> releaseChannel.compareTo(other.releaseChannel)
             else -> 0
         }
@@ -93,13 +92,14 @@ data class EngineVersion(
             val minor = result.groups[2]?.value ?: return null
             val patch = result.groups[3]?.value ?: "0"
             val metadata = result.groups[4]?.value
-            val engineReleaseChannel = when (releaseChannel) {
-                "nightly" -> EngineReleaseChannel.NIGHTLY
-                "beta" -> EngineReleaseChannel.BETA
-                "release" -> EngineReleaseChannel.RELEASE
-                "default" -> EngineReleaseChannel.DEFAULT
-                else -> EngineReleaseChannel.UNKNOWN
-            }
+            val engineReleaseChannel =
+                when (releaseChannel) {
+                    "nightly" -> EngineReleaseChannel.NIGHTLY
+                    "beta" -> EngineReleaseChannel.BETA
+                    "release" -> EngineReleaseChannel.RELEASE
+                    "default" -> EngineReleaseChannel.DEFAULT
+                    else -> EngineReleaseChannel.UNKNOWN
+                }
 
             return try {
                 EngineVersion(

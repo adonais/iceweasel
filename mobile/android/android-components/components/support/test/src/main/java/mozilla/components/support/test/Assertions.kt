@@ -4,8 +4,5 @@
 
 package mozilla.components.support.test
 
-/**
- * Fails the test if this function is used.
- */
-fun assertUnused(): Nothing =
-    throw AssertionError("Expected unused function, but was called")
+/** Fails the test if this function is used. */
+fun assertUnused(): Nothing = throw AssertionError("Expected unused function, but was called")

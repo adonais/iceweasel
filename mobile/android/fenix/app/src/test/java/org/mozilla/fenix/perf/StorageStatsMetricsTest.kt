@@ -11,22 +11,21 @@ import androidx.core.content.getSystemService
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.fenix.GleanMetrics.StorageStats as Metrics
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
-import org.mozilla.fenix.GleanMetrics.StorageStats as Metrics
 
 @RunWith(RobolectricTestRunner::class) // gleanTestRule
 class StorageStatsMetricsTest {
 
-    @get:Rule
-    val gleanTestRule = FenixGleanTestRule(testContext)
+    @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     @RelaxedMockK private lateinit var mockContext: Context
 

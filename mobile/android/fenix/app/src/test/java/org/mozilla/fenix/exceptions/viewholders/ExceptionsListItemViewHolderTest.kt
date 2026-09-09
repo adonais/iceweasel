@@ -13,6 +13,7 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import kotlin.test.assertNotNull
 import mozilla.components.browser.icons.BrowserIcons
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.ui.widgets.WidgetSiteItemView
@@ -21,19 +22,16 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.exceptions.ExceptionsInteractor
 import org.mozilla.fenix.helpers.MockkRetryTestRule
-import kotlin.test.assertNotNull
 
 class ExceptionsListItemViewHolderTest {
 
-    @RelaxedMockK
-    private lateinit var view: WidgetSiteItemView
+    @RelaxedMockK private lateinit var view: WidgetSiteItemView
 
     @MockK private lateinit var icons: BrowserIcons
 
     @MockK private lateinit var interactor: ExceptionsInteractor<Exception>
 
-    @get:Rule
-    val mockkRule = MockkRetryTestRule()
+    @get:Rule val mockkRule = MockkRetryTestRule()
 
     @Before
     fun setup() {
@@ -44,16 +42,14 @@ class ExceptionsListItemViewHolderTest {
 
     @Test
     fun `sets url text and loads favicon - mozilla`() {
-        ExceptionsListItemViewHolder(view, interactor, icons)
-            .bind(Exception(), url = "mozilla.org")
+        ExceptionsListItemViewHolder(view, interactor, icons).bind(Exception(), url = "mozilla.org")
         verify { view.setText(label = "mozilla.org", caption = null) }
         verify { icons.loadIntoView(view.iconView, IconRequest("mozilla.org")) }
     }
 
     @Test
     fun `sets url text and loads favicon - example`() {
-        ExceptionsListItemViewHolder(view, interactor, icons)
-            .bind(Exception(), url = "https://example.com/icon.svg")
+        ExceptionsListItemViewHolder(view, interactor, icons).bind(Exception(), url = "https://example.com/icon.svg")
         verify { view.setText(label = "https://example.com/icon.svg", caption = null) }
         verify { icons.loadIntoView(view.iconView, IconRequest("https://example.com/icon.svg")) }
     }
@@ -62,9 +58,10 @@ class ExceptionsListItemViewHolderTest {
     fun `delete button calls interactor`() {
         var clickListener: ((View) -> Unit)? = null
         val exception = Exception()
-        every { view.setSecondaryButton(any(), any<Int>(), any()) } answers {
-            clickListener = thirdArg()
-        }
+        every { view.setSecondaryButton(any(), any<Int>(), any()) } answers
+            {
+                clickListener = thirdArg()
+            }
         ExceptionsListItemViewHolder(view, interactor, icons).bind(exception, url = "mozilla.org")
 
         every { interactor.onDeleteOne(exception) } just Runs

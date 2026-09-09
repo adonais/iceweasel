@@ -34,7 +34,8 @@ extern unsigned long s_mpi_is_sse2();
  *  esi:    a ptr
  *  edi:    c ptr
  */
-__declspec(naked) void s_mpv_mul_d(const mp_digit *a, mp_size a_len, mp_digit b, mp_digit *c)
+__declspec(naked) void
+s_mpv_mul_d(const mp_digit *a, mp_size a_len, mp_digit b, mp_digit *c)
 {
     __asm {
     mov    eax, is_sse
@@ -137,7 +138,8 @@ L_6:
  *  esi:    a ptr
  *  edi:    c ptr
  */
-__declspec(naked) void s_mpv_mul_d_add(const mp_digit *a, mp_size a_len, mp_digit b, mp_digit *c)
+__declspec(naked) void
+s_mpv_mul_d_add(const mp_digit *a, mp_size a_len, mp_digit b, mp_digit *c)
 {
     __asm {
     mov    eax, is_sse
@@ -245,7 +247,8 @@ L_16:
  *  esi:    a ptr
  *  edi:    c ptr
  */
-__declspec(naked) void s_mpv_mul_d_add_prop(const mp_digit *a, mp_size a_len, mp_digit b, mp_digit *c)
+__declspec(naked) void
+s_mpv_mul_d_add_prop(const mp_digit *a, mp_size a_len, mp_digit b, mp_digit *c)
 {
     __asm {
     mov    eax, is_sse
@@ -374,7 +377,8 @@ L_28:
  *  esi:    a ptr
  *  edi:    c ptr
  */
-__declspec(naked) void s_mpv_sqr_add_prop(const mp_digit *a, mp_size a_len, mp_digit *sqrs)
+__declspec(naked) void
+s_mpv_sqr_add_prop(const mp_digit *a, mp_size a_len, mp_digit *sqrs)
 {
     __asm {
      mov    eax, is_sse
@@ -510,8 +514,8 @@ L_38:
  *  edi:    c ptr
  */
 __declspec(naked) mp_err
-    s_mpv_div_2dx1d(mp_digit Nhi, mp_digit Nlo, mp_digit divisor,
-                    mp_digit *qp, mp_digit *rp)
+s_mpv_div_2dx1d(mp_digit Nhi, mp_digit Nlo, mp_digit divisor,
+                mp_digit *qp, mp_digit *rp)
 {
     __asm {
        push   ebx

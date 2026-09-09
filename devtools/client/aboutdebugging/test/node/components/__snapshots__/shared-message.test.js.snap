@@ -3,6 +3,7 @@
 exports[`Message component renders the expected snapshot for ERROR level 1`] = `
 <aside
   className="message message--level-error  qa-message some-classname-3"
+  tabIndex={null}
 >
   <img
     className="message__icon"
@@ -22,6 +23,7 @@ exports[`Message component renders the expected snapshot for ERROR level 1`] = `
 exports[`Message component renders the expected snapshot for INFO level 1`] = `
 <aside
   className="message message--level-info  qa-message some-classname-1"
+  tabIndex={null}
 >
   <img
     className="message__icon"
@@ -41,6 +43,7 @@ exports[`Message component renders the expected snapshot for INFO level 1`] = `
 exports[`Message component renders the expected snapshot for WARNING level 1`] = `
 <aside
   className="message message--level-warning  qa-message some-classname-2"
+  tabIndex={null}
 >
   <img
     className="message__icon"
@@ -60,6 +63,7 @@ exports[`Message component renders the expected snapshot for WARNING level 1`] =
 exports[`Message component renders with closing button renders the expected snapshot for Message with closing button 1`] = `
 <aside
   className="message message--level-info  qa-message some-classname-1"
+  tabIndex={null}
 >
   <img
     className="message__icon"

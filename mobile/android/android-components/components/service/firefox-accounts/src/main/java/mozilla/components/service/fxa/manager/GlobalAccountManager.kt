@@ -7,14 +7,18 @@ package mozilla.components.service.fxa.manager
 import androidx.annotation.VisibleForTesting
 import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import mozilla.components.service.fxa.sync.RustSyncManager
 
 /**
- * A singleton which exposes an instance of [FxaAccountManager] for internal consumption.
- * Populated during initialization of [FxaAccountManager].
- * This exists to allow various internal parts without a direct reference to an instance of
- * [FxaAccountManager] to notify it of encountered auth errors via [authError].
+ * A singleton which exposes an instance of [FxaAccountManager] for internal consumption. Populated during
+ * initialization of [FxaAccountManager]. This exists to allow various internal parts without a direct reference to an
+ * instance of [FxaAccountManager] to notify it of encountered auth errors via [authError].
  */
 internal object GlobalAccountManager {
+
+    private var rustSyncManager: RustSyncManager? = null
     private var instance: WeakReference<FxaAccountManager>? = null
     private var lastAuthErrorCheckPoint: Long = 0L
     private var authErrorCountWithinWindow: Int = 0
@@ -23,12 +27,13 @@ internal object GlobalAccountManager {
         fun getTimeCheckPoint(): Long
     }
 
-    private val systemClock = object : Clock {
-        override fun getTimeCheckPoint(): Long {
-            // nanoTime to decouple from wall-time.
-            return TimeUnit.NANOSECONDS.toMillis(System.nanoTime())
+    private val systemClock =
+        object : Clock {
+            override fun getTimeCheckPoint(): Long {
+                // nanoTime to decouple from wall-time.
+                return TimeUnit.NANOSECONDS.toMillis(System.nanoTime())
+            }
         }
-    }
 
     internal fun setInstance(am: FxaAccountManager) {
         instance = WeakReference(am)
@@ -47,11 +52,12 @@ internal object GlobalAccountManager {
     ) {
         val authErrorCheckPoint: Long = clock.getTimeCheckPoint()
 
-        val timeSinceLastAuthErrorMs: Long? = if (lastAuthErrorCheckPoint == 0L) {
-            null
-        } else {
-            authErrorCheckPoint - lastAuthErrorCheckPoint
-        }
+        val timeSinceLastAuthErrorMs: Long? =
+            if (lastAuthErrorCheckPoint == 0L) {
+                null
+            } else {
+                authErrorCheckPoint - lastAuthErrorCheckPoint
+            }
         lastAuthErrorCheckPoint = authErrorCheckPoint
 
         if (timeSinceLastAuthErrorMs == null) {
@@ -80,6 +86,20 @@ internal object GlobalAccountManager {
     internal fun requireAccountManager(): FxaAccountManager {
         return requireNotNull(instance?.get()) {
             "Trying to access the account manager without calling GlobalAccountManager.setInstance"
+        }
+    }
+
+    /** Sets the [RustSyncManager] to be used for sync operations */
+    internal fun setRustSyncManager(rustSyncManager: RustSyncManager) {
+        this.rustSyncManager = rustSyncManager
+    }
+
+    /** Coroutine dispatcher that allows us to test the operation of sync */
+    internal var syncIoDispatcher: CoroutineDispatcher = Dispatchers.IO
+
+    internal fun requireRustSyncManager(): RustSyncManager {
+        return requireNotNull(rustSyncManager) {
+            "Trying to access the rust sync manager without calling GlobalAccountManager.setRustSyncManager"
         }
     }
 }

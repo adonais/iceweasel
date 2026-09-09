@@ -18,13 +18,16 @@ parent:
   // the parent creates a PSerialPort endpoint pair, binds the parent
   // endpoint to a new SerialPortParent on the IO thread, and returns the
   // child endpoint here. Otherwise the returned endpoint is invalid.
-  async RequestPort(IPCSerialPortFilter[] filters, bool autoselect)
+  async RequestPort(IPCSerialPortFilter[] filters,
+                    nsString[] allowedBluetoothServiceClassIds,
+                    bool autoselect)
                     returns (IPCRequestPortResult result,
                              Endpoint<PSerialPortChild> childEndpoint);
 
-  // Test-only
+  // Test-only. An empty bluetoothServiceClassId means "no bluetooth UUID".
   async SimulateDeviceConnection(nsString deviceId, nsString devicePath,
-                                 uint16_t vendorId, uint16_t productId) returns (nsresult rv);
+                                 uint16_t vendorId, uint16_t productId,
+                                 nsString bluetoothServiceClassId) returns (nsresult rv);
 
   // Test-only
   async SimulateDeviceDisconnection(nsString deviceId) returns (nsresult rv);

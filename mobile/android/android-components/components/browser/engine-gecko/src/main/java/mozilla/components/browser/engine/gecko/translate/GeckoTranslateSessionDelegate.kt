@@ -10,15 +10,14 @@ import mozilla.components.concept.engine.translate.TranslationPair
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.TranslationsController
 
-internal class GeckoTranslateSessionDelegate(
-    private val engineSession: GeckoEngineSession,
-) : TranslationsController.SessionTranslation.Delegate {
+internal class GeckoTranslateSessionDelegate(private val engineSession: GeckoEngineSession) :
+    TranslationsController.SessionTranslation.Delegate {
 
     /**
      * This delegate function is triggered when requesting a translation on the page is likely.
      *
-     * The criteria is that the page is in a different language than the user's known languages and
-     * that the page is translatable (a model is available).
+     * The criteria is that the page is in a different language than the user's known languages and that the page is
+     * translatable (a model is available).
      *
      * @param session The session that this delegate event corresponds to.
      */
@@ -42,36 +41,38 @@ internal class GeckoTranslateSessionDelegate(
     }
 
     /**
-     * This delegate function is triggered when the state of the translation or translation options
-     * for the page has changed. State changes usually occur on navigation or if a translation
-     * action was requested, such as translating or restoring to the original page.
+     * This delegate function is triggered when the state of the translation or translation options for the page has
+     * changed. State changes usually occur on navigation or if a translation action was requested, such as translating
+     * or restoring to the original page.
      *
      * This provides the translations engine state and information for the page.
      *
      * @param session The session that this delegate event corresponds to.
-     * @param state The reported translations state. Not to be confused
-     * with the browser translation state.
+     * @param state The reported translations state. Not to be confused with the browser translation state.
      */
     override fun onTranslationStateChange(
         session: GeckoSession,
         state: TranslationsController.SessionTranslation.TranslationState?,
     ) {
-        val detectedLanguages = DetectedLanguages(
-            state?.detectedLanguages?.docLangTag,
-            state?.detectedLanguages?.isDocLangTagSupported,
-            state?.detectedLanguages?.userLangTag,
-        )
-        val pair = TranslationPair(
-            state?.requestedTranslationPair?.fromLanguage,
-            state?.requestedTranslationPair?.toLanguage,
-        )
-        val translationsState = TranslationEngineState(
-            detectedLanguages = detectedLanguages,
-            error = state?.error,
-            isEngineReady = state?.isEngineReady,
-            hasVisibleChange = state?.hasVisibleChange,
-            requestedTranslationPair = pair,
-        )
+        val detectedLanguages =
+            DetectedLanguages(
+                state?.detectedLanguages?.docLangTag,
+                state?.detectedLanguages?.isDocLangTagSupported,
+                state?.detectedLanguages?.userLangTag,
+            )
+        val pair =
+            TranslationPair(
+                state?.requestedTranslationPair?.fromLanguage,
+                state?.requestedTranslationPair?.toLanguage,
+            )
+        val translationsState =
+            TranslationEngineState(
+                detectedLanguages = detectedLanguages,
+                error = state?.error,
+                isEngineReady = state?.isEngineReady,
+                hasVisibleChange = state?.hasVisibleChange,
+                requestedTranslationPair = pair,
+            )
 
         engineSession.notifyObservers {
             onTranslateStateChange(translationsState)

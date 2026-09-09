@@ -748,7 +748,8 @@ nsIFrame* Event::GetPrimaryFrameOfEventTarget(const nsPresContext& aPresContext,
   // For compat, see https://github.com/w3c/csswg-drafts/issues/1508. In SVG
   // we just return the coordinates of the outer SVG box. This is all kinda
   // unfortunate.
-  if (frame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT) &&
+  if ((frame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT) ||
+       frame->IsInSVGTextSubtree()) &&
       StaticPrefs::dom_events_offset_in_svg_relative_to_svg_root()) {
     return SVGUtils::GetOuterSVGFrame(frame);
   }

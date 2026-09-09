@@ -26,10 +26,11 @@ class WindowInsetsCompatTest {
         insets = Insets.of(3, 1, 2, 4)
         mandatorySystemGestureInsets = Insets.of(5, 6, 7, 8)
 
-        windowInsetsCompat = WindowInsetsCompat.Builder()
-            .setInsetsIgnoringVisibility(systemBars() or displayCutout(), insets)
-            .setInsets(mandatorySystemGestures(), mandatorySystemGestureInsets)
-            .build()
+        windowInsetsCompat =
+            WindowInsetsCompat.Builder()
+                .setInsetsIgnoringVisibility(systemBars() or displayCutout(), insets)
+                .setInsets(mandatorySystemGestures(), mandatorySystemGestureInsets)
+                .build()
     }
 
     @Test

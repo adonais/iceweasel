@@ -81,15 +81,9 @@ xul|findbar {
 
 .findbar-textbox {
   appearance: none;
-  background-color: var(--background-color-box);
-  color: var(--input-text-color);
+  background-color: var(--toolbar-field-background-color);
+  color: var(--toolbar-field-text-color);
   min-height: 28px;
-
-  :root[lwtheme] &:not([status="notfound"], [flash="true"]) {
-    background-color: var(--toolbar-field-background-color);
-    color: var(--toolbar-field-text-color);
-  }
-
   border: var(--border-width) solid var(--border-color-interactive);
   border-radius: var(--border-radius-xlarge);
   outline: none;
@@ -103,7 +97,6 @@ xul|findbar {
   @media not -moz-pref("browser.nova.enabled") {
     border-radius: var(--border-radius-small);
     border: 1px solid var(--input-border-color);
-    background-color: var(--input-text-background-color);
     min-height: auto;
     padding: 2px 5px;
 

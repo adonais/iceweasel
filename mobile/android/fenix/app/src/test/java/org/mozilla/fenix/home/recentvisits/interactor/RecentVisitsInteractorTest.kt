@@ -29,8 +29,7 @@ import org.mozilla.fenix.home.toolbar.ToolbarController
 import org.mozilla.fenix.home.topsites.controller.TopSiteController
 
 class RecentVisitsInteractorTest {
-    private val defaultSessionControlController: DefaultSessionControlController =
-        mockk(relaxed = true)
+    private val defaultSessionControlController: DefaultSessionControlController = mockk(relaxed = true)
     private val recentTabController: RecentTabController = mockk(relaxed = true)
     private val recentSyncedTabController: RecentSyncedTabController = mockk(relaxed = true)
     private val bookmarksController: BookmarksController = mockk(relaxed = true)
@@ -48,21 +47,22 @@ class RecentVisitsInteractorTest {
 
     @Before
     fun setup() {
-        interactor = SessionControlInteractor(
-            defaultSessionControlController,
-            recentTabController,
-            recentSyncedTabController,
-            bookmarksController,
-            recentVisitsController,
-            pocketStoriesController,
-            privateBrowsingController,
-            toolbarController,
-            homeSearchController,
-            topSiteController,
-            privacyNoticeBannerController,
-            trackingProtectionController,
-            logoController,
-        )
+        interactor =
+            SessionControlInteractor(
+                defaultSessionControlController,
+                recentTabController,
+                recentSyncedTabController,
+                bookmarksController,
+                recentVisitsController,
+                pocketStoriesController,
+                privateBrowsingController,
+                toolbarController,
+                homeSearchController,
+                topSiteController,
+                privacyNoticeBannerController,
+                trackingProtectionController,
+                logoController,
+            )
     }
 
     @Test
@@ -70,17 +70,18 @@ class RecentVisitsInteractorTest {
         val historyGroup =
             RecentHistoryGroup(
                 title = "mozilla",
-                historyMetadata = listOf(
-                    HistoryMetadata(
-                        key = HistoryMetadataKey("http://www.mozilla.com", null, null),
-                        title = "mozilla",
-                        createdAt = System.currentTimeMillis(),
-                        updatedAt = System.currentTimeMillis(),
-                        totalViewTime = 10,
-                        documentType = DocumentType.Regular,
-                        previewImageUrl = null,
+                historyMetadata =
+                    listOf(
+                        HistoryMetadata(
+                            key = HistoryMetadataKey("http://www.mozilla.com", null, null),
+                            title = "mozilla",
+                            createdAt = System.currentTimeMillis(),
+                            updatedAt = System.currentTimeMillis(),
+                            totalViewTime = 10,
+                            documentType = DocumentType.Regular,
+                            previewImageUrl = null,
+                        )
                     ),
-                ),
             )
 
         interactor.onRecentHistoryGroupClicked(historyGroup)
@@ -97,26 +98,28 @@ class RecentVisitsInteractorTest {
 
     @Test
     fun onRemoveRecentHistoryGroup() {
-        val historyMetadataKey = HistoryMetadataKey(
-            "http://www.mozilla.com",
-            "mozilla",
-            null,
-        )
+        val historyMetadataKey =
+            HistoryMetadataKey(
+                "http://www.mozilla.com",
+                "mozilla",
+                null,
+            )
 
         val historyGroup =
             RecentHistoryGroup(
                 title = "mozilla",
-                historyMetadata = listOf(
-                    HistoryMetadata(
-                        key = historyMetadataKey,
-                        title = "mozilla",
-                        createdAt = System.currentTimeMillis(),
-                        updatedAt = System.currentTimeMillis(),
-                        totalViewTime = 10,
-                        documentType = DocumentType.Regular,
-                        previewImageUrl = null,
+                historyMetadata =
+                    listOf(
+                        HistoryMetadata(
+                            key = historyMetadataKey,
+                            title = "mozilla",
+                            createdAt = System.currentTimeMillis(),
+                            updatedAt = System.currentTimeMillis(),
+                            totalViewTime = 10,
+                            documentType = DocumentType.Regular,
+                            previewImageUrl = null,
+                        )
                     ),
-                ),
             )
 
         interactor.onRemoveRecentHistoryGroup(historyGroup.title)

@@ -10,6 +10,7 @@ import android.view.View
 import android.widget.NumberPicker
 import android.widget.ScrollView
 import androidx.annotation.VisibleForTesting
+import java.util.Calendar
 import mozilla.components.feature.prompts.R
 import mozilla.components.feature.prompts.ext.hour
 import mozilla.components.feature.prompts.ext.maxHour
@@ -25,13 +26,12 @@ import mozilla.components.feature.prompts.ext.minute
 import mozilla.components.feature.prompts.ext.now
 import mozilla.components.feature.prompts.ext.second
 import mozilla.components.support.utils.TimePicker.shouldShowMillisecondsPicker
-import java.util.Calendar
 
-/**
- * UI widget that allows to select a time with precision of seconds or milliseconds.
- */
+/** UI widget that allows to select a time with precision of seconds or milliseconds. */
 @SuppressLint("ViewConstructor") // This view is only instantiated in code
-internal class TimePrecisionPicker @JvmOverloads constructor(
+internal class TimePrecisionPicker
+@JvmOverloads
+constructor(
     context: Context,
     private val selectedTime: Calendar = now(),
     private val minTime: Calendar = getDefaultMinTime(),
@@ -40,17 +40,13 @@ internal class TimePrecisionPicker @JvmOverloads constructor(
     private var timeSetListener: OnTimeSetListener? = null,
 ) : ScrollView(context), NumberPicker.OnValueChangeListener {
 
-    @VisibleForTesting
-    internal val hourView: NumberPicker
+    @VisibleForTesting internal val hourView: NumberPicker
 
-    @VisibleForTesting
-    internal val minuteView: NumberPicker
+    @VisibleForTesting internal val minuteView: NumberPicker
 
-    @VisibleForTesting
-    internal val secondView: NumberPicker
+    @VisibleForTesting internal val secondView: NumberPicker
 
-    @VisibleForTesting
-    internal val millisecondView: NumberPicker
+    @VisibleForTesting internal val millisecondView: NumberPicker
 
     init {
         inflate(context, R.layout.mozac_feature_prompts_time_picker, this)
@@ -151,29 +147,32 @@ internal class TimePrecisionPicker @JvmOverloads constructor(
 
     // Update the minute view.
     private fun updateMinuteView() {
-        val min: Int = if (selectedTime.hour == minTime.hour) {
-            minTime.minute
-        } else {
-            selectedTime.minMinute()
-        }
-        val max: Int = if (selectedTime.hour == maxTime.hour) {
-            maxTime.minute
-        } else {
-            selectedTime.maxMinute()
-        }
+        val min: Int =
+            if (selectedTime.hour == minTime.hour) {
+                minTime.minute
+            } else {
+                selectedTime.minMinute()
+            }
+        val max: Int =
+            if (selectedTime.hour == maxTime.hour) {
+                maxTime.minute
+            } else {
+                selectedTime.maxMinute()
+            }
         // If the hour is set to min/max value, then constraint the minute to a valid value.
-        val minute = if (selectedTime.minute < min || selectedTime.minute > max) {
-            timeSetListener?.onTimeSet(
-                this,
-                selectedTime.hour,
-                min,
-                selectedTime.second,
-                selectedTime.millisecond,
-            )
-            min
-        } else {
-            selectedTime.minute
-        }
+        val minute =
+            if (selectedTime.minute < min || selectedTime.minute > max) {
+                timeSetListener?.onTimeSet(
+                    this,
+                    selectedTime.hour,
+                    min,
+                    selectedTime.second,
+                    selectedTime.millisecond,
+                )
+                min
+            } else {
+                selectedTime.minute
+            }
 
         minuteView.apply {
             displayedValues = null

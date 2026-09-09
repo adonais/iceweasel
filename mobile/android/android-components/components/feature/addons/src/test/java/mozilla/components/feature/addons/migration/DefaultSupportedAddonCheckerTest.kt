@@ -13,6 +13,7 @@ import androidx.work.Configuration
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.testing.WorkManagerTestInitHelper
+import java.util.concurrent.TimeUnit
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
@@ -28,7 +29,6 @@ import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.spy
-import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class DefaultSupportedAddonCheckerTest {
@@ -38,13 +38,12 @@ class DefaultSupportedAddonCheckerTest {
     @Before
     fun setUp() {
         val configuration = Configuration.Builder().build()
-        context = spy(testContext).also {
-            val packageManager: PackageManager = mock()
-            doReturn(Intent()).`when`(packageManager).getLaunchIntentForPackage(
-                ArgumentMatchers.anyString(),
-            )
-            doReturn(packageManager).`when`(it).packageManager
-        }
+        context =
+            spy(testContext).also {
+                val packageManager: PackageManager = mock()
+                doReturn(Intent()).`when`(packageManager).getLaunchIntentForPackage(ArgumentMatchers.anyString())
+                doReturn(packageManager).`when`(it).packageManager
+            }
 
         // Initialize WorkManager (early) for instrumentation tests.
         WorkManagerTestInitHelper.initializeTestWorkManager(testContext, configuration)

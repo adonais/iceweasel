@@ -19,9 +19,7 @@ import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.tabstray.ui.TabManagementFragment
 import org.mozilla.fenix.utils.Settings
 
-/**
- * Sets [TabManagementFragment] flags to secure when private tabs list is selected.
- */
+/** Sets [TabManagementFragment] flags to secure when private tabs list is selected. */
 class SecureTabManagerBinding(
     store: TabsTrayStore,
     private val settings: Settings,
@@ -30,17 +28,13 @@ class SecureTabManagerBinding(
 ) : AbstractBinding<TabsTrayState>(store, mainDispatcher) {
 
     override suspend fun onState(flow: Flow<TabsTrayState>) {
-        flow.map { it }
+        flow
+            .map { it }
             .ifAnyChanged { state ->
-                arrayOf(
-                    state.selectedPage,
-                )
+                arrayOf(state.selectedPage)
             }
             .collect { state ->
-                if (
-                    state.selectedPage == Page.PrivateTabs &&
-                    !settings.shouldSecureModeBeOverridden
-                ) {
+                if (state.selectedPage == Page.PrivateTabs && !settings.shouldSecureModeBeOverridden) {
                     setSecureMode(true)
                 } else if (!settings.lastKnownMode.isPrivate) {
                     setSecureMode(false)

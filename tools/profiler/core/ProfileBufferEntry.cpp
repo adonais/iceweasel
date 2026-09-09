@@ -336,11 +336,7 @@ bool UniqueStacks::FrameKey::NormalFrameData::operator==(
 }
 
 bool UniqueStacks::FrameKey::JITFrameData::operator==(
-    const JITFrameData& aOther) const {
-  return mCanonicalAddress == aOther.mCanonicalAddress &&
-         mDepth == aOther.mDepth && mRangeIndex == aOther.mRangeIndex &&
-         mLine == aOther.mLine && mColumn == aOther.mColumn;
-}
+    const JITFrameData& aOther) const = default;
 
 // Consume aJITFrameInfo by stealing its string table and its JIT frame info
 // ranges. The JIT frame info contains JSON which refers to strings from the

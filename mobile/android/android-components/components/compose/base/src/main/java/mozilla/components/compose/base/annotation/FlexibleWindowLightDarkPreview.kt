@@ -10,8 +10,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import mozilla.components.compose.base.theme.layout.AcornWindowSize
 
 /**
- * A wrapper annotation for creating a preview that renders a preview for each
- * combination of [AcornWindowSize] and Light/Dark theme.
+ * A wrapper annotation for creating a preview that renders a preview for each combination of [AcornWindowSize] and
+ * Light/Dark theme.
  */
 // The device parameter is needed in order to force the `LocalConfiguration.current.screenWidth`
 // to work properly. See: https://issuetracker.google.com/issues/300116108#comment1

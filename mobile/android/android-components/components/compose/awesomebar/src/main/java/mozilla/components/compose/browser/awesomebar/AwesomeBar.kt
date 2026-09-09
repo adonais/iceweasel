@@ -49,17 +49,18 @@ fun AwesomeBar(
     onScroll: () -> Unit = {},
     profiler: Profiler? = null,
 ) {
-    val groups = remember(providers) {
-        providers
-            .groupBy { it.groupTitle() }
-            .map { (title, groupedProviders) ->
-                AwesomeBar.SuggestionProviderGroup(
-                    providers = groupedProviders,
-                    title = title,
-                    displayTitle = groupedProviders.first().displayGroupTitle(),
-                )
-            }
-    }
+    val groups =
+        remember(providers) {
+            providers
+                .groupBy { it.groupTitle() }
+                .map { (title, groupedProviders) ->
+                    AwesomeBar.SuggestionProviderGroup(
+                        providers = groupedProviders,
+                        title = title,
+                        displayTitle = groupedProviders.first().displayGroupTitle(),
+                    )
+                }
+        }
 
     AwesomeBar(
         text = text,
@@ -104,46 +105,47 @@ fun AwesomeBar(
     profiler: Profiler? = null,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .semantics {
-                testTagsAsResourceId = true
-                testTag = "mozac.awesomebar"
-            }
-            .background(colors.background),
+        modifier =
+            Modifier.fillMaxWidth()
+                .semantics {
+                    testTagsAsResourceId = true
+                    testTag = "mozac.awesomebar"
+                }
+                .background(colors.background)
     ) {
         if (groups.isEmpty()) return
         val fetcher = remember(groups) { SuggestionFetcher(groups, profiler) }
 
-        val suggestions by remember(fetcher.state.value, hiddenSuggestions) {
-            derivedStateOf {
-                val currentSuggestions = fetcher.state.value
+        val suggestions by
+            remember(fetcher.state.value, hiddenSuggestions) {
+                derivedStateOf {
+                    val currentSuggestions = fetcher.state.value
 
-                // Simple scenario: No pending soft deletion -> no need to filter suggestions.
-                if (hiddenSuggestions.isEmpty()) {
-                    return@derivedStateOf currentSuggestions.toSortedMap(
-                        compareByDescending<AwesomeBar.SuggestionProviderGroup> { it.priority }
-                            // Also using the ID avoids eliding results from groups with the same priority.
-                            .thenBy { it.id },
-                    )
-                }
-
-                // Complex scenario: Suggestions set for deletion -> need to avoid showing them in the meantime.
-                currentSuggestions
-                    .mapValues { (group, suggestions) ->
-                        suggestions.filterNot { suggestion ->
-                            GroupedSuggestion(suggestion, group.id) in hiddenSuggestions
-                        }
+                    // Simple scenario: No pending soft deletion -> no need to filter suggestions.
+                    if (hiddenSuggestions.isEmpty()) {
+                        return@derivedStateOf currentSuggestions.toSortedMap(
+                            compareByDescending<AwesomeBar.SuggestionProviderGroup> { it.priority }
+                                // Also using the ID avoids eliding results from groups with the same priority.
+                                .thenBy { it.id }
+                        )
                     }
-                    // Remove any groups that become empty after filtering hidden suggestions.
-                    .filterValues { it.isNotEmpty() }
-                    .toSortedMap(
-                        compareByDescending<AwesomeBar.SuggestionProviderGroup> { it.priority }
-                            // Also using the ID avoids eliding results from groups with the same priority.
-                            .thenBy { it.id },
-                    )
+
+                    // Complex scenario: Suggestions set for deletion -> need to avoid showing them in the meantime.
+                    currentSuggestions
+                        .mapValues { (group, suggestions) ->
+                            suggestions.filterNot { suggestion ->
+                                GroupedSuggestion(suggestion, group.id) in hiddenSuggestions
+                            }
+                        }
+                        // Remove any groups that become empty after filtering hidden suggestions.
+                        .filterValues { it.isNotEmpty() }
+                        .toSortedMap(
+                            compareByDescending<AwesomeBar.SuggestionProviderGroup> { it.priority }
+                                // Also using the ID avoids eliding results from groups with the same priority.
+                                .thenBy { it.id }
+                        )
+                }
             }
-        }
 
         LaunchedEffect(text, fetcher) {
             fetcher.fetch(text)

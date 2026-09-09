@@ -40,11 +40,11 @@ internal val FAVICON_ROUNDED_CORNER_SHAPE = RoundedCornerShape(2.dp)
  * @param url Website URL for which the favicon will be shown.
  * @param size [Dp] height and width of the image to be loaded.
  * @param modifier [Modifier] to be applied to the layout.
- * @param isPrivate Whether or not a private request (like in private browsing) should be used to
- * download the icon (if needed).
+ * @param isPrivate Whether or not a private request (like in private browsing) should be used to download the icon (if
+ *   needed).
  * @param imageUrl Optional image URL to create an [IconRequest.Resource] from.
- * @param shape The shape used to clip the favicon. Defaults to a slightly rounded rectangle.
- * Use [CircleShape] for a round image.
+ * @param shape The shape used to clip the favicon. Defaults to a slightly rounded rectangle. Use [CircleShape] for a
+ *   round image.
  */
 @Composable
 fun Favicon(
@@ -85,9 +85,7 @@ fun Favicon(
                 Image(
                     painter = icon.painter,
                     contentDescription = null,
-                    modifier = modifier
-                        .size(size)
-                        .clip(shape),
+                    modifier = modifier.size(size).clip(shape),
                     contentScale = ContentScale.Crop,
                 )
             }
@@ -101,8 +99,8 @@ fun Favicon(
  * @param imageResource ID of a drawable resource to be shown.
  * @param size [Dp] height and width of the image to be displayed.
  * @param modifier [Modifier] to be applied to the layout.
- * @param shape The shape used to clip the favicon. Defaults to a slightly rounded rectangle.
- * Use [CircleShape] for a round image.
+ * @param shape The shape used to clip the favicon. Defaults to a slightly rounded rectangle. Use [CircleShape] for a
+ *   round image.
  */
 @Composable
 fun Favicon(
@@ -119,9 +117,7 @@ fun Favicon(
         Image(
             painter = painterResource(id = imageResource),
             contentDescription = null,
-            modifier = modifier
-                .size(size)
-                .clip(shape),
+            modifier = modifier.size(size).clip(shape),
             contentScale = ContentScale.Crop,
         )
     }
@@ -132,8 +128,8 @@ fun Favicon(
  *
  * @param size [Dp] height and width of the placeholder to display.
  * @param modifier [Modifier] to be applied to the layout.
- * @param shape The shape used to clip the favicon. Defaults to a slightly rounded rectangle.
- * Use [CircleShape] for a round image.
+ * @param shape The shape used to clip the favicon. Defaults to a slightly rounded rectangle. Use [CircleShape] for a
+ *   round image.
  * @param content The content to be displayed in the favicon.
  */
 @Composable
@@ -168,34 +164,28 @@ private fun FaviconPlaceholder(
     shape: Shape,
 ) {
     Box(
-        modifier = modifier
-            .size(size)
-            .clip(shape)
-            .background(
-                color = MaterialTheme.colorScheme.surfaceContainerHighest,
-            ),
+        modifier = modifier.size(size).clip(shape).background(color = MaterialTheme.colorScheme.surfaceContainerHighest)
     )
 }
 
 @Preview
 @Composable
-private fun FaviconPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun FaviconPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         Favicon(
             url = "www.mozilla.com",
             size = 64.dp,
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                .padding(all = FirefoxTheme.layout.space.static200),
+            modifier =
+                Modifier.background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                    .padding(all = FirefoxTheme.layout.space.static200),
         )
     }
 }
 
 @Composable
-private fun Dp.toIconRequestSize() = when {
-    value <= dimensionResource(IconRequest.Size.DEFAULT.dimen).value -> IconRequest.Size.DEFAULT
-    value <= dimensionResource(IconRequest.Size.LAUNCHER.dimen).value -> IconRequest.Size.LAUNCHER
-    else -> IconRequest.Size.LAUNCHER_ADAPTIVE
-}
+private fun Dp.toIconRequestSize() =
+    when {
+        value <= dimensionResource(IconRequest.Size.DEFAULT.dimen).value -> IconRequest.Size.DEFAULT
+        value <= dimensionResource(IconRequest.Size.LAUNCHER.dimen).value -> IconRequest.Size.LAUNCHER
+        else -> IconRequest.Size.LAUNCHER_ADAPTIVE
+    }

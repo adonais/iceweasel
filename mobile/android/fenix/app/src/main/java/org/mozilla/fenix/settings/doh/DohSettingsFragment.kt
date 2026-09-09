@@ -20,9 +20,7 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.theme.FirefoxTheme
 
-/**
- * Settings for DNS over HTTPS (DoH)
- */
+/** Settings for DNS over HTTPS (DoH) */
 internal class DohSettingsFragment : Fragment(), SystemInsetsPaddedFragment {
 
     override fun onCreateView(
@@ -32,29 +30,32 @@ internal class DohSettingsFragment : Fragment(), SystemInsetsPaddedFragment {
     ) = content {
         val buildStore = { composeNavController: NavHostController ->
             val navController = findNavController()
-            val settingsProvider = DefaultDohSettingsProvider(
-                engine = requireContext().components.core.engine,
-                settings = requireContext().components.settings,
-            )
-
-            val store by fragmentStore(DohSettingsState()) {
-                DohSettingsStore(
-                    middleware = listOf(
-                        DohSettingsMiddleware(
-                            getSettingsProvider = { settingsProvider },
-                            getNavController = { composeNavController },
-                            openUrlInBrowser = { url ->
-                                navController.openToBrowser()
-                                requireComponents.useCases.fenixBrowserUseCases.loadUrlOrSearch(
-                                    searchTermOrURL = url,
-                                    newTab = true,
-                                )
-                            },
-                            exitDohSettings = { navController.popBackStack() },
-                        ),
-                    ),
+            val settingsProvider =
+                DefaultDohSettingsProvider(
+                    engine = requireContext().components.core.engine,
+                    settings = requireContext().components.settings,
                 )
-            }
+
+            val store by
+                fragmentStore(DohSettingsState()) {
+                    DohSettingsStore(
+                        middleware =
+                            listOf(
+                                DohSettingsMiddleware(
+                                    getSettingsProvider = { settingsProvider },
+                                    getNavController = { composeNavController },
+                                    openUrlInBrowser = { url ->
+                                        navController.openToBrowser()
+                                        requireComponents.useCases.fenixBrowserUseCases.loadUrlOrSearch(
+                                            searchTermOrURL = url,
+                                            newTab = true,
+                                        )
+                                    },
+                                    exitDohSettings = { navController.popBackStack() },
+                                )
+                            )
+                    )
+                }
 
             store
         }

@@ -34,7 +34,17 @@ elif (CONFIG["OS_TARGET"] == "Darwin" and CONFIG["TARGET_OS"] != "iOS") or CONFI
     ]
 
     if CONFIG["OS_TARGET"] == "Darwin":
+        SOURCES += [
+            "MacBluetoothServiceClassId.mm",
+        ]
+        # toolkit/xre is needed for MacAutoreleasePool.h, which is not in
+        # EXPORTS.mozilla.
+        LOCAL_INCLUDES += [
+            "/toolkit/xre",
+        ]
         OS_LIBS += [
+            "-framework Foundation",
+            "-framework IOBluetooth",
             "-framework IOKit",
             "-framework CoreFoundation",
         ]

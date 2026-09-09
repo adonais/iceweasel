@@ -11,9 +11,7 @@ import androidx.annotation.LayoutRes
 import mozilla.components.browser.menu2.R
 import mozilla.components.concept.menu.candidate.RowMenuCandidate
 
-/**
- * Displays a row of small menu options.
- */
+/** Displays a row of small menu options. */
 internal class RowMenuCandidateViewHolder(
     itemView: View,
     inflater: LayoutInflater,
@@ -31,15 +29,17 @@ internal class RowMenuCandidateViewHolder(
         if (newCandidate.items.size != oldCandidate?.items?.size) {
             layout.removeAllViews()
             // Create new view holders list
-            buttonViewHolders = newCandidate.items.map {
-                val button = inflater.inflate(
-                    SmallMenuCandidateViewHolder.layoutResource,
-                    layout,
-                    false,
-                )
-                layout.addView(button)
-                SmallMenuCandidateViewHolder(button, dismiss)
-            }
+            buttonViewHolders =
+                newCandidate.items.map {
+                    val button =
+                        inflater.inflate(
+                            SmallMenuCandidateViewHolder.layoutResource,
+                            layout,
+                            false,
+                        )
+                    layout.addView(button)
+                    SmallMenuCandidateViewHolder(button, dismiss)
+                }
         }
 
         // Use the button view holders to compare individual menu items in the row.
@@ -49,7 +49,6 @@ internal class RowMenuCandidateViewHolder(
     }
 
     companion object {
-        @LayoutRes
-        val layoutResource = R.layout.mozac_browser_menu2_candidate_row
+        @LayoutRes val layoutResource = R.layout.mozac_browser_menu2_candidate_row
     }
 }

@@ -448,7 +448,7 @@ nsresult GetAddrInfo(const nsACString& aHost, uint16_t aAddressFamily,
 
 bool FindHTTPSRecordOverride(const nsACString& aHost,
                              TypeRecordResultType& aResult,
-                             nsACString& aAliasName) {
+                             HTTPSAliasTarget& aAlias) {
   LOG("FindHTTPSRecordOverride aHost=%s", PromiseFlatCString(aHost).get());
   if (!gOverrideServiceUsed) {
     return false;
@@ -468,7 +468,7 @@ bool FindHTTPSRecordOverride(const nsACString& aHost,
 
   // From here on the host has an override entry, so it is authoritative: we
   // always return true and never fall through to a real lookup, even if the
-  // override yields no usable record (aResult/aAliasName carry the outcome).
+  // override yields no usable record (aResult/aAlias carry the outcome).
   DNSPacket packet;
   nsAutoCString host(aHost);
 
@@ -487,13 +487,13 @@ bool FindHTTPSRecordOverride(const nsACString& aHost,
   }
 
   uint32_t ttl = 0;
-  rv = ParseHTTPSRecord(host, packet, aResult, ttl, aAliasName);
+  rv = ParseHTTPSRecord(host, packet, aResult, ttl, aAlias);
   if (NS_FAILED(rv)) {
     // ParseHTTPSRecord may leave partial data (e.g. a valid record parsed
     // before a malformed one) or a stale alias behind. Don't let the caller
     // treat that as a successful resolution.
     aResult = AsVariant(Nothing());
-    aAliasName.Truncate();
+    aAlias = HTTPSAliasTarget{};
   }
 
   return true;
@@ -501,7 +501,7 @@ bool FindHTTPSRecordOverride(const nsACString& aHost,
 
 nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
                           TypeRecordResultType& aResult, uint32_t& aTTL,
-                          nsACString& aAliasName) {
+                          HTTPSAliasTarget& aAlias) {
   nsAutoCString cname;
   nsresult rv;
 
@@ -515,21 +515,23 @@ nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
     rv = aDNSPacket.Decode(aHost, TRRTYPE_HTTPSSVC, cname, true, resp, aResult,
                            additionalRecords, aTTL);
     if (NS_FAILED(rv)) {
-      // If we were following an HTTPS AliasMode target whose records are not
-      // present in this response, surface it so the caller can re-query it.
-      if (rv == NS_ERROR_UNKNOWN_HOST && !aAliasName.IsEmpty()) {
+      // If we were following a target whose records are not present in this
+      // response, surface it so the caller can re-query it.
+      if (rv == NS_ERROR_UNKNOWN_HOST && !aAlias.mName.IsEmpty()) {
         return NS_OK;
       }
       // For any other hard error, clear the alias a previous iteration may have
       // set so the caller doesn't follow a stale target and mask the error.
-      aAliasName.Truncate();
+      aAlias = HTTPSAliasTarget{};
       LOG("Decode failed %x", static_cast<uint32_t>(rv));
       return rv;
     }
     if (!cname.IsEmpty() && aResult.is<Nothing>()) {
       // AliasMode/CNAME target. Its records may be chained within this same
-      // response; otherwise the caller re-queries aAliasName.
-      aAliasName = cname;
+      // response; otherwise the caller re-queries aAlias.mName.
+      aAlias.mFromAliasMode =
+          aAlias.mFromAliasMode || aDNSPacket.CnameIsHTTPSAlias();
+      aAlias.mName = cname;
       aHost = cname;
       cname.Truncate();
       continue;
@@ -537,7 +539,7 @@ nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
   }
 
   if (aResult.is<Nothing>()) {
-    if (!aAliasName.IsEmpty()) {
+    if (!aAlias.mName.IsEmpty()) {
       // We resolved to an alias but its target wasn't in this response.
       return NS_OK;
     }
@@ -548,7 +550,7 @@ nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
 
   // The records were found within this response, so there is no external alias
   // target left to follow.
-  aAliasName.Truncate();
+  aAlias = HTTPSAliasTarget{};
   return NS_OK;
 }
 
@@ -565,14 +567,13 @@ nsresult ResolveHTTPSRecord(const nsACString& aHost,
   constexpr uint32_t kMaxHTTPSAliasChain = 8;
   for (uint32_t i = 0; i < kMaxHTTPSAliasChain; i++) {
     aResult = AsVariant(Nothing());
-    nsAutoCString aliasName;
+    HTTPSAliasTarget alias;
     nsresult rv;
-    if (gOverrideServiceUsed &&
-        FindHTTPSRecordOverride(host, aResult, aliasName)) {
+    if (gOverrideServiceUsed && FindHTTPSRecordOverride(host, aResult, alias)) {
       // The host has an override entry; treat it as authoritative.
       rv = NS_OK;
     } else {
-      rv = ResolveHTTPSRecordImpl(host, aFlags, aResult, aTTL, aliasName);
+      rv = ResolveHTTPSRecordImpl(host, aFlags, aResult, aTTL, alias);
     }
 
     if (NS_FAILED(rv) && rv != NS_ERROR_UNKNOWN_HOST) {
@@ -587,12 +588,17 @@ nsresult ResolveHTTPSRecord(const nsACString& aHost,
       return NS_OK;
     }
 
-    if (!aliasName.IsEmpty() &&
-        !aliasName.Equals(host, nsCaseInsensitiveCStringComparator)) {
+    // Only chase the target when an HTTPS AliasMode record led us here, either
+    // in this response or earlier in the chain. A plain CNAME is resolved by
+    // the recursive resolver, so the absence of an HTTPS record for its target
+    // is definitive.
+    if (!alias.mName.IsEmpty() &&
+        !alias.mName.Equals(host, nsCaseInsensitiveCStringComparator) &&
+        (alias.mFromAliasMode || !aliasTarget.IsEmpty())) {
       LOG("ResolveHTTPSRecord following alias %s => %s", host.get(),
-          aliasName.get());
-      aliasTarget = aliasName;
-      host = std::move(aliasName);
+          alias.mName.get());
+      aliasTarget = alias.mName;
+      host = std::move(alias.mName);
       continue;
     }
 
@@ -676,8 +682,8 @@ nsresult CreateAndResolveMockHTTPSRecord(const nsACString& aHost,
     return rv;
   }
 
-  nsAutoCString aliasName;
-  return ParseHTTPSRecord(host, packet, aResult, aTTL, aliasName);
+  HTTPSAliasTarget alias;
+  return ParseHTTPSRecord(host, packet, aResult, aTTL, alias);
 }
 
 // static
@@ -762,7 +768,7 @@ NS_IMETHODIMP NativeDNSResolverOverride::ClearOverrides() {
 nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
                                 nsIDNSService::DNSFlags aFlags,
                                 TypeRecordResultType& aResult, uint32_t& aTTL,
-                                nsACString& aAliasName) {
+                                HTTPSAliasTarget& aAlias) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 

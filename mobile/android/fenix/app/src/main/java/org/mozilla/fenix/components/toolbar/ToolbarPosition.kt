@@ -7,11 +7,11 @@ package org.mozilla.fenix.components.toolbar
 import android.view.Gravity
 
 /**
- * Fenix lets the browser toolbar be placed at either the top or the bottom of the screen.
- * This enum represents the posible positions.
+ * Fenix lets the browser toolbar be placed at either the top or the bottom of the screen. This enum represents the
+ * posible positions.
  *
- * @property androidGravity [Gravity] value corresponding to the position.
- * Used to position related elements such as a CFR tooltip.
+ * @property androidGravity [Gravity] value corresponding to the position. Used to position related elements such as a
+ *   CFR tooltip.
  */
 enum class ToolbarPosition(val androidGravity: Int) {
     BOTTOM(Gravity.BOTTOM),

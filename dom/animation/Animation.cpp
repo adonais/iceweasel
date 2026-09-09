@@ -432,19 +432,36 @@ bool Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
         break;
     }
   } else if (fromFiniteTimeline) {
-    // mAutoAlignStartTime is only meaningful for finite timelines; clear it
-    // here. Transitioning into a new finite timeline is handled by the
-    // toFiniteTimeline branch above. This clearing is a deviation from spec
-    // [1], which only acts when previousProgress is resolved; without it the
-    // flag's invariant (true only while the timeline is finite) is violated
-    // and AutoAlignStartTime would later fire on a monotonic timeline.
-    // [1] https://drafts.csswg.org/web-animations-2/#setting-the-timeline
-    mAutoAlignStartTime = false;
-    if (!previousProgress.IsNull()) {
+    const auto timeToSet = [&]() -> Maybe<TimeDuration> {
+      const auto autoAlignStartTimePending = mAutoAlignStartTime;
+      // mAutoAlignStartTime is only meaningful for finite timelines; clear it
+      // here. Transitioning into a new finite timeline is handled by the
+      // toFiniteTimeline branch above. This clearing is a deviation from spec
+      // [1], which only acts when previousProgress is resolved; without it the
+      // flag's invariant (true only while the timeline is finite) is violated
+      // and AutoAlignStartTime would later fire on a monotonic timeline.
+      // [1] https://drafts.csswg.org/web-animations-2/#setting-the-timeline
+      if (mAutoAlignStartTime) {
+        mAutoAlignStartTime = false;
+      }
+      if (autoAlignStartTimePending && mHoldTime.IsNull() &&
+          mStartTime.IsNull()) {
+        // If we don't have the start time aligned, and no valid (normalized)
+        // time.
+        return Some(TimeDuration::FromMilliseconds(0.0));
+      }
+
+      if (previousProgress.IsNull()) {
+        return Nothing{};
+      }
+
+      return Some(
+          TimeDuration(EffectEnd().MultDouble(previousProgress.Value())));
+    }();
+    if (timeToSet) {
       // If from finite timeline and previous progress is resolved, run the
       // procedure to set the current time to previous progress * end time.
-      SetCurrentTimeNoUpdate(
-          TimeDuration(EffectEnd().MultDouble(previousProgress.Value())));
+      SetCurrentTimeNoUpdate(TimeDuration(*timeToSet));
     }
   }
   // 10. If the start time of animation is resolved, make animation’s hold time

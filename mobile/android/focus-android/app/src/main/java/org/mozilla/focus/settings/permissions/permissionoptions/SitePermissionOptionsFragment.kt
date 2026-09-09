@@ -19,17 +19,14 @@ import org.mozilla.focus.settings.permissions.SitePermissionOption
 import org.mozilla.focus.state.AppAction
 
 /**
- * A fragment that displays a list of options for a specific site permission (e.g., Camera,
- * Location). It allows the user to select an option, such as "Ask every time", "Allowed", or
- * "Blocked".
+ * A fragment that displays a list of options for a specific site permission (e.g., Camera, Location). It allows the
+ * user to select an option, such as "Ask every time", "Allowed", or "Blocked".
  *
- * This fragment receives a [SitePermission] object via its arguments, which defines the permission
- * to be configured. It uses a `SitePermissionOptionsScreenStore` to manage its state and an
- * interactor to handle user actions.
+ * This fragment receives a [SitePermission] object via its arguments, which defines the permission to be configured. It
+ * uses a `SitePermissionOptionsScreenStore` to manage its state and an interactor to handle user actions.
  *
- * For permissions that require a corresponding Android system permission (like Camera or
- * Location), this fragment also manages the logic to check for the system-level permission and
- * guides the user to the app's settings if it's denied.
+ * For permissions that require a corresponding Android system permission (like Camera or Location), this fragment also
+ * manages the logic to check for the system-level permission and guides the user to the app's settings if it's denied.
  */
 class SitePermissionOptionsFragment : BaseComposeFragment() {
 
@@ -39,16 +36,17 @@ class SitePermissionOptionsFragment : BaseComposeFragment() {
     private lateinit var sitePermissionOptionsStorage: SitePermissionOptionsStorage
 
     private val sitePermission: SitePermission
-        get() = requireArguments().getParcelableCompat(SITE_PERMISSION, SitePermission::class.java)
-            ?: throw IllegalAccessError("Site permission is not set for fragment")
+        get() =
+            requireArguments().getParcelableCompat(SITE_PERMISSION, SitePermission::class.java)
+                ?: throw IllegalAccessError("Site permission is not set for fragment")
 
     companion object {
         const val FRAGMENT_TAG = "SitePermissionOptionsFragment"
         private const val SITE_PERMISSION = "sitePermission"
 
         /**
-         * Creates a [Bundle] containing the provided [SitePermission]. This is useful for passing
-         * the site permission data to fragments or other components.
+         * Creates a [Bundle] containing the provided [SitePermission]. This is useful for passing the site permission
+         * data to fragments or other components.
          *
          * @param sitePermission The [SitePermission] to be added to the bundle.
          * @return A new [Bundle] instance with the site permission parcelable.
@@ -63,23 +61,26 @@ class SitePermissionOptionsFragment : BaseComposeFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         sitePermissionOptionsStorage = SitePermissionOptionsStorage(context = requireContext())
-        sitePermissionOptionsScreenStore = SitePermissionOptionsScreenStore(
-            SitePermissionOptionsScreenState(),
-            listOf(
-                SitePermissionOptionsStorageMiddleware(
-                    sitePermission = sitePermission,
-                    storage = sitePermissionOptionsStorage,
+        sitePermissionOptionsScreenStore =
+            SitePermissionOptionsScreenStore(
+                SitePermissionOptionsScreenState(),
+                listOf(
+                    SitePermissionOptionsStorageMiddleware(
+                        sitePermission = sitePermission,
+                        storage = sitePermissionOptionsStorage,
+                    )
                 ),
-            ),
-        )
-        defaultSitePermissionOptionsScreenInteractor = DefaultSitePermissionOptionsScreenInteractor(
-            sitePermissionOptionsScreenStore = sitePermissionOptionsScreenStore,
-        )
-        hardwarePermissionCheckFeature = HardwarePermissionCheckFeature(
-            storage = sitePermissionOptionsStorage,
-            store = sitePermissionOptionsScreenStore,
-            sitePermission = sitePermission,
-        )
+            )
+        defaultSitePermissionOptionsScreenInteractor =
+            DefaultSitePermissionOptionsScreenInteractor(
+                sitePermissionOptionsScreenStore = sitePermissionOptionsScreenStore
+            )
+        hardwarePermissionCheckFeature =
+            HardwarePermissionCheckFeature(
+                storage = sitePermissionOptionsStorage,
+                store = sitePermissionOptionsScreenStore,
+                sitePermission = sitePermission,
+            )
         lifecycle.addObserver(hardwarePermissionCheckFeature)
     }
 
@@ -88,15 +89,24 @@ class SitePermissionOptionsFragment : BaseComposeFragment() {
 
     @Composable
     override fun Content() {
-        val sitePermissionOptionsList = sitePermissionOptionsScreenStore.observeAsComposableState { state ->
-            state.sitePermissionOptionList
-        }.value
-        val sitePermissionOptionSelected = sitePermissionOptionsScreenStore.observeAsComposableState { state ->
-            state.selectedSitePermissionOption
-        }.value
-        val isAndroidPermissionGranted = sitePermissionOptionsScreenStore.observeAsComposableState { state ->
-            state.isAndroidPermissionGranted
-        }.value
+        val sitePermissionOptionsList =
+            sitePermissionOptionsScreenStore
+                .observeAsComposableState { state ->
+                    state.sitePermissionOptionList
+                }
+                .value
+        val sitePermissionOptionSelected =
+            sitePermissionOptionsScreenStore
+                .observeAsComposableState { state ->
+                    state.selectedSitePermissionOption
+                }
+                .value
+        val isAndroidPermissionGranted =
+            sitePermissionOptionsScreenStore
+                .observeAsComposableState { state ->
+                    state.isAndroidPermissionGranted
+                }
+                .value
         if (sitePermissionOptionSelected != null) {
             CreateOptionsPermissionList(
                 sitePermissionOptionSelected,
@@ -117,16 +127,17 @@ class SitePermissionOptionsFragment : BaseComposeFragment() {
         }
         val optionsListItems = ArrayList<SitePermissionOptionListItem>()
         sitePermissionOptionsList.forEach { sitePermissionOption ->
-            val sitePermissionOptionListItem = SitePermissionOptionListItem(
-                sitePermissionOption = sitePermissionOption,
-                onClick = {
-                    state.intValue = sitePermissionOption.prefKeyId
-                    defaultSitePermissionOptionsScreenInteractor.handleSitePermissionOptionSelected(
-                        sitePermissionOption,
-                    )
-                    requireComponents.appStore.dispatch(AppAction.SitePermissionOptionChange(true))
-                },
-            )
+            val sitePermissionOptionListItem =
+                SitePermissionOptionListItem(
+                    sitePermissionOption = sitePermissionOption,
+                    onClick = {
+                        state.intValue = sitePermissionOption.prefKeyId
+                        defaultSitePermissionOptionsScreenInteractor.handleSitePermissionOptionSelected(
+                            sitePermissionOption
+                        )
+                        requireComponents.appStore.dispatch(AppAction.SitePermissionOptionChange(true))
+                    },
+                )
             optionsListItems.add(sitePermissionOptionListItem)
         }
         OptionsPermissionList(

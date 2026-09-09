@@ -6,13 +6,13 @@ package mozilla.components.concept.toolbar
 
 import android.widget.LinearLayout
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertNotNull
 import mozilla.components.support.base.android.Padding
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class ActionButtonTest {
@@ -28,11 +28,12 @@ class ActionButtonTest {
         assertEquals(view.paddingRight, 0)
         assertEquals(view.paddingBottom, 0)
 
-        button = Toolbar.ActionButton(
-            mock(),
-            "imageResource",
-            padding = Padding(16, 20, 24, 28),
-        ) {}
+        button =
+            Toolbar.ActionButton(
+                mock(),
+                "imageResource",
+                padding = Padding(16, 20, 24, 28),
+            ) {}
 
         view = button.createView(linearLayout)
         view.paddingLeft
@@ -45,15 +46,16 @@ class ActionButtonTest {
     @Test
     fun `constructor with drawables`() {
         val visibilityListener = { false }
-        val button = Toolbar.ActionButton(
-            mock(),
-            "image",
-            visibilityListener,
-            { false },
-            { -1 },
-            0,
-            null,
-        ) { }
+        val button =
+            Toolbar.ActionButton(
+                mock(),
+                "image",
+                visibilityListener,
+                { false },
+                { -1 },
+                0,
+                null,
+            ) {}
         assertNotNull(button.imageDrawable)
         assertEquals("image", button.contentDescription)
         assertEquals(visibilityListener, button.visible)
@@ -65,7 +67,7 @@ class ActionButtonTest {
 
     @Test
     fun `set contentDescription`() {
-        val button = Toolbar.ActionButton(mock(), "image") { }
+        val button = Toolbar.ActionButton(mock(), "image") {}
         val linearLayout = LinearLayout(testContext)
         val view = button.createView(linearLayout)
 

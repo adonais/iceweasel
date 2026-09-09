@@ -23,23 +23,17 @@ import mozilla.components.support.utils.ext.getParcelableArrayListCompat
 
 private const val KEY_PROVIDERS = "KEY_PROVIDERS"
 
-/**
- * A Federated Credential Management dialog for selecting a provider.
- */
+/** A Federated Credential Management dialog for selecting a provider. */
 internal class SelectProviderDialogFragment : PromptDialogFragment() {
 
     private val providers: List<Provider> by lazy {
-        safeArguments.getParcelableArrayListCompat(KEY_PROVIDERS, Provider::class.java)
-            ?: emptyList()
+        safeArguments.getParcelableArrayListCompat(KEY_PROVIDERS, Provider::class.java) ?: emptyList()
     }
 
     private var colorsProvider: DialogColorsProvider = DialogColors.defaultProvider()
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
-        MaterialAlertDialogBuilder(requireContext())
-            .setCancelable(true)
-            .setView(createDialogContentView())
-            .create()
+        MaterialAlertDialogBuilder(requireContext()).setCancelable(true).setView(createDialogContentView()).create()
 
     override fun onCancel(dialog: DialogInterface) {
         super.onCancel(dialog)
@@ -57,9 +51,7 @@ internal class SelectProviderDialogFragment : PromptDialogFragment() {
         }
     }
 
-    /**
-     * Called when a new [Provider] is selected by the user.
-     */
+    /** Called when a new [Provider] is selected by the user. */
     @VisibleForTesting
     internal fun onProviderChange(provider: Provider) {
         feature?.onConfirm(sessionId, promptRequestUID, provider)
@@ -70,11 +62,12 @@ internal class SelectProviderDialogFragment : PromptDialogFragment() {
 
         /**
          * A builder method for creating a [SelectAccountDialogFragment]
+         *
          * @param sessionId The id of the session for which this dialog will be created.
          * @param promptRequestUID Identifier of the [PromptRequest] for which this dialog is shown.
          * @param providers The list of available providers.
-         * @param shouldDismissOnLoad Whether or not the dialog should automatically be dismissed
-         * when a new page is loaded.
+         * @param shouldDismissOnLoad Whether or not the dialog should automatically be dismissed when a new page is
+         *   loaded.
          * @param colorsProvider Provides [DialogColors] that define the colors in the Dialog
          */
         fun newInstance(
@@ -83,14 +76,16 @@ internal class SelectProviderDialogFragment : PromptDialogFragment() {
             providers: List<Provider>,
             shouldDismissOnLoad: Boolean,
             colorsProvider: DialogColorsProvider,
-        ) = SelectProviderDialogFragment().apply {
-            arguments = (arguments ?: Bundle()).apply {
-                putString(KEY_SESSION_ID, sessionId)
-                putString(KEY_PROMPT_UID, promptRequestUID)
-                putBoolean(KEY_SHOULD_DISMISS_ON_LOAD, shouldDismissOnLoad)
-                putParcelableArrayList(KEY_PROVIDERS, ArrayList(providers))
+        ) =
+            SelectProviderDialogFragment().apply {
+                arguments =
+                    (arguments ?: Bundle()).apply {
+                        putString(KEY_SESSION_ID, sessionId)
+                        putString(KEY_PROMPT_UID, promptRequestUID)
+                        putBoolean(KEY_SHOULD_DISMISS_ON_LOAD, shouldDismissOnLoad)
+                        putParcelableArrayList(KEY_PROVIDERS, ArrayList(providers))
+                    }
+                this.colorsProvider = colorsProvider
             }
-            this.colorsProvider = colorsProvider
-        }
     }
 }

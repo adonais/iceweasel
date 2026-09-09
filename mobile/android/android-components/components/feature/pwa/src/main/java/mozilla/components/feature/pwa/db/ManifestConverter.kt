@@ -8,9 +8,7 @@ import androidx.room.TypeConverter
 import mozilla.components.concept.engine.manifest.WebAppManifest
 import mozilla.components.concept.engine.manifest.WebAppManifestParser
 
-/**
- * Converts a web app manifest to and from JSON strings
- */
+/** Converts a web app manifest to and from JSON strings */
 internal class ManifestConverter {
     private val parser = WebAppManifestParser()
 
@@ -21,6 +19,5 @@ internal class ManifestConverter {
             is WebAppManifestParser.Result.Failure -> throw result.exception
         }
 
-    @TypeConverter
-    fun toJsonString(manifest: WebAppManifest): String = parser.serialize(manifest).toString()
+    @TypeConverter fun toJsonString(manifest: WebAppManifest): String = parser.serialize(manifest).toString()
 }

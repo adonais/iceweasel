@@ -1745,7 +1745,7 @@ void Loader::MaybeNotifyPreloadUsed(SheetLoadData& aData) {
 }
 
 Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
-    const SheetInfo& aInfo, const nsAString& aBuffer,
+    const SheetInfo& aInfo, const nsACString& aBuffer,
     nsICSSLoaderObserver* aObserver) {
   LOG(("css::Loader::LoadInlineStyle"));
   MOZ_ASSERT(aInfo.mContent);
@@ -1853,11 +1853,10 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
       // Note that we need to parse synchronously, since the web expects that
       // the effects of inline stylesheets are visible immediately (aside from
       // @imports).
-      NS_ConvertUTF16toUTF8 utf8(aBuffer);
       RefPtr<SheetLoadDataHolder> holder(
           new nsMainThreadPtrHolder<css::SheetLoadData>(__func__, data.get(),
                                                         true));
-      completed = ParseSheet(utf8, holder, AllowAsyncParse::No);
+      completed = ParseSheet(aBuffer, holder, AllowAsyncParse::No);
       if (completed == Completed::Yes) {
         aHandle.OrInsert().AppendElement(
             SharedStyleSheetCache::InlineSheetEntry{data->ValueForCache(),

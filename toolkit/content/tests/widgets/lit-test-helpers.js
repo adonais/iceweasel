@@ -170,6 +170,7 @@ class InputTestHelpers extends LitTestHelpers {
     await this.verifyLabel(elementName);
     await this.verifyAriaLabel(elementName);
     await this.verifyAriaDescription(elementName);
+    await this.verifyTitle(elementName);
     await this.verifyName(elementName);
     await this.verifyValue(elementName);
     await this.verifyIcon(elementName);
@@ -854,6 +855,35 @@ class InputTestHelpers extends LitTestHelpers {
       input.inputEl.getAttribute("aria-description"),
       ARIA_DESCRIPTION,
       "The aria-description is set on the input element."
+    );
+  }
+
+  /**
+   * Verifies that the title attribute is applied to the input element.
+   *
+   * @param {string} selector - HTML tag of the element under test.
+   */
+  async verifyTitle(selector) {
+    const TITLE = "More information about this control";
+    let titleTemplate = this.templateFn({
+      value: "default",
+      title: TITLE,
+    });
+    let renderTarget = await this.renderTemplate(titleTemplate);
+    let input = renderTarget.querySelector(selector);
+
+    ok(!input.hasAttribute("title"), "title is not set on the outer element.");
+    is(
+      input.inputEl.getAttribute("title"),
+      TITLE,
+      "The title is set on the input element."
+    );
+
+    input.title = null;
+    await input.updateComplete;
+    ok(
+      !input.inputEl.hasAttribute("title"),
+      "title is cleared from the input element when unset."
     );
   }
 

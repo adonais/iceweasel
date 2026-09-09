@@ -1,0 +1,68 @@
+From: Jan Grulich <jgrulich@redhat.com>
+Date: Tue, 11 Aug 2026 09:40:00 +0000
+Subject: Bug 2054299 - WebRTC backport: Video capture: fix division by zero
+ when framerate is unset r=pehrsons
+
+SPA_FORMAT_VIDEO_framerate is optional in the PipeWire format pod. When
+absent or zero, the unguarded division in OnFormatChanged() causes
+a SIGFPE crash. Initialize format structs and fallback to max_framerate
+or a default of 30 FPS.
+
+This is a simple backport of an WebRTC upstream change.
+
+Upstream commit: 67becacf3c88a16f7118766492439863406852cf
+
+Differential Revision: https://phabricator.services.mozilla.com/D317736
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/eab64a6c2c606edd49aad5e58a35da0bdd116620
+---
+ .../linux/video_capture_pipewire.cc           | 19 +++++++++++++++----
+ 1 file changed, 15 insertions(+), 4 deletions(-)
+
+diff --git a/modules/video_capture/linux/video_capture_pipewire.cc b/modules/video_capture/linux/video_capture_pipewire.cc
+index e8ef843b8e..8118f5e2b2 100644
+--- a/modules/video_capture/linux/video_capture_pipewire.cc
++++ b/modules/video_capture/linux/video_capture_pipewire.cc
+@@ -301,6 +301,15 @@ void VideoCaptureModulePipeWire::OnStreamParamChanged(
+     that->OnFormatChanged(format);
+ }
+ 
++static int32_t MaxFPSFromFractions(const spa_fraction& framerate,
++                                   const spa_fraction& max_framerate) {
++  if (framerate.num && framerate.denom)
++    return framerate.num / framerate.denom;
++  if (max_framerate.num && max_framerate.denom)
++    return max_framerate.num / max_framerate.denom;
++  return 30;
++}
++
+ RTC_NO_SANITIZE("cfi-icall")
+ void VideoCaptureModulePipeWire::OnFormatChanged(const struct spa_pod* format) {
+   RTC_CHECK_RUNS_SERIALIZED(&capture_checker_);
+@@ -314,21 +323,23 @@ void VideoCaptureModulePipeWire::OnFormatChanged(const struct spa_pod* format) {
+ 
+   switch (media_subtype) {
+     case SPA_MEDIA_SUBTYPE_raw: {
+-      struct spa_video_info_raw f;
++      struct spa_video_info_raw f = SPA_VIDEO_INFO_RAW_INIT();
+       spa_format_video_raw_parse(format, &f);
+       configured_capability_.width = f.size.width;
+       configured_capability_.height = f.size.height;
+       configured_capability_.videoType = PipeWireRawFormatToVideoType(f.format);
+-      configured_capability_.maxFPS = f.framerate.num / f.framerate.denom;
++      configured_capability_.maxFPS =
++          MaxFPSFromFractions(f.framerate, f.max_framerate);
+       break;
+     }
+     case SPA_MEDIA_SUBTYPE_mjpg: {
+-      struct spa_video_info_mjpg f;
++      struct spa_video_info_mjpg f = {};
+       spa_format_video_mjpg_parse(format, &f);
+       configured_capability_.width = f.size.width;
+       configured_capability_.height = f.size.height;
+       configured_capability_.videoType = VideoType::kMJPEG;
+-      configured_capability_.maxFPS = f.framerate.num / f.framerate.denom;
++      configured_capability_.maxFPS =
++          MaxFPSFromFractions(f.framerate, f.max_framerate);
+       break;
+     }
+     default:

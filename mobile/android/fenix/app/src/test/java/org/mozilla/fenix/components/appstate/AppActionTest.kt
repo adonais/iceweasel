@@ -16,8 +16,7 @@ class AppActionTest {
 
         assertFalse(initialState.inactiveTabsExpanded)
 
-        val finalState =
-            AppStoreReducer.reduce(initialState, AppAction.UpdateInactiveExpanded(true))
+        val finalState = AppStoreReducer.reduce(initialState, AppAction.UpdateInactiveExpanded(true))
 
         assertTrue(finalState.inactiveTabsExpanded)
     }

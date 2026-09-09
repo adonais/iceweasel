@@ -23,13 +23,11 @@ import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.store.SyncStore
 
 /**
- * A system that collects state from an [FxaAccountManager] and [IPProtectionEligibilityStorage] and
- * forwards it to the [IPProtectionStore].
+ * A system that collects state from an [FxaAccountManager] and [IPProtectionEligibilityStorage] and forwards it to the
+ * [IPProtectionStore].
  *
- * This helper is a convenience for [IPProtectionFeature] that needs to react to multiple data sources
- * in combination, so forwarding them to one location, allows the Store to be the single-source-of-truth
- * for the feature.
- *
+ * This helper is a convenience for [IPProtectionFeature] that needs to react to multiple data sources in combination,
+ * so forwarding them to one location, allows the Store to be the single-source-of-truth for the feature.
  */
 class IPProtectionStorageSynchronizer(
     val storage: IPProtectionEligibilityStorage,
@@ -40,9 +38,7 @@ class IPProtectionStorageSynchronizer(
     private val storageStoreSync by lazy { StorageStoreSync(storage, store) }
     private val fxaAccountStoreSync by lazy { FxaAccountStoreSync(syncStore, store, lazyAccountManager) }
 
-    /**
-     * Initialize the sync.
-     */
+    /** Initialize the sync. */
     fun initialize() {
         storageStoreSync.initialize()
         fxaAccountStoreSync.initialize()
@@ -57,10 +53,9 @@ internal class StorageStoreSync(
 ) {
     fun initialize() {
         CoroutineScope(dispatcher).launch {
-            storage
-                .eligibilityStatus
-                .distinctUntilChanged()
-                .collect { store.dispatch(IPProtectionAction.EligibilityChanged(it)) }
+            storage.eligibilityStatus.distinctUntilChanged().collect {
+                store.dispatch(IPProtectionAction.EligibilityChanged(it))
+            }
         }
         storage.init()
     }
@@ -105,8 +100,8 @@ internal class FxaAccountStoreSync(
 
         ipProtectionStore.dispatch(
             InternalAction.AccountManagerStateChanged(
-                if (authenticatedAccount == null) AccountStatus.NoAccount else AccountStatus.WarmingUp,
-            ),
+                if (authenticatedAccount == null) AccountStatus.NoAccount else AccountStatus.WarmingUp
+            )
         )
     }
 

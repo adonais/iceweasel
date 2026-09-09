@@ -8,22 +8,21 @@ import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 
 /**
- * An interface for providing the default search engine.
- * This can be used to abstract the source of the default search engine.
- * */
+ * An interface for providing the default search engine. This can be used to abstract the source of the default search
+ * engine.
+ */
 interface SearchEngineProvider {
     /**
      * Retrieves the default search engine currently set.
      *
-     * @return The [SearchEngine] object representing the default search engine,
-     * or `null` if no default search engine is set or available.
+     * @return The [SearchEngine] object representing the default search engine, or `null` if no default search engine
+     *   is set or available.
      */
     fun getDefaultSearchEngine(): SearchEngine?
 }
 
 /**
- * A [SearchEngineProvider] that provides the default search engine based on the current
- * state of the [BrowserStore].
+ * A [SearchEngineProvider] that provides the default search engine based on the current state of the [BrowserStore].
  *
  * @property store The [BrowserStore] instance to retrieve the search engine state from.
  */

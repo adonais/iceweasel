@@ -124,7 +124,7 @@ class GeckoContentController {
   /**
    * Notify content of a MozMouseScrollFailed event.
    */
-  virtual void NotifyMozMouseScrollEvent(
+  MOZ_CAN_RUN_SCRIPT virtual void NotifyMozMouseScrollEvent(
       const ScrollableLayerGuid::ViewID& aScrollId, const nsString& aEvent) {}
 
   /**

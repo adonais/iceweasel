@@ -144,7 +144,7 @@ struct CRMFPOPOSigningKeyStr {
                        */
     SECAlgorithmID *algorithmIdentifier;
     SECItem signature; /* This is a BIT STRING. Remember */
-};                     /* that when interpreting.        */
+}; /* that when interpreting.        */
 
 /* ASN1 must only choose one of these members */
 struct CRMFPOPOPrivKeyStr {

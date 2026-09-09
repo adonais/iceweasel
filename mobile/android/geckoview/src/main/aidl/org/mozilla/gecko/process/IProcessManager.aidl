@@ -10,7 +10,7 @@ import org.mozilla.gecko.gfx.ISurfaceAllocator;
 import android.os.IBinder;
 
 interface IProcessManager {
-    void getEditableParent(in IGeckoEditableChild child, long contentId, long tabId);
+    void getEditableParent(in IGeckoEditableChild child, long tabId);
     // Returns the interface that child processes should use to allocate Surfaces.
     ISurfaceAllocator getSurfaceAllocator(in IBinder client);
 }

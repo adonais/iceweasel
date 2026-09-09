@@ -48,7 +48,7 @@ add_task(async function () {
   await pushPref("devtools.editor.expandtab", true);
   await pushPref("devtools.editor.tabsize", 2);
 
-  const { panel, ui } = await openStyleEditorForURL(TESTCASE_URI);
+  const { panel, tab, ui } = await openStyleEditorForURL(TESTCASE_URI);
   is(ui.editors.length, 3, "Three sheets present.");
 
   info("Testing minified style sheet.");
@@ -131,10 +131,11 @@ add_task(async function () {
     true,
     "Pretty print button has the expected title attribute when it's disabled"
   );
+  await closeTabAndToolbox(tab);
 });
 
 add_task(async function testSystemStylesheet() {
-  const { ui, panel } = await openStyleEditorForURL("about:support");
+  const { panel, tab, ui } = await openStyleEditorForURL("about:support");
 
   const formsEditor = ui.editors.find(
     editor => editor.friendlyName === "forms.css"
@@ -164,4 +165,5 @@ add_task(async function testSystemStylesheet() {
   );
 
   ok(true, "Pretty print button has the expected title attribute");
+  await closeTabAndToolbox(tab);
 });

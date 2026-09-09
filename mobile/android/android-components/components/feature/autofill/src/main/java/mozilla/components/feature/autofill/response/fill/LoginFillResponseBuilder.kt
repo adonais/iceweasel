@@ -13,10 +13,7 @@ import mozilla.components.feature.autofill.response.dataset.LoginDatasetBuilder
 import mozilla.components.feature.autofill.response.dataset.SearchDatasetBuilder
 import mozilla.components.feature.autofill.structure.ParsedStructure
 
-/**
- * [FillResponseBuilder] implementation that creates a [FillResponse] containing logins for
- * autofilling.
- */
+/** [FillResponseBuilder] implementation that creates a [FillResponse] containing logins for autofilling. */
 internal data class LoginFillResponseBuilder(
     val parsedStructure: ParsedStructure,
     val logins: List<Login>,
@@ -32,25 +29,25 @@ internal data class LoginFillResponseBuilder(
         val builder = FillResponse.Builder()
 
         logins.forEachIndexed { index, login ->
-            val datasetBuilder = LoginDatasetBuilder(
-                parsedStructure,
-                login,
-                needsConfirmation,
-                requestOffset = index,
-            )
+            val datasetBuilder =
+                LoginDatasetBuilder(
+                    parsedStructure,
+                    login,
+                    needsConfirmation,
+                    requestOffset = index,
+                )
 
-            val dataset = datasetBuilder.build(
-                context,
-                configuration,
-                imeSpec,
-            )
+            val dataset =
+                datasetBuilder.build(
+                    context,
+                    configuration,
+                    imeSpec,
+                )
 
             builder.addDataset(dataset)
         }
 
-        builder.addDataset(
-            searchDatasetBuilder.build(context, configuration, imeSpec),
-        )
+        builder.addDataset(searchDatasetBuilder.build(context, configuration, imeSpec))
 
         return builder.build()
     }

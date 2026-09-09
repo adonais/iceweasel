@@ -3,6 +3,12 @@
 
 "use strict";
 
+// TODO bug 1938594: moveMultipleWindows sometimes triggers this error. See
+// https://bugzilla.mozilla.org/show_bug.cgi?id=1938594#c6
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Unexpected undefined tabState for onMoveToNewWindow/
+);
+
 add_task(async function moveMultipleWindows() {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: { permissions: ["tabs"] },

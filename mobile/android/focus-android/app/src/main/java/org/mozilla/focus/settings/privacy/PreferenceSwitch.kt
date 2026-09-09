@@ -12,9 +12,7 @@ import androidx.core.content.withStyledAttributes
 import androidx.preference.PreferenceManager
 import org.mozilla.focus.R
 
-/**
- * A custom [SwitchCompat] that automatically persists its state to SharedPreferences.
- */
+/** A custom [SwitchCompat] that automatically persists its state to SharedPreferences. */
 class PreferenceSwitch(
     context: Context,
     attrs: AttributeSet,
@@ -34,8 +32,7 @@ class PreferenceSwitch(
         ) {
             key = getResourceId(R.styleable.PreferenceSwitch_preferenceKey, 0)
             title = getResourceId(R.styleable.PreferenceSwitch_preferenceKeyTitle, 0)
-            description =
-                getResourceId(R.styleable.PreferenceSwitch_preferenceKeyDescription, 0)
+            description = getResourceId(R.styleable.PreferenceSwitch_preferenceKeyDescription, 0)
         }
     }
 
@@ -53,13 +50,10 @@ class PreferenceSwitch(
     }
 
     private fun setInitialValue() {
-        this.isChecked = PreferenceManager.getDefaultSharedPreferences(context)
-            .getBoolean(context.getString(key), true)
+        this.isChecked = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(key), true)
     }
 
-    /**
-     * Sets a listener to be invoked when the preference is clicked.
-     */
+    /** Sets a listener to be invoked when the preference is clicked. */
     fun onClickListener(listener: () -> Unit) {
         clickListener = listener
     }

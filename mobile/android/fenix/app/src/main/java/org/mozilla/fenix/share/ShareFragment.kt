@@ -54,10 +54,10 @@ class ShareFragment : AppCompatDialogFragment() {
                     packageName = app.packageName,
                     getCopyApp = ::getCopyApp,
                     queryIntentActivitiesCompat = { intent ->
-                        app.packageManagerCompatHelper.queryIntentActivitiesCompat(intent, 0)
-                            .orEmpty()
+                        app.packageManagerCompatHelper.queryIntentActivitiesCompat(intent, 0).orEmpty()
                     },
-                ) as T
+                )
+                    as T
             }
         }
     }
@@ -69,17 +69,13 @@ class ShareFragment : AppCompatDialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        context?.components?.analytics?.crashReporter?.recordCrashBreadcrumb(
-            Breadcrumb("ShareFragment onCreate"),
-        )
+        context?.components?.analytics?.crashReporter?.recordCrashBreadcrumb(Breadcrumb("ShareFragment onCreate"))
         setStyle(STYLE_NO_TITLE, R.style.ShareDialogStyle)
     }
 
     override fun onPause() {
         super.onPause()
-        context?.components?.analytics?.crashReporter?.recordCrashBreadcrumb(
-            Breadcrumb("ShareFragment dismiss"),
-        )
+        context?.components?.analytics?.crashReporter?.recordCrashBreadcrumb(Breadcrumb("ShareFragment dismiss"))
         consumePrompt { onDismiss() }
         dismiss()
     }
@@ -90,52 +86,44 @@ class ShareFragment : AppCompatDialogFragment() {
         savedInstanceState: Bundle?,
     ): View {
         requireComponents.useCases.sessionUseCases.exitFullscreen.invoke()
-        val binding = FragmentShareBinding.inflate(
-            inflater,
-            container,
-            false,
-        )
+        val binding =
+            FragmentShareBinding.inflate(
+                inflater,
+                container,
+                false,
+            )
         val shareData = args.data.toList()
 
         val accountManager = requireComponents.backgroundServices.accountManager
 
-        // Determine if tabs being shared are from private browsing mode.
-        // When sessionId is provided, check that specific tab's private state.
-        // When sessionId is null it must be from tabs tray, and since selection mode
-        // is not currently supported for private tabs, we assume it's not a private tab.
-        val isPrivate = args.sessionId
-            ?.let { sessionId -> requireComponents.core.store.state.findTabOrCustomTab(sessionId) }
-            ?.content?.private ?: false
-
-        shareInteractor = ShareInteractor(
-            DefaultShareController(
-                context = requireContext(),
-                appStore = requireComponents.appStore,
-                shareSubject = args.shareSubject,
-                shareData = shareData,
-                isPrivate = isPrivate,
-                navController = findNavController(),
-                sendTabUseCases = SendTabUseCases(accountManager),
-                saveToPdfUseCase = requireComponents.useCases.sessionUseCases.saveToPdf,
-                printUseCase = requireComponents.useCases.sessionUseCases.printContent,
-                sentFromFirefoxManager = requireComponents.core.sentFromFirefoxManager,
-                recentAppsStorage = RecentAppsStorage(requireContext()),
-                viewLifecycleScope = viewLifecycleOwner.lifecycleScope,
-            ) { result ->
-                consumePrompt {
-                    when (result) {
-                        ShareController.Result.DISMISSED -> onDismiss()
-                        ShareController.Result.SHARE_ERROR -> onFailure()
-                        ShareController.Result.SUCCESS -> onSuccess()
+        shareInteractor =
+            ShareInteractor(
+                DefaultShareController(
+                    context = requireContext(),
+                    appStore = requireComponents.appStore,
+                    shareSubject = args.shareSubject,
+                    shareData = shareData,
+                    navController = findNavController(),
+                    sendTabUseCases = SendTabUseCases(accountManager),
+                    saveToPdfUseCase = requireComponents.useCases.sessionUseCases.saveToPdf,
+                    printUseCase = requireComponents.useCases.sessionUseCases.printContent,
+                    sentFromFirefoxManager = requireComponents.core.sentFromFirefoxManager,
+                    recentAppsStorage = RecentAppsStorage(requireContext()),
+                    viewLifecycleScope = viewLifecycleOwner.lifecycleScope,
+                ) { result ->
+                    consumePrompt {
+                        when (result) {
+                            ShareController.Result.DISMISSED -> onDismiss()
+                            ShareController.Result.SHARE_ERROR -> onFailure()
+                            ShareController.Result.SUCCESS -> onSuccess()
+                        }
                     }
+                    super.dismiss()
                 }
-                super.dismiss()
-            },
-        )
+            )
 
         binding.shareWrapper.setOnClickListener { shareInteractor.onShareClosed() }
-        shareToAccountDevicesView =
-            ShareToAccountDevicesView(binding.devicesShareLayout, shareInteractor)
+        shareToAccountDevicesView = ShareToAccountDevicesView(binding.devicesShareLayout, shareInteractor)
 
         if (args.showPage) {
             // Show the previous fragment underneath the share background scrim
@@ -185,9 +173,7 @@ class ShareFragment : AppCompatDialogFragment() {
     }
 
     override fun onDestroy() {
-        context?.components?.analytics?.crashReporter?.recordCrashBreadcrumb(
-            Breadcrumb("ShareFragment onDestroy"),
-        )
+        context?.components?.analytics?.crashReporter?.recordCrashBreadcrumb(Breadcrumb("ShareFragment onDestroy"))
         setFragmentResult(RESULT_KEY, Bundle())
         // Clear the stored result in case there is no listener with the same key set.
         clearFragmentResult(RESULT_KEY)
@@ -196,12 +182,10 @@ class ShareFragment : AppCompatDialogFragment() {
     }
 
     /**
-     * If [ShareFragmentArgs.sessionId] is set and the session has a pending Web Share
-     * prompt request, call [consume] then clean up the prompt.
+     * If [ShareFragmentArgs.sessionId] is set and the session has a pending Web Share prompt request, call [consume]
+     * then clean up the prompt.
      */
-    private fun consumePrompt(
-        consume: PromptRequest.Share.() -> Unit,
-    ) {
+    private fun consumePrompt(consume: PromptRequest.Share.() -> Unit) {
         val browserStore = requireComponents.core.store
         args.sessionId
             ?.let { sessionId -> browserStore.state.findTabOrCustomTab(sessionId) }

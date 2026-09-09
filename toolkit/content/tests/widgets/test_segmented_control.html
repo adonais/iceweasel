@@ -622,6 +622,55 @@
           "Deck view updates with keyboard navigation."
         );
       });
+
+      add_task(async function testLabelTruncation() {
+        const LONG_LABEL = "A considerably longer label";
+
+        function isTruncated(item) {
+          let labelEl = item.shadowRoot.querySelector("label");
+          return labelEl.scrollWidth > labelEl.clientWidth;
+        }
+
+        function constrainedTemplate(width, labels) {
+          return html`
+            <div style="width: ${width}px">
+              <moz-segmented-control value="first">
+                ${labels.map(
+                  (label, i) => html`
+                    <moz-segmented-control-item
+                      value=${["first", "second", "third"][i]}
+                      label=${label}
+                    >
+                    </moz-segmented-control-item>
+                  `
+                )}
+              </moz-segmented-control>
+            </div>
+          `;
+        }
+
+        // A control that is too narrow truncates labels instead of wrapping.
+        let { items, firstItem } = await renderSegmentedControl(
+          constrainedTemplate(260, [LONG_LABEL, LONG_LABEL, LONG_LABEL])
+        );
+
+        items.forEach((item, i) => {
+          is(
+            item.offsetTop,
+            firstItem.offsetTop,
+            `Item ${i} stays on the same line as the first item.`
+          );
+          ok(isTruncated(item), `Item ${i} truncates its label.`);
+        });
+
+        // Given room to spare, each item is sized to its own label.
+        ({ items, firstItem } = await renderSegmentedControl(
+          constrainedTemplate(600, ["One", LONG_LABEL, "Three"])
+        ));
+        items.forEach((item, i) => {
+          ok(!isTruncated(item), `Item ${i} isn't truncated when it fits.`);
+        });
+      });
     </script>
   </head>
 </html>

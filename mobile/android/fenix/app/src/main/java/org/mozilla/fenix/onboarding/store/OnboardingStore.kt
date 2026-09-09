@@ -15,34 +15,24 @@ import org.mozilla.fenix.onboarding.view.ToolbarOptionType
  *
  * @property toolbarOptionSelected the selected toolbar option.
  */
-data class OnboardingState(
-    val toolbarOptionSelected: ToolbarOptionType = ToolbarOptionType.TOOLBAR_TOP,
-) : State
+data class OnboardingState(val toolbarOptionSelected: ToolbarOptionType = ToolbarOptionType.TOOLBAR_TOP) : State
 
-/**
- * [Action] implementation related to [OnboardingStore].
- */
+/** [Action] implementation related to [OnboardingStore]. */
 sealed interface OnboardingAction : Action {
 
-    /**
-     * Triggered when the store is initialized.
-     */
+    /** Triggered when the store is initialized. */
     data object Init : OnboardingAction
 
-    /**
-     * [Action] implementation related to toolbar selection.
-     */
+    /** [Action] implementation related to toolbar selection. */
     sealed interface OnboardingToolbarAction : OnboardingAction {
-        /**
-         * Updates the selected toolbar option to the given [selected] value.
-         */
+        /** Updates the selected toolbar option to the given [selected] value. */
         data class UpdateSelected(val selected: ToolbarOptionType) : OnboardingToolbarAction
     }
 }
 
 /**
- * A [Store] that holds the [OnboardingState] for the onboarding pages and reduces [OnboardingAction]s
- * dispatched to the store.
+ * A [Store] that holds the [OnboardingState] for the onboarding pages and reduces [OnboardingAction]s dispatched to the
+ * store.
  */
 class OnboardingStore(
     initialState: OnboardingState = OnboardingState(),
@@ -65,7 +55,6 @@ private fun reducer(
     when (action) {
         is OnboardingAction.Init -> state
 
-        is OnboardingAction.OnboardingToolbarAction.UpdateSelected -> state.copy(
-            toolbarOptionSelected = action.selected,
-        )
+        is OnboardingAction.OnboardingToolbarAction.UpdateSelected ->
+            state.copy(toolbarOptionSelected = action.selected)
     }

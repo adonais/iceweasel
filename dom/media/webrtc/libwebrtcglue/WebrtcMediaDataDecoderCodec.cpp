@@ -28,8 +28,9 @@ bool WebrtcMediaDataDecoder::IsCodecEnabled(webrtc::VideoCodecType aCodec) {
       return StaticPrefs::media_navigator_mediadatadecoder_vpx_enabled();
     case webrtc::VideoCodecType::kVideoCodecH264:
       return StaticPrefs::media_navigator_mediadatadecoder_h264_enabled();
-    case webrtc::VideoCodecType::kVideoCodecGeneric:
     case webrtc::VideoCodecType::kVideoCodecAV1:
+      return StaticPrefs::media_navigator_mediadatadecoder_av1_enabled();
+    case webrtc::VideoCodecType::kVideoCodecGeneric:
     case webrtc::VideoCodecType::kVideoCodecH265:
       return false;
   }

@@ -15,7 +15,7 @@ ChromeUtils.defineESModuleGetters(this, {
   FormAutofillParent: "resource://autofill/FormAutofillParent.sys.mjs",
   FormAutofillStatus: "resource://autofill/FormAutofillParent.sys.mjs",
   FormAutofillUtils: "resource://gre/modules/shared/FormAutofillUtils.sys.mjs",
-  AutoCompleteParent: "resource://gre/actors/AutoCompleteParent.sys.mjs",
+  AutoCompleteParent: "moz-src:///toolkit/actors/AutoCompleteParent.sys.mjs",
 });
 
 XPCOMUtils.defineLazyServiceGetter(

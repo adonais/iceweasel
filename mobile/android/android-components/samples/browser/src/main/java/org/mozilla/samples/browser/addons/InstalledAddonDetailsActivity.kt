@@ -21,9 +21,7 @@ import org.mozilla.samples.browser.BrowserActivity
 import org.mozilla.samples.browser.R
 import org.mozilla.samples.browser.ext.components
 
-/**
- * An activity to show the details of a installed add-on.
- */
+/** An activity to show the details of a installed add-on. */
 @Suppress("LargeClass")
 class InstalledAddonDetailsActivity : AppCompatActivity() {
 
@@ -47,10 +45,11 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
                 }
             } catch (e: AddonManagerException) {
                 Toast.makeText(
-                    baseContext,
-                    R.string.mozac_feature_addon_failed_to_load_extension,
-                    Toast.LENGTH_SHORT,
-                ).show()
+                        baseContext,
+                        R.string.mozac_feature_addon_failed_to_load_extension,
+                        Toast.LENGTH_SHORT,
+                    )
+                    .show()
             }
         }
     }
@@ -187,9 +186,10 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
         addon: Addon,
     ) {
         Toast.makeText(
-            this,
-            getString(textId, addon.translateName(context = this)),
-            Toast.LENGTH_SHORT,
-        ).show()
+                this,
+                getString(textId, addon.translateName(context = this)),
+                Toast.LENGTH_SHORT,
+            )
+            .show()
     }
 }

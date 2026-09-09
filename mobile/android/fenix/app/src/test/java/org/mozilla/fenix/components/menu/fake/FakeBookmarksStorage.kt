@@ -4,14 +4,14 @@
 
 package org.mozilla.fenix.components.menu.fake
 
+import java.util.UUID
 import mozilla.components.concept.storage.BookmarkInfo
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarkNodeType
 import mozilla.components.concept.storage.BookmarksStorage
 import mozilla.components.concept.storage.bookmarks.InsertableBookmarkTreeRoot
-import java.util.UUID
 
-class FakeBookmarksStorage() : BookmarksStorage {
+class FakeBookmarksStorage : BookmarksStorage {
     private val bookmarkMap: HashMap<String, BookmarkNode> = hashMapOf()
 
     override suspend fun warmUp() {
@@ -22,8 +22,7 @@ class FakeBookmarksStorage() : BookmarksStorage {
         throw NotImplementedError()
     }
 
-    override suspend fun getBookmark(guid: String): Result<BookmarkNode?> =
-        Result.runCatching { bookmarkMap[guid] }
+    override suspend fun getBookmark(guid: String): Result<BookmarkNode?> = Result.runCatching { bookmarkMap[guid] }
 
     override suspend fun getBookmarksWithUrl(url: String): Result<List<BookmarkNode>> {
         return Result.runCatching { bookmarkMap.values.filter { it.url == url } }
@@ -34,9 +33,7 @@ class FakeBookmarksStorage() : BookmarksStorage {
         maxAge: Long?,
     ): Result<List<BookmarkNode>> {
         return Result.runCatching {
-            bookmarkMap.values.toList()
-                .sortedByDescending { it.position }
-                .take(limit)
+            bookmarkMap.values.toList().sortedByDescending { it.position }.take(limit)
         }
     }
 

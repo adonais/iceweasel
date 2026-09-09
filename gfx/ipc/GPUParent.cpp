@@ -447,7 +447,8 @@ mozilla::ipc::IPCResult GPUParent::RecvInitSandboxTesting(
 mozilla::ipc::IPCResult GPUParent::RecvInitCompositorManager(
     Endpoint<PCompositorManagerParent>&& aEndpoint, uint32_t aNamespace) {
   CompositorManagerParent::Create(std::move(aEndpoint), ContentParentId(),
-                                  aNamespace, /* aIsRoot */ true);
+                                  aNamespace, /* aContentBridgeNamespace */ 0,
+                                  /* aIsRoot */ true);
   return IPC_OK();
 }
 
@@ -600,8 +601,10 @@ mozilla::ipc::IPCResult GPUParent::RecvSimulateDeviceReset() {
 
 mozilla::ipc::IPCResult GPUParent::RecvNewContentCompositorManager(
     Endpoint<PCompositorManagerParent>&& aEndpoint,
-    const ContentParentId& aChildId, uint32_t aNamespace) {
+    const ContentParentId& aChildId, uint32_t aNamespace,
+    uint32_t aContentBridgeNamespace) {
   CompositorManagerParent::Create(std::move(aEndpoint), aChildId, aNamespace,
+                                  aContentBridgeNamespace,
                                   /* aIsRoot */ false);
   return IPC_OK();
 }

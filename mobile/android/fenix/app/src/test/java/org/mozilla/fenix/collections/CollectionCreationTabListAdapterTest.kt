@@ -110,9 +110,10 @@ class CollectionCreationTabListAdapterTest {
 
     @Test
     fun `updateData inserts item`() {
-        val tab = mockk<Tab> {
-            every { sessionId } returns "abc"
-        }
+        val tab =
+            mockk<Tab> {
+                every { sessionId } returns "abc"
+            }
         val observer = mockk<RecyclerView.AdapterDataObserver>(relaxed = true)
         adapter.registerAdapterDataObserver(observer)
         adapter.updateData(

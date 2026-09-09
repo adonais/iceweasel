@@ -380,7 +380,7 @@ FT2FontEntry* gfxFT2Font::GetFontEntry() {
 // properly.
 
 nsresult FT2FontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
-  if (mCharacterMap || mShmemCharacterMap) {
+  if (HasCharacterMap()) {
     return NS_OK;
   }
 
@@ -454,13 +454,12 @@ nsresult FT2FontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
     } else {
       charmap = pfl->FindCharMap(charmap);
     }
-    mHasCmapTable = true;
   } else {
     // if error occurred, initialize to null cmap
     charmap = new gfxCharacterMap(0);
-    mHasCmapTable = false;
   }
   if (setCharMap) {
+    AutoWriteLock lock(mLock);
     if (mCharacterMap.compareExchange(nullptr, charmap.get())) {
       // We forget rather than addref because we don't use the charmap below.
       charmap.forget().leak();
@@ -518,7 +517,7 @@ hb_face_t* FT2FontEntry::CreateHBFace() {
   return nullptr;
 }
 
-bool FT2FontEntry::HasFontTable(uint32_t aTableTag) {
+bool FT2FontEntry::HasFontTableInternal(uint32_t aTableTag) {
   // If we already have a FreeType face, we can just use that.
   if (mFTFace) {
     RefPtr<SharedFTFace> face = GetFTFace();
@@ -576,7 +575,7 @@ nsresult FT2FontEntry::CopyFontTable(uint32_t aTableTag,
   return gfxFT2FontEntryBase::CopyFaceTable(face, aTableTag, aBuffer);
 }
 
-hb_blob_t* FT2FontEntry::GetFontTable(uint32_t aTableTag) {
+hb_blob_t* FT2FontEntry::GetFontTableInternal(uint32_t aTableTag) {
   if (FTUserFontData* userFontData = GetUserFontData()) {
     // If there's a cairo font face, we may be able to return a blob
     // that just wraps a range of the attached user font data
@@ -597,7 +596,7 @@ hb_blob_t* FT2FontEntry::GetFontTable(uint32_t aTableTag) {
 
   // Otherwise, use the default method (which in turn will call our
   // implementation of CopyFontTable).
-  return gfxFontEntry::GetFontTable(aTableTag);
+  return gfxFontEntry::GetFontTableInternal(aTableTag);
 }
 
 gfxFontEntry::FontTableCache* FT2FontEntry::GetFontTableCache(bool aCreate) {
@@ -611,7 +610,7 @@ gfxFontEntry::FontTableCache* FT2FontEntry::GetFontTableCache(bool aCreate) {
   return mFontTableCache;
 }
 
-bool FT2FontEntry::HasVariations() {
+bool FT2FontEntry::HasVariationsInternal() {
   switch (mHasVariations) {
     case HasVariationsState::No:
       return false;
@@ -631,7 +630,8 @@ bool FT2FontEntry::HasVariations() {
   return hasVariations;
 }
 
-void FT2FontEntry::GetVariationAxes(nsTArray<gfxFontVariationAxis>& aAxes) {
+void FT2FontEntry::GetVariationAxesInternal(
+    nsTArray<gfxFontVariationAxis>& aAxes) {
   if (!HasVariations()) {
     return;
   }
@@ -640,7 +640,7 @@ void FT2FontEntry::GetVariationAxes(nsTArray<gfxFontVariationAxis>& aAxes) {
   }
 }
 
-void FT2FontEntry::GetVariationInstances(
+void FT2FontEntry::GetVariationInstancesInternal(
     nsTArray<gfxFontVariationInstance>& aInstances) {
   if (!HasVariations()) {
     return;

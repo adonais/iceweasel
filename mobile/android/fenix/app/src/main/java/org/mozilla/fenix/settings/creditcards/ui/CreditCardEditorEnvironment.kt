@@ -9,9 +9,7 @@ package org.mozilla.fenix.settings.creditcards.ui
  *
  * @property navigateBack used to navigate back.
  */
-data class CreditCardEditorEnvironment(
-    val navigateBack: () -> Unit,
-) {
+data class CreditCardEditorEnvironment(val navigateBack: () -> Unit) {
 
     internal companion object {
         val Default = CreditCardEditorEnvironment(navigateBack = {})

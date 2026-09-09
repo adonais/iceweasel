@@ -38,16 +38,7 @@ if CONFIG["OS_TARGET"] == "Android":
     GeneratedFile(
         "/third_party/angle/gen/ANGLEShaderProgramVersion.h.rsp",
         entry_point="write_paths",
-        inputs=['ANGLEShaderProgramVersion.h-f55f152d23101920.rsp.in'],
-        script="/python/mozbuild/mozbuild/action/write_path_list.py",
-    )
-
-if CONFIG["OS_TARGET"] == "Darwin":
-
-    GeneratedFile(
-        "/third_party/angle/gen/ANGLEShaderProgramVersion.h.rsp",
-        entry_point="write_paths",
-        inputs=['ANGLEShaderProgramVersion.h-6486ad7f5fa1aa9f.rsp.in'],
+        inputs=['ANGLEShaderProgramVersion.h-fceddb19599b4b60.rsp.in'],
         script="/python/mozbuild/mozbuild/action/write_path_list.py",
     )
 
@@ -56,7 +47,7 @@ if CONFIG["OS_TARGET"] == "Linux":
     GeneratedFile(
         "/third_party/angle/gen/ANGLEShaderProgramVersion.h.rsp",
         entry_point="write_paths",
-        inputs=['ANGLEShaderProgramVersion.h-f55f152d23101920.rsp.in'],
+        inputs=['ANGLEShaderProgramVersion.h-fceddb19599b4b60.rsp.in'],
         script="/python/mozbuild/mozbuild/action/write_path_list.py",
     )
 
@@ -65,7 +56,7 @@ if CONFIG["OS_TARGET"] == "OpenBSD":
     GeneratedFile(
         "/third_party/angle/gen/ANGLEShaderProgramVersion.h.rsp",
         entry_point="write_paths",
-        inputs=['ANGLEShaderProgramVersion.h-c98ac207d8118669.rsp.in'],
+        inputs=['ANGLEShaderProgramVersion.h-836a2a2c2d63f685.rsp.in'],
         script="/python/mozbuild/mozbuild/action/write_path_list.py",
     )
 
@@ -77,7 +68,25 @@ if CONFIG["OS_TARGET"] == "WINNT":
     GeneratedFile(
         "/third_party/angle/gen/ANGLEShaderProgramVersion.h.rsp",
         entry_point="write_paths",
-        inputs=['ANGLEShaderProgramVersion.h-1a5cdd7820aae880.rsp.in'],
+        inputs=['ANGLEShaderProgramVersion.h-ab7744763b34a063.rsp.in'],
+        script="/python/mozbuild/mozbuild/action/write_path_list.py",
+    )
+
+if CONFIG["OS_TARGET"] == "Darwin" and CONFIG["TARGET_OS"] == "OSX":
+
+    GeneratedFile(
+        "/third_party/angle/gen/ANGLEShaderProgramVersion.h.rsp",
+        entry_point="write_paths",
+        inputs=['ANGLEShaderProgramVersion.h-517e8378c7c3f6da.rsp.in'],
+        script="/python/mozbuild/mozbuild/action/write_path_list.py",
+    )
+
+if CONFIG["OS_TARGET"] == "Darwin" and CONFIG["TARGET_OS"] == "iOS":
+
+    GeneratedFile(
+        "/third_party/angle/gen/ANGLEShaderProgramVersion.h.rsp",
+        entry_point="write_paths",
+        inputs=['ANGLEShaderProgramVersion.h-0e2911912cfaae39.rsp.in'],
         script="/python/mozbuild/mozbuild/action/write_path_list.py",
     )
 

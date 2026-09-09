@@ -4,9 +4,7 @@
 
 package mozilla.components.concept.toolbar
 
-/**
- * Interface to be implemented by components that provide hiding-on-scroll toolbar functionality.
- */
+/** Interface to be implemented by components that provide hiding-on-scroll toolbar functionality. */
 interface ScrollableToolbar {
 
     /**
@@ -16,19 +14,12 @@ interface ScrollableToolbar {
      */
     fun enableScrolling()
 
-    /**
-     * Completely disable scrolling of the dynamic toolbar.
-     * Use [enableScrolling] to restore the functionality.
-     */
+    /** Completely disable scrolling of the dynamic toolbar. Use [enableScrolling] to restore the functionality. */
     fun disableScrolling()
 
-    /**
-     * Force the toolbar to expand.
-     */
+    /** Force the toolbar to expand. */
     fun expand()
 
-    /**
-     * Force the toolbar to collapse. Only if dynamic.
-     */
+    /** Force the toolbar to collapse. Only if dynamic. */
     fun collapse()
 }

@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -42,15 +42,15 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
 import org.mozilla.geckoview.test.util.UiThreadUtils
 
 /**
- * Test for the GeckoSessionTestRule class, to ensure it properly sets up a session for
- * each test, and to ensure it can properly wait for and assert delegate
- * callbacks.
+ * Test for the GeckoSessionTestRule class, to ensure it properly sets up a session for each test, and to ensure it can
+ * properly wait for and assert delegate callbacks.
  */
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
 
-    @Test fun getSession() {
+    @Test
+    fun getSession() {
         assertThat("Can get session", mainSession, notNullValue())
         assertThat(
             "Session is open",
@@ -99,17 +99,17 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     @TimeoutMillis(2000)
     fun noPendingCallbacks() {
         // Make sure we don't have unexpected pending callbacks at the start of a test.
-        sessionRule.waitUntilCalled(object : ProgressDelegate, HistoryDelegate {
-            // There may be extraneous onSessionStateChange and onHistoryStateChange calls
-            // after a test, so ignore the first received.
-            @AssertCalled(count = 2)
-            override fun onSessionStateChange(session: GeckoSession, state: SessionState) {
-            }
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate, HistoryDelegate {
+                // There may be extraneous onSessionStateChange and onHistoryStateChange calls
+                // after a test, so ignore the first received.
+                @AssertCalled(count = 2)
+                override fun onSessionStateChange(session: GeckoSession, state: SessionState) {}
 
-            @AssertCalled(count = 2)
-            override fun onHistoryStateChange(session: GeckoSession, historyList: HistoryDelegate.HistoryList) {
+                @AssertCalled(count = 2)
+                override fun onHistoryStateChange(session: GeckoSession, historyList: HistoryDelegate.HistoryList) {}
             }
-        })
+        )
     }
 
     @NullDelegate.List(
@@ -166,33 +166,39 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.open()
     }
 
-    @Test fun waitForPageStop() {
+    @Test
+    fun waitForPageStop() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
         var counter = 0
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         assertThat("Callback count should be correct", counter, equalTo(1))
     }
 
-    @Test fun waitForPageStops() {
+    @Test
+    fun waitForPageStops() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.reload()
         sessionRule.waitForPageStops(2)
 
         var counter = 0
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         assertThat("Callback count should be correct", counter, equalTo(2))
     }
@@ -209,41 +215,45 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.waitForPageStops(2)
     }
 
-    @Test fun waitUntilCalled_anyInterfaceMethod() {
+    @Test
+    fun waitUntilCalled_anyInterfaceMethod() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitUntilCalled(ProgressDelegate::class)
 
         var counter = 0
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            override fun onPageStart(session: GeckoSession, url: String) {
-                counter++
-            }
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    counter++
+                }
 
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
-            }
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
 
-            override fun onSecurityChange(
-                session: GeckoSession,
-                securityInfo: ProgressDelegate.SecurityInformation,
-            ) {
-                counter++
-            }
+                override fun onSecurityChange(
+                    session: GeckoSession,
+                    securityInfo: ProgressDelegate.SecurityInformation,
+                ) {
+                    counter++
+                }
 
-            override fun onProgressChange(session: GeckoSession, progress: Int) {
-                counter++
-            }
+                override fun onProgressChange(session: GeckoSession, progress: Int) {
+                    counter++
+                }
 
-            override fun onSessionStateChange(session: GeckoSession, state: SessionState) {
-                counter++
+                override fun onSessionStateChange(session: GeckoSession, state: SessionState) {
+                    counter++
+                }
             }
-        })
+        )
 
         assertThat("Callback count should be correct", counter, equalTo(1))
     }
 
-    @Test fun waitUntilCalled_specificInterfaceMethod() {
+    @Test
+    fun waitUntilCalled_specificInterfaceMethod() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitUntilCalled(
             ProgressDelegate::class,
@@ -253,34 +263,38 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
 
         var counter = 0
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            override fun onPageStart(session: GeckoSession, url: String) {
-                counter++
-            }
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    counter++
+                }
 
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         assertThat("Callback count should be correct", counter, equalTo(2))
     }
 
-    @Test fun waitUntilCalled_shouldContinue() {
+    @Test
+    fun waitUntilCalled_shouldContinue() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ProgressDelegate, ShouldContinue {
-            var pageStart = false
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate, ShouldContinue {
+                var pageStart = false
 
-            override fun shouldContinue(): Boolean = pageStart
+                override fun shouldContinue(): Boolean = pageStart
 
-            override fun onPageStart(session: GeckoSession, url: String) {
-                pageStart = true
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    pageStart = true
+                }
+
+                // This is here to verify that we don't wait on all methods of this object
+                override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-
-            // This is here to verify that we don't wait on all methods of this object
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-            }
-        })
+        )
 
         // This is to verify that the above only waits until pageStart, but not pageStop.
         // If the above block waits until pageStop, this will time out, indicating a problem.
@@ -308,55 +322,61 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.waitUntilCalled(ProgressDelegate::class, "onPageStop")
     }
 
-    @Test fun waitUntilCalled_anyObjectMethod() {
+    @Test
+    fun waitUntilCalled_anyObjectMethod() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
 
         var counter = 0
 
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            override fun onPageStart(session: GeckoSession, url: String) {
-                counter++
-            }
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    counter++
+                }
 
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
-            }
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
 
-            override fun onSecurityChange(
-                session: GeckoSession,
-                securityInfo: ProgressDelegate.SecurityInformation,
-            ) {
-                counter++
-            }
+                override fun onSecurityChange(
+                    session: GeckoSession,
+                    securityInfo: ProgressDelegate.SecurityInformation,
+                ) {
+                    counter++
+                }
 
-            override fun onProgressChange(session: GeckoSession, progress: Int) {
-                counter++
-            }
+                override fun onProgressChange(session: GeckoSession, progress: Int) {
+                    counter++
+                }
 
-            override fun onSessionStateChange(session: GeckoSession, state: SessionState) {
-                counter++
+                override fun onSessionStateChange(session: GeckoSession, state: SessionState) {
+                    counter++
+                }
             }
-        })
+        )
 
         assertThat("Callback count should be correct", counter, equalTo(1))
     }
 
-    @Test fun waitUntilCalled_specificObjectMethod() {
+    @Test
+    fun waitUntilCalled_specificObjectMethod() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
 
         var counter = 0
 
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled
-            override fun onPageStart(session: GeckoSession, url: String) {
-                counter++
-            }
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    counter++
+                }
 
-            @AssertCalled
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+                @AssertCalled
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         assertThat("Callback count should be correct", counter, equalTo(2))
     }
@@ -368,11 +388,11 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         sessionRule.waitForPageStop()
 
         mainSession.reload()
-        mainSession.waitUntilCalled(object : ScrollDelegate {
-            @AssertCalled
-            override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
+        mainSession.waitUntilCalled(
+            object : ScrollDelegate {
+                @AssertCalled override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {}
             }
-        })
+        )
     }
 
     @NullDelegate(ScrollDelegate::class)
@@ -382,58 +402,64 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         sessionRule.waitForPageStop()
 
         mainSession.reload()
-        mainSession.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+        mainSession.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
     }
 
-    @Test fun waitUntilCalled_multipleCount() {
+    @Test
+    fun waitUntilCalled_multipleCount() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.reload()
 
         var counter = 0
 
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled(count = 2)
-            override fun onPageStart(session: GeckoSession, url: String) {
-                counter++
-            }
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled(count = 2)
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    counter++
+                }
 
-            @AssertCalled(count = 2)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+                @AssertCalled(count = 2)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         assertThat("Callback count should be correct", counter, equalTo(4))
     }
 
-    @Test fun waitUntilCalled_currentCall() {
+    @Test
+    fun waitUntilCalled_currentCall() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.reload()
 
         var counter = 0
 
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled(count = 2, order = [1, 2])
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                val info = sessionRule.currentCall
-                assertThat("Method info should be valid", info, notNullValue())
-                assertThat(
-                    "Counter should be correct",
-                    info.counter,
-                    equalTo(forEachCall(1, 2)),
-                )
-                assertThat(
-                    "Order should equal counter",
-                    info.order,
-                    equalTo(info.counter),
-                )
-                counter++
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled(count = 2, order = [1, 2])
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    val info = sessionRule.currentCall
+                    assertThat("Method info should be valid", info, notNullValue())
+                    assertThat(
+                        "Counter should be correct",
+                        info.counter,
+                        equalTo(forEachCall(1, 2)),
+                    )
+                    assertThat(
+                        "Order should equal counter",
+                        info.order,
+                        equalTo(info.counter),
+                    )
+                    counter++
+                }
             }
-        })
+        )
 
         assertThat("Callback count should be correct", counter, equalTo(2))
     }
@@ -441,39 +467,44 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     @Test(expected = IllegalStateException::class)
     fun waitUntilCalled_passThroughExceptions() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                throw IllegalStateException()
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    throw IllegalStateException()
+                }
             }
-        })
+        )
     }
 
-    @Test fun waitUntilCalled_zeroCount() {
+    @Test
+    fun waitUntilCalled_zeroCount() {
         // Support having @AssertCalled(count = 0) annotations for waitUntilCalled calls.
         mainSession.loadTestPath(HELLO_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ProgressDelegate, ScrollDelegate {
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-            }
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate, ScrollDelegate {
+                @AssertCalled(count = 1) override fun onPageStop(session: GeckoSession, success: Boolean) {}
 
-            @AssertCalled(count = 0)
-            override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
+                @AssertCalled(count = 0)
+                override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {}
             }
-        })
+        )
     }
 
-    @Test fun forCallbacksDuringWait_anyMethod() {
+    @Test
+    fun forCallbacksDuringWait_anyMethod() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
         var counter = 0
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         assertThat("Callback count should be correct", counter, equalTo(1))
     }
@@ -495,57 +526,64 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        sessionRule.forCallbacksDuringWait(object : NavigationDelegate {
-            @AssertCalled(count = 0)
-            override fun onLocationChange(
-                session: GeckoSession,
-                url: String?,
-                perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>,
-                hasUserGesture: Boolean,
-            ) {
+        sessionRule.forCallbacksDuringWait(
+            object : NavigationDelegate {
+                @AssertCalled(count = 0)
+                override fun onLocationChange(
+                    session: GeckoSession,
+                    url: String?,
+                    perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>,
+                    hasUserGesture: Boolean,
+                ) {}
             }
-        })
+        )
     }
 
-    @Test fun forCallbacksDuringWait_specificMethod() {
+    @Test
+    fun forCallbacksDuringWait_specificMethod() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
         var counter = 0
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled
-            override fun onPageStart(session: GeckoSession, url: String) {
-                counter++
-            }
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    counter++
+                }
 
-            @AssertCalled
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+                @AssertCalled
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         assertThat("Callback count should be correct", counter, equalTo(2))
     }
 
-    @Test fun forCallbacksDuringWait_specificMethodMultipleTimes() {
+    @Test
+    fun forCallbacksDuringWait_specificMethodMultipleTimes() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.reload()
         sessionRule.waitForPageStops(2)
 
         var counter = 0
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled
-            override fun onPageStart(session: GeckoSession, url: String) {
-                counter++
-            }
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    counter++
+                }
 
-            @AssertCalled
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+                @AssertCalled
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         assertThat("Callback count should be correct", counter, equalTo(4))
     }
@@ -555,52 +593,58 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        sessionRule.forCallbacksDuringWait(object : ScrollDelegate {
-            @AssertCalled
-            override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
+        sessionRule.forCallbacksDuringWait(
+            object : ScrollDelegate {
+                @AssertCalled override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {}
             }
-        })
+        )
     }
 
-    @Test fun waitUntilCalled_specificCount() {
+    @Test
+    fun waitUntilCalled_specificCount() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.reload()
 
         var counter = 0
 
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled(count = 2)
-            override fun onPageStart(session: GeckoSession, url: String) {
-                counter++
-            }
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled(count = 2)
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    counter++
+                }
 
-            @AssertCalled(count = 2)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+                @AssertCalled(count = 2)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         assertThat("Callback count should be correct", counter, equalTo(4))
     }
 
-    @Test fun forCallbacksDuringWait_specificCount() {
+    @Test
+    fun forCallbacksDuringWait_specificCount() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.reload()
         sessionRule.waitForPageStops(2)
 
         var counter = 0
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(count = 2)
-            override fun onPageStart(session: GeckoSession, url: String) {
-                counter++
-            }
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 2)
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    counter++
+                }
 
-            @AssertCalled(count = 2)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+                @AssertCalled(count = 2)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         assertThat("Callback count should be correct", counter, equalTo(4))
     }
@@ -609,15 +653,13 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     fun waitUntilCalled_throwOnWrongCount() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.reload()
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onPageStart(session: GeckoSession, url: String) {
-            }
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1) override fun onPageStart(session: GeckoSession, url: String) {}
 
-            @AssertCalled(count = 2)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+                @AssertCalled(count = 2) override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
     }
 
     @Test(expected = AssertionError::class)
@@ -626,57 +668,51 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.reload()
         sessionRule.waitForPageStops(2)
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onPageStart(session: GeckoSession, url: String) {
-            }
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1) override fun onPageStart(session: GeckoSession, url: String) {}
 
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+                @AssertCalled(count = 1) override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
     }
 
-    @Test fun waitUntilCalled_specificOrder() {
+    @Test
+    fun waitUntilCalled_specificOrder() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled(order = [1])
-            override fun onPageStart(session: GeckoSession, url: String) {
-            }
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled(order = [1]) override fun onPageStart(session: GeckoSession, url: String) {}
 
-            @AssertCalled(order = [2])
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+                @AssertCalled(order = [2]) override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
     }
 
-    @Test fun forCallbacksDuringWait_specificOrder() {
+    @Test
+    fun forCallbacksDuringWait_specificOrder() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(order = [1])
-            override fun onPageStart(session: GeckoSession, url: String) {
-            }
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(order = [1]) override fun onPageStart(session: GeckoSession, url: String) {}
 
-            @AssertCalled(order = [2])
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+                @AssertCalled(order = [2]) override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
     }
 
     @Test(expected = AssertionError::class)
     fun waitUntilCalled_throwOnWrongOrder() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled(order = [2])
-            override fun onPageStart(session: GeckoSession, url: String) {
-            }
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled(order = [2]) override fun onPageStart(session: GeckoSession, url: String) {}
 
-            @AssertCalled(order = [1])
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+                @AssertCalled(order = [1]) override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
     }
 
     @Test(expected = AssertionError::class)
@@ -684,31 +720,28 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(order = [2])
-            override fun onPageStart(session: GeckoSession, url: String) {
-            }
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(order = [2]) override fun onPageStart(session: GeckoSession, url: String) {}
 
-            @AssertCalled(order = [1])
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+                @AssertCalled(order = [1]) override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
     }
 
-    @Test fun forCallbacksDuringWait_multipleOrder() {
+    @Test
+    fun forCallbacksDuringWait_multipleOrder() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.reload()
         sessionRule.waitForPageStops(2)
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(order = [1, 3, 1])
-            override fun onPageStart(session: GeckoSession, url: String) {
-            }
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(order = [1, 3, 1]) override fun onPageStart(session: GeckoSession, url: String) {}
 
-            @AssertCalled(order = [2, 4, 1])
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+                @AssertCalled(order = [2, 4, 1]) override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
     }
 
     @Test(expected = AssertionError::class)
@@ -717,72 +750,70 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.reload()
         sessionRule.waitForPageStops(2)
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(order = [1, 2, 1])
-            override fun onPageStart(session: GeckoSession, url: String) {
-            }
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(order = [1, 2, 1]) override fun onPageStart(session: GeckoSession, url: String) {}
 
-            @AssertCalled(order = [3, 4, 1])
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+                @AssertCalled(order = [3, 4, 1]) override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
     }
 
-    @Test fun forCallbacksDuringWait_notCalled() {
+    @Test
+    fun forCallbacksDuringWait_notCalled() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        sessionRule.forCallbacksDuringWait(object : ScrollDelegate {
-            @AssertCalled(false)
-            override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
+        sessionRule.forCallbacksDuringWait(
+            object : ScrollDelegate {
+                @AssertCalled(false) override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {}
             }
-        })
+        )
     }
 
     @Test(expected = AssertionError::class)
     fun waitUntilCalled_throwOnCallingZeroCall() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
 
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled(count = 0)
-            override fun onPageStart(session: GeckoSession, url: String) {
-            }
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled(count = 0) override fun onPageStart(session: GeckoSession, url: String) {}
 
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+                @AssertCalled(count = 1) override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
     }
 
     fun waitUntilCalled_assertCalledFalseNoTimeout() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
 
-        sessionRule.waitUntilCalled(object : ProgressDelegate, NavigationDelegate {
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {}
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate, NavigationDelegate {
+                @AssertCalled(count = 1) override fun onPageStop(session: GeckoSession, success: Boolean) {}
 
-            @AssertCalled(false)
-            override fun onLoadError(
-                session: GeckoSession,
-                uri: String?,
-                error: WebRequestError,
-            ): GeckoResult<String>? {
-                return null
+                @AssertCalled(false)
+                override fun onLoadError(
+                    session: GeckoSession,
+                    uri: String?,
+                    error: WebRequestError,
+                ): GeckoResult<String>? {
+                    return null
+                }
             }
-        })
+        )
     }
 
     @Test(expected = AssertionError::class)
     fun waitUntilCalled_throwOnCallingNoCall() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
 
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {}
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1) override fun onPageStop(session: GeckoSession, success: Boolean) {}
 
-            @AssertCalled(false)
-            override fun onPageStart(session: GeckoSession, url: String) {}
-        })
+                @AssertCalled(false) override fun onPageStart(session: GeckoSession, url: String) {}
+            }
+        )
     }
 
     @Test(expected = AssertionError::class)
@@ -790,22 +821,24 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(false)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(false) override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
     }
 
-    @Test fun forCallbacksDuringWait_zeroCountEqualsNotCalled() {
+    @Test
+    fun forCallbacksDuringWait_zeroCountEqualsNotCalled() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        sessionRule.forCallbacksDuringWait(object : ScrollDelegate {
-            @AssertCalled(count = 0)
-            override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
+        sessionRule.forCallbacksDuringWait(
+            object : ScrollDelegate {
+                @AssertCalled(count = 0)
+                override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {}
             }
-        })
+        )
     }
 
     @Test(expected = AssertionError::class)
@@ -813,14 +846,15 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(count = 0)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 0) override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
     }
 
-    @Test fun forCallbacksDuringWait_limitedToLastWait() {
+    @Test
+    fun forCallbacksDuringWait_limitedToLastWait() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.reload()
         mainSession.reload()
@@ -835,42 +869,47 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         var counter = 0
 
         // assert should only apply to callbacks within range (loadUri, first reload].
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onPageStart(session: GeckoSession, url: String) {
-                counter++
-            }
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    counter++
+                }
 
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+                @AssertCalled(count = 1)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         assertThat("Callback count should be correct", counter, equalTo(2))
     }
 
-    @Test fun forCallbacksDuringWait_currentCall() {
+    @Test
+    fun forCallbacksDuringWait_currentCall() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                val info = sessionRule.currentCall
-                assertThat("Method info should be valid", info, notNullValue())
-                assertThat(
-                    "Counter should be correct",
-                    info.counter,
-                    equalTo(1),
-                )
-                assertThat(
-                    "Order should equal counter",
-                    info.order,
-                    equalTo(0),
-                )
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    val info = sessionRule.currentCall
+                    assertThat("Method info should be valid", info, notNullValue())
+                    assertThat(
+                        "Counter should be correct",
+                        info.counter,
+                        equalTo(1),
+                    )
+                    assertThat(
+                        "Order should equal counter",
+                        info.order,
+                        equalTo(0),
+                    )
+                }
             }
-        })
+        )
     }
 
     @Test(expected = IllegalStateException::class)
@@ -878,12 +917,14 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                throw IllegalStateException()
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    throw IllegalStateException()
+                }
             }
-        })
+        )
     }
 
     @Test(expected = AssertionError::class)
@@ -905,11 +946,11 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.reload()
         mainSession.waitForPageStop()
 
-        mainSession.forCallbacksDuringWait(object : ScrollDelegate {
-            @AssertCalled
-            override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
+        mainSession.forCallbacksDuringWait(
+            object : ScrollDelegate {
+                @AssertCalled override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {}
             }
-        })
+        )
     }
 
     @NullDelegate(ScrollDelegate::class)
@@ -920,11 +961,11 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.reload()
         mainSession.waitForPageStop()
 
-        mainSession.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+        mainSession.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
     }
 
     @Test(expected = AssertionError::class)
@@ -932,20 +973,23 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         sessionRule.currentCall
     }
 
-    @Test fun delegateUntilTestEnd() {
+    @Test
+    fun delegateUntilTestEnd() {
         var counter = 0
 
-        sessionRule.delegateUntilTestEnd(object : ProgressDelegate {
-            @AssertCalled(count = 1, order = [1])
-            override fun onPageStart(session: GeckoSession, url: String) {
-                counter++
-            }
+        sessionRule.delegateUntilTestEnd(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1, order = [1])
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    counter++
+                }
 
-            @AssertCalled(count = 1, order = [2])
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+                @AssertCalled(count = 1, order = [2])
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
@@ -953,31 +997,33 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         assertThat("Callback count should be correct", counter, equalTo(2))
     }
 
-    @Test fun delegateUntilTestEnd_notCalled() {
-        sessionRule.delegateUntilTestEnd(object : ScrollDelegate {
-            @AssertCalled(false)
-            override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
+    @Test
+    fun delegateUntilTestEnd_notCalled() {
+        sessionRule.delegateUntilTestEnd(
+            object : ScrollDelegate {
+                @AssertCalled(false) override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {}
             }
-        })
+        )
     }
 
     @Test(expected = AssertionError::class)
     fun delegateUntilTestEnd_throwOnNotCalled() {
-        sessionRule.delegateUntilTestEnd(object : ScrollDelegate {
-            @AssertCalled(count = 1)
-            override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
+        sessionRule.delegateUntilTestEnd(
+            object : ScrollDelegate {
+                @AssertCalled(count = 1)
+                override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {}
             }
-        })
+        )
         sessionRule.performTestEndCheck()
     }
 
     @Test(expected = AssertionError::class)
     fun delegateUntilTestEnd_throwOnCallingNoCall() {
-        sessionRule.delegateUntilTestEnd(object : ProgressDelegate {
-            @AssertCalled(false)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+        sessionRule.delegateUntilTestEnd(
+            object : ProgressDelegate {
+                @AssertCalled(false) override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
 
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
@@ -985,59 +1031,64 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
 
     @Test(expected = AssertionError::class)
     fun delegateUntilTestEnd_throwOnWrongOrder() {
-        sessionRule.delegateUntilTestEnd(object : ProgressDelegate {
-            @AssertCalled(count = 1, order = [2])
-            override fun onPageStart(session: GeckoSession, url: String) {
-            }
+        sessionRule.delegateUntilTestEnd(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1, order = [2]) override fun onPageStart(session: GeckoSession, url: String) {}
 
-            @AssertCalled(count = 1, order = [1])
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+                @AssertCalled(count = 1, order = [1])
+                override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
 
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
     }
 
-    @Test fun delegateUntilTestEnd_currentCall() {
-        sessionRule.delegateUntilTestEnd(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                val info = sessionRule.currentCall
-                assertThat("Method info should be valid", info, notNullValue())
-                assertThat(
-                    "Counter should be correct",
-                    info.counter,
-                    equalTo(1),
-                )
-                assertThat(
-                    "Order should equal counter",
-                    info.order,
-                    equalTo(0),
-                )
+    @Test
+    fun delegateUntilTestEnd_currentCall() {
+        sessionRule.delegateUntilTestEnd(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    val info = sessionRule.currentCall
+                    assertThat("Method info should be valid", info, notNullValue())
+                    assertThat(
+                        "Counter should be correct",
+                        info.counter,
+                        equalTo(1),
+                    )
+                    assertThat(
+                        "Order should equal counter",
+                        info.order,
+                        equalTo(0),
+                    )
+                }
             }
-        })
+        )
 
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
     }
 
-    @Test fun delegateDuringNextWait() {
+    @Test
+    fun delegateDuringNextWait() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
         var counter = 0
 
-        sessionRule.delegateDuringNextWait(object : ProgressDelegate {
-            @AssertCalled(count = 1, order = [1])
-            override fun onPageStart(session: GeckoSession, url: String) {
-                counter++
-            }
+        sessionRule.delegateDuringNextWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1, order = [1])
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    counter++
+                }
 
-            @AssertCalled(count = 1, order = [2])
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+                @AssertCalled(count = 1, order = [2])
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
@@ -1052,64 +1103,69 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
 
     @Test(expected = AssertionError::class)
     fun delegateDuringNextWait_throwOnNotCalled() {
-        sessionRule.delegateDuringNextWait(object : ScrollDelegate {
-            @AssertCalled(count = 1)
-            override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
+        sessionRule.delegateDuringNextWait(
+            object : ScrollDelegate {
+                @AssertCalled(count = 1)
+                override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {}
             }
-        })
+        )
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
     }
 
     @Test(expected = AssertionError::class)
     fun delegateDuringNextWait_throwOnNotCalledAtTestEnd() {
-        sessionRule.delegateDuringNextWait(object : ScrollDelegate {
-            @AssertCalled(count = 1)
-            override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
+        sessionRule.delegateDuringNextWait(
+            object : ScrollDelegate {
+                @AssertCalled(count = 1)
+                override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {}
             }
-        })
+        )
         sessionRule.performTestEndCheck()
     }
 
-    @Test fun delegateDuringNextWait_hasPrecedence() {
+    @Test
+    fun delegateDuringNextWait_hasPrecedence() {
         var testCounter = 0
         var waitCounter = 0
 
-        sessionRule.delegateUntilTestEnd(object :
-            ProgressDelegate,
-            NavigationDelegate {
-            @AssertCalled(count = 1, order = [2])
-            override fun onPageStart(session: GeckoSession, url: String) {
-                testCounter++
-            }
+        sessionRule.delegateUntilTestEnd(
+            object : ProgressDelegate, NavigationDelegate {
+                @AssertCalled(count = 1, order = [2])
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    testCounter++
+                }
 
-            @AssertCalled(count = 1, order = [4])
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                testCounter++
-            }
+                @AssertCalled(count = 1, order = [4])
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    testCounter++
+                }
 
-            @AssertCalled(count = 2, order = [1, 3])
-            override fun onCanGoBack(session: GeckoSession, canGoBack: Boolean) {
-                testCounter++
-            }
+                @AssertCalled(count = 2, order = [1, 3])
+                override fun onCanGoBack(session: GeckoSession, canGoBack: Boolean) {
+                    testCounter++
+                }
 
-            @AssertCalled(count = 2, order = [1, 3])
-            override fun onCanGoForward(session: GeckoSession, canGoForward: Boolean) {
-                testCounter++
+                @AssertCalled(count = 2, order = [1, 3])
+                override fun onCanGoForward(session: GeckoSession, canGoForward: Boolean) {
+                    testCounter++
+                }
             }
-        })
+        )
 
-        sessionRule.delegateDuringNextWait(object : ProgressDelegate {
-            @AssertCalled(count = 1, order = [1])
-            override fun onPageStart(session: GeckoSession, url: String) {
-                waitCounter++
-            }
+        sessionRule.delegateDuringNextWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1, order = [1])
+                override fun onPageStart(session: GeckoSession, url: String) {
+                    waitCounter++
+                }
 
-            @AssertCalled(count = 1, order = [2])
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                waitCounter++
+                @AssertCalled(count = 1, order = [2])
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    waitCounter++
+                }
             }
-        })
+        )
 
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
@@ -1130,12 +1186,14 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
 
     @Test(expected = IllegalStateException::class)
     fun delegateDuringNextWait_passThroughExceptions() {
-        sessionRule.delegateDuringNextWait(object : ProgressDelegate {
-            @AssertCalled
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                throw IllegalStateException()
+        sessionRule.delegateDuringNextWait(
+            object : ProgressDelegate {
+                @AssertCalled
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    throw IllegalStateException()
+                }
             }
-        })
+        )
 
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
@@ -1147,16 +1205,16 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.delegateDuringNextWait(object : NavigationDelegate {})
     }
 
-    @Test fun wrapSession() {
-        val session = sessionRule.wrapSession(
-            GeckoSession(mainSession.settings),
-        )
+    @Test
+    fun wrapSession() {
+        val session = sessionRule.wrapSession(GeckoSession(mainSession.settings))
         sessionRule.openSession(session)
         session.reload()
         session.waitForPageStop()
     }
 
-    @Test fun createOpenSession() {
+    @Test
+    fun createOpenSession() {
         val newSession = sessionRule.createOpenSession()
         assertThat("Can create session", newSession, notNullValue())
         assertThat("New session is open", newSession.isOpen, equalTo(true))
@@ -1167,16 +1225,16 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         )
     }
 
-    @Test fun createOpenSession_withSettings() {
-        val settings = GeckoSessionSettings.Builder(mainSession.settings)
-            .usePrivateMode(true)
-            .build()
+    @Test
+    fun createOpenSession_withSettings() {
+        val settings = GeckoSessionSettings.Builder(mainSession.settings).usePrivateMode(true).build()
 
         val newSession = sessionRule.createOpenSession(settings)
         assertThat("New session has same settings", newSession.settings, equalTo(settings))
     }
 
-    @Test fun createOpenSession_canInterleaveOtherCalls() {
+    @Test
+    fun createOpenSession_canInterleaveOtherCalls() {
         // TODO: Bug 1673953
         assumeThat(sessionRule.env.isFission, equalTo(false))
 
@@ -1186,20 +1244,21 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStops(2)
 
-        newSession.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(false)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+        newSession.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(false) override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
 
-        mainSession.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(count = 2)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+        mainSession.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 2) override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
     }
 
-    @Test fun createClosedSession() {
+    @Test
+    fun createClosedSession() {
         val newSession = sessionRule.createClosedSession()
         assertThat("Can create session", newSession, notNullValue())
         assertThat("New session is open", newSession.isOpen, equalTo(false))
@@ -1210,7 +1269,8 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         )
     }
 
-    @Test fun createClosedSession_withSettings() {
+    @Test
+    fun createClosedSession_withSettings() {
         val settings = GeckoSessionSettings.Builder(mainSession.settings).usePrivateMode(true).build()
 
         val newSession = sessionRule.createClosedSession(settings)
@@ -1223,26 +1283,28 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     fun noPendingCallbacks_withSpecificSession() {
         sessionRule.createOpenSession()
         // Make sure we don't have unexpected pending callbacks after opening a session.
-        sessionRule.waitUntilCalled(object : HistoryDelegate, ProgressDelegate {
-            // There may be extraneous onSessionStateChange and onHistoryStateChange calls
-            // after a test, so ignore the first received.
-            @AssertCalled(count = 2)
-            override fun onSessionStateChange(session: GeckoSession, state: SessionState) {
-            }
+        sessionRule.waitUntilCalled(
+            object : HistoryDelegate, ProgressDelegate {
+                // There may be extraneous onSessionStateChange and onHistoryStateChange calls
+                // after a test, so ignore the first received.
+                @AssertCalled(count = 2)
+                override fun onSessionStateChange(session: GeckoSession, state: SessionState) {}
 
-            @AssertCalled(count = 2)
-            override fun onHistoryStateChange(session: GeckoSession, historyList: HistoryDelegate.HistoryList) {
+                @AssertCalled(count = 2)
+                override fun onHistoryStateChange(session: GeckoSession, historyList: HistoryDelegate.HistoryList) {}
             }
-        })
+        )
     }
 
-    @Test fun waitForPageStop_withSpecificSession() {
+    @Test
+    fun waitForPageStop_withSpecificSession() {
         val newSession = sessionRule.createOpenSession()
         newSession.loadTestPath(HELLO_HTML_PATH)
         newSession.waitForPageStop()
     }
 
-    @Test fun waitForPageStop_withAllSessions() {
+    @Test
+    fun waitForPageStop_withAllSessions() {
         val newSession = sessionRule.createOpenSession()
         newSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
@@ -1253,21 +1315,24 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         GeckoSession(mainSession.settings).waitForPageStop()
     }
 
-    @Test fun waitForPageStops_withSpecificSessions() {
+    @Test
+    fun waitForPageStops_withSpecificSessions() {
         val newSession = sessionRule.createOpenSession()
         newSession.loadTestPath(HELLO_HTML_PATH)
         newSession.reload()
         newSession.waitForPageStops(2)
     }
 
-    @Test fun waitForPageStops_withAllSessions() {
+    @Test
+    fun waitForPageStops_withAllSessions() {
         val newSession = sessionRule.createOpenSession()
         newSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStops(2)
     }
 
-    @Test fun waitForPageStops_acrossSessionCreation() {
+    @Test
+    fun waitForPageStops_acrossSessionCreation() {
         // TODO: Bug 1673953
         assumeThat(sessionRule.env.isFission, equalTo(false))
 
@@ -1278,64 +1343,74 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         sessionRule.waitForPageStops(3)
     }
 
-    @Test fun waitUntilCalled_interfaceWithSpecificSession() {
+    @Test
+    fun waitUntilCalled_interfaceWithSpecificSession() {
         val newSession = sessionRule.createOpenSession()
         newSession.loadTestPath(HELLO_HTML_PATH)
         newSession.waitUntilCalled(ProgressDelegate::class, "onPageStop")
     }
 
-    @Test fun waitUntilCalled_interfaceWithAllSessions() {
+    @Test
+    fun waitUntilCalled_interfaceWithAllSessions() {
         val newSession = sessionRule.createOpenSession()
         newSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitUntilCalled(ProgressDelegate::class, "onPageStop")
     }
 
-    @Test fun waitUntilCalled_callbackWithSpecificSession() {
+    @Test
+    fun waitUntilCalled_callbackWithSpecificSession() {
         val newSession = sessionRule.createOpenSession()
         newSession.loadTestPath(HELLO_HTML_PATH)
-        newSession.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+        newSession.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1) override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
     }
 
-    @Test fun waitUntilCalled_callbackWithAllSessions() {
+    @Test
+    fun waitUntilCalled_callbackWithAllSessions() {
         val newSession = sessionRule.createOpenSession()
         newSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.loadTestPath(HELLO_HTML_PATH)
-        sessionRule.waitUntilCalled(object : ProgressDelegate {
-            @AssertCalled(count = 2)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+        sessionRule.waitUntilCalled(
+            object : ProgressDelegate {
+                @AssertCalled(count = 2) override fun onPageStop(session: GeckoSession, success: Boolean) {}
             }
-        })
+        )
     }
 
-    @Test fun forCallbacksDuringWait_withSpecificSession() {
+    @Test
+    fun forCallbacksDuringWait_withSpecificSession() {
         val newSession = sessionRule.createOpenSession()
         newSession.loadTestPath(HELLO_HTML_PATH)
         newSession.waitForPageStop()
 
         var counter = 0
 
-        newSession.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+        newSession.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
-        mainSession.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(false)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+        mainSession.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(false)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         assertThat("Callback count should be correct", counter, equalTo(1))
     }
 
-    @Test fun forCallbacksDuringWait_withAllSessions() {
+    @Test
+    fun forCallbacksDuringWait_withAllSessions() {
         val newSession = sessionRule.createOpenSession()
         newSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.loadTestPath(HELLO_HTML_PATH)
@@ -1343,17 +1418,20 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
 
         var counter = 0
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(count = 2)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 2)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         assertThat("Callback count should be correct", counter, equalTo(2))
     }
 
-    @Test fun forCallbacksDuringWait_limitedToLastSessionWait() {
+    @Test
+    fun forCallbacksDuringWait_limitedToLastSessionWait() {
         val newSession = sessionRule.createOpenSession()
 
         mainSession.loadTestPath(HELLO_HTML_PATH)
@@ -1365,48 +1443,59 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         // forCallbacksDuringWait calls strictly apply to the last wait, session-specific or not.
         var counter = 0
 
-        mainSession.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(false)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+        mainSession.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(false)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
-        newSession.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+        newSession.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
-        sessionRule.forCallbacksDuringWait(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+        sessionRule.forCallbacksDuringWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         assertThat("Callback count should be correct", counter, equalTo(2))
     }
 
-    @Test fun delegateUntilTestEnd_withSpecificSession() {
+    @Test
+    fun delegateUntilTestEnd_withSpecificSession() {
         val newSession = sessionRule.createOpenSession()
 
         var counter = 0
 
-        newSession.delegateUntilTestEnd(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+        newSession.delegateUntilTestEnd(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
-        mainSession.delegateUntilTestEnd(object : ProgressDelegate {
-            @AssertCalled(false)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+        mainSession.delegateUntilTestEnd(
+            object : ProgressDelegate {
+                @AssertCalled(false)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         newSession.loadTestPath(HELLO_HTML_PATH)
         newSession.waitForPageStop()
@@ -1414,15 +1503,18 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         assertThat("Callback count should be correct", counter, equalTo(1))
     }
 
-    @Test fun delegateUntilTestEnd_withAllSessions() {
+    @Test
+    fun delegateUntilTestEnd_withAllSessions() {
         var counter = 0
 
-        sessionRule.delegateUntilTestEnd(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+        sessionRule.delegateUntilTestEnd(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         val newSession = sessionRule.createOpenSession()
         newSession.loadTestPath(HELLO_HTML_PATH)
@@ -1431,23 +1523,28 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         assertThat("Callback count should be correct", counter, equalTo(1))
     }
 
-    @Test fun delegateDuringNextWait_hasPrecedenceWithSpecificSession() {
+    @Test
+    fun delegateDuringNextWait_hasPrecedenceWithSpecificSession() {
         val newSession = sessionRule.createOpenSession()
         var counter = 0
 
-        newSession.delegateDuringNextWait(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+        newSession.delegateDuringNextWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
-        newSession.delegateUntilTestEnd(object : ProgressDelegate {
-            @AssertCalled(false)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+        newSession.delegateUntilTestEnd(
+            object : ProgressDelegate {
+                @AssertCalled(false)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         newSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.loadTestPath(HELLO_HTML_PATH)
@@ -1456,23 +1553,28 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         assertThat("Callback count should be correct", counter, equalTo(1))
     }
 
-    @Test fun delegateDuringNextWait_specificSessionOverridesAll() {
+    @Test
+    fun delegateDuringNextWait_specificSessionOverridesAll() {
         val newSession = sessionRule.createOpenSession()
         var counter = 0
 
-        newSession.delegateDuringNextWait(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+        newSession.delegateDuringNextWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
-        sessionRule.delegateDuringNextWait(object : ProgressDelegate {
-            @AssertCalled(count = 1)
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                counter++
+        sessionRule.delegateDuringNextWait(
+            object : ProgressDelegate {
+                @AssertCalled(count = 1)
+                override fun onPageStop(session: GeckoSession, success: Boolean) {
+                    counter++
+                }
             }
-        })
+        )
 
         newSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.loadTestPath(HELLO_HTML_PATH)
@@ -1518,7 +1620,8 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.waitForPageStop()
     }
 
-    @Test fun evaluateExtensionJS() {
+    @Test
+    fun evaluateExtensionJS() {
         assertThat(
             "JS string result should be correct",
             sessionRule.evaluateExtensionJS("return 'foo';") as String,
@@ -1563,9 +1666,10 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
             "Can access extension APIS",
             sessionRule.evaluateExtensionJS(
                 """
-                    return true;
-                    // Comments at the end are allowed
-                """.trimIndent(),
+                return true;
+                // Comments at the end are allowed
+                """
+                    .trimIndent()
             ) as Boolean,
             equalTo(true),
         )
@@ -1582,7 +1686,8 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         }
     }
 
-    @Test fun evaluateJS() {
+    @Test
+    fun evaluateJS() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.waitForPageStop()
 
@@ -1627,7 +1732,8 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         )
     }
 
-    @Test fun evaluateJS_windowObject() {
+    @Test
+    fun evaluateJS_windowObject() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.waitForPageStop()
 
@@ -1638,7 +1744,8 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         )
     }
 
-    @Test fun evaluateJS_multipleSessions() {
+    @Test
+    fun evaluateJS_multipleSessions() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.waitForPageStop()
 
@@ -1661,21 +1768,18 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         )
     }
 
-    @Test fun evaluateJS_supportPromises() {
+    @Test
+    fun evaluateJS_supportPromises() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.waitForPageStop()
 
         assertThat(
             "Can get resolved promise",
-            mainSession.evaluatePromiseJS(
-                "new Promise(resolve => resolve('foo'))",
-            ).value as String,
+            mainSession.evaluatePromiseJS("new Promise(resolve => resolve('foo'))").value as String,
             equalTo("foo"),
         )
 
-        val promise = mainSession.evaluatePromiseJS(
-            "new Promise(r => window.resolve = r)",
-        )
+        val promise = mainSession.evaluatePromiseJS("new Promise(r => window.resolve = r)")
 
         mainSession.evaluateJS("window.resolve('bar')")
 
@@ -1693,7 +1797,8 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.evaluatePromiseJS("Promise.reject('foo')").value
     }
 
-    @Test fun evaluateJS_notBlockMainThread() {
+    @Test
+    fun evaluateJS_notBlockMainThread() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.waitForPageStop()
         // Test that we can still receive delegate callbacks during evaluateJS,
@@ -1710,13 +1815,18 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     fun evaluateJS_canTimeout() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.waitForPageStop()
-        mainSession.delegateUntilTestEnd(object : PromptDelegate {
-            override fun onAlertPrompt(session: GeckoSession, prompt: PromptDelegate.AlertPrompt): GeckoResult<PromptDelegate.PromptResponse> {
-                // Return a GeckoResult that we will never complete, so it hangs.
-                val res = GeckoResult<PromptDelegate.PromptResponse>()
-                return res
+        mainSession.delegateUntilTestEnd(
+            object : PromptDelegate {
+                override fun onAlertPrompt(
+                    session: GeckoSession,
+                    prompt: PromptDelegate.AlertPrompt,
+                ): GeckoResult<PromptDelegate.PromptResponse> {
+                    // Return a GeckoResult that we will never complete, so it hangs.
+                    val res = GeckoResult<PromptDelegate.PromptResponse>()
+                    return res
+                }
             }
-        })
+        )
         mainSession.evaluateJS("new Promise(resolve => window.setTimeout(resolve, 2000))")
     }
 
@@ -1741,7 +1851,8 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.evaluateJS("ChromeUtils")
     }
 
-    @Test fun getPrefs_undefinedPrefReturnsNull() {
+    @Test
+    fun getPrefs_undefinedPrefReturnsNull() {
         assertThat(
             "Undefined pref should have null value",
             sessionRule.getPrefs("invalid.pref")[0],
@@ -1749,21 +1860,23 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         )
     }
 
-    @Test fun setPrefsUntilTestEnd() {
+    @Test
+    fun setPrefsUntilTestEnd() {
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 "test.pref.bool" to true,
                 "test.pref.int" to 1,
                 "test.pref.foo" to "foo",
-            ),
+            )
         )
 
-        var prefs = sessionRule.getPrefs(
-            "test.pref.bool",
-            "test.pref.int",
-            "test.pref.foo",
-            "test.pref.bar",
-        )
+        var prefs =
+            sessionRule.getPrefs(
+                "test.pref.bool",
+                "test.pref.int",
+                "test.pref.foo",
+                "test.pref.bar",
+            )
 
         assertThat("Prefs should be set", prefs[0] as Boolean, equalTo(true))
         assertThat("Prefs should be set", prefs[1] as Int, equalTo(1))
@@ -1774,15 +1887,16 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
             mapOf(
                 "test.pref.foo" to "bar",
                 "test.pref.bar" to "baz",
-            ),
+            )
         )
 
-        prefs = sessionRule.getPrefs(
-            "test.pref.bool",
-            "test.pref.int",
-            "test.pref.foo",
-            "test.pref.bar",
-        )
+        prefs =
+            sessionRule.getPrefs(
+                "test.pref.bool",
+                "test.pref.int",
+                "test.pref.foo",
+                "test.pref.bar",
+            )
 
         assertThat("New prefs should be set", prefs[0] as Boolean, equalTo(true))
         assertThat("New prefs should be set", prefs[1] as Int, equalTo(1))
@@ -1790,7 +1904,8 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         assertThat("New prefs should be set", prefs[3] as String, equalTo("baz"))
     }
 
-    @Test fun setPrefsDuringNextWait() {
+    @Test
+    fun setPrefsDuringNextWait() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
@@ -1799,14 +1914,15 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
                 "test.pref.bool" to true,
                 "test.pref.int" to 1,
                 "test.pref.foo" to "foo",
-            ),
+            )
         )
 
-        var prefs = sessionRule.getPrefs(
-            "test.pref.bool",
-            "test.pref.int",
-            "test.pref.foo",
-        )
+        var prefs =
+            sessionRule.getPrefs(
+                "test.pref.bool",
+                "test.pref.int",
+                "test.pref.foo",
+            )
 
         assertThat("Prefs should be set before wait", prefs[0] as Boolean, equalTo(true))
         assertThat("Prefs should be set before wait", prefs[1] as Int, equalTo(1))
@@ -1815,18 +1931,20 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.reload()
         mainSession.waitForPageStop()
 
-        prefs = sessionRule.getPrefs(
-            "test.pref.bool",
-            "test.pref.int",
-            "test.pref.foo",
-        )
+        prefs =
+            sessionRule.getPrefs(
+                "test.pref.bool",
+                "test.pref.int",
+                "test.pref.foo",
+            )
 
         assertThat("Prefs should be cleared after wait", prefs[0], equalTo(JSONObject.NULL))
         assertThat("Prefs should be cleared after wait", prefs[1], equalTo(JSONObject.NULL))
         assertThat("Prefs should be cleared after wait", prefs[2], equalTo(JSONObject.NULL))
     }
 
-    @Test fun setPrefsDuringNextWait_hasPrecedence() {
+    @Test
+    fun setPrefsDuringNextWait_hasPrecedence() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
@@ -1834,21 +1952,22 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
             mapOf(
                 "test.pref.int" to 1,
                 "test.pref.foo" to "foo",
-            ),
+            )
         )
 
         sessionRule.setPrefsDuringNextWait(
             mapOf(
                 "test.pref.foo" to "bar",
                 "test.pref.bar" to "baz",
-            ),
+            )
         )
 
-        var prefs = sessionRule.getPrefs(
-            "test.pref.int",
-            "test.pref.foo",
-            "test.pref.bar",
-        )
+        var prefs =
+            sessionRule.getPrefs(
+                "test.pref.int",
+                "test.pref.foo",
+                "test.pref.bar",
+            )
 
         assertThat("Prefs should be overridden", prefs[0] as Int, equalTo(1))
         assertThat("Prefs should be overridden", prefs[1] as String, equalTo("bar"))
@@ -1857,18 +1976,20 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         mainSession.reload()
         mainSession.waitForPageStop()
 
-        prefs = sessionRule.getPrefs(
-            "test.pref.int",
-            "test.pref.foo",
-            "test.pref.bar",
-        )
+        prefs =
+            sessionRule.getPrefs(
+                "test.pref.int",
+                "test.pref.foo",
+                "test.pref.bar",
+            )
 
         assertThat("Overriden prefs should be restored", prefs[0] as Int, equalTo(1))
         assertThat("Overriden prefs should be restored", prefs[1] as String, equalTo("foo"))
         assertThat("Overriden prefs should be restored", prefs[2], equalTo(JSONObject.NULL))
     }
 
-    @Test fun waitForJS() {
+    @Test
+    fun waitForJS() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
@@ -1878,15 +1999,21 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
             equalTo("foo"),
         )
 
-        mainSession.forCallbacksDuringWait(object : PromptDelegate {
-            @AssertCalled(count = 1)
-            override fun onAlertPrompt(session: GeckoSession, prompt: PromptDelegate.AlertPrompt): GeckoResult<PromptDelegate.PromptResponse>? {
-                return null
+        mainSession.forCallbacksDuringWait(
+            object : PromptDelegate {
+                @AssertCalled(count = 1)
+                override fun onAlertPrompt(
+                    session: GeckoSession,
+                    prompt: PromptDelegate.AlertPrompt,
+                ): GeckoResult<PromptDelegate.PromptResponse>? {
+                    return null
+                }
             }
-        })
+        )
     }
 
-    @Test fun waitForJS_resolvePromise() {
+    @Test
+    fun waitForJS_resolvePromise() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
         assertThat(
@@ -1896,17 +2023,23 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         )
     }
 
-    @Test fun waitForJS_delegateDuringWait() {
+    @Test
+    fun waitForJS_delegateDuringWait() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
         var count = 0
-        mainSession.delegateDuringNextWait(object : PromptDelegate {
-            override fun onAlertPrompt(session: GeckoSession, prompt: PromptDelegate.AlertPrompt): GeckoResult<PromptDelegate.PromptResponse> {
-                count++
-                return GeckoResult.fromValue(prompt.dismiss())
+        mainSession.delegateDuringNextWait(
+            object : PromptDelegate {
+                override fun onAlertPrompt(
+                    session: GeckoSession,
+                    prompt: PromptDelegate.AlertPrompt,
+                ): GeckoResult<PromptDelegate.PromptResponse> {
+                    count++
+                    return GeckoResult.fromValue(prompt.dismiss())
+                }
             }
-        })
+        )
 
         mainSession.waitForJS("alert()")
         mainSession.waitForJS("alert()")
@@ -1939,13 +2072,14 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         fun onDelegate(foo: String, bar: String): Int
     }
 
-    @Test fun addExternalDelegateUntilTestEnd() {
+    @Test
+    fun addExternalDelegateUntilTestEnd() {
         lateinit var delegate: TestDelegate
 
         sessionRule.addExternalDelegateUntilTestEnd(
             TestDelegate::class,
             { newDelegate -> delegate = newDelegate },
-            { },
+            {},
             object : TestDelegate {
                 @AssertCalled(count = 1)
                 override fun onDelegate(foo: String, bar: String): Int {
@@ -1969,8 +2103,8 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     fun addExternalDelegateUntilTestEnd_throwOnNotCalled() {
         sessionRule.addExternalDelegateUntilTestEnd(
             TestDelegate::class,
-            { },
-            { },
+            {},
+            {},
             object : TestDelegate {
                 @AssertCalled(count = 1)
                 override fun onDelegate(foo: String, bar: String): Int {
@@ -1981,8 +2115,8 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         sessionRule.performTestEndCheck()
     }
 
-    @Suppress("ktlint:standard:annotation")
-    @Test fun addExternalDelegateDuringNextWait() {
+    @Test
+    fun addExternalDelegateDuringNextWait() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
@@ -1992,7 +2126,7 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
             Runnable::class,
             { newDelegate -> delegate = newDelegate },
             { delegate = null },
-            Runnable { },
+            Runnable {},
         )
 
         assertThat("Delegate should be registered", delegate, notNullValue())
@@ -2005,7 +2139,8 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         assertThat("Delegate should be unregistered after wait", delegate, nullValue())
     }
 
-    @Test fun addExternalDelegateDuringNextWait_hasPrecedence() {
+    @Test
+    fun addExternalDelegateDuringNextWait_hasPrecedence() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop()
 
@@ -2064,10 +2199,11 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         assumeThat(sessionRule.env.isAppZygoteProcess, equalTo(false))
 
         mainSession.loadUri(CONTENT_CRASH_URL)
-        mainSession.waitUntilCalled(object : ContentDelegate {
-            @AssertCalled(count = 1)
-            override fun onCrash(session: GeckoSession) = Unit
-        })
+        mainSession.waitUntilCalled(
+            object : ContentDelegate {
+                @AssertCalled(count = 1) override fun onCrash(session: GeckoSession) = Unit
+            }
+        )
     }
 
     @Test(expected = ChildCrashedException::class)
@@ -2078,15 +2214,20 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         sessionRule.waitForPageStop()
     }
 
-    @Test fun waitForResult() {
+    @Test
+    fun waitForResult() {
         val handler = Handler(Looper.getMainLooper())
-        val result = object : GeckoResult<Int>() {
-            init {
-                handler.postDelayed({
-                    complete(42)
-                }, 100)
+        val result =
+            object : GeckoResult<Int>() {
+                init {
+                    handler.postDelayed(
+                        {
+                            complete(42)
+                        },
+                        100,
+                    )
+                }
             }
-        }
 
         val value = sessionRule.waitForResult(result)
         assertThat("Value should match", value, equalTo(42))
@@ -2095,13 +2236,17 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
     @Test(expected = IllegalStateException::class)
     fun waitForResultExceptionally() {
         val handler = Handler(Looper.getMainLooper())
-        val result = object : GeckoResult<Int>() {
-            init {
-                handler.postDelayed({
-                    completeExceptionally(IllegalStateException("boom"))
-                }, 100)
+        val result =
+            object : GeckoResult<Int>() {
+                init {
+                    handler.postDelayed(
+                        {
+                            completeExceptionally(IllegalStateException("boom"))
+                        },
+                        100,
+                    )
+                }
             }
-        }
 
         sessionRule.waitForResult(result)
     }

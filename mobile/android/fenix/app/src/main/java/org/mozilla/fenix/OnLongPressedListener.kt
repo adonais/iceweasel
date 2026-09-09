@@ -4,16 +4,13 @@
 
 package org.mozilla.fenix
 
-/**
- * Interface for features and fragments that want to handle long presses of the system back/forward button
- */
+/** Interface for features and fragments that want to handle long presses of the system back/forward button */
 interface OnLongPressedListener {
 
     /**
      * Called when the system back button is long pressed.
      *
-     * Note: This cannot be called when gesture navigation is enabled on Android 10+ due to system
-     * limitations.
+     * Note: This cannot be called when gesture navigation is enabled on Android 10+ due to system limitations.
      *
      * @return true if the event was handled
      */

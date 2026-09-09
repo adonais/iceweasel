@@ -8,6 +8,8 @@
 
 #include "gc/Tenuring.h"
 
+#include "mozilla/glue/Debug.h"
+
 #include <bit>
 
 #include "gc/Cell.h"
@@ -1598,11 +1600,11 @@ void TenuringTracer::printPromotionReport(
   double fractionPromoted = double(getPromotedSize()) / usedBytes;
   double usedMB = usedBytes / (1024 * 1024);
   double capacityMB = capacityBytes / (1024 * 1024);
-  fprintf(stderr, "Promotion stats for minor GC %zu:\n", minorGCCount);
-  fprintf(stderr, "  Reason: %s\n", ExplainGCReason(reason));
-  fprintf(stderr, "  Nursery size: %4.1f MB used of %4.1f MB\n", usedMB,
-          capacityMB);
-  fprintf(stderr, "  Promotion rate: %5.1f%%\n", 100 * fractionPromoted);
+  printf_stderr("Promotion stats for minor GC %zu:\n", minorGCCount);
+  printf_stderr("  Reason: %s\n", ExplainGCReason(reason));
+  printf_stderr("  Nursery size: %4.1f MB used of %4.1f MB\n", usedMB,
+                capacityMB);
+  printf_stderr("  Promotion rate: %5.1f%%\n", 100 * fractionPromoted);
 
   promotionStats->printReport(cx, nogc);
 }
@@ -1645,21 +1647,21 @@ bool PromotionStats::shouldPrintReport() const {
 void PromotionStats::printReport(JSContext* cx,
                                  const JS::AutoRequireNoGC& nogc) {
   if (objectCount) {
-    fprintf(stderr, "  Objects promoted: %zu\n", objectCount);
+    printf_stderr("  Objects promoted: %zu\n", objectCount);
     printObjectCounts(cx, nogc);
   }
 
   if (stringCount) {
-    fprintf(stderr, "  Strings promoted: %zu\n", stringCount);
+    printf_stderr("  Strings promoted: %zu\n", stringCount);
     printStringCounts();
   }
 
   if (bigIntCount) {
-    fprintf(stderr, "  BigInts promoted: %zu\n", bigIntCount);
+    printf_stderr("  BigInts promoted: %zu\n", bigIntCount);
   }
 
   if (getterSetterCount) {
-    fprintf(stderr, "  GetterSetters promoted: %zu\n", getterSetterCount);
+    printf_stderr("  GetterSetters promoted: %zu\n", getterSetterCount);
   }
 }
 
@@ -1761,7 +1763,7 @@ void PromotionStats::printCounts(CountsVector& counts, size_t total) {
 
 void PromotionStats::printLine(const char* name, size_t count, size_t total) {
   double percent = 100.0 * double(count) / double(total);
-  fprintf(stderr, "    %5.1f%%: %s\n", percent, name);
+  printf_stderr("    %5.1f%%: %s\n", percent, name);
 }
 
 #endif

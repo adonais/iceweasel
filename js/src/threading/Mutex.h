@@ -23,63 +23,77 @@ struct MutexId {
   uint32_t order;
 };
 
-// The Mutex class below wraps mozilla::detail::MutexImpl, but we don't want to
-// use public inheritance, and private inheritance is problematic because
-// Mutex's friends can access the private parent class as if it was public
-// inheritance.  So use a data member, but for Mutex to access the data member
-// we must override it and make Mutex a friend.
-class MutexImpl : public mozilla::detail::MutexImpl {
- protected:
-  MutexImpl() = default;
-
-  friend class Mutex;
-};
-
-// In debug builds, js::Mutex is a wrapper over MutexImpl that checks correct
-// locking order is observed.
-//
-// The class maintains a per-thread stack of currently-held mutexes to enable it
-// to check this.
-class Mutex {
- private:
-  MutexImpl impl_;
-
+// Base class for mutex implementations that maintains a per-thread stack of
+// currently-held mutexes to enable it to check mutex ordering is observed in
+// debug builds.
+class MutexBase {
 #ifdef DEBUG
   const MutexId id_;
-  Mutex* prev_ = nullptr;
+  MutexBase* prev_ = nullptr;
   ThreadId owningThread_;
 
-  static MOZ_THREAD_LOCAL(Mutex*) HeldMutexStack;
-#endif
+  static MOZ_THREAD_LOCAL(MutexBase*) HeldMutexStack;
 
- public:
-#ifdef DEBUG
-  static bool Init();
-
-  explicit Mutex(const MutexId& id) : id_(id) { MOZ_ASSERT(id_.order != 0); }
-
-  void lock();
-  bool tryLock();
-  void unlock();
-  bool isOwnedByCurrentThread() const;
-  void assertOwnedByCurrentThread() const;
-#else
-  static bool Init() { return true; }
-
-  explicit Mutex(const MutexId& id) {}
-
-  void lock() { impl_.lock(); }
-  bool tryLock() { return impl_.tryLock(); }
-  void unlock() { impl_.unlock(); }
-  void assertOwnedByCurrentThread() const {};
-#endif
-
- private:
-#ifdef DEBUG
+ protected:
   void preLockChecks() const;
   void postLockChecks();
   void preUnlockChecks();
+
+ public:
+  static bool Init();
+  explicit MutexBase(const MutexId& id) : id_(id) {
+    MOZ_ASSERT(id_.order != 0);
+  }
+  bool isOwnedByCurrentThread() const;
+  void assertOwnedByCurrentThread() const;
+
+#else
+ protected:
+  void preLockChecks() const {}
+  void postLockChecks() {}
+  void preUnlockChecks() {}
+
+ public:
+  static bool Init() { return true; }
+  explicit MutexBase(const MutexId& id) {}
+  void assertOwnedByCurrentThread() const {}
 #endif
+};
+
+class Mutex : public MutexBase, private mozilla::detail::MutexImpl {
+ public:
+  explicit Mutex(const MutexId& id) : MutexBase(id) {}
+
+  void lock() {
+    preLockChecks();
+    MutexImpl::lock();
+    postLockChecks();
+  }
+
+  bool tryLock() {
+    preLockChecks();
+    if (!MutexImpl::tryLock()) {
+      return false;
+    }
+
+    postLockChecks();
+    return true;
+  }
+
+  void unlock() {
+    preUnlockChecks();
+    MutexImpl::unlock();
+  }
+
+  // Call |func| which unlocks and re-locks the mutex, adding checks before and
+  // afterwards.
+  template <typename F>
+  void checkScopedUnlock(F&& func) {
+    preUnlockChecks();
+    func();
+    preLockChecks();
+    postLockChecks();
+  }
 
   friend class ConditionVariable;
 };

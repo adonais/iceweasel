@@ -7,6 +7,7 @@ package mozilla.components.lib.state.ext
 import android.view.View
 import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.coroutines.ContinuationInterceptor
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.lib.state.Store
@@ -19,7 +20,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.doNothing
-import kotlin.coroutines.ContinuationInterceptor
 
 @RunWith(AndroidJUnit4::class)
 class ViewKtTest {
@@ -30,10 +30,11 @@ class ViewKtTest {
         val view = mock<View>()
         val owner = MockedLifecycleOwner(Lifecycle.State.INITIALIZED)
 
-        val store = Store(
-            TestState(counter = 23),
-            ::reducer,
-        )
+        val store =
+            Store(
+                TestState(counter = 23),
+                ::reducer,
+            )
 
         val onAttachListener = argumentCaptor<View.OnAttachStateChangeListener>()
         var receivedValue = 0

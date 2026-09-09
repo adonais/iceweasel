@@ -5,44 +5,46 @@
 #ifndef jit_WarpBuilder_h
 #define jit_WarpBuilder_h
 
+#include "mozilla/Maybe.h"
+
 #include <initializer_list>
 
 #include "ds/InlineTable.h"
+#include "jit/GeneratorResumeAnalysis.h"
 #include "jit/JitContext.h"
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
 #include "jit/WarpBuilderShared.h"
 #include "jit/WarpSnapshot.h"
 #include "vm/Opcodes.h"
+#include "vm/Stack.h"  // js::ResumeFrameArgs
 
 namespace js {
 namespace jit {
 
 // JSOps not yet supported by WarpBuilder. See warning at the end of the list.
-#define WARP_UNSUPPORTED_OPCODE_LIST(_)  \
-  /* With */                             \
-  _(EnterWith)                           \
-  _(LeaveWith)                           \
-  /* Eval */                             \
-  _(Eval)                                \
-  _(StrictEval)                          \
-  _(SpreadEval)                          \
-  _(StrictSpreadEval)                    \
-  _(BindVar)                             \
-  /* Super */                            \
-  _(SetPropSuper)                        \
-  _(SetElemSuper)                        \
-  _(StrictSetPropSuper)                  \
-  _(StrictSetElemSuper)                  \
-  /* Generators / Async (bug 1317690) */ \
-  _(IsGenClosing)                        \
-  /* Misc */                             \
-  _(DelName)                             \
-  _(SetIntrinsic)                        \
-  /* Private Fields */                   \
-  _(GetAliasedDebugVar)                  \
-  /* Non-syntactic scope */              \
-  _(NonSyntacticGlobalThis)              \
+#define WARP_UNSUPPORTED_OPCODE_LIST(_) \
+  /* With */                            \
+  _(EnterWith)                          \
+  _(LeaveWith)                          \
+  /* Eval */                            \
+  _(Eval)                               \
+  _(StrictEval)                         \
+  _(SpreadEval)                         \
+  _(StrictSpreadEval)                   \
+  _(BindVar)                            \
+  /* Super */                           \
+  _(SetPropSuper)                       \
+  _(SetElemSuper)                       \
+  _(StrictSetPropSuper)                 \
+  _(StrictSetElemSuper)                 \
+  /* Misc */                            \
+  _(DelName)                            \
+  _(SetIntrinsic)                       \
+  /* Private Fields */                  \
+  _(GetAliasedDebugVar)                 \
+  /* Non-syntactic scope */             \
+  _(NonSyntacticGlobalThis)             \
   // === !! WARNING WARNING WARNING !! ===
   // Do you really want to sacrifice performance by not implementing this
   // operation in the optimizing compiler?
@@ -102,6 +104,23 @@ enum class CacheKind : uint8_t;
 // Finally-blocks are compiled by WarpBuilder, but when we have to enter a
 // finally-block from the exception handler, we bail out to the Baseline
 // Interpreter.
+//
+// Generators and async functions
+// ------------------------------
+// When entering a generator, we branch on the IsResumingGenerator bit in the
+// frame descriptor to decide whether we're initializing the generator or
+// resuming. If we're resuming, we dispatch based on the resume index. If the
+// resume point (the AfterYield op) is inside a loop, we dispatch through the
+// loop header so that the graph stays reducible.
+// See the [SMDOC] in GeneratorResumeAnalysis.h.
+//
+// If we have to bail out while the IsResumingGenerator bit is set, we don't
+// have a suitable baseline pc available. We therefore redo the whole resume
+// by jumping to the Baseline resume prologue. This works because we ensure
+// that the resume path has no effectful instructions (eg interrupt checks).
+// Note that optimization passes can add guards and other instructions without
+// side-effects to the resume path, eg LICM can hoist a shape guard to the
+// preheader block shared by the normal and resume paths.
 
 // PendingEdge is used whenever a block is terminated with a forward branch in
 // the bytecode. When we reach the jump target we use this information to link
@@ -189,6 +208,26 @@ class MOZ_STACK_CLASS WarpBuilder : public WarpBuilderShared {
   MResumePoint* callerResumePoint_ = nullptr;
   CallInfo* inlineCallInfo_ = nullptr;
 
+  // Information about AfterYield ops and loops containing them. Used only for
+  // generator/async scripts.
+  mozilla::Maybe<GeneratorResumeAnalysis> resumeAnalysis_;
+
+  // Maps a JSOp::LoopHead offset to its resume-entry block. The loop's entry
+  // merge code (buildLoopResumeMerge) will remove it from this map. A loop
+  // that's unreachable in Warp never reaches build_LoopHead, so |build|
+  // terminates whatever blocks are left here.
+  using PendingInnerLoopResumesMap =
+      InlineMap<uint32_t, MBasicBlock*, 2, DefaultHasher<uint32_t>,
+                SystemAllocPolicy>;
+  PendingInnerLoopResumesMap pendingInnerLoopResumes_;
+
+  // The number of generator slots saved by a suspend op. Used by the
+  // JSOp::AfterYield that follows it so it knows how much to restore.
+  mozilla::Maybe<uint32_t> pendingSuspendSavedSlots_;
+#ifdef DEBUG
+  uint32_t pendingSuspendResumeIndex_ = 0;
+#endif
+
   WarpCompilation* warpCompilation() const { return warpCompilation_; }
   MIRGraph& graph() { return graph_; }
   const WarpScriptSnapshot* scriptSnapshot() const { return scriptSnapshot_; }
@@ -265,6 +304,23 @@ class MOZ_STACK_CLASS WarpBuilder : public WarpBuilderShared {
 
   [[nodiscard]] bool buildSuspend(BytecodeLocation loc, MDefinition* gen,
                                   MDefinition* retVal);
+
+  [[nodiscard]] bool startResumePath(MBasicBlock* from, BytecodeLocation loc,
+                                     MBasicBlock** normalBlock);
+  [[nodiscard]] bool buildPrologueResumeDispatch(BytecodeLocation startLoc);
+  [[nodiscard]] bool buildResumeIndexDispatch(BytecodeLocation loc,
+                                              DispatchEntrySpan entries);
+  [[nodiscard]] bool linkDispatchEntry(MBasicBlock* from, size_t successorIndex,
+                                       const DispatchEntry& entry,
+                                       BytecodeLocation loc);
+  [[nodiscard]] bool buildLoopResumeMerge(BytecodeLocation loopHead);
+
+  MBasicBlock* takePendingInnerLoopResume(BytecodeLocation loopHead);
+
+  MDefinition* resumeFrameArg(ResumeFrameArgs::Slot slot);
+  MDefinition* resumeGeneratorObject();
+
+  MDefinition* loadGeneratorStackStorage(MDefinition* genObj);
 
   void buildCheckLexicalOp(BytecodeLocation loc);
 

@@ -212,7 +212,7 @@ class PrototypeDocumentContentSink final : public nsIStreamLoaderObserver,
    * Expects that both the prototype document walk is complete and
    * all referenced stylesheets finished loading.
    */
-  nsresult DoneWalking();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult DoneWalking();
 
   /**
    * Create a delegate content model element from a prototype.
@@ -243,7 +243,7 @@ class PrototypeDocumentContentSink final : public nsIStreamLoaderObserver,
   nsresult InsertXMLStylesheetPI(const nsXULPrototypePI* aProtoPI,
                                  nsINode* aParent,
                                  XMLStylesheetProcessingInstruction* aPINode);
-  void CloseElement(Element* aElement);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void CloseElement(Element* aElement);
 };
 
 }  // namespace mozilla::dom

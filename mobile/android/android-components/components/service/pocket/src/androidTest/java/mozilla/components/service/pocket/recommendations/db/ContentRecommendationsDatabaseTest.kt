@@ -24,15 +24,15 @@ class ContentRecommendationsDatabaseTest {
     private lateinit var database: ContentRecommendationsDatabase
 
     @get:Rule
-    val helper: MigrationTestHelper = MigrationTestHelper(
-        InstrumentationRegistry.getInstrumentation(),
-        ContentRecommendationsDatabase::class.java,
-    )
+    val helper: MigrationTestHelper =
+        MigrationTestHelper(
+            InstrumentationRegistry.getInstrumentation(),
+            ContentRecommendationsDatabase::class.java,
+        )
 
     @Before
     fun setUp() {
-        database = Room.inMemoryDatabaseBuilder(context, ContentRecommendationsDatabase::class.java)
-            .build()
+        database = Room.inMemoryDatabaseBuilder(context, ContentRecommendationsDatabase::class.java).build()
     }
 
     @After
@@ -60,37 +60,37 @@ class ContentRecommendationsDatabaseTest {
                     "${contentRecommendationEntity.receivedRank}",
                     "${contentRecommendationEntity.impressions}"
                     )
-                """,
+                """
             )
 
-            query("SELECT * FROM ${ContentRecommendationsDatabase.CONTENT_RECOMMENDATIONS_TABLE}")
-                .use { cursor ->
-                    assertEquals(11, cursor.columnCount)
-                    assertEquals(1, cursor.count)
+            query("SELECT * FROM ${ContentRecommendationsDatabase.CONTENT_RECOMMENDATIONS_TABLE}").use { cursor ->
+                assertEquals(11, cursor.columnCount)
+                assertEquals(1, cursor.count)
 
-                    cursor.moveToFirst()
+                cursor.moveToFirst()
 
-                    assertEquals(
-                        contentRecommendationEntity.scheduledCorpusItemId,
-                        cursor.getString(cursor.getColumnIndexOrThrow("scheduledCorpusItemId")),
-                    )
-                }
+                assertEquals(
+                    contentRecommendationEntity.scheduledCorpusItemId,
+                    cursor.getString(cursor.getColumnIndexOrThrow("scheduledCorpusItemId")),
+                )
+            }
         }
 
-        helper.runMigrationsAndValidate(
-            MIGRATION_TEST_DB,
-            2,
-            true,
-            Migrations.migration_1_2,
-        ).apply {
-            query("SELECT * FROM ${ContentRecommendationsDatabase.CONTENT_RECOMMENDATIONS_TABLE}")
-                .use { cursor ->
+        helper
+            .runMigrationsAndValidate(
+                MIGRATION_TEST_DB,
+                2,
+                true,
+                Migrations.migration_1_2,
+            )
+            .apply {
+                query("SELECT * FROM ${ContentRecommendationsDatabase.CONTENT_RECOMMENDATIONS_TABLE}").use { cursor ->
                     assertEquals(13, cursor.columnCount)
                     assertEquals(0, cursor.count)
                 }
 
-            execSQL(
-                """
+                execSQL(
+                    """
                     INSERT INTO ${ContentRecommendationsDatabase.CONTENT_RECOMMENDATIONS_TABLE}
                     (corpusItemId, scheduledCorpusItemId, url, title, excerpt, topic, publisher, isTimeSensitive, imageUrl, tileId, receivedRank, recommendedAt, impressions)
                     VALUES (
@@ -108,11 +108,10 @@ class ContentRecommendationsDatabaseTest {
                     "${contentRecommendationEntity.recommendedAt}",
                     "${contentRecommendationEntity.impressions}"
                     )
-                """,
-            )
+                """
+                )
 
-            query("SELECT * FROM ${ContentRecommendationsDatabase.CONTENT_RECOMMENDATIONS_TABLE}")
-                .use { cursor ->
+                query("SELECT * FROM ${ContentRecommendationsDatabase.CONTENT_RECOMMENDATIONS_TABLE}").use { cursor ->
                     assertEquals(1, cursor.count)
 
                     cursor.moveToFirst()
@@ -126,7 +125,7 @@ class ContentRecommendationsDatabaseTest {
                         cursor.getLong(cursor.getColumnIndexOrThrow("recommendedAt")),
                     )
                 }
-        }
+            }
     }
 
     @Test
@@ -151,35 +150,35 @@ class ContentRecommendationsDatabaseTest {
                     "${contentRecommendationEntity.recommendedAt}",
                     "${contentRecommendationEntity.impressions}"
                     )
-                """,
+                """
             )
 
-            query("SELECT * FROM ${ContentRecommendationsDatabase.CONTENT_RECOMMENDATIONS_TABLE}")
-                .use { cursor ->
-                    assertEquals(1, cursor.count)
+            query("SELECT * FROM ${ContentRecommendationsDatabase.CONTENT_RECOMMENDATIONS_TABLE}").use { cursor ->
+                assertEquals(1, cursor.count)
 
-                    cursor.moveToFirst()
+                cursor.moveToFirst()
 
-                    assertEquals(
-                        contentRecommendationEntity.corpusItemId,
-                        cursor.getString(cursor.getColumnIndexOrThrow("corpusItemId")),
-                    )
-                    assertEquals(
-                        contentRecommendationEntity.recommendedAt,
-                        cursor.getLong(cursor.getColumnIndexOrThrow("recommendedAt")),
-                    )
-                }
+                assertEquals(
+                    contentRecommendationEntity.corpusItemId,
+                    cursor.getString(cursor.getColumnIndexOrThrow("corpusItemId")),
+                )
+                assertEquals(
+                    contentRecommendationEntity.recommendedAt,
+                    cursor.getLong(cursor.getColumnIndexOrThrow("recommendedAt")),
+                )
+            }
         }
 
-        helper.runMigrationsAndValidate(
-            MIGRATION_TEST_DB,
-            3,
-            true,
-            Migrations.migration_2_3,
-        ).apply {
-            // Check that content recommendations are unchanged.
-            query("SELECT * FROM ${ContentRecommendationsDatabase.CONTENT_RECOMMENDATIONS_TABLE}")
-                .use { cursor ->
+        helper
+            .runMigrationsAndValidate(
+                MIGRATION_TEST_DB,
+                3,
+                true,
+                Migrations.migration_2_3,
+            )
+            .apply {
+                // Check that content recommendations are unchanged.
+                query("SELECT * FROM ${ContentRecommendationsDatabase.CONTENT_RECOMMENDATIONS_TABLE}").use { cursor ->
                     assertEquals(1, cursor.count)
 
                     cursor.moveToFirst()
@@ -194,8 +193,7 @@ class ContentRecommendationsDatabaseTest {
                     )
                 }
 
-            query("SELECT * FROM ${ContentRecommendationsDatabase.SPONSORED_CONTENT_TABLE}")
-                .use { cursor ->
+                query("SELECT * FROM ${ContentRecommendationsDatabase.SPONSORED_CONTENT_TABLE}").use { cursor ->
                     assertEquals(0, cursor.count)
                     assertEquals(12, cursor.columnCount)
 
@@ -213,8 +211,8 @@ class ContentRecommendationsDatabaseTest {
                     assertEquals("priority", cursor.getColumnName(11))
                 }
 
-            query("SELECT * FROM ${ContentRecommendationsDatabase.SPONSORED_CONTENT_IMPRESSION_TABLE}")
-                .use { cursor ->
+                query("SELECT * FROM ${ContentRecommendationsDatabase.SPONSORED_CONTENT_IMPRESSION_TABLE}").use { cursor
+                    ->
                     assertEquals(0, cursor.count)
                     assertEquals(3, cursor.columnCount)
 
@@ -222,22 +220,23 @@ class ContentRecommendationsDatabaseTest {
                     assertEquals("impressionId", cursor.getColumnName(1))
                     assertEquals("impressionDateInSeconds", cursor.getColumnName(2))
                 }
-        }
+            }
     }
 }
 
-private val contentRecommendationEntity = ContentRecommendationEntity(
-    corpusItemId = "1111",
-    scheduledCorpusItemId = "2222",
-    url = "https://getpocket.com/",
-    title = "Pocket",
-    excerpt = "Pocket",
-    topic = "food",
-    publisher = "Pocket",
-    isTimeSensitive = false,
-    imageUrl = "https://img-getpocket.cdn.mozilla.net/",
-    tileId = 1,
-    receivedRank = 2,
-    recommendedAt = 1L,
-    impressions = 1,
-)
+private val contentRecommendationEntity =
+    ContentRecommendationEntity(
+        corpusItemId = "1111",
+        scheduledCorpusItemId = "2222",
+        url = "https://getpocket.com/",
+        title = "Pocket",
+        excerpt = "Pocket",
+        topic = "food",
+        publisher = "Pocket",
+        isTimeSensitive = false,
+        imageUrl = "https://img-getpocket.cdn.mozilla.net/",
+        tileId = 1,
+        receivedRank = 2,
+        recommendedAt = 1L,
+        impressions = 1,
+    )

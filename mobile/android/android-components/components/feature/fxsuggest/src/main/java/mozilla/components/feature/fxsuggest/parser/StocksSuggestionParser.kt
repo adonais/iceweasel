@@ -20,12 +20,13 @@ internal class StocksSuggestionParser {
     }
 }
 
-private fun StockTickerDto.toStockItem() = StockItem(
-    query = query,
-    name = name,
-    ticker = ticker,
-    todaysChangePerc = todaysChangePerc,
-    lastPrice = lastPrice,
-    exchange = exchange,
-    imageUrl = imageUrl,
-)
+private fun StockTickerDto.toStockItem() =
+    StockItem(
+        query = query,
+        name = name,
+        ticker = ticker,
+        todaysChangePerc = todaysChangePerc,
+        lastPrice = lastPrice,
+        exchange = exchange,
+        imageUrl = imageUrl,
+    )

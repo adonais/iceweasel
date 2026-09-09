@@ -31,35 +31,55 @@ class NimbusExperimentDelegateTest {
         val mockGeckoSetting = mock<GeckoRuntimeSettings>()
         whenever(runtime.settings).thenReturn(mockGeckoSetting)
         whenever(mockGeckoSetting.experimentDelegate).thenReturn(mockExperimentDelegate)
-        assertThat("Can set and retrieve experiment delegate.", runtime.settings.experimentDelegate, equalTo(mockExperimentDelegate))
+        assertThat(
+            "Can set and retrieve experiment delegate.",
+            runtime.settings.experimentDelegate,
+            equalTo(mockExperimentDelegate),
+        )
     }
 
     @Test
     fun `WHEN the Nimbus experiment delegate is used AND the feature does not exist THEN the delegate responds with exceptions`() {
         val nimbusExperimentDelegate = NimbusExperimentDelegate()
-        nimbusExperimentDelegate.onGetExperimentFeature("test-no-op")
+        nimbusExperimentDelegate
+            .onGetExperimentFeature("test-no-op")
             .accept { assertTrue("Should not have completed.", false) }
             .exceptionally { e ->
-                assertTrue("Should have completed exceptionally.", (e as ExperimentException).code == ExperimentException.ERROR_FEATURE_NOT_FOUND)
+                assertTrue(
+                    "Should have completed exceptionally.",
+                    (e as ExperimentException).code == ExperimentException.ERROR_FEATURE_NOT_FOUND,
+                )
                 GeckoResult.fromValue(null)
             }
 
-        nimbusExperimentDelegate.onRecordExposureEvent("test-no-op")
+        nimbusExperimentDelegate
+            .onRecordExposureEvent("test-no-op")
             .accept { assertTrue("Should not have completed.", false) }
             .exceptionally { e ->
-                assertTrue("Should have completed exceptionally.", (e as ExperimentException).code == ExperimentException.ERROR_FEATURE_NOT_FOUND)
+                assertTrue(
+                    "Should have completed exceptionally.",
+                    (e as ExperimentException).code == ExperimentException.ERROR_FEATURE_NOT_FOUND,
+                )
                 GeckoResult.fromValue(null)
             }
-        nimbusExperimentDelegate.onRecordExperimentExposureEvent("test-no-op", "test-no-op")
+        nimbusExperimentDelegate
+            .onRecordExperimentExposureEvent("test-no-op", "test-no-op")
             .accept { assertTrue("Should not have completed.", false) }
             .exceptionally { e ->
-                assertTrue("Should have completed exceptionally.", (e as ExperimentException).code == ExperimentException.ERROR_FEATURE_NOT_FOUND)
+                assertTrue(
+                    "Should have completed exceptionally.",
+                    (e as ExperimentException).code == ExperimentException.ERROR_FEATURE_NOT_FOUND,
+                )
                 GeckoResult.fromValue(null)
             }
-        nimbusExperimentDelegate.onRecordMalformedConfigurationEvent("test-no-op", "test")
+        nimbusExperimentDelegate
+            .onRecordMalformedConfigurationEvent("test-no-op", "test")
             .accept { assertTrue("Should not have completed.", false) }
             .exceptionally { e ->
-                assertTrue("Should have completed exceptionally.", (e as ExperimentException).code == ExperimentException.ERROR_FEATURE_NOT_FOUND)
+                assertTrue(
+                    "Should have completed exceptionally.",
+                    (e as ExperimentException).code == ExperimentException.ERROR_FEATURE_NOT_FOUND,
+                )
                 GeckoResult.fromValue(null)
             }
 

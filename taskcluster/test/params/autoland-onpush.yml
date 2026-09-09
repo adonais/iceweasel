@@ -17,6 +17,7 @@ filters:
 head_git_repository: https://github.com/mozilla-firefox/firefox
 head_git_rev: f18a08cd59a4c299c1f9bd6ed0d735647ca58d5b
 head_ref: e14c826ee0f326bf1b454fd5b68bc4a7a7c356d2
+head_git_ref: refs/heads/autoland
 head_repository: https://hg.mozilla.org/integration/autoland
 head_rev: e14c826ee0f326bf1b454fd5b68bc4a7a7c356d2
 head_tag: ''

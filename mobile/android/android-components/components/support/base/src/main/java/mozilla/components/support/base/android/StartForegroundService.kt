@@ -5,9 +5,8 @@
 package mozilla.components.support.base.android
 
 /**
- * This class is used to start a foreground service safely. For api levels >= 31. It will only
- * start the service if the app is in the foreground to prevent throwing the
- * ForegroundServiceStartNotAllowedException.
+ * This class is used to start a foreground service safely. For api levels >= 31. It will only start the service if the
+ * app is in the foreground to prevent throwing the ForegroundServiceStartNotAllowedException.
  *
  * @param processInfoProvider The provider to check if the app is in the foreground.
  * @param buildVersionProvider The provider to get the sdk version.
@@ -19,15 +18,15 @@ class StartForegroundService(
 ) {
 
     /**
+     * @param func The function to run if the app is in the foreground to follow the foreground service restrictions for
+     *   sdk version >= 31. For lower versions, the function will always run.
      * @see StartForegroundService
-     *
-     * @param func The function to run if the app is in the foreground to follow the foreground
-     * service restrictions for sdk version >= 31. For lower versions, the function will always run.
      */
     operator fun invoke(func: () -> Unit): Boolean =
         if (buildVersionProvider.sdkInt() >= BuildVersionProvider.FOREGROUND_SERVICE_RESTRICTIONS_STARTING_VERSION) {
-            if (powerManagerInfoProvider.isIgnoringBatteryOptimizations() ||
-                processInfoProvider.isForegroundImportance()
+            if (
+                powerManagerInfoProvider.isIgnoringBatteryOptimizations() ||
+                    processInfoProvider.isForegroundImportance()
             ) {
                 func()
                 true

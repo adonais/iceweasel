@@ -18,12 +18,16 @@
   }
 
   main {
+    --on-main: 2em;
+    --registered: 3em;
+    --registered-inherits: 4em;
     container-type: size;
     width: 200px;
     height: 100px;
   }
 
   section {
+    --on-section: 1em;
     width: 100px;
     height: 50px;
     font-size: 24px;
@@ -32,10 +36,22 @@
       font-size: 28px;
     }
   }
+
+  @property --registered {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 123px;
+  }
+
+  @property --registered-inherits {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 123px;
+  }
 </style>
 
 <main>
-  <section>Section.80</section>
+  <section data-x="10" data-y="tomato">Section.80</section>
   <ol>
     <li>First</li>
     <li>Second</li>
@@ -639,6 +655,228 @@ add_task(async function() {
     ]
   });
 
+  /// var()
+  test({
+    expression: "var(--on-section)",
+    el: sectionEl,
+    expected: [
+      "var(--on-section)",
+      "1em"
+    ]
+  });
+
+  test({
+    expression: "var(--on-section, Infinity)",
+    el: sectionEl,
+    expected: [
+      "var(--on-section, Infinity)",
+      "1em"
+    ]
+  });
+
+ test({
+    expression: "var(--on-main)",
+    el: sectionEl,
+    expected: [
+      "var(--on-main)",
+      "2em"
+    ]
+  });
+
+  test({
+    expression: "var(--on-main, Infinity)",
+    el: sectionEl,
+    expected: [
+      "var(--on-main, Infinity)",
+      "2em"
+    ]
+  });
+
+  test({
+    expression: "var(--undef)",
+    el: sectionEl,
+    // Undefined variable can't be substituted
+    // XXX Ideally, we'd show a meaningful message for this
+    expected: []
+  });
+
+  test({
+    expression: "var(--undef, Infinity)",
+    el: sectionEl,
+    expected: [
+      "var(--undef, Infinity)",
+      "Infinity"
+    ]
+  });
+
+  test({
+    expression: "var(--undef, var(--on-section))",
+    el: sectionEl,
+    expected: [
+      "var(--undef, var(--on-section))",
+      "1em"
+    ]
+  });
+
+  test({
+    expression: "var(--registered)",
+    el: sectionEl,
+    expected: [
+      "var(--registered)",
+      // --registered does not inherit and is not set on section, we should get the initial value
+      "123px"
+    ]
+  });
+
+  test({
+    expression: "var(--registered-inherits)",
+    el: sectionEl,
+    expected: [
+      "var(--registered-inherits)",
+      // --registered-inherits is not set on section, but it is on main, and it does inherit
+      //   so we should get the value set on main: 4em -> 4 * 20px -> 80px.
+      //   XXX It would be nice to get the computation detail here too
+      "80px"
+    ]
+  });
+
+  /// attr()
+
+  test({
+    expression: "attr(data-x)",
+    el: sectionEl,
+    expected: [
+      "attr(data-x)",
+      `"10"`
+    ]
+  });
+
+  test({
+    expression: "attr(data-x px)",
+    el: sectionEl,
+    expected: [
+      "attr(data-x px)",
+      "10px"
+    ]
+  });
+
+  test({
+    expression: "attr(data-x type(<number>))",
+    el: sectionEl,
+    expected: [
+      "attr(data-x type(<number>))",
+      "10"
+    ]
+  });
+
+  test({
+    expression: "attr(data-x type(<color>))",
+    el: sectionEl,
+    // XXX: attribute value ("10") doesn't match what's expected from type(<color>)
+    // Ideally, we'd show a meaningful message for this
+    expected: []
+  });
+
+  test({
+    expression: "attr(data-y type(<color>))",
+    el: sectionEl,
+    expected: [
+      "attr(data-y type(<color>))",
+      "tomato"
+    ]
+  });
+
+  test({
+    expression: "attr(data-x px, Infinity)",
+    el: sectionEl,
+    expected: [
+      "attr(data-x px, Infinity)",
+      "10px"
+    ]
+  });
+
+  test({
+    expression: "attr(data-undef)",
+    el: sectionEl,
+    // Undefined attribute can't be substituted
+    // XXX Ideally, we'd show a meaningful message for this
+    expected: [
+      "attr(data-undef)",
+      `""`
+    ]
+  });
+
+  test({
+    expression: `attr(data-undef, "hello")`,
+    el: sectionEl,
+    expected: [
+      `attr(data-undef, "hello")`,
+      `"hello"`
+    ]
+  });
+
+  test({
+    expression: "attr(data-undef px)",
+    el: sectionEl,
+    // Undefined attribute can't be substituted
+    // XXX Ideally, we'd show a meaningful message for this
+    expected: []
+  });
+
+  test({
+    expression: "attr(data-undef px, Infinity)",
+    el: sectionEl,
+    expected: [
+      "attr(data-undef px, Infinity)",
+      "Infinity"
+    ]
+  });
+
+  test({
+    expression: "attr(data-undef px, attr(data-x px, Infinity))",
+    el: sectionEl,
+    expected: [
+      "attr(data-undef px, attr(data-x px, Infinity))",
+      "10px"
+    ]
+  });
+
+  /// env()
+
+  test({
+    expression: "env(safe-area-inset-top)",
+    el: sectionEl,
+    expected: [
+      "env(safe-area-inset-top)",
+      "0.0px"
+    ]
+  });
+
+  test({
+    expression: "env(safe-area-inset-top, 10px)",
+    el: sectionEl,
+    expected: [
+      "env(safe-area-inset-top, 10px)",
+      "0.0px"
+    ]
+  });
+
+  test({
+    expression: "env(undef)",
+    el: sectionEl,
+    expected: [
+    ]
+  });
+
+  test({
+    expression: "env(undef, 10px)",
+    el: sectionEl,
+    expected: [
+      "env(undef, 10px)",
+      "10px",
+    ]
+  });
+
   /// calc() operations
   test({
     expression: "calc(1px)",
@@ -844,12 +1082,6 @@ add_task(async function() {
     ]
   });
   test({
-    expression: "calc(var(--x, 10px) + 3px)",
-    el: sectionEl,
-    // TODO: var() should be substituted (See Bug 2041622)
-    expected: []
-  });
-  test({
     expression: "calc((1em * max(sibling-index(), 10)) + (min(2, sibling-count()) * 0.5rem))",
     el: document.querySelector("li:nth-of-type(2)"),
     expected: [
@@ -892,6 +1124,28 @@ add_task(async function() {
     el: sectionEl,
     // TODO: This should be handled (See Bug 1898261)
     expected: []
+  });
+
+  test({
+    expression: "calc(var(--on-main, 10px) + 3px)",
+    el: sectionEl,
+    expected: [
+      "calc(var(--on-main, 10px) + 3px)",
+      "calc(2em + 3px)",
+      "calc(48px + 3px)",
+      "51px",
+    ]
+  });
+
+  test({
+    expression: "calc(var(--on-section, 0.1em) + var(--on-main, 0.2em) + attr(data-x px, 2px) + env(safe-area-inset-top, 1em))",
+    el: sectionEl,
+    expected: [
+      "calc(var(--on-section, 0.1em) + var(--on-main, 0.2em) + attr(data-x px, 2px) + env(safe-area-inset-top, 1em))",
+      "calc(1em + 2em + 10px + 0.0px)",
+      "calc(24px + 48px + 10px + 0px)",
+      "82px",
+    ]
   });
 });
 </script>

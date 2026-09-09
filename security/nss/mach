@@ -139,7 +139,7 @@ class cfAction(argparse.Action):
 
         files = [os.path.join("/home/worker/nss", x) for x in files]
         docker_image = "clang-format-service:latest"
-        cf_docker_folder = cwd + "/automation/clang-format"
+        cf_docker_folder = cwd + "/taskcluster/docker/clang-format"
 
         # Build the image if necessary.
         if self.filesChanged(cf_docker_folder):
@@ -162,9 +162,14 @@ class cfAction(argparse.Action):
             "run",
             "-v",
             cwd + ":/home/worker/nss:Z",
+            # The image has no USER (run-task needs root in CI), so ask for the
+            # unprivileged one here rather than letting the script su to it.
+            "--user",
+            "worker",
             "--rm",
             "-ti",
             docker_image,
+            "/home/worker/nss/automation/clang-format/run_clang_format.sh",
         ]
         # The clang format script returns 1 if something's to do. We don't
         # care.
@@ -1029,13 +1034,11 @@ class clangTidyAction(argparse.Action):
 class docLintAction(argparse.Action):
 
     def __call__(self, parser, args, values, option_string=None):
-        env = os.environ.copy()
-        env["VCS_PATH"] = os.path.dirname(cwd)
         script = os.path.join(
             cwd, "automation", "taskcluster", "scripts", "check_doc_lint.sh"
         )
         try:
-            subprocess.check_call([script], env=env)
+            subprocess.check_call([script])
         except subprocess.CalledProcessError as e:
             print(
                 "doc-lint failed with exit status {}".format(e.returncode),
@@ -1113,6 +1116,11 @@ def _tc_try_options():
             else:
                 syms.add(sym.lower())
 
+    # The fuzz kind is selected as a whole rather than per target (see
+    # filter_try_syntax in target_tasks.py), so it contributes one token.
+    if os.path.isdir(os.path.join(tc, "kinds", "fuzz")):
+        groups.add("fuzz")
+
     tests = sorted(groups) + sorted(syms)
 
     # Tools: lowercased treeherder symbols from the tools kind YAML.
@@ -1130,6 +1138,8 @@ def _tc_try_options():
 
 class tryAction(argparse.Action):
 
+    TREEHERDER = "https://treeherder.mozilla.org/#/jobs?repo=nss-try&revision={}"
+
     @staticmethod
     def _hg_email():
         """Return the user's hg email from ui.username, or None."""
@@ -1142,6 +1152,15 @@ class tryAction(argparse.Action):
         m = re.search(r"<([^>]+)>", username)
         return m.group(1) if m else (username or None)
 
+    @staticmethod
+    def _detect_vcs():
+        """Return 'hg' or 'git' for the checkout at cwd, or None."""
+        if os.path.exists(os.path.join(cwd, ".hg")):
+            return "hg"
+        if os.path.exists(os.path.join(cwd, ".git")):
+            return "git"
+        return None
+
     def __call__(self, parser, args, values, option_string=None):
         # argparse REMAINDER doesn't reliably capture arguments that begin
         # with '-'; read sys.argv directly instead.  sys.argv[1] is 'try'.
@@ -1153,6 +1172,25 @@ class tryAction(argparse.Action):
             parser.print_help()
             sys.exit(0)
 
+        trysyntax = "try: " + " ".join(values)
+
+        vcs = self._detect_vcs()
+        if vcs == "hg":
+            self._try_hg(trysyntax)
+        elif vcs == "git":
+            self._try_git(trysyntax)
+        else:
+            print(
+                "Error: {} is not a Mercurial or git checkout.".format(cwd),
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        # Exit without handing control back to the argument parser. All of the
+        # arguments have been interpreted as try syntax.
+        sys.exit(0)
+
+    def _try_hg(self, trysyntax):
         result = subprocess.run(
             ["hg", "status", "-mard"], cwd=cwd, capture_output=True, text=True
         )
@@ -1188,7 +1226,6 @@ class tryAction(argparse.Action):
             )
             sys.exit(1)
 
-        trysyntax = "try: " + " ".join(values)
         print("Try syntax:")
         print("  {}".format(trysyntax))
         print()
@@ -1226,14 +1263,7 @@ class tryAction(argparse.Action):
                     text=True,
                     check=True,
                 ).stdout.strip()
-                print("Pushed {} to nss-try. Find it on Treeherder:".format(rev))
-                print()
-                print(
-                    "  https://treeherder.mozilla.org/#/jobs?repo=nss-try&revision={}".format(
-                        rev
-                    )
-                )
-                print()
+                self._print_treeherder(rev)
         finally:
             print("Cleaning up...")
             if subprocess.call(["hg", "strip", "-r", "."]) != 0:
@@ -1249,9 +1279,146 @@ class tryAction(argparse.Action):
                 file=sys.stderr,
             )
             sys.exit(1)
-        # Exit without handing control back to the argument parser. All of the
-        # arguments have been interpreted as try syntax.
-        sys.exit(0)
+
+    def _git_try_remote(self):
+        """Return the name of a git remote that pushes to nss-try, or None."""
+        result = subprocess.run(
+            ["git", "remote", "-v"], cwd=cwd, capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            return None
+        for line in result.stdout.splitlines():
+            parts = line.split()
+            if (
+                len(parts) >= 3
+                and parts[2] == "(push)"
+                and "hg.mozilla.org/projects/nss-try" in parts[1]
+            ):
+                return parts[0]
+        return None
+
+    def _try_git(self, trysyntax):
+        # git-cinnabar bridges git to the Mercurial nss-try repository.
+        if shutil.which("git-cinnabar") is None:
+            print(
+                "git-cinnabar is required to push to nss-try from a git checkout.",
+                file=sys.stderr,
+            )
+            print(
+                "See https://github.com/glandium/git-cinnabar for installation.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        result = subprocess.run(
+            ["git", "status", "--porcelain"], cwd=cwd, capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            print("Error: could not run git status", file=sys.stderr)
+            sys.exit(1)
+        if result.stdout.strip():
+            print("Please commit unstaged changes", file=sys.stderr)
+            sys.exit(1)
+
+        remote = self._git_try_remote()
+        if remote is None:
+            print(
+                "You need to set up a git-cinnabar remote for nss-try.", file=sys.stderr
+            )
+            print("Run the following once:", file=sys.stderr)
+            print("", file=sys.stderr)
+            print(
+                "  git remote add nss-try hg::https://hg.mozilla.org/projects/nss",
+                file=sys.stderr,
+            )
+            print(
+                "  git remote set-url --push nss-try "
+                "hg::ssh://hg.mozilla.org/projects/nss-try",
+                file=sys.stderr,
+            )
+            print("  git fetch nss-try", file=sys.stderr)
+            print("", file=sys.stderr)
+            print(
+                "See https://wiki.mozilla.org/NSS:TryServer for SSH key setup.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        print("Try syntax:")
+        print("  {}".format(trysyntax))
+        print()
+
+        root_result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        tryfile = os.path.join(root_result.stdout.strip(), ".try")
+
+        with open(tryfile, "w") as f:
+            f.write(trysyntax + "\n")
+
+        commit_suffix = os.environ.get("COMMIT_SUFFIX", "")
+        commit_msg = "{} {}".format(trysyntax, commit_suffix).strip()
+
+        try:
+            subprocess.check_call(["git", "add", tryfile], cwd=cwd)
+            subprocess.check_call(["git", "commit", "-q", "-m", commit_msg], cwd=cwd)
+        except subprocess.CalledProcessError:
+            print("Error creating try commit", file=sys.stderr)
+            # Undo the staged .try file so the working tree is left clean.
+            subprocess.call(["git", "rm", "-f", "--quiet", tryfile], cwd=cwd)
+            sys.exit(1)
+
+        print("Pushing to nss-try...")
+        try:
+            push_result = subprocess.run(
+                [
+                    "git",
+                    "-c",
+                    "cinnabar.data=force",
+                    "push",
+                    remote,
+                    "+HEAD:refs/heads/branches/default/tip",
+                ],
+                cwd=cwd,
+            )
+            if push_result.returncode == 0:
+                # After a successful push cinnabar knows the git<->hg mapping.
+                rev = subprocess.run(
+                    ["git", "cinnabar", "git2hg", "HEAD"],
+                    cwd=cwd,
+                    capture_output=True,
+                    text=True,
+                ).stdout.strip()
+                if rev and set(rev) != {"0"}:
+                    self._print_treeherder(rev)
+        finally:
+            print("Cleaning up...")
+            if (
+                subprocess.call(["git", "reset", "--hard", "-q", "HEAD~1"], cwd=cwd)
+                != 0
+            ):
+                print(
+                    "Warning: failed to remove try commit. "
+                    "Run 'git reset --hard HEAD~1' to clean up manually.",
+                    file=sys.stderr,
+                )
+
+        if os.path.exists(tryfile):
+            print(
+                "Something went wrong! Watch out, {} still exists.".format(tryfile),
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+    def _print_treeherder(self, rev):
+        print("Pushed {} to nss-try. Find it on Treeherder:".format(rev))
+        print()
+        print("  {}".format(self.TREEHERDER.format(rev)))
+        print()
 
 
 class commandsAction(argparse.Action):

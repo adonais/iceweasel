@@ -909,7 +909,7 @@ export const FormAutofillHeuristics = {
 
     let elementType = element.type;
     if (elementType != "text") {
-      this.tokenizeWords("**" + elementType, words);
+      words.push("**" + elementType);
     }
   },
 

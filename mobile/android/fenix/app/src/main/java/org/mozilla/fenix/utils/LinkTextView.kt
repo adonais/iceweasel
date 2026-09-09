@@ -11,10 +11,10 @@ import android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction.ACTI
 import androidx.appcompat.widget.AppCompatTextView
 import org.mozilla.fenix.R
 
-/**
- * An [AppCompatTextView] that announces as link in screen readers for a11y purposes
- */
-class LinkTextView @JvmOverloads constructor(
+/** An [AppCompatTextView] that announces as link in screen readers for a11y purposes */
+class LinkTextView
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,

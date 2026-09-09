@@ -385,7 +385,10 @@ function Crossword({
             menuId="crossword-context-menu"
             type="ghost"
           />
-          <panel-list id="crossword-context-menu">
+          <panel-list
+            className="panel-list-no-icons"
+            id="crossword-context-menu"
+          >
             {MENU_ACTION_ITEMS.filter(
               item => !(puzzleCompleted && item.hideWhenCompleted)
             ).map(item => (

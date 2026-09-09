@@ -24,15 +24,17 @@ class DebugInfoJsonTest {
 
     @Test
     fun `WHEN a section contains text items THEN they are serialized as label to value pairs`() {
-        val sections = listOf(
-            DebugInfoSection(
-                title = "Build",
-                items = listOf(
-                    DebugInfoItem("Version", DebugInfoValue.Text("142.0")),
-                    DebugInfoItem("GeckoView", DebugInfoValue.Text("142.0-20250101")),
-                ),
-            ),
-        )
+        val sections =
+            listOf(
+                DebugInfoSection(
+                    title = "Build",
+                    items =
+                        listOf(
+                            DebugInfoItem("Version", DebugInfoValue.Text("142.0")),
+                            DebugInfoItem("GeckoView", DebugInfoValue.Text("142.0-20250101")),
+                        ),
+                )
+            )
 
         val json = JSONObject(sections.toJson()).getJSONObject("Build")
 
@@ -42,15 +44,17 @@ class DebugInfoJsonTest {
 
     @Test
     fun `WHEN a section contains state items THEN they are serialized as booleans`() {
-        val sections = listOf(
-            DebugInfoSection(
-                title = "Settings",
-                items = listOf(
-                    DebugInfoItem("topSitesEnabled", DebugInfoValue.State(enabled = true)),
-                    DebugInfoItem("vpnEnabled", DebugInfoValue.State(enabled = false)),
-                ),
-            ),
-        )
+        val sections =
+            listOf(
+                DebugInfoSection(
+                    title = "Settings",
+                    items =
+                        listOf(
+                            DebugInfoItem("topSitesEnabled", DebugInfoValue.State(enabled = true)),
+                            DebugInfoItem("vpnEnabled", DebugInfoValue.State(enabled = false)),
+                        ),
+                )
+            )
 
         val settings = JSONObject(sections.toJson()).getJSONObject("Settings")
 
@@ -60,21 +64,21 @@ class DebugInfoJsonTest {
 
     @Test
     fun `WHEN there are multiple sections THEN each is a top level object keyed by its title`() {
-        val sections = listOf(
-            DebugInfoSection(
-                title = "Build",
-                items = listOf(
-                    DebugInfoItem("Version", DebugInfoValue.Text("142.0")),
-                    DebugInfoItem("Debuggable", DebugInfoValue.State(enabled = false)),
+        val sections =
+            listOf(
+                DebugInfoSection(
+                    title = "Build",
+                    items =
+                        listOf(
+                            DebugInfoItem("Version", DebugInfoValue.Text("142.0")),
+                            DebugInfoItem("Debuggable", DebugInfoValue.State(enabled = false)),
+                        ),
                 ),
-            ),
-            DebugInfoSection(
-                title = "Device",
-                items = listOf(
-                    DebugInfoItem("Model", DebugInfoValue.Text("Pixel 9")),
+                DebugInfoSection(
+                    title = "Device",
+                    items = listOf(DebugInfoItem("Model", DebugInfoValue.Text("Pixel 9"))),
                 ),
-            ),
-        )
+            )
 
         val json = JSONObject(sections.toJson())
 

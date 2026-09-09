@@ -4,37 +4,23 @@
 
 package mozilla.components.feature.prompts.concept
 
-/**
- * A prompt that can be expanded and collapsed.
- */
+/** A prompt that can be expanded and collapsed. */
 interface ExpandablePrompt {
-    /**
-     * Listener for when this prompt is expanded or collapsed.
-     */
+    /** Listener for when this prompt is expanded or collapsed. */
     var expandablePromptListener: Listener?
 
-    /**
-     * Expand this prompt.
-     */
+    /** Expand this prompt. */
     fun expand()
 
-    /**
-     * Collapse this prompt.
-     */
+    /** Collapse this prompt. */
     fun collapse()
 
-    /**
-     * Listener for when this prompt is expanded or collapsed.
-     */
+    /** Listener for when this prompt is expanded or collapsed. */
     interface Listener {
-        /**
-         * Informs when the prompt has been expanded.
-         */
+        /** Informs when the prompt has been expanded. */
         fun onExpanded()
 
-        /**
-         * Informs when the prompt has been collapsed.
-         */
+        /** Informs when the prompt has been collapsed. */
         fun onCollapsed()
     }
 }

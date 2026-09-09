@@ -676,20 +676,6 @@ class LConstructArrayNative : public LCallInstructionHelper<BOX_PIECES, 2, 3> {
   const LAllocation* getArgc() { return getOperand(0); }
 };
 
-// Returns from the function being compiled (not used in inlined frames). The
-// input must be a box.
-class LReturn : public LInstructionHelper<0, BOX_PIECES, 0> {
-  bool isGenerator_;
-
- public:
-  LIR_HEADER(Return)
-
-  explicit LReturn(bool isGenerator)
-      : LInstructionHelper(classOpcode), isGenerator_(isGenerator) {}
-
-  bool isGenerator() { return isGenerator_; }
-};
-
 class LHypot : public LCallInstructionHelper<1, 4, 0> {
   uint32_t numOperands_;
 
@@ -795,51 +781,17 @@ class LOsrEntry : public LInstructionHelper<1, 0, 1> {
   const LDefinition* temp() { return getTemp(0); }
 };
 
-// This is used only with LWasmCall.
-class LWasmCallIndirectAdjunctSafepoint : public LInstructionHelper<0, 0, 0> {
-  CodeOffset offs_;
-  uint32_t framePushedAtStackMapBase_;
-
- public:
-  LIR_HEADER(WasmCallIndirectAdjunctSafepoint);
-
-  LWasmCallIndirectAdjunctSafepoint()
-      : LInstructionHelper(classOpcode),
-        offs_(0),
-        framePushedAtStackMapBase_(0) {
-    // Ensure that the safepoint does not get live registers associated with it.
-    setIsCall();
-  }
-
-  CodeOffset safepointLocation() const {
-    MOZ_ASSERT(offs_.offset() != 0);
-    return offs_;
-  }
-  uint32_t framePushedAtStackMapBase() const {
-    MOZ_ASSERT(offs_.offset() != 0);
-    return framePushedAtStackMapBase_;
-  }
-  void recordSafepointInfo(CodeOffset offs, uint32_t framePushed) {
-    offs_ = offs;
-    framePushedAtStackMapBase_ = framePushed;
-  }
-};
-
 // LWasmCall may be generated into two function calls in the case of
-// call_indirect, one for the fast path and one for the slow path.  In that
-// case, the node carries a pointer to a companion node, the "adjunct
-// safepoint", representing the safepoint for the second of the two calls.  The
-// dual-call construction is only meaningful for wasm because wasm has no
-// invalidation of code; this is not a pattern to be used generally.
+// call_indirect, one for the fast path and one for the slow path.  The two
+// paths are mutually exclusive and rejoin with the same live references and
+// frame layout, so codegen registers this node's single LSafepoint a second
+// time at the slow-path return offset (see CodeGenerator::visitWasmCall).
 class LWasmCall : public LVariadicInstruction<0, 0> {
-  LWasmCallIndirectAdjunctSafepoint* adjunctSafepoint_;
-
  public:
   LIR_HEADER(WasmCall);
 
   explicit LWasmCall(uint32_t numOperands)
-      : LVariadicInstruction(classOpcode, numOperands),
-        adjunctSafepoint_(nullptr) {
+      : LVariadicInstruction(classOpcode, numOperands) {
     this->setIsCall();
   }
 
@@ -873,14 +825,6 @@ class LWasmCall : public LVariadicInstruction<0, 0> {
     // MWasmCallCatchable which needs all live registers to be spilled before
     // a call.
     return !reg.isFloat() && reg.gpr() == InstanceReg;
-  }
-
-  LWasmCallIndirectAdjunctSafepoint* adjunctSafepoint() const {
-    MOZ_ASSERT(adjunctSafepoint_ != nullptr);
-    return adjunctSafepoint_;
-  }
-  void setAdjunctSafepoint(LWasmCallIndirectAdjunctSafepoint* asp) {
-    adjunctSafepoint_ = asp;
   }
 };
 
@@ -919,23 +863,77 @@ class LWasmSystemFloatRegisterResult : public LInstructionHelper<1, 0, 0> {
 };
 
 #ifdef ENABLE_WASM_JSPI
-class LWasmResume : public LInstructionHelper<0, 3, 3> {
+class LWasmSuspend : public LInstructionHelper<0, 3, 3> {
+ public:
+  LIR_HEADER(WasmSuspend);
+
+  static constexpr size_t InstanceIndex = 0;
+  static constexpr size_t SuspendedContIndex = 1;
+  static constexpr size_t HandlerIndex = 2;
+
+  explicit LWasmSuspend(const LAllocation& instance,
+                        const LAllocation& suspendedCont,
+                        const LAllocation& handler, const LDefinition& temp0,
+                        const LDefinition& temp1, const LDefinition& temp2)
+      : LInstructionHelper(classOpcode) {
+    this->setIsCall();
+    setOperand(InstanceIndex, instance);
+    setOperand(SuspendedContIndex, suspendedCont);
+    setOperand(HandlerIndex, handler);
+    setTemp(0, temp0);
+    setTemp(1, temp1);
+    setTemp(2, temp2);
+  }
+
+  const LAllocation* instance() const { return getOperand(InstanceIndex); }
+  const LAllocation* suspendedCont() const {
+    return getOperand(SuspendedContIndex);
+  }
+  const LAllocation* handler() const { return getOperand(HandlerIndex); }
+  const LDefinition* temp0() { return getTemp(0); }
+  const LDefinition* temp1() { return getTemp(1); }
+  const LDefinition* temp2() { return getTemp(2); }
+  MWasmSuspend* mir() const { return mir_->toWasmSuspend(); }
+
+  static bool isCallPreserved(AnyRegister reg) {
+    return LWasmCall::isCallPreserved(reg);
+  }
+};
+
+class LWasmPrepareResume : public LInstructionHelper<1, 1, 2> {
+ public:
+  LIR_HEADER(WasmPrepareResume);
+
+  static constexpr size_t ContIndex = 0;
+
+  explicit LWasmPrepareResume(const LAllocation& cont, const LDefinition& temp0,
+                              const LDefinition& temp1)
+      : LInstructionHelper(classOpcode) {
+    setOperand(ContIndex, cont);
+    setTemp(0, temp0);
+    setTemp(1, temp1);
+  }
+
+  const LAllocation* cont() const { return getOperand(ContIndex); }
+  const LDefinition* temp0() { return getTemp(0); }
+  const LDefinition* temp1() { return getTemp(1); }
+  MWasmPrepareResume* mir() const { return mir_->toWasmPrepareResume(); }
+};
+
+class LWasmResume : public LInstructionHelper<0, 2, 3> {
  public:
   LIR_HEADER(WasmResume);
 
   static constexpr size_t InstanceIndex = 0;
   static constexpr size_t ContIndex = 1;
-  static constexpr size_t HandlersParamsAreaIndex = 2;
 
   explicit LWasmResume(const LAllocation& instance, const LAllocation& cont,
-                       const LAllocation& handlersParamsArea,
                        const LDefinition& temp0, const LDefinition& temp1,
                        const LDefinition& temp2)
       : LInstructionHelper(classOpcode) {
     this->setIsCall();
     setOperand(InstanceIndex, instance);
     setOperand(ContIndex, cont);
-    setOperand(HandlersParamsAreaIndex, handlersParamsArea);
     setTemp(0, temp0);
     setTemp(1, temp1);
     setTemp(2, temp2);
@@ -943,9 +941,6 @@ class LWasmResume : public LInstructionHelper<0, 3, 3> {
 
   const LAllocation* instance() const { return getOperand(InstanceIndex); }
   const LAllocation* cont() const { return getOperand(ContIndex); }
-  const LAllocation* handlersParamsArea() const {
-    return getOperand(HandlersParamsAreaIndex);
-  }
   const LDefinition* temp0() { return getTemp(0); }
   const LDefinition* temp1() { return getTemp(1); }
   const LDefinition* temp2() { return getTemp(2); }

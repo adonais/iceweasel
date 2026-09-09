@@ -7,45 +7,31 @@ package mozilla.components.concept.storage
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
-/**
- * The possible document types to record history metadata for.
- */
+/** The possible document types to record history metadata for. */
 enum class DocumentType {
     Regular,
     Media,
 }
 
-/**
- * Represents the different types of history metadata observations.
- */
+/** Represents the different types of history metadata observations. */
 sealed class HistoryMetadataObservation {
-    /**
-     * A [HistoryMetadataObservation] to increment the total view time.
-     */
-    data class ViewTimeObservation(
-        val viewTime: Int,
-    ) : HistoryMetadataObservation()
+    /** A [HistoryMetadataObservation] to increment the total view time. */
+    data class ViewTimeObservation(val viewTime: Int) : HistoryMetadataObservation()
 
-    /**
-     * A [HistoryMetadataObservation] to update the document type.
-     */
-    data class DocumentTypeObservation(
-        val documentType: DocumentType,
-    ) : HistoryMetadataObservation()
+    /** A [HistoryMetadataObservation] to update the document type. */
+    data class DocumentTypeObservation(val documentType: DocumentType) : HistoryMetadataObservation()
 }
 
 /**
- * Represents a set of history metadata values that uniquely identify a record. Note that
- * when recording observations, the same set of values may or may not cause a new record to be
- * created, depending on the de-bouncing logic of the underlying storage i.e. recording history
- * metadata observations with the exact same values may be combined into a single record.
+ * Represents a set of history metadata values that uniquely identify a record. Note that when recording observations,
+ * the same set of values may or may not cause a new record to be created, depending on the de-bouncing logic of the
+ * underlying storage i.e. recording history metadata observations with the exact same values may be combined into a
+ * single record.
  *
  * @property url A url of the page.
- * @property searchTerm An optional search term if this record was
- * created as part of a search by the user.
- * @property referrerUrl An optional url of the parent/referrer if
- * this record was created in response to a user opening
- * a page in a new tab.
+ * @property searchTerm An optional search term if this record was created as part of a search by the user.
+ * @property referrerUrl An optional url of the parent/referrer if this record was created in response to a user opening
+ *   a page in a new tab.
  */
 @Parcelize
 data class HistoryMetadataKey(
@@ -55,8 +41,8 @@ data class HistoryMetadataKey(
 ) : Parcelable
 
 /**
- * Represents a history metadata record, which describes metadata for a history visit, such as metadata
- * about the page itself as well as metadata about how the page was opened.
+ * Represents a history metadata record, which describes metadata for a history visit, such as metadata about the page
+ * itself as well as metadata about how the page was opened.
  *
  * @property key The [HistoryMetadataKey] of this record.
  * @property title A title of the page.
@@ -77,8 +63,8 @@ data class HistoryMetadata(
 )
 
 /**
- * Represents a history highlight, a URL of interest.
- * The highlights are produced via [HistoryMetadataStorage.getHistoryHighlights].
+ * Represents a history highlight, a URL of interest. The highlights are produced via
+ * [HistoryMetadataStorage.getHistoryHighlights].
  *
  * @param score A relative score of this highlight. Useful to compare against other highlights.
  * @param placeId An ID of the history entry ("page") represented by this highlight.
@@ -95,10 +81,9 @@ data class HistoryHighlight(
 )
 
 /**
- * Weights of factors that contribute to ranking [HistoryHighlight].
- * An input to [HistoryMetadataStorage.getHistoryHighlights].
- * For example, (1.0, 1.0) for equal weights. Equal weights represent equal importance of these
- * factors during ranking.
+ * Weights of factors that contribute to ranking [HistoryHighlight]. An input to
+ * [HistoryMetadataStorage.getHistoryHighlights]. For example, (1.0, 1.0) for equal weights. Equal weights represent
+ * equal importance of these factors during ranking.
  *
  * @param viewTime A weight specifying importance of cumulative view time of a page.
  * @param frequency A weight specifying importance of frequency of visits to a page.
@@ -108,9 +93,7 @@ data class HistoryHighlightWeights(
     val frequency: Double,
 )
 
-/**
- * An interface for interacting with a storage that manages [HistoryMetadata].
- */
+/** An interface for interacting with a storage that manages [HistoryMetadata]. */
 interface HistoryMetadataStorage : Cancellable {
     /**
      * Returns the most recent [HistoryMetadata] for the provided [url].
@@ -124,8 +107,8 @@ interface HistoryMetadataStorage : Cancellable {
      * Returns all [HistoryMetadata] where [HistoryMetadata.updatedAt] is greater or equal to [since].
      *
      * @param since Timestamp to search by.
-     * @return A `List` of matching [HistoryMetadata], ordered by [HistoryMetadata.updatedAt] DESC.
-     * Empty if nothing is found.
+     * @return A `List` of matching [HistoryMetadata], ordered by [HistoryMetadata.updatedAt] DESC. Empty if nothing is
+     *   found.
      */
     suspend fun getHistoryMetadataSince(since: Long): List<HistoryMetadata>
 
@@ -134,8 +117,8 @@ interface HistoryMetadataStorage : Cancellable {
      *
      * @param start A `start` timestamp.
      * @param end An `end` timestamp.
-     * @return A `List` of matching [HistoryMetadata], ordered by [HistoryMetadata.updatedAt] DESC.
-     * Empty if nothing is found.
+     * @return A `List` of matching [HistoryMetadata], ordered by [HistoryMetadata.updatedAt] DESC. Empty if nothing is
+     *   found.
      */
     suspend fun getHistoryMetadataBetween(start: Long, end: Long): List<HistoryMetadata>
 
@@ -145,8 +128,8 @@ interface HistoryMetadataStorage : Cancellable {
      *
      * @param query A search query.
      * @param limit A maximum number of records to return.
-     * @return A `List` of matching [HistoryMetadata], ordered by [HistoryMetadata.updatedAt] DESC.
-     * Empty if nothing is found.
+     * @return A `List` of matching [HistoryMetadata], ordered by [HistoryMetadata.updatedAt] DESC. Empty if nothing is
+     *   found.
      */
     suspend fun queryHistoryMetadata(query: String, limit: Int): List<HistoryMetadata>
 
@@ -155,14 +138,13 @@ interface HistoryMetadataStorage : Cancellable {
      *
      * @param weights A set of weights used by the ranking algorithm.
      * @param limit A maximum number of records to return.
-     * @return A `List` of [HistoryHighlight], ordered by [HistoryHighlight.score] DESC.
-     * Empty if nothing is found.
+     * @return A `List` of [HistoryHighlight], ordered by [HistoryHighlight.score] DESC. Empty if nothing is found.
      */
     suspend fun getHistoryHighlights(weights: HistoryHighlightWeights, limit: Int): List<HistoryHighlight>
 
     /**
-     * Records the provided [HistoryMetadataObservation] and updates the record identified by the
-     * provided [HistoryMetadataKey].
+     * Records the provided [HistoryMetadataObservation] and updates the record identified by the provided
+     * [HistoryMetadataKey].
      *
      * @param key the [HistoryMetadataKey] identifying the metadata records
      * @param observation the [HistoryMetadataObservation] to record.
@@ -176,18 +158,12 @@ interface HistoryMetadataStorage : Cancellable {
      */
     suspend fun deleteHistoryMetadataOlderThan(olderThan: Long)
 
-    /**
-     * Deletes metadata records that match [HistoryMetadataKey].
-     */
+    /** Deletes metadata records that match [HistoryMetadataKey]. */
     suspend fun deleteHistoryMetadata(key: HistoryMetadataKey)
 
-    /**
-     * Deletes metadata records that match [searchTerm] (case insensitive).
-     */
+    /** Deletes metadata records that match [searchTerm] (case insensitive). */
     suspend fun deleteHistoryMetadata(searchTerm: String)
 
-    /**
-     * Deletes all metadata records for the provided [url].
-     */
+    /** Deletes all metadata records for the provided [url]. */
     suspend fun deleteHistoryMetadataForUrl(url: String)
 }

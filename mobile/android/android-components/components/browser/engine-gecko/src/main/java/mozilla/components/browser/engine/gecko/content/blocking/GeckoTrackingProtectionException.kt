@@ -9,6 +9,7 @@ import org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission
 
 /**
  * Represents a site that will be ignored by the tracking protection policies.
+ *
  * @property url The url of the site to be ignored.
  * @property privateMode Indicates if this exception should persisted in private mode.
  * @property contentPermission The associated gecko content permission of this exception.

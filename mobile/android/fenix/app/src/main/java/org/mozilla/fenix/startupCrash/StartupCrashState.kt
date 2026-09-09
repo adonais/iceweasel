@@ -6,6 +6,10 @@ package org.mozilla.fenix.startupCrash
 
 import mozilla.components.lib.state.State
 
-internal enum class UiState { Idle, Loading, Finished }
+internal enum class UiState {
+    Idle,
+    Loading,
+    Finished,
+}
 
 internal data class StartupCrashState(val uiState: UiState) : State

@@ -5,8 +5,6 @@ const { QuarantinedDomains } = ChromeUtils.importESModule(
   "resource://gre/modules/ExtensionPermissions.sys.mjs"
 );
 
-AddonTestUtils.init(this);
-AddonTestUtils.overrideCertDB();
 AddonTestUtils.usePrivilegedSignatures = id => id.startsWith("privileged");
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "42", "42");

@@ -7,25 +7,19 @@ package org.mozilla.fenix.home.logo
 import android.content.Context
 import org.mozilla.fenix.longfox.LongFoxFeatureApi
 
-/**
- * Controller for launching the LongFox feature.
- */
+/** Controller for launching the LongFox feature. */
 class LogoController(
     private val longFoxFeature: LongFoxFeatureApi,
     private val context: Context,
     private val longFoxEnabled: Boolean,
 ) {
 
-    /**
-     * When the longfox entry point text is clicked, launch the LongFox feature.
-     */
+    /** When the longfox entry point text is clicked, launch the LongFox feature. */
     fun handleLongfoxEntryPointClicked() {
         if (longFoxEnabled) longFoxFeature.start(context)
     }
 
-    /**
-     * When the longfox entry point is shown, record the telemetry event.
-     */
+    /** When the longfox entry point is shown, record the telemetry event. */
     fun handleLongfoxEntryPointShown() {
         longFoxFeature.onEntryPointShown()
     }

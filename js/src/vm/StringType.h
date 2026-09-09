@@ -698,6 +698,10 @@ class JSString : public js::gc::CellWithLengthAndFlags {
     assertTypeUnchanged(flags() | flag);
     setHeaderFlagBit(flag);
   }
+  void setFlagBitAtomic(uint32_t flag) {
+    assertTypeUnchanged(flags() | flag);
+    setHeaderFlagBitAtomic(flag);
+  }
   void clearFlagBit(uint32_t flag) {
     assertTypeUnchanged(flags() & ~flag);
     clearHeaderFlagBit(flag);

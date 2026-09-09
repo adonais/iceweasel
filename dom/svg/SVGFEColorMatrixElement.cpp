@@ -90,7 +90,7 @@ FilterPrimitiveDescription SVGFEColorMatrixElement::GetPrimitiveDescription(
     atts.mValues.AppendElements(Span(identityMatrix));
   } else {
     atts.mType = type;
-    if (values.Length()) {
+    if (!values.IsEmpty()) {
       atts.mValues.AppendElements(&values[0], values.Length());
     }
   }

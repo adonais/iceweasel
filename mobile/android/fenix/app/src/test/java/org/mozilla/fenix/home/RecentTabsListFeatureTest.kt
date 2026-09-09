@@ -5,6 +5,8 @@
 package org.mozilla.fenix.home
 
 import io.mockk.mockk
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.ContentAction.UpdateIconAction
@@ -30,8 +32,6 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.home.recenttabs.RecentTab
 import org.mozilla.fenix.home.recenttabs.RecentTabsListFeature
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 
 class RecentTabsListFeatureTest {
 
@@ -55,11 +55,12 @@ class RecentTabsListFeatureTest {
         runTest(testDispatcher) {
             val browserStore = BrowserStore()
             val appStore = AppStore()
-            val feature = RecentTabsListFeature(
-                browserStore = browserStore,
-                appStore = appStore,
-                mainDispatcher = testDispatcher,
-            )
+            val feature =
+                RecentTabsListFeature(
+                    browserStore = browserStore,
+                    appStore = appStore,
+                    mainDispatcher = testDispatcher,
+                )
 
             feature.start()
             testDispatcher.scheduler.advanceUntilIdle()
@@ -70,19 +71,19 @@ class RecentTabsListFeatureTest {
     @Test
     fun `GIVEN no selected but last active tab available WHEN the feature starts THEN dispatch the last active tab as a recent tab list`() =
         runTest(testDispatcher) {
-            val tab = createTab(
-                url = "https://www.mozilla.org",
-                id = "1",
-            )
+            val tab =
+                createTab(
+                    url = "https://www.mozilla.org",
+                    id = "1",
+                )
             val tabs = listOf(tab)
-            val browserStore = BrowserStore(
-                BrowserState(tabs = tabs),
-            )
-            val feature = RecentTabsListFeature(
-                browserStore = browserStore,
-                appStore = appStore,
-                mainDispatcher = testDispatcher,
-            )
+            val browserStore = BrowserStore(BrowserState(tabs = tabs))
+            val feature =
+                RecentTabsListFeature(
+                    browserStore = browserStore,
+                    appStore = appStore,
+                    mainDispatcher = testDispatcher,
+                )
 
             feature.start()
             testDispatcher.scheduler.advanceUntilIdle()
@@ -93,22 +94,25 @@ class RecentTabsListFeatureTest {
     @Test
     fun `GIVEN a selected tab WHEN the feature starts THEN dispatch the selected tab as a recent tab list`() =
         runTest(testDispatcher) {
-            val tab = createTab(
-                url = "https://www.mozilla.org",
-                id = "1",
-            )
+            val tab =
+                createTab(
+                    url = "https://www.mozilla.org",
+                    id = "1",
+                )
             val tabs = listOf(tab)
-            val browserStore = BrowserStore(
-                BrowserState(
-                    tabs = tabs,
-                    selectedTabId = "1",
-                ),
-            )
-            val feature = RecentTabsListFeature(
-                browserStore = browserStore,
-                appStore = appStore,
-                mainDispatcher = testDispatcher,
-            )
+            val browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs = tabs,
+                        selectedTabId = "1",
+                    )
+                )
+            val feature =
+                RecentTabsListFeature(
+                    browserStore = browserStore,
+                    appStore = appStore,
+                    mainDispatcher = testDispatcher,
+                )
 
             feature.start()
             testDispatcher.scheduler.advanceUntilIdle()
@@ -119,23 +123,26 @@ class RecentTabsListFeatureTest {
     @Test
     fun `GIVEN a valid inProgressMediaTabId and another selected tab exists WHEN the feature starts THEN dispatch both as as a recent tabs list`() =
         runTest(testDispatcher) {
-            val mediaTab = createTab(
-                url = "https://mozilla.com",
-                id = "42",
-                lastMediaAccessState = LastMediaAccessState("https://mozilla.com", 123),
-            )
+            val mediaTab =
+                createTab(
+                    url = "https://mozilla.com",
+                    id = "42",
+                    lastMediaAccessState = LastMediaAccessState("https://mozilla.com", 123),
+                )
             val selectedTab = createTab("https://mozilla.com", id = "43")
-            val browserStore = BrowserStore(
-                BrowserState(
-                    tabs = listOf(mediaTab, selectedTab),
-                    selectedTabId = "43",
-                ),
-            )
-            val feature = RecentTabsListFeature(
-                browserStore = browserStore,
-                appStore = appStore,
-                mainDispatcher = testDispatcher,
-            )
+            val browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs = listOf(mediaTab, selectedTab),
+                        selectedTabId = "43",
+                    )
+                )
+            val feature =
+                RecentTabsListFeature(
+                    browserStore = browserStore,
+                    appStore = appStore,
+                    mainDispatcher = testDispatcher,
+                )
 
             feature.start()
             testDispatcher.scheduler.advanceUntilIdle()
@@ -151,22 +158,25 @@ class RecentTabsListFeatureTest {
     @Test
     fun `GIVEN a valid inProgressMediaTabId exists and that is the selected tab WHEN the feature starts THEN dispatch just one tab as the recent tabs list`() =
         runTest(testDispatcher) {
-            val selectedMediaTab = createTab(
-                "https://mozilla.com",
-                id = "42",
-                lastMediaAccessState = LastMediaAccessState("https://mozilla.com", 123),
-            )
-            val browserStore = BrowserStore(
-                BrowserState(
-                    tabs = listOf(selectedMediaTab),
-                    selectedTabId = "42",
-                ),
-            )
-            val feature = RecentTabsListFeature(
-                browserStore = browserStore,
-                appStore = appStore,
-                mainDispatcher = testDispatcher,
-            )
+            val selectedMediaTab =
+                createTab(
+                    "https://mozilla.com",
+                    id = "42",
+                    lastMediaAccessState = LastMediaAccessState("https://mozilla.com", 123),
+                )
+            val browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs = listOf(selectedMediaTab),
+                        selectedTabId = "42",
+                    )
+                )
+            val feature =
+                RecentTabsListFeature(
+                    browserStore = browserStore,
+                    appStore = appStore,
+                    mainDispatcher = testDispatcher,
+                )
 
             feature.start()
             testDispatcher.scheduler.advanceUntilIdle()
@@ -179,26 +189,30 @@ class RecentTabsListFeatureTest {
     @Test
     fun `WHEN the browser state has an updated select tab THEN dispatch the new recent tab list`() =
         runTest(testDispatcher) {
-            val tab1 = createTab(
-                url = "https://www.mozilla.org",
-                id = "1",
-            )
-            val tab2 = createTab(
-                url = "https://www.firefox.com",
-                id = "2",
-            )
+            val tab1 =
+                createTab(
+                    url = "https://www.mozilla.org",
+                    id = "1",
+                )
+            val tab2 =
+                createTab(
+                    url = "https://www.firefox.com",
+                    id = "2",
+                )
             val tabs = listOf(tab1, tab2)
-            val browserStore = BrowserStore(
-                BrowserState(
-                    tabs = tabs,
-                    selectedTabId = "1",
-                ),
-            )
-            val feature = RecentTabsListFeature(
-                browserStore = browserStore,
-                appStore = appStore,
-                mainDispatcher = testDispatcher,
-            )
+            val browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs = tabs,
+                        selectedTabId = "1",
+                    )
+                )
+            val feature =
+                RecentTabsListFeature(
+                    browserStore = browserStore,
+                    appStore = appStore,
+                    mainDispatcher = testDispatcher,
+                )
 
             feature.start()
             testDispatcher.scheduler.advanceUntilIdle()
@@ -217,28 +231,33 @@ class RecentTabsListFeatureTest {
     @Test
     fun `WHEN the browser state has an in progress media tab THEN dispatch the new recent tab list`() =
         runTest(testDispatcher) {
-            val initialMediaTab = createTab(
-                url = "https://mozilla.com",
-                id = "1",
-                lastMediaAccessState = LastMediaAccessState("https://mozilla.com", 123),
-            )
-            val newMediaTab = createTab(
-                url = "http://mozilla.org",
-                id = "2",
-                lastMediaAccessState = LastMediaAccessState("https://mozilla.com", 100),
-            )
-            val browserStore = BrowserStore(
-                initialState = BrowserState(
-                    tabs = listOf(initialMediaTab, newMediaTab),
-                    selectedTabId = "1",
-                ),
-                middleware = listOf(LastMediaAccessMiddleware()),
-            )
-            val feature = RecentTabsListFeature(
-                browserStore = browserStore,
-                appStore = appStore,
-                mainDispatcher = testDispatcher,
-            )
+            val initialMediaTab =
+                createTab(
+                    url = "https://mozilla.com",
+                    id = "1",
+                    lastMediaAccessState = LastMediaAccessState("https://mozilla.com", 123),
+                )
+            val newMediaTab =
+                createTab(
+                    url = "http://mozilla.org",
+                    id = "2",
+                    lastMediaAccessState = LastMediaAccessState("https://mozilla.com", 100),
+                )
+            val browserStore =
+                BrowserStore(
+                    initialState =
+                        BrowserState(
+                            tabs = listOf(initialMediaTab, newMediaTab),
+                            selectedTabId = "1",
+                        ),
+                    middleware = listOf(LastMediaAccessMiddleware()),
+                )
+            val feature =
+                RecentTabsListFeature(
+                    browserStore = browserStore,
+                    appStore = appStore,
+                    mainDispatcher = testDispatcher,
+                )
 
             feature.start()
             testDispatcher.scheduler.advanceUntilIdle()
@@ -250,7 +269,7 @@ class RecentTabsListFeatureTest {
                 MediaSessionAction.UpdateMediaPlaybackStateAction(
                     "2",
                     MediaSession.PlaybackState.PLAYING,
-                ),
+                )
             )
             testDispatcher.scheduler.advanceUntilIdle()
             assertEquals(2, appStore.state.recentTabs.size)
@@ -270,42 +289,47 @@ class RecentTabsListFeatureTest {
             // Check that the media tab is updated ignoring just the lastMediaAccess property.
             assertEquals(
                 newMediaTab,
-                (appStore.state.recentTabs[1] as RecentTab.Tab).state.copy(
-                    lastMediaAccessState = LastMediaAccessState("https://mozilla.com", 100),
-                ),
+                (appStore.state.recentTabs[1] as RecentTab.Tab)
+                    .state
+                    .copy(lastMediaAccessState = LastMediaAccessState("https://mozilla.com", 100)),
             )
         }
 
     @Test
     fun `WHEN the browser state selects a private tab THEN dispatch an empty list`() =
         runTest(testDispatcher) {
-            val selectedNormalTab = createTab(
-                url = "https://www.mozilla.org",
-                id = "1",
-                lastAccess = 0,
-            )
-            val lastAccessedNormalTab = createTab(
-                url = "https://www.mozilla.org",
-                id = "2",
-                lastAccess = 1,
-            )
-            val privateTab = createTab(
-                url = "https://www.firefox.com",
-                id = "3",
-                private = true,
-            )
+            val selectedNormalTab =
+                createTab(
+                    url = "https://www.mozilla.org",
+                    id = "1",
+                    lastAccess = 0,
+                )
+            val lastAccessedNormalTab =
+                createTab(
+                    url = "https://www.mozilla.org",
+                    id = "2",
+                    lastAccess = 1,
+                )
+            val privateTab =
+                createTab(
+                    url = "https://www.firefox.com",
+                    id = "3",
+                    private = true,
+                )
             val tabs = listOf(selectedNormalTab, lastAccessedNormalTab, privateTab)
-            val browserStore = BrowserStore(
-                BrowserState(
-                    tabs = tabs,
-                    selectedTabId = "1",
-                ),
-            )
-            val feature = RecentTabsListFeature(
-                browserStore = browserStore,
-                appStore = appStore,
-                mainDispatcher = testDispatcher,
-            )
+            val browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs = tabs,
+                        selectedTabId = "1",
+                    )
+                )
+            val feature =
+                RecentTabsListFeature(
+                    browserStore = browserStore,
+                    appStore = appStore,
+                    mainDispatcher = testDispatcher,
+                )
 
             feature.start()
             testDispatcher.scheduler.advanceUntilIdle()
@@ -328,22 +352,25 @@ class RecentTabsListFeatureTest {
     @Test
     fun `WHEN the selected tabs title or icon update THEN update the home store`() =
         runTest(testDispatcher) {
-            val browserStore = BrowserStore(
-                BrowserState(
-                    tabs = listOf(
-                        createTab(
-                            url = "https://www.mozilla.org",
-                            id = "1",
-                        ),
-                    ),
-                    selectedTabId = "1",
-                ),
-            )
-            val feature = RecentTabsListFeature(
-                browserStore = browserStore,
-                appStore = appStore,
-                mainDispatcher = testDispatcher,
-            )
+            val browserStore =
+                BrowserStore(
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab(
+                                    url = "https://www.mozilla.org",
+                                    id = "1",
+                                )
+                            ),
+                        selectedTabId = "1",
+                    )
+                )
+            val feature =
+                RecentTabsListFeature(
+                    browserStore = browserStore,
+                    appStore = appStore,
+                    mainDispatcher = testDispatcher,
+                )
 
             feature.start()
             testDispatcher.scheduler.advanceUntilIdle()
@@ -376,18 +403,21 @@ class RecentTabsListFeatureTest {
         runTest(testDispatcher) {
             val initialMediaTab = createTab(url = "https://mozilla.com", id = "1")
             val selectedTab = createTab(url = "https://mozilla.com/firefox", id = "2")
-            val browserStore = BrowserStore(
-                initialState = BrowserState(
-                    listOf(initialMediaTab, selectedTab),
-                    selectedTabId = "2",
-                ),
-                middleware = listOf(LastMediaAccessMiddleware()),
-            )
-            val feature = RecentTabsListFeature(
-                browserStore = browserStore,
-                appStore = appStore,
-                mainDispatcher = testDispatcher,
-            )
+            val browserStore =
+                BrowserStore(
+                    initialState =
+                        BrowserState(
+                            listOf(initialMediaTab, selectedTab),
+                            selectedTabId = "2",
+                        ),
+                    middleware = listOf(LastMediaAccessMiddleware()),
+                )
+            val feature =
+                RecentTabsListFeature(
+                    browserStore = browserStore,
+                    appStore = appStore,
+                    mainDispatcher = testDispatcher,
+                )
 
             feature.start()
             testDispatcher.scheduler.advanceUntilIdle()

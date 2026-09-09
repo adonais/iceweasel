@@ -15,92 +15,89 @@ class AutofillSettingsReducerTest {
     @Test
     fun `WHEN addresses are loaded THEN they are added to state`() {
         val state = AutofillSettingsState.default
-        val addresses = List(5) {
-            Address(
-                guid = "$it",
-                name = "name$it",
-                organization = "organization$it",
-                streetAddress = "street$it",
-                addressLevel1 = "",
-                addressLevel2 = "",
-                addressLevel3 = "",
-                postalCode = "40066$it",
-                country = "country$it",
-                tel = "123456$it",
-                email = "user$it@gmail.com",
-                timeCreated = System.currentTimeMillis(),
-                timeLastUsed = System.currentTimeMillis(),
-                timeLastModified = System.currentTimeMillis(),
-                timesUsed = 1L,
+        val addresses =
+            List(5) {
+                Address(
+                    guid = "$it",
+                    name = "name$it",
+                    organization = "organization$it",
+                    streetAddress = "street$it",
+                    addressLevel1 = "",
+                    addressLevel2 = "",
+                    addressLevel3 = "",
+                    postalCode = "40066$it",
+                    country = "country$it",
+                    tel = "123456$it",
+                    email = "user$it@gmail.com",
+                    timeCreated = System.currentTimeMillis(),
+                    timeLastUsed = System.currentTimeMillis(),
+                    timeLastModified = System.currentTimeMillis(),
+                    timesUsed = 1L,
+                )
+            }
+
+        val result =
+            autofillSettingsReducer(
+                state,
+                UpdateAddresses(addresses = addresses),
             )
-        }
 
-        val result = autofillSettingsReducer(
-            state,
-            UpdateAddresses(
-                addresses = addresses,
-            ),
-        )
-
-        val expected = state.copy(
-            addresses = addresses,
-        )
+        val expected = state.copy(addresses = addresses)
         assertEquals(expected, result)
     }
 
     @Test
     fun `WHEN creditCards are loaded THEN they are added to state`() {
         val state = AutofillSettingsState.default
-        val creditCards = List(5) {
-            CreditCard(
-                guid = "$it",
-                billingName = "name$it",
-                encryptedCardNumber = CreditCardNumber.Encrypted("4111111111111111"),
-                cardNumberLast4 = "211$it",
-                expiryMonth = 12,
-                expiryYear = 2029,
-                cardType = "Visa",
-                timeCreated = System.currentTimeMillis(),
-                timeLastUsed = System.currentTimeMillis(),
-                timeLastModified = System.currentTimeMillis(),
-                timesUsed = 1L,
+        val creditCards =
+            List(5) {
+                CreditCard(
+                    guid = "$it",
+                    billingName = "name$it",
+                    encryptedCardNumber = CreditCardNumber.Encrypted("4111111111111111"),
+                    cardNumberLast4 = "211$it",
+                    expiryMonth = 12,
+                    expiryYear = 2029,
+                    cardType = "Visa",
+                    timeCreated = System.currentTimeMillis(),
+                    timeLastUsed = System.currentTimeMillis(),
+                    timeLastModified = System.currentTimeMillis(),
+                    timesUsed = 1L,
+                )
+            }
+
+        val result =
+            autofillSettingsReducer(
+                state,
+                UpdateCreditCards(creditCards = creditCards),
             )
-        }
 
-        val result = autofillSettingsReducer(
-            state,
-            UpdateCreditCards(
-                creditCards = creditCards,
-            ),
-        )
-
-        val expected = state.copy(
-            creditCards = creditCards,
-        )
+        val expected = state.copy(creditCards = creditCards)
         assertEquals(expected, result)
     }
 
     @Test
     fun `WHEN the back button is clicked THEN remove all addresses from state`() {
-        val addresses = List(5) {
-            Address(
-                guid = "$it",
-                name = "name$it",
-                organization = "organization$it",
-                streetAddress = "street$it",
-                addressLevel1 = "",
-                addressLevel2 = "",
-                addressLevel3 = "",
-                postalCode = "40066$it",
-                country = "country$it",
-                tel = "123456$it",
-                email = "user$it@gmail.com",
-                timeCreated = System.currentTimeMillis(),
-                timeLastUsed = System.currentTimeMillis(),
-                timeLastModified = System.currentTimeMillis(),
-                timesUsed = 1L,
-            )
-        }
+        val addresses =
+            List(5) {
+                Address(
+                    guid = "$it",
+                    name = "name$it",
+                    organization = "organization$it",
+                    streetAddress = "street$it",
+                    addressLevel1 = "",
+                    addressLevel2 = "",
+                    addressLevel3 = "",
+                    postalCode = "40066$it",
+                    country = "country$it",
+                    tel = "123456$it",
+                    email = "user$it@gmail.com",
+                    timeCreated = System.currentTimeMillis(),
+                    timeLastUsed = System.currentTimeMillis(),
+                    timeLastModified = System.currentTimeMillis(),
+                    timesUsed = 1L,
+                )
+            }
 
         val state = AutofillSettingsState.default.copy(addresses = addresses)
         val result = autofillSettingsReducer(state, AutofillSettingsBackClicked)
@@ -112,21 +109,22 @@ class AutofillSettingsReducerTest {
 
     @Test
     fun `WHEN the back button is clicked THEN remove all credit cards from state`() {
-        val creditCards = List(5) {
-            CreditCard(
-                guid = "$it",
-                billingName = "name$it",
-                encryptedCardNumber = CreditCardNumber.Encrypted("4111111111111111"),
-                cardNumberLast4 = "211$it",
-                expiryMonth = 12,
-                expiryYear = 2029,
-                cardType = "Visa",
-                timeCreated = System.currentTimeMillis(),
-                timeLastUsed = System.currentTimeMillis(),
-                timeLastModified = System.currentTimeMillis(),
-                timesUsed = 1L,
-            )
-        }
+        val creditCards =
+            List(5) {
+                CreditCard(
+                    guid = "$it",
+                    billingName = "name$it",
+                    encryptedCardNumber = CreditCardNumber.Encrypted("4111111111111111"),
+                    cardNumberLast4 = "211$it",
+                    expiryMonth = 12,
+                    expiryYear = 2029,
+                    cardType = "Visa",
+                    timeCreated = System.currentTimeMillis(),
+                    timeLastUsed = System.currentTimeMillis(),
+                    timeLastModified = System.currentTimeMillis(),
+                    timesUsed = 1L,
+                )
+            }
 
         val state = AutofillSettingsState.default.copy(creditCards = creditCards)
         val result = autofillSettingsReducer(state, AutofillSettingsBackClicked)
@@ -178,8 +176,7 @@ class AutofillSettingsReducerTest {
 
     @Test
     fun `WHEN account authentication succeeds THEN this is reflected in the state`() {
-        val state =
-            AutofillSettingsState.default.copy(accountAuthState = AccountAuthState.LoggedOut)
+        val state = AutofillSettingsState.default.copy(accountAuthState = AccountAuthState.LoggedOut)
         val result = autofillSettingsReducer(state, AccountAuthenticationAction.Authenticated)
 
         val expectedResult = state.copy(accountAuthState = AccountAuthState.Authenticated)
@@ -189,8 +186,7 @@ class AutofillSettingsReducerTest {
 
     @Test
     fun `WHEN account authentication encounters a problem THEN this is reflected in the state`() {
-        val state =
-            AutofillSettingsState.default.copy(accountAuthState = AccountAuthState.Authenticated)
+        val state = AutofillSettingsState.default.copy(accountAuthState = AccountAuthState.Authenticated)
         val result = autofillSettingsReducer(state, AccountAuthenticationAction.Failed)
 
         val expectedResult = state.copy(accountAuthState = AccountAuthState.NeedsReauthentication)
@@ -200,8 +196,7 @@ class AutofillSettingsReducerTest {
 
     @Test
     fun `WHEN account authentication fails THEN this is reflected in the state`() {
-        val state =
-            AutofillSettingsState.default.copy(accountAuthState = AccountAuthState.Authenticated)
+        val state = AutofillSettingsState.default.copy(accountAuthState = AccountAuthState.Authenticated)
         val result = autofillSettingsReducer(state, AccountAuthenticationAction.NotAuthenticated)
 
         val expectedResult = state.copy(accountAuthState = AccountAuthState.LoggedOut)

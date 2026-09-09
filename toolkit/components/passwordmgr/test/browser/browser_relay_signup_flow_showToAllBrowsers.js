@@ -300,12 +300,12 @@ add_task(
 add_task(
   async function test_unauthenticated_browser_use_email_mask_opens_fxa_signin() {
     const relayParams = {
-      service: "relay",
       utm_source: "relay-integration",
       utm_medium: "firefox-desktop",
     };
     const fxaSigninUrlString =
       await gFxAccounts.constructor.config.promiseConnectAccountURI(
+        "relay",
         "relay_integration",
         relayParams
       );

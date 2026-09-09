@@ -39,9 +39,8 @@ class ToolbarSimpleShortcutPreferenceTest {
     private val summarizationFeatureSettings: FenixSummarizationFeatureConfiguration = mockk()
     private val preferencesEditor: SharedPreferences.Editor = mockk()
 
-    private val browserStore = BrowserStore(
-        BrowserState(translationEngine = TranslationsBrowserState(isEngineSupported = true)),
-    )
+    private val browserStore =
+        BrowserStore(BrowserState(translationEngine = TranslationsBrowserState(isEngineSupported = true)))
 
     @Before
     fun setUp() {
@@ -81,9 +80,10 @@ class ToolbarSimpleShortcutPreferenceTest {
 
     @Test
     fun `GIVEN summarization enabled and normal browsing WHEN getting the shortcut options THEN all simple shortcut options are returned in order`() {
-        val preference = ToolbarSimpleShortcutPreference(context).apply {
-            isTranslationsFeatureEnabled = true
-        }
+        val preference =
+            ToolbarSimpleShortcutPreference(context).apply {
+                isTranslationsFeatureEnabled = true
+            }
 
         val optionKeys = preference.getShortcutOptions().map { it.key }
 
@@ -93,9 +93,10 @@ class ToolbarSimpleShortcutPreferenceTest {
     @Test
     fun `GIVEN summarization enabled and private browsing WHEN getting the shortcut options THEN the summarize option is shown but disabled`() {
         every { components.appStore } returns AppStore(AppState(mode = BrowsingMode.Private))
-        val preference = ToolbarSimpleShortcutPreference(context).apply {
-            isTranslationsFeatureEnabled = true
-        }
+        val preference =
+            ToolbarSimpleShortcutPreference(context).apply {
+                isTranslationsFeatureEnabled = true
+            }
 
         val options = preference.getShortcutOptions()
 
@@ -118,9 +119,10 @@ class ToolbarSimpleShortcutPreferenceTest {
 
     @Test
     fun `GIVEN translations is available WHEN getting the shortcut options THEN the translate option is included`() {
-        val preference = ToolbarSimpleShortcutPreference(context).apply {
-            isTranslationsFeatureEnabled = true
-        }
+        val preference =
+            ToolbarSimpleShortcutPreference(context).apply {
+                isTranslationsFeatureEnabled = true
+            }
 
         val optionKeys = preference.getShortcutOptions().map { it.key }
 
@@ -129,9 +131,10 @@ class ToolbarSimpleShortcutPreferenceTest {
 
     @Test
     fun `GIVEN the translations feature is disabled WHEN getting the shortcut options THEN the translate option is excluded`() {
-        val preference = ToolbarSimpleShortcutPreference(context).apply {
-            isTranslationsFeatureEnabled = false
-        }
+        val preference =
+            ToolbarSimpleShortcutPreference(context).apply {
+                isTranslationsFeatureEnabled = false
+            }
 
         val optionKeys = preference.getShortcutOptions().map { it.key }
 
@@ -140,12 +143,12 @@ class ToolbarSimpleShortcutPreferenceTest {
 
     @Test
     fun `GIVEN the translations engine is not supported WHEN getting the shortcut options THEN the translate option is excluded`() {
-        every { components.core.store } returns BrowserStore(
-            BrowserState(translationEngine = TranslationsBrowserState(isEngineSupported = false)),
-        )
-        val preference = ToolbarSimpleShortcutPreference(context).apply {
-            isTranslationsFeatureEnabled = true
-        }
+        every { components.core.store } returns
+            BrowserStore(BrowserState(translationEngine = TranslationsBrowserState(isEngineSupported = false)))
+        val preference =
+            ToolbarSimpleShortcutPreference(context).apply {
+                isTranslationsFeatureEnabled = true
+            }
 
         val optionKeys = preference.getShortcutOptions().map { it.key }
 

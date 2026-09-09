@@ -115,6 +115,7 @@ def generate(output):
         )
 
     # Write out some useful strings from the buildconfig.
+    output.write(generate_string("MOZ_BACKGROUNDTASK_ACTIVATABLE_CLASS_ID"))
     output.write(generate_string("MOZ_MACBUNDLE_ID"))
     output.write(generate_string("MOZ_APP_BASENAME"))
     output.write(generate_string("MOZ_APP_NAME"))

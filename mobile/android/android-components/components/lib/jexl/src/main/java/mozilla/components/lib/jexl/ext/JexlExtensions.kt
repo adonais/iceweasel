@@ -13,20 +13,25 @@ import mozilla.components.lib.jexl.value.JexlString
 // Kotlin extensions that make it easier to work with Jexl types and values
 
 inline fun <reified T> List<T>.toJexlArray(): JexlArray {
-    val values = when (T::class) {
-        String::class -> map { JexlString(it as String) }
-        Int::class -> map { JexlInteger(it as Int) }
-        Double::class -> map { JexlDouble(it as Double) }
-        Float::class -> map { JexlDouble((it as Float).toDouble()) }
-        Boolean::class -> map { JexlBoolean(it as Boolean) }
-        else -> throw UnsupportedOperationException("Can't convert type " + T::class + " to Jexl")
-    }
+    val values =
+        when (T::class) {
+            String::class -> map { JexlString(it as String) }
+            Int::class -> map { JexlInteger(it as Int) }
+            Double::class -> map { JexlDouble(it as Double) }
+            Float::class -> map { JexlDouble((it as Float).toDouble()) }
+            Boolean::class -> map { JexlBoolean(it as Boolean) }
+            else -> throw UnsupportedOperationException("Can't convert type " + T::class + " to Jexl")
+        }
 
     return JexlArray(values)
 }
 
 fun String.toJexl(): JexlString = JexlString(this)
+
 fun Int.toJexl(): JexlInteger = JexlInteger(this)
+
 fun Double.toJexl(): JexlDouble = JexlDouble(this)
+
 fun Float.toJexl(): JexlDouble = JexlDouble(this.toDouble())
+
 fun Boolean.toJexl(): JexlBoolean = JexlBoolean(this)

@@ -7,18 +7,18 @@ package mozilla.components.support.ktx.util
 import android.util.AtomicFile
 import android.util.JsonReader
 import android.util.JsonWriter
-import org.json.JSONException
 import java.io.BufferedWriter
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.Writer
+import org.json.JSONException
 
 /**
  * Reads an [AtomicFile] and provides a deserialized version of its content.
- * @param block A function to be executed after the file is read and provides the content as
- * a [String]. It is expected that this function returns a deserialized version of the content
- * of the file.
+ *
+ * @param block A function to be executed after the file is read and provides the content as a [String]. It is expected
+ *   that this function returns a deserialized version of the content of the file.
  */
 inline fun <T> AtomicFile.readAndDeserialize(block: (String) -> T): T? {
     return try {
@@ -35,6 +35,7 @@ inline fun <T> AtomicFile.readAndDeserialize(block: (String) -> T): T? {
 
 /**
  * Writes an [AtomicFile] and indicates if the file was wrote.
+ *
  * @param block A function with provides the content of the file as a [String]
  * @return true if the file wrote otherwise false
  */
@@ -45,8 +46,7 @@ inline fun AtomicFile.writeString(block: () -> String): Boolean {
 }
 
 /**
- * Opens the [AtomicFile] for writing and provides a [JsonWriter] to [block] for writing JSON
- * directly to the file.
+ * Opens the [AtomicFile] for writing and provides a [JsonWriter] to [block] for writing JSON directly to the file.
  *
  * At the end of [block] the writer will be flushed and the file closed.
  */
@@ -58,10 +58,7 @@ inline fun AtomicFile.streamJSON(block: JsonWriter.() -> Unit): Boolean {
     }
 }
 
-/**
- * Opens the [AtomicFile] for reading and provides a [JsonReader] to [block] for reading JSON from
- * the file.
- */
+/** Opens the [AtomicFile] for reading and provides a [JsonReader] to [block] for reading JSON from the file. */
 inline fun <R> AtomicFile.readJSON(block: JsonReader.() -> R): R? {
     var reader: InputStream? = null
 
@@ -78,8 +75,7 @@ inline fun <R> AtomicFile.readJSON(block: JsonReader.() -> R): R? {
 }
 
 /**
- * Opens the [AtomicFile] for writing and provides an [Writer] to [block] for writing
- * directly to the file.
+ * Opens the [AtomicFile] for writing and provides an [Writer] to [block] for writing directly to the file.
  *
  * At the end of [block] the writer will be flushed and the file closed.
  */

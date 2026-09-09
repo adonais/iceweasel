@@ -7,9 +7,7 @@ package mozilla.components.concept.engine.activity
 import android.content.Intent
 import android.content.IntentSender
 
-/**
- * Notifies applications or other components of engine events that require interaction with an Android Activity.
- */
+/** Notifies applications or other components of engine events that require interaction with an Android Activity. */
 interface ActivityDelegate {
 
     /**

@@ -26,8 +26,8 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieAnimatable
 import com.airbnb.lottie.compose.rememberLottieComposition
-import kotlinx.coroutines.delay
 import kotlin.time.Duration
+import kotlinx.coroutines.delay
 
 private const val ANIMATIONS_DISABLED_SCALE = 0.0f
 
@@ -41,9 +41,9 @@ internal object AnimatedIllustrationTestTag {
 }
 
 /**
- * Displays a Lottie animation, falling back to [staticDrawableResource] whenever the animation
- * is loading, fails to load, or when the user has reduced motion enabled. The static fallback
- * is required so call sites do not depend on Lottie directly.
+ * Displays a Lottie animation, falling back to [staticDrawableResource] whenever the animation is loading, fails to
+ * load, or when the user has reduced motion enabled. The static fallback is required so call sites do not depend on
+ * Lottie directly.
  *
  * @param animationResource Raw resource ID for the Lottie JSON animation.
  * @param staticDrawableResource Drawable shown when the animation can't or shouldn't play.
@@ -65,11 +65,12 @@ fun AnimatedIllustration(
 ) {
     val context = LocalContext.current
     val reducedMotionEnabled = remember(context) { isReducedMotionEnabled(context) }
-    val composition = if (reducedMotionEnabled) {
-        null
-    } else {
-        rememberLottieComposition(LottieCompositionSpec.RawRes(animationResource)).value
-    }
+    val composition =
+        if (reducedMotionEnabled) {
+            null
+        } else {
+            rememberLottieComposition(LottieCompositionSpec.RawRes(animationResource)).value
+        }
 
     AnimatedIllustration(
         composition = composition,
@@ -100,18 +101,19 @@ internal fun AnimatedIllustration(
             contentScale = contentScale,
         )
     } else {
-        val animatedModifier = modifier
-            .testTag(AnimatedIllustrationTestTag.ANIMATION)
-            .then(
-                if (contentDescription != null) {
-                    Modifier.semantics {
-                        this.contentDescription = contentDescription
-                        this.role = Role.Image
+        val animatedModifier =
+            modifier
+                .testTag(AnimatedIllustrationTestTag.ANIMATION)
+                .then(
+                    if (contentDescription != null) {
+                        Modifier.semantics {
+                            this.contentDescription = contentDescription
+                            this.role = Role.Image
+                        }
+                    } else {
+                        Modifier
                     }
-                } else {
-                    Modifier
-                },
-            )
+                )
 
         if (iterationDelay <= Duration.ZERO) {
             LottieAnimation(
@@ -132,9 +134,7 @@ internal fun AnimatedIllustration(
     }
 }
 
-/**
- * Plays [composition], resting on the final frame for an [iterationDelay] pause between each loop.
- */
+/** Plays [composition], resting on the final frame for an [iterationDelay] pause between each loop. */
 @Composable
 private fun LoopingLottieAnimation(
     composition: LottieComposition,
@@ -168,17 +168,16 @@ private fun LoopingLottieAnimation(
     )
 }
 
-/**
- * Whether the user has disabled animations system-wide.
- */
+/** Whether the user has disabled animations system-wide. */
 internal fun isReducedMotionEnabled(context: Context): Boolean {
-    val animationScale = try {
-        Settings.Global.getFloat(
-            context.contentResolver,
-            Settings.Global.ANIMATOR_DURATION_SCALE,
-        )
-    } catch (_: Settings.SettingNotFoundException) {
-        return false
-    }
+    val animationScale =
+        try {
+            Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+            )
+        } catch (_: Settings.SettingNotFoundException) {
+            return false
+        }
     return animationScale == ANIMATIONS_DISABLED_SCALE
 }

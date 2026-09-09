@@ -166,6 +166,7 @@ BytecodeSection::BytecodeSection(FrontendContext* fc, uint32_t lineNum,
       tryNoteList_(fc),
       scopeNoteList_(fc),
       resumeOffsetList_(fc),
+      tableSwitchOffsetList_(fc),
       currentLine_(lineNum),
       lastColumn_(column) {}
 

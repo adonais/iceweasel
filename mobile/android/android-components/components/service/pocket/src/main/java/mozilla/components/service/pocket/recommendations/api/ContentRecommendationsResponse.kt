@@ -37,8 +37,8 @@ internal data class ContentRecommendationsResponse(
  * @property isTimeSensitive Whether or not the recommendation is time sensitive.
  * @property imageUrl The image URL of the recommendation.
  * @property tileId The tile ID of the recommendation.
- * @property receivedRank The original position/sort order of this item. This is provided to
- * include in telemetry payloads.
+ * @property receivedRank The original position/sort order of this item. This is provided to include in telemetry
+ *   payloads.
  */
 @Serializable
 internal data class ContentRecommendationResponseItem(

@@ -543,8 +543,8 @@ class JS_PUBLIC_API GCCellPtr {
     return asCell();
   }
 
-  bool operator==(const GCCellPtr other) const { return ptr == other.ptr; }
-  bool operator!=(const GCCellPtr other) const { return ptr != other.ptr; }
+  bool operator==(const GCCellPtr& other) const = default;
+  bool operator!=(const GCCellPtr& other) const = default;
 
   // Simplify checks to the kind.
   template <typename T, typename = std::enable_if_t<JS::IsBaseTraceType_v<T>>>

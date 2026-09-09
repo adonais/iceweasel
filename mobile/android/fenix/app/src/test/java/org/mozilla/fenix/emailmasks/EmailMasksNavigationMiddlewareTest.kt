@@ -24,13 +24,15 @@ class EmailMasksNavigationMiddlewareTest {
 
     private class FakeEmailMasksUrlProvider : EmailMasksUrlProvider {
         override fun manageUrl(): String = MANAGE_URL
+
         override fun learnMoreUrl(): String = LEARN_MORE_URL
     }
 
-    private fun createStore() = Store<EmailMasksState, EmailMasksAction>(
-        initialState = EmailMasksState(),
-        reducer = { state, _ -> state },
-    )
+    private fun createStore() =
+        Store<EmailMasksState, EmailMasksAction>(
+            initialState = EmailMasksState(),
+            reducer = { state, _ -> state },
+        )
 
     @Test
     fun `GIVEN ManageClicked WHEN middleware invoked THEN opens manage url and forwards action`() {
@@ -40,13 +42,14 @@ class EmailMasksNavigationMiddlewareTest {
         var openTabCalled = false
         var urlPassed: String? = null
 
-        val middleware = EmailMasksNavigationMiddleware(
-            openTab = { url ->
-                openTabCalled = true
-                urlPassed = url
-            },
-            urlProvider = urlProvider,
-        )
+        val middleware =
+            EmailMasksNavigationMiddleware(
+                openTab = { url ->
+                    openTabCalled = true
+                    urlPassed = url
+                },
+                urlProvider = urlProvider,
+            )
 
         middleware.invoke(store, next = {}, action = EmailMasksUserAction.ManageClicked)
 
@@ -62,13 +65,14 @@ class EmailMasksNavigationMiddlewareTest {
         var openTabCalled = false
         var urlPassed: String? = null
 
-        val middleware = EmailMasksNavigationMiddleware(
-            openTab = { url ->
-                openTabCalled = true
-                urlPassed = url
-            },
-            urlProvider = urlProvider,
-        )
+        val middleware =
+            EmailMasksNavigationMiddleware(
+                openTab = { url ->
+                    openTabCalled = true
+                    urlPassed = url
+                },
+                urlProvider = urlProvider,
+            )
         middleware.invoke(store, next = {}, action = EmailMasksUserAction.LearnMoreClicked)
 
         assertTrue(openTabCalled)
@@ -82,10 +86,11 @@ class EmailMasksNavigationMiddlewareTest {
 
         var openTabCalled = false
 
-        val middleware = EmailMasksNavigationMiddleware(
-            openTab = { _ -> openTabCalled = true },
-            urlProvider = urlProvider,
-        )
+        val middleware =
+            EmailMasksNavigationMiddleware(
+                openTab = { _ -> openTabCalled = true },
+                urlProvider = urlProvider,
+            )
 
         middleware.invoke(store, next = {}, action = EmailMasksUserAction.SuggestEmailMasksEnabled)
 

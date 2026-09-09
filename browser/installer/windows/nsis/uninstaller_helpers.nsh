@@ -304,41 +304,51 @@
 !macroend
 
 !macro PostUpdate
-  ${CreateShortcutsLog}
+  Call GetPostUpdateTarget
+  Exch $0
+  ${If} $0 == "CurrentUser"
+    Call PostUpdateCurrentUser
+  ${Else}
+    Call PostUpdateInstallation
+  ${EndIf}
+  Pop $0
+!macroend
+!define PostUpdate "!insertmacro PostUpdate"
 
-  ; Remove registry entries for non-existent apps and for apps that point to our
-  ; install location in the Software\Mozilla key and uninstall registry entries
-  ; that point to our install location for both HKCU and HKLM.
-  SetShellVarContext current  ; Set SHCTX to the current user (e.g. HKCU)
-  ${RegCleanMain} "Software\Mozilla"
-  ${RegCleanUninstall}
-  ${UpdateProtocolHandlers}
-
-  ; setup the application model id registration value
-  ${InitHashAppModelId} "$INSTDIR" "Software\Mozilla\${AppName}\TaskBarIDs"
-
+; This function is run once per installation on each update with enough
+; privileges to modify the installation directory. Generally, this will be
+; SYSTEM or the user who controls the installation (possibly elevated or not).
+;
+; If at all possible, put post-update logic here. This runs consistently on
+; every installation and makes it easy to use the right registry keys.
+;
+; It does not make sense to consistently access HKCU or HKLM here, although
+; some older code unfortunately does. Use SHCTX or $RegHive instead.
+Function PostUpdateInstallation
   ClearErrors
   WriteRegStr HKLM "Software\Mozilla" "${BrandShortName}InstallerTest" "Write Test"
   ${If} ${Errors}
+    SetShellVarContext current  ; Set SHCTX to the current user (e.g. HKCU)
     StrCpy $RegHive "HKCU"
+    Call PostUpdateNonElevated
   ${Else}
     SetShellVarContext all    ; Set SHCTX to all users (e.g. HKLM)
     DeleteRegValue HKLM "Software\Mozilla" "${BrandShortName}InstallerTest"
     StrCpy $RegHive "HKLM"
-    ${RegCleanMain} "Software\Mozilla"
-    ${RegCleanUninstall}
-    ${UpdateProtocolHandlers}
-    ${FixShellIconHandler} "HKLM"
-    ${SetAppLSPCategories} ${LSP_CATEGORIES}
-
-    ; Add the Firewall entries after an update
-    Call AddFirewallEntries
-
-    ReadRegStr $0 HKLM "Software\mozilla.org\Mozilla" "CurrentVersion"
-    ${If} "$0" != "${GREVersion}"
-      WriteRegStr HKLM "Software\mozilla.org\Mozilla" "CurrentVersion" "${GREVersion}"
-    ${EndIf}
+    Call PostUpdateElevated
   ${EndIf}
+
+  ${CreateShortcutsLog}
+
+  ; setup the application model id registration value
+  ${InitHashAppModelId} "$INSTDIR" "Software\Mozilla\${AppName}\TaskBarIDs"
+
+  ; Remove registry entries for non-existent apps and for apps that point to our
+  ; install location in the Software\Mozilla key and uninstall registry entries
+  ; that point to our install location.
+  ${RegCleanMain} "Software\Mozilla"
+  ${RegCleanUninstall}
+  ${UpdateProtocolHandlers}
 
   ${RemoveDeprecatedKeys}
   ${Set32to64DidMigrateReg}
@@ -358,21 +368,9 @@
 
   ; Update the name/icon/AppModelID of our shortcuts as needed, then update the
   ; lastwritetime of the Start Menu shortcut to clear the tile icon cache.
-  ; Do this for both shell contexts in case the user has shortcuts in multiple
-  ; locations, then restore the previous context at the end.
-  SetShellVarContext all
   ${UpdateShortcutsBranding}
   ${TouchStartMenuShortcut}
   Call FixShortcutAppModelIDs
-  SetShellVarContext current
-  ${UpdateShortcutsBranding}
-  ${TouchStartMenuShortcut}
-  Call FixShortcutAppModelIDs
-  ${If} $RegHive == "HKLM"
-    SetShellVarContext all
-  ${ElseIf} $RegHive == "HKCU"
-    SetShellVarContext current
-  ${EndIf}
 
   ; Remove files that may be left behind by the application in the
   ; VirtualStore directory.
@@ -412,6 +410,130 @@
   Pop $TmpVal ; get "Marker" or error msg
   ${If} $TmpVal != "Marker"
     Pop $TmpVal ; get "Marker"
+  ${EndIf}
+
+  ${WriteToastNotificationRegistration} $RegHive
+FunctionEnd
+
+; This function runs each update IF THE UPDATE REQUIRED THE UPDATER TO ELEVATE
+; ITSELF. It runs as the user who requested the update, and (if it runs) it is
+; guaranteed to run after PostUpdateInstallation.
+;
+; Avoid putting logic here, since it will only run on some installations. If
+; you do put logic here, check that it behaves correctly on per-user
+; installations.
+Function PostUpdateCurrentUser
+  ClearErrors
+  WriteRegStr HKLM "Software\Mozilla" "${BrandShortName}InstallerTest" "Write Test"
+  ${If} ${Errors}
+    SetShellVarContext current  ; Set SHCTX to the current user (e.g. HKCU)
+    StrCpy $RegHive "HKCU"
+    Call PostUpdateNonElevated
+  ${Else}
+    SetShellVarContext all    ; Set SHCTX to all users (e.g. HKLM)
+    DeleteRegValue HKLM "Software\Mozilla" "${BrandShortName}InstallerTest"
+    StrCpy $RegHive "HKLM"
+    Call PostUpdateElevated
+  ${EndIf}
+
+  ${CreateShortcutsLog}
+
+  ; setup the application model id registration value
+  ${InitHashAppModelId} "$INSTDIR" "Software\Mozilla\${AppName}\TaskBarIDs"
+
+  ; Remove registry entries for non-existent apps and for apps that point to our
+  ; install location in the Software\Mozilla key and uninstall registry entries
+  ; that point to our install location.
+  ${RegCleanMain} "Software\Mozilla"
+  ${RegCleanUninstall}
+  ${UpdateProtocolHandlers}
+
+  ${RemoveDeprecatedKeys}
+  ${Set32to64DidMigrateReg}
+
+  ${SetAppKeys}
+  ${FixClassKeys}
+  ${SetUninstallKeys}
+  ${If} $RegHive == "HKLM"
+    ${SetStartMenuInternet} HKLM
+  ${ElseIf} $RegHive == "HKCU"
+    ${SetStartMenuInternet} HKCU
+  ${EndIf}
+
+  !ifdef DESKTOP_LAUNCHER_ENABLED
+    Call OnUpdateDesktopLauncherHandler
+  !endif
+
+  ; Update the name/icon/AppModelID of our shortcuts as needed, then update the
+  ; lastwritetime of the Start Menu shortcut to clear the tile icon cache.
+  ${UpdateShortcutsBranding}
+  ${TouchStartMenuShortcut}
+  Call FixShortcutAppModelIDs
+
+  ; Remove files that may be left behind by the application in the
+  ; VirtualStore directory.
+  ${CleanVirtualStore}
+
+  ${RemoveDeprecatedFiles}
+
+  ; Fix the distribution.ini file if applicable
+  ${FixDistributionsINI}
+
+  ; https://bugzilla.mozilla.org/show_bug.cgi?id=1616355
+  ; Migrate postSigningData file if present, and if it doesn't already exist.
+  ${GetLocalAppDataFolder} $0
+  ${If} ${FileExists} "$INSTDIR\postSigningData"
+    ; If it already exists, just delete the appdata one.
+    ; It's possible this was for a different install, but it's impossible to
+    ; know for sure, so we may as well just get rid of it.
+    Delete /REBOOTOK "$0\Mozilla\Firefox\postSigningData"
+  ${Else}
+    ${If} ${FileExists} "$0\Mozilla\Firefox\postSigningData"
+      Rename "$0\Mozilla\Firefox\postSigningData" "$INSTDIR\postSigningData"
+    ${EndIf}
+  ${EndIf}
+
+  RmDir /r /REBOOTOK "$INSTDIR\${TO_BE_DELETED}"
+
+  ; Register AccessibleMarshal.dll with COM (this requires write access to HKLM)
+  ${RegisterAccessibleMarshal}
+
+  ; Record the Windows Error Reporting module
+  WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows\Windows Error Reporting\RuntimeExceptionHelperModules" "$INSTDIR\mozwer.dll" 0
+
+  ; Apply LPAC permissions to install directory.
+  Push "Marker"
+  AccessControl::GrantOnFile \
+    "$INSTDIR" "(${LpacFirefoxInstallFilesSid})" "GenericRead + GenericExecute"
+  Pop $TmpVal ; get "Marker" or error msg
+  ${If} $TmpVal != "Marker"
+    Pop $TmpVal ; get "Marker"
+  ${EndIf}
+
+  ${WriteToastNotificationRegistration} $RegHive
+FunctionEnd
+
+; This function runs each update with admin privileges, if possible.
+;
+; Avoid putting logic here, since it only affects systemwide installations.
+; Prefer PostUpdateInstallation if you don't need to access HKLM.
+;
+; It does not make sense to access HKCU here.
+Function PostUpdateElevated
+  ; RegHive=HKLM, ShellVarContext=all
+
+  ${RegCleanMain} "Software\Mozilla"
+  ${RegCleanUninstall}
+  ${UpdateProtocolHandlers}
+  ${FixShellIconHandler} "HKLM"
+  ${SetAppLSPCategories} ${LSP_CATEGORIES}
+
+  ; Add the Firewall entries after an update
+  Call AddFirewallEntries
+
+  ReadRegStr $0 HKLM "Software\mozilla.org\Mozilla" "CurrentVersion"
+  ${If} "$0" != "${GREVersion}"
+    WriteRegStr HKLM "Software\mozilla.org\Mozilla" "CurrentVersion" "${GREVersion}"
   ${EndIf}
 
 !ifdef MOZ_MAINTENANCE_SERVICE
@@ -458,22 +580,31 @@
     ${EndIf}
   ${EndIf}
 !endif
+FunctionEnd
+
+; This function runs each update as the user who requested the update.
+;
+; Avoid putting logic here, since it only affects the user who runs the
+; updater, which is essentially random. It also doesn't run if the updater is
+; run as admin. Use PostUpdateInstallation if at all possible.
+Function PostUpdateNonElevated
+  ; RegHive=HKCU, ShellVarContext=current
+  ${UpdateShortcutsBranding}
+  ${TouchStartMenuShortcut}
+  Call FixShortcutAppModelIDs
 
 !ifdef MOZ_LAUNCHER_PROCESS
   ${ResetLauncherProcessDefaults}
 !endif
 
-  ${WriteToastNotificationRegistration} $RegHive
-
-; Make sure the scheduled task registration for the default browser agent gets
-; updated, but only if we're not the instance of PostUpdate that was started
-; by the service, because this needs to run as the actual user. Also, don't do
-; that if the installer was told not to register the agent task at all.
-; XXXbytesized - This also needs to un-register any scheduled tasks for the WDBA
-;                that were registered using elevation, but currently it does
-;                not. See Bugs 1638509 and 1902719.
+  ; Make sure the scheduled task registration for the default browser agent gets
+  ; updated, but only if we're not the instance of PostUpdate that was started
+  ; by the service, because this needs to run as the actual user. Also, don't do
+  ; that if the installer was told not to register the agent task at all.
+  ; XXXbytesized - This also needs to un-register any scheduled tasks for the WDBA
+  ;                that were registered using elevation, but currently it does
+  ;                not. See Bugs 1638509 and 1902719.
 !ifdef MOZ_DEFAULT_BROWSER_AGENT
-${If} $RegHive == "HKCU"
   ClearErrors
   ReadRegDWORD $0 HKCU "Software\Mozilla\${AppName}\Installer\$AppUserModelID" \
                     "DidRegisterDefaultBrowserAgent"
@@ -481,12 +612,10 @@ ${If} $RegHive == "HKCU"
   ${OrIf} ${Errors}
     ExecWait '"$INSTDIR\default-browser-agent.exe" register-task $AppUserModelID'
   ${EndIf}
-${EndIf}
 !endif
 
-${RemoveDefaultBrowserAgentShortcut}
-!macroend
-!define PostUpdate "!insertmacro PostUpdate"
+  ${RemoveDefaultBrowserAgentShortcut}
+FunctionEnd
 
 Function OnUpdateDesktopLauncherHandler
   Push $0

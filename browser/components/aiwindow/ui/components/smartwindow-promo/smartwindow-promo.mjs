@@ -11,6 +11,7 @@ const SMARTWINDOW_PROMO_EVENTS = window.IS_STORYBOOK
   ? Object.freeze({
       PRIMARY: "SmartWindowPromo:PrimaryAction",
       CLOSE: "SmartWindowPromo:Close",
+      DISMISS: "SmartWindowPromo:Dismiss",
       IMPRESSION: "SmartWindowPromo:Impression",
     })
   : ChromeUtils.importESModule(
@@ -21,6 +22,7 @@ const SMARTWINDOW_PROMO_EVENTS = window.IS_STORYBOOK
  * Renders an asrouter-driven promotional message inside the AI window.
  * Receives a resolved message via the `message` property and dispatches
  * `SmartWindowPromo:PrimaryAction` / `SmartWindowPromo:Close` /
+ * `SmartWindowPromo:Dismiss` (moz-promo's built-in close button) /
  * `SmartWindowPromo:Impression` events.
  *
  * @property {object|null} message - Resolved promo content
@@ -80,9 +82,15 @@ export class SmartwindowPromo extends MozLitElement {
 
   #handlePrimary = () => this.#dispatch(SMARTWINDOW_PROMO_EVENTS.PRIMARY);
   #handleClose = () => this.#dispatch(SMARTWINDOW_PROMO_EVENTS.CLOSE);
+  #handleDismiss = event => {
+    // moz-promo removes itself on dismiss by default.
+    event.preventDefault();
+    this.#dispatch(SMARTWINDOW_PROMO_EVENTS.DISMISS);
+  };
 
   render() {
     const content = this.message ?? {};
+    const dismissable = content.dismissable ?? false;
     return html`
       <link
         rel="stylesheet"
@@ -96,6 +104,8 @@ export class SmartwindowPromo extends MozLitElement {
         imagealignment=${content.imageAlignment ?? "start"}
         imagewidth=${content.imageWidth ?? "small"}
         imagedisplay=${content.imageDisplay ?? "padded"}
+        ?dismissable=${dismissable}
+        @promo:user-dismissed=${this.#handleDismiss}
       >
         ${content.secondaryActionText
           ? html`<moz-button

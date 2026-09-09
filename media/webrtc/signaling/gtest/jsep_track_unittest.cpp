@@ -13,7 +13,6 @@
 #include "api/rtp_parameters.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "jsapi/DefaultCodecPreferences.h"
 #include "jsapi/RTCRtpTransceiver.h"
 #include "jsep/JsepTrack.h"
 #include "sdp/SdpHelper.h"
@@ -33,18 +32,18 @@ class JsepTrackTestBase : public ::testing::Test {
 };
 
 struct CodecOverrides {
-  bool addFecCodecs = false;
-  bool preferRed = false;
-  bool addDtmfCodec = false;
-  bool enableRemb = true;
-  bool enableTransportCC = true;
-  bool enableAudioTransportCC = true;
-  bool enableRtx = true;
+  bool mAddFecCodecs = false;
+  bool mPreferRed = false;
+  bool mAddDtmfCodec = false;
+  bool mEnableRemb = true;
+  bool mEnableTransportCC = true;
+  bool mEnableAudioTransportCC = true;
+  bool mEnableRtx = true;
   void ApplyToPrefs(MockJsepCodecPreferences& aPrefs) const {
-    aPrefs.mUseRemb = enableRemb;
-    aPrefs.mUseTransportCC = enableTransportCC;
-    aPrefs.mUseAudioTransportCC = enableAudioTransportCC;
-    aPrefs.mUseRtx = enableRtx;
+    aPrefs.mUseRemb = mEnableRemb;
+    aPrefs.mUseTransportCC = mEnableTransportCC;
+    aPrefs.mUseAudioTransportCC = mEnableAudioTransportCC;
+    aPrefs.mUseRtx = mEnableRtx;
   }
 };
 
@@ -73,98 +72,95 @@ class JsepTrackTest : public JsepTrackTestBase {
     }
   }
 
-  std::vector<UniquePtr<JsepCodecDescription>> MakeCodecs(
-      const CodecOverrides overrides) const {
+  nsTArray<UniquePtr<JsepCodecDescription>> MakeCodecs(
+      const CodecOverrides aOverrides) const {
     MockJsepCodecPreferences prefs;
-    overrides.ApplyToPrefs(prefs);
+    aOverrides.ApplyToPrefs(prefs);
 
-    prefs.mUseRemb = overrides.enableRemb;
-    prefs.mUseTransportCC = overrides.enableTransportCC;
     JsepCodecPreferences& prefsRef = prefs;
     std::cout << "CodecPrefrences: " << prefsRef << "\n";
-    std::vector<UniquePtr<JsepCodecDescription>> results;
-    results.emplace_back(JsepAudioCodecDescription::CreateDefaultOpus(prefs));
-    results.emplace_back(JsepAudioCodecDescription::CreateDefaultG722(prefs));
-    if (overrides.addDtmfCodec) {
-      results.emplace_back(
+    AutoTArray<UniquePtr<JsepCodecDescription>, 16> results;
+    results.EmplaceBack(JsepAudioCodecDescription::CreateDefaultOpus(prefs));
+    results.EmplaceBack(JsepAudioCodecDescription::CreateDefaultG722(prefs));
+    if (aOverrides.mAddDtmfCodec) {
+      results.EmplaceBack(
           JsepAudioCodecDescription::CreateDefaultTelephoneEvent());
     }
 
-    if (overrides.addFecCodecs && overrides.preferRed) {
-      results.emplace_back(JsepVideoCodecDescription::CreateDefaultRed(prefs));
+    if (aOverrides.mAddFecCodecs && aOverrides.mPreferRed) {
+      results.EmplaceBack(JsepVideoCodecDescription::CreateDefaultRed(prefs));
     }
-    results.emplace_back(JsepVideoCodecDescription::CreateDefaultVP8(prefs));
-    results.emplace_back(JsepVideoCodecDescription::CreateDefaultH264_1(prefs));
-    results.emplace_back(JsepVideoCodecDescription::CreateDefaultAV1(prefs));
+    results.EmplaceBack(JsepVideoCodecDescription::CreateDefaultVP8(prefs));
+    results.EmplaceBack(JsepVideoCodecDescription::CreateDefaultH264_1(prefs));
+    results.EmplaceBack(JsepVideoCodecDescription::CreateDefaultAV1(prefs));
 
-    if (overrides.addFecCodecs) {
-      if (!overrides.preferRed) {
-        results.emplace_back(
-            JsepVideoCodecDescription::CreateDefaultRed(prefs));
+    if (aOverrides.mAddFecCodecs) {
+      if (!aOverrides.mPreferRed) {
+        results.EmplaceBack(JsepVideoCodecDescription::CreateDefaultRed(prefs));
       }
-      results.emplace_back(
+      results.EmplaceBack(
           JsepVideoCodecDescription::CreateDefaultUlpFec(prefs));
     }
 
-    results.emplace_back(new JsepApplicationCodecDescription(
+    results.EmplaceBack(new JsepApplicationCodecDescription(
         "webrtc-datachannel", 256, 5999, 499));
 
-    return results;
+    return std::move(results);
   }
 
-  void Init(SdpMediaSection::MediaType type) {
+  void Init(SdpMediaSection::MediaType aType) {
     InitCodecs(CodecOverrides{});
-    InitTracks(type);
-    InitSdp(type);
+    InitTracks(aType);
+    InitSdp(aType);
   }
 
   struct SplitOverrides {
-    CodecOverrides offer = {};
-    CodecOverrides answer = {};
+    CodecOverrides mOffer = {};
+    CodecOverrides mAnswer = {};
   };
 
-  void InitCodecs(const CodecOverrides& overrides) {
-    mOffCodecs = MakeCodecs(overrides);
-    mAnsCodecs = MakeCodecs(overrides);
+  void InitCodecs(const CodecOverrides& aOverrides) {
+    mOffCodecs = MakeCodecs(aOverrides);
+    mAnsCodecs = MakeCodecs(aOverrides);
   }
-  void InitCodecs(const SplitOverrides& overrides) {
-    mOffCodecs = MakeCodecs(overrides.offer);
-    mAnsCodecs = MakeCodecs(overrides.answer);
+  void InitCodecs(const SplitOverrides& aOverrides) {
+    mOffCodecs = MakeCodecs(aOverrides.mOffer);
+    mAnsCodecs = MakeCodecs(aOverrides.mAnswer);
   }
 
-  void InitTracks(SdpMediaSection::MediaType type) {
-    mSendOff = JsepTrack(type, sdp::kSend);
-    if (type != SdpMediaSection::MediaType::kApplication) {
+  void InitTracks(SdpMediaSection::MediaType aType) {
+    mSendOff = JsepTrack(aType, sdp::kSend);
+    if (aType != SdpMediaSection::MediaType::kApplication) {
       mSendOff.UpdateStreamIds(std::vector<std::string>(1, "stream_id"));
     }
-    mRecvOff = JsepTrack(type, sdp::kRecv);
+    mRecvOff = JsepTrack(aType, sdp::kRecv);
     mSendOff.PopulateCodecs(mOffCodecs);
     mRecvOff.PopulateCodecs(mOffCodecs);
 
-    mSendAns = JsepTrack(type, sdp::kSend);
-    if (type != SdpMediaSection::MediaType::kApplication) {
+    mSendAns = JsepTrack(aType, sdp::kSend);
+    if (aType != SdpMediaSection::MediaType::kApplication) {
       mSendAns.UpdateStreamIds(std::vector<std::string>(1, "stream_id"));
     }
-    mRecvAns = JsepTrack(type, sdp::kRecv);
+    mRecvAns = JsepTrack(aType, sdp::kRecv);
     mSendAns.PopulateCodecs(mAnsCodecs);
     mRecvAns.PopulateCodecs(mAnsCodecs);
   }
 
-  void InitSdp(SdpMediaSection::MediaType type) {
+  void InitSdp(SdpMediaSection::MediaType aType) {
     std::vector<std::string> msids(1, "*");
     std::string error;
     SdpHelper helper(&error);
 
     mOffer.reset(new SipccSdp(SdpOrigin("", 0, 0, sdp::kIPv4, "")));
-    mOffer->AddMediaSection(type, SdpDirectionAttribute::kSendrecv, 0,
-                            SdpHelper::GetProtocolForMediaType(type),
+    mOffer->AddMediaSection(aType, SdpDirectionAttribute::kSendrecv, 0,
+                            SdpHelper::GetProtocolForMediaType(aType),
                             sdp::kIPv4, "0.0.0.0");
     // JsepTrack doesn't set msid-semantic
     helper.SetupMsidSemantic(msids, mOffer.get());
 
     mAnswer.reset(new SipccSdp(SdpOrigin("", 0, 0, sdp::kIPv4, "")));
-    mAnswer->AddMediaSection(type, SdpDirectionAttribute::kSendrecv, 0,
-                             SdpHelper::GetProtocolForMediaType(type),
+    mAnswer->AddMediaSection(aType, SdpDirectionAttribute::kSendrecv, 0,
+                             SdpHelper::GetProtocolForMediaType(aType),
                              sdp::kIPv4, "0.0.0.0");
     // JsepTrack doesn't set msid-semantic
     helper.SetupMsidSemantic(msids, mAnswer.get());
@@ -422,8 +418,8 @@ class JsepTrackTest : public JsepTrackTestBase {
   JsepTrack mRecvOff;
   JsepTrack mSendAns;
   JsepTrack mRecvAns;
-  std::vector<UniquePtr<JsepCodecDescription>> mOffCodecs;
-  std::vector<UniquePtr<JsepCodecDescription>> mAnsCodecs;
+  nsTArray<UniquePtr<JsepCodecDescription>> mOffCodecs;
+  nsTArray<UniquePtr<JsepCodecDescription>> mAnsCodecs;
   UniquePtr<Sdp> mOffer;
   UniquePtr<Sdp> mAnswer;
   SsrcGenerator mSsrcGenerator;
@@ -480,7 +476,7 @@ TEST_F(JsepTrackTest, CheckForAnsweringWithExtmapAllowMixedWhenNotOffered) {
 
 // Appends a sendrecv a=extmap entry to an msection.
 static void AddExtmap(SdpMediaSection& aMsection, uint16_t aId,
-                      const std::string& aUri,
+                      const nsACString& aUri,
                       const SdpDirectionAttribute::Direction aDir =
                           SdpDirectionAttribute::kSendrecv) {
   auto& attrs = aMsection.GetAttributeList();
@@ -503,7 +499,7 @@ TEST_F(JsepTrackTest, TwoByteExtIdKeptOnSendWhenExtmapAllowMixed) {
   GetOffer().GetAttributeList().SetAttribute(
       MakeUnique<SdpFlagAttribute>(SdpAttribute::kExtmapAllowMixedAttribute));
   CreateAnswer();
-  const std::string uri = "urn:ietf:params:rtp-hdrext:toffset";
+  const nsLiteralCString uri = "urn:ietf:params:rtp-hdrext:toffset"_ns;
   AddExtmap(GetAnswer(), 15, uri);
   Negotiate();
   ASSERT_TRUE(mSendAns.GetNegotiatedDetails());
@@ -518,7 +514,7 @@ TEST_F(JsepTrackTest, TwoByteExtIdDroppedFromSendWithoutExtmapAllowMixed) {
   GetOffer().GetAttributeList().RemoveAttribute(
       SdpAttribute::kExtmapAllowMixedAttribute);
   CreateAnswer();
-  const std::string uri = "urn:ietf:params:rtp-hdrext:toffset";
+  const nsLiteralCString uri = "urn:ietf:params:rtp-hdrext:toffset"_ns;
   AddExtmap(GetAnswer(), 15, uri);
   Negotiate();
   ASSERT_TRUE(mSendAns.GetNegotiatedDetails());
@@ -537,7 +533,7 @@ TEST_F(JsepTrackTest,
   GetOffer().GetAttributeList().RemoveAttribute(
       SdpAttribute::kExtmapAllowMixedAttribute);
   CreateAnswer();
-  const std::string uri = webrtc::RtpExtension::kDependencyDescriptorUri;
+  const nsLiteralCString uri(webrtc::RtpExtension::kDependencyDescriptorUri);
   AddExtmap(GetAnswer(), 5, uri);
   Negotiate();
   ASSERT_TRUE(mSendAns.GetNegotiatedDetails());
@@ -545,10 +541,9 @@ TEST_F(JsepTrackTest,
 }
 
 TEST_F(JsepTrackTest, CheckForMismatchedAudioCodecAndVideoTrack) {
-  std::vector<UniquePtr<JsepCodecDescription>> offerCodecs;
-
   // make codecs including telephone-event (an audio codec)
-  offerCodecs = MakeCodecs({.addDtmfCodec = true});
+  const nsTArray<UniquePtr<JsepCodecDescription>> offerCodecs =
+      MakeCodecs({.mAddDtmfCodec = true});
   JsepTrack videoTrack(SdpMediaSection::kVideo, sdp::kSend);
   videoTrack.UpdateStreamIds(std::vector<std::string>(1, "stream_id"));
   // populate codecs and then make sure we don't have any audio codecs
@@ -607,7 +602,7 @@ TEST_F(JsepTrackTest, CheckVideoTrackWithHackedDtmfSdp) {
 
 TEST_F(JsepTrackTest, AudioNegotiationOffererDtmf) {
   InitCodecs(
-      {.offer = {.addDtmfCodec = true}, .answer = {.addDtmfCodec = false}});
+      {.mOffer = {.mAddDtmfCodec = true}, .mAnswer = {.mAddDtmfCodec = false}});
 
   InitTracks(SdpMediaSection::kAudio);
   InitSdp(SdpMediaSection::kAudio);
@@ -645,7 +640,7 @@ TEST_F(JsepTrackTest, AudioNegotiationOffererDtmf) {
 
 TEST_F(JsepTrackTest, AudioNegotiationAnswererDtmf) {
   InitCodecs(
-      {.offer = {.addDtmfCodec = false}, .answer = {.addDtmfCodec = true}});
+      {.mOffer = {.mAddDtmfCodec = false}, .mAnswer = {.mAddDtmfCodec = true}});
 
   InitTracks(SdpMediaSection::kAudio);
   InitSdp(SdpMediaSection::kAudio);
@@ -683,7 +678,7 @@ TEST_F(JsepTrackTest, AudioNegotiationAnswererDtmf) {
 
 TEST_F(JsepTrackTest, AudioNegotiationOffererAnswererDtmf) {
   InitCodecs(
-      {.offer = {.addDtmfCodec = true}, .answer = {.addDtmfCodec = true}});
+      {.mOffer = {.mAddDtmfCodec = true}, .mAnswer = {.mAddDtmfCodec = true}});
 
   InitTracks(SdpMediaSection::kAudio);
   InitSdp(SdpMediaSection::kAudio);
@@ -729,7 +724,7 @@ TEST_F(JsepTrackTest, AudioNegotiationOffererAnswererDtmf) {
 
 TEST_F(JsepTrackTest, AudioNegotiationDtmfOffererNoFmtpAnswererFmtp) {
   InitCodecs(
-      {.offer = {.addDtmfCodec = true}, .answer = {.addDtmfCodec = true}});
+      {.mOffer = {.mAddDtmfCodec = true}, .mAnswer = {.mAddDtmfCodec = true}});
 
   mExpectDifferingFmtp = true;
 
@@ -788,7 +783,7 @@ TEST_F(JsepTrackTest, AudioNegotiationDtmfOffererNoFmtpAnswererFmtp) {
 
 TEST_F(JsepTrackTest, AudioNegotiationDtmfOffererFmtpAnswererNoFmtp) {
   InitCodecs(
-      {.offer = {.addDtmfCodec = true}, .answer = {.addDtmfCodec = true}});
+      {.mOffer = {.mAddDtmfCodec = true}, .mAnswer = {.mAddDtmfCodec = true}});
 
   mExpectDifferingFmtp = true;
 
@@ -847,7 +842,7 @@ TEST_F(JsepTrackTest, AudioNegotiationDtmfOffererFmtpAnswererNoFmtp) {
 
 TEST_F(JsepTrackTest, AudioNegotiationDtmfOffererNoFmtpAnswererNoFmtp) {
   InitCodecs(
-      {.offer = {.addDtmfCodec = true}, .answer = {.addDtmfCodec = true}});
+      {.mOffer = {.mAddDtmfCodec = true}, .mAnswer = {.mAddDtmfCodec = true}});
 
   mExpectDifferingFmtp = true;
 
@@ -907,7 +902,7 @@ TEST_F(JsepTrackTest, AudioNegotiationDtmfOffererNoFmtpAnswererNoFmtp) {
 
 TEST_F(JsepTrackTest, VideoNegotationOffererFEC) {
   InitCodecs(
-      {.offer = {.addFecCodecs = true}, .answer = {.addFecCodecs = false}});
+      {.mOffer = {.mAddFecCodecs = true}, .mAnswer = {.mAddFecCodecs = false}});
 
   InitTracks(SdpMediaSection::kVideo);
   InitSdp(SdpMediaSection::kVideo);
@@ -942,7 +937,7 @@ TEST_F(JsepTrackTest, VideoNegotationOffererFEC) {
 
 TEST_F(JsepTrackTest, VideoNegotationAnswererFEC) {
   InitCodecs(
-      {.offer = {.addFecCodecs = false}, .answer = {.addFecCodecs = true}});
+      {.mOffer = {.mAddFecCodecs = false}, .mAnswer = {.mAddFecCodecs = true}});
 
   InitTracks(SdpMediaSection::kVideo);
   InitSdp(SdpMediaSection::kVideo);
@@ -977,7 +972,7 @@ TEST_F(JsepTrackTest, VideoNegotationAnswererFEC) {
 
 TEST_F(JsepTrackTest, VideoNegotationOffererAnswererFEC) {
   InitCodecs(
-      {.offer = {.addFecCodecs = true}, .answer = {.addFecCodecs = true}});
+      {.mOffer = {.mAddFecCodecs = true}, .mAnswer = {.mAddFecCodecs = true}});
 
   InitTracks(SdpMediaSection::kVideo);
   InitSdp(SdpMediaSection::kVideo);
@@ -1003,8 +998,8 @@ TEST_F(JsepTrackTest, VideoNegotationOffererAnswererFEC) {
 }
 
 TEST_F(JsepTrackTest, VideoNegotationOffererAnswererFECPreferred) {
-  InitCodecs({.offer = {.addFecCodecs = true, .preferRed = true},
-              .answer = {.addFecCodecs = true}});
+  InitCodecs({.mOffer = {.mAddFecCodecs = true, .mPreferRed = true},
+              .mAnswer = {.mAddFecCodecs = true}});
 
   InitTracks(SdpMediaSection::kVideo);
   InitSdp(SdpMediaSection::kVideo);
@@ -1033,13 +1028,12 @@ TEST_F(JsepTrackTest, VideoNegotationOffererAnswererFECPreferred) {
 
 // Make sure we only put the right things in the fmtp:122 120/.... line
 TEST_F(JsepTrackTest, VideoNegotationOffererAnswererFECMismatch) {
-  InitCodecs({.offer = {.addFecCodecs = true, .preferRed = true},
-              .answer = {.addFecCodecs = true}});
+  InitCodecs({.mOffer = {.mAddFecCodecs = true, .mPreferRed = true},
+              .mAnswer = {.mAddFecCodecs = true}});
   // remove h264 & AV1 from answer codecs
-  ASSERT_EQ("H264", mAnsCodecs[3]->mName);
-  ASSERT_EQ("AV1", mAnsCodecs[4]->mName);
-  mAnsCodecs.erase(mAnsCodecs.begin() + 4);
-  mAnsCodecs.erase(mAnsCodecs.begin() + 3);
+  mAnsCodecs.RemoveElementsBy([](const auto& aCodec) {
+    return aCodec->mName == "H264" || aCodec->mName == "AV1";
+  });
 
   InitTracks(SdpMediaSection::kVideo);
   InitSdp(SdpMediaSection::kVideo);
@@ -1068,17 +1062,17 @@ TEST_F(JsepTrackTest, VideoNegotationOffererAnswererFECMismatch) {
 
 TEST_F(JsepTrackTest, VideoNegotationOffererAnswererFECZeroVP9Codec) {
   MockJsepCodecPreferences prefs;
-  mOffCodecs = MakeCodecs({.addFecCodecs = true});
+  mOffCodecs = MakeCodecs({.mAddFecCodecs = true});
   auto vp9 = JsepVideoCodecDescription::CreateDefaultVP9(prefs);
   vp9->mDefaultPt = "0";
-  mOffCodecs.push_back(std::move(vp9));
+  mOffCodecs.AppendElement(std::move(vp9));
 
-  ASSERT_EQ(9U, mOffCodecs.size());
+  ASSERT_EQ(9U, mOffCodecs.Length());
   JsepVideoCodecDescription& red =
       static_cast<JsepVideoCodecDescription&>(*mOffCodecs[5]);
   ASSERT_EQ("red", red.mName);
 
-  mAnsCodecs = MakeCodecs({.addFecCodecs = true});
+  mAnsCodecs = MakeCodecs({.mAddFecCodecs = true});
 
   InitTracks(SdpMediaSection::kVideo);
   InitSdp(SdpMediaSection::kVideo);
@@ -1095,8 +1089,8 @@ TEST_F(JsepTrackTest, VideoNegotationOffererAnswererFECZeroVP9Codec) {
 
 TEST_F(JsepTrackTest, VideoNegotiationOfferRemb) {
   // enable remb on the offer codecs
-  InitCodecs({.offer = {.enableRemb = true, .enableTransportCC = false},
-              .answer = {.enableRemb = false, .enableTransportCC = false}});
+  InitCodecs({.mOffer = {.mEnableRemb = true, .mEnableTransportCC = false},
+              .mAnswer = {.mEnableRemb = false, .mEnableTransportCC = false}});
   InitTracks(SdpMediaSection::kVideo);
   InitSdp(SdpMediaSection::kVideo);
   OfferAnswer();
@@ -1122,8 +1116,8 @@ TEST_F(JsepTrackTest, VideoNegotiationOfferRemb) {
 }
 
 TEST_F(JsepTrackTest, VideoNegotiationAnswerRemb) {
-  InitCodecs({.offer = {.enableRemb = false, .enableTransportCC = false},
-              .answer = {.enableRemb = true, .enableTransportCC = false}});
+  InitCodecs({.mOffer = {.mEnableRemb = false, .mEnableTransportCC = false},
+              .mAnswer = {.mEnableRemb = true, .mEnableTransportCC = false}});
   // enable remb on the answer codecs
   ((JsepVideoCodecDescription&)*mAnsCodecs[2]).EnableRemb();
   InitTracks(SdpMediaSection::kVideo);
@@ -1150,8 +1144,8 @@ TEST_F(JsepTrackTest, VideoNegotiationAnswerRemb) {
 }
 
 TEST_F(JsepTrackTest, VideoNegotiationOfferAnswerRemb) {
-  InitCodecs({.offer = {.enableRemb = true, .enableTransportCC = false},
-              .answer = {.enableRemb = true, .enableTransportCC = false}});
+  InitCodecs({.mOffer = {.mEnableRemb = true, .mEnableTransportCC = false},
+              .mAnswer = {.mEnableRemb = true, .mEnableTransportCC = false}});
   // enable remb on the offer and answer codecs
   ((JsepVideoCodecDescription&)*mOffCodecs[2]).EnableRemb();
   ((JsepVideoCodecDescription&)*mAnsCodecs[2]).EnableRemb();
@@ -1183,7 +1177,7 @@ TEST_F(JsepTrackTest, VideoNegotiationOfferAnswerRemb) {
 }
 
 TEST_F(JsepTrackTest, AudioNegotiationOfferTransportCC) {
-  InitCodecs({.enableAudioTransportCC = false});
+  InitCodecs({.mEnableAudioTransportCC = false});
   // enable TransportCC on the offer codecs
   ((JsepAudioCodecDescription&)*mOffCodecs[0]).EnableTransportCC();
   InitTracks(SdpMediaSection::kAudio);
@@ -1210,7 +1204,7 @@ TEST_F(JsepTrackTest, AudioNegotiationOfferTransportCC) {
 }
 
 TEST_F(JsepTrackTest, AudioNegotiationAnswerTransportCC) {
-  InitCodecs({.enableAudioTransportCC = false});
+  InitCodecs({.mEnableAudioTransportCC = false});
   // enable TransportCC on the answer codecs
   ((JsepAudioCodecDescription&)*mAnsCodecs[0]).EnableTransportCC();
   InitTracks(SdpMediaSection::kAudio);
@@ -1237,7 +1231,7 @@ TEST_F(JsepTrackTest, AudioNegotiationAnswerTransportCC) {
 }
 
 TEST_F(JsepTrackTest, AudioNegotiationOfferAnswerTransportCC) {
-  InitCodecs({.enableAudioTransportCC = false});
+  InitCodecs({.mEnableAudioTransportCC = false});
   // enable TransportCC on the offer and answer codecs
   ((JsepAudioCodecDescription&)*mOffCodecs[0]).EnableTransportCC();
   ((JsepAudioCodecDescription&)*mAnsCodecs[0]).EnableTransportCC();
@@ -1273,7 +1267,7 @@ TEST_F(JsepTrackTest, AudioNegotiationOfferAnswerTransportCC) {
 }
 
 TEST_F(JsepTrackTest, AudioTransportCCFbSetUnsetWhenAnswerRejects) {
-  InitCodecs({.enableAudioTransportCC = false});
+  InitCodecs({.mEnableAudioTransportCC = false});
   // Offer enables TransportCC, answer does not. After negotiation TC is
   // dropped; AudioCodecConfig::mTransportCCFbSet must reflect that even though
   // JsepAudioCodecDescription::mTransportCCEnabled stays true on the offerer.
@@ -1322,8 +1316,8 @@ TEST_F(JsepTrackTest, AudioTransportCCFbSetWhenBothSidesNegotiate) {
 }
 
 TEST_F(JsepTrackTest, VideoNegotiationOfferTransportCC) {
-  InitCodecs({.offer = {.enableRemb = false, .enableTransportCC = true},
-              .answer = {.enableRemb = false, .enableTransportCC = false}});
+  InitCodecs({.mOffer = {.mEnableRemb = false, .mEnableTransportCC = true},
+              .mAnswer = {.mEnableRemb = false, .mEnableTransportCC = false}});
   // enable TransportCC on the offer codecs
   ((JsepVideoCodecDescription&)*mOffCodecs[2]).EnableTransportCC();
   InitTracks(SdpMediaSection::kVideo);
@@ -1350,8 +1344,8 @@ TEST_F(JsepTrackTest, VideoNegotiationOfferTransportCC) {
 }
 
 TEST_F(JsepTrackTest, VideoNegotiationAnswerTransportCC) {
-  InitCodecs({.offer = {.enableRemb = false, .enableTransportCC = false},
-              .answer = {.enableRemb = false, .enableTransportCC = true}});
+  InitCodecs({.mOffer = {.mEnableRemb = false, .mEnableTransportCC = false},
+              .mAnswer = {.mEnableRemb = false, .mEnableTransportCC = true}});
   // enable TransportCC on the answer codecs
   ((JsepVideoCodecDescription&)*mAnsCodecs[2]).EnableTransportCC();
   InitTracks(SdpMediaSection::kVideo);
@@ -1378,7 +1372,7 @@ TEST_F(JsepTrackTest, VideoNegotiationAnswerTransportCC) {
 }
 
 TEST_F(JsepTrackTest, VideoNegotiationOfferAnswerTransportCC) {
-  InitCodecs({.enableRemb = false, .enableTransportCC = true});
+  InitCodecs({.mEnableRemb = false, .mEnableTransportCC = true});
   // enable TransportCC on the offer and answer codecs
   ((JsepVideoCodecDescription&)*mOffCodecs[2]).EnableTransportCC();
   ((JsepVideoCodecDescription&)*mAnsCodecs[2]).EnableTransportCC();
@@ -1526,9 +1520,8 @@ TEST_F(JsepTrackTest, DataChannelDraft21) {
 TEST_F(JsepTrackTest, DataChannelDraft21AnswerWithDifferentPort) {
   InitCodecs(CodecOverrides{});
 
-  mOffCodecs.pop_back();
-  mOffCodecs.emplace_back(new JsepApplicationCodecDescription(
-      "webrtc-datachannel", 256, 4555, 10544));
+  mOffCodecs.LastElement() = MakeUnique<JsepApplicationCodecDescription>(
+      "webrtc-datachannel", 256, 4555, 10544);
 
   InitTracks(SdpMediaSection::kApplication);
   InitSdp(SdpMediaSection::kApplication);
@@ -1803,8 +1796,8 @@ TEST_F(JsepTrackTest, RtcpFbWithPayloadTypeAsymmetry) {
 }
 
 TEST_F(JsepTrackTest, OfferRedUlpfecNoRtx) {
-  InitCodecs({.offer = {.addFecCodecs = true, .enableRtx = false},
-              .answer = {.addFecCodecs = true, .enableRtx = true}});
+  InitCodecs({.mOffer = {.mAddFecCodecs = true, .mEnableRtx = false},
+              .mAnswer = {.mAddFecCodecs = true, .mEnableRtx = true}});
   InitTracks(SdpMediaSection::kVideo);
   InitSdp(SdpMediaSection::kVideo);
   OfferAnswer();
@@ -1834,8 +1827,8 @@ TEST_F(JsepTrackTest, OfferRedUlpfecNoRtx) {
 }
 
 TEST_F(JsepTrackTest, AnswerRedUlpfecNoRtx) {
-  InitCodecs({.offer = {.addFecCodecs = true, .enableRtx = true},
-              .answer = {.addFecCodecs = true, .enableRtx = false}});
+  InitCodecs({.mOffer = {.mAddFecCodecs = true, .mEnableRtx = true},
+              .mAnswer = {.mAddFecCodecs = true, .mEnableRtx = false}});
   InitTracks(SdpMediaSection::kVideo);
   InitSdp(SdpMediaSection::kVideo);
   OfferAnswer();
@@ -1872,9 +1865,9 @@ TEST_F(JsepTrackTest, AnswerRedUlpfecNoRtx) {
 
 TEST_F(JsepTrackTest, AudioSdpFmtpLine) {
   mOffCodecs = MakeCodecs(
-      {.addFecCodecs = true, .preferRed = true, .addDtmfCodec = true});
+      {.mAddFecCodecs = true, .mPreferRed = true, .mAddDtmfCodec = true});
   mAnsCodecs = MakeCodecs(
-      {.addFecCodecs = true, .preferRed = true, .addDtmfCodec = true});
+      {.mAddFecCodecs = true, .mPreferRed = true, .mAddDtmfCodec = true});
   InitTracks(SdpMediaSection::kAudio);
   InitSdp(SdpMediaSection::kAudio);
   OfferAnswer();
@@ -1908,9 +1901,9 @@ TEST_F(JsepTrackTest, AudioSdpFmtpLine) {
 
 TEST_F(JsepTrackTest, NonDefaultAudioSdpFmtpLine) {
   mOffCodecs = MakeCodecs(
-      {.addFecCodecs = true, .preferRed = true, .addDtmfCodec = true});
+      {.mAddFecCodecs = true, .mPreferRed = true, .mAddDtmfCodec = true});
   mAnsCodecs = MakeCodecs(
-      {.addFecCodecs = true, .preferRed = true, .addDtmfCodec = true});
+      {.mAddFecCodecs = true, .mPreferRed = true, .mAddDtmfCodec = true});
 
   for (auto& codec : mOffCodecs) {
     if (codec->mName == "opus") {
@@ -2009,9 +2002,9 @@ TEST_F(JsepTrackTest, OpusPtimeNegotiatedFromRemoteFmtp) {
 
 TEST_F(JsepTrackTest, VideoSdpFmtpLine) {
   mOffCodecs = MakeCodecs(
-      {.addFecCodecs = true, .preferRed = true, .addDtmfCodec = true});
+      {.mAddFecCodecs = true, .mPreferRed = true, .mAddDtmfCodec = true});
   mAnsCodecs = MakeCodecs(
-      {.addFecCodecs = true, .preferRed = true, .addDtmfCodec = true});
+      {.mAddFecCodecs = true, .mPreferRed = true, .mAddDtmfCodec = true});
   InitTracks(SdpMediaSection::kVideo);
   InitSdp(SdpMediaSection::kVideo);
   OfferAnswer();
@@ -2054,9 +2047,9 @@ TEST_F(JsepTrackTest, VideoSdpFmtpLine) {
 
 TEST_F(JsepTrackTest, NonDefaultVideoSdpFmtpLine) {
   mOffCodecs = MakeCodecs(
-      {.addFecCodecs = true, .preferRed = true, .addDtmfCodec = true});
+      {.mAddFecCodecs = true, .mPreferRed = true, .mAddDtmfCodec = true});
   mAnsCodecs = MakeCodecs(
-      {.addFecCodecs = true, .preferRed = true, .addDtmfCodec = true});
+      {.mAddFecCodecs = true, .mPreferRed = true, .mAddDtmfCodec = true});
 
   for (auto& codec : mOffCodecs) {
     if (codec->mName == "VP8" || codec->mName == "H264") {
@@ -2136,8 +2129,8 @@ TEST(JsepTrackRecvPayloadTypesTest, SingleTrackPTsAreUnique)
 {
   constexpr auto audio = SdpMediaSection::MediaType::kAudio;
 
-  std::vector<UniquePtr<JsepCodecDescription>> codecs;
-  codecs.emplace_back(
+  AutoTArray<UniquePtr<JsepCodecDescription>, 16> codecs;
+  codecs.AppendElement(
       MakeUnique<JsepAudioCodecDescription>("1", "codec1", 48000, 1));
 
   SipccSdp offer1(SdpOrigin("", 0, 0, sdp::kIPv4, ""));
@@ -2176,12 +2169,10 @@ TEST(JsepTrackRecvPayloadTypesTest, DoubleTrackPTsAreUnique)
 {
   constexpr auto audio = SdpMediaSection::MediaType::kAudio;
 
-  std::vector<UniquePtr<JsepCodecDescription>> codecs1;
-  codecs1.emplace_back(
+  AutoTArray<UniquePtr<JsepCodecDescription>, 16> codecs1, codecs2;
+  codecs1.AppendElement(
       MakeUnique<JsepAudioCodecDescription>("1", "codec1", 48000, 1));
-
-  std::vector<UniquePtr<JsepCodecDescription>> codecs2;
-  codecs2.emplace_back(
+  codecs2.AppendElement(
       MakeUnique<JsepAudioCodecDescription>("2", "codec1", 48000, 1));
 
   SipccSdp offer1(SdpOrigin("", 0, 0, sdp::kIPv4, ""));
@@ -2244,12 +2235,10 @@ TEST(JsepTrackRecvPayloadTypesTest, DoubleTrackPTsAreDuplicates)
 {
   constexpr auto audio = SdpMediaSection::MediaType::kAudio;
 
-  std::vector<UniquePtr<JsepCodecDescription>> codecs1;
-  codecs1.emplace_back(
+  AutoTArray<UniquePtr<JsepCodecDescription>, 16> codecs1, codecs2;
+  codecs1.AppendElement(
       MakeUnique<JsepAudioCodecDescription>("1", "codec1", 48000, 1));
-
-  std::vector<UniquePtr<JsepCodecDescription>> codecs2;
-  codecs2.emplace_back(
+  codecs2.AppendElement(
       MakeUnique<JsepAudioCodecDescription>("1", "codec1", 48000, 1));
 
   SipccSdp offer1(SdpOrigin("", 0, 0, sdp::kIPv4, ""));
@@ -2311,16 +2300,15 @@ TEST(JsepTrackRecvPayloadTypesTest, DoubleTrackPTsOverlap)
 {
   constexpr auto audio = SdpMediaSection::MediaType::kAudio;
 
-  std::vector<UniquePtr<JsepCodecDescription>> codecs1;
-  codecs1.emplace_back(
+  AutoTArray<UniquePtr<JsepCodecDescription>, 16> codecs1, codecs2;
+  codecs1.AppendElement(
       MakeUnique<JsepAudioCodecDescription>("1", "codec1", 48000, 1));
-  codecs1.emplace_back(
+  codecs1.AppendElement(
       MakeUnique<JsepAudioCodecDescription>("2", "codec2", 48000, 1));
 
-  std::vector<UniquePtr<JsepCodecDescription>> codecs2;
-  codecs2.emplace_back(
+  codecs2.AppendElement(
       MakeUnique<JsepAudioCodecDescription>("1", "codec1", 48000, 1));
-  codecs2.emplace_back(
+  codecs2.AppendElement(
       MakeUnique<JsepAudioCodecDescription>("3", "codec2", 48000, 1));
 
   SipccSdp offer1(SdpOrigin("", 0, 0, sdp::kIPv4, ""));
@@ -2383,16 +2371,15 @@ TEST(JsepTrackRecvPayloadTypesTest, DoubleTrackPTsDuplicateAfterRenegotiation)
 {
   constexpr auto audio = SdpMediaSection::MediaType::kAudio;
 
-  std::vector<UniquePtr<JsepCodecDescription>> codecs1;
-  codecs1.emplace_back(
+  AutoTArray<UniquePtr<JsepCodecDescription>, 16> codecs1, codecs2;
+  codecs1.AppendElement(
       MakeUnique<JsepAudioCodecDescription>("1", "codec1", 48000, 1));
-  codecs1.emplace_back(
+  codecs1.AppendElement(
       MakeUnique<JsepAudioCodecDescription>("2", "codec2", 48000, 1));
 
-  std::vector<UniquePtr<JsepCodecDescription>> codecs2;
-  codecs2.emplace_back(
+  codecs2.AppendElement(
       MakeUnique<JsepAudioCodecDescription>("3", "codec1", 48000, 1));
-  codecs2.emplace_back(
+  codecs2.AppendElement(
       MakeUnique<JsepAudioCodecDescription>("4", "codec2", 48000, 1));
 
   // First negotiation.

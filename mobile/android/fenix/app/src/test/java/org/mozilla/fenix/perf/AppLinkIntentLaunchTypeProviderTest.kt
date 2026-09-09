@@ -103,5 +103,6 @@ class AppLinkIntentLaunchTypeProviderTest {
     }
 
     private class TestActivity : Activity()
+
     private class OtherActivity : Activity()
 }

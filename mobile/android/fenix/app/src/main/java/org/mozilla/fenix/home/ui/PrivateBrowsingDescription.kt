@@ -29,11 +29,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.LinkText
 import mozilla.components.compose.base.LinkTextState
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_PRIVATE_BROWSING_LEARN_MORE_LINK
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Private Browsing Mode description.
@@ -41,14 +41,10 @@ import mozilla.components.ui.icons.R as iconsR
  * @param onLearnMoreClick Invoked when the user clicks on the learn more link.
  */
 @Composable
-fun PrivateBrowsingDescription(
-    onLearnMoreClick: () -> Unit,
-) {
+fun PrivateBrowsingDescription(onLearnMoreClick: () -> Unit) {
     Surface {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Image(
@@ -69,29 +65,32 @@ fun PrivateBrowsingDescription(
                 )
 
                 Text(
-                    text = stringResource(
-                        id = R.string.felt_privacy_info_card_subtitle_3,
-                        stringResource(id = R.string.app_name),
-                    ),
+                    text =
+                        stringResource(
+                            id = R.string.felt_privacy_info_card_subtitle_3,
+                            stringResource(id = R.string.app_name),
+                        ),
                     textAlign = TextAlign.Center,
                     style = FirefoxTheme.typography.subtitle1,
                 )
 
                 Box(
-                    modifier = Modifier.semantics {
-                        testTagsAsResourceId = true
-                        testTag = HOMEPAGE_PRIVATE_BROWSING_LEARN_MORE_LINK
-                    },
+                    modifier =
+                        Modifier.semantics {
+                            testTagsAsResourceId = true
+                            testTag = HOMEPAGE_PRIVATE_BROWSING_LEARN_MORE_LINK
+                        }
                 ) {
                     LinkText(
                         text = stringResource(id = R.string.felt_privacy_info_card_subtitle_link_text),
-                        linkTextStates = listOf(
-                            LinkTextState(
-                                text = stringResource(id = R.string.felt_privacy_info_card_subtitle_link_text),
-                                url = "",
-                                onClick = { onLearnMoreClick() },
+                        linkTextStates =
+                            listOf(
+                                LinkTextState(
+                                    text = stringResource(id = R.string.felt_privacy_info_card_subtitle_link_text),
+                                    url = "",
+                                    onClick = { onLearnMoreClick() },
+                                )
                             ),
-                        ),
                         style = FirefoxTheme.typography.subtitle1,
                         linkTextColor = MaterialTheme.colorScheme.onSurface,
                         linkTextDecoration = TextDecoration.Underline,
@@ -108,9 +107,7 @@ fun PrivateBrowsingDescription(
 private fun PrivacyBrowsingDescriptionPreview() {
     FirefoxTheme(theme = Theme.Private) {
         Surface {
-            PrivateBrowsingDescription(
-                onLearnMoreClick = {},
-            )
+            PrivateBrowsingDescription(onLearnMoreClick = {})
         }
     }
 }

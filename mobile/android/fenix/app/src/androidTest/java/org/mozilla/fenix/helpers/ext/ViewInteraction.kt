@@ -30,11 +30,11 @@ fun ViewInteraction.assertIsSelected(isSelected: Boolean): ViewInteraction {
 }
 
 /**
- * Perform a click (simulate the finger touching the View) at a specific location in the View
- * rather than the default middle of the View.
+ * Perform a click (simulate the finger touching the View) at a specific location in the View rather than the default
+ * middle of the View.
  *
- * Useful in situations where the View we want clicked contains other Views in it's x,y middle
- * and we need to simulate the touch in some other free space of the View we want clicked.
+ * Useful in situations where the View we want clicked contains other Views in it's x,y middle and we need to simulate
+ * the touch in some other free space of the View we want clicked.
  */
 fun ViewInteraction.clickAtLocationInView(locationInView: GeneralLocation): ViewAction =
     ViewActions.actionWithAssertions(
@@ -44,5 +44,5 @@ fun ViewInteraction.clickAtLocationInView(locationInView: GeneralLocation): View
             Press.FINGER,
             InputDevice.SOURCE_UNKNOWN,
             MotionEvent.BUTTON_PRIMARY,
-        ),
+        )
     )

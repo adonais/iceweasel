@@ -4,6 +4,7 @@
 
 package mozilla.components.browser.state.action
 
+import kotlin.test.assertNotNull
 import mozilla.components.browser.state.reducer.BrowserStateReducer
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.state.BrowserState
@@ -32,7 +33,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertNotNull
 
 class TranslationsActionTest {
     private lateinit var tab: TabSessionState
@@ -42,9 +42,7 @@ class TranslationsActionTest {
     fun setUp() {
         tab = createTab("https://www.mozilla.org")
 
-        state = BrowserState(
-            tabs = listOf(tab),
-        )
+        state = BrowserState(tabs = listOf(tab))
     }
 
     private fun tabState(): TabSessionState = state.findTab(tab.id)!!
@@ -53,10 +51,11 @@ class TranslationsActionTest {
     fun `WHEN a TranslateExpectedAction is dispatched THEN update translation expected status`() {
         assertEquals(false, tabState().translationsState.isExpectedTranslate)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateExpectedAction(tabId = tab.id),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateExpectedAction(tabId = tab.id),
+            )
 
         assertEquals(true, tabState().translationsState.isExpectedTranslate)
     }
@@ -65,17 +64,19 @@ class TranslationsActionTest {
     fun `WHEN a TranslateOfferAction is dispatched THEN update translation expected status`() {
         assertEquals(false, tabState().translationsState.isOfferTranslate)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateOfferAction(tabId = tab.id, isOfferTranslate = true),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateOfferAction(tabId = tab.id, isOfferTranslate = true),
+            )
 
         assertEquals(true, tabState().translationsState.isOfferTranslate)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateOfferAction(tabId = tab.id, isOfferTranslate = false),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateOfferAction(tabId = tab.id, isOfferTranslate = false),
+            )
 
         assertFalse(tabState().translationsState.isOfferTranslate)
     }
@@ -84,10 +85,11 @@ class TranslationsActionTest {
     fun `WHEN a TranslateStateChangeAction is dispatched THEN update translation expected status`() {
         assertEquals(null, tabState().translationsState.translationEngineState)
 
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateStateChangeAction(tabId = tab.id, mock()),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateStateChangeAction(tabId = tab.id, mock()),
+            )
 
         assertEquals(true, tabState().translationsState.translationEngineState != null)
     }
@@ -100,32 +102,36 @@ class TranslationsActionTest {
         assertFalse(tabState().translationsState.isTranslateProcessing)
 
         // Set an initial state for is translate processing via a translation request:
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateAction(tabId = tab.id, "en", "es", null),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateAction(tabId = tab.id, "en", "es", null),
+            )
 
         assertTrue(tabState().translationsState.isTranslateProcessing)
 
-        val translatedEngineState = TranslationEngineState(
-            detectedLanguages = DetectedLanguages(
-                documentLangTag = "es",
-                supportedDocumentLang = true,
-                userPreferredLangTag = "en",
-            ),
-            error = null,
-            isEngineReady = true,
-            requestedTranslationPair = TranslationPair(fromLanguage = "es", toLanguage = "en"),
-            hasVisibleChange = true,
-        )
+        val translatedEngineState =
+            TranslationEngineState(
+                detectedLanguages =
+                    DetectedLanguages(
+                        documentLangTag = "es",
+                        supportedDocumentLang = true,
+                        userPreferredLangTag = "en",
+                    ),
+                error = null,
+                isEngineReady = true,
+                requestedTranslationPair = TranslationPair(fromLanguage = "es", toLanguage = "en"),
+                hasVisibleChange = true,
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateStateChangeAction(
-                tabId = tab.id,
-                translationEngineState = translatedEngineState,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateStateChangeAction(
+                    tabId = tab.id,
+                    translationEngineState = translatedEngineState,
+                ),
+            )
 
         // Translated state
         assertEquals(translatedEngineState, tabState().translationsState.translationEngineState)
@@ -133,22 +139,25 @@ class TranslationsActionTest {
         assertFalse(tabState().translationsState.isExpectedTranslate)
         assertFalse(tabState().translationsState.isTranslateProcessing)
 
-        val nonTranslatedEngineState = TranslationEngineState(
-            detectedLanguages = DetectedLanguages(
-                documentLangTag = "es",
-                supportedDocumentLang = true,
-                userPreferredLangTag = "en",
-            ),
-            error = null,
-            isEngineReady = true,
-            requestedTranslationPair = TranslationPair(fromLanguage = null, toLanguage = null),
-            hasVisibleChange = false,
-        )
+        val nonTranslatedEngineState =
+            TranslationEngineState(
+                detectedLanguages =
+                    DetectedLanguages(
+                        documentLangTag = "es",
+                        supportedDocumentLang = true,
+                        userPreferredLangTag = "en",
+                    ),
+                error = null,
+                isEngineReady = true,
+                requestedTranslationPair = TranslationPair(fromLanguage = null, toLanguage = null),
+                hasVisibleChange = false,
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateStateChangeAction(tabId = tab.id, nonTranslatedEngineState),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateStateChangeAction(tabId = tab.id, nonTranslatedEngineState),
+            )
 
         // Non-translated state
         assertEquals(nonTranslatedEngineState, tabState().translationsState.translationEngineState)
@@ -162,22 +171,24 @@ class TranslationsActionTest {
         assertFalse(tabState().translationsState.isOfferTranslate)
 
         // Initial Offer State
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateOfferAction(tabId = tab.id, true),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateOfferAction(tabId = tab.id, true),
+            )
         assertTrue(tabState().translationsState.isOfferTranslate)
 
         // Action
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateAction(
-                tabId = tab.id,
-                fromLanguage = "en",
-                toLanguage = "en",
-                options = null,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateAction(
+                    tabId = tab.id,
+                    fromLanguage = "en",
+                    toLanguage = "en",
+                    options = null,
+                ),
+            )
 
         // Should revert to false
         assertFalse(tabState().translationsState.isOfferTranslate)
@@ -190,62 +201,70 @@ class TranslationsActionTest {
 
         // Sending an initial request to set state; however, the engine hasn't decided if it is an
         // expected state
-        var translatedEngineState = TranslationEngineState(
-            detectedLanguages = DetectedLanguages(
-                documentLangTag = "es",
-                supportedDocumentLang = true,
-                userPreferredLangTag = "en",
-            ),
-            error = null,
-            isEngineReady = true,
-            requestedTranslationPair = TranslationPair(fromLanguage = "es", toLanguage = "en"),
-        )
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateStateChangeAction(
-                tabId = tab.id,
-                translationEngineState = translatedEngineState,
-            ),
-        )
+        var translatedEngineState =
+            TranslationEngineState(
+                detectedLanguages =
+                    DetectedLanguages(
+                        documentLangTag = "es",
+                        supportedDocumentLang = true,
+                        userPreferredLangTag = "en",
+                    ),
+                error = null,
+                isEngineReady = true,
+                requestedTranslationPair = TranslationPair(fromLanguage = "es", toLanguage = "en"),
+            )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateStateChangeAction(
+                    tabId = tab.id,
+                    translationEngineState = translatedEngineState,
+                ),
+            )
 
         assertFalse(tabState().translationsState.isExpectedTranslate)
 
         // Engine is sending a translation expected action
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateExpectedAction(tabId = tab.id),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateExpectedAction(tabId = tab.id),
+            )
 
         // Initial expected translation state
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateStateChangeAction(
-                tabId = tab.id,
-                translationEngineState = translatedEngineState,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateStateChangeAction(
+                    tabId = tab.id,
+                    translationEngineState = translatedEngineState,
+                ),
+            )
 
         assertTrue(tabState().translationsState.isExpectedTranslate)
 
         // Not expected translation state, because it is no longer supported
-        translatedEngineState = TranslationEngineState(
-            detectedLanguages = DetectedLanguages(
-                documentLangTag = "es",
-                supportedDocumentLang = false,
-                userPreferredLangTag = "en",
-            ),
-            error = null,
-            isEngineReady = true,
-            requestedTranslationPair = TranslationPair(fromLanguage = "es", toLanguage = "en"),
-        )
+        translatedEngineState =
+            TranslationEngineState(
+                detectedLanguages =
+                    DetectedLanguages(
+                        documentLangTag = "es",
+                        supportedDocumentLang = false,
+                        userPreferredLangTag = "en",
+                    ),
+                error = null,
+                isEngineReady = true,
+                requestedTranslationPair = TranslationPair(fromLanguage = "es", toLanguage = "en"),
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateStateChangeAction(
-                tabId = tab.id,
-                translationEngineState = translatedEngineState,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateStateChangeAction(
+                    tabId = tab.id,
+                    translationEngineState = translatedEngineState,
+                ),
+            )
 
         assertFalse(tabState().translationsState.isExpectedTranslate)
     }
@@ -257,62 +276,70 @@ class TranslationsActionTest {
 
         // Sending an initial request to set state; however, the engine hasn't decided if it is an
         // offered state
-        var translatedEngineState = TranslationEngineState(
-            detectedLanguages = DetectedLanguages(
-                documentLangTag = "es",
-                supportedDocumentLang = true,
-                userPreferredLangTag = "en",
-            ),
-            error = null,
-            isEngineReady = true,
-            requestedTranslationPair = TranslationPair(fromLanguage = "es", toLanguage = "en"),
-        )
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateStateChangeAction(
-                tabId = tab.id,
-                translationEngineState = translatedEngineState,
-            ),
-        )
+        var translatedEngineState =
+            TranslationEngineState(
+                detectedLanguages =
+                    DetectedLanguages(
+                        documentLangTag = "es",
+                        supportedDocumentLang = true,
+                        userPreferredLangTag = "en",
+                    ),
+                error = null,
+                isEngineReady = true,
+                requestedTranslationPair = TranslationPair(fromLanguage = "es", toLanguage = "en"),
+            )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateStateChangeAction(
+                    tabId = tab.id,
+                    translationEngineState = translatedEngineState,
+                ),
+            )
 
         assertFalse(tabState().translationsState.isOfferTranslate)
 
         // Engine is sending a translation offer action
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateOfferAction(tabId = tab.id, isOfferTranslate = true),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateOfferAction(tabId = tab.id, isOfferTranslate = true),
+            )
 
         // Initial expected translation state
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateStateChangeAction(
-                tabId = tab.id,
-                translationEngineState = translatedEngineState,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateStateChangeAction(
+                    tabId = tab.id,
+                    translationEngineState = translatedEngineState,
+                ),
+            )
 
         assertTrue(tabState().translationsState.isOfferTranslate)
 
         // Not in an offer translation state, because it is no longer supported
-        translatedEngineState = TranslationEngineState(
-            detectedLanguages = DetectedLanguages(
-                documentLangTag = "es",
-                supportedDocumentLang = false,
-                userPreferredLangTag = "en",
-            ),
-            error = null,
-            isEngineReady = true,
-            requestedTranslationPair = TranslationPair(fromLanguage = "es", toLanguage = "en"),
-        )
+        translatedEngineState =
+            TranslationEngineState(
+                detectedLanguages =
+                    DetectedLanguages(
+                        documentLangTag = "es",
+                        supportedDocumentLang = false,
+                        userPreferredLangTag = "en",
+                    ),
+                error = null,
+                isEngineReady = true,
+                requestedTranslationPair = TranslationPair(fromLanguage = "es", toLanguage = "en"),
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateStateChangeAction(
-                tabId = tab.id,
-                translationEngineState = translatedEngineState,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateStateChangeAction(
+                    tabId = tab.id,
+                    translationEngineState = translatedEngineState,
+                ),
+            )
 
         assertFalse(tabState().translationsState.isOfferTranslate)
     }
@@ -324,46 +351,52 @@ class TranslationsActionTest {
         assertNull(tabState().translationsState.translationError)
 
         // Sending an initial request to set state, notice the supportedDocumentLang isn't supported
-        val noSupportedState = TranslationEngineState(
-            detectedLanguages = DetectedLanguages(
-                documentLangTag = "unknown",
-                supportedDocumentLang = false,
-                userPreferredLangTag = "en",
-            ),
-            error = null,
-            isEngineReady = true,
-            requestedTranslationPair = null,
-        )
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateStateChangeAction(
-                tabId = tab.id,
-                translationEngineState = noSupportedState,
-            ),
-        )
+        val noSupportedState =
+            TranslationEngineState(
+                detectedLanguages =
+                    DetectedLanguages(
+                        documentLangTag = "unknown",
+                        supportedDocumentLang = false,
+                        userPreferredLangTag = "en",
+                    ),
+                error = null,
+                isEngineReady = true,
+                requestedTranslationPair = null,
+            )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateStateChangeAction(
+                    tabId = tab.id,
+                    translationEngineState = noSupportedState,
+                ),
+            )
 
         // Response state
         assertEquals(noSupportedState, tabState().translationsState.translationEngineState)
         assertNotNull(tabState().translationsState.translationError)
 
         // Sending a request to show state change, notice the supportedDocumentLang is now supported
-        val supportedState = TranslationEngineState(
-            detectedLanguages = DetectedLanguages(
-                documentLangTag = "es",
-                supportedDocumentLang = true,
-                userPreferredLangTag = "en",
-            ),
-            error = null,
-            isEngineReady = true,
-            requestedTranslationPair = null,
-        )
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateStateChangeAction(
-                tabId = tab.id,
-                translationEngineState = supportedState,
-            ),
-        )
+        val supportedState =
+            TranslationEngineState(
+                detectedLanguages =
+                    DetectedLanguages(
+                        documentLangTag = "es",
+                        supportedDocumentLang = true,
+                        userPreferredLangTag = "en",
+                    ),
+                error = null,
+                isEngineReady = true,
+                requestedTranslationPair = null,
+            )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateStateChangeAction(
+                    tabId = tab.id,
+                    translationEngineState = supportedState,
+                ),
+            )
 
         // Response state
         assertEquals(supportedState, tabState().translationsState.translationEngineState)
@@ -376,21 +409,23 @@ class TranslationsActionTest {
         assertEquals(false, tabState().translationsState.isTranslateProcessing)
 
         // Action started
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateAction(tabId = tab.id, "en", "es", null),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateAction(tabId = tab.id, "en", "es", null),
+            )
 
         assertEquals(true, tabState().translationsState.isTranslateProcessing)
 
         // Action success
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateSuccessAction(
-                tabId = tab.id,
-                operation = TranslationOperation.TRANSLATE,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateSuccessAction(
+                    tabId = tab.id,
+                    operation = TranslationOperation.TRANSLATE,
+                ),
+            )
 
         assertEquals(null, tabState().translationsState.translationError)
     }
@@ -401,23 +436,25 @@ class TranslationsActionTest {
         assertEquals(false, tabState().translationsState.isTranslateProcessing)
 
         // Action started
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateAction(tabId = tab.id, "en", "es", null),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateAction(tabId = tab.id, "en", "es", null),
+            )
 
         assertEquals(true, tabState().translationsState.isTranslateProcessing)
 
         // Action failure
         val error = TranslationError.UnknownError(Exception())
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateExceptionAction(
-                tabId = tab.id,
-                operation = TranslationOperation.TRANSLATE,
-                error,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateExceptionAction(
+                    tabId = tab.id,
+                    operation = TranslationOperation.TRANSLATE,
+                    error,
+                ),
+            )
 
         assertEquals(false, tabState().translationsState.isTranslateProcessing)
         assertEquals(false, tabState().translationsState.isTranslated)
@@ -430,21 +467,23 @@ class TranslationsActionTest {
         assertEquals(false, tabState().translationsState.isRestoreProcessing)
 
         // Action started
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateRestoreAction(tabId = tab.id),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateRestoreAction(tabId = tab.id),
+            )
 
         assertEquals(true, tabState().translationsState.isRestoreProcessing)
 
         // Action success
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateSuccessAction(
-                tabId = tab.id,
-                operation = TranslationOperation.RESTORE,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateSuccessAction(
+                    tabId = tab.id,
+                    operation = TranslationOperation.RESTORE,
+                ),
+            )
 
         assertEquals(false, tabState().translationsState.isRestoreProcessing)
         assertEquals(false, tabState().translationsState.isTranslated)
@@ -457,23 +496,25 @@ class TranslationsActionTest {
         assertEquals(false, tabState().translationsState.isRestoreProcessing)
 
         // Action started
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateRestoreAction(tabId = tab.id),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateRestoreAction(tabId = tab.id),
+            )
 
         assertEquals(true, tabState().translationsState.isRestoreProcessing)
 
         // Action failure
         val error = TranslationError.UnknownError(Exception())
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateExceptionAction(
-                tabId = tab.id,
-                operation = TranslationOperation.RESTORE,
-                error,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateExceptionAction(
+                    tabId = tab.id,
+                    operation = TranslationOperation.RESTORE,
+                    error,
+                ),
+            )
 
         assertEquals(false, tabState().translationsState.isRestoreProcessing)
         assertEquals(false, tabState().translationsState.isTranslated)
@@ -489,12 +530,11 @@ class TranslationsActionTest {
         val toLanguage = Language("de", "German")
         val fromLanguage = Language("es", "Spanish")
         val supportedLanguages = TranslationSupport(listOf(fromLanguage), listOf(toLanguage))
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetSupportedLanguagesAction(
-                supportedLanguages = supportedLanguages,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetSupportedLanguagesAction(supportedLanguages = supportedLanguages),
+            )
 
         // Action success
         assertEquals(supportedLanguages, state.translationEngine.supportedLanguages)
@@ -507,12 +547,11 @@ class TranslationsActionTest {
 
         // Action started
         val neverTranslateSites = listOf("google.com")
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetNeverTranslateSitesAction(
-                neverTranslateSites = neverTranslateSites,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetNeverTranslateSitesAction(neverTranslateSites = neverTranslateSites),
+            )
 
         // Action success
         assertEquals(neverTranslateSites, state.translationEngine.neverTranslateSites)
@@ -523,21 +562,19 @@ class TranslationsActionTest {
         // Initial add to neverTranslateSites
         assertNull(state.translationEngine.neverTranslateSites)
         val neverTranslateSites = listOf("google.com")
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetNeverTranslateSitesAction(
-                neverTranslateSites = neverTranslateSites,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetNeverTranslateSitesAction(neverTranslateSites = neverTranslateSites),
+            )
         assertEquals(neverTranslateSites, state.translationEngine.neverTranslateSites)
 
         // Action started
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.RemoveNeverTranslateSiteAction(
-                origin = "google.com",
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.RemoveNeverTranslateSiteAction(origin = "google.com"),
+            )
 
         // Action success
         assertEquals(listOf<String>(), state.translationEngine.neverTranslateSites)
@@ -550,60 +587,63 @@ class TranslationsActionTest {
         assertFalse(tabState().translationsState.isTranslateProcessing)
 
         // Set an initial state for is translate processing via a translation request:
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateAction(tabId = tab.id, "en", "es", null),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateAction(tabId = tab.id, "en", "es", null),
+            )
 
         assertTrue(tabState().translationsState.isTranslateProcessing)
 
         // TRANSLATE usage
         val translateError = TranslationError.CouldNotLoadLanguagesError(null)
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateExceptionAction(
-                tabId = tab.id,
-                operation = TranslationOperation.TRANSLATE,
-                translationError = translateError,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateExceptionAction(
+                    tabId = tab.id,
+                    operation = TranslationOperation.TRANSLATE,
+                    translationError = translateError,
+                ),
+            )
         assertEquals(translateError, tabState().translationsState.translationError)
         // A translate error should clear this state
         assertFalse(tabState().translationsState.isTranslateProcessing)
 
         // RESTORE usage
         val restoreError = TranslationError.CouldNotRestoreError(null)
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateExceptionAction(
-                tabId = tab.id,
-                operation = TranslationOperation.RESTORE,
-                translationError = restoreError,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateExceptionAction(
+                    tabId = tab.id,
+                    operation = TranslationOperation.RESTORE,
+                    translationError = restoreError,
+                ),
+            )
         assertEquals(restoreError, tabState().translationsState.translationError)
 
         // FETCH_LANGUAGES usage
         val fetchLanguagesError = TranslationError.CouldNotLoadLanguagesError(null)
 
         // Testing setting tab level error
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateExceptionAction(
-                tabId = tab.id,
-                operation = TranslationOperation.FETCH_SUPPORTED_LANGUAGES,
-                translationError = fetchLanguagesError,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateExceptionAction(
+                    tabId = tab.id,
+                    operation = TranslationOperation.FETCH_SUPPORTED_LANGUAGES,
+                    translationError = fetchLanguagesError,
+                ),
+            )
         assertEquals(fetchLanguagesError, tabState().translationsState.translationError)
 
         // Testing setting browser level error
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.EngineExceptionAction(
-                error = fetchLanguagesError,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.EngineExceptionAction(error = fetchLanguagesError),
+            )
         assertEquals(fetchLanguagesError, state.translationEngine.engineError)
     }
 
@@ -615,36 +655,39 @@ class TranslationsActionTest {
         assertEquals(false, tabState().translationsState.isTranslateProcessing)
 
         // TRANSLATE usage
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateSuccessAction(
-                tabId = tab.id,
-                operation = TranslationOperation.TRANSLATE,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateSuccessAction(
+                    tabId = tab.id,
+                    operation = TranslationOperation.TRANSLATE,
+                ),
+            )
         assertEquals(null, tabState().translationsState.translationError)
         assertEquals(false, tabState().translationsState.isTranslateProcessing)
 
         // RESTORE usage
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateSuccessAction(
-                tabId = tab.id,
-                operation = TranslationOperation.RESTORE,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateSuccessAction(
+                    tabId = tab.id,
+                    operation = TranslationOperation.RESTORE,
+                ),
+            )
         assertEquals(null, tabState().translationsState.translationError)
         assertEquals(false, tabState().translationsState.isTranslated)
         assertEquals(false, tabState().translationsState.isRestoreProcessing)
 
         // FETCH_LANGUAGES usage
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateSuccessAction(
-                tabId = tab.id,
-                operation = TranslationOperation.FETCH_SUPPORTED_LANGUAGES,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateSuccessAction(
+                    tabId = tab.id,
+                    operation = TranslationOperation.FETCH_SUPPORTED_LANGUAGES,
+                ),
+            )
         assertEquals(null, tabState().translationsState.translationError)
         assertEquals(false, tabState().translationsState.isTranslated)
     }
@@ -655,19 +698,21 @@ class TranslationsActionTest {
         assertNull(tabState().translationsState.pageSettings)
 
         // Action started
-        val pageSettings = TranslationPageSettings(
-            alwaysOfferPopup = true,
-            alwaysTranslateLanguage = true,
-            neverTranslateLanguage = true,
-            neverTranslateSite = true,
-        )
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetPageSettingsAction(
-                tabId = tab.id,
-                pageSettings = pageSettings,
-            ),
-        )
+        val pageSettings =
+            TranslationPageSettings(
+                alwaysOfferPopup = true,
+                alwaysTranslateLanguage = true,
+                neverTranslateLanguage = true,
+                neverTranslateSite = true,
+            )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetPageSettingsAction(
+                    tabId = tab.id,
+                    pageSettings = pageSettings,
+                ),
+            )
 
         // Action success
         assertEquals(pageSettings, tabState().translationsState.pageSettings)
@@ -680,13 +725,14 @@ class TranslationsActionTest {
 
         // Action started
         val isProcessing = true
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetTranslateProcessingAction(
-                tabId = tab.id,
-                isProcessing = isProcessing,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetTranslateProcessingAction(
+                    tabId = tab.id,
+                    isProcessing = isProcessing,
+                ),
+            )
 
         // Action success
         assertEquals(isProcessing, tabState().translationsState.isTranslateProcessing)
@@ -698,19 +744,21 @@ class TranslationsActionTest {
         assertNull(tabState().translationsState.translationDownloadSize)
 
         // Action started
-        val translationSize = TranslationDownloadSize(
-            fromLanguage = Language("en", "English"),
-            toLanguage = Language("fr", "French"),
-            size = 10000L,
-            error = null,
-        )
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetTranslationDownloadSizeAction(
-                tabId = tab.id,
-                translationSize = translationSize,
-            ),
-        )
+        val translationSize =
+            TranslationDownloadSize(
+                fromLanguage = Language("en", "English"),
+                toLanguage = Language("fr", "French"),
+                size = 10000L,
+                error = null,
+            )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetTranslationDownloadSizeAction(
+                    tabId = tab.id,
+                    translationSize = translationSize,
+                ),
+            )
 
         // Action success
         assertEquals(translationSize, tabState().translationsState.translationDownloadSize)
@@ -719,31 +767,34 @@ class TranslationsActionTest {
     @Test
     fun `WHEN a FetchTranslationDownloadSize is dispatched THEN translationSize is cleared`() {
         // Initial setting size for a more robust test
-        val translationSize = TranslationDownloadSize(
-            fromLanguage = Language("en", "English"),
-            toLanguage = Language("fr", "French"),
-            size = 10000L,
-            error = null,
-        )
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetTranslationDownloadSizeAction(
-                tabId = tab.id,
-                translationSize = translationSize,
-            ),
-        )
+        val translationSize =
+            TranslationDownloadSize(
+                fromLanguage = Language("en", "English"),
+                toLanguage = Language("fr", "French"),
+                size = 10000L,
+                error = null,
+            )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetTranslationDownloadSizeAction(
+                    tabId = tab.id,
+                    translationSize = translationSize,
+                ),
+            )
 
         assertEquals(translationSize, tabState().translationsState.translationDownloadSize)
 
         // Action started
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.FetchTranslationDownloadSizeAction(
-                tabId = tab.id,
-                fromLanguage = Language("en", "English"),
-                toLanguage = Language("fr", "French"),
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.FetchTranslationDownloadSizeAction(
+                    tabId = tab.id,
+                    fromLanguage = Language("en", "English"),
+                    toLanguage = Language("fr", "French"),
+                ),
+            )
 
         // Action success
         assertNull(tabState().translationsState.translationDownloadSize)
@@ -754,32 +805,35 @@ class TranslationsActionTest {
         // Setting first to have a more robust initial state
         assertNull(tabState().translationsState.pageSettings)
 
-        val pageSettings = TranslationPageSettings(
-            alwaysOfferPopup = true,
-            alwaysTranslateLanguage = true,
-            neverTranslateLanguage = true,
-            neverTranslateSite = true,
-        )
+        val pageSettings =
+            TranslationPageSettings(
+                alwaysOfferPopup = true,
+                alwaysTranslateLanguage = true,
+                neverTranslateLanguage = true,
+                neverTranslateSite = true,
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetPageSettingsAction(
-                tabId = tab.id,
-                pageSettings = pageSettings,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetPageSettingsAction(
+                    tabId = tab.id,
+                    pageSettings = pageSettings,
+                ),
+            )
 
         assertEquals(pageSettings, tabState().translationsState.pageSettings)
         assertNull(tabState().translationsState.settingsError)
 
         // Action started
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.OperationRequestedAction(
-                tabId = tab.id,
-                operation = TranslationOperation.FETCH_PAGE_SETTINGS,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.OperationRequestedAction(
+                    tabId = tab.id,
+                    operation = TranslationOperation.FETCH_PAGE_SETTINGS,
+                ),
+            )
 
         // Action success
         assertNull(tabState().translationsState.pageSettings)
@@ -790,28 +844,29 @@ class TranslationsActionTest {
         // Setting first to have a more robust initial state
         assertNull(state.translationEngine.supportedLanguages)
 
-        val supportLanguages = TranslationSupport(
-            fromLanguages = listOf(Language("en", "English")),
-            toLanguages = listOf(Language("en", "English")),
-        )
+        val supportLanguages =
+            TranslationSupport(
+                fromLanguages = listOf(Language("en", "English")),
+                toLanguages = listOf(Language("en", "English")),
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetSupportedLanguagesAction(
-                supportedLanguages = supportLanguages,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetSupportedLanguagesAction(supportedLanguages = supportLanguages),
+            )
 
         assertEquals(supportLanguages, state.translationEngine.supportedLanguages)
 
         // Action started
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.OperationRequestedAction(
-                tabId = tab.id,
-                operation = TranslationOperation.FETCH_SUPPORTED_LANGUAGES,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.OperationRequestedAction(
+                    tabId = tab.id,
+                    operation = TranslationOperation.FETCH_SUPPORTED_LANGUAGES,
+                ),
+            )
 
         // Action success
         assertNull(state.translationEngine.supportedLanguages)
@@ -823,14 +878,15 @@ class TranslationsActionTest {
         assertNull(tabState().translationsState.pageSettings?.alwaysOfferPopup)
 
         // Action started
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.UpdatePageSettingAction(
-                tabId = tab.id,
-                operation = TranslationPageSettingOperation.UPDATE_ALWAYS_OFFER_POPUP,
-                setting = true,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.UpdatePageSettingAction(
+                    tabId = tab.id,
+                    operation = TranslationPageSettingOperation.UPDATE_ALWAYS_OFFER_POPUP,
+                    setting = true,
+                ),
+            )
 
         // Action success
         assertTrue(tabState().translationsState.pageSettings?.alwaysOfferPopup!!)
@@ -843,14 +899,15 @@ class TranslationsActionTest {
         assertNull(tabState().translationsState.pageSettings?.neverTranslateLanguage)
 
         // Action started
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.UpdatePageSettingAction(
-                tabId = tab.id,
-                operation = TranslationPageSettingOperation.UPDATE_ALWAYS_TRANSLATE_LANGUAGE,
-                setting = true,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.UpdatePageSettingAction(
+                    tabId = tab.id,
+                    operation = TranslationPageSettingOperation.UPDATE_ALWAYS_TRANSLATE_LANGUAGE,
+                    setting = true,
+                ),
+            )
 
         // Action success
         assertTrue(tabState().translationsState.pageSettings?.alwaysTranslateLanguage!!)
@@ -864,14 +921,15 @@ class TranslationsActionTest {
         assertNull(tabState().translationsState.pageSettings?.alwaysTranslateLanguage)
 
         // Action started
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.UpdatePageSettingAction(
-                tabId = tab.id,
-                operation = TranslationPageSettingOperation.UPDATE_NEVER_TRANSLATE_LANGUAGE,
-                setting = true,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.UpdatePageSettingAction(
+                    tabId = tab.id,
+                    operation = TranslationPageSettingOperation.UPDATE_NEVER_TRANSLATE_LANGUAGE,
+                    setting = true,
+                ),
+            )
 
         // Action success
         assertTrue(tabState().translationsState.pageSettings?.neverTranslateLanguage!!)
@@ -884,14 +942,15 @@ class TranslationsActionTest {
         assertNull(tabState().translationsState.pageSettings?.neverTranslateLanguage)
 
         // Action started
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.UpdatePageSettingAction(
-                tabId = tab.id,
-                operation = TranslationPageSettingOperation.UPDATE_NEVER_TRANSLATE_SITE,
-                setting = true,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.UpdatePageSettingAction(
+                    tabId = tab.id,
+                    operation = TranslationPageSettingOperation.UPDATE_NEVER_TRANSLATE_SITE,
+                    setting = true,
+                ),
+            )
 
         // Action success
         assertTrue(tabState().translationsState.pageSettings?.neverTranslateSite!!)
@@ -904,42 +963,45 @@ class TranslationsActionTest {
         assertNull(tabState().translationsState.pageSettings?.neverTranslateLanguage)
 
         // Action started to update the always offer setting to true
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.UpdatePageSettingAction(
-                tabId = tab.id,
-                operation = TranslationPageSettingOperation.UPDATE_ALWAYS_TRANSLATE_LANGUAGE,
-                setting = true,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.UpdatePageSettingAction(
+                    tabId = tab.id,
+                    operation = TranslationPageSettingOperation.UPDATE_ALWAYS_TRANSLATE_LANGUAGE,
+                    setting = true,
+                ),
+            )
 
         // When always is true, never should be false
         assertTrue(tabState().translationsState.pageSettings?.alwaysTranslateLanguage!!)
         assertFalse(tabState().translationsState.pageSettings?.neverTranslateLanguage!!)
 
         // Action started to update the never offer setting to true
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.UpdatePageSettingAction(
-                tabId = tab.id,
-                operation = TranslationPageSettingOperation.UPDATE_NEVER_TRANSLATE_LANGUAGE,
-                setting = true,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.UpdatePageSettingAction(
+                    tabId = tab.id,
+                    operation = TranslationPageSettingOperation.UPDATE_NEVER_TRANSLATE_LANGUAGE,
+                    setting = true,
+                ),
+            )
 
         // When never is true, always should be false
         assertFalse(tabState().translationsState.pageSettings?.alwaysTranslateLanguage!!)
         assertTrue(tabState().translationsState.pageSettings?.neverTranslateLanguage!!)
 
         // Action started to update the never language setting to false
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.UpdatePageSettingAction(
-                tabId = tab.id,
-                operation = TranslationPageSettingOperation.UPDATE_NEVER_TRANSLATE_LANGUAGE,
-                setting = false,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.UpdatePageSettingAction(
+                    tabId = tab.id,
+                    operation = TranslationPageSettingOperation.UPDATE_NEVER_TRANSLATE_LANGUAGE,
+                    setting = false,
+                ),
+            )
 
         // When never is false, always may also be false
         assertFalse(tabState().translationsState.pageSettings?.alwaysTranslateLanguage!!)
@@ -955,45 +1017,50 @@ class TranslationsActionTest {
         assertNull(tabState().translationsState.pageSettings?.neverTranslateSite)
 
         // Action started
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.UpdatePageSettingAction(
-                tabId = tab.id,
-                operation = TranslationPageSettingOperation.UPDATE_ALWAYS_OFFER_POPUP,
-                setting = true,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.UpdatePageSettingAction(
+                    tabId = tab.id,
+                    operation = TranslationPageSettingOperation.UPDATE_ALWAYS_OFFER_POPUP,
+                    setting = true,
+                ),
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.UpdatePageSettingAction(
-                tabId = tab.id,
-                operation = TranslationPageSettingOperation.UPDATE_ALWAYS_TRANSLATE_LANGUAGE,
-                setting = true,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.UpdatePageSettingAction(
+                    tabId = tab.id,
+                    operation = TranslationPageSettingOperation.UPDATE_ALWAYS_TRANSLATE_LANGUAGE,
+                    setting = true,
+                ),
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.UpdatePageSettingAction(
-                tabId = tab.id,
-                operation = TranslationPageSettingOperation.UPDATE_NEVER_TRANSLATE_LANGUAGE,
-                setting = true,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.UpdatePageSettingAction(
+                    tabId = tab.id,
+                    operation = TranslationPageSettingOperation.UPDATE_NEVER_TRANSLATE_LANGUAGE,
+                    setting = true,
+                ),
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.UpdatePageSettingAction(
-                tabId = tab.id,
-                operation = TranslationPageSettingOperation.UPDATE_NEVER_TRANSLATE_SITE,
-                setting = true,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.UpdatePageSettingAction(
+                    tabId = tab.id,
+                    operation = TranslationPageSettingOperation.UPDATE_NEVER_TRANSLATE_SITE,
+                    setting = true,
+                ),
+            )
 
         // Action success
         assertTrue(tabState().translationsState.pageSettings?.alwaysOfferPopup!!)
-        // neverTranslateLanguage was posted last and will prevent a contradictory state on the alwaysTranslateLanguage state.
+        // neverTranslateLanguage was posted last and will prevent a contradictory state on the alwaysTranslateLanguage
+        // state.
         assertFalse(tabState().translationsState.pageSettings?.alwaysTranslateLanguage!!)
         assertTrue(tabState().translationsState.pageSettings?.neverTranslateLanguage!!)
         assertTrue(tabState().translationsState.pageSettings?.neverTranslateSite!!)
@@ -1006,12 +1073,11 @@ class TranslationsActionTest {
 
         // Dispatch
         val languageSetting = mapOf("es" to LanguageSetting.OFFER)
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetLanguageSettingsAction(
-                languageSettings = languageSetting,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetLanguageSettingsAction(languageSettings = languageSetting),
+            )
 
         // Final state
         assertEquals(state.translationEngine.languageSettings!!, languageSetting)
@@ -1021,22 +1087,22 @@ class TranslationsActionTest {
     fun `WHEN a OperationRequestedAction is dispatched for FETCH_AUTOMATIC_LANGUAGE_SETTINGS THEN clear languageSettings`() {
         // Setting first to have a more robust initial state
         val languageSetting = mapOf("es" to LanguageSetting.OFFER)
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetLanguageSettingsAction(
-                languageSettings = languageSetting,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetLanguageSettingsAction(languageSettings = languageSetting),
+            )
         assertEquals(state.translationEngine.languageSettings, languageSetting)
 
         // Action started
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.OperationRequestedAction(
-                tabId = tab.id,
-                operation = TranslationOperation.FETCH_AUTOMATIC_LANGUAGE_SETTINGS,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.OperationRequestedAction(
+                    tabId = tab.id,
+                    operation = TranslationOperation.FETCH_AUTOMATIC_LANGUAGE_SETTINGS,
+                ),
+            )
 
         // Action success
         assertNull(state.translationEngine.languageSettings)
@@ -1046,14 +1112,15 @@ class TranslationsActionTest {
     fun `WHEN a TranslateExceptionAction is dispatched for FETCH_AUTOMATIC_LANGUAGE_SETTINGS THEN set the error`() {
         // Action started
         val error = TranslationError.UnknownError(IllegalStateException())
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateExceptionAction(
-                tabId = tab.id,
-                operation = TranslationOperation.FETCH_AUTOMATIC_LANGUAGE_SETTINGS,
-                translationError = error,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateExceptionAction(
+                    tabId = tab.id,
+                    operation = TranslationOperation.FETCH_AUTOMATIC_LANGUAGE_SETTINGS,
+                    translationError = error,
+                ),
+            )
 
         // Action success
         assertEquals(error, tabState().translationsState.translationError)
@@ -1065,12 +1132,11 @@ class TranslationsActionTest {
         assertTrue(state.translationEngine.isTranslationsEnabled)
 
         // Dispatch
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetTranslationsEnabledAction(
-                isTranslationsEnabled = false,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetTranslationsEnabledAction(isTranslationsEnabled = false),
+            )
 
         // Final state
         assertFalse(state.translationEngine.isTranslationsEnabled)
@@ -1083,30 +1149,34 @@ class TranslationsActionTest {
         val supportedLanguages = TranslationSupport(listOf(fromLanguage), listOf(toLanguage))
 
         // Set up populated browser store state
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetSupportedLanguagesAction(supportedLanguages = supportedLanguages),
-        )
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetEngineSupportedAction(isEngineSupported = true),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetSupportedLanguagesAction(supportedLanguages = supportedLanguages),
+            )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetEngineSupportedAction(isEngineSupported = true),
+            )
 
         // Set up populated session store state
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.TranslateExpectedAction(tabId = tab.id),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.TranslateExpectedAction(tabId = tab.id),
+            )
 
         // Verify initial populated state
         assertEquals(supportedLanguages, state.translationEngine.supportedLanguages)
         assertTrue(tabState().translationsState.isExpectedTranslate)
 
         // Turn off translations
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetTranslationsEnabledAction(isTranslationsEnabled = false),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetTranslationsEnabledAction(isTranslationsEnabled = false),
+            )
 
         // Browser store is cleared and disabled
         assertFalse(state.translationEngine.isTranslationsEnabled)
@@ -1131,12 +1201,11 @@ class TranslationsActionTest {
         assertNull(state.translationEngine.isEngineSupported)
 
         // Dispatch
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetEngineSupportedAction(
-                isEngineSupported = true,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetEngineSupportedAction(isEngineSupported = true),
+            )
 
         // Final state
         assertTrue(state.translationEngine.isEngineSupported!!)
@@ -1149,12 +1218,11 @@ class TranslationsActionTest {
 
         // Dispatch
         val error = TranslationError.UnknownError(Throwable())
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.EngineExceptionAction(
-                error = error,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.EngineExceptionAction(error = error),
+            )
 
         // Final state
         assertEquals(state.translationEngine.engineError!!, error)
@@ -1174,12 +1242,11 @@ class TranslationsActionTest {
         val languageModels = mutableListOf(languageModel)
 
         // Dispatch
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetLanguageModelsAction(
-                languageModels = languageModels,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetLanguageModelsAction(languageModels = languageModels),
+            )
 
         // Final state
         assertEquals(languageModels, state.translationEngine.languageModels)
@@ -1191,19 +1258,19 @@ class TranslationsActionTest {
         assertNull(state.translationEngine.languageModels)
 
         // Test Operation
-        val options = ModelManagementOptions(
-            languageToManage = "es",
-            operation = ModelOperation.DOWNLOAD,
-            operationLevel = OperationLevel.LANGUAGE,
-        )
+        val options =
+            ModelManagementOptions(
+                languageToManage = "es",
+                operation = ModelOperation.DOWNLOAD,
+                operationLevel = OperationLevel.LANGUAGE,
+            )
 
         // Dispatch a request when state is not setup
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.ManageLanguageModelsAction(
-                options = options,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.ManageLanguageModelsAction(options = options),
+            )
 
         // We don't have an initial state, so nothing should change.
         assertNull(state.translationEngine.languageModels)
@@ -1216,20 +1283,18 @@ class TranslationsActionTest {
         val language = Language(code, localizedDisplayName)
         val languageModel = LanguageModel(language, processState, size)
         val languageModels = mutableListOf(languageModel)
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetLanguageModelsAction(
-                languageModels = languageModels,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetLanguageModelsAction(languageModels = languageModels),
+            )
 
         // Dispatch a valid request
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.ManageLanguageModelsAction(
-                options = options,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.ManageLanguageModelsAction(options = options),
+            )
 
         // Expectations based on operation
         val expectedLanguageModel = LanguageModel(language, ModelState.DOWNLOAD_IN_PROGRESS, size)
@@ -1237,16 +1302,18 @@ class TranslationsActionTest {
         assertEquals(expectedLanguageModels, state.translationEngine.languageModels)
 
         // Dispatch a language not listed
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.ManageLanguageModelsAction(
-                options = ModelManagementOptions(
-                    languageToManage = "de",
-                    operation = ModelOperation.DOWNLOAD,
-                    operationLevel = OperationLevel.LANGUAGE,
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.ManageLanguageModelsAction(
+                    options =
+                        ModelManagementOptions(
+                            languageToManage = "de",
+                            operation = ModelOperation.DOWNLOAD,
+                            operationLevel = OperationLevel.LANGUAGE,
+                        )
                 ),
-            ),
-        )
+            )
 
         // Nothing should change, since it isn't a known option
         assertEquals(expectedLanguageModels, state.translationEngine.languageModels)
@@ -1258,12 +1325,11 @@ class TranslationsActionTest {
         assertNull(state.translationEngine.offerTranslation)
 
         // Action started
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetGlobalOfferTranslateSettingAction(
-                offerTranslation = false,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetGlobalOfferTranslateSettingAction(offerTranslation = false),
+            )
 
         // Action success
         assertFalse(state.translationEngine.offerTranslation!!)
@@ -1275,12 +1341,11 @@ class TranslationsActionTest {
         assertNull(state.translationEngine.offerTranslation)
 
         // Action started
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.UpdateGlobalOfferTranslateSettingAction(
-                offerTranslation = false,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.UpdateGlobalOfferTranslateSettingAction(offerTranslation = false),
+            )
 
         // Action success
         assertFalse(state.translationEngine.offerTranslation!!)
@@ -1292,51 +1357,54 @@ class TranslationsActionTest {
         assertNull(state.translationEngine.languageSettings)
 
         // No-op null test
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.UpdateLanguageSettingsAction(
-                languageCode = "fr",
-                setting = LanguageSetting.ALWAYS,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.UpdateLanguageSettingsAction(
+                    languageCode = "fr",
+                    setting = LanguageSetting.ALWAYS,
+                ),
+            )
 
         assertNull(state.translationEngine.languageSettings)
 
         // Setting Initial State
-        val languageSettings = mapOf<String, LanguageSetting>(
-            "en" to LanguageSetting.OFFER,
-            "es" to LanguageSetting.NEVER,
-            "de" to LanguageSetting.ALWAYS,
-        )
+        val languageSettings =
+            mapOf<String, LanguageSetting>(
+                "en" to LanguageSetting.OFFER,
+                "es" to LanguageSetting.NEVER,
+                "de" to LanguageSetting.ALWAYS,
+            )
 
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.SetLanguageSettingsAction(
-                languageSettings = languageSettings,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.SetLanguageSettingsAction(languageSettings = languageSettings),
+            )
 
         assertEquals(languageSettings, state.translationEngine.languageSettings)
 
         // No-op update test
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.UpdateLanguageSettingsAction(
-                languageCode = "fr",
-                setting = LanguageSetting.ALWAYS,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.UpdateLanguageSettingsAction(
+                    languageCode = "fr",
+                    setting = LanguageSetting.ALWAYS,
+                ),
+            )
 
         assertEquals(languageSettings, state.translationEngine.languageSettings)
 
         // Main action started
-        state = BrowserStateReducer.reduce(
-            state,
-            TranslationsAction.UpdateLanguageSettingsAction(
-                languageCode = "es",
-                setting = LanguageSetting.ALWAYS,
-            ),
-        )
+        state =
+            BrowserStateReducer.reduce(
+                state,
+                TranslationsAction.UpdateLanguageSettingsAction(
+                    languageCode = "es",
+                    setting = LanguageSetting.ALWAYS,
+                ),
+            )
 
         // Action success
         assertEquals(LanguageSetting.ALWAYS, state.translationEngine.languageSettings!!["es"])

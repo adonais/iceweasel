@@ -64,26 +64,23 @@ import mozilla.components.support.ktx.android.view.getRectWithViewLocation
 import mozilla.components.support.ktx.kotlin.tryGetHostFromUrl
 import mozilla.components.support.utils.DefaultDownloadFileUtils
 
-/**
- * WebView-based implementation of EngineView.
- */
+/** WebView-based implementation of EngineView. */
 @Suppress("TooManyFunctions")
-class SystemEngineView @JvmOverloads constructor(
+class SystemEngineView
+@JvmOverloads
+constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
 ) : FrameLayout(context, attrs, defStyleAttr), EngineView, View.OnLongClickListener {
-    @VisibleForTesting(otherwise = PRIVATE)
-    internal var session: SystemEngineSession? = null
+    @VisibleForTesting(otherwise = PRIVATE) internal var session: SystemEngineSession? = null
 
     override var selectionActionDelegate: SelectionActionDelegate? = null
 
     override val verticalScrollPosition = flowOf(0f)
     override val verticalScrollDelta = flowOf(0f)
 
-    /**
-     * Render the content of the given session.
-     */
+    /** Render the content of the given session. */
     override fun render(session: EngineSession) {
         removeAllViews()
 
@@ -145,464 +142,491 @@ class SystemEngineView @JvmOverloads constructor(
     }
 
     @Suppress("NestedBlockDepth", "CognitiveComplexMethod")
-    private fun createWebViewClient() = object : WebViewClient() {
-        override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
-            // TODO private browsing not supported for SystemEngine
-            // https://github.com/mozilla-mobile/android-components/issues/649
-            // Check if the delegate wants this type of url.
-            val delegate = session?.settings?.historyTrackingDelegate ?: return
+    private fun createWebViewClient() =
+        object : WebViewClient() {
+            override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
+                // TODO private browsing not supported for SystemEngine
+                // https://github.com/mozilla-mobile/android-components/issues/649
+                // Check if the delegate wants this type of url.
+                val delegate = session?.settings?.historyTrackingDelegate ?: return
 
-            if (!delegate.shouldStoreUri(url)) {
-                return
-            }
+                if (!delegate.shouldStoreUri(url)) {
+                    return
+                }
 
-            val visitType = when (isReload) {
-                true -> VisitType.RELOAD
-                false -> VisitType.LINK
-            }
+                val visitType =
+                    when (isReload) {
+                        true -> VisitType.RELOAD
+                        false -> VisitType.LINK
+                    }
 
-            runBlocking {
-                session?.settings?.historyTrackingDelegate?.onVisited(url, PageVisit(visitType))
-            }
-        }
-
-        override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
-            url?.let {
-                session?.currentUrl = url
-                session?.internalNotifyObservers {
-                    onLoadingStateChange(true)
-                    onLocationChange(it, false)
-                    onNavigationStateChange(view.canGoBack(), view.canGoForward())
+                runBlocking {
+                    session?.settings?.historyTrackingDelegate?.onVisited(url, PageVisit(visitType))
                 }
             }
-        }
 
-        override fun onPageFinished(view: WebView?, url: String?) {
-            url?.let {
-                val cert = view?.certificate
-                session?.internalNotifyObservers {
-                    onLocationChange(it, false)
-                    onLoadingStateChange(false)
-                    onSecurityChange(
-                        secure = cert != null,
-                        host = cert?.let { url.toUri().host },
-                        issuer = cert?.issuedBy?.oName,
-                        // Bug 2000336: when the minimum API version is 29,
-                        // this can use cert?.x509Certificate.
-                        certificate = null,
+            override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
+                url?.let {
+                    session?.currentUrl = url
+                    session?.internalNotifyObservers {
+                        onLoadingStateChange(true)
+                        onLocationChange(it, false)
+                        onNavigationStateChange(view.canGoBack(), view.canGoForward())
+                    }
+                }
+            }
+
+            override fun onPageFinished(view: WebView?, url: String?) {
+                url?.let {
+                    val cert = view?.certificate
+                    session?.internalNotifyObservers {
+                        onLocationChange(it, false)
+                        onLoadingStateChange(false)
+                        onSecurityChange(
+                            secure = cert != null,
+                            host = cert?.let { url.toUri().host },
+                            issuer = cert?.issuedBy?.oName,
+                            // Bug 2000336: when the minimum API version is 29,
+                            // this can use cert?.x509Certificate.
+                            certificate = null,
+                        )
+                    }
+                }
+            }
+
+            @Suppress("ReturnCount", "NestedBlockDepth", "LongMethod")
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
+                if (session?.webFontsEnabled == false && UrlMatcher.isWebFont(request.url)) {
+                    return WebResourceResponse(null, null, null)
+                }
+
+                session?.trackingProtectionPolicy?.let {
+                    val resourceUri = request.url
+                    val scheme = resourceUri.scheme
+                    val path = resourceUri.path
+
+                    if (!request.isForMainFrame && scheme != "http" && scheme != "https") {
+                        // Block any malformed non-http(s) URIs. WebView will already ignore things like market: URLs,
+                        // but not in all cases (malformed market: URIs, such as market:://... will still end up here).
+                        // (Note: data: URIs are automatically handled by WebView, and won't end up here either.)
+                        // file:// URIs are disabled separately by setting WebSettings.setAllowFileAccess()
+                        return WebResourceResponse(null, null, null)
+                    }
+
+                    // WebView always requests a favicon, even though it won't be used anywhere. This check
+                    // isn't able to block all favicons (some of them will be loaded using <link rel="shortcut icon">
+                    // with a custom URL which we can't match or detect), but reduces the amount of unnecessary
+                    // favicon loading that's performed.
+                    if (path != null && path.endsWith("/favicon.ico")) {
+                        return WebResourceResponse(null, null, null)
+                    }
+
+                    val (matches, stringCategory) =
+                        getOrCreateUrlMatcher(resources, it)
+                            .matches(
+                                resourceUri,
+                                session?.currentUrl?.toUri() ?: Uri.EMPTY,
+                            )
+
+                    if (!request.isForMainFrame && matches) {
+                        session?.internalNotifyObservers {
+                            val matchedCategories = stringCategory.toTrackingProtectionCategories()
+                            onTrackerBlocked(
+                                Tracker(
+                                    resourceUri.toString(),
+                                    matchedCategories,
+                                )
+                            )
+                        }
+                        return WebResourceResponse(null, null, null)
+                    }
+                }
+
+                val isRedirect = request.isRedirect
+
+                session?.let { session ->
+                    session.settings.requestInterceptor?.let { interceptor ->
+                        interceptor
+                            .onLoadRequest(
+                                session,
+                                request.url.toString(),
+                                session.currentUrl,
+                                request.hasGesture(),
+                                session.currentUrl.tryGetHostFromUrl() == request.url.host,
+                                isRedirect,
+                                false,
+                                request.isForMainFrame,
+                            )
+                            ?.apply {
+                                return when (this) {
+                                    is InterceptionResponse.Content ->
+                                        WebResourceResponse(mimeType, encoding, data.byteInputStream())
+                                    is InterceptionResponse.Url -> {
+                                        view.post { view.loadUrl(url) }
+                                        super.shouldInterceptRequest(view, request)
+                                    }
+                                    is InterceptionResponse.AppIntent -> {
+                                        if (request.isForMainFrame) {
+                                            session.notifyObservers {
+                                                onLaunchIntentRequest(
+                                                    url = url,
+                                                    appIntent = appIntent,
+                                                    fallbackUrl = fallbackUrl,
+                                                    appName = appName,
+                                                )
+                                            }
+                                        }
+
+                                        super.shouldInterceptRequest(view, request)
+                                    }
+
+                                    is InterceptionResponse.Deny -> super.shouldInterceptRequest(view, request)
+                                }
+                            }
+                    }
+                }
+
+                if (request.isForMainFrame) {
+                    session?.let {
+                        it.notifyObservers {
+                            onLoadRequest(request.url.toString(), request.hasGesture(), true)
+                        }
+                    }
+                }
+
+                return super.shouldInterceptRequest(view, request)
+            }
+
+            override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
+                handler.cancel()
+                session?.let { session ->
+                    session.settings.requestInterceptor
+                        ?.onErrorRequest(
+                            session,
+                            ErrorType.ERROR_SECURITY_SSL,
+                            error.url,
+                        )
+                        ?.apply {
+                            view.loadUrl(this.uri)
+                        }
+                }
+            }
+
+            override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+                session?.let { session ->
+                    if (!request.isForMainFrame) {
+                        return
+                    }
+                    val errorType = SystemEngineSession.webViewErrorToErrorType(error.errorCode)
+                    session.settings.requestInterceptor
+                        ?.onErrorRequest(
+                            session,
+                            errorType,
+                            request.url.toString(),
+                        )
+                        ?.apply {
+                            view.loadUrl(this.uri)
+                        }
+                }
+            }
+
+            override fun onReceivedHttpAuthRequest(
+                view: WebView,
+                handler: HttpAuthHandler,
+                host: String,
+                realm: String,
+            ) {
+                val session = session ?: return handler.cancel()
+
+                val formattedUrl =
+                    session.currentUrl.toUri().let { uri ->
+                        "${uri.scheme ?: "http"}://${uri.host ?: host}"
+                    }
+
+                // Trim obnoxiously long realms.
+                val trimmedRealm =
+                    if (realm.length > MAX_REALM_LENGTH) {
+                        realm.substring(0, MAX_REALM_LENGTH) + "\u2026"
+                    } else {
+                        realm
+                    }
+
+                val message =
+                    if (trimmedRealm.isEmpty()) {
+                        context.getString(R.string.mozac_browser_engine_system_auth_no_realm_message, formattedUrl)
+                    } else {
+                        context.getString(R.string.mozac_browser_engine_system_auth_message, trimmedRealm, formattedUrl)
+                    }
+
+                val credentials = view.getAuthCredentials(host, realm)
+                val userName = credentials.first
+                val password = credentials.second
+
+                session.notifyObservers {
+                    onPromptRequest(
+                        PromptRequest.Authentication(
+                            formattedUrl,
+                            "",
+                            message,
+                            userName,
+                            password,
+                            PromptRequest.Authentication.Method.HOST,
+                            PromptRequest.Authentication.Level.NONE,
+                            onConfirm = { user, pass -> handler.proceed(user, pass) },
+                            onDismiss = { handler.cancel() },
+                        )
                     )
                 }
             }
         }
 
-        @Suppress("ReturnCount", "NestedBlockDepth", "LongMethod")
-        override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
-            if (session?.webFontsEnabled == false && UrlMatcher.isWebFont(request.url)) {
-                return WebResourceResponse(null, null, null)
-            }
-
-            session?.trackingProtectionPolicy?.let {
-                val resourceUri = request.url
-                val scheme = resourceUri.scheme
-                val path = resourceUri.path
-
-                if (!request.isForMainFrame && scheme != "http" && scheme != "https") {
-                    // Block any malformed non-http(s) URIs. WebView will already ignore things like market: URLs,
-                    // but not in all cases (malformed market: URIs, such as market:://... will still end up here).
-                    // (Note: data: URIs are automatically handled by WebView, and won't end up here either.)
-                    // file:// URIs are disabled separately by setting WebSettings.setAllowFileAccess()
-                    return WebResourceResponse(null, null, null)
-                }
-
-                // WebView always requests a favicon, even though it won't be used anywhere. This check
-                // isn't able to block all favicons (some of them will be loaded using <link rel="shortcut icon">
-                // with a custom URL which we can't match or detect), but reduces the amount of unnecessary
-                // favicon loading that's performed.
-                if (path != null && path.endsWith("/favicon.ico")) {
-                    return WebResourceResponse(null, null, null)
-                }
-
-                val (matches, stringCategory) = getOrCreateUrlMatcher(resources, it).matches(
-                    resourceUri,
-                    session?.currentUrl?.toUri() ?: Uri.EMPTY,
-                )
-
-                if (!request.isForMainFrame && matches) {
-                    session?.internalNotifyObservers {
-                        val matchedCategories = stringCategory.toTrackingProtectionCategories()
-                        onTrackerBlocked(
-                            Tracker(
-                                resourceUri.toString(),
-                                matchedCategories,
-                            ),
-                        )
+    private fun createWebChromeClient() =
+        object : WebChromeClient() {
+            override fun getVisitedHistory(callback: ValueCallback<Array<String>>) {
+                // TODO private browsing not supported for SystemEngine
+                // https://github.com/mozilla-mobile/android-components/issues/649
+                session?.settings?.historyTrackingDelegate?.let {
+                    runBlocking {
+                        callback.onReceiveValue(it.getVisited().toTypedArray())
                     }
-                    return WebResourceResponse(null, null, null)
                 }
             }
 
-            val isRedirect = request.isRedirect
+            override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                session?.internalNotifyObservers { onProgress(newProgress) }
+            }
 
-            session?.let { session ->
-                session.settings.requestInterceptor?.let { interceptor ->
-                    interceptor.onLoadRequest(
-                        session,
-                        request.url.toString(),
-                        session.currentUrl,
-                        request.hasGesture(),
-                        session.currentUrl.tryGetHostFromUrl() == request.url.host,
-                        isRedirect,
-                        false,
-                        request.isForMainFrame,
-                    )?.apply {
-                        return when (this) {
-                            is InterceptionResponse.Content ->
-                                WebResourceResponse(mimeType, encoding, data.byteInputStream())
-                            is InterceptionResponse.Url -> {
-                                view.post { view.loadUrl(url) }
-                                super.shouldInterceptRequest(view, request)
+            override fun onReceivedTitle(view: WebView, title: String?) {
+                val titleOrEmpty = title ?: ""
+                // TODO private browsing not supported for SystemEngine
+                // https://github.com/mozilla-mobile/android-components/issues/649
+                session
+                    ?.currentUrl
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.let { url ->
+                        session?.settings?.historyTrackingDelegate?.let { delegate ->
+                            runBlocking {
+                                delegate.onTitleChanged(url, titleOrEmpty)
                             }
-                            is InterceptionResponse.AppIntent -> {
-                                if (request.isForMainFrame) {
-                                    session.notifyObservers {
-                                        onLaunchIntentRequest(
-                                            url = url,
-                                            appIntent = appIntent,
-                                            fallbackUrl = fallbackUrl,
-                                            appName = appName,
-                                        )
-                                    }
-                                }
-
-                                super.shouldInterceptRequest(view, request)
-                            }
-
-                            is InterceptionResponse.Deny -> super.shouldInterceptRequest(view, request)
                         }
                     }
+                session?.internalNotifyObservers {
+                    onTitleChange(titleOrEmpty)
+                    onNavigationStateChange(view.canGoBack(), view.canGoForward())
                 }
             }
 
-            if (request.isForMainFrame) {
-                session?.let {
-                    it.notifyObservers {
-                        onLoadRequest(request.url.toString(), request.hasGesture(), true)
+            override fun onShowCustomView(view: View, callback: CustomViewCallback) {
+                addFullScreenView(view, callback)
+                session?.internalNotifyObservers { onFullScreenChange(true) }
+            }
+
+            override fun onHideCustomView() {
+                removeFullScreenView()
+                session?.internalNotifyObservers { onFullScreenChange(false) }
+            }
+
+            override fun onPermissionRequestCanceled(request: PermissionRequest) {
+                session?.internalNotifyObservers { onCancelContentPermissionRequest(SystemPermissionRequest(request)) }
+            }
+
+            override fun onPermissionRequest(request: PermissionRequest) {
+                session?.internalNotifyObservers { onContentPermissionRequest(SystemPermissionRequest(request)) }
+            }
+
+            override fun onJsAlert(view: WebView, url: String?, message: String?, result: JsResult): Boolean {
+                val session = session ?: return applyDefaultJsDialogBehavior(result)
+
+                // When an alert is triggered from a iframe, url is equals to about:blank, using currentUrl as a
+                // fallback.
+                val safeUrl =
+                    if (url.isNullOrBlank()) {
+                        session.currentUrl
+                    } else {
+                        if (url.contains("about")) session.currentUrl else url
                     }
+
+                val title = context.getString(R.string.mozac_browser_engine_system_alert_title, safeUrl)
+
+                val onDismiss: () -> Unit = {
+                    result.cancel()
                 }
-            }
 
-            return super.shouldInterceptRequest(view, request)
-        }
+                val onConfirm: (Boolean) -> Unit = { _ -> result.confirm() }
 
-        override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
-            handler.cancel()
-            session?.let { session ->
-                session.settings.requestInterceptor?.onErrorRequest(
-                    session,
-                    ErrorType.ERROR_SECURITY_SSL,
-                    error.url,
-                )?.apply {
-                    view.loadUrl(this.uri)
+                session.notifyObservers {
+                    onPromptRequest(
+                        PromptRequest.Alert(
+                            title,
+                            message ?: "",
+                            false,
+                            onConfirm,
+                            onDismiss,
+                        )
+                    )
                 }
+                return true
             }
-        }
 
-        override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
-            session?.let { session ->
-                if (!request.isForMainFrame) {
-                    return
+            override fun onJsPrompt(
+                view: WebView?,
+                url: String?,
+                message: String?,
+                defaultValue: String?,
+                result: JsPromptResult,
+            ): Boolean {
+                val session = session ?: return applyDefaultJsDialogBehavior(result)
+
+                val title =
+                    context.getString(R.string.mozac_browser_engine_system_alert_title, url ?: session.currentUrl)
+
+                val onDismiss: () -> Unit = {
+                    result.cancel()
                 }
-                val errorType = SystemEngineSession.webViewErrorToErrorType(error.errorCode)
-                session.settings.requestInterceptor?.onErrorRequest(
-                    session,
-                    errorType,
-                    request.url.toString(),
-                )?.apply {
-                    view.loadUrl(this.uri)
+
+                val onConfirm: (Boolean, String) -> Unit = { _, valueInput ->
+                    result.confirm(valueInput)
                 }
-            }
-        }
 
-        override fun onReceivedHttpAuthRequest(view: WebView, handler: HttpAuthHandler, host: String, realm: String) {
-            val session = session ?: return handler.cancel()
-
-            val formattedUrl = session.currentUrl.toUri().let { uri ->
-                "${uri.scheme ?: "http"}://${uri.host ?: host}"
-            }
-
-            // Trim obnoxiously long realms.
-            val trimmedRealm = if (realm.length > MAX_REALM_LENGTH) {
-                realm.substring(0, MAX_REALM_LENGTH) + "\u2026"
-            } else {
-                realm
-            }
-
-            val message = if (trimmedRealm.isEmpty()) {
-                context.getString(R.string.mozac_browser_engine_system_auth_no_realm_message, formattedUrl)
-            } else {
-                context.getString(R.string.mozac_browser_engine_system_auth_message, trimmedRealm, formattedUrl)
-            }
-
-            val credentials = view.getAuthCredentials(host, realm)
-            val userName = credentials.first
-            val password = credentials.second
-
-            session.notifyObservers {
-                onPromptRequest(
-                    PromptRequest.Authentication(
-                        formattedUrl,
-                        "",
-                        message,
-                        userName,
-                        password,
-                        PromptRequest.Authentication.Method.HOST,
-                        PromptRequest.Authentication.Level.NONE,
-                        onConfirm = { user, pass -> handler.proceed(user, pass) },
-                        onDismiss = { handler.cancel() },
-                    ),
-                )
-            }
-        }
-    }
-
-    private fun createWebChromeClient() = object : WebChromeClient() {
-        override fun getVisitedHistory(callback: ValueCallback<Array<String>>) {
-            // TODO private browsing not supported for SystemEngine
-            // https://github.com/mozilla-mobile/android-components/issues/649
-            session?.settings?.historyTrackingDelegate?.let {
-                runBlocking {
-                    callback.onReceiveValue(it.getVisited().toTypedArray())
+                session.notifyObservers {
+                    onPromptRequest(
+                        PromptRequest.TextPrompt(
+                            title,
+                            message ?: "",
+                            defaultValue ?: "",
+                            false,
+                            onConfirm,
+                            onDismiss,
+                        )
+                    )
                 }
+                return true
             }
-        }
 
-        override fun onProgressChanged(view: WebView?, newProgress: Int) {
-            session?.internalNotifyObservers { onProgress(newProgress) }
-        }
+            override fun onJsConfirm(view: WebView?, url: String?, message: String?, result: JsResult): Boolean {
+                val session = session ?: return applyDefaultJsDialogBehavior(result)
+                val title =
+                    context.getString(R.string.mozac_browser_engine_system_alert_title, url ?: session.currentUrl)
 
-        override fun onReceivedTitle(view: WebView, title: String?) {
-            val titleOrEmpty = title ?: ""
-            // TODO private browsing not supported for SystemEngine
-            // https://github.com/mozilla-mobile/android-components/issues/649
-            session?.currentUrl?.takeIf { it.isNotEmpty() }?.let { url ->
-                session?.settings?.historyTrackingDelegate?.let { delegate ->
-                    runBlocking {
-                        delegate.onTitleChanged(url, titleOrEmpty)
+                val onDismiss: () -> Unit = {
+                    result.cancel()
+                }
+
+                val onConfirmPositiveButton: (Boolean) -> Unit = { _ ->
+                    result.confirm()
+                }
+
+                val onConfirmNegativeButton: (Boolean) -> Unit = { _ ->
+                    result.cancel()
+                }
+
+                session.notifyObservers {
+                    onPromptRequest(
+                        PromptRequest.Confirm(
+                            title,
+                            message ?: "",
+                            false,
+                            "",
+                            "",
+                            "",
+                            onConfirmPositiveButton,
+                            onConfirmNegativeButton,
+                            {},
+                            onDismiss,
+                        )
+                    )
+                }
+                return true
+            }
+
+            override fun onShowFileChooser(
+                webView: WebView?,
+                filePathCallback: ValueCallback<Array<Uri>>?,
+                fileChooserParams: FileChooserParams?,
+            ): Boolean {
+                var mimeTypes = fileChooserParams?.acceptTypes ?: arrayOf()
+
+                if (mimeTypes.isNotEmpty() && mimeTypes.first().isNullOrEmpty()) {
+                    mimeTypes = arrayOf()
+                }
+
+                val isMultipleFilesSelection = fileChooserParams?.mode == MODE_OPEN_MULTIPLE
+
+                val captureMode =
+                    if (fileChooserParams?.isCaptureEnabled == true) {
+                        PromptRequest.File.FacingMode.ANY
+                    } else {
+                        PromptRequest.File.FacingMode.NONE
                     }
+
+                val onSelectMultiple: (Context, Array<Uri>) -> Unit = { _, uris ->
+                    filePathCallback?.onReceiveValue(uris)
+                }
+
+                val onSelectSingle: (Context, Uri) -> Unit = { _, uri ->
+                    filePathCallback?.onReceiveValue(arrayOf(uri))
+                }
+
+                val onDismiss: () -> Unit = {
+                    filePathCallback?.onReceiveValue(null)
+                }
+
+                session?.notifyObservers {
+                    onPromptRequest(
+                        PromptRequest.File(
+                            mimeTypes,
+                            isMultipleFilesSelection,
+                            captureMode,
+                            onSelectSingle,
+                            onSelectMultiple,
+                            onDismiss,
+                        )
+                    )
+                }
+
+                return true
+            }
+
+            override fun onCreateWindow(
+                view: WebView,
+                isDialog: Boolean,
+                isUserGesture: Boolean,
+                resultMsg: Message?,
+            ): Boolean {
+                session?.internalNotifyObservers {
+                    val newEngineSession = SystemEngineSession(context, session?.settings)
+                    onWindowRequest(
+                        SystemWindowRequest(
+                            view,
+                            newEngineSession,
+                            NestedWebView(context),
+                            isDialog,
+                            isUserGesture,
+                            resultMsg,
+                        )
+                    )
+                }
+                return true
+            }
+
+            override fun onCloseWindow(window: WebView) {
+                session?.internalNotifyObservers {
+                    onWindowRequest(SystemWindowRequest(window, type = WindowRequest.Type.CLOSE))
                 }
             }
-            session?.internalNotifyObservers {
-                onTitleChange(titleOrEmpty)
-                onNavigationStateChange(view.canGoBack(), view.canGoForward())
-            }
         }
-
-        override fun onShowCustomView(view: View, callback: CustomViewCallback) {
-            addFullScreenView(view, callback)
-            session?.internalNotifyObservers { onFullScreenChange(true) }
-        }
-
-        override fun onHideCustomView() {
-            removeFullScreenView()
-            session?.internalNotifyObservers { onFullScreenChange(false) }
-        }
-
-        override fun onPermissionRequestCanceled(request: PermissionRequest) {
-            session?.internalNotifyObservers { onCancelContentPermissionRequest(SystemPermissionRequest(request)) }
-        }
-
-        override fun onPermissionRequest(request: PermissionRequest) {
-            session?.internalNotifyObservers { onContentPermissionRequest(SystemPermissionRequest(request)) }
-        }
-
-        override fun onJsAlert(view: WebView, url: String?, message: String?, result: JsResult): Boolean {
-            val session = session ?: return applyDefaultJsDialogBehavior(result)
-
-            // When an alert is triggered from a iframe, url is equals to about:blank, using currentUrl as a fallback.
-            val safeUrl = if (url.isNullOrBlank()) {
-                session.currentUrl
-            } else {
-                if (url.contains("about")) session.currentUrl else url
-            }
-
-            val title = context.getString(R.string.mozac_browser_engine_system_alert_title, safeUrl)
-
-            val onDismiss: () -> Unit = {
-                result.cancel()
-            }
-
-            val onConfirm: (Boolean) -> Unit = { _ -> result.confirm() }
-
-            session.notifyObservers {
-                onPromptRequest(
-                    PromptRequest.Alert(
-                        title,
-                        message ?: "",
-                        false,
-                        onConfirm,
-                        onDismiss,
-                    ),
-                )
-            }
-            return true
-        }
-
-        override fun onJsPrompt(
-            view: WebView?,
-            url: String?,
-            message: String?,
-            defaultValue: String?,
-            result: JsPromptResult,
-        ): Boolean {
-            val session = session ?: return applyDefaultJsDialogBehavior(result)
-
-            val title = context.getString(R.string.mozac_browser_engine_system_alert_title, url ?: session.currentUrl)
-
-            val onDismiss: () -> Unit = {
-                result.cancel()
-            }
-
-            val onConfirm: (Boolean, String) -> Unit = { _, valueInput ->
-                result.confirm(valueInput)
-            }
-
-            session.notifyObservers {
-                onPromptRequest(
-                    PromptRequest.TextPrompt(
-                        title,
-                        message ?: "",
-                        defaultValue ?: "",
-                        false,
-                        onConfirm,
-                        onDismiss,
-                    ),
-                )
-            }
-            return true
-        }
-
-        override fun onJsConfirm(view: WebView?, url: String?, message: String?, result: JsResult): Boolean {
-            val session = session ?: return applyDefaultJsDialogBehavior(result)
-            val title = context.getString(R.string.mozac_browser_engine_system_alert_title, url ?: session.currentUrl)
-
-            val onDismiss: () -> Unit = {
-                result.cancel()
-            }
-
-            val onConfirmPositiveButton: (Boolean) -> Unit = { _ ->
-                result.confirm()
-            }
-
-            val onConfirmNegativeButton: (Boolean) -> Unit = { _ ->
-                result.cancel()
-            }
-
-            session.notifyObservers {
-                onPromptRequest(
-                    PromptRequest.Confirm(
-                        title,
-                        message ?: "",
-                        false,
-                        "",
-                        "",
-                        "",
-                        onConfirmPositiveButton,
-                        onConfirmNegativeButton,
-                        {},
-                        onDismiss,
-                    ),
-                )
-            }
-            return true
-        }
-
-        override fun onShowFileChooser(
-            webView: WebView?,
-            filePathCallback: ValueCallback<Array<Uri>>?,
-            fileChooserParams: FileChooserParams?,
-        ): Boolean {
-            var mimeTypes = fileChooserParams?.acceptTypes ?: arrayOf()
-
-            if (mimeTypes.isNotEmpty() && mimeTypes.first().isNullOrEmpty()) {
-                mimeTypes = arrayOf()
-            }
-
-            val isMultipleFilesSelection = fileChooserParams?.mode == MODE_OPEN_MULTIPLE
-
-            val captureMode = if (fileChooserParams?.isCaptureEnabled == true) {
-                PromptRequest.File.FacingMode.ANY
-            } else {
-                PromptRequest.File.FacingMode.NONE
-            }
-
-            val onSelectMultiple: (Context, Array<Uri>) -> Unit = { _, uris ->
-                filePathCallback?.onReceiveValue(uris)
-            }
-
-            val onSelectSingle: (Context, Uri) -> Unit = { _, uri ->
-                filePathCallback?.onReceiveValue(arrayOf(uri))
-            }
-
-            val onDismiss: () -> Unit = {
-                filePathCallback?.onReceiveValue(null)
-            }
-
-            session?.notifyObservers {
-                onPromptRequest(
-                    PromptRequest.File(
-                        mimeTypes,
-                        isMultipleFilesSelection,
-                        captureMode,
-                        onSelectSingle,
-                        onSelectMultiple,
-                        onDismiss,
-                    ),
-                )
-            }
-
-            return true
-        }
-
-        override fun onCreateWindow(
-            view: WebView,
-            isDialog: Boolean,
-            isUserGesture: Boolean,
-            resultMsg: Message?,
-        ): Boolean {
-            session?.internalNotifyObservers {
-                val newEngineSession = SystemEngineSession(context, session?.settings)
-                onWindowRequest(
-                    SystemWindowRequest(
-                        view,
-                        newEngineSession,
-                        NestedWebView(context),
-                        isDialog,
-                        isUserGesture,
-                        resultMsg,
-                    ),
-                )
-            }
-            return true
-        }
-
-        override fun onCloseWindow(window: WebView) {
-            session?.internalNotifyObservers {
-                onWindowRequest(SystemWindowRequest(window, type = WindowRequest.Type.CLOSE))
-            }
-        }
-    }
 
     internal fun createDownloadListener(): DownloadListener {
         return DownloadListener { url, userAgent, contentDisposition, mimetype, contentLength ->
             session?.let { session ->
                 session.internalNotifyObservers {
-                    val fileName = DefaultDownloadFileUtils(
-                        context = context,
-                    ).guessFileName(
-                        contentDisposition = contentDisposition,
-                        url = url,
-                        mimeType = mimetype,
-                    )
+                    val fileName =
+                        DefaultDownloadFileUtils(context = context)
+                            .guessFileName(
+                                contentDisposition = contentDisposition,
+                                url = url,
+                                mimeType = mimetype,
+                            )
                     val cookie = CookieManager.getInstance().getCookie(url)
                     onExternalResource(url, fileName, contentLength, mimetype, cookie, userAgent)
                 }
@@ -619,33 +643,34 @@ class SystemEngineView @JvmOverloads constructor(
     }
 
     internal fun handleLongClick(type: Int, extra: String): Boolean {
-        val result: HitResult? = when (type) {
-            EMAIL_TYPE -> {
-                HitResult.EMAIL(extra)
+        val result: HitResult? =
+            when (type) {
+                EMAIL_TYPE -> {
+                    HitResult.EMAIL(extra)
+                }
+                GEO_TYPE -> {
+                    HitResult.GEO(extra)
+                }
+                PHONE_TYPE -> {
+                    HitResult.PHONE(extra)
+                }
+                IMAGE_TYPE -> {
+                    HitResult.IMAGE(extra)
+                }
+                SRC_ANCHOR_TYPE -> {
+                    HitResult.UNKNOWN(extra)
+                }
+                SRC_IMAGE_ANCHOR_TYPE -> {
+                    // HitTestResult.getExtra() contains only the image URL, and not the link
+                    // URL. Internally, WebView's HitTestData contains both, but they only
+                    // make it available via requestFocusNodeHref...
+                    val message = Message()
+                    message.target = ImageHandler(session)
+                    session?.webView?.requestFocusNodeHref(message)
+                    null
+                }
+                else -> null
             }
-            GEO_TYPE -> {
-                HitResult.GEO(extra)
-            }
-            PHONE_TYPE -> {
-                HitResult.PHONE(extra)
-            }
-            IMAGE_TYPE -> {
-                HitResult.IMAGE(extra)
-            }
-            SRC_ANCHOR_TYPE -> {
-                HitResult.UNKNOWN(extra)
-            }
-            SRC_IMAGE_ANCHOR_TYPE -> {
-                // HitTestResult.getExtra() contains only the image URL, and not the link
-                // URL. Internally, WebView's HitTestData contains both, but they only
-                // make it available via requestFocusNodeHref...
-                val message = Message()
-                message.target = ImageHandler(session)
-                session?.webView?.requestFocusNodeHref(message)
-                null
-            }
-            else -> null
-        }
         result?.let {
             session?.internalNotifyObservers { onLongPress(it) }
             return true
@@ -655,10 +680,11 @@ class SystemEngineView @JvmOverloads constructor(
 
     internal fun addFullScreenView(view: View, callback: WebChromeClient.CustomViewCallback) {
         val webView = findViewWithTag<WebView>("mozac_system_engine_webview")
-        val layoutParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT,
-        )
+        val layoutParams =
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            )
         webView?.apply { this.visibility = View.INVISIBLE }
 
         session?.fullScreenCallback = callback
@@ -720,8 +746,7 @@ class SystemEngineView @JvmOverloads constructor(
     override fun canScrollVerticallyDown() = session?.webView?.canScrollVertically(1) ?: false
 
     override fun getInputResultDetail(): InputResultDetail {
-        return (session?.webView as? NestedWebView)?.inputResultDetail
-            ?: InputResultDetail.newInstance()
+        return (session?.webView as? NestedWebView)?.inputResultDetail ?: InputResultDetail.newInstance()
     }
 
     override fun captureThumbnail(onFinish: (Bitmap?) -> Unit) {
@@ -789,17 +814,17 @@ class SystemEngineView @JvmOverloads constructor(
         // Number of milliseconds in 1 second.
         internal const val SECOND_MS: Int = 1000
 
-        @Volatile
-        internal var urlMatcher: UrlMatcher? = null
+        @Volatile internal var urlMatcher: UrlMatcher? = null
 
-        private val urlMatcherCategoryMap = mapOf(
-            UrlMatcher.ADVERTISING to TrackingProtectionPolicy.TrackingCategory.AD,
-            UrlMatcher.ANALYTICS to TrackingProtectionPolicy.TrackingCategory.ANALYTICS,
-            UrlMatcher.CONTENT to TrackingProtectionPolicy.TrackingCategory.CONTENT,
-            UrlMatcher.SOCIAL to TrackingProtectionPolicy.TrackingCategory.SOCIAL,
-            UrlMatcher.CRYPTOMINING to TrackingProtectionPolicy.TrackingCategory.CRYPTOMINING,
-            UrlMatcher.FINGERPRINTING to TrackingProtectionPolicy.TrackingCategory.FINGERPRINTING,
-        )
+        private val urlMatcherCategoryMap =
+            mapOf(
+                UrlMatcher.ADVERTISING to TrackingProtectionPolicy.TrackingCategory.AD,
+                UrlMatcher.ANALYTICS to TrackingProtectionPolicy.TrackingCategory.ANALYTICS,
+                UrlMatcher.CONTENT to TrackingProtectionPolicy.TrackingCategory.CONTENT,
+                UrlMatcher.SOCIAL to TrackingProtectionPolicy.TrackingCategory.SOCIAL,
+                UrlMatcher.CRYPTOMINING to TrackingProtectionPolicy.TrackingCategory.CRYPTOMINING,
+                UrlMatcher.FINGERPRINTING to TrackingProtectionPolicy.TrackingCategory.FINGERPRINTING,
+            )
 
         private fun String?.toTrackingProtectionCategories(): List<TrackingProtectionPolicy.TrackingCategory> {
             val category = urlMatcherCategoryMap[this]
@@ -814,14 +839,16 @@ class SystemEngineView @JvmOverloads constructor(
         internal fun getOrCreateUrlMatcher(resources: Resources, policy: TrackingProtectionPolicy): UrlMatcher {
             val categories = urlMatcherCategoryMap.filterValues { policy.contains(it) }.keys
 
-            urlMatcher?.setCategoriesEnabled(categories) ?: run {
-                urlMatcher = UrlMatcher.createMatcher(
-                    resources,
-                    R.raw.domain_blocklist,
-                    R.raw.domain_safelist,
-                    categories,
-                )
-            }
+            urlMatcher?.setCategoriesEnabled(categories)
+                ?: run {
+                    urlMatcher =
+                        UrlMatcher.createMatcher(
+                            resources,
+                            R.raw.domain_blocklist,
+                            R.raw.domain_safelist,
+                            categories,
+                        )
+                }
 
             return urlMatcher as UrlMatcher
         }

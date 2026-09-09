@@ -124,7 +124,6 @@ export default [
       "browser/components/tabbrowser/content/browser-allTabsMenu.js",
       "browser/components/tabbrowser/content/browser-ctrlTab.js",
       "browser/components/tabbrowser/content/browser-fullZoom.js",
-      "browser/components/tabbrowser/content/tabbrowser.js",
       "browser/components/tabbrowser/content/tabs.js",
       "browser/components/translations/content/fullPageTranslationsPanel.js",
       "browser/components/translations/content/selectTranslationsPanel.js",

@@ -1300,9 +1300,31 @@ containers-new-tab-check3 =
     .label = Select a container for each new tab
     .accesskey = S
 
+# Checkbox in the Containers settings. By default, when a link is opened from
+# another application, Firefox tries to pick a matching container for it. When
+# this checkbox is checked, such links always open outside of any container.
+containers-external-links-check =
+    .label = Don’t use containers for links opened from external apps
+    .accesskey = D
+
 containers-settings-button2 =
     .title = Settings
 containers-remove-button3 =
+    .title = Delete
+
+containers-sites-card-header =
+    .label = Site-specific containers
+    .description = Choose a container for a site and { -brand-short-name } will use it every time the site opens.
+containers-sites-add-button =
+    .label = Add website
+    .accesskey = w
+
+# The dropdown that picks which container a site opens in.
+# Variables:
+#   $site (string) - Domain of the website, for example “example.com”.
+containers-site-container-select = Container for { $site }
+
+containers-site-remove-button =
     .title = Delete
 
 ## Account and sync
@@ -2711,8 +2733,8 @@ preferences-etp-custom-cookie-behavior =
 
 preferences-etp-custom-cookie-behavior-accept-all =
     .label = Allow all cookies
-preferences-etp-custom-cookie-behavior-block-cross-site-cookies =
-    .label = Block cross-site cookies
+preferences-etp-custom-cookie-behavior-block-cross-site-tracking-cookies =
+    .label = Block cross-site tracking cookies
 preferences-etp-custom-cookie-behavior-isolate-cross-site-cookies =
     .label = Isolate cross-site cookies
 preferences-etp-custom-cookie-behavior-block-unvisited =
@@ -3037,11 +3059,11 @@ disk_x = %s drive
 
 # The header in settings with link to the referral page, where the user can invite others to
 # use the browser. "Share" here means recommending or referring the browser
-referrals-section-header =
-  .label = Share { -brand-short-name }
+referrals-section-header2 =
+  .label = Share { -brand-product-name }
   .description = Invite someone to choose the browser that puts privacy first.
 
 # Link that opens the referral page, where the user can invite others to
 # use the browser. "Share" here means recommending or referring the browser
-referrals-link =
-  .label = Share { -brand-short-name }
+referrals-link2 =
+  .label = Share { -brand-product-name }

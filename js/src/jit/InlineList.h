@@ -291,12 +291,8 @@ class AppendOnlyListIterator {
   }
   T* operator*() const { return static_cast<T*>(iter); }
   T* operator->() const { return static_cast<T*>(iter); }
-  bool operator!=(const AppendOnlyListIterator<T>& where) const {
-    return iter != where.iter;
-  }
-  bool operator==(const AppendOnlyListIterator<T>& where) const {
-    return iter == where.iter;
-  }
+  bool operator!=(const AppendOnlyListIterator& where) const = default;
+  bool operator==(const AppendOnlyListIterator& where) const = default;
   explicit operator bool() const { return iter != nullptr; }
 
  private:
@@ -474,12 +470,8 @@ class InlineListIterator {
   }
   T* operator*() const { return static_cast<T*>(iter); }
   T* operator->() const { return static_cast<T*>(iter); }
-  bool operator!=(const InlineListIterator<T>& where) const {
-    return iter != where.iter;
-  }
-  bool operator==(const InlineListIterator<T>& where) const {
-    return iter == where.iter;
-  }
+  bool operator!=(const InlineListIterator<T>& where) const = default;
+  bool operator==(const InlineListIterator<T>& where) const = default;
 
  private:
   Node* iter;
@@ -516,12 +508,8 @@ class InlineListReverseIterator {
   }
   T* operator*() { return static_cast<T*>(iter); }
   T* operator->() { return static_cast<T*>(iter); }
-  bool operator!=(const InlineListReverseIterator<T>& where) const {
-    return iter != where.iter;
-  }
-  bool operator==(const InlineListReverseIterator<T>& where) const {
-    return iter == where.iter;
-  }
+  bool operator!=(const InlineListReverseIterator<T>& where) const = default;
+  bool operator==(const InlineListReverseIterator<T>& where) const = default;
 
  private:
   Node* iter;
@@ -600,12 +588,8 @@ class InlineSpaghettiStackIterator {
   }
   T* operator*() const { return static_cast<T*>(iter); }
   T* operator->() const { return static_cast<T*>(iter); }
-  bool operator!=(const InlineSpaghettiStackIterator<T>& where) const {
-    return iter != where.iter;
-  }
-  bool operator==(const InlineSpaghettiStackIterator<T>& where) const {
-    return iter == where.iter;
-  }
+  bool operator!=(const InlineSpaghettiStackIterator<T>& where) const = default;
+  bool operator==(const InlineSpaghettiStackIterator<T>& where) const = default;
 
  private:
   Node* iter;

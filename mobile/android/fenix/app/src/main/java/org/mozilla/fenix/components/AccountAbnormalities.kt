@@ -17,30 +17,22 @@ import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.perf.StrictModeManager
 
-/**
- * Miscellaneous FxA-related abnormalities.
- */
+/** Miscellaneous FxA-related abnormalities. */
 @VisibleForTesting
 internal abstract class AbnormalFxaEvent : Exception() {
-    /**
-     * Indicates an overlapping sign-out request.
-     */
+    /** Indicates an overlapping sign-out request. */
     class OverlappingFxaLogoutRequest : AbnormalFxaEvent()
 
-    /**
-     * Indicates an onLogout callback which was received without a preceding onAuthenticated callback.
-     */
+    /** Indicates an onLogout callback which was received without a preceding onAuthenticated callback. */
     class LogoutWithoutAuth : AbnormalFxaEvent()
 
     /**
-     * Indicates an unexpected sign-out event. All events must be user-triggered; this exception is
-     * logged when a sign-out event was detected without a corresponding user action.
+     * Indicates an unexpected sign-out event. All events must be user-triggered; this exception is logged when a
+     * sign-out event was detected without a corresponding user action.
      */
     class UnexpectedFxaLogout : AbnormalFxaEvent()
 
-    /**
-     * Indicates an account that's missing after startup, while it was expected to be present.
-     */
+    /** Indicates an account that's missing after startup, while it was expected to be present. */
     class MissingExpectedAccountAfterStartup : AbnormalFxaEvent()
 }
 
@@ -51,8 +43,7 @@ internal abstract class AbnormalFxaEvent : Exception() {
  *
  * @param context An Android [Context].
  * @param crashReporter An instance of [CrashReporter] used for reporting detected abnormalities.
- * @param strictMode An instance of [StrictModeManager] used to manage strict mode settings for the
- * application.
+ * @param strictMode An instance of [StrictModeManager] used to manage strict mode settings for the application.
  */
 class AccountAbnormalities(
     context: Context,
@@ -64,14 +55,11 @@ class AccountAbnormalities(
         private const val KEY_HAS_ACCOUNT = "has_account"
     }
 
-    @GuardedBy("this")
-    private var isLoggingOut = false
+    @GuardedBy("this") private var isLoggingOut = false
 
-    @Volatile
-    private var accountManagerConfigured = false
+    @Volatile private var accountManagerConfigured = false
 
-    @Volatile
-    private var onAuthenticatedCalled = false
+    @Volatile private var onAuthenticatedCalled = false
 
     private val logger = Logger("AccountAbnormalities")
 
@@ -79,11 +67,12 @@ class AccountAbnormalities(
     private val hadAccountPrior: Boolean
 
     init {
-        val prefPair = strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
-            val p = context.getSharedPreferences(PREF_FXA_ABNORMALITIES, Context.MODE_PRIVATE)
-            val a = p.getBoolean(KEY_HAS_ACCOUNT, false)
-            Pair(p, a)
-        }
+        val prefPair =
+            strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
+                val p = context.getSharedPreferences(PREF_FXA_ABNORMALITIES, Context.MODE_PRIVATE)
+                val a = p.getBoolean(KEY_HAS_ACCOUNT, false)
+                Pair(p, a)
+            }
         prefs = prefPair.first
         hadAccountPrior = prefPair.second
     }
@@ -105,15 +94,11 @@ class AccountAbnormalities(
 
             logger.warn("Missing expected account on startup")
 
-            crashReporter.submitCaughtException(
-                AbnormalFxaEvent.MissingExpectedAccountAfterStartup(),
-            )
+            crashReporter.submitCaughtException(AbnormalFxaEvent.MissingExpectedAccountAfterStartup())
         }
     }
 
-    /**
-     * Keeps track of user requests to logout.
-     */
+    /** Keeps track of user requests to logout. */
     fun userRequestedLogout() {
         check(accountManagerConfigured) {
             "userRequestedLogout before account manager was configured"

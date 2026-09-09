@@ -4,13 +4,13 @@
 
 package mozilla.components.feature.fxsuggest
 
+import java.util.UUID
 import mozilla.appservices.suggest.Suggestion
 import mozilla.appservices.suggest.SuggestionProvider
 import mozilla.appservices.suggest.SuggestionQuery
 import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.support.ktx.kotlin.toBitmap
-import java.util.UUID
 
 private const val MAX_NUM_OF_FIREFOX_SUGGESTIONS = 1
 
@@ -34,9 +34,7 @@ class FxSuggestSuggestionProvider(
     private val contextId: String? = null,
     private val scorer: AwesomeBar.SuggestionProvider.Scorer = DefaultScorer(),
 ) : AwesomeBar.SuggestionProvider {
-    /**
-     * [AwesomeBar.Suggestion.metadata] keys for this provider's suggestions.
-     */
+    /** [AwesomeBar.Suggestion.metadata] keys for this provider's suggestions. */
     object MetadataKeys {
         const val CLICK_INFO = "click_info"
         const val IMPRESSION_INFO = "impression_info"
@@ -51,10 +49,8 @@ class FxSuggestSuggestionProvider(
             emptyList()
         } else {
             val providers = buildList {
-                val availableSuggestionTypes = FxSuggestNimbus.features
-                    .awesomebarSuggestionProvider
-                    .value()
-                    .availableSuggestionTypes
+                val availableSuggestionTypes =
+                    FxSuggestNimbus.features.awesomebarSuggestionProvider.value().availableSuggestionTypes
                 if (includeSponsoredSuggestions && availableSuggestionTypes[SuggestionType.AMP] == true) {
                     add(SuggestionProvider.AMP)
                 }
@@ -65,47 +61,52 @@ class FxSuggestSuggestionProvider(
                     add(SuggestionProvider.WIKIPEDIA)
                 }
             }
-            GlobalFxSuggestDependencyProvider.requireStorage().query(
-                SuggestionQuery(
-                    keyword = text,
-                    providers = providers,
-                    limit = MAX_NUM_OF_FIREFOX_SUGGESTIONS,
-                ),
-            ).into()
+            GlobalFxSuggestDependencyProvider.requireStorage()
+                .query(
+                    SuggestionQuery(
+                        keyword = text,
+                        providers = providers,
+                        limit = MAX_NUM_OF_FIREFOX_SUGGESTIONS,
+                    )
+                )
+                .into()
         }
 
     override fun onInputCancelled() {
         GlobalFxSuggestDependencyProvider.requireStorage().cancelReads()
     }
 
-    private suspend fun List<Suggestion>.into(): List<AwesomeBar.Suggestion> =
-        mapNotNull { suggestion ->
-            val details = when (suggestion) {
-                is Suggestion.Amp -> SuggestionDetails(
-                    title = suggestion.title,
-                    url = suggestion.url,
-                    fullKeyword = suggestion.fullKeyword,
-                    isSponsored = true,
-                    icon = suggestion.icon,
-                    clickInfo = contextId?.let {
-                        FxSuggestInteractionInfo.Amp(
-                            blockId = suggestion.blockId,
-                            advertiser = suggestion.advertiser.lowercase(),
-                            reportingUrl = suggestion.clickUrl,
-                            iabCategory = suggestion.iabCategory,
-                            contextId = it,
-                        )
-                    },
-                    impressionInfo = contextId?.let {
-                        FxSuggestInteractionInfo.Amp(
-                            blockId = suggestion.blockId,
-                            advertiser = suggestion.advertiser.lowercase(),
-                            reportingUrl = suggestion.impressionUrl,
-                            iabCategory = suggestion.iabCategory,
-                            contextId = it,
-                        )
-                    },
-                )
+    private suspend fun List<Suggestion>.into(): List<AwesomeBar.Suggestion> = mapNotNull { suggestion ->
+        val details =
+            when (suggestion) {
+                is Suggestion.Amp ->
+                    SuggestionDetails(
+                        title = suggestion.title,
+                        url = suggestion.url,
+                        fullKeyword = suggestion.fullKeyword,
+                        isSponsored = true,
+                        icon = suggestion.icon,
+                        clickInfo =
+                            contextId?.let {
+                                FxSuggestInteractionInfo.Amp(
+                                    blockId = suggestion.blockId,
+                                    advertiser = suggestion.advertiser.lowercase(),
+                                    reportingUrl = suggestion.clickUrl,
+                                    iabCategory = suggestion.iabCategory,
+                                    contextId = it,
+                                )
+                            },
+                        impressionInfo =
+                            contextId?.let {
+                                FxSuggestInteractionInfo.Amp(
+                                    blockId = suggestion.blockId,
+                                    advertiser = suggestion.advertiser.lowercase(),
+                                    reportingUrl = suggestion.impressionUrl,
+                                    iabCategory = suggestion.iabCategory,
+                                    contextId = it,
+                                )
+                            },
+                    )
                 is Suggestion.Wikipedia -> {
                     val interactionInfo = contextId?.let {
                         FxSuggestInteractionInfo.Wikipedia(contextId = it)
@@ -122,30 +123,31 @@ class FxSuggestSuggestionProvider(
                 }
                 else -> return@mapNotNull null
             }
-            AwesomeBar.Suggestion(
-                provider = this@FxSuggestSuggestionProvider,
-                icon = details.icon?.toBitmap(),
-                title = details.title,
-                description = if (details.isSponsored) {
+        AwesomeBar.Suggestion(
+            provider = this@FxSuggestSuggestionProvider,
+            icon = details.icon?.toBitmap(),
+            title = details.title,
+            description =
+                if (details.isSponsored) {
                     sponsoredSuggestionDescription
                 } else {
                     null
                 },
-                onSuggestionClicked = {
-                    loadUrlUseCase(details.url)
-                },
-                metadata = buildMap {
+            onSuggestionClicked = {
+                loadUrlUseCase(details.url)
+            },
+            metadata =
+                buildMap {
                     details.clickInfo?.let { put(MetadataKeys.CLICK_INFO, it) }
                     details.impressionInfo?.let { put(MetadataKeys.IMPRESSION_INFO, it) }
                 },
-            )
-        }.let {
+        )
+    }
+        .let {
             scorer.score(it)
         }
 
-    /**
-     * A default implementation of [AwesomeBar.SuggestionProvider.Scorer] used by [FxSuggestSuggestionProvider].
-     * */
+    /** A default implementation of [AwesomeBar.SuggestionProvider.Scorer] used by [FxSuggestSuggestionProvider]. */
     private class DefaultScorer : AwesomeBar.SuggestionProvider.Scorer {
         override fun score(suggestions: List<AwesomeBar.Suggestion>): List<AwesomeBar.Suggestion> {
             return suggestions.map { suggestion ->
@@ -166,8 +168,8 @@ internal data class SuggestionDetails(
 )
 
 /**
- * Additional information about a Firefox Suggest [AwesomeBar.Suggestion] to record in telemetry when the user
- * interacts with the suggestion.
+ * Additional information about a Firefox Suggest [AwesomeBar.Suggestion] to record in telemetry when the user interacts
+ * with the suggestion.
  */
 sealed interface FxSuggestInteractionInfo {
     /**
@@ -192,7 +194,5 @@ sealed interface FxSuggestInteractionInfo {
      *
      * @param contextId The contextual services user identifier.
      */
-    data class Wikipedia(
-        val contextId: String,
-    ) : FxSuggestInteractionInfo
+    data class Wikipedia(val contextId: String) : FxSuggestInteractionInfo
 }

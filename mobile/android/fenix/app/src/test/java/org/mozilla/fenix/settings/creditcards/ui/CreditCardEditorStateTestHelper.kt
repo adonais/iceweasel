@@ -4,9 +4,7 @@
 
 package org.mozilla.fenix.settings.creditcards.ui
 
-/**
- * Creates a [CreditCardEditorState] with the given parameters for use in tests.
- */
+/** Creates a [CreditCardEditorState] with the given parameters for use in tests. */
 internal fun createState(
     guid: String = "",
     cardNumber: String = "5555444433331111",

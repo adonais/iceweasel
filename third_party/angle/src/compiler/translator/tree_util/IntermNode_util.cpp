@@ -6,10 +6,8 @@
 // IntermNode_util.cpp: High-level utilities for creating AST nodes and node hierarchies. Mostly
 // meant to be used in AST transforms.
 
+#include "common/unsafe_buffers.h"
 #include "compiler/translator/util.h"
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
 
 #include "compiler/translator/tree_util/IntermNode_util.h"
 
@@ -77,16 +75,16 @@ TIntermTyped *CreateZeroNode(const TType &type)
             switch (type.getBasicType())
             {
                 case EbtFloat:
-                    u[i].setFConst(0.0f);
+                    ANGLE_UNSAFE_TODO(u[i]).setFConst(0.0f);
                     break;
                 case EbtInt:
-                    u[i].setIConst(0);
+                    ANGLE_UNSAFE_TODO(u[i]).setIConst(0);
                     break;
                 case EbtUInt:
-                    u[i].setUConst(0u);
+                    ANGLE_UNSAFE_TODO(u[i]).setUConst(0u);
                     break;
                 case EbtBool:
-                    u[i].setBConst(false);
+                    ANGLE_UNSAFE_TODO(u[i]).setBConst(false);
                     break;
                 default:
                     // CreateZeroNode is called by ParseContext that keeps parsing even when an
@@ -95,7 +93,7 @@ TIntermTyped *CreateZeroNode(const TType &type)
                     // needs to return a value with the correct type to continue the type check.
                     // That's why we handle non-basic type by setting whatever value, we just need
                     // the type to be right.
-                    u[i].setIConst(42);
+                    ANGLE_UNSAFE_TODO(u[i]).setIConst(42);
                     break;
             }
         }
@@ -147,7 +145,7 @@ TIntermConstantUnion *CreateVecNode(const float values[],
     TConstantUnion *u = new TConstantUnion[vecSize];
     for (unsigned int channel = 0; channel < vecSize; ++channel)
     {
-        u[channel].setFConst(values[channel]);
+        ANGLE_UNSAFE_TODO(u[channel].setFConst(values[channel]));
     }
 
     TType type(EbtFloat, precision, EvqConst, static_cast<uint8_t>(vecSize));
@@ -161,7 +159,7 @@ TIntermConstantUnion *CreateUVecNode(const unsigned int values[],
     TConstantUnion *u = new TConstantUnion[vecSize];
     for (unsigned int channel = 0; channel < vecSize; ++channel)
     {
-        u[channel].setUConst(values[channel]);
+        ANGLE_UNSAFE_TODO(u[channel].setUConst(values[channel]));
     }
 
     TType type(EbtUInt, precision, EvqConst, static_cast<uint8_t>(vecSize));
@@ -489,12 +487,13 @@ TIntermSymbol *ReferenceGlobalVariable(const ImmutableString &name, const TSymbo
 }
 
 TIntermSymbol *ReferenceBuiltInVariable(const ImmutableString &name,
-                                        const TSymbolTable &symbolTable,
+                                        TSymbolTable &symbolTable,
                                         int shaderVersion)
 {
     const TVariable *var =
         static_cast<const TVariable *>(symbolTable.findBuiltIn(name, shaderVersion));
     ASSERT(var);
+    symbolTable.markStaticUse(*var);
     return new TIntermSymbol(var);
 }
 
@@ -570,6 +569,34 @@ TIntermNode *CastScalar(const TType &type, TIntermTyped *scalar)
 
     TType castDestType(basicType, type.getPrecision());
     return TIntermAggregate::CreateConstructor(castDestType, {scalar});
+}
+
+void MoveDeclarationsBeforeFunctions(TIntermBlock *root)
+{
+    TIntermSequence *original = root->getSequence();
+
+    TIntermSequence replacement;
+    TIntermSequence functionDefs;
+
+    // Accumulate non-function-definition declarations in |replacement| and function definitions in
+    // |functionDefs|.
+    for (TIntermNode *node : *original)
+    {
+        if (node->getAsFunctionDefinition() || node->getAsFunctionPrototypeNode())
+        {
+            functionDefs.push_back(node);
+        }
+        else
+        {
+            replacement.push_back(node);
+        }
+    }
+
+    // Append function definitions to |replacement|.
+    replacement.insert(replacement.end(), functionDefs.begin(), functionDefs.end());
+
+    // Replace root's sequence with |replacement|.
+    root->replaceAllChildren(std::move(replacement));
 }
 
 }  // namespace sh

@@ -26,22 +26,14 @@ data class ShortcutsState(
     }
 }
 
-/**
- * Represents the dialog state of the shortcuts screen.
- */
+/** Represents the dialog state of the shortcuts screen. */
 sealed interface DialogState {
-    /**
-     * The bottom sheet for adding a shortcut.
-     */
+    /** The bottom sheet for adding a shortcut. */
     data object AddShortcutBottomSheet : DialogState
 
-    /**
-     * The dialog for entering a new website shortcut's details.
-     */
+    /** The dialog for entering a new website shortcut's details. */
     data object AddShortcut : DialogState
 
-    /**
-     * No dialog is being shown.
-     */
+    /** No dialog is being shown. */
     data object Closed : DialogState
 }

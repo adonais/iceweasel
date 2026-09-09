@@ -220,7 +220,8 @@ nsContentSink::StyleSheetLoaded(StyleSheet* aSheet, bool aWasDeferred,
 
     if (loadedAllSheets &&
         mDocument->GetReadyStateEnum() >= Document::READYSTATE_INTERACTIVE) {
-      mScriptLoader->DeferCheckpointReached();
+      const RefPtr<ScriptLoader> scriptLoader = mScriptLoader;
+      scriptLoader->DeferCheckpointReached();
     }
   }
 
@@ -848,10 +849,10 @@ void nsContentSink::DidBuildModelImpl(bool aTerminated) {
              "Bad readyState");
   mDocument->SetReadyStateInternal(Document::READYSTATE_INTERACTIVE);
 
-  if (mScriptLoader) {
-    mScriptLoader->ParsingComplete(aTerminated);
+  if (const RefPtr<ScriptLoader> scriptLoader = mScriptLoader) {
+    scriptLoader->ParsingComplete(aTerminated);
     if (!mPendingSheetCount) {
-      mScriptLoader->DeferCheckpointReached();
+      scriptLoader->DeferCheckpointReached();
     }
   }
 

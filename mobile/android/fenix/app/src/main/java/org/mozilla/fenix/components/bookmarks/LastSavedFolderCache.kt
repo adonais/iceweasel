@@ -6,9 +6,7 @@ package org.mozilla.fenix.components.bookmarks
 
 import org.mozilla.fenix.utils.Settings
 
-/**
- * An interface to store and retrieve the guid of the folder we last saved a bookmark in.
- */
+/** An interface to store and retrieve the guid of the folder we last saved a bookmark in. */
 interface LastSavedFolderCache {
     /**
      * Retrieves the guid of the folder we last saved a bookmark in.
@@ -30,9 +28,7 @@ val Settings.lastSavedFolderCache: LastSavedFolderCache
         return SettingsBackedLastSavedFolderCache(this)
     }
 
-private class SettingsBackedLastSavedFolderCache(
-    private val settings: Settings,
-) : LastSavedFolderCache {
+private class SettingsBackedLastSavedFolderCache(private val settings: Settings) : LastSavedFolderCache {
     override suspend fun getGuid(): String? {
         if (settings.lastSavedInFolderGuid.isEmpty()) {
             return null

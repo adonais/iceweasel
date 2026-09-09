@@ -16,14 +16,15 @@ import org.junit.runners.JUnit4
 class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
 
     override fun getDetector(): Detector = NoSystemCurrentTimeMillisDetector()
-    override fun getIssues(): List<Issue> = listOf(
-        NoSystemCurrentTimeMillisDetector.ISSUE_NO_SYSTEM_CURRENT_TIME_MILLIS,
-    )
+
+    override fun getIssues(): List<Issue> =
+        listOf(NoSystemCurrentTimeMillisDetector.ISSUE_NO_SYSTEM_CURRENT_TIME_MILLIS)
 
     @Test
     fun `GIVEN System_currentTimeMillis is called in a method THEN expect lint warning`() {
-        val code = TestFiles.kotlin(
-            """
+        val code =
+            TestFiles.kotlin(
+                    """
             package my.pkg
 
             class MyClass {
@@ -31,8 +32,9 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
                     return System.currentTimeMillis()
                 }
             }
-            """,
-        ).indented()
+            """
+                )
+                .indented()
 
         lint()
             .files(code)
@@ -43,84 +45,80 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
                 """
                 Show URL for src/my/pkg/MyClass.kt line 5: See DateTimeProvider for one way to make this injectable:
                 https://searchfox.org/mozilla-central/source/mobile/android/android-components/components/support/utils/src/main/java/mozilla/components/support/utils/DateTimeProvider.kt
-                """.trimIndent(),
+                """
+                    .trimIndent()
             )
     }
 
     @Test
     fun `GIVEN System_currentTimeMillis is assigned to a property THEN expect lint warning`() {
-        val code = TestFiles.kotlin(
-            """
+        val code =
+            TestFiles.kotlin(
+                    """
             package my.pkg
 
             class MyClass {
                 val timestamp = System.currentTimeMillis()
             }
-            """,
-        ).indented()
+            """
+                )
+                .indented()
 
-        lint()
-            .files(code)
-            .run()
-            .expectWarningCount(1)
-            .expectContains("System.currentTimeMillis() must be injectable.")
+        lint().files(code).run().expectWarningCount(1).expectContains("System.currentTimeMillis() must be injectable.")
     }
 
     @Test
     fun `GIVEN System_currentTimeMillis is used as a method reference THEN expect lint warning`() {
-        val code = TestFiles.kotlin(
-            """
+        val code =
+            TestFiles.kotlin(
+                    """
             package my.pkg
 
             class MyClass {
                 val getTime: () -> Long = System::currentTimeMillis
             }
-            """,
-        ).indented()
+            """
+                )
+                .indented()
 
-        lint()
-            .files(code)
-            .run()
-            .expectWarningCount(1)
-            .expectContains("System.currentTimeMillis() must be injectable.")
+        lint().files(code).run().expectWarningCount(1).expectContains("System.currentTimeMillis() must be injectable.")
     }
 
     @Test
     fun `GIVEN System_currentTimeMillis is a default value on a top-level function THEN expect no warning`() {
-        val code = TestFiles.kotlin(
-            """
+        val code =
+            TestFiles.kotlin(
+                    """
             package my.pkg
 
             fun getTime(now: Long = System.currentTimeMillis()): Long = now
-            """,
-        ).indented()
+            """
+                )
+                .indented()
 
-        lint()
-            .files(code)
-            .run()
-            .expectClean()
+        lint().files(code).run().expectClean()
     }
 
     @Test
     fun `GIVEN System_currentTimeMillis is a default value on a class primary constructor THEN expect no warning`() {
-        val code = TestFiles.kotlin(
-            """
+        val code =
+            TestFiles.kotlin(
+                    """
             package my.pkg
 
             class MyClass(val now: Long = System.currentTimeMillis())
-            """,
-        ).indented()
+            """
+                )
+                .indented()
 
-        lint()
-            .files(code)
-            .run()
-            .expectClean()
+        lint().files(code).run().expectClean()
     }
 
     @Test
     fun `GIVEN System_currentTimeMillis is a default value on a class secondary constructor THEN expect no warning`() {
-        val code = TestFiles.kotlin(
-            """
+        val code =
+            TestFiles.kotlin(
+                    """
             package my.pkg
 
             class MyClass {
@@ -129,126 +127,117 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
                     this.now = now
                 }
             }
-            """,
-        ).indented()
+            """
+                )
+                .indented()
 
-        lint()
-            .files(code)
-            .run()
-            .expectClean()
+        lint().files(code).run().expectClean()
     }
 
     @Test
     fun `GIVEN System_currentTimeMillis is wrapped in a lambda default value on a top-level function THEN expect no warning`() {
-        val code = TestFiles.kotlin(
-            """
+        val code =
+            TestFiles.kotlin(
+                    """
             package my.pkg
 
             fun topLevelFunction(
                 currentTimeProvider: () -> Long = { System.currentTimeMillis() },
             ): Long = currentTimeProvider()
-            """,
-        ).indented()
+            """
+                )
+                .indented()
 
-        lint()
-            .files(code)
-            .run()
-            .expectClean()
+        lint().files(code).run().expectClean()
     }
 
     @Test
     fun `GIVEN System_currentTimeMillis is wrapped in a lambda default value on a class primary constructor THEN expect no warning`() {
-        val code = TestFiles.kotlin(
-            """
+        val code =
+            TestFiles.kotlin(
+                    """
             package my.pkg
 
             class MyClass(
                 private val currentTimeProvider: () -> Long = { System.currentTimeMillis() },
             )
-            """,
-        ).indented()
+            """
+                )
+                .indented()
 
-        lint()
-            .files(code)
-            .run()
-            .expectClean()
+        lint().files(code).run().expectClean()
     }
 
     @Test
     fun `GIVEN System_currentTimeMillis method reference is a default value on a top-level function THEN expect no warning`() {
-        val code = TestFiles.kotlin(
-            """
+        val code =
+            TestFiles.kotlin(
+                    """
             package my.pkg
 
             fun getTime(getTime: () -> Long = System::currentTimeMillis): Long = getTime()
-            """,
-        ).indented()
+            """
+                )
+                .indented()
 
-        lint()
-            .files(code)
-            .run()
-            .expectClean()
+        lint().files(code).run().expectClean()
     }
 
     @Test
     fun `GIVEN System_currentTimeMillis method reference is a default value on a class primary constructor THEN expect no warning`() {
-        val code = TestFiles.kotlin(
-            """
+        val code =
+            TestFiles.kotlin(
+                    """
             package my.pkg
 
             class MyClass(val getTime: () -> Long = System::currentTimeMillis)
-            """,
-        ).indented()
+            """
+                )
+                .indented()
 
-        lint()
-            .files(code)
-            .run()
-            .expectClean()
+        lint().files(code).run().expectClean()
     }
 
     @Test
     fun `GIVEN System_currentTimeMillis method reference is a default value on a method inside a class THEN expect lint warning`() {
-        val code = TestFiles.kotlin(
-            """
+        val code =
+            TestFiles.kotlin(
+                    """
             package my.pkg
 
             class MyClass {
                 fun getTime(getTime: () -> Long = System::currentTimeMillis): Long = getTime()
             }
-            """,
-        ).indented()
+            """
+                )
+                .indented()
 
-        lint()
-            .files(code)
-            .run()
-            .expectWarningCount(1)
-            .expectContains("System.currentTimeMillis() must be injectable.")
+        lint().files(code).run().expectWarningCount(1).expectContains("System.currentTimeMillis() must be injectable.")
     }
 
     @Test
     fun `GIVEN System_currentTimeMillis is a default value on a local function THEN expect lint warning`() {
-        val code = TestFiles.kotlin(
-            """
+        val code =
+            TestFiles.kotlin(
+                    """
             package my.pkg
 
             fun outer() {
                 fun localFn(now: Long = System.currentTimeMillis()): Long = now
                 localFn()
             }
-            """,
-        ).indented()
+            """
+                )
+                .indented()
 
-        lint()
-            .files(code)
-            .run()
-            .expectWarningCount(1)
-            .expectContains("System.currentTimeMillis() must be injectable.")
+        lint().files(code).run().expectWarningCount(1).expectContains("System.currentTimeMillis() must be injectable.")
     }
 
     @Test
     fun `GIVEN System_currentTimeMillis is a default value on a companion object method THEN expect lint warning`() {
-        val code = TestFiles.kotlin(
-            """
+        val code =
+            TestFiles.kotlin(
+                    """
             package my.pkg
 
             class MyClass {
@@ -256,68 +245,64 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
                     fun create(now: Long = System.currentTimeMillis()): Long = now
                 }
             }
-            """,
-        ).indented()
+            """
+                )
+                .indented()
 
-        lint()
-            .files(code)
-            .run()
-            .expectWarningCount(1)
-            .expectContains("System.currentTimeMillis() must be injectable.")
+        lint().files(code).run().expectWarningCount(1).expectContains("System.currentTimeMillis() must be injectable.")
     }
 
     @Test
     fun `GIVEN System_currentTimeMillis is a default value on a method inside a class THEN expect lint warning`() {
-        val code = TestFiles.kotlin(
-            """
+        val code =
+            TestFiles.kotlin(
+                    """
             package my.pkg
 
             class MyClass {
                 fun getTime(now: Long = System.currentTimeMillis()): Long = now
             }
-            """,
-        ).indented()
+            """
+                )
+                .indented()
 
-        lint()
-            .files(code)
-            .run()
-            .expectWarningCount(1)
-            .expectContains("System.currentTimeMillis() must be injectable.")
+        lint().files(code).run().expectWarningCount(1).expectContains("System.currentTimeMillis() must be injectable.")
     }
 
     @Test
     fun `GIVEN System_currentTimeMillis is a default value on a method inside an object THEN expect lint warning`() {
-        val code = TestFiles.kotlin(
-            """
+        val code =
+            TestFiles.kotlin(
+                    """
             package my.pkg
 
             object MyObject {
                 fun getTime(now: Long = System.currentTimeMillis()): Long = now
             }
-            """,
-        ).indented()
+            """
+                )
+                .indented()
 
-        lint()
-            .files(code)
-            .run()
-            .expectWarningCount(1)
-            .expectContains("System.currentTimeMillis() must be injectable.")
+        lint().files(code).run().expectWarningCount(1).expectContains("System.currentTimeMillis() must be injectable.")
     }
 
     @Test
     fun `GIVEN another currentTimeMillis is called on a non-System receiver THEN expect no warning`() {
-        val provider = TestFiles.kotlin(
-            """
+        val provider =
+            TestFiles.kotlin(
+                    """
             package some.pkg
 
             object SomeProvider {
                 fun currentTimeMillis(): Long = 0L
             }
-            """,
-        ).indented()
-
-        val code = TestFiles.kotlin(
             """
+                )
+                .indented()
+
+        val code =
+            TestFiles.kotlin(
+                    """
             package my.pkg
 
             import some.pkg.SomeProvider
@@ -327,19 +312,18 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
                     return SomeProvider.currentTimeMillis()
                 }
             }
-            """,
-        ).indented()
+            """
+                )
+                .indented()
 
-        lint()
-            .files(provider, code)
-            .run()
-            .expectClean()
+        lint().files(provider, code).run().expectClean()
     }
 
     @Test
     fun `GIVEN other System methods are called THEN expect no warning`() {
-        val code = TestFiles.kotlin(
-            """
+        val code =
+            TestFiles.kotlin(
+                    """
             package my.pkg
 
             class MyClass {
@@ -347,12 +331,10 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
                     System.out.println("test")
                 }
             }
-            """,
-        ).indented()
+            """
+                )
+                .indented()
 
-        lint()
-            .files(code)
-            .run()
-            .expectClean()
+        lint().files(code).run().expectClean()
     }
 }

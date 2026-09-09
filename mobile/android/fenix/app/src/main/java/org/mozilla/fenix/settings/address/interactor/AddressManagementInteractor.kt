@@ -7,35 +7,27 @@ package org.mozilla.fenix.settings.address.interactor
 import mozilla.components.concept.storage.Address
 import org.mozilla.fenix.settings.address.controller.AddressManagementController
 
-/**
- * Interface for the address management interactor.
- */
+/** Interface for the address management interactor. */
 interface AddressManagementInteractor {
 
     /**
-     * Navigates to the address editor to edit the selected address. Called when a user
-     * taps on an address item.
+     * Navigates to the address editor to edit the selected address. Called when a user taps on an address item.
      *
      * @param address The selected [Address] to edit.
      */
     fun onSelectAddress(address: Address)
 
-    /**
-     * Navigates to the address editor to add a new address. Called when a user
-     * taps on 'Add address' button.
-     */
+    /** Navigates to the address editor to add a new address. Called when a user taps on 'Add address' button. */
     fun onAddAddressButtonClick()
 }
 
 /**
  * The default implementation of [AddressManagementInteractor].
  *
- * @param controller An instance of [AddressManagementController] which will be delegated for
- * all user interactions.
+ * @param controller An instance of [AddressManagementController] which will be delegated for all user interactions.
  */
-class DefaultAddressManagementInteractor(
-    private val controller: AddressManagementController,
-) : AddressManagementInteractor {
+class DefaultAddressManagementInteractor(private val controller: AddressManagementController) :
+    AddressManagementInteractor {
 
     override fun onSelectAddress(address: Address) {
         controller.handleAddressClicked(address)

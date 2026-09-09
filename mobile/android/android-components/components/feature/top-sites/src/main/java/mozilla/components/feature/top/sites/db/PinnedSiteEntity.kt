@@ -9,22 +9,14 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import mozilla.components.feature.top.sites.TopSite
 
-/**
- * Internal entity representing a pinned site.
- */
+/** Internal entity representing a pinned site. */
 @Entity(tableName = "top_sites")
 internal data class PinnedSiteEntity(
-    @PrimaryKey(autoGenerate = true)
-    @ColumnInfo(name = "id")
-    var id: Long? = null,
-    @ColumnInfo(name = "title")
-    var title: String,
-    @ColumnInfo(name = "url")
-    var url: String,
-    @ColumnInfo(name = "is_default")
-    var isDefault: Boolean = false,
-    @ColumnInfo(name = "created_at")
-    var createdAt: Long = System.currentTimeMillis(),
+    @PrimaryKey(autoGenerate = true) @ColumnInfo(name = "id") var id: Long? = null,
+    @ColumnInfo(name = "title") var title: String,
+    @ColumnInfo(name = "url") var url: String,
+    @ColumnInfo(name = "is_default") var isDefault: Boolean = false,
+    @ColumnInfo(name = "created_at") var createdAt: Long = System.currentTimeMillis(),
 ) {
     internal fun toTopSite(): TopSite =
         if (isDefault) {

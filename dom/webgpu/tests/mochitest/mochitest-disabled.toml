@@ -1,3 +1,8 @@
+# Tests for WebGPU behavior when disabled.
+#
+# For these tests we set `dom.webgpu.enabled=false` and check expected
+# behavior when WebGPU is disabled.
+
 [DEFAULT]
 subsuite = "webgpu"
 dupe-manifest = true # duplicates mochitest-no-pref.toml

@@ -6,6 +6,7 @@ package org.mozilla.fenix.splashscreen
 import android.content.Context
 import android.view.View
 import androidx.lifecycle.LifecycleOwner
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -21,88 +22,95 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.experiments.nimbus.NimbusInterface
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class SplashScreenOperationTest {
 
     @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
-    fun `GIVEN the nimbus experiment has not fetched the data WHEN fetch operation is called THEN we observe and record nimbus fetching the data`() = runTest {
-        val testNimbus = TestNimbusApi(this)
-        val operation = FetchExperimentsOperation(
-            buildStorage(isDataFetchedAlready = false),
-            testNimbus,
-        )
+    fun `GIVEN the nimbus experiment has not fetched the data WHEN fetch operation is called THEN we observe and record nimbus fetching the data`() =
+        runTest {
+            val testNimbus = TestNimbusApi(this)
+            val operation =
+                FetchExperimentsOperation(
+                    buildStorage(isDataFetchedAlready = false),
+                    testNimbus,
+                )
 
-        assertNull(operation.fetchNimbusObserver)
-        assertTrue(testNimbus.observers.isEmpty())
+            assertNull(operation.fetchNimbusObserver)
+            assertTrue(testNimbus.observers.isEmpty())
 
-        launch { operation.run() }
-        delay(100)
+            launch { operation.run() }
+            delay(100)
 
-        assertNotNull(operation.fetchNimbusObserver)
-        assertTrue(testNimbus.observers.contains(operation.fetchNimbusObserver))
+            assertNotNull(operation.fetchNimbusObserver)
+            assertTrue(testNimbus.observers.contains(operation.fetchNimbusObserver))
 
-        launch { testNimbus.fakeExperimentsFetch(0) }
-        advanceUntilIdle()
+            launch { testNimbus.fakeExperimentsFetch(0) }
+            advanceUntilIdle()
 
-        assertTrue(operation.dataFetched)
-    }
+            assertTrue(operation.dataFetched)
+        }
 
     @Test
-    fun `GIVEN nimbus data is already fetched WHEN fetch operation is called THEN we do not observe nimbus fetch`() = runTest {
-        val operation = FetchExperimentsOperation(
-            buildStorage(isDataFetchedAlready = true),
-            TestNimbusApi(this),
-        )
+    fun `GIVEN nimbus data is already fetched WHEN fetch operation is called THEN we do not observe nimbus fetch`() =
+        runTest {
+            val operation =
+                FetchExperimentsOperation(
+                    buildStorage(isDataFetchedAlready = true),
+                    TestNimbusApi(this),
+                )
 
-        operation.run()
+            operation.run()
 
-        assertNull(operation.fetchNimbusObserver)
-        assertTrue(operation.dataFetched)
-    }
+            assertNull(operation.fetchNimbusObserver)
+            assertTrue(operation.dataFetched)
+        }
 
     @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
-    fun `GIVEN nimbus data not fetched WHEN apply operation is called THEN we observe and record nimbus fetching the data and nimbus applying the data`() = runTest {
-        val testNimbus = TestNimbusApi(scope = this, applyDelay = 1000L)
-        val operation = ApplyExperimentsOperation(
-            buildStorage(isDataFetchedAlready = false),
-            testNimbus,
-        )
+    fun `GIVEN nimbus data not fetched WHEN apply operation is called THEN we observe and record nimbus fetching the data and nimbus applying the data`() =
+        runTest {
+            val testNimbus = TestNimbusApi(scope = this, applyDelay = 1000L)
+            val operation =
+                ApplyExperimentsOperation(
+                    buildStorage(isDataFetchedAlready = false),
+                    testNimbus,
+                )
 
-        assertNull(operation.fetchNimbusObserver)
-        assertNull(operation.applyNimbusObserver)
-        assertTrue(testNimbus.observers.isEmpty())
+            assertNull(operation.fetchNimbusObserver)
+            assertNull(operation.applyNimbusObserver)
+            assertTrue(testNimbus.observers.isEmpty())
 
-        launch { operation.run() }
-        delay(100)
-        assertNotNull(operation.fetchNimbusObserver)
-        assertTrue(testNimbus.observers.contains(operation.fetchNimbusObserver))
+            launch { operation.run() }
+            delay(100)
+            assertNotNull(operation.fetchNimbusObserver)
+            assertTrue(testNimbus.observers.contains(operation.fetchNimbusObserver))
 
-        launch { testNimbus.fakeExperimentsFetch(0) }
-        delay(100)
-        assertNotNull(operation.applyNimbusObserver)
-        assertTrue(testNimbus.observers.contains(operation.applyNimbusObserver))
+            launch { testNimbus.fakeExperimentsFetch(0) }
+            delay(100)
+            assertNotNull(operation.applyNimbusObserver)
+            assertTrue(testNimbus.observers.contains(operation.applyNimbusObserver))
 
-        advanceUntilIdle()
-        assertTrue(operation.dataFetched)
-        assertTrue(operation.isDataApplied)
-    }
+            advanceUntilIdle()
+            assertTrue(operation.dataFetched)
+            assertTrue(operation.isDataApplied)
+        }
 
     @Test
-    fun `GIVEN nimbus data already fetched WHEN apply operation is called THEN we do not observe nimbus fetch`() = runTest {
-        val operation = ApplyExperimentsOperation(
-            buildStorage(isDataFetchedAlready = true),
-            TestNimbusApi(this),
-        )
+    fun `GIVEN nimbus data already fetched WHEN apply operation is called THEN we do not observe nimbus fetch`() =
+        runTest {
+            val operation =
+                ApplyExperimentsOperation(
+                    buildStorage(isDataFetchedAlready = true),
+                    TestNimbusApi(this),
+                )
 
-        operation.run()
+            operation.run()
 
-        assertNull(operation.fetchNimbusObserver)
-        assertTrue(operation.dataFetched)
-    }
+            assertNull(operation.fetchNimbusObserver)
+            assertTrue(operation.dataFetched)
+        }
 
     class TestNimbusApi(
         private val scope: CoroutineScope,
@@ -173,10 +181,9 @@ class SplashScreenOperationTest {
         override var rolloutParticipation: Boolean = true
     }
 
-    private fun buildStorage(
-        isDataFetchedAlready: Boolean = false,
-    ) = object : ExperimentsOperationStorage {
-        override val nimbusExperimentsFetched: Boolean
-            get() = isDataFetchedAlready
-    }
+    private fun buildStorage(isDataFetchedAlready: Boolean = false) =
+        object : ExperimentsOperationStorage {
+            override val nimbusExperimentsFetched: Boolean
+                get() = isDataFetchedAlready
+        }
 }

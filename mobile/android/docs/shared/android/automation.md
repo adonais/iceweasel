@@ -46,7 +46,7 @@ For Kotlin only projects, run these tools:
 
 * Android lint
 * [detekt](https://github.com/arturbosch/detekt)
-* [ktlint](https://github.com/shyiko/ktlint)
+* [ktfmt](https://github.com/Kotlin/ktfmt)
 
 For projects that also include Java, add these tools:
 

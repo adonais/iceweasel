@@ -14,65 +14,50 @@ Bug 895360 - [app manager] Device meta data actor
 <script>
 "use strict";
 
-window.onload = function() {
-  const {require} = ChromeUtils.importESModule("resource://devtools/shared/loader/Loader.sys.mjs");
-  const {DevToolsClient} = require("devtools/client/devtools-client");
-  const {DevToolsServer} = require("devtools/server/devtools-server");
+const {require} = ChromeUtils.importESModule("resource://devtools/shared/loader/Loader.sys.mjs");
+const {
+  createLocalClientForTests
+} = require("resource://devtools/shared/commands/commands-factory.js");
 
-  SimpleTest.waitForExplicitFinish();
+add_task(async function () {
+  const client = await createLocalClientForTests();
+  const device = await client.mainRoot.getFront("device");
 
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
+  const appInfo = Services.appinfo;
+  const utils = window.windowUtils;
 
-  const client = new DevToolsClient(DevToolsServer.connectPipe());
-  client.connect().then(function onConnect() {
-    return client.mainRoot.getFront("device");
-  }).then(function(d) {
-    let desc;
-    const appInfo = Services.appinfo;
-    const utils = window.windowUtils;
+  const localDesc = {
+    appid: appInfo.ID,
+    vendor: appInfo.vendor,
+    name: appInfo.name,
+    version: appInfo.version,
+    appbuildid: appInfo.appBuildID,
+    platformbuildid: appInfo.platformBuildID,
+    platformversion: appInfo.platformVersion,
+    geckobuildid: appInfo.platformBuildID,
+    geckoversion: appInfo.platformVersion,
+    useragent: window.navigator.userAgent,
+    locale: Services.locale.appLocaleAsBCP47,
+    os: appInfo.OS,
+    processor: appInfo.XPCOMABI.split("-")[0],
+    compiler: appInfo.XPCOMABI.split("-")[1],
+    dpi: utils.displayDPI,
+    width: window.screen.width,
+    height: window.screen.height,
+  };
 
-    const localDesc = {
-      appid: appInfo.ID,
-      vendor: appInfo.vendor,
-      name: appInfo.name,
-      version: appInfo.version,
-      appbuildid: appInfo.appBuildID,
-      platformbuildid: appInfo.platformBuildID,
-      platformversion: appInfo.platformVersion,
-      geckobuildid: appInfo.platformBuildID,
-      geckoversion: appInfo.platformVersion,
-      useragent: window.navigator.userAgent,
-      locale: Services.locale.appLocaleAsBCP47,
-      os: appInfo.OS,
-      processor: appInfo.XPCOMABI.split("-")[0],
-      compiler: appInfo.XPCOMABI.split("-")[1],
-      dpi: utils.displayDPI,
-      width: window.screen.width,
-      height: window.screen.height,
-    };
+  const desc = await device.getDescription();
+  for (const key in localDesc) {
+    is(desc[key], localDesc[key], "valid field (" + key + ")");
+  }
 
-    function checkValues() {
-      for (const key in localDesc) {
-        is(desc[key], localDesc[key], "valid field (" + key + ")");
-      }
+  const currProfD = Services.dirsvc.get("ProfD", Ci.nsIFile);
+  const profileDir = currProfD.path;
+  ok(profileDir.includes(!!desc.profile.length && desc.profile),
+     "valid profile name");
 
-      const currProfD = Services.dirsvc.get("ProfD", Ci.nsIFile);
-      const profileDir = currProfD.path;
-      ok(profileDir.includes(!!desc.profile.length && desc.profile),
-         "valid profile name");
-
-      client.close().then(() => {
-        DevToolsServer.destroy();
-        SimpleTest.finish();
-      });
-    }
-
-    d.getDescription().then(function(v) {
-      desc = v;
-    }).then(checkValues);
-  });
-};
+  await client.close()
+});
 </script>
 </pre>
 </body>

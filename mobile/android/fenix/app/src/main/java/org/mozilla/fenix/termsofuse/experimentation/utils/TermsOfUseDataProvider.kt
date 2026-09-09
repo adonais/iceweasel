@@ -8,54 +8,34 @@ import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.Engine.HttpsOnlyMode
 import org.mozilla.fenix.utils.Settings
 
-/**
- * Provides Terms of Use related data.
- */
+/** Provides Terms of Use related data. */
 interface TermsOfUseDataProvider {
-    /**
-     * Whether Strict Tracking Protection is enabled.
-     */
+    /** Whether Strict Tracking Protection is enabled. */
     val useStrictTrackingProtection: Boolean
 
-    /**
-     * Whether Global Privacy Control is enabled.
-     */
+    /** Whether Global Privacy Control is enabled. */
     val shouldEnableGlobalPrivacyControl: Boolean
 
-    /**
-     * Whether increased DoH protection is enabled.
-     */
+    /** Whether increased DoH protection is enabled. */
     fun isIncreasedDohProtectionEnabled(): Boolean
 
-    /**
-     * Whether HTTPS-only mode is enabled.
-     */
+    /** Whether HTTPS-only mode is enabled. */
     fun enabledHttpsOnlyMode(): Boolean
 
-    /**
-     * Whether sponsored Shortcuts are enabled.
-     */
+    /** Whether sponsored Shortcuts are enabled. */
     val showSponsoredShortcuts: Boolean
 
-    /**
-     * Whether the Shortcuts feature is enabled.
-     */
+    /** Whether the Shortcuts feature is enabled. */
     val showShortcutsFeature: Boolean
 
-    /**
-     * Whether sponsored Stories are enabled.
-     */
+    /** Whether sponsored Stories are enabled. */
     val showSponsoredStories: Boolean
 
-    /**
-     * Whether the Stories feature is enabled.
-     */
+    /** Whether the Stories feature is enabled. */
     val showStoriesFeature: Boolean
 }
 
-/**
- * Default implementation of [TermsOfUseDataProvider].
- */
+/** Default implementation of [TermsOfUseDataProvider]. */
 class DefaultTermsOfUseDataProvider(private val settings: Settings) : TermsOfUseDataProvider {
     override val useStrictTrackingProtection: Boolean
         get() = settings.useStrictTrackingProtection

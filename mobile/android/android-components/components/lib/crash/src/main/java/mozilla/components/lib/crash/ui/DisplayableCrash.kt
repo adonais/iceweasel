@@ -10,9 +10,10 @@ import mozilla.components.lib.crash.db.ReportEntity
 
 /**
  * Data class representing a Crash for the UI layer.
+ *
  * @property uuid the id of the crash.
- * @property stacktrace The stacktrace of the crash (if this crash was caused by an exception/throwable):
- * otherwise a string describing the type of crash.
+ * @property stacktrace The stacktrace of the crash (if this crash was caused by an exception/throwable): otherwise a
+ *   string describing the type of crash.
  * @property createdAt Timestamp (in milliseconds) of when the crash happened.
  * @property reports The reports of the crash on our crash reporting services.
  */
@@ -25,6 +26,7 @@ internal data class DisplayableCrash(
 
     /**
      * Data class representing a crash report on our crash reporting services.
+     *
      * @property serviceName The Service name.
      * @property url The URL of this crash on this service.
      */
@@ -33,30 +35,34 @@ internal data class DisplayableCrash(
         val url: String?,
     )
 
-    override fun toString() = StringBuilder().apply {
-        append(uuid)
-        appendLine()
-        append(stacktrace.lines().first())
-        appendLine()
+    override fun toString() =
+        StringBuilder()
+            .apply {
+                append(uuid)
+                appendLine()
+                append(stacktrace.lines().first())
+                appendLine()
 
-        reports.forEach { report ->
-            append(" * ${report.serviceName}: ${report.url ?: "<No URL>"}")
-            appendLine()
-        }
+                reports.forEach { report ->
+                    append(" * ${report.serviceName}: ${report.url ?: "<No URL>"}")
+                    appendLine()
+                }
 
-        append("----")
-        appendLine()
-        append(stacktrace)
-        appendLine()
-    }.toString()
+                append("----")
+                appendLine()
+                append(stacktrace)
+                appendLine()
+            }
+            .toString()
 }
 
-internal fun CrashWithReports.toCrash(reporter: CrashReporter) = DisplayableCrash(
-    crash.uuid,
-    crash.stacktrace,
-    crash.createdAt,
-    reports.map { it.toReport(reporter) },
-)
+internal fun CrashWithReports.toCrash(reporter: CrashReporter) =
+    DisplayableCrash(
+        crash.uuid,
+        crash.stacktrace,
+        crash.createdAt,
+        reports.map { it.toReport(reporter) },
+    )
 
 internal fun ReportEntity.toReport(reporter: CrashReporter): DisplayableCrash.Report {
     val service = reporter.getCrashReporterServiceById(serviceId)

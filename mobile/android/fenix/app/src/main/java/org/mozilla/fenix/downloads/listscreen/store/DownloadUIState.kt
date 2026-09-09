@@ -37,24 +37,22 @@ data class DownloadUIState(
     private val userSelectedContentTypeFilter: FileItem.ContentTypeFilter = FileItem.ContentTypeFilter.All,
 ) : State {
 
-    /**
-     * The ungrouped list of items, excluding any items that are pending deletion.
-     */
+    /** The ungrouped list of items, excluding any items that are pending deletion. */
     private val itemsNotPendingDeletion = items.filter { it.id !in pendingDeletionIds }
 
     /**
-     * The content type filter that is actually used to filter the items. This overrides the user
-     * selected content type filter to [FileItem.ContentTypeFilter.All] if there are no items that
-     * matches the user selected filter.
+     * The content type filter that is actually used to filter the items. This overrides the user selected content type
+     * filter to [FileItem.ContentTypeFilter.All] if there are no items that matches the user selected filter.
      */
     val selectedContentTypeFilter: FileItem.ContentTypeFilter
         get() {
-            val selectedTypeContainsItems = itemsNotPendingDeletion
-                .filter {
-                    userSelectedContentTypeFilter == FileItem.ContentTypeFilter.All ||
-                    it.status == FileItem.Status.Completed
-                }
-                .any { download -> userSelectedContentTypeFilter.predicate(download.contentType) }
+            val selectedTypeContainsItems =
+                itemsNotPendingDeletion
+                    .filter {
+                        userSelectedContentTypeFilter == FileItem.ContentTypeFilter.All ||
+                            it.status == FileItem.Status.Completed
+                    }
+                    .any { download -> userSelectedContentTypeFilter.predicate(download.contentType) }
 
             return if (selectedTypeContainsItems) {
                 userSelectedContentTypeFilter
@@ -64,31 +62,28 @@ data class DownloadUIState(
         }
 
     /**
-     * The list of items to display grouped by the created time of the item.
-     * The ungrouped list of items to display, excluding any items that are pending deletion and
-     * that match the selected content type filter and the search query.
+     * The list of items to display grouped by the created time of the item. The ungrouped list of items to display,
+     * excluding any items that are pending deletion and that match the selected content type filter and the search
+     * query.
      */
-    val itemsMatchingFilters = itemsNotPendingDeletion
-        .filter {
-            selectedContentTypeFilter == FileItem.ContentTypeFilter.All ||
-            it.status == FileItem.Status.Completed
-        }
-        .filter { selectedContentTypeFilter.predicate(it.contentType) }
-        .filter { it.stringToMatchForSearchQuery.contains(searchQuery, ignoreCase = true) }
+    val itemsMatchingFilters =
+        itemsNotPendingDeletion
+            .filter {
+                selectedContentTypeFilter == FileItem.ContentTypeFilter.All || it.status == FileItem.Status.Completed
+            }
+            .filter { selectedContentTypeFilter.predicate(it.contentType) }
+            .filter { it.stringToMatchForSearchQuery.contains(searchQuery, ignoreCase = true) }
 
-    /**
-     * The list of items to display grouped by the created time of the item.
-     */
-    private val itemsToDisplay: List<DownloadListItem> = itemsMatchingFilters
-        .groupBy { it.timeCategory }
-        .toSortedMap()
-        .flatMap { (createdTime, fileItems) ->
-            listOf(HeaderItem(createdTime)) + fileItems
-        }
+    /** The list of items to display grouped by the created time of the item. */
+    private val itemsToDisplay: List<DownloadListItem> =
+        itemsMatchingFilters
+            .groupBy { it.timeCategory }
+            .toSortedMap()
+            .flatMap { (createdTime, fileItems) ->
+                listOf(HeaderItem(createdTime)) + fileItems
+            }
 
-    /**
-     * The list of content type filters that have at least one item that matches the filter.
-     */
+    /** The list of content type filters that have at least one item that matches the filter. */
     private val matchingFilters: List<FileItem.ContentTypeFilter> =
         itemsNotPendingDeletion
             .filter { it.status == FileItem.Status.Completed }
@@ -96,9 +91,7 @@ data class DownloadUIState(
             .distinct()
             .sorted()
 
-    /**
-     * The list of content type filters to display.
-     */
+    /** The list of content type filters to display. */
     val filtersToDisplay: List<FileItem.ContentTypeFilter> =
         if (matchingFilters.size > 1) {
             listOf(FileItem.ContentTypeFilter.All) + matchingFilters
@@ -106,11 +99,12 @@ data class DownloadUIState(
             emptyList()
         }
 
-    val itemsState: ItemsState = when {
-        itemsToDisplay.isEmpty() && searchQuery.isNotEmpty() -> ItemsState.NoSearchResults
-        itemsToDisplay.isEmpty() -> ItemsState.NoItems
-        else -> ItemsState.Items(itemsToDisplay)
-    }
+    val itemsState: ItemsState =
+        when {
+            itemsToDisplay.isEmpty() && searchQuery.isNotEmpty() -> ItemsState.NoSearchResults
+            itemsToDisplay.isEmpty() -> ItemsState.NoItems
+            else -> ItemsState.Items(itemsToDisplay)
+        }
 
     val isSearchFieldVisible: Boolean
         get() = isSearchFieldRequested && mode is Mode.Normal
@@ -124,89 +118,64 @@ data class DownloadUIState(
     val isBackHandlerEnabled: Boolean
         get() = isSearchFieldRequested || mode is Mode.Editing
 
-    /**
-     * @see [DownloadUIState].
-     */
+    /** @see [DownloadUIState]. */
     companion object {
-        val INITIAL = DownloadUIState(
-            items = emptyList(),
-            mode = Mode.Normal,
-            pendingDeletionIds = emptySet(),
-            userSelectedContentTypeFilter = FileItem.ContentTypeFilter.All,
-        )
+        val INITIAL =
+            DownloadUIState(
+                items = emptyList(),
+                mode = Mode.Normal,
+                pendingDeletionIds = emptySet(),
+                userSelectedContentTypeFilter = FileItem.ContentTypeFilter.All,
+            )
     }
 
-    /**
-     * The state of the items to display in the Download screen.
-     */
+    /** The state of the items to display in the Download screen. */
     sealed interface ItemsState {
-        /**
-         * The state when there are no files to display.
-         */
+        /** The state when there are no files to display. */
         data object NoItems : ItemsState
 
-        /**
-         * The state when there are no results to display based on the search query.
-         */
+        /** The state when there are no results to display based on the search query. */
         data object NoSearchResults : ItemsState
 
-        /**
-         * The state when there are files to display.
-         */
-        data class Items(
-            val items: List<DownloadListItem>,
-        ) : ItemsState
+        /** The state when there are files to display. */
+        data class Items(val items: List<DownloadListItem>) : ItemsState
     }
 
-    /**
-     * The mode of the Download screen.
-     */
+    /** The mode of the Download screen. */
     sealed class Mode {
         open val selectedItems = emptySet<FileItem>()
 
-        /**
-         * Normal mode for the Download screen.
-         */
+        /** Normal mode for the Download screen. */
         data object Normal : Mode()
 
-        /**
-         * Editing mode for the Download screen where items can be selected.
-         */
+        /** Editing mode for the Download screen where items can be selected. */
         data class Editing(override val selectedItems: Set<FileItem>) : Mode()
     }
 
-    /**
-     * The state of the Undo deletion snackbar.
-     */
+    /** The state of the Undo deletion snackbar. */
     sealed interface SnackbarState {
-        /**
-         * No snackbar is currently visible.
-         */
+        /** No snackbar is currently visible. */
         data object None : SnackbarState
 
-        /**
-         * The Undo deletion snackbar is shown with the specified items.
-         */
+        /** The Undo deletion snackbar is shown with the specified items. */
         data class UndoDeletion(val items: Set<FileItem>) : SnackbarState
     }
 
-    /**
-     * The state of the active dialog on the Download screen.
-     */
+    /** The state of the active dialog on the Download screen. */
     sealed interface DialogState {
-        /**
-         * No dialog is currently visible.
-         */
+        /** No dialog is currently visible. */
         data object None : DialogState
 
         /**
          * The delete confirmation dialog is visible.
+         *
          * @property items The items waiting for deletion confirmation.
          */
         data class DeleteConfirmation(val items: Set<FileItem>) : DialogState
 
         /**
          * The multi-select delete confirmation dialog is visible.
+         *
          * @property items The items waiting for deletion confirmation.
          */
         data class MultiSelectDeleteConfirmation(val items: Set<FileItem>) : DialogState

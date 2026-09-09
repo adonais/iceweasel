@@ -331,6 +331,52 @@ add_task(async function test_invalid_gradient_arguments() {
   await extension.unload();
 });
 
+add_task(async function test_backgrounds_area() {
+  // `backgrounds_area` overrides the alignment-based heuristic that decides
+  // whether the background images go on the toolbox or on the window.
+  async function testArea(area, alignment, expectInToolbox) {
+    let properties = { additional_backgrounds_alignment: [alignment] };
+    if (area) {
+      properties.backgrounds_area = area;
+    }
+
+    let extension = ExtensionTestUtils.loadExtension({
+      manifest: {
+        theme: {
+          images: { additional_backgrounds: ["face.png"] },
+          colors: {
+            frame: FRAME_COLOR,
+            tab_background_text: TAB_BACKGROUND_TEXT_COLOR,
+          },
+          properties,
+        },
+      },
+      files: { "face.png": imageBufferFromDataURI(ENCODED_IMAGE_DATA) },
+    });
+
+    await extension.startup();
+
+    Assert.equal(
+      document.documentElement.hasAttribute("theme-image-in-toolbox"),
+      expectInToolbox,
+      `theme-image-in-toolbox should be ${expectInToolbox} for ${area ?? "unspecified"} area with ${alignment} alignment.`
+    );
+
+    await extension.unload();
+  }
+
+  // An absent property and "auto" both defer to the heuristic, which only
+  // moves the images to the toolbox when they're aligned along the y axis.
+  for (let area of [undefined, "auto"]) {
+    await testArea(area, "right top", false);
+    await testArea(area, "right bottom", true);
+  }
+
+  // An explicit area overrides the heuristic in both directions.
+  await testArea("top_toolbars", "right top", true);
+  await testArea("window", "right bottom", false);
+});
+
 add_task(async function test_additional_images_check() {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {

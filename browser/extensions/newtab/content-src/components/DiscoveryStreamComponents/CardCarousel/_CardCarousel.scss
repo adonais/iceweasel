@@ -1,0 +1,159 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+// Grid items default to min-width: auto, so each level below sets
+// min-inline-size: 0. Without it a wide card pushes the carousel out of
+// the grid track it was given and eats the gutter beside it.
+.ds-carousel {
+  position: relative;
+  display: grid;
+  min-inline-size: 0;
+}
+
+.ds-carousel-slides {
+  display: grid;
+  min-inline-size: 0;
+}
+
+.ds-carousel-slide {
+  grid-area: 1 / 1;
+  min-inline-size: 0;
+  display: grid;
+  // The card sets no min-inline-size of its own, so cap the track here instead.
+  grid-template-columns: minmax(0, 1fr);
+  opacity: 0;
+  transition: opacity 800ms ease-out;
+
+  &.is-active {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+.ds-carousel-nav {
+  position: absolute;
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  // Above a card with its context menu open, which takes z-index 2.
+  z-index: 3;
+
+  &:dir(rtl) {
+    transform: scaleX(-1);
+  }
+}
+
+.ds-carousel-previous {
+  inset-inline-start: var(--space-small);
+}
+
+.ds-carousel-next {
+  inset-inline-end: var(--space-small);
+}
+
+// These hang below the carousel box rather than sitting inside it. In flow
+// they would make the section grid's row taller, and cards stretch to fill
+// their row, so every sibling card would outgrow the carousel's own card.
+.ds-carousel-stepper,
+.ds-carousel-rotation-control {
+  position: absolute;
+  inset-block-start: 100%;
+}
+
+.ds-carousel-rotation-control {
+  // Override the icon size to fit the small button.
+  --icon-size: var(--icon-size-xsmall);
+
+  inset-inline-end: 0;
+  margin-block-start: var(--space-xsmall);
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: opacity 100ms;
+  }
+
+  // :focus-visible covers keyboard focus within the card, but can't see
+  // into moz-button's shadow DOM, so this control handles its own focus.
+  .ds-carousel:hover &,
+  .ds-carousel:has(:focus-visible) &,
+  &:focus-within {
+    opacity: 1;
+  }
+}
+
+.ds-carousel-stepper {
+  inset-inline: 0;
+  // Stepper dots are non-interactive.
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xsmall);
+  margin-block-start: var(--space-small);
+  min-block-size: var(--size-item-small);
+}
+
+// The controls hang below the carousel, so the first row needs a band of space
+// under it. Every item in that row takes the same block-end margin, not just
+// the carousel. A grid item's margin box is what stretches to fill the row, so
+// a margin on the carousel alone would leave its neighbours taller than its card.
+
+// LIMITATION: this assumes the first row is positions 0 through columnCount-1,
+// which only holds while every tile in the row is `medium`. A layout that includes
+// small or large cards in the first row would have incorrectly applied margins.
+.nova-enabled .ds-section-grid.ds-card-grid:has(.ds-carousel) {
+  --carousel-controls-space: calc(
+    var(--size-item-medium) + var(--space-xsmall)
+  );
+
+  // Only direct children. The carousel passes its position classes down to the
+  // card it renders, so a descendant selector would apply the margin twice.
+  @include at-content-cols-range(0, 8) {
+    > .col-1-position-0 {
+      margin-block-end: var(--carousel-controls-space);
+    }
+  }
+
+  @include at-content-cols-range(8, 12) {
+    > .col-2-position-0,
+    > .col-2-position-1 {
+      margin-block-end: var(--carousel-controls-space);
+    }
+  }
+
+  @include at-content-cols-range(12, 16) {
+    > .col-3-position-0,
+    > .col-3-position-1,
+    > .col-3-position-2 {
+      margin-block-end: var(--carousel-controls-space);
+    }
+  }
+
+  @include at-content-cols(16) {
+    > .col-4-position-0,
+    > .col-4-position-1,
+    > .col-4-position-2,
+    > .col-4-position-3 {
+      margin-block-end: var(--carousel-controls-space);
+    }
+  }
+}
+
+/* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+.ds-carousel-dot {
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: var(--border-radius-circle);
+  background-color: var(--text-color-deemphasized);
+  opacity: var(--opacity-deemphasized-strong);
+
+  &.is-active {
+    opacity: 1;
+    background-color: var(--color-accent-primary);
+  }
+}
+/* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */

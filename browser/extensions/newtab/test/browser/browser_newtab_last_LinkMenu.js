@@ -131,7 +131,9 @@ add_task(async function test_newtab_last_LinkMenu() {
       "there should be no horizontal scroll bar"
     );
 
-    // Close it so it cannot overflow at the narrower stories width.
+    // Close the topsite menu before the story-card block below. Both menus are
+    // now panel-list popovers; opening a second auto-popover light-dismisses the
+    // first, so we check each menu's positioning in isolation.
     topsiteContextMenuButton.click();
     await ContentTaskUtils.waitForCondition(
       () => !topsiteOuter.classList.contains("active"),

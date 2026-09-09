@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import com.google.android.material.R as materialR
 import mozilla.components.support.ktx.android.content.getColorFromAttr
 import mozilla.components.support.ktx.android.content.getStatusBarColor
 import mozilla.components.support.ktx.android.view.createWindowInsetsController
@@ -25,36 +26,33 @@ import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.customtabs.ExternalAppBrowserActivity
-import com.google.android.material.R as materialR
 
 abstract class ThemeManager {
 
     abstract var currentTheme: BrowsingMode
 
-    /**
-     * Returns the style resource corresponding to the [currentTheme].
-     */
+    /** Returns the style resource corresponding to the [currentTheme]. */
     @get:StyleRes
-    val currentThemeResource get() = when (currentTheme) {
-        BrowsingMode.Normal -> R.style.NormalTheme
-        BrowsingMode.Private -> R.style.PrivateTheme
-    }
+    val currentThemeResource
+        get() =
+            when (currentTheme) {
+                BrowsingMode.Normal -> R.style.NormalTheme
+                BrowsingMode.Private -> R.style.PrivateTheme
+            }
 
     /**
      * Handles status bar theme change since the window does not dynamically recreate
      *
      * @param activity The activity to apply the status bar theme to.
      */
-    fun applyStatusBarTheme(activity: Activity) =
-        applyStatusBarTheme(activity.window, activity)
+    fun applyStatusBarTheme(activity: Activity) = applyStatusBarTheme(activity.window, activity)
 
     private fun applyStatusBarTheme(window: Window, context: Context) {
         when (currentTheme) {
             BrowsingMode.Normal -> {
                 when (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) {
                     Configuration.UI_MODE_NIGHT_UNDEFINED, // We assume light here per Android doc's recommendation
-                    Configuration.UI_MODE_NIGHT_NO,
-                    -> {
+                    Configuration.UI_MODE_NIGHT_NO -> {
                         updateLightSystemBars(window, context)
                     }
                     Configuration.UI_MODE_NIGHT_YES -> {

@@ -47,8 +47,7 @@ private const val CFR_VERTICAL_OFFSET = 0
 /**
  * Represents the state and behavior of a CFR shown in the browser toolbar.
  *
- * @property tag An identifying tag for the CFR. This can be used to handle side effects
- * of interactions with the tag.
+ * @property tag An identifying tag for the CFR. This can be used to handle side effects of interactions with the tag.
  * @property enabled Whether the CFR is currently active and should be displayed.
  * @property title The headline text displayed in the CFR banner.
  * @property description A short descriptive message explaining the feature or action.
@@ -56,25 +55,23 @@ private const val CFR_VERTICAL_OFFSET = 0
 data class BrowserToolbarCFR(
     val tag: String,
     val enabled: Boolean,
-    @get:StringRes
-    val title: Int?,
-    @get:StringRes
-    val description: Int,
+    @get:StringRes val title: Int?,
+    @get:StringRes val description: Int,
 )
 
 /**
  * A customizable toolbar for browsers.
  *
- * The toolbar can switch between two modes: display and edit. The display mode displays the current
- * URL and controls for navigation. In edit mode the current URL can be edited. Those two modes are
- * implemented by the [BrowserDisplayToolbar] and [BrowserEditToolbar] composables.
+ * The toolbar can switch between two modes: display and edit. The display mode displays the current URL and controls
+ * for navigation. In edit mode the current URL can be edited. Those two modes are implemented by the
+ * [BrowserDisplayToolbar] and [BrowserEditToolbar] composables.
  *
  * @param store The [BrowserToolbarStore] to observe the UI state from.
  * @param cfr The [BrowserToolbarCFR] to hold properties of Toolbar's CFR.
- * @property useMinimalBottomToolbarWhenEnteringText Whether to show a smaller height addressbar
- * with just the URL when using a bottom toolbar and the user is entering text in a website.
- * @param browserActionsColor Optional `onSurface` color override applied only to the display
- * toolbar's browser actions (outside the URL bounding box), leaving page actions unchanged.
+ * @property useMinimalBottomToolbarWhenEnteringText Whether to show a smaller height addressbar with just the URL when
+ *   using a bottom toolbar and the user is entering text in a website.
+ * @param browserActionsColor Optional `onSurface` color override applied only to the display toolbar's browser actions
+ *   (outside the URL bounding box), leaving page actions unchanged.
  */
 @Composable
 fun BrowserToolbar(
@@ -110,22 +107,23 @@ fun BrowserToolbar(
             onInteraction = { store.dispatch(it) },
         )
     } else {
-        val displayToolbar = @Composable {
-            BrowserDisplayToolbar(
-                pageOrigin = uiState.displayState.pageOrigin,
-                progressBarConfig = uiState.displayState.progressBarConfig,
-                gravity = uiState.gravity,
-                backgroundColor = backgroundColor,
-                outlineColor = outlineColor,
-                browserActionsStart = uiState.displayState.browserActionsStart,
-                pageActionsStart = uiState.displayState.pageActionsStart,
-                pageActionsEnd = uiState.displayState.pageActionsEnd,
-                browserActionsEnd = uiState.displayState.browserActionsEnd,
-                browserActionsColor = browserActionsColor,
-                onInteraction = { store.dispatch(it) },
-                useMinimalBottomToolbarWhenEnteringText = useMinimalBottomToolbarWhenEnteringText,
-            )
-        }
+        val displayToolbar =
+            @Composable {
+                BrowserDisplayToolbar(
+                    pageOrigin = uiState.displayState.pageOrigin,
+                    progressBarConfig = uiState.displayState.progressBarConfig,
+                    gravity = uiState.gravity,
+                    backgroundColor = backgroundColor,
+                    outlineColor = outlineColor,
+                    browserActionsStart = uiState.displayState.browserActionsStart,
+                    pageActionsStart = uiState.displayState.pageActionsStart,
+                    pageActionsEnd = uiState.displayState.pageActionsEnd,
+                    browserActionsEnd = uiState.displayState.browserActionsEnd,
+                    browserActionsColor = browserActionsColor,
+                    onInteraction = { store.dispatch(it) },
+                    useMinimalBottomToolbarWhenEnteringText = useMinimalBottomToolbarWhenEnteringText,
+                )
+            }
 
         if (cfr?.enabled == true) {
             // Wrapping the toolbar with the CFR code negatively impacts the transition
@@ -155,9 +153,10 @@ private fun DisplayToolbarWithCFR(
     modifier: Modifier = Modifier,
     displayToolbar: @Composable () -> Unit,
 ) {
-    val title: @Composable (() -> Unit)? = cfr.title?.run {
-        { Text(text = stringResource(cfr.title)) }
-    }
+    val title: @Composable (() -> Unit)? =
+        cfr.title?.run {
+            { Text(text = stringResource(cfr.title)) }
+        }
 
     val state = rememberCFRState()
     val onDismiss = {
@@ -195,12 +194,9 @@ private fun DisplayToolbarWithCFR(
 }
 
 @Composable
-private fun browserToolbarCFRProperties(
-    gravity: ToolbarGravity,
-): CFRPopupProperties {
+private fun browserToolbarCFRProperties(gravity: ToolbarGravity): CFRPopupProperties {
     val isBottom = gravity == ToolbarGravity.Bottom
-    val indicatorDir =
-        if (isBottom) IndicatorDirection.DOWN else IndicatorDirection.UP
+    val indicatorDir = if (isBottom) IndicatorDirection.DOWN else IndicatorDirection.UP
 
     val cfrBrush = AcornTheme.gradients.cfr.brush
 
@@ -220,52 +216,53 @@ private fun browserToolbarCFRProperties(
 @Composable
 private fun BrowserToolbarPreview_EditMode() {
     // Mock edit state
-    val editState = EditState(
-        query = BrowserToolbarQuery("https://www.mozilla.org"),
-        suggestion = null,
-        editActionsStart = emptyList(),
-        editActionsEnd = emptyList(),
-    )
-    val toolbarState = BrowserToolbarState(
-        mode = Mode.EDIT,
-        editState = editState,
-    )
+    val editState =
+        EditState(
+            query = BrowserToolbarQuery("https://www.mozilla.org"),
+            suggestion = null,
+            editActionsStart = emptyList(),
+            editActionsEnd = emptyList(),
+        )
+    val toolbarState =
+        BrowserToolbarState(
+            mode = Mode.EDIT,
+            editState = editState,
+        )
     val store = BrowserToolbarStore(toolbarState)
 
     AcornTheme {
-        BrowserToolbar(
-            store = store,
-        )
+        BrowserToolbar(store = store)
     }
 }
 
 @PreviewLightDark
 @Composable
 private fun BrowserToolbarPreview_DisplayMode() {
-    val mockPageOrigin = PageOrigin(
-        hint = 0,
-        title = "Preview Title",
-        url = "https://www.mozilla.org",
-        onClick = object : BrowserToolbarEvent {},
-        onLongClick = null,
-        textGravity = PageOrigin.Companion.TextGravity.TEXT_GRAVITY_START,
-    )
-    val displayState = DisplayState(
-        pageOrigin = mockPageOrigin,
-        browserActionsStart = emptyList(),
-        pageActionsStart = emptyList(),
-        pageActionsEnd = emptyList(),
-        browserActionsEnd = emptyList(),
-    )
-    val toolbarState = BrowserToolbarState(
-        mode = Mode.DISPLAY,
-        displayState = displayState,
-    )
+    val mockPageOrigin =
+        PageOrigin(
+            hint = 0,
+            title = "Preview Title",
+            url = "https://www.mozilla.org",
+            onClick = object : BrowserToolbarEvent {},
+            onLongClick = null,
+            textGravity = PageOrigin.Companion.TextGravity.TEXT_GRAVITY_START,
+        )
+    val displayState =
+        DisplayState(
+            pageOrigin = mockPageOrigin,
+            browserActionsStart = emptyList(),
+            pageActionsStart = emptyList(),
+            pageActionsEnd = emptyList(),
+            browserActionsEnd = emptyList(),
+        )
+    val toolbarState =
+        BrowserToolbarState(
+            mode = Mode.DISPLAY,
+            displayState = displayState,
+        )
     val store = BrowserToolbarStore(toolbarState)
 
     AcornTheme {
-        BrowserToolbar(
-            store = store,
-        )
+        BrowserToolbar(store = store)
     }
 }

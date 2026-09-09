@@ -293,6 +293,10 @@ add_task(async function testClearAll() {
     "key_duplicateTab is not customized"
   );
 
+  const copyKeyEl = document.getElementById("key_copy");
+  const copyKey = copyKeyEl.getAttribute("key");
+  ok(copyKey, "key_copy has a key attribute");
+
   info("Clearing all keys");
   CustomKeys.clearAll();
   Assert.deepEqual(
@@ -304,6 +308,12 @@ add_task(async function testClearAll() {
     CustomKeys.getDefaultKey("key_duplicateTab"),
     null,
     "key_duplicateTab is still not customized"
+  );
+  is(CustomKeys.getDefaultKey("key_copy"), null, "key_copy is not customized");
+  is(
+    copyKeyEl.getAttribute("key"),
+    copyKey,
+    "key_copy still has its key attribute"
   );
 
   info("Pressing accel+L");

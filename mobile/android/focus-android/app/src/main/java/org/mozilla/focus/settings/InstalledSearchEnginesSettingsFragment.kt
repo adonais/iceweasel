@@ -9,6 +9,7 @@ import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import androidx.preference.Preference
+import kotlin.collections.forEach as withEach
 import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.state.availableSearchEngines
 import mozilla.components.browser.state.state.searchEngines
@@ -22,11 +23,8 @@ import org.mozilla.focus.ext.showToolbar
 import org.mozilla.focus.search.RadioSearchEngineListPreference
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.state.Screen
-import kotlin.collections.forEach as withEach
 
-/**
- * Settings fragment for managing installed search engines.
- */
+/** Settings fragment for managing installed search engines. */
 class InstalledSearchEnginesSettingsFragment : BaseSettingsFragment() {
     override fun onCreatePreferences(p0: Bundle?, p1: String?) {
         //
@@ -65,19 +63,15 @@ class InstalledSearchEnginesSettingsFragment : BaseSettingsFragment() {
 
         return when (menuItem.itemId) {
             R.id.menu_remove_search_engines -> {
-                requireComponents.appStore.dispatch(
-                    AppAction.OpenSettings(Screen.Settings.Page.SearchRemove),
-                )
-                SearchEngines.openRemoveScreen.record(
-                    SearchEngines.OpenRemoveScreenExtra(currentEnginesCount),
-                )
+                requireComponents.appStore.dispatch(AppAction.OpenSettings(Screen.Settings.Page.SearchRemove))
+                SearchEngines.openRemoveScreen.record(SearchEngines.OpenRemoveScreenExtra(currentEnginesCount))
 
                 true
             }
             R.id.menu_restore_default_engines -> {
                 restoreSearchEngines()
                 SearchEngines.restoreDefaultEngines.record(
-                    SearchEngines.RestoreDefaultEnginesExtra(currentEnginesCount),
+                    SearchEngines.RestoreDefaultEnginesExtra(currentEnginesCount)
                 )
                 true
             }
@@ -94,9 +88,7 @@ class InstalledSearchEnginesSettingsFragment : BaseSettingsFragment() {
     override fun onPreferenceTreeClick(preference: Preference): Boolean {
         return when (preference.key) {
             resources.getString(R.string.pref_key_manual_add_search_engine) -> {
-                requireComponents.appStore.dispatch(
-                    AppAction.OpenSettings(page = Screen.Settings.Page.SearchAdd),
-                )
+                requireComponents.appStore.dispatch(AppAction.OpenSettings(page = Screen.Settings.Page.SearchAdd))
                 SearchEngines.addEngineTapped.record(NoExtras())
 
                 return true
@@ -107,17 +99,14 @@ class InstalledSearchEnginesSettingsFragment : BaseSettingsFragment() {
         }
     }
 
-    /**
-     * Refresh search engines list.
-     */
+    /** Refresh search engines list. */
     private fun refetchSearchEngines() {
         // Refresh this preference screen to display changes.
         preferenceScreen?.removeAll()
         addPreferencesFromResource(R.xml.search_engine_settings)
 
-        val pref: RadioSearchEngineListPreference? = preferenceScreen.findPreference(
-            resources.getString(R.string.pref_key_radio_search_engine_list),
-        )
+        val pref: RadioSearchEngineListPreference? =
+            preferenceScreen.findPreference(resources.getString(R.string.pref_key_radio_search_engine_list))
         pref?.refetchSearchEngines()
     }
 }
@@ -128,13 +117,9 @@ private fun SearchState.hasDefaultSearchEnginesOnly(): Boolean {
 
 private fun restoreSearchDefaults(store: BrowserStore, useCases: SearchUseCases) {
     store.state.search.customSearchEngines.withEach { searchEngine ->
-        useCases.removeSearchEngine(
-            searchEngine,
-        )
+        useCases.removeSearchEngine(searchEngine)
     }
     store.state.search.hiddenSearchEngines.withEach { searchEngine ->
-        useCases.addSearchEngine(
-            searchEngine,
-        )
+        useCases.addSearchEngine(searchEngine)
     }
 }

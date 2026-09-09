@@ -52,7 +52,8 @@ add_task(async function test_IPProtectionStates_uninitialized() {
   let sandbox = sinon.createSandbox();
   IPPDummyAuthProvider.simulateSignIn(false);
   IPPDummyAuthProvider.setGetEntitlementResponse({});
-  sandbox.stub(IPPNimbusHelper, "isEligible").get(() => false);
+  let hidden = true;
+  sandbox.stub(IPPNimbusHelper, "hidesFeature").callsFake(() => hidden);
 
   await IPProtectionService.init();
 
@@ -62,7 +63,7 @@ add_task(async function test_IPProtectionStates_uninitialized() {
     "IP Protection service should be unavailable"
   );
 
-  sandbox.stub(IPPNimbusHelper, "isEligible").get(() => true);
+  hidden = false;
 
   IPProtectionService.updateState();
 
@@ -83,7 +84,8 @@ add_task(async function test_IPProtectionStates_unauthenticated() {
   let sandbox = sinon.createSandbox();
   IPPDummyAuthProvider.simulateSignIn(true);
   IPPDummyAuthProvider.setGetEntitlementResponse({});
-  sandbox.stub(IPPNimbusHelper, "isEligible").get(() => false);
+  let hidden = true;
+  sandbox.stub(IPPNimbusHelper, "hidesFeature").callsFake(() => hidden);
 
   await IPProtectionService.init();
 
@@ -93,7 +95,7 @@ add_task(async function test_IPProtectionStates_unauthenticated() {
     "IP Protection service should be unavailable"
   );
 
-  sandbox.stub(IPPNimbusHelper, "isEligible").get(() => true);
+  hidden = false;
   IPPDummyAuthProvider.setEntitlement(createTestEntitlement(), {
     silent: true,
   });
@@ -127,7 +129,7 @@ add_task(async function test_IPProtectionStates_enrolling() {
   let sandbox = sinon.createSandbox();
   IPPDummyAuthProvider.simulateSignIn(true);
   IPPDummyAuthProvider.setGetEntitlementResponse({});
-  sandbox.stub(IPPNimbusHelper, "isEligible").get(() => true);
+  sandbox.stub(IPPNimbusHelper, "hidesFeature").returns(false);
   IPPDummyAuthProvider.setEnrollResponse({
     isEnrolledAndEntitled: true,
     entitlement: createTestEntitlement(),

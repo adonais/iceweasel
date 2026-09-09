@@ -4,7 +4,7 @@
 
 (using-jss-1)=
 
-## [Using JSS](#using_jss)
+## Using JSS
 
 :::{container}
 *Newsgroup:*[mozilla.dev.tech.crypto](news://news.mozilla.org:119/mozilla.dev.tech.crypto)
@@ -22,7 +22,7 @@ are planning to use a binary release of JSS, here's how to get JSS working with 
 
 (gather-components)=
 
-### [Gather components](#gather_components)
+### Gather components
 
 :::{container}
 
@@ -40,44 +40,44 @@ are planning to use a binary release of JSS, here's how to get JSS working with 
    platform-specific prefix and suffix.
 
    ```{eval-rst}
-   +-------------------+-------------------------------------+--------------------------------------+
-   | JSS Dependencies  |                                     |                                      |
-   +-------------------+-------------------------------------+--------------------------------------+
-   | Core Library Name | Description                         | Binary Release Location              |
-   +-------------------+-------------------------------------+--------------------------------------+
-   | nspr4             | NSPR OS abstraction layer           | `htt                                 |
-   |                   |                                     | p://ftp.mozilla.org/pub/mozilla.org/ |
-   |                   |                                     | nspr/releases <http://ftp.mozilla.or |
-   |                   |                                     | g/pub/mozilla.org/nspr/releases/>`__ |
-   +-------------------+-------------------------------------+--------------------------------------+
-   | plc4              |                                     | NSPR standard C library replacement  |
-   |                   |                                     | functions                            |
-   +-------------------+-------------------------------------+--------------------------------------+
-   | plds4             |                                     | NSPR data structure types            |
-   +-------------------+-------------------------------------+--------------------------------------+
-   | nss3              | NSS crypto, PKCS #11, and utilities | `http://ftp.mozilla.                 |
-   |                   |                                     | org/pub/mozilla.org/security/nss/rel |
-   |                   |                                     | eases <http://ftp.mozilla.org/pub/mo |
-   |                   |                                     | zilla.org/security/nss/releases/>`__ |
-   +-------------------+-------------------------------------+--------------------------------------+
-   | ssl3              |                                     | NSS SSL library                      |
-   +-------------------+-------------------------------------+--------------------------------------+
-   | smime3            |                                     | NSS S/MIME functions and types       |
-   +-------------------+-------------------------------------+--------------------------------------+
-   | nssckbi           |                                     | PKCS #11 module containing built-in  |
-   |                   |                                     | root CA certificates. Optional.      |
-   +-------------------+-------------------------------------+--------------------------------------+
-   | freebl\_\*        |                                     | Processor-specific optimized         |
-   |                   |                                     | big-number arithmetic library. Not   |
-   |                   |                                     | present on all platforms.            |
-   |                   |                                     | :ref:`mozilla_projects_nss_introd    |
-   |                   |                                     | uction_to_network_security_services` |
-   +-------------------+-------------------------------------+--------------------------------------+
-   | fort              |                                     | FORTEZZA support. Optional           |
-   +-------------------+-------------------------------------+--------------------------------------+
-   | swft              |                                     | PKCS #11 module implementing         |
-   |                   |                                     | FORTEZZA in software. Optional.      |
-   +-------------------+-------------------------------------+--------------------------------------+
+   +-------------------+-------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+   | JSS Dependencies  |                                     |                                                                                                                                                                 |
+   +-------------------+-------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+   | Core Library Name | Description                         | Binary Release Location                                                                                                                                         |
+   +-------------------+-------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+   | nspr4             | NSPR OS abstraction layer           | `http://ftp.mozilla.org/pub/mozilla.org/nspr/releases <http://ftp.mozilla.org/pub/mozilla.org/nspr/releases/>`__                                                |
+   |                   |                                     |                                                                                                                                                                 |
+   |                   |                                     |                                                                                                                                                                 |
+   |                   |                                     |                                                                                                                                                                 |
+   +-------------------+-------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+   | plc4              |                                     | NSPR standard C library replacement                                                                                                                             |
+   |                   |                                     | functions                                                                                                                                                       |
+   +-------------------+-------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+   | plds4             |                                     | NSPR data structure types                                                                                                                                       |
+   +-------------------+-------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+   | nss3              | NSS crypto, PKCS #11, and utilities | `http://ftp.mozilla.org/pub/mozilla.org/security/nss/releases <http://ftp.mozilla.org/pub/mozilla.org/security/nss/releases/>`__                                |
+   |                   |                                     |                                                                                                                                                                 |
+   |                   |                                     |                                                                                                                                                                 |
+   |                   |                                     |                                                                                                                                                                 |
+   +-------------------+-------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+   | ssl3              |                                     | NSS SSL library                                                                                                                                                 |
+   +-------------------+-------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+   | smime3            |                                     | NSS S/MIME functions and types                                                                                                                                  |
+   +-------------------+-------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+   | nssckbi           |                                     | PKCS #11 module containing built-in                                                                                                                             |
+   |                   |                                     | root CA certificates. Optional.                                                                                                                                 |
+   +-------------------+-------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+   | freebl\_\*        |                                     | Processor-specific optimized big-number arithmetic library. Not present on all platforms. :ref:`mozilla-projects-nss-introduction-to-network-security-services` |
+   |                   |                                     |                                                                                                                                                                 |
+   |                   |                                     |                                                                                                                                                                 |
+   |                   |                                     |                                                                                                                                                                 |
+   |                   |                                     |                                                                                                                                                                 |
+   +-------------------+-------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+   | fort              |                                     | FORTEZZA support. Optional                                                                                                                                      |
+   +-------------------+-------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+   | swft              |                                     | PKCS #11 module implementing                                                                                                                                    |
+   |                   |                                     | FORTEZZA in software. Optional.                                                                                                                                 |
+   +-------------------+-------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
    ```
 
    If you built JSS from source, you have these libraries in the `mozilla/dist/<platform>/lib`
@@ -130,7 +130,7 @@ are planning to use a binary release of JSS, here's how to get JSS working with 
 
 (setup-your-runtime-environment)=
 
-### [Setup your runtime environment](#setup_your_runtime_environment)
+### Setup your runtime environment
 
 :::{container}
 You need to set some environment variables before building and running Java applications with
@@ -149,7 +149,7 @@ JSS.
 
 (initialize-jss-in-your-application)=
 
-### [Initialize JSS in your application](#initialize_jss_in_your_application)
+### Initialize JSS in your application
 
 :::{container}
 Before calling any JSS methods, you must initialize JSS by calling one of the

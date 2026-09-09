@@ -4,6 +4,7 @@
 
 package mozilla.components.lib.jexl.ext
 
+import java.lang.UnsupportedOperationException
 import mozilla.components.lib.jexl.value.JexlArray
 import mozilla.components.lib.jexl.value.JexlBoolean
 import mozilla.components.lib.jexl.value.JexlDouble
@@ -11,7 +12,6 @@ import mozilla.components.lib.jexl.value.JexlInteger
 import mozilla.components.lib.jexl.value.JexlString
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.lang.UnsupportedOperationException
 
 class JexlExtensionsTest {
     @Test

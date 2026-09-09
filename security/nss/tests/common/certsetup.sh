@@ -37,6 +37,9 @@ make_cert() {
     rsapss384) type_args=(-g 1024 --pss);type=rsa;sighash=(-Z SHA384) ;;
     rsapss512) type_args=(-g 2048 --pss);type=rsa;sighash=(-Z SHA512) ;;
     rsapss_noparam) type_args=(-g 2048 --pss);type=rsa;sighash=() ;;
+    mldsa44) type_args=(-q ml-dsa-44);type=mldsa;sighash=() ;;
+    mldsa65) type_args=(-q ml-dsa-65);type=mldsa;sighash=() ;;
+    mldsa87) type_args=(-q ml-dsa-87);type=mldsa;sighash=() ;;
     p256) type_args=(-q nistp256);type=ec ;;
     p384) type_args=(-q secp384r1);type=ec ;;
     p521) type_args=(-q secp521r1);type=ec ;;
@@ -45,7 +48,28 @@ make_cert() {
     rsapss_ca) type_args=(-g 1024 --pss);trust='CT,CT,CT';type=rsa ;;
     rsapss_chain) type_args=(-g 1024);sign=(-c rsa_pss_ca);type=rsa;;
     rsa_ca_rsapss_chain) type_args=(-g 1024 --pss-sign);sign=(-c rsa_ca);type=rsa;;
+    mldsa44_ca) type_args=(-q ml-dsa-44);trust='CT,CT,CT';type=mldsa ;;
+    mldsa65_ca) type_args=(-q ml-dsa-65);trust='CT,CT,CT';type=mldsa ;;
+    mldsa87_ca) type_args=(-q ml-dsa-87);trust='CT,CT,CT';type=mldsa ;;
+    mldsa44_chain) type_args=(-q ml-dsa-44);sign=(-c mldsa44_ca);type=mldsa;;
+    mldsa65_chain) type_args=(-q ml-dsa-65);sign=(-c mldsa65_ca);type=mldsa;;
+    mldsa87_chain) type_args=(-q ml-dsa-87);sign=(-c mldsa87_ca);type=mldsa;;
     ecdh_rsa) type_args=(-q nistp256);sign=(-c rsa_ca);type=ec ;;
+    delegator_mldsa44)
+        touch empty.txt
+        type_args=(-q ml-dsa-44 --extGeneric 1.3.6.1.4.1.44363.44:not-critical:empty.txt)
+        type=mldsa
+        ;;
+    delegator_mldsa65)
+        touch empty.txt
+        type_args=(-q ml-dsa-65 --extGeneric 1.3.6.1.4.1.44363.44:not-critical:empty.txt)
+        type=mldsa
+        ;;
+    delegator_mldsa87)
+        touch empty.txt
+        type_args=(-q ml-dsa-87 --extGeneric 1.3.6.1.4.1.44363.44:not-critical:empty.txt)
+        type=mldsa
+        ;;
     delegator_p256)
         touch empty.txt
         type_args=(-q nistp256 --extGeneric 1.3.6.1.4.1.44363.44:not-critical:empty.txt)

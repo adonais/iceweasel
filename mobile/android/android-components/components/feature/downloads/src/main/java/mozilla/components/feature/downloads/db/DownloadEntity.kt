@@ -9,30 +9,18 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import mozilla.components.browser.state.state.content.DownloadState
 
-/**
- * Internal entity representing a download as it gets saved to the database.
- */
+/** Internal entity representing a download as it gets saved to the database. */
 @Entity(tableName = "downloads")
 internal data class DownloadEntity(
-    @PrimaryKey
-    @ColumnInfo(name = "id")
-    var id: String,
-    @ColumnInfo(name = "url")
-    var url: String,
-    @ColumnInfo(name = "file_name")
-    var fileName: String?,
-    @ColumnInfo(name = "content_type")
-    var contentType: String?,
-    @ColumnInfo(name = "content_length")
-    var contentLength: Long?,
-    @ColumnInfo(name = "status")
-    var status: DownloadState.Status,
-    @ColumnInfo(name = "directory_path")
-    var directoryPath: String,
-    @ColumnInfo(name = "created_at")
-    var createdAt: Long,
-    @ColumnInfo(name = "etag")
-    val etag: String?,
+    @PrimaryKey @ColumnInfo(name = "id") var id: String,
+    @ColumnInfo(name = "url") var url: String,
+    @ColumnInfo(name = "file_name") var fileName: String?,
+    @ColumnInfo(name = "content_type") var contentType: String?,
+    @ColumnInfo(name = "content_length") var contentLength: Long?,
+    @ColumnInfo(name = "status") var status: DownloadState.Status,
+    @ColumnInfo(name = "directory_path") var directoryPath: String,
+    @ColumnInfo(name = "created_at") var createdAt: Long,
+    @ColumnInfo(name = "etag") val etag: String?,
 ) {
 
     internal fun toDownloadState(): DownloadState {
@@ -57,16 +45,17 @@ internal data class DownloadEntity(
 
 internal fun DownloadState.toDownloadEntity(): DownloadEntity {
     /**
-     * Data URLs cause problems when restoring the values from the db,
-     * as the string could be so long that it could break the maximum allowed size for a cursor,
-     * causing SQLiteBIobTooBigException when restoring downloads from the DB.
+     * Data URLs cause problems when restoring the values from the db, as the string could be so long that it could
+     * break the maximum allowed size for a cursor, causing SQLiteBIobTooBigException when restoring downloads from the
+     * DB.
      */
     val isDataURL = url.startsWith("data:")
-    val sanitizedURL = if (isDataURL) {
-        ""
-    } else {
-        url
-    }
+    val sanitizedURL =
+        if (isDataURL) {
+            ""
+        } else {
+            url
+        }
 
     return DownloadEntity(
         id,

@@ -79,7 +79,9 @@ if (!window.CM_DDX) {
 
   w.cmSetupOther = b => {
     for (const a in b) {
-      window[a] = b[a];
+      try {
+        window[a] = b[a];
+      } catch (_) {}
     }
   };
 

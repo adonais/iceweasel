@@ -37,13 +37,6 @@ support-files = ["file_dataTransfer_files.html"]
 ["browser_ext_contentscript_nontab_connect.js"]
 
 ["browser_ext_contentscript_sender_url.js"]
-skip-if = [
-  "debug", # The nature of the reduced STR test triggers an unrelated debug assertion in DOM IPC code, see bug 1736590.
-  "os == 'win' && os_version == '11.26100' && arch == 'x86' && opt", # Bug 1933435
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1933435
-  "os == 'win' && os_version == '11.26200' && arch == 'x86' && opt", # Bug 1933435
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 1933435
-]
 tags = "bleedover"
 
 ["browser_ext_slow_script.js"]

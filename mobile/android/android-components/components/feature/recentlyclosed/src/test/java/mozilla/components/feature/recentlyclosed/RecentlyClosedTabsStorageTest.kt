@@ -6,6 +6,7 @@ package mozilla.components.feature.recentlyclosed
 
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.IOException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.recover.RecoverableTab
@@ -24,7 +25,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.verify
-import java.io.IOException
 
 @RunWith(AndroidJUnit4::class)
 class RecentlyClosedTabsStorageTest {
@@ -34,7 +34,7 @@ class RecentlyClosedTabsStorageTest {
     private lateinit var database: RecentlyClosedTabsDatabase
     private lateinit var crashReporting: CrashReporting
 
-    private class TestEngineSessionStateStorage() : EngineSessionStateStorage {
+    private class TestEngineSessionStateStorage : EngineSessionStateStorage {
         val data: MutableMap<String, EngineSessionState?> = mutableMapOf()
         var throwsOutOfMemoryOnWrite: Boolean = false
 
@@ -69,18 +69,19 @@ class RecentlyClosedTabsStorageTest {
     @Before
     fun setUp() {
         crashReporting = mock()
-        database = Room
-            .inMemoryDatabaseBuilder(testContext, RecentlyClosedTabsDatabase::class.java)
-            .allowMainThreadQueries()
-            .build()
+        database =
+            Room.inMemoryDatabaseBuilder(testContext, RecentlyClosedTabsDatabase::class.java)
+                .allowMainThreadQueries()
+                .build()
 
         engineStateStorage = TestEngineSessionStateStorage()
-        storage = RecentlyClosedTabsStorage(
-            testContext,
-            mock(),
-            crashReporting,
-            engineStateStorage = engineStateStorage,
-        )
+        storage =
+            RecentlyClosedTabsStorage(
+                testContext,
+                mock(),
+                crashReporting,
+                engineStateStorage = engineStateStorage,
+            )
         storage.database = lazy { database }
     }
 
@@ -94,27 +95,30 @@ class RecentlyClosedTabsStorageTest {
     fun testAddingTabsWithMax() = runTest {
         // Test tab
         val t1 = System.currentTimeMillis()
-        val closedTab = RecoverableTab(
-            engineSessionState = null,
-            state = TabState(
-                id = "first-tab",
-                title = "Mozilla",
-                url = "https://mozilla.org",
-                lastAccess = t1,
-            ),
-        )
+        val closedTab =
+            RecoverableTab(
+                engineSessionState = null,
+                state =
+                    TabState(
+                        id = "first-tab",
+                        title = "Mozilla",
+                        url = "https://mozilla.org",
+                        lastAccess = t1,
+                    ),
+            )
 
         // Test tab
         val engineState2: EngineSessionState = mock()
-        val secondClosedTab = RecoverableTab(
-            engineSessionState = engineState2,
-            TabState(
-                id = "second-tab",
-                title = "Pocket",
-                url = "https://pocket.com",
-                lastAccess = t1 - 1000,
-            ),
-        )
+        val secondClosedTab =
+            RecoverableTab(
+                engineSessionState = engineState2,
+                TabState(
+                    id = "second-tab",
+                    title = "Pocket",
+                    url = "https://pocket.com",
+                    lastAccess = t1 - 1000,
+                ),
+            )
 
         storage.addTabsToCollectionWithMax(listOf(closedTab, secondClosedTab), 1)
         val tabs = storage.getTabs().first()
@@ -129,15 +133,17 @@ class RecentlyClosedTabsStorageTest {
 
         // Test tab
         val engineState3: EngineSessionState = mock()
-        val thirdClosedTab = RecoverableTab(
-            engineSessionState = engineState3,
-            state = TabState(
-                id = "third-tab",
-                title = "Firefox",
-                url = "https://firefox.com",
-                lastAccess = System.currentTimeMillis(),
-            ),
-        )
+        val thirdClosedTab =
+            RecoverableTab(
+                engineSessionState = engineState3,
+                state =
+                    TabState(
+                        id = "third-tab",
+                        title = "Firefox",
+                        url = "https://firefox.com",
+                        lastAccess = System.currentTimeMillis(),
+                    ),
+            )
 
         storage.addTabsToCollectionWithMax(listOf(thirdClosedTab), 1)
         val newTabs = storage.getTabs().first()
@@ -155,15 +161,17 @@ class RecentlyClosedTabsStorageTest {
     fun testAllowAddingSameTabTwice() = runTest {
         // Test tab
         val engineState: EngineSessionState = mock()
-        val closedTab = RecoverableTab(
-            engineSessionState = engineState,
-            state = TabState(
-                id = "first-tab",
-                title = "Mozilla",
-                url = "https://mozilla.org",
-                lastAccess = System.currentTimeMillis(),
-            ),
-        )
+        val closedTab =
+            RecoverableTab(
+                engineSessionState = engineState,
+                state =
+                    TabState(
+                        id = "first-tab",
+                        title = "Mozilla",
+                        url = "https://mozilla.org",
+                        lastAccess = System.currentTimeMillis(),
+                    ),
+            )
 
         val updatedTab = closedTab.copy(state = closedTab.state.copy(title = "updated"))
         storage.addTabsToCollectionWithMax(listOf(closedTab), 2)
@@ -183,26 +191,30 @@ class RecentlyClosedTabsStorageTest {
     fun testRemovingAllTabs() = runTest {
         // Test tab
         val t1 = System.currentTimeMillis()
-        val closedTab = RecoverableTab(
-            engineSessionState = mock(),
-            state = TabState(
-                id = "first-tab",
-                title = "Mozilla",
-                url = "https://mozilla.org",
-                lastAccess = t1,
-            ),
-        )
+        val closedTab =
+            RecoverableTab(
+                engineSessionState = mock(),
+                state =
+                    TabState(
+                        id = "first-tab",
+                        title = "Mozilla",
+                        url = "https://mozilla.org",
+                        lastAccess = t1,
+                    ),
+            )
 
         // Test tab
-        val secondClosedTab = RecoverableTab(
-            engineSessionState = mock(),
-            state = TabState(
-                id = "second-tab",
-                title = "Pocket",
-                url = "https://pocket.com",
-                lastAccess = t1 - 1000,
-            ),
-        )
+        val secondClosedTab =
+            RecoverableTab(
+                engineSessionState = mock(),
+                state =
+                    TabState(
+                        id = "second-tab",
+                        title = "Pocket",
+                        url = "https://pocket.com",
+                        lastAccess = t1 - 1000,
+                    ),
+            )
 
         storage.addTabsToCollectionWithMax(listOf(closedTab, secondClosedTab), 2)
         val tabs = storage.getTabs().first()
@@ -228,27 +240,31 @@ class RecentlyClosedTabsStorageTest {
         // Test tab
         val engineState1: EngineSessionState = mock()
         val t1 = System.currentTimeMillis()
-        val closedTab = RecoverableTab(
-            engineSessionState = engineState1,
-            state = TabState(
-                id = "first-tab",
-                title = "Mozilla",
-                url = "https://mozilla.org",
-                lastAccess = t1,
-            ),
-        )
+        val closedTab =
+            RecoverableTab(
+                engineSessionState = engineState1,
+                state =
+                    TabState(
+                        id = "first-tab",
+                        title = "Mozilla",
+                        url = "https://mozilla.org",
+                        lastAccess = t1,
+                    ),
+            )
 
         // Test tab
         val engineState2: EngineSessionState = mock()
-        val secondClosedTab = RecoverableTab(
-            engineSessionState = engineState2,
-            state = TabState(
-                id = "second-tab",
-                title = "Pocket",
-                url = "https://pocket.com",
-                lastAccess = t1 - 1000,
-            ),
-        )
+        val secondClosedTab =
+            RecoverableTab(
+                engineSessionState = engineState2,
+                state =
+                    TabState(
+                        id = "second-tab",
+                        title = "Pocket",
+                        url = "https://pocket.com",
+                        lastAccess = t1 - 1000,
+                    ),
+            )
 
         storage.addTabState(closedTab)
         storage.addTabState(secondClosedTab)
@@ -277,15 +293,17 @@ class RecentlyClosedTabsStorageTest {
     @Test
     fun testAddingTabWithEngineStateStorageFailure() = runTest {
         // 'fail' in tab's id will cause test engine session storage to fail on writing engineSessionState.
-        val closedTab = RecoverableTab(
-            engineSessionState = mock(),
-            state = TabState(
-                id = "second-tab-fail",
-                title = "Pocket",
-                url = "https://pocket.com",
-                lastAccess = System.currentTimeMillis(),
-            ),
-        )
+        val closedTab =
+            RecoverableTab(
+                engineSessionState = mock(),
+                state =
+                    TabState(
+                        id = "second-tab-fail",
+                        title = "Pocket",
+                        url = "https://pocket.com",
+                        lastAccess = System.currentTimeMillis(),
+                    ),
+            )
 
         storage.addTabState(closedTab)
         val tabs = storage.getTabs().first()
@@ -304,15 +322,17 @@ class RecentlyClosedTabsStorageTest {
         // Test tab
         val engineState1: EngineSessionState = mock()
         val t1 = System.currentTimeMillis()
-        val closedTab = RecoverableTab(
-            engineSessionState = engineState1,
-            state = TabState(
-                id = "first-tab",
-                title = "Mozilla",
-                url = "https://mozilla.org",
-                lastAccess = t1,
-            ),
-        )
+        val closedTab =
+            RecoverableTab(
+                engineSessionState = engineState1,
+                state =
+                    TabState(
+                        id = "first-tab",
+                        title = "Mozilla",
+                        url = "https://mozilla.org",
+                        lastAccess = t1,
+                    ),
+            )
 
         storage.addTabState(closedTab)
         val tabs = storage.getTabs().first()
@@ -330,15 +350,17 @@ class RecentlyClosedTabsStorageTest {
     @Test
     fun testStorageFailuresAreCaught() = runTest {
         val engineState: EngineSessionState = mock()
-        val closedTab = RecoverableTab(
-            engineSessionState = engineState,
-            state = TabState(
-                id = "second-tab-boom", // boom will cause an exception to be thrown
-                title = "Pocket",
-                url = "https://pocket.com",
-                lastAccess = System.currentTimeMillis(),
-            ),
-        )
+        val closedTab =
+            RecoverableTab(
+                engineSessionState = engineState,
+                state =
+                    TabState(
+                        id = "second-tab-boom", // boom will cause an exception to be thrown
+                        title = "Pocket",
+                        url = "https://pocket.com",
+                        lastAccess = System.currentTimeMillis(),
+                    ),
+            )
         try {
             storage.addTabsToCollectionWithMax(listOf(closedTab), 2)
             verify(crashReporting).submitCaughtException(any())

@@ -50,9 +50,10 @@ class PdfShareActionExtTest {
     @Test
     fun `GIVEN a remote PDF tab WHEN createPdfShareAction is called THEN return AddShareAction with InternetResource`() {
         val url = "https://mozilla.org/document.pdf"
-        val tab = createTab(url = url, id = "1", private = true).let {
-            it.copy(content = it.content.copy(isPdf = true))
-        }
+        val tab =
+            createTab(url = url, id = "1", private = true).let {
+                it.copy(content = it.content.copy(isPdf = true))
+            }
         val store = BrowserStore(BrowserState(tabs = listOf(tab), selectedTabId = tab.id))
 
         val action = store.createPdfShareAction(tabId = tab.id, url = url)

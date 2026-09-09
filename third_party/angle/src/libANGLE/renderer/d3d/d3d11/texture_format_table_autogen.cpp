@@ -69,40 +69,20 @@ const Format &Format::Get(GLenum internalFormat, const Renderer11DeviceCaps &dev
         }
         case GL_ALPHA8_EXT:
         {
-            if (OnlyFL10Plus(deviceCaps))
-            {
-                static constexpr Format info(GL_ALPHA8_EXT,
-                                             angle::FormatID::A8_UNORM,
-                                             DXGI_FORMAT_A8_UNORM,
-                                             DXGI_FORMAT_A8_UNORM,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_A8_UNORM,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_A8_UNORM,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             GL_RGBA8,
-                                             nullptr);
-                return info;
-            }
-            else
-            {
-                static constexpr Format info(GL_ALPHA8_EXT,
-                                             angle::FormatID::R8G8B8A8_UNORM,
-                                             DXGI_FORMAT_R8G8B8A8_UNORM,
-                                             DXGI_FORMAT_R8G8B8A8_UNORM,
-                                             DXGI_FORMAT_R8G8B8A8_UNORM,
-                                             DXGI_FORMAT_R8G8B8A8_UNORM,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_R8G8B8A8_UNORM,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_R8G8B8A8_TYPELESS,
-                                             GL_RGBA8,
-                                             nullptr);
-                return info;
-            }
+            static constexpr Format info(GL_ALPHA8_EXT,
+                                         angle::FormatID::A8_UNORM,
+                                         DXGI_FORMAT_A8_UNORM,
+                                         DXGI_FORMAT_A8_UNORM,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_A8_UNORM,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_A8_UNORM,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         GL_RGBA8,
+                                         nullptr);
+            return info;
         }
         case GL_BGR10_A2_ANGLEX:
         {
@@ -365,23 +345,6 @@ const Format &Format::Get(GLenum internalFormat, const Renderer11DeviceCaps &dev
                                          Initialize4ComponentData<GLubyte, 0x00, 0x00, 0x00, 0xFF>);
             return info;
         }
-        case GL_COMPRESSED_RGB8_LOSSY_DECODE_ETC2_ANGLE:
-        {
-            static constexpr Format info(GL_COMPRESSED_RGB8_LOSSY_DECODE_ETC2_ANGLE,
-                                         angle::FormatID::BC1_RGB_UNORM_BLOCK,
-                                         DXGI_FORMAT_BC1_UNORM,
-                                         DXGI_FORMAT_BC1_UNORM,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_BC1_UNORM,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         GL_RGBA8,
-                                         nullptr);
-            return info;
-        }
         case GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2:
         {
             static constexpr Format info(GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2,
@@ -397,23 +360,6 @@ const Format &Format::Get(GLenum internalFormat, const Renderer11DeviceCaps &dev
                                          DXGI_FORMAT_R8G8B8A8_TYPELESS,
                                          GL_RGBA8,
                                          Initialize4ComponentData<GLubyte, 0x00, 0x00, 0x00, 0xFF>);
-            return info;
-        }
-        case GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_LOSSY_DECODE_ETC2_ANGLE:
-        {
-            static constexpr Format info(GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_LOSSY_DECODE_ETC2_ANGLE,
-                                         angle::FormatID::BC1_RGBA_UNORM_BLOCK,
-                                         DXGI_FORMAT_BC1_UNORM,
-                                         DXGI_FORMAT_BC1_UNORM,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_BC1_UNORM,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         GL_RGBA8,
-                                         nullptr);
             return info;
         }
         case GL_COMPRESSED_RGBA8_ETC2_EAC:
@@ -1538,23 +1484,6 @@ const Format &Format::Get(GLenum internalFormat, const Renderer11DeviceCaps &dev
                                          Initialize4ComponentData<GLubyte, 0x00, 0x00, 0x00, 0xFF>);
             return info;
         }
-        case GL_COMPRESSED_SRGB8_LOSSY_DECODE_ETC2_ANGLE:
-        {
-            static constexpr Format info(GL_COMPRESSED_SRGB8_LOSSY_DECODE_ETC2_ANGLE,
-                                         angle::FormatID::BC1_RGB_UNORM_SRGB_BLOCK,
-                                         DXGI_FORMAT_BC1_UNORM_SRGB,
-                                         DXGI_FORMAT_BC1_UNORM_SRGB,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_BC1_UNORM_SRGB,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_BC1_UNORM,
-                                         DXGI_FORMAT_BC1_TYPELESS,
-                                         GL_RGBA8,
-                                         nullptr);
-            return info;
-        }
         case GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2:
         {
             static constexpr Format info(GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2,
@@ -1570,23 +1499,6 @@ const Format &Format::Get(GLenum internalFormat, const Renderer11DeviceCaps &dev
                                          DXGI_FORMAT_R8G8B8A8_TYPELESS,
                                          GL_SRGB8_ALPHA8,
                                          Initialize4ComponentData<GLubyte, 0x00, 0x00, 0x00, 0xFF>);
-            return info;
-        }
-        case GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_LOSSY_DECODE_ETC2_ANGLE:
-        {
-            static constexpr Format info(GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_LOSSY_DECODE_ETC2_ANGLE,
-                                         angle::FormatID::BC1_RGBA_UNORM_SRGB_BLOCK,
-                                         DXGI_FORMAT_BC1_UNORM_SRGB,
-                                         DXGI_FORMAT_BC1_UNORM_SRGB,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_BC1_UNORM_SRGB,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_BC1_UNORM,
-                                         DXGI_FORMAT_BC1_TYPELESS,
-                                         GL_RGBA8,
-                                         nullptr);
             return info;
         }
         case GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_EXT:
@@ -1744,40 +1656,20 @@ const Format &Format::Get(GLenum internalFormat, const Renderer11DeviceCaps &dev
         }
         case GL_DEPTH24_STENCIL8:
         {
-            if (OnlyFL10Plus(deviceCaps))
-            {
-                static constexpr Format info(GL_DEPTH24_STENCIL8,
-                                             angle::FormatID::D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_R24G8_TYPELESS,
-                                             DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
-                                             DXGI_FORMAT_X24_TYPELESS_G8_UINT,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             GL_RGBA32F,
-                                             nullptr);
-                return info;
-            }
-            else
-            {
-                static constexpr Format info(GL_DEPTH24_STENCIL8,
-                                             angle::FormatID::D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             GL_RGBA32F,
-                                             nullptr);
-                return info;
-            }
+            static constexpr Format info(GL_DEPTH24_STENCIL8,
+                                         angle::FormatID::D24_UNORM_S8_UINT,
+                                         DXGI_FORMAT_R24G8_TYPELESS,
+                                         DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_D24_UNORM_S8_UINT,
+                                         DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
+                                         DXGI_FORMAT_X24_TYPELESS_G8_UINT,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         GL_RGBA32F,
+                                         nullptr);
+            return info;
         }
         case GL_DEPTH32F_STENCIL8:
         {
@@ -1798,77 +1690,37 @@ const Format &Format::Get(GLenum internalFormat, const Renderer11DeviceCaps &dev
         }
         case GL_DEPTH_COMPONENT16:
         {
-            if (OnlyFL10Plus(deviceCaps))
-            {
-                static constexpr Format info(GL_DEPTH_COMPONENT16,
-                                             angle::FormatID::D16_UNORM,
-                                             DXGI_FORMAT_R16_TYPELESS,
-                                             DXGI_FORMAT_R16_UNORM,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_D16_UNORM,
-                                             DXGI_FORMAT_R16_UNORM,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             GL_RGBA16_EXT,
-                                             nullptr);
-                return info;
-            }
-            else
-            {
-                static constexpr Format info(GL_DEPTH_COMPONENT16,
-                                             angle::FormatID::D16_UNORM,
-                                             DXGI_FORMAT_D16_UNORM,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_D16_UNORM,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             GL_RGBA16_EXT,
-                                             nullptr);
-                return info;
-            }
+            static constexpr Format info(GL_DEPTH_COMPONENT16,
+                                         angle::FormatID::D16_UNORM,
+                                         DXGI_FORMAT_R16_TYPELESS,
+                                         DXGI_FORMAT_R16_UNORM,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_D16_UNORM,
+                                         DXGI_FORMAT_R16_UNORM,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         GL_RGBA16_EXT,
+                                         nullptr);
+            return info;
         }
         case GL_DEPTH_COMPONENT24:
         {
-            if (OnlyFL10Plus(deviceCaps))
-            {
-                static constexpr Format info(GL_DEPTH_COMPONENT24,
-                                             angle::FormatID::D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_R24G8_TYPELESS,
-                                             DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
-                                             DXGI_FORMAT_X24_TYPELESS_G8_UINT,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             GL_RGBA32F,
-                                             nullptr);
-                return info;
-            }
-            else
-            {
-                static constexpr Format info(GL_DEPTH_COMPONENT24,
-                                             angle::FormatID::D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             GL_RGBA32F,
-                                             nullptr);
-                return info;
-            }
+            static constexpr Format info(GL_DEPTH_COMPONENT24,
+                                         angle::FormatID::D24_UNORM_S8_UINT,
+                                         DXGI_FORMAT_R24G8_TYPELESS,
+                                         DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_D24_UNORM_S8_UINT,
+                                         DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
+                                         DXGI_FORMAT_X24_TYPELESS_G8_UINT,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         GL_RGBA32F,
+                                         nullptr);
+            return info;
         }
         case GL_DEPTH_COMPONENT32F:
         {
@@ -1889,55 +1741,18 @@ const Format &Format::Get(GLenum internalFormat, const Renderer11DeviceCaps &dev
         }
         case GL_DEPTH_COMPONENT32_OES:
         {
-            if (OnlyFL10Plus(deviceCaps))
-            {
-                static constexpr Format info(GL_DEPTH_COMPONENT32_OES,
-                                             angle::FormatID::D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_R24G8_TYPELESS,
-                                             DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
-                                             DXGI_FORMAT_X24_TYPELESS_G8_UINT,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             GL_RGBA32F,
-                                             nullptr);
-                return info;
-            }
-            else
-            {
-                static constexpr Format info(GL_DEPTH_COMPONENT32_OES,
-                                             angle::FormatID::D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             GL_RGBA32F,
-                                             nullptr);
-                return info;
-            }
-        }
-        case GL_ETC1_RGB8_LOSSY_DECODE_ANGLE:
-        {
-            static constexpr Format info(GL_ETC1_RGB8_LOSSY_DECODE_ANGLE,
-                                         angle::FormatID::BC1_RGB_UNORM_BLOCK,
-                                         DXGI_FORMAT_BC1_UNORM,
-                                         DXGI_FORMAT_BC1_UNORM,
+            static constexpr Format info(GL_DEPTH_COMPONENT32_OES,
+                                         angle::FormatID::D24_UNORM_S8_UINT,
+                                         DXGI_FORMAT_R24G8_TYPELESS,
+                                         DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
                                          DXGI_FORMAT_UNKNOWN,
                                          DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_D24_UNORM_S8_UINT,
+                                         DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
+                                         DXGI_FORMAT_X24_TYPELESS_G8_UINT,
                                          DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_BC1_UNORM,
                                          DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         DXGI_FORMAT_UNKNOWN,
-                                         GL_RGBA8,
+                                         GL_RGBA32F,
                                          nullptr);
             return info;
         }
@@ -3525,40 +3340,20 @@ const Format &Format::Get(GLenum internalFormat, const Renderer11DeviceCaps &dev
         }
         case GL_STENCIL_INDEX8:
         {
-            if (OnlyFL10Plus(deviceCaps))
-            {
-                static constexpr Format info(GL_STENCIL_INDEX8,
-                                             angle::FormatID::D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_R24G8_TYPELESS,
-                                             DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
-                                             DXGI_FORMAT_X24_TYPELESS_G8_UINT,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             GL_RGBA32F,
-                                             nullptr);
-                return info;
-            }
-            else
-            {
-                static constexpr Format info(GL_STENCIL_INDEX8,
-                                             angle::FormatID::D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_D24_UNORM_S8_UINT,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             DXGI_FORMAT_UNKNOWN,
-                                             GL_RGBA32F,
-                                             nullptr);
-                return info;
-            }
+            static constexpr Format info(GL_STENCIL_INDEX8,
+                                         angle::FormatID::D24_UNORM_S8_UINT,
+                                         DXGI_FORMAT_R24G8_TYPELESS,
+                                         DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_D24_UNORM_S8_UINT,
+                                         DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
+                                         DXGI_FORMAT_X24_TYPELESS_G8_UINT,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         DXGI_FORMAT_UNKNOWN,
+                                         GL_RGBA32F,
+                                         nullptr);
+            return info;
         }
 
         default:

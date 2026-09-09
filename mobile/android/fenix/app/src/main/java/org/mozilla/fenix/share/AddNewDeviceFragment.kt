@@ -18,9 +18,7 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.SupportUtils
 
-/**
- * Fragment to add a new device. Tabs can be shared to devices after they are added.
- */
+/** Fragment to add a new device. Tabs can be shared to devices after they are added. */
 class AddNewDeviceFragment : Fragment(R.layout.fragment_add_new_device), SystemInsetsPaddedFragment {
 
     override fun onResume() {
@@ -35,20 +33,23 @@ class AddNewDeviceFragment : Fragment(R.layout.fragment_add_new_device), SystemI
         binding.learnButton.setOnClickListener {
             findNavController().openToBrowser()
             requireComponents.useCases.fenixBrowserUseCases.loadUrlOrSearch(
-                searchTermOrURL = SupportUtils.getSumoURLForTopic(
-                    requireContext(),
-                    SupportUtils.SumoTopic.SEND_TABS,
-                ),
+                searchTermOrURL =
+                    SupportUtils.getSumoURLForTopic(
+                        requireContext(),
+                        SupportUtils.SumoTopic.SEND_TABS,
+                    ),
                 newTab = true,
             )
         }
 
         binding.connectButton.setOnClickListener {
-            MaterialAlertDialogBuilder(requireContext()).apply {
-                setMessage(R.string.sync_connect_device_dialog)
-                setPositiveButton(R.string.sync_confirmation_button) { dialog, _ -> dialog.cancel() }
-                create().withCenterAlignedButtons()
-            }.show()
+            MaterialAlertDialogBuilder(requireContext())
+                .apply {
+                    setMessage(R.string.sync_connect_device_dialog)
+                    setPositiveButton(R.string.sync_confirmation_button) { dialog, _ -> dialog.cancel() }
+                    create().withCenterAlignedButtons()
+                }
+                .show()
         }
     }
 }

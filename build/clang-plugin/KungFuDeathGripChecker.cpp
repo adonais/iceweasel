@@ -71,6 +71,7 @@ void KungFuDeathGripChecker::check(const MatchFinder::MatchResult &Result) {
   if (TD && TD->getIdentifier()) {
     static const char *IgnoreTypes[] = {
         "already_AddRefed",
+        "GetServiceHelper",
         "nsGetServiceByCID",
         "nsGetServiceByCIDWithError",
         "nsGetServiceByContractID",

@@ -27,12 +27,11 @@ import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
 import org.mozilla.fenix.tabstray.ext.isNormalTab
 
 /**
- * A [BrowserStore] binding that observes the selected tab and shows a "Shake to Summarize"
- * Contextual Feature Recommendation (CFR) in the toolbar when the page content is eligible
- * for summarization for the first time.
+ * A [BrowserStore] binding that observes the selected tab and shows a "Shake to Summarize" Contextual Feature
+ * Recommendation (CFR) in the toolbar when the page content is eligible for summarization for the first time.
  *
- * This Binding should be used in [org.mozilla.fenix.browser.BrowserFragment] to ensure that we
- * don't show it in a custom tab.
+ * This Binding should be used in [org.mozilla.fenix.browser.BrowserFragment] to ensure that we don't show it in a
+ * custom tab.
  *
  * The CFR is shown only when all of the following conditions are met:
  * - The selected tab is a normal (non-private) tab.
@@ -60,7 +59,8 @@ class SummarizeToolbarCFRBinding(
 ) : AbstractBinding<BrowserState>(browserStore, mainDispatcher) {
 
     override suspend fun onState(flow: Flow<BrowserState>) {
-        flow.filter { it.selectedTab?.isNormalTab() == true }
+        flow
+            .filter { it.selectedTab?.isNormalTab() == true }
             .map { requireNotNull(it.selectedTab) }
             .filter { featureDiscovery.shouldToolbarShowCfr }
             // summarize settings is an IO call to shared prefs
@@ -69,32 +69,27 @@ class SummarizeToolbarCFRBinding(
             .collect { summarizable ->
                 // if the content is summarizable, and
                 // there is no existing CFR in the toolbar, then we add ours
-                val existingEnabledCfr =
-                    browserToolbarStore.state.displayState.cfr?.enabled ?: false
+                val existingEnabledCfr = browserToolbarStore.state.displayState.cfr?.enabled ?: false
                 if (summarizable && !existingEnabledCfr) {
                     browserToolbarStore.dispatch(
                         BrowserDisplayToolbarAction.ToolbarCFRShown(
-                            cfr = BrowserToolbarCFR(
-                                tag = CFR_TAG_SHAKE_TO_SUMMARIZE,
-                                enabled = true,
-                                title = null,
-                                description = R.string.browser_toolbar_summarize_cfr_description,
-                            ),
-                        ),
+                            cfr =
+                                BrowserToolbarCFR(
+                                    tag = CFR_TAG_SHAKE_TO_SUMMARIZE,
+                                    enabled = true,
+                                    title = null,
+                                    description = R.string.browser_toolbar_summarize_cfr_description,
+                                )
+                        )
                     )
-                    featureDiscovery.cacheDiscoveryEvent(
-                        event = SummarizeDiscoveryEvent.CfrExposure,
-                    )
+                    featureDiscovery.cacheDiscoveryEvent(event = SummarizeDiscoveryEvent.CfrExposure)
                 }
             }
     }
 
-    /**
-     * Filters the flow and returns a boolean indicating whether or not the content is summarizable
-     */
+    /** Filters the flow and returns a boolean indicating whether or not the content is summarizable */
     private fun Flow<TabSessionState>.filterSummarizable(): Flow<Boolean> {
-        return this
-            .filter { it.readerState.readerable }
+        return this.filter { it.readerState.readerable }
             .filterNot { it.content.loading && it.content.progress != CONTENT_MAX_PROGRESS }
             .distinctUntilChanged()
             .map { tabSessionState ->
@@ -106,18 +101,15 @@ class SummarizeToolbarCFRBinding(
     private suspend fun TabSessionState?.isEligibleForSummarization(): Boolean {
         val session = this?.engineState?.engineSession ?: return false
 
-        return eligibilityChecker.check(session)
-            .getOrNull() ?: false
+        return eligibilityChecker.check(session).getOrNull() ?: false
     }
 
-    /**
-     * Dismiss the S2S CFR if it exists
-     */
+    /** Dismiss the S2S CFR if it exists */
     fun maybeDismissCfr() {
         val shakeToSummarizeCfrTag = browserToolbarStore.state.displayState.cfr?.tag
         if (shakeToSummarizeCfrTag == CFR_TAG_SHAKE_TO_SUMMARIZE) {
             browserToolbarStore.dispatch(
-                action = BrowserDisplayToolbarAction.ToolbarCFRDismissed(shakeToSummarizeCfrTag),
+                action = BrowserDisplayToolbarAction.ToolbarCFRDismissed(shakeToSummarizeCfrTag)
             )
         }
     }

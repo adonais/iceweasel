@@ -19,13 +19,15 @@ class QrScannerActionTest {
 
         val finalState = AppStoreReducer.reduce(initialState, AppAction.QrScannerAction.QrScannerRequested)
 
-        val expectedState = AppState(
-            qrScannerState = QrScannerState(
-                isRequesting = true,
-                inProgress = false,
-                lastScanData = null,
-            ),
-        )
+        val expectedState =
+            AppState(
+                qrScannerState =
+                    QrScannerState(
+                        isRequesting = true,
+                        inProgress = false,
+                        lastScanData = null,
+                    )
+            )
 
         assertEquals(expectedState, finalState)
     }
@@ -36,25 +38,29 @@ class QrScannerActionTest {
 
         state = AppStoreReducer.reduce(state, AppAction.QrScannerAction.QrScannerRequested)
 
-        var expectedState = AppState(
-            qrScannerState = QrScannerState(
-                isRequesting = true,
-                inProgress = false,
-                lastScanData = null,
-            ),
-        )
+        var expectedState =
+            AppState(
+                qrScannerState =
+                    QrScannerState(
+                        isRequesting = true,
+                        inProgress = false,
+                        lastScanData = null,
+                    )
+            )
 
         assertEquals(expectedState, state)
 
         state = AppStoreReducer.reduce(state, AppAction.QrScannerAction.QrScannerRequestConsumed)
 
-        expectedState = AppState(
-            qrScannerState = QrScannerState(
-                isRequesting = false,
-                inProgress = true,
-                lastScanData = null,
-            ),
-        )
+        expectedState =
+            AppState(
+                qrScannerState =
+                    QrScannerState(
+                        isRequesting = false,
+                        inProgress = true,
+                        lastScanData = null,
+                    )
+            )
 
         assertEquals(expectedState, state)
     }
@@ -65,13 +71,15 @@ class QrScannerActionTest {
 
         val finalState = AppStoreReducer.reduce(initialState, AppAction.QrScannerAction.QrScannerInputAvailable("test"))
 
-        val expectedState = AppState(
-            qrScannerState = QrScannerState(
-                isRequesting = false,
-                inProgress = false,
-                lastScanData = "test",
-            ),
-        )
+        val expectedState =
+            AppState(
+                qrScannerState =
+                    QrScannerState(
+                        isRequesting = false,
+                        inProgress = false,
+                        lastScanData = "test",
+                    )
+            )
 
         assertEquals(expectedState, finalState)
     }
@@ -82,13 +90,15 @@ class QrScannerActionTest {
 
         state = AppStoreReducer.reduce(state, AppAction.QrScannerAction.QrScannerInputAvailable("test"))
 
-        var expectedState = AppState(
-            qrScannerState = QrScannerState(
-                isRequesting = false,
-                inProgress = false,
-                lastScanData = "test",
-            ),
-        )
+        var expectedState =
+            AppState(
+                qrScannerState =
+                    QrScannerState(
+                        isRequesting = false,
+                        inProgress = false,
+                        lastScanData = "test",
+                    )
+            )
 
         assertEquals(expectedState, state)
 
@@ -105,13 +115,15 @@ class QrScannerActionTest {
 
         state = AppStoreReducer.reduce(state, AppAction.QrScannerAction.QrScannerRequested)
 
-        var expectedState = AppState(
-            qrScannerState = QrScannerState(
-                isRequesting = true,
-                inProgress = false,
-                lastScanData = null,
-            ),
-        )
+        var expectedState =
+            AppState(
+                qrScannerState =
+                    QrScannerState(
+                        isRequesting = true,
+                        inProgress = false,
+                        lastScanData = null,
+                    )
+            )
 
         assertEquals(expectedState, state)
 

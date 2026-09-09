@@ -4,42 +4,26 @@
 
 package mozilla.components.feature.ipprotection.store.state
 
-/**
- * IP Protection proxy states.
- */
+/** IP Protection proxy states. */
 sealed interface ProxyStatus
 
-/**
- * Proxy is not yet initialized.
- */
+/** Proxy is not yet initialized. */
 data object Uninitialized : ProxyStatus
 
-/**
- * Feature is ready for use.
- */
+/** Feature is ready for use. */
 sealed interface Authorized : ProxyStatus {
-    /**
-     * Inactive, and could be turned on.
-     */
+    /** Inactive, and could be turned on. */
     data object Idle : Authorized
 
-    /**
-     * In the process of activating the proxy.
-     */
+    /** In the process of activating the proxy. */
     data object Activating : Authorized
 
-    /**
-     * Proxy is active.
-     */
+    /** Proxy is active. */
     data object Active : Authorized
 
-    /**
-     * User has reached the data limit for this month.
-     */
+    /** User has reached the data limit for this month. */
     data object DataLimitReached : Authorized
 
-    /**
-     * Errored while connecting to the proxy.
-     */
+    /** Errored while connecting to the proxy. */
     data object ConnectionError : ProxyStatus
 }

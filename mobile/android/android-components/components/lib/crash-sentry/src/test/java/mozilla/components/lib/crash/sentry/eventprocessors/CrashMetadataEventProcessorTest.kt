@@ -28,15 +28,16 @@ class CrashMetadataEventProcessorTest {
         val event = SentryEvent()
         val processor = CrashMetadataEventProcessor()
 
-        processor.crashToProcess = Crash.NativeCodeCrash(
-            timestamp = System.currentTimeMillis(),
-            minidumpPath = null,
-            extrasPath = null,
-            processVisibility = null,
-            processType = null,
-            remoteType = null,
-            breadcrumbs = arrayListOf(),
-        )
+        processor.crashToProcess =
+            Crash.NativeCodeCrash(
+                timestamp = System.currentTimeMillis(),
+                minidumpPath = null,
+                extrasPath = null,
+                processVisibility = null,
+                processType = null,
+                remoteType = null,
+                breadcrumbs = arrayListOf(),
+            )
         val result = processor.process(event, mock())
 
         assertEquals(event, result)
@@ -57,34 +58,32 @@ class CrashMetadataEventProcessorTest {
         val actualRelease = "136.0.1"
         val processor = CrashMetadataEventProcessor()
 
-        val experimentData = ExperimentData(
-            mapOf(
-                "use-unit-test" to "branch-test",
-            ),
-        )
+        val experimentData = ExperimentData(mapOf("use-unit-test" to "branch-test"))
 
-        processor.crashToProcess = Crash.NativeCodeCrash(
-            timestamp = System.currentTimeMillis(),
-            minidumpPath = null,
-            extrasPath = null,
-            processVisibility = null,
-            processType = null,
-            remoteType = null,
-            breadcrumbs = arrayListOf(),
-            runtimeTags = mapOf(
-                RuntimeTag.RELEASE to actualRelease,
-                RuntimeTag.GIT to "git_hash",
-                RuntimeTag.AC_VERSION to "ac_version",
-                RuntimeTag.AS_VERSION to "as_version",
-                RuntimeTag.GLEAN_VERSION to "glean_version",
-                RuntimeTag.LOCALE to "locale",
-                RuntimeTag.BUILD_ID to "build_id",
-                RuntimeTag.VERSION_CODE to "version_code",
-                RuntimeTag.VERSION_NAME to "version_name",
-                RuntimeTag.GECKOVIEW_VERSION to "geckoview_version",
-                RuntimeTag.EXPERIMENT_DATA to experimentData.asJsonString(),
-            ),
-        )
+        processor.crashToProcess =
+            Crash.NativeCodeCrash(
+                timestamp = System.currentTimeMillis(),
+                minidumpPath = null,
+                extrasPath = null,
+                processVisibility = null,
+                processType = null,
+                remoteType = null,
+                breadcrumbs = arrayListOf(),
+                runtimeTags =
+                    mapOf(
+                        RuntimeTag.RELEASE to actualRelease,
+                        RuntimeTag.GIT to "git_hash",
+                        RuntimeTag.AC_VERSION to "ac_version",
+                        RuntimeTag.AS_VERSION to "as_version",
+                        RuntimeTag.GLEAN_VERSION to "glean_version",
+                        RuntimeTag.LOCALE to "locale",
+                        RuntimeTag.BUILD_ID to "build_id",
+                        RuntimeTag.VERSION_CODE to "version_code",
+                        RuntimeTag.VERSION_NAME to "version_name",
+                        RuntimeTag.GECKOVIEW_VERSION to "geckoview_version",
+                        RuntimeTag.EXPERIMENT_DATA to experimentData.asJsonString(),
+                    ),
+            )
         val result = processor.process(event, mock())
 
         event.release = actualRelease

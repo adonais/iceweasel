@@ -9,10 +9,8 @@ package org.mozilla.fenix.customannotations
  *
  * You can annotate a test function to disable memory leak checks for the test
  *
- * @param reasons Reasons for skipping leak detection, typically the bugzilla bug link for it
+ * @property reasons Reasons for skipping leak detection, typically the bugzilla bug link for it
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class SkipLeaks(
-    val reasons: Array<String> = [],
-)
+annotation class SkipLeaks(val reasons: Array<String> = [])

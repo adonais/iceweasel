@@ -23,10 +23,10 @@ import org.mozilla.fenix.snackbar.SnackbarBinding
  * A binding for observing the [SnackbarState] for IP Protection related states in the [AppStore].
  *
  * Unlike [SnackbarBinding], this binding handles specifically IP Protection related snackbar states. So that, in cases
- * where we could have multiple snackbar bindings (e.g., a home fragment + a menu dialog fragment active together),
- * we could have granular control over which types of snackbars the menu should consume. (The consumption could be
- * potentially a problem; for example, adding a bookmark through the menu shows a snackbar and dismisses the menu -
- * if the menu consumed the bookmark and immediately dismissed itself, the snackbar would not get visible for the user).
+ * where we could have multiple snackbar bindings (e.g., a home fragment + a menu dialog fragment active together), we
+ * could have granular control over which types of snackbars the menu should consume. (The consumption could be
+ * potentially a problem; for example, adding a bookmark through the menu shows a snackbar and dismisses the menu - if
+ * the menu consumed the bookmark and immediately dismissed itself, the snackbar would not get visible for the user).
  *
  * @param appStore The [AppStore] used to observe the [SnackbarState].
  * @param snackbarDelegate The [SnackbarDelegate] used to display a snackbar.
@@ -39,11 +39,12 @@ class IPProtectionSnackbarBinding(
 ) : AbstractBinding<AppState>(appStore, mainDispatcher) {
 
     override suspend fun onState(flow: Flow<AppState>) {
-        flow.map { state -> state.snackbarState }
+        flow
+            .map { state -> state.snackbarState }
             .distinctUntilChanged()
             .collect { state ->
                 when (state) {
-                    is SnackbarState.IPProtectionConnectionError -> state.title
+                    is SnackbarState.IPProtectionShowSnackbar -> state.title
                     is SnackbarState.IPProtectionDataLimitReached -> state.title
                     else -> null
                 }?.let {

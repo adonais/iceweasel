@@ -89,8 +89,9 @@ class ProfilerMarkerFactProcessorTest {
 private fun newFact(
     action: Action,
     item: String = "itemName",
-) = Fact(
-    Component.BROWSER_SESSION_STORAGE,
-    action,
-    item,
-)
+) =
+    Fact(
+        Component.BROWSER_SESSION_STORAGE,
+        action,
+        item,
+    )

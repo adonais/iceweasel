@@ -29,9 +29,7 @@ import org.mozilla.fenix.settings.creditcards.ui.CreditCardEditorStore
 import org.mozilla.fenix.settings.creditcards.ui.DefaultCalendarDataProvider
 import org.mozilla.fenix.theme.FirefoxTheme
 
-/**
- * Display a credit card editor for adding and editing a credit card.
- */
+/** Display a credit card editor for adding and editing a credit card. */
 class CreditCardEditorFragment : SecureFragment(), SystemInsetsPaddedFragment {
 
     private val args by navArgs<CreditCardEditorFragmentArgs>()
@@ -48,18 +46,16 @@ class CreditCardEditorFragment : SecureFragment(), SystemInsetsPaddedFragment {
     ): View {
         val store: CreditCardEditorStore = storeProvider.get { state ->
             CreditCardEditorStore(
-                initialState = state
-                    ?: CreditCardEditorState.Default.copy(inEditMode = args.creditCard != null),
-                middleware = listOf(
-                    CreditCardEditorMiddleware(
-                        CreditCardEditorEnvironment(
-                            navigateBack = { findNavController().popBackStack() },
-                        ),
-                        storage = requireComponents.core.autofillStorage,
-                        calendarDataProvider = DefaultCalendarDataProvider(),
-                        coroutineScope = lifecycleScope,
+                initialState = state ?: CreditCardEditorState.Default.copy(inEditMode = args.creditCard != null),
+                middleware =
+                    listOf(
+                        CreditCardEditorMiddleware(
+                            CreditCardEditorEnvironment(navigateBack = { findNavController().popBackStack() }),
+                            storage = requireComponents.core.autofillStorage,
+                            calendarDataProvider = DefaultCalendarDataProvider(),
+                            coroutineScope = lifecycleScope,
+                        )
                     ),
-                ),
             )
         }
         return content {
@@ -74,8 +70,8 @@ class CreditCardEditorFragment : SecureFragment(), SystemInsetsPaddedFragment {
     }
 
     /**
-     * Close the keyboard, any open dialogs or menus and then reauthenticate if the
-     * fragment is paused and the user is not navigating to [CreditCardsManagementFragment].
+     * Close the keyboard, any open dialogs or menus and then reauthenticate if the fragment is paused and the user is
+     * not navigating to [CreditCardsManagementFragment].
      */
     override fun onPause() {
         redirectToReAuth(

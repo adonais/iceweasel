@@ -117,21 +117,11 @@ bool TranslatorHLSL::translate(TIntermBlock *root,
         return false;
     }
 
-    if (!shouldRunLoopAndIndexingValidation(compileOptions))
+    if (!shouldRunLoopAndIndexingValidation())
     {
         // HLSL doesn't support dynamic indexing of vectors and matrices.
         if (!RemoveDynamicIndexingOfNonSSBOVectorOrMatrix(this, root, &getSymbolTable(),
                                                           perfDiagnostics))
-        {
-            return false;
-        }
-    }
-
-    // Work around D3D9 bug that would manifest in vertex shaders with selection blocks which
-    // use a vertex attribute as a condition, and some related computation in the else block.
-    if (getOutputType() == SH_HLSL_3_0_OUTPUT && getShaderType() == GL_VERTEX_SHADER)
-    {
-        if (!sh::RewriteElseBlocks(this, root, &getSymbolTable()))
         {
             return false;
         }

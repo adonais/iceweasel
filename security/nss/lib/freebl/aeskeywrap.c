@@ -468,7 +468,7 @@ AESKeyWrap_Decrypt(AESKeyWrapContext *cx, unsigned char *output,
                            input, inputLen);
 }
 
-#define BLOCK_PAD_POWER2(x, bs) (((bs) - ((x) & ((bs)-1))) & ((bs)-1))
+#define BLOCK_PAD_POWER2(x, bs) (((bs) - ((x) & ((bs) - 1))) & ((bs) - 1))
 #define AES_KEY_WRAP_ICV2 0xa6, 0x59, 0x59, 0xa6
 #define AES_KEY_WRAP_ICV2_INT32 0xa65959a6
 #define AES_KEY_WRAP_ICV2_LEN 4

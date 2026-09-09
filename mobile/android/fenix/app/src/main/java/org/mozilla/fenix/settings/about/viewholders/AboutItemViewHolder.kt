@@ -32,7 +32,6 @@ class AboutItemViewHolder(
     }
 
     companion object {
-        @LayoutRes
-        val LAYOUT_ID = R.layout.about_list_item
+        @LayoutRes val LAYOUT_ID = R.layout.about_list_item
     }
 }

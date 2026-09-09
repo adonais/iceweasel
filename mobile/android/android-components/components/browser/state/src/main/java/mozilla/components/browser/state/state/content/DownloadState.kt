@@ -5,9 +5,9 @@
 package mozilla.components.browser.state.state.content
 
 import android.os.Environment
-import mozilla.components.concept.fetch.Response
 import java.io.File
 import java.util.UUID
+import mozilla.components.concept.fetch.Response
 
 /**
  * Value type that represents a download request.
@@ -23,15 +23,15 @@ import java.util.UUID
  * @property filePath The file path the file was saved at.
  * @property referrerUrl The site that linked to this download.
  * @property skipConfirmation Whether or not the confirmation dialog should be shown before the download begins.
- * @property openInApp Whether or not the file associated with this download should be opened in a
- * third party app after downloaded successfully.
+ * @property openInApp Whether or not the file associated with this download should be opened in a third party app after
+ *   downloaded successfully.
  * @property id The unique identifier of this download.
  * @property private Indicates if the download was created from a private session.
  * @property createdTime A timestamp when the download was created.
- * @property response A response object associated with this request, when provided can be
- * used instead of performing a manual a download.
- * @property notificationId Identifies the download notification in the status bar, if this
- * [DownloadState] has one otherwise null.
+ * @property response A response object associated with this request, when provided can be used instead of performing a
+ *   manual a download.
+ * @property notificationId Identifies the download notification in the status bar, if this [DownloadState] has one
+ *   otherwise null.
  */
 data class DownloadState(
     val url: String,
@@ -65,45 +65,34 @@ data class DownloadState(
             }
 
     val progress: Float?
-        get() = if (contentLength == null || contentLength == 0L) {
-            null
-        } else {
-            currentBytesCopied.toFloat() / contentLength.toFloat()
-        }
+        get() =
+            if (contentLength == null || contentLength == 0L) {
+                null
+            } else {
+                currentBytesCopied.toFloat() / contentLength.toFloat()
+            }
 
-    /**
-     * Status that represents every state that a download can be in.
-     */
+    /** Status that represents every state that a download can be in. */
     enum class Status(val id: Int) {
-        /**
-         * Indicates that the download is in the first state after creation but not yet [DOWNLOADING].
-         */
+        /** Indicates that the download is in the first state after creation but not yet [DOWNLOADING]. */
         INITIATED(INITIATED_ID),
 
-        /**
-         * Indicates that an [INITIATED] download is now actively being downloaded.
-         */
+        /** Indicates that an [INITIATED] download is now actively being downloaded. */
         DOWNLOADING(DOWNLOADING_ID),
 
-        /**
-         * Indicates that the download that has been [DOWNLOADING] has been paused.
-         */
+        /** Indicates that the download that has been [DOWNLOADING] has been paused. */
         PAUSED(PAUSED_ID),
 
-        /**
-         * Indicates that the download has been cancelled.
-         */
+        /** Indicates that the download has been cancelled. */
         CANCELLED(CANCELLED_ID),
 
         /**
-         * Indicates that the download that has been [DOWNLOADING] has moved to failed because
-         * something unexpected has happened.
+         * Indicates that the download that has been [DOWNLOADING] has moved to failed because something unexpected has
+         * happened.
          */
         FAILED(FAILED_ID),
 
-        /**
-         * Indicates that the [DOWNLOADING] download has been completed.
-         */
+        /** Indicates that the [DOWNLOADING] download has been completed. */
         COMPLETED(COMPLETED_ID),
     }
 

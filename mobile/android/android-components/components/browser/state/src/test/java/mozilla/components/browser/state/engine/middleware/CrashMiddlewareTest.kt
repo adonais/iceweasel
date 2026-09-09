@@ -29,48 +29,37 @@ class CrashMiddlewareTest {
 
         val engine: Engine = mock()
 
-        val store = BrowserStore(
-            middleware = EngineMiddleware.create(
-                engine = engine,
-                scope = this,
-            ),
-            initialState = BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "tab1").copy(
-                        engineState = EngineState(engineSession1),
+        val store =
+            BrowserStore(
+                middleware =
+                    EngineMiddleware.create(
+                        engine = engine,
+                        scope = this,
                     ),
-                    createTab("https://www.firefox.com", id = "tab2").copy(
-                        engineState = EngineState(engineSession2),
+                initialState =
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab("https://www.mozilla.org", id = "tab1")
+                                    .copy(engineState = EngineState(engineSession1)),
+                                createTab("https://www.firefox.com", id = "tab2")
+                                    .copy(engineState = EngineState(engineSession2)),
+                                createTab("https://getpocket.com", id = "tab3")
+                                    .copy(engineState = EngineState(engineSession3)),
+                            )
                     ),
-                    createTab("https://getpocket.com", id = "tab3").copy(
-                        engineState = EngineState(engineSession3),
-                    ),
-                ),
-            ),
-        )
+            )
 
-        store.dispatch(
-            CrashAction.SessionCrashedAction(
-                "tab1",
-            ),
-        )
+        store.dispatch(CrashAction.SessionCrashedAction("tab1"))
 
-        store.dispatch(
-            CrashAction.SessionCrashedAction(
-                "tab3",
-            ),
-        )
+        store.dispatch(CrashAction.SessionCrashedAction("tab3"))
 
         assertTrue(store.state.tabs[0].engineState.crashed)
         assertFalse(store.state.tabs[1].engineState.crashed)
         assertTrue(store.state.tabs[2].engineState.crashed)
 
         // Restoring crashed session
-        store.dispatch(
-            CrashAction.RestoreCrashedSessionAction(
-                "tab1",
-            ),
-        )
+        store.dispatch(CrashAction.RestoreCrashedSessionAction("tab1"))
 
         testScheduler.advanceUntilIdle()
 
@@ -79,20 +68,12 @@ class CrashMiddlewareTest {
         assertTrue(store.state.tabs[2].engineState.crashed)
 
         // Restoring a non crashed session
-        store.dispatch(
-            CrashAction.RestoreCrashedSessionAction(
-                "tab2",
-            ),
-        )
+        store.dispatch(CrashAction.RestoreCrashedSessionAction("tab2"))
 
         testScheduler.advanceUntilIdle()
 
         // Restoring unknown session
-        store.dispatch(
-            CrashAction.RestoreCrashedSessionAction(
-                "unknown",
-            ),
-        )
+        store.dispatch(CrashAction.RestoreCrashedSessionAction("unknown"))
 
         testScheduler.advanceUntilIdle()
 
@@ -107,33 +88,23 @@ class CrashMiddlewareTest {
         val engine: Engine = mock()
         doReturn(engineSession).`when`(engine).createSession()
 
-        val store = BrowserStore(
-            middleware = EngineMiddleware.create(
-                engine = engine,
-                scope = this,
-            ),
-            initialState = BrowserState(
-                tabs = listOf(
-                    createTab("https://www.mozilla.org", id = "tab1"),
-                ),
-            ),
-        )
+        val store =
+            BrowserStore(
+                middleware =
+                    EngineMiddleware.create(
+                        engine = engine,
+                        scope = this,
+                    ),
+                initialState = BrowserState(tabs = listOf(createTab("https://www.mozilla.org", id = "tab1"))),
+            )
 
-        store.dispatch(
-            CrashAction.SessionCrashedAction(
-                "tab1",
-            ),
-        )
+        store.dispatch(CrashAction.SessionCrashedAction("tab1"))
 
         testScheduler.advanceUntilIdle()
 
         assertTrue(store.state.tabs[0].engineState.crashed)
 
-        store.dispatch(
-            CrashAction.RestoreCrashedSessionAction(
-                "tab1",
-            ),
-        )
+        store.dispatch(CrashAction.RestoreCrashedSessionAction("tab1"))
 
         testScheduler.advanceUntilIdle()
 

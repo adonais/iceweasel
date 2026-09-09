@@ -10,6 +10,7 @@ LOCAL_INCLUDES += [
 UNIFIED_SOURCES += [
     "TestOffscreenCanvas.cpp",
     "TestSanitizeRenderer.cpp",
+    "TestWebGLTextureUploadInit.cpp",
 ]
 
 include("/ipc/chromium/chromium-config.mozbuild")

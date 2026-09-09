@@ -4,9 +4,7 @@
 
 package org.mozilla.focus.appreview
 
-/**
- * Represents the current step in the app review flow.
- */
+/** Represents the current step in the app review flow. */
 enum class AppReviewStep {
     Pending,
     ReviewNeeded,

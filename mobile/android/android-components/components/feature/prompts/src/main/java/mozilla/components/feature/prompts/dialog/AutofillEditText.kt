@@ -9,17 +9,17 @@ import android.view.ViewStructure
 import androidx.appcompat.widget.AppCompatEditText
 
 /**
- * [androidx.appcompat.widget.AppCompatEditText] implementation to add WebDomain information which
- * allows autofill applications to detect which URL is requesting the authentication info.
+ * [androidx.appcompat.widget.AppCompatEditText] implementation to add WebDomain information which allows autofill
+ * applications to detect which URL is requesting the authentication info.
  */
 internal class AutofillEditText : AppCompatEditText {
     internal var url: String? = null
 
-    constructor (context: Context) : super(context)
+    constructor(context: Context) : super(context)
 
-    constructor (context: Context, attrs: AttributeSet?) : super(context, attrs)
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
 
-    constructor (context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
     override fun onProvideAutofillStructure(structure: ViewStructure?, flags: Int) {
         if (url != null) {

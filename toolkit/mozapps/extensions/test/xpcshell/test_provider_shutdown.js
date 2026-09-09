@@ -26,6 +26,10 @@ function mockAddonProvider(aName) {
       this.shutdownResolve();
       return this.donePromise;
     },
+
+    getAddonsByTypes() {
+      return [];
+    },
   };
   mockProvider.donePromise = new Promise((resolve, reject) => {
     mockProvider.doneResolve = resolve;

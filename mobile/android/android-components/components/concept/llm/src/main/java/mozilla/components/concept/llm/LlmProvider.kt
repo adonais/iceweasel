@@ -9,16 +9,14 @@ import kotlinx.coroutines.flow.StateFlow
 /**
  * Marker interface representing a source of an [Llm].
  *
- * This is required as an underlying LLM model might have required setup steps. For example: Google
- * gemini nano needs to be downloaded before the user is able to submit it a prompt.
+ * This is required as an underlying LLM model might have required setup steps. For example: Google gemini nano needs to
+ * be downloaded before the user is able to submit it a prompt.
  *
- * Implementations may provide models from different environments
- * (e.g., cloud-hosted or locally installed).
+ * Implementations may provide models from different environments (e.g., cloud-hosted or locally installed).
  */
 sealed interface LlmProvider {
     /**
-     * Non-user-facing identifier of a specific model served by an [LlmProvider]. Used for
-     * telemetry and logging.
+     * Non-user-facing identifier of a specific model served by an [LlmProvider]. Used for telemetry and logging.
      *
      * @property value The raw model identifier string (e.g. "moz-summarization").
      */
@@ -36,28 +34,21 @@ sealed interface LlmProvider {
      */
     data class Info(val nameRes: Int, val iconRes: Int? = null, val modelId: ModelID? = null)
 
-    /**
-     * Metadata about this provider, including its display name.
-     */
+    /** Metadata about this provider, including its display name. */
     val info: Info
 }
 
 /**
  * A provider that exposes an LLM hosted in the cloud.
  *
- * Implementations are responsible for tracking availability and readiness
- * of the remote model and exposing that state via [state].
+ * Implementations are responsible for tracking availability and readiness of the remote model and exposing that state
+ * via [state].
  */
 interface CloudLlmProvider : LlmProvider {
-    /**
-     * Represents the current lifecycle state of a cloud LLM.
-     */
+    /** Represents the current lifecycle state of a cloud LLM. */
     sealed interface State {
 
-        /**
-         * Indicates that the cloud provider is reachable and the model
-         * can potentially be prepared for use.
-         */
+        /** Indicates that the cloud provider is reachable and the model can potentially be prepared for use. */
         object Available : State
 
         /**
@@ -72,13 +63,10 @@ interface CloudLlmProvider : LlmProvider {
          *
          * @property llm The ready-to-use LLM instance.
          */
-        @JvmInline
-        value class Ready(val llm: Llm) : State
+        @JvmInline value class Ready(val llm: Llm) : State
     }
 
-    /**
-     * The current state of the [CloudLlmProvider]
-     */
+    /** The current state of the [CloudLlmProvider] */
     val state: StateFlow<State>
 
     /** prepare the [CloudLlmProvider] */
@@ -88,30 +76,19 @@ interface CloudLlmProvider : LlmProvider {
 /**
  * A provider that exposes an LLM running locally on the device.
  *
- * Implementations are responsible for handling model availability,
- * download lifecycle, and readiness state.
+ * Implementations are responsible for handling model availability, download lifecycle, and readiness state.
  */
 interface LocalLlmProvider : LlmProvider {
-    /**
-     * Represents the current lifecycle state of a local LLM.
-     */
+    /** Represents the current lifecycle state of a local LLM. */
     sealed interface State {
 
-        /**
-         * Indicates that the provider is idle and no model is currently
-         * being downloaded or prepared.
-         */
+        /** Indicates that the provider is idle and no model is currently being downloaded or prepared. */
         object Idle : State
 
-        /**
-         * Indicates that the local model cannot be used
-         * (e.g., unsupported device, missing requirements).
-         */
+        /** Indicates that the local model cannot be used (e.g., unsupported device, missing requirements). */
         object Unavailable : State
 
-        /**
-         * Indicates that the model is not yet present locally and must be downloaded.
-         */
+        /** Indicates that the model is not yet present locally and must be downloaded. */
         object ReadyToDownload : State
 
         /**
@@ -122,9 +99,7 @@ interface LocalLlmProvider : LlmProvider {
          */
         data class Downloading(val bytesToDownload: Long, val bytesDownloaded: Long) : State
 
-        /**
-         * Indicates that the model provider is in a failed state.
-         */
+        /** Indicates that the model provider is in a failed state. */
         object Failed : State
 
         /**
@@ -132,27 +107,22 @@ interface LocalLlmProvider : LlmProvider {
          *
          * @property llm The ready-to-use LLM instance.
          */
-        @JvmInline
-        value class Ready(val llm: Llm) : State
+        @JvmInline value class Ready(val llm: Llm) : State
     }
 
-    /**
-     * The current state of the [LocalLlmProvider]
-     */
+    /** The current state of the [LocalLlmProvider] */
     val state: StateFlow<State>
 
     /**
      * Initiates a model download if required.
      *
-     * If the model is already available locally, this method should return
-     * immediately without side effects.
+     * If the model is already available locally, this method should return immediately without side effects.
      */
     suspend fun downloadIfNeeded()
 }
 
 /**
- * Strategy interface used to select a single [LlmProvider] from a list
- * of available providers.
+ * Strategy interface used to select a single [LlmProvider] from a list of available providers.
  *
  * Implementations may apply custom prioritization logic, such as:
  * - Preferring local providers over cloud

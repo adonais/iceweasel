@@ -18,10 +18,11 @@ class MessagingFeatureTest {
     fun `WHEN onResume is called THEN evaluate message`() = runTest {
         val appStore: AppStore = spyk(AppStore())
         val lifecycleOwner = TestLifecycleOwner()
-        val binding = MessagingFeature(
-            appStore = appStore,
-            surface = FenixMessageSurfaceId.HOMESCREEN,
-        )
+        val binding =
+            MessagingFeature(
+                appStore = appStore,
+                surface = FenixMessageSurfaceId.HOMESCREEN,
+            )
 
         binding.onResume(lifecycleOwner)
         testScheduler.advanceUntilIdle()

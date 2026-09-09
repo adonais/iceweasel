@@ -39,18 +39,16 @@ class FenixIPProtectionEligibilityStorageTest {
     @Test
     fun `WHEN nimbus disabled and secret settings disabled THEN status is Ineligible`() = runTest {
         FxNimbus.features.ipProtection.withCachedValue(IpProtection(enabled = false))
-        val browserStore = BrowserStore(
-            initialState = BrowserState(
-                search = SearchState(region = RegionState("CA", "CA")),
-            ),
-        )
+        val browserStore =
+            BrowserStore(initialState = BrowserState(search = SearchState(region = RegionState("CA", "CA"))))
 
-        val storage = FenixIPProtectionEligibilityStorage(
-            browserStore = browserStore,
-            sharedPref = sharedPreferences,
-            prefKey = prefKey,
-            lifecycleOwner = mockk(relaxed = true),
-        )
+        val storage =
+            FenixIPProtectionEligibilityStorage(
+                browserStore = browserStore,
+                sharedPref = sharedPreferences,
+                prefKey = prefKey,
+                lifecycleOwner = mockk(relaxed = true),
+            )
 
         assertEquals(EligibilityStatus.Ineligible, storage.eligibilityStatus.first())
     }
@@ -58,20 +56,18 @@ class FenixIPProtectionEligibilityStorageTest {
     @Test
     fun `WHEN nimbus disabled but region in allowed list THEN status is Ineligible`() = runTest {
         FxNimbus.features.ipProtection.withCachedValue(
-            IpProtection(enabled = false, allowedRegions = listOf("US", "CA")),
+            IpProtection(enabled = false, allowedRegions = listOf("US", "CA"))
         )
-        val browserStore = BrowserStore(
-            initialState = BrowserState(
-                search = SearchState(region = RegionState("US", "US")),
-            ),
-        )
+        val browserStore =
+            BrowserStore(initialState = BrowserState(search = SearchState(region = RegionState("US", "US"))))
 
-        val storage = FenixIPProtectionEligibilityStorage(
-            browserStore = browserStore,
-            sharedPref = sharedPreferences,
-            prefKey = prefKey,
-            lifecycleOwner = mockk(relaxed = true),
-        )
+        val storage =
+            FenixIPProtectionEligibilityStorage(
+                browserStore = browserStore,
+                sharedPref = sharedPreferences,
+                prefKey = prefKey,
+                lifecycleOwner = mockk(relaxed = true),
+            )
 
         assertEquals(EligibilityStatus.Ineligible, storage.eligibilityStatus.first())
     }
@@ -79,20 +75,18 @@ class FenixIPProtectionEligibilityStorageTest {
     @Test
     fun `WHEN nimbus enabled and region in allowed list THEN status is Eligible`() = runTest {
         FxNimbus.features.ipProtection.withCachedValue(
-            IpProtection(enabled = true, allowedRegions = listOf("US", "CA")),
+            IpProtection(enabled = true, allowedRegions = listOf("US", "CA"))
         )
-        val browserStore = BrowserStore(
-            initialState = BrowserState(
-                search = SearchState(region = RegionState("US", "US")),
-            ),
-        )
+        val browserStore =
+            BrowserStore(initialState = BrowserState(search = SearchState(region = RegionState("US", "US"))))
 
-        val storage = FenixIPProtectionEligibilityStorage(
-            browserStore = browserStore,
-            sharedPref = sharedPreferences,
-            prefKey = prefKey,
-            lifecycleOwner = mockk(relaxed = true),
-        )
+        val storage =
+            FenixIPProtectionEligibilityStorage(
+                browserStore = browserStore,
+                sharedPref = sharedPreferences,
+                prefKey = prefKey,
+                lifecycleOwner = mockk(relaxed = true),
+            )
 
         assertEquals(EligibilityStatus.Eligible, storage.eligibilityStatus.first())
     }
@@ -100,20 +94,18 @@ class FenixIPProtectionEligibilityStorageTest {
     @Test
     fun `WHEN nimbus enabled and region not in allowed list THEN status is UnsupportedRegion`() = runTest {
         FxNimbus.features.ipProtection.withCachedValue(
-            IpProtection(enabled = true, allowedRegions = listOf("US", "CA")),
+            IpProtection(enabled = true, allowedRegions = listOf("US", "CA"))
         )
-        val browserStore = BrowserStore(
-            initialState = BrowserState(
-                search = SearchState(region = RegionState("JP", "JP")),
-            ),
-        )
+        val browserStore =
+            BrowserStore(initialState = BrowserState(search = SearchState(region = RegionState("JP", "JP"))))
 
-        val storage = FenixIPProtectionEligibilityStorage(
-            browserStore = browserStore,
-            sharedPref = sharedPreferences,
-            prefKey = prefKey,
-            lifecycleOwner = mockk(relaxed = true),
-        )
+        val storage =
+            FenixIPProtectionEligibilityStorage(
+                browserStore = browserStore,
+                sharedPref = sharedPreferences,
+                prefKey = prefKey,
+                lifecycleOwner = mockk(relaxed = true),
+            )
 
         assertEquals(EligibilityStatus.UnsupportedRegion, storage.eligibilityStatus.first())
     }
@@ -123,18 +115,16 @@ class FenixIPProtectionEligibilityStorageTest {
         FxNimbus.features.ipProtection.withCachedValue(IpProtection(enabled = false))
         sharedPreferences.edit().putBoolean(prefKey, true).apply()
 
-        val browserStore = BrowserStore(
-            initialState = BrowserState(
-                search = SearchState(region = RegionState("JP", "JP")),
-            ),
-        )
+        val browserStore =
+            BrowserStore(initialState = BrowserState(search = SearchState(region = RegionState("JP", "JP"))))
 
-        val storage = FenixIPProtectionEligibilityStorage(
-            browserStore = browserStore,
-            sharedPref = sharedPreferences,
-            prefKey = prefKey,
-            lifecycleOwner = mockk(relaxed = true),
-        )
+        val storage =
+            FenixIPProtectionEligibilityStorage(
+                browserStore = browserStore,
+                sharedPref = sharedPreferences,
+                prefKey = prefKey,
+                lifecycleOwner = mockk(relaxed = true),
+            )
 
         assertEquals(EligibilityStatus.Eligible, storage.eligibilityStatus.first())
     }
@@ -142,18 +132,16 @@ class FenixIPProtectionEligibilityStorageTest {
     @Test
     fun `WHEN secret preference changes to enabled THEN status is updated to Eligible`() = runTest {
         FxNimbus.features.ipProtection.withCachedValue(IpProtection(enabled = false))
-        val browserStore = BrowserStore(
-            initialState = BrowserState(
-                search = SearchState(region = RegionState("JP", "JP")),
-            ),
-        )
+        val browserStore =
+            BrowserStore(initialState = BrowserState(search = SearchState(region = RegionState("JP", "JP"))))
 
-        val storage = FenixIPProtectionEligibilityStorage(
-            browserStore = browserStore,
-            sharedPref = sharedPreferences,
-            prefKey = prefKey,
-            lifecycleOwner = mockk(relaxed = true),
-        )
+        val storage =
+            FenixIPProtectionEligibilityStorage(
+                browserStore = browserStore,
+                sharedPref = sharedPreferences,
+                prefKey = prefKey,
+                lifecycleOwner = mockk(relaxed = true),
+            )
 
         assertEquals(EligibilityStatus.Ineligible, storage.eligibilityStatus.first())
 
@@ -168,18 +156,16 @@ class FenixIPProtectionEligibilityStorageTest {
         FxNimbus.features.ipProtection.withCachedValue(IpProtection(enabled = false))
         sharedPreferences.edit().putBoolean(prefKey, true).apply()
 
-        val browserStore = BrowserStore(
-            initialState = BrowserState(
-                search = SearchState(region = RegionState("JP", "JP")),
-            ),
-        )
+        val browserStore =
+            BrowserStore(initialState = BrowserState(search = SearchState(region = RegionState("JP", "JP"))))
 
-        val storage = FenixIPProtectionEligibilityStorage(
-            browserStore = browserStore,
-            sharedPref = sharedPreferences,
-            prefKey = prefKey,
-            lifecycleOwner = mockk(relaxed = true),
-        )
+        val storage =
+            FenixIPProtectionEligibilityStorage(
+                browserStore = browserStore,
+                sharedPref = sharedPreferences,
+                prefKey = prefKey,
+                lifecycleOwner = mockk(relaxed = true),
+            )
 
         assertEquals(EligibilityStatus.Eligible, storage.eligibilityStatus.first())
 
@@ -192,18 +178,16 @@ class FenixIPProtectionEligibilityStorageTest {
     @Test
     fun `WHEN onPreferenceChange is called with a different key THEN status is not updated`() = runTest {
         FxNimbus.features.ipProtection.withCachedValue(IpProtection(enabled = false))
-        val browserStore = BrowserStore(
-            initialState = BrowserState(
-                search = SearchState(region = RegionState("JP", "JP")),
-            ),
-        )
+        val browserStore =
+            BrowserStore(initialState = BrowserState(search = SearchState(region = RegionState("JP", "JP"))))
 
-        val storage = FenixIPProtectionEligibilityStorage(
-            browserStore = browserStore,
-            sharedPref = sharedPreferences,
-            prefKey = prefKey,
-            lifecycleOwner = mockk(relaxed = true),
-        )
+        val storage =
+            FenixIPProtectionEligibilityStorage(
+                browserStore = browserStore,
+                sharedPref = sharedPreferences,
+                prefKey = prefKey,
+                lifecycleOwner = mockk(relaxed = true),
+            )
 
         assertEquals(EligibilityStatus.Ineligible, storage.eligibilityStatus.first())
 
@@ -215,44 +199,37 @@ class FenixIPProtectionEligibilityStorageTest {
 
     @Test
     fun `WHEN region changes to an allowed region THEN status is updated to Eligible`() = runTest {
-        FxNimbus.features.ipProtection.withCachedValue(
-            IpProtection(enabled = true, allowedRegions = listOf("US")),
-        )
-        val browserStore = BrowserStore(
-            initialState = BrowserState(
-                search = SearchState(region = RegionState("JP", "JP")),
-            ),
-        )
+        FxNimbus.features.ipProtection.withCachedValue(IpProtection(enabled = true, allowedRegions = listOf("US")))
+        val browserStore =
+            BrowserStore(initialState = BrowserState(search = SearchState(region = RegionState("JP", "JP"))))
 
-        val storage = FenixIPProtectionEligibilityStorage(
-            browserStore = browserStore,
-            sharedPref = sharedPreferences,
-            prefKey = prefKey,
-            lifecycleOwner = mockk(relaxed = true),
-        )
+        val storage =
+            FenixIPProtectionEligibilityStorage(
+                browserStore = browserStore,
+                sharedPref = sharedPreferences,
+                prefKey = prefKey,
+                lifecycleOwner = mockk(relaxed = true),
+            )
 
         assertEquals(EligibilityStatus.UnsupportedRegion, storage.eligibilityStatus.first())
 
-        browserStore.dispatch(
-            SearchAction.SetRegionAction(RegionState("US", "US")),
-        )
+        browserStore.dispatch(SearchAction.SetRegionAction(RegionState("US", "US")))
 
         assertEquals(EligibilityStatus.Eligible, storage.eligibilityStatus.first())
     }
 
     @Test
     fun `GIVEN null region WHEN nimbus is enabled THEN status is UnsupportedRegion`() = runTest {
-        FxNimbus.features.ipProtection.withCachedValue(
-            IpProtection(enabled = true, allowedRegions = listOf("US")),
-        )
+        FxNimbus.features.ipProtection.withCachedValue(IpProtection(enabled = true, allowedRegions = listOf("US")))
         val browserStore = BrowserStore()
 
-        val storage = FenixIPProtectionEligibilityStorage(
-            browserStore = browserStore,
-            sharedPref = sharedPreferences,
-            prefKey = prefKey,
-            lifecycleOwner = mockk(relaxed = true),
-        )
+        val storage =
+            FenixIPProtectionEligibilityStorage(
+                browserStore = browserStore,
+                sharedPref = sharedPreferences,
+                prefKey = prefKey,
+                lifecycleOwner = mockk(relaxed = true),
+            )
 
         assertEquals(EligibilityStatus.UnsupportedRegion, storage.eligibilityStatus.first())
     }

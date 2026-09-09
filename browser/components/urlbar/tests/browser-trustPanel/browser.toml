@@ -17,9 +17,6 @@ https_first_disabled = true
 support-files = ["!/browser/base/content/test/protectionsUI/trackingPage.html"]
 
 ["browser_trust_panel_cert_exception.js"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 2062455
-]
 
 ["browser_trust_panel_focus.js"]
 

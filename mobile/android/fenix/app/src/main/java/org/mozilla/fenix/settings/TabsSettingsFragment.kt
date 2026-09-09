@@ -20,9 +20,7 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.utils.view.addToRadioGroup
 
-/**
- * Lets the user customize auto closing tabs.
- */
+/** Lets the user customize auto closing tabs. */
 class TabsSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
     private lateinit var listRadioButton: RadioButtonPreference
     private lateinit var gridRadioButton: RadioButtonPreference
@@ -33,6 +31,7 @@ class TabsSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragm
     private lateinit var inactiveTabsCategory: PreferenceCategory
     private lateinit var inactiveTabs: SwitchPreferenceCompat
     private lateinit var privacyReport: SwitchPreferenceCompat
+    private lateinit var tabGroups: SwitchPreferenceCompat
     private val args by navArgs<TabsSettingsFragmentArgs>()
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -68,25 +67,30 @@ class TabsSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragm
         radioOneWeek = requirePreference(R.string.pref_key_close_tabs_after_one_week)
         radioOneDay = requirePreference(R.string.pref_key_close_tabs_after_one_day)
 
-        inactiveTabs = requirePreference<SwitchPreferenceCompat>(R.string.pref_key_inactive_tabs).also {
-            it.isChecked = requireComponents.settings.inactiveTabsAreEnabled
-            it.onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
+        inactiveTabs =
+            requirePreference<SwitchPreferenceCompat>(R.string.pref_key_inactive_tabs).also {
+                it.isChecked = requireComponents.settings.inactiveTabsAreEnabled
+                it.onPreferenceChangeListener = SharedPreferenceUpdater()
+            }
 
-        privacyReport = requirePreference<SwitchPreferenceCompat>(
-            R.string.pref_key_privacy_report_tab_manager,
-        ).also {
-            it.isChecked = requireComponents.settings.showPrivacyReportInTabManager
-            it.onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
+        privacyReport =
+            requirePreference<SwitchPreferenceCompat>(R.string.pref_key_privacy_report_tab_manager).also {
+                it.isChecked = requireComponents.settings.showPrivacyReportInTabManager
+                it.onPreferenceChangeListener = SharedPreferenceUpdater()
+            }
 
-        inactiveTabsCategory = requirePreference<PreferenceCategory>(R.string.pref_key_inactive_tabs_category).also {
-            it.isEnabled =
-                !(
-                    it.context.components.settings.closeTabsAfterOneDay ||
-                        it.context.components.settings.closeTabsAfterOneWeek
-                    )
-        }
+        tabGroups =
+            requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tab_groups).also {
+                it.isChecked = requireComponents.settings.tabGroupsEnabled
+                it.onPreferenceChangeListener = SharedPreferenceUpdater()
+            }
+
+        inactiveTabsCategory =
+            requirePreference<PreferenceCategory>(R.string.pref_key_inactive_tabs_category).also {
+                it.isEnabled =
+                    !(it.context.components.settings.closeTabsAfterOneDay ||
+                        it.context.components.settings.closeTabsAfterOneWeek)
+            }
 
         listRadioButton.onClickListener(::sendTabViewTelemetry)
         gridRadioButton.onClickListener(::sendTabViewTelemetry)

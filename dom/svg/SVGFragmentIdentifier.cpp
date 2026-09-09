@@ -36,10 +36,10 @@ class MOZ_RAII AutoFragmentHandler {
       mSVGView = nullptr;
     }
     if (mStartTime) {
-      mRoot->SetCurrentTime(mStartTime.value());
+      mRoot->SetCurrentTime(*mStartTime);
     }
     if (mEndTime) {
-      mRoot->PauseAnimationsAt(mEndTime.value());
+      mRoot->PauseAnimationsAt(*mEndTime);
     }
     if (mCurrentViewID.IsVoid()) {
       mRoot->SetViewSpec(std::move(mSVGView));

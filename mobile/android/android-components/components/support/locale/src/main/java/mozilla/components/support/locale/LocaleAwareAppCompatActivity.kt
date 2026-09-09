@@ -12,9 +12,7 @@ import android.os.Bundle
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 
-/**
- * Base activity for apps that want to customized the system defined language by their own.
- */
+/** Base activity for apps that want to customized the system defined language by their own. */
 open class LocaleAwareAppCompatActivity : AppCompatActivity() {
     @SuppressLint("AppBundleLocaleChanges")
     override fun attachBaseContext(base: Context) {

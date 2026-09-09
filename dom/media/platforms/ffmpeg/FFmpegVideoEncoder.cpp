@@ -304,7 +304,8 @@ RefPtr<MediaDataEncoder::InitPromise> FFmpegVideoEncoder<LIBAV_VER>::Init() {
 
 nsCString FFmpegVideoEncoder<LIBAV_VER>::GetDescriptionName() const {
 #ifdef USING_MOZFFVPX
-  return "ffvpx video encoder"_ns;
+  return mIsHardwareAccelerated ? "ffvpx hardware video encoder"_ns
+                                : "ffvpx software video encoder"_ns;
 #else
   const char* lib =
 #  if defined(MOZ_FFMPEG)
@@ -312,7 +313,8 @@ nsCString FFmpegVideoEncoder<LIBAV_VER>::GetDescriptionName() const {
 #  else
       "no library: ffmpeg disabled during build";
 #  endif
-  return nsFmtCString("ffmpeg video encoder ({})", lib);
+  return nsFmtCString("ffmpeg {} video encoder ({})",
+                      mIsHardwareAccelerated ? "hardware" : "software", lib);
 #endif
 }
 

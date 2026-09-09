@@ -315,7 +315,7 @@ const embedHelperLib = (() => {
 
         // Create container for sanitized content
         const contentDiv = document.createElement("div");
-        contentDiv.setHTML(originalContainer.innerHTML, { sanitizer });
+        contentDiv.setHTML(originalContainer.outerHTML, { sanitizer });
 
         // Manually filter out non-https URLs from links (prevents data:, blob:, etc.)
         // Sanitizer API handles javascript: URLs, but not data: or blob:

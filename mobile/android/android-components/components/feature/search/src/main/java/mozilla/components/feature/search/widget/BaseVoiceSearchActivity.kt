@@ -14,19 +14,14 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import java.util.Locale
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.ext.getParcelableCompat
-import java.util.Locale
 
-/**
- * Launches voice recognition then uses it to start a new web search.
- */
+/** Launches voice recognition then uses it to start a new web search. */
 abstract class BaseVoiceSearchActivity : AppCompatActivity() {
 
-    /**
-     * Holds the intent that initially started this activity
-     * so that it can persist through the speech activity.
-     */
+    /** Holds the intent that initially started this activity so that it can persist through the speech activity. */
     private var previousIntent: Intent? = null
 
     private var activityResultLauncher: ActivityResultLauncher<Intent> = getActivityResultLauncher()
@@ -55,18 +50,15 @@ abstract class BaseVoiceSearchActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Language locale for Voice Search.
-     */
+    /** Language locale for Voice Search. */
     abstract fun getCurrentLocale(): Locale
 
-    /**
-     * Speech recognizer popup is shown.
-     */
+    /** Speech recognizer popup is shown. */
     abstract fun onSpeechRecognitionStarted()
 
     /**
      * Start intent after voice search ,for example a browser page is open with the spokenText.
+     *
      * @param spokenText what the user voice search
      */
     abstract fun onSpeechRecognitionEnded(spokenText: String)
@@ -74,9 +66,7 @@ abstract class BaseVoiceSearchActivity : AppCompatActivity() {
     @VisibleForTesting
     internal fun activityResultImplementation(activityResult: ActivityResult) {
         if (activityResult.resultCode == Activity.RESULT_OK) {
-            val spokenText =
-                activityResult.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-                    ?.firstOrNull()
+            val spokenText = activityResult.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
             previousIntent?.apply {
                 spokenText?.let { onSpeechRecognitionEnded(it) }
             }
@@ -85,27 +75,24 @@ abstract class BaseVoiceSearchActivity : AppCompatActivity() {
     }
 
     private fun getActivityResultLauncher(): ActivityResultLauncher<Intent> {
-        return registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult(),
-        ) {
+        return registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             activityResultImplementation(it)
         }
     }
 
-    /**
-     * Displays a speech recognizer popup that listens for input from the user.
-     */
+    /** Displays a speech recognizer popup that listens for input from the user. */
     private fun displaySpeechRecognizer() {
-        val intentSpeech = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
-            )
-            putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE,
-                getCurrentLocale(),
-            )
-        }
+        val intentSpeech =
+            Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(
+                    RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
+                )
+                putExtra(
+                    RecognizerIntent.EXTRA_LANGUAGE,
+                    getCurrentLocale(),
+                )
+            }
         onSpeechRecognitionStarted()
         try {
             activityResultLauncher.launch(intentSpeech)
@@ -116,18 +103,14 @@ abstract class BaseVoiceSearchActivity : AppCompatActivity() {
     }
 
     /**
-     * Returns true if the [SPEECH_PROCESSING] extra is present and set to true.
-     * Returns false if the intent is null.
+     * Returns true if the [SPEECH_PROCESSING] extra is present and set to true. Returns false if the intent is null.
      */
-    private fun Intent?.isForSpeechProcessing(): Boolean =
-        this?.getBooleanExtra(SPEECH_PROCESSING, false) == true
+    private fun Intent?.isForSpeechProcessing(): Boolean = this?.getBooleanExtra(SPEECH_PROCESSING, false) == true
 
     companion object {
         const val PREVIOUS_INTENT = "org.mozilla.components.previous_intent"
 
-        /**
-         * In [BaseVoiceSearchActivity] activity, used to store if the speech processing should start.
-         */
+        /** In [BaseVoiceSearchActivity] activity, used to store if the speech processing should start. */
         const val SPEECH_PROCESSING = "speech_processing"
         const val TAG = "BaseVoiceSearchActivity"
     }

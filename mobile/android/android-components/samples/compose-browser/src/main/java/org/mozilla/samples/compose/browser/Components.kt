@@ -26,12 +26,8 @@ import mozilla.components.support.remotesettings.RemoteSettingsService
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.samples.compose.browser.app.AppStore
 
-/**
- * Global components of the sample browser.
- */
-class Components(
-    context: Context,
-) {
+/** Global components of the sample browser. */
+class Components(context: Context) {
     private val runtime by lazy { GeckoRuntime.create(context) }
 
     val engine: Engine by lazy { GeckoEngine(context, runtime = runtime) }
@@ -39,10 +35,11 @@ class Components(
 
     val store: BrowserStore by lazy {
         BrowserStore(
-            middleware = listOf(
-                RegionMiddleware(context, locationService),
-                SearchMiddleware(context),
-            ) + EngineMiddleware.create(engine),
+            middleware =
+                listOf(
+                    RegionMiddleware(context, locationService),
+                    SearchMiddleware(context),
+                ) + EngineMiddleware.create(engine)
         )
     }
 
@@ -67,9 +64,7 @@ class Components(
     }
 }
 
-/**
- * Returns the global [Components] object from within a `@Composable` context.
- */
+/** Returns the global [Components] object from within a `@Composable` context. */
 @Composable
 fun components(): Components {
     return (LocalContext.current.applicationContext as BrowserApplication).components

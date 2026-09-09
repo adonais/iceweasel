@@ -1333,6 +1333,22 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
         nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_LESS_THAN, V(24, 2, 0, 0),
         "FEATURE_HARDWARE_VIDEO_ZERO_COPY_LINUX_AMD_DISABLE", "Mesa 24.2.0.0");
 
+    /////////////////////////////////////////
+    // FEATURE_HARDWARE_VIDEO_DECODING_VULKAN
+#ifdef NIGHTLY_BUILD
+    // Enable on NVIDIA and recent drivers.
+    APPEND_TO_DRIVER_BLOCKLIST(
+        OperatingSystem::Linux, DeviceFamily::NvidiaAll,
+        nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING_VULKAN,
+        nsIGfxInfo::FEATURE_STATUS_OK, DRIVER_GREATER_THAN_OR_EQUAL,
+        V(580, 76, 5, 0), "FEATURE_VIDEO_DECODING_VULKAN_NIGHTLY_NVIDIA", "");
+#endif
+    APPEND_TO_DRIVER_BLOCKLIST(
+        OperatingSystem::Linux, DeviceFamily::All,
+        nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING_VULKAN,
+        nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_COMPARISON_IGNORED,
+        V(0, 0, 0, 0), "FEATURE_VIDEO_DECODING_VULKAN_DISABLED", "");
+
     ////////////////////////////////////
     // FEATURE_VIDEO_HDR & FEATURE_WEBRENDER_COMPOSITOR
 
@@ -1580,7 +1596,7 @@ nsresult GfxInfo::GetFeatureStatusImpl(
   auto ret = GfxInfoBase::GetFeatureStatusImpl(
       aFeature, aStatus, aSuggestedDriverVersion, aDriverInfo, aFailureId, &os);
 
-  // Probe Vulkan first
+  // Probe Vulkan on supported devices only
   if (aFeature == nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING_VULKAN) {
     if (!StaticPrefs::
             media_hardware_video_decoding_vulkan_enabled_AtStartup()) {
@@ -1588,13 +1604,11 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       aFailureId = "FEATURE_HARDWARE_VIDEO_DECODING_VULKAN_PREF_DISABLED"_ns;
       return NS_OK;
     }
-    if (!StaticPrefs::media_hardware_video_decoding_enabled_AtStartup()) {
-      return ret;
-    }
     bool probeHWDecode =
         mIsAccelerated &&
         (*aStatus == nsIGfxInfo::FEATURE_STATUS_OK ||
-         StaticPrefs::media_hardware_video_decoding_force_enabled_AtStartup());
+         StaticPrefs::
+             media_hardware_video_decoding_vulkan_force_enabled_AtStartup());
     if (probeHWDecode) {
       GetDataVulkan();
     } else {
@@ -1606,7 +1620,7 @@ nsresult GfxInfo::GetFeatureStatusImpl(
     }
   }
 
-  // Probe VA-API/V4L2/Vulkan on supported devices only
+  // Probe VA-API/V4L2 on supported devices only
   if (aFeature == nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING) {
     if (!StaticPrefs::media_hardware_video_decoding_enabled_AtStartup()) {
       return ret;

@@ -1,5 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+http://creativecommons.org/publicdomain/zero/1.0/ */
 
 package org.mozilla.geckoview.test
 
@@ -53,10 +53,7 @@ class DynamicToolbarTest : BaseSessionTest() {
         }
     }
 
-    /**
-     * Returns a whole green Bitmap.
-     * This Bitmap would be a reference image of tests in this file.
-     */
+    /** Returns a whole green Bitmap. This Bitmap would be a reference image of tests in this file. */
     private fun getComparisonScreenshot(width: Int, height: Int): Bitmap {
         val screenshotFile = createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(screenshotFile)
@@ -145,13 +142,15 @@ class DynamicToolbarTest : BaseSessionTest() {
             sessionRule.display?.run { setVerticalClipping(-i) }
 
             val expectedViewportHeight = (SCREEN_HEIGHT - dynamicToolbarMaxHeight + i) / scale / pixelRatio
-            val promise = mainSession.evaluatePromiseJS(
-                """
-             new Promise(resolve => {
-               window.visualViewport.addEventListener('resize', resolve(window.visualViewport.height));
-             });
-                """.trimIndent(),
-            )
+            val promise =
+                mainSession.evaluatePromiseJS(
+                    """
+                    new Promise(resolve => {
+                      window.visualViewport.addEventListener('resize', resolve(window.visualViewport.height));
+                    });
+                    """
+                        .trimIndent()
+                )
 
             assertThat(
                 "The visual viewport height should be changed in response to the dynamc toolbar transition",
@@ -173,20 +172,24 @@ class DynamicToolbarTest : BaseSessionTest() {
         mainSession.loadTestPath(BaseSessionTest.FIXED_PERCENT)
         mainSession.waitForPageStop()
 
-        val originalHeight = mainSession.evaluateJS(
-            """
-            getComputedStyle(document.querySelector('#fixed-element')).height
-            """.trimIndent(),
-        ) as String
+        val originalHeight =
+            mainSession.evaluateJS(
+                """
+                getComputedStyle(document.querySelector('#fixed-element')).height
+                """
+                    .trimIndent()
+            ) as String
 
         // Set the vertical clipping value to the middle of toolbar transition.
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight / 2) }
 
-        var height = mainSession.evaluateJS(
-            """
-            getComputedStyle(document.querySelector('#fixed-element')).height
-            """.trimIndent(),
-        ) as String
+        var height =
+            mainSession.evaluateJS(
+                """
+                getComputedStyle(document.querySelector('#fixed-element')).height
+                """
+                    .trimIndent()
+            ) as String
 
         assertThat(
             "The %-based height should be the static in the middle of toolbar tansition",
@@ -196,11 +199,13 @@ class DynamicToolbarTest : BaseSessionTest() {
 
         // Set the vertical clipping value to hide the toolbar completely.
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }
-        height = mainSession.evaluateJS(
-            """
-            getComputedStyle(document.querySelector('#fixed-element')).height
-            """.trimIndent(),
-        ) as String
+        height =
+            mainSession.evaluateJS(
+                """
+                getComputedStyle(document.querySelector('#fixed-element')).height
+                """
+                    .trimIndent()
+            ) as String
 
         val scale = mainSession.evaluateJS("window.visualViewport.scale") as Double
         val expectedHeight = (SCREEN_HEIGHT / scale).toInt()
@@ -224,18 +229,20 @@ class DynamicToolbarTest : BaseSessionTest() {
         mainSession.waitForPageStop()
 
         for (i in 1..dynamicToolbarMaxHeight - 1) {
-            val promise = mainSession.evaluatePromiseJS(
-                """
-                new Promise(resolve => {
-                    let fired = false;
-                    window.addEventListener('resize', () => { fired = true; }, { once: true });
-                    // Note that `resize` event is fired just before rAF callbacks, so under ideal
-                    // circumstances waiting for a rAF should be sufficient, even if it's not sufficient
-                    // unexpected resize event(s) will be caught in the next loop.
-                    requestAnimationFrame(() => { resolve(fired); });
-                });
-                """.trimIndent(),
-            )
+            val promise =
+                mainSession.evaluatePromiseJS(
+                    """
+                    new Promise(resolve => {
+                        let fired = false;
+                        window.addEventListener('resize', () => { fired = true; }, { once: true });
+                        // Note that `resize` event is fired just before rAF callbacks, so under ideal
+                        // circumstances waiting for a rAF should be sufficient, even if it's not sufficient
+                        // unexpected resize event(s) will be caught in the next loop.
+                        requestAnimationFrame(() => { resolve(fired); });
+                    });
+                    """
+                        .trimIndent()
+                )
 
             // Simulate the dynamic toolbar is going to be hidden.
             sessionRule.display?.run { setVerticalClipping(-i) }
@@ -246,13 +253,15 @@ class DynamicToolbarTest : BaseSessionTest() {
             )
         }
 
-        val promise = mainSession.evaluatePromiseJS(
-            """
-            new Promise(resolve => {
-                window.addEventListener('resize', () => { resolve(true); }, { once: true });
-            });
-            """.trimIndent(),
-        )
+        val promise =
+            mainSession.evaluatePromiseJS(
+                """
+                new Promise(resolve => {
+                    window.addEventListener('resize', () => { resolve(true); }, { once: true });
+                });
+                """
+                    .trimIndent()
+            )
 
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }
         assertThat(
@@ -280,13 +289,15 @@ class DynamicToolbarTest : BaseSessionTest() {
         val pixelRatio = mainSession.evaluateJS("window.devicePixelRatio") as Double
 
         for (i in 1..dynamicToolbarMaxHeight - 1) {
-            val promise = mainSession.evaluatePromiseJS(
-                """
-               new Promise(resolve => {
-                 window.visualViewport.addEventListener('resize', resolve(window.innerHeight));
-               });
-                """.trimIndent(),
-            )
+            val promise =
+                mainSession.evaluatePromiseJS(
+                    """
+                    new Promise(resolve => {
+                      window.visualViewport.addEventListener('resize', resolve(window.innerHeight));
+                    });
+                    """
+                        .trimIndent()
+                )
 
             // Simulate the dynamic toolbar is going to be hidden.
             sessionRule.display?.run { setVerticalClipping(-i) }
@@ -297,13 +308,15 @@ class DynamicToolbarTest : BaseSessionTest() {
             )
         }
 
-        val promise = mainSession.evaluatePromiseJS(
-            """
-            new Promise(resolve => {
-                window.addEventListener('resize', () => { resolve(window.innerHeight); }, { once: true });
-            });
-            """.trimIndent(),
-        )
+        val promise =
+            mainSession.evaluatePromiseJS(
+                """
+                new Promise(resolve => {
+                    window.addEventListener('resize', () => { resolve(window.innerHeight); }, { once: true });
+                });
+                """
+                    .trimIndent()
+            )
 
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }
         assertThat(
@@ -325,11 +338,13 @@ class DynamicToolbarTest : BaseSessionTest() {
         mainSession.loadTestPath(BaseSessionTest.FIXED_VH)
         mainSession.waitForPageStop()
 
-        val promise = mainSession.evaluatePromiseJS(
-            """
-            new Promise(resolve => window.addEventListener('resize', () => resolve(true)));
-            """.trimIndent(),
-        )
+        val promise =
+            mainSession.evaluatePromiseJS(
+                """
+                new Promise(resolve => window.addEventListener('resize', () => resolve(true)));
+                """
+                    .trimIndent()
+            )
 
         // Do some setVerticalClipping calls that we might try to queue two window resize events.
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }
@@ -354,22 +369,23 @@ class DynamicToolbarTest : BaseSessionTest() {
         mainSession.loadTestPath(SHOW_DYNAMIC_TOOLBAR_HTML_PATH + "?target=body")
         mainSession.waitForPageStop()
         mainSession.evaluateJS("window.scrollTo(0, " + dynamicToolbarMaxHeight + ")")
-        mainSession.waitUntilCalled(object : ScrollDelegate {
-            @AssertCalled(count = 1)
-            override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
+        mainSession.waitUntilCalled(
+            object : ScrollDelegate {
+                @AssertCalled(count = 1)
+                override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {}
             }
-        })
+        )
 
         // Simulate the dynamic toolbar being hidden by the scroll
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }
 
         mainSession.synthesizeTap(5, 25)
 
-        mainSession.waitUntilCalled(object : ContentDelegate {
-            @AssertCalled(count = 1)
-            override fun onShowDynamicToolbar(session: GeckoSession) {
+        mainSession.waitUntilCalled(
+            object : ContentDelegate {
+                @AssertCalled(count = 1) override fun onShowDynamicToolbar(session: GeckoSession) {}
             }
-        })
+        )
     }
 
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
@@ -384,22 +400,23 @@ class DynamicToolbarTest : BaseSessionTest() {
         mainSession.loadTestPath(SHOW_DYNAMIC_TOOLBAR_HTML_PATH + "?target=html")
         mainSession.waitForPageStop()
         mainSession.evaluateJS("window.scrollTo(0, " + dynamicToolbarMaxHeight + ")")
-        mainSession.waitUntilCalled(object : ScrollDelegate {
-            @AssertCalled(count = 1)
-            override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
+        mainSession.waitUntilCalled(
+            object : ScrollDelegate {
+                @AssertCalled(count = 1)
+                override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {}
             }
-        })
+        )
 
         // Simulate the dynamic toolbar being hidden by the scroll
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }
 
         mainSession.synthesizeTap(5, 25)
 
-        mainSession.waitUntilCalled(object : ContentDelegate {
-            @AssertCalled(count = 1)
-            override fun onShowDynamicToolbar(session: GeckoSession) {
+        mainSession.waitUntilCalled(
+            object : ContentDelegate {
+                @AssertCalled(count = 1) override fun onShowDynamicToolbar(session: GeckoSession) {}
             }
-        })
+        )
     }
 
     @WithDisplay(height = 600, width = 600)
@@ -420,11 +437,11 @@ class DynamicToolbarTest : BaseSessionTest() {
         mainSession.evaluateJS("document.getElementById('input1').focus();")
         mainSession.zoomToFocusedInput()
 
-        mainSession.waitUntilCalled(object : ContentDelegate {
-            @AssertCalled(count = 1)
-            override fun onHideDynamicToolbar(session: GeckoSession) {
+        mainSession.waitUntilCalled(
+            object : ContentDelegate {
+                @AssertCalled(count = 1) override fun onHideDynamicToolbar(session: GeckoSession) {}
             }
-        })
+        )
     }
 
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
@@ -439,33 +456,36 @@ class DynamicToolbarTest : BaseSessionTest() {
         mainSession.loadTestPath(SHOW_DYNAMIC_TOOLBAR_HTML_PATH)
         mainSession.waitForPageStop()
         mainSession.evaluateJS("window.scrollTo(0, " + dynamicToolbarMaxHeight + ")")
-        mainSession.waitUntilCalled(object : ScrollDelegate {
-            @AssertCalled(count = 1)
-            override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
+        mainSession.waitUntilCalled(
+            object : ScrollDelegate {
+                @AssertCalled(count = 1)
+                override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {}
             }
-        })
+        )
 
         // Simulate the dynamic toolbar being hidden by the scroll
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }
 
         mainSession.evaluateJS("document.documentElement.style.overflow = 'hidden'")
 
-        mainSession.waitUntilCalled(object : ContentDelegate {
-            @AssertCalled(count = 1)
-            override fun onShowDynamicToolbar(session: GeckoSession) {
+        mainSession.waitUntilCalled(
+            object : ContentDelegate {
+                @AssertCalled(count = 1) override fun onShowDynamicToolbar(session: GeckoSession) {}
             }
-        })
+        )
     }
 
     private fun getComputedViewportHeight(style: String): Double {
-        val viewportHeight = mainSession.evaluateJS(
-            """
+        val viewportHeight =
+            mainSession.evaluateJS(
+                """
             const target = document.createElement('div');
             target.style.height = '$style';
             document.body.appendChild(target);
             parseFloat(getComputedStyle(target).height);
-            """.trimIndent(),
-        ) as Double
+            """
+                    .trimIndent()
+            ) as Double
 
         return viewportHeight
     }
@@ -555,63 +575,69 @@ class DynamicToolbarTest : BaseSessionTest() {
 
         // Scrolling down by touch events.
         var downTime = SystemClock.uptimeMillis()
-        var down = MotionEvent.obtain(
-            downTime,
-            SystemClock.uptimeMillis(),
-            MotionEvent.ACTION_DOWN,
-            50f,
-            70f,
-            0,
-        )
+        var down =
+            MotionEvent.obtain(
+                downTime,
+                SystemClock.uptimeMillis(),
+                MotionEvent.ACTION_DOWN,
+                50f,
+                70f,
+                0,
+            )
         mainSession.panZoomController.onTouchEvent(down)
-        var move = MotionEvent.obtain(
-            downTime,
-            SystemClock.uptimeMillis(),
-            MotionEvent.ACTION_MOVE,
-            50f,
-            30f,
-            0,
-        )
+        var move =
+            MotionEvent.obtain(
+                downTime,
+                SystemClock.uptimeMillis(),
+                MotionEvent.ACTION_MOVE,
+                50f,
+                30f,
+                0,
+            )
         mainSession.panZoomController.onTouchEvent(move)
-        var up = MotionEvent.obtain(
-            downTime,
-            SystemClock.uptimeMillis(),
-            MotionEvent.ACTION_UP,
-            50f,
-            10f,
-            0,
-        )
+        var up =
+            MotionEvent.obtain(
+                downTime,
+                SystemClock.uptimeMillis(),
+                MotionEvent.ACTION_UP,
+                50f,
+                10f,
+                0,
+            )
         mainSession.panZoomController.onTouchEvent(up)
         mainSession.flushApzRepaints()
 
         // Scrolling up by touch events to restore the original position.
         downTime = SystemClock.uptimeMillis()
-        down = MotionEvent.obtain(
-            downTime,
-            SystemClock.uptimeMillis(),
-            MotionEvent.ACTION_DOWN,
-            50f,
-            10f,
-            0,
-        )
+        down =
+            MotionEvent.obtain(
+                downTime,
+                SystemClock.uptimeMillis(),
+                MotionEvent.ACTION_DOWN,
+                50f,
+                10f,
+                0,
+            )
         mainSession.panZoomController.onTouchEvent(down)
-        move = MotionEvent.obtain(
-            downTime,
-            SystemClock.uptimeMillis(),
-            MotionEvent.ACTION_MOVE,
-            50f,
-            30f,
-            0,
-        )
+        move =
+            MotionEvent.obtain(
+                downTime,
+                SystemClock.uptimeMillis(),
+                MotionEvent.ACTION_MOVE,
+                50f,
+                30f,
+                0,
+            )
         mainSession.panZoomController.onTouchEvent(move)
-        up = MotionEvent.obtain(
-            downTime,
-            SystemClock.uptimeMillis(),
-            MotionEvent.ACTION_UP,
-            50f,
-            70f,
-            0,
-        )
+        up =
+            MotionEvent.obtain(
+                downTime,
+                SystemClock.uptimeMillis(),
+                MotionEvent.ACTION_UP,
+                50f,
+                70f,
+                0,
+            )
         mainSession.panZoomController.onTouchEvent(up)
         mainSession.flushApzRepaints()
 
@@ -780,7 +806,8 @@ class DynamicToolbarTest : BaseSessionTest() {
             """
             document.querySelector('#target').style.top = 'calc(100svh + 1px)';
             document.querySelector('#target').getBoundingClientRect();
-            """.trimIndent(),
+            """
+                .trimIndent()
         )
 
         // Setup an IntersectionObserver to change the target element background color
@@ -798,15 +825,18 @@ class DynamicToolbarTest : BaseSessionTest() {
 
               observer.observe(document.getElementById('target'));
             });
-            """.trimIndent(),
+            """
+                .trimIndent()
         )
 
         // Make sure the target background is "red".
-        var backgroundColor = mainSession.evaluateJS(
-            """
-            getComputedStyle(document.querySelector('#target')).backgroundColor;
-            """.trimIndent(),
-        ) as String
+        var backgroundColor =
+            mainSession.evaluateJS(
+                """
+                getComputedStyle(document.querySelector('#target')).backgroundColor;
+                """
+                    .trimIndent()
+            ) as String
         assertThat(
             "The background color of the IntersectionObserver's target element should be red",
             backgroundColor,
@@ -817,11 +847,13 @@ class DynamicToolbarTest : BaseSessionTest() {
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight / 2) }
 
         // But the background color should be still "red".
-        backgroundColor = mainSession.evaluateJS(
-            """
-            getComputedStyle(document.querySelector('#target')).backgroundColor;
-            """.trimIndent(),
-        ) as String
+        backgroundColor =
+            mainSession.evaluateJS(
+                """
+                getComputedStyle(document.querySelector('#target')).backgroundColor;
+                """
+                    .trimIndent()
+            ) as String
         assertThat(
             "The background color of the IntersectionObserver's target element should be still red",
             backgroundColor,
@@ -846,33 +878,38 @@ class DynamicToolbarTest : BaseSessionTest() {
             """
             document.querySelector('#target').style.top = 'calc(100lvh + 1px)';
             document.querySelector('#target').getBoundingClientRect();
-            """.trimIndent(),
+            """
+                .trimIndent()
         )
 
         // Setup an IntersectionObserver to change the target element background color
         // if the target element is considered as "intersecting" by the observer.
-        val promise = mainSession.evaluatePromiseJS(
-            """
-            new Promise(resolve => {
-              const observer = new IntersectionObserver(entries => {
-                const intersected = entries.find(entry => entry.isIntersecting);
-                if (intersected) {
-                  intersected.target.style.backgroundColor = 'green';
-                  resolve(true);
-                }
-              });
+        val promise =
+            mainSession.evaluatePromiseJS(
+                """
+                new Promise(resolve => {
+                  const observer = new IntersectionObserver(entries => {
+                    const intersected = entries.find(entry => entry.isIntersecting);
+                    if (intersected) {
+                      intersected.target.style.backgroundColor = 'green';
+                      resolve(true);
+                    }
+                  });
 
-              observer.observe(document.getElementById('target'));
-            });
-            """.trimIndent(),
-        )
+                  observer.observe(document.getElementById('target'));
+                });
+                """
+                    .trimIndent()
+            )
 
         // Make sure the target background is "red".
-        var backgroundColor = mainSession.evaluateJS(
-            """
-            getComputedStyle(document.querySelector('#target')).backgroundColor;
-            """.trimIndent(),
-        ) as String
+        var backgroundColor =
+            mainSession.evaluateJS(
+                """
+                getComputedStyle(document.querySelector('#target')).backgroundColor;
+                """
+                    .trimIndent()
+            ) as String
         assertThat(
             "The background color of the IntersectionObserver's target element should be red",
             backgroundColor,
@@ -882,11 +919,13 @@ class DynamicToolbarTest : BaseSessionTest() {
         // Fully collapse the dynamic toolbar, now the target element should NOT be visible.
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }
 
-        backgroundColor = mainSession.evaluateJS(
-            """
-            getComputedStyle(document.querySelector('#target')).backgroundColor;
-            """.trimIndent(),
-        ) as String
+        backgroundColor =
+            mainSession.evaluateJS(
+                """
+                getComputedStyle(document.querySelector('#target')).backgroundColor;
+                """
+                    .trimIndent()
+            ) as String
         assertThat(
             "The background color of the IntersectionObserver's target element should be still red",
             backgroundColor,
@@ -897,11 +936,13 @@ class DynamicToolbarTest : BaseSessionTest() {
         mainSession.evaluateJS("window.scrollBy(0, 10)")
         assertThat("resize", promise.value as Boolean, equalTo(true))
 
-        backgroundColor = mainSession.evaluateJS(
-            """
-            getComputedStyle(document.querySelector('#target')).backgroundColor;
-            """.trimIndent(),
-        ) as String
+        backgroundColor =
+            mainSession.evaluateJS(
+                """
+                getComputedStyle(document.querySelector('#target')).backgroundColor;
+                """
+                    .trimIndent()
+            ) as String
         assertThat(
             "The background color of the IntersectionObserver's target element should have changed to green",
             backgroundColor,
@@ -929,7 +970,8 @@ class DynamicToolbarTest : BaseSessionTest() {
             """
             document.querySelector('#target').style.top = 'calc(200svh + 1px)';
             document.querySelector('#target').getBoundingClientRect();
-            """.trimIndent(),
+            """
+                .trimIndent()
         )
 
         // Setup an IntersectionObserver to change the target element background color
@@ -947,15 +989,18 @@ class DynamicToolbarTest : BaseSessionTest() {
 
               observer.observe(document.getElementById('target'));
             });
-            """.trimIndent(),
+            """
+                .trimIndent()
         )
 
         // Make sure the target background is "red".
-        var backgroundColor = mainSession.evaluateJS(
-            """
-            getComputedStyle(document.querySelector('#target')).backgroundColor;
-            """.trimIndent(),
-        ) as String
+        var backgroundColor =
+            mainSession.evaluateJS(
+                """
+                getComputedStyle(document.querySelector('#target')).backgroundColor;
+                """
+                    .trimIndent()
+            ) as String
         assertThat(
             "The background color of the IntersectionObserver's target element should be red",
             backgroundColor,
@@ -966,11 +1011,13 @@ class DynamicToolbarTest : BaseSessionTest() {
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight / 2) }
 
         // But the background color should be still "red".
-        backgroundColor = mainSession.evaluateJS(
-            """
-            getComputedStyle(document.querySelector('#target')).backgroundColor;
-            """.trimIndent(),
-        ) as String
+        backgroundColor =
+            mainSession.evaluateJS(
+                """
+                getComputedStyle(document.querySelector('#target')).backgroundColor;
+                """
+                    .trimIndent()
+            ) as String
         assertThat(
             "The background color of the IntersectionObserver's target element should be still red",
             backgroundColor,
@@ -996,33 +1043,38 @@ class DynamicToolbarTest : BaseSessionTest() {
             """
             document.querySelector('#target').style.top = 'calc(200lvh + 1px)';
             document.querySelector('#target').getBoundingClientRect();
-            """.trimIndent(),
+            """
+                .trimIndent()
         )
 
         // Setup an IntersectionObserver to change the target element background color
         // if the target element is considered as "intersecting" by the observer.
-        val promise = mainSession.evaluatePromiseJS(
-            """
-            new Promise(resolve => {
-              const observer = new IntersectionObserver(entries => {
-                const intersected = entries.find(entry => entry.isIntersecting);
-                if (intersected) {
-                  intersected.target.style.backgroundColor = 'green';
-                  resolve(true);
-                }
-              });
+        val promise =
+            mainSession.evaluatePromiseJS(
+                """
+                new Promise(resolve => {
+                  const observer = new IntersectionObserver(entries => {
+                    const intersected = entries.find(entry => entry.isIntersecting);
+                    if (intersected) {
+                      intersected.target.style.backgroundColor = 'green';
+                      resolve(true);
+                    }
+                  });
 
-              observer.observe(document.getElementById('target'));
-            });
-            """.trimIndent(),
-        )
+                  observer.observe(document.getElementById('target'));
+                });
+                """
+                    .trimIndent()
+            )
 
         // Make sure the target background is "red".
-        var backgroundColor = mainSession.evaluateJS(
-            """
-            getComputedStyle(document.querySelector('#target')).backgroundColor;
-            """.trimIndent(),
-        ) as String
+        var backgroundColor =
+            mainSession.evaluateJS(
+                """
+                getComputedStyle(document.querySelector('#target')).backgroundColor;
+                """
+                    .trimIndent()
+            ) as String
         assertThat(
             "The background color of the IntersectionObserver's target element should be red",
             backgroundColor,
@@ -1032,11 +1084,13 @@ class DynamicToolbarTest : BaseSessionTest() {
         // Fully collapse the dynamic toolbar, now the target element should NOT be visible.
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }
 
-        backgroundColor = mainSession.evaluateJS(
-            """
-            getComputedStyle(document.querySelector('#target')).backgroundColor;
-            """.trimIndent(),
-        ) as String
+        backgroundColor =
+            mainSession.evaluateJS(
+                """
+                getComputedStyle(document.querySelector('#target')).backgroundColor;
+                """
+                    .trimIndent()
+            ) as String
         assertThat(
             "The background color of the IntersectionObserver's target element should be still red",
             backgroundColor,
@@ -1047,11 +1101,13 @@ class DynamicToolbarTest : BaseSessionTest() {
         mainSession.evaluateJS("window.scrollBy(0, 10)")
         assertThat("resize", promise.value as Boolean, equalTo(true))
 
-        backgroundColor = mainSession.evaluateJS(
-            """
-            getComputedStyle(document.querySelector('#target')).backgroundColor;
-            """.trimIndent(),
-        ) as String
+        backgroundColor =
+            mainSession.evaluateJS(
+                """
+                getComputedStyle(document.querySelector('#target')).backgroundColor;
+                """
+                    .trimIndent()
+            ) as String
         assertThat(
             "The background color of the IntersectionObserver's target element should have changed to green",
             backgroundColor,
@@ -1099,12 +1155,6 @@ class DynamicToolbarTest : BaseSessionTest() {
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
     @Test
     fun viewTransitionSnapshotSize() {
-        sessionRule.setPrefsUntilTestEnd(
-            mapOf(
-                "dom.viewTransitions.enabled" to true,
-            ),
-        )
-
         val reference = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         val dynamicToolbarMaxHeight = SCREEN_HEIGHT / 2
@@ -1117,15 +1167,17 @@ class DynamicToolbarTest : BaseSessionTest() {
         mainSession.waitForPageStop()
 
         // Wait for the view transition to start.
-        val promise = mainSession.evaluatePromiseJS(
-            """
-            new Promise(resolve => {
-                document.startViewTransition(() => {}).ready
-                    .then(() => resolve(true))
-                    .catch(() => resolve(false));
-            });
-            """.trimIndent(),
-        )
+        val promise =
+            mainSession.evaluatePromiseJS(
+                """
+                new Promise(resolve => {
+                    document.startViewTransition(() => {}).ready
+                        .then(() => resolve(true))
+                        .catch(() => resolve(false));
+                });
+                """
+                    .trimIndent()
+            )
         assertThat("View transition is ready", promise.value as Boolean, equalTo(true))
 
         // Simulate the dynamic toolbar being hidden by the scroll.
@@ -1152,15 +1204,17 @@ class DynamicToolbarTest : BaseSessionTest() {
         mainSession.waitForPageStop()
         mainSession.flushApzRepaints()
 
-        val clickEventPromise = mainSession.evaluatePromiseJS(
-            """
-            new Promise(resolve => {
-                document.querySelector('button').addEventListener('click', () => {
-                    resolve(true);
+        val clickEventPromise =
+            mainSession.evaluatePromiseJS(
+                """
+                new Promise(resolve => {
+                    document.querySelector('button').addEventListener('click', () => {
+                        resolve(true);
+                    });
                 });
-            });
-            """.trimIndent(),
-        )
+                """
+                    .trimIndent()
+            )
 
         // Explicitly call `waitForRoundTrip()` to make sure the above event listener
         // has set up in the content.
@@ -1191,36 +1245,41 @@ class DynamicToolbarTest : BaseSessionTest() {
         mainSession.flushApzRepaints()
 
         // Scroll to the bottom edge first.
-        val scrollPromise = mainSession.evaluatePromiseJS(
-            """
-            new Promise(resolve => {
-                window.addEventListener('scroll', () => {
-                    resolve(true);
-                }, { once: true });
-            });
-            """.trimIndent(),
-        )
+        val scrollPromise =
+            mainSession.evaluatePromiseJS(
+                """
+                new Promise(resolve => {
+                    window.addEventListener('scroll', () => {
+                        resolve(true);
+                    }, { once: true });
+                });
+                """
+                    .trimIndent()
+            )
         mainSession.waitForRoundTrip()
         mainSession.evaluateJS(
             """
             document.scrollingElement.scrollTo(0, document.scrollingElement.scrollHeight);
-            """.trimIndent(),
+            """
+                .trimIndent()
         )
 
         assertThat("scroll", scrollPromise.value as Boolean, equalTo(true))
         mainSession.flushApzRepaints()
 
-        var clickEventPromise = mainSession.evaluatePromiseJS(
-            """
-            new Promise(resolve => {
-                document.querySelectorAll('button').forEach(element => {
-                    element.addEventListener('click', event => {
-                        resolve(event.target.id);
-                    }, { once: true });
+        var clickEventPromise =
+            mainSession.evaluatePromiseJS(
+                """
+                new Promise(resolve => {
+                    document.querySelectorAll('button').forEach(element => {
+                        element.addEventListener('click', event => {
+                            resolve(event.target.id);
+                        }, { once: true });
+                    });
                 });
-            });
-            """.trimIndent(),
-        )
+                """
+                    .trimIndent()
+            )
 
         // Explicitly call `waitForRoundTrip()` to make sure the above event listener
         // has set up in the content.
@@ -1238,17 +1297,19 @@ class DynamicToolbarTest : BaseSessionTest() {
         mainSession.synthesizeTap(SCREEN_WIDTH / 2, SCREEN_HEIGHT - dynamicToolbarMaxHeight / 4)
         assertThat("click event on sticky", clickEventPromise.value as String, equalTo("sticky"))
 
-        clickEventPromise = mainSession.evaluatePromiseJS(
-            """
-            new Promise(resolve => {
-                document.querySelectorAll('button').forEach(element => {
-                    element.addEventListener('click', event => {
-                        resolve(event.target.id);
-                    }, { once: true });
+        clickEventPromise =
+            mainSession.evaluatePromiseJS(
+                """
+                new Promise(resolve => {
+                    document.querySelectorAll('button').forEach(element => {
+                        element.addEventListener('click', event => {
+                            resolve(event.target.id);
+                        }, { once: true });
+                    });
                 });
-            });
-            """.trimIndent(),
-        )
+                """
+                    .trimIndent()
+            )
 
         mainSession.waitForRoundTrip()
 

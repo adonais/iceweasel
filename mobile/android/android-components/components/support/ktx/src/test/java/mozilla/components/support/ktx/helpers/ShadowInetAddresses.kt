@@ -5,21 +5,19 @@
 package mozilla.components.support.ktx.helpers
 
 import android.net.InetAddresses
+import java.util.regex.Pattern
 import org.robolectric.Robolectric
 import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
-import java.util.regex.Pattern
 
-/**
- * Custom [InetAddresses] shadow to use with [Robolectric] tests to reduce their flakiness.
- */
+/** Custom [InetAddresses] shadow to use with [Robolectric] tests to reduce their flakiness. */
 @Implements(InetAddresses::class)
+// Robolectric instantiates shadows, so this has to stay a class.
+@Suppress("UtilityClassWithPublicConstructor")
 class ShadowInetAddresses {
     companion object {
         // Strict IPv4 regex to ensure domains like "example.com" fail immediately
-        private val IPV4_PATTERN = Pattern.compile(
-            "^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$",
-        )
+        private val IPV4_PATTERN = Pattern.compile("^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$")
 
         @JvmStatic
         @Implementation

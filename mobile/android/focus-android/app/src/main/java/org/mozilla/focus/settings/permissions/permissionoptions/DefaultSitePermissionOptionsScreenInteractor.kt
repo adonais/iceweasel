@@ -6,23 +6,17 @@ package org.mozilla.focus.settings.permissions.permissionoptions
 
 import org.mozilla.focus.settings.permissions.SitePermissionOption
 
-/**
- * Default implementation of the interactor for the site permission options screen.
- */
+/** Default implementation of the interactor for the site permission options screen. */
 class DefaultSitePermissionOptionsScreenInteractor(
-    private val sitePermissionOptionsScreenStore: SitePermissionOptionsScreenStore,
+    private val sitePermissionOptionsScreenStore: SitePermissionOptionsScreenStore
 ) {
-    /**
-     * Handles the selection of a [sitePermissionOption] on the site permission options screen.
-     */
+    /** Handles the selection of a [sitePermissionOption] on the site permission options screen. */
     fun handleSitePermissionOptionSelected(sitePermissionOption: SitePermissionOption) {
         if (sitePermissionOptionsScreenStore.state.selectedSitePermissionOption == sitePermissionOption) {
             return
         }
         sitePermissionOptionsScreenStore.dispatch(
-            SitePermissionOptionsScreenAction.Select(
-                selectedSitePermissionOption = sitePermissionOption,
-            ),
+            SitePermissionOptionsScreenAction.Select(selectedSitePermissionOption = sitePermissionOption)
         )
     }
 }

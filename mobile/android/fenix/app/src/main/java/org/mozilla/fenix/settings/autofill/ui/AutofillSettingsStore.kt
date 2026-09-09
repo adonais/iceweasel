@@ -19,11 +19,12 @@ internal class AutofillSettingsStore(
     initialState: AutofillSettingsState = AutofillSettingsState.default,
     reducer: Reducer<AutofillSettingsState, AutofillSettingsAction> = ::autofillSettingsReducer,
     middleware: List<Middleware<AutofillSettingsState, AutofillSettingsAction>> = listOf(),
-) : Store<AutofillSettingsState, AutofillSettingsAction>(
-    initialState = initialState,
-    reducer = reducer,
-    middleware = middleware,
-) {
+) :
+    Store<AutofillSettingsState, AutofillSettingsAction>(
+        initialState = initialState,
+        reducer = reducer,
+        middleware = middleware,
+    ) {
     init {
         dispatch(InitializeAddressesAndCreditCards)
     }

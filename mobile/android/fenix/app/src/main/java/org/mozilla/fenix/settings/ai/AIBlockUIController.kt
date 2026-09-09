@@ -11,9 +11,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import mozilla.components.concept.ai.controls.AIFeatureBlock
 
-internal data class AIBlockUIController(
-    private val onBlockDialog: (Boolean) -> Unit,
-) {
+internal data class AIBlockUIController(private val onBlockDialog: (Boolean) -> Unit) {
 
     private val _showDialogFlow: MutableStateFlow<Boolean> = MutableStateFlow(false)
     internal val showDialogFlow: StateFlow<Boolean> = _showDialogFlow
@@ -39,16 +37,17 @@ internal data class AIBlockUIController(
         internal fun default(
             featureBlock: AIFeatureBlock,
             scope: CoroutineScope,
-        ) = AIBlockUIController(
-            onBlockDialog = { blocked: Boolean ->
-                scope.launch {
-                    if (blocked) {
-                        featureBlock.block()
-                    } else {
-                        featureBlock.unblock()
+        ) =
+            AIBlockUIController(
+                onBlockDialog = { blocked: Boolean ->
+                    scope.launch {
+                        if (blocked) {
+                            featureBlock.block()
+                        } else {
+                            featureBlock.unblock()
+                        }
                     }
                 }
-            },
-        )
+            )
     }
 }

@@ -14,11 +14,13 @@ class FakeTermsOfUsePromptRepository(
 
     override fun canShowTermsOfUsePrompt() = canShowTermsOfUsePrompt
 
-    override fun userPostponedAndWithinCooldownPeriod(currentTimeMillis: Long) =
-        userPostponedAndWithinCooldownPeriod
+    override fun userPostponedAndWithinCooldownPeriod(currentTimeMillis: Long) = userPostponedAndWithinCooldownPeriod
 
     override fun updateHasAcceptedTermsOfUsePreference() {}
+
     override fun updateHasPostponedAcceptingTermsOfUsePreference() {}
+
     override fun updateLastTermsOfUsePromptTimeInMillis() {}
+
     override fun incrementTermsOfUsePromptDisplayedCount() {}
 }

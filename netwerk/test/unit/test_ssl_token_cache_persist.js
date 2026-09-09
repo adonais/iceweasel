@@ -4,19 +4,14 @@
 
 // Tests for Bug 2035453: SSLTokensCache persistence.
 //
-// Verifies that ssl_tokens_cache.bin is written to the profile directory
-// for each of the three triggers:
-//   1. "idle-daily"         — once-a-day write
-//   2. "application-background" — Android backgrounding write
-//   3. profile-before-change via AsyncShutdown — on-quit write
+// Verifies ssl_tokens_cache.sqlite is written for each of the three write
+// triggers: "idle-daily", "application-background", and profile-before-change
+// via AsyncShutdown.
 //
-// network.ssl_tokens_cache_persistence is set in the toml [prefs] block.
-// SSLTokensCache::Init() runs early (triggered by the IO service start in
-// head.js) and the pref may still be false at that point.  Init() therefore
-// only registers the profile-after-change observer unconditionally; the
-// write observers (idle-daily, application-background) and the shutdown
-// blocker are registered in Observe("profile-after-change"), which fires
-// after prefs are fully applied.
+// The DB file is created as soon as persistence activates, before any token is
+// written, so each test polls the row count rather than checking existence.
+// The read-back uses the synchronous Services.storage API, since
+// Sqlite.sys.mjs refuses new connections during profile-before-change.
 
 "use strict";
 
@@ -38,10 +33,10 @@ add_setup({ skip_if: () => AppConstants.MOZ_SYSTEM_NSS }, async () => {
   // head_http3.js and head_trr.js call do_get_profile() at load time, setting
   // _profileInitialized = true.  A subsequent do_get_profile(true) early-
   // returns without firing profile-after-change.  Fire it explicitly so that
-  // SSLTokensCache::Observe() sets mBackingFile and schedules the shutdown
-  // blocker.
+  // SSLTokensCache::Observe() sets up persistence and schedules the
+  // shutdown blocker.
   gProfileDir = do_get_profile();
-  gCacheFile = PathUtils.join(gProfileDir.path, "ssl_tokens_cache.bin");
+  gCacheFile = PathUtils.join(gProfileDir.path, "ssl_tokens_cache.sqlite");
   Services.obs.notifyObservers(
     null,
     "profile-after-change",
@@ -78,15 +73,51 @@ async function makeConnection() {
   ok(buf, "connection succeeded and NewSessionTicket was issued");
 }
 
-// Polls until ssl_tokens_cache.bin appears (or the timeout is reached).
-async function waitForCacheFile() {
+// Row count via a throwaway connection, or null if the file/table isn't there
+// yet or is briefly locked by a concurrent write.
+function readCacheRowCount() {
+  let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+  file.initWithPath(gCacheFile);
+  if (!file.exists()) {
+    return null;
+  }
+  let conn;
+  try {
+    conn = Services.storage.openDatabase(file);
+  } catch (e) {
+    return null;
+  }
+  try {
+    let stmt = conn.createStatement("SELECT COUNT(*) FROM ssl_tokens");
+    try {
+      stmt.executeStep();
+      return stmt.getInt32(0);
+    } finally {
+      stmt.reset();
+      stmt.finalize();
+    }
+  } catch (e) {
+    return null;
+  } finally {
+    conn.close();
+  }
+}
+
+// Polls the row count until it reaches aMinCount or times out, returning the
+// last count seen.
+async function waitForCacheRows(aMinCount = 1) {
+  let lastCount = 0;
   for (let i = 0; i < 50; i++) {
-    if (await IOUtils.exists(gCacheFile)) {
-      return true;
+    let count = readCacheRowCount();
+    if (count !== null) {
+      lastCount = count;
+      if (count >= aMinCount) {
+        return count;
+      }
     }
     await new Promise(resolve => do_timeout(100, resolve));
   }
-  return false;
+  return lastCount;
 }
 
 // --- Test 1: idle-daily --------------------------------------------------
@@ -95,19 +126,13 @@ add_task(
   { skip_if: () => AppConstants.MOZ_SYSTEM_NSS },
   async function test_ssl_token_cache_written_on_idle_daily() {
     await makeConnection();
-    await IOUtils.remove(gCacheFile, { ignoreAbsent: true });
 
     Services.obs.notifyObservers(null, "idle-daily");
 
-    ok(
-      await waitForCacheFile(),
-      "ssl_tokens_cache.bin written after idle-daily"
-    );
-    const info = await IOUtils.stat(gCacheFile);
-    Assert.greater(
-      info.size,
-      0,
-      `cache file is non-empty (${info.size} bytes)`
+    Assert.greaterOrEqual(
+      await waitForCacheRows(1),
+      1,
+      "ssl_tokens_cache.sqlite has rows after idle-daily"
     );
   }
 );
@@ -118,19 +143,13 @@ add_task(
   { skip_if: () => AppConstants.MOZ_SYSTEM_NSS },
   async function test_ssl_token_cache_written_on_application_background() {
     await makeConnection();
-    await IOUtils.remove(gCacheFile, { ignoreAbsent: true });
 
     Services.obs.notifyObservers(null, "application-background");
 
-    ok(
-      await waitForCacheFile(),
-      "ssl_tokens_cache.bin written after application-background"
-    );
-    const info = await IOUtils.stat(gCacheFile);
-    Assert.greater(
-      info.size,
-      0,
-      `cache file is non-empty (${info.size} bytes)`
+    Assert.greaterOrEqual(
+      await waitForCacheRows(1),
+      1,
+      "ssl_tokens_cache.sqlite has rows after application-background"
     );
   }
 );
@@ -141,12 +160,9 @@ add_task(
   { skip_if: () => AppConstants.MOZ_SYSTEM_NSS },
   async function test_ssl_token_cache_written_on_quit() {
     await makeConnection();
-    await IOUtils.remove(gCacheFile, { ignoreAbsent: true });
 
-    // Simulate the profile-before-change shutdown phase.  The async shutdown
-    // blocker registered by SSLTokensCache calls BlockShutdown, which
-    // dispatches DoWrite(true) to the write task queue.  _trigger() awaits
-    // all blockers, so when it resolves the write has completed.
+    // _trigger() awaits all blockers, so when it resolves SSLTokensCache's
+    // BlockShutdown has written the final snapshot.
     Services.prefs.setBoolPref("toolkit.asyncshutdown.testing", true);
     registerCleanupFunction(() =>
       Services.prefs.clearUserPref("toolkit.asyncshutdown.testing")
@@ -155,13 +171,12 @@ add_task(
 
     ok(
       await IOUtils.exists(gCacheFile),
-      "ssl_tokens_cache.bin written after profile-before-change"
+      "ssl_tokens_cache.sqlite exists after profile-before-change"
     );
-    const info = await IOUtils.stat(gCacheFile);
-    Assert.greater(
-      info.size,
-      0,
-      `cache file is non-empty (${info.size} bytes)`
+    Assert.greaterOrEqual(
+      await waitForCacheRows(1),
+      1,
+      "ssl_tokens_cache.sqlite has rows after profile-before-change"
     );
   }
 );

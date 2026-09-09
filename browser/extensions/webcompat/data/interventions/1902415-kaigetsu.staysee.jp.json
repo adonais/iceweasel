@@ -6,13 +6,15 @@
       "matches": ["*://kaigetsu.staysee.jp/*"]
     }
   },
-  "css": {
-    "hide_browser_notice": ".loginFooter__desc__browser { display: none !important; }"
-  },
   "interventions": [
     {
       "platforms": ["all"],
-      "css": ["hide_browser_notice"]
+      "hide_messages": [
+        {
+          "container": ".flashMessage",
+          "message": "Google Chrome"
+        }
+      ]
     }
   ]
 }

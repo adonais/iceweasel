@@ -225,8 +225,9 @@ static PRFileDesc* CreatePacketAdaptor(PacketAdaptorData* data) {
 }
 
 std::string FormatError(PRErrorCode code) {
-  return std::string(":") + PORT_ErrorToName(code) + ":" + ":" +
-         PORT_ErrorToString(code);
+  const char* name = PORT_ErrorToName(code);
+  const char* str = PORT_ErrorToString(code);
+  return std::string(":") + (name ? name : "") + ":" + ":" + (str ? str : "");
 }
 
 static void StringRemoveNewlines(std::string& str) {
@@ -755,9 +756,13 @@ class TestAgent {
   // flip all the bits, and send them back.
   SECStatus ReadWrite() {
     for (;;) {
-      uint8_t block[512];
+      uint8_t block[1 << 14];
       int32_t rv = PR_Read(ssl_fd_.get(), block, sizeof(block));
       if (rv < 0) {
+        // DTLS drops invalid records (e.g. oversized ciphertext) before
+        // authentication and returns WOULD_BLOCK rather than failing; read the
+        // next datagram instead of treating it as an error.
+        if (PR_GetError() == PR_WOULD_BLOCK_ERROR) continue;
         std::cerr << "Failure reading\n";
         return SECFailure;
       }
@@ -1363,6 +1368,7 @@ std::unique_ptr<const Config> ReadConfig(int argc, char** argv) {
   cfg->AddEntry<int>("resume-count", 0);
   cfg->AddEntry<std::string>("key-file", "");
   cfg->AddEntry<std::string>("cert-file", "");
+  cfg->AddEntry<std::string>("trust-cert", "");
   cfg->AddEntry<int>("min-version", 0);
   cfg->AddEntry<int>("max-version", 0xffff);
   for (auto flag : kVersionDisableFlags) {

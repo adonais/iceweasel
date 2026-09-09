@@ -27,11 +27,11 @@ import org.mozilla.fenix.helpers.TestHelper.setPortraitDisplayOrientation
 import org.mozilla.fenix.ui.robots.notificationShade
 
 /**
- * A JUnit [ExternalResource] that performs the standard Fenix test environment setup and
- * teardown: device orientation, storage cleanup, notification dismissal, and browser state
- * initialization.
+ * A JUnit [ExternalResource] that performs the standard Fenix test environment setup and teardown: device orientation,
+ * storage cleanup, notification dismissal, and browser state initialization.
  *
- * Intended to be used alongside [MockWebServerRule][mozilla.components.support.android.test.rules.MockWebServerRule] and a [androidx.test.rule.GrantPermissionRule].
+ * Intended to be used alongside [MockWebServerRule][mozilla.components.support.android.test.rules.MockWebServerRule]
+ * and a [androidx.test.rule.GrantPermissionRule].
  */
 class TestSetupRule : ExternalResource() {
 

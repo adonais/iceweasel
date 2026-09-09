@@ -31,19 +31,21 @@ class CollectionCreationView(
     private val interactor: CollectionCreationInteractor,
 ) {
 
-    private val binding = ComponentCollectionCreationBinding.inflate(
-        LayoutInflater.from(container.context),
-        container,
-        true,
-    )
+    private val binding =
+        ComponentCollectionCreationBinding.inflate(
+            LayoutInflater.from(container.context),
+            container,
+            true,
+        )
 
-    private val bottomBarView = CollectionCreationBottomBarView(
-        interactor = interactor,
-        layout = binding.bottomButtonBarLayout,
-        iconButton = binding.bottomBarIconButton,
-        textView = binding.bottomBarText,
-        saveButton = binding.saveButton,
-    )
+    private val bottomBarView =
+        CollectionCreationBottomBarView(
+            interactor = interactor,
+            layout = binding.bottomButtonBarLayout,
+            iconButton = binding.bottomBarIconButton,
+            textView = binding.bottomBarText,
+            saveButton = binding.saveButton,
+        )
     private val collectionCreationTabListAdapter = CollectionCreationTabListAdapter(interactor)
     private val collectionSaveListAdapter = SaveCollectionListAdapter {
         interactor.selectCollection(it, selectedTabs.toList())
@@ -62,9 +64,7 @@ class CollectionCreationView(
         transition.duration = TRANSITION_DURATION
         transition.excludeTarget(binding.backButton, true)
 
-        binding.nameCollectionEdittext.filters += InputFilter.LengthFilter(
-            COLLECTION_NAME_MAX_LENGTH,
-        )
+        binding.nameCollectionEdittext.filters += InputFilter.LengthFilter(COLLECTION_NAME_MAX_LENGTH)
         binding.nameCollectionEdittext.setOnEditorActionListener { view, actionId, _ ->
             val text = view.text.toString().trim()
             if (actionId == EditorInfo.IME_ACTION_DONE && text.isNotEmpty()) {
@@ -127,11 +127,12 @@ class CollectionCreationView(
         binding.selectAllButton.apply {
             val allSelected = state.selectedTabs.size == state.tabs.size
 
-            text = if (allSelected) {
-                context.getString(R.string.create_collection_deselect_all)
-            } else {
-                context.getString(R.string.create_collection_select_all)
-            }
+            text =
+                if (allSelected) {
+                    context.getString(R.string.create_collection_deselect_all)
+                } else {
+                    context.getString(R.string.create_collection_select_all)
+                }
 
             setOnClickListener {
                 if (allSelected) {
@@ -200,7 +201,7 @@ class CollectionCreationView(
             container.context.getString(
                 R.string.create_collection_default_name,
                 state.defaultCollectionNumber,
-            ),
+            )
         )
         binding.nameCollectionEdittext.setSelection(0, binding.nameCollectionEdittext.text.length)
     }
@@ -210,16 +211,18 @@ class CollectionCreationView(
 
         state.selectedTabCollection?.let { tabCollection ->
             val publicSuffixList = container.context.components.publicSuffixList
-            tabCollection.tabs.map { tab ->
-                Tab(
-                    sessionId = tab.id.toString(),
-                    url = tab.url,
-                    hostname = tab.url.toShortUrl(publicSuffixList),
-                    title = tab.title,
-                )
-            }.let { tabs ->
-                collectionCreationTabListAdapter.updateData(tabs, tabs.toSet(), true)
-            }
+            tabCollection.tabs
+                .map { tab ->
+                    Tab(
+                        sessionId = tab.id.toString(),
+                        url = tab.url,
+                        hostname = tab.url.toShortUrl(publicSuffixList),
+                        title = tab.title,
+                    )
+                }
+                .let { tabs ->
+                    collectionCreationTabListAdapter.updateData(tabs, tabs.toSet(), true)
+                }
         }
         nameCollectionConstraints.clone(
             container.context,
@@ -260,7 +263,7 @@ class CollectionCreationView(
 
                 override fun onTransitionResume(transition: Transition) { // noop
                 }
-            },
+            }
         )
         TransitionManager.beginDelayedTransition(binding.collectionConstraintLayout, transition)
     }
@@ -271,9 +274,7 @@ class CollectionCreationView(
         }
     }
 
-    /**
-     * Call this function to handle user action of swiping back or pressing the system back button.
-     */
+    /** Call this function to handle user action of swiping back or pressing the system back button. */
     fun handleOnBackPressed() {
         interactor.onBackPressed(step)
     }

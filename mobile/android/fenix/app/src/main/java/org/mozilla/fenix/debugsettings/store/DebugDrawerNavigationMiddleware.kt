@@ -35,30 +35,26 @@ class DebugDrawerNavigationMiddleware(
                 is DebugDrawerAction.OnBackPressed -> navController.popBackStack()
                 is DebugDrawerAction.DrawerOpened,
                 DebugDrawerAction.DrawerClosed,
-                DebugDrawerAction.ViewAppeared,
-                -> Unit // no-op
+                DebugDrawerAction.ViewAppeared -> Unit // no-op
             }
         }
     }
 
     private fun navigateTo(action: DebugDrawerAction.NavigateTo) {
         when (action) {
-            is DebugDrawerAction.NavigateTo.Home -> navController.popBackStack(
-                route = DEBUG_DRAWER_HOME_ROUTE,
-                inclusive = false,
-            )
-            is DebugDrawerAction.NavigateTo.TabTools ->
-                navController.navigate(route = DebugDrawerRoute.TabTools.route)
-            is DebugDrawerAction.NavigateTo.Logins ->
-                navController.navigate(route = DebugDrawerRoute.Logins.route)
+            is DebugDrawerAction.NavigateTo.Home ->
+                navController.popBackStack(
+                    route = DEBUG_DRAWER_HOME_ROUTE,
+                    inclusive = false,
+                )
+            is DebugDrawerAction.NavigateTo.TabTools -> navController.navigate(route = DebugDrawerRoute.TabTools.route)
+            is DebugDrawerAction.NavigateTo.Logins -> navController.navigate(route = DebugDrawerRoute.Logins.route)
             is DebugDrawerAction.NavigateTo.Addresses ->
                 navController.navigate(route = DebugDrawerRoute.Addresses.route)
             is DebugDrawerAction.NavigateTo.CreditCards ->
                 navController.navigate(route = DebugDrawerRoute.CreditCards.route)
-            is DebugDrawerAction.NavigateTo.Autofill ->
-                navController.navigate(route = DebugDrawerRoute.Autofill.route)
-            is DebugDrawerAction.NavigateTo.CfrTools ->
-                navController.navigate(route = DebugDrawerRoute.CfrTools.route)
+            is DebugDrawerAction.NavigateTo.Autofill -> navController.navigate(route = DebugDrawerRoute.Autofill.route)
+            is DebugDrawerAction.NavigateTo.CfrTools -> navController.navigate(route = DebugDrawerRoute.CfrTools.route)
             is DebugDrawerAction.NavigateTo.GleanDebugTools ->
                 navController.navigate(route = DebugDrawerRoute.GleanDebugTools.route)
             is DebugDrawerAction.NavigateTo.RegionDebugTools ->

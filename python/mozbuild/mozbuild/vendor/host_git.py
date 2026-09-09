@@ -22,16 +22,17 @@ class GitHost(BaseHost):
 
     def upstream_commit(self, revision):
         sha = subprocess.check_output(
-            ["git", "rev-parse", revision], cwd=self.workdir.name
+            ["git", "rev-parse", revision], cwd=self.workdir.name, text=True
         )
         created = subprocess.check_output(
             ["git", "show", "--no-patch", "--format=%ci", revision],
             cwd=self.workdir.name,
+            text=True,
         )
         return sha.strip(), created.strip()
 
     def upstream_snapshot(self, revision):
-        tarball = os.path.join(self.workdir.name, revision.decode() + ".tar")
+        tarball = os.path.join(self.workdir.name, revision + ".tar")
         subprocess.check_call(
             ["git", "archive", "--format=tar", "-o", tarball, revision],
             cwd=self.workdir.name,

@@ -210,6 +210,9 @@ add_task(async function test_legacy_certerror_no_neterror() {
 
 // Test: click_try_again_button fires on a net error page
 add_task(async function test_feltprivacy_neterror_click_try_again() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.netError.searchCTA.enabled", false]],
+  });
   let tab = await openNetErrorPage(NET_ERROR_PAGE);
   let browser = gBrowser.selectedBrowser;
   let nextErrorPage = BrowserTestUtils.waitForErrorPage(browser);
@@ -223,6 +226,7 @@ add_task(async function test_feltprivacy_neterror_click_try_again() {
   );
   assertNeterrorClickEvent(events, "dnsNotFound");
   BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
 });
 
 // Test: click_learn_more_link fires on a net error page

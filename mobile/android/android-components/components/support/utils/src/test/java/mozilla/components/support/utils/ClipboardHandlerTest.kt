@@ -82,9 +82,7 @@ class ClipboardHandlerTest {
     fun `GIVEN clipboard contains an text marked as an URL WHEN requesting it as an URL THEN return the text`() {
         assertEquals(null, clipboardHandler.extractURL())
 
-        clipboard.setPrimaryClip(
-            ClipData(clipboardUrl, arrayOf("text/x-moz-url"), ClipData.Item(clipboardUrl)),
-        )
+        clipboard.setPrimaryClip(ClipData(clipboardUrl, arrayOf("text/x-moz-url"), ClipData.Item(clipboardUrl)))
         assertEquals(clipboardUrl, clipboardHandler.extractURL())
     }
 

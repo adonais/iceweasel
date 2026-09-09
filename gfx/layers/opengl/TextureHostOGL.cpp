@@ -74,6 +74,11 @@ already_AddRefed<TextureHost> CreateTextureHostOGL(
       break;
     }
     case SurfaceDescriptor::TSurfaceDescriptorAndroidHardwareBuffer: {
+      if (aDeallocator) {
+        gfxCriticalError() << "SurfaceDescriptorAndroidHardwareBuffer is used "
+                              "only for remote texture";
+        return nullptr;
+      }
       const SurfaceDescriptorAndroidHardwareBuffer& desc =
           aDesc.get_SurfaceDescriptorAndroidHardwareBuffer();
       result = AndroidHardwareBufferTextureHost::Create(aFlags, desc);

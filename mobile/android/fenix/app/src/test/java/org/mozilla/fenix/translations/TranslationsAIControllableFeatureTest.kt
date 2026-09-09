@@ -37,6 +37,10 @@ class TranslationsAIControllableFeatureTest {
         feature.set(false)
 
         assertTrue(feature.featureState.first() == AIFeatureState.Disabled)
-        assertFalse(captureActionsMiddleware.findFirstAction(TranslationsAction.SetTranslationsEnabledAction::class).isTranslationsEnabled)
+        assertFalse(
+            captureActionsMiddleware
+                .findFirstAction(TranslationsAction.SetTranslationsEnabledAction::class)
+                .isTranslationsEnabled
+        )
     }
 }

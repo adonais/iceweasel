@@ -17,14 +17,16 @@ import androidx.recyclerview.widget.RecyclerView
  * @param context [Context] needed for various Android interactions.
  * @param reverseLayout When set to true, layouts from end to start.
  */
-open class StickyHeaderLinearLayoutManager<T> constructor(
+open class StickyHeaderLinearLayoutManager<T>
+constructor(
     context: Context,
     reverseLayout: Boolean = false,
-) : StickyItemsLinearLayoutManager<T>(
-    context,
-    StickyItemPlacement.TOP,
-    reverseLayout,
-) where T : RecyclerView.Adapter<*>, T : StickyItemsAdapter {
+) :
+    StickyItemsLinearLayoutManager<T>(
+        context,
+        StickyItemPlacement.TOP,
+        reverseLayout,
+    ) where T : RecyclerView.Adapter<*>, T : StickyItemsAdapter {
 
     override fun scrollToIndicatedPositionWithOffset(
         position: Int,

@@ -559,6 +559,57 @@ TEST_F(RtpVideoStreamReceiver2Test,
 }
 
 TEST_F(RtpVideoStreamReceiver2Test,
+       FrameInstrumentationDataGetsPopulatedForSyncMessage) {
+  const std::vector<uint8_t> kKeyFramePayload = {0, 1, 2, 3, 4};
+
+  // Prepare the receiver for VP9.
+  CodecParameterMap codec_params;
+  rtp_video_stream_receiver_->AddReceiveCodec(kVp9PayloadType, kVideoCodecVP9,
+                                              codec_params,
+                                              /*raw_payload=*/false);
+
+  ReceivedPacketGenerator received_packet_generator;
+  // Create a sync-only message.
+  CorruptionDetectionMessage::Builder builder;
+  builder.WithSequenceIndex(0).WithInterpretSequenceIndexAsMostSignificantBits(
+      true);
+  std::optional<CorruptionDetectionMessage> corruption_detection_msg =
+      builder.Build();
+  ASSERT_TRUE(corruption_detection_msg.has_value());
+  received_packet_generator.SetCorruptionDetectionHeader(
+      *corruption_detection_msg);
+
+  // Generate key frame packets.
+  received_packet_generator.SetPayload(kKeyFramePayload,
+                                       VideoFrameType::kVideoFrameKey);
+  // Have corruption header on the key frame.
+  RtpPacketReceived key_frame_packet =
+      received_packet_generator.NextPacket(/*include_corruption_header=*/true);
+
+  rtp_video_stream_receiver_->StartReceive();
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(
+      kKeyFramePayload.data(), kKeyFramePayload.size());
+
+  EXPECT_TRUE(key_frame_packet.GetExtension<CorruptionDetectionExtension>());
+  std::unique_ptr<EncodedFrame> key_encoded_frame;
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame(_))
+      .WillOnce([&](EncodedFrame* encoded_frame) {
+        key_encoded_frame = std::make_unique<EncodedFrame>(*encoded_frame);
+      });
+  rtp_video_stream_receiver_->OnRtpPacket(key_frame_packet);
+  ASSERT_TRUE(key_encoded_frame != nullptr);
+  std::optional<FrameInstrumentationData> frame_inst_data_key_frame =
+      key_encoded_frame->CodecSpecific()->frame_instrumentation_data;
+  ASSERT_TRUE(frame_inst_data_key_frame.has_value());
+  EXPECT_EQ(frame_inst_data_key_frame->sequence_index(), 0);
+  EXPECT_TRUE(frame_inst_data_key_frame->is_sync_only());
+  EXPECT_EQ(frame_inst_data_key_frame->std_dev(), 0.0);
+  EXPECT_EQ(frame_inst_data_key_frame->luma_error_threshold(), 0);
+  EXPECT_EQ(frame_inst_data_key_frame->chroma_error_threshold(), 0);
+  EXPECT_TRUE(frame_inst_data_key_frame->sample_values().empty());
+}
+
+TEST_F(RtpVideoStreamReceiver2Test,
        FrameInstrumentationDataGetsPopulatedMSBIncreasedCorrectly) {
   const std::vector<uint8_t> kKeyFramePayload = {0, 1, 2, 3, 4};
   const std::vector<uint8_t> kDeltaFramePayload = {5, 6, 7, 8, 9};

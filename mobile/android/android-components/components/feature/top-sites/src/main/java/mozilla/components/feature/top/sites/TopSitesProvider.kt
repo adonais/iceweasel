@@ -4,22 +4,17 @@
 
 package mozilla.components.feature.top.sites
 
-/**
- * A contract that indicates how a top sites provider must behave.
- */
+/** A contract that indicates how a top sites provider must behave. */
 interface TopSitesProvider {
 
     /**
      * Provides a list of top sites.
      *
-     * @param allowCache Whether or not the result may be provided from a previously
-     * cached response.
+     * @param allowCache Whether or not the result may be provided from a previously cached response.
      * @return a list of top sites from the provider.
      */
     suspend fun getTopSites(allowCache: Boolean = true): List<TopSite>
 
-    /**
-     * Refreshes the cache with the latest top sites response if the cache is expired.
-     */
+    /** Refreshes the cache with the latest top sites response if the cache is expired. */
     suspend fun refreshTopSitesIfCacheExpired() = Unit
 }

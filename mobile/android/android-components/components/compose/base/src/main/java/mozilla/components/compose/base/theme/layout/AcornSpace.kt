@@ -8,14 +8,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * A palette defining the static and dynamic whitespace and arrangement between visual elements
- * styled by the Acorn Design System.
+ * A palette defining the static and dynamic whitespace and arrangement between visual elements styled by the Acorn
+ * Design System.
  */
 sealed class AcornSpace {
 
     /**
-     * A palette defining the static whitespace and arrangement between visual elements
-     * styled by the Acorn Design System.
+     * A palette defining the static whitespace and arrangement between visual elements styled by the Acorn Design
+     * System.
      */
     val static25: Dp = 2.dp
     val static50: Dp = 4.dp
@@ -28,8 +28,8 @@ sealed class AcornSpace {
     val static600: Dp = 48.dp
 
     /**
-     * A palette defining the dynamic whitespace and arrangement between visual elements
-     * styled by the Acorn Design System.
+     * A palette defining the dynamic whitespace and arrangement between visual elements styled by the Acorn Design
+     * System.
      */
     abstract val dynamic50: Dp
     abstract val dynamic100: Dp
@@ -40,9 +40,7 @@ sealed class AcornSpace {
     abstract val dynamic500: Dp
     abstract val dynamic600: Dp
 
-    /**
-     * [AcornSpace] tokens for [AcornWindowSize.Small].
-     */
+    /** [AcornSpace] tokens for [AcornWindowSize.Small]. */
     data object Small : AcornSpace() {
         override val dynamic50: Dp = 4.dp
         override val dynamic100: Dp = 8.dp
@@ -54,9 +52,7 @@ sealed class AcornSpace {
         override val dynamic600: Dp = 48.dp
     }
 
-    /**
-     * [AcornSpace] tokens for [AcornWindowSize.Medium] and [AcornWindowSize.Large].
-     */
+    /** [AcornSpace] tokens for [AcornWindowSize.Medium] and [AcornWindowSize.Large]. */
     data object MediumLarge : AcornSpace() {
         override val dynamic50: Dp = 8.dp
         override val dynamic100: Dp = 12.dp
@@ -68,18 +64,18 @@ sealed class AcornSpace {
         override val dynamic600: Dp = 56.dp
     }
 
-    /**
-     * [AcornSpace] helper object
-     */
+    /** [AcornSpace] helper object */
     companion object {
         /**
          * Returns the palette of space tokens corresponding to the [AcornWindowSize].
          *
          * @param windowSize The app window's current [AcornWindowSize].
          */
-        fun fromWindowSize(windowSize: AcornWindowSize): AcornSpace = when (windowSize) {
-            AcornWindowSize.Small -> Small
-            AcornWindowSize.Medium, AcornWindowSize.Large -> MediumLarge
-        }
+        fun fromWindowSize(windowSize: AcornWindowSize): AcornSpace =
+            when (windowSize) {
+                AcornWindowSize.Small -> Small
+                AcornWindowSize.Medium,
+                AcornWindowSize.Large -> MediumLarge
+            }
     }
 }

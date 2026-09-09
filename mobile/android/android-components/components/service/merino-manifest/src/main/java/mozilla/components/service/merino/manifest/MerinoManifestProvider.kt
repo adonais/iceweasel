@@ -6,17 +6,17 @@ package mozilla.components.service.merino.manifest
 
 import android.content.res.AssetManager
 import androidx.core.net.toUri
+import java.io.IOException
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.net.hostWithoutCommonPrefixes
-import java.io.IOException
 
 internal const val ASSET_FILE_PATH = "manifest/manifest.json"
 
 /**
- * Provides lookups into an embedded snapshot of the Merino manifest, which contains metadata for
- * websites including icons, titles, and categories.
+ * Provides lookups into an embedded snapshot of the Merino manifest, which contains metadata for websites including
+ * icons, titles, and categories.
  *
  * The manifest is read from [assetManager] on first use and cached for subsequent calls.
  *
@@ -29,25 +29,24 @@ class MerinoManifestProvider(private val assetManager: AssetManager) {
     private val json = Json { ignoreUnknownKeys = true }
 
     /**
-     * Returns the icon URL for the given [host], or null if no entry exists in the manifest or
-     * the entry has no icon.
+     * Returns the icon URL for the given [host], or null if no entry exists in the manifest or the entry has no icon.
      *
-     * @param host The bare hostname of a URL with common prefixes (e.g. `www.`) already stripped,
-     * such as `"google.com"` or `"wikipedia.org"`.
+     * @param host The bare hostname of a URL with common prefixes (e.g. `www.`) already stripped, such as
+     *   `"google.com"` or `"wikipedia.org"`.
      */
     fun getIconUrl(host: String): String? = manifestMap[host]?.icon?.takeIf { it.isNotBlank() }
 
     /**
      * Returns the [ManifestEntry] for the given [host], or null if no entry exists.
      *
-     * @param host The bare hostname of a URL with common prefixes (e.g. `www.`) already stripped,
-     * such as `"google.com"` or `"wikipedia.org"`.
+     * @param host The bare hostname of a URL with common prefixes (e.g. `www.`) already stripped, such as
+     *   `"google.com"` or `"wikipedia.org"`.
      */
     fun getManifestEntry(host: String): ManifestEntry? = manifestMap[host]
 
     /**
-     * Returns websites from the manifest sorted by rank ascending (rank 1 = most popular) and
-     * excludes entries that matches one of the [excludedDomains].
+     * Returns websites from the manifest sorted by rank ascending (rank 1 = most popular) and excludes entries that
+     * matches one of the [excludedDomains].
      *
      * @param limit Maximum number of entries to return. Defaults to all entries.
      * @param excludedDomains Set of hostnames to filter out.
@@ -56,7 +55,8 @@ class MerinoManifestProvider(private val assetManager: AssetManager) {
         limit: Int = Int.MAX_VALUE,
         excludedDomains: Set<String> = emptySet(),
     ): List<ManifestEntry> =
-        manifestMap.entries.asSequence()
+        manifestMap.entries
+            .asSequence()
             .filterNot { (host, _) -> host in excludedDomains }
             .map { (_, entry) -> entry }
             .take(limit)

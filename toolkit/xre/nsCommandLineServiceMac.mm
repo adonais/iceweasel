@@ -55,14 +55,22 @@ void SetupMacCommandLine(int& argc, char**& argv, bool forRestart) {
   if (forRestart &&
       [path hasSuffix:[NSString stringWithUTF8String:MOZ_APP_NAME]]) {
     // When we restart, we ask the updater binary to restart us instead.
-    // This avoids duplicate Dock icons, by giving this process a chance to
-    // shut down before the new process is launched.
-    // Essentially, we are using the updater as a relauncher process.
+    // Essentially, we are using the updater as a relauncher process. We pass
+    // our pid along so that it waits for us to go away before it launches the
+    // new process. Two processes of the same app bundle must not be registered
+    // with macOS at the same time: the second one is treated as another
+    // instance of the app and is given its own dock tile, which then sticks
+    // around in the dock's list of recently used applications.
     NSString* updaterPath = [[path stringByDeletingLastPathComponent]
         stringByAppendingPathComponent:
             @"updater.app/Contents/MacOS/org.mozilla.updater"];
     AddToCommandLine(updaterPath.UTF8String);
     AddToCommandLine("--openAppBundle");
+    AddToCommandLine("--wait-pid");
+    AddToCommandLine(
+        [NSString stringWithFormat:@"%d", [[NSProcessInfo processInfo]
+                                              processIdentifier]]
+            .UTF8String);
   }
 
   // We adjust the path to point to the .app bundle, rather than the executable

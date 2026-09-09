@@ -244,6 +244,10 @@ enum class Trap {
   Limit
 };
 
+// Returns `true` if there is any possibility that a trap of kind `t` might
+// resume.  Only returns `false` if `t` definitely won't resume.
+bool TrapMightResume(Trap t);
+
 #ifdef JS_JITSPEW
 const char* NameOfTrap(Trap t);
 #endif

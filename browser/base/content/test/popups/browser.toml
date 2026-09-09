@@ -47,6 +47,14 @@ skip-if = [
   "debug", # This test triggers Bug 1578794 due to opening many popups.
 ]
 
+["browser_popup_blocker_parent_target.js"]
+https_first_disabled = true
+support-files = [
+  "popup_blocker_a.html",
+  "popup_blocker_b.html",
+  "popup_blocker_parent_target.html",
+]
+
 ["browser_popup_close_main_window.js"]
 
 ["browser_popup_frames.js"]

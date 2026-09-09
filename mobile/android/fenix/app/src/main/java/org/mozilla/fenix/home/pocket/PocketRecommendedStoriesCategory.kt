@@ -7,14 +7,13 @@ package org.mozilla.fenix.home.pocket
 import mozilla.components.service.pocket.PocketStory.PocketRecommendedStory
 
 /**
- * Category name of the default category from which stories are to be shown
- * if user hasn't explicitly selected others.
+ * Category name of the default category from which stories are to be shown if user hasn't explicitly selected others.
  */
 const val POCKET_STORIES_DEFAULT_CATEGORY_NAME = "general"
 
 /**
- * In memory cache of Pocket assigned topic of interest for recommended stories.
- * Avoids multiple stories mappings for each time we are interested in their categories.
+ * In memory cache of Pocket assigned topic of interest for recommended stories. Avoids multiple stories mappings for
+ * each time we are interested in their categories.
  *
  * One to many relationship with [PocketRecommendedStory]es.
  *

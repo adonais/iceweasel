@@ -7,18 +7,12 @@ package mozilla.components.service.mars
 import androidx.annotation.VisibleForTesting
 import mozilla.components.feature.top.sites.TopSitesProvider
 
-/**
- * Contains use cases related to the MAC top sites feature.
- */
+/** Contains use cases related to the MAC top sites feature. */
 internal class MacTopSitesUseCases {
 
-    /**
-     * Refresh MAC top sites use case.
-     */
+    /** Refresh MAC top sites use case. */
     class RefreshMacTopSitesUseCase internal constructor() {
-        /**
-         * Refreshes the MAC top sites.
-         */
+        /** Refreshes the MAC top sites. */
         suspend operator fun invoke() {
             requireMacTopSitesProvider().getTopSites(allowCache = false)
         }
@@ -27,25 +21,17 @@ internal class MacTopSitesUseCases {
     internal companion object {
         @VisibleForTesting internal var provider: TopSitesProvider? = null
 
-        /**
-         * Initializes the [TopSitesProvider] which will fetch the top sites tile from the
-         * provider.
-         */
+        /** Initializes the [TopSitesProvider] which will fetch the top sites tile from the provider. */
         internal fun initialize(provider: TopSitesProvider) {
             this.provider = provider
         }
 
-        /**
-         * Unbinds the [TopSitesProvider].
-         */
+        /** Unbinds the [TopSitesProvider]. */
         internal fun destroy() {
             this.provider = null
         }
 
-        /**
-         * Returns the [TopSitesProvider], otherwise throw an exception if the [provider]
-         * has not been initialized.
-         */
+        /** Returns the [TopSitesProvider], otherwise throw an exception if the [provider] has not been initialized. */
         internal fun requireMacTopSitesProvider(): TopSitesProvider {
             return requireNotNull(provider) {
                 "initialize must be called before trying to access the TopSitesProvider"

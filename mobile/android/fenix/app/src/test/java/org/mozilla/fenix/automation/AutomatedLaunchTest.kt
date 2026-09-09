@@ -5,6 +5,7 @@
 package org.mozilla.fenix.automation
 
 import android.content.Intent
+import android.provider.Settings as AndroidSettings
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -17,7 +18,6 @@ import org.mozilla.fenix.helpers.perf.TestStrictModeManager
 import org.mozilla.fenix.perf.StrictModeManager
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
-import android.provider.Settings as AndroidSettings
 
 @RunWith(RobolectricTestRunner::class)
 class AutomatedLaunchTest {

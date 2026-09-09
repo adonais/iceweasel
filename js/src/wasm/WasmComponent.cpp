@@ -1636,8 +1636,8 @@ void ComponentInstance::tracePrivate(JSTracer* trc) {
 
   // Instantiate the module and extract the function
   Rooted<WasmInstanceObject*> instanceObj(cx);
-  ImportValues imports;
-  if (!m->instantiate(cx, imports, nullptr, &instanceObj)) {
+  Rooted<ImportValues> imports(cx);
+  if (!m->instantiate(cx, imports.get(), nullptr, &instanceObj)) {
     return false;
   }
   RootedFunction exportedFunc(cx);
@@ -1673,7 +1673,8 @@ bool ComponentInstance::init(JSContext* cx) {
     SharedModule mod = component_->getCoreModule(desc.moduleIndex);
 
     // Build up imports.
-    ImportValues imports;
+    Rooted<ImportValues> importValues(cx);
+    ImportValues& imports = importValues.get();
     for (const Import& imp : mod->moduleMeta().imports) {
       auto p = desc.args.lookup(imp.module.utf8Bytes());
       MOZ_RELEASE_ASSERT(p);

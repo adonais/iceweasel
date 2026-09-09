@@ -1084,7 +1084,8 @@ bool NativeLayerWayland::Map(WaylandSurfaceLock& aParentWaylandSurfaceLock) {
       }
     }
     mSurface->EnableColorManagementLocked(surfaceLock, yuvColorSpace,
-                                          transferFunction, hdrMetadata);
+                                          transferFunction, hdrMetadata,
+                                          parentSurface->GetGdkWindow());
   }
 
   if (auto* external = AsNativeLayerWaylandExternal()) {

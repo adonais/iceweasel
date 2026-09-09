@@ -49,6 +49,27 @@ async function searchHistory(gLibrary, searchTerm) {
   );
 }
 
+async function openContextMenuOnSelectedTreeCell(gLibrary) {
+  // The command the menu item triggers is dispatched to the focused view when
+  // it arrives after popuphiding cleared PlacesUIUtils.lastContextMenuTriggerNode.
+  gLibrary.ContentTree.view.focus();
+
+  let contextMenu = gLibrary.document.getElementById("placesContext");
+  let shown = BrowserTestUtils.waitForPopupEvent(contextMenu, "shown");
+  await synthesizeClickOnSelectedTreeCell(gLibrary.ContentTree.view, {
+    button: 2,
+    type: "contextmenu",
+  });
+  await shown;
+  return contextMenu;
+}
+
+function activateContextMenuItem(contextMenu, id) {
+  return BrowserTestUtils.activateMenuItem(
+    contextMenu.querySelector(`#${CSS.escape(id)}`)
+  );
+}
+
 function searchBookmarks(gLibrary, searchTerm) {
   let searchBox = gLibrary.document.getElementById("searchFilter");
   searchBox.value = searchTerm;
@@ -223,18 +244,14 @@ add_task(async function test_library_history_telemetry() {
   TelemetryTestUtils.assertHistogram(cumulativeSearchesHistogram, 4, 1);
   info("Cumulative search telemetry looks right");
 
-  await synthesizeClickOnSelectedTreeCell(gLibrary.ContentTree.view, {
-    button: 2,
-    type: "contextmenu",
-  });
+  let contextMenu = await openContextMenuOnSelectedTreeCell(gLibrary);
 
   TelemetryTestUtils.assertScalarUnset(
     TelemetryTestUtils.getProcessScalars("parent", true, true),
     "library.link"
   );
 
-  let openOption = document.getElementById("placesContext_open");
-  openOption.click();
+  await activateContextMenuItem(contextMenu, "placesContext_open");
 
   TelemetryTestUtils.assertKeyedScalar(
     TelemetryTestUtils.getProcessScalars("parent", true, true),
@@ -243,18 +260,14 @@ add_task(async function test_library_history_telemetry() {
     1
   );
 
-  await synthesizeClickOnSelectedTreeCell(gLibrary.ContentTree.view, {
-    button: 2,
-    type: "contextmenu",
-  });
+  contextMenu = await openContextMenuOnSelectedTreeCell(gLibrary);
 
   TelemetryTestUtils.assertScalarUnset(
     TelemetryTestUtils.getProcessScalars("parent", true, true),
     "library.link"
   );
 
-  let openNewTabOption = document.getElementById("placesContext_open:newtab");
-  openNewTabOption.click();
+  await activateContextMenuItem(contextMenu, "placesContext_open:newtab");
 
   TelemetryTestUtils.assertKeyedScalar(
     TelemetryTestUtils.getProcessScalars("parent", true, true),
@@ -265,20 +278,14 @@ add_task(async function test_library_history_telemetry() {
 
   let newWinOpened = BrowserTestUtils.waitForNewWindow();
 
-  await synthesizeClickOnSelectedTreeCell(gLibrary.ContentTree.view, {
-    button: 2,
-    type: "contextmenu",
-  });
+  contextMenu = await openContextMenuOnSelectedTreeCell(gLibrary);
 
   TelemetryTestUtils.assertScalarUnset(
     TelemetryTestUtils.getProcessScalars("parent", true, true),
     "library.link"
   );
 
-  let openNewWindowOption = document.getElementById(
-    "placesContext_open:newwindow"
-  );
-  openNewWindowOption.click();
+  await activateContextMenuItem(contextMenu, "placesContext_open:newwindow");
 
   let newWin = await newWinOpened;
 
@@ -293,20 +300,17 @@ add_task(async function test_library_history_telemetry() {
 
   let newPrivateWinOpened = BrowserTestUtils.waitForNewWindow();
 
-  await synthesizeClickOnSelectedTreeCell(gLibrary.ContentTree.view, {
-    button: 2,
-    type: "contextmenu",
-  });
+  contextMenu = await openContextMenuOnSelectedTreeCell(gLibrary);
 
   TelemetryTestUtils.assertScalarUnset(
     TelemetryTestUtils.getProcessScalars("parent", true, true),
     "library.link"
   );
 
-  let openNewPrivateWindowOption = document.getElementById(
+  await activateContextMenuItem(
+    contextMenu,
     "placesContext_open:newprivatewindow"
   );
-  openNewPrivateWindowOption.click();
 
   let newPrivateWin = await newPrivateWinOpened;
 

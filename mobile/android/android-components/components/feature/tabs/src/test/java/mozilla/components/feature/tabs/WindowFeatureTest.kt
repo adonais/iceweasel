@@ -40,23 +40,28 @@ class WindowFeatureTest {
     @Before
     fun setup() {
         engineSession = mock()
-        store = BrowserStore(
-            initialState = BrowserState(
-                tabs = listOf(
-                    createTab(
-                        id = tabId,
-                        url = "https://www.mozilla.org",
-                        engineSession = engineSession,
+        store =
+            BrowserStore(
+                initialState =
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab(
+                                    id = tabId,
+                                    url = "https://www.mozilla.org",
+                                    engineSession = engineSession,
+                                ),
+                                createTab(id = privateTabId, url = "https://www.mozilla.org", private = true),
+                            ),
+                        selectedTabId = tabId,
                     ),
-                    createTab(id = privateTabId, url = "https://www.mozilla.org", private = true),
-                ),
-                selectedTabId = tabId,
-            ),
-            middleware = listOf(captureActionsMiddleware) + EngineMiddleware.create(
-                engine = mock(),
-                TestScope(testDispatcher),
-            ),
-        )
+                middleware =
+                    listOf(captureActionsMiddleware) +
+                        EngineMiddleware.create(
+                            engine = mock(),
+                            TestScope(testDispatcher),
+                        ),
+            )
 
         addTabUseCase = mock()
         removeTabUseCase = mock()
@@ -66,84 +71,89 @@ class WindowFeatureTest {
     }
 
     @Test
-    fun `handles request to open window`() = runTest(testDispatcher) {
-        val feature = WindowFeature(store, tabsUseCases, testDispatcher)
-        feature.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+    fun `handles request to open window`() =
+        runTest(testDispatcher) {
+            val feature = WindowFeature(store, tabsUseCases, testDispatcher)
+            feature.start()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        val windowRequest: WindowRequest = mock()
-        whenever(windowRequest.type).thenReturn(WindowRequest.Type.OPEN)
-        whenever(windowRequest.url).thenReturn("https://www.firefox.com")
+            val windowRequest: WindowRequest = mock()
+            whenever(windowRequest.type).thenReturn(WindowRequest.Type.OPEN)
+            whenever(windowRequest.url).thenReturn("https://www.firefox.com")
 
-        store.dispatch(ContentAction.UpdateWindowRequestAction(tabId, windowRequest))
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(ContentAction.UpdateWindowRequestAction(tabId, windowRequest))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(addTabUseCase).invoke(url = "about:blank", selectTab = true, parentId = tabId)
-        captureActionsMiddleware.assertFirstAction(ContentAction.ConsumeWindowRequestAction::class) { action ->
-            assertEquals(tabId, action.sessionId)
+            verify(addTabUseCase).invoke(url = "about:blank", selectTab = true, parentId = tabId)
+            captureActionsMiddleware.assertFirstAction(ContentAction.ConsumeWindowRequestAction::class) { action ->
+                assertEquals(tabId, action.sessionId)
+            }
         }
-    }
 
     @Test
-    fun `handles request to open private window`() = runTest(testDispatcher) {
-        val feature = WindowFeature(store, tabsUseCases, testDispatcher)
-        feature.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+    fun `handles request to open private window`() =
+        runTest(testDispatcher) {
+            val feature = WindowFeature(store, tabsUseCases, testDispatcher)
+            feature.start()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        val windowRequest: WindowRequest = mock()
-        whenever(windowRequest.type).thenReturn(WindowRequest.Type.OPEN)
-        whenever(windowRequest.url).thenReturn("https://www.firefox.com")
+            val windowRequest: WindowRequest = mock()
+            whenever(windowRequest.type).thenReturn(WindowRequest.Type.OPEN)
+            whenever(windowRequest.url).thenReturn("https://www.firefox.com")
 
-        store.dispatch(TabListAction.SelectTabAction(privateTabId))
-        store.dispatch(ContentAction.UpdateWindowRequestAction(privateTabId, windowRequest))
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(TabListAction.SelectTabAction(privateTabId))
+            store.dispatch(ContentAction.UpdateWindowRequestAction(privateTabId, windowRequest))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(addTabUseCase).invoke(
-            url = "about:blank",
-            selectTab = true,
-            parentId = privateTabId,
-            private = true,
-        )
-        captureActionsMiddleware.assertFirstAction(ContentAction.ConsumeWindowRequestAction::class) { action ->
-            assertEquals(privateTabId, action.sessionId)
+            verify(addTabUseCase)
+                .invoke(
+                    url = "about:blank",
+                    selectTab = true,
+                    parentId = privateTabId,
+                    private = true,
+                )
+            captureActionsMiddleware.assertFirstAction(ContentAction.ConsumeWindowRequestAction::class) { action ->
+                assertEquals(privateTabId, action.sessionId)
+            }
         }
-    }
 
     @Test
-    fun `handles request to close window`() = runTest(testDispatcher) {
-        val feature = WindowFeature(store, tabsUseCases, testDispatcher)
-        feature.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+    fun `handles request to close window`() =
+        runTest(testDispatcher) {
+            val feature = WindowFeature(store, tabsUseCases, testDispatcher)
+            feature.start()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        val windowRequest: WindowRequest = mock()
-        whenever(windowRequest.type).thenReturn(WindowRequest.Type.CLOSE)
-        whenever(windowRequest.prepare()).thenReturn(engineSession)
+            val windowRequest: WindowRequest = mock()
+            whenever(windowRequest.type).thenReturn(WindowRequest.Type.CLOSE)
+            whenever(windowRequest.prepare()).thenReturn(engineSession)
 
-        store.dispatch(ContentAction.UpdateWindowRequestAction(tabId, windowRequest))
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(ContentAction.UpdateWindowRequestAction(tabId, windowRequest))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(removeTabUseCase).invoke(tabId)
-        captureActionsMiddleware.assertFirstAction(ContentAction.ConsumeWindowRequestAction::class) { action ->
-            assertEquals(tabId, action.sessionId)
+            verify(removeTabUseCase).invoke(tabId)
+            captureActionsMiddleware.assertFirstAction(ContentAction.ConsumeWindowRequestAction::class) { action ->
+                assertEquals(tabId, action.sessionId)
+            }
         }
-    }
 
     @Test
-    fun `handles no requests when stopped`() = runTest(testDispatcher) {
-        val feature = WindowFeature(store, tabsUseCases, testDispatcher)
-        feature.start()
-        testDispatcher.scheduler.advanceUntilIdle()
+    fun `handles no requests when stopped`() =
+        runTest(testDispatcher) {
+            val feature = WindowFeature(store, tabsUseCases, testDispatcher)
+            feature.start()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        feature.stop()
-        testDispatcher.scheduler.advanceUntilIdle()
+            feature.stop()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        val windowRequest: WindowRequest = mock()
-        whenever(windowRequest.type).thenReturn(WindowRequest.Type.CLOSE)
+            val windowRequest: WindowRequest = mock()
+            whenever(windowRequest.type).thenReturn(WindowRequest.Type.CLOSE)
 
-        store.dispatch(ContentAction.UpdateWindowRequestAction(tabId, windowRequest))
-        testDispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(ContentAction.UpdateWindowRequestAction(tabId, windowRequest))
+            testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(removeTabUseCase, never()).invoke(tabId)
-        captureActionsMiddleware.assertNotDispatched(ContentAction.ConsumeWindowRequestAction::class)
-    }
+            verify(removeTabUseCase, never()).invoke(tabId)
+            captureActionsMiddleware.assertNotDispatched(ContentAction.ConsumeWindowRequestAction::class)
+        }
 }

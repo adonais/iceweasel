@@ -70,7 +70,7 @@ class DownloadDeleteMiddleware(
                     DownloadUIAction.AddPendingDeletionSet(
                         removeFromDisk = removeFromDisk,
                         items = action.items,
-                    ),
+                    )
                 )
             }
 
@@ -102,7 +102,7 @@ class DownloadDeleteMiddleware(
                     DownloadUIAction.AddPendingDeletionSet(
                         removeFromDisk = removeFromDisk,
                         items = items,
-                    ),
+                    )
                 )
             }
         }

@@ -222,7 +222,7 @@ ec_secp256r1_sign_digest(ECPrivateKey *ecPrivKey, SECItem *signature,
     bool b = Hacl_P256_ecdsa_sign_p256_without_hash(
         signature->data, 32, hash, key, nonce);
 #else
-    bool b = key != NULL;                        /* Avoiding unused variable warnings */
+    bool b = key != NULL; /* Avoiding unused variable warnings */
 #endif
 
     if (!b) {

@@ -7,15 +7,12 @@ package org.mozilla.fenix
 import androidx.annotation.IdRes
 
 /**
- * Used with [HomeActivity.openToBrowser] to indicate which fragment
- * the browser is being opened from.
+ * Used with [HomeActivity.openToBrowser] to indicate which fragment the browser is being opened from.
  *
- * @property fragmentId ID of the fragment opening the browser in the navigation graph.
- * An ID of `0` indicates a global action with no corresponding opening fragment.
+ * @property fragmentId ID of the fragment opening the browser in the navigation graph. An ID of `0` indicates a global
+ *   action with no corresponding opening fragment.
  */
-enum class BrowserDirection(
-    @param:IdRes val fragmentId: Int,
-) {
+enum class BrowserDirection(@param:IdRes val fragmentId: Int) {
     FromGlobal(0),
     FromHome(R.id.homeFragment),
     FromWallpaper(R.id.wallpaperSettingsFragment),

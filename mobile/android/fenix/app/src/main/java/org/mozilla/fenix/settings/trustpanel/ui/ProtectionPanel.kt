@@ -43,6 +43,7 @@ import mozilla.components.compose.base.menu.MenuItem.CheckableItem
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.text.value
 import mozilla.components.support.utils.CertificateUtils
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.compose.IPProtectionMenuItem
 import org.mozilla.fenix.components.menu.compose.MenuBadgeItem
@@ -57,7 +58,6 @@ import org.mozilla.fenix.settings.trustpanel.store.AutoplayValue
 import org.mozilla.fenix.settings.trustpanel.store.WebsiteInfoState
 import org.mozilla.fenix.settings.trustpanel.store.WebsitePermission
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 private const val DROPDOWN_TEXT_WIDTH_FRACTION = 0.5f
 
@@ -92,7 +92,7 @@ internal fun ProtectionPanel(
                 websiteInfoState = websiteInfoState,
                 icon = icon,
             )
-        },
+        }
     ) {
         TrackingProtectionHeader(
             websiteIsSecured = websiteInfoState.isSecured,
@@ -144,13 +144,14 @@ internal fun ProtectionPanel(
 
         LinkText(
             text = stringResource(id = R.string.protection_panel_privacy_and_security_settings_2),
-            linkTextStates = listOf(
-                LinkTextState(
-                    text = stringResource(id = R.string.protection_panel_privacy_and_security_settings_2),
-                    url = "",
-                    onClick = { onPrivacySecuritySettingsClick() },
+            linkTextStates =
+                listOf(
+                    LinkTextState(
+                        text = stringResource(id = R.string.protection_panel_privacy_and_security_settings_2),
+                        url = "",
+                        onClick = { onPrivacySecuritySettingsClick() },
+                    )
                 ),
-            ),
             linkTextColor = MaterialTheme.colorScheme.tertiary,
             linkTextDecoration = TextDecoration.Underline,
         )
@@ -168,8 +169,7 @@ private fun TrackingProtectionHeader(
 ) {
     ProtectionPanelBanner(
         isSecured = websiteIsSecured || isLocalPdf,
-        isTrackingProtectionEnabled = isGlobalTrackingProtectionEnabled &&
-            (isTrackingProtectionEnabled || isLocalPdf),
+        isTrackingProtectionEnabled = isGlobalTrackingProtectionEnabled && (isTrackingProtectionEnabled || isLocalPdf),
         numberOfTrackersBlocked = numberOfTrackersBlocked,
         onClick = onTrackerBlockedMenuClick.takeIf { numberOfTrackersBlocked > 0 },
     )
@@ -189,9 +189,7 @@ private fun TrackingProtectionMenuGroup(
                 isGlobalTrackingProtectionEnabled = isGlobalTrackingProtectionEnabled,
                 onTrackingProtectionToggleClick = onTrackingProtectionToggleClick,
             )
-            TrackersBlockedMenuItem(
-                isSiteProtectionEnabled = isSiteProtectionEnabled,
-            )
+            TrackersBlockedMenuItem(isSiteProtectionEnabled = isSiteProtectionEnabled)
         }
     }
 }
@@ -202,16 +200,18 @@ private fun TrackingProtectionToggleItem(
     isGlobalTrackingProtectionEnabled: Boolean,
     onTrackingProtectionToggleClick: () -> Unit,
 ) {
-    val description = if (isSiteProtectionEnabled) {
-        stringResource(id = R.string.protection_panel_etp_toggle_enabled_description_2)
-    } else {
-        stringResource(id = R.string.protection_panel_etp_toggle_disabled_description_2)
-    }
-    val badgeText = if (isSiteProtectionEnabled) {
-        stringResource(id = R.string.protection_panel_etp_toggle_on)
-    } else {
-        stringResource(id = R.string.protection_panel_etp_toggle_off)
-    }
+    val description =
+        if (isSiteProtectionEnabled) {
+            stringResource(id = R.string.protection_panel_etp_toggle_enabled_description_2)
+        } else {
+            stringResource(id = R.string.protection_panel_etp_toggle_disabled_description_2)
+        }
+    val badgeText =
+        if (isSiteProtectionEnabled) {
+            stringResource(id = R.string.protection_panel_etp_toggle_on)
+        } else {
+            stringResource(id = R.string.protection_panel_etp_toggle_off)
+        }
 
     MenuBadgeItem(
         label = stringResource(id = R.string.protection_panel_etp_toggle_label),
@@ -224,9 +224,7 @@ private fun TrackingProtectionToggleItem(
 }
 
 @Composable
-private fun TrackersBlockedMenuItem(
-    isSiteProtectionEnabled: Boolean,
-) {
+private fun TrackersBlockedMenuItem(isSiteProtectionEnabled: Boolean) {
     if (!isSiteProtectionEnabled) {
         MenuItem(
             label = stringResource(id = R.string.protection_panel_etp_disabled_no_trackers_blocked),
@@ -253,18 +251,20 @@ private fun ConnectionSecurityMenuGroup(
             MenuItem(
                 label = stringResource(id = R.string.connection_security_panel_secure),
                 beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_lock_24),
-                description = stringResource(
-                    id = R.string.connection_security_panel_verified_by,
-                    CertificateUtils.issuerOrganization(websiteInfoState.certificate) ?: "",
-                ),
+                description =
+                    stringResource(
+                        id = R.string.connection_security_panel_verified_by,
+                        CertificateUtils.issuerOrganization(websiteInfoState.certificate) ?: "",
+                    ),
                 onClick = onViewCertificateClick,
             )
             websiteInfoState.qwac?.let {
                 MenuTextItem(
-                    label = stringResource(
-                        id = R.string.connection_security_panel_issued_to,
-                        CertificateUtils.subjectOrganization(it) ?: "",
-                    ),
+                    label =
+                        stringResource(
+                            id = R.string.connection_security_panel_issued_to,
+                            CertificateUtils.subjectOrganization(it) ?: "",
+                        ),
                     description = stringResource(id = R.string.connection_security_panel_qualified_certificate),
                     onClick = onViewQWACClick,
                 )
@@ -305,11 +305,7 @@ private fun WebsitePermissionsMenuGroup(
     onToggleablePermissionClick: (WebsitePermission.Toggleable) -> Unit,
 ) {
     Column {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-        ) {
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
             Text(
                 text = stringResource(id = R.string.protection_panel_permissions_title),
                 color = MaterialTheme.colorScheme.onSurface,
@@ -319,45 +315,48 @@ private fun WebsitePermissionsMenuGroup(
 
         MenuGroup {
             websitePermissions.forEachIndexed { index, websitePermission ->
-                val stateDescription: String = when (websitePermission) {
-                    is WebsitePermission.Autoplay -> {
-                        AutoplayValue.entries.find { it == websitePermission.autoplayValue }?.title?.let {
-                            stringResource(
-                                it,
-                            )
-                        } ?: ""
-                    }
+                val stateDescription: String =
+                    when (websitePermission) {
+                        is WebsitePermission.Autoplay -> {
+                            AutoplayValue.entries
+                                .find { it == websitePermission.autoplayValue }
+                                ?.title
+                                ?.let {
+                                    stringResource(it)
+                                } ?: ""
+                        }
 
-                    is WebsitePermission.Toggleable -> {
-                         if (websitePermission.isBlockedByAndroid) {
-                            stringResource(id = R.string.phone_feature_blocked_by_android)
-                        } else if (websitePermission.isEnabled) {
-                            stringResource(id = R.string.preference_option_phone_feature_allowed)
-                        } else {
-                            stringResource(id = R.string.preference_option_phone_feature_blocked)
+                        is WebsitePermission.Toggleable -> {
+                            if (websitePermission.isBlockedByAndroid) {
+                                stringResource(id = R.string.phone_feature_blocked_by_android)
+                            } else if (websitePermission.isEnabled) {
+                                stringResource(id = R.string.preference_option_phone_feature_allowed)
+                            } else {
+                                stringResource(id = R.string.preference_option_phone_feature_blocked)
+                            }
                         }
                     }
-                }
 
                 MenuItem(
                     label = stringResource(id = websitePermission.deviceFeature.getLabelId()),
                     beforeIconPainter = painterResource(id = websitePermission.deviceFeature.getIconId()),
                     stateDescription = stateDescription,
-                    afterContent = when (websitePermission) {
-                        is WebsitePermission.Autoplay -> {
-                            { AutoplayDropdownMenu(websitePermission, onAutoplayValueClick) }
-                        }
-
-                        is WebsitePermission.Toggleable -> {
-                            {
-                                WebsitePermissionToggle(
-                                    websitePermission,
-                                    stateDescription,
-                                    onToggleablePermissionClick,
-                                )
+                    afterContent =
+                        when (websitePermission) {
+                            is WebsitePermission.Autoplay -> {
+                                { AutoplayDropdownMenu(websitePermission, onAutoplayValueClick) }
                             }
-                        }
-                    },
+
+                            is WebsitePermission.Toggleable -> {
+                                {
+                                    WebsitePermissionToggle(
+                                        websitePermission,
+                                        stateDescription,
+                                        onToggleablePermissionClick,
+                                    )
+                                }
+                            }
+                        },
                 )
             }
         }
@@ -371,9 +370,8 @@ private fun WebsitePermissionToggle(
     onToggleablePermissionClick: (WebsitePermission.Toggleable) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .clickable { onToggleablePermissionClick(websitePermission) }
-            .semantics { role = Role.Switch },
+        modifier =
+            Modifier.clickable { onToggleablePermissionClick(websitePermission) }.semantics { role = Role.Switch }
     ) {
         Text(
             text = toggleLabel,
@@ -395,24 +393,19 @@ private fun AutoplayDropdownMenu(
     var expanded by remember { mutableStateOf(false) }
     var contextMenuWidthDp by remember { mutableStateOf(0.dp) }
 
-    val dropdownItems = AutoplayValue.entries.map { autoplayValueEntry ->
-        CheckableItem(
-            text = Text.String(stringResource(id = autoplayValueEntry.title)),
-            isChecked = autoplayValueEntry == websitePermission.autoplayValue,
-            onClick = { onAutoplayValueClick(autoplayValueEntry) },
-        )
-    }
+    val dropdownItems =
+        AutoplayValue.entries.map { autoplayValueEntry ->
+            CheckableItem(
+                text = Text.String(stringResource(id = autoplayValueEntry.title)),
+                isChecked = autoplayValueEntry == websitePermission.autoplayValue,
+                onClick = { onAutoplayValueClick(autoplayValueEntry) },
+            )
+        }
 
-    Column(
-        modifier = Modifier
-            .clickable { expanded = true }
-            .semantics { role = Role.DropdownList },
-    ) {
+    Column(modifier = Modifier.clickable { expanded = true }.semantics { role = Role.DropdownList }) {
         val placeholderText = dropdownItems.find { it.isChecked }?.text?.value ?: ""
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = placeholderText,
                 modifier = Modifier.fillMaxWidth(DROPDOWN_TEXT_WIDTH_FRACTION),
@@ -435,11 +428,12 @@ private fun AutoplayDropdownMenu(
                     DropdownMenu(
                         expanded = true,
                         menuItems = dropdownItems,
-                        modifier = Modifier
-                            .onGloballyPositioned { coordinates ->
-                                contextMenuWidthDp = with(density) {
-                                    coordinates.size.width.toDp()
-                                }
+                        modifier =
+                            Modifier.onGloballyPositioned { coordinates ->
+                                contextMenuWidthDp =
+                                    with(density) {
+                                        coordinates.size.width.toDp()
+                                    }
                             },
                         onDismissRequest = { expanded = false },
                     )
@@ -452,17 +446,18 @@ private fun AutoplayDropdownMenu(
 @PreviewLightDark
 @Composable
 private fun ProtectionPanelPreview(
-    @PreviewParameter(ProtectionPanelBannerPreviewProvider::class) state: ProtectionPanelBannerPreviewState,
+    @PreviewParameter(ProtectionPanelBannerPreviewProvider::class) state: ProtectionPanelBannerPreviewState
 ) {
     FirefoxTheme {
         Surface {
             ProtectionPanel(
-                websiteInfoState = WebsiteInfoState(
-                    isSecured = state.isSecured,
-                    websiteUrl = "https://www.mozilla.org",
-                    websiteTitle = "Mozilla",
-                    certificate = null,
-                ),
+                websiteInfoState =
+                    WebsiteInfoState(
+                        isSecured = state.isSecured,
+                        websiteUrl = "https://www.mozilla.org",
+                        websiteTitle = "Mozilla",
+                        certificate = null,
+                    ),
                 ipProtectionMenuState = IPProtectionMenuState(),
                 icon = null,
                 isTrackingProtectionEnabled = state.isTrackingProtectionEnabled,
@@ -471,13 +466,14 @@ private fun ProtectionPanelPreview(
                 isPrivate = false,
                 showIPProtection = true,
                 numberOfTrackersBlocked = 5,
-                websitePermissions = listOf(
-                    WebsitePermission.Autoplay(
-                        AutoplayValue.AUTOPLAY_BLOCK_AUDIBLE,
-                        true,
-                        PhoneFeature.AUTOPLAY,
+                websitePermissions =
+                    listOf(
+                        WebsitePermission.Autoplay(
+                            AutoplayValue.AUTOPLAY_BLOCK_AUDIBLE,
+                            true,
+                            PhoneFeature.AUTOPLAY,
+                        )
                     ),
-                ),
                 onTrackerBlockedMenuClick = {},
                 onTrackingProtectionToggleClick = {},
                 onClearSiteDataMenuClick = {},

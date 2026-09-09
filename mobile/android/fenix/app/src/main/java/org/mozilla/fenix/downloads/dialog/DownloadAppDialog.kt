@@ -40,16 +40,13 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
- * Creates and configures an [AlertDialog] for allowing the user to choose a third-party
- * application to handle a download.
+ * Creates and configures an [AlertDialog] for allowing the user to choose a third-party application to handle a
+ * download.
  *
  * @param context The [Context] in which the dialog should be shown.
- * @param downloaderApps A list of [DownloaderApp] objects representing the available
- * applications to choose from.
- * @param onAppSelected A lambda function that will be invoked when the user selects an
- * application.
- * @param onDismiss A lambda function that will be invoked when the dialog is dismissed
- * for any reason.
+ * @param downloaderApps A list of [DownloaderApp] objects representing the available applications to choose from.
+ * @param onAppSelected A lambda function that will be invoked when the user selects an application.
+ * @param onDismiss A lambda function that will be invoked when the dialog is dismissed for any reason.
  * @return The created [AlertDialog] instance, ready to be shown via `dialog.show()`.
  */
 internal fun createDownloadAppDialog(
@@ -60,27 +57,29 @@ internal fun createDownloadAppDialog(
 ): AlertDialog {
     lateinit var dialog: AlertDialog
 
-    val composeView = ComposeView(context).apply {
-        setContent {
-            FirefoxTheme {
-                DownloaderAppList(
-                    apps = downloaderApps,
-                    onAppSelected = { selectedApp ->
-                        onAppSelected(selectedApp)
-                        dialog.dismiss()
-                    },
-                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
-                )
+    val composeView =
+        ComposeView(context).apply {
+            setContent {
+                FirefoxTheme {
+                    DownloaderAppList(
+                        apps = downloaderApps,
+                        onAppSelected = { selectedApp ->
+                            onAppSelected(selectedApp)
+                            dialog.dismiss()
+                        },
+                        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+                    )
+                }
             }
         }
-    }
 
-    val builder = MaterialAlertDialogBuilder(context)
-        .setTitle(context.getString(R.string.download_app_dialog_title))
-        .setView(composeView)
-        .setOnDismissListener {
-            onDismiss.invoke()
-        }
+    val builder =
+        MaterialAlertDialogBuilder(context)
+            .setTitle(context.getString(R.string.download_app_dialog_title))
+            .setView(composeView)
+            .setOnDismissListener {
+                onDismiss.invoke()
+            }
 
     dialog = builder.create()
     return dialog
@@ -95,8 +94,7 @@ private fun DownloaderAppList(
     LazyColumn(modifier = modifier) {
         items(apps) { app ->
             DownloaderAppItem(
-                iconBitmap = app.resolver.loadIcon(LocalContext.current.packageManager).toBitmap()
-                    .asImageBitmap(),
+                iconBitmap = app.resolver.loadIcon(LocalContext.current.packageManager).toBitmap().asImageBitmap(),
                 appName = app.name,
                 onAppSelected = { onAppSelected(app) },
             )
@@ -112,10 +110,7 @@ private fun DownloaderAppItem(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
-            .clickable { onAppSelected() },
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp).clickable { onAppSelected() },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Image(
@@ -138,12 +133,13 @@ private fun DownloaderAppItem(
 @FlexibleWindowLightDarkPreview
 @Composable
 private fun DownloaderAppItemPreview() {
-    val placeholderBitmap = ImageBitmap(width = 40, height = 40).also {
-        // Draw a 40x40 square for the placeholder bitmap.
-        val canvas = Canvas(it)
-        val paint = Paint().apply { color = Color.White }
-        canvas.drawRect(0f, 0f, 40f, 40f, paint)
-    }
+    val placeholderBitmap =
+        ImageBitmap(width = 40, height = 40).also {
+            // Draw a 40x40 square for the placeholder bitmap.
+            val canvas = Canvas(it)
+            val paint = Paint().apply { color = Color.White }
+            canvas.drawRect(0f, 0f, 40f, 40f, paint)
+        }
 
     FirefoxTheme {
         AlertDialog(

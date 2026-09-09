@@ -5,11 +5,11 @@
 package mozilla.components.concept.engine.translate
 
 /**
-* The representation of the translation state.
-*
-* @property fromLanguage The language the page is translated from originally.
-* @property toLanguage The language the page is translated to that the user knows.
-*/
+ * The representation of the translation state.
+ *
+ * @property fromLanguage The language the page is translated from originally.
+ * @property toLanguage The language the page is translated to that the user knows.
+ */
 data class TranslationPair(
     val fromLanguage: String? = null,
     val toLanguage: String? = null,

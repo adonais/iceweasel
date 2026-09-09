@@ -18,16 +18,17 @@ import org.junit.Test
 class OAuthAccountRelayClientTest {
 
     @Test
-    fun `GIVEN account with relay client using any client ID WHEN relayClient is called THEN returns the client`() = runTest {
-        val relayClient = createAttachedClient(clientId = ServiceClientId.Production.id)
-        val otherClient = createAttachedClient(clientId = "other-client-id")
-        val account: OAuthAccount = mock()
-        whenever(account.getAttachedClient()).thenReturn(listOf(otherClient, relayClient))
+    fun `GIVEN account with relay client using any client ID WHEN relayClient is called THEN returns the client`() =
+        runTest {
+            val relayClient = createAttachedClient(clientId = ServiceClientId.Production.id)
+            val otherClient = createAttachedClient(clientId = "other-client-id")
+            val account: OAuthAccount = mock()
+            whenever(account.getAttachedClient()).thenReturn(listOf(otherClient, relayClient))
 
-        val result = account.relayClient()
+            val result = account.relayClient()
 
-        assertEquals(relayClient, result)
-    }
+            assertEquals(relayClient, result)
+        }
 
     @Test
     fun `GIVEN account with no relay client WHEN relayClient is called THEN returns null`() = runTest {
@@ -73,14 +74,15 @@ class OAuthAccountRelayClientTest {
         createdTime: Long? = 1234567890L,
         lastAccessTime: Long? = 1234567890L,
         scope: List<String>? = null,
-    ) = AttachedClient(
-        clientId = clientId,
-        deviceId = deviceId,
-        deviceType = deviceType,
-        isCurrentSession = isCurrentSession,
-        name = name,
-        createdTime = createdTime,
-        lastAccessTime = lastAccessTime,
-        scope = scope,
-    )
+    ) =
+        AttachedClient(
+            clientId = clientId,
+            deviceId = deviceId,
+            deviceType = deviceType,
+            isCurrentSession = isCurrentSession,
+            name = name,
+            createdTime = createdTime,
+            lastAccessTime = lastAccessTime,
+            scope = scope,
+        )
 }

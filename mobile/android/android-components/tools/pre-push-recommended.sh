@@ -15,6 +15,6 @@
 # output of `./gradlew tasks`.
 
 ./gradlew -q \
-        ktlint \
+        ktfmtCheck \
         detekt \
         testToolsDir

@@ -14,9 +14,7 @@ import androidx.core.graphics.BlendModeColorFilterCompat.createBlendModeColorFil
 import androidx.core.graphics.BlendModeCompat.SRC_IN
 import androidx.core.view.forEach
 
-/**
- * Adjust the colors of the [Toolbar] on the top of the screen.
- */
+/** Adjust the colors of the [Toolbar] on the top of the screen. */
 fun Toolbar.setToolbarColors(
     @ColorInt foreground: Int,
     @ColorInt background: Int,

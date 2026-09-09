@@ -13,6 +13,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.runBlocking
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.SearchState
@@ -57,7 +58,6 @@ import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class FenixApplicationTest {
@@ -69,15 +69,19 @@ class FenixApplicationTest {
     private lateinit var mozillaProductDetector: MozillaProductDetector
     private lateinit var browserStore: BrowserStore
 
-    private val testDistributionProviderChecker = object : DistributionProviderChecker {
-        override suspend fun queryProvider(): String? = null
-    }
+    private val testDistributionProviderChecker =
+        object : DistributionProviderChecker {
+            override suspend fun queryProvider(): String? = null
+        }
 
-    private val testDistributionSettings = object : DistributionSettings {
-        override fun getDistributionId(): String = ""
-        override fun saveDistributionId(id: String) = Unit
-        override fun setMarketingTelemetryPreferences() = Unit
-    }
+    private val testDistributionSettings =
+        object : DistributionSettings {
+            override fun getDistributionId(): String = ""
+
+            override fun saveDistributionId(id: String) = Unit
+
+            override fun setMarketingTelemetryPreferences() = Unit
+        }
 
     @Before
     fun setUp() {
@@ -90,13 +94,14 @@ class FenixApplicationTest {
         every { testContext.components.nimbus } returns mockk(relaxed = true)
         every { testContext.components.aiControlsFeatureBlock } returns AIFeatureBlock.inMemory()
         every { testContext.components.aiFeatureRegistry } returns AIFeatureRegistry.inMemory()
-        every { testContext.components.distributionIdManager } returns DistributionIdManager(
-            packageManager = testContext.packageManagerWrapper,
-            browserStoreProvider = DefaultDistributionBrowserStoreProvider(browserStore),
-            distributionProviderChecker = testDistributionProviderChecker,
-            distributionSettings = testDistributionSettings,
-            metricController = FakeMetricController(),
-        )
+        every { testContext.components.distributionIdManager } returns
+            DistributionIdManager(
+                packageManager = testContext.packageManagerWrapper,
+                browserStoreProvider = DefaultDistributionBrowserStoreProvider(browserStore),
+                distributionProviderChecker = testDistributionProviderChecker,
+                distributionSettings = testDistributionSettings,
+                metricController = FakeMetricController(),
+            )
     }
 
     @Test
@@ -285,11 +290,12 @@ class FenixApplicationTest {
     @Config(sdk = [28])
     fun `GIVEN the current etp mode is custom WHEN tracking the etp metric THEN track also the cookies option on SDK 28`() =
         runBlocking {
-            val settings: Settings = mockk(relaxed = true) {
-                every { shouldUseTrackingProtection } returns true
-                every { useCustomTrackingProtection } returns true
-                every { blockCookiesSelectionInCustomTrackingProtection } returns "Test"
-            }
+            val settings: Settings =
+                mockk(relaxed = true) {
+                    every { shouldUseTrackingProtection } returns true
+                    every { useCustomTrackingProtection } returns true
+                    every { blockCookiesSelectionInCustomTrackingProtection } returns "Test"
+                }
 
             application.setStartupMetrics(
                 browserStore = browserStore,
@@ -303,11 +309,12 @@ class FenixApplicationTest {
     @Test
     fun `GIVEN the current etp mode is custom WHEN tracking the etp metric THEN track also the cookies option`() =
         runBlocking {
-            val settings: Settings = mockk(relaxed = true) {
-                every { shouldUseTrackingProtection } returns true
-                every { useCustomTrackingProtection } returns true
-                every { blockCookiesSelectionInCustomTrackingProtection } returns "Test"
-            }
+            val settings: Settings =
+                mockk(relaxed = true) {
+                    every { shouldUseTrackingProtection } returns true
+                    every { useCustomTrackingProtection } returns true
+                    every { blockCookiesSelectionInCustomTrackingProtection } returns "Test"
+                }
 
             val packageManager: PackageManager = testContext.packageManager
             shadowOf(packageManager)
@@ -324,13 +331,7 @@ class FenixApplicationTest {
 
     @Test
     fun `WHEN the search configuration is updated in remote settings THEN set a new search configuration being available`() {
-        val browserStore = BrowserStore(
-            BrowserState(
-                search = SearchState(
-                    isNewSearchConfigurationAvailable = false,
-                ),
-            ),
-        )
+        val browserStore = BrowserStore(BrowserState(search = SearchState(isNewSearchConfigurationAvailable = false)))
 
         application.setupRefreshingSearchEngines(listOf("search-config-v2"), browserStore)
 
@@ -339,13 +340,7 @@ class FenixApplicationTest {
 
     @Test
     fun `WHEN the search configuration overrides are updated in remote settings THEN set a new search configuration being available`() {
-        val browserStore = BrowserStore(
-            BrowserState(
-                search = SearchState(
-                    isNewSearchConfigurationAvailable = false,
-                ),
-            ),
-        )
+        val browserStore = BrowserStore(BrowserState(search = SearchState(isNewSearchConfigurationAvailable = false)))
 
         application.setupRefreshingSearchEngines(listOf("search-config-overrides-v2"), browserStore)
 
@@ -354,13 +349,7 @@ class FenixApplicationTest {
 
     @Test
     fun `WHEN the search engine icons are updated in remote settings THEN set a new search configuration being available`() {
-        val browserStore = BrowserStore(
-            BrowserState(
-                search = SearchState(
-                    isNewSearchConfigurationAvailable = false,
-                ),
-            ),
-        )
+        val browserStore = BrowserStore(BrowserState(search = SearchState(isNewSearchConfigurationAvailable = false)))
 
         application.setupRefreshingSearchEngines(listOf("search-config-icons"), browserStore)
 

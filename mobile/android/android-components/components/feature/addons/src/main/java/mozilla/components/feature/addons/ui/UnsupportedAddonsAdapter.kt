@@ -21,8 +21,8 @@ import mozilla.components.feature.addons.R
  * An adapter for displaying unsupported add-on items.
  *
  * @property addonManager Manager of installed and recommended [Addon]s and manages their states.
- * @property unsupportedAddonsAdapterDelegate Delegate that will provides callbacks for handling
- * any interactions with the unsupported add-ons to the app to handle.
+ * @property unsupportedAddonsAdapterDelegate Delegate that will provides callbacks for handling any interactions with
+ *   the unsupported add-ons to the app to handle.
  * @property unsupportedAddons The list of unsupported add-ons based on the AMO store.
  */
 @SuppressLint("NotifyDataSetChanged")
@@ -33,8 +33,7 @@ class UnsupportedAddonsAdapter(
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private val unsupportedAddons = addons.toMutableList()
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal var pendingUninstall = false
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal var pendingUninstall = false
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         holder as UnsupportedAddonViewHolder
@@ -100,9 +99,7 @@ class UnsupportedAddonsAdapter(
         return UnsupportedAddonViewHolder(view, iconView, titleView, removeButton)
     }
 
-    /**
-     * A view holder for displaying unsupported add-on items.
-     */
+    /** A view holder for displaying unsupported add-on items. */
     class UnsupportedAddonViewHolder(
         view: View,
         val iconView: ImageView,

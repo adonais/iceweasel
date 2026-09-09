@@ -18,6 +18,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat.getColor
 import androidx.core.view.forEach
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
 import kotlinx.coroutines.test.StandardTestDispatcher
 import mozilla.components.browser.menu.BrowserMenu
 import mozilla.components.browser.menu.BrowserMenuBuilder
@@ -61,7 +62,6 @@ import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.robolectric.annotation.Config
-import kotlin.test.assertIs
 
 @RunWith(AndroidJUnit4::class)
 class CustomTabsToolbarFeatureTest {
@@ -78,10 +78,11 @@ class CustomTabsToolbarFeatureTest {
         whenever(display.colors).thenReturn(colors)
         whenever(colors.menu).thenReturn(0)
 
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val feature = spy(CustomTabsToolbarFeature(store, toolbar, sessionId = null, useCases = useCases) {})
 
         feature.start()
@@ -94,16 +95,13 @@ class CustomTabsToolbarFeatureTest {
     fun `start calls initialize with the sessionId`() {
         val tab = createCustomTab("https://www.mozilla.org", id = "mozilla")
 
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = BrowserToolbar(testContext)
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val feature = spy(CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases) {})
 
         feature.start()
@@ -123,16 +121,13 @@ class CustomTabsToolbarFeatureTest {
     fun `initialize updates toolbar`() {
         val tab = createCustomTab("https://www.mozilla.org", id = "mozilla")
 
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = BrowserToolbar(testContext)
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val feature = CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases) {}
 
         feature.init(tab.config)
@@ -144,33 +139,35 @@ class CustomTabsToolbarFeatureTest {
     @Test
     @Config(sdk = [28])
     fun `initialize updates toolbar, window and text color on SDK 28`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                colorSchemes = ColorSchemes(
-                    defaultColorSchemeParams = ColorSchemeParams(
-                        toolbarColor = Color.RED,
-                        navigationBarColor = Color.BLUE,
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config =
+                    CustomTabConfig(
+                        colorSchemes =
+                            ColorSchemes(
+                                defaultColorSchemeParams =
+                                    ColorSchemeParams(
+                                        toolbarColor = Color.RED,
+                                        navigationBarColor = Color.BLUE,
+                                    )
+                            )
                     ),
-                ),
-            ),
-        )
+            )
 
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val window: Window = mock()
         `when`(window.decorView).thenReturn(mock())
         `when`(window.context).thenReturn(testContext)
-        val feature = CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases, window = window) {}
+        val feature =
+            CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases, window = window) {}
 
         feature.init(tab.config)
 
@@ -186,35 +183,37 @@ class CustomTabsToolbarFeatureTest {
     @Suppress("DEPRECATION")
     @Test
     fun `initialize updates toolbar, window and text color on SDK lower than 35`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                colorSchemes = ColorSchemes(
-                    defaultColorSchemeParams = ColorSchemeParams(
-                        toolbarColor = Color.RED,
-                        navigationBarColor = Color.BLUE,
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config =
+                    CustomTabConfig(
+                        colorSchemes =
+                            ColorSchemes(
+                                defaultColorSchemeParams =
+                                    ColorSchemeParams(
+                                        toolbarColor = Color.RED,
+                                        navigationBarColor = Color.BLUE,
+                                    )
+                            )
                     ),
-                ),
-            ),
-        )
+            )
 
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val window: Window = mock()
         `when`(window.decorView).thenReturn(mock())
         `when`(window.context).thenReturn(testContext)
         `when`(window.insetsController).thenReturn(mock())
 
-        val feature = CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases, window = window) {}
+        val feature =
+            CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases, window = window) {}
 
         feature.init(tab.config)
 
@@ -229,29 +228,30 @@ class CustomTabsToolbarFeatureTest {
     @Suppress("DEPRECATION")
     @Test
     fun `initialize updates toolbar, window and text color on SDK 35`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                colorSchemes = ColorSchemes(
-                    defaultColorSchemeParams = ColorSchemeParams(
-                        toolbarColor = Color.RED,
-                        navigationBarColor = Color.BLUE,
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config =
+                    CustomTabConfig(
+                        colorSchemes =
+                            ColorSchemes(
+                                defaultColorSchemeParams =
+                                    ColorSchemeParams(
+                                        toolbarColor = Color.RED,
+                                        navigationBarColor = Color.BLUE,
+                                    )
+                            )
                     ),
-                ),
-            ),
-        )
+            )
 
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val window: Window = mock()
         val decorView: View = mock()
         `when`(decorView.findViewById<View>(anyInt())).thenReturn(mock())
@@ -259,7 +259,15 @@ class CustomTabsToolbarFeatureTest {
         `when`(window.context).thenReturn(testContext)
         `when`(window.insetsController).thenReturn(mock())
 
-        val feature = CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases, window = window, mainDispatcher = testDispatcher) {}
+        val feature =
+            CustomTabsToolbarFeature(
+                store,
+                toolbar,
+                sessionId = "mozilla",
+                useCases = useCases,
+                window = window,
+                mainDispatcher = testDispatcher,
+            ) {}
 
         feature.init(tab.config)
 
@@ -276,26 +284,24 @@ class CustomTabsToolbarFeatureTest {
 
     @Test
     fun `initialize does not update toolbar colors if this functionality is disabled`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                colorSchemes = ColorSchemes(
-                    defaultColorSchemeParams = ColorSchemeParams(toolbarColor = Color.RED),
-                ),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config =
+                    CustomTabConfig(
+                        colorSchemes =
+                            ColorSchemes(defaultColorSchemeParams = ColorSchemeParams(toolbarColor = Color.RED))
+                    ),
+            )
 
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val window: Window = mock()
         val decorView: View = mock()
         `when`(decorView.findViewById<View>(anyInt())).thenReturn(mock())
@@ -305,16 +311,15 @@ class CustomTabsToolbarFeatureTest {
         val initialDisplayToolbarColors = toolbar.display.colors
 
         run {
-            val feature = CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                window = window,
-                customTabsColorsConfig = CustomTabsColorsConfig(
-                    updateToolbarsColor = false,
-                ),
-            ) {}
+            val feature =
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    window = window,
+                    customTabsColorsConfig = CustomTabsColorsConfig(updateToolbarsColor = false),
+                ) {}
 
             feature.init(tab.config)
 
@@ -323,16 +328,15 @@ class CustomTabsToolbarFeatureTest {
         }
 
         run {
-            val feature = CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                window = window,
-                customTabsColorsConfig = CustomTabsColorsConfig(
-                    updateToolbarsColor = true,
-                ),
-            ) {}
+            val feature =
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    window = window,
+                    customTabsColorsConfig = CustomTabsColorsConfig(updateToolbarsColor = true),
+                ) {}
 
             feature.init(tab.config)
 
@@ -345,41 +349,38 @@ class CustomTabsToolbarFeatureTest {
     @Suppress("DEPRECATION")
     @Test
     fun `GIVEN changing the status bar color is enabled WHEN customizing the UI for a custom tab on SDK lower than 35 THEN change the status bar color`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                colorSchemes = ColorSchemes(
-                    defaultColorSchemeParams = ColorSchemeParams(toolbarColor = Color.GREEN),
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config =
+                    CustomTabConfig(
+                        colorSchemes =
+                            ColorSchemes(defaultColorSchemeParams = ColorSchemeParams(toolbarColor = Color.GREEN))
+                    ),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = BrowserToolbar(testContext)
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val window: Window = mock()
         `when`(window.decorView).thenReturn(mock())
         `when`(window.context).thenReturn(testContext)
         `when`(window.insetsController).thenReturn(mock())
 
         run {
-            val feature = CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                window = window,
-                customTabsColorsConfig = CustomTabsColorsConfig(
-                    updateStatusBarColor = true,
-                ),
-            ) {}
+            val feature =
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    window = window,
+                    customTabsColorsConfig = CustomTabsColorsConfig(updateStatusBarColor = true),
+                ) {}
 
             feature.init(tab.config)
 
@@ -390,25 +391,23 @@ class CustomTabsToolbarFeatureTest {
     @Suppress("DEPRECATION")
     @Test
     fun `GIVEN changing the status bar color is enabled WHEN customizing the UI for a custom tab on SDK 35 THEN the status bar color is not changed`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                colorSchemes = ColorSchemes(
-                    defaultColorSchemeParams = ColorSchemeParams(toolbarColor = Color.GREEN),
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config =
+                    CustomTabConfig(
+                        colorSchemes =
+                            ColorSchemes(defaultColorSchemeParams = ColorSchemeParams(toolbarColor = Color.GREEN))
+                    ),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = BrowserToolbar(testContext)
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val window: Window = mock()
         val decorView: View = mock()
         `when`(decorView.findViewById<View>(anyInt())).thenReturn(mock())
@@ -417,16 +416,15 @@ class CustomTabsToolbarFeatureTest {
         `when`(window.insetsController).thenReturn(mock())
 
         run {
-            val feature = CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                window = window,
-                customTabsColorsConfig = CustomTabsColorsConfig(
-                    updateStatusBarColor = true,
-                ),
-            ) {}
+            val feature =
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    window = window,
+                    customTabsColorsConfig = CustomTabsColorsConfig(updateStatusBarColor = true),
+                ) {}
 
             feature.init(tab.config)
 
@@ -438,25 +436,23 @@ class CustomTabsToolbarFeatureTest {
     @Suppress("DEPRECATION")
     @Test
     fun `GIVEN changing the status bar color is disabled WHEN customizing the UI for a custom tab THEN don't change the status bar color`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                colorSchemes = ColorSchemes(
-                    defaultColorSchemeParams = ColorSchemeParams(toolbarColor = Color.GREEN),
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config =
+                    CustomTabConfig(
+                        colorSchemes =
+                            ColorSchemes(defaultColorSchemeParams = ColorSchemeParams(toolbarColor = Color.GREEN))
+                    ),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = BrowserToolbar(testContext)
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val window: Window = mock()
         val decorView: View = mock()
         `when`(decorView.findViewById<View>(anyInt())).thenReturn(mock())
@@ -465,16 +461,15 @@ class CustomTabsToolbarFeatureTest {
         `when`(window.insetsController).thenReturn(mock())
 
         run {
-            val feature = CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                window = window,
-                customTabsColorsConfig = CustomTabsColorsConfig(
-                    updateStatusBarColor = false,
-                ),
-            ) {}
+            val feature =
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    window = window,
+                    customTabsColorsConfig = CustomTabsColorsConfig(updateStatusBarColor = false),
+                ) {}
 
             feature.init(tab.config)
 
@@ -486,42 +481,39 @@ class CustomTabsToolbarFeatureTest {
     @Suppress("DEPRECATION")
     @Test
     fun `GIVEN changing the system navigation bar color is enabled WHEN customizing the UI for a custom tab on SDK lower than 35 THEN change the system navigation bar color`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                colorSchemes = ColorSchemes(
-                    defaultColorSchemeParams = ColorSchemeParams(toolbarColor = Color.BLUE),
-                ),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config =
+                    CustomTabConfig(
+                        colorSchemes =
+                            ColorSchemes(defaultColorSchemeParams = ColorSchemeParams(toolbarColor = Color.BLUE))
+                    ),
+            )
 
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = BrowserToolbar(testContext)
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val window: Window = mock()
         `when`(window.decorView).thenReturn(mock())
         `when`(window.context).thenReturn(testContext)
         `when`(window.insetsController).thenReturn(mock())
 
         run {
-            val feature = CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                window = window,
-                customTabsColorsConfig = CustomTabsColorsConfig(
-                    updateSystemNavigationBarColor = true,
-                ),
-            ) {}
+            val feature =
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    window = window,
+                    customTabsColorsConfig = CustomTabsColorsConfig(updateSystemNavigationBarColor = true),
+                ) {}
 
             feature.init(tab.config)
 
@@ -532,26 +524,24 @@ class CustomTabsToolbarFeatureTest {
     @Test
     @Suppress("DEPRECATION")
     fun `GIVEN changing the system navigation bar color is enabled WHEN customizing the UI for a custom tab on SDK 35 THEN change the system navigation bar color is not called`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                colorSchemes = ColorSchemes(
-                    defaultColorSchemeParams = ColorSchemeParams(toolbarColor = Color.BLUE),
-                ),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config =
+                    CustomTabConfig(
+                        colorSchemes =
+                            ColorSchemes(defaultColorSchemeParams = ColorSchemeParams(toolbarColor = Color.BLUE))
+                    ),
+            )
 
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = BrowserToolbar(testContext)
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val window: Window = mock()
         val decorView: View = mock()
         `when`(decorView.findViewById<View>(anyInt())).thenReturn(mock())
@@ -560,16 +550,15 @@ class CustomTabsToolbarFeatureTest {
         `when`(window.insetsController).thenReturn(mock())
 
         run {
-            val feature = CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                window = window,
-                customTabsColorsConfig = CustomTabsColorsConfig(
-                    updateSystemNavigationBarColor = true,
-                ),
-            ) {}
+            val feature =
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    window = window,
+                    customTabsColorsConfig = CustomTabsColorsConfig(updateSystemNavigationBarColor = true),
+                ) {}
 
             feature.init(tab.config)
 
@@ -581,26 +570,24 @@ class CustomTabsToolbarFeatureTest {
     @Suppress("DEPRECATION")
     @Test
     fun `GIVEN changing the system navigation bar color is disabled WHEN customizing the UI for a custom tab THEN don't change the system navigation bar color`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                colorSchemes = ColorSchemes(
-                    defaultColorSchemeParams = ColorSchemeParams(toolbarColor = Color.BLUE),
-                ),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config =
+                    CustomTabConfig(
+                        colorSchemes =
+                            ColorSchemes(defaultColorSchemeParams = ColorSchemeParams(toolbarColor = Color.BLUE))
+                    ),
+            )
 
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = BrowserToolbar(testContext)
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val window: Window = mock()
         val decorView: View = mock()
         `when`(decorView.findViewById<View>(anyInt())).thenReturn(mock())
@@ -609,16 +596,15 @@ class CustomTabsToolbarFeatureTest {
         `when`(window.insetsController).thenReturn(mock())
 
         run {
-            val feature = CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                window = window,
-                customTabsColorsConfig = CustomTabsColorsConfig(
-                    updateSystemNavigationBarColor = false,
-                ),
-            ) {}
+            val feature =
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    window = window,
+                    customTabsColorsConfig = CustomTabsColorsConfig(updateSystemNavigationBarColor = false),
+                ) {}
 
             feature.init(tab.config)
 
@@ -630,16 +616,13 @@ class CustomTabsToolbarFeatureTest {
     fun `adds close button`() {
         val tab = createCustomTab("https://www.mozilla.org", id = "mozilla", config = CustomTabConfig())
 
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val feature = CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases) {}
 
         feature.start()
@@ -650,24 +633,20 @@ class CustomTabsToolbarFeatureTest {
 
     @Test
     fun `doesn't add close button if the button should be hidden`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                showCloseButton = false,
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(showCloseButton = false),
+            )
 
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val feature = CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases) {}
 
         feature.start()
@@ -680,24 +659,29 @@ class CustomTabsToolbarFeatureTest {
     fun `close button invokes callback and removes session`() {
         val middleware = CaptureActionsMiddleware<BrowserState, BrowserAction>()
 
-        val store = BrowserStore(
-            middleware = listOf(middleware),
-            initialState = BrowserState(
-                customTabs = listOf(
-                    createCustomTab("https://www.mozilla.org", id = "mozilla", config = CustomTabConfig()),
-                ),
-            ),
-        )
+        val store =
+            BrowserStore(
+                middleware = listOf(middleware),
+                initialState =
+                    BrowserState(
+                        customTabs =
+                            listOf(
+                                createCustomTab("https://www.mozilla.org", id = "mozilla", config = CustomTabConfig())
+                            )
+                    ),
+            )
 
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         var closeClicked = false
-        val feature = CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases) {
-            closeClicked = true
-        }
+        val feature =
+            CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases) {
+                closeClicked = true
+            }
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -720,24 +704,22 @@ class CustomTabsToolbarFeatureTest {
     @Test
     fun `GIVEN default custom tabs setting THEN refresh button does not appear`() {
         val tab = createCustomTab("https://www.mozilla.org", id = "mozilla", config = CustomTabConfig())
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-            ) {},
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -749,30 +731,24 @@ class CustomTabsToolbarFeatureTest {
     @Test
     fun `GIVEN custom tab setting with refresh listener and flag THEN refresh button does appear`() {
         val tab = createCustomTab("https://www.mozilla.org", id = "mozilla", config = CustomTabConfig())
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                customTabsToolbarListeners = CustomTabsToolbarListeners(
-                    refreshListener = {},
-                ),
-                customTabsToolbarButtonConfig = CustomTabsToolbarButtonConfig(
-                    showRefreshButton = true,
-                ),
-            ) {},
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    customTabsToolbarListeners = CustomTabsToolbarListeners(refreshListener = {}),
+                    customTabsToolbarButtonConfig = CustomTabsToolbarButtonConfig(showRefreshButton = true),
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -783,31 +759,25 @@ class CustomTabsToolbarFeatureTest {
     @Test
     fun `GIVEN custom tabs setting with refresh button listener and flag THEN Refresh button uses custom refresh listener`() {
         val tab = createCustomTab("https://www.mozilla.org", id = "mozilla", config = CustomTabConfig())
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         var clicked = false
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                customTabsToolbarListeners = CustomTabsToolbarListeners(
-                    refreshListener = { clicked = true },
-                ),
-                customTabsToolbarButtonConfig = CustomTabsToolbarButtonConfig(
-                    showRefreshButton = true,
-                ),
-            ) {},
-        )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    customTabsToolbarListeners = CustomTabsToolbarListeners(refreshListener = { clicked = true }),
+                    customTabsToolbarButtonConfig = CustomTabsToolbarButtonConfig(showRefreshButton = true),
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -825,24 +795,22 @@ class CustomTabsToolbarFeatureTest {
     @Test
     fun `GIVEN the default custom tabs toolbar button config and listeners THEN do not add menu button`() {
         val tab = createCustomTab("https://www.mozilla.org", id = "mozilla", config = CustomTabConfig())
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = spy(
-            CustomTabsToolbarFeature(
+        val useCases =
+            CustomTabsUseCases(
                 store = store,
-                toolbar = toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-            ) {},
-        )
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store = store,
+                    toolbar = toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -854,31 +822,25 @@ class CustomTabsToolbarFeatureTest {
     @Test
     fun `GIVEN custom tabs toolbar config to show menu with a menu listener THEN show menu button with custom menu listener`() {
         val tab = createCustomTab("https://www.mozilla.org", id = "mozilla", config = CustomTabConfig())
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        var clicked = false
-        val feature = spy(
-            CustomTabsToolbarFeature(
+        val useCases =
+            CustomTabsUseCases(
                 store = store,
-                toolbar = toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                customTabsToolbarButtonConfig = CustomTabsToolbarButtonConfig(
-                    showMenu = true,
-                ),
-                customTabsToolbarListeners = CustomTabsToolbarListeners(
-                    menuListener = { clicked = true },
-                ),
-            ) {},
-        )
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        var clicked = false
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store = store,
+                    toolbar = toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    customTabsToolbarButtonConfig = CustomTabsToolbarButtonConfig(showMenu = true),
+                    customTabsToolbarListeners = CustomTabsToolbarListeners(menuListener = { clicked = true }),
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -896,16 +858,13 @@ class CustomTabsToolbarFeatureTest {
     @Test
     fun `does not add share button by default`() {
         val tab = createCustomTab("https://www.mozilla.org", id = "mozilla", config = CustomTabConfig())
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val feature = spy(CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases) {})
 
         feature.start()
@@ -917,23 +876,19 @@ class CustomTabsToolbarFeatureTest {
 
     @Test
     fun `adds share button`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                showShareMenuItem = true,
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(showShareMenuItem = true),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val feature = spy(CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases) {})
 
         feature.start()
@@ -945,33 +900,28 @@ class CustomTabsToolbarFeatureTest {
 
     @Test
     fun `share button uses custom share listener`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                showShareMenuItem = true,
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(showShareMenuItem = true),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         var clicked = false
-        val feature = CustomTabsToolbarFeature(
-            store,
-            toolbar,
-            sessionId = "mozilla",
-            useCases = useCases,
-            customTabsToolbarListeners = CustomTabsToolbarListeners(
-                shareListener = { clicked = true },
-            ),
-        ) {}
+        val feature =
+            CustomTabsToolbarFeature(
+                store,
+                toolbar,
+                sessionId = "mozilla",
+                useCases = useCases,
+                customTabsToolbarListeners = CustomTabsToolbarListeners(shareListener = { clicked = true }),
+            ) {}
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -987,16 +937,13 @@ class CustomTabsToolbarFeatureTest {
     @Test
     fun `initialize calls addActionButton`() {
         val tab = createCustomTab("https://www.mozilla.org", id = "mozilla", config = CustomTabConfig())
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val feature = spy(CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases) {})
 
         feature.start()
@@ -1010,27 +957,27 @@ class CustomTabsToolbarFeatureTest {
         val captor = argumentCaptor<Toolbar.ActionButton>()
         val size = 48
         val pendingIntent: PendingIntent = mock()
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                actionButtonConfig = CustomTabActionButtonConfig(
-                    description = "Button",
-                    icon = Bitmap.createBitmap(IntArray(size * size), size, size, Bitmap.Config.ARGB_8888),
-                    pendingIntent = pendingIntent,
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config =
+                    CustomTabConfig(
+                        actionButtonConfig =
+                            CustomTabActionButtonConfig(
+                                description = "Button",
+                                icon = Bitmap.createBitmap(IntArray(size * size), size, size, Bitmap.Config.ARGB_8888),
+                                pendingIntent = pendingIntent,
+                            )
+                    ),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val feature = spy(CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases) {})
 
         feature.start()
@@ -1050,27 +997,33 @@ class CustomTabsToolbarFeatureTest {
         val width = 96
         val height = 48
         val pendingIntent: PendingIntent = mock()
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                actionButtonConfig = CustomTabActionButtonConfig(
-                    description = "Button",
-                    icon = Bitmap.createBitmap(IntArray(width * height), width, height, Bitmap.Config.ARGB_8888),
-                    pendingIntent = pendingIntent,
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config =
+                    CustomTabConfig(
+                        actionButtonConfig =
+                            CustomTabActionButtonConfig(
+                                description = "Button",
+                                icon =
+                                    Bitmap.createBitmap(
+                                        IntArray(width * height),
+                                        width,
+                                        height,
+                                        Bitmap.Config.ARGB_8888,
+                                    ),
+                                pendingIntent = pendingIntent,
+                            )
+                    ),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val feature = spy(CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases) {})
 
         feature.start()
@@ -1090,27 +1043,33 @@ class CustomTabsToolbarFeatureTest {
         val width = 24
         val height = 48
         val pendingIntent: PendingIntent = mock()
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                actionButtonConfig = CustomTabActionButtonConfig(
-                    description = "Button",
-                    icon = Bitmap.createBitmap(IntArray(width * height), width, height, Bitmap.Config.ARGB_8888),
-                    pendingIntent = pendingIntent,
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config =
+                    CustomTabConfig(
+                        actionButtonConfig =
+                            CustomTabActionButtonConfig(
+                                description = "Button",
+                                icon =
+                                    Bitmap.createBitmap(
+                                        IntArray(width * height),
+                                        width,
+                                        height,
+                                        Bitmap.Config.ARGB_8888,
+                                    ),
+                                pendingIntent = pendingIntent,
+                            )
+                    ),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val feature = spy(CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases) {})
 
         feature.start()
@@ -1131,27 +1090,27 @@ class CustomTabsToolbarFeatureTest {
         val captor = argumentCaptor<Toolbar.ActionButton>()
         val intentCaptor = argumentCaptor<Intent>()
 
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                actionButtonConfig = CustomTabActionButtonConfig(
-                    description = "Button",
-                    icon = Bitmap.createBitmap(IntArray(size * size), size, size, Bitmap.Config.ARGB_8888),
-                    pendingIntent = pendingIntent,
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config =
+                    CustomTabConfig(
+                        actionButtonConfig =
+                            CustomTabActionButtonConfig(
+                                description = "Button",
+                                icon = Bitmap.createBitmap(IntArray(size * size), size, size, Bitmap.Config.ARGB_8888),
+                                pendingIntent = pendingIntent,
+                            )
+                    ),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val feature = spy(CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases) {})
 
         feature.start()
@@ -1161,7 +1120,7 @@ class CustomTabsToolbarFeatureTest {
             ContentAction.UpdateUrlAction(
                 "mozilla",
                 "https://github.com/mozilla-mobile/android-components",
-            ),
+            )
         )
 
         verify(feature).addActionButton(anyInt(), any())
@@ -1178,25 +1137,19 @@ class CustomTabsToolbarFeatureTest {
 
     @Test
     fun `initialize calls addMenuItems when config has items`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                menuItems = listOf(
-                    CustomTabMenuItem("Share", mock()),
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(menuItems = listOf(CustomTabMenuItem("Share", mock()))),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         val feature = spy(CustomTabsToolbarFeature(store, toolbar, sessionId = "mozilla", useCases = useCases) {})
 
         feature.start()
@@ -1207,34 +1160,29 @@ class CustomTabsToolbarFeatureTest {
 
     @Test
     fun `initialize calls addMenuItems when menuBuilder has items`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                menuItems = listOf(
-                    CustomTabMenuItem("Share", mock()),
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(menuItems = listOf(CustomTabMenuItem("Share", mock()))),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
-            ) {},
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -1244,34 +1192,29 @@ class CustomTabsToolbarFeatureTest {
 
     @Test
     fun `menu items added WITHOUT current items`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                menuItems = listOf(
-                    CustomTabMenuItem("Share", mock()),
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(menuItems = listOf(CustomTabMenuItem("Share", mock()))),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                menuBuilder = BrowserMenuBuilder(listOf()),
-            ) {},
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    menuBuilder = BrowserMenuBuilder(listOf()),
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -1282,34 +1225,29 @@ class CustomTabsToolbarFeatureTest {
 
     @Test
     fun `menu items added WITH current items`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                menuItems = listOf(
-                    CustomTabMenuItem("Share", mock()),
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(menuItems = listOf(CustomTabMenuItem("Share", mock()))),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
-            ) {},
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -1320,35 +1258,30 @@ class CustomTabsToolbarFeatureTest {
 
     @Test
     fun `menu item added at specified index`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                menuItems = listOf(
-                    CustomTabMenuItem("Share", mock()),
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(menuItems = listOf(CustomTabMenuItem("Share", mock()))),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
-                menuItemIndex = 1,
-            ) {},
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
+                    menuItemIndex = 1,
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -1361,35 +1294,30 @@ class CustomTabsToolbarFeatureTest {
 
     @Test
     fun `menu item added appended if index too large`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                menuItems = listOf(
-                    CustomTabMenuItem("Share", mock()),
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(menuItems = listOf(CustomTabMenuItem("Share", mock()))),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
-                menuItemIndex = 4,
-            ) {},
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
+                    menuItemIndex = 4,
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -1402,35 +1330,30 @@ class CustomTabsToolbarFeatureTest {
 
     @Test
     fun `menu item added appended if index too small`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                menuItems = listOf(
-                    CustomTabMenuItem("Share", mock()),
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(menuItems = listOf(CustomTabMenuItem("Share", mock()))),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
-                menuItemIndex = -4,
-            ) {},
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
+                    menuItemIndex = -4,
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -1445,34 +1368,29 @@ class CustomTabsToolbarFeatureTest {
     fun `menu item uses updated url`() {
         val pendingIntent: PendingIntent = mock()
         val intentCaptor = argumentCaptor<Intent>()
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                menuItems = listOf(
-                    CustomTabMenuItem("Share", pendingIntent),
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(menuItems = listOf(CustomTabMenuItem("Share", pendingIntent))),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                menuBuilder = BrowserMenuBuilder(listOf()),
-            ) {},
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    menuBuilder = BrowserMenuBuilder(listOf()),
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -1481,7 +1399,7 @@ class CustomTabsToolbarFeatureTest {
             ContentAction.UpdateUrlAction(
                 "mozilla",
                 "https://github.com/mozilla-mobile/android-components",
-            ),
+            )
         )
 
         val menuBuilder = toolbar.display.menuBuilder!!
@@ -1503,31 +1421,36 @@ class CustomTabsToolbarFeatureTest {
 
     @Test
     fun `onBackPressed removes initialized session`() {
-        val store = BrowserStore(
-            initialState = BrowserState(
-                customTabs = listOf(
-                    createCustomTab("https://www.mozilla.org", id = "mozilla", config = CustomTabConfig()),
-                ),
-            ),
-        )
+        val store =
+            BrowserStore(
+                initialState =
+                    BrowserState(
+                        customTabs =
+                            listOf(
+                                createCustomTab("https://www.mozilla.org", id = "mozilla", config = CustomTabConfig())
+                            )
+                    )
+            )
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         var closeExecuted = false
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
-                menuItemIndex = 4,
-            ) {
-                closeExecuted = true
-            },
-        )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
+                    menuItemIndex = 4,
+                ) {
+                    closeExecuted = true
+                }
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -1541,29 +1464,27 @@ class CustomTabsToolbarFeatureTest {
     @Test
     fun `onBackPressed without a session does nothing`() {
         val tab = createCustomTab("https://www.mozilla.org", id = "mozilla", config = CustomTabConfig())
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         var closeExecuted = false
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = null,
-                useCases = useCases,
-                menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
-                menuItemIndex = 4,
-            ) {
-                closeExecuted = true
-            },
-        )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = null,
+                    useCases = useCases,
+                    menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
+                    menuItemIndex = 4,
+                ) {
+                    closeExecuted = true
+                }
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -1577,29 +1498,27 @@ class CustomTabsToolbarFeatureTest {
     @Test
     fun `onBackPressed with uninitialized feature returns false`() {
         val tab = createCustomTab("https://www.mozilla.org", id = "mozilla", config = CustomTabConfig())
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
         var closeExecuted = false
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = null,
-                useCases = useCases,
-                menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
-                menuItemIndex = 4,
-            ) {
-                closeExecuted = true
-            },
-        )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = null,
+                    useCases = useCases,
+                    menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
+                    menuItemIndex = 4,
+                ) {
+                    closeExecuted = true
+                }
+            )
 
         val result = feature.onBackPressed()
 
@@ -1609,45 +1528,45 @@ class CustomTabsToolbarFeatureTest {
 
     @Test
     fun `WHEN config toolbar color is dark THEN readableColor is white`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                colorSchemes = ColorSchemes(
-                    defaultColorSchemeParams = ColorSchemeParams(toolbarColor = Color.BLACK),
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config =
+                    CustomTabConfig(
+                        colorSchemes =
+                            ColorSchemes(defaultColorSchemeParams = ColorSchemeParams(toolbarColor = Color.BLACK))
+                    ),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
-                menuItemIndex = 4,
-            ) {},
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
+                    menuItemIndex = 4,
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(feature).updateTheme(
-            tab.config.colorSchemes!!.defaultColorSchemeParams!!.toolbarColor,
-            tab.config.colorSchemes!!.defaultColorSchemeParams!!.toolbarColor,
-            tab.config.colorSchemes!!.defaultColorSchemeParams!!.navigationBarDividerColor,
-            Color.WHITE,
-        )
+        verify(feature)
+            .updateTheme(
+                tab.config.colorSchemes!!.defaultColorSchemeParams!!.toolbarColor,
+                tab.config.colorSchemes!!.defaultColorSchemeParams!!.toolbarColor,
+                tab.config.colorSchemes!!.defaultColorSchemeParams!!.navigationBarDividerColor,
+                Color.WHITE,
+            )
         verify(feature).addCloseButton(Color.WHITE, tab.config.closeButtonIcon)
         verify(feature).addActionButton(Color.WHITE, tab.config.actionButtonConfig)
         assertEquals(Color.WHITE, toolbar.display.colors.text)
@@ -1655,87 +1574,87 @@ class CustomTabsToolbarFeatureTest {
 
     @Test
     fun `WHEN config toolbar color is not dark THEN readableColor is black`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                colorSchemes = ColorSchemes(
-                    defaultColorSchemeParams = ColorSchemeParams(toolbarColor = Color.WHITE),
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config =
+                    CustomTabConfig(
+                        colorSchemes =
+                            ColorSchemes(defaultColorSchemeParams = ColorSchemeParams(toolbarColor = Color.WHITE))
+                    ),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
 
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
-                menuItemIndex = 4,
-            ) {},
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
+                    menuItemIndex = 4,
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(feature).updateTheme(
-            tab.config.colorSchemes!!.defaultColorSchemeParams!!.toolbarColor,
-            tab.config.colorSchemes!!.defaultColorSchemeParams!!.toolbarColor,
-            tab.config.colorSchemes!!.defaultColorSchemeParams!!.navigationBarDividerColor,
-            Color.BLACK,
-        )
+        verify(feature)
+            .updateTheme(
+                tab.config.colorSchemes!!.defaultColorSchemeParams!!.toolbarColor,
+                tab.config.colorSchemes!!.defaultColorSchemeParams!!.toolbarColor,
+                tab.config.colorSchemes!!.defaultColorSchemeParams!!.navigationBarDividerColor,
+                Color.BLACK,
+            )
         verify(feature).addCloseButton(Color.BLACK, tab.config.closeButtonIcon)
         verify(feature).addActionButton(Color.BLACK, tab.config.actionButtonConfig)
     }
 
     @Test
     fun `WHEN config toolbar has no colour set THEN readableColor uses the toolbar display menu colour`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
-                menuItemIndex = 4,
-            ) {},
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
+                    menuItemIndex = 4,
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        verify(feature).updateTheme(
-            tab.config.colorSchemes?.defaultColorSchemeParams?.toolbarColor,
-            tab.config.colorSchemes?.defaultColorSchemeParams?.toolbarColor,
-            tab.config.colorSchemes?.defaultColorSchemeParams?.navigationBarDividerColor,
-            toolbar.display.colors.menu,
-        )
+        verify(feature)
+            .updateTheme(
+                tab.config.colorSchemes?.defaultColorSchemeParams?.toolbarColor,
+                tab.config.colorSchemes?.defaultColorSchemeParams?.toolbarColor,
+                tab.config.colorSchemes?.defaultColorSchemeParams?.navigationBarDividerColor,
+                toolbar.display.colors.menu,
+            )
         verify(feature).addCloseButton(toolbar.display.colors.menu, tab.config.closeButtonIcon)
         verify(feature).addActionButton(toolbar.display.colors.menu, tab.config.actionButtonConfig)
         assertEquals(Color.WHITE, toolbar.display.colors.menu)
@@ -1744,31 +1663,28 @@ class CustomTabsToolbarFeatureTest {
     @Test
     fun `GIVEN the close button has enabled customization WHEN needing to show the close button THEN use the provided icon`() {
         val customCloseIcon: Bitmap = mock()
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                closeButtonIcon = customCloseIcon,
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(closeButtonIcon = customCloseIcon),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = BrowserToolbar(testContext)
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-            ) {},
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -1779,34 +1695,29 @@ class CustomTabsToolbarFeatureTest {
     @Test
     fun `GIVEN the close button has disabled customization WHEN needing to show the close button THEN use the default icon`() {
         val customCloseIcon: Bitmap = mock()
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                closeButtonIcon = customCloseIcon,
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(closeButtonIcon = customCloseIcon),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = BrowserToolbar(testContext)
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                customTabsToolbarButtonConfig = CustomTabsToolbarButtonConfig(
-                    allowCustomizingCloseButton = false,
-                ),
-            ) {},
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    customTabsToolbarButtonConfig = CustomTabsToolbarButtonConfig(allowCustomizingCloseButton = false),
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -1816,32 +1727,31 @@ class CustomTabsToolbarFeatureTest {
 
     @Test
     fun `WHEN tab is private THEN readableColor is the default private color`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(showShareMenuItem = true),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(showShareMenuItem = true),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = spy(
-            CustomTabsToolbarFeature(
+        val useCases =
+            CustomTabsUseCases(
                 store = store,
-                toolbar = toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
-                menuItemIndex = 4,
-                customTabsColorsConfig = getPrivateCustomTabColorsConfig(),
-            ) {},
-        )
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store = store,
+                    toolbar = toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
+                    menuItemIndex = 4,
+                    customTabsColorsConfig = getPrivateCustomTabColorsConfig(),
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -1855,31 +1765,30 @@ class CustomTabsToolbarFeatureTest {
 
     @Test
     fun `show title only if not empty`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(),
-            title = "",
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(),
+                title = "",
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = CustomTabsToolbarFeature(
-            store,
-            toolbar,
-            sessionId = "mozilla",
-            useCases = useCases,
-            menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
-            menuItemIndex = 4,
-            mainDispatcher = testDispatcher,
-        ) {}
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            CustomTabsToolbarFeature(
+                store,
+                toolbar,
+                sessionId = "mozilla",
+                useCases = useCases,
+                menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
+                menuItemIndex = 4,
+                mainDispatcher = testDispatcher,
+            ) {}
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -1890,7 +1799,7 @@ class CustomTabsToolbarFeatureTest {
             ContentAction.UpdateTitleAction(
                 "mozilla",
                 "Internet for people, not profit - Mozilla",
-            ),
+            )
         )
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -1899,42 +1808,39 @@ class CustomTabsToolbarFeatureTest {
 
     @Test
     fun `Will use URL as title if title was shown once and is now empty`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(),
-            title = "",
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(),
+                title = "",
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-                menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
-                menuItemIndex = 4,
-                mainDispatcher = testDispatcher,
-            ) {},
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                    menuBuilder = BrowserMenuBuilder(listOf(mock(), mock())),
+                    menuItemIndex = 4,
+                    mainDispatcher = testDispatcher,
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals("", toolbar.title)
 
-        store.dispatch(
-            ContentAction.UpdateUrlAction("mozilla", "https://www.mozilla.org/en-US/firefox/"),
-        )
+        store.dispatch(ContentAction.UpdateUrlAction("mozilla", "https://www.mozilla.org/en-US/firefox/"))
 
         assertEquals("", toolbar.title)
 
@@ -1942,36 +1848,28 @@ class CustomTabsToolbarFeatureTest {
             ContentAction.UpdateTitleAction(
                 "mozilla",
                 "Firefox - Protect your life online with privacy-first products",
-            ),
+            )
         )
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals("Firefox - Protect your life online with privacy-first products", toolbar.title)
 
-        store.dispatch(
-            ContentAction.UpdateUrlAction("mozilla", "https://github.com/mozilla-mobile/android-components"),
-        )
+        store.dispatch(ContentAction.UpdateUrlAction("mozilla", "https://github.com/mozilla-mobile/android-components"))
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals("https://github.com/mozilla-mobile/android-components", toolbar.title)
 
-        store.dispatch(
-            ContentAction.UpdateTitleAction("mozilla", "Le GitHub"),
-        )
+        store.dispatch(ContentAction.UpdateTitleAction("mozilla", "Le GitHub"))
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals("Le GitHub", toolbar.title)
 
-        store.dispatch(
-            ContentAction.UpdateUrlAction("mozilla", "https://github.com/mozilla-mobile/fenix"),
-        )
+        store.dispatch(ContentAction.UpdateUrlAction("mozilla", "https://github.com/mozilla-mobile/fenix"))
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals("https://github.com/mozilla-mobile/fenix", toolbar.title)
 
-        store.dispatch(
-            ContentAction.UpdateTitleAction("mozilla", ""),
-        )
+        store.dispatch(ContentAction.UpdateTitleAction("mozilla", ""))
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals("https://github.com/mozilla-mobile/fenix", toolbar.title)
@@ -1980,15 +1878,13 @@ class CustomTabsToolbarFeatureTest {
             ContentAction.UpdateTitleAction(
                 "mozilla",
                 "A collection of Android libraries to build browsers or browser-like applications.",
-            ),
+            )
         )
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals("A collection of Android libraries to build browsers or browser-like applications.", toolbar.title)
 
-        store.dispatch(
-            ContentAction.UpdateTitleAction("mozilla", ""),
-        )
+        store.dispatch(ContentAction.UpdateTitleAction("mozilla", ""))
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals("https://github.com/mozilla-mobile/fenix", toolbar.title)
@@ -1996,33 +1892,28 @@ class CustomTabsToolbarFeatureTest {
 
     @Test
     fun `WHEN menuBuilder is not passed in as a parameter THEN feature does not create a menu and add items to it`() {
-        val tab = createCustomTab(
-            "https://www.mozilla.org",
-            id = "mozilla",
-            config = CustomTabConfig(
-                menuItems = listOf(
-                    CustomTabMenuItem("Share", mock()),
-                ),
-            ),
-        )
-        val store = BrowserStore(
-            BrowserState(
-                customTabs = listOf(tab),
-            ),
-        )
+        val tab =
+            createCustomTab(
+                "https://www.mozilla.org",
+                id = "mozilla",
+                config = CustomTabConfig(menuItems = listOf(CustomTabMenuItem("Share", mock()))),
+            )
+        val store = BrowserStore(BrowserState(customTabs = listOf(tab)))
         val toolbar = spy(BrowserToolbar(testContext))
-        val useCases = CustomTabsUseCases(
-            store = store,
-            loadUrlUseCase = SessionUseCases(store).loadUrl,
-        )
-        val feature = spy(
-            CustomTabsToolbarFeature(
-                store,
-                toolbar,
-                sessionId = "mozilla",
-                useCases = useCases,
-            ) {},
-        )
+        val useCases =
+            CustomTabsUseCases(
+                store = store,
+                loadUrlUseCase = SessionUseCases(store).loadUrl,
+            )
+        val feature =
+            spy(
+                CustomTabsToolbarFeature(
+                    store,
+                    toolbar,
+                    sessionId = "mozilla",
+                    useCases = useCases,
+                ) {}
+            )
 
         feature.start()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -2054,9 +1945,10 @@ class CustomTabsToolbarFeatureTest {
         return actionView
     }
 
-    private fun getPrivateCustomTabColorsConfig() = CustomTabsColorsConfig(
-        updateToolbarsColor = false,
-        updateStatusBarColor = false,
-        updateSystemNavigationBarColor = false,
-    )
+    private fun getPrivateCustomTabColorsConfig() =
+        CustomTabsColorsConfig(
+            updateToolbarsColor = false,
+            updateStatusBarColor = false,
+            updateSystemNavigationBarColor = false,
+        )
 }

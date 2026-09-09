@@ -29,7 +29,6 @@ bool ValidateES3TexImageParametersBase(const Context *context,
                                        TextureTarget target,
                                        GLint level,
                                        GLenum internalformat,
-                                       bool isCompressed,
                                        bool isSubImage,
                                        GLint xoffset,
                                        GLint yoffset,
@@ -40,8 +39,8 @@ bool ValidateES3TexImageParametersBase(const Context *context,
                                        GLint border,
                                        GLenum format,
                                        GLenum type,
-                                       GLsizei imageSize,
-                                       const void *pixels);
+                                       const void *pixels,
+                                       GLuint *outImageSize);
 
 bool ValidateES3TexStorageParametersLevel(const Context *context,
                                           angle::EntryPoint entryPoint,

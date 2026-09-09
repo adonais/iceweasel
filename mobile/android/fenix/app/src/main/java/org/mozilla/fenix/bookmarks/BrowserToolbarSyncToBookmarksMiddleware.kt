@@ -15,8 +15,8 @@ import mozilla.components.lib.state.Store
 import mozilla.components.lib.state.ext.flow
 
 /**
- * [BrowserToolbarStore] middleware that will synchronize bookmarks searches being ended
- * when the toolbar exits search mode.
+ * [BrowserToolbarStore] middleware that will synchronize bookmarks searches being ended when the toolbar exits search
+ * mode.
  */
 internal class BrowserToolbarSyncToBookmarksMiddleware(
     private val toolbarStore: BrowserToolbarStore,
@@ -34,14 +34,16 @@ internal class BrowserToolbarSyncToBookmarksMiddleware(
 
         if (action is ViewAppeared && action.bookmarkToLoad == null) {
             syncJob?.cancel()
-            syncJob = toolbarStore.flow()
-                .map { it.isEditMode() }
-                .onEach { isInEditMode ->
-                    if (store.state.isSearching && !isInEditMode) {
-                        store.dispatch(SearchAction.SearchDismissed)
+            syncJob =
+                toolbarStore
+                    .flow()
+                    .map { it.isEditMode() }
+                    .onEach { isInEditMode ->
+                        if (store.state.isSearching && !isInEditMode) {
+                            store.dispatch(SearchAction.SearchDismissed)
+                        }
                     }
-                }
-                .launchIn(scope)
+                    .launchIn(scope)
         }
     }
 }

@@ -6,26 +6,20 @@ package org.mozilla.fenix.settings.settingssearch
 
 import kotlinx.coroutines.flow.Flow
 
-/**
- * A repository for recent search items.
- */
+/** A repository for recent search items. */
 interface RecentSettingsSearchesRepository {
 
-    /**
-     * A flow that emits the list of recent search items whenever it changes.
-     */
+    /** A flow that emits the list of recent search items whenever it changes. */
     val recentSearches: Flow<List<SettingsSearchItem>>
 
     /**
-     * Adds a [SettingsSearchItem] to the list of recent search items.
-     * If the item already exits, it is moved to the top.
+     * Adds a [SettingsSearchItem] to the list of recent search items. If the item already exits, it is moved to the
+     * top.
      *
      * @param item The item to add.
      */
     suspend fun addRecentSearchItem(item: SettingsSearchItem)
 
-    /**
-     * Clears the list of recent search items.
-     */
+    /** Clears the list of recent search items. */
     suspend fun clearRecentSearches()
 }

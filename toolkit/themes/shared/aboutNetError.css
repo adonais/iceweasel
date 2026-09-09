@@ -143,6 +143,53 @@ button:disabled {
   margin-block-end: var(--space-xxlarge);
 }
 
+/* Search call-to-action on the online dnsNotFound error page (bug 2055637). */
+/* Not moz-button-group: it reorders its slotted children by moving them in the
+   light DOM, which breaks Lit's markers for the button slot this page swaps
+   between a spinner, the Search button, and an offline message. */
+.search-cta-buttons {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: var(--space-small);
+  margin-block: var(--space-large) var(--space-xxlarge);
+}
+
+.search-cta-loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xsmall);
+  min-width: 2.5em;
+  min-height: 2em;
+}
+
+/* loading.svg owns its own rotation and its own prefers-reduced-motion
+   fallback, and tracks the text color, so it stays visible in High Contrast
+   Mode without a forced-colors override of our own. */
+.search-cta-loading-icon {
+  width: 1em;
+  height: 1em;
+  -moz-context-properties: fill;
+  fill: currentColor;
+}
+
+.search-cta-offline {
+  margin-block: 0;
+}
+
+/* Keep the error code and Learn More lines tight together, one above the
+   other, at a slightly smaller size (bug 2055637). */
+.search-cta-error-code,
+.search-cta-learn-more {
+  display: block;
+  margin: 0;
+  padding: 0;
+  font-size: var(--font-size-small);
+  line-height: 1.5;
+}
+
 #errorCode {
   white-space: nowrap;
 }

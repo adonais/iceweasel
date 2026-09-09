@@ -24,7 +24,6 @@ gcloud:
     - class org.mozilla.fenix.ui.SettingsSearchTest#verifyShowSearchSuggestionsToggleTest
     - class org.mozilla.fenix.ui.CollectionTest#deleteCollectionTest
     - class org.mozilla.fenix.ui.HistoryTest#noHistoryInPrivateBrowsingTest
-    - class org.mozilla.fenix.ui.NoNetworkAccessStartupTests#noNetworkConnectionStartupTest
     - class org.mozilla.fenix.ui.SettingsAboutTest#verifyLibrariesListInReleaseBuildsTest
 
   device:

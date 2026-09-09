@@ -109,6 +109,10 @@ void PacketTransportInternal::SubscribeReceivingState(
   RTC_DCHECK_RUN_ON(&network_checker_);
   receiving_state_callbacks_.AddReceiver(tag, std::move(callback));
 }
+void PacketTransportInternal::UnsubscribeReceivingState(void* tag) {
+  RTC_DCHECK_RUN_ON(&network_checker_);
+  receiving_state_callbacks_.RemoveReceivers(tag);
+}
 void PacketTransportInternal::NotifyReceivingState(
     PacketTransportInternal* packet_transport) {
   RTC_DCHECK_RUN_ON(&network_checker_);

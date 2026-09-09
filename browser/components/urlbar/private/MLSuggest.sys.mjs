@@ -21,7 +21,7 @@ const lazy = XPCOMUtils.declareLazy({
  *   EngineCreateOptions,
  *   EngineOptions
  * } from "../../../../toolkit/components/ml/ml.d.ts"
- * @import { MLEngine } from "resource://gre/actors/MLEngineParent.sys.mjs"
+ * @import { MLEngine } from "moz-src:///toolkit/components/ml/actors/MLEngineParent.sys.mjs"
  * @typedef {Awaited<ReturnType<typeof lazy.createEngine>>} MLEngine
  */
 
@@ -48,15 +48,7 @@ class _MLSuggest {
     featureId: /** @type {const} */ ("suggest-intent-classification"),
     timeoutMS: -1,
     numThreads: 2,
-    backend: "onnx-native",
-  };
-
-  INTENT_OPTIONS_FALLBACK = {
-    taskName: /** @type {const} */ ("text-classification"),
-    featureId: /** @type {const} */ ("suggest-intent-classification"),
-    timeoutMS: -1,
-    numThreads: 2,
-    backend: "onnx",
+    backend: "best-onnx",
   };
 
   NER_OPTIONS = {
@@ -64,15 +56,7 @@ class _MLSuggest {
     featureId: /** @type {const} */ ("suggest-NER"),
     timeoutMS: -1,
     numThreads: 2,
-    backend: "onnx-native",
-  };
-
-  NER_OPTIONS_FALLBACK = {
-    taskName: /** @type {const} */ ("token-classification"),
-    featureId: /** @type {const} */ ("suggest-NER"),
-    timeoutMS: -1,
-    numThreads: 2,
-    backend: "onnx",
+    backend: "best-onnx",
   };
 
   /**
@@ -92,11 +76,8 @@ class _MLSuggest {
    */
   async initialize() {
     await Promise.all([
-      this.#initializeModelEngine(
-        this.INTENT_OPTIONS,
-        this.INTENT_OPTIONS_FALLBACK
-      ),
-      this.#initializeModelEngine(this.NER_OPTIONS, this.NER_OPTIONS_FALLBACK),
+      this.#initializeModelEngine(this.INTENT_OPTIONS),
+      this.#initializeModelEngine(this.NER_OPTIONS),
     ]);
   }
 
@@ -192,10 +173,10 @@ class _MLSuggest {
    *
    * @param {EngineCreateOptions[FeatureId]} options
    *   Configuration options for the ML engine.
-   * @param {EngineCreateOptions[FeatureId]} [fallbackOptions]
-   *   Fallback options if creating with the main options fails.
+   * @returns {Promise<?MLEngine<any>>}
+   *   The engine, or null if it could not be created.
    */
-  async #initializeModelEngine(options, fallbackOptions = null) {
+  async #initializeModelEngine(options) {
     /** @type {EngineFeatureIds} */
     const featureId = options.featureId;
 
@@ -204,16 +185,16 @@ class _MLSuggest {
     if (engine) {
       return engine;
     }
+
     try {
       engine = await this.createEngine(options);
     } catch (e) {
-      if (fallbackOptions) {
-        try {
-          engine = await this.createEngine(fallbackOptions);
-        } catch (_) {
-          // do nothing
-        }
-      }
+      // Engine creation is best effort: "best-onnx" already covers falling
+      // back to the wasm backend, so anything reaching here (no model, not
+      // enough memory, crashed inference process) leaves us without
+      // suggestions rather than being fatal for the caller.
+      console.error(`Failed to create the ${featureId} engine: ${e}`);
+      return null;
     }
 
     // Cache the engine. Cast the featureId to "any" here since there's not an easy
@@ -246,13 +227,10 @@ class _MLSuggest {
         options,
       });
     } catch (error) {
-      // engine could timeout or fail, so remove that from cache
-      // and reinitialize
+      // The engine could have timed out or crashed, so drop it from the cache
+      // and recreate it for the next query.
       delete this.#modelEngines[this.INTENT_OPTIONS.featureId];
-      this.#initializeModelEngine(
-        this.INTENT_OPTIONS,
-        this.INTENT_OPTIONS_FALLBACK
-      );
+      this.#initializeModelEngine(this.INTENT_OPTIONS);
       return null;
     }
     return res;
@@ -270,12 +248,12 @@ class _MLSuggest {
   async _findNER(query, options = {}) {
     const engineNER = this.#modelEngines[this.NER_OPTIONS.featureId];
     try {
-      return engineNER?.run({ args: [query], options });
+      return await engineNER?.run({ args: [query], options });
     } catch (error) {
-      // engine could timeout or fail, so remove that from cache
-      // and reinitialize
+      // The engine could have timed out or crashed, so drop it from the cache
+      // and recreate it for the next query.
       delete this.#modelEngines[this.NER_OPTIONS.featureId];
-      this.#initializeModelEngine(this.NER_OPTIONS, this.NER_OPTIONS_FALLBACK);
+      this.#initializeModelEngine(this.NER_OPTIONS);
       return null;
     }
   }

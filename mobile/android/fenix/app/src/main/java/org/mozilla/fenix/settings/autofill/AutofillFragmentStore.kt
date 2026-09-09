@@ -10,9 +10,7 @@ import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
 
-/**
- * The [Store] for holding the [AutofillFragmentState] and applying [AutofillAction]s.
- */
+/** The [Store] for holding the [AutofillFragmentState] and applying [AutofillAction]s. */
 class AutofillFragmentStore(initialState: AutofillFragmentState) :
     Store<AutofillFragmentState, AutofillAction>(
         initialState,
@@ -24,8 +22,7 @@ class AutofillFragmentStore(initialState: AutofillFragmentState) :
  *
  * @property addresses The list of [Address]es to display in the address list.
  * @property creditCards The list of [CreditCard]s to display in the credit card list.
- * @property isLoading True if the addresses or credit cards are still being loaded from storage,
- * otherwise false.
+ * @property isLoading True if the addresses or credit cards are still being loaded from storage, otherwise false.
  */
 data class AutofillFragmentState(
     val addresses: List<Address> = emptyList(),
@@ -34,8 +31,8 @@ data class AutofillFragmentState(
 ) : State
 
 /**
- * Actions to dispatch through the [AutofillFragmentStore] to modify the [AutofillFragmentState]
- * through the [autofillFragmentStateReducer].
+ * Actions to dispatch through the [AutofillFragmentStore] to modify the [AutofillFragmentState] through the
+ * [autofillFragmentStateReducer].
  */
 sealed class AutofillAction : Action {
     /**

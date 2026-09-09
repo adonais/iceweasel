@@ -9,12 +9,8 @@ import mozilla.components.lib.state.Store
 import org.mozilla.fenix.GleanMetrics.Onboarding
 import org.mozilla.fenix.onboarding.OnboardingReason
 
-/**
- * [Middleware] for recording telemetry based on [PrivacyPreferencesAction]s.
- */
-class PrivacyPreferencesTelemetryMiddleware(
-    private val installSource: String,
-) :
+/** [Middleware] for recording telemetry based on [PrivacyPreferencesAction]s. */
+class PrivacyPreferencesTelemetryMiddleware(private val installSource: String) :
     Middleware<PrivacyPreferencesState, PrivacyPreferencesAction> {
     override fun invoke(
         store: Store<PrivacyPreferencesState, PrivacyPreferencesAction>,
@@ -30,7 +26,7 @@ class PrivacyPreferencesTelemetryMiddleware(
                         onboardingReason = OnboardingReason.NEW_USER.value,
                         value = action.enabled,
                         installSource = installSource,
-                    ),
+                    )
                 )
 
             is PrivacyPreferencesAction.UsageDataPreferenceUpdatedTo ->
@@ -39,23 +35,25 @@ class PrivacyPreferencesTelemetryMiddleware(
                         onboardingReason = OnboardingReason.NEW_USER.value,
                         value = action.enabled,
                         installSource = installSource,
-                    ),
+                    )
                 )
 
             is PrivacyPreferencesAction.CrashReportingLearnMore ->
                 Onboarding.privacyPreferencesModalCrashReportingLearnMore.record(
-                    extra = Onboarding.PrivacyPreferencesModalCrashReportingLearnMoreExtra(
-                        onboardingReason = OnboardingReason.NEW_USER.value,
-                        installSource = installSource,
-                    ),
+                    extra =
+                        Onboarding.PrivacyPreferencesModalCrashReportingLearnMoreExtra(
+                            onboardingReason = OnboardingReason.NEW_USER.value,
+                            installSource = installSource,
+                        )
                 )
 
             is PrivacyPreferencesAction.UsageDataUserLearnMore ->
                 Onboarding.privacyPreferencesModalUsageDataLearnMore.record(
-                    extra = Onboarding.PrivacyPreferencesModalUsageDataLearnMoreExtra(
-                        onboardingReason = OnboardingReason.NEW_USER.value,
-                        installSource = installSource,
-                    ),
+                    extra =
+                        Onboarding.PrivacyPreferencesModalUsageDataLearnMoreExtra(
+                            onboardingReason = OnboardingReason.NEW_USER.value,
+                            installSource = installSource,
+                        )
                 )
 
             // no-ops

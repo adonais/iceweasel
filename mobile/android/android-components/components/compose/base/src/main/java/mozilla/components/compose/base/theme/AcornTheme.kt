@@ -42,10 +42,11 @@ fun AcornTheme(
             colorScheme = colorScheme,
             shapes = AcornShapes,
         ) {
-            val textSelectionColors = TextSelectionColors(
-                handleColor = colorScheme.primary,
-                backgroundColor = colors.selectedText,
-            )
+            val textSelectionColors =
+                TextSelectionColors(
+                    handleColor = colorScheme.primary,
+                    backgroundColor = colors.selectedText,
+                )
 
             // `LocalTextSelectionColors` needs to be overridden here, inside `MaterialTheme`,
             // not in `ProvideAcornTokens`. Otherwise, `MaterialTheme` provides its own
@@ -63,59 +64,52 @@ fun AcornTheme(
 
 @Composable
 @ReadOnlyComposable
-private fun getAcornColors() = if (isSystemInDarkTheme()) {
-    darkColorPalette
-} else {
-    lightColorPalette
-}
+private fun getAcornColors() =
+    if (isSystemInDarkTheme()) {
+        darkColorPalette
+    } else {
+        lightColorPalette
+    }
 
 @Composable
 @ReadOnlyComposable
-private fun getAcornColorScheme(): ColorScheme = if (isSystemInDarkTheme()) {
-    acornDarkColorScheme()
-} else {
-    acornLightColorScheme()
-}
+private fun getAcornColorScheme(): ColorScheme =
+    if (isSystemInDarkTheme()) {
+        acornDarkColorScheme()
+    } else {
+        acornLightColorScheme()
+    }
 
 @Composable
 @ReadOnlyComposable
-private fun getAcornGradients(): AcornGradientScheme = if (isSystemInDarkTheme()) {
-    darkAcornGradientScheme
-} else {
-    lightAcornGradientScheme
-}
+private fun getAcornGradients(): AcornGradientScheme =
+    if (isSystemInDarkTheme()) {
+        darkAcornGradientScheme
+    } else {
+        lightAcornGradientScheme
+    }
 
-/**
- * Provides access to the Acorn design system tokens.
- */
+/** Provides access to the Acorn design system tokens. */
 object AcornTheme {
     val colors: AcornColors
-        @Composable
-        @ReadOnlyComposable
-        get() = localAcornColors.current
+        @Composable @ReadOnlyComposable get() = localAcornColors.current
 
     val typography: AcornTypography
         get() = defaultTypography
 
     val layout: AcornLayout
-        @Composable
-        @ReadOnlyComposable
-        get() = localLayout.current
+        @Composable @ReadOnlyComposable get() = localLayout.current
 
     val windowSize: AcornWindowSize
-        @Composable
-        @ReadOnlyComposable
-        get() = localWindowSize.current
+        @Composable @ReadOnlyComposable get() = localWindowSize.current
 
     val gradients: AcornGradientScheme
-        @Composable
-        @ReadOnlyComposable
-        get() = localAcornGradients.current
+        @Composable @ReadOnlyComposable get() = localAcornGradients.current
 }
 
 /**
- * This function is used to set the current value of [localWindowSize],
- * [localLayout], [localAcornColors], and [localAcornGradients].
+ * This function is used to set the current value of [localWindowSize], [localLayout], [localAcornColors], and
+ * [localAcornGradients].
  */
 @Composable
 private fun ProvideAcornTokens(
@@ -124,9 +118,10 @@ private fun ProvideAcornTokens(
     gradients: AcornGradientScheme,
     content: @Composable () -> Unit,
 ) {
-    val layout = remember(windowSize) {
-        AcornLayout.fromWindowSize(windowSize = windowSize)
-    }
+    val layout =
+        remember(windowSize) {
+            AcornLayout.fromWindowSize(windowSize = windowSize)
+        }
     val colorPalette = remember {
         // Explicitly creating a new object here so we don't mutate the initial [colors]
         // provided, and overwrite the values set in it.
@@ -146,8 +141,8 @@ private fun ProvideAcornTokens(
 /**
  * CompositionLocal that provides the current Acorn color palette to the Compose tree.
  *
- * Defaults to [lightColorPalette]. This value is typically set by [AcornTheme] at the root of
- * your application. To access the active palette, use [AcornTheme.colors].
+ * Defaults to [lightColorPalette]. This value is typically set by [AcornTheme] at the root of your application. To
+ * access the active palette, use [AcornTheme.colors].
  */
 val localAcornColors = staticCompositionLocalOf {
     lightColorPalette

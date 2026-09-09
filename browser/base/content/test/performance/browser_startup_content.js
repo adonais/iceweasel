@@ -36,7 +36,7 @@ const known_scripts = {
     "resource:///actors/InteractionsChild.sys.mjs",
     "resource:///actors/LinkHandlerChild.sys.mjs",
     "resource:///actors/SearchSERPTelemetryChild.sys.mjs",
-    "resource://gre/actors/ContentMetaChild.sys.mjs",
+    "moz-src:///toolkit/actors/ContentMetaChild.sys.mjs",
     "resource://gre/modules/Readerable.sys.mjs",
 
     // Telemetry
@@ -46,6 +46,10 @@ const known_scripts = {
     // Extensions
     "resource://gre/modules/ExtensionProcessScript.sys.mjs",
     "resource://gre/modules/ExtensionUtils.sys.mjs",
+
+    // Enterprise policies
+    "resource://gre/modules/EnterprisePolicies.sys.mjs",
+    "resource://gre/modules/EnterprisePoliciesContent.sys.mjs",
   ]),
   frameScripts: new Set([
     // Test related

@@ -284,14 +284,14 @@ class EventTarget : public nsISupports, public nsWrapperCache {
    * Called on the activation target during dispatch of activation events.
    * https://dom.spec.whatwg.org/#eventtarget-activation-behavior
    */
-  MOZ_CAN_RUN_SCRIPT
-  virtual void ActivationBehavior(EventChainPostVisitor& aVisitor) {}
+  MOZ_CAN_RUN_SCRIPT virtual void ActivationBehavior(
+      EventChainPostVisitor& aVisitor) {}
 
   /**
    * Called on the activation target during dispatch of activation events.
    * https://dom.spec.whatwg.org/#eventtarget-legacy-canceled-activation-behavior
    */
-  virtual void LegacyCanceledActivationBehavior(
+  MOZ_CAN_RUN_SCRIPT virtual void LegacyCanceledActivationBehavior(
       EventChainPostVisitor& aVisitor) {}
 
   /**

@@ -17,11 +17,10 @@ import org.mozilla.focus.ext.settings
 
 /**
  * [Middleware] to record the number of blocked trackers in response to [BrowserAction]s.
+ *
  * @param context The application context.
  */
-class BlockedTrackersMiddleware(
-    private val context: Context,
-) : Middleware<BrowserState, BrowserAction> {
+class BlockedTrackersMiddleware(private val context: Context) : Middleware<BrowserState, BrowserAction> {
 
     private val settings = context.settings
     private val preferences = PreferenceManager.getDefaultSharedPreferences(context)
@@ -45,12 +44,11 @@ class BlockedTrackersMiddleware(
 
     private fun incrementCount() {
         val blockedTrackersCount = settings.getTotalBlockedTrackersCount()
-        preferences
-            .edit {
-                putInt(
-                    context.getString(R.string.pref_key_privacy_total_trackers_blocked_count),
-                    blockedTrackersCount + 1,
-                )
-            }
+        preferences.edit {
+            putInt(
+                context.getString(R.string.pref_key_privacy_total_trackers_blocked_count),
+                blockedTrackersCount + 1,
+            )
+        }
     }
 }

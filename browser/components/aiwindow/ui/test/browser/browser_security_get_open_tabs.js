@@ -217,8 +217,8 @@ add_task(async function test_get_open_tabs_returns_sanitized_data() {
   for (const tab of tabs) {
     Assert.deepEqual(
       Object.keys(tab).sort(),
-      ["lastAccessed", "title", "url"],
-      "Tab info exposes exactly url, title, lastAccessed and no other fields."
+      ["lastAccessed", "title", "url", "windowId"],
+      "Tab info exposes exactly url, title, lastAccessed, windowId and no other fields."
     );
   }
 
@@ -472,12 +472,16 @@ add_task(async function test_get_open_tabs_aggregates_across_ai_windows() {
     browser: gBrowser,
   });
 
-  const tabInWinA = await server.openTab({
+  const tabAInWinA = await server.openTab({
     title: "Tab in AI window A",
     body: "<p>A</p>",
   });
+  const tabBInWinA = await server.openTab({
+    title: "Second tab in window A",
+    body: "<p>A2</p>",
+  });
 
-  pinLastAccessed([tabInWinA.tab, tabInWinB.tab]);
+  pinLastAccessed([tabAInWinA.tab, tabBInWinA.tab, tabInWinB.tab]);
 
   await SimpleTest.promiseFocus(winA);
 
@@ -497,12 +501,12 @@ add_task(async function test_get_open_tabs_aggregates_across_ai_windows() {
   const tabs = toolMessage.content.body;
   Assert.equal(
     tabs.length,
-    2,
-    "Only the two AI-window tabs are returned; non-AI window is filtered out."
+    3,
+    "Only the three AI-window tabs are returned; non-AI window is filtered out."
   );
   Assert.deepEqual(
     new Set(tabs.map(t => t.url)),
-    new Set([tabInWinA.url, tabInWinB.url]),
+    new Set([tabAInWinA.url, tabBInWinA.url, tabInWinB.url]),
     "Result contains exactly the tabs from both AI windows."
   );
   Assert.ok(
@@ -515,6 +519,29 @@ add_task(async function test_get_open_tabs_aggregates_across_ai_windows() {
     "Most-recently-accessed tab (winB's, pinned newer) sorts first across windows."
   );
 
+  const tabA = tabs.find(tab => tab.url === tabAInWinA.url);
+  const tabA2 = tabs.find(tab => tab.url === tabBInWinA.url);
+  const tabB = tabs.find(tab => tab.url === tabInWinB.url);
+  Assert.equal(
+    tabA.windowId,
+    SessionStore.getWindowId(winA),
+    "Tab matches the SessionStore ID of the window holding it."
+  );
+  Assert.equal(
+    tabA2.windowId,
+    SessionStore.getWindowId(winA),
+    "Tabs in the same window have matching windowId."
+  );
+  Assert.equal(
+    tabB.windowId,
+    SessionStore.getWindowId(winB),
+    "Tab in window B matches the window ID."
+  );
+  Assert.notEqual(
+    tabA.windowId,
+    tabB.windowId,
+    "Tabs in different windows are distinguishable by window ID."
+  );
   Assert.equal(
     conversation.securityProperties.privateData,
     true,

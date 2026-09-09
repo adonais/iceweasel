@@ -7,11 +7,8 @@
 // renderer11_utils.cpp: Conversion functions and other utility routines
 // specific to the D3D11 renderer.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-#    pragma allow_unsafe_buffers
-#endif
-
 #include "libANGLE/renderer/d3d/d3d11/renderer11_utils.h"
+#include "common/unsafe_buffers.h"
 
 #include <algorithm>
 
@@ -68,7 +65,6 @@ class DXGISupportHelper : angle::NonCopyable
             }
             else
             {
-                // TODO(jmadill): find out why we fail this call sometimes in FL9_3
                 // ERR() << "Error checking format support for format 0x" << std::hex << dxgiFormat;
             }
         }
@@ -159,12 +155,6 @@ bool GetNPOTTextureSupport(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return true;
 
-        // From http://msdn.microsoft.com/en-us/library/windows/desktop/ff476876.aspx
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return false;
-
         default:
             UNREACHABLE();
             return false;
@@ -185,14 +175,6 @@ float GetMaximumAnisotropy(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return D3D10_MAX_MAXANISOTROPY;
 
-        // From http://msdn.microsoft.com/en-us/library/windows/desktop/ff476876.aspx
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-            return 16;
-
-        case D3D_FEATURE_LEVEL_9_1:
-            return D3D_FL9_1_DEFAULT_MAX_ANISOTROPY;
-
         default:
             UNREACHABLE();
             return 0;
@@ -210,14 +192,6 @@ bool GetOcclusionQuerySupport(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
             return true;
-
-        // From http://msdn.microsoft.com/en-us/library/windows/desktop/ff476150.aspx
-        // ID3D11Device::CreateQuery
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-            return true;
-        case D3D_FEATURE_LEVEL_9_1:
-            return false;
 
         default:
             UNREACHABLE();
@@ -238,9 +212,6 @@ bool GetEventQuerySupport(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_11_0:
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
             return true;
 
         default:
@@ -264,22 +235,6 @@ bool GetInstancingSupport(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return true;
 
-        // Feature Level 9_3 supports instancing, but slot 0 in the input layout must not be
-        // instanced.
-        // D3D9 has a similar restriction, where stream 0 must not be instanced.
-        // This restriction can be worked around by remapping any non-instanced slot to slot
-        // 0.
-        // This works because HLSL uses shader semantics to match the vertex inputs to the
-        // elements in the input layout, rather than the slots.
-        // Note that we only support instancing via ANGLE_instanced_array on 9_3, since 9_3
-        // doesn't support OpenGL ES 3.0
-        case D3D_FEATURE_LEVEL_9_3:
-            return true;
-
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return false;
-
         default:
             UNREACHABLE();
             return false;
@@ -297,11 +252,6 @@ bool GetFramebufferMultisampleSupport(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
             return true;
-
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return false;
 
         default:
             UNREACHABLE();
@@ -321,11 +271,6 @@ bool GetFramebufferBlitSupport(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return true;
 
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return false;
-
         default:
             UNREACHABLE();
             return false;
@@ -335,12 +280,8 @@ bool GetFramebufferBlitSupport(D3D_FEATURE_LEVEL featureLevel)
 bool GetDerivativeInstructionSupport(D3D_FEATURE_LEVEL featureLevel)
 {
     // http://msdn.microsoft.com/en-us/library/windows/desktop/bb509588.aspx states that
-    // shader model
-    // ps_2_x is required for the ddx (and other derivative functions).
-
-    // http://msdn.microsoft.com/en-us/library/windows/desktop/ff476876.aspx states that
-    // feature level
-    // 9.3 supports shader model ps_2_x.
+    // shader model ps_2_x is required for the ddx (and other derivative functions). This is
+    // supported by all feature levels ANGLE targets (FL10_0 and above).
 
     switch (featureLevel)
     {
@@ -350,12 +291,7 @@ bool GetDerivativeInstructionSupport(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_11_0:
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
-        case D3D_FEATURE_LEVEL_9_3:
             return true;
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return false;
-
         default:
             UNREACHABLE();
             return false;
@@ -373,11 +309,6 @@ bool GetShaderTextureLODSupport(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
             return true;
-
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return false;
 
         default:
             UNREACHABLE();
@@ -402,12 +333,6 @@ int GetMaximumSimultaneousRenderTargets(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return D3D10_SIMULTANEOUS_RENDER_TARGET_COUNT;
 
-        case D3D_FEATURE_LEVEL_9_3:
-            return D3D_FL9_3_SIMULTANEOUS_RENDER_TARGET_COUNT;
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return D3D_FL9_1_SIMULTANEOUS_RENDER_TARGET_COUNT;
-
         default:
             UNREACHABLE();
             return 0;
@@ -427,12 +352,6 @@ int GetMaximum2DTextureSize(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
             return D3D10_REQ_TEXTURE2D_U_OR_V_DIMENSION;
-
-        case D3D_FEATURE_LEVEL_9_3:
-            return D3D_FL9_3_REQ_TEXTURE2D_U_OR_V_DIMENSION;
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return D3D_FL9_1_REQ_TEXTURE2D_U_OR_V_DIMENSION;
 
         default:
             UNREACHABLE();
@@ -454,12 +373,6 @@ int GetMaximumCubeMapTextureSize(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return D3D10_REQ_TEXTURECUBE_DIMENSION;
 
-        case D3D_FEATURE_LEVEL_9_3:
-            return D3D_FL9_3_REQ_TEXTURECUBE_DIMENSION;
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return D3D_FL9_1_REQ_TEXTURECUBE_DIMENSION;
-
         default:
             UNREACHABLE();
             return 0;
@@ -479,11 +392,6 @@ int GetMaximum2DTextureArraySize(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
             return D3D10_REQ_TEXTURE2D_ARRAY_AXIS_DIMENSION;
-
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 0;
 
         default:
             UNREACHABLE();
@@ -505,11 +413,6 @@ int GetMaximum3DTextureSize(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return D3D10_REQ_TEXTURE3D_U_V_OR_W_DIMENSION;
 
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return D3D_FL9_1_REQ_TEXTURE3D_U_V_OR_W_DIMENSION;
-
         default:
             UNREACHABLE();
             return 0;
@@ -529,14 +432,6 @@ int GetMaximumViewportSize(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
             return D3D10_VIEWPORT_BOUNDS_MAX;
-
-        // No constants for D3D11 Feature Level 9 viewport size limits, use the maximum
-        // texture sizes
-        case D3D_FEATURE_LEVEL_9_3:
-            return D3D_FL9_3_REQ_TEXTURE2D_U_OR_V_DIMENSION;
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return D3D_FL9_1_REQ_TEXTURE2D_U_OR_V_DIMENSION;
 
         default:
             UNREACHABLE();
@@ -564,12 +459,6 @@ int GetMaximumDrawIndexedIndexCount(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return std::numeric_limits<GLint>::max();
 
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-            return D3D_FL9_2_IA_PRIMITIVE_MAX_COUNT;
-        case D3D_FEATURE_LEVEL_9_1:
-            return D3D_FL9_1_IA_PRIMITIVE_MAX_COUNT;
-
         default:
             UNREACHABLE();
             return 0;
@@ -594,12 +483,6 @@ int GetMaximumDrawVertexCount(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return std::numeric_limits<GLint>::max();
 
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-            return D3D_FL9_2_IA_PRIMITIVE_MAX_COUNT;
-        case D3D_FEATURE_LEVEL_9_1:
-            return D3D_FL9_1_IA_PRIMITIVE_MAX_COUNT;
-
         default:
             UNREACHABLE();
             return 0;
@@ -621,13 +504,6 @@ int GetMaximumVertexInputSlots(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return D3D10_STANDARD_VERTEX_ELEMENT_COUNT;
 
-        // From http://http://msdn.microsoft.com/en-us/library/windows/desktop/ff476876.aspx
-        // "Max Input Slots"
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 16;
-
         default:
             UNREACHABLE();
             return 0;
@@ -647,13 +523,6 @@ int GetMaximumVertexUniformVectors(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
             return D3D10_REQ_CONSTANT_BUFFER_ELEMENT_COUNT;
-
-        // From http://msdn.microsoft.com/en-us/library/windows/desktop/ff476149.aspx
-        // ID3D11DeviceContext::VSSetConstantBuffers
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 255 - d3d11_gl::GetReservedVertexUniformVectors(featureLevel);
 
         default:
             UNREACHABLE();
@@ -676,12 +545,6 @@ int GetMaximumVertexUniformBlocks(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return D3D10_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT -
                    d3d11::RESERVED_CONSTANT_BUFFER_SLOT_COUNT;
-
-        // Uniform blocks not supported on D3D11 Feature Level 9
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 0;
 
         default:
             UNREACHABLE();
@@ -713,13 +576,6 @@ int GetReservedVertexOutputVectors(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return 2;
 
-        // Just reserve dx_Position on Feature Level 9, since we don't ever need to output
-        // gl_Position.
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 1;
-
         default:
             UNREACHABLE();
             return 0;
@@ -744,12 +600,6 @@ int GetMaximumVertexOutputVectors(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return D3D10_VS_OUTPUT_REGISTER_COUNT - GetReservedVertexOutputVectors(featureLevel);
 
-        // Use Shader Model 2.X limits
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 8 - GetReservedVertexOutputVectors(featureLevel);
-
         default:
             UNREACHABLE();
             return 0;
@@ -769,14 +619,6 @@ int GetMaximumVertexTextureUnits(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
             return D3D10_COMMONSHADER_SAMPLER_SLOT_COUNT;
-
-        // Vertex textures not supported on D3D11 Feature Level 9 according to
-        // http://msdn.microsoft.com/en-us/library/windows/desktop/ff476149.aspx
-        // ID3D11DeviceContext::VSSetSamplers and ID3D11DeviceContext::VSSetShaderResources
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 0;
 
         default:
             UNREACHABLE();
@@ -798,13 +640,6 @@ int GetMaximumPixelUniformVectors(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
             return 1024;  // D3D10_REQ_CONSTANT_BUFFER_ELEMENT_COUNT;
-
-        // From http://msdn.microsoft.com/en-us/library/windows/desktop/ff476149.aspx
-        // ID3D11DeviceContext::PSSetConstantBuffers
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 32 - d3d11_gl::GetReservedFragmentUniformVectors(featureLevel);
 
         default:
             UNREACHABLE();
@@ -828,12 +663,6 @@ int GetMaximumPixelUniformBlocks(D3D_FEATURE_LEVEL featureLevel)
             return D3D10_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT -
                    d3d11::RESERVED_CONSTANT_BUFFER_SLOT_COUNT;
 
-        // Uniform blocks not supported on D3D11 Feature Level 9
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 0;
-
         default:
             UNREACHABLE();
             return 0;
@@ -854,13 +683,6 @@ int GetMaximumPixelInputVectors(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return D3D10_PS_INPUT_REGISTER_COUNT - GetReservedVertexOutputVectors(featureLevel);
 
-        // Use Shader Model 2.X limits
-        case D3D_FEATURE_LEVEL_9_3:
-            return 8 - GetReservedVertexOutputVectors(featureLevel);
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 8 - GetReservedVertexOutputVectors(featureLevel);
-
         default:
             UNREACHABLE();
             return 0;
@@ -880,13 +702,6 @@ int GetMaximumPixelTextureUnits(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
             return D3D10_COMMONSHADER_SAMPLER_SLOT_COUNT;
-
-        // http://msdn.microsoft.com/en-us/library/windows/desktop/ff476149.aspx
-        // ID3D11DeviceContext::PSSetShaderResources
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 16;
 
         default:
             UNREACHABLE();
@@ -951,12 +766,6 @@ int GetMinimumTexelOffset(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return D3D10_COMMONSHADER_TEXEL_OFFSET_MAX_NEGATIVE;
 
-        // Sampling functions with offsets are not available below shader model 4.0.
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 0;
-
         default:
             UNREACHABLE();
             return 0;
@@ -975,12 +784,6 @@ int GetMaximumTexelOffset(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
             return D3D11_COMMONSHADER_TEXEL_OFFSET_MAX_POSITIVE;
-
-        // Sampling functions with offsets are not available below shader model 4.0.
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 0;
 
         default:
             UNREACHABLE();
@@ -1001,9 +804,6 @@ int GetMinimumTextureGatherOffset(D3D_FEATURE_LEVEL featureLevel)
 
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
             return 0;
 
         default:
@@ -1025,9 +825,6 @@ int GetMaximumTextureGatherOffset(D3D_FEATURE_LEVEL featureLevel)
 
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
             return 0;
 
         default:
@@ -1056,13 +853,6 @@ size_t GetMaximumConstantBufferSize(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return D3D10_REQ_CONSTANT_BUFFER_ELEMENT_COUNT * bytesPerComponent;
 
-        // Limits from http://msdn.microsoft.com/en-us/library/windows/desktop/ff476501.aspx
-        // remarks section
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 4096 * bytesPerComponent;
-
         default:
             UNREACHABLE();
             return 0;
@@ -1084,11 +874,6 @@ int GetMaximumStreamOutputBuffers(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return D3D10_SO_BUFFER_SLOT_COUNT;
 
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 0;
-
         default:
             UNREACHABLE();
             return 0;
@@ -1107,11 +892,6 @@ int GetMaximumStreamOutputInterleavedComponents(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
             return GetMaximumVertexOutputVectors(featureLevel) * 4;
-
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 0;
 
         default:
             UNREACHABLE();
@@ -1136,11 +916,6 @@ int GetMaximumStreamOutputSeparateComponents(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return 4;
 
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 0;
-
         default:
             UNREACHABLE();
             return 0;
@@ -1159,14 +934,6 @@ int GetMaximumRenderToBufferWindowSize(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
             return D3D10_REQ_RENDER_TO_BUFFER_WINDOW_WIDTH;
-
-        // REQ_RENDER_TO_BUFFER_WINDOW_WIDTH not supported on D3D11 Feature Level 9,
-        // use the maximum texture sizes
-        case D3D_FEATURE_LEVEL_9_3:
-            return D3D_FL9_3_REQ_TEXTURE2D_U_OR_V_DIMENSION;
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return D3D_FL9_1_REQ_TEXTURE2D_U_OR_V_DIMENSION;
 
         default:
             UNREACHABLE();
@@ -1202,11 +969,6 @@ unsigned int GetReservedVertexUniformVectors(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_0:
             return 0;
 
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 3;  // dx_ViewAdjust, dx_ViewCoords and dx_ViewScale
-
         default:
             UNREACHABLE();
             return 0;
@@ -1224,11 +986,6 @@ unsigned int GetReservedFragmentUniformVectors(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
             return 0;
-
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 4;  // dx_ViewCoords, dx_DepthFront, dx_DepthRange, dx_FragCoordOffset
 
         default:
             UNREACHABLE();
@@ -1257,11 +1014,6 @@ gl::Version GetMaximumClientVersion(const Renderer11DeviceCaps &caps)
             {
                 return gl::Version(2, 0);
             }
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return gl::Version(2, 0);
-
         default:
             UNREACHABLE();
             return gl::Version(0, 0);
@@ -1279,9 +1031,6 @@ unsigned int GetMaxViewportAndScissorRectanglesPerPipeline(D3D_FEATURE_LEVEL fea
             return D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
             return 1;
         default:
             UNREACHABLE();
@@ -1316,10 +1065,6 @@ int GetMaxSampleMaskWords(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_10_1:
         case D3D_FEATURE_LEVEL_10_0:
             return 1;
-        case D3D_FEATURE_LEVEL_9_3:
-        case D3D_FEATURE_LEVEL_9_2:
-        case D3D_FEATURE_LEVEL_9_1:
-            return 0;
         default:
             UNREACHABLE();
             return 0;
@@ -1607,7 +1352,6 @@ void GenerateCaps(ID3D11Device *device,
     extensions->EGLStreamConsumerExternalNV         = true;
     extensions->unpackSubimageEXT                   = true;
     extensions->packSubimageNV                      = true;
-    extensions->lossyEtcDecodeANGLE                 = true;
     extensions->copyTextureCHROMIUM                 = true;
     extensions->copyCompressedTextureCHROMIUM       = true;
     extensions->textureStorageMultisample2dArrayOES = true;
@@ -1637,7 +1381,6 @@ void GenerateCaps(ID3D11Device *device,
     extensions->baseVertexBaseInstanceShaderBuiltinANGLE = true;
     extensions->drawElementsBaseVertexOES                = true;
     extensions->drawElementsBaseVertexEXT                = true;
-    extensions->videoTextureWEBGL = true;
 
     // D3D11 cannot support reading depth texture as a luminance texture.
     // It treats it as a red-channel-only texture.
@@ -1646,7 +1389,6 @@ void GenerateCaps(ID3D11Device *device,
     // readPixels on depth & stencil not working with D3D11 backend.
     extensions->readDepthNV         = false;
     extensions->readStencilNV       = false;
-    extensions->depthBufferFloat2NV = false;
 
     // GL_EXT_clip_control
     extensions->clipControlEXT = (featureLevel >= D3D_FEATURE_LEVEL_10_0);
@@ -1686,14 +1428,6 @@ void GenerateCaps(ID3D11Device *device,
             renderer11DeviceCaps.supportsUAVLoadStoreCommonFormats;
     }
 
-    // D3D11 Feature Level 10_0+ uses SV_IsFrontFace in HLSL to emulate gl_FrontFacing.
-    // D3D11 Feature Level 9_3 doesn't support SV_IsFrontFace, and has no equivalent, so can't
-    // support gl_FrontFacing.
-    limitations->noFrontFacingSupport = (featureLevel <= D3D_FEATURE_LEVEL_9_3);
-
-    // D3D11 Feature Level 9_3 doesn't support alpha-to-coverage
-    limitations->noSampleAlphaToCoverageSupport = (featureLevel <= D3D_FEATURE_LEVEL_9_3);
-
     // D3D11 has no concept of separate masks and refs for front and back faces in the depth stencil
     // state.
     limitations->noSeparateStencilRefsAndMasks = true;
@@ -1716,14 +1450,6 @@ void GenerateCaps(ID3D11Device *device,
         // this maybe touble for RGB32 format.
         caps->textureBufferOffsetAlignment = 16;
     }
-
-#ifdef ANGLE_ENABLE_WINDOWS_UWP
-    // Setting a non-zero divisor on attribute zero doesn't work on certain Windows Phone 8-era
-    // devices. We should prevent developers from doing this on ALL Windows Store devices. This will
-    // maintain consistency across all Windows devices. We allow non-zero divisors on attribute zero
-    // if the Client Version >= 3, since devices affected by this issue don't support ES3+.
-    limitations->attributeZeroRequiresZeroDivisorInEXT = true;
-#endif
 }
 
 }  // namespace d3d11_gl
@@ -2090,9 +1816,8 @@ ANGLED3D11DeviceType GetDeviceType(ID3D11Device *device)
     // Note that this function returns an ANGLED3D11DeviceType rather than a D3D_DRIVER_TYPE value,
     // since it is difficult to tell Software and Reference devices apart
 
-    IDXGIDevice *dxgiDevice     = nullptr;
-    IDXGIAdapter *dxgiAdapter   = nullptr;
-    IDXGIAdapter2 *dxgiAdapter2 = nullptr;
+    IDXGIDevice *dxgiDevice   = nullptr;
+    IDXGIAdapter *dxgiAdapter = nullptr;
 
     ANGLED3D11DeviceType retDeviceType = ANGLE_D3D11_DEVICE_TYPE_UNKNOWN;
 
@@ -2102,24 +1827,9 @@ ANGLED3D11DeviceType GetDeviceType(ID3D11Device *device)
         hr = dxgiDevice->GetParent(__uuidof(IDXGIAdapter), (void **)&dxgiAdapter);
         if (SUCCEEDED(hr))
         {
-            std::wstring adapterString;
-            HRESULT adapter2hr =
-                dxgiAdapter->QueryInterface(__uuidof(dxgiAdapter2), (void **)&dxgiAdapter2);
-            if (SUCCEEDED(adapter2hr))
-            {
-                // On D3D_FEATURE_LEVEL_9_*, IDXGIAdapter::GetDesc returns "Software Adapter"
-                // for the description string. Try to use IDXGIAdapter2::GetDesc2 to get the
-                // actual hardware values if possible.
-                DXGI_ADAPTER_DESC2 adapterDesc2;
-                dxgiAdapter2->GetDesc2(&adapterDesc2);
-                adapterString = std::wstring(adapterDesc2.Description);
-            }
-            else
-            {
-                DXGI_ADAPTER_DESC adapterDesc;
-                dxgiAdapter->GetDesc(&adapterDesc);
-                adapterString = std::wstring(adapterDesc.Description);
-            }
+            DXGI_ADAPTER_DESC adapterDesc;
+            dxgiAdapter->GetDesc(&adapterDesc);
+            std::wstring adapterString = std::wstring(adapterDesc.Description);
 
             // Both Reference and Software adapters will be 'Software Adapter'
             const bool isSoftwareDevice =
@@ -2146,7 +1856,6 @@ ANGLED3D11DeviceType GetDeviceType(ID3D11Device *device)
 
     SafeRelease(dxgiDevice);
     SafeRelease(dxgiAdapter);
-    SafeRelease(dxgiAdapter2);
 
     return retDeviceType;
 }
@@ -2275,18 +1984,18 @@ void SetPositionLayerTexCoord3DVertex(PositionLayerTexCoord3DVertex *vertex,
 
 BlendStateKey::BlendStateKey()
 {
-    memset(this, 0, sizeof(BlendStateKey));
+    ANGLE_UNSAFE_TODO(memset(this, 0, sizeof(BlendStateKey)));
     blendStateExt = gl::BlendStateExt();
 }
 
 BlendStateKey::BlendStateKey(const BlendStateKey &other)
 {
-    memcpy(this, &other, sizeof(BlendStateKey));
+    ANGLE_UNSAFE_TODO(memcpy(this, &other, sizeof(BlendStateKey)));
 }
 
 bool operator==(const BlendStateKey &a, const BlendStateKey &b)
 {
-    return memcmp(&a, &b, sizeof(BlendStateKey)) == 0;
+    return ANGLE_UNSAFE_TODO(memcmp(&a, &b, sizeof(BlendStateKey))) == 0;
 }
 
 bool operator!=(const BlendStateKey &a, const BlendStateKey &b)
@@ -2296,12 +2005,12 @@ bool operator!=(const BlendStateKey &a, const BlendStateKey &b)
 
 RasterizerStateKey::RasterizerStateKey()
 {
-    memset(this, 0, sizeof(RasterizerStateKey));
+    ANGLE_UNSAFE_TODO(memset(this, 0, sizeof(RasterizerStateKey)));
 }
 
 bool operator==(const RasterizerStateKey &a, const RasterizerStateKey &b)
 {
-    return memcmp(&a, &b, sizeof(RasterizerStateKey)) == 0;
+    return ANGLE_UNSAFE_TODO(memcmp(&a, &b, sizeof(RasterizerStateKey))) == 0;
 }
 
 bool operator!=(const RasterizerStateKey &a, const RasterizerStateKey &b)
@@ -2410,15 +2119,15 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
                         const DXGI_ADAPTER_DESC &adapterDesc,
                         angle::FeaturesD3D *features)
 {
-    bool isNvidia          = IsNvidia(adapterDesc.VendorId);
-    bool isIntel           = IsIntel(adapterDesc.VendorId);
-    bool isSkylake         = false;
-    bool isBroadwell       = false;
-    bool isHaswell         = false;
-    bool isIvyBridge       = false;
-    bool isSandyBridge     = false;
-    bool isAMD             = IsAMD(adapterDesc.VendorId);
-    bool isFeatureLevel9_3 = deviceCaps.featureLevel <= D3D_FEATURE_LEVEL_9_3;
+    bool isNvidia      = IsNvidia(adapterDesc.VendorId);
+    bool isIntel       = IsIntel(adapterDesc.VendorId);
+    bool isSkylake     = false;
+    bool isBroadwell   = false;
+    bool isHaswell     = false;
+    bool isIvyBridge   = false;
+    bool isSandyBridge = false;
+    bool isAMD         = IsAMD(adapterDesc.VendorId);
+    bool isQualcomm    = IsQualcomm(adapterDesc.VendorId);
 
     angle::VersionTriple capsVersion;
     if (isIntel)
@@ -2454,7 +2163,6 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
     }
 
     ANGLE_FEATURE_CONDITION(features, mrtPerfWorkaround, true);
-    ANGLE_FEATURE_CONDITION(features, zeroMaxLodWorkaround, isFeatureLevel9_3);
     ANGLE_FEATURE_CONDITION(features, allowES3OnFL100, false);
 
     // TODO(jmadill): Disable workaround when we have a fixed compiler DLL.
@@ -2515,17 +2223,14 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
     // NVidia drivers have no trouble clearing textures without showing corruption.
     // Intel and AMD drivers that have trouble have been blocklisted by Chromium. In the case of
     // Intel, they've been blocklisted to the DX9 runtime.
-    ANGLE_FEATURE_CONDITION(features, allowClearForRobustResourceInit, true);
+    // Qualcomm D3D11 drivers have trouble clearing textures when robust resource initialization
+    // uses ClearRenderTargetView, so use the upload path instead.
+    ANGLE_FEATURE_CONDITION(features, allowClearForRobustResourceInit, !isQualcomm);
 
     // Allow translating uniform block to StructuredBuffer on Windows 10. This is targeted
     // to work around a slow fxc compile performance issue with dynamic uniform indexing.
     ANGLE_FEATURE_CONDITION(features, allowTranslateUniformBlockToStructuredBuffer,
                             IsWindows10OrLater());
-
-    // D3D11 Feature Levels 9_3 and below do not support non-constant loop indexing and require
-    // additional
-    // pre-validation of the shader at compile time to produce a better error message.
-    ANGLE_FEATURE_CONDITION(features, supportsNonConstantLoopIndexing, !isFeatureLevel9_3);
 }
 
 void InitializeFrontendFeatures(const DXGI_ADAPTER_DESC &adapterDesc,
@@ -2538,6 +2243,8 @@ void InitializeFrontendFeatures(const DXGI_ADAPTER_DESC &adapterDesc,
     // The D3D backend's handling of compile and link is thread-safe
     ANGLE_FEATURE_CONDITION(features, compileJobIsThreadSafe, true);
     ANGLE_FEATURE_CONDITION(features, linkJobIsThreadSafe, true);
+
+    ANGLE_FEATURE_CONDITION(features, setNeedInitOnInvalidation, true);
 }
 
 void InitConstantBufferDesc(D3D11_BUFFER_DESC *constantBufferDescription, size_t byteWidth)

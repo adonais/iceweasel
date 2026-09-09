@@ -42,6 +42,11 @@
   @media -moz-pref("browser.nova.enabled") {
     border-radius: var(--border-radius-large);
   }
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+  }
 }
 
 .message__icon {

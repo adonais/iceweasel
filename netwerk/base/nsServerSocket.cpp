@@ -368,28 +368,38 @@ nsresult nsServerSocket::InitWithAddressInternal(const PRNetAddr* aAddr,
     return ErrorAccordingToNSPR(PR_GetError());
   }
 
-#if defined(XP_WIN)
-  // https://docs.microsoft.com/en-us/windows/win32/winsock/dual-stack-sockets
-  // To create a Dual-Stack Socket, we have to disable IPV6_V6ONLY.
-  if (aDualStack) {
-    PROsfd osfd = PR_FileDesc2NativeHandle(mFD);
-    if (osfd != -1) {
-      int disable = 0;
-      setsockopt(osfd, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&disable,
-                 sizeof(disable));
-    }
-  }
-#else
-  (void)aDualStack;
-#endif
-
   PR_SetFDInheritable(mFD, false);
 
   PRSocketOptionData opt;
 
+#if defined(XP_WIN)
+  {
+    PROsfd osfd = PR_FileDesc2NativeHandle(mFD);
+    if (osfd != -1) {
+      // https://docs.microsoft.com/en-us/windows/win32/winsock/dual-stack-sockets
+      // To create a Dual-Stack Socket, we have to disable IPV6_V6ONLY.
+      if (aDualStack) {
+        int disable = 0;
+        setsockopt(osfd, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&disable,
+                   sizeof(disable));
+      }
+
+      // On Windows, SO_REUSEADDR allows a second process to bind to a port that
+      // is already being actively listened on, enabling silent port hijacking.
+      // SO_EXCLUSIVEADDRUSE prevents this; the two options are mutually
+      // exclusive.
+      int enable = 1;
+      setsockopt(osfd, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (char*)&enable,
+                 sizeof(enable));
+    }
+  }
+#else
+  (void)aDualStack;
+
   opt.option = PR_SockOpt_Reuseaddr;
   opt.value.reuse_addr = true;
   PR_SetSocketOption(mFD, &opt);
+#endif
 
   opt.option = PR_SockOpt_Nonblocking;
   opt.value.non_blocking = true;

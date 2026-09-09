@@ -22,9 +22,7 @@ import org.mozilla.samples.compose.browser.browser.BrowserScreen
 import org.mozilla.samples.compose.browser.ext.components
 import org.mozilla.samples.compose.browser.settings.SettingsScreen
 
-/**
- * Ladies and gentleman, the browser. ¯\_(ツ)_/¯
- */
+/** Ladies and gentleman, the browser. ¯\_(ツ)_/¯ */
 class BrowserComposeActivity : AppCompatActivity() {
     companion object {
         const val ROUTE_BROWSER = "browser"

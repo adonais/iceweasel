@@ -9,6 +9,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlin.test.assertNotNull
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert
 import org.junit.Assert.assertEquals
@@ -16,7 +17,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.wifi.WifiConnectionMonitor
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class DownloadLanguagesFeatureTest {
@@ -48,9 +48,7 @@ class DownloadLanguagesFeatureTest {
             wifiConnectionMonitor.start()
         }
         verify(exactly = 1) {
-            wifiConnectionMonitor.addOnWifiConnectedChangedListener(
-                downloadLanguagesFeature.wifiConnectedListener,
-            )
+            wifiConnectionMonitor.addOnWifiConnectedChangedListener(downloadLanguagesFeature.wifiConnectedListener)
         }
         assertNotNull(downloadLanguagesFeature.connectivityManager)
     }
@@ -63,9 +61,7 @@ class DownloadLanguagesFeatureTest {
             wifiConnectionMonitor.stop()
         }
         verify(exactly = 1) {
-            wifiConnectionMonitor.removeOnWifiConnectedChangedListener(
-                downloadLanguagesFeature.wifiConnectedListener,
-            )
+            wifiConnectionMonitor.removeOnWifiConnectedChangedListener(downloadLanguagesFeature.wifiConnectedListener)
         }
         Assert.assertNull(downloadLanguagesFeature.connectivityManager)
     }

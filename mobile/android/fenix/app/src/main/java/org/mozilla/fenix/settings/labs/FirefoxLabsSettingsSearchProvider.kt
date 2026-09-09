@@ -10,22 +10,12 @@ import org.mozilla.fenix.settings.settingssearch.PreferenceFileInformation
 import org.mozilla.fenix.settings.settingssearch.SettingsSearchItem
 import org.mozilla.fenix.settings.settingssearch.SettingsSearchProvider
 
-/**
- * [SettingsSearchProvider] for making "Firefox Labs" discoverable in settings search.
- *
- * Returns an empty list when Firefox Labs is not enabled, so the screen is not indexed.
- *
- * @param isLabsEnabled Returns whether Firefox Labs is currently enabled.
- */
-class FirefoxLabsSettingsSearchProvider(
-    private val isLabsEnabled: () -> Boolean,
-) : SettingsSearchProvider {
+/** [SettingsSearchProvider] for making "Firefox Labs" discoverable in settings search. */
+class FirefoxLabsSettingsSearchProvider : SettingsSearchProvider {
 
     private val preferenceFileInformation = PreferenceFileInformation.FirefoxLabsPreferences
 
     override fun getSearchItems(context: Context): List<SettingsSearchItem> {
-        if (!isLabsEnabled()) return emptyList()
-
         return listOf(
             SettingsSearchItem(
                 title = context.getString(R.string.firefox_labs_title),
@@ -33,7 +23,7 @@ class FirefoxLabsSettingsSearchProvider(
                 preferenceKey = FIREFOX_LABS_KEY,
                 categoryHeader = context.getString(preferenceFileInformation.categoryHeaderResourceId),
                 preferenceFileInformation = preferenceFileInformation,
-            ),
+            )
         )
     }
 

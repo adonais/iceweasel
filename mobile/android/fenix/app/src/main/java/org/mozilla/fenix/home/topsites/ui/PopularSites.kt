@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.Favicon
 import org.mozilla.fenix.home.topsites.TOP_SITES_FAVICON_CARD_SIZE
@@ -47,7 +48,6 @@ import org.mozilla.fenix.home.topsites.TOP_SITES_ITEM_SIZE
 import org.mozilla.fenix.home.topsites.TOP_SITES_PER_ROW
 import org.mozilla.fenix.home.topsites.store.PopularSite
 import org.mozilla.fenix.theme.FirefoxTheme
-import mozilla.components.ui.icons.R as iconsR
 
 private const val BADGE_SIZE = 16
 private const val PREVIEW_SITE_COUNT = 8
@@ -76,14 +76,11 @@ internal fun PopularSites(
 
             val rowCount = (sites.size + TOP_SITES_PER_ROW - 1) / TOP_SITES_PER_ROW
             val rowSpacing = FirefoxTheme.layout.space.static100
-            val gridHeight = POPULAR_SITES_ITEM_HEIGHT * rowCount +
-                rowSpacing * (rowCount - 1).coerceAtLeast(0)
+            val gridHeight = POPULAR_SITES_ITEM_HEIGHT * rowCount + rowSpacing * (rowCount - 1).coerceAtLeast(0)
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(TOP_SITES_PER_ROW),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(gridHeight),
+                modifier = Modifier.fillMaxWidth().height(gridHeight),
                 verticalArrangement = Arrangement.spacedBy(rowSpacing),
                 horizontalArrangement = Arrangement.Center,
                 userScrollEnabled = false,
@@ -105,14 +102,14 @@ private fun PopularSiteItem(
     onClick: () -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                role = Role.Button,
-                onClick = onClick,
-            )
-            .width(TOP_SITES_ITEM_SIZE.dp),
+        modifier =
+            Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    role = Role.Button,
+                    onClick = onClick,
+                )
+                .width(TOP_SITES_ITEM_SIZE.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(contentAlignment = Alignment.BottomEnd) {
@@ -145,13 +142,12 @@ private fun FaviconCard(
     Card(
         modifier = modifier.size(TOP_SITES_FAVICON_CARD_SIZE.dp),
         shape = CircleShape,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-        border = BorderStroke(
-            width = FirefoxTheme.layout.border.default,
-            color = MaterialTheme.colorScheme.outlineVariant,
-        ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border =
+            BorderStroke(
+                width = FirefoxTheme.layout.border.default,
+                color = MaterialTheme.colorScheme.outlineVariant,
+            ),
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -177,13 +173,12 @@ private fun AddBadge() {
     Card(
         modifier = Modifier.size(BADGE_SIZE.dp),
         shape = CircleShape,
-        border = BorderStroke(
-            width = FirefoxTheme.layout.border.heavy,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        ),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-        ),
+        border =
+            BorderStroke(
+                width = FirefoxTheme.layout.border.heavy,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -204,9 +199,10 @@ private fun PopularSitesPreview() {
     FirefoxTheme {
         Surface {
             PopularSites(
-                sites = List(PREVIEW_SITE_COUNT) {
-                    PopularSite(title = "Mozilla", url = "https://mozilla.com", iconUrl = null)
-                },
+                sites =
+                    List(PREVIEW_SITE_COUNT) {
+                        PopularSite(title = "Mozilla", url = "https://mozilla.com", iconUrl = null)
+                    },
                 onClick = {},
             )
         }

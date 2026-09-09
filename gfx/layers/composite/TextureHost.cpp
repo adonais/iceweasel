@@ -995,6 +995,7 @@ bool TextureParent::Init(const SurfaceDescriptor& aSharedData,
                          ReadLockDescriptor&& aReadLock,
                          const LayersBackend& aBackend,
                          const TextureFlags& aFlags) {
+  MOZ_ASSERT(mSurfaceAllocator);
   mTextureHost =
       TextureHost::Create(aSharedData, std::move(aReadLock), mSurfaceAllocator,
                           aBackend, aFlags, mExternalImageId);
@@ -1038,9 +1039,8 @@ mozilla::ipc::IPCResult TextureParent::RecvRecycleTexture(
 }
 
 void TextureParent::ActorDestroy(ActorDestroyReason aWhy) {
-  auto* manager = Manager();
-  if (manager->GetProtocolId() == ipc::ProtocolId::PVideoBridgeMsgStart) {
-    static_cast<VideoBridgeParent*>(manager)->RemoveTexture(mSerial);
+  if (VideoBridgeParent* manager = ActorDynCast<VideoBridgeParent>(Manager())) {
+    manager->RemoveTexture(mSerial);
   }
   Destroy();
 }

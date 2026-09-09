@@ -13,12 +13,9 @@ import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 
-/**
- * [Middleware] that handles updating the [TabSessionState.lastAccess] when a tab is selected.
- */
-class LastAccessMiddleware(
-    private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
-) : Middleware<BrowserState, BrowserAction> {
+/** [Middleware] that handles updating the [TabSessionState.lastAccess] when a tab is selected. */
+class LastAccessMiddleware(private val currentTimeMillis: () -> Long = { System.currentTimeMillis() }) :
+    Middleware<BrowserState, BrowserAction> {
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,
@@ -26,21 +23,22 @@ class LastAccessMiddleware(
     ) {
         // Since tab removal can affect tab selection we save the
         // selected tab ID before removal to determine if it changed.
-        val selectionBeforeRemoval = when (action) {
-            is TabListAction.RemoveTabAction,
-            is TabListAction.RemoveTabsAction,
-            // NB: RemoveAllNormalTabsAction and RemoveAllPrivateTabsAction never update tab selection
-            -> {
-                store.state.selectedTabId
+        val selectionBeforeRemoval =
+            when (action) {
+                is TabListAction.RemoveTabAction,
+                is TabListAction.RemoveTabsAction
+                // NB: RemoveAllNormalTabsAction and RemoveAllPrivateTabsAction never update tab selection
+                -> {
+                    store.state.selectedTabId
+                }
+                else -> null
             }
-            else -> null
-        }
 
         next(action)
 
         when (action) {
             is TabListAction.RemoveTabAction,
-            is TabListAction.RemoveTabsAction,
+            is TabListAction.RemoveTabsAction
             // NB: RemoveAllNormalTabsAction and RemoveAllPrivateTabsAction never updates tab selection
             -> {
                 // If the selected tab changed during removal we make sure to update

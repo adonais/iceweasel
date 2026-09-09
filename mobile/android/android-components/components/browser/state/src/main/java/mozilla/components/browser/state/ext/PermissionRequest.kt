@@ -3,21 +3,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package mozilla.components.browser.state.ext
+
 import mozilla.components.concept.engine.permission.PermissionRequest
 
-/**
- * @returns true if the given [permissionRequest] is contained in this list otherwise false
- * */
+/** @returns true if the given [permissionRequest] is contained in this list otherwise false */
 fun List<PermissionRequest>.containsPermission(permissionRequest: PermissionRequest): Boolean {
     return this.any {
-        it.uri == permissionRequest.uri &&
-            it.permissions == permissionRequest.permissions
+        it.uri == permissionRequest.uri && it.permissions == permissionRequest.permissions
     }
 }
 
-/**
- * Merge the given [permissionRequest] if it is contained in this list.
- */
+/** Merge the given [permissionRequest] if it is contained in this list. */
 fun List<PermissionRequest>.mergePermissions(permissionRequest: PermissionRequest) {
     run loop@{
         this.forEach {

@@ -39,7 +39,7 @@ static Atomic<android_res_nresult_ptr> sAndroidResNResult;
 nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
                                 nsIDNSService::DNSFlags aFlags,
                                 TypeRecordResultType& aResult, uint32_t& aTTL,
-                                nsACString& aAliasName) {
+                                HTTPSAliasTarget& aAlias) {
   DNSPacket packet;
   nsAutoCString host(aHost);
   nsresult rv;
@@ -120,7 +120,7 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
     return rv;
   }
 
-  return ParseHTTPSRecord(host, packet, aResult, aTTL, aAliasName);
+  return ParseHTTPSRecord(host, packet, aResult, aTTL, aAlias);
 }
 
 void DNSThreadShutdown() {}

@@ -179,8 +179,6 @@ hb_codepoint_t gfxHarfBuzzShaper::GetVariationGlyph(
     return mFont->GetGlyph(unicode, variation_selector);
   }
 
-  NS_ASSERTION(mFont->GetFontEntry()->HasCmapTable(),
-               "we cannot be using this font!");
   NS_ASSERTION(mCmapTable && (mCmapFormat > 0) && (mSubtableOffset > 0),
                "cmap data not correctly set up, expect disaster");
 
@@ -431,7 +429,10 @@ void gfxHarfBuzzShaper::GetGlyphHAdvances(unsigned int count,
 
 hb_position_t gfxHarfBuzzShaper::GetGlyphVAdvance(hb_codepoint_t glyph) {
   if (!mVerticalInitialized) {
-    InitializeVertical();
+    RecursiveMutexAutoLock lock(mMutex);
+    if (!mVerticalInitialized) {  // re-check in case we're racing another call
+      InitializeVertical();
+    }
   }
 
   if (!mVmtxTable) {
@@ -1315,8 +1316,7 @@ bool gfxHarfBuzzShaper::LoadHmtxTable() {
 void gfxHarfBuzzShaper::InitializeVertical() {
   // We only do this once. If we don't have a mHmtxTable after that,
   // we'll be making up fallback metrics.
-  RecursiveMutexAutoLock lock(mMutex);
-
+  // The caller must be already holding mMutex.
   mVerticalInitialized = true;
 
   if (!mHmtxTable) {
@@ -1377,22 +1377,6 @@ bool gfxHarfBuzzShaper::ShapeText(const char16_t* aText, uint32_t aOffset,
                                   nsAtom* aLanguage, bool aVertical,
                                   RoundingFlags aRounding,
                                   gfxShapedText* aShapedText) {
-  // gfxFont (and hence this shaper) may be shared across threads via the
-  // global font cache; serialize ShapeText so that mBuffer and other mutable
-  // per-call state cannot be touched concurrently.
-  RecursiveMutexAutoLock lock(mMutex);
-
-  mUseVerticalPresentationForms = false;
-  if (aVertical) {
-    if (!mVerticalInitialized) {
-      InitializeVertical();
-    }
-    if (!mFont->GetFontEntry()->SupportsOpenTypeFeature(
-            aScript, HB_TAG('v', 'e', 'r', 't'))) {
-      mUseVerticalPresentationForms = true;
-    }
-  }
-
   const gfxFontStyle* style = mFont->GetStyle();
 
   // determine whether petite-caps falls back to small-caps
@@ -1450,6 +1434,21 @@ bool gfxHarfBuzzShaper::ShapeText(const char16_t* aText, uint32_t aOffset,
                                               HB_FEATURE_GLOBAL_END});
         }
       }
+    }
+  }
+
+  // gfxFont (and hence this shaper) may be shared across threads via the
+  // global font cache; serialize shaping so that mBuffer and other mutable
+  // per-call state cannot be touched concurrently.
+  RecursiveMutexAutoLock lock(mMutex);
+
+  mUseVerticalPresentationForms = false;
+  if (aVertical) {
+    if (!mVerticalInitialized) {
+      InitializeVertical();
+    }
+    if (!entry->SupportsOpenTypeFeature(aScript, HB_TAG('v', 'e', 'r', 't'))) {
+      mUseVerticalPresentationForms = true;
     }
   }
 

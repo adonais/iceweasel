@@ -17,8 +17,12 @@
 import argparse
 import logging
 import os
+import subprocess
 import sys
+import tarfile
 import tempfile
+import zipfile
+from urllib import parse
 
 import redo
 import requests
@@ -26,7 +30,7 @@ import requests
 log = logging.getLogger("upload-symbols")
 log.setLevel(logging.INFO)
 
-DEFAULT_URL = "https://symbols.mozilla.org/upload/"
+DEFAULT_URL = "https://symbols.mozilla.org/"
 TASKCLUSTER_PROXY_URL = os.environ.get("TASKCLUSTER_PROXY_URL", "http://taskcluster")
 TASKCLUSTER_ROOT_URL = os.environ.get(
     "TASKCLUSTER_ROOT_URL", "https://firefox-ci-tc.services.mozilla.com"
@@ -73,7 +77,7 @@ def get_taskcluster_artifact_urls(task_id):
 def main():
     logging.basicConfig()
     parser = argparse.ArgumentParser(
-        description="Upload symbols in ZIP using token from Taskcluster secrets service."
+        description="Upload symbols using token from Taskcluster secrets service."
     )
     parser.add_argument(
         "archive",
@@ -115,45 +119,56 @@ def main():
         if error:
             return 1
 
-    try:
-        tmpdir = tempfile.TemporaryDirectory()
-        zip_paths = convert_zst_archives(args.archive, tmpdir)
-        for zip_path in zip_paths:
-            result = upload_symbols(zip_path)
-            if result:
-                return result
-        return 0
-    finally:
-        tmpdir.cleanup()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        unpack_zst_archives(args.archive, tmpdir)
+        return upload_symbols(tmpdir)
 
 
-def convert_zst_archives(archives, tmpdir):
+def download_archive(archive):
+    output_filename = parse.urlsplit(archive).path.rpartition("/")[2]
+    output_path = os.path.join(tempfile.gettempdir(), output_filename)
+    log.info(f"Downloading archive {archive}...")
+    with requests.get(archive, stream=True) as response:
+        response.raise_for_status()
+        with open(output_path, "wb") as output:
+            for chunk in response.iter_content(chunk_size=1024 * 1024):
+                if chunk:
+                    output.write(chunk)
+    return output_path
+
+
+def unpack_zst_archives(archives, tmpdir):
     for archive in archives:
         if archive.endswith(".tar.zst"):
-            yield from convert_zst_archive(archive, tmpdir)
+            unpack_zst_archive(archive, tmpdir)
+        elif archive.startswith("http"):
+            # This is a ZIP archive URL. We used to directly pass the URL to the
+            # Symbols Server, which would download the archive and process it. In
+            # the upcoming version of the upload API, symbols file data no longer
+            # passes through the Symbols Server, so we need to download the archive
+            # to the local disk. ZIP archives need to be seekable to be unpacked,
+            # since the central directory is stored near the end of the archive.
+            local_archive = download_archive(archive)
+            zipfile.ZipFile(local_archive).extractall(tmpdir)
+            os.unlink(local_archive)
         else:
-            yield archive
+            zipfile.ZipFile(archive).extractall(tmpdir)
 
 
-def convert_zst_archive(zst_archive, tmpdir):
+def unpack_zst_archive(zst_archive, tmpdir):
     """
-    Convert a .tar.zst file to a zip file
+    Unpack a .tar.zst file to a temporary directory.
 
-    Our build tasks output .tar.zst files, but the tecken server only allows
-    .zip files to be uploaded.
+    Our build tasks output .tar.zst files, but the upload-symbols command-line tool
+    expects a directory of symbols files as input.
 
     :param zst_archive: path or URL to a .tar.zst source file
-    :param tmpdir: TemporaryDirectory to store the output zip file in
-    :returns: path to output zip file
+    :param tmpdir: Path to the temporary directory to extract the symbols files to
     """
     import concurrent.futures
     import gzip
-    import itertools
-    import tarfile
 
     import zstandard
-    from mozpack.files import File
-    from mozpack.mozjar import Deflater, JarWriter
 
     def iter_files_from_tar(reader, desc="reader"):
         ctx = zstandard.ZstdDecompressor()
@@ -193,97 +208,66 @@ def convert_zst_archive(zst_archive, tmpdir):
             (file_name, None) when the file can't be compressed.
             """
             name, data = data
-            log.info("Compressing %s", name)
+            log.info("Handling %s", name)
             path = os.path.join(tmpdir, name.lstrip("/"))
+            os.makedirs(os.path.dirname(path), exist_ok=True)
             if name.endswith(".dbg"):
-                os.makedirs(os.path.dirname(path), exist_ok=True)
-                with open(path, "wb") as fh:
+                with open(path + ".gz", "wb") as fh:
                     with gzip.GzipFile(fileobj=fh, mode="wb", compresslevel=5) as c:
                         c.write(data)
-                return (name + ".gz", File(path))
             elif name.endswith(".dSYM.tar"):
                 import bz2
 
-                os.makedirs(os.path.dirname(path), exist_ok=True)
-                with open(path, "wb") as fh:
-                    fh.write(bz2.compress(data))
-                return (name + ".bz2", File(path))
+                with bz2.open(path + ".bz2", "wb") as fh:
+                    fh.write(data)
             elif name.endswith((".pdb", ".exe", ".dll")):
-                import subprocess
-
                 # The CAB format doesn't support files larger than 2GB.
                 # Skipping the file is still better than failing the entire
                 # upload.
                 if len(data) >= 0x7FFF8000:
-                    return (name, None)
+                    log.info("Skipping %s", name)
+                    return
 
                 makecab = os.environ.get("MAKECAB", "makecab")
-                os.makedirs(os.path.dirname(path), exist_ok=True)
                 with open(path, "wb") as fh:
                     fh.write(data)
 
                 subprocess.check_call(
-                    [makecab, "-D", "CompressionType=MSZIP", path, path + "_"],
+                    [makecab, "-D", "CompressionType=MSZIP", path, path[:-1] + "_"],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.STDOUT,
                 )
-
-                return (name[:-1] + "_", File(path + "_"))
+                os.unlink(path)
             else:
-                deflater = Deflater(compress_level=5)
-                deflater.write(data)
-                return (name, deflater)
+                with open(path, "wb") as fh:
+                    fh.write(data)
 
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=os.cpu_count()
         ) as executor:
-            yield from executor.map(
+            # Consume the iterator to propagate exceptions
+            for _ in executor.map(
                 handle_file, iter_files_from_tar(reader, desc=reader_desc)
-            )
+            ):
+                pass
 
         reader.close()
 
-    zip_paths_iter = iter(
-        os.path.join(tmpdir.name, "symbols{}.zip".format("" if i == 1 else i))
-        for i in itertools.count(start=1)
-    )
-    zip_path = next(zip_paths_iter)
-    log.info(f'Preparing symbol archive "{zip_path}" from "{zst_archive}"')
+    log.info(f'Extracting symbols files from "{zst_archive}"')
     for i, _ in enumerate(redo.retrier(attempts=MAX_RETRIES), start=1):
-        zip_paths = []
-        jar = None
         try:
-            for name, data in prepare_from(zst_archive, tmpdir.name):
-                if data is None:
-                    log.info("Skipping %s", name)
-                    continue
-                if not jar:
-                    jar = JarWriter(zip_path)
-                    zip_paths.append(zip_path)
-                    size = 0
-                log.info("Adding %s", name)
-                jar.add(name, data, compress=not isinstance(data, File))
-                size += data.size() if isinstance(data, File) else data.compressed_size
-                if size > MAX_ZIP_SIZE:
-                    jar.finish()
-                    jar = None
-                    zip_path = next(zip_paths_iter)
-                    log.info(f'Continuing with symbol archive "{zip_path}"')
-            if jar:
-                jar.finish()
-            return zip_paths
+            prepare_from(zst_archive, tmpdir)
+            return
         except requests.exceptions.RequestException as e:
             log.error(f"Error: {e}")
             log.info("Retrying...")
 
-    return []
 
-
-def upload_symbols(zip_path):
+def upload_symbols(directory):
     """
     Upload symbols to the tecken server
 
-    :param zip_path: path to the zip file to upload
+    :param directory: path to the directory of symbols files to upload
     :returns: 0 indicates the upload was successful, non-zero indicates an
               error that should be used for the script's exit code
     """
@@ -309,47 +293,21 @@ def upload_symbols(zip_path):
     # Allow overwriting of the upload url with an environmental variable
     if "SOCORRO_SYMBOL_UPLOAD_URL" in os.environ:
         url = os.environ["SOCORRO_SYMBOL_UPLOAD_URL"]
+        if url.endswith("upload/"):
+            # The URL used to be the full path to the upload endpoint. Now the URL is
+            # the base URL of the Symbols Server. For backwards compatibility, remove
+            # the endpoint path to the old upload endpoint.
+            url = url.removesuffix("upload/")
+            log.warning(f"SOCORRO_SYMBOL_UPLOAD_URL should be set to {url}.")
     else:
         url = DEFAULT_URL
 
-    log.info(f'Uploading symbol file "{zip_path}" to "{url}"')
-
-    for i, _ in enumerate(
-        redo.retrier(attempts=MAX_RETRIES, sleeptime=60, sleepscale=1), start=1
-    ):
-        log.info("Attempt %d of %d..." % (i, MAX_RETRIES))
-        try:
-            if zip_path.startswith("http"):
-                zip_arg = {"data": {"url": zip_path}}
-            else:
-                zip_arg = {"files": {"symbols.zip": open(zip_path, "rb")}}
-            r = requests.post(
-                url,
-                headers={"Auth-Token": auth_token},
-                allow_redirects=False,
-                # Allow a longer read timeout because uploading by URL means the server
-                # has to fetch the entire zip file, which can take a while.
-                timeout=(300, 600),
-                **zip_arg,
-            )
-            # 408, 429 or any 5XX is likely to be a transient failure.
-            # Break out for success or other error codes.
-            if r.ok or (r.status_code < 500 and (r.status_code not in (408, 429))):
-                break
-            print_error(r)
-        except requests.exceptions.RequestException as e:
-            log.error(f"Error: {e}")
-        log.info("Retrying...")
-    else:
-        log.warning("Maximum retries hit, giving up!")
-        return 1
-
-    if r.status_code >= 200 and r.status_code < 300:
-        log.info("Uploaded successfully!")
-        return 0
-
-    print_error(r)
-    return 1
+    os.environ["SYMBOLS_AUTH_TOKEN"] = auth_token
+    upload_symbols = os.environ.get("UPLOAD_SYMBOLS", "upload-symbols")
+    status = subprocess.run(
+        [upload_symbols, "--server-url", url, directory], check=False
+    )
+    return status.returncode
 
 
 if __name__ == "__main__":

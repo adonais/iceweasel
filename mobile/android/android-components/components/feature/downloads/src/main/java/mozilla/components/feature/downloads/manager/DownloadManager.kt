@@ -19,6 +19,7 @@ interface DownloadManager {
 
     /**
      * Schedules a download through the [DownloadManager].
+     *
      * @param download metadata related to the download.
      * @param cookie any additional cookie to add as part of the download request.
      * @return the id reference of the scheduled download.
@@ -30,15 +31,12 @@ interface DownloadManager {
 
     /**
      * Schedules another attempt at downloading the given download.
+     *
      * @param downloadId the id of the previously attempted download
      */
-    fun tryAgain(
-        downloadId: String,
-    )
+    fun tryAgain(downloadId: String)
 
-    /**
-     * Registers any listeners required by the [DownloadManager] to monitor download progress or status changes.
-     */
+    /** Registers any listeners required by the [DownloadManager] to monitor download progress or status changes. */
     fun registerListeners() = Unit
 
     fun unregisterListeners() = Unit

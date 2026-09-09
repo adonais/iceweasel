@@ -8361,6 +8361,22 @@ search_widget:
     metadata:
       tags:
         - Search
+  lens_button:
+    type: event
+    description: |
+      A user pressed the Google Lens icon, opening the Google Lens image search flow.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2048722
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D308320
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Search
 
 tracking_protection:
   privacy_report_tapped:
@@ -8372,10 +8388,12 @@ tracking_protection:
       source:
         description: |
           The surface the user opened the privacy dashboard from. Possible
-          values are: `home`, `tabs_tray` or `trust_panel`.
+          values are: `home`, `tabs_tray`, `trust_panel`, `deeplink` or
+          `privacy_report_notification`.
         type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2044067
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2051483
     data_reviews:
       - https://phabricator.services.mozilla.com/D304862
     data_sensitivity:
@@ -9415,6 +9433,40 @@ top_sites:
       - https://github.com/mozilla-mobile/fenix/pull/19924#issuecomment-861423789
       - https://github.com/mozilla-mobile/fenix/pull/20517#pullrequestreview-718069041
       - https://github.com/mozilla-mobile/fenix/pull/21038#issuecomment-906757301
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Shortcuts
+  show_more:
+    type: event
+    description: |
+      A user tapped the control that expands the shortcuts section to show all
+      of their shortcuts on the homepage.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063302
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063302
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Shortcuts
+  show_less:
+    type: event
+    description: |
+      A user tapped the control that collapses the shortcuts section back to the
+      default number of shortcuts on the homepage.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063302
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063302
     data_sensitivity:
       - interaction
     notification_emails:
@@ -13235,6 +13287,70 @@ addresses:
     metadata:
       tags:
         - Autofill
+  save_prompt_shown:
+    type: event
+    description: |
+      The address autofill save prompt is shown.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061457
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061457
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Autofill
+  save_prompt_create:
+    type: event
+    description: |
+      User saved an address using the autofill save prompt.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061457
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061457
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Autofill
+  save_prompt_update:
+    type: event
+    description: |
+      User updated an address using the autofill save prompt.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061457
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061457
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Autofill
+  save_prompt_dismissed:
+    type: event
+    description: |
+      User dismissed the address autofill save prompt without saving.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061457
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061457
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Autofill
   management_add_tapped:
     type: event
     description: |
@@ -16056,6 +16172,36 @@ ai_summarize:
     notification_emails:
       - android-probes@mozilla.com
     expires: never
+  feedback:
+    type: event
+    description: |
+      Recorded each time the user taps the thumbs up/down feedback control on
+      a generated summary. The user can change their rating while the summary
+      is on screen, so this can be recorded more than once per summarization
+      session; consumers should take the last event for a given session_id.
+    extra_keys:
+      session_id:
+        description: |
+          A UUID identifying a single summarization session, shared across all
+          events recorded during that session.
+        type: string
+      rating:
+        description: |
+          The user's rating of the summary. Possible values:
+          "good", "bad".
+        type: string
+      model:
+        description: The name of the model used for summarization.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2047013
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2047013
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
   duration:
     type: timing_distribution
     time_unit: millisecond
@@ -16539,10 +16685,43 @@ vpn:
         description:
           The error code or number associated with the error, if available.
         type: string
+      operation:
+        description: >
+          Which engine request failed: "activate" or "deactivate". Both are
+          reported through the same action, so error_code alone cannot tell
+          them apart.
+        type: string
+      service_state:
+        description: >
+          Service state when the engine reported the failure. Not the state that
+          issued the request: the reply is asynchronous, so the two can differ.
+          One of "uninitialized", "unavailable", "unauthenticated", "opted_out",
+          "ready".
+        type: string
+      proxy_state:
+        description: >
+          Proxy state when the engine reported the failure. Not the state that
+          issued the request: the reply is asynchronous, so the two can differ.
+          One of "uninitialized", "idle", "activating", "active",
+          "data_limit_reached", "connection_error".
+        type: string
+      account_state:
+        description: >
+          Account status when the engine reported the failure. Not the status
+          that issued the request: the reply is asynchronous, so the two can
+          differ. One of "uninitialized", "warming_up", "no_account",
+          "needs_authentication", "requesting_authentication",
+          "needs_authorization", "requesting_authorization",
+          "awaiting_authentication", "awaiting_authorization",
+          "awaiting_enrollment", "auth_failed", "authenticated",
+          "enrolled_and_entitled", "try_again".
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2031198
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068852
     data_reviews:
       - https://phabricator.services.mozilla.com/D293774
+      - https://phabricator.services.mozilla.com/D323162
     data_sensitivity:
       - technical
     notification_emails:
@@ -16586,6 +16765,24 @@ vpn:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2031198
     data_reviews:
       - https://phabricator.services.mozilla.com/D293774
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  location_switch_error:
+    type: event
+    description:
+      Triggered when switching the location fails.
+    extra_keys:
+      error_code:
+        description:
+          The error code or number associated with the error, if available.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2049041
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D318300
     data_sensitivity:
       - technical
     notification_emails:
@@ -16672,3 +16869,119 @@ native_share_sheet:
     metadata:
       tags:
         - Sharing
+
+pdf_viewer:
+  download_tapped:
+    type: event
+    description: |
+      A user tapped the download button in the PDF viewer tools.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054916
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D319233
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - interaction
+    expires: never
+    metadata:
+      tags:
+        - Download
+  print_tapped:
+    type: event
+    description: |
+      A user tapped the print button in the PDF viewer tools.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054917
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D319739
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - interaction
+    expires: never
+  share_tapped:
+    type: event
+    description: |
+      A user tapped the share button in the PDF viewer tools.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054918
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D319812
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - interaction
+    expires: never
+    metadata:
+      tags:
+        - Sharing
+  sign_tapped:
+    type: event
+    description: |
+      A user tapped the sign button in the PDF viewer tools, opening the dialog for
+      adding a signature.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061281
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D321102
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - interaction
+    expires: never
+  sign_dialog_clear_tapped:
+    type: event
+    description: |
+      A user tapped the clear button in the PDF viewer's add a signature dialog.
+    extra_keys:
+      signature_type:
+        description: |
+          How the signature was created. Possible values are: `typed`.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061281
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D321102
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - interaction
+    expires: never
+  sign_dialog_add_tapped:
+    type: event
+    description: |
+      A user tapped the add button in the PDF viewer's add a signature dialog.
+    extra_keys:
+      signature_type:
+        description: |
+          How the signature was created. Possible values are: `typed`.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061281
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D321102
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - interaction
+    expires: never
+  sign_dialog_close_tapped:
+    type: event
+    description: |
+      A user dismissed the PDF viewer's add a signature dialog without adding a
+      signature, either with the close button or by going back.
+    extra_keys:
+      signature_type:
+        description: |
+          How the signature was created. Possible values are: `typed`.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061281
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D321102
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - interaction
+    expires: never

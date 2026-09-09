@@ -99,25 +99,6 @@ sftk_kyber_AllocPrivKeyItem(KyberParams params, SECItem *privkey)
     }
 }
 
-SECItem *
-sftk_kyber_AllocCiphertextItem(KyberParams params, SECItem *ciphertext)
-{
-    switch (params) {
-#ifndef NSS_DISABLE_KYBER
-        case params_kyber768_round3:
-        case params_kyber768_round3_test_mode:
-#endif
-        case params_ml_kem768:
-        case params_ml_kem768_test_mode:
-            return SECITEM_AllocItem(NULL, ciphertext, KYBER768_CIPHERTEXT_BYTES);
-        case params_ml_kem1024:
-        case params_ml_kem1024_test_mode:
-            return SECITEM_AllocItem(NULL, ciphertext, MLKEM1024_CIPHERTEXT_BYTES);
-        default:
-            return NULL;
-    }
-}
-
 static PRBool
 sftk_kem_ValidateMechanism(CK_MECHANISM_PTR pMechanism)
 {

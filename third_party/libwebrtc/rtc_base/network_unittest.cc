@@ -964,6 +964,13 @@ TEST_F(NetworkTest, TestGetAdapterTypeFromNameMatching) {
   ClearNetworks(manager);
   ReleaseIfAddrs(addr_list);
 
+  // Tailscale interface; name is in form "tailscale<index>".
+  strcpy(if_name, "tailscale0");
+  addr_list = InstallIpv4Network(if_name, ipv4_address1, ipv4_mask, manager);
+  EXPECT_EQ(ADAPTER_TYPE_VPN, GetAdapterType(manager));
+  ClearNetworks(manager);
+  ReleaseIfAddrs(addr_list);
+
   strcpy(if_name, "lo0");
   addr_list = InstallIpv6Network(if_name, ipv6_address1, ipv6_mask, manager);
   EXPECT_EQ(ADAPTER_TYPE_LOOPBACK, GetAdapterType(manager));

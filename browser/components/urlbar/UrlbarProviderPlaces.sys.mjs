@@ -345,7 +345,7 @@ function makeUrlbarResult(queryContext, info) {
             url: action.params.url,
             title: info.title,
             icon: info.icon,
-            userContextId: info.userContextId,
+            userContext: UrlbarUtils.getUserContextData(info.userContextId),
             lastVisit: info.lastVisit,
             bookmarkDateMs: info.bookmarkDateMs,
             tabGroup: info.tabGroup,

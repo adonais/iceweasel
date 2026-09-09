@@ -115,11 +115,12 @@ class WebCompatReporterFeatureTest {
 
         val onSuccess = argumentCaptor<((WebExtension) -> Unit)>()
         val onError = argumentCaptor<((Throwable) -> Unit)>()
-        verify(controller, times(1)).install(
-            eq(engine),
-            onSuccess.capture(),
-            onError.capture(),
-        )
+        verify(controller, times(1))
+            .install(
+                eq(engine),
+                onSuccess.capture(),
+                onError.capture(),
+            )
 
         onSuccess.value.invoke(mock())
         return reporterFeature

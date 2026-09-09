@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+</head>
+<body>
+  <div id="api-status">pending</div>
+  <div id="intercept-status">pending</div>
+
+  <script>
+    async function run() {
+      let apiEl = document.getElementById("api-status");
+      let interceptEl = document.getElementById("intercept-status");
+      try {
+        if ("serviceWorker" in navigator) {
+          apiEl.textContent = "sw-available";
+          await navigator.serviceWorker.register("sw_fetch_intercept.js");
+          await navigator.serviceWorker.ready;
+
+          if (!navigator.serviceWorker.controller) {
+            await new Promise(resolve => {
+              navigator.serviceWorker.addEventListener("controllerchange", resolve, { once: true });
+            });
+          }
+        } else {
+          apiEl.textContent = "sw-not-supported";
+        }
+
+        let response = await fetch("?sw-intercepted-resource");
+        let text = await response.text();
+        interceptEl.textContent = text === "intercepted" ? "sw-intercepted" : "sw-not-intercepted";
+      } catch (e) {
+        interceptEl.textContent = "sw-error";
+      }
+    }
+
+    run();
+  </script>
+</body>
+</html>

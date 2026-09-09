@@ -7,14 +7,10 @@ package org.mozilla.fenix.home.recentvisits.interactor
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryGroup
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryHighlight
 
-/**
- * All possible user interactions with the "Recent visits" section.
- */
+/** All possible user interactions with the "Recent visits" section. */
 interface RecentVisitsInteractor {
 
-    /**
-     * Callback for when the user clicks on the "Show all" button besides the recent visits header.
-     */
+    /** Callback for when the user clicks on the "Show all" button besides the recent visits header. */
     fun onHistoryShowAllClicked()
 
     /**

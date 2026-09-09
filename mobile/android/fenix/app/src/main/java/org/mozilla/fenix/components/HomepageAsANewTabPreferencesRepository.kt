@@ -6,14 +6,10 @@ package org.mozilla.fenix.components
 
 import org.mozilla.fenix.utils.Settings
 
-/**
- * The repository for managing the homepage as a new tab preference.
- */
+/** The repository for managing the homepage as a new tab preference. */
 interface HomepageAsANewTabPreferencesRepository {
 
-    /**
-     * Returns whether the homepage as a new tab preference is enabled.
-     */
+    /** Returns whether the homepage as a new tab preference is enabled. */
     fun getHomepageAsANewTabEnabled(): Boolean
 }
 
@@ -22,9 +18,8 @@ interface HomepageAsANewTabPreferencesRepository {
  *
  * @param settings [Settings] used to check the application shared preferences.
  */
-class DefaultHomepageAsANewTabPreferenceRepository(
-    private val settings: Settings,
-) : HomepageAsANewTabPreferencesRepository {
+class DefaultHomepageAsANewTabPreferenceRepository(private val settings: Settings) :
+    HomepageAsANewTabPreferencesRepository {
 
     override fun getHomepageAsANewTabEnabled(): Boolean = settings.enableHomepageAsNewTab
 }

@@ -20,9 +20,7 @@ import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.state.AppStore
 import org.mozilla.focus.utils.Settings
 
-/**
- * Middleware used to intercept browser store actions in order to decide when should we display a specific CFR
- */
+/** Middleware used to intercept browser store actions in order to decide when should we display a specific CFR */
 class CfrMiddleware(
     private val appStore: AppStore,
     private val settings: Settings,
@@ -58,36 +56,38 @@ class CfrMiddleware(
 
             appStore.dispatch(
                 AppAction.ShowTrackingProtectionCfrChange(
-                    mapOf((action as TrackingProtectionAction.TrackerBlockedAction).tabId to true),
-                ),
+                    mapOf((action as TrackingProtectionAction.TrackerBlockedAction).tabId to true)
+                )
             )
         }
     }
 
     @VisibleForTesting
     internal fun isMozillaUrl(browserState: BrowserState): Boolean {
-        return browserState.findTabOrCustomTabOrSelectedTab(
-            browserState.selectedTabId,
-        )?.content?.url?.toUri()?.truncatedHost()?.substringBefore(".") == ("mozilla")
+        return browserState
+            .findTabOrCustomTabOrSelectedTab(browserState.selectedTabId)
+            ?.content
+            ?.url
+            ?.toUri()
+            ?.truncatedHost()
+            ?.substringBefore(".") == ("mozilla")
     }
 
     private fun isActionSecure(action: BrowserAction, browserState: BrowserState) =
         action is TrackingProtectionAction.TrackerBlockedAction &&
-                action.tabId == browserState.selectedTabId &&
-                isSessionSecure(browserState)
+            action.tabId == browserState.selectedTabId &&
+            isSessionSecure(browserState)
 
     private fun isSessionSecure(browserState: BrowserState) =
-        browserState.findTabOrCustomTabOrSelectedTab(
-            browserState.selectedTabId,
-        )?.content?.securityInfo?.isSecure == true
+        browserState.findTabOrCustomTabOrSelectedTab(browserState.selectedTabId)?.content?.securityInfo?.isSecure ==
+            true
 
     private fun shouldShowCfrForTrackingProtection(
         action: BrowserAction,
         browserState: BrowserState,
-    ) = (
-            isActionSecure(action = action, browserState = browserState) &&
-                    !isMozillaUrl(browserState = browserState) &&
-                    settings.shouldShowCfrForTrackingProtection &&
-                    !appStore.state.showEraseTabsCfr
-            )
+    ) =
+        (isActionSecure(action = action, browserState = browserState) &&
+            !isMozillaUrl(browserState = browserState) &&
+            settings.shouldShowCfrForTrackingProtection &&
+            !appStore.state.showEraseTabsCfr)
 }

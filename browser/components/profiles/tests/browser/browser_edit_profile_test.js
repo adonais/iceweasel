@@ -11,9 +11,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 const NEW_PROFILE_NAME = "This is a new profile name";
 
 const setup = async () => {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.nova.enabled", false]],
-  });
   await initGroupDatabase();
   let profile = SelectableProfileService.currentProfile;
   Assert.ok(profile, "Should have a profile now");
@@ -187,7 +184,7 @@ add_task(async function test_edit_profile_avatar() {
         const avatarSelector = editProfileCard.avatarSelector;
 
         await ContentTaskUtils.waitForCondition(
-          () => ContentTaskUtils.isVisible(avatarSelector),
+          () => ContentTaskUtils.isVisible(avatarSelector.dialog),
           "Waiting for avatar selector to become visible"
         );
 
@@ -486,7 +483,7 @@ add_task(async function test_avatar_picker_arrow_key_support() {
         const avatarSelector = editProfileCard.avatarSelector;
 
         await ContentTaskUtils.waitForCondition(
-          () => ContentTaskUtils.isVisible(avatarSelector),
+          () => ContentTaskUtils.isVisible(avatarSelector.dialog),
           "Waiting for avatar selector to become visible"
         );
 
@@ -797,23 +794,27 @@ add_task(async function test_edit_link_keyboard_accessibility() {
         );
 
         let avatarSelector = editProfileCard.avatarSelector;
-        Assert.ok(avatarSelector.hidden, "Avatar selector should start hidden");
+        Assert.ok(
+          ContentTaskUtils.isHidden(avatarSelector.dialog),
+          "Avatar selector should start hidden"
+        );
 
         EventUtils.synthesizeKey("KEY_Enter", {}, content);
         Assert.ok(
-          !avatarSelector.hidden,
+          ContentTaskUtils.isVisible(avatarSelector.dialog),
           "Avatar selector should be visible after Enter key"
         );
 
+        editButton.focus();
         EventUtils.synthesizeKey("KEY_Enter", {}, content); // Hide the avatar selector first
         Assert.ok(
-          avatarSelector.hidden,
+          ContentTaskUtils.isHidden(avatarSelector.dialog),
           "Avatar selector should be hidden again"
         );
 
         EventUtils.synthesizeKey(" ", {}, content);
         Assert.ok(
-          !avatarSelector.hidden,
+          ContentTaskUtils.isVisible(avatarSelector.dialog),
           "Avatar selector should be visible after Space key"
         );
       });

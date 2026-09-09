@@ -3334,6 +3334,18 @@ set_define("MOZ_APP_UA_VERSION", depends(milestone.app_version)(lambda v: f'"{v}
 set_config("MOZ_APP_DISPLAYNAME", moz_app_displayname)
 
 
+# WinRT activatable class that Windows activates when a registered background
+# task trigger fires.
+@depends(when=target_is_windows)
+def moz_backgroundtask_activatable_class_id():
+    return "Mozilla.MsixComServer.BackgroundTaskHost"
+
+
+set_config(
+    "MOZ_BACKGROUNDTASK_ACTIVATABLE_CLASS_ID", moz_backgroundtask_activatable_class_id
+)
+
+
 confvar(
     "MOZ_MACBUNDLE_ID",
     nargs=1,
@@ -3388,6 +3400,10 @@ with only_when(target_is_osx):
     set_config(
         "MOZ_CHILD_PROCESS_BUNDLEID",
         depends("--with-distribution-id")(lambda v: f"{v[0]}.plugincontainer"),
+    )
+    set_define(
+        "MOZ_CHILD_PROCESS_BUNDLEID",
+        depends("--with-distribution-id")(lambda v: f'"{v[0]}.plugincontainer"'),
     )
     set_config("MOZ_CHILD_PROCESS_BUNDLENAME", "plugin-container.app")
 
@@ -3779,6 +3795,69 @@ def pkg_suffix(pkg_format):
 
 
 set_config("PKG_SUFFIX", pkg_suffix)
+
+@depends(build_project, moz_app_name)
+def moz_pkg_dir_default(build_project, moz_app_name):
+    if build_project == "mobile/android":
+        return "geckoview"
+    return moz_app_name
+
+
+set_config("MOZ_PKG_DIR_DEFAULT", moz_pkg_dir_default)
+
+
+@depends(moz_pkg_platform, "MOZ_SIMPLE_PACKAGE_NAME")
+@imports(_from="mozbuild.packaging", _import="jsshell_name")
+def pkg_jsshell_name(platform, simple_name):
+    return jsshell_name(
+        platform=platform,
+        simple_name=simple_name[0] if simple_name else None,
+    )
+
+
+set_config("JSSHELL_NAME", pkg_jsshell_name)
+
+
+@depends(when=True)
+@imports(_from="mozbuild.packaging", _import="NO_PKG_FILES")
+def no_pkg_files():
+    return list(NO_PKG_FILES)
+
+
+set_config("NO_PKG_FILES", no_pkg_files)
+
+
+@depends(
+    library_name_info.dll.prefix,
+    library_name_info.dll.suffix,
+    bin_suffix(target),
+    toolkit,
+    fold_libs,
+)
+@imports(_from="mozbuild.packaging", _import="quote_defines")
+def package_toolkit_defines(dll_prefix, dll_suffix, bin_suffix, toolkit, fold_libs):
+    defines = [
+        f"-DDLL_PREFIX={dll_prefix}",
+        f"-DDLL_SUFFIX={dll_suffix}",
+        f"-DBIN_SUFFIX={bin_suffix}",
+    ]
+    if toolkit == "cocoa":
+        defines += [
+            "-DDIR_MACOS=Contents/MacOS/",
+            "-DDIR_RESOURCES=Contents/Resources/",
+        ]
+    else:
+        defines += ["-DDIR_MACOS=", "-DDIR_RESOURCES="]
+    if fold_libs:
+        defines.append("-DMOZ_FOLD_LIBS=1")
+    return quote_defines(defines)
+
+
+set_config("PACKAGE_TOOLKIT_DEFINES", package_toolkit_defines)
+
+set_config(
+    "JAR_COMPRESSION", "none", when=depends(toolkit)(lambda t: t != "android")
+)
 
 
 @depends("MOZ_DEV_EDITION")
@@ -4512,12 +4591,12 @@ with only_when(artifact_builds):
 set_config(
     "GECKO_TRACE_ENABLE",
     True,
-    when=moz_debug | milestone.is_early_beta_or_earlier,
+    when=moz_debug | milestone.is_nightly | moz_dev_edition,
 )
 set_define(
     "GECKO_TRACE_ENABLE",
     True,
-    when=moz_debug | milestone.is_early_beta_or_earlier,
+    when=moz_debug | milestone.is_nightly | moz_dev_edition,
 )
 
 
@@ -4546,3 +4625,18 @@ def enable_appservices_in_tree(value):
 
 
 set_config("MOZ_APPSERVICES_IN_TREE", enable_appservices_in_tree)
+
+
+option(
+    env="MOZ_LIBMEGAZORD_ARTIFACTS",
+    help="Build libmegazord.so in the default build so it can be packaged as an artifact",
+)
+
+
+@depends("MOZ_LIBMEGAZORD_ARTIFACTS")
+def libmegazord_artifacts(value):
+    if value:
+        return True
+
+
+set_config("MOZ_LIBMEGAZORD_ARTIFACTS", libmegazord_artifacts)

@@ -493,13 +493,16 @@ class KeyframeEffect : public AnimationEffect {
     bool mOverflow : 1;
     // True if there is any current-color for background color.
     bool mHasBackgroundColorCurrentColor : 1;
+    // Whether the display property is changing.
+    bool mDisplay : 1;
 
     CumulativeChanges()
         : mOpacity(false),
           mVisibility(false),
           mLayout(false),
           mOverflow(false),
-          mHasBackgroundColorCurrentColor(false) {}
+          mHasBackgroundColorCurrentColor(false),
+          mDisplay(false) {}
   };
   CumulativeChanges mCumulativeChanges;
 
@@ -517,6 +520,13 @@ class KeyframeEffect : public AnimationEffect {
   // Returns the frame which is used for styling.
   nsIFrame* GetStyleFrame() const;
 
+  // Returns true if this effect can skip its main-thread restyle for this tick,
+  // e.g. because it has no visible result (no frame, invisible, or scrolled out
+  // of view) or is running entirely on the compositor.
+  //
+  // Special Case: when animating from `display:none`, the animation might
+  // animate back to a non-none display value, so we must not throttle so the
+  // result can reappear.
   bool CanThrottle() const;
   bool CanThrottleOverflowChanges(const nsIFrame& aFrame) const;
   bool CanThrottleOverflowChangesInScrollable(nsIFrame& aFrame) const;

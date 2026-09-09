@@ -34,11 +34,11 @@ import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 
 /**
- * This dialog is used to prompt the user to confirm if they want to ungroup a tab group.
- * It includes an option to suppress this warning in the future.
+ * This dialog is used to prompt the user to confirm if they want to ungroup a tab group. It includes an option to
+ * suppress this warning in the future.
  *
- * @param onConfirmUngroup Callback invoked when the user confirms ungrouping. Passes a boolean
- *                         indicating whether "Don't ask again" was checked.
+ * @param onConfirmUngroup Callback invoked when the user confirms ungrouping. Passes a boolean indicating whether
+ *   "Don't ask again" was checked.
  * @param onCancel Callback invoked when the user cancels the action.
  */
 @Composable
@@ -69,9 +69,7 @@ fun UngroupTabGroupConfirmationDialog(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = FirefoxTheme.layout.space.static100),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = FirefoxTheme.layout.space.static100),
                 ) {
                     Checkbox(
                         checked = dontAskAgain,
@@ -106,9 +104,7 @@ fun UngroupTabGroupConfirmationDialog(
 
 @FlexibleWindowPreview
 @Composable
-private fun UngroupTabGroupConfirmationDialogPreview(
-    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
-) {
+private fun UngroupTabGroupConfirmationDialogPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
     FirefoxTheme(theme) {
         Surface {
             UngroupTabGroupConfirmationDialog(

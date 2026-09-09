@@ -13,12 +13,10 @@ import mozilla.components.support.ktx.android.net.hostWithoutCommonPrefixes
 import mozilla.components.support.ktx.android.net.isHttpOrHttps
 
 /**
- * [IconPreprarer] implementation that looks up the host in the Merino manifest. If it can find a
- * match then it inserts the icon URL into the request.
+ * [IconPreprarer] implementation that looks up the host in the Merino manifest. If it can find a match then it inserts
+ * the icon URL into the request.
  */
-class MerinoManifestIconPreparer(
-    private val manifestProvider: MerinoManifestProvider,
-) : IconPreprarer {
+class MerinoManifestIconPreparer(private val manifestProvider: MerinoManifestProvider) : IconPreprarer {
     override fun prepare(context: Context, request: IconRequest): IconRequest {
         val uri = request.url.toUri()
         if (!uri.isHttpOrHttps) {
@@ -29,10 +27,11 @@ class MerinoManifestIconPreparer(
 
         return if (host != null) {
             val iconUrl = manifestProvider.getIconUrl(host) ?: return request
-            val resource = IconRequest.Resource(
-                url = iconUrl,
-                type = IconRequest.Resource.Type.MERINO_MANIFEST,
-            )
+            val resource =
+                IconRequest.Resource(
+                    url = iconUrl,
+                    type = IconRequest.Resource.Type.MERINO_MANIFEST,
+                )
             request.copy(resources = request.resources + resource)
         } else {
             request

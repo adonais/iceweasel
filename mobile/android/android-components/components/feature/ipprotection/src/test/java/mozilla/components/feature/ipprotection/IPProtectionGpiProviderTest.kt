@@ -30,9 +30,10 @@ class IPProtectionGpiProviderTest {
 
     @Test
     fun `WHEN the provider warms up THEN it delegates to the integrity client`() = runTest {
-        val integrityClient = coMock<GooglePlayIntegrityClient> {
-            whenever(warmUp()).thenReturn(true)
-        }
+        val integrityClient =
+            coMock<GooglePlayIntegrityClient> {
+                whenever(warmUp()).thenReturn(true)
+            }
         val handler = mock<IPProtectionHandler>()
         val testScope = CoroutineScope(StandardTestDispatcher(testScheduler))
 
@@ -50,10 +51,11 @@ class IPProtectionGpiProviderTest {
 
     @Test
     fun `WHEN a token is requested THEN the consumer client token is returned`() = runTest {
-        val integrityClient = mock<GooglePlayIntegrityClient> {
-            whenever(forConsumer(IntegrityConsumer.IpProtection))
-                .thenReturn(IntegrityClient { Result.success(IntegrityToken("gpi-token")) })
-        }
+        val integrityClient =
+            mock<GooglePlayIntegrityClient> {
+                whenever(forConsumer(IntegrityConsumer.IpProtection))
+                    .thenReturn(IntegrityClient { Result.success(IntegrityToken("gpi-token")) })
+            }
         val handler = mock<IPProtectionHandler>()
         val testScope = CoroutineScope(StandardTestDispatcher(testScheduler))
 
@@ -71,10 +73,11 @@ class IPProtectionGpiProviderTest {
 
     @Test
     fun `WHEN the token request fails THEN null is returned`() = runTest {
-        val integrityClient = mock<GooglePlayIntegrityClient> {
-            whenever(forConsumer(IntegrityConsumer.IpProtection))
-                .thenReturn(IntegrityClient { Result.failure(RuntimeException("boom")) })
-        }
+        val integrityClient =
+            mock<GooglePlayIntegrityClient> {
+                whenever(forConsumer(IntegrityConsumer.IpProtection))
+                    .thenReturn(IntegrityClient { Result.failure(RuntimeException("boom")) })
+            }
         val handler = mock<IPProtectionHandler>()
         val testScope = CoroutineScope(StandardTestDispatcher(testScheduler))
 

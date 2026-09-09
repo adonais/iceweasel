@@ -24,13 +24,10 @@ private const val KEY_SELECTED_COLOR = "KEY_SELECTED_COLOR"
 
 private const val RGB_BIT_MASK = 0xffffff
 
-/**
- * [androidx.fragment.app.DialogFragment] implementation for a color picker dialog.
- */
+/** [androidx.fragment.app.DialogFragment] implementation for a color picker dialog. */
 internal class ColorPickerDialogFragment : PromptDialogFragment(), DialogInterface.OnClickListener {
 
-    @ColorInt
-    private var initiallySelectedCustomColor: Int? = null
+    @ColorInt private var initiallySelectedCustomColor: Int? = null
     private lateinit var defaultColors: List<ColorItem>
     private lateinit var listAdapter: BasicColorAdapter
 
@@ -66,9 +63,8 @@ internal class ColorPickerDialogFragment : PromptDialogFragment(), DialogInterfa
 
     @SuppressLint("InflateParams")
     internal fun createDialogContentView(): View {
-        val view = LayoutInflater
-            .from(requireContext())
-            .inflate(R.layout.mozac_feature_prompts_color_picker_dialogs, null)
+        val view =
+            LayoutInflater.from(requireContext()).inflate(R.layout.mozac_feature_prompts_color_picker_dialogs, null)
 
         // Save the color selected when this dialog opened to show at the end
         initiallySelectedCustomColor = selectedColor
@@ -76,15 +72,16 @@ internal class ColorPickerDialogFragment : PromptDialogFragment(), DialogInterfa
         // Load list of colors from resources
         val typedArray = resources.obtainTypedArray(R.array.mozac_feature_prompts_default_colors)
 
-        defaultColors = List(typedArray.length()) { i ->
-            val color = typedArray.getColor(i, Color.BLACK)
-            if (color == initiallySelectedCustomColor) {
-                // No need to save the initial color, its already in the list
-                initiallySelectedCustomColor = null
-            }
+        defaultColors =
+            List(typedArray.length()) { i ->
+                val color = typedArray.getColor(i, Color.BLACK)
+                if (color == initiallySelectedCustomColor) {
+                    // No need to save the initial color, its already in the list
+                    initiallySelectedCustomColor = null
+                }
 
-            color.toColorItem()
-        }
+                color.toColorItem()
+            }
         typedArray.recycle()
 
         setupRecyclerView(view)
@@ -95,30 +92,30 @@ internal class ColorPickerDialogFragment : PromptDialogFragment(), DialogInterfa
     private fun setupRecyclerView(view: View) {
         listAdapter = BasicColorAdapter(this::onColorChange)
         view.findViewById<RecyclerView>(R.id.recyclerView).apply {
-            layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false).apply {
-                stackFromEnd = true
-            }
+            layoutManager =
+                LinearLayoutManager(context, RecyclerView.VERTICAL, false).apply {
+                    stackFromEnd = true
+                }
             adapter = listAdapter
             setHasFixedSize(true)
             itemAnimator = null
         }
     }
 
-    /**
-     * Called when a new color is selected by the user.
-     */
+    /** Called when a new color is selected by the user. */
     @VisibleForTesting
     internal fun onColorChange(newColor: Int) {
         selectedColor = newColor
 
         val colorItems = defaultColors.toMutableList()
         val index = colorItems.indexOfFirst { it.color == newColor }
-        val lastColor = if (index > -1) {
-            colorItems[index] = colorItems[index].copy(selected = true)
-            initiallySelectedCustomColor
-        } else {
-            newColor
-        }
+        val lastColor =
+            if (index > -1) {
+                colorItems[index] = colorItems[index].copy(selected = true)
+                initiallySelectedCustomColor
+            } else {
+                newColor
+            }
         if (lastColor != null) {
             colorItems.add(lastColor.toColorItem(selected = lastColor == newColor))
         }
@@ -133,14 +130,16 @@ internal class ColorPickerDialogFragment : PromptDialogFragment(), DialogInterfa
             promptRequestUID: String,
             shouldDismissOnLoad: Boolean,
             defaultColor: String,
-        ) = ColorPickerDialogFragment().apply {
-            arguments = (arguments ?: Bundle()).apply {
-                putString(KEY_SESSION_ID, sessionId)
-                putString(KEY_PROMPT_UID, promptRequestUID)
-                putBoolean(KEY_SHOULD_DISMISS_ON_LOAD, shouldDismissOnLoad)
-                putInt(KEY_SELECTED_COLOR, defaultColor.toColor())
+        ) =
+            ColorPickerDialogFragment().apply {
+                arguments =
+                    (arguments ?: Bundle()).apply {
+                        putString(KEY_SESSION_ID, sessionId)
+                        putString(KEY_PROMPT_UID, promptRequestUID)
+                        putBoolean(KEY_SHOULD_DISMISS_ON_LOAD, shouldDismissOnLoad)
+                        putInt(KEY_SELECTED_COLOR, defaultColor.toColor())
+                    }
             }
-        }
     }
 }
 

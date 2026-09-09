@@ -11,13 +11,14 @@ import org.hamcrest.CoreMatchers.not
 import org.hamcrest.Matcher
 import org.junit.Test
 
-private val BOOLEAN_VIEW_MATCHER_TO_UNDERLYING_MATCHER: List<Pair<(Boolean) -> Matcher<View>, Matcher<View>>> = listOf(
-    ::hasFocus to ViewMatchers.hasFocus(),
-    ::isChecked to ViewMatchers.isChecked(),
-    ::isDisplayed to ViewMatchers.isDisplayed(),
-    ::isEnabled to ViewMatchers.isEnabled(),
-    ::isSelected to ViewMatchers.isSelected(),
-)
+private val BOOLEAN_VIEW_MATCHER_TO_UNDERLYING_MATCHER: List<Pair<(Boolean) -> Matcher<View>, Matcher<View>>> =
+    listOf(
+        ::hasFocus to ViewMatchers.hasFocus(),
+        ::isChecked to ViewMatchers.isChecked(),
+        ::isDisplayed to ViewMatchers.isDisplayed(),
+        ::isEnabled to ViewMatchers.isEnabled(),
+        ::isSelected to ViewMatchers.isSelected(),
+    )
 
 class ViewMatchersKtTest {
 

@@ -29,7 +29,7 @@ class OnboardingPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestR
     override val pageName = "OnboardingPage"
 
     init {
-        // Reached at launch when BaseTest(skipOnboarding = false); no steps needed.
+        // Reached at launch when BaseTest(LaunchConfig(skipOnboarding = false)); no steps needed.
         NavigationRegistry.register(from = "AppEntry", to = pageName, steps = listOf())
     }
 

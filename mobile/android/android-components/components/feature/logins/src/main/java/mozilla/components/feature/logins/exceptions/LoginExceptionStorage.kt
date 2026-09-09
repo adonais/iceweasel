@@ -13,14 +13,9 @@ import mozilla.components.feature.logins.exceptions.db.LoginExceptionDatabase
 import mozilla.components.feature.logins.exceptions.db.LoginExceptionEntity
 import mozilla.components.feature.prompts.login.LoginExceptions
 
-/**
- * A storage implementation for organizing login exceptions.
- */
-class LoginExceptionStorage(
-    context: Context,
-) : LoginExceptions {
-    internal var database: Lazy<LoginExceptionDatabase> =
-        lazy { LoginExceptionDatabase.get(context) }
+/** A storage implementation for organizing login exceptions. */
+class LoginExceptionStorage(context: Context) : LoginExceptions {
+    internal var database: Lazy<LoginExceptionDatabase> = lazy { LoginExceptionDatabase.get(context) }
 
     /**
      * Adds a new [LoginException].
@@ -28,33 +23,23 @@ class LoginExceptionStorage(
      * @param origin The origin.
      */
     override fun addLoginException(origin: String) {
-        LoginExceptionEntity(
-            origin = origin,
-        ).also { entity ->
+        LoginExceptionEntity(origin = origin).also { entity ->
             entity.id = database.value.loginExceptionDao().insertLoginException(entity)
         }
     }
 
-    /**
-     * Returns a [Flow] list of all the [LoginException] instances.
-     */
+    /** Returns a [Flow] list of all the [LoginException] instances. */
     fun getLoginExceptions(): Flow<List<LoginException>> {
         return database.value.loginExceptionDao().getLoginExceptions().map { list ->
             list.map { entity -> LoginExceptionAdapter(entity) }
         }
     }
 
-    /**
-     * Returns all [LoginException]s as a [DataSource.Factory].
-     */
-    fun getLoginExceptionsPaged(): DataSource.Factory<Int, LoginException> = database.value
-        .loginExceptionDao()
-        .getLoginExceptionsPaged()
-        .map { entity -> LoginExceptionAdapter(entity) }
+    /** Returns all [LoginException]s as a [DataSource.Factory]. */
+    fun getLoginExceptionsPaged(): DataSource.Factory<Int, LoginException> =
+        database.value.loginExceptionDao().getLoginExceptionsPaged().map { entity -> LoginExceptionAdapter(entity) }
 
-    /**
-     * Removes the given [LoginException].
-     */
+    /** Removes the given [LoginException]. */
     fun removeLoginException(site: LoginException) {
         val exceptionEntity = (site as LoginExceptionAdapter).entity
         database.value.loginExceptionDao().deleteLoginException(exceptionEntity)
@@ -64,21 +49,15 @@ class LoginExceptionStorage(
         return findExceptionByOrigin(origin) != null
     }
 
-    /**
-     * Finds a [LoginException] by origin.
-     */
+    /** Finds a [LoginException] by origin. */
     fun findExceptionByOrigin(origin: String): LoginException? {
         val exception = database.value.loginExceptionDao().findExceptionByOrigin(origin)
         return exception?.let {
-            LoginExceptionAdapter(
-                it,
-            )
+            LoginExceptionAdapter(it)
         }
     }
 
-    /**
-     * Removes all [LoginException]s.
-     */
+    /** Removes all [LoginException]s. */
     fun deleteAllLoginExceptions() {
         database.value.loginExceptionDao().deleteAllLoginExceptions()
     }

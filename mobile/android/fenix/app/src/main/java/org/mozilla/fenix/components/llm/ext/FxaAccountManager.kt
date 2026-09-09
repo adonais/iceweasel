@@ -7,9 +7,8 @@ package org.mozilla.fenix.components.llm.ext
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.SCOPE_PROFILE
 
-internal val FxaAccountManager.accessTokenProvider get() = FxaAccessTokenProvider {
-    val account = authenticatedAccount() ?: return@FxaAccessTokenProvider FxaAccessToken.NotSignedIn
-    account.getAccessToken(SCOPE_PROFILE)?.token
-        ?.let { FxaAccessToken.Available(it) }
-        ?: FxaAccessToken.Unavailable
-}
+internal val FxaAccountManager.accessTokenProvider
+    get() = FxaAccessTokenProvider {
+        val account = authenticatedAccount() ?: return@FxaAccessTokenProvider FxaAccessToken.NotSignedIn
+        account.getAccessToken(SCOPE_PROFILE)?.token?.let { FxaAccessToken.Available(it) } ?: FxaAccessToken.Unavailable
+    }

@@ -16,8 +16,7 @@ import org.mozilla.fenix.webcompat.store.WebCompatReporterStore
  * A [Middleware] for recording telemetry based on [WebCompatReporterAction]s that are dispatched to the
  * [WebCompatReporterStore].
  */
-class WebCompatReporterTelemetryMiddleware :
-    Middleware<WebCompatReporterState, WebCompatReporterAction> {
+class WebCompatReporterTelemetryMiddleware : Middleware<WebCompatReporterState, WebCompatReporterAction> {
 
     override fun invoke(
         store: Store<WebCompatReporterState, WebCompatReporterAction>,
@@ -33,7 +32,7 @@ class WebCompatReporterTelemetryMiddleware :
 
             WebCompatReporterAction.SendReportClicked -> {
                 Webcompatreporting.send.record(
-                    Webcompatreporting.SendExtra(sentWithBlockedTrackers = store.state.includeEtpBlockedUrls),
+                    Webcompatreporting.SendExtra(sentWithBlockedTrackers = store.state.includeEtpBlockedUrls)
                 )
             }
 

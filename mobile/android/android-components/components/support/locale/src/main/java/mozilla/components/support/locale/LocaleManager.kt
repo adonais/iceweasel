@@ -12,18 +12,16 @@ import android.content.res.Resources
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.edit
 import androidx.core.os.ConfigurationCompat
-import mozilla.components.support.locale.LocaleManager.getCurrentLocale
-import mozilla.components.support.locale.LocaleManager.setNewLocale
 import java.util.Locale
 import mozilla.components.support.base.R as supportBaseR
+import mozilla.components.support.locale.LocaleManager.getCurrentLocale
+import mozilla.components.support.locale.LocaleManager.setNewLocale
 
-/**
- * Helper for apps that want to change locale defined by the system.
- */
+/** Helper for apps that want to change locale defined by the system. */
 object LocaleManager {
     /**
-     * Change the system defined locale to the indicated in the [language] parameter.
-     * This new [language] will be stored and will be the new current locale returned by [getCurrentLocale].
+     * Change the system defined locale to the indicated in the [language] parameter. This new [language] will be stored
+     * and will be the new current locale returned by [getCurrentLocale].
      *
      * After calling this function, to visualize the locale changes you have to make sure all your visible activities
      * get recreated. If your app is using the single activity approach, this will be trivial just call
@@ -45,22 +43,19 @@ object LocaleManager {
     /**
      * The latest stored locale saved by [setNewLocale].
      *
-     * @return The current selected locale. If the app is following the system default then this
-     * value will be null.
+     * @return The current selected locale. If the app is following the system default then this value will be null.
      */
     fun getCurrentLocale(context: Context): Locale? {
         return Storage.getLocale(context)?.toLocale()
     }
 
     /**
-     * Change the current locale to the system defined one. As a result, [getCurrentLocale] will
-     * return null.
+     * Change the current locale to the system defined one. As a result, [getCurrentLocale] will return null.
      *
      * After calling this function, to visualize the locale changes you have to make sure all your visible activities
      * get recreated. If your app is using the single activity approach, this will be trivial just call
      * [AppCompatActivity.recreate]. On the other hand, if you have multiple activity this could be tricky, one
      * alternative could be restarting your application process see https://github.com/JakeWharton/ProcessPhoenix
-     *
      */
     fun resetToSystemDefault(context: Context, localeUseCase: LocaleUseCases?) {
         clear(context)
@@ -72,9 +67,7 @@ object LocaleManager {
         notifyStore(locale, localeUseCase)
     }
 
-    /**
-     * Returns the locale set by the system
-     */
+    /** Returns the locale set by the system */
     fun getSystemDefault(): Locale {
         val config = Resources.getSystem().configuration
         return ConfigurationCompat.getLocales(config).get(0) ?: Locale.getDefault()
@@ -85,16 +78,14 @@ object LocaleManager {
      *
      * @return A context that is locale aware.
      */
-     fun updateResources(baseContext: Context): Context {
+    fun updateResources(baseContext: Context): Context {
         val locale = getCurrentLocale(baseContext) ?: getSystemDefault()
 
         updateSystemLocale(locale)
         return updateConfiguration(baseContext, locale)
     }
 
-    /**
-     * Notify the [BrowserStore] that the [Locale] has been changed via [LocaleUseCases].
-     */
+    /** Notify the [BrowserStore] that the [Locale] has been changed via [LocaleUseCases]. */
     private fun notifyStore(locale: Locale?, localeUseCase: LocaleUseCases?) {
         localeUseCase?.let { useCases ->
             useCases.notifyLocaleChanged(locale)

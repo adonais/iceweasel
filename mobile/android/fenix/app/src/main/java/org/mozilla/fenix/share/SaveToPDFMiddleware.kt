@@ -6,6 +6,7 @@ package org.mozilla.fenix.share
 
 import android.content.Context
 import androidx.annotation.VisibleForTesting
+import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -30,7 +31,6 @@ import org.mozilla.geckoview.GeckoSession.GeckoPrintException.ERROR_NO_PRINT_DEL
 import org.mozilla.geckoview.GeckoSession.GeckoPrintException.ERROR_PRINT_SETTINGS_SERVICE_NOT_AVAILABLE
 import org.mozilla.geckoview.GeckoSession.GeckoPrintException.ERROR_UNABLE_TO_CREATE_PRINT_SETTINGS
 import org.mozilla.geckoview.GeckoSession.GeckoPrintException.ERROR_UNABLE_TO_RETRIEVE_CANONICAL_BROWSING_CONTEXT
-import java.io.IOException
 
 /**
  * [BrowserAction] middleware reacting in response to Save to PDF related [Action]s.
@@ -62,10 +62,8 @@ class SaveToPDFMiddleware(
             is EngineAction.SaveToPdfExceptionAction -> {
                 context.components.appStore.dispatch(
                     AppAction.UpdateStandardSnackbarErrorAction(
-                        StandardSnackbarError(
-                            context.getString(R.string.unable_to_save_to_pdf_error),
-                        ),
-                    ),
+                        StandardSnackbarError(context.getString(R.string.unable_to_save_to_pdf_error))
+                    )
                 )
                 postTelemetryFailed(store.state.findTab(action.tabId), action.throwable, isPrint = false)
             }
@@ -81,10 +79,8 @@ class SaveToPDFMiddleware(
             is EngineAction.PrintContentExceptionAction -> {
                 context.components.appStore.dispatch(
                     AppAction.UpdateStandardSnackbarErrorAction(
-                        StandardSnackbarError(
-                            context.getString(R.string.unable_to_print_page_error),
-                        ),
-                    ),
+                        StandardSnackbarError(context.getString(R.string.unable_to_print_page_error))
+                    )
                 )
                 postTelemetryFailed(store.state.findTab(action.tabId), action.throwable, isPrint = true)
             }
@@ -129,11 +125,12 @@ class SaveToPDFMiddleware(
      */
     @VisibleForTesting // package
     fun telemetrySource(isPdfViewer: Boolean?): String {
-        val source = when (isPdfViewer) {
-            null -> "unknown"
-            true -> "pdf"
-            false -> "non-pdf"
-        }
+        val source =
+            when (isPdfViewer) {
+                null -> "unknown"
+                true -> "pdf"
+                false -> "non-pdf"
+            }
         return source
     }
 
@@ -145,39 +142,25 @@ class SaveToPDFMiddleware(
      */
     private fun postTelemetryTapped(tab: TabSessionState?, isPrint: Boolean) {
         mainScope.launch {
-            tab?.engineState?.engineSession?.checkForPdfViewer(
-                onResult = { isPdf ->
-                    if (isPrint) {
-                        Events.printTapped.record(
-                            Events.PrintTappedExtra(
-                                source = telemetrySource(isPdf),
-                            ),
-                        )
-                        context.recordEventInNimbus("print_tapped")
-                    } else {
-                        Events.saveToPdfTapped.record(
-                            Events.SaveToPdfTappedExtra(
-                                source = telemetrySource(isPdf),
-                            ),
-                        )
-                    }
-                },
-                onException = {
-                    if (isPrint) {
-                        Events.printTapped.record(
-                            Events.PrintTappedExtra(
-                                source = telemetrySource(null),
-                            ),
-                        )
-                    } else {
-                        Events.saveToPdfTapped.record(
-                            Events.SaveToPdfTappedExtra(
-                                source = telemetrySource(null),
-                            ),
-                        )
-                    }
-                },
-            )
+            tab?.engineState
+                ?.engineSession
+                ?.checkForPdfViewer(
+                    onResult = { isPdf ->
+                        if (isPrint) {
+                            Events.printTapped.record(Events.PrintTappedExtra(source = telemetrySource(isPdf)))
+                            context.recordEventInNimbus("print_tapped")
+                        } else {
+                            Events.saveToPdfTapped.record(Events.SaveToPdfTappedExtra(source = telemetrySource(isPdf)))
+                        }
+                    },
+                    onException = {
+                        if (isPrint) {
+                            Events.printTapped.record(Events.PrintTappedExtra(source = telemetrySource(null)))
+                        } else {
+                            Events.saveToPdfTapped.record(Events.SaveToPdfTappedExtra(source = telemetrySource(null)))
+                        }
+                    },
+                )
         }
     }
 
@@ -189,38 +172,28 @@ class SaveToPDFMiddleware(
      */
     private fun postTelemetryCompleted(tab: TabSessionState?, isPrint: Boolean) {
         mainScope.launch {
-            tab?.engineState?.engineSession?.checkForPdfViewer(
-                onResult = { isPdf ->
-                    if (isPrint) {
-                        Events.printCompleted.record(
-                            Events.PrintCompletedExtra(
-                                source = telemetrySource(isPdf),
-                            ),
-                        )
-                    } else {
-                        Events.saveToPdfCompleted.record(
-                            Events.SaveToPdfCompletedExtra(
-                                source = telemetrySource(isPdf),
-                            ),
-                        )
-                    }
-                },
-                onException = {
-                    if (isPrint) {
-                        Events.printCompleted.record(
-                            Events.PrintCompletedExtra(
-                                source = telemetrySource(null),
-                            ),
-                        )
-                    } else {
-                        Events.saveToPdfCompleted.record(
-                            Events.SaveToPdfCompletedExtra(
-                                source = telemetrySource(null),
-                            ),
-                        )
-                    }
-                },
-            )
+            tab?.engineState
+                ?.engineSession
+                ?.checkForPdfViewer(
+                    onResult = { isPdf ->
+                        if (isPrint) {
+                            Events.printCompleted.record(Events.PrintCompletedExtra(source = telemetrySource(isPdf)))
+                        } else {
+                            Events.saveToPdfCompleted.record(
+                                Events.SaveToPdfCompletedExtra(source = telemetrySource(isPdf))
+                            )
+                        }
+                    },
+                    onException = {
+                        if (isPrint) {
+                            Events.printCompleted.record(Events.PrintCompletedExtra(source = telemetrySource(null)))
+                        } else {
+                            Events.saveToPdfCompleted.record(
+                                Events.SaveToPdfCompletedExtra(source = telemetrySource(null))
+                            )
+                        }
+                    },
+                )
         }
     }
 
@@ -234,42 +207,44 @@ class SaveToPDFMiddleware(
     private fun postTelemetryFailed(tab: TabSessionState?, throwable: Throwable, isPrint: Boolean) {
         val telFailureReason = telemetryErrorReason(throwable as Exception)
         mainScope.launch {
-            tab?.engineState?.engineSession?.checkForPdfViewer(
-                onResult = { isPdf ->
-                    if (isPrint) {
-                        Events.printFailure.record(
-                            Events.PrintFailureExtra(
-                                source = telemetrySource(isPdf),
-                                reason = telFailureReason,
-                            ),
-                        )
-                    } else {
-                        Events.saveToPdfFailure.record(
-                            Events.SaveToPdfFailureExtra(
-                                source = telemetrySource(isPdf),
-                                reason = telFailureReason,
-                            ),
-                        )
-                    }
-                },
-                onException = {
-                    if (isPrint) {
-                        Events.printFailure.record(
-                            Events.PrintFailureExtra(
-                                source = telemetrySource(null),
-                                reason = telFailureReason,
-                            ),
-                        )
-                    } else {
-                        Events.saveToPdfFailure.record(
-                            Events.SaveToPdfFailureExtra(
-                                source = telemetrySource(null),
-                                reason = telFailureReason,
-                            ),
-                        )
-                    }
-                },
-            )
+            tab?.engineState
+                ?.engineSession
+                ?.checkForPdfViewer(
+                    onResult = { isPdf ->
+                        if (isPrint) {
+                            Events.printFailure.record(
+                                Events.PrintFailureExtra(
+                                    source = telemetrySource(isPdf),
+                                    reason = telFailureReason,
+                                )
+                            )
+                        } else {
+                            Events.saveToPdfFailure.record(
+                                Events.SaveToPdfFailureExtra(
+                                    source = telemetrySource(isPdf),
+                                    reason = telFailureReason,
+                                )
+                            )
+                        }
+                    },
+                    onException = {
+                        if (isPrint) {
+                            Events.printFailure.record(
+                                Events.PrintFailureExtra(
+                                    source = telemetrySource(null),
+                                    reason = telFailureReason,
+                                )
+                            )
+                        } else {
+                            Events.saveToPdfFailure.record(
+                                Events.SaveToPdfFailureExtra(
+                                    source = telemetrySource(null),
+                                    reason = telFailureReason,
+                                )
+                            )
+                        }
+                    },
+                )
         }
     }
 }

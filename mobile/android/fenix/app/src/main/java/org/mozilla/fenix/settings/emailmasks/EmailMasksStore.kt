@@ -19,36 +19,32 @@ class EmailMasksStore(
     initialState: EmailMasksState,
     reducer: Reducer<EmailMasksState, EmailMasksAction> = ::emailMasksReducer,
     middleware: List<Middleware<EmailMasksState, EmailMasksAction>>,
-) : Store<EmailMasksState, EmailMasksAction>(
-    initialState = initialState,
-    reducer = reducer,
-    middleware = middleware,
-)
+) :
+    Store<EmailMasksState, EmailMasksAction>(
+        initialState = initialState,
+        reducer = reducer,
+        middleware = middleware,
+    )
 
-/**
- * Function for reducing [EmailMasksState] in response to [EmailMasksAction]s.
- */
-internal fun emailMasksReducer(state: EmailMasksState, action: EmailMasksAction) = when (action) {
-    is EmailMasksUserAction -> state.handleUserAction(action)
-    is EmailMasksSystemAction -> state.handleSystemAction(action)
-}
+/** Function for reducing [EmailMasksState] in response to [EmailMasksAction]s. */
+internal fun emailMasksReducer(state: EmailMasksState, action: EmailMasksAction) =
+    when (action) {
+        is EmailMasksUserAction -> state.handleUserAction(action)
+        is EmailMasksSystemAction -> state.handleSystemAction(action)
+    }
 
 private fun EmailMasksState.handleUserAction(action: EmailMasksUserAction): EmailMasksState =
     when (action) {
-        is EmailMasksUserAction.SuggestEmailMasksEnabled ->
-            copy(isSuggestMasksEnabled = true)
+        is EmailMasksUserAction.SuggestEmailMasksEnabled -> copy(isSuggestMasksEnabled = true)
 
-        is EmailMasksUserAction.SuggestEmailMasksDisabled ->
-            copy(isSuggestMasksEnabled = false)
+        is EmailMasksUserAction.SuggestEmailMasksDisabled -> copy(isSuggestMasksEnabled = false)
 
         is EmailMasksUserAction.ManageClicked,
-        is EmailMasksUserAction.LearnMoreClicked,
-            -> this
+        is EmailMasksUserAction.LearnMoreClicked -> this
     }
 
 private fun EmailMasksState.handleSystemAction(action: EmailMasksSystemAction): EmailMasksState =
     when (action) {
         is EmailMasksSystemAction.ManageTabOpened,
-        is EmailMasksSystemAction.LearnMoreTabOpened,
-            -> this
+        is EmailMasksSystemAction.LearnMoreTabOpened -> this
     }

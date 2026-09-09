@@ -20,30 +20,29 @@ import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UReturnExpression
 import org.jetbrains.uast.getParentOfType
 
-/**
- * A custom lint check that warns if [Fact.collect()] is not called on a newly created [Fact] instance
- */
+/** A custom lint check that warns if [Fact.collect()] is not called on a newly created [Fact] instance */
 class FactCollectDetector : Detector(), SourceCodeScanner {
 
     companion object {
-        private const val FULLY_QUALIFIED_FACT_CLASS_NAME =
-            "mozilla.components.support.base.facts.Fact"
-        private const val EXPECTED_METHOD_SIMPLE_NAME =
-            "collect" // The `Fact.collect` extension method
+        private const val FULLY_QUALIFIED_FACT_CLASS_NAME = "mozilla.components.support.base.facts.Fact"
+        private const val EXPECTED_METHOD_SIMPLE_NAME = "collect" // The `Fact.collect` extension method
 
-        private val IMPLEMENTATION = Implementation(
-            FactCollectDetector::class.java,
-            Scope.JAVA_FILE_SCOPE,
-        )
+        private val IMPLEMENTATION =
+            Implementation(
+                FactCollectDetector::class.java,
+                Scope.JAVA_FILE_SCOPE,
+            )
 
-        val ISSUE_FACT_COLLECT_CALLED: Issue = Issue
-            .create(
+        val ISSUE_FACT_COLLECT_CALLED: Issue =
+            Issue.create(
                 id = "FactCollect",
                 briefDescription = "Fact created but not collected",
-                explanation = """
-                An instance of `Fact` was created but not collected. You must call
-                `collect()` on the instance to actually process it.
-                """.trimIndent(),
+                explanation =
+                    """
+                    An instance of `Fact` was created but not collected. You must call
+                    `collect()` on the instance to actually process it.
+                    """
+                        .trimIndent(),
                 category = Category.CORRECTNESS,
                 priority = 6,
                 severity = Severity.ERROR,
@@ -62,25 +61,26 @@ class FactCollectDetector : Detector(), SourceCodeScanner {
     ) {
         var isCollectCalled = false
         var escapes = false
-        val visitor = object : DataFlowAnalyzer(setOf(node)) {
-            override fun receiver(call: UCallExpression) {
-                if (call.methodName == EXPECTED_METHOD_SIMPLE_NAME) {
-                    isCollectCalled = true
+        val visitor =
+            object : DataFlowAnalyzer(setOf(node)) {
+                override fun receiver(call: UCallExpression) {
+                    if (call.methodName == EXPECTED_METHOD_SIMPLE_NAME) {
+                        isCollectCalled = true
+                    }
+                }
+
+                override fun argument(call: UCallExpression, reference: UElement) {
+                    escapes = true
+                }
+
+                override fun field(field: UElement) {
+                    escapes = true
+                }
+
+                override fun returns(expression: UReturnExpression) {
+                    escapes = true
                 }
             }
-
-            override fun argument(call: UCallExpression, reference: UElement) {
-                escapes = true
-            }
-
-            override fun field(field: UElement) {
-                escapes = true
-            }
-
-            override fun returns(expression: UReturnExpression) {
-                escapes = true
-            }
-        }
         val method = node.getParentOfType<UMethod>(UMethod::class.java, true) ?: return
         method.accept(visitor)
         if (!isCollectCalled && !escapes) {
@@ -92,11 +92,12 @@ class FactCollectDetector : Detector(), SourceCodeScanner {
         context.report(
             issue = ISSUE_FACT_COLLECT_CALLED,
             scope = node,
-            location = context.getCallLocation(
-                call = node,
-                includeReceiver = true,
-                includeArguments = false,
-            ),
+            location =
+                context.getCallLocation(
+                    call = node,
+                    includeReceiver = true,
+                    includeArguments = false,
+                ),
             message = "Fact created but not shown: did you forget to call `collect()` ?",
         )
     }

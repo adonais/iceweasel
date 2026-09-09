@@ -24,6 +24,7 @@ function imageBufferFromDataURI(encodedImageData) {
 const SIDEBAR_VISIBILITY_PREF = "sidebar.visibility";
 const POSITION_SETTING_PREF = "sidebar.position_start";
 const VERTICAL_TABS_PREF = "sidebar.verticalTabs";
+const HOVER_PREVIEW_PREF = "sidebar.openTabsPanel.hoverPreview.enabled";
 const kPrefCustomizationState = "browser.uiCustomization.state";
 const kPrefCustomizationHorizontalTabstrip =
   "browser.uiCustomization.horizontalTabstrip";
@@ -318,7 +319,7 @@ async function waitForElementHidden(elem, hidden = true) {
     elem,
     { attributes: true, attributeFilter: ["hidden"] },
     () => elem.hidden === hidden,
-    `Element hidden should be ${hidden}`
+    { msg: `Element hidden should be ${hidden}` }
   );
 }
 

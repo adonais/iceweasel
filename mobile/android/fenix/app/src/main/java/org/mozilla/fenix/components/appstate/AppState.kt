@@ -43,14 +43,14 @@ import org.mozilla.fenix.wallpapers.WallpaperState
  * - Recreating the state does not involve expensive operations (for example, network or disk I/O).
  *
  * @property isForeground Whether or not the app is in the foreground.
- * @property inactiveTabsExpanded A flag to know if the Inactive Tabs section of the Tabs Tray
- * should be expanded when the tray is opened.
+ * @property inactiveTabsExpanded A flag to know if the Inactive Tabs section of the Tabs Tray should be expanded when
+ *   the tray is opened.
  * @property firstFrameDrawn Flag indicating whether the first frame of the homescreen has been drawn.
  * @property openInFirefoxRequested Flag indicating whether a custom tab should be opened in the browser.
  * @property nonFatalCrashes List of non-fatal crashes that allow the app to continue being used.
  * @property collections The list of [TabCollection] to display in the [HomeFragment].
- * @property expandedCollections A set containing the ids of the [TabCollection] that are expanded
- * in the [HomeFragment].
+ * @property expandedCollections A set containing the ids of the [TabCollection] that are expanded in the
+ *   [HomeFragment].
  * @property mode Whether the app is in private browsing mode.
  * @property orientation Current orientation of the application.
  * @property topSites The list of [TopSite] in the [HomeFragment].
@@ -61,9 +61,9 @@ import org.mozilla.fenix.wallpapers.WallpaperState
  * @property recommendationState The [ContentRecommendationsState] to display.
  * @property messaging State related messages.
  * @property microsurvey The [MicrosurveyState] derived from the MICROSURVEY message surface.
- * @property pendingDeletionHistoryItems The set of History items marked for removal in the UI,
- * awaiting to be removed once the Undo snackbar hides away.
- * Also serves as an in memory cache of all stories mapped by category allowing for quick stories filtering.
+ * @property pendingDeletionHistoryItems The set of History items marked for removal in the UI, awaiting to be removed
+ *   once the Undo snackbar hides away. Also serves as an in memory cache of all stories mapped by category allowing for
+ *   quick stories filtering.
  * @property wallpaperState The [WallpaperState] to display in the [HomeFragment].
  * @property standardSnackbarError A snackbar error message to display.
  * @property readerViewState The [ReaderViewState] to display.
@@ -72,15 +72,14 @@ import org.mozilla.fenix.wallpapers.WallpaperState
  * @property showFindInPage Whether or not to show the find in page feature.
  * @property crashState State related to the crash reporter.
  * @property wasLastTabClosedPrivate Whether the last remaining tab that was closed in private mode. This is used to
- * display an undo snackbar message relevant to the browsing mode. If null, no snackbar is shown.
+ *   display an undo snackbar message relevant to the browsing mode. If null, no snackbar is shown.
  * @property wasNativeDefaultBrowserPromptShown Whether the native default browser prompt was shown to the user.
  * @property webCompatState The [WebCompatState] when the feature was last used.
  * @property setupChecklistState Optional [SetupChecklistState] for the Setup Checklist feature.
  * @property searchState The current search state.
  * @property lensState The [LensState] for Google Lens image search.
  * @property qrScannerState The [QrScannerState] when the feature was last used.
- * @property isPrivateScreenLocked Whether the private browsing mode is currently locked behind
- * authentication.
+ * @property isPrivateScreenLocked Whether the private browsing mode is currently locked behind authentication.
  * @property reviewPrompt Whether we should show a review prompt and whether we ran the eligibility check at all
  * @property voiceSearchState The [VoiceSearchState] representing the current state of voice search functionality.
  * @property isDefaultBrowser Whether Firefox is the default browser or not.

@@ -90,7 +90,7 @@ void SdpExtmapAttributeList::Serialize(std::ostream& os) const {
       os << "/" << i->direction;
     }
     os << " " << i->extensionname;
-    if (i->extensionattributes.length()) {
+    if (i->extensionattributes.Length()) {
       os << " " << i->extensionattributes;
     }
     os << CRLF;
@@ -446,6 +446,8 @@ bool SdpImageattrAttributeList::PRange::Parse(std::istream& is,
 }
 
 void SdpImageattrAttributeList::SRange::Serialize(std::ostream& os) const {
+  auto savedFlags = os.flags();
+  auto savedPrecision = os.precision();
   os << std::setprecision(4) << std::fixed;
   if (discreteValues.empty()) {
     os << "[" << min << "-" << max << "]";
@@ -459,11 +461,17 @@ void SdpImageattrAttributeList::SRange::Serialize(std::ostream& os) const {
     }
     os << "]";
   }
+  os.flags(savedFlags);
+  os.precision(savedPrecision);
 }
 
 void SdpImageattrAttributeList::PRange::Serialize(std::ostream& os) const {
+  auto savedFlags = os.flags();
+  auto savedPrecision = os.precision();
   os << std::setprecision(4) << std::fixed;
   os << "[" << min << "-" << max << "]";
+  os.flags(savedFlags);
+  os.precision(savedPrecision);
 }
 
 static std::string ParseKey(std::istream& is, std::string* error) {
@@ -618,7 +626,11 @@ void SdpImageattrAttributeList::Set::Serialize(std::ostream& os) const {
     pRange.Serialize(os);
   }
   if (qValue >= 0) {
+    auto savedFlags = os.flags();
+    auto savedPrecision = os.precision();
     os << std::setprecision(2) << std::fixed << ",q=" << qValue;
+    os.flags(savedFlags);
+    os.precision(savedPrecision);
   }
   os << "]";
 }

@@ -20,9 +20,7 @@ import mozilla.components.concept.engine.mediasession.MediaSession
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 
-/**
- * Feature that will auto-rotate the device to the correct orientation for the media aspect ratio.
- */
+/** Feature that will auto-rotate the device to the correct orientation for the media aspect ratio. */
 class MediaSessionFullscreenFeature(
     private val activity: Activity,
     private val store: BrowserStore,
@@ -33,42 +31,44 @@ class MediaSessionFullscreenFeature(
     private var scope: CoroutineScope? = null
 
     override fun start() {
-        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.map {
-                it.tabs + it.customTabs
-            }.map { tab ->
-                tab.firstOrNull { it.mediaSessionState?.fullscreen == true }
-            }.distinctUntilChanged { old, new ->
-                old.hasSameOrientationInformationAs(new)
-            }.collect { state ->
-                // There should only be one fullscreen session.
-                if (state == null) {
-                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
-                    activity.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                    return@collect
-                }
+        scope =
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
+                flow
+                    .map {
+                        it.tabs + it.customTabs
+                    }
+                    .map { tab ->
+                        tab.firstOrNull { it.mediaSessionState?.fullscreen == true }
+                    }
+                    .distinctUntilChanged { old, new ->
+                        old.hasSameOrientationInformationAs(new)
+                    }
+                    .collect { state ->
+                        // There should only be one fullscreen session.
+                        if (state == null) {
+                            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
+                            activity.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                            return@collect
+                        }
 
-                if (store.state.findCustomTabOrSelectedTab(tabId)?.id == state.id) {
-                    setOrientationForTabState(state)
-                }
-                setDeviceSleepModeForTabState(state)
+                        if (store.state.findCustomTabOrSelectedTab(tabId)?.id == state.id) {
+                            setOrientationForTabState(state)
+                        }
+                        setDeviceSleepModeForTabState(state)
+                    }
             }
-        }
     }
 
     @Suppress("SourceLockedOrientationActivity") // We deliberately want to lock the orientation here.
     private fun setOrientationForTabState(activeTabState: SessionState) {
         when (activeTabState.mediaSessionState?.elementMetadata?.portrait) {
-            true ->
-                activity.requestedOrientation =
-                    ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT
+            true -> activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT
 
             false ->
                 if (activity.isInPictureInPictureMode) {
                     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                 } else {
-                    activity.requestedOrientation =
-                        ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
                 }
 
             null -> activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER

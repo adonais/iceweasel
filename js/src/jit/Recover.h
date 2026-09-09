@@ -138,6 +138,7 @@ namespace jit {
   _(NewTypedArray)                \
   _(NewArray)                     \
   _(NewIterator)                  \
+  _(NewBoundFunction)             \
   _(NewDateObject)                \
   _(NewCallObject)                \
   _(Lambda)                       \
@@ -960,6 +961,14 @@ class RNewIterator final : public RInstruction {
 
  public:
   RINSTRUCTION_HEADER_NUM_OP_(NewIterator, 1)
+
+  [[nodiscard]] bool recover(JSContext* cx,
+                             SnapshotIterator& iter) const override;
+};
+
+class RNewBoundFunction final : public RInstruction {
+ public:
+  RINSTRUCTION_HEADER_NUM_OP_(NewBoundFunction, 1)
 
   [[nodiscard]] bool recover(JSContext* cx,
                              SnapshotIterator& iter) const override;

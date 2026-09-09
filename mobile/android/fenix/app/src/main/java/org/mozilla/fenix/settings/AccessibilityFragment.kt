@@ -18,8 +18,8 @@ import org.mozilla.fenix.utils.Settings
 /**
  * Displays font size controls for accessibility.
  *
- * Includes an automatic font sizing toggle. When turned on, font sizing follows the Android device settings.
- * When turned off, the font sizing can be controlled manually within the app.
+ * Includes an automatic font sizing toggle. When turned on, font sizing follows the Android device settings. When
+ * turned off, the font sizing can be controlled manually within the app.
  */
 class AccessibilityFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
 
@@ -29,9 +29,8 @@ class AccessibilityFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
         super.onResume()
         showToolbar(getString(R.string.preferences_accessibility))
 
-        val forceZoomPreference = requirePreference<SwitchPreferenceCompat>(
-            R.string.pref_key_accessibility_force_enable_zoom,
-        )
+        val forceZoomPreference =
+            requirePreference<SwitchPreferenceCompat>(R.string.pref_key_accessibility_force_enable_zoom)
 
         val components = requireContext().components
         val settings = components.settings
@@ -43,9 +42,8 @@ class AccessibilityFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
             true
         }
 
-        val textSizePreference = requirePreference<ComposeTextSizePreference>(
-            R.string.pref_key_accessibility_font_scale,
-        )
+        val textSizePreference =
+            requirePreference<ComposeTextSizePreference>(R.string.pref_key_accessibility_font_scale)
 
         textSizePreference.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { preference, newValue ->
             // Bug 2044409: The `setIsSliderEnabled` call below doesn't disable this callback
@@ -65,8 +63,7 @@ class AccessibilityFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
             true
         }
 
-        val useAutoSizePreference =
-            requirePreference<SwitchPreferenceCompat>(R.string.pref_key_accessibility_auto_size)
+        val useAutoSizePreference = requirePreference<SwitchPreferenceCompat>(R.string.pref_key_accessibility_auto_size)
         useAutoSizePreference.setOnPreferenceChangeListener<Boolean> { preference, useAutoSize ->
 
             // Save the new setting value

@@ -100,7 +100,7 @@ void GetDirectoryListingTaskChild::SetSuccessRequestResult(
   MOZ_ASSERT(aValue.type() ==
              FileSystemResponseValue::TFileSystemDirectoryListingResponse);
 
-  FileSystemDirectoryListingResponse r = aValue;
+  const FileSystemDirectoryListingResponse& r = aValue;
   for (uint32_t i = 0; i < r.data().Length(); ++i) {
     const FileSystemDirectoryListingResponseData& data = r.data()[i];
 

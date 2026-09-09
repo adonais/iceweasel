@@ -13,9 +13,9 @@ import org.mozilla.fenix.components.Core.Companion.METADATA_SHORTCUT_SUGGESTION_
 /**
  * A scorer implementation used specifically for [FxSuggestSuggestionProvider] experiment.
  *
- * The score is set to guarantee the suggestions are scored lower than that of [SearchSuggestionProvider],
- * which is intended to have the lowest priority among the search providers. This also guarantees that the suggestions
- * will be put at the top of its group.
+ * The score is set to guarantee the suggestions are scored lower than that of [SearchSuggestionProvider], which is
+ * intended to have the lowest priority among the search providers. This also guarantees that the suggestions will be
+ * put at the top of its group.
  */
 class FxSuggestionExperimentScorer : AwesomeBar.SuggestionProvider.Scorer {
     private val experimentScore =

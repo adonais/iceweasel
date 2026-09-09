@@ -19,9 +19,9 @@ To set up Mozilla Central, you can follow the general instructions provided in t
 
 - {ref}`Getting Set Up To Work On The Firefox Codebase <Getting Set Up To Work On The Firefox Codebase>`
 
-Additionally, to set up specifically for mozilla-central, you can refer to the following guide:
+Additionally, for writing, submitting and updating a patch with git, you can refer to the following guide:
 
-- {ref}`Quick Start Guide for Git Users <contribute-with-git>`
+- {ref}`Firefox Contributors' Quick Reference <firefox-contributors-quick-reference>`
 
 ## Bootstrap
 
@@ -139,7 +139,7 @@ native code. [Bug
 making Android Studio and Gradle do this automatically.
 
 If you want set up code formatting for Kotlin, please reference
-[IntelliJ IDEA configuration](https://pinterest.github.io/ktlint/rules/configuration-intellij-idea/).
+[IntelliJ IDEA configuration](https://github.com/Kotlin/ktfmt#intellij-android-studio-and-other-jetbrains-ides).
 
 ## Mobile Devices and Emulators
 

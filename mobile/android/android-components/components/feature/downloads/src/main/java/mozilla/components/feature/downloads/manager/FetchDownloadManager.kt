@@ -19,6 +19,7 @@ import android.os.Build.VERSION.SDK_INT
 import android.os.Build.VERSION_CODES.P
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.ContextCompat
+import kotlin.reflect.KClass
 import mozilla.components.browser.state.action.DownloadAction
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.state.content.DownloadState.Status
@@ -29,7 +30,6 @@ import mozilla.components.feature.downloads.ext.isScheme
 import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.utils.ext.getSerializableExtraCompat
 import mozilla.components.support.utils.ext.registerReceiverCompat
-import kotlin.reflect.KClass
 
 /**
  * Handles the interactions with [AbstractFetchDownloadService].
@@ -50,19 +50,20 @@ class FetchDownloadManager<T : AbstractFetchDownloadService>(
     // Do not require WRITE_EXTERNAL_STORAGE permission on API 29 and above (using scoped storage)
     override val permissions
         @SuppressLint("InlinedApi")
-        get() = if (getSDKVersion() >= Build.VERSION_CODES.Q) {
-            arrayOf(INTERNET, FOREGROUND_SERVICE)
-        } else if (getSDKVersion() >= P) {
-            arrayOf(INTERNET, WRITE_EXTERNAL_STORAGE, FOREGROUND_SERVICE)
-        } else {
-            arrayOf(INTERNET, WRITE_EXTERNAL_STORAGE)
-        }
+        get() =
+            if (getSDKVersion() >= Build.VERSION_CODES.Q) {
+                arrayOf(INTERNET, FOREGROUND_SERVICE)
+            } else if (getSDKVersion() >= P) {
+                arrayOf(INTERNET, WRITE_EXTERNAL_STORAGE, FOREGROUND_SERVICE)
+            } else {
+                arrayOf(INTERNET, WRITE_EXTERNAL_STORAGE)
+            }
 
-    @VisibleForTesting
-    internal fun getSDKVersion() = SDK_INT
+    @VisibleForTesting internal fun getSDKVersion() = SDK_INT
 
     /**
      * Schedules a download through the [AbstractFetchDownloadService].
+     *
      * @param download metadata related to the download.
      * @param cookie any additional cookie to add as part of the download request.
      * @return the id reference of the scheduled download.
@@ -96,9 +97,7 @@ class FetchDownloadManager<T : AbstractFetchDownloadService>(
         registerBroadcastReceiver()
     }
 
-    /**
-     * Remove all the listeners.
-     */
+    /** Remove all the listeners. */
     override fun unregisterListeners() {
         if (isSubscribedReceiver) {
             applicationContext.unregisterReceiver(this)
@@ -125,14 +124,13 @@ class FetchDownloadManager<T : AbstractFetchDownloadService>(
     }
 
     /**
-     * Invoked when a download is complete. Notifies [onDownloadStopped] and removes the queued
-     * download if it's complete.
+     * Invoked when a download is complete. Notifies [onDownloadStopped] and removes the queued download if it's
+     * complete.
      */
     override fun onReceive(context: Context, intent: Intent) {
         val downloadID = intent.getStringExtra(EXTRA_DOWNLOAD_ID) ?: ""
         val download = store.state.downloads[downloadID]
-        val downloadStatus = intent.getSerializableExtraCompat(EXTRA_DOWNLOAD_STATUS, Status::class.java)
-            as Status?
+        val downloadStatus = intent.getSerializableExtraCompat(EXTRA_DOWNLOAD_STATUS, Status::class.java) as Status?
 
         if (download != null && downloadStatus != null) {
             onDownloadStopped(download, downloadID, downloadStatus)

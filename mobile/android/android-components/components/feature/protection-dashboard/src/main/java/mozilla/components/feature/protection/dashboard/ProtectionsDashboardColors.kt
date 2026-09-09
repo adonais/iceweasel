@@ -43,26 +43,31 @@ internal fun rememberProtectionsDashboardColors(): ProtectionsDashboardColors {
         context.obtainStyledAttributes(R.styleable.ProtectionsDashboard).let { attrs ->
             try {
                 ProtectionsDashboardColors(
-                    chipBackground = attrs.getRequiredColor(
-                        R.styleable.ProtectionsDashboard_mozacProtectionsDashboardChipBackground,
-                        "mozacProtectionsDashboardChipBackground",
-                    ),
-                    chipText = attrs.getRequiredColor(
-                        R.styleable.ProtectionsDashboard_mozacProtectionsDashboardChipText,
-                        "mozacProtectionsDashboardChipText",
-                    ),
-                    progressBar = attrs.getRequiredColor(
-                        R.styleable.ProtectionsDashboard_mozacProtectionsDashboardProgressBar,
-                        "mozacProtectionsDashboardProgressBar",
-                    ),
-                    gradientStart = attrs.getRequiredColor(
-                        R.styleable.ProtectionsDashboard_mozacProtectionsDashboardGradientStart,
-                        "mozacProtectionsDashboardGradientStart",
-                    ),
-                    gradientEnd = attrs.getRequiredColor(
-                        R.styleable.ProtectionsDashboard_mozacProtectionsDashboardGradientEnd,
-                        "mozacProtectionsDashboardGradientEnd",
-                    ),
+                    chipBackground =
+                        attrs.getRequiredColor(
+                            R.styleable.ProtectionsDashboard_mozacProtectionsDashboardChipBackground,
+                            "mozacProtectionsDashboardChipBackground",
+                        ),
+                    chipText =
+                        attrs.getRequiredColor(
+                            R.styleable.ProtectionsDashboard_mozacProtectionsDashboardChipText,
+                            "mozacProtectionsDashboardChipText",
+                        ),
+                    progressBar =
+                        attrs.getRequiredColor(
+                            R.styleable.ProtectionsDashboard_mozacProtectionsDashboardProgressBar,
+                            "mozacProtectionsDashboardProgressBar",
+                        ),
+                    gradientStart =
+                        attrs.getRequiredColor(
+                            R.styleable.ProtectionsDashboard_mozacProtectionsDashboardGradientStart,
+                            "mozacProtectionsDashboardGradientStart",
+                        ),
+                    gradientEnd =
+                        attrs.getRequiredColor(
+                            R.styleable.ProtectionsDashboard_mozacProtectionsDashboardGradientEnd,
+                            "mozacProtectionsDashboardGradientEnd",
+                        ),
                 )
             } finally {
                 attrs.recycle()

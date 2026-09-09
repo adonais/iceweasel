@@ -14,6 +14,7 @@ import android.widget.TextView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ActivityScenario.launch
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.lib.crash.Crash
@@ -32,12 +33,10 @@ import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations.openMocks
-import kotlin.coroutines.CoroutineContext
 
 @RunWith(AndroidJUnit4::class)
 class CrashReporterActivityTest {
-    @Mock
-    lateinit var service: CrashReporterService
+    @Mock lateinit var service: CrashReporterService
     private val testDispatcher = StandardTestDispatcher()
 
     @Before
@@ -46,194 +45,207 @@ class CrashReporterActivityTest {
     }
 
     @Test
-    fun `Pressing close button sends report`() = runTest(testDispatcher) {
-        CrashReporter(
-            context = testContext,
-            shouldPrompt = CrashReporter.Prompt.ALWAYS,
-            services = listOf(service),
-            mainDispatcher = testDispatcher,
-            scope = this,
-        ).install(testContext)
+    fun `Pressing close button sends report`() =
+        runTest(testDispatcher) {
+            CrashReporter(
+                    context = testContext,
+                    shouldPrompt = CrashReporter.Prompt.ALWAYS,
+                    services = listOf(service),
+                    mainDispatcher = testDispatcher,
+                    scope = this,
+                )
+                .install(testContext)
 
-        val crash = Crash.UncaughtExceptionCrash(0, RuntimeException("Hello World"), arrayListOf())
-        val scenario = coroutineContext.launchActivityWithCrash(crash)
+            val crash = Crash.UncaughtExceptionCrash(0, RuntimeException("Hello World"), arrayListOf())
+            val scenario = coroutineContext.launchActivityWithCrash(crash)
 
-        scenario.onActivity { activity ->
-            // When
-            activity.closeButton.performClick()
-        }
+            scenario.onActivity { activity ->
+                // When
+                activity.closeButton.performClick()
+            }
 
-        // Await for all coroutines to be finished
-        testScheduler.advanceUntilIdle()
-
-        // Then
-        verify(service).report(crash)
-    }
-
-    @Test
-    fun `Pressing restart button sends report`() = runTest(testDispatcher) {
-        CrashReporter(
-            context = testContext,
-            shouldPrompt = CrashReporter.Prompt.ALWAYS,
-            services = listOf(service),
-            mainDispatcher = testDispatcher,
-            scope = this,
-        ).install(testContext)
-
-        val crash = Crash.UncaughtExceptionCrash(0, RuntimeException("Hello World"), arrayListOf())
-        val scenario = coroutineContext.launchActivityWithCrash(crash)
-
-        scenario.onActivity { activity ->
-            // When
-            activity.restartButton.performClick()
-        }
-
-        // Await for all coroutines to be finished
-        testScheduler.advanceUntilIdle()
-
-        // Then
-        verify(service).report(crash)
-    }
-
-    @Test
-    fun `Custom message is set on CrashReporterActivity`() = runTest(testDispatcher) {
-        CrashReporter(
-            context = testContext,
-            shouldPrompt = CrashReporter.Prompt.ALWAYS,
-            promptConfiguration = CrashReporter.PromptConfiguration(
-                message = "Hello World!",
-                theme = android.R.style.Theme_DeviceDefault, // Yolo!
-            ),
-            mainDispatcher = testDispatcher,
-            scope = this,
-            services = listOf(mock()),
-        ).install(testContext)
-
-        val crash = Crash.UncaughtExceptionCrash(0, RuntimeException("Hello World"), arrayListOf())
-        val scenario = coroutineContext.launchActivityWithCrash(crash)
-
-        scenario.onActivity { activity ->
-            // Then
-            assertEquals("Hello World!", activity.messageView.text)
-        }
-    }
-
-    @Test
-    fun `Sending crash report saves checkbox state`() = runTest(testDispatcher) {
-        CrashReporter(
-            context = testContext,
-            shouldPrompt = CrashReporter.Prompt.ALWAYS,
-            services = listOf(service),
-            mainDispatcher = testDispatcher,
-            scope = this,
-        ).install(testContext)
-
-        val crash = Crash.UncaughtExceptionCrash(0, RuntimeException("Hello World"), arrayListOf())
-        val scenario = coroutineContext.launchActivityWithCrash(crash)
-
-        scenario.onActivity { activity ->
-            // When
-            activity.sendCheckbox.isChecked = true
+            // Await for all coroutines to be finished
+            testScheduler.advanceUntilIdle()
 
             // Then
-            assertFalse(activity.isSendReportPreferenceEnabled)
+            verify(service).report(crash)
+        }
 
-            // When
-            activity.restartButton.performClick()
+    @Test
+    fun `Pressing restart button sends report`() =
+        runTest(testDispatcher) {
+            CrashReporter(
+                    context = testContext,
+                    shouldPrompt = CrashReporter.Prompt.ALWAYS,
+                    services = listOf(service),
+                    mainDispatcher = testDispatcher,
+                    scope = this,
+                )
+                .install(testContext)
+
+            val crash = Crash.UncaughtExceptionCrash(0, RuntimeException("Hello World"), arrayListOf())
+            val scenario = coroutineContext.launchActivityWithCrash(crash)
+
+            scenario.onActivity { activity ->
+                // When
+                activity.restartButton.performClick()
+            }
+
+            // Await for all coroutines to be finished
+            testScheduler.advanceUntilIdle()
 
             // Then
-            assertTrue(activity.isSendReportPreferenceEnabled)
+            verify(service).report(crash)
         }
-    }
 
     @Test
-    fun `Restart button visible for main process crash`() = runTest(testDispatcher) {
-        CrashReporter(
-            context = testContext,
-            shouldPrompt = CrashReporter.Prompt.ALWAYS,
-            services = listOf(service),
-            mainDispatcher = testDispatcher,
-            scope = this,
-        ).install(testContext)
+    fun `Custom message is set on CrashReporterActivity`() =
+        runTest(testDispatcher) {
+            CrashReporter(
+                    context = testContext,
+                    shouldPrompt = CrashReporter.Prompt.ALWAYS,
+                    promptConfiguration =
+                        CrashReporter.PromptConfiguration(
+                            message = "Hello World!",
+                            theme = android.R.style.Theme_DeviceDefault, // Yolo!
+                        ),
+                    mainDispatcher = testDispatcher,
+                    scope = this,
+                    services = listOf(mock()),
+                )
+                .install(testContext)
 
-        val crash = Crash.NativeCodeCrash(
-            0,
-            "",
-            "",
-            Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
-            processType = "main",
-            breadcrumbs = arrayListOf(),
-            remoteType = null,
-        )
-        val scenario = coroutineContext.launchActivityWithCrash(crash)
+            val crash = Crash.UncaughtExceptionCrash(0, RuntimeException("Hello World"), arrayListOf())
+            val scenario = coroutineContext.launchActivityWithCrash(crash)
 
-        scenario.onActivity { activity ->
-            assertEquals(activity.restartButton.visibility, View.VISIBLE)
+            scenario.onActivity { activity ->
+                // Then
+                assertEquals("Hello World!", activity.messageView.text)
+            }
         }
-    }
 
     @Test
-    fun `Restart button hidden for background child process crash`() = runTest(testDispatcher) {
-        CrashReporter(
-            context = testContext,
-            shouldPrompt = CrashReporter.Prompt.ALWAYS,
-            services = listOf(service),
-            mainDispatcher = testDispatcher,
-            scope = this,
-        ).install(testContext)
+    fun `Sending crash report saves checkbox state`() =
+        runTest(testDispatcher) {
+            CrashReporter(
+                    context = testContext,
+                    shouldPrompt = CrashReporter.Prompt.ALWAYS,
+                    services = listOf(service),
+                    mainDispatcher = testDispatcher,
+                    scope = this,
+                )
+                .install(testContext)
 
-        val crash = Crash.NativeCodeCrash(
-            0,
-            "",
-            "",
-            Crash.NativeCodeCrash.PROCESS_VISIBILITY_BACKGROUND_CHILD,
-            processType = "utility",
-            breadcrumbs = arrayListOf(),
-            remoteType = null,
-        )
-        val scenario = coroutineContext.launchActivityWithCrash(crash)
+            val crash = Crash.UncaughtExceptionCrash(0, RuntimeException("Hello World"), arrayListOf())
+            val scenario = coroutineContext.launchActivityWithCrash(crash)
 
-        scenario.onActivity { activity ->
-            assertEquals(activity.restartButton.visibility, View.GONE)
+            scenario.onActivity { activity ->
+                // When
+                activity.sendCheckbox.isChecked = true
+
+                // Then
+                assertFalse(activity.isSendReportPreferenceEnabled)
+
+                // When
+                activity.restartButton.performClick()
+
+                // Then
+                assertTrue(activity.isSendReportPreferenceEnabled)
+            }
         }
-    }
 
     @Test
-    fun `WHEN crash is native AND background child THEN is background returns true`() = runTest(testDispatcher) {
-        CrashReporter(
-            context = testContext,
-            shouldPrompt = CrashReporter.Prompt.ALWAYS,
-            services = listOf(service),
-            mainDispatcher = testDispatcher,
-            scope = this,
-        ).install(testContext)
+    fun `Restart button visible for main process crash`() =
+        runTest(testDispatcher) {
+            CrashReporter(
+                    context = testContext,
+                    shouldPrompt = CrashReporter.Prompt.ALWAYS,
+                    services = listOf(service),
+                    mainDispatcher = testDispatcher,
+                    scope = this,
+                )
+                .install(testContext)
 
-        val crash = Crash.NativeCodeCrash(
-            123,
-            "",
-            "",
-            Crash.NativeCodeCrash.PROCESS_VISIBILITY_BACKGROUND_CHILD,
-            processType = "utility",
-            breadcrumbs = arrayListOf(),
-            remoteType = null,
-        )
+            val crash =
+                Crash.NativeCodeCrash(
+                    0,
+                    "",
+                    "",
+                    Crash.NativeCodeCrash.PROCESS_VISIBILITY_MAIN,
+                    processType = "main",
+                    breadcrumbs = arrayListOf(),
+                    remoteType = null,
+                )
+            val scenario = coroutineContext.launchActivityWithCrash(crash)
 
-        val scenario = coroutineContext.launchActivityWithCrash(crash)
-
-        scenario.onActivity { activity ->
-            assert(activity.isRecoverableBackgroundCrash(crash))
+            scenario.onActivity { activity ->
+                assertEquals(activity.restartButton.visibility, View.VISIBLE)
+            }
         }
-    }
+
+    @Test
+    fun `Restart button hidden for background child process crash`() =
+        runTest(testDispatcher) {
+            CrashReporter(
+                    context = testContext,
+                    shouldPrompt = CrashReporter.Prompt.ALWAYS,
+                    services = listOf(service),
+                    mainDispatcher = testDispatcher,
+                    scope = this,
+                )
+                .install(testContext)
+
+            val crash =
+                Crash.NativeCodeCrash(
+                    0,
+                    "",
+                    "",
+                    Crash.NativeCodeCrash.PROCESS_VISIBILITY_BACKGROUND_CHILD,
+                    processType = "utility",
+                    breadcrumbs = arrayListOf(),
+                    remoteType = null,
+                )
+            val scenario = coroutineContext.launchActivityWithCrash(crash)
+
+            scenario.onActivity { activity ->
+                assertEquals(activity.restartButton.visibility, View.GONE)
+            }
+        }
+
+    @Test
+    fun `WHEN crash is native AND background child THEN is background returns true`() =
+        runTest(testDispatcher) {
+            CrashReporter(
+                    context = testContext,
+                    shouldPrompt = CrashReporter.Prompt.ALWAYS,
+                    services = listOf(service),
+                    mainDispatcher = testDispatcher,
+                    scope = this,
+                )
+                .install(testContext)
+
+            val crash =
+                Crash.NativeCodeCrash(
+                    123,
+                    "",
+                    "",
+                    Crash.NativeCodeCrash.PROCESS_VISIBILITY_BACKGROUND_CHILD,
+                    processType = "utility",
+                    breadcrumbs = arrayListOf(),
+                    remoteType = null,
+                )
+
+            val scenario = coroutineContext.launchActivityWithCrash(crash)
+
+            scenario.onActivity { activity ->
+                assert(activity.isRecoverableBackgroundCrash(crash))
+            }
+        }
 }
 
-/**
- * Launch activity scenario for certain [crash].
- */
-private fun CoroutineContext.launchActivityWithCrash(
-    crash: Crash,
-): ActivityScenario<CrashReporterActivity> = run {
-    val intent = Intent(testContext, CrashReporterActivity::class.java)
-        .also { crash.fillIn(it) }
+/** Launch activity scenario for certain [crash]. */
+private fun CoroutineContext.launchActivityWithCrash(crash: Crash): ActivityScenario<CrashReporterActivity> = run {
+    val intent = Intent(testContext, CrashReporterActivity::class.java).also { crash.fillIn(it) }
 
     launch<CrashReporterActivity>(intent).apply {
         onActivity { activity ->
@@ -243,10 +255,14 @@ private fun CoroutineContext.launchActivityWithCrash(
 }
 
 // Views
-private val CrashReporterActivity.closeButton: Button get() = binding.closeButton
-private val CrashReporterActivity.restartButton: Button get() = binding.restartButton
-private val CrashReporterActivity.messageView: TextView get() = binding.messageView
-private val CrashReporterActivity.sendCheckbox: CheckBox get() = binding.sendCheckbox
+private val CrashReporterActivity.closeButton: Button
+    get() = binding.closeButton
+private val CrashReporterActivity.restartButton: Button
+    get() = binding.restartButton
+private val CrashReporterActivity.messageView: TextView
+    get() = binding.messageView
+private val CrashReporterActivity.sendCheckbox: CheckBox
+    get() = binding.sendCheckbox
 
 // Preferences
 private val CrashReporterActivity.preferences: SharedPreferences

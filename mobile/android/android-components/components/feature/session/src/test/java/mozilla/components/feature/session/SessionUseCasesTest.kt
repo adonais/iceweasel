@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.session
 
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.CrashAction
@@ -30,7 +31,6 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class SessionUseCasesTest {
@@ -45,25 +45,28 @@ class SessionUseCasesTest {
         engineSession = mock()
         childEngineSession = mock()
         middleware = CaptureActionsMiddleware()
-        store = BrowserStore(
-            initialState = BrowserState(
-                tabs = listOf(
-                    createTab(
-                        url = "https://mozilla.org",
-                        id = "mozilla",
-                        engineSession = engineSession,
+        store =
+            BrowserStore(
+                initialState =
+                    BrowserState(
+                        tabs =
+                            listOf(
+                                createTab(
+                                    url = "https://mozilla.org",
+                                    id = "mozilla",
+                                    engineSession = engineSession,
+                                ),
+                                createTab(
+                                    url = "https://bugzilla.com",
+                                    id = "bugzilla",
+                                    engineSession = childEngineSession,
+                                    parentId = "mozilla",
+                                ),
+                            ),
+                        selectedTabId = "mozilla",
                     ),
-                    createTab(
-                        url = "https://bugzilla.com",
-                        id = "bugzilla",
-                        engineSession = childEngineSession,
-                        parentId = "mozilla",
-                    ),
-                ),
-                selectedTabId = "mozilla",
-            ),
-            middleware = listOf(middleware) + EngineMiddleware.create(engine = mock()),
-        )
+                middleware = listOf(middleware) + EngineMiddleware.create(engine = mock()),
+            )
         useCases = SessionUseCases(store)
     }
 
@@ -79,10 +82,11 @@ class SessionUseCasesTest {
 
         useCases.loadUrl("https://www.mozilla.org", LoadUrlFlags.select(LoadUrlFlags.EXTERNAL))
         middleware.assertNotDispatched(EngineAction.LoadUrlAction::class)
-        verify(engineSession).loadUrl(
-            url = "https://www.mozilla.org",
-            flags = LoadUrlFlags.select(LoadUrlFlags.EXTERNAL),
-        )
+        verify(engineSession)
+            .loadUrl(
+                url = "https://www.mozilla.org",
+                flags = LoadUrlFlags.select(LoadUrlFlags.EXTERNAL),
+            )
         middleware.assertLastAction(EngineAction.OptimizedLoadUrlTriggeredAction::class) { action ->
             assertEquals("mozilla", action.tabId)
             assertEquals("https://www.mozilla.org", action.url)
@@ -103,10 +107,11 @@ class SessionUseCasesTest {
             LoadUrlFlags.select(LoadUrlFlags.BYPASS_PROXY),
         )
         middleware.assertNotDispatched(EngineAction.LoadUrlAction::class)
-        verify(engineSession).loadUrl(
-            url = "https://developer.mozilla.org",
-            flags = LoadUrlFlags.select(LoadUrlFlags.BYPASS_PROXY),
-        )
+        verify(engineSession)
+            .loadUrl(
+                url = "https://developer.mozilla.org",
+                flags = LoadUrlFlags.select(LoadUrlFlags.BYPASS_PROXY),
+            )
         middleware.assertLastAction(EngineAction.OptimizedLoadUrlTriggeredAction::class) { action ->
             assertEquals("mozilla", action.tabId)
             assertEquals("https://developer.mozilla.org", action.url)
@@ -118,9 +123,7 @@ class SessionUseCasesTest {
             "bugzilla",
         )
         middleware.assertNotDispatched(EngineAction.LoadUrlAction::class)
-        verify(childEngineSession).loadUrl(
-            url = "https://www.mozilla.org/en-CA/firefox/browsers/mobile/",
-        )
+        verify(childEngineSession).loadUrl(url = "https://www.mozilla.org/en-CA/firefox/browsers/mobile/")
         middleware.assertLastAction(EngineAction.OptimizedLoadUrlTriggeredAction::class) { action ->
             assertEquals("bugzilla", action.tabId)
             assertEquals("https://www.mozilla.org/en-CA/firefox/browsers/mobile/", action.url)
@@ -340,10 +343,11 @@ class SessionUseCasesTest {
 
         store.dispatch(TabListAction.RemoveAllTabsAction())
 
-        val loadUseCase = SessionUseCases.DefaultLoadUrlUseCase(store) { url ->
-            tabCreatedForUrl = url
-            createTab(url).also { createdTab = it }
-        }
+        val loadUseCase =
+            SessionUseCases.DefaultLoadUrlUseCase(store) { url ->
+                tabCreatedForUrl = url
+                createTab(url).also { createdTab = it }
+            }
 
         loadUseCase("https://www.example.com")
 
@@ -363,10 +367,11 @@ class SessionUseCasesTest {
 
         store.dispatch(TabListAction.RemoveAllTabsAction())
 
-        val loadUseCase = SessionUseCases.LoadDataUseCase(store) { url ->
-            tabCreatedForUrl = url
-            createTab(url).also { createdTab = it }
-        }
+        val loadUseCase =
+            SessionUseCases.LoadDataUseCase(store) { url ->
+                tabCreatedForUrl = url
+                createTab(url).also { createdTab = it }
+            }
 
         loadUseCase("Hello", mimeType = "text/plain", encoding = "UTF-8")
 
@@ -392,21 +397,22 @@ class SessionUseCasesTest {
 
     @Test
     fun `CrashRecoveryUseCase will restore list of crashed sessions`() {
-        val store = BrowserStore(
-            middleware = listOf(middleware),
-            initialState = BrowserState(
-                tabs = listOf(
-                    createTab(url = "https://wwww.mozilla.org", id = "tab1", crashed = true),
-                ),
-                customTabs = listOf(
-                    createCustomTab(
-                        "https://wwww.mozilla.org",
-                        id = "customTab1",
-                        crashed = true,
+        val store =
+            BrowserStore(
+                middleware = listOf(middleware),
+                initialState =
+                    BrowserState(
+                        tabs = listOf(createTab(url = "https://wwww.mozilla.org", id = "tab1", crashed = true)),
+                        customTabs =
+                            listOf(
+                                createCustomTab(
+                                    "https://wwww.mozilla.org",
+                                    id = "customTab1",
+                                    crashed = true,
+                                )
+                            ),
                     ),
-                ),
-            ),
-        )
+            )
         val useCases = SessionUseCases(store)
 
         useCases.crashRecovery.invoke()
@@ -432,12 +438,14 @@ class SessionUseCasesTest {
         val tab = createTab("https://firefox.com")
         val otherTab = createTab("https://example.com")
         val customTab = createCustomTab("https://getpocket.com")
-        store = BrowserStore(
-            initialState = BrowserState(
-                tabs = listOf(tab, otherTab),
-                customTabs = listOf(customTab),
-            ),
-        )
+        store =
+            BrowserStore(
+                initialState =
+                    BrowserState(
+                        tabs = listOf(tab, otherTab),
+                        customTabs = listOf(customTab),
+                    )
+            )
         useCases = SessionUseCases(store)
 
         // Make sure use case doesn't crash for custom tab and non-existent tab
